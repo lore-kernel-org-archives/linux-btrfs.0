@@ -2,99 +2,65 @@ Return-Path: <SRS0=zJiL=XU=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.7 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.7 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D4F70C432C2
-	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Sep 2019 13:37:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 57359C4360C
+	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Sep 2019 13:37:46 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A9E632146E
-	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Sep 2019 13:37:44 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 36C1A2146E
+	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Sep 2019 13:37:46 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2406589AbfIYNhn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 25 Sep 2019 09:37:43 -0400
-Received: from mx2.suse.de ([195.135.220.15]:35620 "EHLO mx1.suse.de"
+        id S2406638AbfIYNhp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 25 Sep 2019 09:37:45 -0400
+Received: from mx2.suse.de ([195.135.220.15]:35654 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2406256AbfIYNhn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 25 Sep 2019 09:37:43 -0400
+        id S2406615AbfIYNhp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 25 Sep 2019 09:37:45 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 223B7B038;
-        Wed, 25 Sep 2019 13:37:42 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id DF694B626;
+        Wed, 25 Sep 2019 13:37:43 +0000 (UTC)
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 To:     David Sterba <dsterba@suse.com>
 Cc:     Nikolay Borisov <nborisov@suse.com>,
         Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
         Johannes Thumshirn <jthumshirn@suse.de>
-Subject: [PATCH v5 0/7] btrfs-progs: support xxhash64 checksums
-Date:   Wed, 25 Sep 2019 15:37:21 +0200
-Message-Id: <20190925133728.18027-1-jthumshirn@suse.de>
+Subject: [PATCH v5 4/7] btrfs-progs: also print checksum type when running mkfs
+Date:   Wed, 25 Sep 2019 15:37:25 +0200
+Message-Id: <20190925133728.18027-5-jthumshirn@suse.de>
 X-Mailer: git-send-email 2.16.4
+In-Reply-To: <20190925133728.18027-1-jthumshirn@suse.de>
+References: <20190925133728.18027-1-jthumshirn@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Now that Nikolay's XXHASH64 support for the Crypto API has landed and BTRFS is
-prepared for an easy addition of new checksums, this patchset implements
-XXHASH64 as a second, fast but not cryptographically secure checksum hash.
+As mkfs will grow new checksums, print the used checksum in it's versbose
+output.
 
-This patchset is fully bisectible and available on github at
-https://github.com/morbidrsa/btrfs-progs/tree/mkfs-xxhash64.v5
+Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
+---
+ mkfs/main.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-Changes since v4:
-- Rebased onto latest 'devel' branch and dropped applied changes
-- Split 'btrfs-progs: add xxhash64 as checksum algorithm' into several atomic
-  patches
-- Changed test code to using 'TEST_ENABLE_OVERRIDE'
-
-Johannes Thumshirn (7):
-  btrfs-progs: add option for checksum type to mkfs
-  btrfs-progs: add is_valid_csum_type() helper
-  btrfs-progs: add table for checksum type and name
-  btrfs-progs: also print checksum type when running mkfs
-  btrfs-progs: add xxhash64 to mkfs
-  btrfs-progs: move crc32c implementation to crypto/
-  btrfs-progs: add test override for mkfs to use different checksums
-
- Android.mk                                  |  4 ++--
- Makefile                                    |  7 ++++---
- btrfs-crc.c                                 |  2 +-
- btrfs-find-root.c                           |  2 +-
- btrfs-sb-mod.c                              |  2 +-
- btrfs.c                                     |  2 +-
- cmds/inspect-dump-super.c                   | 26 ++++++++++++++++----------
- cmds/rescue-chunk-recover.c                 |  2 +-
- cmds/rescue-super-recover.c                 |  2 +-
- common/utils.c                              |  2 +-
- convert/common.c                            |  2 +-
- convert/main.c                              |  6 +++---
- {kernel-lib => crypto}/crc32c.c             |  2 +-
- {kernel-lib => crypto}/crc32c.h             |  0
- crypto/hash.c                               | 17 +++++++++++++++++
- crypto/hash.h                               | 10 ++++++++++
- ctree.c                                     | 28 ++++++++++++++++++++++++++++
- ctree.h                                     | 18 +++++++-----------
- disk-io.c                                   |  9 ++++++---
- extent-tree.c                               |  2 +-
- file-item.c                                 |  2 +-
- free-space-cache.c                          |  2 +-
- hash.h                                      |  2 +-
- image/main.c                                |  7 ++++---
- image/sanitize.c                            |  2 +-
- library-test.c                              |  2 +-
- mkfs/common.c                               | 14 +++++++-------
- mkfs/main.c                                 | 10 ++++++++--
- send-stream.c                               |  2 +-
- tests/common                                | 10 ++++++++--
- tests/mkfs-tests/001-basic-profiles/test.sh |  8 +++++++-
- 31 files changed, 143 insertions(+), 63 deletions(-)
- rename {kernel-lib => crypto}/crc32c.c (99%)
- rename {kernel-lib => crypto}/crc32c.h (100%)
- create mode 100644 crypto/hash.c
- create mode 100644 crypto/hash.h
-
+diff --git a/mkfs/main.c b/mkfs/main.c
+index 61184c8e7525..04509e788a52 100644
+--- a/mkfs/main.c
++++ b/mkfs/main.c
+@@ -1380,7 +1380,9 @@ raid_groups:
+ 			pretty_size(allocation.system));
+ 		printf("SSD detected:       %s\n", ssd ? "yes" : "no");
+ 		btrfs_parse_features_to_string(features_buf, features);
+-		printf("Incompat features:  %s", features_buf);
++		printf("Incompat features:  %s\n", features_buf);
++		printf("Checksum:           %s",
++		       btrfs_super_csum_name(mkfs_cfg.csum_type));
+ 		printf("\n");
+ 
+ 		list_all_devices(root);
 -- 
 2.16.4
 

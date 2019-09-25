@@ -6,95 +6,47 @@ X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 69387C432C2
-	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Sep 2019 15:08:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C88C9C432C2
+	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Sep 2019 16:45:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 475BC21D7B
-	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Sep 2019 15:08:54 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A660821D79
+	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Sep 2019 16:45:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731127AbfIYPIx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 25 Sep 2019 11:08:53 -0400
-Received: from outgoing-auth-1.mit.edu ([18.9.28.11]:58412 "EHLO
-        outgoing.mit.edu" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1727297AbfIYPIx (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 25 Sep 2019 11:08:53 -0400
-Received: from callcc.thunk.org (guestnat-104-133-0-98.corp.google.com [104.133.0.98] (may be forged))
-        (authenticated bits=0)
-        (User authenticated as tytso@ATHENA.MIT.EDU)
-        by outgoing.mit.edu (8.14.7/8.12.4) with ESMTP id x8PF8WXY009959
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-        Wed, 25 Sep 2019 11:08:33 -0400
-Received: by callcc.thunk.org (Postfix, from userid 15806)
-        id 3B2284200BF; Wed, 25 Sep 2019 11:08:32 -0400 (EDT)
-Date:   Wed, 25 Sep 2019 11:08:32 -0400
-From:   "Theodore Y. Ts'o" <tytso@mit.edu>
-To:     Colin Walters <walters@verbum.org>
-Cc:     Dave Chinner <david@fromorbit.com>, Jann Horn <jannh@google.com>,
-        Omar Sandoval <osandov@osandov.com>,
-        Aleksa Sarai <cyphar@cyphar.com>, Jens Axboe <axboe@kernel.dk>,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        linux-btrfs@vger.kernel.org, Linux API <linux-api@vger.kernel.org>,
-        Kernel Team <kernel-team@fb.com>,
-        Andy Lutomirski <luto@kernel.org>
-Subject: Re: [RFC PATCH 2/3] fs: add RWF_ENCODED for writing compressed data
-Message-ID: <20190925150832.GA20227@mit.edu>
-References: <cover.1568875700.git.osandov@fb.com>
- <230a76e65372a8fb3ec62ce167d9322e5e342810.1568875700.git.osandov@fb.com>
- <CAG48ez2GKv15Uj6Wzv0sG5v2bXyrSaCtRTw5Ok_ovja_CiO_fQ@mail.gmail.com>
- <20190924171513.GA39872@vader>
- <20190924193513.GA45540@vader>
- <CAG48ez1NQBNR1XeVQYGoopEk=g_KedUr+7jxLQTaO+V8JCeweQ@mail.gmail.com>
- <20190925071129.GB804@dread.disaster.area>
- <60c48ac5-b215-44e1-a628-6145d84a4ce3@www.fastmail.com>
+        id S2391968AbfIYQpg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 25 Sep 2019 12:45:36 -0400
+Received: from mx2.suse.de ([195.135.220.15]:49524 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S2391916AbfIYQpg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 25 Sep 2019 12:45:36 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 5938DAF83;
+        Wed, 25 Sep 2019 16:45:35 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id A0BCFDA835; Wed, 25 Sep 2019 18:45:55 +0200 (CEST)
+Date:   Wed, 25 Sep 2019 18:45:55 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Anand Jain <anand.jain@oracle.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: balance: use redundancy instead of integrity
+Message-ID: <20190925164555.GI2751@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
+        linux-btrfs@vger.kernel.org
+References: <1569392968-21340-1-git-send-email-anand.jain@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <60c48ac5-b215-44e1-a628-6145d84a4ce3@www.fastmail.com>
-User-Agent: Mutt/1.10.1 (2018-07-13)
+In-Reply-To: <1569392968-21340-1-git-send-email-anand.jain@oracle.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Sep 25, 2019 at 08:07:12AM -0400, Colin Walters wrote:
-> 
-> 
-> On Wed, Sep 25, 2019, at 3:11 AM, Dave Chinner wrote:
-> >
-> > We're talking about user data read/write access here, not some
-> > special security capability. Access to the data has already been
-> > permission checked, so why should the format that the data is
-> > supplied to the kernel in suddenly require new privilege checks?
-> 
-> What happens with BTRFS today if userspace provides invalid
-> compressed data via this interface?  Does that show up as filesystem
-> corruption later?  If the data is verified at write time, wouldn't
-> that be losing most of the speed advantages of providing
-> pre-compressed data?
+On Wed, Sep 25, 2019 at 02:29:28PM +0800, Anand Jain wrote:
+> When balance reduces the number of copies of data it reduces the
+> redundancy, use the term redundancy instead of integrity.
 
-Not necessarily, most compression algorithms are far more expensive to
-compress than to decompress.
-
-If there is a buggy decompressor, it's possible that invalid data
-could result in a buffer overrun.  So that's an argument for verifying
-the compressed code at write time.  OTOH, the verification could be
-just as vulnerability to invalid data as the decompressor, so it
-doesn't buy you that much.
-
-> Ability for a user to cause fsck errors later would be a new thing
-> that would argue for a privilege check I think.
-
-Well, if it's only invalid data in a user file, there's no reason why
-it should cause the kernel declare that the file system is corrupt; it
-can just return EIO.
-
-What fsck does is a different question, of course; it might be that
-the fsck code isn't going to check compressed user data.  After all,
-if all of the files on the file system are compressed, requiring fsck
-to check all compressed data blocks is tantamount to requiring it to
-read all of the blocks in the file system.  Much better would be some
-kind of online scrub operation which validates data files while the
-file system is mounted and the system can be in a serving state.
-
-						- Ted
+I agree, patch on the way to misc-next. If anybody has concerns or
+further clarifications, please speak. Thanks.

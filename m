@@ -2,134 +2,114 @@ Return-Path: <SRS0=zJiL=XU=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.7 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.3 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2962FC432C1
-	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Sep 2019 04:26:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8A0AFC4320D
+	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Sep 2019 04:57:02 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E6C6B2054F
-	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Sep 2019 04:26:01 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6042A21A4A
+	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Sep 2019 04:57:02 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=draconx-ca.20150623.gappssmtp.com header.i=@draconx-ca.20150623.gappssmtp.com header.b="bIxNLT99"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="rJRBgTY7"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2405153AbfIYE0B (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 25 Sep 2019 00:26:01 -0400
-Received: from mail-lf1-f66.google.com ([209.85.167.66]:45859 "EHLO
-        mail-lf1-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2390426AbfIYE0A (ORCPT
+        id S2388300AbfIYEzx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 25 Sep 2019 00:55:53 -0400
+Received: from userp2120.oracle.com ([156.151.31.85]:37638 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1729236AbfIYEzw (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 25 Sep 2019 00:26:00 -0400
-Received: by mail-lf1-f66.google.com with SMTP id r134so3072090lff.12
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Sep 2019 21:25:59 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=draconx-ca.20150623.gappssmtp.com; s=20150623;
-        h=mime-version:in-reply-to:references:from:date:message-id:subject:to
-         :cc;
-        bh=lHQObc8VQbZxMgaOaGLOQ4q6IzbV0SlnDKNnxpbc02Q=;
-        b=bIxNLT99kIvN5HPLFXw1UjlrVdpMmTWo+I/ABAevMtPtgwSzWkP+LXwxchy6CfQrTv
-         +NlhcFgiun2SIv6XzZ6dYscp0jt87pZnxpi52atsLDqov3oPYCLN47oeP4y1xdpnc7BT
-         r2ynzSHo5OMSaYUmd1TUDnnoOWOHO2aeowq0NrZqPW8pzpWJVhf/IpKN7zhR0QKTDnnO
-         OTztUpwJ/OK20e1YmbEkeH6CYwJIlp47Z3ilPyKGItRJ0ovvLdviS92OdSS77A4Q6ozh
-         qbnffDDQttQ1jsojREoRqgZqiOUnSf4LFojv+F12fjjop8pL0V7ukYbDHA6iPbajZ3OA
-         uMnA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:in-reply-to:references:from:date
-         :message-id:subject:to:cc;
-        bh=lHQObc8VQbZxMgaOaGLOQ4q6IzbV0SlnDKNnxpbc02Q=;
-        b=nYd7vkusVgf0+bGeMhvb6wOD6+MuycFxf7In9RGa2s0fbUlEhzGi0kdB+GZ01kGtm/
-         VyXKVr+/6T1AfWSAIzRVLruom1IZBAGrPrr/I9HN18K3tOq/wVo3u4NEFQ+zfVz3n3CW
-         Xk96AbROBb1s4BmIJumpuscW7vk1dXYfbqhaUdyBi4foHE+7G23oiLyWTZgNbBxfMAoy
-         KYRym/DQwKWf7Yt5J4lhcCennB3mJnlYeZS1R3GdGRBJXlvSkzTN+R8kC0RDN54ZRy/b
-         a2XMdD3Mvu62z2f07AWdX4KlMULYRJdcMfYVrJUOGyJfBP8wGDrvgyHL3/G8bkBOM9u1
-         U2ww==
-X-Gm-Message-State: APjAAAXjuIpXRy3v89OfmciMalprpkRnQ9ZdG43h7pEgKONCmPs4MXe8
-        1F6o5540gyS0XD14b6Obxy71V2tvzw8BHmwz0abXDhXRjcdPuw==
-X-Google-Smtp-Source: APXvYqxRPZ/E9ByoWAf+JkyFRtBMlRFq41eZ98ARx09/HuN66xw8YvnIyVy48PX0YyR50UmhN7+qqsH07fM6P+FRhew=
-X-Received: by 2002:a05:6512:512:: with SMTP id o18mr4207711lfb.153.1569385558733;
- Tue, 24 Sep 2019 21:25:58 -0700 (PDT)
+        Wed, 25 Sep 2019 00:55:52 -0400
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x8P4tAXc183705;
+        Wed, 25 Sep 2019 04:55:48 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to : cc :
+ references : from : message-id : date : mime-version : in-reply-to :
+ content-type : content-transfer-encoding; s=corp-2019-08-05;
+ bh=mNALWmUD9xu0wUPuXfbkQHni4s30qq9dV7+wchVP3ow=;
+ b=rJRBgTY7XOHy2Z6tscdtQe3/j+PnwOznT70jopYP37V8XDm/1dMZx8xzYMgGi32CBBLG
+ 3tkTFR3yw1/YRA1JJsmF/bVcAaeNiIW7SfGESx2nX7lRDG81vcgYwnTYdPGDI7XBaqTh
+ R33ZCvsCFVzxJQmM7IJVbAZ7uRKUtcoOHCc2wzKwNWuRSl2N+S895VnlZoZdzsBirJpq
+ OQp/0VNCCqVIt2mJ3vU8dpbFK+CewF+wVICYMtsOAQ5QNZE+ytzbF71BqJrfSkIYeqGF
+ BUnFfuTqyIi2S6/8oYgnRVIfDJ7JSNPu/i7IS5NZ4/Fq9rHq1HlbhwxkhlKX+jsGEYLb qQ== 
+Received: from aserp3020.oracle.com (aserp3020.oracle.com [141.146.126.70])
+        by userp2120.oracle.com with ESMTP id 2v5cgr219a-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Wed, 25 Sep 2019 04:55:48 +0000
+Received: from pps.filterd (aserp3020.oracle.com [127.0.0.1])
+        by aserp3020.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x8P4sXvx118015;
+        Wed, 25 Sep 2019 04:55:47 GMT
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by aserp3020.oracle.com with ESMTP id 2v7vnx6rv2-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Wed, 25 Sep 2019 04:55:46 +0000
+Received: from abhmp0007.oracle.com (abhmp0007.oracle.com [141.146.116.13])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x8P4qmQU004537;
+        Wed, 25 Sep 2019 04:52:48 GMT
+Received: from [10.190.155.136] (/192.188.170.104)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Tue, 24 Sep 2019 21:52:47 -0700
+Subject: Re: [PATCH] btrfs: Fix a regression which we can't convert to SINGLE
+ profile
+To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Cc:     Chris Murphy <lists@colorremedies.com>
+References: <20190925021327.90095-1-wqu@suse.com>
+From:   Anand Jain <anand.jain@oracle.com>
+Message-ID: <0a29bea5-f2e4-b7d3-9c31-08ae8d6fc3c4@oracle.com>
+Date:   Wed, 25 Sep 2019 12:51:21 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.8.0
 MIME-Version: 1.0
-Received: by 2002:a2e:534c:0:0:0:0:0 with HTTP; Tue, 24 Sep 2019 21:25:58
- -0700 (PDT)
-X-Originating-IP: [24.53.243.131]
-In-Reply-To: <CAJCQCtQM_Pn4SubsJw9t0TjF8WNoqguxVf--UYH6K82Ch8Dm9Q@mail.gmail.com>
-References: <CADyTPEwDifK+YA6-kh6F8Wpf9C0+acQjkxGBJhf1ATTpZbMSYg@mail.gmail.com>
- <CAJCQCtQM_Pn4SubsJw9t0TjF8WNoqguxVf--UYH6K82Ch8Dm9Q@mail.gmail.com>
-From:   Nick Bowler <nbowler@draconx.ca>
-Date:   Wed, 25 Sep 2019 04:25:58 +0000
-Message-ID: <CADyTPEw=g7y+DroBt+CO-=8T3=8kO5Muj6Ts3LrkwDtKx2=zcQ@mail.gmail.com>
-Subject: Re: Btrfs filesystem trashed after OOM scenario
-To:     Chris Murphy <lists@colorremedies.com>
-Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        Filipe Manana <fdmanana@kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <20190925021327.90095-1-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9390 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
+ adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.0.1-1908290000 definitions=main-1909250048
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9390 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
+ suspectscore=0 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
+ lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1908290000
+ definitions=main-1909250048
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Sep 24, 2019, 18:34 Chris Murphy, <lists@colorremedies.com> wrote:
-> On Tue, Sep 24, 2019 at 4:04 PM Nick Bowler <nbowler@draconx.ca> wrote:
-> > - Running Linux 5.2.14, I pushed this system to OOM; the oom killer
-> > ran and killed some userspace tasks.  At this point many of the
-> > remaining tasks were stuck in uninterruptible sleeps.  Not really
-> > worried, I turned the machine off and on again to just get everything
-> > back to normal.  But I guess now that everything had gone horribly
-> > wrong already at this point...
->
-> Yeah the kernel oomkiller is pretty much only about kernel
-> preservation, not user space preservation.
+On 9/25/19 10:13 AM, Qu Wenruo wrote:
+> [BUG]
+> With v5.3 kernel, we just can't convert to SINGLE profile by all means:
+>    # btrfs balance start -f -dconvert=single $mnt
+>    ERROR: error during balancing '/mnt/btrfs': Invalid argument
+>    # dmesg -t | tail
+>    validate_convert_profile: data profile=0x1000000000000 allowed=0x20 is_valid=1 final=0x1000000000000 ret=1
+>    BTRFS error (device dm-3): balance: invalid convert data profile single
+> 
+> [CAUSE]
+> With the extra debug output added, it shows that the @allowed bit is
+> lacking the special in-memory only SINGLE profile bit.
+> 
+> Thus we fail at that (profile & ~allowed) check.
+> 
+> This regression is caused by commit 081db89b13cb ("btrfs: use raid_attr
+> to get allowed profiles for balance conversion") and the fact that we
+> don't use any bit to indicate SINGLE profile on-disk, but uses special
+> in-memory only bit to help distinguish different profiles.
+> 
+> [FIX]
+> Add that BTRFS_AVAIL_ALLOC_BIT_SINGLE to @allowed, so the code should be
+> the same as it was and fix the regression.
+> 
+> Reported-by: Chris Murphy <lists@colorremedies.com>
+> Fixes: 081db89b13cb ("btrfs: use raid_attr to get allowed profiles for balance conversion")
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
-Indeed I am not bothered at all by needing to turn it off and on again
-in this situation.  But filesystems being completely trashed is
-another matter...
+Reviewed-by: Anand Jain <anand.jain@oracle.com>
 
-> > - Upon reboot, the system boots OK but now btrfs is throwing zillions
-> > of checksum errors.  After some time the filesystem is remounted
-> > readonly and I lose the ability to interact with the system at all, so
-> > it gets powered off.
-> >
-> > - Now the filesystem is unmountable.
->
-> The transid errors look like they might be caused by the 5.2 regression
->
-> https://lore.kernel.org/linux-btrfs/20190911145542.1125-1-fdmanana@kernel.org/T/#u
->
-> Fixed since 5.2.15 and 5.3.0.
-
-Yikes, so my decision to update the latest kernel two weeks ago
-perhaps was a very bad one.  Should've stuck with 4.19.y I guess.
-
-> So if you're willing to blow shit up again, you can try to reproduce
-> with one of those.
-
-Well I could try but it sounds like this might be hard to reproduce...
-
-> I was also doing oomkiller blow shit up tests a few weeks ago with
-> these same problem kernels and never hit this bug, or any others. I
-> also had to do a LOT of force power offs because the system just
-> became totally wedged in and I had no way of estimating how long it
-> would be for recovery so after 30 minutes I hit the power button. Many
-> times. Zero corruptions. That's with a single Samsung 840 EVO in a
-> laptop relegated to such testing.
-
-Just a thought... the system was alive but I was able to briefly
-inspect the situation and notice that tasks were blocked and
-unkillable... until my shell hung too and then I was hosed.  But I
-didn't hit the power button but rather rebooted with sysrq+e, sysrq+u,
-sysrq+b.  Not sure if that makes a difference.
-
-> Might be a different bug. Not sure. But also, this is with
->
-> > [  347.551595] CPU: 3 PID: 1143 Comm: mount Not tainted 4.19.34-1-lts #1
->
-> So I don't know how an older kernel will report on the problem caused
-> by the 5.2 bug.
-
-This is the kernel from systemrescuecd.  I can try taking a disk image
-and mounting on another machine with a newer linux version.
-
-Thanks,
-  Nick
+Thanks, Anand

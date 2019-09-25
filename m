@@ -6,30 +6,30 @@ X-Spam-Status: No, score=-9.7 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 41A52C4360D
-	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Sep 2019 13:37:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8B341C432C2
+	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Sep 2019 13:37:48 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1866F2146E
-	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Sep 2019 13:37:47 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 60DAB2146E
+	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Sep 2019 13:37:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2406634AbfIYNhp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 25 Sep 2019 09:37:45 -0400
-Received: from mx2.suse.de ([195.135.220.15]:35640 "EHLO mx1.suse.de"
+        id S2406646AbfIYNhr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 25 Sep 2019 09:37:47 -0400
+Received: from mx2.suse.de ([195.135.220.15]:35680 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2406608AbfIYNhp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 25 Sep 2019 09:37:45 -0400
+        id S2406639AbfIYNhq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 25 Sep 2019 09:37:46 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id CE449AFC6;
-        Wed, 25 Sep 2019 13:37:43 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 18829B644;
+        Wed, 25 Sep 2019 13:37:44 +0000 (UTC)
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 To:     David Sterba <dsterba@suse.com>
 Cc:     Nikolay Borisov <nborisov@suse.com>,
         Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
         Johannes Thumshirn <jthumshirn@suse.de>
-Subject: [PATCH v5 2/7] btrfs-progs: add is_valid_csum_type() helper
-Date:   Wed, 25 Sep 2019 15:37:23 +0200
-Message-Id: <20190925133728.18027-3-jthumshirn@suse.de>
+Subject: [RFC PATCH v5 7/7] btrfs-progs: add test override for mkfs to use different checksums
+Date:   Wed, 25 Sep 2019 15:37:28 +0200
+Message-Id: <20190925133728.18027-8-jthumshirn@suse.de>
 X-Mailer: git-send-email 2.16.4
 In-Reply-To: <20190925133728.18027-1-jthumshirn@suse.de>
 References: <20190925133728.18027-1-jthumshirn@suse.de>
@@ -38,53 +38,63 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Add a helper to check if we have a valid csum type from the super block.
+Similar to check's test overrides add an override for mkfs tests so we can
+specify different mkfs flags.
 
 Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
 ---
- cmds/inspect-dump-super.c | 15 ++++++++++++---
- 1 file changed, 12 insertions(+), 3 deletions(-)
+ tests/common                                | 10 ++++++++--
+ tests/mkfs-tests/001-basic-profiles/test.sh |  8 +++++++-
+ 2 files changed, 15 insertions(+), 3 deletions(-)
 
-diff --git a/cmds/inspect-dump-super.c b/cmds/inspect-dump-super.c
-index 58bf82b0bbd3..272df1bfdc14 100644
---- a/cmds/inspect-dump-super.c
-+++ b/cmds/inspect-dump-super.c
-@@ -311,6 +311,16 @@ static void print_readable_super_flag(u64 flag)
- 				     super_flags_num, BTRFS_SUPER_FLAG_SUPP);
+diff --git a/tests/common b/tests/common
+index 75e5540155cc..5148820bef58 100644
+--- a/tests/common
++++ b/tests/common
+@@ -473,16 +473,22 @@ prepare_test_dev()
+ # $1-$n: optional, default is -f
+ run_check_mkfs_test_dev()
+ {
++	MKFS_ARGS="$@"
++
+ 	setup_root_helper
+ 
+ 	# check accidental files/devices passed
+-	for opt in "$@"; do
++	for opt in "$MKFS_ARGS"; do
+ 		if [ -f "$opt" -o -b "$opt" ]; then
+ 			_fail "ERROR: unexpected option for run_check_mkfs_test_dev: device"
+ 		fi
+ 	done
+ 
+-	run_check $SUDO_HELPER "$TOP/mkfs.btrfs" -f "$@" "$TEST_DEV"
++	if [ "$TEST_ENABLE_OVERRIDE" = 'true' ]; then
++		MKFS_ARGS="$TEST_ARGS_MKFS $MKFS_ARGS"
++	fi
++
++	run_check $SUDO_HELPER "$TOP/mkfs.btrfs" -f "$MKFS_ARGS" "$TEST_DEV"
  }
  
-+static bool is_valid_csum_type(u16 csum_type)
-+{
-+	switch (csum_type) {
-+	case BTRFS_CSUM_TYPE_CRC32:
-+		return true;
-+	default:
-+		return false;
-+	}
-+}
-+
- static void dump_superblock(struct btrfs_super_block *sb, int full)
+ run_check_mount_test_dev()
+diff --git a/tests/mkfs-tests/001-basic-profiles/test.sh b/tests/mkfs-tests/001-basic-profiles/test.sh
+index 6e295274119d..e0110c722555 100755
+--- a/tests/mkfs-tests/001-basic-profiles/test.sh
++++ b/tests/mkfs-tests/001-basic-profiles/test.sh
+@@ -21,7 +21,13 @@ test_get_info()
+ }
+ test_do_mkfs()
  {
- 	int i;
-@@ -326,7 +336,7 @@ static void dump_superblock(struct btrfs_super_block *sb, int full)
- 	csum_type = btrfs_super_csum_type(sb);
- 	csum_size = BTRFS_CSUM_SIZE;
- 	printf("csum_type\t\t%hu (", csum_type);
--	if (csum_type >= ARRAY_SIZE(btrfs_csum_sizes)) {
-+	if (!is_valid_csum_type(csum_type)) {
- 		printf("INVALID");
- 	} else {
- 		if (csum_type == BTRFS_CSUM_TYPE_CRC32) {
-@@ -342,8 +352,7 @@ static void dump_superblock(struct btrfs_super_block *sb, int full)
- 	printf("csum\t\t\t0x");
- 	for (i = 0, p = sb->csum; i < csum_size; i++)
- 		printf("%02x", p[i]);
--	if (csum_type != BTRFS_CSUM_TYPE_CRC32 ||
--	    csum_size != btrfs_csum_sizes[BTRFS_CSUM_TYPE_CRC32])
-+	if (!is_valid_csum_type(csum_type))
- 		printf(" [UNKNOWN CSUM TYPE OR SIZE]");
- 	else if (check_csum_sblock(sb, csum_size, csum_type))
- 		printf(" [match]");
+-	run_check $SUDO_HELPER "$TOP/mkfs.btrfs" -f "$@"
++	MKFS_ARGS="$@"
++
++	if [ "$TEST_ENABLE_OVERRIDE" = 'true' ]; then
++		MKFS_ARGS="$TEST_ARGS_MKFS $MKFS_ARGS"
++	fi
++
++	run_check $SUDO_HELPER "$TOP/mkfs.btrfs" -f "$MKFS_ARGS"
+ }
+ 
+ test_mkfs_single()
 -- 
 2.16.4
 

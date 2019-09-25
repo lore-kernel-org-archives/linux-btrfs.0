@@ -6,27 +6,27 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DE477C432C2
-	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Sep 2019 12:14:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 47040C432C2
+	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Sep 2019 12:14:11 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B95D4222BD
-	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Sep 2019 12:14:05 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2302E217F4
+	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Sep 2019 12:14:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2405479AbfIYMOF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 25 Sep 2019 08:14:05 -0400
-Received: from mx2.suse.de ([195.135.220.15]:59706 "EHLO mx1.suse.de"
+        id S2405548AbfIYMOJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 25 Sep 2019 08:14:09 -0400
+Received: from mx2.suse.de ([195.135.220.15]:59732 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2405211AbfIYMOE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 25 Sep 2019 08:14:04 -0400
+        id S2405524AbfIYMOI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 25 Sep 2019 08:14:08 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 47728ABCE
-        for <linux-btrfs@vger.kernel.org>; Wed, 25 Sep 2019 12:14:03 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id AB8CFAD4B
+        for <linux-btrfs@vger.kernel.org>; Wed, 25 Sep 2019 12:14:06 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 02/10] btrfs-progs: image: Fix error output to show correct return value
-Date:   Wed, 25 Sep 2019 20:13:48 +0800
-Message-Id: <20190925121356.118038-3-wqu@suse.com>
+Subject: [PATCH v3 05/10] btrfs-progs: image: Introduce helper to determine if a tree block is in the range of system chunks
+Date:   Wed, 25 Sep 2019 20:13:51 +0800
+Message-Id: <20190925121356.118038-6-wqu@suse.com>
 X-Mailer: git-send-email 2.23.0
 In-Reply-To: <20190925121356.118038-1-wqu@suse.com>
 References: <20190925121356.118038-1-wqu@suse.com>
@@ -37,34 +37,77 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We can easily get confusing error message like:
-  ERROR: restore failed: Success
+Introduce a new helper function, is_in_sys_chunks(), to determine if an
+item is in the range of system chunks.
 
-This is caused by wrong "%m" usage, as we normally use ret to indicate
-error, without populating errno.
-
-This patch will fix it by output the return value directly as normally
-we have extra error message to show more meaning message than the return
-value.
+Since btrfs-image will merge adjacent same type extents into one item,
+this function is designed to return true for any bytes in system chunk
+range.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- image/main.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ image/main.c | 48 ++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 48 insertions(+)
 
 diff --git a/image/main.c b/image/main.c
-index fb407f33f858..7c499c0853d0 100644
+index 0a68ea8e70d9..2ceaada7784b 100644
 --- a/image/main.c
 +++ b/image/main.c
-@@ -2734,7 +2734,7 @@ int BOX_MAIN(image)(int argc, char *argv[])
- 				       0, target, multi_devices);
- 	}
- 	if (ret) {
--		error("%s failed: %m", (create) ? "create" : "restore");
-+		error("%s failed: %d", (create) ? "create" : "restore", ret);
- 		goto out;
- 	}
+@@ -1658,6 +1658,54 @@ static int wait_for_worker(struct mdrestore_struct *mdres)
+ 	return ret;
+ }
  
++/*
++ * Check if a range [start ,start + len] has ANY bytes covered by
++ * system chunks ranges.
++ */
++static bool is_in_sys_chunks(struct mdrestore_struct *mdres, u64 start,
++			     u64 len)
++{
++	struct rb_node *node = mdres->sys_chunks.root.rb_node;
++	struct cache_extent *entry;
++	struct cache_extent *next;
++	struct cache_extent *prev;
++
++	if (start > mdres->sys_chunk_end)
++		return false;
++
++	while (node) {
++		entry = rb_entry(node, struct cache_extent, rb_node);
++		if (start > entry->start) {
++			if (!node->rb_right)
++				break;
++			node = node->rb_right;
++		} else if (start < entry->start) {
++			if (!node->rb_left)
++				break;
++			node = node->rb_left;
++		} else {
++			/* already in a system chunk */
++			return true;
++		}
++	}
++	if (!node)
++		return false;
++	entry = rb_entry(node, struct cache_extent, rb_node);
++	/* Now we have entry which is the nearst chunk around @start */
++	if (start > entry->start) {
++		prev = entry;
++		next = next_cache_extent(entry);
++	} else {
++		prev = prev_cache_extent(entry);
++		next = entry;
++	}
++	if (prev && prev->start + prev->size > start)
++		return true;
++	if (next && start + len > next->start)
++		return true;
++	return false;
++}
++
+ static int read_chunk_block(struct mdrestore_struct *mdres, u8 *buffer,
+ 			    u64 bytenr, u64 item_bytenr, u32 bufsize,
+ 			    u64 cluster_bytenr)
 -- 
 2.23.0
 

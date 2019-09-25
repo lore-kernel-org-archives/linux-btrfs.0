@@ -2,85 +2,60 @@ Return-Path: <SRS0=zJiL=XU=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.7 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 64881C432C2
-	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Sep 2019 12:14:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1D531C432C2
+	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Sep 2019 13:23:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4525A222BF
-	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Sep 2019 12:14:21 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id EF84321D7C
+	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Sep 2019 13:23:54 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2405486AbfIYMOG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 25 Sep 2019 08:14:06 -0400
-Received: from mx2.suse.de ([195.135.220.15]:59712 "EHLO mx1.suse.de"
+        id S2406057AbfIYNXy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 25 Sep 2019 09:23:54 -0400
+Received: from mx2.suse.de ([195.135.220.15]:57026 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2405475AbfIYMOF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 25 Sep 2019 08:14:05 -0400
+        id S2405963AbfIYNXx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 25 Sep 2019 09:23:53 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 699BAAD4B
-        for <linux-btrfs@vger.kernel.org>; Wed, 25 Sep 2019 12:14:04 +0000 (UTC)
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 03/10] btrfs-progs: image: Don't waste memory when we're just extracting super block
-Date:   Wed, 25 Sep 2019 20:13:49 +0800
-Message-Id: <20190925121356.118038-4-wqu@suse.com>
-X-Mailer: git-send-email 2.23.0
-In-Reply-To: <20190925121356.118038-1-wqu@suse.com>
-References: <20190925121356.118038-1-wqu@suse.com>
+        by mx1.suse.de (Postfix) with ESMTP id 4DA16AFCC;
+        Wed, 25 Sep 2019 13:23:52 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id A34FCDA835; Wed, 25 Sep 2019 15:24:12 +0200 (CEST)
+Date:   Wed, 25 Sep 2019 15:24:12 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Filipe Manana <fdmanana@gmail.com>
+Cc:     Qu Wenruo <wqu@suse.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Cebtenzzre <cebtenzzre@gmail.com>
+Subject: Re: [PATCH v2] btrfs: relocation: Fix KASAN report about
+ use-after-free due to dead reloc tree cleanup race
+Message-ID: <20190925132412.GF2751@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Filipe Manana <fdmanana@gmail.com>,
+        Qu Wenruo <wqu@suse.com>, linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Cebtenzzre <cebtenzzre@gmail.com>
+References: <20190923065614.22481-1-wqu@suse.com>
+ <CAL3q7H7s8to6yYjymkSuMpifZxJko+RVOXRf7abMuVO5SjS6BQ@mail.gmail.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <CAL3q7H7s8to6yYjymkSuMpifZxJko+RVOXRf7abMuVO5SjS6BQ@mail.gmail.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-There is no need to allocate 2 * max_pending_size (which can be 256M) if
-we're just extracting super block.
+On Wed, Sep 25, 2019 at 10:57:49AM +0100, Filipe Manana wrote:
+> Reviewed-by: Filipe Manana <fdmanana@suse.com>
+> 
+> Instead of such a long subject "btrfs: relocation: Fix KASAN report
+> about use-after-free due to dead reloc tree cleanup race", I would use
+> something smaller like "btrfs: fix use-after-free on dead relocation roots".
+> You don't need to mention in the subject that KASAN detected it, as
+> well as the reason for the problem, both can be left in the changelog.
 
-We only need to prepare BTRFS_SUPER_INFO_SIZE as buffer size.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- image/main.c | 13 +++++++++----
- 1 file changed, 9 insertions(+), 4 deletions(-)
-
-diff --git a/image/main.c b/image/main.c
-index 7c499c0853d0..162a578a3ff8 100644
---- a/image/main.c
-+++ b/image/main.c
-@@ -1522,9 +1522,14 @@ static int fill_mdres_info(struct mdrestore_struct *mdres,
- 		return 0;
- 
- 	if (mdres->compress_method == COMPRESS_ZLIB) {
--		size_t size = MAX_PENDING_SIZE * 2;
-+		/*
-+		 * We know this item is superblock, its should only be 4K.
-+		 * Don't need to waste memory following max_pending_size as it
-+		 * can be as large as 256M.
-+		 */
-+		size_t size = BTRFS_SUPER_INFO_SIZE;
- 
--		buffer = malloc(MAX_PENDING_SIZE * 2);
-+		buffer = malloc(size);
- 		if (!buffer)
- 			return -ENOMEM;
- 		ret = uncompress(buffer, (unsigned long *)&size,
-@@ -1963,10 +1968,10 @@ static int build_chunk_tree(struct mdrestore_struct *mdres,
- 	}
- 
- 	if (mdres->compress_method == COMPRESS_ZLIB) {
--		size_t size = MAX_PENDING_SIZE * 2;
-+		size_t size = BTRFS_SUPER_INFO_SIZE;
- 		u8 *tmp;
- 
--		tmp = malloc(MAX_PENDING_SIZE * 2);
-+		tmp = malloc(size);
- 		if (!tmp) {
- 			free(buffer);
- 			return -ENOMEM;
--- 
-2.23.0
-
+Patch subject updated, thanks.

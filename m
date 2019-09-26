@@ -2,63 +2,77 @@ Return-Path: <SRS0=41A3=XV=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.7 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DBAF6C432C2
-	for <linux-btrfs@archiver.kernel.org>; Thu, 26 Sep 2019 11:39:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9CCB5C4360C
+	for <linux-btrfs@archiver.kernel.org>; Thu, 26 Sep 2019 11:39:58 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B7ACA207FF
-	for <linux-btrfs@archiver.kernel.org>; Thu, 26 Sep 2019 11:39:57 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7B8A1207FF
+	for <linux-btrfs@archiver.kernel.org>; Thu, 26 Sep 2019 11:39:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726090AbfIZLj5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 26 Sep 2019 07:39:57 -0400
-Received: from mx2.suse.de ([195.135.220.15]:47060 "EHLO mx1.suse.de"
+        id S1726177AbfIZLj6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 26 Sep 2019 07:39:58 -0400
+Received: from mx2.suse.de ([195.135.220.15]:47076 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725784AbfIZLj4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 26 Sep 2019 07:39:56 -0400
+        id S1725914AbfIZLj5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 26 Sep 2019 07:39:57 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 5B43FAE0C;
-        Thu, 26 Sep 2019 11:39:55 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 2949CAE3F;
+        Thu, 26 Sep 2019 11:39:56 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 0/3] Improve btrfs llseek implementation
-Date:   Thu, 26 Sep 2019 14:39:50 +0300
-Message-Id: <20190926113953.19569-1-nborisov@suse.com>
+Subject: [PATCH 2/3] btrfs: Simplify btrfs_file_llseek
+Date:   Thu, 26 Sep 2019 14:39:52 +0300
+Message-Id: <20190926113953.19569-3-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
+In-Reply-To: <20190926113953.19569-1-nborisov@suse.com>
+References: <20190926113953.19569-1-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This series aims to speed up and refactor btrfs_file_llseek. This is realized 
-thanks to the fact there is no need to hold the inode locked when modifying the 
-cursors of an opened file descriptor.
+Handle SEEK_END/SEEK_CUR in a single 'default' case by directly
+returning from generic_file_llsee. This makes the 'out' label redundant.
+Finally return directly the vale from vfs_setpos. No semantic changesl.
 
-Patch 1 implements that and it results in around ~85% performance improvement
-on a synthethic, fseek-heavy workload. Details on why this is safe are in the
-patch's changelog alongside benchmarking information. 
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
+ fs/btrfs/file.c | 10 +++-------
+ 1 file changed, 3 insertions(+), 7 deletions(-)
 
-Patch 2 streamlines btrfs_file_llseek and makes it similar to its counterparts
-in ext4/xfs. Main change is that the 'out' label in the function is removed 
-and the SEEK_END/SEEK_CUR are handled in the 'default' case. 
-
-Patch 3 refactors find_desired_extent with the main goal of returning the found
-offset as a function return value rather than into a pointer parameter.
-
-This series survived xfstest.
-
-Nikolay Borisov (3):
-  btrfs: Speed up btrfs_file_llseek
-  btrfs: Simplify btrfs_file_llseek
-  btrfs: Return offset from find_desired_extent
-
- fs/btrfs/file.c | 58 ++++++++++++++++++++++---------------------------
- 1 file changed, 26 insertions(+), 32 deletions(-)
-
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 31111a94251a..8845403287ed 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -3413,10 +3413,8 @@ static loff_t btrfs_file_llseek(struct file *file, loff_t offset, int whence)
+ 	int ret;
+ 
+ 	switch (whence) {
+-	case SEEK_END:
+-	case SEEK_CUR:
+-		offset = generic_file_llseek(file, offset, whence);
+-		goto out;
++	default:
++		return generic_file_llseek(file, offset, whence);
+ 	case SEEK_DATA:
+ 	case SEEK_HOLE:
+ 		if (offset >= i_size_read(inode))
+@@ -3427,9 +3425,7 @@ static loff_t btrfs_file_llseek(struct file *file, loff_t offset, int whence)
+ 			return ret;
+ 	}
+ 
+-	offset = vfs_setpos(file, offset, inode->i_sb->s_maxbytes);
+-out:
+-	return offset;
++	return vfs_setpos(file, offset, inode->i_sb->s_maxbytes);
+ }
+ 
+ static int btrfs_file_open(struct inode *inode, struct file *filp)
 -- 
 2.17.1
 

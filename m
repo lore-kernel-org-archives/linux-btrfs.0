@@ -6,26 +6,26 @@ X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
 	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 03341C4360C
-	for <linux-btrfs@archiver.kernel.org>; Fri, 27 Sep 2019 11:00:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5AA80C4360C
+	for <linux-btrfs@archiver.kernel.org>; Fri, 27 Sep 2019 11:04:52 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D4081217D7
-	for <linux-btrfs@archiver.kernel.org>; Fri, 27 Sep 2019 10:59:59 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 37234217D9
+	for <linux-btrfs@archiver.kernel.org>; Fri, 27 Sep 2019 11:04:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726676AbfI0K76 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 27 Sep 2019 06:59:58 -0400
-Received: from mx2.suse.de ([195.135.220.15]:46318 "EHLO mx1.suse.de"
+        id S1726883AbfI0LEv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 27 Sep 2019 07:04:51 -0400
+Received: from mx2.suse.de ([195.135.220.15]:48074 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725882AbfI0K76 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 27 Sep 2019 06:59:58 -0400
+        id S1725882AbfI0LEu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 27 Sep 2019 07:04:50 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 5D892B19B;
-        Fri, 27 Sep 2019 10:59:56 +0000 (UTC)
-Subject: Re: [PATCH v2 2/3] btrfs: Simplify btrfs_file_llseek
+        by mx1.suse.de (Postfix) with ESMTP id 26E03B336;
+        Fri, 27 Sep 2019 11:04:49 +0000 (UTC)
+Subject: Re: [PATCH v2 3/3] btrfs: Return offset from find_desired_extent
 To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
 References: <20190927102318.12830-1-nborisov@suse.com>
- <20190927102318.12830-3-nborisov@suse.com>
+ <20190927102318.12830-4-nborisov@suse.com>
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 Openpgp: preference=signencrypt
 Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
@@ -83,12 +83,12 @@ Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
  l2t2TyTuHm7wVUY2J3gJYgG723/PUGW4LaoqNrYQUr/rqo6NXw6c+EglRpm1BdpkwPwAng63
  W5VOQMdnozD2RsDM5GfA4aEFi5m00tE+8XPICCtkduyWw+Z+zIqYk2v+zraPLs9Gs0X2C7X0
  yvqY9voUoJjG6skkOToGZbqtMX9K4GOv9JAxVs075QRXL3brHtHONDt6udYobzz+
-Message-ID: <ef4e125e-4939-3370-38d9-c193569a7ec6@suse.de>
-Date:   Fri, 27 Sep 2019 12:59:56 +0200
+Message-ID: <12021c34-a7cc-0111-3a65-38b517a11965@suse.de>
+Date:   Fri, 27 Sep 2019 13:04:48 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.8.0
 MIME-Version: 1.0
-In-Reply-To: <20190927102318.12830-3-nborisov@suse.com>
+In-Reply-To: <20190927102318.12830-4-nborisov@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -97,10 +97,7 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-I thought I already did that for v1, but:
 Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
-
-
 -- 
 Johannes Thumshirn                            SUSE Labs Filesystems
 jthumshirn@suse.de                                +49 911 74053 689

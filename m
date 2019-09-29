@@ -2,127 +2,105 @@ Return-Path: <SRS0=Kllh=XY=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 96EB3C32793
-	for <linux-btrfs@archiver.kernel.org>; Sun, 29 Sep 2019 05:29:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E8855C4360C
+	for <linux-btrfs@archiver.kernel.org>; Sun, 29 Sep 2019 21:44:48 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 76EB4218AC
-	for <linux-btrfs@archiver.kernel.org>; Sun, 29 Sep 2019 05:29:56 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B4E3820863
+	for <linux-btrfs@archiver.kernel.org>; Sun, 29 Sep 2019 21:44:48 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=render-wahnsinn.de header.i=@render-wahnsinn.de header.b="SRgqhycg"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726838AbfI2F3z (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 29 Sep 2019 01:29:55 -0400
-Received: from zeniv.linux.org.uk ([195.92.253.2]:45158 "EHLO
-        ZenIV.linux.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725379AbfI2F3z (ORCPT
+        id S1729022AbfI2Vor (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 29 Sep 2019 17:44:47 -0400
+Received: from mail.render-wahnsinn.de ([176.9.37.177]:38942 "EHLO
+        mail.render-wahnsinn.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728755AbfI2Vor (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 29 Sep 2019 01:29:55 -0400
-Received: from viro by ZenIV.linux.org.uk with local (Exim 4.92.2 #3 (Red Hat Linux))
-        id 1iERm2-0000VV-2n; Sun, 29 Sep 2019 05:29:36 +0000
-Date:   Sun, 29 Sep 2019 06:29:34 +0100
-From:   Al Viro <viro@zeniv.linux.org.uk>
-To:     Linus Torvalds <torvalds@linux-foundation.org>
-Cc:     zhengbin <zhengbin13@huawei.com>, Jan Kara <jack@suse.cz>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        "zhangyi (F)" <yi.zhang@huawei.com>, renxudong1@huawei.com,
-        Hou Tao <houtao1@huawei.com>, linux-btrfs@vger.kernel.org,
-        "Yan, Zheng" <zyan@redhat.com>, linux-cifs@vger.kernel.org,
-        Steve French <sfrench@samba.org>
-Subject: Re: [PATCH] Re: Possible FS race condition between iterate_dir and
- d_alloc_parallel
-Message-ID: <20190929052934.GY26530@ZenIV.linux.org.uk>
-References: <CAHk-=wiPv+yo86GpA+Gd_et0KS2Cydk4gSbEj3p4S4tEb1roKw@mail.gmail.com>
- <20190914200412.GU1131@ZenIV.linux.org.uk>
- <CAHk-=whpoQ_hX2KeqjQs3DeX6Wb4Tmb8BkHa5zr-Xu=S55+ORg@mail.gmail.com>
- <20190915005046.GV1131@ZenIV.linux.org.uk>
- <CAHk-=wjcZBB2GpGP-cxXppzW=M0EuFnSLoTXHyqJ4BtffYrCXw@mail.gmail.com>
- <20190915160236.GW1131@ZenIV.linux.org.uk>
- <CAHk-=whjNE+_oSBP_o_9mquUKsJn4gomL2f0MM79gxk_SkYLRw@mail.gmail.com>
- <20190921140731.GQ1131@ZenIV.linux.org.uk>
- <20190924025215.GA9941@ZenIV.linux.org.uk>
- <CAHk-=wiJ1eY7y6r_cFNRPCqD+BJZS7eJeQFO6OrXxRFjDAipsQ@mail.gmail.com>
+        Sun, 29 Sep 2019 17:44:47 -0400
+X-Greylist: delayed 343 seconds by postgrey-1.27 at vger.kernel.org; Sun, 29 Sep 2019 17:44:46 EDT
+Received: from [127.0.0.1] (localhost [127.0.0.1]) by localhost (Mailerdaemon) with robert.krig@render-wahnsinn.de
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=render-wahnsinn.de;
+        s=dkim; t=1569793138;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding;
+        bh=46F22UjIa9NoWDGGNTTOQ8C3YAdBkeA7ckXVsje82KM=;
+        b=SRgqhycgPEJJg//HDQ8Ij7dUgOHgB/lc7/GQGdt2YlT3GgMLXFZpnQhjHqEV88MMg4WYOo
+        4lI1fzfa+/KSUI3PkmZKtHyJyfqcwlOSZIzdV8S9gVDYs9XfOp6GPKHBXSp9QUD0yY81t0
+        ITquuPb4prmCP0Lh4F5/yi1bfLTHKsgBwhqqiSYagj9PsVjU9eGmQmc7WQ/FADM7pbm81W
+        ramysS2DBWm9N9GYlb7TVAngrU0O1AALXLtku+tSeRhaCZYSrF+bApDuOzLOnwh7OHzJQk
+        bduKjwat39wLDK1v2rxkQY+SzABb+SPi41M1sCGIg+osjARWO9Hpyin0mtxpVQ==
+Message-ID: <804e7e93a00dfe954222e4f8dc820a075d9ccb79.camel@render-wahnsinn.de>
+Subject: BTRFS Raid5 error during Scrub.
+From:   Robert Krig <robert.krig@render-wahnsinn.de>
+To:     Linux Btrfs <linux-btrfs@vger.kernel.org>
+Date:   Sun, 29 Sep 2019 23:38:55 +0200
+Content-Type: text/plain; charset="UTF-8"
+User-Agent: Evolution 3.30.5-1.1 
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <CAHk-=wiJ1eY7y6r_cFNRPCqD+BJZS7eJeQFO6OrXxRFjDAipsQ@mail.gmail.com>
-User-Agent: Mutt/1.12.1 (2019-06-15)
+Content-Transfer-Encoding: 7bit
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=render-wahnsinn.de; s=dkim; t=1569793138;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding;
+        bh=46F22UjIa9NoWDGGNTTOQ8C3YAdBkeA7ckXVsje82KM=;
+        b=QVNlrdnTwHwDI7Ylmifqk6nfZCnJ882rAyyCVBqDSSShWJgJ7Be6CvW6iuufjinsvK+u3A
+        4L7f9+PNTKoKjAc2l9db21LEW20znOpE6/gcy1rnvjbEH1VDebvZHBOSqJVsdWC6Rh04ih
+        yxWBw2KGpyN/eOGh6+2JgfJN751s5Wp4O5CTTjnW8N1KAjYfw0AS6jdJmCFaa8Vu76CDeX
+        8q1zQsyyfKsdcClFv73TXKOqvsAu3IaTmeQVP87yDpULYlh1cNts/ZKZO5F7860U/SVLoe
+        G/fdv8E/AGrPMrRm6XiIGvbEjlgB3SVwejHX5Hqt5RBp+4u9vTOFjIC1BStknA==
+ARC-Seal: i=1; s=dkim; d=render-wahnsinn.de; t=1569793138; a=rsa-sha256;
+        cv=none;
+        b=az+8hcFVFv6xrdoZ72nDhMlErfKUQYLg9ugy7yJ+ZeT/MEaqDU/+9ME2dAtq8muwJj+zjy
+        2XxACI7S0fqUKgn0/CqmADP1KtTnm14BfczHBWU1Bv82BMbddIN0ezoRdB19y63Tz5O+EC
+        q0r1VT7RTvsaIxA4mpQQK5tW2WMQwhK8sKwlixjMykdORkvCT+Pkrfarsjs6NLLiIl7Pw8
+        Dp2ZfdpM6Pj36t3Gc/p+Fpy8XpVM/GNTYuzgMtVIhGKI77Qag47VsOAXFok1T5deeqyVw8
+        1syQ25JR36uV+IdgveTDzvxrEgexZ9ySVmEFixDJ18q/ekSIAMx2MAZKHTExBw==
+ARC-Authentication-Results: i=1;
+        mail.render-wahnsinn.de;
+        auth=pass smtp.mailfrom=robert.krig@render-wahnsinn.de
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Sep 24, 2019 at 09:55:06AM -0700, Linus Torvalds wrote:
-> [ Sorry for html, I'm driving around ]
-> 
-> On Mon, Sep 23, 2019, 19:52 Al Viro <viro@zeniv.linux.org.uk> wrote:
-> 
-> >
-> > Argh...  The things turned interesting.  The tricky part is
-> > where do we handle switching cursors away from something
-> > that gets moved.
-> >
-> 
-> I forget why we do that. Remind me?
-> 
-> Anyway, I think to a first approximation, we should probably first just see
-> if the "remove cursors from the end" change already effectively makes most
-> of the regression go away.
-> 
-> Because with that change, if you just readdir() things with a sufficiently
-> big buffer, you'll never have the cursor hang around over several system
-> calls.
-> 
-> Before, you'd do a readdir, add the cursor, return to user space, then do
-> another readdir just to see the EOF, and then do the close().
-> 
-> So it used to leave the cursor in place over those two final system calls,
-> and now it's all gone.
-> 
-> I'm sure that on the big systems you can still trigger the whole d_lock
-> contention on the parent, but I wonder if it's all that much of a problem
-> any more in practice with your other change..
+Hi guys. First off, I've got backups so no worries there. I'm just
+trying to understand what's happening and which files are affected.
+I've got a scrub running and the kernel dmesg buffer spit out the
+following:
 
-If nothing else, it's DoSable right now.  And getting rid of that would
-reduce the memory footprint, while we are at it.
+BTRFS warning (device sda): checksum/header error at logical
+48781340082176 on dev /dev/sdb, physical 5651115966464: metadata leaf
+(level 0) in tree 7
+BTRFS warning (device sda): checksum/header error at logical
+48781340082176 on dev /dev/sdb, physical 5651115966464: metadata leaf
+(level 0) in tree 7
+BTRFS error (device sda): bdev /dev/sdb errs: wr 0, rd 0, flush 0,
+corrupt 0, gen 1
+BTRFS error (device sda): unable to fixup (regular) error at logical
+48781340082176 on dev /dev/sdb
+BTRFS warning (device sda): checksum/header error at logical
+48781340082176 on dev /dev/sdc, physical 5651115966464: metadata leaf
+(level 0) in tree 7
+BTRFS warning (device sda): checksum/header error at logical
+48781340082176 on dev /dev/sdc, physical 5651115966464: metadata leaf
+(level 0) in tree 7
+BTRFS error (device sda): bdev /dev/sdc errs: wr 0, rd 0, flush 0,
+corrupt 0, gen 1
+BTRFS error (device sda): unable to fixup (regular) error at logical
+48781340082176 on dev /dev/sdc
 
-In any case, it looks like btrfs really wants an empty directory there,
-i.e. the right thing to do would be simple_lookup() for ->lookup.
+Is there any way I can find out which files are affected so that I can
+just restore them from a backup? 
 
-CIFS is potentially trickier.  AFAICS, what's going on is
-	* Windows has a strange export, called IPC$.  Looks like it
-was (still is?) the place where they export their named pipes.  From
-what I'd been able to figure out, it's always there and allows for
-some other uses - it can be used to get the list of exports.  Whether
-the actual named pipes are seen there these days... no idea.
-	* there seems to be nothing to prevent a server (modified
-samba, for example) from exporting whatever it wants under that
-name.
-	* IF it can be non-empty, mounting it will end up with
-root directory where we can do lookups for whatever is there.
-getdents() on that root will show what's currently in dcache
-(== had been looked up and still has not been evicted by
-memory pressure).  Mainline can get seriously buggered if
-dcache_readdir() steps into something that is going away.  With the
-patches in this series that's no longer a problem.  HOWEVER, if
-lookup in one subdirectory picks an alias for another subdirectory
-of root, we will be really screwed - shared lock on parent
-won't stop d_splice_alias() from moving the alias, and that can
-bloody well lead to freeing the original name.  From under
-copy_to_user()...  And grabbing a reference to dentry obviously
-doesn't prevent that - dentry itself won't get freed, but
-external name very well might be.
+I'm running Debian Buster with Kernel 5.2.
+Btrfs-progs v4.20.1
 
-Again, I don't know CIFS well enough to tell how IPC$ is really
-used.  If it doesn't normally contain anything but named pipes,
-we can simply have cifs_lookup() refuse to return subdirectories
-on such mounts, with solves any problems with d_splice_alias().
-If it's always empty - better yet.  If the impressions above
-(and that's all those are) are correct, we might have a problem
-in mainline with bogus/malicious servers.
 
-That's independent from what we do with the cursors.  I asked
-around a bit; no luck so far.  It would be really nice if
-some CIFS folks could give a braindump on that thing...
+Let me know if you need any further info.
+

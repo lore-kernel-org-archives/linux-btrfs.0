@@ -2,441 +2,193 @@ Return-Path: <SRS0=UnVx=XZ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.5 required=3.0
-	tests=HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.0 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0CF77C32792
-	for <linux-btrfs@archiver.kernel.org>; Mon, 30 Sep 2019 17:05:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DF13EC32792
+	for <linux-btrfs@archiver.kernel.org>; Mon, 30 Sep 2019 20:51:05 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C6DAD215EA
-	for <linux-btrfs@archiver.kernel.org>; Mon, 30 Sep 2019 17:05:36 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A11FF224FE
+	for <linux-btrfs@archiver.kernel.org>; Mon, 30 Sep 2019 20:51:05 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="s0C2rE9W"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730485AbfI3RFg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 30 Sep 2019 13:05:36 -0400
-Received: from p3nlsmtpcp01-04.prod.phx3.secureserver.net ([184.168.200.145]:33800
-        "EHLO p3nlsmtpcp01-04.prod.phx3.secureserver.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726425AbfI3RFf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 30 Sep 2019 13:05:35 -0400
-X-Greylist: delayed 450 seconds by postgrey-1.27 at vger.kernel.org; Mon, 30 Sep 2019 13:05:35 EDT
-Received: from p3plcpnl0639.prod.phx3.secureserver.net ([50.62.176.166])
-        by : HOSTING RELAY : with ESMTP
-        id EyyuigJEk7wBxEyyuiJB60; Mon, 30 Sep 2019 09:57:04 -0700
-Received: from [45.116.115.51] (port=4433 helo=giis.co.in)
-        by p3plcpnl0639.prod.phx3.secureserver.net with esmtpsa (TLSv1.2:ECDHE-RSA-AES128-GCM-SHA256:128)
-        (Exim 4.92)
-        (envelope-from <lakshmipathi.ganapathi@collabora.com>)
-        id 1iEyyr-00AOXT-Hw; Mon, 30 Sep 2019 09:57:04 -0700
-Date:   Mon, 30 Sep 2019 22:26:54 +0530
-From:   "Lakshmipathi.G" <lakshmipathi.ganapathi@collabora.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     dsterba@suse.com, thecybershadow@gmail.com, wqu@suse.com,
-        lakshmipathi.g@giis.co.in
-Subject: [PATCH] Setup GitLab-CI for btrfs-progs
-Message-ID: <20190930165622.GA25114@giis.co.in>
+        id S1729022AbfI3UvF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 30 Sep 2019 16:51:05 -0400
+Received: from mail-qk1-f195.google.com ([209.85.222.195]:46610 "EHLO
+        mail-qk1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726425AbfI3UvE (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 30 Sep 2019 16:51:04 -0400
+Received: by mail-qk1-f195.google.com with SMTP id 201so9085306qkd.13
+        for <linux-btrfs@vger.kernel.org>; Mon, 30 Sep 2019 13:51:02 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
+        h=from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=lGkJf1GTYDU2ae9IJvbSbvh17mHGDRcf4FtC+g4Zhxo=;
+        b=s0C2rE9Wm5SpdA9rwt0bjS9v0xFxk4aipZcIh4ThHfhXcSwQ4Vw8Bl9hUyT2KlmbTB
+         pGJNiY1J9njNmNFP7JfDAyZtj4rfQSxQcXASgObr7LRbSoWIt/zd2absQyRMD6Pjq6eL
+         rvPPR9WAkJYj76RuSqAtWok1mZAYVfKfTDNLTc3RukQKCwJ4QWM0xLNJTBKK4Vvmc17j
+         J4ZLczrA2pYlI28aezrqQZvPe4f2fBzVf2VfQ4guazIW/QveShYCE9/SSaCrEke7ztO0
+         363PadmrqphViC37SJxR6lx/JgaNa5oGKZVrCuu7ugd3cAkfqbn9+2OFbWbkfoml4Wd0
+         OEqA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=lGkJf1GTYDU2ae9IJvbSbvh17mHGDRcf4FtC+g4Zhxo=;
+        b=KZkmGLHvjrHzu+0y6h68z7vSwYY6MM3sMIXgnEgOWtLGfvAZsyl+tQ2JsnwffiM+EJ
+         EWSyGUDF/CDw2iv+yukqBU19f4vALKis/74IA0w4oIlrCdHFKogWQcTpfk9mC8TG5iz5
+         ReooqUcIwNrIewv8pLOFkxUgYubNY1Itm41/j/zgyzjrXtu08oW8F2JmnKZBgl5v5iy1
+         8A+1OCIWc6aiAdpxLzoTbGaDoB4LN7TiQuvrdv07CqPpabcEKcHClO7V39QmgsoQ/PdN
+         QDwn/WM55TsZBxpIrp7Chooa0JELm3rJZgna0TMAToBGnVAV+b0vXXRFnwJbmR2Dt2+o
+         xvIw==
+X-Gm-Message-State: APjAAAXhHrRhoDT9cito46ZbmCm33nWUfugu5ymtbnydjA37CEtjveB9
+        BJiitd5oyq2hukPUTy6uaW6WmmKB+EduQA==
+X-Google-Smtp-Source: APXvYqwMUsHi77CjHjrgcuOCW4vFVME5QNrUNkmoHGOPjgrdlvQSoWLNypOnpuTQWW+7Qc5BoHVKtQ==
+X-Received: by 2002:a37:a695:: with SMTP id p143mr2213866qke.144.1569875247759;
+        Mon, 30 Sep 2019 13:27:27 -0700 (PDT)
+Received: from localhost ([107.15.81.208])
+        by smtp.gmail.com with ESMTPSA id n21sm6346506qka.83.2019.09.30.13.27.26
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 30 Sep 2019 13:27:27 -0700 (PDT)
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Cc:     stable@vger.kernel.org, Chris Mason <clm@fb.com>
+Subject: [PATCH] btrfs: fix incorrect updating of log root tree
+Date:   Mon, 30 Sep 2019 16:27:25 -0400
+Message-Id: <20190930202725.1317-1-josef@toxicpanda.com>
+X-Mailer: git-send-email 2.21.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-User-Agent: Mutt/1.5.24 (2015-08-30)
-X-AntiAbuse: This header was added to track abuse, please include it with any abuse report
-X-AntiAbuse: Primary Hostname - p3plcpnl0639.prod.phx3.secureserver.net
-X-AntiAbuse: Original Domain - vger.kernel.org
-X-AntiAbuse: Originator/Caller UID/GID - [47 12] / [47 12]
-X-AntiAbuse: Sender Address Domain - collabora.com
-X-Get-Message-Sender-Via: p3plcpnl0639.prod.phx3.secureserver.net: authenticated_id: hello@giis.co.in
-X-Authenticated-Sender: p3plcpnl0639.prod.phx3.secureserver.net: hello@giis.co.in
-X-Source: 
-X-Source-Args: 
-X-Source-Dir: 
-X-CMAE-Envelope: MS4wfICSW3SemQDHmf5J6jnwv9+9eiJW50USlzJf69d8/AS2gqketw07xH3kEZ3wd8J6TIoYxVqESwzgybjsYZRtekp1znxoDemUl6AHr/zyKURbWYXFQHRL
- wymRyGl9osErK/SOsb+2QJI8XAMZt6OmRqNgeLhP4BlxuxDRwBALZgnjiLPPf0tsEZLnRJMpsluKUYy4V7IJ53k8whnRoqDmd3qakhmjIaRRshl2MgtbPI2V
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Make use of GitLab-CI nested virutal environment to start QEMU instance inside containers
-and perform btrfs-progs build, execute unit test cases and save the logs.
+We've historically had reports of being unable to mount file systems
+because the tree log root couldn't be read.  Usually this is the "parent
+transid failure", but could be any of the related errors, including
+"fsid mismatch" or "bad tree block", depending on which block got
+allocated.
 
-More details can be found at https://github.com/kdave/btrfs-progs/issues/171
+The modification of the individual log root items are serialized on the
+per-log root root_mutex.  This means that any modification to the
+per-subvol log root_item is completely protected.
 
-Signed-off-by: Lakshmipathi.G <lakshmipathi.ganapathi@collabora.com>
+However we update the root item in the log root tree outside of the log
+root tree log_mutex.  We do this in order to allow multiple subvolumes
+to be updated in each log transaction.
+
+This is problematic however because when we are writing the log root
+tree out we update the super block with the _current_ log root node
+information.  Since these two operations happen independently of each
+other, you can end up updating the log root tree in between writing out
+the dirty blocks and setting the super block to point at the current
+root.
+
+This means we'll point at the new root node that hasn't been written
+out, instead of the one we should be pointing at.  Thus whatever garbage
+or old block we end up pointing at complains when we mount the file
+system later and try to replay the log.
+
+Fix this by copying the log's root item into a local root item copy.
+Then once we're safely under the log_root_tree->log_mutex we update the
+root item in the log_root_tree.  This way we do not modify the
+log_root_tree while we're committing it, fixing the problem.
+
+cc: stable@vger.kernel.org
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+Reviewed-by: Chris Mason <clm@fb.com>
 ---
- .gitlab-ci.yml                        | 181 ++++++++++++++++++++++++++++++++++
- gitlab-ci/Dockerfile                  |   3 +
- gitlab-ci/btrfs-progs-tests.service   |  13 +++
- gitlab-ci/build_or_run_btrfs-progs.sh |  37 +++++++
- gitlab-ci/kernel_build.sh             |  30 ++++++
- gitlab-ci/run_tests.sh                |   9 ++
- gitlab-ci/setup_image.sh              |  42 ++++++++
- 7 files changed, 315 insertions(+)
- create mode 100644 .gitlab-ci.yml
- create mode 100644 gitlab-ci/Dockerfile
- create mode 100644 gitlab-ci/btrfs-progs-tests.service
- create mode 100755 gitlab-ci/build_or_run_btrfs-progs.sh
- create mode 100755 gitlab-ci/kernel_build.sh
- create mode 100755 gitlab-ci/run_tests.sh
- create mode 100755 gitlab-ci/setup_image.sh
+ fs/btrfs/tree-log.c | 36 +++++++++++++++++++++++++++---------
+ 1 file changed, 27 insertions(+), 9 deletions(-)
 
-diff --git a/.gitlab-ci.yml b/.gitlab-ci.yml
-new file mode 100644
-index 0000000..2afde50
---- /dev/null
-+++ b/.gitlab-ci.yml
-@@ -0,0 +1,181 @@
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public
-+# License v2 as published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it will be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-+# General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public
-+# License along with this program; if not, write to the
-+# Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-+# Boston, MA 021110-1307, USA.
-+#
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 7cac09a6f007..1d7f22951ef2 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -2908,7 +2908,8 @@ static int walk_log_tree(struct btrfs_trans_handle *trans,
+  * in the tree of log roots
+  */
+ static int update_log_root(struct btrfs_trans_handle *trans,
+-			   struct btrfs_root *log)
++			   struct btrfs_root *log,
++			   struct btrfs_root_item *root_item)
+ {
+ 	struct btrfs_fs_info *fs_info = log->fs_info;
+ 	int ret;
+@@ -2916,10 +2917,10 @@ static int update_log_root(struct btrfs_trans_handle *trans,
+ 	if (log->log_transid == 1) {
+ 		/* insert root item on the first sync */
+ 		ret = btrfs_insert_root(trans, fs_info->log_root_tree,
+-				&log->root_key, &log->root_item);
++				&log->root_key, root_item);
+ 	} else {
+ 		ret = btrfs_update_root(trans, fs_info->log_root_tree,
+-				&log->root_key, &log->root_item);
++				&log->root_key, root_item);
+ 	}
+ 	return ret;
+ }
+@@ -3017,6 +3018,7 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
+ 	struct btrfs_root *log = root->log_root;
+ 	struct btrfs_root *log_root_tree = fs_info->log_root_tree;
++	struct btrfs_root_item new_root_item;
+ 	int log_transid = 0;
+ 	struct btrfs_log_ctx root_log_ctx;
+ 	struct blk_plug plug;
+@@ -3080,17 +3082,25 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+ 		goto out;
+ 	}
+ 
++	/*
++	 * We _must_ update under the root->log_mutex in order to make sure we
++	 * have a consistent view of the log root we are trying to commit at
++	 * this moment.
++	 *
++	 * We _must_ copy this into a local copy, because we are not holding the
++	 * log_root_tree->log_mutex yet.  This is important because when we
++	 * commit the log_root_tree we must have a consistent view of the
++	 * log_root_tree when we update the super block to point at the
++	 * log_root_tree bytenr.  If we update the log_root_tree here we'll race
++	 * with the commit and possibly point at the new block which we may not
++	 * have written out.
++	 */
+ 	btrfs_set_root_node(&log->root_item, log->node);
++	memcpy(&new_root_item, &log->root_item, sizeof(new_root_item));
+ 
+ 	root->log_transid++;
+ 	log->log_transid = root->log_transid;
+ 	root->log_start_pid = 0;
+-	/*
+-	 * Update or create log root item under the root's log_mutex to prevent
+-	 * races with concurrent log syncs that can lead to failure to update
+-	 * log root item because it was not created yet.
+-	 */
+-	ret = update_log_root(trans, log);
+ 	/*
+ 	 * IO has been started, blocks of the log tree have WRITTEN flag set
+ 	 * in their headers. new modifications of the log will be written to
+@@ -3111,6 +3121,14 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+ 	mutex_unlock(&log_root_tree->log_mutex);
+ 
+ 	mutex_lock(&log_root_tree->log_mutex);
 +
-+image: docker:18.09.7
++	/*
++	 * Now we are safe to update the log_root_tree because we're under the
++	 * log_mutex, and we're a current writer so we're holding the commit
++	 * open until we drop the log_mutex.
++	 */
++	ret = update_log_root(trans, log, &new_root_item);
 +
-+services:
-+    - docker:18.09.7-dind
-+
-+variables:
-+  DOCKER_DRIVER: overlay2
-+
-+stages:
-+  - build
-+  - btrfs-progs build
-+  - test
-+
-+variables:
-+  DOCKER_DRIVER: overlay2
-+  IMAGE_TAG: registry.gitlab.com/$CI_PROJECT_NAMESPACE/btrfs-progs:gitlab-ci
-+
-+before_script:
-+   - docker login --username $CI_REGISTRY_USER --password $CI_REGISTRY_PASSWORD $CI_REGISTRY
-+
-+docker build:
-+  stage: build
-+  script:
-+    - cd gitlab-ci
-+    - docker pull $IMAGE_TAG > /dev/null && echo "Downloaded image" || ( docker build -t $IMAGE_TAG . && docker push $IMAGE_TAG )
-+    - cd ..
-+
-+## To enable or disable Kernel Build set BUILD_KERNEL: "1" or BUILD_KERNEL: "0" 
-+## If you disable Kernel Build, make sure PREBUILT_KERNEL_ID points to previously built the kernel job id.
-+
-+kernel build:
-+  variables:
-+    BUILD_KERNEL: "1"
-+    PREBUILT_KERNEL_ID: "288159334"
-+  before_script:
-+    - apk add curl unzip 
-+  stage: build
-+  services:
-+    - docker:18.09.7-dind
-+  script:
-+     - if [ "$BUILD_KERNEL" == "1" ]; then
-+         docker run --cap-add SYS_PTRACE --cap-add sys_admin --privileged --device=/dev/kvm -v $PWD:/repo $IMAGE_TAG /repo/gitlab-ci/kernel_build.sh;
-+       else
-+         curl -o bzImage.zip --location --header "JOB-TOKEN:$CI_JOB_TOKEN"  "https://gitlab.com/api/v4/projects/$CI_PROJECT_ID/jobs/$PREBUILT_KERNEL_ID/artifacts" && unzip bzImage.zip;
-+       fi;
-+  artifacts:
-+    when: always
-+    paths:
-+      - bzImage
-+
-+# To enable or disable image build update BUILD_IMAGE value to "1" or "0".
-+# If you disable Image Build, make sure PREBUILT_IMAGE_ID points to previously built rootfs job id.
-+ 
-+image build:
-+  variables:
-+    BUILD_IMAGE: "1"
-+    PREBUILT_IMAGE_ID: "288506168"
-+  before_script:
-+    - apk add curl unzip 
-+  stage: build
-+  services:
-+    - docker:18.09.7-dind
-+  script:
-+     - if [ "$BUILD_IMAGE" == "1" ]; then
-+          docker run --cap-add SYS_PTRACE --cap-add sys_admin --privileged --device=/dev/kvm -v $PWD:/repo $IMAGE_TAG /repo/gitlab-ci/setup_image.sh;
-+       else
-+          curl  -o qemu-image.img.zip --location --header "JOB-TOKEN:$CI_JOB_TOKEN" "https://gitlab.com/api/v4/projects/$CI_PROJECT_ID/jobs/$PREBUILT_IMAGE_ID/artifacts" && unzip qemu-image.img.zip;
-+       fi;
-+  artifacts:
-+    when: always
-+    paths:
-+      - qemu-image.img
-+
-+btrfs-progs build:
-+  stage: btrfs-progs build
-+  services:
-+    - docker:18.09.7-dind
-+  script:
-+     - docker run --cap-add SYS_PTRACE --cap-add sys_admin --privileged --device=/dev/kvm -v $PWD:/repo $IMAGE_TAG /repo/gitlab-ci/run_tests.sh
-+  artifacts:
-+    expire_in: 1 week
-+    when: always
-+    paths:
-+      - qemu-image.img
-+
-+cli tests:
-+  stage: test
-+  services:
-+    - docker:18.09.7-dind
-+  script:
-+     - echo "./cli-tests.sh" > $PWD/cmd
-+     - docker run --cap-add SYS_PTRACE --cap-add sys_admin --privileged --device=/dev/kvm -v $PWD:/repo $IMAGE_TAG /repo/gitlab-ci/run_tests.sh
-+     - test -e "result" || exit 1 # If result doesn't exists, job failed.
-+  artifacts:
-+    when: always
-+    paths:
-+      - "*tests-results.txt"
-+
-+convert tests:
-+  only: 
-+    - devel
-+  stage: test
-+  services:
-+    - docker:18.09.7-dind
-+  script:
-+     - echo "./convert-tests.sh" > $PWD/cmd
-+     - docker run --cap-add SYS_PTRACE --cap-add sys_admin --privileged --device=/dev/kvm -v $PWD:/repo $IMAGE_TAG /repo/gitlab-ci/run_tests.sh
-+     - test -e "result" || exit 1
-+  artifacts:
-+    when: always
-+    paths:
-+      - "*tests-results.txt"
-+
-+fsck tests:
-+  stage: test
-+  services:
-+    - docker:18.09.7-dind
-+  script:
-+     - echo "./fsck-tests.sh" > $PWD/cmd
-+     - docker run --cap-add SYS_PTRACE --cap-add sys_admin --privileged --device=/dev/kvm -v $PWD:/repo $IMAGE_TAG /repo/gitlab-ci/run_tests.sh
-+     - test -e "result" || exit 1
-+  artifacts:
-+    when: always
-+    paths:
-+      - "*tests-results.txt"
-+      - error.log
-+
-+fuzz tests:
-+  stage: test
-+  services:
-+    - docker:18.09.7-dind
-+  script:
-+     - echo "./fuzz-tests.sh" > $PWD/cmd
-+     - docker run --cap-add SYS_PTRACE --cap-add sys_admin --privileged --device=/dev/kvm -v $PWD:/repo $IMAGE_TAG /repo/gitlab-ci/run_tests.sh
-+     - test -e "result" || exit 1
-+  artifacts:
-+    when: always
-+    paths:
-+      - "*tests-results.txt"
-+
-+misc tests:
-+  stage: test
-+  services:
-+    - docker:18.09.7-dind
-+  script:
-+     - echo "./misc-tests.sh" > $PWD/cmd
-+     - docker run --cap-add SYS_PTRACE --cap-add sys_admin --privileged --device=/dev/kvm -v $PWD:/repo $IMAGE_TAG /repo/gitlab-ci/run_tests.sh
-+     - test -e "result" || exit 1
-+  artifacts:
-+    when: always
-+    paths:
-+      - "*tests-results.txt"
-+
-+mkfs tests:
-+  stage: test
-+  services:
-+    - docker:18.09.7-dind
-+  script:
-+     - echo "./mkfs-tests.sh" > $PWD/cmd
-+     - docker run --cap-add SYS_PTRACE --cap-add sys_admin --privileged --device=/dev/kvm -v $PWD:/repo $IMAGE_TAG /repo/gitlab-ci/run_tests.sh
-+     - test -e "result" || exit 1
-+  artifacts:
-+    when: always
-+    paths:
-+      - "*tests-results.txt"
-+
-diff --git a/gitlab-ci/Dockerfile b/gitlab-ci/Dockerfile
-new file mode 100644
-index 0000000..356a21f
---- /dev/null
-+++ b/gitlab-ci/Dockerfile
-@@ -0,0 +1,3 @@
-+FROM debian:stretch-slim
-+
-+RUN apt-get update && apt-get install -y --no-install-recommends ovmf qemu-system qemu-efi
-diff --git a/gitlab-ci/btrfs-progs-tests.service b/gitlab-ci/btrfs-progs-tests.service
-new file mode 100644
-index 0000000..d255d77
---- /dev/null
-+++ b/gitlab-ci/btrfs-progs-tests.service
-@@ -0,0 +1,13 @@
-+[Unit]
-+Description=Execute build_or_run_btrfs-progs.sh on console
-+
-+[Service]
-+ExecStart=/usr/bin/build_or_run_btrfs-progs.sh
-+StandardInput=tty
-+StandardOutput=tty
-+TTYPath=/dev/ttyS0
-+Type=idle
-+
-+[Install]
-+WantedBy=getty.target
-+After=multi-user.target
-diff --git a/gitlab-ci/build_or_run_btrfs-progs.sh b/gitlab-ci/build_or_run_btrfs-progs.sh
-new file mode 100755
-index 0000000..081e83c
---- /dev/null
-+++ b/gitlab-ci/build_or_run_btrfs-progs.sh
-@@ -0,0 +1,37 @@
-+#!/bin/bash
-+#
-+# Build or Run btrfs-progs tests.
-+#
-+set -x
-+
-+BTRFS_BIN="btrfs"
-+MNT_DIR="/mnt/"
-+BUILD_DIR="/btrfs/"
-+test_cmd=$(cat ${MNT_DIR}/cmd)
-+
-+rm -f ${MNT_DIR}/result
-+${BTRFS_BIN} --version
-+
-+if [ $? -ne 0 ]
-+then
-+    echo "=========================== Builb btrfs-progs ================"
-+    echo " Image doesn't have ${BTRFS_BIN} - start build process"
-+    cd ${MNT_DIR} && ./autogen.sh && ./configure --disable-documentation --disable-backtrace && make -j`nproc` && make install && make testsuite
-+    echo "================= Prepare Testsuite =========================="
-+    mkdir -p ${BUILD_DIR}
-+    cp tests/btrfs-progs-tests.tar.gz ${BUILD_DIR}
-+    poweroff
-+else
-+    echo "================= Run Tests  ================================="
-+    cd ${BUILD_DIR} && tar -xvf btrfs-progs-tests.tar.gz && ${test_cmd}
-+
-+    # check test result status
-+    if [ $? -ne 0 ]; then
-+       cd ${BUILD_DIR} && cp *tests-results.txt ${MNT_DIR}
-+       poweroff
-+    else
-+       cd ${BUILD_DIR} && cp *tests-results.txt ${MNT_DIR}
-+       touch ${MNT_DIR}/result
-+       poweroff
-+    fi
-+fi
-diff --git a/gitlab-ci/kernel_build.sh b/gitlab-ci/kernel_build.sh
-new file mode 100755
-index 0000000..189dec1
---- /dev/null
-+++ b/gitlab-ci/kernel_build.sh
-@@ -0,0 +1,30 @@
-+#!/usr/bin/env bash
-+#
-+# Setup BTRFS kernel options and build kernel 
-+set -x
-+
-+apt-get update
-+apt-get -y install build-essential libncurses-dev bison flex libssl-dev libelf-dev unzip wget bc 
-+
-+# Build kernel
-+wget https://github.com/kdave/btrfs-devel/archive/misc-next.zip
-+unzip -qq  misc-next.zip
-+cd btrfs-devel-misc-next/ && make x86_64_defconfig && make kvmconfig 
-+
-+# BTRFS specific entires
-+cat <<EOF >> .config
-+CONFIG_BTRFS_FS=y
-+CONFIG_BTRFS_FS_POSIX_ACL=y
-+CONFIG_BTRFS_FS_CHECK_INTEGRITY=n
-+CONFIG_BTRFS_FS_RUN_SANITY_TESTS=n
-+CONFIG_BTRFS_DEBUG=y
-+CONFIG_BTRFS_ASSERT=y
-+CONFIG_BTRFS_FS_REF_VERIFY=y
-+CONFIG_RAID6_PQ_BENCHMARK=y
-+CONFIG_LIBCRC32C=y
-+EOF
-+
-+make -j8
-+
-+# Store file to shared dir
-+cp -v arch/x86/boot/bzImage /repo
-diff --git a/gitlab-ci/run_tests.sh b/gitlab-ci/run_tests.sh
-new file mode 100755
-index 0000000..c53d09e
---- /dev/null
-+++ b/gitlab-ci/run_tests.sh
-@@ -0,0 +1,9 @@
-+#!/usr/bin/env bash
-+#
-+# Install and start qemu instance with custom kernel while exporting btrfs-progs src over 9p
-+#
-+set -x
-+
-+qemu-system-x86_64 -m 512 -nographic -kernel /repo/bzImage -drive file=/repo/qemu-image.img,index=0,media=disk,format=raw \
-+-fsdev local,id=btrfs-progs,path=/repo,security_model=mapped -device virtio-9p-pci,fsdev=btrfs-progs,mount_tag=btrfs-progs \
-+-append "console=tty1 root=/dev/sda rw" 
-diff --git a/gitlab-ci/setup_image.sh b/gitlab-ci/setup_image.sh
-new file mode 100755
-index 0000000..1e0418a
---- /dev/null
-+++ b/gitlab-ci/setup_image.sh
-@@ -0,0 +1,42 @@
-+#!/usr/bin/env bash
-+#
-+# Setup debian image via debootstrap and include systemd service file.
-+set -x
-+
-+apt-get update
-+apt-get -y install debootstrap wget unzip
-+
-+# Setup rootfs
-+IMG="/qemu-image.img"
-+DIR="/target"
-+truncate -s2G $IMG
-+mkfs.ext4 $IMG
-+mkdir -p $DIR
-+for i in {0..7};do
-+mknod -m 0660 "/dev/loop$i" b 7 "$i"
-+done
-+
-+# mount the image file
-+mount -o loop $IMG $DIR
-+
-+# Install required pacakges
-+debootstrap --arch=amd64  --include=git,autoconf,automake,gcc,make,pkg-config,e2fslibs-dev,libblkid-dev,zlib1g-dev,liblzo2-dev,asciidoc,xmlto,libzstd-dev,python3.5,python3.5-dev,python3-dev,python3-setuptools,python-setuptools,xz-utils,acl,attr stretch $DIR http://ftp.de.debian.org/debian/
-+
-+## Setup 9p mount
-+echo "btrfs-progs /mnt           9p             trans=virtio    0       0" > $DIR/etc/fstab
-+
-+#Setup autologin 
-+sed -i 's/9600/9600 --autologin root/g' $DIR/lib/systemd/system/serial-getty@.service
-+
-+# Setup systemd service
-+cp -v /repo/gitlab-ci/build_or_run_btrfs-progs.sh $DIR/usr/bin/
-+cp -v /repo/gitlab-ci/btrfs-progs-tests.service $DIR/etc/systemd/system/
-+
-+## Enable service
-+ln -s $DIR/etc/systemd/system/btrfs-progs-tests.service $DIR/etc/systemd/system/getty.target.wants/btrfs-progs-tests.service 
-+
-+cd /
-+umount $DIR
-+rmdir $DIR
-+
-+cp -v $IMG /repo
+ 	if (atomic_dec_and_test(&log_root_tree->log_writers)) {
+ 		/* atomic_dec_and_test implies a barrier */
+ 		cond_wake_up_nomb(&log_root_tree->log_writer_wait);
 -- 
-2.7.4
+2.21.0
 

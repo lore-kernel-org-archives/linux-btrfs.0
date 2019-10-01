@@ -2,84 +2,141 @@ Return-Path: <SRS0=Mi70=X2=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C3437C352AA
-	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Oct 2019 16:39:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7F7A1ECE58A
+	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Oct 2019 16:43:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 948DB2168B
-	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Oct 2019 16:39:12 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5736B21855
+	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Oct 2019 16:43:13 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1569948193;
+	bh=NvOCcBGH4T7KxCOxBszq9UGeeMO4TK4EUencZu5XMOU=;
+	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
+	b=VghaQHEigO+LaEBLXxm8FdhBmWK3K6srHa/xNLo12LtGqlOWXK8HmDbU98pEkWWLX
+	 9ERGWDifEVf8shTdkbIZelfcS3oEiHUbcY1pESwgpBGeWdRXlMIITIXlQesXSg17Y4
+	 XGKvGl2nQewOvCGFESfPGOYzL1nm6yE2IkKLWO34=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727535AbfJAQjM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 1 Oct 2019 12:39:12 -0400
-Received: from mx2.suse.de ([195.135.220.15]:55574 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725747AbfJAQjL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 1 Oct 2019 12:39:11 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 07776B0C6;
-        Tue,  1 Oct 2019 16:39:10 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 5C4CDDA882; Tue,  1 Oct 2019 18:39:27 +0200 (CEST)
-Date:   Tue, 1 Oct 2019 18:39:27 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com,
-        stable@vger.kernel.org, Chris Mason <clm@fb.com>
-Subject: Re: [PATCH] btrfs: fix incorrect updating of log root tree
-Message-ID: <20191001163927.GD2751@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
-        linux-btrfs@vger.kernel.org, kernel-team@fb.com,
-        stable@vger.kernel.org, Chris Mason <clm@fb.com>
-References: <20190930202725.1317-1-josef@toxicpanda.com>
+        id S1732492AbfJAQnM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 1 Oct 2019 12:43:12 -0400
+Received: from mail.kernel.org ([198.145.29.99]:55144 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1732482AbfJAQnL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 1 Oct 2019 12:43:11 -0400
+Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 69E6620B7C;
+        Tue,  1 Oct 2019 16:43:09 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1569948190;
+        bh=NvOCcBGH4T7KxCOxBszq9UGeeMO4TK4EUencZu5XMOU=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+        b=ElUAHyvgt/o2Y60iiLEYAyjvMsuyt2JsmwQ0R7ltSTXsE2vGH10PU3a/dosfwWLY5
+         ZIO/G3Mlq+sylr5KBoAzCLZjY3NTNQhmmuenGSO5gTKHbbEpIKLwyN6YYIHV/ADjZC
+         TRi5/QEm0AZWh5caHuE3tdbJSjwxaY4ndmdUnTP0=
+From:   Sasha Levin <sashal@kernel.org>
+To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
+Cc:     Filipe Manana <fdmanana@suse.com>, Qu Wenruo <wqu@suse.com>,
+        David Sterba <dsterba@suse.com>,
+        Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
+Subject: [PATCH AUTOSEL 5.2 63/63] Btrfs: fix selftests failure due to uninitialized i_mode in test inodes
+Date:   Tue,  1 Oct 2019 12:41:25 -0400
+Message-Id: <20191001164125.15398-63-sashal@kernel.org>
+X-Mailer: git-send-email 2.20.1
+In-Reply-To: <20191001164125.15398-1-sashal@kernel.org>
+References: <20191001164125.15398-1-sashal@kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20190930202725.1317-1-josef@toxicpanda.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-stable: review
+X-Patchwork-Hint: Ignore
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Sep 30, 2019 at 04:27:25PM -0400, Josef Bacik wrote:
-> We've historically had reports of being unable to mount file systems
-> because the tree log root couldn't be read.  Usually this is the "parent
-> transid failure", but could be any of the related errors, including
-> "fsid mismatch" or "bad tree block", depending on which block got
-> allocated.
-> 
-> The modification of the individual log root items are serialized on the
-> per-log root root_mutex.  This means that any modification to the
-> per-subvol log root_item is completely protected.
-> 
-> However we update the root item in the log root tree outside of the log
-> root tree log_mutex.  We do this in order to allow multiple subvolumes
-> to be updated in each log transaction.
-> 
-> This is problematic however because when we are writing the log root
-> tree out we update the super block with the _current_ log root node
-> information.  Since these two operations happen independently of each
-> other, you can end up updating the log root tree in between writing out
-> the dirty blocks and setting the super block to point at the current
-> root.
-> 
-> This means we'll point at the new root node that hasn't been written
-> out, instead of the one we should be pointing at.  Thus whatever garbage
-> or old block we end up pointing at complains when we mount the file
-> system later and try to replay the log.
-> 
-> Fix this by copying the log's root item into a local root item copy.
-> Then once we're safely under the log_root_tree->log_mutex we update the
-> root item in the log_root_tree.  This way we do not modify the
-> log_root_tree while we're committing it, fixing the problem.
-> 
-> cc: stable@vger.kernel.org
-> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-> Reviewed-by: Chris Mason <clm@fb.com>
+From: Filipe Manana <fdmanana@suse.com>
 
-Added to 5.4 queue, thanks.
+[ Upstream commit 9f7fec0ba89108b9385f1b9fb167861224912a4a ]
+
+Some of the self tests create a test inode, setup some extents and then do
+calls to btrfs_get_extent() to test that the corresponding extent maps
+exist and are correct. However btrfs_get_extent(), since the 5.2 merge
+window, now errors out when it finds a regular or prealloc extent for an
+inode that does not correspond to a regular file (its ->i_mode is not
+S_IFREG). This causes the self tests to fail sometimes, specially when
+KASAN, slub_debug and page poisoning are enabled:
+
+  $ modprobe btrfs
+  modprobe: ERROR: could not insert 'btrfs': Invalid argument
+
+  $ dmesg
+  [ 9414.691648] Btrfs loaded, crc32c=crc32c-intel, debug=on, assert=on, integrity-checker=on, ref-verify=on
+  [ 9414.692655] BTRFS: selftest: sectorsize: 4096  nodesize: 4096
+  [ 9414.692658] BTRFS: selftest: running btrfs free space cache tests
+  [ 9414.692918] BTRFS: selftest: running extent only tests
+  [ 9414.693061] BTRFS: selftest: running bitmap only tests
+  [ 9414.693366] BTRFS: selftest: running bitmap and extent tests
+  [ 9414.696455] BTRFS: selftest: running space stealing from bitmap to extent tests
+  [ 9414.697131] BTRFS: selftest: running extent buffer operation tests
+  [ 9414.697133] BTRFS: selftest: running btrfs_split_item tests
+  [ 9414.697564] BTRFS: selftest: running extent I/O tests
+  [ 9414.697583] BTRFS: selftest: running find delalloc tests
+  [ 9415.081125] BTRFS: selftest: running find_first_clear_extent_bit test
+  [ 9415.081278] BTRFS: selftest: running extent buffer bitmap tests
+  [ 9415.124192] BTRFS: selftest: running inode tests
+  [ 9415.124195] BTRFS: selftest: running btrfs_get_extent tests
+  [ 9415.127909] BTRFS: selftest: running hole first btrfs_get_extent test
+  [ 9415.128343] BTRFS critical (device (efault)): regular/prealloc extent found for non-regular inode 256
+  [ 9415.131428] BTRFS: selftest: fs/btrfs/tests/inode-tests.c:904 expected a real extent, got 0
+
+This happens because the test inodes are created without ever initializing
+the i_mode field of the inode, and neither VFS's new_inode() nor the btrfs
+callback btrfs_alloc_inode() initialize the i_mode. Initialization of the
+i_mode is done through the various callbacks used by the VFS to create
+new inodes (regular files, directories, symlinks, tmpfiles, etc), which
+all call btrfs_new_inode() which in turn calls inode_init_owner(), which
+sets the inode's i_mode. Since the tests only uses new_inode() to create
+the test inodes, the i_mode was never initialized.
+
+This always happens on a VM I used with kasan, slub_debug and many other
+debug facilities enabled. It also happened to someone who reported this
+on bugzilla (on a 5.3-rc).
+
+Fix this by setting i_mode to S_IFREG at btrfs_new_test_inode().
+
+Fixes: 6bf9e4bd6a2778 ("btrfs: inode: Verify inode mode to avoid NULL pointer dereference")
+Bugzilla: https://bugzilla.kernel.org/show_bug.cgi?id=204397
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ fs/btrfs/tests/btrfs-tests.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/tests/btrfs-tests.c b/fs/btrfs/tests/btrfs-tests.c
+index 9238fd4f17340..41f41540382e5 100644
+--- a/fs/btrfs/tests/btrfs-tests.c
++++ b/fs/btrfs/tests/btrfs-tests.c
+@@ -48,7 +48,13 @@ static struct file_system_type test_type = {
+ 
+ struct inode *btrfs_new_test_inode(void)
+ {
+-	return new_inode(test_mnt->mnt_sb);
++	struct inode *inode;
++
++	inode = new_inode(test_mnt->mnt_sb);
++	if (inode)
++		inode_init_owner(inode, NULL, S_IFREG);
++
++	return inode;
+ }
+ 
+ static int btrfs_init_test_fs(void)
+-- 
+2.20.1
+

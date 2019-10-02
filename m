@@ -2,30 +2,29 @@ Return-Path: <SRS0=oUBw=X3=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B5490C352AA
-	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Oct 2019 11:09:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 82D3BC35280
+	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Oct 2019 12:20:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8888B20700
-	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Oct 2019 11:09:46 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6000620700
+	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Oct 2019 12:20:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728098AbfJBLJp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 2 Oct 2019 07:09:45 -0400
-Received: from mx2.suse.de ([195.135.220.15]:47584 "EHLO mx1.suse.de"
+        id S1726179AbfJBMUy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 2 Oct 2019 08:20:54 -0400
+Received: from mx2.suse.de ([195.135.220.15]:54612 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725991AbfJBLJp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 2 Oct 2019 07:09:45 -0400
+        id S1725747AbfJBMUy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 2 Oct 2019 08:20:54 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 2AE37AF3B;
-        Wed,  2 Oct 2019 11:09:42 +0000 (UTC)
-Subject: Re: [PATCH 3/3] btrfs: add __pure attribute to functions
+        by mx1.suse.de (Postfix) with ESMTP id 2D9DBB0BD;
+        Wed,  2 Oct 2019 12:20:52 +0000 (UTC)
+Subject: Re: [PATCH 0/3] Coldify, constify, purify (function attributes)
 To:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
 References: <cover.1569587835.git.dsterba@suse.com>
- <faadfd67d10404a342d91a910e40fc2d0f5f4e6c.1569587835.git.dsterba@suse.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -70,12 +69,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
  RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
  5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
-Message-ID: <b6c85e60-dff8-4495-0914-e7aa05a0d9ab@suse.com>
-Date:   Wed, 2 Oct 2019 14:09:41 +0300
+Message-ID: <69cb3c55-78ec-2060-c5a5-d238efef1206@suse.com>
+Date:   Wed, 2 Oct 2019 15:20:50 +0300
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.8.0
 MIME-Version: 1.0
-In-Reply-To: <faadfd67d10404a342d91a910e40fc2d0f5f4e6c.1569587835.git.dsterba@suse.com>
+In-Reply-To: <cover.1569587835.git.dsterba@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -87,165 +86,47 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 1.10.19 г. 20:57 ч., David Sterba wrote:
-> The attribute is more relaxed than const and the functions could
-> dereference pointers, as long as the observable state is not changed. We
-> do have such functions, based on -Wsuggest-attribute=pure .
+> There's a gcc option -Wsuggest-attribute that, as it says, suggests some
+> function attributes to provide some hints and allowing more
+> optimizations.
 > 
-> The visible effects of this patch are negligible, there are differences
-> in the assembly but hard to summarize.
+> Debug build
 > 
-> Signed-off-by: David Sterba <dsterba@suse.com>
+>    text    data     bss     dec     hex filename
+> 1514058  146768   27496 1688322  19c302 pre/btrfs.ko
+> 1512603  146736   27496 1686835  19bd33 post/btrfs.ko
+> DELTA: -1455
+> 
+> Release build
+> 
+>    text    data     bss     dec     hex filename
+> 1079288   17316   14912 1111516  10f5dc pre/btrfs.ko
+> 1078138   17316   14912 1110366  10f15e post/btrfs.ko
+> DELTA: -1150
+> 
+> David Sterba (3):
+>   btrfs: add __cold attribute to more functions
+>   btrfs: add const function attribute
+>   btrfs: add __pure attribute to functions
+
+Checking up the with compiler ppl and discussing I can say:
 
 Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
-one remark: I'm not sure the attribute needs to be duplicated in the
-declaration and definition.
-
-> ---
+> 
 >  fs/btrfs/async-thread.c | 6 ++----
 >  fs/btrfs/async-thread.h | 4 ++--
 >  fs/btrfs/ctree.c        | 2 +-
->  fs/btrfs/ctree.h        | 4 ++--
+>  fs/btrfs/ctree.h        | 6 +++---
 >  fs/btrfs/dev-replace.c  | 2 +-
 >  fs/btrfs/dev-replace.h  | 2 +-
+>  fs/btrfs/disk-io.c      | 4 ++--
+>  fs/btrfs/disk-io.h      | 4 ++--
 >  fs/btrfs/ioctl.c        | 2 +-
 >  fs/btrfs/space-info.c   | 2 +-
 >  fs/btrfs/space-info.h   | 2 +-
->  9 files changed, 12 insertions(+), 14 deletions(-)
-> 
-> diff --git a/fs/btrfs/async-thread.c b/fs/btrfs/async-thread.c
-> index b97ae1b03417..1d32a07bb2d1 100644
-> --- a/fs/btrfs/async-thread.c
-> +++ b/fs/btrfs/async-thread.c
-> @@ -53,14 +53,12 @@ struct btrfs_workqueue {
->  	struct __btrfs_workqueue *high;
->  };
->  
-> -struct btrfs_fs_info *
-> -btrfs_workqueue_owner(const struct __btrfs_workqueue *wq)
-> +struct btrfs_fs_info * __pure btrfs_workqueue_owner(const struct __btrfs_workqueue *wq)
->  {
->  	return wq->fs_info;
->  }
->  
-> -struct btrfs_fs_info *
-> -btrfs_work_owner(const struct btrfs_work *work)
-> +struct btrfs_fs_info * __pure btrfs_work_owner(const struct btrfs_work *work)
->  {
->  	return work->wq->fs_info;
->  }
-> diff --git a/fs/btrfs/async-thread.h b/fs/btrfs/async-thread.h
-> index c5bf2b117c05..a4434301d84d 100644
-> --- a/fs/btrfs/async-thread.h
-> +++ b/fs/btrfs/async-thread.h
-> @@ -41,8 +41,8 @@ void btrfs_queue_work(struct btrfs_workqueue *wq,
->  void btrfs_destroy_workqueue(struct btrfs_workqueue *wq);
->  void btrfs_workqueue_set_max(struct btrfs_workqueue *wq, int max);
->  void btrfs_set_work_high_priority(struct btrfs_work *work);
-> -struct btrfs_fs_info *btrfs_work_owner(const struct btrfs_work *work);
-> -struct btrfs_fs_info *btrfs_workqueue_owner(const struct __btrfs_workqueue *wq);
-> +struct btrfs_fs_info * __pure btrfs_work_owner(const struct btrfs_work *work);
-> +struct btrfs_fs_info * __pure btrfs_workqueue_owner(const struct __btrfs_workqueue *wq);
->  bool btrfs_workqueue_normal_congested(const struct btrfs_workqueue *wq);
->  
->  #endif
-> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-> index f2f9cf1149a4..3a4d8e27e565 100644
-> --- a/fs/btrfs/ctree.c
-> +++ b/fs/btrfs/ctree.c
-> @@ -1538,7 +1538,7 @@ static int comp_keys(const struct btrfs_disk_key *disk,
->  /*
->   * same as comp_keys only with two btrfs_key's
->   */
-> -int btrfs_comp_cpu_keys(const struct btrfs_key *k1, const struct btrfs_key *k2)
-> +int __pure btrfs_comp_cpu_keys(const struct btrfs_key *k1, const struct btrfs_key *k2)
->  {
->  	if (k1->objectid > k2->objectid)
->  		return 1;
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index 793085770c84..df0f2de69991 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -2511,7 +2511,7 @@ void btrfs_wait_for_snapshot_creation(struct btrfs_root *root);
->  /* ctree.c */
->  int btrfs_bin_search(struct extent_buffer *eb, const struct btrfs_key *key,
->  		     int level, int *slot);
-> -int btrfs_comp_cpu_keys(const struct btrfs_key *k1, const struct btrfs_key *k2);
-> +int __pure btrfs_comp_cpu_keys(const struct btrfs_key *k1, const struct btrfs_key *k2);
->  int btrfs_previous_item(struct btrfs_root *root,
->  			struct btrfs_path *path, u64 min_objectid,
->  			int type);
-> @@ -2912,7 +2912,7 @@ long btrfs_ioctl(struct file *file, unsigned int cmd, unsigned long arg);
->  long btrfs_compat_ioctl(struct file *file, unsigned int cmd, unsigned long arg);
->  int btrfs_ioctl_get_supported_features(void __user *arg);
->  void btrfs_sync_inode_flags_to_i_flags(struct inode *inode);
-> -int btrfs_is_empty_uuid(u8 *uuid);
-> +int __pure btrfs_is_empty_uuid(u8 *uuid);
->  int btrfs_defrag_file(struct inode *inode, struct file *file,
->  		      struct btrfs_ioctl_defrag_range_args *range,
->  		      u64 newer_than, unsigned long max_pages);
-> diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-> index 48890826b5e6..f639dde2a679 100644
-> --- a/fs/btrfs/dev-replace.c
-> +++ b/fs/btrfs/dev-replace.c
-> @@ -986,7 +986,7 @@ static int btrfs_dev_replace_kthread(void *data)
->  	return 0;
->  }
->  
-> -int btrfs_dev_replace_is_ongoing(struct btrfs_dev_replace *dev_replace)
-> +int __pure btrfs_dev_replace_is_ongoing(struct btrfs_dev_replace *dev_replace)
->  {
->  	if (!dev_replace->is_valid)
->  		return 0;
-> diff --git a/fs/btrfs/dev-replace.h b/fs/btrfs/dev-replace.h
-> index 78c5d8f1adda..60b70dacc299 100644
-> --- a/fs/btrfs/dev-replace.h
-> +++ b/fs/btrfs/dev-replace.h
-> @@ -17,6 +17,6 @@ void btrfs_dev_replace_status(struct btrfs_fs_info *fs_info,
->  int btrfs_dev_replace_cancel(struct btrfs_fs_info *fs_info);
->  void btrfs_dev_replace_suspend_for_unmount(struct btrfs_fs_info *fs_info);
->  int btrfs_resume_dev_replace_async(struct btrfs_fs_info *fs_info);
-> -int btrfs_dev_replace_is_ongoing(struct btrfs_dev_replace *dev_replace);
-> +int __pure btrfs_dev_replace_is_ongoing(struct btrfs_dev_replace *dev_replace);
->  
->  #endif
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index de730e56d3f5..55b41d5e7ea9 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -541,7 +541,7 @@ static noinline int btrfs_ioctl_fitrim(struct file *file, void __user *arg)
->  	return 0;
->  }
->  
-> -int btrfs_is_empty_uuid(u8 *uuid)
-> +int __pure btrfs_is_empty_uuid(u8 *uuid)
->  {
->  	int i;
->  
-> diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-> index 98dc092a905e..f32993efbf61 100644
-> --- a/fs/btrfs/space-info.c
-> +++ b/fs/btrfs/space-info.c
-> @@ -10,7 +10,7 @@
->  #include "transaction.h"
->  #include "block-group.h"
->  
-> -u64 btrfs_space_info_used(struct btrfs_space_info *s_info,
-> +u64 __pure btrfs_space_info_used(struct btrfs_space_info *s_info,
->  			  bool may_use_included)
->  {
->  	ASSERT(s_info);
-> diff --git a/fs/btrfs/space-info.h b/fs/btrfs/space-info.h
-> index 8867e84aa33d..2d8c811a9792 100644
-> --- a/fs/btrfs/space-info.h
-> +++ b/fs/btrfs/space-info.h
-> @@ -116,7 +116,7 @@ void btrfs_update_space_info(struct btrfs_fs_info *info, u64 flags,
->  			     struct btrfs_space_info **space_info);
->  struct btrfs_space_info *btrfs_find_space_info(struct btrfs_fs_info *info,
->  					       u64 flags);
-> -u64 btrfs_space_info_used(struct btrfs_space_info *s_info,
-> +u64 __pure btrfs_space_info_used(struct btrfs_space_info *s_info,
->  			  bool may_use_included);
->  void btrfs_clear_space_info_full(struct btrfs_fs_info *info);
->  void btrfs_dump_space_info(struct btrfs_fs_info *fs_info,
+>  fs/btrfs/super.c        | 4 ++--
+>  fs/btrfs/volumes.c      | 4 ++--
+>  fs/btrfs/volumes.h      | 2 +-
+>  14 files changed, 22 insertions(+), 24 deletions(-)
 > 

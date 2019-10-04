@@ -2,285 +2,118 @@ Return-Path: <SRS0=BfKx=X5=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 42D40C47404
-	for <linux-btrfs@archiver.kernel.org>; Fri,  4 Oct 2019 07:41:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9CDA1C4360C
+	for <linux-btrfs@archiver.kernel.org>; Fri,  4 Oct 2019 07:50:22 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0375A22499
-	for <linux-btrfs@archiver.kernel.org>; Fri,  4 Oct 2019 07:41:21 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 661292245D
+	for <linux-btrfs@archiver.kernel.org>; Fri,  4 Oct 2019 07:50:22 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=duckstad.net header.i=@duckstad.net header.b="ju7BqAsl"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="FU3S4rR0"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729621AbfJDHlU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 4 Oct 2019 03:41:20 -0400
-Received: from relay2-d.mail.gandi.net ([217.70.183.194]:53639 "EHLO
-        relay2-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728841AbfJDHlU (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Oct 2019 03:41:20 -0400
-X-Originating-IP: 163.158.29.153
-Received: from katrien.duckstad.net (153-029-158-163.dynamic.caiway.nl [163.158.29.153])
-        (Authenticated sender: relay@duckstad.net)
-        by relay2-d.mail.gandi.net (Postfix) with ESMTPSA id 99CDA40003;
-        Fri,  4 Oct 2019 07:41:17 +0000 (UTC)
-Received: from localhost (localhost.localdomain [127.0.0.1])
-        by katrien.duckstad.net (Postfix) with ESMTP id EC66638037;
-        Fri,  4 Oct 2019 09:41:16 +0200 (CEST)
-Received: from katrien.duckstad.net ([127.0.0.1])
-        by localhost (katrien.duckstad.net [127.0.0.1]) (amavisd-new, port 10032)
-        with ESMTP id A_TK7uSZfYZ5; Fri,  4 Oct 2019 09:41:15 +0200 (CEST)
-Received: from localhost (localhost.localdomain [127.0.0.1])
-        by katrien.duckstad.net (Postfix) with ESMTP id 16A7338039;
-        Fri,  4 Oct 2019 09:41:15 +0200 (CEST)
-DKIM-Filter: OpenDKIM Filter v2.10.3 katrien.duckstad.net 16A7338039
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=duckstad.net;
-        s=EEE0E95C-ABE4-11E9-AA35-1FC771689572; t=1570174875;
-        bh=s2cC/W2AMQPulfqRxVHQSH46akdKcFtbAiK9nfp2vuE=;
-        h=Message-ID:From:To:Date:MIME-Version;
-        b=ju7BqAsloPH3KmS4wZ/6B4ECyxCcSvSKF1S32jj0zRGTxuLJ6V3Pmwryp4lTo4+NY
-         Wo+AtufSAM/yo18VQDsQolvc4ELO3soDtETGI1uM0ugLJueZ1hdb96tw4P5XRcgSh4
-         yjlpyMuJevixHpXk8tK/o7i2U/cdwjvsOt9P7vVr5jl/+6FP89Zz2OHhMtuFzGG7Id
-         VRWbn9qMBa9G3w1JT4cYU24xeUqYCrHOEiulaNvTEed0Gwu4iN6PgUDTM+kAVrR7bs
-         PnpfrO0CVvDvBIMUym1BDKVV18pVhek8qE68G1tdh9sIImUP4FJs+t76vPZZjMsVUL
-         HcLrugwFqMYAA==
-X-Virus-Scanned: amavisd-new at katrien.duckstad.net
-Received: from katrien.duckstad.net ([127.0.0.1])
-        by localhost (katrien.duckstad.net [127.0.0.1]) (amavisd-new, port 10026)
-        with ESMTP id g2PC2f3Nf1D8; Fri,  4 Oct 2019 09:41:15 +0200 (CEST)
-Received: from bolderbast (unknown [10.4.2.1])
-        by katrien.duckstad.net (Postfix) with ESMTPSA id BA4F338037;
-        Fri,  4 Oct 2019 09:41:14 +0200 (CEST)
-Message-ID: <1a5483ba85372d02d898ae9650686e591f82a735.camel@duckstad.net>
-Subject: Re: BTRFS errors, and won't mount
-From:   Patrick Dijkgraaf <bolderbast@duckstad.net>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
-Date:   Fri, 04 Oct 2019 09:41:14 +0200
-In-Reply-To: <293de2b3-506a-0fcc-f692-0fc03012941c@gmx.com>
-References: <2649522a0283fc35ade2218755063f8ff0dc4aa4.camel@duckstad.net>
-         <293de2b3-506a-0fcc-f692-0fc03012941c@gmx.com>
-Content-Type: text/plain; charset="UTF-8"
-User-Agent: Evolution 3.34.0 
-MIME-Version: 1.0
-Content-Transfer-Encoding: quoted-printable
+        id S2387511AbfJDHuV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 4 Oct 2019 03:50:21 -0400
+Received: from aserp2120.oracle.com ([141.146.126.78]:48520 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726811AbfJDHuV (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Oct 2019 03:50:21 -0400
+Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
+        by aserp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x947mvTn064680
+        for <linux-btrfs@vger.kernel.org>; Fri, 4 Oct 2019 07:50:20 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
+ date : message-id : in-reply-to : references; s=corp-2019-08-05;
+ bh=TIXS8NaLhISNKlyOqdXIVpj6mNg6d7lTQzs+T/sMNhs=;
+ b=FU3S4rR0a/3EGdtRj5nnYV6azOqyqxkkYJlGrJ3mWPNSSuvLs2yqteBMF8QXutubcEIJ
+ c/97hywWy3bCCkQAM20Mgqo7kEZXfNllBBmpohymu+YdNLaosIIia385hz6hKTq34Fif
+ dkEBVCFwuffo8xF5v/mdwvDny6lnourPztNUX4Bgm05mscRCFT0BdNPdSVv/oOoLkDRG
+ eKyQk7XeRr375yeVKaUZeGxVtb1BGu2qhStWHZ2SMpsXJv/mPRFJS7n7AmB/OeFabQEn
+ dvTtqbKSchizVOqPLnQr5hf7iW3kAFRs86Opx8GpbRu1HKouRt0ewBgRTbOWmaZGeZGp IQ== 
+Received: from aserp3030.oracle.com (aserp3030.oracle.com [141.146.126.71])
+        by aserp2120.oracle.com with ESMTP id 2v9yfqshn5-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Fri, 04 Oct 2019 07:50:19 +0000
+Received: from pps.filterd (aserp3030.oracle.com [127.0.0.1])
+        by aserp3030.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x947mLfE006173
+        for <linux-btrfs@vger.kernel.org>; Fri, 4 Oct 2019 07:50:19 GMT
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by aserp3030.oracle.com with ESMTP id 2vdxu89m6h-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Fri, 04 Oct 2019 07:50:19 +0000
+Received: from abhmp0012.oracle.com (abhmp0012.oracle.com [141.146.116.18])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x947oIBB029644
+        for <linux-btrfs@vger.kernel.org>; Fri, 4 Oct 2019 07:50:18 GMT
+Received: from tp.wifi.oracle.com (/192.188.170.104)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Fri, 04 Oct 2019 00:50:17 -0700
+From:   Anand Jain <anand.jain@oracle.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/4] btrfs: drop useless goto in open_fs_devices
+Date:   Fri,  4 Oct 2019 15:50:00 +0800
+Message-Id: <1570175403-4073-2-git-send-email-anand.jain@oracle.com>
+X-Mailer: git-send-email 1.8.3.1
+In-Reply-To: <1570175403-4073-1-git-send-email-anand.jain@oracle.com>
+References: <1570175403-4073-1-git-send-email-anand.jain@oracle.com>
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9399 signatures=668684
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=1 malwarescore=0
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
+ adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.0.1-1908290000 definitions=main-1910040072
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9399 signatures=668684
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
+ suspectscore=1 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
+ lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1908290000
+ definitions=main-1910040072
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi Qu,
+There is no need of goto out in open_fs_devices() as there is nothing
+special done at %out:. So refactor it.
 
-I know about RAID5/6 risks, so I won't blame anyone but myself. I'm
-currenlty working on another solution, but I was not quite there yet...
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ fs/btrfs/volumes.c | 12 +++++-------
+ 1 file changed, 5 insertions(+), 7 deletions(-)
 
-mount -o ro /dev/sdh2 /mnt/data gives me:
-
-[Fri Oct  4 09:36:27 2019] BTRFS info (device sde2): disk space caching
-is enabled
-[Fri Oct  4 09:36:27 2019] BTRFS info (device sde2): has skinny extents
-[Fri Oct  4 09:36:27 2019] BTRFS error (device sde2): parent transid
-verify failed on 5483020828672 wanted 470169 found 470108
-[Fri Oct  4 09:36:27 2019] btree_readpage_end_io_hook: 5 callbacks
-suppressed
-[Fri Oct  4 09:36:27 2019] BTRFS error (device sde2): bad tree block
-start 2286352011705795888 5483020828672
-[Fri Oct  4 09:36:27 2019] BTRFS error (device sde2): bad tree block
-start 2286318771218040112 5483020828672
-[Fri Oct  4 09:36:27 2019] BTRFS error (device sde2): bad tree block
-start 2286363934109025584 5483020828672
-[Fri Oct  4 09:36:27 2019] BTRFS error (device sde2): bad tree block
-start 2286229742125204784 5483020828672
-[Fri Oct  4 09:36:27 2019] BTRFS error (device sde2): bad tree block
-start 2286353230849918256 5483020828672
-[Fri Oct  4 09:36:27 2019] BTRFS error (device sde2): bad tree block
-start 2286246155688035632 5483020828672
-[Fri Oct  4 09:36:27 2019] BTRFS error (device sde2): bad tree block
-start 2286321695890425136 5483020828672
-[Fri Oct  4 09:36:27 2019] BTRFS error (device sde2): bad tree block
-start 2286384677254874416 5483020828672
-[Fri Oct  4 09:36:27 2019] BTRFS error (device sde2): bad tree block
-start 2286386365024912688 5483020828672
-[Fri Oct  4 09:36:27 2019] BTRFS error (device sde2): bad tree block
-start 2286284400752608560 5483020828672
-[Fri Oct  4 09:36:27 2019] BTRFS error (device sde2): failed to recover
-balance: -5
-[Fri Oct  4 09:36:27 2019] BTRFS error (device sde2): open_ctree failed
-
-Do you think there is any chance to recover?
-
-Thanks,
-Patrick.
-
-
-On Fri, 2019-10-04 at 15:22 +0800, Qu Wenruo wrote:
-> On 2019/10/4 =E4=B8=8B=E5=8D=882:59, Patrick Dijkgraaf wrote:
-> > Hi guys,
-> >=20
-> > During the night, I started getting the following errors and data
-> > was
-> > no longer accessible:
-> >=20
-> > [Fri Oct  4 08:04:26 2019] btree_readpage_end_io_hook: 2522
-> > callbacks
-> > suppressed
-> > [Fri Oct  4 08:04:26 2019] BTRFS error (device sde2): bad tree
-> > block
-> > start 17686343003259060482 7808404996096
->=20
-> Tree block at address 7808404996096 is completely broken.
->=20
-> All the other messages with 7808404996096 shows btrfs is trying all
-> possible device combinations to rebuild that tree block, but
-> obviously
-> all failed.
->=20
-> Not sure why the tree block is corrupted, but it's pretty possible
-> that
-> RAID5/6 write hole ruined your possibility to recover.
->=20
-> > [Fri Oct  4 08:04:26 2019] BTRFS error (device sde2): bad tree
-> > block
-> > start 254095834002432 7808404996096
-> > [Fri Oct  4 08:04:26 2019] BTRFS error (device sde2): bad tree
-> > block
-> > start 2574563607252646368 7808404996096
-> > [Fri Oct  4 08:04:26 2019] BTRFS error (device sde2): bad tree
-> > block
-> > start 17873260189421384017 7808404996096
-> > [Fri Oct  4 08:04:26 2019] BTRFS error (device sde2): bad tree
-> > block
-> > start 9965805624054187110 7808404996096
-> > [Fri Oct  4 08:04:26 2019] BTRFS error (device sde2): bad tree
-> > block
-> > start 15108378087789580224 7808404996096
-> > [Fri Oct  4 08:04:26 2019] BTRFS error (device sde2): bad tree
-> > block
-> > start 7914705769619568652 7808404996096
-> > [Fri Oct  4 08:04:26 2019] BTRFS error (device sde2): bad tree
-> > block
-> > start 16752645757091223687 7808404996096
-> > [Fri Oct  4 08:04:26 2019] BTRFS error (device sde2): bad tree
-> > block
-> > start 9617669583708276649 7808404996096
-> > [Fri Oct  4 08:04:26 2019] BTRFS error (device sde2): bad tree
-> > block
-> > start 3384408928046898608 7808404996096
->=20
-> [...]
-> > Decided to reboot (for another reason) and tried to mount
-> > afterwards:
-> >=20
-> > [Fri Oct  4 08:29:42 2019] BTRFS info (device sde2): disk space
-> > caching
-> > is enabled
-> > [Fri Oct  4 08:29:42 2019] BTRFS info (device sde2): has skinny
-> > extents
-> > [Fri Oct  4 08:29:44 2019] BTRFS error (device sde2): parent
-> > transid
-> > verify failed on 5483020828672 wanted 470169 found 470108
-> > [Fri Oct  4 08:29:45 2019] BTRFS error (device sde2): bad tree
-> > block
-> > start 2286352011705795888 5483020828672
-> > [Fri Oct  4 08:29:45 2019] BTRFS error (device sde2): bad tree
-> > block
-> > start 2286318771218040112 5483020828672
-> > [Fri Oct  4 08:29:45 2019] BTRFS error (device sde2): bad tree
-> > block
-> > start 2286363934109025584 5483020828672
-> > [Fri Oct  4 08:29:45 2019] BTRFS error (device sde2): bad tree
-> > block
-> > start 2286229742125204784 5483020828672
-> > [Fri Oct  4 08:29:45 2019] BTRFS error (device sde2): bad tree
-> > block
-> > start 2286353230849918256 5483020828672
-> > [Fri Oct  4 08:29:45 2019] BTRFS error (device sde2): bad tree
-> > block
-> > start 2286246155688035632 5483020828672
-> > [Fri Oct  4 08:29:45 2019] BTRFS error (device sde2): bad tree
-> > block
-> > start 2286321695890425136 5483020828672
-> > [Fri Oct  4 08:29:45 2019] BTRFS error (device sde2): bad tree
-> > block
-> > start 2286384677254874416 5483020828672
-> > [Fri Oct  4 08:29:45 2019] BTRFS error (device sde2): bad tree
-> > block
-> > start 2286386365024912688 5483020828672
-> > [Fri Oct  4 08:29:45 2019] BTRFS error (device sde2): bad tree
-> > block
-> > start 2286284400752608560 5483020828672
-> > [Fri Oct  4 08:29:45 2019] BTRFS error (device sde2): failed to
-> > recover
-> > balance: -5
-> > [Fri Oct  4 08:29:45 2019] BTRFS error (device sde2): open_ctree
-> > failed
->=20
-> You're lucky, as the problem is from balance recovery, thus you may
-> have
-> a chance to mount the RO.
-> As your fs can progress to btrfs_recover_relocation(), most essential
-> trees should be OK, thus you have a chance to mount it RO.
->=20
-> > The FS info is shown below. It is a RAID6.
-> >=20
-> > Label: 'data'  uuid: 43472491-7bb3-418c-b476-874a52e8b2b0
-> > 	Total devices 16 FS bytes used 36.73TiB
->=20
-> You won't want to salvage data from a near 40T fs...
->=20
-> > 	devid    1 size 7.28TiB used 2.66TiB path /dev/sde2
-> > 	devid    2 size 3.64TiB used 2.66TiB path /dev/sdf2
-> > 	devid    3 size 3.64TiB used 2.66TiB path /dev/sdg2
-> > 	devid    4 size 7.28TiB used 2.66TiB path /dev/sdh2
-> > 	devid    5 size 3.64TiB used 2.66TiB path /dev/sdi2
-> > 	devid    6 size 7.28TiB used 2.66TiB path /dev/sdj2
-> > 	devid    7 size 3.64TiB used 2.66TiB path /dev/sdk2
-> > 	devid    8 size 3.64TiB used 2.66TiB path /dev/sdl2
-> > 	devid    9 size 7.28TiB used 2.66TiB path /dev/sdm2
-> > 	devid   10 size 3.64TiB used 2.66TiB path /dev/sdn2
-> > 	devid   11 size 7.28TiB used 2.66TiB path /dev/sdo2
-> > 	devid   12 size 3.64TiB used 2.66TiB path /dev/sdp2
-> > 	devid   13 size 7.28TiB used 2.66TiB path /dev/sdq2
-> > 	devid   14 size 7.28TiB used 2.66TiB path /dev/sdr2
-> > 	devid   15 size 3.64TiB used 2.66TiB path /dev/sds2
-> > 	devid   16 size 3.64TiB used 2.66TiB path /dev/sdt2
->=20
-> And you won't want to use RAID6 if you're expecting RAID6 to tolerant
-> 2
-> disks malfunction.
->=20
-> As btrfs RAID5/6 has write-hole problem, any unexpected power loss or
-> disk error could reduce the error tolerance step by step, if you're
-> not
-> running scrub regularly.
->=20
-> > The initial error refers to sdw, so possibly something happened
-> > that
-> > caused one or more disks in the external cabinet to disappear and
-> > reappear.
-> >=20
-> > Kernel is 4.18.16-arch1-1-ARCH. Very hesitant to upgrade it,
-> > because
-> > previously I had to downgrade the kernel to get the volume mounted
-> > again.
-> >=20
-> > Question: I know that running checks on BTRFS can be dangerous,
-> > what
-> > can you recommend me doing to get the volume back online?
->=20
-> "btrfs check" is not dangerous at all. In fact it's pretty safe and
-> it's
-> the main tool we use to expose any problem.
->=20
-> It's "btrfs check --repair" dangerous, but way less dangerous in
-> recent
-> years. (although in your case, --repair is completely unrelated and
-> won't help at all)
->=20
-> "btrfs check" output from latest btrfs-progs would help.
->=20
-> Thanks,
-> Qu
-
-
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index e176346afed1..06ec3577c6b4 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1330,7 +1330,6 @@ static int open_fs_devices(struct btrfs_fs_devices *fs_devices,
+ {
+ 	struct btrfs_device *device;
+ 	struct btrfs_device *latest_dev = NULL;
+-	int ret = 0;
+ 
+ 	flags |= FMODE_EXCL;
+ 
+@@ -1343,15 +1342,14 @@ static int open_fs_devices(struct btrfs_fs_devices *fs_devices,
+ 		    device->generation > latest_dev->generation)
+ 			latest_dev = device;
+ 	}
+-	if (fs_devices->open_devices == 0) {
+-		ret = -EINVAL;
+-		goto out;
+-	}
++	if (fs_devices->open_devices == 0)
++		return -EINVAL;
++
+ 	fs_devices->opened = 1;
+ 	fs_devices->latest_bdev = latest_dev->bdev;
+ 	fs_devices->total_rw_bytes = 0;
+-out:
+-	return ret;
++
++	return 0;
+ }
+ 
+ static int devid_cmp(void *priv, struct list_head *a, struct list_head *b)
+-- 
+1.8.3.1
 

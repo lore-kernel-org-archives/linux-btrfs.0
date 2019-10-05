@@ -1,217 +1,159 @@
-Return-Path: <SRS0=BfKx=X5=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=u81V=X6=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.2 required=3.0
-	tests=HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BEB3FC47404
-	for <linux-btrfs@archiver.kernel.org>; Fri,  4 Oct 2019 14:19:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E69A2C4CED1
+	for <linux-btrfs@archiver.kernel.org>; Sat,  5 Oct 2019 05:34:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 926FE21D81
-	for <linux-btrfs@archiver.kernel.org>; Fri,  4 Oct 2019 14:19:51 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C1117222BE
+	for <linux-btrfs@archiver.kernel.org>; Sat,  5 Oct 2019 05:34:12 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=mykernel.net header.i=cgxu519@mykernel.net header.b="TFPkn7lh"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388724AbfJDOTu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 4 Oct 2019 10:19:50 -0400
-Received: from mx2.suse.de ([195.135.220.15]:59168 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2388197AbfJDOTu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 4 Oct 2019 10:19:50 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 4E344AEA1;
-        Fri,  4 Oct 2019 14:19:47 +0000 (UTC)
-Subject: Re: [PATCH 1/3] btrfs: tree-checker: Fix false alerts on log trees
-To:     fdmanana@gmail.com
-Cc:     David Sterba <dsterba@suse.com>, WenRuo Qu <wqu@suse.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <20191004093133.83582-1-wqu@suse.com>
- <20191004093133.83582-2-wqu@suse.com>
- <4e1e4ffd-c8c1-0d02-d8a0-ebdb4deabe4c@suse.com>
- <CAL3q7H43Qsz9cy_EULphP=L=FjpPpiY2KwScHYCSbncJogujjg@mail.gmail.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <886d611e-e95e-a7ac-6025-9a302771a72e@suse.com>
-Date:   Fri, 4 Oct 2019 17:19:45 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.8.0
+        id S1726654AbfJEFdo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 5 Oct 2019 01:33:44 -0400
+Received: from sender2-of-o52.zoho.com.cn ([163.53.93.247]:21573 "EHLO
+        sender2-of-o52.zoho.com.cn" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1726511AbfJEFdo (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 5 Oct 2019 01:33:44 -0400
+ARC-Seal: i=1; a=rsa-sha256; t=1570252686; cv=none; 
+        d=zoho.com.cn; s=zohoarc; 
+        b=l2GRt2oltuT8Js8gkaOq4/cmWZP648Xa075DakNnbJ8Q7n3d6JFhbmYznD7nMKfqotR25qaZh9S5BINxXHTcDOBjWOqg1lOv0g9oCex3privv7FJYaQnM505i4zHlkjpCf9xlv2gTt8ouEg/9Jw3kUzTv4ZYouNXwTca1wUhw3M=
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=zoho.com.cn; s=zohoarc; 
+        t=1570252686; h=Content-Type:Content-Transfer-Encoding:Cc:Date:From:In-Reply-To:MIME-Version:Message-ID:References:Subject:To:ARC-Authentication-Results; 
+        bh=KAmWT9ZgEK3+5bjAXL2HNblCb43PqqG5xVDTsKJZsNA=; 
+        b=VNZdz4rjyZZp5TchRILaaatEC8fRIZvVSPYg1IesP4lCOBkj6SgSxEpn84sKu5f+fz+VmBR4bNUaesGctQrzTjzSYBmbVLPBJihOo+OWwBDGBl3OMN0VN1CY2zI3+ugm0oS0sA5blbOzZKXIpnCZLjrbTxJy6ISxi4mGbB8acRY=
+ARC-Authentication-Results: i=1; mx.zoho.com.cn;
+        dkim=pass  header.i=mykernel.net;
+        spf=pass  smtp.mailfrom=cgxu519@mykernel.net;
+        dmarc=pass header.from=<cgxu519@mykernel.net> header.from=<cgxu519@mykernel.net>
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; t=1570252686;
+        s=zohomail; d=mykernel.net; i=cgxu519@mykernel.net;
+        h=From:To:Cc:Message-ID:Subject:Date:In-Reply-To:References:MIME-Version:Content-Transfer-Encoding:Content-Type;
+        l=3333; bh=KAmWT9ZgEK3+5bjAXL2HNblCb43PqqG5xVDTsKJZsNA=;
+        b=TFPkn7lh3MHe7R19i+MnquDfSPlf5IULC35j4rfUvBFuDAc4UO1qqn4VZfAyMjNG
+        rMRgaCw8K5h2z7CLTwXYAdARPg+YfGlYhI41nOEqGoXqQ7yoxI6sf249UmVLUU6vXmR
+        5iqj2yyJJ+F0g0Q6UzhhatzcMdp/0LF2N0ZUwm+4=
+Received: from localhost.localdomain (116.30.195.234 [116.30.195.234]) by mx.zoho.com.cn
+        with SMTPS id 15702526847841015.7426628721475; Sat, 5 Oct 2019 13:18:04 +0800 (CST)
+From:   Chengguang Xu <cgxu519@mykernel.net>
+To:     clm@fb.com, josef@toxicpanda.com, dsterba@suse.com
+Cc:     linux-btrfs@vger.kernel.org, Chengguang Xu <cgxu519@mykernel.net>
+Message-ID: <20191005051736.29857-2-cgxu519@mykernel.net>
+Subject: [PATCH 2/3] btrfs: code cleanup for compression type
+Date:   Sat,  5 Oct 2019 13:17:35 +0800
+X-Mailer: git-send-email 2.21.0
+In-Reply-To: <20191005051736.29857-1-cgxu519@mykernel.net>
+References: <20191005051736.29857-1-cgxu519@mykernel.net>
 MIME-Version: 1.0
-In-Reply-To: <CAL3q7H43Qsz9cy_EULphP=L=FjpPpiY2KwScHYCSbncJogujjg@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: quoted-printable
+X-ZohoCNMailClient: External
+Content-Type: text/plain; charset=utf8
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+Let BTRFS_COMPRESS_TYPES represents the total number
+of cmpressoin types and fix related calling places.
+It will be more safe when adding new compression type
+in the future.
+
+Signed-off-by: Chengguang Xu <cgxu519@mykernel.net>
+---
+ fs/btrfs/compression.c  |  2 ++
+ fs/btrfs/compression.h  | 12 ++++++------
+ fs/btrfs/ioctl.c        |  2 +-
+ fs/btrfs/tree-checker.c |  4 ++--
+ 4 files changed, 11 insertions(+), 9 deletions(-)
+
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index d70c46407420..93deaf0cc2b8 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -39,6 +39,8 @@ const char* btrfs_compress_type2str(enum btrfs_compressio=
+n_type type)
+ =09case BTRFS_COMPRESS_ZSTD:
+ =09case BTRFS_COMPRESS_NONE:
+ =09=09return btrfs_compress_types[type];
++=09default:
++=09=09break;
+ =09}
+=20
+ =09return NULL;
+diff --git a/fs/btrfs/compression.h b/fs/btrfs/compression.h
+index dd392278ab3f..091ff3f986e5 100644
+--- a/fs/btrfs/compression.h
++++ b/fs/btrfs/compression.h
+@@ -101,11 +101,11 @@ blk_status_t btrfs_submit_compressed_read(struct inod=
+e *inode, struct bio *bio,
+ unsigned int btrfs_compress_str2level(unsigned int type, const char *str);
+=20
+ enum btrfs_compression_type {
+-=09BTRFS_COMPRESS_NONE  =3D 0,
+-=09BTRFS_COMPRESS_ZLIB  =3D 1,
+-=09BTRFS_COMPRESS_LZO   =3D 2,
+-=09BTRFS_COMPRESS_ZSTD  =3D 3,
+-=09BTRFS_COMPRESS_TYPES =3D 3,
++=09BTRFS_COMPRESS_NONE,
++=09BTRFS_COMPRESS_ZLIB,
++=09BTRFS_COMPRESS_LZO,
++=09BTRFS_COMPRESS_ZSTD,
++=09BTRFS_COMPRESS_TYPES
+ };
+=20
+ struct workspace_manager {
+@@ -163,7 +163,7 @@ struct btrfs_compress_op {
+ };
+=20
+ /* The heuristic workspaces are managed via the 0th workspace manager */
+-#define BTRFS_NR_WORKSPACE_MANAGERS=09(BTRFS_COMPRESS_TYPES + 1)
++#define BTRFS_NR_WORKSPACE_MANAGERS=09BTRFS_COMPRESS_TYPES
+=20
+ extern const struct btrfs_compress_op btrfs_heuristic_compress;
+ extern const struct btrfs_compress_op btrfs_zlib_compress;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index de730e56d3f5..8c7196ed7ae0 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1411,7 +1411,7 @@ int btrfs_defrag_file(struct inode *inode, struct fil=
+e *file,
+ =09=09return -EINVAL;
+=20
+ =09if (do_compress) {
+-=09=09if (range->compress_type > BTRFS_COMPRESS_TYPES)
++=09=09if (range->compress_type >=3D BTRFS_COMPRESS_TYPES)
+ =09=09=09return -EINVAL;
+ =09=09if (range->compress_type)
+ =09=09=09compress_type =3D range->compress_type;
+diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
+index f28f9725cef1..2d91c34bbf63 100644
+--- a/fs/btrfs/tree-checker.c
++++ b/fs/btrfs/tree-checker.c
+@@ -168,11 +168,11 @@ static int check_extent_data_item(struct extent_buffe=
+r *leaf,
+ =09 * Support for new compression/encryption must introduce incompat flag,
+ =09 * and must be caught in open_ctree().
+ =09 */
+-=09if (btrfs_file_extent_compression(leaf, fi) > BTRFS_COMPRESS_TYPES) {
++=09if (btrfs_file_extent_compression(leaf, fi) >=3D BTRFS_COMPRESS_TYPES) =
+{
+ =09=09file_extent_err(leaf, slot,
+ =09"invalid compression for file extent, have %u expect range [0, %u]",
+ =09=09=09btrfs_file_extent_compression(leaf, fi),
+-=09=09=09BTRFS_COMPRESS_TYPES);
++=09=09=09BTRFS_COMPRESS_TYPES - 1);
+ =09=09return -EUCLEAN;
+ =09}
+ =09if (btrfs_file_extent_encryption(leaf, fi)) {
+--=20
+2.21.0
 
 
-On 4.10.19 г. 17:13 ч., Filipe Manana wrote:
-> On Fri, Oct 4, 2019 at 2:54 PM Nikolay Borisov <nborisov@suse.com> wrote:
->>
->>
->>
->> On 4.10.19 г. 12:31 ч., Qu Wenruo wrote:
->>> [BUG]
->>> When running btrfs/063 in a loop, we got the following random write time
->>> tree checker error:
->>>
->>>   BTRFS critical (device dm-4): corrupt leaf: root=18446744073709551610 block=33095680 slot=2 ino=307 file_offset=0, invalid previous key objectid, have 305 expect 307
->>>   BTRFS info (device dm-4): leaf 33095680 gen 7 total ptrs 47 free space 12146 owner 18446744073709551610
->>>   BTRFS info (device dm-4): refs 1 lock (w:0 r:0 bw:0 br:0 sw:0 sr:0) lock_owner 0 current 26176
->>>           item 0 key (305 1 0) itemoff 16123 itemsize 160
->>>                   inode generation 0 size 0 mode 40777
->>>           item 1 key (305 12 257) itemoff 16111 itemsize 12
->>>           item 2 key (307 108 0) itemoff 16058 itemsize 53 <<<
->>>                   extent data disk bytenr 0 nr 0
->>>                   extent data offset 0 nr 614400 ram 671744
->>>           item 3 key (307 108 614400) itemoff 16005 itemsize 53
->>>                   extent data disk bytenr 195342336 nr 57344
->>>                   extent data offset 0 nr 53248 ram 57344
->>>           item 4 key (307 108 667648) itemoff 15952 itemsize 53
->>>                   extent data disk bytenr 194048000 nr 4096
->>>                   extent data offset 0 nr 4096 ram 4096
->>>         [...]
->>>   BTRFS error (device dm-4): block=33095680 write time tree block corruption detected
->>>   BTRFS: error (device dm-4) in btrfs_commit_transaction:2332: errno=-5 IO failure (Error while writing out transaction)
->>>   BTRFS info (device dm-4): forced readonly
->>>   BTRFS warning (device dm-4): Skipping commit of aborted transaction.
->>>   BTRFS info (device dm-4): use zlib compression, level 3
->>>   BTRFS: error (device dm-4) in cleanup_transaction:1890: errno=-5 IO failure
->>>
->>> [CAUSE]
->>> Commit 59b0d030fb30 ("btrfs: tree-checker: Try to detect missing INODE_ITEM")
->>> assumes all XATTR_ITEM/DIR_INDEX/DIR_ITEM/INODE_REF/EXTENT_DATA items
->>> should have previous key with the same objectid as ino.
->>>
->>> But it's only true for fs trees. For log-tree, we can get above log tree
->>> block where an EXTENT_DATA item has no previous key with the same ino.
->>> As log tree only records modified items, it won't record unmodified
->>> items like INODE_ITEM.
->>>
->>> So this triggers write time tree check warning.
->>>
->>> [FIX]
->>> As a quick fix, check header owner to skip the previous key if it's not
->>> fs tree (log tree doesn't count as fs tree).
->>>
->>> This fix is only to be merged as a quick fix.
->>> There will be a more comprehensive fix to refactor the common check into
->>> one function.
->>>
->>> Reported-by: David Sterba <dsterba@suse.com>
->>> Fixes: 59b0d030fb30 ("btrfs: tree-checker: Try to detect missing INODE_ITEM")
->>> Signed-off-by: Qu Wenruo <wqu@suse.com>
->>
->>
->> It's not entirely clear why this bug manifests. My tests show that when
->> we write extents we always update the inode's c/m time so it's always
->> dirtied hence it's logged. OTOH when punching a hole the same thing is
->> valid.
->>
->> Filipe, under what conditions should it be possible to log an
->> EXTENT_DATA item without first logging the inode it belongs to? It seems
->> using the usual write paths (e.g. buffered write and punchole) that's
->> impossible?
-> 
-> The tests you did are pointless, none of those operations write to a
-> log tree, only fsync does that.
 
-You were quick to judge, I tried:
-xfs_io -f -c "fpunch 1m 4k" -c "fsync" /media/foo (foo was a 4m, fully
-sycned file)
-
-Similar command with the just writing in the middle of the file i.e not
-changing isize.
-
-> 
-> This change is perfectly fine. Logging (fsync) always logs the inode
-> item since commit [1] (2015),
-> however it might do so after logging extents and other items, and in
-> between that, if writeback for
-> the log tree leaf happens we get that error from the tree-checker.
-
-Fair enough, however that clarification about the sequence of events
-should be in the changelog.
-
-> 
-> [1] https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=e4545de5b035c7debb73d260c78377dbb69cbfb5
-> 
->>
->>> ---
->>>  fs/btrfs/tree-checker.c | 6 ++++--
->>>  1 file changed, 4 insertions(+), 2 deletions(-)
->>>
->>> diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
->>> index b8f82d9be9f0..5e34cd5e3e2e 100644
->>> --- a/fs/btrfs/tree-checker.c
->>> +++ b/fs/btrfs/tree-checker.c
->>> @@ -148,7 +148,8 @@ static int check_extent_data_item(struct extent_buffer *leaf,
->>>        * But if objectids mismatch, it means we have a missing
->>>        * INODE_ITEM.
->>>        */
->>> -     if (slot > 0 && prev_key->objectid != key->objectid) {
->>> +     if (slot > 0 && is_fstree(btrfs_header_owner(leaf)) &&
->>> +         prev_key->objectid != key->objectid) {
->>>               file_extent_err(leaf, slot,
->>>               "invalid previous key objectid, have %llu expect %llu",
->>>                               prev_key->objectid, key->objectid);
->>> @@ -322,7 +323,8 @@ static int check_dir_item(struct extent_buffer *leaf,
->>>       u32 cur = 0;
->>>
->>>       /* Same check as in check_extent_data_item() */
->>> -     if (slot > 0 && prev_key->objectid != key->objectid) {
->>> +     if (slot > 0 && is_fstree(btrfs_header_owner(leaf)) &&
->>> +         prev_key->objectid != key->objectid) {
->>>               dir_item_err(leaf, slot,
->>>               "invalid previous key objectid, have %llu expect %llu",
->>>                            prev_key->objectid, key->objectid);
->>>
-> 
-> 
-> 

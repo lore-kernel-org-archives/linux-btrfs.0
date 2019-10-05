@@ -2,116 +2,178 @@ Return-Path: <SRS0=u81V=X6=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.4 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4D53CECE589
-	for <linux-btrfs@archiver.kernel.org>; Sat,  5 Oct 2019 05:34:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1673FC4740A
+	for <linux-btrfs@archiver.kernel.org>; Sat,  5 Oct 2019 17:14:19 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 25838222BE
-	for <linux-btrfs@archiver.kernel.org>; Sat,  5 Oct 2019 05:34:14 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BA02E218AC
+	for <linux-btrfs@archiver.kernel.org>; Sat,  5 Oct 2019 17:14:18 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=mykernel.net header.i=cgxu519@mykernel.net header.b="VAiAMPQM"
+	dkim=pass (2048-bit key) header.d=georgianit.com header.i=@georgianit.com header.b="VV5mG10A";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="EOZfINNW"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726774AbfJEFdp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 5 Oct 2019 01:33:45 -0400
-Received: from sender2-of-o52.zoho.com.cn ([163.53.93.247]:21554 "EHLO
-        sender2-of-o52.zoho.com.cn" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1726426AbfJEFdo (ORCPT
+        id S1728892AbfJEROR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 5 Oct 2019 13:14:17 -0400
+Received: from out5-smtp.messagingengine.com ([66.111.4.29]:37087 "EHLO
+        out5-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1727466AbfJEROR (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 5 Oct 2019 01:33:44 -0400
-ARC-Seal: i=1; a=rsa-sha256; t=1570252688; cv=none; 
-        d=zoho.com.cn; s=zohoarc; 
-        b=p0E5kHJEP+jqUDuo6tPyptfqmyyFtXCBdAK3lhYR+bvCzZYpGptNRs+M7H6lRB8aOO2LvrNiRQIFd8UNxuwP8UkDNlCIhv5J8HIvj+C3XqHbCnx2b6TSmwQ4kgXRz2zS6pgmZyp67uCdQAwvhybDCNyqkYOID+sEULfYJcH80XM=
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=zoho.com.cn; s=zohoarc; 
-        t=1570252688; h=Content-Type:Content-Transfer-Encoding:Cc:Date:From:In-Reply-To:MIME-Version:Message-ID:References:Subject:To:ARC-Authentication-Results; 
-        bh=cuCj8lkW5ZTQMOaX87sqd1zA7ygX45opu+Zre1DkD74=; 
-        b=hFSkpJQtZFch6eEo614NYHZ+qxN4cVu8KTly2f3p05VcWQrJki3QbLiQmRdkec5ukIwDWCunzV/DiBcOqcmPoOaBEP2QAKiD+fQYcdx+vXR80eho/zQIhNgSCUFCU4PDrC6NXY/G6Ux1LEPtBaogezf8GfGtEkjrRfxcqoAb+Q8=
-ARC-Authentication-Results: i=1; mx.zoho.com.cn;
-        dkim=pass  header.i=mykernel.net;
-        spf=pass  smtp.mailfrom=cgxu519@mykernel.net;
-        dmarc=pass header.from=<cgxu519@mykernel.net> header.from=<cgxu519@mykernel.net>
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; t=1570252688;
-        s=zohomail; d=mykernel.net; i=cgxu519@mykernel.net;
-        h=From:To:Cc:Message-ID:Subject:Date:In-Reply-To:References:MIME-Version:Content-Transfer-Encoding:Content-Type;
-        l=1664; bh=cuCj8lkW5ZTQMOaX87sqd1zA7ygX45opu+Zre1DkD74=;
-        b=VAiAMPQMrk5vGgxyMA6mV2vHRSXkM58PjTDN1ruQo66Yemw5jYvt/8bucPetlJ2i
-        cT3okPyObu0umh+3hIFU89a7QT3Xm89He3Alsv6Y/qyyu0wZJvbdnZd3BCQJCGj33bW
-        hUC+OD2yEcv6B52axw1nmAYIhly42C+Wv/sLTieQ=
-Received: from localhost.localdomain (116.30.195.234 [116.30.195.234]) by mx.zoho.com.cn
-        with SMTPS id 1570252686586852.6704752914676; Sat, 5 Oct 2019 13:18:06 +0800 (CST)
-From:   Chengguang Xu <cgxu519@mykernel.net>
-To:     clm@fb.com, josef@toxicpanda.com, dsterba@suse.com
-Cc:     linux-btrfs@vger.kernel.org, Chengguang Xu <cgxu519@mykernel.net>
-Message-ID: <20191005051736.29857-3-cgxu519@mykernel.net>
-Subject: [PATCH 3/3] btrfs: using enum to replace macro
-Date:   Sat,  5 Oct 2019 13:17:36 +0800
-X-Mailer: git-send-email 2.21.0
-In-Reply-To: <20191005051736.29857-1-cgxu519@mykernel.net>
-References: <20191005051736.29857-1-cgxu519@mykernel.net>
+        Sat, 5 Oct 2019 13:14:17 -0400
+Received: from compute2.internal (compute2.nyi.internal [10.202.2.42])
+        by mailout.nyi.internal (Postfix) with ESMTP id 1B53421C0F;
+        Sat,  5 Oct 2019 13:14:16 -0400 (EDT)
+Received: from mailfrontend2 ([10.202.2.163])
+  by compute2.internal (MEProxy); Sat, 05 Oct 2019 13:14:16 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=georgianit.com;
+         h=subject:to:references:from:message-id:date:mime-version
+        :in-reply-to:content-type; s=fm1; bh=Uj7KyYM7E1bB5+vfZiC+nKdRBCJ
+        0+L53leuHPS60cOo=; b=VV5mG10A91PKeP/Ji1e3QwOJZ9SSDge7pvu586n8wmL
+        OIsPl+HiqVlxJkuCI1ypSmumny06yl6magoWxcp4KlazGcyALeXpxHW/uSsEJLZH
+        vVjTApIsL/KuJQ/8ZanfOxccOC+pRgQrQCE/ew8gZgVyJxZJqR+rRuOuDRqtttIC
+        f7aS/iyDC+B0U3H3ksZw9eyYhGsVNvEUUJ9MSr7YCv4quh87qHNFZO/bJI2LHzG4
+        Sq57Ue1FFFMS/THDQXOh6f6VXRSugotI6gIAxrRiNo7uewrX+AeOcVByEaP0e0Rq
+        Bo02I6wP4bMjB9Y7rkQBIUfm3ZhwP9V/ul2YMNV9oLQ==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+        messagingengine.com; h=content-type:date:from:in-reply-to
+        :message-id:mime-version:references:subject:to:x-me-proxy
+        :x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm3; bh=Uj7KyY
+        M7E1bB5+vfZiC+nKdRBCJ0+L53leuHPS60cOo=; b=EOZfINNW4l56TfBvJpeneu
+        FpJ53yxFjCisRxGzMc9l8Z4B88ZIPNWZKRDkkHOLqg5NEqQoISdMVEHFhuYMlkMH
+        JON3R7S28nF1zQiM83eH04U+rF8+IQnghhzpOa4WeAyq7ORTkwxXK8PoUOtIwtz4
+        J0ngXDHM4tE+Xz4bzj0NKa71IX5/WwDkAXbpjKqR+oMohYXaXlPNqqyON2tIrZof
+        8NKlq0DozZR9NmhLG+9agznLyrW11S6xYO2CjThD9oBhb85XSDx11++A+VFU87F1
+        kOdI4EmXCEBYBjcyZaNdrWQnjlXIzLJvCms78I3+LI6VJvtbsqoIWLAxSLDzhDog
+        ==
+X-ME-Sender: <xms:Z8-YXUMu30O7QcW5rGLCnr_TKjgrAvdQqHUbDriGdr5BEZ6akAPwpQ>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedufedrheefgdduudduucetufdoteggodetrfdotf
+    fvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfqfgfvpdfurfetoffkrfgpnffqhgen
+    uceurghilhhouhhtmecufedttdenucenucfjughrpefuvfhfhffkffgfgggjtgesghdtre
+    fotdefjeenucfhrhhomheptfgvmhhiucfirghuvhhinhcuoehrvghmihesghgvohhrghhi
+    rghnihhtrdgtohhmqeenucfkphepudefhedrvdefrddvgeeirddufedunecurfgrrhgrmh
+    epmhgrihhlfhhrohhmpehrvghmihesghgvohhrghhirghnihhtrdgtohhmnecuvehluhhs
+    thgvrhfuihiivgeptd
+X-ME-Proxy: <xmx:Z8-YXdUKzQyFxTdsuVn8oqusD6q9tPP0HH7VIML-etjsKNvdTjiMlQ>
+    <xmx:Z8-YXUj891Zy_23I6AcYBbuo_8O_7vB_c8WkM5zuSsYhf64Pfjn7Qg>
+    <xmx:Z8-YXf3FX2KlQDT9rFL_lZtYjmQ43Th2LBKM-WT9nQ8xfQvoyUE1Ag>
+    <xmx:aM-YXczm1mV5G2-Acq8L5U6Mgl9rFGMaspV4qp4eDpvTbHQ7w1gzzA>
+Received: from [10.0.0.6] (135-23-246-131.cpe.pppoe.ca [135.23.246.131])
+        by mail.messagingengine.com (Postfix) with ESMTPA id 8757BD60065;
+        Sat,  5 Oct 2019 13:14:15 -0400 (EDT)
+Subject: Re: BTRFS corruption, mounts but comes read-only
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <1d65213e-6237-2c5b-4820-81a0d3bd3e53@georgianit.com>
+ <44df5407-b7c9-bbd1-eae0-d5ebf6ad75d8@georgianit.com>
+ <6022d6c9-3022-01fd-3b97-67bd08ce36f1@gmx.com>
+ <fe22fa62-7b13-f417-1af8-3ed12bf082f8@georgianit.com>
+ <8d765abc-b9f6-066f-8327-bcfc9a156177@gmx.com>
+From:   Remi Gauvin <remi@georgianit.com>
+Openpgp: url=http://www.georgianit.com/pgp/Remi%20Gauvin%20remi%40georgianit.com%20(0xEF539FF247456A6D)%20pub.asc
+Autocrypt: addr=remi@georgianit.com; prefer-encrypt=mutual;
+ keydata= mQENBFogjcYBCADvI0pxdYyVkEUAIzT6HwYnZ5CAy2czT87Si5mqk4wL4Ulupwfv9TLzaj3R
+ CUgHPNpFsp1n/nKKyOq1ZmE6w5YKx4I8/o9tRl+vjnJr2otfS7XizBaVV7UwziODikOimmT+
+ sGNfYGcjdJ+CC567g9aAECbvnyxNlncTyUPUdmazOKhmzB4IvG8+M2u+C4c9nVkX2ucf3OuF
+ t/qmeRaF8+nlkCMtAdIVh0F7HBYJzvYG3EPiKbGmbOody3OM55113uEzyw39k8WHRhhaKhi6
+ 8QY9nKCPVhRFzk6wUHJa2EKbKxqeFcFzZ1ok7l7vrX3/OBk2dGOAoOJ4UX+ozAtrMqCBABEB
+ AAG0IVJlbWkgR2F1dmluIDxyZW1pQGdlb3JnaWFuaXQuY29tPokBPgQTAQIAKAUCWiCNxgIb
+ IwUJCWYBgAYLCQgHAwIGFQgCCQoLBBYCAwECHgECF4AACgkQ71Of8kdFam2V1Qf9Fs6LSx1i
+ OoVgOzjWwiI06vJrZznjmtbJkcm/Of5onITZnB4h+tbqEyaMYYsEIk1r4oFMfKB7SDpQbADj
+ 9CI2EbpygwZa24Oqv4gWEzb4c7mSJuLKTnrhmwCOtdeDQXO/uu6BZPkazDAaKHUM6XqNEVvt
+ WHBaGioaV4dGxzjXALQDpLc4vDreSl9nwlTorwJR9t6u5BlDcdh3VOuYlgXjI4pCk+cihgtY
+ k3KZo/El1fWFYmtSTq7m/JPpKZyb77cbzf2AbkxJuLgg9o0iVAg81LjElznI0R5UbYrJcJeh
+ Jo4rvXKFYQ1qFwno1jlSXejsFA5F3FQzJe1JUAu2HlYqRrkBDQRaII3GAQgAo0Y6FX84QsDp
+ R8kFEqMhpkjeVQpbwYhqBgIFJT5cBMQpZsHmnOgpYU0Jo8P3owHUFu569g6j4+wSubbh2+bt
+ WL0QoFZcng0a2/j3qH98g9lAn8ZgohxavmwYINt7b+LEeDoBvq0s/0ZeXx47MOmbjROq8L/g
+ QOYbIWoJLO2emyxmVo1Fg00FKkbuCEgJPW8U/7VX4EFYaIhPQv/K3mpnyWXIq5lviiMCHzxE
+ jzBh/35DTLwymDdmtzWgcu1rzZ6j2s+4bTxE8mYXd4l2Xonn7v448gwvQmZJ8EPplO/pWe9F
+ oISyiNxZnQNCVEO9lManKPFphfVHqJ1WEtYMiLxTkQARAQABiQElBBgBAgAPBQJaII3GAhsM
+ BQkJZgGAAAoJEO9Tn/JHRWptnn0H+gOtkumwlKcad2PqLFXCt2SzVJm5rHuYZhPPq4GCdMbz
+ XwuCEPXDoECFVXeiXngJmrL8+tLxvUhxUMdXtyYSPusnmFgj/EnCjQdFMLdvgvXI/wF5qj0/
+ r6NKJWtx3/+OSLW0E9J/gLfimIc3OF49E3S1c35Wj+4Okx9Tpwor7Tw8KwBVbdZA6TyQF08N
+ phFkhgnTK6gl2XqIHaoxPKhI9pKU5oPkg2eI27OICZrpTCppaSh3SGUp0EHPkZuhVfIxg4vF
+ nato30VZr+RMHtPtx813VZ/kzj+2pC/DrwZOtqFeaqJfCi6JSik3vX9BQd9GL4mxytQBZKXz
+ SY9JJa155sI=
+Message-ID: <e546074f-4292-32c5-fe6b-170ace2f63f7@georgianit.com>
+Date:   Sat, 5 Oct 2019 13:14:14 -0400
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.2.1
 MIME-Version: 1.0
-Content-Transfer-Encoding: quoted-printable
-X-ZohoCNMailClient: External
-Content-Type: text/plain; charset=utf8
+In-Reply-To: <8d765abc-b9f6-066f-8327-bcfc9a156177@gmx.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="od9itbxcVFHQuRCCojmZU14MjraBJHlwm"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-using enum to replace macro definition for extent
-types.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--od9itbxcVFHQuRCCojmZU14MjraBJHlwm
+Content-Type: multipart/mixed; boundary="6IkACV4deixxkzZfjCsFT76W65mLrWRFD";
+ protected-headers="v1"
+From: Remi Gauvin <remi@georgianit.com>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>,
+ linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <e546074f-4292-32c5-fe6b-170ace2f63f7@georgianit.com>
+Subject: Re: BTRFS corruption, mounts but comes read-only
+References: <1d65213e-6237-2c5b-4820-81a0d3bd3e53@georgianit.com>
+ <44df5407-b7c9-bbd1-eae0-d5ebf6ad75d8@georgianit.com>
+ <6022d6c9-3022-01fd-3b97-67bd08ce36f1@gmx.com>
+ <fe22fa62-7b13-f417-1af8-3ed12bf082f8@georgianit.com>
+ <8d765abc-b9f6-066f-8327-bcfc9a156177@gmx.com>
+In-Reply-To: <8d765abc-b9f6-066f-8327-bcfc9a156177@gmx.com>
 
-Signed-off-by: Chengguang Xu <cgxu519@mykernel.net>
----
- fs/btrfs/tree-checker.c         |  4 ++--
- include/uapi/linux/btrfs_tree.h | 10 ++++++----
- 2 files changed, 8 insertions(+), 6 deletions(-)
+--6IkACV4deixxkzZfjCsFT76W65mLrWRFD
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-index 2d91c34bbf63..9b0c5fdbe04e 100644
---- a/fs/btrfs/tree-checker.c
-+++ b/fs/btrfs/tree-checker.c
-@@ -156,11 +156,11 @@ static int check_extent_data_item(struct extent_buffe=
-r *leaf,
-=20
- =09fi =3D btrfs_item_ptr(leaf, slot, struct btrfs_file_extent_item);
-=20
--=09if (btrfs_file_extent_type(leaf, fi) > BTRFS_FILE_EXTENT_TYPES) {
-+=09if (btrfs_file_extent_type(leaf, fi) >=3D BTRFS_FILE_EXTENT_TYPES) {
- =09=09file_extent_err(leaf, slot,
- =09=09"invalid type for file extent, have %u expect range [0, %u]",
- =09=09=09btrfs_file_extent_type(leaf, fi),
--=09=09=09BTRFS_FILE_EXTENT_TYPES);
-+=09=09=09BTRFS_FILE_EXTENT_TYPES - 1);
- =09=09return -EUCLEAN;
- =09}
-=20
-diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tre=
-e.h
-index b65c7ee75bc7..34bd09ffc71d 100644
---- a/include/uapi/linux/btrfs_tree.h
-+++ b/include/uapi/linux/btrfs_tree.h
-@@ -737,10 +737,12 @@ struct btrfs_balance_item {
- =09__le64 unused[4];
- } __attribute__ ((__packed__));
-=20
--#define BTRFS_FILE_EXTENT_INLINE 0
--#define BTRFS_FILE_EXTENT_REG 1
--#define BTRFS_FILE_EXTENT_PREALLOC 2
--#define BTRFS_FILE_EXTENT_TYPES=092
-+enum {
-+=09BTRFS_FILE_EXTENT_INLINE,
-+=09BTRFS_FILE_EXTENT_REG,
-+=09BTRFS_FILE_EXTENT_PREALLOC,
-+=09BTRFS_FILE_EXTENT_TYPES
-+};
-=20
- struct btrfs_file_extent_item {
- =09/*
---=20
-2.21.0
+On 2019-09-30 9:53 p.m., Qu Wenruo wrote:
+
+>=20
+> It's indeed a symptom of btrfs kernel module bug. But at least looks
+> repairable.
+>=20
+
+As advertised, btrfs --check repair restored the FS to full function.
+
+A follow-up scrub even found and corrected some corrupt data on one of
+the disks, that went  completely unreported by the disk itself.  So,
+despite this hiccup, BTRFS did it's job admirably.
 
 
+Whenever I do any further btrfs check after cleanly unmounting the
+filesystem, I get this error:
 
+cache and super generation don't match, space cache will be invalidated
+
+Even mounting with clear_cache,nospace_cache , (then mounting again with
+space_cache=3Dv2) does not remove this warning.  But it doesn't seem to b=
+e
+causing any problems.. There are no warnings about the space cache in
+the dmesg log when the filesystem is mounted.
+
+
+--6IkACV4deixxkzZfjCsFT76W65mLrWRFD--
+
+--od9itbxcVFHQuRCCojmZU14MjraBJHlwm
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQEcBAEBCAAGBQJdmM9nAAoJEO9Tn/JHRWptmJAIAMv2sQLdxeKeIGt+h4p4sdIc
+YSh4hECLffj+kL9MvPeBRyGeyZbmqTcOr1s17XX4tV8TOR+7nuPsrRJNfgL9UiHK
+DnyAmnugnDKCGDipWtQEf0ourXCwYRCZj7P3s1WO5Yh5cwNd46sWVpACfVMhsHlb
+2kC9LTk0UYY9veup9mUYsozh25OSWss9Iw0B+W2uKuOEz4yEQpp3K8GO/P56oQhP
+XkgWkDLU7yZjcO/R/IHPfTZYRxsfeNs+JOTaGUaSFHgG4HXomMsqkJkGHHznCDOH
+N5f80SB7WKtLGgBAxR4tHxYLcnE1MfDd+XdbToN7sC62KfhzRozP+lM1WR5k7Tc=
+=sWNp
+-----END PGP SIGNATURE-----
+
+--od9itbxcVFHQuRCCojmZU14MjraBJHlwm--

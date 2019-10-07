@@ -2,111 +2,213 @@ Return-Path: <SRS0=vnEf=YA=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.9 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,
+	USER_AGENT_GIT autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 85618ECE58F
-	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Oct 2019 09:11:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 06C37C47404
+	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Oct 2019 09:41:14 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5607C2084D
-	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Oct 2019 09:11:13 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CF6FF217F9
+	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Oct 2019 09:41:13 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="W0RAQNsB"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727486AbfJGJLJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 7 Oct 2019 05:11:09 -0400
-Received: from mx2.suse.de ([195.135.220.15]:38376 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727262AbfJGJLJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 7 Oct 2019 05:11:09 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 5F4B2B14B;
-        Mon,  7 Oct 2019 09:11:07 +0000 (UTC)
-From:   Johannes Thumshirn <jthumshirn@suse.de>
-To:     David Sterba <dsterba@suse.com>
-Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
-        Nikolay Borisov <nborisov@suse.com>,
-        Johannes Thumshirn <jthumshirn@suse.de>
-Subject: [PATCH 1/4] btrfs: add xxhash64 to checksumming algorithms
-Date:   Mon,  7 Oct 2019 11:11:01 +0200
-Message-Id: <20191007091104.18095-2-jthumshirn@suse.de>
-X-Mailer: git-send-email 2.16.4
-In-Reply-To: <20191007091104.18095-1-jthumshirn@suse.de>
-References: <20191007091104.18095-1-jthumshirn@suse.de>
+        id S1727345AbfJGJlN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 7 Oct 2019 05:41:13 -0400
+Received: from userp2130.oracle.com ([156.151.31.86]:57664 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726010AbfJGJlM (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Oct 2019 05:41:12 -0400
+Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
+        by userp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x979d0la065541;
+        Mon, 7 Oct 2019 09:41:11 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
+ subject : date : message-id : mime-version : content-transfer-encoding;
+ s=corp-2019-08-05; bh=mQ4Pr5bXawH34/BdLD74IVvqIYnW5NOAZ+RvAxw2jNo=;
+ b=W0RAQNsBMgxMclZHydTIdJ8vnVeiNwwBDiXqzWL+cksytXCxaT30JPJscv4daiTpmIb9
+ 3jGcCO5lHTHlOCuINiAlEAzUSQ3VaOONB41KqqTRXjH4J+d69FT9Rr0h7Mka0bAj2YBk
+ 1OnLrPXHT7UzQYfj4u4YaoeisJE3Pr1lhVHDEqgRwYnmoOp8SdAkSVBOVzuDRcDe7DUw
+ TIjC21hY8PppO0wHGS6t+E6IXQoEtdSzDX+QCdlucVgkua0K8RpTwYcFrh079MO02waQ
+ zxETFF+hKprHWu8EqDzeRphI9dk8YSBegaJ2m6PDXCAB06oQJsf/BS9F7+LPNWwgc1Ey Gw== 
+Received: from aserp3020.oracle.com (aserp3020.oracle.com [141.146.126.70])
+        by userp2130.oracle.com with ESMTP id 2vejku5pru-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Mon, 07 Oct 2019 09:41:11 +0000
+Received: from pps.filterd (aserp3020.oracle.com [127.0.0.1])
+        by aserp3020.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x979cSWK093944;
+        Mon, 7 Oct 2019 09:41:10 GMT
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by aserp3020.oracle.com with ESMTP id 2vf4ph739q-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Mon, 07 Oct 2019 09:41:10 +0000
+Received: from abhmp0012.oracle.com (abhmp0012.oracle.com [141.146.116.18])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x979f8Hg019175;
+        Mon, 7 Oct 2019 09:41:09 GMT
+Received: from localhost.localdomain (/39.109.145.141)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Mon, 07 Oct 2019 02:41:07 -0700
+From:   Anand Jain <anand.jain@oracle.com>
+To:     fstests@vger.kernel.org
+Cc:     linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/2] fstest: btrfs/196: test for alien btrfs-devices
+Date:   Mon,  7 Oct 2019 17:41:00 +0800
+Message-Id: <20191007094101.784-1-anand.jain@oracle.com>
+X-Mailer: git-send-email 2.23.0
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9402 signatures=668684
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=1 malwarescore=0
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
+ adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.0.1-1908290000 definitions=main-1910070097
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9402 signatures=668684
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
+ suspectscore=1 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
+ lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1908290000
+ definitions=main-1910070097
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Add xxhash64 to the list of possible checksumming algorithms used by
-BTRFS.
+Test if btrfs.ko sucessfully identifies and reports the missing device,
+if the missed device contians someother btrfs.
 
-Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/Kconfig                | 1 +
- fs/btrfs/ctree.c                | 1 +
- fs/btrfs/disk-io.c              | 1 +
- fs/btrfs/super.c                | 1 +
- include/uapi/linux/btrfs_tree.h | 1 +
- 5 files changed, 5 insertions(+)
+ tests/btrfs/196     | 77 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/196.out | 25 +++++++++++++++++
+ tests/btrfs/group   |  1 +
+ 3 files changed, 103 insertions(+)
+ create mode 100755 tests/btrfs/196
+ create mode 100644 tests/btrfs/196.out
 
-diff --git a/fs/btrfs/Kconfig b/fs/btrfs/Kconfig
-index 38651fae7f21..6d5a01c57da3 100644
---- a/fs/btrfs/Kconfig
-+++ b/fs/btrfs/Kconfig
-@@ -5,6 +5,7 @@ config BTRFS_FS
- 	select CRYPTO
- 	select CRYPTO_CRC32C
- 	select LIBCRC32C
-+	select CRYPTO_XXHASH
- 	select ZLIB_INFLATE
- 	select ZLIB_DEFLATE
- 	select LZO_COMPRESS
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 3a4d8e27e565..a1b317cf193b 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -34,6 +34,7 @@ static const struct btrfs_csums {
- 	const char	*name;
- } btrfs_csums[] = {
- 	[BTRFS_CSUM_TYPE_CRC32] = { .size = 4, .name = "crc32c" },
-+	[BTRFS_CSUM_TYPE_XXHASH] = { .size = 8, .name = "xxhash64" },
- };
- 
- int btrfs_super_csum_size(const struct btrfs_super_block *s)
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index ea40898d49eb..b0a6904b6139 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -352,6 +352,7 @@ static bool btrfs_supported_super_csum(u16 csum_type)
- {
- 	switch (csum_type) {
- 	case BTRFS_CSUM_TYPE_CRC32:
-+	case BTRFS_CSUM_TYPE_XXHASH:
- 		return true;
- 	default:
- 		return false;
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index d5d15a19f51d..c91cdf123cd8 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -2462,3 +2462,4 @@ module_exit(exit_btrfs_fs)
- 
- MODULE_LICENSE("GPL");
- MODULE_SOFTDEP("pre: crc32c");
-+MODULE_SOFTDEP("pre: xxhash64");
-diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tree.h
-index b65c7ee75bc7..ba2f125a3a1c 100644
---- a/include/uapi/linux/btrfs_tree.h
-+++ b/include/uapi/linux/btrfs_tree.h
-@@ -302,6 +302,7 @@
- /* csum types */
- enum btrfs_csum_type {
- 	BTRFS_CSUM_TYPE_CRC32	= 0,
-+	BTRFS_CSUM_TYPE_XXHASH	= 1,
- };
- 
- /*
+diff --git a/tests/btrfs/196 b/tests/btrfs/196
+new file mode 100755
+index 000000000000..e35cdce492e5
+--- /dev/null
++++ b/tests/btrfs/196
+@@ -0,0 +1,77 @@
++#! /bin/bash
++# SPDX-License-Identifier: GPL-2.0
++# Copyright (c) 2019 Oracle.  All Rights Reserved.
++#
++# FS QA Test 196
++#
++# Test stale and alien btrfs-device in the fs devices list.
++#
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++	cd /
++	rm -f $tmp.*
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/filter.btrfs
++
++# remove previous $seqres.full before test
++rm -f $seqres.full
++
++# real QA test starts here
++
++# Modify as appropriate.
++_supported_fs generic
++_supported_os Linux
++_require_scratch
++_require_scratch_dev_pool 4
++
++workout()
++{
++	raid=$1
++	device_nr=$2
++
++	echo $raid
++	_scratch_dev_pool_get $device_nr
++
++	_scratch_pool_mkfs "-d$raid -m$raid" >> $seqres.full 2>&1 || \
++							_fail "mkfs failed"
++
++	# Make device_1 an alien btrfs device for the raid created above by
++	# adding it to the $TEST_DIR
++
++	# don't test with the first device as auto fs check (_check_scratch_fs)
++	# picks the first device
++	device_1=$(echo $SCRATCH_DEV_POOL | awk '{print $2}')
++	$BTRFS_UTIL_PROG device add -f "$device_1" "$TEST_DIR"
++
++	device_2=$(echo $SCRATCH_DEV_POOL | awk '{print $1}')
++	_mount -o degraded $device_2 $SCRATCH_MNT
++	# Check if missing device is reported as in the 196.out
++	$BTRFS_UTIL_PROG filesystem show -m $SCRATCH_MNT | \
++						_filter_btrfs_filesystem_show
++
++	$BTRFS_UTIL_PROG device remove "$device_1" "$TEST_DIR"
++	_scratch_unmount
++	_scratch_dev_pool_put
++}
++
++workout "raid1" "2"
++workout "raid5" "3"
++workout "raid6" "4"
++workout "raid10" "4"
++
++# success, all done
++status=0
++exit
+diff --git a/tests/btrfs/196.out b/tests/btrfs/196.out
+new file mode 100644
+index 000000000000..311ae9e2f46a
+--- /dev/null
++++ b/tests/btrfs/196.out
+@@ -0,0 +1,25 @@
++QA output created by 196
++raid1
++Label: none  uuid: <UUID>
++	Total devices <NUM> FS bytes used <SIZE>
++	devid <DEVID> size <SIZE> used <SIZE> path SCRATCH_DEV
++	*** Some devices missing
++
++raid5
++Label: none  uuid: <UUID>
++	Total devices <NUM> FS bytes used <SIZE>
++	devid <DEVID> size <SIZE> used <SIZE> path SCRATCH_DEV
++	*** Some devices missing
++
++raid6
++Label: none  uuid: <UUID>
++	Total devices <NUM> FS bytes used <SIZE>
++	devid <DEVID> size <SIZE> used <SIZE> path SCRATCH_DEV
++	*** Some devices missing
++
++raid10
++Label: none  uuid: <UUID>
++	Total devices <NUM> FS bytes used <SIZE>
++	devid <DEVID> size <SIZE> used <SIZE> path SCRATCH_DEV
++	*** Some devices missing
++
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index 3ce6fa4628d8..c86ea2516397 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -198,3 +198,4 @@
+ 193 auto quick qgroup enospc limit
+ 194 auto volume
+ 195 auto volume
++196 auto quick volume
 -- 
-2.16.4
+1.8.3.1
 

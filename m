@@ -2,193 +2,160 @@ Return-Path: <SRS0=vnEf=YA=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-4.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_GIT autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.3 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,UNWANTED_LANGUAGE_BODY,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A0F4FC47404
-	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Oct 2019 20:17:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4E54EECE58C
+	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Oct 2019 20:17:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 6C88D21479
-	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Oct 2019 20:17:55 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 279B321479
+	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Oct 2019 20:17:57 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1570479475;
-	bh=DJN5uYAbi66V8tqzKoXmGVbuo6uXQeGVxiKCVRaC8Lc=;
-	h=From:To:Cc:Subject:Date:List-ID:From;
-	b=ZuUZ1slqxhDVyWm/acRhSk73YU3BKpgxbDaONnVlfn7iXEz8XDFWcl8ZZqKKFyKUC
-	 eE0b/jZQD/DCOpwxbLIt6YQR89bV7qQwzJyQqOXimZ8V0A57Q3IaJkHbtctBOSGlow
-	 Vz8F99edX7EEh2zpEb0V2G0grxBO8HDmObTRWI1o=
+	s=default; t=1570479477;
+	bh=9sDhDRbYTrW/8mQk7o0nXFzlk3QY5b8v7gAmCVTP+q0=;
+	h=From:To:Cc:Subject:Date:In-Reply-To:References:In-Reply-To:
+	 References:List-ID:From;
+	b=yybVWyg+lLo3zLPD86/izgOF9YLG/czZYx8LxigoB37N9U+BIvsedteEesXNoAMZM
+	 HRHW22cSy7d+S9lfxnwtnCMCKPbhTMGsBBAimqYXUeKUl/tH+Z77PvGrUhrkO/4pHU
+	 upxtyAPrSe56hVh5yv+PmXbovhKhKGxkGqW9zI3k=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728325AbfJGURy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 7 Oct 2019 16:17:54 -0400
-Received: from mail-qk1-f196.google.com ([209.85.222.196]:37406 "EHLO
-        mail-qk1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728187AbfJGURy (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Oct 2019 16:17:54 -0400
-Received: by mail-qk1-f196.google.com with SMTP id u184so13926468qkd.4
-        for <linux-btrfs@vger.kernel.org>; Mon, 07 Oct 2019 13:17:53 -0700 (PDT)
+        id S1728792AbfJGUR4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 7 Oct 2019 16:17:56 -0400
+Received: from mail-qk1-f195.google.com ([209.85.222.195]:41014 "EHLO
+        mail-qk1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728187AbfJGUR4 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Oct 2019 16:17:56 -0400
+Received: by mail-qk1-f195.google.com with SMTP id p10so13890234qkg.8
+        for <linux-btrfs@vger.kernel.org>; Mon, 07 Oct 2019 13:17:55 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id;
-        bh=A+tKGrFQE+RqFAoABJje+XLBw4/azw/l5fPIF+cpKM0=;
-        b=ZbpiS8ViKtfLOZhfrUxz6e9mFAxhDb31Kb7MLxQsWhh4skNVdlfP46VFueumDlSJ9K
-         RguIXshgYgpF1e81L9mtuYSkzJWNpi95JBIALqEkoZkSLgVJTpQ0e2p3cToAnksR3DcM
-         4JEJ5EZGbgyASHWrQX+KcNT482DkpP4g4FTV+RX+t7KaYi8GyLJm8JIMi/6EgN+G3e/D
-         942sFwktt7jG8lgOGCKHN3o72Wb2/1Vp6I0egPX6wwh/4DWfDKbGSsrnYYldZ2EuXc1a
-         oIks03slyQw0EdJ+ArKgRmtgLFSiHbMPOjb+x821coZO2KclGcs5eSD8X58gQfEI2oZ4
-         k0Yg==
-X-Gm-Message-State: APjAAAU8bhZfHz4oF/Wvg5hFYYoxFv0VnOO8NpIm/B/x9nKRITGuuyqW
-        MlD0umZZopc0MTE3oUiIP+EZ8VF4
-X-Google-Smtp-Source: APXvYqyu1OgTBi6E4wd037LOhMCg8kamkWnQ9Gt2yYcT/NYVPf7FxbuJfymzS+84xjQ5izais5DmVg==
-X-Received: by 2002:ae9:e312:: with SMTP id v18mr6461454qkf.252.1570479472957;
-        Mon, 07 Oct 2019 13:17:52 -0700 (PDT)
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
+         :references:in-reply-to:references;
+        bh=mX/ZOP+xwUvm9kyq1kt0/WmL3ZO5jZwqkXSGicUVRV8=;
+        b=cBmwJ2z/fmLfVCD7/WHymKefAjZdUdi0kG9suI1DkRKIKN5JU6523lAT+ezlZcDMP/
+         tj/IVWsBimepkLejQ4vNSrdV03+xB0O26vMX4atZJdNCXiXlglTR78+3V7rvmZp+37ep
+         qEkpt4GryRZIEqMfAlxdZ5iL6l/OshhoiMM2gAj9CrDogbitNfw2c1qQcBdSVQIYVc9M
+         19RDeP54jc2WF9XU/Mmvu6OCIq9zeO3jrsNPWSamfUprApkupR1xAC3a18UtR4Ps6nn9
+         AZyjWPAd9EUMgSpAE4I/UMuVE5z2e9rXVLAVrvXC4jKkSq8KdsXATfECFbOoAjwlFTRv
+         muiw==
+X-Gm-Message-State: APjAAAUwiTJmVZzRetfThgrHDTG8jjBhNgs4ow8qUSpPlh1OxeUmgmmh
+        DQSZej10Tzkx+FhnAlyvo9I=
+X-Google-Smtp-Source: APXvYqzuLSnTsLJ3M9qPPPG7j0k3xqDxttSZjK2K5C31YnH2SGjjb8wsQrBYA0rE8fA+P7/8BF5BKg==
+X-Received: by 2002:a37:67c6:: with SMTP id b189mr24773475qkc.472.1570479475482;
+        Mon, 07 Oct 2019 13:17:55 -0700 (PDT)
 Received: from dennisz-mbp.thefacebook.com ([163.114.130.128])
-        by smtp.gmail.com with ESMTPSA id k2sm6904005qtm.42.2019.10.07.13.17.51
+        by smtp.gmail.com with ESMTPSA id k2sm6904005qtm.42.2019.10.07.13.17.54
         (version=TLS1_2 cipher=ECDHE-RSA-AES128-SHA bits=128/128);
-        Mon, 07 Oct 2019 13:17:52 -0700 (PDT)
+        Mon, 07 Oct 2019 13:17:54 -0700 (PDT)
 From:   Dennis Zhou <dennis@kernel.org>
 To:     David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
         Josef Bacik <josef@toxicpanda.com>,
         Omar Sandoval <osandov@osandov.com>
 Cc:     kernel-team@fb.com, linux-btrfs@vger.kernel.org,
         Dennis Zhou <dennis@kernel.org>
-Subject: [RFC PATCH 00/19] btrfs: async discard support
-Date:   Mon,  7 Oct 2019 16:17:31 -0400
-Message-Id: <cover.1570479299.git.dennis@kernel.org>
+Subject: [PATCH 02/19] btrfs: rename DISCARD opt to DISCARD_SYNC
+Date:   Mon,  7 Oct 2019 16:17:33 -0400
+Message-Id: <e2c7ca7b48bc3a5a219329f7d086ab1cfd7330a3.1570479299.git.dennis@kernel.org>
 X-Mailer: git-send-email 2.13.5
+In-Reply-To: <cover.1570479299.git.dennis@kernel.org>
+References: <cover.1570479299.git.dennis@kernel.org>
+In-Reply-To: <cover.1570479299.git.dennis@kernel.org>
+References: <cover.1570479299.git.dennis@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hello,
+This series introduces async discard which will use the flag
+DISCARD_ASYNC, so rename the original flag to DISCARD_SYNC as it is
+synchronously done in transaction commit.
 
-Discard is an operation that allows for the filesystem to communicate
-with underlying ssds that a lba region is no longer needed. This gives
-the drive the more information as it tries to manage the available free
-space to minimize write amplification. However, discard hasn't been
-given the most tlc. Discard is a problematic command because a drive's
-physical block management is more or less a black box to us and the
-effects of any particular discard aren't necessarily limited the
-lifetime of a command.
+Signed-off-by: Dennis Zhou <dennis@kernel.org>
+---
+ fs/btrfs/block-group.c | 2 +-
+ fs/btrfs/ctree.h       | 2 +-
+ fs/btrfs/extent-tree.c | 4 ++--
+ fs/btrfs/super.c       | 8 ++++----
+ 4 files changed, 8 insertions(+), 8 deletions(-)
 
-Currently, btrfs handles discarding synchronously during transaction
-commit. This problematically can delay transaction commit based on the
-amount of space that needs to be trimmed and the efficacy of the discard
-operation for a particular drive.
+diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+index bf7e3f23bba7..afe86028246a 100644
+--- a/fs/btrfs/block-group.c
++++ b/fs/btrfs/block-group.c
+@@ -1365,7 +1365,7 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
+ 		spin_unlock(&space_info->lock);
+ 
+ 		/* DISCARD can flip during remount */
+-		trimming = btrfs_test_opt(fs_info, DISCARD);
++		trimming = btrfs_test_opt(fs_info, DISCARD_SYNC);
+ 
+ 		/* Implicit trim during transaction commit. */
+ 		if (trimming)
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 19d669d12ca1..1877586576aa 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1171,7 +1171,7 @@ static inline u32 BTRFS_MAX_XATTR_SIZE(const struct btrfs_fs_info *info)
+ #define BTRFS_MOUNT_FLUSHONCOMMIT       (1 << 7)
+ #define BTRFS_MOUNT_SSD_SPREAD		(1 << 8)
+ #define BTRFS_MOUNT_NOSSD		(1 << 9)
+-#define BTRFS_MOUNT_DISCARD		(1 << 10)
++#define BTRFS_MOUNT_DISCARD_SYNC	(1 << 10)
+ #define BTRFS_MOUNT_FORCE_COMPRESS      (1 << 11)
+ #define BTRFS_MOUNT_SPACE_CACHE		(1 << 12)
+ #define BTRFS_MOUNT_CLEAR_CACHE		(1 << 13)
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 49cb26fa7c63..77a5904756c5 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2903,7 +2903,7 @@ int btrfs_finish_extent_commit(struct btrfs_trans_handle *trans)
+ 			break;
+ 		}
+ 
+-		if (btrfs_test_opt(fs_info, DISCARD))
++		if (btrfs_test_opt(fs_info, DISCARD_SYNC))
+ 			ret = btrfs_discard_extent(fs_info, start,
+ 						   end + 1 - start, NULL);
+ 
+@@ -4146,7 +4146,7 @@ static int __btrfs_free_reserved_extent(struct btrfs_fs_info *fs_info,
+ 	if (pin)
+ 		pin_down_extent(cache, start, len, 1);
+ 	else {
+-		if (btrfs_test_opt(fs_info, DISCARD))
++		if (btrfs_test_opt(fs_info, DISCARD_SYNC))
+ 			ret = btrfs_discard_extent(fs_info, start, len, NULL);
+ 		btrfs_add_free_space(cache, start, len);
+ 		btrfs_free_reserved_bytes(cache, len, delalloc);
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 1b151af25772..a02fece949cb 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -695,11 +695,11 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
+ 				   info->metadata_ratio);
+ 			break;
+ 		case Opt_discard:
+-			btrfs_set_and_info(info, DISCARD,
+-					   "turning on discard");
++			btrfs_set_and_info(info, DISCARD_SYNC,
++					   "turning on sync discard");
+ 			break;
+ 		case Opt_nodiscard:
+-			btrfs_clear_and_info(info, DISCARD,
++			btrfs_clear_and_info(info, DISCARD_SYNC,
+ 					     "turning off discard");
+ 			break;
+ 		case Opt_space_cache:
+@@ -1322,7 +1322,7 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
+ 		seq_puts(seq, ",nologreplay");
+ 	if (btrfs_test_opt(info, FLUSHONCOMMIT))
+ 		seq_puts(seq, ",flushoncommit");
+-	if (btrfs_test_opt(info, DISCARD))
++	if (btrfs_test_opt(info, DISCARD_SYNC))
+ 		seq_puts(seq, ",discard");
+ 	if (!(info->sb->s_flags & SB_POSIXACL))
+ 		seq_puts(seq, ",noacl");
+-- 
+2.17.1
 
-This series introduces async discarding, which removes discard from the
-transaction commit path. While every SSD has the choice of implementing
-trim support different, we strive here to do the right thing. The idea
-hinges on recognizing that write amplification really only kicks in once
-we're really low on free space.  As long as we trim enough to keep a
-large enough pool of free space, in theory this should minimize the cost
-of issuing discards on a workload and have limited cost overhead in
-write amplification.
-
-With async discard, we try to emphasize discarding larger regions
-and reusing the lba (implicit discard). The first is done by using the
-free space cache to maintain discard state and thus allows us to get
-coalescing for fairly cheap. A background workqueue is used to scan over
-an LRU kept list of the block groups. It then uses filters to determine
-what to discard next hence giving priority to larger discards. While
-reusing an lba isn't explicitly attempted, it happens implicitly via
-find_free_extent() which if it happens to find a dirty extent, will
-grant us reuse of the lba. Additionally, async discarding skips metadata
-block groups as these should see a fairly high turnover as btrfs is a
-self-packing filesystem being stingy with allocating new block groups
-until necessary.
-
-Preliminary results seem promising as when a lot of freeing is going on,
-the discarding is delayed allowing for reuse which translates to less
-discarding (in addition to the slower discarding). This has shown a
-reduction in p90 and p99 read latencies on a test on our webservers.
-
-I am currently working on tuning the rate at which it discards in the
-background. I am doing this by evaluating other workloads and drives.
-The iops and bps rate limits are fairly aggressive right now as my
-basic survey of a few drives noted that the trim command itself is a
-significant part of the overhead. So optimizing for larger trims is the
-right thing to do.
-
-Persistence isn't supported, so when we mount a filesystem, the block
-groups are read in as dirty and background trim begins. This makes async
-discard more useful for longer running mount points.
-
-This series contains the following 19 patches and is on top of
-btrfs-devel#master 0f1a7b3fac05:
-  0001-bitmap-genericize-percpu-bitmap-region-iterators.patch
-  0002-btrfs-rename-DISCARD-opt-to-DISCARD_SYNC.patch
-  0003-btrfs-keep-track-of-which-extents-have-been-discarde.patch
-  0004-btrfs-keep-track-of-cleanliness-of-the-bitmap.patch
-  0005-btrfs-add-the-beginning-of-async-discard-discard-wor.patch
-  0006-btrfs-handle-empty-block_group-removal.patch
-  0007-btrfs-discard-one-region-at-a-time-in-async-discard.patch
-  0008-btrfs-track-discardable-extents-for-asnyc-discard.patch
-  0009-btrfs-keep-track-of-discardable_bytes.patch
-  0010-btrfs-calculate-discard-delay-based-on-number-of-ext.patch
-  0011-btrfs-add-bps-discard-rate-limit.patch
-  0012-btrfs-limit-max-discard-size-for-async-discard.patch
-  0013-btrfs-have-multiple-discard-lists.patch
-  0014-btrfs-only-keep-track-of-data-extents-for-async-disc.patch
-  0015-btrfs-load-block_groups-into-discard_list-on-mount.patch
-  0016-btrfs-keep-track-of-discard-reuse-stats.patch
-  0017-btrfs-add-async-discard-header.patch
-  0018-btrfs-increase-the-metadata-allowance-for-the-free_s.patch
-  0019-btrfs-make-smaller-extents-more-likely-to-go-into-bi.patch
-
-0001 exports percpu's bitmap iterators for eventual use in 0015. 0002
-renames DISCARD to DISCARD_SYNC. 0003 and 0004 adds discard tracking to
-the free space cache. 0005-0007 adds the core of async discard support.
-0008-0013 fiddle with stats and operation limits. 0014 makes async
-discarding only track data block groups. 0015 loads block groups on
-reading in the block groups. 0016 adds reuse stats. 0017 adds an
-explanation header. 0018 and 0019 modify the free space cache metadata
-allowance, add a bitmap -> extent path and makes us more likely to put
-smaller extents into the bitmaps.
-
-diffstats below:
-
-Dennis Zhou (19):
-  bitmap: genericize percpu bitmap region iterators
-  btrfs: rename DISCARD opt to DISCARD_SYNC
-  btrfs: keep track of which extents have been discarded
-  btrfs: keep track of cleanliness of the bitmap
-  btrfs: add the beginning of async discard, discard workqueue
-  btrfs: handle empty block_group removal
-  btrfs: discard one region at a time in async discard
-  btrfs: track discardable extents for asnyc discard
-  btrfs: keep track of discardable_bytes
-  btrfs: calculate discard delay based on number of extents
-  btrfs: add bps discard rate limit
-  btrfs: limit max discard size for async discard
-  btrfs: have multiple discard lists
-  btrfs: only keep track of data extents for async discard
-  btrfs: load block_groups into discard_list on mount
-  btrfs: keep track of discard reuse stats
-  btrfs: add async discard header
-  btrfs: increase the metadata allowance for the free_space_cache
-  btrfs: make smaller extents more likely to go into bitmaps
-
- fs/btrfs/Makefile           |   2 +-
- fs/btrfs/block-group.c      |  47 +++-
- fs/btrfs/block-group.h      |  18 ++
- fs/btrfs/ctree.h            |  29 ++-
- fs/btrfs/discard.c          | 458 +++++++++++++++++++++++++++++++++
- fs/btrfs/discard.h          | 112 ++++++++
- fs/btrfs/disk-io.c          |  15 +-
- fs/btrfs/extent-tree.c      |  26 +-
- fs/btrfs/free-space-cache.c | 494 ++++++++++++++++++++++++++++++------
- fs/btrfs/free-space-cache.h |  27 +-
- fs/btrfs/inode-map.c        |  13 +-
- fs/btrfs/scrub.c            |   7 +-
- fs/btrfs/super.c            |  39 ++-
- fs/btrfs/sysfs.c            | 141 ++++++++++
- include/linux/bitmap.h      |  35 +++
- mm/percpu.c                 |  61 ++---
- 16 files changed, 1369 insertions(+), 155 deletions(-)
- create mode 100644 fs/btrfs/discard.c
- create mode 100644 fs/btrfs/discard.h
-
-Thanks,
-Dennis

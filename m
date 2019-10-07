@@ -7,57 +7,57 @@ X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C4B3CC47404
-	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Oct 2019 20:18:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1D227C47404
+	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Oct 2019 20:18:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9E164206C0
-	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Oct 2019 20:18:13 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E6FD2206C0
+	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Oct 2019 20:18:16 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1570479493;
-	bh=SsNKFbW5rUScI5MxgGp7mfMw+r4koVdhtafLGiiPnn8=;
+	s=default; t=1570479497;
+	bh=3qOnVvLxs1I/g+rPlLz35cb86WfaeefidX0KU6jYE24=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:In-Reply-To:
 	 References:List-ID:From;
-	b=wP5i9GFsdUpizPAvh+uDa7IYWvVAdqrseIjCm4iK7z7eYs+oQkPntUj0y4RFpirjn
-	 OtreR7K8oJfOgjx2ldeRXLJMxuerMv0eH5gzk7m7/V8CfiD2LChdiYegHLj/BX7hxF
-	 58ha9gElkP8heqXLbqmAtd0sL/JkhHQ4u0JD3ey0=
+	b=HesE/H/sARsSN9T4l/lG+J0LePqiGZayANUfBu2sEe/C1KKFWygJp0RxI2UEZb1jK
+	 I8/FYmVcNqakx15nIwOvaqD+eSXiDOngQnwMKGf5ZEwv9yav/qg/kVbsPBfjLSuL89
+	 WwLQLaRDgFExdMDgBfc8DBqGzP18juusr9r7K7yo=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729379AbfJGUSM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 7 Oct 2019 16:18:12 -0400
-Received: from mail-qt1-f194.google.com ([209.85.160.194]:37106 "EHLO
-        mail-qt1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729363AbfJGUSL (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Oct 2019 16:18:11 -0400
-Received: by mail-qt1-f194.google.com with SMTP id e15so6257337qtr.4
-        for <linux-btrfs@vger.kernel.org>; Mon, 07 Oct 2019 13:18:10 -0700 (PDT)
+        id S1729402AbfJGUSP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 7 Oct 2019 16:18:15 -0400
+Received: from mail-qk1-f196.google.com ([209.85.222.196]:37901 "EHLO
+        mail-qk1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1729380AbfJGUSO (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Oct 2019 16:18:14 -0400
+Received: by mail-qk1-f196.google.com with SMTP id u186so13942834qkc.5
+        for <linux-btrfs@vger.kernel.org>; Mon, 07 Oct 2019 13:18:13 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:in-reply-to:references;
-        bh=btKJ6g9fTO1tYKb8F6/OgOsQXGTbh+3K3gbcTVgRpv8=;
-        b=mueRn1SNW1DtS3SWPCrP5Nh7tOPic28Otuy/v0vw6Dspa0U7r+RRHDNExNwC0oECyS
-         0nFX8epiTzXwp3Pr0ymK/EUiu2jLzaoHtoBDirHenSUi10myxD17+oMM+OrulACgaZ/6
-         xJGouliyEbtS72PsYaueu+r+BL+5pxUxUvrmXbpBif0s83Mtks+OCCMfsLZSzt4quJXx
-         EopZGrOrnKVT3ZMJ5r+q4DzJ9jSn/BJ9wtPJoBE2XDOV8d/FA+IFf+thTS2+uF4pcmRh
-         Rlk3bPy9Z/myNACtN5HHLVnw8OZRUuP3j9YPKrnN2G+c3hMjPWl6518dQe4DaFxojN5M
-         jjKg==
-X-Gm-Message-State: APjAAAU6rAian8wZCQbAl9ZCypkAlSZCk3WiEVNqmr8arvqF4db+uDVW
-        5Q29WqsWuOi/xGwLfruDTj4=
-X-Google-Smtp-Source: APXvYqyVid1DQ637aoxSO6T4UHyz0+tHRWlO6WzbTiHs/H1xQdWg1tBxZoUoPV+2S7Vs7LNBtxjVZQ==
-X-Received: by 2002:ac8:43cc:: with SMTP id w12mr22481392qtn.301.1570479490571;
-        Mon, 07 Oct 2019 13:18:10 -0700 (PDT)
+        bh=ydAJYdps+yVy//BCuVYseS/Oav8Svt31Ns5WcndpjHM=;
+        b=Rq+dhffEeyNx36PHKGx5avXT3hmzaihHEbUCxBl/4Fjv0L/3mFlDO+DD8uCxtQSKPi
+         9VZ7qiV5Gmk7/1uG7kf58bLMtJBj9Kw0Ml1eky3KUYUXcrvHhd5gzVnMh0pyserJ0NWa
+         BDii6AUu2tRcB7UeP+kL/c83Lc4CuUu89sLcq6GLq8f1fmQMgLea1n9ns2dzNgPAiqEr
+         H7U63U0lHZJ72LSA5j+64rN8pu1Nl6yRQsBOBLQ1nVAk77xezIQKMd1YZ+a93G53DO+c
+         HCtkxV7QNiN6p/LE2Bj/PbWm+PPWR3i7mPxHHakNiv9wqQlb6PPg1FlTFibut9EmgmJ6
+         G2/A==
+X-Gm-Message-State: APjAAAUUhPBvCd5mhwUbqiU7tJT4T0PwcQyWXkHc6zMjGMn69grYZZX2
+        AR5TETqKtPsoBkcrZ1VSn3Q=
+X-Google-Smtp-Source: APXvYqyCnse2OVlmmP5jbjkElNNnd3QPowNCkYaeMm+CkzmcYas6ECxgcbSl/FbyFUZHxiJAyU6YoA==
+X-Received: by 2002:a37:a2c3:: with SMTP id l186mr24169465qke.461.1570479493477;
+        Mon, 07 Oct 2019 13:18:13 -0700 (PDT)
 Received: from dennisz-mbp.thefacebook.com ([163.114.130.128])
-        by smtp.gmail.com with ESMTPSA id k2sm6904005qtm.42.2019.10.07.13.18.09
+        by smtp.gmail.com with ESMTPSA id k2sm6904005qtm.42.2019.10.07.13.18.12
         (version=TLS1_2 cipher=ECDHE-RSA-AES128-SHA bits=128/128);
-        Mon, 07 Oct 2019 13:18:09 -0700 (PDT)
+        Mon, 07 Oct 2019 13:18:12 -0700 (PDT)
 From:   Dennis Zhou <dennis@kernel.org>
 To:     David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
         Josef Bacik <josef@toxicpanda.com>,
         Omar Sandoval <osandov@osandov.com>
 Cc:     kernel-team@fb.com, linux-btrfs@vger.kernel.org,
         Dennis Zhou <dennis@kernel.org>
-Subject: [PATCH 15/19] btrfs: load block_groups into discard_list on mount
-Date:   Mon,  7 Oct 2019 16:17:46 -0400
-Message-Id: <31ce602fac88f25567a0b3e89037693ec962c1c7.1570479299.git.dennis@kernel.org>
+Subject: [PATCH 18/19] btrfs: increase the metadata allowance for the free_space_cache
+Date:   Mon,  7 Oct 2019 16:17:49 -0400
+Message-Id: <4b171367793ccdcd722e787e5ae0f4f547ed5c43.1570479299.git.dennis@kernel.org>
 X-Mailer: git-send-email 2.13.5
 In-Reply-To: <cover.1570479299.git.dennis@kernel.org>
 References: <cover.1570479299.git.dennis@kernel.org>
@@ -68,73 +68,78 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Async discard doesn't remember the discard state of a block_group when
-unmounting or when we crash. So, any block_group that is not fully used
-may have undiscarded regions. However, free space caches are read in on
-demand. Let the discard worker read in the free space cache so we can
-proceed with discarding rather than wait for the block_group to be used.
-This prevents us from indefinitely deferring discards until that
-particular block_group is reused.
+Currently, there is no way for the free space cache to recover from
+being serviced by purely bitmaps because the extent threshold is set to
+0 in recalculate_thresholds() when we surpass the metadata allowance.
+
+This adds a recovery mechanism by keeping large extents out of the
+bitmaps and increases the metadata upper bound to 64KB. The recovery
+mechanism bypasses this upper bound, thus making it a soft upper bound.
+But, with the bypass being 1MB or greater, it shouldn't add unbounded
+overhead.
 
 Signed-off-by: Dennis Zhou <dennis@kernel.org>
 ---
- fs/btrfs/block-group.c |  2 ++
- fs/btrfs/discard.c     | 15 +++++++++++++++
- 2 files changed, 17 insertions(+)
+ fs/btrfs/free-space-cache.c | 26 +++++++++++---------------
+ 1 file changed, 11 insertions(+), 15 deletions(-)
 
-diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index 73e5a9384491..684959c96c3f 100644
---- a/fs/btrfs/block-group.c
-+++ b/fs/btrfs/block-group.c
-@@ -1859,6 +1859,8 @@ int btrfs_read_block_groups(struct btrfs_fs_info *info)
- 						&info->discard_ctl, cache);
- 			else
- 				btrfs_mark_bg_unused(cache);
-+		} else if (btrfs_test_opt(info, DISCARD_ASYNC)) {
-+			btrfs_add_to_discard_list(&info->discard_ctl, cache);
- 		}
- 	}
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 480119016c0d..a0941d281a63 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -24,7 +24,8 @@
+ #include "discard.h"
  
-diff --git a/fs/btrfs/discard.c b/fs/btrfs/discard.c
-index 0e4d5a22c661..d99ba31e6f3b 100644
---- a/fs/btrfs/discard.c
-+++ b/fs/btrfs/discard.c
-@@ -246,6 +246,7 @@ static void btrfs_discard_workfn(struct work_struct *work)
- 	int discard_index = 0;
- 	u64 trimmed = 0;
- 	u64 minlen = 0;
-+	int ret;
+ #define BITS_PER_BITMAP		(PAGE_SIZE * 8UL)
+-#define MAX_CACHE_BYTES_PER_GIG	SZ_32K
++#define MAX_CACHE_BYTES_PER_GIG	SZ_64K
++#define FORCE_EXTENT_THRESHOLD	SZ_1M
  
- 	discard_ctl = container_of(work, struct btrfs_discard_ctl, work.work);
+ struct btrfs_trim_range {
+ 	u64 start;
+@@ -1686,26 +1687,17 @@ static void recalculate_thresholds(struct btrfs_free_space_ctl *ctl)
+ 	ASSERT(ctl->total_bitmaps <= max_bitmaps);
  
-@@ -254,6 +255,19 @@ static void btrfs_discard_workfn(struct work_struct *work)
- 	if (!cache || !btrfs_run_discard_work(discard_ctl))
- 		return;
+ 	/*
+-	 * The goal is to keep the total amount of memory used per 1gb of space
+-	 * at or below 32k, so we need to adjust how much memory we allow to be
+-	 * used by extent based free space tracking
++	 * We are trying to keep the total amount of memory used per 1gb of
++	 * space to be MAX_CACHE_BYTES_PER_GIG.  However, with a reclamation
++	 * mechanism of pulling extents >= FORCE_EXTENT_THRESHOLD out of
++	 * bitmaps, we may end up using more memory than this.
+ 	 */
+ 	if (size < SZ_1G)
+ 		max_bytes = MAX_CACHE_BYTES_PER_GIG;
+ 	else
+ 		max_bytes = MAX_CACHE_BYTES_PER_GIG * div_u64(size, SZ_1G);
  
-+	if (!btrfs_block_group_cache_done(cache)) {
-+		ret = btrfs_cache_block_group(cache, 0);
-+		if (ret) {
-+			remove_from_discard_list(discard_ctl, cache);
-+			goto out;
-+		}
-+		ret = btrfs_wait_block_group_cache_done(cache);
-+		if (ret) {
-+			remove_from_discard_list(discard_ctl, cache);
-+			goto out;
-+		}
-+	}
+-	/*
+-	 * we want to account for 1 more bitmap than what we have so we can make
+-	 * sure we don't go over our overall goal of MAX_CACHE_BYTES_PER_GIG as
+-	 * we add more bitmaps.
+-	 */
+-	bitmap_bytes = (ctl->total_bitmaps + 1) * ctl->unit;
+-
+-	if (bitmap_bytes >= max_bytes) {
+-		ctl->extents_thresh = 0;
+-		return;
+-	}
++	bitmap_bytes = ctl->total_bitmaps * ctl->unit;
+ 
+ 	/*
+ 	 * we want the extent entry threshold to always be at most 1/2 the max
+@@ -2086,6 +2078,10 @@ static bool use_bitmap(struct btrfs_free_space_ctl *ctl,
+ 		forced = true;
+ #endif
+ 
++	/* this is a way to reclaim large regions from the bitmaps */
++	if (!forced && info->bytes >= FORCE_EXTENT_THRESHOLD)
++		return false;
 +
- 	minlen = discard_minlen[discard_index];
- 
- 	if (btrfs_discard_bitmaps(cache)) {
-@@ -291,6 +305,7 @@ static void btrfs_discard_workfn(struct work_struct *work)
- 		}
- 	}
- 
-+out:
- 	spin_lock(&discard_ctl->lock);
- 	discard_ctl->cache = NULL;
- 	spin_unlock(&discard_ctl->lock);
+ 	/*
+ 	 * If we are below the extents threshold then we can add this as an
+ 	 * extent, and don't have to deal with the bitmap
 -- 
 2.17.1
 

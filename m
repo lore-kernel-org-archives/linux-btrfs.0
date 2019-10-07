@@ -2,79 +2,90 @@ Return-Path: <SRS0=vnEf=YA=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E7419C4740A
-	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Oct 2019 03:34:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C6304C47404
+	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Oct 2019 09:11:10 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C13FD20656
-	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Oct 2019 03:34:30 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A0D7A2133F
+	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Oct 2019 09:11:10 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726908AbfJGDe3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 6 Oct 2019 23:34:29 -0400
-Received: from p3nlsmtpcp01-04.prod.phx3.secureserver.net ([184.168.200.145]:34928
-        "EHLO p3nlsmtpcp01-04.prod.phx3.secureserver.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726789AbfJGDe3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 6 Oct 2019 23:34:29 -0400
-X-Greylist: delayed 450 seconds by postgrey-1.27 at vger.kernel.org; Sun, 06 Oct 2019 23:34:29 EDT
-Received: from p3plcpnl0639.prod.phx3.secureserver.net ([50.62.176.166])
-        by : HOSTING RELAY : with ESMTP
-        id HJeoiaxDf7wBxHJeoi3vOb; Sun, 06 Oct 2019 20:25:58 -0700
-Received: from [45.116.115.51] (port=44124 helo=giis.co.in)
-        by p3plcpnl0639.prod.phx3.secureserver.net with esmtpsa (TLSv1.2:ECDHE-RSA-AES128-GCM-SHA256:128)
-        (Exim 4.92)
-        (envelope-from <lakshmipathi.g@giis.co.in>)
-        id 1iHJen-00Gmbp-Ep; Sun, 06 Oct 2019 20:25:58 -0700
-Date:   Mon, 7 Oct 2019 08:55:47 +0530
-From:   "Lakshmipathi.G" <lakshmipathi.g@giis.co.in>
-To:     Philipp Hahn <pmhahn+btrfs@pmhahn.de>
-Cc:     "Lakshmipathi.G" <lakshmipathi.ganapathi@collabora.com>,
-        linux-btrfs@vger.kernel.org, dsterba@suse.com,
-        thecybershadow@gmail.com, wqu@suse.com
-Subject: Re: [PATCH] Setup GitLab-CI for btrfs-progs
-Message-ID: <20191007032546.GB5135@giis.co.in>
-References: <20190930165622.GA25114@giis.co.in>
- <1ecbc32d-9f28-b0f5-bf2d-8ceee12d6404@pmhahn.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <1ecbc32d-9f28-b0f5-bf2d-8ceee12d6404@pmhahn.de>
-User-Agent: Mutt/1.5.24 (2015-08-30)
-X-AntiAbuse: This header was added to track abuse, please include it with any abuse report
-X-AntiAbuse: Primary Hostname - p3plcpnl0639.prod.phx3.secureserver.net
-X-AntiAbuse: Original Domain - vger.kernel.org
-X-AntiAbuse: Originator/Caller UID/GID - [47 12] / [47 12]
-X-AntiAbuse: Sender Address Domain - giis.co.in
-X-Get-Message-Sender-Via: p3plcpnl0639.prod.phx3.secureserver.net: authenticated_id: lakshmipathi.g@giis.co.in
-X-Authenticated-Sender: p3plcpnl0639.prod.phx3.secureserver.net: lakshmipathi.g@giis.co.in
-X-Source: 
-X-Source-Args: 
-X-Source-Dir: 
-X-CMAE-Envelope: MS4wfDqidP6qngvUW6bi9Q1maKPoSxbo3pVlEkhQxwpx/6njl45XxNjHKfDmLcvP5KAIa069jVf+sXDN0fZV6acyKT0aQRXAV1cLApHz+s8Ca8ECAbGr4alC
- E11FqFqqmgtqD11LT4gsyjWmmq44O0TTBaFONIEVqoxu79hBhqqUsOHcr+YCtFGzcmH/Jx+nP9AQ+5wetHL6DIZy4BxEg2WglooVELmLc+Cwn0iOv8UikqTP
+        id S1727503AbfJGJLJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 7 Oct 2019 05:11:09 -0400
+Received: from mx2.suse.de ([195.135.220.15]:38394 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727473AbfJGJLJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 7 Oct 2019 05:11:09 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 7B4BBB1A4;
+        Mon,  7 Oct 2019 09:11:07 +0000 (UTC)
+From:   Johannes Thumshirn <jthumshirn@suse.de>
+To:     David Sterba <dsterba@suse.com>
+Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
+        Nikolay Borisov <nborisov@suse.com>,
+        Johannes Thumshirn <jthumshirn@suse.de>
+Subject: [PATCH 4/4] btrfs: show used checksum driver per filesystem in sysfs
+Date:   Mon,  7 Oct 2019 11:11:04 +0200
+Message-Id: <20191007091104.18095-5-jthumshirn@suse.de>
+X-Mailer: git-send-email 2.16.4
+In-Reply-To: <20191007091104.18095-1-jthumshirn@suse.de>
+References: <20191007091104.18095-1-jthumshirn@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Oct 01, 2019 at 08:02:29AM +0200, Philipp Hahn wrote:
-> 
-> You already have a "variables" section above - merge them?
-> 
-> > +  services:
-> > +    - docker:18.09.7-dind
-> 
-> You already have "services" defined globally - no need to repeat that
-> here again.
-> 
-Hi Philipp,
+Show the used driver for the checksum algorithm for the filesystem in
+sysfs.
 
-Thanks for the comments. I ran into some issue while using global section so
-started using job section. Let me try placing them in global and update the 
-results. thanks.
+Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
+---
+ fs/btrfs/sysfs.c | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
 
-Cheers.
-Lakshmipathi.G 
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index aeebbdfe1a98..11a3cf7f563e 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -9,6 +9,7 @@
+ #include <linux/spinlock.h>
+ #include <linux/completion.h>
+ #include <linux/bug.h>
++#include <crypto/hash.h>
+ 
+ #include "ctree.h"
+ #include "disk-io.h"
+@@ -637,6 +638,19 @@ static ssize_t btrfs_metadata_uuid_show(struct kobject *kobj,
+ 
+ BTRFS_ATTR(, metadata_uuid, btrfs_metadata_uuid_show);
+ 
++static ssize_t btrfs_checksum_show(struct kobject *kobj,
++				   struct kobj_attribute *a, char *buf)
++{
++	struct btrfs_fs_info *fs_info = to_fs_info(kobj);
++	u16 csum_type = btrfs_super_csum_type(fs_info->super_copy);
++
++	return snprintf(buf, PAGE_SIZE, "%s (%s)\n",
++			btrfs_super_csum_name(csum_type),
++			crypto_shash_driver_name(fs_info->csum_shash));
++}
++
++BTRFS_ATTR(, checksum, btrfs_checksum_show);
++
+ static const struct attribute *btrfs_attrs[] = {
+ 	BTRFS_ATTR_PTR(, label),
+ 	BTRFS_ATTR_PTR(, nodesize),
+@@ -644,6 +658,7 @@ static const struct attribute *btrfs_attrs[] = {
+ 	BTRFS_ATTR_PTR(, clone_alignment),
+ 	BTRFS_ATTR_PTR(, quota_override),
+ 	BTRFS_ATTR_PTR(, metadata_uuid),
++	BTRFS_ATTR_PTR(, checksum),
+ 	NULL,
+ };
+ 
+-- 
+2.16.4
+

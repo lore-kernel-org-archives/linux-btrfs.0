@@ -6,27 +6,27 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A841DC4360C
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Oct 2019 04:49:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3763FC10F14
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Oct 2019 04:49:52 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 794952084D
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Oct 2019 04:49:50 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 13878206C2
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Oct 2019 04:49:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729750AbfJHEts (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 8 Oct 2019 00:49:48 -0400
-Received: from mx2.suse.de ([195.135.220.15]:33594 "EHLO mx1.suse.de"
+        id S1729767AbfJHEtu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 8 Oct 2019 00:49:50 -0400
+Received: from mx2.suse.de ([195.135.220.15]:33618 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1729489AbfJHEtq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 8 Oct 2019 00:49:46 -0400
+        id S1729686AbfJHEtt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 8 Oct 2019 00:49:49 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id C7832AE35
-        for <linux-btrfs@vger.kernel.org>; Tue,  8 Oct 2019 04:49:41 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 90308AE35
+        for <linux-btrfs@vger.kernel.org>; Tue,  8 Oct 2019 04:49:47 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 2/7] btrfs-progs: Refactor btrfs_read_block_groups()
-Date:   Tue,  8 Oct 2019 12:49:31 +0800
-Message-Id: <20191008044936.157873-3-wqu@suse.com>
+Subject: [PATCH v2 7/7] btrfs-progs: btrfstune: Allow to enable bg-tree feature offline
+Date:   Tue,  8 Oct 2019 12:49:36 +0800
+Message-Id: <20191008044936.157873-8-wqu@suse.com>
 X-Mailer: git-send-email 2.23.0
 In-Reply-To: <20191008044936.157873-1-wqu@suse.com>
 References: <20191008044936.157873-1-wqu@suse.com>
@@ -37,271 +37,130 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This patch does the following refactor:
-- Refactor parameter from @root to @fs_info
+Add a new option '-b' for btrfstune, to enable bg-tree feature for a
+unmounted fs.
 
-- Refactor the large loop body into another function
-  Now we have a helper function, read_one_block_group(), to handle
-  block group cache and space info related routine.
-
-- Refactor the return value
-  Even we have the code handling ret > 0 from find_first_block_group(),
-  it never works, as when there is no more block group,
-  find_first_block_group() just return -ENOENT other than 1.
-
-  This is super confusing, it's almost a mircle it even works.
+This feature will convert all BLOCK_GROUP_ITEMs in extent tree to bg
+tree, by reusing the existing btrfs_convert_to_bg_tree() function.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- ctree.h       |   2 +-
- disk-io.c     |   9 ++-
- extent-tree.c | 160 ++++++++++++++++++++++++++++----------------------
- 3 files changed, 97 insertions(+), 74 deletions(-)
+ Documentation/btrfstune.asciidoc |  6 +++++
+ btrfstune.c                      | 44 ++++++++++++++++++++++++++++++--
+ 2 files changed, 48 insertions(+), 2 deletions(-)
 
-diff --git a/ctree.h b/ctree.h
-index 8c7b3cb40151..2899de358613 100644
---- a/ctree.h
-+++ b/ctree.h
-@@ -2550,7 +2550,7 @@ int update_space_info(struct btrfs_fs_info *info, u64 flags,
- 		      u64 total_bytes, u64 bytes_used,
- 		      struct btrfs_space_info **space_info);
- int btrfs_free_block_groups(struct btrfs_fs_info *info);
--int btrfs_read_block_groups(struct btrfs_root *root);
-+int btrfs_read_block_groups(struct btrfs_fs_info *info);
- struct btrfs_block_group_cache *
- btrfs_add_block_group(struct btrfs_fs_info *fs_info, u64 bytes_used, u64 type,
- 		      u64 chunk_offset, u64 size);
-diff --git a/disk-io.c b/disk-io.c
-index be44eead5cef..8978f0cb60c7 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -983,14 +983,17 @@ int btrfs_setup_all_roots(struct btrfs_fs_info *fs_info, u64 root_tree_bytenr,
- 	fs_info->last_trans_committed = generation;
- 	if (extent_buffer_uptodate(fs_info->extent_root->node) &&
- 	    !(flags & OPEN_CTREE_NO_BLOCK_GROUPS)) {
--		ret = btrfs_read_block_groups(fs_info->tree_root);
-+		ret = btrfs_read_block_groups(fs_info);
- 		/*
- 		 * If we don't find any blockgroups (ENOENT) we're either
- 		 * restoring or creating the filesystem, where it's expected,
- 		 * anything else is error
- 		 */
--		if (ret != -ENOENT)
--			return -EIO;
-+		if (ret < 0 && ret != -ENOENT) {
-+			errno = -ret;
-+			error("failed to read block groups: %m");
-+			return ret;
-+		}
- 	}
+diff --git a/Documentation/btrfstune.asciidoc b/Documentation/btrfstune.asciidoc
+index 1d6bc98deed8..ed54c2e1597f 100644
+--- a/Documentation/btrfstune.asciidoc
++++ b/Documentation/btrfstune.asciidoc
+@@ -26,6 +26,12 @@ means.  Please refer to the 'FILESYSTEM FEATURES' in `btrfs`(5).
+ OPTIONS
+ -------
  
- 	key.objectid = BTRFS_FS_TREE_OBJECTID;
-diff --git a/extent-tree.c b/extent-tree.c
-index 19d1ea0df570..9713d627764c 100644
---- a/extent-tree.c
-+++ b/extent-tree.c
-@@ -2607,6 +2607,13 @@ int btrfs_free_block_groups(struct btrfs_fs_info *info)
- 	return 0;
++-b::
++(since kernel: 5.x)
+++
++enable bg-tree feature (faster mount time for large fs), enabled by mkfs
++feature 'bg-tree'.
++
+ -f::
+ Allow dangerous changes, e.g. clear the seeding flag or change fsid. Make sure
+ that you are aware of the dangers.
+diff --git a/btrfstune.c b/btrfstune.c
+index afa3aae35412..aa1ac568aef0 100644
+--- a/btrfstune.c
++++ b/btrfstune.c
+@@ -476,11 +476,39 @@ static void print_usage(void)
+ 	printf("\t-m          change fsid in metadata_uuid to a random UUID\n");
+ 	printf("\t            (incompat change, more lightweight than -u|-U)\n");
+ 	printf("\t-M UUID     change fsid in metadata_uuid to UUID\n");
++	printf("\t-b          enable bg-tree feature (mkfs: bg-tree, for faster mount time)\n");
+ 	printf("  general:\n");
+ 	printf("\t-f          allow dangerous operations, make sure that you are aware of the dangers\n");
+ 	printf("\t--help      print this help\n");
  }
  
-+/*
-+ * Find a block group which starts >= @key->objectid in extent tree.
-+ *
-+ * Return 0 for found
-+ * Retrun >0 for not found
-+ * Return <0 for error
-+ */
- static int find_first_block_group(struct btrfs_root *root,
- 		struct btrfs_path *path, struct btrfs_key *key)
- {
-@@ -2636,36 +2643,95 @@ static int find_first_block_group(struct btrfs_root *root,
- 			return 0;
- 		path->slots[0]++;
- 	}
--	ret = -ENOENT;
-+	ret = 1;
- error:
- 	return ret;
- }
- 
--int btrfs_read_block_groups(struct btrfs_root *root)
-+/*
-+ * Helper function to read out one BLOCK_GROUP_ITEM and insert it into
-+ * block group cache.
-+ *
-+ * Return 0 if nothing wrong (either insert the bg cache or skip 0 sized bg)
-+ * Return <0 for error.
-+ */
-+static int read_one_block_group(struct btrfs_fs_info *fs_info,
-+				 struct btrfs_path *path)
- {
--	struct btrfs_path *path;
--	int ret;
--	int bit;
--	struct btrfs_block_group_cache *cache;
--	struct btrfs_fs_info *info = root->fs_info;
-+	struct extent_io_tree *block_group_cache = &fs_info->block_group_cache;
-+	struct extent_buffer *leaf = path->nodes[0];
- 	struct btrfs_space_info *space_info;
--	struct extent_io_tree *block_group_cache;
-+	struct btrfs_block_group_cache *cache;
- 	struct btrfs_key key;
--	struct btrfs_key found_key;
--	struct extent_buffer *leaf;
-+	int slot = path->slots[0];
-+	int bit = 0;
++static int convert_to_bg_tree(struct btrfs_fs_info *fs_info)
++{
++	struct btrfs_trans_handle *trans;
 +	int ret;
- 
--	block_group_cache = &info->block_group_cache;
-+	btrfs_item_key_to_cpu(leaf, &key, slot);
-+	ASSERT(key.type == BTRFS_BLOCK_GROUP_ITEM_KEY);
 +
-+	/*
-+	 * Skip 0 sized block group, don't insert them into block
-+	 * group cache tree, as its length is 0, it won't get
-+	 * freed at close_ctree() time.
-+	 */
-+	if (key.offset == 0)
-+		return 0;
-+
-+	cache = kzalloc(sizeof(*cache), GFP_NOFS);
-+	if (!cache)
-+		return -ENOMEM;
-+	read_extent_buffer(leaf, &cache->item,
-+			   btrfs_item_ptr_offset(leaf, slot),
-+			   sizeof(cache->item));
-+	memcpy(&cache->key, &key, sizeof(key));
-+	cache->cached = 0;
-+	cache->pinned = 0;
-+	cache->flags = btrfs_block_group_flags(&cache->item);
-+	if (cache->flags & BTRFS_BLOCK_GROUP_DATA) {
-+		bit = BLOCK_GROUP_DATA;
-+	} else if (cache->flags & BTRFS_BLOCK_GROUP_SYSTEM) {
-+		bit = BLOCK_GROUP_SYSTEM;
-+	} else if (cache->flags & BTRFS_BLOCK_GROUP_METADATA) {
-+		bit = BLOCK_GROUP_METADATA;
-+	}
-+	set_avail_alloc_bits(fs_info, cache->flags);
-+	if (btrfs_chunk_readonly(fs_info, cache->key.objectid))
-+		cache->ro = 1;
-+	exclude_super_stripes(fs_info, cache);
-+
-+	ret = update_space_info(fs_info, cache->flags, cache->key.offset,
-+				btrfs_block_group_used(&cache->item),
-+				&space_info);
-+	if (ret < 0) {
-+		free(cache);
++	trans = btrfs_start_transaction(fs_info->tree_root, 1);
++	if (IS_ERR(trans)) {
++		ret = PTR_ERR(trans);
++		errno = -ret;
++		error("failed to start transaction: %m");
 +		return ret;
 +	}
-+	cache->space_info = space_info;
-+
-+	set_extent_bits(block_group_cache, cache->key.objectid,
-+			cache->key.objectid + cache->key.offset - 1,
-+			bit | EXTENT_LOCKED);
-+	set_state_private(block_group_cache, cache->key.objectid,
-+			  (unsigned long)cache);
-+	return 0;
++	ret = btrfs_convert_to_bg_tree(trans);
++	if (ret < 0) {
++		errno = -ret;
++		error("failed to convert: %m");
++		btrfs_abort_transaction(trans, ret);
++		return ret;
++	}
++	ret = btrfs_commit_transaction(trans, fs_info->tree_root);
++	if (ret < 0) {
++		errno = -ret;
++		error("failed to commit transaction: %m");
++	}
++	return ret;
 +}
- 
--	root = info->extent_root;
-+int btrfs_read_block_groups(struct btrfs_fs_info *fs_info)
-+{
-+	struct btrfs_path path;
-+	struct btrfs_root *root;
-+	int ret;
-+	struct btrfs_key key;
 +
-+	root = fs_info->extent_root;
- 	key.objectid = 0;
- 	key.offset = 0;
- 	key.type = BTRFS_BLOCK_GROUP_ITEM_KEY;
--	path = btrfs_alloc_path();
--	if (!path)
--		return -ENOMEM;
-+	btrfs_init_path(&path);
+ int BOX_MAIN(btrfstune)(int argc, char *argv[])
+ {
+ 	struct btrfs_root *root;
+@@ -491,6 +519,7 @@ int BOX_MAIN(btrfstune)(int argc, char *argv[])
+ 	u64 seeding_value = 0;
+ 	int random_fsid = 0;
+ 	int change_metadata_uuid = 0;
++	bool to_bg_tree = false;
+ 	char *new_fsid_str = NULL;
+ 	int ret;
+ 	u64 super_flags = 0;
+@@ -501,7 +530,7 @@ int BOX_MAIN(btrfstune)(int argc, char *argv[])
+ 			{ "help", no_argument, NULL, GETOPT_VAL_HELP},
+ 			{ NULL, 0, NULL, 0 }
+ 		};
+-		int c = getopt_long(argc, argv, "S:rxfuU:nmM:", long_options, NULL);
++		int c = getopt_long(argc, argv, "S:rxfuU:nmM:b", long_options, NULL);
  
- 	while(1) {
--		ret = find_first_block_group(root, path, &key);
-+		ret = find_first_block_group(root, &path, &key);
- 		if (ret > 0) {
- 			ret = 0;
- 			goto error;
-@@ -2673,67 +2739,21 @@ int btrfs_read_block_groups(struct btrfs_root *root)
- 		if (ret != 0) {
- 			goto error;
- 		}
--		leaf = path->nodes[0];
--		btrfs_item_key_to_cpu(leaf, &found_key, path->slots[0]);
-+		btrfs_item_key_to_cpu(path.nodes[0], &key, path.slots[0]);
- 
--		cache = kzalloc(sizeof(*cache), GFP_NOFS);
--		if (!cache) {
--			ret = -ENOMEM;
-+		ret = read_one_block_group(fs_info, &path);
-+		if (ret < 0)
- 			goto error;
--		}
- 
--		read_extent_buffer(leaf, &cache->item,
--				   btrfs_item_ptr_offset(leaf, path->slots[0]),
--				   sizeof(cache->item));
--		memcpy(&cache->key, &found_key, sizeof(found_key));
--		cache->cached = 0;
--		cache->pinned = 0;
--		key.objectid = found_key.objectid + found_key.offset;
--		if (found_key.offset == 0)
-+		if (key.offset == 0)
- 			key.objectid++;
--		btrfs_release_path(path);
--
--		/*
--		 * Skip 0 sized block group, don't insert them into block
--		 * group cache tree, as its length is 0, it won't get
--		 * freed at close_ctree() time.
--		 */
--		if (found_key.offset == 0) {
--			free(cache);
--			continue;
--		}
--
--		cache->flags = btrfs_block_group_flags(&cache->item);
--		bit = 0;
--		if (cache->flags & BTRFS_BLOCK_GROUP_DATA) {
--			bit = BLOCK_GROUP_DATA;
--		} else if (cache->flags & BTRFS_BLOCK_GROUP_SYSTEM) {
--			bit = BLOCK_GROUP_SYSTEM;
--		} else if (cache->flags & BTRFS_BLOCK_GROUP_METADATA) {
--			bit = BLOCK_GROUP_METADATA;
--		}
--		set_avail_alloc_bits(info, cache->flags);
--		if (btrfs_chunk_readonly(info, cache->key.objectid))
--			cache->ro = 1;
--
--		exclude_super_stripes(info, cache);
--
--		ret = update_space_info(info, cache->flags, found_key.offset,
--					btrfs_block_group_used(&cache->item),
--					&space_info);
--		BUG_ON(ret);
--		cache->space_info = space_info;
--
--		/* use EXTENT_LOCKED to prevent merging */
--		set_extent_bits(block_group_cache, found_key.objectid,
--				found_key.objectid + found_key.offset - 1,
--				bit | EXTENT_LOCKED);
--		set_state_private(block_group_cache, found_key.objectid,
--				  (unsigned long)cache);
-+		else
-+			key.objectid = key.objectid + key.offset;
-+		btrfs_release_path(&path);
+ 		if (c < 0)
+ 			break;
+@@ -539,6 +568,9 @@ int BOX_MAIN(btrfstune)(int argc, char *argv[])
+ 			ctree_flags |= OPEN_CTREE_IGNORE_FSID_MISMATCH;
+ 			change_metadata_uuid = 1;
+ 			break;
++		case 'b':
++			to_bg_tree = true;
++			break;
+ 		case GETOPT_VAL_HELP:
+ 		default:
+ 			print_usage();
+@@ -556,7 +588,7 @@ int BOX_MAIN(btrfstune)(int argc, char *argv[])
+ 		return 1;
  	}
- 	ret = 0;
- error:
--	btrfs_free_path(path);
-+	btrfs_release_path(&path);
- 	return ret;
- }
+ 	if (!super_flags && !seeding_flag && !(random_fsid || new_fsid_str) &&
+-	    !change_metadata_uuid) {
++	    !change_metadata_uuid && !to_bg_tree) {
+ 		error("at least one option should be specified");
+ 		print_usage();
+ 		return 1;
+@@ -602,6 +634,14 @@ int BOX_MAIN(btrfstune)(int argc, char *argv[])
+ 		return 1;
+ 	}
  
++	if (to_bg_tree) {
++		ret = convert_to_bg_tree(root->fs_info);
++		if (ret < 0) {
++			errno = -ret;
++			error("failed to convert to bg-tree feature: %m");
++			goto out;
++		}
++	}
+ 	if (seeding_flag) {
+ 		if (btrfs_fs_incompat(root->fs_info, METADATA_UUID)) {
+ 			fprintf(stderr, "SEED flag cannot be changed on a metadata-uuid changed fs\n");
 -- 
 2.23.0
 

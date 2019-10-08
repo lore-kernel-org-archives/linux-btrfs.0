@@ -6,27 +6,27 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 88752C10F14
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Oct 2019 04:49:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A1E6FC4360C
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Oct 2019 04:49:46 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 63C5E206C2
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Oct 2019 04:49:43 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7422B206C2
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Oct 2019 04:49:46 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729670AbfJHEtm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 8 Oct 2019 00:49:42 -0400
-Received: from mx2.suse.de ([195.135.220.15]:33588 "EHLO mx1.suse.de"
+        id S1729727AbfJHEtp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 8 Oct 2019 00:49:45 -0400
+Received: from mx2.suse.de ([195.135.220.15]:33608 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1729647AbfJHEtm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 8 Oct 2019 00:49:42 -0400
+        id S1729682AbfJHEtp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 8 Oct 2019 00:49:45 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id C4504AF56
-        for <linux-btrfs@vger.kernel.org>; Tue,  8 Oct 2019 04:49:40 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id D540AAF6B
+        for <linux-btrfs@vger.kernel.org>; Tue,  8 Oct 2019 04:49:43 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 1/7] btrfs-progs: Refactor excluded extent functions to use fs_info
-Date:   Tue,  8 Oct 2019 12:49:30 +0800
-Message-Id: <20191008044936.157873-2-wqu@suse.com>
+Subject: [PATCH v2 4/7] btrfs-progs: mkfs: Introduce -O bg-tree
+Date:   Tue,  8 Oct 2019 12:49:33 +0800
+Message-Id: <20191008044936.157873-5-wqu@suse.com>
 X-Mailer: git-send-email 2.23.0
 In-Reply-To: <20191008044936.157873-1-wqu@suse.com>
 References: <20191008044936.157873-1-wqu@suse.com>
@@ -37,141 +37,171 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The following functions are just using @root to reach fs_info:
-- exclude_super_stripes
-- free_excluded_extents
-- add_excluded_extent
+This allow mkfs.btrfs to create a btrfs with bg-tree feature.
 
-Refactor them to use fs_info directly.
+This patch introduce a global function, btrfs_convert_to_bg_tree() in
+extent-tree.c, to do the work.
+
+The workflow is pretty simple:
+- Create a new tree block for bg tree
+- Set the BG_TREE feature for superblock
+- Set the fs_info->convert_to_bg_tree flag
+- Mark all block group items as dirty
+- Commit transaction
+  * With fs_info->convert_to_bg_tree set, we will try to delete the
+    BLOCK_GROUP_ITEM in extent tree first, then write the new
+    BLOCK_GROUP_ITEM into bg tree.
+
+This btrfs_convert_to_bg_tree() will be used in mkfs after the basic fs
+is created.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- check/main.c  |  4 ++--
- ctree.h       |  4 ++--
- extent-tree.c | 20 ++++++++++----------
- 3 files changed, 14 insertions(+), 14 deletions(-)
+ common/fsfeatures.c |  6 ++++++
+ ctree.h             |  1 +
+ extent-tree.c       | 38 ++++++++++++++++++++++++++++++++++++++
+ mkfs/common.c       |  6 ++++--
+ mkfs/main.c         |  9 +++++++++
+ transaction.c       |  1 +
+ 6 files changed, 59 insertions(+), 2 deletions(-)
 
-diff --git a/check/main.c b/check/main.c
-index c2d0f3949c5e..94ffab46cb70 100644
---- a/check/main.c
-+++ b/check/main.c
-@@ -5552,7 +5552,7 @@ static int check_space_cache(struct btrfs_root *root)
- 		}
- 
- 		if (btrfs_fs_compat_ro(root->fs_info, FREE_SPACE_TREE)) {
--			ret = exclude_super_stripes(root, cache);
-+			ret = exclude_super_stripes(root->fs_info, cache);
- 			if (ret) {
- 				errno = -ret;
- 				fprintf(stderr,
-@@ -5561,7 +5561,7 @@ static int check_space_cache(struct btrfs_root *root)
- 				continue;
- 			}
- 			ret = load_free_space_tree(root->fs_info, cache);
--			free_excluded_extents(root, cache);
-+			free_excluded_extents(root->fs_info, cache);
- 			if (ret < 0) {
- 				errno = -ret;
- 				fprintf(stderr,
+diff --git a/common/fsfeatures.c b/common/fsfeatures.c
+index 50934bd161b0..b9bd70a4b3b6 100644
+--- a/common/fsfeatures.c
++++ b/common/fsfeatures.c
+@@ -86,6 +86,12 @@ static const struct btrfs_fs_feature {
+ 		VERSION_TO_STRING2(4,0),
+ 		NULL, 0,
+ 		"no explicit hole extents for files" },
++	{ "bg-tree", BTRFS_FEATURE_INCOMPAT_BG_TREE,
++		"bg_tree",
++		VERSION_TO_STRING2(5, 0),
++		NULL, 0,
++		NULL, 0,
++		"store block group items in dedicated tree" },
+ 	/* Keep this one last */
+ 	{ "list-all", BTRFS_FEATURE_LIST_ALL, NULL }
+ };
 diff --git a/ctree.h b/ctree.h
-index 0d12563b7261..8c7b3cb40151 100644
+index c2a18c8ab72f..3d3992487a53 100644
 --- a/ctree.h
 +++ b/ctree.h
-@@ -2568,9 +2568,9 @@ int btrfs_record_file_extent(struct btrfs_trans_handle *trans,
- 			      u64 num_bytes);
- int btrfs_free_block_group(struct btrfs_trans_handle *trans,
- 			   struct btrfs_fs_info *fs_info, u64 bytenr, u64 len);
--void free_excluded_extents(struct btrfs_root *root,
-+void free_excluded_extents(struct btrfs_fs_info *fs_info,
- 			   struct btrfs_block_group_cache *cache);
--int exclude_super_stripes(struct btrfs_root *root,
-+int exclude_super_stripes(struct btrfs_fs_info *fs_info,
- 			  struct btrfs_block_group_cache *cache);
- u64 add_new_free_space(struct btrfs_block_group_cache *block_group,
- 		       struct btrfs_fs_info *info, u64 start, u64 end);
+@@ -2856,5 +2856,6 @@ int btrfs_read_file(struct btrfs_root *root, u64 ino, u64 start, int len,
+ 
+ /* extent-tree.c */
+ int btrfs_run_delayed_refs(struct btrfs_trans_handle *trans, unsigned long nr);
++int btrfs_convert_to_bg_tree(struct btrfs_trans_handle *trans);
+ 
+ #endif
 diff --git a/extent-tree.c b/extent-tree.c
-index 932af2c644bd..19d1ea0df570 100644
+index cb3d7a1add0f..87550ef80e37 100644
 --- a/extent-tree.c
 +++ b/extent-tree.c
-@@ -2716,7 +2716,7 @@ int btrfs_read_block_groups(struct btrfs_root *root)
- 		if (btrfs_chunk_readonly(info, cache->key.objectid))
- 			cache->ro = 1;
- 
--		exclude_super_stripes(root, cache);
-+		exclude_super_stripes(info, cache);
- 
- 		ret = update_space_info(info, cache->flags, found_key.offset,
- 					btrfs_block_group_used(&cache->item),
-@@ -2760,7 +2760,7 @@ btrfs_add_block_group(struct btrfs_fs_info *fs_info, u64 bytes_used, u64 type,
- 	cache->flags = type;
- 	btrfs_set_block_group_flags(&cache->item, type);
- 
--	exclude_super_stripes(fs_info->extent_root, cache);
-+	exclude_super_stripes(fs_info, cache);
- 	ret = update_space_info(fs_info, cache->flags, size, bytes_used,
- 				&cache->space_info);
- 	BUG_ON(ret);
-@@ -3551,16 +3551,16 @@ int btrfs_record_file_extent(struct btrfs_trans_handle *trans,
+@@ -1524,6 +1524,44 @@ int btrfs_dec_ref(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 	return __btrfs_mod_ref(trans, root, buf, record_parent, 0);
  }
  
++int btrfs_convert_to_bg_tree(struct btrfs_trans_handle *trans)
++{
++	struct btrfs_fs_info *fs_info = trans->fs_info;
++	struct btrfs_block_group_cache *bg;
++	struct btrfs_root *bg_root;
++	u64 features = btrfs_super_incompat_flags(fs_info->super_copy);
++	int ret;
++
++	/* create bg tree first */
++	bg_root = btrfs_create_tree(trans, fs_info, BTRFS_BLOCK_GROUP_TREE_OBJECTID);
++	if (IS_ERR(bg_root)) {
++		ret = PTR_ERR(bg_root);
++		errno = -ret;
++		error("failed to create bg tree: %m");
++		return ret;
++	}
++	fs_info->bg_root = bg_root;
++	fs_info->bg_root->track_dirty = 1;
++	fs_info->bg_root->ref_cows = 0;
++
++	/* set BG_TREE feature and mark the fs into bg_tree convert status */
++	btrfs_set_super_incompat_flags(fs_info->super_copy,
++			features | BTRFS_FEATURE_INCOMPAT_BG_TREE);
++	fs_info->convert_to_bg_tree = 1;
++
++	/*
++	 * Mark all block groups dirty so they will get converted to bg tree at
++	 * commit transaction time
++	 */
++	for (bg = btrfs_lookup_first_block_group(fs_info, 0); bg;
++	     bg = btrfs_lookup_first_block_group(fs_info,
++				bg->key.objectid + bg->key.offset))
++		set_extent_bits(&fs_info->block_group_cache, bg->key.objectid,
++				bg->key.objectid + bg->key.offset - 1,
++				BLOCK_GROUP_DIRTY);
++	return 0;
++}
++
+ static int write_one_cache_group(struct btrfs_trans_handle *trans,
+ 				 struct btrfs_path *path,
+ 				 struct btrfs_block_group_cache *cache)
+diff --git a/mkfs/common.c b/mkfs/common.c
+index caca5e707233..876193838612 100644
+--- a/mkfs/common.c
++++ b/mkfs/common.c
+@@ -111,6 +111,9 @@ static int btrfs_create_tree_root(int fd, struct btrfs_mkfs_config *cfg,
+ 	return ret;
+ }
  
--static int add_excluded_extent(struct btrfs_root *root,
-+static int add_excluded_extent(struct btrfs_fs_info *fs_info,
- 			       u64 start, u64 num_bytes)
- {
- 	u64 end = start + num_bytes - 1;
--	set_extent_bits(&root->fs_info->pinned_extents,
-+	set_extent_bits(&fs_info->pinned_extents,
- 			start, end, EXTENT_UPTODATE);
++/* These features will not be set in the temporary fs */
++#define MASKED_FEATURES		(~(BTRFS_FEATURE_INCOMPAT_BG_TREE))
++
+ /*
+  * @fs_uuid - if NULL, generates a UUID, returns back the new filesystem UUID
+  *
+@@ -204,7 +207,7 @@ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg)
+ 	btrfs_set_super_csum_type(&super, BTRFS_CSUM_TYPE_CRC32);
+ 	btrfs_set_super_chunk_root_generation(&super, 1);
+ 	btrfs_set_super_cache_generation(&super, -1);
+-	btrfs_set_super_incompat_flags(&super, cfg->features);
++	btrfs_set_super_incompat_flags(&super, cfg->features & MASKED_FEATURES);
+ 	if (cfg->label)
+ 		__strncpy_null(super.label, cfg->label, BTRFS_LABEL_SIZE - 1);
+ 
+@@ -824,4 +827,3 @@ int test_minimum_size(const char *file, u64 min_dev_size)
  	return 0;
  }
  
--void free_excluded_extents(struct btrfs_root *root,
-+void free_excluded_extents(struct btrfs_fs_info *fs_info,
- 			   struct btrfs_block_group_cache *cache)
- {
- 	u64 start, end;
-@@ -3568,11 +3568,11 @@ void free_excluded_extents(struct btrfs_root *root,
- 	start = cache->key.objectid;
- 	end = start + cache->key.offset - 1;
+-
+diff --git a/mkfs/main.c b/mkfs/main.c
+index b752da13aba9..e05fe8cc2f10 100644
+--- a/mkfs/main.c
++++ b/mkfs/main.c
+@@ -1299,6 +1299,15 @@ raid_groups:
+ 		warning(
+ 	"unable to create uuid tree, will be created after mount: %d", ret);
  
--	clear_extent_bits(&root->fs_info->pinned_extents,
-+	clear_extent_bits(&fs_info->pinned_extents,
- 			  start, end, EXTENT_UPTODATE);
- }
- 
--int exclude_super_stripes(struct btrfs_root *root,
-+int exclude_super_stripes(struct btrfs_fs_info *fs_info,
- 			  struct btrfs_block_group_cache *cache)
- {
- 	u64 bytenr;
-@@ -3583,7 +3583,7 @@ int exclude_super_stripes(struct btrfs_root *root,
- 	if (cache->key.objectid < BTRFS_SUPER_INFO_OFFSET) {
- 		stripe_len = BTRFS_SUPER_INFO_OFFSET - cache->key.objectid;
- 		cache->bytes_super += stripe_len;
--		ret = add_excluded_extent(root, cache->key.objectid,
-+		ret = add_excluded_extent(fs_info, cache->key.objectid,
- 					  stripe_len);
- 		if (ret)
- 			return ret;
-@@ -3591,7 +3591,7 @@ int exclude_super_stripes(struct btrfs_root *root,
- 
- 	for (i = 0; i < BTRFS_SUPER_MIRROR_MAX; i++) {
- 		bytenr = btrfs_sb_offset(i);
--		ret = btrfs_rmap_block(root->fs_info,
-+		ret = btrfs_rmap_block(fs_info,
- 				       cache->key.objectid, bytenr,
- 				       &logical, &nr, &stripe_len);
- 		if (ret)
-@@ -3618,7 +3618,7 @@ int exclude_super_stripes(struct btrfs_root *root,
- 			}
- 
- 			cache->bytes_super += len;
--			ret = add_excluded_extent(root, start, len);
-+			ret = add_excluded_extent(fs_info, start, len);
- 			if (ret) {
- 				kfree(logical);
- 				return ret;
++	/* Bg tree are converted after the fs is created */
++	if (mkfs_cfg.features & BTRFS_FEATURE_INCOMPAT_BG_TREE) {
++		ret = btrfs_convert_to_bg_tree(trans);
++		if (ret < 0) {
++			errno = -ret;
++			error(
++		"bg-tree feature will not be enabled, due to error: %m");
++		}
++	}
+ 	ret = btrfs_commit_transaction(trans, root);
+ 	if (ret) {
+ 		error("unable to commit transaction: %d", ret);
+diff --git a/transaction.c b/transaction.c
+index 45bb9e1f9de6..5de967fb015f 100644
+--- a/transaction.c
++++ b/transaction.c
+@@ -225,6 +225,7 @@ commit_tree:
+ 	root->commit_root = NULL;
+ 	fs_info->running_transaction = NULL;
+ 	fs_info->last_trans_committed = transid;
++	fs_info->convert_to_bg_tree = 0;
+ 	list_for_each_entry(sinfo, &fs_info->space_info, list) {
+ 		if (sinfo->bytes_reserved) {
+ 			warning(
 -- 
 2.23.0
 

@@ -2,399 +2,203 @@ Return-Path: <SRS0=z0ck=YD=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+X-Spam-Status: No, score=-8.2 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E70A5ECE58D
-	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Oct 2019 02:39:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9CAD7C47404
+	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Oct 2019 02:42:31 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C0A212086D
-	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Oct 2019 02:39:40 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 69B5521848
+	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Oct 2019 02:42:31 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="arAihibm"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732663AbfJJCjk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 9 Oct 2019 22:39:40 -0400
-Received: from mx2.suse.de ([195.135.220.15]:41178 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726465AbfJJCjj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 9 Oct 2019 22:39:39 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 4D858AE35
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Oct 2019 02:39:36 +0000 (UTC)
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 3/3] btrfs: Introduce new incompat feature, BG_TREE, to speed up mount time
-Date:   Thu, 10 Oct 2019 10:39:28 +0800
-Message-Id: <20191010023928.24586-4-wqu@suse.com>
-X-Mailer: git-send-email 2.23.0
-In-Reply-To: <20191010023928.24586-1-wqu@suse.com>
-References: <20191010023928.24586-1-wqu@suse.com>
+        id S1732637AbfJJCma (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 9 Oct 2019 22:42:30 -0400
+Received: from mout.gmx.net ([212.227.15.18]:36889 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726197AbfJJCma (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 9 Oct 2019 22:42:30 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1570675343;
+        bh=dM+OlkJECrH8LJlMXOqHMoXjQmz1rU5CFxgQhHaHJrs=;
+        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
+        b=arAihibmUIs0VTE7jZH+oRAXQynhf4ROOgaKkk5xuMCoMK1bcWrG1zKeyYdgPm7o2
+         SdwRFrJB9kOgQGpNJ/19z5tV+jBns2fOWpo3czIiTaGKH3/C8Wc5aFccjqtgj829Ic
+         aplMjLnH6iNaiAaMRI334MzXi3uPtAoCV9pFrND8=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([13.231.109.76]) by mail.gmx.com (mrgmx005
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1MybGh-1htHPf3v0H-00yvy8; Thu, 10
+ Oct 2019 04:42:23 +0200
+Subject: Re: [PATCH] btrfs: use bool argument in free_root_pointers()
+To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+References: <20191010023925.4844-1-anand.jain@oracle.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAU4EEwEIADgCGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1oQAKCRDC
+ PZHzoSX+qCY6CACd+mWu3okGwRKXju6bou+7VkqCaHTdyXwWFTsr+/0ly5nUdDtT3yEVggPJ
+ 3VP70wjlrxUjNjFb6iIvGYxiPOrop1NGwGYvQktgRhaIhALG6rPoSSAhGNjwGVRw0km0PlIN
+ D29BTj/lYEk+jVM1YL0QLgAE1AI3krihg/lp/fQT53wLhR8YZIF8ETXbClQG1vJ0cllPuEEv
+ efKxRyiTSjB+PsozSvYWhXsPeJ+KKjFen7ebE5reQTPFzSHctCdPnoR/4jSPlnTlnEvLeqcD
+ ZTuKfQe1gWrPeevQzgCtgBF/WjIOeJs41klnYzC3DymuQlmFubss0jShLOW8eSOOWhLRuQEN
+ BFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcgaCbPEwhLj
+ 1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj/IrRUUka
+ 68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fNGSsRb+pK
+ EKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0q1eW4Jrv
+ 0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEvABEBAAGJ
+ ATwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1rgUJCWpOfwAKCRDCPZHz
+ oSX+qFcEB/95cs8cM1OQdE/GgOfCGxwgckMeWyzOR7bkAWW0lDVp2hpgJuxBW/gyfmtBnUai
+ fnggx3EE3ev8HTysZU9q0h+TJwwJKGv6sUc8qcTGFDtavnnl+r6xDUY7A6GvXEsSoCEEynby
+ 72byGeSovfq/4AWGNPBG1L61Exl+gbqfvbECP3ziXnob009+z9I4qXodHSYINfAkZkA523JG
+ ap12LndJeLk3gfWNZfXEWyGnuciRGbqESkhIRav8ootsCIops/SqXm0/k+Kcl4gGUO/iD/T5
+ oagaDh0QtOd8RWSMwLxwn8uIhpH84Q4X1LadJ5NCgGa6xPP5qqRuiC+9gZqbq4Nj
+Message-ID: <abc83fbe-2cf1-2ca2-5816-29d87c5fff2e@gmx.com>
+Date:   Thu, 10 Oct 2019 10:42:19 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.1.1
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <20191010023925.4844-1-anand.jain@oracle.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="c7piHdXfBn6VqX3izUblidaZJJxxgSvIL"
+X-Provags-ID: V03:K1:pTnN501ooyi4JnxI0J08nHt8cN83pOWqDHrF/knwYeNRdup1bsw
+ xjW5YhwWJAVkAQzd+neOemlL1hYgvvYxR2/4CDO/X110JyQ0Bygm7fv/jjAKGwMkPdHnD15
+ Z55zC/IEjz4V0orikFIbRqQE70eATZ3PREs9OLDt/IvwbHGgia2wLia126JDjLL2LGXf0jd
+ KyhKgtPBd6VHju4hmfcaA==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:14icuNcsSdw=:LPMD+TKDcRWz+ZU4bxE+fw
+ TDIPTBJM+nzLMKb4QwifxPEhpF2RBR6f6oxR2L15/5NJ1Sah73VHppl/kKaMQNke1m21ntqHH
+ up6CyR09M1cqLjZBfd73nnljJgooyTu6kztwP538uHC0JHDqvQ7WAKL8pY57z51kMoDs05AMb
+ rVe/YJH4zETL2Vb7Ofi9DYcfaw25m3DboVJFacCoYzii+xWYI9WYNmfzwcFCxUIevog+y7gJS
+ 4snO+XPqyttqrKAjYi9qkBEMnpX48xv2tiTFXrHoPNrwO6EqKp1/IitZxuVn70dEKRISUkc0w
+ eyTA1DUUrbwbqwb+DWiuCW7bUfWaOGx+Qs6Rbw3fsBvTW9wpMhPVVXZWbI3rF4QzgHs5lCHQR
+ n+yDOrpYMmIHljxxHKGjzAU0jvjHdq6AjPLWBg06ONhkEhieWd7tIXAMVjrvQBdJGN8j4ag/U
+ rdiualSw2gRer7JI4zZCOytlSryq2NC2WcM2M1xjmMmw2h/0tMWRyx1BH6GHBiKZQdq+ce5yq
+ v4BhRqAYn5vAYTUbsbQ8QrJdXix86roFrquYoCsXw/s8mcnxz2AXvvxuXk3pvFYxI3Z+QnAn3
+ 6rQtgu+4M3/fG4Hv03Nhcz/SgwWF2YxkGYcfMRZfi476refVSzmhVi2Z4s00FtlJkXvIRg5mb
+ NygxAbNv9JJFJKkhvesScvcMTrhbEHy66isKPVwN+NHox0Utz+vIdIimbwy8eeawYSVWJd9yz
+ VlcUT0cIB0R4viwYgL19xYOFwJQArpyKKYlWjtrXHJ4Qcwy6m4z/t3QBeFFswJoOLBmAhnBfy
+ ie6YDedGinKYDDS8N+srN5JqcNjOBamJVhe9TbGsGKSMqSPMBuQ8zHSCTYInP7ia4w9tNFkLl
+ UDLV4JPflCPf/KY0twTY9RbH8ADMh70QNL2CgM/2X/k41NPOMa6NJAZGaXcnlfCHvBewzDNYX
+ bqwqrYLOgwdNLaCzTyTX+VYWLu+3tJkmSdFmki8xowiyumUILND3+wbJvkmA7cyl1/akryflM
+ bxOuxIa3cVrfA8ZxJAN7Izg6P1ZUBj+/AN2laL705jAN8dZ5mk2sL6850c1VYkuQDhWIYcwuh
+ QpxdT3wWa4Uag/gjtRD1DrKeVOz4Z9c9KCz19TBQM0j6UIqz710AVvsOIeJd+sV8d3NC55vd/
+ ckEJ4rDyBRz6KtWhGOfCFiZ6iCyU086UCY3qr2cjWsI1UvHJ3bux26YHh9DIewN/BiYB28Di+
+ 3CuJiemoxojGbZwbvWj3AdDKOFcO1JeLrSAQjnBCMdqADbWuAdFLI6AgIwC8=
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The overall idea of the new BG_TREE is pretty simple:
-Put BLOCK_GROUP_ITEMS into a separate tree.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--c7piHdXfBn6VqX3izUblidaZJJxxgSvIL
+Content-Type: multipart/mixed; boundary="k3n8u6jY4HwmDbdmEs2vPwUe5FznCXUyB"
 
-This brings one obvious enhancement:
-- Reduce mount time of large fs
+--k3n8u6jY4HwmDbdmEs2vPwUe5FznCXUyB
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-Although it could be possible to accept BLOCK_GROUP_ITEMS in either
-trees (extent root or bg root), I'll leave that kernel convert as
-alternatives to offline convert, as next step if there are a lot of
-interests in that.
 
-So for now, if an existing fs want to take advantage of BG_TREE feature,
-btrfs-progs will provide offline convertion tool.
 
-[[Benchmark]]
-Physical device:	NVMe SSD
-VM device:		VirtIO block device, backup by sparse file
-Nodesize:		4K  (to bump up tree height)
-Extent data size:	4M
-Fs size used:		1T
+On 2019/10/10 =E4=B8=8A=E5=8D=8810:39, Anand Jain wrote:
+> We don't need int argument bool shall do in free_root_pointers().
+> And rename the argument as it confused two people.
 
-All file extents on disk is in 4M size, preallocated to reduce space usage
-(as the VM uses loopback block device backed by sparse file)
+Victim here. :)
+Although it's mostly caused by my stupidness. :(
+>=20
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 
-Without patchset:
-Use ftrace function graph:
+Reviewed-by: Qu Wenruo <wqu@suse.com>
 
- 7)               |  open_ctree [btrfs]() {
- 7)               |    btrfs_read_block_groups [btrfs]() {
- 7) @ 805851.8 us |    }
- 7) @ 911890.2 us |  }
+Thanks,
+Qu
+> ---
+>  fs/btrfs/disk-io.c | 10 +++++-----
+>  1 file changed, 5 insertions(+), 5 deletions(-)
+>=20
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index f314fa9fc06e..5a0033b6cf2e 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -2024,7 +2024,7 @@ static void free_root_extent_buffers(struct btrfs=
+_root *root)
+>  }
+> =20
+>  /* helper to cleanup tree roots */
+> -static void free_root_pointers(struct btrfs_fs_info *info, int chunk_r=
+oot)
+> +static void free_root_pointers(struct btrfs_fs_info *info, bool free_c=
+hunk_root)
+>  {
+>  	free_root_extent_buffers(info->tree_root);
+> =20
+> @@ -2033,7 +2033,7 @@ static void free_root_pointers(struct btrfs_fs_in=
+fo *info, int chunk_root)
+>  	free_root_extent_buffers(info->csum_root);
+>  	free_root_extent_buffers(info->quota_root);
+>  	free_root_extent_buffers(info->uuid_root);
+> -	if (chunk_root)
+> +	if (free_chunk_root)
+>  		free_root_extent_buffers(info->chunk_root);
+>  	free_root_extent_buffers(info->free_space_root);
+>  }
+> @@ -3327,7 +3327,7 @@ int __cold open_ctree(struct super_block *sb,
+>  	btrfs_put_block_group_cache(fs_info);
+> =20
+>  fail_tree_roots:
+> -	free_root_pointers(fs_info, 1);
+> +	free_root_pointers(fs_info, true);
+>  	invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
+> =20
+>  fail_sb_buffer:
+> @@ -3359,7 +3359,7 @@ int __cold open_ctree(struct super_block *sb,
+>  	if (!btrfs_test_opt(fs_info, USEBACKUPROOT))
+>  		goto fail_tree_roots;
+> =20
+> -	free_root_pointers(fs_info, 0);
+> +	free_root_pointers(fs_info, false);
+> =20
+>  	/* don't use the log in recovery mode, it won't be valid */
+>  	btrfs_set_super_log_root(disk_super, 0);
+> @@ -4053,7 +4053,7 @@ void __cold close_ctree(struct btrfs_fs_info *fs_=
+info)
+>  	btrfs_free_block_groups(fs_info);
+> =20
+>  	clear_bit(BTRFS_FS_OPEN, &fs_info->flags);
+> -	free_root_pointers(fs_info, 1);
+> +	free_root_pointers(fs_info, true);
+> =20
+>  	iput(fs_info->btree_inode);
+> =20
+>=20
 
- btrfs_read_block_groups() takes 88% of the total mount time,
 
-With patchset, and use -O bg-tree mkfs option:
+--k3n8u6jY4HwmDbdmEs2vPwUe5FznCXUyB--
 
- 6)               |  open_ctree [btrfs]() {
- 6)               |    btrfs_read_block_groups [btrfs]() {
- 6) * 91204.69 us |    }
- 6) @ 192039.5 us |  }
+--c7piHdXfBn6VqX3izUblidaZJJxxgSvIL
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
-  open_ctree() time is only 21% of original mount time.
-  And btrfs_read_block_groups() only takes 47% of total open_ctree()
-  execution time.
+-----BEGIN PGP SIGNATURE-----
 
-The reason is pretty obvious when considering how many tree blocks needs
-to be read from disk:
-- Original extent tree:
-  nodes:	55
-  leaves:	1025
-  total:	1080
-- Block group tree:
-  nodes:	1
-  leaves:	13
-  total:	14
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAl2emosACgkQwj2R86El
+/qjVRAf/dJb3kCha6p8LfwIgSVNA8ypSlXR7T5AV2CrNA2e3U6UZSsbn0D3DtF+4
+x4+raYFfj2Bsx2poJnuNzypfCpNKWL4j+Gre24nhkxzl92UoAs7WtoMIWn2FjYIl
+x3n5jOellSyPNJSb4xwUT1BqBeiVeJFD1eh9c/xIP8QOmcBVgUNGAfEXPS126Wn9
+H+6yWVyVs53cChicJyxbuCAlUpXlSVM5STuRspBoaFtTxI7Bd9gkZfto0kU6cdcs
+31b6qhfK5czRGkAJg5ARbEO1nTLHNJiX0qS6pIaXeve2B2UDy1aG9a6Hwrk1+l01
+a7205j0645arz1K72pBYCfQBA7ThgA==
+=w8Mv
+-----END PGP SIGNATURE-----
 
-Not to mention all the tree blocks readahead works pretty fine for bg
-tree, as we will read every item.
-While readahead for extent tree will just be a diaster, as all block
-groups are scatter across the whole extent tree.
-
-The reduction of mount time is already obvious even on super fast NVMe
-disk with memory cache.
-It would be even more obvious if the fs is on spinning rust.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/block-group.c          | 104 ++++++++++++++++++++++++++------
- fs/btrfs/ctree.h                |   5 +-
- fs/btrfs/disk-io.c              |  13 ++++
- fs/btrfs/sysfs.c                |   2 +
- include/uapi/linux/btrfs.h      |   1 +
- include/uapi/linux/btrfs_tree.h |   3 +
- 6 files changed, 110 insertions(+), 18 deletions(-)
-
-diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index 0c5eef0610fa..0101fd42b586 100644
---- a/fs/btrfs/block-group.c
-+++ b/fs/btrfs/block-group.c
-@@ -861,7 +861,7 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
- 			     u64 group_start, struct extent_map *em)
- {
- 	struct btrfs_fs_info *fs_info = trans->fs_info;
--	struct btrfs_root *root = fs_info->extent_root;
-+	struct btrfs_root *root;
- 	struct btrfs_path *path;
- 	struct btrfs_block_group_cache *block_group;
- 	struct btrfs_free_cluster *cluster;
-@@ -880,6 +880,11 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
- 	BUG_ON(!block_group);
- 	BUG_ON(!block_group->ro);
- 
-+	if (btrfs_fs_incompat(fs_info, BG_TREE))
-+		root = fs_info->bg_root;
-+	else
-+		root = fs_info->extent_root;
-+
- 	trace_btrfs_remove_block_group(block_group);
- 	/*
- 	 * Free the reserved super bytes from this block group before
-@@ -1790,6 +1795,56 @@ static int read_one_block_group(struct btrfs_fs_info *info,
- 	return ret;
- }
- 
-+static int read_block_group_tree(struct btrfs_fs_info *info, int need_clear)
-+{
-+	struct btrfs_path *path;
-+	struct btrfs_key key;
-+	int ret;
-+
-+	key.objectid = 0;
-+	key.offset = 0;
-+	key.type = 0;
-+	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
-+
-+	ret = btrfs_search_slot(NULL, info->bg_root, &key, path, 0, 0);
-+	if (ret < 0)
-+		return ret;
-+	if (ret == 0) {
-+		btrfs_err(info,
-+			  "found invalid block group bytenr %llu len %llu",
-+			  key.objectid, key.offset);
-+		ret = -EUCLEAN;
-+		goto out;
-+	}
-+
-+	while (1) {
-+		btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
-+		if (key.type != BTRFS_BLOCK_GROUP_ITEM_KEY) {
-+			btrfs_err(info,
-+		"found invalid key (%llu, %u, %llu) in block group tree",
-+				  key.objectid, key.type, key.offset);
-+			ret = -EUCLEAN;
-+			goto out;
-+		}
-+
-+		ret = read_one_block_group(info, path, need_clear);
-+		if (ret < 0)
-+			goto out;
-+		ret = btrfs_next_item(info->bg_root, path);
-+		if (ret < 0)
-+			goto out;
-+		if (ret > 0) {
-+			ret = 0;
-+			goto out;
-+		}
-+	}
-+out:
-+	btrfs_free_path(path);
-+	return ret;
-+}
-+
- int btrfs_read_block_groups(struct btrfs_fs_info *info)
- {
- 	struct btrfs_path *path;
-@@ -1815,20 +1870,26 @@ int btrfs_read_block_groups(struct btrfs_fs_info *info)
- 	if (btrfs_test_opt(info, CLEAR_CACHE))
- 		need_clear = 1;
- 
--	while (1) {
--		ret = find_first_block_group(info, path, &key);
--		if (ret > 0)
--			break;
--		if (ret != 0)
--			goto error;
--
--		btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
--		ret = read_one_block_group(info, path, need_clear);
-+	if (btrfs_fs_incompat(info, BG_TREE)) {
-+		ret = read_block_group_tree(info, need_clear);
- 		if (ret < 0)
- 			goto error;
--		key.objectid += key.offset;
--		key.offset = 0;
--		btrfs_release_path(path);
-+	} else {
-+		while (1) {
-+			ret = find_first_block_group(info, path, &key);
-+			if (ret > 0)
-+				break;
-+			if (ret != 0)
-+				goto error;
-+
-+			btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
-+			ret = read_one_block_group(info, path, need_clear);
-+			if (ret < 0)
-+				goto error;
-+			key.objectid += key.offset;
-+			key.offset = 0;
-+			btrfs_release_path(path);
-+		}
- 	}
- 
- 	list_for_each_entry_rcu(space_info, &info->space_info, list) {
-@@ -1863,7 +1924,7 @@ void btrfs_create_pending_block_groups(struct btrfs_trans_handle *trans)
- {
- 	struct btrfs_fs_info *fs_info = trans->fs_info;
- 	struct btrfs_block_group_cache *block_group;
--	struct btrfs_root *extent_root = fs_info->extent_root;
-+	struct btrfs_root *root;
- 	struct btrfs_block_group_item item;
- 	struct btrfs_key key;
- 	int ret = 0;
-@@ -1871,6 +1932,11 @@ void btrfs_create_pending_block_groups(struct btrfs_trans_handle *trans)
- 	if (!trans->can_flush_pending_bgs)
- 		return;
- 
-+	if (btrfs_fs_incompat(fs_info, BG_TREE))
-+		root = fs_info->bg_root;
-+	else
-+		root = fs_info->extent_root;
-+
- 	while (!list_empty(&trans->new_bgs)) {
- 		block_group = list_first_entry(&trans->new_bgs,
- 					       struct btrfs_block_group_cache,
-@@ -1883,7 +1949,7 @@ void btrfs_create_pending_block_groups(struct btrfs_trans_handle *trans)
- 		memcpy(&key, &block_group->key, sizeof(key));
- 		spin_unlock(&block_group->lock);
- 
--		ret = btrfs_insert_item(trans, extent_root, &key, &item,
-+		ret = btrfs_insert_item(trans, root, &key, &item,
- 					sizeof(item));
- 		if (ret)
- 			btrfs_abort_transaction(trans, ret);
-@@ -2119,11 +2185,15 @@ static int write_one_cache_group(struct btrfs_trans_handle *trans,
- {
- 	struct btrfs_fs_info *fs_info = trans->fs_info;
- 	int ret;
--	struct btrfs_root *extent_root = fs_info->extent_root;
-+	struct btrfs_root *root;
- 	unsigned long bi;
- 	struct extent_buffer *leaf;
- 
--	ret = btrfs_search_slot(trans, extent_root, &cache->key, path, 0, 1);
-+	if (btrfs_fs_incompat(fs_info, BG_TREE))
-+		root = fs_info->bg_root;
-+	else
-+		root = fs_info->extent_root;
-+	ret = btrfs_search_slot(trans, root, &cache->key, path, 0, 1);
- 	if (ret) {
- 		if (ret > 0)
- 			ret = -ENOENT;
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 19d669d12ca1..c98d008fb42f 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -291,7 +291,8 @@ struct btrfs_super_block {
- 	 BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF |		\
- 	 BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA |	\
- 	 BTRFS_FEATURE_INCOMPAT_NO_HOLES	|	\
--	 BTRFS_FEATURE_INCOMPAT_METADATA_UUID)
-+	 BTRFS_FEATURE_INCOMPAT_METADATA_UUID	|	\
-+	 BTRFS_FEATURE_INCOMPAT_BG_TREE)
- 
- #define BTRFS_FEATURE_INCOMPAT_SAFE_SET			\
- 	(BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF)
-@@ -538,6 +539,7 @@ struct btrfs_fs_info {
- 	struct btrfs_root *quota_root;
- 	struct btrfs_root *uuid_root;
- 	struct btrfs_root *free_space_root;
-+	struct btrfs_root *bg_root;
- 
- 	/* the log root tree is a directory of all the other log roots */
- 	struct btrfs_root *log_root_tree;
-@@ -2661,6 +2663,7 @@ static inline void free_fs_info(struct btrfs_fs_info *fs_info)
- 	kfree(fs_info->quota_root);
- 	kfree(fs_info->uuid_root);
- 	kfree(fs_info->free_space_root);
-+	kfree(fs_info->bg_root);
- 	kfree(fs_info->super_copy);
- 	kfree(fs_info->super_for_commit);
- 	kvfree(fs_info);
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 044981cf6df9..1c5728e6a660 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1570,6 +1570,8 @@ struct btrfs_root *btrfs_get_fs_root(struct btrfs_fs_info *fs_info,
- 	if (location->objectid == BTRFS_FREE_SPACE_TREE_OBJECTID)
- 		return fs_info->free_space_root ? fs_info->free_space_root :
- 						  ERR_PTR(-ENOENT);
-+	if (location->objectid == BTRFS_BLOCK_GROUP_TREE_OBJECTID)
-+		return fs_info->bg_root ? fs_info->bg_root: ERR_PTR(-ENOENT);
- again:
- 	root = btrfs_lookup_fs_root(fs_info, location->objectid);
- 	if (root) {
-@@ -2041,6 +2043,7 @@ static void free_root_pointers(struct btrfs_fs_info *info, int chunk_root)
- 	if (chunk_root)
- 		free_root_extent_buffers(info->chunk_root);
- 	free_root_extent_buffers(info->free_space_root);
-+	free_root_extent_buffers(info->bg_root);
- }
- 
- void btrfs_free_fs_roots(struct btrfs_fs_info *fs_info)
-@@ -2333,6 +2336,16 @@ static int btrfs_read_roots(struct btrfs_fs_info *fs_info)
- 	set_bit(BTRFS_ROOT_TRACK_DIRTY, &root->state);
- 	fs_info->extent_root = root;
- 
-+	if (btrfs_fs_incompat(fs_info, BG_TREE)) {
-+		location.objectid = BTRFS_BLOCK_GROUP_TREE_OBJECTID;
-+		root = btrfs_read_tree_root(tree_root, &location);
-+		if (IS_ERR(root)) {
-+			ret = PTR_ERR(root);
-+			goto out;
-+		}
-+		set_bit(BTRFS_ROOT_TRACK_DIRTY, &root->state);
-+		fs_info->bg_root = root;
-+	}
- 	location.objectid = BTRFS_DEV_TREE_OBJECTID;
- 	root = btrfs_read_tree_root(tree_root, &location);
- 	if (IS_ERR(root)) {
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index f6d3c80f2e28..799f7e18d6ee 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -257,6 +257,7 @@ BTRFS_FEAT_ATTR_INCOMPAT(raid56, RAID56);
- BTRFS_FEAT_ATTR_INCOMPAT(skinny_metadata, SKINNY_METADATA);
- BTRFS_FEAT_ATTR_INCOMPAT(no_holes, NO_HOLES);
- BTRFS_FEAT_ATTR_INCOMPAT(metadata_uuid, METADATA_UUID);
-+BTRFS_FEAT_ATTR_INCOMPAT(bg_tree, BG_TREE);
- BTRFS_FEAT_ATTR_COMPAT_RO(free_space_tree, FREE_SPACE_TREE);
- 
- static struct attribute *btrfs_supported_feature_attrs[] = {
-@@ -272,6 +273,7 @@ static struct attribute *btrfs_supported_feature_attrs[] = {
- 	BTRFS_FEAT_ATTR_PTR(no_holes),
- 	BTRFS_FEAT_ATTR_PTR(metadata_uuid),
- 	BTRFS_FEAT_ATTR_PTR(free_space_tree),
-+	BTRFS_FEAT_ATTR_PTR(bg_tree),
- 	NULL
- };
- 
-diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index 3ee0678c0a83..0f91ebc07064 100644
---- a/include/uapi/linux/btrfs.h
-+++ b/include/uapi/linux/btrfs.h
-@@ -270,6 +270,7 @@ struct btrfs_ioctl_fs_info_args {
- #define BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA	(1ULL << 8)
- #define BTRFS_FEATURE_INCOMPAT_NO_HOLES		(1ULL << 9)
- #define BTRFS_FEATURE_INCOMPAT_METADATA_UUID	(1ULL << 10)
-+#define BTRFS_FEATURE_INCOMPAT_BG_TREE		(1ULL << 11)
- 
- struct btrfs_ioctl_feature_flags {
- 	__u64 compat_flags;
-diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tree.h
-index b65c7ee75bc7..1d1e50c42d0e 100644
---- a/include/uapi/linux/btrfs_tree.h
-+++ b/include/uapi/linux/btrfs_tree.h
-@@ -48,6 +48,9 @@
- /* tracks free space in block groups. */
- #define BTRFS_FREE_SPACE_TREE_OBJECTID 10ULL
- 
-+/* sotre BLOCK_GROUP_ITEMs in a seprate tree */
-+#define BTRFS_BLOCK_GROUP_TREE_OBJECTID 11ULL
-+
- /* device stats in the device tree */
- #define BTRFS_DEV_STATS_OBJECTID 0ULL
- 
--- 
-2.23.0
-
+--c7piHdXfBn6VqX3izUblidaZJJxxgSvIL--

@@ -2,155 +2,259 @@ Return-Path: <SRS0=z0ck=YD=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.3 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8F922ECE58E
-	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Oct 2019 08:59:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6DAB9C10F14
+	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Oct 2019 13:40:42 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 71E5D2190F
-	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Oct 2019 08:59:40 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3A1FE20B7C
+	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Oct 2019 13:40:42 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="H2V1Oact"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2389059AbfJJI7j (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 10 Oct 2019 04:59:39 -0400
-Received: from mx2.suse.de ([195.135.220.15]:55130 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2388632AbfJJI7i (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 10 Oct 2019 04:59:38 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 536D5B197
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Oct 2019 08:59:36 +0000 (UTC)
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: [PULL REQUEST] btrfs-progs: For next merge window
-Date:   Thu, 10 Oct 2019 16:59:32 +0800
-Message-Id: <20191010085932.39105-1-wqu@suse.com>
-X-Mailer: git-send-email 2.23.0
+        id S2387668AbfJJNkl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 10 Oct 2019 09:40:41 -0400
+Received: from mail-qk1-f196.google.com ([209.85.222.196]:43312 "EHLO
+        mail-qk1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728100AbfJJNkk (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 10 Oct 2019 09:40:40 -0400
+Received: by mail-qk1-f196.google.com with SMTP id h126so5594099qke.10
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Oct 2019 06:40:40 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to:user-agent;
+        bh=a0a4DJQGXGtXDHooqUK1TjoB0xuwglB2xEOUvEuHULM=;
+        b=H2V1OacteLnxzHtFiAmnEYZTjlZK/h/hsTim7FR9VY0MFo77G8F4Rh9fVQYXiiNtP1
+         TblvMAVN7tSaTHuKJlVXeIYkKuA6mGyVhZd6wpuu/V/o37BoZCMSucT1CJ2cL9Fa/ior
+         qIDTJ1jsQkXpzKtxIT+n6rE7kq2K3YE1fF9QDZYLO2TKbIgO6i5ZIRaZTneCgRMRxlbV
+         C0KVji+w+rdxSEHP7Nb26nb+NDFm2vGh+hJ3dO7UoyQd56dS0dkQf7y2NTghbsCBqk20
+         kdvKJzuXgsupeEymTzQkC/E+sZ/ZCWpgL2ED+kKu6ULO0ChtthIPUivaeMlIVKZoHm+Y
+         hbzA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to:user-agent;
+        bh=a0a4DJQGXGtXDHooqUK1TjoB0xuwglB2xEOUvEuHULM=;
+        b=ucLfJxGAYj6sb1w9iNL8UbNNji+zIsjghDIm15r4kMwWn8FF4sxE/V2p/9ePKO3M7z
+         WTyrXYb5Oct8lYBpxZD5FkSMQhcGu4rFv+EEA47CPv7KT72p5mixjLM5cxRp4Lp59cuf
+         dbYbq+9cBabTYcxHL9Fo5S6/OGKluHE+iw1oxQqdmdIycVQxG3Vlzpv7v0yYQ1c7CEdG
+         mKfdYaVic/xErJStGXCn5M5rFzZKwuA1YUh0mYEEhgXKP1Z8EU2rM10eaEjjmYSv1Ucp
+         K2xeik508wYE4fWsePyiUyychozEG3C+s2Oi62sKA1iLEulMStSwm8SbhDPJN7LJNRLS
+         W+yg==
+X-Gm-Message-State: APjAAAUbfYXQfsiF+5W8WAJ2L/SbFl6SIcK0hx2DQQHZQC0CVl9nUQW8
+        5y8ufQvv9uDtnl1OYeW8DdYCsQ==
+X-Google-Smtp-Source: APXvYqxKhY8ZWY/+UYyFj24v5YI9hy3Fqzk32ZJWaWEPUxyVN63xUm84r0IEZNPpiMPXpwNCVdYRww==
+X-Received: by 2002:ae9:f44d:: with SMTP id z13mr9547298qkl.90.1570714839278;
+        Thu, 10 Oct 2019 06:40:39 -0700 (PDT)
+Received: from localhost ([107.15.81.208])
+        by smtp.gmail.com with ESMTPSA id j5sm2300212qkd.56.2019.10.10.06.40.38
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Thu, 10 Oct 2019 06:40:38 -0700 (PDT)
+Date:   Thu, 10 Oct 2019 09:40:37 -0400
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     Dennis Zhou <dennis@kernel.org>
+Cc:     Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
+        Omar Sandoval <osandov@osandov.com>, kernel-team@fb.com,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 03/19] btrfs: keep track of which extents have been
+ discarded
+Message-ID: <20191010134035.khr6ifhfu37afrav@MacBook-Pro-91.local>
+References: <cover.1570479299.git.dennis@kernel.org>
+ <5875088b5f4ada0ef73f097b238935dd583d5b3e.1570479299.git.dennis@kernel.org>
+ <20191007203727.26np5hdnr4nqx3kk@MacBook-Pro-91.local>
+ <20191007223810.GB26876@dennisz-mbp.dhcp.thefacebook.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20191007223810.GB26876@dennisz-mbp.dhcp.thefacebook.com>
+User-Agent: NeoMutt/20180716
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This patchset can be fetched from github:
-https://github.com/adam900710/btrfs-progs/tree/for_next
-Which is based on devel branch, with the following HEAD:
+On Mon, Oct 07, 2019 at 06:38:10PM -0400, Dennis Zhou wrote:
+> On Mon, Oct 07, 2019 at 04:37:28PM -0400, Josef Bacik wrote:
+> > On Mon, Oct 07, 2019 at 04:17:34PM -0400, Dennis Zhou wrote:
+> > > Async discard will use the free space cache as backing knowledge for
+> > > which extents to discard. This patch plumbs knowledge about which
+> > > extents need to be discarded into the free space cache from
+> > > unpin_extent_range().
+> > > 
+> > > An untrimmed extent can merge with everything as this is a new region.
+> > > Absorbing trimmed extents is a tradeoff to for greater coalescing which
+> > > makes life better for find_free_extent(). Additionally, it seems the
+> > > size of a trim isn't as problematic as the trim io itself.
+> > > 
+> > > When reading in the free space cache from disk, if sync is set, mark all
+> > > extents as trimmed. The current code ensures at transaction commit that
+> > > all free space is trimmed when sync is set, so this reflects that.
+> > > 
+> > > Signed-off-by: Dennis Zhou <dennis@kernel.org>
+> > > ---
+> > >  fs/btrfs/extent-tree.c      | 15 ++++++++++-----
+> > >  fs/btrfs/free-space-cache.c | 38 ++++++++++++++++++++++++++++++-------
+> > >  fs/btrfs/free-space-cache.h | 10 +++++++++-
+> > >  fs/btrfs/inode-map.c        | 13 +++++++------
+> > >  4 files changed, 57 insertions(+), 19 deletions(-)
+> > > 
+> > > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> > > index 77a5904756c5..b9e3bedad878 100644
+> > > --- a/fs/btrfs/extent-tree.c
+> > > +++ b/fs/btrfs/extent-tree.c
+> > > @@ -2782,7 +2782,7 @@ fetch_cluster_info(struct btrfs_fs_info *fs_info,
+> > >  }
+> > >  
+> > >  static int unpin_extent_range(struct btrfs_fs_info *fs_info,
+> > > -			      u64 start, u64 end,
+> > > +			      u64 start, u64 end, u32 fsc_flags,
+> > >  			      const bool return_free_space)
+> > >  {
+> > >  	struct btrfs_block_group_cache *cache = NULL;
+> > > @@ -2816,7 +2816,9 @@ static int unpin_extent_range(struct btrfs_fs_info *fs_info,
+> > >  		if (start < cache->last_byte_to_unpin) {
+> > >  			len = min(len, cache->last_byte_to_unpin - start);
+> > >  			if (return_free_space)
+> > > -				btrfs_add_free_space(cache, start, len);
+> > > +				__btrfs_add_free_space(fs_info,
+> > > +						       cache->free_space_ctl,
+> > > +						       start, len, fsc_flags);
+> > >  		}
+> > >  
+> > >  		start += len;
+> > > @@ -2894,6 +2896,7 @@ int btrfs_finish_extent_commit(struct btrfs_trans_handle *trans)
+> > >  
+> > >  	while (!trans->aborted) {
+> > >  		struct extent_state *cached_state = NULL;
+> > > +		u32 fsc_flags = 0;
+> > >  
+> > >  		mutex_lock(&fs_info->unused_bg_unpin_mutex);
+> > >  		ret = find_first_extent_bit(unpin, 0, &start, &end,
+> > > @@ -2903,12 +2906,14 @@ int btrfs_finish_extent_commit(struct btrfs_trans_handle *trans)
+> > >  			break;
+> > >  		}
+> > >  
+> > > -		if (btrfs_test_opt(fs_info, DISCARD_SYNC))
+> > > +		if (btrfs_test_opt(fs_info, DISCARD_SYNC)) {
+> > >  			ret = btrfs_discard_extent(fs_info, start,
+> > >  						   end + 1 - start, NULL);
+> > > +			fsc_flags |= BTRFS_FSC_TRIMMED;
+> > > +		}
+> > >  
+> > >  		clear_extent_dirty(unpin, start, end, &cached_state);
+> > > -		unpin_extent_range(fs_info, start, end, true);
+> > > +		unpin_extent_range(fs_info, start, end, fsc_flags, true);
+> > >  		mutex_unlock(&fs_info->unused_bg_unpin_mutex);
+> > >  		free_extent_state(cached_state);
+> > >  		cond_resched();
+> > > @@ -5512,7 +5517,7 @@ u64 btrfs_account_ro_block_groups_free_space(struct btrfs_space_info *sinfo)
+> > >  int btrfs_error_unpin_extent_range(struct btrfs_fs_info *fs_info,
+> > >  				   u64 start, u64 end)
+> > >  {
+> > > -	return unpin_extent_range(fs_info, start, end, false);
+> > > +	return unpin_extent_range(fs_info, start, end, 0, false);
+> > >  }
+> > >  
+> > >  /*
+> > > diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+> > > index d54dcd0ab230..f119895292b8 100644
+> > > --- a/fs/btrfs/free-space-cache.c
+> > > +++ b/fs/btrfs/free-space-cache.c
+> > > @@ -747,6 +747,14 @@ static int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
+> > >  			goto free_cache;
+> > >  		}
+> > >  
+> > > +		/*
+> > > +		 * Sync discard ensures that the free space cache is always
+> > > +		 * trimmed.  So when reading this in, the state should reflect
+> > > +		 * that.
+> > > +		 */
+> > > +		if (btrfs_test_opt(fs_info, DISCARD_SYNC))
+> > > +			e->flags |= BTRFS_FSC_TRIMMED;
+> > > +
+> > >  		if (!e->bytes) {
+> > >  			kmem_cache_free(btrfs_free_space_cachep, e);
+> > >  			goto free_cache;
+> > > @@ -2165,6 +2173,7 @@ static bool try_merge_free_space(struct btrfs_free_space_ctl *ctl,
+> > >  	bool merged = false;
+> > >  	u64 offset = info->offset;
+> > >  	u64 bytes = info->bytes;
+> > > +	bool is_trimmed = btrfs_free_space_trimmed(info);
+> > >  
+> > >  	/*
+> > >  	 * first we want to see if there is free space adjacent to the range we
+> > > @@ -2178,7 +2187,8 @@ static bool try_merge_free_space(struct btrfs_free_space_ctl *ctl,
+> > >  	else
+> > >  		left_info = tree_search_offset(ctl, offset - 1, 0, 0);
+> > >  
+> > > -	if (right_info && !right_info->bitmap) {
+> > > +	if (right_info && !right_info->bitmap &&
+> > > +	    (!is_trimmed || btrfs_free_space_trimmed(right_info))) {
+> > >  		if (update_stat)
+> > >  			unlink_free_space(ctl, right_info);
+> > >  		else
+> > > @@ -2189,7 +2199,8 @@ static bool try_merge_free_space(struct btrfs_free_space_ctl *ctl,
+> > >  	}
+> > >  
+> > >  	if (left_info && !left_info->bitmap &&
+> > > -	    left_info->offset + left_info->bytes == offset) {
+> > > +	    left_info->offset + left_info->bytes == offset &&
+> > > +	    (!is_trimmed || btrfs_free_space_trimmed(left_info))) {
+> > 
+> > So we allow merging if we haven't trimmed this entry, or if the adjacent entry
+> > is already trimmed?  This means we'll merge if we trimmed the new entry
+> > regardless of the adjacent entries status, or if the new entry is drity.  Why is
+> > that?  Thanks,
+> > 
+> 
+> This is the tradeoff I called out above here:
+> 
+> > > Absorbing trimmed extents is a tradeoff to for greater coalescing which
+> > > makes life better for find_free_extent(). Additionally, it seems the
+> > > size of a trim isn't as problematic as the trim io itself.
+> 
+> A problematic example case:
+> 
+> |----trimmed----|/////X/////|-----trimmed-----|
+> 
+> If region X gets freed and returned to the free space cache, we end up
+> with the following:
+> 
+> |----trimmed----|-untrimmed-|-----trimmed-----|
+> 
+> This isn't great because now we need to teach find_free_extent() to span
+> multiple btrfs_free_space entries, something I didn't want to do. So the
+> other option is to overtrim trading for a simpler find_free_extent().
+> Then the above becomes:
+> 
+> |-------------------trimmed-------------------|
+> 
+> It makes the assumption that if we're inserting, it's generally is free
+> space being returned rather than we needed to slice out from the middle
+> of a block. It does still have degenerative cases, but it's better than
+> the above. The merging also allows for stuff to come out of bitmaps more
+> proactively too.
+> 
+> Also from what it seems, the cost of a discard operation is quite costly
+> relative to the amount your discarding (1 larger discard is better than
+> several smaller discards) as it will clog up the device too.
 
-commit d928fcabc8aed32b5ccab71220abcff9bffac377 (david/devel)
-Author: David Sterba <dsterba@suse.com>
-Date:   Mon Oct 7 18:23:52 2019 +0200
 
-    btrfs-progs: add BLAKE2 to hash-speedtest
+OOOOOh I fucking get it now.  That's going to need a comment, because it's not
+obvious at all.
 
-Please note that, for some binary test images, the patch from patchwork
-doesn't apply correctly and would cause empty files. Not sure if it's
-abug of patchwork.
+However I still wonder if this is right.  Your above examples are legitimate,
+but say you have
 
-This patchset contains the following changes:
+| 512mib adding back that isn't trimmed |------- 512mib trimmed ------|
 
-- image
-  * Proper error message for chunk tree build
-  * Fix error message for restore
-  * Reduce memory usage for compressed image restore
-  * Speed up chunk tree build for restore
+we'll merge these two, but really we should probably trim that 512mib chunk
+we're adding right?  Thanks,
 
-- check
-  * check and repair bad inode mode in subvolume trees
-  * check and repair inode generation
-
-- receive
-  * Fix receiving clone from duplicate subvolume
-
-- tests
-  * Check kernel and btrfs-progs support for zstd for zstd related tests
-
-For receive and tests part, they are just unmerged patches.
-
-For image, most of the patches from the btrfs-image data dump patchset,
-but they are independent from data dump. So they are included in this batch.
-
-For check, those patches are just result of user reports triggered by
-tree-checker, all include report and repair functionality and test images.
-
-The following selftests pass (with my tsukkomi):
-
-- fsck
-  The fastest test, and everyone loves fast tests.
-
-- mkfs
-  Ordinary but good tests.
-
-- convert
-  Slow and boring. But A good test of one's patience.
-
-- misc
-  The most thrilling tests. No one notices a regression until this test
-  fails.
-
-- fuzz
-  It can always catch you unexpectedly.
-
-Johannes Thumshirn (1):
-  btrfs-progs: fix zstd compression test on a kernel without ztsd
-    support
-
-Omar Sandoval (3):
-  btrfs-progs: receive: remove commented out transid checks
-  btrfs-progs: receive: don't lookup clone root for received subvolume
-  btrfs-progs: tests: add test for receiving clone from duplicate
-    subvolume
-
-Qu Wenruo (15):
-  btrfs-progs: image: Output error message for chunk tree build error
-  btrfs-progs: image: Fix error output to show correct return value
-  btrfs-progs: image: Don't waste memory when we're just extracting
-    super block
-  btrfs-progs: image: Allow restore to record system chunk ranges for
-    later usage
-  btrfs-progs: image: Introduce helper to determine if a tree block is
-    in the range of system chunks
-  btrfs-progs: image: Rework how we search chunk tree blocks
-  btrfs-progs: check: Export btrfs_type_to_imode
-  btrfs-progs: check/common: Introduce a function to find imode using
-    info from INODE_REF item
-  btrfs-progs: check/common: Make repair_imode_common() to handle inodes
-    in subvolume trees
-  btrfs-progs: check/lowmem: Repair bad imode early
-  btrfs-progs: check/original: Fix inode mode in subvolume trees
-  btrfs-progs: tests/fsck: Add new images for inode mode repair
-    functionality
-  btrfs-progs: check/lowmem: Add check and repair for invalid inode
-    generation
-  btrfs-progs: check/original: Add check and repair for invalid inode
-    generation
-  btrfs-progs: fsck-tests: Add test image for invalid inode generation
-    repair
-
- check/main.c                                  | 104 +++--
- check/mode-common.c                           | 262 +++++++++++-
- check/mode-common.h                           |  17 +
- check/mode-lowmem.c                           | 115 ++++++
- check/mode-original.h                         |   1 +
- cmds/receive.c                                |  43 +-
- image/main.c                                  | 382 +++++++++++++-----
- .../039-bad-inode-mode/.lowmem_repairable     |   0
- .../bad_free_space_cache_imode.raw.xz}        | Bin
- .../bad_imodes_in_subvolume_tree.img.xz       | Bin 0 -> 2956 bytes
- .../.lowmem_repairable                        |   0
- .../bad_inode_geneartion.img.xz               | Bin 0 -> 2012 bytes
- tests/misc-tests/025-zstd-compression/test.sh |  10 +
- .../test.sh                                   |  34 ++
- 14 files changed, 790 insertions(+), 178 deletions(-)
- create mode 100644 tests/fsck-tests/039-bad-inode-mode/.lowmem_repairable
- rename tests/fsck-tests/{039-bad-free-space-cache-inode-mode/test.raw.xz => 039-bad-inode-mode/bad_free_space_cache_imode.raw.xz} (100%)
- create mode 100644 tests/fsck-tests/039-bad-inode-mode/bad_imodes_in_subvolume_tree.img.xz
- create mode 100644 tests/fsck-tests/043-bad-inode-generation/.lowmem_repairable
- create mode 100644 tests/fsck-tests/043-bad-inode-generation/bad_inode_geneartion.img.xz
- create mode 100755 tests/misc-tests/038-receive-clone-from-current-subvolume/test.sh
-
--- 
-2.23.0
-
+Josef

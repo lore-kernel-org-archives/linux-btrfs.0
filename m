@@ -2,122 +2,153 @@ Return-Path: <SRS0=z0ck=YD=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.9 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EC269C4360C
-	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Oct 2019 07:53:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2BAAAC4360C
+	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Oct 2019 08:00:44 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C12312190F
-	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Oct 2019 07:53:59 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BF662218AC
+	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Oct 2019 08:00:43 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="FAauTkyK"
+	dkim=pass (1024-bit key) header.d=mykernel.net header.i=cgxu519@mykernel.net header.b="SptonRId"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1733074AbfJJHx7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 10 Oct 2019 03:53:59 -0400
-Received: from aserp2120.oracle.com ([141.146.126.78]:47056 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727130AbfJJHx6 (ORCPT
+        id S1732947AbfJJIAn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 10 Oct 2019 04:00:43 -0400
+Received: from sender2-of-o52.zoho.com.cn ([163.53.93.247]:21333 "EHLO
+        sender2-of-o52.zoho.com.cn" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1727123AbfJJIAm (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 10 Oct 2019 03:53:58 -0400
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x9A7rtZl089336
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Oct 2019 07:53:57 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
- date : message-id : mime-version : content-transfer-encoding;
- s=corp-2019-08-05; bh=Qwb4VH23uj87NOXi27p/NVxJEcoJKjUGMBd+uFC1VMU=;
- b=FAauTkyKfolTDNwYpapbaktRkiYe7ldvbCt4CK99l1QtO4PQEQVfIujUZx8crWnEaEnr
- l4jrilbPLehQt1uzbfdAnahh+y11/fG2ZuHQFi5k+m9rgCvhvvdZ2B+ZOVMGXO6A0zwh
- Ay9L3AyAqx21uNUykzUdftjcbxpwsJ5f3D9Ijcaxb/6KPWdIWnwW7VAh05MQ/m7TuZf6
- REiGgp3aruLbIwshrbGLS2Ku9pOOu3bLK2LpMO8IKKsBR7UK3ID19yGi7zUVaA7uKucz
- lb/NCn8BcNnvNNrLGvpU5r3PteLk/08KyfzfQQEw8RNnD5TUXM+bBNIaiqFlKTNmzdXb Hw== 
-Received: from aserp3020.oracle.com (aserp3020.oracle.com [141.146.126.70])
-        by aserp2120.oracle.com with ESMTP id 2vek4qsc75-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Oct 2019 07:53:57 +0000
-Received: from pps.filterd (aserp3020.oracle.com [127.0.0.1])
-        by aserp3020.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x9A7qWfr080555
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Oct 2019 07:53:57 GMT
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by aserp3020.oracle.com with ESMTP id 2vhhsp5y9m-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Oct 2019 07:53:57 +0000
-Received: from abhmp0018.oracle.com (abhmp0018.oracle.com [141.146.116.24])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x9A7ruD3009636
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Oct 2019 07:53:56 GMT
-Received: from mb.wifi.oracle.com (/192.188.170.109)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Thu, 10 Oct 2019 00:53:56 -0700
-From:   Anand Jain <anand.jain@oracle.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH RESEND] btrfs-progs: btrfstune -M|m drop test_uuid_unique
-Date:   Thu, 10 Oct 2019 15:53:52 +0800
-Message-Id: <20191010075352.8352-1-anand.jain@oracle.com>
-X-Mailer: git-send-email 2.23.0
+        Thu, 10 Oct 2019 04:00:42 -0400
+ARC-Seal: i=1; a=rsa-sha256; t=1570694425; cv=none; 
+        d=zoho.com.cn; s=zohoarc; 
+        b=ZOFTf/VXApeKc/LngtyGBbElGjtD4ACU6/LdWobPKU8DxI+jfcHyAs81Kwg2PgqwmJKuw5j7YULBGIuzU8YyyQWmvjzZ4gnIiIYPc6rjmsJkEHk2PptOEPGgrlFUUuKIc1JyQ2vW6LERMMwexU1SCh5Lbl3E9Fb1d6Lf5KJ7qWQ=
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=zoho.com.cn; s=zohoarc; 
+        t=1570694425; h=Content-Type:Content-Transfer-Encoding:Cc:Date:From:In-Reply-To:MIME-Version:Message-ID:References:Subject:To:ARC-Authentication-Results; 
+        bh=B2gk+gbgA5p59sO0B2woiPzlhK3eCFz+24yOHSZILPc=; 
+        b=NPlolf41I+IXgM9pXQhbtYaCK2ivsvHKszxTdQnTY8vwsoTQ6yI7AqGl9VP5CcTiIjAdrE5ItEZkQ95VjphWRPoNtO7qhXqmPShOEP8bF1NqzV4/rmj8QrP4DkVbVXLbY33uVj5by/mXW3PfAvbaxbdAkAV0cN/PtDOJHQnWd+c=
+ARC-Authentication-Results: i=1; mx.zoho.com.cn;
+        dkim=pass  header.i=mykernel.net;
+        spf=pass  smtp.mailfrom=cgxu519@mykernel.net;
+        dmarc=pass header.from=<cgxu519@mykernel.net> header.from=<cgxu519@mykernel.net>
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; t=1570694425;
+        s=zohomail; d=mykernel.net; i=cgxu519@mykernel.net;
+        h=From:To:Cc:Message-ID:Subject:Date:In-Reply-To:References:MIME-Version:Content-Transfer-Encoding:Content-Type;
+        l=3160; bh=B2gk+gbgA5p59sO0B2woiPzlhK3eCFz+24yOHSZILPc=;
+        b=SptonRIdNaqBg7zX76ePiCH7sjEtv4AphvGuMXno1hdJTNjjE1fHtJ4RB+WLqJ4y
+        J7X22RQHLbG7m6s73OTwDOAr2mr5CZ/XvqfeRtLuXfLYWhXrUPo88LIKnohGGElvUfg
+        Jb4hjsDJZrv/UKv2qAgNkeSYRhOCgMA7Z/Jp9i9I=
+Received: from localhost.localdomain (218.18.229.179 [218.18.229.179]) by mx.zoho.com.cn
+        with SMTPS id 1570694424731756.061669011618; Thu, 10 Oct 2019 16:00:24 +0800 (CST)
+From:   Chengguang Xu <cgxu519@mykernel.net>
+To:     clm@fb.com, josef@toxicpanda.com, dsterba@suse.com
+Cc:     linux-btrfs@vger.kernel.org, Chengguang Xu <cgxu519@mykernel.net>
+Message-ID: <20191010075958.28346-2-cgxu519@mykernel.net>
+Subject: [PATCH v2 2/3] btrfs: code cleanup for compression type
+Date:   Thu, 10 Oct 2019 15:59:57 +0800
+X-Mailer: git-send-email 2.20.1
+In-Reply-To: <20191010075958.28346-1-cgxu519@mykernel.net>
+References: <20191010075958.28346-1-cgxu519@mykernel.net>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9405 signatures=668684
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
- phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
- adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.0.1-1908290000 definitions=main-1910100074
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9405 signatures=668684
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
- suspectscore=0 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
- lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1908290000
- definitions=main-1910100074
+Content-Transfer-Encoding: quoted-printable
+X-ZohoCNMailClient: External
+Content-Type: text/plain; charset=utf8
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-It's common to copy/snapshot an OS image to run another instance of the OS.
-A duplicate fsid can't be mounted on the same system unless the fsid is
-changed by using btrfstune -m.
+In order to keep coding style consistency,
+set BTRFS_NR_COMPRESS_TYPES to the total number
+of cmpressoin type and fix related calling places.
 
-However in some circumstances the image needs to go back to the original
-fsid /metadata_uuid.
-
-As of now btrfstune -M fails if the specified uuid isn't unique, as show
-below.
-
-btrfstune -M $(btrfs in dump-super ./2-2g.img | grep metadata_uuid | \
-					awk '{print $2}') ./2-2g.img
-ERROR: fsid 87f8d9c5-a8b7-438e-a890-17bbe11c95e5 is not unique
-
-But as we are changing the fsid of an unmounted image, so its ok to
-leave it to the users choice if the fsid is not unique, so that the
-image can be sent back the system where it was used with that fsid.
-
-So this patch drops the check test_uuid_unique() in btrfstune -M|m.
-Thanks.
-
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Signed-off-by: Chengguang Xu <cgxu519@mykernel.net>
 ---
-Previous sent patch and its discussions:
-https://patchwork.kernel.org/patch/11134157/
+v1->v2:
+- Modify change log.
+- Explicitly specify value for enum.
+- Change the BTRFS_COMPRESS_TYPES to BTRFS_NR_COMPRESS_TYPES.
 
- btrfstune.c | 4 ----
- 1 file changed, 4 deletions(-)
+ fs/btrfs/compression.c  | 2 ++
+ fs/btrfs/compression.h  | 4 ++--
+ fs/btrfs/ioctl.c        | 2 +-
+ fs/btrfs/tree-checker.c | 5 +++--
+ 4 files changed, 8 insertions(+), 5 deletions(-)
 
-diff --git a/btrfstune.c b/btrfstune.c
-index afa3aae35412..4befcadef8b1 100644
---- a/btrfstune.c
-+++ b/btrfstune.c
-@@ -570,10 +570,6 @@ int BOX_MAIN(btrfstune)(int argc, char *argv[])
- 			error("could not parse UUID: %s", new_fsid_str);
- 			return 1;
- 		}
--		if (!test_uuid_unique(new_fsid_str)) {
--			error("fsid %s is not unique", new_fsid_str);
--			return 1;
--		}
- 	}
- 
- 	fd = open(device, O_RDWR);
--- 
-2.21.0 (Apple Git-120)
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index b05b361e2062..45d49f207989 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -39,6 +39,8 @@ const char* btrfs_compress_type2str(enum btrfs_compressio=
+n_type type)
+ =09case BTRFS_COMPRESS_ZSTD:
+ =09case BTRFS_COMPRESS_NONE:
+ =09=09return btrfs_compress_types[type];
++=09default:
++=09=09break;
+ =09}
+=20
+ =09return NULL;
+diff --git a/fs/btrfs/compression.h b/fs/btrfs/compression.h
+index 4cb8be9ff88b..e64336b98358 100644
+--- a/fs/btrfs/compression.h
++++ b/fs/btrfs/compression.h
+@@ -104,7 +104,7 @@ enum btrfs_compression_type {
+ =09BTRFS_COMPRESS_ZLIB  =3D 1,
+ =09BTRFS_COMPRESS_LZO   =3D 2,
+ =09BTRFS_COMPRESS_ZSTD  =3D 3,
+-=09BTRFS_COMPRESS_TYPES =3D 3,
++=09BTRFS_NR_COMPRESS_TYPES =3D 4,
+ };
+=20
+ struct workspace_manager {
+@@ -162,7 +162,7 @@ struct btrfs_compress_op {
+ };
+=20
+ /* The heuristic workspaces are managed via the 0th workspace manager */
+-#define BTRFS_NR_WORKSPACE_MANAGERS=09(BTRFS_COMPRESS_TYPES + 1)
++#define BTRFS_NR_WORKSPACE_MANAGERS=09BTRFS_NR_COMPRESS_TYPES
+=20
+ extern const struct btrfs_compress_op btrfs_heuristic_compress;
+ extern const struct btrfs_compress_op btrfs_zlib_compress;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index de730e56d3f5..cea3bc6a23ce 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1411,7 +1411,7 @@ int btrfs_defrag_file(struct inode *inode, struct fil=
+e *file,
+ =09=09return -EINVAL;
+=20
+ =09if (do_compress) {
+-=09=09if (range->compress_type > BTRFS_COMPRESS_TYPES)
++=09=09if (range->compress_type >=3D BTRFS_NR_COMPRESS_TYPES)
+ =09=09=09return -EINVAL;
+ =09=09if (range->compress_type)
+ =09=09=09compress_type =3D range->compress_type;
+diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
+index 43e488f5d063..92bde1d5b5d7 100644
+--- a/fs/btrfs/tree-checker.c
++++ b/fs/btrfs/tree-checker.c
+@@ -155,11 +155,12 @@ static int check_extent_data_item(struct extent_buffe=
+r *leaf,
+ =09 * Support for new compression/encryption must introduce incompat flag,
+ =09 * and must be caught in open_ctree().
+ =09 */
+-=09if (btrfs_file_extent_compression(leaf, fi) > BTRFS_COMPRESS_TYPES) {
++=09if (btrfs_file_extent_compression(leaf, fi) >=3D
++=09=09=09=09=09=09BTRFS_NR_COMPRESS_TYPES) {
+ =09=09file_extent_err(leaf, slot,
+ =09"invalid compression for file extent, have %u expect range [0, %u]",
+ =09=09=09btrfs_file_extent_compression(leaf, fi),
+-=09=09=09BTRFS_COMPRESS_TYPES);
++=09=09=09BTRFS_NR_COMPRESS_TYPES - 1);
+ =09=09return -EUCLEAN;
+ =09}
+ =09if (btrfs_file_extent_encryption(leaf, fi)) {
+--=20
+2.20.1
+
+
 

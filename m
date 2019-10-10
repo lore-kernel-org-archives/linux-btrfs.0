@@ -2,55 +2,112 @@ Return-Path: <SRS0=z0ck=YD=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EA914C4360C
-	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Oct 2019 15:06:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9F72AC4360C
+	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Oct 2019 15:06:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C8079206A1
-	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Oct 2019 15:06:51 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 77E89206A1
+	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Oct 2019 15:06:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725959AbfJJPGv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 10 Oct 2019 11:06:51 -0400
-Received: from mx2.suse.de ([195.135.220.15]:53032 "EHLO mx1.suse.de"
+        id S1726131AbfJJPGx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 10 Oct 2019 11:06:53 -0400
+Received: from mx2.suse.de ([195.135.220.15]:53140 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725862AbfJJPGu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 10 Oct 2019 11:06:50 -0400
+        id S1726017AbfJJPGw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 10 Oct 2019 11:06:52 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id B40E0B039;
-        Thu, 10 Oct 2019 15:06:49 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id C7EC1B1AE;
+        Thu, 10 Oct 2019 15:06:50 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 0/3] Cleanups in mount path
-Date:   Thu, 10 Oct 2019 18:06:44 +0300
-Message-Id: <20191010150647.20940-1-nborisov@suse.com>
+Subject: [PATCH 3/3] btrfs: Jump to correct label on init_root_trees failure
+Date:   Thu, 10 Oct 2019 18:06:47 +0300
+Message-Id: <20191010150647.20940-4-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
+In-Reply-To: <20191010150647.20940-1-nborisov@suse.com>
+References: <20191010150647.20940-1-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Following the misunderstanding around the 2nd argument of free_root_pointers it
-became apparent that the relevant code in open_ctre is not entirely clear. That's
-mainly due it being split among 2 labels, emulating a loop. This series 
-cleans that up by factoring it out in a discrete function, init_root_trees in 
-patch 1 and then subsequent patches implement  minor cleanups that became 
-apparent while working with the code. 
+During the refactoring and introduction of init_root_trees the code
+retained the special handling of 'next_root_backup' failure by returning
+-ESPIPE from init_root_trees and jumping to fail_block_groups.
 
-This has survived full xfstest run. 
+This is wrong because next_root_backup doesn't tinker with blockgroups
+at all and so any failure in it should be handled the same way as
+failures from its sole caller (init_root_trees) - jumping to
+fail_tree_roots. This was introduced in the original commit which
+implemented backup roots af31f5e5b84b ("Btrfs: add a log of past tree
+roots").
 
-Nikolay Borisov (3):
-  btrfs: Factor out tree roots initialization during mount
-  btrfs: Don't use objectid_mutex during mount
-  btrfs: Jump to correct label on init_root_trees failure
+Fix it by always jumping to fail_tree_roots. While at it put some
+sanity into next_root_backup by returning -EINVAL.
 
- fs/btrfs/disk-io.c | 138 +++++++++++++++++++++++++--------------------
- 1 file changed, 78 insertions(+), 60 deletions(-)
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
+ fs/btrfs/disk-io.c | 15 ++++++---------
+ 1 file changed, 6 insertions(+), 9 deletions(-)
 
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 72580eb6b706..1eed0de4020f 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1913,7 +1913,7 @@ static void backup_super_roots(struct btrfs_fs_info *info)
+  * the array, so you send it the number of backups you've already
+  * tried and the last backup index you used.
+  *
+- * this returns -1 when it has tried all the backups
++ * Returns EINVAL when it has tried all the backups
+  */
+ static noinline int next_root_backup(struct btrfs_fs_info *info,
+ 				     struct btrfs_super_block *super,
+@@ -1927,13 +1927,13 @@ static noinline int next_root_backup(struct btrfs_fs_info *info,
+ 
+ 		newest = find_newest_super_backup(info, gen);
+ 		if (newest == -1)
+-			return -1;
++			return -EINVAL;
+ 
+ 		*backup_index = newest;
+ 		*num_backups_tried = 1;
+ 	} else if (*num_backups_tried == BTRFS_NUM_BACKUP_ROOTS) {
+ 		/* we've tried all the backups, all done */
+-		return -1;
++		return -EINVAL;
+ 	} else {
+ 		/* jump to the next oldest backup */
+ 		newest = (*backup_index + BTRFS_NUM_BACKUP_ROOTS - 1) %
+@@ -2585,8 +2585,8 @@ int __cold init_tree_roots(struct btrfs_fs_info *fs_info)
+ 
+ 			ret = next_root_backup(fs_info, sb, &num_backups_tried,
+ 					       &backup_index);
+-			if (ret == -1)
+-				return -ESPIPE;
++			if (ret)
++				return ret;
+ 		}
+ 		generation = btrfs_super_generation(sb);
+ 		level = btrfs_super_root_level(sb);
+@@ -3067,11 +3067,8 @@ int __cold open_ctree(struct super_block *sb,
+ 	}
+ 
+ 	ret = init_tree_roots(fs_info);
+-	if (ret) {
+-		if (ret == -ESPIPE)
+-			goto fail_block_groups;
++	if (ret)
+ 		goto fail_tree_roots;
+-	}
+ 
+ 	ret = btrfs_verify_dev_extents(fs_info);
+ 	if (ret) {
 -- 
 2.17.1
 

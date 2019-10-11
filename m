@@ -2,60 +2,148 @@ Return-Path: <SRS0=wjlZ=YE=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AE62FC47404
-	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Oct 2019 17:50:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4B21AECE58D
+	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Oct 2019 18:07:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 925272084C
-	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Oct 2019 17:50:16 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2422C2084C
+	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Oct 2019 18:07:08 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1570817228;
+	bh=7VqUxtepOgqCfWD/XkCw9g8tB5VnlfI0LnWrH8KIHAs=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:List-ID:From;
+	b=MLB2n6RrF/w0w82aL2Tt0rvHKcEpg2jZ4GImTo0NUoeqrJP7OI0z7hesAE0RTkCYt
+	 ZtEa9V4ZWArI/Z16LWwJIwBrIjq3/0z2a4DqX4Rtoh8r9HkjrRj+guR7u2LHMa1PPf
+	 5ZUB/vcEmI+AWJPG5GVYZvPEK9B7oROAjI5pCzY8=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728374AbfJKRuQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 11 Oct 2019 13:50:16 -0400
-Received: from mx2.suse.de ([195.135.220.15]:36426 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728588AbfJKRuP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 11 Oct 2019 13:50:15 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 4A84FB333;
-        Fri, 11 Oct 2019 17:50:14 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id F213CDA808; Fri, 11 Oct 2019 19:50:27 +0200 (CEST)
-Date:   Fri, 11 Oct 2019 19:50:27 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     fdmanana@kernel.org
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: add missing extents release on file extent
- cluster relocation error
-Message-ID: <20191011175027.GF2751@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, fdmanana@kernel.org,
+        id S1728587AbfJKSHH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 11 Oct 2019 14:07:07 -0400
+Received: from mail-qk1-f196.google.com ([209.85.222.196]:45217 "EHLO
+        mail-qk1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728470AbfJKSHH (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 11 Oct 2019 14:07:07 -0400
+Received: by mail-qk1-f196.google.com with SMTP id z67so9670105qkb.12
+        for <linux-btrfs@vger.kernel.org>; Fri, 11 Oct 2019 11:07:06 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to:user-agent;
+        bh=mjPoNDuAkBgQRwqHbGG+LxSoYMA5VcKa0vExBnpHuOM=;
+        b=UqNT1lmayJ5VYDnwvrUIVh540CMaoPKSxwr9+ULBUExRCIoPy3v9Pxg9GKwTNftm12
+         eNeuHp0qd1ytaWix3GtM6Qq2P5qliV8Hz/Ov/RSZr2TfeXr11SoWOB65eM7Edch1qX3V
+         6CMUzWdtqaXYpGKwa8XDZDmxQKdV/9XNruuf0/UzxJOML2QD3vUKWqBRWKqXrVZSSfI6
+         JD+3tQ8TsfuGPgrXAzi1vN53rGjBQmNEA3XN9+wzW7sOEb+6XPaznSAXxiRuSQY5AaaM
+         e/gN0+QpQI9hinh9QDhLTGFETik11qpwDFhpigiwfVRp25HAUe/6FfkaLZf/cVDZkykC
+         QX8Q==
+X-Gm-Message-State: APjAAAWOWwmUBXfej1i/mLA8xkbRvNx333RM4NnPVYy69p76dZfeGaOk
+        gwNGB543hNMpcBLG3cFPDw4=
+X-Google-Smtp-Source: APXvYqwoX2wiooCfaoptOB+s/pnF28VjN5k4cSqG64JPlioYA3lJAdqscsQmYZsuY6qO4rbhiKxIyQ==
+X-Received: by 2002:a37:f61d:: with SMTP id y29mr1610790qkj.338.1570817226196;
+        Fri, 11 Oct 2019 11:07:06 -0700 (PDT)
+Received: from dennisz-mbp ([2620:10d:c091:500::2:985b])
+        by smtp.gmail.com with ESMTPSA id q47sm6920249qtq.95.2019.10.11.11.07.04
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Fri, 11 Oct 2019 11:07:05 -0700 (PDT)
+Date:   Fri, 11 Oct 2019 14:07:03 -0400
+From:   Dennis Zhou <dennis@kernel.org>
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
+        Omar Sandoval <osandov@osandov.com>, kernel-team@fb.com,
         linux-btrfs@vger.kernel.org
-References: <20191009164345.23713-1-fdmanana@kernel.org>
+Subject: Re: [PATCH 10/19] btrfs: calculate discard delay based on number of
+ extents
+Message-ID: <20191011180703.GE29672@dennisz-mbp>
+References: <cover.1570479299.git.dennis@kernel.org>
+ <37690bf17c3b3c9f20137fb186c7af4021bb664b.1570479299.git.dennis@kernel.org>
+ <20191010154133.pk62hvu6pgac3mne@macbook-pro-91.dhcp.thefacebook.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20191009164345.23713-1-fdmanana@kernel.org>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <20191010154133.pk62hvu6pgac3mne@macbook-pro-91.dhcp.thefacebook.com>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Oct 09, 2019 at 05:43:45PM +0100, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
+On Thu, Oct 10, 2019 at 11:41:33AM -0400, Josef Bacik wrote:
+> On Mon, Oct 07, 2019 at 04:17:41PM -0400, Dennis Zhou wrote:
+> > Use the number of discardable extents to help guide our discard delay
+> > interval. This value is reevaluated every transaction commit.
+> > 
+> > Signed-off-by: Dennis Zhou <dennis@kernel.org>
+> > ---
+> >  fs/btrfs/ctree.h       |  2 ++
+> >  fs/btrfs/discard.c     | 31 +++++++++++++++++++++++++++++--
+> >  fs/btrfs/discard.h     |  3 +++
+> >  fs/btrfs/extent-tree.c |  4 +++-
+> >  fs/btrfs/sysfs.c       | 30 ++++++++++++++++++++++++++++++
+> >  5 files changed, 67 insertions(+), 3 deletions(-)
+> > 
+> > diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> > index 8479ab037812..b0823961d049 100644
+> > --- a/fs/btrfs/ctree.h
+> > +++ b/fs/btrfs/ctree.h
+> > @@ -449,6 +449,8 @@ struct btrfs_discard_ctl {
+> >  	struct list_head discard_list[BTRFS_NR_DISCARD_LISTS];
+> >  	atomic_t discard_extents;
+> >  	atomic64_t discardable_bytes;
+> > +	atomic_t delay;
+> > +	atomic_t iops_limit;
+> >  };
+> >  
+> >  /* delayed seq elem */
+> > diff --git a/fs/btrfs/discard.c b/fs/btrfs/discard.c
+> > index 75a2ff14b3c0..c7afb5f8240d 100644
+> > --- a/fs/btrfs/discard.c
+> > +++ b/fs/btrfs/discard.c
+> > @@ -15,6 +15,11 @@
+> >  
+> >  #define BTRFS_DISCARD_DELAY		(300ULL * NSEC_PER_SEC)
+> >  
+> > +/* target discard delay in milliseconds */
+> > +#define BTRFS_DISCARD_TARGET_MSEC	(6 * 60 * 60ULL * MSEC_PER_SEC)
+> > +#define BTRFS_DISCARD_MAX_DELAY		(10000UL)
+> > +#define BTRFS_DISCARD_MAX_IOPS		(10UL)
+> > +
+> >  static struct list_head *
+> >  btrfs_get_discard_list(struct btrfs_discard_ctl *discard_ctl,
+> >  		       struct btrfs_block_group_cache *cache)
+> > @@ -170,10 +175,12 @@ void btrfs_discard_schedule_work(struct btrfs_discard_ctl *discard_ctl,
+> >  
+> >  	cache = find_next_cache(discard_ctl, now);
+> >  	if (cache) {
+> > -		u64 delay = 0;
+> > +		u64 delay = atomic_read(&discard_ctl->delay);
+> >  
+> >  		if (now < cache->discard_delay)
+> > -			delay = nsecs_to_jiffies(cache->discard_delay - now);
+> > +			delay = max_t(u64, delay,
+> > +				      nsecs_to_jiffies(cache->discard_delay -
+> > +						       now));
 > 
-> If we error out when finding a page at relocate_file_extent_cluster(), we
-> need to release the outstanding extents counter on the relocation inode,
-> set by the previous call to btrfs_delalloc_reserve_metadata(), otherwise
-> the inode's block reserve size can never decrease to zero and metadata
-> space is leaked. Therefore add a call to btrfs_delalloc_release_extents()
-> in case we can't find the target page.
+> Small nit, instead
 > 
-> Fixes: 8b62f87bad9cf0 ("Btrfs: rework outstanding_extents")
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> 			delay = nsecs_to_jiffies(cache->discard_delay - now);
+> 			delay = max_t(u64, delay,
+> 				      atomic_read(&discard_ctl->delay);
+> 
+> Looks a little cleaner.  Otherwise
 
-Added to misc-next, thanks.
+Hmmm. Does that work if now > cache->discard_delay? I'm just worried
+about the max_t with type u64.
+
+> 
+> Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+> 
+> Thanks,
+> 
+> Josef
+
+Thanks,
+Dennis

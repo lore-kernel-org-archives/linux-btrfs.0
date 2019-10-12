@@ -2,79 +2,100 @@ Return-Path: <SRS0=fefs=YF=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 44C17C47404
-	for <linux-btrfs@archiver.kernel.org>; Sat, 12 Oct 2019 00:34:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 83E3AC4CECE
+	for <linux-btrfs@archiver.kernel.org>; Sat, 12 Oct 2019 16:44:02 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 27624214E0
-	for <linux-btrfs@archiver.kernel.org>; Sat, 12 Oct 2019 00:34:39 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5E00921850
+	for <linux-btrfs@archiver.kernel.org>; Sat, 12 Oct 2019 16:44:02 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727537AbfJLAei (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 11 Oct 2019 20:34:38 -0400
-Received: from shelob.surriel.com ([96.67.55.147]:35894 "EHLO
-        shelob.surriel.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726345AbfJLAei (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 11 Oct 2019 20:34:38 -0400
-Received: from imladris.surriel.com ([96.67.55.152])
-        by shelob.surriel.com with esmtpsa (TLSv1.2:ECDHE-RSA-AES256-GCM-SHA384:256)
-        (Exim 4.92.3)
-        (envelope-from <riel@shelob.surriel.com>)
-        id 1iJ5Md-0006Bt-AZ; Fri, 11 Oct 2019 20:34:31 -0400
-Message-ID: <311cb7cc8998b153cfa6a4cf6e3723754d719e0d.camel@surriel.com>
-Subject: Re: [PATCH] fs: use READ_ONCE/WRITE_ONCE with the i_size helpers
-From:   Rik van Riel <riel@surriel.com>
-To:     Josef Bacik <josef@toxicpanda.com>, linux-fsdevel@vger.kernel.org,
-        kernel-team@fb.com, viro@ZenIV.linux.org.uk, jack@suse.cz,
-        linux-btrfs@vger.kernel.org
-Date:   Fri, 11 Oct 2019 20:34:30 -0400
-In-Reply-To: <20191011202050.8656-1-josef@toxicpanda.com>
-References: <20191011202050.8656-1-josef@toxicpanda.com>
-Content-Type: multipart/signed; micalg="pgp-sha256";
-        protocol="application/pgp-signature"; boundary="=-NKizRVlxhnKsb8IONnHF"
-User-Agent: Evolution 3.34.0 (3.34.0-1.fc31) 
+        id S1729454AbfJLQoB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 12 Oct 2019 12:44:01 -0400
+Received: from mx2.suse.de ([195.135.220.15]:44770 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1728338AbfJLQmB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 12 Oct 2019 12:42:01 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id C5E3CB481;
+        Sat, 12 Oct 2019 16:41:59 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 048B2DA7E3; Sat, 12 Oct 2019 18:42:12 +0200 (CEST)
+From:   David Sterba <dsterba@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     David Sterba <dsterba@suse.com>, stable@vger.kernel.org
+Subject: [PATCH] btrfs: don't needlessly create extent-refs kernel thread
+Date:   Sat, 12 Oct 2019 18:42:10 +0200
+Message-Id: <20191012164210.17081-1-dsterba@suse.com>
+X-Mailer: git-send-email 2.23.0
 MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+The patch 32b593bfcb58 ("Btrfs: remove no longer used function to run
+delayed refs asynchronously") removed the async delayed refs but the
+thread has been created, without any use. Remove it to avoid resource
+consumption.
 
---=-NKizRVlxhnKsb8IONnHF
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Fixes: 32b593bfcb58 ("Btrfs: remove no longer used function to run delayed refs asynchronously")
+CC: stable@vger.kernel.org # 5.2+
+Signed-off-by: David Sterba <dsterba@suse.com>
+---
+ fs/btrfs/ctree.h   | 2 --
+ fs/btrfs/disk-io.c | 6 ------
+ 2 files changed, 8 deletions(-)
 
-On Fri, 2019-10-11 at 16:20 -0400, Josef Bacik wrote:
->=20
-> and this works out properly, we only read the value once and so we
-> won't
-> trip over this problem again.
->=20
-> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-
-Reviewed-by: Rik van Riel <riel@surriel.com>
---=20
-All Rights Reversed.
-
---=-NKizRVlxhnKsb8IONnHF
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part
-Content-Transfer-Encoding: 7bit
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAABCAAdFiEEKR73pCCtJ5Xj3yADznnekoTE3oMFAl2hH5cACgkQznnekoTE
-3oMtAAf/c3rrD4m+bh26/ghFXZSuR6+H8wnw6B4cBy7wZ+KeNKSuNW/VbYkyHvda
-FCk875pDQcVKhZ0+YkdGPpEj56nzgoBu7m5z+VBqi4soRK4UuVGbpO1CzQ0aPCih
-9ZBusAH2+V7NL84Febb0+03U/RbPVI100h5luVZUk0XlgCRegCD2aGn1qyU4CQjt
-7qFr1l+H9rP9BHFjMFSWxAaeakBfeStBFeVnIuOxoowu/fcXPTrc8A762ZMCzLTZ
-sUuKv/BG6+NLV/T6OlQ50ZAmnSienqvpBKkJr8QAmLAizmREW86TK0xpq0JFtzX7
-CpgaTxf6D50unYe5uRqNB+WKAOrCxg==
-=LWDG
------END PGP SIGNATURE-----
-
---=-NKizRVlxhnKsb8IONnHF--
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index d17e79a40930..ba7981478558 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -734,8 +734,6 @@ struct btrfs_fs_info {
+ 	struct btrfs_workqueue *fixup_workers;
+ 	struct btrfs_workqueue *delayed_workers;
+ 
+-	/* the extent workers do delayed refs on the extent allocation tree */
+-	struct btrfs_workqueue *extent_workers;
+ 	struct task_struct *transaction_kthread;
+ 	struct task_struct *cleaner_kthread;
+ 	u32 thread_pool_size;
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 7d6886f70f8f..5d32deb42993 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2002,7 +2002,6 @@ static void btrfs_stop_all_workers(struct btrfs_fs_info *fs_info)
+ 	btrfs_destroy_workqueue(fs_info->readahead_workers);
+ 	btrfs_destroy_workqueue(fs_info->flush_workers);
+ 	btrfs_destroy_workqueue(fs_info->qgroup_rescan_workers);
+-	btrfs_destroy_workqueue(fs_info->extent_workers);
+ 	/*
+ 	 * Now that all other work queues are destroyed, we can safely destroy
+ 	 * the queues used for metadata I/O, since tasks from those other work
+@@ -2198,10 +2197,6 @@ static int btrfs_init_workqueues(struct btrfs_fs_info *fs_info,
+ 				      max_active, 2);
+ 	fs_info->qgroup_rescan_workers =
+ 		btrfs_alloc_workqueue(fs_info, "qgroup-rescan", flags, 1, 0);
+-	fs_info->extent_workers =
+-		btrfs_alloc_workqueue(fs_info, "extent-refs", flags,
+-				      min_t(u64, fs_devices->num_devices,
+-					    max_active), 8);
+ 
+ 	if (!(fs_info->workers && fs_info->delalloc_workers &&
+ 	      fs_info->flush_workers &&
+@@ -2212,7 +2207,6 @@ static int btrfs_init_workqueues(struct btrfs_fs_info *fs_info,
+ 	      fs_info->endio_freespace_worker && fs_info->rmw_workers &&
+ 	      fs_info->caching_workers && fs_info->readahead_workers &&
+ 	      fs_info->fixup_workers && fs_info->delayed_workers &&
+-	      fs_info->extent_workers &&
+ 	      fs_info->qgroup_rescan_workers)) {
+ 		return -ENOMEM;
+ 	}
+-- 
+2.23.0
 

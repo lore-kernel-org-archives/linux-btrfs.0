@@ -1,44 +1,91 @@
-Return-Path: <SRS0=0RKq=YG=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=w+x4=YH=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=0.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	HK_RANDOM_FROM,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5FE53C4360C
-	for <linux-btrfs@archiver.kernel.org>; Sun, 13 Oct 2019 19:57:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CDE0EC4360C
+	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Oct 2019 01:46:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 366BD2053B
-	for <linux-btrfs@archiver.kernel.org>; Sun, 13 Oct 2019 19:57:42 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9670C20815
+	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Oct 2019 01:46:07 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="z2ZzOq4Z"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728579AbfJMT5l (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 13 Oct 2019 15:57:41 -0400
-Received: from 128.246.226.114.broad.cz.js.dynamic.163data.com.cn ([114.226.246.128]:51369
-        "HELO unknown.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with SMTP id S1727492AbfJMT5l (ORCPT
+        id S1729626AbfJNBqG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 13 Oct 2019 21:46:06 -0400
+Received: from mail-wr1-f50.google.com ([209.85.221.50]:38979 "EHLO
+        mail-wr1-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727010AbfJNBqG (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 13 Oct 2019 15:57:41 -0400
-X-Greylist: delayed 6090 seconds by postgrey-1.27 at vger.kernel.org; Sun, 13 Oct 2019 15:57:40 EDT
-Received: from xjwy.cn ([127.0.0.1])
-        (envelope-sender <aaaaaa@wjx.cn>)
-        by 127.0.0.1 with ESMTP
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 Oct 2019 02:16:02 +0800
-X-WM-Sender: aaaaaa@wjx.cn
-X-Priority: 5
-X-Mailer: xIBXuICT 37
-From:   "=?utf-8?Q?aaaaaa?=" <aaaaaa@wjx.cn>
-To:     "=?utf-8?Q?linux-btrfs?=" <linux-btrfs@vger.kernel.org>
-Subject: =?utf-8?Q?aaaaaaaaaaaaaa9?=
-Message-ID: <2f3b8cee1399d099481537c600e49248@wjx.cn>
-Date:   Mon, 14 Oct 2019 02:16:00 +0800
-Content-Type: text/plain;
-        charset="utf-8"
-Content-Transfer-Encoding: 8bit
+        Sun, 13 Oct 2019 21:46:06 -0400
+Received: by mail-wr1-f50.google.com with SMTP id r3so17699318wrj.6
+        for <linux-btrfs@vger.kernel.org>; Sun, 13 Oct 2019 18:46:04 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=e+sInzwh126vD0mjy7QlqsAueTOvL34l2FbJNcyMFc8=;
+        b=z2ZzOq4Z/eQzTUaDuFEwQ73kLuUBgcF/H5sRMyZEZV9/P90QhXM9C/L/tz0OwRJkGt
+         trH9kMDw0T2cFL4rHnhRA8eGVbNRZ8rt/CjPgx8PktUoMGCiwmxl9fgG5jVcIC33XV5F
+         N1DODMsEArrV5IvTI177EzueFF7qrGicmUvQXM7brfPv6tFFa3OLi22iEapBt1D25hZi
+         x6e6ssEeuWf3l2Gl41CAyxICSIkazd/L/5qxCIvYjDzEp9uN2+ldBl8S3oIAY13mIx+L
+         XTztz5yo8H1EsjRrs8VIfRjCpsusPp7a/nZEcgC1NJutMEupWQUdrLkxKxLah+UTDBw8
+         HfLQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=e+sInzwh126vD0mjy7QlqsAueTOvL34l2FbJNcyMFc8=;
+        b=cnarZZoDbkKpVBmjqMGbNxW+UBN6+E4n24jGPYAU3YQhQbtZt3gClU8vNVI9FXzVE2
+         QVEu1MoQAnfv0O5iLcdsDRR8hXAYpaJmTLPPN81/3NLC/zdJcMQqorbTLw1Zb9gQMPwQ
+         Xy/GuYnV1w1C5QyBo5acnKtTP/EIPRhqeW9+3iiuwXv8Qr+h0V2qftm39zwTtT/nmiTD
+         0hUVsB4cdDQRyXQ3KQgEkwUJRnOSFPE7K3mP9RDGgG5tXp8QYXi9lkWKD7Qy4Ne8A48d
+         4WSMxBfQhR7sSdknOCZbHLtsre2cNhz52BSMc6MwMtKAsgzDrc8kTtYHnKLIg1TeU6fy
+         TuEA==
+X-Gm-Message-State: APjAAAXKpo/VVLudUV2/TIsQpopjXUbFGLJmNFMLiky5L1ITjmIRarxb
+        p1UOvnd/KBuwU1+ZDq1fS7t2eP2NTbYvK9Jmwc5AWQ==
+X-Google-Smtp-Source: APXvYqze5XSIiJL38Z/CW/IlZ6KEu9baJNFuikQTDELoLh9GrMQOZzYDOX9wzDnmhnKHilBtS897QAoywdJJc7P0wjM=
+X-Received: by 2002:adf:fe8b:: with SMTP id l11mr23539056wrr.167.1571017564047;
+ Sun, 13 Oct 2019 18:46:04 -0700 (PDT)
+MIME-Version: 1.0
+References: <CA+X5Wn72nYqoMLLHAUZeO43_rLL9c=zwjDYG9MKV+rcZ7x6SXw@mail.gmail.com>
+In-Reply-To: <CA+X5Wn72nYqoMLLHAUZeO43_rLL9c=zwjDYG9MKV+rcZ7x6SXw@mail.gmail.com>
+From:   Chris Murphy <lists@colorremedies.com>
+Date:   Sun, 13 Oct 2019 19:45:47 -0600
+Message-ID: <CAJCQCtT6=msmaMJg-GrV8x=oPUEwuMjHxtXLQMrtSDHkq-DDZw@mail.gmail.com>
+Subject: Re: 5.3.0 deadlock: btrfs_sync_file / btrfs_async_reclaim_metadata_space
+ / btrfs_page_mkwrite
+To:     James Harvey <jamespharvey20@gmail.com>
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-  开发瓢   ⅥⅩ：Ⓚⓕⓟ➆➆➅➇
+On Sat, Oct 12, 2019 at 5:29 PM James Harvey <jamespharvey20@gmail.com> wrote:
+>
+> Was using a temporary BTRFS volume to compile mongodb, which is quite
+> intensive and takes quite a bit of time.  The volume has been
+> deadlocked for about 12 hours.
+>
+> Being a temporary volume, I just used mount without options, so it
+> used the defaults:  rw,relatime,ssd,space_cache,subvolid=5,subvol=/
+>
+> Apologies if upgrading to 5.3.5+ will fix this.  I didn't see
+> discussions of a deadlock looking like this.
 
+I think it's a bug in any case, in particular because its all default
+mount options, but it'd be interesting if any of the following make a
+difference:
+
+- space_cache=v2
+- noatime
+
+
+
+-- 
+Chris Murphy

@@ -2,66 +2,94 @@ Return-Path: <SRS0=E4Z9=YI=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1550DECE588
-	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Oct 2019 12:10:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6B749ECE588
+	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Oct 2019 12:14:10 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E21B0205F4
-	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Oct 2019 12:10:53 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3838521925
+	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Oct 2019 12:14:10 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727998AbfJOMKw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 15 Oct 2019 08:10:52 -0400
-Received: from mx2.suse.de ([195.135.220.15]:59098 "EHLO mx1.suse.de"
+        id S1727670AbfJOMOJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 15 Oct 2019 08:14:09 -0400
+Received: from mx2.suse.de ([195.135.220.15]:34692 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726540AbfJOMKw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 15 Oct 2019 08:10:52 -0400
+        id S1727339AbfJOMOJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 15 Oct 2019 08:14:09 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 63768B2FC;
-        Tue, 15 Oct 2019 12:10:50 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 3BC04DA7E3; Tue, 15 Oct 2019 14:11:02 +0200 (CEST)
-Date:   Tue, 15 Oct 2019 14:11:02 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Dennis Zhou <dennis@kernel.org>
-Cc:     Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
-        Omar Sandoval <osandov@osandov.com>, kernel-team@fb.com,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 01/19] bitmap: genericize percpu bitmap region iterators
-Message-ID: <20191015121102.GT2751@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Dennis Zhou <dennis@kernel.org>,
-        Josef Bacik <josef@toxicpanda.com>, David Sterba <dsterba@suse.com>,
-        Chris Mason <clm@fb.com>, Omar Sandoval <osandov@osandov.com>,
-        kernel-team@fb.com, linux-btrfs@vger.kernel.org
-References: <cover.1570479299.git.dennis@kernel.org>
- <d2efb06e5e5400007a709bb1269b25e16b435169.1570479299.git.dennis@kernel.org>
- <20191007202612.mer74bok5ymyxae6@MacBook-Pro-91.local>
- <20191007222419.GA26876@dennisz-mbp.dhcp.thefacebook.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20191007222419.GA26876@dennisz-mbp.dhcp.thefacebook.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+        by mx1.suse.de (Postfix) with ESMTP id 9F711AD46
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 Oct 2019 12:14:07 +0000 (UTC)
+From:   Johannes Thumshirn <jthumshirn@suse.de>
+To:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>
+Cc:     Johannes Thumshirn <jthumshirn@suse.de>
+Subject: [RFC PATCH 2/2] btrfs: rename btrfs_parse_device_options back to btrfs_parse_early_options
+Date:   Tue, 15 Oct 2019 14:14:05 +0200
+Message-Id: <20191015121405.19066-2-jthumshirn@suse.de>
+X-Mailer: git-send-email 2.16.4
+In-Reply-To: <20191015121405.19066-1-jthumshirn@suse.de>
+References: <20191015121405.19066-1-jthumshirn@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Oct 07, 2019 at 06:24:19PM -0400, Dennis Zhou wrote:
-> > > + * Bitmap region iterators.  Iterates over the bitmap between [@start, @end).
-> > 
-> > Gonna be that guy here, should be '[@start, @end]'
-> 
-> I disagree here. I'm pretty happy with [@start, @end). If btrfs wants to
-> carry their own iterators I'm happy to copy and paste them, but as far
-> as percpu goes I like [@start, @end).
+As btrfs_parse_device_options() now doesn't only parse the -o device mount
+option but -o auth_key as well, it makes sense to rename it back to
+btrfs_parse_early_options().
 
-It's not clear what the comment was about, if it's the notation of
-half-closed interval or request to support closed interval in the
-lookup. The orignal code has [,) and that shouldn't be changed when
-copying. Or I'm missing something.
+This reverts commit fa59f27c8c35bbe00af8eff23de446a7f4b048b0.
+
+Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
+---
+ fs/btrfs/super.c | 11 ++++++-----
+ 1 file changed, 6 insertions(+), 5 deletions(-)
+
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 313ef7fc2bdf..3708264a7335 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -470,8 +470,9 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
+ 		case Opt_subvolrootid:
+ 		case Opt_device:
+ 			/*
+-			 * These are parsed by btrfs_parse_subvol_options or
+-			 * btrfs_parse_device_options and can be ignored here.
++			 * These are parsed by btrfs_parse_subvol_options
++			 * and btrfs_parse_early_options
++			 * and can be happily ignored here.
+ 			 */
+ 			break;
+ 		case Opt_nodatasum:
+@@ -893,7 +894,7 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
+  * All other options will be parsed on much later in the mount process and
+  * only when we need to allocate a new super block.
+  */
+-static int btrfs_parse_device_options(struct btrfs_fs_info *info,
++static int btrfs_parse_early_options(struct btrfs_fs_info *info,
+ 				      const char *options, fmode_t flags,
+ 				      void *holder)
+ {
+@@ -975,7 +976,7 @@ static int btrfs_parse_subvol_options(const char *options, char **subvol_name,
+ 
+ 	/*
+ 	 * strsep changes the string, duplicate it because
+-	 * btrfs_parse_device_options gets called later
++	 * btrfs_parse_early_options gets called later
+ 	 */
+ 	opts = kstrdup(options, GFP_KERNEL);
+ 	if (!opts)
+@@ -1532,7 +1533,7 @@ static struct dentry *btrfs_mount_root(struct file_system_type *fs_type,
+ 	}
+ 
+ 	mutex_lock(&uuid_mutex);
+-	error = btrfs_parse_device_options(fs_info, data, mode, fs_type);
++	error = btrfs_parse_early_options(fs_info, data, mode, fs_type);
+ 	if (error) {
+ 		mutex_unlock(&uuid_mutex);
+ 		goto error_fs_info;
+-- 
+2.16.4
+

@@ -2,120 +2,116 @@ Return-Path: <SRS0=E4Z9=YI=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,
+	SPF_PASS,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 48CB3C10F14
-	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Oct 2019 15:41:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E3825ECE588
+	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Oct 2019 15:42:30 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1AE61205F4
-	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Oct 2019 15:41:41 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B867D205F4
+	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Oct 2019 15:42:30 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1571154102;
-	bh=Q9q/swW0CjJtcYudyTacQZt0zm1HwKijchIV1Y/C2BE=;
+	s=default; t=1571154150;
+	bh=95hmQLfjm+IZao22sg7YuzL+pTlvV1nZN8TteD1eElk=;
 	h=Date:From:To:Cc:Subject:References:In-Reply-To:List-ID:From;
-	b=X5ax3b51OovyaJw1+pGY7fQHPyngj51U35BWHTfxKzzLVeAd1mowr0conQBTON8N9
-	 ipiPem0yBTrmUyzFvdgvnt0vf1bx9Ccx43Mk/p1QD7L3XM9Jw/eD87cXtDpu/4qMrN
-	 lF1yrMWoLy1q93vwpaYl2uqxQT7C77cVLrP9+Dm8=
+	b=xOT+aBasvEHUBRr44YdQ/L8YNhkW/9UZOVfg9Yf8w7xd65fpRo7nCRDRPDRJQqHLH
+	 I81YUts//pjha0qWSRApbFhQEeI2hyV8vxTrJABGkyoVVYbW+cWkfL/spCXmviQIa3
+	 esmr2T4RcajCLY5jJfjX5ion4T/1AkHty4VJx11s=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727656AbfJOPlk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 15 Oct 2019 11:41:40 -0400
-Received: from mail-qt1-f196.google.com ([209.85.160.196]:35536 "EHLO
-        mail-qt1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726231AbfJOPlk (ORCPT
+        id S1728966AbfJOPm3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 15 Oct 2019 11:42:29 -0400
+Received: from mail-qt1-f194.google.com ([209.85.160.194]:39819 "EHLO
+        mail-qt1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726422AbfJOPm3 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 15 Oct 2019 11:41:40 -0400
-Received: by mail-qt1-f196.google.com with SMTP id m15so31249842qtq.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 Oct 2019 08:41:37 -0700 (PDT)
+        Tue, 15 Oct 2019 11:42:29 -0400
+Received: by mail-qt1-f194.google.com with SMTP id n7so31186632qtb.6
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 Oct 2019 08:42:29 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:date:from:to:cc:subject:message-id:references
          :mime-version:content-disposition:in-reply-to:user-agent;
-        bh=i76+j+xrK/8CbH1fZSq+U92Mtj5xQ3L79TTUTA2fsgg=;
-        b=udl5f8ez8pMzi7OxlxHem9eJrjADYoRmiUa+5r5Y+zUmdlwH8YlqkWVpapxYM5XdBo
-         CIVDeTztFgEl9L7xAkGfR2tpY7eXsP8TM8CuP+UwkY9cZIvzBiGJAKggq7gZh8SOVsTp
-         +ObR1DBW3ZRbxi8L1+9OBSlvz68hc45GdoKfEGQLoI7TrUQo7sWK+GZPt6CaMthhEcu1
-         8mc68LgmRwogaE3xuvdAMZCjyuQc08cgYrycG6mJJ2KQzpWUQFQV0aG3exxwcahmw+L9
-         tqz/z8EPjg69ruSjhgUaG0JAtOeGyGQiPTGThbH4hTpTpIniKeZqKEwT/jR/5hPyV7D+
-         9O8A==
-X-Gm-Message-State: APjAAAWwH41LhugTjo4tAsZcTtJ0rcGIL+NbhUr8i81w8WZdfhaN3KQD
-        SMvnF4ZBsyfn6g5BjfqZafY=
-X-Google-Smtp-Source: APXvYqwjGtnCqd16ObkBmZOWMi0uWdmmqK+eie3Almy1UGqXrfWn49PHJRXxTO3yF/ebXgeMob9CzA==
-X-Received: by 2002:ac8:73cf:: with SMTP id v15mr37954217qtp.310.1571154097380;
-        Tue, 15 Oct 2019 08:41:37 -0700 (PDT)
+        bh=vkjukRMYGkOvQPapFg2EWMbIaB4s2EdbEN222R7K6JE=;
+        b=cMDFvz4nZmCm+UTlKirACkHHv6MZmiQjJRC050mdyCnfwV5oTVLPccQy0WBDVNra9Y
+         D3P8R514iIl8f8v0EfqJwQYAv+VHgWYMnLrfz9FtNazYgo20Y+NoU7IbpV2lfTlq6Xa+
+         Ll5HA2FX+GnmHa0Yz5iE2rZnlgNmn6m2rzsNZUyFyVvZ2gQ3Qa5Uhj608iZh/klycWda
+         9FjZ9CAxTci5bfW8ndHwrEJaSTu5BEBQY/6B3ipRi9VUGKTH9xO1AZhJlxDUk2wM9+5W
+         w8wNtXDbWWFujlLnAQXpiTmIi9IkdBXEIIDuiXZDyrEQKNZLgXvuJIwg6zQQv8HSHuI2
+         hkhw==
+X-Gm-Message-State: APjAAAX1Ir6bOPdW0JII8CCfzIMh6jnrsI4ZM5XR8xzZfao3KPvsTLsD
+        e1Oz22Aj0INQ76kN9B7lmII=
+X-Google-Smtp-Source: APXvYqwQd7qaUpAnAf+YTcpKMjbhYxme3vpzoy1R95IyD6rX9I3Xqt9KyDW9Yp4bjzL4cl+GeJI7Jw==
+X-Received: by 2002:ac8:6c9:: with SMTP id j9mr38203846qth.81.1571154148727;
+        Tue, 15 Oct 2019 08:42:28 -0700 (PDT)
 Received: from dennisz-mbp ([2620:10d:c091:500::c97c])
-        by smtp.gmail.com with ESMTPSA id n44sm14451147qtf.51.2019.10.15.08.41.36
+        by smtp.gmail.com with ESMTPSA id b130sm10172132qkc.100.2019.10.15.08.42.27
         (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Tue, 15 Oct 2019 08:41:36 -0700 (PDT)
-Date:   Tue, 15 Oct 2019 11:41:33 -0400
+        Tue, 15 Oct 2019 08:42:28 -0700 (PDT)
+Date:   Tue, 15 Oct 2019 11:42:25 -0400
 From:   Dennis Zhou <dennis@kernel.org>
 To:     David Sterba <dsterba@suse.cz>
-Cc:     Dennis Zhou <dennis@kernel.org>, David Sterba <dsterba@suse.com>,
-        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+Cc:     Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
         Omar Sandoval <osandov@osandov.com>, kernel-team@fb.com,
         linux-btrfs@vger.kernel.org
-Subject: Re: [RFC PATCH 00/19] btrfs: async discard support
-Message-ID: <20191015154133.GA66037@dennisz-mbp>
+Subject: Re: [PATCH 15/19] btrfs: load block_groups into discard_list on mount
+Message-ID: <20191015154225.GB66037@dennisz-mbp>
 References: <cover.1570479299.git.dennis@kernel.org>
- <20191015120831.GS2751@twin.jikos.cz>
+ <31ce602fac88f25567a0b3e89037693ec962c1c7.1570479299.git.dennis@kernel.org>
+ <20191010171137.xxuhjvmqzgifuixd@macbook-pro-91.dhcp.thefacebook.com>
+ <20191014201746.GF40077@dennisz-mbp.dhcp.thefacebook.com>
+ <20191014233825.GR2751@twin.jikos.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20191015120831.GS2751@twin.jikos.cz>
+In-Reply-To: <20191014233825.GR2751@twin.jikos.cz>
 User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Oct 15, 2019 at 02:08:31PM +0200, David Sterba wrote:
-> Hi,
+On Tue, Oct 15, 2019 at 01:38:25AM +0200, David Sterba wrote:
+> On Mon, Oct 14, 2019 at 04:17:46PM -0400, Dennis Zhou wrote:
+> > On Thu, Oct 10, 2019 at 01:11:38PM -0400, Josef Bacik wrote:
+> > > On Mon, Oct 07, 2019 at 04:17:46PM -0400, Dennis Zhou wrote:
+> > > > Async discard doesn't remember the discard state of a block_group when
+> > > > unmounting or when we crash. So, any block_group that is not fully used
+> > > > may have undiscarded regions. However, free space caches are read in on
+> > > > demand. Let the discard worker read in the free space cache so we can
+> > > > proceed with discarding rather than wait for the block_group to be used.
+> > > > This prevents us from indefinitely deferring discards until that
+> > > > particular block_group is reused.
+> > > > 
+> > > > Signed-off-by: Dennis Zhou <dennis@kernel.org>
+> > > 
+> > > What if we did completely discard the last time, now we're going back and
+> > > discarding again?  I think by default we just assume we discarded everything.
+> > > If we didn't then the user can always initiate a fitrim later.  Drop this one.
+> > > Thanks,
+> > > 
+> > 
+> > Yeah this is something I wasn't sure about.
+> > 
+> > It makes me a little uncomfortable to make the lack of persistence a
+> > user problem. If in some extreme case where someone frees a large amount
+> > of space and then unmounts.
 > 
-> thanks for working on this. The plain -odiscard hasn't been recommended
-> to users for a long time, even with the SATA 3.1 drives that allow
-> queueing the requests.
+> Based on past experience, umount should not be slowed down unless really
+> necessary.
 > 
-> The overall approach to async discard sounds good, the hard part is not
-> shoot down the filesystem by trimming live data, and we had a bug like
-> that in the pastlive data, and we had a bug like that in the past. For
-> correctness reasons I understand the size of the patchset.
+> > We can either make them wait on unmount to
+> > discard everything or retrim the whole drive which in an ideal world
+> > should just be a noop on already free lba space.
 > 
-> On Mon, Oct 07, 2019 at 04:17:31PM -0400, Dennis Zhou wrote:
-> > I am currently working on tuning the rate at which it discards in the
-> > background. I am doing this by evaluating other workloads and drives.
-> > The iops and bps rate limits are fairly aggressive right now as my
-> > basic survey of a few drives noted that the trim command itself is a
-> > significant part of the overhead. So optimizing for larger trims is the
-> > right thing to do.
-> 
-> We need a sane default behaviour, without the need for knobs and
-> configuration, so it's great you can have a wide range of samples to
-> tune it.
-> 
+> Without persistence of the state, we can't make it perfect and I think,
+> without any hard evidence, that trimming already trimmed blocks is no-op
+> on the device. We all know that we don't know what SSDs actually do, so
+> it's best effort and making it "device problem" is a good solution from
+> filesystem POV.
 
-Yeah I'm just not quite sure what that is yet. The tricky part is that
-we don't really get burned by trims until well after we've issued the
-trims. The feedback loop is not really transparent with reads and
-writes.
-
-> As trim is only a hint, a short delay in processing the requests or
-> slight ineffectivity should be acceptable, to avoid complications in the
-> code or interfering with other IO.
-> 
-> > Persistence isn't supported, so when we mount a filesystem, the block
-> > groups are read in as dirty and background trim begins. This makes async
-> > discard more useful for longer running mount points.
-> 
-> I think this is acceptable.
-> 
-> Regarding the code, I leave comments to the block group and trim
-> structures to Josef and will focus more on the low-level and coding
-> style or changelogs.
-
-Sounds good. I'll hopefully post a v2 shortly so that we can get more of
-that out of the way. Then hopefully a smaller incremental later to
-figure out the configuration part.
+That makes sense and sounds good to me. I've dropped this patch.
 
 Thanks,
 Dennis

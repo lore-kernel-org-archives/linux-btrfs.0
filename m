@@ -2,311 +2,210 @@ Return-Path: <SRS0=E4Z9=YI=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.3 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0FDB5ECE588
-	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Oct 2019 18:43:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6F333ECE58C
+	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Oct 2019 19:03:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D1BAE2086A
-	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Oct 2019 18:43:18 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3E37620872
+	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Oct 2019 19:03:13 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="14vSyNX0"
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="mvTlmY0G"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726144AbfJOSnS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 15 Oct 2019 14:43:18 -0400
-Received: from mail-pf1-f196.google.com ([209.85.210.196]:46631 "EHLO
-        mail-pf1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2389236AbfJOSnI (ORCPT
+        id S2389229AbfJOTDM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 15 Oct 2019 15:03:12 -0400
+Received: from mail-wm1-f42.google.com ([209.85.128.42]:39416 "EHLO
+        mail-wm1-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1729457AbfJOTDL (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 15 Oct 2019 14:43:08 -0400
-Received: by mail-pf1-f196.google.com with SMTP id q5so13004597pfg.13
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 Oct 2019 11:43:06 -0700 (PDT)
+        Tue, 15 Oct 2019 15:03:11 -0400
+Received: by mail-wm1-f42.google.com with SMTP id v17so195589wml.4
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 Oct 2019 12:03:08 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=osandov-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:cc:subject:date:message-id:in-reply-to:references
-         :mime-version:content-transfer-encoding;
-        bh=/DGeX/s/F7y1Ptg4TXfC149/3MNxfqpqB94L2lN+tho=;
-        b=14vSyNX0fzDf9xngY1AfBlds+lZ2FMgpQ6oeFmWsWrEdx+Idny6JEU716Serthufy3
-         qLzTc7wkNyAJ/7IRT1Njsimn3NbWdgg0ICOBELgJoR+GWwwUsSJmbKNeZx5fmu2Us/Ap
-         L9R65uNRI/fkUFAzYRVIVr7ND98NMrVA/tvHl13/I+JkbO+CtftuwHg9poXQ+P8u7a1Z
-         n4w4mvXw6vhFtiWVVHAcvq3QXG+EMb9oJfhiwkx0LPgVoJlL857xC1QNpSH70ZkfqyR9
-         JSVZIQJ9/EAfzeKJEPY+ySXZiOOTMqZQe1dmDsvDWdNxHBimKI6h82RJ4powbqWfGCJ5
-         D+lA==
+        d=gmail.com; s=20161025;
+        h=to:from:subject:autocrypt:message-id:date:user-agent:mime-version
+         :content-language:content-transfer-encoding;
+        bh=qmBp+m+aav6lcpigfv7QSHsXYy1n0VU6hax7KWePsSc=;
+        b=mvTlmY0GmQQtTSgJtGUYO6hls+Ax5a33Dj1KeNyiGUXyckhlftsUHRa8EK25YzpO7m
+         x/9RB/mn2G/CblWLOm7mIfwW0gEO945bEdNFjwcVxy/5ZAx1wfWR38dvIoTERlcgP/NP
+         mgkNsX3f8sw+a6rlNikisY3B9EJ1HgZg/mv+CKyh4SuWOCSkWR37AzahaMpVsLl1lUdI
+         rNwVZu8iC8VLnOMZSMN7bazyEg1DNX3LepdKKn9eMOVdrQLFidKePTH2qQiiUf7ePGKy
+         CKps+f440FwGS3N9wD3iFsP28+gPDtHCKSCd8C9VEPGnaptMPlbJNsqwvQn1c/ZLxTmt
+         PIyg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=/DGeX/s/F7y1Ptg4TXfC149/3MNxfqpqB94L2lN+tho=;
-        b=IX7S3jwz9h/+ecvNvqMzD81nC1zx0zq+aOyk/bbP6aQBEQBudrbBK+LrbYjBsWE0oZ
-         PqE15lZ3MAXdcSNmdZPFDeQ5fMo5Y/c0gm59SkW6Equk+tPAcFe/u1fwvjnScgUa3aLp
-         B/5v+eQEe0TJ8gYevbotr7X5vcaFKFlj0QxaEQlgedRHla6sF8AcymvicipN7gXolowO
-         +B7Y5eEZ+01tPPbHIdrLsXRhs3KFDHNxwa138TlAb8sGiq9gGrtDovVeZCxP0AGFrsg/
-         y74m8Z/XmONHGDxj5PeItRyTIQ4wamrBCnWu0fFERvaAfT+D/ptzoox2TE+BomQAC8Oh
-         EQxA==
-X-Gm-Message-State: APjAAAVHGIYkTGhwqTHDW88tYTgGnUDcNKkVo7F4eaGPNRbqlth2zisY
-        8tC3XA2NXC8zCMwRWDz3b+TBMQ==
-X-Google-Smtp-Source: APXvYqywC9a+xVFtPcV06leUtXOTMWAiybNplGHzlZII4ICbIq6sFGKGH4YHelYXDu92DH8tF0PqUQ==
-X-Received: by 2002:a62:3387:: with SMTP id z129mr38560916pfz.253.1571164986127;
-        Tue, 15 Oct 2019 11:43:06 -0700 (PDT)
-Received: from vader.thefacebook.com ([2620:10d:c090:200::2:3e5e])
-        by smtp.gmail.com with ESMTPSA id z3sm40396pjd.25.2019.10.15.11.43.05
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 15 Oct 2019 11:43:05 -0700 (PDT)
-From:   Omar Sandoval <osandov@osandov.com>
-To:     linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org
-Cc:     Dave Chinner <david@fromorbit.com>, Jann Horn <jannh@google.com>,
-        linux-api@vger.kernel.org, kernel-team@fb.com
-Subject: [RFC PATCH v2 2/5] fs: add RWF_ENCODED for reading/writing compressed data
-Date:   Tue, 15 Oct 2019 11:42:40 -0700
-Message-Id: <7f98cf5409cf2b583cd5b3451fc739fd3428873b.1571164762.git.osandov@fb.com>
-X-Mailer: git-send-email 2.23.0
-In-Reply-To: <cover.1571164762.git.osandov@fb.com>
-References: <cover.1571164762.git.osandov@fb.com>
+        h=x-gm-message-state:to:from:subject:autocrypt:message-id:date
+         :user-agent:mime-version:content-language:content-transfer-encoding;
+        bh=qmBp+m+aav6lcpigfv7QSHsXYy1n0VU6hax7KWePsSc=;
+        b=R/stv/C128emCH+PqqZRrj5HkIOxQonsaKYbwonKX78goXfHjsYCGGwBtvVPkJ3MPY
+         LlsD+L8pS2a8+WXodOhcbiXQe6p4C+x4GUlILb6Ol6iB+tZz3zDjbA4sBf+OtTGFbEqF
+         ey7DTYubzlXmHlq8Fackz1VsiSzXdVibHvePbe9hp7PcDkFqC1V+DeVzSE2TFpEolLdO
+         NQZMjopYMqUj5oPvKNmaxQLYKVdVqEe29H8UD8hQGjIQ+LQtPTf5vnEOqzU+7Mn223TE
+         WInihIE4HhTUKy7OG2hw8RU9PygGBJ19Xqc6uzQL5olKFZSda+Z8WFdDOP1z39a1ALW+
+         sFbA==
+X-Gm-Message-State: APjAAAUoiAusLrnrBlkK0fa5GkJCcEEca/oHPTEQ/utXiddqQYj6zi4i
+        M1R5uq/14oAUJ9KduUYkPDOIH4L3L5s=
+X-Google-Smtp-Source: APXvYqwOHCBPuQNPEx98p/cxHR0OXbrd8Ydj7mHkYM6LCHDYOZvaA+b/YZKAen9cSB8GJUi895dfIw==
+X-Received: by 2002:a7b:cf30:: with SMTP id m16mr38759wmg.89.1571166187857;
+        Tue, 15 Oct 2019 12:03:07 -0700 (PDT)
+Received: from argo.dxprod.sympato.ch (bsse-bs-dock-128-90.ethz.ch. [129.132.128.90])
+        by smtp.googlemail.com with ESMTPSA id z189sm201514wmc.25.2019.10.15.12.03.05
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 15 Oct 2019 12:03:05 -0700 (PDT)
+To:     linux-btrfs@vger.kernel.org
+From:   DrYak <doktor.yak@gmail.com>
+Subject: bad tree block start, want #### have 0
+Autocrypt: addr=doktor.yak@gmail.com; prefer-encrypt=mutual; keydata=
+ mQINBFZQDsABEAC5bXRJ37OpqYLjlXBZ5356OrUpHDY5rnkVRkfdvne6DBtI3qqjtZWkAoz5
+ UE3LLs6bsWKIg/g1ApvlhpgflTl2dTTW2fJhhrMy2drnOYq2xB2mqyx+Kz8UBE08tR1BFc+I
+ OKyr5O0yFWScfouFVvwNLO1etLslNxtWZxF860IzLL5V3ZOsy2dpWH9e9sir+Na272iOJxZX
+ H9NgVZTsn7rEHkyVqNtdEyndGRqcpjMBm2Iuucvnq0QSrs4bvcEG3TJQSc48sVlJrS1qM/yq
+ B+I30aGBFKKmw0cTBxpiWXJ5xYoOtFkzGOnMhVS8xTiE/1BTzJOAwBTK85KUu/8HIZ/+Nzjx
+ OLd/BeDgfkTjjTjYW+IRivouI0tSHSEO1aEyVu2fBelgWHlV0Xsc2bZKQ5wwEkaUXwZJJUT5
+ kC7muVBfj8fMoYXjW1XT+IP7x9kDC8BFANrr3x2E58NOBlTNmNaeoVFUwtQYBhypHqXC6sdM
+ 9LbU+hhKcPbWWf8il02bnkMVlwZpQSwRMCHIqAtF/CmbEWRnVgMztP5bT2klhVHFE6BrTEhG
+ RftyYOstJLILNIosxXnikckpRXBk9gK0rr6cPVHUz6iGYmh0roL5+ZW55xuKKz7Mno2WUbz5
+ yfg6aXb/nnZW5qFV+YwawVS7RAfl0GOMUMWMMsfOQS6jk4CAfQARAQABtCRJdmFuIFRvcG9s
+ c2t5IDxkb2t0b3IueWFrQGdtYWlsLmNvbT6JAjkEEwECACMFAlZQDsACGy8HCwkIBwMCAQYV
+ CAIJCgsEFgIDAQIeAQIXgAAKCRDt/cWlouzxQrugD/0fnPYVjp7lwWqsOJP1WmSMz81F3UNl
+ ogLIJyDiFpoeKYeHs6us69Z7cbXi99AWTGg/KESRrOJwjkQvKzU0mM9QVC5m1utuv6PxOH5u
+ fjGYQKnpvUkadHdI4qNcWiN9zRrHwe2wFPJmAgT/UaNy7v89K6lNJYLyOEr1rpmhAkhW9fwZ
+ oezsQ7vgpf/27LvsLZpHXPgsatl7bqrPq7opUOybx1EyRPZz94B2fwvy0kSB5OUnKaneIoBJ
+ YuMIatVUFAZ23oVx47OOlP2+ioC903OCz7DO5EMwvWTJ7UEraxTsBHIrf9kS9CqVUoG56ZTx
+ DE44heHFPuWMD3b5UwexfcMqZ0J0YS8mqLdxNIOlMrDWgTsr7F/ZWyqlxzaRd8BXbBLEV/30
+ vDcindKB0IueaoKkRuWdF2o6bf0v6ldcMWGkWrMMoBq3dezVHNzCFELLibz80TYS2pw8zFs2
+ QwiAMZX5AaQOq3ea9lflf4kfKFh/izBd9T4mABBSTH8roR6rRPixgQqwQpx4CVq28FIj05cA
+ yjCevPqiYFLCZ9te5pc9IrSCuOlM13rD5Jk/A4HJMJMdKPDSsnVrh8166yla4n8d5w9tsGrk
+ n5xX5FwQs54tOSK0PtvEDz6iDeesH6FFXos+rfRm/j69VRYeQc8xH31DlFUuBz/zfs/TlJ/G
+ 78q24LkCDQRWUA7AARAAq4Fzh0BeaLuJa9uJrLtybT8C22m1KYCURITcVMY4wPs8E6MqwdqX
+ kXx4zklVffctJgRML17DlUWSx/Ld+O+Z0oBJ7l6lwCpoTVzYE/Ye1JqdxFzvTjYdTI3LQyk8
+ DnDZUZDD8ZwnWjZsL4vhcp/J3xoMT8c+VEW7l/2Co67S755jO3CvxnS5RfZB0CbfeHEuZCbX
+ 5nJMX9rb7IFVHyd2OVB7m1IQcXSKFs37vBz4o4LPTMGNf8ODdypWDsIw/rpBVx49ZGBm42Mg
+ pSk/WVNbN+f3nvR/tuN8UWaAsNVarYDAn8vbcZt5xjah5y8r459Ao7d1ireFPnlnIswZ5hDg
+ NpC30tQicPbnW7JA30retWGrevSKB9eVXxBUsBjplBZSyGx94OeRDaq19kt0TurPSNYEXnpu
+ myUrWroEU1iiz6/FfS9mokSTS9oolN+P1BtZzSzpShQT72fKC3xaA3vhTIXDQDbXT7K4bFF9
+ gM2vrjtBRSZ8sOyPB4hfRAXh0ErrID4Yt+X44vPAe4+lTrWoi7apiaf1V1YMijNwW6vH9u5M
+ ffAgfg4nmWSHg88TqzUzJHO/lWAfKXKqbXQvNqLvLo/5beDkw1LHxIlDoxXolR334b8SUNgZ
+ mFa6BQgsdzStGID0J5mD6OAitNFBVnoaH2Ar8viCiJXg8gJvlDrGUV0AEQEAAYkEPgQYAQIA
+ CQUCVlAOwAIbLgIpCRDt/cWlouzxQsFdIAQZAQIABgUCVlAOwAAKCRDC+mrU1rs74/JtD/4z
+ NJM1GeSTCf9NlG96CjdMaw9Ndbccqos1FKUuWOM/w/AOXi+J+o1DxyKRyoZEKEFOjEOx8ky/
+ VBXs9ssdj4MpBJH5EDUTLz1fBD8t7xDaJv+uenOQyOr9JoMkql2ucfunmS6eUUUhmgOSxvBF
+ uvfWMjOofrPCQV1oX2056Ku17Oz6JYBVjFdL5yn7JBhloJPhiK2/qFpp5AmH50Wp8fwW8SnM
+ 7gQliDRj2kSdGxs930XmiNdx+zvDpw/16xfMVIJ8qquSv9EGLuBZipJ6No1vMfGoSrmbXC6K
+ EDM+/26cXg/LQdkn+MRt5oIoEp8Gd7trY2lH0yLZJmbGNrrhUkOehkc57rvOqFaDbZAipLWB
+ L1o9lIjs8rouHhBqQPX/sHCjocxJR9KQ1dqjnqaBpK4IySD7FtstuRbvsUPegzSxrQ2lZrNz
+ uq5e3DSRmfLoNh0JRVetRoujlY438qQ5XVKrzg3RrQ2M/EGjL28Hh7FCMemof9SoHzOxNss6
+ Mbnvx9k7AV6Kvu1ofq2B+A2U6lxCnwCajvOmLLAQV2wzLi5EhLhFxftzySG2N5rakN5Ehro9
+ Ups6lGMNmMpu8X4S7sm5OK4ZXx3ayXxRVx6Mb7x2YC0sMYj5SWqKhDOs2i/OfB1OUctkEw7o
+ 5cZGNkCd3RIDo8T1hFOwLEXnmw2O+UFeU67mEAC3SOM+4yGxK9yWmyO9ThZOUoCmHJZFMoqL
+ pgdQJIijWwiAj4i8Z+lc7CZUVjALVTLPdIJqpdko+R2AccFWjZ+NdwCRNfGuSkwDXuw0Q15F
+ jV1Sd7p+n0D67UAztA1FWOY1nbHmKSaRYvLLgFv6MCgERJlI02hIs1NyIaw3gkIW8R8FtRT5
+ TovhD/RVVmQHbaEa2GOsiaJNBSojPn5UJfoG8fDRwRWtDKaiOVAkTvdQlRnUXH03co1OMvdm
+ 2/M7PZeuEnyadiNfAsi4yLbAY4LOeao2mJzCwVxi/gDhSPRaDOOjGWUxpFvtdDAT7pAzZJ0c
+ njumANH3WmlOMpgS68o9ULZbBzVDq7NiR2DNLTMueFLJX9Ny5dh29MRajeSFKn24qR8blscA
+ 9xIeDtcrAQyouIlm/qrNJ4286BC5dIZgz44PrAKxGr8rYm4WjGNydMJuPal++S0XvWeWZ2lo
+ SPFY43XEEd2GnaqObxX+TI9bYxD6xghL/oAsS/JuXSqbANKRYaildITFi/MFq7gWZpJ5OcAD
+ cO9cNrWBh9cK3cTgSAGtnPtMTzaf+zW+Be1otnlXsw5N9ENVYfRrPSR4sO9Y4Cef6z5uXY27
+ CmYGwHSpiHIQr2/6pbft7PE8LfTeNWnooq7szSpctacY2BVxe9OVYJAlxTzRQXU8Zhag233P Nw==
+Message-ID: <3bd5b254-f3e4-1b81-da75-7a15cd49fc43@gmail.com>
+Date:   Tue, 15 Oct 2019 21:03:04 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.1.0
 MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Language: fr
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Omar Sandoval <osandov@fb.com>
+Hello
 
-Btrfs supports transparent compression: data written by the user can be
-compressed when written to disk and decompressed when read back.
-However, we'd like to add an interface to write pre-compressed data
-directly to the filesystem, and the matching interface to read
-compressed data without decompressing it. This adds support for
-so-called "encoded I/O" via preadv2() and pwritev2().
+I'm having trouble on a BTRFS file system that I use on a Raspberry Pi.
+I can still mount and access (nearly all) my data.
 
-A new RWF_ENCODED flags indicates that a read or write is "encoded". If
-this flag is set, iov[0].iov_base points to a struct encoded_iov which
-is used for metadata: namely, the compression algorithm, unencoded
-(i.e., decompressed) length, and what subrange of the unencoded data
-should be used (needed for truncated or hole-punched extents and when
-reading in the middle of an extent). For reads, the filesystem returns
-this information; for writes, the caller provides it to the filesystem.
-iov[0].iov_len must be set to sizeof(struct encoded_iov), which can be
-used to extend the interface in the future. The remaining iovecs contain
-the encoded extent.
+The trouble origin itself is probably hardware (flacky USB3-to-mSATA
+adapter and/or power stability), not necessarily a bug in BTRFS.
 
-Filesystems must indicate that they support encoded writes by setting
-FMODE_ENCODED_IO in ->file_open().
+As I've said I can retreive nearly all the data I need, so I could
+surely just `btrfs restore` and then rebuild a new filesystem.
 
-Signed-off-by: Omar Sandoval <osandov@fb.com>
----
- include/linux/fs.h      | 14 +++++++
- include/uapi/linux/fs.h | 26 ++++++++++++-
- mm/filemap.c            | 82 ++++++++++++++++++++++++++++++++++-------
- 3 files changed, 108 insertions(+), 14 deletions(-)
+BUT...
 
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index e0d909d35763..54681f21e05e 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -175,6 +175,9 @@ typedef int (dio_iodone_t)(struct kiocb *iocb, loff_t offset,
- /* File does not contribute to nr_files count */
- #define FMODE_NOACCOUNT		((__force fmode_t)0x20000000)
- 
-+/* File supports encoded IO */
-+#define FMODE_ENCODED_IO	((__force fmode_t)0x40000000)
-+
- /*
-  * Flag for rw_copy_check_uvector and compat_rw_copy_check_uvector
-  * that indicates that they should check the contents of the iovec are
-@@ -314,6 +317,7 @@ enum rw_hint {
- #define IOCB_SYNC		(1 << 5)
- #define IOCB_WRITE		(1 << 6)
- #define IOCB_NOWAIT		(1 << 7)
-+#define IOCB_ENCODED		(1 << 8)
- 
- struct kiocb {
- 	struct file		*ki_filp;
-@@ -3088,6 +3092,11 @@ extern int sb_min_blocksize(struct super_block *, int);
- extern int generic_file_mmap(struct file *, struct vm_area_struct *);
- extern int generic_file_readonly_mmap(struct file *, struct vm_area_struct *);
- extern ssize_t generic_write_checks(struct kiocb *, struct iov_iter *);
-+struct encoded_iov;
-+extern int generic_encoded_write_checks(struct kiocb *, struct encoded_iov *);
-+extern ssize_t check_encoded_read(struct kiocb *, struct iov_iter *);
-+extern int import_encoded_write(struct kiocb *, struct encoded_iov *,
-+				struct iov_iter *);
- extern int generic_remap_checks(struct file *file_in, loff_t pos_in,
- 				struct file *file_out, loff_t pos_out,
- 				loff_t *count, unsigned int remap_flags);
-@@ -3403,6 +3412,11 @@ static inline int kiocb_set_rw_flags(struct kiocb *ki, rwf_t flags)
- 			return -EOPNOTSUPP;
- 		ki->ki_flags |= IOCB_NOWAIT;
- 	}
-+	if (flags & RWF_ENCODED) {
-+		if (!(ki->ki_filp->f_mode & FMODE_ENCODED_IO))
-+			return -EOPNOTSUPP;
-+		ki->ki_flags |= IOCB_ENCODED;
-+	}
- 	if (flags & RWF_HIPRI)
- 		ki->ki_flags |= IOCB_HIPRI;
- 	if (flags & RWF_DSYNC)
-diff --git a/include/uapi/linux/fs.h b/include/uapi/linux/fs.h
-index 379a612f8f1d..ed92a8a257cb 100644
---- a/include/uapi/linux/fs.h
-+++ b/include/uapi/linux/fs.h
-@@ -284,6 +284,27 @@ struct fsxattr {
- 
- typedef int __bitwise __kernel_rwf_t;
- 
-+enum {
-+	ENCODED_IOV_COMPRESSION_NONE,
-+	ENCODED_IOV_COMPRESSION_ZLIB,
-+	ENCODED_IOV_COMPRESSION_LZO,
-+	ENCODED_IOV_COMPRESSION_ZSTD,
-+	ENCODED_IOV_COMPRESSION_TYPES = ENCODED_IOV_COMPRESSION_ZSTD,
-+};
-+
-+enum {
-+	ENCODED_IOV_ENCRYPTION_NONE,
-+	ENCODED_IOV_ENCRYPTION_TYPES = ENCODED_IOV_ENCRYPTION_NONE,
-+};
-+
-+struct encoded_iov {
-+	__u64 len;
-+	__u64 unencoded_len;
-+	__u64 unencoded_offset;
-+	__u32 compression;
-+	__u32 encryption;
-+};
-+
- /* high priority request, poll if possible */
- #define RWF_HIPRI	((__force __kernel_rwf_t)0x00000001)
- 
-@@ -299,8 +320,11 @@ typedef int __bitwise __kernel_rwf_t;
- /* per-IO O_APPEND */
- #define RWF_APPEND	((__force __kernel_rwf_t)0x00000010)
- 
-+/* encoded (e.g., compressed or encrypted) IO */
-+#define RWF_ENCODED	((__force __kernel_rwf_t)0x00000020)
-+
- /* mask of flags supported by the kernel */
- #define RWF_SUPPORTED	(RWF_HIPRI | RWF_DSYNC | RWF_SYNC | RWF_NOWAIT |\
--			 RWF_APPEND)
-+			 RWF_APPEND | RWF_ENCODED)
- 
- #endif /* _UAPI_LINUX_FS_H */
-diff --git a/mm/filemap.c b/mm/filemap.c
-index 1146fcfa3215..d2e6d9caf353 100644
---- a/mm/filemap.c
-+++ b/mm/filemap.c
-@@ -2948,24 +2948,15 @@ static int generic_write_check_limits(struct file *file, loff_t pos,
- 	return 0;
- }
- 
--/*
-- * Performs necessary checks before doing a write
-- *
-- * Can adjust writing position or amount of bytes to write.
-- * Returns appropriate error code that caller should return or
-- * zero in case that write should be allowed.
-- */
--inline ssize_t generic_write_checks(struct kiocb *iocb, struct iov_iter *from)
-+static int generic_write_checks_common(struct kiocb *iocb, loff_t *count)
- {
- 	struct file *file = iocb->ki_filp;
- 	struct inode *inode = file->f_mapping->host;
--	loff_t count;
--	int ret;
- 
- 	if (IS_SWAPFILE(inode))
- 		return -ETXTBSY;
- 
--	if (!iov_iter_count(from))
-+	if (!*count)
- 		return 0;
- 
- 	/* FIXME: this is for backwards compatibility with 2.4 */
-@@ -2975,8 +2966,21 @@ inline ssize_t generic_write_checks(struct kiocb *iocb, struct iov_iter *from)
- 	if ((iocb->ki_flags & IOCB_NOWAIT) && !(iocb->ki_flags & IOCB_DIRECT))
- 		return -EINVAL;
- 
--	count = iov_iter_count(from);
--	ret = generic_write_check_limits(file, iocb->ki_pos, &count);
-+	return generic_write_check_limits(iocb->ki_filp, iocb->ki_pos, count);
-+}
-+
-+/*
-+ * Performs necessary checks before doing a write
-+ *
-+ * Can adjust writing position or amount of bytes to write.
-+ * Returns a negative errno or the new number of bytes to write.
-+ */
-+inline ssize_t generic_write_checks(struct kiocb *iocb, struct iov_iter *from)
-+{
-+	loff_t count = iov_iter_count(from);
-+	int ret;
-+
-+	ret = generic_write_checks_common(iocb, &count);
- 	if (ret)
- 		return ret;
- 
-@@ -2985,6 +2989,58 @@ inline ssize_t generic_write_checks(struct kiocb *iocb, struct iov_iter *from)
- }
- EXPORT_SYMBOL(generic_write_checks);
- 
-+int generic_encoded_write_checks(struct kiocb *iocb,
-+				 struct encoded_iov *encoded)
-+{
-+	loff_t count = encoded->unencoded_len;
-+	int ret;
-+
-+	ret = generic_write_checks_common(iocb, &count);
-+	if (ret)
-+		return ret;
-+
-+	if (count != encoded->unencoded_len) {
-+		/*
-+		 * The write got truncated by generic_write_checks_common(). We
-+		 * can't do a partial encoded write.
-+		 */
-+		return -EFBIG;
-+	}
-+	return 0;
-+}
-+EXPORT_SYMBOL(generic_encoded_write_checks);
-+
-+ssize_t check_encoded_read(struct kiocb *iocb, struct iov_iter *iter)
-+{
-+	if (!(iocb->ki_filp->f_flags & O_ENCODED))
-+		return -EPERM;
-+	if (iov_iter_single_seg_count(iter) != sizeof(struct encoded_iov))
-+		return -EINVAL;
-+	return iov_iter_count(iter) - sizeof(struct encoded_iov);
-+}
-+EXPORT_SYMBOL(check_encoded_read);
-+
-+int import_encoded_write(struct kiocb *iocb, struct encoded_iov *encoded,
-+			 struct iov_iter *from)
-+{
-+	if (!(iocb->ki_filp->f_flags & O_ENCODED))
-+		return -EPERM;
-+	if (iov_iter_single_seg_count(from) != sizeof(*encoded))
-+		return -EINVAL;
-+	if (copy_from_iter(encoded, sizeof(*encoded), from) != sizeof(*encoded))
-+		return -EFAULT;
-+	if (encoded->compression == ENCODED_IOV_COMPRESSION_NONE &&
-+	    encoded->encryption == ENCODED_IOV_ENCRYPTION_NONE)
-+		return -EINVAL;
-+	if (encoded->compression > ENCODED_IOV_COMPRESSION_TYPES ||
-+	    encoded->encryption > ENCODED_IOV_ENCRYPTION_TYPES)
-+		return -EINVAL;
-+	if (encoded->unencoded_offset >= encoded->unencoded_len)
-+		return -EINVAL;
-+	return 0;
-+}
-+EXPORT_SYMBOL(import_encoded_write);
-+
- /*
-  * Performs necessary checks before doing a clone.
-  *
--- 
-2.23.0
+I wanted to know if it would possible to just repair the filesystem.
+(Basically kill the broken extent and/or excise the corresponding tree
+leaf).
+
+Are there any way ?
+
+(Again it's not critical, I could btrfs-restore, I just want to know if
+it would be possible to clean it instead).
+
+
+
+Here are `journalctl` message regarding the failure:
+
+Oct 15 20:37:20 marsberry kernel: BTRFS info (device sdb1): enabling
+auto defrag
+Oct 15 20:37:20 marsberry kernel: BTRFS info (device sdb1): enabling ssd
+optimizations
+Oct 15 20:37:20 marsberry kernel: BTRFS info (device sdb1): disk space
+caching is enabled
+Oct 15 20:37:20 marsberry kernel: BTRFS info (device sdb1): has skinny
+extents
+Oct 15 20:37:20 marsberry kernel: BTRFS info (device sdb1): bdev
+/dev/sdb1 errs: wr 0, rd 0, flush 0, corrupt 126, gen 0
+Oct 15 20:37:49 marsberry kernel: BTRFS error (device sdb1): bad tree
+block start, want 547248750592 have 0
+Oct 15 20:37:49 marsberry kernel: BTRFS error (device sdb1): bad tree
+block start, want 547248750592 have 0
+
+
+
+And here's the read-only check output:
+
+# btrfs check /dev/sdb1
+Opening filesystem to check...
+Checking filesystem on /dev/sdb1
+UUID: 5475b0ac-0010-4875-a0d6-e6641c951f5c
+[1/7] checking root items
+[2/7] checking extents
+checksum verify failed on 547248750592 found E4E3BDB6 wanted 00000000
+checksum verify failed on 547248750592 found E4E3BDB6 wanted 00000000
+bad tree block 547248750592, bytenr mismatch, want=547248750592, have=0
+checksum verify failed on 547248766976 found 8E4EC148 wanted 00000000
+checksum verify failed on 547248766976 found 8E4EC148 wanted 00000000
+bad tree block 547248766976, bytenr mismatch, want=547248766976, have=0
+owner ref check failed [547248750592 16384]
+owner ref check failed [547248766976 16384]
+ERROR: errors found in extent allocation tree or chunk allocation
+[3/7] checking free space cache
+[4/7] checking fs roots
+[5/7] checking only csums items (without verifying data)
+checksum verify failed on 547248766976 found 8E4EC148 wanted 00000000
+checksum verify failed on 547248766976 found 8E4EC148 wanted 00000000
+bad tree block 547248766976, bytenr mismatch, want=547248766976, have=0
+Error going to next leaf -5
+[6/7] checking root refs
+[7/7] checking quota groups skipped (not enabled on this FS)
+found 247339167744 bytes used, error(s) found
+total csum bytes: 241066812
+total tree bytes: 434569216
+total fs tree bytes: 169771008
+total extent tree bytes: 16039936
+btree space waste bytes: 42891494
+file data blocks allocated: 270783406080
+ referenced 268366499840
+
+
+
+So any way to remove the damnaged data instead of restore/re-mkfs the
+still non-damaged one ?
+
+Thanks you!
 

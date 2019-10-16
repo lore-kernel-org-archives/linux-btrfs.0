@@ -2,158 +2,184 @@ Return-Path: <SRS0=uVIb=YJ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.2 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.7 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B4148C4360C
-	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Oct 2019 08:36:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 40B36C4360C
+	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Oct 2019 08:42:05 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 84CA921835
-	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Oct 2019 08:36:39 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="LI6wdJzu"
+	by mail.kernel.org (Postfix) with ESMTP id 1F5002054F
+	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Oct 2019 08:42:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2387452AbfJPIgi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 16 Oct 2019 04:36:38 -0400
-Received: from mout.gmx.net ([212.227.15.19]:59435 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726804AbfJPIgi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 Oct 2019 04:36:38 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1571214987;
-        bh=mygg0stQz1K7mlrp/PCPeH0vrabpF1uoc+Ew1cGlTms=;
-        h=X-UI-Sender-Class:Subject:To:Cc:References:From:Date:In-Reply-To;
-        b=LI6wdJzuIl2yXD/5VrZHV2IiC0/IguwLeq0ZM+7YZewt8y6l7eXTekMImviyhgi4j
-         Uy4rvhFEx3qAU0X83m4eydCidqi2peGqjIFWX3LgJqblEovdiadb/NPyKllzmaa5vR
-         BTASeKuP20cnzSii7Yg8Wi8cUe0YfRqEyWj0+lfc=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([13.231.109.76]) by mail.gmx.com (mrgmx005
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1N7zBR-1hyC2T45Kd-01517l; Wed, 16
- Oct 2019 10:36:27 +0200
-Subject: Re: kernel 5.2 read time tree block corruption
-To:     Roman Mamedov <rm@romanrm.net>
-Cc:     Nikolay Borisov <nborisov@suse.com>,
-        =?UTF-8?Q?Jos=c3=a9_Luis?= <parajoseluis@gmail.com>,
-        linux-btrfs@vger.kernel.org
-References: <CADTa+SqDLtmmjnJ5gz-3jDxi1NGNAu=cyo0kFXSZfnu6QE_Fdw@mail.gmail.com>
- <66e27fee-7f64-6466-866d-42464fca130f@gmx.com>
- <a6d7a4c6-4295-e081-1bfc-74e9d13fd22d@gmx.com>
- <CADTa+SrurdZf5+T+QGNyLc7gKLuTFYsto+L4Q+30y-uQj+jutg@mail.gmail.com>
- <3e7acddf-6503-7746-db4b-a116b7f89c4d@gmx.com>
- <CADTa+SoDEcHvpJj6-QMHUubFcKACiKLQ6izr=uER-hYtqVg20g@mail.gmail.com>
- <0cae0d30-db18-37cc-562f-100c862099e3@gmx.com>
- <ab485a5a-04b4-a117-9b94-902f7dbcf8d4@suse.com>
- <375ce380-7b7d-03e5-212a-197d8cc2d5fc@gmx.com>
- <20191016131226.465eb506@natsu>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAU4EEwEIADgCGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1oQAKCRDC
- PZHzoSX+qCY6CACd+mWu3okGwRKXju6bou+7VkqCaHTdyXwWFTsr+/0ly5nUdDtT3yEVggPJ
- 3VP70wjlrxUjNjFb6iIvGYxiPOrop1NGwGYvQktgRhaIhALG6rPoSSAhGNjwGVRw0km0PlIN
- D29BTj/lYEk+jVM1YL0QLgAE1AI3krihg/lp/fQT53wLhR8YZIF8ETXbClQG1vJ0cllPuEEv
- efKxRyiTSjB+PsozSvYWhXsPeJ+KKjFen7ebE5reQTPFzSHctCdPnoR/4jSPlnTlnEvLeqcD
- ZTuKfQe1gWrPeevQzgCtgBF/WjIOeJs41klnYzC3DymuQlmFubss0jShLOW8eSOOWhLRuQEN
- BFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcgaCbPEwhLj
- 1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj/IrRUUka
- 68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fNGSsRb+pK
- EKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0q1eW4Jrv
- 0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEvABEBAAGJ
- ATwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1rgUJCWpOfwAKCRDCPZHz
- oSX+qFcEB/95cs8cM1OQdE/GgOfCGxwgckMeWyzOR7bkAWW0lDVp2hpgJuxBW/gyfmtBnUai
- fnggx3EE3ev8HTysZU9q0h+TJwwJKGv6sUc8qcTGFDtavnnl+r6xDUY7A6GvXEsSoCEEynby
- 72byGeSovfq/4AWGNPBG1L61Exl+gbqfvbECP3ziXnob009+z9I4qXodHSYINfAkZkA523JG
- ap12LndJeLk3gfWNZfXEWyGnuciRGbqESkhIRav8ootsCIops/SqXm0/k+Kcl4gGUO/iD/T5
- oagaDh0QtOd8RWSMwLxwn8uIhpH84Q4X1LadJ5NCgGa6xPP5qqRuiC+9gZqbq4Nj
-Message-ID: <09661380-b479-748c-8347-1449691e2f7a@gmx.com>
-Date:   Wed, 16 Oct 2019 16:36:22 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.1.1
-MIME-Version: 1.0
-In-Reply-To: <20191016131226.465eb506@natsu>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:DTUlYQuq/Z4X5hXVCHlfdCBxh/K1JdMoHf9fFRnBYVe21MpJtu4
- jAuqQe9hhbuSu751gOf3NBxP2xNAYipE5Dj7vJP6RUN56LKAs1Y1J2KymDCG+vf4Tke5k3Q
- kfeOr8g706kLaWwI8ZTfsgA4txvHwFNMaKZjBuRcmQKDVxrPhlRreySTzmnkCbqfVO76tIh
- OsFyH1POgw/lItBCldNBg==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:FzCYdLrSaDQ=:yEOD2wZhuNbvcuUFHuIwM8
- uCm6P2PSgtiTrhxI8NLyCcf2WLohcJ/n6TMPDIFDfmiojOdWtlaqVJSE7l64EGeCIKeSy/0xD
- bLFuLU/RSZjh6E/P6DLeAhRz66OlT7NhiIdWd3G4Qvrsd3KBdFSLIl93GQM3PiRU3s2vDyZ+T
- 8WyW/AUiM837l7FzncqjO8USzwSuisH65/F3Im1E53xZkofpUL2Yn0UdwHFCQpuXqqyINjjnG
- W5v6GdU/kqeoFbaowFPlQ0A31r3X3tYAvOX2g0AKtgJrWmf6zUbULrhymiodk7JBeCWoYdAlT
- 1xZ7n9S9BlsdjOSmpeWl8F1pM5hS/5iMQeziTNX97/6aJBDLISU6gk3Cb0Ka5pKs1Nbr0Rczz
- qO66Wp+0FmR8iLnsyDizdF1ie0I6N8IyBKQ3MrwBAUwdZ/ZKnfS3V+PgKUEVXTB+WPhbD2qOe
- M4QWIl0/U8nda32Zg4pibDLYphQ0vuAVJQsLG/kQM28eZsFEX6l3jzw4nF5zS1/YH0vDgAjXn
- HEroovdzwPZ0GC7Z/Vlhn4K0Y1z8Zua8VUHTiMKyJt4NP/tvc3Or27fdA4iJm0tpol7QtP2/t
- acOlHYwXSiVk2+0jDE4E/YFRQ2Cjv+NSmBICfItR8Jw9HYRXuTNprN+iDfRaNrcHunYRPlmI5
- /QSPbK6HJ64nRjOjSlHk+nbCvxP5hBDCJdsgY6HJk2AClONBOvNVoBhyQ7Bq9Q4bq4gS0E9Y1
- 3wS2a8VN92mH56yZ7Z6gwISWNhvfeJJUtq/+QrrK2t44v4Ep0NrduWTyXYTRTH0ko6t+mLe5D
- 0YLGR3t0qNmC3ssaj4GDw5slTGovdi8qApOH9KRzN/eR2c4rayWBYbUf8U1elCC4RK+mW+8Sn
- kMpzyA0mn24yztBOaPGuMVoqmK3l+ODrhGwik2XO3OJuYGCEMxD9yzdn1ydLl0pIIuKEWgf0s
- dbn5Mf4jvnLPDTx3gTypt2fdMeEDWYupkfkKv7qSe408nCb7OH1vvsaCOVgP9PDj0TgZZXIs/
- 4/bsBWRxQ3AUa1scgYZfp9pyg8KZYJxciTU7HtOEG4cyr098SJpzCcqoNRKptooRHndWFmhG5
- V+xkxQcYydssplvHy+TzyUUyTdL3rA/5oCtLH2byMkcCHhHaQgz4GChk61Xu9w3tQyqkXH5w9
- xIRiKFQJ7b1qUbtYRuSydy/b4hippwMAan8mB3iDNkMU9N5Zn9dJyCoyGnxqnOPwhzNYuLD4k
- Zrw/tyx25XwDhkqXosnuHSza5OjTFU7F8kjBSnvg8QjE6bSrXPf1pcknLUWA=
+        id S2391741AbfJPImE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 16 Oct 2019 04:42:04 -0400
+Received: from mx2.suse.de ([195.135.220.15]:48272 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S2404146AbfJPImD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 16 Oct 2019 04:42:03 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 569D1AD7F
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 Oct 2019 08:42:01 +0000 (UTC)
+From:   Johannes Thumshirn <jthumshirn@suse.de>
+To:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>
+Cc:     Johannes Thumshirn <jthumshirn@suse.de>
+Subject: [RFC PATCH 4/4] btrfs-progs: add --auth-key to dump-super
+Date:   Wed, 16 Oct 2019 10:41:58 +0200
+Message-Id: <20191016084158.7573-4-jthumshirn@suse.de>
+X-Mailer: git-send-email 2.16.4
+In-Reply-To: <20191016084158.7573-1-jthumshirn@suse.de>
+References: <20191016084158.7573-1-jthumshirn@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+Add auth-key option for btrfs inspect-internal dump-super so we can dump an
+authenticated super-block and check for it's integrity.
 
+Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
+---
+ cmds/inspect-dump-super.c | 35 ++++++++++++++++++++++++-----------
+ 1 file changed, 24 insertions(+), 11 deletions(-)
 
-On 2019/10/16 =E4=B8=8B=E5=8D=884:12, Roman Mamedov wrote:
-> On Wed, 16 Oct 2019 15:45:54 +0800
-> Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
->
->> dirty fixes (a special branch for the user
->> to do, never intended to upstream).
->
-> Still it would be nice to get a btrfs check mode which would include try=
-ing
-> destructive actions, as in accepting the loss of some part of user data
-> (outright delete corrupt blocks, etc), just to restore the filesystem it=
-self to
-> a fully correct and mountable state.
+diff --git a/cmds/inspect-dump-super.c b/cmds/inspect-dump-super.c
+index 5bf5a6bc6f27..ad81ba9f9ea2 100644
+--- a/cmds/inspect-dump-super.c
++++ b/cmds/inspect-dump-super.c
+@@ -35,11 +35,13 @@
+ #include "crypto/crc32c.h"
+ #include "common/help.h"
+ 
+-static int check_csum_sblock(void *sb, int csum_size, u16 csum_type)
++static int check_csum_sblock(void *sb, int csum_size, u16 csum_type,
++			     char *auth_key)
+ {
++	struct btrfs_fs_info dummy_fs_info = { .auth_key = auth_key };
+ 	u8 result[BTRFS_CSUM_SIZE];
+ 
+-	btrfs_csum_data(NULL, csum_type, (u8 *)sb + BTRFS_CSUM_SIZE,
++	btrfs_csum_data(&dummy_fs_info, csum_type, (u8 *)sb + BTRFS_CSUM_SIZE,
+ 			result, BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
+ 
+ 	return !memcmp(sb, result, csum_size);
+@@ -325,7 +327,8 @@ static bool is_valid_csum_type(u16 csum_type)
+ 	}
+ }
+ 
+-static void dump_superblock(struct btrfs_super_block *sb, int full)
++static void dump_superblock(struct btrfs_super_block *sb, int full,
++			    char *auth_key)
+ {
+ 	int i;
+ 	char *s, buf[BTRFS_UUID_UNPARSED_SIZE];
+@@ -352,11 +355,11 @@ static void dump_superblock(struct btrfs_super_block *sb, int full)
+ 	printf("csum\t\t\t0x");
+ 	for (i = 0, p = sb->csum; i < csum_size; i++)
+ 		printf("%02x", p[i]);
+-	if (csum_type == BTRFS_CSUM_TYPE_HMAC_SHA256)
++	if (csum_type == BTRFS_CSUM_TYPE_HMAC_SHA256 && !auth_key)
+ 		printf(" [NO KEY FOR HMAC]");
+ 	else if (!is_valid_csum_type(csum_type))
+ 		printf(" [UNKNOWN CSUM TYPE OR SIZE]");
+-	else if (check_csum_sblock(sb, csum_size, csum_type))
++	else if (check_csum_sblock(sb, csum_size, csum_type, auth_key))
+ 		printf(" [match]");
+ 	else
+ 		printf(" [DON'T MATCH]");
+@@ -484,7 +487,7 @@ static void dump_superblock(struct btrfs_super_block *sb, int full)
+ }
+ 
+ static int load_and_dump_sb(char *filename, int fd, u64 sb_bytenr, int full,
+-		int force)
++		int force, char *auth_key)
+ {
+ 	u8 super_block_data[BTRFS_SUPER_INFO_SIZE];
+ 	struct btrfs_super_block *sb;
+@@ -509,7 +512,7 @@ static int load_and_dump_sb(char *filename, int fd, u64 sb_bytenr, int full,
+ 		error("bad magic on superblock on %s at %llu",
+ 				filename, (unsigned long long)sb_bytenr);
+ 	} else {
+-		dump_superblock(sb, full);
++		dump_superblock(sb, full, auth_key);
+ 	}
+ 	return 0;
+ }
+@@ -523,6 +526,7 @@ static const char * const cmd_inspect_dump_super_usage[] = {
+ 	"-s|--super <super>    specify which copy to print out (values: 0, 1, 2)",
+ 	"-F|--force            attempt to dump superblocks with bad magic",
+ 	"--bytenr <offset>     specify alternate superblock offset",
++	"--auth-key <key>      specify authentication key for authenticated file-system",
+ 	"",
+ 	"Deprecated syntax:",
+ 	"-s <bytenr>           specify alternate superblock offset, values other than 0, 1, 2",
+@@ -545,16 +549,19 @@ static int cmd_inspect_dump_super(const struct cmd_struct *cmd,
+ 	int ret = 0;
+ 	u64 arg;
+ 	u64 sb_bytenr = btrfs_sb_offset(0);
++	char *auth_key = NULL;
+ 
+ 	while (1) {
+ 		int c;
+-		enum { GETOPT_VAL_BYTENR = 257 };
++		enum { GETOPT_VAL_BYTENR = 257, GETOPT_VAL_AUTHKEY, };
+ 		static const struct option long_options[] = {
+ 			{"all", no_argument, NULL, 'a'},
+ 			{"bytenr", required_argument, NULL, GETOPT_VAL_BYTENR },
+ 			{"full", no_argument, NULL, 'f'},
+ 			{"force", no_argument, NULL, 'F'},
+ 			{"super", required_argument, NULL, 's' },
++			{"auth-key", required_argument, NULL,
++				GETOPT_VAL_AUTHKEY },
+ 			{NULL, 0, NULL, 0}
+ 		};
+ 
+@@ -601,13 +608,16 @@ static int cmd_inspect_dump_super(const struct cmd_struct *cmd,
+ 			sb_bytenr = arg;
+ 			all = 0;
+ 			break;
++		case GETOPT_VAL_AUTHKEY:
++			auth_key = strdup(optarg);
++			break;
+ 		default:
+ 			usage_unknown_option(cmd, argv);
+ 		}
+ 	}
+ 
+ 	if (check_argc_min(argc - optind, 1))
+-		return 1;
++		goto out;
+ 
+ 	for (i = optind; i < argc; i++) {
+ 		filename = argv[i];
+@@ -624,7 +634,8 @@ static int cmd_inspect_dump_super(const struct cmd_struct *cmd,
+ 			for (idx = 0; idx < BTRFS_SUPER_MIRROR_MAX; idx++) {
+ 				sb_bytenr = btrfs_sb_offset(idx);
+ 				if (load_and_dump_sb(filename, fd,
+-						sb_bytenr, full, force)) {
++						sb_bytenr, full, force,
++						auth_key)) {
+ 					close(fd);
+ 					ret = 1;
+ 					goto out;
+@@ -633,13 +644,15 @@ static int cmd_inspect_dump_super(const struct cmd_struct *cmd,
+ 				putchar('\n');
+ 			}
+ 		} else {
+-			load_and_dump_sb(filename, fd, sb_bytenr, full, force);
++			load_and_dump_sb(filename, fd, sb_bytenr, full, force,
++					 auth_key);
+ 			putchar('\n');
+ 		}
+ 		close(fd);
+ 	}
+ 
+ out:
++	free(auth_key);
+ 	return ret;
+ }
+ DEFINE_SIMPLE_COMMAND(inspect_dump_super, "dump-super");
+-- 
+2.16.4
 
-It's already there.
-
-The problem is, that mode only works for fs tree, and it can only handle
-cases like full corrupted (not transid, but the child node/leaf can't be
-read out completely).
-
-
->
-> Sometimes there are cases when it is inconvenient to recreate the entire=
- FS
-> (remember seeing 40TB mentioned recently), just to fix a few "parent tra=
-nsid
-> failed", not even many transactions apart.
-
-That transid problem is the biggest and the most complext problem.
-Transid problem can lead to futher corruption, like a tree block is
-completely incorrect in the context of parent tree.
-E.g. a csum tree block points to a fs tree block.
-
-So we can't easily treat transid by easily ignore them.
-
-But your idea is pretty god, maybe we should tread transid error as bad
-csum, and completely ignore the child, do the regular corrupted
-leaf/node repair.
-
-Thanks,
-Qu
-
-> And the data itself is often backed
-> up, so restoring only the missing part from the backup would be much eas=
-ier.
->

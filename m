@@ -6,26 +6,27 @@ X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
 	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CA114FA3732
-	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Oct 2019 09:42:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8FA9FFA372A
+	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Oct 2019 11:03:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A2A6920663
-	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Oct 2019 09:42:56 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6B1A92082C
+	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Oct 2019 11:03:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388225AbfJQJm4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 17 Oct 2019 05:42:56 -0400
-Received: from mx2.suse.de ([195.135.220.15]:43960 "EHLO mx1.suse.de"
+        id S2390847AbfJQLDy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 17 Oct 2019 07:03:54 -0400
+Received: from mx2.suse.de ([195.135.220.15]:60824 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726750AbfJQJmz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 17 Oct 2019 05:42:55 -0400
+        id S1730498AbfJQLDy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 17 Oct 2019 07:03:54 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id B011EB49D;
-        Thu, 17 Oct 2019 09:42:53 +0000 (UTC)
-Subject: Re: [PATCH 02/15] btrfs: switch compression callbacks to direct calls
+        by mx1.suse.de (Postfix) with ESMTP id 0EA19AC49;
+        Thu, 17 Oct 2019 11:03:52 +0000 (UTC)
+Subject: Re: [PATCH 04/15] btrfs: compression: let workspace manager init take
+ only the type
 To:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
 References: <cover.1571054758.git.dsterba@suse.com>
- <e8b9ace10f2df3e902158fa8f2ed2976993a759b.1571054758.git.dsterba@suse.com>
+ <7096eaf28c495b2edbfc2cc4f57980ab7aee6643.1571054758.git.dsterba@suse.com>
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 Openpgp: preference=signencrypt
 Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
@@ -83,12 +84,12 @@ Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
  l2t2TyTuHm7wVUY2J3gJYgG723/PUGW4LaoqNrYQUr/rqo6NXw6c+EglRpm1BdpkwPwAng63
  W5VOQMdnozD2RsDM5GfA4aEFi5m00tE+8XPICCtkduyWw+Z+zIqYk2v+zraPLs9Gs0X2C7X0
  yvqY9voUoJjG6skkOToGZbqtMX9K4GOv9JAxVs075QRXL3brHtHONDt6udYobzz+
-Message-ID: <0f4ddb93-5295-87a6-c7ff-4a45b9b75b24@suse.de>
-Date:   Thu, 17 Oct 2019 11:42:53 +0200
+Message-ID: <d410fdb1-620d-46fe-d44d-0b0bc3e6bdfa@suse.de>
+Date:   Thu, 17 Oct 2019 13:03:51 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.8.0
 MIME-Version: 1.0
-In-Reply-To: <e8b9ace10f2df3e902158fa8f2ed2976993a759b.1571054758.git.dsterba@suse.com>
+In-Reply-To: <7096eaf28c495b2edbfc2cc4f57980ab7aee6643.1571054758.git.dsterba@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -97,48 +98,7 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 14/10/2019 14:22, David Sterba wrote:
-> +static int compression_decompress_bio(int type, struct list_head *ws,
-> +		struct compressed_bio *cb)
-> +{
-> +	switch (type) {
-> +	case BTRFS_COMPRESS_ZLIB: return zlib_decompress_bio(ws, cb);
-> +	case BTRFS_COMPRESS_LZO:  return lzo_decompress_bio(ws, cb);
-> +	case BTRFS_COMPRESS_ZSTD: return zstd_decompress_bio(ws, cb);
-> +	case BTRFS_COMPRESS_NONE:
-> +	default:
-> +		/*
-> +		 * This can't happen, the type is validated several times
-> +		 * before we get here.
-> +		 */
-> +		BUG();
-> +	}
-> +}
-> +
-> +static int compression_decompress(int type, struct list_head *ws,
-> +               unsigned char *data_in, struct page *dest_page,
-> +               unsigned long start_byte, size_t srclen, size_t destlen)
-> +{
-> +	switch (type) {
-> +	case BTRFS_COMPRESS_ZLIB: return zlib_decompress(ws, data_in, dest_page,
-> +						start_byte, srclen, destlen);
-> +	case BTRFS_COMPRESS_LZO:  return lzo_decompress(ws, data_in, dest_page,
-> +						start_byte, srclen, destlen);
-> +	case BTRFS_COMPRESS_ZSTD: return zstd_decompress(ws, data_in, dest_page,
-> +						start_byte, srclen, destlen);
-> +	case BTRFS_COMPRESS_NONE:
-> +	default:
-> +		/*
-> +		 * This can't happen, the type is validated several times
-> +		 * before we get here.
-> +		 */
-> +		BUG();
-> +	}
-> +}
-
-Hmm should we really BUG() here? Maybe throw in an ASSERT(), so we can
-catch it in debug builds but not halt the machine (even if it
-theoretically can't happen).
+Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
 
 -- 
 Johannes Thumshirn                            SUSE Labs Filesystems

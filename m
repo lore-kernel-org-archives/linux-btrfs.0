@@ -6,26 +6,27 @@ X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
 	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 08721ECE58E
-	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Oct 2019 11:58:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 80B7BECE58E
+	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Oct 2019 11:59:33 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D870D2089C
-	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Oct 2019 11:58:16 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5E46B2082C
+	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Oct 2019 11:59:33 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2502160AbfJQL6Q (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 17 Oct 2019 07:58:16 -0400
-Received: from mx2.suse.de ([195.135.220.15]:44188 "EHLO mx1.suse.de"
+        id S2502181AbfJQL7c (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 17 Oct 2019 07:59:32 -0400
+Received: from mx2.suse.de ([195.135.220.15]:44778 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2405586AbfJQL6P (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 17 Oct 2019 07:58:15 -0400
+        id S2502168AbfJQL7c (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 17 Oct 2019 07:59:32 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 9DB1DB2E3;
-        Thu, 17 Oct 2019 11:58:13 +0000 (UTC)
-Subject: Re: [PATCH 14/15] btrfs: compression: inline free_workspace
+        by mx1.suse.de (Postfix) with ESMTP id 438E8B2E3;
+        Thu, 17 Oct 2019 11:59:30 +0000 (UTC)
+Subject: Re: [PATCH 15/15] btrfs: compression: remove ops pointer from
+ workspace_manager
 To:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
 References: <cover.1571054758.git.dsterba@suse.com>
- <72c6b766cb35dbbc7087528a13522e8d7c7e5a89.1571054758.git.dsterba@suse.com>
+ <7fe1018a3a18485a0d3eeab1be89fd84603e46ea.1571054758.git.dsterba@suse.com>
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 Openpgp: preference=signencrypt
 Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
@@ -83,12 +84,12 @@ Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
  l2t2TyTuHm7wVUY2J3gJYgG723/PUGW4LaoqNrYQUr/rqo6NXw6c+EglRpm1BdpkwPwAng63
  W5VOQMdnozD2RsDM5GfA4aEFi5m00tE+8XPICCtkduyWw+Z+zIqYk2v+zraPLs9Gs0X2C7X0
  yvqY9voUoJjG6skkOToGZbqtMX9K4GOv9JAxVs075QRXL3brHtHONDt6udYobzz+
-Message-ID: <1f80e883-05c9-a3cd-1843-abf3b42a97e6@suse.de>
-Date:   Thu, 17 Oct 2019 13:58:13 +0200
+Message-ID: <c9f4a69f-dfdb-e529-65fe-dd624a3eeb99@suse.de>
+Date:   Thu, 17 Oct 2019 13:59:29 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.8.0
 MIME-Version: 1.0
-In-Reply-To: <72c6b766cb35dbbc7087528a13522e8d7c7e5a89.1571054758.git.dsterba@suse.com>
+In-Reply-To: <7fe1018a3a18485a0d3eeab1be89fd84603e46ea.1571054758.git.dsterba@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -99,7 +100,6 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 Looks good,
 Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
-
 -- 
 Johannes Thumshirn                            SUSE Labs Filesystems
 jthumshirn@suse.de                                +49 911 74053 689

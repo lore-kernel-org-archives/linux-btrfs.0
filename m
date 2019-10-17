@@ -3,30 +3,30 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
-	autolearn=no autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 24A11FA3735
-	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Oct 2019 11:08:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3094FFA372A
+	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Oct 2019 11:10:29 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 010C22082C
-	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Oct 2019 11:08:33 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 09FDF2082C
+	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Oct 2019 11:10:29 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2439620AbfJQLIc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 17 Oct 2019 07:08:32 -0400
-Received: from mx2.suse.de ([195.135.220.15]:38160 "EHLO mx1.suse.de"
+        id S2406094AbfJQLK2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 17 Oct 2019 07:10:28 -0400
+Received: from mx2.suse.de ([195.135.220.15]:39822 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2393652AbfJQLIc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 17 Oct 2019 07:08:32 -0400
+        id S2405285AbfJQLK2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 17 Oct 2019 07:10:28 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id DF256B4D1;
-        Thu, 17 Oct 2019 11:08:29 +0000 (UTC)
-Subject: Re: [PATCH 03/15] btrfs: compression: attach workspace manager to the
- ops
+        by mx1.suse.de (Postfix) with ESMTP id 94CEBB628;
+        Thu, 17 Oct 2019 11:10:25 +0000 (UTC)
+Subject: Re: [PATCH 06/15] btrfs: compression: let workspace manager cleanup
+ take only the type
 To:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
 References: <cover.1571054758.git.dsterba@suse.com>
- <cf0b8745c5aada29f9431a66777f1af5bb4d382f.1571054758.git.dsterba@suse.com>
+ <bcb19c6cd3991c504f2ed7ef35d708300be0589b.1571054758.git.dsterba@suse.com>
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 Openpgp: preference=signencrypt
 Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
@@ -84,12 +84,12 @@ Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
  l2t2TyTuHm7wVUY2J3gJYgG723/PUGW4LaoqNrYQUr/rqo6NXw6c+EglRpm1BdpkwPwAng63
  W5VOQMdnozD2RsDM5GfA4aEFi5m00tE+8XPICCtkduyWw+Z+zIqYk2v+zraPLs9Gs0X2C7X0
  yvqY9voUoJjG6skkOToGZbqtMX9K4GOv9JAxVs075QRXL3brHtHONDt6udYobzz+
-Message-ID: <84190fc9-90df-aeca-6281-9b826e08b042@suse.de>
-Date:   Thu, 17 Oct 2019 13:08:29 +0200
+Message-ID: <7962ba55-59cb-255b-22ff-c8585d51b563@suse.de>
+Date:   Thu, 17 Oct 2019 13:10:22 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.8.0
 MIME-Version: 1.0
-In-Reply-To: <cf0b8745c5aada29f9431a66777f1af5bb4d382f.1571054758.git.dsterba@suse.com>
+In-Reply-To: <bcb19c6cd3991c504f2ed7ef35d708300be0589b.1571054758.git.dsterba@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit

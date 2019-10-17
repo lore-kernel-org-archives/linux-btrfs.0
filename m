@@ -2,541 +2,453 @@ Return-Path: <SRS0=AqV7=YK=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.2 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.3 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 233F3C4CECE
-	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Oct 2019 04:34:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C4363C4CECE
+	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Oct 2019 04:56:25 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id BD8142082C
-	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Oct 2019 04:34:03 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7A09420872
+	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Oct 2019 04:56:25 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="K3YV/VGB"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="FIwNnXCz"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2407767AbfJQEeC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 17 Oct 2019 00:34:02 -0400
-Received: from mout.gmx.net ([212.227.17.22]:43647 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2404613AbfJQEeC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 17 Oct 2019 00:34:02 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1571286821;
-        bh=x7UJHrUVGzds+DcBnLlo9oD6Ax70RpNY2Gqo6vaEaC0=;
-        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
-        b=K3YV/VGBz3IfKjaqW0FmqfenQWqAq1kOD7Rj4oRa5LHSnMeSzqlMO3E/eT8LlIign
-         seG2E3LZXlbX10sxb7IyUybegu/xMvECAsMKt7pE+62HdI8LgyBy5bRc3uIXUko3MX
-         3/ksxiGwq6JEjyFCqWokv5y2+uIiSxABAuAZu8kg=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([13.231.109.76]) by mail.gmx.com (mrgmx104
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1M5wPb-1iQjqZ3Oqx-007WWJ; Thu, 17
- Oct 2019 06:33:41 +0200
-Subject: Re: [PATCH v2 2/7] btrfs-progs: Refactor btrfs_read_block_groups()
-To:     Anand Jain <anand.jain@oracle.com>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
+        id S2392373AbfJQE4Y (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 17 Oct 2019 00:56:24 -0400
+Received: from userp2130.oracle.com ([156.151.31.86]:54422 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728755AbfJQE4Y (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 17 Oct 2019 00:56:24 -0400
+Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
+        by userp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x9H4sCrP050144;
+        Thu, 17 Oct 2019 04:56:19 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
+ references : from : message-id : date : mime-version : in-reply-to :
+ content-type : content-transfer-encoding; s=corp-2019-08-05;
+ bh=rw209Cd1C8Yk1Ill94sveuHbk3g++EhHIZIMwuzSma0=;
+ b=FIwNnXCzL+6BH063Z1nKoz1X8qNiQA1UFqBK6TYi3jLnYoddS/ykGMtclxRAsJ7qhO/d
+ 3NuIfOqaC/UKHXVpKNvj0MkMzhYIlO2JUF8Kb4PhTwfKObleoDZEt8Mli8S85WHlUz/O
+ FwLHBj0/oQBo0beRDH0S3waW4rK/VjaedBkk9PZGLAjJNsMz9cejS1MrcTG+nhJKDD5J
+ hzvcRspjo4lolClg7Vv1IKRQ+5KLpCEBD4aW9ADc3AG1ZVy64ezPCk9h88f71aUn5Mfb
+ +c1qH0tuYV2IeVktZmL051weDI8Ufd8qDX9aPHGE0LN+fCIztsp4ca4tDxwWHdmODZRT vQ== 
+Received: from aserp3020.oracle.com (aserp3020.oracle.com [141.146.126.70])
+        by userp2130.oracle.com with ESMTP id 2vk68uuk27-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Thu, 17 Oct 2019 04:56:19 +0000
+Received: from pps.filterd (aserp3020.oracle.com [127.0.0.1])
+        by aserp3020.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x9H4rJCH103742;
+        Thu, 17 Oct 2019 04:56:18 GMT
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by aserp3020.oracle.com with ESMTP id 2vp70p6u6t-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Thu, 17 Oct 2019 04:56:18 +0000
+Received: from abhmp0016.oracle.com (abhmp0016.oracle.com [141.146.116.22])
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x9H4uHIL023370;
+        Thu, 17 Oct 2019 04:56:17 GMT
+Received: from [10.190.155.136] (/192.188.170.104)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Thu, 17 Oct 2019 04:56:17 +0000
+Subject: Re: [PATCH v2 3/7] btrfs-progs: Enable read-write ability for
+ 'bg_tree' feature
+To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
 References: <20191008044936.157873-1-wqu@suse.com>
- <20191008044936.157873-3-wqu@suse.com>
- <fd4f3e1c-fd98-6550-6284-f1456e0332ba@oracle.com>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAU4EEwEIADgCGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1oQAKCRDC
- PZHzoSX+qCY6CACd+mWu3okGwRKXju6bou+7VkqCaHTdyXwWFTsr+/0ly5nUdDtT3yEVggPJ
- 3VP70wjlrxUjNjFb6iIvGYxiPOrop1NGwGYvQktgRhaIhALG6rPoSSAhGNjwGVRw0km0PlIN
- D29BTj/lYEk+jVM1YL0QLgAE1AI3krihg/lp/fQT53wLhR8YZIF8ETXbClQG1vJ0cllPuEEv
- efKxRyiTSjB+PsozSvYWhXsPeJ+KKjFen7ebE5reQTPFzSHctCdPnoR/4jSPlnTlnEvLeqcD
- ZTuKfQe1gWrPeevQzgCtgBF/WjIOeJs41klnYzC3DymuQlmFubss0jShLOW8eSOOWhLRuQEN
- BFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcgaCbPEwhLj
- 1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj/IrRUUka
- 68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fNGSsRb+pK
- EKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0q1eW4Jrv
- 0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEvABEBAAGJ
- ATwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1rgUJCWpOfwAKCRDCPZHz
- oSX+qFcEB/95cs8cM1OQdE/GgOfCGxwgckMeWyzOR7bkAWW0lDVp2hpgJuxBW/gyfmtBnUai
- fnggx3EE3ev8HTysZU9q0h+TJwwJKGv6sUc8qcTGFDtavnnl+r6xDUY7A6GvXEsSoCEEynby
- 72byGeSovfq/4AWGNPBG1L61Exl+gbqfvbECP3ziXnob009+z9I4qXodHSYINfAkZkA523JG
- ap12LndJeLk3gfWNZfXEWyGnuciRGbqESkhIRav8ootsCIops/SqXm0/k+Kcl4gGUO/iD/T5
- oagaDh0QtOd8RWSMwLxwn8uIhpH84Q4X1LadJ5NCgGa6xPP5qqRuiC+9gZqbq4Nj
-Message-ID: <566f2d81-8454-d4f5-6e73-adbd0ddedf28@gmx.com>
-Date:   Thu, 17 Oct 2019 12:33:36 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.1.1
+ <20191008044936.157873-4-wqu@suse.com>
+From:   Anand Jain <anand.jain@oracle.com>
+Message-ID: <8444fabf-c761-5dae-e056-a5e9a58b34d4@oracle.com>
+Date:   Thu, 17 Oct 2019 12:56:13 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.8.0
 MIME-Version: 1.0
-In-Reply-To: <fd4f3e1c-fd98-6550-6284-f1456e0332ba@oracle.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="DdnbfQVb281Q90zvA79JLfFRqPbOYbTVk"
-X-Provags-ID: V03:K1:isFcxjMdvO0B+KuupjwmgUrqPMLNvb2ZYr3x7DfUy8I8qVSzGwi
- CtiLKrdPDdG9YlNAcYZ2PVFW80V7ODJcIndMFXbghUjgWJOM0dnNPS5GTNpBkER643vXQ63
- 1EWuFrRyF83Hq2Dw+5oIWsLdtH4TpyvDsZV2anpBfIyU8bTmHtEghE5/jdpwCda5+eumeNe
- dQjlQKn+Lvb02RJraw6kg==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:hXXlJH0X6dc=:zHBV93IkUD9JA4IK4PD1Kg
- WytkBCfS3M3Mz4PZaD3rPjH+KljSgyY9ZD1T1RdSlgIn7mqWt03UycQTDFgF//Ww3rYlmPIK1
- SbPDWKvfG+Mbfhat6llf2+PwVa6Tx1FIIB1ZwRsNglj6LDyDWYB8Rkv+GsoCqvRyoIas4KH7x
- d9oIBuFREiG133MCypcKY2q2u4vNYcov1CeGrn8rUUzuz+pM60xZDg9AF9/V2lTrVs7NilmDq
- q4aosKiNNW3HBlJIlb9BaqTNpPRXcXk6QTqFqVTh43jhbP9gY5TCz3ybRdNgDDVdUsKFZ6262
- RtNn9mCnudJPMgN05d+8JAbR8p87umVDtvo27PP7qRTlyDljnMw4zloa6ehF0VVpTNlmzB1wv
- +DaOoZVPm+AVGm9mB2lY36iDEAmFS6JABPDlBgmBH/BYDFy8pQjvvbkrflpHeDYJRtTM0te1k
- eP4jSx6s9PkAC6MeoH1gtMLrdneF08sco76z1gDmG6W1Z99FZ6q9U5ma/L1TZN72utI7hrPNa
- 5uvpB8jjwKiJq1yaQ6YCo+qnw+t7+KcSDVKFmDdWxL7xzaxG7O39//o465ePG6yAI7ncZB5wr
- HrIHDd7DqUcZIgcJ9tYuqTTer2g9mOZgb6CIoJfWPRo89EKlP/5/XvbIZAx2bri6MVw1AKP6d
- vFjGNoSeF7vDEVuANAxs0FqgCgTeWnQYk0sFTVvogkv/CbYpYyjdjYzxHejeg+R21zsxW12Gg
- 1bWO+LpBf5+PzYrn7kFPEJBx4Wc6hVrFEv09wCAvob7wiPOyXZpQKFjefI3bFu/HeaGll/PvW
- Xeko3MVpuDjei0qYluIqLhhoeDcl5kquVzkU+cLVmLX9YsJx+ex3z/QQVo1hZStSb7DYeYVJh
- 1ajWecqmwdcHEK3lm9zpYNH+Z0PsjPhIKr4rdzIqrZWCDqYGyRH2FCRKVocoEGXATZyAgWQFN
- S12vwy7JMnyCL7kcqiap8csbRp702cBEscnTwOIyAZCO9f/VLqMceGKDRthOIwQkamklPyP8/
- ++NvXNh6ASEBWmTEgBhGCSj8AnS13FD+61bL5oeggfIA2LbP5biVMDJizhOsNHO1VVvfQ4c09
- RQrqJgqj0Uw6nOB702lr9aGnj8bS6X3a7DgMoGQDsg3wUwlMJ/cY6C04pbvpYaeYvapJ70xbI
- utU5d91EA3ZMqPytD3qlLYWJlhl/lcMz82YMB/HhSSfpv4xGzSd+BFBBqMLOIpn384shjraPH
- T+08zzWJAc+OaoYX+G8tEWmOtNj3G7B1FokZ08D9xTtsF86aDJ4hx3XGJrhM=
+In-Reply-To: <20191008044936.157873-4-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9412 signatures=668684
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=2 malwarescore=0
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
+ adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.0.1-1908290000 definitions=main-1910170036
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9412 signatures=668684
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
+ suspectscore=2 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
+ lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1908290000
+ definitions=main-1910170036
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---DdnbfQVb281Q90zvA79JLfFRqPbOYbTVk
-Content-Type: multipart/mixed; boundary="ngSZ5YJXqaeyTy1oJ0Mr9QzTuXvknAUlh"
+On 10/8/19 12:49 PM, Qu Wenruo wrote:
+> Allow btrfs-progs to open, read and write 'bg_tree' enabled fs.
+> 
+> The modification itself is not large, as block groups items are only
+> used at 4 timing:
+> 1) open_ctree()
+>     We only need to populate fs_info->bg_root and read block group items
+>     from fs_info->bg_root.
+>     The obvious change is, we don't need to do btrfs_search_slot() for
+>     each block group item, but btrfs_next_item() is enough.
+> 
+>     This should hugely reduce open_ctree() execution duration.
+> 
+> 2) btrfs_commit_transaction()
+>     We need to write back dirty block group items back to bg_root.
+> 
+>     The modification here is to insert new block group item if we can't
+>     find one existing in bg_root, and delete the old one in extent tree
+>     if we're converting to bg_tree feature.
+> 
+> 3) btrfs_make_block_group()
+>     Just change @root for btrfs_insert_item() from @extent_root to
+>     @bg_root for fs with that feature.
+> 
+>     This modification needs extra handling for converting case, where
+>     block group items can be either in extent tree or bg tree.
+> 
+> 4) free_block_group_item()
+>     Just delete the block group item in extent tree.
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
---ngSZ5YJXqaeyTy1oJ0Mr9QzTuXvknAUlh
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+looks good.
+two nit below.
 
-
-
-On 2019/10/17 =E4=B8=8A=E5=8D=8811:23, Anand Jain wrote:
-> On 10/8/19 12:49 PM, Qu Wenruo wrote:
->> This patch does the following refactor:
->> - Refactor parameter from @root to @fs_info
->>
->> - Refactor the large loop body into another function
->> =C2=A0=C2=A0 Now we have a helper function, read_one_block_group(), to=
- handle
->> =C2=A0=C2=A0 block group cache and space info related routine.
->>
->> - Refactor the return value
->> =C2=A0=C2=A0 Even we have the code handling ret > 0 from find_first_bl=
-ock_group(),
->> =C2=A0=C2=A0 it never works, as when there is no more block group,
->> =C2=A0=C2=A0 find_first_block_group() just return -ENOENT other than 1=
-=2E
->=20
->=20
-> =C2=A0Can it be separated into patches? My concern is as it alters the =
-return
-> =C2=A0value of the rescue command. So we shall have clarity of a discre=
-te
-> =C2=A0patch to blame. Otherwise I agree its a good change.
-
-No problem.
-
-What about 3 patches split by the mentioned 3 refactors?
->=20
->=20
->> =C2=A0=C2=A0 This is super confusing, it's almost a mircle it even wor=
-ks.
->>
->> Signed-off-by: Qu Wenruo <wqu@suse.com>
->> ---
->> =C2=A0 ctree.h=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 |=C2=A0=C2=A0 2 +-
->> =C2=A0 disk-io.c=C2=A0=C2=A0=C2=A0=C2=A0 |=C2=A0=C2=A0 9 ++-
->> =C2=A0 extent-tree.c | 160 ++++++++++++++++++++++++++++---------------=
--------
->> =C2=A0 3 files changed, 97 insertions(+), 74 deletions(-)
->>
->> diff --git a/ctree.h b/ctree.h
->> index 8c7b3cb40151..2899de358613 100644
->> --- a/ctree.h
->> +++ b/ctree.h
->> @@ -2550,7 +2550,7 @@ int update_space_info(struct btrfs_fs_info
->> *info, u64 flags,
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
-=C2=A0=C2=A0=C2=A0 u64 total_bytes, u64 bytes_used,
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
-=C2=A0=C2=A0=C2=A0 struct btrfs_space_info **space_info);
->> =C2=A0 int btrfs_free_block_groups(struct btrfs_fs_info *info);
->> -int btrfs_read_block_groups(struct btrfs_root *root);
->> +int btrfs_read_block_groups(struct btrfs_fs_info *info);
->> =C2=A0 struct btrfs_block_group_cache *
->> =C2=A0 btrfs_add_block_group(struct btrfs_fs_info *fs_info, u64 bytes_=
-used,
->> u64 type,
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
-=C2=A0=C2=A0=C2=A0 u64 chunk_offset, u64 size);
->> diff --git a/disk-io.c b/disk-io.c
->> index be44eead5cef..8978f0cb60c7 100644
->> --- a/disk-io.c
->> +++ b/disk-io.c
->> @@ -983,14 +983,17 @@ int btrfs_setup_all_roots(struct btrfs_fs_info
->> *fs_info, u64 root_tree_bytenr,
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 fs_info->last_trans_committed =3D gener=
-ation;
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 if (extent_buffer_uptodate(fs_info->ext=
-ent_root->node) &&
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 !(flags & OPEN_=
-CTREE_NO_BLOCK_GROUPS)) {
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 ret =3D btrfs_read_block_g=
-roups(fs_info->tree_root);
->> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 ret =3D btrfs_read_block_g=
-roups(fs_info);
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 /*
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 * If we d=
-on't find any blockgroups (ENOENT) we're either
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 * restori=
-ng or creating the filesystem, where it's expected,
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 * anythin=
-g else is error
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 */
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 if (ret !=3D -ENOENT)
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 re=
-turn -EIO;
->> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 if (ret < 0 && ret !=3D -E=
-NOENT) {
->> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 er=
-rno =3D -ret;
->> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 er=
-ror("failed to read block groups: %m");
->> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 re=
-turn ret;
->> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 }
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 }
->=20
->=20
-> As mentioned this alters the rescue command semantics as show below.
-> Earlier we had only -EIO as error now its much more and accurate
-> which is good. fstests is fine but anything else?
->=20
-> cmd_rescue_chunk_recover()
-> =C2=A0 btrfs_recover_chunk_tree()
-> =C2=A0=C2=A0=C2=A0 open_ctree_with_broken_chunk()
-> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 btrfs_setup_all_roots()
-
-I'm not sure if I got the point.
-
-Although btrfs_setup_all_roots() get called in above call chain, it
-doesn't have any special handling of -EIO or others.
-
-It just reads the extent tree root.
-
-Would you mind to explain a little more?
-
-Thanks,
-Qu
+Reviewed-by: Anand Jain <anand.jain@oracle.com>
 
 
->=20
-> Thanks, Anand
->=20
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 key.objectid =3D BTRFS_FS_TREE_OBJECTID=
-;
->> diff --git a/extent-tree.c b/extent-tree.c
->> index 19d1ea0df570..9713d627764c 100644
->> --- a/extent-tree.c
->> +++ b/extent-tree.c
->> @@ -2607,6 +2607,13 @@ int btrfs_free_block_groups(struct
->> btrfs_fs_info *info)
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 return 0;
->> =C2=A0 }
->> =C2=A0 +/*
->> + * Find a block group which starts >=3D @key->objectid in extent tree=
-=2E
->> + *
->> + * Return 0 for found
->> + * Retrun >0 for not found
->> + * Return <0 for error
->> + */
->> =C2=A0 static int find_first_block_group(struct btrfs_root *root,
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 struct btrfs_pa=
-th *path, struct btrfs_key *key)
->> =C2=A0 {
->> @@ -2636,36 +2643,95 @@ static int find_first_block_group(struct
->> btrfs_root *root,
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
-=C2=A0 return 0;
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 path->slots[0]+=
-+;
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 }
->> -=C2=A0=C2=A0=C2=A0 ret =3D -ENOENT;
->> +=C2=A0=C2=A0=C2=A0 ret =3D 1;
->> =C2=A0 error:
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 return ret;
->> =C2=A0 }
->> =C2=A0 -int btrfs_read_block_groups(struct btrfs_root *root)
->> +/*
->> + * Helper function to read out one BLOCK_GROUP_ITEM and insert it int=
-o
->> + * block group cache.
->> + *
->> + * Return 0 if nothing wrong (either insert the bg cache or skip 0
->> sized bg)
->> + * Return <0 for error.
->> + */
->> +static int read_one_block_group(struct btrfs_fs_info *fs_info,
->> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
-=A0=C2=A0=C2=A0=C2=A0=C2=A0 struct btrfs_path *path)
->> =C2=A0 {
->> -=C2=A0=C2=A0=C2=A0 struct btrfs_path *path;
->> -=C2=A0=C2=A0=C2=A0 int ret;
->> -=C2=A0=C2=A0=C2=A0 int bit;
->> -=C2=A0=C2=A0=C2=A0 struct btrfs_block_group_cache *cache;
->> -=C2=A0=C2=A0=C2=A0 struct btrfs_fs_info *info =3D root->fs_info;
->> +=C2=A0=C2=A0=C2=A0 struct extent_io_tree *block_group_cache =3D
->> &fs_info->block_group_cache;
->> +=C2=A0=C2=A0=C2=A0 struct extent_buffer *leaf =3D path->nodes[0];
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 struct btrfs_space_info *space_info;
->> -=C2=A0=C2=A0=C2=A0 struct extent_io_tree *block_group_cache;
->> +=C2=A0=C2=A0=C2=A0 struct btrfs_block_group_cache *cache;
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 struct btrfs_key key;
->> -=C2=A0=C2=A0=C2=A0 struct btrfs_key found_key;
->> -=C2=A0=C2=A0=C2=A0 struct extent_buffer *leaf;
->> +=C2=A0=C2=A0=C2=A0 int slot =3D path->slots[0];
->> +=C2=A0=C2=A0=C2=A0 int bit =3D 0;
->> +=C2=A0=C2=A0=C2=A0 int ret;
->> =C2=A0 -=C2=A0=C2=A0=C2=A0 block_group_cache =3D &info->block_group_ca=
-che;
->> +=C2=A0=C2=A0=C2=A0 btrfs_item_key_to_cpu(leaf, &key, slot);
->> +=C2=A0=C2=A0=C2=A0 ASSERT(key.type =3D=3D BTRFS_BLOCK_GROUP_ITEM_KEY)=
-;
->> +
->> +=C2=A0=C2=A0=C2=A0 /*
->> +=C2=A0=C2=A0=C2=A0=C2=A0 * Skip 0 sized block group, don't insert the=
-m into block
->> +=C2=A0=C2=A0=C2=A0=C2=A0 * group cache tree, as its length is 0, it w=
-on't get
->> +=C2=A0=C2=A0=C2=A0=C2=A0 * freed at close_ctree() time.
->> +=C2=A0=C2=A0=C2=A0=C2=A0 */
->> +=C2=A0=C2=A0=C2=A0 if (key.offset =3D=3D 0)
->> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 return 0;
->> +
->> +=C2=A0=C2=A0=C2=A0 cache =3D kzalloc(sizeof(*cache), GFP_NOFS);
->> +=C2=A0=C2=A0=C2=A0 if (!cache)
->> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 return -ENOMEM;
->> +=C2=A0=C2=A0=C2=A0 read_extent_buffer(leaf, &cache->item,
->> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
-=A0=C2=A0=C2=A0 btrfs_item_ptr_offset(leaf, slot),
->> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
-=A0=C2=A0=C2=A0 sizeof(cache->item));
->> +=C2=A0=C2=A0=C2=A0 memcpy(&cache->key, &key, sizeof(key));
->> +=C2=A0=C2=A0=C2=A0 cache->cached =3D 0;
->> +=C2=A0=C2=A0=C2=A0 cache->pinned =3D 0;
->> +=C2=A0=C2=A0=C2=A0 cache->flags =3D btrfs_block_group_flags(&cache->i=
-tem);
->> +=C2=A0=C2=A0=C2=A0 if (cache->flags & BTRFS_BLOCK_GROUP_DATA) {
->> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 bit =3D BLOCK_GROUP_DATA;
->> +=C2=A0=C2=A0=C2=A0 } else if (cache->flags & BTRFS_BLOCK_GROUP_SYSTEM=
-) {
->> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 bit =3D BLOCK_GROUP_SYSTEM=
-;
->> +=C2=A0=C2=A0=C2=A0 } else if (cache->flags & BTRFS_BLOCK_GROUP_METADA=
-TA) {
->> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 bit =3D BLOCK_GROUP_METADA=
-TA;
->> +=C2=A0=C2=A0=C2=A0 }
->> +=C2=A0=C2=A0=C2=A0 set_avail_alloc_bits(fs_info, cache->flags);
->> +=C2=A0=C2=A0=C2=A0 if (btrfs_chunk_readonly(fs_info, cache->key.objec=
-tid))
->> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 cache->ro =3D 1;
->> +=C2=A0=C2=A0=C2=A0 exclude_super_stripes(fs_info, cache);
->> +
->> +=C2=A0=C2=A0=C2=A0 ret =3D update_space_info(fs_info, cache->flags, c=
-ache->key.offset,
->> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
-=A0=C2=A0=C2=A0=C2=A0 btrfs_block_group_used(&cache->item),
->> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
-=A0=C2=A0=C2=A0=C2=A0 &space_info);
->> +=C2=A0=C2=A0=C2=A0 if (ret < 0) {
->> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 free(cache);
->> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 return ret;
->> +=C2=A0=C2=A0=C2=A0 }
->> +=C2=A0=C2=A0=C2=A0 cache->space_info =3D space_info;
->> +
->> +=C2=A0=C2=A0=C2=A0 set_extent_bits(block_group_cache, cache->key.obje=
-ctid,
->> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 ca=
-che->key.objectid + cache->key.offset - 1,
->> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 bi=
-t | EXTENT_LOCKED);
->> +=C2=A0=C2=A0=C2=A0 set_state_private(block_group_cache, cache->key.ob=
-jectid,
->> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
-=A0=C2=A0 (unsigned long)cache);
->> +=C2=A0=C2=A0=C2=A0 return 0;
->> +}
->> =C2=A0 -=C2=A0=C2=A0=C2=A0 root =3D info->extent_root;
->> +int btrfs_read_block_groups(struct btrfs_fs_info *fs_info)
->> +{
->> +=C2=A0=C2=A0=C2=A0 struct btrfs_path path;
->> +=C2=A0=C2=A0=C2=A0 struct btrfs_root *root;
->> +=C2=A0=C2=A0=C2=A0 int ret;
->> +=C2=A0=C2=A0=C2=A0 struct btrfs_key key;
->> +
->> +=C2=A0=C2=A0=C2=A0 root =3D fs_info->extent_root;
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 key.objectid =3D 0;
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 key.offset =3D 0;
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 key.type =3D BTRFS_BLOCK_GROUP_ITEM_KEY=
-;
->> -=C2=A0=C2=A0=C2=A0 path =3D btrfs_alloc_path();
->> -=C2=A0=C2=A0=C2=A0 if (!path)
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 return -ENOMEM;
->> +=C2=A0=C2=A0=C2=A0 btrfs_init_path(&path);
->> =C2=A0 =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 while(1) {
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 ret =3D find_first_block_g=
-roup(root, path, &key);
->> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 ret =3D find_first_block_g=
-roup(root, &path, &key);
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 if (ret > 0) {
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
-=C2=A0 ret =3D 0;
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
-=C2=A0 goto error;
->> @@ -2673,67 +2739,21 @@ int btrfs_read_block_groups(struct btrfs_root
->> *root)
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 if (ret !=3D 0)=
- {
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
-=C2=A0 goto error;
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 }
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 leaf =3D path->nodes[0];
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 btrfs_item_key_to_cpu(leaf=
-, &found_key, path->slots[0]);
->> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 btrfs_item_key_to_cpu(path=
-=2Enodes[0], &key, path.slots[0]);
->> =C2=A0 -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 cache =3D kzalloc(s=
-izeof(*cache), GFP_NOFS);
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 if (!cache) {
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 re=
-t =3D -ENOMEM;
->> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 ret =3D read_one_block_gro=
-up(fs_info, &path);
->> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 if (ret < 0)
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
-=C2=A0 goto error;
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 }
->> =C2=A0 -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 read_extent_buffer(=
-leaf, &cache->item,
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
-=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 btrfs_item_ptr_offset(leaf, path-=
->slots[0]),
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
-=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 sizeof(cache->item));
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 memcpy(&cache->key, &found=
-_key, sizeof(found_key));
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 cache->cached =3D 0;
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 cache->pinned =3D 0;
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 key.objectid =3D found_key=
-=2Eobjectid + found_key.offset;
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 if (found_key.offset =3D=3D=
- 0)
->> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 if (key.offset =3D=3D 0)
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
-=C2=A0 key.objectid++;
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 btrfs_release_path(path);
->> -
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 /*
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 * Skip 0 sized block=
- group, don't insert them into block
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 * group cache tree, =
-as its length is 0, it won't get
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 * freed at close_ctr=
-ee() time.
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 */
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 if (found_key.offset =3D=3D=
- 0) {
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 fr=
-ee(cache);
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 co=
-ntinue;
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 }
->> -
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 cache->flags =3D btrfs_blo=
-ck_group_flags(&cache->item);
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 bit =3D 0;
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 if (cache->flags & BTRFS_B=
-LOCK_GROUP_DATA) {
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 bi=
-t =3D BLOCK_GROUP_DATA;
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 } else if (cache->flags & =
-BTRFS_BLOCK_GROUP_SYSTEM) {
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 bi=
-t =3D BLOCK_GROUP_SYSTEM;
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 } else if (cache->flags & =
-BTRFS_BLOCK_GROUP_METADATA) {
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 bi=
-t =3D BLOCK_GROUP_METADATA;
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 }
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 set_avail_alloc_bits(info,=
- cache->flags);
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 if (btrfs_chunk_readonly(i=
-nfo, cache->key.objectid))
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 ca=
-che->ro =3D 1;
->> -
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 exclude_super_stripes(info=
-, cache);
->> -
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 ret =3D update_space_info(=
-info, cache->flags, found_key.offset,
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
-=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 btrfs_block_group_used(&cac=
-he->item),
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
-=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 &space_info);
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 BUG_ON(ret);
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 cache->space_info =3D spac=
-e_info;
->> -
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 /* use EXTENT_LOCKED to pr=
-event merging */
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 set_extent_bits(block_grou=
-p_cache, found_key.objectid,
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
-=A0=C2=A0=C2=A0=C2=A0 found_key.objectid + found_key.offset - 1,
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
-=A0=C2=A0=C2=A0=C2=A0 bit | EXTENT_LOCKED);
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 set_state_private(block_gr=
-oup_cache, found_key.objectid,
->> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
-=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 (unsigned long)cache);
->> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 else
->> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 ke=
-y.objectid =3D key.objectid + key.offset;
->> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 btrfs_release_path(&path);=
+> ---
+>   ctree.h       |  11 +++-
+>   disk-io.c     |  20 +++++++
+>   extent-tree.c | 152 +++++++++++++++++++++++++++++++++++++++++++++-----
+>   3 files changed, 168 insertions(+), 15 deletions(-)
+> 
+> diff --git a/ctree.h b/ctree.h
+> index 2899de358613..c2a18c8ab72f 100644
+> --- a/ctree.h
+> +++ b/ctree.h
+> @@ -89,6 +89,9 @@ struct btrfs_free_space_ctl;
+>   /* tracks free space in block groups. */
+>   #define BTRFS_FREE_SPACE_TREE_OBJECTID 10ULL
+>   
+> +/* store BLOCK_GROUP_ITEMS in a seperate tree */
+> +#define BTRFS_BLOCK_GROUP_TREE_OBJECTID 11ULL
+> +
+>   /* device stats in the device tree */
+>   #define BTRFS_DEV_STATS_OBJECTID 0ULL
+>   
+> @@ -490,6 +493,7 @@ struct btrfs_super_block {
+>   #define BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA	(1ULL << 8)
+>   #define BTRFS_FEATURE_INCOMPAT_NO_HOLES		(1ULL << 9)
+>   #define BTRFS_FEATURE_INCOMPAT_METADATA_UUID    (1ULL << 10)
+> +#define BTRFS_FEATURE_INCOMPAT_BG_TREE		(1ULL << 11)
+>   
+>   #define BTRFS_FEATURE_COMPAT_SUPP		0ULL
+>   
+> @@ -513,7 +517,8 @@ struct btrfs_super_block {
+>   	 BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS |		\
+>   	 BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA |	\
+>   	 BTRFS_FEATURE_INCOMPAT_NO_HOLES |		\
+> -	 BTRFS_FEATURE_INCOMPAT_METADATA_UUID)
+> +	 BTRFS_FEATURE_INCOMPAT_METADATA_UUID |		\
+> +	 BTRFS_FEATURE_INCOMPAT_BG_TREE)
+>   
+>   /*
+>    * A leaf is full of items. offset and size tell us where to find
+> @@ -1123,6 +1128,7 @@ struct btrfs_fs_info {
+>   	struct btrfs_root *quota_root;
+>   	struct btrfs_root *free_space_root;
+>   	struct btrfs_root *uuid_root;
+> +	struct btrfs_root *bg_root;
+>   
+>   	struct rb_root fs_root_tree;
+>   
+> @@ -1175,6 +1181,9 @@ struct btrfs_fs_info {
+>   	unsigned int avoid_sys_chunk_alloc:1;
+>   	unsigned int finalize_on_close:1;
+>   
+> +	/* Converting from bg in extent tree to bg tree */
+> +	unsigned int convert_to_bg_tree:1;
+> +
 
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 }
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 ret =3D 0;
->> =C2=A0 error:
->> -=C2=A0=C2=A0=C2=A0 btrfs_free_path(path);
->> +=C2=A0=C2=A0=C2=A0 btrfs_release_path(&path);
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 return ret;
->> =C2=A0 }
->> =C2=A0
->=20
+  This should probably be part of the patch 7/7.
+
+>   	int transaction_aborted;
+>   
+>   	int (*free_extent_hook)(struct btrfs_fs_info *fs_info,
+> diff --git a/disk-io.c b/disk-io.c
+> index 8978f0cb60c7..38248aa895b8 100644
+> --- a/disk-io.c
+> +++ b/disk-io.c
+> @@ -716,6 +716,8 @@ struct btrfs_root *btrfs_read_fs_root(struct btrfs_fs_info *fs_info,
+>   	if (location->objectid == BTRFS_FREE_SPACE_TREE_OBJECTID)
+>   		return fs_info->free_space_root ? fs_info->free_space_root :
+>   						ERR_PTR(-ENOENT);
+> +	if (location->objectid == BTRFS_BLOCK_GROUP_TREE_OBJECTID)
+> +		return fs_info->bg_root ? fs_info->bg_root : ERR_PTR(-ENOENT);
+>   
+>   	BUG_ON(location->objectid == BTRFS_TREE_RELOC_OBJECTID ||
+>   	       location->offset != (u64)-1);
+> @@ -768,6 +770,7 @@ struct btrfs_fs_info *btrfs_new_fs_info(int writable, u64 sb_bytenr)
+>   	fs_info->quota_root = calloc(1, sizeof(struct btrfs_root));
+>   	fs_info->free_space_root = calloc(1, sizeof(struct btrfs_root));
+>   	fs_info->uuid_root = calloc(1, sizeof(struct btrfs_root));
+> +	fs_info->bg_root = calloc(1, sizeof(struct btrfs_root));
+>   	fs_info->super_copy = calloc(1, BTRFS_SUPER_INFO_SIZE);
+>   
+>   	if (!fs_info->tree_root || !fs_info->extent_root ||
+> @@ -930,6 +933,21 @@ int btrfs_setup_all_roots(struct btrfs_fs_info *fs_info, u64 root_tree_bytenr,
+>   		return ret;
+>   	fs_info->extent_root->track_dirty = 1;
+>   
+> +	if (btrfs_fs_incompat(fs_info, BG_TREE)) {
+> +		ret = setup_root_or_create_block(fs_info, flags,
+> +					fs_info->bg_root,
+> +					BTRFS_BLOCK_GROUP_TREE_OBJECTID, "bg");
+> +		if (ret < 0) {
+> +			error("Couldn't setup bg tree");
+> +			return ret;
+> +		}
+> +		fs_info->bg_root->track_dirty = 1;
+> +		fs_info->bg_root->ref_cows = 0;
+> +	} else {
+> +		free(fs_info->bg_root);
+> +		fs_info->bg_root = NULL;
+> +	}
+> +
+>   	ret = find_and_setup_root(root, fs_info, BTRFS_DEV_TREE_OBJECTID,
+>   				  fs_info->dev_root);
+>   	if (ret) {
+> @@ -1012,6 +1030,8 @@ void btrfs_release_all_roots(struct btrfs_fs_info *fs_info)
+>   		free_extent_buffer(fs_info->free_space_root->node);
+>   	if (fs_info->quota_root)
+>   		free_extent_buffer(fs_info->quota_root->node);
+> +	if (fs_info->bg_root)
+> +		free_extent_buffer(fs_info->bg_root->node);
+>   	if (fs_info->csum_root)
+>   		free_extent_buffer(fs_info->csum_root->node);
+>   	if (fs_info->dev_root)
+> diff --git a/extent-tree.c b/extent-tree.c
+> index 9713d627764c..cb3d7a1add0f 100644
+> --- a/extent-tree.c
+> +++ b/extent-tree.c
+> @@ -1528,22 +1528,68 @@ static int write_one_cache_group(struct btrfs_trans_handle *trans,
+>   				 struct btrfs_path *path,
+>   				 struct btrfs_block_group_cache *cache)
+>   {
+> +	bool is_bg_tree = btrfs_fs_incompat(trans->fs_info, BG_TREE);
+>   	int ret;
+> -	struct btrfs_root *extent_root = trans->fs_info->extent_root;
+> +	struct btrfs_fs_info *fs_info = trans->fs_info;
+> +	struct btrfs_root *root;
+>   	unsigned long bi;
+>   	struct extent_buffer *leaf;
+>   
+> -	ret = btrfs_search_slot(trans, extent_root, &cache->key, path, 0, 1);
+> +	if (is_bg_tree)
+> +		root = fs_info->bg_root;
+> +	else
+> +		root = fs_info->extent_root;
+> +
+> +	ret = btrfs_search_slot(trans, root, &cache->key, path, 0, 1);
+>   	if (ret < 0)
+> -		goto fail;
 
 
---ngSZ5YJXqaeyTy1oJ0Mr9QzTuXvknAUlh--
+> -	BUG_ON(ret);
 
---DdnbfQVb281Q90zvA79JLfFRqPbOYbTVk
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+  Unrelated change ?
 
------BEGIN PGP SIGNATURE-----
+Thanks, Anand
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAl2n7yAACgkQwj2R86El
-/qhHOwgAjFcNCYD43h8WVu5hAtGbQ1Q5gszLAanQTREUXxNHK1Sr5AZ3p6tkid6O
-RaBaxivKHvGsuEh5MSiX+LBpEYXAn9Z6fuOKGzyen0Dps/Nm9I3SU58CCzB5mtbY
-sf4bkJDWYDQ0mlHub/ZsYGmPfZvmbtEMNXkN8VFzMj/YSc2ay/cujFU3NrBDle1s
-S7I7Rlkbww5oTd0/y9kQFE/1L13ONnyM39FawR3Dk0tl5hscEIdvy/HAUkEaJVFP
-Jw9x7VMgSRijCw/0NVlBPru5rZf8EXi5nkC8vkCdsVv6mVY3EJk6u636vbOu3pmw
-OFOeUOY8llAVKCsgsp9k8Xr4y9dQVQ==
-=cuhP
------END PGP SIGNATURE-----
+> +		goto out;
+>   
+> -	leaf = path->nodes[0];
+> -	bi = btrfs_item_ptr_offset(leaf, path->slots[0]);
+> -	write_extent_buffer(leaf, &cache->item, bi, sizeof(cache->item));
+> -	btrfs_mark_buffer_dirty(leaf);
+> -	btrfs_release_path(path);
+> -fail:
+> +	if (ret == 0) {
+> +		/* Update existing bg */
+> +		leaf = path->nodes[0];
+> +		bi = btrfs_item_ptr_offset(leaf, path->slots[0]);
+> +		write_extent_buffer(leaf, &cache->item, bi, sizeof(cache->item));
+> +		btrfs_mark_buffer_dirty(leaf);
+> +		btrfs_release_path(path);
+> +	} else {
 
---DdnbfQVb281Q90zvA79JLfFRqPbOYbTVk--
+
+
+> +		btrfs_release_path(path);
+> +
+> +		/*
+> +		 * Insert new bg item
+> +		 *
+> +		 * This only happens for bg_tree feature
+> +		 */
+> +		if (!is_bg_tree) {
+> +			error("can't find block group item for bytenr %llu",
+> +			      cache->key.objectid);
+> +			ret = -ENOENT;
+> +			goto out;
+> +		}
+> +		ret = btrfs_insert_item(trans, root, &cache->key, &cache->item,
+> +					sizeof(cache->item));
+> +		if (ret < 0)
+> +			goto out;
+> +
+> +		/* Also delete the existing one in next tree if needed */
+> +		if (fs_info->convert_to_bg_tree) {
+> +			ret = btrfs_search_slot(trans, fs_info->extent_root,
+> +						&cache->key, path, -1, 1);
+> +			if (ret < 0) {
+> +				btrfs_release_path(path);
+> +				goto out;
+> +			}
+> +			/* Good, already converted */
+> +			if (ret > 0) {
+> +				ret = 0;
+> +				btrfs_release_path(path);
+> +				goto out;
+> +			}
+> +			/* Delete old block group item in extent tree */
+> +			ret = btrfs_del_item(trans, fs_info->extent_root, path);
+> +			btrfs_release_path(path);
+> +		}
+> +	}
+> +out:
+>   	if (ret)
+>   		return ret;
+>   	return 0;
+> @@ -2717,14 +2763,66 @@ static int read_one_block_group(struct btrfs_fs_info *fs_info,
+>   	return 0;
+>   }
+>   
+> +static int read_block_group_tree(struct btrfs_fs_info *fs_info)
+> +{
+> +	struct btrfs_root *root = fs_info->bg_root;
+> +	struct btrfs_key key = { 0 };
+> +	struct btrfs_path path;
+> +	int ret;
+> +
+> +	btrfs_init_path(&path);
+> +	ret = btrfs_search_slot(NULL, root, &key, &path, 0, 0);
+> +	if (ret < 0) {
+> +		errno = -ret;
+> +		error("failed to search block group tree: %m");
+> +		return ret;
+> +	}
+> +	if (ret == 0)
+> +		goto invalid_key;
+> +
+> +	while (1) {
+> +		btrfs_item_key_to_cpu(path.nodes[0], &key, path.slots[0]);
+> +		if (key.type != BTRFS_BLOCK_GROUP_ITEM_KEY)
+> +			goto invalid_key;
+> +
+> +		ret = read_one_block_group(fs_info, &path);
+> +		if (ret < 0) {
+> +			errno = -ret;
+> +			error("failed to read one block group: %m");
+> +			goto out;
+> +		}
+> +		ret = btrfs_next_item(root, &path);
+> +		if (ret < 0) {
+> +			errno = -ret;
+> +			error("failed to search block group tree: %m");
+> +			goto out;
+> +		}
+> +		if (ret > 0) {
+> +			ret = 0;
+> +			break;
+> +		}
+> +	}
+> +out:
+> +	btrfs_release_path(&path);
+> +	return ret;
+> +
+> +invalid_key:
+> +	error("invalid key (%llu, %u, %llu) found in block group tree",
+> +	      key.objectid, key.type, key.offset);
+> +	btrfs_release_path(&path);
+> +	return -EUCLEAN;
+> +}
+> +
+>   int btrfs_read_block_groups(struct btrfs_fs_info *fs_info)
+>   {
+>   	struct btrfs_path path;
+> -	struct btrfs_root *root;
+> +	struct btrfs_root *root = fs_info->extent_root;
+>   	int ret;
+>   	struct btrfs_key key;
+>   
+> -	root = fs_info->extent_root;
+> +	if (btrfs_fs_incompat(fs_info, BG_TREE))
+> +		return read_block_group_tree(fs_info);
+> +
+>   	key.objectid = 0;
+>   	key.offset = 0;
+>   	key.type = BTRFS_BLOCK_GROUP_ITEM_KEY;
+> @@ -2804,12 +2902,17 @@ int btrfs_make_block_group(struct btrfs_trans_handle *trans,
+>   			   u64 type, u64 chunk_offset, u64 size)
+>   {
+>   	int ret;
+> -	struct btrfs_root *extent_root = fs_info->extent_root;
+> +	struct btrfs_root *root;
+>   	struct btrfs_block_group_cache *cache;
+>   
+> +	if (btrfs_fs_incompat(fs_info, BG_TREE))
+> +		root = fs_info->bg_root;
+> +	else
+> +		root = fs_info->extent_root;
+> +
+>   	cache = btrfs_add_block_group(fs_info, bytes_used, type, chunk_offset,
+>   				      size);
+> -	ret = btrfs_insert_item(trans, extent_root, &cache->key, &cache->item,
+> +	ret = btrfs_insert_item(trans, root, &cache->key, &cache->item,
+>   				sizeof(cache->item));
+>   	BUG_ON(ret);
+>   
+> @@ -2943,8 +3046,16 @@ static int free_block_group_item(struct btrfs_trans_handle *trans,
+>   	if (!path)
+>   		return -ENOMEM;
+>   
+> +	/* Using bg tree only */
+> +	if (btrfs_fs_incompat(fs_info, BG_TREE) && !fs_info->convert_to_bg_tree)
+> +		goto bg_tree;
+> +
+>   	ret = btrfs_search_slot(trans, root, &key, path, -1, 1);
+>   	if (ret > 0) {
+> +		if (btrfs_fs_incompat(fs_info, BG_TREE)) {
+> +			btrfs_release_path(path);
+> +			goto bg_tree;
+> +		}
+>   		ret = -ENOENT;
+>   		goto out;
+>   	}
+> @@ -2952,6 +3063,19 @@ static int free_block_group_item(struct btrfs_trans_handle *trans,
+>   		goto out;
+>   
+>   	ret = btrfs_del_item(trans, root, path);
+> +	goto out;
+> +
+> +bg_tree:
+> +	root = fs_info->bg_root;
+> +	ret = btrfs_search_slot(trans, fs_info->bg_root, &key, path, -1, 1);
+> +	if (ret < 0)
+> +		goto out;
+> +	if (ret > 0) {
+> +		ret = -ENOENT;
+> +		goto out;
+> +	}
+> +	ret = btrfs_del_item(trans, root, path);
+> +
+>   out:
+>   	btrfs_free_path(path);
+>   	return ret;
+> 
+

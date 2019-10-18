@@ -6,29 +6,29 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C3B8DCA9EA1
-	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Oct 2019 09:58:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6BEA6CA9EA0
+	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Oct 2019 09:58:43 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 96140222BD
-	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Oct 2019 09:58:42 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4D7D2222C3
+	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Oct 2019 09:58:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2407879AbfJRJ6m (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S2407892AbfJRJ6m (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Fri, 18 Oct 2019 05:58:42 -0400
-Received: from mx2.suse.de ([195.135.220.15]:40256 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:40248 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2403858AbfJRJ6l (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 18 Oct 2019 05:58:41 -0400
+        id S2389081AbfJRJ6m (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 18 Oct 2019 05:58:42 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 59E11B585;
+        by mx1.suse.de (Postfix) with ESMTP id 44329B57A;
         Fri, 18 Oct 2019 09:58:40 +0000 (UTC)
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 To:     David Sterba <dsterba@suse.com>
 Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
         Johannes Thumshirn <jthumshirn@suse.de>
-Subject: [PATCH 3/4] btrfs: reduce indentation in btrfs_may_alloc_data_chunk
-Date:   Fri, 18 Oct 2019 11:58:22 +0200
-Message-Id: <20191018095823.15282-4-jthumshirn@suse.de>
+Subject: [PATCH 1/4] btrfs: reduce indentation in lock_stripe_add
+Date:   Fri, 18 Oct 2019 11:58:20 +0200
+Message-Id: <20191018095823.15282-2-jthumshirn@suse.de>
 X-Mailer: git-send-email 2.16.4
 In-Reply-To: <20191018095823.15282-1-jthumshirn@suse.de>
 References: <20191018095823.15282-1-jthumshirn@suse.de>
@@ -37,72 +37,128 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-In btrfs_may_alloc_data_chunk() we're checking if the chunk type is of
-type BTRFS_BLOCK_GROUP_DATA and if it is we process it.
+In lock_stripe_add() we're traversing the stripe hash list and check if
+the current list element's raid_map equals is equal to the raid bio's
+raid_map. If both are equal we continue processing.
 
-Instead of checking if the chunk type is a BTRFS_BLOCK_GROUP_DATA chunk we
-can negate the check and bail out early if it isn't.
-
-This makes the code a bit more readable.
+If we'd check for inequality instead of equality we can reduce one level
+of indentation.
 
 Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
 ---
- fs/btrfs/volumes.c | 41 +++++++++++++++++++++--------------------
- 1 file changed, 21 insertions(+), 20 deletions(-)
+ fs/btrfs/raid56.c | 90 ++++++++++++++++++++++++++-----------------------------
+ 1 file changed, 43 insertions(+), 47 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index bba74e3bd9d8..4c630356bb30 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2982,27 +2982,28 @@ static int btrfs_may_alloc_data_chunk(struct btrfs_fs_info *fs_info,
- 	chunk_type = cache->flags;
- 	btrfs_put_block_group(cache);
+diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+index 8f47a85944eb..9e8a6c447e51 100644
+--- a/fs/btrfs/raid56.c
++++ b/fs/btrfs/raid56.c
+@@ -682,62 +682,58 @@ static noinline int lock_stripe_add(struct btrfs_raid_bio *rbio)
  
--	if (chunk_type & BTRFS_BLOCK_GROUP_DATA) {
--		spin_lock(&fs_info->data_sinfo->lock);
--		bytes_used = fs_info->data_sinfo->bytes_used;
--		spin_unlock(&fs_info->data_sinfo->lock);
+ 	spin_lock_irqsave(&h->lock, flags);
+ 	list_for_each_entry(cur, &h->hash_list, hash_list) {
+-		if (cur->bbio->raid_map[0] == rbio->bbio->raid_map[0]) {
+-			spin_lock(&cur->bio_list_lock);
 -
--		if (!bytes_used) {
--			struct btrfs_trans_handle *trans;
--			int ret;
+-			/* can we steal this cached rbio's pages? */
+-			if (bio_list_empty(&cur->bio_list) &&
+-			    list_empty(&cur->plug_list) &&
+-			    test_bit(RBIO_CACHE_BIT, &cur->flags) &&
+-			    !test_bit(RBIO_RMW_LOCKED_BIT, &cur->flags)) {
+-				list_del_init(&cur->hash_list);
+-				refcount_dec(&cur->refs);
 -
--			trans =	btrfs_join_transaction(fs_info->tree_root);
--			if (IS_ERR(trans))
--				return PTR_ERR(trans);
--
--			ret = btrfs_force_chunk_alloc(trans,
--						      BTRFS_BLOCK_GROUP_DATA);
--			btrfs_end_transaction(trans);
--			if (ret < 0)
--				return ret;
--			return 1;
--		}
-+	if (!(chunk_type & BTRFS_BLOCK_GROUP_DATA))
-+		return 0;
+-				steal_rbio(cur, rbio);
+-				cache_drop = cur;
+-				spin_unlock(&cur->bio_list_lock);
++		if (cur->bbio->raid_map[0] != rbio->bbio->raid_map[0])
++			continue;
+ 
+-				goto lockit;
+-			}
++		spin_lock(&cur->bio_list_lock);
+ 
+-			/* can we merge into the lock owner? */
+-			if (rbio_can_merge(cur, rbio)) {
+-				merge_rbio(cur, rbio);
+-				spin_unlock(&cur->bio_list_lock);
+-				freeit = rbio;
+-				ret = 1;
+-				goto out;
+-			}
++		/* can we steal this cached rbio's pages? */
++		if (bio_list_empty(&cur->bio_list) &&
++		    list_empty(&cur->plug_list) &&
++		    test_bit(RBIO_CACHE_BIT, &cur->flags) &&
++		    !test_bit(RBIO_RMW_LOCKED_BIT, &cur->flags)) {
++			list_del_init(&cur->hash_list);
++			refcount_dec(&cur->refs);
+ 
++			steal_rbio(cur, rbio);
++			cache_drop = cur;
++			spin_unlock(&cur->bio_list_lock);
+ 
+-			/*
+-			 * we couldn't merge with the running
+-			 * rbio, see if we can merge with the
+-			 * pending ones.  We don't have to
+-			 * check for rmw_locked because there
+-			 * is no way they are inside finish_rmw
+-			 * right now
+-			 */
+-			list_for_each_entry(pending, &cur->plug_list,
+-					    plug_list) {
+-				if (rbio_can_merge(pending, rbio)) {
+-					merge_rbio(pending, rbio);
+-					spin_unlock(&cur->bio_list_lock);
+-					freeit = rbio;
+-					ret = 1;
+-					goto out;
+-				}
+-			}
++			goto lockit;
++		}
+ 
+-			/* no merging, put us on the tail of the plug list,
+-			 * our rbio will be started with the currently
+-			 * running rbio unlocks
+-			 */
+-			list_add_tail(&rbio->plug_list, &cur->plug_list);
++		/* can we merge into the lock owner? */
++		if (rbio_can_merge(cur, rbio)) {
++			merge_rbio(cur, rbio);
+ 			spin_unlock(&cur->bio_list_lock);
++			freeit = rbio;
+ 			ret = 1;
+ 			goto out;
+ 		}
 +
-+	spin_lock(&fs_info->data_sinfo->lock);
-+	bytes_used = fs_info->data_sinfo->bytes_used;
-+	spin_unlock(&fs_info->data_sinfo->lock);
 +
-+	if (!bytes_used) {
-+		struct btrfs_trans_handle *trans;
-+		int ret;
++		/*
++		 * we couldn't merge with the running rbio, see if we can merge
++		 * with the pending ones.  We don't have to check for rmw_locked
++		 * because there is no way they are inside finish_rmw right now
++		 */
++		list_for_each_entry(pending, &cur->plug_list, plug_list) {
++			if (rbio_can_merge(pending, rbio)) {
++				merge_rbio(pending, rbio);
++				spin_unlock(&cur->bio_list_lock);
++				freeit = rbio;
++				ret = 1;
++				goto out;
++			}
++		}
 +
-+		trans =	btrfs_join_transaction(fs_info->tree_root);
-+		if (IS_ERR(trans))
-+			return PTR_ERR(trans);
-+
-+		ret = btrfs_force_chunk_alloc(trans, BTRFS_BLOCK_GROUP_DATA);
-+		btrfs_end_transaction(trans);
-+		if (ret < 0)
-+			return ret;
-+		return 1;
++		/* no merging, put us on the tail of the plug list, our rbio
++		 * will be started with the currently running rbio unlocks
++		 */
++		list_add_tail(&rbio->plug_list, &cur->plug_list);
++		spin_unlock(&cur->bio_list_lock);
++		ret = 1;
++		goto out;
  	}
-+
- 	return 0;
- }
- 
+ lockit:
+ 	refcount_inc(&rbio->refs);
 -- 
 2.16.4
 

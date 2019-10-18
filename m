@@ -6,29 +6,29 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D845CCA9EA0
-	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Oct 2019 09:58:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 03E84CA9EA3
+	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Oct 2019 09:58:46 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id AFAD8222C3
-	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Oct 2019 09:58:44 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D9808222BD
+	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Oct 2019 09:58:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2407876AbfJRJ6l (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 18 Oct 2019 05:58:41 -0400
-Received: from mx2.suse.de ([195.135.220.15]:40250 "EHLO mx1.suse.de"
+        id S2389081AbfJRJ6p (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 18 Oct 2019 05:58:45 -0400
+Received: from mx2.suse.de ([195.135.220.15]:40258 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2390955AbfJRJ6l (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S2403993AbfJRJ6l (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Fri, 18 Oct 2019 05:58:41 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 46B2DB57B;
+        by mx1.suse.de (Postfix) with ESMTP id 5A369B586;
         Fri, 18 Oct 2019 09:58:40 +0000 (UTC)
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 To:     David Sterba <dsterba@suse.com>
 Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
         Johannes Thumshirn <jthumshirn@suse.de>
-Subject: [PATCH 2/4] btrfs: remove pointless local variable in lock_stripe_add()
-Date:   Fri, 18 Oct 2019 11:58:21 +0200
-Message-Id: <20191018095823.15282-3-jthumshirn@suse.de>
+Subject: [PATCH 4/4] btrfs: remove pointless indentation in btrfs_read_sys_array()
+Date:   Fri, 18 Oct 2019 11:58:23 +0200
+Message-Id: <20191018095823.15282-5-jthumshirn@suse.de>
 X-Mailer: git-send-email 2.16.4
 In-Reply-To: <20191018095823.15282-1-jthumshirn@suse.de>
 References: <20191018095823.15282-1-jthumshirn@suse.de>
@@ -37,43 +37,106 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-In lock_stripe_add() we're caching the bucket for the stripe hash table
-just for a single call to dereference the stripe hash.
+Instead of checking if we've read a BTRFS_CHUNK_ITEM_KEY from disk and
+then process it we could just bail out early if the read disk key wasn't a
+BTRFS_CHUNK_ITEM_KEY.
 
-If we just directly call rbio_bucket() we can safe the pointless local
-variable.
-
-Also move the dereferencing of the stripe hash outside of the variable
-declaration block to not break over the 80 characters limit.
+This removes a level of indentation and makes the code nicer to read.
 
 Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
 ---
- fs/btrfs/raid56.c | 5 +++--
- 1 file changed, 3 insertions(+), 2 deletions(-)
+ fs/btrfs/volumes.c | 71 +++++++++++++++++++++++++++---------------------------
+ 1 file changed, 36 insertions(+), 35 deletions(-)
 
-diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index 9e8a6c447e51..530719ff8185 100644
---- a/fs/btrfs/raid56.c
-+++ b/fs/btrfs/raid56.c
-@@ -671,8 +671,7 @@ static struct page *rbio_qstripe_page(struct btrfs_raid_bio *rbio, int index)
-  */
- static noinline int lock_stripe_add(struct btrfs_raid_bio *rbio)
- {
--	int bucket = rbio_bucket(rbio);
--	struct btrfs_stripe_hash *h = rbio->fs_info->stripe_hash_table->table + bucket;
-+	struct btrfs_stripe_hash *h;
- 	struct btrfs_raid_bio *cur;
- 	struct btrfs_raid_bio *pending;
- 	unsigned long flags;
-@@ -680,6 +679,8 @@ static noinline int lock_stripe_add(struct btrfs_raid_bio *rbio)
- 	struct btrfs_raid_bio *cache_drop = NULL;
- 	int ret = 0;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 4c630356bb30..08a2d1f6ec41 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -6805,48 +6805,49 @@ int btrfs_read_sys_array(struct btrfs_fs_info *fs_info)
+ 		sb_array_offset += len;
+ 		cur_offset += len;
  
-+	h = rbio->fs_info->stripe_hash_table->table + rbio_bucket(rbio);
+-		if (key.type == BTRFS_CHUNK_ITEM_KEY) {
+-			chunk = (struct btrfs_chunk *)sb_array_offset;
+-			/*
+-			 * At least one btrfs_chunk with one stripe must be
+-			 * present, exact stripe count check comes afterwards
+-			 */
+-			len = btrfs_chunk_item_size(1);
+-			if (cur_offset + len > array_size)
+-				goto out_short_read;
+-
+-			num_stripes = btrfs_chunk_num_stripes(sb, chunk);
+-			if (!num_stripes) {
+-				btrfs_err(fs_info,
+-					"invalid number of stripes %u in sys_array at offset %u",
+-					num_stripes, cur_offset);
+-				ret = -EIO;
+-				break;
+-			}
++		if (key.type != BTRFS_CHUNK_ITEM_KEY) {
++			btrfs_err(fs_info,
++			    "unexpected item type %u in sys_array at offset %u",
++				  (u32)key.type, cur_offset);
++			ret = -EIO;
++			break;
++		}
+ 
+-			type = btrfs_chunk_type(sb, chunk);
+-			if ((type & BTRFS_BLOCK_GROUP_SYSTEM) == 0) {
+-				btrfs_err(fs_info,
+-			    "invalid chunk type %llu in sys_array at offset %u",
+-					type, cur_offset);
+-				ret = -EIO;
+-				break;
+-			}
++		chunk = (struct btrfs_chunk *)sb_array_offset;
++		/*
++		 * At least one btrfs_chunk with one stripe must be
++		 * present, exact stripe count check comes afterwards
++		 */
++		len = btrfs_chunk_item_size(1);
++		if (cur_offset + len > array_size)
++			goto out_short_read;
+ 
+-			len = btrfs_chunk_item_size(num_stripes);
+-			if (cur_offset + len > array_size)
+-				goto out_short_read;
++		num_stripes = btrfs_chunk_num_stripes(sb, chunk);
++		if (!num_stripes) {
++			btrfs_err(fs_info,
++				  "invalid number of stripes %u in sys_array at offset %u",
++				  num_stripes, cur_offset);
++			ret = -EIO;
++			break;
++		}
+ 
+-			ret = read_one_chunk(&key, sb, chunk);
+-			if (ret)
+-				break;
+-		} else {
++		type = btrfs_chunk_type(sb, chunk);
++		if ((type & BTRFS_BLOCK_GROUP_SYSTEM) == 0) {
+ 			btrfs_err(fs_info,
+-			    "unexpected item type %u in sys_array at offset %u",
+-				  (u32)key.type, cur_offset);
++				  "invalid chunk type %llu in sys_array at offset %u",
++				  type, cur_offset);
+ 			ret = -EIO;
+ 			break;
+ 		}
 +
- 	spin_lock_irqsave(&h->lock, flags);
- 	list_for_each_entry(cur, &h->hash_list, hash_list) {
- 		if (cur->bbio->raid_map[0] != rbio->bbio->raid_map[0])
++		len = btrfs_chunk_item_size(num_stripes);
++		if (cur_offset + len > array_size)
++			goto out_short_read;
++
++		ret = read_one_chunk(&key, sb, chunk);
++		if (ret)
++			break;
++
+ 		array_ptr += len;
+ 		sb_array_offset += len;
+ 		cur_offset += len;
 -- 
 2.16.4
 

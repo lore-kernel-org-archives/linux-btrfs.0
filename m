@@ -2,71 +2,79 @@ Return-Path: <SRS0=+tro=YL=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 55942CA9EA4
-	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Oct 2019 12:06:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EB442CA9EA1
+	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Oct 2019 12:07:34 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 3562921D7C
-	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Oct 2019 12:06:27 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C5F1421925
+	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Oct 2019 12:07:33 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2409966AbfJRMGY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 18 Oct 2019 08:06:24 -0400
-Received: from szxga05-in.huawei.com ([45.249.212.191]:4731 "EHLO huawei.com"
+        id S2409990AbfJRMHd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 18 Oct 2019 08:07:33 -0400
+Received: from mx2.suse.de ([195.135.220.15]:41914 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2409959AbfJRMGX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 18 Oct 2019 08:06:23 -0400
-Received: from DGGEMS408-HUB.china.huawei.com (unknown [172.30.72.58])
-        by Forcepoint Email with ESMTP id C6A009722F2450F91989;
-        Fri, 18 Oct 2019 20:06:19 +0800 (CST)
-Received: from localhost (10.133.213.239) by DGGEMS408-HUB.china.huawei.com
- (10.3.19.208) with Microsoft SMTP Server id 14.3.439.0; Fri, 18 Oct 2019
- 20:06:12 +0800
-From:   YueHaibing <yuehaibing@huawei.com>
-To:     <clm@fb.com>, <josef@toxicpanda.com>, <dsterba@suse.com>
-CC:     <linux-btrfs@vger.kernel.org>, <linux-kernel@vger.kernel.org>,
-        YueHaibing <yuehaibing@huawei.com>
-Subject: [PATCH -next] btrfs: Make init_tree_roots static
-Date:   Fri, 18 Oct 2019 20:06:04 +0800
-Message-ID: <20191018120604.29508-1-yuehaibing@huawei.com>
-X-Mailer: git-send-email 2.10.2.windows.1
+        id S2409959AbfJRMHc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 18 Oct 2019 08:07:32 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 5677AB4D0;
+        Fri, 18 Oct 2019 12:07:31 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id C92EFDA785; Fri, 18 Oct 2019 14:07:45 +0200 (CEST)
+Date:   Fri, 18 Oct 2019 14:07:45 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Merlin =?iso-8859-1?Q?B=FCge?= <merlin.buege@tuhh.de>
+Cc:     David Sterba <dsterba@suse.cz>,
+        Nikolay Borisov <nborisov@suse.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: small fixes/cleanup in Documentation
+Message-ID: <20191018120745.GB3001@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz,
+        Merlin =?iso-8859-1?Q?B=FCge?= <merlin.buege@tuhh.de>,
+        Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
+References: <20191017045006.130378-1-merlin.buege@tuhh.de>
+ <1201273d-8051-b65a-51bc-6e4c12cff7f2@suse.com>
+ <20191017111805.GE2751@twin.jikos.cz>
+ <20191017164731.48111095.merlin.buege@tuhh.de>
 MIME-Version: 1.0
-Content-Type: text/plain
-X-Originating-IP: [10.133.213.239]
-X-CFilter-Loop: Reflected
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <20191017164731.48111095.merlin.buege@tuhh.de>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Fix sparse warning:
+On Thu, Oct 17, 2019 at 04:47:31PM +0200, Merlin Büge wrote:
+> On Thu, 17 Oct 2019 13:18:05 +0200
+> David Sterba <dsterba@suse.cz> wrote:
+> 
+> > Well, for documentation patches and for progs it's not that strict and
+> > I've applied many drive-by patches. My sign-off will be there and the
+> > original author is usually mentioned as Author:, so the credit is
+> > recorded.
+> 
+> I'm fine with that.
+> 
+> Sorry, I'm not yet really familiar with the email driven patch workflow
+> (actually it's my first patch via email). I will include a SOB line
+> next time. If I should resend this patch with one, please tell me!
 
-fs/btrfs/disk-io.c:2534:12: warning:
- symbol 'init_tree_roots' was not declared. Should it be static?
+No need to resend, getting documentation updates should not pose any
+barrier as they can be sent by anyone who found something to fix and
+insisting on the formalities (that are otherwise a good thing for code)
+would probably discourage people.
 
-Reported-by: Hulk Robot <hulkci@huawei.com>
-Signed-off-by: YueHaibing <yuehaibing@huawei.com>
----
- fs/btrfs/disk-io.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+> Q: How would I go about updating the patch? Just completely resend it
+> to the mailing list from scratch so a new thread gets created, or
+> replying to the existing one?
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index d078276..cb187f5 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2531,7 +2531,7 @@ static int btrfs_validate_write_super(struct btrfs_fs_info *fs_info,
- 	return ret;
- }
- 
--int __cold init_tree_roots(struct btrfs_fs_info *fs_info)
-+static int __cold init_tree_roots(struct btrfs_fs_info *fs_info)
- {
- 	int backup_index = find_newest_super_backup(fs_info);
- 	struct btrfs_super_block *sb = fs_info->super_copy;
--- 
-2.7.4
-
-
+Replying to the same would be better in this case. If you don't have
+more updates to the docs resending is not necessary, unless you want to
+exercise sending patches by mail.

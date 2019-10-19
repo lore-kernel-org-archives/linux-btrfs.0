@@ -2,146 +2,217 @@ Return-Path: <SRS0=c6Mw=YM=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.2 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 09D3ECA9EA9
-	for <linux-btrfs@archiver.kernel.org>; Sat, 19 Oct 2019 00:08:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4447DCA9EA0
+	for <linux-btrfs@archiver.kernel.org>; Sat, 19 Oct 2019 00:24:35 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D2B3D21897
-	for <linux-btrfs@archiver.kernel.org>; Sat, 19 Oct 2019 00:08:13 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 05E83222C2
+	for <linux-btrfs@archiver.kernel.org>; Sat, 19 Oct 2019 00:24:35 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="Zn8Zw3Oz"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1733143AbfJSAIM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 18 Oct 2019 20:08:12 -0400
-Received: from m9a0003g.houston.softwaregrp.com ([15.124.64.68]:48372 "EHLO
-        m9a0003g.houston.softwaregrp.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1728668AbfJSAIM (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 18 Oct 2019 20:08:12 -0400
-Received: FROM m9a0003g.houston.softwaregrp.com (15.121.0.191) BY m9a0003g.houston.softwaregrp.com WITH ESMTP
- FOR linux-btrfs@vger.kernel.org;
- Sat, 19 Oct 2019 00:07:32 +0000
-Received: from M9W0067.microfocus.com (2002:f79:be::f79:be) by
- M9W0068.microfocus.com (2002:f79:bf::f79:bf) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256_P256) id
- 15.1.1591.10; Fri, 18 Oct 2019 23:50:02 +0000
-Received: from NAM03-DM3-obe.outbound.protection.outlook.com (15.124.72.10) by
- M9W0067.microfocus.com (15.121.0.190) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256_P256) id
- 15.1.1591.10 via Frontend Transport; Fri, 18 Oct 2019 23:50:02 +0000
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
- b=c9KrQYL4en0hGgDbnvsMS8ASccf5RqFhEEwnFUzVtn7C4us9mrFutTL6I8QgZgjuy2n5xnYnseSqzANliM+YAqtceqYatqxrxqIPOZU8fASxq5Q1Rm2i1hwuTd48eSzDqH9iRCmjQgSJDszsj8T4vs86/1j18aLJdk7Tl5kBYlt/bFJ8HuU+pfhagssR+SyVTn5TN9OjKpKegWU95tB71bONlEWM/GDT0XnbDGYhPNsH18n6YFdIqdqwJSt6xlhry3CQqNm9ir/srlBPdNID405cMl07NsUl8/UqyuBhNc34l8JNxIbCdJPAV0XtCU9RMw1LTBjxlwDfiVP8+SI+fQ==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector9901;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=d2bZUtzqVJAql97dVH9g9t0SRgf7czWA/zulCYJG4Kk=;
- b=V2zvhBTdgs8yCt/1iUshtZiY7OLwh/ivYcTSteADLTaVys8yMwZcTh/2chMrhfdqY8t5QMjxCYDB+5uDObb3F9DblcVowQMOfKcCDmmNYktX+IHdelRPRvXBhf8CwKYP27EhE+8X6Y1jDRbDqfz+XmuYasRB3XJYuXQdtcqZEpQN3rN8VoloOA/5PWFw4xTwFPOkOoCt9bf53GqMTD4ylCouL+ePKbPQf7W89awt4wIR9n5bYyjaO5iwaPljKgjsvQObaQUojb/4y2eoMEmCqqf3Pw0JWitjBlvP5i8pFghDOamKSi4M6KO3t7IoYWFJqzy8Tnw8qkJRwW3ArQEJqw==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=suse.com; dmarc=pass action=none header.from=suse.com;
- dkim=pass header.d=suse.com; arc=none
-Received: from BY5PR18MB3266.namprd18.prod.outlook.com (10.255.163.207) by
- BY5PR18MB3107.namprd18.prod.outlook.com (10.255.137.225) with Microsoft SMTP
- Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.20.2347.21; Fri, 18 Oct 2019 23:50:00 +0000
-Received: from BY5PR18MB3266.namprd18.prod.outlook.com
- ([fe80::5c5:8dae:70ef:a254]) by BY5PR18MB3266.namprd18.prod.outlook.com
- ([fe80::5c5:8dae:70ef:a254%4]) with mapi id 15.20.2347.024; Fri, 18 Oct 2019
- 23:50:00 +0000
-From:   Qu WenRuo <wqu@suse.com>
-To:     Ferry Toth <fntoth@gmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 0/3] btrfs-progs: Add check and repair for invalid inode
- generation
-Thread-Topic: [PATCH 0/3] btrfs-progs: Add check and repair for invalid inode
- generation
-Thread-Index: AQHVhfM0opL6vpxcaUKwBk5wEWOTL6dhEZKA
-Date:   Fri, 18 Oct 2019 23:50:00 +0000
-Message-ID: <b1c32c4b-734f-0f4e-44d1-cb4ef69b7fe1@suse.com>
-References: <20190924081120.6283-1-wqu@suse.com>
- <36d45e31-f125-4b21-a68e-428f807180f7@gmail.com>
-In-Reply-To: <36d45e31-f125-4b21-a68e-428f807180f7@gmail.com>
-Accept-Language: zh-CN, en-US
-Content-Language: en-US
-X-MS-Has-Attach: 
-X-MS-TNEF-Correlator: 
-x-clientproxiedby: TYAPR01CA0079.jpnprd01.prod.outlook.com
- (2603:1096:404:2c::19) To BY5PR18MB3266.namprd18.prod.outlook.com
- (2603:10b6:a03:1a1::15)
-authentication-results: spf=none (sender IP is ) smtp.mailfrom=wqu@suse.com; 
-x-ms-exchange-messagesentrepresentingtype: 1
-x-originating-ip: [13.231.109.76]
-x-ms-publictraffictype: Email
-x-ms-office365-filtering-correlation-id: f54672b0-2294-41bf-0f3a-08d75425e37e
-x-ms-traffictypediagnostic: BY5PR18MB3107:
-x-microsoft-antispam-prvs: <BY5PR18MB3107F3B97DD4E0291ED239E7D66C0@BY5PR18MB3107.namprd18.prod.outlook.com>
-x-ms-oob-tlc-oobclassifiers: OLM:9508;
-x-forefront-prvs: 01949FE337
-x-forefront-antispam-report: SFV:NSPM;SFS:(10019020)(4636009)(39860400002)(396003)(136003)(376002)(346002)(366004)(199004)(189003)(7736002)(256004)(6246003)(6512007)(6116002)(66946007)(229853002)(386003)(2906002)(6486002)(76176011)(6506007)(66556008)(66446008)(64756008)(305945005)(52116002)(102836004)(66476007)(81156014)(81166006)(476003)(486006)(2616005)(14444005)(11346002)(8676002)(8936002)(446003)(3846002)(186003)(26005)(71190400001)(36756003)(6436002)(5660300002)(71200400001)(14454004)(2501003)(66066001)(86362001)(110136005)(478600001)(316002)(25786009)(31696002)(31686004)(99286004);DIR:OUT;SFP:1102;SCL:1;SRVR:BY5PR18MB3107;H:BY5PR18MB3266.namprd18.prod.outlook.com;FPR:;SPF:None;LANG:en;PTR:InfoNoRecords;A:1;MX:1;
-received-spf: None (protection.outlook.com: suse.com does not designate
- permitted sender hosts)
-x-ms-exchange-senderadcheck: 1
-x-microsoft-antispam: BCL:0;
-x-microsoft-antispam-message-info: 76y2Agdz757fV3sZsFL4e6pq8fiUgdj1Qacsb1/loSxuAqhv+lOBaR/F56ap6s1pYzfRxmKDOZgVyUf9NHt50sPEAJx+hMCxh2XSNIlK8ncwBuPgaUKDRPX9q3VGPKVjwV+RPnMPnwt57J9j69l9R7BQAcPwMlkS0H55++O+NrC/+Vi+gZmBLFjvyS9jeeqkpJR14KXEeYD7aEzJtAxWshGRMMzJIJ5BvDtqRxnBYzau49TQu9D38SjRLYvaoyQ83TD3rgueFQfiuGszf/IN5fwmbzI+6WA9ZZeBPi5dg+dtRnC9LF12zh7+u+Q4aDmrrnjnteRDVRyve7ANddaoNEZvcml3FhZDfFiaf/+h9EvYL4jw2X5tVgh5AFVNTGzP/Suf13VrZeizCDWFBAjdy1rFy5nsvmgJzXJ68O0h9b0=
-x-ms-exchange-transport-forked: True
-Content-Type: text/plain; charset="utf-8"
-Content-ID: <83CEEE312B42B4418DA723E028A899E5@namprd18.prod.outlook.com>
-Content-Transfer-Encoding: base64
+        id S2391185AbfJSAYd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 18 Oct 2019 20:24:33 -0400
+Received: from mout.gmx.net ([212.227.17.22]:53693 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1729709AbfJSAYd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 18 Oct 2019 20:24:33 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1571444668;
+        bh=knDxskx4Fo6hktWHjiH9uPg1KLthaw8u/yoUuPbCQgI=;
+        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
+        b=Zn8Zw3OzBbxpTo5df5C8+qtbUWU4ZeeYHiKYJr7/CaROK87Mk3oaJt1NRBwaVK9N/
+         Om/cOM8YNFRBqAMRdUGR/F0bytzsngiEzFF93pmKyhxbmzCwuLvTdQX9HIQYs9xrdH
+         imeOBms+Ddt3DHiL7Lla6/fmn0sqGZdFCMnxbHp0=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([13.231.109.76]) by mail.gmx.com (mrgmx104
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1MFsYx-1iFrdN3Tah-00HSBN; Sat, 19
+ Oct 2019 02:24:28 +0200
+Subject: Re: tree-checker: corrupt leaf: invalid mode: has 00 expect valid
+ S_IF* bit(s)
+To:     =?UTF-8?B?5bCP5aSq?= <nospam@kota.moe>, linux-btrfs@vger.kernel.org
+References: <CACsxjPamjSOddJ9oOmkE-7bQVZCr+0UhL_hfG0zHqHrY+07opA@mail.gmail.com>
+ <CACsxjPa3gkUK5+J5aCqtkrjdu1kVE8GB=ErRPu-RCyALWwhU3A@mail.gmail.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAU4EEwEIADgCGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1oQAKCRDC
+ PZHzoSX+qCY6CACd+mWu3okGwRKXju6bou+7VkqCaHTdyXwWFTsr+/0ly5nUdDtT3yEVggPJ
+ 3VP70wjlrxUjNjFb6iIvGYxiPOrop1NGwGYvQktgRhaIhALG6rPoSSAhGNjwGVRw0km0PlIN
+ D29BTj/lYEk+jVM1YL0QLgAE1AI3krihg/lp/fQT53wLhR8YZIF8ETXbClQG1vJ0cllPuEEv
+ efKxRyiTSjB+PsozSvYWhXsPeJ+KKjFen7ebE5reQTPFzSHctCdPnoR/4jSPlnTlnEvLeqcD
+ ZTuKfQe1gWrPeevQzgCtgBF/WjIOeJs41klnYzC3DymuQlmFubss0jShLOW8eSOOWhLRuQEN
+ BFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcgaCbPEwhLj
+ 1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj/IrRUUka
+ 68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fNGSsRb+pK
+ EKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0q1eW4Jrv
+ 0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEvABEBAAGJ
+ ATwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1rgUJCWpOfwAKCRDCPZHz
+ oSX+qFcEB/95cs8cM1OQdE/GgOfCGxwgckMeWyzOR7bkAWW0lDVp2hpgJuxBW/gyfmtBnUai
+ fnggx3EE3ev8HTysZU9q0h+TJwwJKGv6sUc8qcTGFDtavnnl+r6xDUY7A6GvXEsSoCEEynby
+ 72byGeSovfq/4AWGNPBG1L61Exl+gbqfvbECP3ziXnob009+z9I4qXodHSYINfAkZkA523JG
+ ap12LndJeLk3gfWNZfXEWyGnuciRGbqESkhIRav8ootsCIops/SqXm0/k+Kcl4gGUO/iD/T5
+ oagaDh0QtOd8RWSMwLxwn8uIhpH84Q4X1LadJ5NCgGa6xPP5qqRuiC+9gZqbq4Nj
+Message-ID: <6ee919b1-48f6-3718-b6c2-2bd7befb3dd3@gmx.com>
+Date:   Sat, 19 Oct 2019 08:24:21 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.1.1
 MIME-Version: 1.0
-X-MS-Exchange-CrossTenant-Network-Message-Id: f54672b0-2294-41bf-0f3a-08d75425e37e
-X-MS-Exchange-CrossTenant-originalarrivaltime: 18 Oct 2019 23:50:00.6375
- (UTC)
-X-MS-Exchange-CrossTenant-fromentityheader: Hosted
-X-MS-Exchange-CrossTenant-id: 856b813c-16e5-49a5-85ec-6f081e13b527
-X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
-X-MS-Exchange-CrossTenant-userprincipalname: 7FLBWIiIXTn5wmbsqOuplIGuE3qMYFm3BIvj6k8P3+4E32jnhxzYJVLSklzFP2XG
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: BY5PR18MB3107
-X-OriginatorOrg: suse.com
+In-Reply-To: <CACsxjPa3gkUK5+J5aCqtkrjdu1kVE8GB=ErRPu-RCyALWwhU3A@mail.gmail.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="7dDZd4XwCkHflx74zZUJgFZIME4q4KspS"
+X-Provags-ID: V03:K1:rAOWzqhi+oMbzekMJVsG4qYKOJKpn7HszLlcFEoLp6WnRwz3YZd
+ HxZdAw2US3HK/1UwASdzBjA4TCaLCt9lS0Qg00x/w9ZxKVuBH78oGkIDx/12m0WobwT4XLT
+ +r1pQjxuhFt4qrmb6DTeFzUJO8w+2K1zz7thJM9RK3GzR77hZFQSO4X7ElAoTbCJXAant7C
+ fLAV83etukX9izKs0blOQ==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:GXZwbnv5aL8=:zAFG51jPznBWlu5o1V40fo
+ WlGpY/ahoBmmURhU+aSpZ0QDIifHoQSfRe/eO6kU/6qw8Kj0vp1ZFd6d7rp687m3oNlV7REN8
+ yoSylfupc6z8q77FKCZw6dkedK1Tm4RnO+ID106d6rnXKoBw+v1URcevJicKwRi2c7Edf7ZWz
+ sKGJv96ICzg2uXKfxGzcLluq4LdcUPhxnofnMydEQZCuVJDnqv0XTfT8680RXQrav3jihE/J5
+ vFD/Rg/OneGs4btuxoZMp92K8vLn9rsfwV3/i+se8Nj1NbahfqvjbXMaTLUBFByejX0JVROhU
+ OxVy+86nmt3l7PUQAh5A7jlXTjyeyL/qZvdSccWSvS9ttIE4c8L2+xgn+U3Suhn5noLU4krTG
+ t2JKuj4HL8xamDZdU+lG8sbbFAbu1OE7IEotuqWrMXZ67nTgurX3wlgmIzsFgCAHmHlTGcJgU
+ 3KHZDHTOqn5JW8fjkTc5rKVhp68DuSjrvtCUrdTZ1Y3XHSwcttOlxwELipCLQk2NIa4m2dNf+
+ 228NKgs1JjSIUYi/iTFTBs9novyCHlrDidNCZAGXpwTF00eBQE5Zjeyvxwi/r3ca73PVWcvz5
+ nnZ2Gju+WXmYiBVFbbyUbIf0RdxTzEx5dYgFrij1sYSmd4M0pmSqO8g4L2FceVLVzQ/CRGy5I
+ UsthvOBzJn9vRDEFPe/8B9dHcQxQQs9MhhN9qQt4r8jxVzEMbFnriUiRh024ySHMjhEjLD/8w
+ QM0wyq/HaRw6C2RfGg2MuxWhbsUssQpTf4llE+CFFo6kgAayBapPU0WMc3lY09YGa6RuWxOM8
+ QtTegl+2p9GUTfq6PXcFlbZxy6+rFSK1jQO0TjLwF9+9LfePvUBJwYfHM50WMylo2Skgy32UN
+ LWQOfS4egGtSmmW7h3Y4/y+hwNh46PwntW7KxxLE8FcqQMAUYlaMH/W1qyVWe1fpfFJTRz3z/
+ Rqv1bToJSHMfQCp+eAUccpbY0v6kRgbitR97QxwXK1D71NzuVIQEmuMRvR77m2QxBvusb9PgR
+ rvsqwbNbutK/XdTH8BEXg9NR2DbUYpsjlPLE0MFdgCbIhBwAcuv9SvCfWPq14VdoenRozRlv9
+ vEmpMLPiHPenYnoGg1vINaZ1Wf2X0XFFTK4pmHZwlZCUUgDvHXMtszhYPKYZFZD+aF6XAO4/9
+ sAJzP2QPu0hI7bmwfqr6zKu1NdQ8A+qZeVDeuG4Nyo9cBDn8J2WN6VVNk9txIAVn83VPfbV86
+ BB9LI/0iD2wyTdUzsH/yUdNqYtML752ialmAraQ9crQFe7q/GGwwZu8YZIk0=
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-DQoNCk9uIDIwMTkvMTAvMTkg5LiK5Y2INDozMiwgRmVycnkgVG90aCB3cm90ZToNCj4gT3AgMjQt
-MDktMjAxOSBvbSAxMDoxMSBzY2hyZWVmIFF1IFdlbnJ1bzoNCj4+IFdlIGhhdmUgYXQgbGVhc3Qg
-dHdvIHVzZXIgcmVwb3J0cyBhYm91dCBiYWQgaW5vZGUgZ2VuZXJhdGlvbiBtYWtlcw0KPj4ga2Vy
-bmVsIHJlamVjdCB0aGUgZnMuDQo+IA0KPiBNYXkgSSBhZGQgbXkgcmVwb3J0PyBJIGp1c3QgdXBn
-cmFkZWQgVWJ1bnR1IGZyb20gMTkuMDQgLT4gMTkuMTAgc28NCj4ga2VybmVsIHdlbnQgZnJvbSA1
-LjAgLT4gNS4zIChidXQgSSB3YXMgdXNpbmcgNC4xNSB0b28pLg0KPiANCj4gQm9vdGluZyA1LjMg
-bGVhdmVzIG1lIGluIGluaXRyYW1mcyBhcyBJIGhhdmUgL2Jvb3Qgb24gQGJvb3QgYW5kIC8gb24g
-L0ANCj4gDQo+IEluIGluaXRyYW1mcyBJIGNhbiB0cnkgdG8gbW91bnQgYnV0IGdldCBzb21ldGhp
-bmcgbGlrZQ0KPiBidHJmcyBjcml0aWNhbCBjb3JydXB0IGxlYWYgaW52YWxpZCBpbm9kZSBnZW5l
-cmF0aW9uIG9wZW5fY3RyZWUgZmFpbGVkDQo+IA0KPiBCb290aW5nIG9sZCBrZXJuZWwgd29ya3Mg
-anVzdCBhcyBiZWZvcmUsIG5vIGVycm9ycy4NCj4gDQo+PiBBY2NvcmRpbmcgdG8gdGhlIGNyZWF0
-aW9uIHRpbWUsIHRoZSBpbm9kZSBpcyBjcmVhdGVkIGJ5IHNvbWUgMjAxNA0KPj4ga2VybmVsLg0K
-PiANCj4gSG93IGRvIEkgZ2V0IHRoZSBjcmVhdGlvbiB0aW1lPw0KDQojIGJ0cmZzIGlucyBkdW1w
-LXRyZWUgLWIgPHRoZSBieXRlbnIgcmVwb3J0ZWQgYnkga2VybmVsPiA8eW91ciBkZXZpY2U+DQo+
-IA0KPj4gQW5kIHRoZSBnZW5lcmF0aW9uIG1lbWJlciBvZiBJTk9ERV9JVEVNIGlzIG5vdCB1cGRh
-dGVkICh1bmxpa2UgdGhlDQo+PiB0cmFuc2lkIG1lbWJlcikgc28gdGhlIGVycm9yIHBlcnNpc3Rz
-IHVudGlsIGxhdGVzdCB0cmVlLWNoZWNrZXIgZGV0ZWN0cy4NCj4+DQo+PiBFdmVuIHRoZSBzaXR1
-YXRpb24gY2FuIGJlIGZpeGVkIGJ5IHJldmVydGluZyBiYWNrIHRvIG9sZGVyIGtlcm5lbCBhbmQN
-Cj4+IGNvcHlpbmcgdGhlIG9mZmVuZGluZyBkaXIvZmlsZSB0byBhbm90aGVyIGlub2RlIGFuZCBk
-ZWxldGUgdGhlIG9mZmVuZGluZw0KPj4gb25lLCBpdCBzdGlsbCBzaG91bGQgYmUgZG9uZSBieSBi
-dHJmcy1wcm9ncy4NCj4+DQo+IEhvdyB0byBmaW5kIHRoZSBvZmZlbmRpbmcgZGlyL2ZpbGUgZnJv
-bSB0aGUgY29tbWFuZCBsaW5lIG1hbnVhbGx5Pw0KDQojIGZpbmQgPG1vdW50IHBvaW50PiAtaW51
-bSA8aW5vZGUgbnVtYmVyPg0KDQpUaGFua3MsDQpRdQ0KDQo+IA0KPj4gVGhpcyBwYXRjaHNldCBh
-ZGRzIHN1Y2ggY2hlY2sgYW5kIHJlcGFpciBhYmlsaXR5IHRvIGJ0cmZzLWNoZWNrLCB3aXRoIGEN
-Cj4+IHNpbXBsZSB0ZXN0IGltYWdlLg0KPj4NCj4+IFF1IFdlbnJ1byAoMyk6DQo+PiDCoMKgIGJ0
-cmZzLXByb2dzOiBjaGVjay9sb3dtZW06IEFkZCBjaGVjayBhbmQgcmVwYWlyIGZvciBpbnZhbGlk
-IGlub2RlDQo+PiDCoMKgwqDCoCBnZW5lcmF0aW9uDQo+PiDCoMKgIGJ0cmZzLXByb2dzOiBjaGVj
-ay9vcmlnaW5hbDogQWRkIGNoZWNrIGFuZCByZXBhaXIgZm9yIGludmFsaWQgaW5vZGUNCj4+IMKg
-wqDCoMKgIGdlbmVyYXRpb24NCj4+IMKgwqAgYnRyZnMtcHJvZ3M6IGZzY2stdGVzdHM6IEFkZCB0
-ZXN0IGltYWdlIGZvciBpbnZhbGlkIGlub2RlIGdlbmVyYXRpb24NCj4+IMKgwqDCoMKgIHJlcGFp
-cg0KPj4NCj4+IMKgIGNoZWNrL21haW4uY8KgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
-wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoCB8wqAgNTAgKysrKysrKysrKystDQo+
-PiDCoCBjaGVjay9tb2RlLWxvd21lbS5jwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDC
-oMKgwqDCoMKgwqDCoMKgwqDCoCB8wqAgNzYgKysrKysrKysrKysrKysrKysrDQo+PiDCoCBjaGVj
-ay9tb2RlLW9yaWdpbmFsLmjCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
-wqDCoMKgwqAgfMKgwqAgMSArDQo+PiDCoCAuLi4vLmxvd21lbV9yZXBhaXJhYmxlwqDCoMKgwqDC
-oMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoCB8wqDCoCAwDQo+PiDCoCAuLi4v
-YmFkX2lub2RlX2dlbmVhcnRpb24uaW1nLnh6wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoCB8
-IEJpbiAwIC0+IDIwMTIgYnl0ZXMNCj4+IMKgIDUgZmlsZXMgY2hhbmdlZCwgMTI2IGluc2VydGlv
-bnMoKyksIDEgZGVsZXRpb24oLSkNCj4+IMKgIGNyZWF0ZSBtb2RlIDEwMDY0NA0KPj4gdGVzdHMv
-ZnNjay10ZXN0cy8wNDMtYmFkLWlub2RlLWdlbmVyYXRpb24vLmxvd21lbV9yZXBhaXJhYmxlDQo+
-PiDCoCBjcmVhdGUgbW9kZSAxMDA2NDQNCj4+IHRlc3RzL2ZzY2stdGVzdHMvMDQzLWJhZC1pbm9k
-ZS1nZW5lcmF0aW9uL2JhZF9pbm9kZV9nZW5lYXJ0aW9uLmltZy54eg0KPj4NCj4gDQo=
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--7dDZd4XwCkHflx74zZUJgFZIME4q4KspS
+Content-Type: multipart/mixed; boundary="lLkRQLdNaAUQFGsBPljcFG0XO98zhw2BM"
+
+--lLkRQLdNaAUQFGsBPljcFG0XO98zhw2BM
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+
+
+
+On 2019/10/19 =E4=B8=8A=E5=8D=881:18, =E2=80=8D=E5=B0=8F=E5=A4=AA wrote:
+> Hi, I recently got the following error in dmesg while taking an
+> incremental backup of my data:
+>=20
+> [26876.491167] BTRFS critical (device dm-0): corrupt leaf: root=3D258
+> block=3D739531833344 slot=3D0 ino=3D19366566, invalid mode: has 00 expe=
+ct
+> valid S_IF* bit(s)
+
+Tree-checker detects an invalid inode mode bit.
+
+=46rom previous report, it should be caused by older kernel around 2014.
+
+> [26876.491171] BTRFS error (device dm-0): block=3D739531833344 read tim=
+e
+> tree block corruption detected
+>=20
+> It is triggered whenever stat() is called on one of these files:
+> $ ls -lR >/dev/null
+> ls: cannot access './<redacted a>/2018-05-31.220504+1000AEST.html':
+> Input/output error
+> ls: cannot access './<redacted b>/2018-05-31.200836+1000AEST.html':
+> Input/output error
+> ls: cannot access './<redacted c>/2018-05-31.201834+1000AEST.html':
+> Input/output error
+> ls: cannot access './<redacted d>/2018-05-31.222947+1000AEST.html':
+> Input/output error
+>=20
+> https://btrfs.wiki.kernel.org/index.php/Tree-checker#How_to_handle_such=
+_error
+> tells me to post on this mailing list upon getting such an error, so
+> here I am.
+>=20
+> What's happened?
+
+Your 2014 kernel created some bad inodes.
+
+> How can I fix this?
+
+There are two solutions:
+- Remove the offending inodes using older kernel
+  The problem is, you need to find *all* offending inodes.
+  Tree-checker can only report the first one it hits, can't
+  report all.
+  The offending inodes is reported by the "ino=3D%llu" part of the kernel=
+
+  message.
+
+- Use out-of-tree btrfs-check.
+  The report and repair functionality hasn't been merged yet, but you
+  can still try them using this branch:
+  https://github.com/adam900710/btrfs-progs/tree/for_next
+
+  You can fix it using "./btrfs check --repair" but you need to compile
+  the branch.
+
+Thanks,
+Qu
+
+> Should I just restore from backup?
+>=20
+> Various diagnostic command outputs:
+>=20
+> $ uname -a
+> Linux home.kota.moe 5.2.0-3-rt-amd64 #1 SMP PREEMPT RT Debian 5.2.17-1
+> (2019-09-26) x86_64 GNU/Linux
+> $ btrfs --version
+> btrfs-progs v5.2.1
+> $ sudo btrfs filesystem show
+> Label: none  uuid: 909c3fad-bc84-4b62-8090-ad1ae46f925e
+> Total devices 2 FS bytes used 191.27GiB
+> devid    1 size 200.00GiB used 197.03GiB path /dev/mapper/home-dom0
+> devid    2 size 200.00GiB used 197.03GiB path /dev/mapper/home-dom0--mi=
+rror
+> $ sudo btrfs filesystem df .
+> Data, RAID1: total=3D193.00GiB, used=3D188.50GiB
+> System, RAID1: total=3D32.00MiB, used=3D48.00KiB
+> Metadata, RAID1: total=3D4.00GiB, used=3D2.77GiB
+> GlobalReserve, single: total=3D385.31MiB, used=3D0.00B
+> $ diff -u <(sudo btrfs ins dump-tree -b 739531833344 /dev/home/dom0)
+> <(sudo btrfs ins dump-tree -b 739531833344 /dev/home/dom0-mirror)
+> $ sudo btrfs ins dump-tree -b 739531833344 /dev/home/dom0
+> (See attached file)
+>=20
+
+
+--lLkRQLdNaAUQFGsBPljcFG0XO98zhw2BM--
+
+--7dDZd4XwCkHflx74zZUJgFZIME4q4KspS
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAl2qV7UACgkQwj2R86El
+/qjudQf7BE/hxUbTExN1D8aRzhA9l7FpaL/vcSr8+AuAy3zLKPlhZMyJp2Wi4HZ5
+tFusTxpm1z/iSSgbKs+ZEBeOr7MFdLNSdBoXiAmn8v5kG7LdLf3mukjEsYUzGkhK
+vI7S04ZjpA87wfyuiC7cVsuFDlod48icb4ElCYpzxxHNfbB2/bv6llmQAVJyNNt7
+1yyBgH0mVosYi2j8OAqvtC0+LTlGW6T41WeHGgeiNGVz4lFFujL7FCmG2KIgIbuW
+ZeAUrGHItVvzAUZF9JbSxjvCXpNuOkUOZXdCc1BmNvUiAR3OeTuXEj9tBYS8TD6N
+lv6VgI+duDC0WnFzi17Nen8aNQH5lQ==
+=EeN2
+-----END PGP SIGNATURE-----
+
+--7dDZd4XwCkHflx74zZUJgFZIME4q4KspS--

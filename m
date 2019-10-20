@@ -2,278 +2,111 @@ Return-Path: <SRS0=ichI=YN=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.2 required=3.0 tests=DKIM_ADSP_CUSTOM_MED,
-	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7656DCA9EAD
-	for <linux-btrfs@archiver.kernel.org>; Sun, 20 Oct 2019 14:25:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C6897CA9EAD
+	for <linux-btrfs@archiver.kernel.org>; Sun, 20 Oct 2019 21:42:15 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 54C4721929
-	for <linux-btrfs@archiver.kernel.org>; Sun, 20 Oct 2019 14:25:08 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8B3FA21929
+	for <linux-btrfs@archiver.kernel.org>; Sun, 20 Oct 2019 21:42:15 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="ZChEwc90"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726474AbfJTOYv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 20 Oct 2019 10:24:51 -0400
-Received: from mailfilter06-out31.webhostingserver.nl ([141.138.169.48]:59698
-        "EHLO mailfilter06-out31.webhostingserver.nl" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1726299AbfJTOYv (ORCPT
+        id S1726506AbfJTVmO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 20 Oct 2019 17:42:14 -0400
+Received: from mail-wm1-f66.google.com ([209.85.128.66]:54608 "EHLO
+        mail-wm1-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726374AbfJTVmO (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 20 Oct 2019 10:24:51 -0400
-X-Halon-ID: 5d5c3aae-f345-11e9-9223-001a4a4cb958
-Received: from s198.webhostingserver.nl (unknown [195.211.72.171])
-        by mailfilter06.webhostingserver.nl (Halon) with ESMTPSA
-        id 5d5c3aae-f345-11e9-9223-001a4a4cb958;
-        Sun, 20 Oct 2019 16:24:45 +0200 (CEST)
-Received: from cust-178-250-146-69.breedbanddelft.nl ([178.250.146.69] helo=[10.8.0.10])
-        by s198.webhostingserver.nl with esmtpa (Exim 4.92.3)
-        (envelope-from <fntoth@gmail.com>)
-        id 1iMC8T-00AWvR-Gc; Sun, 20 Oct 2019 16:24:45 +0200
-Subject: Re: [PATCH 0/3] btrfs-progs: Add check and repair for invalid inode
- generation
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>, Qu WenRuo <wqu@suse.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <20190924081120.6283-1-wqu@suse.com>
- <36d45e31-f125-4b21-a68e-428f807180f7@gmail.com>
- <b1c32c4b-734f-0f4e-44d1-cb4ef69b7fe1@suse.com>
- <796be1b6-1f1d-7946-e53e-9b85610c7c65@gmail.com>
- <c56c880f-22c9-4200-87e5-81e61a1ada0b@gmx.com>
- <5315fc1e-f0e6-68ca-8938-33bc0dbce07d@gmx.com>
- <df807dde-ecdf-9bc9-cb7d-1bf1cc9c27c1@gmail.com>
- <a14ac7f0-e85c-3172-8570-3755320ea235@suse.com>
- <218ddabb-d419-31cd-f092-59f8ffb1a5b4@gmail.com>
- <6ec4c90c-d276-c03d-9315-f808f21b3769@gmx.com>
-From:   Ferry Toth <fntoth@gmail.com>
-Message-ID: <a5215d68-074d-16a5-a78e-5d63bd6acc37@gmail.com>
-Date:   Sun, 20 Oct 2019 16:24:44 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.1.2
+        Sun, 20 Oct 2019 17:42:14 -0400
+Received: by mail-wm1-f66.google.com with SMTP id p7so11104402wmp.4
+        for <linux-btrfs@vger.kernel.org>; Sun, 20 Oct 2019 14:42:13 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=CCKwdC6forXflCR0yb5jfqws9kfA367B0MxLgwQnDWY=;
+        b=ZChEwc90/+bEv6pMvTXbM27t5X1K2ALJM7Q3P9FSJqgX/5b6QoQ8PLWRbEa836hcfL
+         fxlHIIMUIZVs4mlxIKTsFBpZjA318PKMwN8bbOcYVuIoBfsAmRfQXWmW/fs+5s18O8yB
+         ZKu8KFKaS0hAkXShUdY1SASxFt1EwyDrCCyDBgcFlgev7ZDZVfR+BCMXpH6vvuVMfCc2
+         NfC+9Ad+PZVA5C1DzYpsilRRJa7JauVdKlQwPzRHWcmCT6DHpEEZ6Mcm/59jjOLvtsva
+         51l7aHxIdcfYHXZuILxLFA4gE5kMX2hR/ld8N5D7dngKeayet8aMbtBXcdIvMgA8OgnE
+         zmBg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=CCKwdC6forXflCR0yb5jfqws9kfA367B0MxLgwQnDWY=;
+        b=VSVkBUD8wbptiM5+UfrOKlywyPhLkpg2yfstDCbUuYbopuD7XaIFVuXakoSDPcbx3O
+         hN1SoxBICOeNqtKzAOGuRqek/P+olwYg6WUuOdTrbZl/9TrnNJv9foMxb+EinD5xNU70
+         oeeBXufctvssrJgaMiFA7g/O5PYQSopjwIVYUeVRu6T98LC1H3VF2XYkDpPG4TElR1SU
+         pGKeyyALIz+XzZ6lcIJ0YrDkimuCKlQZ56BlBEGYP96lZPU21/AxQtxyRx+rCjNaI3ZX
+         k8j9JJI4ByV9kRqNGFsMD5YtBU1JHfultpM/FZ4Nm+NYifGi9KeKdDh4E0jXXDhESooP
+         IBWg==
+X-Gm-Message-State: APjAAAUEjquuO7fC8mnwaVgMNl/KgsklTOH/ezhEYDUdSmdRKiJT4caG
+        rz7e4Nxhv65UciGOoWjTPYo58C7otWJSNnhzdppQpkEIklXqkg==
+X-Google-Smtp-Source: APXvYqztkhnt7pOwBfRkvi9CzWFPlKXFkmbUdMWBJvg7s0kw9dn0lviZY2xZzEojXJM7SGw+QOnMqYkh4Cf2mOTkQ2s=
+X-Received: by 2002:a7b:cbc5:: with SMTP id n5mr195043wmi.65.1571607732360;
+ Sun, 20 Oct 2019 14:42:12 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <6ec4c90c-d276-c03d-9315-f808f21b3769@gmx.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
-X-SendingUser: hidden
-X-SendingServer: hidden
-X-Antivirus-Scanner: Clean mail though you should still use an Antivirus
-X-Authenticated-Id: hidden
-X-SendingUser: hidden
-X-SendingServer: hidden
+References: <b665710c-5171-487b-ce38-5ea7075492e4@liland.com>
+ <CACa3q1wUmgY9uTygYFVBer=QgZjtwX2NOvVT68kAYKAgoLpXRg@mail.gmail.com>
+ <CAJCQCtR=NQd6uovvAhuTdxRNJtnMFDtkTma9u8-Ep9Nq+YQY=A@mail.gmail.com> <be2aa15e-0539-219f-c2d6-fdb01297351e@cobb.uk.net>
+In-Reply-To: <be2aa15e-0539-219f-c2d6-fdb01297351e@cobb.uk.net>
+From:   Chris Murphy <lists@colorremedies.com>
+Date:   Sun, 20 Oct 2019 23:41:54 +0200
+Message-ID: <CAJCQCtSKTJKj5xTk2aUyXCrSZ2LOCfjyB400He3Be79Vz0OUug@mail.gmail.com>
+Subject: Re: MD RAID 5/6 vs BTRFS RAID 5/6
+To:     Graham Cobb <g.btrfs@cobb.uk.net>
+Cc:     Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        Qu Wenruo <quwenruo.btrfs@gmx.com>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Op 20-10-2019 om 16:11 schreef Qu Wenruo:
-> 
-> 
-> On 2019/10/20 下午9:29, Ferry Toth wrote:
->> Op 20-10-2019 om 15:15 schreef Qu WenRuo:
->>>
->>>
->>> On 2019/10/20 下午9:04, Ferry Toth wrote:
->>>> Op 20-10-2019 om 02:51 schreef Qu Wenruo:
->>>>>
->>>>>
->>>>> On 2019/10/20 上午8:26, Qu Wenruo wrote:
->>>>>>
->>>>>>
->>>>>> On 2019/10/20 上午12:24, Ferry Toth wrote:
->>>>>>> Hi,
->>>>>>>
->>>>>>> Op 19-10-2019 om 01:50 schreef Qu WenRuo:
->>>>>>>>
->>>>>>>>
->>>>>>>> On 2019/10/19 上午4:32, Ferry Toth wrote:
->>>>>>>>> Op 24-09-2019 om 10:11 schreef Qu Wenruo:
->>>>>>>>>> We have at least two user reports about bad inode generation makes
->>>>>>>>>> kernel reject the fs.
->>>>>>>>>
->>>>>>>>> May I add my report? I just upgraded Ubuntu from 19.04 -> 19.10 so
->>>>>>>>> kernel went from 5.0 -> 5.3 (but I was using 4.15 too).
->>>>>>>>>
->>>>>>>>> Booting 5.3 leaves me in initramfs as I have /boot on @boot and /
->>>>>>>>> on /@
->>>>>>>>>
->>>>>>>>> In initramfs I can try to mount but get something like
->>>>>>>>> btrfs critical corrupt leaf invalid inode generation open_ctree
->>>>>>>>> failed
->>>>>>>>>
->>>>>>>>> Booting old kernel works just as before, no errors.
->>>>>>>>>
->>>>>>>>>> According to the creation time, the inode is created by some 2014
->>>>>>>>>> kernel.
->>>>>>>>>
->>>>>>>>> How do I get the creation time?
->>>>>>>>
->>>>>>>> # btrfs ins dump-tree -b <the bytenr reported by kernel> <your
->>>>>>>> device>
->>>>>>>
->>>>>>> I just went back to the office to reboot to 5.3 and check the
->>>>>>> creation
->>>>>>> times and found they were 2013 - 2014.
->>>>>>>
->>>>>>>>>
->>>>>>>>>> And the generation member of INODE_ITEM is not updated (unlike the
->>>>>>>>>> transid member) so the error persists until latest tree-checker
->>>>>>>>>> detects.
->>>>>>>>>>
->>>>>>>>>> Even the situation can be fixed by reverting back to older kernel
->>>>>>>>>> and
->>>>>>>>>> copying the offending dir/file to another inode and delete the
->>>>>>>>>> offending
->>>>>>>>>> one, it still should be done by btrfs-progs.
->>>>>>>>>>
->>>>>>>>> How to find the offending dir/file from the command line manually?
->>>>>>>>
->>>>>>>> # find <mount point> -inum <inode number>
->>>>>>>
->>>>>>> This works, thanks.
->>>>>>>
->>>>>>> But appears unpractical. After fix 2 files and reboot, I found 4
->>>>>>> more,
->>>>>>> then 16, then I gave up.
->>>>>
->>>>> Another solution is use "find" to locate the files with creation time
->>>>> before 2015, and copy them to a new file, then replace the old file
->>>>> with
->>>>> the new file.
->>>>
->>>> Hmm. But how do I "find" by creation time (otime)? Do you have a
->>>> suggestion for this?
->>>
->>> $ touch -t 201501010000 /tmp/sample
->>> $ find <mnt> -not -cnewer /tmp/sample
->>
->> AFAIK this compares file modified date with status changed date. So, no
->> search for creation date.
->>
->> And stat /tmp/sample (sorry dutch lang output):
->>
->> ferry@ferry-quad:~$ stat /tmp/sample
->>    Bestand: /tmp/sample
->>    Grootte: 0            Blokken: 0            IO-blok: 4096   leeg
->> normaal bestand
->> Apparaat: 1bh/27d   Inode: 62005381     Koppelingen: 1
->> Toegang: (0664/-rw-rw-r--)   UID: ( 1001/   ferry)   GID: ( 1001/   ferry)
->> Toegang:   2015-01-01 00:00:00.000000000 +0100
->> Gewijzigd: 2015-01-01 00:00:00.000000000 +0100
->> Veranderd: 2019-10-20 15:20:50.366163766 +0200
->> Ontstaan:  -
-> 
-> My bad, always got confused by o/a/c/mtime, as c really looks like *c*
-> reation, so I always got confused between ctime and otime.
-> 
-> Then considering not all fs supports otime, find doesn't support that.
-> I guess it's only possible by other tools....
+On Thu, Oct 17, 2019 at 8:23 PM Graham Cobb <g.btrfs@cobb.uk.net> wrote:
+>
+> On 17/10/2019 16:57, Chris Murphy wrote:
+> > On Wed, Oct 16, 2019 at 10:07 PM Jon Ander MB <jonandermonleon@gmail.com> wrote:
+> >>
+> >> It would be interesting to know the pros and cons of this setup that
+> >> you are suggesting vs zfs.
+> >> +zfs detects and corrects bitrot (
+> >> http://www.zfsnas.com/2015/05/24/testing-bit-rot/ )
+> >> +zfs has working raid56
+> >> -modules out of kernel for license incompatibilities (a big minus)
+> >>
+> >> BTRFS can detect bitrot but... are we sure it can fix it? (can't seem
+> >> to find any conclusive doc about it right now)
+> >
+> > Yes. Active fixups with scrub since 3.19. Passive fixups since 4.12.
+>
+> Presumably this is dependent on checksums? So neither detection nor
+> fixup happen for NOCOW files? Even a scrub won't notice because scrub
+> doesn't attempt to compare both copies unless the first copy has a bad
+> checksum -- is that correct?
 
-New stat will support it, but not in Ubuntu 19.10. We did find this:
-https://github.com/torvalds/linux/blob/master/samples/vfs/test-statx.c
+Normal read (passive) it can't be detected if nocow, since nocow means
+nodatasum. If the problem happens in metadata, it's detected because
+metadata is always cow and always has csum.
 
-and are trying to work out a script that will gzip all files with 
-creation < 2015. Then we can unzip again and overwrite.
+I'm not sure what the scrub behavior is for nocow. There's enough
+information to detect a mismatch if in normal (not degraded)
+operation. But I don't know if Btrfs scrub warns on this case.
 
-> BTW, did you find any patterns in those existing offending inodes?
-> I guess it would be faster than finding a tool supporting otime search.
 
-I didn't see any logic. A mix of logs, cached files, journal files etc. 
-+ a .kde directory in the /
+> If I understand correctly, metadata always has checksums so that is true
+> for filesystem structure. But for no-checksum files (such as nocow
+> files) the corruption will be silent, won't it?
 
-> Thanks,
-> Qu
-> 
->>
->>
->>> If you want, you can add -exec to that find, but I'd only add that after
->>> confirming the execution load is verified.
->>>
->>> Thanks,
->>> Qu
->>>
->>>>
->>>>> It would be much safer than btrfs check --repair.
->>>>>
->>>>> Thanks,
->>>>> Qu
->>>>>
->>>>>
->>>>>>>
->>>>>>>> Thanks,
->>>>>>>> Qu
->>>>>>>>
->>>>>>>>>
->>>>>>>>>> This patchset adds such check and repair ability to btrfs-check,
->>>>>>>>>> with a
->>>>>>>>>> simple test image.
->>>>>>>>>>
->>>>>>>>>> Qu Wenruo (3):
->>>>>>>>>>        btrfs-progs: check/lowmem: Add check and repair for invalid
->>>>>>>>>> inode
->>>>>>>>>>          generation
->>>>>>>>>>        btrfs-progs: check/original: Add check and repair for
->>>>>>>>>> invalid inode
->>>>>>>>>>          generation
->>>>>>>>>>        btrfs-progs: fsck-tests: Add test image for invalid inode
->>>>>>>>>> generation
->>>>>>>>>>          repair
->>>>>>>>>>
->>>>>>>>>>       check/main.c                                  |  50
->>>>>>>>>> +++++++++++-
->>>>>>>>>>       check/mode-lowmem.c                           |  76
->>>>>>>>>> ++++++++++++++++++
->>>>>>>>>>       check/mode-original.h                         |   1 +
->>>>>>>>>>       .../.lowmem_repairable                        |   0
->>>>>>>>>>       .../bad_inode_geneartion.img.xz               | Bin 0 -> 2012
->>>>>>>>>> bytes
->>>>>>>>>>       5 files changed, 126 insertions(+), 1 deletion(-)
->>>>>>>>>>       create mode 100644
->>>>>>>>>> tests/fsck-tests/043-bad-inode-generation/.lowmem_repairable
->>>>>>>>>>       create mode 100644
->>>>>>>>>> tests/fsck-tests/043-bad-inode-generation/bad_inode_geneartion.img.xz
->>>>>>>>>>
->>>>>>>>>>
->>>>>>>>>>
->>>>>>>>>
->>>>>>>
->>>>>>> I checked out and built v5.3-rc1 of btrfs-progs. Then ran it on my
->>>>>>> mounted rootfs with linux 5.0 and captured the log (~1800 lines 209
->>>>>>> errors).
->>>>>>
->>>>>> It's really not recommended to run btrfs check, especially repair
->>>>>> on the
->>>>>> mounted fs, unless it's RO.
->>>>>>
->>>>>> A new transaction from kernel can easily screw up the repaired fs.
->>>>>>>
->>>>>>> I'm not sure if using the v5.0 kernel and/or checking mounted
->>>>>>> distorts
->>>>>>> the results? Else I'm going to need a live usb with a v5.3 kernel and
->>>>>>> v5.3 btrfs-progs.
->>>>>>>
->>>>>>> If you like I can share the log. Let me know.
->>>>>>>
->>>>>>> This issue can potentially cause a lot of grief. Our company server
->>>>>>> runs
->>>>>>> Ubuntu LTS (18.04.02) with a 4.15 kernel on a btrfs boot/rootfs with
->>>>>>> ~100 snapshots. I guess the problematic inodes need to be fixed on
->>>>>>> each
->>>>>>> snapshot prior to upgrading to 20.04 LTS (which might be on kernel
->>>>>>> ~5.6)?
->>>>>>
->>>>>> Yes.
->>>>>>
->>>>>>>
->>>>>>> Do I understand correctly that this FTB is caused by more strict
->>>>>>> checking of the fs by the kernel, while the tools to fix the detected
->>>>>>> corruptions are not yet released?
->>>>>>
->>>>>> Yes.
->>>>>>
->>>>>> Thanks,
->>>>>> Qu
->>>>>>
->>>>>
->>>>
->>
-> 
+Corruption is always silent for nocow data. Same as any other
+filesystem, it's up to the application layer to detect it.
 
+
+-- 
+Chris Murphy

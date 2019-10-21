@@ -2,121 +2,100 @@ Return-Path: <SRS0=SF3a=YO=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1A0BACA9EAF
-	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Oct 2019 13:03:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E4AD9CA9EAF
+	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Oct 2019 13:07:12 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E1CB320679
-	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Oct 2019 13:03:34 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="RVZ1ytdR"
+	by mail.kernel.org (Postfix) with ESMTP id C1FFE20659
+	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Oct 2019 13:07:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728831AbfJUNDe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 21 Oct 2019 09:03:34 -0400
-Received: from mail-ed1-f43.google.com ([209.85.208.43]:37073 "EHLO
-        mail-ed1-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728829AbfJUNDd (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 21 Oct 2019 09:03:33 -0400
-Received: by mail-ed1-f43.google.com with SMTP id r4so9945345edy.4
-        for <linux-btrfs@vger.kernel.org>; Mon, 21 Oct 2019 06:03:32 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=ln31ItBN6c43yOKakjwFCr7pqh/RYcQKe74wxeRuEWw=;
-        b=RVZ1ytdRlWmzBPr2jUvoOAU1+6s5aZV9sq3J3fn/iTiuQ7jeChP4fTIlfj1YCoh71F
-         Fvu+kRKlU2XzKbE1muHR8FdC7+fsfsGZ0uxTpus5Al7dE3RW9g5924+kjPu7ZHDz/hRr
-         k2xMKDlBwSZ4bVW1IoRUsr8sHpayiDnsNjyOlOoMIbY5tRjSyUkD0gODnFxfNpquJJPC
-         TH7h8gJck5L2dL/jhOy9jQav8tTu2SIkICtOarag+cNtSTrvelRpRM4oF4qT2C/Hza6s
-         c0mr74QScMvIyDbazKanvelWkKgcZjES8wefOGiwrndBdilF1ghF3ik+dr+dA+w0ICNB
-         4Etw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=ln31ItBN6c43yOKakjwFCr7pqh/RYcQKe74wxeRuEWw=;
-        b=f+thQRoCQBLAUGLolQuPH3NRhJU7TXo16Zy1jKoHZNxieDV+WoVpUj6035uVamq0RP
-         XBaVd9YH4wUG5KjmsLBMI6GDhCRySlIPP/lWkbU3TgbCCcq2GmISEzheYuRGd8jth1Dt
-         f+lKiezewtsglfOB3JrgKBFDGwAwA6wLLNOivM07q5vpZ6Y8KnL5cqhDiCVSgRpRSB5c
-         AxMOcrhyxIpfB0z33wKTC7OovLHnexzuxCTs3ZYy6PZwWY+LJnO5WVSpDYbalb+bUKii
-         YeYqVphWIgJHPvEsCWidi1H5vyTnwlkfJYihVT0XdD4WJRqAWvZBGB155OiZL5auWeeW
-         asXA==
-X-Gm-Message-State: APjAAAV28YrUkWMLQWe+j4y/TBgUjauwiz+YciVDJRSKMsfXlfW2gCZP
-        EejS0Q2M3DRS9H/j2WXyWZRL7sY8rkOsLUvDPgvqTyY=
-X-Google-Smtp-Source: APXvYqxIezNDMl3+UJr6vgRKqY+SpJ46XqPVMVVQyw7/psZCUWORbu6sQF8el/CkxXMkOsQNoouUxSgyMunank0mK74=
-X-Received: by 2002:a05:6402:1acd:: with SMTP id ba13mr7638856edb.141.1571663011986;
- Mon, 21 Oct 2019 06:03:31 -0700 (PDT)
+        id S1728902AbfJUNHM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 21 Oct 2019 09:07:12 -0400
+Received: from mx2.suse.de ([195.135.220.15]:37730 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1728897AbfJUNHL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 21 Oct 2019 09:07:11 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 577A1B693;
+        Mon, 21 Oct 2019 13:07:10 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 9633ADA8C5; Mon, 21 Oct 2019 15:07:23 +0200 (CEST)
+Date:   Mon, 21 Oct 2019 15:07:23 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Patrik Lundquist <patrik.lundquist@gmail.com>
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: Lots of btrfs_dump_space_info in kernel log
+Message-ID: <20191021130723.GG3001@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz,
+        Patrik Lundquist <patrik.lundquist@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <CAA7pwKNn3BTb1Dxu9mOVoBvk0ftXfcEcFLwXEgiUEkwcwCWOcg@mail.gmail.com>
 MIME-Version: 1.0
-References: <CAKbQEqE7xN1q3byFL7-_pD=_pGJ0Vm9pj7d-g+rRgtONeH-GrA@mail.gmail.com>
- <CAKbQEqG35D_=8raTFH75-yCYoqH2OvpPEmpj2dxgo+PTc=cfhA@mail.gmail.com>
- <4608b644-0fa3-7212-af45-0f4eebfb0be9@gmx.com> <CAKbQEqG8Sb-5+wx4NMfjORc-XnCtytuoqRw4J9hk2Pj9BNY_9g@mail.gmail.com>
- <CAKbQEqGwYCB1N+MQVYLNVm5o10acOFAa_JyO8NefGZfVtdyVBQ@mail.gmail.com>
- <fe882b36-0f7b-5ad5-e62e-06def50acd30@gmx.com> <CAKbQEqEuYqxO8pFk3sDQwEayTPiggLAFtCT8LmoNPF4Zc+-uzw@mail.gmail.com>
- <e0c57aba-9baf-b375-6ba3-1201131a2844@gmail.com>
-In-Reply-To: <e0c57aba-9baf-b375-6ba3-1201131a2844@gmail.com>
-From:   Christian Pernegger <pernegger@gmail.com>
-Date:   Mon, 21 Oct 2019 15:02:55 +0200
-Message-ID: <CAKbQEqFdY8hSko2jW=3BzpiZ6H4EV9yhncozoy=Kzroh3KfD5g@mail.gmail.com>
-Subject: Re: first it froze, now the (btrfs) root fs won't mount ...
-To:     "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Cc:     Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <CAA7pwKNn3BTb1Dxu9mOVoBvk0ftXfcEcFLwXEgiUEkwcwCWOcg@mail.gmail.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-[Please CC me, I'm not on the list.]
+On Mon, Oct 21, 2019 at 12:58:12PM +0200, Patrik Lundquist wrote:
+> I'm running Debian Testing with kernel 5.2.17-1. Five disk raid1 with
+> at least 393.01GiB unallocated on each disk. No device errors. No
+> kernel WARNINGs or ERRORs.
+> 
+> BTRFS info (device dm-1): enabling auto defrag
+> BTRFS info (device dm-1): using free space tree
+> BTRFS info (device dm-1): has skinny extents
+> 
+> Mounted with noauto,noatime,autodefrag,skip_balance,space_cache=v2,enospc_debug.
+> 
+> First btrfs_dump_space_info() is
+> 
+> BTRFS info (device dm-1): space_info 4 has 18446744073353838592 free,
+> is not full
+> BTRFS info (device dm-1): space_info total=10737418240,
+> used=9636544512, pinned=0, reserved=27066368, may_use=1429454848,
+> readonly=65536
+> BTRFS info (device dm-1): global_block_rsv: size 536870912 reserved 536870912
+> BTRFS info (device dm-1): trans_block_rsv: size 0 reserved 0
+> BTRFS info (device dm-1): chunk_block_rsv: size 0 reserved 0
+> BTRFS info (device dm-1): delayed_block_rsv: size 20185088 reserved 20185088
+> BTRFS info (device dm-1): delayed_refs_rsv: size 868745216 reserved 868745216
+> 
+> and current last is
+> 
+> BTRFS info (device dm-1): space_info 4 has 0 free, is not full
+> BTRFS info (device dm-1): space_info total=10737418240,
+> used=9664561152, pinned=458752, reserved=2523136, may_use=1069809664,
+> readonly=65536
+> BTRFS info (device dm-1): global_block_rsv: size 536870912 reserved 536821760
+> BTRFS info (device dm-1): trans_block_rsv: size 0 reserved 0
+> BTRFS info (device dm-1): chunk_block_rsv: size 0 reserved 0
+> BTRFS info (device dm-1): delayed_block_rsv: size 0 reserved 0
+> BTRFS info (device dm-1): delayed_refs_rsv: size 556531712 reserved 498647040
+> 
+> with lots more in between and no other Btrfs kernel printing preceding
+> it since mounting.
+> 
+> It's the first time I'm seeing it but I have always mounted with
+> enospc_debug since it always seems too late to add the option when you
+> finally need it.
+> 
+> What does it mean? Should I be worried? What to do? No apparent problems yet.
 
-Am Mo., 21. Okt. 2019 um 13:47 Uhr schrieb Austin S. Hemmelgarn
-<ahferroin7@gmail.com>:
-> I've [worked with fs clones] like this dozens of times on single-device volumes with exactly zero issues.
+enospc_debug is known to be noisy, in many cases it prints the state of
+the space management structures at some interesting points. It's
+possible that the amount of the information dumped changes over time,
+there have been updates to the space reservations and related code.
 
-Thank you, I have taken precautions, but it does seem to work fine.
-
-> There are actually two possible ways I can think of a buggy GPU driver causing this type of issue: [snip]
-
-Interesting and plausible, but ...
-
-> Your best option for mitigation [...] is to ensure that your hardware has an IOMMU [...] and ensure it's enabled in firmware.
-
-It has and it is. (The machine's been specced so GPU pass-through is
-an option, should it be required. I haven't gotten around to setting
-that up yet, haven't even gotten a second GPU, but I have laid the
-groundwork, the IOMMU is enabled and, as far as one can tell from logs
-and such, working.)
-
-> However, there's also the possibility that you may have hardware issues.
-
-Don't I know it ... The problem is, if there are hardware issues,
-that's the first I've seen of them, and while I didn't run torture
-tests, there was quite a lot of benchmarking when it was new. Needle
-in a haystack. Some memory testing can't hurt, I suppose. Any other
-ideas (for hardware testing)?
-
-Back on the topic of TRIM: I'm 99 % certain discard wasn't set on the
-mount (not by me, in any case), but I think Mint runs fstrim
-periodically by default. Just to be sure, should any form of TRIM be
-disabled?
-The only other idea I've got is Timeshift's hourly snapshots. (How)
-would btrfs deal with a crash during snapshot creation?
-
-
-In other news, I've still not quite given up, mainly because the fs
-doesn't look all that broken. The output of btrfs inspect-internal
-dump-tree (incl. options), for instance, looks like gibberish to me of
-course, but it looks sane, doesn't spew warnings, doesn't error out or
-crash. Also plain btrfs check --init-extent-tree errored out, same
-with -s0, but with -s1 it's now chugging along. (BTW, is there a
-hierarchy among the super block slots, a best or newest one?)
-
-Will keep you posted.
-
-Cheers,
-C.
+I've checked the message levels of the messages printed under the
+option, some of them are 'debug' some of them are 'info'. I would be
+possible to make them all 'debug' so they are in the log but you can
+filter them out on console.

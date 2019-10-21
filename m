@@ -2,203 +2,169 @@ Return-Path: <SRS0=SF3a=YO=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.2 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DA671CA9EB7
-	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Oct 2019 19:07:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 944E5CA9EAF
+	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Oct 2019 19:34:32 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A68D620873
-	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Oct 2019 19:07:13 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="dsiNdpRA"
+	by mail.kernel.org (Postfix) with ESMTP id 67DC320873
+	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Oct 2019 19:34:32 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729839AbfJUTHM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 21 Oct 2019 15:07:12 -0400
-Received: from mail-pf1-f196.google.com ([209.85.210.196]:44467 "EHLO
-        mail-pf1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729270AbfJUTHM (ORCPT
+        id S1730149AbfJUTeb convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 21 Oct 2019 15:34:31 -0400
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:37302 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727953AbfJUTeb (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 21 Oct 2019 15:07:12 -0400
-Received: by mail-pf1-f196.google.com with SMTP id q21so8984729pfn.11
-        for <linux-btrfs@vger.kernel.org>; Mon, 21 Oct 2019 12:07:12 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=osandov-com.20150623.gappssmtp.com; s=20150623;
-        h=date:from:to:cc:subject:message-id:references:mime-version
-         :content-disposition:in-reply-to:user-agent;
-        bh=Xr2V3uPLDBgP2U5wUE/gYBjr7Sf5LBUfrf2Bn/NaMjo=;
-        b=dsiNdpRAElMpIKaS1rLTLJNPeEFHfvzVpK8kK9/YfTc5lT3e1ImwVmp9tyx2P4NDax
-         It8dvSpFcf27UBTjlaIpwX6dJyZ5guF4CA9PbZ7TkQkXxz9BXX/LFbr+ByCrVBT9E05W
-         WrNzBkpNJuQtu7OA9tScdbeUaRcd/oKpPD8WDs1BM6RPnbxlfrQVch4k7OZ1FR6IlKBf
-         Aie5Tnw9i3+7pYcN+Z7befE3SKhVO8Rv/SUvowJlI3GMnG37kBErzkyTmCbXSb2b9eaK
-         QHmWp/JM7UMUtJErRdqgH97zwX49/TAzBCcdabiiV9nfTrWjFilKQYiBs1BO7/FONuKD
-         oFZA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
-         :mime-version:content-disposition:in-reply-to:user-agent;
-        bh=Xr2V3uPLDBgP2U5wUE/gYBjr7Sf5LBUfrf2Bn/NaMjo=;
-        b=KFFjwGK00wW/SiIPwcdVz42GjzbDyyymxN73Vg/ZRZfNj/cJ35DQX7oCt43Dw8GYaL
-         Me3HMorTO0eJYDLygQvWGZeZ7EhxuQwZaRP12VCHI39vpTxM9Lp1J1hWupXGo+fXoYOM
-         /TpgQBAqJL2caNNPoSXuy0gmWkLeZy0FToSqMgGqSX4/N//euQnKBK1YP8mQ+xgbO7+J
-         i25QGzDVxk8EookzY03aiJa52Mx2WMGIx/6KwtKGdwAqmhxKaZZZI7QLozeYLRAPL6Tu
-         S1xH9c6QDmxI4KUK36nYLSDYgwpxleWd6OoqnnnRzmbEJvdIgUiYKFG/GCazg84Jt+pg
-         MOCw==
-X-Gm-Message-State: APjAAAVjBnUcg10Nv48Dh+lgTNmZizbUf+zG4XXD4dmpEhlO9DkiApyF
-        bLbLkwzDb3IOGR8zqT0D9G7jFQ==
-X-Google-Smtp-Source: APXvYqwYoRx9woMwa5wxi8hk4jPhMuIKimZ/Lk6+GyPrVtcL+R/DoXZiuxubqhv8k7HQcJvYSyvRWw==
-X-Received: by 2002:a17:90a:741:: with SMTP id s1mr31750740pje.113.1571684831090;
-        Mon, 21 Oct 2019 12:07:11 -0700 (PDT)
-Received: from vader ([2620:10d:c090:200::3:4637])
-        by smtp.gmail.com with ESMTPSA id v68sm16864545pfv.47.2019.10.21.12.07.10
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 21 Oct 2019 12:07:10 -0700 (PDT)
-Date:   Mon, 21 Oct 2019 12:07:09 -0700
-From:   Omar Sandoval <osandov@osandov.com>
-To:     "Darrick J. Wong" <darrick.wong@oracle.com>
-Cc:     linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        Dave Chinner <david@fromorbit.com>,
-        Jann Horn <jannh@google.com>, linux-api@vger.kernel.org,
-        kernel-team@fb.com
-Subject: Re: [RFC PATCH v2 2/5] fs: add RWF_ENCODED for reading/writing
- compressed data
-Message-ID: <20191021190709.GD81648@vader>
-References: <cover.1571164762.git.osandov@fb.com>
- <7f98cf5409cf2b583cd5b3451fc739fd3428873b.1571164762.git.osandov@fb.com>
- <20191021182806.GA6706@magnolia>
+        Mon, 21 Oct 2019 15:34:31 -0400
+Received: by james.kirk.hungrycats.org (Postfix, from userid 1002)
+        id B42C448432C; Mon, 21 Oct 2019 15:34:29 -0400 (EDT)
+Date:   Mon, 21 Oct 2019 15:34:26 -0400
+From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To:     Edmund Urbani <edmund.urbani@liland.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: MD RAID 5/6 vs BTRFS RAID 5/6
+Message-ID: <20191021193417.GP24379@hungrycats.org>
+References: <b665710c-5171-487b-ce38-5ea7075492e4@liland.com>
+ <20191016194237.GP22121@hungrycats.org>
+ <067d06fc-4148-b56f-e6b4-238c6b805c11@liland.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <20191021182806.GA6706@magnolia>
-User-Agent: Mutt/1.12.2 (2019-09-21)
+Content-Transfer-Encoding: 8BIT
+In-Reply-To: <067d06fc-4148-b56f-e6b4-238c6b805c11@liland.com>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Oct 21, 2019 at 11:28:06AM -0700, Darrick J. Wong wrote:
-> On Tue, Oct 15, 2019 at 11:42:40AM -0700, Omar Sandoval wrote:
-> > From: Omar Sandoval <osandov@fb.com>
-> > 
-> > Btrfs supports transparent compression: data written by the user can be
-> > compressed when written to disk and decompressed when read back.
-> > However, we'd like to add an interface to write pre-compressed data
-> > directly to the filesystem, and the matching interface to read
-> > compressed data without decompressing it. This adds support for
-> > so-called "encoded I/O" via preadv2() and pwritev2().
-> > 
-> > A new RWF_ENCODED flags indicates that a read or write is "encoded". If
-> > this flag is set, iov[0].iov_base points to a struct encoded_iov which
-> > is used for metadata: namely, the compression algorithm, unencoded
-> > (i.e., decompressed) length, and what subrange of the unencoded data
-> > should be used (needed for truncated or hole-punched extents and when
-> > reading in the middle of an extent). For reads, the filesystem returns
-> > this information; for writes, the caller provides it to the filesystem.
-> > iov[0].iov_len must be set to sizeof(struct encoded_iov), which can be
-> > used to extend the interface in the future. The remaining iovecs contain
-> > the encoded extent.
-> > 
-> > Filesystems must indicate that they support encoded writes by setting
-> > FMODE_ENCODED_IO in ->file_open().
-> > 
-> > Signed-off-by: Omar Sandoval <osandov@fb.com>
-> > ---
-> >  include/linux/fs.h      | 14 +++++++
-> >  include/uapi/linux/fs.h | 26 ++++++++++++-
-> >  mm/filemap.c            | 82 ++++++++++++++++++++++++++++++++++-------
-> >  3 files changed, 108 insertions(+), 14 deletions(-)
-> > 
-> > diff --git a/include/linux/fs.h b/include/linux/fs.h
-> > index e0d909d35763..54681f21e05e 100644
-> > --- a/include/linux/fs.h
-> > +++ b/include/linux/fs.h
-> > @@ -175,6 +175,9 @@ typedef int (dio_iodone_t)(struct kiocb *iocb, loff_t offset,
-> >  /* File does not contribute to nr_files count */
-> >  #define FMODE_NOACCOUNT		((__force fmode_t)0x20000000)
-> >  
-> > +/* File supports encoded IO */
-> > +#define FMODE_ENCODED_IO	((__force fmode_t)0x40000000)
-> > +
-> >  /*
-> >   * Flag for rw_copy_check_uvector and compat_rw_copy_check_uvector
-> >   * that indicates that they should check the contents of the iovec are
-> > @@ -314,6 +317,7 @@ enum rw_hint {
-> >  #define IOCB_SYNC		(1 << 5)
-> >  #define IOCB_WRITE		(1 << 6)
-> >  #define IOCB_NOWAIT		(1 << 7)
-> > +#define IOCB_ENCODED		(1 << 8)
-> >  
-> >  struct kiocb {
-> >  	struct file		*ki_filp;
-> > @@ -3088,6 +3092,11 @@ extern int sb_min_blocksize(struct super_block *, int);
-> >  extern int generic_file_mmap(struct file *, struct vm_area_struct *);
-> >  extern int generic_file_readonly_mmap(struct file *, struct vm_area_struct *);
-> >  extern ssize_t generic_write_checks(struct kiocb *, struct iov_iter *);
-> > +struct encoded_iov;
-> > +extern int generic_encoded_write_checks(struct kiocb *, struct encoded_iov *);
-> > +extern ssize_t check_encoded_read(struct kiocb *, struct iov_iter *);
-> > +extern int import_encoded_write(struct kiocb *, struct encoded_iov *,
-> > +				struct iov_iter *);
-> >  extern int generic_remap_checks(struct file *file_in, loff_t pos_in,
-> >  				struct file *file_out, loff_t pos_out,
-> >  				loff_t *count, unsigned int remap_flags);
-> > @@ -3403,6 +3412,11 @@ static inline int kiocb_set_rw_flags(struct kiocb *ki, rwf_t flags)
-> >  			return -EOPNOTSUPP;
-> >  		ki->ki_flags |= IOCB_NOWAIT;
-> >  	}
-> > +	if (flags & RWF_ENCODED) {
-> > +		if (!(ki->ki_filp->f_mode & FMODE_ENCODED_IO))
-> > +			return -EOPNOTSUPP;
-> > +		ki->ki_flags |= IOCB_ENCODED;
-> > +	}
-> >  	if (flags & RWF_HIPRI)
-> >  		ki->ki_flags |= IOCB_HIPRI;
-> >  	if (flags & RWF_DSYNC)
-> > diff --git a/include/uapi/linux/fs.h b/include/uapi/linux/fs.h
-> > index 379a612f8f1d..ed92a8a257cb 100644
-> > --- a/include/uapi/linux/fs.h
-> > +++ b/include/uapi/linux/fs.h
-> > @@ -284,6 +284,27 @@ struct fsxattr {
-> >  
-> >  typedef int __bitwise __kernel_rwf_t;
-> >  
-> > +enum {
-> > +	ENCODED_IOV_COMPRESSION_NONE,
-> > +	ENCODED_IOV_COMPRESSION_ZLIB,
-> > +	ENCODED_IOV_COMPRESSION_LZO,
-> > +	ENCODED_IOV_COMPRESSION_ZSTD,
-> > +	ENCODED_IOV_COMPRESSION_TYPES = ENCODED_IOV_COMPRESSION_ZSTD,
-> > +};
-> > +
-> > +enum {
-> > +	ENCODED_IOV_ENCRYPTION_NONE,
-> > +	ENCODED_IOV_ENCRYPTION_TYPES = ENCODED_IOV_ENCRYPTION_NONE,
-> > +};
-> > +
-> > +struct encoded_iov {
-> > +	__u64 len;
-> > +	__u64 unencoded_len;
-> > +	__u64 unencoded_offset;
-> > +	__u32 compression;
-> > +	__u32 encryption;
+On Mon, Oct 21, 2019 at 05:27:54PM +0200, Edmund Urbani wrote:
+> On 10/16/19 9:42 PM, Zygo Blaxell wrote:
+> >
+> > For raid5 I'd choose btrfs -draid5 -mraid1 over mdadm raid5
+> > sometimes--even with the write hole, I'd expect smaller average data
+> > losses than mdadm raid5 + write hole mitigation due to the way disk
+> > failure modes are distributed.  
 > 
-> Can we add some must-be-zero padding space at the end here for whomever
-> comes along next wanting to add more encoding info?
+> What about the write hole and RAID-1? I understand the write hole is most
+> commonly associated with RAID-5, but it is also a problem with other RAID levels.
 
-From the commit message:
+Filesystem tree updates are atomic on btrfs.  Everything persistent on
+btrfs is part of a committed tree.  The current writes in progress are
+initially stored in an uncommitted tree, which consists of blocks that
+are isolated from any committed tree block.  The algorithm relies on
+two things:
 
-iov_len must be set to sizeof(struct encoded_iov), which can be used to
-extend the interface in the future.
+	Isolation:  every write to any uncommitted data block must not
+	affect the correctness of any data in any committed data block.
 
-> (And maybe a manpage and some basic testing, to reiterate Dave...)
+	Ordering:  a commit completes all uncommitted tree updates on
+	all disks in any order, then updates superblocks to point to the
+	updated tree roots.  A barrier is used to separate these phases
+	of updates across disks.
 
-I sent a man page as part of this thread:
+Isolation and ordering make each transaction atomic.  If either
+requirement is not implemented correctly, data or metadata may be
+corrupted.  If metadata is corrupted, the filesystem can be destroyed.
 
-https://lore.kernel.org/linux-btrfs/c7e8f93596fee7bb818dc0edf29f484036be1abb.1571164851.git.osandov@fb.com/
+Transactions close write holes in all btrfs RAID profiles except 5
+and 6.  mdadm RAID levels 0, 1, 10, and linear have isolation properties
+sufficient for btrfs.  mdadm RAID 4/5/6 work only if the mdadm write hole
+mitigation feature is enabled to provide isolation.  All mdadm and btrfs
+RAID profiles provide sufficient ordering.
 
-See my reply to Dave, I have tests in my xfstests repo that I haven't
-sent yet.
+The problem on mdadm/btrfs raid5/6 is that committed data blocks are not
+fully isolated from uncommitted data blocks when they share a parity block
+in the RAID5/6 layer (wherever that layer is).  This is why the problem
+only affects raid5/6 on btrfs (and why it also applies to mdadm raid5/6).
+In this case, writing to any single block within a stripe makes the parity
+block inconsistent with previously committed data blocks.  This violates
+the isolation requirement for CoW transactions: a committed data block
+is related to uncommitted data blocks in the same stripe through the
+parity block and the RAID5/6 data/parity equation.
 
-> --D
+The isolation failure affects only parity blocks.  You could kill
+power all day long and not lose any committed data on any btrfs raid
+profile--as long as none of the disks fail and each disk's firmware
+implements write barriers correctly or write cache is disabled (sadly,
+even in 2019, a few drive models still don't have working barriers).
+btrfs on raid5/6 is as robust as raid0 if you ignore the parity blocks.
+
+> You would need to scrub after a power failure to be sure that no meta data gets
+> corrupted even with RAID-1. Otherwise you might still have inconsistent copies
+> and the problem may only become apparent when one drive fails. 
+
+There are no inconsistencies expected with RAID1 unless the hardware is
+already failing (or there's a software/firmware bug).
+
+Scrub after power failure is required only if raid5/6 is used.
+All committed data and metadata blocks will be consistent on all
+RAID profiles--even in raid5/6, only parity blocks are inconsistent.
+Uncommitted data returns to free space when the filesystem is mounted,
+so the the consistency of uncommitted data blocks doesn't matter.
+
+Parity block updates are not handled by the btrfs transaction update
+mechanism.  The scrub after power failure is required specifically
+to repair inconsistent parity blocks.  This should happen as soon as
+possible after a crash, while all the data blocks are still readable.
+
+> Can we be certain that scrubbing is always able to fix such
+> inconsistencies...
+
+Scrub can reliably repair raid5/6 parity blocks assuming all data blocks
+are still correct and readable.
+
+> ...with RAID-1?
+
+We cannot be certain that scrub fixes inconsistencies in the general case.
+If the hardware is failing, scrub relies on crc32c to detect missing
+writes.  Error detection and repair is highly likely, but not certain.
+
+Collisions between old/bad data crc32c and correct data crc32c are
+not detected.  nodatasum files (which have no csums) are corrupted.
+Metadata has a greater chance of successful error detection because more
+fields in metadata are checked than just CRC.
+
+If all the errors are confined to a single drive, device 'replace' is more
+appropriate than 'scrub'; however, it can be hard to determine if errors
+are confined to a single disk without running 'scrub' first to find out.
+
+> Regards,
+>  Edmund
+> 
+> 
+> -- 
+> *Liland IT GmbH*
+> 
+> 
+> Ferlach ● Wien ● München
+> Tel: +43 463 220111
+> Tel: +49 89 
+> 458 15 940
+> office@Liland.com
+> https://Liland.com <https://Liland.com> 
+> 
+> 
+> 
+> Copyright © 2019 Liland IT GmbH 
+> 
+> Diese Mail enthaelt vertrauliche und/oder 
+> rechtlich geschuetzte Informationen. 
+> Wenn Sie nicht der richtige Adressat 
+> sind oder diese Email irrtuemlich erhalten haben, informieren Sie bitte 
+> sofort den Absender und vernichten Sie diese Mail. Das unerlaubte Kopieren 
+> sowie die unbefugte Weitergabe dieser Mail ist nicht gestattet. 
+> 
+> This 
+> email may contain confidential and/or privileged information. 
+> If you are 
+> not the intended recipient (or have received this email in error) please 
+> notify the sender immediately and destroy this email. Any unauthorised 
+> copying, disclosure or distribution of the material in this email is 
+> strictly forbidden.
+> 
+> 

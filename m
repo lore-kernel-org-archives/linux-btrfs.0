@@ -2,135 +2,67 @@ Return-Path: <SRS0=SF3a=YO=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 35264CA9EAF
-	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Oct 2019 16:12:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 23D05CA9EAF
+	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Oct 2019 16:45:03 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 162782064B
-	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Oct 2019 16:12:47 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id F411B20659
+	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Oct 2019 16:45:02 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729910AbfJUQMq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 21 Oct 2019 12:12:46 -0400
-Received: from mx2.suse.de ([195.135.220.15]:37168 "EHLO mx1.suse.de"
+        id S1729011AbfJUQpC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 21 Oct 2019 12:45:02 -0400
+Received: from mx2.suse.de ([195.135.220.15]:52876 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726289AbfJUQMq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 21 Oct 2019 12:12:46 -0400
+        id S1726847AbfJUQpC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 21 Oct 2019 12:45:02 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id AEC60B235;
-        Mon, 21 Oct 2019 16:12:43 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id A1B4CABC7;
+        Mon, 21 Oct 2019 16:45:00 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id C4016DA733; Mon, 21 Oct 2019 18:12:56 +0200 (CEST)
-Date:   Mon, 21 Oct 2019 18:12:56 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Anand Jain <anand.jain@oracle.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [RFC PATCH 00/14] btrfs-progs: global-verbose option
-Message-ID: <20191021161256.GR3001@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
-        linux-btrfs@vger.kernel.org
-References: <1571652082-25982-1-git-send-email-anand.jain@oracle.com>
+        id D918BDA733; Mon, 21 Oct 2019 18:45:13 +0200 (CEST)
+From:   David Sterba <dsterba@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     David Sterba <dsterba@suse.com>
+Subject: [PATCH 0/2 + 0/2] Add BLAKE2 checksumming support
+Date:   Mon, 21 Oct 2019 18:45:13 +0200
+Message-Id: <cover.1571674940.git.dsterba@suse.com>
+X-Mailer: git-send-email 2.23.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <1571652082-25982-1-git-send-email-anand.jain@oracle.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Oct 21, 2019 at 06:01:08PM +0800, Anand Jain wrote:
-> This patch set brings --verbose option to the top level btrfs command,
-> such as 'btrfs --verbose'. With this we don't have to add or remember
-> verbose option at the sub-commands level.
-> 
-> As there are already verbose options to 11 sub-commands as listed
-> below [1][2]. So the top level --verbose option here takes care to transpire
-> verbose request from the top level to the sub-command level for 9 (not 11)
-> sub-commands as in [1] as of now.
-> 
-> This patch is RFC still for the following two reasons (comments appreciated).
-> 
-> 1.
-> The sub-commands as in [2] uses multi-level compile time verbose option,
-> such as %g_verbose = 0 (quite), %g_verbose = 1 (default), %g_verbose > 1
-> (real-verbose). And verbose at default is also part the .out files in
-> fstests. So it needs further discussions on how to handle the multi-
-> level verbose option using the global verbose option, and so sub-
-> commands in [2] are untouched.
+The two patches apply on top of Johaness' series adding SHA256. To
+make it actually work the patch adding BLAKE2 to kernel is needed. You
+can find it here (v5) https://patchwork.kernel.org/patch/11188109/ .
 
-The idea is to unify all verbosity options. Default is 1, 0 is for quiet
-(only errors are printed), the rest is up to the commands what to print
-on the higher levels.
+WARNING: This is for testing only!
 
-> 2.
-> These patch has been unit-tested individually.
-> These patches does not alter the verbose output.
-> But it fixes the indentation in the command's help output, which may be
-> used in fstests and btrfs-progs/tests and their verification is pending
-> still, which I am planning to do it before v1.
+All in one can be pulled from
 
-The indentation does not need to be changed if the glboal options are
-split from the per-command, like
+  git://github.com/kdave/btrfs-devel preview/checksums-5
 
----
-usage: btrfs subvolume delete [options] <subvolume> [<subvolume>...]
+and the btrfs-progs patches are in the devel branch
 
-    Delete subvolume(s)
+  git://github.com/kdave/btrfs-progs devel
 
-    Delete subvolumes from the filesystem. The corresponding directory
-    is removed instantly but the data blocks are removed later.
-    The deletion does not involve full commit by default due to
-    performance reasons (as a consequence, the subvolume may appear again
-    after a crash). Use one of the --commit options to wait until the
-    operation is safely stored on the media.
+David Sterba (2):
+  btrfs: add member for a specific checksum driver
+  btrfs: add blake2b to checksumming algorithms
 
-    -c|--commit-after  wait for transaction commit at the end of the operation
-    -C|--commit-each   wait for transaction commit after deleting each subvolume
+ fs/btrfs/ctree.c                | 14 ++++++++++++++
+ fs/btrfs/ctree.h                |  1 +
+ fs/btrfs/disk-io.c              |  7 ++++---
+ fs/btrfs/super.c                |  1 +
+ include/uapi/linux/btrfs_tree.h |  1 +
+ 5 files changed, 21 insertions(+), 3 deletions(-)
 
-    Global options:
-    -v|--verbose     show verbose output
----
+-- 
+2.23.0
 
-Some commands can have long option names or the argument names make it
-long in some cases, the global options could stay indented. I think
-visually it'll be ok. We can introduce some way to automatically format
-the options and help texts so we don't have to adjust them manually each
-time, but this would be more intrusive and can be done later.
-
-With the global verbose option there shouldbe also -q|--quiet. Both
-short and long versions should be available for all commands. So the
-help would look like:
-
----
-    Global options:
-    -v|--verbose     verbose output, repeat for more verbosity
-    -q|--quiet       print only errors
----
-
-In code this looks like:
-
-          "",
-          "-c|--commit-after  wait for transaction commit at the end of the operation",
-          "-C|--commit-each   wait for transaction commit after deleting each subvolume",
-          HELPINFO_GLOBAL_OPTIONS_HEADER,
-          HELPINFO_INSERT_VERBOSE,
-          NULL
-
-#define HELPINFO_GLOBAL_OPTIONS_HEADER					\
-	"",								\
-	"Global options:"
-
-and HELPINFO_INSERT_VERBOSE also contains the quiet option.
-
-The global option value is stored in 'btrfs_config_init bconf', so
-everything can access it directly.
-
-Thanks for working on this, I'll have more comments on v2 as I probably
-forgot a few more things to do, the above is the base for all further
-changes.

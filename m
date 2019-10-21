@@ -2,111 +2,93 @@ Return-Path: <SRS0=SF3a=YO=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.3 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DCD5ECA9EAF
-	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Oct 2019 16:45:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E3CCCCA9EB0
+	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Oct 2019 18:05:27 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id ACBC7206C2
-	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Oct 2019 16:45:54 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BA08521906
+	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Oct 2019 18:05:27 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="mIsrtuZI"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728238AbfJUQpy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 21 Oct 2019 12:45:54 -0400
-Received: from mx2.suse.de ([195.135.220.15]:53336 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726672AbfJUQpx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 21 Oct 2019 12:45:53 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 61AF5AF9F;
-        Mon, 21 Oct 2019 16:45:52 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id A5D5BDA733; Mon, 21 Oct 2019 18:46:05 +0200 (CEST)
-From:   David Sterba <dsterba@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     David Sterba <dsterba@suse.com>
-Subject: More checksumming algorithms for btrfs
-Date:   Mon, 21 Oct 2019 18:45:49 +0200
-Message-Id: <20191021164549.15404-1-dsterba@suse.com>
-X-Mailer: git-send-email 2.23.0
+        id S1730049AbfJUSF0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 21 Oct 2019 14:05:26 -0400
+Received: from mail-pf1-f193.google.com ([209.85.210.193]:33054 "EHLO
+        mail-pf1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1730041AbfJUSFZ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 21 Oct 2019 14:05:25 -0400
+Received: by mail-pf1-f193.google.com with SMTP id q10so8922863pfl.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 21 Oct 2019 11:05:25 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=osandov-com.20150623.gappssmtp.com; s=20150623;
+        h=date:from:to:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to:user-agent;
+        bh=+qMv7Aq/EKWcqrxVLodIHRmz/ZNgPTOxblOtF0zmUyA=;
+        b=mIsrtuZI2pu1seVtPlHpFnpNq+53C91o7GSE9m8ZZybgJznhZYmp7QTkGlNqwNeFSS
+         2uhxou+IVzBM5+QFoaY8QhGw4uUKqPHrCzXZz1p7VXVUk/KvNqucynnGFl+YWiQVnA7s
+         n92vAF01jaMsePBRl2+TS53rKcJSilmCX+gDbBTE+YFiAh1ylXDHQ0ldqmO5Iadul4DE
+         lhinrgTVgse144a3Y1Fo4tILDk+oEe4XKklmBPdSEX+M79ZZ7R6rM5u+Mbv6ikXBoE9j
+         M3BhuQ/NSOOEdbgxDNWtbRH8eJGymYBxle2X6yFH3E027XXR/U0SmN79UgFroryXLN/8
+         pX1g==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:date:from:to:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to:user-agent;
+        bh=+qMv7Aq/EKWcqrxVLodIHRmz/ZNgPTOxblOtF0zmUyA=;
+        b=LT0ey96NpTAx3V12nfTBgVhGKm1dajsTfVq10DNt4wP8itOIUffvi4KpM+EI747DtO
+         ndRBMFCB/Qvlo6b40HiLYhkG+Mr/wVoCPQ4aCC2GoVVfR9CixacrjFSTBzzY7y8vDb7J
+         yGrJm+qs58Q5dF8XhYIuywEi2LIlQoI+JRjs9Ld7QsXn37G+k37xm7ofecVBCn0yK6mF
+         erQPebYYVfzXjeD70o5nFw18H2FIky/DPHns68UB1ae1A0crVKshnNKF7GSx0nwIEnjW
+         djM87ExTnC7XOy2eY+RbLrcmaWK43+DXqyh+kptLSSy1ZrBwNULjKiAiWNZA2cqJ1ttQ
+         lhRg==
+X-Gm-Message-State: APjAAAWIgnpCzeNjp0o319AwGm6wiAGvYIACzYl72KoY19st1NzfEEWP
+        lUd4FqMTgmoIO75PCFXPZ/WAcQ==
+X-Google-Smtp-Source: APXvYqzxVOSpakbgchAj/0P4pwxdp36727zPto9TUN70iw399TJ9wp8rkaQTKKWIbUxovXt9MA4Lrg==
+X-Received: by 2002:a65:638a:: with SMTP id h10mr26701649pgv.388.1571681123766;
+        Mon, 21 Oct 2019 11:05:23 -0700 (PDT)
+Received: from vader ([2620:10d:c090:200::3:4637])
+        by smtp.gmail.com with ESMTPSA id k31sm17586704pjb.14.2019.10.21.11.05.22
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 21 Oct 2019 11:05:22 -0700 (PDT)
+Date:   Mon, 21 Oct 2019 11:05:22 -0700
+From:   Omar Sandoval <osandov@osandov.com>
+To:     dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
+        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        kernel-team@fb.com, Dave Chinner <david@fromorbit.com>,
+        Jann Horn <jannh@google.com>, linux-api@vger.kernel.org
+Subject: Re: [RFC PATCH v2 5/5] btrfs: implement RWF_ENCODED writes
+Message-ID: <20191021180522.GA81648@vader>
+References: <cover.1571164762.git.osandov@fb.com>
+ <904de93d9bbe630aff7f725fd587810c6eb48344.1571164762.git.osandov@fb.com>
+ <0da91628-7f54-7d24-bf58-6807eb9535a5@suse.com>
+ <20191018225513.GD59713@vader>
+ <20191021131452.GH3001@twin.jikos.cz>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20191021131452.GH3001@twin.jikos.cz>
+User-Agent: Mutt/1.12.2 (2019-09-21)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The work to add more checksums is nearly finished, we're now in a good state to
-let interested users do some testing and benchmarking.
+On Mon, Oct 21, 2019 at 03:14:52PM +0200, David Sterba wrote:
+> On Fri, Oct 18, 2019 at 03:55:13PM -0700, Omar Sandoval wrote:
+> > > > +	nr_pages = (disk_num_bytes + PAGE_SIZE - 1) >> PAGE_SHIFT;
+> > > 
+> > > nit: nr_pages = DIV_ROUND_UP(disk_num_bytes, PAGE_SIZE)
+> > 
+> > disk_num_bytes is a u64, so that would expand to a 64-bit division. The
+> > compiler is probably smart enough to optimize it to a shift, but I
+> > didn't want to rely on that, because that would cause build failures on
+> > 32-bit.
+> 
+> There are several DIV_ROUND_UP(u64, PAGE_SIZE) in btrfs code, no build
+> brekages have been reported so far, you can use it.
 
-New hashes: xxhash64, sha256, blake2b-256
-
-Quick start:
-
-  git://github.com/kdave/btrfs-devel preview/checksums-5
-  (build with CRYPTO_BLAKE2B=m)
-
-  git://github.com/kdave/btrfs-progs devel
-
-  $ mkfs.btrfs --csum blake2 /dev/sda
-  $ mount /dev/sda /mnt
-
-Warning: use only for testing!
-
-The increased size of checksums is allocating more memory when the data are
-being written so this can produce some warnings regarding size of the
-allocation. This will be addressed later.
-
-
-Selection results
-~~~~~~~~~~~~~~~~~
-
-fast hash: xxhash
-- 64bit digest
-- optimized for 64bit platforms, leveraging CPU pipelining
-
-cryptographically strong hash 1: sha256
-- 256bit digest
-- FIPS certification
-
-cryptographically strong hash 2: blake2
-- blake2b with 256bit digest
-- '2b' as it targets 64bit platforms
-
-
-Microbenchmark
-~~~~~~~~~~~~~~
-
-  $ cd btrfs-progs.git
-  $ make hash-speedtest
-  $ ./hash-speedtest [iterations]
-
-Block size: 4096
-Iterations: 100000
-
-    NULL-NOP: cycles:     53638797, c/i      536
- NULL-MEMCPY: cycles:     59547932, c/i      595
-      CRC32C: cycles:    179251924, c/i     1792
-      XXHASH: cycles:    137327470, c/i     1373
-      SHA256: cycles:  10719756126, c/i   107197
-     BLAKE2b: cycles:   2264316924, c/i    22643
-
-
-Compatibility
-~~~~~~~~~~~~~
-
-There's no new incompat bit, the checksum algorithm is detected at mount time
-and unknown type will fail to mount.
-
-The crypto modules implementing the digests must be either built-in or
-loadable, lack of thereof will fail mount. The actual digest implementation is
-up to the crypto API to choose. Check /sys/fs/UUID/features/checksum .
-
-
-Target release
-~~~~~~~~~~~~~~
-
-The plan is to queue the patches for 5.5, the blake2b patches seem to be on a
-good track so both shall be in the same release.
+Good to know, I'll fix both places I'm doing this, then.

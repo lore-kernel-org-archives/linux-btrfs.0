@@ -7,62 +7,62 @@ X-Spam-Status: No, score=-8.4 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DF307CA9EB9
-	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Oct 2019 09:22:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EB0C7CA9EB9
+	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Oct 2019 09:22:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B4BF72084B
-	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Oct 2019 09:22:51 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C07E82084B
+	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Oct 2019 09:22:57 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="liUPdNXe"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="adqNGilV"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388153AbfJVJWv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 22 Oct 2019 05:22:51 -0400
-Received: from userp2120.oracle.com ([156.151.31.85]:51852 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2387995AbfJVJWv (ORCPT
+        id S2388266AbfJVJW5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 22 Oct 2019 05:22:57 -0400
+Received: from userp2130.oracle.com ([156.151.31.86]:35282 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2387995AbfJVJW5 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 Oct 2019 05:22:51 -0400
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x9M9JQos164887;
-        Tue, 22 Oct 2019 09:22:48 GMT
+        Tue, 22 Oct 2019 05:22:57 -0400
+Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
+        by userp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x9M9JU7E185939;
+        Tue, 22 Oct 2019 09:22:54 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to : cc :
  references : from : message-id : date : mime-version : in-reply-to :
  content-type : content-transfer-encoding; s=corp-2019-08-05;
- bh=mS/SLkLedDo/r9lDiCdg45axH+Onqjfk6TPC7dAt+pM=;
- b=liUPdNXew58C2JcabVuJh/XQ+yipOyrn35sE0bo8jUy268MmxoOPEA/SXJHrFupA8c4A
- 06dVB5FTCVA4UlNp4R1M2uewJBybkDiXdHgkm02giVIDTCI6fejRz7AdAohboQhO76Sr
- wdaBW91elahi8yTBA8BEvtU78cVl915Fy7nxMik6TSXOdrtndGvZTQeAfFeGBqVNn/dQ
- rUCGI4twv+2OBvAFYHB0XdraCnTE8zxQvH+hrVtD724hcnTDsS3yq/gmr8vqxWXVZRvX
- P0vNThEoL6YngCdq/3gUWtEu1xEN/srb/OOMplpWZZN6SyPnaoXaQWLVgtikH9Jakl6C jA== 
+ bh=r0On3Ng2/07J8MJK3pTZtz/lINk5i2yndF7Vfb19QHg=;
+ b=adqNGilVASeQjfU3K1QwjV2oWt6Lj5F0mYKE7TdcT1236qRj34GegdkL4p3TR2EWTQqd
+ 43gHoCtIbAxYhkvIgsRBjKEgzaWuEoSW1kwqvh/MCm7QeesruuzbPXFjJaIinnWZ9WbL
+ YXMEITHk+7JBshvIzpbDeDtgWEntG7PuViD0oicJyaFWzOEumfe4heGrohCa/E9J3QmU
+ K1XV2oSxxV9aMoImr4HgafU/f600CrTCP/iLky/pWHMOQCfQ2C4dPdU7v5ko1SU9xv7N
+ Z5LIJyBluRrP7MM7CGi4vikIWjFOxBvdCmmV5btX8jq8lJCM8hON+jOPHY7tT88Jw2ZV eQ== 
 Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
-        by userp2120.oracle.com with ESMTP id 2vqu4qn522-1
+        by userp2130.oracle.com with ESMTP id 2vqswtdee9-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Tue, 22 Oct 2019 09:22:48 +0000
+        Tue, 22 Oct 2019 09:22:54 +0000
 Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
-        by userp3030.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x9M937Tu014987;
-        Tue, 22 Oct 2019 09:22:48 GMT
+        by userp3030.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x9M936ZM014773;
+        Tue, 22 Oct 2019 09:22:54 GMT
 Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by userp3030.oracle.com with ESMTP id 2vsx2qc838-1
+        by userp3030.oracle.com with ESMTP id 2vsx2qc8au-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Tue, 22 Oct 2019 09:22:48 +0000
-Received: from abhmp0012.oracle.com (abhmp0012.oracle.com [141.146.116.18])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x9M9MlX8011796;
-        Tue, 22 Oct 2019 09:22:47 GMT
+        Tue, 22 Oct 2019 09:22:54 +0000
+Received: from abhmp0010.oracle.com (abhmp0010.oracle.com [141.146.116.16])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x9M9MrZB011890;
+        Tue, 22 Oct 2019 09:22:53 GMT
 Received: from [10.186.52.87] (/10.186.52.87)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Tue, 22 Oct 2019 02:22:47 -0700
-Subject: Re: [PATCH 1/2] fstest: btrfs/196: test for alien btrfs-devices
+        with ESMTP ; Tue, 22 Oct 2019 09:22:53 +0000
+Subject: Re: [PATCH 2/2] fstest: btrfs/197: test for alien devices
 To:     Eryu Guan <guaneryu@gmail.com>
 Cc:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
 References: <20191007094101.784-1-anand.jain@oracle.com>
- <20191018091019.GK2622@desktop>
+ <20191007094101.784-2-anand.jain@oracle.com> <20191018091344.GL2622@desktop>
 From:   Anand Jain <anand.jain@oracle.com>
-Message-ID: <81b63597-7afb-23d3-58be-1329d55dd06b@oracle.com>
-Date:   Tue, 22 Oct 2019 17:23:40 +0800
+Message-ID: <007fb279-9dec-a5f1-d69d-8f0eade4b8fa@oracle.com>
+Date:   Tue, 22 Oct 2019 17:23:47 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.9.0
 MIME-Version: 1.0
-In-Reply-To: <20191018091019.GK2622@desktop>
+In-Reply-To: <20191018091344.GL2622@desktop>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
 Content-Transfer-Encoding: 7bit
@@ -84,33 +84,35 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 10/18/19 5:10 PM, Eryu Guan wrote:
-> On Mon, Oct 07, 2019 at 05:41:00PM +0800, Anand Jain wrote:
+On 10/18/19 5:13 PM, Eryu Guan wrote:
+> On Mon, Oct 07, 2019 at 05:41:01PM +0800, Anand Jain wrote:
 >> Test if btrfs.ko sucessfully identifies and reports the missing device,
->> if the missed device contians someother btrfs.
+>> if the missed device contians no btrfs magic string.
 >>
 >> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 >> ---
->>   tests/btrfs/196     | 77 +++++++++++++++++++++++++++++++++++++++++++++++++++++
->>   tests/btrfs/196.out | 25 +++++++++++++++++
+>>   tests/btrfs/197     | 79 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+>>   tests/btrfs/197.out | 25 +++++++++++++++++
 >>   tests/btrfs/group   |  1 +
->>   3 files changed, 103 insertions(+)
->>   create mode 100755 tests/btrfs/196
->>   create mode 100644 tests/btrfs/196.out
+>>   3 files changed, 105 insertions(+)
+>>   create mode 100755 tests/btrfs/197
+>>   create mode 100644 tests/btrfs/197.out
 >>
->> diff --git a/tests/btrfs/196 b/tests/btrfs/196
+>> diff --git a/tests/btrfs/197 b/tests/btrfs/197
 >> new file mode 100755
->> index 000000000000..e35cdce492e5
+>> index 000000000000..82e1a299ca43
 >> --- /dev/null
->> +++ b/tests/btrfs/196
->> @@ -0,0 +1,77 @@
+>> +++ b/tests/btrfs/197
+>> @@ -0,0 +1,79 @@
 >> +#! /bin/bash
 >> +# SPDX-License-Identifier: GPL-2.0
 >> +# Copyright (c) 2019 Oracle.  All Rights Reserved.
 >> +#
->> +# FS QA Test 196
+>> +# FS QA Test 197
 >> +#
->> +# Test stale and alien btrfs-device in the fs devices list.
+>> +# Test stale and alien device in the fs devices list.
+>> +# Similar to the testcase btrfs/196 except that here the alien device no more
+>> +# contains the btrfs superblock.
 >> +#
 >> +seq=`basename $0`
 >> +seqres=$RESULT_DIR/$seq
@@ -140,11 +142,7 @@ On 10/18/19 5:10 PM, Eryu Guan wrote:
 >> +# Modify as appropriate.
 >> +_supported_fs generic
 >> +_supported_os Linux
-> 
-> _supported_os btrfs
-
-  Thanks fixed in v2.
-
+>> +_require_command "$WIPEFS_PROG" wipefs
 >> +_require_scratch
 >> +_require_scratch_dev_pool 4
 >> +
@@ -162,51 +160,41 @@ On 10/18/19 5:10 PM, Eryu Guan wrote:
 >> +	# Make device_1 an alien btrfs device for the raid created above by
 >> +	# adding it to the $TEST_DIR
 > 
-> Instead of adding $device_1 to $TEST_DIR, does creating a new btrfs on
-> $device_1 work? I'm a bit worried that changing $TEST_DIR/$TEST_DEV
-> configuration would have some side effects, e.g. we add it to $TEST_DIR
-> and cancle the test before removing it, the $TEST_DEV will end up in an
-> unexpected state in next test run. (Though we could remove the device in
-> _cleanup, this is just an example.)
+> Stale comments above.
 
-  In v2 I am avoiding adding $device_1 to $TEST_DIR.
-  Instead, I am using $SPARE_DEV to create a new btrfs and $device_1
-  is added to it. I feel this is a better fix which shall completely
-  avoid messing up the $TEST_DEV. Thanks.
+  updated in v2.
 
+> Otherwise looks fine to me.
+> 
 >> +
 >> +	# don't test with the first device as auto fs check (_check_scratch_fs)
 >> +	# picks the first device
 >> +	device_1=$(echo $SCRATCH_DEV_POOL | awk '{print $2}')
->> +	$BTRFS_UTIL_PROG device add -f "$device_1" "$TEST_DIR"
->> +
->> +	device_2=$(echo $SCRATCH_DEV_POOL | awk '{print $1}')
->> +	_mount -o degraded $device_2 $SCRATCH_MNT
->> +	# Check if missing device is reported as in the 196.out
+>> +	$WIPEFS_PROG -a $device_1 >> $seqres.full 2>&1
 > 
-> Test could be renumbered, no need to hardcode 196.out, just ".out file"
-> would be fine.
+> If creating a new btrfs works for btrfs/196, I wonder if we could merge
+> the two tests into one test, firstly create a new fs & degraded mount,
+> then wipefs & degraded mount.
 
-  Oh. Thanks this is fixed in v2.
+  Its better if they are separate. The workout is already looping for
+  different raids. Per experiences from btrfs/011 it gets harder to
+  debug with testing different cases in one test case. Can I keep them
+  separate?
 
->> +	$BTRFS_UTIL_PROG filesystem show -m $SCRATCH_MNT | \
->> +						_filter_btrfs_filesystem_show
->> +
->> +	$BTRFS_UTIL_PROG device remove "$device_1" "$TEST_DIR"
-> 
-> I think we should remove $device_1 in _cleanup if it's not empty in case
-> test exits unexpectly. But as mentioned above, better to avoid adding
-> new device to $TEST_DIR.
-
-  As I am not using $TEST_DIR to add the $device_1. So this won't be
-  needed now.
-
+  V2 is being sent out in a while.
 
 Thanks, Anand
 
 > Thanks,
 > Eryu
 > 
+>> +
+>> +	device_2=$(echo $SCRATCH_DEV_POOL | awk '{print $1}')
+>> +	_mount -o degraded $device_2 $SCRATCH_MNT
+>> +	# Check if missing device is reported as in the 196.out
+>> +	$BTRFS_UTIL_PROG filesystem show -m $SCRATCH_MNT | \
+>> +						_filter_btrfs_filesystem_show
+>> +
 >> +	_scratch_unmount
 >> +	_scratch_dev_pool_put
 >> +}
@@ -219,13 +207,13 @@ Thanks, Anand
 >> +# success, all done
 >> +status=0
 >> +exit
->> diff --git a/tests/btrfs/196.out b/tests/btrfs/196.out
+>> diff --git a/tests/btrfs/197.out b/tests/btrfs/197.out
 >> new file mode 100644
->> index 000000000000..311ae9e2f46a
+>> index 000000000000..79237b854b5a
 >> --- /dev/null
->> +++ b/tests/btrfs/196.out
+>> +++ b/tests/btrfs/197.out
 >> @@ -0,0 +1,25 @@
->> +QA output created by 196
+>> +QA output created by 197
 >> +raid1
 >> +Label: none  uuid: <UUID>
 >> +	Total devices <NUM> FS bytes used <SIZE>
@@ -251,14 +239,14 @@ Thanks, Anand
 >> +	*** Some devices missing
 >> +
 >> diff --git a/tests/btrfs/group b/tests/btrfs/group
->> index 3ce6fa4628d8..c86ea2516397 100644
+>> index c86ea2516397..f2eac5c20712 100644
 >> --- a/tests/btrfs/group
 >> +++ b/tests/btrfs/group
->> @@ -198,3 +198,4 @@
->>   193 auto quick qgroup enospc limit
+>> @@ -199,3 +199,4 @@
 >>   194 auto volume
 >>   195 auto volume
->> +196 auto quick volume
+>>   196 auto quick volume
+>> +197 auto quick volume
 >> -- 
 >> 1.8.3.1
 >>

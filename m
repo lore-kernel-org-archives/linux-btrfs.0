@@ -3,29 +3,30 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
-	autolearn=no autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0FE0DCA9EAF
-	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Oct 2019 08:33:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B51B8CA9EAF
+	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Oct 2019 08:34:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id DE50F205ED
-	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Oct 2019 08:33:13 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8F0FC205ED
+	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Oct 2019 08:34:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2438261AbfJXIdM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 24 Oct 2019 04:33:12 -0400
-Received: from mx2.suse.de ([195.135.220.15]:38596 "EHLO mx1.suse.de"
+        id S1728741AbfJXIeX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 24 Oct 2019 04:34:23 -0400
+Received: from mx2.suse.de ([195.135.220.15]:39674 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2438240AbfJXIdG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 24 Oct 2019 04:33:06 -0400
+        id S1726205AbfJXIeX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 24 Oct 2019 04:34:23 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 36F2ABBE0;
-        Thu, 24 Oct 2019 08:33:04 +0000 (UTC)
-Subject: Re: [PATCH 3/6] btrfs: remove embedded block_group_cache::item
+        by mx1.suse.de (Postfix) with ESMTP id ED1C1AFCD;
+        Thu, 24 Oct 2019 08:34:21 +0000 (UTC)
+Subject: Re: [PATCH 4/6] btrfs: rename block_group_item on-stack accessors to
+ follow naming
 To:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
 References: <cover.1571848791.git.dsterba@suse.com>
- <925c46538656d1b46146e09d19882e9c5038658c.1571848791.git.dsterba@suse.com>
+ <ef0d23acaf30f86cc54321e81c338bef72f9cd2c.1571848791.git.dsterba@suse.com>
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 Openpgp: preference=signencrypt
 Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
@@ -83,12 +84,12 @@ Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
  l2t2TyTuHm7wVUY2J3gJYgG723/PUGW4LaoqNrYQUr/rqo6NXw6c+EglRpm1BdpkwPwAng63
  W5VOQMdnozD2RsDM5GfA4aEFi5m00tE+8XPICCtkduyWw+Z+zIqYk2v+zraPLs9Gs0X2C7X0
  yvqY9voUoJjG6skkOToGZbqtMX9K4GOv9JAxVs075QRXL3brHtHONDt6udYobzz+
-Message-ID: <13040c88-da8a-a483-3701-5a73394d1948@suse.de>
-Date:   Thu, 24 Oct 2019 10:33:03 +0200
+Message-ID: <5d058f1d-6163-25ba-71de-c9e3c2d67b64@suse.de>
+Date:   Thu, 24 Oct 2019 10:34:21 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.8.0
 MIME-Version: 1.0
-In-Reply-To: <925c46538656d1b46146e09d19882e9c5038658c.1571848791.git.dsterba@suse.com>
+In-Reply-To: <ef0d23acaf30f86cc54321e81c338bef72f9cd2c.1571848791.git.dsterba@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -97,7 +98,7 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Looks good,
+Fair enough,
 Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
 -- 
 Johannes Thumshirn                            SUSE Labs Filesystems

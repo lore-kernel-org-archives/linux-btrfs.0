@@ -1,445 +1,302 @@
-Return-Path: <SRS0=avBk=YQ=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=miBu=YR=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-5.0 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DB27CCA9EB9
-	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Oct 2019 22:53:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EEC27CA9EB9
+	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Oct 2019 00:42:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9E2BF20679
-	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Oct 2019 22:53:53 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1571871233;
-	bh=ZnY6vBeFZb79Z0JUnkG/W2Q0gObzLgIFJDxyxQR5CdY=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References:In-Reply-To:
-	 References:List-ID:From;
-	b=DMoGJNK2gdKTLoBO0vPK+JUItSPi3Y7ewL2WHBVatLX0NNRR2qe2GZppTHsvTpRfr
-	 OVSFZn4IyUVkrKPXrovcJ2xd/FuwoEpTrq2Gy5dkXkZEB7LjlM8NFh/wwN9At2k7Qj
-	 6Fn7jQ5T9JNK3l0JUeHsyLNTcMga8TPQJ4pNJfos=
+	by mail.kernel.org (Postfix) with ESMTP id 9B9842084B
+	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Oct 2019 00:42:08 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="ckf6NIaw"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2436961AbfJWWxw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 23 Oct 2019 18:53:52 -0400
-Received: from mail-qt1-f195.google.com ([209.85.160.195]:42964 "EHLO
-        mail-qt1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2436937AbfJWWxk (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 23 Oct 2019 18:53:40 -0400
-Received: by mail-qt1-f195.google.com with SMTP id w14so34720833qto.9
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 Oct 2019 15:53:39 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
-         :references:in-reply-to:references;
-        bh=lX9FOONTj5msGOtE7JTjLUUHfskPijAQYi6iH1byrYQ=;
-        b=YZIUnOGb9ZWDAy5mJlbjExv9ALMes1kBk0Y6r2W/ib3AlVhJSobrI6IMwYepG7SXCj
-         iPzj6+mXQC9gQYiCtS1Dm3sk1GEXLZUcFc+EkMAn+VWlHjWXV3sfbf3iNtn5xuVvGiQy
-         Av/B/vi/dH3nf81P4Rs4CchZIsh6cUZRG4m9P+y402tizFGplg1fv5m/MOvJygn8KPc8
-         NlNvxWUZg/RkqsOJS9C3oULcjf0CRI7yoZVZTPfvrGpG3mseCO54ycH3V9+kRJdw98B1
-         sdMnVDGN6BhGstZoM9BUSMnZPfi3zFUeDvG5oB2wOX+8JpVMWL+5M7/vxk5q+SJF/NkS
-         FJKQ==
-X-Gm-Message-State: APjAAAW8KQhYpBHWVKFqGwOXRVBaEiEUBxbXm5q27xbgcnw76FIv40lW
-        xgaYQw/UiIR9AU6RO1SeRM4=
-X-Google-Smtp-Source: APXvYqwZzxXkMkw4tfBUB6A3+HTUgZcBQGP0i7HTdDZnJ5XVCWkmnD3ehtz/B9g3fBzNtk7cnqD1tw==
-X-Received: by 2002:ac8:411b:: with SMTP id q27mr1159179qtl.53.1571871218959;
-        Wed, 23 Oct 2019 15:53:38 -0700 (PDT)
-Received: from dennisz-mbp.thefacebook.com ([163.114.130.128])
-        by smtp.gmail.com with ESMTPSA id j4sm11767542qkf.116.2019.10.23.15.53.37
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-SHA bits=128/128);
-        Wed, 23 Oct 2019 15:53:38 -0700 (PDT)
-From:   Dennis Zhou <dennis@kernel.org>
-To:     David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        Omar Sandoval <osandov@osandov.com>
-Cc:     kernel-team@fb.com, linux-btrfs@vger.kernel.org,
-        Dennis Zhou <dennis@kernel.org>
-Subject: [PATCH 17/22] btrfs: have multiple discard lists
-Date:   Wed, 23 Oct 2019 18:53:11 -0400
-Message-Id: <9affe695998972620340031ccc95caac909bfe4b.1571865774.git.dennis@kernel.org>
-X-Mailer: git-send-email 2.13.5
-In-Reply-To: <cover.1571865774.git.dennis@kernel.org>
-References: <cover.1571865774.git.dennis@kernel.org>
-In-Reply-To: <cover.1571865774.git.dennis@kernel.org>
-References: <cover.1571865774.git.dennis@kernel.org>
+        id S2392840AbfJXAkr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 23 Oct 2019 20:40:47 -0400
+Received: from mout.gmx.net ([212.227.17.22]:39261 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S2392817AbfJXAkr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 23 Oct 2019 20:40:47 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1571877366;
+        bh=GoehOsarMWaNv04aeSnZyq7FykXjwScuaIg5Fu5ydjs=;
+        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
+        b=ckf6NIawxsKGK1Uf9OP4x4N4zo3//DmeGB8+CGIPfDspJv8CtlV0REHfAKtmcbsAj
+         WtlcTjDjalHEAQstBHb/a4J9x+d64d7rTBMdqlf5YsiyK/2SI4aABo9JsbWAX+5n6R
+         u9ksPHT2Lovo9mUxltgK383bpD5GTmOmzIGkdHHk=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([13.231.109.76]) by mail.gmx.com (mrgmx104
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1MD9XF-1iEsNw36XZ-009AbH; Thu, 24
+ Oct 2019 02:36:06 +0200
+Subject: Re: [PATCH v3 2/2] btrfs: extent-tree: Ensure we trim ranges across
+ block group boundary
+To:     Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20191023135727.64358-1-wqu@suse.com>
+ <20191023135727.64358-3-wqu@suse.com>
+ <1322eb4c-5d7a-29c0-befc-952a012f1bcc@suse.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAU4EEwEIADgCGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1oQAKCRDC
+ PZHzoSX+qCY6CACd+mWu3okGwRKXju6bou+7VkqCaHTdyXwWFTsr+/0ly5nUdDtT3yEVggPJ
+ 3VP70wjlrxUjNjFb6iIvGYxiPOrop1NGwGYvQktgRhaIhALG6rPoSSAhGNjwGVRw0km0PlIN
+ D29BTj/lYEk+jVM1YL0QLgAE1AI3krihg/lp/fQT53wLhR8YZIF8ETXbClQG1vJ0cllPuEEv
+ efKxRyiTSjB+PsozSvYWhXsPeJ+KKjFen7ebE5reQTPFzSHctCdPnoR/4jSPlnTlnEvLeqcD
+ ZTuKfQe1gWrPeevQzgCtgBF/WjIOeJs41klnYzC3DymuQlmFubss0jShLOW8eSOOWhLRuQEN
+ BFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcgaCbPEwhLj
+ 1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj/IrRUUka
+ 68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fNGSsRb+pK
+ EKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0q1eW4Jrv
+ 0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEvABEBAAGJ
+ ATwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1rgUJCWpOfwAKCRDCPZHz
+ oSX+qFcEB/95cs8cM1OQdE/GgOfCGxwgckMeWyzOR7bkAWW0lDVp2hpgJuxBW/gyfmtBnUai
+ fnggx3EE3ev8HTysZU9q0h+TJwwJKGv6sUc8qcTGFDtavnnl+r6xDUY7A6GvXEsSoCEEynby
+ 72byGeSovfq/4AWGNPBG1L61Exl+gbqfvbECP3ziXnob009+z9I4qXodHSYINfAkZkA523JG
+ ap12LndJeLk3gfWNZfXEWyGnuciRGbqESkhIRav8ootsCIops/SqXm0/k+Kcl4gGUO/iD/T5
+ oagaDh0QtOd8RWSMwLxwn8uIhpH84Q4X1LadJ5NCgGa6xPP5qqRuiC+9gZqbq4Nj
+Message-ID: <8340fb01-1a0b-2831-ba6e-ce4a04e842bf@gmx.com>
+Date:   Thu, 24 Oct 2019 08:35:59 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.1.1
+MIME-Version: 1.0
+In-Reply-To: <1322eb4c-5d7a-29c0-befc-952a012f1bcc@suse.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:6aWL+RIm+KKRlfEvBwHQKg+SMIFEbkm4chWaA9eqESsiFjg6j7n
+ wHQfys7mAwEiI1+5C5vnkvYiCgbUGELAHf+Wsd66wd6Uq6OOcRUWwv+hDn5dMxWkRY/PMq7
+ ceL2jWtVSMrLo+75DYa1xdjQa6SpNWpi2jF9GL+vmv1rJ0s4wCuU2gozKCPwK2dVJH1sYmo
+ 1tXBV3eJRKKgtQraLO3/w==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:Q7D7ip5PEfQ=:rvS3PsAkoKEK6n3IHipinD
+ xuWg7/uKVajRSpyDdLGStVAorLs4LdL/ndyqqXF+Ntsigbcv5/fwY7INmgcY0qxfgUJbV1wMs
+ V000RieJkr05qZn0qV6dm1LhwwT5AtihfUOuH6UrvhjOUcJDy+6XlekDyjoD4ve+U9af17fu7
+ 2czmgFjSoHISWvtDTZrbokCFDMWkOl044FH0YPxJSUIzSBJAVAIw4uXs+IdA/0KO3y/OiGHXe
+ yrrkxquwKZLcvf0IwjysCScSO+u9hP7SsB4/pX2+5zDetmk0WVRZpXjJpht0k5X5cxCIacPNz
+ PTqfUP+Qvi/sXLUl5JqnvWlsc1o4R/k9Fvy3V7X1nleZtqam/ImahRiJds+NyLsnq15S9OPXY
+ fotgmw8wTja+p8cXNzHf6BWmvj4rY0tfrowwRSj0Bae1ftzXTrVs6GfcukaoCsLZZY8m7pFHs
+ 3zAkIpfqWbm+ifb9j8Zm+VN8HcxBn73vO+N+eW4kpRMfzdfnqyWBby2wuFG6gwZnjj6mNH3vN
+ WEqOrEuYicKwSUNDKTMYrNYVMo5pzI2ovO/nmGiV64hvV8i2vzgHDCtkkteqRUZggBYt4zIyd
+ sB0HowtKPGyOpn12UaqKhaDF5UzUXWInCqcGmH2ZR/v+oJlyHmF7TenKwtiqj3YI5FCYNnyW2
+ bHS1A2MgtjNW16UB7R3BfrJSg8ZpVopiLQwSeNYMk9V+6M3TNbvvUuenKX2Uim/0nW2TrYjw1
+ uA6PIDpmLJsCu6dsgJpwqHjI1OO6VN/azI4E6GHWFwSAg+DvnbVDGjjq2eyzXFk1yvful/HuC
+ EuJmAksrp55r1rcHDi/BNb1mYC5TPlpENoY5Nz5sIqrQjQegt2K7iSQsr8ZKmszWqoQeCQRg/
+ NYqf6vmdxtBlVBXKCt4JJtZjE9d5x0OT1gGF7T7YbSUFFsDamBz+Ly76LE1BXxmRtvhPoyGQ6
+ tMlSxHld7VWPDWmiIw0efnhh+qRgbYYWF17WyUBw0tsv6ffYem1hFRC2NQbyZJ4QX333IQ5XW
+ lxNUajhZUikYwDpid51YSnhaseuCzmp3oXr5EzHJAi8E+L3iKdeumpkPgcRk9gWlfA9lW9Z24
+ qYOLeEAoJGWq73edH5n8r2C0a2vZjHGdRLvaPvCjNG31iGrp6+4L7oN5mB4c4+hxudbW55F1g
+ xvE/5EQr3A5yFX9jAE7nEllzpsUXqKnpEe1ACc0EnW/lDvhAHOppJk+5xAX5WwzZp2TWCVCn6
+ l/vlFVeOFiHrBMyd52fhGk1W3BXT5kXxk8d6NBoMdspYlMYv2juTOaN68nCM=
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Non-block group destruction discarding currently only had a single list
-with no minimum discard length. This can lead to caravaning more
-meaningful discards behind a heavily fragmented block group.
 
-This adds support for multiple lists with minimum discard lengths to
-prevent the caravan effect. We promote block groups back up when we
-exceed the BTRFS_ASYNC_DISCARD_MAX_FILTER size, currently we support
-only 2 lists with filters of 1MB and 32KB respectively.
 
-Signed-off-by: Dennis Zhou <dennis@kernel.org>
----
- fs/btrfs/ctree.h            |  2 +-
- fs/btrfs/discard.c          | 98 ++++++++++++++++++++++++++++++++++---
- fs/btrfs/discard.h          |  4 ++
- fs/btrfs/free-space-cache.c | 53 +++++++++++++++-----
- fs/btrfs/free-space-cache.h |  2 +-
- 5 files changed, 136 insertions(+), 23 deletions(-)
+On 2019/10/23 =E4=B8=8B=E5=8D=8811:41, Nikolay Borisov wrote:
+>
+>
+> On 23.10.19 =D0=B3. 16:57 =D1=87., Qu Wenruo wrote:
+>> [BUG]
+>> When deleting large files (which cross block group boundary) with disca=
+rd
+>> mount option, we find some btrfs_discard_extent() calls only trimmed pa=
+rt
+>> of its space, not the whole range:
+>>
+>>   btrfs_discard_extent: type=3D0x1 start=3D19626196992 len=3D2144530432=
+ trimmed=3D1073741824 ratio=3D50%
+>>
+>> type:		bbio->map_type, in above case, it's SINGLE DATA.
+>> start:		Logical address of this trim
+>> len:		Logical length of this trim
+>> trimmed:	Physically trimmed bytes
+>> ratio:		trimmed / len
+>>
+>> Thus leading some unused space not discarded.
+>>
+>> [CAUSE]
+>> When discard mount option is specified, after a transaction is fully
+>> committed (super block written to disk), we begin to cleanup pinned
+>> extents in the following call chain:
+>>
+>> btrfs_commit_transaction()
+>> |- write_all_supers()
+>
+> You can remove write_all_supers
+>
+>> |- btrfs_finish_extent_commit()
+>>    |- find_first_extent_bit(unpin, 0, &start, &end, EXTENT_DIRTY);
+>>    |- btrfs_discard_extent()
+>>
+>> However pinned extents are recorded in an extent_io_tree, which can
+>> merge adjacent extent states.
+>>
+>> When a large file get deleted and it has adjacent file extents across
+>> block group boundary, we will get a large merged range.
+>
+> This is wrong, it will only get merged if the extent spans contiguous bg=
+ boundaries
+> (this is very important!)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 0a87970c7117..57cfc0e11c53 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -455,7 +455,7 @@ struct btrfs_full_stripe_locks_tree {
-  * afterwards represent monotonically decreasing discard filter sizes to
-  * prioritize what should be discarded next.
-  */
--#define BTRFS_NR_DISCARD_LISTS		2
-+#define BTRFS_NR_DISCARD_LISTS		3
- #define BTRFS_DISCARD_INDEX_UNUSED	0
- #define BTRFS_DISCARD_INDEX_START	1
- 
-diff --git a/fs/btrfs/discard.c b/fs/btrfs/discard.c
-index f7799b659d39..592a5c7b9dc1 100644
---- a/fs/btrfs/discard.c
-+++ b/fs/btrfs/discard.c
-@@ -21,6 +21,10 @@
- #define BTRFS_DISCARD_MAX_DELAY		(10000UL)
- #define BTRFS_DISCARD_MAX_IOPS		(10UL)
- 
-+/* Montonically decreasing minimum length filters after index 0. */
-+static int discard_minlen[BTRFS_NR_DISCARD_LISTS] = {0,
-+	BTRFS_ASYNC_DISCARD_MAX_FILTER, BTRFS_ASYNC_DISCARD_MIN_FILTER};
-+
- static struct list_head *btrfs_get_discard_list(
- 					struct btrfs_discard_ctl *discard_ctl,
- 					struct btrfs_block_group_cache *cache)
-@@ -133,16 +137,18 @@ static struct btrfs_block_group_cache *find_next_cache(
-  * peek_discard_list - wrap find_next_cache()
-  * @discard_ctl: discard control
-  * @discard_state: the discard_state of the block_group after state management
-+ * @discard_index: the discard_index of the block_group after state management
-  *
-  * This wraps find_next_cache() and sets the cache to be in use.
-  * discard_state's control flow is managed here.  Variables related to
-  * discard_state are reset here as needed (eg discard_cursor).  @discard_state
-- * is remembered as it may change while we're discarding, but we want the
-- * discard to execute in the context determined here.
-+ * and @discard_index are remembered as it may change while we're discarding,
-+ * but we want the discard to execute in the context determined here.
-  */
- static struct btrfs_block_group_cache *peek_discard_list(
- 					struct btrfs_discard_ctl *discard_ctl,
--					enum btrfs_discard_state *discard_state)
-+					enum btrfs_discard_state *discard_state,
-+					int *discard_index)
- {
- 	struct btrfs_block_group_cache *cache;
- 	u64 now = ktime_get_ns();
-@@ -164,6 +170,7 @@ static struct btrfs_block_group_cache *peek_discard_list(
- 		}
- 		discard_ctl->cache = cache;
- 		*discard_state = cache->discard_state;
-+		*discard_index = cache->discard_index;
- 	} else {
- 		cache = NULL;
- 	}
-@@ -173,6 +180,63 @@ static struct btrfs_block_group_cache *peek_discard_list(
- 	return cache;
- }
- 
-+/**
-+ * btrfs_discard_check_filter - updates a block groups filters
-+ * @cache: block group of interest
-+ * @bytes: recently freed region size after coalescing
-+ *
-+ * Async discard maintains multiple lists with progressively smaller filters
-+ * to prioritize discarding based on size.  Should a free space that matches
-+ * a larger filter be returned to the free_space_cache, prioritize that discard
-+ * by moving @cache to the proper filter.
-+ */
-+void btrfs_discard_check_filter(struct btrfs_block_group_cache *cache,
-+				u64 bytes)
-+{
-+	struct btrfs_discard_ctl *discard_ctl;
-+
-+	if (!cache || !btrfs_test_opt(cache->fs_info, DISCARD_ASYNC))
-+		return;
-+
-+	discard_ctl = &cache->fs_info->discard_ctl;
-+
-+	if (cache->discard_index > BTRFS_DISCARD_INDEX_START &&
-+	    bytes >= discard_minlen[cache->discard_index - 1]) {
-+		int i;
-+
-+		remove_from_discard_list(discard_ctl, cache);
-+
-+		for (i = BTRFS_DISCARD_INDEX_START; i < BTRFS_NR_DISCARD_LISTS;
-+		     i++) {
-+			if (bytes >= discard_minlen[i]) {
-+				cache->discard_index = i;
-+				btrfs_add_to_discard_list(discard_ctl, cache);
-+				break;
-+			}
-+		}
-+	}
-+}
-+
-+/**
-+ * btrfs_update_discard_index - moves a block_group along the discard lists
-+ * @discard_ctl: discard control
-+ * @cache: block_group of interest
-+ *
-+ * Increment @cache's discard_index.  If it falls of the list, let it be.
-+ * Otherwise add it back to the appropriate list.
-+ */
-+static void btrfs_update_discard_index(struct btrfs_discard_ctl *discard_ctl,
-+				       struct btrfs_block_group_cache *cache)
-+{
-+	cache->discard_index++;
-+	if (cache->discard_index == BTRFS_NR_DISCARD_LISTS) {
-+		cache->discard_index = 1;
-+		return;
-+	}
-+
-+	btrfs_add_to_discard_list(discard_ctl, cache);
-+}
-+
- /**
-  * btrfs_discard_cancel_work - remove a block_group from the discard lists
-  * @discard_ctl: discard control
-@@ -289,6 +353,8 @@ static void btrfs_finish_discard_pass(struct btrfs_discard_ctl *discard_ctl,
- 			btrfs_mark_bg_unused(cache);
- 		else
- 			btrfs_add_to_discard_unused_list(discard_ctl, cache);
-+	} else {
-+		btrfs_update_discard_index(discard_ctl, cache);
- 	}
- }
- 
-@@ -305,25 +371,41 @@ static void btrfs_discard_workfn(struct work_struct *work)
- 	struct btrfs_discard_ctl *discard_ctl;
- 	struct btrfs_block_group_cache *cache;
- 	enum btrfs_discard_state discard_state;
-+	int discard_index = 0;
- 	u64 trimmed = 0;
-+	u64 minlen = 0;
- 
- 	discard_ctl = container_of(work, struct btrfs_discard_ctl, work.work);
- 
--	cache = peek_discard_list(discard_ctl, &discard_state);
-+	cache = peek_discard_list(discard_ctl, &discard_state, &discard_index);
- 	if (!cache || !btrfs_run_discard_work(discard_ctl))
- 		return;
- 
- 	/* Perform discarding. */
--	if (discard_state == BTRFS_DISCARD_BITMAPS)
-+	minlen = discard_minlen[discard_index];
-+
-+	if (discard_state == BTRFS_DISCARD_BITMAPS) {
-+		u64 maxlen = 0;
-+
-+		/*
-+		 * Use the previous levels minimum discard length as the max
-+		 * length filter.  In the case something is added to make a
-+		 * region go beyond the max filter, the entire bitmap is set
-+		 * back to BTRFS_TRIM_STATE_UNTRIMMED.
-+		 */
-+		if (discard_index != BTRFS_DISCARD_INDEX_UNUSED)
-+			maxlen = discard_minlen[discard_index - 1];
-+
- 		btrfs_trim_block_group_bitmaps(cache, &trimmed,
- 					       cache->discard_cursor,
- 					       btrfs_block_group_end(cache),
--					       0, true);
--	else
-+					       minlen, maxlen, true);
-+	} else {
- 		btrfs_trim_block_group_extents(cache, &trimmed,
- 					       cache->discard_cursor,
- 					       btrfs_block_group_end(cache),
--					       0, true);
-+					       minlen, true);
-+	}
- 
- 	discard_ctl->prev_discard = trimmed;
- 
-diff --git a/fs/btrfs/discard.h b/fs/btrfs/discard.h
-index c1e745196b6c..d24a6fd389f8 100644
---- a/fs/btrfs/discard.h
-+++ b/fs/btrfs/discard.h
-@@ -13,12 +13,16 @@ struct btrfs_block_group_cache;
- 
- /* Discard size limits. */
- #define BTRFS_ASYNC_DISCARD_MAX_SIZE	(SZ_64M)
-+#define BTRFS_ASYNC_DISCARD_MAX_FILTER	(SZ_1M)
-+#define BTRFS_ASYNC_DISCARD_MIN_FILTER	(SZ_32K)
- 
- /* List operations. */
- void btrfs_add_to_discard_list(struct btrfs_discard_ctl *discard_ctl,
- 			       struct btrfs_block_group_cache *cache);
- void btrfs_add_to_discard_unused_list(struct btrfs_discard_ctl *discard_ctl,
- 				      struct btrfs_block_group_cache *cache);
-+void btrfs_discard_check_filter(struct btrfs_block_group_cache *cache,
-+				u64 bytes);
- 
- /* Work operations. */
- void btrfs_discard_cancel_work(struct btrfs_discard_ctl *discard_ctl,
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index c62346b23ca0..dc632afe5f61 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -2463,6 +2463,7 @@ int __btrfs_add_free_space(struct btrfs_fs_info *fs_info,
- 	struct btrfs_block_group_cache *cache = ctl->private;
- 	struct btrfs_free_space *info;
- 	int ret = 0;
-+	u64 filter_bytes = bytes;
- 
- 	info = kmem_cache_zalloc(btrfs_free_space_cachep, GFP_NOFS);
- 	if (!info)
-@@ -2499,6 +2500,8 @@ int __btrfs_add_free_space(struct btrfs_fs_info *fs_info,
- 	 */
- 	steal_from_bitmap(ctl, info, true);
- 
-+	filter_bytes = max(filter_bytes, info->bytes);
-+
- 	ret = link_free_space(ctl, info);
- 	if (ret)
- 		kmem_cache_free(btrfs_free_space_cachep, info);
-@@ -2511,8 +2514,10 @@ int __btrfs_add_free_space(struct btrfs_fs_info *fs_info,
- 		ASSERT(ret != -EEXIST);
- 	}
- 
--	if (trim_state != BTRFS_TRIM_STATE_TRIMMED)
-+	if (trim_state != BTRFS_TRIM_STATE_TRIMMED) {
-+		btrfs_discard_check_filter(cache, filter_bytes);
- 		btrfs_discard_queue_work(&fs_info->discard_ctl, cache);
-+	}
- 
- 	return ret;
- }
-@@ -3453,7 +3458,14 @@ static int trim_no_bitmap(struct btrfs_block_group_cache *block_group,
- 				goto next;
- 			}
- 			unlink_free_space(ctl, entry);
--			if (max_discard_size && bytes > max_discard_size) {
-+			/*
-+			 * Let bytes = BTRFS_MAX_DISCARD_SIZE + X.
-+			 * If X < BTRFS_ASYNC_DISCARD_MIN_FILTER, we won't trim
-+			 * X when we come back around.  So trim it now.
-+			 */
-+			if (max_discard_size &&
-+			    bytes >= (max_discard_size +
-+				      BTRFS_ASYNC_DISCARD_MIN_FILTER)) {
- 				bytes = extent_bytes = max_discard_size;
- 				entry->offset += max_discard_size;
- 				entry->bytes -= max_discard_size;
-@@ -3563,7 +3575,7 @@ static void end_trimming_bitmap(struct btrfs_free_space_ctl *ctl,
-  */
- static int trim_bitmaps(struct btrfs_block_group_cache *block_group,
- 			u64 *total_trimmed, u64 start, u64 end, u64 minlen,
--			bool async)
-+			u64 maxlen, bool async)
- {
- 	struct btrfs_discard_ctl *discard_ctl =
- 					&block_group->fs_info->discard_ctl;
-@@ -3591,7 +3603,15 @@ static int trim_bitmaps(struct btrfs_block_group_cache *block_group,
- 		}
- 
- 		entry = tree_search_offset(ctl, offset, 1, 0);
--		if (!entry || (async && start == offset &&
-+		/*
-+		 * Bitmaps are marked trimmed lossily now to prevent constant
-+		 * discarding of the same bitmap (the reason why we are bound
-+		 * by the filters).  So, retrim the block group bitmaps when we
-+		 * are preparing to punt to the unused_bgs list.  This uses
-+		 * @minlen to determine if we are in BTRFS_DISCARD_INDEX_UNUSED
-+		 * which is the only discard index which sets minlen to 0.
-+		 */
-+		if (!entry || (async && minlen && start == offset &&
- 			       btrfs_free_space_trimmed(entry))) {
- 			spin_unlock(&ctl->tree_lock);
- 			mutex_unlock(&ctl->cache_writeout_mutex);
-@@ -3612,10 +3632,10 @@ static int trim_bitmaps(struct btrfs_block_group_cache *block_group,
- 		ret2 = search_bitmap(ctl, entry, &start, &bytes, false);
- 		if (ret2 || start >= end) {
- 			/*
--			 * This keeps the invariant that all bytes are trimmed
--			 * if BTRFS_TRIM_STATE_TRIMMED is set on a bitmap.
-+			 * We lossily consider a bitmap trimmed if we only skip
-+			 * over regions <= BTRFS_ASYNC_DISCARD_MIN_FILTER.
- 			 */
--			if (ret2 && !minlen)
-+			if (ret2 && minlen <= BTRFS_ASYNC_DISCARD_MIN_FILTER)
- 				end_trimming_bitmap(ctl, entry);
- 			else
- 				entry->trim_state = BTRFS_TRIM_STATE_UNTRIMMED;
-@@ -3636,14 +3656,20 @@ static int trim_bitmaps(struct btrfs_block_group_cache *block_group,
- 		}
- 
- 		bytes = min(bytes, end - start);
--		if (bytes < minlen) {
--			entry->trim_state = BTRFS_TRIM_STATE_UNTRIMMED;
-+		if (bytes < minlen || (async && maxlen && bytes > maxlen)) {
- 			spin_unlock(&ctl->tree_lock);
- 			mutex_unlock(&ctl->cache_writeout_mutex);
- 			goto next;
- 		}
- 
--		if (async && max_discard_size && bytes > max_discard_size)
-+		/*
-+		 * Let bytes = BTRFS_MAX_DISCARD_SIZE + X.
-+		 * If X < @minlen, we won't trim X when we come back around.
-+		 * So trim it now.  We differ here from trimming extents as we
-+		 * don't keep individual state per bit.
-+		 */
-+		if (async && max_discard_size &&
-+		    bytes > (max_discard_size + minlen))
- 			bytes = max_discard_size;
- 
- 		bitmap_clear_bits(ctl, entry, start, bytes);
-@@ -3749,7 +3775,7 @@ int btrfs_trim_block_group(struct btrfs_block_group_cache *block_group,
- 	if (ret)
- 		goto out;
- 
--	ret = trim_bitmaps(block_group, trimmed, start, end, minlen, false);
-+	ret = trim_bitmaps(block_group, trimmed, start, end, minlen, 0, false);
- 	/* If we ended in the middle of a bitmap, reset the trimming flag. */
- 	if (end % (BITS_PER_BITMAP * ctl->unit))
- 		reset_trimming_bitmap(ctl, offset_to_bitmap(ctl, end));
-@@ -3782,7 +3808,7 @@ int btrfs_trim_block_group_extents(struct btrfs_block_group_cache *block_group,
- 
- int btrfs_trim_block_group_bitmaps(struct btrfs_block_group_cache *block_group,
- 				   u64 *trimmed, u64 start, u64 end, u64 minlen,
--				   bool async)
-+				   u64 maxlen, bool async)
- {
- 	int ret;
- 
-@@ -3796,7 +3822,8 @@ int btrfs_trim_block_group_bitmaps(struct btrfs_block_group_cache *block_group,
- 	btrfs_get_block_group_trimming(block_group);
- 	spin_unlock(&block_group->lock);
- 
--	ret = trim_bitmaps(block_group, trimmed, start, end, minlen, async);
-+	ret = trim_bitmaps(block_group, trimmed, start, end, minlen, maxlen,
-+			   async);
- 
- 	btrfs_put_block_group_trimming(block_group);
- 	return ret;
-diff --git a/fs/btrfs/free-space-cache.h b/fs/btrfs/free-space-cache.h
-index 1c0ec98da529..d3a7c9228409 100644
---- a/fs/btrfs/free-space-cache.h
-+++ b/fs/btrfs/free-space-cache.h
-@@ -146,7 +146,7 @@ int btrfs_trim_block_group_extents(struct btrfs_block_group_cache *block_group,
- 				   bool async);
- int btrfs_trim_block_group_bitmaps(struct btrfs_block_group_cache *block_group,
- 				   u64 *trimmed, u64 start, u64 end, u64 minlen,
--				   bool async);
-+				   u64 maxlen, bool async);
- 
- /* Support functions for running our sanity tests */
- #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
--- 
-2.17.1
+Yep, skipped some details as I thought it was too obvious, but indeed it
+needs extra wording.
 
+>
+>>
+>> Then when we pass the large range into btrfs_discard_extent(),
+>> btrfs_discard_extent() will just trim the first part, without trimming
+>> the remaining part.
+>
+> Here is what my testing shows:
+>
+> mkfs.btrfs -f /dev/vdc
+>
+> mount -onodatasum,nospace_cache /dev/vdc /media/scratch/
+
+nospace_cache is important as v1 space cache exists as regular file,
+which could take up data space and screw up extent layout.
+(And in original report, v1 cache is the cause of randomness in
+reproducibility)
+
+> xfs_io -f -c "pwrite 0 800m" /media/scratch/file1 && sync
+> xfs_io -f -c "pwrite 0 300m" /media/scratch/file2 && sync
+> umount /media/scratch
+>
+> mount -odiscard /dev/vdc /media/scratch
+> rm -f /media/scratch/file2 && sync
+> trace-cmd show
+>
+> umount /media/scratch
+>
+> The output I get in trace-cmd is:
+>
+> sync-1014  [001] ....   534.272310: btrfs_finish_extent_commit: Discardi=
+ng 1943011328-2077229055 (len: 134217728)
+> sync-1014  [001] ....   534.272315: btrfs_discard_extent: Requested to d=
+iscard: 134217728 but discarded: 134217728
+>
+> sync-1014  [001] ....   534.272325: btrfs_finish_extent_commit: Discardi=
+ng 2177892352-2358247423 (len: 180355072)
+> sync-1014  [001] ....   534.272330: btrfs_discard_extent: Requested to d=
+iscard: 180355072 but discarded: 180355072
+>
+> The extents of this file look like this in the extent tree prior to the =
+trim:
+>
+> item 18 key (1943011328 EXTENT_ITEM 134217728) itemoff 15523 itemsize 53
+> 		refs 1 gen 7 flags DATA
+> 		extent data backref root FS_TREE objectid 258 offset 0 count 1
+> item 19 key (2177892352 EXTENT_ITEM 134217728) itemoff 15470 itemsize 53
+> 		refs 1 gen 7 flags DATA
+> 		extent data backref root FS_TREE objectid 258 offset 134217728 count 1
+> item 20 key (2177892352 BLOCK_GROUP_ITEM 1073741824) itemoff 15446 items=
+ize 24
+> 		block group used 180355072 chunk_objectid 256 flags DATA
+> item 21 key (2312110080 EXTENT_ITEM 46137344) itemoff 15393 itemsize 53
+> 		refs 1 gen 7 flags DATA
+> 		extent data backref root FS_TREE objectid 258 offset 268435456 count 1
+>
+> So we have 3 extents 1 of which is in bg 1 and the other 2 in bg2. The 2=
+ extents in bg2 are merged but
+> since the 2nd bg is not contiguous to the first hence no merging.
+>
+> Here comes the requirement why the bg must be contiguous.
+>
+> If I modify my test case with slightly different write offsets such that=
+ bg1
+> is indeed filled and the next extent gets allocated to in bg2, which is =
+adjacent then
+> the bug is reproduced:
+>
+> mkfs.btrfs -f /dev/vdc
+>
+> mount -onodatasum,nospace_cache /dev/vdc /media/scratch/
+> xfs_io -f -c "pwrite 0 800m" /media/scratch/file1 && sync
+> xfs_io -f -c "pwrite 0 224m" /media/scratch/file2 && sync
+> xfs_io -f -c "pwrite 224m 76m" /media/scratch/file2 && sync
+> umount /media/scratch
+>
+> mount -odiscard /dev/vdc /media/scratch
+> rm -f /media/scratch/file2 && sync
+> trace-cmd show
+>
+> umount /media/scratch
+>
+> The 3 extents being created and subsequently deleted are:
+>
+> sync-799   [000] ....   313.938048: btrfs_update_block_group: Pinning 19=
+43011328-2077229055
+> sync-799   [000] ....   313.938073: btrfs_update_block_group: Pinning 20=
+77229056-2177892351 <- BG1 ends
+> sync-799   [000] ....   313.938116: btrfs_update_block_group: Pinning 21=
+77892352-2257584127 <- BG2 begins
+>
+> But we only get 1 discard request:
+>
+> sync-798   [003] ....   154.077897: btrfs_finish_extent_commit: Discardi=
+ng 1943011328-2257584127 (len: 314572800) <- this is the request passed to=
+ btrfs_discard_extent
+> sync-798   [003] ....   154.077901: btrfs_discard_extent: Discarding 234=
+881024 length for bytenr: 1943011328 <- this is the actual range being dis=
+carded inside the for loop.
+>
+> So the bug is genuine I will test whether your patch fixes it and report=
+ back.
+>
+>> Furthermore, this bug is not that reliably observed, as if the whole
+>> block group is empty, there will be another trim for that block group.
+>
+> Not only because of this, mainly because of the contiguousness requireme=
+nt.
+
+Contiguousness requirement is in fact pretty easy to hit.
+
+Just do a 20G write, you will find most bg and file extents are Contiguous=
+.
+
+The problem is to craft a reliable way extent and bg layout in a
+reproducible way, and a good way to detect the missing trim.
+
+
+In my environment, I'm using 20G write so even space cache is screwing
+me up, I still have 20 chances to have contiguous bg and file extents.
+And for trim result, loopback device can be used to account how many
+bytes are really used.
+
+I just need to polish them into a good fstests case.
+
+Thanks,
+Qu
+
+>
+>>
+>> So the most obvious way to find this missing trim needs to delete large
+>> extents at block group boundary without empting involved block groups.
+>>
+>> [FIX]
+>> - Allow __btrfs_map_block_for_discard() to modify @length parameter
+>>   btrfs_map_block() uses its @length paramter to notify the caller how
+>>   many bytes are mapped in current call.
+>>   With __btrfs_map_block_for_discard() also modifing the @length,
+>>   btrfs_discard_extent() now understands when to do extra trim.
+>>
+>> - Call btrfs_map_block() in a loop until we hit the range end
+>>   Since we now know how many bytes are mapped each time, we can iterate
+>>   through each block group boundary and issue correct trim for each
+>>   range.
+>>
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>
+> <snip>
+>

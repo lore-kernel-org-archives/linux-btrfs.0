@@ -2,114 +2,102 @@ Return-Path: <SRS0=miBu=YR=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
+X-Spam-Status: No, score=-3.9 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT autolearn=no
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0DB9BCA9EB9
-	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Oct 2019 02:35:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0A7B4CA9EAF
+	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Oct 2019 06:28:34 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D5F6220856
-	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Oct 2019 02:35:00 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CE9D42166E
+	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Oct 2019 06:28:33 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="aqXvgS3d"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="b4u3arLq"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2437100AbfJXCev (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 23 Oct 2019 22:34:51 -0400
-Received: from mail-qt1-f196.google.com ([209.85.160.196]:44718 "EHLO
-        mail-qt1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2437093AbfJXCev (ORCPT
+        id S2436471AbfJXG2c (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 24 Oct 2019 02:28:32 -0400
+Received: from userp2130.oracle.com ([156.151.31.86]:55614 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1729789AbfJXG2c (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 23 Oct 2019 22:34:51 -0400
-Received: by mail-qt1-f196.google.com with SMTP id z22so14976795qtq.11;
-        Wed, 23 Oct 2019 19:34:50 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=from:to:cc:subject:date:message-id:in-reply-to:references
-         :mime-version:content-transfer-encoding;
-        bh=MdjBl45h9xt9Bxg4VPMkmRN0bJK1gJzee5THO4fvM2c=;
-        b=aqXvgS3dfP+0XgdQ80ffVw/io7830PY0SVCeCv8a/9ej7O94EcqaGaLh6AYImu6STm
-         mbKpYUKkXI1+rFwxzkaNAxMpCmUb49ksKFEPzblBU+rQuNwuiefHUPTUzsdlYsNGEOa9
-         JLE/iGz6GxZ7j1zOXVWUx4cfD1vuCkq3taXk+LDX5VbEYVYV7oNeUgUiDAqLyf917MH3
-         KA4WWT18vIb8ZrVhvc/3K3Nh7keNQNGj9cpVZ+fW09q5ZoBRU8NCQrlway+59xqyc6TZ
-         IrJEe1BC1xLdCvOUvN48hCte6niOwNmXEkj0k2yU82hRXiJWFDw1c9qNkhnyDsR87k1B
-         LgQQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=MdjBl45h9xt9Bxg4VPMkmRN0bJK1gJzee5THO4fvM2c=;
-        b=ZHKgjTZL6VZAI3ZbdYRuBWeKrNOQtFOIAdzYC7mqwnSqWAgEL5MTPMT7kK4AXI41vp
-         Tr1dqMQYdVgtvVN8TU7jpQCsuf2/nj/kOHjRX6wPtx6mgCQW1Bya+UCXz0hsl22TGy0H
-         F+tfKKQfi2tw0J+3TnNZ5SDU0Dx+rMuswCBJx6/QETut9f9dBdcYmIoHRw3OG2G+RvYv
-         LAqpmUz/8UfOou2pP3g2mBbHiU2OGAQwswqTxLJO7qEBU2RkefUrnctqr6jEtyIgxT6l
-         ePSxlRny/Knc1sD2kCwYu74vQXiKVAUfwutj5CdQQI8gQsUmtOLEif8FnWkQ/ins/k9X
-         YVAQ==
-X-Gm-Message-State: APjAAAU+Lxg8g5xXolWKMFjnztP51WwO7DN73ANAMB2bdm9auiAmh/P+
-        3lOJZjo3q+DMHVADTGFaOelrOCUV
-X-Google-Smtp-Source: APXvYqw+mzewUgpctNlCsG9CnLPmhf9YMul+ytiPBkO5dHRaxba/a8qNlrzwQf12lfL6yuQdwpym1A==
-X-Received: by 2002:a0c:92dc:: with SMTP id c28mr12627065qvc.26.1571884489717;
-        Wed, 23 Oct 2019 19:34:49 -0700 (PDT)
-Received: from localhost.localdomain ([186.212.94.31])
-        by smtp.gmail.com with ESMTPSA id q16sm10252495qke.22.2019.10.23.19.34.47
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 23 Oct 2019 19:34:49 -0700 (PDT)
-From:   Marcos Paulo de Souza <marcos.souza.org@gmail.com>
-To:     linux-kernel@vger.kernel.org
-Cc:     clm@fb.com, josef@toxicpanda.com, dsterba@suse.com,
-        linux-btrfs@vger.kernel.org, mpdesouza@suse.com
-Subject: [PATCH 4/5] btrfs: ctree.h: Add btrfs_is_snapshot function
-Date:   Wed, 23 Oct 2019 23:36:35 -0300
-Message-Id: <20191024023636.21124-5-marcos.souza.org@gmail.com>
+        Thu, 24 Oct 2019 02:28:32 -0400
+Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
+        by userp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x9O6O0ue178705
+        for <linux-btrfs@vger.kernel.org>; Thu, 24 Oct 2019 06:28:31 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
+ date : message-id : mime-version : content-transfer-encoding;
+ s=corp-2019-08-05; bh=1h00HK0R7zpIbgF9OMtfC5F2JPbYUcSKeTsBnC+Oj7s=;
+ b=b4u3arLqWLBQJKZkzR0bepcl2gDKSv5u2/6aO6pp1cpxyVlp+dB1GFVIJx/Dl6NUa/cd
+ pSCU4EN51vEVhMKitA2BwA3aIeUrK0vPQ5rqziV669va8NEzo9EBOMVD4DryTtaa/jA2
+ osz+it3xNB5D0DE/lHBjVbqTPZZLXtajORJ3+RhmmdOxjPojXDyJefK+BWqOOIqUluEp
+ +1QLngtlLgoO5Pe2Sp71HlF/LpWW4HQHUaN6nDt+E5GrE5xHU5pPCjxKQ/hJu9rLWIqe
+ NExm8fcdShUSGB3iAZ9vSJ37bJgTeA0B6OsHXPhj51svv66zfxTh1SJJRXYkX4vkC4OT 6Q== 
+Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
+        by userp2130.oracle.com with ESMTP id 2vqswtsktq-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Thu, 24 Oct 2019 06:28:30 +0000
+Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
+        by userp3030.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x9O6Mxtl045207
+        for <linux-btrfs@vger.kernel.org>; Thu, 24 Oct 2019 06:28:30 GMT
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by userp3030.oracle.com with ESMTP id 2vtjkhrqkc-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Thu, 24 Oct 2019 06:28:30 +0000
+Received: from abhmp0008.oracle.com (abhmp0008.oracle.com [141.146.116.14])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x9O6ST7o022213
+        for <linux-btrfs@vger.kernel.org>; Thu, 24 Oct 2019 06:28:29 GMT
+Received: from localhost.localdomain (/39.109.145.141)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Wed, 23 Oct 2019 23:28:29 -0700
+From:   Anand Jain <anand.jain@oracle.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [RFC PATCH 0/3] btrfs-progs: make quiet to overrule verbose
+Date:   Thu, 24 Oct 2019 14:28:22 +0800
+Message-Id: <20191024062825.13097-1-anand.jain@oracle.com>
 X-Mailer: git-send-email 2.23.0
-In-Reply-To: <20191024023636.21124-1-marcos.souza.org@gmail.com>
-References: <20191024023636.21124-1-marcos.souza.org@gmail.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9419 signatures=668684
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=1 malwarescore=0
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=736
+ adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.0.1-1908290000 definitions=main-1910240060
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9419 signatures=668684
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
+ suspectscore=1 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
+ lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=823 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1908290000
+ definitions=main-1910240060
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Marcos Paulo de Souza <mpdesouza@suse.com>
+When both the options (--quiet and --verbose) in btrfs send and receive
+is specified, we need at least one of it to overrule the other, irrespective
+of the chronological order of options.
 
-This new function takes a btrfs_root as argument, and returns true is
-root_key.offset is bigger than 0, meaning that this tree is a snapshot.
+This patch-set makes quiet overrule verbose.
 
-This new function will be used by the next patch.
+I don't think this shall break any script as such, because these two options are
+of kind of mutually exclusive. But just in case if I am missing something? So
+marked it as RFC.
 
-Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
----
- fs/btrfs/ctree.h | 14 ++++++++++++++
- 1 file changed, 14 insertions(+)
+And again patch 3/3 makes quiet option really quiet in receive and removes the
+output
+ At snapshot <>
+I don't expect scripts to specify quiet option and expect some logs.
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 19d669d12ca1..8502e9082914 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3411,6 +3411,20 @@ static inline int btrfs_defrag_cancelled(struct btrfs_fs_info *fs_info)
- 	return signal_pending(current);
- }
- 
-+/*
-+ * btrfs_is_snapshot() - Verify is a tree is a snapshot
-+ * @root: btrfs_root
-+ *
-+ * When the key.offset field of btrfs_root is bigger than 0 it means the referred
-+ * tree is a snapshot.
-+ *
-+ * Returns true if @root refers to a snapshot.
-+ */
-+static inline bool btrfs_is_snapshot(struct btrfs_root *root)
-+{
-+	return root->root_key.offset > 0;
-+}
-+
- #define in_range(b, first, len) ((b) >= (first) && (b) < (first) + (len))
- 
- /* Sanity test specific functions */
+Anand Jain (3):
+  btrfs-progs: send: let option quiet overrule verbose
+  btrfs-progs: receive: let option quiet overrule verbose
+  btrfs-progs: receive: make quiet really quiet
+
+ cmds/receive.c | 9 +++++++--
+ cmds/send.c    | 6 +++++-
+ 2 files changed, 12 insertions(+), 3 deletions(-)
+
 -- 
 2.23.0
 

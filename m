@@ -2,32 +2,34 @@ Return-Path: <SRS0=FriU=YS=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.7 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 21B61CA9EA0
-	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Oct 2019 09:00:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 956E1CA9EA0
+	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Oct 2019 09:00:05 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 00F9B21D71
-	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Oct 2019 09:00:03 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 75DC121D71
+	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Oct 2019 09:00:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2408590AbfJYJAC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 25 Oct 2019 05:00:02 -0400
-Received: from mx2.suse.de ([195.135.220.15]:55076 "EHLO mx1.suse.de"
+        id S2408600AbfJYJAE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 25 Oct 2019 05:00:04 -0400
+Received: from mx2.suse.de ([195.135.220.15]:55142 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2405717AbfJYJAB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 25 Oct 2019 05:00:01 -0400
+        id S2405717AbfJYJAE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 25 Oct 2019 05:00:04 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 73338B4D1
-        for <linux-btrfs@vger.kernel.org>; Fri, 25 Oct 2019 09:00:00 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 112F2B4D5
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 Oct 2019 09:00:03 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v4 0/2] btrfs: trim: Fix a bug certain range may not be trimmed properly
-Date:   Fri, 25 Oct 2019 16:59:54 +0800
-Message-Id: <20191025085956.48352-1-wqu@suse.com>
+Subject: [PATCH v4 1/2] btrfs: volumes: Use more straightforward way to calculate map length
+Date:   Fri, 25 Oct 2019 16:59:55 +0800
+Message-Id: <20191025085956.48352-2-wqu@suse.com>
 X-Mailer: git-send-email 2.23.0
+In-Reply-To: <20191025085956.48352-1-wqu@suse.com>
+References: <20191025085956.48352-1-wqu@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -35,49 +37,38 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-There is a bug report about discard mount option not trimming some range
-properly, and causing unexpected space usage for thin device.
+The old code goes:
 
-It turns out to be that, if there are pinned extents across block group
-boundary, we will only trim to the end of current block group, skipping
-the remaining.
+ 	offset = logical - em->start;
+	length = min_t(u64, em->len - offset, length);
 
-This patchset will fix it by ensuring btrfs_discard_extent() will
-iterate the full range before exiting.
+Where @length calculate is dependent on offset, it can take reader
+several more seconds to find it's just the same code as:
 
-The first patch is just a tiny readability improvement found during the
-fix.
-The second patch is the main body of the fix.
+ 	offset = logical - em->start;
+	length = min_t(u64, em->start + em->len - logical, length);
 
-Meanwhile I'm still looking into how to craft such test case for btrfs,
-so the test case may be late for several days.
+Use above code to make the length calculate independent from other
+variable, thus slightly increase the readability.
 
-Changelog:
-v2:
-- Fold the __btrfs_map_block_for_discard() @length change into the main
-  patch
-  Since the @length parameter change itself doesn't make much sense,
-  folding it into the fix looks more reasonable.
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/volumes.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-- Split the tiny readability improvement patch into its own patch
-
-v3:
-- Reset @num_bytes for btrfs_map_block() to limit the trim range inside
-  the original range.
-  Or we can trim into existing extent to corrupt data.
-
-v4:
-- Use better ASCII graph to show the bug
-  No code change at all.
-
-Qu Wenruo (2):
-  btrfs: volumes: Use more straightforward way to calculate map length
-  btrfs: extent-tree: Ensure we trim ranges across block group boundary
-
- fs/btrfs/extent-tree.c | 41 +++++++++++++++++++++++++++++++----------
- fs/btrfs/volumes.c     |  8 +++++---
- 2 files changed, 36 insertions(+), 13 deletions(-)
-
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index cdd7af424033..a6db11e821a5 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -5616,7 +5616,7 @@ static int __btrfs_map_block_for_discard(struct btrfs_fs_info *fs_info,
+ 	}
+ 
+ 	offset = logical - em->start;
+-	length = min_t(u64, em->len - offset, length);
++	length = min_t(u64, em->start + em->len - logical, length);
+ 
+ 	stripe_len = map->stripe_len;
+ 	/*
 -- 
 2.23.0
 

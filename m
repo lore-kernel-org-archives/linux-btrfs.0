@@ -2,220 +2,143 @@ Return-Path: <SRS0=FriU=YS=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CC3C6CA9EA0
-	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Oct 2019 09:53:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 86973CA9EA0
+	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Oct 2019 10:02:50 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 96D7721929
-	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Oct 2019 09:53:46 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1571997226;
-	bh=L5jNtXAGIXyC0pEzjikRjjYwyHzKYAYv6uOpuYN+DhY=;
-	h=From:To:Subject:Date:List-ID:From;
-	b=fDWYU3rMd4y8Vp+kopE3WMjRvYzj0VhXbtPYu9HwdSZ61Cy4ObPZD3BSHx8fnCTIn
-	 kPOAqSrG+d4+drcX7t/il/IPoKW50OznwTpHhS0mpGJV2joPKLUZv+XYSe0rkCd1Wi
-	 Ex8HtQLD8rnpu/hQzQlyOlTyyDAXwA+KzQI6z/QQ=
+	by mail.kernel.org (Postfix) with ESMTP id 5BD0620663
+	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Oct 2019 10:02:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2408162AbfJYJxp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 25 Oct 2019 05:53:45 -0400
-Received: from mail.kernel.org ([198.145.29.99]:51756 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2390193AbfJYJxp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 25 Oct 2019 05:53:45 -0400
-Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id A57CE21929
-        for <linux-btrfs@vger.kernel.org>; Fri, 25 Oct 2019 09:53:43 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1571997224;
-        bh=L5jNtXAGIXyC0pEzjikRjjYwyHzKYAYv6uOpuYN+DhY=;
-        h=From:To:Subject:Date:From;
-        b=gIcfM8OEEh7/rR7CjfXqGlcnLWIVZ5HTtZUuAxIqNqtc24uTJcQSZ/6iUxW3QoiQr
-         xGK6fkhZGiLG8V2yzLMTFUA5WeKbkp7KwnHZbNzBb+R2A2uj1zSLCDAeMbhnZb9WVd
-         EJDrICzyF8Vkj+su0HzYmFd3SourmypR3G7Jqhjo=
-From:   fdmanana@kernel.org
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: fix race leading to metadata space leak after task received signal
-Date:   Fri, 25 Oct 2019 10:53:41 +0100
-Message-Id: <20191025095341.18704-1-fdmanana@kernel.org>
-X-Mailer: git-send-email 2.11.0
+        id S2502474AbfJYKCt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 25 Oct 2019 06:02:49 -0400
+Received: from mx2.suse.de ([195.135.220.15]:60724 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S2502435AbfJYKCs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 25 Oct 2019 06:02:48 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 91C4FB887;
+        Fri, 25 Oct 2019 10:02:46 +0000 (UTC)
+Subject: Re: "BUG: kernel NULL pointer dereference," when unmounting
+ filesystem hitted by enospc error
+From:   Johannes Thumshirn <jthumshirn@suse.de>
+To:     Peter Hjalmarsson <kanelxake@gmail.com>
+Cc:     linux-btrfs@vger.kernel.org
+References: <CALpSwpjVz=F_hb9DbVanECsfWOYog2B7SLY=Dy0NvQx=w9voDA@mail.gmail.com>
+ <f4037f43-97fb-5a25-52db-2d69ec69f6ee@suse.de>
+ <3acc15f7-fe1e-6672-8a89-fba9a09561d4@suse.de>
+ <CALpSwpgFiOo+KxZ13TD_YY0mx2vZ4BLMo=qBeaagHrA=UgW9Mw@mail.gmail.com>
+ <6d27bb89-d59b-3ca4-7587-2d0067c41ca1@suse.de>
+Openpgp: preference=signencrypt
+Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <0c808629-1b54-8c27-a848-ef050dea21e4@suse.de>
+Date:   Fri, 25 Oct 2019 12:02:46 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.8.0
+MIME-Version: 1.0
+In-Reply-To: <6d27bb89-d59b-3ca4-7587-2d0067c41ca1@suse.de>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+On 25/10/2019 10:07, Johannes Thumshirn wrote:
+> On 24/10/2019 22:23, Peter Hjalmarsson wrote:
+>> Hi,
+>>
+>> Sorry for late answer. Have been out of town for work.
+>> Interesting that you could not reproduce. What kind of system do you run?
+> 
+> I ran it up to 64 times but in a very minimal VM. Let me try to reprouce
+> the issue on a bare metal system.
+> 
+>> I have tried on a couple of system now, and they behave slightly
+>> different, so maybe it has something to do with which arch it runs
+>> what kind of crash it triggers if any?
+>> Also make sure that the "dd"-line in the script is not wrapped like it
+>> became in the mail.
+> 
+> Yes I've fixed that up.
+> 
+>> For me running trough the test in a couple of systems, I found the following:
+>>
+>> The systems that always crashes did that during the first or the
+>> second run of the script (so probably no need to run for longer than
+>> maybe three to four times to verify).
 
-When a task that is allocating metadata needs to wait for the async
-reclaim job to process its ticket and gets a signal (because it was killed
-for example) before doing the wait, the task ends up erroring out but
-with space reserved for its ticket, which never gets released, resulting
-in a metadata space leak (more specifically a leak in the bytes_may_use
-counter of the metadata space_info object).
+Good news. I was able to reproduce this on bare metal and have a kdump core.
 
-Here's the sequence of steps leading to the space leak:
 
-1) A task tries to create a file for example, so it ends up trying to
-   start a transaction at btrfs_create();
 
-2) The filesystem is currently in a state where there is not enough
-   metadata free space to satisfy the transaction's needs. So at
-   space-info.c:__reserve_metadata_bytes() we create a ticket and
-   add it to the list of tickets of the space info object. Also,
-   because the metadata async reclaim job is not running, we queue
-   a job ro run metadata reclaim;
 
-3) In the meanwhile the task receives a signal (like SIGTERM from
-   a kill command for example);
 
-4) After queing the async reclaim job, at __reserve_metadata_bytes(),
-   we unlock the metadata space info and call handle_reserve_ticket();
-
-5) That last function calls wait_reserve_ticket(), which acquires the
-   lock from the metadata space info. Then in the first iteration of
-   its while loop, it calls prepare_to_wait_event(), which returns
-   -ERESTARTSYS because the task has a pending signal. As a result,
-   we set the error field of the ticket to -EINTR and exit the while
-   loop without deleting the ticket from the list of tickets (in the
-   space info object). After exiting the loop we unlock the space info;
-
-6) The async reclaim job is able to release enough metadata, acquires
-   the metadata space info's lock and then reserves space for the ticket,
-   since the ticket is still in the list of (non-priority) tickets. The
-   space reservation happens at btrfs_try_granting_tickets(), called from
-   maybe_fail_all_tickets(). This increments the bytes_may_use counter
-   from the metadata space info object, sets the ticket's bytes field to
-   zero (meaning success, that space was reserved) and removes it from
-   the list of tickets;
-
-7) wait_reserve_ticket() returns, with the error field of the ticket
-   set to -EINTR. Then handle_reserve_ticket() just propagates that error
-   to the caller. Because an error was returned, the caller does not
-   release the reserved space, since the expectation is that any error
-   means no space was reserved.
-
-Fix this by removing the ticket from the list, while holding the space
-info lock, at wait_reserve_ticket() when prepare_to_wait_event() returns
-an error.
-
-Also add some comments and an assertion to guarantee we never end up with
-a ticket that has an error set and a bytes counter field set to zero, to
-more easily detect regressions in the future.
-
-This issue could be triggered sporadically by some test cases from fstests
-such as generic/269 for example, which tries to fill a filesystem and then
-kills fsstress processes running in the background.
-
-When this issue happens, we get a warning in syslog/dmesg when unmounting
-the filesystem, like the following:
-
- [Tue Oct  1 17:24:23 2019] ------------[ cut here ]------------
- [Tue Oct  1 17:24:23 2019] WARNING: CPU: 0 PID: 13240 at fs/btrfs/block-group.c:3186 btrfs_free_block_groups+0x314/0x470 [btrfs]
- (...)
- [Tue Oct  1 17:24:23 2019] CPU: 0 PID: 13240 Comm: umount Tainted: G        W    L    5.3.0-rc8-btrfs-next-48+ #1
- [Tue Oct  1 17:24:23 2019] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.12.0-0-ga698c8995f-prebuilt.qemu.org 04/01/2014
- [Tue Oct  1 17:24:23 2019] RIP: 0010:btrfs_free_block_groups+0x314/0x470 [btrfs]
- (...)
- [Tue Oct  1 17:24:24 2019] RSP: 0018:ffff9910c14cfdb8 EFLAGS: 00010286
- [Tue Oct  1 17:24:24 2019] RAX: 0000000000000024 RBX: ffff89cd8a4d55f0 RCX: 0000000000000000
- [Tue Oct  1 17:24:24 2019] RDX: 0000000000000000 RSI: ffff89cdf6a178a8 RDI: ffff89cdf6a178a8
- [Tue Oct  1 17:24:24 2019] RBP: ffff9910c14cfde8 R08: 0000000000000000 R09: 0000000000000001
- [Tue Oct  1 17:24:24 2019] R10: ffff89cd4d618040 R11: 0000000000000000 R12: ffff89cd8a4d5508
- [Tue Oct  1 17:24:24 2019] R13: ffff89cde7c4a600 R14: dead000000000122 R15: dead000000000100
- [Tue Oct  1 17:24:24 2019] FS:  00007f42754432c0(0000) GS:ffff89cdf6a00000(0000) knlGS:0000000000000000
- [Tue Oct  1 17:24:24 2019] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
- [Tue Oct  1 17:24:24 2019] CR2: 00007fd25a47f730 CR3: 000000021f8d6006 CR4: 00000000003606f0
- [Tue Oct  1 17:24:24 2019] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
- [Tue Oct  1 17:24:24 2019] DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
- [Tue Oct  1 17:24:24 2019] Call Trace:
- [Tue Oct  1 17:24:24 2019]  close_ctree+0x1ad/0x390 [btrfs]
- [Tue Oct  1 17:24:24 2019]  generic_shutdown_super+0x6c/0x110
- [Tue Oct  1 17:24:24 2019]  kill_anon_super+0xe/0x30
- [Tue Oct  1 17:24:24 2019]  btrfs_kill_super+0x12/0xa0 [btrfs]
- [Tue Oct  1 17:24:24 2019]  deactivate_locked_super+0x3a/0x70
- [Tue Oct  1 17:24:24 2019]  cleanup_mnt+0xb4/0x160
- [Tue Oct  1 17:24:24 2019]  task_work_run+0x7e/0xc0
- [Tue Oct  1 17:24:24 2019]  exit_to_usermode_loop+0xfa/0x100
- [Tue Oct  1 17:24:24 2019]  do_syscall_64+0x1cb/0x220
- [Tue Oct  1 17:24:24 2019]  entry_SYSCALL_64_after_hwframe+0x49/0xbe
- [Tue Oct  1 17:24:24 2019] RIP: 0033:0x7f4274d2cb37
- (...)
- [Tue Oct  1 17:24:24 2019] RSP: 002b:00007ffcff701d38 EFLAGS: 00000246 ORIG_RAX: 00000000000000a6
- [Tue Oct  1 17:24:24 2019] RAX: 0000000000000000 RBX: 0000557ebde2f060 RCX: 00007f4274d2cb37
- [Tue Oct  1 17:24:24 2019] RDX: 0000000000000001 RSI: 0000000000000000 RDI: 0000557ebde2f240
- [Tue Oct  1 17:24:24 2019] RBP: 0000557ebde2f240 R08: 0000557ebde2f270 R09: 0000000000000015
- [Tue Oct  1 17:24:24 2019] R10: 00000000000006b4 R11: 0000000000000246 R12: 00007f427522ee64
- [Tue Oct  1 17:24:24 2019] R13: 0000000000000000 R14: 0000000000000000 R15: 00007ffcff701fc0
- [Tue Oct  1 17:24:24 2019] irq event stamp: 0
- [Tue Oct  1 17:24:24 2019] hardirqs last  enabled at (0): [<0000000000000000>] 0x0
- [Tue Oct  1 17:24:24 2019] hardirqs last disabled at (0): [<ffffffffb12b561e>] copy_process+0x75e/0x1fd0
- [Tue Oct  1 17:24:24 2019] softirqs last  enabled at (0): [<ffffffffb12b561e>] copy_process+0x75e/0x1fd0
- [Tue Oct  1 17:24:24 2019] softirqs last disabled at (0): [<0000000000000000>] 0x0
- [Tue Oct  1 17:24:24 2019] ---[ end trace bcf4b235461b26f6 ]---
- [Tue Oct  1 17:24:24 2019] BTRFS info (device sdb): space_info 4 has 19116032 free, is full
- [Tue Oct  1 17:24:24 2019] BTRFS info (device sdb): space_info total=33554432, used=14176256, pinned=0, reserved=0, may_use=196608, readonly=65536
- [Tue Oct  1 17:24:24 2019] BTRFS info (device sdb): global_block_rsv: size 0 reserved 0
- [Tue Oct  1 17:24:24 2019] BTRFS info (device sdb): trans_block_rsv: size 0 reserved 0
- [Tue Oct  1 17:24:24 2019] BTRFS info (device sdb): chunk_block_rsv: size 0 reserved 0
- [Tue Oct  1 17:24:24 2019] BTRFS info (device sdb): delayed_block_rsv: size 0 reserved 0
- [Tue Oct  1 17:24:24 2019] BTRFS info (device sdb): delayed_refs_rsv: size 0 reserved 0
-
-Fixes: 374bf9c5cd7d0b ("btrfs: unify error handling for ticket flushing")
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/space-info.c | 21 +++++++++++++++++++++
- 1 file changed, 21 insertions(+)
-
-diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-index 260a883994b9..ada89bdcae3c 100644
---- a/fs/btrfs/space-info.c
-+++ b/fs/btrfs/space-info.c
-@@ -892,6 +892,15 @@ static void wait_reserve_ticket(struct btrfs_fs_info *fs_info,
- 	while (ticket->bytes > 0 && ticket->error == 0) {
- 		ret = prepare_to_wait_event(&ticket->wait, &wait, TASK_KILLABLE);
- 		if (ret) {
-+			/*
-+			 * Delete us from the list. After we unlock the space
-+			 * info, we don't want the async reclaim job to reserve
-+			 * space for this ticket. If that would happen, then the
-+			 * ticket's task would not known that space was reserved
-+			 * despite getting an error, resulting in a space leak
-+			 * (bytes_may_use counter of our space_info).
-+			 */
-+			list_del_init(&ticket->list);
- 			ticket->error = -EINTR;
- 			break;
- 		}
-@@ -944,12 +953,24 @@ static int handle_reserve_ticket(struct btrfs_fs_info *fs_info,
- 	spin_lock(&space_info->lock);
- 	ret = ticket->error;
- 	if (ticket->bytes || ticket->error) {
-+		/*
-+		 * Need to delete here for priority tickets. For regular tickets
-+		 * either the async reclaim job deletes the ticket from the list
-+		 * or we delete it ourselves at wait_reserve_ticket().
-+		 */
- 		list_del_init(&ticket->list);
- 		if (!ret)
- 			ret = -ENOSPC;
- 	}
- 	spin_unlock(&space_info->lock);
- 	ASSERT(list_empty(&ticket->list));
-+	/*
-+	 * Check that we can't have an error set if the reservation succeeded,
-+	 * as that would confuse tasks and lead them to error out without
-+	 * releasing reserved space (if an error happens the expectation is that
-+	 * space wasn't reserved at all).
-+	 */
-+	ASSERT(!(ticket->bytes == 0 && ticket->error));
- 	return ret;
- }
- 
 -- 
-2.11.0
-
+Johannes Thumshirn                            SUSE Labs Filesystems
+jthumshirn@suse.de                                +49 911 74053 689
+SUSE Software Solutions Germany GmbH
+Maxfeldstr. 5
+90409 Nürnberg
+Germany
+(HRB 36809, AG Nürnberg)
+Geschäftsführer: Felix Imendörffer
+Key fingerprint = EC38 9CAB C2C4 F25D 8600 D0D0 0393 969D 2D76 0850

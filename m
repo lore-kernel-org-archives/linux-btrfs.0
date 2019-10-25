@@ -2,142 +2,145 @@ Return-Path: <SRS0=FriU=YS=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 78A54CA9EBC
-	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Oct 2019 10:02:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 40ABDCA9EA0
+	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Oct 2019 10:05:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5112B21D7F
-	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Oct 2019 10:02:51 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="ZgWgLuM7"
+	by mail.kernel.org (Postfix) with ESMTP id 1C82D21D7F
+	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Oct 2019 10:05:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2502351AbfJYKCq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 25 Oct 2019 06:02:46 -0400
-Received: from mail-vs1-f67.google.com ([209.85.217.67]:35163 "EHLO
-        mail-vs1-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2502347AbfJYKCp (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 25 Oct 2019 06:02:45 -0400
-Received: by mail-vs1-f67.google.com with SMTP id k15so1074890vsp.2;
-        Fri, 25 Oct 2019 03:02:45 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
-         :subject:to:cc:content-transfer-encoding;
-        bh=1dpvdESdNNZO8A0QegOAAzPsITBcaZ7esH282Ku6EX8=;
-        b=ZgWgLuM7ky9Hb071dcQHEoh48trt9DDpLaHsoG3YtszTbD0999wLaeWAXExggv61/U
-         C9IxJJarXlbeB3So5vK+3Ue3oDeM7qUMAHtWY+3mH5/P9CAQdo1Tozz9KlpPV/ZFipyX
-         /ok2HIgoU42Hi0+qK2FQX1gEyCjE1r0qw+J0MEI3PZ7JfehpYxWhHHtNBQ0PjsOVDppb
-         wLs4eJ3hdzfO1c/cMpOcC+w2u9+eF1EOxHPkPUyG/yvFoJezlynrS/vkHSaxB9vJjZ8P
-         e5hi+mvgBcft8Sp95+kTGDgIzP+T9X3ZvWV0VnYETsOaJN+A+mAUYzzTpSqkGNyUVeQY
-         mgwA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
-         :from:date:message-id:subject:to:cc:content-transfer-encoding;
-        bh=1dpvdESdNNZO8A0QegOAAzPsITBcaZ7esH282Ku6EX8=;
-        b=CuXppzIIjKTZOc/nkqfwPLCi5LD2EejfmmNa/aUjmCkxAJIXe3q9x8Eq76C1yRc9td
-         JyPZe6A1sdwVnRBb4zyA2fO/elGSf1jP6fMpLvxGuQ9/GEWDcEzhJPp6jIaF/lI0KTu2
-         SfzAxmWavWw/rCG08/7Vz7sqadA0htIE3AT9NzOVjnSB5BJohzSQLBqnVr0GM1ZOLgEa
-         sL9G+e/f1p2cLiKNim1UyajaWgUSMzRjGZK/fhSi/+Wqeat+XJfGFS9xPECfu1ljJheP
-         Vp4hoqpO892PsB9OH+PR9JawYtSX+W08sWXCnOB32Wr8OZxfNCaMzHB9jSPo7Q/QW/ju
-         K8Xg==
-X-Gm-Message-State: APjAAAVXIO+tmBeV075s8Y7bGhFTx97Kforwv1xZ3tjSKTtd/1jUahkt
-        WpDLc4J01/JqdbcGTnLOMMsAkn6iw6RB/aCGx4A=
-X-Google-Smtp-Source: APXvYqyLIdQE9Pj9ftdOICpGGvJTw/M8UeZ9FfEWQVy/HsnXX0GhKnMNjJ2pssy2HzeCxxW09zXv03R+LjoagMxsdU4=
-X-Received: by 2002:a67:fe8f:: with SMTP id b15mr1456846vsr.90.1571997764415;
- Fri, 25 Oct 2019 03:02:44 -0700 (PDT)
-MIME-Version: 1.0
-References: <20191024023636.21124-1-marcos.souza.org@gmail.com> <20191024023636.21124-5-marcos.souza.org@gmail.com>
-In-Reply-To: <20191024023636.21124-5-marcos.souza.org@gmail.com>
-Reply-To: fdmanana@gmail.com
-From:   Filipe Manana <fdmanana@gmail.com>
-Date:   Fri, 25 Oct 2019 11:02:33 +0100
-Message-ID: <CAL3q7H63xK8DP84gUFjuK02tsUt_RX_R310Gdw6wjA6FD5rbwA@mail.gmail.com>
-Subject: Re: [PATCH 4/5] btrfs: ctree.h: Add btrfs_is_snapshot function
-To:     Marcos Paulo de Souza <marcos.souza.org@gmail.com>
-Cc:     linux-kernel@vger.kernel.org, Chris Mason <clm@fb.com>,
-        Josef Bacik <josef@toxicpanda.com>,
+        id S2502081AbfJYKFw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 25 Oct 2019 06:05:52 -0400
+Received: from mx2.suse.de ([195.135.220.15]:35032 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S2439297AbfJYKFv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 25 Oct 2019 06:05:51 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 3CC25BA5D;
+        Fri, 25 Oct 2019 10:05:46 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 35AD2DA733; Fri, 25 Oct 2019 12:05:18 +0200 (CEST)
+Date:   Fri, 25 Oct 2019 12:05:18 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Johannes Thumshirn <jthumshirn@suse.de>
+Cc:     David Sterba <dsterba@suse.com>,
+        Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 2/2] btrfs: provide an estimated number of inodes for
+ statfs
+Message-ID: <20191025100518.GL3001@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Johannes Thumshirn <jthumshirn@suse.de>,
         David Sterba <dsterba@suse.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>, mpdesouza@suse.com
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+        Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>
+References: <20191024154455.19370-1-jthumshirn@suse.de>
+ <20191024154455.19370-3-jthumshirn@suse.de>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20191024154455.19370-3-jthumshirn@suse.de>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Oct 24, 2019 at 7:56 PM Marcos Paulo de Souza
-<marcos.souza.org@gmail.com> wrote:
->
-> From: Marcos Paulo de Souza <mpdesouza@suse.com>
->
-> This new function takes a btrfs_root as argument, and returns true is
-> root_key.offset is bigger than 0, meaning that this tree is a snapshot.
->
-> This new function will be used by the next patch.
->
-> Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
-> ---
->  fs/btrfs/ctree.h | 14 ++++++++++++++
->  1 file changed, 14 insertions(+)
->
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index 19d669d12ca1..8502e9082914 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -3411,6 +3411,20 @@ static inline int btrfs_defrag_cancelled(struct bt=
-rfs_fs_info *fs_info)
->         return signal_pending(current);
->  }
->
-> +/*
-> + * btrfs_is_snapshot() - Verify is a tree is a snapshot
-> + * @root: btrfs_root
-> + *
-> + * When the key.offset field of btrfs_root is bigger than 0 it means the=
- referred
-> + * tree is a snapshot.
-> + *
-> + * Returns true if @root refers to a snapshot.
-> + */
-> +static inline bool btrfs_is_snapshot(struct btrfs_root *root)
-> +{
-> +       return root->root_key.offset > 0;
+On Thu, Oct 24, 2019 at 05:44:55PM +0200, Johannes Thumshirn wrote:
+> On the BeeGFS Mailing list there is a report claiming BTRFS is not usable
+> with BeeGFS, as BeeGFS is using statfs output to determine the number of
+> total and free inodes. BeeGFS needs the number of free inodes as it stores
+> its meta-data either in extended attributes of the underlying file-system
+> or directly in an inline inode. According to the BeeGFS Server Tuning
+> Guide:
+> 
+> """
+> BeeGFS metadata is stored as extended attributes (EAs) on the underlying
+> file system to optimal performance. One metadata file will be created for
+> each file that a user creates. About extended attributes usage: BeeGFS
+> Metadata files have a size of 0 bytes (i.e. no normal file contents).
 
-So this is not true for all roots. For log roots and relocation roots
-for example, which are not snapshots,
-the offset corresponds to the objectid of the root they are associated to.
-So this isn't generic enough to have in ctree.h, and will create
-confusion or potential bugs if anyone tries to use it in the future.
+That's not really typical use of a files and the 'optimal performance'
+claim would need some clarifications.
 
-Since you only use this function in a later patch at the
-subvolume/deletion ioctl, I would suggest using this directly in that
-code only,
-as there this assumption is true, since user space can't reference a
-log or relocation tree in the ioctl call.
+> Access to extended attributes is possible with the getfattr tool.
+> 
+> If the inodes of the underlying file system are sufficiently large, EAs
+> can be inlined into the inode of the underlying file system.  Additional
+> data blocks are then not required anymore and metadata disk usage will be
+> reduced.  With EAs inlined into the inode, access latencies are reduced as
+> seeking to an extra data block is not required anymore.
 
-Thanks.
+So this describes how it's implemented in EXT4 and the BeeGFS is
+probably tuned to work 'optimally' there.
 
+> """
+> 
+> Provide some estimated numbers of total and free inodes in statfs by
+> dividing the number of blocks by the size of an inode-item for the total
+> number of possible inodes and for the number of free inodes divide the
+> number of free blocks by the size of an inode-item, similar to what other
+> file-systems without a fixed number of inodes do.
+> 
+> This of is just an estimation and should not be relied upon.
 
-> +}
-> +
->  #define in_range(b, first, len) ((b) >=3D (first) && (b) < (first) + (le=
-n))
->
->  /* Sanity test specific functions */
-> --
-> 2.23.0
->
+This is the most problematic part. The inode counts cannot be calculated
+exactly on btrfs, because of the dynamic nature of the space usage. We
+can only give rough estimates "how the rest of unallocated space would
+be used if [assumptions]". We have this problem with explaining 'df'
+values and now somebody is asking for the same with 'df -i'.
 
+The Inode/IFree numbers are intentionally zero, to avoid confusion of
+monitoring tools to report low inode counts. Though I can't find a
+documented and standardized interpretation of the numbers, manual page
+of statfs only says
 
---=20
-Filipe David Manana,
+	fsfilcnt_t f_files;   /* Total file nodes in filesystem */
+	fsfilcnt_t f_ffree;   /* Free file nodes in filesystem */
 
-=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
- right.=E2=80=9D
+for the respective fields. And nothing else.
+
+For traditional filesystems, and EXT2/3/4 in particular, the inodes are
+preallocated at creation time so calculating the numbers is easy.
+
+I believe XFS does that too without the option inode64, so users are
+used to see non-zero value and nowadays it has to be faked. That makes
+sense from backward compatibility POV. But still the numbers are made up
+and can change unexpectedly.
+
+Btrfs has reported 0/0/0 since the beginning to not cofuse monitoring
+tools, yet this is exactly what can be seen at
+
+https://groups.google.com/forum/#!msg/fhgfs-user/IJqGS5o1UD0/8ftDdUI3AQAJ
+
+I'd say fix your monitoring tool not to interpret 0% free inodes in case
+there's also 0 in total. This is not even btrfs-specific fix, IMHO this
+is interpreting the numbers in the wrong way.
+
+> Without the patch applied:
+> rapido1:/# df -hTi /mnt/test
+> Filesystem     Type     Inodes IUsed IFree IUse% Mounted on
+> /mnt/test      btrfs         0     0     0     - /mnt/test
+> 
+> With the patch applied on an empty fs:
+> rapido1:/# df -hTi /mnt/test
+> Filesystem     Type     Inodes IUsed IFree IUse% Mounted on
+> /dev/zram0     btrfs      1.6K     0  1.6K    0% /mnt/test
+> 
+> With the patch applied on a dirty fs:
+> rapido1:/# df -hTi /mnt/test
+> Filesystem     Type     Inodes IUsed IFree IUse% Mounted on
+> /dev/zram0     btrfs      1.6K  1.5K   197   88% /mnt/test
+
+At the moment I object against conjuring up numbers like that. It's
+perhaps going to silence some tools but would cause lots of questions
+because the numbers otherwise don't reflect reality, not even close.
+
+We try hard to make the regular Allocated/Free space numbers to match
+users' expectations, but it's not perfect and can't be made much better.
+And I'm glad we have a simple answer to the inode counts.
+
+Should the discussion continue, it would be good to have interested
+people from BeeGFS on CC.

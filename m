@@ -2,68 +2,73 @@ Return-Path: <SRS0=FriU=YS=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 08B60CA9EA0
-	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Oct 2019 16:32:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5905BCA9EA0
+	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Oct 2019 16:35:46 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id CE38220663
-	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Oct 2019 16:32:35 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3383E21872
+	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Oct 2019 16:35:46 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2408186AbfJYQcf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 25 Oct 2019 12:32:35 -0400
-Received: from mx2.suse.de ([195.135.220.15]:38980 "EHLO mx1.suse.de"
+        id S2633067AbfJYQfp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 25 Oct 2019 12:35:45 -0400
+Received: from mx2.suse.de ([195.135.220.15]:42538 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1732240AbfJYQce (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 25 Oct 2019 12:32:34 -0400
+        id S1727811AbfJYQfp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 25 Oct 2019 12:35:45 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 692A6B1C2;
-        Fri, 25 Oct 2019 16:32:33 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 00533ADD9;
+        Fri, 25 Oct 2019 16:35:43 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id CC8F3DA785; Fri, 25 Oct 2019 18:32:44 +0200 (CEST)
-Date:   Fri, 25 Oct 2019 18:32:44 +0200
+        id 66EF7DA785; Fri, 25 Oct 2019 18:35:55 +0200 (CEST)
+Date:   Fri, 25 Oct 2019 18:35:55 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     fdmanana@kernel.org
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: remove unnecessary delalloc mutex for inodes
-Message-ID: <20191025163244.GO3001@twin.jikos.cz>
+To:     Anand Jain <anand.jain@oracle.com>
+Cc:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [RFC PATCH 0/3] btrfs-progs: make quiet to overrule verbose
+Message-ID: <20191025163555.GP3001@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, fdmanana@kernel.org,
+Mail-Followup-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
         linux-btrfs@vger.kernel.org
-References: <20191025095242.15996-1-fdmanana@kernel.org>
+References: <20191024062825.13097-1-anand.jain@oracle.com>
+ <20191024154151.GI3001@twin.jikos.cz>
+ <1166a5c7-8bc9-b93f-6f4c-8871b5fc394b@oracle.com>
+ <7b97f0ce-1f62-09fa-ad86-6a4d0af40e1d@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=iso-8859-1
 Content-Disposition: inline
-In-Reply-To: <20191025095242.15996-1-fdmanana@kernel.org>
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <7b97f0ce-1f62-09fa-ad86-6a4d0af40e1d@oracle.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Oct 25, 2019 at 10:52:42AM +0100, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
+On Fri, Oct 25, 2019 at 09:56:14AM +0800, Anand Jain wrote:
+> On 25/10/19 7:51 AM, Anand Jain wrote:
+> > 
+> > 
+> > On 24/10/19 11:41 PM, David Sterba wrote:
+> >> On Thu, Oct 24, 2019 at 02:28:22PM +0800, Anand Jain wrote:
+> >>> When both the options (--quiet and --verbose) in btrfs send and receive
+> >>> is specified, we need at least one of it to overrule the other, 
+> >>> irrespective
+> >>> of the chronological order of options.
+> >>
+> >> I think the common behaviour is to respect the order of appearance on
+> >> the commandline.
+> > 
+> >    I am fine with this. Will fix it as this.
 > 
-> The inode delalloc mutex was added a long time ago by commit f248679e86fea
-> ("Btrfs: add a delalloc mutex to inodes for delalloc reservations"), and
-> the reason for its introduction is not very clear from the change log. It
-> claims it solves bogus warnings from lockdep, however it lacks an example
-> report/warning from lockdep, or any explanation.
-> 
-> Since we have enough concurrentcy protection from the locks of the space
-> info and block reserve objects, and such lockdep warnings don't seem to
-> exist anymore (at least on a 5.3 kernel I couldn't get them with fstests,
-> ltp, fs_mark, etc), remove it, simplifying things a bit and decreasing
-> the size of the btrfs_inode structure. With some quick fio tests doing
-> direct IO and mmap writes I couldn't observe any significant performance
-> increase either (direct IO writes that don't increase the file's size
-> don't hold the inode's lock for their entire duration and mmap writes
-> don't hold the inode's lock at all), which are the only type of writes
-> that could see any performance gain due to less serialization.
-> 
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+>   Question: command -v -q -v should be equal to command -v, right?
 
-Added to misc-next with Josef's comment. Thanks.
+No, that would be equivalent to the default level:
+
+verbose starts with 1			()
+verbose++				(-v)
+verbose = 0				(-q)
+verbose++ is now 1, which is not -v	()

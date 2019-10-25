@@ -4,52 +4,52 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F3E3DCA9EBD
-	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Oct 2019 13:59:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CE7D8CA9EBC
+	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Oct 2019 14:00:56 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C718D222C9
-	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Oct 2019 13:59:40 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A6F03222C9
+	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Oct 2019 14:00:56 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1572011980;
-	bh=Rra1HkeYZZAUy6HVOskcmRZCJVCSWBkK8qI8nsO/Jh0=;
+	s=default; t=1572012056;
+	bh=la3xfm77mTHrN9MjZAExRmGreRCnVATFwQRG5TLWQBw=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=mOLIJRKjALrpu0Nvh76dmOuEZsNxY9HO67TMvukBCzw0CuD2vhfryuoa+2eGkUg+0
-	 jfHieyhy0jacYl/laLExX+tb2+hcZanPOF4G+teLTbWIWNGYgqoeVWlnPbJygAghY4
-	 EakoMbvosXUbmMYY1hz1wSc0ApWRACGnnA21d9Ko=
+	b=YScuBB0bQCsdGYPc84TuNWVC2fAdlhwgjYkqhZj2NsrtFF4dYi22SJkz0Z36rxKd9
+	 OEygWh5BN68QxHWHexiEPmeePLxEfJHsV44+BsrU11rWGIDw7b8SWi8EgRALHdTMHJ
+	 jMszS4spuqoVNZoUYWyE7D+1/jXJSApGOB0MqEeA=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2632992AbfJYN7g (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 25 Oct 2019 09:59:36 -0400
-Received: from mail.kernel.org ([198.145.29.99]:54894 "EHLO mail.kernel.org"
+        id S2394884AbfJYOAs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 25 Oct 2019 10:00:48 -0400
+Received: from mail.kernel.org ([198.145.29.99]:53964 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2632915AbfJYN7J (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 25 Oct 2019 09:59:09 -0400
+        id S2505607AbfJYN6d (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 25 Oct 2019 09:58:33 -0400
 Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 9FA402245D;
-        Fri, 25 Oct 2019 13:59:07 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id DA202222D1;
+        Fri, 25 Oct 2019 13:58:31 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1572011948;
-        bh=Rra1HkeYZZAUy6HVOskcmRZCJVCSWBkK8qI8nsO/Jh0=;
+        s=default; t=1572011912;
+        bh=la3xfm77mTHrN9MjZAExRmGreRCnVATFwQRG5TLWQBw=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=Gh1fPIRCbonn6y/RlVu8pX47+v+n584h6WOYaqQjlH2zBNeL1Jgzm9yiIZuxivOp9
-         UojotZ83zRqphbFIwMXgeO+2fRfVZ2UPhhsnjZnaN7Mj4VR+i62ADoSDBOaEJ5FLDx
-         lmXb8DrZwtoFddnVRLAbVBtqcHnUUNPe5kyNCGp4=
+        b=mCbxsuwQn8nS1Bea2T4LpiiexmOI5stnsKUO9klI1FJZFG3hJNZKk+bTSGaDlP3Yh
+         LqZ/iMSe5fCAwgVVAzNmxCbmdufKucxP10LIis+XhbxitaT92j7BJtyHM+x7OcpKwr
+         tVHi9EbbAWxL3JpFz2Apys0BmjsL96tjPm3Q7668=
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
 Cc:     Filipe Manana <fdmanana@suse.com>,
         Nikolay Borisov <nborisov@suse.com>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 4.4 13/16] Btrfs: fix hang when loading existing inode cache off disk
-Date:   Fri, 25 Oct 2019 09:58:37 -0400
-Message-Id: <20191025135842.25977-13-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 4.9 16/20] Btrfs: fix hang when loading existing inode cache off disk
+Date:   Fri, 25 Oct 2019 09:57:56 -0400
+Message-Id: <20191025135801.25739-16-sashal@kernel.org>
 X-Mailer: git-send-email 2.20.1
-In-Reply-To: <20191025135842.25977-1-sashal@kernel.org>
-References: <20191025135842.25977-1-sashal@kernel.org>
+In-Reply-To: <20191025135801.25739-1-sashal@kernel.org>
+References: <20191025135801.25739-1-sashal@kernel.org>
 MIME-Version: 1.0
 X-stable: review
 X-Patchwork-Hint: Ignore
@@ -126,10 +126,10 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
  1 file changed, 1 insertion(+)
 
 diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
-index 07573dc1614ab..3469c7ce7cb6d 100644
+index d27014b8bf727..075b59516c8c0 100644
 --- a/fs/btrfs/inode-map.c
 +++ b/fs/btrfs/inode-map.c
-@@ -158,6 +158,7 @@ static void start_caching(struct btrfs_root *root)
+@@ -159,6 +159,7 @@ static void start_caching(struct btrfs_root *root)
  		spin_lock(&root->ino_cache_lock);
  		root->ino_cache_state = BTRFS_CACHE_FINISHED;
  		spin_unlock(&root->ino_cache_lock);

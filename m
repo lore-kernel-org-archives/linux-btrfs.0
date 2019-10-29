@@ -2,55 +2,53 @@ Return-Path: <SRS0=DyoH=YW=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+X-Spam-Status: No, score=-3.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=no
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B69E1CA9EAE
-	for <linux-btrfs@archiver.kernel.org>; Tue, 29 Oct 2019 17:22:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E5579CA9EAE
+	for <linux-btrfs@archiver.kernel.org>; Tue, 29 Oct 2019 17:28:45 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 95B7620856
-	for <linux-btrfs@archiver.kernel.org>; Tue, 29 Oct 2019 17:22:16 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BB65320830
+	for <linux-btrfs@archiver.kernel.org>; Tue, 29 Oct 2019 17:28:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2390793AbfJ2RWP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 29 Oct 2019 13:22:15 -0400
-Received: from mx2.suse.de ([195.135.220.15]:35714 "EHLO mx1.suse.de"
+        id S1727015AbfJ2R2o (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 29 Oct 2019 13:28:44 -0400
+Received: from mx2.suse.de ([195.135.220.15]:38242 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727763AbfJ2RWP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 29 Oct 2019 13:22:15 -0400
+        id S1726261AbfJ2R2o (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 29 Oct 2019 13:28:44 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id E7A61B1D3;
-        Tue, 29 Oct 2019 17:22:13 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id A7729B241;
+        Tue, 29 Oct 2019 17:28:43 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id A8884DA734; Tue, 29 Oct 2019 18:22:21 +0100 (CET)
-Date:   Tue, 29 Oct 2019 18:22:20 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     viro@ZenIV.linux.org.uk, linux-fsdevel@vger.kernel.org,
-        kernel-team@fb.com, jack@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] fs: use READ_ONCE/WRITE_ONCE with the i_size helpers
-Message-ID: <20191029172220.GY3001@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
-        viro@ZenIV.linux.org.uk, linux-fsdevel@vger.kernel.org,
-        kernel-team@fb.com, jack@suse.cz, linux-btrfs@vger.kernel.org
-References: <20191011202050.8656-1-josef@toxicpanda.com>
- <20191024120843.4n2eh47okn4c635f@MacBook-Pro-91.local>
+        id 1E643DA734; Tue, 29 Oct 2019 18:28:52 +0100 (CET)
+From:   David Sterba <dsterba@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     David Sterba <dsterba@suse.com>
+Subject: [PATCH 0/2] Minor parameter cleanups
+Date:   Tue, 29 Oct 2019 18:28:52 +0100
+Message-Id: <cover.1572369984.git.dsterba@suse.com>
+X-Mailer: git-send-email 2.23.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20191024120843.4n2eh47okn4c635f@MacBook-Pro-91.local>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Oct 24, 2019 at 08:08:44AM -0400, Josef Bacik wrote:
-> Al,
-> 
-> Will you pick this up, or do you want me to send it along?  Thanks,
+We can remove write_flags parameter in case the function also has wbc
+(and the value is equal).
 
-So is this patch on the way to 5.4-rc or shall we apply the
-btrfs-specific fix? Thanks.
+David Sterba (2):
+  btrfs: sink write_flags to __extent_writepage_io
+  btrfs: sink write flags to cow_file_range_async
+
+ fs/btrfs/extent_io.c | 8 +++-----
+ fs/btrfs/inode.c     | 8 +++-----
+ 2 files changed, 6 insertions(+), 10 deletions(-)
+
+-- 
+2.23.0
+

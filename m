@@ -4,32 +4,30 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A8001CA9EB9
-	for <linux-btrfs@archiver.kernel.org>; Tue, 29 Oct 2019 05:02:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9F2C5CA9EB9
+	for <linux-btrfs@archiver.kernel.org>; Tue, 29 Oct 2019 06:22:19 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 85C0520862
-	for <linux-btrfs@archiver.kernel.org>; Tue, 29 Oct 2019 05:02:58 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7CA0020679
+	for <linux-btrfs@archiver.kernel.org>; Tue, 29 Oct 2019 06:22:19 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729489AbfJ2FCx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 29 Oct 2019 01:02:53 -0400
-Received: from mx2.suse.de ([195.135.220.15]:47602 "EHLO mx1.suse.de"
+        id S1732453AbfJ2GV5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 29 Oct 2019 02:21:57 -0400
+Received: from mx2.suse.de ([195.135.220.15]:35488 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726708AbfJ2FCx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 29 Oct 2019 01:02:53 -0400
+        id S1732446AbfJ2GV5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 29 Oct 2019 02:21:57 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 810BAB11A
-        for <linux-btrfs@vger.kernel.org>; Tue, 29 Oct 2019 05:02:51 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 0B4CBB194
+        for <linux-btrfs@vger.kernel.org>; Tue, 29 Oct 2019 06:21:55 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v5 1/2] btrfs: Introduce "rescue=" mount option
-Date:   Tue, 29 Oct 2019 13:02:36 +0800
-Message-Id: <20191029050237.213038-2-wqu@suse.com>
+Subject: [RFC PATCH] btrfs: rescue: Introduce new rescue mount option, rescue=skipdatacsum, to skip data csum verification
+Date:   Tue, 29 Oct 2019 14:21:49 +0800
+Message-Id: <20191029062149.217995-1-wqu@suse.com>
 X-Mailer: git-send-email 2.23.0
-In-Reply-To: <20191029050237.213038-1-wqu@suse.com>
-References: <20191029050237.213038-1-wqu@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -37,182 +35,134 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This patch introduces a new "rescue=" mount option group for all those
-mount options for data recovery.
+When btrfs csum tree is corrupted, e.g. one csum tree block get csum
+error for all its copies, we will have no chance to read out the data.
 
-Different rescue sub options are seperated by ':'. E.g
-"ro,rescue=nologreplay:usebackuproot".
-(The original plan is to use ';', but ';' needs to be escaped/quoted,
-or it will be interpreted by bash)
+  # Hook before we submit a read bio, will fill up the csum buffer
+  # for this read
+  btrfs_submit_bio_hook()
+  |- btrfs_lookup_bio_sums()
+     |- __btrfs_lookup_bio_sums()
+        |- item = btrfs_lookup_csum();
+        |  Failed with -EIO
+        |- memset(csum, 0, csum_size);	# Set the csum buffer to 0
+        |- goto found;			# Go to next page lookup
 
-And obviously, user can specify rescue options one by one like:
-"ro,rescue=nologreplay,rescue=usebackuproot"
+  # Now that btrfs_io_bio->csum has 0 filled for failure range
 
-The following mount options are converted to "rescue=", old mount
-options are deprecated but still available for compatibility purpose:
+  # Hook after the read bio is completed, will do the csum verification
+  btrfs_readpage_end_io_hook()
+  |- __readpage_endio_check()
+     |- do csum calculation
+     |  Since all csum value is set to 0, the csum verification will
+     |  fail.
+     |- btrfs_print_data_csum_error();
 
-- usebackuproot
-  Now it's "rescue=usebackuproot"
+  # We got EIO in user space, without any usable data
 
-- nologreplay
-  Now it's "rescue=nologreplay"
+The best solution to this problem would be introduce an extra companion
+bitmap for csum verification, notifying the caller whether we failed to
+read out the csum or the csum is really all 0.
+
+But that solution can be complex and only works for above described
+case.
+
+Here we introduce a new rescue= mount option to completely skip data
+csum check.
+Since data csum check is completely skipped, for profiles with extra
+mirrors/copies, it will return the first copy only, which is not
+optimized, but should be good enough for rescue usage.
+
+This option only affects data csum verification, doesn't affect data
+csum calcuation, so new data write will still be protected by csum (if
+it doesn't get affected by csum tree corruption).
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/super.c | 79 +++++++++++++++++++++++++++++++++++++++++++-----
- 1 file changed, 71 insertions(+), 8 deletions(-)
+This patch needs rescue= mount options patchset.
 
+Reason for RFC:
+Need extra feedbacks. I guess users who has experienced data salvage
+would like this. But I'm not sure if it's welcomed to add such mount
+option.
+---
+ fs/btrfs/compression.c | 3 ++-
+ fs/btrfs/ctree.h       | 1 +
+ fs/btrfs/inode.c       | 3 +++
+ fs/btrfs/super.c       | 6 ++++++
+ 4 files changed, 12 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index b05b361e2062..08dfc2255490 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -85,7 +85,8 @@ static int check_compressed_csum(struct btrfs_inode *inode,
+ 	u8 csum[BTRFS_CSUM_SIZE];
+ 	u8 *cb_sum = cb->sums;
+ 
+-	if (inode->flags & BTRFS_INODE_NODATASUM)
++	if (inode->flags & BTRFS_INODE_NODATASUM ||
++	    btrfs_test_opt(fs_info, SKIP_DATACSUM))
+ 		return 0;
+ 
+ 	shash->tfm = fs_info->csum_shash;
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index ff24b607bc91..bc64abb42a99 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1191,6 +1191,7 @@ static inline u32 BTRFS_MAX_XATTR_SIZE(const struct btrfs_fs_info *info)
+ #define BTRFS_MOUNT_NOLOGREPLAY		(1 << 27)
+ #define BTRFS_MOUNT_REF_VERIFY		(1 << 28)
+ #define BTRFS_MOUNT_SKIP_BG		(1 << 29)
++#define BTRFS_MOUNT_SKIP_DATACSUM	(1 << 30)
+ 
+ #define BTRFS_DEFAULT_COMMIT_INTERVAL	(30)
+ #define BTRFS_DEFAULT_MAX_INLINE	(2048)
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index a0546401bc0a..bfd1ee35e2e9 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3275,6 +3275,9 @@ static int __readpage_endio_check(struct inode *inode,
+ 	u8 *csum_expected;
+ 	u8 csum[BTRFS_CSUM_SIZE];
+ 
++	if (btrfs_test_opt(fs_info, SKIP_DATACSUM))
++		return 0;
++
+ 	csum_expected = ((u8 *)io_bio->csum) + icsum * csum_size;
+ 
+ 	kaddr = kmap_atomic(page);
 diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 1b151af25772..4cc88173e26d 100644
+index ab61b0364960..e442ef36ac24 100644
 --- a/fs/btrfs/super.c
 +++ b/fs/btrfs/super.c
-@@ -313,7 +313,6 @@ enum {
- 	Opt_datasum, Opt_nodatasum,
- 	Opt_defrag, Opt_nodefrag,
- 	Opt_discard, Opt_nodiscard,
--	Opt_nologreplay,
- 	Opt_norecovery,
- 	Opt_ratio,
- 	Opt_rescan_uuid_tree,
-@@ -327,9 +326,13 @@ enum {
- 	Opt_subvolid,
- 	Opt_thread_pool,
- 	Opt_treelog, Opt_notreelog,
--	Opt_usebackuproot,
- 	Opt_user_subvol_rm_allowed,
+@@ -333,6 +333,7 @@ enum {
+ 	Opt_usebackuproot,
+ 	Opt_nologreplay,
+ 	Opt_rescue_skip_bg,
++	Opt_rescue_skip_datacsum,
  
-+	/* Rescue options */
-+	Opt_rescue,
-+	Opt_usebackuproot,
-+	Opt_nologreplay,
-+
  	/* Deprecated options */
  	Opt_alloc_start,
- 	Opt_recovery,
-@@ -376,7 +379,6 @@ static const match_table_t tokens = {
- 	{Opt_nodefrag, "noautodefrag"},
- 	{Opt_discard, "discard"},
- 	{Opt_nodiscard, "nodiscard"},
--	{Opt_nologreplay, "nologreplay"},
- 	{Opt_norecovery, "norecovery"},
- 	{Opt_ratio, "metadata_ratio=%u"},
- 	{Opt_rescan_uuid_tree, "rescan_uuid_tree"},
-@@ -394,9 +396,13 @@ static const match_table_t tokens = {
- 	{Opt_thread_pool, "thread_pool=%u"},
- 	{Opt_treelog, "treelog"},
- 	{Opt_notreelog, "notreelog"},
--	{Opt_usebackuproot, "usebackuproot"},
- 	{Opt_user_subvol_rm_allowed, "user_subvol_rm_allowed"},
- 
-+	/* Recovery options */
-+	{Opt_rescue, "rescue=%s"},
-+	{Opt_nologreplay, "nologreplay"},
-+	{Opt_usebackuproot, "usebackuproot"},
-+
- 	/* Deprecated options */
- 	{Opt_alloc_start, "alloc_start=%s"},
- 	{Opt_recovery, "recovery"},
-@@ -419,6 +425,55 @@ static const match_table_t tokens = {
+@@ -430,6 +431,7 @@ static const match_table_t rescue_tokens = {
+ 	{Opt_usebackuproot, "usebackuproot"},
+ 	{Opt_nologreplay, "nologreplay"},
+ 	{Opt_rescue_skip_bg, "skipbg"},
++	{Opt_rescue_skip_datacsum, "skipdatacsum"},
  	{Opt_err, NULL},
  };
  
-+static const match_table_t rescue_tokens = {
-+	{Opt_usebackuproot, "usebackuproot"},
-+	{Opt_nologreplay, "nologreplay"},
-+	{Opt_err, NULL},
-+};
-+
-+static int parse_rescue_options(struct btrfs_fs_info *info, const char *options)
-+{
-+	char *opts;
-+	char *orig;
-+	char *p;
-+	substring_t args[MAX_OPT_ARGS];
-+	int ret = 0;
-+
-+	opts = kstrdup(options, GFP_KERNEL);
-+	if (!opts)
-+		return -ENOMEM;
-+	orig = opts;
-+
-+	while ((p = strsep(&opts, ":")) != NULL) {
-+		int token;
-+
-+		if (!*p)
-+			continue;
-+		token = match_token(p, rescue_tokens, args);
-+		switch (token){
-+		case Opt_usebackuproot:
-+			btrfs_info(info,
-+				   "trying to use backup root at mount time");
-+			btrfs_set_opt(info->mount_opt, USEBACKUPROOT);
-+			break;
-+		case Opt_nologreplay:
-+			btrfs_set_and_info(info, NOLOGREPLAY,
-+					   "disabling log replay at mount time");
-+			break;
-+		case Opt_err:
-+			btrfs_info(info, "unrecognized rescue option '%s'", p);
-+			ret = -EINVAL;
-+			goto out;
-+		default:
-+			break;
-+		}
-+
-+	}
-+out:
-+	kfree(orig);
-+	return ret;
-+}
-+
- /*
-  * Regular mount options parser.  Everything that is needed only when
-  * reading in a new superblock is parsed here.
-@@ -675,6 +730,8 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
+@@ -466,6 +468,10 @@ static int parse_rescue_options(struct btrfs_fs_info *info, const char *options)
+ 			btrfs_set_and_info(info, SKIP_BG,
+ 				"skip mount time block group searching");
  			break;
- 		case Opt_norecovery:
- 		case Opt_nologreplay:
-+			btrfs_warn(info,
-+	"'nologreplay' is deprecated, use 'rescue=nologreplay' instead");
- 			btrfs_set_and_info(info, NOLOGREPLAY,
- 					   "disabling log replay at mount time");
- 			break;
-@@ -763,10 +820,11 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
- 					     "disabling auto defrag");
- 			break;
- 		case Opt_recovery:
--			btrfs_warn(info,
--				   "'recovery' is deprecated, use 'usebackuproot' instead");
--			/* fall through */
- 		case Opt_usebackuproot:
-+			btrfs_warn(info,
-+		"'%s' is deprecated, use 'rescue=usebackuproot' instead",
-+				   token == Opt_recovery ? "recovery" :
-+				   "usebackuproot");
- 			btrfs_info(info,
- 				   "trying to use backup root at mount time");
- 			btrfs_set_opt(info->mount_opt, USEBACKUPROOT);
-@@ -853,6 +911,11 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
- 			btrfs_set_opt(info->mount_opt, REF_VERIFY);
- 			break;
- #endif
-+		case Opt_rescue:
-+			ret = parse_rescue_options(info, args[0].from);
-+			if (ret < 0)
-+				goto out;
++		case Opt_rescue_skip_datacsum:
++			btrfs_set_and_info(info, SKIP_DATACSUM,
++				"skip data checksum verification");
 +			break;
  		case Opt_err:
- 			btrfs_info(info, "unrecognized mount option '%s'", p);
+ 			btrfs_info(info, "unrecognized rescue option '%s'", p);
  			ret = -EINVAL;
-@@ -1319,7 +1382,7 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
- 	if (btrfs_test_opt(info, NOTREELOG))
- 		seq_puts(seq, ",notreelog");
- 	if (btrfs_test_opt(info, NOLOGREPLAY))
--		seq_puts(seq, ",nologreplay");
-+		seq_puts(seq, ",rescue=no_log_replay");
- 	if (btrfs_test_opt(info, FLUSHONCOMMIT))
- 		seq_puts(seq, ",flushoncommit");
- 	if (btrfs_test_opt(info, DISCARD))
 -- 
 2.23.0
 

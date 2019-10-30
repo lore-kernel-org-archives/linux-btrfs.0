@@ -2,61 +2,61 @@ Return-Path: <SRS0=ZWk7=YX=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.9 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 26231CA9EAF
-	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Oct 2019 08:41:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C34DCCA9EC4
+	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Oct 2019 08:41:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id EF96220856
-	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Oct 2019 08:41:33 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8633020874
+	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Oct 2019 08:41:37 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="fTLB2giY"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="Xqb6oqF5"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726427AbfJ3Ild (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 30 Oct 2019 04:41:33 -0400
-Received: from userp2130.oracle.com ([156.151.31.86]:60440 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726073AbfJ3Ilc (ORCPT
+        id S1726453AbfJ3Ilg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 30 Oct 2019 04:41:36 -0400
+Received: from aserp2120.oracle.com ([141.146.126.78]:33052 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726073AbfJ3Ilg (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 30 Oct 2019 04:41:32 -0400
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x9U8crQL054270;
-        Wed, 30 Oct 2019 08:41:31 GMT
+        Wed, 30 Oct 2019 04:41:36 -0400
+Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
+        by aserp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x9U8cc6M036433;
+        Wed, 30 Oct 2019 08:41:35 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
  subject : date : message-id : in-reply-to : references : mime-version :
  content-transfer-encoding; s=corp-2019-08-05;
- bh=+Ho813UuMrlu7rk9iE6S99A3Dhw/fREytY+VkMNAToc=;
- b=fTLB2giYeegHTkv0mJIUB+WSSpfJadEBJ6y9xKOHXhflAlBn0Q/oVLd+SKiFBeKGlGTT
- O7KJP30PMGASBwdtWS6sj6+6/tUtV0lUCQ/G64Jyc9WnbFJyKMx+9MvOIhNKMbX1OzO6
- DxiSSBBVcMVHsh/Wv7Vah4LlEBwRxsTP9Za/ows+mqEmsCK7bqvZj8kxzoeL+pISaMy5
- LhIYYdjVPLp6+jyA5WaeuSdkNgoM3EPenE8Hj53Kx82X4e850QehWdFjmrcv/vwkPhPA
- clUuFleiNxo96OZb6469mfeiTsEq6udBUbFg+1TbRG9fGYtTYeisNJB5KPGYb9Dr7SjB uQ== 
-Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
-        by userp2130.oracle.com with ESMTP id 2vxwhfje02-1
+ bh=q9zJLQ/0OkxTOMvOBjv/tPOE/ipYtsGRv1XTI13kUFw=;
+ b=Xqb6oqF5lIPdZPXR8103mNkIxgyaLEKteChAipdomKWaGGG9nhuOIOypL9piyRivN7jv
+ kgo4cm2WzzXqjnJRdFJzSe7kvVgxflCkrADgwpNzJGOQQQZ8z3h8KZ6QtZ8z8okTzBgn
+ enTNFX7YLYb4DLe8FGQ40TUhWaaiEzWJaRJr4Ee9Rb6E99Nc4+7Y97bmk/tFeVZnAUuC
+ SzcfN4+bpjvEWOsT4r/VKLk0e1JDb57rZ9wbdR6vVJy89TNc0waILBDUJIZVMl41eP0Y
+ pa2DyrJWOpm3zKnLcTg8ucxnWk9XmWzrItaclvAKdCaxVTFCDHfHnWOU7ev3jo4hn6IG ag== 
+Received: from aserp3030.oracle.com (aserp3030.oracle.com [141.146.126.71])
+        by aserp2120.oracle.com with ESMTP id 2vxwhfafe8-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Wed, 30 Oct 2019 08:41:31 +0000
-Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
-        by userp3030.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x9U8cpjw150096;
-        Wed, 30 Oct 2019 08:41:30 GMT
+        Wed, 30 Oct 2019 08:41:35 +0000
+Received: from pps.filterd (aserp3030.oracle.com [127.0.0.1])
+        by aserp3030.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x9U8bvwk113575;
+        Wed, 30 Oct 2019 08:41:35 GMT
 Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by userp3030.oracle.com with ESMTP id 2vxwhvmfnc-1
+        by aserp3030.oracle.com with ESMTP id 2vxwj9ja66-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Wed, 30 Oct 2019 08:41:30 +0000
+        Wed, 30 Oct 2019 08:41:34 +0000
 Received: from abhmp0013.oracle.com (abhmp0013.oracle.com [141.146.116.19])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x9U8fU73008011;
-        Wed, 30 Oct 2019 08:41:30 GMT
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x9U8fXX4008020;
+        Wed, 30 Oct 2019 08:41:33 GMT
 Received: from mb.wifi.oracle.com (/192.188.170.109)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Wed, 30 Oct 2019 01:41:29 -0700
+        with ESMTP ; Wed, 30 Oct 2019 01:41:33 -0700
 From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     dsterba@suse.com
-Subject: [PATCH v1 02/18] btrfs-progs: balance status: fix usage show long verbose
-Date:   Wed, 30 Oct 2019 16:41:06 +0800
-Message-Id: <20191030084122.29745-3-anand.jain@oracle.com>
+Subject: [PATCH v1 04/18] btrfs-progs: add global verbose and quiet options and helper functions
+Date:   Wed, 30 Oct 2019 16:41:08 +0800
+Message-Id: <20191030084122.29745-5-anand.jain@oracle.com>
 X-Mailer: git-send-email 2.23.0
 In-Reply-To: <20191030084122.29745-1-anand.jain@oracle.com>
 References: <20191030084122.29745-1-anand.jain@oracle.com>
@@ -78,26 +78,185 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-btrfs balance status supports both short and long option -v|--verbose
-but usage failed to show it in its --help. This patch fixes the --help.
+Add btrfs(8) global --verbose and --quiet command options to show
+verbose or no output from the sub-commands.
+By introducing global a %bconf::verbose memeber to transpire the same
+down to the sub-command.
+Further the added helper function pr_verbose() helps to logs the verbose
+messages, based on the state of the %bconf::verbose. And further HELPINFO_
+defines are provides for the usage.
 
+Suggested-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- cmds/balance.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ btrfs.c           | 20 ++++++++++++++++++--
+ common/help.h     | 11 +++++++++++
+ common/messages.c | 18 ++++++++++++++++++
+ common/messages.h |  5 +++++
+ common/utils.c    |  1 +
+ common/utils.h    |  3 +++
+ 6 files changed, 56 insertions(+), 2 deletions(-)
 
-diff --git a/cmds/balance.c b/cmds/balance.c
-index 32830002f3a0..b236fabbe236 100644
---- a/cmds/balance.c
-+++ b/cmds/balance.c
-@@ -822,7 +822,7 @@ static const char * const cmd_balance_status_usage[] = {
- 	"btrfs balance status [-v] <path>",
- 	"Show status of running or paused balance",
- 	"",
--	"-v     be verbose",
-+	"-v|--verbose     be verbose",
+diff --git a/btrfs.c b/btrfs.c
+index 6c8aabe24dc8..a97bc1858390 100644
+--- a/btrfs.c
++++ b/btrfs.c
+@@ -27,7 +27,7 @@
+ #include "common/box.h"
+ 
+ static const char * const btrfs_cmd_group_usage[] = {
+-	"btrfs [--help] [--version] [--format <format>] <group> [<group>...] <command> [<args>]",
++	"btrfs [--help] [--version] [--format <format>] [-v|--verbose] [--quiet] <group> [<group>...] <command> [<args>]",
  	NULL
  };
+ 
+@@ -248,6 +248,8 @@ static int handle_global_options(int argc, char **argv)
+ 		{ "version", no_argument, NULL, OPT_VERSION },
+ 		{ "format", required_argument, NULL, OPT_FORMAT },
+ 		{ "full", no_argument, NULL, OPT_FULL },
++		{ "verbose", no_argument, NULL, 'v' },
++		{ "quiet", no_argument, NULL, 'q' },
+ 		{ NULL, 0, NULL, 0}
+ 	};
+ 	int shift;
+@@ -259,7 +261,7 @@ static int handle_global_options(int argc, char **argv)
+ 	while (1) {
+ 		int c;
+ 
+-		c = getopt_long(argc, argv, "+", long_options, NULL);
++		c = getopt_long(argc, argv, "+vq", long_options, NULL);
+ 		if (c < 0)
+ 			break;
+ 
+@@ -270,6 +272,12 @@ static int handle_global_options(int argc, char **argv)
+ 		case OPT_FORMAT:
+ 			handle_output_format(optarg);
+ 			break;
++		case 'v':
++			bconf.verbose < 0 ? bconf.verbose = 1 : bconf.verbose++;
++			break;
++		case 'q':
++			bconf.verbose = 0;
++			break;
+ 		default:
+ 			fprintf(stderr, "Unknown global option: %s\n",
+ 					argv[optind - 1]);
+@@ -310,6 +318,14 @@ static void handle_special_globals(int shift, int argc, char **argv)
+ 			cmd_execute(&cmd_struct_version, argc, argv);
+ 			exit(0);
+ 		}
++
++	for (i = 0; i < shift; i++)
++		if (strcmp(argv[i], "--verbose") == 0)
++			bconf.verbose < 0 ? bconf.verbose = 1 : bconf.verbose++;
++
++	for (i = 0; i < shift; i++)
++		if (strcmp(argv[i], "--quiet") == 0)
++			bconf.verbose = 0;
+ }
+ 
+ static const struct cmd_group btrfs_cmd_group = {
+diff --git a/common/help.h b/common/help.h
+index 01dfc68a7c8d..c983734eff95 100644
+--- a/common/help.h
++++ b/common/help.h
+@@ -52,6 +52,17 @@
+ 	"-g|--gbytes        show sizes in GiB, or GB with --si",		\
+ 	"-t|--tbytes        show sizes in TiB, or TB with --si"
+ 
++/*
++ * Global verbose option for the sub-commands
++ */
++#define HELPINFO_GLOBAL_OPTIONS_HEADER						\
++	"",									\
++	"Global options:"
++#define HELPINFO_INSERT_VERBOSE							\
++	"-v|--verbose       show verbose output"
++#define HELPINFO_INSERT_QUITE							\
++	"-q|--quiet         run the command quietly"
++
+ /*
+  * Special marker in the help strings that will preemptively insert the global
+  * options and then continue with the following text that possibly follows
+diff --git a/common/messages.c b/common/messages.c
+index 0e5694ecd467..01ae431406e8 100644
+--- a/common/messages.c
++++ b/common/messages.c
+@@ -16,7 +16,9 @@
+ 
+ #include <stdio.h>
+ #include <stdarg.h>
++#include <stdbool.h>
+ #include "common/messages.h"
++#include "common/utils.h"
+ 
+ __attribute__ ((format (printf, 1, 2)))
+ void __btrfs_warning(const char *fmt, ...)
+@@ -75,3 +77,19 @@ int __btrfs_error_on(int condition, const char *fmt, ...)
+ 
+ 	return 1;
+ }
++
++__attribute__ ((format (printf, 2, 3)))
++void pr_verbose(int level, const char *fmt, ...)
++{
++	va_list args;
++
++	if (level == 0 || bconf.verbose == 0)
++		return;
++
++	if (level > bconf.verbose)
++		return;
++
++	va_start(args, fmt);
++	vfprintf(stdout, fmt, args);
++	va_end(args);
++}
+diff --git a/common/messages.h b/common/messages.h
+index 596047948fef..7724cd97c6cf 100644
+--- a/common/messages.h
++++ b/common/messages.h
+@@ -14,6 +14,8 @@
+  * Boston, MA 021110-1307, USA.
+  */
+ 
++#include <stdbool.h>
++
+ #ifndef __BTRFS_MESSAGES_H__
+ #define __BTRFS_MESSAGES_H__
+ 
+@@ -96,3 +98,6 @@ __attribute__ ((format (printf, 2, 3)))
+ int __btrfs_error_on(int condition, const char *fmt, ...);
+ 
+ #endif
++
++__attribute__ ((format (printf, 2, 3)))
++void pr_verbose(int level, const char *fmt, ...);
+diff --git a/common/utils.c b/common/utils.c
+index 2cf15c333f6b..c2c6d0af0efc 100644
+--- a/common/utils.c
++++ b/common/utils.c
+@@ -1649,6 +1649,7 @@ u8 rand_u8(void)
+ void btrfs_config_init(void)
+ {
+ 	bconf.output_format = CMD_FORMAT_TEXT;
++	bconf.verbose = -1;
+ }
+ 
+ /* Returns total size of main memory in bytes, -1UL if error. */
+diff --git a/common/utils.h b/common/utils.h
+index 0ef1d6e89c2b..8774194f4e9d 100644
+--- a/common/utils.h
++++ b/common/utils.h
+@@ -122,6 +122,9 @@ void print_all_devices(struct list_head *devices);
+  */
+ struct btrfs_config {
+ 	unsigned int output_format;
++
++	/* -1:unset 0:quiet >0:verbose */
++	int verbose;
+ };
+ extern struct btrfs_config bconf;
  
 -- 
 2.23.0

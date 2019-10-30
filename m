@@ -2,76 +2,55 @@ Return-Path: <SRS0=ZWk7=YX=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D5267CA9EC5
-	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Oct 2019 12:15:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BD934CA9EC5
+	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Oct 2019 12:23:00 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B402B20862
-	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Oct 2019 12:15:01 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9F8952087E
+	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Oct 2019 12:23:00 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726664AbfJ3MPA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 30 Oct 2019 08:15:00 -0400
-Received: from server.roznica.com.ua ([80.90.224.56]:37648 "EHLO
-        server.roznica.com.ua" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726088AbfJ3MPA (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 30 Oct 2019 08:15:00 -0400
-X-Greylist: delayed 424 seconds by postgrey-1.27 at vger.kernel.org; Wed, 30 Oct 2019 08:14:59 EDT
-Received: from work.roznica.com.ua (h244.onetel95.onetelecom.od.ua [91.196.95.244])
-        by server.roznica.com.ua (Postfix) with ESMTP id B4C887244EE
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 Oct 2019 14:07:53 +0200 (EET)
-From:   Michael <mclaud@roznica.com.ua>
-Subject: Read-only snapshot send speed very slow after modify original data.
- Need help
+        id S1726562AbfJ3MWb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 30 Oct 2019 08:22:31 -0400
+Received: from mx2.suse.de ([195.135.220.15]:41562 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726088AbfJ3MWa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 30 Oct 2019 08:22:30 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id D1534B6C8;
+        Wed, 30 Oct 2019 12:22:29 +0000 (UTC)
+From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Message-ID: <af5343ac-2896-51ef-18f5-de05498c01f9@roznica.com.ua>
-Date:   Wed, 30 Oct 2019 14:07:53 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.1.1
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Transfer-Encoding: 8bit
-Content-Language: en-US
+Cc:     Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH 0/3] Misc btrfs-progs fixes 
+Date:   Wed, 30 Oct 2019 14:22:24 +0200
+Message-Id: <20191030122227.28496-1-nborisov@suse.com>
+X-Mailer: git-send-email 2.17.1
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi linux-btrfs,
+Here are 2 cleanups and 1 minor fix for mkfs. The gist of the fix is to ensure 
+sub_stripes is always set to 1 when mkfs creates blockgroups with alloc profile 
+different than RAID10. This what kernels does. 
 
-Step to reproduce
+The other 2 patches are simple cleanups which reduce the number of arguments 
+of btrfs_alloc_data_chunk. 
 
-1) mkfs.btrfs -draid6 -mraid6 /dev/sd[abcdefgh]
+Nikolay Borisov (3):
+  btrfs-progs: Initialize sub_stripes to 1 in btrfs_alloc_data_chunk
+  btrfs-progs: Remove type argument from btrfs_alloc_data_chunk
+  btrfs-progs: Remove convert param from btrfs_alloc_data_chunk
 
-2) mount 
--onoatime,nodiratime,thread_pool=24,max_inline=0,ssd_spread,compress-force=zstd 
-/dev/sda /mnt/test/
+ convert/main.c |  4 +---
+ volumes.c      | 52 ++++++++++++++++++----------------------------------
+ volumes.h      |  3 +--
+ 3 files changed, 20 insertions(+), 39 deletions(-)
 
-3) btrfs subvol create /mnt/test/subvol/
-
-4) dd if=/dev/zero of=/mnt/test/subvol/test.dat bs=1M count=65536
-
-5) btrfs subvol snapshot -r /mnt/test/subvol /mnt/test/subvol.ro
-
-6) btrfs send /mnt/test/subvol.ro | pv >/dev/null
-
-64,1GiB 0:01:18 [ 833MiB/s]  - fast
-
-7) for i in {1..16384}; do echo $i; printf '\x01\x02\x03' | dd 
-of=/mnt/test/subvol/test.dat bs=1 seek=$(($i * 1024 * 1024)) count=3 
-conv=notrunc; done
-
-8) btrfs send /mnt/test/subvol.ro | pv >/dev/null
-
-I stop it at 0:01:18
-
-464MiB 0:01:18 [4,67MiB/s] - very very slow
-
-
-uname -a
-Linux storage.domain.com 5.3.7-200.fc30.x86_64 #1 SMP Fri Oct 18 
-20:13:59 UTC 2019 x86_64 x86_64 x86_64 GNU/Linux
+-- 
+2.7.4
 

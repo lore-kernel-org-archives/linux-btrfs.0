@@ -2,79 +2,194 @@ Return-Path: <SRS0=F3aj=YY=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 457BCCA9ECB
-	for <linux-btrfs@archiver.kernel.org>; Thu, 31 Oct 2019 13:56:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CF7CBCA9ECB
+	for <linux-btrfs@archiver.kernel.org>; Thu, 31 Oct 2019 15:13:40 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0E10D2086D
-	for <linux-btrfs@archiver.kernel.org>; Thu, 31 Oct 2019 13:56:13 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="QN1rVkC2"
+	by mail.kernel.org (Postfix) with ESMTP id AD96D2083E
+	for <linux-btrfs@archiver.kernel.org>; Thu, 31 Oct 2019 15:13:40 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727593AbfJaN4M (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 31 Oct 2019 09:56:12 -0400
-Received: from mail-wr1-f45.google.com ([209.85.221.45]:42598 "EHLO
-        mail-wr1-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727567AbfJaN4M (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 31 Oct 2019 09:56:12 -0400
-Received: by mail-wr1-f45.google.com with SMTP id a15so6341627wrf.9
-        for <linux-btrfs@vger.kernel.org>; Thu, 31 Oct 2019 06:56:10 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=jABzMUS1ximEwPXuff6fg/FSUSeykjfarKskNygbxq4=;
-        b=QN1rVkC23ZzhCPYvfAAKfGBKtMiSXuGcRfiym3X1wY9P3hsgLeuY5zuRW39t+O7ghD
-         9DZq7D+SoO6qPjpJJE64SAW1/ht/nqih2JUi/GxYhFF6DQp85PpwoQ9Kez+8s7+Miz+I
-         dipWqK5fYLuMOR91avOKAscQuQB/DS0SLRS0l5ATgUzK17Up2i/7y2EiqJPHKbBWEBge
-         gB1IEqC1SgGVlMiqj11xyXNme+O3l/+xFzOoDm7RyplyXC7ZnLYThdHSDbTVAaG1RiVk
-         /he2AyuJVR0krPL9tZEcicIAvADUZKME/OwOGj3ExTpthWHFiv4JHVLg0GeebpjVCliv
-         obug==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=jABzMUS1ximEwPXuff6fg/FSUSeykjfarKskNygbxq4=;
-        b=U2zpgyK1gPDnIWgH9VtNpSYIMKdznbj9ZRyI3XWHXWNq0ZNtAx/JoB9ByTRS4WzXZx
-         LlDGH/4O0NkaauvnH5u2ftzaK0sHGrK9A4uV2YJ4eyINsIMHc5ONC81nupZFCYyn5EGJ
-         aI8iKq8dkERylWtrC2R7we/M3fZHEZQxj4pZEy3JpF1HQ/Sp7+izy0dowvJ+RfJlyiu1
-         cYlSmUuRMHl4ymJ1vvyPihvo5X7bsB/z/aEhYAq+4BHMSxSMdV8/xRfmUBJMysO1v3ON
-         8ECz4OIr2hS+yoL7xd7NDKVJ1z2nXUrS4yFauZU204Z3cZWJEzT6Nm/KA+0T/RcuYAZl
-         cfzQ==
-X-Gm-Message-State: APjAAAXW9eV06WSrADNoH31IPDpy1IdNRsciT7USwE/mE69Fj+Kk6xTu
-        K8uDXB9gSuq3kWvYWb9E1v2i/3qmFbmlDCrRMhU=
-X-Google-Smtp-Source: APXvYqycQP8mzUwm8IKNBt+N5FEAJms27YT6DQuwwbNiPFQclikcHdiftLw/yYPp6JCNLXQ8XNFDX2a65Sxbd00CNtc=
-X-Received: by 2002:adf:e5cf:: with SMTP id a15mr6054154wrn.143.1572530169735;
- Thu, 31 Oct 2019 06:56:09 -0700 (PDT)
+        id S1728320AbfJaPNk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 31 Oct 2019 11:13:40 -0400
+Received: from mx2.suse.de ([195.135.220.15]:50756 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1728004AbfJaPNj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 31 Oct 2019 11:13:39 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 93E7CB6EA;
+        Thu, 31 Oct 2019 15:13:37 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 764EFDA785; Thu, 31 Oct 2019 16:13:45 +0100 (CET)
+From:   David Sterba <dsterba@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     David Sterba <dsterba@suse.com>
+Subject: [PATCH v2 1/4] btrfs: add support for 3-copy replication (raid1c3)
+Date:   Thu, 31 Oct 2019 16:13:45 +0100
+Message-Id: <ee21de37b5f090241ae210b188aa2dac8a547055.1572534591.git.dsterba@suse.com>
+X-Mailer: git-send-email 2.23.0
+In-Reply-To: <cover.1572534591.git.dsterba@suse.com>
+References: <cover.1572534591.git.dsterba@suse.com>
 MIME-Version: 1.0
-References: <CAE4GHg=W+a319=Ra_PNh3LV0hdD-Y12k-0N5ej72FSt=Fq520Q@mail.gmail.com>
- <cb5f9048-919f-0ff9-0765-d5a33e58afa7@gmx.com> <CAE4GHgmW2A-2SUUw8FzgafRhQ2BoViBx2DsLigwBrrbbp=oOsw@mail.gmail.com>
- <b4673e3b-b9b2-e8e5-2783-4b5eac7f656d@gmx.com> <CAE4GHg=4S4KqzBGHo-7T3cmmgECZxWZ-vXJMq8SYnnwy16h3xg@mail.gmail.com>
- <CAL3q7H4Wc0GnKNORVvwCOEk1QhzUweJr1JnN=+Scx5-TpQ5+yA@mail.gmail.com>
- <CAE4GHgntuxsoqv5vGMRTy6QYOTpQOocHgA2RxxeN6YKLgr5rNA@mail.gmail.com>
- <CAL3q7H5+xDr=0ZzW0+CnNqBh8ox9=rh8Vpp2aD4-jnXXnWCpgg@mail.gmail.com> <CAE4GHgkvqVADtS4AzcQJxo0Q1jKQgKaW3JGp3SGdoinVo=C9eQ@mail.gmail.com>
-In-Reply-To: <CAE4GHgkvqVADtS4AzcQJxo0Q1jKQgKaW3JGp3SGdoinVo=C9eQ@mail.gmail.com>
-From:   Atemu <atemu.main@gmail.com>
-Date:   Thu, 31 Oct 2019 14:55:58 +0100
-Message-ID: <CAE4GHgmQTadqg11b1r6GGo9tDFf6Y2UwE4=3PPUW5ToMYE_dJA@mail.gmail.com>
-Subject: Re: BUG: btrfs send: Kernel's memory usage rises until OOM kernel
- panic after sending ~37GiB
-To:     fdmanana@gmail.com
-Cc:     Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-> kmalloc-N. N was probably 64 but that I'm not sure about.
+Add new block group profile to store 3 copies in a simliar way that
+current RAID1 does. The profile attributes and constraints are defined
+in the raid table and used by the same code that already handles the
+2-copy RAID1.
 
-Correction: It's kmalloc-32.
+The minimum number of devices is 3, the maximum number of devices/chunks
+that can be lost/damaged is 2. Like RAID6 but with 33% space
+utilization.
 
--Atemu
+Signed-off-by: David Sterba <dsterba@suse.com>
+---
+ fs/btrfs/ctree.h                |  4 ++--
+ fs/btrfs/super.c                |  2 ++
+ fs/btrfs/volumes.c              | 19 +++++++++++++++++--
+ fs/btrfs/volumes.h              |  2 ++
+ include/uapi/linux/btrfs.h      |  3 ++-
+ include/uapi/linux/btrfs_tree.h |  6 +++++-
+ 6 files changed, 30 insertions(+), 6 deletions(-)
+
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 1c8f01eaf27c..aa1b437fb951 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -57,9 +57,9 @@ struct btrfs_ref;
+  * filesystem data as well that can be used to read data in order to repair
+  * read errors on other disks.
+  *
+- * Current value is derived from RAID1 with 2 copies.
++ * Current value is derived from RAID1C3 with 3 copies.
+  */
+-#define BTRFS_MAX_MIRRORS (2 + 1)
++#define BTRFS_MAX_MIRRORS (3 + 1)
+ 
+ #define BTRFS_MAX_LEVEL 8
+ 
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 3f49407cc2aa..a5aff138e2e0 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1935,6 +1935,8 @@ static inline int btrfs_calc_avail_data_space(struct btrfs_fs_info *fs_info,
+ 		num_stripes = nr_devices;
+ 	else if (type & BTRFS_BLOCK_GROUP_RAID1)
+ 		num_stripes = 2;
++	else if (type & BTRFS_BLOCK_GROUP_RAID1C3)
++		num_stripes = 3;
+ 	else if (type & BTRFS_BLOCK_GROUP_RAID10)
+ 		num_stripes = 4;
+ 
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index f534a6a5553e..22560062269f 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -58,6 +58,18 @@ const struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
+ 		.bg_flag	= BTRFS_BLOCK_GROUP_RAID1,
+ 		.mindev_error	= BTRFS_ERROR_DEV_RAID1_MIN_NOT_MET,
+ 	},
++	[BTRFS_RAID_RAID1C3] = {
++		.sub_stripes	= 1,
++		.dev_stripes	= 1,
++		.devs_max	= 0,
++		.devs_min	= 3,
++		.tolerated_failures = 2,
++		.devs_increment	= 3,
++		.ncopies	= 3,
++		.raid_name	= "raid1c3",
++		.bg_flag	= BTRFS_BLOCK_GROUP_RAID1C3,
++		.mindev_error	= BTRFS_ERROR_DEV_RAID1C3_MIN_NOT_MET,
++	},
+ 	[BTRFS_RAID_DUP] = {
+ 		.sub_stripes	= 1,
+ 		.dev_stripes	= 2,
+@@ -4839,8 +4851,11 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+ 	sort(devices_info, ndevs, sizeof(struct btrfs_device_info),
+ 	     btrfs_cmp_device_info, NULL);
+ 
+-	/* round down to number of usable stripes */
+-	ndevs = round_down(ndevs, devs_increment);
++	/*
++	 * Round down to number of usable stripes, devs_increment can be any
++	 * number so we can't use round_down()
++	 */
++	ndevs -= ndevs % devs_increment;
+ 
+ 	if (ndevs < devs_min) {
+ 		ret = -ENOSPC;
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index ac4ba8c57283..a4e26b84e1b9 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -545,6 +545,8 @@ static inline enum btrfs_raid_types btrfs_bg_flags_to_raid_index(u64 flags)
+ 		return BTRFS_RAID_RAID10;
+ 	else if (flags & BTRFS_BLOCK_GROUP_RAID1)
+ 		return BTRFS_RAID_RAID1;
++	else if (flags & BTRFS_BLOCK_GROUP_RAID1C3)
++		return BTRFS_RAID_RAID1C3;
+ 	else if (flags & BTRFS_BLOCK_GROUP_DUP)
+ 		return BTRFS_RAID_DUP;
+ 	else if (flags & BTRFS_BLOCK_GROUP_RAID0)
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index 3ee0678c0a83..ba22f91a3f5b 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -831,7 +831,8 @@ enum btrfs_err_code {
+ 	BTRFS_ERROR_DEV_TGT_REPLACE,
+ 	BTRFS_ERROR_DEV_MISSING_NOT_FOUND,
+ 	BTRFS_ERROR_DEV_ONLY_WRITABLE,
+-	BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS
++	BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS,
++	BTRFS_ERROR_DEV_RAID1C3_MIN_NOT_MET,
+ };
+ 
+ #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
+diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tree.h
+index 5160be1d7332..52b2964b0311 100644
+--- a/include/uapi/linux/btrfs_tree.h
++++ b/include/uapi/linux/btrfs_tree.h
+@@ -841,6 +841,7 @@ struct btrfs_dev_replace_item {
+ #define BTRFS_BLOCK_GROUP_RAID10	(1ULL << 6)
+ #define BTRFS_BLOCK_GROUP_RAID5         (1ULL << 7)
+ #define BTRFS_BLOCK_GROUP_RAID6         (1ULL << 8)
++#define BTRFS_BLOCK_GROUP_RAID1C3       (1ULL << 9)
+ #define BTRFS_BLOCK_GROUP_RESERVED	(BTRFS_AVAIL_ALLOC_BIT_SINGLE | \
+ 					 BTRFS_SPACE_INFO_GLOBAL_RSV)
+ 
+@@ -852,6 +853,7 @@ enum btrfs_raid_types {
+ 	BTRFS_RAID_SINGLE,
+ 	BTRFS_RAID_RAID5,
+ 	BTRFS_RAID_RAID6,
++	BTRFS_RAID_RAID1C3,
+ 	BTRFS_NR_RAID_TYPES
+ };
+ 
+@@ -861,6 +863,7 @@ enum btrfs_raid_types {
+ 
+ #define BTRFS_BLOCK_GROUP_PROFILE_MASK	(BTRFS_BLOCK_GROUP_RAID0 |   \
+ 					 BTRFS_BLOCK_GROUP_RAID1 |   \
++					 BTRFS_BLOCK_GROUP_RAID1C3 | \
+ 					 BTRFS_BLOCK_GROUP_RAID5 |   \
+ 					 BTRFS_BLOCK_GROUP_RAID6 |   \
+ 					 BTRFS_BLOCK_GROUP_DUP |     \
+@@ -868,7 +871,8 @@ enum btrfs_raid_types {
+ #define BTRFS_BLOCK_GROUP_RAID56_MASK	(BTRFS_BLOCK_GROUP_RAID5 |   \
+ 					 BTRFS_BLOCK_GROUP_RAID6)
+ 
+-#define BTRFS_BLOCK_GROUP_RAID1_MASK	(BTRFS_BLOCK_GROUP_RAID1)
++#define BTRFS_BLOCK_GROUP_RAID1_MASK	(BTRFS_BLOCK_GROUP_RAID1 |   \
++					 BTRFS_BLOCK_GROUP_RAID1C3)
+ 
+ /*
+  * We need a bit for restriper to be able to tell when chunks of type
+-- 
+2.23.0
+

@@ -2,35 +2,37 @@ Return-Path: <SRS0=F3aj=YY=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B31E7CA9ECE
-	for <linux-btrfs@archiver.kernel.org>; Thu, 31 Oct 2019 15:13:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6E8B5CA9ED0
+	for <linux-btrfs@archiver.kernel.org>; Thu, 31 Oct 2019 15:13:42 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 91FFA2083E
-	for <linux-btrfs@archiver.kernel.org>; Thu, 31 Oct 2019 15:13:41 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4EC6F2083E
+	for <linux-btrfs@archiver.kernel.org>; Thu, 31 Oct 2019 15:13:42 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728318AbfJaPNk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 31 Oct 2019 11:13:40 -0400
-Received: from mx2.suse.de ([195.135.220.15]:50758 "EHLO mx1.suse.de"
+        id S1728323AbfJaPNl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 31 Oct 2019 11:13:41 -0400
+Received: from mx2.suse.de ([195.135.220.15]:50772 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728292AbfJaPNj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 31 Oct 2019 11:13:39 -0400
+        id S1728306AbfJaPNk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 31 Oct 2019 11:13:40 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 94DD8B6F3;
-        Thu, 31 Oct 2019 15:13:37 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 945A5B706;
+        Thu, 31 Oct 2019 15:13:38 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 648B4DA783; Thu, 31 Oct 2019 16:13:42 +0100 (CET)
+        id C6736DA783; Thu, 31 Oct 2019 16:13:47 +0100 (CET)
 From:   David Sterba <dsterba@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     David Sterba <dsterba@suse.com>
-Subject: [PATCH v3 0/4] RAID1 with 3- and 4- copies
-Date:   Thu, 31 Oct 2019 16:13:41 +0100
-Message-Id: <cover.1572534591.git.dsterba@suse.com>
+Subject: [PATCH v2 2/4] btrfs: add support for 4-copy replication (raid1c4)
+Date:   Thu, 31 Oct 2019 16:13:47 +0100
+Message-Id: <501e343804320c22f6cafe417543f5039ef8c48a.1572534591.git.dsterba@suse.com>
 X-Mailer: git-send-email 2.23.0
+In-Reply-To: <cover.1572534591.git.dsterba@suse.com>
+References: <cover.1572534591.git.dsterba@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -38,115 +40,141 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Here it goes again, RAID1 with 3- and 4- copies. I found the bug that stopped
-it from inclusion last time, it was in the test itself, so the kernel code is
-effectively unchanged.
+Add new block group profile to store 4 copies in a simliar way that
+current RAID1 does.  The profile attributes and constraints are defined
+in the raid table and used by the same code that already handles the 2-
+and 3-copy RAID1.
 
-So, with 1 or 2 missing devices, replace by device id works. There's one
-annoying thing but not new: regarding replace of a missing device, some
-extra single/dup block groups are created during the replace process.
-Example below. This can happen on plain raid1 with degraded read-write
-mount as well.
+The minimum number of devices is 4, the maximum number of devices/chunks
+that can be lost/damaged is 3. There is no comparable traditional RAID
+level, the profile is added for future needs to accompany triple-parity
+and beyond.
 
-Now what's the merge target.
+Signed-off-by: David Sterba <dsterba@suse.com>
+---
+ fs/btrfs/ctree.h                |  4 ++--
+ fs/btrfs/super.c                |  2 ++
+ fs/btrfs/volumes.c              | 12 ++++++++++++
+ fs/btrfs/volumes.h              |  2 ++
+ include/uapi/linux/btrfs.h      |  1 +
+ include/uapi/linux/btrfs_tree.h |  6 +++++-
+ 6 files changed, 24 insertions(+), 3 deletions(-)
 
-The patches almost made it to 5.3, the changes build on existing code so the
-actual addition of new profiles is namely in the definitions and additional
-cases. So it should be safe.
-
-I'm for adding it to 5.5 queue, though we're at rc5 and this can be seen as a
-late time for a feature. The user benefits are noticeable, raid1c3 can replace
-raid6 of metadata which is the most problematic part and much more complicated
-to fix (write ahead journal or something like that). The feedback regarding the
-plain 3-copy as a replacement was positive, on IRC and there are mails about
-that too.
-
-Further information can be found in the 5.3-time submission:
-https://lore.kernel.org/linux-btrfs/cover.1559917235.git.dsterba@suse.com/
-
---
-
-Example of 2 devices gone missing and replaced
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
- - mkfs -d raid1c3 -m raidc3 /dev/sda10 /dev/sda11 /dev/sda12
-
- - delete devices 2 and 3 from the system
-
-              Data      Metadata  System
-Id Path       RAID1C3   RAID1C3   RAID1C3  Unallocated
--- ---------- --------- --------- -------- -----------
- 1 /dev/sda10   1.00GiB 256.00MiB  8.00MiB     8.74GiB
- 2 missing      1.00GiB 256.00MiB  8.00MiB    -1.26GiB
- 3 missing      1.00GiB 256.00MiB  8.00MiB    -1.26GiB
--- ---------- --------- --------- -------- -----------
-   Total        1.00GiB 256.00MiB  8.00MiB     6.23GiB
-   Used       200.31MiB 320.00KiB 16.00KiB
-
-- mount -o degraded
-
-- btrfs replace 2 /dev/sda13
-
-              Data      Metadata  Metadata  System   System
-Id Path       RAID1C3   single    RAID1C3   single   RAID1C3 Unallocated
--- ---------- --------- --------- --------- -------- ------- -----------
- 1 /dev/sda10   1.00GiB 256.00MiB 256.00MiB 32.00MiB 8.00MiB     8.46GiB
- 2 /dev/sda13   1.00GiB         - 256.00MiB        - 8.00MiB     8.74GiB
- 3 missing      1.00GiB         - 256.00MiB        - 8.00MiB    -1.26GiB
--- ---------- --------- --------- --------- -------- ------- -----------
-   Total        1.00GiB 256.00MiB 256.00MiB 32.00MiB 8.00MiB    15.95GiB
-   Used       200.31MiB     0.00B 320.00KiB 16.00KiB   0.00B
-
-
-- btrfs replace 3 /dev/sda14
-
-              Data      Metadata  Metadata  System   System
-Id Path       RAID1C3   single    RAID1C3   single   RAID1C3 Unallocated
--- ---------- --------- --------- --------- -------- ------- -----------
- 1 /dev/sda10   1.00GiB 256.00MiB 256.00MiB 32.00MiB 8.00MiB     8.46GiB
- 2 /dev/sda13   1.00GiB         - 256.00MiB        - 8.00MiB     8.74GiB
- 3 /dev/sda14   1.00GiB         - 256.00MiB        - 8.00MiB     8.74GiB
--- ---------- --------- --------- --------- -------- ------- -----------
-   Total        1.00GiB 256.00MiB 256.00MiB 32.00MiB 8.00MiB    25.95GiB
-   Used       200.31MiB     0.00B 320.00KiB 16.00KiB   0.00B
-
-There you can see the metadata/single and system/single chunks, that are
-otherwise unused if there are no other writes happening during replace.
-Running 'balance start -mconvert=raid1c3,profiles=single' should get rid of
-them.
-
-This is an annoyance, we have a plan to avoid that but it needs to change
-behaviour with degraded mount and enabled writes.
-
-Implementation details: The new profiles are reduced from the expected ones
-  (raid1 -> single or dup) to allow writes without breaking the raid
-  constraints.  To relax that condition, allow writing to "half" of the raid
-  with a missing device will skip creating the block groups.
-
-  This is similar to MD-RAID that allows writing to just one of the RAID1
-  devices, and then sync to the other when it's available again.
-
-  With the btrfs style raid1 we can do better in case there are enough other
-  devices that would satify the raid1 constraint (yet with a missing device).
-
---
-
-David Sterba (4):
-  btrfs: add support for 3-copy replication (raid1c3)
-  btrfs: add support for 4-copy replication (raid1c4)
-  btrfs: add incompat for raid1 with 3, 4 copies
-  btrfs: drop incompat bit for raid1c34 after last block group is gone
-
- fs/btrfs/block-group.c          | 27 ++++++++++++++--------
- fs/btrfs/ctree.h                |  7 +++---
- fs/btrfs/super.c                |  4 ++++
- fs/btrfs/sysfs.c                |  2 ++
- fs/btrfs/volumes.c              | 40 +++++++++++++++++++++++++++++++--
- fs/btrfs/volumes.h              |  4 ++++
- include/uapi/linux/btrfs.h      |  5 ++++-
- include/uapi/linux/btrfs_tree.h | 10 ++++++++-
- 8 files changed, 83 insertions(+), 16 deletions(-)
-
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index aa1b437fb951..923a8804ae94 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -57,9 +57,9 @@ struct btrfs_ref;
+  * filesystem data as well that can be used to read data in order to repair
+  * read errors on other disks.
+  *
+- * Current value is derived from RAID1C3 with 3 copies.
++ * Current value is derived from RAID1C4 with 4 copies.
+  */
+-#define BTRFS_MAX_MIRRORS (3 + 1)
++#define BTRFS_MAX_MIRRORS (4 + 1)
+ 
+ #define BTRFS_MAX_LEVEL 8
+ 
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index a5aff138e2e0..a98c3c71fc54 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1937,6 +1937,8 @@ static inline int btrfs_calc_avail_data_space(struct btrfs_fs_info *fs_info,
+ 		num_stripes = 2;
+ 	else if (type & BTRFS_BLOCK_GROUP_RAID1C3)
+ 		num_stripes = 3;
++	else if (type & BTRFS_BLOCK_GROUP_RAID1C4)
++		num_stripes = 4;
+ 	else if (type & BTRFS_BLOCK_GROUP_RAID10)
+ 		num_stripes = 4;
+ 
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 22560062269f..238d814f83a1 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -70,6 +70,18 @@ const struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
+ 		.bg_flag	= BTRFS_BLOCK_GROUP_RAID1C3,
+ 		.mindev_error	= BTRFS_ERROR_DEV_RAID1C3_MIN_NOT_MET,
+ 	},
++	[BTRFS_RAID_RAID1C4] = {
++		.sub_stripes	= 1,
++		.dev_stripes	= 1,
++		.devs_max	= 0,
++		.devs_min	= 4,
++		.tolerated_failures = 3,
++		.devs_increment	= 4,
++		.ncopies	= 4,
++		.raid_name	= "raid1c4",
++		.bg_flag	= BTRFS_BLOCK_GROUP_RAID1C4,
++		.mindev_error	= BTRFS_ERROR_DEV_RAID1C4_MIN_NOT_MET,
++	},
+ 	[BTRFS_RAID_DUP] = {
+ 		.sub_stripes	= 1,
+ 		.dev_stripes	= 2,
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index a4e26b84e1b9..46987a2da786 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -547,6 +547,8 @@ static inline enum btrfs_raid_types btrfs_bg_flags_to_raid_index(u64 flags)
+ 		return BTRFS_RAID_RAID1;
+ 	else if (flags & BTRFS_BLOCK_GROUP_RAID1C3)
+ 		return BTRFS_RAID_RAID1C3;
++	else if (flags & BTRFS_BLOCK_GROUP_RAID1C4)
++		return BTRFS_RAID_RAID1C4;
+ 	else if (flags & BTRFS_BLOCK_GROUP_DUP)
+ 		return BTRFS_RAID_DUP;
+ 	else if (flags & BTRFS_BLOCK_GROUP_RAID0)
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index ba22f91a3f5b..a2b761275bba 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -833,6 +833,7 @@ enum btrfs_err_code {
+ 	BTRFS_ERROR_DEV_ONLY_WRITABLE,
+ 	BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS,
+ 	BTRFS_ERROR_DEV_RAID1C3_MIN_NOT_MET,
++	BTRFS_ERROR_DEV_RAID1C4_MIN_NOT_MET,
+ };
+ 
+ #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
+diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tree.h
+index 52b2964b0311..8e322e2c7e78 100644
+--- a/include/uapi/linux/btrfs_tree.h
++++ b/include/uapi/linux/btrfs_tree.h
+@@ -842,6 +842,7 @@ struct btrfs_dev_replace_item {
+ #define BTRFS_BLOCK_GROUP_RAID5         (1ULL << 7)
+ #define BTRFS_BLOCK_GROUP_RAID6         (1ULL << 8)
+ #define BTRFS_BLOCK_GROUP_RAID1C3       (1ULL << 9)
++#define BTRFS_BLOCK_GROUP_RAID1C4       (1ULL << 10)
+ #define BTRFS_BLOCK_GROUP_RESERVED	(BTRFS_AVAIL_ALLOC_BIT_SINGLE | \
+ 					 BTRFS_SPACE_INFO_GLOBAL_RSV)
+ 
+@@ -854,6 +855,7 @@ enum btrfs_raid_types {
+ 	BTRFS_RAID_RAID5,
+ 	BTRFS_RAID_RAID6,
+ 	BTRFS_RAID_RAID1C3,
++	BTRFS_RAID_RAID1C4,
+ 	BTRFS_NR_RAID_TYPES
+ };
+ 
+@@ -864,6 +866,7 @@ enum btrfs_raid_types {
+ #define BTRFS_BLOCK_GROUP_PROFILE_MASK	(BTRFS_BLOCK_GROUP_RAID0 |   \
+ 					 BTRFS_BLOCK_GROUP_RAID1 |   \
+ 					 BTRFS_BLOCK_GROUP_RAID1C3 | \
++					 BTRFS_BLOCK_GROUP_RAID1C4 | \
+ 					 BTRFS_BLOCK_GROUP_RAID5 |   \
+ 					 BTRFS_BLOCK_GROUP_RAID6 |   \
+ 					 BTRFS_BLOCK_GROUP_DUP |     \
+@@ -872,7 +875,8 @@ enum btrfs_raid_types {
+ 					 BTRFS_BLOCK_GROUP_RAID6)
+ 
+ #define BTRFS_BLOCK_GROUP_RAID1_MASK	(BTRFS_BLOCK_GROUP_RAID1 |   \
+-					 BTRFS_BLOCK_GROUP_RAID1C3)
++					 BTRFS_BLOCK_GROUP_RAID1C3 | \
++					 BTRFS_BLOCK_GROUP_RAID1C4)
+ 
+ /*
+  * We need a bit for restriper to be able to tell when chunks of type
 -- 
 2.23.0
 

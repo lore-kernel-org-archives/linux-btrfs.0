@@ -2,50 +2,74 @@ Return-Path: <SRS0=KJGA=Y2=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.5 required=3.0 tests=FREEMAIL_REPLYTO_END_DIGIT,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F3A1DCA9EC7
-	for <linux-btrfs@archiver.kernel.org>; Sat,  2 Nov 2019 13:43:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1F978CA9EC7
+	for <linux-btrfs@archiver.kernel.org>; Sat,  2 Nov 2019 13:50:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D674721726
-	for <linux-btrfs@archiver.kernel.org>; Sat,  2 Nov 2019 13:43:52 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E0E5E217D9
+	for <linux-btrfs@archiver.kernel.org>; Sat,  2 Nov 2019 13:50:16 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="I3UqZ7X7"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727025AbfKBNnw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 2 Nov 2019 09:43:52 -0400
-Received: from [211.53.128.215] ([211.53.128.215]:10497 "EHLO MAIL.isd.co.kr"
-        rhost-flags-FAIL-FAIL-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727020AbfKBNnu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 2 Nov 2019 09:43:50 -0400
-X-Greylist: delayed 333 seconds by postgrey-1.27 at vger.kernel.org; Sat, 02 Nov 2019 09:43:49 EDT
-Received: from 192.168.1.163 (217.217.179.17) by MAIL.isd.co.kr (10.10.10.22)
- with Microsoft SMTP Server id 14.3.123.3; Sat, 2 Nov 2019 22:38:08 +0900
-Date:   Sat, 2 Nov 2019 14:38:04 +0100
-From:   Peter Wong <choimj@isd.co.kr>
-Reply-To: Peter Wong <pw178484@gmail.com>
-To:     <linux-btrfs@vger.kernel.org>
-Message-ID: <2370754.37999.1572701887310.JavaMail.cash@webmail.isd.co.kr>
-Subject: Your opportunity
+        id S1726685AbfKBNuQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 2 Nov 2019 09:50:16 -0400
+Received: from mail-ed1-f51.google.com ([209.85.208.51]:33343 "EHLO
+        mail-ed1-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726380AbfKBNuP (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 2 Nov 2019 09:50:15 -0400
+Received: by mail-ed1-f51.google.com with SMTP id c4so9635391edl.0
+        for <linux-btrfs@vger.kernel.org>; Sat, 02 Nov 2019 06:50:14 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:from:date:message-id:subject:to;
+        bh=yEaI2VSTjFeg2PJcPwUsmUSknamE3JfjF7u7xrHeq9Y=;
+        b=I3UqZ7X7sgr/30WVkcgPLV3HXhL6XuO8GQnPPZe0Tt5biMKTwklcG8V9SCuVoqryav
+         KELt4Nz0tpMOhB//1PBRxV7jy9MX3uX5TDPrPtQNbtBzmJsE6dcUV+/qrFbcuymNEzIK
+         2jTRsJnGxnueeaD0N6QVyhj/hKGlSel9JQR5OncP0vVAY7Qt7phtaJl9y3mPeCtfpwzM
+         LrBd6Ijtngw0VEB1ysEsoqpsM9XWGytNgf08/n84WkzRQyT+GvjYUem0iSOsMceIfQfc
+         rFu5v7tg4bUJna72iTqlx9xiM/rAM8RZdEGtMe958Di0m8mj/pe0hO9kYzg9Annx6mtS
+         YiAQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:from:date:message-id:subject:to;
+        bh=yEaI2VSTjFeg2PJcPwUsmUSknamE3JfjF7u7xrHeq9Y=;
+        b=hR3S+Nf7NIxihr6t+PcAq4fw/1+/44VQo7J3gwrGTU7E9siUognh360LZg5G6jpFWA
+         Zk/InDWmt01Q8J0T99OVcP+dNOthmdyjvTYoTzZUREg17N6hTNhCthepUaqgEG51rSEt
+         c+Z7gLUV11+DFsMpRYMcVNzczThyCOVIww2MncZe3TOLCrjNX2s2Gb1A9IxBFuuWUYXT
+         VlonYs6fujq8j7omUdpd+ZB1MvpvRThfin/ywDbnYFi0fTYyH4IfXCR5KjvmhvpUXtxb
+         dcUz9SOCxMpm0dltimqKparkwZjrm2/Id4FegQeyXpfCR/6KHeRuw208IMeeHJMCYbNz
+         KXCQ==
+X-Gm-Message-State: APjAAAWicu4p88IQ0atWGwsvbfiEK2LEI80r8HqPTpuKxH7B3/Tnuq2J
+        mYSnOkm9+SlAT/gBI9YVYalAQIzTyephzyDlOPcan17pEwU=
+X-Google-Smtp-Source: APXvYqzWk+ldZtdh5EL/MycY3m0AYopr29PFORRQkjYlHwILOvTFG/hfMHW0hGBIExQ9F9KmOYSd95f4WAgCmCSigZ8=
+X-Received: by 2002:aa7:cad0:: with SMTP id l16mr15463477edt.82.1572702613613;
+ Sat, 02 Nov 2019 06:50:13 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-X-Originating-IP: [217.217.179.17]
+From:   Brian Hansen <dulanic@gmail.com>
+Date:   Sat, 2 Nov 2019 08:49:37 -0500
+Message-ID: <CAMiuOHXH1ic6Mcz+o1uWLNMCK+iCinhR+nnZ8N1wTHQoEms-7Q@mail.gmail.com>
+Subject: cp --reflink invalid argument error
+To:     linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Greetings,
+Hello,
 
-Find this mail very confidential. reply for more details
+First time i've sent to this group but I am trying to figure out the
+cause of this. Normal copy is working fine, but then if I use
+--reflink it says invalid argument. Not sure how to read some of this,
+but here is the strace.
 
-Thanks.
-Peter Wong
+I'm running kernel v4.15
 
+Here is the full output of strace. I ran a strace on normal copy and
+most looks similar so I'm not able to figure out much here...
 
-
-
-----------------------------------------------------
-This email was sent by the shareware version of Postman Professional.
-
+https://pastebin.com/raw/YmQ8FvCH

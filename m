@@ -7,53 +7,53 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D6CB1CA9ECF
-	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Nov 2019 06:34:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0BCD0CA9ED3
+	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Nov 2019 06:34:42 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A73D120578
+	by mail.kernel.org (Postfix) with ESMTP id D1E0D222C6
 	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Nov 2019 06:34:41 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="PXWZ8iU6"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="JmCgOZXk"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728409AbfKDGek (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 4 Nov 2019 01:34:40 -0500
-Received: from userp2120.oracle.com ([156.151.31.85]:41662 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728396AbfKDGei (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Nov 2019 01:34:38 -0500
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xA46Ybvi174163
-        for <linux-btrfs@vger.kernel.org>; Mon, 4 Nov 2019 06:34:37 GMT
+        id S1728362AbfKDGeg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 4 Nov 2019 01:34:36 -0500
+Received: from aserp2120.oracle.com ([141.146.126.78]:32822 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728305AbfKDGeg (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Nov 2019 01:34:36 -0500
+Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
+        by aserp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xA46YY8o187195
+        for <linux-btrfs@vger.kernel.org>; Mon, 4 Nov 2019 06:34:34 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
  date : message-id : in-reply-to : references; s=corp-2019-08-05;
- bh=hj2mJB0JJGerxGosnAb6r1CGNuOXbrnKUJOsknHcdzY=;
- b=PXWZ8iU6hDVTfj6WyuLEy33vAKExpoNSwpVY6oinLQIS/J4xtOScVSNbdM6rhkXVidvU
- cxhN7P/rfqhsjZyQFoo6Yb/rsqNJfqrqBtjBHXa0CHRpncIynMqe86zWmXruvUo4gyV1
- LLv9V6TbQbfkF4cZyW+FUcpt2sYgqJA4rL7ArrP+Vk4CBE0aePte6YJ29/YzvKo1ZRQu
- x4Msc2VR0ruN7XGEL7k2+RvKc0eb1cgH9I1OccIOo3zD7m+chDObzqIUyb2b4D5cS2eL
- C3EpEj5OlYFOmiXc4Pjg3xjtJ1RwOmaFdRPTszTvCX6JDA6tNkgOvwzdJJ3QysdNynES bw== 
+ bh=eQ5D49kxW0WTWhWtU7+Say7+zTJmJzixCso9Q86w/gk=;
+ b=JmCgOZXkP9iZlqZVtjuJ/01iTY80CjMkxXj/FoOJ4tYM8MX1ozP1EEq+A/JNHJRr4NxX
+ Oc1DXnhwPxrRgZDg0eIaxdHObtyODR54Awjp6A75ipiI7IM4VBQZpb2Dp30qARabUW9r
+ 1HsRlgjyq7sDhXmQcHdmepsmHcHECzJoi2ZE6FxjJx3he+uhFTAiyxPUt6V/O+lbQEMi
+ vcZYiIkdGsPuu5Bk6g+Lr2yiY+2GGyaGvvvRepWZwQ/sqPsLzBhYKwLDadBojwzW/m4A
+ myurtdyh8SMBswl5TU5vhbCRPPl4bSxFABDHp52GY7AD6knJzKkZPPHC+TKaCovk+aPc qA== 
 Received: from aserp3030.oracle.com (aserp3030.oracle.com [141.146.126.71])
-        by userp2120.oracle.com with ESMTP id 2w12eqw0x2-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 Nov 2019 06:34:37 +0000
-Received: from pps.filterd (aserp3030.oracle.com [127.0.0.1])
-        by aserp3030.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xA46YWc4187512
-        for <linux-btrfs@vger.kernel.org>; Mon, 4 Nov 2019 06:34:36 GMT
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by aserp3030.oracle.com with ESMTP id 2w1kxkt9cf-1
+        by aserp2120.oracle.com with ESMTP id 2w11rpn5p6-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
         for <linux-btrfs@vger.kernel.org>; Mon, 04 Nov 2019 06:34:34 +0000
+Received: from pps.filterd (aserp3030.oracle.com [127.0.0.1])
+        by aserp3030.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xA46YXiP187574
+        for <linux-btrfs@vger.kernel.org>; Mon, 4 Nov 2019 06:34:34 GMT
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by aserp3030.oracle.com with ESMTP id 2w1kxkt9b6-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Mon, 04 Nov 2019 06:34:33 +0000
 Received: from abhmp0023.oracle.com (abhmp0023.oracle.com [141.146.116.29])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id xA46Xs5t004200
-        for <linux-btrfs@vger.kernel.org>; Mon, 4 Nov 2019 06:33:54 GMT
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id xA46XnlE023641
+        for <linux-btrfs@vger.kernel.org>; Mon, 4 Nov 2019 06:33:49 GMT
 Received: from tp.wifi.oracle.com (/192.188.170.104)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Mon, 04 Nov 2019 06:33:53 +0000
+        with ESMTP ; Mon, 04 Nov 2019 06:33:49 +0000
 From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v1.1 18/18] btrfs-progs: device scan: add quiet option
-Date:   Mon,  4 Nov 2019 14:33:16 +0800
-Message-Id: <1572849196-21775-19-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH v1 15/18] btrfs-progs: inspect-internal logical-resolve: use global verbose option
+Date:   Mon,  4 Nov 2019 14:33:13 +0800
+Message-Id: <1572849196-21775-16-git-send-email-anand.jain@oracle.com>
 X-Mailer: git-send-email 1.8.3.1
 In-Reply-To: <1572849196-21775-1-git-send-email-anand.jain@oracle.com>
 References: <1572849196-21775-1-git-send-email-anand.jain@oracle.com>
@@ -73,38 +73,97 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Enable the quiet option to the btrfs(8) device scan command.
-Does the job quietly. For example:
- btrfs --quiet device scan
+Transpire global --verbose option down to the
+btrfs inspect-internal logical-resolve sub-command.
 
+Command btrfs inspect-internal logical-resolve provides local verbose
+option this patch makes it enable-able by using the global --verbose
+option.
+
+Suggested-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
-v1.1: fix typo in HELPINFO_INSERT_QUIET
+ cmds/inspect.c | 25 +++++++++++--------------
+ 1 file changed, 11 insertions(+), 14 deletions(-)
 
- cmds/device.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
-
-diff --git a/cmds/device.c b/cmds/device.c
-index d268fb2de126..8fef0695990e 100644
---- a/cmds/device.c
-+++ b/cmds/device.c
-@@ -305,6 +305,7 @@ static const char * const cmd_device_scan_usage[] = {
- 	" -u|--forget [<device>...]   unregister a given device or all stale devices if no path ",
- 	HELPINFO_GLOBAL_OPTIONS_HEADER,
- 	HELPINFO_INSERT_VERBOSE,
-+	HELPINFO_INSERT_QUIET,
+diff --git a/cmds/inspect.c b/cmds/inspect.c
+index f36fee395159..443a287fd540 100644
+--- a/cmds/inspect.c
++++ b/cmds/inspect.c
+@@ -38,7 +38,7 @@ static const char * const inspect_cmd_group_usage[] = {
  	NULL
  };
  
-@@ -355,7 +356,7 @@ static int cmd_device_scan(const struct cmd_struct *cmd, int argc, char **argv)
- 				error("cannot unregister devices: %m");
+-static int __ino_to_path_fd(u64 inum, int fd, int verbose, const char *prepend)
++static int __ino_to_path_fd(u64 inum, int fd, const char *prepend)
+ {
+ 	int ret;
+ 	int i;
+@@ -121,8 +121,7 @@ static int cmd_inspect_inode_resolve(const struct cmd_struct *cmd,
+ 	if (fd < 0)
+ 		return 1;
+ 
+-	ret = __ino_to_path_fd(arg_strtou64(argv[optind]), fd,
+-			       bconf.verbose, argv[optind+1]);
++	ret = __ino_to_path_fd(arg_strtou64(argv[optind]), fd, argv[optind+1]);
+ 	close_file_or_dir(fd, dirstream);
+ 	return !!ret;
+ 
+@@ -138,6 +137,8 @@ static const char * const cmd_inspect_logical_resolve_usage[] = {
+ 	"-s bufsize  set inode container's size. This is used to increase inode",
+ 	"            container's size in case it is not enough to read all the ",
+ 	"            resolved results. The max value one can set is 64k",
++	HELPINFO_GLOBAL_OPTIONS_HEADER,
++	HELPINFO_INSERT_VERBOSE,
+ 	NULL
+ };
+ 
+@@ -147,7 +148,6 @@ static int cmd_inspect_logical_resolve(const struct cmd_struct *cmd,
+ 	int ret;
+ 	int fd;
+ 	int i;
+-	int verbose = 0;
+ 	int getpath = 1;
+ 	int bytes_left;
+ 	struct btrfs_ioctl_logical_ino_args loi;
+@@ -168,7 +168,7 @@ static int cmd_inspect_logical_resolve(const struct cmd_struct *cmd,
+ 			getpath = 0;
+ 			break;
+ 		case 'v':
+-			verbose = 1;
++			bconf.verbose++;
+ 			break;
+ 		case 's':
+ 			size = arg_strtou64(optarg);
+@@ -203,13 +203,11 @@ static int cmd_inspect_logical_resolve(const struct cmd_struct *cmd,
+ 		goto out;
+ 	}
+ 
+-	if (verbose)
+-		printf("ioctl ret=%d, total_size=%llu, bytes_left=%lu, "
+-			"bytes_missing=%lu, cnt=%d, missed=%d\n",
+-			ret, size,
+-			(unsigned long)inodes->bytes_left,
+-			(unsigned long)inodes->bytes_missing,
+-			inodes->elem_cnt, inodes->elem_missed);
++	pr_verbose(1,
++"ioctl ret=%d, total_size=%llu, bytes_left=%lu, bytes_missing=%lu, cnt=%d, missed=%d\n",
++		   ret, size, (unsigned long)inodes->bytes_left,
++		   (unsigned long)inodes->bytes_missing, inodes->elem_cnt,
++		   inodes->elem_missed);
+ 
+ 	bytes_left = sizeof(full_path);
+ 	ret = snprintf(full_path, bytes_left, "%s/", argv[optind+1]);
+@@ -254,8 +252,7 @@ static int cmd_inspect_logical_resolve(const struct cmd_struct *cmd,
+ 					goto out;
+ 				}
  			}
+-			ret = __ino_to_path_fd(inum, path_fd, verbose,
+-						full_path);
++			ret = __ino_to_path_fd(inum, path_fd, full_path);
+ 			if (path_fd != fd)
+ 				close_file_or_dir(path_fd, dirs);
  		} else {
--			printf("Scanning for Btrfs filesystems\n");
-+			pr_verbose(-1, "Scanning for Btrfs filesystems\n");
- 			ret = btrfs_scan_devices(1);
- 			error_on(ret, "error %d while scanning", ret);
- 			ret = btrfs_register_all_devices();
 -- 
 1.8.3.1
 

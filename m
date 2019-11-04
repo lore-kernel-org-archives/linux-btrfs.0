@@ -5,55 +5,55 @@ X-Spam-Level:
 X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0DD11CA9ECF
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 36974CA9ED3
 	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Nov 2019 06:34:50 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D670720578
-	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Nov 2019 06:34:49 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0CE3721744
+	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Nov 2019 06:34:50 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="pMQMYt5Q"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="owNw0yHV"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728459AbfKDGes (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 4 Nov 2019 01:34:48 -0500
-Received: from userp2130.oracle.com ([156.151.31.86]:41714 "EHLO
+        id S1728437AbfKDGen (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 4 Nov 2019 01:34:43 -0500
+Received: from userp2130.oracle.com ([156.151.31.86]:41660 "EHLO
         userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728407AbfKDGeo (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Nov 2019 01:34:44 -0500
+        with ESMTP id S1728414AbfKDGem (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Nov 2019 01:34:42 -0500
 Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xA46YgjK004027
-        for <linux-btrfs@vger.kernel.org>; Mon, 4 Nov 2019 06:34:42 GMT
+        by userp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xA46YZFW003930
+        for <linux-btrfs@vger.kernel.org>; Mon, 4 Nov 2019 06:34:40 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
  date : message-id : in-reply-to : references; s=corp-2019-08-05;
- bh=rR7SssLA0hRkUVIT9oT4mKRnpbJzebUKxcFoiZumXD4=;
- b=pMQMYt5Ql5P2qnXjg22qB0TwhdAJ3+oy3eh8RoQi8DaIICuhFINayu997kW6OQ4iHQp4
- RWRZl0lxOKnmJV8gjfgHZTX5ypApMNJldFJIrXubIhwMpUhYc0PtKeA6Py+rSehLex+5
- Ube0ZMY45vpnYWJSuuqMonJXxoESiQAAsVbx5HL5IWsA2Tsida4bqRUez4uwvW/RrsJm
- zcDlEh6xoEDde9nLLw7c2rvSMwWkh9aP3lHe5ot/BWd3Y0S87EIwcPbOTpxB0E1TSxU1
- zL7R7pcRHQEUeS/wnBAyZSlHDEbYSc9iCPoqLq/B2F5/UKwrGDVywc3eGQc3Uqocip2b Yg== 
+ bh=M4JkRyUtpBYTyskCMyRgwyciKvgvC8LijRprb37rIOk=;
+ b=owNw0yHVJ/UiBI3JZ+j6Hi9Ysx/EpH2/jQVlH9TITXuCUef7StfLgeIy9pfB2XShrgwe
+ 9sulYneu9stPkOzfX71fzr+hdfJZFxOWOByyghxn2m4EalIBFt0X8RDx7Fz+tPj8DXi1
+ 88tsqNsIbmMmBMO+MLjLalTdsQFME1FQjiU0RRWLQhy/WKPwDZtAyq8BC8Gir7LTL/sE
+ Loo4eGiAY5Nr3fWIkbOJDXgE54ZVRxOj2s6tDlFGuQJeQRPfHTlTeJGb19WUgkz08IuL
+ TnqPS68xo6vKDlFb4xc8fFROsRC3pLMuoYkTVjykyFWuk8bQrg57hkoEmYOM3J/dnRK3 Wg== 
 Received: from userp3020.oracle.com (userp3020.oracle.com [156.151.31.79])
-        by userp2130.oracle.com with ESMTP id 2w117tn76x-1
+        by userp2130.oracle.com with ESMTP id 2w117tn76k-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 Nov 2019 06:34:42 +0000
+        for <linux-btrfs@vger.kernel.org>; Mon, 04 Nov 2019 06:34:40 +0000
 Received: from pps.filterd (userp3020.oracle.com [127.0.0.1])
-        by userp3020.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xA46Ye1M131440
-        for <linux-btrfs@vger.kernel.org>; Mon, 4 Nov 2019 06:34:42 GMT
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by userp3020.oracle.com with ESMTP id 2w1kxcnf9u-1
+        by userp3020.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xA46Ydab131281
+        for <linux-btrfs@vger.kernel.org>; Mon, 4 Nov 2019 06:34:40 GMT
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by userp3020.oracle.com with ESMTP id 2w1kxcnf8q-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 Nov 2019 06:34:41 +0000
+        for <linux-btrfs@vger.kernel.org>; Mon, 04 Nov 2019 06:34:38 +0000
 Received: from abhmp0023.oracle.com (abhmp0023.oracle.com [141.146.116.29])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id xA46XpEe000602
-        for <linux-btrfs@vger.kernel.org>; Mon, 4 Nov 2019 06:33:51 GMT
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id xA46XkR4004186
+        for <linux-btrfs@vger.kernel.org>; Mon, 4 Nov 2019 06:33:46 GMT
 Received: from tp.wifi.oracle.com (/192.188.170.104)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Mon, 04 Nov 2019 06:33:50 +0000
+        with ESMTP ; Mon, 04 Nov 2019 06:33:46 +0000
 From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v1.1 16/18] btrfs-progs: refactor btrfs_scan_devices() to accept verbose argument
-Date:   Mon,  4 Nov 2019 14:33:14 +0800
-Message-Id: <1572849196-21775-17-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH v1.1 13/18] btrfs-progs: restore: use global verbose option
+Date:   Mon,  4 Nov 2019 14:33:11 +0800
+Message-Id: <1572849196-21775-14-git-send-email-anand.jain@oracle.com>
 X-Mailer: git-send-email 1.8.3.1
 In-Reply-To: <1572849196-21775-1-git-send-email-anand.jain@oracle.com>
 References: <1572849196-21775-1-git-send-email-anand.jain@oracle.com>
@@ -73,111 +73,171 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Function btrfs_scan_devices() is being used by commands such as
-'btrfs filesystem' and 'btrfs device', by having the verbose argument in
-the btrfs_scan_devices() we can control which threads to show the
-verbose when verbose is enabled by the global verbose option.
+Transpire global --verbose option down to the btrfs restore sub-command.
 
-So add an option %verbose to btrfs_scan_devices().
-
+Suggested-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
-v1.1: drop stale #include <stdbool.h> as %bconf.verbose is now int
+v1.1: use pr_verbose(-1,..) instead of all conditions printf();
 
- cmds/device.c        | 2 +-
- cmds/filesystem.c    | 2 +-
- common/device-scan.c | 3 ++-
- common/device-scan.h | 2 +-
- common/utils.c       | 2 +-
- disk-io.c            | 2 +-
- 6 files changed, 7 insertions(+), 6 deletions(-)
+ cmds/restore.c | 57 +++++++++++++++++++++++++++------------------------------
+ 1 file changed, 27 insertions(+), 30 deletions(-)
 
-diff --git a/cmds/device.c b/cmds/device.c
-index 24158308a41b..f96d71e0477a 100644
---- a/cmds/device.c
-+++ b/cmds/device.c
-@@ -354,7 +354,7 @@ static int cmd_device_scan(const struct cmd_struct *cmd, int argc, char **argv)
- 			}
- 		} else {
- 			printf("Scanning for Btrfs filesystems\n");
--			ret = btrfs_scan_devices();
-+			ret = btrfs_scan_devices(0);
- 			error_on(ret, "error %d while scanning", ret);
- 			ret = btrfs_register_all_devices();
- 			error_on(ret,
-diff --git a/cmds/filesystem.c b/cmds/filesystem.c
-index 819b9fd1fcc5..c5332335e417 100644
---- a/cmds/filesystem.c
-+++ b/cmds/filesystem.c
-@@ -746,7 +746,7 @@ devs_only:
- 		else
- 			ret = 1;
- 	} else {
--		ret = btrfs_scan_devices();
-+		ret = btrfs_scan_devices(0);
- 	}
+diff --git a/cmds/restore.c b/cmds/restore.c
+index c104b01aef69..5afa1c7c40ff 100644
+--- a/cmds/restore.c
++++ b/cmds/restore.c
+@@ -51,7 +51,6 @@ static char fs_name[PATH_MAX];
+ static char path_name[PATH_MAX];
+ static char symlink_target[PATH_MAX];
+ static int get_snaps = 0;
+-static int verbose = 0;
+ static int restore_metadata = 0;
+ static int restore_symlinks = 0;
+ static int ignore_errors = 0;
+@@ -375,8 +374,7 @@ static int copy_one_extent(struct btrfs_root *root, int fd,
+ 	if (compress == BTRFS_COMPRESS_NONE)
+ 		bytenr += offset;
  
- 	if (ret) {
-diff --git a/common/device-scan.c b/common/device-scan.c
-index 48dbd9e19715..b6b6b30cfb23 100644
---- a/common/device-scan.c
-+++ b/common/device-scan.c
-@@ -360,7 +360,7 @@ void free_seen_fsid(struct seen_fsid *seen_fsid_hash[])
- 	}
- }
+-	if (verbose && offset)
+-		printf("offset is %Lu\n", offset);
++	pr_verbose(offset ? 1 : 0, "offset is %Lu\n", offset);
+ 	/* we found a hole */
+ 	if (disk_size == 0)
+ 		return 0;
+@@ -832,11 +830,13 @@ static int overwrite_ok(const char * path)
+ 		if (overwrite)
+ 			return 2;
  
--int btrfs_scan_devices(void)
-+int btrfs_scan_devices(int verbose)
- {
- 	int fd = -1;
- 	int ret;
-@@ -404,6 +404,7 @@ int btrfs_scan_devices(void)
- 			close (fd);
- 			continue;
+-		if (verbose || !warn)
+-			printf("Skipping existing file"
+-				   " %s\n", path);
+-		if (!warn)
+-			printf("If you wish to overwrite use -o\n");
++		if (!warn) {
++			pr_verbose(-1, "Skipping existing file %s\n", path);
++			pr_verbose(-1, "If you wish to overwrite use -o\n");
++		} else {
++			pr_verbose(1, "Skipping existing file %s\n", path);
++		}
++
+ 		warn = 1;
+ 		return 0;
+ 	}
+@@ -987,9 +987,8 @@ static int search_dir(struct btrfs_root *root, struct btrfs_key *key,
+ 
+ 	leaf = path.nodes[0];
+ 	while (!leaf) {
+-		if (verbose > 1)
+-			printf("No leaf after search, looking for the next "
+-			       "leaf\n");
++		pr_verbose(2,
++			   "No leaf after search, looking for the next leaf\n");
+ 		ret = next_leaf(root, &path);
+ 		if (ret < 0) {
+ 			fprintf(stderr, "Error getting next leaf %d\n",
+@@ -997,9 +996,8 @@ static int search_dir(struct btrfs_root *root, struct btrfs_key *key,
+ 			goto out;
+ 		} else if (ret > 0) {
+ 			/* No more leaves to search */
+-			if (verbose)
+-				printf("Reached the end of the tree looking "
+-				       "for the directory\n");
++			pr_verbose(1,
++		   "Reached the end of the tree looking for the directory\n");
+ 			ret = 0;
+ 			goto out;
  		}
-+		pr_verbose(verbose, "registered: %s\n", path);
+@@ -1023,10 +1021,8 @@ static int search_dir(struct btrfs_root *root, struct btrfs_key *key,
+ 					goto out;
+ 				} else if (ret > 0) {
+ 					/* No more leaves to search */
+-					if (verbose)
+-						printf("Reached the end of "
+-						       "the tree searching the"
+-						       " directory\n");
++					pr_verbose(1,
++		"Reached the end of the tree searching the directory\n");
+ 					ret = 0;
+ 					goto out;
+ 				}
+@@ -1036,14 +1032,12 @@ static int search_dir(struct btrfs_root *root, struct btrfs_key *key,
+ 		}
+ 		btrfs_item_key_to_cpu(leaf, &found_key, path.slots[0]);
+ 		if (found_key.objectid != key->objectid) {
+-			if (verbose > 1)
+-				printf("Found objectid=%Lu, key=%Lu\n",
+-				       found_key.objectid, key->objectid);
++			pr_verbose(2, "Found objectid=%Lu, key=%Lu\n",
++				   found_key.objectid, key->objectid);
+ 			break;
+ 		}
+ 		if (found_key.type != key->type) {
+-			if (verbose > 1)
+-				printf("Found type=%u, want=%u\n",
++			pr_verbose(2, "Found type=%u, want=%u\n",
+ 				       found_key.type, key->type);
+ 			break;
+ 		}
+@@ -1072,8 +1066,7 @@ static int search_dir(struct btrfs_root *root, struct btrfs_key *key,
+ 			if (!overwrite_ok(path_name))
+ 				goto next;
  
- 		close(fd);
+-			if (verbose)
+-				printf("Restoring %s\n", path_name);
++			pr_verbose(1, "Restoring %s\n", path_name);
+ 			if (dry_run)
+ 				goto next;
+ 			fd = open(path_name, O_CREAT|O_WRONLY, 0644);
+@@ -1145,8 +1138,7 @@ static int search_dir(struct btrfs_root *root, struct btrfs_key *key,
+ 				location.objectid = BTRFS_FIRST_FREE_OBJECTID;
+ 			}
+ 
+-			if (verbose)
+-				printf("Restoring %s\n", path_name);
++			pr_verbose(1, "Restoring %s\n", path_name);
+ 
+ 			errno = 0;
+ 			if (dry_run)
+@@ -1209,8 +1201,7 @@ next:
+ 		}
  	}
-diff --git a/common/device-scan.h b/common/device-scan.h
-index eda2bae5c6c4..8017a27511b9 100644
---- a/common/device-scan.h
-+++ b/common/device-scan.h
-@@ -29,7 +29,7 @@ struct seen_fsid {
- 	int fd;
+ 
+-	if (verbose)
+-		printf("Done searching %s\n", in_dir);
++	pr_verbose(1, "Done searching %s\n", in_dir);
+ out:
+ 	btrfs_release_path(&path);
+ 	return ret;
+@@ -1420,6 +1411,8 @@ static const char * const cmd_restore_usage[] = {
+ 	"                     you have to use following syntax (possibly quoted):",
+ 	"                     ^/(|home(|/username(|/Desktop(|/.*))))$",
+ 	"-c                   ignore case (--path-regex only)",
++	HELPINFO_GLOBAL_OPTIONS_HEADER,
++	HELPINFO_INSERT_VERBOSE,
+ 	NULL
  };
  
--int btrfs_scan_devices(void);
-+int btrfs_scan_devices(int verbose);
- int btrfs_register_one_device(const char *fname);
- int btrfs_register_all_devices(void);
- int btrfs_add_to_fsid(struct btrfs_trans_handle *trans,
-diff --git a/common/utils.c b/common/utils.c
-index c2c6d0af0efc..81c319f8ff52 100644
---- a/common/utils.c
-+++ b/common/utils.c
-@@ -277,7 +277,7 @@ int check_mounted_where(int fd, const char *file, char *where, int size,
+@@ -1441,6 +1434,10 @@ static int cmd_restore(const struct cmd_struct *cmd, int argc, char **argv)
+ 	regex_t match_reg, *mreg = NULL;
+ 	char reg_err[256];
  
- 	/* scan other devices */
- 	if (is_btrfs && total_devs > 1) {
--		ret = btrfs_scan_devices();
-+		ret = btrfs_scan_devices(0);
- 		if (ret)
- 			return ret;
- 	}
-diff --git a/disk-io.c b/disk-io.c
-index c3e85c0ee06e..beec7b162531 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -1097,7 +1097,7 @@ int btrfs_scan_fs_devices(int fd, const char *path,
- 	}
- 
- 	if (!skip_devices && total_devs != 1) {
--		ret = btrfs_scan_devices();
-+		ret = btrfs_scan_devices(0);
- 		if (ret)
- 			return ret;
- 	}
++	/* Init global verbose if unset */
++	if (bconf.verbose < 0)
++		bconf.verbose = 0;
++
+ 	optind = 0;
+ 	while (1) {
+ 		int opt;
+@@ -1472,7 +1469,7 @@ static int cmd_restore(const struct cmd_struct *cmd, int argc, char **argv)
+ 				get_snaps = 1;
+ 				break;
+ 			case 'v':
+-				verbose++;
++				bconf.verbose++;
+ 				break;
+ 			case 'i':
+ 				ignore_errors = 1;
 -- 
 1.8.3.1
 

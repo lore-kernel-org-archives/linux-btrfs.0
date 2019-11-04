@@ -2,170 +2,152 @@ Return-Path: <SRS0=gdyl=Y4=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.4 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,
+	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AC290CA9ECF
-	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Nov 2019 06:27:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9C907CA9ECF
+	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Nov 2019 06:34:36 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 7E64920848
-	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Nov 2019 06:27:11 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6EE5D20578
+	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Nov 2019 06:34:36 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="sRWv/B4k"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="DqP4a/nl"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728293AbfKDG1K (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 4 Nov 2019 01:27:10 -0500
-Received: from aserp2120.oracle.com ([141.146.126.78]:54376 "EHLO
+        id S1728316AbfKDGef (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 4 Nov 2019 01:34:35 -0500
+Received: from aserp2120.oracle.com ([141.146.126.78]:32790 "EHLO
         aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728064AbfKDG1I (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Nov 2019 01:27:08 -0500
+        with ESMTP id S1728268AbfKDGef (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Nov 2019 01:34:35 -0500
 Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xA46OD48180004;
-        Mon, 4 Nov 2019 06:27:03 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : subject : to :
- references : message-id : date : mime-version : in-reply-to : content-type
- : content-transfer-encoding; s=corp-2019-08-05;
- bh=hQZeWgvqDOpfb+Xevnhaz3cICIeWbRjiyGq0V1d0sFo=;
- b=sRWv/B4kXkagvgYY0EsqdjJWagtl57C6IcjCYOmlkUrNFtbZVKZ8mA98WzdNF/8tHxlT
- 7yJNEcdBtyCV2euhBpFemkptv9haNxgWyI7hFUE3nRD8mAfx6jc6Sv4KQiMhxGcjiyxt
- Qv0SGUqz+yw7ln1I9zx5aGGf+9aTwqPhmV/VoZ3209NK+HKWZNQJl8v7jKJFhYsubFgK
- SeA73rUfr27xeuaLEzNB5oT4rw4CxMQ7DLaOsHVjTX1NdKYDlUcH92AKIBdNzTJ2p558
- ayFWmFMr2uUM/gNceqdcW58V9y+DbD1ntmlzEjsbk/sWYuqZQil0NvOviUZB2NLX83vg 5g== 
-Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
-        by aserp2120.oracle.com with ESMTP id 2w11rpn52c-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Mon, 04 Nov 2019 06:27:02 +0000
-Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
-        by userp3030.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xA46OMBh044896;
-        Mon, 4 Nov 2019 06:27:02 GMT
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by userp3030.oracle.com with ESMTP id 2w1k8u609a-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Mon, 04 Nov 2019 06:27:01 +0000
-Received: from abhmp0003.oracle.com (abhmp0003.oracle.com [141.146.116.9])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id xA46R03o020394;
-        Mon, 4 Nov 2019 06:27:00 GMT
-Received: from [10.190.155.136] (/192.188.170.104)
+        by aserp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xA46YXUd187178
+        for <linux-btrfs@vger.kernel.org>; Mon, 4 Nov 2019 06:34:33 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
+ date : message-id : in-reply-to : references; s=corp-2019-08-05;
+ bh=JQIReaKp9e6eoi7r6LLrz6DY/1J7adoj9GBx7dLWOVo=;
+ b=DqP4a/nlbkNLrfZtDF5WEtkvCtE1ZIZjzFmfnzpAc6rlMieRgEaGcIe8ZRGKUuld/ULh
+ YeqAuMyXI+Brtwc0ObqpaV4XMf6a/KZnTrD6z5BXe95j5QZTLXvq2BjCJIGOan30/XYw
+ 5UmIfPYH2RnU2jPqg5Zly/iYZg84vqTXH/gqqxL8D0tzAMQmXnBZjM0YSpldnrU3ZN5O
+ b+PgRmzjzHlg7MXDEIGxLNl+MxTGynV+cV1d7HY1BRxJzsnApNgiXoF/MoIsi2VK0qCN
+ Tsua6UyMHAOoxkW671wsi6orF+c6eB7I/+Vyc4Q1KsADZSo7aG1wOGC7rm3Z4bwmTPcv TQ== 
+Received: from aserp3030.oracle.com (aserp3030.oracle.com [141.146.126.71])
+        by aserp2120.oracle.com with ESMTP id 2w11rpn5nx-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Mon, 04 Nov 2019 06:34:33 +0000
+Received: from pps.filterd (aserp3030.oracle.com [127.0.0.1])
+        by aserp3030.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xA46YUnh187427
+        for <linux-btrfs@vger.kernel.org>; Mon, 4 Nov 2019 06:34:33 GMT
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by aserp3030.oracle.com with ESMTP id 2w1kxkt9ak-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Mon, 04 Nov 2019 06:34:33 +0000
+Received: from abhmp0023.oracle.com (abhmp0023.oracle.com [141.146.116.29])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id xA46XlL3031009
+        for <linux-btrfs@vger.kernel.org>; Mon, 4 Nov 2019 06:33:47 GMT
+Received: from tp.wifi.oracle.com (/192.188.170.104)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Sun, 03 Nov 2019 22:27:00 -0800
+        with ESMTP ; Mon, 04 Nov 2019 06:33:47 +0000
 From:   Anand Jain <anand.jain@oracle.com>
-Subject: Re: [RFC PATCH 0/3] btrfs-progs: make quiet to overrule verbose
-To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
-References: <20191024062825.13097-1-anand.jain@oracle.com>
- <20191024154151.GI3001@twin.jikos.cz>
- <1166a5c7-8bc9-b93f-6f4c-8871b5fc394b@oracle.com>
- <7b97f0ce-1f62-09fa-ad86-6a4d0af40e1d@oracle.com>
- <20191025163555.GP3001@twin.jikos.cz>
- <79a8fa97-6aff-3698-2263-548fbb68baf0@oracle.com>
- <0bf84f2d-d125-8c06-cb1a-e5498d84d196@oracle.com>
- <20191101151815.GV3001@twin.jikos.cz>
-Message-ID: <cc5d4ad7-04c3-c752-65d0-3997a101e4b4@oracle.com>
-Date:   Mon, 4 Nov 2019 14:26:48 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.8.0
-MIME-Version: 1.0
-In-Reply-To: <20191101151815.GV3001@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH v1 14/18] btrfs-progs: inspect-internal inode-resolve: use global verbose
+Date:   Mon,  4 Nov 2019 14:33:12 +0800
+Message-Id: <1572849196-21775-15-git-send-email-anand.jain@oracle.com>
+X-Mailer: git-send-email 1.8.3.1
+In-Reply-To: <1572849196-21775-1-git-send-email-anand.jain@oracle.com>
+References: <1572849196-21775-1-git-send-email-anand.jain@oracle.com>
 X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9430 signatures=668685
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=1 malwarescore=0
  phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
  adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.0.1-1908290000 definitions=main-1911040061
+ engine=8.0.1-1908290000 definitions=main-1911040063
 X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9430 signatures=668685
 X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
- suspectscore=0 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
+ suspectscore=1 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
  lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
  classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1908290000
- definitions=main-1911040061
+ definitions=main-1911040063
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+Transpire global --verbose option down to the
+btrfs inspect-internal inode-resolve sub-command.
 
+Suggested-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ cmds/inspect.c | 24 ++++++++++++++----------
+ 1 file changed, 14 insertions(+), 10 deletions(-)
 
-On 11/1/19 11:18 PM, David Sterba wrote:
-> On Wed, Oct 30, 2019 at 03:42:56AM +0800, Anand Jain wrote:
->>>>>     Question: command -v -q -v should be equal to command -v, right?
->>>>
->>>> No, that would be equivalent to the default level:
->>>>
->>>> verbose starts with 1            ()
->>>> verbose++                (-v)
->>>> verbose = 0                (-q)
->>>> verbose++ is now 1, which is not -v    ()
->>>>
->>>
->>> Oh I was thinking its a bug, and no need to carry forward to the global
->>> verbose. Will make it look like this.
->>
->> What do you think should be the final %verbose value when both
->> local and global verbose and or quiet options are specified?
->>
->> For example:
->>    btrfs -v -q sub-command -v
->>    btrfs -q sub-command -v
->>    btrfs -vv sub-command -q
->>    etc..
-> 
-> Ah that's the conflicting part.
-
-> I'd say treat all -v and -q equal,
-
-  Umm I don't understand what is treating equal here.
-  The sub-command already treats differently under sub-command options.
-  As shown below.
-
-       case 'v':
-                 bconf.verbose++;
-                 break;
-       case 'q':
-                 bconf.verbose = 0;
-		break;
-
-
-> so
-> modify the bconf.verbose variable, and it's straightforward to document.
-> Some time in the future we should also issue a warning for 'sub-command
-> -v'.
-
-  I am guessing you mean:- Warning option is deprecated ?
-
-> The order makes it unintuitive so
-> 
->    btrfs -q command -v
-> 
-> is going to be the default verbosity.
-
-  default verbosity is 0? 1 ?
-  As of now in send/receive default verbosity is 1. And rest
-  of the sub-commands its 0.
-
-  And as the -v is last to appear the command will be
-  equivalent to 'btrfs sub-command -q -v' which is verbosity level 1.
-  I hope this is reasonable.
-
-> We can't ignore the sub-command
-> part, and making it conditionally work in case there's no global
-> verbosity setting is kind of complicating it.
-
-  Umm. As of now in v1.1, the sub-command continues to operate on the
-  global bconf.verbose values, which works very well. Please see v1.1
-  in the ML.
-
-> So let's take the simple approach, maybe we'll have second thought on
-> that before release.
-> 
-
-  Sure. To simplify the discussion, in v1.1 cover-letter I have included
-  verbosity implementation code sample, hope this helps.
-
-verbosity code sample as in v1.1
-
-Thanks, Anand
-
+diff --git a/cmds/inspect.c b/cmds/inspect.c
+index 758b6e60c591..f36fee395159 100644
+--- a/cmds/inspect.c
++++ b/cmds/inspect.c
+@@ -56,12 +56,11 @@ static int __ino_to_path_fd(u64 inum, int fd, int verbose, const char *prepend)
+ 		goto out;
+ 	}
+ 
+-	if (verbose)
+-		printf("ioctl ret=%d, bytes_left=%lu, bytes_missing=%lu, "
+-			"cnt=%d, missed=%d\n", ret,
+-			(unsigned long)fspath->bytes_left,
+-			(unsigned long)fspath->bytes_missing,
+-			fspath->elem_cnt, fspath->elem_missed);
++	pr_verbose(1,
++	"ioctl ret=%d, bytes_left=%lu, bytes_missing=%lu cnt=%d, missed=%d\n",
++		   ret, (unsigned long)fspath->bytes_left,
++		   (unsigned long)fspath->bytes_missing, fspath->elem_cnt,
++		   fspath->elem_missed);
+ 
+ 	for (i = 0; i < fspath->elem_cnt; ++i) {
+ 		u64 ptr;
+@@ -84,6 +83,8 @@ static const char * const cmd_inspect_inode_resolve_usage[] = {
+ 	"Get file system paths for the given inode",
+ 	"",
+ 	"-v   verbose mode",
++	HELPINFO_GLOBAL_OPTIONS_HEADER,
++	HELPINFO_INSERT_VERBOSE,
+ 	NULL
+ };
+ 
+@@ -91,10 +92,13 @@ static int cmd_inspect_inode_resolve(const struct cmd_struct *cmd,
+ 				     int argc, char **argv)
+ {
+ 	int fd;
+-	int verbose = 0;
+ 	int ret;
+ 	DIR *dirstream = NULL;
+ 
++	/* set global verbose if unset */
++	if (bconf.verbose < 0)
++		bconf.verbose = 0;
++
+ 	optind = 0;
+ 	while (1) {
+ 		int c = getopt(argc, argv, "v");
+@@ -103,7 +107,7 @@ static int cmd_inspect_inode_resolve(const struct cmd_struct *cmd,
+ 
+ 		switch (c) {
+ 		case 'v':
+-			verbose = 1;
++			bconf.verbose++;
+ 			break;
+ 		default:
+ 			usage_unknown_option(cmd, argv);
+@@ -117,8 +121,8 @@ static int cmd_inspect_inode_resolve(const struct cmd_struct *cmd,
+ 	if (fd < 0)
+ 		return 1;
+ 
+-	ret = __ino_to_path_fd(arg_strtou64(argv[optind]), fd, verbose,
+-			       argv[optind+1]);
++	ret = __ino_to_path_fd(arg_strtou64(argv[optind]), fd,
++			       bconf.verbose, argv[optind+1]);
+ 	close_file_or_dir(fd, dirstream);
+ 	return !!ret;
+ 
+-- 
+1.8.3.1
 

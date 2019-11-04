@@ -7,53 +7,53 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,
 	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EDD0DCA9ED3
-	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Nov 2019 06:34:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 452CFCA9ED2
+	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Nov 2019 06:34:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C523320578
-	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Nov 2019 06:34:53 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 131EF21D7D
+	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Nov 2019 06:34:55 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="dPpnxwlu"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="JLEypLEl"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728475AbfKDGex (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 4 Nov 2019 01:34:53 -0500
-Received: from userp2130.oracle.com ([156.151.31.86]:41952 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728469AbfKDGew (ORCPT
+        id S1728480AbfKDGey (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 4 Nov 2019 01:34:54 -0500
+Received: from userp2120.oracle.com ([156.151.31.85]:42014 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728468AbfKDGew (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Nov 2019 01:34:52 -0500
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xA46YZOi003925
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xA46YXmH174095
         for <linux-btrfs@vger.kernel.org>; Mon, 4 Nov 2019 06:34:51 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
  date : message-id : in-reply-to : references; s=corp-2019-08-05;
- bh=HVN7Ghbw1bYCzRqjiMfCU6wRN5bhRVK0yMOh1Bx5kP4=;
- b=dPpnxwlufW5WwFGihMhdWc/qDia73ybsucAWoD66gkQSrfyLx4+DP6qnbA/KVYbIRHqW
- ilXrcwXI+tRUHyBjK9/EKj15prdGB5fksfXF82t50y5sWmpH33mULcBUUH595IQBE3L8
- cBl3MELaJ5aFNpwbxMz5kk5AsbFf/O6IMPtR8InAjSZ1flGs7SB+cxyT2VVXrT/+IV2a
- MzUMoLiBhnYKtCBM1t6Akzj0MzbJMKejssMuz38XTudnCztwJ0vZudrVybyQo+lAnEdG
- Ip8SCZjAmMAq5yY9cGDCvr9ITOIT1dsCRADTo9VwnHn9Knr0te4WLPHut+8BAwwArKk6 jw== 
+ bh=J41ZmfPWCTuX/JfSTjtVB/bJycUC0QP4KfUkiHg1uzo=;
+ b=JLEypLElClpatlj4dCU6jB1dJjfsBfVh6yzBamcoCM6eqaWNVLUzWGWOEiGgvs9D5QMq
+ xTFCeN6tfPFgTShpScAIFm6dYddQwGv/TVKGqsFc2dY7mZuwr7Pifsz6UQ9rsGiuqYDU
+ WppuYNOy4VpGf63NaJ32CnV5buKmiSWivCaPaGTqELQIyUt/uBZ5tnzJjRQbVllpZ5XX
+ zulPFSw/pMnRAgl07lU2pIOjUSJRNEgd96+ucQ4YAoT1b1omsXew2+nd8rrzSE1dR7o4
+ ZiGDLRMOgd+iFauKpLtXPMSu2Ef381gyerQGzBRw1RagguCkSWtAX4msYEXmI4nhpKOd 3A== 
 Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
-        by userp2130.oracle.com with ESMTP id 2w117tn796-1
+        by userp2120.oracle.com with ESMTP id 2w12eqw10e-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 Nov 2019 06:34:51 +0000
+        for <linux-btrfs@vger.kernel.org>; Mon, 04 Nov 2019 06:34:50 +0000
 Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
-        by userp3030.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xA46Yjqd066397
+        by userp3030.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xA46YjSt066394
         for <linux-btrfs@vger.kernel.org>; Mon, 4 Nov 2019 06:34:50 GMT
 Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by userp3030.oracle.com with ESMTP id 2w1k8u69hu-1
+        by userp3030.oracle.com with ESMTP id 2w1k8u69js-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 Nov 2019 06:34:46 +0000
+        for <linux-btrfs@vger.kernel.org>; Mon, 04 Nov 2019 06:34:45 +0000
 Received: from abhmp0023.oracle.com (abhmp0023.oracle.com [141.146.116.29])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id xA46XXUe000405
-        for <linux-btrfs@vger.kernel.org>; Mon, 4 Nov 2019 06:33:33 GMT
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id xA46XasU000414
+        for <linux-btrfs@vger.kernel.org>; Mon, 4 Nov 2019 06:33:36 GMT
 Received: from tp.wifi.oracle.com (/192.188.170.104)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Mon, 04 Nov 2019 06:33:33 +0000
+        with ESMTP ; Mon, 04 Nov 2019 06:33:36 +0000
 From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v1.1 04/18] btrfs-progs: add global verbose and quiet options and helper functions
-Date:   Mon,  4 Nov 2019 14:33:02 +0800
-Message-Id: <1572849196-21775-5-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH v1.1 06/18] btrfs-progs: receive: use global verbose and quiet options
+Date:   Mon,  4 Nov 2019 14:33:04 +0800
+Message-Id: <1572849196-21775-7-git-send-email-anand.jain@oracle.com>
 X-Mailer: git-send-email 1.8.3.1
 In-Reply-To: <1572849196-21775-1-git-send-email-anand.jain@oracle.com>
 References: <1572849196-21775-1-git-send-email-anand.jain@oracle.com>
@@ -73,179 +73,341 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Add btrfs(8) global --verbose and --quiet command options to show
-verbose or no output from the sub-commands.
-By introducing global a %bconf::verbose memeber to transpire the same
-down to the sub-command.
-Further the added helper function pr_verbose() helps to logs the verbose
-messages, based on the state of the %bconf::verbose. And further HELPINFO_
-defines are provides for the usage.
+Transpire global --verbose and --quiet options down to the btrfs receive
+sub-command.
 
 Suggested-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
 v1.1: Fix typo in HELPINFO_INSERT_QUIET
-      Drop stale #include <stdbool.h> we don't need it because
-      %bconf.verbose is now declared as int.
 
- btrfs.c           | 20 ++++++++++++++++++--
- common/help.h     | 11 +++++++++++
- common/messages.c | 17 +++++++++++++++++
- common/messages.h |  3 +++
- common/utils.c    |  1 +
- common/utils.h    |  3 +++
- 6 files changed, 53 insertions(+), 2 deletions(-)
+Global verbose and quite option sequences behave differently from the
+same sequence in the local command, as show below.
 
-diff --git a/btrfs.c b/btrfs.c
-index 6c8aabe24dc8..a97bc1858390 100644
---- a/btrfs.c
-+++ b/btrfs.c
-@@ -27,7 +27,7 @@
- #include "common/box.h"
+Before:
+  btrfs receive -q -v -f /tmp/t /btrfs1
+  At snapshot ss3
+
+  btrfs receive -v -f /tmp/t /btrfs1
+  At snapshot ss3
+  receiving snapshot ss3 uuid=9d0001ec-29e4-194a-a13e-42d9f428d745, ctransid=11 parent_uuid=a6b75134-8865-f045-89d2-c2afcf794475, parent_ctransid=11
+  BTRFS_IOC_SET_RECEIVED_SUBVOL uuid=9d0001ec-29e4-194a-a13e-42d9f428d745, stransid=11
+
+After:
+In the sub-command level the output remains same as before.
+  btrfs receive -q -v -f /tmp/t /btrfs1
+  At snapshot ss3
+
+In the global verbose level it does it correctly
+which is same as 'before: btrfs receive -v'
+  btrfs -q -v receive -f /tmp/t /btrfs1
+  At snapshot ss3
+  receiving snapshot ss3 uuid=9d0001ec-29e4-194a-a13e-42d9f428d745, ctransid=11 parent_uuid=a6b75134-8865-f045-89d2-c2afcf794475, parent_ctransid=11
+  BTRFS_IOC_SET_RECEIVED_SUBVOL uuid=9d0001ec-29e4-194a-a13e-42d9f428d745, stransid=11
+
+btrfs -q -v receive is same as btrfs -v receive, I belive this isn't regression.
+
+ cmds/receive.c | 80 ++++++++++++++++++++++++++++++++--------------------------
+ 1 file changed, 44 insertions(+), 36 deletions(-)
+
+diff --git a/cmds/receive.c b/cmds/receive.c
+index c4827c1dd999..05718ecb0287 100644
+--- a/cmds/receive.c
++++ b/cmds/receive.c
+@@ -53,12 +53,6 @@
+ #include "common/help.h"
+ #include "common/path-utils.h"
  
- static const char * const btrfs_cmd_group_usage[] = {
--	"btrfs [--help] [--version] [--format <format>] <group> [<group>...] <command> [<args>]",
-+	"btrfs [--help] [--version] [--format <format>] [-v|--verbose] [--quiet] <group> [<group>...] <command> [<args>]",
+-/*
+- * Default is 1 for historical reasons, changing may break scripts that expect
+- * the 'At subvol' message.
+- */
+-static int g_verbose = 1;
+-
+ struct btrfs_receive
+ {
+ 	int mnt_fd;
+@@ -116,7 +110,7 @@ static int finish_subvol(struct btrfs_receive *rctx)
+ 	memcpy(rs_args.uuid, rctx->cur_subvol.received_uuid, BTRFS_UUID_SIZE);
+ 	rs_args.stransid = rctx->cur_subvol.stransid;
+ 
+-	if (g_verbose >= 2) {
++	if (bconf.verbose >= 2) {
+ 		uuid_unparse((u8*)rs_args.uuid, uuid_str);
+ 		fprintf(stderr, "BTRFS_IOC_SET_RECEIVED_SUBVOL uuid=%s, "
+ 				"stransid=%llu\n", uuid_str, rs_args.stransid);
+@@ -199,13 +193,13 @@ static int process_subvol(const char *path, const u8 *uuid, u64 ctransid,
+ 		goto out;
+ 	}
+ 
+-	if (g_verbose)
++	if (bconf.verbose >= 1)
+ 		fprintf(stderr, "At subvol %s\n", path);
+ 
+ 	memcpy(rctx->cur_subvol.received_uuid, uuid, BTRFS_UUID_SIZE);
+ 	rctx->cur_subvol.stransid = ctransid;
+ 
+-	if (g_verbose >= 2) {
++	if (bconf.verbose >= 2) {
+ 		uuid_unparse((u8*)rctx->cur_subvol.received_uuid, uuid_str);
+ 		fprintf(stderr, "receiving subvol %s uuid=%s, stransid=%llu\n",
+ 				path, uuid_str,
+@@ -269,13 +263,12 @@ static int process_snapshot(const char *path, const u8 *uuid, u64 ctransid,
+ 		goto out;
+ 	}
+ 
+-	if (g_verbose)
+-		fprintf(stdout, "At snapshot %s\n", path);
++	pr_verbose(1, "At snapshot %s\n", path);
+ 
+ 	memcpy(rctx->cur_subvol.received_uuid, uuid, BTRFS_UUID_SIZE);
+ 	rctx->cur_subvol.stransid = ctransid;
+ 
+-	if (g_verbose >= 2) {
++	if (bconf.verbose >= 2) {
+ 		uuid_unparse((u8*)rctx->cur_subvol.received_uuid, uuid_str);
+ 		fprintf(stderr, "receiving snapshot %s uuid=%s, "
+ 				"ctransid=%llu ", path, uuid_str,
+@@ -402,7 +395,7 @@ static int process_mkfile(const char *path, void *user)
+ 		goto out;
+ 	}
+ 
+-	if (g_verbose >= 3)
++	if (bconf.verbose >= 3)
+ 		fprintf(stderr, "mkfile %s\n", path);
+ 
+ 	ret = creat(full_path, 0600);
+@@ -430,7 +423,7 @@ static int process_mkdir(const char *path, void *user)
+ 		goto out;
+ 	}
+ 
+-	if (g_verbose >= 3)
++	if (bconf.verbose >= 3)
+ 		fprintf(stderr, "mkdir %s\n", path);
+ 
+ 	ret = mkdir(full_path, 0700);
+@@ -455,7 +448,7 @@ static int process_mknod(const char *path, u64 mode, u64 dev, void *user)
+ 		goto out;
+ 	}
+ 
+-	if (g_verbose >= 3)
++	if (bconf.verbose >= 3)
+ 		fprintf(stderr, "mknod %s mode=%llu, dev=%llu\n",
+ 				path, mode, dev);
+ 
+@@ -481,7 +474,7 @@ static int process_mkfifo(const char *path, void *user)
+ 		goto out;
+ 	}
+ 
+-	if (g_verbose >= 3)
++	if (bconf.verbose >= 3)
+ 		fprintf(stderr, "mkfifo %s\n", path);
+ 
+ 	ret = mkfifo(full_path, 0600);
+@@ -506,7 +499,7 @@ static int process_mksock(const char *path, void *user)
+ 		goto out;
+ 	}
+ 
+-	if (g_verbose >= 3)
++	if (bconf.verbose >= 3)
+ 		fprintf(stderr, "mksock %s\n", path);
+ 
+ 	ret = mknod(full_path, 0600 | S_IFSOCK, 0);
+@@ -531,7 +524,7 @@ static int process_symlink(const char *path, const char *lnk, void *user)
+ 		goto out;
+ 	}
+ 
+-	if (g_verbose >= 3)
++	if (bconf.verbose >= 3)
+ 		fprintf(stderr, "symlink %s -> %s\n", path, lnk);
+ 
+ 	ret = symlink(lnk, full_path);
+@@ -563,7 +556,7 @@ static int process_rename(const char *from, const char *to, void *user)
+ 		goto out;
+ 	}
+ 
+-	if (g_verbose >= 3)
++	if (bconf.verbose >= 3)
+ 		fprintf(stderr, "rename %s -> %s\n", from, to);
+ 
+ 	ret = rename(full_from, full_to);
+@@ -595,7 +588,7 @@ static int process_link(const char *path, const char *lnk, void *user)
+ 		goto out;
+ 	}
+ 
+-	if (g_verbose >= 3)
++	if (bconf.verbose >= 3)
+ 		fprintf(stderr, "link %s -> %s\n", path, lnk);
+ 
+ 	ret = link(full_link_path, full_path);
+@@ -621,7 +614,7 @@ static int process_unlink(const char *path, void *user)
+ 		goto out;
+ 	}
+ 
+-	if (g_verbose >= 3)
++	if (bconf.verbose >= 3)
+ 		fprintf(stderr, "unlink %s\n", path);
+ 
+ 	ret = unlink(full_path);
+@@ -646,7 +639,7 @@ static int process_rmdir(const char *path, void *user)
+ 		goto out;
+ 	}
+ 
+-	if (g_verbose >= 3)
++	if (bconf.verbose >= 3)
+ 		fprintf(stderr, "rmdir %s\n", path);
+ 
+ 	ret = rmdir(full_path);
+@@ -711,7 +704,7 @@ static int process_write(const char *path, const void *data, u64 offset,
+ 	if (ret < 0)
+ 		goto out;
+ 
+-	if (g_verbose >= 2)
++	if (bconf.verbose >= 2)
+ 		fprintf(stderr, "write %s - offset=%llu length=%llu\n",
+ 			path, offset, len);
+ 
+@@ -819,7 +812,7 @@ static int process_clone(const char *path, u64 offset, u64 len,
+ 		goto out;
+ 	}
+ 
+-	if (g_verbose >= 2)
++	if (bconf.verbose >= 2)
+ 		fprintf(stderr,
+ 			"clone %s - source=%s source offset=%llu offset=%llu length=%llu\n",
+ 			path, clone_path, clone_offset, offset, len);
+@@ -860,7 +853,7 @@ static int process_set_xattr(const char *path, const char *name,
+ 	}
+ 
+ 	if (strcmp("security.capability", name) == 0) {
+-		if (g_verbose >= 4)
++		if (bconf.verbose >= 4)
+ 			fprintf(stderr, "set_xattr: cache capabilities\n");
+ 		if (rctx->cached_capabilities_len)
+ 			warning("capabilities set multiple times per file: %s",
+@@ -875,7 +868,7 @@ static int process_set_xattr(const char *path, const char *name,
+ 		memcpy(rctx->cached_capabilities, data, len);
+ 	}
+ 
+-	if (g_verbose >= 3) {
++	if (bconf.verbose >= 3) {
+ 		fprintf(stderr, "set_xattr %s - name=%s data_len=%d "
+ 				"data=%.*s\n", path, name, len,
+ 				len, (char*)data);
+@@ -905,7 +898,7 @@ static int process_remove_xattr(const char *path, const char *name, void *user)
+ 		goto out;
+ 	}
+ 
+-	if (g_verbose >= 3) {
++	if (bconf.verbose >= 3) {
+ 		fprintf(stderr, "remove_xattr %s - name=%s\n",
+ 				path, name);
+ 	}
+@@ -933,7 +926,7 @@ static int process_truncate(const char *path, u64 size, void *user)
+ 		goto out;
+ 	}
+ 
+-	if (g_verbose >= 3)
++	if (bconf.verbose >= 3)
+ 		fprintf(stderr, "truncate %s size=%llu\n", path, size);
+ 
+ 	ret = truncate(full_path, size);
+@@ -959,7 +952,7 @@ static int process_chmod(const char *path, u64 mode, void *user)
+ 		goto out;
+ 	}
+ 
+-	if (g_verbose >= 3)
++	if (bconf.verbose >= 3)
+ 		fprintf(stderr, "chmod %s - mode=0%o\n", path, (int)mode);
+ 
+ 	ret = chmod(full_path, mode);
+@@ -985,7 +978,7 @@ static int process_chown(const char *path, u64 uid, u64 gid, void *user)
+ 		goto out;
+ 	}
+ 
+-	if (g_verbose >= 3)
++	if (bconf.verbose >= 3)
+ 		fprintf(stderr, "chown %s - uid=%llu, gid=%llu\n", path,
+ 				uid, gid);
+ 
+@@ -997,7 +990,7 @@ static int process_chown(const char *path, u64 uid, u64 gid, void *user)
+ 	}
+ 
+ 	if (rctx->cached_capabilities_len) {
+-		if (g_verbose >= 3)
++		if (bconf.verbose >= 3)
+ 			fprintf(stderr, "chown: restore capabilities\n");
+ 		ret = lsetxattr(full_path, "security.capability",
+ 				rctx->cached_capabilities,
+@@ -1031,7 +1024,7 @@ static int process_utimes(const char *path, struct timespec *at,
+ 		goto out;
+ 	}
+ 
+-	if (g_verbose >= 3)
++	if (bconf.verbose >= 3)
+ 		fprintf(stderr, "utimes %s\n", path);
+ 
+ 	tv[0] = *at;
+@@ -1050,7 +1043,7 @@ out:
+ static int process_update_extent(const char *path, u64 offset, u64 len,
+ 		void *user)
+ {
+-	if (g_verbose >= 3)
++	if (bconf.verbose >= 3)
+ 		fprintf(stderr, "update_extent %s: offset=%llu, len=%llu\n",
+ 				path, (unsigned long long)offset,
+ 				(unsigned long long)len);
+@@ -1190,7 +1183,7 @@ static int do_receive(struct btrfs_receive *rctx, const char *tomnt,
+ 
+ 	while (!end) {
+ 		if (rctx->cached_capabilities_len) {
+-			if (g_verbose >= 4)
++			if (bconf.verbose >= 4)
+ 				fprintf(stderr, "clear cached capabilities\n");
+ 			memset(rctx->cached_capabilities, 0,
+ 					sizeof(rctx->cached_capabilities));
+@@ -1279,6 +1272,9 @@ static const char * const cmd_receive_usage[] = {
+ 	"                 this file system is mounted.",
+ 	"--dump           dump stream metadata, one line per operation,",
+ 	"                 does not require the MOUNT parameter",
++	HELPINFO_GLOBAL_OPTIONS_HEADER,
++	HELPINFO_INSERT_VERBOSE,
++	HELPINFO_INSERT_QUIET,
  	NULL
  };
  
-@@ -248,6 +248,8 @@ static int handle_global_options(int argc, char **argv)
- 		{ "version", no_argument, NULL, OPT_VERSION },
- 		{ "format", required_argument, NULL, OPT_FORMAT },
- 		{ "full", no_argument, NULL, OPT_FULL },
-+		{ "verbose", no_argument, NULL, 'v' },
-+		{ "quiet", no_argument, NULL, 'q' },
- 		{ NULL, 0, NULL, 0}
- 	};
- 	int shift;
-@@ -259,7 +261,7 @@ static int handle_global_options(int argc, char **argv)
+@@ -1301,6 +1297,18 @@ static int cmd_receive(const struct cmd_struct *cmd, int argc, char **argv)
+ 	realmnt[0] = 0;
+ 	fromfile[0] = 0;
+ 
++	/*
++	 * Init global verbose to default, if it is unset.
++	 * Default is 1 for historical reasons, changing may break scripts that
++	 * expect the 'At subvol' message.
++	 * As default is 1, which means the effective verbose for receive is 2
++	 * which global verbose is unaware. So adjust global verbose value here.
++	 */
++	if (bconf.verbose < 0)
++		bconf.verbose = 1;
++	else if (bconf.verbose > 0)
++		bconf.verbose++;
++
+ 	optind = 0;
  	while (1) {
  		int c;
+@@ -1319,10 +1327,10 @@ static int cmd_receive(const struct cmd_struct *cmd, int argc, char **argv)
  
--		c = getopt_long(argc, argv, "+", long_options, NULL);
-+		c = getopt_long(argc, argv, "+vq", long_options, NULL);
- 		if (c < 0)
+ 		switch (c) {
+ 		case 'v':
+-			g_verbose++;
++			bconf.verbose++;
  			break;
- 
-@@ -270,6 +272,12 @@ static int handle_global_options(int argc, char **argv)
- 		case OPT_FORMAT:
- 			handle_output_format(optarg);
+ 		case 'q':
+-			g_verbose = 0;
++			bconf.verbose = 0;
  			break;
-+		case 'v':
-+			bconf.verbose < 0 ? bconf.verbose = 1 : bconf.verbose++;
-+			break;
-+		case 'q':
-+			bconf.verbose = 0;
-+			break;
- 		default:
- 			fprintf(stderr, "Unknown global option: %s\n",
- 					argv[optind - 1]);
-@@ -310,6 +318,14 @@ static void handle_special_globals(int shift, int argc, char **argv)
- 			cmd_execute(&cmd_struct_version, argc, argv);
- 			exit(0);
- 		}
-+
-+	for (i = 0; i < shift; i++)
-+		if (strcmp(argv[i], "--verbose") == 0)
-+			bconf.verbose < 0 ? bconf.verbose = 1 : bconf.verbose++;
-+
-+	for (i = 0; i < shift; i++)
-+		if (strcmp(argv[i], "--quiet") == 0)
-+			bconf.verbose = 0;
- }
- 
- static const struct cmd_group btrfs_cmd_group = {
-diff --git a/common/help.h b/common/help.h
-index 01dfc68a7c8d..2618f31de712 100644
---- a/common/help.h
-+++ b/common/help.h
-@@ -53,6 +53,17 @@
- 	"-t|--tbytes        show sizes in TiB, or TB with --si"
- 
- /*
-+ * Global verbose option for the sub-commands
-+ */
-+#define HELPINFO_GLOBAL_OPTIONS_HEADER						\
-+	"",									\
-+	"Global options:"
-+#define HELPINFO_INSERT_VERBOSE							\
-+	"-v|--verbose       show verbose output"
-+#define HELPINFO_INSERT_QUIET							\
-+	"-q|--quiet         run the command quietly"
-+
-+/*
-  * Special marker in the help strings that will preemptively insert the global
-  * options and then continue with the following text that possibly follows
-  * after the regular options
-diff --git a/common/messages.c b/common/messages.c
-index 0e5694ecd467..410630ffdd6d 100644
---- a/common/messages.c
-+++ b/common/messages.c
-@@ -17,6 +17,7 @@
- #include <stdio.h>
- #include <stdarg.h>
- #include "common/messages.h"
-+#include "common/utils.h"
- 
- __attribute__ ((format (printf, 1, 2)))
- void __btrfs_warning(const char *fmt, ...)
-@@ -75,3 +76,19 @@ int __btrfs_error_on(int condition, const char *fmt, ...)
- 
- 	return 1;
- }
-+
-+__attribute__ ((format (printf, 2, 3)))
-+void pr_verbose(int level, const char *fmt, ...)
-+{
-+	va_list args;
-+
-+	if (level == 0 || bconf.verbose == 0)
-+		return;
-+
-+	if (level > bconf.verbose)
-+		return;
-+
-+	va_start(args, fmt);
-+	vfprintf(stdout, fmt, args);
-+	va_end(args);
-+}
-diff --git a/common/messages.h b/common/messages.h
-index 596047948fef..f802a9413265 100644
---- a/common/messages.h
-+++ b/common/messages.h
-@@ -96,3 +96,6 @@ __attribute__ ((format (printf, 2, 3)))
- int __btrfs_error_on(int condition, const char *fmt, ...);
- 
- #endif
-+
-+__attribute__ ((format (printf, 2, 3)))
-+void pr_verbose(int level, const char *fmt, ...);
-diff --git a/common/utils.c b/common/utils.c
-index 2cf15c333f6b..c2c6d0af0efc 100644
---- a/common/utils.c
-+++ b/common/utils.c
-@@ -1649,6 +1649,7 @@ u8 rand_u8(void)
- void btrfs_config_init(void)
- {
- 	bconf.output_format = CMD_FORMAT_TEXT;
-+	bconf.verbose = -1;
- }
- 
- /* Returns total size of main memory in bytes, -1UL if error. */
-diff --git a/common/utils.h b/common/utils.h
-index 0ef1d6e89c2b..8774194f4e9d 100644
---- a/common/utils.h
-+++ b/common/utils.h
-@@ -122,6 +122,9 @@ void print_all_devices(struct list_head *devices);
-  */
- struct btrfs_config {
- 	unsigned int output_format;
-+
-+	/* -1:unset 0:quiet >0:verbose */
-+	int verbose;
- };
- extern struct btrfs_config bconf;
- 
+ 		case 'f':
+ 			if (arg_copy_path(fromfile, optarg, sizeof(fromfile))) {
 -- 
 1.8.3.1
 

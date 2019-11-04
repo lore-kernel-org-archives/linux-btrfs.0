@@ -7,64 +7,64 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9EE0CCA9ED2
-	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Nov 2019 06:34:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CB7BDCA9ECF
+	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Nov 2019 06:34:43 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 70E7220578
-	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Nov 2019 06:34:42 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9D31120578
+	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Nov 2019 06:34:43 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="XhuURsDV"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="NC7aEahw"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728423AbfKDGel (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S1728417AbfKDGel (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Mon, 4 Nov 2019 01:34:41 -0500
-Received: from aserp2120.oracle.com ([141.146.126.78]:32968 "EHLO
+Received: from aserp2120.oracle.com ([141.146.126.78]:32948 "EHLO
         aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728407AbfKDGek (ORCPT
+        with ESMTP id S1728290AbfKDGek (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Nov 2019 01:34:40 -0500
 Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xA46YdKP187263
+        by aserp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xA46Ycrw187248
         for <linux-btrfs@vger.kernel.org>; Mon, 4 Nov 2019 06:34:39 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
  date : message-id : in-reply-to : references; s=corp-2019-08-05;
- bh=kylUJcZylBwookZRUzhhf5tWMxgg4CdhYPdRmR7iMJ4=;
- b=XhuURsDVs9uPkxYItiRRVtPMFthdTXsL0N66i/2Y6VdlXPFr7qgqY6mkzyoGIuxp5+KX
- sxvBZ4Qi0y0yTIPMEfH2epV5AF/j80Vy+JheQFc51rBzp66uueN3EbwB+ueO/8pryjYN
- hsUCu64nfClyzZRumRsNc7MgzWkU+lyuQzkB9YdBK7/ZImxxwSolRcUZYuGqd85MyPmC
- GZr4ij4/ZaPFnBjWjP6iZmvwXa7jKSDw3Odx9EgHzb77e4l68zdGrWVIVLGTPvjKUnLN
- 1/aQ7v/VBG0C+XNmq0NvBdAueBjBmMH3O+nS9i4GKJr+0gXA1M6++4FMh23EtuW5BDSO kA== 
+ bh=HBX34Q5JsQ31rA+x9uFnSUdcSyPsp7PHU21JZ3Jwygs=;
+ b=NC7aEahwSqiVugKEgYoeEfbgAmonpAS4WwmBGsVZNu2mTmK5AKROGzcgNutRUoTobzNl
+ 56e0iSdTkflf0kR1BAZIgjLvvPabIbbhFEH0V9orUnnEtihw+K20TnxPhT+K+Md8MqEG
+ 4TgfOYA1zCBUAbtTm7WPGJUx6o33BjZyiHf3mrOgAKea2FIk0r5G/IYR9En0hJa5q3xd
+ OzbdLM+xYvhWBbFMnXDx5Z+qEWefRcj1ehaawLEJwDv915dUQsgpyeTldgU0uPvQdVY1
+ F/8WNySV6rU69/7A2btoqbrjfy2BG83Xta6OazalgSGdOI8HTwC7zJkRl2naHUypTE0p 6w== 
 Received: from aserp3030.oracle.com (aserp3030.oracle.com [141.146.126.71])
-        by aserp2120.oracle.com with ESMTP id 2w11rpn5q1-1
+        by aserp2120.oracle.com with ESMTP id 2w11rpn5px-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
         for <linux-btrfs@vger.kernel.org>; Mon, 04 Nov 2019 06:34:39 +0000
 Received: from pps.filterd (aserp3030.oracle.com [127.0.0.1])
-        by aserp3030.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xA46YX3l187592
-        for <linux-btrfs@vger.kernel.org>; Mon, 4 Nov 2019 06:34:39 GMT
+        by aserp3030.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xA46YX3j187592
+        for <linux-btrfs@vger.kernel.org>; Mon, 4 Nov 2019 06:34:38 GMT
 Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by aserp3030.oracle.com with ESMTP id 2w1kxkt974-1
+        by aserp3030.oracle.com with ESMTP id 2w1kxkt95n-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 Nov 2019 06:34:37 +0000
+        for <linux-btrfs@vger.kernel.org>; Mon, 04 Nov 2019 06:34:35 +0000
 Received: from abhmp0023.oracle.com (abhmp0023.oracle.com [141.146.116.29])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id xA46Xd2l000420
-        for <linux-btrfs@vger.kernel.org>; Mon, 4 Nov 2019 06:33:39 GMT
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id xA46XZn7000411
+        for <linux-btrfs@vger.kernel.org>; Mon, 4 Nov 2019 06:33:35 GMT
 Received: from tp.wifi.oracle.com (/192.188.170.104)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Mon, 04 Nov 2019 06:33:38 +0000
+        with ESMTP ; Mon, 04 Nov 2019 06:33:34 +0000
 From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v1 08/18] btrfs-progs: filesystem defragment: use global verbose option
-Date:   Mon,  4 Nov 2019 14:33:06 +0800
-Message-Id: <1572849196-21775-9-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH v1.1 05/18] btrfs-progs: send: use global verbose and quiet options
+Date:   Mon,  4 Nov 2019 14:33:03 +0800
+Message-Id: <1572849196-21775-6-git-send-email-anand.jain@oracle.com>
 X-Mailer: git-send-email 1.8.3.1
 In-Reply-To: <1572849196-21775-1-git-send-email-anand.jain@oracle.com>
 References: <1572849196-21775-1-git-send-email-anand.jain@oracle.com>
 X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9430 signatures=668685
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=1 malwarescore=0
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=4 malwarescore=0
  phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
  adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
  engine=8.0.1-1908290000 definitions=main-1911040063
 X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9430 signatures=668685
 X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
- suspectscore=1 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
+ suspectscore=4 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
  lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
  classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1908290000
  definitions=main-1911040063
@@ -73,80 +73,131 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Transpire global --verbose option down to the btrfs receive sub-command.
+Transpire global --verbose and --quiet options down to the btrfs send
+sub-command.
 
 Suggested-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- cmds/filesystem.c | 16 +++++++++-------
- 1 file changed, 9 insertions(+), 7 deletions(-)
+v1.1: Fix typo in HELPINFO_INSERT_QUIET
 
-diff --git a/cmds/filesystem.c b/cmds/filesystem.c
-index 4f22089abeaa..819b9fd1fcc5 100644
---- a/cmds/filesystem.c
-+++ b/cmds/filesystem.c
-@@ -844,11 +844,12 @@ static const char * const cmd_filesystem_defrag_usage[] = {
- 	"(e.g., files copied with 'cp --reflink', snapshots) which may cause",
- 	"considerable increase of space usage. See btrfs-filesystem(8) for",
- 	"more information.",
+Global verbose-and-quiet option sequences behave differently from the
+same sequence used in the local command, as show below.
+
+Before:
+btrfs.old send -q -v -f /tmp/f -p /btrfs/ss2 /btrfs/ss3
+At subvol /btrfs/ss3
+
+btrfs.old send -v -f /tmp/f -p /btrfs/ss2 /btrfs/ss3
+At subvol /btrfs/ss3
+BTRFS_IOC_SEND returned 0
+joining genl thread
+
+After:
+btrfs.new send -q -v -f /tmp/f -p /btrfs/ss2 /btrfs/ss3
+At subvol /btrfs/ss3
+
+btrfs.new -q -v send -f /tmp/f -p /btrfs/ss2 /btrfs/ss3
+At subvol /btrfs/ss3
+BTRFS_IOC_SEND returned 0
+joining genl thread
+
+The (btrfs.new -q -v send) output is same as (btrfs.old send -v) which IMO
+is acceptable and not a regression.
+
+ cmds/send.c | 33 +++++++++++++++++++++------------
+ 1 file changed, 21 insertions(+), 12 deletions(-)
+
+diff --git a/cmds/send.c b/cmds/send.c
+index 7ce6c3273857..a5b9c7698dba 100644
+--- a/cmds/send.c
++++ b/cmds/send.c
+@@ -48,11 +48,6 @@
+ 
+ #define SEND_BUFFER_SIZE	SZ_64K
+ 
+-/*
+- * Default is 1 for historical reasons, changing may break scripts that expect
+- * the 'At subvol' message.
+- */
+-static int g_verbose = 1;
+ 
+ struct btrfs_send {
+ 	int send_fd;
+@@ -292,10 +287,10 @@ static int do_send(struct btrfs_send *send, u64 parent_root_id,
+ 				"Try upgrading your kernel or don't use -e.\n");
+ 		goto out;
+ 	}
+-	if (g_verbose > 1)
++	if (bconf.verbose > 1)
+ 		fprintf(stderr, "BTRFS_IOC_SEND returned %d\n", ret);
+ 
+-	if (g_verbose > 1)
++	if (bconf.verbose > 1)
+ 		fprintf(stderr, "joining genl thread\n");
+ 
+ 	close(pipefd[1]);
+@@ -460,6 +455,9 @@ static const char * const cmd_send_usage[] = {
+ 	"-v|--verbose     enable verbose output to stderr, each occurrence of",
+ 	"                 this option increases verbosity",
+ 	"-q|--quiet       suppress all messages, except errors",
 +	HELPINFO_GLOBAL_OPTIONS_HEADER,
 +	HELPINFO_INSERT_VERBOSE,
++	HELPINFO_INSERT_QUIET,
  	NULL
  };
  
- static struct btrfs_ioctl_defrag_range_args defrag_global_range;
--static int defrag_global_verbose;
- static int defrag_global_errors;
- static int defrag_callback(const char *fpath, const struct stat *sb,
- 		int typeflag, struct FTW *ftwbuf)
-@@ -857,8 +858,7 @@ static int defrag_callback(const char *fpath, const struct stat *sb,
- 	int fd = 0;
+@@ -482,6 +480,17 @@ static int cmd_send(const struct cmd_struct *cmd, int argc, char **argv)
+ 	send.dump_fd = fileno(stdout);
+ 	outname[0] = 0;
  
- 	if ((typeflag == FTW_F) && S_ISREG(sb->st_mode)) {
--		if (defrag_global_verbose)
--			printf("%s\n", fpath);
-+		pr_verbose(1, "%s\n", fpath);
- 		fd = open(fpath, defrag_open_mode);
- 		if (fd < 0) {
- 			goto error;
-@@ -897,6 +897,10 @@ static int cmd_filesystem_defrag(const struct cmd_struct *cmd,
- 	int compress_type = BTRFS_COMPRESS_NONE;
- 	DIR *dirstream;
- 
-+	/* init global verbose if unset */
++	/*
++	 * For send, verbose default is 1 (insteasd of 0) for historical reasons,
++	 * changing may break scripts that expect the 'At subvol' message. But do
++	 * it only when bconf.verbose is unset (-1) and also adjust the value,
++	 * if global verbose is already set.
++	 */
 +	if (bconf.verbose < 0)
-+		bconf.verbose = 0;
++		bconf.verbose = 1;
++	else if (bconf.verbose > 0)
++		bconf.verbose++;
 +
- 	/*
- 	 * Kernel 4.19+ supports defragmention of files open read-only,
- 	 * otherwise it's an ETXTBSY error
-@@ -913,7 +917,6 @@ static int cmd_filesystem_defrag(const struct cmd_struct *cmd,
- 	thresh = SZ_32M;
- 
- 	defrag_global_errors = 0;
--	defrag_global_verbose = 0;
- 	defrag_global_errors = 0;
  	optind = 0;
- 	while(1) {
-@@ -931,7 +934,7 @@ static int cmd_filesystem_defrag(const struct cmd_struct *cmd,
- 			flush = 1;
- 			break;
+ 	while (1) {
+ 		enum { GETOPT_VAL_SEND_NO_DATA = 256 };
+@@ -497,10 +506,10 @@ static int cmd_send(const struct cmd_struct *cmd, int argc, char **argv)
+ 
+ 		switch (c) {
  		case 'v':
--			defrag_global_verbose = 1;
+-			g_verbose++;
 +			bconf.verbose++;
  			break;
- 		case 's':
- 			start = parse_size(optarg);
-@@ -1031,8 +1034,7 @@ static int cmd_filesystem_defrag(const struct cmd_struct *cmd,
- 			/* errors are handled in the callback */
- 			ret = 0;
- 		} else {
--			if (defrag_global_verbose)
--				printf("%s\n", argv[i]);
-+			pr_verbose(1, "%s\n", argv[i]);
- 			ret = ioctl(fd, BTRFS_IOC_DEFRAG_RANGE,
- 					&defrag_global_range);
- 			defrag_err = errno;
+ 		case 'q':
+-			g_verbose = 0;
++			bconf.verbose = 0;
+ 			break;
+ 		case 'e':
+ 			new_end_cmd_semantic = 1;
+@@ -680,8 +689,8 @@ static int cmd_send(const struct cmd_struct *cmd, int argc, char **argv)
+ 		}
+ 	}
+ 
+-	if ((send_flags & BTRFS_SEND_FLAG_NO_FILE_DATA) && g_verbose > 1)
+-		if (g_verbose > 1)
++	if ((send_flags & BTRFS_SEND_FLAG_NO_FILE_DATA) && bconf.verbose > 1)
++		if (bconf.verbose > 1)
+ 			fprintf(stderr, "Mode NO_FILE_DATA enabled\n");
+ 
+ 	for (i = optind; i < argc; i++) {
+@@ -691,7 +700,7 @@ static int cmd_send(const struct cmd_struct *cmd, int argc, char **argv)
+ 		free(subvol);
+ 		subvol = argv[i];
+ 
+-		if (g_verbose > 0)
++		if (bconf.verbose > 0)
+ 			fprintf(stderr, "At subvol %s\n", subvol);
+ 
+ 		subvol = realpath(subvol, NULL);
 -- 
 1.8.3.1
 

@@ -6,34 +6,34 @@ X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1E5EAFC6197
-	for <linux-btrfs@archiver.kernel.org>; Fri,  8 Nov 2019 22:24:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 73660FC6196
+	for <linux-btrfs@archiver.kernel.org>; Fri,  8 Nov 2019 22:25:59 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E571A21882
-	for <linux-btrfs@archiver.kernel.org>; Fri,  8 Nov 2019 22:24:15 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4EFB8218AE
+	for <linux-btrfs@archiver.kernel.org>; Fri,  8 Nov 2019 22:25:59 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727654AbfKHWYP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 8 Nov 2019 17:24:15 -0500
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:36060 "EHLO
+        id S1728142AbfKHWZ6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 8 Nov 2019 17:25:58 -0500
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:36238 "EHLO
         james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726121AbfKHWYO (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Nov 2019 17:24:14 -0500
-X-Greylist: delayed 427 seconds by postgrey-1.27 at vger.kernel.org; Fri, 08 Nov 2019 17:24:14 EST
+        with ESMTP id S1726095AbfKHWZ6 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Nov 2019 17:25:58 -0500
 Received: by james.kirk.hungrycats.org (Postfix, from userid 1002)
-        id 4F0184C11A5; Fri,  8 Nov 2019 17:16:57 -0500 (EST)
-Date:   Fri, 8 Nov 2019 17:16:56 -0500
-From:   Zygo Blaxell <zblaxell@furryterror.org>
+        id 7A6074C11ED; Fri,  8 Nov 2019 17:25:57 -0500 (EST)
+Date:   Fri, 8 Nov 2019 17:25:57 -0500
+From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
 To:     Richard Weinberger <richard@nod.at>
 Cc:     linux-btrfs@vger.kernel.org
 Subject: Re: Decoding "unable to fixup (regular)" errors
-Message-ID: <20191108221656.GS22121@hungrycats.org>
+Message-ID: <20191108222557.GT22121@hungrycats.org>
 References: <1591390.YpsIS3gr9g@blindfold>
- <2590197.gOHgNE8CYM@blindfold>
+ <20191108220927.GR22121@hungrycats.org>
+ <1374130535.78772.1573251716407.JavaMail.zimbra@nod.at>
 MIME-Version: 1.0
 Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="ni93GHxFvA+th69W"
+        protocol="application/pgp-signature"; boundary="HKEL+t8MFpg/ASTE"
 Content-Disposition: inline
-In-Reply-To: <2590197.gOHgNE8CYM@blindfold>
+In-Reply-To: <1374130535.78772.1573251716407.JavaMail.zimbra@nod.at>
 User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
@@ -41,123 +41,95 @@ List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
---ni93GHxFvA+th69W
-Content-Type: text/plain; charset=us-ascii
+--HKEL+t8MFpg/ASTE
+Content-Type: text/plain; charset=iso-8859-1
 Content-Disposition: inline
 Content-Transfer-Encoding: quoted-printable
 
-On Fri, Nov 08, 2019 at 11:06:50PM +0100, Richard Weinberger wrote:
-> Am Dienstag, 5. November 2019, 23:03:01 CET schrieb Richard Weinberger:
-> > [10860370.764595] BTRFS error (device md1): unable to fixup (regular) e=
-rror at logical 593483341824 on dev /dev/md1
-> > [10860395.236787] BTRFS error (device md1): bdev /dev/md1 errs: wr 0, r=
-d 0, flush 0, corrupt 2292, gen 0
-> > [10860395.237267] BTRFS error (device md1): unable to fixup (regular) e=
-rror at logical 595304841216 on dev /dev/md1
-> > [10860395.506085] BTRFS error (device md1): bdev /dev/md1 errs: wr 0, r=
-d 0, flush 0, corrupt 2293, gen 0
-> > [10860395.506560] BTRFS error (device md1): unable to fixup (regular) e=
-rror at logical 595326820352 on dev /dev/md1
-> > [10860395.511546] BTRFS error (device md1): bdev /dev/md1 errs: wr 0, r=
-d 0, flush 0, corrupt 2294, gen 0
-> > [10860395.512061] BTRFS error (device md1): unable to fixup (regular) e=
-rror at logical 595327647744 on dev /dev/md1
-> > [10860395.664956] BTRFS error (device md1): bdev /dev/md1 errs: wr 0, r=
-d 0, flush 0, corrupt 2295, gen 0
-> > [10860395.664959] BTRFS error (device md1): unable to fixup (regular) e=
-rror at logical 595344850944 on dev /dev/md1
-> > [10860395.677733] BTRFS error (device md1): bdev /dev/md1 errs: wr 0, r=
-d 0, flush 0, corrupt 2296, gen 0
-> > [10860395.677736] BTRFS error (device md1): unable to fixup (regular) e=
-rror at logical 595346452480 on dev /dev/md1
-> > [10860395.770918] BTRFS error (device md1): bdev /dev/md1 errs: wr 0, r=
-d 0, flush 0, corrupt 2297, gen 0
-> > [10860395.771523] BTRFS error (device md1): unable to fixup (regular) e=
-rror at logical 595357601792 on dev /dev/md1
-> > [10860395.789808] BTRFS error (device md1): bdev /dev/md1 errs: wr 0, r=
-d 0, flush 0, corrupt 2298, gen 0
-> > [10860395.790455] BTRFS error (device md1): unable to fixup (regular) e=
-rror at logical 595359870976 on dev /dev/md1
-> > [10860395.806699] BTRFS error (device md1): bdev /dev/md1 errs: wr 0, r=
-d 0, flush 0, corrupt 2299, gen 0
-> > [10860395.807381] BTRFS error (device md1): unable to fixup (regular) e=
-rror at logical 595361865728 on dev /dev/md1
-> > [10860395.918793] BTRFS error (device md1): bdev /dev/md1 errs: wr 0, r=
-d 0, flush 0, corrupt 2300, gen 0
-> > [10860395.919513] BTRFS error (device md1): unable to fixup (regular) e=
-rror at logical 595372343296 on dev /dev/md1
-> > [10860395.993817] BTRFS error (device md1): bdev /dev/md1 errs: wr 0, r=
-d 0, flush 0, corrupt 2301, gen 0
-> > [10860395.994574] BTRFS error (device md1): unable to fixup (regular) e=
-rror at logical 595384438784 on dev /dev/md1
->=20
-> > For obvious reasons the "BTRFS error (device md1): unable to fixup (reg=
-ular) error" lines made me nervous
-> > and I would like to understand better what is going on.
-> > The system has ECC memory with md1 being a RAID1 which passes all healt=
-h checks.
+On Fri, Nov 08, 2019 at 11:21:56PM +0100, Richard Weinberger wrote:
+> ----- Urspr=FCngliche Mail -----
+> > btrfs found corrupted data on md1.  You appear to be using btrfs
+> > -dsingle on a single mdadm raid1 device, so no recovery is possible
+> > ("unable to fixup").
 > >=20
-> > I tried to find the inodes behind the erroneous addresses without succe=
-ss.
-> > e.g.
-> > $ btrfs inspect-internal logical-resolve -v -P 593483341824 /
-> > ioctl ret=3D0, total_size=3D4096, bytes_left=3D4080, bytes_missing=3D0,=
- cnt=3D0, missed=3D0
-> > $ echo $?
-> > 1
+> >> The system has ECC memory with md1 being a RAID1 which passes all heal=
+th checks.
 > >=20
-> > My kernel is 4.12.14-lp150.12.64-default (OpenSUSE 15.0), so not super =
-recent but AFAICT btrfs should be sane
-> > there. :-)
+> > mdadm doesn't have any way to repair data corruption--it can find
+> > differences, but it cannot identify which version of the data is correc=
+t.
+> > If one of your drives is corrupting data without reporting IO errors,
+> > mdadm will simply copy the corruption to the other drive.  If one
+> > drive is failing by intermittently injecting corrupted bits into reads
+> > (e.g. because of a failure in the RAM on the drive control board),
+> > this behavior may not show up in mdadm health checks.
+>=20
+> Well, this is not cheap hardware...
+> Possible, but not very likely IMHO
+
+Even the disks?  We see RAM failures in disk drive embedded boards from
+time to time.
+
+> >> I tried to find the inodes behind the erroneous addresses without succ=
+ess.
+> >> e.g.
+> >> $ btrfs inspect-internal logical-resolve -v -P 593483341824 /
+> >> ioctl ret=3D0, total_size=3D4096, bytes_left=3D4080, bytes_missing=3D0=
+, cnt=3D0, missed=3D0
+> >> $ echo $?
+> >> 1
 > >=20
-> > What could cause the errors and how to dig further?
+> > That usually means the file is deleted, or the specific blocks referenc=
+ed
+> > have been overwritten (i.e. there are no references to the given block =
+in
+> > any existing file, but a reference to the extent containing the block
+> > still exists).  Although it's not possible to reach those blocks by
+> > reading a file, a scrub or balance will still hit the corrupted blocks.
+> >=20
+> > You can try adding or subtracting multiples of 4096 to the block number
+> > to see if you get a hint about which inodes reference this extent.
+> > The first block found in either direction should be a reference to the
+> > same extent, though there's no easy way (other than dumping the extent
+> > tree with 'btrfs ins dump-tree -t 2' and searching for the extent record
+> > containing the block number) to figure out which.  Extents can be up to
+> > 128MB long, i.e. 32768 blocks.
 >=20
-> I was able to reproduce this on vanilla v5.4-rc6.
+> Thanks for the hint!
 >=20
-> Instrumenting btrfs revealed that all erroneous blocks are data blocks (B=
-TRFS_EXTENT_FLAG_DATA)
-> and only have ->checksum_error set.
-> Both expected and computed checksums are non-zero.
+> > Or modify 'btrfs ins log' to use LOGICAL_INO_V2 and the IGNORE_OFFSETS
+> > flag.
+> >=20
+> >> My kernel is 4.12.14-lp150.12.64-default (OpenSUSE 15.0), so not super=
+ recent
+> >> but AFAICT btrfs should be sane
+> >> there. :-)
+> >=20
+> > I don't know of specific problems with csums in 4.12, but I'd upgrade t=
+hat
+> > for a dozen other reasons anyway.  One of those is that LOGICAL_INO_V2
+> > was merged in 4.15.
+> >=20
+> >> What could cause the errors and how to dig further?
+> >=20
+> > Probably a silent data corruption on one of the underlying disks.
+> > If you convert this mdadm raid1 to btrfs raid1, btrfs will tell you
+> > which disk the errors are coming from while also correcting them.
 >=20
-> To me it seems like all these blocks are orphaned data, while extent_from=
-_logical() finds and extent
-> for the affected logical addresses, none of the extents belong to an inod=
-e.
-> This explains also why "btrfs inspect-internal logical-resolve" is unable=
- to point me to an
-> inode. And why scrub_print_warning("checksum error", sblock_to_check) doe=
-s not log anything.
-> The function returns early if no inode can be found for a data block...
+> Hmm, I don't really buy this reasoning. Like I said, this is not
+> cheap/consumer hardware.
 >=20
-> This is something to worry about?
->=20
-> Why does the scrubbing mechanism check orphaned blocks?
-
-Because it would be absurdly expensive to figure out which blocks in an
-extent are orphaned.
-
-Scrub normally reads just the extent and csum trees which are already
-sorted in on-disk order, so it reads fast with no seeking.
-
-To determine if an extent has orphaned blocks, scrub would have to
-follow backrefs until it found references to every block in the extent,
-or ran out of backrefs without finding a reference to at least one block.
-The seeking makes this hundreds to millions of times more expensive than
-just reading and verifying the orphan blocks.
-
 > Thanks,
 > //richard
->=20
->=20
 
---ni93GHxFvA+th69W
+--HKEL+t8MFpg/ASTE
 Content-Type: application/pgp-signature; name="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iF0EABECAB0WIQSnOVjcfGcC/+em7H2B+YsaVrMbnAUCXcXpWAAKCRCB+YsaVrMb
-nJTQAJsGEA6u9m9lySY8uV7OFi5TUcBp1wCfXr+7VUoda0F/zEpSmwlbLtAbqr8=
-=YQEd
+iF0EABECAB0WIQSnOVjcfGcC/+em7H2B+YsaVrMbnAUCXcXrdQAKCRCB+YsaVrMb
+nHw+AJ4gvvCkENUh1Vp+J/OM8dV1bMkXfACcC/bj4BmwdXArdG50Qttv9c+Evj0=
+=Xe5M
 -----END PGP SIGNATURE-----
 
---ni93GHxFvA+th69W--
+--HKEL+t8MFpg/ASTE--

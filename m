@@ -2,129 +2,103 @@ Return-Path: <SRS0=5HN8=ZA=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 688F6FC6196
-	for <linux-btrfs@archiver.kernel.org>; Fri,  8 Nov 2019 21:24:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7D73EFC6196
+	for <linux-btrfs@archiver.kernel.org>; Fri,  8 Nov 2019 21:39:00 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 444912084D
-	for <linux-btrfs@archiver.kernel.org>; Fri,  8 Nov 2019 21:24:21 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5C77320650
+	for <linux-btrfs@archiver.kernel.org>; Fri,  8 Nov 2019 21:39:00 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731373AbfKHVYU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 8 Nov 2019 16:24:20 -0500
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:42866 "EHLO
-        james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726819AbfKHVYU (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Nov 2019 16:24:20 -0500
-Received: by james.kirk.hungrycats.org (Postfix, from userid 1002)
-        id 0CB4E4C101C; Fri,  8 Nov 2019 16:23:44 -0500 (EST)
-Date:   Fri, 8 Nov 2019 16:23:44 -0500
-From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To:     Odin Hultgren van der Horst <odin@digitalgarden.no>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: Extent to files
-Message-ID: <20191108212343.GQ22121@hungrycats.org>
-References: <20191104113519.htdigcg6lzbes6v7@T580.localdomain>
+        id S2388613AbfKHVi6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 8 Nov 2019 16:38:58 -0500
+Received: from mx2.suse.de ([195.135.220.15]:45870 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1731097AbfKHVi6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 8 Nov 2019 16:38:58 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 735B3B19A;
+        Fri,  8 Nov 2019 21:38:56 +0000 (UTC)
+From:   =?UTF-8?q?Andreas=20F=C3=A4rber?= <afaerber@suse.de>
+To:     Qu Wenruo <wqu@suse.com>, David Sterba <dsterba@suse.com>
+Cc:     Johannes Thumshirn <jthumshirn@suse.de>, Chris Mason <clm@fb.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        linux-btrfs@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+        linux-kernel@vger.kernel.org
+Subject: [PATCH next 2/2] btrfs: extent-tree: Fix error format string
+Date:   Fri,  8 Nov 2019 22:38:53 +0100
+Message-Id: <20191108213853.16635-3-afaerber@suse.de>
+X-Mailer: git-send-email 2.16.4
+In-Reply-To: <20191108213853.16635-1-afaerber@suse.de>
+References: <20191108213853.16635-1-afaerber@suse.de>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="0/kgSOzhNoDC5T3a"
-Content-Disposition: inline
-In-Reply-To: <20191104113519.htdigcg6lzbes6v7@T580.localdomain>
-User-Agent: Mutt/1.10.1 (2018-07-13)
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+From: Andreas Färber <afaerber@suse.com>
 
---0/kgSOzhNoDC5T3a
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+sizeof() returns type size_t, thus we need %zu instead of %lu.
 
-On Mon, Nov 04, 2019 at 12:35:19PM +0100, Odin Hultgren van der Horst wrote:
-> I did a ioctl(FICLONE) IOCTL-FICLONERANGE(2) at some point later I want t=
-o be
-> able to check if the new file still shares all its physical storage with =
-just
-> knowing the name of the new file.
+This fixes the following build warning on 32-bit arm:
 
-"Shares all its physical storage" is not very specific.  You could run
-'filefrag -v' and count extents with and without the "shared" flag.
-If either number is 0, the file is all-unique or all-shared.
+  In file included from ../include/linux/printk.h:7,
+                   from ../include/linux/kernel.h:15,
+                   from ../include/asm-generic/bug.h:19,
+                   from ../arch/arm/include/asm/bug.h:60,
+                   from ../include/linux/bug.h:5,
+                   from ../include/linux/thread_info.h:12,
+                   from ../include/asm-generic/current.h:5,
+                   from ./arch/arm/include/generated/asm/current.h:1,
+                   from ../include/linux/sched.h:12,
+                   from ../fs/btrfs/extent-tree.c:6:
+  ../fs/btrfs/extent-tree.c: In function '__btrfs_free_extent':
+  ../include/linux/kern_levels.h:5:18: warning: format '%lu' expects argument of type 'long unsigned int', but argument 8 has type 'unsigned int' [-Wformat=]
+      5 | #define KERN_SOH "\001"  /* ASCII Start Of Header */
+        |                  ^~~~~~
+  ../include/linux/kern_levels.h:10:19: note: in expansion of macro 'KERN_SOH'
+     10 | #define KERN_CRIT KERN_SOH "2" /* critical conditions */
+        |                   ^~~~~~~~
+  ../fs/btrfs/ctree.h:2986:24: note: in expansion of macro 'KERN_CRIT'
+   2986 |  btrfs_printk(fs_info, KERN_CRIT fmt, ##args)
+        |                        ^~~~~~~~~
+  ../fs/btrfs/extent-tree.c:3207:4: note: in expansion of macro 'btrfs_crit'
+   3207 |    btrfs_crit(info,
+        |    ^~~~~~~~~~
+  ../fs/btrfs/extent-tree.c:3208:83: note: format string is defined here
+   3208 | "invalid extent item size for key (%llu, %u, %llu) owner %llu, has %u expect >= %lu",
+        |                                                                                 ~~^
+        |                                                                                   |
+        |                                                                                   long unsigned int
+        |                                                                                 %u
 
-If the extents are marked shared, filefrag doesn't tell you what is doing
-the sharing.  A file can, and often does, share extents with itself.
-e.g. you write a 1MB extent, then write 4K in the middle, now you have
-two smaller references to the 1MB extent separated by the 4K in the
-middle.  Having two references will set the "shared" bit in FIEMAP
-even though all references are in the same file.
+Fixes: 0c171e9095e4 ("btrfs: extent-tree: Kill BUG_ON() in __btrfs_free_extent() and do better comment")
+Cc: Qu Wenruo <wqu@suse.com>
+Cc: David Sterba <dsterba@suse.com>
+Signed-off-by: Andreas Färber <afaerber@suse.com>
+---
+ fs/btrfs/extent-tree.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-> I found some people suggesting to compare the files extents.
->=20
-> But the implementation I looked at knew both files used in the comparison,
-> so I was wondering if there a way to get all files that references a exte=
-nt
-> in user space?
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 7c7a3e30e917..631c9743ddc7 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3205,7 +3205,7 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 		struct btrfs_tree_block_info *bi;
+ 		if (unlikely(item_size < sizeof(*ei) + sizeof(*bi))) {
+ 			btrfs_crit(info,
+-"invalid extent item size for key (%llu, %u, %llu) owner %llu, has %u expect >= %lu",
++"invalid extent item size for key (%llu, %u, %llu) owner %llu, has %u expect >= %zu",
+ 				   key.objectid, key.type, key.offset,
+ 				   owner_objectid, item_size,
+ 				   sizeof(*ei) + sizeof(*bi));
+-- 
+2.16.4
 
-Use TREE_SEARCH_V2 and the subvol and inode numbers of the target file
-to read the file's EXTENT_ITEM metadata to get all the extent bytenrs
-in a file.  You need the raw extent bytenr ("physical") field from each
-extent metadata item in the file.
-
-You can use 'btrfs ins dump-tree' to see the metadata in the filesystem,
-and as an example of how to decode the various metadata objects.  I used
-'btrfs sub find-new' as an example for walking the metadata trees with
-TREE_SEARCH_V2.
-
-Use the LOGICAL_INO_V2 ioctl with the extent bytenrs obtained from
-TREE_SEARCH_V2 to discover the (subvol, ino, offset) tuples referencing
-each extent.  'btrfs ins logical' does this with LOGICAL_INO v1.  You want
-to use the V2 BTRFS_LOGICAL_INO_ARGS_IGNORE_OFFSET flag so you get all
-the referencing extent items (V1 requires repeating the call for every
-block in the extent, V2 gets all references at once).
-
-Use 'btrfs ins subvolid-resolve' to map subvol IDs to paths in the
-filesystem.  You will need to open these paths to use INO_TO_PATHS.
-
-Use INO_TO_PATHS ioctl to convert (subvol_fd, inode) numbers
-into filenames.  For the FD argument, use the paths obtained from
-'subvolid-resolve'.  This tells you the filename relative to the subvol.
-Combine with the subvol's name for the full path of the file.
-
-All of the above require root or CAP_SYS_ADMIN privileges to work.
-
-> In reality I want a count off clones/(identical files) to a given file
-> in user space.
-
-Repeat the above for each extent in the target file to build a list of
-all extents and what files reference them.
-
-Partial matches between files and extents are possible, so you will
-need to decide what to do about them (include in result set, exclude
-=66rom result set, diffstat-style output, percentage overlap, make a Venn
-diagram, etc).
-
-It's also possible to have two files referring to the same extents in
-different orders or at different offsets within the extents, so two
-files could share 100% of their space but not be identical.
-
-If you only care about the number of files that have one or more blocks
-shared, you can skip some of the steps, i.e. you only need the total
-number of unique (subvol, inode) pairs and you can skip the path lookups,
-but if you do this, you can't tell if the files are identical, only that
-they are at least partly shared.
-
---0/kgSOzhNoDC5T3a
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iF0EABECAB0WIQSnOVjcfGcC/+em7H2B+YsaVrMbnAUCXcXc2gAKCRCB+YsaVrMb
-nJi/AJ9inlydZDbPtyrj/NCvpUyGLkjvZQCfdR5QY9tLC4kGc/vRSHik+mAC9EI=
-=KDXj
------END PGP SIGNATURE-----
-
---0/kgSOzhNoDC5T3a--

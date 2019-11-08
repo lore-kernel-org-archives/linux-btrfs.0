@@ -2,85 +2,84 @@ Return-Path: <SRS0=5HN8=ZA=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.3 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,
-	SPF_PASS,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.3 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0A48EC5DF60
-	for <linux-btrfs@archiver.kernel.org>; Fri,  8 Nov 2019 19:29:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A1728FA372C
+	for <linux-btrfs@archiver.kernel.org>; Fri,  8 Nov 2019 19:31:10 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C144620659
-	for <linux-btrfs@archiver.kernel.org>; Fri,  8 Nov 2019 19:29:28 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 69925206A3
+	for <linux-btrfs@archiver.kernel.org>; Fri,  8 Nov 2019 19:31:10 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="JvP4joK3"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="bhOUM4Pv"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2387417AbfKHT32 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 8 Nov 2019 14:29:28 -0500
-Received: from mail-qk1-f196.google.com ([209.85.222.196]:45769 "EHLO
-        mail-qk1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729896AbfKHT31 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Nov 2019 14:29:27 -0500
-Received: by mail-qk1-f196.google.com with SMTP id q70so6262591qke.12
-        for <linux-btrfs@vger.kernel.org>; Fri, 08 Nov 2019 11:29:27 -0800 (PST)
+        id S1731777AbfKHTbJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 8 Nov 2019 14:31:09 -0500
+Received: from mail-qt1-f195.google.com ([209.85.160.195]:36288 "EHLO
+        mail-qt1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1729896AbfKHTbJ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Nov 2019 14:31:09 -0500
+Received: by mail-qt1-f195.google.com with SMTP id y10so7754363qto.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 08 Nov 2019 11:31:08 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=date:from:to:cc:subject:message-id:references:mime-version
          :content-disposition:in-reply-to:user-agent;
-        bh=ZaXwk9ZvgVjf561TUtFfdoLurEzZ/EBueVR5e31UGVg=;
-        b=JvP4joK3/fxv1M0ISVYdIX/Ick9yoj1WDwmg8thcL7+K7J0Zafir72OW4f3UWgzkia
-         8nDGyKBk7ywnWXBPgSz/YFK9cvgriYNUiwkZHPcoO5r6wKvoAiVpGcB+BW2VNIK7ppSJ
-         LJMNervzdlJe4f8ODqLNRNfskGhhms69IuBPY8WQRBKNELUo3ch/jYUGe8LmxTDmnkdr
-         DrrQN3gQWzFwUa30tuu/pt5Bb5UYNEAGJvj1hBfDBIxVQDPbJHBQ7/8WF0wwinZmL7RR
-         VJWMCnZJ/HxamS9hs+kriYQm04sin8t7hpVGCtSwAUKoAvL0ng6H+iPPmMQPZ7Iqsuqj
-         i42g==
+        bh=V+CSD64absZ7DfcSq+oyPkqo0mjH/EKq7bJt6K43C5I=;
+        b=bhOUM4PvMIehg0IiOcshwp/xWUparLGn/G2L3/vlXAsK/Ho5lM5OQRv0KMx8oCK+Gx
+         sYfXWYug2PCAyWX5nh7aiCzr8ISysekASYFhWHaVeu8nxHPpfwRQryRKcSoaLDrp5+xg
+         QgBWO33ZHNOn3rkCYAy4tiz+Kav0QU7V0fr3nUavjMz/wt78VAsVUtrtJlb6kFm+rldU
+         TRZxD4NeXu2+WMpVthyXBrhYmr+kaFpqpbcmYchvKuzbw9TQBHH9eG9+GBgIx//4Iao3
+         ogXGi6xaGllpmcwu5TIakOGv+RAMvHUAt/ZRn1/bU+U9Kb74/cDMNvDTtfXFIZqgaq/P
+         83Eg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:date:from:to:cc:subject:message-id:references
          :mime-version:content-disposition:in-reply-to:user-agent;
-        bh=ZaXwk9ZvgVjf561TUtFfdoLurEzZ/EBueVR5e31UGVg=;
-        b=fnjJh5jFeZYbwL6gK2LTDsDOC50z+q289SeG+4vzoBFetMFf/bl67F19N/U8B1hRw+
-         zUWpqJ43dvqtAjek4HxE7i+w2MHZ97pFjyjbm4J5g5Q3ru+Xe2xTRp7kSkb7r3yOCtwo
-         JlNSjlAV5IBUhVjcfZ29LQEz3VpzNmJ0vgn5JVDOy428eiWYNnv2hwx6+BDbm9ZzkWXW
-         yRIdynGLWSKGhCqnmpA+bEm7ZyYDyY/w1ugurPc2qcW7EN9Y261LlMddpIyIIICNjQnw
-         TZ4j/uxio1bkOERZD9gl/qUZDHg5ufVfgHP1BahiR76Egmfndpv7fOuC+CZ3I/bQxTG+
-         XAxQ==
-X-Gm-Message-State: APjAAAVtPXVMGqdy5XpcRwUgDQw6d8eRaK1+l2QqeNs9EW8aecDRPgU6
-        VOD/qf5Ix7y4zU6Yvm0waa1uDg==
-X-Google-Smtp-Source: APXvYqxnh52w2GxmFUp7MgqMlguE2CvxNItnT33ChHMrexyp6idcPzFUyt1MIoOIljIJdjrz+rh1bw==
-X-Received: by 2002:a37:84c1:: with SMTP id g184mr10739751qkd.309.1573241366685;
-        Fri, 08 Nov 2019 11:29:26 -0800 (PST)
+        bh=V+CSD64absZ7DfcSq+oyPkqo0mjH/EKq7bJt6K43C5I=;
+        b=qAHCIr6q75nyZGXG7Vb/F/gPshK2j1U0E6rsSOQlazfp2NLrqmBg/EelpQaT5v2s0x
+         x+t7W6ghaQjitYv+L3YMBiH7jJmSmNsBCqHZvGQAcmH+R4Ur54Rfx0Yv4CW/6Ihv+Not
+         yd2LjfTKyM0Ro2ZzFmxmynbYztNaF1JBQkgH78lVnh7cMm+baP7U9mPQW2HEbz6rnNTV
+         RtQi9thahxk/sXveciJAwjvMMbJI+q1yt1Ff0vXAJiLJzXlfD+MbFZNnF5NQ/SjXPx98
+         ueq/HZWV4iZKOusEiBzxPLetOxSawwSwEMURLvL1stOnJRIKkVfbVVWXBQkvkpEBvYj3
+         Nxqw==
+X-Gm-Message-State: APjAAAVL4VcG3CtKuikCxKhog7x97vFexc9GBdnvfnWWhiRjiuDD0mf6
+        Mva4WpgTHRG0M70zl5MC75vKow==
+X-Google-Smtp-Source: APXvYqzwe4mMahOA9Ip/WKL0GUjfSJtI777UnPOtHQBiUMQxxpa8mD8A+7X5dqY3PUoU6HVMRxj4Aw==
+X-Received: by 2002:ac8:3f28:: with SMTP id c37mr12827686qtk.295.1573241468419;
+        Fri, 08 Nov 2019 11:31:08 -0800 (PST)
 Received: from localhost ([2620:10d:c091:480::1852])
-        by smtp.gmail.com with ESMTPSA id b2sm3850512qtc.21.2019.11.08.11.29.25
+        by smtp.gmail.com with ESMTPSA id p145sm3595414qke.37.2019.11.08.11.31.07
         (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Fri, 08 Nov 2019 11:29:26 -0800 (PST)
-Date:   Fri, 8 Nov 2019 14:29:24 -0500
+        Fri, 08 Nov 2019 11:31:08 -0800 (PST)
+Date:   Fri, 8 Nov 2019 14:31:05 -0500
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     Dennis Zhou <dennis@kernel.org>
 Cc:     David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
         Josef Bacik <josef@toxicpanda.com>,
         Omar Sandoval <osandov@osandov.com>, kernel-team@fb.com,
         linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 10/22] btrfs: add discard sysfs directory
-Message-ID: <20191108192923.fr4spbbn6uzkksxi@macbook-pro-91.dhcp.thefacebook.com>
+Subject: Re: [PATCH 12/22] btrfs: keep track of discardable_bytes
+Message-ID: <20191108193105.kubknd2xidz3nabn@macbook-pro-91.dhcp.thefacebook.com>
 References: <cover.1571865774.git.dennis@kernel.org>
- <ddd9245fc0653d1b10538a5db7cbd2143a32ae0a.1571865774.git.dennis@kernel.org>
+ <3801afee5fe1a6a81e04e27692e2ded4c5df64ec.1571865774.git.dennis@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <ddd9245fc0653d1b10538a5db7cbd2143a32ae0a.1571865774.git.dennis@kernel.org>
+In-Reply-To: <3801afee5fe1a6a81e04e27692e2ded4c5df64ec.1571865774.git.dennis@kernel.org>
 User-Agent: NeoMutt/20180716
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Oct 23, 2019 at 06:53:04PM -0400, Dennis Zhou wrote:
-> Setup sysfs directory for discard stats + tunables.
+On Wed, Oct 23, 2019 at 06:53:06PM -0400, Dennis Zhou wrote:
+> Keep track of this metric so that we can understand how ahead or behind
+> we are in discarding rate.
 > 
-> Signed-off-by: Dennis Zhou <dennis@kernel.org>
 
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
-
-Thanks,
+If these are only going to be exposed via a debug sysfs, then it makes sense to
+only track it if we have DEBUG set.  Thanks,
 
 Josef

@@ -6,29 +6,29 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 59757C17441
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9A3EEC17440
 	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Nov 2019 12:24:25 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 3C61B20818
+	by mail.kernel.org (Postfix) with ESMTP id 7C7AC20818
 	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Nov 2019 12:24:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727077AbfKLMYY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 12 Nov 2019 07:24:24 -0500
-Received: from mx2.suse.de ([195.135.220.15]:56776 "EHLO mx1.suse.de"
+        id S1725997AbfKLMYZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 12 Nov 2019 07:24:25 -0500
+Received: from mx2.suse.de ([195.135.220.15]:56804 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725874AbfKLMYY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1727047AbfKLMYY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Tue, 12 Nov 2019 07:24:24 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 9E04EB194;
+        by mx1.suse.de (Postfix) with ESMTP id C6543B287;
         Tue, 12 Nov 2019 12:24:22 +0000 (UTC)
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 To:     David Sterba <dsterba@suse.com>
 Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
         Johannes Thumshirn <jthumshirn@suse.de>
-Subject: [PATCH 1/5] btrfs: decrement number of open devices after closing the device not before
-Date:   Tue, 12 Nov 2019 13:24:12 +0100
-Message-Id: <20191112122416.30672-2-jthumshirn@suse.de>
+Subject: [PATCH 4/5] btrfs: handle error return of close_fs_devices()
+Date:   Tue, 12 Nov 2019 13:24:15 +0100
+Message-Id: <20191112122416.30672-5-jthumshirn@suse.de>
 X-Mailer: git-send-email 2.16.4
 In-Reply-To: <20191112122416.30672-1-jthumshirn@suse.de>
 References: <20191112122416.30672-1-jthumshirn@suse.de>
@@ -37,45 +37,49 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-In btrfs_close_one_device we're decrementing the number of open devices
-before we're calling btrfs_close_bdev().
+close_fs_devices() will be able to return an error instead of crashing
+after the following patch.
 
-As there is no intermediate exit between these points in this function it
-is technically OK to do so, but it a) is a bit harder to understand and b)
-further refactoring to implement proper error handling in
-btrfs_close_one_device() will change the layout of the function.
-
-Move both operations closer together and move the decrement step after
-btrfs_close_bdev().
+Prepare btrfs_close_devices() for this.
 
 Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
 ---
- fs/btrfs/volumes.c | 5 ++---
- 1 file changed, 2 insertions(+), 3 deletions(-)
+ fs/btrfs/volumes.c | 11 +++++++----
+ 1 file changed, 7 insertions(+), 4 deletions(-)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 22a5bd991e47..5ee26e7fca32 100644
+index e5864ca3bb3b..be1fd935edf7 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -1067,9 +1067,6 @@ static void btrfs_close_one_device(struct btrfs_device *device)
- 	struct btrfs_device *new_device;
- 	struct rcu_string *name;
+@@ -1143,10 +1143,10 @@ static int close_fs_devices(struct btrfs_fs_devices *fs_devices)
+ int btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
+ {
+ 	struct btrfs_fs_devices *seed_devices = NULL;
+-	int ret;
++	int err, err2 = 0;
  
--	if (device->bdev)
--		fs_devices->open_devices--;
--
- 	if (test_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state) &&
- 	    device->devid != BTRFS_DEV_REPLACE_DEVID) {
- 		list_del_init(&device->dev_alloc_list);
-@@ -1080,6 +1077,8 @@ static void btrfs_close_one_device(struct btrfs_device *device)
- 		fs_devices->missing_devices--;
+ 	mutex_lock(&uuid_mutex);
+-	ret = close_fs_devices(fs_devices);
++	err = close_fs_devices(fs_devices);
+ 	if (!fs_devices->opened) {
+ 		seed_devices = fs_devices->seed;
+ 		fs_devices->seed = NULL;
+@@ -1156,10 +1156,13 @@ int btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
+ 	while (seed_devices) {
+ 		fs_devices = seed_devices;
+ 		seed_devices = fs_devices->seed;
+-		close_fs_devices(fs_devices);
++		err2 = close_fs_devices(fs_devices);
+ 		free_fs_devices(fs_devices);
+ 	}
+-	return ret;
++
++	if (err2)
++		return err2;
++	return err;
+ }
  
- 	btrfs_close_bdev(device);
-+	if (device->bdev)
-+		fs_devices->open_devices--;
- 
- 	new_device = btrfs_alloc_device(NULL, &device->devid,
- 					device->uuid);
+ static int open_fs_devices(struct btrfs_fs_devices *fs_devices,
 -- 
 2.16.4
 

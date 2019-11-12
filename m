@@ -2,76 +2,51 @@ Return-Path: <SRS0=1fJ+=ZE=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1F235C43331
-	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Nov 2019 13:33:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6473FC43331
+	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Nov 2019 14:28:25 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0008B21783
-	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Nov 2019 13:33:54 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 418AE222C5
+	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Nov 2019 14:28:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727279AbfKLNdv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 12 Nov 2019 08:33:51 -0500
-Received: from mx2.suse.de ([195.135.220.15]:50364 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725865AbfKLNdv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 12 Nov 2019 08:33:51 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 64721B213;
-        Tue, 12 Nov 2019 13:33:49 +0000 (UTC)
-Received: by quack2.suse.cz (Postfix, from userid 1000)
-        id AC6B71E4AD2; Tue, 12 Nov 2019 14:33:48 +0100 (CET)
-Date:   Tue, 12 Nov 2019 14:33:48 +0100
-From:   Jan Kara <jack@suse.cz>
-To:     Andrew Morton <akpm@linux-foundation.org>
-Cc:     ira.weiny@intel.com, Alexander Viro <viro@zeniv.linux.org.uk>,
-        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>,
-        Jaegeuk Kim <jaegeuk@kernel.org>, Chao Yu <chao@kernel.org>,
-        linux-xfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        Trond Myklebust <trond.myklebust@hammerspace.com>,
-        Anna Schumaker <anna.schumaker@netapp.com>,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-f2fs-devel@lists.sourceforge.net, linux-nfs@vger.kernel.org,
-        linux-mm@kvack.org, Dave Chinner <david@fromorbit.com>,
-        Jan Kara <jack@suse.cz>
-Subject: Re: [PATCH 2/2] fs: Move swap_[de]activate to file_operations
-Message-ID: <20191112133348.GJ1241@quack2.suse.cz>
-References: <20191112003452.4756-1-ira.weiny@intel.com>
- <20191112003452.4756-3-ira.weiny@intel.com>
- <20191111164320.80f814161469055b14f27045@linux-foundation.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20191111164320.80f814161469055b14f27045@linux-foundation.org>
-User-Agent: Mutt/1.10.1 (2018-07-13)
+        id S1727078AbfKLO2Y (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 12 Nov 2019 09:28:24 -0500
+Received: from briare1.fullpliant.org ([78.227.24.35]:57492 "HELO
+        briare1.fullpliant.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with SMTP id S1726008AbfKLO2Y (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 12 Nov 2019 09:28:24 -0500
+X-Greylist: delayed 900 seconds by postgrey-1.27 at vger.kernel.org; Tue, 12 Nov 2019 09:28:24 EST
+From:   Hubert Tonneau <hubert.tonneau@fullpliant.org>
+To:     linux-btrfs@vger.kernel.org
+Subject: Avoiding BRTFS RAID5 write hole
+Date:   Tue, 12 Nov 2019 15:13:26 GMT
+Message-ID: <0JG8IAF11@briare1.fullpliant.org>
+X-Mailer: Pliant 114
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon 11-11-19 16:43:20, Andrew Morton wrote:
-> On Mon, 11 Nov 2019 16:34:52 -0800 ira.weiny@intel.com wrote:
-> 
-> > From: Ira Weiny <ira.weiny@intel.com>
-> > 
-> > swap_activate() and swap_deactivate() have nothing to do with
-> > address spaces.  We want to eventually make the address space operations
-> > dynamic to switch inode flags on the fly.
-> 
-> What does this mean?
+Hi,
 
-See my reply to Christoph [1]. Ira wants to make switching inodes between
-DAX and non-DAX mode work which means switching also
-address_space_operations pointer in the mapping. 
+In order to close the RAID5 write hole, I prepose the add a mount option that would change RAID5 (and RAID6) behaviour :
 
-								Honza
+. When overwriting a RAID5 stripe, first convert it to RAID1 (convert it to RAID1C3 if it was RAID6)
 
-[1] lore.kernel.org/r/20191112133055.GI1241@quack2.suse.cz
+. Have a background process that converts RAID1 stripes to RAID5 (RAID1C3 to RAID6)
 
--- 
-Jan Kara <jack@suse.com>
-SUSE Labs, CR
+Expected advantages are :
+. the low level features set basically remains the same
+. the filesystem format remains the same
+. old kernels and btrs-progs would not be disturbed
+
+The end result would be a mixed filesystem where active parts are RAID1 and archives one are RAID5.
+
+Regards,
+Hubert Tonneau

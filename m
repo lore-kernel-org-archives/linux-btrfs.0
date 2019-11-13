@@ -4,29 +4,29 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+	USER_AGENT_GIT autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7B2D4C43331
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Nov 2019 06:57:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B09D2C17442
+	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Nov 2019 06:59:48 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5A6EB222CD
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Nov 2019 06:57:24 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9047821A49
+	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Nov 2019 06:59:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726326AbfKMG5X (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 13 Nov 2019 01:57:23 -0500
-Received: from mx2.suse.de ([195.135.220.15]:47758 "EHLO mx1.suse.de"
+        id S1726165AbfKMG7s (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 13 Nov 2019 01:59:48 -0500
+Received: from mx2.suse.de ([195.135.220.15]:48084 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726186AbfKMG5X (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 13 Nov 2019 01:57:23 -0500
+        id S1725858AbfKMG7r (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 13 Nov 2019 01:59:47 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 9B0AEAFA1
-        for <linux-btrfs@vger.kernel.org>; Wed, 13 Nov 2019 06:57:21 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 5491CADEF;
+        Wed, 13 Nov 2019 06:59:46 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
+To:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
 Subject: [PATCH] fstests: common: Keep $seqres.dmesg in $RESULT_DIR
-Date:   Wed, 13 Nov 2019 14:57:16 +0800
-Message-Id: <20191113065716.33948-1-wqu@suse.com>
+Date:   Wed, 13 Nov 2019 14:59:38 +0800
+Message-Id: <20191113065938.34720-1-wqu@suse.com>
 X-Mailer: git-send-email 2.24.0
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit

@@ -6,30 +6,30 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CFC96C17442
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Nov 2019 10:27:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5C185C43331
+	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Nov 2019 10:27:44 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A8B73222C6
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Nov 2019 10:27:41 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 36423222C1
+	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Nov 2019 10:27:44 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727348AbfKMK1k (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 13 Nov 2019 05:27:40 -0500
-Received: from mx2.suse.de ([195.135.220.15]:48240 "EHLO mx1.suse.de"
+        id S1727372AbfKMK1n (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 13 Nov 2019 05:27:43 -0500
+Received: from mx2.suse.de ([195.135.220.15]:48238 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726597AbfKMK1k (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 13 Nov 2019 05:27:40 -0500
+        id S1727229AbfKMK1j (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 13 Nov 2019 05:27:39 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 18AB9B52C;
+        by mx1.suse.de (Postfix) with ESMTP id 18174B2C3;
         Wed, 13 Nov 2019 10:27:37 +0000 (UTC)
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 To:     David Sterba <dsterba@suse.com>
 Cc:     Qu Wenru <wqu@suse.com>,
         Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
         Johannes Thumshirn <jthumshirn@suse.de>
-Subject: [PATCH v2 6/7] btrfs: change btrfs_fs_devices::seeing to bool
-Date:   Wed, 13 Nov 2019 11:27:27 +0100
-Message-Id: <20191113102728.8835-7-jthumshirn@suse.de>
+Subject: [PATCH v2 4/7] btrfs: handle error return of close_fs_devices()
+Date:   Wed, 13 Nov 2019 11:27:25 +0100
+Message-Id: <20191113102728.8835-5-jthumshirn@suse.de>
 X-Mailer: git-send-email 2.16.4
 In-Reply-To: <20191113102728.8835-1-jthumshirn@suse.de>
 References: <20191113102728.8835-1-jthumshirn@suse.de>
@@ -38,71 +38,49 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-struct btrfs_fs_devices::seeding currently is declared as an integer
-variable but only used as a boolean.
+close_fs_devices() will be able to return an error instead of crashing
+after the following patch.
 
-Change the variable definition to bool and update to code touching it to
-set 'true' and 'false'.
+Prepare btrfs_close_devices() for this.
 
 Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
 ---
- fs/btrfs/volumes.c | 8 ++++----
- fs/btrfs/volumes.h | 2 +-
- 2 files changed, 5 insertions(+), 5 deletions(-)
+ fs/btrfs/volumes.c | 11 +++++++----
+ 1 file changed, 7 insertions(+), 4 deletions(-)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 25e4608e20f1..ce9c6fa3a32c 100644
+index e5864ca3bb3b..be1fd935edf7 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -634,7 +634,7 @@ static int btrfs_open_one_device(struct btrfs_fs_devices *fs_devices,
- 		}
+@@ -1143,10 +1143,10 @@ static int close_fs_devices(struct btrfs_fs_devices *fs_devices)
+ int btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
+ {
+ 	struct btrfs_fs_devices *seed_devices = NULL;
+-	int ret;
++	int err, err2 = 0;
  
- 		clear_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state);
--		fs_devices->seeding = 1;
-+		fs_devices->seeding = true;
- 	} else {
- 		if (bdev_read_only(bdev))
- 			clear_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state);
-@@ -1139,7 +1139,7 @@ static int close_fs_devices(struct btrfs_fs_devices *fs_devices)
- 	WARN_ON(fs_devices->open_devices);
- 	WARN_ON(fs_devices->rw_devices);
- 	fs_devices->opened = 0;
--	fs_devices->seeding = 0;
-+	fs_devices->seeding = false;
- 
- 	return 0;
- }
-@@ -2297,7 +2297,7 @@ static int btrfs_prepare_sprout(struct btrfs_fs_info *fs_info)
- 	list_splice_init(&fs_devices->alloc_list, &seed_devices->alloc_list);
- 	mutex_unlock(&fs_info->chunk_mutex);
- 
--	fs_devices->seeding = 0;
-+	fs_devices->seeding = false;
- 	fs_devices->num_devices = 0;
- 	fs_devices->open_devices = 0;
- 	fs_devices->missing_devices = 0;
-@@ -6681,7 +6681,7 @@ static struct btrfs_fs_devices *open_seed_devices(struct btrfs_fs_info *fs_info,
- 		if (IS_ERR(fs_devices))
- 			return fs_devices;
- 
--		fs_devices->seeding = 1;
-+		fs_devices->seeding = true;
- 		fs_devices->opened = 1;
- 		return fs_devices;
+ 	mutex_lock(&uuid_mutex);
+-	ret = close_fs_devices(fs_devices);
++	err = close_fs_devices(fs_devices);
+ 	if (!fs_devices->opened) {
+ 		seed_devices = fs_devices->seed;
+ 		fs_devices->seed = NULL;
+@@ -1156,10 +1156,13 @@ int btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
+ 	while (seed_devices) {
+ 		fs_devices = seed_devices;
+ 		seed_devices = fs_devices->seed;
+-		close_fs_devices(fs_devices);
++		err2 = close_fs_devices(fs_devices);
+ 		free_fs_devices(fs_devices);
  	}
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 46987a2da786..8e9513b3fe9d 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -243,7 +243,7 @@ struct btrfs_fs_devices {
- 	struct list_head alloc_list;
+-	return ret;
++
++	if (err2)
++		return err2;
++	return err;
+ }
  
- 	struct btrfs_fs_devices *seed;
--	int seeding;
-+	bool seeding;
- 
- 	int opened;
- 
+ static int open_fs_devices(struct btrfs_fs_devices *fs_devices,
 -- 
 2.16.4
 

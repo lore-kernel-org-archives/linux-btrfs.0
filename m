@@ -2,117 +2,125 @@ Return-Path: <SRS0=qcWT=ZF=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.7 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 03A81C432C3
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Nov 2019 21:50:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 86EE2C432C3
+	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Nov 2019 22:51:20 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id EEF89206EE
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Nov 2019 21:50:48 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3A7C5206EE
+	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Nov 2019 22:51:21 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="cpMqQPvW"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=dirtcellar.net header.i=@dirtcellar.net header.b="eKfj8jsa"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726599AbfKMVur (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 13 Nov 2019 16:50:47 -0500
-Received: from mail-wr1-f67.google.com ([209.85.221.67]:45595 "EHLO
-        mail-wr1-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726162AbfKMVuq (ORCPT
+        id S1726473AbfKMWvT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 13 Nov 2019 17:51:19 -0500
+Received: from smtp.domeneshop.no ([194.63.252.55]:53297 "EHLO
+        smtp.domeneshop.no" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726393AbfKMWvT (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 13 Nov 2019 16:50:46 -0500
-Received: by mail-wr1-f67.google.com with SMTP id z10so4112452wrs.12
-        for <linux-btrfs@vger.kernel.org>; Wed, 13 Nov 2019 13:50:45 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=nyooZT8wtbNRMz61o0FZGBCnOr8yYqM/0EJg1xrF8Ak=;
-        b=cpMqQPvW7sh/MEFOhW1O7gcGzlN/APKWYBloPwyPKQPlZixE6al/OptOA0zp5yzlKr
-         V0ZQxNBXvEwnDubZAW2PZGBwG5hKjRqcifFN8z38tjoZ9FvaR/FAIQpEZBkCQSt/pX8A
-         bqD+7LZSyp/eKggZLIgZjEiwMWiILFiv1JKB2Ih/4ajA/aVVMK21na+QhzDR2MPQEHP2
-         gBXi/k8NMIvv/KDpO3EjVlghgC9/viNYVdL7Jx0TfGbCk2GJvjoD0wvy7Qunk/Ab4bVO
-         xzl/ZYYlQMm3AoGk2vP3rdjeZlQbgb0A2ZWRRNUgc5+YMXkRaLiqn3kMxx7rCjRxsCoA
-         0Rcw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=nyooZT8wtbNRMz61o0FZGBCnOr8yYqM/0EJg1xrF8Ak=;
-        b=nds+zA8DJ0NUO5SMniVcSRqATzyg+h4Booqs/rboi24OkGUdba3YwvcMpVrG6bq9fy
-         GIZYmpCeq8DbE0/HIGrRW8MUNZe17rErYFW4h5RwXX3Av/fk/RjZktvpOrvW7v85f0Rk
-         520y4uj9cYiBGwMYoBImyU0enXRKi1paOWzm8GqA4ShM5q6aSBQM9lLDS2QAtVitl0uM
-         IjQiqWm1bjaFT8LqeOsqFL5cj+h0NCURN7c/M3gvXYvS/Guckc9pL426iFVV1xC7YR64
-         yN69tMZAI1gB1fnpPyv7RWWYDh2f5ObXR4dgQE/sijEa9CLBEjkGV44fWXxq/MDNUn2b
-         uJkw==
-X-Gm-Message-State: APjAAAW/88KIrmqofg4SvCyepUIXzuGfQyb39XERmAKYgwDkPquVpJAG
-        v6Ystxy3Ht/u2eZyQyuiu2eIrJiA+jFPlm04hGbCWL1cY6VHc6iW
-X-Google-Smtp-Source: APXvYqy5kx53qe4W9bAt2sFRcw9TmFvuy6dFaRk6dLKIq70CgVlVIKpN0pBDmHaH/c6XX8kcwJtxLI5Iqpn8yH8WUMg=
-X-Received: by 2002:adf:f607:: with SMTP id t7mr4918076wrp.390.1573681844539;
- Wed, 13 Nov 2019 13:50:44 -0800 (PST)
+        Wed, 13 Nov 2019 17:51:19 -0500
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=dirtcellar.net; s=ds201810; h=Content-Transfer-Encoding:Content-Type:
+        In-Reply-To:MIME-Version:Date:Message-ID:From:References:Cc:To:Subject:
+        Reply-To:Sender:Content-ID:Content-Description:Resent-Date:Resent-From:
+        Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
+        List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
+        bh=X7tIGq4ukxDj+jkgelnPKccAG1VwNdEqH5IUmUXrAlM=; b=eKfj8jsa312ZTKifYQYLuLatJr
+        1XLRV3aXL/FMpeMvZJmObGCmZ/I85ESuF8ENV9dD6PkNmlrS7Ft56+6Ytsn97aac/7dFoHlPw1UIS
+        QCZqnrtGKf42QheMSueyVoqb4coN7aET2tE/3vERY5MN7yQKOwLra/O0hXBMsL59yzOuuuofi4ZpF
+        MPecJTG3fCMW4Lj966kNh9qNZNdFL3BxkhzRLiQZXkEPxTcnOGTjKq9Lh1EZlj1RQK/fJhBoRYeyM
+        np1dm+r2MZv0gokgeBDLK7zjPx1XVTZEtdDsJ3vs2rOI1Ou6cYITidj9bLxfAJvUCwP1p+mgysS3Q
+        uzZtl/kQ==;
+Received: from 254.79-160-170.customer.lyse.net ([79.160.170.254]:7746 helo=[10.0.0.10])
+        by smtp.domeneshop.no with esmtpsa (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128)
+        (Exim 4.92)
+        (envelope-from <waxhead@dirtcellar.net>)
+        id 1iV1To-0005Yg-4S; Wed, 13 Nov 2019 23:51:16 +0100
+Reply-To: waxhead@dirtcellar.net
+Subject: Re: Avoiding BRTFS RAID5 write hole
+To:     Hubert Tonneau <hubert.tonneau@fullpliant.org>,
+        Goffredo Baroncelli <kreijack@libero.it>
+Cc:     linux-btrfs@vger.kernel.org
+References: <0JGAX5Q12@briare1.fullpliant.org>
+From:   waxhead <waxhead@dirtcellar.net>
+Message-ID: <c8f387e9-9240-945d-da3e-568edaf032da@dirtcellar.net>
+Date:   Wed, 13 Nov 2019 23:51:15 +0100
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
+ Firefox/52.0 SeaMonkey/2.49.5
 MIME-Version: 1.0
-References: <CAJCQCtS1v7waFA=ERafSCSCHmPJVytdFZkJLqNTC3U3Gw3Y7tA@mail.gmail.com>
- <d1874d17-700a-d78d-34be-eec0544c9de2@gmail.com> <CAJCQCtTpLTJdRjD7aNJEYXuMO+E65=GiYpKP3Wy5sgOWYs3Hsw@mail.gmail.com>
- <20191104193454.GD3001@twin.jikos.cz> <CAJCQCtSiDQA4919YDTyQkW7jPkxMds1K32ym=HgO6KHQLzHw+w@mail.gmail.com>
- <d2301902-bd5b-7c5a-0354-a5df21ca8eb3@libero.it> <CAJCQCtQm_5L9uvH53O3Qby3Ktwpvsc2_6rUhkBLGeD07RP5a7Q@mail.gmail.com>
- <4480d47f-1b1e-d99d-e480-b31220433340@inwind.it>
-In-Reply-To: <4480d47f-1b1e-d99d-e480-b31220433340@inwind.it>
-From:   Chris Murphy <lists@colorremedies.com>
-Date:   Wed, 13 Nov 2019 21:50:08 +0000
-Message-ID: <CAJCQCtTeYNvU-FueRKW6tnkNaRDDCAAUUCb5ZitA2VT+PR+K-A@mail.gmail.com>
-Subject: Re: Does GRUB btrfs support log tree?
-To:     Goffredo Baroncelli <kreijack@inwind.it>
-Cc:     Chris Murphy <lists@colorremedies.com>,
-        David Sterba <dsterba@suse.cz>,
-        Andrei Borzenkov <arvidjaar@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <0JGAX5Q12@briare1.fullpliant.org>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Nov 13, 2019 at 6:54 PM Goffredo Baroncelli <kreijack@inwind.it> wrote:
->
-> On 13/11/2019 18.00, Chris Murphy wrote:
-> >> The GRUB-fs should have the following main requirements:
-> >> - allow the atomicity guarantee
-> >> - allow molti-disk setup
-> >> - allow grub to update some file (grubenv come me as first)
-> >> - it should require a simple implementation (easy to porting to multiple system, which basically means linux, *bsd and solaris ?)
-> >> - the speed should be not important
-> > Plausibly we're most of the way there already, adapting the existing
-> > "BIOS Boot" partition.
-> >
-> Unfortunately the BIOS Boot partition (which means basically FAT), doesn't have support for "atomicity" nor multidisk..
+First of all, I am just a regular and a BTRFS enthusiast with no proper 
+filesystem knowledge.
 
-It's definitely not FAT. It's a blob of space owned by the bootloader.
-No file system at all. As far as I know only the BIOS variant of GRUB
-uses it. But GRUB does have a way of detecting core.img on it, and
-avoids overwriting it by preferring to write in free space within that
-partition, ostensibly to support multiple instances of GRUB (multiple
-distributions), and some degree of atomicity as the core.img is
-written first to this partition before the boot.img or "jump code" is
-written in the first 440 bytes of the MBR.
+regarding the write hole.... I was just pondering (and I may be totally 
+wrong about this , but it is worth a shot)
 
-Obviously this is BIOS specific, which is also x86 specific. So it
-needs to grow to be more arch and firmware agnostic. But it's so
-simple it might actually be more practical than alternatives like a
-new file system or building a transactional based FAT.
+If raid5/6 needs to read-modify-write - would not the write hole be 
+avoided if you first log a XOR cipher value in the metadata, then you 
+modify an already existing stripe by XOR'ing whatever needs to be 
+modified on the rewriten stripe. The journal would only need to know 
+what stripes are being modified so it can be checked on a mount.
 
-I'm sorta annoyed with the UEFI spec using FAT, having not solved the
-problem of atomic updating of the EFI System partition. But we could
-agree to only use the EFI System partition for the sole purpose of the
-firmware loading an EFI file system driver, immediately allowing the
-firmware to read/write to a more reliable file system.
+If you encounter the write hole, the parity would not match and since 
+the XOR cipher is in the metadata you can roll back any failed update 
+byte by byte until the checksum match and you will be good to go with 
+the old data instead of the new one.
 
-www.datalight.com/assets/files/secure/resources/Where%20Does%20FAT%20Fail%202016.pdf
-https://elinux.org/images/5/54/Elc2011_munegowda.pdf
+If on the other hand you can write a new stripe the problem goes away. I 
+personally are willing to have increased disk IO and reduced performance 
+for space. After all raid5/6 is not performance oriented , but primarily 
+a space saver.
 
-Those PDFs are kind interesting.
+once (if ever) BTRFS supports per subvolume raid levels then the 
+performance issues goes away as you can always raid1/0 some subvolume if 
+you need to sacrifice space for performance.
+
+- Waxhead
 
 
-
-
--- 
-Chris Murphy
+Hubert Tonneau wrote:
+> Goffredo Baroncelli wrote:
+>>
+>>> What I am suggesting is to write it as RAID1 instead of RAID5, so that if it's changed a lot of times, you pay only once.
+>> I am not sure to understand what are you saying. Could you elaborate ?
+> 
+> The safety problem with RAID5 is that between the time you start to overwrite a stripe and the time you finish, disk safety is disabled because parity is broken.
+> On the other hand, with RAID1, disk safety more or less remains all the time, so overwriting is no issue.
+> 
+> There are several possible strategies to keep RAID5 disk safety all the time:
+> 
+> 1) Use a journal
+> This is the MDADM solution because it's the only resonable one if the RAID layer is separated from the filesystem (because you don't whan to add another sectors mapping layer).
+> The problem is that it's IO expensive.
+> This is the solution implemented in Liu Bo 2017 patch, as far as I can understand it.
+> 
+> 2) Never overwrite the RAID5 stripe
+> This is stripe COW. The new stripe is stored at different disks positions.
+> The problem is that it's even more IO expensive.
+> This is the solution you are suggesting, as far as I can understand it.
+> 
+> What I'm suggesting is to use your COW solution, but also write the new (set of) stripe(s) as RAID1.
+> Let me call this operation stripe COW RAID5 to RAID1.
+> The key advantage is that if you have to overwrite it again a few seconds (or hours) later, then it can be fast, because it's already RAID1.
+> 
+> Morever, new stripes resulting from writing a new file, or appending, would be created as RAID1, even if the filesystem DATA is configured as RAID5, each time the stripe is not full or is likely to be modified soon.
+> This will reduce the number of stripe COW RAID5 to RAID1 operations.
+> 
+> The final objective is to have few stripe COW operations, because they are IO expensive, and many RAID1 stripe overwrite operations.
+> The price to pay for the reduced number of stripe COW operations is consuming more disk space, because RAID1 stripes consumes more disk space than RAID5 ones, and that is why we would have a background process that does stripe COW from RAID1 to RAID5 in order to reclaim disk space, and we could make it more aggressive when we lack disk space.
+> 
+> What I'm trying to provide is the idea that seeing the DATA as RAID1 or RAID5 is not a good idea when we have BTRFS flexibility. We should rather see it as RAID1 and RAID5, RAID5 beeing just a way to reclaim disk space (same for RAID1C3 and RAID6).
+> Having METADATA as RAID1 and DATA as RAID5 was a first step, but BTRFS flexibility probably allows to do more.
+> 
+> Please notice that I understand the BTRFS and RAID principles, but on the other hand, I have not read the code, so can hardly say what is easy to implement.
+> Sorry about that. I've written a full new operating system (see www.fullpliant.org) but the kernel :-)
+> 

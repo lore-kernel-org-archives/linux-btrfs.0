@@ -2,66 +2,69 @@ Return-Path: <SRS0=qcWT=ZF=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
-	SPF_HELO_NONE,SPF_PASS autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.7 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 88E8FC432C3
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Nov 2019 21:05:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2937EC432C3
+	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Nov 2019 21:29:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4E081206EF
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Nov 2019 21:05:15 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1573679115;
-	bh=F23cvoRoqrCWlr35NjIMIE49ZR7wTNyqsqVpCHoHjMs=;
-	h=Subject:From:In-Reply-To:References:Date:To:Cc:List-ID:From;
-	b=nCDmu0Hty0wtQ//EPZNOZZ80Ke77qDSam1xJyMttDdztOm/nj5iTRmR3zhqKrOVzq
-	 uD0GM5DHxl7v6ruwzFuB2yePXcmc5dwfnEKjXEv8EapLaay21SGaTmn7OlsVJzzcDP
-	 jScrnWltROiymQCxoMvDlFV6a1TxoqXGQhGZDm7k=
+	by mail.kernel.org (Postfix) with ESMTP id 158D5206E3
+	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Nov 2019 21:29:56 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726409AbfKMVFH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 13 Nov 2019 16:05:07 -0500
-Received: from mail.kernel.org ([198.145.29.99]:60548 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726185AbfKMVFG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 13 Nov 2019 16:05:06 -0500
-Subject: Re: [GIT PULL] Btrfs fix for 5.4-rc8
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1573679107;
-        bh=F23cvoRoqrCWlr35NjIMIE49ZR7wTNyqsqVpCHoHjMs=;
-        h=From:In-Reply-To:References:Date:To:Cc:From;
-        b=gDgM3NyJWuSPY9VpjGU4pZDEKxUV5B5nkqTPIPUSj9ug8XUImRBK+weMnH8E8h5jr
-         L5dp+7gQI669IYDRb7DT14sbxTAyQPWpT0BIHat3+bI1sSvVyEsM4wsu0YQ4+2Yfdg
-         pk5lR11RVc8o+WKvAGWONZPfAdpYOT4aK+hGlt8k=
-From:   pr-tracker-bot@kernel.org
-In-Reply-To: <cover.1573671550.git.dsterba@suse.com>
-References: <cover.1573671550.git.dsterba@suse.com>
-X-PR-Tracked-List-Id: <linux-kernel.vger.kernel.org>
-X-PR-Tracked-Message-Id: <cover.1573671550.git.dsterba@suse.com>
-X-PR-Tracked-Remote: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.4-rc7-tag
-X-PR-Tracked-Commit-Id: e6c617102c7e4ac1398cb0b98ff1f0727755b520
-X-PR-Merge-Tree: torvalds/linux.git
-X-PR-Merge-Refname: refs/heads/master
-X-PR-Merge-Commit-Id: afd7a71872f14062cc12cac126bb8e219e7dacf6
-Message-Id: <157367910652.4154.3240212309981343057.pr-tracker-bot@kernel.org>
-Date:   Wed, 13 Nov 2019 21:05:06 +0000
-To:     David Sterba <dsterba@suse.com>
-Cc:     torvalds@linux-foundation.org, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+        id S1727053AbfKMV3y (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 13 Nov 2019 16:29:54 -0500
+Received: from briare1.fullpliant.org ([78.227.24.35]:50896 "HELO
+        briare1.fullpliant.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with SMTP id S1726162AbfKMV3x (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 13 Nov 2019 16:29:53 -0500
+From:   Hubert Tonneau <hubert.tonneau@fullpliant.org>
+To:     Goffredo Baroncelli <kreijack@libero.it>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: Avoiding BRTFS RAID5 write hole
+Date:   Wed, 13 Nov 2019 22:29:49 GMT
+Message-ID: <0JGAX5Q12@briare1.fullpliant.org>
+X-Mailer: Pliant 114
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The pull request you sent on Wed, 13 Nov 2019 20:06:25 +0100:
+Goffredo Baroncelli wrote:
+>
+> > What I am suggesting is to write it as RAID1 instead of RAID5, so that if it's changed a lot of times, you pay only once.
+> I am not sure to understand what are you saying. Could you elaborate ?
 
-> git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.4-rc7-tag
+The safety problem with RAID5 is that between the time you start to overwrite a stripe and the time you finish, disk safety is disabled because parity is broken.
+On the other hand, with RAID1, disk safety more or less remains all the time, so overwriting is no issue.
 
-has been merged into torvalds/linux.git:
-https://git.kernel.org/torvalds/c/afd7a71872f14062cc12cac126bb8e219e7dacf6
+There are several possible strategies to keep RAID5 disk safety all the time:
 
-Thank you!
+1) Use a journal
+This is the MDADM solution because it's the only resonable one if the RAID layer is separated from the filesystem (because you don't whan to add another sectors mapping layer).
+The problem is that it's IO expensive.
+This is the solution implemented in Liu Bo 2017 patch, as far as I can understand it.
 
--- 
-Deet-doot-dot, I am a bot.
-https://korg.wiki.kernel.org/userdoc/prtracker
+2) Never overwrite the RAID5 stripe
+This is stripe COW. The new stripe is stored at different disks positions.
+The problem is that it's even more IO expensive.
+This is the solution you are suggesting, as far as I can understand it.
+
+What I'm suggesting is to use your COW solution, but also write the new (set of) stripe(s) as RAID1.
+Let me call this operation stripe COW RAID5 to RAID1.
+The key advantage is that if you have to overwrite it again a few seconds (or hours) later, then it can be fast, because it's already RAID1.
+
+Morever, new stripes resulting from writing a new file, or appending, would be created as RAID1, even if the filesystem DATA is configured as RAID5, each time the stripe is not full or is likely to be modified soon.
+This will reduce the number of stripe COW RAID5 to RAID1 operations.
+
+The final objective is to have few stripe COW operations, because they are IO expensive, and many RAID1 stripe overwrite operations.
+The price to pay for the reduced number of stripe COW operations is consuming more disk space, because RAID1 stripes consumes more disk space than RAID5 ones, and that is why we would have a background process that does stripe COW from RAID1 to RAID5 in order to reclaim disk space, and we could make it more aggressive when we lack disk space.
+
+What I'm trying to provide is the idea that seeing the DATA as RAID1 or RAID5 is not a good idea when we have BTRFS flexibility. We should rather see it as RAID1 and RAID5, RAID5 beeing just a way to reclaim disk space (same for RAID1C3 and RAID6).
+Having METADATA as RAID1 and DATA as RAID5 was a first step, but BTRFS flexibility probably allows to do more.
+
+Please notice that I understand the BTRFS and RAID principles, but on the other hand, I have not read the code, so can hardly say what is easy to implement.
+Sorry about that. I've written a full new operating system (see www.fullpliant.org) but the kernel :-)

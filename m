@@ -2,149 +2,206 @@ Return-Path: <SRS0=JLvI=ZG=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.4 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 42119C432C3
-	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Nov 2019 09:01:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7506DC432C3
+	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Nov 2019 10:58:34 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 231AA206CB
-	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Nov 2019 09:01:56 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 441EE206EF
+	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Nov 2019 10:58:34 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="Hm2+JOyC"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726190AbfKNJBz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 14 Nov 2019 04:01:55 -0500
-Received: from mx2.suse.de ([195.135.220.15]:39898 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725920AbfKNJBz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 14 Nov 2019 04:01:55 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 946ACB167;
-        Thu, 14 Nov 2019 09:01:52 +0000 (UTC)
-Subject: Re: [PATCH v2 5/7] btrfs: remove final BUG_ON() in close_fs_devices()
-To:     dsterba@suse.cz, David Sterba <dsterba@suse.com>,
-        Qu Wenru <wqu@suse.com>,
+        id S1726962AbfKNK6d (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 14 Nov 2019 05:58:33 -0500
+Received: from userp2130.oracle.com ([156.151.31.86]:46368 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726139AbfKNK6d (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 14 Nov 2019 05:58:33 -0500
+Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
+        by userp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xAEAsMoq097520;
+        Thu, 14 Nov 2019 10:57:05 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
+ references : from : message-id : date : mime-version : in-reply-to :
+ content-type : content-transfer-encoding; s=corp-2019-08-05;
+ bh=gTEEvlY9JpSb50zxUGhPDgcYco3DZmQDT5Er0/YqL/w=;
+ b=Hm2+JOyCDNfURJWGs5Fx3mlLwvEITcoSzK8otyGHheQlqy7GzfwE2Gj61jcVCXbG2oD1
+ /maaH5qsH0LqMkLdDAUKMQBJui++UC/wCCBsTI3NmthvHWs3dwDXMqI0W2V6Fwz0CgGG
+ aM66T7Gj0v8MmM5s4mIkR242AZpTVG1A64zox8Cy3XomXUE9wBE2DjMGwuFVWzeQY/nJ
+ 8HvyN+aRA+dZtc1zPLwMDgEhCBLk7kRvPyJ6+F9+vVBm/sk6cxtggXj2iIni1B2nC1kD
+ 9VuW49R/j7+Bd5KFCfRvRUbBuuGiSXilbZgtIVXK9OC+9dyFkyKOrwemipjCcXElLbNH Gw== 
+Received: from userp3020.oracle.com (userp3020.oracle.com [156.151.31.79])
+        by userp2130.oracle.com with ESMTP id 2w5mvu2egj-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Thu, 14 Nov 2019 10:57:05 +0000
+Received: from pps.filterd (userp3020.oracle.com [127.0.0.1])
+        by userp3020.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xAEAsGtj061104;
+        Thu, 14 Nov 2019 10:57:04 GMT
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by userp3020.oracle.com with ESMTP id 2w8v35gkk6-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Thu, 14 Nov 2019 10:57:04 +0000
+Received: from abhmp0011.oracle.com (abhmp0011.oracle.com [141.146.116.17])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id xAEAv3Gs003049;
+        Thu, 14 Nov 2019 10:57:03 GMT
+Received: from [10.190.130.61] (/192.188.170.109)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Thu, 14 Nov 2019 02:57:03 -0800
+Subject: Re: [PATCH v2 2/7] btrfs: handle device allocation failure in
+ btrfs_close_one_device()
+To:     Johannes Thumshirn <jthumshirn@suse.de>, dsterba@suse.cz,
+        David Sterba <dsterba@suse.com>, Qu Wenru <wqu@suse.com>,
         Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>
 References: <20191113102728.8835-1-jthumshirn@suse.de>
- <20191113102728.8835-6-jthumshirn@suse.de>
- <20191113150246.GD3001@twin.jikos.cz>
-From:   Johannes Thumshirn <jthumshirn@suse.de>
-Openpgp: preference=signencrypt
-Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <91cdf0e1-006b-7568-f6ce-f9611bf9de0f@suse.de>
-Date:   Thu, 14 Nov 2019 10:01:52 +0100
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.8.0
+ <20191113102728.8835-3-jthumshirn@suse.de>
+ <20191113145859.GB3001@twin.jikos.cz>
+ <4a86d0f6-94cb-24a7-05d1-5297673ac248@suse.de>
+From:   Anand Jain <anand.jain@oracle.com>
+Message-ID: <9fb09a95-ec34-0a45-8f4b-97a6467a2c81@oracle.com>
+Date:   Thu, 14 Nov 2019 18:56:54 +0800
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:52.0)
+ Gecko/20100101 Thunderbird/52.9.1
 MIME-Version: 1.0
-In-Reply-To: <20191113150246.GD3001@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <4a86d0f6-94cb-24a7-05d1-5297673ac248@suse.de>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: 7bit
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9440 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
+ adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.0.1-1910280000 definitions=main-1911140101
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9440 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
+ suspectscore=0 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
+ lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1910280000
+ definitions=main-1911140102
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 13/11/2019 16:02, David Sterba wrote:
-> On Wed, Nov 13, 2019 at 11:27:26AM +0100, Johannes Thumshirn wrote:
->> Now that the preparation work is done, remove the temporary BUG_ON() in
->> close_fs_devices() and return an error instead.
+On 14/11/19 4:48 PM, Johannes Thumshirn wrote:
+> On 13/11/2019 15:58, David Sterba wrote:
+>> On Wed, Nov 13, 2019 at 11:27:23AM +0100, Johannes Thumshirn wrote:
+>>> In btrfs_close_one_device() we're allocating a new device and if this
+>>> fails we BUG().
+>>>
+>>> Move the allocation to the top of the function and return an error in case
+>>> it failed.
+>>>
+>>> The BUG_ON() is temporarily moved to close_fs_devices(), the caller of
+>>> btrfs_close_one_device() as further work is pending to untangle this.
+>>>
+>>> Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
+>>> ---
+>>>   fs/btrfs/volumes.c | 27 +++++++++++++++++++++------
+>>>   1 file changed, 21 insertions(+), 6 deletions(-)
+>>>
+>>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+>>> index 5ee26e7fca32..0a2a73907563 100644
+>>> --- a/fs/btrfs/volumes.c
+>>> +++ b/fs/btrfs/volumes.c
+>>> @@ -1061,12 +1061,17 @@ static void btrfs_close_bdev(struct btrfs_device *device)
+>>>   	blkdev_put(device->bdev, device->mode);
+>>>   }
+>>>   
+>>> -static void btrfs_close_one_device(struct btrfs_device *device)
+>>> +static int btrfs_close_one_device(struct btrfs_device *device)
+>>>   {
+>>>   	struct btrfs_fs_devices *fs_devices = device->fs_devices;
+>>>   	struct btrfs_device *new_device;
+>>>   	struct rcu_string *name;
+>>>   
+>>> +	new_device = btrfs_alloc_device(NULL, &device->devid,
+>>> +					device->uuid);
+>>> +	if (IS_ERR(new_device))
+>>> +		goto err_close_device;
+>>> +
+>>>   	if (test_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state) &&
+>>>   	    device->devid != BTRFS_DEV_REPLACE_DEVID) {
+>>>   		list_del_init(&device->dev_alloc_list);
+>>> @@ -1080,10 +1085,6 @@ static void btrfs_close_one_device(struct btrfs_device *device)
+>>>   	if (device->bdev)
+>>>   		fs_devices->open_devices--;
+>>>   
+>>> -	new_device = btrfs_alloc_device(NULL, &device->devid,
+>>> -					device->uuid);
+>>> -	BUG_ON(IS_ERR(new_device)); /* -ENOMEM */
+>>> -
+>>>   	/* Safe because we are under uuid_mutex */
+>>>   	if (device->name) {
+>>>   		name = rcu_string_strdup(device->name->str, GFP_NOFS);
+>>> @@ -1096,18 +1097,32 @@ static void btrfs_close_one_device(struct btrfs_device *device)
+>>>   
+>>>   	synchronize_rcu();
+>>>   	btrfs_free_device(device);
+>>> +
+>>> +	return 0;
+>>> +
+>>> +err_close_device:
+>>> +	btrfs_close_bdev(device);
+>>> +	if (device->bdev) {
+>>> +		fs_devices->open_devices--;
+>>> +		btrfs_sysfs_rm_device_link(fs_devices, device);
+>>> +		device->bdev = NULL;
+>>> +	}
 >>
->> Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
+>> I don't understand this part: the 'device' pointer is from the argument,
+>> so the device we want to delete from the list and for that all the state
+>> bit tests, bdev close, list replace rcu and synchronize_rcu should
+>> happen -- in case we have a newly allocated new_device.
 >>
->> ---
->> Changes to v1:
->> - btrfs_fs_devices::seeding is a 'boolean' flags and no counter, don't
->>   decrement it (Qu)
->> ---
->>  fs/btrfs/volumes.c | 6 +++++-
->>  1 file changed, 5 insertions(+), 1 deletion(-)
+>> What I don't understand how the short version after label
+>> err_close_device: is correct. The device is still left in the list but
+>> with NULL bdev but rw_devices, missing_devices is untouched.
 >>
->> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
->> index be1fd935edf7..25e4608e20f1 100644
->> --- a/fs/btrfs/volumes.c
->> +++ b/fs/btrfs/volumes.c
->> @@ -1128,7 +1128,11 @@ static int close_fs_devices(struct btrfs_fs_devices *fs_devices)
->>  	mutex_lock(&fs_devices->device_list_mutex);
->>  	list_for_each_entry_safe(device, tmp, &fs_devices->devices, dev_list) {
->>  		ret = btrfs_close_one_device(device);
->> -		BUG_ON(ret); /* -ENOMEM */
->> +		if (ret) {
->> +			mutex_unlock(&fs_devices->device_list_mutex);
->> +			return ret;
+>> That a device closing needs to allocate memory for a new device instead
+>> of reinitializing it again is stupid but with the simplified device
+>> closing I'm not sure the state is well defined.
 > 
-> This can fail in the middle of the loop thus leaving some devices in the
-> list and keeping open_devices half-changed.
+> As we couldn't allocate memory to remove the device from the list, we
+> have to keep it in the list (technically even leaking some memory here).
 > 
-> Not all callers of close_fs_devices handle the errors so this can break
-> invariants, where eg. fs_devices->opened is expected to be 0 after the
-> function call, similar for ->seeding or ->rw_devices.
+> What we definitively need to do is clear the ->bdev pointer, otherwise
+> we'll trip over a NULL-pointer in open_fs_devices().
+> 
+> open_fs_devices() will traverse the list and call
+> btrfs_open_one_device() this will fail as device->bdev is (still) set
+> thus latest_dev is NULL and then this 'fs_devices->latest_bdev =
+> latest_dev->bdev;' will blow up.
+> 
+> If you have a better solution I'm all ears. This is what I came up with
+> to tackle the problem of half initialized devices.
+> 
+> One thing we could do though is call btrfs_free_stale_devices() in the
+> error case.
+> 
+> Byte,
+> 	Johannes
+> 
 
-Please see my answer to "btrfs: handle device allocation failure in
-btrfs_close_one_device()" on this topic.
+Johannes,
 
--- 
-Johannes Thumshirn                            SUSE Labs Filesystems
-jthumshirn@suse.de                                +49 911 74053 689
-SUSE Software Solutions Germany GmbH
-Maxfeldstr. 5
-90409 Nürnberg
-Germany
-(HRB 36809, AG Nürnberg)
-Geschäftsführer: Felix Imendörffer
-Key fingerprint = EC38 9CAB C2C4 F25D 8600 D0D0 0393 969D 2D76 0850
+   Thanks for attempting to fix this.
+
+   I wrote comments about this unoptimized code here [1]
+
+   [1]
+    ML email therad
+     'invalid opcode in close_fs_devices'
+
+ 
+https://groups.google.com/forum/#!msg/syzkaller-bugs/eSgcqygYaXE/6wuz-0jMCwAJ
+
+   You may want to review.
+
+   Yes David is correct why a closed device will still remain in the
+   dev_alloc_list even after the close here in this patch.
+
+Thanks, Anand

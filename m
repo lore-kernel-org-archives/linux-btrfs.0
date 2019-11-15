@@ -2,115 +2,60 @@ Return-Path: <SRS0=NtSv=ZH=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BAC24C43215
-	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Nov 2019 16:17:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B489BC432C3
+	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Nov 2019 16:20:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8A7B320730
-	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Nov 2019 16:17:47 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8E33920692
+	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Nov 2019 16:20:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727777AbfKOQRe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 15 Nov 2019 11:17:34 -0500
-Received: from mx2.suse.de ([195.135.220.15]:36880 "EHLO mx1.suse.de"
+        id S1727579AbfKOQUk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 15 Nov 2019 11:20:40 -0500
+Received: from mx2.suse.de ([195.135.220.15]:38216 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727520AbfKOQRd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 15 Nov 2019 11:17:33 -0500
+        id S1727423AbfKOQUk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 15 Nov 2019 11:20:40 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 21025B1BA;
-        Fri, 15 Nov 2019 16:17:32 +0000 (UTC)
-From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
-To:     linux-btrfs@vger.kernel.org
-Cc:     linux-fsdevel@vger.kernel.org, hch@infradead.org,
-        darrick.wong@oracle.com, Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: [PATCH 3/7] iomap: use a function pointer for dio submits
-Date:   Fri, 15 Nov 2019 10:16:56 -0600
-Message-Id: <20191115161700.12305-4-rgoldwyn@suse.de>
-X-Mailer: git-send-email 2.16.4
-In-Reply-To: <20191115161700.12305-1-rgoldwyn@suse.de>
-References: <20191115161700.12305-1-rgoldwyn@suse.de>
+        by mx1.suse.de (Postfix) with ESMTP id ED724AEEE;
+        Fri, 15 Nov 2019 16:20:38 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id E3BBFDA7D3; Fri, 15 Nov 2019 17:20:41 +0100 (CET)
+Date:   Fri, 15 Nov 2019 17:20:41 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     damenly.su@gmail.com
+Cc:     linux-btrfs@vger.kernel.org, Damenly_Su@gmx.com
+Subject: Re: [PATCH 1/2] btrfs-progs: add comments of block group lookup
+ functions
+Message-ID: <20191115162041.GA3001@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, damenly.su@gmail.com,
+        linux-btrfs@vger.kernel.org, Damenly_Su@gmx.com
+References: <20191111084226.475957-1-Damenly_Su@gmx.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20191111084226.475957-1-Damenly_Su@gmx.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Goldwyn Rodrigues <rgoldwyn@suse.com>
+On Mon, Nov 11, 2019 at 04:42:25PM +0800, damenly.su@gmail.com wrote:
+> From: Su Yue <Damenly_Su@gmx.com>
+> 
+> The progs side function btrfs_lookup_first_block_group() calls
+> find_first_extent_bit() to find block group which contains bytenr
+> or after the bytenr. This behavior differs from kernel code, so
+> add the comments.
+> 
+> Add the coments of btrfs_lookup_block_group() too, this one works
+> like kernel side.
+> 
+> Signed-off-by: Su Yue <Damenly_Su@gmx.com>
 
-This helps filesystems to perform tasks on the bio while
-submitting for I/O. This could be post-write operations
-such as data CRC or data replication for fs-handled RAID.
-
-Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
----
- fs/iomap/direct-io.c  | 14 +++++++++-----
- include/linux/iomap.h |  2 ++
- 2 files changed, 11 insertions(+), 5 deletions(-)
-
-diff --git a/fs/iomap/direct-io.c b/fs/iomap/direct-io.c
-index 2f88d64c2a4d..1e93a8d99439 100644
---- a/fs/iomap/direct-io.c
-+++ b/fs/iomap/direct-io.c
-@@ -59,7 +59,7 @@ int iomap_dio_iopoll(struct kiocb *kiocb, bool spin)
- EXPORT_SYMBOL_GPL(iomap_dio_iopoll);
- 
- static void iomap_dio_submit_bio(struct iomap_dio *dio, struct iomap *iomap,
--		struct bio *bio)
-+		struct bio *bio, loff_t pos)
- {
- 	atomic_inc(&dio->ref);
- 
-@@ -67,7 +67,11 @@ static void iomap_dio_submit_bio(struct iomap_dio *dio, struct iomap *iomap,
- 		bio_set_polled(bio, dio->iocb);
- 
- 	dio->submit.last_queue = bdev_get_queue(iomap->bdev);
--	dio->submit.cookie = submit_bio(bio);
-+	if (dio->dops && dio->dops->submit_io)
-+		dio->submit.cookie = dio->dops->submit_io(bio,
-+				file_inode(dio->iocb->ki_filp),	pos);
-+	else
-+		dio->submit.cookie = submit_bio(bio);
- }
- 
- static ssize_t iomap_dio_complete(struct iomap_dio *dio)
-@@ -191,7 +195,7 @@ iomap_dio_zero(struct iomap_dio *dio, struct iomap *iomap, loff_t pos,
- 	get_page(page);
- 	__bio_add_page(bio, page, len, 0);
- 	bio_set_op_attrs(bio, REQ_OP_WRITE, flags);
--	iomap_dio_submit_bio(dio, iomap, bio);
-+	iomap_dio_submit_bio(dio, iomap, bio, pos);
- }
- 
- static loff_t
-@@ -297,11 +301,11 @@ iomap_dio_bio_actor(struct inode *inode, loff_t pos, loff_t length,
- 		iov_iter_advance(dio->submit.iter, n);
- 
- 		dio->size += n;
--		pos += n;
- 		copied += n;
- 
- 		nr_pages = iov_iter_npages(&iter, BIO_MAX_PAGES);
--		iomap_dio_submit_bio(dio, iomap, bio);
-+		iomap_dio_submit_bio(dio, iomap, bio, pos);
-+		pos += n;
- 	} while (nr_pages);
- 
- 	/*
-diff --git a/include/linux/iomap.h b/include/linux/iomap.h
-index 8b09463dae0d..386ac8ff58d0 100644
---- a/include/linux/iomap.h
-+++ b/include/linux/iomap.h
-@@ -252,6 +252,8 @@ int iomap_writepages(struct address_space *mapping,
- struct iomap_dio_ops {
- 	int (*end_io)(struct kiocb *iocb, ssize_t size, int error,
- 		      unsigned flags);
-+	blk_qc_t (*submit_io)(struct bio *bio, struct inode *inode,
-+			  loff_t file_offset);
- };
- 
- ssize_t iomap_dio_rw(struct kiocb *iocb, struct iov_iter *iter,
--- 
-2.16.4
-
+1 and 2 added to devel, thanks.

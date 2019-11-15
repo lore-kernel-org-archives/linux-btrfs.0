@@ -2,58 +2,75 @@ Return-Path: <SRS0=NtSv=ZH=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=no
+X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3F056C43141
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 260FAC432C3
 	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Nov 2019 16:17:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2160520692
+	by mail.kernel.org (Postfix) with ESMTP id 02A4920718
 	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Nov 2019 16:17:28 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727740AbfKOQR1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S1727700AbfKOQR1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Fri, 15 Nov 2019 11:17:27 -0500
-Received: from mx2.suse.de ([195.135.220.15]:36786 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:36770 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727520AbfKOQR1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 15 Nov 2019 11:17:27 -0500
+        id S1727461AbfKOQR0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 15 Nov 2019 11:17:26 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id C486EAC4A;
+        by mx1.suse.de (Postfix) with ESMTP id 36A26B150;
         Fri, 15 Nov 2019 16:17:25 +0000 (UTC)
-From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
-To:     linux-btrfs@vger.kernel.org
-Cc:     linux-fsdevel@vger.kernel.org, hch@infradead.org,
-        darrick.wong@oracle.com
-Subject: btrfs direct-io using iomap
-Date:   Fri, 15 Nov 2019 10:16:53 -0600
-Message-Id: <20191115161700.12305-1-rgoldwyn@suse.de>
-X-Mailer: git-send-email 2.16.4
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 2BAD1DA7D3; Fri, 15 Nov 2019 17:17:28 +0100 (CET)
+Date:   Fri, 15 Nov 2019 17:17:28 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Su Yue <Damenly_Su@gmx.com>
+Cc:     Qu Wenruo <quwenruo.btrfs@gmx.com>, damenly.su@gmail.com,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/2] btrfs-progs: add comments of block group lookup
+ functions
+Message-ID: <20191115161728.GZ3001@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Su Yue <Damenly_Su@gmx.com>,
+        Qu Wenruo <quwenruo.btrfs@gmx.com>, damenly.su@gmail.com,
+        linux-btrfs@vger.kernel.org
+References: <20191111084226.475957-1-Damenly_Su@gmx.com>
+ <97915605-5df1-ab83-ca98-3133b0648df9@gmx.com>
+ <bf2131c4-c780-a66f-8963-452082438375@gmx.com>
+ <9840c8eb-9fc9-972c-8b0a-1907228d7a2c@gmx.com>
+ <ceecb3e5-09eb-1978-1bc2-2cb636ee7a98@gmx.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <ceecb3e5-09eb-1978-1bc2-2cb636ee7a98@gmx.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an effort to use iomap for direct I/O in btrfs. This would
-change the call from __blockdev_direct_io() to iomap_dio_rw().
+On Mon, Nov 11, 2019 at 06:17:17PM +0800, Su Yue wrote:
+> >>>> + * Return the block group that contains or after bytenr
+> >>>> + */
+> >>>
+> >>> What about "Return the block group thart starts at or after @bytenr" ?
+> >>>
+> >>
+> >> That's what documented in kernel already.
+> >> The thing I try to express is "contains".
+> >> For such a block group marked as B[n, m).
+> >> btrfs_lookup_first_block_group(x) (x > n && x < m). Kernel code will
+> >> return the block group next to B. However, progs side will return the
+> >> block group B.
+> >
+> > "Contains" indeed covers your example.
+> > But the "after @bytenr" part looks strange to me.
+> >
+> > Did you mean if @bytenr is not covered by any block group, then the next
+> > block group starts after @bytenr is returned?
+> >
+> Yes, that's precisely what I mean.
 
-The main objective is to lose the buffer head and use bio defined by
-iomap code, and hopefully to use more of generic-FS codebase.
-
-I have tested it against xfstests. The performance seems to be nearly
-the same on my VMs.
-
--- 
-Goldwyn
-
- fs/btrfs/ctree.h      |    1 
- fs/btrfs/extent_io.c  |    8 ++-
- fs/btrfs/file.c       |   67 +++++++++++++++++++++++++-
- fs/btrfs/inode.c      |  128 +++++++++++++++++++++-----------------------------
- fs/iomap/direct-io.c  |   14 +++--
- include/linux/fs.h    |    2 
- include/linux/iomap.h |    2 
- mm/filemap.c          |   13 ++---
- 8 files changed, 147 insertions(+), 88 deletions(-)
-
+I'll use the wording as suggested by Qu. Thanks.

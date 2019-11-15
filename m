@@ -2,53 +2,53 @@ Return-Path: <SRS0=NtSv=ZH=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.1 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+X-Spam-Status: No, score=-2.0 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7A647C432C3
-	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Nov 2019 16:45:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id ADBF0C432C3
+	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Nov 2019 16:47:10 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 46F5820723
-	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Nov 2019 16:45:15 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8182020740
+	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Nov 2019 16:47:10 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="ZyOFhs34"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="l3mQflry"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727579AbfKOQpO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 15 Nov 2019 11:45:14 -0500
-Received: from bombadil.infradead.org ([198.137.202.133]:56606 "EHLO
+        id S1727815AbfKOQrJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 15 Nov 2019 11:47:09 -0500
+Received: from bombadil.infradead.org ([198.137.202.133]:56672 "EHLO
         bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727543AbfKOQpO (ORCPT
+        with ESMTP id S1727585AbfKOQrJ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 15 Nov 2019 11:45:14 -0500
+        Fri, 15 Nov 2019 11:47:09 -0500
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20170209; h=In-Reply-To:Content-Type:MIME-Version
         :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
         Content-Transfer-Encoding:Content-ID:Content-Description:Resent-Date:
         Resent-From:Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:
         List-Help:List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-         bh=fgQvum3QLVrdMFGmAv4Ff4UwCxQGnqqjYsqE9IiuPhA=; b=ZyOFhs34r9pHccgAmsHeIpJ+M
-        CS5hmHfbxoA2N9qul5IbKplnFDaP7NoGn/7tI/66OaokTW6lBMYWzBFrc8PU25S0a0b+GOQvHcQDo
-        U7QhFgv0JLxn3IHNokjhE1YAHsTp7zJq+xa915sdHEtNI5Q7rzfEVa70EJ/xvALMSHiThrvFNzdcB
-        1yzeFeXIr2gfZWKtXdFLmorRARkoPhYmrVzWvIn9BODS5lOCJhNCs+mlGeflsZL6J9Yq7mSgGie8B
-        Q5TXN+uQI6znsZ+tLMU8cI9gKwloBOuKkNpxp0urpgwrSnVTEXSdI4uWJcODzMIzw08rZVApP16si
-        W9kGfYv3g==;
+         bh=fLV+AcEBB3jNMQPnx6NT/0oMloj69XAoEcsuwbPVrgk=; b=l3mQflryCpdI3yViX5gI6U6Rj
+        b43a9bEATr64qVCltsrLiS+MBOa/bn+GDfbJXsJabVa+yUv97Bifk36iuV/fI6cIBHlrFVkehPjO2
+        oOZIY5zOAP5xLNQ/fo67IVfSUJEqrVF/ftYCo7ermvNNDZJohjUyBl7jCJHabjQ9+Fe08jXnQAkYL
+        4HkZSPV0v26Fr8Tc2dz9lUyobnDMJ45UfRz1E1yBmEnXgEY+s8Z6tSw3GaY9SlcDCjaXRsAxF6bqa
+        tqOgyru5arybs1OaIw9qnjYFRINzdS3PMnkL2TvazqK+5/TAL56nybrZbYmbnLPJdZXSn3pxb0qkt
+        G5xQhincQ==;
 Received: from hch by bombadil.infradead.org with local (Exim 4.92.3 #3 (Red Hat Linux))
-        id 1iVeif-0008IN-DO; Fri, 15 Nov 2019 16:45:13 +0000
-Date:   Fri, 15 Nov 2019 08:45:13 -0800
+        id 1iVekW-0008Rj-25; Fri, 15 Nov 2019 16:47:08 +0000
+Date:   Fri, 15 Nov 2019 08:47:08 -0800
 From:   Christoph Hellwig <hch@infradead.org>
 To:     Goldwyn Rodrigues <rgoldwyn@suse.de>
 Cc:     linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
         hch@infradead.org, darrick.wong@oracle.com,
         Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: Re: [PATCH 2/7] btrfs: basic direct I/O read operation
-Message-ID: <20191115164513.GA26016@infradead.org>
+Subject: Re: [PATCH 3/7] iomap: use a function pointer for dio submits
+Message-ID: <20191115164708.GB26016@infradead.org>
 References: <20191115161700.12305-1-rgoldwyn@suse.de>
- <20191115161700.12305-3-rgoldwyn@suse.de>
+ <20191115161700.12305-4-rgoldwyn@suse.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20191115161700.12305-3-rgoldwyn@suse.de>
+In-Reply-To: <20191115161700.12305-4-rgoldwyn@suse.de>
 User-Agent: Mutt/1.12.1 (2019-06-15)
 X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -56,30 +56,23 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Nov 15, 2019 at 10:16:55AM -0600, Goldwyn Rodrigues wrote:
-> +/*
-> + * get_iomap: Get the block map and fill the iomap structure
-> + * @pos: file position
-> + * @length: I/O length
-> + * @iomap: The iomap structure to fill
-> + */
-> +
-> +static int get_iomap(struct inode *inode, loff_t pos, loff_t length,
-> +		struct iomap *iomap)
+The subject is a little odd, as we only optionally override submit_bio.
+Maybe something like:
 
-The function name probably wants a btrfs_ prefix.
+iomap: add a file system hook for direct I/O bio submission
 
-> +{
-> +	struct extent_map *em;
-> +	iomap->addr = IOMAP_NULL_ADDR;
+On Fri, Nov 15, 2019 at 10:16:56AM -0600, Goldwyn Rodrigues wrote:
+> From: Goldwyn Rodrigues <rgoldwyn@suse.com>
+> 
+> This helps filesystems to perform tasks on the bio while
+> submitting for I/O. This could be post-write operations
+> such as data CRC or data replication for fs-handled RAID.
 
-Please add an empty line after the variable declaration.
+You can use up to 73 chars for the commit log.
 
-> +static int btrfs_dio_iomap_begin(struct inode *inode, loff_t pos,
-> +		loff_t length, unsigned flags, struct iomap *iomap,
-> +		struct iomap *srcmap)
-> +{
-> +	return get_iomap(inode, pos, length, iomap);
-> +}
+> +	if (dio->dops && dio->dops->submit_io)
+> +		dio->submit.cookie = dio->dops->submit_io(bio,
+> +				file_inode(dio->iocb->ki_filp),	pos);
 
-Or do we even need the separate helper for now?
+Any reason to not simply pass the file?
+

@@ -2,75 +2,115 @@ Return-Path: <SRS0=NtSv=ZH=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 260FAC432C3
-	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Nov 2019 16:17:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B024EC43141
+	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Nov 2019 16:17:32 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 02A4920718
-	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Nov 2019 16:17:28 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 90E4520692
+	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Nov 2019 16:17:32 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727700AbfKOQR1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 15 Nov 2019 11:17:27 -0500
-Received: from mx2.suse.de ([195.135.220.15]:36770 "EHLO mx1.suse.de"
+        id S1727762AbfKOQRc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 15 Nov 2019 11:17:32 -0500
+Received: from mx2.suse.de ([195.135.220.15]:36798 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727461AbfKOQR0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 15 Nov 2019 11:17:26 -0500
+        id S1727520AbfKOQR3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 15 Nov 2019 11:17:29 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 36A26B150;
-        Fri, 15 Nov 2019 16:17:25 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 2BAD1DA7D3; Fri, 15 Nov 2019 17:17:28 +0100 (CET)
-Date:   Fri, 15 Nov 2019 17:17:28 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Su Yue <Damenly_Su@gmx.com>
-Cc:     Qu Wenruo <quwenruo.btrfs@gmx.com>, damenly.su@gmail.com,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/2] btrfs-progs: add comments of block group lookup
- functions
-Message-ID: <20191115161728.GZ3001@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Su Yue <Damenly_Su@gmx.com>,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>, damenly.su@gmail.com,
-        linux-btrfs@vger.kernel.org
-References: <20191111084226.475957-1-Damenly_Su@gmx.com>
- <97915605-5df1-ab83-ca98-3133b0648df9@gmx.com>
- <bf2131c4-c780-a66f-8963-452082438375@gmx.com>
- <9840c8eb-9fc9-972c-8b0a-1907228d7a2c@gmx.com>
- <ceecb3e5-09eb-1978-1bc2-2cb636ee7a98@gmx.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <ceecb3e5-09eb-1978-1bc2-2cb636ee7a98@gmx.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+        by mx1.suse.de (Postfix) with ESMTP id C3527AEE1;
+        Fri, 15 Nov 2019 16:17:27 +0000 (UTC)
+From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
+To:     linux-btrfs@vger.kernel.org
+Cc:     linux-fsdevel@vger.kernel.org, hch@infradead.org,
+        darrick.wong@oracle.com, Goldwyn Rodrigues <rgoldwyn@suse.com>
+Subject: [PATCH 1/7] fs: Export generic_file_buffered_read()
+Date:   Fri, 15 Nov 2019 10:16:54 -0600
+Message-Id: <20191115161700.12305-2-rgoldwyn@suse.de>
+X-Mailer: git-send-email 2.16.4
+In-Reply-To: <20191115161700.12305-1-rgoldwyn@suse.de>
+References: <20191115161700.12305-1-rgoldwyn@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Nov 11, 2019 at 06:17:17PM +0800, Su Yue wrote:
-> >>>> + * Return the block group that contains or after bytenr
-> >>>> + */
-> >>>
-> >>> What about "Return the block group thart starts at or after @bytenr" ?
-> >>>
-> >>
-> >> That's what documented in kernel already.
-> >> The thing I try to express is "contains".
-> >> For such a block group marked as B[n, m).
-> >> btrfs_lookup_first_block_group(x) (x > n && x < m). Kernel code will
-> >> return the block group next to B. However, progs side will return the
-> >> block group B.
-> >
-> > "Contains" indeed covers your example.
-> > But the "after @bytenr" part looks strange to me.
-> >
-> > Did you mean if @bytenr is not covered by any block group, then the next
-> > block group starts after @bytenr is returned?
-> >
-> Yes, that's precisely what I mean.
+From: Goldwyn Rodrigues <rgoldwyn@suse.com>
 
-I'll use the wording as suggested by Qu. Thanks.
+Export generic_file_buffered_read() to be used to
+supplement incomplete direct reads.
+
+While we are at it, correct the comments and variable names.
+
+Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
+---
+ include/linux/fs.h |  2 ++
+ mm/filemap.c       | 13 +++++++------
+ 2 files changed, 9 insertions(+), 6 deletions(-)
+
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index e0d909d35763..5bc75cff3536 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -3095,6 +3095,8 @@ extern int generic_file_rw_checks(struct file *file_in, struct file *file_out);
+ extern int generic_copy_file_checks(struct file *file_in, loff_t pos_in,
+ 				    struct file *file_out, loff_t pos_out,
+ 				    size_t *count, unsigned int flags);
++extern ssize_t generic_file_buffered_read(struct kiocb *iocb,
++		struct iov_iter *to, ssize_t already_read);
+ extern ssize_t generic_file_read_iter(struct kiocb *, struct iov_iter *);
+ extern ssize_t __generic_file_write_iter(struct kiocb *, struct iov_iter *);
+ extern ssize_t generic_file_write_iter(struct kiocb *, struct iov_iter *);
+diff --git a/mm/filemap.c b/mm/filemap.c
+index 85b7d087eb45..6a1be2fcdfe7 100644
+--- a/mm/filemap.c
++++ b/mm/filemap.c
+@@ -1994,7 +1994,7 @@ static void shrink_readahead_size_eio(struct file *filp,
+  * generic_file_buffered_read - generic file read routine
+  * @iocb:	the iocb to read
+  * @iter:	data destination
+- * @written:	already copied
++ * @copied:	already copied
+  *
+  * This is a generic file read routine, and uses the
+  * mapping->a_ops->readpage() function for the actual low-level stuff.
+@@ -2003,11 +2003,11 @@ static void shrink_readahead_size_eio(struct file *filp,
+  * of the logic when it comes to error handling etc.
+  *
+  * Return:
+- * * total number of bytes copied, including those the were already @written
++ * * total number of bytes copied, including those the were @copied
+  * * negative error code if nothing was copied
+  */
+-static ssize_t generic_file_buffered_read(struct kiocb *iocb,
+-		struct iov_iter *iter, ssize_t written)
++ssize_t generic_file_buffered_read(struct kiocb *iocb,
++		struct iov_iter *iter, ssize_t copied)
+ {
+ 	struct file *filp = iocb->ki_filp;
+ 	struct address_space *mapping = filp->f_mapping;
+@@ -2148,7 +2148,7 @@ static ssize_t generic_file_buffered_read(struct kiocb *iocb,
+ 		prev_offset = offset;
+ 
+ 		put_page(page);
+-		written += ret;
++		copied += ret;
+ 		if (!iov_iter_count(iter))
+ 			goto out;
+ 		if (ret < nr) {
+@@ -2256,8 +2256,9 @@ static ssize_t generic_file_buffered_read(struct kiocb *iocb,
+ 
+ 	*ppos = ((loff_t)index << PAGE_SHIFT) + offset;
+ 	file_accessed(filp);
+-	return written ? written : error;
++	return copied ? copied : error;
+ }
++EXPORT_SYMBOL_GPL(generic_file_buffered_read);
+ 
+ /**
+  * generic_file_read_iter - generic filesystem read routine
+-- 
+2.16.4
+

@@ -7,46 +7,44 @@ X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D013DC432C3
-	for <linux-btrfs@archiver.kernel.org>; Sat, 16 Nov 2019 16:27:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 83877C432C3
+	for <linux-btrfs@archiver.kernel.org>; Sat, 16 Nov 2019 16:27:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A9D84214DE
-	for <linux-btrfs@archiver.kernel.org>; Sat, 16 Nov 2019 16:27:08 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5C276214DE
+	for <linux-btrfs@archiver.kernel.org>; Sat, 16 Nov 2019 16:27:13 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1573921628;
-	bh=rsnNf15HrUbaGOrIbi6wyozb9yMbdByNuffKHCgCcss=;
+	s=default; t=1573921633;
+	bh=1UHd5Z+iO61oz8qaxXgGlqrU6/ESGUcvWsJ5GK3etOY=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=wLofygmtYFz7s0iStIVbdcxDDz3q3WVTvI3Qeid0xgk/nkiZec9FwZ6pISvTTU0un
-	 yrT8ZS0gfE6xfiUaeP6lil9tXBGOkgxjwhNI/h3q9aaZ7ZjqdOwNtO9zmFHggIu4Qk
-	 AXHdrmdMwQKSg7ua5plSnE8F8kUE0QUoU2/Pp3Xo=
+	b=d72/0o/4bamgtFseBuN0z5kNFS6+ViGRdyxj/jL6b+fK2BPC7GxgLf3YCWDLpPuPw
+	 hgDHah4B8nK+XTE/rsEvpt3oZKI69FeJRTQKklFGzVA/fuDZx2OEs6MoFDb+rEbaBY
+	 Smr5Bl3KPor/oVglloINHh9HBdEF5TwWprPxEe8o=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729676AbfKPQ1E (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 16 Nov 2019 11:27:04 -0500
-Received: from mail.kernel.org ([198.145.29.99]:44944 "EHLO mail.kernel.org"
+        id S1729439AbfKPQ1J (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 16 Nov 2019 11:27:09 -0500
+Received: from mail.kernel.org ([198.145.29.99]:44886 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727969AbfKPPll (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 16 Nov 2019 10:41:41 -0500
+        id S1727962AbfKPPlj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 16 Nov 2019 10:41:39 -0500
 Received: from sasha-vm.mshome.net (unknown [50.234.116.4])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 609AE2081E;
-        Sat, 16 Nov 2019 15:41:40 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 2103320830;
+        Sat, 16 Nov 2019 15:41:39 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1573918900;
-        bh=rsnNf15HrUbaGOrIbi6wyozb9yMbdByNuffKHCgCcss=;
+        s=default; t=1573918899;
+        bh=1UHd5Z+iO61oz8qaxXgGlqrU6/ESGUcvWsJ5GK3etOY=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=m9ItCvsSC2uJjajHlASRqYoi5HM99qCHZ6y+K2+rYf4dq+DxdMO+2QRNyjeQkHiuZ
-         dOUT+5mQWyo0hbVLovnj63vTf9GV18Vq2FYNK4qSYPEsIVOHtFGwN+p86u4+nPxTBy
-         9GmQj1uoTxjaQssmABcI2JvGUFbuZBXQ1hGSB3A4=
+        b=J8MYdDZRxS10ql0g6lEnXSQiHHdYXMXNp0FddstZmy0SCLtnlLwZoSVcD7v8Diff5
+         vQWCrhMRB0gJusD0dbsLL+K6dln4EG5bEO2tw1d38F67Y3ssExtp6OO0xWQcU2Cp3Z
+         aQRXnIQ1uF/y5FgKi0L39YCh/ZeS4A6hFDQsgC1w=
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Nikolay Borisov <nborisov@suse.com>,
-        Lu Fengqi <lufq.fnst@cn.fujitsu.com>,
-        David Sterba <dsterba@suse.com>,
+Cc:     Su Yue <suy.fnst@cn.fujitsu.com>, David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 4.19 029/237] btrfs: handle error of get_old_root
-Date:   Sat, 16 Nov 2019 10:37:44 -0500
-Message-Id: <20191116154113.7417-29-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 4.19 027/237] btrfs: defrag: use btrfs_mod_outstanding_extents in cluster_pages_for_defrag
+Date:   Sat, 16 Nov 2019 10:37:42 -0500
+Message-Id: <20191116154113.7417-27-sashal@kernel.org>
 X-Mailer: git-send-email 2.20.1
 In-Reply-To: <20191116154113.7417-1-sashal@kernel.org>
 References: <20191116154113.7417-1-sashal@kernel.org>
@@ -59,41 +57,38 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Nikolay Borisov <nborisov@suse.com>
+From: Su Yue <suy.fnst@cn.fujitsu.com>
 
-[ Upstream commit 315bed43fea532650933e7bba316a7601d439edf ]
+[ Upstream commit 28c4a3e21ad030d7571ee9b1b246a5cbfd886627 ]
 
-In btrfs_search_old_slot get_old_root is always used with the assumption
-it cannot fail. However, this is not true in rare circumstance it can
-fail and return null. This will lead to null point dereference when the
-header is read. Fix this by checking the return value and properly
-handling NULL by setting ret to -EIO and returning gracefully.
+Since commit 8b62f87bad9c ("Btrfs: rework outstanding_extents"),
+manual operations of outstanding_extent in btrfs_inode are replaced by
+btrfs_mod_outstanding_extents().
+The one in cluster_pages_for_defrag seems to be lost, so replace it
+of btrfs_mod_outstanding_extents().
 
-Coverity-id: 1087503
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-Reviewed-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+Fixes: 8b62f87bad9c ("Btrfs: rework outstanding_extents")
+Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
 Reviewed-by: David Sterba <dsterba@suse.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
- fs/btrfs/ctree.c | 4 ++++
- 1 file changed, 4 insertions(+)
+ fs/btrfs/ioctl.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 9fd383285f0ea..fc764f350f05a 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -3031,6 +3031,10 @@ int btrfs_search_old_slot(struct btrfs_root *root, const struct btrfs_key *key,
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 7592beb53fc4e..00ff4349b4579 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1337,7 +1337,7 @@ static int cluster_pages_for_defrag(struct inode *inode,
  
- again:
- 	b = get_old_root(root, time_seq);
-+	if (!b) {
-+		ret = -EIO;
-+		goto done;
-+	}
- 	level = btrfs_header_level(b);
- 	p->locks[level] = BTRFS_READ_LOCK;
- 
+ 	if (i_done != page_cnt) {
+ 		spin_lock(&BTRFS_I(inode)->lock);
+-		BTRFS_I(inode)->outstanding_extents++;
++		btrfs_mod_outstanding_extents(BTRFS_I(inode), 1);
+ 		spin_unlock(&BTRFS_I(inode)->lock);
+ 		btrfs_delalloc_release_space(inode, data_reserved,
+ 				start_index << PAGE_SHIFT,
 -- 
 2.20.1
 

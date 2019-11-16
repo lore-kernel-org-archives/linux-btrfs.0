@@ -7,49 +7,49 @@ X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E5B14C432C3
-	for <linux-btrfs@archiver.kernel.org>; Sat, 16 Nov 2019 15:50:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1EC37C432C3
+	for <linux-btrfs@archiver.kernel.org>; Sat, 16 Nov 2019 15:59:52 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id BB31E20855
-	for <linux-btrfs@archiver.kernel.org>; Sat, 16 Nov 2019 15:50:20 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DE3D221843
+	for <linux-btrfs@archiver.kernel.org>; Sat, 16 Nov 2019 15:59:51 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1573919420;
-	bh=e0kwQxqjl/q5q36XpJycaaUijSZMetJRcSRLw0P4rkw=;
+	s=default; t=1573919992;
+	bh=28UcTghOrsaTsVNgqi4hwzYOQG18W8MsP+t0Js06z9M=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=wdCxukZ7hnAqCi3xMre/V72NU3oQ5G6NuIkTUNHfNNeT6Mb9VCY/pvyiWPXmvjk/V
-	 SRxrVAzwACLIjkr5Nr3yMTCMn8nf46XxdxErk84HUzb9464sj/wl8k6vmAOufNJtOD
-	 STk+pxlNwZ279afpk5n7KtQU2xsNwRRxBA2QqX/Q=
+	b=Q4wJgvECnjJqN9zghTZFjnIBWWBwY7kDDZfii5y5VCYHxeMf/WFRYVZAAJeV31fom
+	 P1gr8Q+YPjifcvvmKCW1bi2pp/2JRtIJ2z/WdJA37Op91DHH4iZ3ChUg7fnIVeTtJR
+	 f6QAxZ7vQNQvIZ2eCF30iLhGdI1tdKb0pSg8Dbt4=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730487AbfKPPuU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 16 Nov 2019 10:50:20 -0500
-Received: from mail.kernel.org ([198.145.29.99]:58306 "EHLO mail.kernel.org"
+        id S1731467AbfKPP7u (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 16 Nov 2019 10:59:50 -0500
+Received: from mail.kernel.org ([198.145.29.99]:35110 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1730478AbfKPPuT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 16 Nov 2019 10:50:19 -0500
+        id S1731316AbfKPPxt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 16 Nov 2019 10:53:49 -0500
 Received: from sasha-vm.mshome.net (unknown [50.234.116.4])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id C56F721479;
-        Sat, 16 Nov 2019 15:50:18 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id D86FB2168B;
+        Sat, 16 Nov 2019 15:53:48 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1573919419;
-        bh=e0kwQxqjl/q5q36XpJycaaUijSZMetJRcSRLw0P4rkw=;
+        s=default; t=1573919629;
+        bh=28UcTghOrsaTsVNgqi4hwzYOQG18W8MsP+t0Js06z9M=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=uKZsLnD/VAwJx4hUiSHppjgNQbwApeS3I6NUzsJoPuKio490EvPchnD5YSkBST3Fj
-         eQ6N/LfLMo2WpI5Wp89b5MtX1j1bMEqGZKKGgxgJNj23OO357jsG50Su8H05li23el
-         z4NfPFlqDPZMiagkMZQ4pZhRx4kyE4MlDgpZz2VI=
+        b=MdHoewWZan58GFI8xDKokD8D2D6Kbil5F1AUOGNHoZ4VRPx2mGBkb3Jwq1vKZYwet
+         nPxYhCRDfW8GCOMpNHdpPZOZYQH4B+f7j+ubsVfwU9cvomqeUGdqteK1Kbghcb3D9w
+         CXnCBgARZID61VRwfKltpf04qzQyGuHAoC1tNOEI=
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Arnd Bergmann <arnd@arndb.de>, Nikolay Borisov <nborisov@suse.com>,
-        Changbin Du <changbin.du@gmail.com>,
+Cc:     Nikolay Borisov <nborisov@suse.com>,
+        Lu Fengqi <lufq.fnst@cn.fujitsu.com>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 4.14 119/150] btrfs: avoid link error with CONFIG_NO_AUTO_INLINE
-Date:   Sat, 16 Nov 2019 10:46:57 -0500
-Message-Id: <20191116154729.9573-119-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 4.4 10/77] btrfs: handle error of get_old_root
+Date:   Sat, 16 Nov 2019 10:52:32 -0500
+Message-Id: <20191116155339.11909-10-sashal@kernel.org>
 X-Mailer: git-send-email 2.20.1
-In-Reply-To: <20191116154729.9573-1-sashal@kernel.org>
-References: <20191116154729.9573-1-sashal@kernel.org>
+In-Reply-To: <20191116155339.11909-1-sashal@kernel.org>
+References: <20191116155339.11909-1-sashal@kernel.org>
 MIME-Version: 1.0
 X-stable: review
 X-Patchwork-Hint: Ignore
@@ -59,70 +59,41 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Arnd Bergmann <arnd@arndb.de>
+From: Nikolay Borisov <nborisov@suse.com>
 
-[ Upstream commit 7e17916b35797396f681a3270245fd29c1e4c250 ]
+[ Upstream commit 315bed43fea532650933e7bba316a7601d439edf ]
 
-Note: this patch fixes a problem in a feature outside of btrfs ("kernel
-hacking: add a config option to disable compiler auto-inlining") and is
-applied ahead of time due to cross-subsystem dependencies.
+In btrfs_search_old_slot get_old_root is always used with the assumption
+it cannot fail. However, this is not true in rare circumstance it can
+fail and return null. This will lead to null point dereference when the
+header is read. Fix this by checking the return value and properly
+handling NULL by setting ret to -EIO and returning gracefully.
 
-On 32-bit ARM with gcc-8, I see a link error with the addition of the
-CONFIG_NO_AUTO_INLINE option:
-
-fs/btrfs/super.o: In function `btrfs_statfs':
-super.c:(.text+0x67b8): undefined reference to `__aeabi_uldivmod'
-super.c:(.text+0x67fc): undefined reference to `__aeabi_uldivmod'
-super.c:(.text+0x6858): undefined reference to `__aeabi_uldivmod'
-super.c:(.text+0x6920): undefined reference to `__aeabi_uldivmod'
-super.c:(.text+0x693c): undefined reference to `__aeabi_uldivmod'
-fs/btrfs/super.o:super.c:(.text+0x6958): more undefined references to `__aeabi_uldivmod' follow
-
-So far this is the only file that shows the behavior, so I'd propose
-to just work around it by marking the functions as 'static inline'
-that normally get inlined here.
-
-The reference to __aeabi_uldivmod comes from a div_u64() which has an
-optimization for a constant division that uses a straight '/' operator
-when the result should be known to the compiler. My interpretation is
-that as we turn off inlining, gcc still expects the result to be constant
-but fails to use that constant value.
-
-Link: https://lkml.kernel.org/r/20181103153941.1881966-1-arnd@arndb.de
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-Reviewed-by: Changbin Du <changbin.du@gmail.com>
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-[ add the note ]
+Coverity-id: 1087503
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+Reviewed-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+Reviewed-by: David Sterba <dsterba@suse.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
- fs/btrfs/super.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ fs/btrfs/ctree.c | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 49a02bf091aea..204d585e012a8 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1863,7 +1863,7 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
- }
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 51a0409e1b84a..a980b33097701 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -2966,6 +2966,10 @@ int btrfs_search_old_slot(struct btrfs_root *root, struct btrfs_key *key,
  
- /* Used to sort the devices by max_avail(descending sort) */
--static int btrfs_cmp_device_free_bytes(const void *dev_info1,
-+static inline int btrfs_cmp_device_free_bytes(const void *dev_info1,
- 				       const void *dev_info2)
- {
- 	if (((struct btrfs_device_info *)dev_info1)->max_avail >
-@@ -1892,8 +1892,8 @@ static inline void btrfs_descending_sort_devices(
-  * The helper to calc the free space on the devices that can be used to store
-  * file data.
-  */
--static int btrfs_calc_avail_data_space(struct btrfs_fs_info *fs_info,
--				       u64 *free_bytes)
-+static inline int btrfs_calc_avail_data_space(struct btrfs_fs_info *fs_info,
-+					      u64 *free_bytes)
- {
- 	struct btrfs_device_info *devices_info;
- 	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
+ again:
+ 	b = get_old_root(root, time_seq);
++	if (!b) {
++		ret = -EIO;
++		goto done;
++	}
+ 	level = btrfs_header_level(b);
+ 	p->locks[level] = BTRFS_READ_LOCK;
+ 
 -- 
 2.20.1
 

@@ -6,69 +6,76 @@ X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 346C1C432C3
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Nov 2019 15:45:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 751DFC432C0
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Nov 2019 15:49:14 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1008A20857
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Nov 2019 15:45:58 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8B2A020885
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Nov 2019 15:49:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727508AbfKRPp5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 18 Nov 2019 10:45:57 -0500
-Received: from mx2.suse.de ([195.135.220.15]:53740 "EHLO mx1.suse.de"
+        id S1727109AbfKRPtD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 18 Nov 2019 10:49:03 -0500
+Received: from mx2.suse.de ([195.135.220.15]:56104 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727336AbfKRPp4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Nov 2019 10:45:56 -0500
+        id S1726646AbfKRPtD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 18 Nov 2019 10:49:03 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 0AF56ABB1;
-        Mon, 18 Nov 2019 15:45:55 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 54FC9ABB1;
+        Mon, 18 Nov 2019 15:49:02 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id BB126DA823; Mon, 18 Nov 2019 16:45:56 +0100 (CET)
-Date:   Mon, 18 Nov 2019 16:45:56 +0100
+        id 05491DA823; Mon, 18 Nov 2019 16:49:03 +0100 (CET)
+Date:   Mon, 18 Nov 2019 16:49:03 +0100
 From:   David Sterba <dsterba@suse.cz>
-To:     Anand Jain <anand.jain@oracle.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 00/15] btrfs: sysfs, cleanups
-Message-ID: <20191118154556.GJ3001@twin.jikos.cz>
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 0/5] Remove extent_map::bdev
+Message-ID: <20191118154903.GK3001@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
-        linux-btrfs@vger.kernel.org
-References: <20191118084656.3089-1-anand.jain@oracle.com>
+Mail-Followup-To: dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+References: <cover.1570474492.git.dsterba@suse.com>
+ <20191118154154.wfter4dio7mlibva@macbook-pro-91.dhcp.thefacebook.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20191118084656.3089-1-anand.jain@oracle.com>
+In-Reply-To: <20191118154154.wfter4dio7mlibva@macbook-pro-91.dhcp.thefacebook.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Nov 18, 2019 at 04:46:41PM +0800, Anand Jain wrote:
-> Mostly cleanups patches.
+On Mon, Nov 18, 2019 at 10:41:54AM -0500, Josef Bacik wrote:
+> On Mon, Oct 07, 2019 at 09:37:40PM +0200, David Sterba wrote:
+> > The extent_map::bdev is unused and and can be removed, but it's not
+> > straightforward so there are several steps. The first patch decouples
+> > bdev from map_lookup. The remaining patches clean up use of the bdev,
+> > removing a few bio_set_dev on the way. In the end, submit_extent_page is
+> > one parameter lighter.
+> > 
+> > This has survived several fstests runs
+> > 
+> > David Sterba (5):
+> >   btrfs: assert extent_map bdevs and lookup_map and split
+> >   btrfs: get bdev from latest_dev for dio bh_result
+> >   btrfs: drop bio_set_dev where not needed
+> >   btrfs: remove extent_map::bdev
+> >   btrfs: drop bdev argument from submit_extent_page
+> > 
+> >  fs/btrfs/compression.c | 10 ----------
+> >  fs/btrfs/disk-io.c     |  3 ---
+> >  fs/btrfs/extent_io.c   | 15 +++------------
+> >  fs/btrfs/extent_map.c  |  6 +++++-
+> >  fs/btrfs/extent_map.h  | 11 ++---------
+> >  fs/btrfs/file-item.c   |  1 -
+> >  fs/btrfs/file.c        |  3 ---
+> >  fs/btrfs/inode.c       | 14 ++++----------
+> >  fs/btrfs/relocation.c  |  2 --
+> >  9 files changed, 14 insertions(+), 51 deletions(-)
+> > 
 > 
-> Patches 1-7 are renames, code moves patches and there are no
-> functional changes.
-> 
-> Patch 8 drops unused argument in the function btrfs_sysfs_add_fsid().
-> Patch 9 merges two small functions which is an extension of the other.
-> 
-> Patches 10,11 and 13 removes unnecessary features in the functions, 
-> originally it was planned to provide sysfs attributes for the scanned
-> and unmounted devices, as in the un-merged patch in the mailing list [1]
->    [1] [PATCH] btrfs: Introduce device pool sysfs attributes
+> This series needs to be dropped from misc-next, it causes any box with cgroups
+> enabled to crash on boot.  The bio requires having a bio->bi_disk set when we do
+> wbc_init_bio, which we no longer have with this patch.
 
-We want something like that, I don't recall all the past discussions,
-but a separate directory for all the new sysfs files should be
-introduced. Extending the existing /devices/ that contains just the
-sysfs device like should stay as is.
-
-/sys/fs/btrfs/UUID/
-	devinfo/
-		1/
-			uuid
-			state
-			...
-		2/
-			...
-
+Do you have the stack trace of the crash?

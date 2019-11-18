@@ -1,155 +1,74 @@
-Return-Path: <SRS0=VfBG=ZJ=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=0Ua4=ZK=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.7 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 85857C432C0
-	for <linux-btrfs@archiver.kernel.org>; Sun, 17 Nov 2019 23:24:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D7E98C432C0
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Nov 2019 02:09:43 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4F9542071E
-	for <linux-btrfs@archiver.kernel.org>; Sun, 17 Nov 2019 23:24:49 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 87FE52068F
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Nov 2019 02:09:43 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="MTtziFbM"
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="WsD7wMrb"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726290AbfKQXYr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 17 Nov 2019 18:24:47 -0500
-Received: from mail-wr1-f65.google.com ([209.85.221.65]:38487 "EHLO
-        mail-wr1-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726268AbfKQXYq (ORCPT
+        id S1726178AbfKRCJm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 17 Nov 2019 21:09:42 -0500
+Received: from mail-wm1-f41.google.com ([209.85.128.41]:51488 "EHLO
+        mail-wm1-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725905AbfKRCJm (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 17 Nov 2019 18:24:46 -0500
-Received: by mail-wr1-f65.google.com with SMTP id i12so17325559wro.5
-        for <linux-btrfs@vger.kernel.org>; Sun, 17 Nov 2019 15:24:45 -0800 (PST)
+        Sun, 17 Nov 2019 21:09:42 -0500
+Received: by mail-wm1-f41.google.com with SMTP id q70so15655469wme.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 17 Nov 2019 18:09:41 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=yF/jL8YOV7FuBgNBtXgP0Ul6LhUYiGrDMA+MyQQlje0=;
-        b=MTtziFbMypUIM7EeH1YyGi3q1DRsUTINpYfoRWcl2lodz6Z64qePzCTpBlMF0vczrE
-         SZu9mf/Vu4PJngHJN8pXaHmL8uyo+I1DVPScPQmK6HPc3GEbyRyGt/pCFm8H7bFQyq81
-         3r1lHwebWVLqTtIbDtUj/06IrzOQ3DcwZEGUVzrPmbcCZHVmHL8GBq02oxxGdW/5ZYnP
-         A+D/c1yCtIKpAD//zjEP1XU7GSPaqgJ5PTz7P3dlUJe5HObEh+PFeVsyLMT+WQ6x1Q8G
-         m7UvNpWxLGK4We5jT3Yq7vxXrjfnmZfU7hJqGv1ZSTI/MyDY8cCVu60YWUImEWVfqD6v
-         2Y/A==
+        d=gmail.com; s=20161025;
+        h=mime-version:from:date:message-id:subject:to;
+        bh=rqF3FzjOPuFlnMei6yp+hU41oMeUhgrF+AdRFUcH8fc=;
+        b=WsD7wMrbjnq1vP6Qd2T6c60Erg4Z3NraFa2MBCVyeMQuljjXaJX6V1IybR65Bq4AVh
+         2y0fjGsfv4RbxPl3+tFrYhfvJYHRpAln1ZimsycZEShQ45ppriVzIAE/QgnT/opI15eX
+         U7ziAhmDoJaEjrG49rrfjmX/yD9X8TqOBRAEfsCR+mu4+Q8l9Ql1S7f31ph4fY/aKgKF
+         ar3Ben1OfCEJ0jlW1IBhg7TypjyEUrqdyF9jlGKNNngk/PyF2Q0nKgnUeGFx0NPNOTfY
+         ghUr6mUa/PVdN6Ix9qgEZZ2enWXhhXol+YVB3jDz4UEmzbwt7tMNuQBBBqj7J4osqsEB
+         QQxA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=yF/jL8YOV7FuBgNBtXgP0Ul6LhUYiGrDMA+MyQQlje0=;
-        b=fv5OQr2wAjE0mLVKzt0dWzPgbRrwt4jR1EcP8zEdQcW62nba14JhoUrd6sU/WWh8IC
-         bERjAVPjmsczvi2D5FasUGKPdWQMHVlEnKmYkCJKSXYvxHtA+CGs4h7XEH5mxqKz/P8Y
-         t9y1knaMGT8Hby4qbsoyEenfhHQnOmg8mB9bvQtOkYaR0mIjsqWcO2wsSOiDJp9AdFuE
-         ZuhHIuXftvjpCQB3pSp0dBTaO714Pp8/0ZkLeRtfazA/PPXpOUpkBVIPaVOEC/iPLYov
-         /yUP4UJJyaGRhU1LprUzPPZl5BJveWC+oa3Xd4dcM9Gk/cELdKb/J9dAFGDiubbga4pF
-         yBpA==
-X-Gm-Message-State: APjAAAViXPNA3lV2oGQxub5c/qfKmNIeC5Gf3jo5EtETWERsq/Bn6ANS
-        eQQ0KpFw8R219aIfEtgwn63GK88STtEW+ioF+tBM3Z2gUV5T7Q==
-X-Google-Smtp-Source: APXvYqz+uFb3u7TrUGltxl7TID9bUpzW6+JjTtD4ZSpXZrC2j9wLnxqL66/mmxSHBhp+Qkbh0qI2MSgWWI2I4drOgT0=
-X-Received: by 2002:adf:f607:: with SMTP id t7mr26807501wrp.390.1574033084461;
- Sun, 17 Nov 2019 15:24:44 -0800 (PST)
+        h=x-gm-message-state:mime-version:from:date:message-id:subject:to;
+        bh=rqF3FzjOPuFlnMei6yp+hU41oMeUhgrF+AdRFUcH8fc=;
+        b=tDdvQS/e/FXZAcuaqnAuKd6FMSBZ+ZSRC2mYh1uasVoK4zfeaFrELWJWxwd2pyuD6j
+         nY7BCmEUHifJomQSYiPz1PIdq6gS49pVMGOupHNk0fDtT6+R9WUuczs8Ld3vzIZA+H9g
+         zD0qhXmFmTISySBOQXTNTVBMdHK27kWOmp9jYubsQIUmPg3YufMz5kxyZDrbvWvj2nIl
+         LIrPdI0eBU3rOZO8By7g6y3G7d2z3gcGaTY1Zo+5565YPYcRz5p4UGVqiGkoNdSXNnwV
+         4agv18EnAYhRcnJ67pbTFS0HI5LpIedKQ74XhVs1UTcrsuL7/JRk5fmTxf3JYUL7xXbz
+         E8FA==
+X-Gm-Message-State: APjAAAVNWlmt2f59dNvlQRki7LiDX/J6uiK80qpHz/KVDxuwaOM1tkkJ
+        lAcKc7ByYRdVnYcyvA1LQm2xtKMiJeAI93fIOohZ9yRuvjk=
+X-Google-Smtp-Source: APXvYqyobqeKfk/0X7+ZJbVRtaGwNq96UgM/udzeePJs59FzCu3qdelwvKoyAmN23lZMpab2p1Z+4AQpOVwHOrkrLUY=
+X-Received: by 2002:a7b:cd0f:: with SMTP id f15mr15518185wmj.127.1574042980500;
+ Sun, 17 Nov 2019 18:09:40 -0800 (PST)
 MIME-Version: 1.0
-References: <CAJCQCtS1v7waFA=ERafSCSCHmPJVytdFZkJLqNTC3U3Gw3Y7tA@mail.gmail.com>
- <d1874d17-700a-d78d-34be-eec0544c9de2@gmail.com> <CAJCQCtTpLTJdRjD7aNJEYXuMO+E65=GiYpKP3Wy5sgOWYs3Hsw@mail.gmail.com>
- <20191104193454.GD3001@twin.jikos.cz> <CAJCQCtSiDQA4919YDTyQkW7jPkxMds1K32ym=HgO6KHQLzHw+w@mail.gmail.com>
- <d2301902-bd5b-7c5a-0354-a5df21ca8eb3@libero.it> <CAJCQCtQm_5L9uvH53O3Qby3Ktwpvsc2_6rUhkBLGeD07RP5a7Q@mail.gmail.com>
- <4480d47f-1b1e-d99d-e480-b31220433340@inwind.it> <CAJCQCtTeYNvU-FueRKW6tnkNaRDDCAAUUCb5ZitA2VT+PR+K-A@mail.gmail.com>
- <CAA91j0WMinT4YP3oSZaPLc_aLHjL2ODXz=QQd6NynphvRJ2hBw@mail.gmail.com>
-In-Reply-To: <CAA91j0WMinT4YP3oSZaPLc_aLHjL2ODXz=QQd6NynphvRJ2hBw@mail.gmail.com>
-From:   Chris Murphy <lists@colorremedies.com>
-Date:   Mon, 18 Nov 2019 00:24:06 +0100
-Message-ID: <CAJCQCtSVCVNfT-iS=vmJnZ=u0eoiM=92fWr_emy0A13u3C-++Q@mail.gmail.com>
-Subject: Re: Does GRUB btrfs support log tree?
-To:     Andrei Borzenkov <arvidjaar@gmail.com>
-Cc:     Chris Murphy <lists@colorremedies.com>,
-        Goffredo Baroncelli <kreijack@inwind.it>,
-        David Sterba <dsterba@suse.cz>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From:   Nathan Dehnel <ncdehnel@gmail.com>
+Date:   Sun, 17 Nov 2019 20:09:28 -0600
+Message-ID: <CAEEhgEt_hNzY7Y3oct767TGGOHpqvOn4V_xWoOOB0NfYi1cswg@mail.gmail.com>
+Subject: How to replace a missing device with a smaller one
+To:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Nov 14, 2019 at 9:19 AM Andrei Borzenkov <arvidjaar@gmail.com> wrote:
->
-> On Thu, Nov 14, 2019 at 12:50 AM Chris Murphy <lists@colorremedies.com> wrote:
-> > But GRUB does have a way of detecting core.img on it, and
->
-> No. GRUB does not "detect" core.img at all. On Legacy BIOS stage0 code
-> in MBR includes hardcoded absolute disk location of core.img (as list
-> of extents). Stage0 does not care whether this location is post-MBR
-> gap, BIOS boot partition or file inside another file system, it simply
-> loads absolute disk blocks and jumps to loaded code.
->
-> > avoids overwriting it by preferring to write in free space within that
-> > partition, ostensibly to support multiple instances of GRUB (multiple
-> > distributions),
->
-> Sorry? What are you talking about?
+I have a 10-disk raid10 with a missing device I'm trying to replace. I
+get this error when doing it though:
 
-grub-install does this, at least it's what someone on grub-devel@ list
-told me ages ago.
+btrfs replace start 1 /dev/bcache0 /mnt
+ERROR: target device smaller than source device (required 1000203091968 bytes)
 
-
-> > and some degree of atomicity as the core.img is
-> > written first to this partition before the boot.img or "jump code" is
-> > written in the first 440 bytes of the MBR.
-> >
->
-> core.img must match block list recorded in MBR; as soon as core.img is
-> overwritten in-place you cannot guarantee that whatever stage0 will
-> read matches what has been written if stage0 update was aborted for
-> whatever reasons.
-
-Yeah what I was told is grub-install tries not to overwrite core.img.
-Obviously if it's unavoidable, the update can't be atomic.
-
-
-> This is outside of scope of EFI, really. GRUB consists of two parts -
-> kernel (which is implicitly embedded in core.img/core.efi) and
-> loadable modules. They must match. So to ensure atomic update on any
-> architecture one has to
->
-> 1. Write new core.img.
-> 2. Write new /boot/grub/$platform content (new modules).
-> 3. Switch boot information to use new version.
-
-The need to update modules is sort of a problem for atomicity too.
-
-
->
-> On EFI this would simple mean to write grubx64.efi with different name
-> or location on ESP and then update EFI boot variable to point to it.
-> Like
->
-> \EFI\vendor\image1\grubx64.efi
-> \EFI\vendor\image2\grubx64.efi
-
-Yes, although I'm not a fan of writes to NVRAM. They really should be
-minimized. It's not high wear NVRAM, and no way to replace it if it
-starts crapping out.
-
->
-> If you want make it alternate between two independent ESP for
-> additional redundancy.
->
-> /boot/grub/$platform is more involved, as a lot of code in grub2
-> assumes location is always under /boot/grub ($prefix more precisely).
-> SUSE had to introduce concept of "mounting" subvolumes on btrfs as
-> quick hack to overcome it.
->
-> On Legacy BIOS having two copy of core.img even more involved as it
-> likely really needs some primitive filesystem to manage multiple
-> copies.
-
-GRUB Is just too complicated. i'd really like to see it simplified and
-for sure no longer depend on os-prober. When distributions are
-considering things like petiboot, and linux as a bootloader,
-something's gotten too complicated.
-
-
--- 
-Chris Murphy
+I see that people recommend resizing a disk before replacing it, which
+isn't an option for me because it's gone. I'm replacing the drive by
+copying from its mirror, so can I resize the mirror and then replace?
+How do I do that? Do I need to run "btrfs fi res" on each of the
+remaining drives in the array?

@@ -7,68 +7,68 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B324AC43215
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Nov 2019 08:47:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8E828C432C0
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Nov 2019 08:47:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8A35520740
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Nov 2019 08:47:35 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 63B582075C
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Nov 2019 08:47:37 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="L84lV98F"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="D62WD+au"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726765AbfKRIrd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 18 Nov 2019 03:47:33 -0500
-Received: from aserp2120.oracle.com ([141.146.126.78]:47930 "EHLO
+        id S1726788AbfKRIrg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 18 Nov 2019 03:47:36 -0500
+Received: from aserp2120.oracle.com ([141.146.126.78]:47970 "EHLO
         aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726716AbfKRIrd (ORCPT
+        with ESMTP id S1726717AbfKRIrf (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Nov 2019 03:47:33 -0500
+        Mon, 18 Nov 2019 03:47:35 -0500
 Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xAI8i4cW093613
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Nov 2019 08:47:31 GMT
+        by aserp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xAI8i5Cl093859
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Nov 2019 08:47:34 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
  date : message-id : in-reply-to : references : mime-version :
  content-transfer-encoding; s=corp-2019-08-05;
- bh=/nDjPX4hZwrKij0QTicl8iyGUL4yhoc8M2n3sDI8Zic=;
- b=L84lV98FECR9/1+RvX3LJr4CUUCa8ZXnHulXHSoLfC9OQtLhzDbNVtYg6BRj8fujFhT8
- EDqcNf8Tvmm1u1FDjMPuMMoHxMeGruiTbjRi4nJwJzLhCPQkeZvU+RGChWOHAuoabNfn
- cj0hQt21P9loK8nW3qwd+dbGFOLhRS44GcfO6F5aOnvIXb82AV2VrOmQDRx/R9wb6IbY
- uvGtM5tEJQFobIvMXoQGnZCJjniVt5NL+Zn0+eRimTBFvFQwIqJHZ1NF3lwkwlqG4+xa
- TQeQvabgvTnPZ14bXQQTahEU44A5zJW7cGGTRQ3H8qA1JHDKCNNvAKKXFsSNYmVuVnGK MA== 
-Received: from userp3020.oracle.com (userp3020.oracle.com [156.151.31.79])
-        by aserp2120.oracle.com with ESMTP id 2wa92pekay-1
+ bh=UQ+wJBcUY5IVaVy8nUdJ5n8RGJ7HfaobKp4r43nnlAs=;
+ b=D62WD+auVgabcdgNc9/ZOHhNoCVJ8gGLzXlxQ6KnaziGTIguwd/DPzfPk7/RZY2pi6Yq
+ Era1qZBvXlogNxpHMAYbc5o7FBucLSUmV1jUjlCNhQOdq5wapMGMq2vj/Bn9aqnToioE
+ DCCNnr1t4/51gDZDFcI6EvjNzyqoZR6250/afDKX+/Vpe4Bd55LGSt5b7p9fjeqmiFlO
+ VdaX/xegK5J1Hteg3+hExi5qswdHrtsw4WjdDNibc5LRa48jlCzWonh3YZa1SqaSAig6
+ qiH7vvCXUBAzZiK39tIh3ckMENUCF9LFZrtrAhzpEZ9FH6FszDm6Y3Eq8DTJublAFQ1m kw== 
+Received: from aserp3020.oracle.com (aserp3020.oracle.com [141.146.126.70])
+        by aserp2120.oracle.com with ESMTP id 2wa92pekb6-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Nov 2019 08:47:31 +0000
-Received: from pps.filterd (userp3020.oracle.com [127.0.0.1])
-        by userp3020.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xAI8hvKT021063
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Nov 2019 08:47:30 GMT
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by userp3020.oracle.com with ESMTP id 2wau8mtaw7-1
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Nov 2019 08:47:34 +0000
+Received: from pps.filterd (aserp3020.oracle.com [127.0.0.1])
+        by aserp3020.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xAI8iL6e152953
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Nov 2019 08:47:33 GMT
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by aserp3020.oracle.com with ESMTP id 2watmr3jw8-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Nov 2019 08:47:30 +0000
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Nov 2019 08:47:33 +0000
 Received: from abhmp0016.oracle.com (abhmp0016.oracle.com [141.146.116.22])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id xAI8lTO6003264
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Nov 2019 08:47:30 GMT
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id xAI8lXMC019036
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Nov 2019 08:47:33 GMT
 Received: from mb.wifi.oracle.com (/192.188.170.109)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Mon, 18 Nov 2019 00:47:28 -0800
+        with ESMTP ; Mon, 18 Nov 2019 00:47:32 -0800
 From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 13/15] btrfs: sysfs, cleanup btrfs_sysfs_remove_fsid()
-Date:   Mon, 18 Nov 2019 16:46:54 +0800
-Message-Id: <20191118084656.3089-14-anand.jain@oracle.com>
+Subject: [PATCH 15/15] btrfs: sysfs, unexport btrfs_sysfs_remove_mounted()
+Date:   Mon, 18 Nov 2019 16:46:56 +0800
+Message-Id: <20191118084656.3089-16-anand.jain@oracle.com>
 X-Mailer: git-send-email 2.23.0
 In-Reply-To: <20191118084656.3089-1-anand.jain@oracle.com>
 References: <20191118084656.3089-1-anand.jain@oracle.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9444 signatures=668685
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=1 malwarescore=0
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=3 malwarescore=0
  phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
  adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
  engine=8.0.1-1911140001 definitions=main-1911180079
 X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9444 signatures=668685
 X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
- suspectscore=1 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
+ suspectscore=3 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
  lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
  classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1911140001
  definitions=main-1911180079
@@ -77,52 +77,72 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-btrfs_sysfs_remove_fsid() when called with NULL argument then it shall
-cleanup all kobjects belonging to btrfs. However no function is using
-btrfs_sysfs_remove_fsid() with NULL argument.
-
-This happened in the commit 2e3e1281 (Btrfs: sysfs: provide framework to
-remove all fsid sysfs kobject) which is a helper commit to the proposed
-patch [1], which proposed to show /sys/fs/btrfs/UUID in the unmounted but
-scanned context as well, so that there is a way to know fsid and devices which
-are scanned. As of now there isn't anyway that the user/script can figure
-out all the scanned fsids/devices in the system, but its been long time,
-probably there isn't such a need at all. For developers to debug the
-struct fs_devices list there is procfs boiler-plate patch in the mailing
-list which comes handy.
- [1] [PATCH] btrfs: Introduce device pool sysfs attributes
+btrfs_sysfs_remove_mounted() is always called along with
+btrfs_sysfs_remove_fsid(), call btrfs_sysfs_remove_mounted() in
+btrfs_sysfs_remove_fsid() as well. And unexport
+btrfs_sysfs_remove_mounted().
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/sysfs.c | 13 +------------
- 1 file changed, 1 insertion(+), 12 deletions(-)
+ fs/btrfs/disk-io.c | 2 --
+ fs/btrfs/sysfs.c   | 4 +++-
+ fs/btrfs/sysfs.h   | 1 -
+ 3 files changed, 3 insertions(+), 4 deletions(-)
 
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 8f6a08bef490..28db7bbb437e 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3299,7 +3299,6 @@ int __cold open_ctree(struct super_block *sb,
+ 	filemap_write_and_wait(fs_info->btree_inode->i_mapping);
+ 
+ fail_sysfs:
+-	btrfs_sysfs_remove_mounted(fs_info);
+ 	btrfs_sysfs_remove_fsid(fs_info);
+ 
+ fail_block_groups:
+@@ -3997,7 +3996,6 @@ void __cold close_ctree(struct btrfs_fs_info *fs_info)
+ 		btrfs_info(fs_info, "at unmount dio bytes count %lld",
+ 			   percpu_counter_sum(&fs_info->dio_bytes));
+ 
+-	btrfs_sysfs_remove_mounted(fs_info);
+ 	btrfs_sysfs_remove_fsid(fs_info);
+ 
+ 	btrfs_free_fs_roots(fs_info);
 diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index 2ea27c2d9ef1..34bf080ea530 100644
+index 74210ef59641..468a42c442cf 100644
 --- a/fs/btrfs/sysfs.c
 +++ b/fs/btrfs/sysfs.c
-@@ -1087,20 +1087,9 @@ static void __btrfs_sysfs_remove_fsid(struct btrfs_fs_info *fs_info)
- 	}
+@@ -983,7 +983,7 @@ void btrfs_kobject_uevent(struct block_device *bdev, enum kobject_action action)
+ 			&disk_to_dev(bdev->bd_disk)->kobj);
  }
  
--/* when fs_info is NULL it will remove all fs_info::fsid kobject */
- void btrfs_sysfs_remove_fsid(struct btrfs_fs_info *fs_info)
+-void btrfs_sysfs_remove_mounted(struct btrfs_fs_info *fs_info)
++static void btrfs_sysfs_remove_mounted(struct btrfs_fs_info *fs_info)
  {
--	struct list_head *fs_uuids = btrfs_get_fs_uuids();
--	struct btrfs_fs_devices *fs_devices;
--
--	if (fs_info) {
--		__btrfs_sysfs_remove_fsid(fs_info);
--		return;
--	}
--
--	list_for_each_entry(fs_devices, fs_uuids, fs_list) {
--		__btrfs_sysfs_remove_fsid(fs_devices->fs_info);
--	}
-+	__btrfs_sysfs_remove_fsid(fs_info);
- }
+ 	btrfs_reset_fs_info_ptr(fs_info);
  
- /*
+@@ -1074,6 +1074,8 @@ void btrfs_sysfs_remove_fsid(struct btrfs_fs_info *fs_info)
+ {
+ 	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
+ 
++	btrfs_sysfs_remove_mounted(fs_info);
++
+ 	if (fs_devices->devices_dir_kobj) {
+ 		kobject_del(fs_devices->devices_dir_kobj);
+ 		kobject_put(fs_devices->devices_dir_kobj);
+diff --git a/fs/btrfs/sysfs.h b/fs/btrfs/sysfs.h
+index a977fe3bec64..2b01b3af5e50 100644
+--- a/fs/btrfs/sysfs.h
++++ b/fs/btrfs/sysfs.h
+@@ -28,7 +28,6 @@ void btrfs_kobject_uevent(struct block_device *bdev, enum kobject_action action)
+ 
+ int __init btrfs_init_sysfs(void);
+ void __cold btrfs_exit_sysfs(void);
+-void btrfs_sysfs_remove_mounted(struct btrfs_fs_info *fs_info);
+ void btrfs_sysfs_add_block_group_type(struct btrfs_block_group *cache);
+ int btrfs_sysfs_add_space_info_type(struct btrfs_fs_info *fs_info,
+ 				    struct btrfs_space_info *space_info);
 -- 
 2.23.0
 

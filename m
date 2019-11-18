@@ -7,55 +7,55 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5B447C432C0
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Nov 2019 08:47:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8AC35C432C0
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Nov 2019 08:47:27 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2F42020740
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Nov 2019 08:47:24 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 62FCC20740
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Nov 2019 08:47:27 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="lXcS8G36"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="O7MZmSkx"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726646AbfKRIrW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 18 Nov 2019 03:47:22 -0500
-Received: from userp2130.oracle.com ([156.151.31.86]:48206 "EHLO
+        id S1726714AbfKRIr0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 18 Nov 2019 03:47:26 -0500
+Received: from userp2130.oracle.com ([156.151.31.86]:48298 "EHLO
         userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726464AbfKRIrW (ORCPT
+        with ESMTP id S1726712AbfKRIrZ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Nov 2019 03:47:22 -0500
+        Mon, 18 Nov 2019 03:47:25 -0500
 Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xAI8i5qS105268
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Nov 2019 08:47:20 GMT
+        by userp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xAI8i8JT105412
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Nov 2019 08:47:24 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
  date : message-id : in-reply-to : references : mime-version :
  content-transfer-encoding; s=corp-2019-08-05;
- bh=4J2mgIEJeKlPDqBt/T75o0ODJ82ciFy8HNQX7DU/JB8=;
- b=lXcS8G36O61njP1J2x756JFAAkf1vqkstKgne/gEVWJ6ij/+bQKrJeAgKkwNBXX2h6Bj
- qh0BsXw2mtfeF17hLk6DkcIai1RgssGOuqQPjWghsmT1lB6BE9CLaegtpLe+PhrW+B2k
- e1wfhLwae7aJ7wVrKACpgQl0Bv1J0+A6uKtjJzMiVYa6xQV8k46uye40V9uIC9Ldvf61
- n1N7PuR2RyjGC9FGhaBYIBxSMM12dZDPAEjjzH6cVWyEuOHrU0xmlfyZ03iHVywGtlrl
- 19QR1B+lV534U6xuS3S4+LSXDrgDLzDfTmRu3kQtkElsiXEZnh3Q1HZcKesyZy4EZKUS KA== 
-Received: from aserp3020.oracle.com (aserp3020.oracle.com [141.146.126.70])
-        by userp2130.oracle.com with ESMTP id 2wa8htenr9-1
+ bh=CC5pMmhR3fLlSBHBHMRSzLwSOcojt0hvET6EKsUN6a8=;
+ b=O7MZmSkxyHH5FIB5HmgsVAFFL2KjqOm+Bi/bMJSyj4kOXM+H83CHw1ebp90ee1RKKOtl
+ 6a+7LMDRYwYtM2p2b1E7NrqOSXK71kovD5t4vkzbWBNY1YvfGSaYgkb0nhBjUtbf2xHM
+ iZLcM9T3bnDpXR9QtnITF7GI1W+uCGJ6bpzMBVEHcdf0kzq9XJqLhJzhPut/ieJob7Cg
+ NCkFIi0UjfmukqEVrFXzCv6GECIWdvQ7FoUDP0N7ujE2/WMhZ0MQYg0L+5/4fXdQFPQY
+ JelfCTqFGFEjihLVlWM4pk7LcRsVW68HbGOrfyjEwQ/RM9PGaM8zVq/KB+qJ+LkZmfAz /Q== 
+Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
+        by userp2130.oracle.com with ESMTP id 2wa8htenru-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Nov 2019 08:47:20 +0000
-Received: from pps.filterd (aserp3020.oracle.com [127.0.0.1])
-        by aserp3020.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xAI8iJuV152713
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Nov 2019 08:47:19 GMT
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Nov 2019 08:47:24 +0000
+Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
+        by userp3030.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xAI8iME5091066
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Nov 2019 08:47:24 GMT
 Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by aserp3020.oracle.com with ESMTP id 2watmr3h2g-1
+        by userp3030.oracle.com with ESMTP id 2watjx33wq-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Nov 2019 08:47:19 +0000
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Nov 2019 08:47:23 +0000
 Received: from abhmp0016.oracle.com (abhmp0016.oracle.com [141.146.116.22])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id xAI8lJij018884
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Nov 2019 08:47:19 GMT
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id xAI8lNKW018899
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Nov 2019 08:47:23 GMT
 Received: from mb.wifi.oracle.com (/192.188.170.109)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Mon, 18 Nov 2019 00:47:18 -0800
+        with ESMTP ; Mon, 18 Nov 2019 00:47:22 -0800
 From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 08/15] btrfs: sysfs, btrfs_sysfs_add_fsid() drop unused argument parent
-Date:   Mon, 18 Nov 2019 16:46:49 +0800
-Message-Id: <20191118084656.3089-9-anand.jain@oracle.com>
+Subject: [PATCH 10/15] btrfs: volume, btrfs_free_stale_devices() cleanup unreachable code
+Date:   Mon, 18 Nov 2019 16:46:51 +0800
+Message-Id: <20191118084656.3089-11-anand.jain@oracle.com>
 X-Mailer: git-send-email 2.23.0
 In-Reply-To: <20191118084656.3089-1-anand.jain@oracle.com>
 References: <20191118084656.3089-1-anand.jain@oracle.com>
@@ -77,80 +77,33 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Commit 24bd69cb (Btrfs: sysfs: add support to add parent for fsid)
-added parent argument in preparation to show the seed fsid under the
-sprout fsid as in the patch [1] in the mailing list.
-
- [1] Btrfs: sysfs: support seed devices in the sysfs layout
-
-But later this idea was superseded by another idea to rename the fsid
-as in the commit f93c39970b1d (btrfs: factor out sysfs code for updating
-sprout fsid).
-
-So we don't need parent argument anymore.
+fs_devices::num_devices can be zero only in unmounted context, and we
+don't have any fsid specific kobjects in the unmoutend context. So no
+need to call btrfs_sysfs_remove_fsid() in btrfs_free_stale_devices().
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/disk-io.c |  2 +-
- fs/btrfs/sysfs.c   | 11 +++++------
- fs/btrfs/sysfs.h   |  3 +--
- 3 files changed, 7 insertions(+), 9 deletions(-)
+We implemented this in preparation to provide the fsid/device attributes
+for the devices in unmoutned context as was proposed here [1].
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 72191c213ac4..3f6a26d9afcd 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3082,7 +3082,7 @@ int __cold open_ctree(struct super_block *sb,
+[1] [PATCH] btrfs: Introduce device pool sysfs attributes
+
+ fs/btrfs/volumes.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 40d77b5846dc..fe135b5a8a03 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -585,7 +585,7 @@ static int btrfs_free_stale_devices(const char *path,
+ 		mutex_unlock(&fs_devices->device_list_mutex);
  
- 	btrfs_free_extra_devids(fs_devices, 1);
- 
--	ret = btrfs_sysfs_add_fsid(fs_devices, NULL);
-+	ret = btrfs_sysfs_add_fsid(fs_devices);
- 	if (ret) {
- 		btrfs_err(fs_info, "failed to init sysfs fsid interface: %d",
- 				ret);
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index 9494ccace624..42aeb2375f2a 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -1118,18 +1118,17 @@ void btrfs_sysfs_remove_fsid(struct btrfs_fs_devices *fs_devs)
- }
- 
- /*
-- * Can be called by the device discovery thread.
-- * And parent can be specified for seed device
-+ * Creates:
-+ * 	/sys/fs/btrfs/UUID
-  */
--int btrfs_sysfs_add_fsid(struct btrfs_fs_devices *fs_devs,
--				struct kobject *parent)
-+int btrfs_sysfs_add_fsid(struct btrfs_fs_devices *fs_devs)
- {
- 	int error;
- 
- 	init_completion(&fs_devs->kobj_unregister);
- 	fs_devs->fsid_kobj.kset = btrfs_kset;
--	error = kobject_init_and_add(&fs_devs->fsid_kobj,
--				&btrfs_ktype, parent, "%pU", fs_devs->fsid);
-+	error = kobject_init_and_add(&fs_devs->fsid_kobj, &btrfs_ktype, NULL,
-+				     "%pU", fs_devs->fsid);
- 	if (error) {
- 		kobject_put(&fs_devs->fsid_kobj);
- 		return error;
-diff --git a/fs/btrfs/sysfs.h b/fs/btrfs/sysfs.h
-index 3dac8e163056..6addc35deb67 100644
---- a/fs/btrfs/sysfs.h
-+++ b/fs/btrfs/sysfs.h
-@@ -18,8 +18,7 @@ int btrfs_sysfs_add_device_info(struct btrfs_fs_devices *fs_devices,
- 		struct btrfs_device *one_device);
- int btrfs_sysfs_remove_device_info(struct btrfs_fs_devices *fs_devices,
-                 struct btrfs_device *one_device);
--int btrfs_sysfs_add_fsid(struct btrfs_fs_devices *fs_devs,
--				struct kobject *parent);
-+int btrfs_sysfs_add_fsid(struct btrfs_fs_devices *fs_devs);
- int btrfs_sysfs_add_devices_dir(struct btrfs_fs_devices *fs_devs);
- void btrfs_sysfs_remove_fsid(struct btrfs_fs_devices *fs_devs);
- void btrfs_sysfs_update_sprout_fsid(struct btrfs_fs_devices *fs_devices,
+ 		if (fs_devices->num_devices == 0) {
+-			btrfs_sysfs_remove_fsid(fs_devices);
++			/* If its here fsid is unmounted */
+ 			list_del(&fs_devices->fs_list);
+ 			free_fs_devices(fs_devices);
+ 		}
 -- 
 2.23.0
 

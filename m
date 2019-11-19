@@ -2,244 +2,155 @@ Return-Path: <SRS0=Px4L=ZL=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EAF91C432C0
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Nov 2019 12:06:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EE806C432C0
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Nov 2019 12:07:39 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id CD0CB20637
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Nov 2019 12:06:07 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C35D4222CD
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Nov 2019 12:07:39 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1574165259;
+	bh=IofSgCiJWkzyZtttH7o5BARjNgM/jumMZHZU+RXGXss=;
+	h=From:To:Subject:Date:List-ID:From;
+	b=fVEw/XFUNx+ddCMGfNZwgmqKW6TNUtnFOX+s9qGg4X9uudhTE+N3VcVTGRFdHxvXC
+	 tvHY7/y19fsl9e4Ft3ZUFJIc6ntZzK+1G2HOVh3wzU5UL6ifHepMfrmXZOYihuxRNK
+	 L4llq1dQpeDoNkTEuuQO4Vk/EqjvS8b4gU1lf8Ro=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727805AbfKSMGC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 19 Nov 2019 07:06:02 -0500
-Received: from mx2.suse.de ([195.135.220.15]:49280 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727066AbfKSMGB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Nov 2019 07:06:01 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 3E70DB39A;
-        Tue, 19 Nov 2019 12:05:59 +0000 (UTC)
-From:   Nikolay Borisov <nborisov@suse.com>
+        id S1727783AbfKSMHi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 19 Nov 2019 07:07:38 -0500
+Received: from mail.kernel.org ([198.145.29.99]:40184 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1725798AbfKSMHi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 19 Nov 2019 07:07:38 -0500
+Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 40849222CD
+        for <linux-btrfs@vger.kernel.org>; Tue, 19 Nov 2019 12:07:37 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1574165257;
+        bh=IofSgCiJWkzyZtttH7o5BARjNgM/jumMZHZU+RXGXss=;
+        h=From:To:Subject:Date:From;
+        b=P9XrXvWf9X3LvNCj/PbExyHHHaUr7kiXtQOrKZ61WDH06ySQvqXqHrUsFD0/iF6D6
+         ejYlknuHPgseP7D6FlNpK3bkIqlHyOOGg1Fgm+6fh6QaBNHx+sHfW7tb3W4uMrFcB4
+         XZaf/7+NWLQYWgY040vTbEwBn8tweBlakL0Zw/K4=
+From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 1/6] btrfs: Move and unexport btrfs_rmap_block
-Date:   Tue, 19 Nov 2019 14:05:50 +0200
-Message-Id: <20191119120555.6465-2-nborisov@suse.com>
-X-Mailer: git-send-email 2.17.1
-In-Reply-To: <20191119120555.6465-1-nborisov@suse.com>
-References: <20191119120555.6465-1-nborisov@suse.com>
+Subject: [PATCH] Btrfs: fix cloning range with a hole when using the NO_HOLES feature
+Date:   Tue, 19 Nov 2019 12:07:32 +0000
+Message-Id: <20191119120732.24729-1-fdmanana@kernel.org>
+X-Mailer: git-send-email 2.11.0
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-It's used only during initial block group reading to map physical
-address of super block to a list of logical ones. Make it private to
-block-group.c and while at it add proper kernel doc.
+From: Filipe Manana <fdmanana@suse.com>
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+When using the NO_HOLES feature if we clone a range that contains a hole
+and a temporary ENOSPC happens while dropping extents from the target
+inode's range, we can end up failing and aborting the transaction with
+-EEXIST or with a corrupt file extent item, that has a length greater
+than it should and overlaps with other extents. For example when cloning
+the following range from inode A to inode B:
+
+  Inode A:
+
+    extent A1                                          extent A2
+  [ ----------- ]  [ hole, implicit, 4Mb length ]  [ ------------- ]
+  0            1Mb                                 5Mb            6Mb
+
+  Range to clone: [1Mb, 6Mb[
+
+  Inode B:
+
+    extent B1       extent B2        extent B3         extent B4
+  [ ---------- ]  [ --------- ]    [ ---------- ]    [ ---------- ]
+  0           1Mb 1Mb        2Mb   2Mb        5Mb    5Mb         6Mb
+
+  Target range: [1Mb, 6Mb[ (same as source, to make it easier to explain)
+
+The following can happen:
+
+1) btrfs_punch_hole_range() gets -ENOSPC from __btrfs_drop_extents();
+
+2) At that point, 'cur_offset' is set to 1Mb and __btrfs_drop_extents()
+   set 'drop_end' to 2Mb, meaning it was able to drop only extent B2;
+
+3) We then compute 'clone_len' as 'drop_end' - 'cur_offset' = 2Mb - 1Mb =
+   1Mb;
+
+4) We then attempt to insert a file extent item at inode B with a file
+   offset of 5Mb, which is the value of clone_info->file_offset. This
+   fails with error -EEXIST because there's already an extent at that
+   offset (extent B4);
+
+5) We abort the current transaction with -EEXIST and return that error
+   to user space as well.
+
+Another example, for extent corruption:
+
+  Inode A:
+
+    extent A1                                           extent A2
+  [ ----------- ]   [ hole, implicit, 10Mb length ]  [ ------------- ]
+  0            1Mb                                  11Mb            12Mb
+
+  Inode B:
+
+    extent B1         extent B2
+  [ ----------- ]   [ --------- ]    [ ----------------------------- ]
+  0            1Mb 1Mb         5Mb  5Mb                             12Mb
+
+  Target range: [1Mb, 12Mb[ (same as source, to make it easier to explain)
+
+1) btrfs_punch_hole_range() gets -ENOSPC from __btrfs_drop_extents();
+
+2) At that point, 'cur_offset' is set to 1Mb and __btrfs_drop_extents()
+   set 'drop_end' to 5Mb, meaning it was able to drop only extent B2;
+
+3) We then compute 'clone_len' as 'drop_end' - 'cur_offset' = 5Mb - 1Mb =
+   4Mb;
+
+4) We then insert a file extent item at inode B with a file offset of 11Mb
+   which is the value of clone_info->file_offset, and a length of 4Mb (the
+   value of 'clone_len'). So we get 2 extents items with ranges that
+   overlap and an extent length of 4Mb, larger then the extent A2 from
+   inode A (1Mb length);
+
+5) After that we end the transaction, balance the btree dirty pages and
+   then start another or join the previous transaction. It might happen
+   that the transaction which inserted the incorrect extent was committed
+   by another task so we end up with extent corruption if a power failure
+   happens.
+
+So fix this by making sure we attempt to insert the extent to clone at
+the destination inode only if we are past dropping the sub-range that
+corresponds to a hole.
+
+Fixes: 690a5dbfc51315 ("Btrfs: fix ENOSPC errors, leading to transaction aborts, when cloning extents")
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/block-group.c | 82 ++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/volumes.c     | 69 -----------------------------------
- fs/btrfs/volumes.h     |  2 --
- 3 files changed, 82 insertions(+), 71 deletions(-)
+ fs/btrfs/file.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index d96561d1ce90..902c246a9d38 100644
---- a/fs/btrfs/block-group.c
-+++ b/fs/btrfs/block-group.c
-@@ -14,6 +14,7 @@
- #include "sysfs.h"
- #include "tree-log.h"
- #include "delalloc-space.h"
-+#include "raid56.h"
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index c332968f9056..454aaf0b825c 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -2601,7 +2601,7 @@ int btrfs_punch_hole_range(struct inode *inode, struct btrfs_path *path,
+ 			}
+ 		}
  
- /*
-  * Return target flags in extended format or 0 if restripe for this chunk_type
-@@ -1516,6 +1517,87 @@ static void set_avail_alloc_bits(struct btrfs_fs_info *fs_info, u64 flags)
- 	write_sequnlock(&fs_info->profiles_lock);
- }
+-		if (clone_info) {
++		if (clone_info && cur_offset >= clone_info->file_offset) {
+ 			u64 clone_len = drop_end - cur_offset;
  
-+/*
-+ * btrfs_rmap_block - Maps a particular @physical disk address to a list of @logical
-+ * addresses. Used primarily to exclude those portions of a block group that
-+ * contain super block copies.
-+ *
-+ * chunk_start - Logical address of block group
-+ * physical - Physical address to map to logical addresses
-+ * logical - Return array of logical addresses which map to @physical
-+ * naddrs - Length of @logical
-+ * stripe_len - size of IO stripe for the given block group
-+ */
-+EXPORT_FOR_TESTS
-+int btrfs_rmap_block(struct btrfs_fs_info *fs_info, u64 chunk_start,
-+		     u64 physical, u64 **logical, int *naddrs, int *stripe_len)
-+{
-+	struct extent_map *em;
-+	struct map_lookup *map;
-+	u64 *buf;
-+	u64 bytenr;
-+	u64 length;
-+	u64 stripe_nr;
-+	u64 rmap_len;
-+	int i, j, nr = 0;
-+
-+	em = btrfs_get_chunk_map(fs_info, chunk_start, 1);
-+	if (IS_ERR(em))
-+		return -EIO;
-+
-+	map = em->map_lookup;
-+	length = em->len;
-+	rmap_len = map->stripe_len;
-+
-+	if (map->type & BTRFS_BLOCK_GROUP_RAID10)
-+		length = div_u64(length, map->num_stripes / map->sub_stripes);
-+	else if (map->type & BTRFS_BLOCK_GROUP_RAID0)
-+		length = div_u64(length, map->num_stripes);
-+	else if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
-+		length = div_u64(length, nr_data_stripes(map));
-+		rmap_len = map->stripe_len * nr_data_stripes(map);
-+	}
-+
-+	buf = kcalloc(map->num_stripes, sizeof(u64), GFP_NOFS);
-+	BUG_ON(!buf); /* -ENOMEM */
-+
-+	for (i = 0; i < map->num_stripes; i++) {
-+		if (map->stripes[i].physical > physical ||
-+		    map->stripes[i].physical + length <= physical)
-+			continue;
-+
-+		stripe_nr = physical - map->stripes[i].physical;
-+		stripe_nr = div64_u64(stripe_nr, map->stripe_len);
-+
-+		if (map->type & BTRFS_BLOCK_GROUP_RAID10) {
-+			stripe_nr = stripe_nr * map->num_stripes + i;
-+			stripe_nr = div_u64(stripe_nr, map->sub_stripes);
-+		} else if (map->type & BTRFS_BLOCK_GROUP_RAID0) {
-+			stripe_nr = stripe_nr * map->num_stripes + i;
-+		} /* else if RAID[56], multiply by nr_data_stripes().
-+		   * Alternatively, just use rmap_len below instead of
-+		   * map->stripe_len */
-+
-+		bytenr = chunk_start + stripe_nr * rmap_len;
-+		WARN_ON(nr >= map->num_stripes);
-+		for (j = 0; j < nr; j++) {
-+			if (buf[j] == bytenr)
-+				break;
-+		}
-+		if (j == nr) {
-+			WARN_ON(nr >= map->num_stripes);
-+			buf[nr++] = bytenr;
-+		}
-+	}
-+
-+	*logical = buf;
-+	*naddrs = nr;
-+	*stripe_len = rmap_len;
-+
-+	free_extent_map(em);
-+	return 0;
-+}
-+
- static int exclude_super_stripes(struct btrfs_block_group *cache)
- {
- 	struct btrfs_fs_info *fs_info = cache->fs_info;
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index d8e5560db285..a1a7b543e465 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -6107,75 +6107,6 @@ int btrfs_map_sblock(struct btrfs_fs_info *fs_info, enum btrfs_map_op op,
- 	return __btrfs_map_block(fs_info, op, logical, length, bbio_ret, 0, 1);
- }
- 
--int btrfs_rmap_block(struct btrfs_fs_info *fs_info, u64 chunk_start,
--		     u64 physical, u64 **logical, int *naddrs, int *stripe_len)
--{
--	struct extent_map *em;
--	struct map_lookup *map;
--	u64 *buf;
--	u64 bytenr;
--	u64 length;
--	u64 stripe_nr;
--	u64 rmap_len;
--	int i, j, nr = 0;
--
--	em = btrfs_get_chunk_map(fs_info, chunk_start, 1);
--	if (IS_ERR(em))
--		return -EIO;
--
--	map = em->map_lookup;
--	length = em->len;
--	rmap_len = map->stripe_len;
--
--	if (map->type & BTRFS_BLOCK_GROUP_RAID10)
--		length = div_u64(length, map->num_stripes / map->sub_stripes);
--	else if (map->type & BTRFS_BLOCK_GROUP_RAID0)
--		length = div_u64(length, map->num_stripes);
--	else if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
--		length = div_u64(length, nr_data_stripes(map));
--		rmap_len = map->stripe_len * nr_data_stripes(map);
--	}
--
--	buf = kcalloc(map->num_stripes, sizeof(u64), GFP_NOFS);
--	BUG_ON(!buf); /* -ENOMEM */
--
--	for (i = 0; i < map->num_stripes; i++) {
--		if (map->stripes[i].physical > physical ||
--		    map->stripes[i].physical + length <= physical)
--			continue;
--
--		stripe_nr = physical - map->stripes[i].physical;
--		stripe_nr = div64_u64(stripe_nr, map->stripe_len);
--
--		if (map->type & BTRFS_BLOCK_GROUP_RAID10) {
--			stripe_nr = stripe_nr * map->num_stripes + i;
--			stripe_nr = div_u64(stripe_nr, map->sub_stripes);
--		} else if (map->type & BTRFS_BLOCK_GROUP_RAID0) {
--			stripe_nr = stripe_nr * map->num_stripes + i;
--		} /* else if RAID[56], multiply by nr_data_stripes().
--		   * Alternatively, just use rmap_len below instead of
--		   * map->stripe_len */
--
--		bytenr = chunk_start + stripe_nr * rmap_len;
--		WARN_ON(nr >= map->num_stripes);
--		for (j = 0; j < nr; j++) {
--			if (buf[j] == bytenr)
--				break;
--		}
--		if (j == nr) {
--			WARN_ON(nr >= map->num_stripes);
--			buf[nr++] = bytenr;
--		}
--	}
--
--	*logical = buf;
--	*naddrs = nr;
--	*stripe_len = rmap_len;
--
--	free_extent_map(em);
--	return 0;
--}
--
- static inline void btrfs_end_bbio(struct btrfs_bio *bbio, struct bio *bio)
- {
- 	bio->bi_private = bbio->private;
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index fc1b564b9cfe..12a7e0dd26bd 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -417,8 +417,6 @@ int btrfs_map_sblock(struct btrfs_fs_info *fs_info, enum btrfs_map_op op,
- 		     struct btrfs_bio **bbio_ret);
- int btrfs_get_io_geometry(struct btrfs_fs_info *fs_info, enum btrfs_map_op op,
- 		u64 logical, u64 len, struct btrfs_io_geometry *io_geom);
--int btrfs_rmap_block(struct btrfs_fs_info *fs_info, u64 chunk_start,
--		     u64 physical, u64 **logical, int *naddrs, int *stripe_len);
- int btrfs_read_sys_array(struct btrfs_fs_info *fs_info);
- int btrfs_read_chunk_tree(struct btrfs_fs_info *fs_info);
- int btrfs_alloc_chunk(struct btrfs_trans_handle *trans, u64 type);
+ 			ret = btrfs_insert_clone_extent(trans, inode, path,
 -- 
-2.17.1
+2.11.0
 

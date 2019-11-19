@@ -4,30 +4,30 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5DD19C432C3
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Nov 2019 12:06:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3A862C43141
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Nov 2019 12:06:04 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2F90020637
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Nov 2019 12:06:03 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 18B8620637
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Nov 2019 12:06:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727846AbfKSMGC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 19 Nov 2019 07:06:02 -0500
-Received: from mx2.suse.de ([195.135.220.15]:49324 "EHLO mx1.suse.de"
+        id S1727851AbfKSMGD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 19 Nov 2019 07:06:03 -0500
+Received: from mx2.suse.de ([195.135.220.15]:49312 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727677AbfKSMGB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Nov 2019 07:06:01 -0500
+        id S1727646AbfKSMGC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 19 Nov 2019 07:06:02 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id D4860B3DB;
+        by mx1.suse.de (Postfix) with ESMTP id 70A0CB14B;
         Tue, 19 Nov 2019 12:06:00 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 5/6] btrfs: Read stripe len directly in btrfs_rmap_block
-Date:   Tue, 19 Nov 2019 14:05:54 +0200
-Message-Id: <20191119120555.6465-6-nborisov@suse.com>
+Subject: [PATCH 4/6] btrfs: Refactor btrfs_rmap_block to improve readability
+Date:   Tue, 19 Nov 2019 14:05:53 +0200
+Message-Id: <20191119120555.6465-5-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20191119120555.6465-1-nborisov@suse.com>
 References: <20191119120555.6465-1-nborisov@suse.com>
@@ -36,41 +36,114 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-extent_map::orig_block_len contains the size of a physical stripe when
-it's used to describe block groups. So get the size directly in
-btrfs_rmap_block rather than open-coding the calculations. No
-functional changes.
+Move variables to appropriate scope. Remove last BUG_ON in the function
+and rework error handling accordingly. Make the duplicate detection code
+more straightforward. Use in_range macro. And give variables more
+descriptive name by explicitly distinguishing between IO stripe size
+(size recorded in the chunk item) and data stripe size (the size of
+an actual stripe, constituting a logical chunk/block group).
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/block-group.c | 11 +++--------
- 1 file changed, 3 insertions(+), 8 deletions(-)
+ fs/btrfs/block-group.c | 53 ++++++++++++++++++++++++------------------
+ 1 file changed, 31 insertions(+), 22 deletions(-)
 
 diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index c3b1f304bc70..2ab4d9cb598a 100644
+index 902c246a9d38..c3b1f304bc70 100644
 --- a/fs/btrfs/block-group.c
 +++ b/fs/btrfs/block-group.c
-@@ -1546,17 +1546,12 @@ int btrfs_rmap_block(struct btrfs_fs_info *fs_info, u64 chunk_start,
+@@ -1536,34 +1536,41 @@ int btrfs_rmap_block(struct btrfs_fs_info *fs_info, u64 chunk_start,
+ 	struct map_lookup *map;
+ 	u64 *buf;
+ 	u64 bytenr;
+-	u64 length;
+-	u64 stripe_nr;
+-	u64 rmap_len;
+-	int i, j, nr = 0;
++	u64 data_stripe_length;
++	u64 io_stripe_size;
++	int i, nr = 0;
++	int ret = 0;
+ 
+ 	em = btrfs_get_chunk_map(fs_info, chunk_start, 1);
+ 	if (IS_ERR(em))
  		return -EIO;
  
  	map = em->map_lookup;
--	data_stripe_length = em->len;
-+	data_stripe_length = em->orig_block_len;
- 	io_stripe_size = map->stripe_len;
+-	length = em->len;
+-	rmap_len = map->stripe_len;
++	data_stripe_length = em->len;
++	io_stripe_size = map->stripe_len;
  
--	if (map->type & BTRFS_BLOCK_GROUP_RAID10)
--		data_stripe_length = div_u64(data_stripe_length, map->num_stripes / map->sub_stripes);
--	else if (map->type & BTRFS_BLOCK_GROUP_RAID0)
--		data_stripe_length = div_u64(data_stripe_length, map->num_stripes);
--	else if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
--		data_stripe_length = div_u64(data_stripe_length, nr_data_stripes(map));
-+	/* For raid5/6 adjust to a full IO stripe length */
-+	if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK)
- 		io_stripe_size = map->stripe_len * nr_data_stripes(map);
--	}
+ 	if (map->type & BTRFS_BLOCK_GROUP_RAID10)
+-		length = div_u64(length, map->num_stripes / map->sub_stripes);
++		data_stripe_length = div_u64(data_stripe_length, map->num_stripes / map->sub_stripes);
+ 	else if (map->type & BTRFS_BLOCK_GROUP_RAID0)
+-		length = div_u64(length, map->num_stripes);
++		data_stripe_length = div_u64(data_stripe_length, map->num_stripes);
+ 	else if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
+-		length = div_u64(length, nr_data_stripes(map));
+-		rmap_len = map->stripe_len * nr_data_stripes(map);
++		data_stripe_length = div_u64(data_stripe_length, nr_data_stripes(map));
++		io_stripe_size = map->stripe_len * nr_data_stripes(map);
+ 	}
  
  	buf = kcalloc(map->num_stripes, sizeof(u64), GFP_NOFS);
- 	if (!buf) {
+-	BUG_ON(!buf); /* -ENOMEM */
++	if (!buf) {
++		ret = -ENOMEM;
++		goto out;
++	}
+ 
+ 	for (i = 0; i < map->num_stripes; i++) {
+-		if (map->stripes[i].physical > physical ||
+-		    map->stripes[i].physical + length <= physical)
++		bool already_inserted = false;
++		u64 stripe_nr;
++		int j;
++
++		if (!in_range(physical, map->stripes[i].physical,
++			      data_stripe_length))
+ 			continue;
+ 
+ 		stripe_nr = physical - map->stripes[i].physical;
+@@ -1575,25 +1582,27 @@ int btrfs_rmap_block(struct btrfs_fs_info *fs_info, u64 chunk_start,
+ 		} else if (map->type & BTRFS_BLOCK_GROUP_RAID0) {
+ 			stripe_nr = stripe_nr * map->num_stripes + i;
+ 		} /* else if RAID[56], multiply by nr_data_stripes().
+-		   * Alternatively, just use rmap_len below instead of
++		   * Alternatively, just use io_stripe_size below instead of
+ 		   * map->stripe_len */
+ 
+-		bytenr = chunk_start + stripe_nr * rmap_len;
+-		WARN_ON(nr >= map->num_stripes);
++		bytenr = chunk_start + stripe_nr * io_stripe_size;
++
++		/* Ensure we don't add duplicate addresses */
+ 		for (j = 0; j < nr; j++) {
+-			if (buf[j] == bytenr)
++			if (buf[j] == bytenr) {
++				already_inserted = true;
+ 				break;
++			}
+ 		}
+-		if (j == nr) {
+-			WARN_ON(nr >= map->num_stripes);
++
++		if (!already_inserted)
+ 			buf[nr++] = bytenr;
+-		}
+ 	}
+ 
+ 	*logical = buf;
+ 	*naddrs = nr;
+-	*stripe_len = rmap_len;
+-
++	*stripe_len = io_stripe_size;
++out:
+ 	free_extent_map(em);
+ 	return 0;
+ }
 -- 
 2.17.1
 

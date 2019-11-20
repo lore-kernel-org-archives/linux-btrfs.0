@@ -2,101 +2,105 @@ Return-Path: <SRS0=4jq6=ZM=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.5 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id ADDF9C432C0
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Nov 2019 06:47:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5B19AC432C0
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Nov 2019 06:50:20 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8789520731
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Nov 2019 06:47:10 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 28032206CB
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Nov 2019 06:50:20 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="Z/GJNzPS"
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="i027N4Ey"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726623AbfKTGrK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 20 Nov 2019 01:47:10 -0500
-Received: from esa4.hgst.iphmx.com ([216.71.154.42]:49569 "EHLO
-        esa4.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725268AbfKTGrJ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Nov 2019 01:47:09 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1574232429; x=1605768429;
-  h=from:to:cc:subject:date:message-id:mime-version:
-   content-transfer-encoding;
-  bh=x3C0QWKGnbHiXf89Z95VPNtK6A6B5YQ6CboCRZJg454=;
-  b=Z/GJNzPSUgO9D42wIQ+qowzmXGSjgA8gctVA6h9aAc77LbBwChDRHT+1
-   1qaVzeMtqfbEYGmIDECaDcuhWRh3K7lERi41AmqDXSghlr1Y1HMXTJVI0
-   GtqCfIfgfSxWwgfZUzdsycFNvJjUTQN+sqORd0q26JpCmh212UbtMy7TW
-   lfj3K3m8MAsyWTTBdoPj8GHfWVQD7G23LXDDLzKLk2jz5qC6aRt+2ZmUm
-   LfVQAxcW6SuxdVBUn9Q08ZTms6t3sybIe6epOFgMJl+6f8hzO+j5fzwoy
-   oDuthES75yNrvX+Z4Ltp3ASGIgRROKVLTjmC8wu7TEm1QpWCXpCTzmFAR
-   Q==;
-IronPort-SDR: E/5pzDZMCngS7JwoQGSCnVljk9VeTSwrB/Bj6QtsYb3yZ8r0JPzn4tfmgO+QR3W/t8GWdTwoSv
- uvoSIIPFxjsZJ4i8lX8Mj0UUSKSEhBjfALrKH7H6vIyBoTcto3+sPFebUTz/5f8FvQ068MSmgn
- HAfDO5n2/XjFfVSsJfNumchyP/povTZdkOO3RRT5UCEhL2N+GKQvn0lzsnborkLQn7/9ZseVH7
- NdFhODNJpbYH/ZWk6KRQnuuYSnXK5doOggjzDEUfTnmtZDmul8AXn5NWlSOV2naIaN/LkDWp/c
- U9s=
-X-IronPort-AV: E=Sophos;i="5.69,220,1571673600"; 
-   d="scan'208";a="123506626"
-Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 20 Nov 2019 14:47:09 +0800
-IronPort-SDR: XqyC7hvd8VD76gLqFrrq+yL12wkiym9QYNV5fTPYgUwTiq9q417JbfTQo50c6yNvtvY4iPoe4J
- huO/RqsvPFzGe5cYzV9JbxGKEyJE2GByb9QuYTwI70PuQRk+V8f9SL1yx9hbI8K+ij0SW5O6DE
- FPF0l/cvYlJSrcxSMZdMmLYtQkoRBstcyxRdCRqRo9oSgYGdCUKH7Zcfnzin8I9LEibUd+PBj9
- yhoKw/i1uwRMlTfYlfQ8mwYlu3bMY8w+Pr34Tq1A+d3ckIWEeS1NTm9JZEUN2C8G0Lkc0P8dIp
- Z/pBCUxwaJ2LvnprL0Vj83Xi
-Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 19 Nov 2019 22:42:20 -0800
-IronPort-SDR: I4q08cXQk4g/llEotZS96WckPyC/OAcjAO2icxGiuReWHHnqhI5nEa02IpBJvbcaGiUGhMOk0s
- i3XcvZp/tsJTIrAJiWbBZIkC+7IGh+rRMYZNKtXYc/1YGSAmrJWpXH0qPcivyydAyUh/6AnBZj
- y5Tuk932y+Ls5HTtwHswZaupPEBfav3K/Gw6jAX9a0BCUhN8hvlQOyGzWlyJNfdbLM9zNvEAAJ
- aFBcj/MYc9aN8sEqxQGE1LnTEClAAmS4uAKGuLs0ZI9C/9g5AWz8NUjWFLBVHAGpvOjlRv8Ruw
- cxE=
-WDCIronportException: Internal
-Received: from naota.dhcp.fujisawa.hgst.com (HELO naota.fujisawa.hgst.com) ([10.149.53.115])
-  by uls-op-cesaip01.wdc.com with ESMTP; 19 Nov 2019 22:47:09 -0800
-From:   Naohiro Aota <naohiro.aota@wdc.com>
-To:     fstests@vger.kernel.org
-Cc:     linux-btrfs@vger.kernel.org, Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH] fstests, btrfs: check flakey device instead of backend device
-Date:   Wed, 20 Nov 2019 15:44:06 +0900
-Message-Id: <20191120064406.3467779-1-naohiro.aota@wdc.com>
-X-Mailer: git-send-email 2.24.0
+        id S1726277AbfKTGuT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 20 Nov 2019 01:50:19 -0500
+Received: from mout.gmx.net ([212.227.15.18]:49057 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1725263AbfKTGuT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 20 Nov 2019 01:50:19 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1574232617;
+        bh=Q6P2UmF6wU+RV3pJ5RH5j1goUlEOva/Td2Q96VDm/2o=;
+        h=X-UI-Sender-Class:From:To:Cc:Subject:Date:In-Reply-To:References;
+        b=i027N4EyqNQ61bhgKQYssnTjp70uL9HUdqsxT/VCLvmywx/4c/St7cqq8Jip3bLQL
+         s65rzkBWnFz033LwSmum5bTmmsbJI5kt/cgspcraafk5VEKarSkkqaczgPbiDHxBo7
+         oRUAVo4OcMJGymXGz4s4MnTFr1Br+hb+MTgQuX/Y=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [34.92.246.95] ([34.92.246.95]) by
+ msvc-mesg-gmx022.server.lan (via HTTP); Wed, 20 Nov 2019 07:50:17 +0100
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Message-ID: <trinity-ec49f5ac-9f49-4833-a25e-d4afaa9f0749-1574232617442@msvc-mesg-gmx022>
+From:   "Su Yue" <Damenly_Su@gmx.com>
+To:     damenly.su@gmail.com
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: block group: do not exclude bytenr adjacent to
+ block group
+Content-Type: text/plain; charset=UTF-8
+Date:   Wed, 20 Nov 2019 07:50:17 +0100
+In-Reply-To: <20191118055603.10011-1-Damenly_Su@gmx.com>
+References: <20191118055603.10011-1-Damenly_Su@gmx.com>
+X-Provags-ID: V03:K1:z2OgCr6MGOuwkLZTbhOqvccRFMIzq9JECvzCD/HVoGnv5emqHu7YL7YXVLGvcyDB2nAhE
+ eCKBQ7cDUSNfKrjJxYNBiJpB5vUAq9TrhQuGIZZXnEZ7ntg9PgDDzeBuOSlcHkpIDw+w0xxS5+BH
+ 2AuWWWaP7VlE7nwdEr2OX1GCbUdqlHY3tCWtABYDWfZ5QFswk/sytRHzS16kxu+Rj4krfxo1aB1v
+ +ggqpgbf8OU9n8TJ6T/p/BXWqrcrQcAB204akpOaQOqs01UfxMdjTQpBVM00Fys623XCCKPR3qn8
+ zpM29/m6cB0aWKL7oShSALD
+X-UI-Out-Filterresults: notjunk:1;V03:K0:DRW9kds14O0=:LueIwrdOYyTSLY8kjdZMtw
+ DtV8abXmRR+FttD7OyKtHm4phKDlNCozuJ0b7gcDppxOHyXHOS96i++Sg/ujlRd9/yIoXBocJ
+ EYJx6k+aThFHMgOUXNpzhdiKR+6H8itYjhtr0tJGUcOaZtpu0/KsemIUuWZxCuiEUHMy+diRu
+ xVN3De1VAYBnr7t0WpoQtvP/mA2vsRXmeL1kvbOa6e+ZMbXrj3uOVHcvhak1cIZSL8OG5rHZ8
+ vh+4FXyWW7Xb05nWgwwXQemUqwMapxlA5nx9K12+eskfTGjCgnk0jyCD1abXhzbnlWPLACkTS
+ BKk1t2qO5dVhEWJR5dryGDRIotIOm9W8mgAxvT7esDvzHIccf1RRDQTTUSP/6/93+kL+GncCr
+ m58j33rwT7B9ufvVdQc/YSR+j8B6WBmn/v7LJujvnfnOFjPcl6rXk2sgy/R1DY4mm+VlnZ2mg
+ Mo/wXJAgaz3UsdRwY1o+mkBF9FI3XD1r3Eulr0vadQ7Apvn4XYh2tAWYr4VUwG3CKWlcXtLJ2
+ L2GxUWbQ/VfeZh7xHgk0oBzrunmzwjkeigMy82nmFtMt1e18WFoIZmbArTqe/Vltdo3a6xV/a
+ BYj4hHkYL7QdkMI6HwFNOoWrRVSzsgsX+Is9FrsjEz5XiaI9IYNkApquKohgkeqAnJFNYQfUy
+ fQxGc3TS2ESMTRqb8073taM57HoLb90eXLblvRcobeUdHudGWy+tuAzJq3v15aPTGmwL0FgzC
+ h1NvhUGEpvXZnCtH6pZlNNcHtwYZAEhmMOYuPNnPIQGeWTCsShwBwmEn7a7kso4zezCBWrdY0
+ DyEEgFR
+Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-btrfs/085 mount and works on $FLAKEY_DEV, but it's inspecting the
-underlying $SCRATCH_DEV. Since writing to dm-flakey does not invalidate
-page cache of $SCRATCH_DEV, the btrfs command can read a stalled data
-from page cache. We should check the flakey device to avoid such cache
-inconsistency.
 
-Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
----
- tests/btrfs/085 | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/tests/btrfs/085 b/tests/btrfs/085
-index 4773ed8041fd..2a31eefd2013 100755
---- a/tests/btrfs/085
-+++ b/tests/btrfs/085
-@@ -46,7 +46,7 @@ rm -f $seqres.full
- has_orphan_item()
- {
- 	INO=$1
--	if $BTRFS_UTIL_PROG inspect-internal dump-tree $SCRATCH_DEV | \
-+	if $BTRFS_UTIL_PROG inspect-internal dump-tree $FLAKEY_DEV | \
- 		grep -q "key (ORPHAN ORPHAN_ITEM $INO)"; then
- 		return 0
- 	fi
--- 
-2.24.0
+Drop those too, will send new version fixed by another method.
+
+On 2019/11/18 at 13:56, damenly.su@gmail.com wrote:
+
+> From: Su Yue <Damenly_Su@gmx.com>
+>
+> while excluding super stripes from one block group, the logical bytenr
+> should not be excluded if the block group's start + length equals the
+> bytenr since the bytenr is not belong to the block group.
+>
+> This is insipred by same bugous code of btrfs-progs.
+> The fuzz image is rejected to be mounted by tree-checker, but not
+> bad to enhance the check in practice.
+>
+> Signed-off-by: Su Yue <Damenly_Su@gmx.com>
+> ---
+>  fs/btrfs/block-group.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+>
+> diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+> index 1e521db3ef56..54f970f459f5 100644
+> --- a/fs/btrfs/block-group.c
+> +++ b/fs/btrfs/block-group.c
+> @@ -1539,7 +1539,7 @@ static int exclude_super_stripes(struct btrfs_bloc=
+k_group_cache *cache)
+>  		while (nr--) {
+>  			u64 start, len;
+>
+> -			if (logical[nr] > cache->start + cache->length)
+> +			if (logical[nr] >=3D cache->start + cache->length)
+>  				continue;
+>
+>  			if (logical[nr] + stripe_len <=3D cache->start)
+> --
+> 2.23.0
 

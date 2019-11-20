@@ -7,58 +7,58 @@ X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 27D3EC432C3
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Nov 2019 21:51:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 78B02C432C0
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Nov 2019 21:51:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id EABBE2070B
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Nov 2019 21:51:34 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3CF9F20708
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Nov 2019 21:51:37 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1574286695;
-	bh=9hwfSkuDGvWUAsbOdX4ItVcaJjsb+65iiYjLsyffDNQ=;
+	s=default; t=1574286697;
+	bh=oVkHWXHVLGzlX8WBnwoGYQw8znfbx83u+gjVtzJPbTs=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:In-Reply-To:
 	 References:List-ID:From;
-	b=BSs+JPB8PjNH5ajCQHn8w6oBOphyFAudAhJUJ3WUWOTHnYVoz1tNYwegnZSaUmQtA
-	 mbbNwZhT5n5UsRysV0QKW0onG+9fMjK9NTx9R0fRomxaQw8rY/ayXqzeyI1vdPZv8Y
-	 d5oBLYs0gnnNdKg06MnaHEgfdT0iC9z43ep12OLo=
+	b=A0dyyYAEMif6AX70TEaZDdLMpLMBiI9dbL0+0YDqvn+h3U1XU679aggNxc8YVS5ZL
+	 2aCAUzPNXbphgG1z6sxE4aqN9LA7o+lNgBsbRXJvmE7VGw+TD8TTnSllahXgWUUbzw
+	 95wWnYpSorhLYXo+DGmlZ8Telm2LfOP6ZklUwQF8=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726840AbfKTVvd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 20 Nov 2019 16:51:33 -0500
-Received: from mail-qv1-f67.google.com ([209.85.219.67]:36079 "EHLO
-        mail-qv1-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726822AbfKTVvd (ORCPT
+        id S1726855AbfKTVvg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 20 Nov 2019 16:51:36 -0500
+Received: from mail-qk1-f196.google.com ([209.85.222.196]:40831 "EHLO
+        mail-qk1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726658AbfKTVvg (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Nov 2019 16:51:33 -0500
-Received: by mail-qv1-f67.google.com with SMTP id cv8so580784qvb.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Nov 2019 13:51:32 -0800 (PST)
+        Wed, 20 Nov 2019 16:51:36 -0500
+Received: by mail-qk1-f196.google.com with SMTP id z16so1247336qkg.7
+        for <linux-btrfs@vger.kernel.org>; Wed, 20 Nov 2019 13:51:35 -0800 (PST)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:in-reply-to:references;
-        bh=JbS6Xnh6/UEk+qphSqVZ3EdK4Ri8tUYlmlPZnPj+vhs=;
-        b=eNx5XmVsIMpsl2a/PadR7ccsaFpI3rFpTe/bJDkso+PR7n3olCrmjOmQxGFPxqVrLQ
-         4FrjCYGX+cnQzZrfvkZAzJ/nvNcYTdPT+s5V/7T8ysr2gtJAlp/X877pwSkFsn1+TOd7
-         ZcjbdDLbjDwSoXm4Ztqqt0JOD0Ya1OY08wjspXE1EFbhauCHwFWA8BAKGwkILpETjc1f
-         J9JckLAUFWyn/QFKwcit2eXbBwfodA2b3BSOxD/vAtIMmbq+qKMhbsb+cFkmyPh7oeNp
-         /OxPeV+bcyb5GSphrya/o2EouE0GWq9PSjPEFfmMetmBnCcM5RrclDSsPqMtuh1Wrpa6
-         o7Vw==
-X-Gm-Message-State: APjAAAV5Za4PbheqVIoRXQUjMDCtnfCpYIFa9FDONmwAE9b/D6EYuWMx
-        EIaDRrKiEa0e6TGabEyVBVs=
-X-Google-Smtp-Source: APXvYqybgFCOUq+DgA1uOFjes5ovKCvZVXGMwkcGeBNk9o/YbO3RrZeCVPwNjPLJmLw4TxNa8neuCw==
-X-Received: by 2002:a0c:9314:: with SMTP id d20mr5010304qvd.28.1574286692105;
-        Wed, 20 Nov 2019 13:51:32 -0800 (PST)
+        bh=CV0u28tbVYKKnnzQQeMixqqGVkiKdnLkWp3pE8z1ZxY=;
+        b=A7lHkDKZWcIxLLdSjxpsiJgWSY8LG0YeYPrRSdPRYeLM5s3R+EST6SrQG+0R6/234R
+         9Qio1POf1OwzFeawtsDOd6dEbo8iHXNK/GpCT1rNdK5zlx9Dhm0vN9rkLVG6G76aLbrq
+         lOim+zNvsKx877MLY6x5nZQWfJhfnASu5cipCaYJuiEuMAKDZIQ7NPwdS3svSnk0JV/v
+         T8/JPGpUFsNgfLb/BxPJuZ+nqe5KxR/MGNl0nvSZZsO1Wt+2+xWU4Lk+fWpoc6/1gXP1
+         pZUr+2TYbzMMBedQFGF2f5w3UobAMaMWVEl9EX0ny4IVPj1Wq2PN1zVKhgLpsnOaelOp
+         8wtA==
+X-Gm-Message-State: APjAAAWJeQ0C0wvJjNxup/0oe5v1wShOIC4KQot2xMt/XjrDchh5soxe
+        5D6rPOiwvlgNSTYdnZ1qK8s=
+X-Google-Smtp-Source: APXvYqyYqiM6tH7nMOH4aE8wbGt8XvfvRMuPxUFMtC3RX6HnwgeFah6+PCbszrzxVSxp++5QQoiWRg==
+X-Received: by 2002:a37:a603:: with SMTP id p3mr4647560qke.382.1574286694509;
+        Wed, 20 Nov 2019 13:51:34 -0800 (PST)
 Received: from dennisz-mbp.thefacebook.com ([163.114.130.128])
-        by smtp.gmail.com with ESMTPSA id t16sm303820qkm.73.2019.11.20.13.51.30
+        by smtp.gmail.com with ESMTPSA id t16sm303820qkm.73.2019.11.20.13.51.33
         (version=TLS1_2 cipher=ECDHE-RSA-AES128-SHA bits=128/128);
-        Wed, 20 Nov 2019 13:51:30 -0800 (PST)
+        Wed, 20 Nov 2019 13:51:33 -0800 (PST)
 From:   Dennis Zhou <dennis@kernel.org>
 To:     David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
         Josef Bacik <josef@toxicpanda.com>,
         Omar Sandoval <osandov@osandov.com>
 Cc:     kernel-team@fb.com, linux-btrfs@vger.kernel.org,
         Dennis Zhou <dennis@kernel.org>
-Subject: [PATCH 04/22] btrfs: keep track of cleanliness of the bitmap
-Date:   Wed, 20 Nov 2019 16:51:03 -0500
-Message-Id: <06410c758182c36e3af04249721ded50d8f2c62f.1574282259.git.dennis@kernel.org>
+Subject: [PATCH 06/22] btrfs: handle empty block_group removal
+Date:   Wed, 20 Nov 2019 16:51:05 -0500
+Message-Id: <41ac461c9007ece384635e600b4ab76f8e757af4.1574282259.git.dennis@kernel.org>
 X-Mailer: git-send-email 2.13.5
 In-Reply-To: <cover.1574282259.git.dennis@kernel.org>
 References: <cover.1574282259.git.dennis@kernel.org>
@@ -69,278 +69,470 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-There is a cap in btrfs in the amount of free extents that a block group
-can have. When it surpasses that threshold, future extents are placed
-into bitmaps. Instead of keeping track of if a certain bit is trimmed or
-not in a second bitmap, keep track of the relative state of the bitmap.
+block_group removal is a little tricky. It can race with the extent
+allocator, the cleaner thread, and balancing. The current path is for a
+block_group to be added to the unused_bgs list. Then, when the cleaner
+thread comes around, it starts a transaction and then proceeds with
+removing the block_group. Extents that are pinned are subsequently
+removed from the pinned trees and then eventually a discard is issued
+for the entire block_group.
 
-With async discard, trimming bitmaps becomes a more frequent operation.
-As a trade off with simplicity, we keep track of if discarding a bitmap
-is in progress. If we fully scan a bitmap and trim as necessary, the
-bitmap is marked clean. This has some caveats as the min block size may
-skip over regions deemed too small. But this should be a reasonable
-trade off rather than keeping a second bitmap and making allocation
-paths more complex. The downside is we may overtrim, but ideally the min
-block size should prevent us from doing that too often and getting stuck
-trimming pathological cases.
+Async discard introduces another player into the game, the discard
+workqueue. While it has none of the racing issues, the new problem is
+ensuring we don't leave free space untrimmed prior to forgetting the
+block_group.  This is handled by placing fully free block_groups on a
+separate discard queue. This is necessary to maintain discarding order
+as in the future we will slowly trim even fully free block_groups. The
+ordering helps us make progress on the same block_group rather than say
+the last fully freed block_group or needing to search through the fully
+freed block groups at the beginning of a list and insert after.
 
-BTRFS_TRIM_STATE_TRIMMING is added to indicate a bitmap is in the
-process of being trimmed. If additional free space is added to that
-bitmap, the bit is cleared. A bitmap will be marked
-BTRFS_TRIM_STATE_TRIMMED if the trimming code was able to reach the end
-of it and the former is still set.
+The new order of events is a fully freed block group gets placed on the
+unused discard queue first. Once it's processed, it will be placed on
+the unusued_bgs list and then the original sequence of events will
+happen, just without the final whole block_group discard.
+
+The mount flags can change when processing unused_bgs, so when flipping
+from DISCARD to DISCARD_ASYNC, the unused_bgs must be punted to the
+discard_list to be trimmed. If we flip off DISCARD_ASYNC, we punt
+free block groups on the discard_list to the unused_bg queue which will
+do the final discard for us.
 
 Signed-off-by: Dennis Zhou <dennis@kernel.org>
 Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/free-space-cache.c | 89 +++++++++++++++++++++++++++++++++----
- fs/btrfs/free-space-cache.h | 12 +++++
- 2 files changed, 92 insertions(+), 9 deletions(-)
+ fs/btrfs/block-group.c      |  50 +++++++++++++--
+ fs/btrfs/ctree.h            |   9 ++-
+ fs/btrfs/discard.c          | 117 +++++++++++++++++++++++++++++++++++-
+ fs/btrfs/discard.h          |   6 ++
+ fs/btrfs/free-space-cache.c |  34 +++++++++++
+ fs/btrfs/free-space-cache.h |   1 +
+ fs/btrfs/scrub.c            |   7 ++-
+ 7 files changed, 214 insertions(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 399c641440bc..946a7df33249 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -1979,11 +1979,18 @@ static noinline int remove_from_bitmap(struct btrfs_free_space_ctl *ctl,
+diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+index d2bc46c365f4..aea2b2637d65 100644
+--- a/fs/btrfs/block-group.c
++++ b/fs/btrfs/block-group.c
+@@ -1250,6 +1250,7 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
+ 	struct btrfs_block_group *block_group;
+ 	struct btrfs_space_info *space_info;
+ 	struct btrfs_trans_handle *trans;
++	bool async_trim_enabled = btrfs_test_opt(fs_info, DISCARD_ASYNC);
+ 	int ret = 0;
  
- static u64 add_bytes_to_bitmap(struct btrfs_free_space_ctl *ctl,
- 			       struct btrfs_free_space *info, u64 offset,
--			       u64 bytes)
-+			       u64 bytes, enum btrfs_trim_state trim_state)
- {
- 	u64 bytes_to_set = 0;
- 	u64 end;
+ 	if (!test_bit(BTRFS_FS_OPEN, &fs_info->flags))
+@@ -1259,6 +1260,7 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
+ 	while (!list_empty(&fs_info->unused_bgs)) {
+ 		u64 start, end;
+ 		int trimming;
++		bool async_trimmed;
  
-+	/*
-+	 * This is a tradeoff to make bitmap trim state minimal.  We mark the
-+	 * whole bitmap untrimmed if at any point we add untrimmed regions.
-+	 */
-+	if (trim_state == BTRFS_TRIM_STATE_UNTRIMMED)
-+		info->trim_state = BTRFS_TRIM_STATE_UNTRIMMED;
+ 		block_group = list_first_entry(&fs_info->unused_bgs,
+ 					       struct btrfs_block_group,
+@@ -1280,9 +1282,23 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
+ 		/* Don't want to race with allocators so take the groups_sem */
+ 		down_write(&space_info->groups_sem);
+ 		spin_lock(&block_group->lock);
 +
- 	end = info->offset + (u64)(BITS_PER_BITMAP * ctl->unit);
- 
- 	bytes_to_set = min(end - offset, bytes);
-@@ -2058,10 +2065,12 @@ static int insert_into_bitmap(struct btrfs_free_space_ctl *ctl,
- 	struct btrfs_block_group *block_group = NULL;
- 	int added = 0;
- 	u64 bytes, offset, bytes_added;
-+	enum btrfs_trim_state trim_state;
- 	int ret;
- 
- 	bytes = info->bytes;
- 	offset = info->offset;
-+	trim_state = info->trim_state;
- 
- 	if (!ctl->op->use_bitmap(ctl, info))
- 		return 0;
-@@ -2096,8 +2105,8 @@ static int insert_into_bitmap(struct btrfs_free_space_ctl *ctl,
- 		}
- 
- 		if (entry->offset == offset_to_bitmap(ctl, offset)) {
--			bytes_added = add_bytes_to_bitmap(ctl, entry,
--							  offset, bytes);
-+			bytes_added = add_bytes_to_bitmap(ctl, entry, offset,
-+							  bytes, trim_state);
- 			bytes -= bytes_added;
- 			offset += bytes_added;
- 		}
-@@ -2116,7 +2125,8 @@ static int insert_into_bitmap(struct btrfs_free_space_ctl *ctl,
- 		goto new_bitmap;
- 	}
- 
--	bytes_added = add_bytes_to_bitmap(ctl, bitmap_info, offset, bytes);
-+	bytes_added = add_bytes_to_bitmap(ctl, bitmap_info, offset, bytes,
-+					  trim_state);
- 	bytes -= bytes_added;
- 	offset += bytes_added;
- 	added = 0;
-@@ -2150,6 +2160,7 @@ static int insert_into_bitmap(struct btrfs_free_space_ctl *ctl,
- 		/* allocate the bitmap */
- 		info->bitmap = kmem_cache_zalloc(btrfs_free_space_bitmap_cachep,
- 						 GFP_NOFS);
-+		info->trim_state = BTRFS_TRIM_STATE_TRIMMED;
- 		spin_lock(&ctl->tree_lock);
- 		if (!info->bitmap) {
- 			ret = -ENOMEM;
-@@ -3320,6 +3331,39 @@ static int trim_no_bitmap(struct btrfs_block_group *block_group,
- 	return ret;
- }
- 
-+/*
-+ * If we break out of trimming a bitmap prematurely, we should reset the
-+ * trimming bit.  In a rather contrieved case, it's possible to race here so
-+ * reset the state to BTRFS_TRIM_STATE_UNTRIMMED.
-+ *
-+ * start = start of bitmap
-+ * end = near end of bitmap
-+ *
-+ * Thread 1:			Thread 2:
-+ * trim_bitmaps(start)
-+ *				trim_bitmaps(end)
-+ *				end_trimming_bitmap()
-+ * reset_trimming_bitmap()
-+ */
-+static void reset_trimming_bitmap(struct btrfs_free_space_ctl *ctl, u64 offset)
-+{
-+	struct btrfs_free_space *entry;
++		/*
++		 * Async discard moves the final block group discard to be prior
++		 * to the unused_bgs code path.  Therefore, if it's not fully
++		 * trimmed, punt it back to the async discard lists.
++		 */
++		async_trimmed = (!btrfs_test_opt(fs_info, DISCARD_ASYNC) ||
++				 btrfs_is_free_space_trimmed(block_group));
 +
-+	spin_lock(&ctl->tree_lock);
-+
-+	entry = tree_search_offset(ctl, offset, 1, 0);
-+	if (entry)
-+		entry->trim_state = BTRFS_TRIM_STATE_UNTRIMMED;
-+
-+	spin_unlock(&ctl->tree_lock);
-+}
-+
-+static void end_trimming_bitmap(struct btrfs_free_space *entry)
-+{
-+	if (btrfs_free_space_trimming_bitmap(entry))
-+		entry->trim_state = BTRFS_TRIM_STATE_TRIMMED;
-+}
-+
- static int trim_bitmaps(struct btrfs_block_group *block_group,
- 			u64 *total_trimmed, u64 start, u64 end, u64 minlen)
- {
-@@ -3344,16 +3388,33 @@ static int trim_bitmaps(struct btrfs_block_group *block_group,
- 		}
- 
- 		entry = tree_search_offset(ctl, offset, 1, 0);
--		if (!entry) {
-+		if (!entry || btrfs_free_space_trimmed(entry)) {
- 			spin_unlock(&ctl->tree_lock);
- 			mutex_unlock(&ctl->cache_writeout_mutex);
- 			next_bitmap = true;
- 			goto next;
- 		}
+ 		if (block_group->reserved || block_group->pinned ||
+ 		    block_group->used || block_group->ro ||
+-		    list_is_singular(&block_group->list)) {
++		    list_is_singular(&block_group->list) ||
++		    !async_trimmed) {
++			/* Requeue if we failed because of async discard. */
++			if (!async_trimmed)
++				btrfs_discard_queue_work(&fs_info->discard_ctl,
++							 block_group);
+ 			/*
+ 			 * We want to bail if we made new allocations or have
+ 			 * outstanding allocations in this block group.  We do
+@@ -1365,6 +1381,17 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
+ 		spin_unlock(&block_group->lock);
+ 		spin_unlock(&space_info->lock);
  
 +		/*
-+		 * Async discard bitmap trimming begins at by setting the start
-+		 * to be key.objectid and the offset_to_bitmap() aligns to the
-+		 * start of the bitmap.  This lets us know we are fully
-+		 * scanning the bitmap rather than only some portion of it.
++		 * The normal path here is an unused block group is passed here,
++		 * then trimming is handled in the transaction commit path.
++		 * Async discard interposes before this to do the trimming
++		 * before coming down the unused block group path as trimming
++		 * will no longer be done later in the transaction commit path.
 +		 */
-+		if (start == offset)
-+			entry->trim_state = BTRFS_TRIM_STATE_TRIMMING;
++		if (!async_trim_enabled &&
++		    btrfs_test_opt(fs_info, DISCARD_ASYNC))
++			goto flip_async;
 +
- 		bytes = minlen;
- 		ret2 = search_bitmap(ctl, entry, &start, &bytes, false);
- 		if (ret2 || start >= end) {
-+			/*
-+			 * This keeps the invariant that all bytes are trimmed
-+			 * if BTRFS_TRIM_STATE_TRIMMED is set on a bitmap.
-+			 */
-+			if (ret2 && !minlen)
-+				end_trimming_bitmap(entry);
-+			else
-+				entry->trim_state = BTRFS_TRIM_STATE_UNTRIMMED;
- 			spin_unlock(&ctl->tree_lock);
- 			mutex_unlock(&ctl->cache_writeout_mutex);
- 			next_bitmap = true;
-@@ -3362,6 +3423,7 @@ static int trim_bitmaps(struct btrfs_block_group *block_group,
+ 		/* DISCARD can flip during remount */
+ 		trimming = btrfs_test_opt(fs_info, DISCARD_SYNC);
  
- 		bytes = min(bytes, end - start);
- 		if (bytes < minlen) {
-+			entry->trim_state = BTRFS_TRIM_STATE_UNTRIMMED;
- 			spin_unlock(&ctl->tree_lock);
- 			mutex_unlock(&ctl->cache_writeout_mutex);
- 			goto next;
-@@ -3379,18 +3441,21 @@ static int trim_bitmaps(struct btrfs_block_group *block_group,
- 
- 		ret = do_trimming(block_group, total_trimmed, start, bytes,
- 				  start, bytes, &trim_entry);
--		if (ret)
-+		if (ret) {
-+			reset_trimming_bitmap(ctl, offset);
- 			break;
-+		}
- next:
- 		if (next_bitmap) {
- 			offset += BITS_PER_BITMAP * ctl->unit;
-+			start = offset;
- 		} else {
- 			start += bytes;
--			if (start >= offset + BITS_PER_BITMAP * ctl->unit)
--				offset += BITS_PER_BITMAP * ctl->unit;
- 		}
- 
- 		if (fatal_signal_pending(current)) {
-+			if (start != offset)
-+				reset_trimming_bitmap(ctl, offset);
- 			ret = -ERESTARTSYS;
- 			break;
- 		}
-@@ -3444,6 +3509,7 @@ void btrfs_put_block_group_trimming(struct btrfs_block_group *block_group)
- int btrfs_trim_block_group(struct btrfs_block_group *block_group,
- 			   u64 *trimmed, u64 start, u64 end, u64 minlen)
- {
-+	struct btrfs_free_space_ctl *ctl = block_group->free_space_ctl;
- 	int ret;
- 
- 	*trimmed = 0;
-@@ -3461,6 +3527,9 @@ int btrfs_trim_block_group(struct btrfs_block_group *block_group,
- 		goto out;
- 
- 	ret = trim_bitmaps(block_group, trimmed, start, end, minlen);
-+	/* If we ended in the middle of a bitmap, reset the trimming flag. */
-+	if (end % (BITS_PER_BITMAP * ctl->unit))
-+		reset_trimming_bitmap(ctl, offset_to_bitmap(ctl, end));
- out:
- 	btrfs_put_block_group_trimming(block_group);
- 	return ret;
-@@ -3645,6 +3714,7 @@ int test_add_free_space_entry(struct btrfs_block_group *cache,
- 	struct btrfs_free_space_ctl *ctl = cache->free_space_ctl;
- 	struct btrfs_free_space *info = NULL, *bitmap_info;
- 	void *map = NULL;
-+	enum btrfs_trim_state trim_state = BTRFS_TRIM_STATE_TRIMMED;
- 	u64 bytes_added;
- 	int ret;
- 
-@@ -3686,7 +3756,8 @@ int test_add_free_space_entry(struct btrfs_block_group *cache,
- 		info = NULL;
+@@ -1409,6 +1436,13 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
+ 		spin_lock(&fs_info->unused_bgs_lock);
  	}
- 
--	bytes_added = add_bytes_to_bitmap(ctl, bitmap_info, offset, bytes);
-+	bytes_added = add_bytes_to_bitmap(ctl, bitmap_info, offset, bytes,
-+					  trim_state);
- 
- 	bytes -= bytes_added;
- 	offset += bytes_added;
-diff --git a/fs/btrfs/free-space-cache.h b/fs/btrfs/free-space-cache.h
-index 66c073f854dc..29d16f58b40b 100644
---- a/fs/btrfs/free-space-cache.h
-+++ b/fs/btrfs/free-space-cache.h
-@@ -8,10 +8,16 @@
- 
- /*
-  * This is the trim state of an extent or bitmap.
-+ *
-+ * BTRFS_TRIM_STATE_TRIMMING is special and used to maintain the state of a
-+ * bitmap as we may need several trims to fully trim a single bitmap entry.
-+ * This is reset should any free space other than trimmed space is added to the
-+ * bitmap.
-  */
- enum btrfs_trim_state {
- 	BTRFS_TRIM_STATE_UNTRIMMED,
- 	BTRFS_TRIM_STATE_TRIMMED,
-+	BTRFS_TRIM_STATE_TRIMMING,
- };
- 
- struct btrfs_free_space {
-@@ -29,6 +35,12 @@ static inline bool btrfs_free_space_trimmed(struct btrfs_free_space *info)
- 	return (info->trim_state == BTRFS_TRIM_STATE_TRIMMED);
+ 	spin_unlock(&fs_info->unused_bgs_lock);
++	return;
++
++flip_async:
++	btrfs_end_transaction(trans);
++	mutex_unlock(&fs_info->delete_unused_bgs_mutex);
++	btrfs_put_block_group(block_group);
++	btrfs_discard_punt_unused_bgs_list(fs_info);
  }
  
-+static inline bool btrfs_free_space_trimming_bitmap(
-+					    struct btrfs_free_space *info)
-+{
-+	return (info->trim_state == BTRFS_TRIM_STATE_TRIMMING);
+ void btrfs_mark_bg_unused(struct btrfs_block_group *bg)
+@@ -1613,6 +1647,8 @@ static struct btrfs_block_group *btrfs_create_block_group_cache(
+ 	cache->full_stripe_len = btrfs_full_stripe_len(fs_info, start);
+ 	set_free_space_tree_thresholds(cache);
+ 
++	cache->discard_index = BTRFS_DISCARD_INDEX_UNUSED;
++
+ 	atomic_set(&cache->count, 1);
+ 	spin_lock_init(&cache->lock);
+ 	init_rwsem(&cache->data_rwsem);
+@@ -1779,7 +1815,11 @@ static int read_one_block_group(struct btrfs_fs_info *info,
+ 		inc_block_group_ro(cache, 1);
+ 	} else if (cache->used == 0) {
+ 		ASSERT(list_empty(&cache->bg_list));
+-		btrfs_mark_bg_unused(cache);
++		if (btrfs_test_opt(info, DISCARD_ASYNC))
++			btrfs_add_to_discard_unused_list(&info->discard_ctl,
++							 cache);
++		else
++			btrfs_mark_bg_unused(cache);
+ 	}
+ 	return 0;
+ error:
+@@ -2742,8 +2782,10 @@ int btrfs_update_block_group(struct btrfs_trans_handle *trans,
+ 		 * dirty list to avoid races between cleaner kthread and space
+ 		 * cache writeout.
+ 		 */
+-		if (!alloc && old_val == 0)
+-			btrfs_mark_bg_unused(cache);
++		if (!alloc && old_val == 0) {
++			if (!btrfs_test_opt(info, DISCARD_ASYNC))
++				btrfs_mark_bg_unused(cache);
++		}
+ 
+ 		btrfs_put_block_group(cache);
+ 		total -= num_bytes;
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index d5ce8054f074..68340d65a8b6 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -443,9 +443,14 @@ struct btrfs_full_stripe_locks_tree {
+ /* Discard control. */
+ /*
+  * Async discard uses multiple lists to differentiate the discard filter
+- * parameters.
++ * parameters.  Index 0 is for completely free block groups where we need to
++ * ensure the entire block group is trimmed without being lossy.  Indices
++ * afterwards represent monotonically decreasing discard filter sizes to
++ * prioritize what should be discarded next.
+  */
+-#define BTRFS_NR_DISCARD_LISTS		1
++#define BTRFS_NR_DISCARD_LISTS		2
++#define BTRFS_DISCARD_INDEX_UNUSED	0
++#define BTRFS_DISCARD_INDEX_START	1
+ 
+ struct btrfs_discard_ctl {
+ 	struct workqueue_struct *discard_workers;
+diff --git a/fs/btrfs/discard.c b/fs/btrfs/discard.c
+index 15d54de3d682..e0f48d6de9a1 100644
+--- a/fs/btrfs/discard.c
++++ b/fs/btrfs/discard.c
+@@ -26,13 +26,33 @@ void btrfs_add_to_discard_list(struct btrfs_discard_ctl *discard_ctl,
+ {
+ 	spin_lock(&discard_ctl->lock);
+ 
+-	if (list_empty(&block_group->discard_list))
++	if (list_empty(&block_group->discard_list) ||
++	    block_group->discard_index == BTRFS_DISCARD_INDEX_UNUSED) {
++		if (block_group->discard_index == BTRFS_DISCARD_INDEX_UNUSED)
++			block_group->discard_index = BTRFS_DISCARD_INDEX_START;
+ 		block_group->discard_eligible_time = (ktime_get_ns() +
+ 						      BTRFS_DISCARD_DELAY);
++	}
+ 
+ 	list_move_tail(&block_group->discard_list,
+ 		       btrfs_get_discard_list(discard_ctl, block_group));
+ 
++spin_unlock(&discard_ctl->lock);
 +}
 +
- struct btrfs_free_space_ctl {
- 	spinlock_t tree_lock;
- 	struct rb_root free_space_offset;
++void btrfs_add_to_discard_unused_list(struct btrfs_discard_ctl *discard_ctl,
++				      struct btrfs_block_group *block_group)
++{
++	spin_lock(&discard_ctl->lock);
++
++	if (!list_empty(&block_group->discard_list))
++		list_del_init(&block_group->discard_list);
++
++	block_group->discard_index = BTRFS_DISCARD_INDEX_UNUSED;
++	block_group->discard_eligible_time = ktime_get_ns();
++	list_add_tail(&block_group->discard_list,
++		      &discard_ctl->discard_list[BTRFS_DISCARD_INDEX_UNUSED]);
++
+ 	spin_unlock(&discard_ctl->lock);
+ }
+ 
+@@ -151,7 +171,11 @@ void btrfs_discard_queue_work(struct btrfs_discard_ctl *discard_ctl,
+ 	    !btrfs_test_opt(block_group->fs_info, DISCARD_ASYNC))
+ 		return;
+ 
+-	btrfs_add_to_discard_list(discard_ctl, block_group);
++	if (block_group->used == 0)
++		btrfs_add_to_discard_unused_list(discard_ctl, block_group);
++	else
++		btrfs_add_to_discard_list(discard_ctl, block_group);
++
+ 	if (!delayed_work_pending(&discard_ctl->work))
+ 		btrfs_discard_schedule_work(discard_ctl, false);
+ }
+@@ -196,6 +220,30 @@ void btrfs_discard_schedule_work(struct btrfs_discard_ctl *discard_ctl,
+ 	spin_unlock(&discard_ctl->lock);
+ }
+ 
++/**
++ * btrfs_finish_discard_pass - determine next step of a block_group
++ * @discard_ctl: discard control
++ * @block_group: block_group of interest
++ *
++ * This determines the next step for a block group after it's finished going
++ * through a pass on a discard list.  If it is unused and fully trimmed, we can
++ * mark it unused and send it to the unused_bgs path.  Otherwise, pass it onto
++ * the appropriate filter list or let it fall off.
++ */
++static void btrfs_finish_discard_pass(struct btrfs_discard_ctl *discard_ctl,
++				      struct btrfs_block_group *block_group)
++{
++	remove_from_discard_list(discard_ctl, block_group);
++
++	if (block_group->used == 0) {
++		if (btrfs_is_free_space_trimmed(block_group))
++			btrfs_mark_bg_unused(block_group);
++		else
++			btrfs_add_to_discard_unused_list(discard_ctl,
++							 block_group);
++	}
++}
++
+ /**
+  * btrfs_discard_workfn - discard work function
+  * @work: work
+@@ -217,7 +265,7 @@ static void btrfs_discard_workfn(struct work_struct *work)
+ 	btrfs_trim_block_group(block_group, &trimmed, block_group->start,
+ 			       btrfs_block_group_end(block_group), 0);
+ 
+-	remove_from_discard_list(discard_ctl, block_group);
++	btrfs_finish_discard_pass(discard_ctl, block_group);
+ 
+ 	btrfs_discard_schedule_work(discard_ctl, false);
+ }
+@@ -238,6 +286,65 @@ bool btrfs_run_discard_work(struct btrfs_discard_ctl *discard_ctl)
+ 		test_bit(BTRFS_FS_DISCARD_RUNNING, &fs_info->flags));
+ }
+ 
++/**
++ * btrfs_discard_punt_unused_bgs_list - punt unused_bgs list to discard lists
++ * @fs_info: fs_info of interest
++ *
++ * The unused_bgs list needs to be punted to the discard lists because the
++ * order of operations is changed.  In the normal sychronous discard path, the
++ * block groups are trimmed via a single large trim in transaction commit.  This
++ * is ultimately what we are trying to avoid with asynchronous discard.  Thus,
++ * it must be done before going down the unused_bgs path.
++ */
++void btrfs_discard_punt_unused_bgs_list(struct btrfs_fs_info *fs_info)
++{
++	struct btrfs_block_group *block_group, *next;
++
++	spin_lock(&fs_info->unused_bgs_lock);
++
++	/* We enabled async discard, so punt all to the queue. */
++	list_for_each_entry_safe(block_group, next, &fs_info->unused_bgs,
++				 bg_list) {
++		list_del_init(&block_group->bg_list);
++		btrfs_add_to_discard_unused_list(&fs_info->discard_ctl,
++						 block_group);
++	}
++
++	spin_unlock(&fs_info->unused_bgs_lock);
++}
++
++/**
++ * btrfs_discard_purge_list - purge discard lists
++ * @discard_ctl: discard control
++ *
++ * If we are disabling async discard, we may have intercepted block groups that
++ * are completely free and ready for the unused_bgs path.  As discarding will
++ * now happen in transaction commit or not at all, we can safely mark the
++ * corresponding block groups as unused and they will be sent on their merry
++ * way to the unused_bgs list.
++ */
++static void btrfs_discard_purge_list(struct btrfs_discard_ctl *discard_ctl)
++{
++	struct btrfs_block_group *block_group, *next;
++	int i;
++
++	spin_lock(&discard_ctl->lock);
++
++	for (i = 0; i < BTRFS_NR_DISCARD_LISTS; i++) {
++		list_for_each_entry_safe(block_group, next,
++					 &discard_ctl->discard_list[i],
++					 discard_list) {
++			list_del_init(&block_group->discard_list);
++			spin_unlock(&discard_ctl->lock);
++			if (block_group->used == 0)
++				btrfs_mark_bg_unused(block_group);
++			spin_lock(&discard_ctl->lock);
++		}
++	}
++
++	spin_unlock(&discard_ctl->lock);
++}
++
+ void btrfs_discard_resume(struct btrfs_fs_info *fs_info)
+ {
+ 	if (!btrfs_test_opt(fs_info, DISCARD_ASYNC)) {
+@@ -245,6 +352,8 @@ void btrfs_discard_resume(struct btrfs_fs_info *fs_info)
+ 		return;
+ 	}
+ 
++	btrfs_discard_punt_unused_bgs_list(fs_info);
++
+ 	set_bit(BTRFS_FS_DISCARD_RUNNING, &fs_info->flags);
+ }
+ 
+@@ -270,4 +379,6 @@ void btrfs_discard_cleanup(struct btrfs_fs_info *fs_info)
+ {
+ 	btrfs_discard_stop(fs_info);
+ 	cancel_delayed_work_sync(&fs_info->discard_ctl.work);
++
++	btrfs_discard_purge_list(&fs_info->discard_ctl);
+ }
+diff --git a/fs/btrfs/discard.h b/fs/btrfs/discard.h
+index 439ca8c51877..b61ea684b48d 100644
+--- a/fs/btrfs/discard.h
++++ b/fs/btrfs/discard.h
+@@ -7,9 +7,13 @@ struct btrfs_fs_info;
+ struct btrfs_discard_ctl;
+ struct btrfs_block_group;
+ 
++/* List operations. */
+ void btrfs_add_to_discard_list(struct btrfs_discard_ctl *discard_ctl,
+ 			       struct btrfs_block_group *block_group);
++void btrfs_add_to_discard_unused_list(struct btrfs_discard_ctl *discard_ctl,
++				      struct btrfs_block_group *block_group);
+ 
++/* Work operations. */
+ void btrfs_discard_cancel_work(struct btrfs_discard_ctl *discard_ctl,
+ 			       struct btrfs_block_group *block_group);
+ void btrfs_discard_queue_work(struct btrfs_discard_ctl *discard_ctl,
+@@ -18,6 +22,8 @@ void btrfs_discard_schedule_work(struct btrfs_discard_ctl *discard_ctl,
+ 				 bool override);
+ bool btrfs_run_discard_work(struct btrfs_discard_ctl *discard_ctl);
+ 
++/* Setup/Cleanup operations. */
++void btrfs_discard_punt_unused_bgs_list(struct btrfs_fs_info *fs_info);
+ void btrfs_discard_resume(struct btrfs_fs_info *fs_info);
+ void btrfs_discard_stop(struct btrfs_fs_info *fs_info);
+ void btrfs_discard_init(struct btrfs_fs_info *fs_info);
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 72933996e743..55d3d139c113 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -2684,6 +2684,37 @@ void btrfs_remove_free_space_cache(struct btrfs_block_group *block_group)
+ 
+ }
+ 
++/**
++ * btrfs_is_free_space_trimmed - see if everything is trimmed
++ * @block_group: block_group of interest
++ *
++ * Walk @block_group's free space rb_tree to determine if everything is trimmed.
++ */
++bool btrfs_is_free_space_trimmed(struct btrfs_block_group *block_group)
++{
++	struct btrfs_free_space_ctl *ctl = block_group->free_space_ctl;
++	struct btrfs_free_space *info;
++	struct rb_node *node;
++	bool ret = true;
++
++	spin_lock(&ctl->tree_lock);
++	node = rb_first(&ctl->free_space_offset);
++
++	while (node) {
++		info = rb_entry(node, struct btrfs_free_space, offset_index);
++
++		if (!btrfs_free_space_trimmed(info)) {
++			ret = false;
++			break;
++		}
++
++		node = rb_next(node);
++	}
++
++	spin_unlock(&ctl->tree_lock);
++	return ret;
++}
++
+ u64 btrfs_find_space_for_alloc(struct btrfs_block_group *block_group,
+ 			       u64 offset, u64 bytes, u64 empty_size,
+ 			       u64 *max_extent_size)
+@@ -2770,6 +2801,9 @@ int btrfs_return_cluster_to_free_space(
+ 	ret = __btrfs_return_cluster_to_free_space(block_group, cluster);
+ 	spin_unlock(&ctl->tree_lock);
+ 
++	btrfs_discard_queue_work(&block_group->fs_info->discard_ctl,
++				 block_group);
++
+ 	/* finally drop our ref */
+ 	btrfs_put_block_group(block_group);
+ 	return ret;
+diff --git a/fs/btrfs/free-space-cache.h b/fs/btrfs/free-space-cache.h
+index 29d16f58b40b..49ff6d6f333b 100644
+--- a/fs/btrfs/free-space-cache.h
++++ b/fs/btrfs/free-space-cache.h
+@@ -117,6 +117,7 @@ int btrfs_remove_free_space(struct btrfs_block_group *block_group,
+ 			    u64 bytenr, u64 size);
+ void __btrfs_remove_free_space_cache(struct btrfs_free_space_ctl *ctl);
+ void btrfs_remove_free_space_cache(struct btrfs_block_group *block_group);
++bool btrfs_is_free_space_trimmed(struct btrfs_block_group *block_group);
+ u64 btrfs_find_space_for_alloc(struct btrfs_block_group *block_group,
+ 			       u64 offset, u64 bytes, u64 empty_size,
+ 			       u64 *max_extent_size);
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 21de630b0730..49b7afa38895 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -8,6 +8,7 @@
+ #include <linux/sched/mm.h>
+ #include <crypto/hash.h>
+ #include "ctree.h"
++#include "discard.h"
+ #include "volumes.h"
+ #include "disk-io.h"
+ #include "ordered-data.h"
+@@ -3659,7 +3660,11 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
+ 		if (!cache->removed && !cache->ro && cache->reserved == 0 &&
+ 		    cache->used == 0) {
+ 			spin_unlock(&cache->lock);
+-			btrfs_mark_bg_unused(cache);
++			if (btrfs_test_opt(fs_info, DISCARD_ASYNC))
++				btrfs_add_to_discard_unused_list(
++						&fs_info->discard_ctl, cache);
++			else
++				btrfs_mark_bg_unused(cache);
+ 		} else {
+ 			spin_unlock(&cache->lock);
+ 		}
 -- 
 2.17.1
 

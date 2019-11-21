@@ -2,55 +2,109 @@ Return-Path: <SRS0=heYa=ZN=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.7 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DFD74C432C0
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Nov 2019 12:03:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 21690C432C3
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Nov 2019 12:03:40 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id BEFF020855
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Nov 2019 12:03:38 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 03C9B20872
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Nov 2019 12:03:40 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726784AbfKUMDi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 21 Nov 2019 07:03:38 -0500
-Received: from mx2.suse.de ([195.135.220.15]:52378 "EHLO mx1.suse.de"
+        id S1726887AbfKUMDj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 21 Nov 2019 07:03:39 -0500
+Received: from mx2.suse.de ([195.135.220.15]:52390 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726197AbfKUMDh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 21 Nov 2019 07:03:37 -0500
+        id S1726343AbfKUMDi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 21 Nov 2019 07:03:38 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id D0023B18A;
-        Thu, 21 Nov 2019 12:03:36 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 3D412AFD4;
+        Thu, 21 Nov 2019 12:03:37 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 0/3] 3 misc patches
-Date:   Thu, 21 Nov 2019 14:03:28 +0200
-Message-Id: <20191121120331.29070-1-nborisov@suse.com>
+Subject: [PATCH 1/3] btrfs: Don't discard unwritten extents
+Date:   Thu, 21 Nov 2019 14:03:29 +0200
+Message-Id: <20191121120331.29070-2-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
+In-Reply-To: <20191121120331.29070-1-nborisov@suse.com>
+References: <20191121120331.29070-1-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Here are 3 misc patches. First one is an optimsation to prevent issuing discards
-for reserved but not written extents. The other 2 simply get rid of
-__btrfs_free_reserved_extent by moving its relevant parts to the two wrappers.
+All callers of btrfs_free_reserved_extent (respectively
+__btrfs_free_reserved_extent with in set to 0) pass in extents which
+have only been reserved but not yet written to. Namely,
 
-Nikolay Borisov (3):
-  btrfs: Don't discard unwritten extents
-  btrfs: Open code __btrfs_free_reserved_extent in
-    btrfs_free_reserved_extent
-  btrfs: Rename __btrfs_free_reserved_extent to
-    btrfs_pin_reserved_extent
+* In cow_file_range that function is called only if create_io_em fails or
+btrfs_add_ordered_extent fail, both of which happen _before_ any IO is
+submitted to the newly reserved range.
 
- fs/btrfs/ctree.h       |  4 ++--
- fs/btrfs/extent-tree.c | 44 ++++++++++++++++++------------------------
- fs/btrfs/inode.c       |  7 ++++++-
- fs/btrfs/tree-log.c    | 12 +++++-------
- 4 files changed, 32 insertions(+), 35 deletions(-)
+* In submit_compressed_extents the code flow is similar - out_free_reserve
+can be called only before btrfs_submit_compressed_write which is where
+any writes to the range could occur.
 
---
+* btrfs_new_extent_direct also calls btrfs_free_reserved_extent only
+if extent_map fails, before any IO is issued.
+
+* __btrfs_prealloc_file_range also calls btrfs_free_reserved_extent
+in case insertion of the metadata fails.
+
+* btrfs_alloc_tree_block again can only be called in case in-memory
+operations fail, before any IO is submitted.
+
+* btrfs_finish_ordered_io - this is the only caller where discarding
+the extent could have a material effect, since it can be called for
+an extent which was partially written.
+
+With this change the submission of discards is optimised since discards
+are now not being created for extents which are known to not have been
+touched on disk.
+
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
+ fs/btrfs/extent-tree.c | 2 --
+ fs/btrfs/inode.c       | 7 ++++++-
+ 2 files changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index fe0f33dd344d..613c7bbf5cbd 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4169,8 +4169,6 @@ static int __btrfs_free_reserved_extent(struct btrfs_fs_info *fs_info,
+ 		if (ret)
+ 			goto out;
+ 	} else {
+-		if (btrfs_test_opt(fs_info, DISCARD))
+-			ret = btrfs_discard_extent(fs_info, start, len, NULL);
+ 		btrfs_add_free_space(cache, start, len);
+ 		btrfs_free_reserved_bytes(cache, len, delalloc);
+ 		trace_btrfs_reserved_extent_free(fs_info, start, len);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 0ac0f5b33003..5d80fe030e79 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3250,10 +3250,15 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
+ 		if ((ret || !logical_len) &&
+ 		    clear_reserved_extent &&
+ 		    !test_bit(BTRFS_ORDERED_NOCOW, &ordered_extent->flags) &&
+-		    !test_bit(BTRFS_ORDERED_PREALLOC, &ordered_extent->flags))
++		    !test_bit(BTRFS_ORDERED_PREALLOC, &ordered_extent->flags)) {
+ 			btrfs_free_reserved_extent(fs_info,
+ 						   ordered_extent->start,
+ 						   ordered_extent->disk_len, 1);
++			if (ret && btrfs_test_opt(fs_info, DISCARD))
++				btrfs_discard_extent(fs_info,
++				ordered_extent->start, ordered_extent->disk_len,
++				NULL);
++		}
+ 	}
+ 
+ 
+-- 
 2.17.1
 

@@ -2,118 +2,77 @@ Return-Path: <SRS0=P1qN=ZO=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8DD81C432C0
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Nov 2019 06:27:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9210AC432C3
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Nov 2019 11:33:43 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 56A3020674
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Nov 2019 06:27:14 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1574404034;
-	bh=ixzM77mmAEzKa7tBc5NRii33XANhKZZ0LS4L+LzBBAE=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=lFeZujiCjGzRm2f40q9CS/aEeb1TtiA3D1sF+WEjyex2+AUhlQjZl/JTYCjqt7lZC
-	 2TVARpirv2sq1m1/ywsoIcj/pZu+CH/Hu2Law9tg3hPudur0FKryj3IjXBVytgEpyw
-	 yyypyk6YPzdUhNh/BCyjN1B+37Zn2lkLfzMTYA6E=
+	by mail.kernel.org (Postfix) with ESMTP id 6ECBF20679
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Nov 2019 11:33:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727339AbfKVG1N (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 22 Nov 2019 01:27:13 -0500
-Received: from mail.kernel.org ([198.145.29.99]:55092 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727754AbfKVFuc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Nov 2019 00:50:32 -0500
-Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 3AF2520717;
-        Fri, 22 Nov 2019 05:50:31 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1574401831;
-        bh=ixzM77mmAEzKa7tBc5NRii33XANhKZZ0LS4L+LzBBAE=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=SL6V17rwLHmPR2f1WhIsWGInhUj1ukWuEfQ3pVFEX5j8u4YgsX5PJ+7J0eaWsfmcP
-         u20EKvGtl8PdeX/xH1K7nxPYk0yv5w6Kbejc5I5bty5Iet6LalReFqqAqonEax3kOt
-         AYRKgdNLXKp2YiNcDr/Ot06QeuvQ6Nl5uR5zzlhE=
-From:   Sasha Levin <sashal@kernel.org>
-To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Anand Jain <anand.jain@oracle.com>,
-        David Sterba <dsterba@suse.com>,
-        Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 4.19 073/219] btrfs: dev-replace: set result code of cancel by status of scrub
-Date:   Fri, 22 Nov 2019 00:46:45 -0500
-Message-Id: <20191122054911.1750-66-sashal@kernel.org>
-X-Mailer: git-send-email 2.20.1
-In-Reply-To: <20191122054911.1750-1-sashal@kernel.org>
+        id S1727225AbfKVLdj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 22 Nov 2019 06:33:39 -0500
+Received: from mx2.suse.de ([195.135.220.15]:46284 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726563AbfKVLdj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 22 Nov 2019 06:33:39 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 36C23AF19;
+        Fri, 22 Nov 2019 11:33:37 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 38C16DA898; Fri, 22 Nov 2019 12:33:37 +0100 (CET)
+Date:   Fri, 22 Nov 2019 12:33:37 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Sasha Levin <sashal@kernel.org>
+Cc:     linux-kernel@vger.kernel.org, stable@vger.kernel.org,
+        Nikolay Borisov <nborisov@suse.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        Anand Jain <anand.jain@oracle.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH AUTOSEL 4.19 071/219] btrfs: Check for missing device
+ before bio submission in btrfs_map_bio
+Message-ID: <20191122113337.GB3001@suse.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Sasha Levin <sashal@kernel.org>,
+        linux-kernel@vger.kernel.org, stable@vger.kernel.org,
+        Nikolay Borisov <nborisov@suse.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        Anand Jain <anand.jain@oracle.com>, David Sterba <dsterba@suse.com>,
+        linux-btrfs@vger.kernel.org
 References: <20191122054911.1750-1-sashal@kernel.org>
+ <20191122054911.1750-64-sashal@kernel.org>
 MIME-Version: 1.0
-X-stable: review
-X-Patchwork-Hint: Ignore
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20191122054911.1750-64-sashal@kernel.org>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Anand Jain <anand.jain@oracle.com>
+On Fri, Nov 22, 2019 at 12:46:43AM -0500, Sasha Levin wrote:
+> From: Nikolay Borisov <nborisov@suse.com>
+> 
+> [ Upstream commit fc8a168aa9ab1680c2bd52bf9db7c994e0f2524f ]
+> 
+> Before btrfs_map_bio submits all stripe bios it does a number of checks
+> to ensure the device for every stripe is present. However, it doesn't do
+> a DEV_STATE_MISSING check, instead this is relegated to the lower level
+> btrfs_schedule_bio (in the async submission case, sync submission
+> doesn't check DEV_STATE_MISSING at all). Additionally
+> btrfs_schedule_bios does the duplicate device->bdev check which has
+> already been performed in btrfs_map_bio.
+> 
+> This patch moves the DEV_STATE_MISSING check in btrfs_map_bio and
+> removes the duplicate device->bdev check. Doing so ensures that no bio
+> cloning/submission happens for both async/sync requests in the face of
+> missing device. This makes the async io submission path slightly shorter
+> in terms of instruction count. No functional changes.
+                                 ^^^^^^^^^^^^^^^^^^^^^
 
-[ Upstream commit b47dda2ef6d793b67fd5979032dcd106e3f0a5c9 ]
-
-The device-replace needs to check the result code of the scrub workers
-in btrfs_dev_replace_cancel and distinguish if successful cancel
-operation and when the there was no operation running.
-
-If btrfs_scrub_cancel() fails, return
-BTRFS_IOCTL_DEV_REPLACE_RESULT_NOT_STARTED so that user can try
-to cancel the replace again.
-
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
-Reviewed-by: David Sterba <dsterba@suse.com>
-[ update changelog ]
-Signed-off-by: David Sterba <dsterba@suse.com>
-Signed-off-by: Sasha Levin <sashal@kernel.org>
----
- fs/btrfs/dev-replace.c | 21 ++++++++++++++-------
- 1 file changed, 14 insertions(+), 7 deletions(-)
-
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 23b13fbecdc22..96763805787ed 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -810,16 +810,23 @@ int btrfs_dev_replace_cancel(struct btrfs_fs_info *fs_info)
- 		btrfs_dev_replace_write_unlock(dev_replace);
- 		break;
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_STARTED:
--		result = BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_ERROR;
- 		tgt_device = dev_replace->tgtdev;
- 		src_device = dev_replace->srcdev;
- 		btrfs_dev_replace_write_unlock(dev_replace);
--		btrfs_scrub_cancel(fs_info);
--		/* btrfs_dev_replace_finishing() will handle the cleanup part */
--		btrfs_info_in_rcu(fs_info,
--			"dev_replace from %s (devid %llu) to %s canceled",
--			btrfs_dev_name(src_device), src_device->devid,
--			btrfs_dev_name(tgt_device));
-+		ret = btrfs_scrub_cancel(fs_info);
-+		if (ret < 0) {
-+			result = BTRFS_IOCTL_DEV_REPLACE_RESULT_NOT_STARTED;
-+		} else {
-+			result = BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_ERROR;
-+			/*
-+			 * btrfs_dev_replace_finishing() will handle the
-+			 * cleanup part
-+			 */
-+			btrfs_info_in_rcu(fs_info,
-+				"dev_replace from %s (devid %llu) to %s canceled",
-+				btrfs_dev_name(src_device), src_device->devid,
-+				btrfs_dev_name(tgt_device));
-+		}
- 		break;
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_SUSPENDED:
- 		/*
--- 
-2.20.1
-
+This should be a strong indication that the patch is not suitable for
+autosel/stable, please remove it. Thanks.

@@ -7,45 +7,46 @@ X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 66141C432C0
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Nov 2019 06:27:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 758D1C432C0
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Nov 2019 06:27:12 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2EDB820409
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Nov 2019 06:27:02 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 401BB20674
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Nov 2019 06:27:12 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1574404022;
-	bh=DY+CV//UhqoXHgRjapHeX99xlDAoyM3iyNDRbwIt9rQ=;
+	s=default; t=1574404032;
+	bh=ak0oafLdw9C8TV8kEB7ReTBdXAP8KMKwZSruFOSqZQo=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=UQqbE3bMCEnapkHNQuQKZiwfTH9SV47cjsVrx1IsgxL3rulPGvIgItwE0aUMfOL6I
-	 GlQN847Ybn4ZH8szxR0zE8gBD7pr0BEPWt63d0UFEf/T6MOwflzlyKzVZfOdSh5aHw
-	 DptUAoKFiFCHuSPjLJDRirRtu76YrIZw4oNerOtE=
+	b=Ggg/bc9EPkOzKgxqbITH+B9Rcwvm3SWmtfypDdULtOiktTzA7q2Y7CGpwgUZlrXF2
+	 RgvkNxLJGno8EAYjjen+fseToLoB8P/W/x0N0ki6MFIGhnQM74B9AbEROZToUtqy5O
+	 vr8GPbkYTpU535v3efmF0fOLy3bZRnflMcLKJvDo=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727785AbfKVFuf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 22 Nov 2019 00:50:35 -0500
-Received: from mail.kernel.org ([198.145.29.99]:55206 "EHLO mail.kernel.org"
+        id S1727762AbfKVFuc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 22 Nov 2019 00:50:32 -0500
+Received: from mail.kernel.org ([198.145.29.99]:55076 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727771AbfKVFuf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Nov 2019 00:50:35 -0500
+        id S1727743AbfKVFub (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 22 Nov 2019 00:50:31 -0500
 Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 7E4522072D;
-        Fri, 22 Nov 2019 05:50:33 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 1800C2071B;
+        Fri, 22 Nov 2019 05:50:30 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1574401834;
-        bh=DY+CV//UhqoXHgRjapHeX99xlDAoyM3iyNDRbwIt9rQ=;
+        s=default; t=1574401830;
+        bh=ak0oafLdw9C8TV8kEB7ReTBdXAP8KMKwZSruFOSqZQo=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=iMeh4Zybp2bnb87j2YD6G39j5LqggBZkaBfOqjARVXxUgXV3ezh4bck2dL9MNmUt7
-         BOs6yhhUplKLFS/h6NIzENQ+4U/dXnnDFYpvI1W6AyLmyI2qmrcXoOrrr3iDiJZ900
-         GztHdXBIbaAhKBN5TY58i4NYbmfRgAjV8LTlPy8E=
+        b=uw4HWBmQK2KhYnFeV8N5eSq/lPQnl6fNVBxCVnbmr3cZMUkxbn9LS+dfDzegh51He
+         6hb2R+6uxVQptECpME7Jd50cPlZ2HnxUXMdH67tsEaAXwTRm6iH4mMn8n0lCrP1umI
+         ujEoUblDsZlfxjpVDlBORzRJ6v9468T2P7o8fEV4=
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Josef Bacik <jbacik@fb.com>, Nikolay Borisov <nborisov@suse.com>,
+Cc:     Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
+        Nikolay Borisov <nborisov@suse.com>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 4.19 075/219] btrfs: only track ref_heads in delayed_ref_updates
-Date:   Fri, 22 Nov 2019 00:46:47 -0500
-Message-Id: <20191122054911.1750-68-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 4.19 072/219] btrfs: fix ncopies raid_attr for RAID56
+Date:   Fri, 22 Nov 2019 00:46:44 -0500
+Message-Id: <20191122054911.1750-65-sashal@kernel.org>
 X-Mailer: git-send-email 2.20.1
 In-Reply-To: <20191122054911.1750-1-sashal@kernel.org>
 References: <20191122054911.1750-1-sashal@kernel.org>
@@ -58,49 +59,43 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Josef Bacik <jbacik@fb.com>
+From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
 
-[ Upstream commit 158ffa364bf723fa1ef128060646d23dc3942994 ]
+[ Upstream commit da612e31aee51bd13231c78a47c714b543bd3ad8 ]
 
-We use this number to figure out how many delayed refs to run, but
-__btrfs_run_delayed_refs really only checks every time we need a new
-delayed ref head, so we always run at least one ref head completely no
-matter what the number of items on it.  Fix the accounting to only be
-adjusted when we add/remove a ref head.
-
-In addition to using this number to limit the number of delayed refs
-run, a future patch is also going to use it to calculate the amount of
-space required for delayed refs space reservation.
+RAID5 and RAID6 profile store one copy of the data, not 2 or 3. These
+values are not yet used anywhere so there's no change.
 
 Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-Signed-off-by: Josef Bacik <jbacik@fb.com>
+Signed-off-by: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
- fs/btrfs/delayed-ref.c | 3 ---
- 1 file changed, 3 deletions(-)
+ fs/btrfs/volumes.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index 62ff545ba1f71..7e5c81e80e15d 100644
---- a/fs/btrfs/delayed-ref.c
-+++ b/fs/btrfs/delayed-ref.c
-@@ -234,8 +234,6 @@ static inline void drop_delayed_ref(struct btrfs_trans_handle *trans,
- 	ref->in_tree = 0;
- 	btrfs_put_delayed_ref(ref);
- 	atomic_dec(&delayed_refs->num_entries);
--	if (trans->delayed_ref_updates)
--		trans->delayed_ref_updates--;
- }
- 
- static bool merge_ref(struct btrfs_trans_handle *trans,
-@@ -446,7 +444,6 @@ static int insert_delayed_ref(struct btrfs_trans_handle *trans,
- 	if (ref->action == BTRFS_ADD_DELAYED_REF)
- 		list_add_tail(&ref->add_list, &href->ref_add_list);
- 	atomic_inc(&root->num_entries);
--	trans->delayed_ref_updates++;
- 	spin_unlock(&href->lock);
- 	return ret;
- }
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index f84c18e86c816..5bbcdcff68a9e 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -96,7 +96,7 @@ const struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
+ 		.devs_min	= 2,
+ 		.tolerated_failures = 1,
+ 		.devs_increment	= 1,
+-		.ncopies	= 2,
++		.ncopies	= 1,
+ 		.raid_name	= "raid5",
+ 		.bg_flag	= BTRFS_BLOCK_GROUP_RAID5,
+ 		.mindev_error	= BTRFS_ERROR_DEV_RAID5_MIN_NOT_MET,
+@@ -108,7 +108,7 @@ const struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
+ 		.devs_min	= 3,
+ 		.tolerated_failures = 2,
+ 		.devs_increment	= 1,
+-		.ncopies	= 3,
++		.ncopies	= 1,
+ 		.raid_name	= "raid6",
+ 		.bg_flag	= BTRFS_BLOCK_GROUP_RAID6,
+ 		.mindev_error	= BTRFS_ERROR_DEV_RAID6_MIN_NOT_MET,
 -- 
 2.20.1
 

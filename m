@@ -2,118 +2,112 @@ Return-Path: <SRS0=+PHC=ZQ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.2 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+X-Spam-Status: No, score=-0.7 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=unavailable
-	autolearn_force=no version=3.4.0
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 99A8FC43215
-	for <linux-btrfs@archiver.kernel.org>; Sun, 24 Nov 2019 16:15:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 448D8C432C3
+	for <linux-btrfs@archiver.kernel.org>; Sun, 24 Nov 2019 19:09:59 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 7423220828
-	for <linux-btrfs@archiver.kernel.org>; Sun, 24 Nov 2019 16:15:46 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 186012075E
+	for <linux-btrfs@archiver.kernel.org>; Sun, 24 Nov 2019 19:09:59 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="fJrDcJgS"
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="A+qrGCzn"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726772AbfKXQPp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 24 Nov 2019 11:15:45 -0500
-Received: from mail-pg1-f194.google.com ([209.85.215.194]:36494 "EHLO
-        mail-pg1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726752AbfKXQPp (ORCPT
+        id S1726940AbfKXTJ6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 24 Nov 2019 14:09:58 -0500
+Received: from mail-ed1-f49.google.com ([209.85.208.49]:45739 "EHLO
+        mail-ed1-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726861AbfKXTJ6 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 24 Nov 2019 11:15:45 -0500
-Received: by mail-pg1-f194.google.com with SMTP id k13so5848734pgh.3;
-        Sun, 24 Nov 2019 08:15:45 -0800 (PST)
+        Sun, 24 Nov 2019 14:09:58 -0500
+Received: by mail-ed1-f49.google.com with SMTP id b5so10435979eds.12
+        for <linux-btrfs@vger.kernel.org>; Sun, 24 Nov 2019 11:09:56 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
-        h=date:from:to:cc:subject:message-id:references:mime-version
-         :content-disposition:in-reply-to:user-agent;
-        bh=HEMyPYslSRvsQaFXYqP66gozSXb19Xey/UqHovRaLu8=;
-        b=fJrDcJgSc1WTy5HQBPeIr8aPegFFPyTOdu0KgMG+/z0VEyS5VnAXSznzKL4IZrdeLe
-         +NHGARfSHN6X/MRnaU+fQkQtbYhy/KQBdMlAn4J7PjaxlUs1ycKqwQObCIwybHopFSGz
-         57zwBDJk/kFgsLV+jd40aofmzabQ1A3PgdbHxwKTcKM7uIcMkGSYzGEx6xrTgnk9kxPE
-         G12q5tbtHSXZrmE2W6GucY0b3Wqsp10dvpYuZIyOJqzU1NdAbAQgtFcmG4S5AujCt30g
-         /UQUoY1E41RNxNo6bw+BHgNRg/PyNeA4DLFdStC19k9I47v0NKGaaoS2XlMId6fWDvhS
-         AB9w==
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to;
+        bh=YCMNI1tTcZeYS/7ngT3LL90z4mQr0dBdwZCLMt7VkkY=;
+        b=A+qrGCzn8VIwbLy4aHNJN5nDTshIuY4rZEdMqxXuh8YL6Spdy1ReVwnjeEqUSwcCm8
+         /SAgbLB2PY95gsPrtKM7aAan30vZLMRr1aDdaHKzurVQ6R+/G99Qy+UhYzvY8u2J2BKt
+         KyzI8ZxmMZ3mhW8grWIoQG/hpVoV3vFDbWxCNoUwi15qnjtzBccOryIVmlcXagzJ8XxO
+         cF2K0dGp4gy+tIssI0mNu2Gchcn5Djgm/y4Lwv5jOWSgYtMi+5Ip1IkfeyNgblq7DKss
+         5xldEv3gP8paF8/rV6QRLFu8vMUJdrq2CpCG6ZFqiYHbCpXL83er4IOMkw2QXg0gkmFW
+         Uuzw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
-         :mime-version:content-disposition:in-reply-to:user-agent;
-        bh=HEMyPYslSRvsQaFXYqP66gozSXb19Xey/UqHovRaLu8=;
-        b=a3SI6ayxqwqBlq6uE1cU/GEfwg4QOxQ16UPLeN+xoD8hc8chMQdOnsMdqr1b+uoWcH
-         pUDjdueg1bw3EipgPlD0ZI2Y2pqNosiqcDTYe/um6kQ1ePrQBilgQgdR03QP291+81eD
-         J2SiOueSiTNjAmfUKMqVkRicJgKKkUCWTpM2xROgvQFnzXicdKVbuCXvSfm9Sf/8wKXh
-         qv2kTqYLqN2HP7gRf68a9rPMp1+bkZJd4oI3vRJv+AgSRkLBFSrJ6qTfB6K0hHQnDHaH
-         cI1AJexvMWMcymooVRYloNUkuV2Cs5uOaDXuTG+UsbqihczKi8UWoElG5hRLb8wG5HmO
-         mRQQ==
-X-Gm-Message-State: APjAAAXF2ONWO99f6jXju/558tHWFdx5Lok//igOqNzYY6uZVqXP53QS
-        ZM/yQ0AurpQ7rxxv7RsSLWY=
-X-Google-Smtp-Source: APXvYqyHW3/DCFWX39ZnKWIMeT1OYEkL2J5DkWbPLvQvvYpz8ESIPyJLa6835vFjAM2LeiQwcYBhrA==
-X-Received: by 2002:aa7:86c2:: with SMTP id h2mr29512432pfo.248.1574612144782;
-        Sun, 24 Nov 2019 08:15:44 -0800 (PST)
-Received: from localhost ([178.128.102.47])
-        by smtp.gmail.com with ESMTPSA id j186sm4941960pfg.161.2019.11.24.08.15.43
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sun, 24 Nov 2019 08:15:44 -0800 (PST)
-Date:   Mon, 25 Nov 2019 00:15:38 +0800
-From:   Eryu Guan <guaneryu@gmail.com>
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] fstests: common: Keep $seqres.dmesg in $RESULT_DIR
-Message-ID: <20191124161538.GG8664@desktop>
-References: <20191113065938.34720-1-wqu@suse.com>
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to;
+        bh=YCMNI1tTcZeYS/7ngT3LL90z4mQr0dBdwZCLMt7VkkY=;
+        b=Vw+//5KBVUDNSJhio8uIdFcjotQ2P5m1LYrc36iFkqWbAKK6AGpp3m9/N4EcT0zaw9
+         HxkzIxYG6odEPUvvbTZKdm7buGD9+Ruj5anpOHVIsid/Q8Ui8w78eFcLK0bp8zIK0Jip
+         NGUFcBLxgG/YtuAZKNN/o957/fss1dtLjy9mKmV16Dpyq7HHKpaLFBUoBJZbdJ5743k+
+         kp2BfU3kmFsqZSHF0Q+40aueHQe36IKgAbVCjxumZk54OhLdGNSwsL66kKXZZUYoHop5
+         35VWUQH74DYJyCYEJ2oxDwFLV5NaxcB6fI4Lte086YS/i2Vr8cAgmEvVZewZyy4ei1vE
+         8vKw==
+X-Gm-Message-State: APjAAAV2fBYVyZTF4ZHati4iRx3sbIHYQYUKLugMCFyHvc54lDDuiQzB
+        0DQoKYBmFWkwqCFtyJuIb9o77GuOozmswTnObPzYuAI=
+X-Google-Smtp-Source: APXvYqyv7RopxpAPa5JnGyf6zhZvL4oXwoK+1HbY+Mr/qHSjBXg+7QLuN7/dw6+2oRTXAne5YAt9nQseFAIasrce1M4=
+X-Received: by 2002:a17:906:6043:: with SMTP id p3mr33647300ejj.103.1574622595466;
+ Sun, 24 Nov 2019 11:09:55 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20191113065938.34720-1-wqu@suse.com>
-User-Agent: Mutt/1.12.1 (2019-06-15)
+References: <20191112183425.GA1257@tik.uni-stuttgart.de> <7f628741-b32e-24dc-629f-97338fde3d16@googlemail.com>
+ <CAKbQEqGOXNhHUSdHQyjQDijh3ezVK-QZgg7dK5LJJNUNqRiHpg@mail.gmail.com>
+ <3e5cd446-3527-17ef-9ab8-d6ad01d740d0@gmx.com> <CAKbQEqFCAYq7Cy6D-x3C8qWvf6SusjkTbLi531AMY3QAakrn6w@mail.gmail.com>
+ <4544ecff-b70e-09fb-6fd3-e2c03d848c1c@googlemail.com> <CAKbQEqFELp0TWzM+K9TqAwywYBxX_3jXy0rz6tx9mNXyKEF02A@mail.gmail.com>
+ <2b0f68d6-6d27-2f14-0b44-8a40abad6542@googlemail.com> <CAKbQEqFYhQBLK83uxp1gS9WNbTVkr535LvKyBbc=6ZCstmGP3Q@mail.gmail.com>
+ <d362cbc6-2138-2efc-00d2-729549a03886@gmx.com> <CAKbQEqG362x12PyDUjiz96kGn15xZY_PRdAknS60kKvDDkKktw@mail.gmail.com>
+ <75349379-56b2-7381-4201-dbf53e7a111b@gmx.com>
+In-Reply-To: <75349379-56b2-7381-4201-dbf53e7a111b@gmx.com>
+From:   Christian Pernegger <pernegger@gmail.com>
+Date:   Sun, 24 Nov 2019 20:09:18 +0100
+Message-ID: <CAKbQEqGoJcP9isUVW479wJMeXa=nNPdU_buNVRFK07LOn8D6Vg@mail.gmail.com>
+Subject: Re: freezes during snapshot creation/deletion -- to be expected?
+ (Was: Re: btrfs based backup?)
+To:     linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Nov 13, 2019 at 02:59:38PM +0800, Qu Wenruo wrote:
-> Currently fstests will remove $seqres.dmesg if nothing wrong happened.
-> It saves some space, but sometimes it may not provide good enough
-> history for developers to check.
-> E.g. some unexpected dmesg from fs, but not serious enough to be caught
-> by current filter.
-> 
-> So instead of deleting the ordinary $seqres.dmesg, just keep them, so
-> we can archive them for later review.
-> 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+Am So., 24. Nov. 2019 um 01:38 Uhr schrieb Qu Wenruo <quwenruo.btrfs@gmx.com>:
+> In short, unless you really need to know how many bytes each snapshots
+> really takes, then disable qgroup.
+>
+> And BTW, for "many" subvolumes/snapshots, I guess we mean 20.
+> 200 is already prone to cause problem, not only qgroups, but also send.
+>
+> So it's also recommended to reduce the number of snapshots.
 
-This looks fine to me, but it causes more disk space consumption and may
-eat all rootfs space quickly and unexpectedly.
+I've disabled qgroups for now, we'll see how that goes. These are
+personal desktops, they would have been nice to have, that's all.
+Sadly that means that they probably won't work on any storage setup
+complex enough for them to be really useful, either, yet.
+If btrfs scales so badly with the number of subvolumes that having >20
+at a time should be avoided, doesn't that kill a lot of interesting
+use-cases? My "time machine" desktop setup, certainly, but anything
+with a couple of users or VMs would chew through that 20 pretty
+quickly, even before snapshots. Which leaves the LVM use-case
+(snapshot, backup the snapshot, delete the snapshot).
 
-I suggest we add an option to control the behavior, and default behavior
-is to delete the dmesg file.
+> The slowdown happens in commit transaction, and with commit transaction,
+> a lot of operation is blocked until current transaction is committed.
+>
+> That's why it blocks everything.
+>
+> We had tried our best to reduce the impact, but deletion is still a big
+> problem, as it can cause tons of extents to change their owner, thus
+> cause the problem.
 
-Thanks,
-Eryu
+Sure, but why does it *have to* block? Couldn't the intent to delete
+the subvolume be committed, the metadata changes / actual deletion
+happen at leisure? Yes, if qgroups are on, then the qgroup info will
+be behind, but so what? At least I think that lax/lazy qgroups would
+be a nice option to have.
+Also, I still don't get why disabling qgroups, reenabling them and
+doing a full rescan is lightning fast (and non-blocking), while just
+leaving them on results in the observed behaviour.
 
-> ---
->  common/rc | 4 +---
->  1 file changed, 1 insertion(+), 3 deletions(-)
-> 
-> diff --git a/common/rc b/common/rc
-> index b988e912..59a339a6 100644
-> --- a/common/rc
-> +++ b/common/rc
-> @@ -3625,10 +3625,8 @@ _check_dmesg()
->  	if [ $? -eq 0 ]; then
->  		_dump_err "_check_dmesg: something found in dmesg (see $seqres.dmesg)"
->  		return 1
-> -	else
-> -		rm -f $seqres.dmesg
-> -		return 0
->  	fi
-> +	return 0
->  }
->  
->  # capture the kmemleak report
-> -- 
-> 2.23.0
-> 
+Cheers,
+C.

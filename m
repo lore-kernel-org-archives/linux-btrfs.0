@@ -7,58 +7,58 @@ X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C3AFCC432C0
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Nov 2019 19:47:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E7E1DC43141
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Nov 2019 19:47:36 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 937C22071E
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Nov 2019 19:47:35 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BF0252071E
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Nov 2019 19:47:36 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1574711255;
-	bh=+eM5mPZ+ZRH1qTFqS68sUyGXgTyEcEiIux4n3xdq7Sc=;
+	s=default; t=1574711256;
+	bh=EKXXRyOwtA0kFojJ2pCLj1GPm1CwKvtotNKOPpVyaJs=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:In-Reply-To:
 	 References:List-ID:From;
-	b=Eyv9MheLuCm+6SqPoqH5lspvyMAn/YCNlmP/WzBgPQH5O2VGanH3c7kuPnlAj61bQ
-	 LYMXdOrCXorJdPpRPcuRoiGFMAcFwAtBEzxH9L20lcUjEqWaCt+ha7iGzLyVMEvVmf
-	 7SgnaVrRtjrmW5FjOcua7t8vKavmyjfcvcjc3eIU=
+	b=MFDOV/LIjVrRR9a0zQd7w7Y/LZNn5w8PGpQ/7aVrIHKLtcu5h3g9PWU71hpgXaqUf
+	 n0PG2W8IhOIb2HKxgSPEiHB25hTSq150HvNIJi2JTPl233gilSIzdY07b55+o7A0Gd
+	 Uf8GMkSnBSFGFBJW81AfIxw4CJHWkigmUjw3uJ/c=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727205AbfKYTre (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Nov 2019 14:47:34 -0500
-Received: from mail-qv1-f67.google.com ([209.85.219.67]:39883 "EHLO
-        mail-qv1-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727197AbfKYTrd (ORCPT
+        id S1725862AbfKYTrf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Nov 2019 14:47:35 -0500
+Received: from mail-qv1-f68.google.com ([209.85.219.68]:34645 "EHLO
+        mail-qv1-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727176AbfKYTrc (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Nov 2019 14:47:33 -0500
-Received: by mail-qv1-f67.google.com with SMTP id v16so6272345qvq.6
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Nov 2019 11:47:32 -0800 (PST)
+        Mon, 25 Nov 2019 14:47:32 -0500
+Received: by mail-qv1-f68.google.com with SMTP id n12so6290122qvt.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Nov 2019 11:47:30 -0800 (PST)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:in-reply-to:references;
-        bh=bWkEItJsrciCUsqYOdkuyqGCVe7sz9XQCB/6ACz1IpE=;
-        b=PEJiShX9CiHL8LcMjKdX8ICWwBV5K3UqumL22B4FibO04/DBbFi+IJGLGaLuWyeATv
-         P6ftZYR5JUkDP6BQtqg2WRrq2T3Xoe7jliNsHD859/ZCXh2cGVi6dsMHlxSUXVg+FscO
-         lBd/og4Mcs5NV3xGNPNDp9FZjD035TfPEm1Egxzl4nREpvZPrzq4vTPH1O61CJ05dhnC
-         bEJFlnF2Pr3FLqOZ8xyM4isaDxGWk7nFkKUXo49QfV405dlO2UOYmIddn68Cgpjtq9RU
-         g2n/VHo6a6weQdwlEPz47KpSNl8YReGJSI3RTfAXQmAuMk18/+Y6Z0ZGYokc06DvBoL4
-         NYog==
-X-Gm-Message-State: APjAAAWzvZPCahLQLJQpKwrvONCRDW/q2MelnyxIXtuVbkKMvFRcW1ej
-        pQZqTqm5ihmxnQ20MyVhyiA=
-X-Google-Smtp-Source: APXvYqw7Lygdp+cR3wdX1ku3Yjk85gBii3Ov/hPddgXuVUty47Z/ntOod3Pb5Xajht5cGcCP2edn+A==
-X-Received: by 2002:ad4:4391:: with SMTP id s17mr14806489qvr.232.1574711251669;
-        Mon, 25 Nov 2019 11:47:31 -0800 (PST)
+        bh=vkcIRBFOsluZbYg6A84SaZ/77cib1TDE+4UeF7XKKAc=;
+        b=IsKbUFvpQeCTTnHVOZO0Y+lSBKrw9JlVLEuSjlvN1ZjkEhvvjD/je+MELICU4gcnHY
+         q+42J/P2dK3W4KJpXJSUB3E+Z7Ak2qAqo6Tga5kuw0wNPt9E0eibXvhAm9/wKfxiG8FY
+         PXVPE/hiWB1xeOJG6DO0Bro5W9PgwNYNrDJjl8AjCKMu4jlm+Kkpan/G7ct9FgydPIFo
+         uMC2suVYI+F4yFXRC/lglThlj15U3nW+Dc3zr4TlueQVCUZf1LxjjMN1RDf0qL1i9XM4
+         HAOFp9cXUUGx8caSiiwJduYeo5XApUSdw/sWU75wJKSD9Gpau25aw1SSU6j04BDst0Ku
+         3ryw==
+X-Gm-Message-State: APjAAAXpFm3CLL77GZ3+dIG0RI9fQe+6VyO0RmVugJbPW7hx735PZhSW
+        ypE/T4WnMzRCzoyNMgp+lC0=
+X-Google-Smtp-Source: APXvYqyjwwKeyIe3B8OHsbEqX2mZ5ftvKGOx49iWqqrG8JJ0vDAwJyttVXEDGDID7vzlIj+gfaJsQQ==
+X-Received: by 2002:ad4:55ce:: with SMTP id bt14mr28532711qvb.131.1574711249535;
+        Mon, 25 Nov 2019 11:47:29 -0800 (PST)
 Received: from dennisz-mbp.thefacebook.com ([163.114.130.128])
-        by smtp.gmail.com with ESMTPSA id o13sm4481033qto.96.2019.11.25.11.47.30
+        by smtp.gmail.com with ESMTPSA id o13sm4481033qto.96.2019.11.25.11.47.28
         (version=TLS1_2 cipher=ECDHE-RSA-AES128-SHA bits=128/128);
-        Mon, 25 Nov 2019 11:47:31 -0800 (PST)
+        Mon, 25 Nov 2019 11:47:28 -0800 (PST)
 From:   Dennis Zhou <dennis@kernel.org>
 To:     David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
         Josef Bacik <josef@toxicpanda.com>,
         Omar Sandoval <osandov@osandov.com>
 Cc:     kernel-team@fb.com, linux-btrfs@vger.kernel.org,
         Dennis Zhou <dennis@kernel.org>
-Subject: [PATCH 22/22] btrfs: make smaller extents more likely to go into bitmaps
-Date:   Mon, 25 Nov 2019 14:47:02 -0500
-Message-Id: <048ac58fcc4d6147a0025b4a6021f773d736adb5.1574709825.git.dennis@kernel.org>
+Subject: [PATCH 20/22] btrfs: add async discard header
+Date:   Mon, 25 Nov 2019 14:47:00 -0500
+Message-Id: <c409aa7d47090134f2e2db5089c5fee1747c26dd.1574709825.git.dennis@kernel.org>
 X-Mailer: git-send-email 2.13.5
 In-Reply-To: <cover.1574709825.git.dennis@kernel.org>
 References: <cover.1574709825.git.dennis@kernel.org>
@@ -69,30 +69,58 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-It's less than ideal for small extents to eat into our extent budget, so
-force extents <= 32KB into the bitmaps save for the first handful.
+Give a brief overview for how async discard is implemented.
 
 Signed-off-by: Dennis Zhou <dennis@kernel.org>
 Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/free-space-cache.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ fs/btrfs/discard.c | 35 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 35 insertions(+)
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 15667095c50d..9167be1e27bf 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -2108,8 +2108,8 @@ static bool use_bitmap(struct btrfs_free_space_ctl *ctl,
- 		 * of cache left then go ahead an dadd them, no sense in adding
- 		 * the overhead of a bitmap if we don't have to.
- 		 */
--		if (info->bytes <= fs_info->sectorsize * 4) {
--			if (ctl->free_extents * 2 <= ctl->extents_thresh)
-+		if (info->bytes <= fs_info->sectorsize * 8) {
-+			if (ctl->free_extents * 3 <= ctl->extents_thresh)
- 				return false;
- 		} else {
- 			return false;
+diff --git a/fs/btrfs/discard.c b/fs/btrfs/discard.c
+index 7ab4a93fc3b7..66b7855449df 100644
+--- a/fs/btrfs/discard.c
++++ b/fs/btrfs/discard.c
+@@ -1,4 +1,39 @@
+ // SPDX-License-Identifier: GPL-2.0
++/*
++ * This contains the logic to handle async discard.
++ *
++ * Async discard manages trimming of free space outside of transaction commit.
++ * Discarding is done by managing the block_groups on a LRU list based on free
++ * space recency.  Two passes are used to first prioritize discarding extents
++ * and then allow for trimming in the bitmap the best opportunity to coalesce.
++ * The block_groups are maintained on multiple lists to allow for multiple
++ * passes with different discard filter requirements.  A delayed work item is
++ * used to manage discarding with timeout determined by a max of the delay
++ * incurred by the iops rate limit, byte rate limit, and the timeout of max
++ * delay of BTRFS_DISCARD_MAX_DELAY.
++ *
++ * The first list is special to manage discarding of fully free block groups.
++ * This is necessary because we issue a final trim for a full free block group
++ * after forgetting it.  When a block group becomes unused, instead of directly
++ * being added to the unused_bgs list, we add it to this first list.  Then
++ * from there, if it becomes fully discarded, we place it onto the unused_bgs
++ * list.
++ *
++ * The in-memory free space cache serves as the backing state for discard.
++ * Consequently this means there is no persistence.  We opt to load all the
++ * block groups in as not discarded, so the mount case degenerates to the
++ * crashing case.
++ *
++ * As the free space cache uses bitmaps, there exists a tradeoff between
++ * ease/efficiency for find_free_extent() and the accuracy of discard state.
++ * Here we opt to let untrimmed regions merge with everything while only letting
++ * trimmed regions merge with other trimmed regions.  This can cause
++ * overtrimming, but the coalescing benefit seems to be worth it.  Additionally,
++ * bitmap state is tracked as a whole.  If we're able to fully trim a bitmap,
++ * the trimmed flag is set on the bitmap.  Otherwise, if an allocation comes in,
++ * this resets the state and we will retry trimming the whole bitmap.  This is a
++ * tradeoff between discard state accuracy and the cost of accounting.
++ */
+ 
+ #include <linux/jiffies.h>
+ #include <linux/kernel.h>
 -- 
 2.17.1
 

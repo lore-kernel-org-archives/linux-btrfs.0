@@ -7,54 +7,54 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 41E1BC432C0
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Nov 2019 10:39:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 17153C432C3
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Nov 2019 10:39:49 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1A5C22075C
+	by mail.kernel.org (Postfix) with ESMTP id E473720740
 	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Nov 2019 10:39:48 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="ABdTf6Pp"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="qILaWI1G"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727534AbfKYKjr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Nov 2019 05:39:47 -0500
-Received: from userp2120.oracle.com ([156.151.31.85]:48200 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727524AbfKYKjq (ORCPT
+        id S1727538AbfKYKjs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Nov 2019 05:39:48 -0500
+Received: from aserp2120.oracle.com ([141.146.126.78]:37730 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727532AbfKYKjr (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Nov 2019 05:39:46 -0500
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xAPAY6n5006377
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Nov 2019 10:39:45 GMT
+        Mon, 25 Nov 2019 05:39:47 -0500
+Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
+        by aserp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xAPAY6KZ021421
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Nov 2019 10:39:46 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
  date : message-id : in-reply-to : references; s=corp-2019-08-05;
- bh=um/Dblr28DOQNZpmDtKaP71+P5HlUbPaxLl1ooA7et8=;
- b=ABdTf6PpMZufYQpWe88vgLvrTcQWQzqeQKrDEchFBFVdGPVjaDQ04FoSRHq8QUkoDv9K
- MCSSLO2dLDU3V521vYvYvf5LzYZkjnAS4f+iq3IzqI/y2lgoma5jLX8rDnwo2OwXjQGV
- oxv8MBUQVeS35TmdArvw6aKKWvalwyD0BmXUH1rdDvymmql3XMSn5z3Zk5T1VJIbWviF
- DdUUu21IRsktyPTdooGlPJhgSybHdu2JbRUJ52A92SrtEbK0N4m/lwaqhsFIpErvxd/1
- QPucQitvlQkYoi1TUxChZAZeb4OWz9Eg22vosUG0Atsf/h1BN5c48RqKmU5A5aS1NQws mw== 
+ bh=V6WayFPm4TW4qAUPvPra1ipLsS39NYdUI8cVB+f4nSE=;
+ b=qILaWI1G9rrCJHfFBDeRA+OkjNJehATtZk7Po8FdDfOoAI08Sd5DVZPyqO2/lPzHK/L3
+ d6sUep0BJyjouFaApOr22NrKKwa1LWptE7jYeMLMHid5I+Vm7necfJp4mYV1AiPXi2gb
+ z777ZrgYu+yNl+DOA2qYsJOsQ3i5r9LxHqJ2vhUDZig4T3mFj/TxooeAuDEZrEKuJ/+A
+ NVeZwXhgHNLqhYm1kL8OWHiLCrpm1b/9JqAKoMosZ/GbUS75Omw2W4UZavTeLI5Nt3vI
+ enM4Q7qG5qAO/8tDS+++Qlz3Ld3bhKRO5k6QJmzQGaYr/NIu6oiZpmsfuE+eqw668aGZ 1Q== 
 Received: from aserp3030.oracle.com (aserp3030.oracle.com [141.146.126.71])
-        by userp2120.oracle.com with ESMTP id 2wewdqxnp3-1
+        by aserp2120.oracle.com with ESMTP id 2wevqpxrxd-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Nov 2019 10:39:44 +0000
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Nov 2019 10:39:45 +0000
 Received: from pps.filterd (aserp3030.oracle.com [127.0.0.1])
-        by aserp3030.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xAPAXIFw191733
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Nov 2019 10:39:44 GMT
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by aserp3030.oracle.com with ESMTP id 2wfex64qxm-1
+        by aserp3030.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xAPAXIKa191737
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Nov 2019 10:39:45 GMT
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by aserp3030.oracle.com with ESMTP id 2wfex64r0d-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Nov 2019 10:39:43 +0000
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Nov 2019 10:39:45 +0000
 Received: from abhmp0008.oracle.com (abhmp0008.oracle.com [141.146.116.14])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id xAPAdfpP016886
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Nov 2019 10:39:42 GMT
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id xAPAdj2n010838
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Nov 2019 10:39:45 GMT
 Received: from tp.wifi.oracle.com (/192.188.170.104)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Mon, 25 Nov 2019 02:39:41 -0800
+        with ESMTP ; Mon, 25 Nov 2019 02:39:44 -0800
 From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 08/16] btrfs-progs: balance status: use global verbose option
-Date:   Mon, 25 Nov 2019 18:39:09 +0800
-Message-Id: <1574678357-22222-9-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH v2 10/16] btrfs-progs: rescue super-recover: use global verbose option
+Date:   Mon, 25 Nov 2019 18:39:11 +0800
+Message-Id: <1574678357-22222-11-git-send-email-anand.jain@oracle.com>
 X-Mailer: git-send-email 1.8.3.1
 In-Reply-To: <1574678357-22222-1-git-send-email-anand.jain@oracle.com>
 References: <1574678357-22222-1-git-send-email-anand.jain@oracle.com>
@@ -74,60 +74,110 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Transpire global --verbose option down to the btrfs balance status
+Transpire global --verbose option down to the btrfs rescue super-recover
 sub-command.
+
+For example: Both global and local verbose options are now supported.
+btrfs -v|--verbose rescue super-recover
+btrfs rescue super-recover -v
 
 Suggested-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
 v2: Use new helper functions and defines
-    HELPINFO_INSERT_GLOBALS, BTRFS_BCONF_UNSET, BTRFS_BCONF_QUIET
-    bconf_be_verbose(), bconf_be_quiet()
+     HELPINFO_INSERT_GLOBALS, BTRFS_BCONF_UNSET, BTRFS_BCONF_QUIET
+     bconf_be_verbose(), bconf_be_quiet()
+    Drop verbose argument in btrfs_recover_superblocks()
 
-    No need to init bconf.verbose in the sub command.
+ cmds/rescue-super-recover.c | 7 +++----
+ cmds/rescue.c               | 7 ++++---
+ cmds/rescue.h               | 2 +-
+ 3 files changed, 8 insertions(+), 8 deletions(-)
 
- cmds/balance.c | 7 ++++---
- 1 file changed, 4 insertions(+), 3 deletions(-)
-
-diff --git a/cmds/balance.c b/cmds/balance.c
-index 9c2cdacdb288..9f4ab21518de 100644
---- a/cmds/balance.c
-+++ b/cmds/balance.c
-@@ -828,6 +828,8 @@ static const char * const cmd_balance_status_usage[] = {
- 	"Show status of running or paused balance",
+diff --git a/cmds/rescue-super-recover.c b/cmds/rescue-super-recover.c
+index 5d6bea836c8b..3a60eb40c8bb 100644
+--- a/cmds/rescue-super-recover.c
++++ b/cmds/rescue-super-recover.c
+@@ -226,8 +226,7 @@ static void recover_err_str(int ret)
+ 	}
+ }
+ 
+-int btrfs_recover_superblocks(const char *dname,
+-			int verbose, int yes)
++int btrfs_recover_superblocks(const char *dname, int yes)
+ {
+ 	int fd, ret;
+ 	struct btrfs_recover_superblock recover;
+@@ -249,7 +248,7 @@ int btrfs_recover_superblocks(const char *dname,
+ 		goto no_recover;
+ 	}
+ 
+-	if (verbose)
++	if (bconf.verbose > BTRFS_BCONF_QUIET)
+ 		print_all_devices(&recover.fs_devices->devices);
+ 
+ 	ret = read_fs_supers(&recover);
+@@ -257,7 +256,7 @@ int btrfs_recover_superblocks(const char *dname,
+ 		ret = 1;
+ 		goto no_recover;
+ 	}
+-	if (verbose) {
++	if (bconf.verbose > BTRFS_BCONF_QUIET) {
+ 		printf("Before Recovering:\n");
+ 		print_all_supers(&recover);
+ 	}
+diff --git a/cmds/rescue.c b/cmds/rescue.c
+index 19de5235a22e..2e14c98ba911 100644
+--- a/cmds/rescue.c
++++ b/cmds/rescue.c
+@@ -107,6 +107,8 @@ static const char * const cmd_rescue_super_recover_usage[] = {
  	"",
- 	"-v|--verbose     be verbose",
+ 	"-y	Assume an answer of `yes' to all questions",
+ 	"-v	Verbose mode",
 +	HELPINFO_INSERT_GLOBALS,
 +	HELPINFO_INSERT_VERBOSE,
  	NULL
  };
  
-@@ -844,7 +846,6 @@ static int cmd_balance_status(const struct cmd_struct *cmd,
- 	const char *path;
- 	DIR *dirstream = NULL;
- 	int fd;
--	int verbose = 0;
+@@ -122,7 +124,6 @@ static int cmd_rescue_super_recover(const struct cmd_struct *cmd,
+ 				    int argc, char **argv)
+ {
  	int ret;
+-	int verbose = 0;
+ 	int yes = 0;
+ 	char *dname;
  
- 	optind = 0;
-@@ -861,7 +862,7 @@ static int cmd_balance_status(const struct cmd_struct *cmd,
- 
- 		switch (opt) {
+@@ -133,7 +134,7 @@ static int cmd_rescue_super_recover(const struct cmd_struct *cmd,
+ 			break;
+ 		switch (c) {
  		case 'v':
 -			verbose = 1;
 +			bconf_be_verbose();
  			break;
- 		default:
- 			usage_unknown_option(cmd, argv);
-@@ -907,7 +908,7 @@ static int cmd_balance_status(const struct cmd_struct *cmd,
- 	       (unsigned long long)args.stat.considered,
- 	       100 * (1 - (float)args.stat.completed/args.stat.expected));
+ 		case 'y':
+ 			yes = 1;
+@@ -155,7 +156,7 @@ static int cmd_rescue_super_recover(const struct cmd_struct *cmd,
+ 		error("the device is busy");
+ 		return 1;
+ 	}
+-	ret = btrfs_recover_superblocks(dname, verbose, yes);
++	ret = btrfs_recover_superblocks(dname, yes);
+ 	return ret;
+ }
+ static DEFINE_SIMPLE_COMMAND(rescue_super_recover, "super-recover");
+diff --git a/cmds/rescue.h b/cmds/rescue.h
+index e594954f78e2..3b99ec6b0daa 100644
+--- a/cmds/rescue.h
++++ b/cmds/rescue.h
+@@ -15,7 +15,7 @@
+ #ifndef __BTRFS_RESCUE_H__
+ #define __BTRFS_RESCUE_H__
  
--	if (verbose)
-+	if (bconf.verbose > BTRFS_BCONF_QUIET)
- 		dump_ioctl_balance_args(&args);
+-int btrfs_recover_superblocks(const char *path, int verbose, int yes);
++int btrfs_recover_superblocks(const char *path, int yes);
+ int btrfs_recover_chunk_tree(const char *path, int yes);
  
- 	ret = 1;
+ #endif
 -- 
 1.8.3.1
 

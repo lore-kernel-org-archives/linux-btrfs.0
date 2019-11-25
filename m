@@ -7,58 +7,58 @@ X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E6133C432C0
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Nov 2019 19:47:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 37188C43215
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Nov 2019 19:47:34 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C0B1F2075C
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Nov 2019 19:47:33 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 11B2E2071E
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Nov 2019 19:47:34 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1574711253;
-	bh=sIzf3UTUducXI/7JkZWC/786gPgYfXSjvFIi1XC6SE0=;
+	s=default; t=1574711254;
+	bh=v4sbOozutVQSWHDuezScddpsR5ThCfXs4HzadS1Znmg=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:In-Reply-To:
 	 References:List-ID:From;
-	b=I5jikQDjJ4vSucc5l/H9hJoFaOllBSxMPB2V7lUYFFzeeibz5gY5yv9WApjd/KKq6
-	 TDZIUsefd/3vAvv91mTa2kQ9b4L0306grtufs1TF0Z0HWdsn88YyjN3iF2xpztG+nm
-	 AJEtHMGaF+qkiN9pmNgc5blGwsG+Q9DsWX2saq2E=
+	b=zTiVWMdOYvvChrlRDV8oftnESQyRX+D4JEOqhWXCjU0gizk5cMtiZVEyB3yDp4veg
+	 3y0gSNwyf3QbfqBAr7wGGoY0byepFBz8T6HHp6VwUuVKF8p8nQdrSTfJH7e4DNWMuH
+	 i4Gl73QRe0HQA3RxEkLcORp5dDU3dObmD1VOmllU=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727198AbfKYTrc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Nov 2019 14:47:32 -0500
-Received: from mail-qv1-f65.google.com ([209.85.219.65]:46109 "EHLO
-        mail-qv1-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727187AbfKYTrb (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1727194AbfKYTrb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Mon, 25 Nov 2019 14:47:31 -0500
-Received: by mail-qv1-f65.google.com with SMTP id w11so6253229qvu.13
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Nov 2019 11:47:31 -0800 (PST)
+Received: from mail-qt1-f194.google.com ([209.85.160.194]:39017 "EHLO
+        mail-qt1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727186AbfKYTra (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Nov 2019 14:47:30 -0500
+Received: by mail-qt1-f194.google.com with SMTP id g1so9222945qtj.6
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Nov 2019 11:47:28 -0800 (PST)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:in-reply-to:references;
-        bh=/55shlXn5U81maiE2JbP9Y20nOk8gQoXsZiv9oaLK/M=;
-        b=SVwFlHB8vKFBu3FetWD3yOgU1IwQKnAKr5+t439B7hV5X4PVvwfWSAonNb/D5BkqK6
-         G2GgDiMcRNp4Il78PItU4dwc+NJQBqNAb26cSIKGVu0FwB3JGSIfI5DvJ5pY146VescF
-         u9Nd8mGAmcmXwoJUJkXEJKP3V7STie+MYJizdyH1G1Zwx9MPRJaKC00S2bsgyEDvtUse
-         8zwKqMTmuOo95pAfBEkeT0l6iyR3iXE67Vaw7oSz4iA8wmRgz21dMDGMRl/AmmeW2SuC
-         YEWdAlkwOrsAPk1lkHP7YhkUsfiaiwyZ/Yojnk6oF2X1EtAXXRvwo/mnRsF2to6//xjh
-         Soow==
-X-Gm-Message-State: APjAAAWoDQSJewAuWa85YoYR9yvCa0Ws1xkaI3O6Xz6KRH6jQMoPX92k
-        2SkD/dh2B+wVwsv6xrJZ2mw=
-X-Google-Smtp-Source: APXvYqyMfWFn6uhxCuDQYS07cgLAKOYyCc74u2UDZak2XYN4dMPzI9ghW02vy+mfk/MPz6BF73pLgg==
-X-Received: by 2002:ad4:462d:: with SMTP id x13mr29356075qvv.105.1574711250651;
-        Mon, 25 Nov 2019 11:47:30 -0800 (PST)
+        bh=kWToEm0JE7KVFYUkmI6pVchwKh3LLVs2L2Cuev+zDCg=;
+        b=HCuMj2cCDcKc73V0IASoSTtn0hAqcvaempgQW/6XC+WZzN3P+QHSi7y2hmYEY8vGJk
+         Xtc0t0A8iHULpeSU2Uz8gNs1hm+n9KBucIH/4fCm+MJVzVdxhGGeNzT0cjL8OBXQvBE+
+         Aq5fwi2yi/7VQCnlslmFnkc2fv3EHhrajdNZ7qtFMyOOEj2mavEfBaZg14LL7FjJCvLO
+         nvuA/eSZXh+Mrv7gv/OCZXel/jgzJiIvIz/m17AuBlTuHV0191o+aymiYExJOZlkQmP5
+         BDXWe5npXXr/ArEPFXhrbsDH/C5swKaEtV7PbVdE3dzRWUapamBR3ED2AdnJET1lehoS
+         872A==
+X-Gm-Message-State: APjAAAVsukKGG4Oe3D4YV7S5kqdSvj1eS2aiyVhSD0RIh/Fq+TcnnA6j
+        AiHLI441jdAe2xrLpnmpxo0=
+X-Google-Smtp-Source: APXvYqy8Xuwx5VkG5pHX0/yuySW7YLAAle9P3le0bYkvhkWEkxDyX05FrSwUiBTSBl6/uuxlnviU/A==
+X-Received: by 2002:aed:2103:: with SMTP id 3mr18817410qtc.132.1574711247636;
+        Mon, 25 Nov 2019 11:47:27 -0800 (PST)
 Received: from dennisz-mbp.thefacebook.com ([163.114.130.128])
-        by smtp.gmail.com with ESMTPSA id o13sm4481033qto.96.2019.11.25.11.47.29
+        by smtp.gmail.com with ESMTPSA id o13sm4481033qto.96.2019.11.25.11.47.26
         (version=TLS1_2 cipher=ECDHE-RSA-AES128-SHA bits=128/128);
-        Mon, 25 Nov 2019 11:47:29 -0800 (PST)
+        Mon, 25 Nov 2019 11:47:27 -0800 (PST)
 From:   Dennis Zhou <dennis@kernel.org>
 To:     David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
         Josef Bacik <josef@toxicpanda.com>,
         Omar Sandoval <osandov@osandov.com>
 Cc:     kernel-team@fb.com, linux-btrfs@vger.kernel.org,
         Dennis Zhou <dennis@kernel.org>
-Subject: [PATCH 21/22] btrfs: increase the metadata allowance for the free_space_cache
-Date:   Mon, 25 Nov 2019 14:47:01 -0500
-Message-Id: <894355ca977324aec8587d16625ed5ce10b23e55.1574709825.git.dennis@kernel.org>
+Subject: [PATCH 18/22] btrfs: only keep track of data extents for async discard
+Date:   Mon, 25 Nov 2019 14:46:58 -0500
+Message-Id: <ea5bb4494425c9339fbdd657454500acc3f56774.1574709825.git.dennis@kernel.org>
 X-Mailer: git-send-email 2.13.5
 In-Reply-To: <cover.1574709825.git.dennis@kernel.org>
 References: <cover.1574709825.git.dennis@kernel.org>
@@ -69,79 +69,73 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Currently, there is no way for the free space cache to recover from
-being serviced by purely bitmaps because the extent threshold is set to
-0 in recalculate_thresholds() when we surpass the metadata allowance.
-
-This adds a recovery mechanism by keeping large extents out of the
-bitmaps and increases the metadata upper bound to 64KB. The recovery
-mechanism bypasses this upper bound, thus making it a soft upper bound.
-But, with the bypass being 1MB or greater, it shouldn't add unbounded
-overhead.
+As mentioned earlier, discarding data can be done either by issuing an
+explicit discard or implicitly by reusing the LBA. Metadata chunks see
+much more frequent reuse due to well it being metadata. So instead of
+explicitly discarding metadata blocks, just leave them be and let the
+latter implicit discarding be done for them.
 
 Signed-off-by: Dennis Zhou <dennis@kernel.org>
 Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/free-space-cache.c | 26 +++++++++++---------------
- 1 file changed, 11 insertions(+), 15 deletions(-)
+ fs/btrfs/block-group.h |  6 ++++++
+ fs/btrfs/discard.c     | 12 ++++++++++--
+ 2 files changed, 16 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 1b887c0d7508..15667095c50d 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -24,7 +24,8 @@
- #include "discard.h"
+diff --git a/fs/btrfs/block-group.h b/fs/btrfs/block-group.h
+index 601e1d217e22..ee8441439a56 100644
+--- a/fs/btrfs/block-group.h
++++ b/fs/btrfs/block-group.h
+@@ -182,6 +182,12 @@ static inline u64 btrfs_block_group_end(struct btrfs_block_group *block_group)
+ 	return (block_group->start + block_group->length);
+ }
  
- #define BITS_PER_BITMAP		(PAGE_SIZE * 8UL)
--#define MAX_CACHE_BYTES_PER_GIG	SZ_32K
-+#define MAX_CACHE_BYTES_PER_GIG	SZ_64K
-+#define FORCE_EXTENT_THRESHOLD	SZ_1M
- 
- struct btrfs_trim_range {
- 	u64 start;
-@@ -1695,26 +1696,17 @@ static void recalculate_thresholds(struct btrfs_free_space_ctl *ctl)
- 	ASSERT(ctl->total_bitmaps <= max_bitmaps);
- 
- 	/*
--	 * The goal is to keep the total amount of memory used per 1gb of space
--	 * at or below 32k, so we need to adjust how much memory we allow to be
--	 * used by extent based free space tracking
-+	 * We are trying to keep the total amount of memory used per 1gb of
-+	 * space to be MAX_CACHE_BYTES_PER_GIG.  However, with a reclamation
-+	 * mechanism of pulling extents >= FORCE_EXTENT_THRESHOLD out of
-+	 * bitmaps, we may end up using more memory than this.
- 	 */
- 	if (size < SZ_1G)
- 		max_bytes = MAX_CACHE_BYTES_PER_GIG;
- 	else
- 		max_bytes = MAX_CACHE_BYTES_PER_GIG * div_u64(size, SZ_1G);
- 
--	/*
--	 * we want to account for 1 more bitmap than what we have so we can make
--	 * sure we don't go over our overall goal of MAX_CACHE_BYTES_PER_GIG as
--	 * we add more bitmaps.
--	 */
--	bitmap_bytes = (ctl->total_bitmaps + 1) * ctl->unit;
--
--	if (bitmap_bytes >= max_bytes) {
--		ctl->extents_thresh = 0;
--		return;
--	}
-+	bitmap_bytes = ctl->total_bitmaps * ctl->unit;
- 
- 	/*
- 	 * we want the extent entry threshold to always be at most 1/2 the max
-@@ -2100,6 +2092,10 @@ static bool use_bitmap(struct btrfs_free_space_ctl *ctl,
- 		forced = true;
- #endif
- 
-+	/* This is a way to reclaim large regions from the bitmaps. */
-+	if (!forced && info->bytes >= FORCE_EXTENT_THRESHOLD)
-+		return false;
++static inline bool btrfs_is_block_group_data(
++					struct btrfs_block_group *block_group)
++{
++	return (block_group->flags & BTRFS_BLOCK_GROUP_DATA);
++}
 +
- 	/*
- 	 * If we are below the extents threshold then we can add this as an
- 	 * extent, and don't have to deal with the bitmap
+ #ifdef CONFIG_BTRFS_DEBUG
+ static inline int btrfs_should_fragment_free_space(
+ 		struct btrfs_block_group *block_group)
+diff --git a/fs/btrfs/discard.c b/fs/btrfs/discard.c
+index 004d83b0a215..c8e923b3f2b9 100644
+--- a/fs/btrfs/discard.c
++++ b/fs/btrfs/discard.c
+@@ -50,6 +50,9 @@ static void __btrfs_add_to_discard_list(struct btrfs_discard_ctl *discard_ctl,
+ void btrfs_add_to_discard_list(struct btrfs_discard_ctl *discard_ctl,
+ 			       struct btrfs_block_group *block_group)
+ {
++	if (!btrfs_is_block_group_data(block_group))
++		return;
++
+ 	spin_lock(&discard_ctl->lock);
+ 
+ 	__btrfs_add_to_discard_list(discard_ctl, block_group);
+@@ -160,7 +163,11 @@ static struct btrfs_block_group *peek_discard_list(
+ 	if (block_group && now > block_group->discard_eligible_time) {
+ 		if (block_group->discard_index == BTRFS_DISCARD_INDEX_UNUSED &&
+ 		    block_group->used != 0) {
+-			__btrfs_add_to_discard_list(discard_ctl, block_group);
++			if (btrfs_is_block_group_data(block_group))
++				__btrfs_add_to_discard_list(discard_ctl,
++							    block_group);
++			else
++				list_del_init(&block_group->discard_list);
+ 			goto again;
+ 		}
+ 		if (block_group->discard_state == BTRFS_DISCARD_RESET_CURSOR) {
+@@ -502,7 +509,8 @@ void btrfs_discard_update_discardable(struct btrfs_block_group *block_group,
+ 	s64 bytes_delta;
+ 
+ 	if (!block_group ||
+-	    !btrfs_test_opt(block_group->fs_info, DISCARD_ASYNC))
++	    !btrfs_test_opt(block_group->fs_info, DISCARD_ASYNC) ||
++	    !btrfs_is_block_group_data(block_group))
+ 		return;
+ 
+ 	discard_ctl = &block_group->fs_info->discard_ctl;
 -- 
 2.17.1
 

@@ -2,212 +2,147 @@ Return-Path: <SRS0=lVOs=ZR=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.4 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D8371C432C0
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Nov 2019 10:04:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 355CEC432C0
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Nov 2019 10:37:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B7E2E20740
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Nov 2019 10:04:57 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0997820835
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Nov 2019 10:37:05 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="Bd/0TUXV"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727446AbfKYKE5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Nov 2019 05:04:57 -0500
-Received: from mx2.suse.de ([195.135.220.15]:34368 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727316AbfKYKE4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Nov 2019 05:04:56 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 03829AE47
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Nov 2019 10:04:54 +0000 (UTC)
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH RFC] btrfs: space-info: Make over-commit threshold to 87.5% of a new chunk
-Date:   Mon, 25 Nov 2019 18:04:50 +0800
-Message-Id: <20191125100450.43599-1-wqu@suse.com>
-X-Mailer: git-send-email 2.24.0
+        id S1727368AbfKYKhD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Nov 2019 05:37:03 -0500
+Received: from aserp2120.oracle.com ([141.146.126.78]:34728 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727266AbfKYKhD (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Nov 2019 05:37:03 -0500
+Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
+        by aserp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xAPAY7l6021487;
+        Mon, 25 Nov 2019 10:36:58 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
+ references : from : message-id : date : mime-version : in-reply-to :
+ content-type : content-transfer-encoding; s=corp-2019-08-05;
+ bh=5k7gDTWCXnVdWZS3OA8yACh5YrMmj0TdHrPN1yixMsg=;
+ b=Bd/0TUXVcC/YBm8zhK5J4oEi0t3TA51nCKsYsQH5v3USNDhBZhU3sPX5yaEVMsZN3IoM
+ SXN3Z8NmwCDlskM/DU11WtkI6uUR8iCWr+1jbl2uaP3jWAUjJLuyEyDse669OzZKlbsH
+ 61flvs+4muksE4AuitWl2MQIM/dvABq4dDlcvHNX+ZYDoWis3IBJpdJFzE7mY8zwVpzV
+ 3YmjVN3LIQwQu606IyGr3CSqJRZLw7G99wAcZqCQzcaie/IzqQ00gHQo6kKEDpYzyvQ3
+ WYBjOqOo2BdqRhf/f3j2LYDJ6hQWENB0z+6+AwXYteF76vI3mxQtv1VxjWWwKG9fChna Bw== 
+Received: from aserp3020.oracle.com (aserp3020.oracle.com [141.146.126.70])
+        by aserp2120.oracle.com with ESMTP id 2wevqpxrf3-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Mon, 25 Nov 2019 10:36:58 +0000
+Received: from pps.filterd (aserp3020.oracle.com [127.0.0.1])
+        by aserp3020.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xAPAXtgv173219;
+        Mon, 25 Nov 2019 10:36:58 GMT
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by aserp3020.oracle.com with ESMTP id 2wfe9erea1-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Mon, 25 Nov 2019 10:36:57 +0000
+Received: from abhmp0019.oracle.com (abhmp0019.oracle.com [141.146.116.25])
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id xAPAav1s015928;
+        Mon, 25 Nov 2019 10:36:57 GMT
+Received: from [10.190.155.136] (/192.188.170.104)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Mon, 25 Nov 2019 02:36:57 -0800
+Subject: Re: [PATCH v1.1 04/18] btrfs-progs: add global verbose and quiet
+ options and helper functions
+To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
+References: <1572849196-21775-1-git-send-email-anand.jain@oracle.com>
+ <1572849196-21775-5-git-send-email-anand.jain@oracle.com>
+ <20191114160813.GK3001@twin.jikos.cz>
+ <6852d675-0244-388e-899f-008dc53b6ad9@oracle.com>
+ <20191119165147.GW3001@twin.jikos.cz>
+From:   Anand Jain <anand.jain@oracle.com>
+Message-ID: <8e4e8164-ac80-bc2f-0196-1f86570c2e47@oracle.com>
+Date:   Mon, 25 Nov 2019 18:36:53 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.8.0
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <20191119165147.GW3001@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9451 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
+ adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.0.1-1911140001 definitions=main-1911250098
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9451 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
+ suspectscore=0 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
+ lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1911140001
+ definitions=main-1911250098
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-[BUG]
-For certain fs layout, a full balance can cause reproducible ENOSPC.
-With enospc_debug, we got the following dmesg (BTRFS info and device
-info ommitted to save some space):
 
- disk space caching is enabled
- has skinny extents
- balance: start -d -m -s
- relocating block group 1104150528 flags data
- found 14659 extents
- found 14659 extents
- unable to make block group 30408704 ro  <<< from inc_block_group_ro()
- sinfo_used=2386411520 bg_num_bytes=1046888448 min_allocable=1048576
- space_info 4 has 18446744072434089984 free, is not full
- space_info total=1073741824, used=24281088, pinned=1277952, reserved=1245184, may_use=2322333696, readonly=65536
- global_block_rsv: size 3407872 reserved 3407872
- trans_block_rsv: size 0 reserved 0
- chunk_block_rsv: size 0 reserved 0
- delayed_block_rsv: size 0 reserved 0
- delayed_refs_rsv: size 2318401536 reserved 2318401536
- unable to make block group 30408704 ro <<< double inc_block_group_ro()
-                                            failure, means
-                                            btrfs_inc_block_group_ro() failed
- sinfo_used=2342912000 bg_num_bytes=1046872064 min_allocable=1048576
- space_info 4 has 18446744072726380544 free, is not full
- space_info total=1342177280, used=24281088, pinned=1277952, reserved=1245184, may_use=2298478592, readonly=65536
- global_block_rsv: size 3407872 reserved 3407872
- trans_block_rsv: size 0 reserved 0
- chunk_block_rsv: size 393216 reserved 393216
- delayed_block_rsv: size 0 reserved 0
- delayed_refs_rsv: size 2294546432 reserved 2294546432
- ...
- 1 enospc errors during balance
- balance: ended with status: -28
 
-[CAUSE]
-When allocating block group 1104150528, since that block group has a lot
-of extents, it has a data reloc inode with a lot of extents (14659
-non-hole data extents).
+On 11/20/19 12:51 AM, David Sterba wrote:
+> On Tue, Nov 19, 2019 at 11:36:59AM +0800, Anand Jain wrote:
+>>> As this is a simple fixup
+>>> s/HELPINFO_GLOBAL_OPTIONS_HEADER/HELPINFO_INSERT_GLOBALS/, hold on with
+>>> resending I might find more things or fix it myself.
+>>>
+>>
+>> But there is one problem,  HELPINFO_INSERT_GLOBALS is already defined
+>> as..
+>>        Global options:
+>>       --format TYPE      where TYPE is: text
+>>
+>> (ref: common/help.c   do_usage_one_command())
+>>
+>> Albeit all commands support --format text by default.
+>>
+>> But no sub-command is using the HELPINFO_INSERT_GLOBALS in its usage.
+>>
+>> Looks like its a good idea to separate title and the options, like
+>> #define HELPINFO_INSERT_GLOBALS		"Global options:"
+>> #define HELPINGO_INSERT_FORMAT		"--format TYPE"
+> 
+> Yeah, makes sense to split it, right now the format does not bring
+> anything so that will be better done in a major release some time in the
+> future when more commands have json output.
 
-After relocating that block group, btrfs needs to cleanup the data reloc
-inode.
+  Ok. In v2 I have split
+   HELPINFO_GLOBAL_OPTIONS_HEADER into HELPINFO_INSERT_GLOBALS and
+   HELPINGO_INSERT_FORMAT as above.
 
-During that inode eviction, we have call evict_refill_and_join() to get
-metadata space reserved, which will cause a lot of metadata
-bytes_may_use:
-  evict_refill_and_join()
-  |- btrfs_block_rsv_refill()
-     |- btrfs_reserve_metadata_bytes()
-        |- __reserve_metadata_bytes()
-           |- if (can_overcommit() || ...) {
-           |     btrfs_space_info_update_bytes_may_use();
-           |     ret = 0;
-           |  }
-           |  if (!ret || flush == BTRFS_RESERVE_NO_FLUSH)
-           |     return ret;
-           |  return handle_reserve_ticket();
+Thanks, Anand
 
-That means, if we can can_overcommit(), we will increase bytes_may_use()
-anyway.
-And only when we failed to over-commit, handle_reserve_ticket() get
-triggered to reclaim some space.
 
-On the other hand, at btrfs_inc_block_group_ro(), we will check if we
-have enough space, and if not, allocate a chunk and retry:
-  btrfs_inc_block_group_ro()
-  |- ret = inc_block_group_ro(cache, 0);
-  |        |- if (sinfo_used + num_bytes + min_allocable_bytes <=
-  |        |      sinfo->total_bytes)
-  |        |      ret = 0; # Only success if we have enough space.
-  |- ret = btrfs_alloc_chunk(); # Trigger a chunk allocation
-  |- ret = inc_block_group_ro(cache, 0);
-           |- Do the same check again.
-
-That means, if above over-commit threshold is larger than current space
-+ 1 more chunk, btrfs will continue over-commit, causing very large
-bytes_may_use just like the enospc debug output:
- space_info total=1073741824, used=24281088, ..., may_use=2322333696
-                                                          ^^^^^^^^^^
-The fs is 25G, DUP metadata, so the over-commit threshold can be as
-large as 6G.
-In our case may_use is over 2.3G, while our metadata space info is only 1G.
-Definitely will not pass the check in btrfs_inc_block_group_ro().
-
-Such over-commit behavior works fine for most use cases, but when
-btrfs_inc_block_group_ro() is involved, we will get ENOSPC.
-
-[FIX]
-Change can_overcommit() threshold, to follow the
-btrfs_inc_block_group_ro() behavior.
-
-Adds a new threshold check based on chunk size, so if our used bytes
-(including bytes_may_use) exceeds current space info + 87.5% one chunk size,
-we stop over-commit.
-
-The 87.5% is used as extra headroom for min_allocable_bytes (SZ_1M).
-
-This makes over-commit work along with btrfs_inc_block_group_ro().
-
-The downside is, we will have much smaller over-commit threshold.
-This means, when fs is mostly empty, performance may drop compared to
-the old behavior.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
-Reason for RFC:
-This is another extreme, compared to "[RFC PATCH] btrfs: Commit
-transaction to workaround ENOSPC during relocation".
-
-This patch will reduce commit threshold for all cases, just to address
-one case in relocation.
-
-While the other RFC just address one problem, and one problem only,
-but in a whac-a-hole fashion.
-
-I don't know which is better, personally speaking, that whac-a-hole
-patch may be a little better.
-
-So both patches are with RFC tag.
----
- fs/btrfs/space-info.c | 24 +++++++++++++++++++++---
- 1 file changed, 21 insertions(+), 3 deletions(-)
-
-diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-index e8a4b0ebe97f..ea46d549ee2d 100644
---- a/fs/btrfs/space-info.c
-+++ b/fs/btrfs/space-info.c
-@@ -168,16 +168,23 @@ static int can_overcommit(struct btrfs_fs_info *fs_info,
- 	u64 profile;
- 	u64 avail;
- 	u64 used;
-+	u64 chunk_size;
- 	int factor;
- 
- 	/* Don't overcommit when in mixed mode. */
- 	if (space_info->flags & BTRFS_BLOCK_GROUP_DATA)
- 		return 0;
- 
--	if (system_chunk)
-+	if (system_chunk) {
- 		profile = btrfs_system_alloc_profile(fs_info);
--	else
-+		chunk_size = SZ_32M;
-+	} else {
- 		profile = btrfs_metadata_alloc_profile(fs_info);
-+		if (fs_info->fs_devices->total_rw_bytes > 50ULL * SZ_1G)
-+			chunk_size = SZ_1G;
-+		else
-+			chunk_size = SZ_256M;
-+	}
- 
- 	used = btrfs_space_info_used(space_info, true);
- 	avail = atomic64_read(&fs_info->free_chunk_space);
-@@ -201,7 +208,18 @@ static int can_overcommit(struct btrfs_fs_info *fs_info,
- 	else
- 		avail >>= 1;
- 
--	if (used + bytes < space_info->total_bytes + avail)
-+	/*
-+	 * The over commit threshold is the lower value of:
-+	 * - 1/2 or 1/8 of unallocated space as meta/sys chunk
-+	 *   This works well if there isn't much unallocated space left.
-+	 *
-+	 * - 7/8 of a new chunk
-+	 *   This works well if there is a lot of unallocated space left.
-+	 *   And it co-operates with inc_block_group_ro() used in relocation to
-+	 *   avoid false ENOSPC.
-+	 */
-+	if (used + bytes < space_info->total_bytes + avail &&
-+	    used + bytes < space_info->total_bytes + chunk_size * 7 / 8)
- 		return 1;
- 	return 0;
- }
--- 
-2.24.0
-
+>> As at the moment I am not sure if its safe to declare that all
+>> sub-commands will support --format json (whenever we do that).
+> 
+> No, right now json output should not be declared anywhere.
+> 
+>> So with the defines split as above, in each sub-command-usage
+>> we shall do..
+>> 
+>> -----------------------------------------
+>> diff --git a/cmds/filesystem.c b/cmds/filesystem.c
+>> index 4f22089abeaa..f4dba38b4c17 100644
+>> --- a/cmds/filesystem.c
+>> +++ b/cmds/filesystem.c
+>> @@ -631,6 +631,10 @@ static const char * const
+>> cmd_filesystem_show_usage[] = {
+>>           "-m|--mounted       show only mounted btrfs",
+>>           HELPINFO_UNITS_LONG,
+>>           "If no argument is given, structure of all present filesystems
+>> is shown.",
+>> +       HELPINFO_INSERT_GLOBALS,
+>> +       HELPINFO_INSERT_FORMAT,
+>> +       HELPINFO_INSERT_VERBOSE,
+>> +       HELPINFO_INSERT_QUIET,
+> 
+> Sounds ok.
+> 

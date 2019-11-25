@@ -2,125 +2,66 @@ Return-Path: <SRS0=lVOs=ZR=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-6.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
+	SPF_HELO_NONE,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E7E1DC43141
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Nov 2019 19:47:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 269B9C432C0
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Nov 2019 22:45:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id BF0252071E
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Nov 2019 19:47:36 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id F22F220862
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Nov 2019 22:45:06 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1574711256;
-	bh=EKXXRyOwtA0kFojJ2pCLj1GPm1CwKvtotNKOPpVyaJs=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References:In-Reply-To:
-	 References:List-ID:From;
-	b=MFDOV/LIjVrRR9a0zQd7w7Y/LZNn5w8PGpQ/7aVrIHKLtcu5h3g9PWU71hpgXaqUf
-	 n0PG2W8IhOIb2HKxgSPEiHB25hTSq150HvNIJi2JTPl233gilSIzdY07b55+o7A0Gd
-	 Uf8GMkSnBSFGFBJW81AfIxw4CJHWkigmUjw3uJ/c=
+	s=default; t=1574721907;
+	bh=ZClY/lm1Iav2NgRbsrICC8kisv5A90msTOuVRsCMpFw=;
+	h=Subject:From:In-Reply-To:References:Date:To:Cc:List-ID:From;
+	b=xIqEugA47OPoBvTR0sNgkCZnIa8MjSNEUcXlWDIETgrxAU2QuzNxMuLjtDNAf5Mxk
+	 fO8E7mqouGRsVWW/l/DDNOEIHsFP/y1l45EPABbNmSCc89+zPPHSvpwwVqUvcnlpUN
+	 r0JqA7hbDV+65tWvObXwtxumtljHVAVNCJ+R6LR4=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725862AbfKYTrf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Nov 2019 14:47:35 -0500
-Received: from mail-qv1-f68.google.com ([209.85.219.68]:34645 "EHLO
-        mail-qv1-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727176AbfKYTrc (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Nov 2019 14:47:32 -0500
-Received: by mail-qv1-f68.google.com with SMTP id n12so6290122qvt.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Nov 2019 11:47:30 -0800 (PST)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
-         :references:in-reply-to:references;
-        bh=vkcIRBFOsluZbYg6A84SaZ/77cib1TDE+4UeF7XKKAc=;
-        b=IsKbUFvpQeCTTnHVOZO0Y+lSBKrw9JlVLEuSjlvN1ZjkEhvvjD/je+MELICU4gcnHY
-         q+42J/P2dK3W4KJpXJSUB3E+Z7Ak2qAqo6Tga5kuw0wNPt9E0eibXvhAm9/wKfxiG8FY
-         PXVPE/hiWB1xeOJG6DO0Bro5W9PgwNYNrDJjl8AjCKMu4jlm+Kkpan/G7ct9FgydPIFo
-         uMC2suVYI+F4yFXRC/lglThlj15U3nW+Dc3zr4TlueQVCUZf1LxjjMN1RDf0qL1i9XM4
-         HAOFp9cXUUGx8caSiiwJduYeo5XApUSdw/sWU75wJKSD9Gpau25aw1SSU6j04BDst0Ku
-         3ryw==
-X-Gm-Message-State: APjAAAXpFm3CLL77GZ3+dIG0RI9fQe+6VyO0RmVugJbPW7hx735PZhSW
-        ypE/T4WnMzRCzoyNMgp+lC0=
-X-Google-Smtp-Source: APXvYqyjwwKeyIe3B8OHsbEqX2mZ5ftvKGOx49iWqqrG8JJ0vDAwJyttVXEDGDID7vzlIj+gfaJsQQ==
-X-Received: by 2002:ad4:55ce:: with SMTP id bt14mr28532711qvb.131.1574711249535;
-        Mon, 25 Nov 2019 11:47:29 -0800 (PST)
-Received: from dennisz-mbp.thefacebook.com ([163.114.130.128])
-        by smtp.gmail.com with ESMTPSA id o13sm4481033qto.96.2019.11.25.11.47.28
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-SHA bits=128/128);
-        Mon, 25 Nov 2019 11:47:28 -0800 (PST)
-From:   Dennis Zhou <dennis@kernel.org>
-To:     David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        Omar Sandoval <osandov@osandov.com>
-Cc:     kernel-team@fb.com, linux-btrfs@vger.kernel.org,
-        Dennis Zhou <dennis@kernel.org>
-Subject: [PATCH 20/22] btrfs: add async discard header
-Date:   Mon, 25 Nov 2019 14:47:00 -0500
-Message-Id: <c409aa7d47090134f2e2db5089c5fee1747c26dd.1574709825.git.dennis@kernel.org>
-X-Mailer: git-send-email 2.13.5
-In-Reply-To: <cover.1574709825.git.dennis@kernel.org>
-References: <cover.1574709825.git.dennis@kernel.org>
-In-Reply-To: <cover.1574709825.git.dennis@kernel.org>
-References: <cover.1574709825.git.dennis@kernel.org>
+        id S1727809AbfKYWpG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Nov 2019 17:45:06 -0500
+Received: from mail.kernel.org ([198.145.29.99]:39760 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727139AbfKYWpF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Nov 2019 17:45:05 -0500
+Subject: Re: [GIT PULL] Btrfs updates for 5.5
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1574721905;
+        bh=ZClY/lm1Iav2NgRbsrICC8kisv5A90msTOuVRsCMpFw=;
+        h=From:In-Reply-To:References:Date:To:Cc:From;
+        b=jLVqA+a23ELumM+o/45vWqUuMQYFFv7MEHwbh2Uxuaz+/dJbs33kvjFaVcVBftSjT
+         9RvWSALk0txJaGhSiN4VN4SQwHdMRSYtPfUCeMefasbwEgQpI+ny02FQ/JHqmcRzi8
+         0grJkwgUGpUDrGUm/UrteCUzNCxLCU0e5TOwBqbA=
+From:   pr-tracker-bot@kernel.org
+In-Reply-To: <cover.1574439340.git.dsterba@suse.com>
+References: <cover.1574439340.git.dsterba@suse.com>
+X-PR-Tracked-List-Id: <linux-kernel.vger.kernel.org>
+X-PR-Tracked-Message-Id: <cover.1574439340.git.dsterba@suse.com>
+X-PR-Tracked-Remote: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.5-tag
+X-PR-Tracked-Commit-Id: fa17ed069c61286b26382e23b57a62930657b9c1
+X-PR-Merge-Tree: torvalds/linux.git
+X-PR-Merge-Refname: refs/heads/master
+X-PR-Merge-Commit-Id: 97d0bf96a0d0986f466c3ff59f2ace801e33dc69
+Message-Id: <157472190532.22729.17441948611368975877.pr-tracker-bot@kernel.org>
+Date:   Mon, 25 Nov 2019 22:45:05 +0000
+To:     David Sterba <dsterba@suse.com>
+Cc:     torvalds@linux-foundation.org, David Sterba <dsterba@suse.com>,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Give a brief overview for how async discard is implemented.
+The pull request you sent on Fri, 22 Nov 2019 17:23:44 +0100:
 
-Signed-off-by: Dennis Zhou <dennis@kernel.org>
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
----
- fs/btrfs/discard.c | 35 +++++++++++++++++++++++++++++++++++
- 1 file changed, 35 insertions(+)
+> git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.5-tag
 
-diff --git a/fs/btrfs/discard.c b/fs/btrfs/discard.c
-index 7ab4a93fc3b7..66b7855449df 100644
---- a/fs/btrfs/discard.c
-+++ b/fs/btrfs/discard.c
-@@ -1,4 +1,39 @@
- // SPDX-License-Identifier: GPL-2.0
-+/*
-+ * This contains the logic to handle async discard.
-+ *
-+ * Async discard manages trimming of free space outside of transaction commit.
-+ * Discarding is done by managing the block_groups on a LRU list based on free
-+ * space recency.  Two passes are used to first prioritize discarding extents
-+ * and then allow for trimming in the bitmap the best opportunity to coalesce.
-+ * The block_groups are maintained on multiple lists to allow for multiple
-+ * passes with different discard filter requirements.  A delayed work item is
-+ * used to manage discarding with timeout determined by a max of the delay
-+ * incurred by the iops rate limit, byte rate limit, and the timeout of max
-+ * delay of BTRFS_DISCARD_MAX_DELAY.
-+ *
-+ * The first list is special to manage discarding of fully free block groups.
-+ * This is necessary because we issue a final trim for a full free block group
-+ * after forgetting it.  When a block group becomes unused, instead of directly
-+ * being added to the unused_bgs list, we add it to this first list.  Then
-+ * from there, if it becomes fully discarded, we place it onto the unused_bgs
-+ * list.
-+ *
-+ * The in-memory free space cache serves as the backing state for discard.
-+ * Consequently this means there is no persistence.  We opt to load all the
-+ * block groups in as not discarded, so the mount case degenerates to the
-+ * crashing case.
-+ *
-+ * As the free space cache uses bitmaps, there exists a tradeoff between
-+ * ease/efficiency for find_free_extent() and the accuracy of discard state.
-+ * Here we opt to let untrimmed regions merge with everything while only letting
-+ * trimmed regions merge with other trimmed regions.  This can cause
-+ * overtrimming, but the coalescing benefit seems to be worth it.  Additionally,
-+ * bitmap state is tracked as a whole.  If we're able to fully trim a bitmap,
-+ * the trimmed flag is set on the bitmap.  Otherwise, if an allocation comes in,
-+ * this resets the state and we will retry trimming the whole bitmap.  This is a
-+ * tradeoff between discard state accuracy and the cost of accounting.
-+ */
- 
- #include <linux/jiffies.h>
- #include <linux/kernel.h>
+has been merged into torvalds/linux.git:
+https://git.kernel.org/torvalds/c/97d0bf96a0d0986f466c3ff59f2ace801e33dc69
+
+Thank you!
+
 -- 
-2.17.1
-
+Deet-doot-dot, I am a bot.
+https://korg.wiki.kernel.org/userdoc/prtracker

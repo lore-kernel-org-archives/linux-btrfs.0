@@ -7,54 +7,54 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 24A0DC432C0
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Nov 2019 10:39:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E2C9EC432C3
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Nov 2019 10:39:46 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id F195820740
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Nov 2019 10:39:44 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B8B352075C
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Nov 2019 10:39:46 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="bmIuP1GH"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="eKUjbLVb"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727523AbfKYKjn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Nov 2019 05:39:43 -0500
-Received: from aserp2120.oracle.com ([141.146.126.78]:37662 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727510AbfKYKjm (ORCPT
+        id S1727530AbfKYKjq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Nov 2019 05:39:46 -0500
+Received: from userp2130.oracle.com ([156.151.31.86]:50394 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727510AbfKYKjp (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Nov 2019 05:39:42 -0500
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xAPAY6b2021407
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Nov 2019 10:39:41 GMT
+        Mon, 25 Nov 2019 05:39:45 -0500
+Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
+        by userp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xAPAY8YW026933
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Nov 2019 10:39:44 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
  date : message-id : in-reply-to : references; s=corp-2019-08-05;
- bh=s9T4tsWbCzq3wueo/6QaQoWWTLLCxiHukl3t6dzAvWQ=;
- b=bmIuP1GHaNB/wGSi8IouZ7slGcNmw1wjWmBwNWmG/8CW8X7eBZWPzSGJTbz+MCYw3EFw
- 6lYA0DfPbIr1OKt3xvxehtI0Ayz8Il2u5NFlQA5UaK3lm7UBKyofHRzaJv2+1XPJHkE+
- 7mPIqWslCJk/snUlOfh066YqXvOsX2PF/iTtrURJR7McqSt0xoMrWJa9Ur0p4iCIdtWn
- tqtqDfVJC9zZmQ6bIPQjQ6/yIvhz09/zepScsd174kolg8RPKzvIkVI00aupos43mehf
- M5Z9WYWN9QllG/yF2t6pOPxDGaLKZxSya8bu90UDR+RF7oBrkWRdmmRDKfXYgAXn4zev VQ== 
+ bh=+DbVHrN61eEJdFmQa3G3gSMqH3Tl4XDcK5WKekl+bNU=;
+ b=eKUjbLVbSlO1op/ub6mGzATcAFxwu0kFFNl2OMydfqm72vKFoDugmTo16skz/eL2z/Ma
+ WvGO4GnqWPm5sZbamgaIulTMs1o8LdoNxiJFOC3M6NUVU68cBwBAX0DEHCwVbRTZ0jfx
+ 12P332jCMchd7p2v47UEhVX1kDEMn46Iy7U7/z9ZZpgRU72Dky9L0gqlfl1ysUoW+NMb
+ /zrPE6ZLoOeKmez3KbR25SmxLxXASq9l+s86d+njZxXr5syCbNW27u3A9upvPQvs5nzk
+ 7SX9/EVnaKazfY2H6KDogAztI3w12xvRfUOMCXQiDXVcrKKSkM24iF6mbESWuWcbnZAu sA== 
 Received: from aserp3030.oracle.com (aserp3030.oracle.com [141.146.126.71])
-        by aserp2120.oracle.com with ESMTP id 2wevqpxrx0-1
+        by userp2130.oracle.com with ESMTP id 2wev6txrtc-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Nov 2019 10:39:41 +0000
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Nov 2019 10:39:44 +0000
 Received: from pps.filterd (aserp3030.oracle.com [127.0.0.1])
-        by aserp3030.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xAPAXIB0191751
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Nov 2019 10:39:40 GMT
+        by aserp3030.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xAPAXIWU191785
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Nov 2019 10:39:43 GMT
 Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by aserp3030.oracle.com with ESMTP id 2wfex64qvu-1
+        by aserp3030.oracle.com with ESMTP id 2wfex64qxu-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Nov 2019 10:39:40 +0000
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Nov 2019 10:39:43 +0000
 Received: from abhmp0008.oracle.com (abhmp0008.oracle.com [141.146.116.14])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id xAPAdejw017356
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Nov 2019 10:39:40 GMT
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id xAPAdh9d017373
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Nov 2019 10:39:43 GMT
 Received: from tp.wifi.oracle.com (/192.188.170.104)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Mon, 25 Nov 2019 02:39:39 -0800
+        with ESMTP ; Mon, 25 Nov 2019 02:39:42 -0800
 From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 07/16] btrfs-progs: balance start: use global verbose option
-Date:   Mon, 25 Nov 2019 18:39:08 +0800
-Message-Id: <1574678357-22222-8-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH v2 09/16] btrfs-progs: rescue chunk-recover: use global verbose option
+Date:   Mon, 25 Nov 2019 18:39:10 +0800
+Message-Id: <1574678357-22222-10-git-send-email-anand.jain@oracle.com>
 X-Mailer: git-send-email 1.8.3.1
 In-Reply-To: <1574678357-22222-1-git-send-email-anand.jain@oracle.com>
 References: <1574678357-22222-1-git-send-email-anand.jain@oracle.com>
@@ -74,60 +74,121 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Transpire global --verbose option down to the btrfs balance start
+Transpire global --verbose option down to the btrfs rescue chunk-recover
 sub-command.
+
+For example: Both global and local verbose options are now supported.
+ btrfs -v|--verbose rescue chunk-recover
+ btrfs rescue chunk-recover -v
 
 Suggested-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
 v2: Use new helper functions and defines
-    HELPINFO_INSERT_GLOBALS, BTRFS_BCONF_UNSET, BTRFS_BCONF_QUIET
-    bconf_be_verbose(), bconf_be_quiet()
+     HELPINFO_INSERT_GLOBALS, BTRFS_BCONF_UNSET, BTRFS_BCONF_QUIET
+     bconf_be_verbose(), bconf_be_quiet()
+    Drop verbose argument in init_recover_control()
 
-    No need to init bconf.verbose in the sub command.
+ cmds/rescue-chunk-recover.c |  9 ++++-----
+ cmds/rescue.c               | 11 ++++++++---
+ cmds/rescue.h               |  2 +-
+ 3 files changed, 13 insertions(+), 9 deletions(-)
 
- cmds/balance.c | 7 ++++---
- 1 file changed, 4 insertions(+), 3 deletions(-)
-
-diff --git a/cmds/balance.c b/cmds/balance.c
-index 5392a6040a02..9c2cdacdb288 100644
---- a/cmds/balance.c
-+++ b/cmds/balance.c
-@@ -499,6 +499,8 @@ static const char * const cmd_balance_start_usage[] = {
- 	"--full-balance do not print warning and do not delay start",
- 	"--background|--bg",
- 	"               run the balance as a background process",
+diff --git a/cmds/rescue-chunk-recover.c b/cmds/rescue-chunk-recover.c
+index 171b4d07ecf9..cc7dc8c72487 100644
+--- a/cmds/rescue-chunk-recover.c
++++ b/cmds/rescue-chunk-recover.c
+@@ -194,8 +194,7 @@ static struct btrfs_chunk *create_chunk_item(struct chunk_record *record)
+ 	return ret;
+ }
+ 
+-static void init_recover_control(struct recover_control *rc, int verbose,
+-		int yes)
++static void init_recover_control(struct recover_control *rc, int yes)
+ {
+ 	memset(rc, 0, sizeof(struct recover_control));
+ 	cache_tree_init(&rc->chunk);
+@@ -208,7 +207,7 @@ static void init_recover_control(struct recover_control *rc, int verbose,
+ 	INIT_LIST_HEAD(&rc->rebuild_chunks);
+ 	INIT_LIST_HEAD(&rc->unrepaired_chunks);
+ 
+-	rc->verbose = verbose;
++	rc->verbose = bconf.verbose;
+ 	rc->yes = yes;
+ 	pthread_mutex_init(&rc->rc_lock, NULL);
+ }
+@@ -2319,14 +2318,14 @@ static void validate_rebuild_chunks(struct recover_control *rc)
+ /*
+  * Return 0 when successful, < 0 on error and > 0 if aborted by user
+  */
+-int btrfs_recover_chunk_tree(const char *path, int verbose, int yes)
++int btrfs_recover_chunk_tree(const char *path, int yes)
+ {
+ 	int ret = 0;
+ 	struct btrfs_root *root = NULL;
+ 	struct btrfs_trans_handle *trans;
+ 	struct recover_control rc;
+ 
+-	init_recover_control(&rc, verbose, yes);
++	init_recover_control(&rc, yes);
+ 
+ 	ret = recover_prepare(&rc, path);
+ 	if (ret) {
+diff --git a/cmds/rescue.c b/cmds/rescue.c
+index 087c33befeff..19de5235a22e 100644
+--- a/cmds/rescue.c
++++ b/cmds/rescue.c
+@@ -40,6 +40,8 @@ static const char * const cmd_rescue_chunk_recover_usage[] = {
+ 	"-y	Assume an answer of `yes' to all questions",
+ 	"-v	Verbose mode",
+ 	"-h	Help",
 +	HELPINFO_INSERT_GLOBALS,
 +	HELPINFO_INSERT_VERBOSE,
  	NULL
  };
  
-@@ -509,7 +511,6 @@ static int cmd_balance_start(const struct cmd_struct *cmd,
- 	struct btrfs_balance_args *ptrs[] = { &args.data, &args.sys,
- 						&args.meta, NULL };
- 	int force = 0;
+@@ -49,7 +51,10 @@ static int cmd_rescue_chunk_recover(const struct cmd_struct *cmd,
+ 	int ret = 0;
+ 	char *file;
+ 	int yes = 0;
 -	int verbose = 0;
- 	int background = 0;
- 	unsigned start_flags = 0;
- 	int i;
-@@ -564,7 +565,7 @@ static int cmd_balance_start(const struct cmd_struct *cmd,
- 			force = 1;
++
++	/* If verbose is unset, set it to 0 */
++	if (bconf.verbose == BTRFS_BCONF_UNSET)
++		bconf.verbose = BTRFS_BCONF_QUIET;
+ 
+ 	optind = 0;
+ 	while (1) {
+@@ -61,7 +66,7 @@ static int cmd_rescue_chunk_recover(const struct cmd_struct *cmd,
+ 			yes = 1;
  			break;
  		case 'v':
 -			verbose = 1;
-+			bconf_be_verbose();
++			bconf.verbose++;
  			break;
- 		case GETOPT_VAL_FULL_BALANCE:
- 			start_flags |= BALANCE_START_NOWARN;
-@@ -640,7 +641,7 @@ static int cmd_balance_start(const struct cmd_struct *cmd,
+ 		default:
+ 			usage_unknown_option(cmd, argv);
+@@ -83,7 +88,7 @@ static int cmd_rescue_chunk_recover(const struct cmd_struct *cmd,
+ 		return 1;
+ 	}
  
- 	if (force)
- 		args.flags |= BTRFS_BALANCE_FORCE;
--	if (verbose)
-+	if (bconf.verbose > BTRFS_BCONF_QUIET)
- 		dump_ioctl_balance_args(&args);
- 	if (background) {
- 		switch (fork()) {
+-	ret = btrfs_recover_chunk_tree(file, verbose, yes);
++	ret = btrfs_recover_chunk_tree(file, yes);
+ 	if (!ret) {
+ 		fprintf(stdout, "Chunk tree recovered successfully\n");
+ 	} else if (ret > 0) {
+diff --git a/cmds/rescue.h b/cmds/rescue.h
+index de486e2e2004..e594954f78e2 100644
+--- a/cmds/rescue.h
++++ b/cmds/rescue.h
+@@ -16,6 +16,6 @@
+ #define __BTRFS_RESCUE_H__
+ 
+ int btrfs_recover_superblocks(const char *path, int verbose, int yes);
+-int btrfs_recover_chunk_tree(const char *path, int verbose, int yes);
++int btrfs_recover_chunk_tree(const char *path, int yes);
+ 
+ #endif
 -- 
 1.8.3.1
 

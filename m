@@ -7,58 +7,58 @@ X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 73DDEC43215
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Nov 2019 19:47:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 458EFC432C0
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Nov 2019 19:47:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4E2AB2075C
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Nov 2019 19:47:27 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 17C562075C
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Nov 2019 19:47:28 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1574711247;
-	bh=qIHa463K50knl/D3e5c97Qu5bI9IRPCnymi5/p5WO5k=;
+	s=default; t=1574711248;
+	bh=qCochKK/calBzIbLkts0EnlcLYiNUebyAPxOefuJQa8=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:In-Reply-To:
 	 References:List-ID:From;
-	b=f+UMJyFoITvz6yyiNN+wXcCUfgzATnZ5JE9jZsqJNODU6RxmG8UdeInznl2D/WVMK
-	 red4xm7vIEhFlB43+HAxFVxmUmDgimicXyzRowsnvZgggLIAqUjd940XAGY9WD1Aht
-	 MY66VRnYkWl4S+aVdiaYBKVOISDfky4wat6Z9nu8=
+	b=fixXIbS9glbSk8cXIAor1e+AsIYcVjCAwV1qt3pMOwRELbDjrebqXOuxv/+jHkjMZ
+	 7987G8ciUZ48Xx+ZY18PInYOJSP5FYxt5g4bPZEq4guRzTb8GwDtUx30CWcAZ4nBMM
+	 8nvDv9SEOUmSsA4mCa+IbqOLLSxKXvsDGnk5lpBY=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727158AbfKYTrY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Nov 2019 14:47:24 -0500
-Received: from mail-qt1-f193.google.com ([209.85.160.193]:44837 "EHLO
-        mail-qt1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727139AbfKYTrX (ORCPT
+        id S1727175AbfKYTr1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Nov 2019 14:47:27 -0500
+Received: from mail-qk1-f194.google.com ([209.85.222.194]:38201 "EHLO
+        mail-qk1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727156AbfKYTr0 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Nov 2019 14:47:23 -0500
-Received: by mail-qt1-f193.google.com with SMTP id g24so11749887qtq.11
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Nov 2019 11:47:22 -0800 (PST)
+        Mon, 25 Nov 2019 14:47:26 -0500
+Received: by mail-qk1-f194.google.com with SMTP id e2so13940480qkn.5
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Nov 2019 11:47:26 -0800 (PST)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:in-reply-to:references;
-        bh=yGC/Pq+tnj/7aNVBYYJDP8+R4STEJhY4WcWAt+ulph8=;
-        b=jcOOYHKAMl2Xkn5OSGeSbyGcRJyu8zZsmTwVLutz/kyLKVtFl2lWci1x8EP3uRy9Xf
-         hqcKuq2f0TYALa0FQukd5x6VNSlq7p9guUkBhXozjM4i6hVPCyLenvf8Sa9PFrr98tBX
-         scRadvN3GjFheDVcUYQV24/KqIUzMkEge9MwwDRqh879bwjIpAAWMzCr9hEnCPsuMaRQ
-         bjxgi6NAGPI6Eqt0F3qBRPp3E1Ni3S7VzwilpTv5eUHRouHq3Uezpr/IOaYEFIw11Yhh
-         fNGg6XKy0KNK63ABwWpSKBi3mEtxMKSkWhDzzg/mQ9LQHPNuwLDG0bnjimJJ671H3gDB
-         bK/Q==
-X-Gm-Message-State: APjAAAVMgiCQqw7BWG8w/qlOX1p86aj2qCgeR4FNkMcpKRRg8MzjPm40
-        DtLKH+7muOMuPZiJU4Cu3Ag=
-X-Google-Smtp-Source: APXvYqxSppfLMpciEqV5UW1BmpWeJHYjFSi1d5GtZwWDwH5yABX4es+SLKNaqwHhi27bbJEvfLrwhQ==
-X-Received: by 2002:ac8:607:: with SMTP id d7mr30857306qth.186.1574711242161;
-        Mon, 25 Nov 2019 11:47:22 -0800 (PST)
+        bh=WgUX1nnyUuZ2SLI+nwXY5rwEtLfw8mEHuGCXouJzMiQ=;
+        b=gSR5qn3JxeqxS5jCZtKQIeUWVTa4Wb2E60km16dQGKJHnQC26/lQU/eTSrHoRFyiac
+         W/jLxX1IWB8Fufv+fX1HKUDko8NlIhmnxnrr2foX60vA3Z3V93yPlqTOIBQC04NrzSF1
+         nmZMgTepQ9Tso9XlYOK+m7vvIAAVDfnVuFcQV3/uabKcYVzXRYDwEZYPuioP5o2MRyLP
+         mvD8VvgEhll4lVWT3ukYTbssFi53ZQ24aKbxPQxF+kXu6gzMMdtuZ+bY7q+fkUw2b7NH
+         CjMIEhLqM29w4k744juQ69KUE7BkMI30a/6RzoKFHjIEaG92mRWNwROgLaJjoJvOQ+xr
+         e2Rg==
+X-Gm-Message-State: APjAAAX1zUUj4D7tFT/s+O52Vbds1YFtZS7ZCM4KjG8VnPiyZ50N56+Y
+        z40oH5lN7BVOAzCw2sHFYi4=
+X-Google-Smtp-Source: APXvYqxukUjLd9g6JXroxdty6K7/2r+2g4jjEuyKoP6et+T6IVxcEfYrJx21B4z0Z8iQ8RFt9fvGCw==
+X-Received: by 2002:a37:f905:: with SMTP id l5mr14370745qkj.90.1574711245508;
+        Mon, 25 Nov 2019 11:47:25 -0800 (PST)
 Received: from dennisz-mbp.thefacebook.com ([163.114.130.128])
-        by smtp.gmail.com with ESMTPSA id o13sm4481033qto.96.2019.11.25.11.47.21
+        by smtp.gmail.com with ESMTPSA id o13sm4481033qto.96.2019.11.25.11.47.24
         (version=TLS1_2 cipher=ECDHE-RSA-AES128-SHA bits=128/128);
-        Mon, 25 Nov 2019 11:47:21 -0800 (PST)
+        Mon, 25 Nov 2019 11:47:24 -0800 (PST)
 From:   Dennis Zhou <dennis@kernel.org>
 To:     David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
         Josef Bacik <josef@toxicpanda.com>,
         Omar Sandoval <osandov@osandov.com>
 Cc:     kernel-team@fb.com, linux-btrfs@vger.kernel.org,
         Dennis Zhou <dennis@kernel.org>
-Subject: [PATCH 13/22] btrfs: calculate discard delay based on number of extents
-Date:   Mon, 25 Nov 2019 14:46:53 -0500
-Message-Id: <9171398d2ba16bc6b2b41a3d4982acf9ae27417d.1574709825.git.dennis@kernel.org>
+Subject: [PATCH 16/22] btrfs: make max async discard size tunable
+Date:   Mon, 25 Nov 2019 14:46:56 -0500
+Message-Id: <355a12c95c442c50a0da3370c8d8befb113b6bd7.1574709825.git.dennis@kernel.org>
 X-Mailer: git-send-email 2.13.5
 In-Reply-To: <cover.1574709825.git.dennis@kernel.org>
 References: <cover.1574709825.git.dennis@kernel.org>
@@ -69,192 +69,150 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Use the number of discardable extents to help guide our discard delay
-interval. This value is reevaluated every transaction commit.
+Expose max_discard_size as a tunable via sysfs.
 
 Signed-off-by: Dennis Zhou <dennis@kernel.org>
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/ctree.h       |  2 ++
- fs/btrfs/discard.c     | 53 ++++++++++++++++++++++++++++++++++++++----
- fs/btrfs/discard.h     |  1 +
- fs/btrfs/extent-tree.c |  4 +++-
- fs/btrfs/sysfs.c       | 31 ++++++++++++++++++++++++
- 5 files changed, 86 insertions(+), 5 deletions(-)
+ fs/btrfs/ctree.h            |  1 +
+ fs/btrfs/discard.c          |  1 +
+ fs/btrfs/free-space-cache.c | 19 ++++++++++++-------
+ fs/btrfs/sysfs.c            | 31 +++++++++++++++++++++++++++++++
+ 4 files changed, 45 insertions(+), 7 deletions(-)
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 5b13bda52ab7..78b970cfd108 100644
+index 303f000fe30a..37ad60913092 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -469,6 +469,8 @@ struct btrfs_discard_ctl {
- 	struct list_head discard_list[BTRFS_NR_DISCARD_LISTS];
+@@ -470,6 +470,7 @@ struct btrfs_discard_ctl {
+ 	u64 prev_discard;
  	atomic_t discardable_extents;
  	atomic64_t discardable_bytes;
-+	u32 delay;
-+	u32 iops_limit;
- };
- 
- /* delayed seq elem */
++	u64 max_discard_size;
+ 	u32 delay;
+ 	u32 iops_limit;
+ 	u64 bps_limit;
 diff --git a/fs/btrfs/discard.c b/fs/btrfs/discard.c
-index 074341c8242a..ddd5cc303b1e 100644
+index 49e148a6a0ea..93e632267247 100644
 --- a/fs/btrfs/discard.c
 +++ b/fs/btrfs/discard.c
-@@ -14,6 +14,11 @@
- /* This is an initial delay to give some chance for lba reuse. */
- #define BTRFS_DISCARD_DELAY		(120ULL * NSEC_PER_SEC)
- 
-+/* Target completion latency of discarding all discardable extents. */
-+#define BTRFS_DISCARD_TARGET_MSEC	(6 * 60 * 60UL * MSEC_PER_SEC)
-+#define BTRFS_DISCARD_MAX_DELAY		(10000UL)
-+#define BTRFS_DISCARD_MAX_IOPS		(10UL)
-+
- static struct list_head *btrfs_get_discard_list(
- 					struct btrfs_discard_ctl *discard_ctl,
- 					struct btrfs_block_group *block_group)
-@@ -231,11 +236,18 @@ void btrfs_discard_schedule_work(struct btrfs_discard_ctl *discard_ctl,
- 
- 	block_group = find_next_block_group(discard_ctl, now);
- 	if (block_group) {
--		u64 delay = 0;
-+		u32 delay = discard_ctl->delay;
-+
-+		/*
-+		 * This timeout is to hopefully prevent immediate discarding
-+		 * in a recently allocated block group.
-+		 */
-+		if (now < block_group->discard_eligible_time) {
-+			u64 bg_timeout = (block_group->discard_eligible_time -
-+					  now);
- 
--		if (now < block_group->discard_eligible_time)
--			delay = nsecs_to_jiffies(
--				block_group->discard_eligible_time - now);
-+			delay = max_t(u64, delay, nsecs_to_jiffies(bg_timeout));
-+		}
- 
- 		mod_delayed_work(discard_ctl->discard_workers,
- 				 &discard_ctl->work,
-@@ -341,6 +353,37 @@ bool btrfs_run_discard_work(struct btrfs_discard_ctl *discard_ctl)
- 		test_bit(BTRFS_FS_DISCARD_RUNNING, &fs_info->flags));
- }
- 
-+/**
-+ * btrfs_discard_calc_delay - recalculate the base delay
-+ * @discard_ctl: discard control
-+ *
-+ * Recalculate the base delay which is based off the total number of
-+ * discardable_extents.  Clamp this with the iops_limit and
-+ * BTRFS_DISCARD_MAX_DELAY.
-+ */
-+void btrfs_discard_calc_delay(struct btrfs_discard_ctl *discard_ctl)
-+{
-+	s32 discardable_extents =
-+		atomic_read(&discard_ctl->discardable_extents);
-+	s32 iops_limit;
-+	unsigned long delay;
-+
-+	if (!discardable_extents)
-+		return;
-+
-+	spin_lock(&discard_ctl->lock);
-+
-+	iops_limit = READ_ONCE(discard_ctl->iops_limit);
-+	if (iops_limit)
-+		iops_limit = MSEC_PER_SEC / iops_limit;
-+
-+	delay = BTRFS_DISCARD_TARGET_MSEC / discardable_extents;
-+	delay = clamp_t(s32, delay, iops_limit, BTRFS_DISCARD_MAX_DELAY);
-+	discard_ctl->delay = msecs_to_jiffies(delay);
-+
-+	spin_unlock(&discard_ctl->lock);
-+}
-+
- /**
-  * btrfs_discard_update_discardable - propagate discard counters
-  * @block_group: block_group of interest
-@@ -470,6 +513,8 @@ void btrfs_discard_init(struct btrfs_fs_info *fs_info)
- 
+@@ -530,6 +530,7 @@ void btrfs_discard_init(struct btrfs_fs_info *fs_info)
+ 	discard_ctl->prev_discard = 0;
  	atomic_set(&discard_ctl->discardable_extents, 0);
  	atomic64_set(&discard_ctl->discardable_bytes, 0);
-+	discard_ctl->delay = BTRFS_DISCARD_MAX_DELAY;
-+	discard_ctl->iops_limit = BTRFS_DISCARD_MAX_IOPS;
- }
++	discard_ctl->max_discard_size = BTRFS_ASYNC_DISCARD_MAX_SIZE;
+ 	discard_ctl->delay = BTRFS_DISCARD_MAX_DELAY;
+ 	discard_ctl->iops_limit = BTRFS_DISCARD_MAX_IOPS;
+ 	discard_ctl->bps_limit = 0;
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 452afd616623..1c195308652d 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -3407,6 +3407,8 @@ static int trim_no_bitmap(struct btrfs_block_group *block_group,
+ 			  u64 *total_trimmed, u64 start, u64 end, u64 minlen,
+ 			  bool async)
+ {
++	struct btrfs_discard_ctl *discard_ctl =
++					&block_group->fs_info->discard_ctl;
+ 	struct btrfs_free_space_ctl *ctl = block_group->free_space_ctl;
+ 	struct btrfs_free_space *entry;
+ 	struct rb_node *node;
+@@ -3415,6 +3417,7 @@ static int trim_no_bitmap(struct btrfs_block_group *block_group,
+ 	u64 extent_bytes;
+ 	enum btrfs_trim_state extent_trim_state;
+ 	u64 bytes;
++	u64 max_discard_size = READ_ONCE(discard_ctl->max_discard_size);
  
- void btrfs_discard_cleanup(struct btrfs_fs_info *fs_info)
-diff --git a/fs/btrfs/discard.h b/fs/btrfs/discard.h
-index 75f00a84d540..88f1363aa4e4 100644
---- a/fs/btrfs/discard.h
-+++ b/fs/btrfs/discard.h
-@@ -23,6 +23,7 @@ void btrfs_discard_schedule_work(struct btrfs_discard_ctl *discard_ctl,
- bool btrfs_run_discard_work(struct btrfs_discard_ctl *discard_ctl);
+ 	while (start < end) {
+ 		struct btrfs_trim_range trim_entry;
+@@ -3452,11 +3455,10 @@ static int trim_no_bitmap(struct btrfs_block_group *block_group,
+ 				goto next;
+ 			}
+ 			unlink_free_space(ctl, entry);
+-			if (bytes > BTRFS_ASYNC_DISCARD_MAX_SIZE) {
+-				bytes = extent_bytes =
+-					BTRFS_ASYNC_DISCARD_MAX_SIZE;
+-				entry->offset += BTRFS_ASYNC_DISCARD_MAX_SIZE;
+-				entry->bytes -= BTRFS_ASYNC_DISCARD_MAX_SIZE;
++			if (max_discard_size && bytes > max_discard_size) {
++				bytes = extent_bytes = max_discard_size;
++				entry->offset += max_discard_size;
++				entry->bytes -= max_discard_size;
+ 				link_free_space(ctl, entry);
+ 			} else {
+ 				kmem_cache_free(btrfs_free_space_cachep, entry);
+@@ -3565,12 +3567,15 @@ static int trim_bitmaps(struct btrfs_block_group *block_group,
+ 			u64 *total_trimmed, u64 start, u64 end, u64 minlen,
+ 			bool async)
+ {
++	struct btrfs_discard_ctl *discard_ctl =
++					&block_group->fs_info->discard_ctl;
+ 	struct btrfs_free_space_ctl *ctl = block_group->free_space_ctl;
+ 	struct btrfs_free_space *entry;
+ 	int ret = 0;
+ 	int ret2;
+ 	u64 bytes;
+ 	u64 offset = offset_to_bitmap(ctl, start);
++	u64 max_discard_size = READ_ONCE(discard_ctl->max_discard_size);
  
- /* Update operations. */
-+void btrfs_discard_calc_delay(struct btrfs_discard_ctl *discard_ctl);
- void btrfs_discard_update_discardable(struct btrfs_block_group *block_group,
- 				      struct btrfs_free_space_ctl *ctl);
+ 	while (offset < end) {
+ 		bool next_bitmap = false;
+@@ -3640,8 +3645,8 @@ static int trim_bitmaps(struct btrfs_block_group *block_group,
+ 			goto next;
+ 		}
  
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 857642dc8589..27ca833c11c8 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2941,8 +2941,10 @@ int btrfs_finish_extent_commit(struct btrfs_trans_handle *trans)
- 		cond_resched();
- 	}
+-		if (async && bytes > BTRFS_ASYNC_DISCARD_MAX_SIZE)
+-			bytes = BTRFS_ASYNC_DISCARD_MAX_SIZE;
++		if (async && max_discard_size && bytes > max_discard_size)
++			bytes = max_discard_size;
  
--	if (btrfs_test_opt(fs_info, DISCARD_ASYNC))
-+	if (btrfs_test_opt(fs_info, DISCARD_ASYNC)) {
-+		btrfs_discard_calc_delay(&fs_info->discard_ctl);
- 		btrfs_discard_schedule_work(&fs_info->discard_ctl, true);
-+	}
- 
- 	/*
- 	 * Transaction is finished.  We don't need the lock anymore.  We
+ 		bitmap_clear_bits(ctl, entry, start, bytes);
+ 		if (entry->bytes == 0)
 diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index 07098f6d62bd..043430ae3818 100644
+index 028081bdde6c..65417a66866d 100644
 --- a/fs/btrfs/sysfs.c
 +++ b/fs/btrfs/sysfs.c
-@@ -344,6 +344,36 @@ static const struct attribute_group btrfs_static_feature_attr_group = {
-  */
- #define discard_to_fs_info(_kobj)	to_fs_info((_kobj)->parent->parent)
+@@ -404,6 +404,36 @@ static ssize_t btrfs_discard_bps_limit_store(struct kobject *kobj,
+ BTRFS_ATTR_RW(discard, bps_limit, btrfs_discard_bps_limit_show,
+ 	      btrfs_discard_bps_limit_store);
  
-+static ssize_t btrfs_discard_iops_limit_show(struct kobject *kobj,
-+					     struct kobj_attribute *a,
-+					     char *buf)
++static ssize_t btrfs_discard_max_discard_size_show(struct kobject *kobj,
++						   struct kobj_attribute *a,
++						   char *buf)
 +{
 +	struct btrfs_fs_info *fs_info = discard_to_fs_info(kobj);
 +
-+	return snprintf(buf, PAGE_SIZE, "%u\n",
-+			READ_ONCE(fs_info->discard_ctl.iops_limit));
++	return snprintf(buf, PAGE_SIZE, "%llu\n",
++			READ_ONCE(fs_info->discard_ctl.max_discard_size));
 +}
 +
-+static ssize_t btrfs_discard_iops_limit_store(struct kobject *kobj,
-+					      struct kobj_attribute *a,
-+					      const char *buf, size_t len)
++static ssize_t btrfs_discard_max_discard_size_store(struct kobject *kobj,
++						    struct kobj_attribute *a,
++						    const char *buf, size_t len)
 +{
 +	struct btrfs_fs_info *fs_info = discard_to_fs_info(kobj);
 +	struct btrfs_discard_ctl *discard_ctl = &fs_info->discard_ctl;
-+	u32 iops_limit;
++	u64 max_discard_size;
 +	int ret;
 +
-+	ret = kstrtou32(buf, 10, &iops_limit);
++	ret = kstrtou64(buf, 10, &max_discard_size);
 +	if (ret)
 +		return -EINVAL;
 +
-+	WRITE_ONCE(discard_ctl->iops_limit, iops_limit);
++	WRITE_ONCE(discard_ctl->max_discard_size, max_discard_size);
 +
 +	return len;
 +}
-+BTRFS_ATTR_RW(discard, iops_limit, btrfs_discard_iops_limit_show,
-+	      btrfs_discard_iops_limit_store);
++BTRFS_ATTR_RW(discard, max_discard_size, btrfs_discard_max_discard_size_show,
++	      btrfs_discard_max_discard_size_store);
 +
  static ssize_t btrfs_discardable_extents_show(struct kobject *kobj,
  					      struct kobj_attribute *a,
  					      char *buf)
-@@ -367,6 +397,7 @@ static ssize_t btrfs_discardable_bytes_show(struct kobject *kobj,
- BTRFS_ATTR(discard, discardable_bytes, btrfs_discardable_bytes_show);
- 
+@@ -429,6 +459,7 @@ BTRFS_ATTR(discard, discardable_bytes, btrfs_discardable_bytes_show);
  static const struct attribute *discard_debug_attrs[] = {
-+	BTRFS_ATTR_PTR(discard, iops_limit),
+ 	BTRFS_ATTR_PTR(discard, iops_limit),
+ 	BTRFS_ATTR_PTR(discard, bps_limit),
++	BTRFS_ATTR_PTR(discard, max_discard_size),
  	BTRFS_ATTR_PTR(discard, discardable_extents),
  	BTRFS_ATTR_PTR(discard, discardable_bytes),
  	NULL,

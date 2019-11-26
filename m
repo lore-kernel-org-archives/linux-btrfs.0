@@ -2,66 +2,150 @@ Return-Path: <SRS0=NX0b=ZS=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.0 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D23D3C432C0
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Nov 2019 03:43:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1C7F6C432C0
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Nov 2019 04:00:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A508D2071E
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Nov 2019 03:43:48 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="P4WSwdSu"
+	by mail.kernel.org (Postfix) with ESMTP id E25D020678
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Nov 2019 04:00:23 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727333AbfKZDnr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Nov 2019 22:43:47 -0500
-Received: from bombadil.infradead.org ([198.137.202.133]:48996 "EHLO
-        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726962AbfKZDnr (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Nov 2019 22:43:47 -0500
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20170209; h=In-Reply-To:Content-Type:MIME-Version
-        :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-        Content-Transfer-Encoding:Content-ID:Content-Description:Resent-Date:
-        Resent-From:Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:
-        List-Help:List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-         bh=O9aSwAcar6p1taSqsuS96zzbuJGucnCb3oGHCfogu2k=; b=P4WSwdSua8Va4qsHSeQGtL0S/
-        ISmXu9IZDvWuFF2hf74ZX7EYeDzfIttYbn+ucPOcobp2w3/sfzWAR+T2BpBkn2KMl/YlI+CR9SnbC
-        6RdHBr8hdQiyl5zY+EjtcuAACAt2O+U9LGpwb87Eb6SQqj+aMi8sDnfIh2FKwVeCS12eboBNV+QQ6
-        dey5kAxKElU71V6XYHdw9Dg/bwQOgtTTsi/1NKSdT/XEjMKZ8PDINW7vhUIJ8UMFdNQ+92f3nqT9a
-        Eh3kKfzmcpDBX/3ODX/ct/VtlNypbDUJJyExNivVsoLWb22AijELYD72ifQZbxG4xkCw3hBpgDhLs
-        XqJUjD8bg==;
-Received: from willy by bombadil.infradead.org with local (Exim 4.92.3 #3 (Red Hat Linux))
-        id 1iZRlR-000620-PX; Tue, 26 Nov 2019 03:43:45 +0000
-Date:   Mon, 25 Nov 2019 19:43:45 -0800
-From:   Matthew Wilcox <willy@infradead.org>
-To:     Goldwyn Rodrigues <rgoldwyn@suse.de>
-Cc:     linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        hch@infradead.org, darrick.wong@oracle.com, fdmanana@kernel.org,
-        Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: Re: [PATCH 1/5] fs: Export generic_file_buffered_read()
-Message-ID: <20191126034345.GC20752@bombadil.infradead.org>
-References: <20191126031456.12150-1-rgoldwyn@suse.de>
- <20191126031456.12150-2-rgoldwyn@suse.de>
+        id S1727404AbfKZEAX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Nov 2019 23:00:23 -0500
+Received: from mga12.intel.com ([192.55.52.136]:52414 "EHLO mga12.intel.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726947AbfKZEAW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Nov 2019 23:00:22 -0500
+X-Amp-Result: UNKNOWN
+X-Amp-Original-Verdict: FILE UNKNOWN
+X-Amp-File-Uploaded: False
+Received: from fmsmga008.fm.intel.com ([10.253.24.58])
+  by fmsmga106.fm.intel.com with ESMTP/TLS/DHE-RSA-AES256-GCM-SHA384; 25 Nov 2019 20:00:22 -0800
+X-ExtLoop1: 1
+X-IronPort-AV: E=Sophos;i="5.69,244,1571727600"; 
+   d="scan'208";a="206339904"
+Received: from pl-dbox.sh.intel.com (HELO intel.com) ([10.239.13.128])
+  by fmsmga008.fm.intel.com with ESMTP; 25 Nov 2019 20:00:19 -0800
+Date:   Tue, 26 Nov 2019 12:07:25 +0800
+From:   Philip Li <philip.li@intel.com>
+To:     Nick Desaulniers <ndesaulniers@google.com>
+Cc:     Dennis Zhou <dennis@kernel.org>, Chen Rong <rong.a.chen@intel.com>,
+        kbuild@lists.01.org,
+        clang-built-linux <clang-built-linux@googlegroups.com>,
+        kbuild test robot <lkp@intel.com>, kbuild-all@lists.01.org,
+        David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        Omar Sandoval <osandov@osandov.com>, kernel-team@fb.com,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 05/22] btrfs: add the beginning of async discard, discard
+ workqueue
+Message-ID: <20191126040725.GD26032@intel.com>
+References: <201911220351.HPI9gxNo%lkp@intel.com>
+ <CAKwvOdn5j37AYzmoOsaSqyYdBkjqevbTrSyGQypB+G_NgxX0fQ@mail.gmail.com>
+ <20191125185931.GA30548@dennisz-mbp.dhcp.thefacebook.com>
+ <CAKwvOdnaiXo8qqK_tyiYvw5Fo4HvdFzrMxLU7k62qEWucC-58Q@mail.gmail.com>
+ <20191126014209.GB21240@intel.com>
+ <CAKwvOdnp6kjJkmnDj=bmnN-VaRrNunNCQ5ngUNbCEUXCqYvq5w@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20191126031456.12150-2-rgoldwyn@suse.de>
-User-Agent: Mutt/1.12.1 (2019-06-15)
+In-Reply-To: <CAKwvOdnp6kjJkmnDj=bmnN-VaRrNunNCQ5ngUNbCEUXCqYvq5w@mail.gmail.com>
+User-Agent: Mutt/1.9.4 (2018-02-28)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Nov 25, 2019 at 09:14:52PM -0600, Goldwyn Rodrigues wrote:
-> @@ -2003,11 +2003,11 @@ static void shrink_readahead_size_eio(struct file *filp,
->   * of the logic when it comes to error handling etc.
->   *
->   * Return:
-> - * * total number of bytes copied, including those the were already @written
-> + * * total number of bytes copied, including those the were @copied
+On Mon, Nov 25, 2019 at 05:47:00PM -0800, Nick Desaulniers wrote:
+> On Mon, Nov 25, 2019 at 5:35 PM Philip Li <philip.li@intel.com> wrote:
+> >
+> > On Mon, Nov 25, 2019 at 11:39:08AM -0800, Nick Desaulniers wrote:
+> > > On Mon, Nov 25, 2019 at 10:59 AM Dennis Zhou <dennis@kernel.org> wrote:
+> > > >
+> > > > On Thu, Nov 21, 2019 at 08:27:43PM -0800, Nick Desaulniers wrote:
+> > > > > Hi Dennis,
+> > > > > Below is a 0day bot report from a build w/ Clang. Warning looks legit,
+> > > > > can you please take a look?
+> > > > >
+> > > >
+> > > > Ah thanks for this! Yeah that was a miss when I switched from flags ->
+> > > > an enum and didn't update the declaration properly. I'll be sending out
+> > > > a v4 as another fix for arm has some rebase conflicts.
+> > > >
+> > > > Is there a way to enable so I get these emails directly?
+> > >
+> > > + Rong, Philip
+> > >
+> > > The reports have only been sent to our mailing list where we've been
+> > > manually triaging them.  The issue with enabling them globally was
+> > > that the script to reproduce the warning still doesn't mention how to
+> > > build w/ Clang.
+> > Thanks Nick for continuous caring on this. One thing we initially worry
+> > is how to avoid duplicated reports to developer, like the one that can
+> > be same as gcc's finding. We haven't found a way to effectively handle
+> > this.
+> 
+> Thanks for maintaining an invaluable tool.
+> 
+> How would the reports be duplicated? Does 0day bot build with GCC,
+> then rebuild with Clang?
+no, they are built separately. For duplication, i refer to the issue
+can be detected by both tool, and gcc reports out already (or clang first).
 
-"those that were"
+> 
+> Regardless, does it matter? If I make a mistake, and get two build
+> failure emails from 0day bot instead of one, does it matter? Sometimes
+> developers may just get one, as some warnings are unique to each
+> compiler.  Maybe it runs the risk of folks ignoring the email if the
+> volume is too much, but do authors generally ignore 0day bot emails?
+> (I'd hope not).
+:-) this is a good point, and recently we are working to make the
+service more stable to generate reports in time.
 
+> 
+> >
+> > >
+> > > In general the reports have been high value (I ignore most reports
+> > > with -Wimplicit-function-declaration, which is the most frequent as it
+> > > shows the patch was not compile tested at all).
+> > Do we mean the report with -Wimplicit-function-declaration can be duplicated
+> > to gcc, so we can ignore them to avoid duplication to developer?
+> 
+> Many of the warnings GCC has Clang does as well.
+> -Wimplicit-function-declaration is the most common warning I see in
+> triage, which developers would see regardless of toolchain had they
+> compiled first before pushing.  It might be interesting to see maybe
+> the intersection or common flags between GCC and Clang, and only email
+> Clang reports for warnings unique to clang?  I think CFLAGS can even
+> be passed into make invocations so you could do:
+> $ make CC=clang KBUILD_CFLAGS=<list of flags common to GCC and Clang;
+> -Wno-implicit-function-declaration -Wno-...>
+> such that any resulting warnings were unique to Clang.  I'd expect
+> such a list to quickly get stale over time though.
+thanks for the idea, we will look into this. 
+
+> 
+> >
+> > >
+> > > Rong, Philip, it's been a while since we talked about this last. Is
+> > > there a general timeline of when these reports will be turned on
+> > > globally?  Even if the directions to reproduce aren't quite right,
+> > For the timeline, it's not decided due to the duplication concern. We tend
+> > to look into next year after other priorities are solved for this year.
+> >
+> > > generally there's enough info in the existing bugs where authors can
+> > > rewrite their patch without even needing to rebuild with Clang (though
+> > > having correct directions to reproduce would be nice, we could wait
+> > > until someone asked for them explicitly).
+> > >
+> > > --
+> > > Thanks,
+> > > ~Nick Desaulniers
+> 
+> 
+> 
+> -- 
+> Thanks,
+> ~Nick Desaulniers

@@ -2,43 +2,40 @@ Return-Path: <SRS0=NX0b=ZS=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.0 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+X-Spam-Status: No, score=-2.0 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1FB90C432C3
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Nov 2019 05:00:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9B088C432C0
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Nov 2019 08:18:01 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id CB9BF20722
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Nov 2019 05:00:25 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 676712075C
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Nov 2019 08:18:01 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="Er36ERUK"
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="IXK8THSu"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725769AbfKZFAZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 26 Nov 2019 00:00:25 -0500
-Received: from mout.gmx.net ([212.227.15.15]:37085 "EHLO mout.gmx.net"
+        id S1726192AbfKZISA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 26 Nov 2019 03:18:00 -0500
+Received: from mout.gmx.net ([212.227.15.18]:33383 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725372AbfKZFAY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 26 Nov 2019 00:00:24 -0500
+        id S1725872AbfKZISA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 26 Nov 2019 03:18:00 -0500
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1574744361;
-        bh=K35Rcq3emrwL0Nwq87qkJss0qJNyBuAsWx3qB5DxAFM=;
-        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
-        b=Er36ERUKYf/63phSup/ZYx4L77odKEh7WV7iXpqe8ldtrMMaZ08wpWw9QOeFSRTSi
-         DmTQHQ1eowjCZzjrGGWt6w22QaapJbhgJC5FAC0sfT46xOvt/joJbO4EMnqbx+FcIS
-         UgFWioMtOHwk+A14u/bnfITTVk/I/J5LcTJ2D/iY=
+        s=badeba3b8450; t=1574756278;
+        bh=TC7ge7BJdfxov8l9GULCHWpFdaCFwHqshfQRKS0nbcI=;
+        h=X-UI-Sender-Class:To:From:Subject:Date;
+        b=IXK8THSu0p831GKuA8ckUJz2mlRjqhZcyVnXRKvT35S5sQRFLYo+j5p/AcNoevuNy
+         8TzJMs+BDPKDOffbHUU1cwiEOPdAooVsJZhXUquOx1eHUB2PYMUcowVK88FiIkhjYL
+         5NvrFN4xtEqUcIwAP4G8odTU+TgDsfQjGOX9M2+U=
 X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
 Received: from [0.0.0.0] ([13.231.109.76]) by mail.gmx.com (mrgmx005
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1Mzyya-1hddnj0qCU-00wzQX; Tue, 26
- Nov 2019 05:59:21 +0100
-Subject: Re: [PATCH 3/4] btrfs: fix force usage in inc_block_group_ro
-To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
-        kernel-team@fb.com, wqu@suse.com
-References: <20191125144011.146722-1-josef@toxicpanda.com>
- <20191125144011.146722-4-josef@toxicpanda.com>
- <64dec4e1-a602-454c-e9d5-af8f39aaf97a@gmx.com>
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1MEV3I-1icGvH3798-00G3yI; Tue, 26
+ Nov 2019 09:17:58 +0100
+To:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Linux FS Devel <linux-fsdevel@vger.kernel.org>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Subject: btrfs/058 deadlock with lseek
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
  8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
@@ -63,159 +60,116 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  72byGeSovfq/4AWGNPBG1L61Exl+gbqfvbECP3ziXnob009+z9I4qXodHSYINfAkZkA523JG
  ap12LndJeLk3gfWNZfXEWyGnuciRGbqESkhIRav8ootsCIops/SqXm0/k+Kcl4gGUO/iD/T5
  oagaDh0QtOd8RWSMwLxwn8uIhpH84Q4X1LadJ5NCgGa6xPP5qqRuiC+9gZqbq4Nj
-Message-ID: <38b1b3ab-abd3-57b0-c94a-178980d4dea5@gmx.com>
-Date:   Tue, 26 Nov 2019 12:59:16 +0800
+Message-ID: <3310d598-bd2f-6024-e5ac-c1c6080c0fd7@gmx.com>
+Date:   Tue, 26 Nov 2019 16:17:53 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
  Thunderbird/68.2.2
 MIME-Version: 1.0
-In-Reply-To: <64dec4e1-a602-454c-e9d5-af8f39aaf97a@gmx.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="l5SimTX4qU7FBOG3oBZT3jg1cBTU7GFuO"
-X-Provags-ID: V03:K1:7b62EPqG/MLDBpO/Hi/Bq2nk+OUYsDR4qZpDumRR9xSU60XICJh
- MaKwOIE46qKLNTK8R0qxlu57+3oDk4zzG1MkPzhl5qp0/IPCHi5R/ov2HyJku/fflXUM+VX
- oHRDV6P2QtPTvOIj+iMy7aW1jSMb9huRiALOCzbpUC4da7HdivDrdMmbWgggMOsCf6mzYbK
- aQetbfhkKVttY4ZgK4HUA==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:bv2XKd9aOQk=:VsPWGXOYGO4MAvhgAmW0bD
- UOd5F2WJ3ygMa2owddxkNKVfMn6x4dS73lmdOdz9i61FXFQsf+PL2Mu4owjKED14P06CaBdR7
- K6sJqd9R9lNzdtk4tVGvD4YTTHMNvvGmFvK17BhPtyX1eFVMug2E+LWiVNhrgu+TR/8qY5RhJ
- uLhtAPYxBV91dEBQXBy4UGpaEogE9OQJHqYSAa3BT6Vwvx1LaqXF5XtCPWYJghG4RnS+CsS4B
- 2FFYDUOjPzXV0Bp4Q1w/Jkpo4ssrmZusqJoGroV1SQ3ZiCh7GY+bxZpB4BjyARBMXomTGe1xB
- bANEtzmK/gFYDa/VEf4ntSjc92S+c7S5tybMWUuJdQnNlDW1chfSQxwpyZYH1HyFU82u53s0g
- GePQYT6poSngHLA6e9nT+NvBAlaxurpMJzMGdlNaDWSQCJpJasvLn/5WHOb24jKCcw5PqnGMy
- upneCBYzlmJhivjujNj6TixfyugDqrkZoYtRvb/7bxm+HJ9XkF+2+3OtzPC4u+8vFlDvECw/k
- a/BcYEzGZkxmczaZ3vp/RQSdh6/mgUrFI+naBgtBken7KLO2vh/qh+R8dbq/qytHyvXyGjahX
- MqnR5B3e7QnF3P6WLYPzWFYa46Ome1YBJvopH2gBdcet96bF/rYTedBhMjTITl09LwhF0v90Q
- Vf4suHoOasGO2e50UACIDZsp6iq2doztb69zPEoXN73PXcOEhCuyxOqUwRMd41EgrKifTpJIr
- bT15T+EUaPEuj+Gc9e7KtoEvk7JDYXrJ0bexQoGjkTI8CH5T67ucO6HYWAv7sWZj94EVrlgch
- ukFydYJh1c6A1ySrAEi9ydZt+bUJ8vXVuS15jCyrvf0gN0wCo9VwQibtqSrFg/4chAlkv4duO
- akvYQQezvYCqhdcLKjd2n5jbLEzPvANAuwrdQ/yZqMdyO1+0zcHEKF3rEb7j37ZMQMyJKLpYu
- GnUHAikKbJxJGyERFUeLP7fjty6ILpaTCHLhNq0iUPhcN+QAIe3VnlcXlbyAq/CBGqk+aJtml
- Ekhs8ExY0AXcpcXb8TdbgE7E145kCrgmHZt7Bchxfc+Du50L+zOnXsQc0YiNG5VO1PC9MHK7P
- xkHeNxTh1D1UT9ioE2kwbuGRXV1GaDo7AO+P8HvHxav0PnsUo+wS94OWxe6ReJbvQ0/B1VMqI
- DjjzjisTByl5BTGobQrGMBvGUF8lw7/x+LsGq4Wod3Z07FYze3pbjvhCcAdRvX6Nn7eqXZMvF
- vpoOKD6xNjNqxfo+ng8CMQzi7OmujC7E08K0Ji9FcK7inHUy4/U4BnCMKDHQ=
+ boundary="sEsVUbBOM8Qf4ItnyAz7IpElG9Y0qw8kx"
+X-Provags-ID: V03:K1:G/HR4NIeJZxoD4akmnh3paAT2Mq1IPk2MfwU5Ux1h0ovl1HVagj
+ WOGoVSNxe34RBt90UyIKH+2U/OZvkpsZAZmOhd5L7IUo/3J21DSCdDWTbYocQmP+eNXCve+
+ L4bCwDeBOjNcD2E4O/S8t+yGjUa5NRYJxW1wWX9/Uy5M7XPp8Lq7/iUxNdsEeRCMxs9jO4o
+ QZkstBMBwIb+G4Dyd9gVw==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:Qdk1w21MHeE=:3cd1+ldbGWUI1VAEyaShRa
+ iUtxRSWCtpq1FtkahPslAbk8qLJslwBOF0jl8lBCqyw4OYMaHJLAj968/5YbUZC7xDcS65fMc
+ tAl9KAOJZjxSChhTauy6qWNooC6LgfZghEIDjyCLU4Y+BPGss3LuT4ZIbHmkljObWgW2sU8qo
+ ckXqZ+T4Tot6cGVLWBfGRepHWNBhh+ijIbxIHhVvui/ibG8o2R8fIBn0HGJEA7KCKtEBppyr+
+ LaNvauMWU/Ae2LMqmasE2eq2epW7y7pNwaPo/WjbGLmaAIC/AGxGd2ccZa0JejjQWG7RM92+7
+ wLMrCBgcgA0+5Ovr4ZBekO/nWh/MB7BdsuyZLZ1Y8p5yaZpNJJvmCkbU9r+Ro4yLL5nSgGcTV
+ CVD4xBuyawU9nYwJgoIe10Y+v4cC35N7EP+7zp8H+WwO6AmDobNeZtDnj1xL7JTMMTuS08SJ6
+ VVdYzYJQtfuf/KkhR3HaAQw1BL04WisS72ewsIUEGpbf8kjWG+l9BuuTlNBXm4kVd49I1aj7B
+ Sjocf4w0+ul7YUQcZi8YQUs5h6xCUpPDnwqwDAQr1MFHmVx16XNgSEAQjrRURNH+2tGBR1yJS
+ CC6mQA3IYLMGIzZEhZMDXGdoTbcpNP2eUZQzhLHcou6t4BhMhIlfcr32vR2cQP448DHNwsd8q
+ aDEc/s1cGv+tbQJNsnudJ3etDDCnXHIZ6E+pK+903R9F/8n4nJN6VMfXp7b4Uf9Fay5HGj5Eb
+ mCLswL45g0zbqGib24gme60cLB6CzexXnfke8eFFhipImDUSewvbohX7vwcnnd/ZpyB6ynyci
+ FgWtUSWL3X/FAgYF1xoNpUDyBHRDU4X9B+dUsY1BP/NxR5gRU2U8sqdL64vdGO3uBc7CnwLtM
+ iOz0MYbULUhRBvk1zahugZXp+WvRCJ3nsvmLQGRMsocLSbN3TnP8yTyDgRBA9LAbLZf57wxSD
+ vH0z6zCxRFTpBlMJhE7gHCg9agXVXaoBx0hG9044PW5wbrUdtk/PcS/a9jEjD5PfICClLnk9a
+ pjcu69vKzXaSJCWqxEapqUKjr1U4EC8+48/MMso9LYq2b68LVnSHGOv0Yl+G3jCpNz9OHV1wz
+ co79jIHr/owaayz/09WoFxwTqUu3tJ4VJdMITzcWVzeQCsRuu9lBoAf93mw2Fs1a5LkXMytDn
+ COELn0aCMM6Et5lB4/Qcxco/FiHojA/EuyeP5kF6xh+/Oy1SUEK34QS9Je/on2Chbhx23Rkhx
+ L55Dra9oNi15MKUpmhtOfchpoc4bZccq+tHtnNA7IofESXLL9oAPj2SxsOKQ=
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---l5SimTX4qU7FBOG3oBZT3jg1cBTU7GFuO
-Content-Type: multipart/mixed; boundary="OoCyMymmfTCFqM2RLdKpMBp3oXZMSPjjo"
+--sEsVUbBOM8Qf4ItnyAz7IpElG9Y0qw8kx
+Content-Type: multipart/mixed; boundary="LAAT9lpIZKISOtIUwz4daR6aVcb8wrasr"
 
---OoCyMymmfTCFqM2RLdKpMBp3oXZMSPjjo
+--LAAT9lpIZKISOtIUwz4daR6aVcb8wrasr
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
+Hi guys,
 
+Just got a reproducible error in btrfs/058.
+The backtrace is completely in VFS territory, not btrfs related lock at a=
+ll:
 
-On 2019/11/26 =E4=B8=8A=E5=8D=8810:43, Qu Wenruo wrote:
->=20
->=20
-> On 2019/11/25 =E4=B8=8B=E5=8D=8810:40, Josef Bacik wrote:
->> For some reason we've translated the do_chunk_alloc that goes into
->> btrfs_inc_block_group_ro to force in inc_block_group_ro, but these are=
+BTRFS info (device dm-5): checking UUID tree
+sysrq: Show Blocked State
+  task                        PC stack   pid father
+rm              D    0 560678 560445 0x00000000
+Call Trace:
+ __schedule+0x5c7/0xea0
+ ? __sched_text_start+0x8/0x8
+ ? lock_downgrade+0x380/0x380
+ ? lock_contended+0x730/0x730
+ ? debug_check_no_locks_held+0x60/0x60
+ schedule+0x7b/0x170
+ schedule_preempt_disabled+0x18/0x30
+ __mutex_lock+0x481/0xc70
+ ? __fdget_pos+0x7e/0x80
+ ? mutex_trylock+0x190/0x190
+ ? debug_lockdep_rcu_enabled+0x26/0x40
+ ? kmem_cache_free+0x157/0x3b0
+ ? putname+0x73/0x80
+ ? __ia32_sys_rmdir+0x30/0x30
+ ? __check_object_size+0x134/0x1e6
+ mutex_lock_nested+0x1b/0x20
+ ? mutex_lock_nested+0x1b/0x20
+ __fdget_pos+0x7e/0x80
+ ksys_lseek+0x1d/0xf0
+ __x64_sys_lseek+0x43/0x50
+ do_syscall_64+0x79/0xe0
+ entry_SYSCALL_64_after_hwframe+0x49/0xbe
+RIP: 0033:0x7f7518e5652b
+Code: Bad RIP value.
+RSP: 002b:00007ffead7508e8 EFLAGS: 00000246 ORIG_RAX: 0000000000000008
+RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007f7518e5652b
+RDX: 0000000000000001 RSI: 0000000000000000 RDI: 0000000000000000
+RBP: 00007f7518f267e0 R08: 0000000000000001 R09: 0000000000000001
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
+R13: 0000000000000002 R14: 00007f7518f2be68 R15: 00007f7518f287e0
 
->> two different things.
->>
->> force for inc_block_group_ro is used when we are forcing the block gro=
-up
->> read only no matter what, for example when the underlying chunk is
->> marked read only.  We need to not do the space check here as this bloc=
-k
->> group needs to be read only.
->>
->> btrfs_inc_block_group_ro() has a do_chunk_alloc flag that indicates th=
-at
->> we need to pre-allocate a chunk before marking the block group read
->> only.  This has nothing to do with forcing, and in fact we _always_ wa=
-nt
->> to do the space check in this case, so unconditionally pass false for
->> force in this case.
->=20
-> I think the patch order makes thing a little hard to grasp here.
-> Without the last patch, the idea itself is not correct.
->=20
-> The reason to force ro is because we want to avoid empty chunk to be
-> allocated, especially for scrub case.
->=20
->=20
-> If you put the last patch before this one, it's more clear, as then we
-> can accept over-commit, we won't return false ENOSPC and no empty chunk=
-
-> created.
->=20
-> BTW, with the last patch applied, we can remove that @force parameter
-> for inc_block_group_ro().
-
-My bad, @force parameter is still needed. Didn't notice that until all
-patches applied.
+Is this a known bug in VFS layer?
 
 Thanks,
 Qu
 
->=20
-> Thanks,
-> Qu
->>
->> Then fixup inc_block_group_ro to honor force as it's expected and
->> documented to do.
->>
->> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
->> ---
->>  fs/btrfs/block-group.c | 6 ++++--
->>  1 file changed, 4 insertions(+), 2 deletions(-)
->>
->> diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
->> index db539bfc5a52..3ffbc2e0af21 100644
->> --- a/fs/btrfs/block-group.c
->> +++ b/fs/btrfs/block-group.c
->> @@ -1190,8 +1190,10 @@ static int inc_block_group_ro(struct btrfs_bloc=
-k_group *cache, int force)
->>  	spin_lock(&sinfo->lock);
->>  	spin_lock(&cache->lock);
->> =20
->> -	if (cache->ro) {
->> +	if (cache->ro || force) {
->>  		cache->ro++;
->> +		if (list_empty(&cache->ro_list))
->> +			list_add_tail(&cache->ro_list, &sinfo->ro_bgs);
->>  		ret =3D 0;
->>  		goto out;
->>  	}
->> @@ -2063,7 +2065,7 @@ int btrfs_inc_block_group_ro(struct btrfs_block_=
-group *cache,
->>  		}
->>  	}
->> =20
->> -	ret =3D inc_block_group_ro(cache, !do_chunk_alloc);
->> +	ret =3D inc_block_group_ro(cache, false);
->>  	if (!do_chunk_alloc)
->>  		goto unlock_out;
->>  	if (!ret)
->>
->=20
 
+--LAAT9lpIZKISOtIUwz4daR6aVcb8wrasr--
 
---OoCyMymmfTCFqM2RLdKpMBp3oXZMSPjjo--
-
---l5SimTX4qU7FBOG3oBZT3jg1cBTU7GFuO
+--sEsVUbBOM8Qf4ItnyAz7IpElG9Y0qw8kx
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAl3csSQACgkQwj2R86El
-/qjAYwf+JTxQQotEE8yR2n6Ev5OwS04IXLlcdr7fb1cG7r2P70hlMKch50cQqujb
-6b/Tp9lKolOJbbpZiVlLLWzdTPV93uKp5U0hl5ooi6Il+NtVvWdO1rfdDlFsiNzg
-XIqpEIIWbt2NOoJlQRIiLngc5Ajd8ZTEf5p/PTIj5EXkBP/EzTdZPFhZBVUh2Ptv
-zU09+s7siGeh/CNqGDxQqS18hyHMwe/1T4uNQ0ph5o2t0QYI8Ah8D9460/0puuvy
-YFhWrsD2TUWZlWKdVjhc52AGrL2gg7gesmUF0RM9KNLm5DpJGrt5S59MUXZxQ7/A
-XQZGqFAN0/XEB7MZU+KCHtZDjlSxPg==
-=JHKM
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAl3c37EACgkQwj2R86El
+/qgEDQgAgV53rVzVEAYe9dMuz/9oLJFv1dSE4/aIv7MxNDX4wsZq/CRfdgApwEmc
+9MnoblynhRxAuyEHhG22ba9sBZamqudSPbcbkkMxYUjZrXO1puH/NctTRDNLN92s
+L/16wZrFjpmXjMNZ2jsOalRnCLgZ2bDOt4Px2LQQWcmKc99AFmRkt75HjqkgGTak
+iGizg6wEUdqQb898uEpNowgyzyWNVp8cVQgkG87sXooxsKseExqArau4PUwW/TcP
+kqFbfr1weRANQ33wbZsKGTRgUo6zTU0YBH5mpYkqPYMiGuFfWm0EclooBX8MBlh9
+DdhuyMY0xvJHoLJ6vkBrCoOc5HE9wQ==
+=SQOM
 -----END PGP SIGNATURE-----
 
---l5SimTX4qU7FBOG3oBZT3jg1cBTU7GFuO--
+--sEsVUbBOM8Qf4ItnyAz7IpElG9Y0qw8kx--

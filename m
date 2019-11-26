@@ -6,29 +6,29 @@ X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
 	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 764F2C432C0
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Nov 2019 12:42:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D3694C432C0
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Nov 2019 12:50:15 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4DAD82071A
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Nov 2019 12:42:44 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B31A52071A
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Nov 2019 12:50:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727629AbfKZMmn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 26 Nov 2019 07:42:43 -0500
-Received: from mx2.suse.de ([195.135.220.15]:51708 "EHLO mx1.suse.de"
+        id S1727258AbfKZMuP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 26 Nov 2019 07:50:15 -0500
+Received: from mx2.suse.de ([195.135.220.15]:55546 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726049AbfKZMmm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 26 Nov 2019 07:42:42 -0500
+        id S1726049AbfKZMuO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 26 Nov 2019 07:50:14 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 25F9DB2C3;
-        Tue, 26 Nov 2019 12:42:41 +0000 (UTC)
-Subject: Re: [PATCH 4/5] btrfs: Wait for extent bits to release page
+        by mx1.suse.de (Postfix) with ESMTP id 6C52EAD45;
+        Tue, 26 Nov 2019 12:50:12 +0000 (UTC)
+Subject: Re: [PATCH 5/5] fs: Remove dio_end_io()
 To:     Goldwyn Rodrigues <rgoldwyn@suse.de>, linux-btrfs@vger.kernel.org
 Cc:     linux-fsdevel@vger.kernel.org, hch@infradead.org,
         darrick.wong@oracle.com, fdmanana@kernel.org,
         Goldwyn Rodrigues <rgoldwyn@suse.com>
 References: <20191126031456.12150-1-rgoldwyn@suse.de>
- <20191126031456.12150-5-rgoldwyn@suse.de>
+ <20191126031456.12150-6-rgoldwyn@suse.de>
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 Openpgp: preference=signencrypt
 Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
@@ -86,12 +86,12 @@ Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
  l2t2TyTuHm7wVUY2J3gJYgG723/PUGW4LaoqNrYQUr/rqo6NXw6c+EglRpm1BdpkwPwAng63
  W5VOQMdnozD2RsDM5GfA4aEFi5m00tE+8XPICCtkduyWw+Z+zIqYk2v+zraPLs9Gs0X2C7X0
  yvqY9voUoJjG6skkOToGZbqtMX9K4GOv9JAxVs075QRXL3brHtHONDt6udYobzz+
-Message-ID: <bf6f70d5-89a3-b5d3-27ae-5c71a1d835e9@suse.de>
-Date:   Tue, 26 Nov 2019 13:42:40 +0100
+Message-ID: <6ccfd64c-b361-822d-6acc-18ce7e6fa2e9@suse.de>
+Date:   Tue, 26 Nov 2019 13:50:12 +0100
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.8.0
 MIME-Version: 1.0
-In-Reply-To: <20191126031456.12150-5-rgoldwyn@suse.de>
+In-Reply-To: <20191126031456.12150-6-rgoldwyn@suse.de>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -102,6 +102,7 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 Looks good,
 Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
+
 -- 
 Johannes Thumshirn                            SUSE Labs Filesystems
 jthumshirn@suse.de                                +49 911 74053 689

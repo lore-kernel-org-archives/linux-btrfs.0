@@ -2,241 +2,105 @@ Return-Path: <SRS0=NX0b=ZS=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
+X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D3184C43141
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Nov 2019 00:57:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A2E1BC432C0
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Nov 2019 01:35:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A47852075C
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Nov 2019 00:57:05 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="QRAHX5Pl"
+	by mail.kernel.org (Postfix) with ESMTP id 884822082F
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Nov 2019 01:35:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727125AbfKZA45 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Nov 2019 19:56:57 -0500
-Received: from mail-pj1-f66.google.com ([209.85.216.66]:39676 "EHLO
-        mail-pj1-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725945AbfKZA45 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Nov 2019 19:56:57 -0500
-Received: by mail-pj1-f66.google.com with SMTP id v93so4173601pjb.6;
-        Mon, 25 Nov 2019 16:56:55 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=from:to:cc:subject:date:message-id:in-reply-to:references
-         :mime-version:content-transfer-encoding;
-        bh=mK4YYpGvmcl+UsKcFd9/hDIZGDrUcsqxidj1mlw+fb8=;
-        b=QRAHX5Pl00QYssmBGDmk7pRWuuWWlekSCNlCEOtKDozeT2ysH7Opo8K8MGMUZNZhFq
-         QFToHuezpU2JFCR+m9OwkA1bsyGgfLCNFeb8z116rmzJFQfqTM8o8tXHsWQS8sutwouA
-         ZpjQgwiqgLwcI4LeLlfIBIsnOOhx96x7JbOaGSiAqvrYTDy2pi8DVmCKgOxMKiTyScJa
-         zKWjsdROZeY/AZDwvo/5DxfyfmcmgEM4b+lKLkoQPYc2z3JTfUDxNsQXy5DQKssk4za7
-         k2PZ+vo2aRKPxu7zdgfYQ+OalPw8qo4agDnOrQsWhBIGCVJcATwe/OQIVcZCHd6ZLh4s
-         pCDQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=mK4YYpGvmcl+UsKcFd9/hDIZGDrUcsqxidj1mlw+fb8=;
-        b=JpzT5t1yAfUytI8a3rnZTiKEdBO21cFQj6vhJJ9GwDH3Gcd8cNcr7smqiZGNmc1rSp
-         itQ/bgcB8MTbcvmu1siiC4kXTXxwDKhW6mAGrmf87a8A1yq8emCap5sRLfvo/7c+t0S9
-         xkQAJcMic04Xnen8Tg0FadMJoirBFYzqbTdS+ZISnTovFrIhf6kSt8X5C7Uw3VPnZnNz
-         JhN0qPUn837dUYKf8IVM9dYdc46V9WKCWaqUcltgX8H5sIhmqhnxvEoDMMQ6X10cSkPQ
-         wH4kOm8vL0TXjySMKs5tpmnVB0QkQA0QjVXsT0FJUBj7Rvg8qBN+1OEPyJoFd4O7aOSe
-         VH6Q==
-X-Gm-Message-State: APjAAAVcQv86kMVUXNOi/SKRGSdup+kOEuJ8tkQuSIXjsiFRkyfwRpnu
-        ytxX+pS6D59crBjArgJFZCtxa5Ro
-X-Google-Smtp-Source: APXvYqzgZGN9muTbJEbWi3FYhS6sG+SaYDD3YnVIgnxOAKlBZpTX51LjKgOluJ+5OsVlki9hFpr40g==
-X-Received: by 2002:a17:90b:30cc:: with SMTP id hi12mr2676638pjb.80.1574729814960;
-        Mon, 25 Nov 2019 16:56:54 -0800 (PST)
-Received: from hephaestus.prv.suse.net ([186.212.48.108])
-        by smtp.gmail.com with ESMTPSA id w15sm9421223pfi.168.2019.11.25.16.56.52
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 25 Nov 2019 16:56:54 -0800 (PST)
-From:   Marcos Paulo de Souza <marcos.souza.org@gmail.com>
-To:     linux-kernel@vger.kernel.org
-Cc:     dsterba@suse.com, linux-btrfs@vger.kernel.org,
-        anand.jain@oracle.com, Marcos Paulo de Souza <mpdesouza@suse.com>,
-        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>
-Subject: [PATCH 1/2] btrfs: qgroup: Cleanup quota_root checks
-Date:   Mon, 25 Nov 2019 21:58:50 -0300
-Message-Id: <20191126005851.11813-2-marcos.souza.org@gmail.com>
-X-Mailer: git-send-email 2.23.0
-In-Reply-To: <20191126005851.11813-1-marcos.souza.org@gmail.com>
-References: <20191126005851.11813-1-marcos.souza.org@gmail.com>
+        id S1727217AbfKZBfH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Nov 2019 20:35:07 -0500
+Received: from mga06.intel.com ([134.134.136.31]:46727 "EHLO mga06.intel.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727166AbfKZBfH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Nov 2019 20:35:07 -0500
+X-Amp-Result: UNKNOWN
+X-Amp-Original-Verdict: FILE UNKNOWN
+X-Amp-File-Uploaded: False
+Received: from orsmga008.jf.intel.com ([10.7.209.65])
+  by orsmga104.jf.intel.com with ESMTP/TLS/DHE-RSA-AES256-GCM-SHA384; 25 Nov 2019 17:35:06 -0800
+X-ExtLoop1: 1
+X-IronPort-AV: E=Sophos;i="5.69,243,1571727600"; 
+   d="scan'208";a="202561180"
+Received: from pl-dbox.sh.intel.com (HELO intel.com) ([10.239.13.128])
+  by orsmga008.jf.intel.com with ESMTP; 25 Nov 2019 17:35:03 -0800
+Date:   Tue, 26 Nov 2019 09:42:10 +0800
+From:   Philip Li <philip.li@intel.com>
+To:     Nick Desaulniers <ndesaulniers@google.com>
+Cc:     Dennis Zhou <dennis@kernel.org>, Chen Rong <rong.a.chen@intel.com>,
+        kbuild@lists.01.org,
+        clang-built-linux <clang-built-linux@googlegroups.com>,
+        kbuild test robot <lkp@intel.com>, kbuild-all@lists.01.org,
+        David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        Omar Sandoval <osandov@osandov.com>, kernel-team@fb.com,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 05/22] btrfs: add the beginning of async discard, discard
+ workqueue
+Message-ID: <20191126014209.GB21240@intel.com>
+References: <201911220351.HPI9gxNo%lkp@intel.com>
+ <CAKwvOdn5j37AYzmoOsaSqyYdBkjqevbTrSyGQypB+G_NgxX0fQ@mail.gmail.com>
+ <20191125185931.GA30548@dennisz-mbp.dhcp.thefacebook.com>
+ <CAKwvOdnaiXo8qqK_tyiYvw5Fo4HvdFzrMxLU7k62qEWucC-58Q@mail.gmail.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <CAKwvOdnaiXo8qqK_tyiYvw5Fo4HvdFzrMxLU7k62qEWucC-58Q@mail.gmail.com>
+User-Agent: Mutt/1.9.4 (2018-02-28)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Marcos Paulo de Souza <mpdesouza@suse.com>
+On Mon, Nov 25, 2019 at 11:39:08AM -0800, Nick Desaulniers wrote:
+> On Mon, Nov 25, 2019 at 10:59 AM Dennis Zhou <dennis@kernel.org> wrote:
+> >
+> > On Thu, Nov 21, 2019 at 08:27:43PM -0800, Nick Desaulniers wrote:
+> > > Hi Dennis,
+> > > Below is a 0day bot report from a build w/ Clang. Warning looks legit,
+> > > can you please take a look?
+> > >
+> >
+> > Ah thanks for this! Yeah that was a miss when I switched from flags ->
+> > an enum and didn't update the declaration properly. I'll be sending out
+> > a v4 as another fix for arm has some rebase conflicts.
+> >
+> > Is there a way to enable so I get these emails directly?
+> 
+> + Rong, Philip
+> 
+> The reports have only been sent to our mailing list where we've been
+> manually triaging them.  The issue with enabling them globally was
+> that the script to reproduce the warning still doesn't mention how to
+> build w/ Clang.
+Thanks Nick for continuous caring on this. One thing we initially worry
+is how to avoid duplicated reports to developer, like the one that can
+be same as gcc's finding. We haven't found a way to effectively handle
+this.
 
-Remove some variables that are set only to be checked later, and never
-used.
+> 
+> In general the reports have been high value (I ignore most reports
+> with -Wimplicit-function-declaration, which is the most frequent as it
+> shows the patch was not compile tested at all).
+Do we mean the report with -Wimplicit-function-declaration can be duplicated
+to gcc, so we can ignore them to avoid duplication to developer?
 
-Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
----
- fs/btrfs/qgroup.c | 34 ++++++++++------------------------
- 1 file changed, 10 insertions(+), 24 deletions(-)
+> 
+> Rong, Philip, it's been a while since we talked about this last. Is
+> there a general timeline of when these reports will be turned on
+> globally?  Even if the directions to reproduce aren't quite right,
+For the timeline, it's not decided due to the duplication concern. We tend
+to look into next year after other priorities are solved for this year.
 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index d4282e12f2a6..417fafb4b4f6 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -1243,7 +1243,6 @@ int btrfs_add_qgroup_relation(struct btrfs_trans_handle *trans, u64 src,
- 			      u64 dst)
- {
- 	struct btrfs_fs_info *fs_info = trans->fs_info;
--	struct btrfs_root *quota_root;
- 	struct btrfs_qgroup *parent;
- 	struct btrfs_qgroup *member;
- 	struct btrfs_qgroup_list *list;
-@@ -1259,8 +1258,7 @@ int btrfs_add_qgroup_relation(struct btrfs_trans_handle *trans, u64 src,
- 		return -ENOMEM;
- 
- 	mutex_lock(&fs_info->qgroup_ioctl_lock);
--	quota_root = fs_info->quota_root;
--	if (!quota_root) {
-+	if (!fs_info->quota_root) {
- 		ret = -EINVAL;
- 		goto out;
- 	}
-@@ -1307,7 +1305,6 @@ static int __del_qgroup_relation(struct btrfs_trans_handle *trans, u64 src,
- 				 u64 dst)
- {
- 	struct btrfs_fs_info *fs_info = trans->fs_info;
--	struct btrfs_root *quota_root;
- 	struct btrfs_qgroup *parent;
- 	struct btrfs_qgroup *member;
- 	struct btrfs_qgroup_list *list;
-@@ -1320,8 +1317,7 @@ static int __del_qgroup_relation(struct btrfs_trans_handle *trans, u64 src,
- 	if (!tmp)
- 		return -ENOMEM;
- 
--	quota_root = fs_info->quota_root;
--	if (!quota_root) {
-+	if (!fs_info->quota_root) {
- 		ret = -EINVAL;
- 		goto out;
- 	}
-@@ -1387,11 +1383,11 @@ int btrfs_create_qgroup(struct btrfs_trans_handle *trans, u64 qgroupid)
- 	int ret = 0;
- 
- 	mutex_lock(&fs_info->qgroup_ioctl_lock);
--	quota_root = fs_info->quota_root;
--	if (!quota_root) {
-+	if (!fs_info->quota_root) {
- 		ret = -EINVAL;
- 		goto out;
- 	}
-+	quota_root = fs_info->quota_root;
- 	qgroup = find_qgroup_rb(fs_info, qgroupid);
- 	if (qgroup) {
- 		ret = -EEXIST;
-@@ -1416,14 +1412,12 @@ int btrfs_create_qgroup(struct btrfs_trans_handle *trans, u64 qgroupid)
- int btrfs_remove_qgroup(struct btrfs_trans_handle *trans, u64 qgroupid)
- {
- 	struct btrfs_fs_info *fs_info = trans->fs_info;
--	struct btrfs_root *quota_root;
- 	struct btrfs_qgroup *qgroup;
- 	struct btrfs_qgroup_list *list;
- 	int ret = 0;
- 
- 	mutex_lock(&fs_info->qgroup_ioctl_lock);
--	quota_root = fs_info->quota_root;
--	if (!quota_root) {
-+	if (!fs_info->quota_root) {
- 		ret = -EINVAL;
- 		goto out;
- 	}
-@@ -1465,7 +1459,6 @@ int btrfs_limit_qgroup(struct btrfs_trans_handle *trans, u64 qgroupid,
- 		       struct btrfs_qgroup_limit *limit)
- {
- 	struct btrfs_fs_info *fs_info = trans->fs_info;
--	struct btrfs_root *quota_root;
- 	struct btrfs_qgroup *qgroup;
- 	int ret = 0;
- 	/* Sometimes we would want to clear the limit on this qgroup.
-@@ -1475,8 +1468,7 @@ int btrfs_limit_qgroup(struct btrfs_trans_handle *trans, u64 qgroupid,
- 	const u64 CLEAR_VALUE = -1;
- 
- 	mutex_lock(&fs_info->qgroup_ioctl_lock);
--	quota_root = fs_info->quota_root;
--	if (!quota_root) {
-+	if (!fs_info->quota_root) {
- 		ret = -EINVAL;
- 		goto out;
- 	}
-@@ -2578,10 +2570,9 @@ int btrfs_qgroup_account_extents(struct btrfs_trans_handle *trans)
- int btrfs_run_qgroups(struct btrfs_trans_handle *trans)
- {
- 	struct btrfs_fs_info *fs_info = trans->fs_info;
--	struct btrfs_root *quota_root = fs_info->quota_root;
- 	int ret = 0;
- 
--	if (!quota_root)
-+	if (!fs_info->quota_root)
- 		return ret;
- 
- 	spin_lock(&fs_info->qgroup_lock);
-@@ -2875,7 +2866,6 @@ static bool qgroup_check_limits(struct btrfs_fs_info *fs_info,
- static int qgroup_reserve(struct btrfs_root *root, u64 num_bytes, bool enforce,
- 			  enum btrfs_qgroup_rsv_type type)
- {
--	struct btrfs_root *quota_root;
- 	struct btrfs_qgroup *qgroup;
- 	struct btrfs_fs_info *fs_info = root->fs_info;
- 	u64 ref_root = root->root_key.objectid;
-@@ -2894,8 +2884,7 @@ static int qgroup_reserve(struct btrfs_root *root, u64 num_bytes, bool enforce,
- 		enforce = false;
- 
- 	spin_lock(&fs_info->qgroup_lock);
--	quota_root = fs_info->quota_root;
--	if (!quota_root)
-+	if (!fs_info->quota_root)
- 		goto out;
- 
- 	qgroup = find_qgroup_rb(fs_info, ref_root);
-@@ -2962,7 +2951,6 @@ void btrfs_qgroup_free_refroot(struct btrfs_fs_info *fs_info,
- 			       u64 ref_root, u64 num_bytes,
- 			       enum btrfs_qgroup_rsv_type type)
- {
--	struct btrfs_root *quota_root;
- 	struct btrfs_qgroup *qgroup;
- 	struct ulist_node *unode;
- 	struct ulist_iterator uiter;
-@@ -2980,8 +2968,7 @@ void btrfs_qgroup_free_refroot(struct btrfs_fs_info *fs_info,
- 	}
- 	spin_lock(&fs_info->qgroup_lock);
- 
--	quota_root = fs_info->quota_root;
--	if (!quota_root)
-+	if (!fs_info->quota_root)
- 		goto out;
- 
- 	qgroup = find_qgroup_rb(fs_info, ref_root);
-@@ -3681,7 +3668,6 @@ void __btrfs_qgroup_free_meta(struct btrfs_root *root, int num_bytes,
- static void qgroup_convert_meta(struct btrfs_fs_info *fs_info, u64 ref_root,
- 				int num_bytes)
- {
--	struct btrfs_root *quota_root = fs_info->quota_root;
- 	struct btrfs_qgroup *qgroup;
- 	struct ulist_node *unode;
- 	struct ulist_iterator uiter;
-@@ -3689,7 +3675,7 @@ static void qgroup_convert_meta(struct btrfs_fs_info *fs_info, u64 ref_root,
- 
- 	if (num_bytes == 0)
- 		return;
--	if (!quota_root)
-+	if (!fs_info->quota_root)
- 		return;
- 
- 	spin_lock(&fs_info->qgroup_lock);
--- 
-2.23.0
-
+> generally there's enough info in the existing bugs where authors can
+> rewrite their patch without even needing to rebuild with Clang (though
+> having correct directions to reproduce would be nice, we could wait
+> until someone asked for them explicitly).
+> 
+> -- 
+> Thanks,
+> ~Nick Desaulniers

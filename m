@@ -3,32 +3,32 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
-	autolearn=no autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1C7F6C432C0
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Nov 2019 04:00:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 56D47C432C0
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Nov 2019 04:02:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E25D020678
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Nov 2019 04:00:23 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2E7AE20678
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Nov 2019 04:02:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727404AbfKZEAX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Nov 2019 23:00:23 -0500
-Received: from mga12.intel.com ([192.55.52.136]:52414 "EHLO mga12.intel.com"
+        id S1727405AbfKZECG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Nov 2019 23:02:06 -0500
+Received: from mga07.intel.com ([134.134.136.100]:29153 "EHLO mga07.intel.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726947AbfKZEAW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Nov 2019 23:00:22 -0500
+        id S1726947AbfKZECG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Nov 2019 23:02:06 -0500
 X-Amp-Result: UNKNOWN
 X-Amp-Original-Verdict: FILE UNKNOWN
 X-Amp-File-Uploaded: False
-Received: from fmsmga008.fm.intel.com ([10.253.24.58])
-  by fmsmga106.fm.intel.com with ESMTP/TLS/DHE-RSA-AES256-GCM-SHA384; 25 Nov 2019 20:00:22 -0800
+Received: from fmsmga006.fm.intel.com ([10.253.24.20])
+  by orsmga105.jf.intel.com with ESMTP/TLS/DHE-RSA-AES256-GCM-SHA384; 25 Nov 2019 20:02:05 -0800
 X-ExtLoop1: 1
 X-IronPort-AV: E=Sophos;i="5.69,244,1571727600"; 
-   d="scan'208";a="206339904"
+   d="scan'208";a="409847404"
 Received: from pl-dbox.sh.intel.com (HELO intel.com) ([10.239.13.128])
-  by fmsmga008.fm.intel.com with ESMTP; 25 Nov 2019 20:00:19 -0800
-Date:   Tue, 26 Nov 2019 12:07:25 +0800
+  by fmsmga006.fm.intel.com with ESMTP; 25 Nov 2019 20:02:02 -0800
+Date:   Tue, 26 Nov 2019 12:09:08 +0800
 From:   Philip Li <philip.li@intel.com>
 To:     Nick Desaulniers <ndesaulniers@google.com>
 Cc:     Dennis Zhou <dennis@kernel.org>, Chen Rong <rong.a.chen@intel.com>,
@@ -41,7 +41,7 @@ Cc:     Dennis Zhou <dennis@kernel.org>, Chen Rong <rong.a.chen@intel.com>,
         linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH 05/22] btrfs: add the beginning of async discard, discard
  workqueue
-Message-ID: <20191126040725.GD26032@intel.com>
+Message-ID: <20191126040908.GE26032@intel.com>
 References: <201911220351.HPI9gxNo%lkp@intel.com>
  <CAKwvOdn5j37AYzmoOsaSqyYdBkjqevbTrSyGQypB+G_NgxX0fQ@mail.gmail.com>
  <20191125185931.GA30548@dennisz-mbp.dhcp.thefacebook.com>
@@ -82,6 +82,11 @@ On Mon, Nov 25, 2019 at 05:47:00PM -0800, Nick Desaulniers wrote:
 > > > manually triaging them.  The issue with enabling them globally was
 > > > that the script to reproduce the warning still doesn't mention how to
 > > > build w/ Clang.
+Hi Nick, i forgot one question. Is it still expected to use latest clang
+to build test? Any possibility the issue is related to clang compiler itself?
+
+Thanks
+
 > > Thanks Nick for continuous caring on this. One thing we initially worry
 > > is how to avoid duplicated reports to developer, like the one that can
 > > be same as gcc's finding. We haven't found a way to effectively handle
@@ -91,9 +96,6 @@ On Mon, Nov 25, 2019 at 05:47:00PM -0800, Nick Desaulniers wrote:
 > 
 > How would the reports be duplicated? Does 0day bot build with GCC,
 > then rebuild with Clang?
-no, they are built separately. For duplication, i refer to the issue
-can be detected by both tool, and gcc reports out already (or clang first).
-
 > 
 > Regardless, does it matter? If I make a mistake, and get two build
 > failure emails from 0day bot instead of one, does it matter? Sometimes
@@ -101,9 +103,6 @@ can be detected by both tool, and gcc reports out already (or clang first).
 > compiler.  Maybe it runs the risk of folks ignoring the email if the
 > volume is too much, but do authors generally ignore 0day bot emails?
 > (I'd hope not).
-:-) this is a good point, and recently we are working to make the
-service more stable to generate reports in time.
-
 > 
 > >
 > > >
@@ -124,8 +123,6 @@ service more stable to generate reports in time.
 > -Wno-implicit-function-declaration -Wno-...>
 > such that any resulting warnings were unique to Clang.  I'd expect
 > such a list to quickly get stale over time though.
-thanks for the idea, we will look into this. 
-
 > 
 > >
 > > >

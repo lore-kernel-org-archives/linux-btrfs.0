@@ -2,70 +2,122 @@ Return-Path: <SRS0=NX0b=ZS=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3EF1DC432C3
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Nov 2019 08:40:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 126CCC43215
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Nov 2019 08:40:12 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 216FE20722
+	by mail.kernel.org (Postfix) with ESMTP id EAC5A206BF
 	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Nov 2019 08:40:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727112AbfKZIkK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S1727091AbfKZIkK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Tue, 26 Nov 2019 03:40:10 -0500
-Received: from mx2.suse.de ([195.135.220.15]:48198 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:48196 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725862AbfKZIkJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1725943AbfKZIkJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Tue, 26 Nov 2019 03:40:09 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 2CA77AE04;
+        by mx1.suse.de (Postfix) with ESMTP id 399AFAE99;
         Tue, 26 Nov 2019 08:40:08 +0000 (UTC)
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 To:     David Sterba <dsterba@suse.com>
 Cc:     Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <wqu@suse.com>,
         Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
         Johannes Thumshirn <jthumshirn@suse.de>
-Subject: [PATCH v4 0/2] remove BUG_ON()s in btrfs_close_one_device()
-Date:   Tue, 26 Nov 2019 09:40:04 +0100
-Message-Id: <20191126084006.23262-1-jthumshirn@suse.de>
+Subject: [PATCH v4 2/2] btrfs: reset device back to allocation state when removing
+Date:   Tue, 26 Nov 2019 09:40:06 +0100
+Message-Id: <20191126084006.23262-3-jthumshirn@suse.de>
 X-Mailer: git-send-email 2.16.4
+In-Reply-To: <20191126084006.23262-1-jthumshirn@suse.de>
+References: <20191126084006.23262-1-jthumshirn@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This series attempts to remove the BUG_ON()s in btrfs_close_one_device().
-Therefore some reorganization of btrfs_close_one_device() was needed, to
-avoid the memory allocation.
+When closing a device, btrfs_close_one_device() first allocates a new
+device, copies the device to close's name, replaces it in the dev_list
+with the copy and then finally frees it.
 
-This series has passed fstests without any deviation from the baseline.
+This involves two memory allocation, which can potentially fail. As this
+code path is tricky to unwind, the allocation failures where handled by
+BUG_ON()s.
 
+But this copying isn't strictly needed, all that is needed is resetting
+the device in question to it's state it had after the allocation.
+
+Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
+
+---
 Changes to v3:
-- Clear BTRFS_DEV_STATE_WRITEABLE after calling btrfs_close_bdev() so
-  btrfs_close_bdev() can call sync_blockdev() and invalidate_bdev() (Nikolay)
+- Clear DEV_STATE_WRITABLE _after_ btrfs_close_bdev() (Nik)
+---
+ fs/btrfs/volumes.c | 38 +++++++++++++++++---------------------
+ 1 file changed, 17 insertions(+), 21 deletions(-)
 
-Changes to v2:
-- Completly different approach to the origianl patchset, instead of handling
-  eventual allocation failures.
-- Dropped already merged patches for ' btrfs_fs_devices::rotating' and
-  'btrfs_fs_devices::seeding'
-- Kept the 1st patch of the old series, as it's a nice cleanup
-
-Changes to v1:
-- Fixed the decremt of btrfs_fs_devices::seeding.
-- In addition to this, I've added two patches changing btrfs_fs_devices::seeding
-  and btrfs_fs_devices::rotating to bool, as they are in fact used as booleans.
-
-Johannes Thumshirn (2):
-  btrfs: decrement number of open devices after closing the device not
-    before
-  btrfs: reset device back to allocation state when removing
-
- fs/btrfs/volumes.c | 41 ++++++++++++++++++-----------------------
- 1 file changed, 18 insertions(+), 23 deletions(-)
-
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 2398b071bcf6..efabffa54a45 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1064,8 +1064,6 @@ static void btrfs_close_bdev(struct btrfs_device *device)
+ static void btrfs_close_one_device(struct btrfs_device *device)
+ {
+ 	struct btrfs_fs_devices *fs_devices = device->fs_devices;
+-	struct btrfs_device *new_device;
+-	struct rcu_string *name;
+ 
+ 	if (test_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state) &&
+ 	    device->devid != BTRFS_DEV_REPLACE_DEVID) {
+@@ -1073,29 +1071,27 @@ static void btrfs_close_one_device(struct btrfs_device *device)
+ 		fs_devices->rw_devices--;
+ 	}
+ 
+-	if (test_bit(BTRFS_DEV_STATE_MISSING, &device->dev_state))
++	if (test_bit(BTRFS_DEV_STATE_MISSING, &device->dev_state)) {
+ 		fs_devices->missing_devices--;
++		clear_bit(BTRFS_DEV_STATE_MISSING, &device->dev_state);
++	}
+ 
++	clear_bit(BTRFS_DEV_STATE_IN_FS_METADATA, &device->dev_state);
+ 	btrfs_close_bdev(device);
+-	if (device->bdev)
++	if (device->bdev) {
+ 		fs_devices->open_devices--;
+-
+-	new_device = btrfs_alloc_device(NULL, &device->devid,
+-					device->uuid);
+-	BUG_ON(IS_ERR(new_device)); /* -ENOMEM */
+-
+-	/* Safe because we are under uuid_mutex */
+-	if (device->name) {
+-		name = rcu_string_strdup(device->name->str, GFP_NOFS);
+-		BUG_ON(!name); /* -ENOMEM */
+-		rcu_assign_pointer(new_device->name, name);
+-	}
+-
+-	list_replace_rcu(&device->dev_list, &new_device->dev_list);
+-	new_device->fs_devices = device->fs_devices;
+-
+-	synchronize_rcu();
+-	btrfs_free_device(device);
++		device->bdev = NULL;
++	}
++	clear_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state);
++
++	/* Verify the device is back in a pristine state  */
++	ASSERT(!test_bit(BTRFS_DEV_STATE_FLUSH_SENT, &device->dev_state));
++	ASSERT(!test_bit(BTRFS_DEV_STATE_REPLACE_TGT, &device->dev_state));
++	ASSERT(list_empty(&device->dev_alloc_list));
++	ASSERT(list_empty(&device->post_commit_list));
++	ASSERT(atomic_read(&device->reada_in_flight) == 0);
++	ASSERT(atomic_read(&device->dev_stats_ccnt) == 0);
++	ASSERT(RB_EMPTY_ROOT(&device->alloc_state.state));
+ }
+ 
+ static int close_fs_devices(struct btrfs_fs_devices *fs_devices)
 -- 
 2.16.4
 

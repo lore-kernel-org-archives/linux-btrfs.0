@@ -5,38 +5,42 @@ X-Spam-Level:
 X-Spam-Status: No, score=-8.0 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=unavailable autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C1584C432C0
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Nov 2019 02:48:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BF28FC432C0
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Nov 2019 02:51:56 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 890682068F
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Nov 2019 02:48:24 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 916312071E
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Nov 2019 02:51:56 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="MZdpp5kE"
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="ldpTWakW"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726926AbfKZCsX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Nov 2019 21:48:23 -0500
-Received: from mout.gmx.net ([212.227.15.18]:50607 "EHLO mout.gmx.net"
+        id S1727166AbfKZCvx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Nov 2019 21:51:53 -0500
+Received: from mout.gmx.net ([212.227.17.20]:48551 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725946AbfKZCsW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Nov 2019 21:48:22 -0500
+        id S1725946AbfKZCvx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Nov 2019 21:51:53 -0500
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1574736225;
-        bh=zIb+0xzEv6fcBOmNeU/MXGrFLzK0wMowgix+ybsqEMk=;
-        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
-        b=MZdpp5kEUtu5SqYn74WpEjOLIczFKm099++OCAbAmm8u69wRvKh3RA9RN2I2OXNE+
-         Kd21QyH0nmW+yClJyY4lkBGobhxLNTy4cCNxH0Sd3MCGDGiucmGs8LOmYz7wDx8ukz
-         G+I6eYzw0OSixjvUs8QpgCBqF3gYoQJaYbqVjmoo=
+        s=badeba3b8450; t=1574736612;
+        bh=IZGlcWAzopY37dn0OGa0aVHUhtF1bI8GYL4mj5nX1kM=;
+        h=X-UI-Sender-Class:Subject:To:Cc:References:From:Date:In-Reply-To;
+        b=ldpTWakWy2DhYY48jhFvK+am9fW6ZHqdT5ar+B2/VneCDOZaRDS8t0ZAp19317zzC
+         1CXlxlcwiGOn/gX3OxcjDi/ePV5kZB7N7c+VXgPQHzNhgGrlZkujkDRz/nU8pZcdua
+         ZI9YIb8KHGprdiF2/rGZ6JMx0CW0XgjdSOJ71bjo=
 X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([13.231.109.76]) by mail.gmx.com (mrgmx005
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1MLzBj-1iIAvR3O89-00HtKn; Tue, 26
- Nov 2019 03:43:45 +0100
-Subject: Re: [PATCH 3/4] btrfs: fix force usage in inc_block_group_ro
-To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
-        kernel-team@fb.com, wqu@suse.com
-References: <20191125144011.146722-1-josef@toxicpanda.com>
- <20191125144011.146722-4-josef@toxicpanda.com>
+Received: from [0.0.0.0] ([13.231.109.76]) by mail.gmx.com (mrgmx105
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1Mzyyk-1hdbPx2r8Y-00x0G0; Tue, 26
+ Nov 2019 03:50:12 +0100
+Subject: Re: [PATCH 2/2] btrfs: qgroup: Return -ENOTCONN instead of -EINVAL
+To:     Marcos Paulo de Souza <marcos.souza.org@gmail.com>,
+        linux-kernel@vger.kernel.org
+Cc:     dsterba@suse.com, linux-btrfs@vger.kernel.org,
+        anand.jain@oracle.com, Marcos Paulo de Souza <mpdesouza@suse.com>,
+        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>
+References: <20191126005851.11813-1-marcos.souza.org@gmail.com>
+ <20191126005851.11813-3-marcos.souza.org@gmail.com>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
@@ -62,146 +66,167 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  72byGeSovfq/4AWGNPBG1L61Exl+gbqfvbECP3ziXnob009+z9I4qXodHSYINfAkZkA523JG
  ap12LndJeLk3gfWNZfXEWyGnuciRGbqESkhIRav8ootsCIops/SqXm0/k+Kcl4gGUO/iD/T5
  oagaDh0QtOd8RWSMwLxwn8uIhpH84Q4X1LadJ5NCgGa6xPP5qqRuiC+9gZqbq4Nj
-Message-ID: <64dec4e1-a602-454c-e9d5-af8f39aaf97a@gmx.com>
-Date:   Tue, 26 Nov 2019 10:43:39 +0800
+Message-ID: <e0c355ac-6446-9b27-12fc-82e05c9e8212@gmx.com>
+Date:   Tue, 26 Nov 2019 10:50:05 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
  Thunderbird/68.2.2
 MIME-Version: 1.0
-In-Reply-To: <20191125144011.146722-4-josef@toxicpanda.com>
+In-Reply-To: <20191126005851.11813-3-marcos.souza.org@gmail.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="Wm8xqUBqU6DbwMQmIxj248VlQgTb1UxBB"
-X-Provags-ID: V03:K1:cq3GxrOt7To2SDrjd8FagG5P92vWeV0geR06cIIavgax4jjq8Iz
- Mce0bQCIbDKCAsmlXWFG3UVtSqdbl/fCzYO7QubpbloeubVVGcQVGkSoR43MftKJj9U5F6N
- DRcPZQD+AQBmqXpKBHxFreMOCbbuFbiOhuGeLNgyqz02nOURuHxKMaA8c598RE6dUm6DvsY
- wRzIlLqzoUijSrsMtj9OQ==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:5xWf/vcQxCk=:2TTjW3dTq19i1M9SPzw9hi
- ExFfGtBLRgK438RnuBO2ZWUG3kGWbbwd+LBxiFoLFTY7WnyhBe0qIG5ZifsJIIu857rpTPWES
- IEzaV206zcD4KERf6y+dqe+VvJLisWYeuhwjYebGqk2JVt5T+FP9+5mXVtRT1Qc2nIsbzZL8s
- D2PiB9CT7dLNxr5zWnNM0KYIkudLgSTh9azyOGPNB8M9E1E8KQtmiBHsE0BcGg+4BiDzB4LnD
- CFE1dPScuR1EoXdzz7v8kpFP8sehePMP8s2QgTODxsKPcaJYA/vcBCOx9Uuw6tWdRG94GpUGP
- 2JWekTFlHhkICNeSxxxRgYme6UV15vt4a6LFS4OOEIS6P3W4vH4tyJArmgwMooxuDFtJD0OwL
- EVHOjfUrERyWm3rMR7D8QvpC9baIWscwpmSqeELH38iE2mOYhCnr7WKcIqbzvde6FDjCuVD5w
- WPsDLtBjs+qkHK/SiC7ngOcxNeJEMbMNy51gymIGX29Bu5RB4Zp2+UpM5Z14qpSuIPbZgAe79
- cgXe64rf8VP3rzCQNf5j6dyCSeCSHexIo6TIyTWwy4AL77/n648eyHJjaXb7hcyZEy6E3nS/f
- q7ICHoa+XyTgH8HKoW+dQ0c7cVLwm48C8GE9Z8pHaWZex6k8Plcx2hCqcbJiXjfrGyTa5b+pL
- +OMSdXZ0oa/Ig5V7pgc1ALpTptnLttAYE53PWfMWzrJC1xXb6/jTe5VXH9z3Bv2F4lwOcXpyP
- 9oDREB/31eAbsIRcKblDYURbdjrozLjC275BsBEG2ce9cFVgwJQ33MhHFZRqTRMELqpwudpWd
- Q46/doeBvrDLBEf6gZkXJ7tU8pSr1U54t4nsfvooExZMc9eYL68TzdNblSWOheXs96jpVTyNj
- PDLhlRVY+qxt5wuX6+K7W2M7gzGGhJLZIFddd3WgIeVyPf8lIj0kEHSRYrFyssjMbVg3wvOAz
- oJPtfvyyoNaN/BmMzq0l9mXqE/Eh1qEvJawVCN/zxnvtKWjX7bCD+FqqINwpnqoIRmJj0BolW
- Gh5g6NMh90gNRqgZbITpLJJge9GPUFbRTC8+Z3ZfL72eSTPLqdTTrfNkex3cqAcpfwCyv37C0
- 2KL7WoopBWWmgl00Y5f48tCz+TjnmnYhu01nbM48CPqwJb4/N5FXz2AzxqBTc++HR4ExXHZsz
- NusxQef2RkH/74VbtoAlqC37CWbw78nk+n0izEzBUUNgpVPaPHIgITzjqH6jg1j556RsDL1Nl
- YwVwHi4LD6YGSjdBQ9aoj3pht8KClxugd8oVqjznrWIlO2IjR18Po6VubgHw=
+ boundary="rxi7JT67L3O8p9aWRcN3scgVICvfBVYEI"
+X-Provags-ID: V03:K1:swRJilVEj+iyhGNliLPhBn8W75JVeggj+5M9zFvK9W/umAtD2Zj
+ VdHQJHRTQdoNh7TLsJKM53N2FVV9qILrYIojoKVc148rECiG9uGb5qIktHNpgcH2vIF4X1j
+ MOs4fIRE7M49s0KQkzUaEcMbAKg2S6etUJw51hpzsuEkPZ+glqh6uViH82YxNijCcwGdDX3
+ W9Nj0zhmg8GJ4PQfDfAmg==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:0MQZ4LSmFYo=:W+lwffKRLjAKEH26+k6JFH
+ PYLxohe+ZOuBiCPDAtDF9rzrRwCdQ3PahXiznAWGZo5b//jJ+ungMWd8o0pHAY3bJPIarC9yS
+ 3w122DTOhD0Sb7fugeDP7ldasu2inF+uoqKyTvghd/IavhCbNsfV2kHvDaArzqOR8rAawwLrT
+ +Fp6GTvc7MHuGJFECeqNkDXhUYHZVijikBS31jkanSZqnNOjGPytlHEQvUT8H15Z3WT7Q5Nxm
+ PI//dIS1YOUw5OOJ9M/mblupH6QTxGaObyyMNV+CVs1XBZkIAFbyjyGCp/iFG04r+/bJCHNQe
+ 8hEVU3FLvPOjjohvC6E/CBbDqBNWWRm4Eku1o7FCJMKCJovSpQV7XDpkd8hJvYkgZyX6QAhxM
+ oPasHttYMwO4J4xNP0P4eqVLJEPk6EFuPvUulag5Vua2fxgyg5SyAdp1uDZyk9llE6Q/wy/1M
+ CoxfKNEhF7NcRLpdTjexLMS5P1Oke6RiXaV2B96tpMjMIjmlKLDiue2Q8ayE4y61wGK+1AEDJ
+ scd20zWhXIx8lAv6UwYsHhlxT5whziGdnzPsYFXhccLdLLOnQQeohQhQxCba9fSu/yIlV4/cf
+ FvG46lXpHq+RO7o5qD5HLmXYyVluL7TG179cjhEp+mildVRjQ5320wY4JFu4+GT4Q7ik/4muM
+ Xpz2UnVKKEGEs0/YX598YlVIyvzE6o0pk1pdnlt+gAFmPKDM1dJPwj7E2uScHh8lH6ynQxj+b
+ PXriMy5D5fVi9CXIdq4krY9O1YfeT9ujK8S9Os3bqNWvgqK2xcZa8DKD6Ewfr33Q5+WH4oE7f
+ TNJRH74rZLttaEOXbRDgo1MHm60HulAvztpKZCvcAuKdfPuSzl7TmSZNphRftkdhI8+9DaB6A
+ 9S/Y8BvW7FSce5vBCgM1YNs8dI/2LQyT9UIS2PpLSuNm/TUFFlMdEOnBU6J1pUdC1LoMLOGKR
+ auA/z806TwZ4UeCqLQRN8eXKtc3NQ2N4CCGlEQRnHC7k2BRRzg1ZqUjSoJKYMOBGWS6nyEPEU
+ CjJ0BimmU3+1SYL3jkFQ7Uw2WCcOW4KawlytoI6jH9XLYK7IGjE/nW1LFgf1SDZTERN+Lh/iA
+ FYzr3FHqd3JhLXn0OGhTDBW2ShuidvnY3IKDC1x5DPADvz5jf/OlP/yLCsjoRG1xWe4xHa43x
+ ZZe8MHprRmC3CZsdMGjosre7URtVALQEA/xFJRqmn4tGU5LN63eemyTAo6DhCUXZAqZbbZwBY
+ 4ZQOnoSG7ArOiTo7ImxtfcLoi+CceTRH6Vd63CpcefCd08aADmkbzkMBf4b0=
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---Wm8xqUBqU6DbwMQmIxj248VlQgTb1UxBB
-Content-Type: multipart/mixed; boundary="UDqJbk4VcMZ3nGFKOqo7FD0vAP0w0d5Jh"
+--rxi7JT67L3O8p9aWRcN3scgVICvfBVYEI
+Content-Type: multipart/mixed; boundary="sk88EurChcutzdNOXDs8TfY1Sv8Udc1zh"
 
---UDqJbk4VcMZ3nGFKOqo7FD0vAP0w0d5Jh
+--sk88EurChcutzdNOXDs8TfY1Sv8Udc1zh
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 2019/11/25 =E4=B8=8B=E5=8D=8810:40, Josef Bacik wrote:
-> For some reason we've translated the do_chunk_alloc that goes into
-> btrfs_inc_block_group_ro to force in inc_block_group_ro, but these are
-> two different things.
+On 2019/11/26 =E4=B8=8A=E5=8D=888:58, Marcos Paulo de Souza wrote:
+> From: Marcos Paulo de Souza <mpdesouza@suse.com>
 >=20
-> force for inc_block_group_ro is used when we are forcing the block grou=
-p
-> read only no matter what, for example when the underlying chunk is
-> marked read only.  We need to not do the space check here as this block=
-
-> group needs to be read only.
+> [PROBLEM]
+> qgroup create/remove code is currently returning EINVAL when the user
+> tries to create a qgroup on a subvolume without quota enabled. EINVAL i=
+s
+> already being used for too many error scenarios so that is hard to depi=
+ct
+> what is the problem.
 >=20
-> btrfs_inc_block_group_ro() has a do_chunk_alloc flag that indicates tha=
-t
-> we need to pre-allocate a chunk before marking the block group read
-> only.  This has nothing to do with forcing, and in fact we _always_ wan=
-t
-> to do the space check in this case, so unconditionally pass false for
-> force in this case.
+> [FIX]
+> Currently scrub and balance code return -ENOTCONN when the user tries t=
+o
+> cancel/pause and no scrub or balance is currently running for the desir=
+ed
+> subvolume. Do the same here by returning -ENOTCONN  when a user
+> tries to create/delete/assing/list a qgroup on a subvolume without quot=
+a
+> enabled.
 
-I think the patch order makes thing a little hard to grasp here.
-Without the last patch, the idea itself is not correct.
+The generic error string for ENOTCONN is "Transport endpoint is not
+connected", not something user can directly know.
 
-The reason to force ro is because we want to avoid empty chunk to be
-allocated, especially for scrub case.
+So don't forget to modify btrfs-progs to interprete the error number to
+"qgroup not enabled" error string.
 
+Despite that, I think it looks good to me.
 
-If you put the last patch before this one, it's more clear, as then we
-can accept over-commit, we won't return false ENOSPC and no empty chunk
-created.
-
-BTW, with the last patch applied, we can remove that @force parameter
-for inc_block_group_ro().
+Reviewed-by: Qu Wenruo <wqu@suse.com>
 
 Thanks,
 Qu
 >=20
-> Then fixup inc_block_group_ro to honor force as it's expected and
-> documented to do.
->=20
-> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+> Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
 > ---
->  fs/btrfs/block-group.c | 6 ++++--
->  1 file changed, 4 insertions(+), 2 deletions(-)
+>  fs/btrfs/qgroup.c | 10 +++++-----
+>  1 file changed, 5 insertions(+), 5 deletions(-)
 >=20
-> diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-> index db539bfc5a52..3ffbc2e0af21 100644
-> --- a/fs/btrfs/block-group.c
-> +++ b/fs/btrfs/block-group.c
-> @@ -1190,8 +1190,10 @@ static int inc_block_group_ro(struct btrfs_block=
-_group *cache, int force)
->  	spin_lock(&sinfo->lock);
->  	spin_lock(&cache->lock);
+> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+> index 417fafb4b4f6..b046b04d7cce 100644
+> --- a/fs/btrfs/qgroup.c
+> +++ b/fs/btrfs/qgroup.c
+> @@ -1259,7 +1259,7 @@ int btrfs_add_qgroup_relation(struct btrfs_trans_=
+handle *trans, u64 src,
 > =20
-> -	if (cache->ro) {
-> +	if (cache->ro || force) {
->  		cache->ro++;
-> +		if (list_empty(&cache->ro_list))
-> +			list_add_tail(&cache->ro_list, &sinfo->ro_bgs);
->  		ret =3D 0;
+>  	mutex_lock(&fs_info->qgroup_ioctl_lock);
+>  	if (!fs_info->quota_root) {
+> -		ret =3D -EINVAL;
+> +		ret =3D -ENOTCONN;
 >  		goto out;
 >  	}
-> @@ -2063,7 +2065,7 @@ int btrfs_inc_block_group_ro(struct btrfs_block_g=
-roup *cache,
->  		}
+>  	member =3D find_qgroup_rb(fs_info, src);
+> @@ -1318,7 +1318,7 @@ static int __del_qgroup_relation(struct btrfs_tra=
+ns_handle *trans, u64 src,
+>  		return -ENOMEM;
+> =20
+>  	if (!fs_info->quota_root) {
+> -		ret =3D -EINVAL;
+> +		ret =3D -ENOTCONN;
+>  		goto out;
 >  	}
 > =20
-> -	ret =3D inc_block_group_ro(cache, !do_chunk_alloc);
-> +	ret =3D inc_block_group_ro(cache, false);
->  	if (!do_chunk_alloc)
->  		goto unlock_out;
->  	if (!ret)
+> @@ -1384,7 +1384,7 @@ int btrfs_create_qgroup(struct btrfs_trans_handle=
+ *trans, u64 qgroupid)
+> =20
+>  	mutex_lock(&fs_info->qgroup_ioctl_lock);
+>  	if (!fs_info->quota_root) {
+> -		ret =3D -EINVAL;
+> +		ret =3D -ENOTCONN;
+>  		goto out;
+>  	}
+>  	quota_root =3D fs_info->quota_root;
+> @@ -1418,7 +1418,7 @@ int btrfs_remove_qgroup(struct btrfs_trans_handle=
+ *trans, u64 qgroupid)
+> =20
+>  	mutex_lock(&fs_info->qgroup_ioctl_lock);
+>  	if (!fs_info->quota_root) {
+> -		ret =3D -EINVAL;
+> +		ret =3D -ENOTCONN;
+>  		goto out;
+>  	}
+> =20
+> @@ -1469,7 +1469,7 @@ int btrfs_limit_qgroup(struct btrfs_trans_handle =
+*trans, u64 qgroupid,
+> =20
+>  	mutex_lock(&fs_info->qgroup_ioctl_lock);
+>  	if (!fs_info->quota_root) {
+> -		ret =3D -EINVAL;
+> +		ret =3D -ENOTCONN;
+>  		goto out;
+>  	}
+> =20
 >=20
 
 
---UDqJbk4VcMZ3nGFKOqo7FD0vAP0w0d5Jh--
+--sk88EurChcutzdNOXDs8TfY1Sv8Udc1zh--
 
---Wm8xqUBqU6DbwMQmIxj248VlQgTb1UxBB
+--rxi7JT67L3O8p9aWRcN3scgVICvfBVYEI
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAl3ckVsACgkQwj2R86El
-/qg3bAf/SQAx4C/azI36oGlw7n4C+YXXAJl8RtU7WFNwUZq5c/1zi4tmnwHb7STG
-L3yDu0ZlYAC+4UFDoY2v65C57ULZDKJ5FwjsWI8tTLNwhlFySYAiHLZcXrbrdMej
-/k/rVE8MGAkDx0X/33ghWp/+4fheqlibg3tGfymIuBiL0B5dvjw1XKpBumFEilpP
-3k2hUiUb2v31FnjkFflM6aouiugVE+oA19cUKRQq0CFYSR4fF0BBNbW7xYllZyri
-hiOxMz8F4igP8+JwF5sXx4MqaEPoWzGsKZl3khiARtvcSFjYHt3OS2xfFyZ/cEJ3
-5DXNGD7ki8MvcxJd6/aWm1kyQMPwtQ==
-=AYdx
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAl3ckt0ACgkQwj2R86El
+/qgTlwf+KQ6kjSF/4Y2yiY16xTaeo5m4901C/GLFz4ZbVViglte642Zf6GvSg7ei
+kyAOWaTMF0dCzY8S7CeE3nAQyQSxRGlLWEB8ji6xInbkYT/joYV4UR+s5+X2RiCr
+ZyAXeTro0CSJc3EnALg8JTGnouE0qVxaP/yIYcXg5XC7hHdzpfM9Lplia+dKzV98
+jXGY2uA9fzSguI2t97EA2zby5XVuHGijx3SiIV4/LlKWfq3wa+7PysUHJEoSLSvC
+uS9S8MY5lL76lH55oDmkUoijLprNQ/9kb80z3aETDi6fX5MS4zdIzTVQ7+InMCns
+Pxc3P7JBvZc1u9+fi8MXN3hOla/Kbg==
+=PLLN
 -----END PGP SIGNATURE-----
 
---Wm8xqUBqU6DbwMQmIxj248VlQgTb1UxBB--
+--rxi7JT67L3O8p9aWRcN3scgVICvfBVYEI--

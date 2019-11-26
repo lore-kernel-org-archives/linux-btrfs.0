@@ -2,147 +2,89 @@ Return-Path: <SRS0=NX0b=ZS=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 56D47C432C0
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Nov 2019 04:02:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id ED3CFC432C3
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Nov 2019 04:05:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2E7AE20678
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Nov 2019 04:02:07 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A1FA820678
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Nov 2019 04:05:41 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="l1g81pFW"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727405AbfKZECG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Nov 2019 23:02:06 -0500
-Received: from mga07.intel.com ([134.134.136.100]:29153 "EHLO mga07.intel.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726947AbfKZECG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Nov 2019 23:02:06 -0500
-X-Amp-Result: UNKNOWN
-X-Amp-Original-Verdict: FILE UNKNOWN
-X-Amp-File-Uploaded: False
-Received: from fmsmga006.fm.intel.com ([10.253.24.20])
-  by orsmga105.jf.intel.com with ESMTP/TLS/DHE-RSA-AES256-GCM-SHA384; 25 Nov 2019 20:02:05 -0800
-X-ExtLoop1: 1
-X-IronPort-AV: E=Sophos;i="5.69,244,1571727600"; 
-   d="scan'208";a="409847404"
-Received: from pl-dbox.sh.intel.com (HELO intel.com) ([10.239.13.128])
-  by fmsmga006.fm.intel.com with ESMTP; 25 Nov 2019 20:02:02 -0800
-Date:   Tue, 26 Nov 2019 12:09:08 +0800
-From:   Philip Li <philip.li@intel.com>
-To:     Nick Desaulniers <ndesaulniers@google.com>
-Cc:     Dennis Zhou <dennis@kernel.org>, Chen Rong <rong.a.chen@intel.com>,
-        kbuild@lists.01.org,
-        clang-built-linux <clang-built-linux@googlegroups.com>,
-        kbuild test robot <lkp@intel.com>, kbuild-all@lists.01.org,
-        David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        Omar Sandoval <osandov@osandov.com>, kernel-team@fb.com,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 05/22] btrfs: add the beginning of async discard, discard
- workqueue
-Message-ID: <20191126040908.GE26032@intel.com>
-References: <201911220351.HPI9gxNo%lkp@intel.com>
- <CAKwvOdn5j37AYzmoOsaSqyYdBkjqevbTrSyGQypB+G_NgxX0fQ@mail.gmail.com>
- <20191125185931.GA30548@dennisz-mbp.dhcp.thefacebook.com>
- <CAKwvOdnaiXo8qqK_tyiYvw5Fo4HvdFzrMxLU7k62qEWucC-58Q@mail.gmail.com>
- <20191126014209.GB21240@intel.com>
- <CAKwvOdnp6kjJkmnDj=bmnN-VaRrNunNCQ5ngUNbCEUXCqYvq5w@mail.gmail.com>
+        id S1727250AbfKZEFk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Nov 2019 23:05:40 -0500
+Received: from mail-wr1-f48.google.com ([209.85.221.48]:34167 "EHLO
+        mail-wr1-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726947AbfKZEFk (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Nov 2019 23:05:40 -0500
+Received: by mail-wr1-f48.google.com with SMTP id t2so20716177wrr.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Nov 2019 20:05:39 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:from:date:message-id:subject:to;
+        bh=zAgjLTevnkBCvaBiSJr5VrWXd5jJXG0Y6KVbAHal7rQ=;
+        b=l1g81pFWvQVAttvEbAae+Tg1x9bw9+0WXQ1cKSapQVq4iMhMco3+2aDAo2uolz+Umk
+         SjHKj6pH9OGquRTCUsSDMfchD/SYz8Pwv553vYgYiipqwCsS5PpSUIey4YYg1nTPzcDH
+         xViFtX/3oDBhi/VGKjadSPuh3rJKFrZ/+iM6/vB22QUsU+WIO2CXGuA6Z9v+OQmVdrSY
+         Xtx4H4TFi9YUxSwQuBCjl/3l8ZHUWKKJqJ+K046rVG/KG7GA9kwV+epglt8IzCKifku0
+         aWMEOOMDXKBRabZ/o8IX02W1y81LzMm9SbL8+nk9XAfXuQO11R+dAmY/PSmDz5sGxAMb
+         0Y+A==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:from:date:message-id:subject:to;
+        bh=zAgjLTevnkBCvaBiSJr5VrWXd5jJXG0Y6KVbAHal7rQ=;
+        b=Be4uemgjY4/VguxzeXt2mb+qMw1RM3QaoAqhpL5FcUgIkqg7OC3sAcJBPqn3sC0mwh
+         RP2uAfHTLh7cAGXwZVAlJd2g7kYi3xfAgR7IvwxnKwpc/ehEZ2VuKoB6Xoc7b0nECaJn
+         Xo8X31Z8rYSHGiGrzHtp8htLszGNGfyp0dN2irJBQrrVMA46q3vDtZPN5E5Q0cabiprp
+         LujRZOjswmCS/wlcf+kRpMyhKokRFL6MDUUjpuRc6nJA3x1aCNvHuW5DH9my7m1QcwHp
+         2N1kNUwTigwqd51hmPLUjCdbTiaPJYJKG6zbeIIniOFID2hcs8cHPTqEjYiNmK4GhfaH
+         gbQQ==
+X-Gm-Message-State: APjAAAXtAE9ORaCdG8FTdaTfN4kO94a/IUm3s/8C/WYKH7CuZESLn2QA
+        o/KkMUDm33vqVWNWmHHwGBVokSbUta2SUpF7NfF4h/5nskwP2Q==
+X-Google-Smtp-Source: APXvYqwXb9D3on9GlkU4bROQNcXgFVVKNbORO+c0BrOHR99MRuD58ikmcqnb6z2tzur1Iz84Iw4MoKxzDPU5X29ZUTY=
+X-Received: by 2002:adf:da52:: with SMTP id r18mr34876784wrl.167.1574741138198;
+ Mon, 25 Nov 2019 20:05:38 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <CAKwvOdnp6kjJkmnDj=bmnN-VaRrNunNCQ5ngUNbCEUXCqYvq5w@mail.gmail.com>
-User-Agent: Mutt/1.9.4 (2018-02-28)
+From:   Chris Murphy <lists@colorremedies.com>
+Date:   Mon, 25 Nov 2019 21:05:22 -0700
+Message-ID: <CAJCQCtSeZu8fRzjABXh3wxvBDEajGutAU4LWu0RcJv-6pd+RGQ@mail.gmail.com>
+Subject: GRUB bug with Btrfs multiple devices
+To:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Nov 25, 2019 at 05:47:00PM -0800, Nick Desaulniers wrote:
-> On Mon, Nov 25, 2019 at 5:35 PM Philip Li <philip.li@intel.com> wrote:
-> >
-> > On Mon, Nov 25, 2019 at 11:39:08AM -0800, Nick Desaulniers wrote:
-> > > On Mon, Nov 25, 2019 at 10:59 AM Dennis Zhou <dennis@kernel.org> wrote:
-> > > >
-> > > > On Thu, Nov 21, 2019 at 08:27:43PM -0800, Nick Desaulniers wrote:
-> > > > > Hi Dennis,
-> > > > > Below is a 0day bot report from a build w/ Clang. Warning looks legit,
-> > > > > can you please take a look?
-> > > > >
-> > > >
-> > > > Ah thanks for this! Yeah that was a miss when I switched from flags ->
-> > > > an enum and didn't update the declaration properly. I'll be sending out
-> > > > a v4 as another fix for arm has some rebase conflicts.
-> > > >
-> > > > Is there a way to enable so I get these emails directly?
-> > >
-> > > + Rong, Philip
-> > >
-> > > The reports have only been sent to our mailing list where we've been
-> > > manually triaging them.  The issue with enabling them globally was
-> > > that the script to reproduce the warning still doesn't mention how to
-> > > build w/ Clang.
-Hi Nick, i forgot one question. Is it still expected to use latest clang
-to build test? Any possibility the issue is related to clang compiler itself?
+grub2-efi-x64-2.02-100.fc31.x86_64
+kernel-5.3.13-300.fc31.x86_64
 
-Thanks
+I've seen this before, so it isn't a regression in either of the above
+versions. But I'm also not certain when the regression occurred,
+because the last time I tested Btrfs multiple devices (specifically
+data single profile), was years ago and I didn't run into this.
 
-> > Thanks Nick for continuous caring on this. One thing we initially worry
-> > is how to avoid duplicated reports to developer, like the one that can
-> > be same as gcc's finding. We haven't found a way to effectively handle
-> > this.
-> 
-> Thanks for maintaining an invaluable tool.
-> 
-> How would the reports be duplicated? Does 0day bot build with GCC,
-> then rebuild with Clang?
-> 
-> Regardless, does it matter? If I make a mistake, and get two build
-> failure emails from 0day bot instead of one, does it matter? Sometimes
-> developers may just get one, as some warnings are unique to each
-> compiler.  Maybe it runs the risk of folks ignoring the email if the
-> volume is too much, but do authors generally ignore 0day bot emails?
-> (I'd hope not).
-> 
-> >
-> > >
-> > > In general the reports have been high value (I ignore most reports
-> > > with -Wimplicit-function-declaration, which is the most frequent as it
-> > > shows the patch was not compile tested at all).
-> > Do we mean the report with -Wimplicit-function-declaration can be duplicated
-> > to gcc, so we can ignore them to avoid duplication to developer?
-> 
-> Many of the warnings GCC has Clang does as well.
-> -Wimplicit-function-declaration is the most common warning I see in
-> triage, which developers would see regardless of toolchain had they
-> compiled first before pushing.  It might be interesting to see maybe
-> the intersection or common flags between GCC and Clang, and only email
-> Clang reports for warnings unique to clang?  I think CFLAGS can even
-> be passed into make invocations so you could do:
-> $ make CC=clang KBUILD_CFLAGS=<list of flags common to GCC and Clang;
-> -Wno-implicit-function-declaration -Wno-...>
-> such that any resulting warnings were unique to Clang.  I'd expect
-> such a list to quickly get stale over time though.
-> 
-> >
-> > >
-> > > Rong, Philip, it's been a while since we talked about this last. Is
-> > > there a general timeline of when these reports will be turned on
-> > > globally?  Even if the directions to reproduce aren't quite right,
-> > For the timeline, it's not decided due to the duplication concern. We tend
-> > to look into next year after other priorities are solved for this year.
-> >
-> > > generally there's enough info in the existing bugs where authors can
-> > > rewrite their patch without even needing to rebuild with Clang (though
-> > > having correct directions to reproduce would be nice, we could wait
-> > > until someone asked for them explicitly).
-> > >
-> > > --
-> > > Thanks,
-> > > ~Nick Desaulniers
-> 
-> 
-> 
-> -- 
-> Thanks,
-> ~Nick Desaulniers
+The gist to reproduce:
+1. btrfs single device, single profile data, single profile metadata
+2. device starts to run out of space; no problem 'btrfs device add
+/dev/'  voila it works, reboots, keeps on working for a while, but
+then...
+3. install a kernel or two or three or four
+
+I suspect that at some point kernels end up on the newly added device
+due to new block groups eventually being created there, and GRUB
+subsequently gets confused, starts spewing a bunch of error
+information which I have to page through. Eventually it does find
+everything and does boot. But it's kinda ugly and I'm not really sure
+how to gather more information.
+
+Shaky cam video of the boot is here:
+https://photos.app.goo.gl/wvJbB6kBEFzNwogo6
+
+
+-- 
+Chris Murphy

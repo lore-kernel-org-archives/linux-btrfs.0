@@ -2,51 +2,106 @@ Return-Path: <SRS0=f83N=ZT=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 695DFC43141
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Nov 2019 04:45:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D1C5FC432C0
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Nov 2019 06:07:22 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4AAB32075C
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Nov 2019 04:45:20 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A12C2207DD
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Nov 2019 06:07:22 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=inwind.it header.i=@inwind.it header.b="sjLwwhTV"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727261AbfK0EoM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 26 Nov 2019 23:44:12 -0500
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:48370 "EHLO
-        james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726558AbfK0EoK (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 26 Nov 2019 23:44:10 -0500
-X-Envelope-Mail-From: zblaxell@waya.furryterror.org
-X-Envelope-Mail-From: zblaxell@waya.furryterror.org
-Received: from waya.furryterror.org (waya.vpn7.hungrycats.org [10.132.226.63])
-        by james.kirk.hungrycats.org (Postfix) with ESMTP id 58CF54F8A73;
-        Tue, 26 Nov 2019 23:37:44 -0500 (EST)
-Received: from zblaxell by waya.furryterror.org with local (Exim 4.92)
-        (envelope-from <zblaxell@waya.furryterror.org>)
-        id 1iZp5E-0003P5-5h; Tue, 26 Nov 2019 23:37:44 -0500
-From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/6] btrfs-progs: add support for LOGICAL_INO_V2 features in logical-resolve
-Date:   Tue, 26 Nov 2019 22:55:03 -0500
-Message-Id: <20191127035509.15011-1-ce3g8jdj@umail.furryterror.org>
-X-Mailer: git-send-email 2.20.1
+        id S1726133AbfK0GHV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 27 Nov 2019 01:07:21 -0500
+Received: from smtp-35.italiaonline.it ([213.209.10.35]:42982 "EHLO libero.it"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726026AbfK0GHV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 27 Nov 2019 01:07:21 -0500
+Received: from venice.bhome ([94.37.221.184])
+        by smtp-35.iol.local with ESMTPA
+        id ZqTui7ZVc4KqMZqTuiJTn3; Wed, 27 Nov 2019 07:07:18 +0100
+x-libjamoibt: 1601
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=inwind.it; s=s2014;
+        t=1574834838; bh=+KHMw1Nu8/6NTyEHT5nt3vxFDvsqEX3QEKsJDFfT3Y0=;
+        h=Reply-To:Subject:To:Cc:References:From:Date:In-Reply-To;
+        b=sjLwwhTV1VAPdZWVvh4IOaG2OqDF6u0NIfHnAxI8nAkClXoak6ywor/NN5vMCfEiw
+         zdVTkagO/ZHOt1RKS2HmGSTpM9PeW/tlnjBIUd+3AOyfTuwfcJIRlJwNUJZRqnL9N1
+         1vMWnFphYJl47upjla5pgb/8RlK8p0cfjBUsBp5DbLOieaxHsMRNTuK8jK8O+Ugnsl
+         soSiiwrwc8mTenVN9R+VZXyv6tXl9uxy6ndNh1rv2cZz7k5JE3eSNqwIXXxFEBSiJ+
+         IXxVUlSeZYyDwLX99d8IP2/QsuYPqaTYfSVrRENBl+1oBO4Q0tLzrpjJQ96S/U3Fay
+         YprCsotqdm3JA==
+X-CNFS-Analysis: v=2.3 cv=UdUvt5aN c=1 sm=1 tr=0
+ a=effWHHp4iGaMry7csNPTyg==:117 a=effWHHp4iGaMry7csNPTyg==:17
+ a=jpOVt7BSZ2e4Z31A5e1TngXxSK0=:19 a=IkcTkHD0fZMA:10 a=lZFbU4aQAAAA:8
+ a=_5mgACltAAAA:20 a=GICLybgeAAAA:20 a=wixdtKU-VwprNg2LVhMA:9
+ a=QEXdDO2ut3YA:10 a=yKZbCDypxrTF-tGext6c:22
+Reply-To: kreijack@inwind.it
+Subject: Re: GRUB bug with Btrfs multiple devices
+To:     Chris Murphy <lists@colorremedies.com>
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <CAJCQCtSeZu8fRzjABXh3wxvBDEajGutAU4LWu0RcJv-6pd+RGQ@mail.gmail.com>
+ <a48a6c50-3a03-0420-ad8c-f589fafe6035@libero.it>
+ <CAJCQCtR6zMNKnhL7OZ8ZGCDwPfjC9a1cBOg+wt2VqoJTA_NbCQ@mail.gmail.com>
+ <CAJCQCtS2CP75JTT4a6y=rzqVtkMTqTRoCvJK9z3mMwLRfKo9Xw@mail.gmail.com>
+From:   Goffredo Baroncelli <kreijack@inwind.it>
+Message-ID: <12f98aaa-14f0-a059-379a-1d1a53375f97@inwind.it>
+Date:   Wed, 27 Nov 2019 07:07:18 +0100
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.2.2
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <CAJCQCtS2CP75JTT4a6y=rzqVtkMTqTRoCvJK9z3mMwLRfKo9Xw@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
+X-CMAE-Envelope: MS4wfO8s0fhKqchzmmyuozG7pCBApTq1WoYEgl8p4EQR2MfKVmZg99m+fNUzA/5c0QCUBG85uE3ffcwQ5owACnWcP/dIQv+4rNfrqvuTTCoYamoY9aZEkRZF
+ eCotUCDnbDn6Pk+pogfDI5K00lKOq1Ve/gV8Vrhc5M94yOU1aKYHHvPZXArB0PL1+mVrTcwYF6UQuICaLX1kSkS4VfqCqn6UhdQ=
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This patch set adds support for LOGICAL_INO_V2 features:
+On 27/11/2019 02.35, Chris Murphy wrote:
+> On Tue, Nov 26, 2019 at 4:53 PM Chris Murphy <lists@colorremedies.com> wrote:
+>>
+>> On Tue, Nov 26, 2019 at 2:11 PM Goffredo Baroncelli <kreijack@libero.it> wrote:
+>>>
+>>> I think that the errors is due to the "rescan" logic (see grub commit [1]). Could you try a more recent grub (2.04 instead of 2.02) ?
+>>
+>> Yes Fedora Rawhide has 2.04 in it, so I'll give that a shot next time
+>> I rebuild this particular laptop, which should be relatively soon; or
+>> even maybe I can reproduce this problem in a VM with two virtio
+>> devices.
+> 
+> I was able to just update to the Fedora 2.04-4.fc32 packages. It's not
+> upstream's but it's a quick and dirty way to give it a shot. Turns
+> out, the same errors happen, although the line number for efidisk.c
+> has changed:
+> https://photos.app.goo.gl/aKWRYhJkkJRDtC1W7
+> 
+> For grins, I dropped to a grub prompt, and issued ls and get a different result:
+> https://photos.app.goo.gl/MvL9QZa6zGsiktAf9
 
-        - bigger buffer size (16M instead of 64K, default also increased to 64K)
+Looking at the second picture, it seems that grub had problem to access the disk 0..3 not only when is doing a btrfs activity.
+No problem accessing hd4 and hd5*
 
-        - IGNORE_OFFSETS flag to look up references by extent instead of block
+Could you enable the debug, doing
 
-If the V2 options are used, it calls the V2 ioctl; otherwise, it calls
-the V1 ioctl for old kernel compatibility.
+	set pager=1
+	set debug=all
+
+?
+
+> 
+> Also for what it's worth, the Btrfs in question is on hd5,gpt4 and
+> hd5gpt5 - same physical device, different partitions.
+> 
+> 
 
 
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

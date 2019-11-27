@@ -6,32 +6,32 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2BD4AC43215
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 011D4C43141
 	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Nov 2019 04:44:12 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 013E1207DD
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Nov 2019 04:44:12 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D65512075C
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Nov 2019 04:44:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727254AbfK0EoL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S1727047AbfK0EoL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Tue, 26 Nov 2019 23:44:11 -0500
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:48384 "EHLO
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:48386 "EHLO
         james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727017AbfK0EoK (ORCPT
+        with ESMTP id S1727016AbfK0EoK (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Tue, 26 Nov 2019 23:44:10 -0500
 X-Envelope-Mail-From: zblaxell@waya.furryterror.org
 X-Envelope-Mail-From: zblaxell@waya.furryterror.org
 Received: from waya.furryterror.org (waya.vpn7.hungrycats.org [10.132.226.63])
-        by james.kirk.hungrycats.org (Postfix) with ESMTP id ED2D54F8A77;
+        by james.kirk.hungrycats.org (Postfix) with ESMTP id BA27E4F8A76;
         Tue, 26 Nov 2019 23:37:44 -0500 (EST)
 Received: from zblaxell by waya.furryterror.org with local (Exim 4.92)
         (envelope-from <zblaxell@waya.furryterror.org>)
-        id 1iZp5E-0003PF-E0; Tue, 26 Nov 2019 23:37:44 -0500
+        id 1iZp5E-0003PD-Bl; Tue, 26 Nov 2019 23:37:44 -0500
 From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/6] btrfs-progs: libbtrfsutil: add LOGICAL_INO_V2
-Date:   Tue, 26 Nov 2019 22:55:05 -0500
-Message-Id: <20191127035509.15011-3-ce3g8jdj@umail.furryterror.org>
+Subject: [PATCH 1/6] btrfs-progs: ioctl-test: add LOGICAL_INO_V2
+Date:   Tue, 26 Nov 2019 22:55:04 -0500
+Message-Id: <20191127035509.15011-2-ce3g8jdj@umail.furryterror.org>
 X-Mailer: git-send-email 2.20.1
 In-Reply-To: <20191127035509.15011-1-ce3g8jdj@umail.furryterror.org>
 References: <20191127035509.15011-1-ce3g8jdj@umail.furryterror.org>
@@ -42,43 +42,35 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Update the args structure, add the flags constant and the ioctl magic
-number.
+Same as LOGICAL_INO, except a different magic number.
 
 Signed-off-by: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
 ---
- libbtrfsutil/btrfs.h | 8 +++++++-
- 1 file changed, 7 insertions(+), 1 deletion(-)
+ ioctl-test.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/libbtrfsutil/btrfs.h b/libbtrfsutil/btrfs.h
-index 944d5013..daa769fd 100644
---- a/libbtrfsutil/btrfs.h
-+++ b/libbtrfsutil/btrfs.h
-@@ -624,10 +624,14 @@ struct btrfs_ioctl_ino_path_args {
- struct btrfs_ioctl_logical_ino_args {
- 	__u64				logical;	/* in */
- 	__u64				size;		/* in */
--	__u64				reserved[4];
-+	__u64				reserved[3];
-+	__u64				flags;		/* in */
- 	/* struct btrfs_data_container	*inodes;	out   */
- 	__u64				inodes;
- };
-+/* Return every ref to the extent, not just those containing logical block.
-+ * Requires logical == extent bytenr. */
-+#define BTRFS_LOGICAL_INO_ARGS_IGNORE_OFFSET    (1ULL << 0)
+diff --git a/ioctl-test.c b/ioctl-test.c
+index 65d584be..a79a13b0 100644
+--- a/ioctl-test.c
++++ b/ioctl-test.c
+@@ -82,7 +82,8 @@
+ 	ONE(BTRFS_IOC_GET_FEATURES)		\
+ 	ONE(BTRFS_IOC_SET_FEATURES)		\
+ 	ONE(BTRFS_IOC_GET_SUPPORTED_FEATURES)	\
+-	ONE(BTRFS_IOC_RM_DEV_V2)
++	ONE(BTRFS_IOC_RM_DEV_V2)		\
++	ONE(BTRFS_IOC_LOGICAL_INO_V2)
  
- enum btrfs_dev_stat_values {
- 	/* disk I/O failure stats */
-@@ -927,6 +931,8 @@ enum btrfs_err_code {
- 				   struct btrfs_ioctl_feature_flags[3])
- #define BTRFS_IOC_RM_DEV_V2 _IOW(BTRFS_IOCTL_MAGIC, 58, \
- 				   struct btrfs_ioctl_vol_args_v2)
-+#define BTRFS_IOC_LOGICAL_INO_V2 _IOWR(BTRFS_IOCTL_MAGIC, 59, \
-+                                     struct btrfs_ioctl_logical_ino_args)
- #define BTRFS_IOC_GET_SUBVOL_INFO _IOR(BTRFS_IOCTL_MAGIC, 60, \
- 				struct btrfs_ioctl_get_subvol_info_args)
- #define BTRFS_IOC_GET_SUBVOL_ROOTREF _IOWR(BTRFS_IOCTL_MAGIC, 61, \
+ #define LIST					\
+ 	LIST_BASE				\
+@@ -160,6 +161,7 @@ static struct ioctl_number expected_list[] = {
+ 	{ BTRFS_IOC_SET_FEATURES,                   0x0040309439 },
+ 	{ BTRFS_IOC_GET_SUPPORTED_FEATURES,         0x0080489439 },
+ 	{ BTRFS_IOC_RM_DEV_V2,                      0x005000943a },
++	{ BTRFS_IOC_LOGICAL_INO_V2,                 0x00c038943b },
+ };
+ 
+ static struct btrfs_ioctl_vol_args used_vol_args __attribute__((used));
 -- 
 2.20.1
 

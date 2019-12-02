@@ -2,108 +2,91 @@ Return-Path: <SRS0=GUsV=ZY=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 564C9C432C3
-	for <linux-btrfs@archiver.kernel.org>; Mon,  2 Dec 2019 18:19:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E57C6C432C0
+	for <linux-btrfs@archiver.kernel.org>; Mon,  2 Dec 2019 18:42:34 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2501A20717
-	for <linux-btrfs@archiver.kernel.org>; Mon,  2 Dec 2019 18:19:38 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=libero.it header.i=@libero.it header.b="NGRcaluc"
+	by mail.kernel.org (Postfix) with ESMTP id BA06B20717
+	for <linux-btrfs@archiver.kernel.org>; Mon,  2 Dec 2019 18:42:34 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727906AbfLBSTh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 2 Dec 2019 13:19:37 -0500
-Received: from smtp-18.italiaonline.it ([213.209.10.18]:59547 "EHLO libero.it"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727898AbfLBSTh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 2 Dec 2019 13:19:37 -0500
-Received: from venice.bhome ([84.220.25.30])
-        by smtp-18.iol.local with ESMTPA
-        id bqIHizXEsNNGebqIIidLfD; Mon, 02 Dec 2019 19:19:34 +0100
-x-libjamoibt: 1601
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=libero.it; s=s2014;
-        t=1575310774; bh=d5J2z1w0T19VOpLdY/rfLZxI50QxrKgZ6iGJcZhPPcw=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References;
-        b=NGRcaluck4r7llKek4Ij0Oz0WDGJnU2YQy4HkDBqfmTr7uHKDEa8Nz/PeyZdHuFnv
-         n7u91Grp7IqEqoU8oUJADTY7mPUnUQ33C6ltrlQuWvJ5nnT3/9/NrTS3Mxwlb3cONx
-         byhX5uO0NUGa9WeWD7nvoxuHE78vWeldnqiOFAM3UQMu5n4E866j8rf3gp5E9wM4wn
-         uXLbo2A1KghkFioaqnv9jZ2l3wTfbNtcA3C+HFi8Nj+s5bhuo/6M2lSuwtHD5JJC5t
-         W6sGlrin+FpQFgsTUT7jHP3cSv3RKp+HRhrjTW2arEPx2/+Hwm3y6/es7P79fdarGK
-         gCeQ8GlA6HcEQ==
-X-CNFS-Analysis: v=2.3 cv=B4jHL9lM c=1 sm=1 tr=0
- a=zfQl08sXljvZd6EmK9/AFg==:117 a=zfQl08sXljvZd6EmK9/AFg==:17
- a=jpOVt7BSZ2e4Z31A5e1TngXxSK0=:19 a=f-10ACRE3To8864kkSMA:9
- a=1T4bNiD3cw4QP5G4:21 a=Mes8qeG62ao3A4co:21
-From:   Goffredo Baroncelli <kreijack@libero.it>
-To:     David Sterba <dsterba@suse.cz>
-Cc:     linux-btrfs@vger.kernel.org,
-        Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH] btrfs: add support for RAID1C3 and RAID1C4
-Date:   Mon,  2 Dec 2019 19:19:28 +0100
-Message-Id: <20191202181928.3098-2-kreijack@libero.it>
-X-Mailer: git-send-email 2.24.0
-In-Reply-To: <20191202181928.3098-1-kreijack@libero.it>
-References: <20191202181928.3098-1-kreijack@libero.it>
+        id S1727580AbfLBSme (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 2 Dec 2019 13:42:34 -0500
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:34868 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727418AbfLBSmd (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Dec 2019 13:42:33 -0500
+Received: by james.kirk.hungrycats.org (Postfix, from userid 1002)
+        id 08469507460; Mon,  2 Dec 2019 13:42:27 -0500 (EST)
+Date:   Mon, 2 Dec 2019 13:42:04 -0500
+From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To:     Anand Jain <anand.jain@oracle.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 0/6] btrfs-progs: add support for LOGICAL_INO_V2 features
+ in logical-resolve
+Message-ID: <20191202184203.GH1046@hungrycats.org>
+References: <20191127035509.15011-1-ce3g8jdj@umail.furryterror.org>
+ <3d8298c5-bab4-67f5-2bf7-8156865d949f@oracle.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-CMAE-Envelope: MS4wfBtZ8+d5evT+aAQb5+VPyGdO2xixP9IO1c3C4fWVCTfLFgfzVzcx9Zf/wM20tnu6U/y3AhmRARybpI2VrbF6SMj6YO40aCi4KAVwn4w1sayx5qv+Ridm
- TMw+t5XNSULMoy+/ZC0j8ww3EG+9GMMya9gH3z9reo1zDGe+O32wDWK+Jfib+AIOO0PT3EyaAh4Jr6JF7y+qKqsw39OE/FEymv8X7mOFLvaZxpanySEXSIaI
- icdfmLm2oN6wj9VMUR1giA==
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="yRA+Bmk8aPhU85Qt"
+Content-Disposition: inline
+In-Reply-To: <3d8298c5-bab4-67f5-2bf7-8156865d949f@oracle.com>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Goffredo Baroncelli <kreijack@inwind.it>
 
-Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
----
- grub-core/fs/btrfs.c | 20 ++++++++++++++++++++
- 1 file changed, 20 insertions(+)
+--yRA+Bmk8aPhU85Qt
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-diff --git a/grub-core/fs/btrfs.c b/grub-core/fs/btrfs.c
-index 48bd3d04a..191c5cd63 100644
---- a/grub-core/fs/btrfs.c
-+++ b/grub-core/fs/btrfs.c
-@@ -136,6 +136,8 @@ struct grub_btrfs_chunk_item
- #define GRUB_BTRFS_CHUNK_TYPE_RAID10        0x40
- #define GRUB_BTRFS_CHUNK_TYPE_RAID5         0x80
- #define GRUB_BTRFS_CHUNK_TYPE_RAID6         0x100
-+#define GRUB_BTRFS_CHUNK_TYPE_RAID1C3       0x200
-+#define GRUB_BTRFS_CHUNK_TYPE_RAID1C4       0x400
-   grub_uint8_t dummy2[0xc];
-   grub_uint16_t nstripes;
-   grub_uint16_t nsubstripes;
-@@ -1088,6 +1090,24 @@ grub_btrfs_read_logical (struct grub_btrfs_data *data, grub_disk_addr_t addr,
- 	      stripe_offset = chunk_stripe_length * high + low;
- 	      csize = chunk_stripe_length - low;
- 
-+	      break;
-+	    }
-+	  case GRUB_BTRFS_CHUNK_TYPE_RAID1C3:
-+	    {
-+	      grub_dprintf ("btrfs", "RAID1C3\n");
-+	      stripen = 0;
-+	      stripe_offset = off;
-+	      csize = grub_le_to_cpu64 (chunk->size) - off;
-+	      redundancy = 3;
-+	      break;
-+	    }
-+	  case GRUB_BTRFS_CHUNK_TYPE_RAID1C4:
-+	    {
-+	      grub_dprintf ("btrfs", "RAID1C4\n");
-+	      stripen = 0;
-+	      stripe_offset = off;
-+	      csize = grub_le_to_cpu64 (chunk->size) - off;
-+	      redundancy = 4;
- 	      break;
- 	    }
- 	  default:
--- 
-2.24.0
+On Mon, Dec 02, 2019 at 07:02:26PM +0800, Anand Jain wrote:
+> On 27/11/19 11:55 AM, Zygo Blaxell wrote:
+> > This patch set adds support for LOGICAL_INO_V2 features:
+> >=20
+> >          - bigger buffer size (16M instead of 64K, default also increas=
+ed to 64K)
+> >=20
+> >          - IGNORE_OFFSETS flag to look up references by extent instead =
+of block
+> >=20
+> > If the V2 options are used, it calls the V2 ioctl; otherwise, it calls
+> > the V1 ioctl for old kernel compatibility.
+> >=20
+> >=20
+>=20
+> For the whole series.
+>=20
+> Reviewed-by: Anand Jain <anand.jain@oracle.com>
+>=20
+> (Nit: This should be v4 as this patch was submitted before:
+>=20
+> https://lore.kernel.org/linux-btrfs/20170922175847.6071-1-ce3g8jdj@umail.=
+furryterror.org/T/#t
 
+Nit^2:  That was the kernel patch, this is a btrfs-progs patch to use
+the kernel feature.
+
+I'm assuming kernel and userspace patches get different version
+numbering...?
+
+>=20
+>=20
+
+--yRA+Bmk8aPhU85Qt
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iF0EABECAB0WIQSnOVjcfGcC/+em7H2B+YsaVrMbnAUCXeVa8wAKCRCB+YsaVrMb
+nL2AAKDbZDXyH5ZLMRBMP/YfBFayI1BwHQCgwmNhCuEI5Y1OzsGRCfPLG1306wg=
+=2H0i
+-----END PGP SIGNATURE-----
+
+--yRA+Bmk8aPhU85Qt--

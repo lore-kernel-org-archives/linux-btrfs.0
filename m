@@ -2,111 +2,44 @@ Return-Path: <SRS0=ifAh=ZZ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 51528C432C0
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Dec 2019 08:33:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DC813C432C3
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Dec 2019 08:37:02 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 332A52068E
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Dec 2019 08:33:57 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BD38E206E0
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Dec 2019 08:37:02 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725939AbfLCIdx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 3 Dec 2019 03:33:53 -0500
-Received: from szxga05-in.huawei.com ([45.249.212.191]:6740 "EHLO huawei.com"
+        id S1726075AbfLCIhC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 3 Dec 2019 03:37:02 -0500
+Received: from mx2.suse.de ([195.135.220.15]:41566 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725773AbfLCIdx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 3 Dec 2019 03:33:53 -0500
-Received: from DGGEMS412-HUB.china.huawei.com (unknown [172.30.72.59])
-        by Forcepoint Email with ESMTP id B2160C238957AF1B488A;
-        Tue,  3 Dec 2019 16:33:51 +0800 (CST)
-Received: from [127.0.0.1] (10.177.251.225) by DGGEMS412-HUB.china.huawei.com
- (10.3.19.212) with Microsoft SMTP Server id 14.3.439.0; Tue, 3 Dec 2019
- 16:33:44 +0800
-Subject: Re: [PATCH] btrfs: remove unused condition check in
- btrfs_page_mkwrite()
+        id S1726017AbfLCIhA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 3 Dec 2019 03:37:00 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id AFEBFAEBD;
+        Tue,  3 Dec 2019 08:36:59 +0000 (UTC)
+Date:   Tue, 3 Dec 2019 09:36:57 +0100
+From:   Johannes Thumshirn <jthumshirn@suse.de>
 To:     Omar Sandoval <osandov@osandov.com>
-CC:     <clm@fb.com>, <josef@toxicpanda.com>, <dsterba@suse.com>,
-        <linux-btrfs@vger.kernel.org>, <linux-kernel@vger.kernel.org>,
-        "hushiyuan@huawei.com" <hushiyuan@huawei.com>,
-        "linfeilong@huawei.com" <linfeilong@huawei.com>
-References: <a84442bc-304b-2514-272e-ea89aae4b992@huawei.com>
- <20191203082426.GC829117@vader>
-From:   Yunfeng Ye <yeyunfeng@huawei.com>
-Message-ID: <4796f90f-ca5d-7b7c-5645-034af21d7c8b@huawei.com>
-Date:   Tue, 3 Dec 2019 16:33:33 +0800
-User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64; rv:60.0) Gecko/20100101
- Thunderbird/60.6.1
+Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com,
+        Nikolay Borisov <nborisov@suse.com>
+Subject: Re: [PATCH 1/9] btrfs: get rid of trivial __btrfs_lookup_bio_sums()
+ wrappers
+Message-ID: <20191203083657.GB21721@Johanness-MacBook-Pro.local>
+References: <cover.1575336815.git.osandov@fb.com>
+ <af5aefd84186419ead73107895ddd6aba02ef8b6.1575336815.git.osandov@fb.com>
 MIME-Version: 1.0
-In-Reply-To: <20191203082426.GC829117@vader>
-Content-Type: text/plain; charset="utf-8"
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
-X-Originating-IP: [10.177.251.225]
-X-CFilter-Loop: Reflected
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <af5aefd84186419ead73107895ddd6aba02ef8b6.1575336815.git.osandov@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-
-
-On 2019/12/3 16:24, Omar Sandoval wrote:
-> On Tue, Dec 03, 2019 at 04:16:43PM +0800, Yunfeng Ye wrote:
->> The condition '!ret2' is always true. so remove the unused condition
->> check.
->>
->> Signed-off-by: Yunfeng Ye <yeyunfeng@huawei.com>
-> 
-> For this sort of change, one should mention how the code got in this
-> state. In this case, commit 717beb96d969 ("Btrfs: fix regression in
-> btrfs_page_mkwrite() from vm_fault_t conversion") left behind the check
-> after moving this code out of the goto.
-> 
-ok, I will update the comment, thanks.
-
-> Ohter than that,
-> 
-> Reviewed-by: Omar Sandoval <osandov@fb.com>
-> 
->> ---
->>  fs/btrfs/inode.c | 11 ++++-------
->>  1 file changed, 4 insertions(+), 7 deletions(-)
->>
->> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
->> index 56032c518b26..eef2432597e2 100644
->> --- a/fs/btrfs/inode.c
->> +++ b/fs/btrfs/inode.c
->> @@ -9073,7 +9073,6 @@ vm_fault_t btrfs_page_mkwrite(struct vm_fault *vmf)
->>  		ret = VM_FAULT_SIGBUS;
->>  		goto out_unlock;
->>  	}
->> -	ret2 = 0;
->>
->>  	/* page is wholly or partially inside EOF */
->>  	if (page_start + PAGE_SIZE > size)
->> @@ -9097,12 +9096,10 @@ vm_fault_t btrfs_page_mkwrite(struct vm_fault *vmf)
->>
->>  	unlock_extent_cached(io_tree, page_start, page_end, &cached_state);
->>
->> -	if (!ret2) {
->> -		btrfs_delalloc_release_extents(BTRFS_I(inode), PAGE_SIZE);
->> -		sb_end_pagefault(inode->i_sb);
->> -		extent_changeset_free(data_reserved);
->> -		return VM_FAULT_LOCKED;
->> -	}
->> +	btrfs_delalloc_release_extents(BTRFS_I(inode), PAGE_SIZE);
->> +	sb_end_pagefault(inode->i_sb);
->> +	extent_changeset_free(data_reserved);
->> +	return VM_FAULT_LOCKED;
->>
->>  out_unlock:
->>  	unlock_page(page);
->> -- 
->> 2.7.4
->>
-> 
-> .
-> 
-
+Looks good,
+Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>

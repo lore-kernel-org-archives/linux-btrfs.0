@@ -2,82 +2,57 @@ Return-Path: <SRS0=ifAh=ZZ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D00CEC432C0
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Dec 2019 17:30:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 885E0C432C0
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Dec 2019 17:42:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 96DAF2073B
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Dec 2019 17:30:12 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=libero.it header.i=@libero.it header.b="uO89rHri"
+	by mail.kernel.org (Postfix) with ESMTP id 640D02084B
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Dec 2019 17:42:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726628AbfLCRaL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 3 Dec 2019 12:30:11 -0500
-Received: from smtp-31.italiaonline.it ([213.209.10.31]:44711 "EHLO libero.it"
+        id S1727048AbfLCRmw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 3 Dec 2019 12:42:52 -0500
+Received: from mx2.suse.de ([195.135.220.15]:57222 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726182AbfLCRaL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 3 Dec 2019 12:30:11 -0500
-Received: from venice.bhome ([84.220.25.30])
-        by smtp-31.iol.local with ESMTPA
-        id cC00il1XciFL3cC00iRSTV; Tue, 03 Dec 2019 18:30:08 +0100
-x-libjamoibt: 1601
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=libero.it; s=s2014;
-        t=1575394208; bh=zXD6i4s2obscPSWEVJJ7UObm5+S8ZAdmCe+7/u7hBhU=;
-        h=Reply-To:Subject:To:References:From:Date:In-Reply-To;
-        b=uO89rHriaWO+YqLMY/JrDQ/uAGfybADJQug7P3qmQ7th2iVjIwE9o86qFbzWTKM39
-         POwU2UPjGoOpiLTqKK30WxbH6nZ4XfwH3mel66ij2HytvxGAyygSkb9iv7GWDTFBVn
-         5xKySo3QthgaXw566wv5e4+H0WlJIyUkDt+eum33zk6Evs46FZgt5QSy7QqHk1vWqi
-         xsyQImPeNikTFOc3YQSddLB2NTrqhCHVz6xflMClbbHKxPvmrF50Zm+kW2wic7Icgj
-         ZWnE1VTio00WW/l7TWxX1xail7LaNO73b+0wZrItiGAgchfACeGhE+afLM0JNns3oF
-         M6/kVMvqHB91Q==
-X-CNFS-Analysis: v=2.3 cv=J77UEzvS c=1 sm=1 tr=0
- a=zfQl08sXljvZd6EmK9/AFg==:117 a=zfQl08sXljvZd6EmK9/AFg==:17
- a=jpOVt7BSZ2e4Z31A5e1TngXxSK0=:19 a=IkcTkHD0fZMA:10 a=mDV3o1hIAAAA:8
- a=V3NtCzo15oPBqwp5Q74A:9 a=QEXdDO2ut3YA:10 a=BIUib9zpbOMA:10
- a=_FVE-zBwftR9WsbkzFJk:22
-Reply-To: kreijack@inwind.it
-Subject: Re: [RFC] GRUB: add support for RAID1C3 and RAID1C4
-To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
-References: <20191202181928.3098-1-kreijack@libero.it>
- <20191203132302.GP2734@suse.cz>
-From:   Goffredo Baroncelli <kreijack@libero.it>
-Message-ID: <e41d122f-a92d-2ba5-7786-c2c4670d4060@libero.it>
-Date:   Tue, 3 Dec 2019 18:30:07 +0100
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.2.2
+        id S1726224AbfLCRmw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 3 Dec 2019 12:42:52 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id C0D5CB21CA;
+        Tue,  3 Dec 2019 17:42:50 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 1CC4BDA7D9; Tue,  3 Dec 2019 18:42:44 +0100 (CET)
+Date:   Tue, 3 Dec 2019 18:42:43 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Nikolay Borisov <nborisov@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 0/3] Cleanups from pinned rework try
+Message-ID: <20191203174243.GS2734@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20191202094015.19444-1-nborisov@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <20191203132302.GP2734@suse.cz>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
-X-CMAE-Envelope: MS4wfHO28vbQJp0nI0DxfEGNtq5iQ1g/dLn1JmNxkTictcs1De7MB80ubJmEfvwN1OW7x+9xQuCZcHWWIMz0VZWntFkkWlkNukuuVyLqJkQ2VEx1wZ2RPc/R
- 2W6dllcVzWVQdUAsLspyIe3cbS92FXitEs76tbQEy1Dlnl9/ZCjrt9na1Xy3xl1WBOBshtV7KUbmTMaeb/CMjhRdQY4edAaKFds=
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20191202094015.19444-1-nborisov@suse.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 03/12/2019 14.23, David Sterba wrote:
-> On Mon, Dec 02, 2019 at 07:19:27PM +0100, Goffredo Baroncelli wrote:
->>
->> The enclosed patch adds support for RAID1C3 and RAID1C4 to grub.
->> I know that David already told that he want to write one; however
->> recently I looked to the grub source and so I make a patch.
+On Mon, Dec 02, 2019 at 11:40:12AM +0200, Nikolay Borisov wrote:
+> Here are 3 minor cleanups resulting from dwelling in pinned extents rework.
+> Those cleanup WARN_ONs and make it clear when btrfs_pin_reserved_extent is
+> called with active transaction. No functional changes in any of them.
 > 
-> I sent the support patches some time ago, the were held back until the
-> kernel support lands. This happened in 5.5-rc1 and Daniel is about to
-> add the patch to grub git.
-> 
-> https://lists.gnu.org/archive/html/grub-devel/2019-11/msg00012.html
-> 
-Perfect, so please ignore my patch
-BR
+> Nikolay Borisov (3):
+>   btrfs: Remove WARN_ON in walk_log_tree
+>   btrfs: Remove redundant WARN_ON in walk_down_log_tree
+>   btrfs: Ensure btrfs_pin_reserved_extent is always called with valid
+>     transaction
 
-
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+Added to misc-next, thanks.

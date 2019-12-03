@@ -2,144 +2,126 @@ Return-Path: <SRS0=ifAh=ZZ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.9 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+X-Spam-Status: No, score=-2.4 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no version=3.4.0
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0FAB3C432C0
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Dec 2019 01:13:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CD9CEC432C0
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Dec 2019 01:30:51 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D95C220684
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Dec 2019 01:13:29 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1575335609;
-	bh=pwx2zpy5m+hWbDJf2hRVzLvYGrk9YhD0g6iBdIxmiC8=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc:List-ID:From;
-	b=AAIgpv768t2c/lqRyXuswzW8nXejyjCEfsSnNAEvdp51rBP92eXwT7/XEGVArQXzX
-	 VHnON+fTTizj3urHfjYUTE6Um/n+kv5cA05nhKefIEwnPlCDZ7lxPQQAZ/vyCq0+ze
-	 1cE8SwYz9qUglKIXVdQUCtV56wR74z7EDqgXFL1Y=
+	by mail.kernel.org (Postfix) with ESMTP id A1657206ED
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Dec 2019 01:30:51 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="WC6j2H/Z"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726024AbfLCBN3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 2 Dec 2019 20:13:29 -0500
-Received: from mail-lj1-f196.google.com ([209.85.208.196]:43721 "EHLO
-        mail-lj1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725853AbfLCBN2 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Dec 2019 20:13:28 -0500
-Received: by mail-lj1-f196.google.com with SMTP id a13so1706153ljm.10
-        for <linux-btrfs@vger.kernel.org>; Mon, 02 Dec 2019 17:13:27 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=linux-foundation.org; s=google;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=f16wPMX3Hv5+5LpFCWWiK7eqWkk4a1TMh+b2JYuh2L4=;
-        b=KquqAkqUVTyG83FELzXx6nZWqrQom0qPebBeM3l4nUnY0IjRxfw5jl9f4rhB4P0Ys1
-         yMMjUqHh9Atftq9/aMH7vPLqvTYv5hjkMQeepjJof4arWmddxk+x0kYqi0oEsm1gm01r
-         c0+/cFEMdOFDQe0735Al7ThhTziCMU1XmN/7g=
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=f16wPMX3Hv5+5LpFCWWiK7eqWkk4a1TMh+b2JYuh2L4=;
-        b=Rvg4ciNAKrjoxh06hRfTULNQ9m1KCrbtwrRbD5pB4Z8sX8SbeLGkN1zKz/YpTSuVKW
-         jmM3KafJzEt71s5BWRLx6/kBlYIlbq5gcc41dxIG/6+7Dc7ZIj2kRx3iwjB4D3Ay/tRH
-         XLiL0bNVIHHyKmKeMbYHLXUtgL/yucVddZH9Il8iC4Rw8GOkJ9VqR1OeexVkw5if+v4e
-         jIx7lu1kzIe6iLp4zNHpc6icP5Rhzp+6BcvzTvoL9w8AZX7H+r8berj2PXu90mtsSdk8
-         0c/i8Od8sdRlzwAtpEu6lqGfzDGHMn8a3KDTzJOwGPHmI96kpjerTJ5Vs7TxWKXt6bde
-         SEYQ==
-X-Gm-Message-State: APjAAAXHm3RE+Sn1sOIEtDpwYC5QnJjxYxfwDkLZ67no6vu8MFK36zbs
-        vZM7EQDY73z5cbOo6J1oUv1ndmCn2eg=
-X-Google-Smtp-Source: APXvYqy1WrT5gtwhYSd9U4kYGCswiIS2BM8RqJwz1GKcH+IFx+md6Ck61tU76F2VKRHBKAIAkceMHA==
-X-Received: by 2002:a2e:b537:: with SMTP id z23mr932458ljm.129.1575335606540;
-        Mon, 02 Dec 2019 17:13:26 -0800 (PST)
-Received: from mail-lj1-f172.google.com (mail-lj1-f172.google.com. [209.85.208.172])
-        by smtp.gmail.com with ESMTPSA id v5sm466692ljk.67.2019.12.02.17.13.26
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 02 Dec 2019 17:13:26 -0800 (PST)
-Received: by mail-lj1-f172.google.com with SMTP id e28so1715011ljo.9
-        for <linux-btrfs@vger.kernel.org>; Mon, 02 Dec 2019 17:13:26 -0800 (PST)
-X-Received: by 2002:a2e:86c4:: with SMTP id n4mr889870ljj.97.1575335193641;
- Mon, 02 Dec 2019 17:06:33 -0800 (PST)
+        id S1726291AbfLCBau (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 2 Dec 2019 20:30:50 -0500
+Received: from aserp2120.oracle.com ([141.146.126.78]:38198 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725899AbfLCBau (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Dec 2019 20:30:50 -0500
+Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
+        by aserp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xB31TSLw033678;
+        Tue, 3 Dec 2019 01:30:41 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
+ references : from : message-id : date : mime-version : in-reply-to :
+ content-type : content-transfer-encoding; s=corp-2019-08-05;
+ bh=kYpZsmJNXxvJfPlBe4wpFGyhVCrfHOUpOct2VpMBqTs=;
+ b=WC6j2H/ZUWkBSnHIhHrnpyFgfU4PJxQHL4ppWQ1bWWgxB105GxANOGH/GPx9mD7FIY6f
+ CVJlLGDL2KA+40dpQjkEQVyxa+QxiA43uwfC3BsZIOmle076T9UqvD7YwH0GYDtLzdaR
+ uuHk4dkwqqwEfzbk2Wx/KsBjthF2iY3PIokeXo2GTaRPdlCJ73pbd0iso4tUMTdkygti
+ cbNdvJf49vh4sFYZf7SVIe+ZKYTm9SSJJ2NqN90mzfimheCwIlD2WNZ/eKGMSbDYNnYZ
+ vtB8PvK/6CBdB5WrgtcUKZyVtl997jl7fLptk5wZ6IxqpN6lxay83Aap68e2aqv/QphE CQ== 
+Received: from userp3020.oracle.com (userp3020.oracle.com [156.151.31.79])
+        by aserp2120.oracle.com with ESMTP id 2wkgcq402r-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Tue, 03 Dec 2019 01:30:41 +0000
+Received: from pps.filterd (userp3020.oracle.com [127.0.0.1])
+        by userp3020.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xB31NmUm127463;
+        Tue, 3 Dec 2019 01:30:40 GMT
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by userp3020.oracle.com with ESMTP id 2wn4qnr6e7-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Tue, 03 Dec 2019 01:30:40 +0000
+Received: from abhmp0014.oracle.com (abhmp0014.oracle.com [141.146.116.20])
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id xB31UZ7B007854;
+        Tue, 3 Dec 2019 01:30:35 GMT
+Received: from [192.168.1.145] (/39.109.145.141)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Mon, 02 Dec 2019 17:30:35 -0800
+Subject: Re: BTRFS subvolume RAID level
+To:     waxhead@dirtcellar.net, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <494b0df1-2aab-5169-836d-e381498f64db@dirtcellar.net>
+ <ed65c577-3971-8c4f-c690-83e85dd8188e@oracle.com>
+ <fcbe2d91-a6ad-5b9b-fa66-aebb2edd14f1@dirtcellar.net>
+From:   Anand Jain <anand.jain@oracle.com>
+Message-ID: <422a04ba-2e63-f951-7097-19ecc7a88c53@oracle.com>
+Date:   Tue, 3 Dec 2019 09:30:31 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.8.0
 MIME-Version: 1.0
-References: <20191129142045.7215-1-agruenba@redhat.com>
-In-Reply-To: <20191129142045.7215-1-agruenba@redhat.com>
-From:   Linus Torvalds <torvalds@linux-foundation.org>
-Date:   Mon, 2 Dec 2019 17:06:17 -0800
-X-Gmail-Original-Message-ID: <CAHk-=wj5caXKoukPyM7Zc6A0Q+E-pBGHSV64iZe8t98OerXR_w@mail.gmail.com>
-Message-ID: <CAHk-=wj5caXKoukPyM7Zc6A0Q+E-pBGHSV64iZe8t98OerXR_w@mail.gmail.com>
-Subject: Re: [PATCH v2] fs: Fix page_mkwrite off-by-one errors
-To:     Andreas Gruenbacher <agruenba@redhat.com>
-Cc:     Christoph Hellwig <hch@infradead.org>,
-        "Darrick J. Wong" <darrick.wong@oracle.com>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        Alexander Viro <viro@zeniv.linux.org.uk>,
-        Jeff Layton <jlayton@kernel.org>, Sage Weil <sage@redhat.com>,
-        Ilya Dryomov <idryomov@gmail.com>,
-        "Theodore Ts'o" <tytso@mit.edu>,
-        Andreas Dilger <adilger.kernel@dilger.ca>,
-        Jaegeuk Kim <jaegeuk@kernel.org>, Chao Yu <chao@kernel.org>,
-        linux-xfs <linux-xfs@vger.kernel.org>,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        Richard Weinberger <richard@nod.at>,
-        Artem Bityutskiy <dedekind1@gmail.com>,
-        Adrian Hunter <adrian.hunter@intel.com>,
-        ceph-devel@vger.kernel.org,
-        Ext4 Developers List <linux-ext4@vger.kernel.org>,
-        linux-f2fs-devel@lists.sourceforge.net,
-        linux-mtd@lists.infradead.org, Chris Mason <clm@fb.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <fcbe2d91-a6ad-5b9b-fa66-aebb2edd14f1@dirtcellar.net>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9459 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=2 malwarescore=0
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
+ adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.0.1-1911140001 definitions=main-1912030011
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9459 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
+ suspectscore=2 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
+ lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1911140001
+ definitions=main-1912030012
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Nov 29, 2019 at 6:21 AM Andreas Gruenbacher <agruenba@redhat.com> wrote:
->
-> +/**
-> + * page_mkwrite_check_truncate - check if page was truncated
-> + * @page: the page to check
-> + * @inode: the inode to check the page against
-> + *
-> + * Returns the number of bytes in the page up to EOF,
-> + * or -EFAULT if the page was truncated.
-> + */
-> +static inline int page_mkwrite_check_truncate(struct page *page,
-> +                                             struct inode *inode)
-> +{
-> +       loff_t size = i_size_read(inode);
-> +       pgoff_t end_index = (size + PAGE_SIZE - 1) >> PAGE_SHIFT;
 
-This special end_index calculation seems to be redundant.
 
-You later want "size >> PAGE_SHIFT" for another test, and that's
-actually the important part.
+On 12/3/19 7:27 AM, waxhead wrote:
+> 
+> 
+> Anand Jain wrote:
+>>
+>>> I imagine that RAIDc4 for example could potentially give a grotesque 
+>>> speed increase for parallel read operations once BTRFS learns to 
+>>> distribute reads to the device with the least waitqueue / fastest 
+>>> devices.
+>>
+>>   That exactly was the objective of the Readmirror patch in the ML.
+>>   It proposed a framework to change the readmirror policy as needed.
+>>
+>> Thanks, Anand
+> 
+> Indeed. If I remember correctly your patch allowed for deterministic 
+> reading from certain devices.
+  It provides a framework to configure the readmirror policies. And the
+  policies can be based on io-depth, pid, or manual for heterogeneous
+  devices with different latency.
 
-The "+ PAGE_SIZE - 1" case is purely to handle the "AT the page
-boundary is special" case, but since you have to calculate
-"offset_in_page(size)" anyway, that's entirely redundant - the answer
-is part of that.
+> As just a regular btrfs user the problem I 
+> see with this is that you loose a "potential free scrub" that *might* 
+> otherwise happen from often read data. On the other hand that is what 
+> manual scrubbing is for anyway.
 
-So I think it would be better to write the logic as
+  Ha ha.
 
-        loff_t size = i_size_read(inode);
-        pgoff_t index = size >> PAGE_SHIFT;
-        int offset = offset_in_page(size);
+  When it comes to data and its reliability and availability we need
+  guarantee and only deterministic approach can provide it.
 
-        if (page->mapping != inode->i_mapping)
-                return -EFAULT;
+  What you are asking for is to route the particular block to
+  the device which was not read before so to avoid scrubbing or to
+  make scrubbing more intelligent to scrub only old never read blocks
+  - this will be challenging we need to keep history of block and the
+  device it used for read - most likely a scope for the bpf based
+  external tools but definitely not with in kernel. With in kernel
+  we can create readmirror like framework so that external tool can
+  achieve it.
 
-        /* Page is wholly past the EOF page */
-        if (page->index > index)
-                return -EFAULT;
-        /* page is wholly inside EOF */
-        if (page->index < index)
-                return PAGE_SIZE;
-        /* bytes in a page? If 0, it's past EOF */
-        return offset ? offset : -PAGE_SIZE;
 
-instead. That avoids the unnecessary "round up" part, and simply uses
-the same EOF index for everything.
-
-              Linus
+Thanks, Anand

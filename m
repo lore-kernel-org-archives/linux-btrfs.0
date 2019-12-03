@@ -7,59 +7,59 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A46A4C432C3
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Dec 2019 01:34:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 33CA0C432C0
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Dec 2019 01:34:44 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 7CCD720705
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Dec 2019 01:34:42 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 01519206F0
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Dec 2019 01:34:44 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="Q8UfocYz"
+	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="dP+q/yOV"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726142AbfLCBel (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 2 Dec 2019 20:34:41 -0500
-Received: from mail-pf1-f193.google.com ([209.85.210.193]:35552 "EHLO
-        mail-pf1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726105AbfLCBej (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Dec 2019 20:34:39 -0500
-Received: by mail-pf1-f193.google.com with SMTP id b19so898974pfo.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 02 Dec 2019 17:34:39 -0800 (PST)
+        id S1726195AbfLCBen (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 2 Dec 2019 20:34:43 -0500
+Received: from mail-pj1-f65.google.com ([209.85.216.65]:43723 "EHLO
+        mail-pj1-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726066AbfLCBem (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Dec 2019 20:34:42 -0500
+Received: by mail-pj1-f65.google.com with SMTP id g4so731759pjs.10
+        for <linux-btrfs@vger.kernel.org>; Mon, 02 Dec 2019 17:34:41 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=osandov-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=3hJ94Hx3xilzbtIBQ65ljDvh6IjEBRdC/DhWOmD8T7M=;
-        b=Q8UfocYzyqKVA1Cx/dc41tlTPP/J3/DZoVld0lwroRly2Hc7W92P/8aZ/4t0zP87Lz
-         sfopkldmGwXe5ZDqqc0/NnIFOeHxY5obcriJHNe73KvMjeF1VWm61JtdQvSGUuxE2HAK
-         Sdt85w2GL+CclXuweN6HE3rhdOKDVGPkKV4rd5oh6TLFH3q+s2rqmJxdotFcnifTA6O+
-         6oMQf/riUsz9W5ucD94dBJKuRp8lk2zgwnCkYdiv+o4fEBU4m5IUdR86Or8OnB3gdTEc
-         F70IpNTAptjxL2/uGWwC7h3SmXxY5lvu/Fe6HX/29PQwEG/MvlPv2nxMECjBway39GXz
-         +tvg==
+        bh=3Z01WoYvrTEc2OUV6ITjBtBaZjRfvvPC11GlOVbz5KM=;
+        b=dP+q/yOVVk/LQzHM5txy6W2okmqDctVG7qp7F+cSVr7f+KqkBllrPr4vs6w1E8SLui
+         jOtIQ+09hUxygcVbocVThyA4eLo3UUO7wy7PSubw+H+jqkXyvxCFnfrwoK6O85MpCFy8
+         kmQJDivD2FJ54U22rvN/JVZLYvonyfMZotW3GtNRHAQsxkcsct9qjyt3VK4WHPbaS93t
+         JdJNe7FaqePAYpG4abB3xDDNknTOC/Q/z4NAMVB/OlZ/qYEJiys8Srz8zeumJOsBY+Oz
+         yerePqxWXBaxeNbmgkwFVQB5OwCgrgm1Y51ZZ9AjwtXa8ECeifgf3XlT0ePsL0jPd1N5
+         xMHA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=3hJ94Hx3xilzbtIBQ65ljDvh6IjEBRdC/DhWOmD8T7M=;
-        b=MbnxGgSgezjaJ9SSLBsL+H8k1YCkTJ1SvL0Cy5gzmv23Bde5vQMBC8zjiGMUw+6X/u
-         d5bRlMGLwMvleo1yi7a0ct+G6KsbdXQYoVqLtvSx25GMUEgzwnc9cuHq09cAa/N4BQXl
-         v62JgsIJMZf+MJmKxlDwBcwnSV2Eey3OvZ2TNOYK/Qt7OxIFGr9CAAiYQb3okOYUCJYi
-         gb5vHdEmzQ106E17YNRJDBwg6K86lbld8RRBNCwOTcKgrqHx8jyLSgzsmv+FUPPDKCrj
-         X6xz3GAQp/bwSkFhaR5Z6sGgQD4xiKzC+OgJxmrRkp2MAlPAWLZ+fayvryamK6n7L93e
-         qOBw==
-X-Gm-Message-State: APjAAAU70qXoXS/d9kTqzO2wIUuUOyPoISoJ252FGe6vni+p1hXusOt3
-        UvHLUGP8wM0wnGQENlkH34y9vCWvG3Bg6A==
-X-Google-Smtp-Source: APXvYqx1Ix2Q/rv+CvpEI67E7kGyE8vc38slFX+Qy5vSbyIHinrlVkn/yCRUXeGZ9XxY8TA0qi/2/g==
-X-Received: by 2002:aa7:8256:: with SMTP id e22mr1996904pfn.247.1575336878763;
-        Mon, 02 Dec 2019 17:34:38 -0800 (PST)
+        bh=3Z01WoYvrTEc2OUV6ITjBtBaZjRfvvPC11GlOVbz5KM=;
+        b=jYnrJ3ga1hE5pBFfGGahhfDWQx8jKbszUviaaqUkQy7Q5iPL4JyqfhwQPIy6MwtO3s
+         bXt2mmbjDfo5wvDYWXWwURk8EIfdNYF/2VyktzJTdindKbvPRgcRzKEaa/BI1rLOqEYB
+         qeY1WuYV8nJ2mtzR72Av4txAvWgTfmJX1eb8JPlksDDaUCHfmpN0RXC7fQZ2L9aKTvqB
+         hsvoB6e1ex2WffrCJ24wBAJLM4RQQivNUih7g8qbVCcaQGljSJVXeCKFLDe2JEs3uJLB
+         oxxyalkiT6cTXWdqsFR2GPJPKfdrQ9M/w0yRwN//IxUvL7uKImRCLU0IegotothvmND4
+         xIww==
+X-Gm-Message-State: APjAAAVnzTWYnEyeT8Pb6A3ke2cpTw2PhEQDUBrn0xQ+cCsmxp8ma7+8
+        5lF6CWVwVoC3/m3JbmZUwcDBDKdktSYOEA==
+X-Google-Smtp-Source: APXvYqyisC41XkUCkUgbHNcjjfQ3Fdgnx9vk1dyZa23Nj804mk9+lpIwsMMx4pslLrWSzfYoTTEVxA==
+X-Received: by 2002:a17:902:bd96:: with SMTP id q22mr2273927pls.98.1575336880799;
+        Mon, 02 Dec 2019 17:34:40 -0800 (PST)
 Received: from vader.thefacebook.com ([2620:10d:c090:180::6ddc])
-        by smtp.gmail.com with ESMTPSA id u65sm800242pfb.35.2019.12.02.17.34.37
+        by smtp.gmail.com with ESMTPSA id u65sm800242pfb.35.2019.12.02.17.34.39
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 02 Dec 2019 17:34:38 -0800 (PST)
+        Mon, 02 Dec 2019 17:34:40 -0800 (PST)
 From:   Omar Sandoval <osandov@osandov.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     kernel-team@fb.com
-Subject: [PATCH 5/9] btrfs: remove trivial goto label in __extent_writepage()
-Date:   Mon,  2 Dec 2019 17:34:21 -0800
-Message-Id: <81ea4a6b327f26506041e2e43adc9dfccc7a86fe.1575336816.git.osandov@fb.com>
+Subject: [PATCH 7/9] btrfs: drop create parameter to btrfs_get_extent()
+Date:   Mon,  2 Dec 2019 17:34:23 -0800
+Message-Id: <3012e96179bf1427eca8e26332c7c4475f31c76b.1575336816.git.osandov@fb.com>
 X-Mailer: git-send-email 2.24.0
 In-Reply-To: <cover.1575336815.git.osandov@fb.com>
 References: <cover.1575336815.git.osandov@fb.com>
@@ -72,46 +72,291 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Omar Sandoval <osandov@fb.com>
 
-Since 40f765805f08 ("Btrfs: split up __extent_writepage to lower stack
-usage"), done_unlocked is simply a return 0. Get rid of it.
+We only pass this as 1 from __extent_writepage_io(). The parameter
+basically means "pretend I didn't pass in a page". This is silly since
+we can simply not pass in the page. Get rid of the parameter from
+btrfs_get_extent(), and since it's used as a get_extent_t callback,
+remove it from get_extent_t and btree_get_extent(), neither of which
+need it.
+
+While we're here, let's document btrfs_get_extent().
 
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- fs/btrfs/extent_io.c | 7 ++-----
- 1 file changed, 2 insertions(+), 5 deletions(-)
+ fs/btrfs/ctree.h     |  2 +-
+ fs/btrfs/disk-io.c   |  4 ++--
+ fs/btrfs/disk-io.h   |  4 ++--
+ fs/btrfs/extent_io.c |  6 +++---
+ fs/btrfs/extent_io.h |  6 ++----
+ fs/btrfs/file.c      | 17 ++++++++---------
+ fs/btrfs/inode.c     | 41 ++++++++++++++++++++++++-----------------
+ fs/btrfs/ioctl.c     |  2 +-
+ 8 files changed, 43 insertions(+), 39 deletions(-)
 
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 5ad45171e482..7a8209b17b3d 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2875,7 +2875,7 @@ struct inode *btrfs_iget(struct super_block *s, struct btrfs_key *location,
+ 			 struct btrfs_root *root);
+ struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
+ 				    struct page *page, size_t pg_offset,
+-				    u64 start, u64 end, int create);
++				    u64 start, u64 end);
+ int btrfs_update_inode(struct btrfs_trans_handle *trans,
+ 			      struct btrfs_root *root,
+ 			      struct inode *inode);
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index ab888d89d844..881aba162e4e 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -202,8 +202,8 @@ void btrfs_set_buffer_lockdep_class(u64 objectid, struct extent_buffer *eb,
+  * that covers the entire device
+  */
+ struct extent_map *btree_get_extent(struct btrfs_inode *inode,
+-		struct page *page, size_t pg_offset, u64 start, u64 len,
+-		int create)
++				    struct page *page, size_t pg_offset,
++				    u64 start, u64 len)
+ {
+ 	struct extent_map_tree *em_tree = &inode->extent_tree;
+ 	struct extent_map *em;
+diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
+index 76f123ebb292..8c2d6cf1ce59 100644
+--- a/fs/btrfs/disk-io.h
++++ b/fs/btrfs/disk-io.h
+@@ -134,8 +134,8 @@ struct btrfs_root *btrfs_create_tree(struct btrfs_trans_handle *trans,
+ int btree_lock_page_hook(struct page *page, void *data,
+ 				void (*flush_fn)(void *));
+ struct extent_map *btree_get_extent(struct btrfs_inode *inode,
+-		struct page *page, size_t pg_offset, u64 start, u64 len,
+-		int create);
++				    struct page *page, size_t pg_offset,
++				    u64 start, u64 len);
+ int btrfs_get_num_tolerated_disk_barrier_failures(u64 flags);
+ int __init btrfs_end_io_wq_init(void);
+ void __cold btrfs_end_io_wq_exit(void);
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index dad6b06d0a8e..8622282db31e 100644
+index 635f5d2954a4..13c03c42ba5c 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -3596,7 +3596,7 @@ static int __extent_writepage(struct page *page, struct writeback_control *wbc,
- 	if (!epd->extent_locked) {
- 		ret = writepage_delalloc(inode, page, wbc, start, &nr_written);
- 		if (ret == 1)
--			goto done_unlocked;
-+			return 0;
- 		if (ret)
- 			goto done;
+@@ -3043,7 +3043,7 @@ __get_extent_map(struct inode *inode, struct page *page, size_t pg_offset,
+ 		*em_cached = NULL;
  	}
-@@ -3604,7 +3604,7 @@ static int __extent_writepage(struct page *page, struct writeback_control *wbc,
- 	ret = __extent_writepage_io(inode, page, wbc, epd,
- 				    i_size, nr_written, &nr);
- 	if (ret == 1)
--		goto done_unlocked;
-+		return 0;
  
- done:
- 	if (nr == 0) {
-@@ -3619,9 +3619,6 @@ static int __extent_writepage(struct page *page, struct writeback_control *wbc,
- 	unlock_page(page);
- 	ASSERT(ret <= 0);
+-	em = get_extent(BTRFS_I(inode), page, pg_offset, start, len, 0);
++	em = get_extent(BTRFS_I(inode), page, pg_offset, start, len);
+ 	if (em_cached && !IS_ERR_OR_NULL(em)) {
+ 		BUG_ON(*em_cached);
+ 		refcount_inc(&em->refs);
+@@ -3466,8 +3466,8 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
+ 							     page_end, 1);
+ 			break;
+ 		}
+-		em = btrfs_get_extent(BTRFS_I(inode), page, pg_offset, cur,
+-				     end - cur + 1, 1);
++		em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, cur,
++				      end - cur + 1);
+ 		if (IS_ERR_OR_NULL(em)) {
+ 			SetPageError(page);
+ 			ret = PTR_ERR_OR_ZERO(em);
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index a8551a1f56e2..5d205bbaafdc 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -183,10 +183,8 @@ static inline int extent_compress_type(unsigned long bio_flags)
+ struct extent_map_tree;
+ 
+ typedef struct extent_map *(get_extent_t)(struct btrfs_inode *inode,
+-					  struct page *page,
+-					  size_t pg_offset,
+-					  u64 start, u64 len,
+-					  int create);
++					  struct page *page, size_t pg_offset,
++					  u64 start, u64 len);
+ 
+ int try_release_extent_mapping(struct page *page, gfp_t mask);
+ int try_release_extent_buffer(struct page *page);
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 568b6391c719..c7efc0b04c62 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -477,8 +477,7 @@ static int btrfs_find_new_delalloc_bytes(struct btrfs_inode *inode,
+ 		u64 em_len;
+ 		int ret = 0;
+ 
+-		em = btrfs_get_extent(inode, NULL, 0, search_start,
+-				      search_len, 0);
++		em = btrfs_get_extent(inode, NULL, 0, search_start, search_len);
+ 		if (IS_ERR(em))
+ 			return PTR_ERR(em);
+ 
+@@ -2390,7 +2389,7 @@ static int find_first_non_hole(struct inode *inode, u64 *start, u64 *len)
+ 
+ 	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0,
+ 			      round_down(*start, fs_info->sectorsize),
+-			      round_up(*len, fs_info->sectorsize), 0);
++			      round_up(*len, fs_info->sectorsize));
+ 	if (IS_ERR(em))
+ 		return PTR_ERR(em);
+ 
+@@ -2957,7 +2956,7 @@ static int btrfs_zero_range_check_range_boundary(struct inode *inode,
+ 	int ret;
+ 
+ 	offset = round_down(offset, sectorsize);
+-	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, offset, sectorsize, 0);
++	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, offset, sectorsize);
+ 	if (IS_ERR(em))
+ 		return PTR_ERR(em);
+ 
+@@ -2990,8 +2989,8 @@ static int btrfs_zero_range(struct inode *inode,
+ 
+ 	inode_dio_wait(inode);
+ 
+-	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0,
+-			      alloc_start, alloc_end - alloc_start, 0);
++	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, alloc_start,
++			      alloc_end - alloc_start);
+ 	if (IS_ERR(em)) {
+ 		ret = PTR_ERR(em);
+ 		goto out;
+@@ -3034,8 +3033,8 @@ static int btrfs_zero_range(struct inode *inode,
+ 
+ 	if (BTRFS_BYTES_TO_BLKS(fs_info, offset) ==
+ 	    BTRFS_BYTES_TO_BLKS(fs_info, offset + len - 1)) {
+-		em = btrfs_get_extent(BTRFS_I(inode), NULL, 0,
+-				      alloc_start, sectorsize, 0);
++		em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, alloc_start,
++				      sectorsize);
+ 		if (IS_ERR(em)) {
+ 			ret = PTR_ERR(em);
+ 			goto out;
+@@ -3273,7 +3272,7 @@ static long btrfs_fallocate(struct file *file, int mode,
+ 	INIT_LIST_HEAD(&reserve_list);
+ 	while (cur_offset < alloc_end) {
+ 		em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, cur_offset,
+-				      alloc_end - cur_offset, 0);
++				      alloc_end - cur_offset);
+ 		if (IS_ERR(em)) {
+ 			ret = PTR_ERR(em);
+ 			break;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 7fe400d18d60..2145543b2425 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -4478,7 +4478,7 @@ int btrfs_cont_expand(struct inode *inode, loff_t oldsize, loff_t size)
+ 	cur_offset = hole_start;
+ 	while (1) {
+ 		em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, cur_offset,
+-				block_end - cur_offset, 0);
++				      block_end - cur_offset);
+ 		if (IS_ERR(em)) {
+ 			err = PTR_ERR(em);
+ 			em = NULL;
+@@ -6253,18 +6253,27 @@ static noinline int uncompress_inline(struct btrfs_path *path,
  	return ret;
--
--done_unlocked:
--	return 0;
  }
  
- void wait_on_extent_buffer_writeback(struct extent_buffer *eb)
+-/*
+- * a bit scary, this does extent mapping from logical file offset to the disk.
+- * the ugly parts come from merging extents from the disk with the in-ram
+- * representation.  This gets more complex because of the data=ordered code,
+- * where the in-ram extents might be locked pending data=ordered completion.
++/**
++ * btrfs_get_extent - Lookup the first extent overlapping a range in a file.
++ * @inode: File to search in.
++ * @page: Page to read extent data into if the extent is inline.
++ * @pg_offset: Offset into @page to copy to.
++ * @start: File offset.
++ * @len: Length of range starting at @start.
++ *
++ * This returns the first &struct extent_map which overlaps with the given
++ * range, reading it from the B-tree and caching it if necessary. Note that
++ * there may be more extents which overlap the given range after the returned
++ * extent_map.
+  *
+- * This also copies inline extents directly into the page.
++ * If @page is not NULL and the extent is inline, this also reads the extent
++ * data directly into the page and marks the extent up to date in the io_tree.
++ *
++ * Return: ERR_PTR on error, non-NULL extent_map on success.
+  */
+ struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
+-				    struct page *page,
+-				    size_t pg_offset, u64 start, u64 len,
+-				    int create)
++				    struct page *page, size_t pg_offset,
++				    u64 start, u64 len)
+ {
+ 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+ 	int ret;
+@@ -6281,7 +6290,6 @@ struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
+ 	struct extent_map *em = NULL;
+ 	struct extent_map_tree *em_tree = &inode->extent_tree;
+ 	struct extent_io_tree *io_tree = &inode->io_tree;
+-	const bool new_inline = !page || create;
+ 
+ 	read_lock(&em_tree->lock);
+ 	em = lookup_extent_mapping(em_tree, start, len);
+@@ -6404,8 +6412,7 @@ struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
+ 		goto insert;
+ 	}
+ 
+-	btrfs_extent_item_to_extent_map(inode, path, item,
+-			new_inline, em);
++	btrfs_extent_item_to_extent_map(inode, path, item, !page, em);
+ 
+ 	if (extent_type == BTRFS_FILE_EXTENT_REG ||
+ 	    extent_type == BTRFS_FILE_EXTENT_PREALLOC) {
+@@ -6417,7 +6424,7 @@ struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
+ 		size_t extent_offset;
+ 		size_t copy_size;
+ 
+-		if (new_inline)
++		if (!page)
+ 			goto out;
+ 
+ 		size = btrfs_file_extent_ram_bytes(leaf, item);
+@@ -6500,7 +6507,7 @@ struct extent_map *btrfs_get_extent_fiemap(struct btrfs_inode *inode,
+ 	u64 delalloc_end;
+ 	int err = 0;
+ 
+-	em = btrfs_get_extent(inode, NULL, 0, start, len, 0);
++	em = btrfs_get_extent(inode, NULL, 0, start, len);
+ 	if (IS_ERR(em))
+ 		return em;
+ 	/*
+@@ -7125,7 +7132,7 @@ static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
+ 		goto err;
+ 	}
+ 
+-	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, start, len, 0);
++	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, start, len);
+ 	if (IS_ERR(em)) {
+ 		ret = PTR_ERR(em);
+ 		goto unlock_err;
+@@ -10153,7 +10160,7 @@ static int btrfs_swap_activate(struct swap_info_struct *sis, struct file *file,
+ 		struct btrfs_block_group *bg;
+ 		u64 len = isize - start;
+ 
+-		em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, start, len, 0);
++		em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, start, len);
+ 		if (IS_ERR(em)) {
+ 			ret = PTR_ERR(em);
+ 			goto out;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index a1ee0b775e65..00452b98e9f5 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1122,7 +1122,7 @@ static struct extent_map *defrag_lookup_extent(struct inode *inode, u64 start)
+ 
+ 		/* get the big lock and read metadata off disk */
+ 		lock_extent_bits(io_tree, start, end, &cached);
+-		em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, start, len, 0);
++		em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, start, len);
+ 		unlock_extent_cached(io_tree, start, end, &cached);
+ 
+ 		if (IS_ERR(em))
 -- 
 2.24.0
 

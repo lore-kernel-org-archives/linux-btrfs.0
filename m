@@ -2,76 +2,87 @@ Return-Path: <SRS0=8E82=Z3=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 01458C43603
-	for <linux-btrfs@archiver.kernel.org>; Thu,  5 Dec 2019 15:28:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 49A63C43603
+	for <linux-btrfs@archiver.kernel.org>; Thu,  5 Dec 2019 15:31:51 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D165520707
-	for <linux-btrfs@archiver.kernel.org>; Thu,  5 Dec 2019 15:28:13 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2495C21823
+	for <linux-btrfs@archiver.kernel.org>; Thu,  5 Dec 2019 15:31:51 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729659AbfLEP2N (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 5 Dec 2019 10:28:13 -0500
-Received: from mx2.suse.de ([195.135.220.15]:45020 "EHLO mx1.suse.de"
+        id S1729659AbfLEPbu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 5 Dec 2019 10:31:50 -0500
+Received: from mx2.suse.de ([195.135.220.15]:47264 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725909AbfLEP2M (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 5 Dec 2019 10:28:12 -0500
+        id S1725909AbfLEPbu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 5 Dec 2019 10:31:50 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 212C9ADC8;
-        Thu,  5 Dec 2019 15:28:11 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 04F89AFAE;
+        Thu,  5 Dec 2019 15:31:48 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 982D3DA733; Thu,  5 Dec 2019 16:28:05 +0100 (CET)
-Date:   Thu, 5 Dec 2019 16:28:05 +0100
+        id 7F9B6DA733; Thu,  5 Dec 2019 16:31:42 +0100 (CET)
+Date:   Thu, 5 Dec 2019 16:31:42 +0100
 From:   David Sterba <dsterba@suse.cz>
 To:     Naohiro Aota <naohiro.aota@wdc.com>
-Cc:     Johannes Thumshirn <jthumshirn@suse.de>,
-        linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>,
+Cc:     linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>,
         Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         Nikolay Borisov <nborisov@suse.com>,
         Damien Le Moal <damien.lemoal@wdc.com>,
+        Johannes Thumshirn <jthumshirn@suse.de>,
         Hannes Reinecke <hare@suse.com>,
         Anand Jain <anand.jain@oracle.com>,
         linux-fsdevel@vger.kernel.org
-Subject: Re: [PATCH v5 03/28] btrfs: Check and enable HMZONED mode
-Message-ID: <20191205152805.GT2734@twin.jikos.cz>
+Subject: Re: [PATCH v5 06/28] btrfs: disallow NODATACOW in HMZONED mode
+Message-ID: <20191205153142.GU2734@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 Mail-Followup-To: dsterba@suse.cz, Naohiro Aota <naohiro.aota@wdc.com>,
-        Johannes Thumshirn <jthumshirn@suse.de>,
         linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>,
         Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         Nikolay Borisov <nborisov@suse.com>,
         Damien Le Moal <damien.lemoal@wdc.com>,
+        Johannes Thumshirn <jthumshirn@suse.de>,
         Hannes Reinecke <hare@suse.com>, Anand Jain <anand.jain@oracle.com>,
         linux-fsdevel@vger.kernel.org
 References: <20191204081735.852438-1-naohiro.aota@wdc.com>
- <20191204081735.852438-4-naohiro.aota@wdc.com>
- <20191204160734.GA3950@Johanness-MacBook-Pro.local>
- <20191205051704.pyelplxjuje6jl6v@naota.dhcp.fujisawa.hgst.com>
+ <20191204081735.852438-7-naohiro.aota@wdc.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20191205051704.pyelplxjuje6jl6v@naota.dhcp.fujisawa.hgst.com>
+In-Reply-To: <20191204081735.852438-7-naohiro.aota@wdc.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Dec 05, 2019 at 02:17:04PM +0900, Naohiro Aota wrote:
-> >I have a question, you wrote you check for a file system consisting of zoned
-> >devices with equal zone size. What happens if you create a multi device file
-> >system combining zoned and regular devices? Is this even supported and if no
-> >where are the checks for it?
+On Wed, Dec 04, 2019 at 05:17:13PM +0900, Naohiro Aota wrote:
+> NODATACOW implies overwriting the file data on a device, which is
+> impossible in sequential required zones. Disable NODATACOW globally with
+> mount option and per-file NODATACOW attribute by masking FS_NOCOW_FL.
 > 
-> We don't allow creaing a file system mixed with zoned and regular device.
-> This is checked by btrfs_check_hmzoned_mode() (called from open_ctree()) at
-> the mount time. "if (hmzoned_devices != nr_devices) { ... }" is doing the
-> actual check.
+> Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+> ---
+>  fs/btrfs/hmzoned.c | 6 ++++++
+>  fs/btrfs/ioctl.c   | 3 +++
+>  2 files changed, 9 insertions(+)
+> 
+> diff --git a/fs/btrfs/hmzoned.c b/fs/btrfs/hmzoned.c
+> index 1c015ed050fc..e890d2ab8cd9 100644
+> --- a/fs/btrfs/hmzoned.c
+> +++ b/fs/btrfs/hmzoned.c
+> @@ -269,5 +269,11 @@ int btrfs_check_mountopts_hmzoned(struct btrfs_fs_info *info)
+>  		return -EINVAL;
+>  	}
+>  
+> +	if (btrfs_test_opt(info, NODATACOW)) {
+> +		btrfs_err(info,
+> +		  "cannot enable nodatacow with HMZONED mode");
+> +		return -EINVAL;
 
-It's ok for first implementation to have more restrictions, like not
-allowing mixing hmzoned and regular devices or hmzoned devices with
-different zone sizes. Adding that later should be possible and not
-complicating the review for now.
+That's maybe -EOPNOTSUPP, the error message explains what's wrong and we
+can leave EINVAL for the really invalid arguments. I'll need to look if
+this is consistent with the rest of error code returned from mount
+though.

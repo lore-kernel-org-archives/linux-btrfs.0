@@ -2,59 +2,62 @@ Return-Path: <SRS0=8E82=Z3=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-4.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_GIT autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C90EAC43603
-	for <linux-btrfs@archiver.kernel.org>; Thu,  5 Dec 2019 13:20:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BB582C2BD09
+	for <linux-btrfs@archiver.kernel.org>; Thu,  5 Dec 2019 13:20:12 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8FBA120675
-	for <linux-btrfs@archiver.kernel.org>; Thu,  5 Dec 2019 13:20:08 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 92B2B20675
+	for <linux-btrfs@archiver.kernel.org>; Thu,  5 Dec 2019 13:20:12 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1575552008;
-	bh=h82NDLmT1GjnxXu5eK5Ouc22/i7NLz30rcFSu5V2t5M=;
-	h=From:To:Cc:Subject:Date:List-ID:From;
-	b=2hAEiaRwN5iTdn3eQmOuWHU6ZXxy5jxwa/yhe5sf/01XaAc+aOd65fMX0Fz2NVX8f
-	 h6uKYA5IgJH6E5TEdUlFm0nm9+yzDe0XSkqWFjzVasb2PLoij7EIQTh9/ijkVYMOW7
-	 R8bBb6Fu95nMa6mqsKy7uiJIB4nq+t2NU7IF9Ec8=
+	s=default; t=1575552012;
+	bh=LlATwjGvgqbg0mrbWC+y9a8HVmmLNiE2VL1fQW2CWZk=;
+	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
+	b=s217wh8tuZACXmilu34VyxBLMUkjPvT6WGBfnXVk3dqnD7D3RrS/Subc3rYrbEa8D
+	 +yRhIGuXMOhDw6Mlt885h8C4tKAv+8PneuRAnUZhDBOqMnK1kMKvSXIQ5K9MlK32wV
+	 O+8tNmc3QlbW56ruxHNKFJCT0oKSnv6MIdYLnezY=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729559AbfLENUI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 5 Dec 2019 08:20:08 -0500
-Received: from mail-wr1-f66.google.com ([209.85.221.66]:44519 "EHLO
+        id S1729587AbfLENUL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 5 Dec 2019 08:20:11 -0500
+Received: from mail-wr1-f66.google.com ([209.85.221.66]:46493 "EHLO
         mail-wr1-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729240AbfLENUH (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Dec 2019 08:20:07 -0500
-Received: by mail-wr1-f66.google.com with SMTP id q10so3522434wrm.11
-        for <linux-btrfs@vger.kernel.org>; Thu, 05 Dec 2019 05:20:06 -0800 (PST)
+        with ESMTP id S1729398AbfLENUK (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Dec 2019 08:20:10 -0500
+Received: by mail-wr1-f66.google.com with SMTP id z7so3485884wrl.13
+        for <linux-btrfs@vger.kernel.org>; Thu, 05 Dec 2019 05:20:09 -0800 (PST)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=BhNSvshV1QHjnGrVTRNJP1wQhxjefRuxjTs1qrT/8cw=;
-        b=GO6FTfG3JtqgZe9repB8EE7NULIjwcvuZNtO7HUkofK33N8hlGTaoTpPrsrBqmjB30
-         Pa6P1d0YTL7vXQtphIvOfVNePQawr3QWqUNrcT4QCm5w18DWe51wc45RRijWy10nude0
-         cmNwyN+RllQhUjgGZWS6jkPYwbOSXf0hw/u8520ycBBwDlYX307syIVZOFguhgD+FLyr
-         Tvik429vbhJ4/wQwmOYGbYXA2RnOL3TL3rMHTPPAFXhdGuHq67ScNDTPRtnk7dECpbst
-         3XWKWR0uJei8xIfmJNZfM7XU4ypkKArLw/OhoR0SmbfPL7vOTsDnwTAXYvWyPp6BQlSt
-         Dqbw==
-X-Gm-Message-State: APjAAAWqgO2gx2H1y3mRFEgkzlMYA7+faxLkvVYyWQ9XZpVfO/A1HNMK
-        OlRyM7odjpJTneghV3CbjUc=
-X-Google-Smtp-Source: APXvYqwIZFDITmec+A6ywZHsf8eMJXXhvUqlGDW2ZsCtm7W+kudZhx2zE8jB5rBxXxsgd8Kd+TCtyg==
-X-Received: by 2002:adf:e6cb:: with SMTP id y11mr10380477wrm.345.1575552005683;
-        Thu, 05 Dec 2019 05:20:05 -0800 (PST)
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
+         :references:mime-version:content-transfer-encoding;
+        bh=uJYL0L43GwvtAnJidqIWN/JjxWUixYHQvCd4q9ayaWI=;
+        b=ujSPioT3Fx5he4hRGgtl37e3soaecxuXjwCQHR0+XuS/1LjvteEhh+1rMFqdUDA1/F
+         UfVTg6vCmHhwEa10ylaTu3xZTbjkAS9VUz9aevX0mWH5eEZWugsYm9G0AbREycGANnvG
+         x/4Q39qCcd8+6C3nk95u7LKxma8azmmN7ggoMMqMxACbYmw51LUlxqlfunjq+8az9Pmo
+         ExpwZIVsEA7sCaxZ+DW65N61bZHqGRlKbN2qf02KIecD1/YMzyQBirqGSRjyAFpOlBJj
+         vsGhofW/scReRAXfm7g4qs+wmWcVKsaivAHDtH/AlMpl/HEoSIn/VFW/lA23FhwJEpr3
+         686w==
+X-Gm-Message-State: APjAAAXRltv1XPHenTyb+BdQnNRbg7RjVTh9Wqaq/u4PdraG7poNvaj0
+        LdFuQhSxwJV6JidkGuPt9mU=
+X-Google-Smtp-Source: APXvYqzTY4+bBXo3DDaZR/u0azkGC0/EGbRyV94+2XP+B0OwagZtZaWienwCvaDwyxxKseiiutmYUw==
+X-Received: by 2002:adf:8541:: with SMTP id 59mr3990453wrh.307.1575552007847;
+        Thu, 05 Dec 2019 05:20:07 -0800 (PST)
 Received: from localhost.localdomain (ppp-46-244-194-187.dynamic.mnet-online.de. [46.244.194.187])
-        by smtp.gmail.com with ESMTPSA id f67sm10482515wme.16.2019.12.05.05.20.04
+        by smtp.gmail.com with ESMTPSA id f67sm10482515wme.16.2019.12.05.05.20.06
         (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Thu, 05 Dec 2019 05:20:04 -0800 (PST)
+        Thu, 05 Dec 2019 05:20:07 -0800 (PST)
 From:   Johannes Thumshirn <jth@kernel.org>
 To:     David Sterba <dsterba@suse.com>
 Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
         Johannes Thumshirn <jth@kernel.org>
-Subject: [PATCH 0/3] Misc fixes silencing false positives from cppcheck
-Date:   Thu,  5 Dec 2019 14:19:56 +0100
-Message-Id: <20191205131959.19184-1-jth@kernel.org>
+Subject: [PATCH 2/3] btrfs: remove superfluous BUG_ON() in integrity checks
+Date:   Thu,  5 Dec 2019 14:19:58 +0100
+Message-Id: <20191205131959.19184-3-jth@kernel.org>
 X-Mailer: git-send-email 2.21.0 (Apple Git-122)
+In-Reply-To: <20191205131959.19184-1-jth@kernel.org>
+References: <20191205131959.19184-1-jth@kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -62,28 +65,30 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-misc fixes provoked by https://bugzilla.kernel.org/show_bug.cgi?id=205003
+btrfsic_process_superblock() BUG_ON()s if 'state' is NULL. But this can
+never happen as the only caller from btrfsic_process_superblock() is btrfsic_mount()
+which allocates 'state' some lines above calling
+btrfsic_process_superblock() and checks for the allocation to succeed.
 
-The first patch removes an unneeded variable, which when removed silences
-a false positive warning generated by cppcheck.
+Let's just remove the impossible to hit BUG_ON().
 
-The second patch removes a BUG_ON() which can't be hit, for the same
-reasons as there can't be no NULL-pointer dereference in patch 1.
+Signed-off-by: Johannes Thumshirn <jth@kernel.org>
+---
+ fs/btrfs/check-integrity.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-Patch number three removes a WARN_ON() which can't be triggered. This
-WARN_ON() was also identified as a possible NULL-pointer dereference by
-cppcheck.
-
-
-Johannes Thumshirn (3):
-  btrfs: fix possible NULL-pointer dereference in integrity checks
-  btrfs: remove superfluous BUG_ON() in integrity checks
-  btrfs: remove impossible WARN_ON in btrfs_destroy_dev_replace_tgtdev()
-
- fs/btrfs/check-integrity.c | 4 +---
- fs/btrfs/volumes.c         | 1 -
- 2 files changed, 1 insertion(+), 4 deletions(-)
-
+diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
+index 72c70f59fc60..a0ce69f2d27c 100644
+--- a/fs/btrfs/check-integrity.c
++++ b/fs/btrfs/check-integrity.c
+@@ -636,7 +636,6 @@ static int btrfsic_process_superblock(struct btrfsic_state *state,
+ 	int ret = 0;
+ 	int pass;
+ 
+-	BUG_ON(NULL == state);
+ 	selected_super = kzalloc(sizeof(*selected_super), GFP_NOFS);
+ 	if (NULL == selected_super) {
+ 		pr_info("btrfsic: error, kmalloc failed!\n");
 -- 
 2.21.0 (Apple Git-122)
 

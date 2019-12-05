@@ -2,104 +2,66 @@ Return-Path: <SRS0=8E82=Z3=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
+X-Spam-Status: No, score=-5.0 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,
+	SPF_PASS,USER_AGENT_SANE_1 autolearn=unavailable autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DE755C2D0C2
-	for <linux-btrfs@archiver.kernel.org>; Thu,  5 Dec 2019 13:20:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DEC07C2D0BF
+	for <linux-btrfs@archiver.kernel.org>; Thu,  5 Dec 2019 13:38:32 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B346320675
-	for <linux-btrfs@archiver.kernel.org>; Thu,  5 Dec 2019 13:20:14 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1575552014;
-	bh=8grJxlwtuw6DJoz7a+ESOcH6rCdL6YgzcmSif1H4+Bw=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=OObMFEmIrzULss1xkFWRuuPrFthxw/pMRD5UMtbZIcbkzaEF6vzxCHz5isb3PE50Y
-	 8p82PSqUmIwkfzJQhdQEr//E29+6KglChp9GLz7cg9XcndfvXWouDYpf0A/A+JQuby
-	 2dxCTS3OmkoR3wk5nJbupBVjLV8sggIkEfzDFGZo=
+	by mail.kernel.org (Postfix) with ESMTP id B5C5C22525
+	for <linux-btrfs@archiver.kernel.org>; Thu,  5 Dec 2019 13:38:32 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="WQ8Vdx+r"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729573AbfLENUJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 5 Dec 2019 08:20:09 -0500
-Received: from mail-wm1-f67.google.com ([209.85.128.67]:51144 "EHLO
-        mail-wm1-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729398AbfLENUI (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Dec 2019 08:20:08 -0500
-Received: by mail-wm1-f67.google.com with SMTP id p9so3778942wmg.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 05 Dec 2019 05:20:07 -0800 (PST)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=uCd5U7DoG4qBbFN1jQxLirgCPg7xjdQna64hhlRmvlI=;
-        b=goAwKeAwFCyRyFk1Cw717Qb6c0SEXkQEWYiuc+0HtkQytpSjGbE+1799j2zhC3+UDf
-         mIuMnQ/X155hFY5jLZd3DVHxjBPSL0dPwBlFMgVSC2tAA90nEJK4xLwh5EvEH2qBtS0n
-         iccEOj/Fc1fGF72g/BZpBhyOnWj5PoCY6AU9rmK4m8+urwghAXyWtAUavL1x4nnu7Yas
-         8f7Yw1qm/Nv8irTxYGrCLT40f3SWsBV8GpbpyBsR8Z8dITkY47aXvUuXK2Q+9Q8HQZjy
-         shhBSF7R2rCsW+Whl6HkqbLnPoqAV9Djpl/MAgCqxQEef1NrHwaqiL6wozmw4mddZPhR
-         6KrQ==
-X-Gm-Message-State: APjAAAX5v93/uHiBsrRVZBjZEwYXKU/ifCSVCldSsjP7lVtPQuGsegGJ
-        CCX7hUwT/OEYTxxcVrDM3pw=
-X-Google-Smtp-Source: APXvYqxEcwRjRhT26Y4VJ/emPseadGTe4SKoCj/kc8ci9HztGBQITvQ4gA6w8jbaB4ERjQSBRWvMcA==
-X-Received: by 2002:a05:600c:204:: with SMTP id 4mr5557063wmi.1.1575552006689;
-        Thu, 05 Dec 2019 05:20:06 -0800 (PST)
-Received: from localhost.localdomain (ppp-46-244-194-187.dynamic.mnet-online.de. [46.244.194.187])
-        by smtp.gmail.com with ESMTPSA id f67sm10482515wme.16.2019.12.05.05.20.05
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Thu, 05 Dec 2019 05:20:06 -0800 (PST)
-From:   Johannes Thumshirn <jth@kernel.org>
-To:     David Sterba <dsterba@suse.com>
-Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
-        Johannes Thumshirn <jth@kernel.org>
-Subject: [PATCH 1/3] btrfs: fix possible NULL-pointer dereference in integrity checks
-Date:   Thu,  5 Dec 2019 14:19:57 +0100
-Message-Id: <20191205131959.19184-2-jth@kernel.org>
-X-Mailer: git-send-email 2.21.0 (Apple Git-122)
-In-Reply-To: <20191205131959.19184-1-jth@kernel.org>
-References: <20191205131959.19184-1-jth@kernel.org>
+        id S1729512AbfLENib (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 5 Dec 2019 08:38:31 -0500
+Received: from bombadil.infradead.org ([198.137.202.133]:59996 "EHLO
+        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1729096AbfLENib (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Dec 2019 08:38:31 -0500
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=bombadil.20170209; h=In-Reply-To:Content-Type:MIME-Version
+        :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+        Content-Transfer-Encoding:Content-ID:Content-Description:Resent-Date:
+        Resent-From:Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:
+        List-Help:List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
+         bh=/zOhhsj0TF+2vJvyTuHdzp88oWZoS4k2GnHbq6L+gbQ=; b=WQ8Vdx+rYdfNKgHBZlpZyQEvg
+        dNca2+MGoqL1J/cqdzWS1Iy8NU0rFag2GarJnG+2yjff7htStPVDfKNfFdHMFHbb913qyCkvh2Xv1
+        5RB/o5sF918KgmAdOB+MVPse+TiqvW+lelx2xzUVeTeD/GRVn6mRV7373sHzp1eSKPH56Fb5unb+B
+        Q4sDVZqEQMFuWA5wc+/Ihm0N9RKbaMi3ztB9OpyrmSkA+kXJutuL18ro74O4FAEwYiu/F1LJINJ1h
+        QCconcly/Ku4jLN0cic7bifTVe2TdrxxFV/R3RKslMRsWfHsztZU+D1S9WY2Dh/66GC38AeqpeCGS
+        Sqgum2peQ==;
+Received: from willy by bombadil.infradead.org with local (Exim 4.92.3 #3 (Red Hat Linux))
+        id 1icrKw-00015o-Gj; Thu, 05 Dec 2019 13:38:30 +0000
+Date:   Thu, 5 Dec 2019 05:38:30 -0800
+From:   Matthew Wilcox <willy@infradead.org>
+To:     Ritesh Harjani <riteshh@linux.ibm.com>
+Cc:     linux-fsdevel@vger.kernel.org, jlayton@kernel.org,
+        viro@zeniv.linux.org.uk, ceph-devel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-nfs@vger.kernel.org,
+        devel@lists.orangefs.org, linux-unionfs@vger.kernel.org
+Subject: Re: [PATCH 1/1] fs: Use inode_lock/unlock class of provided APIs in
+ filesystems
+Message-ID: <20191205133830.GB29612@bombadil.infradead.org>
+References: <20191205103902.23618-1-riteshh@linux.ibm.com>
+ <20191205103902.23618-2-riteshh@linux.ibm.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20191205103902.23618-2-riteshh@linux.ibm.com>
+User-Agent: Mutt/1.12.1 (2019-06-15)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-A user reports a possible NULL-pointer dereference in
-btrfsic_process_superblock(). We are assigning state->fs_info to a local
-fs_info variable and afterwards checking for the presence of state.
+On Thu, Dec 05, 2019 at 04:09:02PM +0530, Ritesh Harjani wrote:
+> This defines 4 more APIs which some of the filesystem needs
+> and reduces the direct use of i_rwsem in filesystem drivers.
+> Instead those are replaced with inode_lock/unlock_** APIs.
+> 
+> Signed-off-by: Ritesh Harjani <riteshh@linux.ibm.com>
 
-While we would BUG_ON() a NULL state anyways, we can also just remove the
-local fs_info copy, as fs_info is only used once as the first argument for
-btrfs_num_copies(). There we can just pass in state->fs_info as well.
-
-Link: https://bugzilla.kernel.org/show_bug.cgi?id=205003
-Signed-off-by: Johannes Thumshirn <jth@kernel.org>
----
- fs/btrfs/check-integrity.c | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
-index 0b52ab4cb964..72c70f59fc60 100644
---- a/fs/btrfs/check-integrity.c
-+++ b/fs/btrfs/check-integrity.c
-@@ -629,7 +629,6 @@ static struct btrfsic_dev_state *btrfsic_dev_state_hashtable_lookup(dev_t dev,
- static int btrfsic_process_superblock(struct btrfsic_state *state,
- 				      struct btrfs_fs_devices *fs_devices)
- {
--	struct btrfs_fs_info *fs_info = state->fs_info;
- 	struct btrfs_super_block *selected_super;
- 	struct list_head *dev_head = &fs_devices->devices;
- 	struct btrfs_device *device;
-@@ -700,7 +699,7 @@ static int btrfsic_process_superblock(struct btrfsic_state *state,
- 			break;
- 		}
- 
--		num_copies = btrfs_num_copies(fs_info, next_bytenr,
-+		num_copies = btrfs_num_copies(state->fs_info, next_bytenr,
- 					      state->metablock_size);
- 		if (state->print_mask & BTRFSIC_PRINT_MASK_NUM_COPIES)
- 			pr_info("num_copies(log_bytenr=%llu) = %d\n",
--- 
-2.21.0 (Apple Git-122)
-
+Reviewed-by: Matthew Wilcox (Oracle) <willy@infradead.org>

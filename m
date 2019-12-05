@@ -2,82 +2,112 @@ Return-Path: <SRS0=8E82=Z3=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.4 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7738DC43603
-	for <linux-btrfs@archiver.kernel.org>; Thu,  5 Dec 2019 14:21:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DAD18C43603
+	for <linux-btrfs@archiver.kernel.org>; Thu,  5 Dec 2019 14:39:25 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 45217206DB
-	for <linux-btrfs@archiver.kernel.org>; Thu,  5 Dec 2019 14:21:56 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id AD18E21835
+	for <linux-btrfs@archiver.kernel.org>; Thu,  5 Dec 2019 14:39:25 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="pZ0977nj"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729417AbfLEOVz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 5 Dec 2019 09:21:55 -0500
-Received: from mx2.suse.de ([195.135.220.15]:60312 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1729240AbfLEOVz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 5 Dec 2019 09:21:55 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 495CFB227;
-        Thu,  5 Dec 2019 14:21:54 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 03EEBDA733; Thu,  5 Dec 2019 15:21:48 +0100 (CET)
-Date:   Thu, 5 Dec 2019 15:21:48 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Anand Jain <anand.jain@oracle.com>
-Cc:     linux-btrfs@vger.kernel.org
+        id S1729099AbfLEOjY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 5 Dec 2019 09:39:24 -0500
+Received: from aserp2120.oracle.com ([141.146.126.78]:57310 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1729530AbfLEOjW (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Dec 2019 09:39:22 -0500
+Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
+        by aserp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xB5EdHmi038716;
+        Thu, 5 Dec 2019 14:39:18 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
+ references : from : message-id : date : mime-version : in-reply-to :
+ content-type : content-transfer-encoding; s=corp-2019-08-05;
+ bh=8dt0wuvwYT/Lo/DmgDwbDbMjmwK746rSv0FbBrT5L7w=;
+ b=pZ0977njeezpLRNLChudmwEsXeFNx7I82ge9Mf1vfCkpcFHn7v86ztG5TGDlITV5QbMV
+ KsIN13G7lxEj8vN+azhTelYeWnbU15cXYKdY+a8QLPEOQqJ9jUUNrLDetiyMFvyyRljq
+ NJ6YZcJWFQq93Db8jZc6jNLz8e/T+k9KkIu0JKJ1hk/u1kSpOPOu7ovfx2foAUFJUzn7
+ AuR8p4foz6pomU/VuRG5A8DyJMjvn2UnNAEtJbxFMOifObRvlc0vc5xEVEomzxbVWHm1
+ NKMiCsoq4XmtA9dPhXCG6jmlpMcyPPMc6uDA22lfbH51b71jz16XaDTu9ClUWS8chPNL pg== 
+Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
+        by aserp2120.oracle.com with ESMTP id 2wkgcqng3w-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Thu, 05 Dec 2019 14:39:17 +0000
+Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
+        by userp3030.oracle.com (8.16.0.27/8.16.0.27) with SMTP id xB5Ed4F8062640;
+        Thu, 5 Dec 2019 14:39:17 GMT
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by userp3030.oracle.com with ESMTP id 2wpp8hysd6-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Thu, 05 Dec 2019 14:39:13 +0000
+Received: from abhmp0016.oracle.com (abhmp0016.oracle.com [141.146.116.22])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id xB5Ecqvt032114;
+        Thu, 5 Dec 2019 14:38:52 GMT
+Received: from [192.168.1.145] (/39.109.145.141)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Thu, 05 Dec 2019 06:38:52 -0800
 Subject: Re: [PATCH 4/4] btrfs: sysfs, add devid/dev_state kobject and
  attribute
-Message-ID: <20191205142148.GQ2734@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
-        linux-btrfs@vger.kernel.org
+To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
 References: <20191205112706.8125-1-anand.jain@oracle.com>
  <20191205112706.8125-5-anand.jain@oracle.com>
+ <20191205141024.GP2734@twin.jikos.cz>
+From:   Anand Jain <anand.jain@oracle.com>
+Message-ID: <fa6882c2-53a4-df61-36a4-f3932d69212b@oracle.com>
+Date:   Thu, 5 Dec 2019 22:38:49 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.8.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20191205112706.8125-5-anand.jain@oracle.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <20191205141024.GP2734@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9461 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
+ adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.0.1-1911140001 definitions=main-1912050123
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9461 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
+ suspectscore=0 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
+ lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1911140001
+ definitions=main-1912050123
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Dec 05, 2019 at 07:27:06PM +0800, Anand Jain wrote:
-> A new sysfs RW attribute
 
-Why RW? Most attributes/files in sysfs are supposed to be read-only, but
-you actually define the attribute as read-only with the macro
-BTRFS_ATTR.
 
->   UUID/devinfo/<devid>/dev_state
-> is added here. The dev_state here reflects the state of the device from
-> the kernel parameter btrfs_device::dev_state and this attribute is born
-> after the device is mounted and goes along with the dynamic nature of the
-> device add and delete. This attribute gets deleted at unmount.
+On 12/5/19 10:10 PM, David Sterba wrote:
+> On Thu, Dec 05, 2019 at 07:27:06PM +0800, Anand Jain wrote:
+>> +static void btrfs_dev_state_to_str(struct btrfs_device *device, char *dev_state_str, size_t n)
+>> +{
+>> +	int state;
+>> +	const char *btrfs_dev_states[] = { "WRITEABLE", "IN_FS_METADATA",
+>> +					   "MISSING", "REPLACE_TGT", "FLUSHING"
+>> +					 };
+>> +
+>> +	n = n - strlen(dev_state_str) - 1;
+>> +
+>> +	for (state = 0; state < ARRAY_SIZE(btrfs_dev_states); state++) {
+>> +		if (test_bit(state, &device->dev_state)) {
+>> +			if (strlen(dev_state_str))
+>> +				strncat(dev_state_str, " ", n);
+>> +			strncat(dev_state_str, btrfs_dev_states[state], n);
+>> +		}
+>> +	}
+>> +	strncat(dev_state_str, "\n", n);
 > 
-> For example:
-> pwd
->  /sys/fs/btrfs/6e1961f1-5918-4ecc-a22f-948897b409f7/devinfo
-> cat 1/dev_state
->  IN_FS_METADATA MISSING
-> cat 2/dev_state
->  WRITABLE IN_FS_METADATA
+> Please use the snprintf way as in supported_checksums_show and not the
+> str* functions.
+> 
 
-So the values copy the device state macros, that's probably ok.
+Ok. Will fix.
 
-> +static ssize_t btrfs_sysfs_dev_state_show(struct kobject *kobj,
-> +					  struct kobj_attribute *a, char *buf)
-> +{
-> +	struct btrfs_device *device = container_of(kobj, struct btrfs_device,
-> +						   devid_kobj);
-> +
-> +	btrfs_dev_state_to_str(device, buf, PAGE_SIZE);
-
-The device access is unprotected, you need at least RCU but that still
-does not prevent from the device being freed by deletion. The
-device_list_mutex is quite heavy and allowing a DoS by repeatedly
-reading the file contents is not something we want to allow.
+Thanks, Anand

@@ -2,86 +2,80 @@ Return-Path: <SRS0=d6VH=Z5=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_GIT autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BB827C2BBE2
-	for <linux-btrfs@archiver.kernel.org>; Sat,  7 Dec 2019 15:02:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B23C4C43603
+	for <linux-btrfs@archiver.kernel.org>; Sat,  7 Dec 2019 16:44:51 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 98C04217BA
-	for <linux-btrfs@archiver.kernel.org>; Sat,  7 Dec 2019 15:02:47 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7182224670
+	for <linux-btrfs@archiver.kernel.org>; Sat,  7 Dec 2019 16:44:51 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=icloud.com header.i=@icloud.com header.b="wSHe4ovU"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726418AbfLGPCo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 7 Dec 2019 10:02:44 -0500
-Received: from aliyun-cloud.icoremail.net ([47.90.104.110]:32738 "HELO
-        aliyun-sdnproxy-3.icoremail.net" rhost-flags-OK-OK-OK-FAIL)
-        by vger.kernel.org with SMTP id S1726400AbfLGPCo (ORCPT
+        id S1726442AbfLGQou (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 7 Dec 2019 11:44:50 -0500
+Received: from ms11p00im-qufo17291801.me.com ([17.58.38.47]:60052 "EHLO
+        ms11p00im-qufo17291801.me.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1726414AbfLGQou (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 7 Dec 2019 10:02:44 -0500
-X-Greylist: delayed 709 seconds by postgrey-1.27 at vger.kernel.org; Sat, 07 Dec 2019 10:02:42 EST
-Received: from localhost.localdomain (unknown [222.205.62.5])
-        by mail-app2 (Coremail) with SMTP id by_KCgC3vlJPuutdctLMBQ--.24137S3;
-        Sat, 07 Dec 2019 22:42:24 +0800 (CST)
-From:   Dinghao Liu <dinghao.liu@zju.edu.cn>
-To:     dinghao.liu@zju.edu.cn, kjlu@umn.edu
-Cc:     pakki001@umn.edu, Chris Mason <clm@fb.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: [PATCH] fs: Fix a missing check bug
-Date:   Sat,  7 Dec 2019 22:41:25 +0800
-Message-Id: <20191207144126.14320-1-dinghao.liu@zju.edu.cn>
-X-Mailer: git-send-email 2.21.0 (Apple Git-122)
-MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-CM-TRANSID: by_KCgC3vlJPuutdctLMBQ--.24137S3
-X-Coremail-Antispam: 1UD129KBjvdXoWrtF47GF1kZr47Ww18Xw1rtFb_yoWfWwc_AF
-        ZxAw1jqr4fKr4xuwn8GwnYqrZY9wsYkryFq3WjkFsrGayYvws8XrnrAryfuF9Iga1UGFsF
-        k34kZry7Ga47ujkaLaAFLSUrUUUUUb8apTn2vfkv8UJUUUU8Yxn0WfASr-VFAUDa7-sFnT
-        9fnUUIcSsGvfJTRUUUbIxFc2x0x2IEx4CE42xK8VAvwI8IcIk0rVWrJVCq3wAFIxvE14AK
-        wVWUJVWUGwA2ocxC64kIII0Yj41l84x0c7CEw4AK67xGY2AK021l84ACjcxK6xIIjxv20x
-        vE14v26w1j6s0DM28EF7xvwVC0I7IYx2IY6xkF7I0E14v26r4UJVWxJr1l84ACjcxK6I8E
-        87Iv67AKxVW0oVCq3wA2z4x0Y4vEx4A2jsIEc7CjxVAFwI0_GcCE3s1le2I262IYc4CY6c
-        8Ij28IcVAaY2xG8wAqx4xG64xvF2IEw4CE5I8CrVC2j2WlYx0E2Ix0cI8IcVAFwI0_Jr0_
-        Jr4lYx0Ex4A2jsIE14v26r1j6r4UMcvjeVCFs4IE7xkEbVWUJVW8JwACjcxG0xvY0x0EwI
-        xGrwACjI8F5VA0II8E6IAqYI8I648v4I1lc2xSY4AK67AK6ry5MxAIw28IcxkI7VAKI48J
-        MxAIw28IcVCjz48v1sIEY20_GFWkJr1UJwCFx2IqxVCFs4IE7xkEbVWUJVW8JwC20s026c
-        02F40E14v26r1j6r18MI8I3I0E7480Y4vE14v26r106r1rMI8E67AF67kF1VAFwI0_Jw0_
-        GFylIxkGc2Ij64vIr41lIxAIcVC0I7IYx2IY67AKxVWUJVWUCwCI42IY6xIIjxv20xvEc7
-        CjxVAFwI0_Jr0_Gr1lIxAIcVCF04k26cxKx2IYs7xG6rW3Jr0E3s1lIxAIcVC2z280aVAF
-        wI0_Jr0_Gr1lIxAIcVC2z280aVCY1x0267AKxVW8JVW8JrUvcSsGvfC2KfnxnUUI43ZEXa
-        7VUbkR65UUUUU==
-X-CM-SenderInfo: qrrzjiaqtzq6lmxovvfxof0/
+        Sat, 7 Dec 2019 11:44:50 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=icloud.com;
+        s=1a1hai; t=1575737088;
+        bh=NAEyDaBHiFqn+s6dHzA3hQZgdPsc82LWBou1lxeWXNM=;
+        h=Content-Type:Subject:From:Date:Message-Id:To;
+        b=wSHe4ovUC5a7C18P2D9UoroAnHQ/kvViNqB4ceezz5dmPhce7nPg4fZm88xA+GM/D
+         rhXk+GKZhKcd1tznl5/76pU1TMkbxElt6UoiALhvWnFjT2EcQLgfdQJztXaAUwht0t
+         6q3zBrgEtqX+dR8jJtD88FnWa8wOcaJZiqqkHSCI9ENLD4X9J1nFqrto1wU8I7cJPS
+         +2N8Ob2CkM51duk1VorAdQahPHEz35lZpzNQxt7gHHdeDw2PTOOedieS6p1PgB5TI4
+         VBOaLf2s3lm7N2KCTROW+2zq7Xo33RnB6PeK8/eKl9r/zSe0qd4bJtwVeg2bAUwt1K
+         n6LLbwPMt7kLA==
+Received: from [192.168.15.24] (unknown [177.27.216.49])
+        by ms11p00im-qufo17291801.me.com (Postfix) with ESMTPSA id DEE81AC0D78;
+        Sat,  7 Dec 2019 16:44:46 +0000 (UTC)
+Content-Type: text/plain;
+        charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 13.0 \(3601.0.10\))
+Subject: Re: [PATCH] btrfs-progs: Skip device tree when we failed to read it
+From:   Christian Wimmer <telefonchris@icloud.com>
+In-Reply-To: <e8b667ab-6b71-7cd8-632a-5483ec4386d8@gmx.com>
+Date:   Sat, 7 Dec 2019 13:44:44 -0300
+Cc:     Qu WenRuo <wqu@suse.com>, Anand Jain <anand.jain@oracle.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Transfer-Encoding: quoted-printable
+Message-Id: <6538780A-6160-4400-A997-E8324DB61F69@icloud.com>
+References: <20191206034406.40167-1-wqu@suse.com>
+ <2a220d44-fb44-66cf-9414-f1d0792a5d4f@oracle.com>
+ <762365A0-8BDF-454B-ABA9-AB2F0C958106@icloud.com>
+ <94a6d1b2-ae32-5564-22ee-6982e952b100@suse.com>
+ <4C0C9689-3ECF-4DF7-9F7E-734B6484AA63@icloud.com>
+ <f7fe057d-adc1-ace5-03b3-0f0e608d68a3@gmx.com>
+ <BF872461-4D5F-4125-85E6-719A42F5BD0F@icloud.com>
+ <e8b667ab-6b71-7cd8-632a-5483ec4386d8@gmx.com>
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+X-Mailer: Apple Mail (2.3601.0.10)
+X-Proofpoint-Virus-Version: vendor=fsecure engine=2.50.10434:,, definitions=2019-12-07_05:,,
+ signatures=0
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
+ phishscore=0 bulkscore=0 spamscore=0 clxscore=1015 mlxscore=0
+ mlxlogscore=728 adultscore=0 classifier=spam adjust=0 reason=mlx
+ scancount=1 engine=8.0.1-1908290000 definitions=main-1912070145
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The return value of link_free_space(ctl, info) is checked out-sync. Only one branch of an if statement checks this return value after WARN_ON(ret).
+Hi Qu,
 
-Since this path pair is similar in semantic, there might be a missing check bug.
+I was reading about chunk-recover. Do you think this could be worth a =
+try?
 
-Fix this by simply adding a check on ret.
+Is there any other command that can search for files that make sense to =
+recover?
 
-Signed-off-by: Dinghao Liu <dinghao.liu@zju.edu.cn>
----
- fs/btrfs/free-space-cache.c | 2 ++
- 1 file changed, 2 insertions(+)
+Regards,
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 3283da419200..acbb3a59d344 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -2437,6 +2437,8 @@ int btrfs_remove_free_space(struct btrfs_block_group *block_group,
- 			if (info->bytes) {
- 				ret = link_free_space(ctl, info);
- 				WARN_ON(ret);
-+				if (ret)
-+					goto out_lock;
- 			} else {
- 				kmem_cache_free(btrfs_free_space_cachep, info);
- 			}
--- 
-2.21.0 (Apple Git-122)
+Chris
 

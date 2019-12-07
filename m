@@ -1,110 +1,73 @@
-Return-Path: <SRS0=lvGj=Z4=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=d6VH=Z5=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FORGED_MUA_MOZILLA,HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B1457C43603
-	for <linux-btrfs@archiver.kernel.org>; Fri,  6 Dec 2019 22:51:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3E9B6C43603
+	for <linux-btrfs@archiver.kernel.org>; Sat,  7 Dec 2019 00:47:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 7BED7217BA
-	for <linux-btrfs@archiver.kernel.org>; Fri,  6 Dec 2019 22:51:45 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0DE1D24670
+	for <linux-btrfs@archiver.kernel.org>; Sat,  7 Dec 2019 00:47:08 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=urbackup.org header.i=@urbackup.org header.b="O4QHu0dX";
-	dkim=pass (1024-bit key) header.d=amazonses.com header.i=@amazonses.com header.b="FWaGoWqd"
+	dkim=pass (2048-bit key) header.d=wpkg.org header.i=@wpkg.org header.b="NgR5LgII"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726414AbfLFWvo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 6 Dec 2019 17:51:44 -0500
-Received: from a4-1.smtp-out.eu-west-1.amazonses.com ([54.240.4.1]:45314 "EHLO
-        a4-1.smtp-out.eu-west-1.amazonses.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1726371AbfLFWvo (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 6 Dec 2019 17:51:44 -0500
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/simple;
-        s=ob2ngmaigrjtzxgmrxn2h6b3gszyqty3; d=urbackup.org; t=1575672702;
-        h=Subject:To:Cc:References:From:Message-ID:Date:MIME-Version:In-Reply-To:Content-Type:Content-Transfer-Encoding;
-        bh=jOYEpzgqC20aG7poYlSeeJgmw2BcWzAIBQtMCJyAgLc=;
-        b=O4QHu0dX5PIRqxRfCCFK7aiPNtGH+uhc8QT9G2Izg+ifFPoZe39tbRK7/LBgeAmA
-        9f66MuLryWLmjKW9jhndwHeqxjYTwQbTctmd6/g6WGgn2ixeUvp0Xx9m3+Pm8EDbxTG
-        7cENAr8is9N+GUqbGbBrVs0WBmwNozv1akmUoizc=
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/simple;
-        s=ihchhvubuqgjsxyuhssfvqohv7z3u4hn; d=amazonses.com; t=1575672702;
-        h=Subject:To:Cc:References:From:Message-ID:Date:MIME-Version:In-Reply-To:Content-Type:Content-Transfer-Encoding:Feedback-ID;
-        bh=jOYEpzgqC20aG7poYlSeeJgmw2BcWzAIBQtMCJyAgLc=;
-        b=FWaGoWqdoaDuTsfUPCo3SFHetXcfNyeeBhC2TSK9nsO6hAT6jwwn3CIprLkbkXby
-        PzZlwurxPDSS6cXF7mbfg+z2LUVFqGflqZogQ8Qfrmom8+FYFj72sM/k8d7GVicuxTp
-        iKWFNX7HsAjypspw/N9fDJVKQ0RkEjqTTnF7zpUQ=
-Subject: Re: df shows no available space in 5.4.1
-To:     Chris Murphy <lists@colorremedies.com>,
-        Tomasz Chmielewski <mangoo@wpkg.org>
-Cc:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>
-References: <0102016edd1b0184-848d9b6d-6b80-4ce3-8428-e472a224e554-000000@eu-west-1.amazonses.com>
- <CAJCQCtTMCQBU98hYdzizMsxajB+6cmxYs5CKmNVDh4D9YZgfEg@mail.gmail.com>
-From:   Martin Raiber <martin@urbackup.org>
-Message-ID: <0102016edd69655b-b6d07bce-6036-4add-aa0c-f91b57e78ee5-000000@eu-west-1.amazonses.com>
-Date:   Fri, 6 Dec 2019 22:51:42 +0000
-User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:60.0) Gecko/20100101
- Thunderbird/60.9.1
+        id S1726469AbfLGArH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 6 Dec 2019 19:47:07 -0500
+Received: from mail.virtall.com ([46.4.129.203]:33732 "EHLO mail.virtall.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726388AbfLGArH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 6 Dec 2019 19:47:07 -0500
+Received: from mail.virtall.com (localhost [127.0.0.1])
+        by mail.virtall.com (Postfix) with ESMTP id 0AE8439A8F9D;
+        Sat,  7 Dec 2019 00:47:04 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=wpkg.org; s=default;
+        t=1575679625; bh=8dmlRdm4KkQiRj+6FPNGKKrN8YVVdyxr18BNadMLOew=;
+        h=Date:From:To:Cc:Subject:In-Reply-To:References;
+        b=NgR5LgIIx/IMG7QtDXtY7Yn4oE+Wk39YLTQkJwCdsD40BA9lMAhmGssNF5ep0Q8Fo
+         KFGOtwbM0EE16usISUNCu2cJfHYIfMIV/JI85s+lkyK2pKZUAKuK00yPy92EqeLK5W
+         DHt/m+mRkm5MK7C9TSz5r3ZRK6kmRaCt0uOqwoyHN+W33zjShSTxiMWIgSMElPfWe9
+         xH6Of91TZKhm4qoo+3tU0W3uGnM/Tej0ZMZKPvIpRyN55GXDX70fm6YMX/TZzoRFfT
+         gJ7OvtItpTGuykOgbLGOTGNRsd9+NgRly28Wl98BJH2xJVffO1gEVfOVj6bp+6PUxw
+         BGPtu/TZcIOJw==
+X-Fuglu-Suspect: df9fbe7057a14e9ba9173c60f3f40525
+X-Fuglu-Spamstatus: NO
+Received: from localhost (localhost [127.0.0.1]) (Authenticated sender: tch@virtall.com)
+        by mail.virtall.com (Postfix) with ESMTPSA;
+        Sat,  7 Dec 2019 00:47:03 +0000 (UTC)
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtTMCQBU98hYdzizMsxajB+6cmxYs5CKmNVDh4D9YZgfEg@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=US-ASCII;
+ format=flowed
 Content-Transfer-Encoding: 7bit
-X-SES-Outgoing: 2019.12.06-54.240.4.1
-Feedback-ID: 1.eu-west-1.zKMZH6MF2g3oUhhjaE2f3oQ8IBjABPbvixQzV8APwT0=:AmazonSES
+Date:   Sat, 07 Dec 2019 09:47:01 +0900
+From:   Tomasz Chmielewski <mangoo@wpkg.org>
+To:     Chris Murphy <lists@colorremedies.com>
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: 100% disk usage reported by "df", 60% disk usage reported by
+ "btrfs fi usage" - this breaks userspace behaviour
+In-Reply-To: <CAJCQCtQ9Vg9VuT66diid6KdRMDqicxj9xLigTBF4sbMgqD=5jQ@mail.gmail.com>
+References: <eb9cfb919176c239d864f78e5756f1db@wpkg.org>
+ <CAJCQCtQ9Vg9VuT66diid6KdRMDqicxj9xLigTBF4sbMgqD=5jQ@mail.gmail.com>
+Message-ID: <c768a339fee28c7b4296d94b02beff12@wpkg.org>
+X-Sender: mangoo@wpkg.org
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 06.12.2019 23:35 Chris Murphy wrote:
-> On Fri, Dec 6, 2019 at 2:26 PM Martin Raiber <martin@urbackup.org> wrote:
->> Hi,
->>
->> with kernel 5.4.1 I have the problem that df shows 100% space used. I
->> can still write to the btrfs volume, but my software looks at the
->> available space and starts deleting stuff if statfs() says there is a
->> low amount of available space.
-> This is the second bug like this reported in as many days against 5.4.1.
->
-> Does this happen with an older kernel? Any 5.3 kernel or 5.2.15+ or
-> any 5.1 kernel? Or heck, even 5.4? :P
+On 2019-12-06 12:54, Chris Murphy wrote:
 
-Sorry, didn't see the other thread. Looks like the same issue.
-Unfortunately, I was previously using 4.19.x, so I can't pinpoint it. I
-think it did not occur when I was testing 5.4-rc7, but it does
-(randomly?) take a few days of runtime to start occuring, so it could
-have just not occurred then.
+> What version of coreutils?
 
->> # df -h
->> Filesystem                                            Size  Used Avail
->> Use% Mounted on
->> ...
->> /dev/loop0                                            7.4T  623G     0
->> 100% /media/backup
->> ...
->>
->> statfs("/media/backup", {f_type=BTRFS_SUPER_MAGIC, f_bsize=4096,
->> f_blocks=1985810876, f_bfree=1822074245, f_bavail=0, f_files=0,
->> f_ffree=0, f_fsid={val=[3667078581, 2813298474]}, f_namelen=255,
->> f_frsize=4096, f_flags=ST_VALID|ST_NOATIME}) = 0
->
-> f_bavail=0 seems wrong to me.
->
-> What distro and what version of coreutils?
-
-It's debian stretch coreutils 8.26-3, glibc 2.29-3. But that's an
-excerpt of the strace output so that shouldn't matter.
-
-Thanks!
-
->
-> It's the same questions for Tomasz in yesterday's thread with similar subject.
->
-> --
-> Chris Murphy
+This is Ubuntu 18.04 LTS, with coreutils 8.28.
 
 
+> Maybe attach a strace of df? (I'm not sure of the list attach size
+> limit but it's preferred, but something like a pastebin is OK also)
+
+"Unfortunately" I did run a balance, which "recovered" the space for df.
+
+
+Tomasz

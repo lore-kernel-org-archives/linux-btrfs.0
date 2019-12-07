@@ -2,57 +2,62 @@ Return-Path: <SRS0=d6VH=Z5=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.9 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS,USER_AGENT_GIT autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E2E3FC43603
-	for <linux-btrfs@archiver.kernel.org>; Sat,  7 Dec 2019 22:29:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2F556C2D0C2
+	for <linux-btrfs@archiver.kernel.org>; Sat,  7 Dec 2019 22:29:49 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 7BF3724670
-	for <linux-btrfs@archiver.kernel.org>; Sat,  7 Dec 2019 22:29:48 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0448224670
+	for <linux-btrfs@archiver.kernel.org>; Sat,  7 Dec 2019 22:29:49 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=fau.de header.i=@fau.de header.b="JL+ddXq8"
+	dkim=pass (2048-bit key) header.d=fau.de header.i=@fau.de header.b="nWpexwO7"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726511AbfLGW3r (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S1726480AbfLGW3r (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Sat, 7 Dec 2019 17:29:47 -0500
-Received: from mx-rz-3.rrze.uni-erlangen.de ([131.188.11.22]:48017 "EHLO
+Received: from mx-rz-3.rrze.uni-erlangen.de ([131.188.11.22]:44567 "EHLO
         mx-rz-3.rrze.uni-erlangen.de" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1726415AbfLGW3r (ORCPT
+        by vger.kernel.org with ESMTP id S1726378AbfLGW3r (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Sat, 7 Dec 2019 17:29:47 -0500
 Received: from mx-rz-smart.rrze.uni-erlangen.de (mx-rz-smart.rrze.uni-erlangen.de [IPv6:2001:638:a000:1025::1e])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits))
         (No client certificate requested)
-        by mx-rz-3.rrze.uni-erlangen.de (Postfix) with ESMTPS id 47VkX86rGXz20Sn;
-        Sat,  7 Dec 2019 23:24:24 +0100 (CET)
+        by mx-rz-3.rrze.uni-erlangen.de (Postfix) with ESMTPS id 47VkXG1WXkz20L3;
+        Sat,  7 Dec 2019 23:24:30 +0100 (CET)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fau.de; s=fau-2013;
-        t=1575757464; bh=jjv5PWMEMhzehN6tk91BT8BdiXjv1QcYvcv4a7tLMFA=;
-        h=From:To:Cc:Subject:Date:From:To:CC:Subject;
-        b=JL+ddXq8isH0UD6LvRcPXZUccrF2Ho5ZAql8Np7gCiEmxmk3TiR7dJem8WvYMpj6r
-         zBXz0k8XJh/BSs3VpSAEEHYffjWXjj1jt72/UYIrTGvGkdCEH+eZb2DyuqzuJ+Ab82
-         bYAOxzup4b7cTgaUXlIxNvQRQHSJxZ8ms2x0yB1fAniLYRHUbSGQBMrChD5lE/OI8p
-         FILCaW6UFJknzwgpVCKZu+O7EvL1Kff03Wi/R/R1Ki99QUDxbt29jvjN+kfa8rG5HG
-         MjtlI+lsyo4e4yg0YezB5AND55ojUvMX1tBDTLfuZOHDkv8b2X9Zm8ciZhjEkacdOr
-         3R1cdkzVuIYug==
+        t=1575757470; bh=VI58KzQg7/uaxVWnMYT34RvGjunNE+yuD2zouZyTEVE=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References:From:To:CC:
+         Subject;
+        b=nWpexwO7v+seVeoQN5wNa9VAGfbixB/Zm9MKnB8pon1sXBr5WiPRTF3vBfFZdBqzH
+         6xOiiqPm1Qvxn8czg+sl6qnVIHgSVHuLZr848YgwrwS1fI2jSEed+Um0zmM04r2plh
+         /7k5xdAvxTmOLcrl5v3oNkV3RAlkjnYMEhL8SpqlG5OMNr1bWI7mkUsZpYZEX5kOXV
+         S/QkEFV1xRabUdbEm8eI9qDoIZSFfXJBT1HgOXrNF3+CSNv4KIsNsLz4en+RtWCNe/
+         e4yrZv23msK5d+YgWYbf78w8i/s1MM0AbnjqRPZjz6SjCRhA6XRPdadXEN/aHzbQVR
+         fJTPINhOiT1lw==
 X-Virus-Scanned: amavisd-new at boeck4.rrze.uni-erlangen.de (RRZE)
 X-RRZE-Flag: Not-Spam
 X-RRZE-Submit-IP: 131.188.22.146
 Received: from localhost.localdomain (firewall.henke.stw.uni-erlangen.de [131.188.22.146])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits))
         (No client certificate requested)
-        (Authenticated sender: U2FsdGVkX18TP1STQvZYNDvw/VaITTwdR2mXGI0dnpc=)
-        by smtp-auth.uni-erlangen.de (Postfix) with ESMTPSA id 47VkX64K4Mz20L3;
-        Sat,  7 Dec 2019 23:24:22 +0100 (CET)
+        (Authenticated sender: U2FsdGVkX19q/UFmHZGkFP0tDe1YIZBwNCOpnb1IPqE=)
+        by smtp-auth.uni-erlangen.de (Postfix) with ESMTPSA id 47VkXC66njz20Y7;
+        Sat,  7 Dec 2019 23:24:27 +0100 (CET)
 From:   Sebastian <sebastian.scherbel@fau.de>
 To:     clm@fb.com
 Cc:     josef@toxicpanda.com, dsterba@suse.com,
         linux-btrfs@vger.kernel.org, linux-kernel@i4.cs.fau.de,
-        Sebastian Scherbel <sebastian.scherbel@fau.de>
-Subject: [PATCH 0/2] btrfs: Move dereference behind null checks
-Date:   Sat,  7 Dec 2019 23:18:16 +0100
-Message-Id: <20191207221818.3641-1-sebastian.scherbel@fau.de>
+        Sebastian Scherbel <sebastian.scherbel@fau.de>,
+        Ole Wiedemann <ole.wiedemann@fau.de>
+Subject: [PATCH 1/2] btrfs: Move dereference behind null check in check integrity
+Date:   Sat,  7 Dec 2019 23:18:17 +0100
+Message-Id: <20191207221818.3641-2-sebastian.scherbel@fau.de>
 X-Mailer: git-send-email 2.17.1
+In-Reply-To: <20191207221818.3641-1-sebastian.scherbel@fau.de>
+References: <20191207221818.3641-1-sebastian.scherbel@fau.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -60,18 +65,40 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Sebastian Scherbel <sebastian.scherbel@fau.de>
 
-Regarding Bug 205003, points 1 and 2
-This patch series moves two dereferences after the null check to avoid
-a possible null pointer dereference.
+Regarding Bug 205003, point 1
+The struct "state" is currently dereferenced before being checked
+for null later on. This patch moves the dereference after the null check
+to avoid a possible null pointer dereference.
 
-Sebastian Scherbel (2):
-  btrfs: Move dereference behind null check in check integrity
-  btrfs: Move dereference behind null check in check volumes
-
+Signed-off-by: Sebastian Scherbel <sebastian.scherbel@fau.de>
+Co-developed-by: Ole Wiedemann <ole.wiedemann@fau.de>
+Signed-off-by: Ole Wiedemann <ole.wiedemann@fau.de>
+---
  fs/btrfs/check-integrity.c | 4 +++-
- fs/btrfs/volumes.c         | 4 +++-
- 2 files changed, 6 insertions(+), 2 deletions(-)
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
+diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
+index 0b52ab4cb964..fc429436765c 100644
+--- a/fs/btrfs/check-integrity.c
++++ b/fs/btrfs/check-integrity.c
+@@ -629,7 +629,7 @@ static struct btrfsic_dev_state *btrfsic_dev_state_hashtable_lookup(dev_t dev,
+ static int btrfsic_process_superblock(struct btrfsic_state *state,
+ 				      struct btrfs_fs_devices *fs_devices)
+ {
+-	struct btrfs_fs_info *fs_info = state->fs_info;
++	struct btrfs_fs_info *fs_info;
+ 	struct btrfs_super_block *selected_super;
+ 	struct list_head *dev_head = &fs_devices->devices;
+ 	struct btrfs_device *device;
+@@ -638,6 +638,8 @@ static int btrfsic_process_superblock(struct btrfsic_state *state,
+ 	int pass;
+ 
+ 	BUG_ON(NULL == state);
++	fs_info = state->fs_info;
++
+ 	selected_super = kzalloc(sizeof(*selected_super), GFP_NOFS);
+ 	if (NULL == selected_super) {
+ 		pr_info("btrfsic: error, kmalloc failed!\n");
 -- 
 2.20.1
 

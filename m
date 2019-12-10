@@ -6,31 +6,31 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 70F1DC43603
-	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Dec 2019 23:02:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9E596C3F68F
+	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Dec 2019 23:02:27 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4CFE02053B
-	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Dec 2019 23:02:26 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 75438205C9
+	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Dec 2019 23:02:27 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727323AbfLJXCZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 10 Dec 2019 18:02:25 -0500
-Received: from mx2.suse.de ([195.135.220.15]:49754 "EHLO mx1.suse.de"
+        id S1727476AbfLJXC1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 10 Dec 2019 18:02:27 -0500
+Received: from mx2.suse.de ([195.135.220.15]:49836 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726801AbfLJXCX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Dec 2019 18:02:23 -0500
+        id S1727417AbfLJXC0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 10 Dec 2019 18:02:26 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 7AAECAE2D;
-        Tue, 10 Dec 2019 23:02:20 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id AEC11AE2E;
+        Tue, 10 Dec 2019 23:02:24 +0000 (UTC)
 From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
 To:     linux-btrfs@vger.kernel.org
 Cc:     hch@infradead.org, darrick.wong@oracle.com, fdmanana@kernel.org,
         nborisov@suse.com, dsterba@suse.cz, jthumshirn@suse.de,
         linux-fsdevel@vger.kernel.org,
         Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: [PATCH 6/8] btrfs: Wait for extent bits to release page
-Date:   Tue, 10 Dec 2019 17:01:53 -0600
-Message-Id: <20191210230155.22688-7-rgoldwyn@suse.de>
+Subject: [PATCH 8/8] btrfs: remove BTRFS_INODE_READDIO_NEED_LOCK
+Date:   Tue, 10 Dec 2019 17:01:55 -0600
+Message-Id: <20191210230155.22688-9-rgoldwyn@suse.de>
 X-Mailer: git-send-email 2.16.4
 In-Reply-To: <20191210230155.22688-1-rgoldwyn@suse.de>
 References: <20191210230155.22688-1-rgoldwyn@suse.de>
@@ -41,113 +41,75 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Goldwyn Rodrigues <rgoldwyn@suse.com>
 
-While trying to release a page, the extent containing the page may be locked
-which would stop the page from being released. Wait for the
-extent lock to be cleared, if blocking is allowed and then clear
-the bits.
+Since we now perform direct reads using i_rwsem, we can remove this
+inode flag used to co-ordinate unlocked reads.
 
-While we are at it, clean the code of try_release_extent_state() to make
-it simpler.
+The truncate call chain gets the i_rwsem which may conflict with direct
+reads:
+do_truncate <-- calls inode_lock
+  notify_change
+   ->setattr/btrfs_setattr
+     btrfs_setsize
 
 Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
-Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
 Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/extent_io.c | 37 ++++++++++++++++---------------------
- fs/btrfs/extent_io.h |  2 +-
- fs/btrfs/inode.c     |  4 ++--
- 3 files changed, 19 insertions(+), 24 deletions(-)
+ fs/btrfs/btrfs_inode.h | 18 ------------------
+ fs/btrfs/inode.c       |  5 -----
+ 2 files changed, 23 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index eb8bd0258360..193785981183 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -4360,33 +4360,28 @@ int extent_invalidatepage(struct extent_io_tree *tree,
-  * are locked or under IO and drops the related state bits if it is safe
-  * to drop the page.
-  */
--static int try_release_extent_state(struct extent_io_tree *tree,
-+static bool try_release_extent_state(struct extent_io_tree *tree,
- 				    struct page *page, gfp_t mask)
- {
- 	u64 start = page_offset(page);
- 	u64 end = start + PAGE_SIZE - 1;
--	int ret = 1;
+diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+index 4e12a477d32e..cd8f378ed8e7 100644
+--- a/fs/btrfs/btrfs_inode.h
++++ b/fs/btrfs/btrfs_inode.h
+@@ -27,7 +27,6 @@ enum {
+ 	BTRFS_INODE_NEEDS_FULL_SYNC,
+ 	BTRFS_INODE_COPY_EVERYTHING,
+ 	BTRFS_INODE_IN_DELALLOC_LIST,
+-	BTRFS_INODE_READDIO_NEED_LOCK,
+ 	BTRFS_INODE_HAS_PROPS,
+ 	BTRFS_INODE_SNAPSHOT_FLUSH,
+ };
+@@ -317,23 +316,6 @@ struct btrfs_dio_private {
+ 			blk_status_t);
+ };
  
- 	if (test_range_bit(tree, start, end, EXTENT_LOCKED, 0, NULL)) {
--		ret = 0;
--	} else {
--		/*
--		 * at this point we can safely clear everything except the
--		 * locked bit and the nodatasum bit
--		 */
--		ret = __clear_extent_bit(tree, start, end,
--				 ~(EXTENT_LOCKED | EXTENT_NODATASUM),
--				 0, 0, NULL, mask, NULL);
+-/*
+- * Disable DIO read nolock optimization, so new dio readers will be forced
+- * to grab i_mutex. It is used to avoid the endless truncate due to
+- * nonlocked dio read.
+- */
+-static inline void btrfs_inode_block_unlocked_dio(struct btrfs_inode *inode)
+-{
+-	set_bit(BTRFS_INODE_READDIO_NEED_LOCK, &inode->runtime_flags);
+-	smp_mb();
+-}
 -
--		/* if clear_extent_bit failed for enomem reasons,
--		 * we can't allow the release to continue.
--		 */
--		if (ret < 0)
--			ret = 0;
--		else
--			ret = 1;
-+		if (!gfpflags_allow_blocking(mask))
-+			return false;
-+		wait_extent_bit(tree, start, end, EXTENT_LOCKED);
- 	}
--	return ret;
-+	/*
-+	 * At this point we can safely clear everything except the locked and
-+	 * nodatasum bits. If clear_extent_bit failed due to -ENOMEM,
-+	 * don't allow release.
-+	 */
-+	if (__clear_extent_bit(tree, start, end,
-+				~(EXTENT_LOCKED | EXTENT_NODATASUM), 0, 0,
-+				NULL, mask, NULL) < 0)
-+		return false;
-+
-+	return true;
- }
- 
- /*
-@@ -4394,7 +4389,7 @@ static int try_release_extent_state(struct extent_io_tree *tree,
-  * in the range corresponding to the page, both state records and extent
-  * map records are removed
-  */
--int try_release_extent_mapping(struct page *page, gfp_t mask)
-+bool try_release_extent_mapping(struct page *page, gfp_t mask)
- {
- 	struct extent_map *em;
- 	u64 start = page_offset(page);
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index a8551a1f56e2..89cc0cf8a7fd 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -188,7 +188,7 @@ typedef struct extent_map *(get_extent_t)(struct btrfs_inode *inode,
- 					  u64 start, u64 len,
- 					  int create);
- 
--int try_release_extent_mapping(struct page *page, gfp_t mask);
-+bool try_release_extent_mapping(struct page *page, gfp_t mask);
- int try_release_extent_buffer(struct page *page);
- 
- int extent_read_full_page(struct extent_io_tree *tree, struct page *page,
+-static inline void btrfs_inode_resume_unlocked_dio(struct btrfs_inode *inode)
+-{
+-	smp_mb__before_atomic();
+-	clear_bit(BTRFS_INODE_READDIO_NEED_LOCK, &inode->runtime_flags);
+-}
+-
+ /* Array of bytes with variable length, hexadecimal format 0x1234 */
+ #define CSUM_FMT				"0x%*phN"
+ #define CSUM_FMT_VALUE(size, bytes)		size, bytes
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 86730f2f2bf6..88f2a7229459 100644
+index ce53f2889673..4c76a6d5e6a4 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -8811,8 +8811,8 @@ btrfs_readpages(struct file *file, struct address_space *mapping,
+@@ -5273,11 +5273,6 @@ static int btrfs_setsize(struct inode *inode, struct iattr *attr)
  
- static int __btrfs_releasepage(struct page *page, gfp_t gfp_flags)
- {
--	int ret = try_release_extent_mapping(page, gfp_flags);
--	if (ret == 1) {
-+	bool ret = try_release_extent_mapping(page, gfp_flags);
-+	if (ret) {
- 		ClearPagePrivate(page);
- 		set_page_private(page, 0);
- 		put_page(page);
+ 		truncate_setsize(inode, newsize);
+ 
+-		/* Disable nonlocked read DIO to avoid the endless truncate */
+-		btrfs_inode_block_unlocked_dio(BTRFS_I(inode));
+-		inode_dio_wait(inode);
+-		btrfs_inode_resume_unlocked_dio(BTRFS_I(inode));
+-
+ 		ret = btrfs_truncate(inode, newsize == oldsize);
+ 		if (ret && inode->i_nlink) {
+ 			int err;
 -- 
 2.16.4
 

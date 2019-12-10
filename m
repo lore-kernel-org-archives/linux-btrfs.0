@@ -4,52 +4,52 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D591BC43603
-	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Dec 2019 22:35:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0CF4FC43603
+	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Dec 2019 22:40:19 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A03FE207FF
-	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Dec 2019 22:35:37 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D100E20836
+	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Dec 2019 22:40:18 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1576017337;
-	bh=g+6Q1nqTZIyboOk9ybA2T2qqr2ssXMoBmdNKNjbQx3g=;
+	s=default; t=1576017618;
+	bh=Y+Bla786PDR3c0m1VaYc1CWVHerhCW0OXJGxhWB+QXw=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=Tqi2l/b4/fyjA716jK932lRAWikcpwJR2TDJ/rA09n4dCNuvUuSqOrRhNuzUd+mjI
-	 nkYGU14t0nZhLPAIacBMfCxHjP8y3LSdjWfQlN2kxV04tOulRo6SKtlBzk4TnjQ1uC
-	 vv56eZnrh/2ECxXUBV/EQg/wkOBVlW3J7pkV+GlM=
+	b=oP818/ohXtQsC0PWmZI5v+O7PR8N3Wrq01rn7fjmp3pHIr9qKYYlAT4PMRB9cbvvk
+	 BydaRVMzGYa2UTYNLY0B35MiLiJjHbrwWz/EH++VSixVcwNaeX5ZodVj6SnZijnTx0
+	 xWO001vZCp3vN0NobqDDPkI9P/xd9w5exFsJfaaI=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729763AbfLJWfg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 10 Dec 2019 17:35:36 -0500
-Received: from mail.kernel.org ([198.145.29.99]:56016 "EHLO mail.kernel.org"
+        id S1730206AbfLJWkM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 10 Dec 2019 17:40:12 -0500
+Received: from mail.kernel.org ([198.145.29.99]:52556 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1730370AbfLJWec (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Dec 2019 17:34:32 -0500
+        id S1727669AbfLJWcK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 10 Dec 2019 17:32:10 -0500
 Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id F1A732077B;
-        Tue, 10 Dec 2019 22:34:30 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 5D39C22464;
+        Tue, 10 Dec 2019 22:32:09 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1576017271;
-        bh=g+6Q1nqTZIyboOk9ybA2T2qqr2ssXMoBmdNKNjbQx3g=;
+        s=default; t=1576017130;
+        bh=Y+Bla786PDR3c0m1VaYc1CWVHerhCW0OXJGxhWB+QXw=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=IA7rio29VRkQ+fU5Cl7H0ZZObvU9DJerVsbDOZD5UKfNZGLG2FOp9P757r5q/+GrD
-         lAQvZPQvEQ6huRGfHdJvLCARAjO/CnxUjA+ev2Zej5PB2j4K986y5TXa9sL4PrwTPB
-         IP712Zvq7SwlscivWxdf5HBeOjD0jeVzofHJ19VI=
+        b=TqpfnzHfs3j88F2kWok28a8lyGWmCie/NU3OZBpHDboOHAt3U4+qHyBIm7u82EFBB
+         GtHyeqgFJfjwv3A+FY7QM/iVfwDtn3H+ZHQeh89eEqw5QvXBh6NfRihKA9hqgl8k8/
+         b5BTxIQHfzgY2259JaGyeYy6vrEFJaMicq9l+6h4=
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
 Cc:     Omar Sandoval <osandov@fb.com>,
         Johannes Thumshirn <jthumshirn@suse.de>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 4.4 63/71] btrfs: don't prematurely free work in end_workqueue_fn()
-Date:   Tue, 10 Dec 2019 17:33:08 -0500
-Message-Id: <20191210223316.14988-63-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 4.9 79/91] btrfs: don't prematurely free work in end_workqueue_fn()
+Date:   Tue, 10 Dec 2019 17:30:23 -0500
+Message-Id: <20191210223035.14270-79-sashal@kernel.org>
 X-Mailer: git-send-email 2.20.1
-In-Reply-To: <20191210223316.14988-1-sashal@kernel.org>
-References: <20191210223316.14988-1-sashal@kernel.org>
+In-Reply-To: <20191210223035.14270-1-sashal@kernel.org>
+References: <20191210223035.14270-1-sashal@kernel.org>
 MIME-Version: 1.0
 X-stable: review
 X-Patchwork-Hint: Ignore
@@ -92,10 +92,10 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 78722aaffecd3..d50fc503f73b8 100644
+index 9d3352fe8dc92..b37519241eb1c 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -1698,8 +1698,8 @@ static void end_workqueue_fn(struct btrfs_work *work)
+@@ -1712,8 +1712,8 @@ static void end_workqueue_fn(struct btrfs_work *work)
  	bio->bi_error = end_io_wq->error;
  	bio->bi_private = end_io_wq->private;
  	bio->bi_end_io = end_io_wq->end_io;

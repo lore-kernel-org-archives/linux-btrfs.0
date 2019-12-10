@@ -2,109 +2,160 @@ Return-Path: <SRS0=ik6r=2A=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2603FC2D0C6
-	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Dec 2019 21:17:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 300C1C00454
+	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Dec 2019 21:19:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E436C205C9
-	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Dec 2019 21:17:32 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1576012653;
-	bh=u0aHa+I+Jg9B2MxzGcgEWpk6L/1D3U3c2zfgH+wGegg=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=GNBNRdMSe0tRibIZK1dRc3ferQrkGONF9Cv1SFaf/GXMBStDFMxJkeo6HeW08KTj2
-	 0QJgx3twMzwTweY3FUSj3BLcPmiRyuyWUO3Qi32nKwJEVDuDjled33Zi1YWSSJsk5S
-	 9R7pPW9O/NhMP7QbE6bf2GQ1bGC4zOE9vke1NPu0=
+	by mail.kernel.org (Postfix) with ESMTP id 0F217206D5
+	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Dec 2019 21:19:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729131AbfLJVMz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 10 Dec 2019 16:12:55 -0500
-Received: from mail.kernel.org ([198.145.29.99]:38340 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1729126AbfLJVMy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Dec 2019 16:12:54 -0500
-Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 272EA222C4;
-        Tue, 10 Dec 2019 21:12:53 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1576012373;
-        bh=u0aHa+I+Jg9B2MxzGcgEWpk6L/1D3U3c2zfgH+wGegg=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=2Oe3pjyr4pTbr7icGH6edWTuZxhbu+R8ZF88kGQwXxzhEn90ONpdSpLWrbFOMXK6F
-         y9TPmno/CeWCvzSWgxBzFAImIHGcW2kGTNB5mXMhYNrZ9puUTkFipOFzTbKskAQAim
-         iU++NQ5L6bBi2w3u1Yr587qwSKCiH/7LNzPahX/A=
-From:   Sasha Levin <sashal@kernel.org>
-To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Omar Sandoval <osandov@fb.com>,
-        Johannes Thumshirn <jthumshirn@suse.de>,
-        David Sterba <dsterba@suse.com>,
-        Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.4 299/350] btrfs: don't prematurely free work in end_workqueue_fn()
-Date:   Tue, 10 Dec 2019 16:06:44 -0500
-Message-Id: <20191210210735.9077-260-sashal@kernel.org>
-X-Mailer: git-send-email 2.20.1
-In-Reply-To: <20191210210735.9077-1-sashal@kernel.org>
-References: <20191210210735.9077-1-sashal@kernel.org>
+        id S1727953AbfLJVTX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 10 Dec 2019 16:19:23 -0500
+Received: from mx2.suse.de ([195.135.220.15]:56158 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1728386AbfLJVTV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 10 Dec 2019 16:19:21 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 41CE5B172;
+        Tue, 10 Dec 2019 21:19:20 +0000 (UTC)
+Subject: Re: [PATCH 1/5] btrfs: drop log root for dropped roots
+To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
+        kernel-team@fb.com
+References: <20191206143718.167998-1-josef@toxicpanda.com>
+ <20191206143718.167998-2-josef@toxicpanda.com>
+ <5e60e26f-8993-ca16-2a93-48d5948ed961@suse.com>
+ <802950f7-b762-920b-7747-cfc18ff64e24@toxicpanda.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <85a03cbb-d096-bfaf-b841-141d63a4f134@suse.com>
+Date:   Tue, 10 Dec 2019 23:19:18 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.9.0
 MIME-Version: 1.0
-X-stable: review
-X-Patchwork-Hint: Ignore
+In-Reply-To: <802950f7-b762-920b-7747-cfc18ff64e24@toxicpanda.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Omar Sandoval <osandov@fb.com>
 
-[ Upstream commit 9be490f1e15c34193b1aae17da58e14dd9f55a95 ]
 
-Currently, end_workqueue_fn() frees the end_io_wq entry (which embeds
-the work item) and then calls bio_endio(). This is another potential
-instance of the bug in "btrfs: don't prematurely free work in
-run_ordered_work()".
+On 10.12.19 г. 22:05 ч., Josef Bacik wrote:
+> On 12/6/19 10:03 AM, Nikolay Borisov wrote:
+>>
+>>
+>> On 6.12.19 г. 16:37 ч., Josef Bacik wrote:
+>>> If we fsync on a subvolume and create a log root for that volume, and
+>>> then later delete that subvolume we'll never clean up its log root.  Fix
+>>> this by making switch_commit_roots free the log for any dropped roots we
+>>> encounter.
+>>>
+>>> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+>>> ---
+>>>   fs/btrfs/transaction.c | 22 ++++++++++++----------
+>>>   1 file changed, 12 insertions(+), 10 deletions(-)
+>>>
+>>> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+>>> index cfc08ef9b876..55d8fd68775a 100644
+>>> --- a/fs/btrfs/transaction.c
+>>> +++ b/fs/btrfs/transaction.c
+>>> @@ -147,13 +147,14 @@ void btrfs_put_transaction(struct
+>>> btrfs_transaction *transaction)
+>>>       }
+>>>   }
+>>>   -static noinline void switch_commit_roots(struct btrfs_transaction
+>>> *trans)
+>>> +static noinline void switch_commit_roots(struct btrfs_trans_handle
+>>> *trans)
+>>>   {
+>>> +    struct btrfs_transaction *cur_trans = trans->transaction;
+>>>       struct btrfs_fs_info *fs_info = trans->fs_info;
+>>>       struct btrfs_root *root, *tmp;
+>>>         down_write(&fs_info->commit_root_sem);
+>>> -    list_for_each_entry_safe(root, tmp, &trans->switch_commits,
+>>> +    list_for_each_entry_safe(root, tmp, &cur_trans->switch_commits,
+>>>                    dirty_list) {
+>>>           list_del_init(&root->dirty_list);
+>>>           free_extent_buffer(root->commit_root);
+>>> @@ -165,16 +166,17 @@ static noinline void switch_commit_roots(struct
+>>> btrfs_transaction *trans)
+>>>       }
+>>>         /* We can free old roots now. */
+>>> -    spin_lock(&trans->dropped_roots_lock);
+>>> -    while (!list_empty(&trans->dropped_roots)) {
+>>> -        root = list_first_entry(&trans->dropped_roots,
+>>> +    spin_lock(&cur_trans->dropped_roots_lock);
+>>> +    while (!list_empty(&cur_trans->dropped_roots)) {
+>>> +        root = list_first_entry(&cur_trans->dropped_roots,
+>>>                       struct btrfs_root, root_list);
+>>>           list_del_init(&root->root_list);
+>>> -        spin_unlock(&trans->dropped_roots_lock);
+>>> +        spin_unlock(&cur_trans->dropped_roots_lock);
+>>> +        btrfs_free_log(trans, root);
+>>
+>> THis patch should really have been this line and converting
+>> switch_commit_roots to taking a trans handle another patch. Otherwise
+>> this is lost in the mechanical refactoring.
+>>
+> 
+> We need the trans handle to even call btrfs_free_log, we're just fixing
+> it so the trans handle can be passed in, making its separate is just
+> superfluous.  Thanks,
 
-In particular, the endio call may depend on other work items. For
-example, btrfs_end_dio_bio() can call btrfs_subio_endio_read() ->
-__btrfs_correct_data_nocsum() -> dio_read_error() ->
-submit_dio_repair_bio(), which submits a bio that is also completed
-through a end_workqueue_fn() work item. However,
-__btrfs_correct_data_nocsum() waits for the newly submitted bio to
-complete, thus it depends on another work item.
+Actually no because callees handle the case when trans is not passed
+(i.e. walk_log_tree and walk_(up|down)_log_tree. If passing valid
+trances changes the call logic then this needs to be explained in the
+changelog. And there is currently one caller calling that function
+without a trans - btrfs_drop_and_free_fs_root in BTRFS_FS_STATE_ERROR case.
 
-This example currently usually works because we use different workqueue
-helper functions for BTRFS_WQ_ENDIO_DATA and BTRFS_WQ_ENDIO_DIO_REPAIR.
-However, it may deadlock with stacked filesystems and is fragile
-overall. The proper fix is to free the work item at the very end of the
-work function, so let's do that.
-
-Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
-Signed-off-by: Omar Sandoval <osandov@fb.com>
-Reviewed-by: David Sterba <dsterba@suse.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
-Signed-off-by: Sasha Levin <sashal@kernel.org>
----
- fs/btrfs/disk-io.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 402b61bf345cd..3895c21853cc4 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1657,8 +1657,8 @@ static void end_workqueue_fn(struct btrfs_work *work)
- 	bio->bi_status = end_io_wq->status;
- 	bio->bi_private = end_io_wq->private;
- 	bio->bi_end_io = end_io_wq->end_io;
--	kmem_cache_free(btrfs_end_io_wq_cache, end_io_wq);
- 	bio_endio(bio);
-+	kmem_cache_free(btrfs_end_io_wq_cache, end_io_wq);
- }
- 
- static int cleaner_kthread(void *arg)
--- 
-2.20.1
-
+> 
+> Josef

@@ -6,28 +6,28 @@ X-Spam-Status: No, score=-8.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 772A2C43603
-	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Dec 2019 08:34:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EEF1FC43603
+	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Dec 2019 08:34:47 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 554DE207FF
-	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Dec 2019 08:34:02 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CB093207FF
+	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Dec 2019 08:34:47 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726971AbfLJIeB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 10 Dec 2019 03:34:01 -0500
-Received: from mx2.suse.de ([195.135.220.15]:50052 "EHLO mx1.suse.de"
+        id S1727067AbfLJIeq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 10 Dec 2019 03:34:46 -0500
+Received: from mx2.suse.de ([195.135.220.15]:50538 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726750AbfLJIeB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Dec 2019 03:34:01 -0500
+        id S1726750AbfLJIeq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 10 Dec 2019 03:34:46 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id E7010ACB7;
-        Tue, 10 Dec 2019 08:33:58 +0000 (UTC)
-Subject: Re: [PATCH 1/2] btrfs-progs: mkfs-tests: Set $csum so mkfs.btrfs does
- not fail
+        by mx1.suse.de (Postfix) with ESMTP id 3EDA6ACB7;
+        Tue, 10 Dec 2019 08:34:44 +0000 (UTC)
+Subject: Re: [PATCH 2/2] btrfs-progs: mkfs-tests: Change $dev1 to TEST_DEV
 To:     Marcos Paulo de Souza <marcos.souza.org@gmail.com>
 Cc:     dsterba@suse.com, linux-btrfs@vger.kernel.org,
         Marcos Paulo de Souza <mpdesouza@suse.com>
 References: <20191205153647.31961-1-marcos.souza.org@gmail.com>
+ <20191205153647.31961-2-marcos.souza.org@gmail.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -72,12 +72,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
  RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
  5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
-Message-ID: <5220654e-4f9c-70f0-1f28-6555a48cd46b@suse.com>
-Date:   Tue, 10 Dec 2019 10:33:57 +0200
+Message-ID: <63d9002a-e590-136a-f82c-01affeeb9835@suse.com>
+Date:   Tue, 10 Dec 2019 10:34:43 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.9.0
 MIME-Version: 1.0
-In-Reply-To: <20191205153647.31961-1-marcos.souza.org@gmail.com>
+In-Reply-To: <20191205153647.31961-2-marcos.souza.org@gmail.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -91,24 +91,29 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 On 5.12.19 г. 17:36 ч., Marcos Paulo de Souza wrote:
 > From: Marcos Paulo de Souza <mpdesouza@suse.com>
 > 
+> It seems to be a typo, since $dev1 was not set, and we are dealing with
+> TEST_DEV and not with loop devices.
+> 
 > Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
 
 Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
 > ---
->  tests/mkfs-tests/020-basic-checksums-mount/test.sh | 1 +
->  1 file changed, 1 insertion(+)
+>  tests/mkfs-tests/020-basic-checksums-mount/test.sh | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
 > 
 > diff --git a/tests/mkfs-tests/020-basic-checksums-mount/test.sh b/tests/mkfs-tests/020-basic-checksums-mount/test.sh
-> index 41ef5417..b7252786 100755
+> index b7252786..42bf5fab 100755
 > --- a/tests/mkfs-tests/020-basic-checksums-mount/test.sh
 > +++ b/tests/mkfs-tests/020-basic-checksums-mount/test.sh
-> @@ -12,6 +12,7 @@ prepare_test_dev
->  
->  test_mkfs_mount_checksum()
->  {
-> +	csum=$1
->  	run_check_stdout $SUDO_HELPER "$TOP/mkfs.btrfs" -f --csum "$csum" "$TEST_DEV" | grep -q "Checksum:.*$csum"
+> @@ -17,7 +17,7 @@ test_mkfs_mount_checksum()
 >  	run_check $SUDO_HELPER "$TOP/btrfs" inspect-internal dump-super "$TEST_DEV"
 >  	run_check $SUDO_HELPER "$TOP/btrfs" check "$TEST_DEV"
+>  
+> -	run_check $SUDO_HELPER mount "$dev1" "$TEST_MNT"
+> +	run_check $SUDO_HELPER mount "$TEST_DEV" "$TEST_MNT"
+>  	run_check "$TOP/btrfs" filesystem df "$TEST_MNT"
+>  	run_check $SUDO_HELPER "$TOP/btrfs" filesystem usage "$TEST_MNT"
+>  	run_check $SUDO_HELPER "$TOP/btrfs" device usage "$TEST_MNT"
 > 
+

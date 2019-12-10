@@ -2,85 +2,119 @@ Return-Path: <SRS0=ik6r=2A=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A8D9CC43603
-	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Dec 2019 23:02:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3D3F6C43603
+	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Dec 2019 23:02:14 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 75B242073B
-	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Dec 2019 23:02:10 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1D8BB2073B
+	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Dec 2019 23:02:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727110AbfLJXCJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 10 Dec 2019 18:02:09 -0500
-Received: from mx2.suse.de ([195.135.220.15]:49588 "EHLO mx1.suse.de"
+        id S1727283AbfLJXCN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 10 Dec 2019 18:02:13 -0500
+Received: from mx2.suse.de ([195.135.220.15]:49632 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726801AbfLJXCJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Dec 2019 18:02:09 -0500
+        id S1726801AbfLJXCN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 10 Dec 2019 18:02:13 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 4DF05AD69;
-        Tue, 10 Dec 2019 23:02:08 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 64E5FAE2D;
+        Tue, 10 Dec 2019 23:02:11 +0000 (UTC)
 From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
 To:     linux-btrfs@vger.kernel.org
 Cc:     hch@infradead.org, darrick.wong@oracle.com, fdmanana@kernel.org,
         nborisov@suse.com, dsterba@suse.cz, jthumshirn@suse.de,
-        linux-fsdevel@vger.kernel.org
-Subject: [PATCH 0/8 v4] btrfs direct-io using iomap
-Date:   Tue, 10 Dec 2019 17:01:47 -0600
-Message-Id: <20191210230155.22688-1-rgoldwyn@suse.de>
+        linux-fsdevel@vger.kernel.org,
+        Goldwyn Rodrigues <rgoldwyn@suse.com>
+Subject: [PATCH 2/8] iomap: add a filesystem hook for direct I/O bio submission
+Date:   Tue, 10 Dec 2019 17:01:49 -0600
+Message-Id: <20191210230155.22688-3-rgoldwyn@suse.de>
 X-Mailer: git-send-email 2.16.4
+In-Reply-To: <20191210230155.22688-1-rgoldwyn@suse.de>
+References: <20191210230155.22688-1-rgoldwyn@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an effort to use iomap for direct I/O in btrfs. This would
-change the call from __blockdev_direct_io() to iomap_dio_rw().
+From: Goldwyn Rodrigues <rgoldwyn@suse.com>
 
-The main objective is to lose the buffer head and use bio defined by
-iomap code, and hopefully to use more of generic-FS codebase.
+This helps filesystems to perform tasks on the bio while submitting for
+I/O. This could be post-write operations such as data CRC or data
+replication for fs-handled RAID.
 
-These patches are based and tested on v5.5-rc1. I have tested it against
-xfstests/btrfs.
+Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
+---
+ fs/iomap/direct-io.c  | 14 +++++++++-----
+ include/linux/iomap.h |  2 ++
+ 2 files changed, 11 insertions(+), 5 deletions(-)
 
-The tree is available at
-https://github.com/goldwynr/linux/tree/btrfs-iomap-dio
-
-
-Changes since v1
-- Incorporated back the efficiency change for inode locking
-- Review comments about coding style and git comments
-- Merge related patches into one
-- Direct read to go through btrfs_direct_IO()
-- Removal of no longer used function dio_end_io()
-
-Changes since v2
-- aligning iomap offset/length to the position/length of I/O
-- Removed btrfs_dio_data
-- Removed BTRFS_INODE_READDIO_NEED_LOCK
-- Re-incorporating write efficiency changes caused lockdep_assert() in
-  iomap to be triggered, remove that code.
-
-Changes since v3
-- Fixed freeze on generic/095. Use iomap_end() to account for
-  failed/incomplete dio instead of btrfs_dio_data
-
---
-Goldwyn
-
- fs/btrfs/btrfs_inode.h |   18 ---
- fs/btrfs/ctree.h       |    1
- fs/btrfs/extent_io.c   |   37 ++----
- fs/btrfs/extent_io.h   |    2
- fs/btrfs/file.c        |   21 +++
- fs/btrfs/inode.c       |  282 ++++++++++++++++++-------------------------------
- fs/direct-io.c         |   19 ---
- fs/iomap/direct-io.c   |   16 +-
- include/linux/fs.h     |    4
- include/linux/iomap.h  |    2
- mm/filemap.c           |   13 +-
- 11 files changed, 162 insertions(+), 253 deletions(-)
-
+diff --git a/fs/iomap/direct-io.c b/fs/iomap/direct-io.c
+index 23837926c0c5..1a3bf3bd86fb 100644
+--- a/fs/iomap/direct-io.c
++++ b/fs/iomap/direct-io.c
+@@ -59,7 +59,7 @@ int iomap_dio_iopoll(struct kiocb *kiocb, bool spin)
+ EXPORT_SYMBOL_GPL(iomap_dio_iopoll);
+ 
+ static void iomap_dio_submit_bio(struct iomap_dio *dio, struct iomap *iomap,
+-		struct bio *bio)
++		struct bio *bio, loff_t pos)
+ {
+ 	atomic_inc(&dio->ref);
+ 
+@@ -67,7 +67,11 @@ static void iomap_dio_submit_bio(struct iomap_dio *dio, struct iomap *iomap,
+ 		bio_set_polled(bio, dio->iocb);
+ 
+ 	dio->submit.last_queue = bdev_get_queue(iomap->bdev);
+-	dio->submit.cookie = submit_bio(bio);
++	if (dio->dops && dio->dops->submit_io)
++		dio->submit.cookie = dio->dops->submit_io(bio,
++				dio->iocb->ki_filp, pos);
++	else
++		dio->submit.cookie = submit_bio(bio);
+ }
+ 
+ static ssize_t iomap_dio_complete(struct iomap_dio *dio)
+@@ -191,7 +195,7 @@ iomap_dio_zero(struct iomap_dio *dio, struct iomap *iomap, loff_t pos,
+ 	get_page(page);
+ 	__bio_add_page(bio, page, len, 0);
+ 	bio_set_op_attrs(bio, REQ_OP_WRITE, flags);
+-	iomap_dio_submit_bio(dio, iomap, bio);
++	iomap_dio_submit_bio(dio, iomap, bio, pos);
+ }
+ 
+ static loff_t
+@@ -299,11 +303,11 @@ iomap_dio_bio_actor(struct inode *inode, loff_t pos, loff_t length,
+ 		}
+ 
+ 		dio->size += n;
+-		pos += n;
+ 		copied += n;
+ 
+ 		nr_pages = iov_iter_npages(dio->submit.iter, BIO_MAX_PAGES);
+-		iomap_dio_submit_bio(dio, iomap, bio);
++		iomap_dio_submit_bio(dio, iomap, bio, pos);
++		pos += n;
+ 	} while (nr_pages);
+ 
+ 	/*
+diff --git a/include/linux/iomap.h b/include/linux/iomap.h
+index 8b09463dae0d..2b093a23ef1c 100644
+--- a/include/linux/iomap.h
++++ b/include/linux/iomap.h
+@@ -252,6 +252,8 @@ int iomap_writepages(struct address_space *mapping,
+ struct iomap_dio_ops {
+ 	int (*end_io)(struct kiocb *iocb, ssize_t size, int error,
+ 		      unsigned flags);
++	blk_qc_t (*submit_io)(struct bio *bio, struct file *file,
++			  loff_t file_offset);
+ };
+ 
+ ssize_t iomap_dio_rw(struct kiocb *iocb, struct iov_iter *iter,
+-- 
+2.16.4
 

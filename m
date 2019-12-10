@@ -4,33 +4,33 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+	USER_AGENT_GIT autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BFDC9C2D0C4
-	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Dec 2019 23:02:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B4D78C00454
+	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Dec 2019 23:02:18 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9AECC2073B
-	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Dec 2019 23:02:15 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 91B7B2073B
+	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Dec 2019 23:02:18 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727231AbfLJXCN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 10 Dec 2019 18:02:13 -0500
-Received: from mx2.suse.de ([195.135.220.15]:49604 "EHLO mx1.suse.de"
+        id S1727319AbfLJXCR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 10 Dec 2019 18:02:17 -0500
+Received: from mx2.suse.de ([195.135.220.15]:49646 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726988AbfLJXCL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Dec 2019 18:02:11 -0500
+        id S1726801AbfLJXCP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 10 Dec 2019 18:02:15 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 23D4EAD76;
-        Tue, 10 Dec 2019 23:02:09 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 28758AD4F;
+        Tue, 10 Dec 2019 23:02:14 +0000 (UTC)
 From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
 To:     linux-btrfs@vger.kernel.org
 Cc:     hch@infradead.org, darrick.wong@oracle.com, fdmanana@kernel.org,
         nborisov@suse.com, dsterba@suse.cz, jthumshirn@suse.de,
         linux-fsdevel@vger.kernel.org,
         Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: [PATCH 1/8] fs: Export generic_file_buffered_read()
-Date:   Tue, 10 Dec 2019 17:01:48 -0600
-Message-Id: <20191210230155.22688-2-rgoldwyn@suse.de>
+Subject: [PATCH 3/8] iomap: Remove lockdep_assert_held()
+Date:   Tue, 10 Dec 2019 17:01:50 -0600
+Message-Id: <20191210230155.22688-4-rgoldwyn@suse.de>
 X-Mailer: git-send-email 2.16.4
 In-Reply-To: <20191210230155.22688-1-rgoldwyn@suse.de>
 References: <20191210230155.22688-1-rgoldwyn@suse.de>
@@ -41,79 +41,28 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Goldwyn Rodrigues <rgoldwyn@suse.com>
 
-Export generic_file_buffered_read() to be used to
-supplement incomplete direct reads.
+Filesystems such as btrfs can perform direct I/O without holding the
+inode->i_rwsem in some of the cases like writing within i_size.
+So, remove the check for lockdep_assert_held().
 
-While we are at it, correct the comments and variable names.
-
-Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
 Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
 ---
- include/linux/fs.h |  2 ++
- mm/filemap.c       | 13 +++++++------
- 2 files changed, 9 insertions(+), 6 deletions(-)
+ fs/iomap/direct-io.c | 2 --
+ 1 file changed, 2 deletions(-)
 
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index 98e0349adb52..3883adaa0e01 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -3098,6 +3098,8 @@ extern int generic_file_rw_checks(struct file *file_in, struct file *file_out);
- extern int generic_copy_file_checks(struct file *file_in, loff_t pos_in,
- 				    struct file *file_out, loff_t pos_out,
- 				    size_t *count, unsigned int flags);
-+extern ssize_t generic_file_buffered_read(struct kiocb *iocb,
-+		struct iov_iter *to, ssize_t already_read);
- extern ssize_t generic_file_read_iter(struct kiocb *, struct iov_iter *);
- extern ssize_t __generic_file_write_iter(struct kiocb *, struct iov_iter *);
- extern ssize_t generic_file_write_iter(struct kiocb *, struct iov_iter *);
-diff --git a/mm/filemap.c b/mm/filemap.c
-index bf6aa30be58d..dc2c7e3472a0 100644
---- a/mm/filemap.c
-+++ b/mm/filemap.c
-@@ -1994,7 +1994,7 @@ static void shrink_readahead_size_eio(struct file *filp,
-  * generic_file_buffered_read - generic file read routine
-  * @iocb:	the iocb to read
-  * @iter:	data destination
-- * @written:	already copied
-+ * @copied:	already copied
-  *
-  * This is a generic file read routine, and uses the
-  * mapping->a_ops->readpage() function for the actual low-level stuff.
-@@ -2003,11 +2003,11 @@ static void shrink_readahead_size_eio(struct file *filp,
-  * of the logic when it comes to error handling etc.
-  *
-  * Return:
-- * * total number of bytes copied, including those the were already @written
-+ * * total number of bytes copied, including those that were @copied
-  * * negative error code if nothing was copied
-  */
--static ssize_t generic_file_buffered_read(struct kiocb *iocb,
--		struct iov_iter *iter, ssize_t written)
-+ssize_t generic_file_buffered_read(struct kiocb *iocb,
-+		struct iov_iter *iter, ssize_t copied)
- {
- 	struct file *filp = iocb->ki_filp;
- 	struct address_space *mapping = filp->f_mapping;
-@@ -2148,7 +2148,7 @@ static ssize_t generic_file_buffered_read(struct kiocb *iocb,
- 		prev_offset = offset;
+diff --git a/fs/iomap/direct-io.c b/fs/iomap/direct-io.c
+index 1a3bf3bd86fb..41c1e7c20a1f 100644
+--- a/fs/iomap/direct-io.c
++++ b/fs/iomap/direct-io.c
+@@ -415,8 +415,6 @@ iomap_dio_rw(struct kiocb *iocb, struct iov_iter *iter,
+ 	struct blk_plug plug;
+ 	struct iomap_dio *dio;
  
- 		put_page(page);
--		written += ret;
-+		copied += ret;
- 		if (!iov_iter_count(iter))
- 			goto out;
- 		if (ret < nr) {
-@@ -2256,8 +2256,9 @@ static ssize_t generic_file_buffered_read(struct kiocb *iocb,
+-	lockdep_assert_held(&inode->i_rwsem);
+-
+ 	if (!count)
+ 		return 0;
  
- 	*ppos = ((loff_t)index << PAGE_SHIFT) + offset;
- 	file_accessed(filp);
--	return written ? written : error;
-+	return copied ? copied : error;
- }
-+EXPORT_SYMBOL_GPL(generic_file_buffered_read);
- 
- /**
-  * generic_file_read_iter - generic filesystem read routine
 -- 
 2.16.4
 

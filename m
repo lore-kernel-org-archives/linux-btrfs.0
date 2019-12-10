@@ -2,96 +2,209 @@ Return-Path: <SRS0=ik6r=2A=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.2 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,
-	SPF_PASS,USER_AGENT_SANE_1 autolearn=unavailable autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1240DC43603
-	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Dec 2019 20:47:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E092BC2D0BF
+	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Dec 2019 21:17:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id DA2072073D
-	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Dec 2019 20:47:48 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="I5QEypMi"
+	by mail.kernel.org (Postfix) with ESMTP id B47ED205C9
+	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Dec 2019 21:17:24 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1576012644;
+	bh=382nN77ut9kPstxERc2XDKlRsgndfGofG7qKXnLEiIg=;
+	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
+	b=1313vMhhO9WUCAdYhLmufpP4qgvlC3Vepo4yvZ7GI4FcO2Z60hNhIHwbPSbsucbXQ
+	 SdTSGGQJQkNkpl2lwigWo+AkWG6WDC1aORbkprZ0x6LCSnecB0fgSKArMkTVDrpGW9
+	 vzk6tnCvOiMoCwUR1tL38MQjh4vJAbOmALzE9DFk=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726877AbfLJUrp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 10 Dec 2019 15:47:45 -0500
-Received: from mail-qk1-f195.google.com ([209.85.222.195]:33027 "EHLO
-        mail-qk1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726619AbfLJUro (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Dec 2019 15:47:44 -0500
-Received: by mail-qk1-f195.google.com with SMTP id d71so9708499qkc.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Dec 2019 12:47:44 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=subject:to:cc:references:from:message-id:date:user-agent
-         :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=brfDeAvapVs1IWQAYvqzmBX7BVOnnV+rFYp3VtF2OSA=;
-        b=I5QEypMiWNt3ukq/J3p83EeOyM1WrwFB6VFJj6VsPiz4PgM+VdvTJA6SgsjrzlJ1Yq
-         JgFZT4iDSRXBKeSckqvePdZzu4QUiYtiKckF4bT2pzjrjk7gn6RqTXONfM1pN211RrXJ
-         J4MjdhgEuEylmBSl3VUWNNZWyT152HhqsfEBylDYc7qJk2Fo27BmgPHtT4OS1A9P1Fyv
-         l+Mr6EtqGhNAAitsTlgnZ83NzVhV7WHDSTWmlAQ4Pjt0b73Tz92q5t3t+db52qXM++aO
-         oCg0ZnqEXDvkwomCM47pV4+pn9SK4Ak0JY8R6xM6kedPVicXd1e6E2q0CoHm48ONVegf
-         iriw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=brfDeAvapVs1IWQAYvqzmBX7BVOnnV+rFYp3VtF2OSA=;
-        b=VXLYCtJIiJH9rCTBjYj3oogCbHQAzkiQ5YEwa+vJUNuUXT8m0CTQsDNjLDJFI3Z1PL
-         ENVj4cjDReXfWqWzt0X1va1yVzpbUwGccBxrac0WgI3B918E7hqQ1VgzVOB+ZtcbMkM1
-         JXp+tJGKFFmbYT1Cff2QSicnnqd8RbZH9QXjbjk1/ek2GYvHpie+O+U6GF2twwWH/YtU
-         7oxCTpo5d0Z+wghySoj4Ggstu1yG70ntTO0WzL+Klu4hu0vbvT62V2MFSuYZbKRgIc/t
-         kxiBhPeLJLG34QqUwMmTbhUH/dW7BaLxG4Vcuc9ASdOl/9vcSWOLe1KmJ0xXtDrJtnqL
-         fYdQ==
-X-Gm-Message-State: APjAAAU8eN04oPayvhg0JaaGavvfnJ3jYNJZf7dqt865LLGjDsB16RlD
-        Pxpk6cEkyOQSCFkxHf/phKvhbw==
-X-Google-Smtp-Source: APXvYqwuOeJY4G/7Ncu0F/iN/4LvvesywqyI7RFGsixjVMyTieOnTgWzsky/fnnkJV85WxRfXcfmXg==
-X-Received: by 2002:ae9:f003:: with SMTP id l3mr3880877qkg.457.1576010863399;
-        Tue, 10 Dec 2019 12:47:43 -0800 (PST)
-Received: from [192.168.1.106] ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id h32sm346951qth.2.2019.12.10.12.47.42
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 10 Dec 2019 12:47:42 -0800 (PST)
-Subject: Re: [PATCH] btrfs: fix format string warning
-To:     Arnd Bergmann <arnd@arndb.de>, Chris Mason <clm@fb.com>,
-        David Sterba <dsterba@suse.com>, Qu Wenruo <wqu@suse.com>
-Cc:     Johannes Thumshirn <jthumshirn@suse.de>,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-References: <20191210204429.3383471-1-arnd@arndb.de>
-From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <215ae20f-7528-6866-bddd-65ef3f73abe1@toxicpanda.com>
-Date:   Tue, 10 Dec 2019 15:47:41 -0500
-User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:68.0)
- Gecko/20100101 Thunderbird/68.3.0
+        id S1729149AbfLJVM6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 10 Dec 2019 16:12:58 -0500
+Received: from mail.kernel.org ([198.145.29.99]:38394 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1729132AbfLJVM4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 10 Dec 2019 16:12:56 -0500
+Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 4624A2077B;
+        Tue, 10 Dec 2019 21:12:54 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1576012375;
+        bh=382nN77ut9kPstxERc2XDKlRsgndfGofG7qKXnLEiIg=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+        b=Rqkkq2dNYaYiPyeE0HOAFPu1lGesGDdeBRWScEio8fTVVSt2HLv0XdHJ6UMl66Y5o
+         XqkIT7wk03W1xzcYW/7IOahRBlJoyyYkb4jYRUV7GxKAL74NWARkAnj2rkR8Szswur
+         mVfaeMI9wmS7DDy1RSfWT1NX22qvHwrX7CB5xycA=
+From:   Sasha Levin <sashal@kernel.org>
+To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
+Cc:     Omar Sandoval <osandov@fb.com>, Tejun Heo <tj@kernel.org>,
+        Johannes Thumshirn <jthumshirn@suse.de>,
+        David Sterba <dsterba@suse.com>,
+        Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
+Subject: [PATCH AUTOSEL 5.4 300/350] btrfs: don't prematurely free work in run_ordered_work()
+Date:   Tue, 10 Dec 2019 16:06:45 -0500
+Message-Id: <20191210210735.9077-261-sashal@kernel.org>
+X-Mailer: git-send-email 2.20.1
+In-Reply-To: <20191210210735.9077-1-sashal@kernel.org>
+References: <20191210210735.9077-1-sashal@kernel.org>
 MIME-Version: 1.0
-In-Reply-To: <20191210204429.3383471-1-arnd@arndb.de>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+X-stable: review
+X-Patchwork-Hint: Ignore
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 12/10/19 3:44 PM, Arnd Bergmann wrote:
-> To print a size_t, the format string modifier %z should be used instead
-> of %l:
-> 
-> fs/btrfs/tree-checker.c: In function 'check_extent_data_item':
-> fs/btrfs/tree-checker.c:230:43: error: format '%lu' expects argument of type 'long unsigned int', but argument 5 has type 'unsigned int' [-Werror=format=]
->       "invalid item size, have %u expect [%lu, %u)",
->                                           ~~^
->                                           %u
-> 
-> Fixes: 153a6d299956 ("btrfs: tree-checker: Check item size before reading file extent type")
-> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+From: Omar Sandoval <osandov@fb.com>
 
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+[ Upstream commit c495dcd6fbe1dce51811a76bb85b4675f6494938 ]
 
-Thanks,
+We hit the following very strange deadlock on a system with Btrfs on a
+loop device backed by another Btrfs filesystem:
 
-Josef
+1. The top (loop device) filesystem queues an async_cow work item from
+   cow_file_range_async(). We'll call this work X.
+2. Worker thread A starts work X (normal_work_helper()).
+3. Worker thread A executes the ordered work for the top filesystem
+   (run_ordered_work()).
+4. Worker thread A finishes the ordered work for work X and frees X
+   (work->ordered_free()).
+5. Worker thread A executes another ordered work and gets blocked on I/O
+   to the bottom filesystem (still in run_ordered_work()).
+6. Meanwhile, the bottom filesystem allocates and queues an async_cow
+   work item which happens to be the recently-freed X.
+7. The workqueue code sees that X is already being executed by worker
+   thread A, so it schedules X to be executed _after_ worker thread A
+   finishes (see the find_worker_executing_work() call in
+   process_one_work()).
+
+Now, the top filesystem is waiting for I/O on the bottom filesystem, but
+the bottom filesystem is waiting for the top filesystem to finish, so we
+deadlock.
+
+This happens because we are breaking the workqueue assumption that a
+work item cannot be recycled while it still depends on other work. Fix
+it by waiting to free the work item until we are done with all of the
+related ordered work.
+
+P.S.:
+
+One might ask why the workqueue code doesn't try to detect a recycled
+work item. It actually does try by checking whether the work item has
+the same work function (find_worker_executing_work()), but in our case
+the function is the same. This is the only key that the workqueue code
+has available to compare, short of adding an additional, layer-violating
+"custom key". Considering that we're the only ones that have ever hit
+this, we should just play by the rules.
+
+Unfortunately, we haven't been able to create a minimal reproducer other
+than our full container setup using a compress-force=zstd filesystem on
+top of another compress-force=zstd filesystem.
+
+Suggested-by: Tejun Heo <tj@kernel.org>
+Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
+Signed-off-by: Omar Sandoval <osandov@fb.com>
+Reviewed-by: David Sterba <dsterba@suse.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ fs/btrfs/async-thread.c | 56 ++++++++++++++++++++++++++++++++---------
+ 1 file changed, 44 insertions(+), 12 deletions(-)
+
+diff --git a/fs/btrfs/async-thread.c b/fs/btrfs/async-thread.c
+index 2e9e13ffbd082..10a04b99798ae 100644
+--- a/fs/btrfs/async-thread.c
++++ b/fs/btrfs/async-thread.c
+@@ -252,16 +252,17 @@ static inline void thresh_exec_hook(struct __btrfs_workqueue *wq)
+ 	}
+ }
+ 
+-static void run_ordered_work(struct __btrfs_workqueue *wq)
++static void run_ordered_work(struct __btrfs_workqueue *wq,
++			     struct btrfs_work *self)
+ {
+ 	struct list_head *list = &wq->ordered_list;
+ 	struct btrfs_work *work;
+ 	spinlock_t *lock = &wq->list_lock;
+ 	unsigned long flags;
++	void *wtag;
++	bool free_self = false;
+ 
+ 	while (1) {
+-		void *wtag;
+-
+ 		spin_lock_irqsave(lock, flags);
+ 		if (list_empty(list))
+ 			break;
+@@ -287,16 +288,47 @@ static void run_ordered_work(struct __btrfs_workqueue *wq)
+ 		list_del(&work->ordered_list);
+ 		spin_unlock_irqrestore(lock, flags);
+ 
+-		/*
+-		 * We don't want to call the ordered free functions with the
+-		 * lock held though. Save the work as tag for the trace event,
+-		 * because the callback could free the structure.
+-		 */
+-		wtag = work;
+-		work->ordered_free(work);
+-		trace_btrfs_all_work_done(wq->fs_info, wtag);
++		if (work == self) {
++			/*
++			 * This is the work item that the worker is currently
++			 * executing.
++			 *
++			 * The kernel workqueue code guarantees non-reentrancy
++			 * of work items. I.e., if a work item with the same
++			 * address and work function is queued twice, the second
++			 * execution is blocked until the first one finishes. A
++			 * work item may be freed and recycled with the same
++			 * work function; the workqueue code assumes that the
++			 * original work item cannot depend on the recycled work
++			 * item in that case (see find_worker_executing_work()).
++			 *
++			 * Note that the work of one Btrfs filesystem may depend
++			 * on the work of another Btrfs filesystem via, e.g., a
++			 * loop device. Therefore, we must not allow the current
++			 * work item to be recycled until we are really done,
++			 * otherwise we break the above assumption and can
++			 * deadlock.
++			 */
++			free_self = true;
++		} else {
++			/*
++			 * We don't want to call the ordered free functions with
++			 * the lock held though. Save the work as tag for the
++			 * trace event, because the callback could free the
++			 * structure.
++			 */
++			wtag = work;
++			work->ordered_free(work);
++			trace_btrfs_all_work_done(wq->fs_info, wtag);
++		}
+ 	}
+ 	spin_unlock_irqrestore(lock, flags);
++
++	if (free_self) {
++		wtag = self;
++		self->ordered_free(self);
++		trace_btrfs_all_work_done(wq->fs_info, wtag);
++	}
+ }
+ 
+ static void normal_work_helper(struct btrfs_work *work)
+@@ -324,7 +356,7 @@ static void normal_work_helper(struct btrfs_work *work)
+ 	work->func(work);
+ 	if (need_order) {
+ 		set_bit(WORK_DONE_BIT, &work->flags);
+-		run_ordered_work(wq);
++		run_ordered_work(wq, work);
+ 	}
+ 	if (!need_order)
+ 		trace_btrfs_all_work_done(wq->fs_info, wtag);
+-- 
+2.20.1
+

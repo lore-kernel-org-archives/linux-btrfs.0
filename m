@@ -2,116 +2,88 @@ Return-Path: <SRS0=0wlt=2B=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.2 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B61BCC43603
-	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Dec 2019 14:58:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 16D08C43603
+	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Dec 2019 15:34:32 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 87377214AF
-	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Dec 2019 14:58:48 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="LC3OIe/1"
+	by mail.kernel.org (Postfix) with ESMTP id DD5752077B
+	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Dec 2019 15:34:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729833AbfLKO6s (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 11 Dec 2019 09:58:48 -0500
-Received: from mail-qk1-f194.google.com ([209.85.222.194]:34619 "EHLO
-        mail-qk1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727477AbfLKO6r (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Dec 2019 09:58:47 -0500
-Received: by mail-qk1-f194.google.com with SMTP id d202so19890406qkb.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Dec 2019 06:58:47 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=subject:to:references:from:message-id:date:user-agent:mime-version
-         :in-reply-to:content-language:content-transfer-encoding;
-        bh=165huzjGadJNRUS46HL3721A3E8SYY2Tk8rls6r0RDM=;
-        b=LC3OIe/1SyyqER9Q7ZR63Ex44I02gRk4PJ1Uf4x9r3O2T31Q9wc1TNVPYUDIy6urpU
-         ih5yO8Iptec3hIge4us/XVsP2LQIYe17j72vIIpanEDBNHdixoCytH66b0O0Km50ZE7/
-         kTcryTNcEzrzzG7TOMft4xvynb4kLFD5ab2zFAOKmOp3d0udiAfKl95I9S2B4dg8aeW2
-         6XBPY1rc2MTqmTHS9Eqc1zZaiW14sJbOeKD/62/iRmbuyR3fjczZBI1p9bjpIy9YkPZc
-         BgmlKoyKnxxwD0366qYDl73XN9G7GBxbt/81HsoS4GExRCLNAlakLO0c6DuMSxjns4/W
-         Bd4A==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=165huzjGadJNRUS46HL3721A3E8SYY2Tk8rls6r0RDM=;
-        b=ZCzbuhYl75pQ6zCzGhs7THJzVoEsb1X69fhhvbMwV4KYfUQGPTVy4C64eZvy52h0CP
-         Dve6t0jjEOBM4dEuqS8MdOKnYxY0wUuL0zyjin+ocBAkGgeFvLpEdPY85P+a1M4A+joV
-         2ujaOmqjs1OMocugw/doGWEqW3sqyFawvuRxmUyV/g8ndFsKjME/NkCytxOCKFZKWG5p
-         4gZcHtpCOKdRoexs74TUxXj7LN5YyWyti3tNQNn2fZNcF7y6tLpSm/yEk9cOxkEWY1Uj
-         SZRDdywWo4lrEhFD1184NRm8xOJYHvlLvw78AqDOefxjwWN85k1PZJZmip+Gws7Rd4Sj
-         0oUA==
-X-Gm-Message-State: APjAAAVzPZN28i/HaDbqmBlFgCCWAtPfuVQL38vMUE9jDtL3JjlGRWhe
-        Qz9qCLR8TQOXoHeg1SctXB0GChKCBQ7uGA==
-X-Google-Smtp-Source: APXvYqzpn6yjU8igql0I0rGH3ZRIiRIjMVwySop20kQW00pJ7P7qgj7+6C4Pj4zDxefm29Eid97XIg==
-X-Received: by 2002:a37:41d2:: with SMTP id o201mr3485776qka.100.1576076326678;
-        Wed, 11 Dec 2019 06:58:46 -0800 (PST)
-Received: from ?IPv6:2620:10d:c0a8:1102:ce0:3629:8daa:1271? ([2620:10d:c091:480::4149])
-        by smtp.gmail.com with ESMTPSA id x19sm950291qtm.47.2019.12.11.06.58.45
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 11 Dec 2019 06:58:45 -0800 (PST)
-Subject: Re: 5.5.0-0.rc1 hang, could be zstd compression related
-To:     Chris Murphy <chris@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        Linux FS Devel <linux-fsdevel@vger.kernel.org>,
-        David Sterba <dsterba@suse.com>
-References: <CAJCQCtS_7vjBnqeDsedBQJYuE_ap+Xo6D=MXY=rOxf66oJZkrA@mail.gmail.com>
-From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <4eca86cf-65c3-5aba-d0fd-466d779614e6@toxicpanda.com>
-Date:   Wed, 11 Dec 2019 09:58:45 -0500
-User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:68.0)
- Gecko/20100101 Thunderbird/68.3.0
+        id S2387533AbfLKPeb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 11 Dec 2019 10:34:31 -0500
+Received: from mx2.suse.de ([195.135.220.15]:37686 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1733083AbfLKPe3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 11 Dec 2019 10:34:29 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id B44E3AD6B;
+        Wed, 11 Dec 2019 15:34:28 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id A68F2DA883; Wed, 11 Dec 2019 16:34:29 +0100 (CET)
+Date:   Wed, 11 Dec 2019 16:34:29 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 0/3] btrfs: fixes for relocation to avoid KASAN reports
+Message-ID: <20191211153429.GO3929@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20191211050004.18414-1-wqu@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtS_7vjBnqeDsedBQJYuE_ap+Xo6D=MXY=rOxf66oJZkrA@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20191211050004.18414-1-wqu@suse.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 12/10/19 11:00 PM, Chris Murphy wrote:
-> Could continue to chat in one application, the desktop environment was
-> responsive, but no shells worked and I couldn't get to a tty and I
-> couldn't ssh into remotely. Looks like the journal has everything up
-> until I pressed and held down the power button.
+On Wed, Dec 11, 2019 at 01:00:01PM +0800, Qu Wenruo wrote:
+> Due to commit d2311e698578 ("btrfs: relocation: Delay reloc tree
+> deletion after merge_reloc_roots"), reloc tree lifespan is extended.
 > 
+> Although we always set root->reloc_root to NULL before we drop the reloc
+> tree, but that's not multi-core safe since we have no proper memory
+> barrier to ensure other cores can see the same root->reloc_root.
 > 
-> /dev/nvme0n1p7 on / type btrfs
-> (rw,noatime,seclabel,compress=zstd:1,ssd,space_cache=v2,subvolid=274,subvol=/root)
-> 
-> dmesg pretty
-> https://pastebin.com/pvG3ERnd
-> 
-> dmesg (likely MUA stomped)
-> [10224.184137] flap.local kernel: perf: interrupt took too long (2522
->> 2500), lowering kernel.perf_event_max_sample_rate to 79000
-> [14712.698184] flap.local kernel: perf: interrupt took too long (3153
->> 3152), lowering kernel.perf_event_max_sample_rate to 63000
-> [17903.211976] flap.local kernel: Lockdown: systemd-logind:
-> hibernation is restricted; see man kernel_lockdown.7
-> [22877.667177] flap.local kernel: BUG: kernel NULL pointer
-> dereference, address: 00000000000006c8
-> [22877.667182] flap.local kernel: #PF: supervisor read access in kernel mode
-> [22877.667184] flap.local kernel: #PF: error_code(0x0000) - not-present page
-> [22877.667187] flap.local kernel: PGD 0 P4D 0
-> [22877.667191] flap.local kernel: Oops: 0000 [#1] SMP PTI
-> [22877.667194] flap.local kernel: CPU: 2 PID: 14747 Comm: kworker/u8:7
-> Not tainted 5.5.0-0.rc1.git0.1.fc32.x86_64+debug #1
-> [22877.667196] flap.local kernel: Hardware name: HP HP Spectre
-> Notebook/81A0, BIOS F.43 04/16/2019
-> [22877.667226] flap.local kernel: Workqueue: btrfs-delalloc
-> btrfs_work_helper [btrfs]
-> [22877.667233] flap.local kernel: RIP:
-> 0010:bio_associate_blkg_from_css+0x1c/0x3b0
+> The proper root fix should be some proper root refcount, and make
+> btrfs_drop_snapshot() to wait for all other root owner to release the
+> root before dropping it.
 
-This looks like the extent_map bdev cleanup thing that was supposed to be fixed, 
-did you send the patch without the fix for it Dave?  Thanks,
+This would block cleaning deleted subvolumes, no? We can skip the dead
+tree (and add it back to the list) in that can and not wait. The
+cleaner thread is able to process the list repeatedly.
 
-Josef
+> But for now, let's just check the DEAD_RELOC_ROOT bit before accessing
+> root->reloc_root.
+
+Ok, the bit is safe way to sync that as long as the correct order of
+setting/clearing is done.  The ops are atomic wrt to the value itself
+but need barriers around as they're simple atomic ops (not RMW,
+according to Documentation/atomic_bitops.txt) and there's no outer
+synchronization.
+
+Check:
+
+	smp_mb__before_atomic();
+	if (test_bit() ...)
+		return;
+
+Set:
+
+	set_bit()
+	smp_mb__after_atomic();
+	(delete reloc_root)
+	reloc_root = NULL
+
+Clearing of the bit is done when there are not potential other users so
+that part does not need the barrier (I think).
+
+The checking part could use a helper so we don't have barriers scattered
+around code.

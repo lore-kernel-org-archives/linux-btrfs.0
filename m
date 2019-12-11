@@ -3,110 +3,63 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
-	autolearn=no autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 12E21C00454
-	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Dec 2019 15:55:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B4EF1C43603
+	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Dec 2019 15:57:01 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E4E982077B
-	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Dec 2019 15:55:56 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 94E5F2073B
+	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Dec 2019 15:57:01 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732101AbfLKPz4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 11 Dec 2019 10:55:56 -0500
-Received: from mx2.suse.de ([195.135.220.15]:58732 "EHLO mx1.suse.de"
+        id S1731462AbfLKP5A (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 11 Dec 2019 10:57:00 -0500
+Received: from mx2.suse.de ([195.135.220.15]:51172 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1732246AbfLKPzy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Dec 2019 10:55:54 -0500
+        id S1730461AbfLKPPU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 11 Dec 2019 10:15:20 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 76924AB98;
-        Wed, 11 Dec 2019 15:55:52 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 433E3AB71;
+        Wed, 11 Dec 2019 15:15:18 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 4C7B2DA883; Wed, 11 Dec 2019 16:55:53 +0100 (CET)
-Date:   Wed, 11 Dec 2019 16:55:53 +0100
+        id DE4C1DA883; Wed, 11 Dec 2019 16:15:18 +0100 (CET)
+Date:   Wed, 11 Dec 2019 16:15:18 +0100
 From:   David Sterba <dsterba@suse.cz>
 To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     Chris Murphy <chris@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        Linux FS Devel <linux-fsdevel@vger.kernel.org>,
-        David Sterba <dsterba@suse.com>
-Subject: Re: 5.5.0-0.rc1 hang, could be zstd compression related
-Message-ID: <20191211155553.GP3929@twin.jikos.cz>
+Cc:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
+        Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+Subject: Re: [PATCH 2/3] btrfs: relocation: Fix KASAN report on
+ create_reloc_tree due to extended reloc tree lifepsan
+Message-ID: <20191211151518.GN3929@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 Mail-Followup-To: dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
-        Chris Murphy <chris@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        Linux FS Devel <linux-fsdevel@vger.kernel.org>,
-        David Sterba <dsterba@suse.com>
-References: <CAJCQCtS_7vjBnqeDsedBQJYuE_ap+Xo6D=MXY=rOxf66oJZkrA@mail.gmail.com>
- <4eca86cf-65c3-5aba-d0fd-466d779614e6@toxicpanda.com>
+        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
+        Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+References: <20191211050004.18414-1-wqu@suse.com>
+ <20191211050004.18414-3-wqu@suse.com>
+ <e429eb35-16d3-1231-b984-7210b1b6972b@toxicpanda.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <4eca86cf-65c3-5aba-d0fd-466d779614e6@toxicpanda.com>
+In-Reply-To: <e429eb35-16d3-1231-b984-7210b1b6972b@toxicpanda.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Dec 11, 2019 at 09:58:45AM -0500, Josef Bacik wrote:
-> On 12/10/19 11:00 PM, Chris Murphy wrote:
-> > Could continue to chat in one application, the desktop environment was
-> > responsive, but no shells worked and I couldn't get to a tty and I
-> > couldn't ssh into remotely. Looks like the journal has everything up
-> > until I pressed and held down the power button.
-> > 
-> > 
-> > /dev/nvme0n1p7 on / type btrfs
-> > (rw,noatime,seclabel,compress=zstd:1,ssd,space_cache=v2,subvolid=274,subvol=/root)
-> > 
-> > dmesg pretty
-> > https://pastebin.com/pvG3ERnd
-> > 
-> > dmesg (likely MUA stomped)
-> > [10224.184137] flap.local kernel: perf: interrupt took too long (2522
-> >> 2500), lowering kernel.perf_event_max_sample_rate to 79000
-> > [14712.698184] flap.local kernel: perf: interrupt took too long (3153
-> >> 3152), lowering kernel.perf_event_max_sample_rate to 63000
-> > [17903.211976] flap.local kernel: Lockdown: systemd-logind:
-> > hibernation is restricted; see man kernel_lockdown.7
-> > [22877.667177] flap.local kernel: BUG: kernel NULL pointer
-> > dereference, address: 00000000000006c8
-> > [22877.667182] flap.local kernel: #PF: supervisor read access in kernel mode
-> > [22877.667184] flap.local kernel: #PF: error_code(0x0000) - not-present page
-> > [22877.667187] flap.local kernel: PGD 0 P4D 0
-> > [22877.667191] flap.local kernel: Oops: 0000 [#1] SMP PTI
-> > [22877.667194] flap.local kernel: CPU: 2 PID: 14747 Comm: kworker/u8:7
-> > Not tainted 5.5.0-0.rc1.git0.1.fc32.x86_64+debug #1
-> > [22877.667196] flap.local kernel: Hardware name: HP HP Spectre
-> > Notebook/81A0, BIOS F.43 04/16/2019
-> > [22877.667226] flap.local kernel: Workqueue: btrfs-delalloc
-> > btrfs_work_helper [btrfs]
-> > [22877.667233] flap.local kernel: RIP:
-> > 0010:bio_associate_blkg_from_css+0x1c/0x3b0
+On Wed, Dec 11, 2019 at 09:55:04AM -0500, Josef Bacik wrote:
+> > +	/*
+> > +	 * We don't need to use reloc tree if:
+> > +	 * - No reloc tree
+> > +	 * - Relocation not running
+> > +	 * - Reloc tree already merged
+> > +	 */
+> > +	if (!root->reloc_root || !rc || test_bit(BTRFS_ROOT_DEAD_RELOC_TREE,
+> > +				&root->state))
 > 
-> This looks like the extent_map bdev cleanup thing that was supposed to be fixed, 
-> did you send the patch without the fix for it Dave?  Thanks,
+> This is awkward formatting, can we move the test_bit() to the first thing we 
+> check so it's less weird?  Then you can add
 
-The fix for NULL bdev was added in 429aebc0a9a063667dba21 (and tested
-with cgroups v2) and it's in a different function than the one that
-appears on the stacktrace.
-
-This seems to be another instance where the bdev is needed right after
-the bio is created but way earlier than it's actually known for real,
-yet still needed for the blkcg thing.
-
- 443         bio = btrfs_bio_alloc(first_byte);
- 444         bio->bi_opf = REQ_OP_WRITE | write_flags;
- 445         bio->bi_private = cb;
- 446         bio->bi_end_io = end_compressed_bio_write;
- 447
- 448         if (blkcg_css) {
- 449                 bio->bi_opf |= REQ_CGROUP_PUNT;
- 450                 bio_associate_blkg_from_css(bio, blkcg_css);
- 451         }
-
-Strange that it takes so long to reproduce, meaning the 'if' branch is
-not taken often.
+I had the same thought, will move the test_bit on the next line.

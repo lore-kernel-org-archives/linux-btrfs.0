@@ -2,87 +2,96 @@ Return-Path: <SRS0=0wlt=2B=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 872A9C43603
-	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Dec 2019 01:57:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 254C8C43603
+	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Dec 2019 02:33:49 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 6393F205C9
-	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Dec 2019 01:57:27 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E2AA92073B
+	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Dec 2019 02:33:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727078AbfLKB50 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 10 Dec 2019 20:57:26 -0500
-Received: from mail104.syd.optusnet.com.au ([211.29.132.246]:38614 "EHLO
-        mail104.syd.optusnet.com.au" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1726417AbfLKB50 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Dec 2019 20:57:26 -0500
-Received: from dread.disaster.area (pa49-195-139-249.pa.nsw.optusnet.com.au [49.195.139.249])
-        by mail104.syd.optusnet.com.au (Postfix) with ESMTPS id 3E8AC82004B;
-        Wed, 11 Dec 2019 12:57:22 +1100 (AEDT)
-Received: from dave by dread.disaster.area with local (Exim 4.92.3)
-        (envelope-from <david@fromorbit.com>)
-        id 1ierFh-00073s-0t; Wed, 11 Dec 2019 12:57:21 +1100
-Date:   Wed, 11 Dec 2019 12:57:21 +1100
-From:   Dave Chinner <david@fromorbit.com>
-To:     Goldwyn Rodrigues <rgoldwyn@suse.de>
-Cc:     linux-btrfs@vger.kernel.org, hch@infradead.org,
-        darrick.wong@oracle.com, fdmanana@kernel.org, nborisov@suse.com,
-        dsterba@suse.cz, jthumshirn@suse.de, linux-fsdevel@vger.kernel.org,
-        Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: Re: [PATCH 3/8] iomap: Remove lockdep_assert_held()
-Message-ID: <20191211015720.GF19213@dread.disaster.area>
-References: <20191210230155.22688-1-rgoldwyn@suse.de>
- <20191210230155.22688-4-rgoldwyn@suse.de>
+        id S1727604AbfLKCdr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 10 Dec 2019 21:33:47 -0500
+Received: from mx2.suse.de ([195.135.220.15]:38910 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727189AbfLKCdr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 10 Dec 2019 21:33:47 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 1669DB2CB
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Dec 2019 02:22:12 +0000 (UTC)
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH] fstests: common: Allow user to keep $seqres.dmesg for all tests
+Date:   Wed, 11 Dec 2019 10:22:07 +0800
+Message-Id: <20191211022207.15359-2-wqu@suse.com>
+X-Mailer: git-send-email 2.24.0
+In-Reply-To: <20191211022207.15359-1-wqu@suse.com>
+References: <20191211022207.15359-1-wqu@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20191210230155.22688-4-rgoldwyn@suse.de>
-User-Agent: Mutt/1.10.1 (2018-07-13)
-X-Optus-CM-Score: 0
-X-Optus-CM-Analysis: v=2.3 cv=W5xGqiek c=1 sm=1 tr=0
-        a=KoypXv6BqLCQNZUs2nCMWg==:117 a=KoypXv6BqLCQNZUs2nCMWg==:17
-        a=jpOVt7BSZ2e4Z31A5e1TngXxSK0=:19 a=kj9zAlcOel0A:10 a=pxVhFHJ0LMsA:10
-        a=iox4zFpeAAAA:8 a=7-415B0cAAAA:8 a=cJ-UA4PGj-_oL9fv718A:9
-        a=CjuIK1q_8ugA:10 a=WzC6qhA0u3u7Ye7llzcV:22 a=biEYGPWJfzWAr4FL6Ov7:22
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Dec 10, 2019 at 05:01:50PM -0600, Goldwyn Rodrigues wrote:
-> From: Goldwyn Rodrigues <rgoldwyn@suse.com>
-> 
-> Filesystems such as btrfs can perform direct I/O without holding the
-> inode->i_rwsem in some of the cases like writing within i_size.
-> So, remove the check for lockdep_assert_held().
-> 
-> Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
-> ---
->  fs/iomap/direct-io.c | 2 --
->  1 file changed, 2 deletions(-)
-> 
-> diff --git a/fs/iomap/direct-io.c b/fs/iomap/direct-io.c
-> index 1a3bf3bd86fb..41c1e7c20a1f 100644
-> --- a/fs/iomap/direct-io.c
-> +++ b/fs/iomap/direct-io.c
-> @@ -415,8 +415,6 @@ iomap_dio_rw(struct kiocb *iocb, struct iov_iter *iter,
->  	struct blk_plug plug;
->  	struct iomap_dio *dio;
->  
-> -	lockdep_assert_held(&inode->i_rwsem);
-> -
->  	if (!count)
->  		return 0;
+Currently fstests will remove $seqres.dmesg if nothing wrong happened.
+It saves some space, but sometimes it may not provide good enough
+history for developers to check.
+E.g. some unexpected dmesg from fs, but not serious enough to be caught
+by current filter.
 
-Please move this up into the existing callers so that we don't lose
-this debug check from those paths.
+So instead of deleting the ordinary $seqres.dmesg, provide a new config:
+KEEP_DMESG, to allow user to choose whether to keep the dmesg.
 
-Cheers,
+The default value for it is 0, which keeps the existing behavior by
+deleting ordinary dmesg.
 
-Dave.
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ common/config | 4 ++++
+ common/rc     | 4 +++-
+ 2 files changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/common/config b/common/config
+index 1b75777f..b409f32c 100644
+--- a/common/config
++++ b/common/config
+@@ -22,6 +22,9 @@
+ # RMT_IRIXTAPE_DEV- the IRIX remote tape device for the xfsdump tests
+ # RMT_TAPE_USER -   remote user for tape device
+ # SELINUX_MOUNT_OPTIONS - Options to use when SELinux is enabled.
++# KEEP_DMESG -      whether to keep all dmesg for each test case.
++#                   1: keep all dmesg
++#                   0: only keep dmesg with error/warning (default)
+ #
+ # - These can be added to $HOST_CONFIG_DIR (witch default to ./config)
+ #   below or a separate local configuration file can be used (using
+@@ -757,6 +760,7 @@ if [ -z "$CONFIG_INCLUDED" ]; then
+ 	[ -z "$TEST_FS_MOUNT_OPTS" ] && _test_mount_opts
+ 	[ -z "$MKFS_OPTIONS" ] && _mkfs_opts
+ 	[ -z "$FSCK_OPTIONS" ] && _fsck_opts
++	[ -z "$KEEP_DMESG" ] && export KEEP_DMESG=0
+ else
+ 	# We get here for the non multi section case, on every test that sources
+ 	# common/rc after re-sourcing the HOST_OPTIONS config file.
+diff --git a/common/rc b/common/rc
+index e5535279..a1386f61 100644
+--- a/common/rc
++++ b/common/rc
+@@ -3634,7 +3634,9 @@ _check_dmesg()
+ 		_dump_err "_check_dmesg: something found in dmesg (see $seqres.dmesg)"
+ 		return 1
+ 	else
+-		rm -f $seqres.dmesg
++		if [ "$KEEP_DMESG" != 1 ]; then
++			rm -f $seqres.dmesg
++		fi
+ 		return 0
+ 	fi
+ }
 -- 
-Dave Chinner
-david@fromorbit.com
+2.23.0
+

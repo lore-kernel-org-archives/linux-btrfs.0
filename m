@@ -2,104 +2,103 @@ Return-Path: <SRS0=0wlt=2B=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B5345C43603
-	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Dec 2019 16:21:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4323DC43603
+	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Dec 2019 16:33:49 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8868D2077B
-	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Dec 2019 16:21:43 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="g70pc2ke"
+	by mail.kernel.org (Postfix) with ESMTP id 1C1E52073D
+	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Dec 2019 16:33:49 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730339AbfLKQVm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 11 Dec 2019 11:21:42 -0500
-Received: from bombadil.infradead.org ([198.137.202.133]:46738 "EHLO
-        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728912AbfLKQVl (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Dec 2019 11:21:41 -0500
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20170209; h=Content-Transfer-Encoding:
-        Content-Type:In-Reply-To:MIME-Version:Date:Message-ID:From:References:To:
-        Subject:Sender:Reply-To:Cc:Content-ID:Content-Description:Resent-Date:
-        Resent-From:Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:
-        List-Help:List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-         bh=AxXuRP6SlO9EYVZsfKYGZTNvOdQRf3h3gzU4Dl8Nq0c=; b=g70pc2kei6mVg+B+h8YjfbGsg
-        mKZeb9t1jKfZKM8HyZWZkFBrKwtlXP8G4ceGlsVyVyzF9AO00JejYenmo4XxrsHfPrw/FSXvisxwb
-        bRiYSzfAhuRtD8shFf9H0KixFRC5QCTuik++EKIAO9xodk1ljCFZEYfSAZb6bS2dBWrmjAosXs3cQ
-        JoYQU3cmJJn1We/+FfugqqzCOVtaKCZnlJa7NDbLXbRkG2tRTu1twvygzBaq10Y/rldyBVDHHr4RK
-        AMMG5jNnzRd16N026VBWH2/TrzhTMgPf1g8Yr1lMDQjJMaql49Ap7FzgjsZhfXmL4BXjMoTpfXX1r
-        UrGFDzjhA==;
-Received: from [2601:1c0:6280:3f0:897c:6038:c71d:ecac]
-        by bombadil.infradead.org with esmtpsa (Exim 4.92.3 #3 (Red Hat Linux))
-        id 1if4k7-0006LN-OM; Wed, 11 Dec 2019 16:21:39 +0000
-Subject: Re: linux-next: Tree for Dec 6 (objtool, lots in btrfs)
-To:     dsterba@suse.cz, Stephen Rothwell <sfr@canb.auug.org.au>,
-        Linux Next Mailing List <linux-next@vger.kernel.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        Linux Btrfs <linux-btrfs@vger.kernel.org>,
-        Peter Zijlstra <peterz@infradead.org>,
-        Josh Poimboeuf <jpoimboe@redhat.com>
-References: <20191206135406.563336e7@canb.auug.org.au>
- <cd4091e4-1c04-a880-f239-00bc053f46a2@infradead.org>
- <20191211134929.GL3929@twin.jikos.cz>
-From:   Randy Dunlap <rdunlap@infradead.org>
-Message-ID: <c751bc1a-505c-5050-3c4c-c83be81b4e48@infradead.org>
-Date:   Wed, 11 Dec 2019 08:21:38 -0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.2.1
+        id S1730477AbfLKQds (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 11 Dec 2019 11:33:48 -0500
+Received: from mx2.suse.de ([195.135.220.15]:59746 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1730373AbfLKQds (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 11 Dec 2019 11:33:48 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id B28D0B1A3;
+        Wed, 11 Dec 2019 16:33:45 +0000 (UTC)
+Subject: Re: fstests: Don't use gawk's strtonum breaking existing fstests
+From:   Nikolay Borisov <nborisov@suse.com>
+To:     slash@ac.auone-net.jp
+Cc:     Eryu Guan <guaneryu@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <cc85789a-6143-e4cc-aa12-6c842ef88016@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <c0dd0b84-776c-a089-0769-913879d9aa9c@suse.com>
+Date:   Wed, 11 Dec 2019 18:33:44 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.9.0
 MIME-Version: 1.0
-In-Reply-To: <20191211134929.GL3929@twin.jikos.cz>
+In-Reply-To: <cc85789a-6143-e4cc-aa12-6c842ef88016@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-[oops, forgot to add Josh and PeterZ]
-
-On 12/11/19 5:49 AM, David Sterba wrote:
-> On Fri, Dec 06, 2019 at 08:17:30AM -0800, Randy Dunlap wrote:
->> On 12/5/19 6:54 PM, Stephen Rothwell wrote:
->>> Hi all,
->>>
->>> Please do not add any material for v5.6 to your linux-next included
->>> trees until after v5.5-rc1 has been released.
->>>
->>> Changes since 20191204:
->>>
->>
->> on x86_64:
->>
->> fs/btrfs/ctree.o: warning: objtool: btrfs_search_slot()+0x2d4: unreachable instruction
-> 
-> Can somebody enlighten me what is one supposed to do to address the
-> warnings? Function names reported in the list contain our ASSERT macro
-> that conditionally calls BUG() that I believe is what could cause the
-> unreachable instructions but I don't see how.
-> 
-> https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/fs/btrfs/ctree.h#n3113
-> 
-> __cold
-> static inline void assfail(const char *expr, const char *file, int line)
-> {
-> 	if (IS_ENABLED(CONFIG_BTRFS_ASSERT)) {
-> 		pr_err("assertion failed: %s, in %s:%d\n", expr, file, line);
-> 		BUG();
-> 	}
-> }
-> 
-> #define ASSERT(expr)	\
-> 	(likely(expr) ? (void)0 : assfail(#expr, __FILE__, __LINE__))
-> 
 
 
--- 
-~Randy
-Reported-by: Randy Dunlap <rdunlap@infradead.org>
+On 11.12.19 г. 17:53 ч., Nikolay Borisov wrote:
+> Hello,
+> 
+> Following upstream commit:
+> https://git.kernel.org/pub/scm/fs/xfs/xfstests-dev.git/commit/?id=37520a314bd472ed720ed0611c6b69e418be9b61
+> 
+> breaks btrfs/095 and btrfs/098 tests.
+> 
+
+The problem is that the old code was using gawk's strtonum and returning
+a base 10 number from an octal input. Whereas the existing code gets an
+octal number which is again parsed as an octal when using printf. So the
+path in question needs to either by reverted or extended so that the
+necessary conversion from octal to base 10 is performed _before_ calling
+printf.

@@ -2,32 +2,35 @@ Return-Path: <SRS0=0wlt=2B=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.7 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5C53CC2D0C6
-	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Dec 2019 10:40:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5D56EC43603
+	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Dec 2019 10:40:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 3588D22B48
-	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Dec 2019 10:40:39 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 35854208C3
+	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Dec 2019 10:40:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728912AbfLKKki (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 11 Dec 2019 05:40:38 -0500
-Received: from mx2.suse.de ([195.135.220.15]:58578 "EHLO mx1.suse.de"
+        id S1728944AbfLKKkk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 11 Dec 2019 05:40:40 -0500
+Received: from mx2.suse.de ([195.135.220.15]:58638 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728030AbfLKKki (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Dec 2019 05:40:38 -0500
+        id S1728030AbfLKKkk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 11 Dec 2019 05:40:40 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 8A6A2AD55;
-        Wed, 11 Dec 2019 10:40:36 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 689CFB1C1;
+        Wed, 11 Dec 2019 10:40:38 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/3] fstests: btrfs/15[78] btrfs/14[23]: Use more accurate devid/phsyical for corruption
-Date:   Wed, 11 Dec 2019 18:40:26 +0800
-Message-Id: <20191211104029.25541-1-wqu@suse.com>
+Subject: [PATCH 1/3] fstests: common: Use more accurate kernel config for _require_fail_make_request
+Date:   Wed, 11 Dec 2019 18:40:27 +0800
+Message-Id: <20191211104029.25541-2-wqu@suse.com>
 X-Mailer: git-send-email 2.24.0
+In-Reply-To: <20191211104029.25541-1-wqu@suse.com>
+References: <20191211104029.25541-1-wqu@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -35,38 +38,29 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Btrfs-progs commit c501c9e3b816 ("btrfs-progs: mkfs: match devid order
-to the stripe index") changed the chunk layout, making it more human
-friendly for manually offset calculation.
+Just enabling CONFIG_FAIL_MAKE_REQUEST will not fulfill
+_require_fail_make_request.
 
-However btrfs/14[23] btrfs/15[78] are using hard-coded devid sequence
-for corruption, thus they can't stand such change and fail.
+It's CONFIG_FAULT_INJECTION_DEBUG_FS.
 
-This patchset will handle such problems in patch 2 and 3, to use more
-accurate helper to replace the hard-coded one.
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ common/rc | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-And the first patch will address a bad _notrun messages, which is mostly
-related to btrfs/14[23].
-
-Qu Wenruo (3):
-  fstests: common: Use more accurate kernel config for
-    _require_fail_make_request
-  fstests: btrfs/14[23]: Use proper help to get both devid and physical
-    offset for corruption.
-  fstests: btrfs/15[78]: Use proper helper to get both devid and
-    physical offset for corruption
-
- common/rc           |  2 +-
- tests/btrfs/142     | 50 +++++++++++++++++++++++++++++-------------
- tests/btrfs/142.out |  2 --
- tests/btrfs/143     | 48 +++++++++++++++++++++++++++++-----------
- tests/btrfs/143.out |  2 --
- tests/btrfs/157     | 53 +++++++++++++++++++++++++++++----------------
- tests/btrfs/157.out |  4 ----
- tests/btrfs/158     | 48 +++++++++++++++++++++++++---------------
- tests/btrfs/158.out |  4 ----
- 9 files changed, 136 insertions(+), 77 deletions(-)
-
+diff --git a/common/rc b/common/rc
+index 5cdd829b..2d72f158 100644
+--- a/common/rc
++++ b/common/rc
+@@ -2357,7 +2357,7 @@ _require_fail_make_request()
+ {
+     [ -f "$DEBUGFS_MNT/fail_make_request/probability" ] \
+ 	|| _notrun "$DEBUGFS_MNT/fail_make_request \
+- not found. Seems that CONFIG_FAIL_MAKE_REQUEST kernel config option not enabled"
++ not found. Seems that CONFIG_FAULT_INJECTION_DEBUG_FS kernel config option not enabled"
+ }
+ 
+ # Disable extent zeroing for ext4 on the given device
 -- 
 2.23.0
 

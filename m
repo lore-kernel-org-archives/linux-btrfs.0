@@ -2,127 +2,104 @@ Return-Path: <SRS0=0wlt=2B=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F26AEC43603
-	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Dec 2019 15:59:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B5345C43603
+	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Dec 2019 16:21:43 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id CEF062073D
-	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Dec 2019 15:59:34 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8868D2077B
+	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Dec 2019 16:21:43 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="g70pc2ke"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732679AbfLKP7d (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 11 Dec 2019 10:59:33 -0500
-Received: from mx2.suse.de ([195.135.220.15]:34194 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1731656AbfLKP7d (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Dec 2019 10:59:33 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 1EA2EAD1A;
-        Wed, 11 Dec 2019 15:59:31 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id BFFAEDA883; Wed, 11 Dec 2019 16:59:31 +0100 (CET)
-Date:   Wed, 11 Dec 2019 16:59:31 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
-        Chris Murphy <chris@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        Linux FS Devel <linux-fsdevel@vger.kernel.org>,
-        David Sterba <dsterba@suse.com>
-Subject: Re: 5.5.0-0.rc1 hang, could be zstd compression related
-Message-ID: <20191211155931.GQ3929@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
-        Chris Murphy <chris@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        Linux FS Devel <linux-fsdevel@vger.kernel.org>,
-        David Sterba <dsterba@suse.com>
-References: <CAJCQCtS_7vjBnqeDsedBQJYuE_ap+Xo6D=MXY=rOxf66oJZkrA@mail.gmail.com>
- <4eca86cf-65c3-5aba-d0fd-466d779614e6@toxicpanda.com>
- <20191211155553.GP3929@twin.jikos.cz>
+        id S1730339AbfLKQVm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 11 Dec 2019 11:21:42 -0500
+Received: from bombadil.infradead.org ([198.137.202.133]:46738 "EHLO
+        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728912AbfLKQVl (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 11 Dec 2019 11:21:41 -0500
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=bombadil.20170209; h=Content-Transfer-Encoding:
+        Content-Type:In-Reply-To:MIME-Version:Date:Message-ID:From:References:To:
+        Subject:Sender:Reply-To:Cc:Content-ID:Content-Description:Resent-Date:
+        Resent-From:Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:
+        List-Help:List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
+         bh=AxXuRP6SlO9EYVZsfKYGZTNvOdQRf3h3gzU4Dl8Nq0c=; b=g70pc2kei6mVg+B+h8YjfbGsg
+        mKZeb9t1jKfZKM8HyZWZkFBrKwtlXP8G4ceGlsVyVyzF9AO00JejYenmo4XxrsHfPrw/FSXvisxwb
+        bRiYSzfAhuRtD8shFf9H0KixFRC5QCTuik++EKIAO9xodk1ljCFZEYfSAZb6bS2dBWrmjAosXs3cQ
+        JoYQU3cmJJn1We/+FfugqqzCOVtaKCZnlJa7NDbLXbRkG2tRTu1twvygzBaq10Y/rldyBVDHHr4RK
+        AMMG5jNnzRd16N026VBWH2/TrzhTMgPf1g8Yr1lMDQjJMaql49Ap7FzgjsZhfXmL4BXjMoTpfXX1r
+        UrGFDzjhA==;
+Received: from [2601:1c0:6280:3f0:897c:6038:c71d:ecac]
+        by bombadil.infradead.org with esmtpsa (Exim 4.92.3 #3 (Red Hat Linux))
+        id 1if4k7-0006LN-OM; Wed, 11 Dec 2019 16:21:39 +0000
+Subject: Re: linux-next: Tree for Dec 6 (objtool, lots in btrfs)
+To:     dsterba@suse.cz, Stephen Rothwell <sfr@canb.auug.org.au>,
+        Linux Next Mailing List <linux-next@vger.kernel.org>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        Linux Btrfs <linux-btrfs@vger.kernel.org>,
+        Peter Zijlstra <peterz@infradead.org>,
+        Josh Poimboeuf <jpoimboe@redhat.com>
+References: <20191206135406.563336e7@canb.auug.org.au>
+ <cd4091e4-1c04-a880-f239-00bc053f46a2@infradead.org>
+ <20191211134929.GL3929@twin.jikos.cz>
+From:   Randy Dunlap <rdunlap@infradead.org>
+Message-ID: <c751bc1a-505c-5050-3c4c-c83be81b4e48@infradead.org>
+Date:   Wed, 11 Dec 2019 08:21:38 -0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.2.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20191211155553.GP3929@twin.jikos.cz>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <20191211134929.GL3929@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Dec 11, 2019 at 04:55:53PM +0100, David Sterba wrote:
-> On Wed, Dec 11, 2019 at 09:58:45AM -0500, Josef Bacik wrote:
-> > On 12/10/19 11:00 PM, Chris Murphy wrote:
-> > > Could continue to chat in one application, the desktop environment was
-> > > responsive, but no shells worked and I couldn't get to a tty and I
-> > > couldn't ssh into remotely. Looks like the journal has everything up
-> > > until I pressed and held down the power button.
-> > > 
-> > > 
-> > > /dev/nvme0n1p7 on / type btrfs
-> > > (rw,noatime,seclabel,compress=zstd:1,ssd,space_cache=v2,subvolid=274,subvol=/root)
-> > > 
-> > > dmesg pretty
-> > > https://pastebin.com/pvG3ERnd
-> > > 
-> > > dmesg (likely MUA stomped)
-> > > [10224.184137] flap.local kernel: perf: interrupt took too long (2522
-> > >> 2500), lowering kernel.perf_event_max_sample_rate to 79000
-> > > [14712.698184] flap.local kernel: perf: interrupt took too long (3153
-> > >> 3152), lowering kernel.perf_event_max_sample_rate to 63000
-> > > [17903.211976] flap.local kernel: Lockdown: systemd-logind:
-> > > hibernation is restricted; see man kernel_lockdown.7
-> > > [22877.667177] flap.local kernel: BUG: kernel NULL pointer
-> > > dereference, address: 00000000000006c8
-> > > [22877.667182] flap.local kernel: #PF: supervisor read access in kernel mode
-> > > [22877.667184] flap.local kernel: #PF: error_code(0x0000) - not-present page
-> > > [22877.667187] flap.local kernel: PGD 0 P4D 0
-> > > [22877.667191] flap.local kernel: Oops: 0000 [#1] SMP PTI
-> > > [22877.667194] flap.local kernel: CPU: 2 PID: 14747 Comm: kworker/u8:7
-> > > Not tainted 5.5.0-0.rc1.git0.1.fc32.x86_64+debug #1
-> > > [22877.667196] flap.local kernel: Hardware name: HP HP Spectre
-> > > Notebook/81A0, BIOS F.43 04/16/2019
-> > > [22877.667226] flap.local kernel: Workqueue: btrfs-delalloc
-> > > btrfs_work_helper [btrfs]
-> > > [22877.667233] flap.local kernel: RIP:
-> > > 0010:bio_associate_blkg_from_css+0x1c/0x3b0
-> > 
-> > This looks like the extent_map bdev cleanup thing that was supposed to be fixed, 
-> > did you send the patch without the fix for it Dave?  Thanks,
-> 
-> The fix for NULL bdev was added in 429aebc0a9a063667dba21 (and tested
-> with cgroups v2) and it's in a different function than the one that
-> appears on the stacktrace.
-> 
-> This seems to be another instance where the bdev is needed right after
-> the bio is created but way earlier than it's actually known for real,
-> yet still needed for the blkcg thing.
-> 
->  443         bio = btrfs_bio_alloc(first_byte);
->  444         bio->bi_opf = REQ_OP_WRITE | write_flags;
->  445         bio->bi_private = cb;
->  446         bio->bi_end_io = end_compressed_bio_write;
->  447
->  448         if (blkcg_css) {
->  449                 bio->bi_opf |= REQ_CGROUP_PUNT;
->  450                 bio_associate_blkg_from_css(bio, blkcg_css);
->  451         }
-> 
-> Strange that it takes so long to reproduce, meaning the 'if' branch is
-> not taken often.
+[oops, forgot to add Josh and PeterZ]
 
-Compile tested only:
+On 12/11/19 5:49 AM, David Sterba wrote:
+> On Fri, Dec 06, 2019 at 08:17:30AM -0800, Randy Dunlap wrote:
+>> On 12/5/19 6:54 PM, Stephen Rothwell wrote:
+>>> Hi all,
+>>>
+>>> Please do not add any material for v5.6 to your linux-next included
+>>> trees until after v5.5-rc1 has been released.
+>>>
+>>> Changes since 20191204:
+>>>
+>>
+>> on x86_64:
+>>
+>> fs/btrfs/ctree.o: warning: objtool: btrfs_search_slot()+0x2d4: unreachable instruction
+> 
+> Can somebody enlighten me what is one supposed to do to address the
+> warnings? Function names reported in the list contain our ASSERT macro
+> that conditionally calls BUG() that I believe is what could cause the
+> unreachable instructions but I don't see how.
+> 
+> https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/fs/btrfs/ctree.h#n3113
+> 
+> __cold
+> static inline void assfail(const char *expr, const char *file, int line)
+> {
+> 	if (IS_ENABLED(CONFIG_BTRFS_ASSERT)) {
+> 		pr_err("assertion failed: %s, in %s:%d\n", expr, file, line);
+> 		BUG();
+> 	}
+> }
+> 
+> #define ASSERT(expr)	\
+> 	(likely(expr) ? (void)0 : assfail(#expr, __FILE__, __LINE__))
+> 
 
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -446,6 +446,7 @@ blk_status_t btrfs_submit_compressed_write(struct inode *inode, u64 start,
-        bio->bi_end_io = end_compressed_bio_write;
- 
-        if (blkcg_css) {
-+               bio_set_bev(bio, fs_info->fs_devices->latest_bdev);
-                bio->bi_opf |= REQ_CGROUP_PUNT;
-                bio_associate_blkg_from_css(bio, blkcg_css);
-        }
 
+-- 
+~Randy
+Reported-by: Randy Dunlap <rdunlap@infradead.org>

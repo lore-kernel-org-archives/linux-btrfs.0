@@ -2,339 +2,213 @@ Return-Path: <SRS0=0wlt=2B=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.7 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0CA6CC43603
-	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Dec 2019 10:40:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5F280C43603
+	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Dec 2019 10:44:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id CA65C208C3
-	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Dec 2019 10:40:49 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2FC1C24656
+	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Dec 2019 10:44:06 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728969AbfLKKkt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 11 Dec 2019 05:40:49 -0500
-Received: from mx2.suse.de ([195.135.220.15]:58652 "EHLO mx1.suse.de"
+        id S1728963AbfLKKoF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 11 Dec 2019 05:44:05 -0500
+Received: from mx2.suse.de ([195.135.220.15]:60886 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728030AbfLKKks (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Dec 2019 05:40:48 -0500
+        id S1728030AbfLKKoF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 11 Dec 2019 05:44:05 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 1E19FAD55;
-        Wed, 11 Dec 2019 10:40:40 +0000 (UTC)
-From:   Qu Wenruo <wqu@suse.com>
-To:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
-Cc:     Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH 2/3] fstests: btrfs/14[23]: Use proper help to get both devid and physical offset for corruption.
-Date:   Wed, 11 Dec 2019 18:40:28 +0800
-Message-Id: <20191211104029.25541-3-wqu@suse.com>
-X-Mailer: git-send-email 2.24.0
-In-Reply-To: <20191211104029.25541-1-wqu@suse.com>
-References: <20191211104029.25541-1-wqu@suse.com>
+        by mx1.suse.de (Postfix) with ESMTP id 01F7CAC7D;
+        Wed, 11 Dec 2019 10:43:59 +0000 (UTC)
+Subject: Re: [PATCH 4/8] btrfs: Switch to iomap_dio_rw() for dio
+To:     Goldwyn Rodrigues <rgoldwyn@suse.de>, linux-btrfs@vger.kernel.org
+Cc:     hch@infradead.org, darrick.wong@oracle.com, fdmanana@kernel.org,
+        dsterba@suse.cz, jthumshirn@suse.de, linux-fsdevel@vger.kernel.org,
+        Goldwyn Rodrigues <rgoldwyn@suse.com>
+References: <20191210230155.22688-1-rgoldwyn@suse.de>
+ <20191210230155.22688-5-rgoldwyn@suse.de>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <e87534f5-22e9-f70e-172e-56e9056b25a6@suse.com>
+Date:   Wed, 11 Dec 2019 12:43:56 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.9.0
 MIME-Version: 1.0
+In-Reply-To: <20191210230155.22688-5-rgoldwyn@suse.de>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-[BUG]
-When using btrfs-progs v5.4, btrfs/142 and btrfs/143 will fail:
-btrfs/142 1s ... - output mismatch (see xfstests/results//btrfs/142.out.bad)
-    --- tests/btrfs/142.out 2018-09-16 21:30:48.505104287 +0100
-    +++ xfstests/results//btrfs/142.out.bad
-2019-12-10 15:35:40.280392626 +0000
-    @@ -3,37 +3,37 @@
-     XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-     wrote 65536/65536 bytes
-     XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-    -XXXXXXXX:  aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa ................
-    -XXXXXXXX:  aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa ................
-    -XXXXXXXX:  aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa ................
-    -XXXXXXXX:  aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa ................
-    ...
-    (Run 'diff -u xfstests/tests/btrfs/142.out xfstests/results//btrfs/142.out.bad' to see the entire diff)
 
-[CAUSE]
-Btrfs/14[23] test whether a read on corrupted stripe will re-silver
-itself.
-Such test by its nature will need to modify on-disk data, thus need to
-get the btrfs logical -> physical mapping, which is done by near
-hard-coded lookup function, which rely on certain stripe:devid sequence.
 
-Recent btrfs-progs commit c501c9e3b816 ("btrfs-progs: mkfs: match devid
-order to the stripe index") changes how we use devices in mkfs.btrfs,
-this caused a change in chunk layout, and break the hard-coded
-stripe:devid sequence.
+On 11.12.19 г. 1:01 ч., Goldwyn Rodrigues wrote:
+> From: Goldwyn Rodrigues <rgoldwyn@suse.com>
+> 
+> Switch from __blockdev_direct_IO() to iomap_dio_rw().
+> Rename btrfs_get_blocks_direct() to btrfs_dio_iomap_begin() and use it
+> as iomap_begin() for iomap direct I/O functions. This function
+> allocates and locks all the blocks required for the I/O.
+> btrfs_submit_direct() is used as the submit_io() hook for direct I/O
+> ops.
+> 
+> Since we need direct I/O reads to go through iomap_dio_rw(), we change
+> file_operations.read_iter() to a btrfs_file_read_iter() which calls
+> btrfs_direct_IO() for direct reads and falls back to
+> generic_file_buffered_read() for incomplete reads and buffered reads.
+> 
+> We don't need address_space.direct_IO() anymore so set it to noop.
+> Similarly, we don't need flags used in __blockdev_direct_IO(). iomap is
+> capable of direct I/O reads from a hole, so we don't need to return
+> -ENOENT.
+> 
+> BTRFS direct I/O is now done under i_rwsem, shared in case of
+> reads and exclusive in case of writes. This guards against simultaneous
+> truncates.
+> 
+> Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
+> ---
+>  fs/btrfs/ctree.h |   1 +
+>  fs/btrfs/file.c  |  21 ++++++-
+>  fs/btrfs/inode.c | 184 ++++++++++++++++++++++++++-----------------------------
+>  3 files changed, 107 insertions(+), 99 deletions(-)
+> 
 
-[FIX]
-This patch will do full devid and physical offset lookup, instead of old
-physical offset only lookup.
+<snip>
 
-The only assumption made is, mkfs.btrfs assigns devid sequentially for
-its devices.
-Which means, for "mkfs.btrfs $dev1 $dev2 $dev3", we get devid 1 for $dev1,
-devid 2 for $dev2, and so on.
+> +
+> +/*
+> + * btrfs_direct_IO - perform direct I/O
+> + * inode->i_rwsem must be locked before calling this function, shared or exclusive.
 
-This change will allow btrfs/14[23] to handle even future chunk layout
-change. (Although I hope this will never happen again).
+Instead of having this as a comment which cannot easily be checked
+automatically I'd rather it gets codified via lockdep_assert_held. I
+believe this is in line with Dave's comment comment on patch 3.
 
-This also addes extra debug output (although less than 10 lines) into
-$seqres.full, just in case when layout changes and current lookup can't
-handle it, developer can still pindown the problem easily.
-
-Reported-by: Filipe Manana <fdmanana@suse.com>
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- tests/btrfs/142     | 50 +++++++++++++++++++++++++++++++--------------
- tests/btrfs/142.out |  2 --
- tests/btrfs/143     | 48 +++++++++++++++++++++++++++++++------------
- tests/btrfs/143.out |  2 --
- 4 files changed, 70 insertions(+), 32 deletions(-)
-
-diff --git a/tests/btrfs/142 b/tests/btrfs/142
-index a23fe1bf..9c037ff6 100755
---- a/tests/btrfs/142
-+++ b/tests/btrfs/142
-@@ -47,30 +47,45 @@ _require_command "$FILEFRAG_PROG" filefrag
- 
- get_physical()
- {
--        # $1 is logical address
--        # print chunk tree and find devid 2 which is $SCRATCH_DEV
-+	local logical=$1
-+	local stripe=$2
-         $BTRFS_UTIL_PROG inspect-internal dump-tree -t 3 $SCRATCH_DEV | \
--	grep $1 -A 6 | awk '($1 ~ /stripe/ && $3 ~ /devid/ && $4 ~ /1/) { print $6 }'
-+		grep $logical -A 6 | \
-+		awk "(\$1 ~ /stripe/ && \$3 ~ /devid/ && \$2 ~ /$stripe/) { print \$6 }"
- }
- 
-+get_devid()
-+{
-+	local logical=$1
-+	local stripe=$2
-+        $BTRFS_UTIL_PROG inspect-internal dump-tree -t 3 $SCRATCH_DEV | \
-+		grep $logical -A 6 | \
-+		awk "(\$1 ~ /stripe/ && \$3 ~ /devid/ && \$2 ~ /$stripe/) { print \$4 }"
-+}
- 
--SYSFS_BDEV=`_sysfs_dev $SCRATCH_DEV`
-+get_device_path()
-+{
-+	local devid=$1
-+	echo "$SCRATCH_DEV_POOL" | awk "{print \$$devid}"
-+}
- 
- start_fail()
- {
-+	local sysfs_bdev="$1"
- 	echo 100 > $DEBUGFS_MNT/fail_make_request/probability
- 	echo 2 > $DEBUGFS_MNT/fail_make_request/times
- 	echo 1 > $DEBUGFS_MNT/fail_make_request/task-filter
- 	echo 0 > $DEBUGFS_MNT/fail_make_request/verbose
--	echo 1 > $SYSFS_BDEV/make-it-fail
-+	echo 1 > $sysfs_bdev/make-it-fail
- }
- 
- stop_fail()
- {
-+	local sysfs_bdev="$1"
- 	echo 0 > $DEBUGFS_MNT/fail_make_request/probability
- 	echo 0 > $DEBUGFS_MNT/fail_make_request/times
- 	echo 0 > $DEBUGFS_MNT/fail_make_request/task-filter
--	echo 0 > $SYSFS_BDEV/make-it-fail
-+	echo 0 > $sysfs_bdev/make-it-fail
- }
- 
- _scratch_dev_pool_get 2
-@@ -87,17 +102,23 @@ _scratch_mount -o nospace_cache,nodatasum
- $XFS_IO_PROG -f -d -c "pwrite -S 0xaa -b 128K 0 128K" "$SCRATCH_MNT/foobar" |\
- 	_filter_xfs_io_offset
- 
--# step 2, corrupt the first 64k of one copy (on SCRATCH_DEV which is the first
--# one in $SCRATCH_DEV_POOL
-+# step 2, corrupt the first 64k of stripe #1
- echo "step 2......corrupt file extent" >>$seqres.full
- 
- ${FILEFRAG_PROG} -v $SCRATCH_MNT/foobar >> $seqres.full
- logical_in_btrfs=`${FILEFRAG_PROG} -v $SCRATCH_MNT/foobar | _filter_filefrag | cut -d '#' -f 1`
--physical_on_scratch=`get_physical ${logical_in_btrfs}`
-+physical=`get_physical ${logical_in_btrfs} 1`
-+devid=$(get_devid ${logical_in_btrfs} 1)
-+target_dev=$(get_device_path $devid)
-+
-+SYSFS_BDEV=`_sysfs_dev $target_dev`
- 
- _scratch_unmount
--$XFS_IO_PROG -d -c "pwrite -S 0xbb -b 64K $physical_on_scratch 64K" $SCRATCH_DEV |\
--	_filter_xfs_io_offset
-+$BTRFS_UTIL_PROG ins dump-tree -t 3 $SCRATCH_DEV | \
-+	grep $logical_in_btrfs -A 6 >> $seqres.full
-+echo "Corrupt stripe 1 devid $devid devpath $target_dev physical $physical" \
-+	>> $seqres.full
-+$XFS_IO_PROG -d -c "pwrite -S 0xbb -b 64K $physical 64K" $target_dev > /dev/null
- 
- _scratch_mount -o nospace_cache
- 
-@@ -106,8 +127,7 @@ echo "step 3......repair the bad copy" >>$seqres.full
- 
- # since raid1 consists of two copies, and the bad copy was put on stripe #1
- # while the good copy lies on stripe #0, the bad copy only gets access when the
--# reader's pid % 2 == 1 is true
--start_fail
-+start_fail $SYSFS_BDEV
- while [[ -z ${result} ]]; do
- 	# enable task-filter only fails the following dio read so the repair is
- 	# supposed to work.
-@@ -117,12 +137,12 @@ while [[ -z ${result} ]]; do
- 		exec $XFS_IO_PROG -d -c \"pread -b 128K 0 128K\" \"$SCRATCH_MNT/foobar\"
- 	fi");
- done
--stop_fail
-+stop_fail $SYSFS_BDEV
- 
- _scratch_unmount
- 
- # check if the repair works
--$XFS_IO_PROG -c "pread -v -b 512 $physical_on_scratch 512" $SCRATCH_DEV |\
-+$XFS_IO_PROG -c "pread -v -b 512 $physical 512" $target_dev | \
- 	_filter_xfs_io_offset
- 
- _scratch_dev_pool_put
-diff --git a/tests/btrfs/142.out b/tests/btrfs/142.out
-index 0f32ffbe..2e22f292 100644
---- a/tests/btrfs/142.out
-+++ b/tests/btrfs/142.out
-@@ -1,8 +1,6 @@
- QA output created by 142
- wrote 131072/131072 bytes
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
--wrote 65536/65536 bytes
--XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
- XXXXXXXX:  aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa  ................
- XXXXXXXX:  aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa  ................
- XXXXXXXX:  aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa  ................
-diff --git a/tests/btrfs/143 b/tests/btrfs/143
-index 91af52f9..b2ffeb63 100755
---- a/tests/btrfs/143
-+++ b/tests/btrfs/143
-@@ -54,30 +54,48 @@ _require_command "$FILEFRAG_PROG" filefrag
- 
- get_physical()
- {
--        # $1 is logical address
--        # print chunk tree and find devid 2 which is $SCRATCH_DEV
-+	local logical=$1
-+	local stripe=$2
-         $BTRFS_UTIL_PROG inspect-internal dump-tree -t 3 $SCRATCH_DEV | \
--	grep $1 -A 6 | awk '($1 ~ /stripe/ && $3 ~ /devid/ && $4 ~ /1/) { print $6 }'
-+		grep $logical -A 6 | \
-+		awk "(\$1 ~ /stripe/ && \$3 ~ /devid/ && \$2 ~ /$stripe/) { print \$6 }"
-+}
-+
-+get_devid()
-+{
-+	local logical=$1
-+	local stripe=$2
-+        $BTRFS_UTIL_PROG inspect-internal dump-tree -t 3 $SCRATCH_DEV | \
-+		grep $logical -A 6 | \
-+		awk "(\$1 ~ /stripe/ && \$3 ~ /devid/ && \$2 ~ /$stripe/) { print \$4 }"
-+}
-+
-+get_device_path()
-+{
-+	local devid=$1
-+	echo "$SCRATCH_DEV_POOL" | awk "{print \$$devid}"
- }
- 
- SYSFS_BDEV=`_sysfs_dev $SCRATCH_DEV`
- 
- start_fail()
- {
-+	local sysfs_bdev="$1"
- 	echo 100 > $DEBUGFS_MNT/fail_make_request/probability
- 	# the 1st one fails the first bio which is reading 4k (or more due to
- 	# readahead), and the 2nd one fails the retry of validation so that it
- 	# triggers read-repair
- 	echo 2 > $DEBUGFS_MNT/fail_make_request/times
- 	echo 0 > $DEBUGFS_MNT/fail_make_request/verbose
--	echo 1 > $SYSFS_BDEV/make-it-fail
-+	echo 1 > $sysfs_bdev/make-it-fail
- }
- 
- stop_fail()
- {
-+	local sysfs_bdev="$1"
- 	echo 0 > $DEBUGFS_MNT/fail_make_request/probability
- 	echo 0 > $DEBUGFS_MNT/fail_make_request/times
--	echo 0 > $SYSFS_BDEV/make-it-fail
-+	echo 0 > $sysfs_bdev/make-it-fail
- }
- 
- _scratch_dev_pool_get 2
-@@ -94,17 +112,21 @@ _scratch_mount -o nospace_cache,nodatasum
- $XFS_IO_PROG -f -d -c "pwrite -S 0xaa -b 128K 0 128K" "$SCRATCH_MNT/foobar" |\
- 	_filter_xfs_io_offset
- 
--# step 2, corrupt the first 64k of one copy (on SCRATCH_DEV which is the first
--# one in $SCRATCH_DEV_POOL
-+# step 2, corrupt the first 64k of stripe #1
- echo "step 2......corrupt file extent" >>$seqres.full
- 
- ${FILEFRAG_PROG} -v $SCRATCH_MNT/foobar >> $seqres.full
- logical_in_btrfs=`${FILEFRAG_PROG} -v $SCRATCH_MNT/foobar | _filter_filefrag | cut -d '#' -f 1`
--physical_on_scratch=`get_physical ${logical_in_btrfs}`
-+physical=`get_physical ${logical_in_btrfs} 1`
-+devid=$(get_devid ${logical_in_btrfs} 1)
-+target_dev=$(get_device_path $devid)
- 
-+SYSFS_BDEV=`_sysfs_dev $target_dev`
- _scratch_unmount
--$XFS_IO_PROG -d -c "pwrite -S 0xbb -b 64K $physical_on_scratch 64K" $SCRATCH_DEV |\
--	_filter_xfs_io_offset
-+
-+echo "corrupt stripe 1 devid $devid devpath $target_dev physical $physical" \
-+	>> $seqres.full
-+$XFS_IO_PROG -d -c "pwrite -S 0xbb -b 64K $physical 64K" $target_dev > /dev/null
- 
- _scratch_mount -o nospace_cache
- 
-@@ -118,18 +140,18 @@ while [[ -z ${result} ]]; do
-     # invalidate the page cache.
-     _scratch_cycle_mount
- 
--    start_fail
-+    start_fail $SYSFS_BDEV
-     result=$(bash -c "
-         if [[ \$((\$\$ % 2)) -eq 1 ]]; then
-                 exec $XFS_IO_PROG -c \"pread 0 4K\" \"$SCRATCH_MNT/foobar\"
-         fi");
--    stop_fail
-+    stop_fail $SYSFS_BDEV
- done
- 
- _scratch_unmount
- 
- # check if the repair works
--$XFS_IO_PROG -c "pread -v -b 512 $physical_on_scratch 512" $SCRATCH_DEV |\
-+$XFS_IO_PROG -c "pread -v -b 512 $physical 512" $target_dev |\
- 	_filter_xfs_io_offset
- 
- _scratch_dev_pool_put
-diff --git a/tests/btrfs/143.out b/tests/btrfs/143.out
-index 66afea4b..a9e82ceb 100644
---- a/tests/btrfs/143.out
-+++ b/tests/btrfs/143.out
-@@ -1,8 +1,6 @@
- QA output created by 143
- wrote 131072/131072 bytes
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
--wrote 65536/65536 bytes
--XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
- XXXXXXXX:  aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa  ................
- XXXXXXXX:  aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa  ................
- XXXXXXXX:  aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa  ................
--- 
-2.23.0
-
+> + * @iocb - kernel iocb
+> + * @iter - iter to/from data is copied
+> + */
+> +
+> +ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
+>  {
+>  	struct file *file = iocb->ki_filp;
+>  	struct inode *inode = file->f_mapping->host;
+> @@ -8662,28 +8676,13 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
+>  	struct extent_changeset *data_reserved = NULL;
+>  	loff_t offset = iocb->ki_pos;
+>  	size_t count = 0;
+> -	int flags = 0;
+> -	bool wakeup = true;
+>  	bool relock = false;
+>  	ssize_t ret;
+>  
+>  	if (check_direct_IO(fs_info, iter, offset))
+>  		return 0;
+>  
+> -	inode_dio_begin(inode);
+> -
+> -	/*
+> -	 * The generic stuff only does filemap_write_and_wait_range, which
+> -	 * isn't enough if we've written compressed pages to this area, so
+> -	 * we need to flush the dirty pages again to make absolutely sure
+> -	 * that any outstanding dirty pages are on disk.
+> -	 */
+>  	count = iov_iter_count(iter);
+> -	if (test_bit(BTRFS_INODE_HAS_ASYNC_EXTENT,
+> -		     &BTRFS_I(inode)->runtime_flags))
+> -		filemap_fdatawrite_range(inode->i_mapping, offset,
+> -					 offset + count - 1);
+> -
+>  	if (iov_iter_rw(iter) == WRITE) {
+>  		/*
+>  		 * If the write DIO is beyond the EOF, we need update
+> @@ -8714,17 +8713,11 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
+>  		dio_data.unsubmitted_oe_range_end = (u64)offset;
+>  		current->journal_info = &dio_data;
+>  		down_read(&BTRFS_I(inode)->dio_sem);
+> -	} else if (test_bit(BTRFS_INODE_READDIO_NEED_LOCK,
+> -				     &BTRFS_I(inode)->runtime_flags)) {
+> -		inode_dio_end(inode);
+> -		flags = DIO_LOCKING | DIO_SKIP_HOLES;
+> -		wakeup = false;
+>  	}
+>  
+> -	ret = __blockdev_direct_IO(iocb, inode,
+> -				   fs_info->fs_devices->latest_bdev,
+> -				   iter, btrfs_get_blocks_direct, NULL,
+> -				   btrfs_submit_direct, flags);
+> +	ret = iomap_dio_rw(iocb, iter, &btrfs_dio_iomap_ops, &btrfs_dops,
+> +			is_sync_kiocb(iocb));
+> +
+>  	if (iov_iter_rw(iter) == WRITE) {
+>  		up_read(&BTRFS_I(inode)->dio_sem);
+>  		current->journal_info = NULL;
+> @@ -8751,11 +8744,8 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
+>  		btrfs_delalloc_release_extents(BTRFS_I(inode), count);
+>  	}
+>  out:
+> -	if (wakeup)
+> -		inode_dio_end(inode);
+>  	if (relock)
+>  		inode_lock(inode);
+> -
+>  	extent_changeset_free(data_reserved);
+>  	return ret;
+>  }
+> @@ -11045,7 +11035,7 @@ static const struct address_space_operations btrfs_aops = {
+>  	.writepage	= btrfs_writepage,
+>  	.writepages	= btrfs_writepages,
+>  	.readpages	= btrfs_readpages,
+> -	.direct_IO	= btrfs_direct_IO,
+> +	.direct_IO	= noop_direct_IO,
+>  	.invalidatepage = btrfs_invalidatepage,
+>  	.releasepage	= btrfs_releasepage,
+>  	.set_page_dirty	= btrfs_set_page_dirty,
+> 

@@ -2,85 +2,170 @@ Return-Path: <SRS0=0wlt=2B=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+X-Spam-Status: No, score=-2.0 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1F678C43603
-	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Dec 2019 16:44:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9DC86C2D0C6
+	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Dec 2019 18:16:20 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id F093F22B48
-	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Dec 2019 16:44:45 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6C9D72173E
+	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Dec 2019 18:16:20 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="WWDt9XZE"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730625AbfLKQon (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 11 Dec 2019 11:44:43 -0500
-Received: from tartarus.angband.pl ([54.37.238.230]:53122 "EHLO
-        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1730404AbfLKQoj (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Dec 2019 11:44:39 -0500
-X-Greylist: delayed 2674 seconds by postgrey-1.27 at vger.kernel.org; Wed, 11 Dec 2019 11:44:38 EST
-Received: from kilobyte by tartarus.angband.pl with local (Exim 4.92)
-        (envelope-from <kilobyte@angband.pl>)
-        id 1if4PA-0000Si-Jj; Wed, 11 Dec 2019 17:00:00 +0100
-Date:   Wed, 11 Dec 2019 17:00:00 +0100
-From:   Adam Borowski <kilobyte@angband.pl>
-To:     Cerem Cem ASLAN <ceremcem@ceremcem.net>
-Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: Is it logical to use a disk that scrub fails but smartctl
- succeeds?
-Message-ID: <20191211160000.GB14837@angband.pl>
-References: <CAN4oSBdH-+BmSLO7DC3u-oBwabNRH2jY2UUO+J0zdxeJTu5FCg@mail.gmail.com>
+        id S1731443AbfLKSQR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 11 Dec 2019 13:16:17 -0500
+Received: from mout.gmx.net ([212.227.15.15]:39169 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1731439AbfLKSQQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 11 Dec 2019 13:16:16 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1576088173;
+        bh=yGINRQU++szqyB2dKBcwmy5FgTVWGIaMocWgfU3OpZk=;
+        h=X-UI-Sender-Class:To:Cc:From:Subject:Date;
+        b=WWDt9XZEi3S6SXY5qmL3/enuSGMx15Et6BVrEQs+IRQGXj9cZthRtkn4+8gWtAdYb
+         cKndhlhx/yRtHSzlVtO/djyBJpIVOfQDHh7fgntsCppzRrXAdkGXE5mvxgAMyZ2zyd
+         B55fM2Gnx+72/qfego3DPJA9mtwLGjuMR8LdhLPU=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [192.168.178.24] ([95.112.79.148]) by mail.gmx.com (mrgmx004
+ [212.227.17.190]) with ESMTPSA (Nemesis) id 1MXXyP-1iDuSo2uRb-00Yx08; Wed, 11
+ Dec 2019 19:16:13 +0100
+To:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Cc:     Linux Kernel <linux-kernel@vger.kernel.org>
+From:   =?UTF-8?Q?Toralf_F=c3=b6rster?= <toralf.foerster@gmx.de>
+Subject: BTRFS with kernel 5.4.1: df -h shows 0 Bytes available but btrfs
+ tells me that there are 1.06 TiB free
+Autocrypt: addr=toralf.foerster@gmx.de; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <9df7f98b-271f-8b1d-f360-00a737d49911@gmx.de>
+Date:   Wed, 11 Dec 2019 19:16:12 +0100
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.3.0
 MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <CAN4oSBdH-+BmSLO7DC3u-oBwabNRH2jY2UUO+J0zdxeJTu5FCg@mail.gmail.com>
-X-Junkbait: aaron@angband.pl, zzyx@angband.pl
-User-Agent: Mutt/1.10.1 (2018-07-13)
-X-SA-Exim-Connect-IP: <locally generated>
-X-SA-Exim-Mail-From: kilobyte@angband.pl
-X-SA-Exim-Scanned: No (on tartarus.angband.pl); SAEximRunCond expanded to false
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:llQP24DdraPE2rf9G3Iloui7iQfhqHXXiz2KFEC234o1T41SzNH
+ CRt1C29WRKe9ykqmHizdeEEZxEdM4CqtFE3AOTHiGH+10PgpBV1e8QP4zZPHup08BqcxPAh
+ CEAIWB4zt224HaaynqyPLUC7ds1O78h49OyogMSwyck1DqUdLyQI7GA0+9OjhZ+4vosRdVc
+ ELqphhvC9Wtgb1wxOJQlQ==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:LlnyD8R28a4=:wHcOfx5faCHxy9BpFpWQCO
+ iJFKxmjBZio83qKpv919ODpKtUeB7rViGpC6sD/FSbRMQtUugOsu4wBmLYbkZKToaiT75czbC
+ F1Vw80s42iMmLriaEgba5i/PEN/tmt2d1Bfw4lTGU9CkDpq/7veI0IrTdSc7Bcr6Zy4kvfsBJ
+ 63AwKxY6VREJ2xEUQJaxo2+JIOrgZEHnnA8HsyE3QLkTbpAYTx9/CaFMXAZsznFjhE9usEiyH
+ m0/SrmJwjuo+TIuGOYTTgEo61KKxv1hIr3k06k/Z8N9ovu5vRnMZ7mIJK/cYceXeBD9h+lAVK
+ +X0lp9PAwwL5adg8MFm++nwEaV4Jue0/s/ikdo+yI+k2sIpaXJ0PnmCs3kg1mzNZVuABExgbh
+ TJdfz8PRNKInZVj9F+aznzj+Op8qlMDWJdlTmhArOBBhQF1TMmoQC9ojxOISMTUf/21wgkrXu
+ TtbvZ8thDhtf6XAWx0EstsOHYmgUBbnAiMe8LEPS0MlfFUndDyae8UASgnG8gJW4ypD5U/fqM
+ jdLJT66QHKpS+WIel3bGg1H9NuQECnk82euQRJv99sfh5x8cFK3csMWzVnnprSho7k5USEjCo
+ wf2sl8rW1A+bFUguEt0SNMi7aNAlEPZ0n6ib3RJ1B23CuCHOaDMriaXgfSIfY0HoftvlQL2kF
+ aYpnPLpWHfK8/GqpjyztFL+PAvTnjBXvVpvfsXUWT3/aSB1C+r19YWGAX5Ixbaf/vCHsXXucm
+ P2ol/BsIfcBGguhdyU5nTsNoh2NYw1pLl68JNudjga6W3IikgEPfXRfeINVbc5A+PrCJHqJjQ
+ bsKs2eLQuRvi7aUXeWfEWyMbbJbSkIUdX7OTX8rZKsT3ax8Aqs2rG2GzwMe9cA8lRMsYEfoGT
+ k1lB4JVH3oOzd57WUglStyK4xv7cM0WvM0WpJKK07ypbmvluzcV3SC4aViAsYbr5QH/C8Spt2
+ 5vu5biUp+Nf850EfLkFWvAIs5YXdG+qF4XFBgATGbSYBpwjWEA7tgSHKwhJ2QI0WqNn4CF7sw
+ 7pDJOj0rxmHczZwIPUfm/765y0MJd3qGfrI3aPZK6UFfWd8zewNg7EHrKHKRQJF80BTioM3+8
+ OUzXzn/zDx04+J39FmRHl7dN3UAo06vUzqOAgZCVwLB8ITVVPx0eBLdaTFE/YJ3WWET8sc0In
+ g4X++RJsdTeBg2xfI1YA8p5q2Mg9P5dLM8vfC9Y7b9kzlH/qEMBJgPAFNkt2+fCyvs1FlgdU2
+ TraoLr3upmoP1pEQOR04TrdxgPwIf+QkECjEXp4va26lg4tChZm73+qftrbc=
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Dec 11, 2019 at 04:11:05PM +0300, Cerem Cem ASLAN wrote:
-> This is the second time after a year that the server's disk throws
-> "INPUT OUTPUT ERROR" and "btrfs scrub" finds some uncorrectable errors
-> along with some corrected errors. However, "smartctl -x" displays
-> "SMART overall-health self-assessment test result: PASSED".
-> 
-> Should we interpret "btrfs scrub"'s "uncorrectable error count" as
-> "time to replace the disk" or are those unrelated events?
+Since 5.4 (5.3.xy was fine) I do get every few days:
 
-"btrfs scrub" operates on a higher layer, and can detect more errors, some
-of which may have a cause elsewhere.  For example, dodgy memory very often
-corrupts data this way; you can retry the scrub to see if the corruption
-happened during write (so the data is lost) or during read (so retrying
-should work).  In that case, you may want to test and/or replace your
-memory, motherboard, processor, etc.
-
-Or, the disk's firmware may fail to detect errors.  It's supposed to verify
-disk's internal checksum but detecting errors is another place where a dodgy
-manufacturer can shave some costs -- either intentionally, or by neglecting
-testing.
-
-Or, some buggy software (which may even include btrfs itself, albeit
-unlikely) might scribble on wrong areas of the disk.
-
-Or...
+# df -h /home/tinderbox/img1
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sda5       1.7T  614G     0 100% /home/tinderbox/img1
 
 
-Anyway, all you know for sure that you have _some_ breakage, which a
-filesystem without data checksums would fail to detect, allowing silent data
-corruption.  Finding the cause is another story.
+# btrfs filesystem usage /home/tinderbox/img1
+Overall:
+    Device size:                   1.66TiB
+    Device allocated:            614.02GiB
+    Device unallocated:            1.06TiB
+    Device missing:                  0.00B
+    Used:                        613.38GiB
+    Free (estimated):              1.06TiB      (min: 543.50GiB)
+    Data ratio:                       1.00
+    Metadata ratio:                   2.00
+    Global reserve:              512.00MiB      (used: 0.00B)
+
+Data,RAID0: Size:566.00GiB, Used:565.50GiB (99.91%)
+   /dev/sda5     283.00GiB
+   /dev/sdb1     283.00GiB
+
+Metadata,RAID1: Size:24.00GiB, Used:23.94GiB (99.76%)
+   /dev/sda5      24.00GiB
+   /dev/sdb1      24.00GiB
+
+System,RAID1: Size:8.00MiB, Used:64.00KiB (0.78%)
+   /dev/sda5       8.00MiB
+   /dev/sdb1       8.00MiB
+
+Unallocated:
+   /dev/sda5     542.99GiB
+   /dev/sdb1     542.99GiB
 
 
-Meow!
--- 
-⢀⣴⠾⠻⢶⣦⠀ A MAP07 (Dead Simple) raspberry tincture recipe: 0.5l 95% alcohol,
-⣾⠁⢠⠒⠀⣿⡁ 1kg raspberries, 0.4kg sugar; put into a big jar for 1 month.
-⢿⡄⠘⠷⠚⠋⠀ Filter out and throw away the fruits (can dump them into a cake,
-⠈⠳⣄⠀⠀⠀⠀ etc), let the drink age at least 3-6 months.
+This is a hardened Gentoo linux acting as a QA build bot for their package=
+s:
+
+# uname -a
+Linux mr-fox 5.4.2 #2 SMP Thu Dec 5 01:18:19 CET 2019 x86_64 Intel(R) Xeon=
+(R) CPU E5-1650 v3 @ 3.50GHz GenuineIntel GNU/Linux
+
+
+I do appreciate hints to overcome this situation.
+
+=2D-
+Toralf

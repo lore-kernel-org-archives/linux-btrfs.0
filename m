@@ -2,79 +2,64 @@ Return-Path: <SRS0=0wlt=2B=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8F875C43603
-	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Dec 2019 04:17:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8108EC43603
+	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Dec 2019 05:00:12 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5FEF22077B
-	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Dec 2019 04:17:01 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="GVzEL5Eq"
+	by mail.kernel.org (Postfix) with ESMTP id 45DB7214AF
+	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Dec 2019 05:00:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726860AbfLKERA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 10 Dec 2019 23:17:00 -0500
-Received: from mail-wr1-f66.google.com ([209.85.221.66]:42949 "EHLO
-        mail-wr1-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726613AbfLKERA (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Dec 2019 23:17:00 -0500
-Received: by mail-wr1-f66.google.com with SMTP id q6so973322wro.9
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Dec 2019 20:16:58 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to;
-        bh=PQ5rQ3wik2ixjrnLCweqtH51YItg+G/tGkSEH/Bd+Yo=;
-        b=GVzEL5EqPxao4ATXBC1uVCO2PZIvALYAVuqVMLM6V+m5cuD8kvlemT76jeSoYoCDHT
-         dpRTFFiRSzCcgUHReyhfNcZDnp3KFmgfpa4l+/z0pFX9Ck4DLsx5Br7HOegBp41QZWYz
-         3pE8gqCV8V4g14+3KFP1sK9L53UxAzrwCflAv9VtxPQWOCeM1Kl+MxFfnijJRupWtPmD
-         EF9aG86Vk/Nlughme+BmHSaLZnYAxA/0BxBPLBmdXR5QI4h+rH9F+w0d3zFn94hTkAPt
-         VNfJiMDfe/wMl4wDIGx+I8GV6OKwQTTcF3Oi1nGfhJXmMQS204j81yXGK/C4tmYDO2nx
-         6E+w==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to;
-        bh=PQ5rQ3wik2ixjrnLCweqtH51YItg+G/tGkSEH/Bd+Yo=;
-        b=PNE/9fb8gGoPSyLj2K4rRurDu9lpQY2sk+BcGpgv0g/M0MyTjHXLEWWqR10xq4IJcl
-         Zlbc1dwy01ZpMNyPQwhwaiAo+Akx9yrIQ4e1me2uBLYonc5apLu1Xfd1FzkqrOpWXVXi
-         5bDBwBQXYU6ILm519ZZ5IDEcetTzc+w9kqPhQyqVi2oMAnPdHkbNnKPFm9Y8IcH0GmEn
-         8s7ayGTZpAqo2XHId4yFsmjqwVhW9WoW8Q0I4nXI21kO2WLKD9V+xLlRKI4RPGDmcKE0
-         4phcPB23hAiNWHAqsNWLHlLUE5Z4PuufT3FHGXrmkFw1ASyB8SRQcRe9gpNry5tgHrsC
-         oquQ==
-X-Gm-Message-State: APjAAAXz2pKvUgeU1eTQe8nWLQ6QbrR/c7tbnxr3UVw2Is69LT2IzI+3
-        B4l+Mdq3udDKS60wapfdU3IJYDXiIQiI2BAc/O2eZfiIfpc=
-X-Google-Smtp-Source: APXvYqwl6qFn1LVxKBJzKSwhIs7tv8ZzsrrES/IkSkJvGkgvu8ob4nnFpE1dLC5qRAZ2qqo5uc5n8QHPUULTf4uJ6cQ=
-X-Received: by 2002:adf:f6c8:: with SMTP id y8mr1105457wrp.167.1576037818100;
- Tue, 10 Dec 2019 20:16:58 -0800 (PST)
+        id S1726141AbfLKFAL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 11 Dec 2019 00:00:11 -0500
+Received: from mx2.suse.de ([195.135.220.15]:45498 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1725768AbfLKFAL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 11 Dec 2019 00:00:11 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 77B68AE07
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Dec 2019 05:00:09 +0000 (UTC)
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/3] btrfs: fixes for relocation to avoid KASAN reports
+Date:   Wed, 11 Dec 2019 13:00:01 +0800
+Message-Id: <20191211050004.18414-1-wqu@suse.com>
+X-Mailer: git-send-email 2.24.0
 MIME-Version: 1.0
-References: <CAJCQCtS_7vjBnqeDsedBQJYuE_ap+Xo6D=MXY=rOxf66oJZkrA@mail.gmail.com>
-In-Reply-To: <CAJCQCtS_7vjBnqeDsedBQJYuE_ap+Xo6D=MXY=rOxf66oJZkrA@mail.gmail.com>
-From:   Chris Murphy <chris@colorremedies.com>
-Date:   Tue, 10 Dec 2019 21:16:42 -0700
-Message-ID: <CAJCQCtRSQgptZ7_Pez8FjHN6cErShOG1F7BRdYciGq7Fb=fL_w@mail.gmail.com>
-Subject: Re: 5.5.0-0.rc1 hang, could be zstd compression related
-To:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        Linux FS Devel <linux-fsdevel@vger.kernel.org>,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        David Sterba <dsterba@suse.cz>
-Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-OK this is interesting. It took 7 hours to hit it the first time. And
-the consistent reproducer I've now run into twice, is 'dnf install'
-any little rpm, which is what I was doing the first time I hit it. I'm
-not sure what about dnf or rpm is triggering this,  I've got other
-things doing a bunch of small file writes including Firefox - yet
-those don't trigger it.
+Due to commit d2311e698578 ("btrfs: relocation: Delay reloc tree
+deletion after merge_reloc_roots"), reloc tree lifespan is extended.
 
-Next, I tried a couple more times with compression disabled, and the
-problem doesn't happen. So it does seem zstd related. Maybe.
+Although we always set root->reloc_root to NULL before we drop the reloc
+tree, but that's not multi-core safe since we have no proper memory
+barrier to ensure other cores can see the same root->reloc_root.
 
+The proper root fix should be some proper root refcount, and make
+btrfs_drop_snapshot() to wait for all other root owner to release the
+root before dropping it.
 
-Chris Murphy
+But for now, let's just check the DEAD_RELOC_ROOT bit before accessing
+root->reloc_root.
+
+Qu Wenruo (3):
+  btrfs: relocation: Fix a KASAN use-after-free bug due to extended
+    reloc tree lifespan
+  btrfs: relocation: Fix KASAN report on create_reloc_tree due to
+    extended reloc tree lifepsan
+  btrfs: relocation: Fix a KASAN report on btrfs_reloc_pre_snapshot()
+    due to extended reloc root lifespan
+
+ fs/btrfs/relocation.c | 16 ++++++++++++++--
+ 1 file changed, 14 insertions(+), 2 deletions(-)
+
+-- 
+2.24.0
+

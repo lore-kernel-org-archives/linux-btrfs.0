@@ -4,61 +4,61 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-9.5 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 94AFAC43603
-	for <linux-btrfs@archiver.kernel.org>; Fri, 13 Dec 2019 04:11:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0793CC2D0C9
+	for <linux-btrfs@archiver.kernel.org>; Fri, 13 Dec 2019 04:11:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5E14F2253D
-	for <linux-btrfs@archiver.kernel.org>; Fri, 13 Dec 2019 04:11:11 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D1FFB2253D
+	for <linux-btrfs@archiver.kernel.org>; Fri, 13 Dec 2019 04:11:16 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="VzEb5ub9"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="oo3qwKTK"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731968AbfLMELK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 12 Dec 2019 23:11:10 -0500
-Received: from esa6.hgst.iphmx.com ([216.71.154.45]:11907 "EHLO
+        id S1731983AbfLMELQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 12 Dec 2019 23:11:16 -0500
+Received: from esa6.hgst.iphmx.com ([216.71.154.45]:11918 "EHLO
         esa6.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1731928AbfLMELJ (ORCPT
+        with ESMTP id S1731971AbfLMELN (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 12 Dec 2019 23:11:09 -0500
+        Thu, 12 Dec 2019 23:11:13 -0500
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1576210269; x=1607746269;
+  t=1576210274; x=1607746274;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=qHitdKXS7WToCLK0tYGztMsYaxh4wdvD80bm2tDzTq4=;
-  b=VzEb5ub9lkIsLIrwxNBMWehY90VjpLuDJeWbIXiNkvtXS1+ZEJCf5hll
-   Ge7eBew66+g5sWfq5IXbaAcRAIZi8X41eLPKRb3xVJnJxxKzBjXmMdY3Y
-   i6EYZnrqLYWmgxqecBbLDF+Yj7t9xVahuE3Rxwa3UOz2OL1Uu2DAIN9hK
-   96mo+3A96goHRkVZLfK7OLahR9dCuapPBdBlBVDY/uYPBiJT3usDoWow/
-   u+GnDBMRAaImYMHoXtmqLjPEqyj/ijsnF4cH3Ww7ajdsXhn9XfwwbJEj+
-   zYnkVQ6KLTMlrgqWFiKk9PNKy/BUVhD2ZnfG057eIyv1kC8qi8d1SnTS9
-   A==;
-IronPort-SDR: Z1eHC5wcz8YbGQuhSxOyw25z7FfpDMtVMkhMC7rAc1+cfHoWn2OWYs7VR4C390GMDomInbQeCz
- +FVoOT8HMg5jP8du1Zd/JxisCKKwG7ZBS6GJvogVL3RvGv9ocC5/xxLI2tYBwukHXsl6GU/JJt
- 0soL8fQ5zsqXAyRI/9LIutelFq+U+ZOgmPI5+c/njsyEqX/Dza27Sz1w1T6fVnZ64FWrmrZhNW
- lhRgLy90JiRoGyTbRqYjTTuxgLOJREiKScnYXEiW6Wv6Phel8qhh/jD6plPgNgF0BrjCvOK1WR
- u44=
+  bh=48fi9iWuTJ5hUDEI3q4s9C6bEGLUNolZCKfPx156Xxk=;
+  b=oo3qwKTKsxRO56wCBQncvBIqjla9jBXXwKAwSvAyq1yuUSuktBcQm6KG
+   cUa0kLify7YlqBkgymSbNsf5Wh8ZT5vXA5Ay1rP4oDZ2evKnB4QCLA8Qc
+   VWLQZ7LiNr2LsRrQhjUc194uOmm52A9rG6pwZjTYGthxHVLXbl6vLu8fX
+   9SsmXBjLRCqWpn54yaWbL9ce18C/DtjOZ6vZ7IDOLyAOC9gklyoAECDay
+   4z5ZUCaZ1U4D82bPw0WMoA327AQyK4xLCiY7yTBfUX7vI2qCsvsKph6jP
+   qSmJr48eb4ApWhMq0k1SunLsNaS7P023hss8ueU/OXAUGYVHzjU/y5FH5
+   g==;
+IronPort-SDR: J4tKul2ZXnGsmHzlOPwAMKL2mTQIN/GtrTfEq23R5akeo9+95K3BEbsdZWtCOmIZo9w5QH8rZz
+ 25c9tb01QFaXFFyFIRIAWUM4CpRKpRiYLy6m5OMo/eEycncjNZtvbuPx7Uowp+O5vtYQHZrhkb
+ tjohd9PkrNxd6i4KTwhiU7JUGTS+/tvLvGhL+1Aoo+2dHhIFyqvnuxXizxdk+lBUozVJ5mH7+P
+ 8mwusG0QauIQBetKswa/OgR5P9etZ4AgpDCeKFUVMHuS+0FlKfUbjOv5XTcdcMRxVWtqqFeAkB
+ j4w=
 X-IronPort-AV: E=Sophos;i="5.69,308,1571673600"; 
-   d="scan'208";a="126860135"
+   d="scan'208";a="126860144"
 Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 13 Dec 2019 12:11:09 +0800
-IronPort-SDR: tiDQo8QRntu4n2GTK74opsh2039MzTt5rXl0EqCTNCOlHmPZ0CRa4dqkrnGHjKgj6cTEU2+4Ah
- 2K/IlQclOY0qFJggDza56Mt1SmXuUCoKQoHLpVOYZzRxscGMH90fpEwchmvDLv1O/nAjcbEPOA
- sKSNtnTQR5/TPGbKW+xeB+QHtFHh+whE6aD72LauYAcNHwxqlVL+nK5eCVajVA/hSnTxTZsaNw
- CleaUJXOCWKL8axVfNU4/nW6eJmvVyroizCIYs1HrHlFo/UW+pqU8uoDuxGF7pxhPDT017ecUl
- 6DLLTe4oKkqg9jb6YSNDQ+zv
+  by ob1.hgst.iphmx.com with ESMTP; 13 Dec 2019 12:11:14 +0800
+IronPort-SDR: fvf3cQgb5GxZfQpNx59pYz0bM7PqDZFhuKiXzxo8fdfCIehy33ykL56Fhz/k2YCYs8mzAjDdjV
+ BPfvGmFxKaiOcRH5Jxu5/sySOuvraaCVVDtsEdRCkMphgR9XELo+KTwF6hqZzSdPNWf+HOyOSJ
+ Jr5DMEPLFX+uxRgC//u/09s/Pj7ZAIrCGmcXX+Sb8kjRJT6ZgjYT2YDhFuT6QDG5ngqkZMzA0V
+ M7hNsZXTQ573TwnFwW7cBIvQk7LAGzEgJN7BmtY7pR/3LYZ9l3hCxd9Ug4NrAaVniY0OhdUu+B
+ FD4KtYUr/paIiswP4tjhecA2
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 12 Dec 2019 20:05:40 -0800
-IronPort-SDR: dCs0ow6v3uyWQUzFjgL5nq9VdvlxzGEnKgdotxP1UhOFYBCeVmzoLWUyEqm4x9B3NlE+zrt9vE
- FH/UPv3JLlBK876vh6A0euhgEhJ8tufgzbtU8B+Fs9XrIwySawfZQkf4APHUCr/r55r4IzcKXM
- AI6Zv+YCjcj5mGrUgVaw5447w5cb0E5guGvT1BxrH4bUnkA5ipCbU/X6iEC6QuWAKaTM7YRpW5
- aMkzPGepchh7R0JLmjtALlUl2kGxRtg7iNXSKUbqBUz3oyw5h20PUoNaJjPm+hwGNfW4bKO3dm
- 5dM=
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 12 Dec 2019 20:05:45 -0800
+IronPort-SDR: 5LnL+4hVnOklwCOqCGNFa4OmPj9F26Xg2LYSNDBLR+CLgugDiYzpy1PJfvaQCMHYhooiY78QxN
+ fJrQvESLNFcHJaIVu9FFNZuK2Q/5eckzCApn4YO6yLo9WRLwbyp98rxAFMOGMv8w7KEMn/uw9p
+ dOpe3QoR70u6VPugaZ7CkRTxNKO5aUVxS8FFEKHBlWMIaE+MP8PElqmpeqTDPL5stvPnOQnIrN
+ nJt8EhY/FYSbzTYzxOuePMZWorwCtBzGYdsKrYF7RQrEcOMKa25bJC6YHqEPgbBQPrWLN1GFRb
+ 7/4=
 WDCIronportException: Internal
 Received: from naota.dhcp.fujisawa.hgst.com (HELO naota.fujisawa.hgst.com) ([10.149.53.115])
-  by uls-op-cesaip02.wdc.com with ESMTP; 12 Dec 2019 20:11:07 -0800
+  by uls-op-cesaip02.wdc.com with ESMTP; 12 Dec 2019 20:11:11 -0800
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
 Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
@@ -68,9 +68,9 @@ Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         Hannes Reinecke <hare@suse.com>,
         Anand Jain <anand.jain@oracle.com>,
         linux-fsdevel@vger.kernel.org, Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH v6 14/28] btrfs: redirty released extent buffers in HMZONED mode
-Date:   Fri, 13 Dec 2019 13:09:01 +0900
-Message-Id: <20191213040915.3502922-15-naohiro.aota@wdc.com>
+Subject: [PATCH v6 16/28] btrfs: implement atomic compressed IO submission
+Date:   Fri, 13 Dec 2019 13:09:03 +0900
+Message-Id: <20191213040915.3502922-17-naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.24.1
 In-Reply-To: <20191213040915.3502922-1-naohiro.aota@wdc.com>
 References: <20191213040915.3502922-1-naohiro.aota@wdc.com>
@@ -81,263 +81,62 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Tree manipulating operations like merging nodes often release
-once-allocated tree nodes. Btrfs cleans such nodes so that pages in the
-node are not uselessly written out. On HMZONED drives, however, such
-optimization blocks the following IOs as the cancellation of the write out
-of the freed blocks breaks the sequential write sequence expected by the
-device.
-
-This patch introduces a list of clean and unwritten extent buffers that
-have been released in a transaction. Btrfs redirty the buffer so that
-btree_write_cache_pages() can send proper bios to the devices.
-
-Besides it clears the entire content of the extent buffer not to confuse
-raw block scanners e.g. btrfsck. By clearing the content,
-csum_dirty_buffer() complains about bytenr mismatch, so avoid the checking
-and checksum using newly introduced buffer flag EXTENT_BUFFER_NO_CHECK.
+As same as with non-compressed IO submission, we must unlock a block group
+for the next allocation.
 
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 ---
- fs/btrfs/disk-io.c     |  8 ++++++++
- fs/btrfs/extent-tree.c | 12 +++++++++++-
- fs/btrfs/extent_io.c   |  3 +++
- fs/btrfs/extent_io.h   |  2 ++
- fs/btrfs/hmzoned.c     | 36 ++++++++++++++++++++++++++++++++++++
- fs/btrfs/hmzoned.h     |  6 ++++++
- fs/btrfs/transaction.c | 10 ++++++++++
- fs/btrfs/transaction.h |  3 +++
- 8 files changed, 79 insertions(+), 1 deletion(-)
+ fs/btrfs/inode.c | 18 ++++++++++++++++--
+ 1 file changed, 16 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 7f4c6a92079a..fbbc313f9f46 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -525,6 +525,12 @@ static int csum_dirty_buffer(struct btrfs_fs_info *fs_info, struct page *page)
- 		return 0;
- 
- 	found_start = btrfs_header_bytenr(eb);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 3677c36999d8..e09089e24a8f 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -793,13 +793,25 @@ static noinline void submit_compressed_extents(struct async_chunk *async_chunk)
+ 			 * and IO for us.  Otherwise, we need to submit
+ 			 * all those pages down to the drive.
+ 			 */
+-			if (!page_started && !ret)
++			if (!page_started && !ret) {
++				struct extent_map *em;
++				u64 logical;
 +
-+	if (test_bit(EXTENT_BUFFER_NO_CHECK, &eb->bflags)) {
-+		WARN_ON(found_start != 0);
-+		return 0;
-+	}
++				em = btrfs_get_extent(BTRFS_I(inode), NULL, 0,
++						      async_extent->start,
++						      async_extent->ram_size,
++						      0);
++				logical = em->block_start;
++				free_extent_map(em);
 +
- 	/*
- 	 * Please do not consolidate these warnings into a single if.
- 	 * It is useful to know what went wrong.
-@@ -4521,6 +4527,8 @@ void btrfs_cleanup_one_transaction(struct btrfs_transaction *cur_trans,
- 	btrfs_destroy_pinned_extent(fs_info,
- 				    fs_info->pinned_extents);
- 
-+	btrfs_free_redirty_list(cur_trans);
-+
- 	cur_trans->state =TRANS_STATE_COMPLETED;
- 	wake_up(&cur_trans->commit_wait);
- }
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index b41a45855bc4..e61f69eef4a8 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3301,8 +3301,10 @@ void btrfs_free_tree_block(struct btrfs_trans_handle *trans,
- 
- 		if (root->root_key.objectid != BTRFS_TREE_LOG_OBJECTID) {
- 			ret = check_ref_cleanup(trans, buf->start);
--			if (!ret)
-+			if (!ret) {
-+				btrfs_redirty_list_add(trans->transaction, buf);
- 				goto out;
-+			}
+ 				extent_write_locked_range(inode,
+ 						  async_extent->start,
+ 						  async_extent->start +
+ 						  async_extent->ram_size - 1,
+ 						  WB_SYNC_ALL);
+-			else if (ret && async_chunk->locked_page)
++				btrfs_hmzoned_data_io_unlock_logical(fs_info,
++								     logical);
++			} else if (ret && async_chunk->locked_page)
+ 				unlock_page(async_chunk->locked_page);
+ 			kfree(async_extent);
+ 			cond_resched();
+@@ -899,6 +911,7 @@ static noinline void submit_compressed_extents(struct async_chunk *async_chunk)
+ 			free_async_extent_pages(async_extent);
  		}
- 
- 		pin = 0;
-@@ -3314,6 +3316,13 @@ void btrfs_free_tree_block(struct btrfs_trans_handle *trans,
- 			goto out;
- 		}
- 
-+		if (btrfs_fs_incompat(fs_info, HMZONED)) {
-+			btrfs_redirty_list_add(trans->transaction, buf);
-+			pin_down_extent(cache, buf->start, buf->len, 1);
-+			btrfs_put_block_group(cache);
-+			goto out;
-+		}
-+
- 		WARN_ON(test_bit(EXTENT_BUFFER_DIRTY, &buf->bflags));
- 
- 		btrfs_add_free_space(cache, buf->start, buf->len);
-@@ -4524,6 +4533,7 @@ btrfs_init_new_buffer(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 	btrfs_tree_lock(buf);
- 	btrfs_clean_tree_block(buf);
- 	clear_bit(EXTENT_BUFFER_STALE, &buf->bflags);
-+	clear_bit(EXTENT_BUFFER_NO_CHECK, &buf->bflags);
- 
- 	btrfs_set_lock_blocking_write(buf);
- 	set_extent_buffer_uptodate(buf);
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index eb8bd0258360..6e25c8790ef4 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -24,6 +24,7 @@
- #include "rcu-string.h"
- #include "backref.h"
- #include "disk-io.h"
-+#include "hmzoned.h"
- 
- static struct kmem_cache *extent_state_cache;
- static struct kmem_cache *extent_buffer_cache;
-@@ -4889,6 +4890,7 @@ __alloc_extent_buffer(struct btrfs_fs_info *fs_info, u64 start,
- 	init_waitqueue_head(&eb->read_lock_wq);
- 
- 	btrfs_leak_debug_add(&eb->leak_list, &buffers);
-+	INIT_LIST_HEAD(&eb->release_list);
- 
- 	spin_lock_init(&eb->refs_lock);
- 	atomic_set(&eb->refs, 1);
-@@ -5686,6 +5688,7 @@ void write_extent_buffer(struct extent_buffer *eb, const void *srcv,
- 
- 	WARN_ON(start > eb->len);
- 	WARN_ON(start + len > eb->start + eb->len);
-+	WARN_ON(test_bit(EXTENT_BUFFER_NO_CHECK, &eb->bflags));
- 
- 	offset = offset_in_page(start_offset + start);
- 
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index a8551a1f56e2..51a15e93a5cd 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -29,6 +29,7 @@ enum {
- 	EXTENT_BUFFER_IN_TREE,
- 	/* write IO error */
- 	EXTENT_BUFFER_WRITE_ERR,
-+	EXTENT_BUFFER_NO_CHECK,
- };
- 
- /* these are flags for __process_pages_contig */
-@@ -115,6 +116,7 @@ struct extent_buffer {
- 	 */
- 	wait_queue_head_t read_lock_wq;
- 	struct page *pages[INLINE_EXTENT_BUFFER_PAGES];
-+	struct list_head release_list;
- #ifdef CONFIG_BTRFS_DEBUG
- 	int spinning_writers;
- 	atomic_t spinning_readers;
-diff --git a/fs/btrfs/hmzoned.c b/fs/btrfs/hmzoned.c
-index 0ca84d888e53..0c0ee9a46009 100644
---- a/fs/btrfs/hmzoned.c
-+++ b/fs/btrfs/hmzoned.c
-@@ -1135,3 +1135,39 @@ int btrfs_reset_device_zone(struct btrfs_device *device, u64 physical,
- 
- 	return ret;
- }
-+
-+void btrfs_redirty_list_add(struct btrfs_transaction *trans,
-+			    struct extent_buffer *eb)
-+{
-+	struct btrfs_fs_info *fs_info = eb->fs_info;
-+
-+	if (!btrfs_fs_incompat(fs_info, HMZONED) ||
-+	    btrfs_header_flag(eb, BTRFS_HEADER_FLAG_WRITTEN) ||
-+	    !list_empty(&eb->release_list))
-+		return;
-+
-+	set_extent_buffer_dirty(eb);
-+	set_extent_bits_nowait(&trans->dirty_pages, eb->start,
-+			       eb->start + eb->len - 1, EXTENT_DIRTY);
-+	memzero_extent_buffer(eb, 0, eb->len);
-+	set_bit(EXTENT_BUFFER_NO_CHECK, &eb->bflags);
-+
-+	spin_lock(&trans->releasing_ebs_lock);
-+	list_add_tail(&eb->release_list, &trans->releasing_ebs);
-+	spin_unlock(&trans->releasing_ebs_lock);
-+	atomic_inc(&eb->refs);
-+}
-+
-+void btrfs_free_redirty_list(struct btrfs_transaction *trans)
-+{
-+	spin_lock(&trans->releasing_ebs_lock);
-+	while (!list_empty(&trans->releasing_ebs)) {
-+		struct extent_buffer *eb;
-+
-+		eb = list_first_entry(&trans->releasing_ebs,
-+				      struct extent_buffer, release_list);
-+		list_del_init(&eb->release_list);
-+		free_extent_buffer(eb);
-+	}
-+	spin_unlock(&trans->releasing_ebs_lock);
-+}
-diff --git a/fs/btrfs/hmzoned.h b/fs/btrfs/hmzoned.h
-index e1fa6a2f2557..ddec6aed7283 100644
---- a/fs/btrfs/hmzoned.h
-+++ b/fs/btrfs/hmzoned.h
-@@ -45,6 +45,9 @@ int btrfs_load_block_group_zone_info(struct btrfs_block_group *cache);
- int btrfs_hmzoned_check_metadata_space(struct btrfs_fs_info *fs_info);
- int btrfs_reset_device_zone(struct btrfs_device *device, u64 physical,
- 			    u64 length, u64 *bytes);
-+void btrfs_redirty_list_add(struct btrfs_transaction *trans,
-+			    struct extent_buffer *eb);
-+void btrfs_free_redirty_list(struct btrfs_transaction *trans);
- #else /* CONFIG_BLK_DEV_ZONED */
- static inline int btrfs_get_dev_zone(struct btrfs_device *device, u64 pos,
- 				     struct blk_zone *zone)
-@@ -110,6 +113,9 @@ static inline int btrfs_reset_device_zone(struct btrfs_device *device,
- {
- 	return 0;
- }
-+static inline void btrfs_redirty_list_add(struct btrfs_transaction *trans,
-+					  struct extent_buffer *eb) { }
-+static inline void btrfs_free_redirty_list(struct btrfs_transaction *trans) { }
- #endif
- 
- static inline bool btrfs_dev_is_sequential(struct btrfs_device *device, u64 pos)
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 19de6e2041dc..39628c370bdb 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -21,6 +21,7 @@
- #include "dev-replace.h"
- #include "qgroup.h"
- #include "block-group.h"
-+#include "hmzoned.h"
- 
- #define BTRFS_ROOT_TRANS_TAG 0
- 
-@@ -329,6 +330,8 @@ static noinline int join_transaction(struct btrfs_fs_info *fs_info,
- 	spin_lock_init(&cur_trans->dirty_bgs_lock);
- 	INIT_LIST_HEAD(&cur_trans->deleted_bgs);
- 	spin_lock_init(&cur_trans->dropped_roots_lock);
-+	INIT_LIST_HEAD(&cur_trans->releasing_ebs);
-+	spin_lock_init(&cur_trans->releasing_ebs_lock);
- 	list_add_tail(&cur_trans->list, &fs_info->trans_list);
- 	extent_io_tree_init(fs_info, &cur_trans->dirty_pages,
- 			IO_TREE_TRANS_DIRTY_PAGES, fs_info->btree_inode);
-@@ -2336,6 +2339,13 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 		goto scrub_continue;
+ 		alloc_hint = ins.objectid + ins.offset;
++		btrfs_hmzoned_data_io_unlock_logical(fs_info, ins.objectid);
+ 		kfree(async_extent);
+ 		cond_resched();
  	}
- 
-+	/*
-+	 * At this point, we should have written the all tree blocks
-+	 * allocated in this transaction. So it's now safe to free the
-+	 * redirtyied extent buffers.
-+	 */
-+	btrfs_free_redirty_list(cur_trans);
-+
- 	ret = write_all_supers(fs_info, 0);
- 	/*
- 	 * the super is written, we can safely allow the tree-loggers
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index 49f7196368f5..3d60d2213c70 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -84,6 +84,9 @@ struct btrfs_transaction {
- 	spinlock_t dropped_roots_lock;
- 	struct btrfs_delayed_ref_root delayed_refs;
- 	struct btrfs_fs_info *fs_info;
-+
-+	spinlock_t releasing_ebs_lock;
-+	struct list_head releasing_ebs;
- };
- 
- #define __TRANS_FREEZABLE	(1U << 0)
+@@ -906,6 +919,7 @@ static noinline void submit_compressed_extents(struct async_chunk *async_chunk)
+ out_free_reserve:
+ 	btrfs_dec_block_group_reservations(fs_info, ins.objectid);
+ 	btrfs_free_reserved_extent(fs_info, ins.objectid, ins.offset, 1);
++	btrfs_hmzoned_data_io_unlock_logical(fs_info, ins.objectid);
+ out_free:
+ 	extent_clear_unlock_delalloc(inode, async_extent->start,
+ 				     async_extent->start +
 -- 
 2.24.0
 

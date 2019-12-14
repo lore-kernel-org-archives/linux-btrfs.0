@@ -7,58 +7,58 @@ X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1B66FC43603
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6D1B4C2D0CA
 	for <linux-btrfs@archiver.kernel.org>; Sat, 14 Dec 2019 00:23:01 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 07F8921655
+	by mail.kernel.org (Postfix) with ESMTP id 58548214AF
 	for <linux-btrfs@archiver.kernel.org>; Sat, 14 Dec 2019 00:23:01 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
 	s=default; t=1576282981;
-	bh=oLjsZ0pdbw872FhrPprCAPRWLOu38dXDVuD5YQessqQ=;
+	bh=Bba+cN5CMLoWQ5OFpycdpFVvXvAt9bf3jdJa1xVvsWI=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:In-Reply-To:
 	 References:List-ID:From;
-	b=y+MRCd2DBas77F13Z3h25QTx0sna6pXJ/SXVBDostya8WqpL87MLpxnRS6QHmtpNV
-	 /TEHKDIgkE+q3MGDwgIedneiflj6SJQeRV2xG1DzffpKOJ55oksbKzB5xqe2NjtIa+
-	 HH+01twMp5iuTons8vgpvJ/LxnqQlD9ieT8Chds8=
+	b=1Uj2RTDg+IMWJkTO2oqJtOkCVDnHn1xz+oi+KsS1TfMkclC8bsGel0iiRdDln1Gw6
+	 IhHfxmMnimKgGwVtw6f20kxqIz/v2C34FGhWwVuxKxmaj5NQqTeveeYGoZLqcf3oKf
+	 GkqdM4+eURE13jilBwHNHfCefdemokCHGGTC+wDs=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726907AbfLNAXA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S1726911AbfLNAXA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Fri, 13 Dec 2019 19:23:00 -0500
-Received: from mail-pf1-f193.google.com ([209.85.210.193]:34529 "EHLO
-        mail-pf1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726865AbfLNAW5 (ORCPT
+Received: from mail-pg1-f194.google.com ([209.85.215.194]:35530 "EHLO
+        mail-pg1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726903AbfLNAW7 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 13 Dec 2019 19:22:57 -0500
-Received: by mail-pf1-f193.google.com with SMTP id l127so537545pfl.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 13 Dec 2019 16:22:56 -0800 (PST)
+        Fri, 13 Dec 2019 19:22:59 -0500
+Received: by mail-pg1-f194.google.com with SMTP id l24so286493pgk.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 13 Dec 2019 16:22:59 -0800 (PST)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:in-reply-to:references;
-        bh=NFbEukKvf2Xh6mgha+jK4U6sHgoIt2QHID8GuNLvCAA=;
-        b=rIgC4YX6cTG3OKYZ7Bsz1hxctVjVxcwTWIknOTnEKdVYt0CwPRHCZhonIpXCufbwQR
-         j/Fpyx6beJpJ5uHElItworTaXGh0q8a80PVgB1rHVufRkoaaT1Ik7c+g3CM6dYML58YO
-         VH8cnjGEGy0p16Ql68s0zkqvGkITcrbkzi3iafoiVb2wg4ZJiCznZiJ4RdDDFPBLYr/M
-         kV57h4CadhL6jouWvBYp1r0l7hTpoAMokzA8UCEetc0hqOQq1E7c3a7UqS6kYuaUri2g
-         inkRWAWFtDCQusBBVuMG5qL7YxZGG2yheCeEpN4mwjNi+b/FndztvhjghvHmCE7pVz36
-         gV+Q==
-X-Gm-Message-State: APjAAAUqbKqRwUSNX6160vzf7xFKRM0VjBpoU+K/FzM80hrwX/sC+3Ys
-        EjRmGtVVDZBAV4Mj4ir6eaw=
-X-Google-Smtp-Source: APXvYqyhEEVUKqgZeYHWdl5+1xeWKGtL98eDbdrzTVybZEUTrzkTwLenfsZY3qLMTcyMg5h+0syEcA==
-X-Received: by 2002:a62:7b54:: with SMTP id w81mr2546453pfc.127.1576282976379;
-        Fri, 13 Dec 2019 16:22:56 -0800 (PST)
+        bh=z+63g65+RKcVcR5uWAB1cmMaOkxiHCfRgiQVI4OyzLs=;
+        b=Ww6obF+Sf8PvyrsRh1Mep9Am8HNdMEZ+nGpzbGmj/asqEQdti6AyANhCbYaMpupJgW
+         MUYcVn1/l8DYn4O9Sa9GZUylXMZtOmb3XJ7fBKdG3jcLjQUoLljva+Swm8VjADtYC2/Y
+         9YxYplakyp5gxv0FGap1nC14IbuQUBSPJTZ8QyOOpKu7eb7RfZHFJBOd/V8IwfWB++yZ
+         drTGF+8exXNaLyPXi3ucU8HZH0yD7G388fSQEz87tZBb5kKlWCfe7Z5IMb6SSCV6y4Et
+         JaGIsBJ/dJX4BsGh+1Ku6skL72xKuMr2VgTiwUz7kI9uLK2KDlac533fENDm+fu2RB2J
+         wAhg==
+X-Gm-Message-State: APjAAAXm+dWRf2ZwdQwIKa58MkHa51mod9ZnaQ9EgIxgu2DG4Sxe6rlh
+        niWNgp5KukkzF4SI/w6d5+Y=
+X-Google-Smtp-Source: APXvYqyFLnMaEIV+qg1IoO9IJTEwuCzCbuImR7Gf/zoLvj4GFIOeGXhTbLz4Bzit0nHSVdunixacpA==
+X-Received: by 2002:a63:f901:: with SMTP id h1mr2547443pgi.445.1576282978865;
+        Fri, 13 Dec 2019 16:22:58 -0800 (PST)
 Received: from dennisz-mbp.thefacebook.com ([199.201.64.138])
-        by smtp.gmail.com with ESMTPSA id m12sm11911430pgr.87.2019.12.13.16.22.55
+        by smtp.gmail.com with ESMTPSA id m12sm11911430pgr.87.2019.12.13.16.22.57
         (version=TLS1_2 cipher=ECDHE-RSA-AES128-SHA bits=128/128);
-        Fri, 13 Dec 2019 16:22:55 -0800 (PST)
+        Fri, 13 Dec 2019 16:22:57 -0800 (PST)
 From:   Dennis Zhou <dennis@kernel.org>
 To:     David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
         Josef Bacik <josef@toxicpanda.com>,
         Omar Sandoval <osandov@osandov.com>
 Cc:     kernel-team@fb.com, linux-btrfs@vger.kernel.org,
         Dennis Zhou <dennis@kernel.org>
-Subject: [PATCH 16/22] btrfs: make max async discard size tunable
-Date:   Fri, 13 Dec 2019 16:22:25 -0800
-Message-Id: <c3e6fa9d3391104c22c3e474af16a86d439a7af7.1576195673.git.dennis@kernel.org>
+Subject: [PATCH 18/22] btrfs: only keep track of data extents for async discard
+Date:   Fri, 13 Dec 2019 16:22:27 -0800
+Message-Id: <7dbf1733c917f37122c630d392622d70021cdbdb.1576195673.git.dennis@kernel.org>
 X-Mailer: git-send-email 2.13.5
 In-Reply-To: <cover.1576195673.git.dennis@kernel.org>
 References: <cover.1576195673.git.dennis@kernel.org>
@@ -69,153 +69,72 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Expose max_discard_size as a tunable via sysfs.
+As mentioned earlier, discarding data can be done either by issuing an
+explicit discard or implicitly by reusing the LBA. Metadata chunks see
+much more frequent reuse due to well it being metadata. So instead of
+explicitly discarding metadata blocks, just leave them be and let the
+latter implicit discarding be done for them.
 
 Signed-off-by: Dennis Zhou <dennis@kernel.org>
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/ctree.h            |  1 +
- fs/btrfs/discard.c          |  1 +
- fs/btrfs/free-space-cache.c | 19 ++++++++++++-------
- fs/btrfs/sysfs.c            | 31 +++++++++++++++++++++++++++++++
- 4 files changed, 45 insertions(+), 7 deletions(-)
+ fs/btrfs/block-group.h |  6 ++++++
+ fs/btrfs/discard.c     | 11 +++++++++--
+ 2 files changed, 15 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 1b2dae5962de..bf93ddbc773f 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -470,6 +470,7 @@ struct btrfs_discard_ctl {
- 	u64 prev_discard;
- 	atomic_t discardable_extents;
- 	atomic64_t discardable_bytes;
-+	u64 max_discard_size;
- 	u32 delay;
- 	u32 iops_limit;
- 	u64 bps_limit;
+diff --git a/fs/btrfs/block-group.h b/fs/btrfs/block-group.h
+index 601e1d217e22..ee8441439a56 100644
+--- a/fs/btrfs/block-group.h
++++ b/fs/btrfs/block-group.h
+@@ -182,6 +182,12 @@ static inline u64 btrfs_block_group_end(struct btrfs_block_group *block_group)
+ 	return (block_group->start + block_group->length);
+ }
+ 
++static inline bool btrfs_is_block_group_data(
++					struct btrfs_block_group *block_group)
++{
++	return (block_group->flags & BTRFS_BLOCK_GROUP_DATA);
++}
++
+ #ifdef CONFIG_BTRFS_DEBUG
+ static inline int btrfs_should_fragment_free_space(
+ 		struct btrfs_block_group *block_group)
 diff --git a/fs/btrfs/discard.c b/fs/btrfs/discard.c
-index 085f36808e7f..dd5143f0283f 100644
+index 884dffd28596..55ad357e65f3 100644
 --- a/fs/btrfs/discard.c
 +++ b/fs/btrfs/discard.c
-@@ -536,6 +536,7 @@ void btrfs_discard_init(struct btrfs_fs_info *fs_info)
- 	discard_ctl->prev_discard = 0;
- 	atomic_set(&discard_ctl->discardable_extents, 0);
- 	atomic64_set(&discard_ctl->discardable_bytes, 0);
-+	discard_ctl->max_discard_size = BTRFS_ASYNC_DISCARD_MAX_SIZE;
- 	discard_ctl->delay = BTRFS_DISCARD_MAX_DELAY;
- 	discard_ctl->iops_limit = BTRFS_DISCARD_MAX_IOPS;
- 	discard_ctl->bps_limit = 0;
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 0dbcea6c59f9..e5bb37627807 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -3431,6 +3431,8 @@ static int trim_no_bitmap(struct btrfs_block_group *block_group,
- 			  u64 *total_trimmed, u64 start, u64 end, u64 minlen,
- 			  bool async)
+@@ -53,6 +53,9 @@ static void __add_to_discard_list(struct btrfs_discard_ctl *discard_ctl,
+ static void add_to_discard_list(struct btrfs_discard_ctl *discard_ctl,
+ 				struct btrfs_block_group *block_group)
  {
-+	struct btrfs_discard_ctl *discard_ctl =
-+					&block_group->fs_info->discard_ctl;
- 	struct btrfs_free_space_ctl *ctl = block_group->free_space_ctl;
- 	struct btrfs_free_space *entry;
- 	struct rb_node *node;
-@@ -3439,6 +3441,7 @@ static int trim_no_bitmap(struct btrfs_block_group *block_group,
- 	u64 extent_bytes;
- 	enum btrfs_trim_state extent_trim_state;
- 	u64 bytes;
-+	u64 max_discard_size = READ_ONCE(discard_ctl->max_discard_size);
++	if (!btrfs_is_block_group_data(block_group))
++		return;
++
+ 	spin_lock(&discard_ctl->lock);
  
- 	while (start < end) {
- 		struct btrfs_trim_range trim_entry;
-@@ -3476,11 +3479,10 @@ static int trim_no_bitmap(struct btrfs_block_group *block_group,
- 				goto next;
- 			}
- 			unlink_free_space(ctl, entry);
--			if (bytes > BTRFS_ASYNC_DISCARD_MAX_SIZE) {
--				bytes = extent_bytes =
--					BTRFS_ASYNC_DISCARD_MAX_SIZE;
--				entry->offset += BTRFS_ASYNC_DISCARD_MAX_SIZE;
--				entry->bytes -= BTRFS_ASYNC_DISCARD_MAX_SIZE;
-+			if (max_discard_size && bytes > max_discard_size) {
-+				bytes = extent_bytes = max_discard_size;
-+				entry->offset += max_discard_size;
-+				entry->bytes -= max_discard_size;
- 				link_free_space(ctl, entry);
- 			} else {
- 				kmem_cache_free(btrfs_free_space_cachep, entry);
-@@ -3589,12 +3591,15 @@ static int trim_bitmaps(struct btrfs_block_group *block_group,
- 			u64 *total_trimmed, u64 start, u64 end, u64 minlen,
- 			bool async)
- {
-+	struct btrfs_discard_ctl *discard_ctl =
-+					&block_group->fs_info->discard_ctl;
- 	struct btrfs_free_space_ctl *ctl = block_group->free_space_ctl;
- 	struct btrfs_free_space *entry;
- 	int ret = 0;
- 	int ret2;
- 	u64 bytes;
- 	u64 offset = offset_to_bitmap(ctl, start);
-+	u64 max_discard_size = READ_ONCE(discard_ctl->max_discard_size);
- 
- 	while (offset < end) {
- 		bool next_bitmap = false;
-@@ -3664,8 +3669,8 @@ static int trim_bitmaps(struct btrfs_block_group *block_group,
- 			goto next;
+ 	__add_to_discard_list(discard_ctl, block_group);
+@@ -168,7 +171,10 @@ static struct btrfs_block_group *peek_discard_list(
+ 	if (block_group && now > block_group->discard_eligible_time) {
+ 		if (block_group->discard_index == BTRFS_DISCARD_INDEX_UNUSED &&
+ 		    block_group->used != 0) {
+-			__add_to_discard_list(discard_ctl, block_group);
++			if (btrfs_is_block_group_data(block_group))
++				__add_to_discard_list(discard_ctl, block_group);
++			else
++				list_del_init(&block_group->discard_list);
+ 			goto again;
  		}
+ 		if (block_group->discard_state == BTRFS_DISCARD_RESET_CURSOR) {
+@@ -508,7 +514,8 @@ void btrfs_discard_update_discardable(struct btrfs_block_group *block_group,
+ 	s64 bytes_delta;
  
--		if (async && bytes > BTRFS_ASYNC_DISCARD_MAX_SIZE)
--			bytes = BTRFS_ASYNC_DISCARD_MAX_SIZE;
-+		if (async && max_discard_size && bytes > max_discard_size)
-+			bytes = max_discard_size;
+ 	if (!block_group ||
+-	    !btrfs_test_opt(block_group->fs_info, DISCARD_ASYNC))
++	    !btrfs_test_opt(block_group->fs_info, DISCARD_ASYNC) ||
++	    !btrfs_is_block_group_data(block_group))
+ 		return;
  
- 		bitmap_clear_bits(ctl, entry, start, bytes);
- 		if (entry->bytes == 0)
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index 12f7a906a36f..e71e8bbc57d0 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -404,6 +404,36 @@ static ssize_t btrfs_discard_bps_limit_store(struct kobject *kobj,
- BTRFS_ATTR_RW(discard, bps_limit, btrfs_discard_bps_limit_show,
- 	      btrfs_discard_bps_limit_store);
- 
-+static ssize_t btrfs_discard_max_discard_size_show(struct kobject *kobj,
-+						   struct kobj_attribute *a,
-+						   char *buf)
-+{
-+	struct btrfs_fs_info *fs_info = discard_to_fs_info(kobj);
-+
-+	return snprintf(buf, PAGE_SIZE, "%llu\n",
-+			READ_ONCE(fs_info->discard_ctl.max_discard_size));
-+}
-+
-+static ssize_t btrfs_discard_max_discard_size_store(struct kobject *kobj,
-+						    struct kobj_attribute *a,
-+						    const char *buf, size_t len)
-+{
-+	struct btrfs_fs_info *fs_info = discard_to_fs_info(kobj);
-+	struct btrfs_discard_ctl *discard_ctl = &fs_info->discard_ctl;
-+	u64 max_discard_size;
-+	int ret;
-+
-+	ret = kstrtou64(buf, 10, &max_discard_size);
-+	if (ret)
-+		return -EINVAL;
-+
-+	WRITE_ONCE(discard_ctl->max_discard_size, max_discard_size);
-+
-+	return len;
-+}
-+BTRFS_ATTR_RW(discard, max_discard_size, btrfs_discard_max_discard_size_show,
-+	      btrfs_discard_max_discard_size_store);
-+
- static ssize_t btrfs_discardable_extents_show(struct kobject *kobj,
- 					      struct kobj_attribute *a,
- 					      char *buf)
-@@ -429,6 +459,7 @@ BTRFS_ATTR(discard, discardable_bytes, btrfs_discardable_bytes_show);
- static const struct attribute *discard_debug_attrs[] = {
- 	BTRFS_ATTR_PTR(discard, iops_limit),
- 	BTRFS_ATTR_PTR(discard, bps_limit),
-+	BTRFS_ATTR_PTR(discard, max_discard_size),
- 	BTRFS_ATTR_PTR(discard, discardable_extents),
- 	BTRFS_ATTR_PTR(discard, discardable_bytes),
- 	NULL,
+ 	discard_ctl = &block_group->fs_info->discard_ctl;
 -- 
 2.17.1
 

@@ -7,59 +7,59 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6DD99C43603
-	for <linux-btrfs@archiver.kernel.org>; Tue, 17 Dec 2019 15:36:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 92C6CC43603
+	for <linux-btrfs@archiver.kernel.org>; Tue, 17 Dec 2019 15:37:02 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 422952465E
-	for <linux-btrfs@archiver.kernel.org>; Tue, 17 Dec 2019 15:36:59 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 69A8F24655
+	for <linux-btrfs@archiver.kernel.org>; Tue, 17 Dec 2019 15:37:02 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="BWaBkXuN"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="RjPJnR0y"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727801AbfLQPg6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 17 Dec 2019 10:36:58 -0500
-Received: from mail-qt1-f196.google.com ([209.85.160.196]:44112 "EHLO
+        id S1727977AbfLQPhB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 17 Dec 2019 10:37:01 -0500
+Received: from mail-qt1-f196.google.com ([209.85.160.196]:33983 "EHLO
         mail-qt1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727360AbfLQPg6 (ORCPT
+        with ESMTP id S1727786AbfLQPhB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 17 Dec 2019 10:36:58 -0500
-Received: by mail-qt1-f196.google.com with SMTP id t3so1703162qtr.11
-        for <linux-btrfs@vger.kernel.org>; Tue, 17 Dec 2019 07:36:57 -0800 (PST)
+        Tue, 17 Dec 2019 10:37:01 -0500
+Received: by mail-qt1-f196.google.com with SMTP id 5so9055391qtz.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 17 Dec 2019 07:37:00 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references:mime-version
          :content-transfer-encoding;
-        bh=X+dDBN36nIO9Ue8qnQBxsC4EQZnEqI2HnSGzAQBPEHQ=;
-        b=BWaBkXuNJ+DR2o9Ne5qWbzR7FgUZSDL8qHg8BPVWQ/AvW/Ot055vf1xP38FT9dsBYk
-         490LQNBhX4yir4gX6U08XJwMZPF/c40J18xgGd0aWFV0NAnMxc9CInhM5mJILn7f7bM8
-         iCHITdDWvvfrYQWGUykV3lrbysrc9M1VeZOUzNUZtCI45HYulc5oMOpZa/PO7KLGn119
-         PpkGo2unDpzbO75QX/JnxjYNDmgEhCsRHfgsNdHj5DzSLL3jQkAyd19jidzxxQHoXn53
-         +aGg4qo8HJRNeUXAfsGYgKot6v9p5X6f596kV8n+B5kGeu+ezJNxJ85yOONogrwu8fN0
-         hUgQ==
+        bh=jfbRXZ/5/MBFQWWw54MEoM9lTLz/KmX5CXwHy/coLzY=;
+        b=RjPJnR0yMps+levKWrQPbjXrTjaY9wQL7LyAzOgI4txpIknMFGhinf8aAiZaSCs1Da
+         kU5P7NeRUSP4OJMFKQNPB1Jp4ddWITuiBUaIa9yS4RKGTw1S9NiJJkX2dTzQniZIGidZ
+         +oDKP8kenrR0kYcDt3T60DlJjcWu1CTt2v3Mgy80UP7gVowDFCHEPSbvTeMAfQsZPvcY
+         HFdprSYivD3WkObfrmpj5vx6U8ewI6F5A3C6/KTXzEgzALPWYYhuIcUD1j1DJUQ/s6U0
+         J9/brhrCuENfPbTh1cKoTQ1z4iBu8yWodiH80fibdUq+rDHZI+Y1G6fGGrxtzU18Yrns
+         E7fQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=X+dDBN36nIO9Ue8qnQBxsC4EQZnEqI2HnSGzAQBPEHQ=;
-        b=CmGOGfCQ+GrDL1HcLEpeYAchhR4qYCwVxKTuqxHL/FR5+Vg2ERYMa0Ni2oVjrR3BYD
-         XcbyfIJOzTmOMNp2Q6U40kNy93YlqUQu7+C8bwKJvWCTsI8j4zPCKWhv7baKq8PwS8jQ
-         XQPn+WWAmVAfNKNBWAyI7jNvMCgwIlHj3pYHC0JPX8gGTq4Vw9XTYLUC9KDJPQnL/try
-         oeYCmIKUrgUeKXzLNsRzI9KQ/5aSZg0YfXKBjVtY/fi6DJMou7cmRVd6dmzf3pgyh0hw
-         JkffIuz8C+fBLkj2c79ML3TgU4D6/IDe44C7QbW9nM44VSms+FxRu5UH4EjRrCNC8H5o
-         WiAQ==
-X-Gm-Message-State: APjAAAWqNfEbfaqU6rZAKwRt7vRKugiAaxPsBLqp75hHEP10LzCwXPJ8
-        27DHyAa2f6uGcAz9pqLIaB1ZoFM1PIPo+g==
-X-Google-Smtp-Source: APXvYqzYSEIEYjjRKHqgTpa6GvhhwReDPbCM1O+dqlQe9lJHXyjvAYnsHu/Yp7FJVFxUoGVHY2/a8w==
-X-Received: by 2002:ac8:2bca:: with SMTP id n10mr5074863qtn.251.1576597016615;
-        Tue, 17 Dec 2019 07:36:56 -0800 (PST)
+        bh=jfbRXZ/5/MBFQWWw54MEoM9lTLz/KmX5CXwHy/coLzY=;
+        b=R4g8aKdC+IvvypxwitNiOh9wAUrimw3y56Gg8KSnR4PZCxZBHBBK9PDbBcz/2xUxPn
+         kVK/3Qe5KTL2fSVyjpHtbrZwJzQPUJKGHKTbJrrjKfdeMt86eCMyD097yqTNFhiqNpYm
+         vUR6icRVowp3ki4PXCN/RX3uyh5xDnw9pwS8cRtUn79uu1rb4tuOkTJSa5Pza1ck4qU2
+         3W5FTSlShqzZ7KwzBmDHA8yQupTOOlwUvs2sWPbaaGyCHBoiStfYX+jQdv99jnXl7sU8
+         t2/qq8EhOsZdbCHwn06QB+Oh9Rby0iisp5r+x206o0uHCQbnCSvj3II/SzB7qL66FE0N
+         hb/Q==
+X-Gm-Message-State: APjAAAVrWhNuU8TIrXresugW4w1yXWeeR/vvCKTxe5c5budwDxwI0Gis
+        G50Qk05W3oxnpYKCtLCMQ68g+FB1t3twSQ==
+X-Google-Smtp-Source: APXvYqxLP9uDseBucxwtIIRZbCqN3v2QMTrLg7310OL/6oT5kAgrc8pYZDsoaUMhIgMTsz4oIIQmDA==
+X-Received: by 2002:ac8:4117:: with SMTP id q23mr5135825qtl.66.1576597019897;
+        Tue, 17 Dec 2019 07:36:59 -0800 (PST)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id z6sm7063100qkz.101.2019.12.17.07.36.55
+        by smtp.gmail.com with ESMTPSA id c6sm7120858qka.111.2019.12.17.07.36.59
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 17 Dec 2019 07:36:55 -0800 (PST)
+        Tue, 17 Dec 2019 07:36:59 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 10/45] btrfs: hold a ref on fs roots while they're in the radix tree
-Date:   Tue, 17 Dec 2019 10:36:00 -0500
-Message-Id: <20191217153635.44733-11-josef@toxicpanda.com>
+Subject: [PATCH 12/45] btrfs: hold a root ref in btrfs_get_dentry
+Date:   Tue, 17 Dec 2019 10:36:02 -0500
+Message-Id: <20191217153635.44733-13-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.23.0
 In-Reply-To: <20191217153635.44733-1-josef@toxicpanda.com>
 References: <20191217153635.44733-1-josef@toxicpanda.com>
@@ -70,40 +70,36 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-If we're sitting in the radix tree, we should probably have a ref for
-the radix tree.  Grab a ref on the root when we insert it, and drop it
-when it gets deleted.
+Looking up the inode we need to search the root, make sure we hold a
+reference on that root while we're doing the lookup.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/disk-io.c | 6 +++++-
- 1 file changed, 5 insertions(+), 1 deletion(-)
+ fs/btrfs/export.c | 5 +++++
+ 1 file changed, 5 insertions(+)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 4c55db4b3147..dfeeabfc341b 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1515,8 +1515,10 @@ int btrfs_insert_fs_root(struct btrfs_fs_info *fs_info,
- 	ret = radix_tree_insert(&fs_info->fs_roots_radix,
- 				(unsigned long)root->root_key.objectid,
- 				root);
--	if (ret == 0)
-+	if (ret == 0) {
-+		btrfs_grab_fs_root(root);
- 		set_bit(BTRFS_ROOT_IN_RADIX, &root->state);
+diff --git a/fs/btrfs/export.c b/fs/btrfs/export.c
+index 08cd8c4a02a5..eba6c6d27bad 100644
+--- a/fs/btrfs/export.c
++++ b/fs/btrfs/export.c
+@@ -82,12 +82,17 @@ static struct dentry *btrfs_get_dentry(struct super_block *sb, u64 objectid,
+ 		err = PTR_ERR(root);
+ 		goto fail;
+ 	}
++	if (!btrfs_grab_fs_root(root)) {
++		err = -ENOENT;
++		goto fail;
 +	}
- 	spin_unlock(&fs_info->fs_roots_radix_lock);
- 	radix_tree_preload_end();
  
-@@ -3816,6 +3818,8 @@ void btrfs_drop_and_free_fs_root(struct btrfs_fs_info *fs_info,
- 	spin_lock(&fs_info->fs_roots_radix_lock);
- 	radix_tree_delete(&fs_info->fs_roots_radix,
- 			  (unsigned long)root->root_key.objectid);
-+	if (test_and_clear_bit(BTRFS_ROOT_IN_RADIX, &root->state))
-+		btrfs_put_fs_root(root);
- 	spin_unlock(&fs_info->fs_roots_radix_lock);
+ 	key.objectid = objectid;
+ 	key.type = BTRFS_INODE_ITEM_KEY;
+ 	key.offset = 0;
  
- 	if (btrfs_root_refs(&root->root_item) == 0)
+ 	inode = btrfs_iget(sb, &key, root);
++	btrfs_put_fs_root(root);
+ 	if (IS_ERR(inode)) {
+ 		err = PTR_ERR(inode);
+ 		goto fail;
 -- 
 2.23.0
 

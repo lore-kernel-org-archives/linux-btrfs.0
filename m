@@ -7,59 +7,59 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0F5CBC2D0CD
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 798ACC43603
 	for <linux-btrfs@archiver.kernel.org>; Tue, 17 Dec 2019 15:37:04 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D677E24655
-	for <linux-btrfs@archiver.kernel.org>; Tue, 17 Dec 2019 15:37:03 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4DC7424655
+	for <linux-btrfs@archiver.kernel.org>; Tue, 17 Dec 2019 15:37:04 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="vGUvYuPp"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="KTyzNFbQ"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727885AbfLQPhD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S1728023AbfLQPhD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Tue, 17 Dec 2019 10:37:03 -0500
-Received: from mail-qt1-f195.google.com ([209.85.160.195]:43785 "EHLO
-        mail-qt1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727360AbfLQPg7 (ORCPT
+Received: from mail-qk1-f194.google.com ([209.85.222.194]:40813 "EHLO
+        mail-qk1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727786AbfLQPhD (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 17 Dec 2019 10:36:59 -0500
-Received: by mail-qt1-f195.google.com with SMTP id b3so9009974qti.10
-        for <linux-btrfs@vger.kernel.org>; Tue, 17 Dec 2019 07:36:59 -0800 (PST)
+        Tue, 17 Dec 2019 10:37:03 -0500
+Received: by mail-qk1-f194.google.com with SMTP id c17so7785061qkg.7
+        for <linux-btrfs@vger.kernel.org>; Tue, 17 Dec 2019 07:37:02 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references:mime-version
          :content-transfer-encoding;
-        bh=JLk4SYGy37fJBjRDw7Ytdl7Bh55Sf6BqQikAUfeWGHU=;
-        b=vGUvYuPpnxDjZYYAq3k1EyK/wh2XpWsMgJrJb6lDIAybMccd6NyfdrhiHQ5QwmN9MT
-         w9oSlqJ9J3mklZVvUqS0ctHiXL7pBv+a1brjdJ/kzLVEhR80GaIkxnlqHDLMOlxz3Tyd
-         tPfKoUk9WNWluDnH2JtGtwMKdmANg+5cfFFu/Ro8A6sYRh+c1Itu0sg5osIdZSWWLGfG
-         KnGPvwp/qZZ99rDWUiTxndMdMWF7NobYWQyCo1xXNtYxOzzxsXJGMEuurqNItcitTjr/
-         pN6v5PTyzlpGoNPcCek4YeMp9OoIsHax87kR9ymqFZ/R9K8/tgXIkyM5MbNsX/Pu8VDn
-         LkYA==
+        bh=jwJhWMl33WBxBZPZsNUeTq/Ywm6VHshAJl9lKM0tdLc=;
+        b=KTyzNFbQkHQC78RJ/mZecMwx14OvtjhUfVQNhKkLh1SyoNbos3uaV6+RXl+CF54NuM
+         KDwZ3toetlWdi63gSqtYsnd/y5W9HO0crh2OO1qn4tvmqi/H9aoyHnHhMBNHuiX8SB1Y
+         tyfrp9yeT28p45SCZ9a6wRxx1mGmXRLYfF/GRYKrUro9T19AofE5pYk0Fcptj+aGLOLy
+         HZzsO8ukUWHMGuQcaKc/cPEwxIvo+7y7Mf38a6JiemchOhe0Rpz5HfnSygywoY/cNwb3
+         eJw+m09TYIM1bdJlamedfx31n5RcWLVsgj1vZuMK1tmUB/AgCvzKyrcssd0iRxZI8IRK
+         YLrQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=JLk4SYGy37fJBjRDw7Ytdl7Bh55Sf6BqQikAUfeWGHU=;
-        b=auFNyK8AWQXb9wQurjjDyEw2jaNh/2TGMlh45vnTRsubZ23p+uI8Q+gsrfBsBSofkP
-         F6SblhCwsNNq/maxuAd/LD4vHvxBQ4v5wVHgsgfkyUIpIVIbwIQS2KW5VSeWKxW+DfWD
-         ix7v2LR04Y54iO2gP/VuOO2wymcLBYjKV8YAP99cpj0kxQUmqH//XcURsp/pLse0Gf3a
-         s3qsG4YhKoiz/Kowr7j+QHscFswQehtyg6X+32To5eoWqZaTmHK3Zd5jP9IEE99KoDjY
-         lv8EwfD3BvGrS8NGERZL5xLcWYT//My3xraftk0bMeU6dZq9Sto2hcDqQV/13SRYC4DW
-         ZG2g==
-X-Gm-Message-State: APjAAAWjwSgqV7dFwQaFdqczbJcV117MXaNiUKC8ljZw/EoUyIos/2zI
-        r77Nh7m+tqbfqNlz+5UWGaNZTwVgt9lHLA==
-X-Google-Smtp-Source: APXvYqyD5zzb724ca24pYCz7kg0vbbNCGeWv5d9Q+bEd+3/1ccgRD/Lk6dJALlR5KT6efk1Bvo7vtA==
-X-Received: by 2002:ac8:75d8:: with SMTP id z24mr4897777qtq.193.1576597018286;
-        Tue, 17 Dec 2019 07:36:58 -0800 (PST)
+        bh=jwJhWMl33WBxBZPZsNUeTq/Ywm6VHshAJl9lKM0tdLc=;
+        b=UUsQLqJ1O4adIU3/1nIeEuRu4m+4WirCAowvnDgt5DRrYiBRS20PAfwPMnaNCgGBY7
+         OAj3noOw7jIV9w4MYZAPeVjtWJ5qCMa5tIAH9TFZWKtMdtNxxAB9B2xX7RIq/+GVgGUL
+         Z+niU055aj/H8Oo3D2d3NjCwnHXTcegmOVxDhwZo448d9u5WxJ6SSqJfNMcOH8xlfnN8
+         h97bAkKdkokE9I8cCv4rWqGK0LROK2w4zrjv0XwH/Cm/+zqOEO3yuHCkOvc1n9gwI1Py
+         nCBEFBDvmVCVD/yv2XZEE+cdLT1/7Bpzy6Yg3sJivKuTjydg0NoNmLpv1XCLOomDbHkT
+         XOfQ==
+X-Gm-Message-State: APjAAAWLsVDijlW+0m3C0rtujrBZ4Agfi/HZzMIJM/T8nMMy7pEL/Ge+
+        xIupGi9IHc8UcqPo+hcR7ZDCg4IPXOGQ7A==
+X-Google-Smtp-Source: APXvYqxUXLSgw4ywJNT9BFB1aE/3UQDjc63YK1a1sbT2GxwjA/U/ZQbAKni+zZ4GnSI9r/BbJ00Z1Q==
+X-Received: by 2002:a37:e408:: with SMTP id y8mr2601274qkf.39.1576597021591;
+        Tue, 17 Dec 2019 07:37:01 -0800 (PST)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id o19sm8418654qtb.43.2019.12.17.07.36.57
+        by smtp.gmail.com with ESMTPSA id o6sm7084516qkk.53.2019.12.17.07.37.00
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 17 Dec 2019 07:36:57 -0800 (PST)
+        Tue, 17 Dec 2019 07:37:00 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 11/45] btrfs: hold a ref on the root in resolve_indirect_ref
-Date:   Tue, 17 Dec 2019 10:36:01 -0500
-Message-Id: <20191217153635.44733-12-josef@toxicpanda.com>
+Subject: [PATCH 13/45] btrfs: hold a ref on the root in __btrfs_run_defrag_inode
+Date:   Tue, 17 Dec 2019 10:36:03 -0500
+Message-Id: <20191217153635.44733-14-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.23.0
 In-Reply-To: <20191217153635.44733-1-josef@toxicpanda.com>
 References: <20191217153635.44733-1-josef@toxicpanda.com>
@@ -70,42 +70,35 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We're looking up a random root, we need to hold a ref on it while we're
-using it.
+We are looking up an arbitrary inode, we need to hold a ref on the root
+while we're doing this.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/backref.c | 10 +++++++++-
- 1 file changed, 9 insertions(+), 1 deletion(-)
+ fs/btrfs/file.c | 5 +++++
+ 1 file changed, 5 insertions(+)
 
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index e5d85311d5d5..193747b6e1f9 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -524,7 +524,13 @@ static int resolve_indirect_ref(struct btrfs_fs_info *fs_info,
- 	if (IS_ERR(root)) {
- 		srcu_read_unlock(&fs_info->subvol_srcu, index);
- 		ret = PTR_ERR(root);
--		goto out;
-+		goto out_free;
-+	}
-+
-+	if (!btrfs_grab_fs_root(root)) {
-+		srcu_read_unlock(&fs_info->subvol_srcu, index);
-+		ret = -ENOENT;
-+		goto out_free;
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 8baa1b44d514..f8e16f44a970 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -292,11 +292,16 @@ static int __btrfs_run_defrag_inode(struct btrfs_fs_info *fs_info,
+ 		ret = PTR_ERR(inode_root);
+ 		goto cleanup;
  	}
++	if (!btrfs_grab_fs_root(inode_root)) {
++		ret = -ENOENT;
++		goto cleanup;
++	}
  
- 	if (btrfs_is_testing(fs_info)) {
-@@ -577,6 +583,8 @@ static int resolve_indirect_ref(struct btrfs_fs_info *fs_info,
- 	ret = add_all_parents(root, path, parents, ref, level, time_seq,
- 			      extent_item_pos, total_refs, ignore_offset);
- out:
-+	btrfs_put_fs_root(root);
-+out_free:
- 	path->lowest_level = 0;
- 	btrfs_release_path(path);
- 	return ret;
+ 	key.objectid = defrag->ino;
+ 	key.type = BTRFS_INODE_ITEM_KEY;
+ 	key.offset = 0;
+ 	inode = btrfs_iget(fs_info->sb, &key, inode_root);
++	btrfs_put_fs_root(inode_root);
+ 	if (IS_ERR(inode)) {
+ 		ret = PTR_ERR(inode);
+ 		goto cleanup;
 -- 
 2.23.0
 

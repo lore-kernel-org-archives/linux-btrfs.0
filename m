@@ -2,110 +2,135 @@ Return-Path: <SRS0=yR0V=2H=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+X-Spam-Status: No, score=-8.0 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	UNPARSEABLE_RELAY autolearn=ham autolearn_force=no version=3.4.0
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B641BC43603
-	for <linux-btrfs@archiver.kernel.org>; Tue, 17 Dec 2019 06:55:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 14EEAC43603
+	for <linux-btrfs@archiver.kernel.org>; Tue, 17 Dec 2019 07:04:38 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9475F206D8
-	for <linux-btrfs@archiver.kernel.org>; Tue, 17 Dec 2019 06:55:09 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CAC67206A5
+	for <linux-btrfs@archiver.kernel.org>; Tue, 17 Dec 2019 07:04:37 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="ksbDTv37"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726718AbfLQGzJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 17 Dec 2019 01:55:09 -0500
-Received: from m9a0013g.houston.softwaregrp.com ([15.124.64.91]:37128 "EHLO
-        m9a0013g.houston.softwaregrp.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1726167AbfLQGzI (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 17 Dec 2019 01:55:08 -0500
-X-Greylist: delayed 993 seconds by postgrey-1.27 at vger.kernel.org; Tue, 17 Dec 2019 01:55:07 EST
-Received: FROM m9a0013g.houston.softwaregrp.com (15.121.0.191) BY m9a0013g.houston.softwaregrp.com WITH ESMTP
- FOR linux-btrfs@vger.kernel.org;
- Tue, 17 Dec 2019 06:53:53 +0000
-Received: from M4W0334.microfocus.com (2002:f78:1192::f78:1192) by
- M9W0068.microfocus.com (2002:f79:bf::f79:bf) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256_P256) id
- 15.1.1591.10; Tue, 17 Dec 2019 06:36:53 +0000
-Received: from NAM12-MW2-obe.outbound.protection.outlook.com (15.124.8.13) by
- M4W0334.microfocus.com (15.120.17.146) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256_P256) id
- 15.1.1591.10 via Frontend Transport; Tue, 17 Dec 2019 06:36:53 +0000
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
- b=NhOIEeWQoXQYeFHrrYwPpKLyRAkvbTnczP3jYy1Dn+ltBRopmKJeE5DBGSXdiBGeMbghPu5lOJrWsKsKR8ET0267e/5bedA4XpgZLQWLUk5/46Bmpxqe2q7Hwo86oTdY/zzzA5uGYxD30oWie52u8kQ3pjvngpq6XnhvLbkMmo2kpI0YHqKBN+zFafHl2ifZKoktMtOr7U5PDMEIeqpH4DZXKCt9FiWp9ZIkaI9GIFT67HYCRDq9pie9HiWJSdcWG/sTz0HS8n1SoHkXDRkxghMOLF6GpUjIQY46dQPVUDe0B5ZdW5raKe5Nk0cv8qPwzImGdZpthqZwTrtbSIgOPw==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector9901;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=pY851qANzem1IftVWSU0DRm+zROlUCkpTbjl2ti8ZSA=;
- b=OZAG6wubTfTRqEyhhluqjHC8MYMyuaqfbTwE2zlZCPkA+H11W+oSofFKSOzQH5cad5YuQ4Q5eZmDXZS7pVWBS5t4vIGQNrHq6OpV8vzRTm8Go1PgWFJR2Mfmn+l84Mcrg+hLyQWdxbOWE7PdjOhgEsqQpFGr4aW2i/Cs7pWCieaKnVBXVXh8g9w0+tAsQ6sVChV9p0uUCx/11rLpeAasVk+NDHRwVqH1GNrQrXQcyl6v6YMQ5GNfKAFbj6BXz0jUHWH41YTxXacFqnKptaL192/Dk43xtxm3nbFYtxThoBaVLGf8bLrIDla6t2KmOj7f3vegPWOUlz1QZ8rAhy1BBA==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=suse.com; dmarc=pass action=none header.from=suse.com;
- dkim=pass header.d=suse.com; arc=none
-Received: from MN2PR18MB2685.namprd18.prod.outlook.com (20.179.82.223) by
- MN2PR18MB3056.namprd18.prod.outlook.com (20.179.21.85) with Microsoft SMTP
- Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.20.2538.19; Tue, 17 Dec 2019 06:36:52 +0000
-Received: from MN2PR18MB2685.namprd18.prod.outlook.com
- ([fe80::b47f:8d41:b41f:5308]) by MN2PR18MB2685.namprd18.prod.outlook.com
- ([fe80::b47f:8d41:b41f:5308%6]) with mapi id 15.20.2538.019; Tue, 17 Dec 2019
- 06:36:52 +0000
-From:   Long An <lan@suse.com>
-To:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] btrfs-progs: tests: mkfs/011: Fix path for rootdir
-Thread-Topic: [PATCH] btrfs-progs: tests: mkfs/011: Fix path for rootdir
-Thread-Index: AQHVtKRdRTt2O7u7lEKBDUilJ/XjMQ==
-Date:   Tue, 17 Dec 2019 06:36:51 +0000
-Message-ID: <1576564610.3899.20.camel@suse.com>
-Accept-Language: zh-CN, en-US
-Content-Language: en-US
-X-MS-Has-Attach: 
-X-MS-TNEF-Correlator: 
-authentication-results: spf=none (sender IP is ) smtp.mailfrom=lan@suse.com; 
-x-originating-ip: [45.122.156.254]
-x-ms-publictraffictype: Email
-x-ms-office365-filtering-correlation-id: fb8e4c58-fc90-43ea-c601-08d782bb8075
-x-ms-traffictypediagnostic: MN2PR18MB3056:
-x-microsoft-antispam-prvs: <MN2PR18MB3056C6A07ECE94B67EFA3647C6500@MN2PR18MB3056.namprd18.prod.outlook.com>
-x-ms-oob-tlc-oobclassifiers: OLM:446;
-x-forefront-prvs: 02543CD7CD
-x-forefront-antispam-report: SFV:NSPM;SFS:(10019020)(4636009)(396003)(136003)(346002)(39860400002)(366004)(376002)(189003)(199004)(478600001)(8936002)(26005)(6916009)(66476007)(66446008)(2616005)(6512007)(103116003)(64756008)(316002)(71200400001)(66556008)(2906002)(8676002)(6486002)(81166006)(81156014)(186003)(86362001)(36756003)(76116006)(91956017)(6506007)(66946007)(4744005)(5660300002);DIR:OUT;SFP:1102;SCL:1;SRVR:MN2PR18MB3056;H:MN2PR18MB2685.namprd18.prod.outlook.com;FPR:;SPF:None;LANG:en;PTR:InfoNoRecords;MX:1;A:1;
-received-spf: None (protection.outlook.com: suse.com does not designate
- permitted sender hosts)
-x-ms-exchange-senderadcheck: 1
-x-microsoft-antispam: BCL:0;
-x-microsoft-antispam-message-info: 9WJDg8PPTIU8mcekImWMZO/ZaSThmWeRi31i0AXt73BFtFnzd2b3l1vuf7IfKdySNneQ5swqxal5Upmpnceng61UhB2BaOTYUSLs1HkShk5aFluNNZMv3dHZULfiuffBsxf4qMXmRaRBOM1aVP8g9zSUnYhPUfbSTo8Xr6Y+sHgtRdIfgioRoR7nX+JAIVUwwm9QlLm59kJYAoZCaYzpTD2KJLi9PNN+hQn/YtV/NmbDYlofLHx4BzoYFE6RC5D9MNmLafalGqi3hGj4WFesjUayIou0Vo2Mkm53xRNgIJbcSw+/NJq7GOlzwOIZRmF3NlV/lBMYK66gx6141mD71CthRxfwPvMaIbGzTAm/6ktMz6YnA2/UZF9d3LQ0tet0ZQmkeNi6OGy+vXH8eDYYTYZ8O+hU5g1skO6UQ6Stq3DkGyZ99WzYCQ9tZ5HxjY/B
-x-ms-exchange-transport-forked: True
-Content-Type: text/plain; charset="utf-8"
-Content-ID: <7B1D8BD7CA657740BB7D3581EDB68D69@namprd18.prod.outlook.com>
-Content-Transfer-Encoding: base64
+        id S1726859AbfLQHEg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 17 Dec 2019 02:04:36 -0500
+Received: from mout.gmx.net ([212.227.15.19]:48241 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726167AbfLQHEg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 17 Dec 2019 02:04:36 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1576566271;
+        bh=uqUzQwJUBXh26452ShERIZTp4UxpkKQquaiO0WkC6P4=;
+        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
+        b=ksbDTv37XQXJRn1ZBbJ8Ip5QxiLkh2gqRt6Hv/5pFVlcQQ8ZxAf2a26M6rAle798k
+         NaSkm4eLuJpNTimwsNoyvYghl2a8Vp0VRHYa4D04ilnOers88sJipy+A4a46oYW4lm
+         sKYtb76CV3OBRBym0SfRJdyT7aIvyyzjx/+I1zAI=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [192.168.2.178] ([34.92.249.81]) by mail.gmx.com (mrgmx005
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1MY68d-1iBLvM3afN-00YQJh; Tue, 17
+ Dec 2019 08:04:30 +0100
+Subject: Re: [PATCH] btrfs: Fix bad comment on disk_bytenr of
+ btrfs_file_extent_item
+To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20191217064839.5724-1-wqu@suse.com>
+From:   Su Yue <Damenly_Su@gmx.com>
+Message-ID: <f41c0df1-3c64-4666-6fb5-9fb0501ada87@gmx.com>
+Date:   Tue, 17 Dec 2019 15:04:24 +0800
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:68.0)
+ Gecko/20100101 Thunderbird/68.3.0
 MIME-Version: 1.0
-X-MS-Exchange-CrossTenant-Network-Message-Id: fb8e4c58-fc90-43ea-c601-08d782bb8075
-X-MS-Exchange-CrossTenant-originalarrivaltime: 17 Dec 2019 06:36:51.9802
- (UTC)
-X-MS-Exchange-CrossTenant-fromentityheader: Hosted
-X-MS-Exchange-CrossTenant-id: 856b813c-16e5-49a5-85ec-6f081e13b527
-X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
-X-MS-Exchange-CrossTenant-userprincipalname: E7STWHKnhkhc/6Ph+BXYfv5kPI8Ae1Xoe9mRj3MXrGXCWUeWMu9UKSdXcksnZCHw
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: MN2PR18MB3056
-X-OriginatorOrg: suse.com
+In-Reply-To: <20191217064839.5724-1-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:0aYwdMs5csD2aLBYbyO0tagIAHGcdboe7P0FPwZJfKtPdHAmFnB
+ zBiiYaGLow/L4kMw7uD/EjGuYvzKj1H8VJdf/xmF+/H+ZyZneY36ZnHHG7DQfwZLnHUeFo0
+ FKpIv7opYxzz7wF4PUCcCzBzbr8vbJLfmkOIzB+2cS+jcWBNsgWRQlPSBBltEdnl8AOYA+X
+ /ixzbWucIfWhd6j/4jWWg==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:kI781/yjcZo=:oxY2WsZTfM6NcpHJMYVxw5
+ eq3G/ehd4CdfKneaIq3d6KCZ3gyS+76nMmTxNTDx56rh4Fv+sBF9WrsLgnzQ+ZcURn7qTVmlr
+ geeI4K6VVenKDrGPpbRAtbtKOepCt0RwMGyZMNMwAMgGs/dkWk/gppyzOm5t3qiMrkgx1gUoH
+ nxIl4Oxg7eg5s9wCBbNS+rEfS2LBo45ic7fiMCEhtsxIVJ1gJCNtCCxOXow4c798wHHPWUJTC
+ 9dhP5LHf4x3OdsGVUBTWRU8/7U0KCklCln6fuxDf4R7PClNMMZJp+Kw72oAiQs2WYUPzhGRO5
+ A7FMzXzJP5rypEvyIIc2Wtonn/7aZHPD9QV9RkpwQkohnx5OMNh4ay0hEvIRC+a9A/x+k4eq7
+ UhQRkUMUfLZDv2FVIRnAxg0lRkRVxKt4Kik6kwKE34KQBrxKMlsGM+GOPzcpNE0MTbj/TVXFv
+ 9Pks7J9Kd3JP031GvLbhtYpXo94Z5RiH7WhlCQTWJJEk0eTEAUOGt2Dr6doPHmEYSb51JiZWP
+ qIyQAmkfX8D7Ubn6AJl6jMPSirvPZXDR65odAXgbS+S0WIFafjPxtKv8rloI829g5amH1sFea
+ AxGpJnaLVtx6dJ9OvHqiOAuzo14CYYYU0U/LOQiFvyRm992EmOThD5/Ft1xf5IDHVDlioWpxE
+ 68jA/2Jombq8SzGi/A0Pd0+0iaSzgT52pTYSyzf7RLfuO4moqoa6JjPiouODx/MfTK6i5XqqS
+ /Ao7ID1WL90Uhc1VFUyyhXtAXkch266E9kg7SHNX9qsojO22yvZHfbd5Ym2hD4i0dCY1YD8n0
+ KKBeaHtyyudTBNguttvVh0kcni06EIsO9gfgpRY+jyDubNPIpDW5Zx59Kl2P7AyRIB10gQXIf
+ TlkQg2zQKlosifVXHb7wmWXy6ljKTKgmcqhP4ZPmQaIGaPvr4sC2r5IHuA/NT0Jj4STTzE45Q
+ h1HRIJ6mGbHkGPY1h7C1Zqz6YV+J6ukeym/SXxgPzqsmobl4Dro0NSBCJkydcIrf/jZLKz/K+
+ 0QhVO+RP6mVX8Qi+3EFA49lKxPPqkpaGymYheRQJ6iWppj9cBBjrzwX/OVubTq6TgfcvuGjqX
+ FFNubId4Hhx8/AsYuRmkFHyIXsytVk79SIbfx4RSuQ1Redq2D/qZCIvyukVt2nHbX6bi0TmA/
+ 4pCpu3E4V+xenK8vgSVuVUTHoVoMMQB2ahPueZbqFV6h5BgXRUwXRl3G7uXT8lreBIP25U99A
+ hQv2+PLXC7RCMc7CgPGfTmbCLWXtNo4fVRswOd0M/q+scTdwurFrRcYOppsM=
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-RG9jdW1lbnRhdGlvbiBmb2xkZXIgcGF0aCBpcyB3cm9uZyBvbiBleHBvcnRlZCB0ZXN0c3V0aWUu
-IEZpeCB0aGlzIGJ5DQpyZXBsYWNlIFRPUCB3aXRoIElOVEVSTkFMX0JJTi4NCg0KU2lnbmVkLW9m
-Zi1ieTogQW4gTG9uZyA8bGFuQHN1c2UuY29tPg0KLS0tDQogdGVzdHMvbWtmcy10ZXN0cy8wMTEt
-cm9vdGRpci1jcmVhdGUtZmlsZS90ZXN0LnNoIHwgMiArLQ0KIDEgZmlsZSBjaGFuZ2VkLCAxIGlu
-c2VydGlvbigrKSwgMSBkZWxldGlvbigtKQ0KDQpkaWZmIC0tZ2l0IGEvdGVzdHMvbWtmcy10ZXN0
-cy8wMTEtcm9vdGRpci1jcmVhdGUtZmlsZS90ZXN0LnNoIGIvdGVzdHMvbWtmcy10ZXN0cy8wMTEt
-cm9vdGRpci1jcmVhdGUtZmlsZS90ZXN0LnNoDQppbmRleCAyMGY3YzRjZS4uYTIxYzYyNDUgMTAw
-NzU1DQotLS0gYS90ZXN0cy9ta2ZzLXRlc3RzLzAxMS1yb290ZGlyLWNyZWF0ZS1maWxlL3Rlc3Qu
-c2gNCisrKyBiL3Rlc3RzL21rZnMtdGVzdHMvMDExLXJvb3RkaXItY3JlYXRlLWZpbGUvdGVzdC5z
-aA0KQEAgLTEwLDYgKzEwLDYgQEAgY2hlY2tfcHJlcmVxIG1rZnMuYnRyZnMNCiB0bXA9JChta3Rl
-bXAgLWQgLS10bXBkaXIgYnRyZnMtcHJvZ3MtbWtmcy5yb290ZGlyWFhYWFhYWCkNCiAjIHdlIGNh
-bid0IHVzZSBURVNUX0RFViwgYSBmaWxlIGlzIG5lZWRlZA0KIGltZz0kKG1rdGVtcCBidHJmcy1w
-cm9ncy1ta2ZzLnJvb3RkaXJYWFhYWFhYKQ0KLXJ1bl9jaGVjayAiJFRPUC9ta2ZzLmJ0cmZzIiAt
-ZiAtLXJvb3RkaXIgIiRUT1AvRG9jdW1lbnRhdGlvbi8iICIkaW1nIg0KK3J1bl9jaGVjayAiJFRP
-UC9ta2ZzLmJ0cmZzIiAtZiAtLXJvb3RkaXIgIiRJTlRFUk5BTF9CSU4vRG9jdW1lbnRhdGlvbi8i
-ICIkaW1nIg0KIA0KIHJtIC1yZiAtLSAiJGltZyINCi0tIA==
+On 2019/12/17 2:48 PM, Qu Wenruo wrote:
+> All btrfs_file_extent_item members don't take checksum size into
+> consideration.
+>
+> This bad comment looks like from early days where inlined data checksum
+> (checksum is stored along with data) is being considered.
+> But the reality is, we never support inlined data checksum since btrfs
+> is mainlined.
+>
+> Remove this dead comment, add a new comment explaining how data checksum=
+ is
+> stored, and remove the unnecessary data csum reference.
+>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+
+LGTM.
+
+Reviewed-by: Su Yue <Damenly_Su@gmx.com>
+> ---
+>   include/uapi/linux/btrfs_tree.h | 11 ++++++-----
+>   1 file changed, 6 insertions(+), 5 deletions(-)
+>
+> diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_=
+tree.h
+> index 8e322e2c7e78..bfe6f38031a3 100644
+> --- a/include/uapi/linux/btrfs_tree.h
+> +++ b/include/uapi/linux/btrfs_tree.h
+> @@ -776,15 +776,16 @@ struct btrfs_file_extent_item {
+>   	__u8 type;
+>
+>   	/*
+> -	 * disk space consumed by the extent, checksum blocks are included
+> -	 * in these numbers
+> +	 * disk space consumed by the data extent.
+> +	 * Checksum is stored in csum tree, thus no bytenr/length takes
+> +	 * csum into consideration.
+>   	 *
+>   	 * At this offset in the structure, the inline extent data start.
+>   	 */
+>   	__le64 disk_bytenr;
+>   	__le64 disk_num_bytes;
+>   	/*
+> -	 * the logical offset in file blocks (no csums)
+> +	 * the logical offset in file blocks
+>   	 * this extent record is for.  This allows a file extent to point
+>   	 * into the middle of an existing extent on disk, sharing it
+>   	 * between two snapshots (useful if some bytes in the middle of the
+> @@ -792,8 +793,8 @@ struct btrfs_file_extent_item {
+>   	 */
+>   	__le64 offset;
+>   	/*
+> -	 * the logical number of file blocks (no csums included).  This
+> -	 * always reflects the size uncompressed and without encoding.
+> +	 * the logical number of file blocks.  This always reflects the size
+> +	 * uncompressed and without encoding.
+>   	 */
+>   	__le64 num_bytes;
+>
+>
+

@@ -6,78 +6,48 @@ X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3E432C2D0CD
-	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Dec 2019 16:03:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6EEF1C43603
+	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Dec 2019 16:19:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 12FB32146E
-	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Dec 2019 16:03:55 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4852F218AC
+	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Dec 2019 16:19:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727021AbfLRQDy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 18 Dec 2019 11:03:54 -0500
-Received: from mx2.suse.de ([195.135.220.15]:56396 "EHLO mx2.suse.de"
+        id S1727422AbfLRQTX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 18 Dec 2019 11:19:23 -0500
+Received: from mx2.suse.de ([195.135.220.15]:39552 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727184AbfLRQDx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 18 Dec 2019 11:03:53 -0500
+        id S1727121AbfLRQTX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 18 Dec 2019 11:19:23 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 49E42B26B;
-        Wed, 18 Dec 2019 16:03:52 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 31BFAAD3A;
+        Wed, 18 Dec 2019 16:19:22 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 4609EDA729; Wed, 18 Dec 2019 17:03:50 +0100 (CET)
-Date:   Wed, 18 Dec 2019 17:03:50 +0100
+        id 3A24CDA729; Wed, 18 Dec 2019 17:19:20 +0100 (CET)
+Date:   Wed, 18 Dec 2019 17:19:20 +0100
 From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     Marcos Paulo de Souza <mpdesouza@suse.de>,
-        Marcos Paulo de Souza <marcos.souza.org@gmail.com>,
-        dsterba@suse.com, linux-btrfs@vger.kernel.org,
-        Marcos Paulo de Souza <mpdesouza@suse.com>, wqu@suse.com
-Subject: Re: [btrfs-progs PATCH 4/4] tests: Do not fail is dmsetup is missing
-Message-ID: <20191218160350.GL3929@suse.cz>
+To:     Long An <lan@suse.com>
+Cc:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] btrfs-progs: tests: mkfs/011: Fix path for rootdir
+Message-ID: <20191218161919.GM3929@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Marcos Paulo de Souza <mpdesouza@suse.de>,
-        Marcos Paulo de Souza <marcos.souza.org@gmail.com>,
-        dsterba@suse.com, linux-btrfs@vger.kernel.org,
-        Marcos Paulo de Souza <mpdesouza@suse.com>, wqu@suse.com
-References: <20191217203155.24206-1-marcos.souza.org@gmail.com>
- <20191217203155.24206-5-marcos.souza.org@gmail.com>
- <ae5f2516-78e5-022f-f516-6351b75a362c@gmx.com>
- <65eb6792b6c9e1c8f58a741866305a6ccb9fee32.camel@suse.de>
- <a880c99c-982d-135c-4e6e-e82c19e681c1@gmx.com>
+Mail-Followup-To: dsterba@suse.cz, Long An <lan@suse.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <1576564610.3899.20.camel@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <a880c99c-982d-135c-4e6e-e82c19e681c1@gmx.com>
+In-Reply-To: <1576564610.3899.20.camel@suse.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Dec 18, 2019 at 08:48:21AM +0800, Qu Wenruo wrote:
-> >>> +# check if dmsetup and targets passed as arguments are available,
-> >> and skip the
-> >>> +# test if they aren't.
-> >>>  check_dm_target_support()
-> >>>  {
-> >>> +	which dmsetup &> /dev/null
-> >>> +	if [ $? -ne 0 ]; then
-> >>> +		_not_run "This test requires dmsetup tool.";
-> >>> +	fi
-> >>
-> >> What about using existing check_global_prereq()?
-> > 
-> > check_global_prereq call _fail when the executable is not found in
-> > $PATH, that's why I open coded the implementation and just called
-> > _not_run.
-> 
-> Makes sense.
-> 
-> Although it would be even better to change from "_fail" to "_not_run"
-> for check_global_prereq().
+On Tue, Dec 17, 2019 at 06:36:51AM +0000, Long An wrote:
+> Documentation folder path is wrong on exported testsutie. Fix this by
+> replace TOP with INTERNAL_BIN.
 
-I'd rather keep it as _fail, the utilities checked by this helper is
-mostly some system tool or other filesystem tool, all should be present
-for the testing. I don't want the testsuite to skip random tests without
-a good reason. We can add a script or make target to make the checks in
-advance and not when some test fails after a long time.
+It feels wrong that the tests use INTERNAL_BIN but it obviously exists
+and works so I'll apply the patch but maybe this could use some cleanup.
+Thanks.

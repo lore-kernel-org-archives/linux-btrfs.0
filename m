@@ -2,162 +2,146 @@ Return-Path: <SRS0=fY3M=2I=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.5 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.0 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 297EDC43603
-	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Dec 2019 10:49:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id ABF94C43603
+	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Dec 2019 11:01:56 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id EC3F221582
-	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Dec 2019 10:49:24 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7DFC32176D
+	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Dec 2019 11:01:56 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="Jfvl26RQ"
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="E20gNVtb"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726787AbfLRKtY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 18 Dec 2019 05:49:24 -0500
-Received: from esa6.hgst.iphmx.com ([216.71.154.45]:41408 "EHLO
-        esa6.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725785AbfLRKtY (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 18 Dec 2019 05:49:24 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1576666163; x=1608202163;
-  h=date:from:to:cc:subject:message-id:references:
-   mime-version:in-reply-to;
-  bh=/DMjkVyfyvI2kcubUQsHCGEvs74jyidMQ1Qv+JhyxmQ=;
-  b=Jfvl26RQ2b+Zzm3pmvvYKcG27RKmcUuxMESH9wM+k+7sjj+SV9geBDgG
-   Fx+XFRDXIzP631i3U4LWtU9JXC2GM/pPKpAIx2gnX9i3gH3gxGVLNBo8H
-   vLxth3OIfDw51qzHZo9TUWEhAhMdumP0VIHuXGDa69S2RBlBuez7ttbwB
-   L1luXD88uryTcjiQDOwM5I0S6uCjHe+PGDI19NzTHs17RcyOYcyu1RcSh
-   gcxceYN5O7ojStLDQh5qIbS2O3Kcn/iYglKcmXqL8CtrFE4G6L2+0ho37
-   1qlvyPsxSX4vUCqIxvk8e9hK7fsVIfjxiedQuOWdXls/jR/7S8GrbRG/7
-   g==;
-IronPort-SDR: 3Zj82qrszqCRBQFbotOdJh5vIkLTgah+sX5J7Wx9anwJ3KiYwC5vRUeUIa4JmcmjV+lvJkuO1G
- rRDr5MZuHD958IXwVKKB/HWwb31bYh71U7xBjwskKx3FzXA31EtW7TVaHT1ZvCMaW89MWRNpf3
- /I6uYr/ylp60RwE2dA+YX/IzsW7G6++Carc/eDuLy8wzvTML8gmLNFlOE7IMsXuMx5bNyK9mKJ
- at4BPl8qft7QLn911EkB0MOxWpJ+7cT3ef86djTPnz0hjvnVElW2/Iu6RK8yAwLXRx7dtFj9Qo
- k1s=
-X-IronPort-AV: E=Sophos;i="5.69,329,1571673600"; 
-   d="scan'208";a="127245447"
-Received: from h199-255-45-15.hgst.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 18 Dec 2019 18:49:23 +0800
-IronPort-SDR: KY4wa/9YEg+D5B8juMLSc9dh1MWWGgYs0ZQIQAhdjwyoatOevqOhcp+2y87MBG+snQ3V0xXLoM
- cKIHgjdwAoSejqcIn0JWwhaNI2FFtBrqPcBnhw/TIJcuP7Jp73Z1477JJLHo2NipZMBQartPmy
- 8W6Tz8su6dMbVzK+K3I99jUjbn2zhC0knnczCOll9B57tkHqzoGVNaxMY0YP78+hAJ+6GxAQOQ
- EApux5aD13/bSjhE8tULxx+yz1jzrQFKm25z1r95uj6ecA8rBz7WaVfVJ+PxtpkyaTQie+eWAL
- sLwdIhjJOWNVYDJdF8uTdh5z
-Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 18 Dec 2019 02:43:25 -0800
-IronPort-SDR: qMJQrwt3meamHp8ztthaqI/oHOAqwWEgE9uTreqXeFi+ssrqlGTGNgBvr5VE5B4Qt2MVxH/j6l
- n2HaQSNHrHFEgIh+moNkIV0jrD1lj1d/CNgImbIACWUj6YhAOmSdUlEyqWJZic3htnOL2CJNE3
- YWYISe116o9fewjG7iXk/VAYMx03BC4k9QsSWWRksPxh+pLohML+NIzPet8UDHKgBAd4TMsWqt
- 7B4Ualz35zK8RPsxqDnKrczLlZq0yO5TNtZLJ37BK5sGeDxkC4euofLdQUJimhleH/lgiFa6jV
- TFQ=
-WDCIronportException: Internal
-Received: from naota.dhcp.fujisawa.hgst.com ([10.149.53.115])
-  by uls-op-cesaip02.wdc.com with SMTP; 18 Dec 2019 02:49:21 -0800
-Received: (nullmailer pid 1323844 invoked by uid 1000);
-        Wed, 18 Dec 2019 10:49:20 -0000
-Date:   Wed, 18 Dec 2019 19:49:20 +0900
-From:   Naohiro Aota <naohiro.aota@wdc.com>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>,
-        Chris Mason <clm@fb.com>, Nikolay Borisov <nborisov@suse.com>,
-        Damien Le Moal <damien.lemoal@wdc.com>,
-        Johannes Thumshirn <jthumshirn@suse.de>,
-        Hannes Reinecke <hare@suse.com>,
-        Anand Jain <anand.jain@oracle.com>,
-        linux-fsdevel@vger.kernel.org
-Subject: Re: [PATCH v6 24/28] btrfs: enable relocation in HMZONED mode
-Message-ID: <20191218104920.ozsa3pawkvxs2gg5@naota.dhcp.fujisawa.hgst.com>
-References: <20191213040915.3502922-1-naohiro.aota@wdc.com>
- <20191213040915.3502922-25-naohiro.aota@wdc.com>
- <83984f9c-4f37-4a04-daea-8169959dc09d@toxicpanda.com>
+        id S1726141AbfLRLBz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 18 Dec 2019 06:01:55 -0500
+Received: from mout.gmx.net ([212.227.17.20]:45245 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1725785AbfLRLBz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 18 Dec 2019 06:01:55 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1576666913;
+        bh=OtBMfeHKxsKENqq+ye21Ig2Ym9NjWLa9zsvfdx/+lnE=;
+        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
+        b=E20gNVtbhF0E7MaXsf+9HEh0X8ZzkSCZ2odtxX6R7sciIK0pCEB8FWEWUNxshGFpV
+         5yQntSCWzn/AkMDzsvN8eoLqsC5TBNkCEc8SjUFggyjvq3Z8mFuhsKttd1ZxyHN24Q
+         tpjFxSm6haRTwKrteNBtaIZoHx6jlJBXRBaW1RkA=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [192.168.2.178] ([34.92.249.81]) by mail.gmx.com (mrgmx104
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1MysRu-1hm0ag1xKM-00vy07; Wed, 18
+ Dec 2019 12:01:53 +0100
+Subject: Re: [PATCH V2 05/10] btrfs-progs: adjust ported block group lookup
+ functions in kernel version
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>, damenly.su@gmail.com,
+        linux-btrfs@vger.kernel.org
+References: <20191218051849.2587-1-Damenly_Su@gmx.com>
+ <20191218051849.2587-6-Damenly_Su@gmx.com>
+ <b87626bd-911c-8fcd-4713-58968458e078@gmx.com>
+From:   Su Yue <Damenly_Su@gmx.com>
+Message-ID: <b0a7e353-5745-5f1e-c9c7-e6bda3fe8ae2@gmx.com>
+Date:   Wed, 18 Dec 2019 19:01:48 +0800
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:68.0)
+ Gecko/20100101 Thunderbird/68.3.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii; format=flowed
-Content-Disposition: inline
-In-Reply-To: <83984f9c-4f37-4a04-daea-8169959dc09d@toxicpanda.com>
+In-Reply-To: <b87626bd-911c-8fcd-4713-58968458e078@gmx.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:DVckzpeU/au+6FouNQcphOwMSLgsHnbNEumQpySgsk46G1VFXbv
+ Wo7tukP8YjomQh0QnrRVSLHQEoUfvK6sU9ZI+VYdfYSQrAsG1dBqWvqjb229pqjCGUy94Aq
+ Io5pOeYSxiMuTGPySsQnLHfdmE7/MVwN60j8LXehqR2xs2mlTqWF+ADQW39teL2Y8u6VnWb
+ E0iMXMu01ZJUCeR6vs+4w==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:n6VYSPvc43w=:M9cxKWVOPk9xlwW7ERVjAa
+ JMbhpKYbn14mCbfRmylFBIeNJ9PlzKqKgmTe5g0noSuTCjafBaUdYpdyiCUVJqelRrxWHEt8N
+ 8mHgZ1jzf2XWLkrvXzKIAim9yjFBBPCvBnxXlFTV/SHUHLROvADZhMCgKs5wMjEaQMfpEeOvX
+ afEl3Ns3rLnmthMWa3LhjERFKaK2dWN+Pr8Jnn5Gr2SKmHpFje6lLIatkStbRyd6GJgxjMO9w
+ 4dUUQ3ZDzwojLeIiWbLUl0wDbzeuKBw6ZMBZYXjLx7mRZd4v4QKu9Y5vUp1hPs4TqP4DnZgkc
+ 6namkyABkyKbe3HkPZdQE36ejYpoASXRUx7R2GrP26H1rPtZ5VAZskshWxVy32gjjT7bfgCHL
+ lgDeVjutWPq6hvM3z67b39UaAwGeyUrmWr3IH0aTt/mx64k0kSMAT9xdyftZJSV1k1GfaqhWW
+ dLXLDewwDYboCdhmW4clZJaM8ZhuH6sWeTAfApzATFDpcwRlVkiwyRdeebwILNDbhGEU4h/y/
+ 2WB4YmCz7pYA00jyQnOL9Jo1oM5hl4mpszNNBxjHgBXDVHSn+mkoCuHfe6olDeS8ruVOlLSFU
+ YkMY/RKjIui+F99yv/t3mF+Bl+OQyV1D1B3M0bmSLHrqAFc3FIMdLVghdAJ9VPiwXw/9FqJqQ
+ m1l3tUqYisHGDaPxsU5f45CXPZOCSHvvYtDYqDo2zgQvMf2CN96Kg/DU4Az3twif2LG08ZBNN
+ 4nHi4y+00+5xDzrt+i3vSf81PE+TLdU5cORMQnL86RfMiqtsEjHQ72i7xgpGxzC8nSWMut93e
+ FZfkOuj/6JMZGzeZZh0pl3+QDtOmFUXLW3pcdhtZB5NKxxPXBQHKik8l3iIBS95ChCk+Ukhet
+ hgY7mTfhfojaNiMz0gFArXytGkEHpE9m7gRdNFQyDgTpWmPkbw23DIH2fC6ZAMbNRsZsfKH/x
+ ddMNBeuEptoIwtevstmtyWlccomhwjk+H82iObHIVFBuao2cOmvbdDjlL5pT6RWsyru3iHADY
+ y19OHHmCPvY58oHP39mmrbzjmhW3FA2GPuYshv/HC93mLOrwzE0fIWaj393Xd8mLa1L9ite0O
+ s8UFQ5oFjHoIe7vsQnYj1hMiQ8nfonVCc06x+uuwPZdZXXSwkewfrGNfc71p1uwBJ/4wWDPdI
+ faIBvo+v+BKagSGYjBM72XO9kiRy4pIzLcYgeFbHgRzz40XVdjSkshnqFXq5oE4PuITUPrtxh
+ U1cr9LmKgrEGIMyqPTtualC7DP00jlcLx/qjqF8crV/ExaWQWcauOiKQ5NbU=
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Dec 17, 2019 at 04:32:04PM -0500, Josef Bacik wrote:
->On 12/12/19 11:09 PM, Naohiro Aota wrote:
->>To serialize allocation and submit_bio, we introduced mutex around them. As
->>a result, preallocation must be completely disabled to avoid a deadlock.
->>
->>Since current relocation process relies on preallocation to move file data
->>extents, it must be handled in another way. In HMZONED mode, we just
->>truncate the inode to the size that we wanted to pre-allocate. Then, we
->>flush dirty pages on the file before finishing relocation process.
->>run_delalloc_hmzoned() will handle all the allocation and submit IOs to
->>the underlying layers.
->>
->>Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
->>---
->>  fs/btrfs/relocation.c | 39 +++++++++++++++++++++++++++++++++++++--
->>  1 file changed, 37 insertions(+), 2 deletions(-)
->>
->>diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
->>index d897a8e5e430..2d17b7566df4 100644
->>--- a/fs/btrfs/relocation.c
->>+++ b/fs/btrfs/relocation.c
->>@@ -3159,6 +3159,34 @@ int prealloc_file_extent_cluster(struct inode *inode,
->>  	if (ret)
->>  		goto out;
->>+	/*
->>+	 * In HMZONED, we cannot preallocate the file region. Instead,
->>+	 * we dirty and fiemap_write the region.
->>+	 */
->>+
->>+	if (btrfs_fs_incompat(btrfs_sb(inode->i_sb), HMZONED)) {
->>+		struct btrfs_root *root = BTRFS_I(inode)->root;
->>+		struct btrfs_trans_handle *trans;
->>+
->>+		end = cluster->end - offset + 1;
->>+		trans = btrfs_start_transaction(root, 1);
->>+		if (IS_ERR(trans))
->>+			return PTR_ERR(trans);
->>+
->>+		inode->i_ctime = current_time(inode);
->>+		i_size_write(inode, end);
->>+		btrfs_ordered_update_i_size(inode, end, NULL);
->>+		ret = btrfs_update_inode(trans, root, inode);
->>+		if (ret) {
->>+			btrfs_abort_transaction(trans, ret);
->>+			btrfs_end_transaction(trans);
->>+			return ret;
->>+		}
->>+		ret = btrfs_end_transaction(trans);
->>+
->>+		goto out;
->>+	}
->>+
+On 2019/12/18 5:52 PM, Qu Wenruo wrote:
 >
->Why are we arbitrarily extending the i_size here?  If we don't need 
->prealloc we don't need to jack up the i_size either.
-
-We need to extend i_size to read data from the relocating block
-group. If not, btrfs_readpage() in relocate_file_extent_cluster()
-always reads zero filled page because the read position is beyond the
-file size.
-
->>  	cur_offset = prealloc_start;
->>  	while (nr < cluster->nr) {
->>  		start = cluster->boundary[nr] - offset;
->>@@ -3346,6 +3374,10 @@ static int relocate_file_extent_cluster(struct inode *inode,
->>  		btrfs_throttle(fs_info);
->>  	}
->>  	WARN_ON(nr != cluster->nr);
->>+	if (btrfs_fs_incompat(fs_info, HMZONED) && !ret) {
->>+		ret = btrfs_wait_ordered_range(inode, 0, (u64)-1);
->>+		WARN_ON(ret);
 >
->Do not WAR_ON() when this could happen due to IO errors.  Thanks,
+> On 2019/12/18 =E4=B8=8B=E5=8D=881:18, damenly.su@gmail.com wrote:
+>> From: Su Yue <Damenly_Su@gmx.com>
+>>
+>> The are different behavior of btrfs_lookup_first_block_group() and
+>> btrfs_lookup_first_block_group_kernel().
+>> There are many palaces calling the lookup function include extent
+>> allocation part. It's too complicated to check and change those.
+>> It will influence many functionalities in progs.
+>>
+>> So here, just make kernel version lookup functions run likely in
+>> progs behavior.
+>>
+>> Signed-off-by: Su Yue <Damenly_Su@gmx.com>
 >
->Josef
+> It should be folded into previous commit, or this will break bisect.
+>
 
-Sure. We can just drop it.
+Oh, will do.
+
+Thanks for your review.
+
+
+> Thanks,
+> Qu
+>
+>> ---
+>>   extent-tree.c | 7 ++++---
+>>   1 file changed, 4 insertions(+), 3 deletions(-)
+>>
+>> diff --git a/extent-tree.c b/extent-tree.c
+>> index fdfa29a2409f..3f7b82dc88a2 100644
+>> --- a/extent-tree.c
+>> +++ b/extent-tree.c
+>> @@ -238,12 +238,13 @@ static struct btrfs_block_group_cache *block_grou=
+p_cache_tree_search(
+>>   }
+>>
+>>   /*
+>> - * Return the block group that starts at or after bytenr
+>> + * Return the block group that contains @bytenr, otherwise return the =
+next one
+>> + * that starts after @bytenr
+>>    */
+>>   struct btrfs_block_group_cache *btrfs_lookup_first_block_group_kernel=
+(
+>>   		struct btrfs_fs_info *info, u64 bytenr)
+>>   {
+>> -	return block_group_cache_tree_search(info, bytenr, 0);
+>> +	return block_group_cache_tree_search(info, bytenr, 1);
+>>   }
+>>
+>>   /*
+>> @@ -252,7 +253,7 @@ struct btrfs_block_group_cache *btrfs_lookup_first_=
+block_group_kernel(
+>>   struct btrfs_block_group_cache *btrfs_lookup_block_group_kernel(
+>>   		struct btrfs_fs_info *info, u64 bytenr)
+>>   {
+>> -	return block_group_cache_tree_search(info, bytenr, 1);
+>> +	return block_group_cache_tree_search(info, bytenr, 0);
+>>   }
+>>
+>>   /*
+>>
+>
+

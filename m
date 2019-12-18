@@ -2,95 +2,115 @@ Return-Path: <SRS0=fY3M=2I=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.7 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY autolearn=no
+X-Spam-Status: No, score=-2.0 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 46ADAC43603
-	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Dec 2019 11:11:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E0116C43603
+	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Dec 2019 11:26:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 21967227BF
-	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Dec 2019 11:11:29 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B57F021582
+	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Dec 2019 11:26:28 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="fncl7wmx"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726824AbfLRLL2 convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 18 Dec 2019 06:11:28 -0500
-Received: from m4a0072g.houston.softwaregrp.com ([15.124.2.130]:48578 "EHLO
-        m4a0072g.houston.softwaregrp.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1726682AbfLRLL2 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 18 Dec 2019 06:11:28 -0500
-X-Greylist: delayed 1630 seconds by postgrey-1.27 at vger.kernel.org; Wed, 18 Dec 2019 06:11:27 EST
-Received: FROM m4a0072g.houston.softwaregrp.com (15.120.17.146) BY m4a0072g.houston.softwaregrp.com WITH ESMTP
- FOR linux-btrfs@vger.kernel.org;
- Wed, 18 Dec 2019 11:10:31 +0000
-Received: from M4W0334.microfocus.com (2002:f78:1192::f78:1192) by
- M4W0334.microfocus.com (2002:f78:1192::f78:1192) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256_P256) id
- 15.1.1591.10; Wed, 18 Dec 2019 10:30:43 +0000
-Received: from NAM04-SN1-obe.outbound.protection.outlook.com (15.124.8.12) by
- M4W0334.microfocus.com (15.120.17.146) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256_P256) id
- 15.1.1591.10 via Frontend Transport; Wed, 18 Dec 2019 10:30:43 +0000
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
- b=HM4AGmvvJraB4ixcNV2XmZyREXFq1o3CRpBGUdJn5shYNXDTMKKFQxDGdt4DnJ39mFDzC92DCC6YnB4tUFs0b10d193B11wp9R1ZnqfYzl7nutTzwK2/KuNbnWCVnbNVWyg4xN9ID3rmjMCoTxf/YdvxdF6/zeYZ/WlwnPhtvwUOS39qFsiNC86W3gcy7L1u2PnCx7KmUEWelkTVX+OSnujdHXleOOlVa37XS4RQ4XAuDSeq2K31IllKqDtUL2W9Ulc02Pm5K9Ue1SNT6AKYVw4BZSPIDTIHuNKKo7RIhTzGqNyOvzEV/rTwEMH4PnqgqZvLCuLkbZ/5cr222fl2cQ==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector9901;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=;
- b=Ce8RJmULBZGM6AaltZvPktw3Z54xtkneJwTodtFO1DBfppf8us4elTFshzUr7ysdYklJnvpVZzbe2yWeiSv1dQVUV6l7xaB6kQDLURg94+wPeftIS9Euku3lQQuvkJW+RbwMIWdwzniCPJNPZIPhz37cxSUgR2Y15PQ2vVLqGoMHRq7x5wpTpnel5oyHV0fdnn+stBmHCe7V+8+uriC6w6fI7OkB+cKlbu4y7RAaYUK2x7SE8KQE9o35Z6y0RPbNmbkYeSkFEbs0Pj1CtdcfvvKE/szQSJuXwZzrw55JE5wt/Y85kJKmnlz2Lnn0UW9I+c5oleX7+tQdLgVpEWtSWw==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=suse.com; dmarc=pass action=none header.from=suse.com;
- dkim=pass header.d=suse.com; arc=none
-Received: from MN2PR18MB2685.namprd18.prod.outlook.com (20.179.82.223) by
- MN2PR18MB2495.namprd18.prod.outlook.com (20.179.83.217) with Microsoft SMTP
- Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.20.2559.14; Wed, 18 Dec 2019 10:30:42 +0000
-Received: from MN2PR18MB2685.namprd18.prod.outlook.com
- ([fe80::b47f:8d41:b41f:5308]) by MN2PR18MB2685.namprd18.prod.outlook.com
- ([fe80::b47f:8d41:b41f:5308%6]) with mapi id 15.20.2538.019; Wed, 18 Dec 2019
- 10:30:42 +0000
-From:   Long An <lan@suse.com>
-To:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] btrfs-progs: fix path for btrfs-corrupt-block
-Thread-Topic: [PATCH] btrfs-progs: fix path for btrfs-corrupt-block
-Thread-Index: AQHVtY4zdM4hdE+tGE6GxRti7p5S/A==
-Date:   Wed, 18 Dec 2019 10:30:42 +0000
-Message-ID: <1576665041.3774.6.camel@suse.com>
-Accept-Language: zh-CN, en-US
-Content-Language: en-US
-X-MS-Has-Attach: 
-X-MS-TNEF-Correlator: 
-authentication-results: spf=none (sender IP is ) smtp.mailfrom=lan@suse.com; 
-x-originating-ip: [45.122.156.254]
-x-ms-publictraffictype: Email
-x-ms-office365-filtering-correlation-id: fa31a6d8-22a0-4952-de0a-08d783a555d3
-x-ms-traffictypediagnostic: MN2PR18MB2495:
-x-microsoft-antispam-prvs: <MN2PR18MB2495BDBB0884EF4A416A5E8EC6530@MN2PR18MB2495.namprd18.prod.outlook.com>
-x-ms-oob-tlc-oobclassifiers: OLM:1728;
-x-forefront-prvs: 0255DF69B9
-x-forefront-antispam-report: SFV:NSPM;SFS:(10019020)(4636009)(136003)(396003)(346002)(366004)(376002)(39860400002)(199004)(189003)(8676002)(81156014)(81166006)(103116003)(478600001)(36756003)(316002)(26005)(86362001)(6506007)(73894004)(621065003)(6512007)(64756008)(66446008)(66556008)(4270600006)(66476007)(76116006)(91956017)(186003)(66946007)(8936002)(2906002)(2616005)(6486002)(6916009)(71200400001);DIR:OUT;SFP:1102;SCL:1;SRVR:MN2PR18MB2495;H:MN2PR18MB2685.namprd18.prod.outlook.com;FPR:;SPF:None;LANG:en;PTR:InfoNoRecords;A:1;MX:1;
-received-spf: None (protection.outlook.com: suse.com does not designate
- permitted sender hosts)
-x-ms-exchange-senderadcheck: 1
-x-microsoft-antispam: BCL:0;
-x-microsoft-antispam-message-info: h1HHqwYohg6rmZeWgc+fLd9DPGw5hdcdhz6Da9Hs2A4ucBxiPH+OCuF3PXJwJc2wIWiJr45j9xnTHscGLuSWWA52SFUPIjPz0MT4uZnOPaiT3XdiXzj5+AatSFAxq09OypE5cADZLx2lPOmueQbKYwiWOrxtZWrVY0VCFbgMyBb5mmgcpaR9S2kUDCYjar8xM/LCKP3AMkMOUpxzcA6KwX0k50aZS+kfC1Pvu587BXWX4u9HS3Ec9tMXQ0txl7y+o3xkA4BA0pMgQWCyGr3tkOFf1PGKfzvPpzI5KKwzqNjNi7rGVxfcJFv316YQ7vRz
-x-ms-exchange-transport-forked: True
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: 8BIT
+        id S1726764AbfLRL01 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 18 Dec 2019 06:26:27 -0500
+Received: from mout.gmx.net ([212.227.17.21]:34679 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726756AbfLRL01 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 18 Dec 2019 06:26:27 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1576668382;
+        bh=pBJPLaZdnqCLw142vyBwHrVjWM0Ft42LoIrmB650OQc=;
+        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
+        b=fncl7wmxdnKI50klsiYf8UFqdnYTdMip75rINi4EvZcHq2akjkw2S1PAwlxrTEMZV
+         OM9HiaWJ9C13S3+tgZvpjdz3M5wRgtY1YRaOyrBbWMo1HKGoMamgjO8+tNHyVSPzXR
+         c6E3JwqhpUYHKC2+Uf5Cb8+5KS/nK7gB/y1AdCHQ=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx104
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1N4hzj-1hj0TC2MEx-011mrS; Wed, 18
+ Dec 2019 12:26:22 +0100
+Subject: Re: [PATCH] btrfs-progs: fix path for btrfs-corrupt-block
+To:     Long An <lan@suse.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <1576665041.3774.6.camel@suse.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <9ec76f89-bc1a-2bdc-7ada-12c3c0a7c258@gmx.com>
+Date:   Wed, 18 Dec 2019 19:26:16 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.3.0
 MIME-Version: 1.0
-X-MS-Exchange-CrossTenant-Network-Message-Id: fa31a6d8-22a0-4952-de0a-08d783a555d3
-X-MS-Exchange-CrossTenant-originalarrivaltime: 18 Dec 2019 10:30:42.7606
- (UTC)
-X-MS-Exchange-CrossTenant-fromentityheader: Hosted
-X-MS-Exchange-CrossTenant-id: 856b813c-16e5-49a5-85ec-6f081e13b527
-X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
-X-MS-Exchange-CrossTenant-userprincipalname: F/Wyeig4VbRVx7kwlSiRx6tylV6BXM/97v4gCfykxcy+KzzmxY5kVpQsOrnSOdM0
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: MN2PR18MB2495
-X-OriginatorOrg: suse.com
+In-Reply-To: <1576665041.3774.6.camel@suse.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="Ev4QwoaFVsI32z1wdh0UXVvoeuTukoiVf"
+X-Provags-ID: V03:K1:RhA8fc+g3zeEVf3KpobJRbpZCPVlO/8lg6EHH+p4vvKKlahNfMY
+ LBp16uNWbGbYKsQAxyGxmopIF6rvZXBbvudcKy24YdlForObNIbdN8wUHSp8GrcOuMPXWO5
+ 3mwO7rneZ+3MwS+O647zbArixhOCKK9gewJWzbempf+KamAZTb6lTALprOaf1deyZi9f4Xx
+ l8W0pXGcAkDX1TDJvTVQw==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:bsL7j8cFnAM=:roIwHpFMY0H8tYmKwBvUqX
+ szOxF0nLhOjNB9B8jGidla77HWe57bXxJlLqyMuvlq+yLQGZ/cHMldm/5A6jvDeHC3iJtUaM9
+ 06GvOTyZBhA5js43JsmC9o78tPPnCmnUPpwA8yio2/Cz7dxXJnwyCgj5yabZupC/wgOlJFQcp
+ EvI3xuYIc/qj9Jenl+AUt9Rble1rHSka8krlbYltpKf+pkCEfribJNNiVpzZZd0wOgkKygQek
+ qkAbcSoLcP32w8y1zeRRnO+BGVJ+y6sJXhdL7MMNI0vAt6WS5NM0nRmrgllpYOXZnp+XR5ZcY
+ V747mcYlpPvjM4B+wOLBFHzIWrNEc/D2ELoJ09oiQAG/7x69KsEzem69dKSGvl5SAzSGiSqST
+ QjaKi4kMeIf1ycX1J4zloPZAjd1J1cOTpfs9LYyL9JLROvqVVQ0Rndb7uzLH1PhEGEy243ow4
+ SAJJ8auzQmwpX6xBAf1ykUrdW9gAaSpI53zZvdb7VCxpXXsbaR5xBPQTu+jj02iHHXMbowxAf
+ pfyNOTQrR0PRoAuEhOKBOmZj6pnKPR/5N4zYTyYYrllSvPO1p0bgVI1YS32dyLCkDag89FKms
+ jBLKTE/Dwscf9bVCuM1puZ2cSogWEaSln3xYMmlhHipJBR/vdSfCW/Tv1lgw3AFavCjH9FO49
+ MxTTt9JSNAHB+hOk7hS3E12k7UDTtAlC2I1yjVIezx7dPpZel2bobTY75vKswqiOTMHt7WdsX
+ kLD4FNpiVtLje6mtYqlzhv5otiD9UOVHqndDnqd7G3FnrShHkcJhKnEP6zqzB6mtCUaX5J0LD
+ o87DZx8ZnoAz8GK76E20DwMS14hjtSqjAoRiUK8aI5L3XXc+A5d05pMopGFh+WfGOPfvqVCSG
+ O/bVD38VU7cTA4++z9VXpRuZTr/Rzuhzi+NVURsA7dwk/yrWdO0fsxx0f7EK0cPsFcIgQPsPT
+ cddeU52t3PqGxup+84qN867tgeufFvkuHd5z/zEjteU9Ue6oD6bJ/RsByHuwTs4XGEaf8jVjr
+ /ZkrY+FWfOGQsu4mUiWYYlqqQPWuybaZx0nd8lUKBSpgXOL2sM5n40/ZzRuKX81be3R05h5TW
+ tgsMIFNriKGk8dbhk1vjQR9xZi9IeYr/ZUG86PSMjxrJjAA/k0PCXx4mE2qHrUH4fMryfP/21
+ 7O+sVwJo/SZAj306qG9D9jwWji3oVqEEM2m9Q9PdEyo1wzNSOKFyveJLlFzML2LMLwsLWf6OP
+ zr5MoWXnyyedAddpOp8zREgrxb/KKRtnKjLuCjYJu1IAVGXX1CyiKDHEm3sU=
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--Ev4QwoaFVsI32z1wdh0UXVvoeuTukoiVf
+Content-Type: multipart/mixed; boundary="aWJnRjyHCauMDoNUTrmsxybl5oerzQGLQ"
 
+--aWJnRjyHCauMDoNUTrmsxybl5oerzQGLQ
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+
+On 2019/12/18 =E4=B8=8B=E5=8D=886:30, Long An wrote:
+>=20
+
+Is that only me? I see nothing but blank.
+
+And raw mail shows nothing but different headers.
+
+Thanks,
+Qu
+
+
+--aWJnRjyHCauMDoNUTrmsxybl5oerzQGLQ--
+
+--Ev4QwoaFVsI32z1wdh0UXVvoeuTukoiVf
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAl36DNgXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qggpQf9GDZ2U8E/7cXz+VxeAifzngxo
+/EN2po3ziATZe+qtYNyR4B4XcFiF2WJ2mG0A9WLx6J6STNokBfAcXH6Bz4ZInU3N
+K77aMPv+G3iQAXl2inqymzICqltUVhArI9udhj2r7IQwm3mnHROBlO1YsrrC9VhF
+CMHYEY5BP1AjLpBcbqmrl7aTEAqiilKTFAb38fYAFBWJfM2OVv+5KiLk/xS2KTIz
+AcbAsAH4foLVec8SYjLRuqhk7UKjTxfsjsf9yxFPFG0ePi/3BI0bnBGcadlo2JJe
+iYLypTdlmdK5WzxsXvLSqGdvHxJByYVN5OdPjZ8DWH1j29e6ZzIgz9DaPdzjkQ==
+=5oWk
+-----END PGP SIGNATURE-----
+
+--Ev4QwoaFVsI32z1wdh0UXVvoeuTukoiVf--

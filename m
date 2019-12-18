@@ -2,154 +2,70 @@ Return-Path: <SRS0=fY3M=2I=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.2 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E9510C2D0CD
-	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Dec 2019 15:01:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0E428C43603
+	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Dec 2019 15:58:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id BF07524672
-	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Dec 2019 15:01:33 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="QWd4WWXI"
+	by mail.kernel.org (Postfix) with ESMTP id CD9E32146E
+	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Dec 2019 15:58:16 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727215AbfLRPBc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 18 Dec 2019 10:01:32 -0500
-Received: from mail-qk1-f193.google.com ([209.85.222.193]:38627 "EHLO
-        mail-qk1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726921AbfLRPBc (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 18 Dec 2019 10:01:32 -0500
-Received: by mail-qk1-f193.google.com with SMTP id k6so1789592qki.5
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 Dec 2019 07:01:31 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=subject:to:cc:references:from:message-id:date:user-agent
-         :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=dksQ3sa6x+MBXi5EvTI6N5sQp4eN9RCuqeUBSUeiFHI=;
-        b=QWd4WWXI10mJymRIsZ49KaESBWBDoT1eSgFAm3FN3AUlcJPTx0dDQ0nn96xIZdVGXj
-         9knLtiLdO4GPhWhG5Xl3J9/1N8c1YpYCojSmcjzcJhNS0eakk2HTvyw3roD6PqMaOi8E
-         0X9Lek+m7WC1gENUZrQwiHOKVXhIGiwZYvUx6sH5DHiKaJvllROZ5Y1KEWrydnGYMxKZ
-         nsmCFAOJd7gm3stvh1qtuWSkAobV1K2dA+8OUnvimyKi6KTmQFUHMIK3+MFyLSukQ/FD
-         bhqrstPnJimg+hCXDpxNbaAdaHefdo/a2vvkHkfoDne6K7Be45cePqZrFi8ngzb52HlL
-         Z5FA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=dksQ3sa6x+MBXi5EvTI6N5sQp4eN9RCuqeUBSUeiFHI=;
-        b=Dl0/PT3HkdZXkdb17XHdkYEcwpxt8zdf2wqPPEt17r0eF1XYK1pbcVTSjEw9vkiZmR
-         IQJxxJy2LgQLkQK6cwwwH6iU0wPQfmnRpydk0AJALWCXI6sb65eKUU9UZe1eQCnZ9wzj
-         kL2uSeMQ2rmNWM9NoXG9ouzYUOzFVghcaEgG0IP7iZnTwMcZHHT+zO2mVcbr7DO+IVn6
-         WGM2GHkJxcQcb2rE2PHYLg0j58YTT1MwSmV5QwNB7vMn9+5P+/yLr3XJNK0BycbRQHIF
-         4lcrzMGsjaGQs+PDsvr6alDfSm/Jn3wOXRSdq04qyXzh36fAwYsBnYzFM8QHdf3sJq4Z
-         x6mQ==
-X-Gm-Message-State: APjAAAWPvGCDnhz7Dcy9ntIzs6VzVzc3j4tYwWSrz2F9cw+2kenW8peV
-        lfXDGuGQF7wL7TFZbigCAC95KA==
-X-Google-Smtp-Source: APXvYqx/TzsrHeabP28pH0c9OJ4meVk6tjQeeCz0NUdpRuB6R0Q7+1s36AoSKdIGDVAWSJPIRQevKg==
-X-Received: by 2002:ae9:ed53:: with SMTP id c80mr2785219qkg.445.1576681291074;
-        Wed, 18 Dec 2019 07:01:31 -0800 (PST)
-Received: from [192.168.1.106] ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id o9sm732800qko.16.2019.12.18.07.01.29
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 18 Dec 2019 07:01:30 -0800 (PST)
-Subject: Re: [PATCH v6 24/28] btrfs: enable relocation in HMZONED mode
-To:     Naohiro Aota <naohiro.aota@wdc.com>
-Cc:     linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>,
-        Chris Mason <clm@fb.com>, Nikolay Borisov <nborisov@suse.com>,
-        Damien Le Moal <damien.lemoal@wdc.com>,
-        Johannes Thumshirn <jthumshirn@suse.de>,
-        Hannes Reinecke <hare@suse.com>,
-        Anand Jain <anand.jain@oracle.com>,
-        linux-fsdevel@vger.kernel.org
-References: <20191213040915.3502922-1-naohiro.aota@wdc.com>
- <20191213040915.3502922-25-naohiro.aota@wdc.com>
- <83984f9c-4f37-4a04-daea-8169959dc09d@toxicpanda.com>
- <20191218104920.ozsa3pawkvxs2gg5@naota.dhcp.fujisawa.hgst.com>
-From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <b538ea95-9493-88b7-de6e-fa94dca43665@toxicpanda.com>
-Date:   Wed, 18 Dec 2019 10:01:29 -0500
-User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:68.0)
- Gecko/20100101 Thunderbird/68.3.1
+        id S1727030AbfLRP6Q (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 18 Dec 2019 10:58:16 -0500
+Received: from mx2.suse.de ([195.135.220.15]:52426 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726985AbfLRP6Q (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 18 Dec 2019 10:58:16 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 5FBE2AF79;
+        Wed, 18 Dec 2019 15:58:14 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 604DADA729; Wed, 18 Dec 2019 16:58:12 +0100 (CET)
+Date:   Wed, 18 Dec 2019 16:58:12 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     Marcos Paulo de Souza <marcos.souza.org@gmail.com>,
+        dsterba@suse.com, linux-btrfs@vger.kernel.org,
+        Marcos Paulo de Souza <mpdesouza@suse.com>, wqu@suse.com
+Subject: Re: [btrfs-progs PATCH 1/4] tests: common: Add
+ check_dm_target_support helper
+Message-ID: <20191218155812.GK3929@suse.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Marcos Paulo de Souza <marcos.souza.org@gmail.com>,
+        dsterba@suse.com, linux-btrfs@vger.kernel.org,
+        Marcos Paulo de Souza <mpdesouza@suse.com>, wqu@suse.com
+References: <20191217203155.24206-1-marcos.souza.org@gmail.com>
+ <20191217203155.24206-2-marcos.souza.org@gmail.com>
+ <076b3709-c702-b7bf-cd03-276115aa5263@gmx.com>
 MIME-Version: 1.0
-In-Reply-To: <20191218104920.ozsa3pawkvxs2gg5@naota.dhcp.fujisawa.hgst.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <076b3709-c702-b7bf-cd03-276115aa5263@gmx.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 12/18/19 5:49 AM, Naohiro Aota wrote:
-> On Tue, Dec 17, 2019 at 04:32:04PM -0500, Josef Bacik wrote:
->> On 12/12/19 11:09 PM, Naohiro Aota wrote:
->>> To serialize allocation and submit_bio, we introduced mutex around them. As
->>> a result, preallocation must be completely disabled to avoid a deadlock.
->>>
->>> Since current relocation process relies on preallocation to move file data
->>> extents, it must be handled in another way. In HMZONED mode, we just
->>> truncate the inode to the size that we wanted to pre-allocate. Then, we
->>> flush dirty pages on the file before finishing relocation process.
->>> run_delalloc_hmzoned() will handle all the allocation and submit IOs to
->>> the underlying layers.
->>>
->>> Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
->>> ---
->>>  fs/btrfs/relocation.c | 39 +++++++++++++++++++++++++++++++++++++--
->>>  1 file changed, 37 insertions(+), 2 deletions(-)
->>>
->>> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
->>> index d897a8e5e430..2d17b7566df4 100644
->>> --- a/fs/btrfs/relocation.c
->>> +++ b/fs/btrfs/relocation.c
->>> @@ -3159,6 +3159,34 @@ int prealloc_file_extent_cluster(struct inode *inode,
->>>      if (ret)
->>>          goto out;
->>> +    /*
->>> +     * In HMZONED, we cannot preallocate the file region. Instead,
->>> +     * we dirty and fiemap_write the region.
->>> +     */
->>> +
->>> +    if (btrfs_fs_incompat(btrfs_sb(inode->i_sb), HMZONED)) {
->>> +        struct btrfs_root *root = BTRFS_I(inode)->root;
->>> +        struct btrfs_trans_handle *trans;
->>> +
->>> +        end = cluster->end - offset + 1;
->>> +        trans = btrfs_start_transaction(root, 1);
->>> +        if (IS_ERR(trans))
->>> +            return PTR_ERR(trans);
->>> +
->>> +        inode->i_ctime = current_time(inode);
->>> +        i_size_write(inode, end);
->>> +        btrfs_ordered_update_i_size(inode, end, NULL);
->>> +        ret = btrfs_update_inode(trans, root, inode);
->>> +        if (ret) {
->>> +            btrfs_abort_transaction(trans, ret);
->>> +            btrfs_end_transaction(trans);
->>> +            return ret;
->>> +        }
->>> +        ret = btrfs_end_transaction(trans);
->>> +
->>> +        goto out;
->>> +    }
->>> +
->>
->> Why are we arbitrarily extending the i_size here?  If we don't need prealloc 
->> we don't need to jack up the i_size either.
+On Wed, Dec 18, 2019 at 08:26:09AM +0800, Qu Wenruo wrote:
+> > +# check if the targets passed as arguments are available, and if not just skip
+> > +# the test
+> > +check_dm_target_support()
+> > +{
+> > +	for target in "$@"; do
+> > +		$SUDO_HELPER modprobe dm-$target >/dev/null 2>&1
 > 
-> We need to extend i_size to read data from the relocating block
-> group. If not, btrfs_readpage() in relocate_file_extent_cluster()
-> always reads zero filled page because the read position is beyond the
-> file size.
+> To utilize $SUDO_HELPER, we need to call setup_root_helper() in the
+> first place, just like all the other $SUDO_HELPER users in `tests/common`.
+> 
+> Although nowadays it feels a little unnecessary, since the functionality
+> is introduced because I'm a lazybone who doesn't bother to startup a VM
+> to do proper test, but uses current unprivileged user to utilize self tests.
+> 
+> Maybe it's time to get rid of SUDO_HELPER ?
 
-Right but the finish_ordered_io stuff will do the btrfs_ordered_update_i_size() 
-once the IO is complete.  So all you really need is the i_size_write and the 
-btrfs_update_inode.  If this crashes you'll have an inode that has a i_size with 
-no extents up to i_size.  This is fine for NO_HOLES but not fine for !NO_HOLES. 
-Thanks,
-
-Josef
+No, that should stay, my local testing relies on that heavily.

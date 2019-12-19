@@ -2,188 +2,93 @@ Return-Path: <SRS0=HsfQ=2J=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 86D15C43603
-	for <linux-btrfs@archiver.kernel.org>; Thu, 19 Dec 2019 16:12:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4A619C43603
+	for <linux-btrfs@archiver.kernel.org>; Thu, 19 Dec 2019 20:06:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 574A12146E
-	for <linux-btrfs@archiver.kernel.org>; Thu, 19 Dec 2019 16:12:24 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1A9BF2467E
+	for <linux-btrfs@archiver.kernel.org>; Thu, 19 Dec 2019 20:06:13 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726855AbfLSQMX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 19 Dec 2019 11:12:23 -0500
-Received: from mx2.suse.de ([195.135.220.15]:38878 "EHLO mx2.suse.de"
+        id S1726930AbfLSUGM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 19 Dec 2019 15:06:12 -0500
+Received: from mx2.suse.de ([195.135.220.15]:44752 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726778AbfLSQMX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Dec 2019 11:12:23 -0500
+        id S1726906AbfLSUGM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 19 Dec 2019 15:06:12 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 56FE5ACE1;
-        Thu, 19 Dec 2019 16:12:20 +0000 (UTC)
-Subject: Re: [PATCH] btrfs: regression test for subvol deletion after rename
-To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
-        fstests@vger.kernel.org, kernel-team@fb.com
-References: <20191219142835.50371-1-josef@toxicpanda.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <db0849cb-66d9-4815-d111-b225cb27a3c5@suse.com>
-Date:   Thu, 19 Dec 2019 18:12:18 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.9.0
+        by mx2.suse.de (Postfix) with ESMTP id 91984AF57;
+        Thu, 19 Dec 2019 20:06:10 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id F0C50DA939; Thu, 19 Dec 2019 21:06:07 +0100 (CET)
+Date:   Thu, 19 Dec 2019 21:06:07 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Dennis Zhou <dennis@kernel.org>
+Cc:     David Sterba <dsterba@suse.cz>, David Sterba <dsterba@suse.com>,
+        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        Omar Sandoval <osandov@osandov.com>, kernel-team@fb.com,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v6 00/22] btrfs: async discard support
+Message-ID: <20191219200607.GQ3929@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Dennis Zhou <dennis@kernel.org>,
+        David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        Omar Sandoval <osandov@osandov.com>, kernel-team@fb.com,
+        linux-btrfs@vger.kernel.org
+References: <cover.1576195673.git.dennis@kernel.org>
+ <20191217145541.GE3929@suse.cz>
+ <20191218000600.GB2823@dennisz-mbp>
+ <20191219020337.GA25072@dennisz-mbp.dhcp.thefacebook.com>
 MIME-Version: 1.0
-In-Reply-To: <20191219142835.50371-1-josef@toxicpanda.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20191219020337.GA25072@dennisz-mbp.dhcp.thefacebook.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On Wed, Dec 18, 2019 at 08:03:37PM -0600, Dennis Zhou wrote:
+> > > This happened also when I deleted everything from the filesystem and ran
+> > > full balance.
+> 
+> Also were these both on fresh file systems so it seems reproducible for
+> you?
 
+Yes the filesystem was freshly created before the test.
 
-On 19.12.19 г. 16:28 ч., Josef Bacik wrote:
-> Test removal of a subvolume via rmdir after it has been renamed into a
-> snapshot of the volume that originally contained the subvolume
-> reference.
-> 
-> This currently fails on btrfs but is fixed by the patch with the title
-> 
->   "btrfs: fix invalid removal of root ref"
-> 
-> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-> ---
->  tests/btrfs/202     | 54 +++++++++++++++++++++++++++++++++++++++++++++
->  tests/btrfs/202.out |  4 ++++
->  tests/btrfs/group   |  1 +
->  3 files changed, 59 insertions(+)
->  create mode 100755 tests/btrfs/202
->  create mode 100644 tests/btrfs/202.out
-> 
-> diff --git a/tests/btrfs/202 b/tests/btrfs/202
-> new file mode 100755
-> index 00000000..b02ee446
-> --- /dev/null
-> +++ b/tests/btrfs/202
-> @@ -0,0 +1,54 @@
-> +#! /bin/bash
-> +# SPDX-License-Identifier: GPL-2.0
-> +#
-> +# FS QA Test 201
-> +#
-> +# Regression test for fix "btrfs: fix invalid removal of root ref"
-> +#
-> +seq=`basename $0`
-> +seqres=$RESULT_DIR/$seq
-> +echo "QA output created by $seq"
-> +
-> +here=`pwd`
-> +tmp=/tmp/$$
-> +status=1	# failure is the default!
-> +trap "_cleanup; exit \$status" 0 1 2 3 15
-> +
-> +_cleanup()
-> +{
-> +	cd /
-> +	rm -f $tmp.*
-> +}
-> +
-> +. ./common/rc
-> +. ./common/filter
-> +
-> +rm -f $seqres.full
-> +
-> +_supported_fs btrfs
-> +_supported_os Linux
-> +
-> +_scratch_mkfs >> $seqres.full 2>&1
-> +_scratch_mount
-> +
-> +# Create a subvol b under a and then snapshot a into c.  This create's a stub
-> +# entry in c for b because c doesn't have a reference for b.
-> +#
-> +# But when we rename b c/foo it creates a ref for b in c.  However if we go to
-> +# remove c/b btrfs used to depend on not finding the root ref to handle the
-> +# unlink properly, but we now have a ref for that root.  We also had a bug that
-> +# would allow us to remove mis-matched refs if the keys matched, so we'd end up
-> +# removing too many entries which would cause a transaction abort.
-> +
-> +$BTRFS_UTIL_PROG subvolume create $SCRATCH_MNT/a | _filter_scratch
-> +$BTRFS_UTIL_PROG subvolume create $SCRATCH_MNT/a/b | _filter_scratch
-> +$BTRFS_UTIL_PROG subvolume snapshot $SCRATCH_MNT/a $SCRATCH_MNT/c \
-> +	| _filter_scratch
-> +ls $SCRATCH_MNT/c/b
+No luck reproducing it, I tried to repeat the steps as before but the
+timing must make a difference and the numbers always ended up as 0
+(bytes) 0 (extents).
 
-Isn't this ls redundant?
-
-> +mkdir $SCRATCH_MNT/c/foo
-> +mv $SCRATCH_MNT/a/b $SCRATCH_MNT/c/foo
-> +rm -rf $SCRATCH_MNT/*
-> +touch $SCRATCH_MNT/blah
-> +
-> +status=0
-> +exit
-> diff --git a/tests/btrfs/202.out b/tests/btrfs/202.out
-> new file mode 100644
-> index 00000000..938870cf
-> --- /dev/null
-> +++ b/tests/btrfs/202.out
-> @@ -0,0 +1,4 @@
-> +QA output created by 201
-> +Create subvolume 'SCRATCH_MNT/a'
-> +Create subvolume 'SCRATCH_MNT/a/b'
-> +Create a snapshot of 'SCRATCH_MNT/a' in 'SCRATCH_MNT/c'
-> diff --git a/tests/btrfs/group b/tests/btrfs/group
-> index d7eeb45d..7abc5f07 100644
-> --- a/tests/btrfs/group
-> +++ b/tests/btrfs/group
-> @@ -204,3 +204,4 @@
->  199 auto quick trim
->  200 auto quick send clone
->  201 auto quick punch log
-> +202 auto quick volume
+> > I'll report back if I continue having trouble reproing it.
 > 
+> I spent the day trying to repro against ext/dzhou-async-discard-v6
+> without any luck... I've been running the following:
+> 
+> $ mkfs.btrfs -f /dev/nvme0n1
+> $ mount -t btrfs -o discard=async /dev/nvme0n1 mnt
+> $ cd mnt
+> $ bash ../age_btrfs.sh .
+> 
+> where age_btrfs.sh is from [1].
+> 
+> If I delete arbitrary subvolumes, sync, and then run balance:
+> $ btrfs balance start --full-balance .
+> It all seems to resolve to 0 after some time. I haven't seen a negative
+> case on either of my 2 boxes. I've also tried unmounting and then
+> remounting, deleting and removing more free space items.
+> 
+> I'm still considering how this can happen. Possibly bad load of free
+> space cache and then freeing of the block group? Because being off by
+> just 1 and it not accumulating seems to be a real corner case here.
+> 
+> Adding asserts in btrfs_discard_update_discardable() might give us
+> insight to which callsite is responsible for going below 0.
+
+Yeah more asserts would be good.

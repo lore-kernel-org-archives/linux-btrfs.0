@@ -2,156 +2,102 @@ Return-Path: <SRS0=HsfQ=2J=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F2428C2D0D1
-	for <linux-btrfs@archiver.kernel.org>; Thu, 19 Dec 2019 20:07:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AF3EFC43603
+	for <linux-btrfs@archiver.kernel.org>; Thu, 19 Dec 2019 20:19:46 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D0C9C2467F
-	for <linux-btrfs@archiver.kernel.org>; Thu, 19 Dec 2019 20:07:53 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 82A3C2467E
+	for <linux-btrfs@archiver.kernel.org>; Thu, 19 Dec 2019 20:19:46 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727289AbfLSUHx convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 19 Dec 2019 15:07:53 -0500
-Received: from nwxsbs11.networkx.de ([217.91.82.83]:64760 "EHLO
-        nwxsbs11.networkx.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727190AbfLSUHw (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Dec 2019 15:07:52 -0500
-X-Greylist: delayed 320 seconds by postgrey-1.27 at vger.kernel.org; Thu, 19 Dec 2019 15:07:52 EST
-Received: from NWXSBS11.networkx.de ([fe80::4091:24d0:23e7:9e44]) by
- NWXSBS11.networkx.de ([fe80::4091:24d0:23e7:9e44%14]) with mapi id
- 14.03.0468.000; Thu, 19 Dec 2019 21:00:12 +0100
-From:   Ralf Zerres <Ralf.Zerres@networkx.de>
-To:     "'linux-btrfs@vger.kernel.org'" <linux-btrfs@vger.kernel.org>
-Subject: How to heel this btrfs fi corruption?
-Thread-Topic: How to heel this btrfs fi corruption?
-Thread-Index: AdW2puxRpbYJ6wGOS3W1/yTrAS6zvA==
-Date:   Thu, 19 Dec 2019 20:00:12 +0000
-Message-ID: <C439384E8BF26546BDDE396FFA246D1001921619EB@NWXSBS11.networkx.de>
-Accept-Language: de-DE, en-US
-Content-Language: de-DE
-X-MS-Has-Attach: 
-X-MS-TNEF-Correlator: 
-x-originating-ip: [10.1.10.16]
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 8BIT
+        id S1727140AbfLSUTq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 19 Dec 2019 15:19:46 -0500
+Received: from mx2.suse.de ([195.135.220.15]:47518 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726880AbfLSUTp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 19 Dec 2019 15:19:45 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id D3F49B2C8;
+        Thu, 19 Dec 2019 20:19:43 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 36532DA939; Thu, 19 Dec 2019 21:19:41 +0100 (CET)
+Date:   Thu, 19 Dec 2019 21:19:41 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Naohiro Aota <naohiro.aota@wdc.com>
+Cc:     linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>,
+        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        Nikolay Borisov <nborisov@suse.com>,
+        Damien Le Moal <damien.lemoal@wdc.com>,
+        Johannes Thumshirn <jthumshirn@suse.de>,
+        Hannes Reinecke <hare@suse.com>,
+        Anand Jain <anand.jain@oracle.com>,
+        linux-fsdevel@vger.kernel.org
+Subject: Re: [PATCH v6 00/28] btrfs: zoned block device support
+Message-ID: <20191219201941.GR3929@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Naohiro Aota <naohiro.aota@wdc.com>,
+        linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>,
+        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        Nikolay Borisov <nborisov@suse.com>,
+        Damien Le Moal <damien.lemoal@wdc.com>,
+        Johannes Thumshirn <jthumshirn@suse.de>,
+        Hannes Reinecke <hare@suse.com>, Anand Jain <anand.jain@oracle.com>,
+        linux-fsdevel@vger.kernel.org
+References: <20191213040915.3502922-1-naohiro.aota@wdc.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20191213040915.3502922-1-naohiro.aota@wdc.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Dear list,
+On Fri, Dec 13, 2019 at 01:08:47PM +0900, Naohiro Aota wrote:
+> This series adds zoned block device support to btrfs.
+> 
+> Changes:
+>  - Changed -EINVAL to -EOPNOTSUPP to reject incompatible features
+>    within HMZONED mode (David)
+>  - Use bitmap helpers (Johannes)
+>  - Fix calculation of a string length
+>  - Code cleanup
+> 
+> Userland series is unchaged with the last version:
+> https://lore.kernel.org/linux-btrfs/20191204082513.857320-1-naohiro.aota@wdc.com/T/
+> 
+> * Patch series description
+> 
+> A zoned block device consists of a number of zones. Zones are either
+> conventional and accepting random writes or sequential and requiring
+> that writes be issued in LBA order from each zone write pointer
+> position. This patch series ensures that the sequential write
+> constraint of sequential zones is respected while fundamentally not
+> changing BtrFS block and I/O management for block stored in
+> conventional zones.
 
-at customer site i can't mount a given btrfs device in rw mode.
-this is production data and i do have a backup and managed to mount the filesystem in ro mode. I did copy out relevant stuff.
-Having said this, if btrfs --repair can't heal the situation, i could reformat the filesystem and start all over.
-But i would prefere to save the time and take the heeling as a proof of "production ready" status of btrfs-progs.
+One more high-level comment: let's please call it 'zone' mode, without
+the 'host managed' part. That term is not relevant for a filesystem. The
+zone allocator, or zone append-only allocator or similar describe what
+happens on the filesystem layer.
 
-Here are the details:
+The constraint posed by device is to never overwrite in place, that's
+fine for COW design and that's what should be kept in mind while adding
+the limitations (no nocow/raid56/...) or exceptions into the code.
 
-kernel: 5.2.2 (Ubuntu 18.04.3)
-btrfs-progs: 5.2.1
-HBA: DELL Perc
-# storcli /c0/v0
-# 0/0   RAID5 Optl  RW     Yes     RWBD  -   OFF 7.274 TB SSD-Data
-#btrfs fi show /dev/sdX
-#Label: 'Data-Ssd'  uuid: <my uuid>
-#        Total devices 1 FS bytes used 7.12TiB
-#        devid    1 size 7.27TiB used 7.27TiB path /dev/<mydev>
+In some cases it's not possible to fold the zoned support into existing
+helpers but we should do that wherever we can. While reading the code
+the number of if (HMZONED) felt too intrusive. This needs to be
+adjusted, but I think it's mostly cosmetic or basic refactoring, not
+changing the core of the implementation.
 
-What happend:
-Customer filled up the filesystem (lots of snapshots in a couple of subvolumes).
-System was working with kernel 4.15 and btrfs-progs 4.15. I updated kernel and btrfs-progs with the assumption
-more mainlined/actual tools could do a better job. Since they have seen lots of fixups.
+So in particular: remove 'hm' everywhere, filename, identifiers. For
+short I'd call it 'zone' mode but full description would be something
+like 'zone aware append-only allocation mode'.
 
-1) As a first step, i did run
-
-# btrfs check --mode lowmem --progress /dev/<mydev> 
-
-got extend mismatches and wrong extend CRC's
-
-2) As a second step i did try to mount in recovery mode
-
-# mount -t btrfs -o defaults, recovery, skip_balance /dev/<mydev> /mnt
-
-I included skip_balance, since there might be an unfinished balance run. But this didn't work out.
-
-3) As a third step, got it mounted with ro mode
-
-# mount -t  btrfs -o ro /dev/<mydev> /mnt
-
-And filed data received via usage:
-
-# btrfs fi usage /mnt
-# Overall:
-#    Device size:                   7.27TiB
-#    Device allocated:              7.27TiB
-#    Device unallocated:            1.00MiB
-#    Device missing:                  0.00B
-#    Used:                          7.13TiB
-#    Free (estimated):            134.13GiB      (min: 134.13GiB)
-#    Data ratio:                       1.00
-#    Metadata ratio:                   2.00
-#    Global reserve:              512.00MiB      (used: 0.00B)
-#
-# Data,single: Size:7.23TiB, Used:7.10TiB
-#   /dev/<mydev>        7.23TiB
-#
-# Metadata,DUP: Size:21.50GiB, Used:14.31GiB
-#   /dev/<mydev>       43.00GiB
-#
-# System,DUP: Size:8.00MiB, Used:864.00KiB
-#   /dev/<mydev>       16.00MiB
-
-# Unallocated:
-#   /dev/<mydev>        1.00MiB
-
-Obviously, totally filled up.
-At that time i copied out all relevant data - you never know ... Finished!
-
-Then tried to unmout, but that got to nowhere. Leads to a reboot .
-
-
-4) As a forth step, i tried to repair it
-
-# btrfs check --mode lowmem --progress --repair /dev/<mydev>
-# enabling repair mode
-# WARNING: low-memory mode repair support is only partial
-# Opening filesystem to check...
-# Checking filesystem on /dev/<mydev>
-# UUID: <my UUID>
-# [1/7] checking root items                      (0:00:33 elapsed, 20853512 items checked)
-# Fixed 0 roots.
-# ERROR: extent[1988733435904, 134217728] referencer count mismatch (root: 261, owner: 286, offset: 5905580032) wanted: # 28, have: 34
-# ERROR: fail to allocate new chunk No space left on device
-# Try to exclude all metadata blcoks and extents, it may be slow
-# Delete backref in extent [1988733435904 134217728]07:16 elapsed, 40435 items checked)
-# ERROR: extent[1988733435904, 134217728] referencer count mismatch (root: 261, owner: 286, offset: 5905580032) wanted: 27, have: 34
-# Delete backref in extent [1988733435904 134217728]
-# ERROR: extent[1988733435904, 134217728] referencer count mismatch (root: 261, owner: 286, offset: 5905580032) wanted: 26, have: 34
-# ERROR: commit_root already set when starting transaction
-# ERROR: fail to start transaction: Invalid argument
-# ERROR: extent[2017321811968, 134217728] referencer count mismatch (root: 261, owner: 287, offset: 2281701376) wanted: 3215, have: 3319
-# ERROR: commit_root already set when starting transaction
-# ERROR: fail to start transaction Invalid argument
-
-This ends with a core-dump.
-
-Last not least my question:
-
-I'm not experienced enough to solve this issue myself and need your help. 
-Is it worth the time and effort to solve this issue? Developers might be interested while having a real live testbed?
-Do you need any further info that will help to solve the issue?
-
-
-Best regards
-Ralf
-
-
-
-
-
+I'll do another review pass to point out what I think can be refactored
+but I hope that with the above gives enough hint.

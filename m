@@ -2,137 +2,179 @@ Return-Path: <SRS0=471q=2K=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DF724C2D0D2
-	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Dec 2019 09:53:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AE3C8C43603
+	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Dec 2019 11:38:52 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id BFE472465E
-	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Dec 2019 09:53:47 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7D8FE24680
+	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Dec 2019 11:38:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727276AbfLTJxr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 20 Dec 2019 04:53:47 -0500
-Received: from mx2.suse.de ([195.135.220.15]:60584 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727261AbfLTJxr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Dec 2019 04:53:47 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 25315ACFE;
-        Fri, 20 Dec 2019 09:53:45 +0000 (UTC)
-Subject: Re: [PATCH] btrfs: regression test for subvol deletion after rename
-To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
-        fstests@vger.kernel.org, kernel-team@fb.com
-References: <20191219142835.50371-1-josef@toxicpanda.com>
- <db0849cb-66d9-4815-d111-b225cb27a3c5@suse.com>
- <5ea1f28a-16bc-f97c-9c4a-ce47f94b1b43@toxicpanda.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Message-ID: <0f3fe438-acc5-31b4-a366-3210b31e5b17@suse.com>
-Date:   Fri, 20 Dec 2019 11:53:43 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.2.2
+        id S1727233AbfLTLiv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 20 Dec 2019 06:38:51 -0500
+Received: from nwxsbs11.networkx.de ([217.91.82.83]:20627 "EHLO
+        nwxsbs11.networkx.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727184AbfLTLiv (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 20 Dec 2019 06:38:51 -0500
+Received: from NWXSBS11.networkx.de ([fe80::4091:24d0:23e7:9e44]) by
+ NWXSBS11.networkx.de ([fe80::4091:24d0:23e7:9e44%14]) with mapi id
+ 14.03.0468.000; Fri, 20 Dec 2019 12:36:31 +0100
+From:   Ralf Zerres <Ralf.Zerres@networkx.de>
+To:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "quwenruo.btrfs@gmx.com" <quwenruo.btrfs@gmx.com>
+Subject: Re: How to heel this btrfs fi corruption?
+Thread-Topic: How to heel this btrfs fi corruption?
+Thread-Index: AdW2puxRpbYJ6wGOS3W1/yTrAS6zvAATB0uAAAumBoA=
+Date:   Fri, 20 Dec 2019 11:36:30 +0000
+Message-ID: <b6f0af39b0851f652600115db72bb789069927f5.camel@networkx.de>
+References: <C439384E8BF26546BDDE396FFA246D1001921619EB@NWXSBS11.networkx.de>
+         <19940557-c91a-145d-4885-8e8c59e8b32f@gmx.com>
+In-Reply-To: <19940557-c91a-145d-4885-8e8c59e8b32f@gmx.com>
+Reply-To: Ralf Zerres <Ralf.Zerres@networkx.de>
+Accept-Language: de-DE, en-US
+Content-Language: de-DE
+X-MS-Has-Attach: 
+X-MS-TNEF-Correlator: 
+user-agent: Evolution 3.34.2 
+x-originating-ip: [89.1.209.38]
+Content-Type: text/plain; charset="utf-8"
+Content-ID: <26230DFE19893A46ABE17DFD341FD745@networkx.de>
+Content-Transfer-Encoding: base64
 MIME-Version: 1.0
-In-Reply-To: <5ea1f28a-16bc-f97c-9c4a-ce47f94b1b43@toxicpanda.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-
-
-On 19.12.19 г. 23:16 ч., Josef Bacik wrote:
-> On 12/19/19 11:12 AM, Nikolay Borisov wrote:
->>
->>
->> On 19.12.19 г. 16:28 ч., Josef Bacik wrote:
->>> Test removal of a subvolume via rmdir after it has been renamed into a
->>> snapshot of the volume that originally contained the subvolume
->>> reference.
->>>
->>> This currently fails on btrfs but is fixed by the patch with the title
->>>
->>>    "btrfs: fix invalid removal of root ref"
->>>
->>> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
->>> ---
->>>   tests/btrfs/202     | 54 +++++++++++++++++++++++++++++++++++++++++++++
->>>   tests/btrfs/202.out |  4 ++++
->>>   tests/btrfs/group   |  1 +
->>>   3 files changed, 59 insertions(+)
->>>   create mode 100755 tests/btrfs/202
->>>   create mode 100644 tests/btrfs/202.out
->>>
->>> diff --git a/tests/btrfs/202 b/tests/btrfs/202
->>> new file mode 100755
->>> index 00000000..b02ee446
->>> --- /dev/null
->>> +++ b/tests/btrfs/202
->>> @@ -0,0 +1,54 @@
->>> +#! /bin/bash
->>> +# SPDX-License-Identifier: GPL-2.0
->>> +#
->>> +# FS QA Test 201
->>> +#
->>> +# Regression test for fix "btrfs: fix invalid removal of root ref"
->>> +#
->>> +seq=`basename $0`
->>> +seqres=$RESULT_DIR/$seq
->>> +echo "QA output created by $seq"
->>> +
->>> +here=`pwd`
->>> +tmp=/tmp/$$
->>> +status=1    # failure is the default!
->>> +trap "_cleanup; exit \$status" 0 1 2 3 15
->>> +
->>> +_cleanup()
->>> +{
->>> +    cd /
->>> +    rm -f $tmp.*
->>> +}
->>> +
->>> +. ./common/rc
->>> +. ./common/filter
->>> +
->>> +rm -f $seqres.full
->>> +
->>> +_supported_fs btrfs
->>> +_supported_os Linux
->>> +
->>> +_scratch_mkfs >> $seqres.full 2>&1
->>> +_scratch_mount
->>> +
->>> +# Create a subvol b under a and then snapshot a into c.  This 
->>> create's a stub
->>> +# entry in c for b because c doesn't have a reference for b.
->>> +#
->>> +# But when we rename b c/foo it creates a ref for b in c.  However 
->>> if we go to
->>> +# remove c/b btrfs used to depend on not finding the root ref to 
->>> handle the
->>> +# unlink properly, but we now have a ref for that root.  We also had 
->>> a bug that
->>> +# would allow us to remove mis-matched refs if the keys matched, so 
->>> we'd end up
->>> +# removing too many entries which would cause a transaction abort.
->>> +
->>> +$BTRFS_UTIL_PROG subvolume create $SCRATCH_MNT/a | _filter_scratch
->>> +$BTRFS_UTIL_PROG subvolume create $SCRATCH_MNT/a/b | _filter_scratch
->>> +$BTRFS_UTIL_PROG subvolume snapshot $SCRATCH_MNT/a $SCRATCH_MNT/c \
->>> +    | _filter_scratch
->>> +ls $SCRATCH_MNT/c/b
->>
->> Isn't this ls redundant?
->>
-> 
-> No we need the dummy entry in cache before we add the root ref during 
-> the rename.  Thanks,
-
-A comment stating this would be good.
-
-> 
-> Josef
+DQoNCg0KDQoNCkFtIEZyZWl0YWcsIGRlbiAyMC4xMi4yMDE5LCAxNDowNSArMDgwMCBzY2hyaWVi
+IFF1IFdlbnJ1bzoNCj4gDQo+IE9uIDIwMTkvMTIvMjAg5LiK5Y2INDowMCwgUmFsZiBaZXJyZXMg
+d3JvdGU6DQo+ID4gRGVhciBsaXN0LA0KPiA+IA0KPiA+IGF0IGN1c3RvbWVyIHNpdGUgaSBjYW4n
+dCBtb3VudCBhIGdpdmVuIGJ0cmZzIGRldmljZSBpbiBydyBtb2RlLg0KPiA+IHRoaXMgaXMgcHJv
+ZHVjdGlvbiBkYXRhIGFuZCBpIGRvIGhhdmUgYSBiYWNrdXAgYW5kIG1hbmFnZWQgdG8gbW91bnQg
+dGhlIGZpbGVzeXN0ZW0gaW4gcm8gbW9kZS4gSSBkaWQgY29weSBvdXQgcmVsZXZhbnQgc3R1ZmYu
+DQo+ID4gSGF2aW5nIHNhaWQgdGhpcywgaWYgYnRyZnMgLS1yZXBhaXIgY2FuJ3QgaGVhbCB0aGUg
+c2l0dWF0aW9uLCBpIGNvdWxkIHJlZm9ybWF0IHRoZSBmaWxlc3lzdGVtIGFuZCBzdGFydCBhbGwg
+b3Zlci4NCj4gPiBCdXQgaSB3b3VsZCBwcmVmZXJlIHRvIHNhdmUgdGhlIHRpbWUgYW5kIHRha2Ug
+dGhlIGhlZWxpbmcgYXMgYSBwcm9vZiBvZiAicHJvZHVjdGlvbiByZWFkeSIgc3RhdHVzIG9mIGJ0
+cmZzLXByb2dzLg0KPiA+IA0KPiA+IEhlcmUgYXJlIHRoZSBkZXRhaWxzOg0KPiA+IA0KPiA+IGtl
+cm5lbDogNS4yLjIgKFVidW50dSAxOC4wNC4zKQ0KPiA+IGJ0cmZzLXByb2dzOiA1LjIuMQ0KPiA+
+IEhCQTogREVMTCBQZXJjDQo+ID4gIyBzdG9yY2xpIC9jMC92MA0KPiA+ICMgMC8wICAgUkFJRDUg
+T3B0bCAgUlcgICAgIFllcyAgICAgUldCRCAgLSAgIE9GRiA3LjI3NCBUQiBTU0QtRGF0YQ0KPiA+
+ICNidHJmcyBmaSBzaG93IC9kZXYvc2RYDQo+ID4gI0xhYmVsOiAnRGF0YS1Tc2QnICB1dWlkOiA8
+bXkgdXVpZD4NCj4gPiAjICAgICAgICBUb3RhbCBkZXZpY2VzIDEgRlMgYnl0ZXMgdXNlZCA3LjEy
+VGlCDQo+ID4gIyAgICAgICAgZGV2aWQgICAgMSBzaXplIDcuMjdUaUIgdXNlZCA3LjI3VGlCIHBh
+dGggL2Rldi88bXlkZXY+DQo+ID4gDQo+ID4gV2hhdCBoYXBwZW5kOg0KPiA+IEN1c3RvbWVyIGZp
+bGxlZCB1cCB0aGUgZmlsZXN5c3RlbSAobG90cyBvZiBzbmFwc2hvdHMgaW4gYSBjb3VwbGUgb2Yg
+c3Vidm9sdW1lcykuDQo+ID4gU3lzdGVtIHdhcyB3b3JraW5nIHdpdGgga2VybmVsIDQuMTUgYW5k
+IGJ0cmZzLXByb2dzIDQuMTUuIEkgdXBkYXRlZCBrZXJuZWwgYW5kIGJ0cmZzLXByb2dzIHdpdGgg
+dGhlIGFzc3VtcHRpb24NCj4gPiBtb3JlIG1haW5saW5lZC9hY3R1YWwgdG9vbHMgY291bGQgZG8g
+YSBiZXR0ZXIgam9iLiBTaW5jZSB0aGV5IGhhdmUgc2VlbiBsb3RzIG9mIGZpeHVwcy4NCj4gPiAN
+Cj4gPiAxKSBBcyBhIGZpcnN0IHN0ZXAsIGkgZGlkIHJ1bg0KPiA+IA0KPiA+ICMgYnRyZnMgY2hl
+Y2sgLS1tb2RlIGxvd21lbSAtLXByb2dyZXNzIC9kZXYvPG15ZGV2Pg0KPiANCj4gVGhlIGluaXRp
+YWwgcmVwb3J0IHdvdWxkIGhlbHAgYSBsb3QgdG8gZGV0ZXJtaW5lIHRoZSByb290IGNhdXNlIG9m
+DQo+IGNvcnJ1cHRpb24gaW4gZmlyc3QgcGxhY2UuDQo+IA0KPiBCdXQgaWYgYnRyZnMgY2hlY2sg
+KGJvdGggbW9kZXMpIHJlcG9ydCBlcnJvciwgeW91J2QgYmV0dGVyIG5vdCB0byB0aGluaw0KPiAt
+LXJlcGFpciBjYW4gZG8gYSBiZXR0ZXIgam9iLg0KPiANCj4gQ3VycmVudGx5IGJ0cmZzIGNoZWNr
+IGlzIG9ubHkgZ29vZCBhdCBmaW5kaW5nIHByb2JsZW1zLCBub3QgcmVhbGx5DQo+IGZpeGluZyB0
+aGVtLg0KPiANCnRoYW5rcyBmb3IgdGhpcyBjbGFyaWZpY2F0aW9uLg0KDQo+IEFzIHRoZXJlIGFy
+ZSB0b28gbWFueSB0aGluZ3MgdG8gY29uc2lkZXIgd2hlbiBkb2luZyByZXBhaXIsIHNvIGF0IGxl
+YXN0DQo+IC0tcmVwYWlyIGlzIGZhciBmcm9tICJwcm9kdWN0aW9uIHJlYWR5Ii4NCj4gVGhhdCdz
+IHdoeSBpbiB2NS40IHByb2dzLCB3ZSBhZGQgZXh0cmEgd2FpdCB0aW1lIGZvciAtLXJlcGFpci4N
+Cj4gDQp3aGljaCBtZWFucyB3ZSBoYXZlIHRvIHdhaXQgdW50aWwgZGV2ZWxvcG1lbnQgY2FuIGZp
+bmlzaCB0aGlzIHRhc2suDQpVbnRpbCB0aGlzIHNpdHVhdGlvbiBpIHdpbGwgcmVnYXJkIC0tcmVw
+YWlyIGFzIGEgV0lQIGZ1bmN0aW9uIHRoYXQgbWF5DQpoZWxwLCBtYXkgbm90LiBPbmx5IHVzZSBp
+dCBmb3IgZGF0YSBzZXRzIGZvciB3aGljaCB2YWxpZCBiYWNrdXBzIGV4aXN0DQpvciBiZSBwcmVw
+YXJlZCB0byBsb29zZSBkYXRhLg0KDQo+ID4gDQo+ID4gZ290IGV4dGVuZCBtaXNtYXRjaGVzIGFu
+ZCB3cm9uZyBleHRlbmQgQ1JDJ3MNCj4gPiANCj4gPiAyKSBBcyBhIHNlY29uZCBzdGVwIGkgZGlk
+IHRyeSB0byBtb3VudCBpbiByZWNvdmVyeSBtb2RlDQo+ID4gDQo+ID4gIyBtb3VudCAtdCBidHJm
+cyAtbyBkZWZhdWx0cywgcmVjb3ZlcnksIHNraXBfYmFsYW5jZSAvZGV2LzxteWRldj4gL21udA0K
+PiA+IA0KPiA+IEkgaW5jbHVkZWQgc2tpcF9iYWxhbmNlLCBzaW5jZSB0aGVyZSBtaWdodCBiZSBh
+biB1bmZpbmlzaGVkIGJhbGFuY2UgcnVuLiBCdXQgdGhpcyBkaWRuJ3Qgd29yayBvdXQuDQo+IA0K
+PiBUaGUgZG1lc2cgd291bGQgaGVscCB0byBmaW5kIG91dCB3aGF0IHdlbnQgd3JvbmcuDQo+IA0K
+PiBKdXN0IGEgdGlwIGZvciBzdWNoIHJlcG9ydCwgdGhlIGluaXRpYWwgZXJyb3IgbWVzc2FnZSBp
+cyBhbHdheXMgdGhlIG1vc3QNCj4gaW1wb3J0YW50IHRoaW5nLg0KPiANCj4gPiANCj4gPiAzKSBB
+cyBhIHRoaXJkIHN0ZXAsIGdvdCBpdCBtb3VudGVkIHdpdGggcm8gbW9kZQ0KPiA+IA0KPiA+ICMg
+bW91bnQgLXQgIGJ0cmZzIC1vIHJvIC9kZXYvPG15ZGV2PiAvbW50DQo+ID4gDQo+ID4gQW5kIGZp
+bGVkIGRhdGEgcmVjZWl2ZWQgdmlhIHVzYWdlOg0KPiA+IA0KPiA+ICMgYnRyZnMgZmkgdXNhZ2Ug
+L21udA0KPiA+ICMgT3ZlcmFsbDoNCj4gPiAjICAgIERldmljZSBzaXplOiAgICAgICAgICAgICAg
+ICAgICA3LjI3VGlCDQo+ID4gIyAgICBEZXZpY2UgYWxsb2NhdGVkOiAgICAgICAgICAgICAgNy4y
+N1RpQg0KPiA+ICMgICAgRGV2aWNlIHVuYWxsb2NhdGVkOiAgICAgICAgICAgIDEuMDBNaUINCj4g
+PiAjICAgIERldmljZSBtaXNzaW5nOiAgICAgICAgICAgICAgICAgIDAuMDBCDQo+ID4gIyAgICBV
+c2VkOiAgICAgICAgICAgICAgICAgICAgICAgICAgNy4xM1RpQg0KPiA+ICMgICAgRnJlZSAoZXN0
+aW1hdGVkKTogICAgICAgICAgICAxMzQuMTNHaUIgICAgICAobWluOiAxMzQuMTNHaUIpDQo+ID4g
+IyAgICBEYXRhIHJhdGlvOiAgICAgICAgICAgICAgICAgICAgICAgMS4wMA0KPiA+ICMgICAgTWV0
+YWRhdGEgcmF0aW86ICAgICAgICAgICAgICAgICAgIDIuMDANCj4gPiAjICAgIEdsb2JhbCByZXNl
+cnZlOiAgICAgICAgICAgICAgNTEyLjAwTWlCICAgICAgKHVzZWQ6IDAuMDBCKQ0KPiA+ICMNCj4g
+PiAjIERhdGEsc2luZ2xlOiBTaXplOjcuMjNUaUIsIFVzZWQ6Ny4xMFRpQg0KPiA+ICMgICAvZGV2
+LzxteWRldj4gICAgICAgIDcuMjNUaUINCj4gPiAjDQo+ID4gIyBNZXRhZGF0YSxEVVA6IFNpemU6
+MjEuNTBHaUIsIFVzZWQ6MTQuMzFHaUINCj4gPiAjICAgL2Rldi88bXlkZXY+ICAgICAgIDQzLjAw
+R2lCDQo+ID4gIw0KPiA+ICMgU3lzdGVtLERVUDogU2l6ZTo4LjAwTWlCLCBVc2VkOjg2NC4wMEtp
+Qg0KPiA+ICMgICAvZGV2LzxteWRldj4gICAgICAgMTYuMDBNaUINCj4gPiANCj4gPiAjIFVuYWxs
+b2NhdGVkOg0KPiA+ICMgICAvZGV2LzxteWRldj4gICAgICAgIDEuMDBNaUINCj4gPiANCj4gPiBP
+YnZpb3VzbHksIHRvdGFsbHkgZmlsbGVkIHVwLg0KPiA+IEF0IHRoYXQgdGltZSBpIGNvcGllZCBv
+dXQgYWxsIHJlbGV2YW50IGRhdGEgLSB5b3UgbmV2ZXIga25vdyAuLi4gRmluaXNoZWQhDQo+ID4g
+DQo+ID4gVGhlbiB0cmllZCB0byB1bm1vdXQsIGJ1dCB0aGF0IGdvdCB0byBub3doZXJlLiBMZWFk
+cyB0byBhIHJlYm9vdCAuDQo+ID4gDQo+ID4gDQo+ID4gNCkgQXMgYSBmb3J0aCBzdGVwLCBpIHRy
+aWVkIHRvIHJlcGFpciBpdA0KPiA+IA0KPiA+ICMgYnRyZnMgY2hlY2sgLS1tb2RlIGxvd21lbSAt
+LXByb2dyZXNzIC0tcmVwYWlyIC9kZXYvPG15ZGV2Pg0KPiA+ICMgZW5hYmxpbmcgcmVwYWlyIG1v
+ZGUNCj4gPiAjIFdBUk5JTkc6IGxvdy1tZW1vcnkgbW9kZSByZXBhaXIgc3VwcG9ydCBpcyBvbmx5
+IHBhcnRpYWwNCj4gPiAjIE9wZW5pbmcgZmlsZXN5c3RlbSB0byBjaGVjay4uLg0KPiA+ICMgQ2hl
+Y2tpbmcgZmlsZXN5c3RlbSBvbiAvZGV2LzxteWRldj4NCj4gPiAjIFVVSUQ6IDxteSBVVUlEPg0K
+PiA+ICMgWzEvN10gY2hlY2tpbmcgcm9vdCBpdGVtcyAgICAgICAgICAgICAgICAgICAgICAoMDow
+MDozMyBlbGFwc2VkLCAyMDg1MzUxMiBpdGVtcyBjaGVja2VkKQ0KPiA+ICMgRml4ZWQgMCByb290
+cy4NCj4gPiAjIEVSUk9SOiBleHRlbnRbMTk4ODczMzQzNTkwNCwgMTM0MjE3NzI4XSByZWZlcmVu
+Y2VyIGNvdW50IG1pc21hdGNoIChyb290OiAyNjEsIG93bmVyOiAyODYsIG9mZnNldDogNTkwNTU4
+MDAzMikgd2FudGVkOiAjIDI4LCBoYXZlOiAzNA0KPiA+ICMgRVJST1I6IGZhaWwgdG8gYWxsb2Nh
+dGUgbmV3IGNodW5rIE5vIHNwYWNlIGxlZnQgb24gZGV2aWNlDQo+ID4gIyBUcnkgdG8gZXhjbHVk
+ZSBhbGwgbWV0YWRhdGEgYmxjb2tzIGFuZCBleHRlbnRzLCBpdCBtYXkgYmUgc2xvdw0KPiA+ICMg
+RGVsZXRlIGJhY2tyZWYgaW4gZXh0ZW50IFsxOTg4NzMzNDM1OTA0IDEzNDIxNzcyOF0wNzoxNiBl
+bGFwc2VkLCA0MDQzNSBpdGVtcyBjaGVja2VkKQ0KPiA+ICMgRVJST1I6IGV4dGVudFsxOTg4NzMz
+NDM1OTA0LCAxMzQyMTc3MjhdIHJlZmVyZW5jZXIgY291bnQgbWlzbWF0Y2ggKHJvb3Q6IDI2MSwg
+b3duZXI6IDI4Niwgb2Zmc2V0OiA1OTA1NTgwMDMyKSB3YW50ZWQ6IDI3LCBoYXZlOiAzNA0KPiA+
+ICMgRGVsZXRlIGJhY2tyZWYgaW4gZXh0ZW50IFsxOTg4NzMzNDM1OTA0IDEzNDIxNzcyOF0NCj4g
+PiAjIEVSUk9SOiBleHRlbnRbMTk4ODczMzQzNTkwNCwgMTM0MjE3NzI4XSByZWZlcmVuY2VyIGNv
+dW50IG1pc21hdGNoIChyb290OiAyNjEsIG93bmVyOiAyODYsIG9mZnNldDogNTkwNTU4MDAzMikg
+d2FudGVkOiAyNiwgaGF2ZTogMzQNCj4gPiAjIEVSUk9SOiBjb21taXRfcm9vdCBhbHJlYWR5IHNl
+dCB3aGVuIHN0YXJ0aW5nIHRyYW5zYWN0aW9uDQo+ID4gIyBFUlJPUjogZmFpbCB0byBzdGFydCB0
+cmFuc2FjdGlvbjogSW52YWxpZCBhcmd1bWVudA0KPiA+ICMgRVJST1I6IGV4dGVudFsyMDE3MzIx
+ODExOTY4LCAxMzQyMTc3MjhdIHJlZmVyZW5jZXIgY291bnQgbWlzbWF0Y2ggKHJvb3Q6IDI2MSwg
+b3duZXI6IDI4Nywgb2Zmc2V0OiAyMjgxNzAxMzc2KSB3YW50ZWQ6IDMyMTUsIGhhdmU6IDMzMTkN
+Cj4gPiAjIEVSUk9SOiBjb21taXRfcm9vdCBhbHJlYWR5IHNldCB3aGVuIHN0YXJ0aW5nIHRyYW5z
+YWN0aW9uDQo+ID4gIyBFUlJPUjogZmFpbCB0byBzdGFydCB0cmFuc2FjdGlvbiBJbnZhbGlkIGFy
+Z3VtZW50DQo+ID4gDQo+ID4gVGhpcyBlbmRzIHdpdGggYSBjb3JlLWR1bXAuDQo+ID4gDQo+ID4g
+TGFzdCBub3QgbGVhc3QgbXkgcXVlc3Rpb246DQo+ID4gDQo+ID4gSSdtIG5vdCBleHBlcmllbmNl
+ZCBlbm91Z2ggdG8gc29sdmUgdGhpcyBpc3N1ZSBteXNlbGYgYW5kIG5lZWQgeW91ciBoZWxwLiAN
+Cj4gPiBJcyBpdCB3b3J0aCB0aGUgdGltZSBhbmQgZWZmb3J0IHRvIHNvbHZlIHRoaXMgaXNzdWU/
+DQo+IA0KPiBJIGRvbid0IHRoaW5rIGl0IHdvdWxkIGJlIHdvcnRoeSwgdW5sZXNzIHlvdSdyZSBh
+IHJlYWxseSBzdXBlciBraW5kIGd1eQ0KPiB3aG8gd2FudCB0byBtYWtlIGJ0cmZzLXByb2dzIGJl
+dHRlci4NCj4gVGhlIHRpbWUgdG8gcmVwYWlyIHRoZSBpbWFnZSBjb3VsZCBlYXNpbHkgYmUgbW9y
+ZSB0aGFuIGp1c3QgcmVzdG9yaW5nDQo+IHRoZSBiYWNrdXAsIG5vdCB0byBtZW50aW9uIGl0J3Mg
+bm90IGVuc3VyZWQgdG8gc2F2ZSBpdC4NCj4gDQpJIHdpbGwgZ2l2ZSBidHJmcy1wcm9nIDUuNCBh
+IHJ1biBvbiA1LjQga2VybmVsIGJvb3RlZCBzeXN0ZW0uDQpUaGUgc3NkLXBvb2wgaXMgc3RpbGwg
+YXZhaWxhYmVsIGluIHRoZSBjb3JydXB0ZWQgc3RhdGUuIEFuZCBpdCB3aWxsIG5vdA0KZ28gaW50
+byBwcm9kdWN0aW9uIGFueXdheSwgYmVmb3JlIHRoZSBjYXBhY2l0eSBjYW4gYmUgZXh0ZW5kZWQu
+DQpUaGUgZGlza3MgYXJlIG9yZGVyZWQgYW5kIGFyZSBvbiB0aGVyZSB3YXkuDQpJIHdpbGwganVz
+dCBkbyB0aGUgLS1yZXBhaXIgYXMgYW4gYWNhZGVtaWMgcHJvY2VzcyAobm90IGNhbGxpbmcgbWUg
+YQ0Kc3VwZXIgbmljZSBndXkpLiBCdXQgaXQgbWlnaHQgZ2l2ZSBzb21lIGluc2lnaHQuDQoNCj4g
+PiBEZXZlbG9wZXJzIG1pZ2h0IGJlIGludGVyZXN0ZWQgd2hpbGUgaGF2aW5nIGEgcmVhbCBsaXZl
+IHRlc3RiZWQ/DQo+ID4gRG8geW91IG5lZWQgYW55IGZ1cnRoZXIgaW5mbyB0aGF0IHdpbGwgaGVs
+cCB0byBzb2x2ZSB0aGUgaXNzdWU/DQo+IA0KPiBJbiB0aGlzIGNhc2UsIHRoZSBoaXN0b3J5IG9m
+IHRoZSBjb3JydXB0aW9uIHdvdWxkIGJlIG1vcmUgdXNlZnVsLg0KPiANCj4gQnV0IHNpbmNlIGl0
+J3MgNC4xNSBrZXJuZWwgd2hpY2ggbWF5IG5vdCBoYXZlIGVub3VnaCBmaXhlcyBiYWNrcG9ydGVk
+DQo+IChzaW5jZSBpdCdzIFVidW50dSwgbm90IFNVU0Uga2VybmVsKSwgYW5kIHRoZSA1LjIuMiBp
+cyBub3Qgc2FmZSBhdCBhbGwNCj4gKHlvdSBuZWVkIDUuMy4wIG9yIDUuMi4xNSkgd2UgY2FuJ3Qg
+ZXZlbiBkZXRlcm1pbmUgaWYgaXQncyA1LjIuMiBjYXVzaW5nDQo+IHRoZSBjb3JydXB0aW9uIGlu
+IHRoZSBmaXJzdCBwbGFjZS4NCg0KV2VsbCwgaSBkbyBleHBlY3QgNS40LjAgdG8gYmUgZXF1YWxs
+eSB2YWxpZC4gVG8gYmFkIHRoYXQgdGhlcmUgaXMgbm8NCm9mZmljaWFsIGJhY2twb3J0IGZvciBV
+YnVudHUgc3RhYmxlIChha2EgMTguMDQueCkNCg0KPiBTbyBJJ20gbm90IHN1cmUgaWYgd2UgY2Fu
+IGdldCBtb3JlIGp1aWNlIGZyb20gdGhlIHJlcG9ydC4NCj4gDQpXaGVuIGkgYWRkIHRoZSBuZXcg
+ZGlza3MgdG8gdGhlIFJhaWQ1LCBpIHdpbGwgZGVmaW5ldGVseSByZWZvcm1hdCBhIG5ldw0KYnRy
+ZnMgZmlsZXN5c3RlbSB0byBiZSBzdXJlIGl0IGlzIGNsZWFuIGFuZCBoYXMgbm8gZmF1bHRzLiBU
+aGVuIHRoZQ0Kc3Vidm9scyBhbmQgZGF0YSB3aWxsIGJlIHJlc3RvcmVkIHdpdGggYnRyZnMtc2Vu
+ZC9idHJmcy1yZWNlaXZlLiANCiANCj4gVGhhbmtzLA0KPiBRdQ0KPiANCg0KUXUsIHRoYW5rcyBh
+IGJ1bmNoIGZvciB5b3VyIHRpbWUgYW5kIHRoZSBmcnVpdGZ1bCBpbmZvcm1hdGlvbi4NClJhbGYN
+Cg0KPiANCj4gPiANCj4gPiANCj4gPiBCZXN0IHJlZ2FyZHMNCj4gPiBSYWxmDQo+ID4gDQo+ID4g
+DQo+ID4gDQo+ID4gDQo+ID4gDQo+IA0K

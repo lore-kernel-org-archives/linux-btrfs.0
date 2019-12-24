@@ -2,60 +2,84 @@ Return-Path: <SRS0=pXlZ=2O=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C9D2AC2D0CF
-	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Dec 2019 08:20:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CE3E1C2D0CF
+	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Dec 2019 12:40:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 471FC20643
-	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Dec 2019 08:20:58 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 999642053B
+	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Dec 2019 12:40:53 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=lesimple.fr header.i=@lesimple.fr header.b="JpFomu3a"
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="V6J1JKax"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726104AbfLXIU5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 24 Dec 2019 03:20:57 -0500
-Received: from ns211617.ip-188-165-215.eu ([188.165.215.42]:48852 "EHLO
-        mx.speed47.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1726065AbfLXIU5 (ORCPT
+        id S1726222AbfLXMkx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 24 Dec 2019 07:40:53 -0500
+Received: from mail-qt1-f171.google.com ([209.85.160.171]:32938 "EHLO
+        mail-qt1-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726140AbfLXMkw (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Dec 2019 03:20:57 -0500
-Received: from [192.168.1.38] (lfbn-poi-1-151-241.w86-233.abo.wanadoo.fr [86.233.118.241])
-        by box.speed47.net (Postfix) with ESMTPSA id AB89EF3C;
-        Tue, 24 Dec 2019 09:20:52 +0100 (CET)
-Authentication-Results: box.speed47.net; dmarc=fail (p=none dis=none) header.from=lesimple.fr
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=lesimple.fr;
-        s=mail01; t=1577175652;
-        bh=aAxTv746K6N9rAIYQlwjioJT/hkWtDjDKrsRPR5/UPA=;
-        h=From:To:CC:Date:In-Reply-To:References:Subject;
-        b=JpFomu3arUW0gFowoN5p5RtoLaOdon2YNxJULz/mBaVPFT9GYLjWt1FPUgFTnZRlx
-         ENJT5486rgGI1UAGba8CdFEiykkA0/ccEq2wafcb8qjalwJzq13weEsSMbhxCMm+7D
-         a3AuvDDO3f19FvKE0fdxGw0io7WSu2u0rj03tSC4=
-From:   =?UTF-8?B?U3TDqXBoYW5lIExlc2ltcGxl?= <stephane_btrfs@lesimple.fr>
+        Tue, 24 Dec 2019 07:40:52 -0500
+Received: by mail-qt1-f171.google.com with SMTP id d5so18063432qto.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 24 Dec 2019 04:40:52 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=subject:to:cc:references:from:message-id:date:user-agent
+         :mime-version:in-reply-to:content-language:content-transfer-encoding;
+        bh=XWJA0kQtC8FCu412p+b6sL5Rpg/KfnNS1eoJmjLJ2u4=;
+        b=V6J1JKaxunhJzojRh7BRXXGFINw7wwgU7cfrT782e5Cy8tqqeE0Jme9hpPRQqkooQE
+         6BFBujwbDyIH2aLqx9AZqVbVGxialZTMzM2ezMJlCUCm6bcYBl6fFM7JLhhyDST8ghCF
+         k2cnOSQ+4JBnd8EKISGGR6awL/1LFAD8h/hb5FmMfFZUQN+Dxk6xHuIjEV5LJoEtEvrx
+         CkW1+VAiGs5maD2wTBiD/evg2+n5yIuopqi4zPrahn045Q+f7ghHwGRMN37fN+PRV0wJ
+         pPfYdWbXONWfS82OFHupa73I+Yvqq13a6MdXlcYPpKYGyJYRKhJDMb1SBaKUwSN7KeQy
+         k3UA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=XWJA0kQtC8FCu412p+b6sL5Rpg/KfnNS1eoJmjLJ2u4=;
+        b=TCLK1rYVi0o3x5V+g37lMLSxsYCuddsWrVXwJme8KvTxGXSxex8D6YWD40hpnUDvwY
+         o8MTmF+a9ui3R+MrlOWuvFtJ6s8sZXrdpTBJZ8mmFbk02p7CocM3Q+atGI4PGCTjuQRk
+         V7cXTQ37FLF2oKpKtbfoFxv6Qn4eM/0XvZeJCTvxwrX95seyklaRrQAq7aw1V5mTQuke
+         TW1iPn7oDGqY7El1IwI3rtOCbC0fSC8dsyhF86VllvJiVwoS3sxCdTX152xlzn/8grYg
+         y3y8s8HMzSqHjVqyAjSDiBlZJ4onpeV5QYtSh8wD6uGtrm4EoNAavGJ9RdHQHUUWP6tA
+         ysQw==
+X-Gm-Message-State: APjAAAVV/Jy5ypvm/e5A62HB2MpaLh3ULUnXA/qKjETsxinKppx96ZeA
+        YnmS+chqL0yOgGZQaVJXQ5UnDpgKGRKBeg==
+X-Google-Smtp-Source: APXvYqz4IbmepNAWx3MdYlMf1zz9oSQReVFO+czVs8WOIlJCFtwdUXwlcYeLkvrli12LlUHTWFraUQ==
+X-Received: by 2002:ac8:27ed:: with SMTP id x42mr12323728qtx.299.1577191251330;
+        Tue, 24 Dec 2019 04:40:51 -0800 (PST)
+Received: from [192.168.1.227] (user-12l2ihc.cable.mindspring.com. [69.81.74.44])
+        by smtp.gmail.com with ESMTPSA id o9sm6864748qko.16.2019.12.24.04.40.50
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 24 Dec 2019 04:40:50 -0800 (PST)
+Subject: Re: Metadata chunks on ssd?
 To:     Wang Shilong <wangshilong1991@gmail.com>,
         Hans van Kranenburg <hans@knorrie.org>
-CC:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Date:   Tue, 24 Dec 2019 09:20:51 +0100
-Message-ID: <16f36fe8ed0.2787.faeb54a6cf393cf366ff7c8c6259040e@lesimple.fr>
-In-Reply-To: <CAP9B-QkL60aELFZzOzZStbAz2UWj11V8YNPtSWWgwzeEnbLpvQ@mail.gmail.com>
+Cc:     =?UTF-8?Q?St=c3=a9phane_Lesimple?= <stephane_btrfs@lesimple.fr>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 References: <16f33002870.2787.faeb54a6cf393cf366ff7c8c6259040e@lesimple.fr>
  <fbf7c50b-fc02-bf51-b55f-6449121e7eec@knorrie.org>
  <CAP9B-QkL60aELFZzOzZStbAz2UWj11V8YNPtSWWgwzeEnbLpvQ@mail.gmail.com>
-User-Agent: AquaMail/1.22.0-1511 (build: 102200004)
-Subject: Re: Metadata chunks on ssd?
+From:   "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <8a45940d-6634-e49d-cfde-e7087060c060@gmail.com>
+Date:   Tue, 24 Dec 2019 07:40:48 -0500
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:68.0) Gecko/20100101
+ Thunderbird/68.3.1
 MIME-Version: 1.0
-Content-Type: text/plain; format=flowed; charset="UTF-8"
+In-Reply-To: <CAP9B-QkL60aELFZzOzZStbAz2UWj11V8YNPtSWWgwzeEnbLpvQ@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-
-
-Le 24 décembre 2019 03:04:34 Wang Shilong <wangshilong1991@gmail.com> a écrit :
-
+On 2019-12-23 21:04, Wang Shilong wrote:
 > On Tue, Dec 24, 2019 at 7:38 AM Hans van Kranenburg <hans@knorrie.org> wrote:
 >>
 >> Hi Stéphane,
@@ -67,13 +91,10 @@ Le 24 décembre 2019 03:04:34 Wang Shilong <wangshilong1991@gmail.com> a écrit 
 >>> filesystem?
 >>
 >> Yes, many times.
->
+>>
+> 
 > I implement it locally before for my local testing before.
-
-If you happen to still have a couple patches around (even if they dont 
-apply cleanly), I'm interested!
-
->
+> 
 >>> As metadata use can be intensive and some operations are known to be slow
 >>> (such as backref walking), I'm under the (maybe wrong) impression that
 >>> having a set of small ssd's just for the metadata would give quite a boost
@@ -89,47 +110,36 @@ apply cleanly), I'm interested!
 >> Be sure to take into account that the filesystem has no way to find out
 >> itself which disks are those ssds. There's no easy way to discover this
 >> in a running system.
->
+>>
+> 
 > No, there is API for filesystem to detect whether lower device is SSD or not.
 > Something like:
->       if (!blk_queue_nonrot(q))
->                fs_devices->rotating = 1;
->
+>         if (!blk_queue_nonrot(q))
+>                  fs_devices->rotating = 1;
+> 
 > Currently, btrfs will treat filesystem as rotational disks if any of
 > one disk is rotational,
-> We might record how many non-rotational disks, and make chunk allocation 
-> try SSD
+> We might record how many non-rotational disks, and make chunk allocation try SSD
 > firstly if it possible.
+This doesn't tell you that the device is an SSD though, just that it 
+reports to the kernel as non+rotational. For example, NBD devices 
+present as non-rotational by default, and in most cases you do _not_ 
+want hot data on a network disc.
 
-My first idea was a preference to be set by the admin himself actually. A 
-tristate that would be set for data chunks and for metadata chunks, for 
-each device. Something like:
-
-- "never": never allocate this type of chunk on this device
-- "default": keep the current allocator behavior
-- "always": consider this device first when trying to allocate
-
-The allocator would then run in 2 passes max, like this:
-
-- try to allocate considering only the device tagged "always"
-- if this fails, try to allocate considering the devices tagged "always" 
-and "default"
-
-For my setup, I would use 2 small SSDs set to metadata=always data=never, 
-and the other rotational drives set to metadata=default data=default.
-
-If we want to autodetect things while not being too invasive, on fs 
-creation and on device add/replace, we could autodetect the rotational 
-status, and maybe set data=default metadata=always for non-rotational 
-drives, and data=default metadata=default for the others. This would 
-enhance the overall experience without getting the user potential "out of 
-space" issues he wouldn't expect.
-
-Migration from a previous preference-unaware code would see all the prefs 
-set to "default", without adding a incompat flag as being 
-preference-unaware doesn't break the filesystem.
-
--- 
-Stéphane.
-
+The important thing here is disk performance, not whether it's an SSD or 
+not. An SD card is non-rotational and solid-state, but on most systems 
+the performance is going to be sufficiently bad for BTRFS-type workloads 
+that it's almost useless for this type of thing.
+> 
+>>> so that a 6 disks
+>>> raid1 FS with 4 spinning disks and 2 ssds prefer to allocate metadata on
+>>> the ssd than on the slow drives (and falling back to spinning disks if ssds
+>>> are full, with the possibility to rebalance later).
+>>>
+>>> Would such a feature make sense?
+>>
+>> Absolutely.
+>>
+>> Hans
+>>
 

@@ -2,169 +2,119 @@ Return-Path: <SRS0=9uFH=2R=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-2.2 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A6FD7C2D0C6
-	for <linux-btrfs@archiver.kernel.org>; Fri, 27 Dec 2019 17:54:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 69FA7C2D0C6
+	for <linux-btrfs@archiver.kernel.org>; Fri, 27 Dec 2019 18:32:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 81FED206CB
-	for <linux-btrfs@archiver.kernel.org>; Fri, 27 Dec 2019 17:54:38 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1577469278;
-	bh=mm4956ygG+jablg48bigObr7P6aCT2lVITov/2olgyg=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=cw2f0kxF3EEBMucpzxvu4JGXojmOZjthSKe4BlpU3+lHeIHRlSMb3nReMUDzP0lr3
-	 RmuJzY9kug1EyQXJwNieHyyfviYtrrEzRfz6GxKHTvn9BPz86dxofv2DbWlS+XoHBb
-	 iZ/h03Htua5piibZ8XdPkKqNyNkgd5GlVYkKzVl0=
+	by mail.kernel.org (Postfix) with ESMTP id 2FA972053B
+	for <linux-btrfs@archiver.kernel.org>; Fri, 27 Dec 2019 18:32:06 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="gfCBFsa3"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727996AbfL0Ryf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 27 Dec 2019 12:54:35 -0500
-Received: from mail.kernel.org ([198.145.29.99]:40034 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727486AbfL0Rmv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 27 Dec 2019 12:42:51 -0500
-Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id EF3D32173E;
-        Fri, 27 Dec 2019 17:42:49 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1577468570;
-        bh=mm4956ygG+jablg48bigObr7P6aCT2lVITov/2olgyg=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=q+1sFqnT+Iu8XXP7PuyNOkTG6nLe/LnoNWHIlWnw9Awu0o8JEyEPbevv20fSgOhO6
-         5+lW2G1G/KHHJYyFbVsxfq271y/Ud+Tpmio0U43ygCe1gVPCXrU+BFe2uAwhT0YqVh
-         xRWUY/QZRoGX9Wx1vhH3BDt5k0lxu/D5AzOVE/M8=
-From:   Sasha Levin <sashal@kernel.org>
-To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Filipe Manana <fdmanana@suse.com>, David Sterba <dsterba@suse.com>,
-        Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.4 095/187] Btrfs: fix cloning range with a hole when using the NO_HOLES feature
-Date:   Fri, 27 Dec 2019 12:39:23 -0500
-Message-Id: <20191227174055.4923-95-sashal@kernel.org>
-X-Mailer: git-send-email 2.20.1
-In-Reply-To: <20191227174055.4923-1-sashal@kernel.org>
-References: <20191227174055.4923-1-sashal@kernel.org>
+        id S1727141AbfL0ScF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 27 Dec 2019 13:32:05 -0500
+Received: from mail-qv1-f67.google.com ([209.85.219.67]:38642 "EHLO
+        mail-qv1-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726379AbfL0ScF (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 27 Dec 2019 13:32:05 -0500
+Received: by mail-qv1-f67.google.com with SMTP id t6so10327095qvs.5
+        for <linux-btrfs@vger.kernel.org>; Fri, 27 Dec 2019 10:32:04 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
+        h=subject:to:references:from:message-id:date:user-agent:mime-version
+         :in-reply-to:content-language:content-transfer-encoding;
+        bh=7nDD6vWTQqkhi2zyDg/pl8amoziOxMKx4D4ZO5pTnt4=;
+        b=gfCBFsa3bMEqf/SF+womEmS3w893OCJy7r/eadal23ZkXQpa3VCGNOKAfyt2pi4JtJ
+         gzQnhGnCl3DYXrkrY32xDmBoASiI0P97AN/w9EEQs0v/WOBZpOgYsPgcwB2cOR/viPBp
+         xDw/5vwuhvf4p9AMLJLvSj8qFoiqHan4QlKV2+O8myRekgSkvWsN08o1g9loL0jUQ81H
+         ChbplFOqZY7/sdqAQmXfZYwwbpRAr5pGWCZvsxnZZobwd1lSmIUyle08rmiRkhoeVR2S
+         lfFjy88XVFIAR5jyYVFMfE5JGNi98Rv2qXN0OmFBPtYsaLDuGAEQ+JnNRBrXmCMvlf4s
+         1jXA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:to:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=7nDD6vWTQqkhi2zyDg/pl8amoziOxMKx4D4ZO5pTnt4=;
+        b=mDY9Y2d/rVRanno2w2vKuReYYfHUUzgrIuFpsU7Q55zpLZ8Cmu6ca+1tc6ORZmGafd
+         BzuI7Qd3e0Oxt8zxMiBNGpfT9B+IlC1tEdzRaxMg6q+7kR+TcB74gpMg9oWK2B7efr/d
+         cbmwnH5khK2CswZM+b++hDjBTyyRRhxb6mJyYG68YbqOYDiJ2rXOw7SiGgJvOQSQp1HM
+         atY6Z1UKQfoVNMK9+Iuqzem7CiOPwimOHWIhYV92YtsF04kXDYK051aPfRej9TtzZq3W
+         /PJF0Tn+qtJilDK/Ww4KexoytuxZN3ZzC4USRc/6eBtGW8SBpbeW14F0Y2QP17MiRCAB
+         gbCg==
+X-Gm-Message-State: APjAAAVpQHKO9BXWP6OjzLAKtIv3DUqZinl0ycAL0Qo7wJXe36egHS6V
+        TTkUkks82OMsyc1RVFkv+T1RG8Bdo9btbw==
+X-Google-Smtp-Source: APXvYqwPVSu9AlB+HbeCF3FGi9VFW9wn2u8IO15wc6MtPhxlkXfkJMsvVJiffy/L1LaeNetkq9S35Q==
+X-Received: by 2002:a0c:9c86:: with SMTP id i6mr41422063qvf.214.1577471523948;
+        Fri, 27 Dec 2019 10:32:03 -0800 (PST)
+Received: from ?IPv6:2620:10d:c0a8:1102:ce0:3629:8daa:1271? ([2620:10d:c091:480::1bd4])
+        by smtp.gmail.com with ESMTPSA id v5sm10966475qtc.64.2019.12.27.10.32.03
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Fri, 27 Dec 2019 10:32:03 -0800 (PST)
+Subject: Re: [PATCH RFC 0/3] Introduce per-profile available space array to
+ avoid over-confident can_overcommit()
+To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20191225133938.115733-1-wqu@suse.com>
+From:   Josef Bacik <josef@toxicpanda.com>
+Message-ID: <34e46810-085e-e79e-c0f3-e6310baa3216@toxicpanda.com>
+Date:   Fri, 27 Dec 2019 13:32:02 -0500
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:68.0)
+ Gecko/20100101 Thunderbird/68.3.1
 MIME-Version: 1.0
-X-stable: review
-X-Patchwork-Hint: Ignore
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <20191225133938.115733-1-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+On 12/25/19 8:39 AM, Qu Wenruo wrote:
+> There are several bug reports of ENOSPC error in
+> btrfs_run_delalloc_range().
+> 
+> With some extra info from one reporter, it turns out that
+> can_overcommit() is using a wrong way to calculate allocatable metadata
+> space.
+> 
+> The most typical case would look like:
+>    devid 1 unallocated:	1G
+>    devid 2 unallocated:  10G
+>    metadata profile:	RAID1
+> 
+> In above case, we can at most allocate 1G chunk for metadata, due to
+> unbalanced disk free space.
+> But current can_overcommit() uses factor based calculation, which never
+> consider the disk free space balance.
+> 
+> 
+> To address this problem, here comes the per-profile available space
+> array, which gets updated every time a chunk get allocated/removed or a
+> device get grown or shrunk.
+> 
+> This provides a quick way for hotter place like can_overcommit() to grab
+> an estimation on how many bytes it can over-commit.
+> 
+> The per-profile available space calculation tries to keep the behavior
+> of chunk allocator, thus it can handle uneven disks pretty well.
+> 
+> The RFC tag is here because I'm not yet confident enough about the
+> implementation.
+> I'm not sure this is the proper to go, or just a over-engineered mess.
+> 
 
-[ Upstream commit fcb970581dd900675c4371c2b688a57924a8368c ]
+In general I like the approach, however re-doing the whole calculation once we 
+add or remove a chunk seems like overkill.  Can we get away with just doing the 
+big expensive calculation on mount, and then adjust available up and down as we 
+add and remove chunks?  We know the chunk allocator is not going to allow us to 
+allocate more chunks than our smallest device, so we can be sure we're never 
+going to go negative, and removing chunks is easy again because of the same reason.
 
-When using the NO_HOLES feature if we clone a range that contains a hole
-and a temporary ENOSPC happens while dropping extents from the target
-inode's range, we can end up failing and aborting the transaction with
--EEXIST or with a corrupt file extent item, that has a length greater
-than it should and overlaps with other extents. For example when cloning
-the following range from inode A to inode B:
+Other than that the approach seems sound to me.  Thanks,
 
-  Inode A:
-
-    extent A1                                          extent A2
-  [ ----------- ]  [ hole, implicit, 4MB length ]  [ ------------- ]
-  0            1MB                                 5MB            6MB
-
-  Range to clone: [1MB, 6MB)
-
-  Inode B:
-
-    extent B1       extent B2        extent B3         extent B4
-  [ ---------- ]  [ --------- ]    [ ---------- ]    [ ---------- ]
-  0           1MB 1MB        2MB   2MB        5MB    5MB         6MB
-
-  Target range: [1MB, 6MB) (same as source, to make it easier to explain)
-
-The following can happen:
-
-1) btrfs_punch_hole_range() gets -ENOSPC from __btrfs_drop_extents();
-
-2) At that point, 'cur_offset' is set to 1MB and __btrfs_drop_extents()
-   set 'drop_end' to 2MB, meaning it was able to drop only extent B2;
-
-3) We then compute 'clone_len' as 'drop_end' - 'cur_offset' = 2MB - 1MB =
-   1MB;
-
-4) We then attempt to insert a file extent item at inode B with a file
-   offset of 5MB, which is the value of clone_info->file_offset. This
-   fails with error -EEXIST because there's already an extent at that
-   offset (extent B4);
-
-5) We abort the current transaction with -EEXIST and return that error
-   to user space as well.
-
-Another example, for extent corruption:
-
-  Inode A:
-
-    extent A1                                           extent A2
-  [ ----------- ]   [ hole, implicit, 10MB length ]  [ ------------- ]
-  0            1MB                                  11MB            12MB
-
-  Inode B:
-
-    extent B1         extent B2
-  [ ----------- ]   [ --------- ]    [ ----------------------------- ]
-  0            1MB 1MB         5MB  5MB                             12MB
-
-  Target range: [1MB, 12MB) (same as source, to make it easier to explain)
-
-1) btrfs_punch_hole_range() gets -ENOSPC from __btrfs_drop_extents();
-
-2) At that point, 'cur_offset' is set to 1MB and __btrfs_drop_extents()
-   set 'drop_end' to 5MB, meaning it was able to drop only extent B2;
-
-3) We then compute 'clone_len' as 'drop_end' - 'cur_offset' = 5MB - 1MB =
-   4MB;
-
-4) We then insert a file extent item at inode B with a file offset of 11MB
-   which is the value of clone_info->file_offset, and a length of 4MB (the
-   value of 'clone_len'). So we get 2 extents items with ranges that
-   overlap and an extent length of 4MB, larger then the extent A2 from
-   inode A (1MB length);
-
-5) After that we end the transaction, balance the btree dirty pages and
-   then start another or join the previous transaction. It might happen
-   that the transaction which inserted the incorrect extent was committed
-   by another task so we end up with extent corruption if a power failure
-   happens.
-
-So fix this by making sure we attempt to insert the extent to clone at
-the destination inode only if we are past dropping the sub-range that
-corresponds to a hole.
-
-Fixes: 690a5dbfc51315 ("Btrfs: fix ENOSPC errors, leading to transaction aborts, when cloning extents")
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
-Signed-off-by: Sasha Levin <sashal@kernel.org>
----
- fs/btrfs/file.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index c332968f9056..eaafd00f93d4 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2601,8 +2601,8 @@ int btrfs_punch_hole_range(struct inode *inode, struct btrfs_path *path,
- 			}
- 		}
- 
--		if (clone_info) {
--			u64 clone_len = drop_end - cur_offset;
-+		if (clone_info && drop_end > clone_info->file_offset) {
-+			u64 clone_len = drop_end - clone_info->file_offset;
- 
- 			ret = btrfs_insert_clone_extent(trans, inode, path,
- 							clone_info, clone_len);
--- 
-2.20.1
-
+Josef

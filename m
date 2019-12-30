@@ -7,59 +7,59 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 37D7AC47409
-	for <linux-btrfs@archiver.kernel.org>; Mon, 30 Dec 2019 21:36:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D6CA5C2D0D3
+	for <linux-btrfs@archiver.kernel.org>; Mon, 30 Dec 2019 21:36:51 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0D25D20658
-	for <linux-btrfs@archiver.kernel.org>; Mon, 30 Dec 2019 21:36:52 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id ABCBD20658
+	for <linux-btrfs@archiver.kernel.org>; Mon, 30 Dec 2019 21:36:51 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="PGJh3dTC"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="fYqth9I/"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727746AbfL3Vbc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 30 Dec 2019 16:31:32 -0500
-Received: from mail-qk1-f195.google.com ([209.85.222.195]:39770 "EHLO
-        mail-qk1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727691AbfL3Vbb (ORCPT
+        id S1727740AbfL3Vb3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 30 Dec 2019 16:31:29 -0500
+Received: from mail-qt1-f195.google.com ([209.85.160.195]:42920 "EHLO
+        mail-qt1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727691AbfL3Vb2 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 30 Dec 2019 16:31:31 -0500
-Received: by mail-qk1-f195.google.com with SMTP id c16so27175076qko.6
-        for <linux-btrfs@vger.kernel.org>; Mon, 30 Dec 2019 13:31:30 -0800 (PST)
+        Mon, 30 Dec 2019 16:31:28 -0500
+Received: by mail-qt1-f195.google.com with SMTP id j5so30449797qtq.9
+        for <linux-btrfs@vger.kernel.org>; Mon, 30 Dec 2019 13:31:27 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references:mime-version
          :content-transfer-encoding;
-        bh=wX8kxsXzTAH8cXKUNYxwg9ut9y6Ze9uaz7hZwHtNmO8=;
-        b=PGJh3dTCUzs851uDLxVmUeNA3zBPqfqvL+NAD6QgaeaFZ1nmEQrD+FumlhBPxl5a7k
-         aQHg5fvFZvRfxxTmQaAF7JaGyzy0tswTbXY+BADsEwnqFC8SjHehpaTpMS6tEx+wBLle
-         FBv8DIQaBzVhQYU+tDzlLg7YcH2YsA9XnacafNqzSUfs7M1Il7VLVIwuO/rXEwWe3hzv
-         KNB/RLFdyvOjDnXX/RhKwRMBeyx1TB3VcmkgL4svmNElifOAt/NAhUrMvrTrfHBQyj+5
-         /2CLeg/rErStItnYUyxZRZ6NY2a7ruvhBMsTiyEKPpptmRNNamh0Ks02EL2J9KEGTl9I
-         Lysg==
+        bh=NX1AGW9+LLFsv+yuu8rcNbx+eiK0tTfC4koajkmvPzA=;
+        b=fYqth9I//PH+wcind/oy4cYLWV6ThRuBhSWE80RLNe8ZTPhEaiW0OvDldEvusyLxhQ
+         kWD2cf/6HF1vyV4S+swiF7wAk8cog4EV6DXxB3YsGrU07sd2FdRaXyd4yAmVaJdmpsEb
+         HdY9t812xOa7jqONXUkw4kuxHq2edS+FJPUCi7klCOmBDhHnNWhXxxgtSZVrZacQ0mrN
+         G+raXKAlG0q74MYb1X6A1kaQt8OSW5//ZzqrQZ4gvVfjZ5FT/OtH4FILXeG/PJ/vy3hl
+         ucKcN/a3PhBgjcJPX0eGGBCWu6ogHt2YAAdsAtbbupclmo806/CP+6ZtaAXYh93Q4wZ7
+         FuIQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=wX8kxsXzTAH8cXKUNYxwg9ut9y6Ze9uaz7hZwHtNmO8=;
-        b=sVrCoZfog8ENifmn3upj8uLq6nrl6aOxhKH2my0kIguVF2n9qsp6YwbPyq+H7LUEtD
-         EW/YTjc3JG/OusnUofNamF12gWgzw2fPAmtuzjwF+kmBVgJSjX/iDxI/cL+LZVYHNMbh
-         H2HJIYMOTEQDvlSjtvQPLS2si4PMGNpGmGdUo8BLxw2IcXM8Bal+wp+dNOjU4bUazo68
-         KmsoqdzANuZhGa9r3BPjwjERUud4zOPGprJJ+fnyYGeS5St+8VBZHp4B/l98pKcf4R+3
-         pfx6tfq9VUAmD8JBcSEngBCg+VZud9CkWJNLYFutrt+2qSAS7CR+cqCDp7hTu5ytNmRc
-         8Mcw==
-X-Gm-Message-State: APjAAAVPlMZoJYKVRtK2szflpinEcdnzxZ5iGSJ87v3vJ/VaIZRpTDU0
-        gjDHB7DziFhemvFLgqWJDgI3Mb3iH5T3qA==
-X-Google-Smtp-Source: APXvYqzyOfpVPVpo0Idi9prwfA1HKrRrdiIld13fkvAkCHqb799XMp0p1HuqfSDMO8flnXgry1EA0w==
-X-Received: by 2002:a37:b402:: with SMTP id d2mr53865324qkf.195.1577741490013;
-        Mon, 30 Dec 2019 13:31:30 -0800 (PST)
+        bh=NX1AGW9+LLFsv+yuu8rcNbx+eiK0tTfC4koajkmvPzA=;
+        b=Pd0V0/scU1Fwo0LlMi832gUKoHDxXgQWnag8x8dR8Gkd7Jpmt8tnEL3skaRkSWZ1pa
+         AfoeVlTe75R4IbttJd3EJZ+Kt8qVwofEPriSEd0vDLZy/SwXlJE0dWAt4ezPtgzLV/4Z
+         lwyhtbUlbVobD+bhZSmD8ZaDqUKr10o4kcFMucn4QYnYE/7fEFb93l9XPnWOZpZGJ+/S
+         Fx57oJzIV2mOu9T7L9hJNU6p4Dsw4uG3lNHoZfduJq62EOEoxJtDgUxJkiqHknk4ekko
+         TUhaZpZId3C88O0h1+cvSuNAe0k1MuDuIvL1dvXYd8icJwXGju0b4H5H7ZCc7zIzlDxX
+         gFlA==
+X-Gm-Message-State: APjAAAWKdFBy20WImVjw65FXcfjA+FxLsVkPRaHi2/g885THOXbUQqFx
+        Samc7y6iSUZ6zpYknsVnXBfX7t3e3yGYsg==
+X-Google-Smtp-Source: APXvYqxpo6hiZi+HMAE14T+U8cz41ko+eUIb3Egwyg67xPtU2e4zXHcGaBA2G6hxO+0jJollNjEClQ==
+X-Received: by 2002:aed:3641:: with SMTP id e59mr50001472qtb.174.1577741486943;
+        Mon, 30 Dec 2019 13:31:26 -0800 (PST)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id z4sm12690927qkz.62.2019.12.30.13.31.29
+        by smtp.gmail.com with ESMTPSA id t3sm14241806qtc.8.2019.12.30.13.31.26
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 30 Dec 2019 13:31:29 -0800 (PST)
+        Mon, 30 Dec 2019 13:31:26 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 5/5] btrfs: delete the ordered isize update code
-Date:   Mon, 30 Dec 2019 16:31:18 -0500
-Message-Id: <20191230213118.7532-6-josef@toxicpanda.com>
+Subject: [PATCH 3/5] btrfs: use the file extent tree infrastructure
+Date:   Mon, 30 Dec 2019 16:31:16 -0500
+Message-Id: <20191230213118.7532-4-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.23.0
 In-Reply-To: <20191230213118.7532-1-josef@toxicpanda.com>
 References: <20191230213118.7532-1-josef@toxicpanda.com>
@@ -70,192 +70,215 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Now that we have a safe way to update the isize, remove all of this code
-as it's no longer needed.
+We want to use this everywhere we modify the file extent items
+permanently.  These include
+
+1) Inserting new file extents for writes and prealloc extents.
+2) Truncating inode items.
+3) btrfs_cont_expand().
+4) Insert inline extents.
+5) Insert new extents from log replay.
+6) Insert a new extent for clone, as it could be past isize.
+
+We do not however call the clear helper for hole punching because it
+simply swaps out an existing file extent for a hole, so there's
+effectively no change as far as the i_size is concerned.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/ordered-data.c      | 128 -----------------------------------
- fs/btrfs/ordered-data.h      |   7 --
- include/trace/events/btrfs.h |   1 -
- 3 files changed, 136 deletions(-)
+ fs/btrfs/delayed-inode.c |  4 ++++
+ fs/btrfs/file.c          |  6 +++++
+ fs/btrfs/inode.c         | 52 +++++++++++++++++++++++++++++++++++++++-
+ fs/btrfs/tree-log.c      |  5 ++++
+ 4 files changed, 66 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index 3a3c648bb9d3..b8de2aea36b3 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -791,134 +791,6 @@ btrfs_lookup_first_ordered_extent(struct inode *inode, u64 file_offset)
- 	return entry;
- }
+diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+index d3e15e1d4a91..8b4dcf4f6b3e 100644
+--- a/fs/btrfs/delayed-inode.c
++++ b/fs/btrfs/delayed-inode.c
+@@ -1762,6 +1762,7 @@ int btrfs_fill_inode(struct inode *inode, u32 *rdev)
+ {
+ 	struct btrfs_delayed_node *delayed_node;
+ 	struct btrfs_inode_item *inode_item;
++	struct btrfs_fs_info *fs_info = BTRFS_I(inode)->root->fs_info;
  
--/*
-- * After an extent is done, call this to conditionally update the on disk
-- * i_size.  i_size is updated to cover any fully written part of the file.
-- */
--int btrfs_ordered_update_i_size(struct inode *inode, u64 offset,
--				struct btrfs_ordered_extent *ordered)
--{
--	struct btrfs_ordered_inode_tree *tree = &BTRFS_I(inode)->ordered_tree;
--	u64 disk_i_size;
--	u64 new_i_size;
--	u64 i_size = i_size_read(inode);
--	struct rb_node *node;
--	struct rb_node *prev = NULL;
--	struct btrfs_ordered_extent *test;
--	int ret = 1;
--	u64 orig_offset = offset;
--
--	spin_lock_irq(&tree->lock);
--	if (ordered) {
--		offset = entry_end(ordered);
--		if (test_bit(BTRFS_ORDERED_TRUNCATED, &ordered->flags))
--			offset = min(offset,
--				     ordered->file_offset +
--				     ordered->truncated_len);
--	} else {
--		offset = ALIGN(offset, btrfs_inode_sectorsize(inode));
--	}
--	disk_i_size = BTRFS_I(inode)->disk_i_size;
--
--	/*
--	 * truncate file.
--	 * If ordered is not NULL, then this is called from endio and
--	 * disk_i_size will be updated by either truncate itself or any
--	 * in-flight IOs which are inside the disk_i_size.
--	 *
--	 * Because btrfs_setsize() may set i_size with disk_i_size if truncate
--	 * fails somehow, we need to make sure we have a precise disk_i_size by
--	 * updating it as usual.
--	 *
--	 */
--	if (!ordered && disk_i_size > i_size) {
--		BTRFS_I(inode)->disk_i_size = orig_offset;
--		ret = 0;
--		goto out;
--	}
--
--	/*
--	 * if the disk i_size is already at the inode->i_size, or
--	 * this ordered extent is inside the disk i_size, we're done
--	 */
--	if (disk_i_size == i_size)
--		goto out;
--
--	/*
--	 * We still need to update disk_i_size if outstanding_isize is greater
--	 * than disk_i_size.
--	 */
--	if (offset <= disk_i_size &&
--	    (!ordered || ordered->outstanding_isize <= disk_i_size))
--		goto out;
--
--	/*
--	 * walk backward from this ordered extent to disk_i_size.
--	 * if we find an ordered extent then we can't update disk i_size
--	 * yet
--	 */
--	if (ordered) {
--		node = rb_prev(&ordered->rb_node);
--	} else {
--		prev = tree_search(tree, offset);
--		/*
--		 * we insert file extents without involving ordered struct,
--		 * so there should be no ordered struct cover this offset
--		 */
--		if (prev) {
--			test = rb_entry(prev, struct btrfs_ordered_extent,
--					rb_node);
--			BUG_ON(offset_in_entry(test, offset));
--		}
--		node = prev;
--	}
--	for (; node; node = rb_prev(node)) {
--		test = rb_entry(node, struct btrfs_ordered_extent, rb_node);
--
--		/* We treat this entry as if it doesn't exist */
--		if (test_bit(BTRFS_ORDERED_UPDATED_ISIZE, &test->flags))
--			continue;
--
--		if (entry_end(test) <= disk_i_size)
--			break;
--		if (test->file_offset >= i_size)
--			break;
--
--		/*
--		 * We don't update disk_i_size now, so record this undealt
--		 * i_size. Or we will not know the real i_size.
--		 */
--		if (test->outstanding_isize < offset)
--			test->outstanding_isize = offset;
--		if (ordered &&
--		    ordered->outstanding_isize > test->outstanding_isize)
--			test->outstanding_isize = ordered->outstanding_isize;
--		goto out;
--	}
--	new_i_size = min_t(u64, offset, i_size);
--
--	/*
--	 * Some ordered extents may completed before the current one, and
--	 * we hold the real i_size in ->outstanding_isize.
--	 */
--	if (ordered && ordered->outstanding_isize > new_i_size)
--		new_i_size = min_t(u64, ordered->outstanding_isize, i_size);
--	BTRFS_I(inode)->disk_i_size = new_i_size;
--	ret = 0;
--out:
--	/*
--	 * We need to do this because we can't remove ordered extents until
--	 * after the i_disk_size has been updated and then the inode has been
--	 * updated to reflect the change, so we need to tell anybody who finds
--	 * this ordered extent that we've already done all the real work, we
--	 * just haven't completed all the other work.
--	 */
--	if (ordered)
--		set_bit(BTRFS_ORDERED_UPDATED_ISIZE, &ordered->flags);
--	spin_unlock_irq(&tree->lock);
--	return ret;
--}
--
- /*
-  * search the ordered extents for one corresponding to 'offset' and
-  * try to find a checksum.  This is used because we allow pages to
-diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
-index 5204171ea962..7f7f9ad091a6 100644
---- a/fs/btrfs/ordered-data.h
-+++ b/fs/btrfs/ordered-data.h
-@@ -52,11 +52,6 @@ enum {
- 	BTRFS_ORDERED_DIRECT,
- 	/* We had an io error when writing this out */
- 	BTRFS_ORDERED_IOERR,
--	/*
--	 * indicates whether this ordered extent has done its due diligence in
--	 * updating the isize
--	 */
--	BTRFS_ORDERED_UPDATED_ISIZE,
- 	/* Set when we have to truncate an extent */
- 	BTRFS_ORDERED_TRUNCATED,
- 	/* Regular IO for COW */
-@@ -180,8 +175,6 @@ struct btrfs_ordered_extent *btrfs_lookup_ordered_range(
- 		struct btrfs_inode *inode,
- 		u64 file_offset,
- 		u64 len);
--int btrfs_ordered_update_i_size(struct inode *inode, u64 offset,
--				struct btrfs_ordered_extent *ordered);
- int btrfs_find_ordered_sum(struct inode *inode, u64 offset, u64 disk_bytenr,
- 			   u8 *sum, int len);
- u64 btrfs_wait_ordered_extents(struct btrfs_root *root, u64 nr,
-diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index 620bf1b38fba..02ac28f0e99e 100644
---- a/include/trace/events/btrfs.h
-+++ b/include/trace/events/btrfs.h
-@@ -468,7 +468,6 @@ DEFINE_EVENT(
- 		{ (1 << BTRFS_ORDERED_PREALLOC), 	"PREALLOC" 	}, \
- 		{ (1 << BTRFS_ORDERED_DIRECT),	 	"DIRECT" 	}, \
- 		{ (1 << BTRFS_ORDERED_IOERR), 		"IOERR" 	}, \
--		{ (1 << BTRFS_ORDERED_UPDATED_ISIZE), 	"UPDATED_ISIZE"	}, \
- 		{ (1 << BTRFS_ORDERED_TRUNCATED), 	"TRUNCATED"	})
+ 	delayed_node = btrfs_get_delayed_node(BTRFS_I(inode));
+ 	if (!delayed_node)
+@@ -1779,6 +1780,9 @@ int btrfs_fill_inode(struct inode *inode, u32 *rdev)
+ 	i_uid_write(inode, btrfs_stack_inode_uid(inode_item));
+ 	i_gid_write(inode, btrfs_stack_inode_gid(inode_item));
+ 	btrfs_i_size_write(BTRFS_I(inode), btrfs_stack_inode_size(inode_item));
++	btrfs_inode_set_file_extent_range(BTRFS_I(inode), 0,
++					  round_up(i_size_read(inode),
++						   fs_info->sectorsize));
+ 	inode->i_mode = btrfs_stack_inode_mode(inode_item);
+ 	set_nlink(inode, btrfs_stack_inode_nlink(inode_item));
+ 	inode_set_bytes(inode, btrfs_stack_inode_nbytes(inode_item));
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 4fadb892af24..f1c880c06ca2 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -2486,6 +2486,12 @@ static int btrfs_insert_clone_extent(struct btrfs_trans_handle *trans,
+ 	btrfs_mark_buffer_dirty(leaf);
+ 	btrfs_release_path(path);
  
++	ret = btrfs_inode_set_file_extent_range(BTRFS_I(inode),
++						clone_info->file_offset,
++						clone_len);
++	if (ret)
++		return ret;
++
+ 	/* If it's a hole, nothing more needs to be done. */
+ 	if (clone_info->disk_offset == 0)
+ 		return 0;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index ab8b972863b1..eaf81129817d 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -243,6 +243,15 @@ static int insert_inline_extent(struct btrfs_trans_handle *trans,
+ 	btrfs_mark_buffer_dirty(leaf);
+ 	btrfs_release_path(path);
  
++	/*
++	 * We align size to sectorsize for inline extents just for simplicity
++	 * sake.
++	 */
++	size = ALIGN(size, root->fs_info->sectorsize);
++	ret = btrfs_inode_set_file_extent_range(BTRFS_I(inode), start, size);
++	if (ret)
++		goto fail;
++
+ 	/*
+ 	 * we're an inline extent, so nobody can
+ 	 * extend the file past i_size without locking
+@@ -2377,6 +2386,11 @@ static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
+ 	ins.offset = disk_num_bytes;
+ 	ins.type = BTRFS_EXTENT_ITEM_KEY;
+ 
++	ret = btrfs_inode_set_file_extent_range(BTRFS_I(inode), file_pos,
++						ram_bytes);
++	if (ret)
++		goto out;
++
+ 	/*
+ 	 * Release the reserved range from inode dirty range map, as it is
+ 	 * already moved into delayed_ref_head
+@@ -4753,6 +4767,8 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
+ 	}
+ 
+ 	while (1) {
++		u64 clear_start = 0, clear_len = 0;
++
+ 		fi = NULL;
+ 		leaf = path->nodes[0];
+ 		btrfs_item_key_to_cpu(leaf, &found_key, path->slots[0]);
+@@ -4803,6 +4819,8 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
+ 
+ 		if (extent_type != BTRFS_FILE_EXTENT_INLINE) {
+ 			u64 num_dec;
++
++			clear_start = found_key.offset;
+ 			extent_start = btrfs_file_extent_disk_bytenr(leaf, fi);
+ 			if (!del_item) {
+ 				u64 orig_num_bytes =
+@@ -4810,6 +4828,8 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
+ 				extent_num_bytes = ALIGN(new_size -
+ 						found_key.offset,
+ 						fs_info->sectorsize);
++				clear_start = ALIGN(new_size,
++						    fs_info->sectorsize);
+ 				btrfs_set_file_extent_num_bytes(leaf, fi,
+ 							 extent_num_bytes);
+ 				num_dec = (orig_num_bytes -
+@@ -4835,6 +4855,7 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
+ 						inode_sub_bytes(inode, num_dec);
+ 				}
+ 			}
++			clear_len = num_dec;
+ 		} else if (extent_type == BTRFS_FILE_EXTENT_INLINE) {
+ 			/*
+ 			 * we can't truncate inline items that have had
+@@ -4856,12 +4877,27 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
+ 				 */
+ 				ret = NEED_TRUNCATE_BLOCK;
+ 				break;
++			} else {
++				/*
++				 * Inline extents are special, we just treat
++				 * them as a full sector worth in the file
++				 * extent tree just for simplicity sake.
++				 */
++				clear_len = fs_info->sectorsize;
+ 			}
+ 
+ 			if (test_bit(BTRFS_ROOT_REF_COWS, &root->state))
+ 				inode_sub_bytes(inode, item_end + 1 - new_size);
+ 		}
+ delete:
++		ret = btrfs_inode_clear_file_extent_range(BTRFS_I(inode),
++							  clear_start,
++							  clear_len);
++		if (ret) {
++			btrfs_abort_transaction(trans, ret);
++			break;
++		}
++
+ 		if (del_item)
+ 			last_size = found_key.offset;
+ 		else
+@@ -5183,14 +5219,22 @@ int btrfs_cont_expand(struct inode *inode, loff_t oldsize, loff_t size)
+ 		}
+ 		last_byte = min(extent_map_end(em), block_end);
+ 		last_byte = ALIGN(last_byte, fs_info->sectorsize);
++		hole_size = last_byte - cur_offset;
++
+ 		if (!test_bit(EXTENT_FLAG_PREALLOC, &em->flags)) {
+ 			struct extent_map *hole_em;
+-			hole_size = last_byte - cur_offset;
+ 
+ 			err = maybe_insert_hole(root, inode, cur_offset,
+ 						hole_size);
+ 			if (err)
+ 				break;
++
++			err = btrfs_inode_set_file_extent_range(BTRFS_I(inode),
++								cur_offset,
++								hole_size);
++			if (err)
++				break;
++
+ 			btrfs_drop_extent_cache(BTRFS_I(inode), cur_offset,
+ 						cur_offset + hole_size - 1, 0);
+ 			hole_em = alloc_extent_map();
+@@ -5223,6 +5267,12 @@ int btrfs_cont_expand(struct inode *inode, loff_t oldsize, loff_t size)
+ 							hole_size - 1, 0);
+ 			}
+ 			free_extent_map(hole_em);
++		} else {
++			err = btrfs_inode_set_file_extent_range(BTRFS_I(inode),
++								cur_offset,
++								hole_size);
++			if (err)
++				break;
+ 		}
+ next:
+ 		free_extent_map(em);
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 19364940f9a1..ad25974ff936 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -829,6 +829,11 @@ static noinline int replay_one_extent(struct btrfs_trans_handle *trans,
+ 			goto out;
+ 	}
+ 
++	ret = btrfs_inode_set_file_extent_range(BTRFS_I(inode), start,
++						extent_end - start);
++	if (ret)
++		goto out;
++
+ 	inode_add_bytes(inode, nbytes);
+ update_inode:
+ 	ret = btrfs_update_inode(trans, root, inode);
 -- 
 2.23.0
 

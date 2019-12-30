@@ -2,168 +2,119 @@ Return-Path: <SRS0=x8Sa=2U=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-0.9 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0EE10C2D0CE
-	for <linux-btrfs@archiver.kernel.org>; Mon, 30 Dec 2019 21:36:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2E1F4C2D0C3
+	for <linux-btrfs@archiver.kernel.org>; Mon, 30 Dec 2019 22:19:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D67B42071E
-	for <linux-btrfs@archiver.kernel.org>; Mon, 30 Dec 2019 21:36:51 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 81AEB222C4
+	for <linux-btrfs@archiver.kernel.org>; Mon, 30 Dec 2019 22:19:06 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="16cIKPSS"
+	dkim=pass (2048-bit key) header.d=miegl.cz header.i=@miegl.cz header.b="B5g0hsuF"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727743AbfL3Vba (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 30 Dec 2019 16:31:30 -0500
-Received: from mail-qt1-f195.google.com ([209.85.160.195]:46201 "EHLO
-        mail-qt1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727691AbfL3Vb3 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 30 Dec 2019 16:31:29 -0500
-Received: by mail-qt1-f195.google.com with SMTP id g1so23556313qtr.13
-        for <linux-btrfs@vger.kernel.org>; Mon, 30 Dec 2019 13:31:29 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:subject:date:message-id:in-reply-to:references:mime-version
-         :content-transfer-encoding;
-        bh=xaCphDu8isH+0R3TXU1WOLK3VnETnY1E9yt3zFz0ccA=;
-        b=16cIKPSS3end2QtFl4Dh/Bo3qJo6Clno3R47Y7Nh+ZOCViPqiY+ArCrQitW+k+ildX
-         g6tT+lMpX3pX0m+4ybbB36lTxMDKjHuNlsG6Ol6SwKojIiixAPpZCumCMv3E/Vmoa3/W
-         g49s/JDk2Mqs+TxHNpZEIy9kn3hPLM9zVPtSBXYwuTHymmXl7z6mIQyWAgYLwMImxvf1
-         mfoJVCWeYqvSgW7/LcKPhz3IJ/KbmCUgDKQZrz9697mVXRwDHpA6VM6ZvWDd3terBBES
-         +qBc/mWpU1HyMHO2hdnRKl0MTgGekrwgL7HpjMTCtZAHl7+N2zPPNNiPBPwctcjPy2jX
-         rlvw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=xaCphDu8isH+0R3TXU1WOLK3VnETnY1E9yt3zFz0ccA=;
-        b=ou68gUoqelgkyu1FNVpuS1Hz6anEy8ExTD8s1Qnns1+e8br7ZmOeK7G3AgRwBDTGXR
-         yehNWg+T3ZH+qAja4RbUzJIKe7ivrWqJmfo1u1rWhhwUOBh0iR/vlLdFssIfeTMjo3Di
-         agCC32HCi08UTMqWnUPzS5hiGtvMBD8vHuTxcmYi3oVWudjM5rrWhu3UASmOr0CAswiv
-         nlztgdUQwKzdzzHlRbhNV/vkje5e3RWj0O2aPGfMOpkOie/qqcTCQl5q7Wg/3DcKRAqW
-         4IoTa4uheYCjK5bFxd1VuysnhjUK1O1MbHyCxuyfD2bpT3ncmmsuSmmAg9D0XnBMqKLV
-         2kwA==
-X-Gm-Message-State: APjAAAUQlELnDDnQENpMcjIrZrSqnZUwzaK/OiujPp0sSdxhndOHy1a5
-        Ghcw45HCDbM195JybNNg8+Y/YtILgEOQ8g==
-X-Google-Smtp-Source: APXvYqx+rGCa6SIcnFJrFOB7e82pXZPkDvNOpjgHcHOuMyV8J8D98kmEdKuwSXeRLyP3tMOCS3g6SA==
-X-Received: by 2002:aed:3b79:: with SMTP id q54mr39927795qte.187.1577741488499;
-        Mon, 30 Dec 2019 13:31:28 -0800 (PST)
-Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id n4sm14094859qti.55.2019.12.30.13.31.27
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 30 Dec 2019 13:31:27 -0800 (PST)
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 4/5] btrfs: replace all uses of btrfs_ordered_update_i_size
-Date:   Mon, 30 Dec 2019 16:31:17 -0500
-Message-Id: <20191230213118.7532-5-josef@toxicpanda.com>
-X-Mailer: git-send-email 2.23.0
-In-Reply-To: <20191230213118.7532-1-josef@toxicpanda.com>
-References: <20191230213118.7532-1-josef@toxicpanda.com>
+        id S1727723AbfL3WQo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 30 Dec 2019 17:16:44 -0500
+Received: from ocelot.miegl.cz ([195.201.216.236]:46914 "EHLO ocelot.miegl.cz"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727691AbfL3WQn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 30 Dec 2019 17:16:43 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=miegl.cz; s=dkim;
+        t=1577744201;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=U+KXkchuPV5jq/9o22Nd7rbLimEdUyG4VPQCjHXoQlY=;
+        b=B5g0hsuF/pJrgRtUTXz86oV9qLWPECOirxGCqn5LpECYDZWB0bc3dh9gaunOQWqg+x+3vD
+        fmRWxJU0FZLUvFwhGZNI/kW/GX6OUPNVuPMpLu0Dbnkloy12EoPXy4dPziY/VG0RY17Xnw
+        FZ8E5SiFhRYxXohJ4YW6vG2XEt2gcprJbZjASo5Ye+KikCcyj8HApcn2lNY3TO824lRi2E
+        1KTy//xmy//H3rmMu6x+A6PCA9qDY0G9aU3OdDAeopjsoiLrNUnmz9JGK4cYvPpXLTYpUH
+        ACIxn0AreitWitrsCyWZA1t1f145xaTT4KxAl+hqxN0+ByU55/kzV7zxywtZMg==
+Date:   Mon, 30 Dec 2019 23:16:36 +0100
+From:   Josef Miegl <josef@miegl.cz>
+To:     linux-btrfs@vger.kernel.org
+Subject: Re: 5.4.6 page fault while running btfrs scrub
+Message-ID: <20191230221636.y4nde7rlez3e4o7s@t420>
+References: <20191230123635.bpcei77hntjx4th2@t420>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: multipart/signed; micalg=pgp-sha256;
+        protocol="application/pgp-signature"; boundary="lqmcorcctehyqzph"
+Content-Disposition: inline
+In-Reply-To: <20191230123635.bpcei77hntjx4th2@t420>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Now that we have a safe way to update the i_size, replace all uses of
-btrfs_ordered_update_i_size with btrfs_inode_safe_disk_i_size_write.
 
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
----
- fs/btrfs/file.c  |  2 +-
- fs/btrfs/inode.c | 12 ++++++------
- fs/btrfs/ioctl.c |  2 +-
- 3 files changed, 8 insertions(+), 8 deletions(-)
+--lqmcorcctehyqzph
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index f1c880c06ca2..35fdc5b99804 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2941,7 +2941,7 @@ static int btrfs_fallocate_update_isize(struct inode *inode,
- 
- 	inode->i_ctime = current_time(inode);
- 	i_size_write(inode, end);
--	btrfs_ordered_update_i_size(inode, end, NULL);
-+	btrfs_inode_safe_disk_i_size_write(inode, 0);
- 	ret = btrfs_update_inode(trans, root, inode);
- 	ret2 = btrfs_end_transaction(trans);
- 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index eaf81129817d..2df54486d0e4 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3119,7 +3119,7 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
- 		 */
- 		btrfs_qgroup_free_data(inode, NULL, ordered_extent->file_offset,
- 				       ordered_extent->len);
--		btrfs_ordered_update_i_size(inode, 0, ordered_extent);
-+		btrfs_inode_safe_disk_i_size_write(inode, 0);
- 		if (freespace_inode)
- 			trans = btrfs_join_transaction_spacecache(root);
- 		else
-@@ -3207,7 +3207,7 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
- 		goto out;
- 	}
- 
--	btrfs_ordered_update_i_size(inode, 0, ordered_extent);
-+	btrfs_inode_safe_disk_i_size_write(inode, 0);
- 	ret = btrfs_update_inode_fallback(trans, root, inode);
- 	if (ret) { /* -ENOMEM or corruption */
- 		btrfs_abort_transaction(trans, ret);
-@@ -5000,7 +5000,7 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
- 		ASSERT(last_size >= new_size);
- 		if (!ret && last_size > new_size)
- 			last_size = new_size;
--		btrfs_ordered_update_i_size(inode, last_size, NULL);
-+		btrfs_inode_safe_disk_i_size_write(inode, last_size);
- 	}
- 
- 	btrfs_free_path(path);
-@@ -5330,7 +5330,7 @@ static int btrfs_setsize(struct inode *inode, struct iattr *attr)
- 		}
- 
- 		i_size_write(inode, newsize);
--		btrfs_ordered_update_i_size(inode, i_size_read(inode), NULL);
-+		btrfs_inode_safe_disk_i_size_write(inode, 0);
- 		pagecache_isize_extended(inode, oldsize, newsize);
- 		ret = btrfs_update_inode(trans, root, inode);
- 		btrfs_end_write_no_snapshotting(root);
-@@ -9312,7 +9312,7 @@ static int btrfs_truncate(struct inode *inode, bool skip_writeback)
- 			ret = PTR_ERR(trans);
- 			goto out;
- 		}
--		btrfs_ordered_update_i_size(inode, inode->i_size, NULL);
-+		btrfs_inode_safe_disk_i_size_write(inode, 0);
- 	}
- 
- 	if (trans) {
-@@ -10571,7 +10571,7 @@ static int __btrfs_prealloc_file_range(struct inode *inode, int mode,
- 			else
- 				i_size = cur_offset;
- 			i_size_write(inode, i_size);
--			btrfs_ordered_update_i_size(inode, i_size, NULL);
-+			btrfs_inode_safe_disk_i_size_write(inode, 0);
- 		}
- 
- 		ret = btrfs_update_inode(trans, root, inode);
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 291dda3b6547..2a02a21cac59 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -3334,7 +3334,7 @@ static int clone_finish_inode_update(struct btrfs_trans_handle *trans,
- 		endoff = destoff + olen;
- 	if (endoff > inode->i_size) {
- 		i_size_write(inode, endoff);
--		btrfs_ordered_update_i_size(inode, endoff, NULL);
-+		btrfs_inode_safe_disk_i_size_write(inode, 0);
- 	}
- 
- 	ret = btrfs_update_inode(trans, root, inode);
--- 
-2.23.0
+Update:
+I've recreated the btrfs volume and this time I ran scrub with linux
+lts.
 
+# uname -a
+Linux t420 4.19.91-1-lts #1 SMP Sat, 21 Dec 2019 16:34:46 +0000 x86_64
+GNU/Linux
+
+dmesg:
+[  134.598508] BUG: stack guard page was hit at 00000000f4d0d811 (stack is 000000002d0d1957..0000000094b2a7c8)
+[  134.598518] kernel stack overflow (page fault): 0000 [#1] SMP NOPTI
+[  134.598521] CPU: 4 PID: 698 Comm: btrfs Not tainted 4.19.91-1-lts #1
+[  134.598523] Hardware name: LENOVO 4180A21/4180A21, BIOS CBET4000 4.9-2176-g2195f7af23 06/22/2019
+[  134.598530] RIP: 0010:memcpy_erms+0x6/0x10
+[  134.598533] Code: 90 90 90 90 eb 1e 0f 1f 00 48 89 f8 48 89 d1 48 c1 e9 03 83 e2 07 f3 48 a5 89 d1 f3 a4 c3 66 0f 1f 44 00 00 48 89 f8 48 89 d1 <f3> a4 c3 0f 1f 80 00 00 00 00 48 89 f8 48 83 fa 20 72 7e 40 38 fe
+[  134.598535] RSP: 0018:ffffadbe811af898 EFLAGS: 00010246
+[  134.598537] RAX: ffffadbe811afab8 RBX: ffffa3cce5fcca90 RCX: fffffffffffffabc
+[  134.598538] RDX: 0000000000000004 RSI: ffffa3cce5fccff8 RDI: ffffadbe811b0000
+[  134.598540] RBP: 0000000000000004 R08: 0000000000010000 R09: ffffa3cce5fcca80
+[  134.598541] R10: ffffdf66c97eff80 R11: 0000000000000000 R12: 0000000000001000
+[  134.598543] R13: dead000000000200 R14: dead000000000100 R15: ffffa3cce582c800
+[  134.598545] FS:  00007f1795fb8700(0000) GS:ffffa3cce7500000(0000) knlGS:0000000000000000
+[  134.598547] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[  134.598548] CR2: ffffadbe811b0000 CR3: 000000024e4b4002 CR4: 00000000001606e0
+[  134.598550] Call Trace:
+[  134.598591]  scrub_find_csum+0xf2/0x150 [btrfs]
+[  134.598621]  scrub_stripe+0x8c8/0xfe0 [btrfs]
+[  134.598645]  ? btrfs_check_space_for_delayed_refs+0xc7/0x100 [btrfs]
+[  134.598649]  ? 0xffffffffc03fb000
+[  134.598652]  ? 0xffffffffc0403000
+[  134.598679]  ? btrfs_delayed_meta_helper+0x10/0x10 [btrfs]
+[  134.598685] Modules linked in: ext4 mbcache jbd2 uas usb_storage ccm algif_aead des_generic algif_skcipher cmac md4 algif_hash af_alg snd_hda_codec_hdmi snd_hda_codec_conexant snd_hda_codec_generic intel_rapl mousedev arc4 iwldvm mac80211 x86_pkg_temp_thermal i915 intel_powerclamp iwlwifi coretemp kvm_intel kvmgt vfio_mdev mdev vfio_iommu_type1 vfio i2c_algo_bit drm_kms_helper kvm btusb iTCO_wdt btrtl iTCO_vendor_support btbcm drm pcc_cpufreq btintel snd_hda_intel irqbypass cfg80211 uvcvideo bluetooth snd_hda_codec psmouse intel_cstate videobuf2_vmalloc videobuf2_memops intel_uncore videobuf2_v4l2 videobuf2_common intel_rapl_perf input_leds videodev i2c_i801 pcspkr media intel_gtt snd_hda_core ecdh_generic tpm_tis crc16 tpm_tis_core snd_hwdep thinkpad_acpi tpm snd_pcm rng_core agpgart e1000e battery
+[  134.598717]  snd_timer nvram ac snd syscopyarea sysfillrect evdev rfkill sysimgblt mac_hid soundcore fb_sys_fops coreboot_table_acpi lpc_ich coreboot_table ip_tables x_tables btrfs libcrc32c crc32c_generic xor raid6_pq dm_crypt dm_mod sr_mod cdrom sd_mod serio_raw atkbd libps2 crct10dif_pclmul crc32_pclmul crc32c_intel ghash_clmulni_intel pcbc ahci libahci aesni_intel libata aes_x86_64 sdhci_pci crypto_simd cqhci cryptd sdhci glue_helper scsi_mod ehci_pci mmc_core ehci_hcd i8042 serio
+[  134.598739] ---[ end trace a21cf6d3169966ee ]---
+[  134.598743] RIP: 0010:memcpy_erms+0x6/0x10
+[  134.598745] Code: 90 90 90 90 eb 1e 0f 1f 00 48 89 f8 48 89 d1 48 c1 e9 03 83 e2 07 f3 48 a5 89 d1 f3 a4 c3 66 0f 1f 44 00 00 48 89 f8 48 89 d1 <f3> a4 c3 0f 1f 80 00 00 00 00 48 89 f8 48 83 fa 20 72 7e 40 38 fe
+[  134.598746] RSP: 0018:ffffadbe811af898 EFLAGS: 00010246
+[  134.598748] RAX: ffffadbe811afab8 RBX: ffffa3cce5fcca90 RCX: fffffffffffffabc
+[  134.598749] RDX: 0000000000000004 RSI: ffffa3cce5fccff8 RDI: ffffadbe811b0000
+[  134.598751] RBP: 0000000000000004 R08: 0000000000010000 R09: ffffa3cce5fcca80
+[  134.598752] R10: ffffdf66c97eff80 R11: 0000000000000000 R12: 0000000000001000
+[  134.598754] R13: dead000000000200 R14: dead000000000100 R15: ffffa3cce582c800
+[  134.598756] FS:  00007f1795fb8700(0000) GS:ffffa3cce7500000(0000) knlGS:0000000000000000
+[  134.598757] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[  134.598758] CR2: ffffadbe811b0000 CR3: 000000024e4b4002 CR4: 00000000001606e0
+
+Is there a way to see which file(s) cause btrfs scrub to page fault?
+
+Josef Miegl
+
+--lqmcorcctehyqzph
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAABCAAdFiEEhXfJKsVC4JYTeQttDVyVn2MnXf0FAl4Kd0AACgkQDVyVn2Mn
+Xf1+aQf/cVvwWzcgAZneqNJszcrrMpFxee25GI1OPk/WTcSQ7NNYE+yN7n99uctK
+nOwmk8TnXvzJ+p27jsfQ3QjoSAfo+0xeyIlvXCIY/chX3JoO/44DnsjFRsVQzj24
+xJ8ASHnpRDjxzbVcHifIljCsUE0Vbss699KcSfv1NyL9zb/jGXuv3OXf/WSYFrq1
+X7w4xA3XB6T7XjMhswqGT5Ca8NWqhP0RrHtbAnwjCBzO08to3upK6v5J9t4e77Mf
+XUbJaWiN0GcIi4GEPYf8Cyj5w7IYlu+hZJOqhY/imXII1i4JCPo+H6yRfVzRZ5Pu
+VaFsrrLOwQPt6zOIR/LYbqmyCPMmJw==
+=paq6
+-----END PGP SIGNATURE-----
+
+--lqmcorcctehyqzph--

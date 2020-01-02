@@ -2,56 +2,67 @@ Return-Path: <SRS0=UIME=2X=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 967BFC2D0DC
-	for <linux-btrfs@archiver.kernel.org>; Thu,  2 Jan 2020 13:18:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7297BC2D0DC
+	for <linux-btrfs@archiver.kernel.org>; Thu,  2 Jan 2020 13:22:48 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 73C31215A4
-	for <linux-btrfs@archiver.kernel.org>; Thu,  2 Jan 2020 13:18:27 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 464BC20863
+	for <linux-btrfs@archiver.kernel.org>; Thu,  2 Jan 2020 13:22:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728318AbgABNS0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 2 Jan 2020 08:18:26 -0500
-Received: from mx2.suse.de ([195.135.220.15]:55802 "EHLO mx2.suse.de"
+        id S1728360AbgABNWr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 2 Jan 2020 08:22:47 -0500
+Received: from mx2.suse.de ([195.135.220.15]:56930 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728165AbgABNS0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 2 Jan 2020 08:18:26 -0500
+        id S1728298AbgABNWr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 2 Jan 2020 08:22:47 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 442ABAD4F;
-        Thu,  2 Jan 2020 13:18:18 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 94AEEAD4F;
+        Thu,  2 Jan 2020 13:22:45 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id E8286DA790; Thu,  2 Jan 2020 14:18:09 +0100 (CET)
-Date:   Thu, 2 Jan 2020 14:18:09 +0100
+        id D331EDA790; Thu,  2 Jan 2020 14:22:37 +0100 (CET)
+Date:   Thu, 2 Jan 2020 14:22:37 +0100
 From:   David Sterba <dsterba@suse.cz>
-To:     zhengbin <zhengbin13@huawei.com>
-Cc:     clm@fb.com, josef@toxicpanda.com, dsterba@suse.com,
+To:     Dennis Zhou <dennis@kernel.org>
+Cc:     David Sterba <dsterba@suse.cz>, David Sterba <dsterba@suse.com>,
+        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        Omar Sandoval <osandov@osandov.com>, kernel-team@fb.com,
         linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: Remove unneeded semicolon
-Message-ID: <20200102131809.GD3929@twin.jikos.cz>
+Subject: Re: [PATCH v6 00/22] btrfs: async discard support
+Message-ID: <20200102132237.GE3929@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, zhengbin <zhengbin13@huawei.com>,
-        clm@fb.com, josef@toxicpanda.com, dsterba@suse.com,
+Mail-Followup-To: dsterba@suse.cz, Dennis Zhou <dennis@kernel.org>,
+        David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        Omar Sandoval <osandov@osandov.com>, kernel-team@fb.com,
         linux-btrfs@vger.kernel.org
-References: <1576747534-112105-1-git-send-email-zhengbin13@huawei.com>
+References: <cover.1576195673.git.dennis@kernel.org>
+ <20191230181318.GC3929@twin.jikos.cz>
+ <20191230184930.GA61432@dennisz-mbp.dhcp.thefacebook.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <1576747534-112105-1-git-send-email-zhengbin13@huawei.com>
+In-Reply-To: <20191230184930.GA61432@dennisz-mbp.dhcp.thefacebook.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Dec 19, 2019 at 05:25:34PM +0800, zhengbin wrote:
-> Fixes coccicheck warning:
+On Mon, Dec 30, 2019 at 01:49:30PM -0500, Dennis Zhou wrote:
+> On Mon, Dec 30, 2019 at 07:13:18PM +0100, David Sterba wrote:
+> > On Fri, Dec 13, 2019 at 04:22:09PM -0800, Dennis Zhou wrote:
+> > Patches 1-12 merged to a temporary misc-next but I haven't pushed it as
+> > misc-next yet (it's misc-next-with-discard-v6 in my github repo). There
+> > are some comments to patch 13 and up so please send them either as
+> > replies or as a shorter series. Thanks.
 > 
-> fs/btrfs/print-tree.c:320:3-4: Unneeded semicolon
-> 
-> Reported-by: Hulk Robot <hulkci@huawei.com>
-> Signed-off-by: zhengbin <zhengbin13@huawei.com>
+> Great! Thanks for taking another pass at it all. Would you prefer a pull
+> request or just another series? I'll throw on top a couple patches to
+> hopefully address the -1 (I'm still not fully sure how it can happen).
 
-Applied, thanks.
+Send the patch series please, you can add a link to git repo/branch but
+that's not necessary.

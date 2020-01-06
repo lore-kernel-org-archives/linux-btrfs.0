@@ -2,66 +2,184 @@ Return-Path: <SRS0=bXJ1=23=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 52D1CC33C8C
-	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Jan 2020 16:30:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C284DC33C8C
+	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Jan 2020 16:50:19 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 3390B222D9
-	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Jan 2020 16:30:14 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9429720731
+	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Jan 2020 16:50:19 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="w8sISshz"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726561AbgAFQaN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 6 Jan 2020 11:30:13 -0500
-Received: from mx2.suse.de ([195.135.220.15]:51022 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726448AbgAFQaN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 6 Jan 2020 11:30:13 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 7BC73ABE9;
-        Mon,  6 Jan 2020 16:30:11 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id CE0C5DA78B; Mon,  6 Jan 2020 17:30:01 +0100 (CET)
-Date:   Mon, 6 Jan 2020 17:30:01 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Dennis Zhou <dennis@kernel.org>
-Cc:     David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        Omar Sandoval <osandov@osandov.com>, kernel-team@fb.com,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 00/12] btrfs: async discard follow up
-Message-ID: <20200106163001.GM3929@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Dennis Zhou <dennis@kernel.org>,
-        David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        Omar Sandoval <osandov@osandov.com>, kernel-team@fb.com,
-        linux-btrfs@vger.kernel.org
-References: <cover.1577999991.git.dennis@kernel.org>
+        id S1726643AbgAFQuT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 6 Jan 2020 11:50:19 -0500
+Received: from mail-qk1-f170.google.com ([209.85.222.170]:40066 "EHLO
+        mail-qk1-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726618AbgAFQuS (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Jan 2020 11:50:18 -0500
+Received: by mail-qk1-f170.google.com with SMTP id c17so39993665qkg.7
+        for <linux-btrfs@vger.kernel.org>; Mon, 06 Jan 2020 08:50:17 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
+        h=from:to:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=1UHJZpXLDXNFV1R+vYyun3qScvCkLU7TZ0quzcane2E=;
+        b=w8sISshzEMzMT6r+r0c/4r0LqCaWCqxknDjkdWH8A8xwslhNg2Njqif/YELyk0Py3e
+         PVKWGRAWmF8VMtzCLiNhDUbiDB6t9BeJ2WRqb0G/BnCLt98J9IjjTODH2OC4Ule4H7KB
+         jEHnMv52WCm7KFkkbURx+Es8uUc6z0ie8B3u0It5RTV2Xxh8Y5XVhrFY6Sn5FmYfQDzJ
+         SuEQBubB9VS00eieBPr8knd+42pJPusai1STes+y8iauesRzLhQMdllQOhQRRgDCoz8k
+         878IUWgXhDeaNLj8xPgQMy5+tbc+EzZy6YtRwiUCnbqNG/RtjOWqd25hvgA0qcbNDWxH
+         z8Sw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:from:to:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=1UHJZpXLDXNFV1R+vYyun3qScvCkLU7TZ0quzcane2E=;
+        b=WEiKa+jD07OQw9Ej3W4cRD15EFxTa8737pRerlLoaeWxYwJLzy0RTqmsY167ljDny1
+         xIXTeuyNMdTdWVJWboGg5ZEdX3zHM5t1039Z89GeJgwpS2XziPGbIND60Hlgw1sXMYnd
+         Ihxp6KHLw6mFDpJmGN7X6BSkbevUjiARbPZ4MiGcyJLaItfOg8RqH4UyMrWl8iI5837+
+         A/Iod+geChj6wEayw8KWbOmRFpFKt2EpnAsYCMGZc9DZxsck4Afm4L5hJWh4IIyofTHr
+         JZ/s7TQtGoF+WBnNHImnVOEWYW/PF6pAsINGhQq2gYcHeCea9iWu3jB2QnGOA7YMsEYi
+         kqmw==
+X-Gm-Message-State: APjAAAVtenERJ74TxxvW1PozYWnQns5EOSf5ucozntBRSSqcasHyPPcc
+        zd68AW5V4gnMf/YS9w9JAVpzpPfaIDmc1Q==
+X-Google-Smtp-Source: APXvYqx0+xKunR1qWx/pBckSyvm9EBn6rsVsSD4X4NZI1i1akq8zrZrPAquCsr2C3+jffVT7+mFBbw==
+X-Received: by 2002:a05:620a:1136:: with SMTP id p22mr84144163qkk.8.1578329416909;
+        Mon, 06 Jan 2020 08:50:16 -0800 (PST)
+Received: from localhost ([107.15.81.208])
+        by smtp.gmail.com with ESMTPSA id v5sm23514969qth.70.2020.01.06.08.50.15
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 06 Jan 2020 08:50:16 -0800 (PST)
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: [PATCH] btrfs: kill update_block_group_flags
+Date:   Mon,  6 Jan 2020 11:50:15 -0500
+Message-Id: <20200106165015.18985-1-josef@toxicpanda.com>
+X-Mailer: git-send-email 2.23.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <cover.1577999991.git.dennis@kernel.org>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Is it expected to leave the counters in a state where are discardable
-extents but not process after a long period of time? I found
+btrfs/061 has been failing consistently for me recently with a
+transaction abort.  We run out of space in the system chunk array, which
+means we've allocated way too many system chunks than we need.
 
-discard_bitmap_bytes:316833792
-discard_bytes_saved:59390722048
-discard_extent_bytes:26122764288
-discardable_bytes:44863488
-discardable_extents:883
-iops_limit:10
-kbps_limit:0
-max_discard_size:67108864
+Chris added this a long time ago for balance as a poor mans restriping.
+If you had a single disk and then added another disk and then did a
+balance, update_block_group_flags would then figure out which RAID level
+you needed.
 
-there was activity when the number of extents wen from about 2000 to
-that value (833), so this could bea nother instance of the -1 accounting
-bug.
+Fast forward to today and we have restriping behavior, so we can
+explicitly tell the fs that we're trying to change the raid level.  This
+is accomplished through the normal get_alloc_profile path.
+
+Furthermore this code actually causes btrfs/061 to fail, because we do
+things like mkfs -m dup -d single with multiple devices.  This trips
+this check
+
+alloc_flags = update_block_group_flags(fs_info, cache->flags);
+if (alloc_flags != cache->flags) {
+	ret = btrfs_chunk_alloc(trans, alloc_flags, CHUNK_ALLOC_FORCE);
+
+in btrfs_inc_block_group_ro.  Because we're balancing and scrubbing, but
+not actually restriping, we keep forcing chunk allocation of RAID1
+chunks.  This eventually causes us to run out of system space and the
+file system aborts and flips read only.
+
+We don't need this poor mans restriping any more, simply use the normal
+get_alloc_profile helper, which will get the correct alloc_flags and
+thus make the right decision for chunk allocation.  This keeps us from
+allocating a billion system chunks and falling over.
+
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+---
+ fs/btrfs/block-group.c | 52 ++----------------------------------------
+ 1 file changed, 2 insertions(+), 50 deletions(-)
+
+diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+index c79eccf188c5..0257e6f1efb1 100644
+--- a/fs/btrfs/block-group.c
++++ b/fs/btrfs/block-group.c
+@@ -1975,54 +1975,6 @@ int btrfs_make_block_group(struct btrfs_trans_handle *trans, u64 bytes_used,
+ 	return 0;
+ }
+ 
+-static u64 update_block_group_flags(struct btrfs_fs_info *fs_info, u64 flags)
+-{
+-	u64 num_devices;
+-	u64 stripped;
+-
+-	/*
+-	 * if restripe for this chunk_type is on pick target profile and
+-	 * return, otherwise do the usual balance
+-	 */
+-	stripped = get_restripe_target(fs_info, flags);
+-	if (stripped)
+-		return extended_to_chunk(stripped);
+-
+-	num_devices = fs_info->fs_devices->rw_devices;
+-
+-	stripped = BTRFS_BLOCK_GROUP_RAID0 | BTRFS_BLOCK_GROUP_RAID56_MASK |
+-		BTRFS_BLOCK_GROUP_RAID1_MASK | BTRFS_BLOCK_GROUP_RAID10;
+-
+-	if (num_devices == 1) {
+-		stripped |= BTRFS_BLOCK_GROUP_DUP;
+-		stripped = flags & ~stripped;
+-
+-		/* turn raid0 into single device chunks */
+-		if (flags & BTRFS_BLOCK_GROUP_RAID0)
+-			return stripped;
+-
+-		/* turn mirroring into duplication */
+-		if (flags & (BTRFS_BLOCK_GROUP_RAID1_MASK |
+-			     BTRFS_BLOCK_GROUP_RAID10))
+-			return stripped | BTRFS_BLOCK_GROUP_DUP;
+-	} else {
+-		/* they already had raid on here, just return */
+-		if (flags & stripped)
+-			return flags;
+-
+-		stripped |= BTRFS_BLOCK_GROUP_DUP;
+-		stripped = flags & ~stripped;
+-
+-		/* switch duplicated blocks with raid1 */
+-		if (flags & BTRFS_BLOCK_GROUP_DUP)
+-			return stripped | BTRFS_BLOCK_GROUP_RAID1;
+-
+-		/* this is drive concat, leave it alone */
+-	}
+-
+-	return flags;
+-}
+-
+ int btrfs_inc_block_group_ro(struct btrfs_block_group *cache)
+ 
+ {
+@@ -2058,7 +2010,7 @@ int btrfs_inc_block_group_ro(struct btrfs_block_group *cache)
+ 	 * if we are changing raid levels, try to allocate a corresponding
+ 	 * block group with the new raid level.
+ 	 */
+-	alloc_flags = update_block_group_flags(fs_info, cache->flags);
++	alloc_flags = get_alloc_profile(fs_info, cache->flags);
+ 	if (alloc_flags != cache->flags) {
+ 		ret = btrfs_chunk_alloc(trans, alloc_flags, CHUNK_ALLOC_FORCE);
+ 		/*
+@@ -2082,7 +2034,7 @@ int btrfs_inc_block_group_ro(struct btrfs_block_group *cache)
+ 	ret = inc_block_group_ro(cache, 0);
+ out:
+ 	if (cache->flags & BTRFS_BLOCK_GROUP_SYSTEM) {
+-		alloc_flags = update_block_group_flags(fs_info, cache->flags);
++		alloc_flags = get_alloc_profile(fs_info, cache->flags);
+ 		mutex_lock(&fs_info->chunk_mutex);
+ 		check_system_chunk(trans, alloc_flags);
+ 		mutex_unlock(&fs_info->chunk_mutex);
+-- 
+2.23.0
+

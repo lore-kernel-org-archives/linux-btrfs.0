@@ -2,99 +2,93 @@ Return-Path: <SRS0=jJu9=25=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DCBB0C282DD
-	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Jan 2020 17:13:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8B0E6C282DD
+	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Jan 2020 17:44:51 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9F6DA2067D
-	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Jan 2020 17:13:20 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=mailmag.net header.i=@mailmag.net header.b="AXvlOEnK"
+	by mail.kernel.org (Postfix) with ESMTP id 6C2B520692
+	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Jan 2020 17:44:51 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729672AbgAHRNT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 8 Jan 2020 12:13:19 -0500
-Received: from mail.mailmag.net ([5.135.159.181]:36564 "EHLO mail.mailmag.net"
+        id S1726900AbgAHRou (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 8 Jan 2020 12:44:50 -0500
+Received: from mx2.suse.de ([195.135.220.15]:41578 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726401AbgAHRNT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 8 Jan 2020 12:13:19 -0500
-X-Greylist: delayed 322 seconds by postgrey-1.27 at vger.kernel.org; Wed, 08 Jan 2020 12:13:19 EST
-Received: from authenticated-user (mail.mailmag.net [127.0.0.1])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by mail.mailmag.net (Postfix) with ESMTPSA id 5B72EEC02AF;
-        Wed,  8 Jan 2020 09:07:56 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=mailmag.net; s=mail;
-        t=1578503276;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=9GtZQoxZkox3X1DhbIYuFLvz2QhnAxSeufIwpyl9cVI=;
-        b=AXvlOEnKysXwmT9DaYREsqtZRC23DWKxH8XZkt8FntvKaiuvX9Mz9NZz2MCQwZskUG/CMg
-        7AIql+IRRhYqmS0hE+zHnEKip6ZqH8uxHu6sJqbLoFqYfOWR4Ej+/mLtC3UFjf3SA29Kxl
-        ZeXm0ZhN/WFEQzBALxoTMnMTpMB34Z8=
-Content-Type: text/plain;
-        charset=utf-8
-Mime-Version: 1.0
-Subject: Re: How long should a btrfs scrub with RAID5/6 take?
-From:   Joshua <joshua@mailmag.net>
-In-Reply-To: <b2ccde6952d0fa67c9948a21cd3ac8eddcdb3970.camel@render-wahnsinn.de>
-Date:   Wed, 8 Jan 2020 09:07:47 -0800
-Cc:     Linux Btrfs <linux-btrfs@vger.kernel.org>
-Content-Transfer-Encoding: quoted-printable
-Message-Id: <F28464EB-75E4-4ECB-BEFB-078186706776@mailmag.net>
-References: <b2ccde6952d0fa67c9948a21cd3ac8eddcdb3970.camel@render-wahnsinn.de>
-To:     Robert Krig <robert.krig@render-wahnsinn.de>
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=mailmag.net;
-        s=mail; t=1578503276;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=9GtZQoxZkox3X1DhbIYuFLvz2QhnAxSeufIwpyl9cVI=;
-        b=pxaMPnafkAhqzeyz1UJtYUj9657SiC14dcwxee3usQPMZ/PhWyl8sJSoju57Kg7CGbNYpS
-        nT5W35RwbclbZYDgF9lT6pxvtckuRp/aXeUcbD2Rx+/7hpV7rzXUREfRmU4d/nKGlw5cfk
-        /h+QNttgswxR/zNGpMhF3Uui8ghSz1Y=
-ARC-Seal: i=1; s=mail; d=mailmag.net; t=1578503276; a=rsa-sha256; cv=none;
-        b=SZL0gbzWWCfykMwzGHRrITIhOtVSziK1ylmK68gT073Poa0amrczNqfhthzkpGZUgC9G41
-        SPaOe1BzvXuIoyy1FsMU9PAr5wx7o08xzQLE/X/zRMzbc90tkMYeyo5eXaJV6DK6IiZQsi
-        xNiyAkzkzHMy83A5cjicjm7IOR0z4r8=
-ARC-Authentication-Results: i=1;
-        mail.mailmag.net;
-        auth=pass smtp.mailfrom=joshua@mailmag.net
+        id S1726290AbgAHRou (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 8 Jan 2020 12:44:50 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id B80A9AE3A;
+        Wed,  8 Jan 2020 17:44:48 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 9F19BDA791; Wed,  8 Jan 2020 18:44:37 +0100 (CET)
+Date:   Wed, 8 Jan 2020 18:44:36 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: Re: [PATCH] btrfs: fix improper setting of scanned
+Message-ID: <20200108174435.GL3929@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
+        linux-btrfs@vger.kernel.org, kernel-team@fb.com
+References: <20200103153844.13852-1-josef@toxicpanda.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20200103153844.13852-1-josef@toxicpanda.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-I do not have a direct answer to your question, but I can chime in on your s=
-crub times:
+As 'scanning' has another meaning in btrfs, the subject should say
+something about writeback or at least write cache range scanning.
 
-I have 4x8TB, 4x10TB, and 8x3TB drives, all in one huge BTRFS =E2=80=98RAID1=
-=E2=80=99.
+On Fri, Jan 03, 2020 at 10:38:44AM -0500, Josef Bacik wrote:
+> We noticed that we were having regular CG OOM kills in cases where there
+> was still enough dirty pages to avoid OOM'ing.  It turned out there's
+> this corner case in btrfs's handling of range_cyclic where files that
+> were being redirtied were not getting fully written out because of how
+> we do range_cyclic writeback.
+> 
+> We unconditionally were setting scanned = 1; the first time we found any
+> pages in the inode.  This isn't actually what we want, we want it to be
+> set if we've scanned the entire file.  For range_cyclic we could be
+> starting in the middle or towards the end of the file, so we could write
+> one page and then not write any of the other dirty pages in the file
+> because we set scanned = 1.
+> 
+> Fix this by not setting scanned = 1 if we find pages.  The rules for
+> setting scanned should be
+> 
+> 1) !range_cyclic.  In this case we have a specified range to write out.
+> 2) range_cyclic && index == 0.  In this case we've started at the
+>    beginning and there is no need to loop around a second time.
+> 3) range_cyclic && we started at index > 0 and we've reached the end of
+>    the file without satisfying our nr_to_write.
+> 
+> This patch fixes both of our writepages implementations to make sure
+> these rules hold true.  This fixed our over zealous CG OOMs in
+> production.
+> 
+> Fixes: d1310b2e0cd9 ("Btrfs: Split the extent_map code into two parts")
+> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+> ---
+>  fs/btrfs/extent_io.c | 4 ++--
+>  1 file changed, 2 insertions(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index 410f5a64d3a6..d634cb0c39e3 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -3965,6 +3965,7 @@ int btree_write_cache_pages(struct address_space *mapping,
+>  	if (wbc->range_cyclic) {
+>  		index = mapping->writeback_index; /* Start from prev offset */
+>  		end = -1;
+> +		scanned = (index == 0);
 
-I can tell you that even in my setup, scrubs usually take less than a day.  S=
-o unless it=E2=80=99s the raid5 making yours take so long, that does not sou=
-nd typical.
-
-> On Jan 8, 2020, at 2:13 AM, Robert Krig <robert.krig@render-wahnsinn.de> w=
-rote:
->=20
-> Hi, I've got a server where I have 4x8TB Disks in a BTRFS RAID5
-> (metadata and systemdata as RAID1) configuration.
->=20
-> It's just a backup server with data I can always recreate.=20
-> This server is in the bedroom, so I send it to sleep/suspend when I go
-> to bed and then wake it up in the morning.=20
->=20
-> Since a scrub takes days on such a setup, I issue a btrfs scrub resume
-> whenever the server wakes up again.
->=20
-> btrfs scrub status shows me that the total data to scrub is 18.67TB,
-> but it's already scrubbed 36.60TB. Is there any way I can calculate how
-> much more data is going to be scrubbed? 4x8TB is 32TB, so we're passed
-> that, but I'm guessing this also has to do with parity data as well.
->=20
+It's explained in the changelog but I think a comment would be good here
+too. I'll add it at commit time.

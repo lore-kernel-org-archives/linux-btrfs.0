@@ -2,82 +2,59 @@ Return-Path: <SRS0=zmxC=27=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7DCFFC282DD
-	for <linux-btrfs@archiver.kernel.org>; Fri, 10 Jan 2020 16:42:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8A2F8C33CA4
+	for <linux-btrfs@archiver.kernel.org>; Fri, 10 Jan 2020 17:06:51 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 54A5D206ED
-	for <linux-btrfs@archiver.kernel.org>; Fri, 10 Jan 2020 16:42:25 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 661E320661
+	for <linux-btrfs@archiver.kernel.org>; Fri, 10 Jan 2020 17:06:51 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728515AbgAJQmY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 10 Jan 2020 11:42:24 -0500
-Received: from mx2.suse.de ([195.135.220.15]:34086 "EHLO mx2.suse.de"
+        id S1727448AbgAJRGu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 10 Jan 2020 12:06:50 -0500
+Received: from mx2.suse.de ([195.135.220.15]:49030 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728209AbgAJQmY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 10 Jan 2020 11:42:24 -0500
+        id S1727207AbgAJRGt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 10 Jan 2020 12:06:49 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 52F5DACD5;
-        Fri, 10 Jan 2020 16:42:23 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id EC29DAD4F;
+        Fri, 10 Jan 2020 17:06:47 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 363D7DA78B; Fri, 10 Jan 2020 17:42:12 +0100 (CET)
-Date:   Fri, 10 Jan 2020 17:42:12 +0100
+        id 033D3DA78B; Fri, 10 Jan 2020 18:06:35 +0100 (CET)
+Date:   Fri, 10 Jan 2020 18:06:34 +0100
 From:   David Sterba <dsterba@suse.cz>
-To:     Anand Jain <anand.jain@oracle.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/2] btrfs: open code log helpers in device_list_add()
-Message-ID: <20200110164212.GQ3929@twin.jikos.cz>
+To:     Dan Carpenter <dan.carpenter@oracle.com>
+Cc:     Chris Mason <clm@fb.com>, Dennis Zhou <dennis@kernel.org>,
+        Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>,
+        Anand Jain <anand.jain@oracle.com>,
+        linux-btrfs@vger.kernel.org, kernel-janitors@vger.kernel.org
+Subject: Re: [PATCH] btrfs: Fix error code in btrfs_sysfs_add_mounted()
+Message-ID: <20200110170634.GR3929@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
-        linux-btrfs@vger.kernel.org
-References: <20200110090555.7049-1-anand.jain@oracle.com>
+Mail-Followup-To: dsterba@suse.cz, Dan Carpenter <dan.carpenter@oracle.com>,
+        Chris Mason <clm@fb.com>, Dennis Zhou <dennis@kernel.org>,
+        Josef Bacik <josef@toxicpanda.com>, David Sterba <dsterba@suse.com>,
+        Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org,
+        kernel-janitors@vger.kernel.org
+References: <20200110055126.4rhhfsotll6puma7@kili.mountain>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20200110090555.7049-1-anand.jain@oracle.com>
+In-Reply-To: <20200110055126.4rhhfsotll6puma7@kili.mountain>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Jan 10, 2020 at 05:05:54PM +0800, Anand Jain wrote:
-> fs_info is born during mount, and operations before the mount such as
-> scanning and assembling of the device volume should happen without any
-> reference to fs_info.
+On Fri, Jan 10, 2020 at 08:51:27AM +0300, Dan Carpenter wrote:
+> The error code wasn't set on this error path.
 > 
-> However the patch commit a9261d4125c9 (btrfs: harden agaist duplicate
-> fsid on scanned devices) used fs_info to call btrfs_warn_in_rcu() and
-> btrfs_info_in_rcu(), so if fs_info is NULL, the stacked functions leads
-> to btrfs_printk() which shall print "unknown" instead of sb->s_id. Or
-> even might UAF as reported in [1].
-> 
-> So do the right thing, don't use btrfs_warn_in_rcu() and
-> btrfs_info_in_rcu() in device_list_add() instead just open code it.
-> 
-> Link:
-> [1] https://www.spinics.net/lists/linux-btrfs/msg96524.html
-> Fixes: a9261d4125c9 (btrfs: harden agaist duplicate fsid on scanned devices)
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
->  fs/btrfs/volumes.c | 12 ++++++++----
->  1 file changed, 8 insertions(+), 4 deletions(-)
-> 
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 6fd90270e2c7..1a419841fc99 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -889,17 +889,21 @@ static noinline struct btrfs_device *device_list_add(const char *path,
->  			if (device->bdev != path_bdev) {
->  				bdput(path_bdev);
->  				mutex_unlock(&fs_devices->device_list_mutex);
-> -				btrfs_warn_in_rcu(device->fs_info,
-> -			"duplicate device fsid:devid for %pU:%llu old:%s new:%s",
-> +				rcu_read_lock();
-> +				printk_ratelimited(
+> Fixes: e12ebce8a4a8 ("btrfs: sysfs: make UUID/debug have its own kobject")
+> Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
 
-Avoiding fs_info here is correct but we don't want to use raw printk or
-printk_ratelimited anywhere.
+Thanks, folded to the original patch.

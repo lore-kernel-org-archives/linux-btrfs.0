@@ -2,141 +2,75 @@ Return-Path: <SRS0=h89n=3F=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
+X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 388F7C33CAF
-	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Jan 2020 18:42:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4E59CC33CAF
+	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Jan 2020 18:55:59 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 11A9D207E0
-	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Jan 2020 18:42:00 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1579200120;
-	bh=PnVpT4/QJ3WAT4Ql9TmzLi2UZ2vA8VjV83vbwLPziJ8=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=eUrD6fr0hp9lueMZY5UlrGb/3o9ykKWvjml5bOxOM4Vs+3P3bEyg5rQ6WcGVUS/ZF
-	 eJfTVv6Rnm8p8tb1EnP9RwkG3+CDi9VVrYNJS/sGl8jUzo9upaQSdCk/EOrbdAc23A
-	 jzvKfoTZj4oMACU0bcuGHnjS4WGq06sHLSFqtshc=
+	by mail.kernel.org (Postfix) with ESMTP id 2D8E220663
+	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Jan 2020 18:55:59 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2389980AbgAPRLl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 16 Jan 2020 12:11:41 -0500
-Received: from mail.kernel.org ([198.145.29.99]:52748 "EHLO mail.kernel.org"
+        id S2436977AbgAPSz6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 16 Jan 2020 13:55:58 -0500
+Received: from mx2.suse.de ([195.135.220.15]:33658 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2389977AbgAPRLk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 16 Jan 2020 12:11:40 -0500
-Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 6564224687;
-        Thu, 16 Jan 2020 17:11:38 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1579194699;
-        bh=PnVpT4/QJ3WAT4Ql9TmzLi2UZ2vA8VjV83vbwLPziJ8=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=wK2DK9DIc3Hvvou5nMFwkPodGrkHxYg0lowJLn2dXxm5UZlNHFWuNiRz/o0rPweHh
-         TdrljZYsW7YgySjIDZ4hX9OpBgmCVOYjW0eU4yo0PEkcw0oumaTvdKS5c+K7lh7Dy3
-         LWRxNfD0ygjkXbrIzL3eFKVx9KFoWT4g10oXhWWU=
-From:   Sasha Levin <sashal@kernel.org>
-To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Filipe Manana <fdmanana@suse.com>,
-        Nikolay Borisov <nborisov@suse.com>,
-        David Sterba <dsterba@suse.com>,
-        Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 4.19 539/671] Btrfs: fix hang when loading existing inode cache off disk
-Date:   Thu, 16 Jan 2020 12:02:57 -0500
-Message-Id: <20200116170509.12787-276-sashal@kernel.org>
-X-Mailer: git-send-email 2.20.1
-In-Reply-To: <20200116170509.12787-1-sashal@kernel.org>
-References: <20200116170509.12787-1-sashal@kernel.org>
+        id S2407310AbgAPSz4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 16 Jan 2020 13:55:56 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id EC87DB4D8;
+        Thu, 16 Jan 2020 18:55:53 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id BF229DA791; Thu, 16 Jan 2020 19:55:39 +0100 (CET)
+Date:   Thu, 16 Jan 2020 19:55:39 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Michael Ruiz <michael@mruiz.dev>
+Cc:     linux-btrfs@vger.kernel.org, osandov@fb.com
+Subject: Re: Linux swap file not activating after reboot
+Message-ID: <20200116185539.GZ3929@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Michael Ruiz <michael@mruiz.dev>,
+        linux-btrfs@vger.kernel.org, osandov@fb.com
+References: <5318295.DvuYhMxLoT@archlinux>
 MIME-Version: 1.0
-X-stable: review
-X-Patchwork-Hint: Ignore
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <5318295.DvuYhMxLoT@archlinux>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+On Wed, Jan 15, 2020 at 04:34:02PM -0800, Michael Ruiz wrote:
+> Hi,
+>  I have a //@swap subvolume and i have a swapfile within it. I mount the 
+> subvolume like such in fstab:
+> 
+> `rw,ssd,nofail,noautodefrag,nodatacow,nodatasum,subvolid=1234,subvol=/@swap`
+> 
+> It mounts correctly, but 1/15/20 4:20 PM kernel I get: 
+> 
+> `BTRFS warning (device dm-0): swapfile must not be copy-on-write`
 
-[ Upstream commit 7764d56baa844d7f6206394f21a0e8c1f303c476 ]
+There are two reasons why the message is printed, one is when the file
+does not have the C attribute and another one when the the existing file
+extents need to be COWed (same case as if the file is NOCOW and has been
+snapshotted).
 
-If we are able to load an existing inode cache off disk, we set the state
-of the cache to BTRFS_CACHE_FINISHED, but we don't wake up any one waiting
-for the cache to be available. This means that anyone waiting for the
-cache to be available, waiting on the condition that either its state is
-BTRFS_CACHE_FINISHED or its available free space is greather than zero,
-can hang forever.
+Plain reboot will not change the C attribute, so either there's a
+snapshot of /@snap or the check of a used swapfile is wrong.
 
-This could be observed running fstests with MOUNT_OPTIONS="-o inode_cache",
-in particular test case generic/161 triggered it very frequently for me,
-producing a trace like the following:
+I tested it here, a swapfile that got almost full after a stress test,
+followed by reboot and swapon (without any change to the file) was ok.
 
-  [63795.739712] BTRFS info (device sdc): enabling inode map caching
-  [63795.739714] BTRFS info (device sdc): disk space caching is enabled
-  [63795.739716] BTRFS info (device sdc): has skinny extents
-  [64036.653886] INFO: task btrfs-transacti:3917 blocked for more than 120 seconds.
-  [64036.654079]       Not tainted 5.2.0-rc4-btrfs-next-50 #1
-  [64036.654143] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-  [64036.654232] btrfs-transacti D    0  3917      2 0x80004000
-  [64036.654239] Call Trace:
-  [64036.654258]  ? __schedule+0x3ae/0x7b0
-  [64036.654271]  schedule+0x3a/0xb0
-  [64036.654325]  btrfs_commit_transaction+0x978/0xae0 [btrfs]
-  [64036.654339]  ? remove_wait_queue+0x60/0x60
-  [64036.654395]  transaction_kthread+0x146/0x180 [btrfs]
-  [64036.654450]  ? btrfs_cleanup_transaction+0x620/0x620 [btrfs]
-  [64036.654456]  kthread+0x103/0x140
-  [64036.654464]  ? kthread_create_worker_on_cpu+0x70/0x70
-  [64036.654476]  ret_from_fork+0x3a/0x50
-  [64036.654504] INFO: task xfs_io:3919 blocked for more than 120 seconds.
-  [64036.654568]       Not tainted 5.2.0-rc4-btrfs-next-50 #1
-  [64036.654617] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-  [64036.654685] xfs_io          D    0  3919   3633 0x00000000
-  [64036.654691] Call Trace:
-  [64036.654703]  ? __schedule+0x3ae/0x7b0
-  [64036.654716]  schedule+0x3a/0xb0
-  [64036.654756]  btrfs_find_free_ino+0xa9/0x120 [btrfs]
-  [64036.654764]  ? remove_wait_queue+0x60/0x60
-  [64036.654809]  btrfs_create+0x72/0x1f0 [btrfs]
-  [64036.654822]  lookup_open+0x6bc/0x790
-  [64036.654849]  path_openat+0x3bc/0xc00
-  [64036.654854]  ? __lock_acquire+0x331/0x1cb0
-  [64036.654869]  do_filp_open+0x99/0x110
-  [64036.654884]  ? __alloc_fd+0xee/0x200
-  [64036.654895]  ? do_raw_spin_unlock+0x49/0xc0
-  [64036.654909]  ? do_sys_open+0x132/0x220
-  [64036.654913]  do_sys_open+0x132/0x220
-  [64036.654926]  do_syscall_64+0x60/0x1d0
-  [64036.654933]  entry_SYSCALL_64_after_hwframe+0x49/0xbe
+Doing a snapshot and swapon resulted in the message you saw.
 
-Fix this by adding a wake_up() call right after setting the cache state to
-BTRFS_CACHE_FINISHED, at start_caching(), when we are able to load the
-cache from disk.
+After deleting the snapshot and waiting until it gets cleaned, swapon
+did not activate the file anymore. Filefrag or fiemap don't report any
+shared extents so here I' expect that the file should be in a valid
+state for swapon.
 
-Fixes: 82d5902d9c681b ("Btrfs: Support reading/writing on disk free ino cache")
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
-Signed-off-by: Sasha Levin <sashal@kernel.org>
----
- fs/btrfs/inode-map.c | 1 +
- 1 file changed, 1 insertion(+)
-
-diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
-index e1b50c62ba65..b3bd27070617 100644
---- a/fs/btrfs/inode-map.c
-+++ b/fs/btrfs/inode-map.c
-@@ -145,6 +145,7 @@ static void start_caching(struct btrfs_root *root)
- 		spin_lock(&root->ino_cache_lock);
- 		root->ino_cache_state = BTRFS_CACHE_FINISHED;
- 		spin_unlock(&root->ino_cache_lock);
-+		wake_up(&root->ino_cache_wait);
- 		return;
- 	}
- 
--- 
-2.20.1
-
+Omar, any ideas?

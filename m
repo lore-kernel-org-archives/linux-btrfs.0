@@ -6,27 +6,27 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 30436C33CB6
-	for <linux-btrfs@archiver.kernel.org>; Fri, 17 Jan 2020 07:30:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5DEBDC33CB1
+	for <linux-btrfs@archiver.kernel.org>; Fri, 17 Jan 2020 07:30:12 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0D3C52072B
-	for <linux-btrfs@archiver.kernel.org>; Fri, 17 Jan 2020 07:30:10 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2F0B12072B
+	for <linux-btrfs@archiver.kernel.org>; Fri, 17 Jan 2020 07:30:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729207AbgAQHaJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 17 Jan 2020 02:30:09 -0500
-Received: from mx2.suse.de ([195.135.220.15]:45066 "EHLO mx2.suse.de"
+        id S1729238AbgAQHaK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 17 Jan 2020 02:30:10 -0500
+Received: from mx2.suse.de ([195.135.220.15]:45080 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727136AbgAQHaI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 17 Jan 2020 02:30:08 -0500
+        id S1729224AbgAQHaK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 17 Jan 2020 02:30:10 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 4FB6AABEA
-        for <linux-btrfs@vger.kernel.org>; Fri, 17 Jan 2020 07:30:05 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id F4152AC0C
+        for <linux-btrfs@vger.kernel.org>; Fri, 17 Jan 2020 07:30:08 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/3] btrfs-progs: check/lowmem: Repair invalid extent item generation
-Date:   Fri, 17 Jan 2020 15:29:57 +0800
-Message-Id: <20200117072959.27929-2-wqu@suse.com>
+Subject: [PATCH 3/3] btrfs-progs: tests/fsck-044: Enable repair test for invalid extent item generation
+Date:   Fri, 17 Jan 2020 15:29:59 +0800
+Message-Id: <20200117072959.27929-4-wqu@suse.com>
 X-Mailer: git-send-email 2.24.1
 In-Reply-To: <20200117072959.27929-1-wqu@suse.com>
 References: <20200117072959.27929-1-wqu@suse.com>
@@ -37,120 +37,45 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Before this patch, the only way to repair extent item generation is
---init-extent-tree.
-
-Unfortunately that operation is super slow since it needs to start and
-commit transaction to each extent backref repaired.
-
-This has caused end-user several failed repair, so introduce the
-repairability for lowmem mode.
-
-Please note that, there is a trade off between accurate generation
-against complexity.
-In theory we should grab the accurate generation number from EXTENT_DATA
-item, but that's a little complex to parse in lowmem mode.
-
-So this patch will just reset extent generation to current transid,
-passing tree-checker.
+Since both original and lowmem mode can repair it, make that test case
+to cover both detection and repair.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- check/mode-lowmem.c | 74 +++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 74 insertions(+)
+ .../.lowmem_repairable                        |  0
+ .../test.sh                                   | 19 -------------------
+ 2 files changed, 19 deletions(-)
+ create mode 100644 tests/fsck-tests/044-invalid-extent-item-generation/.lowmem_repairable
+ delete mode 100755 tests/fsck-tests/044-invalid-extent-item-generation/test.sh
 
-diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
-index 2f76d634bdb5..6fe9dc780285 100644
---- a/check/mode-lowmem.c
-+++ b/check/mode-lowmem.c
-@@ -4140,6 +4140,68 @@ out:
- 	return ret;
- }
- 
-+static int reset_extent_item_gen(struct btrfs_fs_info *fs_info,
-+				 struct btrfs_path *path)
-+{
-+	struct btrfs_trans_handle *trans;
-+	struct btrfs_key key;
-+	struct btrfs_extent_item *ei;
-+	struct extent_buffer *leaf;
-+	u64 transid;
-+	int slot;
-+	int ret;
-+
-+	btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
-+	ASSERT(key.type == BTRFS_EXTENT_ITEM_KEY ||
-+	       key.type == BTRFS_METADATA_ITEM_KEY);
-+
-+	btrfs_release_path(path);
-+	trans = btrfs_start_transaction(fs_info->extent_root, 1);
-+	if (IS_ERR(trans)) {
-+		ret = PTR_ERR(trans);
-+		errno = -ret;
-+		error("failed to start transaction: %m");
-+		return ret;
-+	}
-+	transid = trans->transid;
-+	ret = btrfs_search_slot(trans, fs_info->extent_root, &key, path, 0, 1);
-+	if (ret < 0) {
-+		errno = -ret;
-+		error("failed to search extent tree: %m");
-+		goto abort;
-+	}
-+	if (ret > 0) {
-+		ret = -ENOENT;
-+		error("unable to find key (%llu %u %llu)", key.objectid,
-+				key.type, key.offset);
-+		goto abort;
-+	}
-+	slot = path->slots[0];
-+	leaf = path->nodes[0];
-+	if (btrfs_item_size_nr(leaf, slot) < sizeof(*ei)) {
-+		ret = -EUCLEAN;
-+		error("invalid extent item size, have %u expect >= %zu",
-+			btrfs_item_size_nr(leaf, slot), sizeof(*ei));
-+		goto abort;
-+	}
-+	ei = btrfs_item_ptr(leaf, slot, struct btrfs_extent_item);
-+	/*
-+	 * The best generation should be fetched from EXTENT_DATA item,
-+	 * but in lowmem mode we hadn't get the info.
-+	 * So here use transid for it, which is good enough to pass
-+	 * tree-checker and not cause any problem.
-+	 */
-+	btrfs_set_extent_generation(leaf, ei, transid);
-+	ret = btrfs_commit_transaction(trans, fs_info->extent_root);
-+	if (!ret)
-+		printf("reset extent item generation to %llu for extent %llu\n",
-+			transid, key.objectid);
-+	return ret;
-+abort:
-+	btrfs_abort_transaction(trans, ret);
-+	return ret;
-+}
-+
- /*
-  * This function will check a given extent item, including its backref and
-  * itself (like crossing stripe boundary and type)
-@@ -4203,6 +4265,18 @@ static int check_extent_item(struct btrfs_fs_info *fs_info,
- 		"invalid generation for extent %llu, have %llu expect (0, %llu]",
- 			key.objectid, gen, super_gen + 1);
- 		err |= INVALID_GENERATION;
-+		if (repair) {
-+			ret = reset_extent_item_gen(fs_info, path);
-+			if (!ret)
-+				err &= ~INVALID_GENERATION;
-+			/* Fatal error in repair, path unreliable */
-+			if (!path->nodes[0])
-+				return ret;
-+			/* Reset related eb/slots to new path */
-+			eb = path->nodes[0];
-+			slot = path->slots[0];
-+			ei = btrfs_item_ptr(eb, slot, struct btrfs_extent_item);
-+		}
- 	}
- 
- 	if (flags & BTRFS_EXTENT_FLAG_TREE_BLOCK)
+diff --git a/tests/fsck-tests/044-invalid-extent-item-generation/.lowmem_repairable b/tests/fsck-tests/044-invalid-extent-item-generation/.lowmem_repairable
+new file mode 100644
+index 000000000000..e69de29bb2d1
+diff --git a/tests/fsck-tests/044-invalid-extent-item-generation/test.sh b/tests/fsck-tests/044-invalid-extent-item-generation/test.sh
+deleted file mode 100755
+index 2b88a3c7b3bb..000000000000
+--- a/tests/fsck-tests/044-invalid-extent-item-generation/test.sh
++++ /dev/null
+@@ -1,19 +0,0 @@
+-#!/bin/bash
+-#
+-# Due to a bug in --init-extent-tree option, we may create bad generation
+-# number for data extents.
+-#
+-# This test case will ensure btrfs check can at least detect such problem,
+-# just like kernel tree-checker.
+-
+-source "$TEST_TOP/common"
+-
+-check_prereq btrfs
+-
+-check_image() {
+-	run_mustfail \
+-		"btrfs check failed to detect invalid extent item generation" \
+-		"$TOP/btrfs" check "$1"
+-}
+-
+-check_all_images
 -- 
 2.24.1
 

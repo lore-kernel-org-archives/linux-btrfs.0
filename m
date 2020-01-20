@@ -6,69 +6,56 @@ X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 038D9C32771
-	for <linux-btrfs@archiver.kernel.org>; Mon, 20 Jan 2020 19:10:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 02C22C32771
+	for <linux-btrfs@archiver.kernel.org>; Mon, 20 Jan 2020 19:47:12 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D926922525
-	for <linux-btrfs@archiver.kernel.org>; Mon, 20 Jan 2020 19:10:41 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D53EE217F4
+	for <linux-btrfs@archiver.kernel.org>; Mon, 20 Jan 2020 19:47:10 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726874AbgATTKl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 20 Jan 2020 14:10:41 -0500
-Received: from mx2.suse.de ([195.135.220.15]:38524 "EHLO mx2.suse.de"
+        id S1726894AbgATTrK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 20 Jan 2020 14:47:10 -0500
+Received: from mx2.suse.de ([195.135.220.15]:48046 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726112AbgATTKk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 20 Jan 2020 14:10:40 -0500
+        id S1726874AbgATTrJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 20 Jan 2020 14:47:09 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 474EAB016;
-        Mon, 20 Jan 2020 19:10:39 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 46AC8AC66;
+        Mon, 20 Jan 2020 19:47:08 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 166C0DA7E6; Mon, 20 Jan 2020 20:10:22 +0100 (CET)
-Date:   Mon, 20 Jan 2020 20:10:21 +0100
+        id E0D91DA7E6; Mon, 20 Jan 2020 20:46:51 +0100 (CET)
+Date:   Mon, 20 Jan 2020 20:46:50 +0100
 From:   David Sterba <dsterba@suse.cz>
-To:     Anand Jain <anand.jain@oracle.com>
+To:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
 Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: update devid after replace
-Message-ID: <20200120191021.GN3929@twin.jikos.cz>
+Subject: Re: KASAN splat during mount on 5.4.5, no reproducer
+Message-ID: <20200120194650.GO3929@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
+Mail-Followup-To: dsterba@suse.cz,
+        Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
         linux-btrfs@vger.kernel.org
-References: <20200114183958.GJ3929@twin.jikos.cz>
- <20200115082250.3064-1-anand.jain@oracle.com>
+References: <20191228200326.GD13306@hungrycats.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20200115082250.3064-1-anand.jain@oracle.com>
+In-Reply-To: <20191228200326.GD13306@hungrycats.org>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Jan 15, 2020 at 04:22:50PM +0800, Anand Jain wrote:
-> --- a/fs/btrfs/sysfs.c
-> +++ b/fs/btrfs/sysfs.c
-> @@ -1189,6 +1189,17 @@ int btrfs_sysfs_remove_devices_attr(struct btrfs_fs_devices *fs_devices,
->  	return 0;
->  }
->  
-> +void btrfs_sysfs_update_devid(struct btrfs_device *device)
-> +{
-> +	char tmp[64];
+On Sat, Dec 28, 2019 at 03:03:26PM -0500, Zygo Blaxell wrote:
+> 
+> [...etc...it dumps the same stacks again in the BUG]
+> 
+> The deepest level of fs/btrfs code is the list_del_init in
+> clean_dirty_subvols.
+> 
+> After a reboot the next mount (and all subsequent mounts so far)
+> was successful.  I don't have a reproducer.
 
-24 is enough
-
-> +
-> +	snprintf(tmp, sizeof(tmp), "%llu", device->devid);
-> +
-> +	if (kobject_rename(&device->devid_kobj, tmp))
-> +		btrfs_warn(device->fs_devices->fs_info,
-> +			   "sysfs: failed to update devid");
-
-And printing for which devid the rename failed should be here
-
-> +}
-> +
-
-Once the tests finish I'll add it to misc-next so the patchset is
-complete.
+For the record, this and other KASAN reports regarding reloc root, is
+going to be fixed in 5.4.14, "btrfs: relocation: fix reloc_root lifespan
+and access" (6282675e6708ec78). Thanks for the reports and debugging
+help.

@@ -6,28 +6,28 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EB02BC2D0DB
-	for <linux-btrfs@archiver.kernel.org>; Mon, 20 Jan 2020 14:09:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2DE4AC33CBA
+	for <linux-btrfs@archiver.kernel.org>; Mon, 20 Jan 2020 14:09:29 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C2C9422314
-	for <linux-btrfs@archiver.kernel.org>; Mon, 20 Jan 2020 14:09:25 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 03ACB22314
+	for <linux-btrfs@archiver.kernel.org>; Mon, 20 Jan 2020 14:09:29 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728826AbgATOJZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 20 Jan 2020 09:09:25 -0500
-Received: from mx2.suse.de ([195.135.220.15]:49046 "EHLO mx2.suse.de"
+        id S1728853AbgATOJ1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 20 Jan 2020 09:09:27 -0500
+Received: from mx2.suse.de ([195.135.220.15]:49144 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728587AbgATOJW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 20 Jan 2020 09:09:22 -0500
+        id S1728767AbgATOJY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 20 Jan 2020 09:09:24 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 16A0FB162;
-        Mon, 20 Jan 2020 14:09:21 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 71C36B1B2;
+        Mon, 20 Jan 2020 14:09:22 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 03/11] btrfs: Introduce unaccount_log_buffer
-Date:   Mon, 20 Jan 2020 16:09:10 +0200
-Message-Id: <20200120140918.15647-4-nborisov@suse.com>
+Subject: [PATCH 09/11] btrfs: Mark pinned log extents as excluded
+Date:   Mon, 20 Jan 2020 16:09:16 +0200
+Message-Id: <20200120140918.15647-10-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20200120140918.15647-1-nborisov@suse.com>
 References: <20200120140918.15647-1-nborisov@suse.com>
@@ -36,56 +36,59 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This function correctly adjusts the reserved bytes occupied by a
-log tree extent buffer. It will be used instead of calling
-btrfs_pin_reserved_extent.
+In preparation to making pinned extents per-transaction ensure that
+log such extents are always excluded from caching. To achieve this in
+addition to marking them via btrfs_pin_extent_for_log_replay they also
+need to be marked with btrfs_add_excluded_extent to prevent log tree
+extent buffer being loaded by the free space caching thread. That's
+required since log treeblocks are not recorded in the extent tree, hence
+they always look free.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/tree-log.c | 23 +++++++++++++++++++++++
- 1 file changed, 23 insertions(+)
+ fs/btrfs/extent-tree.c | 8 ++++++++
+ fs/btrfs/tree-log.c    | 2 +-
+ 2 files changed, 9 insertions(+), 1 deletion(-)
 
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 7dcf9217a622..d680f2ac336b 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2634,6 +2634,8 @@ int btrfs_pin_extent_for_log_replay(struct btrfs_trans_handle *trans,
+ 	struct btrfs_block_group *cache;
+ 	int ret;
+ 
++	btrfs_add_excluded_extent(trans->fs_info, bytenr, num_bytes);
++
+ 	cache = btrfs_lookup_block_group(trans->fs_info, bytenr);
+ 	if (!cache)
+ 		return -EINVAL;
+@@ -2920,6 +2922,12 @@ int btrfs_finish_extent_commit(struct btrfs_trans_handle *trans)
+ 			mutex_unlock(&fs_info->unused_bg_unpin_mutex);
+ 			break;
+ 		}
++		if (test_bit(BTRFS_FS_LOG_RECOVERING, &fs_info->flags)) {
++			clear_extent_bits(&fs_info->freed_extents[0], start,
++					  end, EXTENT_UPTODATE);
++			clear_extent_bits(&fs_info->freed_extents[1], start,
++					  end, EXTENT_UPTODATE);
++		}
+ 
+ 		if (btrfs_test_opt(fs_info, DISCARD_SYNC))
+ 			ret = btrfs_discard_extent(fs_info, start,
 diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index a2bae5c230e1..30e7d96a69fe 100644
+index b535d409a728..f89de24838d5 100644
 --- a/fs/btrfs/tree-log.c
 +++ b/fs/btrfs/tree-log.c
-@@ -18,6 +18,8 @@
- #include "compression.h"
- #include "qgroup.h"
- #include "inode-map.h"
-+#include "block-group.h"
-+#include "space-info.h"
- 
- /* magic values for the inode_only field in btrfs_log_inode:
-  *
-@@ -2659,6 +2661,27 @@ static int replay_one_buffer(struct btrfs_root *log, struct extent_buffer *eb,
- 	return ret;
+@@ -2994,7 +2994,7 @@ static inline void btrfs_remove_log_ctx(struct btrfs_root *root,
+ 	mutex_unlock(&root->log_mutex);
  }
  
-+static void unaccount_log_buffer(struct btrfs_fs_info *fs_info, u64 start)
-+{
-+	struct btrfs_block_group *cache;
-+
-+	cache = btrfs_lookup_block_group(fs_info, start);
-+	if (!cache) {
-+		btrfs_err(fs_info, "unable to find block group for %llu", start);
-+		return;
-+	}
-+
-+	spin_lock(&cache->space_info->lock);
-+	spin_lock(&cache->lock);
-+	cache->reserved -= fs_info->nodesize;
-+	cache->space_info->bytes_reserved -= fs_info->nodesize;
-+	spin_unlock(&cache->lock);
-+	spin_unlock(&cache->space_info->lock);
-+
-+	btrfs_put_block_group(cache);
-+	return;
-+}
-+
- static noinline int walk_down_log_tree(struct btrfs_trans_handle *trans,
- 				   struct btrfs_root *root,
- 				   struct btrfs_path *path, int *level,
+-/* 
++/*
+  * Invoked in log mutex context, or be sure there is no other task which
+  * can access the list.
+  */
 -- 
 2.17.1
 

@@ -2,29 +2,32 @@ Return-Path: <SRS0=RPoL=3J=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7F540C2D0DB
-	for <linux-btrfs@archiver.kernel.org>; Mon, 20 Jan 2020 17:29:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A67C5C2D0DB
+	for <linux-btrfs@archiver.kernel.org>; Mon, 20 Jan 2020 17:36:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5D56021835
-	for <linux-btrfs@archiver.kernel.org>; Mon, 20 Jan 2020 17:29:09 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 83610218AC
+	for <linux-btrfs@archiver.kernel.org>; Mon, 20 Jan 2020 17:36:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728811AbgATR3I (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 20 Jan 2020 12:29:08 -0500
-Received: from mx2.suse.de ([195.135.220.15]:40000 "EHLO mx2.suse.de"
+        id S1726982AbgATRg4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 20 Jan 2020 12:36:56 -0500
+Received: from mx2.suse.de ([195.135.220.15]:42546 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726642AbgATR3I (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 20 Jan 2020 12:29:08 -0500
+        id S1726642AbgATRg4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 20 Jan 2020 12:36:56 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id A9BEDAE62;
-        Mon, 20 Jan 2020 17:29:05 +0000 (UTC)
-Subject: Re: BTRFS failure after resume from hibernate
-To:     Robbie Smith <zoqaeski@gmail.com>, linux-btrfs@vger.kernel.org
-References: <CACurcBus8d2RYTtVOheAvJcohY5jmP=akKUw1hen5seccfGihA@mail.gmail.com>
+        by mx2.suse.de (Postfix) with ESMTP id E7A82ABC4;
+        Mon, 20 Jan 2020 17:36:53 +0000 (UTC)
+Subject: Re: [PATCH 03/43] btrfs: make btrfs_find_orphan_roots use
+ btrfs_get_fs_root
+To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
+        kernel-team@fb.com
+References: <20200117212602.6737-1-josef@toxicpanda.com>
+ <20200117212602.6737-4-josef@toxicpanda.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  xsFNBFiKBz4BEADNHZmqwhuN6EAzXj9SpPpH/nSSP8YgfwoOqwrP+JR4pIqRK0AWWeWCSwmZ
@@ -68,12 +71,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <46627619-87ea-d26a-1c5d-8f1cba794826@suse.com>
-Date:   Mon, 20 Jan 2020 19:29:03 +0200
+Message-ID: <ad4c37c0-bebb-4290-800a-94fb669c9301@suse.com>
+Date:   Mon, 20 Jan 2020 19:36:51 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
  Thunderbird/68.2.2
 MIME-Version: 1.0
-In-Reply-To: <CACurcBus8d2RYTtVOheAvJcohY5jmP=akKUw1hen5seccfGihA@mail.gmail.com>
+In-Reply-To: <20200117212602.6737-4-josef@toxicpanda.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -84,15 +87,26 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 20.01.20 г. 16:45 ч., Robbie Smith wrote:
-> I put my laptop into hibernation mode for a few days so I could boot
-> up into Windows 10 to do some things, and upon waking up BTRFS has
-> borked itself, spitting out errors and locking itself into read-only
-> mode. Is there any up-to-date information on how to fix it, short of
-> wiping the partition and reinstalling (which is what I ended up
-> resorting to last time after none of the attempts to fix it worked)?
-> The error messages in my journal are:
+On 17.01.20 г. 23:25 ч., Josef Bacik wrote:
+> btrfs_find_orphan_roots has this weird thing where it looks up the root
+> in cache to see if it is there before just reading the root.  But the
+> read it uses just reads the root, it doesn't do any of the init work, we
 
+The first part of this sentence must be reworded since it's gibberish as
+it is.
 
-Are your btrfs and windows installations on the same disk but different
-partitions? While you were booted into windows did you perform any updates?
+> do that by hand here.  But this is unnecessary, all we really want is to
+> see if the root still exists and add it to the dead roots list to be
+> cleaned up, otherwise we delete the orphan item.
+> 
+> Fix this by just using btrfs_get_fs_root directly with check_ref set to
+> false so we get the orphan root items.  Then we just handle in cache and
+> out of cache roots the same, add them to the dead roots list and carry
+> on.
+> 
+> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+
+Other than that I agree that btrfs_get_fs_root already has the necessary
+processing for orphan roots.
+
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>

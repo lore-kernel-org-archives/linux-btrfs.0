@@ -2,83 +2,87 @@ Return-Path: <SRS0=wPs8=3K=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.9 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	UNPARSEABLE_RELAY,UNWANTED_LANGUAGE_BODY,USER_AGENT_GIT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E6D98C33CAA
-	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Jan 2020 07:34:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7CD7FC2D0DB
+	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Jan 2020 07:35:35 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id BC0EA21734
-	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Jan 2020 07:34:37 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 44C3C22522
+	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Jan 2020 07:35:35 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="OR25Qdq8"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728831AbgAUHe0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 21 Jan 2020 02:34:26 -0500
-Received: from out4436.biz.mail.alibaba.com ([47.88.44.36]:51053 "EHLO
-        out4436.biz.mail.alibaba.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1727453AbgAUHe0 (ORCPT
+        id S1728680AbgAUHfe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 21 Jan 2020 02:35:34 -0500
+Received: from mail-io1-f67.google.com ([209.85.166.67]:33876 "EHLO
+        mail-io1-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726911AbgAUHfe (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Jan 2020 02:34:26 -0500
-X-Alimail-AntiSpam: AC=PASS;BC=-1|-1;BR=01201311R101e4;CH=green;DM=||false|;DS=||;FP=0|-1|-1|-1|0|-1|-1|-1;HT=e01e04407;MF=alex.shi@linux.alibaba.com;NM=1;PH=DS;RN=5;SR=0;TI=SMTPD_---0ToHCg0j_1579592053;
-Received: from localhost(mailfrom:alex.shi@linux.alibaba.com fp:SMTPD_---0ToHCg0j_1579592053)
-          by smtp.aliyun-inc.com(127.0.0.1);
-          Tue, 21 Jan 2020 15:34:13 +0800
-From:   Alex Shi <alex.shi@linux.alibaba.com>
-Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: [PATCH] btrfs/raid56: remove unused actions
-Date:   Tue, 21 Jan 2020 15:34:10 +0800
-Message-Id: <1579592050-86280-1-git-send-email-alex.shi@linux.alibaba.com>
-X-Mailer: git-send-email 1.8.3.1
-To:     unlisted-recipients:; (no To-header on input)
+        Tue, 21 Jan 2020 02:35:34 -0500
+Received: by mail-io1-f67.google.com with SMTP id z193so1837443iof.1;
+        Mon, 20 Jan 2020 23:35:33 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=+F7l/MWFQgRxyHbpRyxJbIOirQMGsQvf8nzkFjt7rtU=;
+        b=OR25Qdq8m/jH+8shuXB7H0qmJwDh0jA3QVqleA6KUHmUJlCojHBr1gSEdR/Ggnndkn
+         I66NHwDEL9K3x8CmAcWUFqAtiqFyZS+7I7+fNUUZude6f5ORPd3iF9inPDySGno/i9aX
+         QphklD173cya/A5w/hT8AvCqpHJuqM76Jj+3Djop8mUiCLs5sW8nwwWLQ29+XxiR2ZUK
+         5NqY/NpdbFNaEEQju9S35xMo30Y83+j3attZojXPLP0Sthc2AGVFZ36n5RTDe6Ht0LF1
+         mc30vgBlku54nelUozGOl9f70N9wujXjnwYNVFrpiZ2HSbT9018O2NGjoJ1E0xEEVZAG
+         oQpQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=+F7l/MWFQgRxyHbpRyxJbIOirQMGsQvf8nzkFjt7rtU=;
+        b=D1SeQ9TC0Pz8fH6en000GECSXEnth3siUWoXnefmlImheNRTHDXBpGH5oP975PMboF
+         EU2F62drgT3qL2KvjvMJNJ5aisTCHJdyfA3Yi3cKkYJYd44jw/T8FX8sSaUHDMLR1r7E
+         P1MTTGzfq27HFqxMLwY58subfzSrBx8/I3IM/oqALXHvfaUY6WseAfowyyHgJyg+dlzg
+         yvgUigRWHkt4RLdUYjc1T+/T4A2InPEX6CxMTZy/01pISW1EafoyBCFVxEEn9xc3YrTC
+         M/UgiKLBcOgaL9MtiIswA7AfNxfBp1TPKVUvn7NGUKxn3QWpxAkiQoD5hLGrYmZmoZmj
+         5Hag==
+X-Gm-Message-State: APjAAAVvyApA/PGULSbTgLXbxJ2Dv2gCkfZVl+DbQ87gtYO418F3MlT/
+        95+agxmgW/LeyZfBstoJf6+kfHMSS9Zj0KecPLU=
+X-Google-Smtp-Source: APXvYqzUyI1DkiewOUq76ctqoWRhaFKDY2EeiUmPqH+S1LBGO00cWRKX+8Zt21jIMmFPghy6M8JEz1p4PBsy0ZRBi8g=
+X-Received: by 2002:a02:a481:: with SMTP id d1mr2247658jam.81.1579592133440;
+ Mon, 20 Jan 2020 23:35:33 -0800 (PST)
+MIME-Version: 1.0
+References: <20160210191715.GB6339@birch.djwong.org> <20160210191848.GC6346@birch.djwong.org>
+ <CAH2r5mtM2nCicTKGFAjYtOG92TKKQdTbZxaD-_-RsWYL=Tn2Nw@mail.gmail.com> <0089aff3-c4d3-214e-30d7-012abf70623a@gmx.com>
+In-Reply-To: <0089aff3-c4d3-214e-30d7-012abf70623a@gmx.com>
+From:   Amir Goldstein <amir73il@gmail.com>
+Date:   Tue, 21 Jan 2020 09:35:22 +0200
+Message-ID: <CAOQ4uxjd-YWe5uHqfSW9iSdw-hQyFCwo84cK8ebJVJSY_vda3Q@mail.gmail.com>
+Subject: Re: [Lsf-pc] [LFS/MM TOPIC] fs reflink issues, fs online scrub/check, etc
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     Steve French <smfrench@gmail.com>,
+        "Darrick J. Wong" <darrick.wong@oracle.com>,
+        lsf-pc@lists.linux-foundation.org, xfs <xfs@oss.sgi.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+        linux-ext4 <linux-ext4@vger.kernel.org>,
+        ocfs2-devel@oss.oracle.com
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-No one care p_stripe in its functions. Guess it's safe to remove.
+On Tue, Jan 21, 2020 at 3:19 AM Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+>
+> Didn't see the original mail, so reply here.
 
-Signed-off-by: Alex Shi <alex.shi@linux.alibaba.com>
-Cc: Chris Mason <clm@fb.com> 
-Cc: Josef Bacik <josef@toxicpanda.com> 
-Cc: David Sterba <dsterba@suse.com> 
-Cc: linux-btrfs@vger.kernel.org 
-Cc: linux-kernel@vger.kernel.org 
----
- fs/btrfs/raid56.c | 9 ++-------
- 1 file changed, 2 insertions(+), 7 deletions(-)
+Heh! Original email was from 2016, but most of Darrick's wish list is
+still relevant in 2020 :)
 
-diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index a8e53c8e7b01..fbee5681e690 100644
---- a/fs/btrfs/raid56.c
-+++ b/fs/btrfs/raid56.c
-@@ -1196,7 +1196,6 @@ static noinline void finish_rmw(struct btrfs_raid_bio *rbio)
- 	int nr_data = rbio->nr_data;
- 	int stripe;
- 	int pagenr;
--	int p_stripe = -1;
- 	int q_stripe = -1;
- 	struct bio_list bio_list;
- 	struct bio *bio;
-@@ -1204,14 +1203,10 @@ static noinline void finish_rmw(struct btrfs_raid_bio *rbio)
- 
- 	bio_list_init(&bio_list);
- 
--	if (rbio->real_stripes - rbio->nr_data == 1) {
--		p_stripe = rbio->real_stripes - 1;
--	} else if (rbio->real_stripes - rbio->nr_data == 2) {
--		p_stripe = rbio->real_stripes - 2;
-+	if (rbio->real_stripes - rbio->nr_data == 2)
- 		q_stripe = rbio->real_stripes - 1;
--	} else {
-+	else
- 		BUG();
--	}
- 
- 	/* at this point we either have a full stripe,
- 	 * or we've read the full stripe from the drive.
--- 
-1.8.3.1
+I for one would be very interested in getting an update on the
+progress of pagecache
+page sharing if there is anyone working on it.
 
+Thanks,
+Amir.

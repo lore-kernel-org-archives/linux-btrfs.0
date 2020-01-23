@@ -2,298 +2,211 @@ Return-Path: <SRS0=1y2F=3M=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-8.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DA259C3F68F
-	for <linux-btrfs@archiver.kernel.org>; Thu, 23 Jan 2020 08:19:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A21B7C33CAA
+	for <linux-btrfs@archiver.kernel.org>; Thu, 23 Jan 2020 08:54:25 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A495F24684
-	for <linux-btrfs@archiver.kernel.org>; Thu, 23 Jan 2020 08:19:07 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="axBoT7pC"
+	by mail.kernel.org (Postfix) with ESMTP id 7341D22522
+	for <linux-btrfs@archiver.kernel.org>; Thu, 23 Jan 2020 08:54:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728708AbgAWITC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 23 Jan 2020 03:19:02 -0500
-Received: from esa6.hgst.iphmx.com ([216.71.154.45]:43991 "EHLO
-        esa6.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728139AbgAWITB (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 23 Jan 2020 03:19:01 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1579767542; x=1611303542;
-  h=from:to:cc:subject:date:message-id:in-reply-to:
-   references:mime-version:content-transfer-encoding;
-  bh=EneM6WceyRrMsFpB6DnTbMPZ+dkv9q8AsWLcEvey984=;
-  b=axBoT7pCryrRbS2lENnGhHdNwZVo6zWoOuc4+TPGGIj4PiBhnEUg9uqB
-   D9n0Mt0nGw8ckdm6AASZe1RvdNIEW2ffHQMd5YaHp1vRMX+15FfPWQOPo
-   Z9QbDP0SaT16jsL6AJSogDMqVwE+Q9bHDx/Pr9wYlorHuy1U2j1zrk0Ez
-   0zxnRknUi6q9KTaTv6GR3U9PVLND/JihOPMHm0Vvf01zhDxVnjH5L4dN+
-   hZ3lVGEIxAq3y3Lc6sGom9Hg5ZEVNFANHTCr+9yxd35p8uuWIM4HJLhzv
-   VsyCzCsPcaRLEDOE7TwIxGAFnbF8MH2SpBp20PaFC3JmslRqsdS4ZJbw9
-   w==;
-IronPort-SDR: eJekihPl8BzaCgq6Pka7ukUJqXl7fTjkICRUaKNaFrcyepVcqhIv/sX9DmDqF64c+HrQwF8zWj
- ZWQj8ZDWaJz1aw2yC09xq0ZZEqlw1QwDhsBmtuTxKvlFfybUNYoX40704p6PzLzArXEihYxgan
- a92phWWAaT0f1sMQ5Hg4tOAsZuGqkPHTLbbkYkq1BtAxin2gzWEEWfj5TOHwtQFcNLvr1AWhaQ
- 3/o9CDzS/aA5BJBzs+C5LkBm40vAMcq0022a8wgmjLlOZzKVlnqjTElFrGkqkMBnuaT6fyNnbI
- 0EI=
-X-IronPort-AV: E=Sophos;i="5.70,353,1574092800"; 
-   d="scan'208";a="129708696"
-Received: from h199-255-45-14.hgst.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 23 Jan 2020 16:19:01 +0800
-IronPort-SDR: zlw6bc1C66TNrWULO/SYwDEOQn/KhozMWctYs4Ho9XZqT6VFlZmzbz/iZdhHcNQpMWsYHso8eY
- I2cfYEz4derKA4GHP8Waejnd5XpC+J7YK4blwL0XRZ6bM3Snkm7ZW0XKARoNowAvMwRIwdh96F
- MgtxAxLB4sYlm6UdQ65jsqdS5sC3UfdtPHAAeAH5RO977cLp7z6lLLRLVOq9cni3X7k8UKrTtL
- EJjn6oGPQWzN8rPK/0NQ3WR75uZ+j1IWNZgkv2HGfredgs7/BGFkrv/njvAADNn5y3D+stLC7t
- idZ2DGPOrXyOA9Vr+x3PJ/A5
-Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 23 Jan 2020 00:12:24 -0800
-IronPort-SDR: w6IvAbyflXthblcs58967GLbYc9/0SXR8Al0wz+4AnvPpQs7MkPGb71mV2w9WsxziZUKKgy1i8
- lCxgYjkRHAgVr0bLrJxA8uy32m/867DvoDztjcM0K4loC+vHt0WOFnp23wjTF0PrmvykzFFZHR
- dbPx+ZeH7iFc9zMjsN2yJKe50lkqN3XVn0uWueaSK6bzpkwLfqgMyS9H9RJeGaNMlgugfbfWp/
- EZLNuU0eHoRq95nbAaefchNpJdd0AKgvRhIvSkIeSI8fdqvof/hKhXUafXH0y6LO69BL6mEwVM
- ID8=
-WDCIronportException: Internal
-Received: from unknown (HELO redsun60.ssa.fujisawa.hgst.com) ([10.149.66.36])
-  by uls-op-cesaip02.wdc.com with ESMTP; 23 Jan 2020 00:19:00 -0800
-From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
-To:     David Sterba <dsterba@suse.com>
-Cc:     Nikolay Borisov <nborisov@suse.com>,
-        "linux-btrfs @ vger . kernel . org" <linux-btrfs@vger.kernel.org>,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH v2 5/6] btrfs: remove buffer_heads from btrfsic_process_written_block()
-Date:   Thu, 23 Jan 2020 17:18:48 +0900
-Message-Id: <20200123081849.23397-6-johannes.thumshirn@wdc.com>
-X-Mailer: git-send-email 2.24.1
-In-Reply-To: <20200123081849.23397-1-johannes.thumshirn@wdc.com>
-References: <20200123081849.23397-1-johannes.thumshirn@wdc.com>
+        id S1726584AbgAWIyY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 23 Jan 2020 03:54:24 -0500
+Received: from mx2.suse.de ([195.135.220.15]:45188 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726099AbgAWIyY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 23 Jan 2020 03:54:24 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 26E78AD7B;
+        Thu, 23 Jan 2020 08:54:21 +0000 (UTC)
+Subject: Re: [PATCH 11/11] btrfs: Use btrfs_transaction::pinned_extents
+To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org
+References: <20200120140918.15647-1-nborisov@suse.com>
+ <20200120140918.15647-12-nborisov@suse.com>
+ <b98bb8f2-2f3f-748b-793a-b9772f9f3569@toxicpanda.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <3396ff95-dbc0-dd91-8c91-4509933e3a30@suse.com>
+Date:   Thu, 23 Jan 2020 10:54:20 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.4.1
 MIME-Version: 1.0
+In-Reply-To: <b98bb8f2-2f3f-748b-793a-b9772f9f3569@toxicpanda.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Now that the last caller of btrfsic_process_written_block() with
-buffer_heads is gone, remove the buffer_head processing path from it as
-well.
 
-Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
----
- fs/btrfs/check-integrity.c | 103 +++++++++----------------------------
- 1 file changed, 25 insertions(+), 78 deletions(-)
 
-diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
-index e7507985435e..4f6db2fe482a 100644
---- a/fs/btrfs/check-integrity.c
-+++ b/fs/btrfs/check-integrity.c
-@@ -152,11 +152,8 @@ struct btrfsic_block {
- 	struct list_head ref_to_list;	/* list */
- 	struct list_head ref_from_list;	/* list */
- 	struct btrfsic_block *next_in_same_bio;
--	void *orig_bio_bh_private;
--	union {
--		bio_end_io_t *bio;
--		bh_end_io_t *bh;
--	} orig_bio_bh_end_io;
-+	void *orig_bio_private;
-+	bio_end_io_t *orig_bio_end_io;
- 	int submit_bio_bh_rw;
- 	u64 flush_gen; /* only valid if !never_written */
- };
-@@ -325,14 +322,12 @@ static void btrfsic_process_written_block(struct btrfsic_dev_state *dev_state,
- 					  u64 dev_bytenr, char **mapped_datav,
- 					  unsigned int num_pages,
- 					  struct bio *bio, int *bio_is_patched,
--					  struct buffer_head *bh,
- 					  int submit_bio_bh_rw);
- static int btrfsic_process_written_superblock(
- 		struct btrfsic_state *state,
- 		struct btrfsic_block *const block,
- 		struct btrfs_super_block *const super_hdr);
- static void btrfsic_bio_end_io(struct bio *bp);
--static void btrfsic_bh_end_io(struct buffer_head *bh, int uptodate);
- static int btrfsic_is_block_ref_by_superblock(const struct btrfsic_state *state,
- 					      const struct btrfsic_block *block,
- 					      int recursion_level);
-@@ -399,8 +394,8 @@ static void btrfsic_block_init(struct btrfsic_block *b)
- 	b->never_written = 0;
- 	b->mirror_num = 0;
- 	b->next_in_same_bio = NULL;
--	b->orig_bio_bh_private = NULL;
--	b->orig_bio_bh_end_io.bio = NULL;
-+	b->orig_bio_private = NULL;
-+	b->orig_bio_end_io = NULL;
- 	INIT_LIST_HEAD(&b->collision_resolving_node);
- 	INIT_LIST_HEAD(&b->all_blocks_node);
- 	INIT_LIST_HEAD(&b->ref_to_list);
-@@ -1743,7 +1738,6 @@ static void btrfsic_process_written_block(struct btrfsic_dev_state *dev_state,
- 					  u64 dev_bytenr, char **mapped_datav,
- 					  unsigned int num_pages,
- 					  struct bio *bio, int *bio_is_patched,
--					  struct buffer_head *bh,
- 					  int submit_bio_bh_rw)
- {
- 	int is_metadata;
-@@ -1902,9 +1896,9 @@ static void btrfsic_process_written_block(struct btrfsic_dev_state *dev_state,
- 				block->is_iodone = 0;
- 				BUG_ON(NULL == bio_is_patched);
- 				if (!*bio_is_patched) {
--					block->orig_bio_bh_private =
-+					block->orig_bio_private =
- 					    bio->bi_private;
--					block->orig_bio_bh_end_io.bio =
-+					block->orig_bio_end_io =
- 					    bio->bi_end_io;
- 					block->next_in_same_bio = NULL;
- 					bio->bi_private = block;
-@@ -1916,25 +1910,17 @@ static void btrfsic_process_written_block(struct btrfsic_dev_state *dev_state,
- 					    bio->bi_private;
- 
- 					BUG_ON(NULL == chained_block);
--					block->orig_bio_bh_private =
--					    chained_block->orig_bio_bh_private;
--					block->orig_bio_bh_end_io.bio =
--					    chained_block->orig_bio_bh_end_io.
--					    bio;
-+					block->orig_bio_private =
-+					    chained_block->orig_bio_private;
-+					block->orig_bio_end_io =
-+					    chained_block->orig_bio_end_io;
- 					block->next_in_same_bio = chained_block;
- 					bio->bi_private = block;
- 				}
--			} else if (NULL != bh) {
--				block->is_iodone = 0;
--				block->orig_bio_bh_private = bh->b_private;
--				block->orig_bio_bh_end_io.bh = bh->b_end_io;
--				block->next_in_same_bio = NULL;
--				bh->b_private = block;
--				bh->b_end_io = btrfsic_bh_end_io;
- 			} else {
- 				block->is_iodone = 1;
--				block->orig_bio_bh_private = NULL;
--				block->orig_bio_bh_end_io.bio = NULL;
-+				block->orig_bio_private = NULL;
-+				block->orig_bio_end_io = NULL;
- 				block->next_in_same_bio = NULL;
- 			}
- 		}
-@@ -2042,8 +2028,8 @@ static void btrfsic_process_written_block(struct btrfsic_dev_state *dev_state,
- 			block->is_iodone = 0;
- 			BUG_ON(NULL == bio_is_patched);
- 			if (!*bio_is_patched) {
--				block->orig_bio_bh_private = bio->bi_private;
--				block->orig_bio_bh_end_io.bio = bio->bi_end_io;
-+				block->orig_bio_private = bio->bi_private;
-+				block->orig_bio_end_io = bio->bi_end_io;
- 				block->next_in_same_bio = NULL;
- 				bio->bi_private = block;
- 				bio->bi_end_io = btrfsic_bio_end_io;
-@@ -2054,24 +2040,17 @@ static void btrfsic_process_written_block(struct btrfsic_dev_state *dev_state,
- 				    bio->bi_private;
- 
- 				BUG_ON(NULL == chained_block);
--				block->orig_bio_bh_private =
--				    chained_block->orig_bio_bh_private;
--				block->orig_bio_bh_end_io.bio =
--				    chained_block->orig_bio_bh_end_io.bio;
-+				block->orig_bio_private =
-+				    chained_block->orig_bio_private;
-+				block->orig_bio_end_io =
-+				    chained_block->orig_bio_end_io;
- 				block->next_in_same_bio = chained_block;
- 				bio->bi_private = block;
- 			}
--		} else if (NULL != bh) {
--			block->is_iodone = 0;
--			block->orig_bio_bh_private = bh->b_private;
--			block->orig_bio_bh_end_io.bh = bh->b_end_io;
--			block->next_in_same_bio = NULL;
--			bh->b_private = block;
--			bh->b_end_io = btrfsic_bh_end_io;
- 		} else {
- 			block->is_iodone = 1;
--			block->orig_bio_bh_private = NULL;
--			block->orig_bio_bh_end_io.bio = NULL;
-+			block->orig_bio_private = NULL;
-+			block->orig_bio_end_io = NULL;
- 			block->next_in_same_bio = NULL;
- 		}
- 		if (state->print_mask & BTRFSIC_PRINT_MASK_VERBOSE)
-@@ -2112,8 +2091,8 @@ static void btrfsic_bio_end_io(struct bio *bp)
- 		iodone_w_error = 1;
- 
- 	BUG_ON(NULL == block);
--	bp->bi_private = block->orig_bio_bh_private;
--	bp->bi_end_io = block->orig_bio_bh_end_io.bio;
-+	bp->bi_private = block->orig_bio_private;
-+	bp->bi_end_io = block->orig_bio_end_io;
- 
- 	do {
- 		struct btrfsic_block *next_block;
-@@ -2146,38 +2125,6 @@ static void btrfsic_bio_end_io(struct bio *bp)
- 	bp->bi_end_io(bp);
- }
- 
--static void btrfsic_bh_end_io(struct buffer_head *bh, int uptodate)
--{
--	struct btrfsic_block *block = (struct btrfsic_block *)bh->b_private;
--	int iodone_w_error = !uptodate;
--	struct btrfsic_dev_state *dev_state;
--
--	BUG_ON(NULL == block);
--	dev_state = block->dev_state;
--	if ((dev_state->state->print_mask & BTRFSIC_PRINT_MASK_END_IO_BIO_BH))
--		pr_info("bh_end_io(error=%d) for %c @%llu (%s/%llu/%d)\n",
--		       iodone_w_error,
--		       btrfsic_get_block_type(dev_state->state, block),
--		       block->logical_bytenr, block->dev_state->name,
--		       block->dev_bytenr, block->mirror_num);
--
--	block->iodone_w_error = iodone_w_error;
--	if (block->submit_bio_bh_rw & REQ_PREFLUSH) {
--		dev_state->last_flush_gen++;
--		if ((dev_state->state->print_mask &
--		     BTRFSIC_PRINT_MASK_END_IO_BIO_BH))
--			pr_info("bh_end_io() new %s flush_gen=%llu\n",
--			       dev_state->name, dev_state->last_flush_gen);
--	}
--	if (block->submit_bio_bh_rw & REQ_FUA)
--		block->flush_gen = 0; /* FUA completed means block is on disk */
--
--	bh->b_private = block->orig_bio_bh_private;
--	bh->b_end_io = block->orig_bio_bh_end_io.bh;
--	block->is_iodone = 1; /* for FLUSH, this releases the block */
--	bh->b_end_io(bh, uptodate);
--}
--
- static int btrfsic_process_written_superblock(
- 		struct btrfsic_state *state,
- 		struct btrfsic_block *const superblock,
-@@ -2781,7 +2728,7 @@ static void __btrfsic_submit_bio(struct bio *bio)
- 		btrfsic_process_written_block(dev_state, dev_bytenr,
- 					      mapped_datav, segs,
- 					      bio, &bio_is_patched,
--					      NULL, bio->bi_opf);
-+					      bio->bi_opf);
- 		bio_for_each_segment(bvec, bio, iter)
- 			kunmap(bvec.bv_page);
- 		kfree(mapped_datav);
-@@ -2805,8 +2752,8 @@ static void __btrfsic_submit_bio(struct bio *bio)
- 			block->iodone_w_error = 0;
- 			block->flush_gen = dev_state->last_flush_gen + 1;
- 			block->submit_bio_bh_rw = bio->bi_opf;
--			block->orig_bio_bh_private = bio->bi_private;
--			block->orig_bio_bh_end_io.bio = bio->bi_end_io;
-+			block->orig_bio_private = bio->bi_private;
-+			block->orig_bio_end_io = bio->bi_end_io;
- 			block->next_in_same_bio = NULL;
- 			bio->bi_private = block;
- 			bio->bi_end_io = btrfsic_bio_end_io;
--- 
-2.24.1
+On 22.01.20 г. 22:21 ч., Josef Bacik wrote:
+> On 1/20/20 9:09 AM, Nikolay Borisov wrote:
+>> This commit flips the switch to start tracking/processing pinned
+>> extents on a per-transaction basis. It mostly replaces all references
+>> from btrfs_fs_info::(pinned_extents|freed_extents[]) to
+>> btrfs_transaction::pinned_extents. Two notable modifications that
+>> warrant explicit mention are changing clean_pinned_extents to get a
+>> reference to the previously running transaction. The other one is
+>> removal of call to btrfs_destroy_pinned_extent since transactions are
+>> going to be cleaned in btrfs_cleanup_one_transaction.
+>>
+>> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> 
+> I'd prefer if the excluded extent changes were separate from the pinned
+> extent changes.
+> 
+>> ---
+>>   fs/btrfs/block-group.c       | 38 ++++++++++++++++++++++++------------
+>>   fs/btrfs/ctree.h             |  4 ++--
+>>   fs/btrfs/disk-io.c           | 30 +++++-----------------------
+>>   fs/btrfs/extent-io-tree.h    |  3 +--
+>>   fs/btrfs/extent-tree.c       | 31 ++++++++---------------------
+>>   fs/btrfs/free-space-cache.c  |  2 +-
+>>   fs/btrfs/tests/btrfs-tests.c |  7 ++-----
+>>   fs/btrfs/transaction.c       |  1 +
+>>   fs/btrfs/transaction.h       |  1 +
+>>   include/trace/events/btrfs.h |  3 +--
+>>   10 files changed, 47 insertions(+), 73 deletions(-)
+>>
+>> diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+>> index 48bb9e08f2e8..562dfb7dc77f 100644
+>> --- a/fs/btrfs/block-group.c
+>> +++ b/fs/btrfs/block-group.c
+>> @@ -460,7 +460,7 @@ u64 add_new_free_space(struct btrfs_block_group
+>> *block_group, u64 start, u64 end
+>>       int ret;
+>>         while (start < end) {
+>> -        ret = find_first_extent_bit(info->pinned_extents, start,
+>> +        ret = find_first_extent_bit(&info->excluded_extents, start,
+>>                           &extent_start, &extent_end,
+>>                           EXTENT_DIRTY | EXTENT_UPTODATE,
+>>                           NULL);
+> 
+> We're no longer doing EXTENT_DIRTY in excluded_extents, so we don't need
+> this part.
+> 
+>> @@ -1233,32 +1233,44 @@ static int inc_block_group_ro(struct
+>> btrfs_block_group *cache, int force)
+>>       return ret;
+>>   }
+>>   -static bool clean_pinned_extents(struct btrfs_block_group *bg)
+>> +static bool clean_pinned_extents(struct btrfs_trans_handle *trans,
+>> +                 struct btrfs_block_group *bg)
+>>   {
+>>       struct btrfs_fs_info *fs_info = bg->fs_info;
+>> +    struct btrfs_transaction *prev_trans = NULL;
+>>       u64 start = bg->start;
+>>       u64 end = start + bg->length - 1;
+>>       int ret;
+>>   +    spin_lock(&fs_info->trans_lock);
+>> +    if (trans->transaction->list.prev != &fs_info->trans_list) {
+>> +        prev_trans = list_entry(trans->transaction->list.prev,
+>> +                    struct btrfs_transaction, list);
+>> +        refcount_inc(&prev_trans->use_count);
+>> +    }
+>> +    spin_unlock(&fs_info->trans_lock);
+>> +
+>>       /*
+>>        * Hold the unused_bg_unpin_mutex lock to avoid racing with
+>>        * btrfs_finish_extent_commit(). If we are at transaction N,
+>>        * another task might be running finish_extent_commit() for the
+>>        * previous transaction N - 1, and have seen a range belonging
+>> -     * to the block group in freed_extents[] before we were able to
+>> -     * clear the whole block group range from freed_extents[]. This
+>> +     * to the block group in pinned_extents before we were able to
+>> +     * clear the whole block group range from pinned_extents. This
+>>        * means that task can lookup for the block group after we
+>> -     * unpinned it from freed_extents[] and removed it, leading to
+>> +     * unpinned it from pinned_extents[] and removed it, leading to
+>>        * a BUG_ON() at unpin_extent_range().
+>>        */
+>>       mutex_lock(&fs_info->unused_bg_unpin_mutex);
+>> -    ret = clear_extent_bits(&fs_info->freed_extents[0], start, end,
+>> -              EXTENT_DIRTY);
+>> -    if (ret)
+>> -        goto failure;
+>> +    if (prev_trans) {
+>> +        ret = clear_extent_bits(&prev_trans->pinned_extents, start, end,
+>> +                    EXTENT_DIRTY);
+>> +        if (ret)
+>> +            goto failure;
+>> +    }
+> 
+> You are leaking a ref to prev_trans here.
+> 
+> <snip>
+>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+>> index 9209c7b0997c..3cb786463eb2 100644
+>> --- a/fs/btrfs/disk-io.c
+>> +++ b/fs/btrfs/disk-io.c
+>> @@ -2021,10 +2021,8 @@ void btrfs_free_fs_roots(struct btrfs_fs_info
+>> *fs_info)
+>>               btrfs_drop_and_free_fs_root(fs_info, gang[i]);
+>>       }
+>>   -    if (test_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state)) {
+>> +    if (test_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state))
+>>           btrfs_free_log_root_tree(NULL, fs_info);
+>> -        btrfs_destroy_pinned_extent(fs_info, fs_info->pinned_extents);
+>> -    }
+> 
+> What about the excluded extents?  We may never cache the block group
+> with one of the super mirrors in it, and thus we would leak the excluded
+> extent for it.  Thanks,
 
+btrfs_destroy_pinned_extent didn't touch EXTENT_UPDATE (excluded
+extents) before so my removing this call doesn't change that. E.g. if
+there is a bug here where excluded extents are not cleaned up then it's
+not due to my code.
+
+On the other hand I don't quite understand your concern w.r.t pinned
+extents. Can you elaborate?
+
+> 
+> Josef

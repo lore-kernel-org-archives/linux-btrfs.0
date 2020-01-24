@@ -7,60 +7,59 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 707A8C2D0DB
-	for <linux-btrfs@archiver.kernel.org>; Fri, 24 Jan 2020 14:34:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C559EC2D0DB
+	for <linux-btrfs@archiver.kernel.org>; Fri, 24 Jan 2020 14:34:22 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 35E2B2077C
-	for <linux-btrfs@archiver.kernel.org>; Fri, 24 Jan 2020 14:34:17 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8E041206F0
+	for <linux-btrfs@archiver.kernel.org>; Fri, 24 Jan 2020 14:34:22 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="cEAC4IfT"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="GOM704r/"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2390119AbgAXOeQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 24 Jan 2020 09:34:16 -0500
-Received: from mail-qt1-f194.google.com ([209.85.160.194]:37311 "EHLO
-        mail-qt1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2387506AbgAXOeP (ORCPT
+        id S2404695AbgAXOeV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 24 Jan 2020 09:34:21 -0500
+Received: from mail-qk1-f196.google.com ([209.85.222.196]:34681 "EHLO
+        mail-qk1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2390966AbgAXOeT (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 24 Jan 2020 09:34:15 -0500
-Received: by mail-qt1-f194.google.com with SMTP id w47so1641556qtk.4
-        for <linux-btrfs@vger.kernel.org>; Fri, 24 Jan 2020 06:34:14 -0800 (PST)
+        Fri, 24 Jan 2020 09:34:19 -0500
+Received: by mail-qk1-f196.google.com with SMTP id d10so2223962qke.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 24 Jan 2020 06:34:18 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:cc:subject:date:message-id:in-reply-to:references
-         :mime-version:content-transfer-encoding;
-        bh=BKRM1g67Pfr98mDQPNb6bIGdHJzZfFefgMZbElHLyuk=;
-        b=cEAC4IfTJyqxq8DuVukzdrZlzW98HsJq2mwUQL8ayIW6SmkuPaenwM/kTddMb3mS5u
-         3l+uUDon3MEo9iqCwTxehl4bQGWkb4UlfCLA+IvGwzb0ORi6Fx3/ThHhNsP1WNCLB5tn
-         PyjdJWRYpXZog4b+PAzLlsW7DtTxR95vR/cHYOAYqrkKReWOr+hGyzL3PfKNOICHbWvH
-         xYX3dk6TwlYMcJEsFnX+fPJmYpg+nE998y07t46mL1wouf7crLAfzh12SvF5Tc8aRIjJ
-         RqWM6zs3cXi+Ks+/fMJRxqwzowmOnKGKkbGruyUNmO4V103i2S50E/D69bYI7uP2JtB2
-         1TbQ==
+        h=from:to:subject:date:message-id:in-reply-to:references:mime-version
+         :content-transfer-encoding;
+        bh=W9bYrWIf26pXVM8x8x40i6bJMwAGF8hatl/9wT8cPGU=;
+        b=GOM704r/J1VfUu06Q2SpnSgrPaD/jEJxDRI+7jWUxpngNmiNEBgcUKjNhKrqUO0o6B
+         h5a6xJ1yqI9u6VJNj7u4vAsvGCbtnRtbvYX8m+3Ek1wLg8hD1CAedTnaKGYWru2dCVtO
+         tYxEw4ua5LS6/JVU6Kt9QAEatJysLKRlf5InygHR5hgUtTzVT0HLxBxw9Iebw90H+bZ/
+         qlmB5B4P9bv0Bfpjbjad7JNuLWL8VWmKK/H6JxZi5bjvpybKU28zPmDfftDZSP4zMdKf
+         K2DiApkE4ps+wKmAYwJ0mxYR6regye2H5HyowlmcS6pUZvh5phd5uVTWAKb46L3lYa73
+         KTIQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
+        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=BKRM1g67Pfr98mDQPNb6bIGdHJzZfFefgMZbElHLyuk=;
-        b=OxTKe09jnTcwP008ADwxpVeuJ196SDLiczPN/bRySeYT00xJMGaRive/Ehn8LqfRy2
-         aGP+sLWyreR1t8KV28mTU/k+KldRg563GHI9ZxAnubOpWOlGVJXhByaXzpVLckSZb1Br
-         21kRNUIKadGy5aJEarBilLNNaULyoIXy5pqDsmB6lo679Shiq88rUkHk0l0g5tOrCjwM
-         ZF325J6+Ev3vdH8FT780fUiHR38meZGX/vtyTtdtRFaUKVc/72oBVt241duE7vR18nXh
-         0Dcui7Ugmn4A+3hYEho8uaNL74E4Tmq1q/fKx6kGfNEIumxQ1gVycaEM9jQKYeRoKFQE
-         Tn8g==
-X-Gm-Message-State: APjAAAWzgDfLFwjA7JxidLV0ep0LmGu5oBtP8azPNlCiCyF7vk776KPR
-        s4+WYZSy70zXoHydPgHSGdoq5oQ7S3KLnA==
-X-Google-Smtp-Source: APXvYqzRreib0lksksIdgEqL6/nqDxr+Y6uCkd/7iyGZ5Rbz5THRwf97SaEzSeQtczDPHMeseCSB3Q==
-X-Received: by 2002:ac8:22fd:: with SMTP id g58mr2371837qta.125.1579876454038;
-        Fri, 24 Jan 2020 06:34:14 -0800 (PST)
+        bh=W9bYrWIf26pXVM8x8x40i6bJMwAGF8hatl/9wT8cPGU=;
+        b=MLSc8joauP3gkSAHnL9yOOL9q/rxCoFpmRWZQFUxpiy0TzMXPvmZXJGNy+0iS9/8K5
+         bLeFFQWfWg9q+IXFM9uG8JORKm0jpBoD6nSYl2gPtPUpe9r8c9h4qC1wm5ZR45o5RAm4
+         Jo27Kw9+0LCSBEo0LGWyeLy/FvpvewhDP3XJPO8UqFiC7uSuC33/NWOhNNRoE5Uam8rt
+         f46MPnSuNg9R4l9cS9aUa/3fbaDP1W54euDIsvMbbOKgKlfnCJ9BcifSYa2lLawGbK+L
+         Gd8vyrl9Vp44tqcUu06rRLCayuFhxYdACguuBoqno4mIm51Oygwgn548gbaMlY47JAHD
+         MXvw==
+X-Gm-Message-State: APjAAAU6LOzrMPs8qWIQD+9m3zRCWWr4b3zAeR8uuUu/PetKKze3eVtf
+        hGwBRmY/9gWpxNsJc8BD+pfnCC8yvSmX+g==
+X-Google-Smtp-Source: APXvYqwttrEuR67I1l5jtqayUCFQgJ/seMyIdj9/2yGP2ApsbeZg9b98OWLHuwolKIzOKTooyjPQTQ==
+X-Received: by 2002:a05:620a:22d1:: with SMTP id o17mr2667841qki.137.1579876458221;
+        Fri, 24 Jan 2020 06:34:18 -0800 (PST)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id d25sm3202786qkk.77.2020.01.24.06.34.13
+        by smtp.gmail.com with ESMTPSA id r13sm3289642qtt.70.2020.01.24.06.34.17
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 24 Jan 2020 06:34:13 -0800 (PST)
+        Fri, 24 Jan 2020 06:34:17 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     kernel-team@fb.com, linux-btrfs@vger.kernel.org
-Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 38/44] btrfs: use btrfs_put_fs_root to free roots always
-Date:   Fri, 24 Jan 2020 09:32:55 -0500
-Message-Id: <20200124143301.2186319-39-josef@toxicpanda.com>
+Subject: [PATCH 40/44] btrfs: free more things in btrfs_free_fs_info
+Date:   Fri, 24 Jan 2020 09:32:57 -0500
+Message-Id: <20200124143301.2186319-41-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.24.1
 In-Reply-To: <20200124143301.2186319-1-josef@toxicpanda.com>
 References: <20200124143301.2186319-1-josef@toxicpanda.com>
@@ -71,189 +70,196 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-If we are going to track leaked roots we need to free them all the same
-way, so don't kfree() roots directly, use btrfs_put_fs_root.
+Things like the percpu_counters, the mapping_tree, and the csum hash can
+all be free'd at btrfs_free_fs_info time, since the helpers all check if
+the structure has been init'ed already.  This significantly cleans up
+the error cases in open_ctree.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/disk-io.c           | 30 +++++++++++++++---------------
- fs/btrfs/free-space-tree.c   |  2 +-
- fs/btrfs/qgroup.c            |  4 ++--
- fs/btrfs/tests/btrfs-tests.c |  2 +-
- fs/btrfs/tree-log.c          |  8 ++++----
- 5 files changed, 23 insertions(+), 23 deletions(-)
+ fs/btrfs/disk-io.c | 60 +++++++++++++++++++---------------------------
+ 1 file changed, 24 insertions(+), 36 deletions(-)
 
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 433c29ddfca7..fa721ca1e732 100644
+index ac306807e5cd..d8adc9c6d8ea 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -1297,7 +1297,7 @@ struct btrfs_root *btrfs_create_tree(struct btrfs_trans_handle *trans,
- 		free_extent_buffer(root->commit_root);
- 		free_extent_buffer(leaf);
- 	}
--	kfree(root);
-+	btrfs_put_fs_root(root);
- 
- 	return ERR_PTR(ret);
+@@ -98,6 +98,12 @@ void __cold btrfs_end_io_wq_exit(void)
+ 	kmem_cache_destroy(btrfs_end_io_wq_cache);
  }
-@@ -1328,7 +1328,7 @@ static struct btrfs_root *alloc_log_tree(struct btrfs_trans_handle *trans,
- 	leaf = btrfs_alloc_tree_block(trans, root, 0, BTRFS_TREE_LOG_OBJECTID,
- 			NULL, 0, 0, 0);
- 	if (IS_ERR(leaf)) {
--		kfree(root);
-+		btrfs_put_fs_root(root);
- 		return ERR_CAST(leaf);
- 	}
  
-@@ -1431,7 +1431,7 @@ struct btrfs_root *btrfs_read_tree_root(struct btrfs_root *tree_root,
- 	return root;
++static void btrfs_free_csum_hash(struct btrfs_fs_info *fs_info)
++{
++	if (fs_info->csum_shash)
++		crypto_free_shash(fs_info->csum_shash);
++}
++
+ /*
+  * async submit bios are used to offload expensive checksumming
+  * onto the worker threads.  They checksum file and metadata bios
+@@ -1527,6 +1533,13 @@ int btrfs_insert_fs_root(struct btrfs_fs_info *fs_info,
  
- find_fail:
--	kfree(root);
-+	btrfs_put_fs_root(root);
- alloc_fail:
- 	root = ERR_PTR(ret);
- 	goto out;
-@@ -1527,17 +1527,17 @@ void btrfs_free_fs_info(struct btrfs_fs_info *fs_info)
+ void btrfs_free_fs_info(struct btrfs_fs_info *fs_info)
  {
++	percpu_counter_destroy(&fs_info->dirty_metadata_bytes);
++	percpu_counter_destroy(&fs_info->delalloc_bytes);
++	percpu_counter_destroy(&fs_info->dio_bytes);
++	percpu_counter_destroy(&fs_info->dev_replace.bio_counter);
++	btrfs_free_csum_hash(fs_info);
++	btrfs_free_stripe_hash_table(fs_info);
++	btrfs_free_ref_cache(fs_info);
  	kfree(fs_info->balance_ctl);
  	kfree(fs_info->delayed_root);
--	kfree(fs_info->extent_root);
--	kfree(fs_info->tree_root);
--	kfree(fs_info->chunk_root);
--	kfree(fs_info->dev_root);
--	kfree(fs_info->csum_root);
--	kfree(fs_info->quota_root);
--	kfree(fs_info->uuid_root);
--	kfree(fs_info->free_space_root);
-+	btrfs_put_fs_root(fs_info->extent_root);
-+	btrfs_put_fs_root(fs_info->tree_root);
-+	btrfs_put_fs_root(fs_info->chunk_root);
-+	btrfs_put_fs_root(fs_info->dev_root);
-+	btrfs_put_fs_root(fs_info->csum_root);
-+	btrfs_put_fs_root(fs_info->quota_root);
-+	btrfs_put_fs_root(fs_info->uuid_root);
-+	btrfs_put_fs_root(fs_info->free_space_root);
-+	btrfs_put_fs_root(fs_info->fs_root);
- 	kfree(fs_info->super_copy);
- 	kfree(fs_info->super_for_commit);
--	btrfs_put_fs_root(fs_info->fs_root);
- 	kvfree(fs_info);
- }
- 
-@@ -2223,12 +2223,12 @@ static int btrfs_replay_log(struct btrfs_fs_info *fs_info,
- 	if (IS_ERR(log_tree_root->node)) {
- 		btrfs_warn(fs_info, "failed to read log tree");
- 		ret = PTR_ERR(log_tree_root->node);
--		kfree(log_tree_root);
-+		btrfs_put_fs_root(log_tree_root);
- 		return ret;
- 	} else if (!extent_buffer_uptodate(log_tree_root->node)) {
- 		btrfs_err(fs_info, "failed to read log tree");
- 		free_extent_buffer(log_tree_root->node);
--		kfree(log_tree_root);
-+		btrfs_put_fs_root(log_tree_root);
- 		return -EIO;
- 	}
- 	/* returns with log_tree_root freed on success */
-@@ -2237,7 +2237,7 @@ static int btrfs_replay_log(struct btrfs_fs_info *fs_info,
- 		btrfs_handle_fs_error(fs_info, ret,
- 				      "Failed to recover log tree");
- 		free_extent_buffer(log_tree_root->node);
--		kfree(log_tree_root);
-+		btrfs_put_fs_root(log_tree_root);
- 		return ret;
- 	}
- 
-diff --git a/fs/btrfs/free-space-tree.c b/fs/btrfs/free-space-tree.c
-index 258cb3fae17a..c79804c30b17 100644
---- a/fs/btrfs/free-space-tree.c
-+++ b/fs/btrfs/free-space-tree.c
-@@ -1253,7 +1253,7 @@ int btrfs_clear_free_space_tree(struct btrfs_fs_info *fs_info)
- 
- 	free_extent_buffer(free_space_root->node);
- 	free_extent_buffer(free_space_root->commit_root);
--	kfree(free_space_root);
-+	btrfs_put_fs_root(free_space_root);
- 
- 	return btrfs_commit_transaction(trans);
- 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 98d9a50352d6..0845e56a1672 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -1040,7 +1040,7 @@ int btrfs_quota_enable(struct btrfs_fs_info *fs_info)
- 	if (ret) {
- 		free_extent_buffer(quota_root->node);
- 		free_extent_buffer(quota_root->commit_root);
--		kfree(quota_root);
-+		btrfs_put_fs_root(quota_root);
- 	}
- out:
- 	if (ret) {
-@@ -1106,7 +1106,7 @@ int btrfs_quota_disable(struct btrfs_fs_info *fs_info)
- 
- 	free_extent_buffer(quota_root->node);
- 	free_extent_buffer(quota_root->commit_root);
--	kfree(quota_root);
-+	btrfs_put_fs_root(quota_root);
- 
- end_trans:
- 	ret = btrfs_end_transaction(trans);
-diff --git a/fs/btrfs/tests/btrfs-tests.c b/fs/btrfs/tests/btrfs-tests.c
-index c12b91ff5f56..27f5b662d2cb 100644
---- a/fs/btrfs/tests/btrfs-tests.c
-+++ b/fs/btrfs/tests/btrfs-tests.c
-@@ -228,7 +228,7 @@ void btrfs_free_dummy_root(struct btrfs_root *root)
- 		/* One for allocate_extent_buffer */
- 		free_extent_buffer(root->node);
- 	}
--	kfree(root);
-+	btrfs_put_fs_root(root);
- }
- 
- struct btrfs_block_group *
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 5b05419a0f4c..f06ad415faf8 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -3284,7 +3284,7 @@ static void free_log_tree(struct btrfs_trans_handle *trans,
- 	clear_extent_bits(&log->dirty_log_pages, 0, (u64)-1,
- 			  EXTENT_DIRTY | EXTENT_NEW | EXTENT_NEED_WAIT);
- 	free_extent_buffer(log->node);
--	kfree(log);
-+	btrfs_put_fs_root(log);
- }
- 
- /*
-@@ -6138,7 +6138,7 @@ int btrfs_recover_log_trees(struct btrfs_root *log_root_tree)
- 							log->node->len);
- 			free_extent_buffer(log->node);
- 			free_extent_buffer(log->commit_root);
--			kfree(log);
-+			btrfs_put_fs_root(log);
- 
- 			if (!ret)
- 				goto next;
-@@ -6177,7 +6177,7 @@ int btrfs_recover_log_trees(struct btrfs_root *log_root_tree)
- 		btrfs_put_fs_root(wc.replay_dest);
- 		free_extent_buffer(log->node);
- 		free_extent_buffer(log->commit_root);
--		kfree(log);
-+		btrfs_put_fs_root(log);
- 
- 		if (ret)
- 			goto error;
-@@ -6211,7 +6211,7 @@ int btrfs_recover_log_trees(struct btrfs_root *log_root_tree)
- 	free_extent_buffer(log_root_tree->node);
- 	log_root_tree->log_root = NULL;
- 	clear_bit(BTRFS_FS_LOG_RECOVERING, &fs_info->flags);
--	kfree(log_root_tree);
-+	btrfs_put_fs_root(log_root_tree);
- 
+ 	btrfs_put_fs_root(fs_info->extent_root);
+@@ -2207,11 +2220,6 @@ static int btrfs_init_csum_hash(struct btrfs_fs_info *fs_info, u16 csum_type)
  	return 0;
- error:
+ }
+ 
+-static void btrfs_free_csum_hash(struct btrfs_fs_info *fs_info)
+-{
+-	crypto_free_shash(fs_info->csum_shash);
+-}
+-
+ static int btrfs_replay_log(struct btrfs_fs_info *fs_info,
+ 			    struct btrfs_fs_devices *fs_devices)
+ {
+@@ -2686,7 +2694,7 @@ int __cold open_ctree(struct super_block *sb,
+ 	ret = percpu_counter_init(&fs_info->dirty_metadata_bytes, 0, GFP_KERNEL);
+ 	if (ret) {
+ 		err = ret;
+-		goto fail_dio_bytes;
++		goto fail_srcu;
+ 	}
+ 	fs_info->dirty_metadata_batch = PAGE_SIZE *
+ 					(1 + ilog2(nr_cpu_ids));
+@@ -2694,14 +2702,14 @@ int __cold open_ctree(struct super_block *sb,
+ 	ret = percpu_counter_init(&fs_info->delalloc_bytes, 0, GFP_KERNEL);
+ 	if (ret) {
+ 		err = ret;
+-		goto fail_dirty_metadata_bytes;
++		goto fail_srcu;
+ 	}
+ 
+ 	ret = percpu_counter_init(&fs_info->dev_replace.bio_counter, 0,
+ 			GFP_KERNEL);
+ 	if (ret) {
+ 		err = ret;
+-		goto fail_delalloc_bytes;
++		goto fail_srcu;
+ 	}
+ 
+ 	INIT_RADIX_TREE(&fs_info->fs_roots_radix, GFP_ATOMIC);
+@@ -2769,7 +2777,7 @@ int __cold open_ctree(struct super_block *sb,
+ 	fs_info->btree_inode = new_inode(sb);
+ 	if (!fs_info->btree_inode) {
+ 		err = -ENOMEM;
+-		goto fail_bio_counter;
++		goto fail_srcu;
+ 	}
+ 	mapping_set_gfp_mask(fs_info->btree_inode->i_mapping, GFP_NOFS);
+ 
+@@ -2882,7 +2890,7 @@ int __cold open_ctree(struct super_block *sb,
+ 		btrfs_err(fs_info, "superblock checksum mismatch");
+ 		err = -EINVAL;
+ 		brelse(bh);
+-		goto fail_csum;
++		goto fail_alloc;
+ 	}
+ 
+ 	/*
+@@ -2919,11 +2927,11 @@ int __cold open_ctree(struct super_block *sb,
+ 	if (ret) {
+ 		btrfs_err(fs_info, "superblock contains fatal errors");
+ 		err = -EINVAL;
+-		goto fail_csum;
++		goto fail_alloc;
+ 	}
+ 
+ 	if (!btrfs_super_root(disk_super))
+-		goto fail_csum;
++		goto fail_alloc;
+ 
+ 	/* check FS state, whether FS is broken. */
+ 	if (btrfs_super_flags(disk_super) & BTRFS_SUPER_FLAG_ERROR)
+@@ -2938,7 +2946,7 @@ int __cold open_ctree(struct super_block *sb,
+ 	ret = btrfs_parse_options(fs_info, options, sb->s_flags);
+ 	if (ret) {
+ 		err = ret;
+-		goto fail_csum;
++		goto fail_alloc;
+ 	}
+ 
+ 	features = btrfs_super_incompat_flags(disk_super) &
+@@ -2948,7 +2956,7 @@ int __cold open_ctree(struct super_block *sb,
+ 		    "cannot mount because of unsupported optional features (%llx)",
+ 		    features);
+ 		err = -EINVAL;
+-		goto fail_csum;
++		goto fail_alloc;
+ 	}
+ 
+ 	features = btrfs_super_incompat_flags(disk_super);
+@@ -2992,7 +3000,7 @@ int __cold open_ctree(struct super_block *sb,
+ 		btrfs_err(fs_info,
+ "unequal nodesize/sectorsize (%u != %u) are not allowed for mixed block groups",
+ 			nodesize, sectorsize);
+-		goto fail_csum;
++		goto fail_alloc;
+ 	}
+ 
+ 	/*
+@@ -3008,7 +3016,7 @@ int __cold open_ctree(struct super_block *sb,
+ 	"cannot mount read-write because of unsupported optional features (%llx)",
+ 		       features);
+ 		err = -EINVAL;
+-		goto fail_csum;
++		goto fail_alloc;
+ 	}
+ 
+ 	ret = btrfs_init_workqueues(fs_info, fs_devices);
+@@ -3343,25 +3351,14 @@ int __cold open_ctree(struct super_block *sb,
+ fail_sb_buffer:
+ 	btrfs_stop_all_workers(fs_info);
+ 	btrfs_free_block_groups(fs_info);
+-fail_csum:
+-	btrfs_free_csum_hash(fs_info);
+ fail_alloc:
+ fail_iput:
+ 	btrfs_mapping_tree_free(&fs_info->mapping_tree);
+ 
+ 	iput(fs_info->btree_inode);
+-fail_bio_counter:
+-	percpu_counter_destroy(&fs_info->dev_replace.bio_counter);
+-fail_delalloc_bytes:
+-	percpu_counter_destroy(&fs_info->delalloc_bytes);
+-fail_dirty_metadata_bytes:
+-	percpu_counter_destroy(&fs_info->dirty_metadata_bytes);
+-fail_dio_bytes:
+-	percpu_counter_destroy(&fs_info->dio_bytes);
+ fail_srcu:
+ 	cleanup_srcu_struct(&fs_info->subvol_srcu);
+ fail:
+-	btrfs_free_stripe_hash_table(fs_info);
+ 	btrfs_close_devices(fs_info->fs_devices);
+ 	return err;
+ }
+@@ -4061,16 +4058,7 @@ void __cold close_ctree(struct btrfs_fs_info *fs_info)
+ 
+ 	btrfs_mapping_tree_free(&fs_info->mapping_tree);
+ 	btrfs_close_devices(fs_info->fs_devices);
+-
+-	percpu_counter_destroy(&fs_info->dirty_metadata_bytes);
+-	percpu_counter_destroy(&fs_info->delalloc_bytes);
+-	percpu_counter_destroy(&fs_info->dio_bytes);
+-	percpu_counter_destroy(&fs_info->dev_replace.bio_counter);
+ 	cleanup_srcu_struct(&fs_info->subvol_srcu);
+-
+-	btrfs_free_csum_hash(fs_info);
+-	btrfs_free_stripe_hash_table(fs_info);
+-	btrfs_free_ref_cache(fs_info);
+ }
+ 
+ int btrfs_buffer_uptodate(struct extent_buffer *buf, u64 parent_transid,
 -- 
 2.24.1
 

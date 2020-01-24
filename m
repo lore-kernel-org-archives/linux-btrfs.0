@@ -7,59 +7,59 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C3444C35242
-	for <linux-btrfs@archiver.kernel.org>; Fri, 24 Jan 2020 14:33:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0955AC32771
+	for <linux-btrfs@archiver.kernel.org>; Fri, 24 Jan 2020 14:33:50 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9AD9620661
-	for <linux-btrfs@archiver.kernel.org>; Fri, 24 Jan 2020 14:33:48 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D41FC2077C
+	for <linux-btrfs@archiver.kernel.org>; Fri, 24 Jan 2020 14:33:49 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="y+82Ja5f"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="RK8txTPJ"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2404579AbgAXOdp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 24 Jan 2020 09:33:45 -0500
-Received: from mail-qt1-f195.google.com ([209.85.160.195]:46616 "EHLO
-        mail-qt1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2404420AbgAXOdh (ORCPT
+        id S2391955AbgAXOds (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 24 Jan 2020 09:33:48 -0500
+Received: from mail-qk1-f196.google.com ([209.85.222.196]:46561 "EHLO
+        mail-qk1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2404581AbgAXOdq (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 24 Jan 2020 09:33:37 -0500
-Received: by mail-qt1-f195.google.com with SMTP id e25so1608038qtr.13
-        for <linux-btrfs@vger.kernel.org>; Fri, 24 Jan 2020 06:33:37 -0800 (PST)
+        Fri, 24 Jan 2020 09:33:46 -0500
+Received: by mail-qk1-f196.google.com with SMTP id g195so2152463qke.13
+        for <linux-btrfs@vger.kernel.org>; Fri, 24 Jan 2020 06:33:46 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references:mime-version
          :content-transfer-encoding;
-        bh=PP4dVMcgyT8OTB+vOohtLtUZzvbmwfUKl46nd4xdSyk=;
-        b=y+82Ja5ffKbcoj4aBWSDmZ8dZUmV0L3G8Y1qwrxx/JeX39zM9uxcndkxO5RexlI/FX
-         kDgzCBRYfypRATV8SpnzPtRb1iyCScvfFwGy52emG+8FR/naPBbwPyUdaQWGTGLDBWDG
-         4MB3mnkVZrq2BlSCnLGzyOWHH21qcP2723Vlim9B7NtIieTEi7OB09mArg3nfBNEx3c3
-         AXaUx4RpFrG3pyFO3buwd5EgiiTAuPN+QS1nSvzVWGRz+CBFFp6RClMJ48gEy7m/XvxO
-         JH7NlZAXEpjk3i1Vc6OWv7T6XRixX7G+xa+/NDlhXvRt8MGBDLxR2B3NLYMta1zKOPvP
-         OxQA==
+        bh=ZyvR/29E2jaJfcsrXDpaKI230YXqgH46fp1QGEE+fWU=;
+        b=RK8txTPJ9CxzuPDb7pXtJPFg098AdnH2bHyLBafbqvw9r5K0SKrCFy4TImhncmmhmy
+         o0ztnYTm+n38J29N6Y4ttf/rm705FfSA5SxbBmQx0AK9eq+SIfjOmo4KXfF9UI8bD01O
+         iMMeLV0XZ/NV3+kcPxaYTwASDq6pDrMt9E8fr2BnZ+GbvlurH87QWHnKopYtkdHJz446
+         7oEdxLTHaxik9txGW55iT0NGaWsDrSo4rNKuliWFaUmSu5fqmbCL9hh546qnHfs4ZSF+
+         qtRHbUFYziMev95fS7W47ngi9oD8BmoigMc9vyvI8ZuMOwf4pCAx03JQ6DG4KA/6TH/B
+         sljA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=PP4dVMcgyT8OTB+vOohtLtUZzvbmwfUKl46nd4xdSyk=;
-        b=tJe6RgRhwkbtH+NhTZ+zqyq8lsloortrFGhKtFVmwusGvd3Gi9B79htkXnZwCAMGsc
-         R2hZ7k53hKGn7MQTPkMBPJejvLQYt9jQ0/tJ8X/6EoWK2ivLC6A82yLG/Svjne4Ls7P3
-         s/z6ezfEx2Pyl5T6ElUVHHiN/gtiVcu/3A0gE3MiiWB4Ez0+G0wmb9dKWvzQOjL4MxfU
-         /RkQBoSKzYbfVVX07Q87RtKBV9XTmoGhk3BsCQu/rvT/O1NJFhE5NjNMoGXDOOxZdCvs
-         QipA/YyclwqFMbr/4v54N9Y3y1SOPPXDN79HirFrBVfUBPDC7tzyr3VaaPZdc4eL7l0u
-         k+Bg==
-X-Gm-Message-State: APjAAAU7yfMiWuMN3HZcIX6jFgD6O9g6zHRkMAAe+Nr9WxE73n868q29
-        C38GbiUVluxn0Wh52d2vjD2PJQ==
-X-Google-Smtp-Source: APXvYqxV+jUIUZhrHQCPWtnjJNCc+Pn5HYAAhHteXWAeQPStb6YUWr0k2fzLivoi2a5sW4uw79FRNA==
-X-Received: by 2002:ac8:7cb0:: with SMTP id z16mr2411754qtv.276.1579876416542;
-        Fri, 24 Jan 2020 06:33:36 -0800 (PST)
+        bh=ZyvR/29E2jaJfcsrXDpaKI230YXqgH46fp1QGEE+fWU=;
+        b=moKCgT4zWqcoSJJfGTmix9d/x7l0KGQZe0eM+n97se7sWLaNbsudbCIEVd/1x2mRuF
+         xyVqsKBd+pR5hfxgm0tEtNwrhnxhluO+q1PV++37+ToR3rtzSvYrptsv0p8zYnU4V3eA
+         PcJ1mfboX2LlvXZgpOlOaevDA5Z2ffMNMKtMLRiPpHkuySexs8rORJBJbEIiqc7We5g2
+         Ff71gc57mN24nYnhZh2wkPlMOGBT+FE+XUOjk5U5yAtbs3hQ06KHxcKKHti395Jrh1Iz
+         RNYB+8a83+nmXJjjr5RHHO2b8cxsqmJpVUc7ccx9fr/udgdhvRc8chzDCWmfEzfEPNbJ
+         ZdvA==
+X-Gm-Message-State: APjAAAWQ/M1k3AB3/fvByN4joK57WqSBvD5M5Jt12aak9fP2qSBTOwB9
+        1g1YXRw0j/cC38iWuxsQa6KEkQ==
+X-Google-Smtp-Source: APXvYqyjjPPUNyAMNj2Vd5H8Wao24Am+9qIE8vSir5mIb+RaB8q8UcgZ8ENZeNPfJDeFZ65rYNm2hw==
+X-Received: by 2002:a05:620a:20db:: with SMTP id f27mr2525339qka.78.1579876425367;
+        Fri, 24 Jan 2020 06:33:45 -0800 (PST)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id v55sm713492qtc.1.2020.01.24.06.33.35
+        by smtp.gmail.com with ESMTPSA id a24sm3117282qkl.82.2020.01.24.06.33.44
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 24 Jan 2020 06:33:35 -0800 (PST)
+        Fri, 24 Jan 2020 06:33:44 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     kernel-team@fb.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH 20/44] btrfs: hold ref on root in btrfs_ioctl_default_subvol
-Date:   Fri, 24 Jan 2020 09:32:37 -0500
-Message-Id: <20200124143301.2186319-21-josef@toxicpanda.com>
+Subject: [PATCH 25/44] btrfs: hold a ref on the root in find_data_references
+Date:   Fri, 24 Jan 2020 09:32:42 -0500
+Message-Id: <20200124143301.2186319-26-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.24.1
 In-Reply-To: <20200124143301.2186319-1-josef@toxicpanda.com>
 References: <20200124143301.2186319-1-josef@toxicpanda.com>
@@ -70,85 +70,40 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We look up an arbitrary fs root here, we need to hold a ref on the root
-for the duration.
+We're looking up the data references for the bytenr in a root, we need
+to hold a ref on that root while we're doing that.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/ioctl.c | 22 ++++++++++++++--------
- 1 file changed, 14 insertions(+), 8 deletions(-)
+ fs/btrfs/relocation.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 7d30c7821490..69c39b3d15a5 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -3987,7 +3987,7 @@ static long btrfs_ioctl_default_subvol(struct file *file, void __user *argp)
- 	struct btrfs_root *new_root;
- 	struct btrfs_dir_item *di;
- 	struct btrfs_trans_handle *trans;
--	struct btrfs_path *path;
-+	struct btrfs_path *path = NULL;
- 	struct btrfs_key location;
- 	struct btrfs_disk_key disk_key;
- 	u64 objectid = 0;
-@@ -4018,44 +4018,50 @@ static long btrfs_ioctl_default_subvol(struct file *file, void __user *argp)
- 		ret = PTR_ERR(new_root);
- 		goto out;
- 	}
--	if (!is_fstree(new_root->root_key.objectid)) {
-+	if (!btrfs_grab_fs_root(root)) {
- 		ret = -ENOENT;
- 		goto out;
- 	}
-+	if (!is_fstree(new_root->root_key.objectid)) {
-+		ret = -ENOENT;
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 9b61fdc89af7..0c75ae09a3a8 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -3708,7 +3708,11 @@ static int find_data_references(struct reloc_control *rc,
+ 	root = read_fs_root(fs_info, ref_root);
+ 	if (IS_ERR(root)) {
+ 		err = PTR_ERR(root);
+-		goto out;
 +		goto out_free;
 +	}
- 
- 	path = btrfs_alloc_path();
- 	if (!path) {
- 		ret = -ENOMEM;
--		goto out;
-+		goto out_free;
- 	}
- 	path->leave_spinning = 1;
- 
- 	trans = btrfs_start_transaction(root, 1);
- 	if (IS_ERR(trans)) {
--		btrfs_free_path(path);
- 		ret = PTR_ERR(trans);
--		goto out;
++	if (!btrfs_grab_fs_root(root)) {
++		err = -ENOENT;
 +		goto out_free;
  	}
  
- 	dir_id = btrfs_super_root_dir(fs_info->super_copy);
- 	di = btrfs_lookup_dir_item(trans, fs_info->tree_root, path,
- 				   dir_id, "default", 7, 1);
- 	if (IS_ERR_OR_NULL(di)) {
--		btrfs_free_path(path);
-+		btrfs_release_path(path);
- 		btrfs_end_transaction(trans);
- 		btrfs_err(fs_info,
- 			  "Umm, you don't have the default diritem, this isn't going to work");
- 		ret = -ENOENT;
--		goto out;
-+		goto out_free;
+ 	key.objectid = ref_objectid;
+@@ -3821,6 +3825,8 @@ static int find_data_references(struct reloc_control *rc,
+ 
  	}
- 
- 	btrfs_cpu_key_to_disk(&disk_key, &new_root->root_key);
- 	btrfs_set_dir_item_key(path->nodes[0], di, &disk_key);
- 	btrfs_mark_buffer_dirty(path->nodes[0]);
--	btrfs_free_path(path);
-+	btrfs_release_path(path);
- 
- 	btrfs_set_fs_incompat(fs_info, DEFAULT_SUBVOL);
- 	btrfs_end_transaction(trans);
-+out_free:
-+	btrfs_put_fs_root(new_root);
-+	btrfs_free_path(path);
  out:
- 	mnt_drop_write_file(file);
- 	return ret;
++	btrfs_put_fs_root(root);
++out_free:
+ 	btrfs_free_path(path);
+ 	return err;
+ }
 -- 
 2.24.1
 

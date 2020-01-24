@@ -7,59 +7,59 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4FAEEC35242
-	for <linux-btrfs@archiver.kernel.org>; Fri, 24 Jan 2020 14:34:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C2873C35242
+	for <linux-btrfs@archiver.kernel.org>; Fri, 24 Jan 2020 14:34:04 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 24BD520661
-	for <linux-btrfs@archiver.kernel.org>; Fri, 24 Jan 2020 14:34:00 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9913C2077C
+	for <linux-btrfs@archiver.kernel.org>; Fri, 24 Jan 2020 14:34:04 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="EcYeQXXP"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="oRRHd2ZS"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2391201AbgAXOd7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 24 Jan 2020 09:33:59 -0500
-Received: from mail-qv1-f67.google.com ([209.85.219.67]:45023 "EHLO
+        id S2404639AbgAXOeC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 24 Jan 2020 09:34:02 -0500
+Received: from mail-qv1-f67.google.com ([209.85.219.67]:36871 "EHLO
         mail-qv1-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2388120AbgAXOd5 (ORCPT
+        with ESMTP id S2404591AbgAXOeB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 24 Jan 2020 09:33:57 -0500
-Received: by mail-qv1-f67.google.com with SMTP id n8so970005qvg.11
-        for <linux-btrfs@vger.kernel.org>; Fri, 24 Jan 2020 06:33:57 -0800 (PST)
+        Fri, 24 Jan 2020 09:34:01 -0500
+Received: by mail-qv1-f67.google.com with SMTP id f16so983132qvi.4
+        for <linux-btrfs@vger.kernel.org>; Fri, 24 Jan 2020 06:34:01 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references:mime-version
          :content-transfer-encoding;
-        bh=4adHR5F024ZCFETalNl7qYodPCR2rclkM9ufEryDrI4=;
-        b=EcYeQXXP+rfA0o6IxiKn8mmKQ4jK3Wqw/O2qSk6+yoKxLlDYJmSTxMFJZrPnJ4tC16
-         WenrTS51etCyB/hw+7S3F+pxiov1KHt4SklWCsgRzG5Rym6yIMuwTWUzADbndukID0WC
-         P6YtxHm+KZEA2WZAVabYvRIC+GHYYqwhyZNmeuLGlq5lMXASxUShzgLRDJgBxPvM+O6g
-         pQQhUpLGaxiPz8E6/ZR9EbmuP2hILXGrtf9NZwbMNZXtbvNUIFce1zmMz4rb3tN9w1Jt
-         4GuEZk/YtPrBZt6bLc9e+ygHQGXMSTtGVfr+IDRW9N3YYjv1bw1CfkrGs/YTX0dfEwVC
-         R+OQ==
+        bh=v3jy/bucDHb1mxW6er9m37yXCMVg9C8Ly2cHcVVVXag=;
+        b=oRRHd2ZSLlbBOFg70OvhtuuF1mK5Xpi38c2ky89qMMeEmYbOX7qS5iMWX/K9Vl0wYG
+         77rnxKra5OYP1DyERCg4zeerP6m/uqdT9fsVKwAmE3kdOhuExA5xrz+aK3vQMHBHcdqz
+         2UJftnNnK+kTsUyi+ZLVOiyBWr82UIoi9pr85vT4dhWIUKJRD6v92X+8LDYemiHhMO/k
+         VtUeIc0TiwmUVNMW0yrOeDLMFezCuq2OzBQMjgAvXfq67r95Af+54RBLg1IGinecO/Bp
+         zlSxUCy2mi+X+DW7v8f02SyAe2ovzSTyYkb/67Fd0GtI2a3sULexVQgvXgRRftPndvBT
+         nWKg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=4adHR5F024ZCFETalNl7qYodPCR2rclkM9ufEryDrI4=;
-        b=I4HohjKPe1awFEUWjhekuNcKoVhSvYvxgbvnA9adS4HqGzLlfOqfxwgjR7l/ul2+i1
-         flRvQaAtRmFJyTQqKHjY4dHjwi4E8aHFBs2EWgL2O7AbR0/9FyZ4xYVXK05abd5oy677
-         23b8QvMlh1Btu5rMwy+kadK+zCH1qkZ3nsHnub01C2oG7pxf2LgdQi4jRl2K2tb39k/1
-         oqX7RElSMvcmYmXTkVr9PSNFEYGvc4dcQsjNj/n/qB7VsMTo9un142HgCc7gYrE7zpIi
-         yLQdprGzLrYxPJM3ePHdNmPqig25SBdqwFIEmxTZg3ily/Y3SYHLo4MpThoEhRBmu1EI
-         PVuQ==
-X-Gm-Message-State: APjAAAX2y9LC0ok0d2s+M9yd+4Iw3MjEr/zBWJV/mT0YzAAxS2CqzEbn
-        +nk+C2awYfH2V2Pc91+Ct26LTm9uAPYo7A==
-X-Google-Smtp-Source: APXvYqxr9CiTf6K0C9HJMYfbYUKUMoc2bS0G1chMiz1Lb5OjoaUW7cqRZg4uChnoD5AY8bYVN9zu7Q==
-X-Received: by 2002:ad4:496f:: with SMTP id p15mr2905547qvy.191.1579876436570;
-        Fri, 24 Jan 2020 06:33:56 -0800 (PST)
+        bh=v3jy/bucDHb1mxW6er9m37yXCMVg9C8Ly2cHcVVVXag=;
+        b=bIHn/+9Pmgk3NvIeVmFQzi1xZLQ8FfAOAQtx3+BZolKCqoZAhQrviqdN5leopHN3bu
+         8M2bXSUjD7MF3qOv8M7tWq8nTkksBh0FRlxCUbpuzxTXIAVo43u9uA2yw7ru7hgpO9/w
+         lQXPaLvpkxh72YASaKcUIDQQDL4XFNQNsWOdBBQNkjYZMbW5MdZTrr9hINnHcXEzganx
+         eSHW1Kk0iPYm4PsqYzQhLG8YxMoDK6QiKTKG9LgQXQzRh3iYT8uyBCtO0D/mYSYhvg6V
+         HZ4t41DYIogMk4dOHjA6NUofKGLJ1Hv5Oy9jafw+bbirybJGc1pXPZ4PgOpG+cx9eo0I
+         mhrA==
+X-Gm-Message-State: APjAAAXyGXMy9gTkTKawvCuzEZU9+N/+iJmP6vvjs30IqTnw37bvEZIJ
+        JHfNqmjmEtvyPjv/TEw7mUwXsWaBnmJZLA==
+X-Google-Smtp-Source: APXvYqyiIDv4PxTtwydJWapt/rMVhGeDIZ8/nsp2JjS0CRt4mtSKfWcPMScrQrF4RcJRESYTjHI1aw==
+X-Received: by 2002:a05:6214:13a3:: with SMTP id h3mr3060286qvz.212.1579876440654;
+        Fri, 24 Jan 2020 06:34:00 -0800 (PST)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id z5sm3309852qts.64.2020.01.24.06.33.55
+        by smtp.gmail.com with ESMTPSA id f28sm1336368qkk.130.2020.01.24.06.33.59
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 24 Jan 2020 06:33:55 -0800 (PST)
+        Fri, 24 Jan 2020 06:34:00 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     kernel-team@fb.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH 30/44] btrfs: hold a ref on the root in scrub_print_warning_inode
-Date:   Fri, 24 Jan 2020 09:32:47 -0500
-Message-Id: <20200124143301.2186319-31-josef@toxicpanda.com>
+Subject: [PATCH 32/44] btrfs: hold a ref on the root in get_subvol_name_from_objectid
+Date:   Fri, 24 Jan 2020 09:32:49 -0500
+Message-Id: <20200124143301.2186319-33-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.24.1
 In-Reply-To: <20200124143301.2186319-1-josef@toxicpanda.com>
 References: <20200124143301.2186319-1-josef@toxicpanda.com>
@@ -70,53 +70,63 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We look up the root for the bytenr that is failing, so we need to hold a
-ref on the root for that operation.
+We lookup the name of a subvol which means we'll cross into different
+roots.  Hold a ref while we're doing the look ups in the fs_root we're
+searching.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/scrub.c | 7 +++++++
- 1 file changed, 7 insertions(+)
+ fs/btrfs/super.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index b5f420456439..f9ee327d7978 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -658,6 +658,10 @@ static int scrub_print_warning_inode(u64 inum, u64 offset, u64 root,
- 		ret = PTR_ERR(local_root);
- 		goto err;
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 3118bc01321e..5c3a1b7de6ee 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1101,6 +1101,10 @@ static char *get_subvol_name_from_objectid(struct btrfs_fs_info *fs_info,
+ 			ret = PTR_ERR(fs_root);
+ 			goto err;
+ 		}
++		if (!btrfs_grab_fs_root(fs_root)) {
++			ret = -ENOENT;
++			goto err;
++		}
+ 
+ 		/*
+ 		 * Walk up the filesystem tree by inode refs until we hit the
+@@ -1113,13 +1117,16 @@ static char *get_subvol_name_from_objectid(struct btrfs_fs_info *fs_info,
+ 
+ 			ret = btrfs_search_slot(NULL, fs_root, &key, path, 0, 0);
+ 			if (ret < 0) {
++				btrfs_put_fs_root(fs_root);
+ 				goto err;
+ 			} else if (ret > 0) {
+ 				ret = btrfs_previous_item(fs_root, path, dirid,
+ 							  BTRFS_INODE_REF_KEY);
+ 				if (ret < 0) {
++					btrfs_put_fs_root(fs_root);
+ 					goto err;
+ 				} else if (ret > 0) {
++					btrfs_put_fs_root(fs_root);
+ 					ret = -ENOENT;
+ 					goto err;
+ 				}
+@@ -1136,6 +1143,7 @@ static char *get_subvol_name_from_objectid(struct btrfs_fs_info *fs_info,
+ 			ptr -= len + 1;
+ 			if (ptr < name) {
+ 				ret = -ENAMETOOLONG;
++				btrfs_put_fs_root(fs_root);
+ 				goto err;
+ 			}
+ 			read_extent_buffer(path->nodes[0], ptr + 1,
+@@ -1143,6 +1151,7 @@ static char *get_subvol_name_from_objectid(struct btrfs_fs_info *fs_info,
+ 			ptr[0] = '/';
+ 			btrfs_release_path(path);
+ 		}
++		btrfs_put_fs_root(fs_root);
  	}
-+	if (!btrfs_grab_fs_root(local_root)) {
-+		ret = -ENOENT;
-+		goto err;
-+	}
  
- 	/*
- 	 * this makes the path point to (inum INODE_ITEM ioff)
-@@ -668,6 +672,7 @@ static int scrub_print_warning_inode(u64 inum, u64 offset, u64 root,
- 
- 	ret = btrfs_search_slot(NULL, local_root, &key, swarn->path, 0, 0);
- 	if (ret) {
-+		btrfs_put_fs_root(local_root);
- 		btrfs_release_path(swarn->path);
- 		goto err;
- 	}
-@@ -688,6 +693,7 @@ static int scrub_print_warning_inode(u64 inum, u64 offset, u64 root,
- 	ipath = init_ipath(4096, local_root, swarn->path);
- 	memalloc_nofs_restore(nofs_flag);
- 	if (IS_ERR(ipath)) {
-+		btrfs_put_fs_root(local_root);
- 		ret = PTR_ERR(ipath);
- 		ipath = NULL;
- 		goto err;
-@@ -711,6 +717,7 @@ static int scrub_print_warning_inode(u64 inum, u64 offset, u64 root,
- 				  min(isize - offset, (u64)PAGE_SIZE), nlink,
- 				  (char *)(unsigned long)ipath->fspath->val[i]);
- 
-+	btrfs_put_fs_root(local_root);
- 	free_ipath(ipath);
- 	return 0;
- 
+ 	btrfs_free_path(path);
 -- 
 2.24.1
 

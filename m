@@ -7,59 +7,59 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A483FC2D0DB
-	for <linux-btrfs@archiver.kernel.org>; Fri, 24 Jan 2020 14:34:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 84596C35242
+	for <linux-btrfs@archiver.kernel.org>; Fri, 24 Jan 2020 14:34:15 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 7B04E2077C
-	for <linux-btrfs@archiver.kernel.org>; Fri, 24 Jan 2020 14:34:14 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 59E80206F0
+	for <linux-btrfs@archiver.kernel.org>; Fri, 24 Jan 2020 14:34:15 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="aHknNs1v"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="t4QlFf9/"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2404667AbgAXOeK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 24 Jan 2020 09:34:10 -0500
-Received: from mail-qt1-f195.google.com ([209.85.160.195]:42101 "EHLO
+        id S2391539AbgAXOeO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 24 Jan 2020 09:34:14 -0500
+Received: from mail-qt1-f195.google.com ([209.85.160.195]:41335 "EHLO
         mail-qt1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2390638AbgAXOeJ (ORCPT
+        with ESMTP id S2388226AbgAXOeM (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 24 Jan 2020 09:34:09 -0500
-Received: by mail-qt1-f195.google.com with SMTP id j5so1625474qtq.9
-        for <linux-btrfs@vger.kernel.org>; Fri, 24 Jan 2020 06:34:08 -0800 (PST)
+        Fri, 24 Jan 2020 09:34:12 -0500
+Received: by mail-qt1-f195.google.com with SMTP id k40so1626636qtk.8
+        for <linux-btrfs@vger.kernel.org>; Fri, 24 Jan 2020 06:34:11 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references:mime-version
          :content-transfer-encoding;
-        bh=7dXPcLtcCSCDRGETr4vm+QgKm0KbD9S2RIf4ehLy/AM=;
-        b=aHknNs1vYy4c796nT4joO5f+xrpJX44v66v4fQ/nSWRNNUqxqIR967pid6byoAIvRb
-         qZ9YzUWhtmnXmuBkXEyQk6hgkquuhFpxImLh66aCqjJZFyeQKlBy+2r3fO3N+YC5NZ3b
-         Glrkai+Kx/7Ee8A0ZbK4L8AJ+p8brqha3N5Iw/35syr98AGVIRtBeecY5cgCI9DWJ4/U
-         2eN5J4aPTZ6XNdhnk9MdIOuTxn7LW4nqi5JYuPR0wuLaKEGJ+o6A5uoHJqIp/ApsBtDl
-         0lpDp6BDLqTyhc2uitUnKGIlo+nQIyGu5a683TKtlkjrqDUux8Zdkr/WHOh8jtt/Kkby
-         b5lg==
+        bh=Y98z689vOUInjSVPqNQnpoOFgpKnVs7895GrjYLrbYM=;
+        b=t4QlFf9/vv/xp1t8Mj85TlpAL5MrKUMWgH/ZSlPIghRYcGvWilphuk6W2Srjl6hKvh
+         Vn4SRQbSmEo0OgVp/1xrbsTSf+MP9KHbs7dL+Z9z3V60cpmO+avp3/My8PtQNCEgVKsh
+         skL7iTgckMkYbdN1V8mw4gXJXXfuCmrwB3SS+vuCZmP24is8MfbafUsmpdpNMXa+/h8I
+         jb4vS534K5NcUBlZX6atRwkGwurWssSzqTFljgatwUph549KmpcZpju/ibVMt7WmB4m9
+         Bp6qRDBt7eFkAlNhgXxf2y2Kmuuj+O2dTyvmWWWH4KQrsBtgy4Hb4NBXFXucJKOYYiDp
+         aPag==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=7dXPcLtcCSCDRGETr4vm+QgKm0KbD9S2RIf4ehLy/AM=;
-        b=ObPpy6dMfiZTfDrmc1m2IZne0kxq3O4bcXxtj1IXv2FES1+59powqCL+O5K40CsCB2
-         cW4HovAbZp3zniOfxRWvgYqV6AgcKcr1cDsSKrTnZfWiun844iEqp+ov7bn+64bKeObW
-         S0mdap69y8SGCz8r99h6tnZsSjL3KElxQyjpjtfTMwsKjLtfm5nV8QqIqmPkJbjrVRqc
-         FL2FvaYOoyr/zDui7mfdOWq8U9so/ksCMPWG5DD9MnhYJFWr6E1UbS7VGprHkTajRxDe
-         uLyldcwxJGdPNEDFEpWVed02Q0EGhuUpicQLLzB8otK3gw/OuxySGwAxBQJrzaZNtyHM
-         RImw==
-X-Gm-Message-State: APjAAAXH+wUnL+hsmeHTiSIILGc4jnLcW8BR/kb/+F+uhMqqERItDYbF
-        gceom9KGdKcaqRobq+LJtUrK2Q==
-X-Google-Smtp-Source: APXvYqxPepp8gJYxm/GoWW3ZccToAAQWSTJl8A4cIxMPR5/GN+Nz0+Dgt2iDFPFzeNP+aOp/VuyWkw==
-X-Received: by 2002:ac8:43ce:: with SMTP id w14mr2366286qtn.256.1579876448040;
-        Fri, 24 Jan 2020 06:34:08 -0800 (PST)
+        bh=Y98z689vOUInjSVPqNQnpoOFgpKnVs7895GrjYLrbYM=;
+        b=YCqDIEaNqUMzTSXLZkJqkfoUDG8s4aAgunG0hmopUxALhzCmbQqfLKxoXIjUvHGxw7
+         FzEiyuwM2lEptjGaJirTf3mcMnI0+VrarA0MI2L+hvMqAPnxeibB1Pbs2Z4ZigNnD20Z
+         Oji5nda3/4C0dvIgfXTZoG/k086UKbyOEWVJ7h4wZlurGoHxwDKx3xdbVoLgdVbPmSja
+         Ufd0T5qLSTzJetXveHaOcZl1upPRUquPLG8yKHOB3+5m3gJEZo15C1BGG/zaa0MjDndV
+         l/VIaXj7LXHtMN5TLmVABdZmhzFVXVBhEwO7UBElDhMtpNjZkJS0SaNBuwefEgtxDyUw
+         pvsQ==
+X-Gm-Message-State: APjAAAUNyI3gGtfj5WY7DoSE6bkgUtqBft+44aJnSuOmXAd1gJtHkoqa
+        Lg0NEgoXWPMUr15lZ8B59C4cbFGChr7zwg==
+X-Google-Smtp-Source: APXvYqxUYnChIyAR1kNyqwLGkxRS5P8SGzzFfBLbT63cFyyOtSkdpbr8WJGGjMBVl1S0b3dnp7hOyA==
+X-Received: by 2002:ac8:4244:: with SMTP id r4mr2373583qtm.169.1579876451451;
+        Fri, 24 Jan 2020 06:34:11 -0800 (PST)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id t29sm2995410qkm.27.2020.01.24.06.34.07
+        by smtp.gmail.com with ESMTPSA id w23sm3188164qto.97.2020.01.24.06.34.10
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 24 Jan 2020 06:34:07 -0800 (PST)
+        Fri, 24 Jan 2020 06:34:10 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     kernel-team@fb.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH 35/44] btrfs: hold a ref on the root in btrfs_check_uuid_tree_entry
-Date:   Fri, 24 Jan 2020 09:32:52 -0500
-Message-Id: <20200124143301.2186319-36-josef@toxicpanda.com>
+Subject: [PATCH 37/44] btrfs: hold a ref on the root in open_ctree
+Date:   Fri, 24 Jan 2020 09:32:54 -0500
+Message-Id: <20200124143301.2186319-38-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.24.1
 In-Reply-To: <20200124143301.2186319-1-josef@toxicpanda.com>
 References: <20200124143301.2186319-1-josef@toxicpanda.com>
@@ -70,38 +70,40 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We lookup the uuid of arbitrary subvolumes, hold a ref on the root while
-we're doing this.
+We lookup the fs_root and put it in our fs_info directly, we should hold
+a ref on this root for the lifetime of the fs_info.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/volumes.c | 6 +++++-
- 1 file changed, 5 insertions(+), 1 deletion(-)
+ fs/btrfs/disk-io.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index ce3eff93c366..527b0b41ebdc 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -4382,6 +4382,10 @@ static int btrfs_check_uuid_tree_entry(struct btrfs_fs_info *fs_info,
- 			ret = 1;
- 		goto out;
- 	}
-+	if (!btrfs_grab_fs_root(subvol_root)) {
-+		ret = 1;
-+		goto out;
-+	}
- 
- 	switch (type) {
- 	case BTRFS_UUID_KEY_SUBVOL:
-@@ -4394,7 +4398,7 @@ static int btrfs_check_uuid_tree_entry(struct btrfs_fs_info *fs_info,
- 			ret = 1;
- 		break;
- 	}
--
-+	btrfs_put_fs_root(subvol_root);
- out:
- 	return ret;
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index c605be6ba889..433c29ddfca7 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1537,6 +1537,7 @@ void btrfs_free_fs_info(struct btrfs_fs_info *fs_info)
+ 	kfree(fs_info->free_space_root);
+ 	kfree(fs_info->super_copy);
+ 	kfree(fs_info->super_for_commit);
++	btrfs_put_fs_root(fs_info->fs_root);
+ 	kvfree(fs_info);
  }
+ 
+@@ -3203,6 +3204,13 @@ int __cold open_ctree(struct super_block *sb,
+ 		goto fail_qgroup;
+ 	}
+ 
++	if (!btrfs_grab_fs_root(fs_info->fs_root)) {
++		fs_info->fs_root = NULL;
++		err = -ENOENT;
++		btrfs_warn(fs_info, "failed to grab a ref on the fs tree");
++		goto fail_qgroup;
++	}
++
+ 	if (sb_rdonly(sb))
+ 		return 0;
+ 
 -- 
 2.24.1
 

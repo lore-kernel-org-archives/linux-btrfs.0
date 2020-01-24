@@ -7,59 +7,60 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E1B32C2D0DB
-	for <linux-btrfs@archiver.kernel.org>; Fri, 24 Jan 2020 14:34:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 707A8C2D0DB
+	for <linux-btrfs@archiver.kernel.org>; Fri, 24 Jan 2020 14:34:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B8AB02077C
-	for <linux-btrfs@archiver.kernel.org>; Fri, 24 Jan 2020 14:34:15 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 35E2B2077C
+	for <linux-btrfs@archiver.kernel.org>; Fri, 24 Jan 2020 14:34:17 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="CXb2dltM"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="cEAC4IfT"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2392016AbgAXOeP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 24 Jan 2020 09:34:15 -0500
-Received: from mail-qt1-f196.google.com ([209.85.160.196]:43722 "EHLO
-        mail-qt1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2404665AbgAXOeK (ORCPT
+        id S2390119AbgAXOeQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 24 Jan 2020 09:34:16 -0500
+Received: from mail-qt1-f194.google.com ([209.85.160.194]:37311 "EHLO
+        mail-qt1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2387506AbgAXOeP (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 24 Jan 2020 09:34:10 -0500
-Received: by mail-qt1-f196.google.com with SMTP id d18so1619568qtj.10
-        for <linux-btrfs@vger.kernel.org>; Fri, 24 Jan 2020 06:34:10 -0800 (PST)
+        Fri, 24 Jan 2020 09:34:15 -0500
+Received: by mail-qt1-f194.google.com with SMTP id w47so1641556qtk.4
+        for <linux-btrfs@vger.kernel.org>; Fri, 24 Jan 2020 06:34:14 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:subject:date:message-id:in-reply-to:references:mime-version
-         :content-transfer-encoding;
-        bh=gDXEsKWmN9OUY0khkSOaMhJZiAuwsok1866a6a1RcM4=;
-        b=CXb2dltM7fNjKeqszjuW4fAsK1NEqjk2+J4JRs/cpXEVgF1xxCsIDnAOEQE1815nIr
-         7QtfCNxq8sAYTea4IcyRPz94ipgPr/lUvi5wYeOcXYLQICbAzAVWvXlCM4z3pex3z65Z
-         YT7elYrHWXg8W6WCWRLtCPyvILkvvZDvwnmG0OIXrO748Mp3knCMmCygK+fO25DcWm+z
-         gwjV0Lrp49EBzEE1L4y9+8Mm4Q/+G+086qx9VbIteQ7jrp/GEw9Om56IbBjWJmRtL5GZ
-         YY+d6vY+jARRLjk1OeFgS9xTzUqkI90snGLPSQNwjnrP7lnc9+JNiaKZIHzxMIoLQl5v
-         g4fg==
+        h=from:to:cc:subject:date:message-id:in-reply-to:references
+         :mime-version:content-transfer-encoding;
+        bh=BKRM1g67Pfr98mDQPNb6bIGdHJzZfFefgMZbElHLyuk=;
+        b=cEAC4IfTJyqxq8DuVukzdrZlzW98HsJq2mwUQL8ayIW6SmkuPaenwM/kTddMb3mS5u
+         3l+uUDon3MEo9iqCwTxehl4bQGWkb4UlfCLA+IvGwzb0ORi6Fx3/ThHhNsP1WNCLB5tn
+         PyjdJWRYpXZog4b+PAzLlsW7DtTxR95vR/cHYOAYqrkKReWOr+hGyzL3PfKNOICHbWvH
+         xYX3dk6TwlYMcJEsFnX+fPJmYpg+nE998y07t46mL1wouf7crLAfzh12SvF5Tc8aRIjJ
+         RqWM6zs3cXi+Ks+/fMJRxqwzowmOnKGKkbGruyUNmO4V103i2S50E/D69bYI7uP2JtB2
+         1TbQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=gDXEsKWmN9OUY0khkSOaMhJZiAuwsok1866a6a1RcM4=;
-        b=jpJvxU3w/kztV2QAfjdlxQuCBz2lsUmI6BaWUL2AzqOvYhyTyX7qg+mj1a0hmJv2d0
-         +x9try+jk+WFzI1z2ou5qu/mC2RnwYVKKByxGDJb3EqeDfvpftMWYDBUuK/XNZMlLX4u
-         hhQY1wD6e2O0Ex0giYDdjTt2m+QcAjR86qNC5kPbUcMS3RGJStMjrEmzE0kKWZtg7yRX
-         yaSQhZvuvkZO2wzpZyPnbAqdmoXWcAH/CGaj1OZWiQyy7AsStXguLcyZbAVi+1BYuwQq
-         d5yo82DXcsHJg9mtuboZHAobxtg68GmCrbYOatffdcHAKDQQlSBIqskBZC0rCm3scMlZ
-         eEqg==
-X-Gm-Message-State: APjAAAVihz+wIUS28aG368+oHHpZHC2BA1bc9UWb0w+IN0zPhQUIGFdD
-        uVZnb7uIBtG/RunNNzm5fiVV0Vbr4ZZ+dA==
-X-Google-Smtp-Source: APXvYqwQlfe0x6a2oEjsKJ2Rxo29po1s4CejJ4Ol4596iuje/2twXi8JmRIU7wwezKav3LB18greKw==
-X-Received: by 2002:ac8:5548:: with SMTP id o8mr2466561qtr.338.1579876449744;
-        Fri, 24 Jan 2020 06:34:09 -0800 (PST)
+        bh=BKRM1g67Pfr98mDQPNb6bIGdHJzZfFefgMZbElHLyuk=;
+        b=OxTKe09jnTcwP008ADwxpVeuJ196SDLiczPN/bRySeYT00xJMGaRive/Ehn8LqfRy2
+         aGP+sLWyreR1t8KV28mTU/k+KldRg563GHI9ZxAnubOpWOlGVJXhByaXzpVLckSZb1Br
+         21kRNUIKadGy5aJEarBilLNNaULyoIXy5pqDsmB6lo679Shiq88rUkHk0l0g5tOrCjwM
+         ZF325J6+Ev3vdH8FT780fUiHR38meZGX/vtyTtdtRFaUKVc/72oBVt241duE7vR18nXh
+         0Dcui7Ugmn4A+3hYEho8uaNL74E4Tmq1q/fKx6kGfNEIumxQ1gVycaEM9jQKYeRoKFQE
+         Tn8g==
+X-Gm-Message-State: APjAAAWzgDfLFwjA7JxidLV0ep0LmGu5oBtP8azPNlCiCyF7vk776KPR
+        s4+WYZSy70zXoHydPgHSGdoq5oQ7S3KLnA==
+X-Google-Smtp-Source: APXvYqzRreib0lksksIdgEqL6/nqDxr+Y6uCkd/7iyGZ5Rbz5THRwf97SaEzSeQtczDPHMeseCSB3Q==
+X-Received: by 2002:ac8:22fd:: with SMTP id g58mr2371837qta.125.1579876454038;
+        Fri, 24 Jan 2020 06:34:14 -0800 (PST)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id t38sm3485352qta.78.2020.01.24.06.34.08
+        by smtp.gmail.com with ESMTPSA id d25sm3202786qkk.77.2020.01.24.06.34.13
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 24 Jan 2020 06:34:09 -0800 (PST)
+        Fri, 24 Jan 2020 06:34:13 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     kernel-team@fb.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH 36/44] btrfs: move free_fs_info
-Date:   Fri, 24 Jan 2020 09:32:53 -0500
-Message-Id: <20200124143301.2186319-37-josef@toxicpanda.com>
+Cc:     Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH 38/44] btrfs: use btrfs_put_fs_root to free roots always
+Date:   Fri, 24 Jan 2020 09:32:55 -0500
+Message-Id: <20200124143301.2186319-39-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.24.1
 In-Reply-To: <20200124143301.2186319-1-josef@toxicpanda.com>
 References: <20200124143301.2186319-1-josef@toxicpanda.com>
@@ -70,30 +71,54 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We're going to start freeing roots and doing other complicated things in
-free_fs_info, so we need to move it to disk-io.c and export it in order
-to use things lik btrfs_put_fs_root().
+If we are going to track leaked roots we need to free them all the same
+way, so don't kfree() roots directly, use btrfs_put_fs_root.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/ctree.h   | 17 -----------------
- fs/btrfs/disk-io.c | 18 ++++++++++++++++++
- fs/btrfs/disk-io.h |  1 +
- fs/btrfs/super.c   |  6 +++---
- 4 files changed, 22 insertions(+), 20 deletions(-)
+ fs/btrfs/disk-io.c           | 30 +++++++++++++++---------------
+ fs/btrfs/free-space-tree.c   |  2 +-
+ fs/btrfs/qgroup.c            |  4 ++--
+ fs/btrfs/tests/btrfs-tests.c |  2 +-
+ fs/btrfs/tree-log.c          |  8 ++++----
+ 5 files changed, 23 insertions(+), 23 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index f90b82050d2d..68510af4cacf 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2697,23 +2697,6 @@ static inline int btrfs_need_cleaner_sleep(struct btrfs_fs_info *fs_info)
- 	return fs_info->sb->s_flags & SB_RDONLY || btrfs_fs_closing(fs_info);
- }
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 433c29ddfca7..fa721ca1e732 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1297,7 +1297,7 @@ struct btrfs_root *btrfs_create_tree(struct btrfs_trans_handle *trans,
+ 		free_extent_buffer(root->commit_root);
+ 		free_extent_buffer(leaf);
+ 	}
+-	kfree(root);
++	btrfs_put_fs_root(root);
  
--static inline void free_fs_info(struct btrfs_fs_info *fs_info)
--{
--	kfree(fs_info->balance_ctl);
--	kfree(fs_info->delayed_root);
+ 	return ERR_PTR(ret);
+ }
+@@ -1328,7 +1328,7 @@ static struct btrfs_root *alloc_log_tree(struct btrfs_trans_handle *trans,
+ 	leaf = btrfs_alloc_tree_block(trans, root, 0, BTRFS_TREE_LOG_OBJECTID,
+ 			NULL, 0, 0, 0);
+ 	if (IS_ERR(leaf)) {
+-		kfree(root);
++		btrfs_put_fs_root(root);
+ 		return ERR_CAST(leaf);
+ 	}
+ 
+@@ -1431,7 +1431,7 @@ struct btrfs_root *btrfs_read_tree_root(struct btrfs_root *tree_root,
+ 	return root;
+ 
+ find_fail:
+-	kfree(root);
++	btrfs_put_fs_root(root);
+ alloc_fail:
+ 	root = ERR_PTR(ret);
+ 	goto out;
+@@ -1527,17 +1527,17 @@ void btrfs_free_fs_info(struct btrfs_fs_info *fs_info)
+ {
+ 	kfree(fs_info->balance_ctl);
+ 	kfree(fs_info->delayed_root);
 -	kfree(fs_info->extent_root);
 -	kfree(fs_info->tree_root);
 -	kfree(fs_info->chunk_root);
@@ -102,86 +127,133 @@ index f90b82050d2d..68510af4cacf 100644
 -	kfree(fs_info->quota_root);
 -	kfree(fs_info->uuid_root);
 -	kfree(fs_info->free_space_root);
--	kfree(fs_info->super_copy);
--	kfree(fs_info->super_for_commit);
--	kvfree(fs_info);
--}
--
- /* tree mod log functions from ctree.c */
- u64 btrfs_get_tree_mod_seq(struct btrfs_fs_info *fs_info,
- 			   struct seq_list *elem);
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 5f672f016ed8..c605be6ba889 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1523,6 +1523,24 @@ int btrfs_insert_fs_root(struct btrfs_fs_info *fs_info,
- 	return ret;
++	btrfs_put_fs_root(fs_info->extent_root);
++	btrfs_put_fs_root(fs_info->tree_root);
++	btrfs_put_fs_root(fs_info->chunk_root);
++	btrfs_put_fs_root(fs_info->dev_root);
++	btrfs_put_fs_root(fs_info->csum_root);
++	btrfs_put_fs_root(fs_info->quota_root);
++	btrfs_put_fs_root(fs_info->uuid_root);
++	btrfs_put_fs_root(fs_info->free_space_root);
++	btrfs_put_fs_root(fs_info->fs_root);
+ 	kfree(fs_info->super_copy);
+ 	kfree(fs_info->super_for_commit);
+-	btrfs_put_fs_root(fs_info->fs_root);
+ 	kvfree(fs_info);
  }
  
-+void btrfs_free_fs_info(struct btrfs_fs_info *fs_info)
-+{
-+	kfree(fs_info->balance_ctl);
-+	kfree(fs_info->delayed_root);
-+	kfree(fs_info->extent_root);
-+	kfree(fs_info->tree_root);
-+	kfree(fs_info->chunk_root);
-+	kfree(fs_info->dev_root);
-+	kfree(fs_info->csum_root);
-+	kfree(fs_info->quota_root);
-+	kfree(fs_info->uuid_root);
-+	kfree(fs_info->free_space_root);
-+	kfree(fs_info->super_copy);
-+	kfree(fs_info->super_for_commit);
-+	kvfree(fs_info);
-+}
-+
-+
- struct btrfs_root *btrfs_get_fs_root(struct btrfs_fs_info *fs_info,
- 				     struct btrfs_key *location,
- 				     bool check_ref)
-diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
-index 8add2e14aab1..97e7ac474a52 100644
---- a/fs/btrfs/disk-io.h
-+++ b/fs/btrfs/disk-io.h
-@@ -68,6 +68,7 @@ struct btrfs_root *btrfs_get_fs_root(struct btrfs_fs_info *fs_info,
- 				     struct btrfs_key *key,
- 				     bool check_ref);
+@@ -2223,12 +2223,12 @@ static int btrfs_replay_log(struct btrfs_fs_info *fs_info,
+ 	if (IS_ERR(log_tree_root->node)) {
+ 		btrfs_warn(fs_info, "failed to read log tree");
+ 		ret = PTR_ERR(log_tree_root->node);
+-		kfree(log_tree_root);
++		btrfs_put_fs_root(log_tree_root);
+ 		return ret;
+ 	} else if (!extent_buffer_uptodate(log_tree_root->node)) {
+ 		btrfs_err(fs_info, "failed to read log tree");
+ 		free_extent_buffer(log_tree_root->node);
+-		kfree(log_tree_root);
++		btrfs_put_fs_root(log_tree_root);
+ 		return -EIO;
+ 	}
+ 	/* returns with log_tree_root freed on success */
+@@ -2237,7 +2237,7 @@ static int btrfs_replay_log(struct btrfs_fs_info *fs_info,
+ 		btrfs_handle_fs_error(fs_info, ret,
+ 				      "Failed to recover log tree");
+ 		free_extent_buffer(log_tree_root->node);
+-		kfree(log_tree_root);
++		btrfs_put_fs_root(log_tree_root);
+ 		return ret;
+ 	}
  
-+void btrfs_free_fs_info(struct btrfs_fs_info *fs_info);
- int btrfs_cleanup_fs_roots(struct btrfs_fs_info *fs_info);
- void btrfs_btree_balance_dirty(struct btrfs_fs_info *fs_info);
- void btrfs_btree_balance_dirty_nodelay(struct btrfs_fs_info *fs_info);
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 5c3a1b7de6ee..0c81456df23e 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1580,7 +1580,7 @@ static struct dentry *btrfs_mount_root(struct file_system_type *fs_type,
+diff --git a/fs/btrfs/free-space-tree.c b/fs/btrfs/free-space-tree.c
+index 258cb3fae17a..c79804c30b17 100644
+--- a/fs/btrfs/free-space-tree.c
++++ b/fs/btrfs/free-space-tree.c
+@@ -1253,7 +1253,7 @@ int btrfs_clear_free_space_tree(struct btrfs_fs_info *fs_info)
  
- 	if (s->s_root) {
- 		btrfs_close_devices(fs_devices);
--		free_fs_info(fs_info);
-+		btrfs_free_fs_info(fs_info);
- 		if ((flags ^ s->s_flags) & SB_RDONLY)
- 			error = -EBUSY;
- 	} else {
-@@ -1603,7 +1603,7 @@ static struct dentry *btrfs_mount_root(struct file_system_type *fs_type,
- error_close_devices:
- 	btrfs_close_devices(fs_devices);
- error_fs_info:
--	free_fs_info(fs_info);
-+	btrfs_free_fs_info(fs_info);
- error_sec_opts:
- 	security_free_mnt_opts(&new_sec_opts);
- 	return ERR_PTR(error);
-@@ -2169,7 +2169,7 @@ static void btrfs_kill_super(struct super_block *sb)
- {
- 	struct btrfs_fs_info *fs_info = btrfs_sb(sb);
- 	kill_anon_super(sb);
--	free_fs_info(fs_info);
-+	btrfs_free_fs_info(fs_info);
+ 	free_extent_buffer(free_space_root->node);
+ 	free_extent_buffer(free_space_root->commit_root);
+-	kfree(free_space_root);
++	btrfs_put_fs_root(free_space_root);
+ 
+ 	return btrfs_commit_transaction(trans);
+ 
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 98d9a50352d6..0845e56a1672 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -1040,7 +1040,7 @@ int btrfs_quota_enable(struct btrfs_fs_info *fs_info)
+ 	if (ret) {
+ 		free_extent_buffer(quota_root->node);
+ 		free_extent_buffer(quota_root->commit_root);
+-		kfree(quota_root);
++		btrfs_put_fs_root(quota_root);
+ 	}
+ out:
+ 	if (ret) {
+@@ -1106,7 +1106,7 @@ int btrfs_quota_disable(struct btrfs_fs_info *fs_info)
+ 
+ 	free_extent_buffer(quota_root->node);
+ 	free_extent_buffer(quota_root->commit_root);
+-	kfree(quota_root);
++	btrfs_put_fs_root(quota_root);
+ 
+ end_trans:
+ 	ret = btrfs_end_transaction(trans);
+diff --git a/fs/btrfs/tests/btrfs-tests.c b/fs/btrfs/tests/btrfs-tests.c
+index c12b91ff5f56..27f5b662d2cb 100644
+--- a/fs/btrfs/tests/btrfs-tests.c
++++ b/fs/btrfs/tests/btrfs-tests.c
+@@ -228,7 +228,7 @@ void btrfs_free_dummy_root(struct btrfs_root *root)
+ 		/* One for allocate_extent_buffer */
+ 		free_extent_buffer(root->node);
+ 	}
+-	kfree(root);
++	btrfs_put_fs_root(root);
  }
  
- static struct file_system_type btrfs_fs_type = {
+ struct btrfs_block_group *
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 5b05419a0f4c..f06ad415faf8 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -3284,7 +3284,7 @@ static void free_log_tree(struct btrfs_trans_handle *trans,
+ 	clear_extent_bits(&log->dirty_log_pages, 0, (u64)-1,
+ 			  EXTENT_DIRTY | EXTENT_NEW | EXTENT_NEED_WAIT);
+ 	free_extent_buffer(log->node);
+-	kfree(log);
++	btrfs_put_fs_root(log);
+ }
+ 
+ /*
+@@ -6138,7 +6138,7 @@ int btrfs_recover_log_trees(struct btrfs_root *log_root_tree)
+ 							log->node->len);
+ 			free_extent_buffer(log->node);
+ 			free_extent_buffer(log->commit_root);
+-			kfree(log);
++			btrfs_put_fs_root(log);
+ 
+ 			if (!ret)
+ 				goto next;
+@@ -6177,7 +6177,7 @@ int btrfs_recover_log_trees(struct btrfs_root *log_root_tree)
+ 		btrfs_put_fs_root(wc.replay_dest);
+ 		free_extent_buffer(log->node);
+ 		free_extent_buffer(log->commit_root);
+-		kfree(log);
++		btrfs_put_fs_root(log);
+ 
+ 		if (ret)
+ 			goto error;
+@@ -6211,7 +6211,7 @@ int btrfs_recover_log_trees(struct btrfs_root *log_root_tree)
+ 	free_extent_buffer(log_root_tree->node);
+ 	log_root_tree->log_root = NULL;
+ 	clear_bit(BTRFS_FS_LOG_RECOVERING, &fs_info->flags);
+-	kfree(log_root_tree);
++	btrfs_put_fs_root(log_root_tree);
+ 
+ 	return 0;
+ error:
 -- 
 2.24.1
 

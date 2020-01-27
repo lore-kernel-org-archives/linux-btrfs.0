@@ -2,159 +2,70 @@ Return-Path: <SRS0=pm4w=3Q=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.0 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 989ABC35240
-	for <linux-btrfs@archiver.kernel.org>; Mon, 27 Jan 2020 02:50:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CDCD6C32771
+	for <linux-btrfs@archiver.kernel.org>; Mon, 27 Jan 2020 07:55:48 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 53B602071E
-	for <linux-btrfs@archiver.kernel.org>; Mon, 27 Jan 2020 02:50:29 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4A77B2071E
+	for <linux-btrfs@archiver.kernel.org>; Mon, 27 Jan 2020 07:55:48 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="k6oJ1N54"
+	dkim=pass (1024-bit key) header.d=protonmail.com header.i=@protonmail.com header.b="n3G7JAuy"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726871AbgA0Cu2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 26 Jan 2020 21:50:28 -0500
-Received: from mout.gmx.net ([212.227.17.22]:52151 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726545AbgA0Cu2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 26 Jan 2020 21:50:28 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1580093420;
-        bh=b32NA1PRZp1iofPiFgitA1ap0gSZjMtUVh6yzjAiuWs=;
-        h=X-UI-Sender-Class:Subject:To:Cc:References:From:Date:In-Reply-To;
-        b=k6oJ1N54F0IjtFp9M3e1buFeqQLlwIY04z5RK4leEcjssa6/kMkRH//eBayyhEZT8
-         mfUwNu+KG2yptlin6UY+5LrDaYNts3V2LtZQExjWVY5O1+Ch4/Q1vUyL9AX9oAo8eC
-         ekiQM82kkhLMTu5SuX0y03vtFfCxXMPkMbu1BNIo=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx104
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1MryXN-1jQ4A22uOL-00o1fj; Mon, 27
- Jan 2020 03:50:20 +0100
-Subject: Re: [PATCH 5/5] VERSION: bump version
-To:     Marcos Paulo de Souza <marcos.souza.org@gmail.com>
-Cc:     dsterba@suse.com, josef@toxicpanda.com,
-        linux-btrfs@vger.kernel.org,
-        Marcos Paulo de Souza <mpdesouza@suse.com>
-References: <20200127024954.16916-1-marcos.souza.org@gmail.com>
- <20200127024954.16916-5-marcos.souza.org@gmail.com>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAU4EEwEIADgCGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1oQAKCRDC
- PZHzoSX+qCY6CACd+mWu3okGwRKXju6bou+7VkqCaHTdyXwWFTsr+/0ly5nUdDtT3yEVggPJ
- 3VP70wjlrxUjNjFb6iIvGYxiPOrop1NGwGYvQktgRhaIhALG6rPoSSAhGNjwGVRw0km0PlIN
- D29BTj/lYEk+jVM1YL0QLgAE1AI3krihg/lp/fQT53wLhR8YZIF8ETXbClQG1vJ0cllPuEEv
- efKxRyiTSjB+PsozSvYWhXsPeJ+KKjFen7ebE5reQTPFzSHctCdPnoR/4jSPlnTlnEvLeqcD
- ZTuKfQe1gWrPeevQzgCtgBF/WjIOeJs41klnYzC3DymuQlmFubss0jShLOW8eSOOWhLRuQEN
- BFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcgaCbPEwhLj
- 1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj/IrRUUka
- 68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fNGSsRb+pK
- EKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0q1eW4Jrv
- 0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEvABEBAAGJ
- ATwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1rgUJCWpOfwAKCRDCPZHz
- oSX+qFcEB/95cs8cM1OQdE/GgOfCGxwgckMeWyzOR7bkAWW0lDVp2hpgJuxBW/gyfmtBnUai
- fnggx3EE3ev8HTysZU9q0h+TJwwJKGv6sUc8qcTGFDtavnnl+r6xDUY7A6GvXEsSoCEEynby
- 72byGeSovfq/4AWGNPBG1L61Exl+gbqfvbECP3ziXnob009+z9I4qXodHSYINfAkZkA523JG
- ap12LndJeLk3gfWNZfXEWyGnuciRGbqESkhIRav8ootsCIops/SqXm0/k+Kcl4gGUO/iD/T5
- oagaDh0QtOd8RWSMwLxwn8uIhpH84Q4X1LadJ5NCgGa6xPP5qqRuiC+9gZqbq4Nj
-Message-ID: <7987441f-c3a0-0d41-45c0-94ebdc17d70a@gmx.com>
-Date:   Mon, 27 Jan 2020 10:50:15 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.4.1
+        id S1726164AbgA0Hx7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 27 Jan 2020 02:53:59 -0500
+Received: from mail-40130.protonmail.ch ([185.70.40.130]:62842 "EHLO
+        mail-40130.protonmail.ch" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725972AbgA0Hx7 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 27 Jan 2020 02:53:59 -0500
+Date:   Mon, 27 Jan 2020 07:53:49 +0000
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=protonmail.com;
+        s=default; t=1580111637;
+        bh=FkXSK7U6UXjHPe8yAO3rgJzoH/oVb85NbA/ruHNlVz4=;
+        h=Date:To:From:Cc:Reply-To:Subject:In-Reply-To:References:
+         Feedback-ID:From;
+        b=n3G7JAuyeg+ZL0QTZb5AN6uij17HmvX4u9RlCvAvKu6X7+rH4HFu/u9q0mMAJBx8K
+         ohraXuJvqt7biK8rNXb2JRGivtqcyb62S83bKbBXgi0iOVPF+X15rEXImO1c5e0c0w
+         UDPSJ2KVF54pe23wXccQhpGAbktdaJj/5d1Dm6z8=
+To:     Nikolay Borisov <nborisov@suse.com>
+From:   Raviu <raviu@protonmail.com>
+Cc:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Reply-To: Raviu <raviu@protonmail.com>
+Subject: Re: fstrim segmentation fault and btrfs crash on vanilla 5.4.14
+Message-ID: <B5lXpRtqEz0NPuXGaaqp8p0AKY3ndP946GmHLVHkhHDPIntSm5HopHG8RCNWlyx8bw39N0NdjMh0PSMuCqZ6-yts7YUKhASbJ2oLx3z06aM=@protonmail.com>
+In-Reply-To: <1DC5LVxi3doXrpiHkvBd4EwjgymRJuf8Znu4UCC-Ut0mOy9f-QYOyvQT3hf-QJX3Hk8hm_UhBGk_3rLcGYs_b6NdpNHDuJU-qog6PFxjEDE=@protonmail.com>
+References: <izW2WNyvy1dEDweBICizKnd2KDwDiDyY2EYQr4YCwk7pkuIpthx-JRn65MPBde00ND6V0_Lh8mW0kZwzDiLDv25pUYWxkskWNJnVP0kgdMA=@protonmail.com>
+ <7tcxgXvMR83f-yW7IN3dKq8NWJETNoAMGo_0GShBJMjR_p_N4vE3nDMPkECoqBiOFDCEFsBM4IZ08Lkk0yT5-H81FkHAV-xEThPkbey0Z40=@protonmail.com>
+ <1a8462a7-c77b-ecc9-681f-3cecb6a51576@suse.com>
+ <hNqW0cNKaqya5Nvb99uUaI7KRF7zyl2urKDMfG6CkwEvLdLq6HlWnBLFrgtNCpleC2dfm8HLOHUdlQYPa1zi9zxfBaY1wwXli1mTAM-4qTQ=@protonmail.com>
+ <1DC5LVxi3doXrpiHkvBd4EwjgymRJuf8Znu4UCC-Ut0mOy9f-QYOyvQT3hf-QJX3Hk8hm_UhBGk_3rLcGYs_b6NdpNHDuJU-qog6PFxjEDE=@protonmail.com>
+Feedback-ID: s2UDJFOuCQB5skd1w8rqWlDOlD5NAbNnTyErhCdMqDC7lQ_PsWqTjpdH2pOmUWgBaEipj53UTbJWo1jzNMb12A==:Ext:ProtonMail
 MIME-Version: 1.0
-In-Reply-To: <20200127024954.16916-5-marcos.souza.org@gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="D79hFQJTMvwX5ZbaItiGxvbaTuuzpsbAD"
-X-Provags-ID: V03:K1:Il9KIIg4e9usl0PgxrXRxppbzlnRQD2n6JLIxZ5AAVpfziy/I3G
- TZoC67OgFbSEncO79m2j3HTHPUqqvAUKeeYD2KAOqNS9PCmTE6KDLoXz0qcAj0TexxON4DI
- ySLOclJNGK1aUh6TBwv0eZRgT37JJGRem01is5iUXXB5+B0UeK2/7i7z4X0skssyJYf8utP
- GN45Rbe+Uq1zbMZhavWGQ==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:rm05IXscidU=:sUh76JLWvfBc9xI3ifHPNH
- wXVZWQYCy1tgieHlFmBAY0TBu/yAmuV1BtP6x9B/WjgCyrjGxpWeHWkLe0jYi1Y2zxe8Co+6J
- HgoYQRhX8TRwLLG1iG5mJLjZl6h6Dc8UL//qUQkKTPfegT9xXjeC4YQDKApkZiQAwUybA9CG8
- iClb94spT8nJJzaBxm3pAxpWZmLHoBcawzonfzwflfvgllIO7xwkM3MTJS/odg2lO+9H5dk+O
- zjHIV3rb2Dhy+o3n6jeUC5OXLs777EYzSl6q/6i7szy9lO3x22AULkfE3tEA3FT0DaYVOB2Sc
- 1zCnScgLK3CrLTlpC0vkGLKVZZd/y0w8CsW3yHwGoQZbTpy05I5s1uiSnOOBFaSKXbMr7elur
- qk/ifEMA2VZ0zvNK4rWV/MnpRUar3/4zsjK80xFUk0aqSwwct5KbgTMbeypgdOS/wqKILd4wn
- foEjoMUs2pyW6X4kzR+GlGps5002nG6tEtin7fqu3vfQnxRgEJNkbEwlBabC5sV/Vi5dNIzoW
- Z/5Dh8W1ji4dYAPpcyhG1Iaw62Ot/Pj0OOnizrGxlw2+/0evWCEVh2op/AzQS4PN9VuTtIVwI
- Q58iT1TeBoA+q9uoOlfGlPvKkxdiYGCbLTD8vdrqbogi96KpBdO7SLRxo+JNqbf8RCLdNXXtj
- V7JwrVPTIPuw12RQvym2d+/6E72+moSn+1R1FaiTC3PCzraGOmHN24+w5CInPtOWr7NYq23kK
- bxLcIBMmQ/BhTVqT1g6X743ixq9FjlbMR1qGpmL15xK/8jLrBmu5ydJiZjYas3Ik/vJNyMDa4
- BbSgV69Bn6irjvdFGNUIadyFpN1I02xnPXWTV88Xl5uZlPOxBbQeXanZofgGGj4fv1LTgJgWE
- v57sv+rWsC6xWlrYHNX6khqLygIdxnVuKsluEsqLxny9EeYy+SfrSH4MVc9piDbIHAQlPD3MY
- WoRlH7lIxbOjFN0NydwCkj7UfBy6GO2BsLY6aQDECgnlFHM67rBaGemYYR/Yai5nnTGb0899d
- cN06VEHufFVq3nwMzA5aBYoCZg0aCXkVvMEwcRX2GO5bpL7eaemQGERz1wSV1Vf64scxBBQEx
- eIFCwXNcjepttMHpu/jxe2EBCn0PPyZ1z4vUekairlEMIuZUz3J3h703T4NidANNxspoJTgFi
- 2mTvkqiCtxgN8fkcKXepUOrRF7oXck5KmosbT7XP7Ycdbw3pKt4FCMHnn4s06E1tgAMVyDSUn
- cgxeDo8KB/p0U3KNf
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---D79hFQJTMvwX5ZbaItiGxvbaTuuzpsbAD
-Content-Type: multipart/mixed; boundary="cYHzbwdyKCu0GILJtb7NrfYaPZNk1RhBT"
-
---cYHzbwdyKCu0GILJtb7NrfYaPZNk1RhBT
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-
-
-
-On 2020/1/27 =E4=B8=8A=E5=8D=8810:49, Marcos Paulo de Souza wrote:
-> From: Marcos Paulo de Souza <mpdesouza@suse.com>
->=20
-> As a new symbol was created, bump the library version.
->=20
-> Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
-
-That's David's work. Please leave the honor work for David.
-
-Thanks,
-Qu
-
-> ---
->  VERSION | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
->=20
-> diff --git a/VERSION b/VERSION
-> index cce56663..4ef789b0 100644
-> --- a/VERSION
-> +++ b/VERSION
-> @@ -1 +1 @@
-> -v5.4.1
-> +v5.5
->=20
+Follow-up:
+It seems that I could solve my problem. Maybe this can also help you know t=
+he root cause and reproduce it some how.
+My buggy btrfs was initially on a single partition, I've freed another part=
+ition later and added as `btrfs device add` as the free partition was to th=
+e left of the original one so a resize was not possible.
+Originally I'd metadata as dup and data as single.
+Even after adding the new device it remained like that for few days, yester=
+day, I noticed it reported both dup and RAID1 of metadata which was weird. =
+It did some sort of metadata balance on its own when it got a new partition=
+, actually I didn't run such balance command before as both partition are o=
+n the same disk, so thought that raid-1 is useless.
+So I've taken a backup, then run `btrfs balance start -mconvert=3Draid1 /ho=
+me/` .. So only raid1 is reported now on `btrfs filesystem df` and `btrfs f=
+ilesystem usage`. I then run fstrim and it worked fine.
 
 
---cYHzbwdyKCu0GILJtb7NrfYaPZNk1RhBT--
-
---D79hFQJTMvwX5ZbaItiGxvbaTuuzpsbAD
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAl4uT+cACgkQwj2R86El
-/qjpPQf/Utjtj7BffelubmqSkWDowrUws4y/j1YNSDZtR91PPRu97X4ezYzskWiD
-kaNwFQFrCMc6XlEKbP/69g5qZgb+z+D06JWRVPHjrINQkf+aqJAMYDfIw8L9YaQ2
-pFmbl3tLgL8p9nemLh7lNOx3VV3VyIP2xd7iyUkRpsXVpgjzXDVxLvy1Ry3+RqOK
-ZChGk1f6NlA0h/119bXPnOAenqZTZWKnk65rgBO3jW8kRIKdOrdNhVlI7nK2ioty
-lyt6POeCq0hw2oQFGit/oFkAa9oipHaaYRb4QFj/VLnKPZ6IGyNcM0MQcvqDQ5rT
-Rlj+zyaXd5OugFpiHZILzVmil1wKAg==
-=Uap9
------END PGP SIGNATURE-----
-
---D79hFQJTMvwX5ZbaItiGxvbaTuuzpsbAD--

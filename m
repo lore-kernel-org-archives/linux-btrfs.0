@@ -6,61 +6,59 @@ X-Spam-Status: No, score=-6.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
 	SPF_HELO_NONE,SPF_PASS autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1C56CC33CB2
-	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Jan 2020 23:40:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4B9E8C2D0DB
+	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Jan 2020 23:40:15 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E2AE622522
-	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Jan 2020 23:40:13 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 20B0922522
+	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Jan 2020 23:40:15 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1580254814;
-	bh=tUhXcy5ta6IIU8tmwDqL/iRBsLFREm3taAO1DytlLAg=;
+	s=default; t=1580254815;
+	bh=WcVL55yM5vmF24gnlm/ugfLFZQFqTA8w3K/W0MVG2Fg=;
 	h=Subject:From:In-Reply-To:References:Date:To:Cc:List-ID:From;
-	b=19CLC4rw+ek/1O1vVUSlTvmEq7ePT7HwxbJ3cSl4ZHUqBNyfeNURKyp8+6HnnhUho
-	 z1FFnohW9MmHUXqgYMrobD0kMslTLWMLUM4POZZ05JK+XF8VGQw3Nh+lfgh7RtzrXd
-	 c2jOkXSJD7yAj1bR50og1P6FCOpCpbhduzi1FN5A=
+	b=CzVxPBuoorPIVWp/zLQUpP5xhSP6TSywOvHcfbv9SAOkOy60sbHS8iQv0QZZNgkQl
+	 Y6xYGYyPSGs99b0Kf1IItuG6f5EkMbRcds9pu1wI1/k7mWh6eQ1ZLGI2okh9HBeQYq
+	 dz4xStKWYR/3gOhS+5cnR7Pt1MkfSRScEsA2iYtU=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726808AbgA1XkH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 28 Jan 2020 18:40:07 -0500
-Received: from mail.kernel.org ([198.145.29.99]:49328 "EHLO mail.kernel.org"
+        id S1726795AbgA1XkG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 28 Jan 2020 18:40:06 -0500
+Received: from mail.kernel.org ([198.145.29.99]:49316 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726303AbgA1XkF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1726786AbgA1XkF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Tue, 28 Jan 2020 18:40:05 -0500
-Subject: Re: [GIT PULL] fs: Deduplication ioctl fix
+Subject: Re: [GIT PULL] Btrfs updates for 5.6
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1580254805;
-        bh=tUhXcy5ta6IIU8tmwDqL/iRBsLFREm3taAO1DytlLAg=;
+        s=default; t=1580254804;
+        bh=WcVL55yM5vmF24gnlm/ugfLFZQFqTA8w3K/W0MVG2Fg=;
         h=From:In-Reply-To:References:Date:To:Cc:From;
-        b=VTFIwDPQnC7wXIFqKXQ6vGoBwhZkGiQeXpxaeZNXgVq4l0p6phULPaVbL882PX82v
-         /5HgDrJ0QQpo8DhBBijslnMwaN4BvVzUgk4qSGkrK7rcIC94Yg6xB7BP8UfiVBjple
-         gXRq7S3x8BypMYYwv4GwCfqqKwBMaps3Gl7WQiIQ=
+        b=EWBnCxN2w6EUoFksBREMvNHT0DY9pShVJuA3WdkzX4m1sDvBhpJpnijLQAQagd+Hw
+         Dk1hHlWKXOUO+Ea83NzXb2Y1MQUPqt2PpEIUuqUdwKYxgDRIbtC5Oj1i/3zXx+7Fpm
+         IE55eryvyEcWjqDyncK/IEeayl7nkE2TVH0WCLGU=
 From:   pr-tracker-bot@kernel.org
-In-Reply-To: <cover.1580142827.git.dsterba@suse.com>
-References: <cover.1580142827.git.dsterba@suse.com>
+In-Reply-To: <cover.1580142284.git.dsterba@suse.com>
+References: <cover.1580142284.git.dsterba@suse.com>
 X-PR-Tracked-List-Id: <linux-kernel.vger.kernel.org>
-X-PR-Tracked-Message-Id: <cover.1580142827.git.dsterba@suse.com>
-X-PR-Tracked-Remote: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git
- fs-dedupe-last-block-tag
-X-PR-Tracked-Commit-Id: 831d2fa25ab8e27592b1b0268dae6f2dfaf7cc43
+X-PR-Tracked-Message-Id: <cover.1580142284.git.dsterba@suse.com>
+X-PR-Tracked-Remote: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.6-tag
+X-PR-Tracked-Commit-Id: 4e19443da1941050b346f8fc4c368aa68413bc88
 X-PR-Merge-Tree: torvalds/linux.git
 X-PR-Merge-Refname: refs/heads/master
-X-PR-Merge-Commit-Id: b5f7ab6b1c4ed967fb76258f79251193cb1ad41d
-Message-Id: <158025480536.16364.16698686040672279236.pr-tracker-bot@kernel.org>
-Date:   Tue, 28 Jan 2020 23:40:05 +0000
+X-PR-Merge-Commit-Id: 81a046b18b331ed6192e6fd9ff6d12a1f18058cf
+Message-Id: <158025480492.16364.6553027097982015044.pr-tracker-bot@kernel.org>
+Date:   Tue, 28 Jan 2020 23:40:04 +0000
 To:     David Sterba <dsterba@suse.com>
 Cc:     torvalds@linux-foundation.org, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        "Darrick J . Wong" <darrick.wong@oracle.com>
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The pull request you sent on Mon, 27 Jan 2020 18:19:15 +0100:
+The pull request you sent on Mon, 27 Jan 2020 17:30:48 +0100:
 
-> git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git fs-dedupe-last-block-tag
+> git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.6-tag
 
 has been merged into torvalds/linux.git:
-https://git.kernel.org/torvalds/c/b5f7ab6b1c4ed967fb76258f79251193cb1ad41d
+https://git.kernel.org/torvalds/c/81a046b18b331ed6192e6fd9ff6d12a1f18058cf
 
 Thank you!
 

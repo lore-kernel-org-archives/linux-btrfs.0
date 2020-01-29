@@ -2,76 +2,163 @@ Return-Path: <SRS0=AaGw=3S=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.7 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+X-Spam-Status: No, score=-8.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable autolearn_force=no
-	version=3.4.0
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D2E14C2D0DB
-	for <linux-btrfs@archiver.kernel.org>; Wed, 29 Jan 2020 18:13:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C4961C2D0DB
+	for <linux-btrfs@archiver.kernel.org>; Wed, 29 Jan 2020 18:26:45 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B9FE2206D4
-	for <linux-btrfs@archiver.kernel.org>; Wed, 29 Jan 2020 18:13:53 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id AA48720702
+	for <linux-btrfs@archiver.kernel.org>; Wed, 29 Jan 2020 18:26:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727274AbgA2SNu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 29 Jan 2020 13:13:50 -0500
-Received: from mx2.suse.de ([195.135.220.15]:42116 "EHLO mx2.suse.de"
+        id S1727447AbgA2S0p (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 29 Jan 2020 13:26:45 -0500
+Received: from mx2.suse.de ([195.135.220.15]:45962 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726245AbgA2SNu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 29 Jan 2020 13:13:50 -0500
+        id S1726560AbgA2S0o (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 29 Jan 2020 13:26:44 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 0DE40AC77;
-        Wed, 29 Jan 2020 18:13:48 +0000 (UTC)
-From:   Davidlohr Bueso <dave@stgolabs.net>
-To:     dsterba@suse.com
-Cc:     nborisov@suse.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org, dave@stgolabs.net,
-        Davidlohr Bueso <dbueso@suse.de>
-Subject: [PATCH] btrfs: optimize barrier usage for Rmw atomics
-Date:   Wed, 29 Jan 2020 10:03:24 -0800
-Message-Id: <20200129180324.24099-1-dave@stgolabs.net>
-X-Mailer: git-send-email 2.16.4
+        by mx2.suse.de (Postfix) with ESMTP id 6F19BB1EC;
+        Wed, 29 Jan 2020 18:26:42 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 7DA90DA730; Wed, 29 Jan 2020 19:26:23 +0100 (CET)
+Date:   Wed, 29 Jan 2020 19:26:23 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Anand Jain <anand.jain@oracle.com>
+Cc:     linux-btrfs@vger.kernel.org, josef@toxicpanda.com,
+        btrfs-list@steev.me.uk
+Subject: Re: [PATCH 1/2] btrfs: add read_policy framework
+Message-ID: <20200129182623.GL3929@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
+        linux-btrfs@vger.kernel.org, josef@toxicpanda.com,
+        btrfs-list@steev.me.uk
+References: <20200105151402.1440-1-anand.jain@oracle.com>
+ <20200105151402.1440-2-anand.jain@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20200105151402.1440-2-anand.jain@oracle.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Use smp_mb__after_atomic() instead of smp_mb() and avoid the
-unnecessary barrier for non LL/SC architectures, such as x86.
+On Sun, Jan 05, 2020 at 11:14:01PM +0800, Anand Jain wrote:
+> As of now we use %pid method to read stripped mirrored data, which means
+> application's process id determines the stripe id to be read. This type
+> of read IO routing typically helps in a system with many small
+> independent applications tying to read random data. On the other hand
+> the %pid based read IO distribution policy is inefficient because if
+> there is a single application trying to read large data the overall disk
+> bandwidth remains under-utilized.
 
-Signed-off-by: Davidlohr Bueso <dbueso@suse.de>
----
- fs/btrfs/btrfs_inode.h | 2 +-
- fs/btrfs/file.c        | 2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+AFAIK it's not always the application pid, for compression or metadata
+it's the pid of btrfs worker thread. So it depends.
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 4e12a477d32e..54e0d2ae22cc 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -325,7 +325,7 @@ struct btrfs_dio_private {
- static inline void btrfs_inode_block_unlocked_dio(struct btrfs_inode *inode)
- {
- 	set_bit(BTRFS_INODE_READDIO_NEED_LOCK, &inode->runtime_flags);
--	smp_mb();
-+	smp_mb__after_atomic();
- }
- 
- static inline void btrfs_inode_resume_unlocked_dio(struct btrfs_inode *inode)
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index a16da274c9aa..ea79ab068079 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2143,7 +2143,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
- 	}
- 	atomic_inc(&root->log_batch);
- 
--	smp_mb();
-+	smp_mb__after_atomic();
- 	if (btrfs_inode_in_log(BTRFS_I(inode), fs_info->generation) ||
- 	    BTRFS_I(inode)->last_trans <= fs_info->last_trans_committed) {
- 		/*
--- 
-2.16.4
+> So this patch introduces read policy framework so that we could add more
+> read policies, such as IO routing based on device's wait-queue or manual
+> when we have a read-preferred device or a policy based on the target
+> storage caching.
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> ---
+> [Patch name changed]
+> 
+> v3: Declare fs_devices::readmirror as enum btrfs_readmirror_policy_type
+> v2: Declare fs_devices::readmirror as u8 instead of atomic_t
+>     A small change in comment and change log wordings.
+> 
+>  fs/btrfs/volumes.c | 16 +++++++++++++++-
+>  fs/btrfs/volumes.h |  9 +++++++++
+>  2 files changed, 24 insertions(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index c95e47aa84f8..2ffffdf1d314 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -1162,6 +1162,8 @@ static int open_fs_devices(struct btrfs_fs_devices *fs_devices,
+>  	fs_devices->opened = 1;
+>  	fs_devices->latest_bdev = latest_dev->bdev;
+>  	fs_devices->total_rw_bytes = 0;
+> +	/* Set the default read policy */
 
+You can drop this comment
+
+> +	fs_devices->read_policy = BTRFS_READ_POLICY_DEFAULT;
+>  out:
+>  	return ret;
+>  }
+> @@ -5300,7 +5302,19 @@ static int find_live_mirror(struct btrfs_fs_info *fs_info,
+>  	else
+>  		num_stripes = map->num_stripes;
+>  
+> -	preferred_mirror = first + current->pid % num_stripes;
+> +	switch (fs_info->fs_devices->read_policy) {
+> +	case BTRFS_READ_BY_PID:
+> +		preferred_mirror = first + current->pid % num_stripes;
+> +		break;
+> +	default:
+> +		/*
+> +		 * Shouln't happen, just warn and use by_pid instead of failing.
+> +		 */
+> +		btrfs_warn_rl(fs_info,
+> +			      "unknown read_policy type %u, fallback to by_pid",
+> +			      fs_info->fs_devices->read_policy);
+> +		preferred_mirror = first + current->pid % num_stripes;
+
+This is repeating the BY_PID code, please move the defaut: case above it
+so the code is shared.
+
+> +	}
+>  
+>  	if (dev_replace_is_ongoing &&
+>  	    fs_info->dev_replace.cont_reading_from_srcdev_mode ==
+> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+> index 68021d1ee216..3bbf0e51433f 100644
+> --- a/fs/btrfs/volumes.h
+> +++ b/fs/btrfs/volumes.h
+> @@ -209,6 +209,13 @@ BTRFS_DEVICE_GETSET_FUNCS(total_bytes);
+>  BTRFS_DEVICE_GETSET_FUNCS(disk_total_bytes);
+>  BTRFS_DEVICE_GETSET_FUNCS(bytes_used);
+>  
+> +/* read_policy types */
+
+More explanation would be nice
+
+> +#define BTRFS_READ_POLICY_DEFAULT	BTRFS_READ_BY_PID
+
+Add this to the enums so we don't have mixed enums and defines
+
+> +enum btrfs_read_policy_type {
+
+I think you can drop _type here, the 'enum' must be spelled everywhere
+is used so the type name can be shorter without losing descriptivity.
+
+> +	BTRFS_READ_BY_PID,
+
+This should share the namespace so, BTRFS_READ_POLICY_PID
+
+> +	BTRFS_NR_READ_POLICY_TYPE,
+> +};
+> +
+>  struct btrfs_fs_devices {
+>  	u8 fsid[BTRFS_FSID_SIZE]; /* FS specific uuid */
+>  	u8 metadata_uuid[BTRFS_FSID_SIZE];
+> @@ -260,6 +267,8 @@ struct btrfs_fs_devices {
+>  	struct kobject *devices_kobj;
+>  	struct kobject *devinfo_kobj;
+>  	struct completion kobj_unregister;
+> +
+> +	enum btrfs_read_policy_type read_policy;
+
+What's the reason to add this to btrfs_fs_devices rather than to
+btrfs_fs_info? The lifetime of the policy and the related sysfs object
+is the same as of the mounted filesystem.
+
+>  };
+>  
+>  #define BTRFS_BIO_INLINE_CSUM_SIZE	64

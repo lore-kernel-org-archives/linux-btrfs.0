@@ -1,67 +1,93 @@
-Return-Path: <SRS0=Obef=3R=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=AaGw=3S=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
-	SPF_HELO_NONE,SPF_PASS autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.7 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	URIBL_DBL_ABUSE_MALW,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4B9E8C2D0DB
-	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Jan 2020 23:40:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E5AF6C35240
+	for <linux-btrfs@archiver.kernel.org>; Wed, 29 Jan 2020 00:25:04 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 20B0922522
-	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Jan 2020 23:40:15 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1580254815;
-	bh=WcVL55yM5vmF24gnlm/ugfLFZQFqTA8w3K/W0MVG2Fg=;
-	h=Subject:From:In-Reply-To:References:Date:To:Cc:List-ID:From;
-	b=CzVxPBuoorPIVWp/zLQUpP5xhSP6TSywOvHcfbv9SAOkOy60sbHS8iQv0QZZNgkQl
-	 Y6xYGYyPSGs99b0Kf1IItuG6f5EkMbRcds9pu1wI1/k7mWh6eQ1ZLGI2okh9HBeQYq
-	 dz4xStKWYR/3gOhS+5cnR7Pt1MkfSRScEsA2iYtU=
+	by mail.kernel.org (Postfix) with ESMTP id BCE6B24686
+	for <linux-btrfs@archiver.kernel.org>; Wed, 29 Jan 2020 00:25:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726795AbgA1XkG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 28 Jan 2020 18:40:06 -0500
-Received: from mail.kernel.org ([198.145.29.99]:49316 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726786AbgA1XkF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 28 Jan 2020 18:40:05 -0500
-Subject: Re: [GIT PULL] Btrfs updates for 5.6
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1580254804;
-        bh=WcVL55yM5vmF24gnlm/ugfLFZQFqTA8w3K/W0MVG2Fg=;
-        h=From:In-Reply-To:References:Date:To:Cc:From;
-        b=EWBnCxN2w6EUoFksBREMvNHT0DY9pShVJuA3WdkzX4m1sDvBhpJpnijLQAQagd+Hw
-         Dk1hHlWKXOUO+Ea83NzXb2Y1MQUPqt2PpEIUuqUdwKYxgDRIbtC5Oj1i/3zXx+7Fpm
-         IE55eryvyEcWjqDyncK/IEeayl7nkE2TVH0WCLGU=
-From:   pr-tracker-bot@kernel.org
-In-Reply-To: <cover.1580142284.git.dsterba@suse.com>
-References: <cover.1580142284.git.dsterba@suse.com>
-X-PR-Tracked-List-Id: <linux-kernel.vger.kernel.org>
-X-PR-Tracked-Message-Id: <cover.1580142284.git.dsterba@suse.com>
-X-PR-Tracked-Remote: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.6-tag
-X-PR-Tracked-Commit-Id: 4e19443da1941050b346f8fc4c368aa68413bc88
-X-PR-Merge-Tree: torvalds/linux.git
-X-PR-Merge-Refname: refs/heads/master
-X-PR-Merge-Commit-Id: 81a046b18b331ed6192e6fd9ff6d12a1f18058cf
-Message-Id: <158025480492.16364.6553027097982015044.pr-tracker-bot@kernel.org>
-Date:   Tue, 28 Jan 2020 23:40:04 +0000
-To:     David Sterba <dsterba@suse.com>
-Cc:     torvalds@linux-foundation.org, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+        id S1726428AbgA2AZB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 28 Jan 2020 19:25:01 -0500
+Received: from mail104.syd.optusnet.com.au ([211.29.132.246]:40046 "EHLO
+        mail104.syd.optusnet.com.au" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1726293AbgA2AZB (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 28 Jan 2020 19:25:01 -0500
+Received: from dread.disaster.area (pa49-195-111-217.pa.nsw.optusnet.com.au [49.195.111.217])
+        by mail104.syd.optusnet.com.au (Postfix) with ESMTPS id 32C487E9A77;
+        Wed, 29 Jan 2020 11:24:56 +1100 (AEDT)
+Received: from dave by dread.disaster.area with local (Exim 4.92.3)
+        (envelope-from <david@fromorbit.com>)
+        id 1iwbA8-0005eI-Bd; Wed, 29 Jan 2020 11:24:56 +1100
+Date:   Wed, 29 Jan 2020 11:24:56 +1100
+From:   Dave Chinner <david@fromorbit.com>
+To:     Matthew Wilcox <willy@infradead.org>
+Cc:     linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
+        linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-erofs@lists.ozlabs.org, linux-ext4@vger.kernel.org,
+        linux-f2fs-devel@lists.sourceforge.net, linux-xfs@vger.kernel.org,
+        cluster-devel@redhat.com, ocfs2-devel@oss.oracle.com
+Subject: Re: [PATCH 04/12] mm: Add readahead address space operation
+Message-ID: <20200129002456.GH18610@dread.disaster.area>
+References: <20200125013553.24899-1-willy@infradead.org>
+ <20200125013553.24899-5-willy@infradead.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20200125013553.24899-5-willy@infradead.org>
+User-Agent: Mutt/1.10.1 (2018-07-13)
+X-Optus-CM-Score: 0
+X-Optus-CM-Analysis: v=2.3 cv=LYdCFQXi c=1 sm=1 tr=0
+        a=0OveGI8p3fsTA6FL6ss4ZQ==:117 a=0OveGI8p3fsTA6FL6ss4ZQ==:17
+        a=jpOVt7BSZ2e4Z31A5e1TngXxSK0=:19 a=kj9zAlcOel0A:10 a=Jdjhy38mL1oA:10
+        a=JfrnYn6hAAAA:8 a=7-415B0cAAAA:8 a=bQT49A20HjYUhGx6rhoA:9
+        a=UEMyszIiLG9v0jT0:21 a=UWfWf6Z2s6wDmKyN:21 a=CjuIK1q_8ugA:10
+        a=1CNFftbPRP8L7MoqJWF3:22 a=biEYGPWJfzWAr4FL6Ov7:22
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The pull request you sent on Mon, 27 Jan 2020 17:30:48 +0100:
+On Fri, Jan 24, 2020 at 05:35:45PM -0800, Matthew Wilcox wrote:
+> From: "Matthew Wilcox (Oracle)" <willy@infradead.org>
+> 
+> This replaces ->readpages with a saner interface:
+>  - Return the number of pages not read instead of an ignored error code.
+>  - Pages are already in the page cache when ->readahead is called.
+>  - Implementation looks up the pages in the page cache instead of
+>    having them passed in a linked list.
+....
+> diff --git a/mm/readahead.c b/mm/readahead.c
+> index 5a6676640f20..6d65dae6dad0 100644
+> --- a/mm/readahead.c
+> +++ b/mm/readahead.c
+> @@ -121,7 +121,18 @@ static void read_pages(struct address_space *mapping, struct file *filp,
+>  
+>  	blk_start_plug(&plug);
+>  
+> -	if (mapping->a_ops->readpages) {
+> +	if (mapping->a_ops->readahead) {
+> +		unsigned left = mapping->a_ops->readahead(filp, mapping,
+> +				start, nr_pages);
+> +
+> +		while (left) {
+> +			struct page *page = readahead_page(mapping,
+> +					start + nr_pages - left - 1);
 
-> git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.6-tag
+Off by one? start = 2, nr_pages = 2, left = 1, this looks up the
+page at index 2, which is the one we issued IO on, not the one we
+"left behind" which is at index 3.
 
-has been merged into torvalds/linux.git:
-https://git.kernel.org/torvalds/c/81a046b18b331ed6192e6fd9ff6d12a1f18058cf
+Cheers,
 
-Thank you!
-
+Dave.
 -- 
-Deet-doot-dot, I am a bot.
-https://korg.wiki.kernel.org/userdoc/prtracker
+Dave Chinner
+david@fromorbit.com

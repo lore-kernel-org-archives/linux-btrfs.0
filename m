@@ -2,32 +2,32 @@ Return-Path: <SRS0=vY8e=3T=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E3538C33CB3
-	for <linux-btrfs@archiver.kernel.org>; Thu, 30 Jan 2020 12:59:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DB4F7C35240
+	for <linux-btrfs@archiver.kernel.org>; Thu, 30 Jan 2020 12:59:51 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C2E9D20702
-	for <linux-btrfs@archiver.kernel.org>; Thu, 30 Jan 2020 12:59:50 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BC1482082E
+	for <linux-btrfs@archiver.kernel.org>; Thu, 30 Jan 2020 12:59:51 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727233AbgA3M7t (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 30 Jan 2020 07:59:49 -0500
-Received: from mx2.suse.de ([195.135.220.15]:38362 "EHLO mx2.suse.de"
+        id S1727261AbgA3M7u (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 30 Jan 2020 07:59:50 -0500
+Received: from mx2.suse.de ([195.135.220.15]:38372 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727161AbgA3M7t (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1727165AbgA3M7t (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Thu, 30 Jan 2020 07:59:49 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 5F59FB053;
+        by mx2.suse.de (Postfix) with ESMTP id 974C3B0B8;
         Thu, 30 Jan 2020 12:59:47 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [RESEND PATCH v2 0/2] Refactor snapshot vs nocow writers locking
-Date:   Thu, 30 Jan 2020 14:59:43 +0200
-Message-Id: <20200130125945.7383-4-nborisov@suse.com>
+Subject: [PATCH v2 1/2] btrfs: Implement DRW lock
+Date:   Thu, 30 Jan 2020 14:59:44 +0200
+Message-Id: <20200130125945.7383-5-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20200130125945.7383-1-nborisov@suse.com>
 References: <20200130125945.7383-1-nborisov@suse.com>
@@ -36,40 +36,171 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hello,
+A (D)ouble (R)eader (W)riter lock is a locking primitive that allows
+to have multiple readers or multiple writers but not multiple readers
+and writers holding it concurrently. The code is factored out from
+the existing open-coded locking scheme used to exclude pending
+snapshots from nocow writers and vice-versa. Current implementation
+actually favors Readers (that is snapshot creaters) to writers (nocow
+writers of the filesystem).
 
-Here is the second version of the DRW lock for btrfs. Main changes from v1:
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
+ fs/btrfs/ctree.h   |  1 +
+ fs/btrfs/locking.c | 87 ++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/locking.h | 21 +++++++++++
+ 3 files changed, 109 insertions(+)
 
-* Fixed all checkpatch warnings (Andrea Parri)
-* Properly call write_unlock in btrfs_drw_try_write_lock (Filipe Manana)
-* Comment fix.
-* Stress tested it via locktorture. Survived for 8 straight days on a 4 socket
-48 thread machine.
-
-
-I'm resending this one since it's been quite a while. Additionally Valentin
-Schneider has created a more accurate spec of the algorithm than the one I had
-initially submitted. It can be found here
-https://lore.kernel.org/lkml/2dcaf81c-f0d3-409e-cb29-733d8b3b4cc9@arm.com/
-
-
-I've been running with those patches on my custoom tree for a couple of months
-and haven't observed any issues.
-
-Nikolay Borisov (2):
-  btrfs: Implement DRW lock
-  btrfs: convert snapshot/nocow exlcusion to drw lock
-
- fs/btrfs/ctree.h       | 10 ++---
- fs/btrfs/disk-io.c     | 46 ++++++----------------
- fs/btrfs/extent-tree.c | 44 ---------------------
- fs/btrfs/file.c        | 11 +++---
- fs/btrfs/inode.c       |  8 ++--
- fs/btrfs/ioctl.c       | 10 ++---
- fs/btrfs/locking.c     | 87 ++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/locking.h     | 21 ++++++++++
- 8 files changed, 134 insertions(+), 103 deletions(-)
-
---
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index f90b82050d2d..908430f563fa 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -33,6 +33,7 @@
+ #include "extent_map.h"
+ #include "async-thread.h"
+ #include "block-rsv.h"
++#include "locking.h"
+ 
+ struct btrfs_trans_handle;
+ struct btrfs_transaction;
+diff --git a/fs/btrfs/locking.c b/fs/btrfs/locking.c
+index 571c4826c428..66d7d1279535 100644
+--- a/fs/btrfs/locking.c
++++ b/fs/btrfs/locking.c
+@@ -523,3 +523,90 @@ void btrfs_unlock_up_safe(struct btrfs_path *path, int level)
+ 		path->locks[i] = 0;
+ 	}
+ }
++
++int btrfs_drw_lock_init(struct btrfs_drw_lock *lock)
++{
++	int ret;
++
++	ret = percpu_counter_init(&lock->writers, 0, GFP_KERNEL);
++	if (ret)
++		return ret;
++
++	atomic_set(&lock->readers, 0);
++	init_waitqueue_head(&lock->pending_readers);
++	init_waitqueue_head(&lock->pending_writers);
++
++	return 0;
++}
++EXPORT_SYMBOL(btrfs_drw_lock_init);
++
++void btrfs_drw_lock_destroy(struct btrfs_drw_lock *lock)
++{
++	percpu_counter_destroy(&lock->writers);
++}
++
++bool btrfs_drw_try_write_lock(struct btrfs_drw_lock *lock)
++{
++	if (atomic_read(&lock->readers))
++		return false;
++
++	percpu_counter_inc(&lock->writers);
++
++	/*
++	 * Ensure writers count is updated before we check for
++	 * pending readers
++	 */
++	smp_mb();
++	if (atomic_read(&lock->readers)) {
++		btrfs_drw_write_unlock(lock);
++		return false;
++	}
++
++	return true;
++}
++EXPORT_SYMBOL(btrfs_drw_try_write_lock);
++
++void btrfs_drw_write_lock(struct btrfs_drw_lock *lock)
++{
++	while (true) {
++		if (btrfs_drw_try_write_lock(lock))
++			return;
++		wait_event(lock->pending_writers, !atomic_read(&lock->readers));
++	}
++}
++EXPORT_SYMBOL(btrfs_drw_write_lock);
++
++void btrfs_drw_write_unlock(struct btrfs_drw_lock *lock)
++{
++	percpu_counter_dec(&lock->writers);
++	cond_wake_up(&lock->pending_readers);
++}
++EXPORT_SYMBOL(btrfs_drw_write_unlock);
++
++void btrfs_drw_read_lock(struct btrfs_drw_lock *lock)
++{
++	atomic_inc(&lock->readers);
++
++	/*
++	 * Ensure the pending reader count is perceieved BEFORE this reader
++	 * goes to sleep in case of active writers. This guarantees new writers
++	 * won't be allowed and that the current reader will be woken up when
++	 * the last active writer finishes its jobs.
++	 */
++	smp_mb__after_atomic();
++
++	wait_event(lock->pending_readers,
++		   percpu_counter_sum(&lock->writers) == 0);
++}
++EXPORT_SYMBOL(btrfs_drw_read_lock);
++
++void btrfs_drw_read_unlock(struct btrfs_drw_lock *lock)
++{
++	/*
++	 * atomic_dec_and_test implies a full barrier, so woken up writers
++	 * are guaranteed to see the decrement
++	 */
++	if (atomic_dec_and_test(&lock->readers))
++		wake_up(&lock->pending_writers);
++}
++EXPORT_SYMBOL(btrfs_drw_read_unlock);
+diff --git a/fs/btrfs/locking.h b/fs/btrfs/locking.h
+index 21a285883e89..ba60318c53d5 100644
+--- a/fs/btrfs/locking.h
++++ b/fs/btrfs/locking.h
+@@ -7,12 +7,17 @@
+ #define BTRFS_LOCKING_H
+ 
+ #include "extent_io.h"
++#include <linux/atomic.h>
++#include <linux/wait.h>
++#include <linux/percpu_counter.h>
+ 
+ #define BTRFS_WRITE_LOCK 1
+ #define BTRFS_READ_LOCK 2
+ #define BTRFS_WRITE_LOCK_BLOCKING 3
+ #define BTRFS_READ_LOCK_BLOCKING 4
+ 
++struct btrfs_path;
++
+ void btrfs_tree_lock(struct extent_buffer *eb);
+ void btrfs_tree_unlock(struct extent_buffer *eb);
+ 
+@@ -48,4 +53,20 @@ static inline void btrfs_tree_unlock_rw(struct extent_buffer *eb, int rw)
+ 		BUG();
+ }
+ 
++
++struct btrfs_drw_lock {
++	atomic_t readers;
++	struct percpu_counter writers;
++	wait_queue_head_t pending_writers;
++	wait_queue_head_t pending_readers;
++};
++
++int btrfs_drw_lock_init(struct btrfs_drw_lock *lock);
++void btrfs_drw_lock_destroy(struct btrfs_drw_lock *lock);
++void btrfs_drw_write_lock(struct btrfs_drw_lock *lock);
++bool btrfs_drw_try_write_lock(struct btrfs_drw_lock *lock);
++void btrfs_drw_write_unlock(struct btrfs_drw_lock *lock);
++void btrfs_drw_read_lock(struct btrfs_drw_lock *lock);
++void btrfs_drw_read_unlock(struct btrfs_drw_lock *lock);
++
+ #endif
+-- 
 2.17.1
 

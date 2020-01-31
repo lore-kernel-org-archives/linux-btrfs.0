@@ -3,31 +3,30 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 06C76C33CB2
-	for <linux-btrfs@archiver.kernel.org>; Fri, 31 Jan 2020 08:03:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A1D66C33CB2
+	for <linux-btrfs@archiver.kernel.org>; Fri, 31 Jan 2020 08:05:38 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id CD815206F0
-	for <linux-btrfs@archiver.kernel.org>; Fri, 31 Jan 2020 08:03:35 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7C2AC206F0
+	for <linux-btrfs@archiver.kernel.org>; Fri, 31 Jan 2020 08:05:38 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728118AbgAaIDf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 31 Jan 2020 03:03:35 -0500
-Received: from mx2.suse.de ([195.135.220.15]:57132 "EHLO mx2.suse.de"
+        id S1728141AbgAaIFh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 31 Jan 2020 03:05:37 -0500
+Received: from mx2.suse.de ([195.135.220.15]:57882 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728077AbgAaIDe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 31 Jan 2020 03:03:34 -0500
+        id S1728077AbgAaIFh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 31 Jan 2020 03:05:37 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 73E9DABB3;
-        Fri, 31 Jan 2020 08:03:32 +0000 (UTC)
-Subject: Re: [PATCH 02/11] btrfs-progs: misc-tests/034: mount the second
- device if first device mount failed
+        by mx2.suse.de (Postfix) with ESMTP id 0A034AD4F;
+        Fri, 31 Jan 2020 08:05:35 +0000 (UTC)
+Subject: Re: [PATCH 00/11] btrfs-progs: metadata_uuid feature fixes and
+ portation
 To:     damenly.su@gmail.com, linux-btrfs@vger.kernel.org
 Cc:     Su Yue <Damenly_Su@gmx.com>
 References: <20191212110204.11128-1-Damenly_Su@gmx.com>
- <20191212110204.11128-3-Damenly_Su@gmx.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  xsFNBFiKBz4BEADNHZmqwhuN6EAzXj9SpPpH/nSSP8YgfwoOqwrP+JR4pIqRK0AWWeWCSwmZ
@@ -71,12 +70,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <2eba385b-1d75-ce1b-669f-f8722dc016fa@suse.com>
-Date:   Fri, 31 Jan 2020 10:03:11 +0200
+Message-ID: <2974237d-ea96-bde8-bc48-2cf8bd6a375b@suse.com>
+Date:   Fri, 31 Jan 2020 10:05:33 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
  Thunderbird/68.4.1
 MIME-Version: 1.0
-In-Reply-To: <20191212110204.11128-3-Damenly_Su@gmx.com>
+In-Reply-To: <20191212110204.11128-1-Damenly_Su@gmx.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -90,20 +89,16 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 On 12.12.19 г. 13:01 ч., damenly.su@gmail.com wrote:
 > From: Su Yue <Damenly_Su@gmx.com>
 > 
-> The 034 test may fail to mount, and dmesg says open_ctree() failed due
-> to device missing.
+> The series are inspired by easy failing misc-tests/034.
+> Those patches fix misc-tests/034 and add new test images.
 > 
-> The partly work flow is
-> step1 loop1 = losetup image1
-> step2 loop2 = losetup image2
-> setp3 mount loop1
-> 
-> The dmesg says the loop2 device is missing.
-> It's possible and known that while step3 is in open_ctree() and
-> fs_devices->opened is nonzero, loop2 device has not been added into the
+> After portation of kernel find fs_devices code, progs is able to
+> work on devices with FSID_CHANGING_V2 flag, not sure whether the
+> functionality is necessary. If not, I will remove it in next version.
+
+For now I think it's best if this is not added. Kernel is supposed to
+handle split-brain scenarios upon device scan which is triggered
+automatically by udev. If the need arises in the future then we can
+think about integrating this code in btrfs-progs.
 
 
-Care to give more details how this can happen? I haven't observed such a
-failure, meaning it's likely due to some race condition. More details
-are needed though. In your change log you say "it's known" but
-apparently only to you in this case.

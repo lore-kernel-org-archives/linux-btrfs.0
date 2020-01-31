@@ -2,32 +2,32 @@ Return-Path: <SRS0=Umwe=3U=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D6185C33CB2
-	for <linux-btrfs@archiver.kernel.org>; Fri, 31 Jan 2020 11:37:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5A92BC33CB2
+	for <linux-btrfs@archiver.kernel.org>; Fri, 31 Jan 2020 11:56:44 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B14E820705
-	for <linux-btrfs@archiver.kernel.org>; Fri, 31 Jan 2020 11:37:42 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3713C214D8
+	for <linux-btrfs@archiver.kernel.org>; Fri, 31 Jan 2020 11:56:44 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728408AbgAaLhl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 31 Jan 2020 06:37:41 -0500
-Received: from mx2.suse.de ([195.135.220.15]:56352 "EHLO mx2.suse.de"
+        id S1728453AbgAaL4n (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 31 Jan 2020 06:56:43 -0500
+Received: from mx2.suse.de ([195.135.220.15]:35688 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728374AbgAaLhl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 31 Jan 2020 06:37:41 -0500
+        id S1728423AbgAaL4n (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 31 Jan 2020 06:56:43 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 08B8AAB98;
-        Fri, 31 Jan 2020 11:37:39 +0000 (UTC)
-Subject: Re: [PATCH 08/20] btrfs: call btrfs_try_granting_tickets when
- reserving space
+        by mx2.suse.de (Postfix) with ESMTP id 4B027AB98;
+        Fri, 31 Jan 2020 11:56:41 +0000 (UTC)
+Subject: Re: [PATCH 09/20] btrfs: use the btrfs_space_info_free_bytes_may_use
+ helper for delalloc
 To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
         kernel-team@fb.com
 References: <20200129235024.24774-1-josef@toxicpanda.com>
- <20200129235024.24774-9-josef@toxicpanda.com>
+ <20200129235024.24774-10-josef@toxicpanda.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  xsFNBFiKBz4BEADNHZmqwhuN6EAzXj9SpPpH/nSSP8YgfwoOqwrP+JR4pIqRK0AWWeWCSwmZ
@@ -71,12 +71,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <b9cbda5b-bc4d-1cfa-4b90-6d355904869f@suse.com>
-Date:   Fri, 31 Jan 2020 13:37:37 +0200
+Message-ID: <fe94fb05-cebc-ef10-b504-556cb9ff38f5@suse.com>
+Date:   Fri, 31 Jan 2020 13:56:40 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
  Thunderbird/68.4.1
 MIME-Version: 1.0
-In-Reply-To: <20200129235024.24774-9-josef@toxicpanda.com>
+In-Reply-To: <20200129235024.24774-10-josef@toxicpanda.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -88,35 +88,11 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 30.01.20 г. 1:50 ч., Josef Bacik wrote:
-> If we have compression on we could free up more space than we reserved,
-> and thus be able to make a space reservation.  Add the call for this
-> scenario.
+> We are going to use the ticket infrastructure for data, so use the
+> btrfs_space_info_free_bytes_may_use() helper in
+> btrfs_free_reserved_data_space_noquota() so we get the
+> try_granting_tickets call when we free our reservation.
 > 
 > Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 
-
 Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-
-> ---
->  fs/btrfs/block-group.c | 7 +++++++
->  1 file changed, 7 insertions(+)
-> 
-> diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-> index 616d0dd69394..aca4510f1f2d 100644
-> --- a/fs/btrfs/block-group.c
-> +++ b/fs/btrfs/block-group.c
-> @@ -2899,6 +2899,13 @@ int btrfs_add_reserved_bytes(struct btrfs_block_group *cache,
->  						      space_info, -ram_bytes);
->  		if (delalloc)
->  			cache->delalloc_bytes += num_bytes;
-> +
-> +		/*
-> +		 * Compression can use less space than we reserved, so wake
-> +		 * tickets if that happens.
-> +		 */
-> +		if (num_bytes < ram_bytes)
-> +			btrfs_try_granting_tickets(cache->fs_info, space_info);
->  	}
->  	spin_unlock(&cache->lock);
->  	spin_unlock(&space_info->lock);
-> 

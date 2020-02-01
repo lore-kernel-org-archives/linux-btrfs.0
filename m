@@ -2,153 +2,113 @@ Return-Path: <SRS0=V5Z0=3V=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,URIBL_DBL_ABUSE_MALW,USER_AGENT_GIT autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.7 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4F23EC35248
-	for <linux-btrfs@archiver.kernel.org>; Sat,  1 Feb 2020 15:13:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4ADE6C35246
+	for <linux-btrfs@archiver.kernel.org>; Sat,  1 Feb 2020 20:38:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1771520661
-	for <linux-btrfs@archiver.kernel.org>; Sat,  1 Feb 2020 15:13:35 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="RnoVi6fU"
+	by mail.kernel.org (Postfix) with ESMTP id 27ECB20643
+	for <linux-btrfs@archiver.kernel.org>; Sat,  1 Feb 2020 20:38:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726869AbgBAPMn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 1 Feb 2020 10:12:43 -0500
-Received: from bombadil.infradead.org ([198.137.202.133]:51822 "EHLO
-        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726669AbgBAPMm (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 1 Feb 2020 10:12:42 -0500
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20170209; h=Content-Transfer-Encoding:
-        MIME-Version:Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:Content-Type:
-        Content-ID:Content-Description:Resent-Date:Resent-From:Resent-Sender:
-        Resent-To:Resent-Cc:Resent-Message-ID:In-Reply-To:References:List-Id:
-        List-Help:List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-         bh=dB7ywmsatelLVL7Psw2UVkpn4TS1ismlyPRVqvsNN4I=; b=RnoVi6fUM/M58i6TYhoTLY0TL
-        V7I9zpJWwCzNP2scBs5DKrt7H9v8YkzB+zy/W4DudHEy5O3nZ2nS+CmMmx7gYjNpb//bY/tIKKSyZ
-        BoIYl7MaogIfsM0Y9tjCirctp4DMLxm6KpweOFcDQtxE+etr4078ycEjYIbRbs9F7wyfbU5GGbVy3
-        fnFz1u13IqALNOQOFhi0zXFNp8K2To+TxPFBQ7dryOGOMrqog5fJewQfdZiz2SpgzlRxhq5dAlgjj
-        JO1o3SZNAvTMRVCpWVcSJwTwalk4DOgKQ0oSw60THP3NVyDBfjsNRTxzLp1iNTUgC+HvKJkv6LBzz
-        TzfPOsY9g==;
-Received: from willy by bombadil.infradead.org with local (Exim 4.92.3 #3 (Red Hat Linux))
-        id 1ixuRu-0006HE-1K; Sat, 01 Feb 2020 15:12:42 +0000
-From:   Matthew Wilcox <willy@infradead.org>
-To:     linux-fsdevel@vger.kernel.org
-Cc:     "Matthew Wilcox (Oracle)" <willy@infradead.org>,
-        linux-mm@kvack.org, linux-kernel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-erofs@lists.ozlabs.org,
-        linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
-        linux-xfs@vger.kernel.org, cluster-devel@redhat.com,
-        ocfs2-devel@oss.oracle.com
-Subject: [PATCH v4 00/12] Change readahead API
-Date:   Sat,  1 Feb 2020 07:12:28 -0800
-Message-Id: <20200201151240.24082-1-willy@infradead.org>
-X-Mailer: git-send-email 2.21.1
-MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+        id S1726514AbgBAUiy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 1 Feb 2020 15:38:54 -0500
+Received: from mail-yw1-f67.google.com ([209.85.161.67]:35080 "EHLO
+        mail-yw1-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726354AbgBAUiy (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 1 Feb 2020 15:38:54 -0500
+Received: by mail-yw1-f67.google.com with SMTP id i190so8986755ywc.2;
+        Sat, 01 Feb 2020 12:38:53 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:from:to:cc:subject:date:message-id;
+        bh=mwTtxM/El7wYG4De6gji0Twu6r1cttjqKEr0PQZ0xW8=;
+        b=r04WWOp4Q59kqnAYxZqwH3pgWYwbkAhQR3J5rGDsprSPcgWjrBUnBccZIL2GCaEEuT
+         KLA/lF2L0DruvDzXuEg+w2G0aau4sP2/7RjmvbNAUD6YZkxRMqWSZ2zZZ2NIYbobP0eh
+         Wk7K3t9NBYhriKTKYLi3AucTNjbWCitIPpR+qXIPbm2Vy2i69gbx1QAfrEundyKwfIaU
+         O5SH3ulNtpRObo6r2t+WU6y1cnAEEGLHcvB/bf96O9Sau8mXawbQwTy0GtG+xxA+eTsk
+         A6ZKoAfLRriydv+ZVLwaoJmeppII7Hp4hqJwlzbcT6tPJUYQ9tjCGBQ66F5xsYVm+XF1
+         5z+Q==
+X-Gm-Message-State: APjAAAUOdwnFIgGxCK9Llivf6WfolHDd1djl5T1KRIDQr3hT0bL63Bo4
+        bJuhhVCrCbRnRJ0bvhKW1YA=
+X-Google-Smtp-Source: APXvYqxmBbdXfk3hSJtvOtOvW9+UNuPKdHGt7J+vBGV1KpT+gP3YFfYjKbPKwbhacfIkRBhmcT6E1Q==
+X-Received: by 2002:a81:8405:: with SMTP id u5mr12746575ywf.93.1580589533499;
+        Sat, 01 Feb 2020 12:38:53 -0800 (PST)
+Received: from localhost.localdomain (h198-137-20-41.xnet.uga.edu. [198.137.20.41])
+        by smtp.gmail.com with ESMTPSA id j72sm6252708ywj.60.2020.02.01.12.38.52
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sat, 01 Feb 2020 12:38:52 -0800 (PST)
+From:   Wenwen Wang <wenwen@cs.uga.edu>
+To:     Wenwen Wang <wenwen@cs.uga.edu>
+Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>,
+        linux-btrfs@vger.kernel.org (open list:BTRFS FILE SYSTEM),
+        linux-kernel@vger.kernel.org (open list)
+Subject: [PATCH] btrfs: ref-verify: fix memory leaks
+Date:   Sat,  1 Feb 2020 20:38:38 +0000
+Message-Id: <20200201203838.19198-1-wenwen@cs.uga.edu>
+X-Mailer: git-send-email 2.17.1
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: "Matthew Wilcox (Oracle)" <willy@infradead.org>
+In btrfs_ref_tree_mod(), 'ref' and 'ra' are allocated through kzalloc() and
+kmalloc(), respectively. In the following code, if an error occurs, the
+execution will be redirected to 'out' or 'out_unlock' and the function will
+be exited. However, on some of the paths, 'ref' and 'ra' are not
+deallocated, leading to memory leaks. For example, if 'action' is
+BTRFS_ADD_DELAYED_EXTENT, add_block_entry() will be invoked. If the return
+value indicates an error, the execution will be redirected to 'out'. But,
+'ref' is not deallocated on this path, causing a memory leak.
 
-I would particularly value feedback on this from the gfs2 and ocfs2
-maintainers.  They have non-trivial changes, and a review on patch 5
-would be greatly appreciated.
+To fix the above issues, deallocate both 'ref' and 'ra' before exiting from
+the function when an error is encountered.
 
-This series adds a readahead address_space operation to eventually
-replace the readpages operation.  The key difference is that
-pages are added to the page cache as they are allocated (and
-then looked up by the filesystem) instead of passing them on a
-list to the readpages operation and having the filesystem add
-them to the page cache.  It's a net reduction in code for each
-implementation, more efficient than walking a list, and solves
-the direct-write vs buffered-read problem reported by yu kuai at
-https://lore.kernel.org/linux-fsdevel/20200116063601.39201-1-yukuai3@huawei.com/
+Signed-off-by: Wenwen Wang <wenwen@cs.uga.edu>
+---
+ fs/btrfs/ref-verify.c | 5 +++++
+ 1 file changed, 5 insertions(+)
 
-v4:
- - Rebase on current Linus (a62aa6f7f50a ("Merge tag 'gfs2-for-5.6'"))
- - Add comment to __do_page_cache_readahead() acknowledging we don't
-   care _that_ much about setting PageReadahead.
- - Fix the return value check of add_to_page_cache_lru().
- - Add a missing call to put_page() in __do_page_cache_readahead() if
-   we fail to insert the page.
- - Improve the documentation of ->readahead (including indentation
-   problem identified by Randy).
- - Fix off by one error in read_pages() (Dave Chinner).
- - Fix nr_pages manipulation in btrfs (Dave Chinner).
- - Remove bogus refcount fix in erofs (Gao Xiang, Dave Chinner).
- - Update ext4 patch for Merkle tree readahead.
- - Update f2fs patch for Merkle tree readahead.
- - Reinstate next_page label in f2fs_readpages() now it's used by the
-   compression code.
- - Reinstate call to fuse_wait_on_page_writeback (Miklos Szeredi).
- - Remove a double-unlock in the error path in fuse.
- - Remove an odd fly-speck in fuse_readpages().
- - Make nr_pages loop in fuse_readpages less convoluted (Dave Chinner).
-
-Matthew Wilcox (Oracle) (12):
-  mm: Fix the return type of __do_page_cache_readahead
-  readahead: Ignore return value of ->readpages
-  readahead: Put pages in cache earlier
-  mm: Add readahead address space operation
-  fs: Convert mpage_readpages to mpage_readahead
-  btrfs: Convert from readpages to readahead
-  erofs: Convert uncompressed files from readpages to readahead
-  erofs: Convert compressed files from readpages to readahead
-  ext4: Convert from readpages to readahead
-  f2fs: Convert from readpages to readahead
-  fuse: Convert from readpages to readahead
-  iomap: Convert from readpages to readahead
-
- Documentation/filesystems/locking.rst |  7 ++-
- Documentation/filesystems/vfs.rst     | 14 +++++
- drivers/staging/exfat/exfat_super.c   |  9 +--
- fs/block_dev.c                        |  9 +--
- fs/btrfs/extent_io.c                  | 19 +++---
- fs/btrfs/extent_io.h                  |  2 +-
- fs/btrfs/inode.c                      | 18 +++---
- fs/erofs/data.c                       | 33 ++++------
- fs/erofs/zdata.c                      | 21 +++----
- fs/ext2/inode.c                       | 12 ++--
- fs/ext4/ext4.h                        |  5 +-
- fs/ext4/inode.c                       | 24 ++++----
- fs/ext4/readpage.c                    | 20 +++---
- fs/ext4/verity.c                      | 16 +++--
- fs/f2fs/data.c                        | 35 +++++------
- fs/f2fs/f2fs.h                        |  5 +-
- fs/f2fs/verity.c                      | 16 +++--
- fs/fat/inode.c                        |  8 +--
- fs/fuse/file.c                        | 37 +++++------
- fs/gfs2/aops.c                        | 20 +++---
- fs/hpfs/file.c                        |  8 +--
- fs/iomap/buffered-io.c                | 74 +++++-----------------
- fs/iomap/trace.h                      |  2 +-
- fs/isofs/inode.c                      |  9 +--
- fs/jfs/inode.c                        |  8 +--
- fs/mpage.c                            | 38 ++++--------
- fs/nilfs2/inode.c                     | 13 ++--
- fs/ocfs2/aops.c                       | 32 +++++-----
- fs/omfs/file.c                        |  8 +--
- fs/qnx6/inode.c                       |  8 +--
- fs/reiserfs/inode.c                   | 10 +--
- fs/udf/inode.c                        |  8 +--
- fs/xfs/xfs_aops.c                     | 10 +--
- include/linux/fs.h                    |  2 +
- include/linux/iomap.h                 |  2 +-
- include/linux/mpage.h                 |  2 +-
- include/linux/pagemap.h               | 12 ++++
- include/trace/events/erofs.h          |  6 +-
- include/trace/events/f2fs.h           |  6 +-
- mm/internal.h                         |  2 +-
- mm/migrate.c                          |  2 +-
- mm/readahead.c                        | 89 ++++++++++++++++++---------
- 42 files changed, 332 insertions(+), 349 deletions(-)
-
+diff --git a/fs/btrfs/ref-verify.c b/fs/btrfs/ref-verify.c
+index b57f3618e58e..454a1015d026 100644
+--- a/fs/btrfs/ref-verify.c
++++ b/fs/btrfs/ref-verify.c
+@@ -744,6 +744,7 @@ int btrfs_ref_tree_mod(struct btrfs_fs_info *fs_info,
+ 		 */
+ 		be = add_block_entry(fs_info, bytenr, num_bytes, ref_root);
+ 		if (IS_ERR(be)) {
++			kfree(ref);
+ 			kfree(ra);
+ 			ret = PTR_ERR(be);
+ 			goto out;
+@@ -757,6 +758,8 @@ int btrfs_ref_tree_mod(struct btrfs_fs_info *fs_info,
+ 			"re-allocated a block that still has references to it!");
+ 			dump_block_entry(fs_info, be);
+ 			dump_ref_action(fs_info, ra);
++			kfree(ref);
++			kfree(ra);
+ 			goto out_unlock;
+ 		}
+ 
+@@ -819,6 +822,7 @@ int btrfs_ref_tree_mod(struct btrfs_fs_info *fs_info,
+ "dropping a ref for a existing root that doesn't have a ref on the block");
+ 				dump_block_entry(fs_info, be);
+ 				dump_ref_action(fs_info, ra);
++				kfree(ref);
+ 				kfree(ra);
+ 				goto out_unlock;
+ 			}
+@@ -834,6 +838,7 @@ int btrfs_ref_tree_mod(struct btrfs_fs_info *fs_info,
+ "attempting to add another ref for an existing ref on a tree block");
+ 			dump_block_entry(fs_info, be);
+ 			dump_ref_action(fs_info, ra);
++			kfree(ref);
+ 			kfree(ra);
+ 			goto out_unlock;
+ 		}
 -- 
-2.24.1
+2.17.1
 

@@ -2,159 +2,208 @@ Return-Path: <SRS0=V5Z0=3V=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+X-Spam-Status: No, score=-7.0 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
-	version=3.4.0
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,URIBL_DBL_ABUSE_MALW,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7136AC35246
-	for <linux-btrfs@archiver.kernel.org>; Sat,  1 Feb 2020 13:07:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E0A3FC33CB7
+	for <linux-btrfs@archiver.kernel.org>; Sat,  1 Feb 2020 15:12:51 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4814520661
-	for <linux-btrfs@archiver.kernel.org>; Sat,  1 Feb 2020 13:07:29 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id ACC0220723
+	for <linux-btrfs@archiver.kernel.org>; Sat,  1 Feb 2020 15:12:51 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="SXEBA+tP"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="bY3NBrXn"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726518AbgBANH2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 1 Feb 2020 08:07:28 -0500
-Received: from mail-il1-f195.google.com ([209.85.166.195]:44485 "EHLO
-        mail-il1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726297AbgBANH2 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 1 Feb 2020 08:07:28 -0500
-Received: by mail-il1-f195.google.com with SMTP id s85so5251039ill.11;
-        Sat, 01 Feb 2020 05:07:28 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc:content-transfer-encoding;
-        bh=oNKC7fDBF5bypMMsY3mRJy+utUKLGrjciGC3lDrgQ1s=;
-        b=SXEBA+tPeh6jGa9IdMJaUREtXKGtqqX9CLtkw/+Xfre+LMAJrwxyLt33mpm1ZiqgJQ
-         QM5UdOvS3oNu9u8VujN0ZOazlwi0a4+qw2FwnlnHWFc3t7WSz+m92hBjqzF68ourdDWY
-         tnPb0gYe5m1FNoGAGcVN2zzl3P2egB8CtZkkQNJeVgXYO3aoFjRnyPbOwG6CjE8GNyqL
-         0ZwRECThXoQA+HMzVEpSk8VMGZVMGbZgAc9ZleddcJLq1lUFivHPloyDoLqBx/hWcREE
-         +g2sR8K8y2U/Hi7TZhkp+9kARkpjMilghf7Fqq7vS6yNEGPF8YV73koJ+7L/5iQRnRVR
-         Jqug==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc:content-transfer-encoding;
-        bh=oNKC7fDBF5bypMMsY3mRJy+utUKLGrjciGC3lDrgQ1s=;
-        b=uG/M9N6BNY+p6vg7A01t3M26Drqoxl+b+QOvI51K789mhK86yjZ3CqVgT0/8YiPVR1
-         hUs0Foe38PqP5xhghyllYIjqggCk1Be+QywVKGbXJMV2m91vgeVBDOsu6vsbOkImJgJG
-         7Q66LXJE1bYdfYpibQG6cxL3cUnbn9C0E1E8lwO4JKaSnDmq5nT4G2enLat4zvygseDL
-         jAZO5sG0JPJiqjw4rXYbbjRHMjrD0DmLJcmc/QviPQOXjPv/+xWN3eYPojPdKzh7rY55
-         mOdX3PHyWVjrOLo1/xlqB0o2uVbDzj6no9xSKtAu8+fEugk0j0UM+jspXhvMdgJ77nqg
-         tnSw==
-X-Gm-Message-State: APjAAAXw4jZsSkzBo1+Q+erL1FHRi3Z7fIjmUHfndscIhpRYmPu1If3L
-        KOTzVVpUpZXwZfNRjbrv1FELbD3Btiqzz/spf3s=
-X-Google-Smtp-Source: APXvYqx3+Gx+gIejbyuzt6sWJ6pulqhDnZM9iFTZSZMn3Nl3GqjRKOQC3qXXSpmALrzdMnhA1342lzXegvRL7mBJe2o=
-X-Received: by 2002:a92:d5c3:: with SMTP id d3mr7139367ilq.250.1580562447510;
- Sat, 01 Feb 2020 05:07:27 -0800 (PST)
+        id S1727265AbgBAPMv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 1 Feb 2020 10:12:51 -0500
+Received: from bombadil.infradead.org ([198.137.202.133]:51880 "EHLO
+        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727225AbgBAPMs (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 1 Feb 2020 10:12:48 -0500
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=bombadil.20170209; h=Content-Transfer-Encoding:
+        MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
+        :Reply-To:Content-Type:Content-ID:Content-Description:Resent-Date:Resent-From
+        :Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
+        List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
+        bh=Ml5Puu4JmLRdzMhiiCOiBo4ACbPsQdjTb+QSPxS+DKY=; b=bY3NBrXng43eEHaP4qFkNBHkjA
+        /0ai0QxQPvj+vzTnehD7kfdwvHZ8vzjptHG3nMCtmSDzhJPLlrrRvHwMG04vHV9fd/CCJRTd7hZ9S
+        kCY6iKxXzzldIpqfDcbhn1eEv9lpm3OwGdFjku0KJeD/QhITkP89Q8r/3MLB+25BxQPdL5yjJPCI/
+        zaoC9Cl+tOymw4aTP+dhrGrhEN9KAUrBXzsBIHlqEM/UfvzLlZxLPkERj8Ov2t+ljIWtVaj85jqMP
+        h352PTKYgXTRiVZYfWwYCWlL9sM65Px7gR4w2uvH7jwuclAa5kmfsGcMYSDK+NcJWFvdA8OCVg7ot
+        FV+G0YLQ==;
+Received: from willy by bombadil.infradead.org with local (Exim 4.92.3 #3 (Red Hat Linux))
+        id 1ixuRu-0006HT-5R; Sat, 01 Feb 2020 15:12:42 +0000
+From:   Matthew Wilcox <willy@infradead.org>
+To:     linux-fsdevel@vger.kernel.org
+Cc:     "Matthew Wilcox (Oracle)" <willy@infradead.org>,
+        linux-mm@kvack.org, linux-kernel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-erofs@lists.ozlabs.org,
+        linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
+        linux-xfs@vger.kernel.org, cluster-devel@redhat.com,
+        ocfs2-devel@oss.oracle.com
+Subject: [PATCH v4 04/12] mm: Add readahead address space operation
+Date:   Sat,  1 Feb 2020 07:12:32 -0800
+Message-Id: <20200201151240.24082-5-willy@infradead.org>
+X-Mailer: git-send-email 2.21.1
+In-Reply-To: <20200201151240.24082-1-willy@infradead.org>
+References: <20200201151240.24082-1-willy@infradead.org>
 MIME-Version: 1.0
-References: <20200114125044.21594-1-wqu@suse.com> <20200201073649.GA2697@desktop>
- <CAOQ4uxj_MFHrWthckSVUaHp3us2eNFeZRc_wuD90CxcUveYUTA@mail.gmail.com> <c3310387-da7b-3184-147f-67f00eed1aae@suse.com>
-In-Reply-To: <c3310387-da7b-3184-147f-67f00eed1aae@suse.com>
-From:   Amir Goldstein <amir73il@gmail.com>
-Date:   Sat, 1 Feb 2020 15:07:16 +0200
-Message-ID: <CAOQ4uxiu6T-cHr5TZ93K1U5fGnu8bG4RSpkZqMvvDEw_wDCuPg@mail.gmail.com>
-Subject: Re: [PATCH] fstests: btrfs/153: Remove it from auto group
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     Eryu Guan <guaneryu@gmail.com>, fstests <fstests@vger.kernel.org>,
-        Linux Btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sat, Feb 1, 2020 at 2:39 PM Qu Wenruo <wqu@suse.com> wrote:
->
->
->
-> On 2020/2/1 =E4=B8=8B=E5=8D=887:10, Amir Goldstein wrote:
-> > On Sat, Feb 1, 2020 at 9:41 AM Eryu Guan <guaneryu@gmail.com> wrote:
-> >>
-> >> On Tue, Jan 14, 2020 at 08:50:44PM +0800, Qu Wenruo wrote:
-> >>> This test case always fail after commit c6887cd11149 ("Btrfs: don't d=
-o
-> >>> nocow check unless we have to").
-> >>> As btrfs no longer checks nodatacow at buffered write time.
-> >>>
-> >>> That commits brings in a big performance enhancement, as that check i=
-s
-> >>> not cheap, but breaks qgroup, as write into preallocated space now ne=
-eds
-> >>> extra space.
-> >>>
-> >>> There isn't yet a good solution (reverting that patch is not possible=
-,
-> >>> and only check nodatacow for quota enabled case is very bug prune due=
- to
-> >>> quite a lot code change).
-> >>>
-> >>> We may solve it using the new ticketed space reservation facility, bu=
-t
-> >>> that won't come into fruit anytime soon.
-> >>>
-> >>> So let's just remove that test case from 'auto' group, but still keep
-> >>> the test case to inform we still have a lot of work to do.
-> >>>
-> >>> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> >>
-> >> I'd like to see an ACK from btrfs folks. Thanks!
-> >>
-> >> Eryu
-> >>
-> >>> ---
-> >>>  tests/btrfs/group | 2 +-
-> >>>  1 file changed, 1 insertion(+), 1 deletion(-)
-> >>>
-> >>> diff --git a/tests/btrfs/group b/tests/btrfs/group
-> >>> index 697b6a38ea00..3c554a194742 100644
-> >>> --- a/tests/btrfs/group
-> >>> +++ b/tests/btrfs/group
-> >>> @@ -155,7 +155,7 @@
-> >>>  150 auto quick dangerous
-> >>>  151 auto quick volume
-> >>>  152 auto quick metadata qgroup send
-> >>> -153 auto quick qgroup limit
-> >>> +153 quick qgroup limit
-> >
-> > Hmm, if removing from auto it might make sense to also remove it
-> > from quick, because people often use quick as a sanity regression group=
-.
->
-> That's also one of my concern.
->
-> However recently I tend to run more same VMs on different ranges of
-> fstests to speed up the testing progress other than using 'quick' group.
->
-> Anyway this depends on the end users (QA and developers).
->
-> >
-> > The issue at hand is a recurring pattern.
-> > It is also been discussed recently about generic/484:
-> > https://lore.kernel.org/fstests/20200131164619.GA13005@infradead.org/
-> >
-> > I also handled something like this with:
-> > fdb69864 overlay/061: remove from auto and quick groups
-> >
-> > I suggest adding a group 'broken' to mark known/wontfix issues
-> > then a default regression test could run -g auto -x broken
-> > or -g quick -x broken for a quick regression sanity.
->
-> That's much better.
->
-> Just one question, if a test is in both quick and broken group, will -g
-> quick -x broken still exclude it?
->
+From: "Matthew Wilcox (Oracle)" <willy@infradead.org>
 
-Yes.
-That is the main use case for -x. Often used with -x dangerous.
+This replaces ->readpages with a saner interface:
+ - Return the number of pages not read instead of an ignored error code.
+ - Pages are already in the page cache when ->readahead is called.
+ - Implementation looks up the pages in the page cache instead of
+   having them passed in a linked list.
 
-What we don't have, AFAIK, is the ability to request 'auto && quick'.
+Signed-off-by: Matthew Wilcox (Oracle) <willy@infradead.org>
+Cc: linux-btrfs@vger.kernel.org
+Cc: linux-erofs@lists.ozlabs.org
+Cc: linux-ext4@vger.kernel.org
+Cc: linux-f2fs-devel@lists.sourceforge.net
+Cc: linux-xfs@vger.kernel.org
+Cc: cluster-devel@redhat.com
+Cc: ocfs2-devel@oss.oracle.com
+---
+ Documentation/filesystems/locking.rst |  7 ++++++-
+ Documentation/filesystems/vfs.rst     | 14 ++++++++++++++
+ include/linux/fs.h                    |  2 ++
+ include/linux/pagemap.h               | 12 ++++++++++++
+ mm/readahead.c                        | 13 ++++++++++++-
+ 5 files changed, 46 insertions(+), 2 deletions(-)
 
-Thanks,
-Amir.
+diff --git a/Documentation/filesystems/locking.rst b/Documentation/filesystems/locking.rst
+index 5057e4d9dcd1..3d10729caf44 100644
+--- a/Documentation/filesystems/locking.rst
++++ b/Documentation/filesystems/locking.rst
+@@ -239,6 +239,8 @@ prototypes::
+ 	int (*readpage)(struct file *, struct page *);
+ 	int (*writepages)(struct address_space *, struct writeback_control *);
+ 	int (*set_page_dirty)(struct page *page);
++	unsigned (*readahead)(struct file *, struct address_space *,
++				 pgoff_t start, unsigned nr_pages);
+ 	int (*readpages)(struct file *filp, struct address_space *mapping,
+ 			struct list_head *pages, unsigned nr_pages);
+ 	int (*write_begin)(struct file *, struct address_space *mapping,
+@@ -271,7 +273,8 @@ writepage:		yes, unlocks (see below)
+ readpage:		yes, unlocks
+ writepages:
+ set_page_dirty		no
+-readpages:
++readahead:		yes, unlocks
++readpages:		no
+ write_begin:		locks the page		 exclusive
+ write_end:		yes, unlocks		 exclusive
+ bmap:
+@@ -295,6 +298,8 @@ the request handler (/dev/loop).
+ ->readpage() unlocks the page, either synchronously or via I/O
+ completion.
+ 
++->readahead() unlocks the pages like ->readpage().
++
+ ->readpages() populates the pagecache with the passed pages and starts
+ I/O against them.  They come unlocked upon I/O completion.
+ 
+diff --git a/Documentation/filesystems/vfs.rst b/Documentation/filesystems/vfs.rst
+index 7d4d09dd5e6d..c2bc345f2169 100644
+--- a/Documentation/filesystems/vfs.rst
++++ b/Documentation/filesystems/vfs.rst
+@@ -706,6 +706,8 @@ cache in your filesystem.  The following members are defined:
+ 		int (*readpage)(struct file *, struct page *);
+ 		int (*writepages)(struct address_space *, struct writeback_control *);
+ 		int (*set_page_dirty)(struct page *page);
++		unsigned (*readahead)(struct file *filp, struct address_space *mapping,
++				 pgoff_t start, unsigned nr_pages);
+ 		int (*readpages)(struct file *filp, struct address_space *mapping,
+ 				 struct list_head *pages, unsigned nr_pages);
+ 		int (*write_begin)(struct file *, struct address_space *mapping,
+@@ -781,6 +783,18 @@ cache in your filesystem.  The following members are defined:
+ 	If defined, it should set the PageDirty flag, and the
+ 	PAGECACHE_TAG_DIRTY tag in the radix tree.
+ 
++``readahead``
++	Called by the VM to read pages associated with the address_space
++	object.  The pages are consecutive in the page cache and
++	are locked.  The implementation should decrement the page
++	refcount after attempting I/O on each page.  Usually the
++	page will be unlocked by the I/O completion handler.  If the
++	function does not attempt I/O on some pages, return the number
++	of pages which were not read so the caller can unlock the pages
++	for you.  Set PageUptodate if the I/O completes successfully.
++	Setting PageError on any page will be ignored; simply unlock
++	the page if an I/O error occurs.
++
+ ``readpages``
+ 	called by the VM to read pages associated with the address_space
+ 	object.  This is essentially just a vector version of readpage.
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 41584f50af0d..3bfc142e7d10 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -375,6 +375,8 @@ struct address_space_operations {
+ 	 */
+ 	int (*readpages)(struct file *filp, struct address_space *mapping,
+ 			struct list_head *pages, unsigned nr_pages);
++	unsigned (*readahead)(struct file *, struct address_space *,
++			pgoff_t start, unsigned nr_pages);
+ 
+ 	int (*write_begin)(struct file *, struct address_space *mapping,
+ 				loff_t pos, unsigned len, unsigned flags,
+diff --git a/include/linux/pagemap.h b/include/linux/pagemap.h
+index ccb14b6a16b5..a2cf007826f2 100644
+--- a/include/linux/pagemap.h
++++ b/include/linux/pagemap.h
+@@ -630,6 +630,18 @@ static inline int add_to_page_cache(struct page *page,
+ 	return error;
+ }
+ 
++/*
++ * Only call this from a ->readahead implementation.
++ */
++static inline
++struct page *readahead_page(struct address_space *mapping, pgoff_t index)
++{
++	struct page *page = xa_load(&mapping->i_pages, index);
++	VM_BUG_ON_PAGE(!PageLocked(page), page);
++
++	return page;
++}
++
+ static inline unsigned long dir_pages(struct inode *inode)
+ {
+ 	return (unsigned long)(inode->i_size + PAGE_SIZE - 1) >>
+diff --git a/mm/readahead.c b/mm/readahead.c
+index 7daef0038b14..b2ed0baf3a5d 100644
+--- a/mm/readahead.c
++++ b/mm/readahead.c
+@@ -121,7 +121,18 @@ static void read_pages(struct address_space *mapping, struct file *filp,
+ 
+ 	blk_start_plug(&plug);
+ 
+-	if (mapping->a_ops->readpages) {
++	if (mapping->a_ops->readahead) {
++		unsigned left = mapping->a_ops->readahead(filp, mapping,
++				start, nr_pages);
++
++		while (left) {
++			struct page *page = readahead_page(mapping,
++					start + nr_pages - left);
++			unlock_page(page);
++			put_page(page);
++			left--;
++		}
++	} else if (mapping->a_ops->readpages) {
+ 		mapping->a_ops->readpages(filp, mapping, pages, nr_pages);
+ 		/* Clean up the remaining pages */
+ 		put_pages_list(pages);
+-- 
+2.24.1
+

@@ -2,76 +2,108 @@ Return-Path: <SRS0=yHCO=3W=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C71B2C35249
-	for <linux-btrfs@archiver.kernel.org>; Sun,  2 Feb 2020 17:53:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 81ECBC35249
+	for <linux-btrfs@archiver.kernel.org>; Sun,  2 Feb 2020 19:56:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A1489206D3
-	for <linux-btrfs@archiver.kernel.org>; Sun,  2 Feb 2020 17:53:11 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 243B3206D3
+	for <linux-btrfs@archiver.kernel.org>; Sun,  2 Feb 2020 19:56:53 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="okMtlRdP"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726907AbgBBRxK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 2 Feb 2020 12:53:10 -0500
-Received: from mx2.suse.de ([195.135.220.15]:44452 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726893AbgBBRxK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 2 Feb 2020 12:53:10 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id ACD00AD14;
-        Sun,  2 Feb 2020 17:53:08 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 54A59DA7A1; Sun,  2 Feb 2020 18:52:47 +0100 (CET)
-Date:   Sun, 2 Feb 2020 18:52:47 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com,
-        Martin Steigerwald <martin@lichtvoll.de>
-Subject: Re: [PATCH] btrfs: do not zero f_bavail if we have available space
-Message-ID: <20200202175247.GB3929@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
-        linux-btrfs@vger.kernel.org, kernel-team@fb.com,
-        Martin Steigerwald <martin@lichtvoll.de>
-References: <20200131143105.52092-1-josef@toxicpanda.com>
+        id S1726921AbgBBT4w (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 2 Feb 2020 14:56:52 -0500
+Received: from mail-wr1-f65.google.com ([209.85.221.65]:38262 "EHLO
+        mail-wr1-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726290AbgBBT4w (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 2 Feb 2020 14:56:52 -0500
+Received: by mail-wr1-f65.google.com with SMTP id y17so15306908wrh.5
+        for <linux-btrfs@vger.kernel.org>; Sun, 02 Feb 2020 11:56:50 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=GGPHZrmfqckR3+PehfRD5MALpm96/TC+7LXgyyq/zmA=;
+        b=okMtlRdPiVoosSI1nxstVDTtDOsp2rtIRINiKDZYmSMkBM9pisctdIxl3L7TDMH+k4
+         oBXmsNJ+tV01mhFHghMsbOeCyJCmIRJ8cfFgvPAOOgF8XSJ3UAS+ZnH7PcGQHbIrrC9B
+         nhvWRqj+eAgW4GlF8k597Ypf9F3RbXpQ72PtpJoqmWYG5cafdr3wd8Ao60V0rwJSYSTi
+         3PCqA5qZcl7WamNF3w+xPsEdg/1qZK+601FaNMOrtC4qKj+MDMheX0N3oSWekz10OoGc
+         JkYeT0f1sVBVhrxXsbYd52vVDIrKJFbGAjnUQ54gwTdXIR1YVAk3n9AjaSrCPQK3LfJd
+         JPMA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=GGPHZrmfqckR3+PehfRD5MALpm96/TC+7LXgyyq/zmA=;
+        b=UZwBt+dEgIlbB9DbCgpwrOD8BbBqfNKaVtFseySPdVEDueEXtbx2sORJ5PpgBbUcE0
+         1Da0Mb5VN7t1NFGf28LElUIjphlrRHmcflegN4Jx1QuNjp/ICMclPuWMfATbgzXRXEdb
+         zlQQqHrtoIIMOnAoTblQfz8WyK6SQYCXREobU0j/U++1GPpnhELrKy6DQ5TvENiUhISa
+         yRCH5MZLfRCIvMvJbeMhq7XPW4h6hM+bTpVO2HXPF3CBXet4jhmdear8Qe6oQkZWxt0n
+         zXgyrESm74QnQOvllIytUVxauyyXExjrFpWG6UbyuHLOOOcv93M6AfeJ5BCZ9wK9T6bX
+         b4jw==
+X-Gm-Message-State: APjAAAVWEQXdc+pL+Fn+rxNFillZuNeLWeerlEJdABinog9UL86FuaGY
+        rQ2/QMrA/oC2pN15XJpnkinYloFZiwKAiKrIrg5QO4KRaXM=
+X-Google-Smtp-Source: APXvYqwGuGfRanHTFtlcNZw+1VPPowEs97YcHowXfzjXpR8v249MwqpTQXgSkvG9pUSe6bDDVUwxxokZHTC6c5H7L0w=
+X-Received: by 2002:adf:ab14:: with SMTP id q20mr11087336wrc.274.1580673409932;
+ Sun, 02 Feb 2020 11:56:49 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20200131143105.52092-1-josef@toxicpanda.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+References: <CACN+yT_AYiLc29M41U+WrQHtk4t==D-4AkH+wRROKJY=WstGAA@mail.gmail.com>
+In-Reply-To: <CACN+yT_AYiLc29M41U+WrQHtk4t==D-4AkH+wRROKJY=WstGAA@mail.gmail.com>
+From:   Chris Murphy <lists@colorremedies.com>
+Date:   Sun, 2 Feb 2020 12:56:34 -0700
+Message-ID: <CAJCQCtR0hzV+9S7cggGUUTtp4R1WdnSwzsOp=9fTnxvzn3Stmw@mail.gmail.com>
+Subject: Re: My first attempt to use btrfs failed miserably
+To:     Skibbi <skibbi@gmail.com>
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Jan 31, 2020 at 09:31:05AM -0500, Josef Bacik wrote:
-> There was some logic added a while ago to clear out f_bavail in statfs()
-> if we did not have enough free metadata space to satisfy our global
-> reserve.  This was incorrect at the time, however didn't really pose a
-> problem for normal file systems because we would often allocate chunks
-> if we got this low on free metadata space, and thus wouldn't really hit
-> this case unless we were actually full.
-> 
-> Fast forward to today and now we are much better about not allocating
-> metadata chunks all of the time.  Couple this with d792b0f19711 which
-> now means we'll easily have a larger global reserve than our free space,
-> we are now more likely to trip over this while still having plenty of
-> space.
-> 
-> Fix this by skipping this logic if the global rsv's space_info is not
-> full.  space_info->full is 0 unless we've attempted to allocate a chunk
-> for that space_info and that has failed.  If this happens then the space
-> for the global reserve is definitely sacred and we need to report
-> b_avail == 0, but before then we can just use our calculated b_avail.
-> 
-> There are other cases where df isn't quite right, and Qu is addressing
-> them in a more holistic way.  This simply fixes the users that are
-> currently experiencing pain because of this problem.
-> 
-> Fixes: ca8a51b3a979 ("btrfs: statfs: report zero available if metadata are exhausted")
-> Reported-by: Martin Steigerwald <martin@lichtvoll.de>
-> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+On Sun, Feb 2, 2020 at 5:45 AM Skibbi <skibbi@gmail.com> wrote:
 
-Added to 5.6 queue, thanks.
+> root@rpi4b:~# dmesg |grep btrfs
+> [223167.290255] BTRFS: error (device dm-0) in
+> btrfs_run_delayed_refs:2935: errno=-5 IO failure
+> [223167.389690] BTRFS: error (device dm-0) in
+> btrfs_run_delayed_refs:2935: errno=-5 IO failure
+> root@rpi4b:~# dmesg |grep BTRFS
+
+The entire unfiltered dmesg is needed. This older kernel doesn't have
+new enough Btrfs tree checker code to help determine what the problem
+is.
+
+> [203285.351377] BTRFS error (device sda1): bad tree block start, want
+> 31457280 have 0
+
+> [203285.466743] BTRFS info (device sda1): read error corrected: ino 0
+> off 32735232 (dev /dev/sda1 sector 80320)
+
+> [218811.383208] BTRFS error (device dm-0): bad tree block start, want
+> 50659328 have 7653333615399691647
+
+These happening together suggest lower storage stack failure. Since
+kernel messages are filtered it only shows that Btrfs is working as
+designed, complaining about known bad file system metadata. But
+because it's filtered, it's not clear why the metadata has gone bad.
+
+> [223167.290255] BTRFS: error (device dm-0) in
+> btrfs_run_delayed_refs:2935: errno=-5 IO failure
+
+More suggestion of IO failure, whether physical device or logical
+layer in between Btrfs and physical device. Btrfs trusts the storage
+stack *less* than other file systems, by design. It's a kind of canary
+in the coal mine. Other file systems assume the storage stack is
+working, so they're less likely to complain. Only recent versions of
+e2fsprogs will format ext4 using metadata checksumming enabled. The
+kind of problems you're reporting look so bad and happen so fast I'd
+expect a good chance you'd reproduce the same problem with any
+metadata checksumming file system, if you have new enough progs to
+enable them.
+
+-- 
+Chris Murphy

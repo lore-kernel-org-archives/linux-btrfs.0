@@ -2,31 +2,31 @@ Return-Path: <SRS0=25Zt=3X=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B45F7C33CAC
-	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Feb 2020 14:21:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 31781C3524F
+	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Feb 2020 14:29:16 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 90A4A207E0
-	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Feb 2020 14:21:02 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1248D2086A
+	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Feb 2020 14:29:16 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728413AbgBCOVB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 3 Feb 2020 09:21:01 -0500
-Received: from mx2.suse.de ([195.135.220.15]:41578 "EHLO mx2.suse.de"
+        id S1728433AbgBCO3P (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 3 Feb 2020 09:29:15 -0500
+Received: from mx2.suse.de ([195.135.220.15]:44796 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728052AbgBCOVA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 3 Feb 2020 09:21:00 -0500
+        id S1728298AbgBCO3O (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 3 Feb 2020 09:29:14 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id E52DDAE7F;
-        Mon,  3 Feb 2020 14:20:58 +0000 (UTC)
-Subject: Re: [PATCH 14/23] btrfs: add btrfs_reserve_data_bytes and use it
+        by mx2.suse.de (Postfix) with ESMTP id D8185AD11;
+        Mon,  3 Feb 2020 14:29:11 +0000 (UTC)
+Subject: Re: [PATCH 15/23] btrfs: use ticketing for data space reservations
 To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
         kernel-team@fb.com
 References: <20200131223613.490779-1-josef@toxicpanda.com>
- <20200131223613.490779-15-josef@toxicpanda.com>
+ <20200131223613.490779-16-josef@toxicpanda.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  xsFNBFiKBz4BEADNHZmqwhuN6EAzXj9SpPpH/nSSP8YgfwoOqwrP+JR4pIqRK0AWWeWCSwmZ
@@ -70,12 +70,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <eb3fbf01-c442-3451-ae46-fc60ed00e712@suse.com>
-Date:   Mon, 3 Feb 2020 16:20:58 +0200
+Message-ID: <bce21b17-d1d9-a83f-324d-99d272918522@suse.com>
+Date:   Mon, 3 Feb 2020 16:29:11 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
  Thunderbird/68.4.1
 MIME-Version: 1.0
-In-Reply-To: <20200131223613.490779-15-josef@toxicpanda.com>
+In-Reply-To: <20200131223613.490779-16-josef@toxicpanda.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -87,24 +87,41 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 1.02.20 г. 0:36 ч., Josef Bacik wrote:
-> Create a new function btrfs_reserve_data_bytes() in order to handle data
-> reservations.  This uses the new flush types and flush states to handle
-> making data reservations.
-> 
-> This patch specifically does not change any functionality, and is
-> purposefully not cleaned up in order to make bisection easier for the
-> future patches.  The new helper is identical to the old helper in how it
-> handles data reservations.  We first try to force a chunk allocation,
-> and then we run through the flush states all at once and in the same
-> order that they were done with the old helper.
-> 
-> Subsequent patches will clean this up and change the behavior of the
-> flushing, and it is important to keep those changes separate so we can
-> easily bisect down to the patch that caused the regression, rather than
-> the patch that made us start using the new infrastructure.
+> Now that we have all the infrastructure in place, use the ticketing
+> infrastructure to make data allocations.  This still maintains the exact
+> same flushing behavior, but now we're using tickets to get our
+> reservations satisfied.
 > 
 > Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 
-
-
 Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+
+> ---
+>  fs/btrfs/space-info.c | 128 ++++++++++++++++++++++--------------------
+>  1 file changed, 68 insertions(+), 60 deletions(-)
+> 
+> diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
+> index 6b71f6d3a348..43c5775bcbc6 100644
+> --- a/fs/btrfs/space-info.c
+> +++ b/fs/btrfs/space-info.c
+> @@ -829,7 +829,7 @@ static void priority_reclaim_metadata_space(struct btrfs_fs_info *fs_info,
+>  				int states_nr)
+>  {
+>  	u64 to_reclaim;
+> -	int flush_state;
+> +	int flush_state = 0;
+>  
+>  	spin_lock(&space_info->lock);
+>  	to_reclaim = btrfs_calc_reclaim_metadata_size(fs_info, space_info);
+> @@ -839,7 +839,6 @@ static void priority_reclaim_metadata_space(struct btrfs_fs_info *fs_info,
+>  	}
+>  	spin_unlock(&space_info->lock);
+>  
+> -	flush_state = 0;
+>  	do {
+>  		flush_space(fs_info, space_info, to_reclaim, states[flush_state]);
+>  		flush_state++;
+
+nit: Those 2 hunks are unrelated and can be dropped.
+
+<snip>

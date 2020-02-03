@@ -7,59 +7,58 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 696B1C3524D
-	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Feb 2020 20:50:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 36C06C35247
+	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Feb 2020 20:50:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 39EE121D7D
-	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Feb 2020 20:50:25 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0107721D7E
+	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Feb 2020 20:50:28 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="KSvm7xOF"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="u9ZBfuon"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727183AbgBCUuX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 3 Feb 2020 15:50:23 -0500
-Received: from mail-qt1-f196.google.com ([209.85.160.196]:38870 "EHLO
-        mail-qt1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727166AbgBCUuX (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Feb 2020 15:50:23 -0500
-Received: by mail-qt1-f196.google.com with SMTP id c24so12610070qtp.5
-        for <linux-btrfs@vger.kernel.org>; Mon, 03 Feb 2020 12:50:21 -0800 (PST)
+        id S1727197AbgBCUu1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 3 Feb 2020 15:50:27 -0500
+Received: from mail-qv1-f66.google.com ([209.85.219.66]:46290 "EHLO
+        mail-qv1-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727192AbgBCUu0 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Feb 2020 15:50:26 -0500
+Received: by mail-qv1-f66.google.com with SMTP id y2so7468100qvu.13
+        for <linux-btrfs@vger.kernel.org>; Mon, 03 Feb 2020 12:50:24 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:cc:subject:date:message-id:in-reply-to:references
-         :mime-version:content-transfer-encoding;
-        bh=WrGaT6IeF0I7JJ883nQaZdbcGwQKIfB0x9CWoix+ibE=;
-        b=KSvm7xOF3iibEZ/bJ2QITew43Y4Y6Onjh574FCDqm+pNI5OhPWBxi15WQiTb++rKsJ
-         u7wOHt97sYGTp6EWdwwF27SX4qlPb3nFBzR7wlLptgS0mre+zWnSx3+hFWylH0gSh+5Z
-         EMNPX4gDiwiBsuJMWg5AoPb184qyuBB+9DG3ttBvacsO/SV8MY9+zu3Lwawff+yIuEU4
-         4V/3zC+atgza6aLzs0PLDY/fIDIfeCdzDD8sbI+Mjyw2D175U/C7nyPT2DMzjv4PT7lG
-         ixrBQ1f4k9jjXBZ6vTGDHAw3w2Bh8a8mAROvJLUloQJ+07FIY1thkU9uiS+2hwcCMAiT
-         uL4Q==
+        h=from:to:subject:date:message-id:in-reply-to:references:mime-version
+         :content-transfer-encoding;
+        bh=HuSDBpvuCX+F7bi3/CaZw77Ffglwhc/jS68wIUdCPhc=;
+        b=u9ZBfuon8bApPXIIuTB1+FrDWOrhBVltO4PT7nuvJ/d63PzmddVSYWy9uls59+iS59
+         T7M5jVD/SAlx/O3nlpMyy3lPU5XnamQwMoXwBG63yv0+dvnNd1gxyTWBBUJcYENCXBg7
+         6UzDOqUJBBQmdawbVHoUqTx4KG/bt1X/A/ItggjzoQxkrhtsgrx12CFGJGU9TIL5VgJp
+         1qX25WQCqDeCw3MeAE7B+25QeEfAMFNxD0VdaUcI8j6kYau0/umLEk22FrZfiO0s97vx
+         XPciIpjQMHIcNSB5hjiQMNZ7LLtg37XTzmXGmPlQtuoVpTlBIFTjuObEjdqV5DW6QxeU
+         ADZg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
+        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=WrGaT6IeF0I7JJ883nQaZdbcGwQKIfB0x9CWoix+ibE=;
-        b=d5cCvq0lJAvOkSkOYd3xhiOKLDRaxj8QfYll75uGqprTVPh8LLz16qSMmP+qwc1nvT
-         i+VfrMG+IyBrtDwsKzq38zX4QnnoAugncju4ClTZWaq58ZmrjUoVmW6HdOMkHLvaxt1p
-         S3PWR90kQFGs3uWjQYT1Lp/txHEvZ4gLJ1D6bPeepGQOI3ZeasRgIeTODwaY5cL2uNom
-         /I4nLid0f3L/uMQ8XcqyqkcH0rUENGGetAj00C5aIaCRA06Y2YhoJmEhckH2+R2s61+D
-         PAIW/MWstY3Wl/UVfITx1ptxX0XhslJvaNYMGLq1wWQR9KBqW9K5+2da9X5eNpRjEuT5
-         0A9A==
-X-Gm-Message-State: APjAAAVlTgk9MxixQLY8ID3lBLYlTZ30MGFuZz7E0ePvrf1ZLqAMwqie
-        8hTsKmDVGhsBCEEGXPoX3HNMOvt85tJLJQ==
-X-Google-Smtp-Source: APXvYqwP4VaZFbop6vm35ainaGc2mAYk50fDfceMMYmUxkRtSnn0fHEL4pFB4OOz4/QGPc6frAyRjA==
-X-Received: by 2002:ac8:7b9a:: with SMTP id p26mr25442903qtu.281.1580763020678;
-        Mon, 03 Feb 2020 12:50:20 -0800 (PST)
+        bh=HuSDBpvuCX+F7bi3/CaZw77Ffglwhc/jS68wIUdCPhc=;
+        b=dsG8ZqSX98+qyUEvLNoD5n3qsVNUIW6ZIG7Yc9y+v8E+z2Gx/Prkt4eU6Nj6nGLBWR
+         HdMDSHbiRRU+Dqs1VTTROv29ojJ5cleS5kzMISNdkoHW3KxZx6Hj7whe53RwEG+cYac8
+         BvzrHu1oYtdz0xZewLx4PLhzxMHxoBy1JqDgmOXDatXuN4+iWKHPAOFeRtqZvVnmcyqe
+         rOL9bPnOuitq+p7e5RWWLtXvq3jSmW+G9sAEB653Zpt7uBEdwBuze2GC/jpePNENbwm6
+         hn4TUS/f5a8x8BuDIvSmFb7XeCqaoUgFSWSJcb/85wKBCFiM73zGNRyAY2QoNO06oM/R
+         cnhA==
+X-Gm-Message-State: APjAAAVxPAX0UpQ+5qXAshG3gw4OpYi95TDjtPipWjdF7AYrIoF4N84Z
+        MWUvZWbPy2AH+hrVW9ZwQTdw3mYj08Gr2Q==
+X-Google-Smtp-Source: APXvYqwtmN3wVVAuJHncIjvKfhGjHjs72IYlsRgFLwqOhuFLq+YyEbVV8O4YaTgqV9tRy38tWRGJ+w==
+X-Received: by 2002:ad4:518b:: with SMTP id b11mr25010184qvp.195.1580763023796;
+        Mon, 03 Feb 2020 12:50:23 -0800 (PST)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id c45sm10975787qtd.43.2020.02.03.12.50.19
+        by smtp.gmail.com with ESMTPSA id h8sm10537419qtm.51.2020.02.03.12.50.22
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 03 Feb 2020 12:50:19 -0800 (PST)
+        Mon, 03 Feb 2020 12:50:23 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 16/24] btrfs: serialize data reservations if we are flushing
-Date:   Mon,  3 Feb 2020 15:49:43 -0500
-Message-Id: <20200203204951.517751-17-josef@toxicpanda.com>
+Subject: [PATCH 18/24] btrfs: drop the commit_cycles stuff for data reservations
+Date:   Mon,  3 Feb 2020 15:49:45 -0500
+Message-Id: <20200203204951.517751-19-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.24.1
 In-Reply-To: <20200203204951.517751-1-josef@toxicpanda.com>
 References: <20200203204951.517751-1-josef@toxicpanda.com>
@@ -70,54 +69,66 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Nikolay reported a problem where generic/371 would fail sometimes with a
-slow drive.  The gist of the test is that we fallocate a file in
-parallel with a pwrite of a different file.  These two files combined
-are smaller than the file system, but sometimes the pwrite would ENOSPC.
+This was an old wart left over from how we previously did data
+reservations.  Before we could have people race in and take a
+reservation while we were flushing space, so we needed to make sure we
+looped a few times before giving up.  Now that we're using the ticketing
+infrastructure we don't have to worry about this and can drop the logic
+altogether.
 
-A fair bit of investigation uncovered the fact that the fallocate
-workload was racing in and grabbing the free space that the pwrite
-workload was trying to free up so it could make its own reservation.
-After a few loops of this eventually the pwrite workload would error out
-with an ENOSPC.
-
-We've had the same problem with metadata as well, and we serialized all
-metadata allocations to satisfy this problem.  This wasn't usually a
-problem with data because data reservations are more straightforward,
-but obviously could still happen.
-
-Fix this by not allowing reservations to occur if there are any pending
-tickets waiting to be satisfied on the space info.
-
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/space-info.c | 6 +++++-
- 1 file changed, 5 insertions(+), 1 deletion(-)
+ fs/btrfs/space-info.c | 22 ++--------------------
+ 1 file changed, 2 insertions(+), 20 deletions(-)
 
 diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-index 5e7454577407..5ee4c6a318aa 100644
+index 225f7f8a0503..8c5543328ec4 100644
 --- a/fs/btrfs/space-info.c
 +++ b/fs/btrfs/space-info.c
-@@ -1155,13 +1155,17 @@ int btrfs_reserve_data_bytes(struct btrfs_fs_info *fs_info, u64 bytes,
- 	struct btrfs_space_info *data_sinfo = fs_info->data_sinfo;
- 	u64 used;
- 	int ret = -ENOSPC;
-+	bool pending_tickets;
+@@ -859,7 +859,6 @@ static void priority_reclaim_data_space(struct btrfs_fs_info *fs_info,
+ 					int states_nr)
+ {
+ 	int flush_state = 0;
+-	int commit_cycles = 2;
  
- 	ASSERT(!current->journal_info || flush != BTRFS_RESERVE_FLUSH_DATA);
+ 	while (!space_info->full) {
+ 		flush_space(fs_info, space_info, U64_MAX, ALLOC_CHUNK_FORCE);
+@@ -870,21 +869,9 @@ static void priority_reclaim_data_space(struct btrfs_fs_info *fs_info,
+ 		}
+ 		spin_unlock(&space_info->lock);
+ 	}
+-again:
+-	while (flush_state < states_nr) {
+-		u64 flush_bytes = U64_MAX;
+-
+-		if (!commit_cycles) {
+-			if (states[flush_state] == FLUSH_DELALLOC_WAIT) {
+-				flush_state++;
+-				continue;
+-			}
+-			if (states[flush_state] == COMMIT_TRANS)
+-				flush_bytes = ticket->bytes;
+-		}
  
- 	spin_lock(&data_sinfo->lock);
- 	used = btrfs_space_info_used(data_sinfo, true);
-+	pending_tickets = !list_empty(&data_sinfo->tickets) ||
-+		!list_empty(&data_sinfo->priority_tickets);
+-		flush_space(fs_info, space_info, flush_bytes,
+-			    states[flush_state]);
++	while (flush_state < states_nr) {
++		flush_space(fs_info, space_info, U64_MAX, states[flush_state]);
+ 		spin_lock(&space_info->lock);
+ 		if (ticket->bytes == 0) {
+ 			spin_unlock(&space_info->lock);
+@@ -893,11 +880,6 @@ static void priority_reclaim_data_space(struct btrfs_fs_info *fs_info,
+ 		spin_unlock(&space_info->lock);
+ 		flush_state++;
+ 	}
+-	if (commit_cycles) {
+-		commit_cycles--;
+-		flush_state = 0;
+-		goto again;
+-	}
+ }
  
--	if (used + bytes > data_sinfo->total_bytes) {
-+	if (pending_tickets ||
-+	    used + bytes > data_sinfo->total_bytes) {
- 		struct reserve_ticket ticket;
- 
- 		init_waitqueue_head(&ticket.wait);
+ static void wait_reserve_ticket(struct btrfs_fs_info *fs_info,
 -- 
 2.24.1
 

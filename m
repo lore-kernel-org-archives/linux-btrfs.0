@@ -2,102 +2,80 @@ Return-Path: <SRS0=SPQA=3Y=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.0 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.4 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 28383C2D0B1
-	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Feb 2020 12:39:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 18DB5C2D0B1
+	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Feb 2020 12:46:15 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D8B092082E
-	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Feb 2020 12:39:34 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DD4B921744
+	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Feb 2020 12:46:14 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="Iz7S4b2W"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="Bn/G9/bG"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727185AbgBDMje (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 4 Feb 2020 07:39:34 -0500
-Received: from mout.gmx.net ([212.227.17.20]:47053 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727129AbgBDMjd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 4 Feb 2020 07:39:33 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1580819964;
-        bh=g69kJNcdFR7UVsjfPqsYMvYj9aqjbZ73oWRTJtD/02w=;
-        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
-        b=Iz7S4b2WO3gxkhW7lMMu5TOAGbFE/SgNAcRypY1LHkU7LO8JWw2ItCem1nsHUFdKE
-         MPgFbtZ63bTAuEHQGNhmKz6DQZa+jom8Rv9zp17R9cwZBrgls7hCjlJ4F2pqET2uAI
-         972NWaJQ+wgCkzX4/VUAjSyzn8fZRUSIpYB41V10=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx104
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1N2V4J-1jgAZI1C7L-013uxf; Tue, 04
- Feb 2020 13:39:23 +0100
-Subject: Re: [PATCH 2/3] btrfs: add a comment describing delalloc space
- reservation
-To:     Nikolay Borisov <nborisov@suse.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        linux-btrfs@vger.kernel.org, kernel-team@fb.com
-References: <20200203204436.517473-1-josef@toxicpanda.com>
- <20200203204436.517473-3-josef@toxicpanda.com>
- <7000f8a2-4d78-d9a1-2e3f-143b88ace1eb@gmx.com>
- <55055cf9-2c36-8e3e-d1b8-b3fb53cc03c1@suse.com>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAU4EEwEIADgCGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1oQAKCRDC
- PZHzoSX+qCY6CACd+mWu3okGwRKXju6bou+7VkqCaHTdyXwWFTsr+/0ly5nUdDtT3yEVggPJ
- 3VP70wjlrxUjNjFb6iIvGYxiPOrop1NGwGYvQktgRhaIhALG6rPoSSAhGNjwGVRw0km0PlIN
- D29BTj/lYEk+jVM1YL0QLgAE1AI3krihg/lp/fQT53wLhR8YZIF8ETXbClQG1vJ0cllPuEEv
- efKxRyiTSjB+PsozSvYWhXsPeJ+KKjFen7ebE5reQTPFzSHctCdPnoR/4jSPlnTlnEvLeqcD
- ZTuKfQe1gWrPeevQzgCtgBF/WjIOeJs41klnYzC3DymuQlmFubss0jShLOW8eSOOWhLRuQEN
- BFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcgaCbPEwhLj
- 1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj/IrRUUka
- 68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fNGSsRb+pK
- EKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0q1eW4Jrv
- 0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEvABEBAAGJ
- ATwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1rgUJCWpOfwAKCRDCPZHz
- oSX+qFcEB/95cs8cM1OQdE/GgOfCGxwgckMeWyzOR7bkAWW0lDVp2hpgJuxBW/gyfmtBnUai
- fnggx3EE3ev8HTysZU9q0h+TJwwJKGv6sUc8qcTGFDtavnnl+r6xDUY7A6GvXEsSoCEEynby
- 72byGeSovfq/4AWGNPBG1L61Exl+gbqfvbECP3ziXnob009+z9I4qXodHSYINfAkZkA523JG
- ap12LndJeLk3gfWNZfXEWyGnuciRGbqESkhIRav8ootsCIops/SqXm0/k+Kcl4gGUO/iD/T5
- oagaDh0QtOd8RWSMwLxwn8uIhpH84Q4X1LadJ5NCgGa6xPP5qqRuiC+9gZqbq4Nj
-Message-ID: <356f2d03-bc34-7d13-ff0c-15cf39676333@gmx.com>
-Date:   Tue, 4 Feb 2020 20:39:19 +0800
+        id S1727151AbgBDMqO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 4 Feb 2020 07:46:14 -0500
+Received: from userp2120.oracle.com ([156.151.31.85]:41958 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727126AbgBDMqN (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 4 Feb 2020 07:46:13 -0500
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id 014ChDRD087516;
+        Tue, 4 Feb 2020 12:46:10 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
+ references : from : message-id : date : mime-version : in-reply-to :
+ content-type : content-transfer-encoding; s=corp-2019-08-05;
+ bh=0qFUiWWfnkEoGulaAD+K0EXphsRDz+htUuGqFCzJmp8=;
+ b=Bn/G9/bGaSLFzytx8Q7K1hDlkf89xAdfgiWNfgtf2M1O9wNnfPx/bkl+cWITzqV6WP4j
+ FhW895QAfMM5VB9990Z1PobqhblyJ2sfvGujKGTuFznHZLiuGDEKlJfzbhg735OvgaSZ
+ rh4hxN4w1qvMenvhjNaqnFWYv2VSrnxjy23QwKYLDI5W92pjzTiRgp0NSHoa9OOCjuoN
+ YiYGWEASVGaqWcwpk5Q6JEucDXbMBAivdeCa9hOuGBNV83Ml/YFOSBfIBOGWOs+wXOHj
+ z8va/vrK29qQgWfxVuHWOIyztGKn78NTxXN4GofZj4lkclPn60yo2n5RaNW9GUslOmt6 xA== 
+Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
+        by userp2120.oracle.com with ESMTP id 2xwyg9jmj3-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Tue, 04 Feb 2020 12:46:09 +0000
+Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
+        by userp3030.oracle.com (8.16.0.27/8.16.0.27) with SMTP id 014Cj3uH073075;
+        Tue, 4 Feb 2020 12:46:09 GMT
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by userp3030.oracle.com with ESMTP id 2xxvurpqw6-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Tue, 04 Feb 2020 12:46:09 +0000
+Received: from abhmp0015.oracle.com (abhmp0015.oracle.com [141.146.116.21])
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id 014Ck8cu024997;
+        Tue, 4 Feb 2020 12:46:08 GMT
+Received: from [192.168.1.145] (/39.109.145.141)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Tue, 04 Feb 2020 04:46:07 -0800
+Subject: Re: [PATCH] btrfs: drop math for block_reserved which is block_rsv
+ size
+To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
+References: <1580814358-1468-1-git-send-email-anand.jain@oracle.com>
+ <f35d657a-bbee-119c-793d-9871d0fc2c65@suse.com>
+From:   Anand Jain <anand.jain@oracle.com>
+Message-ID: <a230e596-887c-51f5-8e4a-e800406774c3@oracle.com>
+Date:   Tue, 4 Feb 2020 20:46:04 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.4.2
+ Thunderbird/68.4.1
 MIME-Version: 1.0
-In-Reply-To: <55055cf9-2c36-8e3e-d1b8-b3fb53cc03c1@suse.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <f35d657a-bbee-119c-793d-9871d0fc2c65@suse.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:1E1fT7POdjN5tQjxLDqIQwpC0PqJui9TbhlTV1wMMxf4pEq6iZK
- C8ZR14fdx/EaWyhRDmF2+FQip0+OAE8xPJEBiqrNiZnRuMHSP0LXieMKjoM06FUYsSnzBGt
- 5txFftVFHlpij96dszgw5qgPI0fcCtiNqbnsaJELgm8FuRzEA4qCvktYrSvgdNJY6eSHAiG
- cnxxm0SCT+cFa0wJAdoIA==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:gL2MmUpKE9w=:NnS7iSVcMeuR/OdQBZwVkh
- U5gqzCuKW4bhmqqvRjvN5yLFAJiZxmi5pzheWABiRopRSgU4YOc/XGUQxEJvOSD/Jzccp4PYn
- 68SDtCweYAcfm+AZvvatlPX+ktYbAbNOXNiTgt0xc+NrvzP7W0NB+tkkpK+Ly36UMrUnzIq9M
- v0j9EJkJUgeN0Olr1tK/eYhBJlcnX45fY00Wmcy6fufIV8mbkqzY/0sC9c1PceqNdGtY66pYA
- 5Z4aCMiEXX18eHSzpmAnZjKiBLgqfz0pwIIP/9ibNJYQGYlLjPqgaPJnEFLUCvcJl11h3aq2j
- sET5WqjJz2MsQeBZM4k4Rk4oPjELx9h95KO7yFqdthAv7xeghghriht/E5muWrl9kyRWMbqiG
- czcSWWaN1XoZYpCbu50f1y/ilLuK1J2r26Xgz5dzK2UhHkDMgRJwh5KYKT5MUmE3ZtqFm+cBC
- SCjm+7MbW47V5O66KllSD49ZOouJZGvC5s+ZAIS3HHH7hO+fg3EX4ChCFpFC/GzCgiSOPvmtc
- PceCYAnlI6dAz5TZPaHz0sFS3WS8yikBG8jSVtTCfCkfq00FmGtXsPA4R1bVgcaYrSzEcOOBB
- sG448NFVKxDzikxDPWaUclbOAEORxovaKqO1Jl3XxlyH8+UFid+TGyxuOLqS+W8UKI54lAZpV
- 5uInUdMEjIePZu1H+QqZCG7L948bJyg3sO92PV+gVeI14AguYvPKh4RPaswE7Mv27oAms3X6h
- G0PDi/z1/8tjOVT1rc1xagiE5l6BjflxIbA5r4jKnHVZ+EVM18ffna+jsDEJMum+66RtXoJfM
- Qy7CbbSrPYIQmW0c7K0aDMVQs2+Lnjx9IGQY7jr2xGtVoS5x9uu4aHmqiHxncTtbuVmSocS7Z
- 9brnEQH/0/zntBSkCVZZyt2Ls65hCd1qzSDQ7vs38mrPVyNjt70X8+FvUXaQUAGDoV3Zs0eBC
- k7J/nAXEtsIeUlxAU+uVYfozM6ruDInNAFOOAMrXI0QhA+/fqyfLA/UCgqfaOFnRetEtAR+eo
- mhBmBIifHel1syrmvDRaNYeituwBlu55z6bCnK8N+9nfRlSPy/ulNjfa8CdRExu708KPqFtCZ
- L1S51rmJDAGaPwXsw+62Qi841AhLgTPWEE5OVqyHIppZZYwik0txhOjArAjEkHRaPQ1G2YSNI
- 8fhR87EW0f9OmBCcwc2yb1DlTqDqyXRYS3I1xRvRcWcsh65og+oaPL7gk9OI90Y+k5c0aQjiz
- T3SBvbP6dJZwDycvd
+Content-Transfer-Encoding: 8bit
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9520 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
+ adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.0.1-1911140001 definitions=main-2002040090
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9520 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
+ suspectscore=0 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
+ lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1911140001
+ definitions=main-2002040090
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -105,153 +83,44 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 2020/2/4 =E4=B8=8B=E5=8D=888:27, Nikolay Borisov wrote:
->
->
-> On 4.02.20 =D0=B3. 11:48 =D1=87., Qu Wenruo wrote:
+On 2/4/20 7:10 PM, Nikolay Borisov wrote:
+> 
+> 
+> On 4.02.20 г. 13:05 ч., Anand Jain wrote:
+>> In btrfs_update_global_block_rsv the lines
+>>    num_bytes = block_rsv->size - block_rsv->reserved;
+>>    block_rsv->reserved += num_bytes;
+>> imply
+>>    block_rsv->reserved = block_rsv->size;
 >>
->
->
-> <snip>
->
+>> Just assign block_rsv->size to block_rsv->reserved instead of the math.
 >>
->>> + *
->>> + *   Once this space is reserved, it is added to space_info->bytes_ma=
-y_use.  The
->>> + *   caller must keep track of this reservation and free it up if it =
-is never
->>> + *   used.  With the buffered IO case this is handled via the EXTENT_=
-DELALLOC
->>> + *   bit's on the inode's io_tree.  For direct IO it's more straightf=
-orward, we
->>> + *   take the reservation at the start of the operation, and if we wr=
-ite less
->>> + *   than we reserved we free the excess.
+>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+>> ---
+>>   fs/btrfs/block-rsv.c | 2 +-
+>>   1 file changed, 1 insertion(+), 1 deletion(-)
 >>
->> This part involves the lifespan and state machine of data.
->> I guess more explanation on the state machine would help a lot.
->>
->> Like:
->> Page clean
->> |
->> +- btrfs_buffered_write()
->> |  Reserve data space for data, metadata space for csum/file
->> |  extents/inodes.
->> |
->> Page dirty
->> |
->> +- run_delalloc_range()
->> |  Allocate data extents, submit ordered extents to do csum calculation
->> |  and bio submission
->> Page write back
->> |
->> +- finish_oredred_io()
->> |  Insert csum and file extents
->> |
->> Page clean
->>
->> Although I'm not sure if such lifespan should belong to delalloc-space.=
-c.
->
-> This omits a lot of critical details. FOr example it should be noted
-> that in btrfs_buffered_write we reserve as much space as is requested by
-> the user. Then in run_delalloc_range it must be mentioned that in case
-> of compressed extents it can be called to allocate an extent which is
-> less than the space reserved in btrfs_buffered_write =3D> that's where t=
-he
-> possible space savings in case of compressed come from.
+>> diff --git a/fs/btrfs/block-rsv.c b/fs/btrfs/block-rsv.c
+>> index 6dacde9a7e93..62e0885c1e5d 100644
+>> --- a/fs/btrfs/block-rsv.c
+>> +++ b/fs/btrfs/block-rsv.c
+>> @@ -304,9 +304,9 @@ void btrfs_update_global_block_rsv(struct btrfs_fs_info *fs_info)
+>>   
+>>   	if (block_rsv->reserved < block_rsv->size) {
+>>   		num_bytes = block_rsv->size - block_rsv->reserved;
+>> -		block_rsv->reserved += num_bytes;
+>>   		btrfs_space_info_update_bytes_may_use(fs_info, sinfo,
+>>   						      num_bytes);
+>> +		block_rsv->reserved = block_rsv->size;
+> 
+> Any particular reason why you put the assignment after
+> btrfs_space_info_update_bytes_may_use and not before?
 
-If you spoiler everything in the introduction, I guess it's no longer
-introduction.
-An introduction should only tell the overall picture, not every details.
-For details, we go read mentioned functions.
+  Oh. To make it similar to the else if part below.
 
-And too many details would make the introduction pretty hard to
-maintain. What if one day we don't the current always reserve behavior
-for buffered write?
+Thanks.
 
-So I tend to have just a overview, and entrance function. With minimal
-details unless it's a really complex design.
-
-Thanks,
-Qu
-
->
-> As a matter of fact running ordered io doesn't really clean any space
-> apart from a bit of metadata space (unless we do overwrites, as per our
-> discussion with josef in the slack channel).
->
-> <snip>
->
->>> + *
->>> + *   1) Updating the inode item.  We hold a reservation for this inod=
-e as long
->>> + *   as there are dirty bytes outstanding for this inode.  This is be=
-cause we
->>> + *   may update the inode multiple times throughout an operation, and=
- there is
->>> + *   no telling when we may have to do a full cow back to that inode =
-item.  Thus
->>> + *   we must always hold a reservation.
->>> + *
->>> + *   2) Adding an extent item.  This is trickier, so a few sub points
->>> + *
->>> + *     a) We keep track of how many extents an inode may need to crea=
-te in
->>> + *     inode->outstanding_extents.  This is how many items we will ha=
-ve reserved
->>> + *     for the extents for this inode.
->>> + *
->>> + *     b) count_max_extents() is used to figure out how many extent i=
-tems we
->>> + *     will need based on the contiguous area we have dirtied.  Thus =
-if we are
->>> + *     writing 4k extents but they coalesce into a very large extent,=
- we will
->
-> I THe way you have worded this is a bit confusing because first you
-> mention that count_max_extents calcs how many extent items we'll need
-> for a contiguous area. Then you mention that if we make a bunch of 4k
-> writes that coalesce to a single extent i.e create 1 large contiguous
-> (that's what coalescing implies in this context) we'll have to split it
-> them. This is counter-intuitive.
->
-> I guess what you meant here is physically contiguous as opposed to
-> logically contiguous?
->
->>> + *     break this into smaller extents which means we'll need a reser=
-vation for
->>> + *     each of those extents.
->>> + *
->>> + *     c) When we set EXTENT_DELALLOC on the inode io_tree we will fi=
-gure out
->>> + *     the nummber of extents needed for the contiguous area we just =
-created,
->
-> nit: s/nummber/number
->
->>> + *     and add that to inode->outstanding_extents.
->
-> <snip>
->
->>> + *
->>> + *   3) Adding csums for the range.  This is more straightforward tha=
-n the
->>> + *   extent items, as we just want to hold the number of bytes we'll =
-need for
->>> + *   checksums until the ordered extent is removed.  If there is an e=
-rror it is
->>> + *   cleared via the EXTENT_CLEAR_META_RESV bit when clearning EXTENT=
-_DELALLOC
->
-> nit: s/clearning/clearing
->
->>> + *   on the inode io_tree.
->>> + */
->>> +
->>>  int btrfs_alloc_data_chunk_ondemand(struct btrfs_inode *inode, u64 by=
-tes)
->>>  {
->>>  	struct btrfs_root *root =3D inode->root;
->>>
+>>   	} else if (block_rsv->reserved > block_rsv->size) {
+>>   		num_bytes = block_rsv->reserved - block_rsv->size;
+>>   		btrfs_space_info_update_bytes_may_use(fs_info, sinfo,
 >>

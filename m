@@ -2,256 +2,182 @@ Return-Path: <SRS0=SPQA=3Y=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.9 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-2.3 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8C7F6C2D0B1
-	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Feb 2020 12:50:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6C745C2D0B1
+	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Feb 2020 13:11:26 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 472BE2087E
-	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Feb 2020 12:50:17 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 32B0B2084E
+	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Feb 2020 13:11:26 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (4096-bit key) header.d=orlives.de header.i=@orlives.de header.b="wmLOG4vN"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="gauaCWOV"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727168AbgBDMuQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 4 Feb 2020 07:50:16 -0500
-Received: from mail.orlives.de ([148.251.55.246]:50164 "EHLO mail.orlives.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727126AbgBDMuQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 4 Feb 2020 07:50:16 -0500
-X-Greylist: delayed 332 seconds by postgrey-1.27 at vger.kernel.org; Tue, 04 Feb 2020 07:50:14 EST
-Received: from mail.orlives.de (localhost [127.0.0.1])
-        by mail.orlives.de (Postfix) with ESMTPSA id 1FB83A0040
-        for <linux-btrfs@vger.kernel.org>; Tue,  4 Feb 2020 13:44:40 +0100 (CET)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=orlives.de; s=dkim1;
-        t=1580820280;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-        to:to:cc:mime-version:mime-version:content-type:content-type:autocrypt:autocrypt;
-        bh=bTJcAwGuoH6fUARF4ipWyxzcFXBteNkZdJ/5Typk1eU=;
-        b=wmLOG4vNrJVpYMxcGh7a+qP1s8Qx/pm2fQ486ybc7R3HqOOlDwGFHf29rsu/fAGJFX5iT4
-        BELQH1f75pTEJWMWPvVIYri6XZXR0ZrxCjxIldAlgvOm7Mp7vuHn7v7bjPD1nwQoNpbOlm
-        5vray4cXNnCq+f5TbLnVFC/plLi2ZjCFgTcdtD0Ce3NEuPKfJ52wtCuiAAykWKO7perIjW
-        bGPF0Vpo97UssdgIBfRPnkaQCzm0pYTWh6eM9y5kIj20rj/xAl+xLcVLBRcmlUinY8STOi
-        m3PT/naCJGculbdEq8J9UB3kZ4Lqa/UuhIvf3BBIYiJHCFjrJ7iynY+0kk/pwx6/1KYZsi
-        FZVpz26TS5ex3GgvfyntejGv7+2XKj21UV2D/vS5E17zBi9fYizAItj6ymPdqCCySzoJ9s
-        /KsYFhxorp8VLXGdnjqS71gHz76EQE3LGZMQxGdZrEk2Z21YugeCUaf84Cy1ySy57P8XAh
-        Q3C4gsBdFzb0X7WQC2yHfCE8LWd9z6wdVN7hnqMdojl+nkV4JXzwXj9pPJdIIwhuIQVy/m
-        HCSV11SZaMsKKPXMchq6TWh0XYYsYo5j451r6gqudNcAH9ZjoTNL/Gs5PnlfXOkRJ74JYP
-        aKb/bgmFcK6hADUww5y0htA/oD7clNotbWUfvyRIwuzp6AVOpVT/o=
-To:     linux-btrfs@vger.kernel.org
-From:   Trolli Schmittlauch <t.schmittlauch+ml@orlives.de>
-Autocrypt: addr=t.schmittlauch+ml@orlives.de; prefer-encrypt=mutual; keydata=
- mQENBF4y2DoBCADCzwZ+V1tJOR2JK20uAVPkAOC5PdIe/UYCVZsYIbh8aIz0HsiqWeTCj3J8
- nZEVKKm6fQRtyMILZeWNHQ98ck+1tmr4a6UQ4UDl+Xb1VuhU4frZI/d75olkn2JNwYcJJcdn
- MJ4WUZ8BWhmia+8ng+7nJ1yOw1ad0uS8dL+w+m+eimFr7HjIXUV/Y5I8NGhkROFDu72byMn1
- OTaq4HFfgilYsDGu8AWUtn+ZBXmCDIYbvXANjDcyuGTTnS/vgyFx66rHOgZKqTafuSAC1k61
- dAYvLlo06yb4S4VNwkW17ho9L6sgqfY5rFd+zQYnXdau7AK7TLAFywHgafHU20Ffv6PbABEB
- AAG0Gzx0LnNjaG1pdHRsYXVjaEBvcmxpdmVzLmRlPokBSQQQAQgAMwIZAQUCXjLYQAIbAwQL
- CQgHBhUICQoLAgMWAgEWIQSJFhEikPObK3+nglaeUEWy+uvFawAKCRCeUEWy+uvFa6UPCACt
- EeMFD8HIbP6vIfs0dQdYw7SyG/Ws/ZEhi61+HfBeltem2LMbcY3B1UNGWWt1px1oFq0sCd12
- j8JhjTPyFoQv+vRDEygMk/OrXfnn32dl9Ttubgz68ktxjv6xQ2q+TGHStUCe9Q1opGqjWqV0
- bqFV9nbpX5DX3urG4eDqjUrvUMasp3/RBBC6dSzRcutbmnFEUhbnQcG2JhxkUqJxErJO7Rs7
- dw5wR+43zipZznrtP/W8nCmL7E8VYn3KWFSb4jSmMyYneqBrhSZMB/BfiOMrWnnMpPChRLyR
- GLqZoyhWDPZyAbKyjlVQVS3d9BtLn5PzNaYRAl9Gad8h+o/WWHGXuQENBF4y2DoBCACmbQWs
- /CCONpIwsHxKt4fEfbW1XhQFoKPmGF2Xonas6kN3Oh8XXFekkXfnRQJX+fOuv7DbaUsmkPzd
- TB2YtfidZJ6xIYPzSgSMsA945dEOY5yYfeNCH1pQYcq1xfM7bHGSwaNervx0wnK/g7yBgp6E
- 1stOwqoR9M3KgmQJPuaSISSfUH5NKcx38S6w+56I3//f1jyCRG5vkQzHsdioBWkAOfagQmcv
- 6fMhDYCoxlTooxlj1/5mSkspCS7fDkVcZn48t+sPfQAywpUDrWBZhp1vrDHfl+wUvCSXPYEz
- 9dkT9NmLz24H20tLV+btVgMsPXSlnM34lNjABg2x7isCoCZ9ABEBAAGJATYEGAEIACAFAl4y
- 2EACGwwWIQSJFhEikPObK3+nglaeUEWy+uvFawAKCRCeUEWy+uvFayO5CACDYH46Tay5BSwn
- FK3EwAYSpXIFzhQet7os7InGRS8/2yuqzsunRDbMy11rTGmXXA1LuTizqsgebQbALpkuHEpi
- gX9b20RfsfuZYbdbtLzzVDuOVuGP3+CSJrB1Z+nGeF1+L4m5n7VDPX0MyWKwhlWY9hVmNQ2+
- lMt+fb6+330M9cXCz6H2/k7b2BTEM9xZPytt2ICT8I9rX5+8tuHDrstr13P40QOR0Exh5EHw
- LA00FYsr0e+ijzxRP9EC3AA9Gt/518IRS7FGvszu4qWWRT33P2cABoVUPpsybrhvuApgpf5y
- DLO17h0Vxwoq2qqCO/RqIw+o8Lj89xOl4VkPpXe4
-Subject: btrfs scrub prevents system suspend
-Message-ID: <6055ac8f-b13d-85ed-7109-3314c5c71c1f@localhost>
-Date:   Tue, 4 Feb 2020 13:44:38 +0100
-Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha512;
- protocol="application/pgp-signature";
- boundary="a7dRvWnDqXMr59N9K6VnyYwSufa4iIeNO"
-Authentication-Results: ORIGINATING;
-        auth=pass smtp.auth=t.schmittlauch@orlives.de smtp.mailfrom=t.schmittlauch@orlives.de
+        id S1727189AbgBDNLZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 4 Feb 2020 08:11:25 -0500
+Received: from mail-qv1-f65.google.com ([209.85.219.65]:44035 "EHLO
+        mail-qv1-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727170AbgBDNLZ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 4 Feb 2020 08:11:25 -0500
+Received: by mail-qv1-f65.google.com with SMTP id n8so8466289qvg.11
+        for <linux-btrfs@vger.kernel.org>; Tue, 04 Feb 2020 05:11:24 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
+        h=subject:to:references:from:message-id:date:user-agent:mime-version
+         :in-reply-to:content-language:content-transfer-encoding;
+        bh=Zpi5pfn+R8gP0KI+x3mij+aiRAEdSQQMePD/9VdvbA8=;
+        b=gauaCWOVhSnKKHTTRCO/tI3VKz8faxCcvAN95Y1YsG0H7EVHaDp0yi5fmBYwfdJQ1m
+         lNa+nMq+7CC2NvuMIM/plGD7yTVqNu8oOmYVClf9b93LFFD5DZmRi+hpxOspJOnDX/da
+         Kz2zhdKXHCgZZwZtffxHZ4JqCC6wYoOOU3wg3eOttlqHLVOx3irFMDQ3vN0bmyIsI0X0
+         rL2feBiaMlBiILLVElNcnh21afX3JsqcZTozl2zf7LDpxlmBEcFQ1U07nAxQwOdPEepb
+         +ozm8p//FlZWmrz8s4xSahfCryNFl3wSTD4ikInvjkuVq8uJvEthVNJV/Qm5sz3Hl67q
+         aOQw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:to:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=Zpi5pfn+R8gP0KI+x3mij+aiRAEdSQQMePD/9VdvbA8=;
+        b=ji+GGwAsshS50pxuLLHe7a3/hwHYfnkZx0YrkCDqqtr4uBMMSsQ3kG9BPjmXKyf9S5
+         HD2yw2SuNKaSf7nvltlh9wcxJMqMc8vsK9nMK2Xn92QXvL5qa59vUHbLfwn+SDFb9hOY
+         NXWLV2ocUiakwykuOWwZet7LEb4EBvKXH+qSEfHDkt1br7MIcw8+asuaNH/+IAtIoLz/
+         WVQdSn7dwbuyuuIaaWILl1R/fq+yCOqPuHv4rT6URvs9TkGFuA1up9WThQBs+fLsdjnd
+         9I4bygbTrj6QV3a8cN9qLvHqE4y9h0yKlL8q8ZsG48XH9gXai2chyyMgA7vFudSHBSOC
+         ml+A==
+X-Gm-Message-State: APjAAAVnqTW4LJh96Q9k81xFEJzlcoDDvjVwBUraSbTJ74wSvfbvEUvl
+        uOQC++nsZ2w6KC4BCAY8pGdAbjkaF6lGSA==
+X-Google-Smtp-Source: APXvYqy7Jx/qMsTRuVdrDtLsGDtd3gti/I+2OsJwgnx7yNczKbrAu+0bFZr7UyyKtW4/RcV416IlXw==
+X-Received: by 2002:a05:6214:1923:: with SMTP id es3mr27961408qvb.49.1580821883371;
+        Tue, 04 Feb 2020 05:11:23 -0800 (PST)
+Received: from [192.168.1.106] ([107.15.81.208])
+        by smtp.gmail.com with ESMTPSA id k7sm11616658qtd.79.2020.02.04.05.11.22
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 04 Feb 2020 05:11:22 -0800 (PST)
+Subject: Re: [PATCH v2] btrfs: Don't submit any btree write bio after
+ transaction is aborted
+To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20200204090314.15278-1-wqu@suse.com>
+From:   Josef Bacik <josef@toxicpanda.com>
+Message-ID: <36dbfbd1-5206-0eeb-2b73-308b0c19c76b@toxicpanda.com>
+Date:   Tue, 4 Feb 2020 08:11:21 -0500
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:68.0)
+ Gecko/20100101 Thunderbird/68.4.2
+MIME-Version: 1.0
+In-Reply-To: <20200204090314.15278-1-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---a7dRvWnDqXMr59N9K6VnyYwSufa4iIeNO
-Content-Type: multipart/mixed; boundary="GIf1s07HPIygTrXfGPLPSI6bFLNkSomvX";
- protected-headers="v1"
-From: Trolli Schmittlauch <t.schmittlauch+ml@orlives.de>
-To: linux-btrfs@vger.kernel.org
-Message-ID: <6055ac8f-b13d-85ed-7109-3314c5c71c1f@localhost>
-Subject: btrfs scrub prevents system suspend
+On 2/4/20 4:03 AM, Qu Wenruo wrote:
+> [BUG]
+> There is a fuzzed image which could cause KASAN report at unmount time.
+> 
+>    ==================================================================
+>    BUG: KASAN: use-after-free in btrfs_queue_work+0x2c1/0x390
+>    Read of size 8 at addr ffff888067cf6848 by task umount/1922
+> 
+>    CPU: 0 PID: 1922 Comm: umount Tainted: G        W         5.0.21 #1
+>    Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS 1.10.2-1ubuntu1 04/01/2014
+>    Call Trace:
+>     dump_stack+0x5b/0x8b
+>     print_address_description+0x70/0x280
+>     kasan_report+0x13a/0x19b
+>     btrfs_queue_work+0x2c1/0x390
+>     btrfs_wq_submit_bio+0x1cd/0x240
+>     btree_submit_bio_hook+0x18c/0x2a0
+>     submit_one_bio+0x1be/0x320
+>     flush_write_bio.isra.41+0x2c/0x70
+>     btree_write_cache_pages+0x3bb/0x7f0
+>     do_writepages+0x5c/0x130
+>     __writeback_single_inode+0xa3/0x9a0
+>     writeback_single_inode+0x23d/0x390
+>     write_inode_now+0x1b5/0x280
+>     iput+0x2ef/0x600
+>     close_ctree+0x341/0x750
+>     generic_shutdown_super+0x126/0x370
+>     kill_anon_super+0x31/0x50
+>     btrfs_kill_super+0x36/0x2b0
+>     deactivate_locked_super+0x80/0xc0
+>     deactivate_super+0x13c/0x150
+>     cleanup_mnt+0x9a/0x130
+>     task_work_run+0x11a/0x1b0
+>     exit_to_usermode_loop+0x107/0x130
+>     do_syscall_64+0x1e5/0x280
+>     entry_SYSCALL_64_after_hwframe+0x44/0xa9
+> 
+> [CAUSE]
+> The fuzzed image has a completely screwd up extent tree:
+>    leaf 29421568 gen 9 total ptrs 6 free space 3587 owner 18446744073709551610
+>    refs 2 lock (w:0 r:0 bw:0 br:0 sw:0 sr:0) lock_owner 0 current 5938
+>            item 0 key (12587008 168 4096) itemoff 3942 itemsize 53
+>                    extent refs 1 gen 9 flags 1
+>                    ref#0: extent data backref root 5 objectid 259 offset 0 count 1
+>            item 1 key (12591104 168 8192) itemoff 3889 itemsize 53
+>                    extent refs 1 gen 9 flags 1
+>                    ref#0: extent data backref root 5 objectid 271 offset 0 count 1
+>            item 2 key (12599296 168 4096) itemoff 3836 itemsize 53
+>                    extent refs 1 gen 9 flags 1
+>                    ref#0: extent data backref root 5 objectid 259 offset 4096 count 1
+>            item 3 key (29360128 169 0) itemoff 3803 itemsize 33
+>                    extent refs 1 gen 9 flags 2
+>                    ref#0: tree block backref root 5
+>            item 4 key (29368320 169 1) itemoff 3770 itemsize 33
+>                    extent refs 1 gen 9 flags 2
+>                    ref#0: tree block backref root 5
+>            item 5 key (29372416 169 0) itemoff 3737 itemsize 33
+>                    extent refs 1 gen 9 flags 2
+>                    ref#0: tree block backref root 5
+> 
+> 1. Wrong owner
+>     The corrupted leaf has owner -6ULL, which matches
+>     BTRFS_TREE_LOG_OBJECTID.
+> 
+> 2. Missing backref for extent tree itself
+>     So extent allocator can allocate tree block 29421568 as a new tree
+>     block.
+> 
+> Above corruption leads to the following sequence to happen:
+> - Btrfs needs to COW extent tree
+>    Extent allocator choose to allocate eb at bytenr 29421568 (which is
+>    current extent tree root).
+> 
+>    And since the owner is copied from old eb, it's -6ULL, so
+>    btrfs_init_new_buffer() will not mark the range dirty in
+>    transaction->dirty_pages, but root->dirty_log_pages.
 
---GIf1s07HPIygTrXfGPLPSI6bFLNkSomvX
-Content-Type: multipart/mixed;
- boundary="------------B0FC79D74FFA3842D9F1D651"
-Content-Language: en-US
+That's not what it checks though, it checks the root that was passed in, so I 
+assume this means that the root that is cow'ing the block is a log root?
 
-This is a multi-part message in MIME format.
---------------B0FC79D74FFA3842D9F1D651
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
+> 
+>    Also, since the eb is already under usage, extent root doesn't even
+>    get marked DIRTY, nor added to dirty_cowonly_list.
+>    Thus even we try to iterate dirty roots to cleanup their
+>    dirty_log_pages, this particular extent tree won't be iterated.
 
-Hi
+But what about the original root that actually allocated this log root?  That 
+should still be on the dirty list, correct?  And thus be cleaned up properly?
 
-I noticed that a running `btrfs scrub` operation prevents a system from s=
-uspending to RAM. I wonder whether this is a known issue and being worked=
- on.
-A kernel trace leading to btrfs scrub can be found attached.
+I'm not quite understanding how we get into this situation, we have the above 
+block that is pointed to by the extent root correct?  But the block itself isn't 
+in the extent tree, and thus appears to be free, correct?
 
-My current system setup:
-NixOS 19.09
-kernel 4.19.98
-btrfs-progs v5.2.1
+So then what you are seeing is
 
-I can also try to reproduce this issue with a more recent kernel version.=
- (am currently on a train with bad link)
+fsync(inode)
+   log the inode, which attaches inode->root to dirty_list
+      create a log root, attach it to the root
+        allocate this bogus block, set it dirty in log_root->dirty_log_pages
+<some time later, boom>
+we try to write out the above block
 
-In the downstream bug report [1] suggests that this could be resolved/ wo=
-rked around in systemd by adding `Conflicts=3Dsuspend.target sleep.target=
-? to the scrubbing service's systemd unit.
-So should this be managed at btrfs (kernel) level or in systemd?
+Why isn't the log root getting cleaned up properly?  It doesn't matter who owned 
+the block originally, it should still be attached to a log root that is attached 
+to a real root and thus be cleaned up properly.  Something else appears to be 
+going screwy here.  Thanks,
 
-All the best
-schmittlauch
-
-[1] https://github.com/NixOS/nixpkgs/issues/79086
-
---------------B0FC79D74FFA3842D9F1D651
-Content-Type: text/x-log; charset=UTF-8;
- name="btrfs-scrub-suspend_partial.log"
-Content-Transfer-Encoding: quoted-printable
-Content-Disposition: attachment;
- filename="btrfs-scrub-suspend_partial.log"
-
-systemd[1]: Starting Suspend...
-systemd-sleep[15702]: Suspending system...
-kernel: PM: Syncing filesystems ... done.
-kernel: Freezing user space processes ...=20
-kernel: Freezing of tasks failed after 20.007 seconds (1 tasks refusing t=
-o freeze, wq_busy=3D0):
-kernel: btrfs           D    0 12483      1 0x00000004
-kernel: Call Trace:
-kernel:  ? __schedule+0x1f4/0x820
-kernel:  ? scrub_missing_raid56_end_io+0x40/0x40 [btrfs]
-kernel:  schedule+0x28/0x80
-kernel:  scrub_add_page_to_rd_bio+0x211/0x2c0 [btrfs]
-kernel:  ? wait_woken+0x80/0x80
-kernel:  scrub_pages+0x239/0x430 [btrfs]
-kernel:  scrub_stripe+0x72b/0xee0 [btrfs]
-kernel:  ? kmem_cache_alloc+0x158/0x1c0
-kernel:  ? btrfs_check_space_for_delayed_refs+0xc7/0x100 [btrfs]
-kernel:  ? btrfs_block_rsv_check+0x20/0x60 [btrfs]
-kernel:  ? scrub_chunk+0xd2/0x130 [btrfs]
-kernel:  scrub_chunk+0xd2/0x130 [btrfs]
-kernel:  scrub_enumerate_chunks+0x20f/0x570 [btrfs]
-kernel:  ? wait_woken+0x60/0x80
-kernel:  btrfs_scrub_dev+0x1e2/0x580 [btrfs]
-kernel:  ? __kmalloc_track_caller+0x167/0x210
-kernel:  btrfs_ioctl+0xfea/0x31b0 [btrfs]
-kernel:  ? __switch_to_asm+0x41/0x70
-kernel:  ? __switch_to_asm+0x35/0x70
-kernel:  ? __switch_to_asm+0x41/0x70
-kernel:  ? __switch_to_asm+0x35/0x70
-kernel:  ? do_vfs_ioctl+0xa4/0x620
-kernel:  do_vfs_ioctl+0xa4/0x620
-kernel:  ? __switch_to_asm+0x41/0x70
-kernel:  ? __switch_to_asm+0x35/0x70
-kernel:  ? __switch_to_asm+0x41/0x70
-kernel:  ? get_task_io_context+0x43/0x80
-kernel:  ksys_ioctl+0x60/0x90
-kernel:  ? __switch_to+0x115/0x440
-kernel:  __x64_sys_ioctl+0x16/0x20
-kernel:  do_syscall_64+0x4e/0x100
-kernel:  entry_SYSCALL_64_after_hwframe+0x44/0xa9
-kernel: RIP: 0033:0x7f7da656cb57
-kernel: Code: Bad RIP value.
-kernel: RSP: 002b:00007f7da647dd48 EFLAGS: 00000246 ORIG_RAX: 00000000000=
-00010
-kernel: RAX: ffffffffffffffda RBX: 0000000000b163e0 RCX: 00007f7da656cb57=
-
-kernel: RDX: 0000000000b163e0 RSI: 00000000c400941b RDI: 0000000000000003=
-
-kernel: RBP: 0000000000000000 R08: 00007f7da647e700 R09: 0000000000000000=
-
-kernel: R10: 00007f7da647e700 R11: 0000000000000246 R12: 00007ffd7f26ddce=
-
-kernel: R13: 00007ffd7f26ddcf R14: 00007f7da647e700 R15: 00007f7da67c9000=
-
-kernel: OOM killer enabled.
-kernel: Restarting tasks ... done.
-kernel: PM: suspend exit
-kernel: PM: suspend entry (s2idle)
-rtkit-daemon[2121]: Demoted 5 threads.
-kernel: PM: Syncing filesystems ... done.
-kernel: Freezing user space processes ...=20
-kernel: Freezing of tasks failed after 20.001 seconds (1 tasks refusing t=
-o freeze, wq_busy=3D0):
-kernel: btrfs           D    0 12483      1 0x00000004
-kernel: Call Trace:
-kernel:  ? __schedule+0x1f4/0x820
-kernel:  ? scrub_missing_raid56_end_io+0x40/0x40 [btrfs]
-kernel:  schedule+0x28/0x80
-kernel:  scrub_add_page_to_rd_bio+0x211/0x2c0 [btrfs]
-kernel:  ? wait_woken+0x80/0x80
-kernel:  scrub_pages+0x239/0x430 [btrfs]
-kernel:  ? btrfs_lookup_csums_range+0x93/0x450 [btrfs]
-kernel:  scrub_stripe+0x72b/0xee0 [btrfs]
-kernel:  ? start_transaction+0xef/0x3f0 [btrfs]
-kernel:  ? kmem_cache_alloc+0x158/0x1c0
-kernel:  ? btrfs_check_space_for_delayed_refs+0xc7/0x100 [btrfs]
-kernel:  ? btrfs_block_rsv_check+0x20/0x60 [btrfs]
-kernel:  ? scrub_chunk+0xd2/0x130 [btrfs]
-kernel:  ? scrub_chunk+0xd2/0x130 [btrfs]
-kernel:  ? scrub_enumerate_chunks+0x20f/0x570 [btrfs]
-kernel:  ? wait_woken+0x60/0x80
-kernel:  ? btrfs_scrub_dev+0x1e2/0x580 [btrfs]
-kernel:  ? __kmalloc_track_caller+0x167/0x210
-kernel:  ? btrfs_ioctl+0xfea/0x31b0 [btrfs]
-kernel:  ? __switch_to_asm+0x41/0x70
-kernel:  ? __switch_to_asm+0x35/0x70
-kernel:  ? __switch_to_asm+0x41/0x70
-kernel:  ? __switch_to_asm+0x35/0x70
-kernel:  ? do_vfs_ioctl+0xa4/0x620
-kernel:  ? do_vfs_ioctl+0xa4/0x620
-kernel:  ? __switch_to_asm+0x41/0x70
-kernel:  ? __switch_to_asm+0x35/0x70
-kernel:  ? __switch_to_asm+0x41/0x70
-kernel:  ? get_task_io_context+0x43/0x80
-kernel:  ? ksys_ioctl+0x60/0x90
-kernel:  ? __switch_to+0x115/0x440
-kernel:  ? __x64_sys_ioctl+0x16/0x20
-kernel:  ? do_syscall_64+0x4e/0x100
-kernel:  ? entry_SYSCALL_64_after_hwframe+0x44/0xa9
-kernel: OOM killer enabled.
-kernel: Restarting tasks ... done.
-
---------------B0FC79D74FFA3842D9F1D651--
-
---GIf1s07HPIygTrXfGPLPSI6bFLNkSomvX--
-
---a7dRvWnDqXMr59N9K6VnyYwSufa4iIeNO
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCgAdFiEEiRYRIpDzmyt/p4JWnlBFsvrrxWsFAl45ZzYACgkQnlBFsvrr
-xWs/RQf+PfVkTvTHmjaiVJ+gcQr8rY5lKCCGEsDIfpNhXHCVmoFzNG9s2pOW25RF
-9RlBu19wk6QWNpLkYMkEvrZtNsc0/1oncGAMMXgGfYJywVwCZuWyoXZ8vXOHUk9X
-A8SjlB82GwF9hKHz2WzrzNB2vtXxLUg9dksRKL0loutqz2XgiNk89wDkVMcuMyRV
-Cthq2n38ilP7pqdhWFWtkgLPbmlSnoCmvRtieclpV1F/u1dJQNulZxQDco+NPrkh
-Uep+GF/9TnXsvrj8KKzifOV06nhyqKpj44EEMsD9t9X4oXbSlLAxILcFCYwBnVEe
-Zi654tjHvNZMi3dHz95dcsVGzEoQdQ==
-=FssW
------END PGP SIGNATURE-----
-
---a7dRvWnDqXMr59N9K6VnyYwSufa4iIeNO--
+Josef

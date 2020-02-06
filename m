@@ -2,84 +2,77 @@ Return-Path: <SRS0=9o53=32=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 837D1C2D0B1
-	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Feb 2020 14:11:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E4EE0C352A6
+	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Feb 2020 15:11:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 604A92082E
-	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Feb 2020 14:11:52 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B9F3221741
+	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Feb 2020 15:11:57 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="rZRvO6tb"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727549AbgBFOLv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 6 Feb 2020 09:11:51 -0500
-Received: from mx2.suse.de ([195.135.220.15]:57050 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727060AbgBFOLv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 6 Feb 2020 09:11:51 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 8BF41ADF1;
-        Thu,  6 Feb 2020 14:11:49 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 8A14ADA952; Thu,  6 Feb 2020 15:11:36 +0100 (CET)
-Date:   Thu, 6 Feb 2020 15:11:36 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Anand Jain <anand.jain@oracle.com>
-Cc:     dsterba@suse.cz, linux-btrfs@vger.kernel.org, dsterba@suse.com
-Subject: Re: [PATCH 0/4 RESEND 1-3/4 v5 4/4] btrfs, sysfs cleanup and add
- dev_state
-Message-ID: <20200206141136.GX2654@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
-        linux-btrfs@vger.kernel.org, dsterba@suse.com
-References: <20200203110012.5954-1-anand.jain@oracle.com>
- <20200203171659.GA2654@twin.jikos.cz>
- <c0ac6404-ed46-be94-ac05-01c723f05134@oracle.com>
+        id S1727828AbgBFPLy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 6 Feb 2020 10:11:54 -0500
+Received: from bombadil.infradead.org ([198.137.202.133]:37526 "EHLO
+        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727502AbgBFPLn (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Feb 2020 10:11:43 -0500
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=bombadil.20170209; h=In-Reply-To:Content-Type:MIME-Version
+        :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+        Content-Transfer-Encoding:Content-ID:Content-Description;
+        bh=sH/t7sKgooZyw4hhQwASgl1lHVyEKiY+WTnlFoK032U=; b=rZRvO6tbtr28PMuz9z+MjhgivQ
+        6cqL7j2Vxr28BoMoIFHC0+OUtmFBkUT8df6uQRQFyd/SdNDk8CNSQ1qFKkUaLgWMkXLLorWKp2DKz
+        NdfzpoPVVLd40MwPL+UxnJaLAy5EVgMD9Ug5o7dzx+zmjj0ot9coY+ZkSiXIP7Lgb/tnWHgs4u7Wn
+        0+9ZlhCjB2bOjmScvM/amzPmAvt4CDlD8Tik3QmSgMZdOJIdja68aAz1dmmui1VPJkNWFz1vSjS89
+        faN+Ky5b4f0hmtP2eqlspuO4Fva8xaM53si8We1Sh+x4nWIi+U4Sa/y2S48znwsLXsdeHNC0cG4kd
+        rKsziq0g==;
+Received: from hch by bombadil.infradead.org with local (Exim 4.92.3 #3 (Red Hat Linux))
+        id 1izicj-0006WS-3G; Thu, 06 Feb 2020 14:59:21 +0000
+Date:   Thu, 6 Feb 2020 06:59:21 -0800
+From:   Christoph Hellwig <hch@infradead.org>
+To:     Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
+Cc:     Christoph Hellwig <hch@infradead.org>,
+        David Sterba <dsterba@suse.cz>,
+        Nikolay Borisov <nborisov@suse.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        "linux-btrfs @ vger . kernel . org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH v4 2/5] btrfs: use BIOs instead of buffer_heads from
+ superblock writeout
+Message-ID: <20200206145921.GB24780@infradead.org>
+References: <20200205143831.13959-1-johannes.thumshirn@wdc.com>
+ <20200205143831.13959-3-johannes.thumshirn@wdc.com>
+ <20200205181605.GA11348@infradead.org>
+ <SN4PR0401MB359893900DDE52857064A2CF9B1D0@SN4PR0401MB3598.namprd04.prod.outlook.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <c0ac6404-ed46-be94-ac05-01c723f05134@oracle.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <SN4PR0401MB359893900DDE52857064A2CF9B1D0@SN4PR0401MB3598.namprd04.prod.outlook.com>
+X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Feb 06, 2020 at 02:31:02PM +0800, Anand Jain wrote:
-> 
-> 
-> On 2/4/20 1:16 AM, David Sterba wrote:
-> > On Mon, Feb 03, 2020 at 07:00:08PM +0800, Anand Jain wrote:
-> >> Resend:
-> >>    Patch 4/4 is already integrated without the cleanup and preparatory
-> >>    patches (1,2,3)/4. So I am resending those 3 patches. And the changes
-> >>    in patch 4/4 as in misc-next is imported into patch v5 4/4 here. Patch
-> >>    4/4 has the details of the changes.
+On Thu, Feb 06, 2020 at 08:20:16AM +0000, Johannes Thumshirn wrote:
+> >>   		op_flags = REQ_SYNC | REQ_META | REQ_PRIO;
+> >>   		if (i == 0 && !btrfs_test_opt(device->fs_info, NOBARRIER))
+> >>   			op_flags |= REQ_FUA;
 > > 
-> > All the patches have been merged and now are in linus/master branch.
+> >> +		bio->bi_opf = REQ_OP_WRITE | op_flags;
+> > 
+> > You could kill the op_flags variable and just assign everything directly
+> > to bio->bi_opf.
+> > 
 > 
-> 
-> David,
-> 
-> > I haven't reordered the patches so they're not in a group and the
-> > preparatory patches are about 10 commits above v5.5-rc7 which is the
-> > beginning of the branch.
-> 
-> 
->   It will cause problem during bisect, without the preparatory patches
->   the devid kobject lands under devices instead of under devinfo,
->   that's how I noticed that preparatory patches are missing.
+> Then I'd still have to deal with the NOBARRIER mount option here so 
+> op_flags is nice to have for readability.
 
-I've tested current master and the device ids are indeed placed under
-device/ and there is no devinfo/, so this needs to be fixed.
+I tend to disagree.  The simple version is:
 
-Preparatory patches I was referring to are:
-
-bc036bb33524  btrfs: sysfs, merge btrfs_sysfs_add devices_kobj and fsid
-be2cf92e0a2f  btrfs: sysfs, rename btrfs_sysfs_add_device()
-c6761a9ed329  btrfs: sysfs, btrfs_sysfs_add_fsid() drop unused argument parent
-b5501504cb6a  btrfs: sysfs, rename devices kobject holder to devices_kobj
-
-so I'll have another look at what you sent.
+		bio->bi_opf = REQ_OP_WRITE | REQ_SYNC | REQ_META | REQ_PRIO;
+		if (i == 0 && !btrfs_test_opt(device->fs_info, NOBARRIER))
+			bio->bi_opf |= REQ_FUA;

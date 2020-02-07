@@ -2,62 +2,63 @@ Return-Path: <SRS0=EUcM=33=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.7 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5B678C2BA83
-	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Feb 2020 20:22:18 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B6AD6C2BA83
+	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Feb 2020 22:31:16 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2C44E21775
-	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Feb 2020 20:22:18 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 706312051A
+	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Feb 2020 22:31:16 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="br0oipOa"
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="mb39vvVe"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727234AbgBGUWR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 7 Feb 2020 15:22:17 -0500
-Received: from mail-wr1-f66.google.com ([209.85.221.66]:40175 "EHLO
-        mail-wr1-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727031AbgBGUWR (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Feb 2020 15:22:17 -0500
-Received: by mail-wr1-f66.google.com with SMTP id t3so395706wru.7
-        for <linux-btrfs@vger.kernel.org>; Fri, 07 Feb 2020 12:22:15 -0800 (PST)
+        id S1727065AbgBGWbP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 7 Feb 2020 17:31:15 -0500
+Received: from mail-ua1-f67.google.com ([209.85.222.67]:37348 "EHLO
+        mail-ua1-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727031AbgBGWbP (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Feb 2020 17:31:15 -0500
+Received: by mail-ua1-f67.google.com with SMTP id h32so457101uah.4
+        for <linux-btrfs@vger.kernel.org>; Fri, 07 Feb 2020 14:31:14 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
+        d=gmail.com; s=20161025;
         h=mime-version:references:in-reply-to:from:date:message-id:subject:to
          :cc;
-        bh=b6AsgFeki4sBs6YPbgx0WqEWuC8p9l5nkMQfU8SqUDw=;
-        b=br0oipOaG2H1Sk4jFc6iVlCpvQc/9feXYYO/ibNF2coOUIwWwmZfZCSDxW0X6je6P6
-         OG5F+XqZKPDlY05NGv48ehWesFP8+DFvcH0cXOgCZXugJP20ozoMbzlfFu8YeHRawzj7
-         MwcK/fprqnh/nJVzgsFVHLY8UnYI0le4iZKzst1J/Cy0fPQMm6JgxsH/H9f3YCj4AGgM
-         rk2anN/Z7inJSURdC8ZtdPTu3Ep2o9v8NCa2Ivb7JpEjNkHyzQopnrtTeefKfniILlnX
-         WPdQtEpQtjGjPzA9iMIewhHPUTLDs/HBUtNYs2vM+3Mexob5uxA69LXzy4xP8nJ8xy2i
-         SiqQ==
+        bh=DnQF3TA2DOGooE2RI+kBZtKFuTnc7lKbEpwuXC7rjLg=;
+        b=mb39vvVeX+M8VvIMhMB07a7DLP/8/ACiBrE0LxzdR4Kr/9FATwMttiHV7G+AB50Aar
+         fivHRButRMLfjvCUYto4t2xgRoJWg0LcK22tPwDVUJl09cCd8BdC6lAnFvQUrdn162AM
+         zLKNqjEpXTMYs4wZnQMxGAJoBYOq2vof+2SEPV6rr2FASpKReEuK6NXJJ/84Oo7RpPIT
+         pBv8eVRv9XjbuHQtGx1Fc8KVnpALJuCo4Kl+BsRjY8L9XPEJMTO4jUnPHqKr1Dh834ET
+         A3+dUPqqK5qyzyojT/wqmh19iE5a7oZL+AwE5QFSLcFmFAugQ3Z1kefypD+LQDOwl20j
+         NBpg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:mime-version:references:in-reply-to:from:date
          :message-id:subject:to:cc;
-        bh=b6AsgFeki4sBs6YPbgx0WqEWuC8p9l5nkMQfU8SqUDw=;
-        b=G9AE8pjRPrjKji588PyD+FCT3Q/OBAukU6aDtVjcXdiXdcwXZ3nyI4mfBoMBR5KGRx
-         X/fC2YaMa9NL05KRrlCZpZfmzePkQNsVl9L9EzT1YRHrLEg6cKxtikWRFaliOMr64hQi
-         YNwNJP22xlsU/FTfpP14DyqfoLTTz00jbw1cQjNIZPJUqb82ihTFgZ/Es7rbrKmEu8tk
-         QIHVtfADvmQccw+FWRHAFJuhrdmmLhnDofRMAntncZg+i/xslqDhh2ewbD1TcHw8P03H
-         Pv3F6nhEbGJTmeDj5eXnuX+X/YlwRM/Y5MmW4ktvI2iIaNzI4LCV2s7iEfdmuBvc6Q7C
-         9Dwg==
-X-Gm-Message-State: APjAAAUuuiDeGVZiGwkAgD7ydE1cRHsyClFyJkzw7ZokhgQmW0WpZpCg
-        yJbKX2Fv9eUxsEla71220EY8sbrXWpMEgZgKUAOkEe9jwFifwQ==
-X-Google-Smtp-Source: APXvYqyZl5jta8zbALBloqDleoZ+lPt9lREENsF5QZ+Wnxe/GEx1aDMyQUB3kGJuYwVmmy3BsvfDwdTyYGANJj0aHXs=
-X-Received: by 2002:adf:ab14:: with SMTP id q20mr741884wrc.274.1581106935083;
- Fri, 07 Feb 2020 12:22:15 -0800 (PST)
+        bh=DnQF3TA2DOGooE2RI+kBZtKFuTnc7lKbEpwuXC7rjLg=;
+        b=k8S6x5B9mvG03yFep/+DP5JZ+9H8o5O5qA/o3PERNxulcJ8WnBKowUE3OnCMhP0I0H
+         jz52S1AsGnHi1oByYv092fVLJ5MfO3BFRCPnkM7l8eBQOQ7Uha7V/x+UkJLayOoqh1L+
+         M/M5n5kIJN8QISmxAZqemYkt/eK1T4X3OEwhh9IMtaZGaVUJ1Dv+SUU6cBkE+RxdhnVR
+         dEbtbOWFkJH5+JTzxqgt6vIvTKVtWYeRy/gAuk8KcNZ+IDShlhzExP/UgAR7OLTInkwJ
+         B7QQzbmrV/ZXfPI3vil5j4FrLnjw6WyY34yn9pLBx4DYLOn4cuGXJEMW82oQKXIXgLD1
+         RneA==
+X-Gm-Message-State: APjAAAUa/BqlZ5E0K7aYGQJr7CS/svXxE8o3RxDGIjcDi2e/fW3Nk/Iy
+        Ln8HrEQgH2yO57P2HrtOyFcx16V2yiQPxGLr0icg+kO6Qa0=
+X-Google-Smtp-Source: APXvYqyb7idFlGTUQpooobbisYTIg+6mjOzfhCxuXanCq1bI7aRxOFT+bDsOrNrbDwLKi53UPjKYrPb1H2YFb9lN/uo=
+X-Received: by 2002:ab0:18a1:: with SMTP id t33mr638900uag.123.1581114674006;
+ Fri, 07 Feb 2020 14:31:14 -0800 (PST)
 MIME-Version: 1.0
 References: <CA+M2ft9zjGm7XJw1BUm364AMqGSd3a8QgsvQDCWz317qjP=o8g@mail.gmail.com>
- <CA+M2ft9ANwKT1+ENS6-w9HLtdx0MDOiVhi5RWKLucaT_WtZLkg@mail.gmail.com>
-In-Reply-To: <CA+M2ft9ANwKT1+ENS6-w9HLtdx0MDOiVhi5RWKLucaT_WtZLkg@mail.gmail.com>
-From:   Chris Murphy <lists@colorremedies.com>
-Date:   Fri, 7 Feb 2020 13:21:59 -0700
-Message-ID: <CAJCQCtShJVH-mTQEQ--RHyJgMWw1R-YfeUQLp2rn3x+xOwJz+Q@mail.gmail.com>
+ <CA+M2ft9ANwKT1+ENS6-w9HLtdx0MDOiVhi5RWKLucaT_WtZLkg@mail.gmail.com> <CAJCQCtShJVH-mTQEQ--RHyJgMWw1R-YfeUQLp2rn3x+xOwJz+Q@mail.gmail.com>
+In-Reply-To: <CAJCQCtShJVH-mTQEQ--RHyJgMWw1R-YfeUQLp2rn3x+xOwJz+Q@mail.gmail.com>
+From:   John Hendy <jw.hendy@gmail.com>
+Date:   Fri, 7 Feb 2020 16:31:03 -0600
+Message-ID: <CA+M2ft88F8XfF+Ob8mvdPvgKEQx=q8xwfgiCjL+ACM3XVuAhbA@mail.gmail.com>
 Subject: Re: btrfs root fs started remounting ro
-To:     John Hendy <jw.hendy@gmail.com>
+To:     Chris Murphy <lists@colorremedies.com>
 Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -65,74 +66,151 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Feb 7, 2020 at 10:52 AM John Hendy <jw.hendy@gmail.com> wrote:
+On Fri, Feb 7, 2020 at 2:22 PM Chris Murphy <lists@colorremedies.com> wrote:
+>
+> On Fri, Feb 7, 2020 at 10:52 AM John Hendy <jw.hendy@gmail.com> wrote:
+>
+> > As an update, I'm now running off of a different drive (ssd, not the
+> > nvme) and I got the error again! I'm now inclined to think this might
+> > not be hardware after all, but something related to my setup or a bug
+> > with chromium.
+>
+> Even if there's a Chromium bug, it should result in file system
+> corruption like what you're seeing.
 
-> As an update, I'm now running off of a different drive (ssd, not the
-> nvme) and I got the error again! I'm now inclined to think this might
-> not be hardware after all, but something related to my setup or a bug
-> with chromium.
+I'm assuming you meant "*shouldn't* result in file system corruption"?
 
-Even if there's a Chromium bug, it should result in file system
-corruption like what you're seeing.
+>
+> > dmesg after trying to start chromium:
+> > - https://pastebin.com/CsCEQMJa
+>
+> Could you post the entire dmesg, start to finish, for the boot in
+> which this first occurred?
 
+Indeed. Just reproduced it:
+- https://pastebin.com/UJ8gbgFE
 
-> dmesg after trying to start chromium:
-> - https://pastebin.com/CsCEQMJa
+Aside: is there a preferred way for sharing these? The page I read
+about this list said text couldn't exceed 100kb, but my original
+appears to have bounced and the dmesg alone is >100kb... Just want to
+make sure pastebin is cool and am happy to use something
+better/preferred.
 
-Could you post the entire dmesg, start to finish, for the boot in
-which this first occurred?
+> This transid isn't realistic, in particular for a filesystem this new.
 
-This transid isn't realistic, in particular for a filesystem this new.
+Clarification, and apologies for the confusion:
+- the m2.sata in my original post was my primary drive and had an
+issue, then I wiped, mkfs.btrfs from scratch, reinstalled linux, etc.
+and it happened again.
 
-[   60.697438] BTRFS error (device dm-0): parent transid verify failed
-on 202711384064 wanted 68719924810 found 448074
-[   60.697457] BTRFS info (device dm-0): no csum found for inode 19064
-start 2392064
-[   60.697777] BTRFS warning (device dm-0): csum failed root 339 ino
-19064 off 2392064 csum 0x8941f998 expected csum 0x00000000 mirror 1
+- the ssd I'm now running on was the former boot drive in my last
+computer which I was using as a backup drive for /mnt/vault pool but
+still had the old root fs. After the m2.sata failure, I started
+booting from it. It is not a new fs but >2yrs old.
 
-Expected csum null? Are these files using chattr +C? Something like
-this might help figure it out:
+If you'd like, let's stick to troubleshooting the ssd for now.
 
-$ sudo btrfs insp inod -v 19064 /home
-$ lsattr /path/to/that/file/
+> [   60.697438] BTRFS error (device dm-0): parent transid verify failed
+> on 202711384064 wanted 68719924810 found 448074
+> [   60.697457] BTRFS info (device dm-0): no csum found for inode 19064
+> start 2392064
+> [   60.697777] BTRFS warning (device dm-0): csum failed root 339 ino
+> 19064 off 2392064 csum 0x8941f998 expected csum 0x00000000 mirror 1
+>
+> Expected csum null? Are these files using chattr +C? Something like
+> this might help figure it out:
+>
+> $ sudo btrfs insp inod -v 19064 /home
 
-Report output for both.
+$ sudo btrfs insp inod -v 19056 /home/jwhendy
+ioctl ret=0, bytes_left=4039, bytes_missing=0, cnt=1, missed=0
+/home/jwhendy/.config/chromium/Default/Cookies
 
+> $ lsattr /path/to/that/file/
 
-> Thanks for any pointers, as it would now seem that my purchase of a
-> new m2.sata may not buy my way out of this problem! While I didn't
-> want to reinstall, at least new hardware is a simple fix. Now I'm
-> worried there is a deeper issue bound to recur :(
+$ lsattr /home/jwhendy/.config/chromium/Default/Cookies
+-------------------- /home/jwhendy/.config/chromium/Default/Cookies
 
-Yep. And fixing Btrfs is not simple.
+> Report output for both.
+>
+>
+> > Thanks for any pointers, as it would now seem that my purchase of a
+> > new m2.sata may not buy my way out of this problem! While I didn't
+> > want to reinstall, at least new hardware is a simple fix. Now I'm
+> > worried there is a deeper issue bound to recur :(
+>
+> Yep. And fixing Btrfs is not simple.
+>
+> > > nvme0n1p3 is encrypted with dm-crypt/LUKS.
+>
+> I don't think the problem is here, except that I sooner believe
+> there's a regression in dm-crypt or Btrfs with discards, than I
+> believe two different drives have discard related bugs.
+>
+>
+> > > The only thing I've stumbled on is that I have been mounting with
+> > > rd.luks.options=discard and that manually running fstrim is preferred.
+>
+> This was the case for both the NVMe and SSD drives?
 
-> > nvme0n1p3 is encrypted with dm-crypt/LUKS.
+Yes, though I have turned that off for the SSD ever since I started
+booting from it. That said, I realized that discard is still in my
+fstab... is this a potential source of the transid/csum issues? I've
+now removed that and am about to reboot after I send this.
 
-I don't think the problem is here, except that I sooner believe
-there's a regression in dm-crypt or Btrfs with discards, than I
-believe two different drives have discard related bugs.
+$ cat /etc/fstab
+/dev/mapper/luks-0712af67-3f01-4dde-9d45-194df9d29d14 on / type btrfs
+(rw,relatime,compress=lzo,ssd,discard,space_cache,subvolid=263,subvol=/arch)
+/dev/mapper/luks-0712af67-3f01-4dde-9d45-194df9d29d14 on /home/jwhendy
+type btrfs (rw,relatime,compress=lzo,ssd,discard,space_cache,subvolid=339,subvol=/jwhendy)
+/dev/mapper/luks-0712af67-3f01-4dde-9d45-194df9d29d14 on /mnt/vault
+type btrfs (rw,relatime,compress=lzo,ssd,discard,space_cache,subvolid=265,subvol=/vault)
 
+> What was the kernel version this problem first appeared on with NVMe?
+> For the (new) SSD you're using 5.5.1, correct?
 
-> > The only thing I've stumbled on is that I have been mounting with
-> > rd.luks.options=discard and that manually running fstrim is preferred.
+I just updated today which put me at 5.5.2, but in theory yes. And as
+I went to check that I get an Input/Output error trying to check the
+pacman log! Here's the dmesg with those new errors included:
+- https://pastebin.com/QzYQ2RRg
 
-This was the case for both the NVMe and SSD drives?
+I'm still mounted rw, but my gosh... what the heck is happening. The
+output is for a different root/inode:
 
-What was the kernel version this problem first appeared on with NVMe?
-For the (new) SSD you're using 5.5.1, correct?
+$ sudo btrfs insp inod -v 273 /
+ioctl ret=0, bytes_left=4053, bytes_missing=0, cnt=1, missed=0
+//var/log/pacman.log
 
-Can you correlate both corruption events to recent use of fstrim?
+Is the double // a concern for that file?
 
-What are the make/model of both drives?
+$ sudo lsattr /var/log/pacman.log
+-------------------- /var/log/pacman.log
 
-In the meantime, I suggest refreshing backups. Btrfs won't allow files
-with checksums that it knows are corrupt to be copied to user space.
-But it sounds like so far the only files affected are Chrome cache
-files? If so this is relatively straight forward to get back to a
-healthy file system. And then it's time to start iterating some of the
-setup to find out what's causing the problem.
+> Can you correlate both corruption events to recent use of fstrim?
 
+I've never used fstrim manually on either drive.
 
--- 
-Chris Murphy
+> What are the make/model of both drives?
+
+- ssd: Samsung 850 evo, 250G
+- m2.sata: nvme Samsung 960 evo, 250G
+
+> In the meantime, I suggest refreshing backups. Btrfs won't allow files
+> with checksums that it knows are corrupt to be copied to user space.
+> But it sounds like so far the only files affected are Chrome cache
+> files? If so this is relatively straight forward to get back to a
+> healthy file system. And then it's time to start iterating some of the
+> setup to find out what's causing the problem.
+
+So far, it seemed limited to chromium. I'm not sure about the new
+input/output error trying to cat/grep on /var/log/pacman.log. I can
+also ro my old drive just fine and have not done anything significant
+on the new one. If/when we get to potential destructive operations,
+I'll certainly re-up prior to doing those.
+
+Really appreciate the help!
+John
+
+>
+> --
+> Chris Murphy

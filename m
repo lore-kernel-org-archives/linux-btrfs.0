@@ -7,66 +7,66 @@ X-Spam-Status: No, score=-9.5 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DB2D0C352A4
-	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Feb 2020 07:21:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6832CC352A3
+	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Feb 2020 07:21:05 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9421B214AF
-	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Feb 2020 07:21:03 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3E93821741
+	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Feb 2020 07:21:05 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="GLLqikBU"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="kobkRPq5"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726861AbgBGHU7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 7 Feb 2020 02:20:59 -0500
-Received: from esa2.hgst.iphmx.com ([68.232.143.124]:26076 "EHLO
+        id S1726936AbgBGHVE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 7 Feb 2020 02:21:04 -0500
+Received: from esa2.hgst.iphmx.com ([68.232.143.124]:2752 "EHLO
         esa2.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726642AbgBGHU7 (ORCPT
+        with ESMTP id S1726798AbgBGHU7 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Feb 2020 02:20:59 -0500
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
   t=1581060064; x=1612596064;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=HrA6DYZ65JG0L8uN7RRDpq6uL0bckMJxFyFPS+bXBEA=;
-  b=GLLqikBUlQPuzjpg4vKXoMOw67Ytig/cIeojO6Twrkh7LW8lFveA5C6e
-   HAMopFkgaxUP28I1ISiAGymx82mIeLVI/kQDnEBSDxPvJkq8iAjhF27h7
-   IcVQOGCQP/JSGp39dXBHwvHJPSgKIv6Q8R9/rAHZn51nUgdkw7IXlydQ/
-   vYSdbZBsDlBwvmiIXAP79zdvX04eCi6w/jckQHw0hyL7E86ihAN2Bf7nM
-   M38CVm4t870yhyjZN26cDyCAQ7qgeSC0D7U7nFL5xpghG1NKiO3+wXCKh
-   jU0ggXxZ17YXqDQqLC5CCIRANA8N3CvQtRMY3qM0pr6NZvfv2a+35nBnX
-   g==;
-IronPort-SDR: gZ0/8oKsMHI0xpjqstM+Ay9gIcC5Bxb+oM8dvJkN0b3inXOa5154jPtZpvc6AME4BHZD55/WWI
- hVrS4Klx0MELi6g0JTGsFyM3hclZyPfQbC00F/YUQrkej0aIyvEo14W21CVeAbKzAn9uLQPYeL
- Rr+acAORGDETzaCYDJ8du1q5dSiRlH6SeIHAwdXmN6bhQb3tNfTA8TjOtmhsi9GB+AeqMxUVhT
- 9k8Mi29k67NofnSve2vrsyQ1icOa8VnpG2DSOj3Fl++cSzdJ9tnfTwWXes3NLIeMBsC7w4JZPJ
- fAU=
+  bh=DY2WAUOAB3R4OVQ1t9StJaVgz7kaMPPbDphATbQMRVE=;
+  b=kobkRPq5QCQ+CWheJPl3+X8SDxfX4J46Ft9TxxFA80tvB8G6anrt0JsJ
+   2O9o/DsTRiQnDZ0mezTxyMqvNr5MYgChA14iSrGN8aw8mLI6BcC0mLIKB
+   0A6snmmW2UdoWektbtNZDMb5/VAr59U0XKsqUIwAppt9So6mSD8n+LCvq
+   uW7nb8wPWAJYehrQiGKJ7hTmb3DmjfQMTF7KEX83MDuZwAZoGFrUb6PXy
+   uqD7Z9crzcZwvSTPsz3/T0bytIWpuhZ/i7WBwumHWWo62rkAzXLx5LAYy
+   BU0ya0O5SWrxKuotMZ5yRRquT6Jcxu0Y2tASvv/Slhuhf1eRMvUAHvKqY
+   A==;
+IronPort-SDR: P7SaYdZs6w2oVR5cbVHpMDiRDQ4UYAz6+6l5iihr97QDPiNuxDgmDZ066p750BZSRIWcDGX10d
+ 5F97RyLgCWTH7B7WnA4lUIrkfK1Jheou3sqiuj9AQZlqTeNEogHCtkBkgbQl6+26RuooQ2Qd6n
+ RM5EeAS8rEABCTDpR53ofy6HyB6UhbHKIHjdWF1XILSpR+PtO75PmTdTMxmkmtBmRnJiIUxYny
+ cjc3w5v1KC7lCfZo5dT2WEAAhIgLShQrbMJghWRlSF9eDymoI4Xrj1W+Axgqqah4/mqx9WsjI8
+ m5Q=
 X-IronPort-AV: E=Sophos;i="5.70,412,1574092800"; 
-   d="scan'208";a="231092228"
+   d="scan'208";a="231092232"
 Received: from h199-255-45-14.hgst.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 07 Feb 2020 15:20:21 +0800
-IronPort-SDR: Q59OJX70b2UsuVtHIbrPVBKI5C+yDq4uGhPVBMVb8nty+s+0O699jiLW2ITW68+IRR7DCCU5Ya
- Ls5spme0G+ZGTbTxAXfF0ZH1y6u+Y2S4kGAppQt8JI0W/jRP0riY9KGj0vWzUfPSWH83zGCXCo
- Iau++MzkazMWZgOIehN2W3Iiiw78a99HHZ5jA+no3y/ayHcczDdQYi+1+/mxXpXCP1+92hPI8c
- tELCiqkCiEHFqy+pEn71OOL58jPBNRlaA6d3oqr6AT9N3t9A12Qk87DWe9Nye9lB+YVLxMKxIy
- mcOmhgFfbkrbiKj85+bYDIHb
+  by ob1.hgst.iphmx.com with ESMTP; 07 Feb 2020 15:20:25 +0800
+IronPort-SDR: 4yDGYP2QbvHbuq7rRWO8Ne2MpZdST9ZuV3YJLJWUulVqo7R2JJV96s7TgfwFAdYwrtXWwA8FqW
+ G3BlckPDfIKMK+BPw1L3o7GylBjg71igGlryp03FKzW9jWbAqNH1kIEGcC35RScqGwxJc1GBrN
+ H2mIRO1ZslauvY89DCcEwyklALPeBuQbjRCUvkuQ71ik22P/n6kjx1dFqC/SF9dwDrWjnXed23
+ rXvZY8xgHKTI5JvEo6Am8O3WZZ5FQ69Ll7sG8GaqbrotdFR/hH1S6u7ELgzoyCnIyu3oSfx+ji
+ t+s095j0v5uYVgClrIzAbw+f
 Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 06 Feb 2020 23:13:12 -0800
-IronPort-SDR: 0lRXhWo7sJzTLNkmcBvqSpZOnHDmJ79JDMggz6cx6q4mqI/w2Wi17oPxc6kGoiCKcBA7KdH6qC
- GYcO/o4cLxv6aog2a/92nxTZUfKc9P0hmhuf2DVu/IsmSgsMphb/sb/QM56LN+et1VHn/2sp1E
- IRE2L1gPnSAS63eTwR2nsoaDYqKxYsBAqa/3dlFauT7nhaq09lLmTse9hk0CqdPr5q/bOcMxd+
- 6E7YJKqLr6FCKBV2Zku894Rs9Y5oZ7fGqC284YU2V78P3mzYm6/wHgtUfcB+LbGq7cExNqpusM
- 9Eo=
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 06 Feb 2020 23:13:14 -0800
+IronPort-SDR: Y2stc2+ZfAQiZjVwHo1oAvB9nyWlrPIdGDoF6x47x5CU/yY2VpW5qXeOnpqRd5/C+WNBvvPk/z
+ gC/hcVAhGeVpaAuGZPESm2BQtmgs+i14WmE4QuDXDjQl/04IkpuVcapYeJn4cXcHFTotld7M3D
+ Yu0+ZyaOxNW2s08tDxsCLwP8gc94VUFA+aM53UqkFWqDi0N8Hhvc/eBvkUBH6HSA+BuIje3cCI
+ QVUcojvcxTY1Hjp2mrrfGWNnTgaNR7ZBEQWKUNf2fo7F3koXLeOqfqdnzwJNx67ZNKPNyXoRbr
+ ZFY=
 WDCIronportException: Internal
 Received: from unknown (HELO redsun60.ssa.fujisawa.hgst.com) ([10.149.66.36])
-  by uls-op-cesaip01.wdc.com with ESMTP; 06 Feb 2020 23:20:14 -0800
+  by uls-op-cesaip01.wdc.com with ESMTP; 06 Feb 2020 23:20:17 -0800
 From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
 To:     David Sterba <dsterba@suse.cz>
 Cc:     Nikolay Borisov <nborisov@suse.com>,
         Josef Bacik <josef@toxicpanda.com>,
         "linux-btrfs @ vger . kernel . org" <linux-btrfs@vger.kernel.org>,
         Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH v5 3/7] btrfs: let btrfs_read_dev_super() return a btrfs_super_block
-Date:   Fri,  7 Feb 2020 16:20:01 +0900
-Message-Id: <20200207072005.22867-4-johannes.thumshirn@wdc.com>
+Subject: [PATCH v5 5/7] btrfs: remove btrfsic_submit_bh()
+Date:   Fri,  7 Feb 2020 16:20:03 +0900
+Message-Id: <20200207072005.22867-6-johannes.thumshirn@wdc.com>
 X-Mailer: git-send-email 2.24.1
 In-Reply-To: <20200207072005.22867-1-johannes.thumshirn@wdc.com>
 References: <20200207072005.22867-1-johannes.thumshirn@wdc.com>
@@ -77,358 +77,101 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Let btrfs_read_dev_super() return a 'struct btrfs_super_block' and
-btrfs_release_disk_super() take a 'struct btrfs_disk_super' as well.
+Now that the last use of btrfsic_submit_bh() is gone, remove the function
+as well.
 
 Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/disk-io.c | 72 +++++++++++++++++-----------------------------
- fs/btrfs/disk-io.h |  6 ++--
- fs/btrfs/volumes.c | 42 ++++++++++++---------------
- fs/btrfs/volumes.h |  2 +-
- 4 files changed, 50 insertions(+), 72 deletions(-)
+ fs/btrfs/check-integrity.c | 57 --------------------------------------
+ fs/btrfs/check-integrity.h |  2 --
+ 2 files changed, 59 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 42cd267ff978..988df20baefd 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2621,8 +2621,6 @@ int __cold open_ctree(struct super_block *sb,
- 	struct btrfs_fs_info *fs_info = btrfs_sb(sb);
- 	struct btrfs_root *tree_root;
- 	struct btrfs_root *chunk_root;
--	struct page *super_page;
--	u8 *superblock;
- 	int ret;
- 	int err = -EINVAL;
- 	int clear_free_space_tree = 0;
-@@ -2816,33 +2814,29 @@ int __cold open_ctree(struct super_block *sb,
- 	/*
- 	 * Read super block and check the signature bytes only
- 	 */
--	ret = btrfs_read_dev_super(fs_devices->latest_bdev, &super_page);
--	if (ret) {
--		err = ret;
-+	disk_super = btrfs_read_dev_super(fs_devices->latest_bdev);
-+	if (IS_ERR(disk_super)) {
-+		err = PTR_ERR(disk_super);
- 		goto fail_alloc;
- 	}
- 
--	superblock = kmap(super_page);
- 	/*
- 	 * Verify the type first, if that or the the checksum value are
- 	 * corrupted, we'll find out
- 	 */
--	csum_type = btrfs_super_csum_type((struct btrfs_super_block *)
--					  superblock);
-+	csum_type = btrfs_super_csum_type(disk_super);
- 	if (!btrfs_supported_super_csum(csum_type)) {
- 		btrfs_err(fs_info, "unsupported checksum algorithm: %u",
- 			  csum_type);
- 		err = -EINVAL;
--		kunmap(super_page);
--		put_page(super_page);
-+		btrfs_release_disk_super(disk_super);
- 		goto fail_alloc;
- 	}
- 
- 	ret = btrfs_init_csum_hash(fs_info, csum_type);
- 	if (ret) {
- 		err = ret;
--		kunmap(super_page);
--		put_page(super_page);
-+		btrfs_release_disk_super(disk_super);
- 		goto fail_alloc;
- 	}
- 
-@@ -2850,11 +2844,10 @@ int __cold open_ctree(struct super_block *sb,
- 	 * We want to check superblock checksum, the type is stored inside.
- 	 * Pass the whole disk block of size BTRFS_SUPER_INFO_SIZE (4k).
- 	 */
--	if (btrfs_check_super_csum(fs_info, superblock)) {
-+	if (btrfs_check_super_csum(fs_info, (u8 *) disk_super)) {
- 		btrfs_err(fs_info, "superblock checksum mismatch");
- 		err = -EINVAL;
--		kunmap(super_page);
--		put_page(super_page);
-+		btrfs_release_disk_super(disk_super);
- 		goto fail_csum;
- 	}
- 
-@@ -2863,9 +2856,8 @@ int __cold open_ctree(struct super_block *sb,
- 	 * following bytes up to INFO_SIZE, the checksum is calculated from
- 	 * the whole block of INFO_SIZE
- 	 */
--	memcpy(fs_info->super_copy, superblock, sizeof(*fs_info->super_copy));
--	kunmap(super_page);
--	put_page(super_page);
-+	memcpy(fs_info->super_copy, disk_super, sizeof(*fs_info->super_copy));
-+	btrfs_release_disk_super(disk_super);
- 
- 	disk_super = fs_info->super_copy;
- 
-@@ -3362,8 +3354,8 @@ static void btrfs_end_buffer_write_sync(struct buffer_head *bh, int uptodate)
- 	put_bh(bh);
+diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
+index a0ce69f2d27c..e7507985435e 100644
+--- a/fs/btrfs/check-integrity.c
++++ b/fs/btrfs/check-integrity.c
+@@ -2730,63 +2730,6 @@ static struct btrfsic_dev_state *btrfsic_dev_state_lookup(dev_t dev)
+ 						  &btrfsic_dev_state_hashtable);
  }
  
--int btrfs_read_dev_one_super(struct block_device *bdev, int copy_num,
--			struct page **super_page)
-+struct btrfs_super_block *btrfs_read_dev_one_super(struct block_device *bdev,
-+						   int copy_num)
- {
- 	struct btrfs_super_block *super;
- 	struct page *page;
-@@ -3372,33 +3364,28 @@ int btrfs_read_dev_one_super(struct block_device *bdev, int copy_num,
- 
- 	bytenr = btrfs_sb_offset(copy_num);
- 	if (bytenr + BTRFS_SUPER_INFO_SIZE >= i_size_read(bdev->bd_inode))
--		return -EINVAL;
-+		return ERR_PTR(-EINVAL);
- 
- 	page = read_cache_page_gfp(mapping, bytenr >> PAGE_SHIFT, GFP_NOFS);
- 	if (IS_ERR_OR_NULL(page))
--		return -ENOMEM;
-+		return ERR_PTR(-ENOMEM);
- 
--	super = kmap(page);
-+	super = kmap(page) + offset_in_page(bytenr);
- 	if (btrfs_super_bytenr(super) != bytenr ||
- 		    btrfs_super_magic(super) != BTRFS_MAGIC) {
--		kunmap(page);
--		put_page(page);
--		return -EINVAL;
-+		btrfs_release_disk_super(super);
-+		return ERR_PTR(-EINVAL);
- 	}
--	kunmap(page);
- 
--	*super_page = page;
--	return 0;
-+	return super;
- }
- 
- 
--int btrfs_read_dev_super(struct block_device *bdev, struct page **page)
-+struct btrfs_super_block *btrfs_read_dev_super(struct block_device *bdev)
- {
--	struct page *latest = NULL;
--	struct btrfs_super_block *super;
-+	struct btrfs_super_block *super, *latest = NULL;
- 	int i;
- 	u64 transid = 0;
--	int ret = -EINVAL;
- 
- 	/* we would like to check all the supers, but that would make
- 	 * a btrfs mount succeed after a mkfs from a different FS.
-@@ -3406,25 +3393,20 @@ int btrfs_read_dev_super(struct block_device *bdev, struct page **page)
- 	 * later supers, using BTRFS_SUPER_MIRROR_MAX instead
- 	 */
- 	for (i = 0; i < 1; i++) {
--		ret = btrfs_read_dev_one_super(bdev, i, page);
--		if (ret)
-+		super = btrfs_read_dev_one_super(bdev, i);
-+		if (IS_ERR(super))
- 			continue;
- 
--		super = kmap(*page);
+-int btrfsic_submit_bh(int op, int op_flags, struct buffer_head *bh)
+-{
+-	struct btrfsic_dev_state *dev_state;
 -
- 		if (!latest || btrfs_super_generation(super) > transid) {
--			if (latest) {
--				kunmap(latest);
--				put_page(latest);
--			}
--			latest = *page;
-+			if (latest)
-+				btrfs_release_disk_super(super);
-+
-+			latest = super;
- 			transid = btrfs_super_generation(super);
- 		}
+-	if (!btrfsic_is_initialized)
+-		return submit_bh(op, op_flags, bh);
 -
--		kunmap(*page);
- 	}
- 
--	return ret;
-+	return super;
- }
- 
- /*
-diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
-index a89283ce8ca2..e6f41871b837 100644
---- a/fs/btrfs/disk-io.h
-+++ b/fs/btrfs/disk-io.h
-@@ -54,9 +54,9 @@ int __cold open_ctree(struct super_block *sb,
- 	       char *options);
- void __cold close_ctree(struct btrfs_fs_info *fs_info);
- int write_all_supers(struct btrfs_fs_info *fs_info, int max_mirrors);
--int btrfs_read_dev_super(struct block_device *bdev, struct page **super_page);
--int btrfs_read_dev_one_super(struct block_device *bdev, int copy_num,
--			     struct page **super_page);
-+struct btrfs_super_block *btrfs_read_dev_super(struct block_device *bdev);
-+struct btrfs_super_block *btrfs_read_dev_one_super(struct block_device *bdev,
-+						   int copy_num);
- int btrfs_commit_super(struct btrfs_fs_info *fs_info);
- struct btrfs_root *btrfs_read_tree_root(struct btrfs_root *tree_root,
- 					struct btrfs_key *key);
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 5b19e5077633..212b9170ce0e 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -499,7 +499,7 @@ static struct btrfs_fs_devices *find_fsid_with_metadata_uuid(
- static int
- btrfs_get_bdev_and_sb(const char *device_path, fmode_t flags, void *holder,
- 		      int flush, struct block_device **bdev,
--		      struct page **super_page)
-+		      struct btrfs_super_block **disk_super)
+-	mutex_lock(&btrfsic_mutex);
+-	/* since btrfsic_submit_bh() might also be called before
+-	 * btrfsic_mount(), this might return NULL */
+-	dev_state = btrfsic_dev_state_lookup(bh->b_bdev->bd_dev);
+-
+-	/* Only called to write the superblock (incl. FLUSH/FUA) */
+-	if (NULL != dev_state &&
+-	    (op == REQ_OP_WRITE) && bh->b_size > 0) {
+-		u64 dev_bytenr;
+-
+-		dev_bytenr = BTRFS_BDEV_BLOCKSIZE * bh->b_blocknr;
+-		if (dev_state->state->print_mask &
+-		    BTRFSIC_PRINT_MASK_SUBMIT_BIO_BH)
+-			pr_info("submit_bh(op=0x%x,0x%x, blocknr=%llu (bytenr %llu), size=%zu, data=%p, bdev=%p)\n",
+-			       op, op_flags, (unsigned long long)bh->b_blocknr,
+-			       dev_bytenr, bh->b_size, bh->b_data, bh->b_bdev);
+-		btrfsic_process_written_block(dev_state, dev_bytenr,
+-					      &bh->b_data, 1, NULL,
+-					      NULL, bh, op_flags);
+-	} else if (NULL != dev_state && (op_flags & REQ_PREFLUSH)) {
+-		if (dev_state->state->print_mask &
+-		    BTRFSIC_PRINT_MASK_SUBMIT_BIO_BH)
+-			pr_info("submit_bh(op=0x%x,0x%x FLUSH, bdev=%p)\n",
+-			       op, op_flags, bh->b_bdev);
+-		if (!dev_state->dummy_block_for_bio_bh_flush.is_iodone) {
+-			if ((dev_state->state->print_mask &
+-			     (BTRFSIC_PRINT_MASK_SUBMIT_BIO_BH |
+-			      BTRFSIC_PRINT_MASK_VERBOSE)))
+-				pr_info("btrfsic_submit_bh(%s) with FLUSH but dummy block already in use (ignored)!\n",
+-				       dev_state->name);
+-		} else {
+-			struct btrfsic_block *const block =
+-				&dev_state->dummy_block_for_bio_bh_flush;
+-
+-			block->is_iodone = 0;
+-			block->never_written = 0;
+-			block->iodone_w_error = 0;
+-			block->flush_gen = dev_state->last_flush_gen + 1;
+-			block->submit_bio_bh_rw = op_flags;
+-			block->orig_bio_bh_private = bh->b_private;
+-			block->orig_bio_bh_end_io.bh = bh->b_end_io;
+-			block->next_in_same_bio = NULL;
+-			bh->b_private = block;
+-			bh->b_end_io = btrfsic_bh_end_io;
+-		}
+-	}
+-	mutex_unlock(&btrfsic_mutex);
+-	return submit_bh(op, op_flags, bh);
+-}
+-
+ static void __btrfsic_submit_bio(struct bio *bio)
  {
- 	int ret;
+ 	struct btrfsic_dev_state *dev_state;
+diff --git a/fs/btrfs/check-integrity.h b/fs/btrfs/check-integrity.h
+index 9bf4359cc44c..bcc730a06cb5 100644
+--- a/fs/btrfs/check-integrity.h
++++ b/fs/btrfs/check-integrity.h
+@@ -7,11 +7,9 @@
+ #define BTRFS_CHECK_INTEGRITY_H
  
-@@ -518,8 +518,9 @@ btrfs_get_bdev_and_sb(const char *device_path, fmode_t flags, void *holder,
- 		goto error;
- 	}
- 	invalidate_bdev(*bdev);
--	ret = btrfs_read_dev_super(*bdev, super_page);
--	if (ret) {
-+	*disk_super = btrfs_read_dev_super(*bdev);
-+	if (IS_ERR(*disk_super)) {
-+		ret = PTR_ERR(*disk_super);
- 		blkdev_put(*bdev, flags);
- 		goto error;
- 	}
-@@ -608,7 +609,6 @@ static int btrfs_open_one_device(struct btrfs_fs_devices *fs_devices,
- {
- 	struct request_queue *q;
- 	struct block_device *bdev;
--	struct page *super_page;
- 	struct btrfs_super_block *disk_super;
- 	u64 devid;
- 	int ret;
-@@ -619,11 +619,10 @@ static int btrfs_open_one_device(struct btrfs_fs_devices *fs_devices,
- 		return -EINVAL;
- 
- 	ret = btrfs_get_bdev_and_sb(device->name->str, flags, holder, 1,
--				    &bdev, &super_page);
-+				    &bdev, &disk_super);
- 	if (ret)
- 		return ret;
- 
--	disk_super = kmap(super_page);
- 	devid = btrfs_stack_device_id(&disk_super->dev_item);
- 	if (devid != device->devid)
- 		goto error_free_page;
-@@ -664,14 +663,12 @@ static int btrfs_open_one_device(struct btrfs_fs_devices *fs_devices,
- 		fs_devices->rw_devices++;
- 		list_add_tail(&device->dev_alloc_list, &fs_devices->alloc_list);
- 	}
--	kunmap(super_page);
--	put_page(super_page);
-+	btrfs_release_disk_super(disk_super);
- 
- 	return 0;
- 
- error_free_page:
--	kunmap(super_page);
--	put_page(super_page);
-+	btrfs_release_disk_super(disk_super);
- 	blkdev_put(bdev, flags);
- 
- 	return -EINVAL;
-@@ -1246,8 +1243,10 @@ int btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
- 	return ret;
- }
- 
--void btrfs_release_disk_super(struct page *page)
-+void btrfs_release_disk_super(struct btrfs_super_block *super)
- {
-+	struct page *page = kmap_to_page(super);
-+
- 	kunmap(page);
- 	put_page(page);
- }
-@@ -1286,7 +1285,7 @@ static int btrfs_read_disk_super(struct block_device *bdev, u64 bytenr,
- 
- 	if (btrfs_super_bytenr(*disk_super) != bytenr ||
- 	    btrfs_super_magic(*disk_super) != BTRFS_MAGIC) {
--		btrfs_release_disk_super(*page);
-+		btrfs_release_disk_super(p);
- 		return 1;
- 	}
- 
-@@ -1349,7 +1348,7 @@ struct btrfs_device *btrfs_scan_one_device(const char *path, fmode_t flags,
- 			btrfs_free_stale_devices(path, device);
- 	}
- 
--	btrfs_release_disk_super(page);
-+	btrfs_release_disk_super(disk_super);
- 
- error_bdev_put:
- 	blkdev_put(bdev, flags);
-@@ -2208,15 +2207,14 @@ static struct btrfs_device *btrfs_find_device_by_path(
- 	u64 devid;
- 	u8 *dev_uuid;
- 	struct block_device *bdev;
--	struct page *super_page;
- 	struct btrfs_device *device;
- 
- 	ret = btrfs_get_bdev_and_sb(device_path, FMODE_READ,
- 				    fs_info->bdev_holder, 0, &bdev,
--				    &super_page);
-+				    &disk_super);
- 	if (ret)
- 		return ERR_PTR(ret);
--	disk_super = kmap(super_page);
-+
- 	devid = btrfs_stack_device_id(&disk_super->dev_item);
- 	dev_uuid = disk_super->dev_item.uuid;
- 	if (btrfs_fs_incompat(fs_info, METADATA_UUID))
-@@ -2226,8 +2224,7 @@ static struct btrfs_device *btrfs_find_device_by_path(
- 		device = btrfs_find_device(fs_info->fs_devices, devid, dev_uuid,
- 					   disk_super->fsid, true);
- 
--	kunmap(super_page);
--	put_page(super_page);
-+	btrfs_release_disk_super(disk_super);
- 	if (!device)
- 		device = ERR_PTR(-ENOENT);
- 	blkdev_put(bdev, FMODE_READ);
-@@ -7328,20 +7325,19 @@ void btrfs_scratch_superblocks(struct block_device *bdev, const char *device_pat
- 
- 	for (copy_num = 0; copy_num < BTRFS_SUPER_MIRROR_MAX;
- 		copy_num++) {
--		u64 bytenr = btrfs_sb_offset(copy_num);
- 		struct page *page;
- 
--		if (btrfs_read_dev_one_super(bdev, copy_num, &page))
-+		disk_super = btrfs_read_dev_one_super(bdev, copy_num);
-+		if (IS_ERR(disk_super))
- 			continue;
- 
--		disk_super = kmap(page) + offset_in_page(bytenr);
- 		memset(&disk_super->magic, 0, sizeof(disk_super->magic));
--		kunmap(page);
- 
-+		page = kmap_to_page(disk_super);
- 		set_page_dirty(page);
- 		lock_page(page); /* write_on_page() unlocks the page */
- 		write_one_page(page);
--		put_page(page);
-+		btrfs_release_disk_super(disk_super);
- 
- 	}
- 
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 1e4ebe6d6368..ed44c45ef199 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -481,7 +481,7 @@ int btrfs_finish_chunk_alloc(struct btrfs_trans_handle *trans,
- int btrfs_remove_chunk(struct btrfs_trans_handle *trans, u64 chunk_offset);
- struct extent_map *btrfs_get_chunk_map(struct btrfs_fs_info *fs_info,
- 				       u64 logical, u64 length);
--void btrfs_release_disk_super(struct page *page);
-+void btrfs_release_disk_super(struct btrfs_super_block *super);
- 
- static inline void btrfs_dev_stat_inc(struct btrfs_device *dev,
- 				      int index)
+ #ifdef CONFIG_BTRFS_FS_CHECK_INTEGRITY
+-int btrfsic_submit_bh(int op, int op_flags, struct buffer_head *bh);
+ void btrfsic_submit_bio(struct bio *bio);
+ int btrfsic_submit_bio_wait(struct bio *bio);
+ #else
+-#define btrfsic_submit_bh submit_bh
+ #define btrfsic_submit_bio submit_bio
+ #define btrfsic_submit_bio_wait submit_bio_wait
+ #endif
 -- 
 2.24.1
 

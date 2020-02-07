@@ -6,30 +6,30 @@ X-Spam-Status: No, score=-5.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BC12FC352A2
-	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Feb 2020 10:12:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 14836C352A2
+	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Feb 2020 10:17:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 997BF20838
-	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Feb 2020 10:12:47 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D0D2E20838
+	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Feb 2020 10:17:56 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726894AbgBGKMq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 7 Feb 2020 05:12:46 -0500
-Received: from mx2.suse.de ([195.135.220.15]:55810 "EHLO mx2.suse.de"
+        id S1726899AbgBGKR4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 7 Feb 2020 05:17:56 -0500
+Received: from mx2.suse.de ([195.135.220.15]:60590 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726867AbgBGKMq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 7 Feb 2020 05:12:46 -0500
+        id S1726587AbgBGKRz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 7 Feb 2020 05:17:55 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 735E1AFCC;
-        Fri,  7 Feb 2020 10:12:44 +0000 (UTC)
-Subject: Re: [PATCH v5 3/7] btrfs: let btrfs_read_dev_super() return a
- btrfs_super_block
+        by mx2.suse.de (Postfix) with ESMTP id A74E2AC0C;
+        Fri,  7 Feb 2020 10:17:53 +0000 (UTC)
+Subject: Re: [PATCH v5 6/7] btrfs: remove buffer_heads from
+ btrfsic_process_written_block()
 To:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
         David Sterba <dsterba@suse.cz>
 Cc:     Josef Bacik <josef@toxicpanda.com>,
         "linux-btrfs @ vger . kernel . org" <linux-btrfs@vger.kernel.org>
 References: <20200207072005.22867-1-johannes.thumshirn@wdc.com>
- <20200207072005.22867-4-johannes.thumshirn@wdc.com>
+ <20200207072005.22867-7-johannes.thumshirn@wdc.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  xsFNBFiKBz4BEADNHZmqwhuN6EAzXj9SpPpH/nSSP8YgfwoOqwrP+JR4pIqRK0AWWeWCSwmZ
@@ -73,12 +73,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <0cf848b0-dbca-a7b3-d58f-a20066302b5f@suse.com>
-Date:   Fri, 7 Feb 2020 12:12:43 +0200
+Message-ID: <63ebf1b0-a009-b37e-630b-454a374a32d7@suse.com>
+Date:   Fri, 7 Feb 2020 12:17:52 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
  Thunderbird/68.4.1
 MIME-Version: 1.0
-In-Reply-To: <20200207072005.22867-4-johannes.thumshirn@wdc.com>
+In-Reply-To: <20200207072005.22867-7-johannes.thumshirn@wdc.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -90,8 +90,11 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 7.02.20 г. 9:20 ч., Johannes Thumshirn wrote:
-> Let btrfs_read_dev_super() return a 'struct btrfs_super_block' and
-> btrfs_release_disk_super() take a 'struct btrfs_disk_super' as well.
+> Now that the last caller of btrfsic_process_written_block() with
+> buffer_heads is gone, remove the buffer_head processing path from it as
+> well.
 > 
 > Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+> Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+
 Reviewed-by: Nikolay Borisov <nborisov@suse.com>

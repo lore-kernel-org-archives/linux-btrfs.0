@@ -2,97 +2,196 @@ Return-Path: <SRS0=EUcM=33=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 76D40C352A2
-	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Feb 2020 09:54:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DF570C352A2
+	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Feb 2020 10:08:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4A3CE20726
-	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Feb 2020 09:54:33 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="f9YfnWPz"
+	by mail.kernel.org (Postfix) with ESMTP id B3CC7214AF
+	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Feb 2020 10:08:06 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726942AbgBGJyc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 7 Feb 2020 04:54:32 -0500
-Received: from esa4.hgst.iphmx.com ([216.71.154.42]:10660 "EHLO
-        esa4.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726857AbgBGJyc (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Feb 2020 04:54:32 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1581069271; x=1612605271;
-  h=date:from:to:cc:subject:message-id:references:
-   mime-version:in-reply-to;
-  bh=lWQzrjZ7b6yc+fgYZaPhmnb6hc29GmMcDgSMWcCDW/c=;
-  b=f9YfnWPze2mWgmZdNzwfENyWdhCgsRie5xqXiNGvfSH6hIEclsdk0be/
-   RuDMF79xtUWAgLUIoKppLlsg8lqG7sE8u5pef9jtkzWcocGkVnbzxTThu
-   LCy6glkmlMyros+DSUiJGWVx0hh3jTHrgiY8TOGBMgKxJjaJ0dDTH3dXT
-   1zM5C3frPemiBGDMpda4UqdCUkotVsuzohAvDDUsGBFteEgohsdB9J29C
-   LP0jLo2r+BpS4YA4IkLAA1v2hwDRFqeO5LDEwDeCv9pQTm1ndw+soi+cX
-   KVHCKu+y+jY0BRpzL3SBNTaMXWumWEsKP4rn2MzKYb+KtEjx1wCLzeeCH
-   A==;
-IronPort-SDR: B+DpAhLBtSauEgHoC4Xb+X7V4X0Icam6rxEhGWLyoJC61d1MokXO9aCtU0GTdIS7kb9Y+TpQGb
- K4Ozclm2ScLR+TX+3avnqKg/IOzDI6Beg3wdA64edzjsozalulDprE6t1VLLPc6E9bRXIYOetY
- uVmgEc++UZRinYpQcvZeQfNXX7HJnJMJBTEgUVtGups8w6yVlWlKPgTvWTbtQzf8U9Kie8DI+m
- 05AeUlIYggVtvTRg94oLbl5OxOdmxDsKqw3Q0ZoBDJngPeQegBsNARAX4Yo+aiDiafl1cMEajA
- MTY=
-X-IronPort-AV: E=Sophos;i="5.70,412,1574092800"; 
-   d="scan'208";a="129341549"
-Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 07 Feb 2020 17:54:31 +0800
-IronPort-SDR: RVvR/PyTiKMdme5iKPP8FC8bXcevdMZO9z/2Hb2Mfs8keas7GM1HLDTeNzOTRAtvhJocM1u4ch
- Kpqzgwad4mfgSP0JBcZkIoQgGX+1SbOUR+Ey/JdGwpON4FvY4zpsSAjFp22exVOdwxygsb6qy3
- dBYVh7VYEkDGwv0S3qfDhzxPKRxYM9Mc/idjaL8YcYF/6O4QqM5gHnwR1FCaLuQLFUQYGq7OwW
- tsqL7RAkypqCWI2cpQWaaI0ZRi3Q+CsOfLNRTclQHmcRjQ0MlDxmEQ/i08/edK8hDnRMw2o12K
- Rme/uK2e7ylBUc8B2zSV/9e3
-Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 07 Feb 2020 01:47:29 -0800
-IronPort-SDR: r14d2We9/ds7rsdtJF3HQBxbAchTWkpUoKpx0M5wJXXxGlu2l/LbcILP0f6jCo6aFwyPsJ3Ow6
- YjBEp4NMCQjUaORdU9FIk09AkfoHod248MYc/NSrHUJzmvHpuuuoVR/XdLWlNqVLc4iTOFjXuS
- Olwshwh/vZaK2PQED9XBVdsZ4GIvx6aJ0wU64mQb2qwU/N+rScx+NnJmB0OmpP/gMW6Fx47cYs
- /7HPaJKRdPZ3GRTXhbQlKTx6oRmdtxFoWsKDsxTCq8f8c2QQPEBexbA97G1Ucw5jwLA9y4JgJB
- lqo=
-WDCIronportException: Internal
-Received: from naota.dhcp.fujisawa.hgst.com ([10.149.52.155])
-  by uls-op-cesaip02.wdc.com with SMTP; 07 Feb 2020 01:54:30 -0800
-Received: (nullmailer pid 969185 invoked by uid 1000);
-        Fri, 07 Feb 2020 09:54:29 -0000
-Date:   Fri, 7 Feb 2020 18:54:29 +0900
-From:   Naohiro Aota <Naohiro.Aota@wdc.com>
-To:     Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
-Cc:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        Nikolay Borisov <nborisov@suse.com>,
-        Damien Le Moal <Damien.LeMoal@wdc.com>,
-        Hannes Reinecke <hare@suse.com>,
-        Anand Jain <anand.jain@oracle.com>,
-        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>
-Subject: Re: [PATCH 06/20] btrfs: factor out gather_device_info()
-Message-ID: <20200207095429.dlo2rei4waa2qtbc@naota.dhcp.fujisawa.hgst.com>
-References: <20200206104214.400857-1-naohiro.aota@wdc.com>
- <20200206104214.400857-7-naohiro.aota@wdc.com>
- <SN4PR0401MB3598D4A69FB9C890F8C25D999B1D0@SN4PR0401MB3598.namprd04.prod.outlook.com>
+        id S1726988AbgBGKIF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 7 Feb 2020 05:08:05 -0500
+Received: from mx2.suse.de ([195.135.220.15]:51278 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726954AbgBGKIE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 7 Feb 2020 05:08:04 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 69D0EB120;
+        Fri,  7 Feb 2020 10:08:01 +0000 (UTC)
+Subject: Re: [PATCH v5 2/7] btrfs: use the page-cache for super block reading
+To:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+        David Sterba <dsterba@suse.cz>
+Cc:     Josef Bacik <josef@toxicpanda.com>,
+        "linux-btrfs @ vger . kernel . org" <linux-btrfs@vger.kernel.org>
+References: <20200207072005.22867-1-johannes.thumshirn@wdc.com>
+ <20200207072005.22867-3-johannes.thumshirn@wdc.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ xsFNBFiKBz4BEADNHZmqwhuN6EAzXj9SpPpH/nSSP8YgfwoOqwrP+JR4pIqRK0AWWeWCSwmZ
+ T7g+RbfPFlmQp+EwFWOtABXlKC54zgSf+uulGwx5JAUFVUIRBmnHOYi/lUiE0yhpnb1KCA7f
+ u/W+DkwGerXqhhe9TvQoGwgCKNfzFPZoM+gZrm+kWv03QLUCr210n4cwaCPJ0Nr9Z3c582xc
+ bCUVbsjt7BN0CFa2BByulrx5xD9sDAYIqfLCcZetAqsTRGxM7LD0kh5WlKzOeAXj5r8DOrU2
+ GdZS33uKZI/kZJZVytSmZpswDsKhnGzRN1BANGP8sC+WD4eRXajOmNh2HL4P+meO1TlM3GLl
+ EQd2shHFY0qjEo7wxKZI1RyZZ5AgJnSmehrPCyuIyVY210CbMaIKHUIsTqRgY5GaNME24w7h
+ TyyVCy2qAM8fLJ4Vw5bycM/u5xfWm7gyTb9V1TkZ3o1MTrEsrcqFiRrBY94Rs0oQkZvunqia
+ c+NprYSaOG1Cta14o94eMH271Kka/reEwSZkC7T+o9hZ4zi2CcLcY0DXj0qdId7vUKSJjEep
+ c++s8ncFekh1MPhkOgNj8pk17OAESanmDwksmzh1j12lgA5lTFPrJeRNu6/isC2zyZhTwMWs
+ k3LkcTa8ZXxh0RfWAqgx/ogKPk4ZxOXQEZetkEyTFghbRH2BIwARAQABzSJOaWtvbGF5IEJv
+ cmlzb3YgPG5ib3Jpc292QHN1c2UuZGU+wsF4BBMBAgAiBQJYijkSAhsDBgsJCAcDAgYVCAIJ
+ CgsEFgIDAQIeAQIXgAAKCRBxvoJG5T8oV/B6D/9a8EcRPdHg8uLEPywuJR8URwXzkofT5bZE
+ IfGF0Z+Lt2ADe+nLOXrwKsamhweUFAvwEUxxnndovRLPOpWerTOAl47lxad08080jXnGfYFS
+ Dc+ew7C3SFI4tFFHln8Y22Q9075saZ2yQS1ywJy+TFPADIprAZXnPbbbNbGtJLoq0LTiESnD
+ w/SUC6sfikYwGRS94Dc9qO4nWyEvBK3Ql8NkoY0Sjky3B0vL572Gq0ytILDDGYuZVo4alUs8
+ LeXS5ukoZIw1QYXVstDJQnYjFxYgoQ5uGVi4t7FsFM/6ykYDzbIPNOx49Rbh9W4uKsLVhTzG
+ BDTzdvX4ARl9La2kCQIjjWRg+XGuBM5rxT/NaTS78PXjhqWNYlGc5OhO0l8e5DIS2tXwYMDY
+ LuHYNkkpMFksBslldvNttSNei7xr5VwjVqW4vASk2Aak5AleXZS+xIq2FADPS/XSgIaepyTV
+ tkfnyreep1pk09cjfXY4A7qpEFwazCRZg9LLvYVc2M2eFQHDMtXsH59nOMstXx2OtNMcx5p8
+ 0a5FHXE/HoXz3p9bD0uIUq6p04VYOHsMasHqHPbsMAq9V2OCytJQPWwe46bBjYZCOwG0+x58
+ fBFreP/NiJNeTQPOa6FoxLOLXMuVtpbcXIqKQDoEte9aMpoj9L24f60G4q+pL/54ql2VRscK
+ d87BTQRYigc+ARAAyJSq9EFk28++SLfg791xOh28tLI6Yr8wwEOvM3wKeTfTZd+caVb9gBBy
+ wxYhIopKlK1zq2YP7ZjTP1aPJGoWvcQZ8fVFdK/1nW+Z8/NTjaOx1mfrrtTGtFxVBdSCgqBB
+ jHTnlDYV1R5plJqK+ggEP1a0mr/rpQ9dFGvgf/5jkVpRnH6BY0aYFPprRL8ZCcdv2DeeicOO
+ YMobD5g7g/poQzHLLeT0+y1qiLIFefNABLN06Lf0GBZC5l8hCM3Rpb4ObyQ4B9PmL/KTn2FV
+ Xq/c0scGMdXD2QeWLePC+yLMhf1fZby1vVJ59pXGq+o7XXfYA7xX0JsTUNxVPx/MgK8aLjYW
+ hX+TRA4bCr4uYt/S3ThDRywSX6Hr1lyp4FJBwgyb8iv42it8KvoeOsHqVbuCIGRCXqGGiaeX
+ Wa0M/oxN1vJjMSIEVzBAPi16tztL/wQtFHJtZAdCnuzFAz8ue6GzvsyBj97pzkBVacwp3/Mw
+ qbiu7sDz7yB0d7J2tFBJYNpVt/Lce6nQhrvon0VqiWeMHxgtQ4k92Eja9u80JDaKnHDdjdwq
+ FUikZirB28UiLPQV6PvCckgIiukmz/5ctAfKpyYRGfez+JbAGl6iCvHYt/wAZ7Oqe/3Cirs5
+ KhaXBcMmJR1qo8QH8eYZ+qhFE3bSPH446+5oEw8A9v5oonKV7zMAEQEAAcLBXwQYAQIACQUC
+ WIoHPgIbDAAKCRBxvoJG5T8oV1pyD/4zdXdOL0lhkSIjJWGqz7Idvo0wjVHSSQCbOwZDWNTN
+ JBTP0BUxHpPu/Z8gRNNP9/k6i63T4eL1xjy4umTwJaej1X15H8Hsh+zakADyWHadbjcUXCkg
+ OJK4NsfqhMuaIYIHbToi9K5pAKnV953xTrK6oYVyd/Rmkmb+wgsbYQJ0Ur1Ficwhp6qU1CaJ
+ mJwFjaWaVgUERoxcejL4ruds66LM9Z1Qqgoer62ZneID6ovmzpCWbi2sfbz98+kW46aA/w8r
+ 7sulgs1KXWhBSv5aWqKU8C4twKjlV2XsztUUsyrjHFj91j31pnHRklBgXHTD/pSRsN0UvM26
+ lPs0g3ryVlG5wiZ9+JbI3sKMfbdfdOeLxtL25ujs443rw1s/PVghphoeadVAKMPINeRCgoJH
+ zZV/2Z/myWPRWWl/79amy/9MfxffZqO9rfugRBORY0ywPHLDdo9Kmzoxoxp9w3uTrTLZaT9M
+ KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
+ zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
+ Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
+Message-ID: <1905a50e-a008-0b67-ff56-080e07eaa2da@suse.com>
+Date:   Fri, 7 Feb 2020 12:08:00 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.4.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii; format=flowed
-Content-Disposition: inline
-In-Reply-To: <SN4PR0401MB3598D4A69FB9C890F8C25D999B1D0@SN4PR0401MB3598.namprd04.prod.outlook.com>
+In-Reply-To: <20200207072005.22867-3-johannes.thumshirn@wdc.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Feb 06, 2020 at 03:43:10PM +0000, Johannes Thumshirn wrote:
->On 06/02/2020 11:44, Naohiro Aota wrote:
->> +	BUG_ON(!alloc_profile_is_valid(type, 0));
->
->I know this was present in the old code as well, but can we turn this
->into an ASSERT() + error return?
->
 
-OK, I'll add this as a separated patch.
 
-Thanks,
-Naohiro
+On 7.02.20 г. 9:20 ч., Johannes Thumshirn wrote:
+> Super-block reading in BTRFS is done using buffer_heads. Buffer_heads have
+> some drawbacks, like not being able to propagate errors from the lower
+> layers.
+> 
+> Directly use the page cache for reading the super-blocks from disk or
+> invalidating an on-disk super-block. We have to use the page-cache so to
+> avoid races between mkfs and udev. See also 6f60cbd3ae44 ("btrfs: access
+> superblock via pagecache in scan_one_device").
+> 
+> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+> 
+> ---
+> Changes to v4:
+> - Remove mapping_gfp_constraint() and GFP_NOFAIL (hch)
+> 
+> Changes to v3:
+> - Use read_cache_pages() and write_one_page() for IO (hch)
+> - Changed subject (David)
+> - Dropped Josef's R-b due to change
+> 
+> Changes to v2:
+> - open-code kunmap() + put_page() (David)
+> - fix double kunmap() (David)
+> - don't use bi_set_op_attrs() (David)
+> 
+> Changes to v1:
+> - move 'super_page' into for-loop in btrfs_scratch_superblocks() (Nikolay)
+> - switch to using pagecahce instead of alloc_pages() (Nikolay, David)
+> ---
+>  fs/btrfs/disk-io.c | 76 +++++++++++++++++++++++++---------------------
+>  fs/btrfs/disk-io.h |  4 +--
+>  fs/btrfs/volumes.c | 57 ++++++++++++++++++----------------
+>  fs/btrfs/volumes.h |  2 --
+>  4 files changed, 74 insertions(+), 65 deletions(-)
+> 
+
+<snip>
+
+>  
+> @@ -3355,40 +3363,38 @@ static void btrfs_end_buffer_write_sync(struct buffer_head *bh, int uptodate)
+>  }
+>  
+>  int btrfs_read_dev_one_super(struct block_device *bdev, int copy_num,
+> -			struct buffer_head **bh_ret)
+> +			struct page **super_page)
+>  {
+> -	struct buffer_head *bh;
+>  	struct btrfs_super_block *super;
+> +	struct page *page;
+>  	u64 bytenr;
+> +	struct address_space *mapping = bdev->bd_inode->i_mapping;
+>  
+>  	bytenr = btrfs_sb_offset(copy_num);
+>  	if (bytenr + BTRFS_SUPER_INFO_SIZE >= i_size_read(bdev->bd_inode))
+>  		return -EINVAL;
+
+You don't use page_offset(bytenr) here but you do it in
+btrfs_scratch_superblocks. I'm aware that this could be omitted entirely
+since the sb is always aligned on a 4k. But in this case either you omit
+it everywhere or you use it everywhere for the sake of consistency.
+
+>  
+> -	bh = __bread(bdev, bytenr / BTRFS_BDEV_BLOCKSIZE, BTRFS_SUPER_INFO_SIZE);
+> -	/*
+> -	 * If we fail to read from the underlying devices, as of now
+> -	 * the best option we have is to mark it EIO.
+> -	 */
+> -	if (!bh)
+> -		return -EIO;
+> +	page = read_cache_page_gfp(mapping, bytenr >> PAGE_SHIFT, GFP_NOFS);
+> +	if (IS_ERR_OR_NULL(page))
+> +		return -ENOMEM;
+
+read_cache_page can return an error from ->readpage as well. Also
+looking at do_read_cache_page it doesn't seem like it can return a NULL
+pointer.
+
+>  
+> -	super = (struct btrfs_super_block *)bh->b_data;
+> +	super = kmap(page);
+>  	if (btrfs_super_bytenr(super) != bytenr ||
+>  		    btrfs_super_magic(super) != BTRFS_MAGIC) {
+> -		brelse(bh);
+> +		kunmap(page);
+> +		put_page(page);
+>  		return -EINVAL;
+>  	}
+> +	kunmap(page);
+>  
+> -	*bh_ret = bh;
+> +	*super_page = page;
+>  	return 0;
+>  }
+>  
+>  
+> -struct buffer_head *btrfs_read_dev_super(struct block_device *bdev)
+> +int btrfs_read_dev_super(struct block_device *bdev, struct page **page)
+>  {
+> -	struct buffer_head *bh;
+> -	struct buffer_head *latest = NULL;
+> +	struct page *latest = NULL;
+>  	struct btrfs_super_block *super;
+>  	int i;
+>  	u64 transid = 0;
+
+<snip>

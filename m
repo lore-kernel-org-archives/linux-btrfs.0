@@ -2,85 +2,101 @@ Return-Path: <SRS0=GNeA=36=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,
+	USER_AGENT_GIT autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 277FEC2BA83
-	for <linux-btrfs@archiver.kernel.org>; Mon, 10 Feb 2020 01:49:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E8991C352A4
+	for <linux-btrfs@archiver.kernel.org>; Mon, 10 Feb 2020 03:13:29 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id DBF7A20838
-	for <linux-btrfs@archiver.kernel.org>; Mon, 10 Feb 2020 01:49:29 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C042521556
+	for <linux-btrfs@archiver.kernel.org>; Mon, 10 Feb 2020 03:13:29 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="Dzh4RMIF"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="xqBbzlno"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726935AbgBJBt3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 9 Feb 2020 20:49:29 -0500
-Received: from mail-wm1-f50.google.com ([209.85.128.50]:55570 "EHLO
-        mail-wm1-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725970AbgBJBt2 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 9 Feb 2020 20:49:28 -0500
-Received: by mail-wm1-f50.google.com with SMTP id q9so8070845wmj.5
-        for <linux-btrfs@vger.kernel.org>; Sun, 09 Feb 2020 17:49:27 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=PiDiE9d82DCOCNrOuXpOX70frlQb8NKWaAJTTK3Ql6M=;
-        b=Dzh4RMIFqyanmkq3ZskLs/YpRK60GWdsSraq0qVKCmARxj1h3E76+yxJlD3SwVzbEo
-         aCVsVUqYrbUPEYV14iijqxrzUE7D89MBX1+9omqrGQczvMz1WDptuVhk/Aos9hAFKChy
-         NkxH+kj1FQrq3/7CJH0a9Nnu4A0yqks95OYsq3hjR4gA0EEB4QsCUNMjhVKqG2tDCnfE
-         1j2BbC9gFpEw5zA1t3AdY0GZlGJw1adqUqaymeWMM4Rm+Z5aE8enkf6VIFrjj4lCaiwu
-         3c6OiX9hKRdqJs80gpuD3kkZnEUAYbFuQKc83Sj4mIVyuJFGc6RkYW3WJOoeYQDjfU6w
-         0zQw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=PiDiE9d82DCOCNrOuXpOX70frlQb8NKWaAJTTK3Ql6M=;
-        b=qoetJyGUT2Jj1AyNgzH3nNVb+gAhyb4nDjWpIAvT6flRZA+5J073RDU0Gw5Dznj3jp
-         wF05bLOcLSbGvJF0hoHYAWKDq7xHFpuowpSuscZAfF9TRGQWNhTZonDRzYnCEFXn9YpA
-         /MN0+Ji9WyyJQzpnWLxEAyPcGXm964tY5YRaOc6TDDEQWGiA5KiMh/J5xBVaxEqdJHRR
-         lK2FMy5ZtOn8XoyUfV1XhfL5/D4E0opSgdc1Nk/LwGzkoS8xC+NORWf1w7ySfvH3gtUL
-         Ftaxco3pQj5usHJyRJ4faIyiuPpbwPxxrUtiARJhSnZeju0GAjZXLlkxZuQF4/bvUkzw
-         Q+1w==
-X-Gm-Message-State: APjAAAXeghE6SDIpIDG6sFnDH+bVPDgXVd9rtnkXtJNz1WU//bQTESRa
-        ZPq51F5b9JVNrhs3vU92El7MDB2Jx065c0SRi50hye3tGZpG9g==
-X-Google-Smtp-Source: APXvYqydXNJIoL6wo3Ka6suYA7mjdVHEBYNCM5/nI7ylaMy+UI5ftb8KmUXBaA0iGdi0Ke+IVAEIz+tjcW7fBhCvP0U=
-X-Received: by 2002:a05:600c:217:: with SMTP id 23mr11934578wmi.124.1581299367139;
- Sun, 09 Feb 2020 17:49:27 -0800 (PST)
+        id S1727008AbgBJDN3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 9 Feb 2020 22:13:29 -0500
+Received: from userp2130.oracle.com ([156.151.31.86]:44368 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726950AbgBJDN2 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 9 Feb 2020 22:13:28 -0500
+Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
+        by userp2130.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 01A39Q2U166676;
+        Mon, 10 Feb 2020 03:13:27 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
+ subject : date : message-id : mime-version : content-transfer-encoding;
+ s=corp-2020-01-29; bh=82bzNdxKtj5UuSLiZn/xbNCmJYFeBE901hOp2eyTKfA=;
+ b=xqBbzlnoywLwE5kasQhFtmXJ2vQXPwZCiwlo4SYK0eWn+ok16ksXPW3L2leduuL2aFTm
+ SFPwtiT6+G8qCwkt73qrBMBBoLUSlbEFnKr7CLUp4wFrrHN3PvgmwjTdDtCAe4iwptLN
+ RsT5Pt2im36JcgaSwLgSD4jP56sC5s0iLEdqpckFNTnnHwPMZuRgKezVFuNib3TCrfCW
+ XOuAtVkA0TXaCA0KA1RFGai9QGnhd1CuJ29xvrGx7id5lwOl9k+W9CylZFS9HJhG+FD3
+ Fl+7hagCAuwLzXR/cUrD+X+rtNUXc404l7C5aOefYKFYeoooaaSEKa176E16PYo25iVS kw== 
+Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
+        by userp2130.oracle.com with ESMTP id 2y2k87s9bm-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Mon, 10 Feb 2020 03:13:27 +0000
+Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
+        by userp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 01A3715S055303;
+        Mon, 10 Feb 2020 03:13:27 GMT
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by userp3030.oracle.com with ESMTP id 2y26fe7b0u-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Mon, 10 Feb 2020 03:13:27 +0000
+Received: from abhmp0013.oracle.com (abhmp0013.oracle.com [141.146.116.19])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id 01A3DQvk027084;
+        Mon, 10 Feb 2020 03:13:26 GMT
+Received: from localhost.localdomain (/39.109.145.141)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Sun, 09 Feb 2020 19:13:25 -0800
+From:   Anand Jain <anand.jain@oracle.com>
+To:     fstests@vger.kernel.org
+Cc:     linux-btrfs@vger.kernel.org
+Subject: [PATCH] fstests: common/btrfs: use complete sub command
+Date:   Mon, 10 Feb 2020 11:13:22 +0800
+Message-Id: <20200210031322.1177-1-anand.jain@oracle.com>
+X-Mailer: git-send-email 2.23.0
 MIME-Version: 1.0
-References: <20200209004307.GG13306@hungrycats.org>
-In-Reply-To: <20200209004307.GG13306@hungrycats.org>
-From:   Chris Murphy <lists@colorremedies.com>
-Date:   Sun, 9 Feb 2020 18:49:11 -0700
-Message-ID: <CAJCQCtRzMqPREP5U=8ZoCY0fMEsX_ng4tH3pHbQwJfrdk-MNmw@mail.gmail.com>
-Subject: Re: data rolled back 5 hours after crash, long fsync running times,
- watchdog evasion on 5.4.11
-To:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        Timothy Pearson <tpearson@raptorengineering.com>
-Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9526 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 malwarescore=0 suspectscore=13
+ adultscore=0 bulkscore=0 mlxscore=0 spamscore=0 phishscore=0
+ mlxlogscore=999 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2001150001 definitions=main-2002100024
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9526 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 adultscore=0 lowpriorityscore=0
+ suspectscore=13 bulkscore=0 phishscore=0 mlxlogscore=999 mlxscore=0
+ malwarescore=0 impostorscore=0 clxscore=1015 spamscore=0
+ priorityscore=1501 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2001150001 definitions=main-2002100024
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sat, Feb 8, 2020 at 5:43 PM Zygo Blaxell
-<ce3g8jdj@umail.furryterror.org> wrote:
->
-> Upon reboot, the filesystem reverts to its state at the last completed
-> transaction 4441796 at #2, which is 5 hours earlier.  Everything seems to
-> be intact, but there is no trace of any update to the filesystem after
-> the transaction 4441796.  The last 'fi usage' logged before the crash
-> and the first 'fi usage' after show 40GB of data and 25GB of metadata
-> block groups freed in between.
+Grep failed to find this subcommand of btrfs, leading to a wrong
+inference for a moment.
 
-Is this behavior affected by flushoncommit mount option? i.e. do you
-see a difference using flushoncommit vs noflushoncommit? My suspicion
-is the problem doesn't happen with noflushoncommit, but then you get
-another consequence that maybe your use case can't tolerate?
+Make sure we use the full subcommand name in the btrfs command.
 
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ common/btrfs | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
+diff --git a/common/btrfs b/common/btrfs
+index 19ac7cc4b18c..33ad7e3b41cc 100644
+--- a/common/btrfs
++++ b/common/btrfs
+@@ -7,7 +7,7 @@ _btrfs_get_subvolid()
+ 	mnt=$1
+ 	name=$2
+ 
+-	$BTRFS_UTIL_PROG sub list $mnt | grep $name | awk '{ print $2 }'
++	$BTRFS_UTIL_PROG subvolume list $mnt | grep $name | awk '{ print $2 }'
+ }
+ 
+ # _require_btrfs_command <command> [<subcommand>|<option>]
 -- 
-Chris Murphy
+1.8.3.1
+

@@ -2,104 +2,108 @@ Return-Path: <SRS0=4n2k=37=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,
-	URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-9.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 75F3DC3F68F
-	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Feb 2020 00:45:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E87D4C3B186
+	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Feb 2020 01:03:56 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5114620733
-	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Feb 2020 00:45:57 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C29772082F
+	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Feb 2020 01:03:56 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="Rr7gIObx"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="WYDhnMYb"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727600AbgBKAp4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 10 Feb 2020 19:45:56 -0500
-Received: from userp2130.oracle.com ([156.151.31.86]:37816 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727437AbgBKAp4 (ORCPT
+        id S1727943AbgBKBDz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 10 Feb 2020 20:03:55 -0500
+Received: from bombadil.infradead.org ([198.137.202.133]:54740 "EHLO
+        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727875AbgBKBDy (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 10 Feb 2020 19:45:56 -0500
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 01B0cJ5g094295;
-        Tue, 11 Feb 2020 00:45:52 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
- subject : date : message-id; s=corp-2020-01-29;
- bh=Fg/X0AtLEc+Zkh7pPYRaOzqen8ezxm2r5jSJkg4R7SM=;
- b=Rr7gIObxKBo63ub7By3oPe93xF55FgpsyyMpUEbGTZjz3Ar1+/3UTATQobsEhhqLpRuj
- gcimqB70EF9Zzwh6aOhuJPm5rdbVCqsXa4B2rhNSVrk8Hzbs8y4JNnbN1LEHkzfTzqeZ
- QDfvp12yi12s3nsRoAC8jli9s20PkoBK63pL7vz5fw8uNZOzdcZiMTC7jcxF4n+B+aJe
- H2YdX/npr0bb85oFbGEtVZIF05/dpZeoKlYrNExQLfLC14OP1lJ647B/1jjSN103zias
- aUnZrUiRE81cxESgtpeAmEjI9cZEoI8mJt+RjWuNW9ugP3a5+Isl9I6elK88emNTz017 Bw== 
-Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
-        by userp2130.oracle.com with ESMTP id 2y2k8807bu-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
-        Tue, 11 Feb 2020 00:45:52 +0000
-Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
-        by userp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 01B0b3TI105149;
-        Tue, 11 Feb 2020 00:45:52 GMT
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by userp3030.oracle.com with ESMTP id 2y26fg5mgy-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Tue, 11 Feb 2020 00:45:51 +0000
-Received: from abhmp0013.oracle.com (abhmp0013.oracle.com [141.146.116.19])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id 01B0joB2019826;
-        Tue, 11 Feb 2020 00:45:51 GMT
-Received: from tp.localdomain (/39.109.145.141)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Mon, 10 Feb 2020 16:45:50 -0800
-From:   Anand Jain <anand.jain@oracle.com>
-To:     fstests@vger.kernel.org
-Cc:     linux-btrfs@vger.kernel.org, mpdesouza@suse.com
-Subject: [PATCH v2] fstests: common/btrfs: use complete sub command
-Date:   Tue, 11 Feb 2020 08:45:11 +0800
-Message-Id: <1581381911-6727-1-git-send-email-anand.jain@oracle.com>
-X-Mailer: git-send-email 1.8.3.1
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9527 signatures=668685
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 malwarescore=0 suspectscore=13
- adultscore=0 bulkscore=0 mlxscore=0 spamscore=0 phishscore=0
- mlxlogscore=999 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2001150001 definitions=main-2002110001
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9527 signatures=668685
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 adultscore=0 lowpriorityscore=0
- suspectscore=13 bulkscore=0 phishscore=0 mlxlogscore=999 mlxscore=0
- malwarescore=0 impostorscore=0 clxscore=1011 spamscore=0
- priorityscore=1501 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2001150001 definitions=main-2002110001
+        Mon, 10 Feb 2020 20:03:54 -0500
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=bombadil.20170209; h=Content-Transfer-Encoding:
+        MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
+        :Reply-To:Content-Type:Content-ID:Content-Description;
+        bh=pH5LFtlmOrFfMRG0qpJp1Yog2+5WC4QJAZDPBwZZUFQ=; b=WYDhnMYb2Tl4xEYpfY2Ku86VXL
+        FI/V0kmlpCs1KHRO35xmh+JKDrQMAEC2a25oQ9BygbUIHc0PYTN7FG/TumtQJ+kUp1O3OHsdm2haz
+        hhEkhbx7SOE6j08H5VRVSHsnGE+ExUvbUQojTzl55uokP3eAI6x7olxu2lddAMOmqOny931og4gai
+        VgiCC9cKCaXR15L83kZWcgQeZ0a5wsc3LFjHAjj0kTRlTOW+lLChKb6KWREqxkWZaagtfhYE9EiFR
+        wECqSjkjhjQbWw5xKUEDD5X8x+mDovm6ZDsjY7BYvt+CQ33FjwZUVX3fAQDKwOducVwUJV4OnKGzp
+        HTa7QHMQ==;
+Received: from willy by bombadil.infradead.org with local (Exim 4.92.3 #3 (Red Hat Linux))
+        id 1j1Jxu-0001nh-AM; Tue, 11 Feb 2020 01:03:50 +0000
+From:   Matthew Wilcox <willy@infradead.org>
+To:     linux-fsdevel@vger.kernel.org
+Cc:     "Matthew Wilcox (Oracle)" <willy@infradead.org>,
+        linux-mm@kvack.org, linux-kernel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-erofs@lists.ozlabs.org,
+        linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
+        cluster-devel@redhat.com, ocfs2-devel@oss.oracle.com,
+        linux-xfs@vger.kernel.org
+Subject: [PATCH v5 01/13] mm: Fix the return type of __do_page_cache_readahead
+Date:   Mon, 10 Feb 2020 17:03:36 -0800
+Message-Id: <20200211010348.6872-2-willy@infradead.org>
+X-Mailer: git-send-email 2.21.1
+In-Reply-To: <20200211010348.6872-1-willy@infradead.org>
+References: <20200211010348.6872-1-willy@infradead.org>
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Search for 'subvolume' in the file common/btrfs failed to find all of
-them, leading to a wrong inference for a moment.
+From: "Matthew Wilcox (Oracle)" <willy@infradead.org>
 
-Make sure we use the full subcommand name in the btrfs command.
+ra_submit() which is a wrapper around __do_page_cache_readahead() already
+returns an unsigned long, and the 'nr_to_read' parameter is an unsigned
+long, so fix __do_page_cache_readahead() to return an unsigned long,
+even though I'm pretty sure we're not going to readahead more than 2^32
+pages ever.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
-Marcos Paulo de Souza <mpdesouza@suse.com>
+Signed-off-by: Matthew Wilcox (Oracle) <willy@infradead.org>
 ---
-v2: Update commit log.
+ mm/internal.h  | 2 +-
+ mm/readahead.c | 4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
 
- common/btrfs | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/common/btrfs b/common/btrfs
-index 19ac7cc4b18c..33ad7e3b41cc 100644
---- a/common/btrfs
-+++ b/common/btrfs
-@@ -7,7 +7,7 @@ _btrfs_get_subvolid()
- 	mnt=$1
- 	name=$2
+diff --git a/mm/internal.h b/mm/internal.h
+index 3cf20ab3ca01..41b93c4b3ab7 100644
+--- a/mm/internal.h
++++ b/mm/internal.h
+@@ -49,7 +49,7 @@ void unmap_page_range(struct mmu_gather *tlb,
+ 			     unsigned long addr, unsigned long end,
+ 			     struct zap_details *details);
  
--	$BTRFS_UTIL_PROG sub list $mnt | grep $name | awk '{ print $2 }'
-+	$BTRFS_UTIL_PROG subvolume list $mnt | grep $name | awk '{ print $2 }'
- }
+-extern unsigned int __do_page_cache_readahead(struct address_space *mapping,
++extern unsigned long __do_page_cache_readahead(struct address_space *mapping,
+ 		struct file *filp, pgoff_t offset, unsigned long nr_to_read,
+ 		unsigned long lookahead_size);
  
- # _require_btrfs_command <command> [<subcommand>|<option>]
+diff --git a/mm/readahead.c b/mm/readahead.c
+index 2fe72cd29b47..6bf73ef33b7e 100644
+--- a/mm/readahead.c
++++ b/mm/readahead.c
+@@ -152,7 +152,7 @@ static int read_pages(struct address_space *mapping, struct file *filp,
+  *
+  * Returns the number of pages requested, or the maximum amount of I/O allowed.
+  */
+-unsigned int __do_page_cache_readahead(struct address_space *mapping,
++unsigned long __do_page_cache_readahead(struct address_space *mapping,
+ 		struct file *filp, pgoff_t offset, unsigned long nr_to_read,
+ 		unsigned long lookahead_size)
+ {
+@@ -161,7 +161,7 @@ unsigned int __do_page_cache_readahead(struct address_space *mapping,
+ 	unsigned long end_index;	/* The last page we want to read */
+ 	LIST_HEAD(page_pool);
+ 	int page_idx;
+-	unsigned int nr_pages = 0;
++	unsigned long nr_pages = 0;
+ 	loff_t isize = i_size_read(inode);
+ 	gfp_t gfp_mask = readahead_gfp_mask(mapping);
+ 
 -- 
-1.8.3.1
+2.25.0
 

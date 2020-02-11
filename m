@@ -6,84 +6,73 @@ X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BE041C35242
-	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Feb 2020 18:45:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2799EC3F68F
+	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Feb 2020 18:45:18 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9F63620873
-	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Feb 2020 18:45:17 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0CFA42086A
+	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Feb 2020 18:45:18 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731434AbgBKSpR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 11 Feb 2020 13:45:17 -0500
-Received: from mx2.suse.de ([195.135.220.15]:42398 "EHLO mx2.suse.de"
+        id S1730696AbgBKSpQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 11 Feb 2020 13:45:16 -0500
+Received: from mx2.suse.de ([195.135.220.15]:42440 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1729445AbgBKSpN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Feb 2020 13:45:13 -0500
+        id S1729554AbgBKSpP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 11 Feb 2020 13:45:15 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 5F934AD11;
+        by mx2.suse.de (Postfix) with ESMTP id AA19FADE8;
         Tue, 11 Feb 2020 18:45:11 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 681D8DA7D3; Tue, 11 Feb 2020 18:39:10 +0100 (CET)
-Date:   Tue, 11 Feb 2020 18:39:09 +0100
+        id C95F9DA86A; Tue, 11 Feb 2020 19:22:01 +0100 (CET)
+Date:   Tue, 11 Feb 2020 19:21:59 +0100
 From:   David Sterba <dsterba@suse.cz>
 To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>
-Subject: Re: [PATCH] btrfs: Doc: Fix the wrong doc about `btrfs filesystem
- sync`
-Message-ID: <20200211173909.GB2902@twin.jikos.cz>
+Cc:     ethanwu <ethanwu@synology.com>, dsterba@suse.cz,
+        Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/4] btrfs: backref, only collect file extent items
+ matching backref offset
+Message-ID: <20200211182159.GD2902@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
-        Nikolay Borisov <nborisov@suse.com>
-References: <20200210090201.29979-1-wqu@suse.com>
- <20200210160929.GJ2654@twin.jikos.cz>
- <a853cd2a-2752-d3ea-4fc7-80a1ec7e1180@gmx.com>
+        ethanwu <ethanwu@synology.com>, Josef Bacik <josef@toxicpanda.com>,
+        linux-btrfs@vger.kernel.org
+References: <20200207093818.23710-1-ethanwu@synology.com>
+ <20200207093818.23710-2-ethanwu@synology.com>
+ <0badf0be-d481-10fb-c23d-1b69b985e145@toxicpanda.com>
+ <c0453c3eb7c9b4e56bd66dbe647c5f0a@synology.com>
+ <20200210162927.GK2654@twin.jikos.cz>
+ <5901b2be7358137e691b319cbad43111@synology.com>
+ <aeb36a34-bc9c-8500-9f36-554729a078fc@gmx.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <a853cd2a-2752-d3ea-4fc7-80a1ec7e1180@gmx.com>
+In-Reply-To: <aeb36a34-bc9c-8500-9f36-554729a078fc@gmx.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Feb 11, 2020 at 08:29:22AM +0800, Qu Wenruo wrote:
+On Tue, Feb 11, 2020 at 12:33:48PM +0800, Qu Wenruo wrote:
+> >> 39862272 have 30949376
+> >> [ 5949.328136] repair_io_failure: 22 callbacks suppressed
+> >> [ 5949.328139] BTRFS info (device vdb): read error corrected: ino 0
+> >> off 39862272 (dev /dev/vdd sector 19488)
+> >> [ 5949.333447] BTRFS info (device vdb): read error corrected: ino 0
+> >> off 39866368 (dev /dev/vdd sector 19496)
+> >> [ 5949.336875] BTRFS info (device vdb): read error corrected: ino 0
+> >> off 39870464 (dev /dev/vdd sector 19504)
+> >> [ 5949.340325] BTRFS info (device vdb): read error corrected: ino 0
+> >> off 39874560 (dev /dev/vdd sector 19512)
+> >> [ 5949.409934] BTRFS warning (device vdb): csum failed root -9 ino 257
+> >> off 2228224 csum
 > 
+> This looks like an existing bug, IIRC Zygo reported it before.
 > 
-> On 2020/2/11 上午12:09, David Sterba wrote:
-> > On Mon, Feb 10, 2020 at 05:02:01PM +0800, Qu Wenruo wrote:
-> >> Since commit ecd4bb607f35 ("btrfs-progs: docs: enhance btrfs-filesystem
-> >> manual page"), the man page of `btrfs filesystem` shows `sync`
-> >> subcommand will wait for all existing orphan subvolumes to be dropped.
-> >
-> > But this is not what the docs say, nor what the ioctl claims to do.
-> >
-> > 'trigger cleaning of deleted subvolumes' means that it just starts the
-> > process in some way (eg. by waking up the cleaner kthread that does the
-> > actual cleaning).
+> Btrfs balance just randomly failed at data reloc tree.
 > 
-> Then at least we shouldn't really confuse the end user (me included)
-> about the cleanup.
+> Thus I don't believe it's related to Ethan's patches.
 
-Yeah, documentation improvements are welcome.
-
-> In fact the cleaner wake up doesn't really have a user-observable impact.
-
-The observable impact is that the cleaning starts immediatelly and not
-after the periodic wakeup. This was the original intention behind
-2fad4e83e1259 ("btrfs: wake up transaction thread from SYNC_FS ioctl").
-I don't remember exactly, maybe it was on IRC somebody asking for it.
-
-> We should at least avoid mentioning such thing.
-
-That there's some connection between 'fi sync' and the cleaning should
-be IMHO mentioned in the docs. The tools provide some commands as
-building blocks and some as all-in-one, so there should be enough
-information to let user decide what to do.
-
-It's not easy to find the balance between the level of detail and amount
-of related information, also to maintain consistency accross all
-documents. As if writing documentation is hard, idk.
+Ok, than the patches make it more likely to happen, which could mean
+that faster backref processing hits some race window. As there could be
+more we should first fix the bug you say Zygo reported.

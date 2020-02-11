@@ -2,115 +2,120 @@ Return-Path: <SRS0=4n2k=37=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F2ABBC352A3
-	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Feb 2020 16:12:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 54B7DC35242
+	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Feb 2020 18:30:29 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B37E12082F
-	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Feb 2020 16:12:52 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3568E20714
+	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Feb 2020 18:30:29 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=mpdesouza.com header.i=@mpdesouza.com header.b="ImeXzwny"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="drSncJvg";
+	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b="QmKStSW1"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729702AbgBKQMw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 11 Feb 2020 11:12:52 -0500
-Received: from gateway20.websitewelcome.com ([192.185.49.40]:36717 "EHLO
-        gateway20.websitewelcome.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1729390AbgBKQMv (ORCPT
+        id S1730325AbgBKSa2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 11 Feb 2020 13:30:28 -0500
+Received: from esa4.hgst.iphmx.com ([216.71.154.42]:41196 "EHLO
+        esa4.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727361AbgBKSa2 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Feb 2020 11:12:51 -0500
-X-Greylist: delayed 1500 seconds by postgrey-1.27 at vger.kernel.org; Tue, 11 Feb 2020 11:12:51 EST
-Received: from cm17.websitewelcome.com (cm17.websitewelcome.com [100.42.49.20])
-        by gateway20.websitewelcome.com (Postfix) with ESMTP id 60474400D059E
-        for <linux-btrfs@vger.kernel.org>; Tue, 11 Feb 2020 08:11:12 -0600 (CST)
-Received: from br540.hostgator.com.br ([108.179.252.180])
-        by cmsmtp with SMTP
-        id 1XP3jYr22AGTX1XP3jlIeZ; Tue, 11 Feb 2020 09:24:45 -0600
-X-Authority-Reason: nr=8
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=mpdesouza.com; s=default; h=Content-Transfer-Encoding:MIME-Version:
-        Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:Content-Type:Content-ID:
-        Content-Description:Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc
-        :Resent-Message-ID:In-Reply-To:References:List-Id:List-Help:List-Unsubscribe:
-        List-Subscribe:List-Post:List-Owner:List-Archive;
-        bh=hm/23NW+SCo6nlE9b57ji0EYuqf5cV9tPkdyZTDdTQ8=; b=ImeXzwnyNIMnAZ/x68MtAhO9qs
-        EencLIgV8uhbSE01pD6cPy9jZ+NZj4THnkbh8hyXQhmDKnQ7jgKm/G2qFU8JcyiIyXP0lVAc2rPmv
-        KHRMUylDriEeR2XCNUIRxfIhZtxdS1WAg/lxJRsXCKqZDgplvq3sKDQe8KRqlYZXAv2z9CAvHR5Qy
-        cq/bVXi7B2+tYecgZ61b4lsyVTKkdE1SqotiP5G0XD1tQbern3P89+dDzNaTgzywqsf+wZ+wor9yd
-        0GFvqe9R0Opimm4hv9joVTfWqUHCWK/4L3EgFdrtq278joKnuVVoVoCz08FZiy7e5JlbySxD2xmBC
-        Ru0X2ZoA==;
-Received: from [189.114.219.35] (port=33874 helo=hephaestus.suse.de)
-        by br540.hostgator.com.br with esmtpsa (TLSv1.2:ECDHE-RSA-AES128-GCM-SHA256:128)
-        (Exim 4.92)
-        (envelope-from <marcos@mpdesouza.com>)
-        id 1j1Vy7-0017fX-Dc; Tue, 11 Feb 2020 10:52:51 -0300
-From:   Marcos Paulo de Souza <marcos@mpdesouza.com>
-To:     linux-btrfs@vger.kernel.org, dsterba@suse.com, nborisov@suse.com,
-        wqu@suse.com
-Cc:     Marcos Paulo de Souza <marcos@mpdesouza.com>
-Subject: [PATCH] btrfs: ioctl: resize: Only how new size if size changed
-Date:   Tue, 11 Feb 2020 10:55:26 -0300
-Message-Id: <20200211135526.22793-1-marcos@mpdesouza.com>
-X-Mailer: git-send-email 2.24.0
+        Tue, 11 Feb 2020 13:30:28 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1581445827; x=1612981827;
+  h=from:to:subject:date:message-id:references:
+   content-transfer-encoding:mime-version;
+  bh=q3dhrWsNqbXI0jtQUuiJri0lnk6ngbRsrZBa9nqEs4U=;
+  b=drSncJvgRQLwv7UvFh5Fc11mKNuSsyzkoFEKhR2zrHgvDNmm1AesDDz2
+   RcuLy9/LGiVlDpSiUwuBbv0yCABECaf8Q/IQmEzRTD05oUlD3cJ0cnR5y
+   ytYaUIxhUNQtkg8HDCNO5hT5c5RVSzt7rnTNfdW1uyd2YHxcqW74OdOPW
+   rC+2JrCLpP99tlfmns7ekYQbaX5VVOhI2osMDbpk9PAacppS6PlVjCpqk
+   3lZmZvr1NoICiCeQUWc4XMFWqdC55tpOcZxlztCZ+iA9CQYRfOpv7sI14
+   OnlQTEKJj0SqPrHxR9xZ5SVSm+nO43YoNwFDQgee4gz9uxaUm1ULldL+D
+   A==;
+IronPort-SDR: hm1u7sc6byHSItg6ukH90MQ+dgwkneZe+vlhelXxkRsXXBrroLUvc7ca+TtnWK8nKwsSqTbBj+
+ /zo7wW/hpHuTDYKtZ1Z2b8G9gLDQ6y9Tt5UWwY5V2VZnZ269hjP2ib1X5nMFczHuTLfoUpQW/V
+ fZLRoPjvvR6L3GS/yQXFf5oWGSjdbt2KTFB3VCh/ZgNOwYD7c0xGxHsGfh//9k4CyZV7JU1r8J
+ H5meCTYpbVeTcXQeLFVi6ZvOMbSYgrV9TPPQTYlhGDia4AlIjqM3bmdVkXvjqiM9dJhppdx5ZD
+ dFI=
+X-IronPort-AV: E=Sophos;i="5.70,428,1574092800"; 
+   d="scan'208";a="129604599"
+Received: from mail-dm6nam10lp2108.outbound.protection.outlook.com (HELO NAM10-DM6-obe.outbound.protection.outlook.com) ([104.47.58.108])
+  by ob1.hgst.iphmx.com with ESMTP; 12 Feb 2020 02:30:26 +0800
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=bdPax3fVK2FO9phCCfS7VxeeEN8hiKP/zzGDNKx7z3H55l+xhCpM6yjRsLHIRECylMP7u+4Buya0zljAs92Z7S/1sIdIiyZV8PEHVhUGTLRw43K7gbJPA7IxL7giHSQZjdprsbVF8zElCQYQVtbWxEMH9/Whq86cpDx6VbfiMhM4stUlBfsmCyi6VqfKC1sB9CNZ9qkX3++TolLnOvmP1u9TNs6HDkUxhckRgenm+LFjktp+Y9ba14mm11Bs29R+D9xmoIlAYBK3/oZWSGQZxA6omE+oPb30G35fdiTSc4qEIcdEOqU16apoLAv5e7VGqMcq3vzXs9OaL/d2FiV8wg==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=q3dhrWsNqbXI0jtQUuiJri0lnk6ngbRsrZBa9nqEs4U=;
+ b=hkWP4bAKZcYZ3g9kTdZdIlKuo+yg/Cf2efFuUiPAWFA/dVTV7OgwdK0nlADGveAC/dxO6HTm9FGfIeoUYFSlMr74VHAUPf14y33q4JU1OHFDd1gga80rnEzdVLpveECWvgUNGTznmdAyzS2xA1+f7l6Ji2BeKxpCT+zICicP+8gfvQbKQQahq66zzSvr+zCoWzNncME+JR28VE33MKFt6AYSBP6W3tPG5afHRAYDKiEEOyWkn+cBuCZUZg1dAWZT9OTn9jU80kvkSCf+kAWzCAdmdkIRI1F3oI5uEo59hnNypEzB5RrfVzhfXFVS3B+O7izCHyZo9ZLxkYSwu8/uLA==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
+ header.d=wdc.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=q3dhrWsNqbXI0jtQUuiJri0lnk6ngbRsrZBa9nqEs4U=;
+ b=QmKStSW1HZ17cUgBL3a3IWCDUKGqpe0ku/ZXBjSvacu2AvewkXhJvp5iarcFFWKG1PUxL20PZkErNSmFgdYWN6q7+1CGTOQQpL3pvL5j14VatPDf7f+NN6asdrZ9H5yWYMY4NhFfiFmKB3T45UMuA9rCyL0kCNjgZkCu7OEShQw=
+Received: from SN4PR0401MB3598.namprd04.prod.outlook.com (10.167.139.149) by
+ SN4PR0401MB3533.namprd04.prod.outlook.com (10.167.129.150) with Microsoft
+ SMTP Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ 15.20.2707.21; Tue, 11 Feb 2020 18:30:26 +0000
+Received: from SN4PR0401MB3598.namprd04.prod.outlook.com
+ ([fe80::e5f5:84d2:cabc:da32]) by SN4PR0401MB3598.namprd04.prod.outlook.com
+ ([fe80::e5f5:84d2:cabc:da32%5]) with mapi id 15.20.2707.030; Tue, 11 Feb 2020
+ 18:30:25 +0000
+From:   Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
+To:     Marcos Paulo de Souza <marcos@mpdesouza.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "dsterba@suse.com" <dsterba@suse.com>,
+        "nborisov@suse.com" <nborisov@suse.com>,
+        "wqu@suse.com" <wqu@suse.com>
+Subject: Re: [PATCH] btrfs: ioctl: resize: Only how new size if size changed
+Thread-Topic: [PATCH] btrfs: ioctl: resize: Only how new size if size changed
+Thread-Index: AQHV4PYgafuD5anozkCOW/4FfegRkg==
+Date:   Tue, 11 Feb 2020 18:30:25 +0000
+Message-ID: <SN4PR0401MB359809950656323F9F4A76709B180@SN4PR0401MB3598.namprd04.prod.outlook.com>
+References: <20200211135526.22793-1-marcos@mpdesouza.com>
+Accept-Language: en-US
+Content-Language: en-US
+X-MS-Has-Attach: 
+X-MS-TNEF-Correlator: 
+authentication-results: spf=none (sender IP is )
+ smtp.mailfrom=Johannes.Thumshirn@wdc.com; 
+x-originating-ip: [129.253.240.72]
+x-ms-publictraffictype: Email
+x-ms-office365-filtering-ht: Tenant
+x-ms-office365-filtering-correlation-id: 2ee3ead1-d5b4-4704-37b4-08d7af207692
+x-ms-traffictypediagnostic: SN4PR0401MB3533:
+x-microsoft-antispam-prvs: <SN4PR0401MB35336119D1390091502D0A0C9B180@SN4PR0401MB3533.namprd04.prod.outlook.com>
+wdcipoutbound: EOP-TRUE
+x-ms-oob-tlc-oobclassifiers: OLM:1728;
+x-forefront-prvs: 0310C78181
+x-forefront-antispam-report: SFV:NSPM;SFS:(10019020)(4636009)(346002)(376002)(136003)(366004)(39860400002)(396003)(199004)(189003)(316002)(110136005)(8936002)(9686003)(478600001)(71200400001)(66476007)(66946007)(64756008)(66446008)(55016002)(66556008)(2906002)(86362001)(76116006)(81156014)(81166006)(91956017)(8676002)(6506007)(52536014)(33656002)(7696005)(558084003)(5660300002)(26005)(4270600006)(19618925003)(186003);DIR:OUT;SFP:1102;SCL:1;SRVR:SN4PR0401MB3533;H:SN4PR0401MB3598.namprd04.prod.outlook.com;FPR:;SPF:None;LANG:en;PTR:InfoNoRecords;A:1;MX:1;
+x-ms-exchange-senderadcheck: 1
+x-microsoft-antispam: BCL:0;
+x-microsoft-antispam-message-info: folc0qMk/wDIZxVA/OS2/xm4wMZKCNvnn/Rl4eXYoTdHlDX+8jLktF3oz0gu/2ySC4nJV8QrEdTnsoZp3JNb3Wv6GbwviOChC4QP9XyR8TV97AGrU4YpD6rpOINcz7X9SniwZ1eetKSPaMokulstoy1d6++cR6ErZigKtPUgWwtiSvhiIgP2yeDgEc8yBwtY15riK64EhDwmY2r1GV37tgNUsrd2w1r8qDWptGK7cSL7oCSqLSD7alBISQI1BImzDPrT+nFFTdv8CCH5yFcyDn8EE8HA9G0EdPEBsmytoXV+Qc7rL9D3HPUsRzW5vdavpCl/OZ8Nr/1Lf3k/8XUC7SmJHmpTMfpV8tk+yL9dKHsP3Jj4dp+S9OSaY7Xaq2MGdq4Ky/3OBBflrXtLMw7jB1GSNhTVeyzB5I2KXS4x3fYn56YitoncgUb2t4nV4sGF
+x-ms-exchange-antispam-messagedata: heVhJTiMWTO3HJNWQJQ7Q4UfuU3jxUR621NG0CUjL1GHY76JhOK530rhiSVT9sqmgFSg+fQ/QvMu6LeeZMnZ/JL50ZevEgtx32U8ANjpjQz/ycLocHE34ukRenjHxkJdaJ5WVHMVn10caYXQ6+CI4w==
+x-ms-exchange-transport-forked: True
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-AntiAbuse: This header was added to track abuse, please include it with any abuse report
-X-AntiAbuse: Primary Hostname - br540.hostgator.com.br
-X-AntiAbuse: Original Domain - vger.kernel.org
-X-AntiAbuse: Originator/Caller UID/GID - [47 12] / [47 12]
-X-AntiAbuse: Sender Address Domain - mpdesouza.com
-X-BWhitelist: no
-X-Source-IP: 189.114.219.35
-X-Source-L: No
-X-Exim-ID: 1j1Vy7-0017fX-Dc
-X-Source: 
-X-Source-Args: 
-X-Source-Dir: 
-X-Source-Sender: (hephaestus.suse.de) [189.114.219.35]:33874
-X-Source-Auth: marcos@mpdesouza.com
-X-Email-Count: 0
-X-Source-Cap: bXBkZXNvNTM7bXBkZXNvNTM7YnI1NDAuaG9zdGdhdG9yLmNvbS5icg==
-X-Local-Domain: yes
+X-OriginatorOrg: wdc.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 2ee3ead1-d5b4-4704-37b4-08d7af207692
+X-MS-Exchange-CrossTenant-originalarrivaltime: 11 Feb 2020 18:30:25.8363
+ (UTC)
+X-MS-Exchange-CrossTenant-fromentityheader: Hosted
+X-MS-Exchange-CrossTenant-id: b61c8803-16f3-4c35-9b17-6f65f441df86
+X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
+X-MS-Exchange-CrossTenant-userprincipalname: REqFL5uSt0GWDJNmp9aplQNweF0nb4VhbAfK+Nr4uhTwwDMuwPDtoxTv+0kfT8uDRRMhJdzABiUtAbQyYhWhvPPZFEpB8Qil73KO878UgWY=
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: SN4PR0401MB3533
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-There is no point to inform the user about "new size" if didn't changed
-at all.
-
-Signed-off-by: Marcos Paulo de Souza <marcos@mpdesouza.com>
----
- fs/btrfs/ioctl.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index be5350582955..fa31a8021d24 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1712,9 +1712,6 @@ static noinline int btrfs_ioctl_resize(struct file *file,
- 
- 	new_size = round_down(new_size, fs_info->sectorsize);
- 
--	btrfs_info_in_rcu(fs_info, "new size for %s is %llu",
--			  rcu_str_deref(device->name), new_size);
--
- 	if (new_size > old_size) {
- 		trans = btrfs_start_transaction(root, 0);
- 		if (IS_ERR(trans)) {
-@@ -1727,6 +1724,9 @@ static noinline int btrfs_ioctl_resize(struct file *file,
- 		ret = btrfs_shrink_device(device, new_size);
- 	} /* equal, nothing need to do */
- 
-+	if (ret == 0 && new_size != old_size)
-+		btrfs_info_in_rcu(fs_info, "new size for %s is %llu",
-+			  rcu_str_deref(device->name), new_size);
- out_free:
- 	kfree(vol_args);
- out:
--- 
-2.24.0
-
+Looks good,=0A=
+Reviewed-by: Johannes Thumshirn <johannes.thumshnirn@wdc.com>=0A=

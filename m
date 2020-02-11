@@ -7,33 +7,33 @@ X-Spam-Status: No, score=-9.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E87D4C3B186
-	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Feb 2020 01:03:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B6C8BC352A5
+	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Feb 2020 01:04:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C29772082F
-	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Feb 2020 01:03:56 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9157B21569
+	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Feb 2020 01:04:08 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="WYDhnMYb"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="q+zRvM7O"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727943AbgBKBDz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 10 Feb 2020 20:03:55 -0500
-Received: from bombadil.infradead.org ([198.137.202.133]:54740 "EHLO
+        id S1728028AbgBKBEE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 10 Feb 2020 20:04:04 -0500
+Received: from bombadil.infradead.org ([198.137.202.133]:54904 "EHLO
         bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727875AbgBKBDy (ORCPT
+        with ESMTP id S1728011AbgBKBED (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 10 Feb 2020 20:03:54 -0500
+        Mon, 10 Feb 2020 20:04:03 -0500
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20170209; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=pH5LFtlmOrFfMRG0qpJp1Yog2+5WC4QJAZDPBwZZUFQ=; b=WYDhnMYb2Tl4xEYpfY2Ku86VXL
-        FI/V0kmlpCs1KHRO35xmh+JKDrQMAEC2a25oQ9BygbUIHc0PYTN7FG/TumtQJ+kUp1O3OHsdm2haz
-        hhEkhbx7SOE6j08H5VRVSHsnGE+ExUvbUQojTzl55uokP3eAI6x7olxu2lddAMOmqOny931og4gai
-        VgiCC9cKCaXR15L83kZWcgQeZ0a5wsc3LFjHAjj0kTRlTOW+lLChKb6KWREqxkWZaagtfhYE9EiFR
-        wECqSjkjhjQbWw5xKUEDD5X8x+mDovm6ZDsjY7BYvt+CQ33FjwZUVX3fAQDKwOducVwUJV4OnKGzp
-        HTa7QHMQ==;
+        bh=gNmBP2JYUyk+l9vVjSopvavD5DUUhW7hR9wGSwi0ypk=; b=q+zRvM7OoP7EzGdrNndsa/IM0V
+        CaSZ2sVmqPPX+vs1TCTIqDnfWEdqTT7H4F4EPM8LLvHEJo1TPo6xv6i/pOe0OEL+PMh+tZfA9P/h+
+        bo/vteh1oOO5/gTZ6tkdErl8STn2DHsckvps0VfCMnU5OUBIKpgpl1KL7hXhCOZN7ZO9OgLL+DZOq
+        1u+7+IPyafu/zUqJdRE+En401twVvpcz6moo7vavL7bY2tVS0y+0kwsextbvsEhMl1/5vMClZbxAz
+        U5mfj1kpW+SLhyQxMbPUVn6gBPZTc2ejjxdcYC6bV+NEx5wsUERg9gU3T2zvHN3yQFhH+6xw/JZUA
+        HGMS8BpQ==;
 Received: from willy by bombadil.infradead.org with local (Exim 4.92.3 #3 (Red Hat Linux))
-        id 1j1Jxu-0001nh-AM; Tue, 11 Feb 2020 01:03:50 +0000
+        id 1j1Jxu-0001oD-JL; Tue, 11 Feb 2020 01:03:50 +0000
 From:   Matthew Wilcox <willy@infradead.org>
 To:     linux-fsdevel@vger.kernel.org
 Cc:     "Matthew Wilcox (Oracle)" <willy@infradead.org>,
@@ -42,9 +42,9 @@ Cc:     "Matthew Wilcox (Oracle)" <willy@infradead.org>,
         linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
         cluster-devel@redhat.com, ocfs2-devel@oss.oracle.com,
         linux-xfs@vger.kernel.org
-Subject: [PATCH v5 01/13] mm: Fix the return type of __do_page_cache_readahead
-Date:   Mon, 10 Feb 2020 17:03:36 -0800
-Message-Id: <20200211010348.6872-2-willy@infradead.org>
+Subject: [PATCH v5 09/13] erofs: Convert compressed files from readpages to readahead
+Date:   Mon, 10 Feb 2020 17:03:44 -0800
+Message-Id: <20200211010348.6872-10-willy@infradead.org>
 X-Mailer: git-send-email 2.21.1
 In-Reply-To: <20200211010348.6872-1-willy@infradead.org>
 References: <20200211010348.6872-1-willy@infradead.org>
@@ -57,52 +57,78 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: "Matthew Wilcox (Oracle)" <willy@infradead.org>
 
-ra_submit() which is a wrapper around __do_page_cache_readahead() already
-returns an unsigned long, and the 'nr_to_read' parameter is an unsigned
-long, so fix __do_page_cache_readahead() to return an unsigned long,
-even though I'm pretty sure we're not going to readahead more than 2^32
-pages ever.
+Use the new readahead operation in erofs.
 
 Signed-off-by: Matthew Wilcox (Oracle) <willy@infradead.org>
 ---
- mm/internal.h  | 2 +-
- mm/readahead.c | 4 ++--
- 2 files changed, 3 insertions(+), 3 deletions(-)
+ fs/erofs/zdata.c | 29 +++++++++--------------------
+ 1 file changed, 9 insertions(+), 20 deletions(-)
 
-diff --git a/mm/internal.h b/mm/internal.h
-index 3cf20ab3ca01..41b93c4b3ab7 100644
---- a/mm/internal.h
-+++ b/mm/internal.h
-@@ -49,7 +49,7 @@ void unmap_page_range(struct mmu_gather *tlb,
- 			     unsigned long addr, unsigned long end,
- 			     struct zap_details *details);
+diff --git a/fs/erofs/zdata.c b/fs/erofs/zdata.c
+index 17f45fcb8c5c..7c02015d501d 100644
+--- a/fs/erofs/zdata.c
++++ b/fs/erofs/zdata.c
+@@ -1303,28 +1303,23 @@ static bool should_decompress_synchronously(struct erofs_sb_info *sbi,
+ 	return nr <= sbi->max_sync_decompress_pages;
+ }
  
--extern unsigned int __do_page_cache_readahead(struct address_space *mapping,
-+extern unsigned long __do_page_cache_readahead(struct address_space *mapping,
- 		struct file *filp, pgoff_t offset, unsigned long nr_to_read,
- 		unsigned long lookahead_size);
- 
-diff --git a/mm/readahead.c b/mm/readahead.c
-index 2fe72cd29b47..6bf73ef33b7e 100644
---- a/mm/readahead.c
-+++ b/mm/readahead.c
-@@ -152,7 +152,7 @@ static int read_pages(struct address_space *mapping, struct file *filp,
-  *
-  * Returns the number of pages requested, or the maximum amount of I/O allowed.
-  */
--unsigned int __do_page_cache_readahead(struct address_space *mapping,
-+unsigned long __do_page_cache_readahead(struct address_space *mapping,
- 		struct file *filp, pgoff_t offset, unsigned long nr_to_read,
- 		unsigned long lookahead_size)
+-static int z_erofs_readpages(struct file *filp, struct address_space *mapping,
+-			     struct list_head *pages, unsigned int nr_pages)
++static void z_erofs_readahead(struct readahead_control *rac)
  {
-@@ -161,7 +161,7 @@ unsigned int __do_page_cache_readahead(struct address_space *mapping,
- 	unsigned long end_index;	/* The last page we want to read */
- 	LIST_HEAD(page_pool);
- 	int page_idx;
--	unsigned int nr_pages = 0;
-+	unsigned long nr_pages = 0;
- 	loff_t isize = i_size_read(inode);
- 	gfp_t gfp_mask = readahead_gfp_mask(mapping);
+-	struct inode *const inode = mapping->host;
++	struct inode *const inode = rac->mapping->host;
+ 	struct erofs_sb_info *const sbi = EROFS_I_SB(inode);
+ 
+-	bool sync = should_decompress_synchronously(sbi, nr_pages);
++	bool sync = should_decompress_synchronously(sbi, readahead_count(rac));
+ 	struct z_erofs_decompress_frontend f = DECOMPRESS_FRONTEND_INIT(inode);
+-	gfp_t gfp = mapping_gfp_constraint(mapping, GFP_KERNEL);
+-	struct page *head = NULL;
++	struct page *page, *head = NULL;
+ 	LIST_HEAD(pagepool);
+ 
+-	trace_erofs_readpages(mapping->host, lru_to_page(pages)->index,
+-			      nr_pages, false);
++	trace_erofs_readpages(inode, readahead_index(rac),
++			readahead_count(rac), false);
+ 
+-	f.headoffset = (erofs_off_t)lru_to_page(pages)->index << PAGE_SHIFT;
+-
+-	for (; nr_pages; --nr_pages) {
+-		struct page *page = lru_to_page(pages);
++	f.headoffset = readahead_offset(rac);
+ 
++	readahead_for_each(rac, page) {
+ 		prefetchw(&page->flags);
+-		list_del(&page->lru);
+ 
+ 		/*
+ 		 * A pure asynchronous readahead is indicated if
+@@ -1333,11 +1328,6 @@ static int z_erofs_readpages(struct file *filp, struct address_space *mapping,
+ 		 */
+ 		sync &= !(PageReadahead(page) && !head);
+ 
+-		if (add_to_page_cache_lru(page, mapping, page->index, gfp)) {
+-			list_add(&page->lru, &pagepool);
+-			continue;
+-		}
+-
+ 		set_page_private(page, (unsigned long)head);
+ 		head = page;
+ 	}
+@@ -1366,11 +1356,10 @@ static int z_erofs_readpages(struct file *filp, struct address_space *mapping,
+ 
+ 	/* clean up the remaining free pages */
+ 	put_pages_list(&pagepool);
+-	return 0;
+ }
+ 
+ const struct address_space_operations z_erofs_aops = {
+ 	.readpage = z_erofs_readpage,
+-	.readpages = z_erofs_readpages,
++	.readahead = z_erofs_readahead,
+ };
  
 -- 
 2.25.0

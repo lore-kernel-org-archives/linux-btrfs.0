@@ -1,337 +1,187 @@
-Return-Path: <SRS0=4n2k=37=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=4+pS=4A=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.3 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.0 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DA5EAC35242
-	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Feb 2020 21:55:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2D23BC35242
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Feb 2020 00:38:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9D33F20714
-	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Feb 2020 21:55:49 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id EC2892086A
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Feb 2020 00:38:54 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="CKtDoxsb"
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="LA5FJe63"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727054AbgBKVzt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 11 Feb 2020 16:55:49 -0500
-Received: from mail-qk1-f193.google.com ([209.85.222.193]:33394 "EHLO
-        mail-qk1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727029AbgBKVzs (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Feb 2020 16:55:48 -0500
-Received: by mail-qk1-f193.google.com with SMTP id h4so95902qkm.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 11 Feb 2020 13:55:47 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=subject:to:references:from:message-id:date:user-agent:mime-version
-         :in-reply-to:content-language:content-transfer-encoding;
-        bh=kzQdmiqQX3ds2N5UODQwnRskkkbp58TfZK9OwDkQK7w=;
-        b=CKtDoxsbXpudxfIoEsUyKz1SAVZdf+ObCdCjrIn/TXaGnLl+xd2BRhCDbsQlLK/hNK
-         FYcxkOmlE+XQIUTYtS+R6LixS2H11AQwMDljAxDbfPv2or45jqRBkZmkfyXbGgTptBIA
-         DSLDEJM/DNi3Zsfy0M5i9w+ccS1cx74vLVTnbNxZeFqFbC+WrwwonkbeMGSIlLjVt0Cl
-         tVZnVuiipSobw5G6yXXe3IBgxb5vWEpuh7NOBleKNbtJTQzSZuCS3IqanXokvVBiJm2C
-         7WvYaFCkMbu/oqmXYb2b/pBbLfx83ewCTq5lkC+bJtOlY+MAjoyC3yDrOfd2ol1vbobP
-         TYHQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=kzQdmiqQX3ds2N5UODQwnRskkkbp58TfZK9OwDkQK7w=;
-        b=LkUmqoVWX2apbOokkJN5v9VVMjKAmdAcoSh73QH9qODh8QKllhD7yqWTmYKg3je0lU
-         dRQWyC18YrJYcVfcLkNp8luV53EbSfTi14Cjc/ije7Ht9pYtMs4etTCb7ELOZZxgbvFj
-         56n4WsSx7ecPGssvOK9CqioN07DgCRqOfdovzmnRsPaNnmB6gAGvi9g2o0f8hqKU9PCH
-         oQl1Enpo0oTbGm2ODZSvA8lmA6SQIwr7c7bs+kx7uDW+0Q0q3nN8MIkk0lKltm+HC//a
-         cNiP++dF06bPMISIdLKQ79vNg72RKJBR9eJGEqpqtbz0TJgY/oxKBME4gfHzueAHT0/F
-         C/9g==
-X-Gm-Message-State: APjAAAXEf3bEgv6WEUMMaq/xdtCXyiH6E2BwinclCaCizKu1VhRJ1pVB
-        BgxBXtBSeAm3KgTPkIErIp8jUbe1zvg=
-X-Google-Smtp-Source: APXvYqz+xGyzZ2Ze8cpn3nR721VdorgR2/HziQRj8r/c6mVXkoxcCJp2uKURaLzgYucsY7Spaufzew==
-X-Received: by 2002:ae9:e207:: with SMTP id c7mr3396145qkc.128.1581458146210;
-        Tue, 11 Feb 2020 13:55:46 -0800 (PST)
-Received: from [192.168.1.106] ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id k50sm3041579qtc.90.2020.02.11.13.55.44
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 11 Feb 2020 13:55:45 -0800 (PST)
+        id S1728087AbgBLAiy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 11 Feb 2020 19:38:54 -0500
+Received: from mout.gmx.net ([212.227.15.19]:39531 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1728057AbgBLAiy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 11 Feb 2020 19:38:54 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1581467921;
+        bh=Y8UocVLRWU4qWrC1WpnYhMhO15eZ4SnheWYy6JFQqUU=;
+        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
+        b=LA5FJe63iT9eEd0pxyg/eR1dv9gpIj9k6ozfedsCoY2Qa4LGy6rIX5McfADejNAhE
+         Ebyn5RLG04VqWmnFEKa3WUwgKFOpZIcX/x0hfYq+j1MZbZkcKwxLISN7MsC7nJAzXC
+         TSaUpPv4ICxVwuVIGru+ghEQMlSI232YUlRyV4SM=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx004
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1N33Il-1jVCP73TR7-013RUF; Wed, 12
+ Feb 2020 01:38:41 +0100
 Subject: Re: [PATCH v4] btrfs: Don't submit any btree write bio after
  transaction is aborted
-To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+To:     Josef Bacik <josef@toxicpanda.com>, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
 References: <20200208100740.81762-1-wqu@suse.com>
-From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <2f566d7c-73eb-8545-7c33-5cc1f6fb52f3@toxicpanda.com>
-Date:   Tue, 11 Feb 2020 16:55:44 -0500
-User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:68.0)
- Gecko/20100101 Thunderbird/68.4.2
+ <2f566d7c-73eb-8545-7c33-5cc1f6fb52f3@toxicpanda.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAU4EEwEIADgCGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1oQAKCRDC
+ PZHzoSX+qCY6CACd+mWu3okGwRKXju6bou+7VkqCaHTdyXwWFTsr+/0ly5nUdDtT3yEVggPJ
+ 3VP70wjlrxUjNjFb6iIvGYxiPOrop1NGwGYvQktgRhaIhALG6rPoSSAhGNjwGVRw0km0PlIN
+ D29BTj/lYEk+jVM1YL0QLgAE1AI3krihg/lp/fQT53wLhR8YZIF8ETXbClQG1vJ0cllPuEEv
+ efKxRyiTSjB+PsozSvYWhXsPeJ+KKjFen7ebE5reQTPFzSHctCdPnoR/4jSPlnTlnEvLeqcD
+ ZTuKfQe1gWrPeevQzgCtgBF/WjIOeJs41klnYzC3DymuQlmFubss0jShLOW8eSOOWhLRuQEN
+ BFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcgaCbPEwhLj
+ 1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj/IrRUUka
+ 68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fNGSsRb+pK
+ EKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0q1eW4Jrv
+ 0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEvABEBAAGJ
+ ATwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1rgUJCWpOfwAKCRDCPZHz
+ oSX+qFcEB/95cs8cM1OQdE/GgOfCGxwgckMeWyzOR7bkAWW0lDVp2hpgJuxBW/gyfmtBnUai
+ fnggx3EE3ev8HTysZU9q0h+TJwwJKGv6sUc8qcTGFDtavnnl+r6xDUY7A6GvXEsSoCEEynby
+ 72byGeSovfq/4AWGNPBG1L61Exl+gbqfvbECP3ziXnob009+z9I4qXodHSYINfAkZkA523JG
+ ap12LndJeLk3gfWNZfXEWyGnuciRGbqESkhIRav8ootsCIops/SqXm0/k+Kcl4gGUO/iD/T5
+ oagaDh0QtOd8RWSMwLxwn8uIhpH84Q4X1LadJ5NCgGa6xPP5qqRuiC+9gZqbq4Nj
+Message-ID: <2750a118-7c40-f62e-7898-6bf263162b19@gmx.com>
+Date:   Wed, 12 Feb 2020 08:38:37 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.4.2
 MIME-Version: 1.0
-In-Reply-To: <20200208100740.81762-1-wqu@suse.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+In-Reply-To: <2f566d7c-73eb-8545-7c33-5cc1f6fb52f3@toxicpanda.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="5uVahTn2KXF6JCvkAFCwLJNufArRBW5X4"
+X-Provags-ID: V03:K1:bRwu13wE67JbeQy6423JzaT6xqzUzfh4WrV3zZgUZwL4utp1Bvn
+ XPdcTBrkeWt4R79TGjlQamlPX4A12XhVwC231vAyu0XY2VfXeUHzG13hlVEKybfHyexk8sH
+ RUL8hOhMgpYI3ino3gw9kQY7lbVvjNpfeuLwe1q6W6ZJuMmU6n1ziI3+v1SD1C9xrIP9TRe
+ t5p76OmtCmZgAc11YmEZA==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:LhGgT1Nh+4Y=:+EGMaeUx5dblop96PTt6Ga
+ eDMzaTMgq5JfMqG/82F36Pu4F0PzspmGLDk7kKaxNC5XInaYQ1PArBzPEFqvt5mVB2acmn5Kg
+ 8FoHY4VoG7j9N7e1Phl8Tvmk1SEaLsLJvEXA0kSrtkufJA0SE99hnXq0KuvxdpMI1/2YbNHHq
+ R9TQ+RcL/e28/GSRyfaNQDaWX++2YPSYmPF9DzjzxK0mmitt8EhV9C9h+4oCnYQLpB0dgOm+N
+ 9xzO9/WBiQHufHAwHdw6Reuqh1KZXYFD8lc7VJvC2y38w0i5jLroENXw9ZOHpKPcBtvCsDOSz
+ pVvtGby6KJkNXYkaC4eLMLyr/ZNA9ukYMMvnARBrr0cdRao/JCgC/J0cYLIyqrouAB+a5jfYr
+ i9ckvL2+3KCOLiEtd9YDJ9974kZ9F5Ln//Vgb1DkHIIQDp1aFRH8BuIKSDj/4ACBsEu71NG+G
+ +I22zXOgtIFEhY700MQLsHer1A/1D97f2AnYmOoEqCssmI5mXlip0TgI4zOnVmiI2h8i4/Rzz
+ KcY7oOt4eSCwft7W3iG1BIGldlXauoOAcnmKwdjBPECnvZvs2lnTQvPTEZVBOVM7MdYBhhcLW
+ IW0RZTAQ3ArwBpfYAbknkPFUmCgBAGmWluzAZikmZWwxKwxsBhvqWDgjI90jmsDlaUi+q8nVP
+ fGeVU3UQnJhklW2vjvSE+b0lDQ4k6LhWLp0N78vgOGwFISZaie6aVaLRoS/l78a+Qv0QsEHDP
+ 9ODq/4W0xd9au99hLNHGSbQtNuIV67nP2apMk7SzWWQwGdGx0oywUxEU0VuT+4rfiXKRnTmi2
+ Sby1z17zF2QSlm5Iemr4z4LzCjnZwxuqilnmWyNGBC0xtNdS2lSUIcWvW9gOPtwSc+nw8YwHz
+ O7Tvwsb7n1OTXTWuxYxmaVGZ17tdeLVbZ35/emLrJUVCylp+CYWebqix+VMyT1u6q7IKEEWyL
+ 9KNobgZRAYv0a7RZ2jdmpwzaiqQfVkcuapRne/I66lcbXg8pZJ0MljTVidxyE4yB8AmwskBu8
+ mU4os6a4zDklm7H5YxMDX6Ft4KLwQb5QQnecx2SjprsEkmkjASUjxeDeC51A3lm/JhskSHxkK
+ RIJVU0UmhcnHjRktApQQdylwlD7vneWsoMlAAbe6TAOJIBph4+w02pJX44B5ihX7TTROwkoSy
+ nl/2saaowglCVX/oHv5PHdNLNy3m/AdgBFVopGLRJQ50+HfalQv9KDWoZ+nz7tlu8MR1njI+S
+ piw39wo8r794wpZt+
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 2/8/20 5:07 AM, Qu Wenruo wrote:
-> [BUG]
-> There is a fuzzed image which could cause KASAN report at unmount time.
-> 
->    ==================================================================
->    BUG: KASAN: use-after-free in btrfs_queue_work+0x2c1/0x390
->    Read of size 8 at addr ffff888067cf6848 by task umount/1922
-> 
->    CPU: 0 PID: 1922 Comm: umount Tainted: G        W         5.0.21 #1
->    Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS 1.10.2-1ubuntu1 04/01/2014
->    Call Trace:
->     dump_stack+0x5b/0x8b
->     print_address_description+0x70/0x280
->     kasan_report+0x13a/0x19b
->     btrfs_queue_work+0x2c1/0x390
->     btrfs_wq_submit_bio+0x1cd/0x240
->     btree_submit_bio_hook+0x18c/0x2a0
->     submit_one_bio+0x1be/0x320
->     flush_write_bio.isra.41+0x2c/0x70
->     btree_write_cache_pages+0x3bb/0x7f0
->     do_writepages+0x5c/0x130
->     __writeback_single_inode+0xa3/0x9a0
->     writeback_single_inode+0x23d/0x390
->     write_inode_now+0x1b5/0x280
->     iput+0x2ef/0x600
->     close_ctree+0x341/0x750
->     generic_shutdown_super+0x126/0x370
->     kill_anon_super+0x31/0x50
->     btrfs_kill_super+0x36/0x2b0
->     deactivate_locked_super+0x80/0xc0
->     deactivate_super+0x13c/0x150
->     cleanup_mnt+0x9a/0x130
->     task_work_run+0x11a/0x1b0
->     exit_to_usermode_loop+0x107/0x130
->     do_syscall_64+0x1e5/0x280
->     entry_SYSCALL_64_after_hwframe+0x44/0xa9
-> 
-> [CAUSE]
-> The fuzzed image has a completely screwd up extent tree:
->    leaf 29421568 gen 8 total ptrs 6 free space 3587 owner EXTENT_TREE
->    refs 2 lock (w:0 r:0 bw:0 br:0 sw:0 sr:0) lock_owner 0 current 5938
->            item 0 key (12587008 168 4096) itemoff 3942 itemsize 53
->                    extent refs 1 gen 9 flags 1
->                    ref#0: extent data backref root 5 objectid 259 offset 0 count 1
->            item 1 key (12591104 168 8192) itemoff 3889 itemsize 53
->                    extent refs 1 gen 9 flags 1
->                    ref#0: extent data backref root 5 objectid 271 offset 0 count 1
->            item 2 key (12599296 168 4096) itemoff 3836 itemsize 53
->                    extent refs 1 gen 9 flags 1
->                    ref#0: extent data backref root 5 objectid 259 offset 4096 count 1
->            item 3 key (29360128 169 0) itemoff 3803 itemsize 33
->                    extent refs 1 gen 9 flags 2
->                    ref#0: tree block backref root 5
->            item 4 key (29368320 169 1) itemoff 3770 itemsize 33
->                    extent refs 1 gen 9 flags 2
->                    ref#0: tree block backref root 5
->            item 5 key (29372416 169 0) itemoff 3737 itemsize 33
->                    extent refs 1 gen 9 flags 2
->                    ref#0: tree block backref root 5
-> 
-> Note that, leaf 29421568 doesn't has its backref in extent tree.
-> Thus extent allocator can re-allocate leaf 29421568 for other trees.
-> 
-> In short, the bug is caused by:
-> - Existing tree block get allocated to log tree
->    This got its generation bumped.
-> 
-> - Log tree balance cleaned dirty bit of offending tree block
->    It will not be written back to disk, thus no WRITTEN flag.
-> 
-> - Original owner of the tree block get COWed
->    Since the tree block has higher transid, no WRITTEN flag, it's reused,
->    and not traced by transaction::dirty_pages.
-> 
-> - Transaction aborted
->    Tree blocks get cleaned according to transaction::dirty_pages. But the
->    offending tree block is not recorded at all.
-> 
-> - Fs unmount
->    Btrfs believes all pages are cleaned, destroying all workqueue, then
->    call iput(btree_inode).
->    But offending tree block is still dirty, which triggers writeback, and
->    cause use-after-free bug.
-> 
-> The detailed sequence looks like this:
-> - Initial status
->    eb: 29421568, header=WRITTEN bflags_dirty=0, page_dirty=0, gen=8,
->        not traced by any dirty extent_iot_tree.
-> 
-> - New tree block is allocated
->    Since there is no backref for 29421568, it's re-allocated as new tree
->    block.
->    Keep in mind that, tree block 29421568 is still referred by extent
->    tree.
-> 
-> - Tree block 29421568 is filled for log tree
->    eb: 29421568, header=0 bflags_dirty=1, page_dirty=1, gen=9 << (gen bumped)
->        traced by btrfs_root::dirty_log_pages
-> 
-> - Some log tree operations
->    Since the fs is using node size 4096, the log tree can easily go a
->    level higher.
-> 
-> - Log tree needs balance
->    Tree block 29421568 gets all it content pushed to right, thus now
->    it is empty, and btrfs don't need it.
->    btrfs_clean_tree_block() from __push_leaf_right() get called.
-> 
->    eb: 29421568, header=0 bflags_dirty=0, page_dirty=0, gen=9
->        traced by btrfs_root::dirty_log_pages
-> 
-> - Log tree write back
->    btree_write_cache_pages() go through dirty pages ranges, but since
->    page of tree block 29421568 gets cleaned already, it's not written
->    back to disk. Thus it doesn't have WRITTEN bit set.
->    But ranges in dirty_log_pages are cleared.
-> 
->    eb: 29421568, header=0 bflags_dirty=0, page_dirty=0, gen=9
->        not traced by any dirty extent_iot_tree.
-> 
-> - Extent tree update when committing transaction
->    Since tree block 29421568 has transid equals to running trans, and has
->    no WRITTEN bit, should_cow_block() will use it directly without adding
->    it to btrfs_transaction::dirty_pages.
-> 
->    eb: 29421568, header=0 bflags_dirty=1, page_dirty=1, gen=9
->        not traced by any dirty extent_iot_tree.
-> 
->    At this stage, we're doomed. We have a dirty eb not traced by any
->    extent io tree.
-> 
-> - Transaction get aborted due to corrupted extent tree
->    Btrfs cleans up dirty pages according to transaction::dirty_pages and
->    btrfs_root::dirty_log_pages.
->    But since tree block 29421568 is not traced by either of them, it's
->    still dirty.
-> 
->    eb: 29421568, header=0 bflags_dirty=1, page_dirty=1, gen=9
->        not traced by any dirty extent_iot_tree.
-> 
-> - Fs unmount
->    Since btrfs believes all its cleanup has done, it destroys all its
->    workqueue. Then call iput(btree_inode), expecting no dirty pages.
->    But tree 29421568 is still dirty, thus triggering writeback.
->    Since all workqueues are already freed, we cause use-after-free.
-> 
-> This shows us that, log tree blocks + back extent tree can cause wild
-> dirty pages.
-> 
-> [FIX]
-> To fix the problem, don't submit any btree write bio after aborted
-> transaction.
-> This is the last safe net, just in case there are other cases can
-> cause similar problem.
-> 
-> Link: https://github.com/bobfuzzer/CVE/tree/master/CVE-2019-19377
-> CVE: CVE-2019-19377
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
-> To Josef,
-> 
-> There is another solution, by resetting the eb's generation to 0 in
-> btrfs_clean_tree_block(), so that later should_cow_block() will choose
-> to COW other than reuse.
-> 
-> But that would cause ASSERT() if CONFIG_BTRFS_FS_CHECK_INTEGRITY is
-> enabled.
-> As described, the offending tree block is completely empty during log
-> tree rebalance, if it's COWed for extent tree, tree-checker won't
-> allow empty extent tree at all, thus we will hit ASSERT() in
-> btrfs_mark_buffer_dirty().
-> 
-> I'm not sure if we should go that direction. So I only go the
-> last-safe-net method.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--5uVahTn2KXF6JCvkAFCwLJNufArRBW5X4
+Content-Type: multipart/mixed; boundary="79RI4odgG9lCFxvPiEju8IGjvNYMeIGLO"
 
-Yeah I can't think of a better scenario here.  We're dealing with a corrupt fs, 
-and trying to work around the corruption in this case isn't super clear-cut.  If 
-there was flaw in how we were handling blocks then I'd be more inclined to 
-fixing the problem more directly, but this is just wonky and we can't trust 
-we'll make the right decision for every type of corruption.
+--79RI4odgG9lCFxvPiEju8IGjvNYMeIGLO
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-> 
-> Changelog:
-> v2:
-> - More detailed reason on why the dirty pages are not cleaned up
->    So regular cleanup method won't work on this extremely corrupted case.
->    Thus we still need this last resort method to prevent use-after-free.
-> 
-> v3:
-> - Dig further to find out the cause
->    It's log tree bumping transid of existing tree blocks causing the
->    problem.
->    This breaks COW condition, making btrfs to dirty eb but not tracing
->    it.
-> 
->    The existing cleanup for log tree is fine for sane fs.
->    But when fs goes insane, no sane cleanup makes sense now.
-> 
-> v4:
-> - Add the missing piece of why WRITTEN bit is not set
->    It's in tree balance, which calls btrfs_clean_tree_block(), making
->    that tree block to have no WRITTEN bit but still has bumped
->    generation.
->    It's a good adventure, but I won't want to debug such damn complex
->    case any more.
-> ---
->   fs/btrfs/extent_io.c | 35 ++++++++++++++++++++++++++++++++++-
->   1 file changed, 34 insertions(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index 2f4802f405a2..59fb3270d3cf 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -3927,6 +3927,7 @@ int btree_write_cache_pages(struct address_space *mapping,
->   		.extent_locked = 0,
->   		.sync_io = wbc->sync_mode == WB_SYNC_ALL,
->   	};
-> +	struct btrfs_fs_info *fs_info = tree->fs_info;
->   	int ret = 0;
->   	int done = 0;
->   	int nr_to_write_done = 0;
-> @@ -4036,7 +4037,39 @@ int btree_write_cache_pages(struct address_space *mapping,
->   		end_write_bio(&epd, ret);
->   		return ret;
->   	}
-> -	ret = flush_write_bio(&epd);
-> +	/*
-> +	 * If transaction is aborted, don't allow any write bio to be
-> +	 * submitted.
-> +	 *
-> +	 * This would prevent use-after-free if we had dirty pages not
-> +	 * cleaned up, which can still happen by fuzzed images.
-> +	 *
-> +	 * - Bad extent tree
-> +	 *   Allowing existing tree block to be allocated for other trees.
-> +	 *
-> +	 * - Log tree operations
-> +	 *   Exiting tree blocks get allocated to log tree, bumps its
-> +	 *   generation, then get cleaned in tree re-balance.
-> +	 *   Such tree block will not be written back, since it's clean,
-> +	 *   thus no WRITTEN flag set.
-> +	 *   And after log writes back, this tree block is not traced by
-> +	 *   any dirty extent_io_tree.
-> +	 *
-> +	 * - Offending tree block gets re-dirtied from its original owner
-> +	 *   Since it has bumped generation, no WRITTEN flag, it can be
-> +	 *   reused without COWing. This tree block will not be traced
-> +	 *   by btrfs_transaction::dirty_pages.
-> +	 *
-> +	 *   Now such dirty tree block will not be cleaned by any dirty
-> +	 *   extent io tree. Thus we don't want to submit such wild eb
-> +	 *   if transaction is aborted.
-> +	 */
-> +	if (!test_bit(BTRFS_FS_STATE_TRANS_ABORTED, &fs_info->fs_state)) {
 
-This needs to be BTRFS_FS_STATE_ERROR, because we could have tripped over some 
-other error where we didn't have a transaction and never gotten TRANS_ABORTED. 
+
+On 2020/2/12 =E4=B8=8A=E5=8D=885:55, Josef Bacik wrote:
+> On 2/8/20 5:07 AM, Qu Wenruo wrote:
+=2E..
+>> But that would cause ASSERT() if CONFIG_BTRFS_FS_CHECK_INTEGRITY is
+>> enabled.
+>> As described, the offending tree block is completely empty during log
+>> tree rebalance, if it's COWed for extent tree, tree-checker won't
+>> allow empty extent tree at all, thus we will hit ASSERT() in
+>> btrfs_mark_buffer_dirty().
+>>
+>> I'm not sure if we should go that direction. So I only go the
+>> last-safe-net method.
+>=20
+> Yeah I can't think of a better scenario here.=C2=A0 We're dealing with =
+a
+> corrupt fs, and trying to work around the corruption in this case isn't=
+
+> super clear-cut.=C2=A0 If there was flaw in how we were handling blocks=
+ then
+> I'd be more inclined to fixing the problem more directly, but this is
+> just wonky and we can't trust we'll make the right decision for every
+> type of corruption.
+
+Another idea is, to check the eb->refs at btrfs_init_new_buffer().
+As we're expecting a completely new buffer not shared by anyone else.
+And it follows my old idea of rejecting corruption as early as possible.
+
+But IIRC I have submitted similar patch before but didn't end up too
+well, so I'll leave that as another patchset.
+
+=2E..
+>> +=C2=A0=C2=A0=C2=A0=C2=A0 *=C2=A0=C2=A0 Now such dirty tree block will=
+ not be cleaned by any dirty
+>> +=C2=A0=C2=A0=C2=A0=C2=A0 *=C2=A0=C2=A0 extent io tree. Thus we don't =
+want to submit such wild eb
+>> +=C2=A0=C2=A0=C2=A0=C2=A0 *=C2=A0=C2=A0 if transaction is aborted.
+>> +=C2=A0=C2=A0=C2=A0=C2=A0 */
+>> +=C2=A0=C2=A0=C2=A0 if (!test_bit(BTRFS_FS_STATE_TRANS_ABORTED, &fs_in=
+fo->fs_state)) {
+>=20
+> This needs to be BTRFS_FS_STATE_ERROR, because we could have tripped
+> over some other error where we didn't have a transaction and never
+> gotten TRANS_ABORTED. Thanks,
+
+Thanks for that hint. Indeed makes sense.
+
+Hopes next version will be the last version.
+
 Thanks,
+Qu
+>=20
+> Josef
 
-Josef
+
+--79RI4odgG9lCFxvPiEju8IGjvNYMeIGLO--
+
+--5uVahTn2KXF6JCvkAFCwLJNufArRBW5X4
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAl5DSQ0ACgkQwj2R86El
+/qiL3gf+PaGAktGbhTrkUx83xYkJKDfRSO13C5wYFqZ8g7VFPOc57qiMBfiyd4c4
+cf8v+iu/Z7VuBLf14osIu0wMXFbsTBsV7OGyL/cfOO458jhAeTwKbjeSoqjIo2Qv
+xE2e6TjA+8TLWhxhuIReXF9l8prjqJ3ckUiWAUWV5MGwT0lIEltYQYgXuaAimt37
+rp5szzeyDmFx2RWyQ6MzXS6d0MF6W9WRQcsYbmJTOauE66Ta+7oXaqrYKTqC6JVo
+ju58i2+G+4F7vW7fDSa75VAvQ9CNO267cKzQ15+hbFIVTP4B3WcBJ307rclPy9oU
+XfyNhjnXYVSsNVIbzYVMYZV4zNlmwg==
+=g7b/
+-----END PGP SIGNATURE-----
+
+--5uVahTn2KXF6JCvkAFCwLJNufArRBW5X4--

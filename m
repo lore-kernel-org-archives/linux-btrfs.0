@@ -2,113 +2,98 @@ Return-Path: <SRS0=4+pS=4A=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.9 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,
-	USER_AGENT_GIT autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.9 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 202DAC3F68F
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Feb 2020 09:35:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BB07BC2BA83
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Feb 2020 11:32:49 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id EAA2C2173E
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Feb 2020 09:35:21 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6051C2073C
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Feb 2020 11:32:49 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="l5rDAAoB"
+	dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b="VrIkOZhu"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728843AbgBLJfV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 12 Feb 2020 04:35:21 -0500
-Received: from userp2130.oracle.com ([156.151.31.86]:45216 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728626AbgBLJfU (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Feb 2020 04:35:20 -0500
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 01C9WenN157848;
-        Wed, 12 Feb 2020 09:35:19 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
- subject : date : message-id; s=corp-2020-01-29;
- bh=UZgTeNn3pFfDcQDEzGHX4wvZEumYLpiPqufzcgnzhzM=;
- b=l5rDAAoBXbYSNDm63UQes8gq3pht7ZLMM7TI5meUOEoE56p0rosGjphKpAfWY2WSH5fK
- 80LiJOtNL3rFP3zcdoueJWh6eqW6OMsQ3ziQkp6jd++p42G2CMbx1OxiCPXW2aW4k5Jw
- GK9Q5NusirRKKFBFZlG9qNhUciO8Irxkjw8NWgiuPdk5Y+j8dJ3ORivxA0cKthAHEcyR
- ALvIKFmBWPliwgKWNdhOtsTVLgJUto/1c4+tS1LI7zM3zqx2tb3Uy0Tf3OKFgKgczYB7
- gTELIjWgYE9t3oenvEezBRaPeEgwRiVzfZ9gnKWQ9uXxXU4U6mxZy+9/4LmliHX6KRL4 gw== 
-Received: from aserp3020.oracle.com (aserp3020.oracle.com [141.146.126.70])
-        by userp2130.oracle.com with ESMTP id 2y2k88914p-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
-        Wed, 12 Feb 2020 09:35:19 +0000
-Received: from pps.filterd (aserp3020.oracle.com [127.0.0.1])
-        by aserp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 01C9WVq2068296;
-        Wed, 12 Feb 2020 09:35:18 GMT
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by aserp3020.oracle.com with ESMTP id 2y26svxrd5-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Wed, 12 Feb 2020 09:35:18 +0000
-Received: from abhmp0004.oracle.com (abhmp0004.oracle.com [141.146.116.10])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 01C9ZIuP015123;
-        Wed, 12 Feb 2020 09:35:18 GMT
-Received: from tp.localdomain (/39.109.145.141)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Wed, 12 Feb 2020 01:35:18 -0800
-From:   Anand Jain <anand.jain@oracle.com>
-To:     fstests@vger.kernel.org
-Cc:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] fstests: btrfs/179 call sync qgroup counts
-Date:   Wed, 12 Feb 2020 17:35:09 +0800
-Message-Id: <1581500109-22736-1-git-send-email-anand.jain@oracle.com>
-X-Mailer: git-send-email 1.8.3.1
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9528 signatures=668685
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 adultscore=0 phishscore=0 mlxscore=0
- malwarescore=0 bulkscore=0 spamscore=0 suspectscore=13 mlxlogscore=999
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2001150001
- definitions=main-2002120076
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9528 signatures=668685
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 adultscore=0 lowpriorityscore=0
- suspectscore=13 bulkscore=0 phishscore=0 mlxlogscore=999 mlxscore=0
- malwarescore=0 impostorscore=0 clxscore=1015 spamscore=0
- priorityscore=1501 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2001150001 definitions=main-2002120076
+        id S1727429AbgBLLcs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 12 Feb 2020 06:32:48 -0500
+Received: from mail.synology.com ([211.23.38.101]:54730 "EHLO synology.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1725874AbgBLLcs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 12 Feb 2020 06:32:48 -0500
+Received: from _ (localhost [127.0.0.1])
+        by synology.com (Postfix) with ESMTPA id ED3A2DB18D89;
+        Wed, 12 Feb 2020 19:32:45 +0800 (CST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=synology.com; s=123;
+        t=1581507166; bh=xo8bLUPSQKlReoaYq/8B6DCtYsDPN89ZqIOXXQBwA6M=;
+        h=Date:From:To:Subject:In-Reply-To:References;
+        b=VrIkOZhuC5Pdfw0evs0OuR58KPRf0Lpbmv0e/DPQcvU8bqPV6swIlbNttJxhw/wRS
+         QNvdJ5N8QJdNMfZG9y1b+867LCu+gFkwH5dwQJlR/XLPo6ApRbur3oXv/p4IHLm29P
+         noQorvOGWaACLfcdEvKJ/JR8ZZ9OECnwziT4TEAY=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8;
+ format=flowed
+Content-Transfer-Encoding: 8bit
+Date:   Wed, 12 Feb 2020 19:32:45 +0800
+From:   ethanwu <ethanwu@synology.com>
+To:     dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        ethanwu <ethanwu@synology.com>,
+        Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/4] btrfs: backref, only collect file extent items
+ matching backref offset
+In-Reply-To: <20200211182159.GD2902@twin.jikos.cz>
+References: <20200207093818.23710-1-ethanwu@synology.com>
+ <20200207093818.23710-2-ethanwu@synology.com>
+ <0badf0be-d481-10fb-c23d-1b69b985e145@toxicpanda.com>
+ <c0453c3eb7c9b4e56bd66dbe647c5f0a@synology.com>
+ <20200210162927.GK2654@twin.jikos.cz>
+ <5901b2be7358137e691b319cbad43111@synology.com>
+ <aeb36a34-bc9c-8500-9f36-554729a078fc@gmx.com>
+ <20200211182159.GD2902@twin.jikos.cz>
+Message-ID: <c3b0f59840b81f4dd440264fb4276d9f@synology.com>
+X-Sender: ethanwu@synology.com
+User-Agent: Roundcube Webmail/1.1.2
+X-Synology-MCP-Status: no
+X-Synology-Spam-Flag: no
+X-Synology-Spam-Status: score=0, required 6, WHITELIST_FROM_ADDRESS 0
+X-Synology-Virus-Status: no
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On some systems btrfs/179 fails because the check finds that there is
-difference in the qgroup counts.
+David Sterba 於 2020-02-12 02:21 寫到:
+> On Tue, Feb 11, 2020 at 12:33:48PM +0800, Qu Wenruo wrote:
+>> >> 39862272 have 30949376
+>> >> [ 5949.328136] repair_io_failure: 22 callbacks suppressed
+>> >> [ 5949.328139] BTRFS info (device vdb): read error corrected: ino 0
+>> >> off 39862272 (dev /dev/vdd sector 19488)
+>> >> [ 5949.333447] BTRFS info (device vdb): read error corrected: ino 0
+>> >> off 39866368 (dev /dev/vdd sector 19496)
+>> >> [ 5949.336875] BTRFS info (device vdb): read error corrected: ino 0
+>> >> off 39870464 (dev /dev/vdd sector 19504)
+>> >> [ 5949.340325] BTRFS info (device vdb): read error corrected: ino 0
+>> >> off 39874560 (dev /dev/vdd sector 19512)
+>> >> [ 5949.409934] BTRFS warning (device vdb): csum failed root -9 ino 257
+>> >> off 2228224 csum
+>> 
+>> This looks like an existing bug, IIRC Zygo reported it before.
+>> 
+>> Btrfs balance just randomly failed at data reloc tree.
+>> 
+>> Thus I don't believe it's related to Ethan's patches.
+> 
+> Ok, than the patches make it more likely to happen, which could mean
+> that faster backref processing hits some race window. As there could be
+> more we should first fix the bug you say Zygo reported.
 
-So as the intention of the test case is to test any hang like situation
-during heavy snapshot create/delete operation with quota enabled, so
-make sure the qgroup counts are consistent at the end of the test case,
-so to make the check happy.
+I added a log to check if find_parent_nodes is ever called under
+test btrfs/125. It turns out that btrfs/125 doesn't pass through the
+function. What my patches do is all under find_parent_nodes.
+Therefore, I don't think my patch would make btrfs/125 more likely
+to happen, at least it doesn't change the behavior of functions
+btrfs/125 run through.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
-v2: Use subvolume sync at the end of the test case.
-    Patch title changed.
+Is it easy to reproduce in your test environment?
 
- tests/btrfs/179 | 9 +++++++++
- 1 file changed, 9 insertions(+)
-
-diff --git a/tests/btrfs/179 b/tests/btrfs/179
-index 4a24ea419a7e..8795d59c01f8 100755
---- a/tests/btrfs/179
-+++ b/tests/btrfs/179
-@@ -109,6 +109,15 @@ wait $snapshot_pid
- kill $delete_pid
- wait $delete_pid
- 
-+# By the async nature of qgroup tree scan and subvolume delete, the latest
-+# qgroup counts at the time of umount might not be upto date, if it isn't
-+# then the check will report the difference in count. The difference in
-+# qgroup counts are anyway updated in the following mount, so it is not a
-+# real issue that this test case is trying to verify. So make sure the
-+# qgroup counts are in sync before unmount happens.
-+
-+$BTRFS_UTIL_PROG subvolume sync $SCRATCH_MNT >> $seqres.full
-+
- # success, all done
- echo "Silence is golden"
- 
--- 
-1.8.3.1
-
+Thanks,
+ethanwu

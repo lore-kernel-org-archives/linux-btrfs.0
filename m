@@ -6,66 +6,65 @@ X-Spam-Status: No, score=-5.3 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,
 	SPF_PASS,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5B2D4C2BA83
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Feb 2020 12:58:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 63738C2BA83
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Feb 2020 13:00:50 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2EB112073C
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Feb 2020 12:58:33 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3408520659
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Feb 2020 13:00:50 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="wJPgL+An"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="dvY2/TRA"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727891AbgBLM6c (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 12 Feb 2020 07:58:32 -0500
-Received: from mail-qv1-f65.google.com ([209.85.219.65]:41525 "EHLO
-        mail-qv1-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726728AbgBLM6b (ORCPT
+        id S1727561AbgBLNAt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 12 Feb 2020 08:00:49 -0500
+Received: from mail-qt1-f195.google.com ([209.85.160.195]:37413 "EHLO
+        mail-qt1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726728AbgBLNAt (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Feb 2020 07:58:31 -0500
-Received: by mail-qv1-f65.google.com with SMTP id s7so844760qvn.8
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Feb 2020 04:58:30 -0800 (PST)
+        Wed, 12 Feb 2020 08:00:49 -0500
+Received: by mail-qt1-f195.google.com with SMTP id w47so1465438qtk.4
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Feb 2020 05:00:48 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=subject:to:references:from:message-id:date:user-agent:mime-version
          :in-reply-to:content-language:content-transfer-encoding;
-        bh=wg5tiWUY+invKMQrt46Rm/zXlyOQZNFLddFXm8QzJiE=;
-        b=wJPgL+AnMM6esDC0X5PWL4dUqURS93RxYllwtKK8h1EirSPavJeQ6WP9224vANnDxj
-         b3e0m2KofGume8753BGQTgOP91ht8DLfnojl2Xe72i5tvdYI40kG/+zsY7xsNsESN9sj
-         LJjH2VRvhjwfSX7ZhUQketozvawy1HFpukk4G/Axb3etoPZ2DPd89IT0Dn/yNJ/jjFL6
-         oa0KRhrRWozWqnnchmyd9Onko0d1ms7VLewTb/Wa6Ud/GOLg3LxYSkx6c4y2QJXFNFjc
-         /qTcYtAMKLtcWvlsZEiWgDSoUayTVhMNEoRSxgOrQWuX1txqtOlCvj02aGrZCI3e+6p4
-         +0QQ==
+        bh=7BmwdnzAzGd2waR4gsKbgJ+i3N8XJRUMBJhbx+3826E=;
+        b=dvY2/TRAptWMkEx3lMad5J9OwLtWHYvHHyTByX2fREHTSnHAcyizPhjO/6EKUUqKcL
+         TK0AWYeVGB3+p5kP0BjRvbUT9tR+MmjlBRKhrGdSiMvL4xJ8elE0E6gqJDdWT7HGJpJe
+         dtSthcCB9yUe0/xtDbjSJAEsS0X3wMlxhhUhqLD0g54smGws8/1i82w+WX2tNQySd8KP
+         uNZ64Y8LE4otCw46CT0qydWnookkABmsttlc6uM2nG1tlNbupy2a7vYiEVn4SCUZn6kj
+         /TYXDurhCVIyiE57Mt2Aganby2nNHCansdYjh0T01pt/TyHFv+F8bX0+Wv0fpJqWCx6C
+         jzxA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:subject:to:references:from:message-id:date
          :user-agent:mime-version:in-reply-to:content-language
          :content-transfer-encoding;
-        bh=wg5tiWUY+invKMQrt46Rm/zXlyOQZNFLddFXm8QzJiE=;
-        b=VdwE/HCaSDY6qOJXsGC0wA8n3XkX+FMHE0rlGhIjYUc1RZ+ehYMtEH0zZ95iSSrDGR
-         HU4J6rjp/uhfPbBcYw9YjNJ51OaiKpmtpj/ChSHpLy2PoY1Smh3CuWMdoAojnHU0mw/f
-         iBo0H/PDJgIN1e0nVt3P0E8A80Vl7u/oW5iHeZSpuxv0MnljE0sF/fjmFZWX3xZaQBdd
-         LsmSGPKVKwaYvzzqmdLre759RXk9ny8etT7sNCVvF08MaNel/5RuJLgbIMeZJ1n+gmls
-         NO11udCiGF/iLhzE/ucSAilMOK9eG/BUpc+LZ9oOqwaGLkhg6IdT71B4ZZHCBpCdwINN
-         nsRg==
-X-Gm-Message-State: APjAAAWqu2POCulLwEXnCh+WU1rRZqzEMocqskDs8/LYrvwsXctd0vjw
-        9hK6FkTRwCkkR6A82jVfNh26fGha3kA=
-X-Google-Smtp-Source: APXvYqzKmdEI8r51qgDeA3wnLGzsQsTBKFEcXrlizQq8egB2S8TCkPdN3GJQYeITfMCEi6ezaLKCxQ==
-X-Received: by 2002:ad4:4e46:: with SMTP id eb6mr7274189qvb.64.1581512309931;
-        Wed, 12 Feb 2020 04:58:29 -0800 (PST)
+        bh=7BmwdnzAzGd2waR4gsKbgJ+i3N8XJRUMBJhbx+3826E=;
+        b=rgMM2I6WS2+y7Crqs0tu6+VBDwhLLCG1cvl9KKsyejsSjqIsvWgX41m7fJK/Obr4+e
+         y3lRN5l/4PvC/vMwnFtgbGj4ezLXDfWGVWysaHg3b66QVnCnAZ3pvmHaiiXgOxIgZwpP
+         L8SdgdcE3tYXcvZLwoxgfi2Ajp26lNR3yaztmOBZgxqsj+ravkZ4e+EKDAlU32d+i82o
+         RsdmZIZMmQXzi4gsithzTSaNbIrG2msqVclCdEX4gkKcVgcGUc4CCwsGOi/9JLIgKyaf
+         wM5iX2qtcRoN4/lIgCdvn008b73selm5BpCnb5+yG30WbmDHmkUWcn9kLS8+5E/oQACW
+         ZcAg==
+X-Gm-Message-State: APjAAAWKvhFIwh2pX6XWvY0oDUP7C1pHv0zKcf6bH0X6PrNgD0HxMnfJ
+        jOoZDpBoPoLFJB0dy4VIitjVUCY5Mow=
+X-Google-Smtp-Source: APXvYqxzgMp42SdYeV15sZgffsccT5LlUszTguzvv02Gq9hU6Crrh5vwxLE97iiuy7rWVoJTbdq8Fg==
+X-Received: by 2002:ac8:7159:: with SMTP id h25mr6885638qtp.380.1581512447835;
+        Wed, 12 Feb 2020 05:00:47 -0800 (PST)
 Received: from ?IPv6:2620:10d:c0a8:1102:ce0:3629:8daa:1271? ([2620:10d:c091:480::de08])
-        by smtp.gmail.com with ESMTPSA id 63sm135073qki.57.2020.02.12.04.58.28
+        by smtp.gmail.com with ESMTPSA id r12sm122497qkm.94.2020.02.12.05.00.45
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 12 Feb 2020 04:58:29 -0800 (PST)
-Subject: Re: [PATCH] btrfs: Only require sector size alignment for parent eb
- bytenr
+        Wed, 12 Feb 2020 05:00:46 -0800 (PST)
+Subject: Re: [PATCH] btrfs: relocation: Remove is_cowonly_root()
 To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <20200212053040.23221-1-wqu@suse.com>
+References: <20200212074331.32800-1-wqu@suse.com>
 From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <9d4bfc49-f914-aa2f-2809-a65a267917a4@toxicpanda.com>
-Date:   Wed, 12 Feb 2020 07:58:27 -0500
+Message-ID: <e4dfd024-d014-b637-4d9e-7a8b1e155bbf@toxicpanda.com>
+Date:   Wed, 12 Feb 2020 08:00:45 -0500
 User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:68.0)
  Gecko/20100101 Thunderbird/68.5.0
 MIME-Version: 1.0
-In-Reply-To: <20200212053040.23221-1-wqu@suse.com>
+In-Reply-To: <20200212074331.32800-1-wqu@suse.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
 Content-Transfer-Encoding: 7bit
@@ -74,58 +73,29 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 2/12/20 12:30 AM, Qu Wenruo wrote:
-> [BUG]
-> A completely sane converted fs will cause kernel warning at balance
-> time:
+On 2/12/20 2:43 AM, Qu Wenruo wrote:
+> This function is only used in read_fs_root(), which is just a wrapper of
+> btrfs_get_fs_root().
 > 
-> [ 1557.188633] BTRFS info (device sda7): relocating block group 8162107392 flags data
-> [ 1563.358078] BTRFS info (device sda7): found 11722 extents
-> [ 1563.358277] BTRFS info (device sda7): leaf 7989321728 gen 95 total ptrs 213 free space 3458 owner 2
-> [ 1563.358280] 	item 0 key (7984947200 169 0) itemoff 16250 itemsize 33
-> [ 1563.358281] 		extent refs 1 gen 90 flags 2
-> [ 1563.358282] 		ref#0: tree block backref root 4
-> [ 1563.358285] 	item 1 key (7985602560 169 0) itemoff 16217 itemsize 33
-> [ 1563.358286] 		extent refs 1 gen 93 flags 258
-> [ 1563.358287] 		ref#0: shared block backref parent 7985602560
-> [ 1563.358288] 			(parent 7985602560 is NOT ALIGNED to nodesize 16384)
-> [ 1563.358290] 	item 2 key (7985635328 169 0) itemoff 16184 itemsize 33
-> ...
-> [ 1563.358995] BTRFS error (device sda7): eb 7989321728 invalid extent inline ref type 182
-> [ 1563.358996] ------------[ cut here ]------------
-> [ 1563.359005] WARNING: CPU: 14 PID: 2930 at 0xffffffff9f231766
+> For all the mentioned essential roots except log root tree,
+> btrfs_get_fs_root() has its own quick path to grab them from fs_info
+> directly, thus no need for key.offset modification.
 > 
-> Then with transaction abort, and obviously failed to balance the fs.
+> For subvolume trees, btrfs_get_fs_root() with key.offset == -1 is
+> completely fine.
 > 
-> [CAUSE]
-> That mentioned inline ref type 182 is completely sane, it's
-> BTRFS_SHARED_BLOCK_REF_KEY, it's some extra check making kernel to
-> believe it's invalid.
+> For log trees and log root tree, it's impossible to hit them, as for
+> relocation all backrefs are fetched from commit root, which never
+> records log tree blocks.
 > 
-> Commit 64ecdb647ddb ("Btrfs: add one more sanity check for shared ref
-> type") introduced extra checks for backref type.
+> Log tree blocks either get freed in regular transaction commit, or
+> replayed at mount time. At runtime we should never hit an backref for
+> log tree in extent tree.
 > 
-> One of the requirement is, parent bytenr must be aligned to node size,
-> which is not correct, especially for converted fs or mixed fs.
-> 
-> One tree block can start at any bytenr aligned to sector size. Node size
-> should never be an alignment requirement.
-> Thus such bad check is causing above bug.
-> 
-> [FIX]
-> Change the alignment requirement from node size alignment to sector size
-> alignment.
-> 
-> Also, to make our lives a little easier, also output @iref when
-> btrfs_get_extent_inline_ref_type() failed, so we can locate the item
-> easier.
-> 
-> Link: https://bugzilla.kernel.org/show_bug.cgi?id=205475
-> Fixes: 64ecdb647ddb ("Btrfs: add one more sanity check for shared ref type")
 > Signed-off-by: Qu Wenruo <wqu@suse.com>
 
-We aren't allowed to have nodesize != sectorsize with mixed, exactly because you 
-ended up with weirdly sized holes and such.  How is convert ending up with this 
-problem?  Thanks,
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+
+Thanks,
 
 Josef

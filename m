@@ -2,59 +2,100 @@ Return-Path: <SRS0=4+pS=4A=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 47465C2BA83
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Feb 2020 07:30:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7833DC2BA83
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Feb 2020 07:43:43 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0D395206DB
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Feb 2020 07:30:08 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="QkI7bISX"
+	by mail.kernel.org (Postfix) with ESMTP id 589F0206DB
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Feb 2020 07:43:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728291AbgBLHaH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 12 Feb 2020 02:30:07 -0500
-Received: from bombadil.infradead.org ([198.137.202.133]:59416 "EHLO
-        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728186AbgBLHaH (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Feb 2020 02:30:07 -0500
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20170209; h=In-Reply-To:Content-Type:MIME-Version
-        :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-        Content-Transfer-Encoding:Content-ID:Content-Description;
-        bh=l2WBiCb5duYJRA9nKpihqrJOH1Qjg6utSrFiu8qAdtc=; b=QkI7bISXL5VfZAOS3GMw/sWpi8
-        vFGiJOF7VByLnGG/ln0lqGdijC6SVS3uKqDxDtyrzIk3HYjYuH0tpDUB4/0Aej1Ql8rMG6eH2bK3g
-        IauKDbmsnsKZgi0fForVPC9f/WFAcwrCYfiCXLVzUvzdjlbor2SiPP3sWhpcMqtsYrtx4NG0ZT7Ok
-        j9Cbyfil5w943kv2Gk8S6ZHMH5TxikCQ3jeKgMDAZ9BE6bSnes/kk7WAuXpvREKdjPecQSbXTzdWI
-        9Rp9TOZZfvjXtlCKuxQQsFAX/uchpa4+j4BHWZ/P0xlnV4NxovMbPb4sjhITd2lQt7pcVzCHnqTAu
-        8Deaochw==;
-Received: from hch by bombadil.infradead.org with local (Exim 4.92.3 #3 (Red Hat Linux))
-        id 1j1mTG-0001mm-1q; Wed, 12 Feb 2020 07:30:06 +0000
-Date:   Tue, 11 Feb 2020 23:30:06 -0800
-From:   Christoph Hellwig <hch@infradead.org>
-To:     Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Cc:     David Sterba <dsterba@suse.cz>,
-        "linux-btrfs @ vger . kernel . org" <linux-btrfs@vger.kernel.org>,
-        Nikolay Borisov <nborisov@suse.com>,
-        Josef Bacik <josef@toxicpanda.com>
-Subject: Re: [PATCH v7 5/8] btrfs: use BIOs instead of buffer_heads from
- superblock writeout
-Message-ID: <20200212073006.GD30977@infradead.org>
-References: <20200212071704.17505-1-johannes.thumshirn@wdc.com>
- <20200212071704.17505-6-johannes.thumshirn@wdc.com>
+        id S1728406AbgBLHnm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 12 Feb 2020 02:43:42 -0500
+Received: from mx2.suse.de ([195.135.220.15]:39884 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727669AbgBLHnm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 12 Feb 2020 02:43:42 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 29D1EAEF6
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Feb 2020 07:43:41 +0000 (UTC)
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: relocation: Remove is_cowonly_root()
+Date:   Wed, 12 Feb 2020 15:43:31 +0800
+Message-Id: <20200212074331.32800-1-wqu@suse.com>
+X-Mailer: git-send-email 2.25.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20200212071704.17505-6-johannes.thumshirn@wdc.com>
-X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Looks good,
+This function is only used in read_fs_root(), which is just a wrapper of
+btrfs_get_fs_root().
 
-Reviewed-by: Christoph Hellwig <hch@lst.de>
+For all the mentioned essential roots except log root tree,
+btrfs_get_fs_root() has its own quick path to grab them from fs_info
+directly, thus no need for key.offset modification.
+
+For subvolume trees, btrfs_get_fs_root() with key.offset == -1 is
+completely fine.
+
+For log trees and log root tree, it's impossible to hit them, as for
+relocation all backrefs are fetched from commit root, which never
+records log tree blocks.
+
+Log tree blocks either get freed in regular transaction commit, or
+replayed at mount time. At runtime we should never hit an backref for
+log tree in extent tree.
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/relocation.c | 20 +-------------------
+ 1 file changed, 1 insertion(+), 19 deletions(-)
+
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 9c68c0e42898..207442557ac4 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -505,21 +505,6 @@ static struct btrfs_root *find_reloc_root(struct reloc_control *rc,
+ 	return root;
+ }
+ 
+-static int is_cowonly_root(u64 root_objectid)
+-{
+-	if (root_objectid == BTRFS_ROOT_TREE_OBJECTID ||
+-	    root_objectid == BTRFS_EXTENT_TREE_OBJECTID ||
+-	    root_objectid == BTRFS_CHUNK_TREE_OBJECTID ||
+-	    root_objectid == BTRFS_DEV_TREE_OBJECTID ||
+-	    root_objectid == BTRFS_TREE_LOG_OBJECTID ||
+-	    root_objectid == BTRFS_CSUM_TREE_OBJECTID ||
+-	    root_objectid == BTRFS_UUID_TREE_OBJECTID ||
+-	    root_objectid == BTRFS_QUOTA_TREE_OBJECTID ||
+-	    root_objectid == BTRFS_FREE_SPACE_TREE_OBJECTID)
+-		return 1;
+-	return 0;
+-}
+-
+ static struct btrfs_root *read_fs_root(struct btrfs_fs_info *fs_info,
+ 					u64 root_objectid)
+ {
+@@ -527,10 +512,7 @@ static struct btrfs_root *read_fs_root(struct btrfs_fs_info *fs_info,
+ 
+ 	key.objectid = root_objectid;
+ 	key.type = BTRFS_ROOT_ITEM_KEY;
+-	if (is_cowonly_root(root_objectid))
+-		key.offset = 0;
+-	else
+-		key.offset = (u64)-1;
++	key.offset = (u64)-1;
+ 
+ 	return btrfs_get_fs_root(fs_info, &key, false);
+ }
+-- 
+2.25.0
+

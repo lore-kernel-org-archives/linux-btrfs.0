@@ -4,59 +4,59 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-5.2 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,
-	SPF_PASS,USER_AGENT_SANE_1 autolearn=unavailable autolearn_force=no
-	version=3.4.0
+	SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1D0E7C3B18C
-	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Feb 2020 16:17:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 48EFAC3B18C
+	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Feb 2020 16:20:23 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E83EC2073C
-	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Feb 2020 16:17:55 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2125F2073C
+	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Feb 2020 16:20:23 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="j9UNLAwB"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="KfMUo1Ab"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730515AbgBMQRz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 13 Feb 2020 11:17:55 -0500
-Received: from mail-qv1-f68.google.com ([209.85.219.68]:37637 "EHLO
-        mail-qv1-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728021AbgBMQRy (ORCPT
+        id S1729066AbgBMQUW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 13 Feb 2020 11:20:22 -0500
+Received: from mail-qt1-f195.google.com ([209.85.160.195]:43433 "EHLO
+        mail-qt1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727675AbgBMQUV (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 13 Feb 2020 11:17:54 -0500
-Received: by mail-qv1-f68.google.com with SMTP id m5so2864655qvv.4
-        for <linux-btrfs@vger.kernel.org>; Thu, 13 Feb 2020 08:17:53 -0800 (PST)
+        Thu, 13 Feb 2020 11:20:21 -0500
+Received: by mail-qt1-f195.google.com with SMTP id d18so4784650qtj.10
+        for <linux-btrfs@vger.kernel.org>; Thu, 13 Feb 2020 08:20:21 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=subject:to:cc:references:from:message-id:date:user-agent
          :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=szNWZ8nZIP9VqzjWfo1padC4dW5ZLKPqhH+3QbR9kl8=;
-        b=j9UNLAwB8efOOKnRVo8/347tTQ6Emo0KZLDuFkI/NfeB6/r7/kfh0s56f8K2fjDd2P
-         G0vDCCSUm8BYT/j+eXFHCbnElD1URx1QXqbdAPU1ahKgjFwZuQPFuu28qpAtFsnAnA6B
-         zF+Cp1O+FpbWDUMyU4kyY3p3gFKaIAwFEoHtqmEY0QQ6oIApksC9RtvejC3zvq6aLBuM
-         RQvdPtyj1dptfIt91qUGWHLJrGgYq8UkhmdRL8epPcYf0vieBEDSK5Erm3Y62ZxU9wfj
-         l7VsEAjb8b+sVW85cYmdPWA2z5pMfSqZFGbYRTlDsPv90ghNgie1UJkK+05DqLFx4QWo
-         RvRQ==
+        bh=uo7vejI/lsIvurQbZI0WXKj5IX0URkCLu86Ld4Lvlf8=;
+        b=KfMUo1AbfXNHH9jNSXtygbufhjygNrWsmz21oAZASLFWNFQ048l5k7FwChy7o6jbi9
+         j3EypP45rZCLDOVkAVliSRZ2ksdneLJjz/mWpzC2A6gxfgaP+bMzxOFpTWhce0Pw9lkO
+         HlystR7Ze/IiJnSRUHyxCUWGDT62g0E0BO/cgxfEuvbiYY7NpsGbx16bHmIXW2AbG1MS
+         TSJhJAzoaN22ez/l5BTOxUI9in2tO+0W4shTdFKXkapRGKtIG/6LYNtd7ztTVTPbTYm8
+         /zSU71SR0EX6OvZSJeYeimkrtILJPgo/TWtpvQwvrw7uQdLTCfLz8Cs1K/uC2ICytUWP
+         XSkw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:subject:to:cc:references:from:message-id:date
          :user-agent:mime-version:in-reply-to:content-language
          :content-transfer-encoding;
-        bh=szNWZ8nZIP9VqzjWfo1padC4dW5ZLKPqhH+3QbR9kl8=;
-        b=IZZQTGvPPhfLLlUmdHH1FpKWlTFKX17Pt0Et9xiDJDsiiudJ9JQAGmRCbegMIUQi/8
-         QXEbC9Lz+IBqx9deSboHM/HdjEmHK4DCf1UN3ZdLpO6LgFoOsDffuk+n3X41PaVd8BtZ
-         h7iQWwgmCJ08n/+LdRwcuxeRsmcT9AaemrwHKc+KecOnRQC0fFUJZoQOb5RckX/iOE8/
-         TeQYiSZGsR+XD1ds+wFHlveOAuDj8QEDZxFOepEA2OMtfyp64TuxRNT7DeIabIE7XSpO
-         nZymViGlGOzvB8wTjMtfhQ5WTkOsEOxjAilKzH1Gd1QSoFltP98q9K92Y68N+UouWM90
-         BIwQ==
-X-Gm-Message-State: APjAAAX/9DhxAsTTClULLVr2coDfefrCsldodUc7OJUbotyHtWY3XTwN
-        D7oKEnirGJOCxjGr3SIWkbeLgA==
-X-Google-Smtp-Source: APXvYqyhZ4YRD5YkR/framUUFq+P/Onh5045Ye4U5HO1QXpXQ4v+dlntPSiOqGYjMh0mf9shH9NbfA==
-X-Received: by 2002:a05:6214:4f0:: with SMTP id cl16mr12342474qvb.213.1581610673364;
-        Thu, 13 Feb 2020 08:17:53 -0800 (PST)
+        bh=uo7vejI/lsIvurQbZI0WXKj5IX0URkCLu86Ld4Lvlf8=;
+        b=iQlG79DictqjUcw2QnPBDFT4bm920wD0VB/+wFpY0tsddKnOfM0hZ/5+S4nW+OvqLo
+         P2FGpBVfObPdLfGSs+pVFn1qCUn/1qxZhxsGtygmZ88S1olZa5GdWL6339Wi4O5QCi5D
+         80+VlIKdPZeYorar+8qqoSjHST3iYhDQ9MXPLI/SGc9kC67A1j5vxHQRDG0E214HIRDp
+         pLa0nMDQOoSMf8W8om3ZxHYXRBB6JY6FhF1uLAsOdqjI1e/FoAyegwFhnysQUSnNHYYX
+         x5Zj/FjTsSBI/YwNBTOuFz78V1jhKY/YOkPgWRTDfGS8xaTyLbgtAwvwF2UESCEt3f3X
+         KtJA==
+X-Gm-Message-State: APjAAAWPc+gaQTe0XEsMDZBWExVi9Vt/ToAAdi/9r03D+8wrVSJt5T2v
+        4vVv6aJKDO9h3L24909lFwLedQ==
+X-Google-Smtp-Source: APXvYqxYxvRtF4CDIFErl2EmPOvPCVsRVD3GHR3YL0sO6L3Xf2557Kl2c4joh4LFcrtLHy0NlfCSTw==
+X-Received: by 2002:ac8:f63:: with SMTP id l32mr7868109qtk.327.1581610820589;
+        Thu, 13 Feb 2020 08:20:20 -0800 (PST)
 Received: from ?IPv6:2620:10d:c0a8:1102:ce0:3629:8daa:1271? ([2620:10d:c091:480::edcc])
-        by smtp.gmail.com with ESMTPSA id b12sm1566485qkl.0.2020.02.13.08.17.51
+        by smtp.gmail.com with ESMTPSA id j17sm1553846qke.69.2020.02.13.08.20.19
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 13 Feb 2020 08:17:52 -0800 (PST)
-Subject: Re: [PATCH v2 05/21] btrfs: introduce alloc_chunk_ctl
+        Thu, 13 Feb 2020 08:20:19 -0800 (PST)
+Subject: Re: [PATCH v2 06/21] btrfs: factor out init_alloc_chunk_ctl
 To:     Naohiro Aota <naohiro.aota@wdc.com>, linux-btrfs@vger.kernel.org,
         David Sterba <dsterba@suse.com>
 Cc:     Chris Mason <clm@fb.com>, Nikolay Borisov <nborisov@suse.com>,
@@ -66,14 +66,14 @@ Cc:     Chris Mason <clm@fb.com>, Nikolay Borisov <nborisov@suse.com>,
         Anand Jain <anand.jain@oracle.com>,
         linux-fsdevel@vger.kernel.org
 References: <20200212072048.629856-1-naohiro.aota@wdc.com>
- <20200212072048.629856-6-naohiro.aota@wdc.com>
+ <20200212072048.629856-7-naohiro.aota@wdc.com>
 From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <64b1ceac-b254-ce1e-6d6e-f75fc4929e12@toxicpanda.com>
-Date:   Thu, 13 Feb 2020 11:17:51 -0500
+Message-ID: <1d328222-7934-013b-0474-71cc2fca9123@toxicpanda.com>
+Date:   Thu, 13 Feb 2020 11:20:18 -0500
 User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:68.0)
  Gecko/20100101 Thunderbird/68.5.0
 MIME-Version: 1.0
-In-Reply-To: <20200212072048.629856-6-naohiro.aota@wdc.com>
+In-Reply-To: <20200212072048.629856-7-naohiro.aota@wdc.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
 Content-Transfer-Encoding: 7bit
@@ -83,12 +83,12 @@ List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 On 2/12/20 2:20 AM, Naohiro Aota wrote:
-> Introduce "struct alloc_chunk_ctl" to wrap needed parameters for the chunk
-> allocation.  This will be used to split __btrfs_alloc_chunk() into smaller
-> functions.
-> 
-> This commit folds a number of local variables in __btrfs_alloc_chunk() into
-> one "struct alloc_chunk_ctl ctl". There is no functional change.
+> Factor out init_alloc_chunk_ctl() from __btrfs_alloc_chunk(). This function
+> initialises parameters of "struct alloc_chunk_ctl" for allocation.
+> init_alloc_chunk_ctl() handles a common part of the initialisation to load
+> the RAID parameters from btrfs_raid_array.
+> init_alloc_chunk_ctl_policy_regular() decides some parameters for its
+> allocation.
 > 
 > Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 

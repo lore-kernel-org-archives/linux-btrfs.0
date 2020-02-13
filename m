@@ -7,65 +7,65 @@ X-Spam-Status: No, score=-9.5 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2A917C2BA83
-	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Feb 2020 15:58:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C04EAC2BA83
+	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Feb 2020 15:58:22 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id F08F920675
-	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Feb 2020 15:58:19 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 926E920675
+	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Feb 2020 15:58:22 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="WpNDW72b"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="Upwu5Xo/"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388205AbgBMP6T (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 13 Feb 2020 10:58:19 -0500
-Received: from esa2.hgst.iphmx.com ([68.232.143.124]:60885 "EHLO
+        id S2388219AbgBMP6W (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 13 Feb 2020 10:58:22 -0500
+Received: from esa2.hgst.iphmx.com ([68.232.143.124]:60891 "EHLO
         esa2.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728336AbgBMP6O (ORCPT
+        with ESMTP id S1729158AbgBMP6R (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 13 Feb 2020 10:58:14 -0500
+        Thu, 13 Feb 2020 10:58:17 -0500
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1581609541; x=1613145541;
+  t=1581609544; x=1613145544;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=FXI3x3SaaDXEeOo7oRhcIQP8lMflANgTphvOQOyVA3k=;
-  b=WpNDW72b+wBFgYOh+o4V28IZDrwABwrdDQxqTkXDs3woPb7gBAqE4TRD
-   9iA0SCu+VF7t+wHuXMEJi3nrnkJRpNi30pKfUUaWbbjGW7qys2j1SKbSU
-   oSwlUhpDVFn2p/+5V9xOyt1oYYn2Mkd6vDqxAnZayrHWrAdECt7F9uAJ3
-   HpS1LSeyh3lmhUpU4rlq9wTAndublGIH+vow9QgKgqODqOUcAvpH1dpQ5
-   XG64TGMcZcC/Hmlj+6HkdC4QZ0+rxbgKeYFzIpH0qsv+33gRHN39kThlx
-   3S8zYa02VSuqy0O9Yi50WRQ+huCee4IS9EuglAKHjpOb0haMHVFRhrxND
-   A==;
-IronPort-SDR: HF6NxTz+9h8n16+OhAKSrrWpZ+1dymA7kT7lOvgS6p199wkoY96xQfPkbrELyCdwaKNCfZsJLq
- 1jMNvrNAf+NU4/VxpMjiMEmd96SzNC/zvMws7s3AJGIXKBfh9M36rtk/eldfnzy/E4T6gZ3Hqf
- b4abQtNp7uHl4MDJvEnAs5PR1qY4fmzNwO0oBufXMmTqSOYcPr8KrtrEqHMHaIAHcJM48imVHw
- p/1+g5Kj4bo8QWQTXqycjA5uL1cpimKqYAsb6+G7cUr6RbVZTb/BCG+7Vwu4NDwWcI71TB5myq
- fao=
+  bh=325QAbuPh1UjGuykfs465BipbXIHHvqK9iVL+yKUCXc=;
+  b=Upwu5Xo/eUPtBLsW7e7lP+uhuUgYrw2It8TTvs36jWVyqYywxW85KdmS
+   qCD1e/ZDZMT/r5mDlxLRWAYYzP3SLw+FnY/UmmZBajVYP+d3ZPwTRmi7Z
+   pHjuJw5VrLwLPBQdaO3gDnkJ1jypITT85N5P6OApnzSi9dbahVkf9ItI9
+   9V0j2CO2YG7CoT9KpZg2YM8Xru5yOL6adL1kolSUzU+AA6wvyz5Q3ujSn
+   2Bd2jrfn+FEMEj/6bXtQF0TdGXPSIPNNEc8D5skO5dN0OyUcEbhd2BjdR
+   GUB1YPhicDIZQWuEo344ns+tQ69WhsDhZ9Vv6DVeERfLot3BuQf5HfH1h
+   g==;
+IronPort-SDR: FBbdBF4jyf9N2h/YO42+eZJ1whGedF8RSfgGA1HUQr/2gqMvEu+q4YAIwXc/yV1Fge7oaFFzO1
+ z8qW0nxI3AjyBYIlBip72xsT+zAPvoPWQOpGf39hyBJlMIHwBzgNUNQi3HE3DZNuJIZsZsU4PV
+ js3w4bKK2FJ6ERHl1ghdTgzuhXeLN9i3xcgrLTdrUdlFsAjB89NysMzO8/aUHTGQO3gPn4ghbt
+ 4n/KUMZTsU3a/81xTC4masKlJb797fWWZjPJ6VuIUBKZM4mJqpw/trX81GWjYHuLYOmLtxzVTu
+ Sf0=
 X-IronPort-AV: E=Sophos;i="5.70,437,1574092800"; 
-   d="scan'208";a="231587562"
+   d="scan'208";a="231587566"
 Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 13 Feb 2020 23:59:01 +0800
-IronPort-SDR: wJirmjZIGI1ov/M/XQyAq4dvvLGass54GyOkHhQW9DTQf6DCsuSmtbUZjjgtP4SjsRcnomqkJg
- n9o368sRB3ZJfxEEzcRy04NWv73e+UOZ/1iHT5eNpc2QbPTOmaQ2sUwbrn2k1P99bdXU34w8o5
- mXWAO5W8Y3uSj/wjPN8z1+6rtympptGQu3QJ/evRvgpK5nkJRn/NfZEz49ZpCAqmJi+IzsGW+3
- mjETxU3IlfIQnmzojmRxAVaM3PVsa95ecPkIeoPiXqzzEilOe1y2Yk7MmHaFhFCYjfcbwG+6jU
- HctOl7++5S0HOlc4gbSGRP5L
+  by ob1.hgst.iphmx.com with ESMTP; 13 Feb 2020 23:59:03 +0800
+IronPort-SDR: MoRVJ1vxXEVgfZqNeV4VzvcZD4GKNbxD3gAcsr6OsMFs7P9FjpRp8uKYYO9CjMoue2MOmK9NVB
+ /4Hk4QkMaTCAsF89D6K0RcFAzlmJcjaRhFYCJcF+INDMnvoDKD9mhZ+WhiKvjGaO0KTquofOWc
+ wnSIWm50VbnQHf4nKGRp86OAYbAQ6ZAoUPB6htbMQLHuKKPSz+6YYbwXZSvrlm5HWqJMlPaJUk
+ 6ab2b1tCDDROGAX86EhcM9ldC9liqFQUWh7wTJHCxxY4+nh7J4ZzJCxJvvGX4TZW7IZ3zhzLxk
+ UPfBAPSOkLW4M2+2LZcoE2Z5
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 13 Feb 2020 07:51:02 -0800
-IronPort-SDR: 3rta8Clgt7AmycDpzslvwwx8LvQK9QfFEh0HgYfTcwvYBnx3X9Gan7KYW1sTg0MXYSc6pOOO79
- 7ThzjCg5EsucIn917Amzq0XcJTo9QQD5/Oy70WXMrSxMUoy8FJqD2GTqrgxluHLuj7tMLdj8Us
- jhueZPXJPs1mwaxVhV7jKYfjGoc8WAXZTfmpJxtFEwXIFdROiQOYCe3DQ1tTniBjtvIgAe0qAK
- 1mEzmj04JUBJUgCGA8emzCgjMX/02FR54ZgVEF+0k2UJrMAL8vrECGO9/KehUXyRQBfb6XHoOy
- Ekc=
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 13 Feb 2020 07:51:03 -0800
+IronPort-SDR: GxkJRVeZVQwgwpex4FnDcH4HltvvxtDk/jYbLgklIfPc9E9fOL8MAjI0tEmD1swZ3zmJWXH+FJ
+ lcJjAme4927PvMAc6uzCnqoxmd3VrGdGB9kJ3mGeyQUUG3d8Z9Je+5MU45jGZ4GIGuHVWDtx52
+ s0/55QCjpDRlthlQnpCdlgANbwMfl5ZHrKbLriozsw8ApD+I3t3iaaeTSFggT6b0lN+bnz4f0M
+ QMg0sTYrg+/g5ej4TwezQXKsP2EOI+fw3RIu017HhFeR75i76cN1vvMGcx4DRo5Y1OIHE5hDKZ
+ z7A=
 WDCIronportException: Internal
 Received: from unknown (HELO redsun60.ssa.fujisawa.hgst.com) ([10.149.66.36])
-  by uls-op-cesaip02.wdc.com with ESMTP; 13 Feb 2020 07:58:14 -0800
+  by uls-op-cesaip02.wdc.com with ESMTP; 13 Feb 2020 07:58:15 -0800
 From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
 To:     David Sterba <dsterba@suse.cz>
 Cc:     "linux-btrfs @ vger . kernel . org" <linux-btrfs@vger.kernel.org>,
         Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH v2 1/5] btrfs: free allocated pages on failed cache write-out
-Date:   Fri, 14 Feb 2020 00:57:59 +0900
-Message-Id: <20200213155803.14799-2-johannes.thumshirn@wdc.com>
+Subject: [PATCH v2 3/5] btrfs: make the uptodate argument of io_ctl_add_pages() boolean.
+Date:   Fri, 14 Feb 2020 00:58:01 +0900
+Message-Id: <20200213155803.14799-4-johannes.thumshirn@wdc.com>
 X-Mailer: git-send-email 2.24.1
 In-Reply-To: <20200213155803.14799-1-johannes.thumshirn@wdc.com>
 References: <20200213155803.14799-1-johannes.thumshirn@wdc.com>
@@ -76,84 +76,44 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-When we fail to write out a dirty block group, we leak the pages allocated
-for a block-group's io_ctl. This can be seen with generic/475 and kmemleak
-turned on:
-
-unreferenced object 0xffff8882249c9000 (size 128):
-  comm "fsstress", pid 1791, jiffies 4294902054 (age 32.100s)
-  hex dump (first 32 bytes):
-    80 0e 42 08 00 ea ff ff 00 0d 42 08 00 ea ff ff  ..B.......B.....
-    00 eb 0e 08 00 ea ff ff 00 e8 0e 08 00 ea ff ff  ................
-  backtrace:
-    [<00000000cd20c449>] io_ctl_init+0xa2/0x110 [btrfs]
-    [<00000000281944cc>] __btrfs_write_out_cache+0x71/0x410 [btrfs]
-    [<000000005d518c07>] btrfs_write_out_cache+0x82/0xd0 [btrfs]
-    [<000000002bb2675c>] btrfs_start_dirty_block_groups+0x1f6/0x440 [btrfs]
-    [<000000004f955ad0>] btrfs_commit_transaction+0xb7/0x970 [btrfs]
-    [<00000000a69c8761>] btrfs_sync_file+0x28f/0x390 [btrfs]
-    [<00000000fa939e06>] do_fsync+0x33/0x70
-    [<000000002ff0388b>] __x64_sys_fdatasync+0xe/0x20
-    [<00000000fdbf32d4>] do_syscall_64+0x43/0x120
-    [<00000000b782d265>] entry_SYSCALL_64_after_hwframe+0x44/0xa9
-
-When cleaning up a block group release all allocated pages. As the data in
-the pages is already lost, we can at least free the memory occupied by
-them.
+Make the uptodate argument of io_ctl_add_pages() boolean.
 
 Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
- fs/btrfs/disk-io.c          | 6 ++++++
- fs/btrfs/free-space-cache.c | 6 ++++++
- fs/btrfs/free-space-cache.h | 1 +
- 3 files changed, 13 insertions(+)
+ fs/btrfs/free-space-cache.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 018681ec159b..b79c194b1126 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -4460,6 +4460,12 @@ static void btrfs_cleanup_bg_io(struct btrfs_block_group *cache)
- {
- 	struct inode *inode;
- 
-+	/*
-+	 * If we end up here, we want the pages to be already released
-+	 * otherwise we'll leak them.
-+	 */
-+	btrfs_drop_dirty_io_ctl(&cache->io_ctl);
-+
- 	inode = cache->io_ctl.inode;
- 	if (inode) {
- 		invalidate_inode_pages2(inode->i_mapping);
 diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 0598fd3c6e3f..3c7660b04a81 100644
+index 657a969a93ad..8da592eaf6f8 100644
 --- a/fs/btrfs/free-space-cache.c
 +++ b/fs/btrfs/free-space-cache.c
-@@ -371,6 +371,12 @@ static void io_ctl_drop_pages(struct btrfs_io_ctl *io_ctl)
- 	}
+@@ -377,7 +377,7 @@ void btrfs_drop_dirty_io_ctl(struct btrfs_io_ctl *io_ctl)
+ 	io_ctl_free(io_ctl);
  }
  
-+void btrfs_drop_dirty_io_ctl(struct btrfs_io_ctl *io_ctl)
-+{
-+	io_ctl_drop_pages(io_ctl);
-+	io_ctl_free(io_ctl);
-+}
-+
- static int io_ctl_prepare_pages(struct btrfs_io_ctl *io_ctl, struct inode *inode,
- 				int uptodate)
+-static int io_ctl_prepare_pages(struct btrfs_io_ctl *io_ctl, int uptodate)
++static int io_ctl_prepare_pages(struct btrfs_io_ctl *io_ctl, bool uptodate)
  {
-diff --git a/fs/btrfs/free-space-cache.h b/fs/btrfs/free-space-cache.h
-index 2e0a8077aa74..cbe25c31041d 100644
---- a/fs/btrfs/free-space-cache.h
-+++ b/fs/btrfs/free-space-cache.h
-@@ -147,6 +147,7 @@ int btrfs_trim_block_group_extents(struct btrfs_block_group *block_group,
- int btrfs_trim_block_group_bitmaps(struct btrfs_block_group *block_group,
- 				   u64 *trimmed, u64 start, u64 end, u64 minlen,
- 				   u64 maxlen, bool async);
-+void btrfs_drop_dirty_io_ctl(struct btrfs_io_ctl *io_ctl);
+ 	struct page *page;
+ 	struct inode *inode = io_ctl->inode;
+@@ -738,7 +738,7 @@ static int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
  
- /* Support functions for running our sanity tests */
- #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
+ 	readahead_cache(inode);
+ 
+-	ret = io_ctl_prepare_pages(&io_ctl, 1);
++	ret = io_ctl_prepare_pages(&io_ctl, true);
+ 	if (ret)
+ 		goto out;
+ 
+@@ -1297,7 +1297,7 @@ static int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
+ 	}
+ 
+ 	/* Lock all pages first so we can lock the extent safely. */
+-	ret = io_ctl_prepare_pages(io_ctl, 0);
++	ret = io_ctl_prepare_pages(io_ctl, false);
+ 	if (ret)
+ 		goto out_unlock;
+ 
 -- 
 2.24.1
 

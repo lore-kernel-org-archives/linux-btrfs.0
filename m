@@ -7,58 +7,58 @@ X-Spam-Status: No, score=-9.5 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B238DC2BA83
-	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Feb 2020 16:00:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D27EDC3B18C
+	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Feb 2020 16:00:31 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 893D420675
-	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Feb 2020 16:00:20 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id AB3262073C
+	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Feb 2020 16:00:31 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="DGyIswtj"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="ppNN4ZeM"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728920AbgBMQAT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 13 Feb 2020 11:00:19 -0500
-Received: from esa6.hgst.iphmx.com ([216.71.154.45]:43900 "EHLO
+        id S1728778AbgBMPYr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 13 Feb 2020 10:24:47 -0500
+Received: from esa6.hgst.iphmx.com ([216.71.154.45]:43897 "EHLO
         esa6.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728786AbgBMPYs (ORCPT
+        with ESMTP id S1728768AbgBMPYq (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 13 Feb 2020 10:24:48 -0500
+        Thu, 13 Feb 2020 10:24:46 -0500
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1581607489; x=1613143489;
+  t=1581607486; x=1613143486;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=TX/uUxZ/HGtxEWFTBh8wXf8Z714XLMpbfm7PHCdgo/k=;
-  b=DGyIswtj74MFJ9+aFN4aKXjNLVvIQs6mGqOkFra79KKUW94meOUtvNVk
-   y6GDJDynJedoxrIkhRRCw/X85cuOZnhy2SlcORyI8Mkm7b5tz7VzPuRmd
-   oKv1ov+lt9ZZOMOK+6oWYjPbWpe1Q/WGU/VaCKuGAjrjUOEhM4L1Je/ZX
-   X8HKICR+FZCQLVFCMvKFAQ3l+/rNMH3xlUYBX7PV0EvWz7+ezQBKmem0J
-   SCNFKu1MYI2RFsH9zDd1AvuHZIJiVQkPgoJMKzbKMq55nHRRarsMoNmRC
-   /cd43p0N4TOaCIyY+nmfAt8J60yVrGIXrWLl82/Y4Qdvni4jbDRLjZUA2
+  bh=z2X4aHgnvPPXZMjaOmCVZ7Drr3KtgumDXJtALPCwaAw=;
+  b=ppNN4ZeMUPRP0UOdmOjf4asJ1cXjjx41KbPKSFtLhxL5CgFxN31Z+QDB
+   glnIdzb59gLYs/MmhCSAOUJ+VOO4q6J3rgHZxeb7auGsspyXFjLmK1iMy
+   m73rEH6WP0b6Fog2t5r6g2S+0bTCA57YPWFHsYC2I/AjWIiu3ljGyhnqq
+   1spz2LLSKJz+rzLa8mhsgImVbHpJGuvd4LVGeeUIgUFjAgdgbvr5FW9xE
+   oXJvbq1bB7FmL52+T0McXZOUrf64PYVKpznwnFDKg/TlZk5Awxw5uYgkc
+   FZSz8F4C9pIjkHwjwrYfDa20iMyaV0QwhDUCXWnCdm1YCoR0evpDnw/Dg
    g==;
-IronPort-SDR: OUBna9y+40mK5ycOXP22A0cIFTMOPLe7yqGC+ZEw0paVKwh4WefEW0ZXvjjALbJWCa/LrPONfH
- 040pCOJMxJUAGKG76L7vcdNfrQbDVjY5osiYL23MDrDfPwXkYu0ME9sTSjtO4toKoJgSunuALY
- ej1ez3FZ7NzC0CpkwReKn8oLRoLlz/cQMPyPp621IaDHo+5F51siEcafrO0a42uVDib9inykE2
- NJ8VXXj6u6pSiflPW3xajN3GSBPbtryWQdjV1c/AklSkFpdLsWX4jxUOhSvWPlHozG/rtE82fZ
- aUA=
+IronPort-SDR: xZ9K+0NU4mkjc/KSisU0uv4sU5mB1GbbtBlTgsRAuZuV5hT9U/IzMkyef2IpeSUAVn+UrP+ZJ0
+ S/BuCoJcGu84eD0wGSHjidRs+OMXXQzpDEkAIuXmftdj0oJdnksuo9siOarfWLD1ZI2TQk0B87
+ VQur88veppqbJ+k1/YBKw1CNmKAnCknWvPRSHxlsAf7d3Q2ODfVKvIkWSqZluEraXSevtjmIW5
+ pvabpY0k/3hDkQgVOunbJ29niKjlsyFr8YTzzlValrXe+c1y71D4LWRdw+2/fxd5k/+WF79gO/
+ 548=
 X-IronPort-AV: E=Sophos;i="5.70,437,1574092800"; 
-   d="scan'208";a="131227886"
+   d="scan'208";a="131227880"
 Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 13 Feb 2020 23:24:48 +0800
-IronPort-SDR: knDBsoQAyPOW4NNHSx369OaZgRY8XW5Wr63UZzl1IygPZoFyPYKJ18+DqycLX11KzsLDAWcfUd
- ixxcrD5ms/xhsV9230KlgmwhNupArQln7+AWTh6AzMbW+ao1mP5VehjaTL8sBeB4UX/HYbNCIO
- pUeW+2eQLbqjFRpAlBDqf84CR+Baykz8iQm85LT/gUIm251slsehdfn90Xs+eeMOWbVfSyNBot
- RjEGueA6fqSSKzbJvLw6SAK2fLrQUd3ZIbAqziN9key9yxQVXhKCrluQp84LK264eoj0en5iwD
- 6lKBCg8jKMfZfUmAzfSXJrYv
+  by ob1.hgst.iphmx.com with ESMTP; 13 Feb 2020 23:24:46 +0800
+IronPort-SDR: tZKuc38yjsFeyw7Tv+ltvr7dCOgccyJA7W4zgSNSV8MjzKrzfgBXG8eplqT0Xe3TTY2SusEAh0
+ r07AVV/a7V1hZO31vJi9amgk6lHQj5IXjDw8MsOGo8UAj0H0OHIVHkyFPSTAqi435TRYgVmCh1
+ 9xUaBU+WUnHk7CoJQB1iWE3EAyznpIEWzebIsvYtQ0TXwcBXB5ZSOCabI4wW1YqymjSBirm+5e
+ cpTVdcwMKBak87ZS+RC3GsGP5dHTTYRcY5g4y+lhMjPdT3aJhTddZJB69Lq9ZlntjirUWyu4KO
+ JsDFC1imrkf6v944P2tIQkTX
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 13 Feb 2020 07:17:35 -0800
-IronPort-SDR: PApH0gWMRuWF4ePqWnpIg0HUrwg04dF0bb2dRlLhuvoY1HgyHTxymivO4kwzQA+5q07AuQt3xS
- U7oRHdPb3VGZXujGROJfYzNp/THCucbkewUECTucFNwlYo5LqyROKObzsIrJwsUED8/LVHgBzf
- I62qyph8AcEja9LAW4IgA7QV72RkIwJ2Mf4/6JsuiKDHdpuYEHB9HIPWLljxlT2jr4n+TdQzen
- e1EVrcaSWP8IadpZQlHb09dvYvi1AxX24F+PSXyZhinlhbSDHVfDgbuMTptyHMVjg8rv8hv0sa
- Dm0=
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 13 Feb 2020 07:17:32 -0800
+IronPort-SDR: lFZSdDoUYaHQ+59+gWVYVyPUayplgAmMZJEfPDBOZw5XJbWROBrmFG+er90p+fbGSPgjM37x/K
+ iqyjCOYbGp63YHLIb0eJFW9cvQHV0rN79Ugv21tjM8hQolZR3NWiazVFPJtaA9CRQYsxTJGIVm
+ NKSQD+pSpUumfupgVZFRbXeSd/ZDWnzPLKszrSDkFltzooYddy7IgtjwVTmxNpHqPXiWBfluX6
+ s81nlNfWUuVPQPnwwN4a+y8s6j+VMs3mBuEAGuoBrFH8SZgnZCagM9BeiS3mnq1GKk/KoIHVwN
+ X/A=
 WDCIronportException: Internal
 Received: from unknown (HELO redsun60.ssa.fujisawa.hgst.com) ([10.149.66.36])
-  by uls-op-cesaip02.wdc.com with ESMTP; 13 Feb 2020 07:24:46 -0800
+  by uls-op-cesaip02.wdc.com with ESMTP; 13 Feb 2020 07:24:44 -0800
 From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
 To:     David Sterba <dsterba@suse.cz>
 Cc:     Nikolay Borisov <nborisov@suse.com>,
@@ -66,9 +66,9 @@ Cc:     Nikolay Borisov <nborisov@suse.com>,
         "linux-btrfs @ vger . kernel . org" <linux-btrfs@vger.kernel.org>,
         Christoph Hellwig <hch@lst.de>,
         Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH v8 3/8] btrfs: reduce scope of btrfs_scratch_superblocks()
-Date:   Fri, 14 Feb 2020 00:24:31 +0900
-Message-Id: <20200213152436.13276-4-johannes.thumshirn@wdc.com>
+Subject: [PATCH v8 1/8] btrfs: Export btrfs_release_disk_super
+Date:   Fri, 14 Feb 2020 00:24:29 +0900
+Message-Id: <20200213152436.13276-2-johannes.thumshirn@wdc.com>
 X-Mailer: git-send-email 2.24.1
 In-Reply-To: <20200213152436.13276-1-johannes.thumshirn@wdc.com>
 References: <20200213152436.13276-1-johannes.thumshirn@wdc.com>
@@ -79,114 +79,42 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-btrfs_scratch_superblocks() isn't used anywhere outside volumes.c so
-remove it from the header file and mark it as static.
+From: Nikolay Borisov <nborisov@suse.com>
 
-Also move it above it's callers so we don't need a forward declaration.
+Preparatory patch for removal of buffer_head usage in btrfs.
 
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-
 ---
-
-Changes to v7:
-- Remove forward declaration of btrfs_scratch_superblocks() (Nikolay)
-- Reword subject (hch)
----
- fs/btrfs/volumes.c | 61 +++++++++++++++++++++++-----------------------
- fs/btrfs/volumes.h |  1 -
- 2 files changed, 31 insertions(+), 31 deletions(-)
+ fs/btrfs/volumes.c | 2 +-
+ fs/btrfs/volumes.h | 1 +
+ 2 files changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 620794f1ea64..461196b03b6c 100644
+index b092021e41e9..6ebdd95b798d 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -1948,6 +1948,37 @@ static u64 btrfs_num_devices(struct btrfs_fs_info *fs_info)
- 	return num_devices;
+@@ -1247,7 +1247,7 @@ int btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
+ 	return ret;
  }
  
-+static void btrfs_scratch_superblocks(struct block_device *bdev,
-+				      const char *device_path)
-+{
-+	struct buffer_head *bh;
-+	struct btrfs_super_block *disk_super;
-+	int copy_num;
-+
-+	if (!bdev)
-+		return;
-+
-+	for (copy_num = 0; copy_num < BTRFS_SUPER_MIRROR_MAX;
-+		copy_num++) {
-+
-+		if (btrfs_read_dev_one_super(bdev, copy_num, &bh))
-+			continue;
-+
-+		disk_super = (struct btrfs_super_block *)bh->b_data;
-+
-+		memset(&disk_super->magic, 0, sizeof(disk_super->magic));
-+		set_buffer_dirty(bh);
-+		sync_dirty_buffer(bh);
-+		brelse(bh);
-+	}
-+
-+	/* Notify udev that device has changed */
-+	btrfs_kobject_uevent(bdev, KOBJ_CHANGE);
-+
-+	/* Update ctime/mtime for device path for libblkid */
-+	update_dev_time(device_path);
-+}
-+
- int btrfs_rm_device(struct btrfs_fs_info *fs_info, const char *device_path,
- 		u64 devid)
+-static void btrfs_release_disk_super(struct page *page)
++void btrfs_release_disk_super(struct page *page)
  {
-@@ -7316,36 +7347,6 @@ int btrfs_get_dev_stats(struct btrfs_fs_info *fs_info,
- 	return 0;
- }
- 
--void btrfs_scratch_superblocks(struct block_device *bdev, const char *device_path)
--{
--	struct buffer_head *bh;
--	struct btrfs_super_block *disk_super;
--	int copy_num;
--
--	if (!bdev)
--		return;
--
--	for (copy_num = 0; copy_num < BTRFS_SUPER_MIRROR_MAX;
--		copy_num++) {
--
--		if (btrfs_read_dev_one_super(bdev, copy_num, &bh))
--			continue;
--
--		disk_super = (struct btrfs_super_block *)bh->b_data;
--
--		memset(&disk_super->magic, 0, sizeof(disk_super->magic));
--		set_buffer_dirty(bh);
--		sync_dirty_buffer(bh);
--		brelse(bh);
--	}
--
--	/* Notify udev that device has changed */
--	btrfs_kobject_uevent(bdev, KOBJ_CHANGE);
--
--	/* Update ctime/mtime for device path for libblkid */
--	update_dev_time(device_path);
--}
--
- /*
-  * Update the size and bytes used for each device where it changed.  This is
-  * delayed since we would otherwise get errors while writing out the
+ 	kunmap(page);
+ 	put_page(page);
 diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index b7f2edbc6581..a3d86ee6a883 100644
+index 690d4f5a0653..b7f2edbc6581 100644
 --- a/fs/btrfs/volumes.h
 +++ b/fs/btrfs/volumes.h
-@@ -473,7 +473,6 @@ int btrfs_run_dev_stats(struct btrfs_trans_handle *trans);
- void btrfs_rm_dev_replace_remove_srcdev(struct btrfs_device *srcdev);
- void btrfs_rm_dev_replace_free_srcdev(struct btrfs_device *srcdev);
- void btrfs_destroy_dev_replace_tgtdev(struct btrfs_device *tgtdev);
--void btrfs_scratch_superblocks(struct block_device *bdev, const char *device_path);
- int btrfs_is_parity_mirror(struct btrfs_fs_info *fs_info,
- 			   u64 logical, u64 len);
- unsigned long btrfs_full_stripe_len(struct btrfs_fs_info *fs_info,
+@@ -483,6 +483,7 @@ int btrfs_finish_chunk_alloc(struct btrfs_trans_handle *trans,
+ int btrfs_remove_chunk(struct btrfs_trans_handle *trans, u64 chunk_offset);
+ struct extent_map *btrfs_get_chunk_map(struct btrfs_fs_info *fs_info,
+ 				       u64 logical, u64 length);
++void btrfs_release_disk_super(struct page *page);
+ 
+ static inline void btrfs_dev_stat_inc(struct btrfs_device *dev,
+ 				      int index)
 -- 
 2.24.1
 

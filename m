@@ -7,62 +7,61 @@ X-Spam-Status: No, score=-9.7 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 05CABC3B189
-	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Feb 2020 15:47:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2414DC2BA83
+	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Feb 2020 15:47:47 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D1E8F20661
-	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Feb 2020 15:47:44 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id EC966217F4
+	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Feb 2020 15:47:46 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="owBk+r/w"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="PurAWdjA"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729342AbgBMPro (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 13 Feb 2020 10:47:44 -0500
-Received: from mail-qk1-f196.google.com ([209.85.222.196]:39245 "EHLO
-        mail-qk1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729392AbgBMPri (ORCPT
+        id S1729400AbgBMPrp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 13 Feb 2020 10:47:45 -0500
+Received: from mail-qv1-f67.google.com ([209.85.219.67]:38480 "EHLO
+        mail-qv1-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1729024AbgBMPro (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 13 Feb 2020 10:47:38 -0500
-Received: by mail-qk1-f196.google.com with SMTP id w15so6089163qkf.6
-        for <linux-btrfs@vger.kernel.org>; Thu, 13 Feb 2020 07:47:38 -0800 (PST)
+        Thu, 13 Feb 2020 10:47:44 -0500
+Received: by mail-qv1-f67.google.com with SMTP id g6so2819818qvy.5
+        for <linux-btrfs@vger.kernel.org>; Thu, 13 Feb 2020 07:47:42 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=vC1p4faqe5ftKr0MQUOFDv6QU+rKjzLAO2BlnoeynwU=;
-        b=owBk+r/wsS1yoP4TUG/BbFjBmbA29zXFfW4yL8XBeI0Ef9CTUoEjIrKU0SDy78lebz
-         FNErSdJsDX3Aglhw9amPKbB/GghluDTQMmCUbrDC+UH81WBTMyFGIlHB74iYizAjO+eZ
-         nIhfvAaLv3Eg7/kuvdFDn0q6BMlT5T6p8BbAaEpS3Hfb96WHa184inKp449TodSIyTPC
-         F96n6pzmofBPsi81Da3Pjsk/ge5P08v5/Z2VMnOsYWVyN8XwdH29q+VSS8l8kQRyhNX4
-         ciNLunzVI7rM5tgiNa+WhnFBRrRNtnbFg4rKZavdhmIFucQ9UXWzwyyRVksihUPgpGJA
-         mnCg==
+        bh=zaenaX+MsEq5QFPOTT1r8BMG2JGhZph2jZ8eABR49Lw=;
+        b=PurAWdjAhLNhp5ZZ1i0j0jlftx5W4o/NKzhod/ol2flWEhdHZSMqs7LQ4EDWGE3rTV
+         WurHdR4IVvK43lqDsheKyzTkLEjd5Rm1sXvnmfENAGhIk8a7Sy+e4i765PKA1yXftCys
+         YAk8ejYRMBkubKH3M8e/EmA2AK3KybGKiGj6NioQ6CoQsypVUW/RdjhysA+19z2ncdIj
+         klEtSmHL+i0vj9zDW/SmlnOW6ITssuYz2xwyqc4Zd/K4wsPH8VvuAaAUDPErDCt1sGv4
+         boLk/zBqxBCTSBv1JeF0YO10u5u2twkc8hJmzia75sKVD+T2WA3Grauzr+1HfoQ81hs7
+         F7Ow==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=vC1p4faqe5ftKr0MQUOFDv6QU+rKjzLAO2BlnoeynwU=;
-        b=CgUg1TH2diM6Lcq+G8XF86Hp9YI+k+5C1MjtW7EN9KKNfxBhTIqGtgeHu2soK50neA
-         +iW7jyfpauvsPFLa/1TVr06pqzQGuR2sLE/jRYSfoF35avGVHAlgth0ofr5vGdKDj8i3
-         61rR7/CKK7/RNr9lZfZgRoXV5t4Oy/N24O7Zj5sagP2jvf4+wk0wg4nk++As03J4BiVQ
-         2VSQRwT7KpwvvPZ5gs7LgsrlTASaIypjZmvunyd4bcprXZwvbuhaZ7MBfm/ijXzdjxJC
-         FsYhdiZKQqgM7bheMDIrvKcph9fcPBQCrZvKMSjD0uAkLNYYRmgn7NXetopaXgq/vcLE
-         M4Fw==
-X-Gm-Message-State: APjAAAU8H7vTO9AWf+uN3j5Paztx7vHxcIkbB68T6ZTa6uLyNDHazgYC
-        +vdTGOdGEyEELrAv0hxO4SyMEQJNzD0=
-X-Google-Smtp-Source: APXvYqwimrHga8MOEWpdk9JwMQ7eeR0+g/TqGaitcLKUMqu8DvYizhhPQY54JxZhTHjVgRC/iZ/9Lw==
-X-Received: by 2002:a37:9407:: with SMTP id w7mr10872300qkd.55.1581608857139;
-        Thu, 13 Feb 2020 07:47:37 -0800 (PST)
+        bh=zaenaX+MsEq5QFPOTT1r8BMG2JGhZph2jZ8eABR49Lw=;
+        b=LD/0vA5iHd3ll/0H0J7Q8sEFrUEOaqz6LfHwPqjRLil1B20htbTSEltG+L54vbSoxw
+         A8XpxhfsKXgH0Hi/2uraGy6qvZFKgiuZ7nJYr6RQdpZ4lDqpqRZXDZxRkFaJ1SbL/mEu
+         1KtrYSPyYr1ZMZO94x/ftoM8FACNNNzL5NptIMUKUe34VBmMMoT2IYzRWOyVp1ptdnI9
+         +/JZVvXMdTuUuBccO6q6Gn+ouJ5LUNHgEclgsgFvRWjhFudoNC1DBlLobetaVh22+mFX
+         s3IE4LvH75s/3+EhAWM+H8gcFE+z33dCQ9dhhTfO5EEA0vSwfeF6F0q5tNDo4BjSFZ4L
+         wJZQ==
+X-Gm-Message-State: APjAAAXw+OrsQohErJ4udLbpr6YOpP+Af3CjohffXejSFTKi1HFlnDXv
+        MUzyD8Yz/Iq1MGWnWYk7czJZG7RXPys=
+X-Google-Smtp-Source: APXvYqzHMtcvEQTdpfoI52DldnGy1ozBVp89EUXulKJRresLrm5H09YfwMQAn8Cv9wDSgVgZ+Z3PvA==
+X-Received: by 2002:a0c:ead1:: with SMTP id y17mr11595967qvp.210.1581608861953;
+        Thu, 13 Feb 2020 07:47:41 -0800 (PST)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id x197sm1536700qkb.28.2020.02.13.07.47.35
+        by smtp.gmail.com with ESMTPSA id q6sm1468296qkm.46.2020.02.13.07.47.40
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 13 Feb 2020 07:47:35 -0800 (PST)
+        Thu, 13 Feb 2020 07:47:40 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Cc:     Nikolay Borisov <nborisov@suse.com>,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-        Qu Wenruo <wqu@suse.com>
-Subject: [PATCH 1/4] btrfs: set fs_root = NULL on error
-Date:   Thu, 13 Feb 2020 10:47:28 -0500
-Message-Id: <20200213154731.90994-2-josef@toxicpanda.com>
+Cc:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+        Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <wqu@suse.com>
+Subject: [PATCH 3/4] btrfs: handle logged extent failure properly
+Date:   Thu, 13 Feb 2020 10:47:30 -0500
+Message-Id: <20200213154731.90994-4-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.24.1
 In-Reply-To: <20200213154731.90994-1-josef@toxicpanda.com>
 References: <20200213154731.90994-1-josef@toxicpanda.com>
@@ -73,31 +72,37 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-While running my error injection script I hit a panic when we tried to
-clean up the fs_root when free'ing the fs_root.  This is because
-fs_info->fs_root == PTR_ERR(-EIO), which isn't great.  Fix this by
-setting fs_info->fs_root = NULL; if we fail to read the root.
+If we're allocating a logged extent we attempt to insert an extent
+record for the file extent directly.  We increase
+space_info->bytes_reserved, because the extent entry addition will call
+btrfs_update_block_group(), which will convert the ->bytes_reserved to
+->bytes_used.  However if we fail at any point while inserting the
+extent entry we will bail and leave space on ->bytes_reserved, which
+will trigger a WARN_ON() on umount.  Fix this by pinning the space if we
+fail to insert, which is what happens in every other failure case that
+involves adding the extent entry.
 
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 Reviewed-by: Qu Wenruo <wqu@suse.com>
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/disk-io.c | 1 +
- 1 file changed, 1 insertion(+)
+ fs/btrfs/extent-tree.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index eb441fa3711b..5b6140482cef 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3260,6 +3260,7 @@ int __cold open_ctree(struct super_block *sb,
- 	if (IS_ERR(fs_info->fs_root)) {
- 		err = PTR_ERR(fs_info->fs_root);
- 		btrfs_warn(fs_info, "failed to read fs tree: %d", err);
-+		fs_info->fs_root = NULL;
- 		goto fail_qgroup;
- 	}
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index c43acb329fa6..2b4c3ca5e651 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4430,6 +4430,8 @@ int btrfs_alloc_logged_file_extent(struct btrfs_trans_handle *trans,
  
+ 	ret = alloc_reserved_file_extent(trans, 0, root_objectid, 0, owner,
+ 					 offset, ins, 1);
++	if (ret)
++		btrfs_pin_extent(fs_info, ins->objectid, ins->offset, 1);
+ 	btrfs_put_block_group(block_group);
+ 	return ret;
+ }
 -- 
 2.24.1
 

@@ -2,160 +2,98 @@ Return-Path: <SRS0=OHkO=4B=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.5 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_GIT autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.2 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,
+	SPF_PASS,USER_AGENT_SANE_1 autolearn=unavailable autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D594DC2BA83
-	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Feb 2020 16:00:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1D0E7C3B18C
+	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Feb 2020 16:17:56 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id ADF592073C
-	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Feb 2020 16:00:46 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E83EC2073C
+	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Feb 2020 16:17:55 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="Lt9CGOHN"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="j9UNLAwB"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730082AbgBMQAe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 13 Feb 2020 11:00:34 -0500
-Received: from esa6.hgst.iphmx.com ([216.71.154.45]:43895 "EHLO
-        esa6.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728206AbgBMPYp (ORCPT
+        id S1730515AbgBMQRz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 13 Feb 2020 11:17:55 -0500
+Received: from mail-qv1-f68.google.com ([209.85.219.68]:37637 "EHLO
+        mail-qv1-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728021AbgBMQRy (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 13 Feb 2020 10:24:45 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1581607485; x=1613143485;
-  h=from:to:cc:subject:date:message-id:mime-version:
-   content-transfer-encoding;
-  bh=qdaUHDz78Va59/mVTsP6Q8kl4bUPU2oD+RDwn42wdx8=;
-  b=Lt9CGOHN642XPlfK4t4U59/ICF8bf0A1KhyDl5OlrxFBlQLacoInYF+A
-   k5D4JNPlRVD4/H1at57Ao5PLtO9iEQ6qUJH3n+Oi9C09m25jMie9out0f
-   oB/vl3xa7VJZ8gdSiCvS8NJax1jRUvp2OhzlLU5JnGMDiKHwt2P4Phxun
-   xEhodlFdCFZCCwHFZZGs+HEuMxhaRsyAmpEQShfpviPIvzPLN4A17WVI9
-   aPOv7BlYf6vn2y+ipI+2gNiz4Vt8S5l0jo2MGV4toAqiaMPuyP0Zf8wB3
-   qufBHA9nKryzSSBH1oNs1PL8Ro0QGD0ivoCgxPAjC1awDK3rhNMzBkfnt
-   w==;
-IronPort-SDR: sKKgogdmUfmhtTFFPmegflxDm/IAE31xuCTvcNq5W6znTacPJ5Ms75rU6XqXzWtR5yg1swoPyw
- +DhxVEuUa/NZ5eRuHZjx3kuiBh0TG2oU41Ig3xcvT11dNt7vFKRBbyfAHPrRwfG6zq8lLn8oot
- TyhCCXh+nM+SSa3GOtsonYad4ukLJ1KzqJWwaFvRYl1mWUgZIU1rDY2kkqB/cgn2fhtXHrvPhg
- sDU3RT2iUcH/N1n1uSfZWGw4cmqOU3ZtRzdgKLICDrcVueDlqJawtwM5a5FlTUin791ltGLPJL
- Uxk=
-X-IronPort-AV: E=Sophos;i="5.70,437,1574092800"; 
-   d="scan'208";a="131227877"
-Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 13 Feb 2020 23:24:45 +0800
-IronPort-SDR: 50Y3Jg8SZoCTaNxqOCqFMFLm/CIOCbngIcET6220zXjG/moXcif9RLix6Jm6sXvk5td1cx1WaX
- mLBL1Q9AmGo55Onbc0A5GFuT+0LYmpY3hU9DNqKKUMsqlwr94AqvW1tn/zfzDyWoNGCban2xho
- VSSal0AvVvOkGmYNUkUVixYVs8OGOYNSyzPG/KoKxT5/ik9YXzSd8d5ENPBGNXIyoqoeFKw6TA
- TDXEH2b0/lun6R/FcEGvs6Yfk2/p8s3LohAj8weaskfXzG7ruKY/F5DbeElWlHqKmF1a9xvNAQ
- /0dpguqApUAfImIBpZ2P997p
-Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 13 Feb 2020 07:17:31 -0800
-IronPort-SDR: qeomJd0ohD5IHz4/JAiaiFTcHeDjZx+Ti7DiCu+tYXK/111F2iAFfnlpBPFYFWwDabkZEMw1Al
- jkS7b8aK3Hsr1re329xT4VI5lCdN3SPzC3JtPLCiWt34GdwLd2cMlcfMvvamofE4LQXLhY0YzZ
- bWIZVpRYbpjD3iBEvhAnggw/3OrfY5p1NbmzPgDZGy4AGeO1IBgbduLdxlPzIcuC+auAvdXGsv
- Xn/2crXrbrYfEwzw33CVnP3Bq/tw1uZWl3lPI3pi7dEzWSK7H9V534nc7d+73OZqDTL1n/e8lX
- bpU=
-WDCIronportException: Internal
-Received: from unknown (HELO redsun60.ssa.fujisawa.hgst.com) ([10.149.66.36])
-  by uls-op-cesaip02.wdc.com with ESMTP; 13 Feb 2020 07:24:42 -0800
-From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
-To:     David Sterba <dsterba@suse.cz>
-Cc:     Nikolay Borisov <nborisov@suse.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        "linux-btrfs @ vger . kernel . org" <linux-btrfs@vger.kernel.org>,
-        Christoph Hellwig <hch@lst.de>,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH v8 0/8] btrfs: remove buffer heads form superblock handling
-Date:   Fri, 14 Feb 2020 00:24:28 +0900
-Message-Id: <20200213152436.13276-1-johannes.thumshirn@wdc.com>
-X-Mailer: git-send-email 2.24.1
+        Thu, 13 Feb 2020 11:17:54 -0500
+Received: by mail-qv1-f68.google.com with SMTP id m5so2864655qvv.4
+        for <linux-btrfs@vger.kernel.org>; Thu, 13 Feb 2020 08:17:53 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
+        h=subject:to:cc:references:from:message-id:date:user-agent
+         :mime-version:in-reply-to:content-language:content-transfer-encoding;
+        bh=szNWZ8nZIP9VqzjWfo1padC4dW5ZLKPqhH+3QbR9kl8=;
+        b=j9UNLAwB8efOOKnRVo8/347tTQ6Emo0KZLDuFkI/NfeB6/r7/kfh0s56f8K2fjDd2P
+         G0vDCCSUm8BYT/j+eXFHCbnElD1URx1QXqbdAPU1ahKgjFwZuQPFuu28qpAtFsnAnA6B
+         zF+Cp1O+FpbWDUMyU4kyY3p3gFKaIAwFEoHtqmEY0QQ6oIApksC9RtvejC3zvq6aLBuM
+         RQvdPtyj1dptfIt91qUGWHLJrGgYq8UkhmdRL8epPcYf0vieBEDSK5Erm3Y62ZxU9wfj
+         l7VsEAjb8b+sVW85cYmdPWA2z5pMfSqZFGbYRTlDsPv90ghNgie1UJkK+05DqLFx4QWo
+         RvRQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=szNWZ8nZIP9VqzjWfo1padC4dW5ZLKPqhH+3QbR9kl8=;
+        b=IZZQTGvPPhfLLlUmdHH1FpKWlTFKX17Pt0Et9xiDJDsiiudJ9JQAGmRCbegMIUQi/8
+         QXEbC9Lz+IBqx9deSboHM/HdjEmHK4DCf1UN3ZdLpO6LgFoOsDffuk+n3X41PaVd8BtZ
+         h7iQWwgmCJ08n/+LdRwcuxeRsmcT9AaemrwHKc+KecOnRQC0fFUJZoQOb5RckX/iOE8/
+         TeQYiSZGsR+XD1ds+wFHlveOAuDj8QEDZxFOepEA2OMtfyp64TuxRNT7DeIabIE7XSpO
+         nZymViGlGOzvB8wTjMtfhQ5WTkOsEOxjAilKzH1Gd1QSoFltP98q9K92Y68N+UouWM90
+         BIwQ==
+X-Gm-Message-State: APjAAAX/9DhxAsTTClULLVr2coDfefrCsldodUc7OJUbotyHtWY3XTwN
+        D7oKEnirGJOCxjGr3SIWkbeLgA==
+X-Google-Smtp-Source: APXvYqyhZ4YRD5YkR/framUUFq+P/Onh5045Ye4U5HO1QXpXQ4v+dlntPSiOqGYjMh0mf9shH9NbfA==
+X-Received: by 2002:a05:6214:4f0:: with SMTP id cl16mr12342474qvb.213.1581610673364;
+        Thu, 13 Feb 2020 08:17:53 -0800 (PST)
+Received: from ?IPv6:2620:10d:c0a8:1102:ce0:3629:8daa:1271? ([2620:10d:c091:480::edcc])
+        by smtp.gmail.com with ESMTPSA id b12sm1566485qkl.0.2020.02.13.08.17.51
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Thu, 13 Feb 2020 08:17:52 -0800 (PST)
+Subject: Re: [PATCH v2 05/21] btrfs: introduce alloc_chunk_ctl
+To:     Naohiro Aota <naohiro.aota@wdc.com>, linux-btrfs@vger.kernel.org,
+        David Sterba <dsterba@suse.com>
+Cc:     Chris Mason <clm@fb.com>, Nikolay Borisov <nborisov@suse.com>,
+        Damien Le Moal <damien.lemoal@wdc.com>,
+        Johannes Thumshirn <Johannes.Thumshirn@wdc.com>,
+        Hannes Reinecke <hare@suse.com>,
+        Anand Jain <anand.jain@oracle.com>,
+        linux-fsdevel@vger.kernel.org
+References: <20200212072048.629856-1-naohiro.aota@wdc.com>
+ <20200212072048.629856-6-naohiro.aota@wdc.com>
+From:   Josef Bacik <josef@toxicpanda.com>
+Message-ID: <64b1ceac-b254-ce1e-6d6e-f75fc4929e12@toxicpanda.com>
+Date:   Thu, 13 Feb 2020 11:17:51 -0500
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:68.0)
+ Gecko/20100101 Thunderbird/68.5.0
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <20200212072048.629856-6-naohiro.aota@wdc.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This patch series removes the use of buffer_heads from btrfs' super block read
-and write paths. It also converts the integrity-checking code to only work
-with pages and BIOs.
+On 2/12/20 2:20 AM, Naohiro Aota wrote:
+> Introduce "struct alloc_chunk_ctl" to wrap needed parameters for the chunk
+> allocation.  This will be used to split __btrfs_alloc_chunk() into smaller
+> functions.
+> 
+> This commit folds a number of local variables in __btrfs_alloc_chunk() into
+> one "struct alloc_chunk_ctl ctl". There is no functional change.
+> 
+> Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 
-Compared to buffer heads, this gives us a leaner call path, as the
-buffer_head code wraps around getting pages from the page-cache and adding
-them to BIOs to submit.
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 
-Patches one to three are preparatory patches, the first one exports
-btrfs_release_disk_super() as a commomn helper to release pages containig a
-super block, the second removes the kmap() calls from block device mappings as
-suggested by Christoph. The third one unexports btrfs_scratch_superblocks()
+Thanks,
 
-The fourth patch removes buffer_heads from superblock reading. The fifth
-removes it from super_block writing and the subsequent patches remove the
-buffer_heads from the integrity check code.
-
-Due to a rebase error patch #3 of v5 got merged into the patch removing the
-BHs form super-block reading, but in the end it isn't too bad this way either.
-
-It's based on misc-next from Monday February 11
-(23ba1a90f0571d91b55bdfef7f06f380a74e8475), and doesn't show any regressions
-in xfstests to the baseline.
-
-Changes to v7:
-- Remove forward declaration for btrfs_scratch_superblocks() (Nikolay)
-- Fix kmap()/kunmap() in check-integrity.c (David)
-- Fix subject of patch 2 (hch)
-
-Changes to v6:
-- Fixed build warning about unused result of write_one_page() (David)
-- Unexport btrfs_scratch_superblocks()
-
-Changes to v5:
-- Rebase to newer misc-next
-- Merge old patches 2 and 3
-- Remove kmap()s of pages from block devices (both in new code as well as
-  existing code)
-
-Changes to v4:
-- Ressurected Nikolay's patch exporting btrfs_release_disk_super()
-- Incroporated feedback from Christoph
-
-Changes to v3:
-- Incroporated feedback from Christoph
-
-Changes to v2:
-- Removed patch #1 again
-- Added Reviews from Josef
-- Re-visited page locking, but not changes, it retains the same locking scheme
-  the buffer_heads had
-- Incroptorated comments from David regarding open-coding functions
-- For more details see the idividual patches.
-
-Changes to v1:
-- Added patch #1
-- Converted sb reading and integrity checking to use the page cache
-- Added rationale behind the conversion to the commit messages.
-- For more details see the idividual patches.
-
-Johannes Thumshirn (7):
-  btrfs: don't kmap() pages from block devices
-  btrfs: reduce scope of btrfs_scratch_superblocks()
-  btrfs: use the page-cache for super block reading
-  btrfs: use BIOs instead of buffer_heads from superblock writeout
-  btrfs: remove btrfsic_submit_bh()
-  btrfs: remove buffer_heads from btrfsic_process_written_block()
-  btrfs: remove buffer_heads form superblock mirror integrity checking
-
-Nikolay Borisov (1):
-  btrfs: Export btrfs_release_disk_super
-
- fs/btrfs/check-integrity.c | 202 +++++++++----------------------------
- fs/btrfs/check-integrity.h |   2 -
- fs/btrfs/disk-io.c         | 191 ++++++++++++++++++-----------------
- fs/btrfs/disk-io.h         |   6 +-
- fs/btrfs/volumes.c         | 125 ++++++++++++-----------
- fs/btrfs/volumes.h         |   4 +-
- 6 files changed, 217 insertions(+), 313 deletions(-)
-
--- 
-2.24.1
-
+Josef

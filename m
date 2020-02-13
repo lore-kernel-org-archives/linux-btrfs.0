@@ -2,119 +2,84 @@ Return-Path: <SRS0=OHkO=4B=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.2 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+X-Spam-Status: No, score=-3.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+	USER_AGENT_GIT autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D7A25C2BA83
-	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Feb 2020 15:38:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 88788C3B189
+	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Feb 2020 15:47:42 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B061C20675
-	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Feb 2020 15:38:09 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5304F20661
+	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Feb 2020 15:47:42 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="2NpeZuxU"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="uH52LOwD"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728923AbgBMPiI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 13 Feb 2020 10:38:08 -0500
-Received: from mail-qt1-f194.google.com ([209.85.160.194]:45254 "EHLO
-        mail-qt1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2387818AbgBMP3T (ORCPT
+        id S2387779AbgBMPri (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 13 Feb 2020 10:47:38 -0500
+Received: from mail-qk1-f175.google.com ([209.85.222.175]:39400 "EHLO
+        mail-qk1-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728955AbgBMPrg (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 13 Feb 2020 10:29:19 -0500
-Received: by mail-qt1-f194.google.com with SMTP id d9so4619234qte.12
-        for <linux-btrfs@vger.kernel.org>; Thu, 13 Feb 2020 07:29:19 -0800 (PST)
+        Thu, 13 Feb 2020 10:47:36 -0500
+Received: by mail-qk1-f175.google.com with SMTP id w15so6089011qkf.6
+        for <linux-btrfs@vger.kernel.org>; Thu, 13 Feb 2020 07:47:35 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=subject:to:references:from:message-id:date:user-agent:mime-version
-         :in-reply-to:content-language:content-transfer-encoding;
-        bh=kodiMKGBjBcSfIvaenwgjSe7A1p4yFG28LJSfaCFuic=;
-        b=2NpeZuxUg0a1AYwXittI32Yg7C3dw7ZfDlI5Xg2jj0whfL+PxYOIOaMdTF7jf01VW4
-         eh12CQ3urcmnHyzA6sXYiQyh/jlPm6p7RyuzlzcKAETrw6zjmDg3D7a2y6qf9EqCSe1d
-         R1zg5AE2JayHJEbNtoDV+LtW1J5GKtGydkJHCecoxrVWKUiJDxGVVjIqZXGCbZNSrLPt
-         +Ga7Xae9QFcRPIBEz/B3oR0JfbEWEij5ZYM/iaibSHhZEIfAY8Qe41VUERGyu/VZMgB/
-         Go+2cVM54sAMQIf4ZIZGGe25CaVUXFUJorDW4oxrWRUhYEGMx2coFaSGUtbBhhGGw1Sq
-         SHRA==
+        h=from:to:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=ouGc9oRqgIZdoP9ZlkCx5G75cQp/gkQCmzTrRXV5DBA=;
+        b=uH52LOwD3UDb3r2HfdIEIYVsgIKRQ36Raz1tE7MTj56uiX3h7lPUZBVpiOGOTJ7RxD
+         D7/90u273x/sFDkPya6cnUMjYlnqyp+IlZeAl7DLlF/9k3JCC37KSjq4DvnlgSclr5Oe
+         76n1VTeo2qv/dVxjt8KivpqNn/uLcv3epdhMnegF/y6F9Cu5EcVYMIl+nfqXd6sdZkHl
+         8mNHtljqFy5kS2negs3pYwYgdc4job336Y1nk0hY/sbnluwg7pyAz2lq5ofU19VGHRhV
+         r6TZm7tbtS18G93OJ5kg0Wv2qrNI6Mb0/WffGEbFHp+vphS5BtPOgWRtVcIKp/UvkvSo
+         HFHQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
+        h=x-gm-message-state:from:to:subject:date:message-id:mime-version
          :content-transfer-encoding;
-        bh=kodiMKGBjBcSfIvaenwgjSe7A1p4yFG28LJSfaCFuic=;
-        b=pFhzi/WBKcStU3sWQ6BcLhTUPhXqzVOkFY5ghvwjhZn508rGI/LsxEIUFkOjJRzrYN
-         ANzK1T2LAIjhM29Sa+WOqwoLLHJ9lyPTdY30ZaJJ7QAutTBU8d3gXlPBqPuoMmcYH1y4
-         73BX8KzzRUloTe9i16fUTw31rZTr0KgQsAV5Ct7XJbxCqqXRd1nre8/ShSBREbUdCnH0
-         3ThHlY2Kff9WOccSv7XruJJeZWEih4vnBmiX9/rBgZV0Gz4AF/R3vz+VM5Jzs/MHFm53
-         5i2zfbpptZHOmPSEOgIRXNnk66cBvip13mntYlLjND3rufuKyeF9tO5OM6X9IqxU3Emk
-         a3rA==
-X-Gm-Message-State: APjAAAU3gbfWYTV/Z6XMeF9aWdccewb5Fo3/iD6kSBBoBzpLFzLN4AeB
-        7sW6G6HH3xszSUAf8ILhxb8Bs+zpxhc=
-X-Google-Smtp-Source: APXvYqzUa+oTYU3CPMpUpT/KeGOdOvzSHl2s17RsqaDmUykAJXr71UMbVKusVLU73FsPk2qrqb3IWA==
-X-Received: by 2002:ac8:2b82:: with SMTP id m2mr11927625qtm.161.1581607758490;
-        Thu, 13 Feb 2020 07:29:18 -0800 (PST)
-Received: from ?IPv6:2620:10d:c0a8:1102:ce0:3629:8daa:1271? ([2620:10d:c091:480::edcc])
-        by smtp.gmail.com with ESMTPSA id 64sm1480464qkh.98.2020.02.13.07.29.16
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 13 Feb 2020 07:29:16 -0800 (PST)
-Subject: Re: [PATCH 4/4] btrfs: fix bytes_may_use underflow in prealloc error
- condtition
-To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org,
-        kernel-team@fb.com
-References: <20200211214042.4645-1-josef@toxicpanda.com>
- <20200211214042.4645-5-josef@toxicpanda.com>
- <55467ec8-f966-d4f9-d882-8c5881328f77@suse.com>
+        bh=ouGc9oRqgIZdoP9ZlkCx5G75cQp/gkQCmzTrRXV5DBA=;
+        b=qc8viaLXKPsW74WM5uwIfNbd8tJr7NubUjWIuEpuA93qR2l5ofN1fEBmhgGBsdUKt4
+         R88ILTK5f2R8wpzy+j/K/4mn1EC/RQ8jJpgwroh+6ts0nwh1tS1EBAfLUrOtkUzObuRf
+         KssAM0tCykXyLDlwlY+MTMwDOn86dTq0Sa/BA8TYXxRA7yVObEZPqFnwxJIv36Hkl6da
+         DO4dhGeM8AypsRXGmuxD58OKB191Vpq5CPRUtidKVdV9bfLXC1e5kjqYORIe94xERcRX
+         FKYge7zPsHVU1bxUAamS2uhuodJX+x5acxcLUhLjrBU79pMybLxlXIdMhxSl6zGCsBgg
+         QUQg==
+X-Gm-Message-State: APjAAAXSS2V73fyyXPbKMh6kGQbTzAli6advH1KsG5xL808OFB3V79ZI
+        gfhgLe9NiHbwWgPETk990Zw3k3OUnmg=
+X-Google-Smtp-Source: APXvYqw4nnWWB7lCnTqeLG0lvpEZ8Frg3XenKFnpauUTvAK4ERWEjKHtin/udznjpscdEJKCy4N1bw==
+X-Received: by 2002:a37:554:: with SMTP id 81mr15826184qkf.297.1581608854783;
+        Thu, 13 Feb 2020 07:47:34 -0800 (PST)
+Received: from localhost ([107.15.81.208])
+        by smtp.gmail.com with ESMTPSA id x4sm1484133qkx.33.2020.02.13.07.47.33
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Thu, 13 Feb 2020 07:47:33 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <42fac191-f4a4-ab70-01ce-307c80909905@toxicpanda.com>
-Date:   Thu, 13 Feb 2020 10:29:16 -0500
-User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:68.0)
- Gecko/20100101 Thunderbird/68.5.0
+To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: [PATCH 0/4][v2] Error condition failure fixes
+Date:   Thu, 13 Feb 2020 10:47:27 -0500
+Message-Id: <20200213154731.90994-1-josef@toxicpanda.com>
+X-Mailer: git-send-email 2.24.1
 MIME-Version: 1.0
-In-Reply-To: <55467ec8-f966-d4f9-d882-8c5881328f77@suse.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 2/13/20 5:17 AM, Nikolay Borisov wrote:
-> 
-> 
-> On 11.02.20 г. 23:40 ч., Josef Bacik wrote:
->> I hit the following warning while running my error injection stress testing
->>
->> ------------[ cut here ]------------
->> WARNING: CPU: 3 PID: 1453 at fs/btrfs/space-info.h:108 btrfs_free_reserved_data_space_noquota+0xfd/0x160 [btrfs]
->> RIP: 0010:btrfs_free_reserved_data_space_noquota+0xfd/0x160 [btrfs]
->> Call Trace:
->> btrfs_free_reserved_data_space+0x4f/0x70 [btrfs]
->> __btrfs_prealloc_file_range+0x378/0x470 [btrfs]
->> elfcorehdr_read+0x40/0x40
->> ? elfcorehdr_read+0x40/0x40
->> ? btrfs_commit_transaction+0xca/0xa50 [btrfs]
->> ? dput+0xb4/0x2a0
->> ? btrfs_log_dentry_safe+0x55/0x70 [btrfs]
->> ? btrfs_sync_file+0x30e/0x420 [btrfs]
->> ? do_fsync+0x38/0x70
->> ? __x64_sys_fdatasync+0x13/0x20
->> ? do_syscall_64+0x5b/0x1b0
->> ? entry_SYSCALL_64_after_hwframe+0x44/0xa9
->> ---[ end trace 70ccb5d0fe51151c ]---
->>
->> This happens if we fail to insert our reserved file extent.  At this
->> point we've already converted our reservation from ->bytes_may_use to
->> ->bytes_reserved.  However once we break we will attempt to free
->> everything from [cur_offset, end] from ->bytes_may_use, but our extent
->> reservation will overlap part of this.
->>
->> Fix this problem by adding ins.offset (our extent allocation size) to
->> cur_offset so we remove the actual remaining part from ->bytes_may_use.
-> This contradicts the code, you are adding ins.objectid which is the
-> offset and not the size. This means either the code is buggy.
+v1->v2:
+- Fixed the ins.objectid thing Nikolay pointed out, and reworked that patch a
+  bit to do the right thing in case of a add_extent_mapping() further down in
+  that function as well.
 
-Ooops you're right, I was getting lucky because we're making the whole 
-allocation at once, and ins.objectid was past extent_end so we ended up doing 
-the right thing, but for the wrong reasons.  In fact I need to adjust this for 
-the other error condition, so I'll fix this up.  Thanks,
+------------------- Original email -----------------------------
+I've been running my bpf error injection stress script and been fixing what has
+fallen out.  I don't think I've fixed everything yet, but to reduce the noise
+from Dave's testing here's the current set of fixes I have.  These are based on
+misc-next from late last week, but should apply cleanly to the recent set.
+These aren't super important, but will cut down on the noise from things like
+generic/019 and generic/475.  Thanks,
 
 Josef
+
+

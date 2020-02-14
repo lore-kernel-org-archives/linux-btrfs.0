@@ -2,83 +2,108 @@ Return-Path: <SRS0=/JOF=4C=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CAF6AC2BA83
-	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Feb 2020 17:03:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 235E2C3B1A4
+	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Feb 2020 17:03:26 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id AAB1E20656
-	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Feb 2020 17:03:24 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E858C2067D
+	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Feb 2020 17:03:25 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1581699806;
+	bh=5eWnpuNF97wZpSCxSv5oQjhNwTwyBqxF0DiaBFyiu2o=;
+	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
+	b=aq9a4/6dwApN4T82MUZoSZhxVaD/dzoq2kQDZxVxlvzfF1plUnxIYOFMKmhZie9SC
+	 TT0d3d8jMOWJJKTkH6y0LtMVaXdsrQDDq0P2aegw+J335cDKwderxTfBQ9nuN/mJYB
+	 pLiGZjksytVgNc6CSOcJ+GwSUIEy47hr05ClCEDQ=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2404628AbgBNRDX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 14 Feb 2020 12:03:23 -0500
-Received: from mx2.suse.de ([195.135.220.15]:35070 "EHLO mx2.suse.de"
+        id S2404366AbgBNRDS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 14 Feb 2020 12:03:18 -0500
+Received: from mail.kernel.org ([198.145.29.99]:46476 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2404533AbgBNRDV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 14 Feb 2020 12:03:21 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 1036DB123;
-        Fri, 14 Feb 2020 17:03:20 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 3E8DFDA703; Fri, 14 Feb 2020 18:03:05 +0100 (CET)
-Date:   Fri, 14 Feb 2020 18:03:04 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org, Jeff Mahoney <jeffm@suse.com>
-Subject: Re: [PATCH v2] btrfs: destroy qgroup extent records on transaction
- abort
-Message-ID: <20200214170304.GD2902@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org, Jeff Mahoney <jeffm@suse.com>
-References: <20200211072537.25751-1-wqu@suse.com>
+        id S2390191AbgBNQPz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 14 Feb 2020 11:15:55 -0500
+Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id D8877246EB;
+        Fri, 14 Feb 2020 16:15:53 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1581696954;
+        bh=5eWnpuNF97wZpSCxSv5oQjhNwTwyBqxF0DiaBFyiu2o=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+        b=R7lvux+zeH0BqZoi/NmyYmtBWFVcykjt1QksOoU2DlbFjvJs0s6mFYLiq+t16/+Dk
+         qLkMXkBQlJHzIwvzWk0/5spbfDqKoL1eLPTM2dZVidmXCwPwAQKUAO6zLS9NKW1Kg9
+         gNxKli3ElkQBUVt50GE6yp5UI0PA2YCIfnx1mUc8=
+From:   Sasha Levin <sashal@kernel.org>
+To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
+Cc:     David Sterba <dsterba@suse.com>,
+        Dan Carpenter <dan.carpenter@oracle.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
+Subject: [PATCH AUTOSEL 4.19 195/252] btrfs: safely advance counter when looking up bio csums
+Date:   Fri, 14 Feb 2020 11:10:50 -0500
+Message-Id: <20200214161147.15842-195-sashal@kernel.org>
+X-Mailer: git-send-email 2.20.1
+In-Reply-To: <20200214161147.15842-1-sashal@kernel.org>
+References: <20200214161147.15842-1-sashal@kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20200211072537.25751-1-wqu@suse.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-stable: review
+X-Patchwork-Hint: Ignore
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Feb 11, 2020 at 03:25:37PM +0800, Qu Wenruo wrote:
-> From: Jeff Mahoney <jeffm@suse.com>
-> 
-> We clean up the delayed references when we abort a transaction but
-> we leave the pending qgroup extent records behind, leaking memory.
-> 
-> This patch destroyes the extent records when we destroy the delayed
-> refs and checks to ensure they're gone before releasing the transaction.
-> 
-> Fixes: 3368d001ba5df (btrfs: qgroup: Record possible quota-related extent for qgroup.)
-> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
-> [Rebased to latest upstream, remove to_qgroup() helper, use
->  rbtree_postorder_for_each_entry_safe() wrapper]
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
-> Changelog:
-> v2:
-> - Update the commit message to remove to_qgroup()
+From: David Sterba <dsterba@suse.com>
 
-Added to misc-next, thanks.
+[ Upstream commit 4babad10198fa73fe73239d02c2e99e3333f5f5c ]
 
-> +void btrfs_qgroup_destroy_extent_records(struct btrfs_transaction *trans)
-> +{
-> +	struct btrfs_delayed_ref_root *delayed_refs = &trans->delayed_refs;
-> +	struct btrfs_qgroup_extent_record *entry;
-> +	struct btrfs_qgroup_extent_record *next;
-> +	struct rb_root *root = &delayed_refs->dirty_extent_root;
+Dan's smatch tool reports
 
-I've removed the delayed_refs varaible indirection:
+  fs/btrfs/file-item.c:295 btrfs_lookup_bio_sums()
+  warn: should this be 'count == -1'
 
-	root = &trans->delayed_refs.dirty_extent_root;
+which points to the while (count--) loop. With count == 0 the check
+itself could decrement it to -1. There's a WARN_ON a few lines below
+that has never been seen in practice though.
 
-> +	rbtree_postorder_for_each_entry_safe(entry, next, root, node) {
-> +		ulist_free(entry->old_roots);
-> +		kfree(entry);
-> +	}
-> +}
+It turns out that the value of page_bytes_left matches the count (by
+sectorsize multiples). The loop never reaches the state where count
+would go to -1, because page_bytes_left == 0 is found first and this
+breaks out.
+
+For clarity, use only plain check on count (and only for positive
+value), decrement safely inside the loop. Any other discrepancy after
+the whole bio list processing should be reported by the exising
+WARN_ON_ONCE as well.
+
+Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ fs/btrfs/file-item.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+index 4cf2817ab1202..f9e280d0b44f3 100644
+--- a/fs/btrfs/file-item.c
++++ b/fs/btrfs/file-item.c
+@@ -275,7 +275,8 @@ static blk_status_t __btrfs_lookup_bio_sums(struct inode *inode, struct bio *bio
+ 		csum += count * csum_size;
+ 		nblocks -= count;
+ next:
+-		while (count--) {
++		while (count > 0) {
++			count--;
+ 			disk_bytenr += fs_info->sectorsize;
+ 			offset += fs_info->sectorsize;
+ 			page_bytes_left -= fs_info->sectorsize;
+-- 
+2.20.1
+

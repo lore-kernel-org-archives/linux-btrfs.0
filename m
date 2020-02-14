@@ -2,139 +2,108 @@ Return-Path: <SRS0=/JOF=4C=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0DAACC2BA83
-	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Feb 2020 15:44:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BEAD4C2BA83
+	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Feb 2020 15:57:58 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id DDBB72467E
-	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Feb 2020 15:44:11 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8DBA7222C4
+	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Feb 2020 15:57:58 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1581695878;
+	bh=7fjuIQKEHWOXOCCf+k1Q0SIAfVa+9d5A3GffvBjQEhg=;
+	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
+	b=Guk6vHJUEjU+QwPLCHQqHa5P8AVRAIsFI5AMKdHG6eMT2YzOxmtB9fLL/s6zUwNHW
+	 EbhWYgU3oLX9yHRL8hKwcDOa5zPMsoXpeCO9vzA1QL2wU6Oi1GPgE1auq2TrfMmosR
+	 lAWstTenAU449cNSqlQD43ooMqScoa8J3ZLwNjmk=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728859AbgBNPoK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 14 Feb 2020 10:44:10 -0500
-Received: from mx2.suse.de ([195.135.220.15]:57994 "EHLO mx2.suse.de"
+        id S2388420AbgBNP55 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 14 Feb 2020 10:57:57 -0500
+Received: from mail.kernel.org ([198.145.29.99]:41428 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728264AbgBNPoK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 14 Feb 2020 10:44:10 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 37477B049;
-        Fri, 14 Feb 2020 15:44:08 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 8080CDA703; Fri, 14 Feb 2020 16:43:36 +0100 (CET)
-Date:   Fri, 14 Feb 2020 16:43:36 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Cc:     David Sterba <dsterba@suse.cz>,
-        Nikolay Borisov <nborisov@suse.com>,
+        id S2388409AbgBNP54 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 14 Feb 2020 10:57:56 -0500
+Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id DA0782467E;
+        Fri, 14 Feb 2020 15:57:54 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1581695875;
+        bh=7fjuIQKEHWOXOCCf+k1Q0SIAfVa+9d5A3GffvBjQEhg=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+        b=L17f26r3zgV+TN9VhLnIf9wcDvryrR0cc3DPWuWFNjk1VIb5igwNCx5W3L2oPXpvn
+         +zcQhG9UAhMjUtRBtIsYiDo/TZDyhSLT4CWDDqdaPVzBxXigEeA46MucfKN+7/5lkb
+         uqjAE1Je4HJ1FfQdm/lmYygs+gU5KEh/rViMcR44=
+From:   Sasha Levin <sashal@kernel.org>
+To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
+Cc:     David Sterba <dsterba@suse.com>,
+        Dan Carpenter <dan.carpenter@oracle.com>,
         Josef Bacik <josef@toxicpanda.com>,
-        "linux-btrfs @ vger . kernel . org" <linux-btrfs@vger.kernel.org>,
-        Christoph Hellwig <hch@lst.de>
-Subject: Re: [PATCH v8 8/8] btrfs: remove buffer_heads form superblock mirror
- integrity checking
-Message-ID: <20200214154336.GA2902@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-        Nikolay Borisov <nborisov@suse.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        "linux-btrfs @ vger . kernel . org" <linux-btrfs@vger.kernel.org>,
-        Christoph Hellwig <hch@lst.de>
-References: <20200213152436.13276-1-johannes.thumshirn@wdc.com>
- <20200213152436.13276-9-johannes.thumshirn@wdc.com>
+        Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
+Subject: [PATCH AUTOSEL 5.5 420/542] btrfs: safely advance counter when looking up bio csums
+Date:   Fri, 14 Feb 2020 10:46:52 -0500
+Message-Id: <20200214154854.6746-420-sashal@kernel.org>
+X-Mailer: git-send-email 2.20.1
+In-Reply-To: <20200214154854.6746-1-sashal@kernel.org>
+References: <20200214154854.6746-1-sashal@kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
+X-stable: review
+X-Patchwork-Hint: Ignore
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <20200213152436.13276-9-johannes.thumshirn@wdc.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Feb 14, 2020 at 12:24:36AM +0900, Johannes Thumshirn wrote:
-> The integrity checking code for the superblock mirrors is the last remaining
-> user of buffer_heads in BTRFS, change it to using plain BIOs as well.
-> 
-> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-> Reviewed-by: Josef Bacik <josef@toxicpanda.com>
-> Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-> 
-> ---
-> Changes to v7:
-> - Use read_Cache_page_gfp()
-> - Don't kmap() block device mappings (David)
-> 
-> Changes to v4:
-> - Remove mapping_gfp_constraint()
-> 
-> Changes to v2:
-> - Open-code kunmap() + put_page() (David)
-> - Remove __GFP_NOFAIL from allocation (Josef)
-> - Merge error paths (David)
-> 
-> Changes to v1:
-> - Convert from alloc_page() to find_or_create_page()
-> ---
->  fs/btrfs/check-integrity.c | 42 +++++++++++++++++++++-----------------
->  1 file changed, 23 insertions(+), 19 deletions(-)
-> 
-> diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
-> index 4f6db2fe482a..d8d915d7beda 100644
-> --- a/fs/btrfs/check-integrity.c
-> +++ b/fs/btrfs/check-integrity.c
-> @@ -77,7 +77,6 @@
->  
->  #include <linux/sched.h>
->  #include <linux/slab.h>
-> -#include <linux/buffer_head.h>
->  #include <linux/mutex.h>
->  #include <linux/genhd.h>
->  #include <linux/blkdev.h>
-> @@ -762,29 +761,33 @@ static int btrfsic_process_superblock_dev_mirror(
->  	struct btrfs_fs_info *fs_info = state->fs_info;
->  	struct btrfs_super_block *super_tmp;
->  	u64 dev_bytenr;
-> -	struct buffer_head *bh;
->  	struct btrfsic_block *superblock_tmp;
->  	int pass;
->  	struct block_device *const superblock_bdev = device->bdev;
-> +	struct page *page;
-> +	struct bio bio;
-> +	struct bio_vec bio_vec;
-> +	struct address_space *mapping = superblock_bdev->bd_inode->i_mapping;
-> +	int ret;
->  
->  	/* super block bytenr is always the unmapped device bytenr */
->  	dev_bytenr = btrfs_sb_offset(superblock_mirror_num);
->  	if (dev_bytenr + BTRFS_SUPER_INFO_SIZE > device->commit_total_bytes)
->  		return -1;
-> -	bh = __bread(superblock_bdev, dev_bytenr / BTRFS_BDEV_BLOCKSIZE,
-> -		     BTRFS_SUPER_INFO_SIZE);
-> -	if (NULL == bh)
-> +
-> +	page = reed_cache_page_gfp(mapping, dev_bytenr >> PAGE_SHIFT, GFP_NOFS);
+From: David Sterba <dsterba@suse.com>
 
-Reed-Solomon error correction in page cache? Have I missed the news? :)
+[ Upstream commit 4babad10198fa73fe73239d02c2e99e3333f5f5c ]
 
-  CC [M]  fs/btrfs/check-integrity.o
-fs/btrfs/check-integrity.c: In function ‘btrfsic_process_superblock_dev_mirror’:
-fs/btrfs/check-integrity.c:778:9: error: implicit declaration of function ‘reed_cache_page_gfp’; did you mean ‘read_cache_page_gfp’? [-Werror=implicit-function-declaration]
-  778 |  page = reed_cache_page_gfp(mapping, dev_bytenr >> PAGE_SHIFT, GFP_NOFS);
-      |         ^~~~~~~~~~~~~~~~~~~
-      |         read_cache_page_gfp
+Dan's smatch tool reports
 
-And with that fixed there are still the following warnings.
+  fs/btrfs/file-item.c:295 btrfs_lookup_bio_sums()
+  warn: should this be 'count == -1'
 
-fs/btrfs/check-integrity.c:778:7: warning: assignment to ‘struct page *’ from ‘int’ makes pointer from integer without a cast [-Wint-conversion]
-  778 |  page = reed_cache_page_gfp(mapping, dev_bytenr >> PAGE_SHIFT, GFP_NOFS);
-      |       ^
-fs/btrfs/check-integrity.c:769:17: warning: unused variable ‘bio_vec’ [-Wunused-variable]
-  769 |  struct bio_vec bio_vec;
-      |                 ^~~~~~~
-fs/btrfs/check-integrity.c:768:13: warning: unused variable ‘bio’ [-Wunused-variable]
-  768 |  struct bio bio;
-      |             ^~~
+which points to the while (count--) loop. With count == 0 the check
+itself could decrement it to -1. There's a WARN_ON a few lines below
+that has never been seen in practice though.
+
+It turns out that the value of page_bytes_left matches the count (by
+sectorsize multiples). The loop never reaches the state where count
+would go to -1, because page_bytes_left == 0 is found first and this
+breaks out.
+
+For clarity, use only plain check on count (and only for positive
+value), decrement safely inside the loop. Any other discrepancy after
+the whole bio list processing should be reported by the exising
+WARN_ON_ONCE as well.
+
+Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ fs/btrfs/file-item.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+index b1bfdc5c1387a..6f18333e83c33 100644
+--- a/fs/btrfs/file-item.c
++++ b/fs/btrfs/file-item.c
+@@ -274,7 +274,8 @@ static blk_status_t __btrfs_lookup_bio_sums(struct inode *inode, struct bio *bio
+ 		csum += count * csum_size;
+ 		nblocks -= count;
+ next:
+-		while (count--) {
++		while (count > 0) {
++			count--;
+ 			disk_bytenr += fs_info->sectorsize;
+ 			offset += fs_info->sectorsize;
+ 			page_bytes_left -= fs_info->sectorsize;
+-- 
+2.20.1
+

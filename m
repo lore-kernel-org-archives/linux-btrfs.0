@@ -7,46 +7,45 @@ X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 43FD8C2BA83
-	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Feb 2020 16:50:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5BEB3C2BA83
+	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Feb 2020 16:50:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1E7F624692
-	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Feb 2020 16:50:05 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2933124670
+	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Feb 2020 16:50:08 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1581699005;
-	bh=5vOT5Cbvh9GNxrUOd50DskvivDNUfqGcKhlzkAN2f3Y=;
+	s=default; t=1581699008;
+	bh=JrqyDo3x/1o+v5c62+1zKO0XnJlzXMNnrtph6kSO1Tc=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=Es0V9ufRr9U/oZwMIPUev3TqKrJfQ2rUp8Nu/3aSpB1BdXJMQ7mVMW9QGSudw+L0v
-	 KwTWidMvkcNMEVZDGwwkQOiv+S7OGUtzElknR++pM9dDlXT42/alWtS8P4aB636Xca
-	 aMGldq8uEbjhb/qYNqRslK6XOxVnWmoK0TiDUF0E=
+	b=ZamehNomFifblWsTcqeZparDSgNNIWmCvMqrcnCU4efGwfHuNg8JbKbQqxaBml39T
+	 LIXDR8Hkv5egU48puDzdElT9t10nTHF9bzKLJ7E7RkIGc7F7lSkvcRrptPf41jwPZL
+	 v0Pw/Exx75DCgXAFjQn+sc34cLJxxYUgjqGDmITI=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730079AbgBNQtl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 14 Feb 2020 11:49:41 -0500
-Received: from mail.kernel.org ([198.145.29.99]:54046 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2405214AbgBNQUX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S2405210AbgBNQUX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Fri, 14 Feb 2020 11:20:23 -0500
+Received: from mail.kernel.org ([198.145.29.99]:53980 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S2404964AbgBNQUV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 14 Feb 2020 11:20:21 -0500
 Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 7027224734;
-        Fri, 14 Feb 2020 16:20:22 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 2D4C024722;
+        Fri, 14 Feb 2020 16:20:20 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1581697223;
-        bh=5vOT5Cbvh9GNxrUOd50DskvivDNUfqGcKhlzkAN2f3Y=;
+        s=default; t=1581697220;
+        bh=JrqyDo3x/1o+v5c62+1zKO0XnJlzXMNnrtph6kSO1Tc=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=UW1E8UYrnS9PjUyuSs9xD35aAKPLM2yFAwbRNj3JIyhrWSSQQGbuGLxXStYmwSf7N
-         cJlzqxLdEHWYi9qSGIVwRFZwcfJMdhFVnCyGHHOhPkieYbgsNE3SamILcDicpPTdXl
-         6MVqG/GsksY5j+pcJb+KX2KtfumyyksG5c4/+m0A=
+        b=I2B496mHgRwiIC7JPDAjpRll+JSUPDRJQ8+sPbtE1aNLZAMW+HTmmxiPStcnEUBRX
+         CP0hzps1iiTPK+0FTeMb/9/5hAiw8AloZXi/kHAB6twRLLzHZe2oP+0QPgyICBo3YP
+         MwaO2leDgukpfzpssqCREgf+WGhwBTIdjxN3eB+I=
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Anand Jain <anand.jain@oracle.com>, philip@philip-seeger.de,
-        Josef Bacik <josef@toxicpanda.com>,
+Cc:     Johannes Thumshirn <jth@kernel.org>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 4.14 146/186] btrfs: device stats, log when stats are zeroed
-Date:   Fri, 14 Feb 2020 11:16:35 -0500
-Message-Id: <20200214161715.18113-146-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 4.14 144/186] btrfs: fix possible NULL-pointer dereference in integrity checks
+Date:   Fri, 14 Feb 2020 11:16:33 -0500
+Message-Id: <20200214161715.18113-144-sashal@kernel.org>
 X-Mailer: git-send-email 2.20.1
 In-Reply-To: <20200214161715.18113-1-sashal@kernel.org>
 References: <20200214161715.18113-1-sashal@kernel.org>
@@ -59,45 +58,49 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Anand Jain <anand.jain@oracle.com>
+From: Johannes Thumshirn <jth@kernel.org>
 
-[ Upstream commit a69976bc69308aa475d0ba3b8b3efd1d013c0460 ]
+[ Upstream commit 3dbd351df42109902fbcebf27104149226a4fcd9 ]
 
-We had a report indicating that some read errors aren't reported by the
-device stats in the userland. It is important to have the errors
-reported in the device stat as user land scripts might depend on it to
-take the reasonable corrective actions. But to debug these issue we need
-to be really sure that request to reset the device stat did not come
-from the userland itself. So log an info message when device error reset
-happens.
+A user reports a possible NULL-pointer dereference in
+btrfsic_process_superblock(). We are assigning state->fs_info to a local
+fs_info variable and afterwards checking for the presence of state.
 
-For example:
- BTRFS info (device sdc): device stats zeroed by btrfs(9223)
+While we would BUG_ON() a NULL state anyways, we can also just remove
+the local fs_info copy, as fs_info is only used once as the first
+argument for btrfs_num_copies(). There we can just pass in
+state->fs_info as well.
 
-Reported-by: philip@philip-seeger.de
-Link: https://www.spinics.net/lists/linux-btrfs/msg96528.html
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Bugzilla: https://bugzilla.kernel.org/show_bug.cgi?id=205003
+Signed-off-by: Johannes Thumshirn <jth@kernel.org>
 Reviewed-by: David Sterba <dsterba@suse.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
- fs/btrfs/volumes.c | 2 ++
- 1 file changed, 2 insertions(+)
+ fs/btrfs/check-integrity.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 358e930df4acd..6d34842912e80 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -7227,6 +7227,8 @@ int btrfs_get_dev_stats(struct btrfs_fs_info *fs_info,
- 			else
- 				btrfs_dev_stat_reset(dev, i);
+diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
+index 7d5a9b51f0d7a..4be07cf31d74c 100644
+--- a/fs/btrfs/check-integrity.c
++++ b/fs/btrfs/check-integrity.c
+@@ -642,7 +642,6 @@ static struct btrfsic_dev_state *btrfsic_dev_state_hashtable_lookup(dev_t dev,
+ static int btrfsic_process_superblock(struct btrfsic_state *state,
+ 				      struct btrfs_fs_devices *fs_devices)
+ {
+-	struct btrfs_fs_info *fs_info = state->fs_info;
+ 	struct btrfs_super_block *selected_super;
+ 	struct list_head *dev_head = &fs_devices->devices;
+ 	struct btrfs_device *device;
+@@ -713,7 +712,7 @@ static int btrfsic_process_superblock(struct btrfsic_state *state,
+ 			break;
  		}
-+		btrfs_info(fs_info, "device stats zeroed by %s (%d)",
-+			   current->comm, task_pid_nr(current));
- 	} else {
- 		for (i = 0; i < BTRFS_DEV_STAT_VALUES_MAX; i++)
- 			if (stats->nr_items > i)
+ 
+-		num_copies = btrfs_num_copies(fs_info, next_bytenr,
++		num_copies = btrfs_num_copies(state->fs_info, next_bytenr,
+ 					      state->metablock_size);
+ 		if (state->print_mask & BTRFSIC_PRINT_MASK_NUM_COPIES)
+ 			pr_info("num_copies(log_bytenr=%llu) = %d\n",
 -- 
 2.20.1
 

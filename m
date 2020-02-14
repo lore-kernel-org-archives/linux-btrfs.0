@@ -7,46 +7,46 @@ X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BEAD4C2BA83
-	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Feb 2020 15:57:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CC073C3F68F
+	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Feb 2020 15:58:29 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8DBA7222C4
-	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Feb 2020 15:57:58 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A0C032086A
+	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Feb 2020 15:58:29 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1581695878;
-	bh=7fjuIQKEHWOXOCCf+k1Q0SIAfVa+9d5A3GffvBjQEhg=;
+	s=default; t=1581695909;
+	bh=p0xUTStllf1KM5Nebaqnyuhwek0/TARRJ3Sz6gsZpqo=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=Guk6vHJUEjU+QwPLCHQqHa5P8AVRAIsFI5AMKdHG6eMT2YzOxmtB9fLL/s6zUwNHW
-	 EbhWYgU3oLX9yHRL8hKwcDOa5zPMsoXpeCO9vzA1QL2wU6Oi1GPgE1auq2TrfMmosR
-	 lAWstTenAU449cNSqlQD43ooMqScoa8J3ZLwNjmk=
+	b=vi3SChebxkptMmt8aSOXW24G1A97DzkRivGxzog0cm3ftJNaOU/N0wL0t4o+28SUR
+	 YLoyt0QdCQEBxRH88xkqLUG7qOt1ZKPAMIGg1Onv8smDGuQZuDirOUaBIUrDTidm9o
+	 ioJu03c+MdXnOaII0zP90rMqLwsL3YyXZztq6wcA=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388420AbgBNP55 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 14 Feb 2020 10:57:57 -0500
-Received: from mail.kernel.org ([198.145.29.99]:41428 "EHLO mail.kernel.org"
+        id S2388600AbgBNP63 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 14 Feb 2020 10:58:29 -0500
+Received: from mail.kernel.org ([198.145.29.99]:42434 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2388409AbgBNP54 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 14 Feb 2020 10:57:56 -0500
+        id S2388589AbgBNP62 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 14 Feb 2020 10:58:28 -0500
 Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id DA0782467E;
-        Fri, 14 Feb 2020 15:57:54 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 5E91424689;
+        Fri, 14 Feb 2020 15:58:27 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1581695875;
-        bh=7fjuIQKEHWOXOCCf+k1Q0SIAfVa+9d5A3GffvBjQEhg=;
+        s=default; t=1581695908;
+        bh=p0xUTStllf1KM5Nebaqnyuhwek0/TARRJ3Sz6gsZpqo=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=L17f26r3zgV+TN9VhLnIf9wcDvryrR0cc3DPWuWFNjk1VIb5igwNCx5W3L2oPXpvn
-         +zcQhG9UAhMjUtRBtIsYiDo/TZDyhSLT4CWDDqdaPVzBxXigEeA46MucfKN+7/5lkb
-         uqjAE1Je4HJ1FfQdm/lmYygs+gU5KEh/rViMcR44=
+        b=D2VXRblYMnsi1qvPVcXFgz9ZzmBt0zy8BcgtSBjEg6TLn0kWaua1aEUIhYw0MMnio
+         0Vb0Xbe86UnIFxPj/2Pi9LpYKGhxlgFjyYZ4/QHpZkZbL4aDLfDnKDH+xp2f+K/0oY
+         z2RBdmUq2LlpnbmY3SjUy3WCBE1YnXdblhxtfODA=
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
 Cc:     David Sterba <dsterba@suse.com>,
-        Dan Carpenter <dan.carpenter@oracle.com>,
-        Josef Bacik <josef@toxicpanda.com>,
+        Josh Poimboeuf <jpoimboe@redhat.com>,
+        Randy Dunlap <rdunlap@infradead.org>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.5 420/542] btrfs: safely advance counter when looking up bio csums
-Date:   Fri, 14 Feb 2020 10:46:52 -0500
-Message-Id: <20200214154854.6746-420-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 5.5 448/542] btrfs: separate definition of assertion failure handlers
+Date:   Fri, 14 Feb 2020 10:47:20 -0500
+Message-Id: <20200214154854.6746-448-sashal@kernel.org>
 X-Mailer: git-send-email 2.20.1
 In-Reply-To: <20200214154854.6746-1-sashal@kernel.org>
 References: <20200214154854.6746-1-sashal@kernel.org>
@@ -61,49 +61,66 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: David Sterba <dsterba@suse.com>
 
-[ Upstream commit 4babad10198fa73fe73239d02c2e99e3333f5f5c ]
+[ Upstream commit 68c467cbb2f389b6c933e235bce0d1756fc8cc34 ]
 
-Dan's smatch tool reports
+There's a report where objtool detects unreachable instructions, eg.:
 
-  fs/btrfs/file-item.c:295 btrfs_lookup_bio_sums()
-  warn: should this be 'count == -1'
+  fs/btrfs/ctree.o: warning: objtool: btrfs_search_slot()+0x2d4: unreachable instruction
 
-which points to the while (count--) loop. With count == 0 the check
-itself could decrement it to -1. There's a WARN_ON a few lines below
-that has never been seen in practice though.
+This seems to be a false positive due to compiler version. The cause is
+in the ASSERT macro implementation that does the conditional check as
+IS_DEFINED(CONFIG_BTRFS_ASSERT) and not an #ifdef.
 
-It turns out that the value of page_bytes_left matches the count (by
-sectorsize multiples). The loop never reaches the state where count
-would go to -1, because page_bytes_left == 0 is found first and this
-breaks out.
+To avoid that, use the ifdefs directly.
 
-For clarity, use only plain check on count (and only for positive
-value), decrement safely inside the loop. Any other discrepancy after
-the whole bio list processing should be reported by the exising
-WARN_ON_ONCE as well.
+There are still 2 reports that aren't fixed:
 
-Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+  fs/btrfs/extent_io.o: warning: objtool: __set_extent_bit()+0x71f: unreachable instruction
+  fs/btrfs/relocation.o: warning: objtool: find_data_references()+0x4e0: unreachable instruction
+
+Co-developed-by: Josh Poimboeuf <jpoimboe@redhat.com>
+Signed-off-by: Josh Poimboeuf <jpoimboe@redhat.com>
+Reported-by: Randy Dunlap <rdunlap@infradead.org>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
- fs/btrfs/file-item.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ fs/btrfs/ctree.h | 20 ++++++++++++--------
+ 1 file changed, 12 insertions(+), 8 deletions(-)
 
-diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index b1bfdc5c1387a..6f18333e83c33 100644
---- a/fs/btrfs/file-item.c
-+++ b/fs/btrfs/file-item.c
-@@ -274,7 +274,8 @@ static blk_status_t __btrfs_lookup_bio_sums(struct inode *inode, struct bio *bio
- 		csum += count * csum_size;
- 		nblocks -= count;
- next:
--		while (count--) {
-+		while (count > 0) {
-+			count--;
- 			disk_bytenr += fs_info->sectorsize;
- 			offset += fs_info->sectorsize;
- 			page_bytes_left -= fs_info->sectorsize;
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index ba7292435c14c..2e9f938508e9b 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3108,17 +3108,21 @@ do {								\
+ 	rcu_read_unlock();					\
+ } while (0)
+ 
+-__cold
+-static inline void assfail(const char *expr, const char *file, int line)
++#ifdef CONFIG_BTRFS_ASSERT
++__cold __noreturn
++static inline void assertfail(const char *expr, const char *file, int line)
+ {
+-	if (IS_ENABLED(CONFIG_BTRFS_ASSERT)) {
+-		pr_err("assertion failed: %s, in %s:%d\n", expr, file, line);
+-		BUG();
+-	}
++	pr_err("assertion failed: %s, in %s:%d\n", expr, file, line);
++	BUG();
+ }
+ 
+-#define ASSERT(expr)	\
+-	(likely(expr) ? (void)0 : assfail(#expr, __FILE__, __LINE__))
++#define ASSERT(expr)						\
++	(likely(expr) ? (void)0 : assertfail(#expr, __FILE__, __LINE__))
++
++#else
++static inline void assertfail(const char *expr, const char* file, int line) { }
++#define ASSERT(expr)	(void)(expr)
++#endif
+ 
+ /*
+  * Use that for functions that are conditionally exported for sanity tests but
 -- 
 2.20.1
 

@@ -7,45 +7,46 @@ X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B2C78C2BA83
-	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Feb 2020 17:18:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7E068C2BA83
+	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Feb 2020 17:22:26 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 85266206CC
-	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Feb 2020 17:18:47 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 58D4420637
+	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Feb 2020 17:22:26 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1581700727;
-	bh=pUXMMxs3K3BuMqt1nQpPRhmt5mebmzuAGH2Y8vUubbs=;
+	s=default; t=1581700946;
+	bh=fFOQjnVPcFd1wvOtxaBYad+RJUFESpmrhGZ80I46uD4=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=d9hwFal8NeJilBBqwRpihVxmJzbvxVKVfvZT0MSBXt7bFKbuhGYPxbn45XNYnsbbC
-	 FZEZUoG8zgPZK3HTwKBDhBgqDVtY4jOiNRfsypGePa6OkkPI7V0FmH5zUmjL8e2mqZ
-	 7eiuiycBxgmhJPdahA86A9V+bCLhC/E/yoB1NO3U=
+	b=QYURLzFLIT4MK5FOM8w3TtvP48Olnhn6OMbNvD38URLHxWyFntj07YSJsnxLK/fKV
+	 z6adE0T3PrMsZ9oTNP4tUSshdlch1wawzE6KO8V86I5XAITrAhDhA4GkG8E9ClcYo7
+	 haadkCs2y6lzvpoqZe8V/j31owapshhpo9wJLU1o=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2390611AbgBNQLA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 14 Feb 2020 11:11:00 -0500
-Received: from mail.kernel.org ([198.145.29.99]:37240 "EHLO mail.kernel.org"
+        id S2404078AbgBNRWY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 14 Feb 2020 12:22:24 -0500
+Received: from mail.kernel.org ([198.145.29.99]:35214 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2391672AbgBNQK6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 14 Feb 2020 11:10:58 -0500
+        id S2391378AbgBNQKA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 14 Feb 2020 11:10:00 -0500
 Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 6747124684;
-        Fri, 14 Feb 2020 16:10:56 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 2EAAC24693;
+        Fri, 14 Feb 2020 16:09:59 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1581696657;
-        bh=pUXMMxs3K3BuMqt1nQpPRhmt5mebmzuAGH2Y8vUubbs=;
+        s=default; t=1581696600;
+        bh=fFOQjnVPcFd1wvOtxaBYad+RJUFESpmrhGZ80I46uD4=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=PCbVNyVxsC5Qg1DMw5LmYpQqiKGKwbdsX1gWrPw56Iv+nuNQT7HWz8SVB6+97qmtG
-         t7q1bEV6kUEOqKo0j6aXnJSV5m+I/dYK1UQeidMLLGE3RJ2Yx3fuJldb2xn1kT8bWx
-         LZD6g3PI4ItCImPUm6wxJk2Lz3+Uafs2Xsj9nYa4=
+        b=Q+sDNSbv4Bv0vb5rnFpjF//6HIS3OcjfALxxIyWFJjW6q9SeVngl58AeekkbqnqS5
+         b4o1hitqIVPzzsPRzo6p2vX/g+/lsx+bNJwFGUY30iMmn7vCUFSmAlNp8TdtQKCsi5
+         k30ASvz51Pd3ewliBAdjw6CBfqaTQLr5QocWMIqI=
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>,
+Cc:     David Sterba <dsterba@suse.com>,
+        Josh Poimboeuf <jpoimboe@redhat.com>,
+        Randy Dunlap <rdunlap@infradead.org>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.4 431/459] btrfs: do not do delalloc reservation under page lock
-Date:   Fri, 14 Feb 2020 11:01:21 -0500
-Message-Id: <20200214160149.11681-431-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 5.4 385/459] btrfs: separate definition of assertion failure handlers
+Date:   Fri, 14 Feb 2020 11:00:35 -0500
+Message-Id: <20200214160149.11681-385-sashal@kernel.org>
 X-Mailer: git-send-email 2.20.1
 In-Reply-To: <20200214160149.11681-1-sashal@kernel.org>
 References: <20200214160149.11681-1-sashal@kernel.org>
@@ -58,218 +59,68 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Josef Bacik <josef@toxicpanda.com>
+From: David Sterba <dsterba@suse.com>
 
-[ Upstream commit f4b1363cae43fef7c86c993b7ca7fe7d546b3c68 ]
+[ Upstream commit 68c467cbb2f389b6c933e235bce0d1756fc8cc34 ]
 
-We ran into a deadlock in production with the fixup worker.  The stack
-traces were as follows:
+There's a report where objtool detects unreachable instructions, eg.:
 
-Thread responsible for the writeout, waiting on the page lock
+  fs/btrfs/ctree.o: warning: objtool: btrfs_search_slot()+0x2d4: unreachable instruction
 
-  [<0>] io_schedule+0x12/0x40
-  [<0>] __lock_page+0x109/0x1e0
-  [<0>] extent_write_cache_pages+0x206/0x360
-  [<0>] extent_writepages+0x40/0x60
-  [<0>] do_writepages+0x31/0xb0
-  [<0>] __writeback_single_inode+0x3d/0x350
-  [<0>] writeback_sb_inodes+0x19d/0x3c0
-  [<0>] __writeback_inodes_wb+0x5d/0xb0
-  [<0>] wb_writeback+0x231/0x2c0
-  [<0>] wb_workfn+0x308/0x3c0
-  [<0>] process_one_work+0x1e0/0x390
-  [<0>] worker_thread+0x2b/0x3c0
-  [<0>] kthread+0x113/0x130
-  [<0>] ret_from_fork+0x35/0x40
-  [<0>] 0xffffffffffffffff
+This seems to be a false positive due to compiler version. The cause is
+in the ASSERT macro implementation that does the conditional check as
+IS_DEFINED(CONFIG_BTRFS_ASSERT) and not an #ifdef.
 
-Thread of the fixup worker who is holding the page lock
+To avoid that, use the ifdefs directly.
 
-  [<0>] start_delalloc_inodes+0x241/0x2d0
-  [<0>] btrfs_start_delalloc_roots+0x179/0x230
-  [<0>] btrfs_alloc_data_chunk_ondemand+0x11b/0x2e0
-  [<0>] btrfs_check_data_free_space+0x53/0xa0
-  [<0>] btrfs_delalloc_reserve_space+0x20/0x70
-  [<0>] btrfs_writepage_fixup_worker+0x1fc/0x2a0
-  [<0>] normal_work_helper+0x11c/0x360
-  [<0>] process_one_work+0x1e0/0x390
-  [<0>] worker_thread+0x2b/0x3c0
-  [<0>] kthread+0x113/0x130
-  [<0>] ret_from_fork+0x35/0x40
-  [<0>] 0xffffffffffffffff
+There are still 2 reports that aren't fixed:
 
-Thankfully the stars have to align just right to hit this.  First you
-have to end up in the fixup worker, which is tricky by itself (my
-reproducer does DIO reads into a MMAP'ed region, so not a common
-operation).  Then you have to have less than a page size of free data
-space and 0 unallocated space so you go down the "commit the transaction
-to free up pinned space" path.  This was accomplished by a random
-balance that was running on the host.  Then you get this deadlock.
+  fs/btrfs/extent_io.o: warning: objtool: __set_extent_bit()+0x71f: unreachable instruction
+  fs/btrfs/relocation.o: warning: objtool: find_data_references()+0x4e0: unreachable instruction
 
-I'm still in the process of trying to force the deadlock to happen on
-demand, but I've hit other issues.  I can still trigger the fixup worker
-path itself so this patch has been tested in that regard, so the normal
-case is fine.
-
-Fixes: 87826df0ec36 ("btrfs: delalloc for page dirtied out-of-band in fixup worker")
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-Reviewed-by: David Sterba <dsterba@suse.com>
+Co-developed-by: Josh Poimboeuf <jpoimboe@redhat.com>
+Signed-off-by: Josh Poimboeuf <jpoimboe@redhat.com>
+Reported-by: Randy Dunlap <rdunlap@infradead.org>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
- fs/btrfs/inode.c | 76 ++++++++++++++++++++++++++++++++++++++----------
- 1 file changed, 60 insertions(+), 16 deletions(-)
+ fs/btrfs/ctree.h | 20 ++++++++++++--------
+ 1 file changed, 12 insertions(+), 8 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 1b4ab02be9243..b83eef445db33 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2168,6 +2168,7 @@ int btrfs_set_extent_delalloc(struct inode *inode, u64 start, u64 end,
- /* see btrfs_writepage_start_hook for details on why this is required */
- struct btrfs_writepage_fixup {
- 	struct page *page;
-+	struct inode *inode;
- 	struct btrfs_work work;
- };
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 290ca193c6c0f..169075550a5a2 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3107,17 +3107,21 @@ do {								\
+ 	rcu_read_unlock();					\
+ } while (0)
  
-@@ -2182,9 +2183,20 @@ static void btrfs_writepage_fixup_worker(struct btrfs_work *work)
- 	u64 page_start;
- 	u64 page_end;
- 	int ret = 0;
-+	bool free_delalloc_space = true;
- 
- 	fixup = container_of(work, struct btrfs_writepage_fixup, work);
- 	page = fixup->page;
-+	inode = fixup->inode;
-+	page_start = page_offset(page);
-+	page_end = page_offset(page) + PAGE_SIZE - 1;
-+
-+	/*
-+	 * This is similar to page_mkwrite, we need to reserve the space before
-+	 * we take the page lock.
-+	 */
-+	ret = btrfs_delalloc_reserve_space(inode, &data_reserved, page_start,
-+					   PAGE_SIZE);
- again:
- 	lock_page(page);
- 
-@@ -2193,25 +2205,48 @@ static void btrfs_writepage_fixup_worker(struct btrfs_work *work)
- 	 * page->mapping may go NULL, but it shouldn't be moved to a different
- 	 * address space.
- 	 */
--	if (!page->mapping || !PageDirty(page) || !PageChecked(page))
-+	if (!page->mapping || !PageDirty(page) || !PageChecked(page)) {
-+		/*
-+		 * Unfortunately this is a little tricky, either
-+		 *
-+		 * 1) We got here and our page had already been dealt with and
-+		 *    we reserved our space, thus ret == 0, so we need to just
-+		 *    drop our space reservation and bail.  This can happen the
-+		 *    first time we come into the fixup worker, or could happen
-+		 *    while waiting for the ordered extent.
-+		 * 2) Our page was already dealt with, but we happened to get an
-+		 *    ENOSPC above from the btrfs_delalloc_reserve_space.  In
-+		 *    this case we obviously don't have anything to release, but
-+		 *    because the page was already dealt with we don't want to
-+		 *    mark the page with an error, so make sure we're resetting
-+		 *    ret to 0.  This is why we have this check _before_ the ret
-+		 *    check, because we do not want to have a surprise ENOSPC
-+		 *    when the page was already properly dealt with.
-+		 */
-+		if (!ret) {
-+			btrfs_delalloc_release_extents(BTRFS_I(inode),
-+						       PAGE_SIZE);
-+			btrfs_delalloc_release_space(inode, data_reserved,
-+						     page_start, PAGE_SIZE,
-+						     true);
-+		}
-+		ret = 0;
- 		goto out_page;
-+	}
- 
- 	/*
--	 * We keep the PageChecked() bit set until we're done with the
--	 * btrfs_start_ordered_extent() dance that we do below.  That drops and
--	 * retakes the page lock, so we don't want new fixup workers queued for
--	 * this page during the churn.
-+	 * We can't mess with the page state unless it is locked, so now that
-+	 * it is locked bail if we failed to make our space reservation.
- 	 */
--	inode = page->mapping->host;
--	page_start = page_offset(page);
--	page_end = page_offset(page) + PAGE_SIZE - 1;
-+	if (ret)
-+		goto out_page;
- 
- 	lock_extent_bits(&BTRFS_I(inode)->io_tree, page_start, page_end,
- 			 &cached_state);
- 
- 	/* already ordered? We're done */
- 	if (PagePrivate2(page))
--		goto out;
-+		goto out_reserved;
- 
- 	ordered = btrfs_lookup_ordered_range(BTRFS_I(inode), page_start,
- 					PAGE_SIZE);
-@@ -2224,11 +2259,6 @@ static void btrfs_writepage_fixup_worker(struct btrfs_work *work)
- 		goto again;
- 	}
- 
--	ret = btrfs_delalloc_reserve_space(inode, &data_reserved, page_start,
--					   PAGE_SIZE);
--	if (ret)
--		goto out;
--
- 	ret = btrfs_set_extent_delalloc(inode, page_start, page_end, 0,
- 					&cached_state);
- 	if (ret)
-@@ -2242,12 +2272,12 @@ static void btrfs_writepage_fixup_worker(struct btrfs_work *work)
- 	 * The page was dirty when we started, nothing should have cleaned it.
- 	 */
- 	BUG_ON(!PageDirty(page));
-+	free_delalloc_space = false;
- out_reserved:
- 	btrfs_delalloc_release_extents(BTRFS_I(inode), PAGE_SIZE);
--	if (ret)
-+	if (free_delalloc_space)
- 		btrfs_delalloc_release_space(inode, data_reserved, page_start,
- 					     PAGE_SIZE, true);
--out:
- 	unlock_extent_cached(&BTRFS_I(inode)->io_tree, page_start, page_end,
- 			     &cached_state);
- out_page:
-@@ -2266,6 +2296,12 @@ static void btrfs_writepage_fixup_worker(struct btrfs_work *work)
- 	put_page(page);
- 	kfree(fixup);
- 	extent_changeset_free(data_reserved);
-+	/*
-+	 * As a precaution, do a delayed iput in case it would be the last iput
-+	 * that could need flushing space. Recursing back to fixup worker would
-+	 * deadlock.
-+	 */
-+	btrfs_add_delayed_iput(inode);
+-__cold
+-static inline void assfail(const char *expr, const char *file, int line)
++#ifdef CONFIG_BTRFS_ASSERT
++__cold __noreturn
++static inline void assertfail(const char *expr, const char *file, int line)
+ {
+-	if (IS_ENABLED(CONFIG_BTRFS_ASSERT)) {
+-		pr_err("assertion failed: %s, in %s:%d\n", expr, file, line);
+-		BUG();
+-	}
++	pr_err("assertion failed: %s, in %s:%d\n", expr, file, line);
++	BUG();
  }
  
+-#define ASSERT(expr)	\
+-	(likely(expr) ? (void)0 : assfail(#expr, __FILE__, __LINE__))
++#define ASSERT(expr)						\
++	(likely(expr) ? (void)0 : assertfail(#expr, __FILE__, __LINE__))
++
++#else
++static inline void assertfail(const char *expr, const char* file, int line) { }
++#define ASSERT(expr)	(void)(expr)
++#endif
+ 
  /*
-@@ -2303,10 +2339,18 @@ int btrfs_writepage_cow_fixup(struct page *page, u64 start, u64 end)
- 	if (!fixup)
- 		return -EAGAIN;
- 
-+	/*
-+	 * We are already holding a reference to this inode from
-+	 * write_cache_pages.  We need to hold it because the space reservation
-+	 * takes place outside of the page lock, and we can't trust
-+	 * page->mapping outside of the page lock.
-+	 */
-+	ihold(inode);
- 	SetPageChecked(page);
- 	get_page(page);
- 	btrfs_init_work(&fixup->work, btrfs_writepage_fixup_worker, NULL, NULL);
- 	fixup->page = page;
-+	fixup->inode = inode;
- 	btrfs_queue_work(fs_info->fixup_workers, &fixup->work);
- 
- 	return -EAGAIN;
+  * Use that for functions that are conditionally exported for sanity tests but
 -- 
 2.20.1
 

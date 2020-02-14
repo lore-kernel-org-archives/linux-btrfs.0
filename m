@@ -2,108 +2,169 @@ Return-Path: <SRS0=/JOF=4C=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7450BC3B19F
-	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Feb 2020 16:50:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0B66AC2BA83
+	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Feb 2020 16:51:18 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4CD4724670
-	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Feb 2020 16:50:12 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1581699012;
-	bh=pNi86Qd8IpSJfMsjvwVOCG2Tki6Im0CYrxAz80yld8E=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=2AHHSibhE17lHu2oCbhNWvn8/I/wONmHxWPEpBxKGBZc0RHLjn2ic8K5fzU7xsjn1
-	 azbIeW7vxcOf29Xdsa2TLFF2vM/n0tdlpWNT2oIvgHb65PXopztYYA1WVydfVKvM7N
-	 IWSSd+Mxukb25kxxrxWzquO3k1H+ijWLNxDs5JRU=
+	by mail.kernel.org (Postfix) with ESMTP id D200620656
+	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Feb 2020 16:51:17 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="rsizz0Bm"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2394129AbgBNQuI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 14 Feb 2020 11:50:08 -0500
-Received: from mail.kernel.org ([198.145.29.99]:54028 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2405206AbgBNQUW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 14 Feb 2020 11:20:22 -0500
-Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 3C49024728;
-        Fri, 14 Feb 2020 16:20:21 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1581697222;
-        bh=pNi86Qd8IpSJfMsjvwVOCG2Tki6Im0CYrxAz80yld8E=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=Zmdw9KXdn4+SB8iRrAhvpbyPgX3yVo+cYb8sbzLWvHusRMCINDQLivb+zejW+SZvw
-         phKKAqS2VfEaAKZXyhzApOjx33mNEOP8OWHkv9jGYS3cCVhfFeaawQ1dd0Xm0OKHgB
-         Rce5QfrvBBzXgUshXxoP6W6NnsRYApC0q7VIp+FU=
-From:   Sasha Levin <sashal@kernel.org>
-To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     David Sterba <dsterba@suse.com>,
-        Dan Carpenter <dan.carpenter@oracle.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 4.14 145/186] btrfs: safely advance counter when looking up bio csums
-Date:   Fri, 14 Feb 2020 11:16:34 -0500
-Message-Id: <20200214161715.18113-145-sashal@kernel.org>
-X-Mailer: git-send-email 2.20.1
-In-Reply-To: <20200214161715.18113-1-sashal@kernel.org>
-References: <20200214161715.18113-1-sashal@kernel.org>
+        id S2394219AbgBNQvQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 14 Feb 2020 11:51:16 -0500
+Received: from mail-ua1-f52.google.com ([209.85.222.52]:42250 "EHLO
+        mail-ua1-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2394217AbgBNQvP (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 14 Feb 2020 11:51:15 -0500
+Received: by mail-ua1-f52.google.com with SMTP id p2so3792127uao.9
+        for <linux-btrfs@vger.kernel.org>; Fri, 14 Feb 2020 08:51:14 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to;
+        bh=xIu3T5/+ScLfuEND5sseDc1HRL1SPvnGgBFk/5TOdGY=;
+        b=rsizz0BmRT4SpjUb2bMg+DFyIjLPZ2paOPAHlJtfyYbX3V6uOjHncngO8ZUEzWWs3V
+         J/5v6A174kNR/KPRJAa7Jat4ujz4YAUTwYtQOV6bcXgf/g5G8DD4PS5/1b51OJimbfZz
+         WXeViXqdrirhhkbch4FSjiz08bUljY8zdq/Erlw/V8lRo1dAkbSSTPrGelR2gEOc5wlw
+         PbIjNkbHHqNIYcpnN+wOv3rWgV/tFl2QisBT8+HZoEGIA1P0m8d39RdXzPLDyOrY882u
+         U+UlbDC5jqF2MIVcT33u89lyeuJesdGse2HpgjTkuu8SIiJkL9CKK5IY+3pYVZoUEphO
+         jYvA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to;
+        bh=xIu3T5/+ScLfuEND5sseDc1HRL1SPvnGgBFk/5TOdGY=;
+        b=JiidB7f8EPDiBs6o/AAjPx69/eKJHkuEAtWG+WgAzP5BDBrAe8CgKlucJ9k8O0Gkji
+         B+VhY7RiYtF3Rkkyx7bNGcueafnNHK+R4zfUI63fwUpiD4oSSNYPm+0L7mNflUXwWC1M
+         6Il6a4udcWqmSRC8W9FtWiIH1cI/BKaXi8g1r/C6qa9+JdZOdFhB4r7njnQPL6b9/dIv
+         b3+5xFxvywnAIkqYBy1PFQm+mUP0bdmyO5pXydiqtV9JfMqRfiHX1V2xmWPvIRttyVu/
+         cJVExM0ELdCKBS/hE6yQsitaCJTIdrTfRx/cHNapeqpilTcc8hsFo3DblIu2RiWqP2e2
+         g2ww==
+X-Gm-Message-State: APjAAAWD617Pt3vvEWTRpXBghf1WQFuHrhV5bRV95f7ggCgZgwy/utMg
+        GfNKhbItinJlj4FM+lPcnJNHTwwDyWLplqn6LUN47BhG
+X-Google-Smtp-Source: APXvYqzDwadVivUzW3WOaJFxkgWvhQ5rY4rwOad1OWc4WBDe7sYqqfjtjJ8dQFf+Ec/q0k1XKgPN+DifzcgOexGpy4c=
+X-Received: by 2002:ab0:72d0:: with SMTP id g16mr1877102uap.11.1581699074132;
+ Fri, 14 Feb 2020 08:51:14 -0800 (PST)
 MIME-Version: 1.0
-X-stable: review
-X-Patchwork-Hint: Ignore
-Content-Transfer-Encoding: 8bit
+References: <CAMry8ZstY5f_qpS-uft1AxOOUxB=LrBAdaJnCosZ2Xj_3_vr-A@mail.gmail.com>
+ <CAMry8Zt8BWWc_Kk_x9TDk+ZRL94pSFZwuqeiW7L4AcZHrXrFXg@mail.gmail.com>
+In-Reply-To: <CAMry8Zt8BWWc_Kk_x9TDk+ZRL94pSFZwuqeiW7L4AcZHrXrFXg@mail.gmail.com>
+From:   Kareem Straker <kareem.straker@gmail.com>
+Date:   Fri, 14 Feb 2020 17:51:04 +0100
+Message-ID: <CAMry8Zs8omAJGqyJWL=O5=pKBq5yhq1+tnKvS9OFEooZNsv-GQ@mail.gmail.com>
+Subject: Re: Help with unmountable btrfs fs - device tree issues suspected
+To:     linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: David Sterba <dsterba@suse.com>
+Hi, I'm still trying to restore data from the drive that I have.
 
-[ Upstream commit 4babad10198fa73fe73239d02c2e99e3333f5f5c ]
+I'm hoping that someone might be able to help, or provide some advice
+how I can proceed.
 
-Dan's smatch tool reports
+It's starting to seem hopeless for this.
 
-  fs/btrfs/file-item.c:295 btrfs_lookup_bio_sums()
-  warn: should this be 'count == -1'
+Thanks for any help you can provide.
 
-which points to the while (count--) loop. With count == 0 the check
-itself could decrement it to -1. There's a WARN_ON a few lines below
-that has never been seen in practice though.
+kareem.
 
-It turns out that the value of page_bytes_left matches the count (by
-sectorsize multiples). The loop never reaches the state where count
-would go to -1, because page_bytes_left == 0 is found first and this
-breaks out.
-
-For clarity, use only plain check on count (and only for positive
-value), decrement safely inside the loop. Any other discrepancy after
-the whole bio list processing should be reported by the exising
-WARN_ON_ONCE as well.
-
-Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
-Signed-off-by: Sasha Levin <sashal@kernel.org>
----
- fs/btrfs/file-item.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index fdcb410026233..2b994f7f820ec 100644
---- a/fs/btrfs/file-item.c
-+++ b/fs/btrfs/file-item.c
-@@ -288,7 +288,8 @@ static blk_status_t __btrfs_lookup_bio_sums(struct inode *inode, struct bio *bio
- 		csum += count * csum_size;
- 		nblocks -= count;
- next:
--		while (count--) {
-+		while (count > 0) {
-+			count--;
- 			disk_bytenr += fs_info->sectorsize;
- 			offset += fs_info->sectorsize;
- 			page_bytes_left -= fs_info->sectorsize;
--- 
-2.20.1
-
+On Wed, 29 Jan 2020 at 21:55, Kareem Straker <kareem.straker@gmail.com> wrote:
+>
+> Hi,
+>
+> My first mail to the list, so I hope I'm getting this right.
+>
+> I'm getting a little despirate trying to recover my Unraid system
+> btrfs 2-disk cache pool, that seems to be corrupted. The 1st disk
+> seems to have lost the partition information completely, the 2nd seems
+> to be present but is not able to mount. Neither disk has been
+> overwritten as far as I'm aware. Both disks are nvme model Samsung 970
+> Evo Plus 250GB.
+>
+> Trying to cram info into this mail.
+>
+> Can anyone help? Advice?
+>
+> When I use any fsck or btrfs tool, I get an error: bad tree block
+> 479137857536, bytenr mismatch, want=479137857536, have=0
+>
+> I believe the filesystem is there, but seems I need to rebuild the
+> superblock or tree.
+>
+> Any suggestions would be appreciated.
+>
+> disk paths:
+> /dev/nvme0n1p1
+> /dev/nvme1n1p1
+>
+> First info + dmesg.log (attached):
+> ```
+> root@blaster:~# uname -a
+> Linux blaster 4.19.94-Unraid #1 SMP Thu Jan 9 08:20:36 PST 2020 x86_64
+> AMD Ryzen 5 3600 6-Core Processor AuthenticAMD GNU/Linux
+> root@blaster:~# btrfs --version
+> btrfs-progs v5.4
+> root@blaster:~# btrfs fi show
+> bad tree block 479137857536, bytenr mismatch, want=479137857536, have=0
+> Couldn't setup device tree
+> Label: none  uuid: 3d4bca36-f541-4b63-bb84-1745a9a384eb
+>         Total devices 2 FS bytes used 179.16GiB
+>         devid    1 size 232.89GiB used 232.01GiB path /dev/nvme1n1p1
+>         *** Some devices missing
+>
+> root@blaster:~# btrfs fi df /mnt/cache
+> ERROR: cannot access '/mnt/cache': No such file or directory
+> ```
+>
+> Extra info:
+> ```
+> root@blaster:~# btrfs check --repair /dev/nvme1n1p1
+> enabling repair mode
+> WARNING:
+>
+>         Do not use --repair unless you are advised to do so by a developer
+>         or an experienced user, and then only after having accepted that no
+>         fsck can successfully repair all types of filesystem corruption. Eg.
+>         some software or hardware bugs can fatally damage a volume.
+>         The operation will start in 10 seconds.
+>         Use Ctrl-C to stop it.
+> 10 9 8 7 6 5 4 3 2 1
+> Starting repair.
+> Opening filesystem to check...
+> bad tree block 479137857536, bytenr mismatch, want=479137857536, have=0
+> Couldn't setup device tree
+> ERROR: cannot open file system
+> root@blaster:~#
+> root@blaster:~#
+> root@blaster:~# btrfs rescue fix-device-size /dev/nvme1n1p1
+> bad tree block 479137857536, bytenr mismatch, want=479137857536, have=0
+> Couldn't setup device tree
+> ERROR: could not open btrfs
+>
+> ```
+>
+> ```
+> root@blaster:~# btrfs rescue super-recover -v /dev/nvme1n1p1
+> All Devices:
+>         Device: id = 1, name = /dev/nvme1n1p1
+>
+> Before Recovering:
+>         [All good supers]:
+>                 device name = /dev/nvme1n1p1
+>                 superblock bytenr = 65536
+>
+>                 device name = /dev/nvme1n1p1
+>                 superblock bytenr = 67108864
+>
+>         [All bad supers]:
+>
+> All supers are valid, no need to recover
+> ```

@@ -7,46 +7,46 @@ X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B6BC6C2BA83
-	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Feb 2020 16:09:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 90339C3B19F
+	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Feb 2020 16:10:04 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8493124676
-	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Feb 2020 16:09:34 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 69BBA222C2
+	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Feb 2020 16:10:04 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1581696574;
-	bh=bKdze+iTRjZ+6yDQsmCbsOAAgJXbF6/hex2eF8Vicfc=;
+	s=default; t=1581696604;
+	bh=sr4AxBpVkrWKUM0/W5gOFoSBI4JuE8Ie0711+bXurxQ=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=oemDQlasQWvxuJAV0+d1modzpcdTq/HZTZE7l0mlscZC9GC4y+1JACM4LHjQl9Zt7
-	 v8t6G2w+RzkpLH8J9J46fcYRXpKGlT/PiQFlm+AiX0rFhsj2EuqzlizwBBr1No+poc
-	 P/RMMXhdnNLzLr8etY3IBFiJQl20awdxPGX94ru0=
+	b=U3ETMdq7DdlcHxUL3bvKLN2reMX2KBivfRhLtnDEl8FNXP879xwCSzgq7dluTQXTs
+	 SY1kfDaYcGjmPdrEZzX3xeLzHbFVheSwPgTJk0lt4ZfACb7tXzdsuE8ZLKsxXReJ5F
+	 T+xUtB42JuV4RrZoRzrgi+Pb0l8fCH55aPQxlSNs=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2391300AbgBNQJc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 14 Feb 2020 11:09:32 -0500
-Received: from mail.kernel.org ([198.145.29.99]:34004 "EHLO mail.kernel.org"
+        id S2391390AbgBNQKD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 14 Feb 2020 11:10:03 -0500
+Received: from mail.kernel.org ([198.145.29.99]:35248 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2391291AbgBNQJb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 14 Feb 2020 11:09:31 -0500
+        id S2391387AbgBNQKC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 14 Feb 2020 11:10:02 -0500
 Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 0F5062468D;
-        Fri, 14 Feb 2020 16:09:29 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 5AC2A24694;
+        Fri, 14 Feb 2020 16:10:00 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1581696570;
-        bh=bKdze+iTRjZ+6yDQsmCbsOAAgJXbF6/hex2eF8Vicfc=;
+        s=default; t=1581696601;
+        bh=sr4AxBpVkrWKUM0/W5gOFoSBI4JuE8Ie0711+bXurxQ=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=inuNYD8URlA57gUjyN97JkZL7glWJcmk7hOljJnGJG73CHob4UiZDpAtFTCknQjnO
-         kwbyFTXkYB40ScaItPDGZoR6b3wK2QWY6+ZZ2g0avw5Wn4Z8hvxjQDXzbqR4xCkRjy
-         v30O6yLP+qvadTgRwyLwn/hfF1JBBLvtIkVRhlnU=
+        b=xHl8XPhoriTDP3xTLY3Gab4n+dMBZXslU9PQaR91/DQ4HQmloArd2V6ybMc37i/Z1
+         AfnWPpHzRF8Vn2G0UZ1x6V0NjpKIdHQgWyvAqxVLkEn3DwWjbUb1qSr4JrUObwsSyD
+         WD75wTG+nkFN+CKl0ihlCXNkthnkKQbAsMdKh+8M=
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     David Sterba <dsterba@suse.com>,
-        Dan Carpenter <dan.carpenter@oracle.com>,
+Cc:     Nikolay Borisov <nborisov@suse.com>, Su Yue <Damenly_Su@gmx.com>,
         Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.4 360/459] btrfs: safely advance counter when looking up bio csums
-Date:   Fri, 14 Feb 2020 11:00:10 -0500
-Message-Id: <20200214160149.11681-360-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 5.4 386/459] btrfs: Fix split-brain handling when changing FSID to metadata uuid
+Date:   Fri, 14 Feb 2020 11:00:36 -0500
+Message-Id: <20200214160149.11681-386-sashal@kernel.org>
 X-Mailer: git-send-email 2.20.1
 In-Reply-To: <20200214160149.11681-1-sashal@kernel.org>
 References: <20200214160149.11681-1-sashal@kernel.org>
@@ -59,51 +59,106 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: David Sterba <dsterba@suse.com>
+From: Nikolay Borisov <nborisov@suse.com>
 
-[ Upstream commit 4babad10198fa73fe73239d02c2e99e3333f5f5c ]
+[ Upstream commit 1362089d2ad7e20d16371b39d3c11990d4ec23e4 ]
 
-Dan's smatch tool reports
+Current code doesn't correctly handle the situation which arises when
+a file system that has METADATA_UUID_INCOMPAT flag set and has its FSID
+changed to the one in metadata uuid. This causes the incompat flag to
+disappear.
 
-  fs/btrfs/file-item.c:295 btrfs_lookup_bio_sums()
-  warn: should this be 'count == -1'
+In case of a power failure we could end up in a situation where part of
+the disks in a multi-disk filesystem are correctly reverted to
+METADATA_UUID_INCOMPAT flag unset state, while others have
+METADATA_UUID_INCOMPAT set and CHANGING_FSID_V2_IN_PROGRESS.
 
-which points to the while (count--) loop. With count == 0 the check
-itself could decrement it to -1. There's a WARN_ON a few lines below
-that has never been seen in practice though.
+This patch corrects the behavior required to handle the case where a
+disk of the second type is scanned first, creating the necessary
+btrfs_fs_devices. Subsequently, when a disk which has already completed
+the transition is scanned it should overwrite the data in
+btrfs_fs_devices.
 
-It turns out that the value of page_bytes_left matches the count (by
-sectorsize multiples). The loop never reaches the state where count
-would go to -1, because page_bytes_left == 0 is found first and this
-breaks out.
-
-For clarity, use only plain check on count (and only for positive
-value), decrement safely inside the loop. Any other discrepancy after
-the whole bio list processing should be reported by the exising
-WARN_ON_ONCE as well.
-
-Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
+Reported-by: Su Yue <Damenly_Su@gmx.com>
 Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+Reviewed-by: David Sterba <dsterba@suse.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
- fs/btrfs/file-item.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ fs/btrfs/volumes.c | 42 ++++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 38 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index c878bc25d0460..f62a179f85bb6 100644
---- a/fs/btrfs/file-item.c
-+++ b/fs/btrfs/file-item.c
-@@ -274,7 +274,8 @@ static blk_status_t __btrfs_lookup_bio_sums(struct inode *inode, struct bio *bio
- 		csum += count * csum_size;
- 		nblocks -= count;
- next:
--		while (count--) {
-+		while (count > 0) {
-+			count--;
- 			disk_bytenr += fs_info->sectorsize;
- 			offset += fs_info->sectorsize;
- 			page_bytes_left -= fs_info->sectorsize;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 9ab3ae5df3005..3e64f49c394b8 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -907,6 +907,32 @@ static struct btrfs_fs_devices *find_fsid_changed(
+ 
+ 	return NULL;
+ }
++
++static struct btrfs_fs_devices *find_fsid_reverted_metadata(
++				struct btrfs_super_block *disk_super)
++{
++	struct btrfs_fs_devices *fs_devices;
++
++	/*
++	 * Handle the case where the scanned device is part of an fs whose last
++	 * metadata UUID change reverted it to the original FSID. At the same
++	 * time * fs_devices was first created by another constitutent device
++	 * which didn't fully observe the operation. This results in an
++	 * btrfs_fs_devices created with metadata/fsid different AND
++	 * btrfs_fs_devices::fsid_change set AND the metadata_uuid of the
++	 * fs_devices equal to the FSID of the disk.
++	 */
++	list_for_each_entry(fs_devices, &fs_uuids, fs_list) {
++		if (memcmp(fs_devices->fsid, fs_devices->metadata_uuid,
++			   BTRFS_FSID_SIZE) != 0 &&
++		    memcmp(fs_devices->metadata_uuid, disk_super->fsid,
++			   BTRFS_FSID_SIZE) == 0 &&
++		    fs_devices->fsid_change)
++			return fs_devices;
++	}
++
++	return NULL;
++}
+ /*
+  * Add new device to list of registered devices
+  *
+@@ -946,7 +972,9 @@ static noinline struct btrfs_device *device_list_add(const char *path,
+ 		fs_devices = find_fsid(disk_super->fsid,
+ 				       disk_super->metadata_uuid);
+ 	} else {
+-		fs_devices = find_fsid(disk_super->fsid, NULL);
++		fs_devices = find_fsid_reverted_metadata(disk_super);
++		if (!fs_devices)
++			fs_devices = find_fsid(disk_super->fsid, NULL);
+ 	}
+ 
+ 
+@@ -976,12 +1004,18 @@ static noinline struct btrfs_device *device_list_add(const char *path,
+ 		 * a device which had the CHANGING_FSID_V2 flag then replace the
+ 		 * metadata_uuid/fsid values of the fs_devices.
+ 		 */
+-		if (has_metadata_uuid && fs_devices->fsid_change &&
++		if (fs_devices->fsid_change &&
+ 		    found_transid > fs_devices->latest_generation) {
+ 			memcpy(fs_devices->fsid, disk_super->fsid,
+ 					BTRFS_FSID_SIZE);
+-			memcpy(fs_devices->metadata_uuid,
+-					disk_super->metadata_uuid, BTRFS_FSID_SIZE);
++
++			if (has_metadata_uuid)
++				memcpy(fs_devices->metadata_uuid,
++				       disk_super->metadata_uuid,
++				       BTRFS_FSID_SIZE);
++			else
++				memcpy(fs_devices->metadata_uuid,
++				       disk_super->fsid, BTRFS_FSID_SIZE);
+ 
+ 			fs_devices->fsid_change = false;
+ 		}
 -- 
 2.20.1
 

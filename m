@@ -1,147 +1,106 @@
-Return-Path: <SRS0=pytO=4E=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=TQMp=4F=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-14.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F33BFC7619B
-	for <linux-btrfs@archiver.kernel.org>; Sun, 16 Feb 2020 21:39:18 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 99775C7619B
+	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Feb 2020 03:18:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8B13520857
-	for <linux-btrfs@archiver.kernel.org>; Sun, 16 Feb 2020 21:39:18 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 72068208C4
+	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Feb 2020 03:18:24 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=mpdesouza.com header.i=@mpdesouza.com header.b="jKTsKRtz"
+	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="C2rldD8W"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727905AbgBPVdm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 16 Feb 2020 16:33:42 -0500
-Received: from gateway22.websitewelcome.com ([192.185.47.179]:32028 "EHLO
-        gateway22.websitewelcome.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1726020AbgBPVdm (ORCPT
+        id S1726672AbgBQDSX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 16 Feb 2020 22:18:23 -0500
+Received: from mail-wm1-f43.google.com ([209.85.128.43]:40525 "EHLO
+        mail-wm1-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726485AbgBQDSX (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 16 Feb 2020 16:33:42 -0500
-X-Greylist: delayed 1453 seconds by postgrey-1.27 at vger.kernel.org; Sun, 16 Feb 2020 16:33:41 EST
-Received: from cm11.websitewelcome.com (cm11.websitewelcome.com [100.42.49.5])
-        by gateway22.websitewelcome.com (Postfix) with ESMTP id 276E23780
-        for <linux-btrfs@vger.kernel.org>; Sun, 16 Feb 2020 15:09:28 -0600 (CST)
-Received: from br540.hostgator.com.br ([108.179.252.180])
-        by cmsmtp with SMTP
-        id 3RAOj30mJSl8q3RAOjkQUr; Sun, 16 Feb 2020 15:09:28 -0600
-X-Authority-Reason: nr=8
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=mpdesouza.com; s=default; h=Content-Transfer-Encoding:MIME-Version:
-        Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:Content-Type:Content-ID:
-        Content-Description:Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc
-        :Resent-Message-ID:In-Reply-To:References:List-Id:List-Help:List-Unsubscribe:
-        List-Subscribe:List-Post:List-Owner:List-Archive;
-        bh=7S5efBgDCSC4pVkAhyXU8Ai4gMY5fgl9Dkx8r1deplE=; b=jKTsKRtz4a38qkKVhYL1lj89my
-        Yo6uFXT45qjqsNmHD6rqQ1AgCYeuCJBb0VNNfw0jLCg14EfTF5ok6Hpsne0chlbQyegG5uhX6MEcA
-        YL8etZPJ7/E3WZOgud4gneEiYb7w78XY56f3mesdgT6jhY1np3oSJ6x4Lb3XUIIofhKB01dr/qIFL
-        QJ5jXKhTKRjkfaFaOSg3iGTAvAEtZFLqpKPgA68na433Ybr+2rrtefITS28L7yEolnyfwhEqKoGre
-        1r8EgDbHBgv1rLzjROouWMbw0FtIvakmV6WTY/OtFFGVMT2kqrv0uQYk+LiN8f/T3+U82PU/aiQNf
-        yseyfH5g==;
-Received: from [179.183.207.150] (port=51688 helo=localhost.localdomain)
-        by br540.hostgator.com.br with esmtpsa (TLSv1.2:ECDHE-RSA-AES128-GCM-SHA256:128)
-        (Exim 4.92)
-        (envelope-from <marcos@mpdesouza.com>)
-        id 1j3RAN-001V3i-IX; Sun, 16 Feb 2020 18:09:27 -0300
-From:   Marcos Paulo de Souza <marcos@mpdesouza.com>
-To:     linux-btrfs@vger.kernel.org, dsterba@suse.com
-Cc:     Marcos Paulo de Souza <mpdesouza@suse.com>
-Subject: [PATCH] progs: misc-test: 034: Call "udevmadm settle" before mount
-Date:   Sun, 16 Feb 2020 18:12:21 -0300
-Message-Id: <20200216211221.31471-1-marcos@mpdesouza.com>
-X-Mailer: git-send-email 2.25.0
+        Sun, 16 Feb 2020 22:18:23 -0500
+Received: by mail-wm1-f43.google.com with SMTP id t14so16786649wmi.5
+        for <linux-btrfs@vger.kernel.org>; Sun, 16 Feb 2020 19:18:21 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:from:date:message-id:subject:to;
+        bh=GVtB47ggrwZFRbF2en1LTjsI9Athjmuxky8H4l9OTC0=;
+        b=C2rldD8WFPkAc1NbktyvKnwJETzm6m+rTl0wDsvfX7gpgYuT9GUEAR1ZvnZhDKwfFE
+         yVejbrSUS8QV9IF6afDXiI3vVpymTzACBTyffyFgSjMXNtUFVhtnXPQFsk4UTyijnlYK
+         KgDMm5YN2AJ+3wl/iOg3vt20pgyL6uILBOMMKQS2Uwb7eNcKdPFqgRrSiy5bi7hGMmem
+         svlfknT/YVILiZtQ6Go9oVlMwRxqnrcsCYbDTIZQKgBJEvQ+xJ5vdgDgDM+/QHZA1gzM
+         clC/bEN8Ehr6tRrRSuVriO9TCPzNoAPe5jLMY0CCImzz132xQyY/h1QZv331ovnvYuK+
+         gnkA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:from:date:message-id:subject:to;
+        bh=GVtB47ggrwZFRbF2en1LTjsI9Athjmuxky8H4l9OTC0=;
+        b=bL1oBdFWJV8/Wswsb8l02lgQZ3x7emPj8cXMEySy7aol8mspGr8paL4hXVn8gyAPeU
+         DZFMIpJxZ/dk8x7quCRfSzORN6+2E2uw9WZPdup0IEtx5clBOTUMyFfhrq8nAh/gKu1h
+         Qng0qw0LRkV3tFsC4PNARiGJFb6u5FIokb7c2DdT0TkkTX5KnTVa6uk3XvZ18RwdRKHN
+         6Yyp2/vFXrV7bGI1/s6fezycWxiPqU8uE3NSbmjaeSNdobLhpCNYetNHBMYMZbhED17b
+         SADDfq/C3LtN4OMNimSpmtsCjhhzp6zY2U5pcR6LQMWxoCM9fXuvZVW8efV0naVg4wmJ
+         ow6Q==
+X-Gm-Message-State: APjAAAUeq+FLSQk7w2wucbRuhh3Yb7Jt5aooNMqPoDnfghbt8mFICz4+
+        z+NFyu/H7WJ1ueupI/iBe94CF+ZYwo9PUq6UIF30FQ==
+X-Google-Smtp-Source: APXvYqy7u0EUG43cZpAVRj99cIrnVoUn1NBx+i9Q7fhJl4jCaHMJVIc0hHETjfoGt+ZlAvlPH2TnLf+IKx6eU1lVJIA=
+X-Received: by 2002:a05:600c:217:: with SMTP id 23mr19257499wmi.124.1581909500919;
+ Sun, 16 Feb 2020 19:18:20 -0800 (PST)
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-AntiAbuse: This header was added to track abuse, please include it with any abuse report
-X-AntiAbuse: Primary Hostname - br540.hostgator.com.br
-X-AntiAbuse: Original Domain - vger.kernel.org
-X-AntiAbuse: Originator/Caller UID/GID - [47 12] / [47 12]
-X-AntiAbuse: Sender Address Domain - mpdesouza.com
-X-BWhitelist: no
-X-Source-IP: 179.183.207.150
-X-Source-L: No
-X-Exim-ID: 1j3RAN-001V3i-IX
-X-Source: 
-X-Source-Args: 
-X-Source-Dir: 
-X-Source-Sender: (localhost.localdomain) [179.183.207.150]:51688
-X-Source-Auth: marcos@mpdesouza.com
-X-Email-Count: 3
-X-Source-Cap: bXBkZXNvNTM7bXBkZXNvNTM7YnI1NDAuaG9zdGdhdG9yLmNvbS5icg==
-X-Local-Domain: yes
+From:   Chris Murphy <lists@colorremedies.com>
+Date:   Sun, 16 Feb 2020 20:18:05 -0700
+Message-ID: <CAJCQCtSUzj4V__vo5LxrF1Jv2MgUNux=d8JwXq6H_VN=sYunvA@mail.gmail.com>
+Subject: dev loop ~23% slower?
+To:     Linux FS Devel <linux-fsdevel@vger.kernel.org>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Marcos Paulo de Souza <mpdesouza@suse.com>
+Hi,
+I see an approximately 23% reduction in performance through a loop
+device. Is it expected? This is kernel 5.5.3.
 
-As seem in this issue[1], this test can fail from time to time. The
-issue happens when a mount is issued before the new device is processed
-by systemd-udevd, as we can see by the og bellow:
+The setup is SSD, plain partitions, no LVM or encryption, Btrfs. This
+scrub performance is typical.
 
-[ 2346.028809] BTRFS: device fsid 593e23af-a7e6-4360-b16a-229f415de697 devid 1 transid 6 /dev/loop10 scanned by systemd-udevd (3418)
-[ 2346.265401] BTRFS info (device loop10): found metadata UUID change in progress flag, clearing
-[ 2346.272474] BTRFS info (device loop10): disk space caching is enabled
-[ 2346.277472] BTRFS info (device loop10): has skinny extents
-[ 2346.281840] BTRFS info (device loop10): flagging fs with big metadata feature
-[ 2346.308428] BTRFS error (device loop10): devid 2 uuid cde07de6-db7e-4b34-909e-d3db6e7c0b06 is missing
-[ 2346.315363] BTRFS error (device loop10): failed to read the system array: -2
-[ 2346.329887] BTRFS error (device loop10): open_ctree failed
-failed: mount /dev/loop10 /home/marcos/git/suse/btrfs-progs/tests//mnt
-test failed for case 034-metadata-uuid
-make: *** [Makefile:401: test-misc] Error 1
-[ 2346.666865] BTRFS: device fsid 593e23af-a7e6-4360-b16a-229f415de697 devid 2 transid 5 /dev/loop11 scanned by systemd-udevd (3422)
-[ 2346.853233] BTRFS: device fsid 1c2debeb-e829-4d6b-84df-aa7c5d246fd5 devid 1 transid 7 /dev/loop6 scanned by systemd-udevd (3418)
+$ sudo btrfs scrub status /
+UUID:             b8e290d5-1dc5-429f-8201-10ca5b2c0b95
+Scrub started:    Sun Feb 16 19:39:01 2020
+Status:           finished
+Duration:         0:00:54
+Total to scrub:   28.00GiB
+Rate:             531.06MiB/s
+Error summary:    no errors found
+[chris@fmac ~]$
 
-A few moments after the test failed systemd-udevd processed the new
-device (registered the new device under btrfs). This can be
-tested by executing a mount after the test failed, resulting in a
-successful mount:
+On this file system is a sparse file, chattr +C is set, and it's
+attached to /dev/loop0 and mounted at /mnt.
 
-mount /dev/loop10 /mnt
-[ 2398.955254] BTRFS info (device loop10): found metadata UUID change in progress flag, clearing
-[ 2398.959416] BTRFS info (device loop10): disk space caching is enabled
-[ 2398.962483] BTRFS info (device loop10): has skinny extents
-[ 2398.965070] BTRFS info (device loop10): flagging fs with big metadata feature
-[ 2399.012617] BTRFS info (device loop10): enabling ssd optimizations
-[ 2399.022375] BTRFS info (device loop10): checking UUID tree
+$ sudo btrfs scrub status /mnt
+UUID:             63a7e2b9-6a5e-4e94-9cc9-f90d01de7541
+Scrub started:    Sun Feb 16 20:06:51 2020
+Status:           finished
+Duration:         0:00:13
+Total to scrub:   5.15GiB
+Rate:             405.79MiB/s
+Error summary:    no errors found
+$
 
-This problem can be avoided is we execute "udevadm settle" before the
-mount is executed.
+I don't think file system over accounts for much more than a couple
+percent of this, so I'm curious where the slow down might be
+happening? The "hosting" Btrfs file system is not busy at all at the
+time of the loop mounted filesystem's scrub. I did issue 'echo 3 >
+/proc/sys/vm/drop_caches' before the loop mount image being scrubbed,
+otherwise I get ~1.72GiB/s scrubs which exceeds the performance of the
+SSD (which is in the realm of 550MiB/s max)
 
-[1]: https://github.com/kdave/btrfs-progs/issues/192
 
-Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
----
- tests/misc-tests/034-metadata-uuid/test.sh | 3 +++
- 1 file changed, 3 insertions(+)
+Thanks,
 
-diff --git a/tests/misc-tests/034-metadata-uuid/test.sh b/tests/misc-tests/034-metadata-uuid/test.sh
-index 6ac55b1c..9791285b 100755
---- a/tests/misc-tests/034-metadata-uuid/test.sh
-+++ b/tests/misc-tests/034-metadata-uuid/test.sh
-@@ -6,6 +6,7 @@ check_prereq mkfs.btrfs
- check_prereq btrfs
- check_prereq btrfstune
- check_prereq btrfs-image
-+check_global_prereq udevadm
- 
- setup_root_helper
- prepare_test_dev
-@@ -172,6 +173,8 @@ failure_recovery() {
- 	loop1=$(run_check_stdout $SUDO_HELPER losetup --find --show "$image1")
- 	loop2=$(run_check_stdout $SUDO_HELPER losetup --find --show "$image2")
- 
-+	run_check $SUDO_HELPER udevadm settle
-+
- 	# Mount and unmount, on trans commit all disks should be consistent
- 	run_check $SUDO_HELPER mount "$loop1" "$TEST_MNT"
- 	run_check $SUDO_HELPER umount "$TEST_MNT"
 -- 
-2.25.0
-
+Chris Murphy

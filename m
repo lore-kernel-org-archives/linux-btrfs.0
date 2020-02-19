@@ -2,78 +2,73 @@ Return-Path: <SRS0=PNgT=4H=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_SANE_1 autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7C08CC34050
-	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Feb 2020 14:17:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6E90AC34047
+	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Feb 2020 14:28:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5D8EE20801
-	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Feb 2020 14:17:55 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4C5CC24654
+	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Feb 2020 14:28:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727809AbgBSORv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 19 Feb 2020 09:17:51 -0500
-Received: from mx2.suse.de ([195.135.220.15]:35534 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726736AbgBSORv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Feb 2020 09:17:51 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 0CF03B9E7;
-        Wed, 19 Feb 2020 14:17:47 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 5F881DA70E; Wed, 19 Feb 2020 15:17:30 +0100 (CET)
-Date:   Wed, 19 Feb 2020 15:17:30 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Nikolay Borisov <nborisov@suse.com>
-Cc:     yu kuai <yukuai3@huawei.com>, clm@fb.com, josef@toxicpanda.com,
-        dsterba@suse.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org, zhengbin13@huawei.com,
-        yi.zhang@huawei.com
-Subject: Re: [PATCH 2/3] btrfs: remove set but not used variable 'parent'
-Message-ID: <20200219141730.GX2902@suse.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
-        yu kuai <yukuai3@huawei.com>, clm@fb.com, josef@toxicpanda.com,
-        dsterba@suse.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org, zhengbin13@huawei.com,
-        yi.zhang@huawei.com
-References: <20200219112203.17075-1-yukuai3@huawei.com>
- <f7bc478c-2fe9-2694-cd0c-92c188d178c5@suse.com>
+        id S1727804AbgBSO2G (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 19 Feb 2020 09:28:06 -0500
+Received: from magic.merlins.org ([209.81.13.136]:57056 "EHLO
+        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726736AbgBSO2G (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 19 Feb 2020 09:28:06 -0500
+X-Greylist: delayed 2674 seconds by postgrey-1.27 at vger.kernel.org; Wed, 19 Feb 2020 09:28:06 EST
+Received: from merlin by mail1.merlins.org with local (Exim 4.92 #3)
+        id 1j4PdP-0006A1-Tl by authid <merlin>; Wed, 19 Feb 2020 05:43:27 -0800
+Date:   Wed, 19 Feb 2020 05:43:27 -0800
+From:   Marc MERLIN <marc@merlins.org>
+To:     Martin Steigerwald <martin@lichtvoll.de>
+Cc:     dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
+        linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: Re: [PATCH] btrfs: do not zero f_bavail if we have available space
+Message-ID: <20200219134327.GD30993@merlins.org>
+References: <20200131143105.52092-1-josef@toxicpanda.com>
+ <20200202175247.GB3929@twin.jikos.cz>
+ <CAKhhfD7S=kcKLRURdNFZ8H4beS8=XjFvnOQXche7+SVOGFGC_w@mail.gmail.com>
+ <2776783.E9KYCc1pZO@merkaba>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <f7bc478c-2fe9-2694-cd0c-92c188d178c5@suse.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <2776783.E9KYCc1pZO@merkaba>
+X-Sysadmin: BOFH
+X-URL:  http://marc.merlins.org/
+User-Agent: Mutt/1.10.1 (2018-07-13)
+X-SA-Exim-Connect-IP: <locally generated>
+X-SA-Exim-Mail-From: marc@merlins.org
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Feb 19, 2020 at 01:34:53PM +0200, Nikolay Borisov wrote:
+On Wed, Feb 19, 2020 at 10:17:24AM +0100, Martin Steigerwald wrote:
+> Marc MERLIN - 19.02.20, 01:42:57 CET:
+> > Has the patch gotten to any 5.5 release too?
 > 
-> 
-> On 19.02.20 г. 13:22 ч., yu kuai wrote:
-> > Fixes gcc '-Wunused-but-set-variable' warning:
-> > 
-> > fs/btrfs/tree-log.c: In function ‘walk_down_log_tree’:
-> > fs/btrfs/tree-log.c:2702:24: warning: variable ‘parent’
-> > set but not used [-Wunused-but-set-variable]
-> > fs/btrfs/tree-log.c: In function ‘walk_up_log_tree’:
-> > fs/btrfs/tree-log.c:2803:26: warning: variable ‘parent’
-> > set but not used [-Wunused-but-set-variable]
-> > 
-> > They are never used, and so can be removed.
-> > 
-> > Signed-off-by: yu kuai <yukuai3@huawei.com>
-> 
-> Ah yes, those two are a result of my :
-> 
-> e084c5ab48f9 ("btrfs: Call btrfs_pin_reserved_extent only during active
-> transaction")  (in misc-next branch)
-> 
-> David perhaps you can squash the two var removals into the original patch?
+> Yes, as git log easily reveals.
 
-Yes I'll do that.
+Sorry if I suck, but right now I only have pre-made kernel releases from
+kernel.org.
+This bug in 5.4 messed up some of my dm-thin volumes which now took 28% of a dm-thin
+14TB pool when the actual data is only using 4GB :( (at the same time it
+also shows my FS is full when of course it's not).
+
+I'll likely have to destroy the dm-thin to recover that space (or maybe
+not, we'll see), but I'm travelling and don't really have countless time
+to allocate to this.
+If 5.5.4 is supposed to fix this too, I'll build it, install it and hope
+it reclaims my lost dm-thin space, and if not suck up the deletion,
+re-creation and backup/restore.
+
+Thanks,
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+ 
+Home page: http://marc.merlins.org/  

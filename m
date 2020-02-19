@@ -2,94 +2,115 @@ Return-Path: <SRS0=PNgT=4H=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.4 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
+X-Spam-Status: No, score=-0.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2789BC34047
-	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Feb 2020 11:42:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 13E5AC34050
+	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Feb 2020 12:18:26 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id EE70D24654
-	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Feb 2020 11:42:14 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="Xb6QolHB"
+	by mail.kernel.org (Postfix) with ESMTP id E6C83206EF
+	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Feb 2020 12:18:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726530AbgBSLmO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 19 Feb 2020 06:42:14 -0500
-Received: from aserp2120.oracle.com ([141.146.126.78]:52334 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726491AbgBSLmO (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Feb 2020 06:42:14 -0500
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 01JBfQjh029887;
-        Wed, 19 Feb 2020 11:42:08 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
- references : from : message-id : date : mime-version : in-reply-to :
- content-type : content-transfer-encoding; s=corp-2020-01-29;
- bh=+vjajekEh3qzLH/UqWsPVAnJQJeUHkHB9O3iddWY+Ts=;
- b=Xb6QolHBIwk8GQ9udZelSC8yxEANkXLPWzuR0xjQjFmUnxQ0UC5Dr6qFED/lkbSd9q2T
- vgwCk8izhWDmVrk1Ifcv9cFr4XyRFEZw3JHC5xoqnakkkQyE6CEI2PFcTTBNT1GUSxUx
- 7bioZ5kZ7WYL4jk9ZtJP0Hblg7F7nxAtPSmZlkFdcXKZ/EFtorkvdihTpEyzSnQh6dHO
- eWoU2ouFErEBHKm5WchppgWsiAknNzHv01No+fKdwQaWpvALLsM7pY88D/Qrd0ZPvBHS
- 2U/fOMCuLJkPvQYpJKe14DCS6XYpCaoDtfgaxyiZkEO36PKeKZqmybOmgb6OIQEAnuKq 8g== 
-Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
-        by aserp2120.oracle.com with ESMTP id 2y8udkadhg-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Wed, 19 Feb 2020 11:42:08 +0000
-Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
-        by userp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 01JBfkLj007976;
-        Wed, 19 Feb 2020 11:42:07 GMT
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by userp3030.oracle.com with ESMTP id 2y8ud314fg-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Wed, 19 Feb 2020 11:42:07 +0000
-Received: from abhmp0001.oracle.com (abhmp0001.oracle.com [141.146.116.7])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id 01JBg6h9013515;
-        Wed, 19 Feb 2020 11:42:07 GMT
-Received: from [192.168.1.145] (/39.109.145.141)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Wed, 19 Feb 2020 03:42:06 -0800
-Subject: Re: [PATCH v5 0/5] readmirror feature (sysfs and in-memory only
- approach; with new read_policy device)
-To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org, josef@toxicpanda.com,
-        dsterba@suse.com
-References: <1581937965-16569-1-git-send-email-anand.jain@oracle.com>
- <20200218163547.GQ2902@twin.jikos.cz>
-From:   Anand Jain <anand.jain@oracle.com>
-Message-ID: <95249fd3-9a6b-1b1a-744c-331795a22522@oracle.com>
-Date:   Wed, 19 Feb 2020 19:42:02 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.4.1
+        id S1726962AbgBSMSY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 19 Feb 2020 07:18:24 -0500
+Received: from bang.steev.me.uk ([81.2.120.65]:57113 "EHLO smtp.steev.me.uk"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726514AbgBSMSY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 19 Feb 2020 07:18:24 -0500
+Received: from localhost ([::1] helo=webmail.steev.me.uk)
+        by smtp.steev.me.uk with esmtp (Exim 4.92.2)
+        id 1j4OIy-001vnQ-R1; Wed, 19 Feb 2020 12:18:16 +0000
 MIME-Version: 1.0
-In-Reply-To: <20200218163547.GQ2902@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
+Content-Type: text/plain; charset=US-ASCII;
+ format=flowed
 Content-Transfer-Encoding: 7bit
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9535 signatures=668685
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 phishscore=0 mlxlogscore=999 mlxscore=0
- adultscore=0 spamscore=0 suspectscore=0 malwarescore=0 bulkscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2001150001
- definitions=main-2002190089
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9535 signatures=668685
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 lowpriorityscore=0 suspectscore=0
- spamscore=0 priorityscore=1501 adultscore=0 mlxscore=0 clxscore=1015
- malwarescore=0 mlxlogscore=999 phishscore=0 impostorscore=0 bulkscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2001150001
- definitions=main-2002190088
+Date:   Wed, 19 Feb 2020 12:18:16 +0000
+From:   Steven Davies <btrfs-list@steev.me.uk>
+To:     Anand Jain <anand.jain@oracle.com>
+Cc:     josef@toxicpanda.com, dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v6 5/5] btrfs: introduce new read_policy device
+In-Reply-To: <1582111766-8372-6-git-send-email-anand.jain@oracle.com>
+References: <1582111766-8372-1-git-send-email-anand.jain@oracle.com>
+ <1582111766-8372-6-git-send-email-anand.jain@oracle.com>
+Message-ID: <ca5fe4b1232aadb3aa0d39b3b339dcbe@steev.me.uk>
+X-Sender: btrfs-list@steev.me.uk
+User-Agent: Roundcube Webmail/1.3.8
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On 2020-02-19 11:29, Anand Jain wrote:
+> A new read policy 'device' is introduced with this patch, which when 
+> set
+> can pick only the device flagged as read_preferred for reading. This
+> tunable is for the advance users and the testers, which can make sure 
+> that
+> reads are read from the device they prefer for chunks of type raid1,
+> raid10, raid1c3 and raid1c4.
+> 
+> The default read policy is pid which can be changed to device as below.
+> 
+> $ pwd
+> /sys/fs/btrfs/12345678-1234-1234-1234-123456789abc
+> 
+> $ cat read_policy; echo device > ./read_policy; cat read_policy
+> [pid] device
+> pid [device]
+> 
+> One or more devices which are favored for reading should set the flag
+> read-preferred. In an example below a typical two disk raid1, devid1 is
+> configured as read preferred.
+> 
+> $ echo 1 > devinfo/1/read_preferred
+> $ cat devinfo/1/read_preferred; cat devinfo/2/read_preffered
 
+Typo: should be read_preferred
 
-> The last patch implementing the new policy needs explanation how it
-> works so users can decide if this is the right read policy for the use
-> case.
+> 1
+> 0
+> 
+> So now when the file is read, the read IO would prefer device(s) with
+> read_preferred flags for reading.
+> 
+> $ echo 3 > /proc/sys/vm/drop_caches; md5sum /btrfs/YkZI
+> 
+> Since the devid 1 (sdb) is our read preferred device, the reads are set
+> to sdb only.
+> $ iostat -zy 1 | egrep 'sdb|sdc' (from another terminal)
+> sdb              50.00     40048.00         0.00      40048          0
+> 
+> $ echo 0 > ./devinfo/1/read_preferred; echo 1 >
+> ./devinfo/2/read_preferred;
+> 
+> [ 3343.918658] BTRFS info (device sdb): reset read preferred on devid 1
+> (1334)
+> [ 3343.919876] BTRFS info (device sdb): set read preferred on devid 2
+> (1334)
+> 
+> $ echo 3 > /proc/sys/vm/drop_caches; md5sum /btrfs/YkZI
+> 
+> Since now we changed the read preferred from devid 1 (sdb) to 2 (sdc),
+> now all the read IO goes to sdc.
+> 
+> $ iostat -zy 1 | egrep 'sdb|sdc' (from another terminal)
+> sdc              49.00     40048.00         0.00      40048          0
+> 
+> Whenever there isn't any read preferred device(s) or if more than one
+> stripe is marked as read preferred device then this read policy shall
+> use the stripe 0 for reading.
 
-V6 adds more details.
+Should we consider the situation where more than one device is preferred 
+(perhaps for a future patch) - e.g. devid1 is HDD, devid2 is SSD, devid3 
+is SSD and data is RAID1C3?
 
-HTH.
+Will there be a warning when this fallback to stripe 0 happens? Although 
+I imagine that would either always display on mount before 
+read_preferred is set or flood dmesg for every read.
 
+Perhaps fallback to the %pid policy to give some form of balancing would 
+be a better default?
+
+-- 
+Steven Davies

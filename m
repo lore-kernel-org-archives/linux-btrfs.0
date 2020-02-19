@@ -2,121 +2,80 @@ Return-Path: <SRS0=PNgT=4H=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-4.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_GIT autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DD747C34047
-	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Feb 2020 14:00:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 613EBC34047
+	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Feb 2020 14:05:45 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B3A902176D
-	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Feb 2020 14:00:00 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2CD192176D
+	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Feb 2020 14:05:45 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1582121145;
+	bh=8aeWqQDvGBQnaonKTNBXGQkyv/H7qazvWwhR3fRraVk=;
+	h=From:To:Subject:Date:List-ID:From;
+	b=zrWdtrjZvSh/u+qNM5bTO7nIztasOFnnf0gyUPM/AEOoSpWrJJA9Se09ABQXICSgD
+	 OWicykhgRNt8oA/mQkbZhUQaF6NfaV0dK5r7HbDymkIMgcsE5yFXqvG63Ffyfkvwct
+	 YyXbEdnbjO7EcOtUG2al8MjybEEo7iWN6r5cEQGg=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727263AbgBSN77 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 19 Feb 2020 08:59:59 -0500
-Received: from mx2.suse.de ([195.135.220.15]:48612 "EHLO mx2.suse.de"
+        id S1727597AbgBSOFo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 19 Feb 2020 09:05:44 -0500
+Received: from mail.kernel.org ([198.145.29.99]:46160 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726617AbgBSN77 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Feb 2020 08:59:59 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 2FDC9B24D;
-        Wed, 19 Feb 2020 13:59:57 +0000 (UTC)
-Subject: Re: [PATCH 1/8] btrfs: make the extent buffer leak check per fs info
-To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
-        kernel-team@fb.com
-References: <20200214211147.24610-1-josef@toxicpanda.com>
- <20200214211147.24610-2-josef@toxicpanda.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <78ac92dc-1e57-1d74-0b17-48832a36c649@suse.com>
-Date:   Wed, 19 Feb 2020 15:59:55 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.4.1
+        id S1726725AbgBSOFo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 19 Feb 2020 09:05:44 -0500
+Received: from debian5.Home (bl8-197-74.dsl.telepac.pt [85.241.197.74])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 32F8C2176D
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Feb 2020 14:05:43 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1582121143;
+        bh=8aeWqQDvGBQnaonKTNBXGQkyv/H7qazvWwhR3fRraVk=;
+        h=From:To:Subject:Date:From;
+        b=NxoVdENl7kQUlsPFKQ16plbv/ISNpoGYJSrhcNdDq1uJdgklBEVeESu6r36bc3y9Z
+         EU1/fmhFQkvzDwMIgxwswe49zwtIs4fCtw1Vhzh/RNEIXt//X+w85vg92QzNczM7nF
+         PsIthxhXsuhpYfsf5tWdyfdpkjlMrELHDLRHz7fY=
+From:   fdmanana@kernel.org
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/4] Add full support for cloning ranges with inline extents
+Date:   Wed, 19 Feb 2020 14:05:39 +0000
+Message-Id: <20200219140539.1641457-1-fdmanana@kernel.org>
+X-Mailer: git-send-email 2.25.0
 MIME-Version: 1.0
-In-Reply-To: <20200214211147.24610-2-josef@toxicpanda.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+From: Filipe Manana <fdmanana@suse.com>
 
+This patchset adds support for currently unsupported cases of reflink
+operations that cover a file range that has inline extents, more details
+on why/how in patch 4/4.
 
-On 14.02.20 г. 23:11 ч., Josef Bacik wrote:
-> I'm going to make the entire destruction of btrfs_root's controlled by
-> their refcount, so it will be helpful to notice if we're leaking their
-> eb's on umount.
-> 
-> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+It also starts by moving all the reflink code out of ioctl.c into a new
+file named reflink.c (like xfs does) since this code is quite significant
+in size and has grown over the years.
 
-Overall looks good, one minor nit below though:
+Filipe Manana (4):
+  Btrfs: move all reflink implementation code into its own file
+  Btrfs: simplify inline extent handling when doing reflinks
+  Btrfs: resurrect extent_read_full_page_nolock()
+  Btrfs: implement full reflink support for inline extents
 
-> ---
->  fs/btrfs/ctree.h     |  3 +++
->  fs/btrfs/disk-io.c   |  3 +++
->  fs/btrfs/extent_io.c | 45 ++++++++++++++++++++++----------------------
->  fs/btrfs/extent_io.h |  7 +++++++
->  4 files changed, 36 insertions(+), 22 deletions(-)
-> 
+ fs/btrfs/Makefile      |   2 +-
+ fs/btrfs/compression.c |   8 +-
+ fs/btrfs/ctree.h       |   2 +
+ fs/btrfs/extent_io.c   |  47 ++-
+ fs/btrfs/extent_io.h   |   3 +
+ fs/btrfs/ioctl.c       | 733 -------------------------------------
+ fs/btrfs/reflink.c     | 803 +++++++++++++++++++++++++++++++++++++++++
+ 7 files changed, 854 insertions(+), 744 deletions(-)
+ create mode 100644 fs/btrfs/reflink.c
 
-<snip>
+-- 
+2.25.0
 
-> @@ -35,42 +35,45 @@ static inline bool extent_state_in_tree(const struct extent_state *state)
->  }
->  
->  #ifdef CONFIG_BTRFS_DEBUG
-> -static LIST_HEAD(buffers);
->  static LIST_HEAD(states);
-> -
->  static DEFINE_SPINLOCK(leak_lock);
-
-This lock should be renamed to extent_state_leak_lock, otherwise it's
-not clear what it protects. I had to through its usage to figure it out.
-To take this further, why don't you make it a a per-fs_info lock as
-well? Extent states are per fs themselves.
-
-<snip>

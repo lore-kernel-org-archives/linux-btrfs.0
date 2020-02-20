@@ -2,77 +2,61 @@ Return-Path: <SRS0=lT2x=4I=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1FC6EC11D0C
-	for <linux-btrfs@archiver.kernel.org>; Thu, 20 Feb 2020 15:54:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2C186C11D0C
+	for <linux-btrfs@archiver.kernel.org>; Thu, 20 Feb 2020 15:57:03 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E3810208CD
-	for <linux-btrfs@archiver.kernel.org>; Thu, 20 Feb 2020 15:54:55 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="PM/AprBi"
+	by mail.kernel.org (Postfix) with ESMTP id 0D20720659
+	for <linux-btrfs@archiver.kernel.org>; Thu, 20 Feb 2020 15:57:03 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728655AbgBTPyw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 20 Feb 2020 10:54:52 -0500
-Received: from bombadil.infradead.org ([198.137.202.133]:56204 "EHLO
-        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728380AbgBTPyw (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 20 Feb 2020 10:54:52 -0500
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20170209; h=In-Reply-To:Content-Type:MIME-Version
-        :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-        Content-Transfer-Encoding:Content-ID:Content-Description;
-        bh=D6I8jW+2llttZsSrEwC7oLd5yfRbnmR5fQ3XY07h6/A=; b=PM/AprBicbU39edYsbWTpTc0Na
-        emVcq7cb+NHUM6oooQNEoXkG8+bHD9DPrTjjG2z2x3T5qTsF2asVZBk11hr9EbGPUjnd00E3//wQZ
-        Ybl+M5Ncbk5X+eqZuv5FQg2IiH2QMSkNvYYPTlkj7xTRE/LwRRrh6jsluV0sdP9tbDuj8LPcnDHs1
-        hcDRVlsCikcg/+gbg3xn8+BGR6mA7HS7wgpHnbqj5ErHAFq/eFM9zwR+c5djfNPqtTIEOm8KczQWy
-        Y9fVsWdlNqjO9NJrXN3ek4kvMofOELyh95VqWLxea4QhQIGt2c5AYVzLVexEyX6ylz0YB4RkWIKLh
-        T/R9auvw==;
-Received: from willy by bombadil.infradead.org with local (Exim 4.92.3 #3 (Red Hat Linux))
-        id 1j4oA8-00077l-7Q; Thu, 20 Feb 2020 15:54:52 +0000
-Date:   Thu, 20 Feb 2020 07:54:52 -0800
-From:   Matthew Wilcox <willy@infradead.org>
-To:     Christoph Hellwig <hch@infradead.org>
-Cc:     Johannes Thumshirn <Johannes.Thumshirn@wdc.com>,
-        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
-        "linux-mm@kvack.org" <linux-mm@kvack.org>,
-        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "linux-erofs@lists.ozlabs.org" <linux-erofs@lists.ozlabs.org>,
-        "linux-ext4@vger.kernel.org" <linux-ext4@vger.kernel.org>,
-        "linux-f2fs-devel@lists.sourceforge.net" 
-        <linux-f2fs-devel@lists.sourceforge.net>,
-        "cluster-devel@redhat.com" <cluster-devel@redhat.com>,
-        "ocfs2-devel@oss.oracle.com" <ocfs2-devel@oss.oracle.com>,
-        "linux-xfs@vger.kernel.org" <linux-xfs@vger.kernel.org>
-Subject: Re: [PATCH v7 14/24] btrfs: Convert from readpages to readahead
-Message-ID: <20200220155452.GX24185@bombadil.infradead.org>
-References: <20200219210103.32400-1-willy@infradead.org>
- <20200219210103.32400-15-willy@infradead.org>
- <SN4PR0401MB35987D7B76007B93B1C5CE5E9B130@SN4PR0401MB3598.namprd04.prod.outlook.com>
- <20200220134849.GV24185@bombadil.infradead.org>
- <20200220154658.GA19577@infradead.org>
+        id S1728687AbgBTP5C (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 20 Feb 2020 10:57:02 -0500
+Received: from mx2.suse.de ([195.135.220.15]:41208 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1728660AbgBTP5A (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 20 Feb 2020 10:57:00 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 64C7BAB6D;
+        Thu, 20 Feb 2020 15:56:58 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id C7145DA70E; Thu, 20 Feb 2020 16:56:40 +0100 (CET)
+Date:   Thu, 20 Feb 2020 16:56:40 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Cc:     David Sterba <dsterba@suse.cz>,
+        Nikolay Borisov <nborisov@suse.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        "linux-btrfs @ vger . kernel . org" <linux-btrfs@vger.kernel.org>,
+        Christoph Hellwig <hch@lst.de>
+Subject: Re: [PATCH v8 0/8] btrfs: remove buffer heads form superblock
+ handling
+Message-ID: <20200220155640.GZ2902@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz,
+        Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+        Nikolay Borisov <nborisov@suse.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        "linux-btrfs @ vger . kernel . org" <linux-btrfs@vger.kernel.org>,
+        Christoph Hellwig <hch@lst.de>
+References: <20200213152436.13276-1-johannes.thumshirn@wdc.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20200220154658.GA19577@infradead.org>
+In-Reply-To: <20200213152436.13276-1-johannes.thumshirn@wdc.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Feb 20, 2020 at 07:46:58AM -0800, Christoph Hellwig wrote:
-> On Thu, Feb 20, 2020 at 05:48:49AM -0800, Matthew Wilcox wrote:
-> > btrfs: Convert from readpages to readahead
-> >   
-> > Implement the new readahead method in btrfs.  Add a readahead_page_batch()
-> > to optimise fetching a batch of pages at once.
-> 
-> Shouldn't this readahead_page_batch heper go into a separate patch so
-> that it clearly stands out?
+On Fri, Feb 14, 2020 at 12:24:28AM +0900, Johannes Thumshirn wrote:
+> This patch series removes the use of buffer_heads from btrfs' super block read
+> and write paths. It also converts the integrity-checking code to only work
+> with pages and BIOs.
 
-I'll move it into 'Put readahead pages in cache earlier' for v8 (the
-same patch where we add readahead_page())
+I've fixed the small things and added this patchset to misc-next.
+Thanks.

@@ -4,71 +4,96 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0F409C35647
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Feb 2020 13:02:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C9BC6C35647
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Feb 2020 13:11:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E2FB124656
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Feb 2020 13:02:40 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 98DA12073A
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Feb 2020 13:11:28 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728435AbgBUNCk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 21 Feb 2020 08:02:40 -0500
-Received: from mx2.suse.de ([195.135.220.15]:40008 "EHLO mx2.suse.de"
+        id S1728295AbgBUNL1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 21 Feb 2020 08:11:27 -0500
+Received: from mx2.suse.de ([195.135.220.15]:46180 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727876AbgBUNCj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 21 Feb 2020 08:02:39 -0500
+        id S1727781AbgBUNL1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 21 Feb 2020 08:11:27 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id D2B02AD2D;
-        Fri, 21 Feb 2020 13:02:37 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 80A81DA70E; Fri, 21 Feb 2020 14:02:20 +0100 (CET)
-From:   David Sterba <dsterba@suse.com>
+        by mx2.suse.de (Postfix) with ESMTP id 7BF89AF22;
+        Fri, 21 Feb 2020 13:11:26 +0000 (UTC)
+From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Cc:     David Sterba <dsterba@suse.com>
-Subject: [PATCH 3/3] btrfs: use ioctl args support mask for device delete
-Date:   Fri, 21 Feb 2020 14:02:20 +0100
-Message-Id: <35813380382186dcd381e759e665f59f77c1f287.1582289899.git.dsterba@suse.com>
-X-Mailer: git-send-email 2.25.0
-In-Reply-To: <cover.1582289899.git.dsterba@suse.com>
-References: <cover.1582289899.git.dsterba@suse.com>
-MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Cc:     Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH 2/2] btrfs: Use list_for_each_entry_safe in free_reloc_roots
+Date:   Fri, 21 Feb 2020 15:11:24 +0200
+Message-Id: <20200221131124.24105-2-nborisov@suse.com>
+X-Mailer: git-send-email 2.17.1
+In-Reply-To: <20200221131124.24105-1-nborisov@suse.com>
+References: <20200221131124.24105-1-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-When the device remove v2 ioctl was added, the full support mask was
-added to sanity check the flags. However this would allow to let the
-subvolume related flags to be accepted. This is not supposed to happen.
+The function always works on a local copy of the reloc root list, which
+cannot be modified outside of it so using list_for_each_entry is fine.
+Additionally the macro handles empty lists so drop list_empty checks of
+callers. No semantic changes.
 
-Use the correct support mask, which means that now any of
-BTRFS_SUBVOL_CREATE_ASYNC, BTRFS_SUBVOL_RDONLY or
-BTRFS_SUBVOL_QGROUP_INHERIT will be rejected as ENOTSUPP. Though this is
-a user-visible change, specifying subvolume flags for device deletion
-does not make sense and there are hopefully no applications doing that.
-
-Signed-off-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/ioctl.c | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+ fs/btrfs/relocation.c | 16 +++++-----------
+ 1 file changed, 5 insertions(+), 11 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index a7872cacd0aa..cd2d11dcd477 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -3075,8 +3075,7 @@ static long btrfs_ioctl_rm_dev_v2(struct file *file, void __user *arg)
- 		goto err_drop;
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index e5cb64409f7c..f13b79adf6b0 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -2523,13 +2523,10 @@ int prepare_to_merge(struct reloc_control *rc, int err)
+ static noinline_for_stack
+ void free_reloc_roots(struct list_head *list)
+ {
+-	struct btrfs_root *reloc_root;
++	struct btrfs_root *reloc_root, *tmp;
+ 
+-	while (!list_empty(list)) {
+-		reloc_root = list_entry(list->next, struct btrfs_root,
+-					root_list);
++	list_for_each_entry_safe(reloc_root, tmp, list, root_list)
+ 		__del_reloc_root(reloc_root);
+-	}
+ }
+ 
+ static noinline_for_stack
+@@ -2588,15 +2585,13 @@ void merge_reloc_roots(struct reloc_control *rc)
+ out:
+ 	if (ret) {
+ 		btrfs_handle_fs_error(fs_info, ret, NULL);
+-		if (!list_empty(&reloc_roots))
+-			free_reloc_roots(&reloc_roots);
++		free_reloc_roots(&reloc_roots);
+ 
+ 		/* new reloc root may be added */
+ 		mutex_lock(&fs_info->reloc_mutex);
+ 		list_splice_init(&rc->reloc_roots, &reloc_roots);
+ 		mutex_unlock(&fs_info->reloc_mutex);
+-		if (!list_empty(&reloc_roots))
+-			free_reloc_roots(&reloc_roots);
++		free_reloc_roots(&reloc_roots);
  	}
  
--	/* Check for compatibility reject unknown flags */
--	if (vol_args->flags & ~BTRFS_VOL_ARG_V2_FLAGS_SUPPORTED) {
-+	if (vol_args->flags & ~BTRFS_DEVICE_REMOVE_ARGS_MASK) {
- 		ret = -EOPNOTSUPP;
- 		goto out;
- 	}
+ 	BUG_ON(!RB_EMPTY_ROOT(&rc->reloc_root_tree.rb_root));
+@@ -4689,8 +4684,7 @@ int btrfs_recover_relocation(struct btrfs_root *root)
+ out_free:
+ 	kfree(rc);
+ out:
+-	if (!list_empty(&reloc_roots))
+-		free_reloc_roots(&reloc_roots);
++	free_reloc_roots(&reloc_roots);
+ 
+ 	btrfs_free_path(path);
+ 
 -- 
-2.25.0
+2.17.1
 

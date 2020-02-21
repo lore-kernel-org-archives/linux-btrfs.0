@@ -7,35 +7,36 @@ X-Spam-Status: No, score=-8.0 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2DA8AC35647
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Feb 2020 13:22:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 17089C35646
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Feb 2020 13:23:30 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id EA081206D7
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Feb 2020 13:22:22 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DBE1E206D7
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Feb 2020 13:23:29 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="CH+c+Vny"
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="KHaSqf9K"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728544AbgBUNWW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 21 Feb 2020 08:22:22 -0500
-Received: from mout.gmx.net ([212.227.15.18]:47981 "EHLO mout.gmx.net"
+        id S1728103AbgBUNX3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 21 Feb 2020 08:23:29 -0500
+Received: from mout.gmx.net ([212.227.17.22]:50659 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727053AbgBUNWW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 21 Feb 2020 08:22:22 -0500
+        id S1727781AbgBUNX2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 21 Feb 2020 08:23:28 -0500
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1582291336;
-        bh=O+T0VbZ6RwfJ9Mvo9vKA/tjvd8XT+zyTlZIGsSRN4Ws=;
+        s=badeba3b8450; t=1582291403;
+        bh=q/RMwsKJ4auxtnj/oEcv4vqBO0ux3oQSeaimSLC/+/A=;
         h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
-        b=CH+c+VnyvS6FajwhLB2ZGwrhYfxBx6ZLyf57lXvWsShFhHNuBFYXoOjCmIjVVXxeg
-         TURWTn/oHSzV95nIeOMaILq4zhZVxN11VrdIiroedeBRzfsp2l/vJzTGn42Q3jf1sX
-         6SwdqQu0q8GFVL8STk5lPPX6KlaUtXLunE1O/yuA=
+        b=KHaSqf9KorOi7bcq8dMY1MJg7pbtAmCNslEFgsSPYLYA1z9HHcr7nj/6Xu3+Wjj4E
+         6xE2KYZtctewvBcyK33qA/rKVmPAhjV/bl3JGcDqfv9MHDzZT3mE10xqOCz3cetBcW
+         FNaNRwpMTM7CeD1jxMkaZJoVN2ub64WKAWE1VoOM=
 X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx004
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1M9Wuk-1j8Q3A0Hv2-005dLe; Fri, 21
- Feb 2020 14:22:16 +0100
-Subject: Re: [PATCH 1/2] btrfs: Remove superflous lock acquisition in
- __del_reloc_root
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx105
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1MJmGP-1ikyp92uAD-00K94j; Fri, 21
+ Feb 2020 14:23:23 +0100
+Subject: Re: [PATCH 2/2] btrfs: Use list_for_each_entry_safe in
+ free_reloc_roots
 To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
 References: <20200221131124.24105-1-nborisov@suse.com>
+ <20200221131124.24105-2-nborisov@suse.com>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
@@ -61,38 +62,38 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  72byGeSovfq/4AWGNPBG1L61Exl+gbqfvbECP3ziXnob009+z9I4qXodHSYINfAkZkA523JG
  ap12LndJeLk3gfWNZfXEWyGnuciRGbqESkhIRav8ootsCIops/SqXm0/k+Kcl4gGUO/iD/T5
  oagaDh0QtOd8RWSMwLxwn8uIhpH84Q4X1LadJ5NCgGa6xPP5qqRuiC+9gZqbq4Nj
-Message-ID: <b4c2a95d-b76d-0f8d-52eb-077f97bb4530@gmx.com>
-Date:   Fri, 21 Feb 2020 21:22:12 +0800
+Message-ID: <7d5e99e4-4122-bec5-6fb8-83a29fb6ce41@gmx.com>
+Date:   Fri, 21 Feb 2020 21:23:19 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
  Thunderbird/68.5.0
 MIME-Version: 1.0
-In-Reply-To: <20200221131124.24105-1-nborisov@suse.com>
+In-Reply-To: <20200221131124.24105-2-nborisov@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:TvtvMDtnUzlIhY9YwFEYDye3VI7Jtth4HJqcH6b88Ad8EpG/DXA
- w+f5aE12IE5F7k8Rr3l3ErM7ZWvU/hVceU//nCbULOEFG8hnz/kiLxxka0RLXBq5eDv+BmN
- +piAKI4vIDz0oKw5UWVpWC/2qdjtk9dyIAokOqorRYZbn8CCyZaB+FdEvWVvX8tQX8rYpF9
- YPwMHHRNrAxJOlO9R1qfw==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:Z9trz3Hh9wM=:fjtEn5Kbg2jM3LDhcPnis9
- GzA2Jj8yXtJ6HmPqby13buL860aS9tb9XIARtp0g4W1UCNMhqn79qGvuiUlP3eov64j0zfIPk
- rgwVyfxA3B/sjuD9IJnUXZa7YZjLNurltY421++2pHvif2+xukNhp4+Epe0G9vIaJVNo9kxF7
- ItRZH3A1diqTugB0jLLcLFyWyEZyGLs54OyhPavL7ZzMTaHbnucqYRBEauWEbjf2wSF2YMWVG
- MpyasDcjKGwqvwbiVExqFk2210/uM1CG5iaVI6hydlufnp4849LWdlxNGwxCBgqumBT6yaFzA
- KHFw9q9TtLa72xCMLZX3VLXgCYnFNQps9q8Hd/hHTOUFzpCNGu75sOJ8VI9M0a+XkGZ8L9Zba
- SDMBGgv4w/cMgFJAKHrJ/1Hd7Uk6M3k9PK9ztm//gASL1zvDo62kfbVF+V17KHStxabHdmPBe
- aFsrJplYeYadHY7RxuAI+tLe6Sq2e3lKohr3ieT5cImpREFFEdjlNw+hBvBDAFSyNty76Nlk7
- 8TywuvJFrik4iOOuUHQEYomAHDJiggWNj9vniFLgL4HoWy5rQ8KTwB5zHKzf1+gC2RttS0mRb
- cgvhIFnnOu4m0+x9TcXNe9WtzZZz4B2MBwLqG5SKGoxbrwl1CSWfS3ri5ZtohOaA0gWCvC7Yd
- S0ls2oKtjNNbdxv7Mv0bIUKQ/MpxUDxxMdx7YPZnvirhWe5x/sieBL3v5iyqPlFcTOZ9c9W38
- /SoIraCp3r8K7kyb/Kc7sFpoRvbswVDpgg4Dj7KzVNPlZQ5rjpOpgiqjhYBTYHyBERAs7Ti5s
- idWWD6BkCqPMNXK1ecOOA+6b4B5Efjacih2MJZzo4Y4Z5EzPvDnu8338oTFzH1ULvb8/RmuA1
- 9vQCfwfXzTWgzUGo4kT5ofc6R4PqSP6o0iLY4JbkcK/P6OkHI464UMEXjp05nSadk4JqUTkn/
- paEhy1QHwjCwlPT2PiwW8TjbudSeXPSc73QlCdYt8AOpWGppzS9g3FXrEqLG1p1voEPckwU3H
- qmWVVI+J7xFoiUSmaXb0/BSTR5Jlhzoi2naTL7IZmoYMBr9FxfH1Rhvjji6oPwPnFC/nuLVPC
- kv5JB0iLjTS2fJtWcxy3tkp5fX+RSvkixJI26+yxmIfQhy8KBzy+LHcsNVvYye60lQTM7R60o
- 5KIZMrXCS+UEPnP5oZCoskqGA8dTDL4drHKC7GUfn4Nb+BucaWNuN5R4wayLX0EZVO4xIl3Th
- rVmYRaqDbioLCCH+l
+X-Provags-ID: V03:K1:hBqWI9+myTu6Wy4+3p+ZCCjtuDcWZ7HjGM2ESdc36jGSxtt5hHr
+ NUAgKpfqIXi2tmFzP4OpI0/cYn0Se6DnfrZGGGwSKKyZqBuuJfOGJ76l7mcguzpgWH2epTF
+ LXPL4r4XXgweAB7sALCPaq2+kf7CLwy7CC/rZlo67hH+/KAWAAOqTe/RdGzzUQEh+I0ngjr
+ hqitcPXIcOjFLo0tfKmMA==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:d/ffsOlJd3c=:2EFBSkxy4+hWizWW8F1CZb
+ XHOwQjkbEBkVwUrhsVQ0apeIdaRBCbUaOFtRokXKl3JAePHb6ZX7kXqUaYHPLd9pTMdI9O6H7
+ D9IWGbERjgt5mNqdsjSY2/ZVVk6dXkQRMCp1QaexyeKKt8JkXwG1b5REqRCXJqDRqd48KNNka
+ eVnMfFgy07rF2zOo03FnVeWSnb426j2hAYj/10+o2m82HLBjzYRzDy0sIolfUBrjrBtY6pRqa
+ kSssOWjTBBlVkAIvb4uauAfNhVdiq/KnODb5B7nBynBO11qWd4FlWfBgtYA14JPH7JHnkKxAz
+ 51t7dL+5HoZTOF7z9VrxdVQr2BcyeKG5i4amL0QV2HiYxY+xE88suLQZbWAWX8KfIRUilugVs
+ QAshmcZp2hz1O83/PUYJH6hQWdZvRCIRmh1/wduV5EyaovsOlGlsd1FY5XX2tdSFU4eicBywj
+ R/LgJ2/pdG3qWmr405pToClUdaYAzm8BvbSOqt61P9MVoMiNnrIrKnCGXry5GxaUeL2QSXUVc
+ hal1Xo1GrBwq967F44gwygYJWwVHlWdEdZw1/FqN3TzyCZu8IWY30dsZK3YfUOaJ3L5jfdhjh
+ snQP1SYqkRTl6Edwvw9pMCZD9MfxFW3lDvEg2WUjhPWETBiZZZAZLifgHtOteY+YbQ+rLOE19
+ wEYMMLPd+V8gmyQQlN0Vhg5/UMrphbXRJh7CIxAiqPFOOIG6pzROu/mNW/CoDSOkl0+D55xwx
+ ZklQRrFsaFccv3Vo3T+bKsclN0BLj6uDgtLV1qBS6x/vuNqLDiR7wEkbPUsqs/bWqo34jMUeP
+ W5WGgTQZWzzh6pgPhEQB9dRC6kgUpxS9LikOzNLmARDrlnyCGHsQQYZ5Kc/TVg6JvoyxcJs4a
+ 0MGMQ1XdnTlCzF+dgiQYVQr/8btMgmQuTjZC+cMGS15TMgBpRUi4ABRtMvBUaBvFr24+fAi1p
+ MXWbNLZtsF4URzEys7ziX1MUr5IT4LUG6DQuygRUMqcWDCq/Ww/WT0FD+9NGko6Bh255pMSIJ
+ crDFPZbENm36kpwVlcvn4Xzk55PQ8fAduClkaCp6pee0fqojj7fJaGp32dWsTl9LrcVzF+11p
+ qH36fCvIj0ukeZ3KqKltgMmfBKS2/2jq6cUK13rhkAgxM5Bs7tfvHIek2fEDpDaoqg/SxdNZr
+ AJ5kThv++XMhaUblPeaC9Sx8P6kuchp2OODx5mr06suUdTXHJE/xg3c2tSheLCyYEyYNAmonh
+ Ceqt/7a8aS2dW2vCU
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -101,41 +102,10 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 2020/2/21 =E4=B8=8B=E5=8D=889:11, Nikolay Borisov wrote:
-> __del_reloc_root is called from:
->
-> a) Transaction commit via:
-> btrfs_transaction_commit
->  commit_fs_roots
->   btrfs_update_reloc_root
->    __del_reloc_root
->
-> b) From the relocation thread with the following call chains:
->
-> relocate_block_group
->  merge_reloc_roots
->   insert_dirty_subvol
->    btrfs_update_reloc_root
->     __del_reloc_root
->
-> c) merge_reloc_roots
->     free_reloc_roots
->      __del_reloc_roots
->
-> (The above call chain can called from btrfs_recover_relocation as well
-> but for the purpose of this fix this is irrelevant).
->
-> The commont data structure that needs protecting is
-> fs_info->reloc_ctl->reloc_list as reloc roots are anchored at this list.
-> Turns out it's no needed to hold the trans_lock in __del_reloc_root
-> since consistency is already guaranteed by call chain b) above holding
-> a transaction while calling insert_dirty_subvol, meaning we cannot have
-> a concurrent transaction commit. For call chain c) above a snapshot of
-> the fs_info->reloc_ctl->reloc_list is taken with reloc_mutex held and
-> free_reloc_roots is called on this local snapshot.
->
-> Those invariants are sufficient to prevent racing calls to
-> __del_reloc_root alongside other users of the list, as such it's fine
-> to drop the lock acquisition.
+> The function always works on a local copy of the reloc root list, which
+> cannot be modified outside of it so using list_for_each_entry is fine.
+> Additionally the macro handles empty lists so drop list_empty checks of
+> callers. No semantic changes.
 >
 > Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 
@@ -143,24 +113,58 @@ Reviewed-by: Qu Wenruo <wqu@suse.com>
 
 Thanks,
 Qu
-
 > ---
->  fs/btrfs/relocation.c | 2 --
->  1 file changed, 2 deletions(-)
+>  fs/btrfs/relocation.c | 16 +++++-----------
+>  1 file changed, 5 insertions(+), 11 deletions(-)
 >
 > diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-> index 8076c340749f..e5cb64409f7c 100644
+> index e5cb64409f7c..f13b79adf6b0 100644
 > --- a/fs/btrfs/relocation.c
 > +++ b/fs/btrfs/relocation.c
-> @@ -1381,9 +1381,7 @@ static void __del_reloc_root(struct btrfs_root *ro=
-ot)
->  		BUG_ON((struct btrfs_root *)node->data !=3D root);
+> @@ -2523,13 +2523,10 @@ int prepare_to_merge(struct reloc_control *rc, i=
+nt err)
+>  static noinline_for_stack
+>  void free_reloc_roots(struct list_head *list)
+>  {
+> -	struct btrfs_root *reloc_root;
+> +	struct btrfs_root *reloc_root, *tmp;
+>
+> -	while (!list_empty(list)) {
+> -		reloc_root =3D list_entry(list->next, struct btrfs_root,
+> -					root_list);
+> +	list_for_each_entry_safe(reloc_root, tmp, list, root_list)
+>  		__del_reloc_root(reloc_root);
+> -	}
+>  }
+>
+>  static noinline_for_stack
+> @@ -2588,15 +2585,13 @@ void merge_reloc_roots(struct reloc_control *rc)
+>  out:
+>  	if (ret) {
+>  		btrfs_handle_fs_error(fs_info, ret, NULL);
+> -		if (!list_empty(&reloc_roots))
+> -			free_reloc_roots(&reloc_roots);
+> +		free_reloc_roots(&reloc_roots);
+>
+>  		/* new reloc root may be added */
+>  		mutex_lock(&fs_info->reloc_mutex);
+>  		list_splice_init(&rc->reloc_roots, &reloc_roots);
+>  		mutex_unlock(&fs_info->reloc_mutex);
+> -		if (!list_empty(&reloc_roots))
+> -			free_reloc_roots(&reloc_roots);
+> +		free_reloc_roots(&reloc_roots);
 >  	}
 >
-> -	spin_lock(&fs_info->trans_lock);
->  	list_del_init(&root->root_list);
-> -	spin_unlock(&fs_info->trans_lock);
->  	kfree(node);
->  }
+>  	BUG_ON(!RB_EMPTY_ROOT(&rc->reloc_root_tree.rb_root));
+> @@ -4689,8 +4684,7 @@ int btrfs_recover_relocation(struct btrfs_root *ro=
+ot)
+>  out_free:
+>  	kfree(rc);
+>  out:
+> -	if (!list_empty(&reloc_roots))
+> -		free_reloc_roots(&reloc_roots);
+> +	free_reloc_roots(&reloc_roots);
+>
+>  	btrfs_free_path(path);
 >
 >

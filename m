@@ -2,90 +2,137 @@ Return-Path: <SRS0=op+e=4M=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.4 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0B5E4C35641
-	for <linux-btrfs@archiver.kernel.org>; Mon, 24 Feb 2020 03:31:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3E975C35669
+	for <linux-btrfs@archiver.kernel.org>; Mon, 24 Feb 2020 03:33:40 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D14E32067D
-	for <linux-btrfs@archiver.kernel.org>; Mon, 24 Feb 2020 03:31:23 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C428C2067D
+	for <linux-btrfs@archiver.kernel.org>; Mon, 24 Feb 2020 03:33:39 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="aD0I5MET"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=mpdesouza.com header.i=@mpdesouza.com header.b="m7u+R2HY"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727223AbgBXDbX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 23 Feb 2020 22:31:23 -0500
-Received: from userp2120.oracle.com ([156.151.31.85]:60448 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727215AbgBXDbW (ORCPT
+        id S1727170AbgBXDdj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 23 Feb 2020 22:33:39 -0500
+Received: from gateway36.websitewelcome.com ([192.185.185.36]:16021 "EHLO
+        gateway36.websitewelcome.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1727156AbgBXDdi (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 23 Feb 2020 22:31:22 -0500
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 01O3N0tG059604;
-        Mon, 24 Feb 2020 03:31:19 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
- references : from : message-id : date : mime-version : in-reply-to :
- content-type : content-transfer-encoding; s=corp-2020-01-29;
- bh=PrW1Abyu1kEQGP77FZasIjhJaq7Z23rm70nZwdVivzY=;
- b=aD0I5METQzeWU8amxyfyEdPVCBdKib8CIllID2GLMRo9mjR5kNU78dcJHvhcancp1XqS
- RKswt2vNEkZMhIJQdg1mFcCzwqJahP8Snn2H7NxF5xIZhacqVBqw0IWcO28iiIyksmSo
- K7zLVX/8UyKdZ551id6+8NYTYPs7dArp2auQRKf52r2Cb1xnGG0MRdHHTt5w2jKE+ZjF
- VULCGm6f5np/tLxA6Uft0E846P/PW//6aWSgIifiX+CLO9JoKDZIzo6cAbRiDCU6xvZh
- 2fvr2T+3lHwU/B1QsbRSC2u8DkFkP5gRVnHGroaqefgOMHAw8L9fRRk8ozah6Hmxns0Y Mw== 
-Received: from userp3020.oracle.com (userp3020.oracle.com [156.151.31.79])
-        by userp2120.oracle.com with ESMTP id 2yavxrcn1s-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Mon, 24 Feb 2020 03:31:18 +0000
-Received: from pps.filterd (userp3020.oracle.com [127.0.0.1])
-        by userp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 01O3SicZ179411;
-        Mon, 24 Feb 2020 03:31:18 GMT
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by userp3020.oracle.com with ESMTP id 2ybe104yvu-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Mon, 24 Feb 2020 03:31:18 +0000
-Received: from abhmp0009.oracle.com (abhmp0009.oracle.com [141.146.116.15])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 01O3VHe3022234;
-        Mon, 24 Feb 2020 03:31:17 GMT
-Received: from [10.190.155.136] (/192.188.170.104)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Sun, 23 Feb 2020 19:31:17 -0800
-Subject: Re: [PATCH 02/11] btrfs: move mapping of block for discard to its
- caller
-To:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-References: <cover.1582302545.git.dsterba@suse.com>
- <32b32a9b68f956a3bfe216b72060001811a71d01.1582302545.git.dsterba@suse.com>
-From:   Anand Jain <anand.jain@oracle.com>
-Message-ID: <0ab1fdaa-41fc-4f6b-615b-719df2c949be@oracle.com>
-Date:   Mon, 24 Feb 2020 11:31:09 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.4.1
+        Sun, 23 Feb 2020 22:33:38 -0500
+X-Greylist: delayed 1354 seconds by postgrey-1.27 at vger.kernel.org; Sun, 23 Feb 2020 22:33:38 EST
+Received: from cm11.websitewelcome.com (cm11.websitewelcome.com [100.42.49.5])
+        by gateway36.websitewelcome.com (Postfix) with ESMTP id C902E40160F62
+        for <linux-btrfs@vger.kernel.org>; Sun, 23 Feb 2020 20:25:44 -0600 (CST)
+Received: from br540.hostgator.com.br ([108.179.252.180])
+        by cmsmtp with SMTP
+        id 6499juXsdSl8q6499jZqDf; Sun, 23 Feb 2020 21:11:03 -0600
+X-Authority-Reason: nr=8
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=mpdesouza.com; s=default; h=Content-Transfer-Encoding:MIME-Version:
+        References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:
+        Content-Type:Content-ID:Content-Description:Resent-Date:Resent-From:
+        Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
+        List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
+        bh=pFaGorldvyQUpBmP2wGhnPUDjRezrXh+v53FzkL7yjM=; b=m7u+R2HYAqya/KnF+3vt7FSqLB
+        XphOUmpYiKULE44M4YujAuahqCxaU2dFNLcR7mZzlgT56iT/EuiIaQdoPe4c+BFO7PTB8+ZV5BwlN
+        lS6zejdOWFuZcpRU6JiGzsovYRssXR8diwyHwkeMvwdd7DB67lN7sS0DSEf+o4eIpUcMExslg4qjQ
+        dt6nxsEsSVXFU5h5D2v2PusNwrOZC33Jf3RFj/C/ejMqD2GJObUvE7q2z5osfjpoc23CfyKXbrCvr
+        2aTvpbzihtBdnS6cvkkY/zVzvADWhZwoX8xoamond+2GX0fJAnNwX3iBf7j1A0BTJ9hGaz6fbjX+z
+        yENePM/w==;
+Received: from [179.185.222.161] (port=40232 helo=hephaestus.suse.de)
+        by br540.hostgator.com.br with esmtpsa (TLSv1.2:ECDHE-RSA-AES128-GCM-SHA256:128)
+        (Exim 4.92)
+        (envelope-from <marcos@mpdesouza.com>)
+        id 1j6496-0034Sn-Lg; Mon, 24 Feb 2020 00:11:01 -0300
+From:   Marcos Paulo de Souza <marcos@mpdesouza.com>
+To:     dsterba@suse.com, nborisov@suse.com, linux-btrfs@vger.kernel.org,
+        fstests@vger.kernel.org, guaneryu@gmail.com
+Cc:     Marcos Paulo de Souza <mpdesouza@suse.com>
+Subject: [ fstests PATCHv3 1/2] common: btrfs: Improve _require_btrfs_command
+Date:   Mon, 24 Feb 2020 00:13:40 -0300
+Message-Id: <20200224031341.27740-2-marcos@mpdesouza.com>
+X-Mailer: git-send-email 2.25.0
+In-Reply-To: <20200224031341.27740-1-marcos@mpdesouza.com>
+References: <20200224031341.27740-1-marcos@mpdesouza.com>
 MIME-Version: 1.0
-In-Reply-To: <32b32a9b68f956a3bfe216b72060001811a71d01.1582302545.git.dsterba@suse.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9540 signatures=668685
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 mlxlogscore=999 spamscore=0
- suspectscore=0 malwarescore=0 phishscore=0 bulkscore=0 mlxscore=0
- adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2001150001 definitions=main-2002240027
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9540 signatures=668685
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 impostorscore=0 lowpriorityscore=0
- spamscore=0 clxscore=1015 suspectscore=0 bulkscore=0 mlxlogscore=999
- malwarescore=0 phishscore=0 adultscore=0 priorityscore=1501 mlxscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2001150001
- definitions=main-2002240027
+Content-Transfer-Encoding: 8bit
+X-AntiAbuse: This header was added to track abuse, please include it with any abuse report
+X-AntiAbuse: Primary Hostname - br540.hostgator.com.br
+X-AntiAbuse: Original Domain - vger.kernel.org
+X-AntiAbuse: Originator/Caller UID/GID - [47 12] / [47 12]
+X-AntiAbuse: Sender Address Domain - mpdesouza.com
+X-BWhitelist: no
+X-Source-IP: 179.185.222.161
+X-Source-L: No
+X-Exim-ID: 1j6496-0034Sn-Lg
+X-Source: 
+X-Source-Args: 
+X-Source-Dir: 
+X-Source-Sender: (hephaestus.suse.de) [179.185.222.161]:40232
+X-Source-Auth: marcos@mpdesouza.com
+X-Email-Count: 10
+X-Source-Cap: bXBkZXNvNTM7bXBkZXNvNTM7YnI1NDAuaG9zdGdhdG9yLmNvbS5icg==
+X-Local-Domain: yes
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 2/22/20 12:31 AM, David Sterba wrote:
-> There's a simple forwarded call based on the operation that would better
-> fit the caller btrfs_map_block that's until now a trivial wrapper.
-> 
-> Signed-off-by: David Sterba <dsterba@suse.com>
+From: Marcos Paulo de Souza <mpdesouza@suse.com>
 
-reviewed-by: Anand Jain <anand.jain@oracle.com>
+Now _require_btrfs_command can also check for subfuntion options, like
+"subvolume delete --subvolid".
+
+Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
+---
+Changes from v2:
+* Added Reviewed-by from Nikolay to patch 0001
+
+Changes from v1:
+* New patch expanding the funtionality of _require_btrfs_command, which now
+  check for argument of subcommands
+
+ common/btrfs | 13 +++++++++++--
+ 1 file changed, 11 insertions(+), 2 deletions(-)
+
+diff --git a/common/btrfs b/common/btrfs
+index 19ac7cc4..ae3142b6 100644
+--- a/common/btrfs
++++ b/common/btrfs
+@@ -12,12 +12,14 @@ _btrfs_get_subvolid()
+ 
+ # _require_btrfs_command <command> [<subcommand>|<option>]
+ # We check for btrfs and (optionally) features of the btrfs command
+-# It can both subfunction like "inspect-internal dump-tree" and
+-# options like "check --qgroup-report"
++# This function support both subfunction like "inspect-internal dump-tree" and
++# options like "check --qgroup-report", and also subfunction options like
++# "subvolume delete --subvolid"
+ _require_btrfs_command()
+ {
+ 	local cmd=$1
+ 	local param=$2
++	local param_arg=$3
+ 	local safe_param
+ 
+ 	_require_command "$BTRFS_UTIL_PROG" btrfs
+@@ -39,6 +41,13 @@ _require_btrfs_command()
+ 
+ 	$BTRFS_UTIL_PROG $cmd $param --help &> /dev/null
+ 	[ $? -eq 0 ] || _notrun "$BTRFS_UTIL_PROG too old (must support $cmd $param)"
++
++	test -z "$param_arg" && return
++
++	# replace leading "-"s for grep
++	safe_param=$(echo $param_arg | sed 's/^-*//')
++	$BTRFS_UTIL_PROG $cmd $param --help | grep -wq $safe_param || \
++		_notrun "$BTRFS_UTIL_PROG too old (must support $cmd $param $param_arg)"
+ }
+ 
+ # Require extra check on btrfs qgroup numbers
+-- 
+2.25.0
+

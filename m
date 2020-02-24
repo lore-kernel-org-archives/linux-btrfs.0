@@ -2,224 +2,110 @@ Return-Path: <SRS0=op+e=4M=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.4 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.5 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_GIT autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 431A6C35641
-	for <linux-btrfs@archiver.kernel.org>; Mon, 24 Feb 2020 03:56:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D2A55C35641
+	for <linux-btrfs@archiver.kernel.org>; Mon, 24 Feb 2020 03:59:39 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0E0F320675
-	for <linux-btrfs@archiver.kernel.org>; Mon, 24 Feb 2020 03:56:23 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A5C3120675
+	for <linux-btrfs@archiver.kernel.org>; Mon, 24 Feb 2020 03:59:39 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="mvtKdXY0"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=mpdesouza.com header.i=@mpdesouza.com header.b="pS3wFvk3"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727197AbgBXD4W (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 23 Feb 2020 22:56:22 -0500
-Received: from aserp2120.oracle.com ([141.146.126.78]:46638 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727166AbgBXD4W (ORCPT
+        id S1727235AbgBXD7i (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 23 Feb 2020 22:59:38 -0500
+Received: from gateway31.websitewelcome.com ([192.185.143.47]:31020 "EHLO
+        gateway31.websitewelcome.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1727202AbgBXD7i (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 23 Feb 2020 22:56:22 -0500
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 01O3s0hx131696;
-        Mon, 24 Feb 2020 03:56:18 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
- references : from : message-id : date : mime-version : in-reply-to :
- content-type : content-transfer-encoding; s=corp-2020-01-29;
- bh=Prwns41aZe5scg4CzMqwIYEhl2oRlHHmw8JUOEr3pZY=;
- b=mvtKdXY0B5rWviv6tXfOiBOyGDpxIjCNXxmbA6eDmc/DiG9NsfG81sfaIIymkymwkbkV
- pddxXKeoknHNd/BAdjrrWrgJwFL+mJnybMbeI9b3O+rRKrnjrUDo2RZzMBo6DDFJBPz3
- bxjssnv6qdI1a5r8fYBGkR/tP9wmrUjYejvAn50q46IBjPkFzngPR+o1pU9O29ZnfOpL
- HJSCxJa93JQi/d32SaC1Jd36s0wHXweBRuZo0/dMLyqok0VRliq+T2kJly6nO+GpeAPW
- 163p9FQ3f8PmyOoe8aU5tIgP98OrDy1bST7wAP/qGvxxYtchrdWwKPUCO7k1d+HyBi3C Ew== 
-Received: from userp3020.oracle.com (userp3020.oracle.com [156.151.31.79])
-        by aserp2120.oracle.com with ESMTP id 2ybvr4h0mu-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Mon, 24 Feb 2020 03:56:18 +0000
-Received: from pps.filterd (userp3020.oracle.com [127.0.0.1])
-        by userp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 01O3q1Qg127350;
-        Mon, 24 Feb 2020 03:56:17 GMT
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by userp3020.oracle.com with ESMTP id 2ybe106gw3-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Mon, 24 Feb 2020 03:56:17 +0000
-Received: from abhmp0005.oracle.com (abhmp0005.oracle.com [141.146.116.11])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id 01O3uGEU031902;
-        Mon, 24 Feb 2020 03:56:16 GMT
-Received: from [10.190.155.136] (/192.188.170.104)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Sun, 23 Feb 2020 19:56:16 -0800
-Subject: Re: [PATCH 10/11] btrfs: merge unlocking to common exit block in
- btrfs_commit_transaction
-To:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-References: <cover.1582302545.git.dsterba@suse.com>
- <133258557ae4387d6a1d01bafa3e5214ca91228d.1582302545.git.dsterba@suse.com>
-From:   Anand Jain <anand.jain@oracle.com>
-Message-ID: <b011fa16-bfd3-674a-b067-d98ad6551858@oracle.com>
-Date:   Mon, 24 Feb 2020 11:56:13 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.4.1
+        Sun, 23 Feb 2020 22:59:38 -0500
+X-Greylist: delayed 1500 seconds by postgrey-1.27 at vger.kernel.org; Sun, 23 Feb 2020 22:59:38 EST
+Received: from cm13.websitewelcome.com (cm13.websitewelcome.com [100.42.49.6])
+        by gateway31.websitewelcome.com (Postfix) with ESMTP id 2C4963AC9
+        for <linux-btrfs@vger.kernel.org>; Sun, 23 Feb 2020 21:10:55 -0600 (CST)
+Received: from br540.hostgator.com.br ([108.179.252.180])
+        by cmsmtp with SMTP
+        id 6491jJAE9RP4z6491jiSvY; Sun, 23 Feb 2020 21:10:55 -0600
+X-Authority-Reason: nr=8
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=mpdesouza.com; s=default; h=Content-Transfer-Encoding:MIME-Version:
+        Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:Content-Type:Content-ID:
+        Content-Description:Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc
+        :Resent-Message-ID:In-Reply-To:References:List-Id:List-Help:List-Unsubscribe:
+        List-Subscribe:List-Post:List-Owner:List-Archive;
+        bh=0ero3NyMggozYrVIkVkRv1FRU//V7ZobE8nQa+kvk2M=; b=pS3wFvk3XL7ipp5yOjsQPorFgz
+        PYPZPk+4SczyvjfxJ0OKCJN105GuKXs/2vCeZdhEUW/EEArSzG/ytJfMWpmp7cpp8X1+1FfjLoN0C
+        S8Ybr1dAia9Su1AZQQ1nFVGQE3+gC1I+u4oWz/GW0qDAPt1pX1GE9+G6q2knnCVg9zYdA8ZFPcCzK
+        SA1Gz6ZWL9tFkRJeoLb9lS2BJpwhEH3n6C9VYTZChU/6uBXsbVgGbKR4HgCeXuHx3mYJtyi/2zwM9
+        khtqpZPBWGkNg88IQZolm6ytF1PBLyC/Evz46PaXlCQbB4wFCHA1G/jDk0xcV4MXzy9jwus8EjPx9
+        fu7pfEMQ==;
+Received: from [179.185.222.161] (port=40232 helo=hephaestus.suse.de)
+        by br540.hostgator.com.br with esmtpsa (TLSv1.2:ECDHE-RSA-AES128-GCM-SHA256:128)
+        (Exim 4.92)
+        (envelope-from <marcos@mpdesouza.com>)
+        id 1j6490-0034Sn-H6; Mon, 24 Feb 2020 00:10:54 -0300
+From:   Marcos Paulo de Souza <marcos@mpdesouza.com>
+To:     dsterba@suse.com, nborisov@suse.com, linux-btrfs@vger.kernel.org,
+        fstests@vger.kernel.org, guaneryu@gmail.com
+Cc:     Marcos Paulo de Souza <mpdesouza@suse.com>
+Subject: [ fstests PATCHv3 0/2] btrfs: Test subvolume delete by id feature
+Date:   Mon, 24 Feb 2020 00:13:39 -0300
+Message-Id: <20200224031341.27740-1-marcos@mpdesouza.com>
+X-Mailer: git-send-email 2.25.0
 MIME-Version: 1.0
-In-Reply-To: <133258557ae4387d6a1d01bafa3e5214ca91228d.1582302545.git.dsterba@suse.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9540 signatures=668685
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 mlxlogscore=999 spamscore=0
- suspectscore=0 malwarescore=0 phishscore=0 bulkscore=0 mlxscore=0
- adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2001150001 definitions=main-2002240031
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9540 signatures=668685
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 mlxlogscore=999 spamscore=0
- clxscore=1015 adultscore=0 lowpriorityscore=0 malwarescore=0
- priorityscore=1501 mlxscore=0 impostorscore=0 suspectscore=0 phishscore=0
- bulkscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2001150001 definitions=main-2002240031
+Content-Transfer-Encoding: 8bit
+X-AntiAbuse: This header was added to track abuse, please include it with any abuse report
+X-AntiAbuse: Primary Hostname - br540.hostgator.com.br
+X-AntiAbuse: Original Domain - vger.kernel.org
+X-AntiAbuse: Originator/Caller UID/GID - [47 12] / [47 12]
+X-AntiAbuse: Sender Address Domain - mpdesouza.com
+X-BWhitelist: no
+X-Source-IP: 179.185.222.161
+X-Source-L: No
+X-Exim-ID: 1j6490-0034Sn-H6
+X-Source: 
+X-Source-Args: 
+X-Source-Dir: 
+X-Source-Sender: (hephaestus.suse.de) [179.185.222.161]:40232
+X-Source-Auth: marcos@mpdesouza.com
+X-Email-Count: 4
+X-Source-Cap: bXBkZXNvNTM7bXBkZXNvNTM7YnI1NDAuaG9zdGdhdG9yLmNvbS5icg==
+X-Local-Domain: yes
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 2/22/20 12:31 AM, David Sterba wrote:
-> The tree_log_mutex and reloc_mutex locks are properly nested so we can
-> simplify error handling and add labels for them. This reduces line count
-> of the function.
-> 
-> Signed-off-by: David Sterba <dsterba@suse.com>
-> ---
->   fs/btrfs/transaction.c | 57 +++++++++++++++---------------------------
->   1 file changed, 20 insertions(+), 37 deletions(-)
-> 
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index fdfdfc426539..3610b6fec627 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -2194,10 +2194,8 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
->   	 * core function of the snapshot creation.
->   	 */
->   	ret = create_pending_snapshots(trans);
-> -	if (ret) {
-> -		mutex_unlock(&fs_info->reloc_mutex);
-> -		goto scrub_continue;
-> -	}
-> +	if (ret)
-> +		goto unlock_reloc;
->   
->   	/*
->   	 * We insert the dir indexes of the snapshots and update the inode
-> @@ -2210,16 +2208,12 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
->   	 * the nodes and leaves.
->   	 */
->   	ret = btrfs_run_delayed_items(trans);
-> -	if (ret) {
-> -		mutex_unlock(&fs_info->reloc_mutex);
-> -		goto scrub_continue;
-> -	}
-> +	if (ret)
-> +		goto unlock_reloc;
->   
->   	ret = btrfs_run_delayed_refs(trans, (unsigned long)-1);
-> -	if (ret) {
-> -		mutex_unlock(&fs_info->reloc_mutex);
-> -		goto scrub_continue;
-> -	}
-> +	if (ret)
-> +		goto unlock_reloc;
->   
->   	/*
->   	 * make sure none of the code above managed to slip in a
-> @@ -2245,11 +2239,8 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
->   	mutex_lock(&fs_info->tree_log_mutex);
->   
->   	ret = commit_fs_roots(trans);
-> -	if (ret) {
-> -		mutex_unlock(&fs_info->tree_log_mutex);
-> -		mutex_unlock(&fs_info->reloc_mutex);
-> -		goto scrub_continue;
-> -	}
-> +	if (ret)
-> +		goto unlock_reloc;
+From: Marcos Paulo de Souza <mpdesouza@suse.com>
 
-                goto unlock_tree_log;
+Changes from v2:
+* Added Reviewed-by from Nikolay to patch 0001
+* Changed awk to $AWK_PROG, suggested by Eryu
+* Changed _run_btrfs_util_prog to $BTRFS_UTIL_PROG, suggested by Eryu
+* Use _scratch_unmount instead of executing umount by hand, sugested by Eryu
+* Created a local function to delete and list subvolumes, suggested by Eryu
 
+Changes from v1:
+* Added some prints printing what is being tested
+* The test now uses the _btrfs_get_subvolid to get subvolumeids instead of using
+  plain integers
+* New patch expanding the funtionality of _require_btrfs_command, which now
+  check for argument of subcommands
 
-Otherwise looks good. When fixed this you may add.
+Marcos Paulo de Souza (2):
+  common: btrfs: Improve _require_btrfs_command
+  btrfs: Test subvolume delete --subvolid feature
 
-Reviewed-by: Anand Jain <anand.jain@oracle.com>
+ common/btrfs        | 13 ++++++--
+ tests/btrfs/203     | 73 +++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/203.out | 14 +++++++++
+ tests/btrfs/group   |  1 +
+ 4 files changed, 99 insertions(+), 2 deletions(-)
+ create mode 100755 tests/btrfs/203
+ create mode 100644 tests/btrfs/203.out
 
-Thanks, Anand
-
->   	/*
->   	 * Since the transaction is done, we can apply the pending changes
-> @@ -2267,29 +2258,20 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
->   	 * new delayed refs. Must handle them or qgroup can be wrong.
->   	 */
->   	ret = btrfs_run_delayed_refs(trans, (unsigned long)-1);
-> -	if (ret) {
-> -		mutex_unlock(&fs_info->tree_log_mutex);
-> -		mutex_unlock(&fs_info->reloc_mutex);
-> -		goto scrub_continue;
-> -	}
-> +	if (ret)
-> +		goto unlock_tree_log;
->   
->   	/*
->   	 * Since fs roots are all committed, we can get a quite accurate
->   	 * new_roots. So let's do quota accounting.
->   	 */
->   	ret = btrfs_qgroup_account_extents(trans);
-> -	if (ret < 0) {
-> -		mutex_unlock(&fs_info->tree_log_mutex);
-> -		mutex_unlock(&fs_info->reloc_mutex);
-> -		goto scrub_continue;
-> -	}
-> +	if (ret < 0)
-> +		goto unlock_tree_log;
->   
->   	ret = commit_cowonly_roots(trans);
-> -	if (ret) {
-> -		mutex_unlock(&fs_info->tree_log_mutex);
-> -		mutex_unlock(&fs_info->reloc_mutex);
-> -		goto scrub_continue;
-> -	}
-> +	if (ret)
-> +		goto unlock_tree_log;
->   
->   	/*
->   	 * The tasks which save the space cache and inode cache may also
-> @@ -2297,9 +2279,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
->   	 */
->   	if (TRANS_ABORTED(cur_trans)) {
->   		ret = cur_trans->aborted;
-> -		mutex_unlock(&fs_info->tree_log_mutex);
-> -		mutex_unlock(&fs_info->reloc_mutex);
-> -		goto scrub_continue;
-> +		goto unlock_tree_log;
->   	}
->   
->   	btrfs_prepare_extent_commit(fs_info);
-> @@ -2346,8 +2326,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
->   	if (ret) {
->   		btrfs_handle_fs_error(fs_info, ret,
->   				      "Error while writing out transaction");
-> -		mutex_unlock(&fs_info->tree_log_mutex);
-> -		goto scrub_continue;
-> +		goto unlock_tree_log;
->   	}
->   
->   	ret = write_all_supers(fs_info, 0);
-> @@ -2394,6 +2373,10 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
->   
->   	return ret;
->   
-> +unlock_tree_log:
-> +	mutex_unlock(&fs_info->tree_log_mutex);
-> +unlock_reloc:
-> +	mutex_unlock(&fs_info->reloc_mutex);
->   scrub_continue:
->   	btrfs_scrub_continue(fs_info);
->   cleanup_transaction:
-> 
+-- 
+2.25.0
 

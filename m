@@ -2,43 +2,45 @@ Return-Path: <SRS0=op+e=4M=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 77D9EC11D2F
-	for <linux-btrfs@archiver.kernel.org>; Mon, 24 Feb 2020 15:37:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B49D2C11D30
+	for <linux-btrfs@archiver.kernel.org>; Mon, 24 Feb 2020 15:37:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4EBC72082F
-	for <linux-btrfs@archiver.kernel.org>; Mon, 24 Feb 2020 15:37:58 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8AAA52072D
+	for <linux-btrfs@archiver.kernel.org>; Mon, 24 Feb 2020 15:37:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727958AbgBXPh5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 24 Feb 2020 10:37:57 -0500
-Received: from mga09.intel.com ([134.134.136.24]:65149 "EHLO mga09.intel.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727930AbgBXPh4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1727948AbgBXPh4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Mon, 24 Feb 2020 10:37:56 -0500
+Received: from mga14.intel.com ([192.55.52.115]:19218 "EHLO mga14.intel.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727830AbgBXPhz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 24 Feb 2020 10:37:55 -0500
 X-Amp-Result: SKIPPED(no attachment in message)
 X-Amp-File-Uploaded: False
-Received: from fmsmga003.fm.intel.com ([10.253.24.29])
-  by orsmga102.jf.intel.com with ESMTP/TLS/DHE-RSA-AES256-GCM-SHA384; 24 Feb 2020 07:37:55 -0800
+Received: from fmsmga004.fm.intel.com ([10.253.24.48])
+  by fmsmga103.fm.intel.com with ESMTP/TLS/DHE-RSA-AES256-GCM-SHA384; 24 Feb 2020 07:37:55 -0800
 X-ExtLoop1: 1
 X-IronPort-AV: E=Sophos;i="5.70,480,1574150400"; 
-   d="scan'208";a="284384038"
+   d="scan'208";a="260374554"
 Received: from black.fi.intel.com ([10.237.72.28])
-  by FMSMGA003.fm.intel.com with ESMTP; 24 Feb 2020 07:37:53 -0800
+  by fmsmga004.fm.intel.com with ESMTP; 24 Feb 2020 07:37:53 -0800
 Received: by black.fi.intel.com (Postfix, from userid 1003)
-        id A916DFE; Mon, 24 Feb 2020 17:37:52 +0200 (EET)
+        id BA74E252; Mon, 24 Feb 2020 17:37:52 +0200 (EET)
 From:   Andy Shevchenko <andriy.shevchenko@linux.intel.com>
 To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>,
         Lu Fengqi <lufq.fnst@cn.fujitsu.com>,
         linux-btrfs@vger.kernel.org, Christoph Hellwig <hch@lst.de>
 Cc:     Andy Shevchenko <andriy.shevchenko@linux.intel.com>
-Subject: [PATCH v4 0/4] btrfs: bypass UUID API aliasing
-Date:   Mon, 24 Feb 2020 17:37:48 +0200
-Message-Id: <20200224153752.35063-1-andriy.shevchenko@linux.intel.com>
+Subject: [PATCH v4 2/4] uuid: Provide a GUID generator for raw buffer
+Date:   Mon, 24 Feb 2020 17:37:50 +0200
+Message-Id: <20200224153752.35063-3-andriy.shevchenko@linux.intel.com>
 X-Mailer: git-send-email 2.25.0
+In-Reply-To: <20200224153752.35063-1-andriy.shevchenko@linux.intel.com>
+References: <20200224153752.35063-1-andriy.shevchenko@linux.intel.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -46,33 +48,51 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-UUID API has been converted to differentiate UUID and GUID.
-Btrfs is using aliases to the new API for some time.
+In some cases we would like to generate a GUID and export it.
+Though it would require either casting to internal kernel types or
+an intermediate buffer. Instead we may achieve this by supplying
+a pointer to raw buffer and make a complimentary API to existing one
+for UUIDs.
 
-Bypass that aliasing by converting btrfs to use API calls directly.
+Signed-off-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+---
+ include/linux/uuid.h |  1 +
+ lib/uuid.c           | 10 ++++++++++
+ 2 files changed, 11 insertions(+)
 
-The series has been compiled only.
-
-P.S. It may be applied either to btrfs tree or to UUID one.
-
-Change v3:
-- rebase to latest kernel base (Linux Next)
-- explain in cover letter purpose of conversion (Johannes)
-
-Andy Shevchenko (4):
-  uuid: Add inline helpers to import / export UUIDs
-  uuid: Provide a GUID generator for raw buffer
-  Btrfs: Switch to use new generic UUID API
-  uuid: Remove no more needed macro
-
- fs/btrfs/disk-io.c     |  6 +++---
- fs/btrfs/ioctl.c       |  4 +---
- fs/btrfs/root-tree.c   |  4 +---
- fs/btrfs/transaction.c |  7 +++----
- include/linux/uuid.h   | 22 +++++++++++++++++++++-
- lib/uuid.c             | 10 ++++++++++
- 6 files changed, 39 insertions(+), 14 deletions(-)
-
+diff --git a/include/linux/uuid.h b/include/linux/uuid.h
+index 8e4a5000da03..3780460a9a85 100644
+--- a/include/linux/uuid.h
++++ b/include/linux/uuid.h
+@@ -84,6 +84,7 @@ static inline bool uuid_is_null(const uuid_t *uuid)
+ }
+ 
+ void generate_random_uuid(unsigned char uuid[16]);
++void generate_random_guid(unsigned char guid[16]);
+ 
+ extern void guid_gen(guid_t *u);
+ extern void uuid_gen(uuid_t *u);
+diff --git a/lib/uuid.c b/lib/uuid.c
+index b6a1edb61d87..562d53977cab 100644
+--- a/lib/uuid.c
++++ b/lib/uuid.c
+@@ -40,6 +40,16 @@ void generate_random_uuid(unsigned char uuid[16])
+ }
+ EXPORT_SYMBOL(generate_random_uuid);
+ 
++void generate_random_guid(unsigned char guid[16])
++{
++	get_random_bytes(guid, 16);
++	/* Set GUID version to 4 --- truly random generation */
++	guid[7] = (guid[7] & 0x0F) | 0x40;
++	/* Set the GUID variant to DCE */
++	guid[8] = (guid[8] & 0x3F) | 0x80;
++}
++EXPORT_SYMBOL(generate_random_guid);
++
+ static void __uuid_gen_common(__u8 b[16])
+ {
+ 	prandom_bytes(b, 16);
 -- 
 2.25.0
 

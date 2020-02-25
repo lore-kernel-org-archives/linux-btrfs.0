@@ -2,127 +2,165 @@ Return-Path: <SRS0=nyR6=4N=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A9952C35E01
-	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Feb 2020 20:40:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 408A8C4BA00
+	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Feb 2020 21:48:58 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 7976720675
-	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Feb 2020 20:40:10 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0900224656
+	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Feb 2020 21:48:57 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="FLPjXDFU"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="BZjHVrty"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731813AbgBYUkJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 25 Feb 2020 15:40:09 -0500
-Received: from mail-wr1-f44.google.com ([209.85.221.44]:38887 "EHLO
-        mail-wr1-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728119AbgBYUkH (ORCPT
+        id S1729653AbgBYVs5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 25 Feb 2020 16:48:57 -0500
+Received: from bombadil.infradead.org ([198.137.202.133]:43670 "EHLO
+        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1729543AbgBYVsr (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 25 Feb 2020 15:40:07 -0500
-Received: by mail-wr1-f44.google.com with SMTP id e8so279697wrm.5
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Feb 2020 12:40:06 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:from:date:message-id:subject:to;
-        bh=JK7E0kIr4KZUij9M1JjmwPEonY1lu+WxHb7q6BfsHgY=;
-        b=FLPjXDFUwOypLuGl1+5J4ct/jHoNy7eioQVF5YoSEKlhY4OqYx5JfnS7pqOiBMF4zT
-         r/rSbme6xEjCs9N8dGVFpZ8oUhlxCsWZlPyqLB6bU4nvCOMmORkwpBIL3wbPr6hbODkH
-         j523PDbCgSTfvg3kE9Ph66s1wxV2q0fUTLe5u7Cj7TjKwiobYrGtGhfXwtQH7ggKC7Nz
-         kfwxJSE2EFcjfr+SuvkE1Crp2WIGCeoQ0BnTwWUM9G8x8zveDmH5yT41cO8IhVMeNbpN
-         bj9m6D9q5GLJJj5rfzhwx9AWjFc4LpIhMd67hTpoklkoNIjzYt4LppuRijio/g1bPeeV
-         xBgw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:from:date:message-id:subject:to;
-        bh=JK7E0kIr4KZUij9M1JjmwPEonY1lu+WxHb7q6BfsHgY=;
-        b=NkrCpUt5ItoAqAG7MKLDT+4hqJxeisTr00RqMabMtQ1agBVNolGqBWNEV8GGGxIRoE
-         PUSUB20VwOt3eJ63v0llb3ppl2k9eICR1ArRnyorqIUaVKZDQ0aGNXMslcLrZYgeFCEJ
-         EfiLnYrMfk4YxQf/vMqDdymzzx6antLcPuwjNFfDSu3v9awtAuTZsQuPUOXWb6jm8q2n
-         xd8HCD9ypkiMyTh8vr1Xv8CQSf68WCXLRCHHtuKj9WJim/WngfGfQziVDrrgPGitA6i1
-         GhWOhs+k7b3E/UDWmhM7XSZeFttxoD09p2CDAWThrSmSd6bzrAk1q30ZXQyk0S6LTxrE
-         ZJGA==
-X-Gm-Message-State: APjAAAWxwn4k11J4SN5T1g3GpKUqJlbdnMZiOE2aH4tzTUVIBGuMecY8
-        kLy9a1VOHyLtnhhxnvhYt9RKr7mBGSTBngDbiqFVPo1xeg==
-X-Google-Smtp-Source: APXvYqxbK5YJuMomeF9hbz6gLrAFJr02kCFHVk9cOm6ear1nIdSV4cNS5QvRQhpUz754uTBljDXpK0XMCfR0B7EpgAM=
-X-Received: by 2002:adf:ed8c:: with SMTP id c12mr872617wro.231.1582663205501;
- Tue, 25 Feb 2020 12:40:05 -0800 (PST)
+        Tue, 25 Feb 2020 16:48:47 -0500
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=bombadil.20170209; h=Content-Transfer-Encoding:
+        MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
+        :Reply-To:Content-Type:Content-ID:Content-Description;
+        bh=Y+DMKEcjJ0PUqBzLJKWtCNhcm7v9FUVVuODqcjMIb+g=; b=BZjHVrtyapAW9nHzSJHblAd4t/
+        xUJNrmLG2TNmO7evD2q+2vZmy7zGYx6LGzBpBb2n7of903wqbB1Hs2HLZWoVjDD8HKnY80sEtSMUX
+        0gf2/0Nyh2X8fCYNCb32ow+1J37VYQtCN+zxSDpZUwtSh8HU27O0EchtXIEBGxHf2aMkR+DASOYrg
+        +YCUuZ7iE+3ud0Vixg+pGI7/2z933+k0NXGV5bej6VfCiAYOgteMZvhiofaLA6Xp+6fVmz5wLkkzT
+        ihdZUhzWMwyexX7dASf5FvoWB4q3m8xvEx5ax+rSD12KBcTk8liqYBeBzjTmAKDZ/2LZtqGs7FQsV
+        8MWSMm0g==;
+Received: from willy by bombadil.infradead.org with local (Exim 4.92.3 #3 (Red Hat Linux))
+        id 1j6i4G-0007pH-UW; Tue, 25 Feb 2020 21:48:40 +0000
+From:   Matthew Wilcox <willy@infradead.org>
+To:     linux-fsdevel@vger.kernel.org
+Cc:     "Matthew Wilcox (Oracle)" <willy@infradead.org>,
+        linux-mm@kvack.org, linux-kernel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-erofs@lists.ozlabs.org,
+        linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
+        cluster-devel@redhat.com, ocfs2-devel@oss.oracle.com,
+        linux-xfs@vger.kernel.org, John Hubbard <jhubbard@nvidia.com>,
+        Christoph Hellwig <hch@lst.de>
+Subject: [PATCH v8 01/25] mm: Move readahead prototypes from mm.h
+Date:   Tue, 25 Feb 2020 13:48:14 -0800
+Message-Id: <20200225214838.30017-2-willy@infradead.org>
+X-Mailer: git-send-email 2.21.1
+In-Reply-To: <20200225214838.30017-1-willy@infradead.org>
+References: <20200225214838.30017-1-willy@infradead.org>
 MIME-Version: 1.0
-From:   Jonathan H <pythonnut@gmail.com>
-Date:   Tue, 25 Feb 2020 12:39:39 -0800
-Message-ID: <CAAW2-ZfunSiUscob==s6Pj+SpDjO6irBcyDtoOYarrJH1ychMQ@mail.gmail.com>
-Subject: USB reset + raid6 = majority of files unreadable
-To:     linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hello everyone,
+From: "Matthew Wilcox (Oracle)" <willy@infradead.org>
 
-Previously, I was running an array with six disks all connected via
-USB. I am running raid1c3 for metadata and raid6 for data, kernel
-5.5.4-arch1-1 and btrfs --version v5.4, and I use bees for
-deduplication. Four of the six drives are stored in a single four-bay
-enclosure. Due to my oversight, TLER was not enabled for any of the
-drives, so when one of them started failing, the enclosure was reset
-and all four drives were disconnected.
+The readahead code is part of the page cache so should be found in the
+pagemap.h file.  force_page_cache_readahead is only used within mm,
+so move it to mm/internal.h instead.  Remove the parameter names where
+they add no value, and rename the ones which were actively misleading.
 
-After rebooting, the file system was still mountable. I saw some
-transid errors in dmesg, but I didn't really pay attention to them
-because I was trying to get rid of the now failed drive. I tried to
-"btrfs replace" the drive with a different one, but the replace
-stopped making progress because all reads to the dead drive in a
-certain location were failing (even with the "-r") flag. So I tried
-mounting degraded without the dead drive and doing "btrfs dev delete
-missing" instead. The deletion failed with the following kernel
-message:
+Signed-off-by: Matthew Wilcox (Oracle) <willy@infradead.org>
+Reviewed-by: John Hubbard <jhubbard@nvidia.com>
+Reviewed-by: Christoph Hellwig <hch@lst.de>
+---
+ block/blk-core.c        |  1 +
+ include/linux/mm.h      | 19 -------------------
+ include/linux/pagemap.h |  8 ++++++++
+ mm/fadvise.c            |  2 ++
+ mm/internal.h           |  2 ++
+ 5 files changed, 13 insertions(+), 19 deletions(-)
 
-[  +2.697798] BTRFS warning (device sdb): csum failed root -9 ino 257
-off 2083160064 csum 0xd0a0b14c expected csum 0x7f3ec5ab mirror 1
-[  +0.003381] BTRFS warning (device sdb): csum failed root -9 ino 257
-off 2083160064 csum 0xd0a0b14c expected csum 0x7f3ec5ab mirror 2
-[  +0.002514] BTRFS warning (device sdb): csum failed root -9 ino 257
-off 2083160064 csum 0xd0a0b14c expected csum 0x7f3ec5ab mirror 4
-[  +0.000543] BTRFS warning (device sdb): csum failed root -9 ino 257
-off 2083160064 csum 0xd0a0b14c expected csum 0x7f3ec5ab mirror 1
-[  +0.001170] BTRFS warning (device sdb): csum failed root -9 ino 257
-off 2083160064 csum 0xd0a0b14c expected csum 0x7f3ec5ab mirror 2
-[  +0.001151] BTRFS warning (device sdb): csum failed root -9 ino 257
-off 2083160064 csum 0xd0a0b14c expected csum 0x7f3ec5ab mirror 4
+diff --git a/block/blk-core.c b/block/blk-core.c
+index 089e890ab208..41417bb93634 100644
+--- a/block/blk-core.c
++++ b/block/blk-core.c
+@@ -20,6 +20,7 @@
+ #include <linux/blk-mq.h>
+ #include <linux/highmem.h>
+ #include <linux/mm.h>
++#include <linux/pagemap.h>
+ #include <linux/kernel_stat.h>
+ #include <linux/string.h>
+ #include <linux/init.h>
+diff --git a/include/linux/mm.h b/include/linux/mm.h
+index 52269e56c514..68dcda9a2112 100644
+--- a/include/linux/mm.h
++++ b/include/linux/mm.h
+@@ -2401,25 +2401,6 @@ extern vm_fault_t filemap_page_mkwrite(struct vm_fault *vmf);
+ int __must_check write_one_page(struct page *page);
+ void task_dirty_inc(struct task_struct *tsk);
+ 
+-/* readahead.c */
+-#define VM_READAHEAD_PAGES	(SZ_128K / PAGE_SIZE)
+-
+-int force_page_cache_readahead(struct address_space *mapping, struct file *filp,
+-			pgoff_t offset, unsigned long nr_to_read);
+-
+-void page_cache_sync_readahead(struct address_space *mapping,
+-			       struct file_ra_state *ra,
+-			       struct file *filp,
+-			       pgoff_t offset,
+-			       unsigned long size);
+-
+-void page_cache_async_readahead(struct address_space *mapping,
+-				struct file_ra_state *ra,
+-				struct file *filp,
+-				struct page *pg,
+-				pgoff_t offset,
+-				unsigned long size);
+-
+ extern unsigned long stack_guard_gap;
+ /* Generic expand stack which grows the stack according to GROWS{UP,DOWN} */
+ extern int expand_stack(struct vm_area_struct *vma, unsigned long address);
+diff --git a/include/linux/pagemap.h b/include/linux/pagemap.h
+index ccb14b6a16b5..24894b9b90c9 100644
+--- a/include/linux/pagemap.h
++++ b/include/linux/pagemap.h
+@@ -614,6 +614,14 @@ int replace_page_cache_page(struct page *old, struct page *new, gfp_t gfp_mask);
+ void delete_from_page_cache_batch(struct address_space *mapping,
+ 				  struct pagevec *pvec);
+ 
++#define VM_READAHEAD_PAGES	(SZ_128K / PAGE_SIZE)
++
++void page_cache_sync_readahead(struct address_space *, struct file_ra_state *,
++		struct file *, pgoff_t index, unsigned long req_count);
++void page_cache_async_readahead(struct address_space *, struct file_ra_state *,
++		struct file *, struct page *, pgoff_t index,
++		unsigned long req_count);
++
+ /*
+  * Like add_to_page_cache_locked, but used to add newly allocated pages:
+  * the page is new, so we can just run __SetPageLocked() against it.
+diff --git a/mm/fadvise.c b/mm/fadvise.c
+index 4f17c83db575..3efebfb9952c 100644
+--- a/mm/fadvise.c
++++ b/mm/fadvise.c
+@@ -22,6 +22,8 @@
+ 
+ #include <asm/unistd.h>
+ 
++#include "internal.h"
++
+ /*
+  * POSIX_FADV_WILLNEED could set PG_Referenced, and POSIX_FADV_NOREUSE could
+  * deactivate the pages and clear PG_Referenced.
+diff --git a/mm/internal.h b/mm/internal.h
+index 3cf20ab3ca01..83f353e74654 100644
+--- a/mm/internal.h
++++ b/mm/internal.h
+@@ -49,6 +49,8 @@ void unmap_page_range(struct mmu_gather *tlb,
+ 			     unsigned long addr, unsigned long end,
+ 			     struct zap_details *details);
+ 
++int force_page_cache_readahead(struct address_space *, struct file *,
++		pgoff_t index, unsigned long nr_to_read);
+ extern unsigned int __do_page_cache_readahead(struct address_space *mapping,
+ 		struct file *filp, pgoff_t offset, unsigned long nr_to_read,
+ 		unsigned long lookahead_size);
+-- 
+2.25.0
 
-I noticed that almost all of the files give an I/O error when read,
-and similar kernel messages are generated, but with positive roots. I
-also see "read error corrected" messages, but
-if I try to read the files again, I the exact same messages are
-printed again, which seems to suggest that the errors haven't really
-been corrected? (But maybe this is intended behavior.)
-
-I also attempted to use "btrfs restore" to recover the files, but
-almost all of the files produce "ERROR: zstd decompress failed Unknown
-frame descriptor" and the recovery does not succeed.
-
-Since, then, I have been scrubbing the file system. The first scrub
-produce lots of Uncorrectable read errors and several hundred csum
-errors. I'm assuming the read errors are due to the missing drive. The
-puzzling thing is, the scrub can "complete" (actually, it is aborted
-after it completes on all drives but the missing one) and I can delete
-all of the files with unrecoverable csum errors, but all of the issues
-above persist. I can then turn around scrub again, and the scrub will
-find new csum errors, which seems bizarre to me, since I would have
-expected them all to be fixed. However, all transid related errors
-have disappeared after the first scrub.
-
-I have also tried deleting the file referenced in the device deletion
-error and restarting the deletion. This seems to be working, but
-progress has been very slow and I fear I'll have to delete all of the
-I/O error-producing files above, which I would like to avoid if
-possible.
-
-What should I do in this situation and how can I avoid this in the future?
-
-Thanks,
-Jonathan

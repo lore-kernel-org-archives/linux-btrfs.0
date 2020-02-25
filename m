@@ -7,66 +7,66 @@ X-Spam-Status: No, score=-9.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0AA8BC35DF3
-	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Feb 2020 03:57:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 22E6DC35DF0
+	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Feb 2020 03:57:27 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C99DF24650
-	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Feb 2020 03:57:25 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id ED99024650
+	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Feb 2020 03:57:26 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="VtXvjIws"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="EQaIsfhb"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728998AbgBYD5Y (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 24 Feb 2020 22:57:24 -0500
-Received: from esa5.hgst.iphmx.com ([216.71.153.144]:34241 "EHLO
+        id S1728956AbgBYD5M (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 24 Feb 2020 22:57:12 -0500
+Received: from esa5.hgst.iphmx.com ([216.71.153.144]:34216 "EHLO
         esa5.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728988AbgBYD5W (ORCPT
+        with ESMTP id S1728866AbgBYD5M (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 24 Feb 2020 22:57:22 -0500
+        Mon, 24 Feb 2020 22:57:12 -0500
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1582603042; x=1614139042;
+  t=1582603031; x=1614139031;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=D/o4C3jAvJlpnMDRfZCjJPHU27WatnH5haOBXeabW0s=;
-  b=VtXvjIwsHxPczzpSOne34AWAbl6cQk9eJ1tOEHoSABRQtlR5zKKzGTgJ
-   rdBtGYEiNvtGxyPHqhsfoqHe2zxEOCihfTt0qruldTVPLASBcTU3zbq5x
-   QcjVqjFtKtMuDj8hveKVJfVyAxgbh+YFTl1kvp3QcUIPp+DZ/DSblykHB
-   asT+OFdW2WPahxSKfzzTjV5XbFXw+8ECEfgF+3BAm29LxkphDzqfcWclH
-   aSHLW329jkbBqdtra3Gt1tUWX7n7zOLkYsEndHhIiD4fZ7K6bT6uXQY9C
-   t3OugJA+lVb9/gLWTKrb7wWpash1RB8GsozMWMFqhtOkZTHuJ34rZN3py
+  bh=PRhYCqlHGa1Ffrr0vuTgOoIhkWEOWH9/AqOyghGgX5w=;
+  b=EQaIsfhbDtzdrbaxmms7dLDsBdlgo6aZMMg/16+QWXfP7Wh/HTKZH9Zm
+   46lmKkf6f+NGqhuMhNcm15LjpxtH+M1/XFv+P/MwvqjAiq83FSWGco/Z1
+   dARz/XUEVPuuxPz2cthaQBJyH0ljRkkc62ew7uXtMKkxtPBcW4NpyMpPp
+   sgqg0kj2zFE3l/1TBb5ic6dQiRg0NBKZrjZYbG3WW4W3CP6FwqQ/xIcmH
+   Dn+1fKT7XPi0lp5FEfLuBh22SaeTGPKy9DMSgt3zyY0K6YhQMW/0E9fkP
+   Uu0M0bvyPOOw08mc+F9/RAd3At1H0p6HgWsR6+Q4LB9gXuyeRhfXtX0co
    g==;
-IronPort-SDR: /f1drOPCf0gh+1eCfHK2pYk21die39adGsIo/qVQz/dRbPUGSx32MGAsongHT+C1MI5KwTBjgl
- OqxYaKUbhMxCPZAE19fmpl6GtaXqm96IatOH2MPX2puVooywDGjEZ404wk/tIZyB5WHZ1qloaq
- IoYQcUgUXU74/XDpIxOMmYrLai2JfZcdLMvanI6jmxyA50hrlnOQvwNnw3lpKwg7j4IDc2qNPy
- 5X5wvFZKvIOOig9q+mXXOPZC21RfY21j47hZpaHsLBd4+CL5nTe6ZpaSJXVfHl1jSlmjQdjczw
- OB8=
+IronPort-SDR: 1PqLTxwRFgMN/ky2xKdK34coMWwCGS0Qv3w/QUFamsQSzFaYQmNyOoYuZ9QrcMGpRaC7GX1kwJ
+ BzUfIBAAtZfvbEZ7HAgnOI9w1rD+WSEmkgaZOh3mS1Rp0fPEJldGHstxjRrRdO/YR8+MAz3Krb
+ BKbR+myhh29/zQ5QqoXk1NyNACzg4npJMj5oWd89YFS0R6ojbPz179Uu/8zpLfBsLUK/TbF8Gu
+ rsTvtQ4oZ5of+2LBJ2KCv9Ibw9gP+zgGIgXiIzOqnPxIGE1+LKPCeDTONgrrV1iRwuIkZYyZr1
+ 7kw=
 X-IronPort-AV: E=Sophos;i="5.70,482,1574092800"; 
-   d="scan'208";a="131168315"
+   d="scan'208";a="131168281"
 Received: from h199-255-45-14.hgst.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 25 Feb 2020 11:57:22 +0800
-IronPort-SDR: C5vn9e8GFqmuKJF4x7o0E/JLtvhcZ/Uax4yoXf1AGASmQRSufS0T1azmDYoZwMVr+VduzDBtw3
- tVNTn57x/pmK0V3cnoGZozHG4Zu88Fa7KhzwsDJQwJK4yZjXVNgaK+C3j/wgw35RQCcWNAT1xr
- mwmxXEqK7DNO37yfTwndaBwzI92McT/zJ7LaSsBzBYtedZgyzQ/UlpX+TinoFXwsXQydSM+t5a
- ms20LpZ2qaRUrEDO6bCRNCgcSzl+8wScmLeQKbIelpN6PzqzqhBaMqPtH3pBntWrBnAWxk65mR
- CuJt69nhy/KxJundFyTxoI9C
+  by ob1.hgst.iphmx.com with ESMTP; 25 Feb 2020 11:57:03 +0800
+IronPort-SDR: Zmow8N0wJC2Hb9HwSYxembgmCr0iBT0N4W1iZAjAzm3eGoOdH1h+K2uyAFF3C9FBumRRN13ZAo
+ OiGwEJIrER0EEJJZOxOX2RfhZKOIAdaXUx/m0LS1wEicGqVfFjTKmq8r/ZUpPYLkFnBmFFagH1
+ IwHtTyskD0XCc31YevZTyPOMDOlKxRugpjs9gOfVoFs0lXP15g+XDEnGpsSoP0OhLpc/FH6hgX
+ glOXJtWL4OtzErVcyvMKDcWPt5a5mEDJ+cjrutuygUILwRLhHBtLKHPbOIBWf/djT0289RyEaQ
+ cyKgJnppmxJsCVG1dPPS6dWA
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 24 Feb 2020 19:49:50 -0800
-IronPort-SDR: AvEXL6ulo6szn/RhkHuGEOyeZuzdJGy8h7iHHGWdvZES1O+t0FgD00K3kWGGVwEQZeDGnMnCKR
- vfM/EGzp//Xm5IxkIoKmsVp1DaVZ0TqBoDJv996DTbdg30NeaRkTLNbRHcTWJYvgLaC8ze+x6t
- 2pfjSJZB7Qik0ojdY7S5FDRDXks/T0Zao3q/Eme9U0bISAxoxyuFtT6Q7v0T2lKAqjoCPhouLR
- LYYXgu3rK0D7PY+08k8cKMynRBvtYbY4jAed7PCTCrevinVJHLeNNbI7mrVtAkf5ElRjvS9KwA
- rpc=
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 24 Feb 2020 19:49:31 -0800
+IronPort-SDR: UqPuoLznLTU6UIAcY3Kg9wTz25xAnNO2+UnfXTT+Q3dmJzKfBiAujhnIFUHwWfjgVgdV0tOTV7
+ 0Et6yBy5CbaqMss5m79+8oXnhQPxrVH4PUnKSKzC5mua2dIvPz/HXr1yaMw88QTrJFMUuKB+rB
+ edpH44rYG6YiNh1yoqtQQ1tZUdDzvVCyqXFdt8Dg/C1qCeLPVKtDJ2QZqZG9kNOhcEdqCbRYDs
+ CpuNFlQTyXmUKzbVPsmUNGm7wL/4+g2ltmUA4mpwjrlKUXvaYi5LWdB+fl7EWY2XHrvM2vx8XC
+ aRU=
 WDCIronportException: Internal
 Received: from naota.dhcp.fujisawa.hgst.com ([10.149.52.155])
-  by uls-op-cesaip02.wdc.com with ESMTP; 24 Feb 2020 19:57:22 -0800
+  by uls-op-cesaip02.wdc.com with ESMTP; 24 Feb 2020 19:57:02 -0800
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
 Cc:     Josef Bacik <josef@toxicpanda.com>,
         Nikolay Borisov <nborisov@suse.com>,
         Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH v3 21/21] btrfs: factor out prepare_allocation()
-Date:   Tue, 25 Feb 2020 12:56:26 +0900
-Message-Id: <20200225035626.1049501-22-naohiro.aota@wdc.com>
+Subject: [PATCH v3 06/21] btrfs: factor out init_alloc_chunk_ctl
+Date:   Tue, 25 Feb 2020 12:56:11 +0900
+Message-Id: <20200225035626.1049501-7-naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <20200225035626.1049501-1-naohiro.aota@wdc.com>
 References: <20200225035626.1049501-1-naohiro.aota@wdc.com>
@@ -77,146 +77,150 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This function finally factor out prepare_allocation() form
-find_free_extent(). This function is called before the allocation loop and
-a specific allocator function like prepare_allocation_clustered() should
-initialize their private information and can set proper hint_byte to
-indicate where to start the allocation with.
+Factor out init_alloc_chunk_ctl() from __btrfs_alloc_chunk(). This function
+initialises parameters of "struct alloc_chunk_ctl" for allocation.
+init_alloc_chunk_ctl() handles a common part of the initialisation to load
+the RAID parameters from btrfs_raid_array.
+init_alloc_chunk_ctl_policy_regular() decides some parameters for its
+allocation.
+
+The last "else" case in the original code is moved to __btrfs_alloc_chunk()
+to handle the error case in the common code. Replace the BUG_ON with
+ASSERT() and error return at the same time.
 
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/extent-tree.c | 110 +++++++++++++++++++++++++----------------
- 1 file changed, 68 insertions(+), 42 deletions(-)
+ fs/btrfs/volumes.c | 100 ++++++++++++++++++++++++++++-----------------
+ 1 file changed, 62 insertions(+), 38 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 055097bff12b..1340485b392b 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3866,6 +3866,71 @@ static int find_free_extent_update_loop(struct btrfs_fs_info *fs_info,
- 	return -ENOSPC;
- }
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index ed90e9d2bd9b..b15c2bb6f913 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -4841,6 +4841,61 @@ struct alloc_chunk_ctl {
+ 	int ndevs;
+ };
  
-+static int prepare_allocation_clustered(struct btrfs_fs_info *fs_info,
-+					struct find_free_extent_ctl *ffe_ctl,
-+					struct btrfs_space_info *space_info,
-+					struct btrfs_key *ins)
++static void
++init_alloc_chunk_ctl_policy_regular(struct btrfs_fs_devices *fs_devices,
++				    struct alloc_chunk_ctl *ctl)
 +{
-+	/*
-+	 * If our free space is heavily fragmented we may not be able to make
-+	 * big contiguous allocations, so instead of doing the expensive search
-+	 * for free space, simply return ENOSPC with our max_extent_size so we
-+	 * can go ahead and search for a more manageable chunk.
-+	 *
-+	 * If our max_extent_size is large enough for our allocation simply
-+	 * disable clustering since we will likely not be able to find enough
-+	 * space to create a cluster and induce latency trying.
-+	 */
-+	if (unlikely(space_info->max_extent_size)) {
-+		spin_lock(&space_info->lock);
-+		if (space_info->max_extent_size &&
-+		    ffe_ctl->num_bytes > space_info->max_extent_size) {
-+			ins->offset = space_info->max_extent_size;
-+			spin_unlock(&space_info->lock);
-+			return -ENOSPC;
-+		} else if (space_info->max_extent_size) {
-+			ffe_ctl->use_cluster = false;
-+		}
-+		spin_unlock(&space_info->lock);
++	u64 type = ctl->type;
++
++	if (type & BTRFS_BLOCK_GROUP_DATA) {
++		ctl->max_stripe_size = SZ_1G;
++		ctl->max_chunk_size = BTRFS_MAX_DATA_CHUNK_SIZE;
++	} else if (type & BTRFS_BLOCK_GROUP_METADATA) {
++		/* for larger filesystems, use larger metadata chunks */
++		if (fs_devices->total_rw_bytes > 50ULL * SZ_1G)
++			ctl->max_stripe_size = SZ_1G;
++		else
++			ctl->max_stripe_size = SZ_256M;
++		ctl->max_chunk_size = ctl->max_stripe_size;
++	} else if (type & BTRFS_BLOCK_GROUP_SYSTEM) {
++		ctl->max_stripe_size = SZ_32M;
++		ctl->max_chunk_size = 2 * ctl->max_stripe_size;
++		ctl->devs_max = min_t(int, ctl->devs_max,
++				      BTRFS_MAX_DEVS_SYS_CHUNK);
++	} else {
++		BUG();
 +	}
 +
-+	ffe_ctl->last_ptr = fetch_cluster_info(fs_info, space_info,
-+					       &ffe_ctl->empty_cluster);
-+	if (ffe_ctl->last_ptr) {
-+		struct btrfs_free_cluster *last_ptr = ffe_ctl->last_ptr;
-+
-+		spin_lock(&last_ptr->lock);
-+		if (last_ptr->block_group)
-+			ffe_ctl->hint_byte = last_ptr->window_start;
-+		if (last_ptr->fragmented) {
-+			/*
-+			 * We still set window_start so we can keep track of the
-+			 * last place we found an allocation to try and save
-+			 * some time.
-+			 */
-+			ffe_ctl->hint_byte = last_ptr->window_start;
-+			ffe_ctl->use_cluster = false;
-+		}
-+		spin_unlock(&last_ptr->lock);
-+	}
-+
-+	return 0;
++	/* We don't want a chunk larger than 10% of writable space */
++	ctl->max_chunk_size = min(div_factor(fs_devices->total_rw_bytes, 1),
++				  ctl->max_chunk_size);
 +}
 +
-+static int prepare_allocation(struct btrfs_fs_info *fs_info,
-+			      struct find_free_extent_ctl *ffe_ctl,
-+			      struct btrfs_space_info *space_info,
-+			      struct btrfs_key *ins)
++static void init_alloc_chunk_ctl(struct btrfs_fs_devices *fs_devices,
++				 struct alloc_chunk_ctl *ctl)
 +{
-+	switch (ffe_ctl->policy) {
-+	case BTRFS_EXTENT_ALLOC_CLUSTERED:
-+		return prepare_allocation_clustered(fs_info, ffe_ctl,
-+						    space_info, ins);
++	int index = btrfs_bg_flags_to_raid_index(ctl->type);
++
++	ctl->sub_stripes = btrfs_raid_array[index].sub_stripes;
++	ctl->dev_stripes = btrfs_raid_array[index].dev_stripes;
++	ctl->devs_max = btrfs_raid_array[index].devs_max;
++	if (!ctl->devs_max)
++		ctl->devs_max = BTRFS_MAX_DEVS(fs_devices->fs_info);
++	ctl->devs_min = btrfs_raid_array[index].devs_min;
++	ctl->devs_increment = btrfs_raid_array[index].devs_increment;
++	ctl->ncopies = btrfs_raid_array[index].ncopies;
++	ctl->nparity = btrfs_raid_array[index].nparity;
++	ctl->ndevs = 0;
++
++	switch (fs_devices->chunk_alloc_policy) {
++	case BTRFS_CHUNK_ALLOC_REGULAR:
++		init_alloc_chunk_ctl_policy_regular(fs_devices, ctl);
++		break;
 +	default:
 +		BUG();
 +	}
 +}
 +
- /*
-  * walks the btree of allocated extents and find a hole of a given size.
-  * The key ins is changed to record the hole:
-@@ -3935,48 +4000,9 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
+ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+ 			       u64 start, u64 type)
+ {
+@@ -4859,7 +4914,6 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+ 	int ndevs;
+ 	int i;
+ 	int j;
+-	int index;
+ 
+ 	if (!alloc_profile_is_valid(type, 0)) {
+ 		ASSERT(0);
+@@ -4872,45 +4926,15 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
  		return -ENOSPC;
  	}
  
--	/*
--	 * If our free space is heavily fragmented we may not be able to make
--	 * big contiguous allocations, so instead of doing the expensive search
--	 * for free space, simply return ENOSPC with our max_extent_size so we
--	 * can go ahead and search for a more manageable chunk.
--	 *
--	 * If our max_extent_size is large enough for our allocation simply
--	 * disable clustering since we will likely not be able to find enough
--	 * space to create a cluster and induce latency trying.
--	 */
--	if (unlikely(space_info->max_extent_size)) {
--		spin_lock(&space_info->lock);
--		if (space_info->max_extent_size &&
--		    num_bytes > space_info->max_extent_size) {
--			ins->offset = space_info->max_extent_size;
--			spin_unlock(&space_info->lock);
--			return -ENOSPC;
--		} else if (space_info->max_extent_size) {
--			ffe_ctl.use_cluster = false;
--		}
--		spin_unlock(&space_info->lock);
--	}
+-	ctl.start = start;
+-	ctl.type = type;
 -
--	ffe_ctl.last_ptr = fetch_cluster_info(fs_info, space_info,
--					      &ffe_ctl.empty_cluster);
--	if (ffe_ctl.last_ptr) {
--		struct btrfs_free_cluster *last_ptr = ffe_ctl.last_ptr;
+-	index = btrfs_bg_flags_to_raid_index(type);
 -
--		spin_lock(&last_ptr->lock);
--		if (last_ptr->block_group)
--			ffe_ctl.hint_byte = last_ptr->window_start;
--		if (last_ptr->fragmented) {
--			/*
--			 * We still set window_start so we can keep track of the
--			 * last place we found an allocation to try and save
--			 * some time.
--			 */
--			ffe_ctl.hint_byte = last_ptr->window_start;
--			ffe_ctl.use_cluster = false;
--		}
--		spin_unlock(&last_ptr->lock);
--	}
-+	ret = prepare_allocation(fs_info, &ffe_ctl, space_info, ins);
-+	if (ret < 0)
-+		return ret;
+-	ctl.sub_stripes = btrfs_raid_array[index].sub_stripes;
+-	ctl.dev_stripes = btrfs_raid_array[index].dev_stripes;
+-	ctl.devs_max = btrfs_raid_array[index].devs_max;
+-	if (!ctl.devs_max)
+-		ctl.devs_max = BTRFS_MAX_DEVS(info);
+-	ctl.devs_min = btrfs_raid_array[index].devs_min;
+-	ctl.devs_increment = btrfs_raid_array[index].devs_increment;
+-	ctl.ncopies = btrfs_raid_array[index].ncopies;
+-	ctl.nparity = btrfs_raid_array[index].nparity;
+-
+-	if (type & BTRFS_BLOCK_GROUP_DATA) {
+-		ctl.max_stripe_size = SZ_1G;
+-		ctl.max_chunk_size = BTRFS_MAX_DATA_CHUNK_SIZE;
+-	} else if (type & BTRFS_BLOCK_GROUP_METADATA) {
+-		/* for larger filesystems, use larger metadata chunks */
+-		if (fs_devices->total_rw_bytes > 50ULL * SZ_1G)
+-			ctl.max_stripe_size = SZ_1G;
+-		else
+-			ctl.max_stripe_size = SZ_256M;
+-		ctl.max_chunk_size = ctl.max_stripe_size;
+-	} else if (type & BTRFS_BLOCK_GROUP_SYSTEM) {
+-		ctl.max_stripe_size = SZ_32M;
+-		ctl.max_chunk_size = 2 * ctl.max_stripe_size;
+-		ctl.devs_max = min_t(int, ctl.devs_max,
+-				      BTRFS_MAX_DEVS_SYS_CHUNK);
+-	} else {
+-		btrfs_err(info, "invalid chunk type 0x%llx requested",
+-		       type);
+-		BUG();
++	if (!(type & BTRFS_BLOCK_GROUP_TYPE_MASK)) {
++		btrfs_err(info, "invalid chunk type 0x%llx requested", type);
++		ASSERT(0);
++		return -EINVAL;
+ 	}
  
- 	ffe_ctl.search_start = max(ffe_ctl.search_start,
- 				   first_logical_byte(fs_info, 0));
+-	/* We don't want a chunk larger than 10% of writable space */
+-	ctl.max_chunk_size = min(div_factor(fs_devices->total_rw_bytes, 1),
+-				  ctl.max_chunk_size);
++	ctl.start = start;
++	ctl.type = type;
++	init_alloc_chunk_ctl(fs_devices, &ctl);
+ 
+ 	devices_info = kcalloc(fs_devices->rw_devices, sizeof(*devices_info),
+ 			       GFP_NOFS);
 -- 
 2.25.1
 

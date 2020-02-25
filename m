@@ -7,67 +7,67 @@ X-Spam-Status: No, score=-9.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 095A4C35DF2
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AEADDC35DF4
 	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Feb 2020 03:57:23 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D40D924650
-	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Feb 2020 03:57:22 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8675524653
+	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Feb 2020 03:57:23 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="QRjPE4+T"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="nxPjCebZ"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728978AbgBYD5S (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 24 Feb 2020 22:57:18 -0500
-Received: from esa5.hgst.iphmx.com ([216.71.153.144]:34233 "EHLO
+        id S1728995AbgBYD5W (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 24 Feb 2020 22:57:22 -0500
+Received: from esa5.hgst.iphmx.com ([216.71.153.144]:34241 "EHLO
         esa5.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728866AbgBYD5Q (ORCPT
+        with ESMTP id S1728984AbgBYD5U (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 24 Feb 2020 22:57:16 -0500
+        Mon, 24 Feb 2020 22:57:20 -0500
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1582603036; x=1614139036;
+  t=1582603040; x=1614139040;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=9Dm5xWcxeGHQQfziuoYwU9OlBKzzE4/PR/QwWTqCGu4=;
-  b=QRjPE4+TT4vGwZ7sVdheOWNMPTIjjzoBOPamX8Rvc7I45LQ+qIi0aHbk
-   j3uGULozUVKef+rQSgLM3zy41tG3+Fis6B+BpCLaOrOEYRYJRjhLt5QVk
-   2/FnLTBoaTZ2zQjL0zF9k6WcYcm/jr5EWm6mKhJf/lRy70sHMJgIhULKO
-   Fd6wgsjf3hJosdUQd1uSz/mcUn43GxgY6f420Um6qA5SGrhDMOQVKYubP
-   7BTtuqOfETwW+TYgzSdmfHNMiKn/JCWVZma5X1UBhNJIaRU2YNRY9MPVd
-   lXFCD6KZ8DBfXw4ollLlW5aDyXhMBqd75j8Ukq8NPC+aVn+0sSoA+2pSF
-   Q==;
-IronPort-SDR: Kdx7wWxfm75py5MoEqI7BktDEaFpi3pBdEuuD9nDqAYtdgEu24O9cpnqSCM0M+C243XlV0HlQj
- 4WodE85RWKBwBrtdVukGeGiRqAFj8mk1ML8m/8ExPNPX6OEpSdxO/qvQJvlhBldpVMHbkKqPvH
- Y3ZHL35IhG/ptX6Kj2INnzOvhPRUIaymrqqtbqfOtqJ5Ry2s+ffwQs/q5HthprxfFrRuYn2kk1
- fTTCta720vjJEQZZkgUJQZRc0aXHY+RzxyoB8jjOPbIGYhT71R8h0Tt3/12TsokDiCAqZ2DxXL
- vQo=
+  bh=Rn2jZXEY45B3cB+vxe8yFrI8seLsouh27GclU6Cx07Q=;
+  b=nxPjCebZ10cpn/mrSEBBfv1MJDiA8krgFnyAdeEECWwpxHcC3bk916d6
+   ghgC8eUYw8KOStgKhr4Nlv9B4kRR6T7Ut8cF/6Q3TQ40B7NTtSB1vHmod
+   Jn2YBq39m2PyBPXx0u+dbKoFrDV292iwGGvPuAJJ/A5P4dM5ak5eL/Cmv
+   PltWk5dtnnGMNZ4bhLt7Hiz/UTr/8SX+LoKF22z5cw7yiF2yTtUSHl7WD
+   9T8Pp96MKpTFf6t6P3IyyRRR1ry+wdecl/VO3XBO1fJPl9GZyWHvv1lW8
+   MCNtXucvzLpohJs9tXxJTL6PnYMSkmmhjF9xUzOSEQptlab3RHYHbbij0
+   A==;
+IronPort-SDR: FY0b5ssDC80qV3iPE56bJ6HKvWMlhfWsWMRLFGX9h19DGmeLXnyBt4z/gNOJbCtmG4G41zgKWN
+ OX+HEeMzwERibCVirqfHT7cjUuRWWagrOSCo+z4gp3RAHrMlep6QW1CKyFPW0ezpG8DSGGInuY
+ pXajYCgMOWreDu79R+MuI6wUt3ZeHNV0LhYrxNa4GALw17Je44rsdFuEXHoGpYV6ZI6OQP86F5
+ zruT6sS8iQGZbplgu1RE2GD9Vdw6WO9FmBifVUFGx09uy/KAhEmfcwFYl7//P95BOl/Tkk9Hw1
+ uE8=
 X-IronPort-AV: E=Sophos;i="5.70,482,1574092800"; 
-   d="scan'208";a="131168297"
+   d="scan'208";a="131168311"
 Received: from h199-255-45-14.hgst.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 25 Feb 2020 11:57:13 +0800
-IronPort-SDR: uXhAI9yeWWIqa4IzFvOodnRBRIKY8uEMIiQz7M1D/d2c+N42iVTkzNVVl5qFp8EJ+lhTbDRQHx
- +x1OA4nJzBYYtkaNSVtOgubtN/7C6oCpMU1NmSf6ku8wIWPLM0Ryj9YfJdV2w77FckF0/Nezbc
- v++Q/0sjfKN7eKWpXSpBMTkJoTAjIaIdaeAnvgxJiJmE8VrpuVtmfzs0hybQfDH6PJ3sLGDNTu
- muZ+JzOj9SbSu9wDnbXyngdGgF4z1CVHoFinf7M+KC1WWslqp3G8Ci2vaw69J49lYHtrSiqAJ8
- X1X4L9DP4t8Esq1KRhpx1xXE
+  by ob1.hgst.iphmx.com with ESMTP; 25 Feb 2020 11:57:20 +0800
+IronPort-SDR: djicKxs1OKwOxinZ+SdyHav7sSO6DtfOLA9QMsKm5rC2oDNOKhwD/5cUDKz2h4KyscvlrKkd0H
+ PGHD2XeNiOKeP1rRzrC7um9RfCapllSXlGFD3BfyDKQ2nRB6zCEnfGYIKs+101ocPD9hMsyrmV
+ HFMJg8HXLze3uHVLIn54rDAElITpqLkPpX+88BCVbNRhd3w4mfeTvjYPtFylMdZZjo6z5vBX2R
+ 9B/rIoeQOYWEBXHi3feaW6Esefyv3h20UY+vkN56MAmObs4hTma48RgEHocbXvWJsuONPRAl7B
+ 07ujbKANYYuiy4Sl9swSYdrI
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 24 Feb 2020 19:49:41 -0800
-IronPort-SDR: 66f2lL5FNr6NLa2QXeUf0+Bec05FA3uiSx95F/IQOsMCrsmCOoL+JGAd9PbSZusgpHihoypuUb
- Ao2t9dRo+FhI7a6hT5wLE93WzkWhgH/mb3b63LO6MKZeZoczlENNRQDxzV/PpakcoOF1CegAnA
- 3AyuBPPMepaR+WdfIH7SEEDWD2q4AyPH6FgokimxaNVrsAllwf4nPYMZOhrbuc8r2Cg9mo4cu7
- FwAgIABBrew2bRHfBjIB/DkKEdxGd4e7kJoDCKRx6xhozSsUXF44WSmPEkumbiYDJrqDV4unCz
- eW0=
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 24 Feb 2020 19:49:48 -0800
+IronPort-SDR: 6j30vn6JJx+CmgQLAmHHANdkENu6Pty5nzfBBcxUztr5vQrTYuYpp2wvpYu/sORgFodIf7u0v7
+ BQbacFdV5VuPo8z71DiUk5fiZCEjf6nsqNL8OVo0PXTui4Eq2+ElaQM10etBKrD13w9z22jGeB
+ g2UH8nh29W7PyyqUWh7x+zEB6EwqN+NT03OCgQyxK4Oup9gZ0mGT5vrGxHx8irB6ofjEGoJtrT
+ S5K9nKr37V5gB8pbdRJJi1hipsR0fPle+C0Pnbo5Dom3YYul6A+5nHkmvWGMFj/G7WnASj8C8z
+ HyE=
 WDCIronportException: Internal
 Received: from naota.dhcp.fujisawa.hgst.com ([10.149.52.155])
-  by uls-op-cesaip02.wdc.com with ESMTP; 24 Feb 2020 19:57:13 -0800
+  by uls-op-cesaip02.wdc.com with ESMTP; 24 Feb 2020 19:57:19 -0800
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
 Cc:     Josef Bacik <josef@toxicpanda.com>,
         Nikolay Borisov <nborisov@suse.com>,
         Naohiro Aota <naohiro.aota@wdc.com>,
         Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH v3 14/21] btrfs: factor out do_allocation()
-Date:   Tue, 25 Feb 2020 12:56:19 +0900
-Message-Id: <20200225035626.1049501-15-naohiro.aota@wdc.com>
+Subject: [PATCH v3 19/21] btrfs: factor out chunk_allocation_failed()
+Date:   Tue, 25 Feb 2020 12:56:24 +0900
+Message-Id: <20200225035626.1049501-20-naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <20200225035626.1049501-1-naohiro.aota@wdc.com>
 References: <20200225035626.1049501-1-naohiro.aota@wdc.com>
@@ -78,52 +78,35 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Factor out do_allocation() from find_free_extent(). This function do an
-actual allocation in a given block group. The ffe_ctl->policy is used to
-determine the actual allocator function to use.
+Factor out chunk_allocation_failed() from find_free_extent_update_loop().
+This function is called when it failed to allocate a chunk. The function
+can modify "ffe_ctl->loop" and return 0 to continue with the next stage.
+Or, it can return -ENOSPC to give up here.
 
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
- fs/btrfs/extent-tree.c | 78 +++++++++++++++++++++++++-----------------
- 1 file changed, 47 insertions(+), 31 deletions(-)
+ fs/btrfs/extent-tree.c | 27 ++++++++++++++++++---------
+ 1 file changed, 18 insertions(+), 9 deletions(-)
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index cbb89ac6cda3..1ed12a033ba9 100644
+index 05edd69f5fe1..cb82eaf28033 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -3675,6 +3675,39 @@ static int find_free_extent_unclustered(struct btrfs_block_group *bg,
- 	return 0;
+@@ -3748,6 +3748,21 @@ static void found_extent(struct find_free_extent_ctl *ffe_ctl,
+ 	}
  }
  
-+static int do_allocation_clustered(struct btrfs_block_group *block_group,
-+				   struct find_free_extent_ctl *ffe_ctl,
-+				   struct btrfs_block_group **bg_ret)
-+{
-+	int ret;
-+
-+	/*
-+	 * Ok we want to try and use the cluster allocator, so lets look there
-+	 */
-+	if (ffe_ctl->last_ptr && ffe_ctl->use_cluster) {
-+		ret = find_free_extent_clustered(block_group, ffe_ctl->last_ptr,
-+						 ffe_ctl, bg_ret);
-+		if (ret >= 0 || ret == -EAGAIN)
-+			return ret;
-+		/* ret == -ENOENT case falls through */
-+	}
-+
-+	return find_free_extent_unclustered(block_group, ffe_ctl->last_ptr,
-+					    ffe_ctl);
-+}
-+
-+static int do_allocation(struct btrfs_block_group *block_group,
-+			 struct find_free_extent_ctl *ffe_ctl,
-+			 struct btrfs_block_group **bg_ret)
++static int chunk_allocation_failed(struct find_free_extent_ctl *ffe_ctl)
 +{
 +	switch (ffe_ctl->policy) {
 +	case BTRFS_EXTENT_ALLOC_CLUSTERED:
-+		return do_allocation_clustered(block_group, ffe_ctl, bg_ret);
++		/*
++		 * If we can't allocate a new chunk we've already looped through
++		 * at least once, move on to the NO_EMPTY_SIZE case.
++		 */
++		ffe_ctl->loop = LOOP_NO_EMPTY_SIZE;
++		return 0;
 +	default:
 +		BUG();
 +	}
@@ -132,68 +115,26 @@ index cbb89ac6cda3..1ed12a033ba9 100644
  /*
   * Return >0 means caller needs to re-search for free extent
   * Return 0 means we have the needed free extent.
-@@ -3942,6 +3975,8 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
- 	down_read(&space_info->groups_sem);
- 	list_for_each_entry(block_group,
- 			    &space_info->block_groups[ffe_ctl.index], list) {
-+		struct btrfs_block_group *bg_ret;
-+
- 		/* If the block group is read-only, we can skip it entirely. */
- 		if (unlikely(block_group->ro))
- 			continue;
-@@ -4002,40 +4037,21 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
- 		if (unlikely(block_group->cached == BTRFS_CACHE_ERROR))
- 			goto loop;
+@@ -3819,16 +3834,10 @@ static int find_free_extent_update_loop(struct btrfs_fs_info *fs_info,
+ 			ret = btrfs_chunk_alloc(trans, ffe_ctl->flags,
+ 						CHUNK_ALLOC_FORCE);
  
--		/*
--		 * Ok we want to try and use the cluster allocator, so
--		 * lets look there
--		 */
--		if (ffe_ctl.last_ptr && ffe_ctl.use_cluster) {
--			struct btrfs_block_group *cluster_bg = NULL;
+-			/*
+-			 * If we can't allocate a new chunk we've already looped
+-			 * through at least once, move on to the NO_EMPTY_SIZE
+-			 * case.
+-			 */
+-			if (ret == -ENOSPC)
+-				ffe_ctl->loop = LOOP_NO_EMPTY_SIZE;
 -
--			ret = find_free_extent_clustered(block_group,
--							 ffe_ctl.last_ptr,
--							 &ffe_ctl, &cluster_bg);
--
--			if (ret == 0) {
--				if (cluster_bg && cluster_bg != block_group) {
--					btrfs_release_block_group(block_group,
--								  delalloc);
--					block_group = cluster_bg;
--				}
--				goto checks;
--			} else if (ret == -EAGAIN) {
--				goto have_block_group;
--			} else if (ret > 0) {
--				goto loop;
-+		bg_ret = NULL;
-+		ret = do_allocation(block_group, &ffe_ctl, &bg_ret);
-+		if (ret == 0) {
-+			if (bg_ret && bg_ret != block_group) {
-+				btrfs_release_block_group(block_group,
-+							  delalloc);
-+				block_group = bg_ret;
- 			}
--			/* ret == -ENOENT case falls through */
--		}
--
--		ret = find_free_extent_unclustered(block_group,
--						   ffe_ctl.last_ptr, &ffe_ctl);
--		if (ret == -EAGAIN)
-+		} else if (ret == -EAGAIN) {
- 			goto have_block_group;
--		else if (ret > 0)
-+		} else if (ret > 0) {
- 			goto loop;
--		/* ret == 0 case falls through */
--checks:
-+		}
-+
-+		/* checks */
- 		ffe_ctl.search_start = round_up(ffe_ctl.found_offset,
- 					     fs_info->stripesize);
- 
+ 			/* Do not bail out on ENOSPC since we can do more. */
+-			if (ret < 0 && ret != -ENOSPC)
++			if (ret == -ENOSPC)
++				ret = chunk_allocation_failed(ffe_ctl);
++			else if (ret < 0)
+ 				btrfs_abort_transaction(trans, ret);
+ 			else
+ 				ret = 0;
 -- 
 2.25.1
 

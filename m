@@ -7,66 +7,66 @@ X-Spam-Status: No, score=-9.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 22E6DC35DF0
-	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Feb 2020 03:57:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 68FFDC35DF3
+	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Feb 2020 03:57:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id ED99024650
-	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Feb 2020 03:57:26 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 400AD24650
+	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Feb 2020 03:57:28 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="EQaIsfhb"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="l1d1dkz5"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728956AbgBYD5M (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 24 Feb 2020 22:57:12 -0500
-Received: from esa5.hgst.iphmx.com ([216.71.153.144]:34216 "EHLO
+        id S1728924AbgBYD51 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 24 Feb 2020 22:57:27 -0500
+Received: from esa5.hgst.iphmx.com ([216.71.153.144]:34231 "EHLO
         esa5.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728866AbgBYD5M (ORCPT
+        with ESMTP id S1728958AbgBYD5M (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Mon, 24 Feb 2020 22:57:12 -0500
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1582603031; x=1614139031;
+  t=1582603032; x=1614139032;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=PRhYCqlHGa1Ffrr0vuTgOoIhkWEOWH9/AqOyghGgX5w=;
-  b=EQaIsfhbDtzdrbaxmms7dLDsBdlgo6aZMMg/16+QWXfP7Wh/HTKZH9Zm
-   46lmKkf6f+NGqhuMhNcm15LjpxtH+M1/XFv+P/MwvqjAiq83FSWGco/Z1
-   dARz/XUEVPuuxPz2cthaQBJyH0ljRkkc62ew7uXtMKkxtPBcW4NpyMpPp
-   sgqg0kj2zFE3l/1TBb5ic6dQiRg0NBKZrjZYbG3WW4W3CP6FwqQ/xIcmH
-   Dn+1fKT7XPi0lp5FEfLuBh22SaeTGPKy9DMSgt3zyY0K6YhQMW/0E9fkP
-   Uu0M0bvyPOOw08mc+F9/RAd3At1H0p6HgWsR6+Q4LB9gXuyeRhfXtX0co
+  bh=3UNk3JARnboYJecuheSmhGM6q4Yh6IyVDpJ+YcGbGUI=;
+  b=l1d1dkz5I4WnBO0t9eI/b84Edx/HI3dd6Pnm2hHI1qGU5LUPK123+YU3
+   EdXXtTix9+s9eELYCr+fCWOg/7ZZYSThGVCrSJsmQGsesYIhooeFEl9xx
+   bG2phz4q3lAUWNKSi5OdVpmcjC4uBBgtEuuU6uAcA9ZUtbFzFSvLn3dff
+   oivnxYii5tQ8D5IPbXPAvBLixfHVkag7JFNKJ2G1AakXYmGswJIxrxs3R
+   Bo187Dn5p/4WdHysV9+NCMbx4EvgjfTF+f4gbqI9pKB63dgXzX8WuTF10
+   n7rpHmOpqx+6HSm3AK+lGtIDCuxjOQ3al9975rF/J2sxJiP0jIImf863O
    g==;
-IronPort-SDR: 1PqLTxwRFgMN/ky2xKdK34coMWwCGS0Qv3w/QUFamsQSzFaYQmNyOoYuZ9QrcMGpRaC7GX1kwJ
- BzUfIBAAtZfvbEZ7HAgnOI9w1rD+WSEmkgaZOh3mS1Rp0fPEJldGHstxjRrRdO/YR8+MAz3Krb
- BKbR+myhh29/zQ5QqoXk1NyNACzg4npJMj5oWd89YFS0R6ojbPz179Uu/8zpLfBsLUK/TbF8Gu
- rsTvtQ4oZ5of+2LBJ2KCv9Ibw9gP+zgGIgXiIzOqnPxIGE1+LKPCeDTONgrrV1iRwuIkZYyZr1
- 7kw=
+IronPort-SDR: PYFTd090tJzFcdGk7VfMaSUZJjnEIQuunz19QID7m3E+oHM04LDMQLwCfRhaaVK6cRDx/5z2Ym
+ 2S93VSmKUwwfiHWXVRrZ1qeVvx3mch+tDqIo2wJZZjJjUUypNmJJVvIKEaxyb9ucOMIptuZEta
+ aqokuL7ph9nH0TMttqStLFn1A61SjHz9pMeuRppztO3BnFpEVsS7AczhPXxkdfphWBXikPAe+q
+ 5VmjNJFy2NQJLuU0jC0WW0L+dI6pMxtxFg/rZj3FnkpC9nr+KrKsQAvuHpScVTLq2GfcNLglaY
+ fp4=
 X-IronPort-AV: E=Sophos;i="5.70,482,1574092800"; 
-   d="scan'208";a="131168281"
+   d="scan'208";a="131168288"
 Received: from h199-255-45-14.hgst.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 25 Feb 2020 11:57:03 +0800
-IronPort-SDR: Zmow8N0wJC2Hb9HwSYxembgmCr0iBT0N4W1iZAjAzm3eGoOdH1h+K2uyAFF3C9FBumRRN13ZAo
- OiGwEJIrER0EEJJZOxOX2RfhZKOIAdaXUx/m0LS1wEicGqVfFjTKmq8r/ZUpPYLkFnBmFFagH1
- IwHtTyskD0XCc31YevZTyPOMDOlKxRugpjs9gOfVoFs0lXP15g+XDEnGpsSoP0OhLpc/FH6hgX
- glOXJtWL4OtzErVcyvMKDcWPt5a5mEDJ+cjrutuygUILwRLhHBtLKHPbOIBWf/djT0289RyEaQ
- cyKgJnppmxJsCVG1dPPS6dWA
+  by ob1.hgst.iphmx.com with ESMTP; 25 Feb 2020 11:57:08 +0800
+IronPort-SDR: RBj2EnjYOAXdxQNjvMbFdnfdLwFHNevM/cKdO53KRC84equo4vCHpAGyg42fDHYpp0SOEm51zL
+ nrUs1smZWbKM67+SHsRGS6eTcKuju28WsBsTbiJ915dfqON7/H4VqfrBapclXiqiKogCt+TA/g
+ nm0MDu9OSWybSQJT7jMEdForXR4790/sxCmLpQA8nl/XZtXN+kIwCp92Ig4H+WNFs1oUjqswO3
+ KktKSuJWl2bU95WWGf6hWxzCAe9a129S9pq48VXA5iPGcLdVhe2VGjMSBZEbrXMZCr4Svx9rGi
+ IXdcKYwhkUwSSIsVx1zJ3PVy
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 24 Feb 2020 19:49:31 -0800
-IronPort-SDR: UqPuoLznLTU6UIAcY3Kg9wTz25xAnNO2+UnfXTT+Q3dmJzKfBiAujhnIFUHwWfjgVgdV0tOTV7
- 0Et6yBy5CbaqMss5m79+8oXnhQPxrVH4PUnKSKzC5mua2dIvPz/HXr1yaMw88QTrJFMUuKB+rB
- edpH44rYG6YiNh1yoqtQQ1tZUdDzvVCyqXFdt8Dg/C1qCeLPVKtDJ2QZqZG9kNOhcEdqCbRYDs
- CpuNFlQTyXmUKzbVPsmUNGm7wL/4+g2ltmUA4mpwjrlKUXvaYi5LWdB+fl7EWY2XHrvM2vx8XC
- aRU=
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 24 Feb 2020 19:49:36 -0800
+IronPort-SDR: oD8yRF73XrPO/ns/qdqOV4kELIoeLiQu2KPMJtgOa/DjvnNIoXa8LbwAotZLDwQDfJYGRojVFR
+ EZYKFso09x1E3VjBVsSGNm5wtf/3kRM+zKdxfM/lDUFoD5+WCpcUK09m7R2gPcLY2iJ9mxVSu9
+ 2mDgwCmzEfUWKPpjxmb6YOXjmhPKG86g7HF9KRFxZ26gYaFZlDUWdTkO1DsiGUOCZq3wTuhJsr
+ l/UcVgIhIxjkmyr5invsAkef9RM0H/rAibbo9z/LE+hUGrPfuoasfnEirNk+YUzQnLkDH7QAvL
+ fTU=
 WDCIronportException: Internal
 Received: from naota.dhcp.fujisawa.hgst.com ([10.149.52.155])
-  by uls-op-cesaip02.wdc.com with ESMTP; 24 Feb 2020 19:57:02 -0800
+  by uls-op-cesaip02.wdc.com with ESMTP; 24 Feb 2020 19:57:07 -0800
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
 Cc:     Josef Bacik <josef@toxicpanda.com>,
         Nikolay Borisov <nborisov@suse.com>,
         Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH v3 06/21] btrfs: factor out init_alloc_chunk_ctl
-Date:   Tue, 25 Feb 2020 12:56:11 +0900
-Message-Id: <20200225035626.1049501-7-naohiro.aota@wdc.com>
+Subject: [PATCH v3 10/21] btrfs: parameterize dev_extent_min
+Date:   Tue, 25 Feb 2020 12:56:15 +0900
+Message-Id: <20200225035626.1049501-11-naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <20200225035626.1049501-1-naohiro.aota@wdc.com>
 References: <20200225035626.1049501-1-naohiro.aota@wdc.com>
@@ -77,150 +77,70 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Factor out init_alloc_chunk_ctl() from __btrfs_alloc_chunk(). This function
-initialises parameters of "struct alloc_chunk_ctl" for allocation.
-init_alloc_chunk_ctl() handles a common part of the initialisation to load
-the RAID parameters from btrfs_raid_array.
-init_alloc_chunk_ctl_policy_regular() decides some parameters for its
-allocation.
-
-The last "else" case in the original code is moved to __btrfs_alloc_chunk()
-to handle the error case in the common code. Replace the BUG_ON with
-ASSERT() and error return at the same time.
+Currently, we ignore a device whose available space is less than
+"BTRFS_STRIPE_LEN * dev_stripes". This is a lower limit for current
+allocation policy (to maximize the number of stripes). This commit
+parameterizes dev_extent_min, so that other policies can set their own
+lower limitation to ignore a device with an insufficient space.
 
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/volumes.c | 100 ++++++++++++++++++++++++++++-----------------
- 1 file changed, 62 insertions(+), 38 deletions(-)
+ fs/btrfs/volumes.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index ed90e9d2bd9b..b15c2bb6f913 100644
+index cd854d6b8208..c5c64252d1f3 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -4841,6 +4841,61 @@ struct alloc_chunk_ctl {
+@@ -4836,6 +4836,7 @@ struct alloc_chunk_ctl {
+ 				   store parity information */
+ 	u64 max_stripe_size;
+ 	u64 max_chunk_size;
++	u64 dev_extent_min;
+ 	u64 stripe_size;
+ 	u64 chunk_size;
  	int ndevs;
- };
+@@ -4869,6 +4870,7 @@ init_alloc_chunk_ctl_policy_regular(struct btrfs_fs_devices *fs_devices,
+ 	/* We don't want a chunk larger than 10% of writable space */
+ 	ctl->max_chunk_size = min(div_factor(fs_devices->total_rw_bytes, 1),
+ 				  ctl->max_chunk_size);
++	ctl->dev_extent_min = BTRFS_STRIPE_LEN * ctl->dev_stripes;
+ }
  
-+static void
-+init_alloc_chunk_ctl_policy_regular(struct btrfs_fs_devices *fs_devices,
-+				    struct alloc_chunk_ctl *ctl)
-+{
-+	u64 type = ctl->type;
-+
-+	if (type & BTRFS_BLOCK_GROUP_DATA) {
-+		ctl->max_stripe_size = SZ_1G;
-+		ctl->max_chunk_size = BTRFS_MAX_DATA_CHUNK_SIZE;
-+	} else if (type & BTRFS_BLOCK_GROUP_METADATA) {
-+		/* for larger filesystems, use larger metadata chunks */
-+		if (fs_devices->total_rw_bytes > 50ULL * SZ_1G)
-+			ctl->max_stripe_size = SZ_1G;
-+		else
-+			ctl->max_stripe_size = SZ_256M;
-+		ctl->max_chunk_size = ctl->max_stripe_size;
-+	} else if (type & BTRFS_BLOCK_GROUP_SYSTEM) {
-+		ctl->max_stripe_size = SZ_32M;
-+		ctl->max_chunk_size = 2 * ctl->max_stripe_size;
-+		ctl->devs_max = min_t(int, ctl->devs_max,
-+				      BTRFS_MAX_DEVS_SYS_CHUNK);
-+	} else {
-+		BUG();
-+	}
-+
-+	/* We don't want a chunk larger than 10% of writable space */
-+	ctl->max_chunk_size = min(div_factor(fs_devices->total_rw_bytes, 1),
-+				  ctl->max_chunk_size);
-+}
-+
-+static void init_alloc_chunk_ctl(struct btrfs_fs_devices *fs_devices,
-+				 struct alloc_chunk_ctl *ctl)
-+{
-+	int index = btrfs_bg_flags_to_raid_index(ctl->type);
-+
-+	ctl->sub_stripes = btrfs_raid_array[index].sub_stripes;
-+	ctl->dev_stripes = btrfs_raid_array[index].dev_stripes;
-+	ctl->devs_max = btrfs_raid_array[index].devs_max;
-+	if (!ctl->devs_max)
-+		ctl->devs_max = BTRFS_MAX_DEVS(fs_devices->fs_info);
-+	ctl->devs_min = btrfs_raid_array[index].devs_min;
-+	ctl->devs_increment = btrfs_raid_array[index].devs_increment;
-+	ctl->ncopies = btrfs_raid_array[index].ncopies;
-+	ctl->nparity = btrfs_raid_array[index].nparity;
-+	ctl->ndevs = 0;
-+
-+	switch (fs_devices->chunk_alloc_policy) {
-+	case BTRFS_CHUNK_ALLOC_REGULAR:
-+		init_alloc_chunk_ctl_policy_regular(fs_devices, ctl);
-+		break;
-+	default:
-+		BUG();
-+	}
-+}
-+
- static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 			       u64 start, u64 type)
- {
-@@ -4859,7 +4914,6 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 	int ndevs;
- 	int i;
- 	int j;
--	int index;
+ static void init_alloc_chunk_ctl(struct btrfs_fs_devices *fs_devices,
+@@ -4904,7 +4906,6 @@ static int gather_device_info(struct btrfs_fs_devices *fs_devices,
+ 	struct btrfs_device *device;
+ 	u64 total_avail;
+ 	u64 dev_extent_want = ctl->max_stripe_size * ctl->dev_stripes;
+-	u64 dev_extent_min = BTRFS_STRIPE_LEN * ctl->dev_stripes;
+ 	int ret;
+ 	int ndevs = 0;
+ 	u64 max_avail;
+@@ -4932,7 +4933,7 @@ static int gather_device_info(struct btrfs_fs_devices *fs_devices,
+ 			total_avail = 0;
  
- 	if (!alloc_profile_is_valid(type, 0)) {
- 		ASSERT(0);
-@@ -4872,45 +4926,15 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 		return -ENOSPC;
- 	}
+ 		/* If there is no space on this device, skip it. */
+-		if (total_avail == 0)
++		if (total_avail < ctl->dev_extent_min)
+ 			continue;
  
--	ctl.start = start;
--	ctl.type = type;
--
--	index = btrfs_bg_flags_to_raid_index(type);
--
--	ctl.sub_stripes = btrfs_raid_array[index].sub_stripes;
--	ctl.dev_stripes = btrfs_raid_array[index].dev_stripes;
--	ctl.devs_max = btrfs_raid_array[index].devs_max;
--	if (!ctl.devs_max)
--		ctl.devs_max = BTRFS_MAX_DEVS(info);
--	ctl.devs_min = btrfs_raid_array[index].devs_min;
--	ctl.devs_increment = btrfs_raid_array[index].devs_increment;
--	ctl.ncopies = btrfs_raid_array[index].ncopies;
--	ctl.nparity = btrfs_raid_array[index].nparity;
--
--	if (type & BTRFS_BLOCK_GROUP_DATA) {
--		ctl.max_stripe_size = SZ_1G;
--		ctl.max_chunk_size = BTRFS_MAX_DATA_CHUNK_SIZE;
--	} else if (type & BTRFS_BLOCK_GROUP_METADATA) {
--		/* for larger filesystems, use larger metadata chunks */
--		if (fs_devices->total_rw_bytes > 50ULL * SZ_1G)
--			ctl.max_stripe_size = SZ_1G;
--		else
--			ctl.max_stripe_size = SZ_256M;
--		ctl.max_chunk_size = ctl.max_stripe_size;
--	} else if (type & BTRFS_BLOCK_GROUP_SYSTEM) {
--		ctl.max_stripe_size = SZ_32M;
--		ctl.max_chunk_size = 2 * ctl.max_stripe_size;
--		ctl.devs_max = min_t(int, ctl.devs_max,
--				      BTRFS_MAX_DEVS_SYS_CHUNK);
--	} else {
--		btrfs_err(info, "invalid chunk type 0x%llx requested",
--		       type);
--		BUG();
-+	if (!(type & BTRFS_BLOCK_GROUP_TYPE_MASK)) {
-+		btrfs_err(info, "invalid chunk type 0x%llx requested", type);
-+		ASSERT(0);
-+		return -EINVAL;
- 	}
+ 		ret = find_free_dev_extent(device, dev_extent_want, &dev_offset,
+@@ -4943,12 +4944,12 @@ static int gather_device_info(struct btrfs_fs_devices *fs_devices,
+ 		if (ret == 0)
+ 			max_avail = dev_extent_want;
  
--	/* We don't want a chunk larger than 10% of writable space */
--	ctl.max_chunk_size = min(div_factor(fs_devices->total_rw_bytes, 1),
--				  ctl.max_chunk_size);
-+	ctl.start = start;
-+	ctl.type = type;
-+	init_alloc_chunk_ctl(fs_devices, &ctl);
+-		if (max_avail < dev_extent_min) {
++		if (max_avail < ctl->dev_extent_min) {
+ 			if (btrfs_test_opt(info, ENOSPC_DEBUG))
+ 				btrfs_debug(info,
+ 			"%s: devid %llu has no free space, have=%llu want=%llu",
+ 					    __func__, device->devid, max_avail,
+-					    dev_extent_min);
++					    ctl->dev_extent_min);
+ 			continue;
+ 		}
  
- 	devices_info = kcalloc(fs_devices->rw_devices, sizeof(*devices_info),
- 			       GFP_NOFS);
 -- 
 2.25.1
 

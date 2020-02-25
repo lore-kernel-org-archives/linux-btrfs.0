@@ -7,33 +7,33 @@ X-Spam-Status: No, score=-9.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BF613C4BA01
-	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Feb 2020 21:50:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 57999C4BA00
+	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Feb 2020 21:50:20 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8FD0821927
-	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Feb 2020 21:50:16 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2D4B521927
+	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Feb 2020 21:50:20 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="A+ugosl7"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="eLGdqJe3"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729298AbgBYVsn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 25 Feb 2020 16:48:43 -0500
-Received: from bombadil.infradead.org ([198.137.202.133]:43526 "EHLO
+        id S1729583AbgBYVuR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 25 Feb 2020 16:50:17 -0500
+Received: from bombadil.infradead.org ([198.137.202.133]:43564 "EHLO
         bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729056AbgBYVsm (ORCPT
+        with ESMTP id S1729225AbgBYVsn (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 25 Feb 2020 16:48:42 -0500
+        Tue, 25 Feb 2020 16:48:43 -0500
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20170209; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=0gMh1yamRVaNETPSTUEglHum9p/xixoA+LVU7RwCI34=; b=A+ugosl7XCuWZ0DZM060VhasbF
-        LlgbO5ELIQJ449viGm0I1EI7L0UglVYvyBriRpH8pBN+Rmj714EtqvFrMaosZr24PrysRfLaHRbus
-        QPSl3wzAaCuxS8hDzpCGhTD8X6bOOyCQ1vFuSYSN48wlEYAR2dKQnRt3n1ww8iX1t3NhnDsNxW/D+
-        8NQfScKs2JhrTJV3TmYoXBX9y+9NBU0TzMuU3vu3FcLiH3QoiWjmtt4tk2jxf2c4WgVjtlmOna6E+
-        uGFSvdXtlaqgrmld7J0hqWFeqCKw0sMvK4sLrLFjwM5dcgtCPADXi0SCBPNZo+JeJ6/L85qK3eqe+
-        YVIWitkw==;
+        bh=vmBYSWiADbzhrnAmLI0opbogq5zBVEJUJhOq4kDcPa8=; b=eLGdqJe3Wpv+/w36Kw9lMzkWe2
+        muOjRb9XmOLI+XfU/D0HqCwq0c0A+rgT2XvDOzoLikexaFECuBqdqM3q0X0VVsFZXDGrh46bXFwLr
+        zpc4n1pMWEgpllNb9lQqDYVqpf7+5SsDWBWrGB6Mi+jiOZkq3xN5zavbTvq3VwzPlJplhDBLUeq+h
+        i5HgW/WJOIrP2NeuzEa+Gh10M9FogPkyWnPpVSxVKYKyhuiYn5hIS8hAl/fwUpKzqXrCMZOknqc/8
+        J8PtWOG2c3IMyUpm25L8fUXFo6wyvoJ22FS1R2oFj3WQcTsdnEOWCRK8OWSzK5zjNuSRq3b07ozah
+        PPV2wMtA==;
 Received: from willy by bombadil.infradead.org with local (Exim 4.92.3 #3 (Red Hat Linux))
-        id 1j6i4H-0007rL-OM; Tue, 25 Feb 2020 21:48:41 +0000
+        id 1j6i4H-0007qu-Jc; Tue, 25 Feb 2020 21:48:41 +0000
 From:   Matthew Wilcox <willy@infradead.org>
 To:     linux-fsdevel@vger.kernel.org
 Cc:     "Matthew Wilcox (Oracle)" <willy@infradead.org>,
@@ -41,10 +41,11 @@ Cc:     "Matthew Wilcox (Oracle)" <willy@infradead.org>,
         linux-btrfs@vger.kernel.org, linux-erofs@lists.ozlabs.org,
         linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
         cluster-devel@redhat.com, ocfs2-devel@oss.oracle.com,
-        linux-xfs@vger.kernel.org
-Subject: [PATCH v8 23/25] f2fs: Pass the inode to f2fs_mpage_readpages
-Date:   Tue, 25 Feb 2020 13:48:36 -0800
-Message-Id: <20200225214838.30017-24-willy@infradead.org>
+        linux-xfs@vger.kernel.org, Gao Xiang <gaoxiang25@huawei.com>,
+        Dave Chinner <dchinner@redhat.com>
+Subject: [PATCH v8 19/25] erofs: Convert compressed files from readpages to readahead
+Date:   Tue, 25 Feb 2020 13:48:32 -0800
+Message-Id: <20200225214838.30017-20-willy@infradead.org>
 X-Mailer: git-send-email 2.21.1
 In-Reply-To: <20200225214838.30017-1-willy@infradead.org>
 References: <20200225214838.30017-1-willy@infradead.org>
@@ -57,51 +58,81 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: "Matthew Wilcox (Oracle)" <willy@infradead.org>
 
-This function now only uses the mapping argument to look up the inode,
-and both callers already have the inode, so just pass the inode instead
-of the mapping.
+Use the new readahead operation in erofs.
 
 Signed-off-by: Matthew Wilcox (Oracle) <willy@infradead.org>
+Acked-by: Gao Xiang <gaoxiang25@huawei.com>
+Reviewed-by: Dave Chinner <dchinner@redhat.com>
 ---
- fs/f2fs/data.c | 7 +++----
- 1 file changed, 3 insertions(+), 4 deletions(-)
+ fs/erofs/zdata.c | 29 +++++++++--------------------
+ 1 file changed, 9 insertions(+), 20 deletions(-)
 
-diff --git a/fs/f2fs/data.c b/fs/f2fs/data.c
-index 237dff36fe73..c8b042979fc4 100644
---- a/fs/f2fs/data.c
-+++ b/fs/f2fs/data.c
-@@ -2159,12 +2159,11 @@ int f2fs_read_multi_pages(struct compress_ctx *cc, struct bio **bio_ret,
-  * use ->readpage() or do the necessary surgery to decouple ->readpages()
-  * from read-ahead.
-  */
--static int f2fs_mpage_readpages(struct address_space *mapping,
-+static int f2fs_mpage_readpages(struct inode *inode,
- 		struct readahead_control *rac, struct page *page)
+diff --git a/fs/erofs/zdata.c b/fs/erofs/zdata.c
+index 17f45fcb8c5c..e64d8ab0900d 100644
+--- a/fs/erofs/zdata.c
++++ b/fs/erofs/zdata.c
+@@ -1303,28 +1303,23 @@ static bool should_decompress_synchronously(struct erofs_sb_info *sbi,
+ 	return nr <= sbi->max_sync_decompress_pages;
+ }
+ 
+-static int z_erofs_readpages(struct file *filp, struct address_space *mapping,
+-			     struct list_head *pages, unsigned int nr_pages)
++static void z_erofs_readahead(struct readahead_control *rac)
  {
- 	struct bio *bio = NULL;
- 	sector_t last_block_in_bio = 0;
--	struct inode *inode = mapping->host;
- 	struct f2fs_map_blocks map;
- #ifdef CONFIG_F2FS_FS_COMPRESSION
- 	struct compress_ctx cc = {
-@@ -2276,7 +2275,7 @@ static int f2fs_read_data_page(struct file *file, struct page *page)
- 	if (f2fs_has_inline_data(inode))
- 		ret = f2fs_read_inline_data(inode, page);
- 	if (ret == -EAGAIN)
--		ret = f2fs_mpage_readpages(page_file_mapping(page), NULL, page);
-+		ret = f2fs_mpage_readpages(inode, NULL, page);
- 	return ret;
+-	struct inode *const inode = mapping->host;
++	struct inode *const inode = rac->mapping->host;
+ 	struct erofs_sb_info *const sbi = EROFS_I_SB(inode);
+ 
+-	bool sync = should_decompress_synchronously(sbi, nr_pages);
++	bool sync = should_decompress_synchronously(sbi, readahead_count(rac));
+ 	struct z_erofs_decompress_frontend f = DECOMPRESS_FRONTEND_INIT(inode);
+-	gfp_t gfp = mapping_gfp_constraint(mapping, GFP_KERNEL);
+-	struct page *head = NULL;
++	struct page *page, *head = NULL;
+ 	LIST_HEAD(pagepool);
+ 
+-	trace_erofs_readpages(mapping->host, lru_to_page(pages)->index,
+-			      nr_pages, false);
++	trace_erofs_readpages(inode, readahead_index(rac),
++			readahead_count(rac), false);
+ 
+-	f.headoffset = (erofs_off_t)lru_to_page(pages)->index << PAGE_SHIFT;
+-
+-	for (; nr_pages; --nr_pages) {
+-		struct page *page = lru_to_page(pages);
++	f.headoffset = readahead_pos(rac);
+ 
++	while ((page = readahead_page(rac))) {
+ 		prefetchw(&page->flags);
+-		list_del(&page->lru);
+ 
+ 		/*
+ 		 * A pure asynchronous readahead is indicated if
+@@ -1333,11 +1328,6 @@ static int z_erofs_readpages(struct file *filp, struct address_space *mapping,
+ 		 */
+ 		sync &= !(PageReadahead(page) && !head);
+ 
+-		if (add_to_page_cache_lru(page, mapping, page->index, gfp)) {
+-			list_add(&page->lru, &pagepool);
+-			continue;
+-		}
+-
+ 		set_page_private(page, (unsigned long)head);
+ 		head = page;
+ 	}
+@@ -1366,11 +1356,10 @@ static int z_erofs_readpages(struct file *filp, struct address_space *mapping,
+ 
+ 	/* clean up the remaining free pages */
+ 	put_pages_list(&pagepool);
+-	return 0;
  }
  
-@@ -2293,7 +2292,7 @@ static void f2fs_readahead(struct readahead_control *rac)
- 	if (f2fs_has_inline_data(inode))
- 		return;
+ const struct address_space_operations z_erofs_aops = {
+ 	.readpage = z_erofs_readpage,
+-	.readpages = z_erofs_readpages,
++	.readahead = z_erofs_readahead,
+ };
  
--	f2fs_mpage_readpages(rac->mapping, rac, NULL);
-+	f2fs_mpage_readpages(inode, rac, NULL);
- }
- 
- int f2fs_encrypt_one_page(struct f2fs_io_info *fio)
 -- 
 2.25.0
 

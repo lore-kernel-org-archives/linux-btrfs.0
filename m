@@ -4,70 +4,70 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-9.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 928D2C35DF2
-	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Feb 2020 03:57:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1A36BC35DF2
+	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Feb 2020 03:57:16 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5B6D724653
-	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Feb 2020 03:57:13 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E582924650
+	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Feb 2020 03:57:15 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="rzTkLNXw"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="pUeFBJG8"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728963AbgBYD5N (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 24 Feb 2020 22:57:13 -0500
+        id S1728921AbgBYD5O (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 24 Feb 2020 22:57:14 -0500
 Received: from esa5.hgst.iphmx.com ([216.71.153.144]:34231 "EHLO
         esa5.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728951AbgBYD5M (ORCPT
+        with ESMTP id S1728951AbgBYD5N (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 24 Feb 2020 22:57:12 -0500
+        Mon, 24 Feb 2020 22:57:13 -0500
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1582603031; x=1614139031;
+  t=1582603033; x=1614139033;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=oJTSQ1c89aup4pa+F8rEF7dY+Ra69cRKtlf1ymhuCeY=;
-  b=rzTkLNXwGGLxgh7jpPlrJ1TSMMo2MERs2D7W0e7Nzh9ogW6XsZC+dore
-   uPyK8pmf3KP4fiMz5tDG9PI0bKdZdzY0MnSB1wfWYhY8XONq1Dm6Vd9Bv
-   WCYNJM7gxq4/q0IK3IHCM6zANe6MPcxn6JDlxDxjGZ2H4PrbhdzbkQXLu
-   w0ycZEktpMnhwsynwuC6dLxSEqY4Amrs55tKukcS5AEWsvbQE+hohp3wq
-   tZixFw93Q+g946F/OSVD3UaG7FRzmtbUhJ/EoGj7ijpCuHrj9LqeNODR/
-   TwJae5i4s0v4gtCwdfl38Aqp+NzxnmDv7OYUg/eKF9sfHcYwLkrlPEseS
-   A==;
-IronPort-SDR: oF6oLSuwua4QWYkFvae92F/qzNnvhoPNN/NkoXlrHueydwNum0MYEIj8Fs7ymTVJSLYnoHyP8t
- buHbr6KeP3Herv9hUgI2fpPzssQMYMGNYe+ydZknbiZ3dmBOTMS3O12l5o+42jRk0tbBD0RCNi
- JnLY+NCzqLtsHCr9f5lbVUgZ2vQEkzjl0U33l96FLI0zvwVcXt4tqQcYlEfQ5CaDhrxcjpmHTs
- uvtCc5ytcICXoqFLU6iBywWqPlcWjmC+Ku+fMohhYbIgvtjeINS3UUblMncApuccNU8ZlRYA44
- boE=
+  bh=RNXg1axbqdLZuo9+0jRwDCry1grvNkhf/pZs0xTqJv8=;
+  b=pUeFBJG8nudcTAUqKiHq6nlIasE5UFJdKs986c2cZDaoVwgB8NpoyPmU
+   Rd+7UoU656EQeZ7q3cuJit49a/xgri87LZbJ1Ug5Sc8yCLAl6M0hVA/Oh
+   XIvHzWmAHhSpymHhh8A6VB+DBy3ijWZwNToJeL8kIdGdV3rfbUK1ufHJ0
+   JxWr9Nfyo2bN/rhy5vZVPQ4vycmTOKBX1KE1YJ12/mjxhlDnzp89d5Ob5
+   0XiKU1eyYlVCuWDN4fF4A+R3uTMyXzbF4M0si3TvGO/8WKAFF6JMbJ7cf
+   Tp2qVk7DJSrIXZnO2ptve49yckWLJj2fV8oRKR5MJ6kPnIbvQT0ikm6KR
+   w==;
+IronPort-SDR: avIlmCml6DXzwccXDtozplQU5wIAD05vMw19zopgzEdCRXXV/RwIYc/Egckl2fiaehHrkUUvoF
+ 9h4H/bpTlLa5/M2FEyWyxqSJ/f4KEgMXeD5P581NX1X/Kh3jz9MTBWwC0Ec/aWYU45IEschnDc
+ UNhY3UxIHImgvRmXSKY4FiErCSq5DJ0XALHtuSwIT/9WGjRmy83QQQVoVkRCOK9oEayLdacbcp
+ 77D4GgksbmQYiIoNKEgFz1d0nNeZiobzv5vHZMZFbKeJRS3w+wYKm0+1NqGakRMbZ2Rdk9XxI9
+ ZlU=
 X-IronPort-AV: E=Sophos;i="5.70,482,1574092800"; 
-   d="scan'208";a="131168285"
+   d="scan'208";a="131168293"
 Received: from h199-255-45-14.hgst.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 25 Feb 2020 11:57:05 +0800
-IronPort-SDR: 0WZ41MwDPiEr3ku5ikxTew868HjOrRp26nhw8MD3v0yNFjHwrwlD28WkAtYJAClQZd+m+8Wse6
- hIeS3hUPZizPH7NQ1heof7U5GzSzjsBOhm9MTbgsOuSPf8Quzpt1iwgGRWBVLomS1H83bWmjYj
- fXSFaw04IVRCDqPfMApckf2uta0g8z82JK1i37bX7L47h9C5p5KViQjkM55p7KgZwXthNrAPLy
- LidTs1PRAewB7w1qPmuN/RMNH3xvLBIDwP6nE/rB9ef+pt4g/y0S5Ff1JPKa5+D14/UKBRN1ps
- zTZ9g24gGsSn/bE0yr1WZ6oH
+  by ob1.hgst.iphmx.com with ESMTP; 25 Feb 2020 11:57:11 +0800
+IronPort-SDR: QRxniGvbs0Hg7KSBbBZQ2DDui3Oei0n+ZXOZxTVac3eT1LcZgO9mnJvbzKspKAUlVHsCtrmnzO
+ 20Vv2IUUEyXmf6Ujqxo4LwwLVGsxEBLpr1O7ohdJL7tB0WqIkh9N8YrnjziyqeRTO1Z5KiarWm
+ YjZd6402xQuXElViAp4KflHr+Y/hbYXGgJAgth47J5cDIru9AnRH78RV2e0Kj1rmhjKByT25gn
+ oe6TDUjst2WLXBYbnNN0q0Nuk7Wv9zYhrDHV/4qmjjlIqLbd/u+pvzCQdxU5Hlgzh3iyNeAhQI
+ dLxUTc+EyK9uanlrYQq1D/Fl
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 24 Feb 2020 19:49:33 -0800
-IronPort-SDR: i2WMMgh6Anx/RwUa5qKxxAZs6RB17B+SylMx3thr6av9hxTn6mM30uZRyCZwni/pHm8h+grUdh
- PMtxshYb9UoJ1GF9PHGKEuYCieIqHHnV9ffuVp/hGVLtR1oQl9yHQs3xw36aUzpDCbkr4tV7dV
- r/1zcrFlJrMpH/155tFhNqiOrxaZLghuzrEFcZiIaW2nHuOFXwPx9ayeZAz6UReonXh3pgaQ+u
- kt5y0bVOEuUE1DeLcGo03f40kOiWtvFPYbN8S8VAix4KB6WUj/YczvHrt5RA45NFfstoQ8+URq
- FN4=
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 24 Feb 2020 19:49:39 -0800
+IronPort-SDR: tpN2SGHEYZp+Vqjk8jksaptYYmMio6Uh/8USKAmtDf9Sc8iq1qVzLZFa3hhPuUPPlDXL5d2C6S
+ 0ko/babL13s2UTzjpBLpy5NZw3l0p1rAtth85+4hkzoN6qqE4xJAaLi3hyYxe5/j/crW3paUBk
+ iEhUUx7Z6BrgcOPT2NIDKMLXa6BqoNY/b0Rtu2AGoJuYsJ4+UDdKb1E/M3QcimkjFOuj3ty8AR
+ MhwXb4jnOV2erFQEm31aZgXpJ53ogirZl/TQrsanWe49smjlJCi2IsZyVRWD7OTMw9+EgCE3MD
+ Mhc=
 WDCIronportException: Internal
 Received: from naota.dhcp.fujisawa.hgst.com ([10.149.52.155])
-  by uls-op-cesaip02.wdc.com with ESMTP; 24 Feb 2020 19:57:05 -0800
+  by uls-op-cesaip02.wdc.com with ESMTP; 24 Feb 2020 19:57:10 -0800
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
 Cc:     Josef Bacik <josef@toxicpanda.com>,
         Nikolay Borisov <nborisov@suse.com>,
         Naohiro Aota <naohiro.aota@wdc.com>,
         Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH v3 08/21] btrfs: factor out decide_stripe_size()
-Date:   Tue, 25 Feb 2020 12:56:13 +0900
-Message-Id: <20200225035626.1049501-9-naohiro.aota@wdc.com>
+Subject: [PATCH v3 12/21] btrfs: move hint_byte into find_free_extent_ctl
+Date:   Tue, 25 Feb 2020 12:56:17 +0900
+Message-Id: <20200225035626.1049501-13-naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <20200225035626.1049501-1-naohiro.aota@wdc.com>
 References: <20200225035626.1049501-1-naohiro.aota@wdc.com>
@@ -78,193 +78,77 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Factor out decide_stripe_size() from __btrfs_alloc_chunk(). This function
-calculates the actual stripe size to allocate. decide_stripe_size() handles
-the common case to round down the 'ndevs' to 'devs_increment' and check the
-upper and lower limitation of 'ndevs'. decide_stripe_size_regular() decides
-the size of a stripe and the size of a chunk. The policy is to maximize the
-number of stripes.
-
-This commit has no functional changes.
+This commit moves hint_byte into find_free_extent_ctl, so that we can
+modify the hint_byte in the other functions. This will help us split
+find_free_extent further. This commit also renames the function argument
+"hint_byte" to "hint_byte_orig" to avoid misuse.
 
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/volumes.c | 138 ++++++++++++++++++++++++++-------------------
- 1 file changed, 80 insertions(+), 58 deletions(-)
+ fs/btrfs/extent-tree.c | 14 +++++++++-----
+ 1 file changed, 9 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index cd3a46a803d8..fe194bc0bce3 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -4974,6 +4974,84 @@ static int gather_device_info(struct btrfs_fs_devices *fs_devices,
- 	return 0;
- }
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index edc72e768119..93f07988d480 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3494,6 +3494,9 @@ struct find_free_extent_ctl {
+ 	/* Found result */
+ 	u64 found_offset;
  
-+static int decide_stripe_size_regular(struct alloc_chunk_ctl *ctl,
-+				      struct btrfs_device_info *devices_info)
-+{
-+	int data_stripes;	/* number of stripes that count for
-+				   block group size */
++	/* Hint byte to start looking for an empty space */
++	u64 hint_byte;
 +
-+	/*
-+	 * The primary goal is to maximize the number of stripes, so use as
-+	 * many devices as possible, even if the stripes are not maximum sized.
-+	 *
-+	 * The DUP profile stores more than one stripe per device, the
-+	 * max_avail is the total size so we have to adjust.
-+	 */
-+	ctl->stripe_size = div_u64(devices_info[ctl->ndevs - 1].max_avail,
-+				   ctl->dev_stripes);
-+	ctl->num_stripes = ctl->ndevs * ctl->dev_stripes;
-+
-+	/*
-+	 * this will have to be fixed for RAID1 and RAID10 over
-+	 * more drives
-+	 */
-+	data_stripes = (ctl->num_stripes - ctl->nparity) / ctl->ncopies;
-+
-+	/*
-+	 * Use the number of data stripes to figure out how big this chunk
-+	 * is really going to be in terms of logical address space,
-+	 * and compare that answer with the max chunk size. If it's higher,
-+	 * we try to reduce stripe_size.
-+	 */
-+	if (ctl->stripe_size * data_stripes > ctl->max_chunk_size) {
-+		/*
-+		 * Reduce stripe_size, round it up to a 16MB boundary again and
-+		 * then use it, unless it ends up being even bigger than the
-+		 * previous value we had already.
-+		 */
-+		ctl->stripe_size = min(round_up(div_u64(ctl->max_chunk_size,
-+							data_stripes), SZ_16M),
-+				       ctl->stripe_size);
-+	}
-+
-+	/* align to BTRFS_STRIPE_LEN */
-+	ctl->stripe_size = round_down(ctl->stripe_size, BTRFS_STRIPE_LEN);
-+	ctl->chunk_size = ctl->stripe_size * data_stripes;
-+
-+	return 0;
-+}
-+
-+static int decide_stripe_size(struct btrfs_fs_devices *fs_devices,
-+			      struct alloc_chunk_ctl *ctl,
-+			      struct btrfs_device_info *devices_info)
-+{
-+	struct btrfs_fs_info *info = fs_devices->fs_info;
-+
-+	/*
-+	 * Round down to number of usable stripes, devs_increment can be any
-+	 * number so we can't use round_down()
-+	 */
-+	ctl->ndevs -= ctl->ndevs % ctl->devs_increment;
-+
-+	if (ctl->ndevs < ctl->devs_min) {
-+		if (btrfs_test_opt(info, ENOSPC_DEBUG)) {
-+			btrfs_debug(info,
-+	"%s: not enough devices with free space: have=%d minimum required=%d",
-+				    __func__, ctl->ndevs, ctl->devs_min);
-+		}
-+		return -ENOSPC;
-+	}
-+
-+	ctl->ndevs = min(ctl->ndevs, ctl->devs_max);
-+
-+	switch (fs_devices->chunk_alloc_policy) {
-+	case BTRFS_CHUNK_ALLOC_REGULAR:
-+		return decide_stripe_size_regular(ctl, devices_info);
-+	default:
-+		BUG();
-+	}
-+}
-+
- static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 			       u64 start, u64 type)
+ 	/* Allocation policy */
+ 	enum btrfs_extent_allocation_policy policy;
+ };
+@@ -3808,7 +3811,7 @@ static int find_free_extent_update_loop(struct btrfs_fs_info *fs_info,
+  */
+ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
+ 				u64 ram_bytes, u64 num_bytes, u64 empty_size,
+-				u64 hint_byte, struct btrfs_key *ins,
++				u64 hint_byte_orig, struct btrfs_key *ins,
+ 				u64 flags, int delalloc)
  {
-@@ -4984,8 +5062,6 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 	struct extent_map *em;
- 	struct btrfs_device_info *devices_info = NULL;
- 	struct alloc_chunk_ctl ctl;
--	int data_stripes;	/* number of stripes that count for
--				   block group size */
- 	int ret;
- 	int i;
- 	int j;
-@@ -5020,61 +5096,9 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 	if (ret < 0)
- 		goto error;
+ 	int ret = 0;
+@@ -3833,6 +3836,7 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
+ 	ffe_ctl.have_caching_bg = false;
+ 	ffe_ctl.orig_have_caching_bg = false;
+ 	ffe_ctl.found_offset = 0;
++	ffe_ctl.hint_byte = hint_byte_orig;
+ 	ffe_ctl.policy = BTRFS_EXTENT_ALLOC_CLUSTERED;
  
--	/*
--	 * Round down to number of usable stripes, devs_increment can be any
--	 * number so we can't use round_down()
--	 */
--	ctl.ndevs -= ctl.ndevs % ctl.devs_increment;
--
--	if (ctl.ndevs < ctl.devs_min) {
--		ret = -ENOSPC;
--		if (btrfs_test_opt(info, ENOSPC_DEBUG)) {
--			btrfs_debug(info,
--	"%s: not enough devices with free space: have=%d minimum required=%d",
--				    __func__, ctl.ndevs, ctl.devs_min);
--		}
-+	ret = decide_stripe_size(fs_devices, &ctl, devices_info);
-+	if (ret < 0)
- 		goto error;
--	}
--
--	ctl.ndevs = min(ctl.ndevs, ctl.devs_max);
--
--	/*
--	 * The primary goal is to maximize the number of stripes, so use as
--	 * many devices as possible, even if the stripes are not maximum sized.
--	 *
--	 * The DUP profile stores more than one stripe per device, the
--	 * max_avail is the total size so we have to adjust.
--	 */
--	ctl.stripe_size = div_u64(devices_info[ctl.ndevs - 1].max_avail,
--				   ctl.dev_stripes);
--	ctl.num_stripes = ctl.ndevs * ctl.dev_stripes;
--
--	/*
--	 * this will have to be fixed for RAID1 and RAID10 over
--	 * more drives
--	 */
--	data_stripes = (ctl.num_stripes - ctl.nparity) / ctl.ncopies;
--
--	/*
--	 * Use the number of data stripes to figure out how big this chunk
--	 * is really going to be in terms of logical address space,
--	 * and compare that answer with the max chunk size. If it's higher,
--	 * we try to reduce stripe_size.
--	 */
--	if (ctl.stripe_size * data_stripes > ctl.max_chunk_size) {
--		/*
--		 * Reduce stripe_size, round it up to a 16MB boundary again and
--		 * then use it, unless it ends up being even bigger than the
--		 * previous value we had already.
--		 */
--		ctl.stripe_size =
--			min(round_up(div_u64(ctl.max_chunk_size, data_stripes),
--				     SZ_16M),
--			    ctl.stripe_size);
--	}
--
--	/* align to BTRFS_STRIPE_LEN */
--	ctl.stripe_size = round_down(ctl.stripe_size, BTRFS_STRIPE_LEN);
+ 	ins->type = BTRFS_EXTENT_ITEM_KEY;
+@@ -3875,14 +3879,14 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
+ 	if (last_ptr) {
+ 		spin_lock(&last_ptr->lock);
+ 		if (last_ptr->block_group)
+-			hint_byte = last_ptr->window_start;
++			ffe_ctl.hint_byte = last_ptr->window_start;
+ 		if (last_ptr->fragmented) {
+ 			/*
+ 			 * We still set window_start so we can keep track of the
+ 			 * last place we found an allocation to try and save
+ 			 * some time.
+ 			 */
+-			hint_byte = last_ptr->window_start;
++			ffe_ctl.hint_byte = last_ptr->window_start;
+ 			use_cluster = false;
+ 		}
+ 		spin_unlock(&last_ptr->lock);
+@@ -3890,8 +3894,8 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
  
- 	map = kmalloc(map_lookup_size(ctl.num_stripes), GFP_NOFS);
- 	if (!map) {
-@@ -5098,8 +5122,6 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 	map->type = type;
- 	map->sub_stripes = ctl.sub_stripes;
- 
--	ctl.chunk_size = ctl.stripe_size * data_stripes;
--
- 	trace_btrfs_chunk_alloc(info, map, start, ctl.chunk_size);
- 
- 	em = alloc_extent_map();
+ 	ffe_ctl.search_start = max(ffe_ctl.search_start,
+ 				   first_logical_byte(fs_info, 0));
+-	ffe_ctl.search_start = max(ffe_ctl.search_start, hint_byte);
+-	if (ffe_ctl.search_start == hint_byte) {
++	ffe_ctl.search_start = max(ffe_ctl.search_start, ffe_ctl.hint_byte);
++	if (ffe_ctl.search_start == ffe_ctl.hint_byte) {
+ 		block_group = btrfs_lookup_block_group(fs_info,
+ 						       ffe_ctl.search_start);
+ 		/*
 -- 
 2.25.1
 

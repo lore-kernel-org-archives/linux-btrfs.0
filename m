@@ -2,263 +2,99 @@ Return-Path: <SRS0=nyR6=4N=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.4 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B3305C35DF0
-	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Feb 2020 03:57:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3102BC35DF2
+	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Feb 2020 04:00:39 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8A1C224650
-	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Feb 2020 03:57:29 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DDE5324653
+	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Feb 2020 04:00:38 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="rxsZApzA"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="J3V9CBMF"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729001AbgBYD52 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 24 Feb 2020 22:57:28 -0500
-Received: from esa5.hgst.iphmx.com ([216.71.153.144]:34216 "EHLO
-        esa5.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728952AbgBYD5M (ORCPT
+        id S1728871AbgBYEAi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 24 Feb 2020 23:00:38 -0500
+Received: from userp2130.oracle.com ([156.151.31.86]:47414 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728846AbgBYEAi (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 24 Feb 2020 22:57:12 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1582603032; x=1614139032;
-  h=from:to:cc:subject:date:message-id:in-reply-to:
-   references:mime-version:content-transfer-encoding;
-  bh=58e7jhwrOPqQXuahKyYyBxRkosy+3/SpZVRmVxJC8L0=;
-  b=rxsZApzAUglAeDKWM2wOUL4U8tzEXuFaZTVJHTbUBQ2cQ2EaWK1S+sE/
-   fSoAie4n+bH56u7rmTHrO7OPZFO1J/ASGzMVkLMzFiDhvhVL5BcqdmmgD
-   m6kjCcn8WnUpoChgex9VqEDtFoB7SmyQa7mFjYqvxHGMTao9H1u8DZm0u
-   bqpiDPNc53TwDDbpu6POIHkn5nAeyg4jobCTJw2oCEAs1l70WSXeV1jVm
-   LK91dy7DVuNwloY8XtC6kHb3GJROVVDf9EnIX9dc11LOhMSvflHzfZrQL
-   KHtooO3Uu/RtVv5ayhtwHO7fHHPxG9z/GStOxuAoUJV1zP19RXtsjxjVH
-   Q==;
-IronPort-SDR: YY6ftMzAFATfFmWdb9JS2Us2Oww7bh0Dt5vkooM2k7X0/WJHUStOHZtJFzO/V/mXOujh+qkXMe
- GRy2q130CjfxA3OQq7VvNbcvoxUhB4Ef6+7lzaK4X2LDthhU3W3NAOb9N5tLVLfQPLWS4ha6mB
- sSTmBgrRA+OytqctoXhLkwaJfnSn+g8yMVex6cGERcys0hT8q+VlNrZzQLBbUq+sTqUYdKTPg7
- yW0cvJbnGHrSgHtX6JSalHWe4fnT+ko3udZGrGVpb5Rr2EIOXeYmSHazBEvY0osR2o9mjb6dZO
- R3A=
-X-IronPort-AV: E=Sophos;i="5.70,482,1574092800"; 
-   d="scan'208";a="131168284"
-Received: from h199-255-45-14.hgst.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 25 Feb 2020 11:57:04 +0800
-IronPort-SDR: Heqydof3Bj3oZwZBzMzwfmIbGCV1hOeJxozE9AaY3D4F5XEf3cvQePEQXjSGUWdY0Ls4/o9gkP
- Pp6/l4w0CXAHNehZmoZbE0NLL4hX5kn3+A90kZjxcCXuMnyQ2UGkLnkbF9pZVYsbD4XkGpAMIz
- VZOWuIAGLsLvgHmdBL1z/bhB/9lRgd7RHBDmO6H67M1XbZ3tXNd2UgG3w7oy4IThQKaqF/ve8N
- +MO4Y269obTmUMeCzF55st0d3vqQHQXe+nSelmiZMXDnAuxUr2dM3bW5QwQWaoqstuGKDD9/uj
- ygJtyl3zQn3SaySCqQh2jxBd
-Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 24 Feb 2020 19:49:32 -0800
-IronPort-SDR: zTIjyhSa6neA6e2kEb8/I1AlCSTe57qT34k/tQJsoPearMC/PB58E1uE8aMlWz3UO20mQ0qft5
- EQA4lrUVIYs4si0Pploku1GZJiV35FPhL8Fmrz3uuhDAoN0XehZBdvSDE5G3YiSYeIDERFl5SP
- jEpNRCY/Fb3GT/q3hMlhUj3pn8F55pp1raFzpdKJiyOnS6ZI5oXfDJ/en//1BX8KrBsFg7b9Nz
- nuDzq13A1X0dUmhPqYcfDFnqr/A/p3hdRE9AzHyXKRshv2SCa6giKNcg7gflBB98CmYvOqN8Ry
- 3GE=
-WDCIronportException: Internal
-Received: from naota.dhcp.fujisawa.hgst.com ([10.149.52.155])
-  by uls-op-cesaip02.wdc.com with ESMTP; 24 Feb 2020 19:57:03 -0800
-From:   Naohiro Aota <naohiro.aota@wdc.com>
-To:     linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
-Cc:     Josef Bacik <josef@toxicpanda.com>,
-        Nikolay Borisov <nborisov@suse.com>,
-        Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH v3 07/21] btrfs: factor out gather_device_info()
-Date:   Tue, 25 Feb 2020 12:56:12 +0900
-Message-Id: <20200225035626.1049501-8-naohiro.aota@wdc.com>
-X-Mailer: git-send-email 2.25.1
-In-Reply-To: <20200225035626.1049501-1-naohiro.aota@wdc.com>
-References: <20200225035626.1049501-1-naohiro.aota@wdc.com>
+        Mon, 24 Feb 2020 23:00:38 -0500
+Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
+        by userp2130.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 01P3xYsw177552;
+        Tue, 25 Feb 2020 04:00:33 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to : cc :
+ references : from : message-id : date : mime-version : in-reply-to :
+ content-type : content-transfer-encoding; s=corp-2020-01-29;
+ bh=ktLGmEGWz4Iu7baH4gMWCQOD/oz6lcC4Imrz6G4DM00=;
+ b=J3V9CBMFejkNAaj1osOCxDQIA5++ntxPONTWYdTnv7D50O6zMmfz75A36PB0VPzVVWUC
+ Mv5gLl4CDZ+3ulSPiLE4Jy9fxDZzeFpMUZ0nnSOqlqMTR0rhCO8OHuBgpy2LsC7+1G6A
+ YAsovLe9U7ZhvhQAut+phbuHz8xB1cW1uy7clWO3ZFn3oOkZ9hOxf69SiAPKrvJUQ4uK
+ 2lSHHWDkcKl+m2xarMkk2b8bjKzNW4ep7zQMH/a1VIa1JfkfXqSLnnnlyrlIhwdHE7/B
+ bPmZ0tzxgXUpSL/P+BqAp3OcqSuRnD0uI2B7bH7AApgf7WY3jZ82RNaOa36hCi8+eVTQ QA== 
+Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
+        by userp2130.oracle.com with ESMTP id 2ycppr957g-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Tue, 25 Feb 2020 04:00:33 +0000
+Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
+        by userp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 01P3wCmB148199;
+        Tue, 25 Feb 2020 04:00:33 GMT
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by userp3030.oracle.com with ESMTP id 2ybdsjbbnx-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Tue, 25 Feb 2020 04:00:33 +0000
+Received: from abhmp0008.oracle.com (abhmp0008.oracle.com [141.146.116.14])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 01P40Vlk005662;
+        Tue, 25 Feb 2020 04:00:31 GMT
+Received: from [192.168.1.145] (/39.109.145.141)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Mon, 24 Feb 2020 20:00:31 -0800
+Subject: Re: [PATCH v2] btrfs: merge unlocking to common exit block in
+ btrfs_commit_transaction
+To:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+Cc:     Johannes.Thumshirn@wdc.com
+References: <133258557ae4387d6a1d01bafa3e5214ca91228d.1582302545.git.dsterba@suse.com>
+ <20200224151345.14174-1-dsterba@suse.com>
+From:   Anand Jain <anand.jain@oracle.com>
+Message-ID: <7f7008d8-f501-7181-253d-df5bc1a1e213@oracle.com>
+Date:   Tue, 25 Feb 2020 12:00:22 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.4.1
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <20200224151345.14174-1-dsterba@suse.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9541 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 phishscore=0 suspectscore=0 spamscore=0
+ malwarescore=0 mlxscore=0 bulkscore=0 mlxlogscore=999 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2001150001
+ definitions=main-2002250030
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9541 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 bulkscore=0 mlxlogscore=999
+ lowpriorityscore=0 malwarescore=0 suspectscore=0 impostorscore=0
+ spamscore=0 phishscore=0 mlxscore=0 clxscore=1015 adultscore=0
+ priorityscore=1501 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2001150001 definitions=main-2002250030
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Factor out gather_device_info() from __btrfs_alloc_chunk(). This function
-iterates over devices list and gather information about devices. This
-commit also introduces "max_avail" and "dev_extent_min" to fold the same
-calculation to one variable.
+On 2/24/20 11:13 PM, David Sterba wrote:
+> The tree_log_mutex and reloc_mutex locks are properly nested so we can
+> simplify error handling and add labels for them. This reduces line count
+> of the function.
+> 
+> Signed-off-by: David Sterba <dsterba@suse.com>
+> ---
+> 
+> v2:
+> - fixed label after commit_fs_roots, to point to unlock_tree_log
+> - added comment after btrfs_handle_fs_error and keep the locks as is
 
-This commit has no functional changes.
+Reviewed-by: Anand Jain <anand.jain@oracle.com>
 
-Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
----
- fs/btrfs/volumes.c | 121 +++++++++++++++++++++++++--------------------
- 1 file changed, 67 insertions(+), 54 deletions(-)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index b15c2bb6f913..cd3a46a803d8 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -4896,60 +4896,25 @@ static void init_alloc_chunk_ctl(struct btrfs_fs_devices *fs_devices,
- 	}
- }
- 
--static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
--			       u64 start, u64 type)
-+static int gather_device_info(struct btrfs_fs_devices *fs_devices,
-+			      struct alloc_chunk_ctl *ctl,
-+			      struct btrfs_device_info *devices_info)
- {
--	struct btrfs_fs_info *info = trans->fs_info;
--	struct btrfs_fs_devices *fs_devices = info->fs_devices;
-+	struct btrfs_fs_info *info = fs_devices->fs_info;
- 	struct btrfs_device *device;
--	struct map_lookup *map = NULL;
--	struct extent_map_tree *em_tree;
--	struct extent_map *em;
--	struct btrfs_device_info *devices_info = NULL;
--	struct alloc_chunk_ctl ctl;
- 	u64 total_avail;
--	int data_stripes;	/* number of stripes that count for
--				   block group size */
-+	u64 dev_extent_want = ctl->max_stripe_size * ctl->dev_stripes;
-+	u64 dev_extent_min = BTRFS_STRIPE_LEN * ctl->dev_stripes;
- 	int ret;
--	int ndevs;
--	int i;
--	int j;
--
--	if (!alloc_profile_is_valid(type, 0)) {
--		ASSERT(0);
--		return -EINVAL;
--	}
--
--	if (list_empty(&fs_devices->alloc_list)) {
--		if (btrfs_test_opt(info, ENOSPC_DEBUG))
--			btrfs_debug(info, "%s: no writable device", __func__);
--		return -ENOSPC;
--	}
--
--	if (!(type & BTRFS_BLOCK_GROUP_TYPE_MASK)) {
--		btrfs_err(info, "invalid chunk type 0x%llx requested", type);
--		ASSERT(0);
--		return -EINVAL;
--	}
--
--	ctl.start = start;
--	ctl.type = type;
--	init_alloc_chunk_ctl(fs_devices, &ctl);
--
--	devices_info = kcalloc(fs_devices->rw_devices, sizeof(*devices_info),
--			       GFP_NOFS);
--	if (!devices_info)
--		return -ENOMEM;
-+	int ndevs = 0;
-+	u64 max_avail;
-+	u64 dev_offset;
- 
- 	/*
- 	 * in the first pass through the devices list, we gather information
- 	 * about the available holes on each device.
- 	 */
--	ndevs = 0;
- 	list_for_each_entry(device, &fs_devices->alloc_list, dev_alloc_list) {
--		u64 max_avail;
--		u64 dev_offset;
--
- 		if (!test_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state)) {
- 			WARN(1, KERN_ERR
- 			       "BTRFS: read-only device in alloc_list\n");
-@@ -4970,21 +4935,20 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 		if (total_avail == 0)
- 			continue;
- 
--		ret = find_free_dev_extent(
--			device, ctl.max_stripe_size * ctl.dev_stripes,
--			&dev_offset, &max_avail);
-+		ret = find_free_dev_extent(device, dev_extent_want, &dev_offset,
-+					   &max_avail);
- 		if (ret && ret != -ENOSPC)
--			goto error;
-+			return ret;
- 
- 		if (ret == 0)
--			max_avail = ctl.max_stripe_size * ctl.dev_stripes;
-+			max_avail = dev_extent_want;
- 
--		if (max_avail < BTRFS_STRIPE_LEN * ctl.dev_stripes) {
-+		if (max_avail < dev_extent_min) {
- 			if (btrfs_test_opt(info, ENOSPC_DEBUG))
- 				btrfs_debug(info,
--			"%s: devid %llu has no free space, have=%llu want=%u",
-+			"%s: devid %llu has no free space, have=%llu want=%llu",
- 					    __func__, device->devid, max_avail,
--					    BTRFS_STRIPE_LEN * ctl.dev_stripes);
-+					    dev_extent_min);
- 			continue;
- 		}
- 
-@@ -4999,14 +4963,63 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 		devices_info[ndevs].dev = device;
- 		++ndevs;
- 	}
--	ctl.ndevs = ndevs;
-+	ctl->ndevs = ndevs;
- 
- 	/*
- 	 * now sort the devices by hole size / available space
- 	 */
--	sort(devices_info, ctl.ndevs, sizeof(struct btrfs_device_info),
-+	sort(devices_info, ndevs, sizeof(struct btrfs_device_info),
- 	     btrfs_cmp_device_info, NULL);
- 
-+	return 0;
-+}
-+
-+static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
-+			       u64 start, u64 type)
-+{
-+	struct btrfs_fs_info *info = trans->fs_info;
-+	struct btrfs_fs_devices *fs_devices = info->fs_devices;
-+	struct map_lookup *map = NULL;
-+	struct extent_map_tree *em_tree;
-+	struct extent_map *em;
-+	struct btrfs_device_info *devices_info = NULL;
-+	struct alloc_chunk_ctl ctl;
-+	int data_stripes;	/* number of stripes that count for
-+				   block group size */
-+	int ret;
-+	int i;
-+	int j;
-+
-+	if (!alloc_profile_is_valid(type, 0)) {
-+		ASSERT(0);
-+		return -EINVAL;
-+	}
-+
-+	if (list_empty(&fs_devices->alloc_list)) {
-+		if (btrfs_test_opt(info, ENOSPC_DEBUG))
-+			btrfs_debug(info, "%s: no writable device", __func__);
-+		return -ENOSPC;
-+	}
-+
-+	if (!(type & BTRFS_BLOCK_GROUP_TYPE_MASK)) {
-+		btrfs_err(info, "invalid chunk type 0x%llx requested", type);
-+		ASSERT(0);
-+		return -EINVAL;
-+	}
-+
-+	ctl.start = start;
-+	ctl.type = type;
-+	init_alloc_chunk_ctl(fs_devices, &ctl);
-+
-+	devices_info = kcalloc(fs_devices->rw_devices, sizeof(*devices_info),
-+			       GFP_NOFS);
-+	if (!devices_info)
-+		return -ENOMEM;
-+
-+	ret = gather_device_info(fs_devices, &ctl, devices_info);
-+	if (ret < 0)
-+		goto error;
-+
- 	/*
- 	 * Round down to number of usable stripes, devs_increment can be any
- 	 * number so we can't use round_down()
--- 
-2.25.1
 

@@ -7,67 +7,67 @@ X-Spam-Status: No, score=-9.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1A36BC35DF2
-	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Feb 2020 03:57:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DB6EEC35DF0
+	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Feb 2020 03:57:15 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E582924650
+	by mail.kernel.org (Postfix) with ESMTP id A51FD24650
 	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Feb 2020 03:57:15 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="pUeFBJG8"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="nW0emgl7"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728921AbgBYD5O (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 24 Feb 2020 22:57:14 -0500
+        id S1728966AbgBYD5N (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 24 Feb 2020 22:57:13 -0500
 Received: from esa5.hgst.iphmx.com ([216.71.153.144]:34231 "EHLO
         esa5.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728951AbgBYD5N (ORCPT
+        with ESMTP id S1728953AbgBYD5M (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 24 Feb 2020 22:57:13 -0500
+        Mon, 24 Feb 2020 22:57:12 -0500
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1582603033; x=1614139033;
+  t=1582603032; x=1614139032;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=RNXg1axbqdLZuo9+0jRwDCry1grvNkhf/pZs0xTqJv8=;
-  b=pUeFBJG8nudcTAUqKiHq6nlIasE5UFJdKs986c2cZDaoVwgB8NpoyPmU
-   Rd+7UoU656EQeZ7q3cuJit49a/xgri87LZbJ1Ug5Sc8yCLAl6M0hVA/Oh
-   XIvHzWmAHhSpymHhh8A6VB+DBy3ijWZwNToJeL8kIdGdV3rfbUK1ufHJ0
-   JxWr9Nfyo2bN/rhy5vZVPQ4vycmTOKBX1KE1YJ12/mjxhlDnzp89d5Ob5
-   0XiKU1eyYlVCuWDN4fF4A+R3uTMyXzbF4M0si3TvGO/8WKAFF6JMbJ7cf
-   Tp2qVk7DJSrIXZnO2ptve49yckWLJj2fV8oRKR5MJ6kPnIbvQT0ikm6KR
-   w==;
-IronPort-SDR: avIlmCml6DXzwccXDtozplQU5wIAD05vMw19zopgzEdCRXXV/RwIYc/Egckl2fiaehHrkUUvoF
- 9h4H/bpTlLa5/M2FEyWyxqSJ/f4KEgMXeD5P581NX1X/Kh3jz9MTBWwC0Ec/aWYU45IEschnDc
- UNhY3UxIHImgvRmXSKY4FiErCSq5DJ0XALHtuSwIT/9WGjRmy83QQQVoVkRCOK9oEayLdacbcp
- 77D4GgksbmQYiIoNKEgFz1d0nNeZiobzv5vHZMZFbKeJRS3w+wYKm0+1NqGakRMbZ2Rdk9XxI9
- ZlU=
+  bh=4gKHM1cxWMBKItzCjnljwfJOG9PGvWyOJiXX2xNIIZ8=;
+  b=nW0emgl7Vxo8ePStoL3wj/zieFzFnj85j5gRwAbyiHyUJyCqU3V3ebij
+   dzYh7v6w6sQ2iq/TkW8UxFYKQdoBzKPidHyVvtyl1naBo7m8U0kQuAP4U
+   44pMvhcLw1AZ5LWBm0DlvnwYv2wPpwmk8oD0sBgCEYyqyeEJRv71277U3
+   VTqAAmL9+X7TDIkg1saXjab4VD3AnmtoAs24JFxOMIWTHIVQZbkTvJnvg
+   HethIF1V+0tJ/Lm1rnMgmmakVYQWWaYM02ygL9aL66j8szahBtsupJEHx
+   KoYeJ4kh7YJxyQaNIREnAygVdFNafOLwz6tN3MgxsexWaP0HlWoWtx0pK
+   g==;
+IronPort-SDR: 9vwUnehC9MBRJIU0HxOZKkWA89dLLOJKMIaa3CIuxvCy8+xFwl62KA8RBFtlCXDpVZS1BQWz6y
+ 6w+vQs9Kmc9pW88vTYdlDKQ7uKVz14UUEeGa6Ptcxmt9QtQGcfRB42XUO3v9+yXcg61wy+ycZI
+ gnzAGSemz6Rr+sP3RKNFpMSYSNvl3EjmbB0WCOeFYDuGdXE4/Q6bWHRtmFun1lifhfkdFqa4IU
+ eCt6Bd5ZpZXo5YOyfW9ygGurcjQVBYXixbQtAZBjE6WPiu5KN9Jjf50NkeyeIEbtP+iprXNP03
+ Ufg=
 X-IronPort-AV: E=Sophos;i="5.70,482,1574092800"; 
-   d="scan'208";a="131168293"
+   d="scan'208";a="131168287"
 Received: from h199-255-45-14.hgst.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 25 Feb 2020 11:57:11 +0800
-IronPort-SDR: QRxniGvbs0Hg7KSBbBZQ2DDui3Oei0n+ZXOZxTVac3eT1LcZgO9mnJvbzKspKAUlVHsCtrmnzO
- 20Vv2IUUEyXmf6Ujqxo4LwwLVGsxEBLpr1O7ohdJL7tB0WqIkh9N8YrnjziyqeRTO1Z5KiarWm
- YjZd6402xQuXElViAp4KflHr+Y/hbYXGgJAgth47J5cDIru9AnRH78RV2e0Kj1rmhjKByT25gn
- oe6TDUjst2WLXBYbnNN0q0Nuk7Wv9zYhrDHV/4qmjjlIqLbd/u+pvzCQdxU5Hlgzh3iyNeAhQI
- dLxUTc+EyK9uanlrYQq1D/Fl
+  by ob1.hgst.iphmx.com with ESMTP; 25 Feb 2020 11:57:07 +0800
+IronPort-SDR: DCtrkvrxJ4Xg8CDNNDzch7h+BVKt/bWPJgLp3FNPzAIe2/3+e0PNuPTV2wONynXsYpCNvwYu2f
+ GYn7dBOQrSQcPxSWvNRks/ZRnssSKYXqxF865MJNPUz3/XLM5XG5LapfV3/ZlqBesl13z3d68X
+ 8YUxg6gCSiFOkFlU9lOAGIkh1KWIJxruqc0fm5QgfjHanbAPNi175gVcIdubOdIwVoI/lbMybR
+ p68nthHfIMK0zGeVXKTM9kMQ1GAurE9vXYpkYs8A+28kSZEs5OLjfLfkqDC0fhnGFwCJxKKfSS
+ LmYKwOqNO+ZBJWrKSENTohK2
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 24 Feb 2020 19:49:39 -0800
-IronPort-SDR: tpN2SGHEYZp+Vqjk8jksaptYYmMio6Uh/8USKAmtDf9Sc8iq1qVzLZFa3hhPuUPPlDXL5d2C6S
- 0ko/babL13s2UTzjpBLpy5NZw3l0p1rAtth85+4hkzoN6qqE4xJAaLi3hyYxe5/j/crW3paUBk
- iEhUUx7Z6BrgcOPT2NIDKMLXa6BqoNY/b0Rtu2AGoJuYsJ4+UDdKb1E/M3QcimkjFOuj3ty8AR
- MhwXb4jnOV2erFQEm31aZgXpJ53ogirZl/TQrsanWe49smjlJCi2IsZyVRWD7OTMw9+EgCE3MD
- Mhc=
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 24 Feb 2020 19:49:35 -0800
+IronPort-SDR: 5v3XTsPu6k/5tzaYXuOXjOx9IbKsQLpv5iKrgnHx27dj0Hjyh7bgc7dTqmTLb4hLdIP7Z+kUEN
+ +a1UCMp3bTNLYgNHkEFqvjGf1zcGzyMp+vh/DMEvQkkxIBInf1PZbNAOl98AzKw0oMS7wpAvDj
+ hrHf+JSuuhiyneLU6TaGP3z6rxY1jh0/s7w+RUsFAFP2Zl/mcP7Njj2F3WlbLwX8bJNC2CjCLG
+ hDDWPcZQgBCk0NKts5Mp8hgQ0qmZqxIuuozoD3dX/ewEyLzUfzc6kyJHt0QwL8WukgeuoZj0Jh
+ 3Gs=
 WDCIronportException: Internal
 Received: from naota.dhcp.fujisawa.hgst.com ([10.149.52.155])
-  by uls-op-cesaip02.wdc.com with ESMTP; 24 Feb 2020 19:57:10 -0800
+  by uls-op-cesaip02.wdc.com with ESMTP; 24 Feb 2020 19:57:06 -0800
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
 Cc:     Josef Bacik <josef@toxicpanda.com>,
         Nikolay Borisov <nborisov@suse.com>,
         Naohiro Aota <naohiro.aota@wdc.com>,
         Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH v3 12/21] btrfs: move hint_byte into find_free_extent_ctl
-Date:   Tue, 25 Feb 2020 12:56:17 +0900
-Message-Id: <20200225035626.1049501-13-naohiro.aota@wdc.com>
+Subject: [PATCH v3 09/21] btrfs: factor out create_chunk()
+Date:   Tue, 25 Feb 2020 12:56:14 +0900
+Message-Id: <20200225035626.1049501-10-naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <20200225035626.1049501-1-naohiro.aota@wdc.com>
 References: <20200225035626.1049501-1-naohiro.aota@wdc.com>
@@ -78,77 +78,223 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This commit moves hint_byte into find_free_extent_ctl, so that we can
-modify the hint_byte in the other functions. This will help us split
-find_free_extent further. This commit also renames the function argument
-"hint_byte" to "hint_byte_orig" to avoid misuse.
+Factor out create_chunk() from __btrfs_alloc_chunk(). This function finally
+creates a chunk. There is no functional changes.
 
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/extent-tree.c | 14 +++++++++-----
- 1 file changed, 9 insertions(+), 5 deletions(-)
+ fs/btrfs/volumes.c | 132 ++++++++++++++++++++++++---------------------
+ 1 file changed, 71 insertions(+), 61 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index edc72e768119..93f07988d480 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3494,6 +3494,9 @@ struct find_free_extent_ctl {
- 	/* Found result */
- 	u64 found_offset;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index fe194bc0bce3..cd854d6b8208 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -5052,91 +5052,53 @@ static int decide_stripe_size(struct btrfs_fs_devices *fs_devices,
+ 	}
+ }
  
-+	/* Hint byte to start looking for an empty space */
-+	u64 hint_byte;
-+
- 	/* Allocation policy */
- 	enum btrfs_extent_allocation_policy policy;
- };
-@@ -3808,7 +3811,7 @@ static int find_free_extent_update_loop(struct btrfs_fs_info *fs_info,
-  */
- static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
- 				u64 ram_bytes, u64 num_bytes, u64 empty_size,
--				u64 hint_byte, struct btrfs_key *ins,
-+				u64 hint_byte_orig, struct btrfs_key *ins,
- 				u64 flags, int delalloc)
+-static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+-			       u64 start, u64 type)
++static int create_chunk(struct btrfs_trans_handle *trans,
++			struct alloc_chunk_ctl *ctl,
++			struct btrfs_device_info *devices_info)
  {
- 	int ret = 0;
-@@ -3833,6 +3836,7 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
- 	ffe_ctl.have_caching_bg = false;
- 	ffe_ctl.orig_have_caching_bg = false;
- 	ffe_ctl.found_offset = 0;
-+	ffe_ctl.hint_byte = hint_byte_orig;
- 	ffe_ctl.policy = BTRFS_EXTENT_ALLOC_CLUSTERED;
+ 	struct btrfs_fs_info *info = trans->fs_info;
+-	struct btrfs_fs_devices *fs_devices = info->fs_devices;
+ 	struct map_lookup *map = NULL;
+ 	struct extent_map_tree *em_tree;
+ 	struct extent_map *em;
+-	struct btrfs_device_info *devices_info = NULL;
+-	struct alloc_chunk_ctl ctl;
++	u64 start = ctl->start;
++	u64 type = ctl->type;
+ 	int ret;
+ 	int i;
+ 	int j;
  
- 	ins->type = BTRFS_EXTENT_ITEM_KEY;
-@@ -3875,14 +3879,14 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
- 	if (last_ptr) {
- 		spin_lock(&last_ptr->lock);
- 		if (last_ptr->block_group)
--			hint_byte = last_ptr->window_start;
-+			ffe_ctl.hint_byte = last_ptr->window_start;
- 		if (last_ptr->fragmented) {
- 			/*
- 			 * We still set window_start so we can keep track of the
- 			 * last place we found an allocation to try and save
- 			 * some time.
- 			 */
--			hint_byte = last_ptr->window_start;
-+			ffe_ctl.hint_byte = last_ptr->window_start;
- 			use_cluster = false;
+-	if (!alloc_profile_is_valid(type, 0)) {
+-		ASSERT(0);
+-		return -EINVAL;
+-	}
+-
+-	if (list_empty(&fs_devices->alloc_list)) {
+-		if (btrfs_test_opt(info, ENOSPC_DEBUG))
+-			btrfs_debug(info, "%s: no writable device", __func__);
+-		return -ENOSPC;
+-	}
+-
+-	if (!(type & BTRFS_BLOCK_GROUP_TYPE_MASK)) {
+-		btrfs_err(info, "invalid chunk type 0x%llx requested", type);
+-		ASSERT(0);
+-		return -EINVAL;
+-	}
+-
+-	ctl.start = start;
+-	ctl.type = type;
+-	init_alloc_chunk_ctl(fs_devices, &ctl);
+-
+-	devices_info = kcalloc(fs_devices->rw_devices, sizeof(*devices_info),
+-			       GFP_NOFS);
+-	if (!devices_info)
++	map = kmalloc(map_lookup_size(ctl->num_stripes), GFP_NOFS);
++	if (!map)
+ 		return -ENOMEM;
++	map->num_stripes = ctl->num_stripes;
+ 
+-	ret = gather_device_info(fs_devices, &ctl, devices_info);
+-	if (ret < 0)
+-		goto error;
+-
+-	ret = decide_stripe_size(fs_devices, &ctl, devices_info);
+-	if (ret < 0)
+-		goto error;
+-
+-	map = kmalloc(map_lookup_size(ctl.num_stripes), GFP_NOFS);
+-	if (!map) {
+-		ret = -ENOMEM;
+-		goto error;
+-	}
+-
+-	map->num_stripes = ctl.num_stripes;
+-
+-	for (i = 0; i < ctl.ndevs; ++i) {
+-		for (j = 0; j < ctl.dev_stripes; ++j) {
+-			int s = i * ctl.dev_stripes + j;
++	for (i = 0; i < ctl->ndevs; ++i) {
++		for (j = 0; j < ctl->dev_stripes; ++j) {
++			int s = i * ctl->dev_stripes + j;
+ 			map->stripes[s].dev = devices_info[i].dev;
+ 			map->stripes[s].physical = devices_info[i].dev_offset +
+-						   j * ctl.stripe_size;
++						   j * ctl->stripe_size;
  		}
- 		spin_unlock(&last_ptr->lock);
-@@ -3890,8 +3894,8 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
+ 	}
+ 	map->stripe_len = BTRFS_STRIPE_LEN;
+ 	map->io_align = BTRFS_STRIPE_LEN;
+ 	map->io_width = BTRFS_STRIPE_LEN;
+ 	map->type = type;
+-	map->sub_stripes = ctl.sub_stripes;
++	map->sub_stripes = ctl->sub_stripes;
  
- 	ffe_ctl.search_start = max(ffe_ctl.search_start,
- 				   first_logical_byte(fs_info, 0));
--	ffe_ctl.search_start = max(ffe_ctl.search_start, hint_byte);
--	if (ffe_ctl.search_start == hint_byte) {
-+	ffe_ctl.search_start = max(ffe_ctl.search_start, ffe_ctl.hint_byte);
-+	if (ffe_ctl.search_start == ffe_ctl.hint_byte) {
- 		block_group = btrfs_lookup_block_group(fs_info,
- 						       ffe_ctl.search_start);
- 		/*
+-	trace_btrfs_chunk_alloc(info, map, start, ctl.chunk_size);
++	trace_btrfs_chunk_alloc(info, map, start, ctl->chunk_size);
+ 
+ 	em = alloc_extent_map();
+ 	if (!em) {
+ 		kfree(map);
+-		ret = -ENOMEM;
+-		goto error;
++		return -ENOMEM;
+ 	}
+ 	set_bit(EXTENT_FLAG_FS_MAPPING, &em->flags);
+ 	em->map_lookup = map;
+ 	em->start = start;
+-	em->len = ctl.chunk_size;
++	em->len = ctl->chunk_size;
+ 	em->block_start = 0;
+ 	em->block_len = em->len;
+-	em->orig_block_len = ctl.stripe_size;
++	em->orig_block_len = ctl->stripe_size;
+ 
+ 	em_tree = &info->mapping_tree;
+ 	write_lock(&em_tree->lock);
+@@ -5144,11 +5106,11 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+ 	if (ret) {
+ 		write_unlock(&em_tree->lock);
+ 		free_extent_map(em);
+-		goto error;
++		return ret;
+ 	}
+ 	write_unlock(&em_tree->lock);
+ 
+-	ret = btrfs_make_block_group(trans, 0, type, start, ctl.chunk_size);
++	ret = btrfs_make_block_group(trans, 0, type, start, ctl->chunk_size);
+ 	if (ret)
+ 		goto error_del_extent;
+ 
+@@ -5156,20 +5118,19 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+ 		struct btrfs_device *dev = map->stripes[i].dev;
+ 
+ 		btrfs_device_set_bytes_used(dev,
+-					    dev->bytes_used + ctl.stripe_size);
++					    dev->bytes_used + ctl->stripe_size);
+ 		if (list_empty(&dev->post_commit_list))
+ 			list_add_tail(&dev->post_commit_list,
+ 				      &trans->transaction->dev_update_list);
+ 	}
+ 
+-	atomic64_sub(ctl.stripe_size * map->num_stripes,
++	atomic64_sub(ctl->stripe_size * map->num_stripes,
+ 		     &info->free_chunk_space);
+ 
+ 	free_extent_map(em);
+ 	check_raid56_incompat_flag(info, type);
+ 	check_raid1c34_incompat_flag(info, type);
+ 
+-	kfree(devices_info);
+ 	return 0;
+ 
+ error_del_extent:
+@@ -5181,7 +5142,56 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+ 	free_extent_map(em);
+ 	/* One for the tree reference */
+ 	free_extent_map(em);
+-error:
++
++	return ret;
++}
++
++static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
++			       u64 start, u64 type)
++{
++	struct btrfs_fs_info *info = trans->fs_info;
++	struct btrfs_fs_devices *fs_devices = info->fs_devices;
++	struct btrfs_device_info *devices_info = NULL;
++	struct alloc_chunk_ctl ctl;
++	int ret;
++
++	if (!alloc_profile_is_valid(type, 0)) {
++		ASSERT(0);
++		return -EINVAL;
++	}
++
++	if (list_empty(&fs_devices->alloc_list)) {
++		if (btrfs_test_opt(info, ENOSPC_DEBUG))
++			btrfs_debug(info, "%s: no writable device", __func__);
++		return -ENOSPC;
++	}
++
++	if (!(type & BTRFS_BLOCK_GROUP_TYPE_MASK)) {
++		btrfs_err(info, "invalid chunk type 0x%llx requested", type);
++		ASSERT(0);
++		return -EINVAL;
++	}
++
++	ctl.start = start;
++	ctl.type = type;
++	init_alloc_chunk_ctl(fs_devices, &ctl);
++
++	devices_info = kcalloc(fs_devices->rw_devices, sizeof(*devices_info),
++			       GFP_NOFS);
++	if (!devices_info)
++		return -ENOMEM;
++
++	ret = gather_device_info(fs_devices, &ctl, devices_info);
++	if (ret < 0)
++		goto out;
++
++	ret = decide_stripe_size(fs_devices, &ctl, devices_info);
++	if (ret < 0)
++		goto out;
++
++	ret = create_chunk(trans, &ctl, devices_info);
++
++out:
+ 	kfree(devices_info);
+ 	return ret;
+ }
 -- 
 2.25.1
 

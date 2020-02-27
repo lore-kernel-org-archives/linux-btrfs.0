@@ -2,164 +2,238 @@ Return-Path: <SRS0=+uyb=4P=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.2 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2EF10C4BA06
-	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Feb 2020 08:26:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D0642C4BA3B
+	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Feb 2020 12:20:35 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id EAACE222C2
-	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Feb 2020 08:26:03 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8C34124699
+	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Feb 2020 12:20:35 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="JaOnxHFF"
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="bBgQXIEk"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728526AbgB0I0D (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 27 Feb 2020 03:26:03 -0500
-Received: from mout.gmx.net ([212.227.17.20]:43289 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728454AbgB0I0C (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 27 Feb 2020 03:26:02 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1582791960;
-        bh=9jqWe9QprVPw7Mn+lQulO2O0SINGFitZsSbA5mUb5AA=;
-        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
-        b=JaOnxHFFisRZ+tOFztCymcISQL7bmBnBkVVweNDOG9qDvOd+kTKmjos4MBnGfFmpd
-         Y+srR2340jxxnvelK8gHT+vWWJ57A4A89pBSJ/5tJM4OS8l4LRlVBYrWKFAJOryEk/
-         FAXObHZU27yhGk2dmtmQzUf7FnBPI7sZwbqLMuTk=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx104
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1N6sn1-1jTVqC37vj-018Jcy; Thu, 27
- Feb 2020 09:26:00 +0100
-Subject: Re: corrupt leaf
-To:     4e868df3 <4e868df3@gmail.com>, linux-btrfs@vger.kernel.org
-References: <CADq=pg=g47zrfKiqGFUHOJg8=+bdSGQeawihKcVcp_BahzPT+Q@mail.gmail.com>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAU4EEwEIADgCGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1oQAKCRDC
- PZHzoSX+qCY6CACd+mWu3okGwRKXju6bou+7VkqCaHTdyXwWFTsr+/0ly5nUdDtT3yEVggPJ
- 3VP70wjlrxUjNjFb6iIvGYxiPOrop1NGwGYvQktgRhaIhALG6rPoSSAhGNjwGVRw0km0PlIN
- D29BTj/lYEk+jVM1YL0QLgAE1AI3krihg/lp/fQT53wLhR8YZIF8ETXbClQG1vJ0cllPuEEv
- efKxRyiTSjB+PsozSvYWhXsPeJ+KKjFen7ebE5reQTPFzSHctCdPnoR/4jSPlnTlnEvLeqcD
- ZTuKfQe1gWrPeevQzgCtgBF/WjIOeJs41klnYzC3DymuQlmFubss0jShLOW8eSOOWhLRuQEN
- BFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcgaCbPEwhLj
- 1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj/IrRUUka
- 68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fNGSsRb+pK
- EKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0q1eW4Jrv
- 0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEvABEBAAGJ
- ATwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1rgUJCWpOfwAKCRDCPZHz
- oSX+qFcEB/95cs8cM1OQdE/GgOfCGxwgckMeWyzOR7bkAWW0lDVp2hpgJuxBW/gyfmtBnUai
- fnggx3EE3ev8HTysZU9q0h+TJwwJKGv6sUc8qcTGFDtavnnl+r6xDUY7A6GvXEsSoCEEynby
- 72byGeSovfq/4AWGNPBG1L61Exl+gbqfvbECP3ziXnob009+z9I4qXodHSYINfAkZkA523JG
- ap12LndJeLk3gfWNZfXEWyGnuciRGbqESkhIRav8ootsCIops/SqXm0/k+Kcl4gGUO/iD/T5
- oagaDh0QtOd8RWSMwLxwn8uIhpH84Q4X1LadJ5NCgGa6xPP5qqRuiC+9gZqbq4Nj
-Message-ID: <587446db-5168-d91d-c1fa-c7bef48959d9@gmx.com>
-Date:   Thu, 27 Feb 2020 16:25:56 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.5.0
+        id S1728977AbgB0MUe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 27 Feb 2020 07:20:34 -0500
+Received: from mail-yw1-f49.google.com ([209.85.161.49]:44672 "EHLO
+        mail-yw1-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728956AbgB0MUe (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 27 Feb 2020 07:20:34 -0500
+Received: by mail-yw1-f49.google.com with SMTP id t141so2749657ywc.11
+        for <linux-btrfs@vger.kernel.org>; Thu, 27 Feb 2020 04:20:33 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=6bfYsjkBV6RkETF5mF1owy2rXvYyJWsQ5xa0+ZYKPlA=;
+        b=bBgQXIEkMkHgYclCh2ZVNHGLU+OUNxHb+SaULcEkxqcEEXTy7kmuMvvmph+dDnks62
+         uxNNMbvDwVrzHEwmnGBeUowwYJC/3JMCxh70H40dsRB7F6bWZ01P5BLxYLIGW1Af118n
+         5rndfSolcAf/Iw6enPVlVxDwHliYRh+7gqAzAarS3xHhpRTp3X7uSHxj4touTjN1FfL2
+         fLOz0qMOlqK8Z7GdG/qcDCa/z19vHx+eMuq8ppfKumn2+nVrKiGIoV7Sgh5oxyfqFffd
+         d/XVjuy8e1XhrEyiCBENkJaNDuByJU8xKyOfCNRk9x+WBdJp5N6FW16y0mbM4tLb4Jow
+         oZEg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=6bfYsjkBV6RkETF5mF1owy2rXvYyJWsQ5xa0+ZYKPlA=;
+        b=QtfKcqf065v2b6t4DUjkUxpLkYYYvXBlOprW3oCSNG0FnA4wa5k0/jW0xdRIieXuhK
+         yoHeFOgL8o3m1M0sqmzwJ2ScojkOq3t0hLRZbROYDYBLn4AMOI3j+vHG5Vs25PbnC3p1
+         YmTdcfZd5mJRgk+OErfMffCm/IM/21dDZHNMDC00FJuUnoHj+qDPzvTyboJnyapa1W2N
+         XewxPl5pKunix1xol2J/eGfDoRkOkmsEKrS7opLXrX3sSGLD50eTfI4WfPeqjViFT5ea
+         mze8NH9xjcXF4vibdNyfSAoxdGLT4SWd5m3mWXXJhJ4SstzFdfkBKYFl84LN1QoZvadZ
+         TZHw==
+X-Gm-Message-State: APjAAAV8dg5bxzqT9KevnnBwUGCNKP6aZb2o5XGAYI0CA1iUp4gig1K/
+        W04EEPzp9OFArTh6LT/64vWSDI6ixla26UQydIY=
+X-Google-Smtp-Source: APXvYqy13LUaQ3CFbu425CTu/9xqM6cnpFIDXvnLTBTAOZR8b8MIbn7OwmEHOKT9EWhUVprllB+Ofh5yU5vxfk36NMQ=
+X-Received: by 2002:a81:6908:: with SMTP id e8mr1114745ywc.432.1582806033039;
+ Thu, 27 Feb 2020 04:20:33 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <CADq=pg=g47zrfKiqGFUHOJg8=+bdSGQeawihKcVcp_BahzPT+Q@mail.gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="jLl4yywjUU0rZLmhRODuvCEDl3wIJIakv"
-X-Provags-ID: V03:K1:nJx1IbEdTSY5NAIwghPfuVPlp1kVG9cMWUfMsrm3nS+EzHzN9qz
- ++4aGvKqcPeIaBQN35Np++JJQRFQ4gOAbaX3hMEucH8M3CtqfLTzsNI3MSKngZR1kz2x2bb
- RdP3T5EQv7jv6247Tw+X5Ji+J5q3r4QYVYr6Hp/h8USyPrJ3DZqc/FvYzL6pBGs3eB+VlGu
- tY/cIDQqSMu7XVpvb79Lw==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:a0jkKsTwL5w=:ObFG+xDjtkqbIPO83LrgAF
- 1VpYDpjBDN2zoAQQlMHk+U/krSIUItziHzRaam2YpvLy4Q0bjPhBXSGIJ4fvZLZQU4VncELIo
- lRVHo/w/B46/oD1GPbrLDUM4/hKRJ4z9m2AHM3fg7ovSTlSEmFsJRHwhzblZcUv0hii0GzoNd
- Hi+2avEVTmTqfR6dJVKxpT5C5of+JEy+5xo/221LH9Fbdbo82yoXBJTFfvxvtqsqbIW6D84Hw
- Ie0QyNJhdaQtHv+PbqOKoQ2KneYmjmTr4vYK08hVAkAwyQYRYPWa7H1o1V11stkFWF/rDPKqa
- bRxoXi8VJERdGGsRNGAkySAKEXx12Bwn2QQN2bs4cRXKFjA7kcSNXkXcgr6nLcCM3E0ZlBBaA
- /5yJErCrj1eikpND2m2c1odwNdF2+jD2w3zhd2+kCw/kWKoN5LzfhBlCeyFuTFxKghJ3xQToK
- z+pMElMmS/PUwjabuOuihZIKdblFvNeQrCBI4iloGzpVqwWInp+0VSOrHLfV/8gWKvv7KFlbJ
- i+MuMgilZkQl/mwoTXckKfPId6X5drQYnlGZsJmD8Mha08KX9saD6GE3HtGqSLR/UaxRbGi5j
- 3qFeaREMH8GRnUNOQ8SBqiu555wkjASrm82HfzmpyOZex3JtYh4G9GoICMX3JYH00y6eeukNC
- J7f4TkKavm4QyT1sw/6v2nu8f1Gddk5p8G1+SKuq3+AYfTl3h1T9797sk/BXu0vyrNfeC+gau
- hG/YQ4HbtBd2JL88XPk1mf8KfIjSM9n0KxloL+fTEFiprW+05okemURaXeHb0P6nJ0ArYRLzR
- QqsMiaa5mxcV53W9b7SUkwvzYdAx5b9Dt5QSMk9w/p9gMQSMVozULoCw/v0H+1sK9DyfRwb4K
- KUxDLXJEI4PFzgVHir5dPk4yAN5YtlDwxvGSJ+HM6K9yAjiaZyF7yQdwo4xLjWo26H6eS8EF3
- smn9JMMf+OA2g6DnUegpeAMGSDgEoMK7oxXdYR1Asp+30YwX9D1TGaNeGvaABwnndXNPE2QT6
- d+2uM/fLvvkpQ5nYAX+IXJObMcGSqPozFBrxuFBiJiDoNc/yFpa0Hn9hrvyYzeGZvuAZ5ufWv
- b0CeBFHUko7toVStsrciYn2mWiXEyj/WteXi9vyIDOfmbc8F0JynAd7rXOIuGXxPWd4NQb81U
- nazO1kdNmFSYqYa3tL6qoD6iWzdtGwFH12YIXs9t1a/2AcvWIYBbPYVraUGvo8DqQNmUOEzXY
- E5sTOiccRwvplRVxw
+References: <CAAW2-ZfunSiUscob==s6Pj+SpDjO6irBcyDtoOYarrJH1ychMQ@mail.gmail.com>
+ <2fe5be2b-16ed-14b8-ef40-ee8c17b2021c@gmx.com> <CAAW2-Zfz8goOBCLovDpA7EtBwOsqKOAP5Ta_iS6KfDFDDmn47g@mail.gmail.com>
+ <60fba046-0aef-3b25-1e7d-7e39f4884ffe@gmx.com> <CAAW2-ZdczvEfgKb++T9YGSOMxJB+jz3_mwqEt2+-g0Omr7tocQ@mail.gmail.com>
+ <CAG_8rEfjNPwT4g2DwbS9atsurLvYazt7aV4o77HGv-fssNmheQ@mail.gmail.com> <CAJCQCtTYBOUDmWBAA4BAenkyZS6uY+f6Ao33uHMmr_16M_1Buw@mail.gmail.com>
+In-Reply-To: <CAJCQCtTYBOUDmWBAA4BAenkyZS6uY+f6Ao33uHMmr_16M_1Buw@mail.gmail.com>
+From:   Steven Fosdick <stevenfosdick@gmail.com>
+Date:   Thu, 27 Feb 2020 12:20:21 +0000
+Message-ID: <CAG_8rEcXpWUyUqmi3fe8BicZXQODJP2ZS69Z=BBcBPfAQBuSHA@mail.gmail.com>
+Subject: Re: USB reset + raid6 = majority of files unreadable
+To:     Chris Murphy <lists@colorremedies.com>
+Cc:     Jonathan H <pythonnut@gmail.com>,
+        Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---jLl4yywjUU0rZLmhRODuvCEDl3wIJIakv
-Content-Type: multipart/mixed; boundary="lQJrOBVpC3nYQjZzweOxh9eI3RUJl7Yen"
+Chris,
 
---lQJrOBVpC3nYQjZzweOxh9eI3RUJl7Yen
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+Thanks for getting back to me.  I have read your subsequent e-mails too.
+
+On Thu, 27 Feb 2020 at 00:39, Chris Murphy <lists@colorremedies.com> wrote:
+
+> Both read and write errors reported by the hardware. These aren't the
+> typical UNC error though. I'm not sure what DID_BAD_TARGET means. Some
+> errors might be suppressed.
+
+What are UNC errors?  My suspicion is that the drive failed in some
+catastrophic way rather than just experiencing a larger number of
+errors.  Upon rebooting the drive made lots of clicking noises but did
+not respond to whatever probe the BIOS does to find hard drives.
+
+> Write errors are generally fatal. Read errors, if they include sector
+> LBA, Btrfs can fix if there's an extra copy (dup, raid1, raid56, etc),
+> otherwise, it may or may not be fatal depending on what's missing, and
+> what's affected by it being missing.
+>
+> Btrfs might survive the write errors though with metadata raid1c3. But
+> later you get more concerning messages...
+
+So if each of these writes had succeeded, in that the drive reported
+success, but then the drive was subsequently unable to read the data
+back surely btrfs should be able to reconstruct the data in the failed
+write as it will either be mirrored, in the case of metadata, or
+raid5, in the case of data.  So why should this be worse if the drive
+reports that the write has failed?
+
+> Ahhh yeah. So for what it's worth, in an md driver backed world, this
+> drive would have been ejected (faulty) upon the first write error. md
+> does retries for reads but writes it pretty much considers the drive
+> written off, which means the array is degraded.
+
+That sounds very sensible.
+
+> As btrfs doesn't have such a concept of faulty drives, ejected drives,
+> yet; you kinda have to keep an eye on this, and setup monitoring so
+> you know when the array goes degraded like this.
+
+So given that I probably don't have a spare drive lying around to
+replace the failed one and also given that this server is not
+hot-plug, is there anything, other than just alerting me, that this
+monitoring could do automatically to minimise or avoid damage to the
+filesystem?  Can be btrfs be instructed to mark a drive missing and go
+into degraded mode on-line?
+
+> You need to replace the bad drive, and do a scrub to fix things up.
+
+Qu previously asked Jonathan for the output of btrfs check.
+I ran 'btrfs check --force --check-data-csum /dev/sda'
+and it found no errors.  Does this check all accessible devices in the
+filesystem or just the one specified on the command line?
+
+I'll resume the scrub I started earlier.
+
+> And double check with 'btrfs fi us /mountpoint/' that all block groups
+> have one profile set, and that it's the correct one.
+
+Here is the output:
+
+# btrfs fi us /data
+WARNING: RAID56 detected, not implemented
+Overall:
+    Device size:   21.83TiB
+    Device allocated:   30.06GiB
+    Device unallocated:   21.80TiB
+    Device missing:    5.46TiB
+    Used:   25.44GiB
+    Free (estimated):      0.00B (min: 8.00EiB)
+    Data ratio:       0.00
+    Metadata ratio:       2.00
+    Global reserve: 512.00MiB (used: 0.00B)
+
+Data,RAID5: Size:8.93TiB, Used:8.93TiB (99.98%)
+   /dev/sda    4.47TiB
+   /dev/sdc    4.47TiB
+   missing   65.00GiB
+   /dev/sdb    4.40TiB
+
+Metadata,RAID1: Size:15.00GiB, Used:12.72GiB (84.78%)
+   /dev/sda    9.00GiB
+   /dev/sdc   11.00GiB
+   /dev/sdb   10.00GiB
+
+System,RAID1: Size:32.00MiB, Used:816.00KiB (2.49%)
+   /dev/sda   32.00MiB
+   /dev/sdb   32.00MiB
+
+Unallocated:
+   /dev/sda 1006.00GiB
+   /dev/sdc 1004.03GiB
+   missing    5.39TiB
+   /dev/sdb    1.04TiB
+
+The only thing that looks odd to me is the overall summary in that
+both "Device Allocated" and "Free (estimated)" seem wrong.
+
+> That's not a good idea in my opinion... you really need to replace the
+> drive. Otherwise you're doing a really expensive full rebalance while
+> degraded, effectively. That means nothing else can go wrong or you're
+> in much bigger trouble.
+
+As you noted in your other e-mail I did add another device first.  I
+would have used btrfs device replace but the documentation I found
+said that the superblock of the device being removed needs to be
+readable.  After the reboot the failed device was not found by the
+BIOS or Linux so the superblock is not readable.
+
+Is the documentation correct, or can device replace now cope with
+completely unreadable devices?
+
+> In particular it's really common for there to
+> be a mismatch between physical drive SCT ERC timeouts, and the
+> kernel's command timer. Mismatches can cause a of confusion because
+> upon kernel timer being reached, it resets the block device that
+> contains the "late" command, which then blows away that drive's entire
+> command queue.
+
+These are NAS-specific hard discs and the SCT ERC timeout is set to 70:
 
 
-
-On 2020/2/27 =E4=B8=8B=E5=8D=881:59, 4e868df3 wrote:
-> I updated kernels recently and now am getting a corrupt leaf error.
-> The drives decrypt and mount, and I can touch a file briefly until the
-> mount switches over to read-only mode. Extended SMART tests show all 6
-> of my drives have a healthy status. I have a backup of the data. The
-> array is configured as RAID10. As the BTRFS filesystem remains
-> accessible / read-only, I am able to take an additional backup. What
-> is the best way to recover from this error?
->=20
-
-> [  130.395696] BTRFS critical (device dm-0): corrupt leaf: root=3D7
-block=3D2533706842112 slot=3D5, csum end range (68761223168) goes beyond =
-the
-start range (68761178112) of the next csum item
-> [  130.395829] BTRFS error (device dm-0): block=3D2533706842112 read
-time tree block corruption detected
-
-This is not something caused by a powerloss, but more likely an older
-kernel, or memory corruption.
-
-Please provide the following command dump:
-# btrfs ins dump-tree -b 2533706842112 /dev/dm-0
-
-Furthermore, btrfs check output would be appreciated to ensure that's
-the only corruption.
-
-But from the generation mismatch, it looks like there are transid
-mismatch error, which could be a bigger problem than your corrupted csum
-tree.
-
-Thanks,
-Qu
-
-
-
---lQJrOBVpC3nYQjZzweOxh9eI3RUJl7Yen--
-
---jLl4yywjUU0rZLmhRODuvCEDl3wIJIakv
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAl5XfRQACgkQwj2R86El
-/qgzhgf/RWs8cSgXKPLlKSQv7vLbW8VR8sGKTcHpGLXCsv22t9NnBXTQAd+vxVqG
-66sxxy8Novq2g+UmR4DHuEnZaw8QaylYQ4Rb+6lyMumLZucOH6NKF5HhGsZnf0gH
-WKkMBfzU/RurxcJWAr4Wc8xnkxihei+OEuQory4SJgvmzsn+6CB8HedUdLCdoWYk
-6WP0fPsOkH6IdXYLzVLhy8o3Nz8wmF4gSg1f/DnExBbmlcxtz3bv2c6ai9OIJZl5
-apVbi44CR4nb6itm0fmhjFFJ10+R3vERP1UTwusrA7i+DCgHOjRsN78dVPXVLgaa
-tckPV/iJjIW6PIXd6LqlJaOuJ+ZfUQ==
-=Zqjw
------END PGP SIGNATURE-----
-
---jLl4yywjUU0rZLmhRODuvCEDl3wIJIakv--
+>
+> https://raid.wiki.kernel.org/index.php/Timeout_Mismatch
+>
+>
+> > Feb 10 19:38:36 meije kernel: BTRFS info (device sda): disk added /dev/sdb
+> > Feb 10 19:39:18 meije kernel: BTRFS info (device sda): relocating
+> > block group 10045992468480 flags data|raid5
+> > Feb 10 19:39:27 meije kernel: BTRFS info (device sda): found 19 extents
+> > Feb 10 19:39:34 meije kernel: BTRFS info (device sda): found 19 extents
+> > Feb 10 19:39:39 meije kernel: BTRFS info (device sda): clearing
+> > incompat feature flag for RAID56 (0x80)
+> > Feb 10 19:39:39 meije kernel: BTRFS info (device sda): relocating
+> > block group 10043844984832 flags data|raid5
+>
+> I'm not sure what's going on here. This is a raid6 volume and raid56
+> flag is being cleared? That's unexpected and I dn't know why you have
+> raid5 block groups on a raid6 array.
+>
+>
+> > and at that point the device remove aborted with an I/O error.
+>
+> OK well you didn't include that so we have no idea if this I/O error
+> is about the same failed device or another device. If it's another
+> device it's more complicated what can happen to the array. Hence why
+> timeout mismatches are important. And why it's important to have
+> monitoring so you aren't running a degraded array for three days.
+>
+> >
+> > I did discover I could use balance with a filter to balance much of
+> > the onto the three working discs, away from the missing one but I also
+> > discovered that whenever the checksum error appears the space cache
+> > seems to get corrupted.  Any further balance attempt results in
+> > getting stuck in a loop.  Mounting with clear_cache resolves that.
+>
+> This sounds like a bug. The default space cache is stored in the data
+> block group which for you should be raid6, with a missing device it's
+> effectively raid5. But there's some kind of conversion happening
+> during the balance/missing device removal, hence the clearing of the
+> raid56 flag per block group, and maybe this corruption is happening
+> related to that removal.
+>
+> --
+> Chris Murphy

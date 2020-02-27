@@ -3,154 +3,103 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
 	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 607DBC4BA24
-	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Feb 2020 06:00:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C2E6BC4BA24
+	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Feb 2020 06:30:22 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1595524672
-	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Feb 2020 06:00:11 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 930B424683
+	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Feb 2020 06:30:22 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="Sf4n8Dd0"
+	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="WpEwb8zd"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726798AbgB0GAK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 27 Feb 2020 01:00:10 -0500
-Received: from mail-ot1-f50.google.com ([209.85.210.50]:33638 "EHLO
-        mail-ot1-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726378AbgB0GAK (ORCPT
+        id S1726860AbgB0GaV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 27 Feb 2020 01:30:21 -0500
+Received: from mail-wm1-f53.google.com ([209.85.128.53]:51086 "EHLO
+        mail-wm1-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726094AbgB0GaV (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 27 Feb 2020 01:00:10 -0500
-Received: by mail-ot1-f50.google.com with SMTP id w6so1887668otk.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Feb 2020 22:00:09 -0800 (PST)
+        Thu, 27 Feb 2020 01:30:21 -0500
+Received: by mail-wm1-f53.google.com with SMTP id a5so2162965wmb.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 26 Feb 2020 22:30:19 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:from:date:message-id:subject:to;
-        bh=ZCe1GTsKTUya4K+K8ajm+b6J28ijG/EbB5LN/mLfkWw=;
-        b=Sf4n8Dd0AvSa3kFzm7MQTIKED2SYX30EXH4KtNBitBIB84RWemhbGc4/toyBIB8zye
-         tCd7MU5v+ol+wUjxv2f29PZyLIxdxM9ZjmhrjGTuiCMJ7vlBABBSdOwqohYCwzTD3hDj
-         csy6H7esdRX5GNrRb2/GN3W478/JGVnPFVutKnOxOfD9IkXzVr5Gkx9EdwMfyRTzSA8t
-         qkPQV+Pl1f/wPxSO8V7Ikbfy/LLKQ23UgwALip2w14g5PRBPFU+YvFpJyq/lKzuIrYFQ
-         GNNXurC2ry0lAbinhoDWFOAUr45ZLsPyRXOYmqCr9dAoKaiYcat7vSwr8vvuAzqVEXej
-         BW6Q==
+        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=4J5yK7qh+zqeAdtbTC/NHYmorMn5wgf5+fS8b6H2Ye4=;
+        b=WpEwb8zdVC2y26HsJ6aQbadCAa4BrG4U1QZrXdEpmI+z8iu7lH/yEc1BE6xCuaPB83
+         uCEzjGehuwmXEMnbyqPm9BYHp1CkkyadZRlIovZEVf/hJCQFG8ZFFeiWkV3tH8epxOcs
+         FpkIAnaVyPy0wTXyAqoiYrEzhlKxWsj7scQEaP4bzxa8YGvrOI2WbPmYRtoR+OnvsbuE
+         iYJm1zOqLEAv5/tbP6E+yKK8FbtVRhHTseEEtVcF4sGYgYxnJTmhHimRb1ZYogKHMnu6
+         BlUcaKB64zSQlK9RsDhCtcx3dBIOr07ofmPt8Odo+5jAJ2uwC5dXVnsgxCIh5IFmBs4n
+         vf9A==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:from:date:message-id:subject:to;
-        bh=ZCe1GTsKTUya4K+K8ajm+b6J28ijG/EbB5LN/mLfkWw=;
-        b=N0o3TJHSz8VG9Ga7wGIkcwrfk0kfHhtaitTo0l21ALgx70JTFCMm/N1c6FKGFW0oDO
-         xjrJYBC7gvxF+mbRlIzZ2VJJKAngDfEzmtm1nzwlS+Stvug9vDcU+MWca8XA2ddVpzyJ
-         AtF8Up8Tpgx83fsERToymMO97nu1Wqu7rOjhBLrHhPQkiD9J02RGRu0zhwIIytOWU4Mq
-         QsB4AaD78lIiMk91tY9Hn8r7tSsdYjbyeAHcuCoVdvqXZOjEnAM05NgvuwQ/Ve11x7Xu
-         w4bWKsJK2qdJT/YGy/B1Jc5MLMYCp4QNfvMiGyBgMtXecP/1gwArb4kzf3YjCjhlsHOB
-         QdZw==
-X-Gm-Message-State: APjAAAVjx9zg0QhkmcrAw6HVXE0YhpKwii3YsWNXfQ5fbpmQORgiDHgR
-        uQ/fSumSVmApT4htk+1SdQxvqyU1EZIrY0APk4KW20cC
-X-Google-Smtp-Source: APXvYqylaqzlZviEljl3p3DKWzW4nymK2/hmhaARQ3gBWJr2+p0a+PmLNsOoz9SgaePVQF7U4zQo1rFbsSx+maRhjAw=
-X-Received: by 2002:a05:6830:1317:: with SMTP id p23mr2031782otq.3.1582783208481;
- Wed, 26 Feb 2020 22:00:08 -0800 (PST)
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=4J5yK7qh+zqeAdtbTC/NHYmorMn5wgf5+fS8b6H2Ye4=;
+        b=AxtGR7ZyEkZJK0G658lW7yJ0A61/tDleSYkW5KarB0CKtQziWEsZVSSFIZVULgs/ZS
+         uF1uHyPEbwIsseNQy2VA/qSpFPa54zwqrZwcX/0LMNcx+bMILlKprJ7Mq+iuF47VVmZv
+         W3OiPvpAVhef62GZudNXTeYkRvbRRK74Iyrr5wq1RiEy8fBI2pExnDMXbsaq/magLQT/
+         1iej0IEZ32F0/A0FqSGhHL0n6GIMVMsSn0osb7BQWan2cGmWzUEgxw+AofXUHyqCU2pk
+         zhuDsF4v9yRRqL6GlkB/Wd4WBk3C+8+WEQ5rjyf5s03KbkmbrcuH7XNmPwqY2OFCaFQU
+         VTaA==
+X-Gm-Message-State: APjAAAWgvH8dIlEmAIbRRcyKTQXaCrxzXEIaM7nffP0OCou0u99K0xQ4
+        LB6T40iIkc2dzwfjlsxcmj3462vBVBZiQIBa57sk+Q==
+X-Google-Smtp-Source: APXvYqzzPnMzmn3zwlEHGkxFAbqU+7mpmRAa1KBrnzSlfjJUCJ5yP26vtWPlG2VFbBmbec5tvjr9DAbbMacSN1tLr6c=
+X-Received: by 2002:a05:600c:214a:: with SMTP id v10mr3307042wml.182.1582785019096;
+ Wed, 26 Feb 2020 22:30:19 -0800 (PST)
 MIME-Version: 1.0
-From:   4e868df3 <4e868df3@gmail.com>
-Date:   Wed, 26 Feb 2020 22:59:32 -0700
-Message-ID: <CADq=pg=g47zrfKiqGFUHOJg8=+bdSGQeawihKcVcp_BahzPT+Q@mail.gmail.com>
-Subject: corrupt leaf
-To:     linux-btrfs@vger.kernel.org
-Content-Type: multipart/mixed; boundary="000000000000e61372059f886ec9"
+References: <CADq=pg=g47zrfKiqGFUHOJg8=+bdSGQeawihKcVcp_BahzPT+Q@mail.gmail.com>
+In-Reply-To: <CADq=pg=g47zrfKiqGFUHOJg8=+bdSGQeawihKcVcp_BahzPT+Q@mail.gmail.com>
+From:   Chris Murphy <lists@colorremedies.com>
+Date:   Wed, 26 Feb 2020 23:30:03 -0700
+Message-ID: <CAJCQCtR3r+nGU4pvRfZooAvDZemr2woWJQFDaMUZT4zMaSzQ7w@mail.gmail.com>
+Subject: Re: corrupt leaf
+To:     4e868df3 <4e868df3@gmail.com>
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
---000000000000e61372059f886ec9
-Content-Type: text/plain; charset="UTF-8"
+On Wed, Feb 26, 2020 at 11:00 PM 4e868df3 <4e868df3@gmail.com> wrote:
+>
+> I updated kernels recently and now am getting a corrupt leaf error.
+> The drives decrypt and mount, and I can touch a file briefly until the
+> mount switches over to read-only mode. Extended SMART tests show all 6
+> of my drives have a healthy status. I have a backup of the data. The
+> array is configured as RAID10. As the BTRFS filesystem remains
+> accessible / read-only, I am able to take an additional backup. What
+> is the best way to recover from this error?
 
-I updated kernels recently and now am getting a corrupt leaf error.
-The drives decrypt and mount, and I can touch a file briefly until the
-mount switches over to read-only mode. Extended SMART tests show all 6
-of my drives have a healthy status. I have a backup of the data. The
-array is configured as RAID10. As the BTRFS filesystem remains
-accessible / read-only, I am able to take an additional backup. What
-is the best way to recover from this error?
 
---000000000000e61372059f886ec9
-Content-Type: text/plain; charset="US-ASCII"; name="info.txt"
-Content-Disposition: attachment; filename="info.txt"
-Content-Transfer-Encoding: base64
-Content-ID: <f_k74c1j5r0>
-X-Attachment-Id: f_k74c1j5r0
+>$ uname -a
+>VM: Linux server0 5.5.6-arch1-1 #1 SMP PREEMPT Mon, 24 Feb 2020 12:20:16 +0000 x86_64 GNU/Linux
+>proxmox: Linux pxe 4.15.18-26-pve #1 SMP PVE 4.15.18-54 (Sat, 15 Feb 2020 15:34:24 +0100) x86_64 GNU/Linux
 
-bGF5b3V0OiBwcm94bW94IHdpdGggZGlyZWN0IC9kZXYgcGFzc3Rocm91Z2ggdG8gVk1zCgokIHVu
-YW1lIC1hClZNOiBMaW51eCBzZXJ2ZXIwIDUuNS42LWFyY2gxLTEgIzEgU01QIFBSRUVNUFQgTW9u
-LCAyNCBGZWIgMjAyMCAxMjoyMDoxNiArMDAwMCB4ODZfNjQgR05VL0xpbnV4CnByb3htb3g6IExp
-bnV4IHB4ZSA0LjE1LjE4LTI2LXB2ZSAjMSBTTVAgUFZFIDQuMTUuMTgtNTQgKFNhdCwgMTUgRmVi
-IDIwMjAgMTU6MzQ6MjQgKzAxMDApIHg4Nl82NCBHTlUvTGludXgKCiQgYnRyZnMgLS12ZXJzaW9u
-IChWTSkKYnRyZnMtcHJvZ3MgdjUuNAoKJCBidHJmcyBmaSBzaG93CkxhYmVsOiBub25lICB1dWlk
-OiA4YzFkZWE4OC1mYTQwLTRlNmUtYTFhMS0yMTRlYTZiY2RiMDAKICAgICAgICBUb3RhbCBkZXZp
-Y2VzIDYgRlMgYnl0ZXMgdXNlZCAyLjg4VGlCCiAgICAgICAgZGV2aWQgICAgMSBzaXplIDIuNzNU
-aUIgdXNlZCAxLjAyVGlCIHBhdGggL2Rldi9tYXBwZXIvbHVrczAKICAgICAgICBkZXZpZCAgICAy
-IHNpemUgMi43M1RpQiB1c2VkIDEuMDJUaUIgcGF0aCAvZGV2L21hcHBlci9sdWtzMQogICAgICAg
-IGRldmlkICAgIDMgc2l6ZSAyLjczVGlCIHVzZWQgMS4wMlRpQiBwYXRoIC9kZXYvbWFwcGVyL2x1
-a3MyCiAgICAgICAgZGV2aWQgICAgNCBzaXplIDIuNzNUaUIgdXNlZCAxLjAyVGlCIHBhdGggL2Rl
-di9tYXBwZXIvbHVrczMKICAgICAgICBkZXZpZCAgICA1IHNpemUgMi43M1RpQiB1c2VkIDEuMDJU
-aUIgcGF0aCAvZGV2L21hcHBlci9sdWtzNAogICAgICAgIGRldmlkICAgIDYgc2l6ZSAyLjczVGlC
-IHVzZWQgMS4wMlRpQiBwYXRoIC9kZXYvbWFwcGVyL2x1a3M1CgokIGJ0cmZzIGZpIGRmIC9tbnQv
-cmFpZCAgCkRhdGEsIFJBSUQxMDogdG90YWw9My4wNVRpQiwgdXNlZD0yLjg3VGlCClN5c3RlbSwg
-UkFJRDEwOiB0b3RhbD0xMDMuODhNaUIsIHVzZWQ9MzIwLjAwS2lCCk1ldGFkYXRhLCBSQUlEMTA6
-IHRvdGFsPTYuMDlHaUIsIHVzZWQ9NC40NkdpQgpHbG9iYWxSZXNlcnZlLCBzaW5nbGU6IHRvdGFs
-PTUxMi4wME1pQiwgdXNlZD0wLjAwQgoKJCBkbWVzZyB8IGdyZXAgQlRSRlMKWyAgIDE5LjA2MDU4
-MV0gQlRSRlM6IGRldmljZSBmc2lkIDhjMWRlYTg4LWZhNDAtNGU2ZS1hMWExLTIxNGVhNmJjZGIw
-MCBkZXZpZCA1IHRyYW5zaWQgMzYxNjg3IC9kZXYvZG0tNSBzY2FubmVkIGJ5IHN5c3RlbWQtdWRl
-dmQgKDU1MykKWyAgIDE5LjA2MTIzMl0gQlRSRlM6IGRldmljZSBmc2lkIDhjMWRlYTg4LWZhNDAt
-NGU2ZS1hMWExLTIxNGVhNmJjZGIwMCBkZXZpZCAxIHRyYW5zaWQgMzYxNjg3IC9kZXYvZG0tMCBz
-Y2FubmVkIGJ5IHN5c3RlbWQtdWRldmQgKDUyNikKWyAgIDE5LjA2Mjc1Nl0gQlRSRlM6IGRldmlj
-ZSBmc2lkIDhjMWRlYTg4LWZhNDAtNGU2ZS1hMWExLTIxNGVhNmJjZGIwMCBkZXZpZCAyIHRyYW5z
-aWQgMzYxNjg3IC9kZXYvZG0tMyBzY2FubmVkIGJ5IHN5c3RlbWQtdWRldmQgKDUzOCkKWyAgIDE5
-LjA2MzI2NV0gQlRSRlM6IGRldmljZSBmc2lkIDhjMWRlYTg4LWZhNDAtNGU2ZS1hMWExLTIxNGVh
-NmJjZGIwMCBkZXZpZCA0IHRyYW5zaWQgMzYxNjg3IC9kZXYvZG0tMiBzY2FubmVkIGJ5IHN5c3Rl
-bWQtdWRldmQgKDU0NSkKWyAgIDE5LjA3MTUyNV0gQlRSRlM6IGRldmljZSBmc2lkIDhjMWRlYTg4
-LWZhNDAtNGU2ZS1hMWExLTIxNGVhNmJjZGIwMCBkZXZpZCA2IHRyYW5zaWQgMzYxNjg3IC9kZXYv
-ZG0tMSBzY2FubmVkIGJ5IHN5c3RlbWQtdWRldmQgKDU1NykKWyAgIDE5LjA3MzcwOF0gQlRSRlM6
-IGRldmljZSBmc2lkIDhjMWRlYTg4LWZhNDAtNGU2ZS1hMWExLTIxNGVhNmJjZGIwMCBkZXZpZCAz
-IHRyYW5zaWQgMzYxNjg3IC9kZXYvZG0tNCBzY2FubmVkIGJ5IHN5c3RlbWQtdWRldmQgKDUzMykK
-WyAgIDE5LjE5MDE1OV0gQlRSRlMgaW5mbyAoZGV2aWNlIGRtLTApOiBlbmFibGluZyBhdXRvIGRl
-ZnJhZwpbICAgMTkuMTkwMTcyXSBCVFJGUyBpbmZvIChkZXZpY2UgZG0tMCk6IGRpc2sgc3BhY2Ug
-Y2FjaGluZyBpcyBlbmFibGVkClsgICAxOS4xOTAxNzRdIEJUUkZTIGluZm8gKGRldmljZSBkbS0w
-KTogaGFzIHNraW5ueSBleHRlbnRzClsgICAxOS40NDg5NzFdIEJUUkZTIGluZm8gKGRldmljZSBk
-bS0wKTogYmRldiAvZGV2L21hcHBlci9sdWtzMCBlcnJzOiB3ciAxMzc5MCwgcmQgMzg3LCBmbHVz
-aCAwLCBjb3JydXB0IDM1MzIsIGdlbiA1NzgKWyAgIDE5LjQ0ODk3N10gQlRSRlMgaW5mbyAoZGV2
-aWNlIGRtLTApOiBiZGV2IC9kZXYvbWFwcGVyL2x1a3M1IGVycnM6IHdyIDEzNjczLCByZCAyMDcs
-IGZsdXNoIDAsIGNvcnJ1cHQgMzU0MCwgZ2VuIDcwNQpbICAxMzAuMTcyOTU2XSBCVFJGUyBpbmZv
-IChkZXZpY2UgZG0tMCk6IHRoZSBmcmVlIHNwYWNlIGNhY2hlIGZpbGUgKDk2OTI5MDU0NzIpIGlz
-IGludmFsaWQsIHNraXAgaXQKWyAgMTMwLjIwNjQ5MF0gQlRSRlMgaW5mbyAoZGV2aWNlIGRtLTAp
-OiB0aGUgZnJlZSBzcGFjZSBjYWNoZSBmaWxlICgzMjI0MTQ4Mzc3NikgaXMgaW52YWxpZCwgc2tp
-cCBpdApbICAxMzAuMjIxODYyXSBCVFJGUyBpbmZvIChkZXZpY2UgZG0tMCk6IHRoZSBmcmVlIHNw
-YWNlIGNhY2hlIGZpbGUgKDM4NjgzOTM0NzIwKSBpcyBpbnZhbGlkLCBza2lwIGl0ClsgIDEzMC4y
-NTQ5MjZdIEJUUkZTIGluZm8gKGRldmljZSBkbS0wKTogdGhlIGZyZWUgc3BhY2UgY2FjaGUgZmls
-ZSAoNTQ3OTAwNjIwODApIGlzIGludmFsaWQsIHNraXAgaXQKWyAgMTMwLjI1NjU4Nl0gQlRSRlMg
-aW5mbyAoZGV2aWNlIGRtLTApOiB0aGUgZnJlZSBzcGFjZSBjYWNoZSBmaWxlICg1ODAxMTI4NzU1
-MikgaXMgaW52YWxpZCwgc2tpcCBpdApbICAxMzAuMjYxMDg1XSBCVFJGUyBpbmZvIChkZXZpY2Ug
-ZG0tMCk6IHRoZSBmcmVlIHNwYWNlIGNhY2hlIGZpbGUgKDYxMjMyNTEzMDI0KSBpcyBpbnZhbGlk
-LCBza2lwIGl0ClsgIDEzMC4yNjE3NzFdIEJUUkZTIGluZm8gKGRldmljZSBkbS0wKTogdGhlIGZy
-ZWUgc3BhY2UgY2FjaGUgZmlsZSAoNjc2NzQ5NjM5NjgpIGlzIGludmFsaWQsIHNraXAgaXQKWyAg
-MTMwLjM5NTY5Nl0gQlRSRlMgY3JpdGljYWwgKGRldmljZSBkbS0wKTogY29ycnVwdCBsZWFmOiBy
-b290PTcgYmxvY2s9MjUzMzcwNjg0MjExMiBzbG90PTUsIGNzdW0gZW5kIHJhbmdlICg2ODc2MTIy
-MzE2OCkgZ29lcyBiZXlvbmQgdGhlIHN0YXJ0IHJhbmdlICg2ODc2MTE3ODExMikgb2YgdGhlIG5l
-eHQgY3N1bSBpdGVtClsgIDEzMC4zOTU4MjldIEJUUkZTIGVycm9yIChkZXZpY2UgZG0tMCk6IGJs
-b2NrPTI1MzM3MDY4NDIxMTIgcmVhZCB0aW1lIHRyZWUgYmxvY2sgY29ycnVwdGlvbiBkZXRlY3Rl
-ZApbICAxMzAuNDA2NjI0XSBCVFJGUyBjcml0aWNhbCAoZGV2aWNlIGRtLTApOiBjb3JydXB0IGxl
-YWY6IHJvb3Q9NyBibG9jaz0yNTMzNzA2ODQyMTEyIHNsb3Q9NSwgY3N1bSBlbmQgcmFuZ2UgKDY4
-NzYxMjIzMTY4KSBnb2VzIGJleW9uZCB0aGUgc3RhcnQgcmFuZ2UgKDY4NzYxMTc4MTEyKSBvZiB0
-aGUgbmV4dCBjc3VtIGl0ZW0KWyAgMTMwLjQwNjgwM10gQlRSRlMgZXJyb3IgKGRldmljZSBkbS0w
-KTogYmxvY2s9MjUzMzcwNjg0MjExMiByZWFkIHRpbWUgdHJlZSBibG9jayBjb3JydXB0aW9uIGRl
-dGVjdGVkClsgIDEzMC40MTIzNDNdIEJUUkZTIGNyaXRpY2FsIChkZXZpY2UgZG0tMCk6IGNvcnJ1
-cHQgbGVhZjogcm9vdD03IGJsb2NrPTI1MzM3MDY4NDIxMTIgc2xvdD01LCBjc3VtIGVuZCByYW5n
-ZSAoNjg3NjEyMjMxNjgpIGdvZXMgYmV5b25kIHRoZSBzdGFydCByYW5nZSAoNjg3NjExNzgxMTIp
-IG9mIHRoZSBuZXh0IGNzdW0gaXRlbQpbICAxMzAuNDEyNTI2XSBCVFJGUyBlcnJvciAoZGV2aWNl
-IGRtLTApOiBibG9jaz0yNTMzNzA2ODQyMTEyIHJlYWQgdGltZSB0cmVlIGJsb2NrIGNvcnJ1cHRp
-b24gZGV0ZWN0ZWQKWyAgMTMwLjQxNDg0N10gQlRSRlMgY3JpdGljYWwgKGRldmljZSBkbS0wKTog
-Y29ycnVwdCBsZWFmOiByb290PTcgYmxvY2s9MjUzMzcwNjg0MjExMiBzbG90PTUsIGNzdW0gZW5k
-IHJhbmdlICg2ODc2MTIyMzE2OCkgZ29lcyBiZXlvbmQgdGhlIHN0YXJ0IHJhbmdlICg2ODc2MTE3
-ODExMikgb2YgdGhlIG5leHQgY3N1bSBpdGVtClsgIDEzMC40MTUwNTZdIEJUUkZTIGVycm9yIChk
-ZXZpY2UgZG0tMCk6IGJsb2NrPTI1MzM3MDY4NDIxMTIgcmVhZCB0aW1lIHRyZWUgYmxvY2sgY29y
-cnVwdGlvbiBkZXRlY3RlZAo=
---000000000000e61372059f886ec9--
+Which kernel is reporting the errors?
+
+> [   19.448971] BTRFS info (device dm-0): bdev /dev/mapper/luks0 errs: wr 13790, rd 387, flush 0, corrupt 3532, gen 578
+> [   19.448977] BTRFS info (device dm-0): bdev /dev/mapper/luks5 errs: wr 13673, rd 207, flush 0, corrupt 3540, gen 705
+
+Btrfs reports at mount time significant number of dropped writes, and
+other issues for 2 of 6 drives. This are problems that have already
+happened, the statistics are recorded in file system metadata. What's
+the history that might explain this? Any power failures or crashes?
+When was the last time it was scrubbed?
+
+>[  130.415056] BTRFS error (device dm-0): block=2533706842112 read time tree block corruption detected
+
+What happens after this line? File ends here.
+
+What do you get for
+btrfs check /dev/
+
+This is readonly, and repair isn't recommended unless a dev advises
+it. The check only needs to be run on one device.
+
+-- 
+Chris Murphy

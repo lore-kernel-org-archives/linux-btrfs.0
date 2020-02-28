@@ -2,47 +2,50 @@ Return-Path: <SRS0=r+Ws=4Q=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-4.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_GIT autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1630FC3F2D2
-	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Feb 2020 13:04:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C058FC3F2D3
+	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Feb 2020 13:04:27 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id DEED8222C4
-	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Feb 2020 13:04:23 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 95EBC222C4
+	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Feb 2020 13:04:27 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1582895063;
-	bh=UJjvIx1rFCSTwGMwfL7bMzYUug8u913A0pifGpJI3NE=;
-	h=From:To:Subject:Date:List-ID:From;
-	b=JXbzNxvkofommWDtxmQg4giQl6J5h45RS7mxrqoT3AmdW6kCKBZinjyFcLiU7VG7b
-	 5u/eJEfd6O1Pf2Elnic5iHCFxXkILthyXxbpU5WIKSG4yBTgQbWia87xPgg7/z/DYl
-	 ctulsYGuUevnn5FwLObg+9tR6dijXnmk6zIkX64g=
+	s=default; t=1582895067;
+	bh=dFis90msgfedCboRnGQG0zG6qvmSIQHSWfEsZRKPp8s=;
+	h=From:To:Subject:Date:In-Reply-To:References:List-ID:From;
+	b=PFi5CazTrWnJ5HKsqdplNvaUVoil4KeKo1ptrwRcsGGAeJCGmDT6tFnI2nm8wjueB
+	 jDtwwgCb64Wr4PYfIDfP1vW68Au8ByjeI5CZv8Gk9HH90avYUJVYkAo0Oh+CFIO+Ke
+	 bvD9/PX2EkA1LiSqxLIYOKD7vZr1nEeE5RbNrGxI=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726077AbgB1NEX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 28 Feb 2020 08:04:23 -0500
-Received: from mail.kernel.org ([198.145.29.99]:34538 "EHLO mail.kernel.org"
+        id S1726562AbgB1NE0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 28 Feb 2020 08:04:26 -0500
+Received: from mail.kernel.org ([198.145.29.99]:34566 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725769AbgB1NEW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 28 Feb 2020 08:04:22 -0500
+        id S1726400AbgB1NEZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 28 Feb 2020 08:04:25 -0500
 Received: from debian6.Home (bl8-197-74.dsl.telepac.pt [85.241.197.74])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 05DAD222C4
-        for <linux-btrfs@vger.kernel.org>; Fri, 28 Feb 2020 13:04:21 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id ED810246AF
+        for <linux-btrfs@vger.kernel.org>; Fri, 28 Feb 2020 13:04:23 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1582895062;
-        bh=UJjvIx1rFCSTwGMwfL7bMzYUug8u913A0pifGpJI3NE=;
-        h=From:To:Subject:Date:From;
-        b=nU/sgcR5WxqOWuzWUeqJ+c0YrhfjEpWH2EEd+JHKzYgbwQqg+myiUSBlRTTsGJzSy
-         T3BM9hr2oH7iFa5d0E21VXWaUDS4iW4BklSeo96Sx+A6flLWNx50h+grZ1UBhNnKsD
-         GVDxLZc1GeoZ6OJj8LqOkoHe9cr0sUrCn4C8qJQA=
+        s=default; t=1582895064;
+        bh=dFis90msgfedCboRnGQG0zG6qvmSIQHSWfEsZRKPp8s=;
+        h=From:To:Subject:Date:In-Reply-To:References:From;
+        b=cH0bfBR5rX6b8U214cuOHpbGdpG+q56ATesHB4YrgUEURnerkPPk0yo3TR9N6Atds
+         1QxA+DFiR/+YTeYKqKa5Uh2f8afaAOVbxnYFr8RCGjiDq8LipIa3V+d9TYsXczsy95
+         Kt60ugWJD7kFxULH8tX3jsUnU9ND5tll4gzWID04=
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v4 0/3] Add full support for cloning inline extents
-Date:   Fri, 28 Feb 2020 13:04:16 +0000
-Message-Id: <20200228130419.16719-1-fdmanana@kernel.org>
+Subject: [PATCH v4 2/3] Btrfs: simplify inline extent handling when doing reflinks
+Date:   Fri, 28 Feb 2020 13:04:18 +0000
+Message-Id: <20200228130419.16719-3-fdmanana@kernel.org>
 X-Mailer: git-send-email 2.11.0
+In-Reply-To: <20200228130419.16719-1-fdmanana@kernel.org>
+References: <20200228130419.16719-1-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -50,39 +53,142 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-This patchset adds support for currently unsupported cases of reflink
-operations that cover a file range that has inline extents, more details
-on why/how in patch 3/3.
+We can not reflink parts of an inline extent, we must always reflink the
+whole inline extent. We know that inline extents always start at file
+offset 0 and that can never represent an amount of data larger then the
+filesystem's sector size (both compressed and uncompressed). We also have
+had the constraints that reflink operations must have a start offset that
+is aligned to the sector size and an end offset that is also aligned or
+it ends the inode's i_size, so there's no way for user space to be able
+to do a reflink operation that will refer to only a part of an inline
+extent.
 
-It also starts by moving all the reflink code out of ioctl.c into a new
-file named reflink.c (like xfs does) since this code is quite significant
-in size and has grown over the years.
+Initially there was a bug in the inlining code that could allow compressed
+inline extents that encoded more than 1 page, but that was fixed in 2008
+by commit 70b99e6959a4c2 ("Btrfs: Compression corner fixes") since that
+was problematic.
 
-V4: Updated patch 3 to fix a deadlock due to allocating space while holding
-    a transaction open. No changes to the first two patches.
+So remove all the extent cloning code that deals with the possibility
+of cloning only partial inline extents.
 
-V3: Updated first patch to introduce reflink.h as well, besides reflink.c.
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
 
-V2: Removed third patch from the previous patchset version. Since the full
-    page ends up getting written, it's not necessary to read it before
-    writing to it in case it's not uptodate. The final patch, which is
-    now patch number 3, ends up being simpler as well.
+V4: No changes.
+V3: No changes.
+V2: No changes.
 
-Filipe Manana (3):
-  Btrfs: move all reflink implementation code into its own file
-  Btrfs: simplify inline extent handling when doing reflinks
-  Btrfs: implement full reflink support for inline extents
+ fs/btrfs/reflink.c | 53 ++++++++++++++---------------------------------------
+ 1 file changed, 14 insertions(+), 39 deletions(-)
 
- fs/btrfs/Makefile  |   2 +-
- fs/btrfs/ctree.h   |   3 -
- fs/btrfs/file.c    |   1 +
- fs/btrfs/ioctl.c   | 733 -----------------------------------------------
- fs/btrfs/reflink.c | 811 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/reflink.h |  12 +
- 6 files changed, 825 insertions(+), 737 deletions(-)
- create mode 100644 fs/btrfs/reflink.c
- create mode 100644 fs/btrfs/reflink.h
-
+diff --git a/fs/btrfs/reflink.c b/fs/btrfs/reflink.c
+index deecb1580e8e..6498ad3c2d02 100644
+--- a/fs/btrfs/reflink.c
++++ b/fs/btrfs/reflink.c
+@@ -74,9 +74,8 @@ static int clone_copy_inline_extent(struct inode *dst,
+ 				    struct btrfs_key *new_key,
+ 				    const u64 drop_start,
+ 				    const u64 datal,
+-				    const u64 skip,
+ 				    const u64 size,
+-				    char *inline_data)
++				    const char *inline_data)
+ {
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(dst->i_sb);
+ 	struct btrfs_root *root = BTRFS_I(dst)->root;
+@@ -172,12 +171,6 @@ static int clone_copy_inline_extent(struct inode *dst,
+ 	if (ret)
+ 		return ret;
+ 
+-	if (skip) {
+-		const u32 start = btrfs_file_extent_calc_inline_size(0);
+-
+-		memmove(inline_data + start, inline_data + start + skip, datal);
+-	}
+-
+ 	write_extent_buffer(path->nodes[0], inline_data,
+ 			    btrfs_item_ptr_offset(path->nodes[0],
+ 						  path->slots[0]),
+@@ -241,7 +234,6 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
+ 		struct btrfs_key new_key;
+ 		u64 disko = 0, diskl = 0;
+ 		u64 datao = 0, datal = 0;
+-		u8 comp;
+ 		u64 drop_start;
+ 
+ 		/*
+@@ -287,7 +279,6 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
+ 
+ 		extent = btrfs_item_ptr(leaf, slot,
+ 					struct btrfs_file_extent_item);
+-		comp = btrfs_file_extent_compression(leaf, extent);
+ 		type = btrfs_file_extent_type(leaf, extent);
+ 		if (type == BTRFS_FILE_EXTENT_REG ||
+ 		    type == BTRFS_FILE_EXTENT_PREALLOC) {
+@@ -370,23 +361,18 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
+ 			if (ret)
+ 				goto out;
+ 		} else if (type == BTRFS_FILE_EXTENT_INLINE) {
+-			u64 skip = 0;
+-			u64 trim = 0;
+-
+-			if (off > key.offset) {
+-				skip = off - key.offset;
+-				new_key.offset += skip;
+-			}
+-
+-			if (key.offset + datal > off + len)
+-				trim = key.offset + datal - (off + len);
+-
+-			if (comp && (skip || trim)) {
+-				ret = -EINVAL;
+-				goto out;
+-			}
+-			size -= skip + trim;
+-			datal -= skip + trim;
++			/*
++			 * Inline extents always have to start at file offset 0
++			 * and can never be bigger then the sector size. We can
++			 * never clone only parts of an inline extent, since all
++			 * reflink operations must start at a sector size aligned
++			 * offset, and the length must be aligned too or end at
++			 * the i_size (which implies the whole inlined data).
++			 */
++			ASSERT(key.offset == 0);
++			ASSERT(datal <= fs_info->sectorsize);
++			if (key.offset != 0 || datal > fs_info->sectorsize)
++				return -EUCLEAN;
+ 
+ 			/*
+ 			 * If our extent is inline, we know we will drop or
+@@ -404,7 +390,7 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
+ 
+ 			ret = clone_copy_inline_extent(inode, trans, path,
+ 						       &new_key, drop_start,
+-						       datal, skip, size, buf);
++						       datal, size, buf);
+ 			if (ret) {
+ 				if (ret != -EOPNOTSUPP)
+ 					btrfs_abort_transaction(trans, ret);
+@@ -551,17 +537,6 @@ static noinline int btrfs_clone_files(struct file *file, struct file *file_src,
+ 	u64 bs = fs_info->sb->s_blocksize;
+ 
+ 	/*
+-	 * TODO:
+-	 * - split compressed inline extents.  annoying: we need to
+-	 *   decompress into destination's address_space (the file offset
+-	 *   may change, so source mapping won't do), then recompress (or
+-	 *   otherwise reinsert) a subrange.
+-	 *
+-	 * - split destination inode's inline extents.  The inline extents can
+-	 *   be either compressed or non-compressed.
+-	 */
+-
+-	/*
+ 	 * VFS's generic_remap_file_range_prep() protects us from cloning the
+ 	 * eof block into the middle of a file, which would result in corruption
+ 	 * if the file size is not blocksize aligned. So we don't need to check
 -- 
 2.11.0
 

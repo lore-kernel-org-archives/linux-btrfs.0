@@ -7,58 +7,58 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8CCE0C3F2CD
-	for <linux-btrfs@archiver.kernel.org>; Mon,  2 Mar 2020 18:48:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 36129C3F2D8
+	for <linux-btrfs@archiver.kernel.org>; Mon,  2 Mar 2020 18:48:10 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 675BB2166E
-	for <linux-btrfs@archiver.kernel.org>; Mon,  2 Mar 2020 18:48:04 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0F0CA2166E
+	for <linux-btrfs@archiver.kernel.org>; Mon,  2 Mar 2020 18:48:10 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="fymMPgrE"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="fOWqcLWH"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727591AbgCBSsD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 2 Mar 2020 13:48:03 -0500
-Received: from mail-qt1-f195.google.com ([209.85.160.195]:36375 "EHLO
-        mail-qt1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727578AbgCBSsD (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Mar 2020 13:48:03 -0500
-Received: by mail-qt1-f195.google.com with SMTP id t13so792343qto.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 02 Mar 2020 10:48:02 -0800 (PST)
+        id S1727432AbgCBSsJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 2 Mar 2020 13:48:09 -0500
+Received: from mail-qt1-f193.google.com ([209.85.160.193]:45696 "EHLO
+        mail-qt1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727663AbgCBSsI (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Mar 2020 13:48:08 -0500
+Received: by mail-qt1-f193.google.com with SMTP id a4so737391qto.12
+        for <linux-btrfs@vger.kernel.org>; Mon, 02 Mar 2020 10:48:07 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references:mime-version
          :content-transfer-encoding;
-        bh=Lt3R0PwHR8RzOkN8CpItcScVihBk66gzuAVrELTCWyM=;
-        b=fymMPgrEl3f8Y2LfyicuVABEno+4f369M0f9eefWBQL52dfvCvmFQiRLep83brkAYk
-         h6EcVfvlCuFQxckLc/hlh2ShEee9duECAPB9DZRjm8JEqX4Uqka5huvmmis0TcTgPtTs
-         kAaJLV21XGeLkJfUdiUZ3UwfA9A+tZloBFAUMHjeNST8d7YDNkVnn+jT8QkxlP3xhzVb
-         klKf33Mz2fCGqTw1Ile1kLENS8rhULS55/Rwziwp84jfChN5QVYG0DQZrGU28+oxQ/hO
-         lLkj4zcfOo3t9RdYhJTJFoA5bEnnkkP09j79fxJLfjLROzoMPBBvEMRnF0z+r7SQEBuJ
-         Fm9w==
+        bh=qmaK7TBMVnh3Y4VaxRl3kWjsYc06fGjS4kb38E9wuzw=;
+        b=fOWqcLWHqXgGuhsBzhpAeUuZWrx9dv9z97fJIePz8ncIcP8/7RRtDPzuK/TWKGSY/S
+         Low17tHjJjVU/AkuLjFLWOddvNW2ySmDf9/IiXS9EA97ncaB+o29u5h9VmL64B5ZzZe1
+         yIEeddUYWCOu+xI0ClfPEs5uhzDQQCYC/o0xmTtllQE2K7vv9Y4uzT9zPWfIYWKFkAdL
+         FZFbQyc3zyyg1LSpKc+EoMS2eJU4XoPwRxh5ttUiLjuIuy90Dna+1y1z5Yikgkw9Cx3n
+         PQABUHQcaDkygOaxbM1728ToBbd2I8CzOdgg/2BwKU49z0lB5G8g8tG6ApmbnO7RvMLE
+         pYDw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=Lt3R0PwHR8RzOkN8CpItcScVihBk66gzuAVrELTCWyM=;
-        b=liRKwW1qmUvrS1Tv+UfUrjIUM7ahUYKn+iBnJuU1bUBGfYXSCcszkaOZDiFGGwjRYW
-         YKRvWmzDWgBDnF/UuSB0znf05faTSonvE8EE9QAZRttr+zfe4l9P6ms/2YrFUmzIeKvY
-         lR3CZWzzb3AZX1sXQxo25y/Zcjo9SHYcRDQR2RXKeWavwB0eEPnBoTM2oYYOAn1fj+H5
-         VyzEgBwgSQXc24/zirlrMv4rST8Ye0u52D7Dz+znusc5KrYy9m0b/a2y5gqYw5gstyto
-         aluuXBYGqWkZUAapVIwpXxrPZWpK7QKkFISzmeirxV2dZkfDNY4haKMl8Wux6dU4F8lj
-         2ROw==
-X-Gm-Message-State: ANhLgQ0VbiDQdqQhHseHQpYmjLhru9mVOCF2w/x5cvPGdK3BEeLEm0Ov
-        fjxhEYJJgQPrpIN5htxShyDx8RqNZYQ=
-X-Google-Smtp-Source: ADFU+vuBiH7LKoUwA/Fzdt9vYoKwQyh1ogRm2pwdSb4nY/L72FiDwZnPgAR7yMkTVa2SEOVpaAcwvw==
-X-Received: by 2002:ac8:7b9a:: with SMTP id p26mr1016754qtu.281.1583174882088;
-        Mon, 02 Mar 2020 10:48:02 -0800 (PST)
+        bh=qmaK7TBMVnh3Y4VaxRl3kWjsYc06fGjS4kb38E9wuzw=;
+        b=B2Fo8q3sxwvFci0tf6yCWSh6kc6zabBiSh0A1Ln4W8wCKBc8HuIoT1tmsXdwdqkLbo
+         gvT+dgj7TmFJSyClsNCUYyOjVPpr6k+ZXEd2z0VGNldDs66VW++bVmt5SN8Gu3CaDVEw
+         nIrRW+lxIzETzDHKPU58fW5i6OBl1V8riwSRSey+23YhWZCrLwcRkmopNqzrTyY7uAHx
+         vrIv9J2U5U1agkoXwdvSQg/RVQ8sBkmBphm9CgbAg6p6wd0zMRZkPNtKhAqBkVf22jho
+         5OcUvQfUyGQmS7hbcaXIkT7ntP47uRlJIWLzk9PWgXOZ5DuzEhlfihzWlYXnJNdOPDT6
+         Df+g==
+X-Gm-Message-State: ANhLgQ3MC8DHWDj8x8pguoh7UFLcFGNpkyRMOGnFsv0mEUiqWmIAC9ev
+        y7annq0dtmWcH4EdqQGF19Gla6MxF4w=
+X-Google-Smtp-Source: ADFU+vv+6liQbDj6F9m/5Nk7wS3xobupAmC+wtACcDNSFqFEahDdQjhD9DEnhqqEKGyFOadk8MCezw==
+X-Received: by 2002:ac8:2618:: with SMTP id u24mr1050448qtu.297.1583174886998;
+        Mon, 02 Mar 2020 10:48:06 -0800 (PST)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id 65sm10797701qtf.95.2020.03.02.10.48.01
+        by smtp.gmail.com with ESMTPSA id f128sm10602296qke.54.2020.03.02.10.48.06
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 02 Mar 2020 10:48:01 -0800 (PST)
+        Mon, 02 Mar 2020 10:48:06 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     kernel-team@fb.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/7] btrfs: drop block from cache on error in relocation
-Date:   Mon,  2 Mar 2020 13:47:51 -0500
-Message-Id: <20200302184757.44176-2-josef@toxicpanda.com>
+Subject: [PATCH 4/7] btrfs: run clean_dirty_subvols if we fail to start a trans
+Date:   Mon,  2 Mar 2020 13:47:54 -0500
+Message-Id: <20200302184757.44176-5-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.24.1
 In-Reply-To: <20200302184757.44176-1-josef@toxicpanda.com>
 References: <20200302184757.44176-1-josef@toxicpanda.com>
@@ -69,32 +69,36 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-If we have an error while building the backref tree in relocation we'll
-process all the pending edges and then free the node.  This isn't quite
-right however as the node could be integrated into the existing cache
-partially, linking children within itself into the cache, but not
-properly linked into the cache itself.  The fix for this is simple, use
-remove_backref_node() instead of free_backref_node(), which will clean
-up the cache related to this node completely.
+If we do merge_reloc_roots() we could insert a few roots onto the dirty
+subvol roots list, where we hold a ref on them.  If we fail to start the
+transaction we need to run clean_dirty_subvols() in order to cleanup the
+refs.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/relocation.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fs/btrfs/relocation.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
 diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 4fb7e3cc2aca..507361e99316 100644
+index f42589cb351c..e60450c44406 100644
 --- a/fs/btrfs/relocation.c
 +++ b/fs/btrfs/relocation.c
-@@ -1244,7 +1244,7 @@ struct backref_node *build_backref_tree(struct reloc_control *rc,
- 			free_backref_node(cache, lower);
- 		}
- 
--		free_backref_node(cache, node);
-+		remove_backref_node(cache, node);
- 		return ERR_PTR(err);
+@@ -4275,6 +4275,7 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
+ 	/* get rid of pinned extents */
+ 	trans = btrfs_join_transaction(rc->extent_root);
+ 	if (IS_ERR(trans)) {
++		clean_dirty_subvols(rc);
+ 		err = PTR_ERR(trans);
+ 		goto out_free;
  	}
- 	ASSERT(!node || !node->detached);
+@@ -4701,6 +4702,7 @@ int btrfs_recover_relocation(struct btrfs_root *root)
+ 
+ 	trans = btrfs_join_transaction(rc->extent_root);
+ 	if (IS_ERR(trans)) {
++		clean_dirty_subvols(rc);
+ 		err = PTR_ERR(trans);
+ 		goto out_free;
+ 	}
 -- 
 2.24.1
 

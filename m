@@ -1,203 +1,183 @@
-Return-Path: <SRS0=zrhK=4S=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=j6ri=4T=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.2 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5E614C3F2D1
-	for <linux-btrfs@archiver.kernel.org>; Sun,  1 Mar 2020 20:33:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7E70DC3F2CD
+	for <linux-btrfs@archiver.kernel.org>; Mon,  2 Mar 2020 00:02:58 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1BF41246BE
-	for <linux-btrfs@archiver.kernel.org>; Sun,  1 Mar 2020 20:33:05 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 41CFF246A1
+	for <linux-btrfs@archiver.kernel.org>; Mon,  2 Mar 2020 00:02:58 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="p64LrrbM"
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="R6uNGmnw"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726146AbgCAUc5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 1 Mar 2020 15:32:57 -0500
-Received: from mail-io1-f51.google.com ([209.85.166.51]:46966 "EHLO
-        mail-io1-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725945AbgCAUc4 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 1 Mar 2020 15:32:56 -0500
-Received: by mail-io1-f51.google.com with SMTP id x21so4766388iox.13
-        for <linux-btrfs@vger.kernel.org>; Sun, 01 Mar 2020 12:32:56 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:from:date:message-id:subject:to
-         :content-transfer-encoding;
-        bh=+Xk+LCMFg2XEb8AmwcbxvBRfnVX0HrcyS9hpXwstSPA=;
-        b=p64LrrbM2Hn6vb893YZMJ8XRgiarfqS9CJoh+p2D+qyKum4rYx4iWFSKxfBDZde3W5
-         Iqk+wLPHxXAss54EZiXVeLqcbSPzjta4pQCnlDc4MGJmdAlkOdI9JKXCadJyuE2AM6HZ
-         JxkGUt2wSsyB+ldQL0aQsyW9wtF97vVorGm/yLnYGudX8WVRxpW1HskbPrxByoPhe+0h
-         GXvjsWHiQEYlwPQ5//E+4iOipGa7Pc4HRJTJfYouJE+9sbiXpKbjNx+BshIPabdAbTk2
-         iRjaAFuQm2qDBk7sAVAqo3RUORU/hWLstfWKqcSVteYXNtV1Cg0x7JTd+NX8+MzQGezc
-         ktbQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:from:date:message-id:subject:to
-         :content-transfer-encoding;
-        bh=+Xk+LCMFg2XEb8AmwcbxvBRfnVX0HrcyS9hpXwstSPA=;
-        b=iUuEiXjM4kQEhVS+SRRZsH6FUfzw54u1U7RxlSpyrxnF1ywjw/qHzqQZI/PgwMPti2
-         T0bQf7EmQmNTED+PK/Gwk6RCHWyP1lUpymrcoEHP6o46XCAaEvK5J1vENEuKlM8PD3eP
-         aZD+sIBjWrthgAM+nHPG/0kl/t69709MBcwcnLqmyrfBqmfbarKQTyxbIFi725E3nidM
-         Q6C1BcdRbCjdYJHm9U/onRErySve63nzN414ntnBXhUGKoYm21dinVVHH12sCSFj8k94
-         8BvYzCaxhX7Hf+/6JooTsqVctHchydEOLZAQ2od7vM87gmdjW0tsVuIatgM7N7SMaVMS
-         bT9A==
-X-Gm-Message-State: ANhLgQ03RvHkpM9emU+nIkStH9m1KTxMTDhV4CT+zwGHjSChstCZJuBB
-        l1ivxbEzYYj0SkSH6WeXDcwgntIsYr/7RGq9mVUJiu36+qY=
-X-Google-Smtp-Source: ADFU+vvMmFfT4nr7rg4QlzRcIaSEW8LfwPgsRBfcj35u6nBctXPbXE9ZfcVZf5x64p+IqtjW/vgGucmZ11rH4J9PVNE=
-X-Received: by 2002:a02:c888:: with SMTP id m8mr3194776jao.86.1583094775243;
- Sun, 01 Mar 2020 12:32:55 -0800 (PST)
+        id S1726714AbgCBAC5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 1 Mar 2020 19:02:57 -0500
+Received: from mout.gmx.net ([212.227.17.20]:44873 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726621AbgCBAC5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 1 Mar 2020 19:02:57 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1583107357;
+        bh=QeMpmZfuxnoKOorDJHu+lkHpdbgI4akPfDnC+vuFGJY=;
+        h=X-UI-Sender-Class:Subject:To:Cc:References:From:Date:In-Reply-To;
+        b=R6uNGmnw6LbBN1in/zW+bThAyCgkixKV47l64IeJ19jRSIqZqcd5N2Z4i1aujxVys
+         f7fhhFrOQ/2fkQ+L4B3OkECy6nGlBPodinprwUaZnjUf0W05FAayQDDusenzbN5OV4
+         /RaEXo+xBu/78GUY6VbkEodsIZ1Jyu15xEkj5A/U=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx104
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1M8ygY-1j3caY3Oic-00696r; Mon, 02
+ Mar 2020 01:02:37 +0100
+Subject: Re: [PATCH 2/3] progs: Include btrfs-find-root and btrfs-select-super
+ in testsuite
+To:     Marcos Paulo de Souza <marcos@mpdesouza.com>
+Cc:     Marcos Paulo de Souza <mpdesouza@suse.com>, dsterba@suse.com,
+        linux-btrfs@vger.kernel.org
+References: <20200301033344.808-1-marcos@mpdesouza.com>
+ <20200301033344.808-3-marcos@mpdesouza.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAU4EEwEIADgCGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1oQAKCRDC
+ PZHzoSX+qCY6CACd+mWu3okGwRKXju6bou+7VkqCaHTdyXwWFTsr+/0ly5nUdDtT3yEVggPJ
+ 3VP70wjlrxUjNjFb6iIvGYxiPOrop1NGwGYvQktgRhaIhALG6rPoSSAhGNjwGVRw0km0PlIN
+ D29BTj/lYEk+jVM1YL0QLgAE1AI3krihg/lp/fQT53wLhR8YZIF8ETXbClQG1vJ0cllPuEEv
+ efKxRyiTSjB+PsozSvYWhXsPeJ+KKjFen7ebE5reQTPFzSHctCdPnoR/4jSPlnTlnEvLeqcD
+ ZTuKfQe1gWrPeevQzgCtgBF/WjIOeJs41klnYzC3DymuQlmFubss0jShLOW8eSOOWhLRuQEN
+ BFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcgaCbPEwhLj
+ 1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj/IrRUUka
+ 68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fNGSsRb+pK
+ EKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0q1eW4Jrv
+ 0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEvABEBAAGJ
+ ATwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1rgUJCWpOfwAKCRDCPZHz
+ oSX+qFcEB/95cs8cM1OQdE/GgOfCGxwgckMeWyzOR7bkAWW0lDVp2hpgJuxBW/gyfmtBnUai
+ fnggx3EE3ev8HTysZU9q0h+TJwwJKGv6sUc8qcTGFDtavnnl+r6xDUY7A6GvXEsSoCEEynby
+ 72byGeSovfq/4AWGNPBG1L61Exl+gbqfvbECP3ziXnob009+z9I4qXodHSYINfAkZkA523JG
+ ap12LndJeLk3gfWNZfXEWyGnuciRGbqESkhIRav8ootsCIops/SqXm0/k+Kcl4gGUO/iD/T5
+ oagaDh0QtOd8RWSMwLxwn8uIhpH84Q4X1LadJ5NCgGa6xPP5qqRuiC+9gZqbq4Nj
+Message-ID: <c0521ff0-2adb-0ef5-3dbe-e4f698188ec0@gmx.com>
+Date:   Mon, 2 Mar 2020 08:02:32 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.5.0
 MIME-Version: 1.0
-From:   Rich Rauenzahn <rrauenza@gmail.com>
-Date:   Sun, 1 Mar 2020 12:32:43 -0800
-Message-ID: <CAG+QAKWwvevCz5zYDtkOO5V0AA7bJuoZWHJ2CZjc1ofsO-c7xQ@mail.gmail.com>
-Subject: btrfs balance to add new drive taking ~60 hours, no progress?
-To:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+In-Reply-To: <20200301033344.808-3-marcos@mpdesouza.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="2QDc1CiT0R6FldNhAGmPPYNfSUPHYIRS3"
+X-Provags-ID: V03:K1:Zm0d+uv575+RjmG2j7nIdwWKfyC36Xb4bukuYXZzVdiPoXRKL3s
+ Solw5n6OrM3deGmb6V9dxnq+AKNSS1Vp+CdWNhhuXvnIht8zKYWFFoF7xhk/DpgHORa4MED
+ jMHNILXdK8nqGVHtpN+b7VGop4xMmDz2FJLfA1FjF+SYl5AS3j+UYpyTnRAWzYbEVT50nLj
+ fTGqh4HPSm2sWqHRIPBwQ==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:0irI6fugUKY=:zJ8w+uLHQwXeXWk8js7TV/
+ wTd6Gu8onTsFLHvuzQiEn3mL5zY+jsJZVpph6L4umHTe4fn7iuajdcgP0vDIPjqXgId446AgM
+ FH4e1ggpAQqNiYKxqtvzdjHff522sRuhwNSujHiiMGRKhm/4Gh07OYW5XesTHxg4JvdjX5bx1
+ Lvs6wh6ULGbr8RfiNwEAVEiT6TDU1Gy8zwv6zYEPp40RPQoyBxdot+L6tVzdah3sSFVNuRfS9
+ kiEsDW3B6PiFPpSSswpqLfHVyuSIBCPpSe6FpH9jq3LtMgro5S9YG6YE29FTspffT4g5Ctg5X
+ n289hxRcTEOyn0In3vHukDcFpXzXhX6b++ScK10vPp5TCSc3WUzpyIyWhpkAc5ED8G2wImKWL
+ sPxEo0A0uwsnDPymWlxrsRY8LzgxnZ+oCmbMbykxoBoYnPOStQ+FN85JXq4SYuYt7dUM/SVzL
+ T50CFIZx5RyL+5Z31fRVjZxpYcANEQLmmV8tHZeBa3T5rRnW9yFRTSXN6PXlX/FEaT6zADjWY
+ i0y1Rc8Caroo/R0LDHCz+xoezg7V03vIfIwGP4OheqV4PsDToHPF+D+QGfPT/EckBtI+P/zSG
+ WrSZkO24qI3Wt65PH7Ak+a40Ce+dvCx5142d7iFOt1nrCAw1iqAaCZNCMAQtSDecGzxCGhhvr
+ MfEUuAnvTwG+9KjE1o+JXc2Grm4BEAyDMu5u/SPv17A0F1F9pT74X1bbFkXP0i9XhiaoyZPUe
+ vgyvRTUiaThRkk8LzisbueyXeLk8qClo6a7OjafeD1XdZMyGITB3sSZXBHKeGIk0BRRhBWAWq
+ jl0YpPoLLp0XIq5CAKBg4+OQcLyg2GKpBJRWUulIPfM3rvp7o39BM6+PVxQ+OgI4sxQfm4n0Q
+ 1pn7E60ixCF73mGBD4wspQGrtdHdv2GIxdqucpQ2LJlBl0A5pAl8DF5tYJKt24vR+HCZHxT3m
+ NtPBZC5yjFW3icGLOzkGAXolWqZUr7cV5QDq4eD6a8bCCI0WxSd6WM3OKFiYUFwCQZlPTdvfq
+ q1sVm4uB27Dllk9F55nijWGCe2XYNJ9jN80dnn7cOBrPsy5sJwBcQwuLSAZDYu7ikNjnidzjn
+ ay/6RoQJhiZgo7cjcbX7sQrn5j+SzC3orMxweLyFqPFq7IRV9ndkXKE893Y675C0jphKBRHh/
+ VoUaiLCxggyL2bs0dRAYC1mtQs+0SR133lq06mXKFbeqnK39cP+howtr/5X1w2bVVXQf3BLyt
+ wQxJriTkDfy0EYFLT
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-(Is this just taking really long because I didn't provide filters when
-balancing across the new drive?)
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--2QDc1CiT0R6FldNhAGmPPYNfSUPHYIRS3
+Content-Type: multipart/mixed; boundary="vnBb21zbm06exBls2Q4LTA3V9qrIfFEs9"
 
-Also, I DID just change my /etc/fstab to not resume the balance just
-in case I reboot:
-
-/.BACKUPS               btrfs   compress=3Dlzo,subvol=3D.BACKUPS,skip_balan=
-ce   1 2
-
-Kernel version:
-
-Kernel:  5.5.5-1.el7.elrepo.x86_64
-
-The pool is mirrored, 2 copies.
-
-The last drive in the list is the one I added.  I think it's been at
-8MiB the whole time.
-
-$ sudo btrfs fi show /.BACKUPS/
-Label: 'BACKUPS'  uuid: cfd65dcd-2a63-4fb1-89a7-0bb9ebe66ddf
-        Total devices 4 FS bytes used 3.64TiB
-        devid    2 size 1.82TiB used 1.82TiB path /dev/sda1
-        devid    3 size 1.82TiB used 1.82TiB path /dev/sdc1
-        devid    4 size 3.64TiB used 3.64TiB path /dev/sdb1
-        devid    5 size 3.64TiB used 8.31MiB path /dev/sdj1
-
-$ sudo btrfs fi df /.BACKUPS/
-Data, RAID1: total=3D3.63TiB, used=3D3.63TiB
-System, RAID1: total=3D32.00MiB, used=3D736.00KiB
-Metadata, RAID1: total=3D5.00GiB, used=3D3.88GiB
-GlobalReserve, single: total=3D512.00MiB, used=3D0.00B
-
-$ btrfs fi usage /.BACKUPS/
-WARNING: cannot read detailed chunk info, RAID5/6 numbers will be
-incorrect, run as root
-Overall:
-    Device size:                  10.92TiB
-    Device allocated:              7.28TiB
-    Device unallocated:            3.64TiB
-    Device missing:               10.92TiB
-    Used:                          7.27TiB
-    Free (estimated):              1.82TiB      (min: 1.82TiB)
-    Data ratio:                       2.00
-    Metadata ratio:                   2.00
-    Global reserve:              512.00MiB      (used: 0.00B)
-
-$ sudo btrfs fi usage /.BACKUPS/
-Overall:
-    Device size:                  10.92TiB
-    Device allocated:              7.28TiB
-    Device unallocated:            3.64TiB
-    Device missing:                  0.00B
-    Used:                          7.27TiB
-    Free (estimated):              1.82TiB      (min: 1.82TiB)
-    Data ratio:                       2.00
-    Metadata ratio:                   2.00
-    Global reserve:              512.00MiB      (used: 0.00B)
-
-Data,RAID1: Size:3.63TiB, Used:3.63TiB
-   /dev/sda1       1.82TiB
-   /dev/sdb1       3.63TiB
-   /dev/sdc1       1.82TiB
-   /dev/sdj1       8.31MiB
-
-Metadata,RAID1: Size:5.00GiB, Used:3.88GiB
-   /dev/sda1       3.00GiB
-   /dev/sdb1       5.00GiB
-   /dev/sdc1       2.00GiB
-
-System,RAID1: Size:32.00MiB, Used:736.00KiB
-   /dev/sda1      32.00MiB
-   /dev/sdb1      32.00MiB
-
-Unallocated:
-   /dev/sda1       1.00MiB
-   /dev/sdb1       1.00MiB
-   /dev/sdc1       1.00MiB
-   /dev/sdj1       3.64TiB
+--vnBb21zbm06exBls2Q4LTA3V9qrIfFEs9
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
 
-Processes (I also tried a cancel, which is just hung as well)
 
-4 S root      3665     1  0  80   0 - 60315 -      06:45 ?
-00:00:00 sudo btrfs balance cancel /.BACKUPS/
-4 D root      3666  3665  0  80   0 -  3983 -      06:45 ?
-00:00:00 btrfs balance cancel /.BACKUPS/
-4 S root     14035     1  0  80   0 - 60315 -      Feb28 ?
-00:00:00 sudo btrfs filesystem balance /.BACKUPS/
-4 D root     14036 14035  2  80   0 -  3984 -      Feb28 ?
-00:59:12 btrfs filesystem balance /.BACKUPS/
+On 2020/3/1 =E4=B8=8A=E5=8D=8811:33, Marcos Paulo de Souza wrote:
+> From: Marcos Paulo de Souza <mpdesouza@suse.com>
+>=20
+> Since these two binaries are not shipped into userspace, and they are
+> used by the testsuite, they need to be include in the final tar.
+>=20
+> Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
+Reviewed-by: Qu Wenruo <wqu@suse.com>
 
-All four drives ARE blinking, and the process takes <10% CPU, but > 0%.
+Just a small nitpick, the prefix for the patch should be "btrfs-progs: "
+not "progs: ".
 
-2.6%:
+Thanks,
+Qu
+> ---
+>  Makefile              | 2 +-
+>  tests/testsuite-files | 2 ++
+>  2 files changed, 3 insertions(+), 1 deletion(-)
+>=20
+> diff --git a/Makefile b/Makefile
+> index b00eafe4..0cd7f0c1 100644
+> --- a/Makefile
+> +++ b/Makefile
+> @@ -424,7 +424,7 @@ test-inst: all
+> =20
+>  test: test-fsck test-mkfs test-misc test-cli test-convert test-fuzz
+> =20
+> -testsuite: btrfs-corrupt-block fssum
+> +testsuite: btrfs-corrupt-block btrfs-find-root btrfs-select-super fssu=
+m
+>  	@echo "Export tests as a package"
+>  	$(Q)cd tests && ./export-testsuite.sh
+> =20
+> diff --git a/tests/testsuite-files b/tests/testsuite-files
+> index 09df6298..507d35fb 100644
+> --- a/tests/testsuite-files
+> +++ b/tests/testsuite-files
+> @@ -3,6 +3,8 @@ G Documentation/
+>  F testsuite-id
+>  F ../fssum
+>  F ../btrfs-corrupt-block
+> +F ../btrfs-find-root
+> +F ../btrfs-select-super
+>  F common
+>  F common.convert
+>  F common.local
+>=20
 
-14036 root      20   0   15936    656    520 D   2.6  0.0  59:13.90
-btrfs filesystem balance /.BACKUPS/
 
-df, while probably misleading with btrfs:
+--vnBb21zbm06exBls2Q4LTA3V9qrIfFEs9--
 
-Filesystem      1K-blocks       Used  Available Use% Mounted on
-/dev/sda1      5860531080 3906340128        384 100% /.BACKUPS
+--2QDc1CiT0R6FldNhAGmPPYNfSUPHYIRS3
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
-dmesg has a lot of these, and you can see they are issued pretty quickly:
+-----BEGIN PGP SIGNATURE-----
 
-[773986.367090] BTRFS info (device sda1): found 472 extents
-[773986.583133] BTRFS info (device sda1): found 472 extents
-[773986.799169] BTRFS info (device sda1): found 472 extents
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAl5cTRgACgkQwj2R86El
+/qg38wf/c5rPS/aoqP8D3J/3ixt/kjRqV2eYtx5ZCTEeqFbI0chLRtQs3UhpDSGl
+3FFpJvfZ9EysVwmETfPeWQcYQHx2FkCFQZEKrn9wLi/IbuA43m2lA93xgzlCAnoj
+XLwcMN5MdA3LOYqXEwI/hwaU+KvX9A9KTVGXXb9uMnbTzKDvnBJMcvXg6vnd24cA
+UFzipy37y3aGJqAcx16zynR540MovDfV56/ln+VwIl9mW26l61Hy8mr0McIqUuU2
+SmPECQeSynKT8UF2Zs6S8/I9/ZzSCaUqndGDgdT33IfSwqE+Ztv2jP/TcV/eNCM5
+jncz7niPfN86DHfVb3DmHleBctXQrQ==
+=qrz2
+-----END PGP SIGNATURE-----
 
-sar output of relevant drives (10 secs):
-
-10:26:23 AM       DEV       tps  rd_sec/s  wr_sec/s  avgrq-sz
-avgqu-sz     await     svctm     %util
-10:26:26 AM       sdb     78.45      0.00   2312.37     29.48
-0.48      6.64      0.58      4.52
-10:26:26 AM       sda     78.80      0.00   2312.37     29.35
-0.94     12.53      0.53      4.20
-10:26:26 AM       sdc     36.40      0.00    220.49      6.06
-0.25      7.24      0.85      3.11
-10:26:26 AM       sdj     36.40      0.00    220.49      6.06
-0.23      6.74      0.83      3.04
-
-$ sudo btrfs balance status -v /.BACKUPS/
-Balance on '/.BACKUPS/' is running, cancel requested
-0 out of about 3733 chunks balanced (29 considered), 100% left
-Dumping filters: flags 0x7, state 0x5, force is off
-  DATA (flags 0x0): balancing
-  METADATA (flags 0x0): balancing
-  SYSTEM (flags 0x0): balancing
-
-Oh, and the drive does think it is out of space even though the drive
-has been added:
-
-$ dd if=3D/dev/random of=3Drandom
-dd: writing to =E2=80=98random=E2=80=99: No space left on device
-0+7 records in
-0+0 records out
-0 bytes (0 B) copied, 0.341074 s, 0.0 kB/s
+--2QDc1CiT0R6FldNhAGmPPYNfSUPHYIRS3--

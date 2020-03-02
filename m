@@ -6,27 +6,27 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E1924C3F2D8
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 656B7C3F2D2
 	for <linux-btrfs@archiver.kernel.org>; Mon,  2 Mar 2020 09:46:20 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id AB6E1246B4
+	by mail.kernel.org (Postfix) with ESMTP id 44EE5246BB
 	for <linux-btrfs@archiver.kernel.org>; Mon,  2 Mar 2020 09:46:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727464AbgCBJqS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 2 Mar 2020 04:46:18 -0500
-Received: from mx2.suse.de ([195.135.220.15]:44070 "EHLO mx2.suse.de"
+        id S1727421AbgCBJqN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 2 Mar 2020 04:46:13 -0500
+Received: from mx2.suse.de ([195.135.220.15]:44000 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727436AbgCBJqS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 2 Mar 2020 04:46:18 -0500
+        id S1726654AbgCBJqM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 2 Mar 2020 04:46:12 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 8E045B0B6
-        for <linux-btrfs@vger.kernel.org>; Mon,  2 Mar 2020 09:46:16 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 30355AD10
+        for <linux-btrfs@vger.kernel.org>; Mon,  2 Mar 2020 09:46:10 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 08/10] btrfs: relocation: Remove the open-coded goto loop for breadth-first search
-Date:   Mon,  2 Mar 2020 17:45:51 +0800
-Message-Id: <20200302094553.58827-9-wqu@suse.com>
+Subject: [PATCH v2 05/10] btrfs: relocation: Refactor tree backref processing into its own function
+Date:   Mon,  2 Mar 2020 17:45:48 +0800
+Message-Id: <20200302094553.58827-6-wqu@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <20200302094553.58827-1-wqu@suse.com>
 References: <20200302094553.58827-1-wqu@suse.com>
@@ -37,239 +37,463 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-build_backref_tree() uses "goto again;" to implement a breadth-first
-search to build backref cache.
+build_backref_tree() function is painfully long, as it has 3 big parts:
+- Tree backref handling
+- Weaving backref nodes
+- Useless nodes pruning
 
-This patch will extract most of its work into a wrapper,
-handle_one_tree_block(), and use a while() loop to implement the same
-thing.
+This patch will move the tree backref handling into its own function,
+handle_one_tree_backref().
+
+And inside that function, the main works are determined by the backref
+key:
+- BTRFS_SHARED_BLOCK_REF_KEY
+  We know the parent node bytenr directly.
+  If the parent is cached, or it's root, call it a day.
+  If the parent is not cached, add it pending list.
+
+- BTRFS_TREE_BLOCK_REF_KEY
+  The most complex work.
+  We need to grab the fs root, do a tree search to locate all its
+  parent nodes, weaving all needed edges, and put all uncached edges to
+  pending edge list.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/relocation.c | 167 +++++++++++++++++++++++-------------------
- 1 file changed, 91 insertions(+), 76 deletions(-)
+ fs/btrfs/relocation.c | 395 +++++++++++++++++++++---------------------
+ 1 file changed, 202 insertions(+), 193 deletions(-)
 
 diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 67a4a61eb86a..26089694b3b5 100644
+index d1e1d613ab98..04416489d87a 100644
 --- a/fs/btrfs/relocation.c
 +++ b/fs/btrfs/relocation.c
-@@ -892,65 +892,21 @@ static int handle_one_tree_backref(struct reloc_control *rc,
- 	return ret;
+@@ -666,6 +666,206 @@ static struct btrfs_root *read_fs_root(struct btrfs_fs_info *fs_info,
+ 	return btrfs_get_fs_root(fs_info, &key, false);
  }
  
--/*
-- * build backref tree for a given tree block. root of the backref tree
-- * corresponds the tree block, leaves of the backref tree correspond
-- * roots of b-trees that reference the tree block.
-- *
-- * the basic idea of this function is check backrefs of a given block
-- * to find upper level blocks that reference the block, and then check
-- * backrefs of these upper level blocks recursively. the recursion stop
-- * when tree root is reached or backrefs for the block is cached.
-- *
-- * NOTE: if we find backrefs for a block are cached, we know backrefs
-- * for all upper level blocks that directly/indirectly reference the
-- * block are also cached.
-- */
--static noinline_for_stack
--struct backref_node *build_backref_tree(struct reloc_control *rc,
--					struct btrfs_key *node_key,
--					int level, u64 bytenr)
-+static int handle_one_tree_block(struct reloc_control *rc,
-+				 struct list_head *useless_node,
-+				 struct list_head *pending_edge,
-+				 struct btrfs_path *path,
-+				 struct btrfs_backref_iter *iter,
-+				 struct btrfs_key *node_key,
-+				 struct backref_node *cur)
- {
--	struct btrfs_backref_iter *iter;
--	struct backref_cache *cache = &rc->backref_cache;
--	struct btrfs_path *path; /* For searching parent of TREE_BLOCK_REF */
--	struct backref_node *cur;
--	struct backref_node *upper;
--	struct backref_node *lower;
--	struct backref_node *node = NULL;
--	struct backref_node *exist = NULL;
- 	struct backref_edge *edge;
--	struct rb_node *rb_node;
--	LIST_HEAD(list); /* Pending edge list, upper node needs to be checked */
--	LIST_HEAD(useless);
--	int cowonly;
-+	struct backref_node *exist;
- 	int ret;
--	int err = 0;
--
--	iter = btrfs_backref_iter_alloc(rc->extent_root->fs_info, GFP_NOFS);
--	if (!iter)
--		return ERR_PTR(-ENOMEM);
--	path = btrfs_alloc_path();
--	if (!path) {
--		err = -ENOMEM;
--		goto out;
--	}
--	path->reada = READA_FORWARD;
--
--	node = alloc_backref_node(cache, bytenr, level);
--	if (!node) {
--		err = -ENOMEM;
--		goto out;
--	}
- 
--	node->lowest = 1;
--	cur = node;
--again:
- 	ret = btrfs_backref_iter_start(iter, cur->bytenr);
--	if (ret < 0) {
--		err = ret;
--		goto out;
--	}
-+	if (ret < 0)
-+		return ret;
- 
- 	/*
- 	 * We skip the first btrfs_tree_block_info, as we don't use the key
-@@ -958,13 +914,11 @@ struct backref_node *build_backref_tree(struct reloc_control *rc,
- 	 */
- 	if (btrfs_backref_has_tree_block_info(iter)) {
- 		ret = btrfs_backref_iter_next(iter);
--		if (ret < 0) {
--			err = ret;
-+		if (ret < 0)
- 			goto out;
--		}
- 		/* No extra backref? This means the tree block is corrupted */
- 		if (ret > 0) {
--			err = -EUCLEAN;
-+			ret = -EUCLEAN;
- 			goto out;
- 		}
- 	}
-@@ -984,7 +938,7 @@ struct backref_node *build_backref_tree(struct reloc_control *rc,
- 		 * check its backrefs
- 		 */
- 		if (!exist->checked)
--			list_add_tail(&edge->list[UPPER], &list);
++static int handle_one_tree_backref(struct reloc_control *rc,
++				   struct list_head *useless_node,
++				   struct list_head *pending_edge,
++				   struct btrfs_path *path,
++				   struct btrfs_key *ref_key,
++				   struct btrfs_key *tree_key,
++				   struct backref_node *cur)
++{
++	struct btrfs_fs_info *fs_info = rc->extent_root->fs_info;
++	struct backref_cache *cache = &rc->backref_cache;
++	struct backref_node *upper;
++	struct backref_node *lower;
++	struct backref_edge *edge;
++	struct extent_buffer *eb;
++	struct btrfs_root *root;
++	struct rb_node *rb_node;
++	bool need_check = true;
++	int level;
++	int ret = 0;
++
++	if (ref_key->type != BTRFS_TREE_BLOCK_REF_KEY &&
++	    ref_key->type != BTRFS_SHARED_BLOCK_REF_KEY)
++		return -EUCLEAN;
++
++	/* SHARED_BLOCK_REF means key.offset is the parent bytenr */
++	if (ref_key->type == BTRFS_SHARED_BLOCK_REF_KEY) {
++
++		/* Only reloc root uses backref pointing to itself */
++		if (ref_key->objectid == ref_key->offset) {
++			root = find_reloc_root(rc, cur->bytenr);
++			if (WARN_ON(!root))
++				return -ENOENT;
++			cur->root = root;
++			return 0;
++		}
++
++		edge = alloc_backref_edge(cache);
++		if (!edge)
++			return -ENOMEM;
++
++		rb_node = tree_search(&cache->rb_root, ref_key->offset);
++		if (!rb_node) {
++			/* Parent node not yet cached */
++			upper = alloc_backref_node(cache);
++			if (!upper) {
++				free_backref_edge(cache, edge);
++				return -ENOMEM;
++			}
++			upper->bytenr = ref_key->offset;
++			upper->level = cur->level + 1;
++
++			/*
++			 *  backrefs for the upper level block isn't
++			 *  cached, add the block to pending list
++			 */
 +			list_add_tail(&edge->list[UPPER], pending_edge);
- 	} else {
- 		exist = NULL;
- 	}
-@@ -1006,7 +960,7 @@ struct backref_node *build_backref_tree(struct reloc_control *rc,
- 			type = btrfs_get_extent_inline_ref_type(eb, iref,
- 							BTRFS_REF_TYPE_BLOCK);
- 			if (type == BTRFS_REF_TYPE_INVALID) {
--				err = -EUCLEAN;
-+				ret = -EUCLEAN;
- 				goto out;
- 			}
- 			key.type = type;
-@@ -1029,29 +983,90 @@ struct backref_node *build_backref_tree(struct reloc_control *rc,
++		} else {
++			/* Parent node already cached */
++			upper = rb_entry(rb_node, struct backref_node,
++					 rb_node);
++			ASSERT(upper->checked);
++			INIT_LIST_HEAD(&edge->list[UPPER]);
++		}
++		list_add_tail(&edge->list[LOWER], &cur->upper);
++		edge->node[LOWER] = cur;
++		edge->node[UPPER] = upper;
++		return 0;
++	}
++	/*
++	 * ref_key.type == BTRFS_TREE_BLOCK_REF_KEY, ref_key->offset means the
++	 * root objectid. We need to search the tree to get its parent bytenr.
++	 */
++	root = read_fs_root(fs_info, ref_key->offset);
++	if (IS_ERR(root))
++		return PTR_ERR(root);
++	if (!test_bit(BTRFS_ROOT_REF_COWS, &root->state))
++		cur->cowonly = 1;
++
++	if (btrfs_root_level(&root->root_item) == cur->level) {
++		/* tree root */
++		ASSERT(btrfs_root_bytenr(&root->root_item) ==
++		       cur->bytenr);
++		if (should_ignore_root(root)) {
++			btrfs_put_root(root);
++			list_add(&cur->list, useless_node);
++		} else {
++			cur->root = root;
++		}
++		return 0;
++	}
++
++	level = cur->level + 1;
++
++	/* Search the tree to find parent blocks referring the block. */
++	path->search_commit_root = 1;
++	path->skip_locking = 1;
++	path->lowest_level = level;
++	ret = btrfs_search_slot(NULL, root, tree_key, path, 0, 0);
++	path->lowest_level = 0;
++	if (ret < 0) {
++		btrfs_put_root(root);
++		return ret;
++	}
++	if (ret > 0 && path->slots[level] > 0)
++		path->slots[level]--;
++
++	eb = path->nodes[level];
++	if (btrfs_node_blockptr(eb, path->slots[level]) != cur->bytenr) {
++		btrfs_err(fs_info,
++"couldn't find block (%llu) (level %d) in tree (%llu) with key (%llu %u %llu)",
++			  cur->bytenr, level - 1, root->root_key.objectid,
++			  tree_key->objectid, tree_key->type, tree_key->offset);
++		btrfs_put_root(root);
++		ret = -ENOENT;
++		goto out;
++	}
++	lower = cur;
++
++	/* Add all nodes and edges in the path */
++	for (; level < BTRFS_MAX_LEVEL; level++) {
++		if (!path->nodes[level]) {
++			ASSERT(btrfs_root_bytenr(&root->root_item) ==
++			       lower->bytenr);
++			if (should_ignore_root(root)) {
++				btrfs_put_root(root);
++				list_add(&lower->list, useless_node);
++			} else {
++				lower->root = root;
++			}
++			break;
++		}
++
++		edge = alloc_backref_edge(cache);
++		if (!edge) {
++			btrfs_put_root(root);
++			ret = -ENOMEM;
++			goto out;
++		}
++
++		eb = path->nodes[level];
++		rb_node = tree_search(&cache->rb_root, eb->start);
++		if (!rb_node) {
++			upper = alloc_backref_node(cache);
++			if (!upper) {
++				btrfs_put_root(root);
++				free_backref_edge(cache, edge);
++				ret = -ENOMEM;
++				goto out;
++			}
++			upper->bytenr = eb->start;
++			upper->owner = btrfs_header_owner(eb);
++			upper->level = lower->level + 1;
++			if (!test_bit(BTRFS_ROOT_REF_COWS, &root->state))
++				upper->cowonly = 1;
++
++			/*
++			 * if we know the block isn't shared we can void
++			 * checking its backrefs.
++			 */
++			if (btrfs_block_can_be_shared(root, eb))
++				upper->checked = 0;
++			else
++				upper->checked = 1;
++
++			/*
++			 * add the block to pending list if we need check its
++			 * backrefs, we only do this once while walking up a
++			 * tree as we will catch anything else later on.
++			 */
++			if (!upper->checked && need_check) {
++				need_check = false;
++				list_add_tail(&edge->list[UPPER], pending_edge);
++			} else {
++				if (upper->checked)
++					need_check = true;
++				INIT_LIST_HEAD(&edge->list[UPPER]);
++			}
++		} else {
++			upper = rb_entry(rb_node, struct backref_node, rb_node);
++			ASSERT(upper->checked);
++			INIT_LIST_HEAD(&edge->list[UPPER]);
++			if (!upper->owner)
++				upper->owner = btrfs_header_owner(eb);
++		}
++		list_add_tail(&edge->list[LOWER], &lower->upper);
++		edge->node[LOWER] = lower;
++		edge->node[UPPER] = upper;
++
++		if (rb_node) {
++			btrfs_put_root(root);
++			break;
++		}
++		lower = upper;
++		upper = NULL;
++	}
++out:
++	btrfs_release_path(path);
++	return ret;
++}
++
+ /*
+  * build backref tree for a given tree block. root of the backref tree
+  * corresponds the tree block, leaves of the backref tree correspond
+@@ -688,7 +888,6 @@ struct backref_node *build_backref_tree(struct reloc_control *rc,
+ 	struct btrfs_backref_iter *iter;
+ 	struct backref_cache *cache = &rc->backref_cache;
+ 	struct btrfs_path *path; /* For searching parent of TREE_BLOCK_REF */
+-	struct btrfs_root *root;
+ 	struct backref_node *cur;
+ 	struct backref_node *upper;
+ 	struct backref_node *lower;
+@@ -701,7 +900,6 @@ struct backref_node *build_backref_tree(struct reloc_control *rc,
+ 	int cowonly;
+ 	int ret;
+ 	int err = 0;
+-	bool need_check = true;
+ 
+ 	iter = btrfs_backref_iter_alloc(rc->extent_root->fs_info, GFP_NOFS);
+ 	if (!iter)
+@@ -807,201 +1005,12 @@ struct backref_node *build_backref_tree(struct reloc_control *rc,
  			continue;
  		}
  
--		ret = handle_one_tree_backref(rc, &useless, &list, path, &key,
--					      node_key, cur);
--		if (ret < 0) {
--			err = ret;
-+		ret = handle_one_tree_backref(rc, useless_node, pending_edge, path,
-+					      &key, node_key, cur);
-+		if (ret < 0)
- 			goto out;
--		}
- 	}
--	if (ret < 0) {
--		err = ret;
-+	if (ret < 0)
- 		goto out;
--	}
- 	ret = 0;
--	btrfs_backref_iter_release(iter);
+-		/* SHARED_BLOCK_REF means key.offset is the parent bytenr */
+-		if (key.type == BTRFS_SHARED_BLOCK_REF_KEY) {
+-			if (key.objectid == key.offset) {
+-				/*
+-				 * Only root blocks of reloc trees use backref
+-				 * pointing to itself.
+-				 */
+-				root = find_reloc_root(rc, cur->bytenr);
+-				ASSERT(root);
+-				cur->root = root;
+-				break;
+-			}
 -
- 	cur->checked = 1;
- 	WARN_ON(exist);
-+out:
-+	btrfs_backref_iter_release(iter);
-+	return ret;
-+}
- 
--	/* the pending list isn't empty, take the first block to process */
--	if (!list_empty(&list)) {
--		edge = list_entry(list.next, struct backref_edge, list[UPPER]);
--		list_del_init(&edge->list[UPPER]);
--		cur = edge->node[UPPER];
--		goto again;
-+/*
-+ * build backref tree for a given tree block. root of the backref tree
-+ * corresponds the tree block, leaves of the backref tree correspond
-+ * roots of b-trees that reference the tree block.
-+ *
-+ * the basic idea of this function is check backrefs of a given block
-+ * to find upper level blocks that reference the block, and then check
-+ * backrefs of these upper level blocks recursively. the recursion stop
-+ * when tree root is reached or backrefs for the block is cached.
-+ *
-+ * NOTE: if we find backrefs for a block are cached, we know backrefs
-+ * for all upper level blocks that directly/indirectly reference the
-+ * block are also cached.
-+ */
-+static noinline_for_stack
-+struct backref_node *build_backref_tree(struct reloc_control *rc,
-+					struct btrfs_key *node_key,
-+					int level, u64 bytenr)
-+{
-+	struct btrfs_backref_iter *iter;
-+	struct backref_cache *cache = &rc->backref_cache;
-+	struct btrfs_path *path; /* For searching parent of TREE_BLOCK_REF */
-+	struct backref_node *cur;
-+	struct backref_node *upper;
-+	struct backref_node *lower;
-+	struct backref_node *node = NULL;
-+	struct backref_edge *edge;
-+	struct rb_node *rb_node;
-+	LIST_HEAD(list); /* Pending edge list, upper node needs to be checked */
-+	LIST_HEAD(useless);
-+	int cowonly;
-+	int ret;
-+	int err = 0;
-+
-+	iter = btrfs_backref_iter_alloc(rc->extent_root->fs_info, GFP_NOFS);
-+	if (!iter)
-+		return ERR_PTR(-ENOMEM);
-+	path = btrfs_alloc_path();
-+	if (!path) {
-+		err = -ENOMEM;
-+		goto out;
-+	}
-+	path->reada = READA_FORWARD;
-+
-+	node = alloc_backref_node(cache, bytenr, level);
-+	if (!node) {
-+		err = -ENOMEM;
-+		goto out;
-+	}
-+
-+	node->lowest = 1;
-+	cur = node;
-+
-+	/* Breadth-first search to build backref cache */
-+	while (1) {
-+		ret = handle_one_tree_block(rc, &useless, &list, path, iter,
-+					    node_key, cur);
-+		if (ret < 0) {
-+			err = ret;
-+			goto out;
-+		}
-+		/* the pending list isn't empty, take the first block to process */
-+		if (!list_empty(&list)) {
-+			edge = list_entry(list.next, struct backref_edge, list[UPPER]);
-+			list_del_init(&edge->list[UPPER]);
-+			cur = edge->node[UPPER];
-+		} else {
-+			break;
-+		}
+-			edge = alloc_backref_edge(cache);
+-			if (!edge) {
+-				err = -ENOMEM;
+-				goto out;
+-			}
+-			rb_node = tree_search(&cache->rb_root, key.offset);
+-			if (!rb_node) {
+-				upper = alloc_backref_node(cache);
+-				if (!upper) {
+-					free_backref_edge(cache, edge);
+-					err = -ENOMEM;
+-					goto out;
+-				}
+-				upper->bytenr = key.offset;
+-				upper->level = cur->level + 1;
+-				/*
+-				 *  backrefs for the upper level block isn't
+-				 *  cached, add the block to pending list
+-				 */
+-				list_add_tail(&edge->list[UPPER], &list);
+-			} else {
+-				upper = rb_entry(rb_node, struct backref_node,
+-						 rb_node);
+-				ASSERT(upper->checked);
+-				INIT_LIST_HEAD(&edge->list[UPPER]);
+-			}
+-			list_add_tail(&edge->list[LOWER], &cur->upper);
+-			edge->node[LOWER] = cur;
+-			edge->node[UPPER] = upper;
+-
+-			continue;
+-		} else if (unlikely(key.type == BTRFS_EXTENT_REF_V0_KEY)) {
+-			err = -EINVAL;
+-			btrfs_print_v0_err(rc->extent_root->fs_info);
+-			btrfs_handle_fs_error(rc->extent_root->fs_info, err,
+-					      NULL);
+-			goto out;
+-		} else if (key.type != BTRFS_TREE_BLOCK_REF_KEY) {
+-			continue;
+-		}
+-
+-		/*
+-		 * key.type == BTRFS_TREE_BLOCK_REF_KEY, inline ref offset
+-		 * means the root objectid. We need to search the tree to get
+-		 * its parent bytenr.
+-		 */
+-		root = read_fs_root(rc->extent_root->fs_info, key.offset);
+-		if (IS_ERR(root)) {
+-			err = PTR_ERR(root);
+-			goto out;
+-		}
+-
+-		if (!test_bit(BTRFS_ROOT_REF_COWS, &root->state))
+-			cur->cowonly = 1;
+-
+-		if (btrfs_root_level(&root->root_item) == cur->level) {
+-			/* tree root */
+-			ASSERT(btrfs_root_bytenr(&root->root_item) ==
+-			       cur->bytenr);
+-			if (should_ignore_root(root)) {
+-				btrfs_put_root(root);
+-				list_add(&cur->list, &useless);
+-			} else {
+-				cur->root = root;
+-			}
+-			break;
+-		}
+-
+-		level = cur->level + 1;
+-
+-		/* Search the tree to find parent blocks referring the block. */
+-		path->search_commit_root = 1;
+-		path->skip_locking = 1;
+-		path->lowest_level = level;
+-		ret = btrfs_search_slot(NULL, root, node_key, path, 0, 0);
+-		path->lowest_level = 0;
++		ret = handle_one_tree_backref(rc, &useless, &list, path, &key,
++					      node_key, cur);
+ 		if (ret < 0) {
+-			btrfs_put_root(root);
+ 			err = ret;
+ 			goto out;
+ 		}
+-		if (ret > 0 && path->slots[level] > 0)
+-			path->slots[level]--;
+-
+-		eb = path->nodes[level];
+-		if (btrfs_node_blockptr(eb, path->slots[level]) !=
+-		    cur->bytenr) {
+-			btrfs_err(root->fs_info,
+-	"couldn't find block (%llu) (level %d) in tree (%llu) with key (%llu %u %llu)",
+-				  cur->bytenr, level - 1,
+-				  root->root_key.objectid,
+-				  node_key->objectid, node_key->type,
+-				  node_key->offset);
+-			btrfs_put_root(root);
+-			err = -ENOENT;
+-			goto out;
+-		}
+-		lower = cur;
+-		need_check = true;
+-
+-		/* Add all nodes and edges in the path */
+-		for (; level < BTRFS_MAX_LEVEL; level++) {
+-			if (!path->nodes[level]) {
+-				ASSERT(btrfs_root_bytenr(&root->root_item) ==
+-				       lower->bytenr);
+-				if (should_ignore_root(root)) {
+-					btrfs_put_root(root);
+-					list_add(&lower->list, &useless);
+-				} else {
+-					lower->root = root;
+-				}
+-				break;
+-			}
+-
+-			edge = alloc_backref_edge(cache);
+-			if (!edge) {
+-				btrfs_put_root(root);
+-				err = -ENOMEM;
+-				goto out;
+-			}
+-
+-			eb = path->nodes[level];
+-			rb_node = tree_search(&cache->rb_root, eb->start);
+-			if (!rb_node) {
+-				upper = alloc_backref_node(cache);
+-				if (!upper) {
+-					btrfs_put_root(root);
+-					free_backref_edge(cache, edge);
+-					err = -ENOMEM;
+-					goto out;
+-				}
+-				upper->bytenr = eb->start;
+-				upper->owner = btrfs_header_owner(eb);
+-				upper->level = lower->level + 1;
+-				if (!test_bit(BTRFS_ROOT_REF_COWS,
+-					      &root->state))
+-					upper->cowonly = 1;
+-
+-				/*
+-				 * if we know the block isn't shared
+-				 * we can void checking its backrefs.
+-				 */
+-				if (btrfs_block_can_be_shared(root, eb))
+-					upper->checked = 0;
+-				else
+-					upper->checked = 1;
+-
+-				/*
+-				 * add the block to pending list if we
+-				 * need check its backrefs, we only do this once
+-				 * while walking up a tree as we will catch
+-				 * anything else later on.
+-				 */
+-				if (!upper->checked && need_check) {
+-					need_check = false;
+-					list_add_tail(&edge->list[UPPER],
+-						      &list);
+-				} else {
+-					if (upper->checked)
+-						need_check = true;
+-					INIT_LIST_HEAD(&edge->list[UPPER]);
+-				}
+-			} else {
+-				upper = rb_entry(rb_node, struct backref_node,
+-						 rb_node);
+-				ASSERT(upper->checked);
+-				INIT_LIST_HEAD(&edge->list[UPPER]);
+-				if (!upper->owner)
+-					upper->owner = btrfs_header_owner(eb);
+-			}
+-			list_add_tail(&edge->list[LOWER], &lower->upper);
+-			edge->node[LOWER] = lower;
+-			edge->node[UPPER] = upper;
+-
+-			if (rb_node) {
+-				btrfs_put_root(root);
+-				break;
+-			}
+-			lower = upper;
+-			upper = NULL;
+-		}
+-		btrfs_release_path(path);
  	}
- 
- 	/*
+ 	if (ret < 0) {
+ 		err = ret;
 -- 
 2.25.1
 

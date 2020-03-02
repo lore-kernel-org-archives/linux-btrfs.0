@@ -6,27 +6,27 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8B8FAC3F2D5
-	for <linux-btrfs@archiver.kernel.org>; Mon,  2 Mar 2020 09:46:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 65F65C3F2D7
+	for <linux-btrfs@archiver.kernel.org>; Mon,  2 Mar 2020 09:46:22 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 64093246B4
-	for <linux-btrfs@archiver.kernel.org>; Mon,  2 Mar 2020 09:46:20 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 475FC246BB
+	for <linux-btrfs@archiver.kernel.org>; Mon,  2 Mar 2020 09:46:22 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727430AbgCBJqP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 2 Mar 2020 04:46:15 -0500
-Received: from mx2.suse.de ([195.135.220.15]:44026 "EHLO mx2.suse.de"
+        id S1727497AbgCBJqV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 2 Mar 2020 04:46:21 -0500
+Received: from mx2.suse.de ([195.135.220.15]:44076 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726654AbgCBJqO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 2 Mar 2020 04:46:14 -0500
+        id S1727436AbgCBJqU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 2 Mar 2020 04:46:20 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id ACB53B02C
-        for <linux-btrfs@vger.kernel.org>; Mon,  2 Mar 2020 09:46:12 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 68D6EAD10
+        for <linux-btrfs@vger.kernel.org>; Mon,  2 Mar 2020 09:46:18 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 06/10] btrfs: relocation: Use wrapper to replace open-coded edge linking
-Date:   Mon,  2 Mar 2020 17:45:49 +0800
-Message-Id: <20200302094553.58827-7-wqu@suse.com>
+Subject: [PATCH v2 09/10] btrfs: relocation: Refactor the finishing part of upper linkage into finish_upper_links()
+Date:   Mon,  2 Mar 2020 17:45:52 +0800
+Message-Id: <20200302094553.58827-10-wqu@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <20200302094553.58827-1-wqu@suse.com>
 References: <20200302094553.58827-1-wqu@suse.com>
@@ -37,136 +37,222 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Since backref_edge is used to connect upper and lower backref nodes, and
-need to access both nodes, some code can look pretty nasty:
+After handle_one_tree_backref(), all newly added (not cached) edges and
+nodes have the following features:
 
-		list_add_tail(&edge->list[LOWER], &cur->upper);
+- Only backref_edge::list[LOWER] is linked.
+  This means, we can only iterate from botton to top, not the other
+  direction.
 
-The above code will link @cur to the LOWER side of the edge, while both
-"LOWER" and "upper" words show up.
-This can sometimes be very confusing for reader to grasp.
+- Newly added nodes are not added to cache rb_tree yet
 
-This patch introduce a new wrapper, link_backref_edge(), to handle the
-linking behavior.
-Which also has extra ASSERT() to ensure caller won't pass wrong nodes
-in.
+So to finish the backref cache, we still need to finish the links and
+add all nodes into backref cache rb_tree.
 
-Also, this updates the comment of related lists of backref_node and
-backref_edge, to make it more clear that each list points to what.
+This patch will refactor the existing code into finish_upper_links(),
+add more comments of each branch, and why we need to do all these works.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/relocation.c | 53 ++++++++++++++++++++++++++++++-------------
- 1 file changed, 37 insertions(+), 16 deletions(-)
+ fs/btrfs/relocation.c | 163 +++++++++++++++++++++++++++---------------
+ 1 file changed, 107 insertions(+), 56 deletions(-)
 
 diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 04416489d87a..c76849409c81 100644
+index 26089694b3b5..b42c3d088be4 100644
 --- a/fs/btrfs/relocation.c
 +++ b/fs/btrfs/relocation.c
-@@ -91,10 +91,12 @@ struct backref_node {
- 	u64 owner;
- 	/* link to pending, changed or detached list */
- 	struct list_head list;
--	/* list of upper level blocks reference this block */
-+
-+	/* List of upper level edges, which links this node to its parent(s) */
- 	struct list_head upper;
--	/* list of child blocks in the cache */
-+	/* List of lower level edges, which links this node to its child(ren) */
- 	struct list_head lower;
-+
- 	/* NULL if this node is not tree root */
- 	struct btrfs_root *root;
- 	/* extent buffer got by COW the block */
-@@ -123,17 +125,26 @@ struct backref_node {
- 	unsigned int detached:1;
- };
- 
-+#define LOWER	0
-+#define UPPER	1
-+#define RELOCATION_RESERVED_NODES	256
- /*
-- * present a block pointer in the backref cache
-+ * present an edge connecting upper and lower backref nodes.
-  */
- struct backref_edge {
-+	/*
-+	 * list[LOWER] is linked to backref_node::upper of lower level node,
-+	 * and list[UPPER] is linked to backref_node::lower of upper level node.
-+	 *
-+	 * Also, build_backref_tree() uses list[UPPER] for pending edges, before
-+	 * linking list[UPPER] to its upper level nodes.
-+	 */
- 	struct list_head list[2];
-+
-+	/* Two related nodes */
- 	struct backref_node *node[2];
- };
- 
--#define LOWER	0
--#define UPPER	1
--#define RELOCATION_RESERVED_NODES	256
- 
- struct backref_cache {
- 	/* red black tree of all backref nodes in the cache */
-@@ -332,6 +343,22 @@ static struct backref_edge *alloc_backref_edge(struct backref_cache *cache)
- 	return edge;
+@@ -998,6 +998,106 @@ static int handle_one_tree_block(struct reloc_control *rc,
+ 	return ret;
  }
  
-+#define		LINK_LOWER	(1 << 0)
-+#define		LINK_UPPER	(1 << 1)
-+static inline void link_backref_edge(struct backref_edge *edge,
-+				     struct backref_node *lower,
-+				     struct backref_node *upper,
-+				     int link_which)
++/*
++ * In handle_one_tree_backref(), we have only linked the lower node to the edge,
++ * but the upper node hasn't been linked to the edge.
++ * This means we can only iterate through backref_node::upper to reach parent
++ * edges, but not through backref_node::lower to reach children edges.
++ *
++ * This function will finish the backref_node::lower to related edges, so that
++ * backref cache can be bi-directionally iterated.
++ *
++ * Also, this will add the nodes to backref cache for next run.
++ */
++static int finish_upper_links(struct backref_cache *cache,
++			      struct backref_node *start,
++			      struct list_head *useless_node)
 +{
-+	ASSERT(upper && lower && upper->level == lower->level + 1);
-+	edge->node[LOWER] = lower;
-+	edge->node[UPPER] = upper;
-+	if (link_which & LINK_LOWER)
-+		list_add_tail(&edge->list[LOWER], &lower->upper);
-+	if (link_which & LINK_UPPER)
++	struct backref_edge *edge;
++	LIST_HEAD(pending_edge);
++
++	/*
++	 * Use breadth first search to iterate all related edges.
++	 *
++	 * The start point is all the edges of this node
++	 */
++	list_for_each_entry(edge, &start->upper, list[LOWER])
++		list_add_tail(&edge->list[UPPER], &pending_edge);
++
++	while (!list_empty(&pending_edge)) {
++		struct backref_node *upper;
++		struct backref_node *lower;
++		struct rb_node *rb_node;
++
++		edge = list_entry(pending_edge.next, struct backref_edge,
++				  list[UPPER]);
++		list_del_init(&edge->list[UPPER]);
++		upper = edge->node[UPPER];
++		lower = edge->node[LOWER];
++
++		/* Parent is detached, no need to keep any edges */
++		if (upper->detached) {
++			list_del(&edge->list[LOWER]);
++			free_backref_edge(cache, edge);
++
++			/* Lower node is orphan, queue for cleanup */
++			if (list_empty(&lower->upper))
++				list_add(&lower->list, useless_node);
++			continue;
++		}
++
++		/*
++		 * All new nodes added in current build_backref_tree() haven't
++		 * been linked to the cache rb tree.
++		 * So if we have upper->rb_node populated, this means a cache
++		 * hit. We only need to link the edge, as @upper and all its
++		 * parent have already been linked.
++		 */
++		if (!RB_EMPTY_NODE(&upper->rb_node)) {
++			if (upper->lowest) {
++				list_del_init(&upper->lower);
++				upper->lowest = 0;
++			}
++
++			list_add_tail(&edge->list[UPPER], &upper->lower);
++			continue;
++		}
++
++		/* Sanity check, we shouldn't have any unchecked nodes */
++		if (!upper->checked) {
++			ASSERT(0);
++			return -EUCLEAN;
++		}
++
++		/* Sanity check, cowonly node has non-cowonly parent */
++		if (start->cowonly != upper->cowonly) {
++			ASSERT(0);
++			return -EUCLEAN;
++		}
++
++		/* Only cache non-cowonly (subvolume trees) tree blocks */
++		if (!upper->cowonly) {
++			rb_node = tree_insert(&cache->rb_root, upper->bytenr,
++					      &upper->rb_node);
++			if (rb_node) {
++				backref_tree_panic(rb_node, -EEXIST,
++						   upper->bytenr);
++				return -EUCLEAN;
++			}
++		}
++
 +		list_add_tail(&edge->list[UPPER], &upper->lower);
++
++		/*
++		 * Also queue all the parent edges of this uncached node
++		 * to finish the upper linkage
++		 */
++		list_for_each_entry(edge, &upper->upper, list[LOWER])
++			list_add_tail(&edge->list[UPPER], &pending_edge);
++	}
++	return 0;
 +}
 +
- static void free_backref_edge(struct backref_cache *cache,
- 			      struct backref_edge *edge)
- {
-@@ -729,9 +756,7 @@ static int handle_one_tree_backref(struct reloc_control *rc,
- 			ASSERT(upper->checked);
- 			INIT_LIST_HEAD(&edge->list[UPPER]);
- 		}
--		list_add_tail(&edge->list[LOWER], &cur->upper);
--		edge->node[LOWER] = cur;
--		edge->node[UPPER] = upper;
-+		link_backref_edge(edge, cur, upper, LINK_LOWER);
- 		return 0;
+ /*
+  * build backref tree for a given tree block. root of the backref tree
+  * corresponds the tree block, leaves of the backref tree correspond
+@@ -1028,7 +1128,6 @@ struct backref_node *build_backref_tree(struct reloc_control *rc,
+ 	struct rb_node *rb_node;
+ 	LIST_HEAD(list); /* Pending edge list, upper node needs to be checked */
+ 	LIST_HEAD(useless);
+-	int cowonly;
+ 	int ret;
+ 	int err = 0;
+ 
+@@ -1074,8 +1173,7 @@ struct backref_node *build_backref_tree(struct reloc_control *rc,
+ 	 * into the cache.
+ 	 */
+ 	ASSERT(node->checked);
+-	cowonly = node->cowonly;
+-	if (!cowonly) {
++	if (!node->cowonly) {
+ 		rb_node = tree_insert(&cache->rb_root, node->bytenr,
+ 				      &node->rb_node);
+ 		if (rb_node)
+@@ -1083,60 +1181,13 @@ struct backref_node *build_backref_tree(struct reloc_control *rc,
+ 		list_add_tail(&node->lower, &cache->leaves);
  	}
+ 
+-	list_for_each_entry(edge, &node->upper, list[LOWER])
+-		list_add_tail(&edge->list[UPPER], &list);
+-
+-	while (!list_empty(&list)) {
+-		edge = list_entry(list.next, struct backref_edge, list[UPPER]);
+-		list_del_init(&edge->list[UPPER]);
+-		upper = edge->node[UPPER];
+-		if (upper->detached) {
+-			list_del(&edge->list[LOWER]);
+-			lower = edge->node[LOWER];
+-			free_backref_edge(cache, edge);
+-			if (list_empty(&lower->upper))
+-				list_add(&lower->list, &useless);
+-			continue;
+-		}
+-
+-		if (!RB_EMPTY_NODE(&upper->rb_node)) {
+-			if (upper->lowest) {
+-				list_del_init(&upper->lower);
+-				upper->lowest = 0;
+-			}
+-
+-			list_add_tail(&edge->list[UPPER], &upper->lower);
+-			continue;
+-		}
+-
+-		if (!upper->checked) {
+-			/*
+-			 * Still want to blow up for developers since this is a
+-			 * logic bug.
+-			 */
+-			ASSERT(0);
+-			err = -EINVAL;
+-			goto out;
+-		}
+-		if (cowonly != upper->cowonly) {
+-			ASSERT(0);
+-			err = -EINVAL;
+-			goto out;
+-		}
+-
+-		if (!cowonly) {
+-			rb_node = tree_insert(&cache->rb_root, upper->bytenr,
+-					      &upper->rb_node);
+-			if (rb_node)
+-				backref_tree_panic(rb_node, -EEXIST,
+-						   upper->bytenr);
+-		}
+-
+-		list_add_tail(&edge->list[UPPER], &upper->lower);
+-
+-		list_for_each_entry(edge, &upper->upper, list[LOWER])
+-			list_add_tail(&edge->list[UPPER], &list);
++	/* Finish the upper linkage of newly added edges/nodes */
++	ret = finish_upper_links(cache, node, &useless);
++	if (ret < 0) {
++		err = ret;
++		goto out;
+ 	}
++
  	/*
-@@ -850,9 +875,7 @@ static int handle_one_tree_backref(struct reloc_control *rc,
- 			if (!upper->owner)
- 				upper->owner = btrfs_header_owner(eb);
- 		}
--		list_add_tail(&edge->list[LOWER], &lower->upper);
--		edge->node[LOWER] = lower;
--		edge->node[UPPER] = upper;
-+		link_backref_edge(edge, lower, upper, LINK_LOWER);
- 
- 		if (rb_node) {
- 			btrfs_put_root(root);
-@@ -1246,10 +1269,8 @@ static int clone_backref_node(struct btrfs_trans_handle *trans,
- 			if (!new_edge)
- 				goto fail;
- 
--			new_edge->node[UPPER] = new_node;
--			new_edge->node[LOWER] = edge->node[LOWER];
--			list_add_tail(&new_edge->list[UPPER],
--				      &new_node->lower);
-+			link_backref_edge(new_edge, edge->node[LOWER], new_node,
-+					  LINK_UPPER);
- 		}
- 	} else {
- 		list_add_tail(&new_node->lower, &cache->leaves);
+ 	 * process useless backref nodes. backref nodes for tree leaves
+ 	 * are deleted from the cache. backref nodes for upper level
 -- 
 2.25.1
 

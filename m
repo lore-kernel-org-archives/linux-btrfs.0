@@ -2,113 +2,53 @@ Return-Path: <SRS0=Ri2p=4V=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.2 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,
-	SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-5.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 45CC4C3F2D7
-	for <linux-btrfs@archiver.kernel.org>; Wed,  4 Mar 2020 18:55:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3A3ABC3F2CE
+	for <linux-btrfs@archiver.kernel.org>; Wed,  4 Mar 2020 19:25:39 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1EEC12084E
-	for <linux-btrfs@archiver.kernel.org>; Wed,  4 Mar 2020 18:55:35 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="riFAZkSA"
+	by mail.kernel.org (Postfix) with ESMTP id 1695E20870
+	for <linux-btrfs@archiver.kernel.org>; Wed,  4 Mar 2020 19:25:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730021AbgCDSze (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 4 Mar 2020 13:55:34 -0500
-Received: from mail-qk1-f196.google.com ([209.85.222.196]:39689 "EHLO
-        mail-qk1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726561AbgCDSze (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Mar 2020 13:55:34 -0500
-Received: by mail-qk1-f196.google.com with SMTP id e16so2718049qkl.6
-        for <linux-btrfs@vger.kernel.org>; Wed, 04 Mar 2020 10:55:32 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=subject:to:references:from:message-id:date:user-agent:mime-version
-         :in-reply-to:content-language:content-transfer-encoding;
-        bh=f/Wc7uqG1cNORb6bzPd5jp244nd9e8KnpJQrCpu+tJo=;
-        b=riFAZkSAvS+UV1CFTEalRudUG6QnOsBPB6w70y9tzmhifVIPzrptI/fWK1/wlO9C20
-         CNnrVcNsM25l7eWG6FEsVxsvrxuQ7IMGTaw3kCZU0WVTCDUBKt1Twd+U9uU9UHJFmSK2
-         rr4qtZ3GnEkJIaB3YTwZg38opVNhxjLSa10hg0R8tLsLwY0eecDOCj/0GRLTRthCq127
-         ss7TTgDMri9Vl/QOn0Q0o/PZOpWkcG0lkojMeZOKO3DkkLpa5R5O5R5B0IN4einaErcR
-         rUZ89HQC5mhS8G8N7x3kfqx/C5pqu3HsHjkP3Cm2S1Gsy87bQOqm0yVC8URBZEqyasgM
-         Bd4Q==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=f/Wc7uqG1cNORb6bzPd5jp244nd9e8KnpJQrCpu+tJo=;
-        b=de7+Wcup0KAKJhYNWga4IJOTZBIhDflEauG9CBjjMk+jziJANHr3haeiAg2V+8N/i8
-         t6sA/ek+LG8n44G2bBWyJKeUgMdUA5RwnBnSiyPQJ//YlqB7rbe6Ro2+NajUG/rb4YzU
-         Q8nxv2BQOELGFbyF9zENRwai7slkSQoqjsFNsBYENlG+Z47usp+3LJy9nGe2VaDzlbQ8
-         5X+5taX/6iXgMzzSexMp/6EXwOMdSQDoZC+bV6UlwXiWT1oWigUJRYhxpXxE92VmiMS1
-         KzPR38q2joZ79Chb9oKUDadJ3wFSsQ6IhJKVPx2nfCm2HD2sVHnFXwcASVRqAmDEVsJ/
-         qFcg==
-X-Gm-Message-State: ANhLgQ2Y3ybLVnrepZXQc7ktwtfmBZipPm1qHYC+TF2Rb6IRpxT+uWKi
-        rxSO5gtaNJdi01JlSj3q4/5pAawk5Zc=
-X-Google-Smtp-Source: ADFU+vtz5ByzXN4YRGUANU9O5A+wrSkgBzsu10HFRn1HddZxDSszGILPZavVnlhjziiwpvOTY1GIrg==
-X-Received: by 2002:a37:4d8b:: with SMTP id a133mr4338778qkb.14.1583348131597;
-        Wed, 04 Mar 2020 10:55:31 -0800 (PST)
-Received: from [192.168.1.106] ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id f5sm12236394qka.43.2020.03.04.10.55.30
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 04 Mar 2020 10:55:30 -0800 (PST)
-Subject: Re: [PATCH] Btrfs: make ranged full fsyncs more efficient
-To:     fdmanana@kernel.org, linux-btrfs@vger.kernel.org
-References: <20200304103404.5571-1-fdmanana@kernel.org>
-From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <31fce27a-510f-3f63-a029-2722c6e20b05@toxicpanda.com>
-Date:   Wed, 4 Mar 2020 13:55:30 -0500
-User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:68.0)
- Gecko/20100101 Thunderbird/68.5.0
+        id S1728512AbgCDTZi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 4 Mar 2020 14:25:38 -0500
+Received: from mx2.suse.de ([195.135.220.15]:42794 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726440AbgCDTZi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 4 Mar 2020 14:25:38 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 1765EAD41;
+        Wed,  4 Mar 2020 19:25:37 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 620DBDA7B4; Wed,  4 Mar 2020 20:25:14 +0100 (CET)
+Date:   Wed, 4 Mar 2020 20:25:14 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Nikolay Borisov <nborisov@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: Remove impossible BUG_ON in get_tree_block_key
+Message-ID: <20200304192514.GZ2902@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20200304150447.19582-1-nborisov@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <20200304103404.5571-1-fdmanana@kernel.org>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20200304150447.19582-1-nborisov@suse.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 3/4/20 5:34 AM, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
+On Wed, Mar 04, 2020 at 05:04:47PM +0200, Nikolay Borisov wrote:
+> relocate_tree_blocks calls get_tree_block_key for a block iff that block
+> has its ->key_ready equal false. Thus the BUG_ON in the latter function
+> cannot ever be triggered so remove it.
 > 
-> Commit 0c713cbab6200b ("Btrfs: fix race between ranged fsync and writeback
-> of adjacent ranges") fixed a bug where we could end up with file extent
-> items in a log tree that represent file ranges that overlap due to a race
-> between the hole detection of a ranged full fsync and writeback for a
-> different file range.
-> 
-> The problem was solved by forcing any ranged full fsync to become a
-> non-ranged full fsync - setting the range start to 0 and the end offset to
-> LLONG_MAX. This was a simple solution because the code that detected and
-> marked holes was very complex, it used to be done at copy_items() and
-> implied several searches on the fs/subvolume tree. The drawback of that
-> solution was that we started to flush delalloc for the entire file and
-> wait for all the ordered extents to complete for ranged full fsyncs
-> (including ordered extents covering ranges completely outside the given
-> range). Fortunatelly ranged full fsyncs are not the most common case.
-> 
-> However a later fix for detecting and marking holes was made by commit
-> 0e56315ca147b3 ("Btrfs: fix missing hole after hole punching and fsync
-> when using NO_HOLES") and it simplified a lot the detection of holes,
-> and now copy_items() no longer does it and we do it in a much more simple
-> way at btrfs_log_holes(). This makes it now possible to simply make the
-> code that detects holes to operate only on the initial range and no longer
-> need to operate on the whole file, while also avoiding the need to flush
-> delalloc for the entire file and wait for ordered extents that cover
-> ranges that don't overlap the given range.
-> 
-> So this change just does that, making any ranged full fsync to actually
-> operate only on the given range and not the whole file.
-> 
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
-
-Thanks,
-
-Josef
+Added to misc-next, thanks.

@@ -2,45 +2,42 @@ Return-Path: <SRS0=xKBH=4W=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.2 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+X-Spam-Status: No, score=-8.2 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5ADFAC3F2D1
-	for <linux-btrfs@archiver.kernel.org>; Thu,  5 Mar 2020 08:38:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1F301C3F2D1
+	for <linux-btrfs@archiver.kernel.org>; Thu,  5 Mar 2020 11:24:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 26D3C21556
-	for <linux-btrfs@archiver.kernel.org>; Thu,  5 Mar 2020 08:38:05 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CFD372073D
+	for <linux-btrfs@archiver.kernel.org>; Thu,  5 Mar 2020 11:24:52 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="Wd+Rfd61"
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="h5Ed7PK7"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726282AbgCEIiE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 5 Mar 2020 03:38:04 -0500
-Received: from mout.gmx.net ([212.227.15.19]:57159 "EHLO mout.gmx.net"
+        id S1726263AbgCELYw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 5 Mar 2020 06:24:52 -0500
+Received: from mout.gmx.net ([212.227.15.19]:56457 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726263AbgCEIiE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 5 Mar 2020 03:38:04 -0500
+        id S1725880AbgCELYv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 5 Mar 2020 06:24:51 -0500
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1583397477;
-        bh=HycUncipTCzI0cZZSU8PPc1JKsEPxvh6YtNPDjbbt2s=;
+        s=badeba3b8450; t=1583407487;
+        bh=mm0sDbhcJ7D8sm3fsdgSe6SxNZhlj7n/A5Ui+CDyU5o=;
         h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
-        b=Wd+Rfd61pbaR1srClVUAgRVBlLFTg1GybmgZBRN2rXam7U3H74JIM86aAaq1iFIIp
-         A+zT2WYdb3/BVuDsD1kLi6qb53KVmqKUXvMLcOpyyRQNa/vwwSMAy//t57ACoh9IaL
-         UDVKb+AYAiRS06fZ9KWYVe5resfyTA5nQMLDhDgA=
+        b=h5Ed7PK7RyQNa0hMGX92jka6rbBjZ1q1cUwJ2yC+reM8LbgeL6BUmcYJtR5uvkF1u
+         fiBd2VHUWAPrwjSDxNvCGxoYxYoLCDXfI+K4OTGO8lj2TD0Q0x2QIcD73FAIryUFJ2
+         tkD6+N5VoHpWqgB30YfVG/JuyT/MCT6lXSrAZ+qM=
 X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx004
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1N5mKP-1jPrrD1gYV-017AHo; Thu, 05
- Mar 2020 09:37:57 +0100
-Subject: Re: [PATCH v2 08/10] btrfs: relocation: Remove the open-coded goto
- loop for breadth-first search
-To:     Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20200302094553.58827-1-wqu@suse.com>
- <20200302094553.58827-9-wqu@suse.com>
- <30ec7909-9ced-fb21-cf8e-1fa0c970d9a0@suse.com>
- <e76f9a62-6c7c-b1fc-e1fe-c985ff395b9d@gmx.com>
- <09fa33e1-740d-b4b0-2ff6-467cee674feb@suse.com>
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx005
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1MpDJd-1jib7i3mP9-00qg42; Thu, 05
+ Mar 2020 12:24:46 +0100
+Subject: Re: [PATCH 2/8] btrfs: do not init a reloc root if we aren't
+ relocating
+To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
+        kernel-team@fb.com
+References: <20200304161830.2360-1-josef@toxicpanda.com>
+ <20200304161830.2360-3-josef@toxicpanda.com>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
@@ -66,110 +63,131 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  72byGeSovfq/4AWGNPBG1L61Exl+gbqfvbECP3ziXnob009+z9I4qXodHSYINfAkZkA523JG
  ap12LndJeLk3gfWNZfXEWyGnuciRGbqESkhIRav8ootsCIops/SqXm0/k+Kcl4gGUO/iD/T5
  oagaDh0QtOd8RWSMwLxwn8uIhpH84Q4X1LadJ5NCgGa6xPP5qqRuiC+9gZqbq4Nj
-Message-ID: <bb1aa705-5735-0c93-1f55-7051810d9e33@gmx.com>
-Date:   Thu, 5 Mar 2020 16:37:53 +0800
+Message-ID: <c6b97399-b367-6bbf-9424-00c10c582ace@gmx.com>
+Date:   Thu, 5 Mar 2020 19:24:42 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
  Thunderbird/68.5.0
 MIME-Version: 1.0
-In-Reply-To: <09fa33e1-740d-b4b0-2ff6-467cee674feb@suse.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:BGjT1LcLC9ZUOD5+s3h5BRw1CZPFDzQAynSJSolPeVHYn0AHGTa
- Ls2vnK7kdEdIshO1h5V9uAM/0xTZAeujPrGd3dbrlC/yWa8Rr4s5a4PrVH/25kj6x5n4HMN
- HuyHSxWrT/n856boe/kYvzDpE6xZ7yBo9oEixV/1063YMp9z/yagZFkTV+O8WDeyi8ADAfZ
- NY4SOtAXaw6y3TMr6h6Eg==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:F7nSUewxXDQ=:JTdbO4ibFfsySBmZqpaY6w
- 4ZnWA3sTYqBTo3nivhsNKUFvyET62qe8kY9mmznUPFuhe9woINvbA/K3yLFuZs3W4RdNDupXM
- LOo3G82nTX3Wb9kh9xa4feH4arJgtm7Nt+k8FmIiSlWbWLem09IKV+AuVOvp3Ya0ap3oEvEAX
- ZAlyc4dXrHS1f6X/umcsvMOp/h9PopLrkveVVaoNZGGZs3I1PUc/EwGhq0zQvSmwNqJq+NHSY
- tQ9CD6l80Zy3TQy+Jz3Exouekv/o6y1vW/RT/lav6rXQ//A30yVyFPshreqHqV5PRwf1F+b0Z
- ZT2cWmChA5G1fjrnpJ01Cyx+UpLLEXjGf6LDb4VHCDvd+VtpredNBMSMETk7KWboIh24MbWp5
- sBLthwrAjlCdMxaPCP8VteRzxUw8o+mXylx7VS4NRI+eiK61gYUCYfJT//OGCQ9vgXCoLks1F
- /3nBpj17o1InbcYSi/BX5Myg1X5K7jq4XsjIKnB4GZPxE4cv+oMevpd8KuUeU4NKZfI1tlk7M
- nU9YYQyfSjix7OmPJY97q7ot5dULIFaqJ7CjbY7BYnSFzgsgClJ+HACiEWsRnlJTXf0vWn7dK
- A3ZntsqEIpqYfkbA7P6IBo82dW0awV5/O8qLxiEbAIZiombI01yae0kYGWLx+qtI1E9Azd10T
- gmaM/+H/rwzY7mOwPINokB2xPipZf6VIPO1nqzDMvhQsvHeqGT+71la+4ttvsqf9lWz+tD1iA
- A9gimLNuyjIUAywtkHHtSHZEFTgpl/7imSeqn3fXGV40mTLvIKoc86kWyx0+S+tCAfdORWxwV
- BBqIcVhD0aW0QMc2PLlgqruY3J/uRkXEl1zgz+Mx+YHrj/IUMjSsNcL5o8ZZWmDWNiiy5Y+6F
- uY4fMZROA7lQ4YewCxwt4/PpkDPHtJJ1NpML/QOo80PEZkbPSBIhsH+pT2y7Tm4L9LSfoMTLZ
- wDtjlHysgA4YG1cH6JLxJtjQWPgA5gNqf67+a3RFkr1IiFwOHML/TOhp4BRIvO76OJDZCiT5g
- aF1bmgUcifviLRg9GvNl+hD/dFuMKi/VzyjOp1fzGF1pjxrPXplVSYUoUyaCdCg3p/QxbeQVh
- F4/PLLOTkBCwDo1jFCPka3bAqI68qyx7qPXM/d2a4HDzLYD5TgVY0ftgy2wN6V6k+eelE5+MI
- m1KC4S84Qjtz31bAVKz0Qs/zBmdzPWqhw+1ovARXwo+ZLabakjtTyZ5Nb+LeDN+mPzDuUlj6z
- ujP5iaEXdr1BD+Exp
+In-Reply-To: <20200304161830.2360-3-josef@toxicpanda.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="aZDQwJvhaQMovnWjSQkpGiySDGg9Vw0yM"
+X-Provags-ID: V03:K1:Reox2nw4W6Ym9Ga1/JYwK7dLtymR1BJStNGFgPa3vKfh18UzMGo
+ WbsqhVUI8X5cAIgy/bULKJPYTF9+len21xU9ImtboqurkNdOyItfwmmKECi4PwLCgctfd6q
+ Zga3gf5mK43iHEiz1QQiWC9JlbWSMtWQn1fJWeM+TxY+lC5K+vSZAhEPH0y7rKkAuIfdVSn
+ kgyWYwGnyLt90dcBNQ2yQ==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:iKrd/6a+aIg=:2n2BvLItDT9jTYpsCxIAhy
+ WUTbuosEvCYgIqyqbfkWaw0ofE2Igm4PdCnjm07BYCoiPkyLiatcpZu2J/hCL/pmVCfNEUXli
+ iegxH+0dkMV2hM0B89/g4Otnq+vtbWlJIvE05G9fZQ6/R33WrP88mMS7WytYLjOG7O81Q3K3Q
+ oUB4EjrAlyyYeWKCTYwd8vZ2Aa1DayNsBRqZeI0nGuNF0ttrzhJ88InZf3THBWJiHMUV3+ufz
+ 239qpVM6AESLrXPkvILPWCcSANCGh50bVLHeuX/K39Mj5mNTOaBzbXx8yYo357gJVlW9CBuLb
+ ftPHBX4q3nItKHtRpSfHbrsYAt90cKjl/+zIIH6CXQjPO4VgbeBmpnUDJCR1+2QzFarghzvmA
+ zCPl99wpCC+9sySW/sAtmqGpO7ho4iBkzij8rBqtoUqlDZlqc0gD0w4aKObslp0b91IX9vFZu
+ jxbGWIKx86DOuKUXGhWZyJ9xg6Mq/s6LknW8ir8YLjvl5IvnHTplv/OeXcZ+UsBy5eEHwkv60
+ 6Hwgx2b9fdkDOS0fehRUs6Y35fcD9W+WCCFaoaPQPCY2EHWPRbIudqJsf4jdJ80ksH0eRw9+n
+ rHxvfCB6IZUTMW+NRrPK0fqnVdwIJ2Ko+1BCD0X2uAWeJ3lfWuKVdjTAqwGmpEhpkoMVBA7pc
+ wTh91TDLMnTRBTtWrJiai05aEOJmRRC9VRMXm95ELKH8JHVTCQjc4KYhG4nHbMdmxrwJZSFan
+ fPeSkWflC/Y983UH+ag5RZQQ2XUidejxROUIHKcHL6bGtEpdFgL4GbJ33slU9v08mSDOPFOem
+ JzW66YuPvu6Fr/l6o7tJbc+aRHIvc9QYAnYTDv4QWeQBNgYPAgJo8C1ObcIbpXNST0opsRXVs
+ DO/OC4BzM7ThRYn/8jZ/JN/x2Vp5KuXaV6eviBZmpA92Ww61oqMLPOtsJsdiUH7WOuH4iozj9
+ KKYWRpr9t7KWVEtLj9/C744eCRqCAKTib3na+2DiX43mAVE2MRxtPV4YkiWw2vYWb8doE8pZl
+ hV+r9JGn42Dl3elHLIiQFzK8/GLqqm6iecvpo4yPMNKJWNDvvvk4/rJG8hczx9ZL/TopGhE5K
+ XpeL8gBOz7IYPHOHv4+ezyzhaJAfyAXeGfW7YOh/8n44kENLGkn88hm4HiKx5IR1t8u1L0pWV
+ xzdJRNAyRrXD6S3SBX43McR4LlONtdZZzTtm3M42oDasQlWVDxOtZXWJqoqmbG+3gz0edZBzd
+ qR+ewJZ6H3Hg+EqLr
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--aZDQwJvhaQMovnWjSQkpGiySDGg9Vw0yM
+Content-Type: multipart/mixed; boundary="4fKFU4OlRmlDEE8OYNFpTJhGQlltidpPJ"
+
+--4fKFU4OlRmlDEE8OYNFpTJhGQlltidpPJ
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
 
-On 2020/3/5 =E4=B8=8B=E5=8D=884:17, Nikolay Borisov wrote:
->
->
-> On 5.03.20 =D0=B3. 2:40 =D1=87., Qu Wenruo wrote:
->>
->>
->> On 2020/3/4 =E4=B8=8B=E5=8D=8810:24, Nikolay Borisov wrote:
->>>
->> [...]
->>>> +	int err =3D 0;
->>>> +
->>>> +	iter =3D btrfs_backref_iter_alloc(rc->extent_root->fs_info, GFP_NOF=
-S);
->>>> +	if (!iter)
->>>> +		return ERR_PTR(-ENOMEM);
->>>
->>> This iterator can be made private to handle_one_tree_block as I don't =
-see it being used outside of that function.
->>
->> It's kinda a performance optimization.
->>
->> Instead of allocating memory for each loop, we allocate the memory just
->> once, and reuse it until the whole backref map for the bytenr is built.
->>>
->>>> +	path =3D btrfs_alloc_path();
->>>> +	if (!path) {
->>>> +		err =3D -ENOMEM;
->>>> +		goto out;
->>>> +	}
->>>
->>> Same thing with this path. Overall this will reduce the argument to ha=
-ndle_one_tree_block by 2.
->>
->> Same performance optimization here.
->
-> Ok, fair point.
->>
->>>
->
-> <snip>
->
->>>
->>> or simply if (!edge)
->>> break;
->>>
->>> Also this loop can be rewritten as a do {} while() and it will look:
->>
->> Yep, but I'm not sure if such do {} while() loop is preferred.
->> IIRC there are some docs saying to avoid such loop?
->
-> I'm not aware of any such docs, can you point me to them?
 
-Then I guess it's not a problem. Pretty happy to utilize do {} while ()
-loop in the future.
+On 2020/3/5 =E4=B8=8A=E5=8D=8812:18, Josef Bacik wrote:
+> We previously were checking if the root had a dead root before accessin=
+g
+> root->reloc_root in order to avoid a UAF type bug.  However this
+> scenario happens after we've unset the reloc control, so we would have
+> been saved if we'd simply checked for fs_info->reloc_control.  At this
+> point during relocation we no longer need to be creating new reloc
+> roots, so simply move this check above the reloc_root checks to avoid
+> any future races and confusion.
+>=20
+> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+
+Right, for btrfs_init_reloc_root() checking rc before accessing root is
+fine.
+
+So,
+
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+
+Although other location, like btrfs_reloc_post_snapshot() still needs
+such check, as we have a window where just merged reloc roots but not
+yet unset the reloc control.
 
 Thanks,
 Qu
->
->>
->> If there is no such restriction, I would be pretty happy to go that way=
-.
->>
->> Thanks,
->> Qu
->>
->
-> <snip>
->
+> ---
+>  fs/btrfs/relocation.c | 8 ++++----
+>  1 file changed, 4 insertions(+), 4 deletions(-)
+>=20
+> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+> index 507361e99316..2141519a9dd0 100644
+> --- a/fs/btrfs/relocation.c
+> +++ b/fs/btrfs/relocation.c
+> @@ -1527,6 +1527,10 @@ int btrfs_init_reloc_root(struct btrfs_trans_han=
+dle *trans,
+>  	int clear_rsv =3D 0;
+>  	int ret;
+> =20
+> +	if (!rc || !rc->create_reloc_tree ||
+> +	    root->root_key.objectid =3D=3D BTRFS_TREE_RELOC_OBJECTID)
+> +		return 0;
+> +
+>  	/*
+>  	 * The subvolume has reloc tree but the swap is finished, no need to
+>  	 * create/update the dead reloc tree
+> @@ -1540,10 +1544,6 @@ int btrfs_init_reloc_root(struct btrfs_trans_han=
+dle *trans,
+>  		return 0;
+>  	}
+> =20
+> -	if (!rc || !rc->create_reloc_tree ||
+> -	    root->root_key.objectid =3D=3D BTRFS_TREE_RELOC_OBJECTID)
+> -		return 0;
+> -
+>  	if (!trans->reloc_reserved) {
+>  		rsv =3D trans->block_rsv;
+>  		trans->block_rsv =3D rc->block_rsv;
+>=20
+
+
+--4fKFU4OlRmlDEE8OYNFpTJhGQlltidpPJ--
+
+--aZDQwJvhaQMovnWjSQkpGiySDGg9Vw0yM
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAl5g4XoACgkQwj2R86El
+/qgIZAf/QZuZ7GpTYPR+jmBoPU9jKEe6FcmmB1ewPHc9LT0ZG9RDEaplpn5DXVtR
+3QnukV+c3l4xdfqKXSOH2WdUoD8SZSUzkXHqEmgnVy0uKUdqFT153zm2ZPE8xE0n
+HSU3O4uP8F1XHs+jMzIKwQIcDupkn1MaNJ6h5YlokwIeW2z3037Ddr6omUrGXM6E
+u1rDQTsPbBPS7XHGgvkIzfOWtm9EOw76LizeDyhiffh3UQtMbceeU/7q157So5ld
+Hep2C34knU5sZsM5RN1BdCrPqj5kY66gxnMpdnKdgCkiWrNVKy+Si3d+DTIN282H
+78p7WAm3502y9N20aoVmhAG+uc6XhQ==
+=O1HO
+-----END PGP SIGNATURE-----
+
+--aZDQwJvhaQMovnWjSQkpGiySDGg9Vw0yM--

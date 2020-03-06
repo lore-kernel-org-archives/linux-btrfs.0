@@ -2,130 +2,65 @@ Return-Path: <SRS0=UWtY=4X=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.1 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-13.8 required=3.0
+	tests=HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PULL_REQUEST,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CD475C10DCE
-	for <linux-btrfs@archiver.kernel.org>; Fri,  6 Mar 2020 17:12:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AA394C10DCE
+	for <linux-btrfs@archiver.kernel.org>; Fri,  6 Mar 2020 17:30:14 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A59DD20848
-	for <linux-btrfs@archiver.kernel.org>; Fri,  6 Mar 2020 17:12:52 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=embeddedor.com header.i=@embeddedor.com header.b="IMfZCiEd"
+	by mail.kernel.org (Postfix) with ESMTP id 8BCDA20658
+	for <linux-btrfs@archiver.kernel.org>; Fri,  6 Mar 2020 17:30:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726676AbgCFRMw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 6 Mar 2020 12:12:52 -0500
-Received: from gateway31.websitewelcome.com ([192.185.144.97]:30142 "EHLO
-        gateway31.websitewelcome.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1725935AbgCFRMv (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 6 Mar 2020 12:12:51 -0500
-Received: from cm10.websitewelcome.com (cm10.websitewelcome.com [100.42.49.4])
-        by gateway31.websitewelcome.com (Postfix) with ESMTP id DCA724885
-        for <linux-btrfs@vger.kernel.org>; Fri,  6 Mar 2020 10:47:59 -0600 (CST)
-Received: from gator4166.hostgator.com ([108.167.133.22])
-        by cmsmtp with SMTP
-        id AG8ljuaotEfyqAG8ljy3tY; Fri, 06 Mar 2020 10:47:59 -0600
-X-Authority-Reason: nr=8
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=embeddedor.com; s=default; h=Content-Type:MIME-Version:Message-ID:Subject:
-        Cc:To:From:Date:Sender:Reply-To:Content-Transfer-Encoding:Content-ID:
-        Content-Description:Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc
-        :Resent-Message-ID:In-Reply-To:References:List-Id:List-Help:List-Unsubscribe:
-        List-Subscribe:List-Post:List-Owner:List-Archive;
-        bh=8UHomocG+fX8U3yCwj2THSJfjfw/ABF8sixeOTpNZSE=; b=IMfZCiEdunBj2yBl3vVZc2GNC/
-        tjavhX3pSWR+qk3oW0uHTcB8KQQRVXbLK2JfXqxRWaBjWLrhWcpLYOY8ugzME2mgTO/ttknFBwX/F
-        4QVZSNTYKQPnhzCgtBFNWWBVMnt4Uqu05Klt/zMe415Nh4yKzOepPUEtXb99N6uGOPxf5IyjhgFhz
-        N4/VVdAncZIsENjJmLXA97QsJsSBLBJ/zXoC/HiUu40geuLJ8KijS3b6/iEwPVCmejPvAurgZjGbC
-        Dr2msOjwgihiDwAtHfXiJ5sc05djz7wm+seVTXXUb6yE2E7WEhxT/jes1kWwRBVba5SROuGOp9nTg
-        e1iAoWTQ==;
-Received: from [201.166.190.232] (port=51794 helo=embeddedor)
-        by gator4166.hostgator.com with esmtpa (Exim 4.92)
-        (envelope-from <gustavo@embeddedor.com>)
-        id 1jAG8j-001tGK-Sl; Fri, 06 Mar 2020 10:47:58 -0600
-Date:   Fri, 6 Mar 2020 10:51:05 -0600
-From:   "Gustavo A. R. Silva" <gustavo@embeddedor.com>
-To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>
-Cc:     linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        "Gustavo A. R. Silva" <gustavo@embeddedor.com>
-Subject: [PATCH][next] btrfs/rcu-string.h: Replace zero-length array with
- flexible-array member
-Message-ID: <20200306165105.GA22637@embeddedor>
+        id S1727049AbgCFRaO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 6 Mar 2020 12:30:14 -0500
+Received: from mx2.suse.de ([195.135.220.15]:53034 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726171AbgCFRaN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 6 Mar 2020 12:30:13 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id EDD71B46F;
+        Fri,  6 Mar 2020 17:30:11 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 75940DA728; Fri,  6 Mar 2020 18:29:48 +0100 (CET)
+From:   David Sterba <dsterba@suse.com>
+To:     torvalds@linux-foundation.org
+Cc:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: [GIT PULL] Btrfs fix for 5.6-rc5
+Date:   Fri,  6 Mar 2020 18:29:47 +0100
+Message-Id: <cover.1583514264.git.dsterba@suse.com>
+X-Mailer: git-send-email 2.25.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-User-Agent: Mutt/1.9.4 (2018-02-28)
-X-AntiAbuse: This header was added to track abuse, please include it with any abuse report
-X-AntiAbuse: Primary Hostname - gator4166.hostgator.com
-X-AntiAbuse: Original Domain - vger.kernel.org
-X-AntiAbuse: Originator/Caller UID/GID - [47 12] / [47 12]
-X-AntiAbuse: Sender Address Domain - embeddedor.com
-X-BWhitelist: no
-X-Source-IP: 201.166.190.232
-X-Source-L: No
-X-Exim-ID: 1jAG8j-001tGK-Sl
-X-Source: 
-X-Source-Args: 
-X-Source-Dir: 
-X-Source-Sender: (embeddedor) [201.166.190.232]:51794
-X-Source-Auth: gustavo@embeddedor.com
-X-Email-Count: 17
-X-Source-Cap: Z3V6aWRpbmU7Z3V6aWRpbmU7Z2F0b3I0MTY2Lmhvc3RnYXRvci5jb20=
-X-Local-Domain: yes
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The current codebase makes use of the zero-length array language
-extension to the C90 standard, but the preferred mechanism to declare
-variable-length types such as these ones is a flexible array member[1][2],
-introduced in C99:
+Hi,
 
-struct foo {
-        int stuff;
-        struct boo array[];
-};
+one fixup for DIO when in use with the new checksums, a missed case
+where the checksum size was still assuming u32. Please pull, thanks.
 
-By making use of the mechanism above, we will get a compiler warning
-in case the flexible array does not occur last in the structure, which
-will help us prevent some kind of undefined behavior bugs from being
-inadvertently introduced[3] to the codebase from now on.
+----------------------------------------------------------------
+The following changes since commit a5ae50dea9111db63d30d700766dd5509602f7ad:
 
-Also, notice that, dynamic memory allocations won't be affected by
-this change:
+  Btrfs: fix deadlock during fast fsync when logging prealloc extents beyond eof (2020-02-21 16:21:19 +0100)
 
-"Flexible array members have incomplete type, and so the sizeof operator
-may not be applied. As a quirk of the original implementation of
-zero-length arrays, sizeof evaluates to zero."[1]
+are available in the Git repository at:
 
-This issue was found with the help of Coccinelle.
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.6-rc4-tag
 
-[1] https://gcc.gnu.org/onlinedocs/gcc/Zero-Length.html
-[2] https://github.com/KSPP/linux/issues/21
-[3] commit 76497732932f ("cxgb3/l2t: Fix undefined behaviour")
+for you to fetch changes up to e7a04894c766daa4248cb736efee93550f2d5872:
 
-Signed-off-by: Gustavo A. R. Silva <gustavo@embeddedor.com>
----
- fs/btrfs/rcu-string.h | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+  btrfs: fix RAID direct I/O reads with alternate csums (2020-03-03 15:26:08 +0100)
 
-diff --git a/fs/btrfs/rcu-string.h b/fs/btrfs/rcu-string.h
-index a97dc74a4d3d..5c1a617eb25d 100644
---- a/fs/btrfs/rcu-string.h
-+++ b/fs/btrfs/rcu-string.h
-@@ -8,7 +8,7 @@
- 
- struct rcu_string {
- 	struct rcu_head rcu;
--	char str[0];
-+	char str[];
- };
- 
- static inline struct rcu_string *rcu_string_strdup(const char *src, gfp_t mask)
--- 
-2.25.0
+----------------------------------------------------------------
+Omar Sandoval (1):
+      btrfs: fix RAID direct I/O reads with alternate csums
 
+ fs/btrfs/inode.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)

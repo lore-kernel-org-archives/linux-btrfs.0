@@ -2,142 +2,130 @@ Return-Path: <SRS0=UWtY=4X=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-13.1 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 622B4C10DCE
-	for <linux-btrfs@archiver.kernel.org>; Fri,  6 Mar 2020 17:05:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CB231C10F00
+	for <linux-btrfs@archiver.kernel.org>; Fri,  6 Mar 2020 17:07:52 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4502F206E2
-	for <linux-btrfs@archiver.kernel.org>; Fri,  6 Mar 2020 17:05:48 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A2E8920658
+	for <linux-btrfs@archiver.kernel.org>; Fri,  6 Mar 2020 17:07:52 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=embeddedor.com header.i=@embeddedor.com header.b="fn4/ra0r"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726947AbgCFRFr convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 6 Mar 2020 12:05:47 -0500
-Received: from relay8-d.mail.gandi.net ([217.70.183.201]:35917 "EHLO
-        relay8-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726646AbgCFRFr (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Mar 2020 12:05:47 -0500
-X-Originating-IP: 78.245.226.90
-Received: from [192.168.38.25] (vau38-1-78-245-226-90.fbx.proxad.net [78.245.226.90])
-        (Authenticated sender: swami@petaramesh.org)
-        by relay8-d.mail.gandi.net (Postfix) with ESMTPSA id 2A4991BF210;
-        Fri,  6 Mar 2020 17:05:44 +0000 (UTC)
-Subject: Re: (One more) BTRFS damaged FS... Any hope ?
-To:     Chris Murphy <lists@colorremedies.com>
-Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <55a1612f-e9af-dabd-5b91-f09cb1528486@petaramesh.org>
- <CAJCQCtT+_ioV6XAUgPyD++9o_0+6-kUgGOF7mpfVHEyb7runsA@mail.gmail.com>
-From:   =?UTF-8?Q?Sw=c3=a2mi_Petaramesh?= <swami@petaramesh.org>
-Autocrypt: addr=swami@petaramesh.org; prefer-encrypt=mutual; keydata=
- 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
- BtUAN08OPA==
-Organization: Secte des Adorateurs de Cela
-Message-ID: <3234bc4b-6e93-c1f7-9ed4-a45173e22dd5@petaramesh.org>
-Date:   Fri, 6 Mar 2020 18:05:44 +0100
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.5.0
+        id S1726533AbgCFRHw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 6 Mar 2020 12:07:52 -0500
+Received: from gateway31.websitewelcome.com ([192.185.144.97]:36963 "EHLO
+        gateway31.websitewelcome.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1726194AbgCFRHv (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 6 Mar 2020 12:07:51 -0500
+Received: from cm17.websitewelcome.com (cm17.websitewelcome.com [100.42.49.20])
+        by gateway31.websitewelcome.com (Postfix) with ESMTP id 7EAD38606F
+        for <linux-btrfs@vger.kernel.org>; Fri,  6 Mar 2020 10:46:07 -0600 (CST)
+Received: from gator4166.hostgator.com ([108.167.133.22])
+        by cmsmtp with SMTP
+        id AG6xjT9leAGTXAG6xjamCT; Fri, 06 Mar 2020 10:46:07 -0600
+X-Authority-Reason: nr=8
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=embeddedor.com; s=default; h=Content-Type:MIME-Version:Message-ID:Subject:
+        Cc:To:From:Date:Sender:Reply-To:Content-Transfer-Encoding:Content-ID:
+        Content-Description:Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc
+        :Resent-Message-ID:In-Reply-To:References:List-Id:List-Help:List-Unsubscribe:
+        List-Subscribe:List-Post:List-Owner:List-Archive;
+        bh=a0yfOiyYtsn67/xw854Gi9PS9vsekXy7OaHr3ZdUtSM=; b=fn4/ra0rE4bp/rosZ9RYHUFyv6
+        /N3piaBjmUoMihSThSuzygMoAc0Usf1H8YHqkSquw1IJdl1W+p1tj4QSHiw5n2DOKPghBAaktwpMM
+        GV9aLkXqxd/NNC3vMLXsZxkqkheCUDa11IDKcKDiSdh0EYKPcwhFnoWTIFK1s6bodSLETOioXbWDu
+        oe37C4vPDVQiKjERSxXRzBszarIUXU6YXMooHMQ+sCk9xQkSEGfsBCfokb9FLVdWyae80IOOaOl5z
+        uhlzZn3QlnP1fhwjoCMcO48Z2q0BbKI2yBfsJqL14TDiOXDMzWtO6nX7ccJCSx81pFHZdLcBrRt9S
+        mJRtLPHg==;
+Received: from [201.166.190.186] (port=51790 helo=embeddedor)
+        by gator4166.hostgator.com with esmtpa (Exim 4.92)
+        (envelope-from <gustavo@embeddedor.com>)
+        id 1jAG6v-001sRG-Bx; Fri, 06 Mar 2020 10:46:06 -0600
+Date:   Fri, 6 Mar 2020 10:49:12 -0600
+From:   "Gustavo A. R. Silva" <gustavo@embeddedor.com>
+To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>
+Cc:     linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        "Gustavo A. R. Silva" <gustavo@embeddedor.com>
+Subject: [PATCH][next] Btrfs: delayed-inode.h: Replace zero-length array with
+ flexible-array member
+Message-ID: <20200306164912.GA22197@embeddedor>
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtT+_ioV6XAUgPyD++9o_0+6-kUgGOF7mpfVHEyb7runsA@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: 8BIT
-Content-Language: en-GB-large
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+User-Agent: Mutt/1.9.4 (2018-02-28)
+X-AntiAbuse: This header was added to track abuse, please include it with any abuse report
+X-AntiAbuse: Primary Hostname - gator4166.hostgator.com
+X-AntiAbuse: Original Domain - vger.kernel.org
+X-AntiAbuse: Originator/Caller UID/GID - [47 12] / [47 12]
+X-AntiAbuse: Sender Address Domain - embeddedor.com
+X-BWhitelist: no
+X-Source-IP: 201.166.190.186
+X-Source-L: No
+X-Exim-ID: 1jAG6v-001sRG-Bx
+X-Source: 
+X-Source-Args: 
+X-Source-Dir: 
+X-Source-Sender: (embeddedor) [201.166.190.186]:51790
+X-Source-Auth: gustavo@embeddedor.com
+X-Email-Count: 12
+X-Source-Cap: Z3V6aWRpbmU7Z3V6aWRpbmU7Z2F0b3I0MTY2Lmhvc3RnYXRvci5jb20=
+X-Local-Domain: yes
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi Chris, and thanks for your help,
+The current codebase makes use of the zero-length array language
+extension to the C90 standard, but the preferred mechanism to declare
+variable-length types such as these ones is a flexible array member[1][2],
+introduced in C99:
 
-Please see below...
+struct foo {
+        int stuff;
+        struct boo array[];
+};
 
-Le 02/03/2020 à 07:43, Chris Murphy a écrit :
->
-> The transids are close so it might work to try -o usebackuproot. If
-> not what do you get for:
-Unfortunately not...
-> btrfs insp dump-t -b 8176123904 /dev/
+By making use of the mechanism above, we will get a compiler warning
+in case the flexible array does not occur last in the structure, which
+will help us prevent some kind of undefined behavior bugs from being
+inadvertently introduced[3] to the codebase from now on.
 
-btrfs-progs v4.15.1
+Also, notice that, dynamic memory allocations won't be affected by
+this change:
 
-parent transid verify failed on 8176123904 wanted 183574 found 183573
+"Flexible array members have incomplete type, and so the sizeof operator
+may not be applied. As a quirk of the original implementation of
+zero-length arrays, sizeof evaluates to zero."[1]
 
-parent transid verify failed on 8176123904 wanted 183574 found 183573
+This issue was found with the help of Coccinelle.
 
-Ignoring transid failure
+[1] https://gcc.gnu.org/onlinedocs/gcc/Zero-Length.html
+[2] https://github.com/KSPP/linux/issues/21
+[3] commit 76497732932f ("cxgb3/l2t: Fix undefined behaviour")
 
-leaf 8176123904 flags 0x1(WRITTEN) backref revision 1
+Signed-off-by: Gustavo A. R. Silva <gustavo@embeddedor.com>
+---
+ fs/btrfs/delayed-inode.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-fs uuid (blah)
-
-chunk uuid (bloh)
-
-item 0 key (TREE_LOG ROOT_ITEM 258) itemoff 15844 itemsize 439
-
-generation 183573 root_dirid 0 bytenr 8176107520 level 0 refs 0
-
-lastsnap 0 byte_limit 0 bytes_used 0 flags 0x0(none)
-
-uuid (bunch of zeroes)
-
-drop key (0 UNKNOWN.0 0) level 0
-
->
-> btrfs-find-root /dev/
-Command not found
->
-> btrfs check /dev/
-
-Unhappy
-
-Reports transid failure, then :
-
-check/main.c:3654: check_owner_ref: BUG_ON `rec->is_root` triggered, value 1
-
-Then eventually aborts.
-
->
-> btrfs check -b /dev/
->
-VERY unhappy with lots of verbosity
-
-(Sorry, the machine isn't booted, I have to type everything by hand...
-
-...any clue ?
-
-Thanks in advance and kind regards.
-
-
+diff --git a/fs/btrfs/delayed-inode.h b/fs/btrfs/delayed-inode.h
+index 74ae226ffaf0..ca96ef007d8f 100644
+--- a/fs/btrfs/delayed-inode.h
++++ b/fs/btrfs/delayed-inode.h
+@@ -70,7 +70,7 @@ struct btrfs_delayed_item {
+ 	refcount_t refs;
+ 	int ins_or_del;
+ 	u32 data_len;
+-	char data[0];
++	char data[];
+ };
+ 
+ static inline void btrfs_init_delayed_root(
+-- 
+2.25.0
 

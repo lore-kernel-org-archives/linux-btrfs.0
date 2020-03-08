@@ -1,184 +1,118 @@
-Return-Path: <SRS0=o+k5=4Y=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=yRDE=4Z=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.4 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EF51CC10F25
-	for <linux-btrfs@archiver.kernel.org>; Sat,  7 Mar 2020 23:07:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5FFA1C10DCE
+	for <linux-btrfs@archiver.kernel.org>; Sun,  8 Mar 2020 10:59:01 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B346F2073D
-	for <linux-btrfs@archiver.kernel.org>; Sat,  7 Mar 2020 23:07:07 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D66B4206D7
+	for <linux-btrfs@archiver.kernel.org>; Sun,  8 Mar 2020 10:59:00 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=mpdesouza.com header.i=@mpdesouza.com header.b="LouPhJly"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="fWC9bHKS"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726252AbgCGXHG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 7 Mar 2020 18:07:06 -0500
-Received: from gateway34.websitewelcome.com ([192.185.148.212]:23037 "EHLO
-        gateway34.websitewelcome.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1726109AbgCGXHG (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 7 Mar 2020 18:07:06 -0500
-X-Greylist: delayed 1480 seconds by postgrey-1.27 at vger.kernel.org; Sat, 07 Mar 2020 18:07:06 EST
-Received: from cm13.websitewelcome.com (cm13.websitewelcome.com [100.42.49.6])
-        by gateway34.websitewelcome.com (Postfix) with ESMTP id 160922747C
-        for <linux-btrfs@vger.kernel.org>; Sat,  7 Mar 2020 16:42:26 -0600 (CST)
-Received: from br540.hostgator.com.br ([108.179.252.180])
-        by cmsmtp with SMTP
-        id Ai9KjpY03RP4zAi9KjCNzH; Sat, 07 Mar 2020 16:42:26 -0600
-X-Authority-Reason: nr=8
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=mpdesouza.com; s=default; h=Content-Transfer-Encoding:MIME-Version:
-        References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:
-        Content-Type:Content-ID:Content-Description:Resent-Date:Resent-From:
-        Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
-        List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-        bh=SA+QQmc1pIEmN+Nq6MRtFjJBYMMue438C/sLfQOcQsI=; b=LouPhJly9PHiOGdxjZyjOQ1sZF
-        U7ZQQl172eapx5O79dJIewONDOtCjvAKKXeGHttU8OLY3qL56CJj0lVZwnIp4SFHb1rnp+2YiAcod
-        EBNSdV8x/T9oys+uNLyTTrmAg/LnJMs+1DHLUWLvEAUdRC5p2WLGoZgeaW+VjjtmG3i4Pa2d1v4Tx
-        vKri5zJN6FsU3Ykf874Nxzuuhu5h13ouwLlUhyF3lZCANYhkg+TEiql8omBuZ5dMCvHVMlP56tDTb
-        LhgnpScY0LNvG30iNO8E5l4mLby7hcQ/kx/ehRFCC4/A+6IYqxiQf67ywyWOwi+Xc/ofE+Xe2+UEm
-        B+X85eRw==;
-Received: from 189.26.190.248.dynamic.adsl.gvt.net.br ([189.26.190.248]:56604 helo=hephaestus.suse.cz)
-        by br540.hostgator.com.br with esmtpsa (TLSv1.2:ECDHE-RSA-AES128-GCM-SHA256:128)
-        (Exim 4.92)
-        (envelope-from <marcos@mpdesouza.com>)
-        id 1jAi9J-002tnS-Ho; Sat, 07 Mar 2020 19:42:25 -0300
-From:   Marcos Paulo de Souza <marcos@mpdesouza.com>
-To:     dsterba@suse.com, linux-btrfs@vger.kernel.org
+        id S1726318AbgCHK67 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 8 Mar 2020 06:58:59 -0400
+Received: from userp2130.oracle.com ([156.151.31.86]:35026 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726298AbgCHK67 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 8 Mar 2020 06:58:59 -0400
+Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
+        by userp2130.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 028AtjVB001651;
+        Sun, 8 Mar 2020 10:58:42 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to : cc :
+ references : from : message-id : date : mime-version : in-reply-to :
+ content-type : content-transfer-encoding; s=corp-2020-01-29;
+ bh=kINgjCvQrFN1H94vBQ2EqzD1V+wSng60QRFxon4e8aE=;
+ b=fWC9bHKS2/Ir7+oiTAuny2VNI+7Upd+WWOGyHmgph0eyVmMIwTqJJTZd+oT4jfAizueh
+ Hud/U0EZBoftHuTmPX4EGu5oUWnOlICx/C7EeDW4bL8zi4MeWGHUJ00Imm1gpagXpvXb
+ PP/K9guR/Txoo9+s8rPRrCfdsOLyv0y7WTCOmogEe06x+lILg0I32UqUnQQC9pbonvYD
+ FjMbCglxvW5c06gZTGeYgQOh9Tni784ZfvL9JC2tpT0DAESwo9/AJpHhUN6XV1WF8GLo
+ 9lv15NDZX3llvHcG1KTt/z+RPp9nlfsZlRLTS4t5ahgyJ8BEKuGLcKv9y0HpXXevoYp+ 7w== 
+Received: from aserp3020.oracle.com (aserp3020.oracle.com [141.146.126.70])
+        by userp2130.oracle.com with ESMTP id 2ym31u3554-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Sun, 08 Mar 2020 10:58:42 +0000
+Received: from pps.filterd (aserp3020.oracle.com [127.0.0.1])
+        by aserp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 028Aqwmb060957;
+        Sun, 8 Mar 2020 10:58:41 GMT
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by aserp3020.oracle.com with ESMTP id 2ymnd9pavj-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Sun, 08 Mar 2020 10:58:41 +0000
+Received: from abhmp0012.oracle.com (abhmp0012.oracle.com [141.146.116.18])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 028AweX4021342;
+        Sun, 8 Mar 2020 10:58:40 GMT
+Received: from [192.168.1.145] (/39.109.145.141)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Sun, 08 Mar 2020 03:58:39 -0700
+Subject: Re: [PATCH 0/2] btrfs-progs: Auto resize fs after device replace
+To:     Marcos Paulo de Souza <marcos@mpdesouza.com>, dsterba@suse.com,
+        linux-btrfs@vger.kernel.org
 Cc:     Marcos Paulo de Souza <mpdesouza@suse.com>
-Subject: [PATCH 2/2] btrfs-progs: replace: New argument to resize the fs after replace
-Date:   Sat,  7 Mar 2020 19:45:16 -0300
-Message-Id: <20200307224516.16315-3-marcos@mpdesouza.com>
-X-Mailer: git-send-email 2.25.0
-In-Reply-To: <20200307224516.16315-1-marcos@mpdesouza.com>
 References: <20200307224516.16315-1-marcos@mpdesouza.com>
+From:   Anand Jain <anand.jain@oracle.com>
+Message-ID: <95a53477-a71d-5304-f4b2-8a0225414050@oracle.com>
+Date:   Sun, 8 Mar 2020 18:58:32 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.4.1
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-AntiAbuse: This header was added to track abuse, please include it with any abuse report
-X-AntiAbuse: Primary Hostname - br540.hostgator.com.br
-X-AntiAbuse: Original Domain - vger.kernel.org
-X-AntiAbuse: Originator/Caller UID/GID - [47 12] / [47 12]
-X-AntiAbuse: Sender Address Domain - mpdesouza.com
-X-BWhitelist: no
-X-Source-IP: 189.26.190.248
-X-Source-L: No
-X-Exim-ID: 1jAi9J-002tnS-Ho
-X-Source: 
-X-Source-Args: 
-X-Source-Dir: 
-X-Source-Sender: 189.26.190.248.dynamic.adsl.gvt.net.br (hephaestus.suse.cz) [189.26.190.248]:56604
-X-Source-Auth: marcos@mpdesouza.com
-X-Email-Count: 8
-X-Source-Cap: bXBkZXNvNTM7bXBkZXNvNTM7YnI1NDAuaG9zdGdhdG9yLmNvbS5icg==
-X-Local-Domain: yes
+In-Reply-To: <20200307224516.16315-1-marcos@mpdesouza.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9553 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 adultscore=0 spamscore=0 bulkscore=0
+ mlxscore=0 suspectscore=0 mlxlogscore=999 phishscore=0 malwarescore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2001150001
+ definitions=main-2003080084
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9553 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 adultscore=0 lowpriorityscore=0
+ spamscore=0 priorityscore=1501 impostorscore=0 bulkscore=0 suspectscore=0
+ phishscore=0 mlxlogscore=999 mlxscore=0 malwarescore=0 clxscore=1011
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2001150001
+ definitions=main-2003080084
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Marcos Paulo de Souza <mpdesouza@suse.com>
+On 3/8/20 6:45 AM, Marcos Paulo de Souza wrote:
+> From: Marcos Paulo de Souza <mpdesouza@suse.com>
+> 
+> These two patches make possible to resize the fs after a successful replace
+> finishes. The flag -a is responsible for doing it (-r is already use, so -a in
+> this context means "automatically").
 
-By using the -a flag on replace makes btrfs issue a resize ioctl after
-the replace finishes. This argument is a shortcut for
+If resize fails we should be able to fail the replace as well which does
+not happen here. I am thinking this should be kernel feature, do the
+resize part before calling btrfs_dev_replace_finishing().
 
-btrfs replace start -f 3 /dev/sdf BTRFS/
-btrfs fi resize 3:max BTRFS/
+IMO, it makes sense that replace and resize be in one command as
+proposed in this patch. We had similar discussion whether to combine
+replace and resize of missing device here:
+    https://patchwork.kernel.org/patch/11249009/
 
-The -a stands for "automatically resize"
+-Anand
 
-Fixes: #21
-
-Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
----
- Documentation/btrfs-replace.asciidoc |  4 +++-
- cmds/replace.c                       | 19 +++++++++++++++++--
- 2 files changed, 20 insertions(+), 3 deletions(-)
-
-diff --git a/Documentation/btrfs-replace.asciidoc b/Documentation/btrfs-replace.asciidoc
-index b73bf1b3..e0b30066 100644
---- a/Documentation/btrfs-replace.asciidoc
-+++ b/Documentation/btrfs-replace.asciidoc
-@@ -18,7 +18,7 @@ SUBCOMMAND
- *cancel* <mount_point>::
- Cancel a running device replace operation.
- 
--*start* [-Bfr] <srcdev>|<devid> <targetdev> <path>::
-+*start* [-aBfr] <srcdev>|<devid> <targetdev> <path>::
- Replace device of a btrfs filesystem.
- +
- On a live filesystem, duplicate the data to the target device which
-@@ -53,6 +53,8 @@ never allowed to be used as the <targetdev>.
- +
- -B::::
- no background replace.
-++a::::
-+automatically resizes the filesystem if the <targetdev> is bigger than <srcdev>.
- 
- *status* [-1] <mount_point>::
- Print status and progress information of a running device replace operation.
-diff --git a/cmds/replace.c b/cmds/replace.c
-index 2321aa15..48f470cd 100644
---- a/cmds/replace.c
-+++ b/cmds/replace.c
-@@ -91,7 +91,7 @@ static int dev_replace_handle_sigint(int fd)
- }
- 
- static const char *const cmd_replace_start_usage[] = {
--	"btrfs replace start [-Bfr] <srcdev>|<devid> <targetdev> <mount_point>",
-+	"btrfs replace start [-aBfr] <srcdev>|<devid> <targetdev> <mount_point>",
- 	"Replace device of a btrfs filesystem.",
- 	"On a live filesystem, duplicate the data to the target device which",
- 	"is currently stored on the source device. If the source device is not",
-@@ -104,6 +104,8 @@ static const char *const cmd_replace_start_usage[] = {
- 	"from the system, you have to use the <devid> parameter format.",
- 	"The <targetdev> needs to be same size or larger than the <srcdev>.",
- 	"",
-+	"-a     automatically resize the filesystem if the <targetdev> is bigger",
-+	"       than <srcdev>",
- 	"-r     only read from <srcdev> if no other zero-defect mirror exists",
- 	"       (enable this if your drive has lots of read errors, the access",
- 	"       would be very slow)",
-@@ -129,6 +131,7 @@ static int cmd_replace_start(const struct cmd_struct *cmd,
- 	char *path;
- 	char *srcdev;
- 	char *dstdev = NULL;
-+	bool auto_resize = false;
- 	int avoid_reading_from_srcdev = 0;
- 	int force_using_targetdev = 0;
- 	u64 dstdev_block_count;
-@@ -138,8 +141,11 @@ static int cmd_replace_start(const struct cmd_struct *cmd,
- 	u64 dstdev_size;
- 
- 	optind = 0;
--	while ((c = getopt(argc, argv, "Brf")) != -1) {
-+	while ((c = getopt(argc, argv, "aBrf")) != -1) {
- 		switch (c) {
-+		case 'a':
-+			auto_resize = true;
-+			break;
- 		case 'B':
- 			do_not_background = 1;
- 			break;
-@@ -309,6 +315,15 @@ static int cmd_replace_start(const struct cmd_struct *cmd,
- 			goto leave_with_error;
- 		}
- 	}
-+
-+	if (ret == 0 && auto_resize && dstdev_size > srcdev_size) {
-+		char amount[BTRFS_PATH_NAME_MAX + 1];
-+		snprintf(amount, BTRFS_PATH_NAME_MAX, "%s:max", srcdev);
-+
-+		if (resize_filesystem(amount, path))
-+			goto leave_with_error;
-+	}
-+
- 	close_file_or_dir(fdmnt, dirstream);
- 	return 0;
- 
--- 
-2.25.0
+> The first patch just moves the resize rationale to utils.c and the second patch
+> adds the flag an calls resize if -a is informed replace finishes successfully.
+> 
+> Please review!
+> 
+> Marcos Paulo de Souza (2):
+>    btrfs-progs: Move resize into functionaly into utils.c
+>    btrfs-progs: replace: New argument to resize the fs after replace
+> 
+>   Documentation/btrfs-replace.asciidoc |  4 +-
+>   cmds/filesystem.c                    | 58 +--------------------------
+>   cmds/replace.c                       | 19 ++++++++-
+>   common/utils.c                       | 60 ++++++++++++++++++++++++++++
+>   common/utils.h                       |  1 +
+>   5 files changed, 83 insertions(+), 59 deletions(-)
+> 
 

@@ -7,59 +7,59 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 99F7AC10F25
-	for <linux-btrfs@archiver.kernel.org>; Mon,  9 Mar 2020 21:33:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 43ACAC10F27
+	for <linux-btrfs@archiver.kernel.org>; Mon,  9 Mar 2020 21:33:09 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 759F024649
-	for <linux-btrfs@archiver.kernel.org>; Mon,  9 Mar 2020 21:33:07 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1EB1224649
+	for <linux-btrfs@archiver.kernel.org>; Mon,  9 Mar 2020 21:33:09 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="uhOkNM8z"
+	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="MdbEJqPu"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726992AbgCIVdG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 9 Mar 2020 17:33:06 -0400
-Received: from mail-pl1-f195.google.com ([209.85.214.195]:45608 "EHLO
-        mail-pl1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726946AbgCIVdF (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Mar 2020 17:33:05 -0400
-Received: by mail-pl1-f195.google.com with SMTP id b22so4520124pls.12
-        for <linux-btrfs@vger.kernel.org>; Mon, 09 Mar 2020 14:33:04 -0700 (PDT)
+        id S1727023AbgCIVdI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 9 Mar 2020 17:33:08 -0400
+Received: from mail-pj1-f65.google.com ([209.85.216.65]:36046 "EHLO
+        mail-pj1-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726971AbgCIVdG (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Mar 2020 17:33:06 -0400
+Received: by mail-pj1-f65.google.com with SMTP id l41so486507pjb.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 09 Mar 2020 14:33:06 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=osandov-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=liJbOg/qh8eI1EH0nzrSmHQQ3FWUVUdFOFKZ+RXSbm4=;
-        b=uhOkNM8zukTViLfTeBabOQS/77uxs6I2H+1R1kCyBUt0gAVPjrEq+Ev+16z7tIsdDZ
-         NjIKZ4jLN6WGzWcqWJWXaCVZpe56fLPZ45ATstd0jPOQXijqqSb6xy5a8AWDCySQKpVt
-         ypPOPyr6wVgpzOaviP0RKTGvTqqwXmQqG6/LFJmnLBCfnNMVdQD9AMWcWYDnQXg5zDxx
-         WTygufiein9wzMu77OaSf2QoPsOuJrJMkr5y9h2Jxj7cWEEFUFIqCNjqYLcFzVeyW8pB
-         Q5e/yHUVJQ6xl3vPtW5mYYPDremnWZICe92bTUHNu9qJlFYHP28zyM0Yrq7M40L/ztZm
-         4Z8g==
+        bh=Y2RsQPRD0w7048dytJeUmrGKvsDH4YsdJs1InlBl878=;
+        b=MdbEJqPuT1gDR8ahrp5wuPF+Ze8hFsye3FXTj9cAbNzv+PpeZov6uZnIlIazeglSkP
+         9mB228Ij1BKvhVO2H7uQ/6nFcREvE2gobOpjV0j8/ULIsQT/QSy4tQoT4z1ING0HhpAY
+         orxd/5dUVp9sbSZrGiuyAXxG2JXpB346oenWbD6dWGw66dY5Wiul9m9qFHNiiRg19poL
+         s2W3qyIFeJoFtwyb7URKAeQvge5fpouFoITIH5kZiHrQmrxPbgE6gWpFUNZDuyMuiPoO
+         1EfNMOoYBdPuEe2b0ZbdWjxvfv7DJxpyKBNCR9fNB2/+gv8w25f86uYaIBu81ofW9FVL
+         a1bw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=liJbOg/qh8eI1EH0nzrSmHQQ3FWUVUdFOFKZ+RXSbm4=;
-        b=iWI53P4Ay33PmNTg9mG1oYlI7ANl3bKppHOhkS2Ja/DivjSUJIuhHmpAr62fG51aRy
-         ev1VI7HjkSffhuy+8E/9Te11ljoxp5czFY+gvqBV1OT9jllfjxtzy8HWafleYuikOfS8
-         5oJ4Hvz9X+iz7gfeGsUWV2tTZq1ZR73gH1a4iDTJ0ZS/xvnCuQ+kYxWQzWuHjlauA5Ld
-         tGrUQ8cmf1F+mR00xkR/erky60VUV0Y8Yz1zYWVt+3dfaWKWk98vbvm/TEaHVQ02KaFj
-         Ox7dYP+U3ddG2X21cbxbLCU744Kxo8vs/dWvysL3KWSGC4zy04bt9eiT8dCnfdVr4eBH
-         I+Dg==
-X-Gm-Message-State: ANhLgQ1xadri7cxa07+EB6Iz/w5XVsd9wr6vniOjS+fcMz8PImiMsu72
-        RSpl5THxUbIXQChj+LPg50lKFdp/hCw=
-X-Google-Smtp-Source: ADFU+vs75VZamV7n1udzU2iPD1IZdCsa3ixWJ3YjIxohdEyqxh4qSkA9PktuEtuOlKUh8zltDZ9FAw==
-X-Received: by 2002:a17:90a:c78b:: with SMTP id gn11mr938925pjb.97.1583789583297;
-        Mon, 09 Mar 2020 14:33:03 -0700 (PDT)
+        bh=Y2RsQPRD0w7048dytJeUmrGKvsDH4YsdJs1InlBl878=;
+        b=oggmB86R6/ReuWDV5Z+PJwFcvUtiOAUB9ckVkgJp3ekeDR2OaaCfnqrKlxKPeV3jVW
+         n/jO4e9TGnCf1oQmNl4mJGOVQ4Df6Y21UKf3wgbqCux4c6y0esd+saHvNVd6KImF36Pt
+         RnmKlU+IGtVFEWkrfuWkrsgBqYBub3al3LyROtJ6JuM88BJpRc/n+x47porZHdClmWsu
+         AV+/sGHnF0y40fjd+zMPACTtGnHAYRrTOsWYsL3a00HUg16novSMr5+zl6SiAZRTobJk
+         txfi7kjp/9YgXgvYQiabwMVbKVZ93Ev/A2A8nwC312KvEHHfHW42XvZLjUErOKEc+AvA
+         8GmQ==
+X-Gm-Message-State: ANhLgQ37Nt+Mwz1n33N8CxrP8nrOja7vQ7OlfxawByjCX1yj6R8zJfOe
+        QHz6akZPuHhRtmGjn62hHX7FQDPJrPw=
+X-Google-Smtp-Source: ADFU+vv4rQr1AIXBAjPfeAq7IJYFhKkwWTy95eyT7dRfpeC692UKjUnuTS0r5ShDa3q2vLuMp/gN7w==
+X-Received: by 2002:a17:90a:25c8:: with SMTP id k66mr1254607pje.90.1583789585379;
+        Mon, 09 Mar 2020 14:33:05 -0700 (PDT)
 Received: from vader.tfbnw.net ([2620:10d:c090:400::5:fe90])
-        by smtp.gmail.com with ESMTPSA id 13sm44221683pgo.13.2020.03.09.14.33.02
+        by smtp.gmail.com with ESMTPSA id 13sm44221683pgo.13.2020.03.09.14.33.04
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 09 Mar 2020 14:33:02 -0700 (PDT)
+        Mon, 09 Mar 2020 14:33:04 -0700 (PDT)
 From:   Omar Sandoval <osandov@osandov.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     kernel-team@fb.com, Christoph Hellwig <hch@lst.de>
-Subject: [PATCH 08/15] btrfs: move btrfs_dio_private to inode.c
-Date:   Mon,  9 Mar 2020 14:32:34 -0700
-Message-Id: <7cb31cf9673d1d232e770145924ef779d3681058.1583789410.git.osandov@fb.com>
+Subject: [PATCH 10/15] btrfs: convert btrfs_dio_private->pending_bios to refcount_t
+Date:   Mon,  9 Mar 2020 14:32:36 -0700
+Message-Id: <ca4884807ed430e3f546e50cc06678517f439df7.1583789410.git.osandov@fb.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1583789410.git.osandov@fb.com>
 References: <cover.1583789410.git.osandov@fb.com>
@@ -72,97 +72,75 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Omar Sandoval <osandov@fb.com>
 
-This hasn't been needed outside of inode.c since commit 23ea8e5a0767
-("Btrfs: load checksum data once when submitting a direct read io").
+This is really a reference count now, so convert it to refcount_t and
+rename it to refs.
 
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- fs/btrfs/btrfs_inode.h | 30 ------------------------------
- fs/btrfs/inode.c       | 30 ++++++++++++++++++++++++++++++
- 2 files changed, 30 insertions(+), 30 deletions(-)
+ fs/btrfs/inode.c | 17 ++++++++++-------
+ 1 file changed, 10 insertions(+), 7 deletions(-)
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 27a1fefce508..ade5c6adec06 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -293,36 +293,6 @@ static inline int btrfs_inode_in_log(struct btrfs_inode *inode, u64 generation)
- 	return ret;
- }
- 
--#define BTRFS_DIO_ORIG_BIO_SUBMITTED	0x1
--
--struct btrfs_dio_private {
--	struct inode *inode;
--	unsigned long flags;
--	u64 logical_offset;
--	u64 disk_bytenr;
--	u64 bytes;
--	void *private;
--
--	/* number of bios pending for this dio */
--	atomic_t pending_bios;
--
--	/* IO errors */
--	int errors;
--
--	/* orig_bio is our btrfs_io_bio */
--	struct bio *orig_bio;
--
--	/* dio_bio came from fs/direct-io.c */
--	struct bio *dio_bio;
--
--	/*
--	 * The original bio may be split to several sub-bios, this is
--	 * done during endio of sub-bios
--	 */
--	blk_status_t (*subio_endio)(struct inode *, struct btrfs_io_bio *,
--			blk_status_t);
--};
--
- /*
-  * Disable DIO read nolock optimization, so new dio readers will be forced
-  * to grab i_mutex. It is used to avoid the endless truncate due to
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 50476ae96552..9d3a275ef253 100644
+index 8cc8741b3fec..a7fb0ba8cde4 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -54,6 +54,36 @@ struct btrfs_iget_args {
- 	struct btrfs_root *root;
- };
+@@ -63,8 +63,11 @@ struct btrfs_dio_private {
+ 	u64 disk_bytenr;
+ 	u64 bytes;
  
-+#define BTRFS_DIO_ORIG_BIO_SUBMITTED	0x1
-+
-+struct btrfs_dio_private {
-+	struct inode *inode;
-+	unsigned long flags;
-+	u64 logical_offset;
-+	u64 disk_bytenr;
-+	u64 bytes;
-+	void *private;
-+
-+	/* number of bios pending for this dio */
-+	atomic_t pending_bios;
-+
-+	/* IO errors */
-+	int errors;
-+
-+	/* orig_bio is our btrfs_io_bio */
-+	struct bio *orig_bio;
-+
-+	/* dio_bio came from fs/direct-io.c */
-+	struct bio *dio_bio;
-+
+-	/* number of bios pending for this dio */
+-	atomic_t pending_bios;
 +	/*
-+	 * The original bio may be split to several sub-bios, this is
-+	 * done during endio of sub-bios
++	 * References to this structure. There is one reference per in-flight
++	 * bio plus one while we're still setting up.
 +	 */
-+	blk_status_t (*subio_endio)(struct inode *, struct btrfs_io_bio *,
-+			blk_status_t);
-+};
-+
- struct btrfs_dio_data {
- 	u64 reserve;
- 	u64 unsubmitted_oe_range_start;
++	refcount_t refs;
+ 
+ 	/* IO errors */
+ 	int errors;
+@@ -7849,7 +7852,7 @@ static void btrfs_end_dio_bio(struct bio *bio)
+ 	}
+ 
+ 	/* if there are more bios still pending for this dio, just exit */
+-	if (!atomic_dec_and_test(&dip->pending_bios))
++	if (!refcount_dec_and_test(&dip->refs))
+ 		goto out;
+ 
+ 	if (dip->errors) {
+@@ -8001,13 +8004,13 @@ static void btrfs_submit_direct_hook(struct btrfs_dio_private *dip)
+ 		 * count. Otherwise, the dip might get freed before we're
+ 		 * done setting it up.
+ 		 */
+-		atomic_inc(&dip->pending_bios);
++		refcount_inc(&dip->refs);
+ 
+ 		status = btrfs_submit_dio_bio(bio, inode, file_offset,
+ 						async_submit);
+ 		if (status) {
+ 			bio_put(bio);
+-			atomic_dec(&dip->pending_bios);
++			refcount_dec(&dip->refs);
+ 			goto out_err;
+ 		}
+ 
+@@ -8036,7 +8039,7 @@ static void btrfs_submit_direct_hook(struct btrfs_dio_private *dip)
+ 	 * atomic operations with a return value are fully ordered as per
+ 	 * atomic_t.txt
+ 	 */
+-	if (atomic_dec_and_test(&dip->pending_bios))
++	if (refcount_dec_and_test(&dip->refs))
+ 		bio_io_error(dip->orig_bio);
+ }
+ 
+@@ -8074,7 +8077,7 @@ static void btrfs_submit_direct(struct bio *dio_bio, struct inode *inode,
+ 	bio->bi_private = dip;
+ 	dip->orig_bio = bio;
+ 	dip->dio_bio = dio_bio;
+-	atomic_set(&dip->pending_bios, 1);
++	refcount_set(&dip->refs, 1);
+ 	io_bio = btrfs_io_bio(bio);
+ 	io_bio->logical = file_offset;
+ 
 -- 
 2.25.1
 

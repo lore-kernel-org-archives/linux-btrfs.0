@@ -7,59 +7,59 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9F13EC10F25
-	for <linux-btrfs@archiver.kernel.org>; Mon,  9 Mar 2020 21:33:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D5E65C10F27
+	for <linux-btrfs@archiver.kernel.org>; Mon,  9 Mar 2020 21:33:03 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 75C3B24654
-	for <linux-btrfs@archiver.kernel.org>; Mon,  9 Mar 2020 21:33:02 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id AAED724649
+	for <linux-btrfs@archiver.kernel.org>; Mon,  9 Mar 2020 21:33:03 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="HRiSjGnm"
+	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="MX2IoLP/"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726859AbgCIVdB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 9 Mar 2020 17:33:01 -0400
-Received: from mail-pl1-f193.google.com ([209.85.214.193]:45601 "EHLO
-        mail-pl1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726454AbgCIVdB (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Mar 2020 17:33:01 -0400
-Received: by mail-pl1-f193.google.com with SMTP id b22so4520040pls.12
-        for <linux-btrfs@vger.kernel.org>; Mon, 09 Mar 2020 14:32:58 -0700 (PDT)
+        id S1726937AbgCIVdD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 9 Mar 2020 17:33:03 -0400
+Received: from mail-pj1-f68.google.com ([209.85.216.68]:34258 "EHLO
+        mail-pj1-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726454AbgCIVdC (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Mar 2020 17:33:02 -0400
+Received: by mail-pj1-f68.google.com with SMTP id 39so360644pjo.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 09 Mar 2020 14:33:02 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=osandov-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=9PGvqJ2BUvDQxTmPLiiPTrQxtqUzNKxmoj31iqotjZM=;
-        b=HRiSjGnmE4GTiups6Z+JVIwXeHKK3V72HEmHnBC83Xtj94OuIQQlL1FZynuiDjWTto
-         s7U0nGxrFMwi9EGg6VtYC7JmS+fguDAdK+kBlag5Vp6/0rC9rD0liGT8J9qkn0DlQCka
-         Rl4KjIh9/Q0vkaS35Aa5ChORG5nOf0+YIDMOoxh8X3ROOZRtfweNqJzngzygr4bt6ZWx
-         oJIcerNfGfHxCp+sGjC3l4PHLi7siMqApg3QKo5+C65XKpK4my0FLrJtNEncbVjXRe2o
-         S/OVrE/C7mbEJ441DYC1q8T2HYBtjNP5bYwLQa7SFvu8bfmYjJX6v9PXvNuzGR3Oo0Bf
-         TjNw==
+        bh=aTJ/i6VyAf03sKqOP0yfj+YRFyIZuvyftpW9EALlG5U=;
+        b=MX2IoLP/byRIN5Yo1YW7AcE0A0TLqNoNJ+NcYXkN5DmHTGr1jyVWtViKhVBvW0MxNz
+         +Fo5qmZXGIduPGn8SSiJl+iYokGXnzn1fxl0tw9CCK9t4vDmglfbZvSD9KBcLW4tx5XX
+         /C2w6nPpI2xhqkq3GCvG1IFepf4hTRmTJCgFAYjG8ux3x5JXNbDSzygsnGcD/vNH5pd8
+         VG/Ghxg8CnH1lxU9LpTa4yZsTff/5/7CgNkO4xauG727mwbAxHAb9KlCqXdbbAI6gVEO
+         EndIBEl+7JwZp7jT6kD8nEiiCPGhj1DPaYMS6DYDm8adDN1EYtWq8z8JEkyiLUTUA8gE
+         hNIg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=9PGvqJ2BUvDQxTmPLiiPTrQxtqUzNKxmoj31iqotjZM=;
-        b=KmDR3vY9jZJFV980xAZmE+AeC1dveSH+dZLbYqoSQNGYaOYvpy10DRVCdxT6tkkI9c
-         OD7fJ0yt8JMg/jsg0lDyMQYw2/mHdKj6SldDZ1RjG035A3r0uXgF03Ax71ILn9XJM2O+
-         PK0O8CO73QibgUL8CJ6k6dUYOjIbwNFnwc/mp49uFMB9By68ha4YvWgT/qMC4laQTku8
-         ovFzMD/QN+LucuY6j2Me3bzOObIxa23N06O+XjWoAPtEjqBwDW7IQZocER8l6JzAnvAc
-         6KVs/k6Cvb3JzjY4BCo67z5uE1DpAK7fFrjde16gE2qvMMOvPm5kLrz76ett9APHVnhM
-         w3OA==
-X-Gm-Message-State: ANhLgQ3lh9UzgN6DmhWurp99qn3jEydY+RiM1QI168p4p9rpZU6TKKCS
-        V4+IsEzCE9TRsBhr+kmcnJAELXm1bBA=
-X-Google-Smtp-Source: ADFU+vukP0f/foyDhE128pHDbI9Q6bQYnxdbA1Slkn2i5ugrfRNmeUjhgmqVkBu0URC/wPtm98V+sA==
-X-Received: by 2002:a17:902:be03:: with SMTP id r3mr17654461pls.137.1583789577980;
-        Mon, 09 Mar 2020 14:32:57 -0700 (PDT)
+        bh=aTJ/i6VyAf03sKqOP0yfj+YRFyIZuvyftpW9EALlG5U=;
+        b=E46FYxRstQW6S6dyFODF52WPYBluaJ3BuYgZWI2YQCMdBV2Wf8/ra3payMi6Z1t+9H
+         om+OFkwJpwmyW6bn0IKCqj8HfzEaSyVTzqkv5mUfsPUi882RpdDHozBQ/SqGj8Z9n2CE
+         M5afjsxej28czG6EssqzFyH2fOLdudenApOB+xeVvQKfHG/Xq9dL/0K5yQOjyD3VNpRc
+         OOv1z8EK3JcbjbdBTDpYpiEsEwWAGxQG0SGRZ3mSUFlLjagrrGVgxxt+H18xOg6O0w8d
+         PNN0A0RQOOeJDNV24ELLn6LqSPlsgcgVmKA0VpCyk00keLfDd04uxMFQ3VrVI62F7YfM
+         rL3Q==
+X-Gm-Message-State: ANhLgQ0YaAw+RK9QL/hQO3IhHqaIWrhHg1nrSThfrTHSSZIvnJytCXJa
+        YeiTkL1vG+Bvk36oXGUu3a12jvIR3yk=
+X-Google-Smtp-Source: ADFU+vuznB8ivUMrnqlY6Z4DqNfjyrdhr2G7J/DR6OudYwtf/SqctKa/9ocFE0LR2qFteaQLAMebiA==
+X-Received: by 2002:a17:902:9f87:: with SMTP id g7mr11022992plq.32.1583789581217;
+        Mon, 09 Mar 2020 14:33:01 -0700 (PDT)
 Received: from vader.tfbnw.net ([2620:10d:c090:400::5:fe90])
-        by smtp.gmail.com with ESMTPSA id 13sm44221683pgo.13.2020.03.09.14.32.56
+        by smtp.gmail.com with ESMTPSA id 13sm44221683pgo.13.2020.03.09.14.33.00
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 09 Mar 2020 14:32:57 -0700 (PDT)
+        Mon, 09 Mar 2020 14:33:00 -0700 (PDT)
 From:   Omar Sandoval <osandov@osandov.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     kernel-team@fb.com, Christoph Hellwig <hch@lst.de>
-Subject: [PATCH 03/15] btrfs: look at full bi_io_vec for repair decision
-Date:   Mon,  9 Mar 2020 14:32:29 -0700
-Message-Id: <c0f65f07b18eee7cef4e0b0b439a45ae437a11c6.1583789410.git.osandov@fb.com>
+Subject: [PATCH 06/15] btrfs: rename __readpage_endio_check to check_data_csum
+Date:   Mon,  9 Mar 2020 14:32:32 -0700
+Message-Id: <f0404525ae352a08750f56a822512a52263d7277.1583789410.git.osandov@fb.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1583789410.git.osandov@fb.com>
 References: <cover.1583789410.git.osandov@fb.com>
@@ -72,119 +72,68 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Omar Sandoval <osandov@fb.com>
 
-Read repair does two things: it finds a good copy of data to return to
-the reader, and it corrects the bad copy on disk. If a read of multiple
-sectors has an I/O error, repair does an extra "validation" step that
-issues a separate read for each sector. This allows us to find the exact
-failing sectors and only rewrite those.
+__readpage_endio_check() is also used from the direct I/O read code, so
+give it a more descriptive name.
 
-This heuristic is implemented in
-bio_readpage_error()/btrfs_check_repairable() as:
-
-	failed_bio_pages = failed_bio->bi_iter.bi_size >> PAGE_SHIFT;
-	if (failed_bio_pages > 1)
-		do validation
-
-However, at this point, bi_iter may have already been advanced. This
-means that we'll skip the validation step and rewrite the entire failed
-read.
-
-Fix it by getting the actual size from the biovec (which we can do
-because this is only called for non-cloned bios, although that will
-change in a later commit).
-
-Fixes: 8a2ee44a371c ("btrfs: look at bi_size for repair decisions")
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- fs/btrfs/extent_io.c | 28 ++++++++++++++++++++++------
- fs/btrfs/extent_io.h |  5 +++--
- 2 files changed, 25 insertions(+), 8 deletions(-)
+ fs/btrfs/inode.c | 22 +++++++++++-----------
+ 1 file changed, 11 insertions(+), 11 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 837262d54e28..279731bff0a8 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2528,8 +2528,9 @@ int btrfs_get_io_failure_record(struct inode *inode, u64 start, u64 end,
- 	return 0;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 8e986056be3c..50476ae96552 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2725,10 +2725,9 @@ void btrfs_writepage_endio_finish_ordered(struct page *page, u64 start,
+ 	btrfs_queue_work(wq, &ordered_extent->work);
  }
  
--bool btrfs_check_repairable(struct inode *inode, unsigned failed_bio_pages,
--			   struct io_failure_record *failrec, int failed_mirror)
-+bool btrfs_check_repairable(struct inode *inode, bool need_validation,
-+			    struct io_failure_record *failrec,
-+			    int failed_mirror)
+-static int __readpage_endio_check(struct inode *inode,
+-				  struct btrfs_io_bio *io_bio,
+-				  int icsum, struct page *page,
+-				  int pgoff, u64 start, size_t len)
++static int check_data_csum(struct inode *inode, struct btrfs_io_bio *io_bio,
++			   int icsum, struct page *page, int pgoff, u64 start,
++			   size_t len)
  {
  	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
- 	int num_copies;
-@@ -2552,7 +2553,7 @@ bool btrfs_check_repairable(struct inode *inode, unsigned failed_bio_pages,
- 	 *	a) deliver good data to the caller
- 	 *	b) correct the bad sectors on disk
- 	 */
--	if (failed_bio_pages > 1) {
-+	if (need_validation) {
- 		/*
- 		 * to fulfill b), we need to know the exact failing sectors, as
- 		 * we don't want to rewrite any more than the failed ones. thus,
-@@ -2638,11 +2639,13 @@ static int bio_readpage_error(struct bio *failed_bio, u64 phy_offset,
- 	struct inode *inode = page->mapping->host;
- 	struct extent_io_tree *tree = &BTRFS_I(inode)->io_tree;
- 	struct extent_io_tree *failure_tree = &BTRFS_I(inode)->io_failure_tree;
-+	bool need_validation = false;
-+	u64 len;
-+	int i;
- 	struct bio *bio;
- 	int read_mode = 0;
- 	blk_status_t status;
- 	int ret;
--	unsigned failed_bio_pages = failed_bio->bi_iter.bi_size >> PAGE_SHIFT;
- 
- 	BUG_ON(bio_op(failed_bio) == REQ_OP_WRITE);
- 
-@@ -2650,13 +2653,26 @@ static int bio_readpage_error(struct bio *failed_bio, u64 phy_offset,
- 	if (ret)
- 		return ret;
- 
--	if (!btrfs_check_repairable(inode, failed_bio_pages, failrec,
-+	/*
-+	 * We need to validate each sector individually if the I/O was for
-+	 * multiple sectors.
-+	 */
-+	len = 0;
-+	for (i = 0; i < failed_bio->bi_vcnt; i++) {
-+		len += failed_bio->bi_io_vec[i].bv_len;
-+		if (len > inode->i_sb->s_blocksize) {
-+			need_validation = true;
-+			break;
-+		}
-+	}
-+
-+	if (!btrfs_check_repairable(inode, need_validation, failrec,
- 				    failed_mirror)) {
- 		free_io_failure(failure_tree, tree, failrec);
- 		return -EIO;
+ 	SHASH_DESC_ON_STACK(shash, fs_info->csum_shash);
+@@ -2789,8 +2788,8 @@ static int btrfs_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
  	}
  
--	if (failed_bio_pages > 1)
-+	if (need_validation)
- 		read_mode |= REQ_FAILFAST_DEV;
- 
  	phy_offset >>= inode->i_sb->s_blocksize_bits;
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 234622101230..64e176995af2 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -312,8 +312,9 @@ struct io_failure_record {
- };
+-	return __readpage_endio_check(inode, io_bio, phy_offset, page, offset,
+-				      start, (size_t)(end - start + 1));
++	return check_data_csum(inode, io_bio, phy_offset, page, offset, start,
++			       (size_t)(end - start + 1));
+ }
  
+ /*
+@@ -7593,9 +7592,9 @@ static void btrfs_retry_endio(struct bio *bio)
  
--bool btrfs_check_repairable(struct inode *inode, unsigned failed_bio_pages,
--			    struct io_failure_record *failrec, int fail_mirror);
-+bool btrfs_check_repairable(struct inode *inode, bool need_validation,
-+			    struct io_failure_record *failrec,
-+			    int failed_mirror);
- struct bio *btrfs_create_repair_bio(struct inode *inode, struct bio *failed_bio,
- 				    struct io_failure_record *failrec,
- 				    struct page *page, int pg_offset, int icsum,
+ 	ASSERT(!bio_flagged(bio, BIO_CLONED));
+ 	bio_for_each_segment_all(bvec, bio, iter_all) {
+-		ret = __readpage_endio_check(inode, io_bio, i, bvec->bv_page,
+-					     bvec->bv_offset, done->start,
+-					     bvec->bv_len);
++		ret = check_data_csum(inode, io_bio, i, bvec->bv_page,
++				      bvec->bv_offset, done->start,
++				      bvec->bv_len);
+ 		if (!ret)
+ 			clean_io_failure(BTRFS_I(inode)->root->fs_info,
+ 					 failure_tree, io_tree, done->start,
+@@ -7645,8 +7644,9 @@ static blk_status_t __btrfs_subio_endio_read(struct inode *inode,
+ next_block:
+ 		if (uptodate) {
+ 			csum_pos = BTRFS_BYTES_TO_BLKS(fs_info, offset);
+-			ret = __readpage_endio_check(inode, io_bio, csum_pos,
+-					bvec.bv_page, pgoff, start, sectorsize);
++			ret = check_data_csum(inode, io_bio, csum_pos,
++					      bvec.bv_page, pgoff, start,
++					      sectorsize);
+ 			if (likely(!ret))
+ 				goto next;
+ 		}
 -- 
 2.25.1
 

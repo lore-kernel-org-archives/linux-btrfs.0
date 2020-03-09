@@ -1,249 +1,224 @@
-Return-Path: <SRS0=yRDE=4Z=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=wiEv=42=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.9 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-14.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 11E5BC10DCE
-	for <linux-btrfs@archiver.kernel.org>; Sun,  8 Mar 2020 21:05:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6B3AFC18E5A
+	for <linux-btrfs@archiver.kernel.org>; Mon,  9 Mar 2020 10:36:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B092D2067C
-	for <linux-btrfs@archiver.kernel.org>; Sun,  8 Mar 2020 21:05:40 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4478E20674
+	for <linux-btrfs@archiver.kernel.org>; Mon,  9 Mar 2020 10:36:57 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=clarafamily.com header.i=@clarafamily.com header.b="V4uP44jn"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=mpdesouza.com header.i=@mpdesouza.com header.b="WiwDeEGR"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726360AbgCHVFj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 8 Mar 2020 17:05:39 -0400
-Received: from mail-qt1-f194.google.com ([209.85.160.194]:43119 "EHLO
-        mail-qt1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726352AbgCHVFj (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 8 Mar 2020 17:05:39 -0400
-Received: by mail-qt1-f194.google.com with SMTP id l13so555016qtv.10
-        for <linux-btrfs@vger.kernel.org>; Sun, 08 Mar 2020 14:05:38 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=clarafamily.com; s=google;
-        h=from:content-transfer-encoding:mime-version:subject:message-id:date
-         :to;
-        bh=m1fm9ZvEhkvQ1zprGzOdgBsw+YFhJHJWw8RnWJ0G7Fw=;
-        b=V4uP44jnW/ZLaRJ1lCZhSYbTXbsmOxW2ciwt1A7X/o7vN7HYUUPrUAGEzuoj/CxJIc
-         7zCSHltiGtCWjqLV/Gl/rPh3k9ewguokm5/+m1L/JVWXYJVgarU/aBnldwUXOxCVunX+
-         NI5b69V6+ikGjexlNN1fINC7Xfn1Pspf/lQKg=
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:content-transfer-encoding:mime-version
-         :subject:message-id:date:to;
-        bh=m1fm9ZvEhkvQ1zprGzOdgBsw+YFhJHJWw8RnWJ0G7Fw=;
-        b=ZsgadX0XlcN6CT7bj2kkmgn3MHUYrpPuDpkYb4lMjVEJ1nCdiEMrGrheonvMow/yBv
-         lo2Ed36xranaQDjle1N9bsWDRLsGTHo+b0A1DWDmMH4jMCnf0dWFJUEef5LWmLB6ND3d
-         vJlpaSL3wJ9SK8tlRiGmwJQT9LU+7M7XHxpypE3xcI/QNEB8vl+9utBc51HUASpqWmZC
-         WYdq5M1zu1ZFuLyEfYVVCahdN2jqZfXxMq/hpcsTM/mj9kKFTJZunbvWxyqMbtxa3vfr
-         1aTscZA7/VN1nz1uKN2NKbIxLDyOvZKh1bHMVfAyaZZg704+SI91WVd0J00qYvjstF97
-         uqSw==
-X-Gm-Message-State: ANhLgQ3xJUNETWmEObiVNpBcV4zQ3TJ2qdiJAavFSspyoquctV1NIktQ
-        uJpb5thMclrFpEVmRmznLBGjrqn4NyV8gIYB
-X-Google-Smtp-Source: ADFU+vtGRifKUXy0gPrc+szQF7f7DO/o0x9ecTyPh4rcb9jzdYdBpTdktQ2/+KSpJ23k9D6tIit0Iw==
-X-Received: by 2002:ac8:6f12:: with SMTP id g18mr12189923qtv.6.1583701537744;
-        Sun, 08 Mar 2020 14:05:37 -0700 (PDT)
-Received: from macbookpro.clara (CPE40623100049e-CM9050cac9ddf0.cpe.net.cable.rogers.com. [99.247.249.188])
-        by smtp.gmail.com with ESMTPSA id z21sm20632284qka.122.2020.03.08.14.05.36
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Sun, 08 Mar 2020 14:05:37 -0700 (PDT)
-From:   Jason Clara <jason@clarafamily.com>
-Content-Type: text/plain;
-        charset=us-ascii
-Content-Transfer-Encoding: quoted-printable
-Mime-Version: 1.0 (Mac OS X Mail 11.5 \(3445.9.1\))
-Subject: BTRFS remove device crashing whole system  
-Message-Id: <EDB94DB8-ECE6-44A0-8508-DFF49AB49721@clarafamily.com>
-Date:   Sun, 8 Mar 2020 17:05:35 -0400
-To:     linux-btrfs@vger.kernel.org
-X-Mailer: Apple Mail (2.3445.9.1)
+        id S1726521AbgCIKg4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 9 Mar 2020 06:36:56 -0400
+Received: from gateway23.websitewelcome.com ([192.185.49.124]:37468 "EHLO
+        gateway23.websitewelcome.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1726389AbgCIKg4 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 9 Mar 2020 06:36:56 -0400
+Received: from cm10.websitewelcome.com (cm10.websitewelcome.com [100.42.49.4])
+        by gateway23.websitewelcome.com (Postfix) with ESMTP id 28DFD35A00
+        for <linux-btrfs@vger.kernel.org>; Mon,  9 Mar 2020 05:36:54 -0500 (CDT)
+Received: from br540.hostgator.com.br ([108.179.252.180])
+        by cmsmtp with SMTP
+        id BFmIjoSzKEfyqBFmIjrBxt; Mon, 09 Mar 2020 05:36:54 -0500
+X-Authority-Reason: nr=8
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=mpdesouza.com; s=default; h=Content-Transfer-Encoding:MIME-Version:
+        Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:Content-Type:Content-ID:
+        Content-Description:Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc
+        :Resent-Message-ID:In-Reply-To:References:List-Id:List-Help:List-Unsubscribe:
+        List-Subscribe:List-Post:List-Owner:List-Archive;
+        bh=elJeF7K6y9JBNeL9AEZ3/QkiKaX0fMBmVIjJ08SoDqY=; b=WiwDeEGRLLq5ghGTMy3ndX2Qi+
+        Wf1Bv5KEHtIYFYIjEv/SQpuzfb08Y0RgvL8DYhvg2EtpsQyx9qMgfwRwIbQdiJX2Ofllpf/nxhRmj
+        FTWo+O50Ca5dzL+y2MPrQn54WT+tmBAjQWPPAws6NPV9kALulPliFmRVIiMGc8Rw8/B/ZkEyHOdqZ
+        nHIY64/Afgte2b+WRplOdAaIfQaDic7McAHVwJzSdfHE3glAcLjRukfLYsTjaAnwfuQ8/cVtGCdrs
+        PiOwQ4cGlOPVoKaCoL9fBh08EBUstjgF73La5Y/SUQKm2qMziCoYaupB3tQfIM5Uwab763lHcrNX9
+        j/1WUlEg==;
+Received: from 189.26.190.248.dynamic.adsl.gvt.net.br ([189.26.190.248]:34340 helo=hephaestus.suse.cz)
+        by br540.hostgator.com.br with esmtpsa (TLSv1.2:ECDHE-RSA-AES128-GCM-SHA256:128)
+        (Exim 4.92)
+        (envelope-from <marcos@mpdesouza.com>)
+        id 1jBFmH-002Aq1-JD; Mon, 09 Mar 2020 07:36:53 -0300
+From:   Marcos Paulo de Souza <marcos@mpdesouza.com>
+To:     linux-btrfs@vger.kernel.org, guaneryu@gmail.com,
+        fstests@vger.kernel.org
+Cc:     Marcos Paulo de Souza <mpdesouza@suse.com>
+Subject: [PATCHv4 fstests] btrfs: Test subvolume delete --subvolid feature
+Date:   Mon,  9 Mar 2020 07:39:56 -0300
+Message-Id: <20200309103956.1697-1-marcos@mpdesouza.com>
+X-Mailer: git-send-email 2.25.0
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
+X-AntiAbuse: This header was added to track abuse, please include it with any abuse report
+X-AntiAbuse: Primary Hostname - br540.hostgator.com.br
+X-AntiAbuse: Original Domain - vger.kernel.org
+X-AntiAbuse: Originator/Caller UID/GID - [47 12] / [47 12]
+X-AntiAbuse: Sender Address Domain - mpdesouza.com
+X-BWhitelist: no
+X-Source-IP: 189.26.190.248
+X-Source-L: No
+X-Exim-ID: 1jBFmH-002Aq1-JD
+X-Source: 
+X-Source-Args: 
+X-Source-Dir: 
+X-Source-Sender: 189.26.190.248.dynamic.adsl.gvt.net.br (hephaestus.suse.cz) [189.26.190.248]:34340
+X-Source-Auth: marcos@mpdesouza.com
+X-Email-Count: 4
+X-Source-Cap: bXBkZXNvNTM7bXBkZXNvNTM7YnI1NDAuaG9zdGdhdG9yLmNvbS5icg==
+X-Local-Domain: yes
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi, hoping someone can help with this issue I am having.  I have a pool =
-setup as D:RAID6/M:RAID1 which I converted to that from D/M:RAID1 about =
-a month ago. =20
+From: Marcos Paulo de Souza <mpdesouza@suse.com>
 
-Since I did that I have been wanting to remove one of my drives from the =
-pool. However, whenever I do it crashes the whole system after running =
-for about 24 hours.  This is my third or fourth attempt with it =
-happening and I have updated my kernel and btrfs-progs hoping it would =
-solve the issue
+Now btrfs can delete subvolumes based in ther subvolume id. This makes
+easy for the user willing to delete a subvolume that cannot be accessed
+by the mount point, since btrfs allows to mount a specific subvolume and
+hiding the other from the mount point.
 
-Since the last time it happened I have run a full balance and a scrub =
-and both complete without any issues.  I do this between every attempt. =
-But when I try to do the remove it crashes the whole system and I have =
-to reset.  Right now a scrub is running since this is RAID6 and =
-suggested to be done after any unclean shutdown.  Should be done in 24 =
-hours.
+Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
+---
+Changes from v3:
+* Changes test 203 -> 208, since other tests were merged
+* The first patch was merged, so remove it from sending again
+  [https://git.kernel.org/pub/scm/fs/xfs/xfstests-dev.git/commit/?id=2f9b4039253d3a6f91cb2a22639a243b5a27e110]
 
-At the moment of the crash the system was being used as a plex server =
-and had three streams going, and some other services.  So reads with =
-some writes going on at the same time.  Remove had been going for maybe =
-24 hours before it locked up.
+Changes from v2:
+* Added Reviewed-by from Nikolay to patch 0001
+* Changed awk to $AWK_PROG, suggested by Eryu
+* Changed _run_btrfs_util_prog to $BTRFS_UTIL_PROG, suggested by Eryu
+* Use _scratch_unmount instead of executing umount by hand, sugested by Eryu
+* Created a local function to delete and list subvolumes, suggested by Eryu
 
-Here is hopefully all the info you need, but please let me know if =
-anything else is required
+Changes from v1:
+* Added some prints printing what is being tested
+* The test now uses the _btrfs_get_subvolid to get subvolumeids instead of using
+  plain integers
+* New patch expanding the funtionality of _require_btrfs_command, which now
+  check for argument of subcommands
 
-I am trying to remove one of the 3TB drives (sdb)
+ tests/btrfs/208     | 68 +++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/208.out | 17 ++++++++++++
+ tests/btrfs/group   |  1 +
+ 3 files changed, 86 insertions(+)
+ create mode 100755 tests/btrfs/208
+ create mode 100644 tests/btrfs/208.out
 
-My device stats shows 1 corruption_errs for one drive that has been =
-there for a while so no errors have come up with these delete attempts
+diff --git a/tests/btrfs/208 b/tests/btrfs/208
+new file mode 100755
+index 00000000..4ffc8719
+--- /dev/null
++++ b/tests/btrfs/208
+@@ -0,0 +1,68 @@
++#! /bin/bash
++# SPDX-License-Identifier: GPL-2.0
++# Copyright (C) 2020 SUSE Linux Products GmbH. All Rights Reserved.
++#
++# FSQA Test No. 208
++#
++# Test subvolume deletion using the subvolume id, even when the subvolume in
++# question is in a different mount space.
++#
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++tmp=/tmp/$$
++status=1	# failure is the default!
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/filter.btrfs
++
++# real QA test starts here
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch
++_require_btrfs_command subvolume delete --subvolid
++
++_scratch_mkfs > /dev/null 2>&1
++_scratch_mount
++
++_delete_and_list()
++{
++	local subvol_name="$1"
++	local msg="$2"
++
++	SUBVOLID=$(_btrfs_get_subvolid $SCRATCH_MNT "$subvol_name")
++	$BTRFS_UTIL_PROG subvolume delete --subvolid $SUBVOLID $SCRATCH_MNT | _filter_scratch
++
++	echo "$msg"
++	$BTRFS_UTIL_PROG subvolume list $SCRATCH_MNT | $AWK_PROG '{ print $NF }'
++}
++
++# Test creating a normal subvolumes
++$BTRFS_UTIL_PROG subvolume create $SCRATCH_MNT/subvol1 | _filter_scratch
++$BTRFS_UTIL_PROG subvolume create $SCRATCH_MNT/subvol2 | _filter_scratch
++$BTRFS_UTIL_PROG subvolume create $SCRATCH_MNT/subvol3 | _filter_scratch
++
++echo "Current subvolume ids:"
++$BTRFS_UTIL_PROG subvolume list $SCRATCH_MNT | $AWK_PROG '{ print $NF }'
++
++# Delete the subvolume subvol1, and list the remaining two subvolumes
++_delete_and_list subvol1 "After deleting one subvolume:"
++_scratch_unmount
++
++# Now we mount the subvol2, which makes subvol3 not accessible for this mount
++# point, but we should be able to delete it using it's subvolume id
++$MOUNT_PROG -o subvol=subvol2 $SCRATCH_DEV $SCRATCH_MNT
++_delete_and_list subvol3 "Last remaining subvolume:"
++_scratch_unmount
++
++# now mount the rootfs
++_scratch_mount
++# Delete the subvol2
++_delete_and_list subvol2 "All subvolumes removed."
++_scratch_unmount
++
++# success, all done
++status=0
++exit
+diff --git a/tests/btrfs/208.out b/tests/btrfs/208.out
+new file mode 100644
+index 00000000..9b660699
+--- /dev/null
++++ b/tests/btrfs/208.out
+@@ -0,0 +1,17 @@
++QA output created by 208
++Create subvolume 'SCRATCH_MNT/subvol1'
++Create subvolume 'SCRATCH_MNT/subvol2'
++Create subvolume 'SCRATCH_MNT/subvol3'
++Current subvolume ids:
++subvol1
++subvol2
++subvol3
++Delete subvolume (no-commit): 'SCRATCH_MNT/subvol1'
++After deleting one subvolume:
++subvol2
++subvol3
++Delete subvolume (no-commit): 'SCRATCH_MNT/subvol3'
++Last remaining subvolume:
++subvol2
++Delete subvolume (no-commit): 'SCRATCH_MNT/subvol2'
++All subvolumes removed.
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index 94090758..4dfed8db 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -210,3 +210,4 @@
+ 205 auto quick clone compress
+ 206 auto quick log replay
+ 207 auto rw raid
++208 auto quick subvol
+-- 
+2.25.0
 
-Pool was created many years ago, and I have been keeping up to date on =
-kernel versions and btrfs-progs manually.
-
-System info
-Ubuntu 18.04=20
-Kernel: Linux FileServer 5.5.7-050507-generic #202002281805=20
-btrfs-progs v5.4.1
-
-device usage
-/dev/sdd1, ID: 1
- Device size:             2.73TiB
- Device slack:              0.00B
- Data,RAID6:              1.16TiB
- Data,RAID6:            810.74GiB
- Data,RAID6:            791.52GiB
- Unallocated:             1.00MiB
-
-/dev/sdb1, ID: 2
- Device size:             2.73TiB
- Device slack:              0.00B
- Data,RAID6:              1.16TiB
- Data,RAID6:            605.74GiB
- Data,RAID6:              6.00GiB
- Unallocated:           990.52GiB
-
-/dev/sdc1, ID: 3
- Device size:             2.73TiB
- Device slack:              0.00B
- Data,RAID6:              1.16TiB
- Data,RAID6:            810.74GiB
- Data,RAID6:            791.52GiB
- Unallocated:             1.00MiB
-
-/dev/sdi1, ID: 5
- Device size:             2.73TiB
- Device slack:            1.36TiB
- Data,RAID6:              1.16TiB
- Data,RAID6:            205.00GiB
- Unallocated:             1.00MiB
-
-/dev/sdh1, ID: 6
- Device size:             4.55TiB
- Device slack:              0.00B
- Data,RAID6:              1.16TiB
- Data,RAID6:            810.74GiB
- Data,RAID6:            581.00GiB
- Data,RAID6:            791.52GiB
- Data,RAID6:              6.00GiB
- Metadata,RAID1:          3.00GiB
- System,RAID1:           32.00MiB
- Unallocated:             1.24TiB
-
-/dev/sda1, ID: 7
- Device size:             7.28TiB
- Device slack:              0.00B
- Data,RAID6:              1.16TiB
- Data,RAID6:            810.74GiB
- Data,RAID6:            581.00GiB
- Data,RAID6:            791.52GiB
- Data,RAID6:              6.00GiB
- Unallocated:             3.97TiB
-
-/dev/sdf1, ID: 8
- Device size:             7.28TiB
- Device slack:              0.00B
- Data,RAID6:              1.16TiB
- Data,RAID6:            810.74GiB
- Data,RAID6:            581.00GiB
- Data,RAID6:            791.52GiB
- Data,RAID6:              6.00GiB
- Metadata,RAID1:          9.00GiB
- System,RAID1:           32.00MiB
- Unallocated:             3.97TiB
-
-/dev/sdj1, ID: 9
- Device size:             7.28TiB
- Device slack:              0.00B
- Data,RAID6:              1.16TiB
- Data,RAID6:            810.74GiB
- Data,RAID6:            581.00GiB
- Data,RAID6:            791.52GiB
- Data,RAID6:              6.00GiB
- Metadata,RAID1:         10.00GiB
- Unallocated:             3.96TiB
-
-fi show
-Label: 'Pool1'  uuid: 99935e27-4922-4efa-bf76-5787536dd71f
-	Total devices 8 FS bytes used 14.91TiB
-	devid    1 size 2.73TiB used 2.73TiB path /dev/sdd1
-	devid    2 size 2.73TiB used 1.76TiB path /dev/sdb1
-	devid    3 size 2.73TiB used 2.73TiB path /dev/sdc1
-	devid    5 size 1.36TiB used 1.36TiB path /dev/sdi1
-	devid    6 size 4.55TiB used 3.31TiB path /dev/sdh1
-	devid    7 size 7.28TiB used 3.30TiB path /dev/sda1
-	devid    8 size 7.28TiB used 3.31TiB path /dev/sdf1
-	devid    9 size 7.28TiB used 3.31TiB path /dev/sdj1
-
-fi df
-Data, RAID6: total=3D15.20TiB, used=3D14.90TiB
-System, RAID1: total=3D32.00MiB, used=3D1.09MiB
-Metadata, RAID1: total=3D11.00GiB, used=3D9.58GiB
-GlobalReserve, single: total=3D512.00MiB, used=3D0.00B
-
-fi usage
-WARNING: RAID56 detected, not implemented
-Overall:
-   Device size:		  35.93TiB
-   Device allocated:		  22.06GiB
-   Device unallocated:		  35.91TiB
-   Device missing:		     0.00B
-   Used:			  19.17GiB
-   Free (estimated):		     0.00B	(min: 8.00EiB)
-   Data ratio:			      0.00
-   Metadata ratio:		      2.00
-   Global reserve:		 512.00MiB	(used: 0.00B)
-
-Data,RAID6: Size:15.20TiB, Used:14.90TiB (98.06%)
-  /dev/sdd1	   2.73TiB
-  /dev/sdb1	   1.76TiB
-  /dev/sdc1	   2.73TiB
-  /dev/sdi1	   1.36TiB
-  /dev/sdh1	   3.30TiB
-  /dev/sda1	   3.30TiB
-  /dev/sdf1	   3.30TiB
-  /dev/sdj1	   3.30TiB
-
-Metadata,RAID1: Size:11.00GiB, Used:9.58GiB (87.11%)
-  /dev/sdh1	   3.00GiB
-  /dev/sdf1	   9.00GiB
-  /dev/sdj1	  10.00GiB
-
-System,RAID1: Size:32.00MiB, Used:1.09MiB (3.42%)
-  /dev/sdh1	  32.00MiB
-  /dev/sdf1	  32.00MiB
-
-Unallocated:
-  /dev/sdd1	   1.00MiB
-  /dev/sdb1	 987.52GiB
-  /dev/sdc1	   1.00MiB
-  /dev/sdi1	   1.00MiB
-  /dev/sdh1	   1.24TiB
-  /dev/sda1	   3.97TiB
-  /dev/sdf1	   3.96TiB
-  /dev/sdj1	   3.96TiB
-
-
-DMESG Log: https://pastebin.com/w09F4nMr
-
-
-PS.  I think my first message was blocked due to being over 100k, so I =
-am resending with pastebin for DMESG.  Sorry if there is a duplicate.=

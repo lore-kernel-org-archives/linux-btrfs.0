@@ -2,143 +2,89 @@ Return-Path: <SRS0=1T4y=43=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8653EC10F27
-	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Mar 2020 10:32:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 63884C18E5B
+	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Mar 2020 12:13:58 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 66CE720727
-	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Mar 2020 10:32:54 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2CA2B2467D
+	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Mar 2020 12:13:58 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1583842438;
+	bh=ohjr4TLd8o+LeSV8fsa8VNrNO/b6WVVs6oQib26tyxU=;
+	h=From:To:Subject:Date:List-ID:From;
+	b=vHgj4Bk5ztIJiu1kN3SvmwXqVW4w1XFV+EavWekDy0yqqp+xNdGKN4ELYwEhE1w0C
+	 iftzZCBDOsUMbdt5668NrYo2Y7qvgDoZ6YEa9g6hiuOS41kn/eXB53JKlD+SlLTKUt
+	 MZ2m6wSXoGdvgZO8r0hXLiA5xiitkY48yY44R9dM=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726271AbgCJKcx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 10 Mar 2020 06:32:53 -0400
-Received: from mx2.suse.de ([195.135.220.15]:52934 "EHLO mx2.suse.de"
+        id S1726295AbgCJMN5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 10 Mar 2020 08:13:57 -0400
+Received: from mail.kernel.org ([198.145.29.99]:53940 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725845AbgCJKcx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Mar 2020 06:32:53 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 052D5B117;
-        Tue, 10 Mar 2020 10:32:51 +0000 (UTC)
-Subject: Re: [PATCH 5/5] btrfs: run btrfs_try_granting_tickets if a priority
- ticket fails
-To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
-        kernel-team@fb.com
-References: <20200309202322.12327-1-josef@toxicpanda.com>
- <20200309202322.12327-6-josef@toxicpanda.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <43e5846b-17a4-8ff2-e6e1-26a3f201a672@suse.com>
-Date:   Tue, 10 Mar 2020 12:32:50 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.4.1
-MIME-Version: 1.0
-In-Reply-To: <20200309202322.12327-6-josef@toxicpanda.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+        id S1726224AbgCJMN5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 10 Mar 2020 08:13:57 -0400
+Received: from debian6.Home (bl8-197-74.dsl.telepac.pt [85.241.197.74])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 8AE7B2467D
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Mar 2020 12:13:56 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1583842437;
+        bh=ohjr4TLd8o+LeSV8fsa8VNrNO/b6WVVs6oQib26tyxU=;
+        h=From:To:Subject:Date:From;
+        b=TqH98XFl5wBcoHEhJPVhD9jAW1ANdGB+60iDUt1SfE8Cwq7JW1+a7s+EG/x1QKYuD
+         +ZfITPRgpzVXcrPa6Fx/uepeVyMSzWlFelJsv+WoKxZKQdYNby0nyLJbPU+64Ya8ye
+         8hNMI1FGBOzQKk1oMXqd856nehgdWTvQ/DU7rV+k=
+From:   fdmanana@kernel.org
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: fix log context list corruption after rename whiteout error
+Date:   Tue, 10 Mar 2020 12:13:53 +0000
+Message-Id: <20200310121353.11764-1-fdmanana@kernel.org>
+X-Mailer: git-send-email 2.11.0
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+From: Filipe Manana <fdmanana@suse.com>
 
+During a rename whiteout, if btrfs_whiteout_for_rename() returns an error
+we can end up returning from btrfs_rename() with the log context object
+still in the root's log context list - this happens if 'sync_log' was
+set to true before we called btrfs_whiteout_for_rename() and it is
+dangerous because we end up with a corrupt linked list (root->log_ctxs)
+as the log context object was allocated on the stack.
 
-On 9.03.20 г. 22:23 ч., Josef Bacik wrote:
-> With normal tickets we could have a large reservation at the front of
-> the list that is unable to be satisfied, but a smaller ticket later on
-> that can be satisfied.  The way we handle this is to run
-> btrfs_try_granting_tickets() in maybe_fail_all_tickets().
-> 
-> However no such protection exists for priority tickets.  Fix this by
-> handling it in handle_reserve_ticket().  If we've returned after
-> attempting to flush space in a priority related way, we'll still be on
-> the priority list and need to be removed.
-> 
-> We rely on the flushing to free up space and wake the ticket, but if
-> there is not enough space to reclaim _but_ there's enough space in the
-> space_info to handle subsequent reservations then we would have gotten
-> an ENOSPC erroneously.
-> 
-> Address this by catching where we are still on the list, meaning we were
-> a priority ticket, and removing ourselves and then running
-> btrfs_try_granting_tickets().  This will handle this particular corner
-> case.
-> 
-> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-> ---
->  fs/btrfs/space-info.c | 14 ++++++++++----
->  1 file changed, 10 insertions(+), 4 deletions(-)
-> 
-> diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-> index 77ea204f0b6a..03172ecd9c0b 100644
-> --- a/fs/btrfs/space-info.c
-> +++ b/fs/btrfs/space-info.c
-> @@ -1256,11 +1256,17 @@ static int handle_reserve_ticket(struct btrfs_fs_info *fs_info,
->  	ret = ticket->error;
->  	if (ticket->bytes || ticket->error) {
->  		/*
-> -		 * Need to delete here for priority tickets. For regular tickets
-> -		 * either the async reclaim job deletes the ticket from the list
-> -		 * or we delete it ourselves at wait_reserve_ticket().
-> +		 * We were a priority ticket, so we need to delete ourselves
-> +		 * from the list.  Because we could have other priority tickets
-> +		 * behind us that require less space, run
-> +		 * btrfs_try_granting_tickets() to see if their reservations can
-> +		 * now be made.
->  		 */
-> -		list_del_init(&ticket->list);
-> +		if (!list_empty(&ticket->list)) {
-> +			list_del_init(&ticket->list);
-> +			btrfs_try_granting_tickets(fs_info, space_info);
-> +		}
+After btrfs_rename() returns, any task that is running btrfs_sync_log()
+concurrently can end up crashing because that linked list is traversed by
+btrfs_sync_log() (through btrfs_remove_all_log_ctxs()). That results in
+the same issue that commit e6c617102c7e4 ("Btrfs: fix log context list
+corruption after rename exchange operation") fixed.
 
-I'd rather have this handled in priority_reclaim_metadata_space.
-> +
->  		if (!ret)
->  			ret = -ENOSPC;
->  	}
-> 
+Fixes: d4682ba03ef618 ("Btrfs: sync log after logging new name")
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/inode.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 3a636b405088..fd9091808ae5 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -9546,6 +9546,10 @@ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
+ 		ret = btrfs_sync_log(trans, BTRFS_I(old_inode)->root, &ctx);
+ 		if (ret)
+ 			commit_transaction = true;
++	} else if (sync_log) {
++		mutex_lock(&root->log_mutex);
++		list_del(&ctx.list);
++		mutex_unlock(&root->log_mutex);
+ 	}
+ 	if (commit_transaction) {
+ 		ret = btrfs_commit_transaction(trans);
+-- 
+2.11.0
+

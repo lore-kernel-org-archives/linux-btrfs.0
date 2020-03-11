@@ -2,104 +2,128 @@ Return-Path: <SRS0=EJVa=44=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-2.2 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 69DF8C4CEC1
-	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Mar 2020 15:21:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6C1FFC2BB1D
+	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Mar 2020 17:44:59 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id CDAC620739
-	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Mar 2020 15:21:49 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id EF7ED20734
+	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Mar 2020 17:44:59 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="aTQYzHzW"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="TGzbji5P"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729913AbgCKPVt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 11 Mar 2020 11:21:49 -0400
-Received: from mail-qt1-f196.google.com ([209.85.160.196]:39767 "EHLO
-        mail-qt1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729408AbgCKPVt (ORCPT
+        id S1730524AbgCKRo6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 11 Mar 2020 13:44:58 -0400
+Received: from mail-qk1-f195.google.com ([209.85.222.195]:41927 "EHLO
+        mail-qk1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1730565AbgCKRo5 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Mar 2020 11:21:49 -0400
-Received: by mail-qt1-f196.google.com with SMTP id f17so540645qtq.6
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Mar 2020 08:21:47 -0700 (PDT)
+        Wed, 11 Mar 2020 13:44:57 -0400
+Received: by mail-qk1-f195.google.com with SMTP id b5so2911107qkh.8
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Mar 2020 10:44:56 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=Otgb+VpDSgsXpZXFDW/TtT2BrHIFp431W3WYtOOqpQk=;
-        b=aTQYzHzW1M5d6QlD+AxokbGi8GpvE9NNa8oqYs/ywoaetY82kAmDQE7vvQT/9x4O/X
-         mbMne6ASeAtXgWyRyXULYdIFPiygVtJx9fz8Yk/bvHQIA0Lzy2fvU/8pDXnKB6wQZz28
-         1IfIqItjJiXRXukgjAcMBYB8hZLZ9qiR2Eh8FFibpJ/ZNmSTAsSoFU91iDFfiLcygsL5
-         fd64ekV2Po+pXFv4scPVDGX+X8bqIAtilib6Ejv1U5NX1nCB+d4607OjJI+czxq54OwC
-         gZsl4XoEvDETKYTYi3mwicLnYeLFH95ydB55Ryy5P/Dpm/uw28DFfqg8UR7jgmcgHRMv
-         zWWw==
+        h=subject:to:references:from:message-id:date:user-agent:mime-version
+         :in-reply-to:content-language:content-transfer-encoding;
+        bh=ttmCiMbEDwtGtvoj06GNeVWmW/kH5G9yg5OKv20SvkE=;
+        b=TGzbji5PbDVu+/E5aCG3AFPXPLNODiCdVgG2r82ug0+LKTYHbWR+BvYih4YJ25bCtb
+         Ht8H4j2lquSR8IVljKsF9qRZaSOnDTiuE4vurak4W9poIXHRxA+CjkmR76Y11fhQIbIQ
+         /4OXjNjfs9xnrlE929ttp+wB0iMKEDkG8Q2TrqUt5aseFT9cVm4cv4ySa0V6TxKeSaIb
+         BTOIrRj9B5dsxixC5xTW+fPMUcKXwNVazGMlRpOt5tf4KyxOKc44M69YRrwUHrDgscFd
+         kZuOOJyk5UVG4m4VWLH2/Cz3AOE5L4ICtHTgWO40FPsCPFuOMjgh4m1zAK38FkpJDmtM
+         14kg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id:mime-version
+        h=x-gm-message-state:subject:to:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
          :content-transfer-encoding;
-        bh=Otgb+VpDSgsXpZXFDW/TtT2BrHIFp431W3WYtOOqpQk=;
-        b=Hi5NjAgS74ydrycmtZJpAGTn89e96XbIjmZ+g3fFcGfZMwT+0d/3EYdubLEcEe30xi
-         rOYfHce2Jgj3aPKPM2qhUBQKAmvot6seFGJ1zTaBg6uvXFKJS5TBPDHcF6IMh2diFY9K
-         Vb4/1pQ7C3jFNTUuIiNXjG7Bt8oQHNpEH4aFZoevNTs5umC8aePVnPXhEGwORjv7iy9y
-         OFESnlXDmQtNEvBbemSErGlZLcd8chSqoae4sHLwqhwoYaawaM0xUcBGnPU6oKaE1HZD
-         XE5HT6JF9muet63r9dYGkC1fW4TqtabFLbUhqme4joYDFTEN1EXICxISJMetpNICvouj
-         UszQ==
-X-Gm-Message-State: ANhLgQ0WrWetovEl7LHHffvwGnmDiY+sBai0uxN4ZQQg9xDaQP1kZy+j
-        +j4Y6by+22CU6kvLtSYHmmffBtzywXg=
-X-Google-Smtp-Source: ADFU+vvpECreOw40Vdh1kl60X13RefKOAsrla2tUxrvp65eeXso3PTSfxrzr69QWUMvuJOFIscQUZg==
-X-Received: by 2002:ac8:5448:: with SMTP id d8mr3041742qtq.205.1583940106599;
-        Wed, 11 Mar 2020 08:21:46 -0700 (PDT)
-Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id k14sm1083119qkh.63.2020.03.11.08.21.45
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 11 Mar 2020 08:21:45 -0700 (PDT)
+        bh=ttmCiMbEDwtGtvoj06GNeVWmW/kH5G9yg5OKv20SvkE=;
+        b=rN5QiPbGuc7B/2h3UCIysyU0Pz7uPR769foNgdrFCotmWeo5lFFJLiC/0HDe5317Ig
+         DYI5KgIYNS4tVnhQDMZIbykCPeSvLHeaNlbyjt4PxXRXlk3AHO2z7o6Vu6fiLRK9Pspl
+         ZS2NKg+PYyldMrtdeZOd8T/6jo9ZjI2kVrK3N3UsVrA3+EL15olLZYhnYqHGHL3Q57Uq
+         nUPUfarpCDtabsHevyqf55c4YtDURuhePe7J9FmDHPfzqMSurXNwC1s/qijWdppErr0R
+         chta/ho+sPOuoQvnRZ8shdKCubwed8S6ox0AqjWY+D3VAdfsOB6hvejgQg/stmvV1e1O
+         nz8A==
+X-Gm-Message-State: ANhLgQ24sidWqrwd9Fh8O9a72U0o72qsIU6brQTqz3SLxEpIhFlsVLon
+        0KL8+2Wy1S+Nxrmm8eU3QLK7YrBNqKM=
+X-Google-Smtp-Source: ADFU+vup+xI+07GLK89LpGQ9snw2AIVR6JbOi3XSzMzHMLOJC65Pax1fBNXamtTCSHbX6ZAFgbXfOg==
+X-Received: by 2002:a05:620a:13f5:: with SMTP id h21mr3801350qkl.426.1583948695848;
+        Wed, 11 Mar 2020 10:44:55 -0700 (PDT)
+Received: from [192.168.1.106] ([107.15.81.208])
+        by smtp.gmail.com with ESMTPSA id w11sm22044896qti.54.2020.03.11.10.44.54
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 11 Mar 2020 10:44:55 -0700 (PDT)
+Subject: Re: [PATCH v3 0/4] Btrfs: make ranged fsyncs always respect the given
+ range
+To:     fdmanana@kernel.org, linux-btrfs@vger.kernel.org
+References: <20200309124108.18952-1-fdmanana@kernel.org>
 From:   Josef Bacik <josef@toxicpanda.com>
-To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH] btrfs: fix ref-verify to catch operations on 0 ref extents
-Date:   Wed, 11 Mar 2020 11:21:44 -0400
-Message-Id: <20200311152144.8765-1-josef@toxicpanda.com>
-X-Mailer: git-send-email 2.24.1
+Message-ID: <6fd4856c-ca48-0cca-f5e1-3208a55ea033@toxicpanda.com>
+Date:   Wed, 11 Mar 2020 13:44:54 -0400
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:68.0)
+ Gecko/20100101 Thunderbird/68.5.0
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <20200309124108.18952-1-fdmanana@kernel.org>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-I was trying to debug something stupid I did and noticed I wasn't
-getting ref verify errors before everything blew up.  Turns out it's
-because we don't warn when we try to add a normal ref via
-btrfs_inc_ref() if the block entry exists but has 0 references.  This is
-incorrect, we should never be doing anything other than adding a new
-extent once a block entry drops to 0 references.  With this fix it blew
-up when I did the stupid thing, and was able to undo my stupid thing.
+On 3/9/20 8:41 AM, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+> 
+> This patchset fixes a bug when not using NO_HOLES and makes ranged fsyncs
+> respect the given file range when using the NO_HOLES feature.
+> 
+> The bug is about missing file extents items representing a hole after doing
+> a ranged fsync on a file and replaying the log.
+> 
+> Btrfs doesn't respect the given range for a fsync when the inode's has the
+> "need full sync" bit set - it treats the fsync as a full ranged one, operating
+> on the whole file, doing more IO and cpu work then needed.
+> 
+> That behaviour was needed to fix a corruption bug. Commit 0c713cbab6200b
+> ("Btrfs: fix race between ranged fsync and writeback of adjacent ranges")
+> fixed that bug by turning the ranged fsync into a full ranged one.
+> 
+> Later the hole detection code of fsync was simplified a lot in order to
+> fix another bug when using the NO_HOLES feature - done by commit
+> 0e56315ca147b3 ("Btrfs: fix missing hole after hole punching and fsync when
+> using NO_HOLES"). That commit now makes it easy to avoid turning the ranged
+> fsyncs into non-ranged fsyncs.
+> 
+> This patchset does those two changes. The first patch fixes the bug mentioned
+> before, patches 2 and 3 are preparation cleanups for patch 4, which is the
+> one that makes fsync respect the given file range when using NO_HOLES.
+> 
+> V3: Updated patch one so that the ranged is set to full before locking the
+>      inode. To make sure we do writeback and wait for ordered extent
+>      completion as much as possible before locking the inode.
+>      Remaining patches are unchanged.
+> 
+> V2: Added one more patch to the series, which is the first patch, that
+>      fixes the bug regarding missing holes after doing a ranged fsync.
+> 
+>      The remaining patches remain the same, only patch 4 had a trivial
+>      conflict when rebasing against patch 1 and got its changelog
+>      updated. Now all fstests pass with version 2 of this patchset.
+> 
+> Filipe Manana (4):
+>    Btrfs: fix missing file extent item for hole after ranged fsync
+>    Btrfs: add helper to get the end offset of a file extent item
+>    Btrfs: factor out inode items copy loop from btrfs_log_inode()
+>    Btrfs: make ranged full fsyncs more efficient
+> 
 
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
----
- fs/btrfs/ref-verify.c | 8 ++++++++
- 1 file changed, 8 insertions(+)
+You can add
 
-diff --git a/fs/btrfs/ref-verify.c b/fs/btrfs/ref-verify.c
-index 454a1015d026..679464e5f06a 100644
---- a/fs/btrfs/ref-verify.c
-+++ b/fs/btrfs/ref-verify.c
-@@ -803,6 +803,14 @@ int btrfs_ref_tree_mod(struct btrfs_fs_info *fs_info,
- 			kfree(ref);
- 			kfree(ra);
- 			goto out_unlock;
-+		} else if (be->num_refs == 0) {
-+			btrfs_err(fs_info,
-+"trying to do action %d for a bytenr that has 0 total references", action);
-+			dump_block_entry(fs_info, be);
-+			dump_ref_action(fs_info, ra);
-+			kfree(ref);
-+			kfree(ra);
-+			goto out_unlock;
- 		}
- 
- 		if (!parent) {
--- 
-2.24.1
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 
+to the whole series.  Thanks,
+
+Josef

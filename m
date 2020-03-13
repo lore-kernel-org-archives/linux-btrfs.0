@@ -2,138 +2,115 @@ Return-Path: <SRS0=6pDE=46=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.2 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B8AD6C10DCE
-	for <linux-btrfs@archiver.kernel.org>; Fri, 13 Mar 2020 15:32:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B0942C10DCE
+	for <linux-btrfs@archiver.kernel.org>; Fri, 13 Mar 2020 15:44:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8903C206E2
-	for <linux-btrfs@archiver.kernel.org>; Fri, 13 Mar 2020 15:32:41 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 87D542074E
+	for <linux-btrfs@archiver.kernel.org>; Fri, 13 Mar 2020 15:44:57 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="bJFyN73E"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="PkT9Ibgf"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726971AbgCMPck (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 13 Mar 2020 11:32:40 -0400
-Received: from mail-qk1-f195.google.com ([209.85.222.195]:35704 "EHLO
-        mail-qk1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726446AbgCMPck (ORCPT
+        id S1727333AbgCMPo5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 13 Mar 2020 11:44:57 -0400
+Received: from mail-qt1-f193.google.com ([209.85.160.193]:40629 "EHLO
+        mail-qt1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727281AbgCMPo4 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 13 Mar 2020 11:32:40 -0400
-Received: by mail-qk1-f195.google.com with SMTP id d8so13172726qka.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 13 Mar 2020 08:32:38 -0700 (PDT)
+        Fri, 13 Mar 2020 11:44:56 -0400
+Received: by mail-qt1-f193.google.com with SMTP id n5so7861949qtv.7
+        for <linux-btrfs@vger.kernel.org>; Fri, 13 Mar 2020 08:44:55 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=subject:to:references:from:message-id:date:user-agent:mime-version
-         :in-reply-to:content-language:content-transfer-encoding;
-        bh=IAAwwG00xxFkc3zUOmc2RSniw+NJbPI3+TLCd/6XtTM=;
-        b=bJFyN73EaYYd+CyCeI0IyodHaYsxzdyuVLQOCTmyXzWUnyQh8C85RK//Kv6v7bKDs7
-         gX4k7pQI/SFJkMIjTJsDfbwr94sHNlKUODjK0S44Z7K9w0R1YewhqLe9EDTWMX9LCkcL
-         jDg9xjEG9DziflMD5HCs/nfSL5fecEoZvprpNG0S3Q94A7yRpF5R/RFRAgxkYhOI2C1t
-         qGOocOwRkh9SBFLf6n9xzz+ogHjj7ZwAZMzP0ONRUHnIlGJe7IZ4qN6TiRVU8u+jySPR
-         IAmSLhU+B6QlGp6nBSX55K0tLiYMkpcd+Q2TKt/xRNisvC+IxPV02JVohVelzImOzwQs
-         roaA==
+        h=from:to:cc:subject:date:message-id:in-reply-to:references
+         :mime-version:content-transfer-encoding;
+        bh=mEP3X74B/Kbe2chZ3uoyUKUmNnB75VXRczKvZeHWmAo=;
+        b=PkT9IbgfcmZ4OIvqq6HQmn9k4X14NzDXZYSTXxBs+U5UjsAzTMxl2W42l5T0Jc7llm
+         kn92qbWdOMbLAyxnXyDqz2oDga5rAp9nw/Z1lq9Cj/dIdEJzHuFDrSZ88jRLWJcV+auj
+         xldDmB2QKpjI3B42wu0YjQfp5rFd+IVLt/aiaOyo+g88gXLfX2czKrainD/w4NC0nck+
+         DGbMY0U6wv2r/BhxPyQsDZnDEn3j+Pa7DHagK0LmIhCA99HKRPGEY3VY6pgNVpiY/Aje
+         VhL6g2nBKqZU9lBmus8aEELeIGJtiD86kxyU53M+zD5KvXMT3dLaXhrwmJ4ngL4qM/Eu
+         sAiw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=IAAwwG00xxFkc3zUOmc2RSniw+NJbPI3+TLCd/6XtTM=;
-        b=pmCxXsmzHI33AW6ZVIeKGuZ6xtQ3SVB1PISYTLZvIrAsh2Tcoe0bUoYZgD7gNF7K1S
-         QuyQ8A/igU2sskawz1nUgAJbI09gajHBGTxv+5nqdIMwsScEMwt315ZRzrOz1G43/n+O
-         M9Ql+SE10MXRBRShIngNAuwhISdOZdKpO+x341BGfVcgPvex35QpWm/xnhGso3FdlqY5
-         f7uuIAl5dV2cOBD5vVyh+yf6BDY8xbrjHko/SczGlq/2hefmXr2GLUiwTGaYNMFU/3s3
-         XBBLIO5s2JX6ODbwlk/JLzAlZjTpu8YzDdbisgrRPrTYRMI1z2HZcEJlZ/xrNtueMGwh
-         UcOw==
-X-Gm-Message-State: ANhLgQ0Cp+z2nresL8kj8rC9D9/Qw12xTLt8ra+6FJja0OHwlSJgVsJl
-        ffbUuiuxnj5k/uapslKBiTy8WFxs44Y=
-X-Google-Smtp-Source: ADFU+vteW790Q1L2SWRc6YCH+qylEK9zyC6hRd8dx3GNo1QQ9n9+8Xb/C8/ldpQ6GQJqNzTBnZ8ArQ==
-X-Received: by 2002:ae9:e90e:: with SMTP id x14mr13770771qkf.222.1584113557911;
-        Fri, 13 Mar 2020 08:32:37 -0700 (PDT)
-Received: from [192.168.1.106] ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id l60sm8644600qtd.35.2020.03.13.08.32.36
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 13 Mar 2020 08:32:36 -0700 (PDT)
-Subject: Re: [PATCH 4/8] btrfs: free the reloc_control in a consistent way
-To:     dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        linux-btrfs@vger.kernel.org, kernel-team@fb.com
-References: <20200304161830.2360-1-josef@toxicpanda.com>
- <20200304161830.2360-5-josef@toxicpanda.com>
- <f77683bc-c644-25a8-6d97-fbe339bd5f98@gmx.com>
- <20200313151829.GN12659@twin.jikos.cz>
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
+         :references:mime-version:content-transfer-encoding;
+        bh=mEP3X74B/Kbe2chZ3uoyUKUmNnB75VXRczKvZeHWmAo=;
+        b=kUEELgI9vvmbMlk8dMQ/FMRfsx8uOUnDMw3H4I2QojpIlB2XI0F0ggu3/6d2n6HYlL
+         rnots6N2VZ8G6yhtllz3gtf0rZH1SzOPRQxL4SCSHvjjegpoBeNmsp7MNVLrAwel96T5
+         zJ7BNVuCkFaMqg6ZYm2RoUH8plGOxs0RfpvOargUMj9ITTl5joILnL+unQPjo3MBXXNX
+         SxWUOW0h5+CtJBZPQ6nctQzp7DgmwWS/irG9oeCPZOD34Gw4yivCdW+oL2fAxNYR0yMw
+         sOD7pqAwajn3IpkvRPrf4h669MfUmEGQzisAQ+0TNV3OTKlgbpls2CIgxkQkmck97zNg
+         8wJw==
+X-Gm-Message-State: ANhLgQ1CfNstvGu1tY1BZQ3LISZjtG8qfkD+OOHdfBCD7LrxL8A5y3gY
+        0+zlpoYh8ULRpK1c8DhjAjgumFjn6DA=
+X-Google-Smtp-Source: ADFU+vtd5MK6T8h6nrZCMtPWKmcB4npRFdGK1Mav2cfMy85mEyH7lovL59+zZHf4XAIOEI2vkQ/tGA==
+X-Received: by 2002:ac8:481a:: with SMTP id g26mr13037450qtq.267.1584114295006;
+        Fri, 13 Mar 2020 08:44:55 -0700 (PDT)
+Received: from localhost ([107.15.81.208])
+        by smtp.gmail.com with ESMTPSA id l6sm29757524qti.10.2020.03.13.08.44.53
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Fri, 13 Mar 2020 08:44:54 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <940ee1b7-a854-275e-e01f-05770435ee15@toxicpanda.com>
-Date:   Fri, 13 Mar 2020 11:32:35 -0400
-User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:68.0)
- Gecko/20100101 Thunderbird/68.5.0
+To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Cc:     Qu Wenruo <wqu@suse.com>
+Subject: [PATCH 2/8] btrfs: do not init a reloc root if we aren't relocating
+Date:   Fri, 13 Mar 2020 11:44:42 -0400
+Message-Id: <20200313154448.53461-3-josef@toxicpanda.com>
+X-Mailer: git-send-email 2.24.1
+In-Reply-To: <20200313154448.53461-1-josef@toxicpanda.com>
+References: <20200313154448.53461-1-josef@toxicpanda.com>
 MIME-Version: 1.0
-In-Reply-To: <20200313151829.GN12659@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 3/13/20 11:18 AM, David Sterba wrote:
-> On Thu, Mar 05, 2020 at 07:39:33PM +0800, Qu Wenruo wrote:
->>
->>
->> On 2020/3/5 上午12:18, Josef Bacik wrote:
->>> If we have an error while processing the reloc roots we could leak roots
->>> that were added to rc->reloc_roots before we hit the error.  We could
->>> have also not removed the reloct tree mapping from our rb_tree, so clean
->>> up any remaining nodes in the reloc root rb_tree.
->>>
->>> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
->>> ---
->>>   fs/btrfs/relocation.c | 18 ++++++++++++++++--
->>>   1 file changed, 16 insertions(+), 2 deletions(-)
->>>
->>> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
->>> index c496f8ed8c7e..f6237d885fe0 100644
->>> --- a/fs/btrfs/relocation.c
->>> +++ b/fs/btrfs/relocation.c
->>> @@ -4387,6 +4387,20 @@ static struct reloc_control *alloc_reloc_control(struct btrfs_fs_info *fs_info)
->>>   	return rc;
->>>   }
->>>   
->>> +static void free_reloc_control(struct reloc_control *rc)
->>> +{
->>> +	struct rb_node *rb_node;
->>> +	struct mapping_node *node;
->>> +
->>> +	free_reloc_roots(&rc->reloc_roots);
->>> +	while ((rb_node = rb_first(&rc->reloc_root_tree.rb_root))) {
->>
->> rbtree_postorder_for_each_entry_safe().
->>
->> So that we don't need to bother the re-balance of rbtree.
-> 
-> I'll update the patch with this
-> 
-> --- a/fs/btrfs/relocation.c
-> +++ b/fs/btrfs/relocation.c
-> @@ -4240,15 +4240,13 @@ static struct reloc_control *alloc_reloc_control(struct btrfs_fs_info *fs_info)
->   
->   static void free_reloc_control(struct reloc_control *rc)
->   {
-> -       struct rb_node *rb_node;
-> -       struct mapping_node *node;
-> +       struct mapping_node *node, *tmp;
->   
->          free_reloc_roots(&rc->reloc_roots);
-> -       while ((rb_node = rb_first(&rc->reloc_root_tree.rb_root))) {
-> -               node = rb_entry(rb_node, struct mapping_node, rb_node);
-> -               rb_erase(rb_node, &rc->reloc_root_tree.rb_root);
-> +       rbtree_postorder_for_each_entry_safe(node, tmp,
-> +                       &rc->reloc_root_tree.rb_root, rb_node)
->                  kfree(node);
+We previously were checking if the root had a dead root before accessing
+root->reloc_root in order to avoid a UAF type bug.  However this
+scenario happens after we've unset the reloc control, so we would have
+been saved if we'd simply checked for fs_info->reloc_control.  At this
+point during relocation we no longer need to be creating new reloc
+roots, so simply move this check above the reloc_root checks to avoid
+any future races and confusion.
 
-You need an rb_erase() in here.  I'm updating the series so I'll fix it before I 
-send the new set.  Thanks,
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+---
+ fs/btrfs/relocation.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-Josef
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 507361e99316..2141519a9dd0 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -1527,6 +1527,10 @@ int btrfs_init_reloc_root(struct btrfs_trans_handle *trans,
+ 	int clear_rsv = 0;
+ 	int ret;
+ 
++	if (!rc || !rc->create_reloc_tree ||
++	    root->root_key.objectid == BTRFS_TREE_RELOC_OBJECTID)
++		return 0;
++
+ 	/*
+ 	 * The subvolume has reloc tree but the swap is finished, no need to
+ 	 * create/update the dead reloc tree
+@@ -1540,10 +1544,6 @@ int btrfs_init_reloc_root(struct btrfs_trans_handle *trans,
+ 		return 0;
+ 	}
+ 
+-	if (!rc || !rc->create_reloc_tree ||
+-	    root->root_key.objectid == BTRFS_TREE_RELOC_OBJECTID)
+-		return 0;
+-
+ 	if (!trans->reloc_reserved) {
+ 		rsv = trans->block_rsv;
+ 		trans->block_rsv = rc->block_rsv;
+-- 
+2.24.1
+

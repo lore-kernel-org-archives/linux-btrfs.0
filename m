@@ -2,105 +2,83 @@ Return-Path: <SRS0=6pDE=46=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_GIT autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A464DC2BB1D
-	for <linux-btrfs@archiver.kernel.org>; Fri, 13 Mar 2020 15:45:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 21355C10DCE
+	for <linux-btrfs@archiver.kernel.org>; Fri, 13 Mar 2020 17:19:20 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 77C0A20724
-	for <linux-btrfs@archiver.kernel.org>; Fri, 13 Mar 2020 15:45:52 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="dV3+GahR"
+	by mail.kernel.org (Postfix) with ESMTP id 03596206B7
+	for <linux-btrfs@archiver.kernel.org>; Fri, 13 Mar 2020 17:19:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727315AbgCMPoy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 13 Mar 2020 11:44:54 -0400
-Received: from mail-qk1-f179.google.com ([209.85.222.179]:33258 "EHLO
-        mail-qk1-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727306AbgCMPox (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 13 Mar 2020 11:44:53 -0400
-Received: by mail-qk1-f179.google.com with SMTP id p62so13252903qkb.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 13 Mar 2020 08:44:52 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=pDn0hxoQ4OTEyfaxajy2ZaHV0eSkb/uvcxLQnw+4EuQ=;
-        b=dV3+GahRQe7+P7/1smOcZbLJavLw1bhLz9fXnMpKKukhcC9YZtgZJ68S2LyeZH7BI4
-         LsHfwK18tZfB5wyWYf3p65PRXNUHA7WeTkAEw5wJD6Pl4/yyVgOksFDh/cyf2VjknZRB
-         75eUHrjQ5dXRvlXTXtLgBdGR6qWkM46Pf9GmhGYJ3ejVoifHEtVc9XY4d1LMKxPFcyKh
-         s1t7O/Bh1NaUneM7OakF+yyVFbJdajS3sosvO+CDdcPCpJQ58YX1O1JiSL8i1HiwC1xn
-         5I2LWfEqVwsmdgfbFnP2T0cdMl4eMXdSAB/z84wz8zxDuCp8bRduXayqr6rhgOByMDuV
-         KN0A==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=pDn0hxoQ4OTEyfaxajy2ZaHV0eSkb/uvcxLQnw+4EuQ=;
-        b=rWXNLZM9IMco7iCTQtkKj/fN3vexrSI34Tqu1dedTQimlC7xXIFyH4Obwq7CMqU/2Q
-         eNOrXScXn+UYohZg5kmQNQVGz1LBZ6bxHybu2KQmorsVkDU0Xht67gHn8KNBpqon4CEe
-         Jg7kCJOsC64RF5MmjML686mmaHc4aUbwMC4LUdipq/r6UrcEfJazQUNETD8wfuOo1K2r
-         KX6D8oU7cSUKnRudSpY1qMg4XRhVyHoLp4HTxXv/hBxVvCQ0Wo8oPjCYJQ5/d4UQpX8/
-         UtRzaKM7VYmcMG4q7I22Qh3nXWGHpHaSz6u4THVEZhEJPwUu4VnC8KkLYD99D4FtfueN
-         G3sg==
-X-Gm-Message-State: ANhLgQ0K+e9wtPLcH/BIjNYo2Y7y1yCC4Od/pI1AI3v0z1/ni1znnEfV
-        j09fPaHFWxTgab8dSySukjRKmbnwNDY=
-X-Google-Smtp-Source: ADFU+vt0avACjeEzRSmqaCI7GwnscKFC8iIPCYFGtGDMvo8vJzfe+9yUhZZmiAJo6St6cL5A4vNPHw==
-X-Received: by 2002:ae9:dec7:: with SMTP id s190mr12859811qkf.303.1584114291291;
-        Fri, 13 Mar 2020 08:44:51 -0700 (PDT)
-Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id 199sm11434573qkm.7.2020.03.13.08.44.50
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 13 Mar 2020 08:44:50 -0700 (PDT)
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 0/8][v3] relocation error handling fixes
-Date:   Fri, 13 Mar 2020 11:44:40 -0400
-Message-Id: <20200313154448.53461-1-josef@toxicpanda.com>
-X-Mailer: git-send-email 2.24.1
+        id S1726794AbgCMRTT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 13 Mar 2020 13:19:19 -0400
+Received: from mx2.suse.de ([195.135.220.15]:45260 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726738AbgCMRTS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 13 Mar 2020 13:19:18 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id A59A7ACBD;
+        Fri, 13 Mar 2020 17:19:17 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 70E3CDA7A7; Fri, 13 Mar 2020 18:18:51 +0100 (CET)
+Date:   Fri, 13 Mar 2020 18:18:51 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: Re: [PATCH 4/8] btrfs: free the reloc_control in a consistent way
+Message-ID: <20200313171851.GO12659@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
+        linux-btrfs@vger.kernel.org, kernel-team@fb.com
+References: <20200313154448.53461-1-josef@toxicpanda.com>
+ <20200313154448.53461-5-josef@toxicpanda.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20200313154448.53461-5-josef@toxicpanda.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-v2->v3:
-- Updated the free reloc control to use the rbtree postorder thing.
-- Updated the changelog for patch 6.
-- Fixed the error goto in patch 5.
-- Added the reviewed-bys.
+On Fri, Mar 13, 2020 at 11:44:44AM -0400, Josef Bacik wrote:
+> If we have an error while processing the reloc roots we could leak roots
+> that were added to rc->reloc_roots before we hit the error.  We could
+> have also not removed the reloct tree mapping from our rb_tree, so clean
+> up any remaining nodes in the reloc root rb_tree.
+> 
+> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+> ---
+>  fs/btrfs/relocation.c | 18 ++++++++++++++++--
+>  1 file changed, 16 insertions(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+> index c496f8ed8c7e..721d049ff2b5 100644
+> --- a/fs/btrfs/relocation.c
+> +++ b/fs/btrfs/relocation.c
+> @@ -4387,6 +4387,20 @@ static struct reloc_control *alloc_reloc_control(struct btrfs_fs_info *fs_info)
+>  	return rc;
+>  }
+>  
+> +static void free_reloc_control(struct reloc_control *rc)
+> +{
+> +	struct mapping_node *node, *tmp;
+> +
+> +	free_reloc_roots(&rc->reloc_roots);
+> +	rbtree_postorder_for_each_entry_safe(node, tmp,
+> +					     &rc->reloc_root_tree.rb_root,
+> +					     rb_node) {
+> +		rb_erase(&node->rb_node, &rc->reloc_root_tree.rb_root);
 
-v1->v2:
-- Incorporated the various feedback, tweaked some things, adjusted commit
-  messages, added some more comments.  Hopefully I got everything.
-- Added "btrfs: do not init a reloc root if we aren't relocating", this is to
-  oddress the weird handling of DEAD_ROOT and the use-after-free that Qu had
-  originally attempted to fix.
-- Reworked "btrfs: splice rc->reloc_roots onto reloc roots in recover" to simply
-  handle cleaning up any remaining bigs on the reloc_control, since errors can
-  mean we'll have some things left pending on the reloc_control.
+The rb_erase is not needed here, the postorder traversal just goes over
+all nodes and allows to free the containing structures together with the
+rb_node. Dangling pointers are not an issue.
 
------------------------------- Original email ---------------------------------
-My root ref patches have uncovered weird failures in some of our xfstests,
-particularly those that do balance while having errors.
-
-I ran relocation through my eio-stress bpf script and loads of things fell out,
-these are the fixes required to make the stress test run to completion.
-
-Dave this is just based on my master, I assume it'll apply cleanly to what you
-have, but if not let me know which branch you want me to rebase onto to get it
-to work right.
-
-Most of these are straightforward, the only tricky/subtle one is 7/7, and I've
-added a lot of explanation there around my reasoning.  6/7 is also a little bit
-more complicated as it changes the rules slightly for reference holding for
-roots.  Before we just sort of hoped and prayed we go the right reference
-dropped when we dropped root->reloc_root.  Now we hold one ref for the list of
-reloc roots and one ref for root->reloc_root, so it's more clear when we need to
-be dropping references.  Everything else is relatively straightforward.  Thanks,
-
-Josef
-
+> +		kfree(node);
+> +	}
+> +	kfree(rc);
+> +}

@@ -7,59 +7,59 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A9B2EC4CECE
-	for <linux-btrfs@archiver.kernel.org>; Fri, 13 Mar 2020 21:12:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 85620C5ACBF
+	for <linux-btrfs@archiver.kernel.org>; Fri, 13 Mar 2020 21:12:33 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 7EC5D2074E
-	for <linux-btrfs@archiver.kernel.org>; Fri, 13 Mar 2020 21:12:32 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5D38E2074F
+	for <linux-btrfs@archiver.kernel.org>; Fri, 13 Mar 2020 21:12:33 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="CM/5VZYq"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="cExnlxlz"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727064AbgCMVMb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 13 Mar 2020 17:12:31 -0400
-Received: from mail-qk1-f193.google.com ([209.85.222.193]:40987 "EHLO
-        mail-qk1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726964AbgCMVMb (ORCPT
+        id S1727146AbgCMVMc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 13 Mar 2020 17:12:32 -0400
+Received: from mail-qt1-f193.google.com ([209.85.160.193]:44433 "EHLO
+        mail-qt1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726949AbgCMVMb (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Fri, 13 Mar 2020 17:12:31 -0400
-Received: by mail-qk1-f193.google.com with SMTP id s11so3809047qks.8
-        for <linux-btrfs@vger.kernel.org>; Fri, 13 Mar 2020 14:12:29 -0700 (PDT)
+Received: by mail-qt1-f193.google.com with SMTP id h16so8843213qtr.11
+        for <linux-btrfs@vger.kernel.org>; Fri, 13 Mar 2020 14:12:31 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references:mime-version
          :content-transfer-encoding;
-        bh=eDEzxvDmITVd2vHk6pg1qrWvm+se1t2pDxfSOckeLV0=;
-        b=CM/5VZYqerCOF2Q3xn2H2zDotyFd0YRM+3TSDm5zOHJ3UruHSw046+RT4YYI1rQgtl
-         mQR9iMYbptg1QsYYmdRWKx6ALEiQYOfMsW9kxtPliQ4UdHnRklDxvnoALJLyCqDQIW/B
-         nZpzAgtgDz3n18tfKt2oPkWP2Yh2TQyT7ayC/5ea1yqz1qWFrk03beBscFHkinQmtOsG
-         6KNq0j8jnnACBRC1mPycIGNg/zS8LpH4nHRiwu667tN6VMc4Irl3bgieJ05pZgAtvDFR
-         g4LLSuKNGPICKLUSB/egQTD6pHEAOTRaWbXkHYQDQllJhyGHssBrXEQGZm/XZ2G/1cjd
-         YFaw==
+        bh=K+1pSzqV4/zQnJjX/QqtA1LtarNMde6WNqPr27gBpoU=;
+        b=cExnlxlz8JQ7w2wK1WYVLvSLlRuCsVgtFCRqisjCLZZVotADmW0b00SRbwNDj8yfT3
+         wbadY9zbN4G/OTyTnbsSMHDrtwcx8PA0EyfLA7FD4389Fxydwnant8LLHxwrY7VOG061
+         smsxHWmmKety/OZ9AEaCiZwwPXFawuU+Aa/4BgBv3eDMKunRvj3dPNd3ga9DV58UVgVs
+         /SRwK7ztYeWlZpA5sKAB/9025/vLMlkO0Zhk+g5Nt0UOp1P3eSXFoHeYMtH+3JClQDC7
+         dgIJ5RX8Yz6y/NXYTGiWYeHofTkkNwrSTVL28rgXuiXUJBGSSoQ2sh/tkmv3tEPz7W4r
+         X0wg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=eDEzxvDmITVd2vHk6pg1qrWvm+se1t2pDxfSOckeLV0=;
-        b=ssMYrwAmztFXGR1ZfA2AxQlihEGy+P3yEVYFdJwdi4k85rbaFnz4Q3E49aRf/9Ea2A
-         u3ItCpqDhbeXQbeumbH/nLke4fchdeskrIuCIhpquC+hEGhL3tsOnQ6AGCICsfCToRCw
-         gKQ9bj9/VLhOOsaqmCe0ci7D8itow5OeMT/5NhfgCwkL1aOJUYYTiAWqp9t9diBvkoBi
-         Q+Gxn/3iJTKXYia5XWlcuND98B+RC/T4+GMgJZ1MyUpK/k2h2wSJhpkmJEFDvmCACLZK
-         /6eKRD0rXEUudxCaXOQdG5dcwTte7+irbkDeMcOBwIHiX3Q64Vr8EHcBBtvu6Ee3KOg2
-         jMag==
-X-Gm-Message-State: ANhLgQ157jDlZMGkIR0fNpoNGV6mR/IcnPRfwrVMU5yuTzeFrxpk2I1J
-        05WygXUmJ9N1q+slEsyVMOBUoxHNhU5JdA==
-X-Google-Smtp-Source: ADFU+vtWP/cpbdUBBa58Q97VHGapsa3Vl5bLjyzVrUC8vLjODv78XLid9Gia7zGAcd6RIwkhbuuG1w==
-X-Received: by 2002:a37:2794:: with SMTP id n142mr14871625qkn.336.1584133946955;
-        Fri, 13 Mar 2020 14:12:26 -0700 (PDT)
+        bh=K+1pSzqV4/zQnJjX/QqtA1LtarNMde6WNqPr27gBpoU=;
+        b=DxrVvvNZ0u0runzwsz0tXbwAK5VeVsJck1pHQ5dPuY32+i8Kf0kWQIQo0OmcU/d5wZ
+         easQt71FMuiTIxOhAh22AaI4e4bAlPDHNWWyEu9hRMN3KnmIYc0a/6ULFvXSZvEoMPDi
+         98wPeX8XpVwYTeDHzSWoUfg01v0wXuFUdNZ3kZYNCEcH3jl4DgxMf25MdDlr/M0MX0eM
+         mtPScOjgzgyXsFEsniO4w/gjRAIeAsEN4fCtm2ii3u9BOJ2U3A2sCg1beUW7sV7+AOvT
+         pJ5T1QKByeC5ABu0LclHACYqGULXZ+PzzivvW/aulymsWwtUpDBLpIHF8mFtP03wHOBL
+         LuAQ==
+X-Gm-Message-State: ANhLgQ1scVt/n5ECb4d9WzB0qDrQkFzFXEk8bdpCGCNxofgVb64G5IJh
+        w036SvuDGoFMr5c+Fa4ad+fYZ0iK45Q3Rg==
+X-Google-Smtp-Source: ADFU+vvvsLHN2uDRzkhhN2dbr4SromrdoxJNoV7TMFBU5v+OGJRKLs/UoqVDCM/DU2ssHacRnL2XtQ==
+X-Received: by 2002:ac8:175d:: with SMTP id u29mr14886860qtk.150.1584133950412;
+        Fri, 13 Mar 2020 14:12:30 -0700 (PDT)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id q75sm1291676qke.12.2020.03.13.14.12.25
+        by smtp.gmail.com with ESMTPSA id l60sm9312710qtd.35.2020.03.13.14.12.29
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 13 Mar 2020 14:12:26 -0700 (PDT)
+        Fri, 13 Mar 2020 14:12:29 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 2/5] btrfs: delayed refs pre-flushing should only run the heads we have
-Date:   Fri, 13 Mar 2020 17:12:17 -0400
-Message-Id: <20200313211220.148772-3-josef@toxicpanda.com>
+Subject: [PATCH 4/5] btrfs: run delayed refs less often in commit_cowonly_roots
+Date:   Fri, 13 Mar 2020 17:12:19 -0400
+Message-Id: <20200313211220.148772-5-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.24.1
 In-Reply-To: <20200313211220.148772-1-josef@toxicpanda.com>
 References: <20200313211220.148772-1-josef@toxicpanda.com>
@@ -70,39 +70,49 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Previously our delayed ref running used the total number of items as the
-items to run.  However we changed that to number of heads to run with
-the delayed_refs_rsv, as generally we want to run all of the operations
-for one bytenr.
-
-But with btrfs_run_delayed_refs(trans, 0) we set our count to 2x the
-number of items that we have.  This is generally fine, but if we have
-some operation generation loads of delayed refs while we're doing this
-pre-flushing in the transaction commit, we'll just spin forever doing
-delayed refs.
-
-Fix this to simply pick the number of delayed refs we currently have,
-that way we do not end up doing a lot of extra work that's being
-generated in other threads.
+We love running delayed refs in commit_cowonly_roots, but it is a bit
+excessive.  I was seeing cases of running 3 or 4 refs a few times in a
+row during this time.  Instead simply update all of the roots first,
+then run delayed refs, then handle the empty block groups case, and then
+if we have any more dirty roots do the whole thing again.  This allows
+us to be much more efficient with our delayed ref running, as we can
+batch a few more operations at once.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/extent-tree.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fs/btrfs/transaction.c | 12 ------------
+ 1 file changed, 12 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 8e5b49baad98..2925b3ad77a1 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2196,7 +2196,7 @@ int btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 3e7fd8a934c1..c3b3b524b8c3 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1646,12 +1646,6 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 		goto fail;
+ 	}
  
- 	delayed_refs = &trans->transaction->delayed_refs;
- 	if (count == 0)
--		count = atomic_read(&delayed_refs->num_entries) * 2;
-+		count = delayed_refs->num_heads_ready;
+-	ret = btrfs_run_delayed_refs(trans, (unsigned long)-1);
+-	if (ret) {
+-		btrfs_abort_transaction(trans, ret);
+-		goto fail;
+-	}
+-
+ 	/*
+ 	 * Do special qgroup accounting for snapshot, as we do some qgroup
+ 	 * snapshot hack to do fast snapshot.
+@@ -1698,12 +1692,6 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 		}
+ 	}
  
- again:
- #ifdef SCRAMBLE_DELAYED_REFS
+-	ret = btrfs_run_delayed_refs(trans, (unsigned long)-1);
+-	if (ret) {
+-		btrfs_abort_transaction(trans, ret);
+-		goto fail;
+-	}
+-
+ fail:
+ 	pending->error = ret;
+ dir_item_existed:
 -- 
 2.24.1
 

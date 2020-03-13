@@ -4,63 +4,63 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 91731C5ACBF
-	for <linux-btrfs@archiver.kernel.org>; Fri, 13 Mar 2020 15:44:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9EEB6C4CECE
+	for <linux-btrfs@archiver.kernel.org>; Fri, 13 Mar 2020 15:45:00 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 681422074B
-	for <linux-btrfs@archiver.kernel.org>; Fri, 13 Mar 2020 15:44:59 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7169120724
+	for <linux-btrfs@archiver.kernel.org>; Fri, 13 Mar 2020 15:45:00 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="U/XE9ur9"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="IXAH/J/S"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727325AbgCMPoz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 13 Mar 2020 11:44:55 -0400
-Received: from mail-qk1-f196.google.com ([209.85.222.196]:39964 "EHLO
-        mail-qk1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727314AbgCMPoy (ORCPT
+        id S1727352AbgCMPo7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 13 Mar 2020 11:44:59 -0400
+Received: from mail-qt1-f193.google.com ([209.85.160.193]:42982 "EHLO
+        mail-qt1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727334AbgCMPo7 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 13 Mar 2020 11:44:54 -0400
-Received: by mail-qk1-f196.google.com with SMTP id j2so354311qkl.7
-        for <linux-btrfs@vger.kernel.org>; Fri, 13 Mar 2020 08:44:54 -0700 (PDT)
+        Fri, 13 Mar 2020 11:44:59 -0400
+Received: by mail-qt1-f193.google.com with SMTP id g16so7837946qtp.9
+        for <linux-btrfs@vger.kernel.org>; Fri, 13 Mar 2020 08:44:57 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=S6S911f685BFTv1GemRJVoOEA35stlYJQ/+RuehFakk=;
-        b=U/XE9ur97EwrDbnGKcaJUhzIvekZjGJ4e9BH99HV8fiiS/St5Hk3Q3HxKuDTLLsBqk
-         ctveOlOoCkFRRVrZPubIfN9Frgm1Q32KhMfA6f8uqEoOGN0cX1/DxJT8hh/4EfDjoUX/
-         4NAGjJVo3qSVZ15IvrwBkjD1WQ8aRcOp5j8SqbxoLWQH635xQZ6Xe5WXi1UwX2tNs1Js
-         Pc34/v4V6Urs47+HuC4D4Q2YuvA89hy0IwuUHc1qw3HLZv26Tf5B8ePR8lFNJZYXiCPO
-         SulRsRGvV8iMm/TMfVZPksJfFqGeCp3pJorAt4yvS6igYdOM+3bf8tqOdsnhsGwYWkzM
-         TFaQ==
+        bh=usB50WR/Edm48JN68lsnmBnKkhKLOjJoGtCIpKn3Uyk=;
+        b=IXAH/J/S0F8e2g358KJnrfspCLxfNYdsfNd0IilrGRzN4nCD9UEV1unkRqAjZUaxKb
+         yRTCSe3gXCfzB15gmfkpOrQWGSWjZUPOcLCCjNdXc3Awe/tUZGLErNKXTdzUArBBT13j
+         hz8cZ0nPKluz9bSfXuQ/p00NxprcskgPqFY6Fw6nB22mH0C8W6FjZSnSFAHMJXhiY8uF
+         6c3FXhT0IafOicmGspWIE+42feqVWtrRQBDUGiIVTJ45G/BMlonu4/V4epTNiiSlU6wk
+         T+CzAGcXkTjclzhGdjNRJC3NuVbQh0ceMmJ549w4DkxeY+FVkMVoBbu6ENSsBagZVGgH
+         ucIQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=S6S911f685BFTv1GemRJVoOEA35stlYJQ/+RuehFakk=;
-        b=SBoZJzNbMIgkw2iid+X5fycv3VZGj5yPHzElthFJJovO9cvPgqkznuDvMZUGTMAHeJ
-         qez+gE2STqtZ1gvAYGo88Y4HITr8ByAdSUcJlWOOjx4lxaTIXuYsLPl8Fum17b59UlYW
-         slHltnsqoiCrhjzEXGy1/BByYbr7vGDxm1CaT4s2aZSztgdPpIpDP7TpNrPVfMP7L/EL
-         W4YCfZdEstQzekxZ0Z4Q+QzxRtG11pvuiAsvZUC8UOQyl7jAnr2jKdUw07eSKFoj9k09
-         G93fwW+b6k6ixKt9BiuSo/Cl7jr1EOPcXUnRzVq3WQfJka0n/dRSo8jADzDSR9/35gZx
-         Vflw==
-X-Gm-Message-State: ANhLgQ27NjdXuyxpO7ShpLHYUuYgUwndVA00JzVZF18Ot5EJcz7XvZhE
-        ps5/0rfd+g7ddJ2agRpRDlPWcJtedek=
-X-Google-Smtp-Source: ADFU+vvRn0bmYT1/McuqkZ4atGjPfkMjGfIfH6izSk8StWqNEZmpRVbcNMSfQe+P8wT8iD6fXvOk3w==
-X-Received: by 2002:a37:702:: with SMTP id 2mr5712720qkh.134.1584114293196;
-        Fri, 13 Mar 2020 08:44:53 -0700 (PDT)
+        bh=usB50WR/Edm48JN68lsnmBnKkhKLOjJoGtCIpKn3Uyk=;
+        b=NCU7xwd2pI64CU4C9+gYxDcK4o3GdMkkM2E36nFCur9Las/rbrd29Sk0jKYRVBdPKq
+         3idpIrZbPrn4xoP/Zas0zTMvsDmZu1RiXBN+lAcYuGrWW1P/cbkb7Nub8EFSepBDLA0R
+         xvxLuvxaNmyS+aAY3HMV8lJcMtBxy5shd72PCq5aKB4McAcxTSarbN0+mvkb1+RloJWw
+         JXj4FAxiSl4yxD93dIC5iKOdQCUeNdBmJtNVxwga53MwC7hvzqwPVMOH7xtOKtgxVcPP
+         FrmYXpC6bPqGSA7p5MMQPjTpwbL0mrX4/bVnyhhcMfNX45oXjy927yK93px/CJ+w8iRk
+         XVRA==
+X-Gm-Message-State: ANhLgQ2oTdDNCy8uFMPmYLzAc26XJBydGFBqjcplcpHxgyghkIbTK4xF
+        zeZAZO+Mfzm5bUgt1gfIPi7oCFTaBZo=
+X-Google-Smtp-Source: ADFU+vsKaCmHw1ZcPd6HNABU8wltQkWW6ImMjz8E4wOWZAMT66N0sgXp5sEJJ1eWvFBQ8HjMgZsEAA==
+X-Received: by 2002:ac8:6043:: with SMTP id k3mr13425384qtm.336.1584114296699;
+        Fri, 13 Mar 2020 08:44:56 -0700 (PDT)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id y197sm29347677qka.65.2020.03.13.08.44.52
+        by smtp.gmail.com with ESMTPSA id z9sm11148340qtu.20.2020.03.13.08.44.55
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 13 Mar 2020 08:44:52 -0700 (PDT)
+        Fri, 13 Mar 2020 08:44:56 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
 Cc:     Qu Wenruo <wqu@suse.com>
-Subject: [PATCH 1/8] btrfs: drop block from cache on error in relocation
-Date:   Fri, 13 Mar 2020 11:44:41 -0400
-Message-Id: <20200313154448.53461-2-josef@toxicpanda.com>
+Subject: [PATCH 3/8] btrfs: unset reloc control if we fail to recover
+Date:   Fri, 13 Mar 2020 11:44:43 -0400
+Message-Id: <20200313154448.53461-4-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.24.1
 In-Reply-To: <20200313154448.53461-1-josef@toxicpanda.com>
 References: <20200313154448.53461-1-josef@toxicpanda.com>
@@ -71,35 +71,63 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-If we have an error while building the backref tree in relocation we'll
-process all the pending edges and then free the node.  However if we
-integrated some edges into the cache we'll lose our link to those edges
-by simply freeing this node, which means we'll leak memory and
-references to any roots that we've found.
+If we fail to load an fs root, or fail to start a transaction we can
+bail without unsetting the reloc control, which leads to problems later
+when we free the reloc control but still have it attached to the file
+system.
 
-Instead we need to use remove_backref_node(), which walks through all of
-the edges that are still linked to this node and free's them up and
-drops any root references we may be holding.
+In the normal path we'll end up calling unset_reloc_control() twice, but
+all it does is set fs_info->reloc_control = NULL, and we can only have
+one balance at a time so it's not racey.
 
 Reviewed-by: Qu Wenruo <wqu@suse.com>
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/relocation.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fs/btrfs/relocation.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
 
 diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 4fb7e3cc2aca..507361e99316 100644
+index 2141519a9dd0..c496f8ed8c7e 100644
 --- a/fs/btrfs/relocation.c
 +++ b/fs/btrfs/relocation.c
-@@ -1244,7 +1244,7 @@ struct backref_node *build_backref_tree(struct reloc_control *rc,
- 			free_backref_node(cache, lower);
+@@ -4657,9 +4657,8 @@ int btrfs_recover_relocation(struct btrfs_root *root)
+ 
+ 	trans = btrfs_join_transaction(rc->extent_root);
+ 	if (IS_ERR(trans)) {
+-		unset_reloc_control(rc);
+ 		err = PTR_ERR(trans);
+-		goto out_free;
++		goto out_unset;
+ 	}
+ 
+ 	rc->merge_reloc_tree = 1;
+@@ -4679,7 +4678,7 @@ int btrfs_recover_relocation(struct btrfs_root *root)
+ 		if (IS_ERR(fs_root)) {
+ 			err = PTR_ERR(fs_root);
+ 			list_add_tail(&reloc_root->root_list, &reloc_roots);
+-			goto out_free;
++			goto out_unset;
  		}
  
--		free_backref_node(cache, node);
-+		remove_backref_node(cache, node);
- 		return ERR_PTR(err);
- 	}
- 	ASSERT(!node || !node->detached);
+ 		err = __add_reloc_root(reloc_root);
+@@ -4690,7 +4689,7 @@ int btrfs_recover_relocation(struct btrfs_root *root)
+ 
+ 	err = btrfs_commit_transaction(trans);
+ 	if (err)
+-		goto out_free;
++		goto out_unset;
+ 
+ 	merge_reloc_roots(rc);
+ 
+@@ -4706,6 +4705,8 @@ int btrfs_recover_relocation(struct btrfs_root *root)
+ 	ret = clean_dirty_subvols(rc);
+ 	if (ret < 0 && !err)
+ 		err = ret;
++out_unset:
++	unset_reloc_control(rc);
+ out_free:
+ 	kfree(rc);
+ out:
 -- 
 2.24.1
 

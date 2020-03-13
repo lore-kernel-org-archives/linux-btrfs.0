@@ -2,68 +2,64 @@ Return-Path: <SRS0=6pDE=46=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_GIT autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A220DC4CECE
-	for <linux-btrfs@archiver.kernel.org>; Fri, 13 Mar 2020 15:45:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A464DC2BB1D
+	for <linux-btrfs@archiver.kernel.org>; Fri, 13 Mar 2020 15:45:52 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 761A32074A
-	for <linux-btrfs@archiver.kernel.org>; Fri, 13 Mar 2020 15:45:48 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 77C0A20724
+	for <linux-btrfs@archiver.kernel.org>; Fri, 13 Mar 2020 15:45:52 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="cXYNX0Vo"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="dV3+GahR"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727018AbgCMPpr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 13 Mar 2020 11:45:47 -0400
-Received: from mail-qk1-f195.google.com ([209.85.222.195]:39996 "EHLO
-        mail-qk1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726832AbgCMPpC (ORCPT
+        id S1727315AbgCMPoy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 13 Mar 2020 11:44:54 -0400
+Received: from mail-qk1-f179.google.com ([209.85.222.179]:33258 "EHLO
+        mail-qk1-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727306AbgCMPox (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 13 Mar 2020 11:45:02 -0400
-Received: by mail-qk1-f195.google.com with SMTP id j2so355035qkl.7
-        for <linux-btrfs@vger.kernel.org>; Fri, 13 Mar 2020 08:45:01 -0700 (PDT)
+        Fri, 13 Mar 2020 11:44:53 -0400
+Received: by mail-qk1-f179.google.com with SMTP id p62so13252903qkb.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 13 Mar 2020 08:44:52 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:cc:subject:date:message-id:in-reply-to:references
-         :mime-version:content-transfer-encoding;
-        bh=jhpST5SRMDU1486x5u4424Fg4Vud/zxOziaLMWOmdRw=;
-        b=cXYNX0Vovb6KTqm2Q53W5ViujD0O//V9PlaH/86mDSvLCuWCEZLnvMTkbDwqc/nwI7
-         vYL4HynpXZRiwS3NnApnW2/mCc/ZU5R8TkCyM17abRIkMl1TTsydup2osJDKq5xSywVS
-         td3wOO9lYg+pfvlcKm1YywwzWXgopPcwa2I2TUDrXExphZhLv5PtR/LF7Ev+JpFpkUli
-         42GImWAulhDeNhyV9jy4HsnZEMKB/Cc8sV5rLyjF/KzixsbMKMNG5bap5SAq4h0UCTiz
-         pTp/7osko/VeILXK8ULPxA5XQCkEOimLvSvBFzPu/5BuqaCkhCXtvn8IjVrFzGANG6o0
-         VbgA==
+        h=from:to:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=pDn0hxoQ4OTEyfaxajy2ZaHV0eSkb/uvcxLQnw+4EuQ=;
+        b=dV3+GahRQe7+P7/1smOcZbLJavLw1bhLz9fXnMpKKukhcC9YZtgZJ68S2LyeZH7BI4
+         LsHfwK18tZfB5wyWYf3p65PRXNUHA7WeTkAEw5wJD6Pl4/yyVgOksFDh/cyf2VjknZRB
+         75eUHrjQ5dXRvlXTXtLgBdGR6qWkM46Pf9GmhGYJ3ejVoifHEtVc9XY4d1LMKxPFcyKh
+         s1t7O/Bh1NaUneM7OakF+yyVFbJdajS3sosvO+CDdcPCpJQ58YX1O1JiSL8i1HiwC1xn
+         5I2LWfEqVwsmdgfbFnP2T0cdMl4eMXdSAB/z84wz8zxDuCp8bRduXayqr6rhgOByMDuV
+         KN0A==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=jhpST5SRMDU1486x5u4424Fg4Vud/zxOziaLMWOmdRw=;
-        b=Wb1E5PBQ9LLp8+wEOjHL/gmncFBVpBPB87UECimeqPJphEGXMuQpQbUuaOp4vtp+CM
-         UeoCWPgsmDu0PekVBg6I39KZkOBAfNXRRu8yDlkampJrUJCWW+nTpWKsLIeBcyfjvIuu
-         HvMmLiMit+SOp6cSYbR6DKcsXWDKwuOIJPY2ISXBcV0g19VSMUtDzjIqSQCSd0PW5xtw
-         iTnu8+XuE+CrkPP4pngrCrrvkUWoa3PHY/kXZ2PQI/lAI7BOyzNJ6Absnm77LmmFZ8rx
-         ikpkJrX6Io/sTQgLxnVTqfLmonVjldRK/GF92BcMYxyNECJftsYJCGZbpvKDvkrChqec
-         5mAw==
-X-Gm-Message-State: ANhLgQ0YQq8Fac2dw8+a3mUyvmFKP+Fl2IjkSP8vjGjZ7a+oN4ul1Lfk
-        3//f3XQTLETxuErFakwdH7vQU9zsSio=
-X-Google-Smtp-Source: ADFU+vvFdsVXt8vVJ8y4MMwTWCnO5OHvqbqHK/dgzXXkAOGnCXCJjuvVFSWxpY77g4vYufLrjF9gWQ==
-X-Received: by 2002:a37:27cf:: with SMTP id n198mr13016005qkn.97.1584114300539;
-        Fri, 13 Mar 2020 08:45:00 -0700 (PDT)
+        h=x-gm-message-state:from:to:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=pDn0hxoQ4OTEyfaxajy2ZaHV0eSkb/uvcxLQnw+4EuQ=;
+        b=rWXNLZM9IMco7iCTQtkKj/fN3vexrSI34Tqu1dedTQimlC7xXIFyH4Obwq7CMqU/2Q
+         eNOrXScXn+UYohZg5kmQNQVGz1LBZ6bxHybu2KQmorsVkDU0Xht67gHn8KNBpqon4CEe
+         Jg7kCJOsC64RF5MmjML686mmaHc4aUbwMC4LUdipq/r6UrcEfJazQUNETD8wfuOo1K2r
+         KX6D8oU7cSUKnRudSpY1qMg4XRhVyHoLp4HTxXv/hBxVvCQ0Wo8oPjCYJQ5/d4UQpX8/
+         UtRzaKM7VYmcMG4q7I22Qh3nXWGHpHaSz6u4THVEZhEJPwUu4VnC8KkLYD99D4FtfueN
+         G3sg==
+X-Gm-Message-State: ANhLgQ0K+e9wtPLcH/BIjNYo2Y7y1yCC4Od/pI1AI3v0z1/ni1znnEfV
+        j09fPaHFWxTgab8dSySukjRKmbnwNDY=
+X-Google-Smtp-Source: ADFU+vt0avACjeEzRSmqaCI7GwnscKFC8iIPCYFGtGDMvo8vJzfe+9yUhZZmiAJo6St6cL5A4vNPHw==
+X-Received: by 2002:ae9:dec7:: with SMTP id s190mr12859811qkf.303.1584114291291;
+        Fri, 13 Mar 2020 08:44:51 -0700 (PDT)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id t53sm3991994qth.70.2020.03.13.08.44.59
+        by smtp.gmail.com with ESMTPSA id 199sm11434573qkm.7.2020.03.13.08.44.50
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 13 Mar 2020 08:44:59 -0700 (PDT)
+        Fri, 13 Mar 2020 08:44:50 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Cc:     Qu Wenruo <wqu@suse.com>
-Subject: [PATCH 5/8] btrfs: run clean_dirty_subvols if we fail to start a trans
-Date:   Fri, 13 Mar 2020 11:44:45 -0400
-Message-Id: <20200313154448.53461-6-josef@toxicpanda.com>
+Subject: [PATCH 0/8][v3] relocation error handling fixes
+Date:   Fri, 13 Mar 2020 11:44:40 -0400
+Message-Id: <20200313154448.53461-1-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.24.1
-In-Reply-To: <20200313154448.53461-1-josef@toxicpanda.com>
-References: <20200313154448.53461-1-josef@toxicpanda.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -71,52 +67,40 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-If we do merge_reloc_roots() we could insert a few roots onto the dirty
-subvol roots list, where we hold a ref on them.  If we fail to start the
-transaction we need to run clean_dirty_subvols() in order to cleanup the
-refs.
+v2->v3:
+- Updated the free reloc control to use the rbtree postorder thing.
+- Updated the changelog for patch 6.
+- Fixed the error goto in patch 5.
+- Added the reviewed-bys.
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
----
- fs/btrfs/relocation.c | 7 +++----
- 1 file changed, 3 insertions(+), 4 deletions(-)
+v1->v2:
+- Incorporated the various feedback, tweaked some things, adjusted commit
+  messages, added some more comments.  Hopefully I got everything.
+- Added "btrfs: do not init a reloc root if we aren't relocating", this is to
+  oddress the weird handling of DEAD_ROOT and the use-after-free that Qu had
+  originally attempted to fix.
+- Reworked "btrfs: splice rc->reloc_roots onto reloc roots in recover" to simply
+  handle cleaning up any remaining bigs on the reloc_control, since errors can
+  mean we'll have some things left pending on the reloc_control.
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 721d049ff2b5..9c8a4a4b2bde 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -4279,10 +4279,10 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
- 		goto out_free;
- 	}
- 	btrfs_commit_transaction(trans);
-+out_free:
- 	ret = clean_dirty_subvols(rc);
- 	if (ret < 0 && !err)
- 		err = ret;
--out_free:
- 	btrfs_free_block_rsv(fs_info, rc->block_rsv);
- 	btrfs_free_path(path);
- 	return err;
-@@ -4712,16 +4712,15 @@ int btrfs_recover_relocation(struct btrfs_root *root)
- 	trans = btrfs_join_transaction(rc->extent_root);
- 	if (IS_ERR(trans)) {
- 		err = PTR_ERR(trans);
--		goto out_free;
-+		goto out_clean;
- 	}
- 	err = btrfs_commit_transaction(trans);
--
-+out_clean:
- 	ret = clean_dirty_subvols(rc);
- 	if (ret < 0 && !err)
- 		err = ret;
- out_unset:
- 	unset_reloc_control(rc);
--out_free:
- 	free_reloc_control(rc);
- out:
- 	if (!list_empty(&reloc_roots))
--- 
-2.24.1
+------------------------------ Original email ---------------------------------
+My root ref patches have uncovered weird failures in some of our xfstests,
+particularly those that do balance while having errors.
+
+I ran relocation through my eio-stress bpf script and loads of things fell out,
+these are the fixes required to make the stress test run to completion.
+
+Dave this is just based on my master, I assume it'll apply cleanly to what you
+have, but if not let me know which branch you want me to rebase onto to get it
+to work right.
+
+Most of these are straightforward, the only tricky/subtle one is 7/7, and I've
+added a lot of explanation there around my reasoning.  6/7 is also a little bit
+more complicated as it changes the rules slightly for reference holding for
+roots.  Before we just sort of hoped and prayed we go the right reference
+dropped when we dropped root->reloc_root.  Now we hold one ref for the list of
+reloc roots and one ref for root->reloc_root, so it's more clear when we need to
+be dropping references.  Everything else is relatively straightforward.  Thanks,
+
+Josef
 

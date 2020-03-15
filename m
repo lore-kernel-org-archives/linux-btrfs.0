@@ -7,41 +7,54 @@ X-Spam-Status: No, score=-2.2 required=3.0 tests=DKIM_ADSP_CUSTOM_MED,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
 	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 134D1C18E5B
-	for <linux-btrfs@archiver.kernel.org>; Sun, 15 Mar 2020 15:45:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F3C61C10DCE
+	for <linux-btrfs@archiver.kernel.org>; Sun, 15 Mar 2020 15:45:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E660220663
+	by mail.kernel.org (Postfix) with ESMTP id C5EC920575
 	for <linux-btrfs@archiver.kernel.org>; Sun, 15 Mar 2020 15:45:06 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728819AbgCOPpF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 15 Mar 2020 11:45:05 -0400
-Received: from ciao.gmane.io ([159.69.161.202]:48704 "EHLO ciao.gmane.io"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728535AbgCOPpF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 15 Mar 2020 11:45:05 -0400
-Received: from list by ciao.gmane.io with local (Exim 4.92)
-        (envelope-from <gcfb-btrfs-devel-moved1-3@m.gmane-mx.org>)
-        id 1jDVRm-000R2o-A6
-        for linux-btrfs@vger.kernel.org; Sun, 15 Mar 2020 16:45:02 +0100
-X-Injected-Via-Gmane: http://gmane.org/
-To:     linux-btrfs@vger.kernel.org
-From:   Ferry Toth <fntoth@gmail.com>
+        id S1728794AbgCOPoN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 15 Mar 2020 11:44:13 -0400
+Received: from mailfilter03-out31.webhostingserver.nl ([141.138.168.202]:44858
+        "EHLO mailfilter03-out31.webhostingserver.nl" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1728535AbgCOPoN (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 15 Mar 2020 11:44:13 -0400
+X-Halon-ID: d017ce39-66d3-11ea-9f46-001a4a4cb9a5
+Received: from s198.webhostingserver.nl (unknown [195.211.72.171])
+        by mailfilter03.webhostingserver.nl (Halon) with ESMTPSA
+        id d017ce39-66d3-11ea-9f46-001a4a4cb9a5;
+        Sun, 15 Mar 2020 16:44:10 +0100 (CET)
+Received: from [2001:981:6fec:1:5c6d:3bf:b008:a656]
+        by s198.webhostingserver.nl with esmtpa (Exim 4.92.3)
+        (envelope-from <fntoth@gmail.com>)
+        id 1jDVQw-009lXe-6v; Sun, 15 Mar 2020 16:44:10 +0100
 Subject: Re: Howto take a snapshot from an image as ordinary user?
-Date:   Sun, 15 Mar 2020 16:48:09 +0100
-Message-ID: <8df0a5eb-79ef-db9e-4b9b-94fc9a8554e6@gmail.com>
+To:     Ferry Toth <ftoth@telfort.nl>, linux-btrfs@vger.kernel.org
+Newsgroups: gmane.comp.file-systems.btrfs
 References: <58ad5d52-425a-a89d-d042-e9941088828a@gmail.com>
  <d87f9e87-0e77-c758-aae9-f0d069b0e6da@telfort.nl>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Transfer-Encoding: 7bit
+From:   Ferry Toth <fntoth@gmail.com>
+Message-ID: <8df0a5eb-79ef-db9e-4b9b-94fc9a8554e6@gmail.com>
+Date:   Sun, 15 Mar 2020 16:48:09 +0100
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
  Thunderbird/68.4.1
+MIME-Version: 1.0
 In-Reply-To: <d87f9e87-0e77-c758-aae9-f0d069b0e6da@telfort.nl>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
+Content-Transfer-Encoding: 7bit
+X-SendingUser: hidden
+X-SendingServer: hidden
+X-Antivirus-Scanner: Clean mail though you should still use an Antivirus
+X-Authenticated-Id: hidden
+X-SendingUser: hidden
+X-SendingServer: hidden
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
+Message-ID: <20200315154809.91GT7uImLjBFRclhLHVGCD2iZELKM6B-xfMMwY8jUeU@z>
 
 Op 08-03-2020 om 16:39 schreef Ferry Toth:
 > Hi
@@ -152,5 +165,4 @@ addtask btrfs_snapshot after image_ext3 before do_bootimg
 >>
 > 
 > 
-
 

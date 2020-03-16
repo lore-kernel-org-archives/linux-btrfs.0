@@ -2,73 +2,118 @@ Return-Path: <SRS0=o3AA=5B=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6B59FC0044D
-	for <linux-btrfs@archiver.kernel.org>; Mon, 16 Mar 2020 09:05:18 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E602AC0044D
+	for <linux-btrfs@archiver.kernel.org>; Mon, 16 Mar 2020 09:26:38 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 49DFA20658
-	for <linux-btrfs@archiver.kernel.org>; Mon, 16 Mar 2020 09:05:18 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id AEEEE20674
+	for <linux-btrfs@archiver.kernel.org>; Mon, 16 Mar 2020 09:26:38 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="BEGyWpkc";
+	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b="ycM9LmEI"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730262AbgCPJFR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 16 Mar 2020 05:05:17 -0400
-Received: from mx2.suse.de ([195.135.220.15]:50786 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1730075AbgCPJFR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 16 Mar 2020 05:05:17 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 18C09AEDE;
-        Mon, 16 Mar 2020 09:05:16 +0000 (UTC)
-From:   Nikolay Borisov <nborisov@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     Johannes.Thumshirn@wdc.com, Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH] btrfs-progs: Fix xxhash on big endian machines
-Date:   Mon, 16 Mar 2020 11:05:12 +0200
-Message-Id: <20200316090512.21519-1-nborisov@suse.com>
-X-Mailer: git-send-email 2.17.1
+        id S1730298AbgCPJ0i (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 16 Mar 2020 05:26:38 -0400
+Received: from esa3.hgst.iphmx.com ([216.71.153.141]:44189 "EHLO
+        esa3.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1730287AbgCPJ0h (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 16 Mar 2020 05:26:37 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1584350797; x=1615886797;
+  h=from:to:subject:date:message-id:references:
+   content-transfer-encoding:mime-version;
+  bh=G8FZ0D3PP/OudJ5uuxCAz/C/vBHo8wESZoPwxTWqVEI=;
+  b=BEGyWpkc+wVt1f0TtWQvfh6YAzkUSe26FEXv4GwvvSjbN0C9DaNmu/0i
+   okOS/Foo4XO+JC4Ut4+UYFiWJ/5cNqHAAL4We38lBrLXEEkIG7lKQ+r2R
+   JC7TGXV2dAE8uzE4BZX0k+NHLEb5kb7gStCu3xZZwINrRimEAsvM1nR9D
+   4XbqoYs5uZS83ipBMi3IsP5wsLwNk+zZSbs02mKkRATovaNZBSLdVbUxr
+   Nt4jPwi/qYvhSAiXOMch7iWXNPUTQazUfCL/EAK4fOyQQlHqC31ch4CW7
+   1YKV6mRn1MLEAuNkzgl7YeaVVxiJhlRR9w4nRzh9SemxTfWSJa3p1Rdet
+   Q==;
+IronPort-SDR: MvuPUbr48HF1LUUL672js9q0UpYFFwyqo3uvC0+BHmk6yBa/uY6EfRelt0ge1KQpElsOibxaFL
+ /vCQ8ntmT64IsRsnFIesi29qHgFn5Xcc/nJnpFHBuxIP0gOu7F4BdlfShSM01qK/7eQJUjGah+
+ TSK8f//MIO+oxSu5Mg19yrxImVt4NDS1tWwJqkCUMe1YlGUYt9+TC+uYDvNb1xv+/pwVwX412S
+ /ZiK6cSgZ58YKMjoKWPmaMsAAs7pQd2h+/KbPRqEMEG/BrZz93JY3UqEmeUA0eiHow9bFty53f
+ GlU=
+X-IronPort-AV: E=Sophos;i="5.70,559,1574092800"; 
+   d="scan'208";a="136959586"
+Received: from mail-bn8nam12lp2176.outbound.protection.outlook.com (HELO NAM12-BN8-obe.outbound.protection.outlook.com) ([104.47.55.176])
+  by ob1.hgst.iphmx.com with ESMTP; 16 Mar 2020 17:26:36 +0800
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=bVjNyHXFfekTD4DcFxhM2NdF1KeaSc0o2HGFnmEXIupnt3LYcfFdFeckThFklaT9V2uRhDvd81YOd/3kkZW+0CgIW1ByBc0EfRBjjqsDbjUiI+W1IPGq7s/T4EWhWJRUlfSOd52PH2mRICgy8tnLW8j3A9Vaf/gH35kIolbNT36CtqXNLlvS4cRlATmSf2tP+GDUZMynSDA7msJFleRSbhA2chBq1hiCK8KcQst5Xmf1pd/7bMmuAPmCoIRX4SCCbLuvOTDr3IES99f0iSu5qEFSaoE/6WBDKOlRlpgcw+EVgRpetToSbKeHn87AqL51F1VJB4+5G/6u/ZOeQNzaTQ==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=G8FZ0D3PP/OudJ5uuxCAz/C/vBHo8wESZoPwxTWqVEI=;
+ b=hI6UStE55IkGUCiQpocp3M2v1fEzPLGSHaDYPh5CXEqS6PjAD/bQKYamEOIaKDadCGmllzeHxsigPCLbRLAPEYfVYaB56Dg4gOOIu6VVsoSH4vk1Yj0xJP4nekYBva4nbnjsnE41mVqkyhVYeE9pDfmcA+Vur7XQHypjMICaqQi8wEwxOjQFjefcoYttDUIe5UVW+LwuzjRofvYJYSc6xB7FvSPFE5uIcqPPtReMWnDGmsWZsfSn7UgAixPq+Bc66dZ5FttCmLez7jKNSXZN90OU74F8cMGXoW1vsk5bMRDwGYdIhAKPu1UaUOk+H1Is6sGoLKiw3w/tRJNUbTGZtA==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
+ header.d=wdc.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=G8FZ0D3PP/OudJ5uuxCAz/C/vBHo8wESZoPwxTWqVEI=;
+ b=ycM9LmEIknYMnY6QAV+H22fITrazrUQSFSuCvCycXjot/12+Wye46cmO+K+o0Db8T3QhPYBnH83+4TKhBu82TUiISZttSfj/33qE5zWjyPAPm1M5bev2F26achzUugI50ayUbAGMO5Qocu7BuPfL2X4Q99f/t3+BzlYRiP4AaJE=
+Received: from SN4PR0401MB3598.namprd04.prod.outlook.com
+ (2603:10b6:803:47::21) by SN4PR0401MB3679.namprd04.prod.outlook.com
+ (2603:10b6:803:46::15) with Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.2793.17; Mon, 16 Mar
+ 2020 09:26:33 +0000
+Received: from SN4PR0401MB3598.namprd04.prod.outlook.com
+ ([fe80::e5f5:84d2:cabc:da32]) by SN4PR0401MB3598.namprd04.prod.outlook.com
+ ([fe80::e5f5:84d2:cabc:da32%5]) with mapi id 15.20.2793.018; Mon, 16 Mar 2020
+ 09:26:33 +0000
+From:   Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
+To:     Nikolay Borisov <nborisov@suse.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] btrfs-progs: Fix xxhash on big endian machines
+Thread-Topic: [PATCH] btrfs-progs: Fix xxhash on big endian machines
+Thread-Index: AQHV+3IFC9PlMOSj9UaUY4eJndn1AQ==
+Date:   Mon, 16 Mar 2020 09:26:33 +0000
+Message-ID: <SN4PR0401MB35986690DE71F4759146D3E69BF90@SN4PR0401MB3598.namprd04.prod.outlook.com>
+References: <20200316090512.21519-1-nborisov@suse.com>
+Accept-Language: en-US
+Content-Language: en-US
+X-MS-Has-Attach: 
+X-MS-TNEF-Correlator: 
+authentication-results: spf=none (sender IP is )
+ smtp.mailfrom=Johannes.Thumshirn@wdc.com; 
+x-originating-ip: [129.253.240.72]
+x-ms-publictraffictype: Email
+x-ms-office365-filtering-ht: Tenant
+x-ms-office365-filtering-correlation-id: 59e81672-5192-4f15-5c9e-08d7c98c1e33
+x-ms-traffictypediagnostic: SN4PR0401MB3679:
+x-microsoft-antispam-prvs: <SN4PR0401MB36791CA7AFAB145DA44D1D519BF90@SN4PR0401MB3679.namprd04.prod.outlook.com>
+wdcipoutbound: EOP-TRUE
+x-ms-oob-tlc-oobclassifiers: OLM:1728;
+x-forefront-prvs: 03449D5DD1
+x-forefront-antispam-report: SFV:NSPM;SFS:(10019020)(4636009)(366004)(376002)(39860400002)(396003)(136003)(346002)(199004)(6506007)(76116006)(7696005)(8936002)(19618925003)(91956017)(66476007)(64756008)(66946007)(66556008)(66446008)(186003)(26005)(558084003)(71200400001)(478600001)(9686003)(52536014)(33656002)(55016002)(316002)(110136005)(5660300002)(8676002)(81156014)(4270600006)(86362001)(2906002)(81166006);DIR:OUT;SFP:1102;SCL:1;SRVR:SN4PR0401MB3679;H:SN4PR0401MB3598.namprd04.prod.outlook.com;FPR:;SPF:None;LANG:en;PTR:InfoNoRecords;A:1;
+x-ms-exchange-senderadcheck: 1
+x-microsoft-antispam: BCL:0;
+x-microsoft-antispam-message-info: looY7iHo7VvUbe5hFee6Zpxic9SluUI1Vadih5LQaK8FLfjUuDekTkpsbgwhXlqYk3aix6cBW6BuC9EhkwT/GkFbfM5aAMPWtmdrf9upvVf98v8QYnwSANKBunHd3fntSEBfbo1PxEtAf3/qpUaZT1PTlXOYn3fhaNfedlIWdxFbRJEQm9u7ynxRbqAHQweZh4NIE9zzBC29J/u4WrYUrqjRifjYsNNWluYTULgwjTF210srqNBcSoaODxD9d3YnqlA0ggf/501ATUUYu1p/Bb5CGZmgDzzcr07v/QNLDugd8zIpDZdruG06cVdRUmeqEHtv6YxTlY94xOKqt2gK2+7mQL78u8tbcgNPZXE+7JQ2dY9qZWtH+i+CRSrfQkRcCxwvsY+lOGXYWs493LHFvxmuK1Za8HELQ3Pkfu6z9NfGV910PDYGNbpkKWZtma5y
+x-ms-exchange-antispam-messagedata: lQ+Vd2ya3oH+hRy63youFeD6rfx90NegY14JtF9nxFZim2SH2WBSun9GCaHNEtEFolkkdeH5+SFud+enrtt/+u+tak+R1+SUIdEJ+60jVDkwedokJ/K5Zk6slpPLpW8D9HgJmsW7vz13Lichl9sFzw==
+x-ms-exchange-transport-forked: True
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+X-OriginatorOrg: wdc.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 59e81672-5192-4f15-5c9e-08d7c98c1e33
+X-MS-Exchange-CrossTenant-originalarrivaltime: 16 Mar 2020 09:26:33.4152
+ (UTC)
+X-MS-Exchange-CrossTenant-fromentityheader: Hosted
+X-MS-Exchange-CrossTenant-id: b61c8803-16f3-4c35-9b17-6f65f441df86
+X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
+X-MS-Exchange-CrossTenant-userprincipalname: JcFKBp/qWlAfzvitLblSRAAB0MT4j6EKdBnSX8IWkt/30zO0ccPxXysVWR0jD2OtpMCD6yiDdLpri1o79IIYHAeqS/WAFQjWgFrcwYXA3Cg=
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: SN4PR0401MB3679
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-xxhash's state and results are always in little, but in progs after the
-hash was calculated it was copied to the final buffer via memcpy,
-meaning it'd be parsed as a big endian number on big endian machines.
-This is incompatible with the kernel implementation of xxhash which
-results in erroneous "checksum didn't match" errors on mount.
-
-Fix it by using put_unaligned_le64 which always ensures the resulting
-checksum will be copied in little endian format as the kernel expects
-it.
-
-Link: https://bugzilla.kernel.org/show_bug.cgi?id=206835
-Fixes: f070ece2e98f ("btrfs-progs: add xxhash64 to mkfs")
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
- crypto/hash.c | 7 +------
- 1 file changed, 1 insertion(+), 6 deletions(-)
-
-diff --git a/crypto/hash.c b/crypto/hash.c
-index 48623c798739..4009e84e8b2c 100644
---- a/crypto/hash.c
-+++ b/crypto/hash.c
-@@ -19,12 +19,7 @@ int hash_xxhash(const u8 *buf, size_t length, u8 *out)
- 	XXH64_hash_t hash;
-
- 	hash = XXH64(buf, length, 0);
--	/*
--	 * NOTE: we're not taking the canonical form here but the plain hash to
--	 * be compatible with the kernel implementation!
--	 */
--	memcpy(out, &hash, 8);
--
-+	put_unaligned_le64(&hash, out);
- 	return 0;
- }
-
---
-2.17.1
-
+Looks good,=0A=
+Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>=0A=

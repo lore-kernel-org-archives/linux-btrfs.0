@@ -2,435 +2,226 @@ Return-Path: <SRS0=o3AA=5B=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.2 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5D11CC18E5B
-	for <linux-btrfs@archiver.kernel.org>; Mon, 16 Mar 2020 09:28:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5CC92C0044D
+	for <linux-btrfs@archiver.kernel.org>; Mon, 16 Mar 2020 10:27:23 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2D3FE20674
-	for <linux-btrfs@archiver.kernel.org>; Mon, 16 Mar 2020 09:28:42 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 259D0205ED
+	for <linux-btrfs@archiver.kernel.org>; Mon, 16 Mar 2020 10:27:23 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="UfS+n9XA"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730450AbgCPJ2k (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 16 Mar 2020 05:28:40 -0400
-Received: from mx2.suse.de ([195.135.220.15]:33898 "EHLO mx2.suse.de"
+        id S1730620AbgCPK1W (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 16 Mar 2020 06:27:22 -0400
+Received: from mout.gmx.net ([212.227.15.18]:42575 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1730293AbgCPJ2k (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 16 Mar 2020 05:28:40 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 3E05BAD2A;
-        Mon, 16 Mar 2020 09:28:38 +0000 (UTC)
-From:   Nikolay Borisov <nborisov@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     osandov@osandov.com, Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v2] btrfs-progs: Remove support for BTRFS_SUBVOL_CREATE_ASYNC
-Date:   Mon, 16 Mar 2020 11:28:36 +0200
-Message-Id: <20200316092836.29091-1-nborisov@suse.com>
-X-Mailer: git-send-email 2.17.1
+        id S1730550AbgCPK1W (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 16 Mar 2020 06:27:22 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1584354426;
+        bh=UqT5xZwJKeOzOXn71LHEnhGUqZ35vPrZJq0TQkik4wg=;
+        h=X-UI-Sender-Class:Subject:To:Cc:References:From:Date:In-Reply-To;
+        b=UfS+n9XAjmRq6BIMAsYJe07Kf8b/Yur39LV/iOzAe7HvoTlGIvQVbDAAzw8BXLymg
+         awgeA+mIerQNuLiQcvkRUZgLbhueH7iMT4XFP5mn0KogJPtcuRjoDwtqmgvy8zXF3d
+         U9LgscmUInUX3Yf09gQI9hyu2ZTBzxWe3E1Fb+qQ=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx005
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1MVN6j-1ilQha1Srf-00SOwQ; Mon, 16
+ Mar 2020 11:27:06 +0100
+Subject: Re: kernel panic after upgrading to Linux 5.5
+To:     Tomasz Chmielewski <mangoo@wpkg.org>
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <8374ca28bc970a51b3378a5a92939c01@wpkg.org>
+ <fa4d1bf5-b800-edba-1fce-ae7108ae023b@gmx.com>
+ <553b4596301e2e7bfa05476065c195d0@wpkg.org>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAU4EEwEIADgCGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1oQAKCRDC
+ PZHzoSX+qCY6CACd+mWu3okGwRKXju6bou+7VkqCaHTdyXwWFTsr+/0ly5nUdDtT3yEVggPJ
+ 3VP70wjlrxUjNjFb6iIvGYxiPOrop1NGwGYvQktgRhaIhALG6rPoSSAhGNjwGVRw0km0PlIN
+ D29BTj/lYEk+jVM1YL0QLgAE1AI3krihg/lp/fQT53wLhR8YZIF8ETXbClQG1vJ0cllPuEEv
+ efKxRyiTSjB+PsozSvYWhXsPeJ+KKjFen7ebE5reQTPFzSHctCdPnoR/4jSPlnTlnEvLeqcD
+ ZTuKfQe1gWrPeevQzgCtgBF/WjIOeJs41klnYzC3DymuQlmFubss0jShLOW8eSOOWhLRuQEN
+ BFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcgaCbPEwhLj
+ 1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj/IrRUUka
+ 68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fNGSsRb+pK
+ EKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0q1eW4Jrv
+ 0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEvABEBAAGJ
+ ATwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1rgUJCWpOfwAKCRDCPZHz
+ oSX+qFcEB/95cs8cM1OQdE/GgOfCGxwgckMeWyzOR7bkAWW0lDVp2hpgJuxBW/gyfmtBnUai
+ fnggx3EE3ev8HTysZU9q0h+TJwwJKGv6sUc8qcTGFDtavnnl+r6xDUY7A6GvXEsSoCEEynby
+ 72byGeSovfq/4AWGNPBG1L61Exl+gbqfvbECP3ziXnob009+z9I4qXodHSYINfAkZkA523JG
+ ap12LndJeLk3gfWNZfXEWyGnuciRGbqESkhIRav8ootsCIops/SqXm0/k+Kcl4gGUO/iD/T5
+ oagaDh0QtOd8RWSMwLxwn8uIhpH84Q4X1LadJ5NCgGa6xPP5qqRuiC+9gZqbq4Nj
+Message-ID: <9711f986-0083-0866-68b7-f1cd8e35db11@gmx.com>
+Date:   Mon, 16 Mar 2020 18:26:59 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.5.0
+MIME-Version: 1.0
+In-Reply-To: <553b4596301e2e7bfa05476065c195d0@wpkg.org>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="dtzcB8zm70kdD7MT5XwOHk7SW9m29jyBG"
+X-Provags-ID: V03:K1:1nMPeRbANdkuY7wFSQjzXW18zmgrNkPZ+gp0NtNExv3ZIWXuhoQ
+ A/JT7xXztfIsPmhSj2LLaU3isyEl4kZkWnMkKG6J3qysXsKaLAg/wQbQSBeQB56XFctV5lk
+ 0QsYVwbaMoj44+1EWus12NadPOVsUa/Q5gwBAuxH+vsyPKifUOzWg5p4xmtXXDreDyAFUAx
+ EcrLwIQYlHn1B2uJQCXfw==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:gsZ57HyTPpo=:ZgS3L6OFKXEjsL1j98k7le
+ ojj4RymRq5urU0drDDoTw21kaOoyf9LY1RXwsQTecT4SDaHgof3G9zoPjZHZGKO8M9Kdrej/T
+ CMLY0aIG9DPw/nqCrgZ1Xj2gnw6hag404gj7mDXUu/cC5enHw6vsXvwml83o0P8TAGVheMZ9K
+ j+yq2rMNuiJw847eRjBaEsy5RMeXJIzTOY9HnKc1q+69vTwfQO5p75cSm4O53MRCrtvPnCoI7
+ 1yAXraksxXyY/clhqFAhfQWLZM7H9nqYGhow1k1Re7u5T2Q3lyEzNKHH2m71DCZdzq0NJl9MP
+ eISdUZw9DfyhJLsW+4cd45Dqc+56H/SSaobywnlQJ2+yNqB6LvK6YIL7rWCr1+owBFnrIOHyC
+ eEfaUg4A1A81e2qesASyCJLWkJ1m6XCJb8XQZZMWVQVDXpezMKGEwEzDgb/A1Vgof9ZoUWooK
+ gppRiVbw4WVq3cQzs6B2YYNgQS0jYZjoud4z9wNI/ZhnHyszTYABaOWwZYDIHt88dPHPCUeMJ
+ q0ePDOp6XR0S9JDsbCFbGd7T6pk2kTEOmOetD+oo2je0ENJ128nVchGJiiC+shLriVUwMbW7p
+ +ShmijF5z76IbtRs2RXWrb7+B/BBlndFCIG27l5Pbrd7YKllCJlyu1VEwfKqx8foTLR8sCf0J
+ osHtYe2UqYwGrep0kHxnzAq2NNU5bru9+uF5+4dnqshGqTFm7hEWWNof2/Vw5IdFDj6dUYemh
+ UGKzx49IO8lt1BVfLKyNN2LskqgYomyc/8Am1xNI3fytOh4BY5Zjm/gGTNRlsO0WfkKA6+iGo
+ md8cG3MUj84LhWrF4LrLuKccmhv6BM5Ky2EgsXD2NquCneHJcnpe5S/Y1RXZP3lHSFkfA4YIJ
+ Tm9JapwtnCFXQ3xOCXFpEDbW/vXXjqcfMPjjNJb2jiehdpo2wRcc3afSpIZydWNqWTxbuvMaF
+ gbrV9j7fo4IIqS8ZeD0hFy8t6ZfEetULghQrE+B/l2l1ucHJjpmT/ZM251HEgepCFluACGbCf
+ 5UkBKdFqkElX2vj0FpBtT3VV/kAVJKgX0G2Et7e2zk4PvjKA9cBMsNhAi/Nvjor7w6mHt/I0+
+ rMVB+7HYGkjWTM9YiKkqvS0ekAR9meIZkp+cNp0kGWIQyEIPgiGieFxWhBcjeZwpU93VaXHDC
+ M0lE5GE1hgVHbFHqyu7UzqDFZGXiqzYEtdRHE4RXw0ECKw8F2M7HYGdgqi9W/yUrlDiNbD5Iu
+ xVUFwVaNuYQRf9coH
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Kernel has removed support for this feature in 5.7 so let's remove
-support from progs as well.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--dtzcB8zm70kdD7MT5XwOHk7SW9m29jyBG
+Content-Type: multipart/mixed; boundary="20NaT6GESZufje66xlKtdhdLPbOta5LLr"
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
-Changelog v2:
- * Removed async mentions in README.md
- * Changed docs in libbtrfsutil/btrfsutil.h to mention async is unused.
- * Removed tests using async_
- * Changed python module's doc to mention the async_ parameter is unused.
+--20NaT6GESZufje66xlKtdhdLPbOta5LLr
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
- ioctl.h                                     |  4 +--
- libbtrfsutil/README.md                      | 14 ++------
- libbtrfsutil/btrfs.h                        |  4 +--
- libbtrfsutil/btrfsutil.h                    | 18 +++++-----
- libbtrfsutil/python/module.c                |  6 ++--
- libbtrfsutil/python/tests/test_subvolume.py | 12 ++-----
- libbtrfsutil/subvolume.c                    | 38 ++++++---------------
- 7 files changed, 29 insertions(+), 67 deletions(-)
 
-diff --git a/ioctl.h b/ioctl.h
-index d3dfd6375de1..93a19a5789b6 100644
---- a/ioctl.h
-+++ b/ioctl.h
-@@ -49,14 +49,12 @@ BUILD_ASSERT(sizeof(struct btrfs_ioctl_vol_args) == 4096);
 
- #define BTRFS_DEVICE_PATH_NAME_MAX 1024
+On 2020/3/16 =E4=B8=8B=E5=8D=881:19, Tomasz Chmielewski wrote:
+> On 2020-03-16 14:06, Qu Wenruo wrote:
+>> On 2020/3/16 =E4=B8=8A=E5=8D=8811:13, Tomasz Chmielewski wrote:
+>>> After upgrading to Linux 5.5 (tried 5.5.6, 5.5.9, also 5.6.0-rc5), th=
+e
+>>> system panics shortly after mounting and starting to use a btrfs
+>>> filesystem. Here is a dmesg - please advise how to deal with it.
+>>> It has since crashed several times, because of panic=3D10 parameter
+>>> (system boots, runs for a while, crashes, boots again, and so on).
+>>>
+>>> Mount options:
+>>>
+>>> noatime,ssd,space_cache=3Dv2,user_subvol_rm_allowed
+>>>
+>>>
+>>>
+>>> [=C2=A0=C2=A0 65.777428] BTRFS info (device sda2): enabling ssd optim=
+izations
+>>> [=C2=A0=C2=A0 65.777435] BTRFS info (device sda2): using free space t=
+ree
+>>> [=C2=A0=C2=A0 65.777436] BTRFS info (device sda2): has skinny extents=
 
--#define BTRFS_SUBVOL_CREATE_ASYNC	(1ULL << 0)
- #define BTRFS_SUBVOL_RDONLY		(1ULL << 1)
- #define BTRFS_SUBVOL_QGROUP_INHERIT	(1ULL << 2)
- #define BTRFS_DEVICE_SPEC_BY_ID		(1ULL << 3)
+>>> [=C2=A0=C2=A0 98.225099] BTRFS error (device sda2): parent transid ve=
+rify failed
+>>> on 19718118866944 wanted 664218442 found 674530371
+>>> [=C2=A0=C2=A0 98.225594] BTRFS error (device sda2): parent transid ve=
+rify failed
+>>> on 19718118866944 wanted 664218442 found 674530371
+>>
+>> This is the root cause, not quota.
+>>
+>> The metadata is already corrupted, and quota is the first to complain
+>> about it.
+>=20
+> Still, should it crash the server, putting it into a cycle of
+> crash-boot-crash-boot, possibly breaking the filesystem even more?
 
- #define BTRFS_VOL_ARG_V2_FLAGS_SUPPORTED		\
--			(BTRFS_SUBVOL_CREATE_ASYNC |	\
--			BTRFS_SUBVOL_RDONLY |		\
-+			(BTRFS_SUBVOL_RDONLY |		\
- 			BTRFS_SUBVOL_QGROUP_INHERIT |	\
- 			BTRFS_DEVICE_SPEC_BY_ID)
+The transid mismatch in the first place is the cause, and I'm not sure
+how it happened.
 
-diff --git a/libbtrfsutil/README.md b/libbtrfsutil/README.md
-index 8abb426d0adf..dcbae6399708 100644
---- a/libbtrfsutil/README.md
-+++ b/libbtrfsutil/README.md
-@@ -245,8 +245,7 @@ The equivalent `btrfs-progs` command is `btrfs subvolume list`.
- #### Creation
+Did you have any history of the kernel used on that server?
 
- `btrfs_util_create_subvolume()` creates a new subvolume at the given path. The
--subvolume can be created asynchronously and inherit from quota groups
--(qgroups).
-+subvolume can inherit from quota groups (qgroups).
+Some potential corruption source includes the v5.2.0~v5.2.14, which
+could cause some tree block not written to disk.
 
- Qgroups to inherit are specified with a `struct btrfs_util_qgroup_inherit`,
- which is created by `btrfs_util_create_qgroup_inherit()` and freed by
-@@ -262,10 +261,6 @@ method and a `groups` member, which is a list of ints.
- ```c
- btrfs_util_create_subvolume("/subvol2", 0, NULL, NULL);
+>=20
+> Also, how do I fix that corruption?
+>=20
+> This server had a drive added, a full balance (to RAID-10 for data and
+> metadata) and scrub a few weeks ago, with no errors. Running scrub now
+> to see if it shows up anything.
 
--uint64_t async_transid;
--btrfs_util_create_subvolume("/subvol2", 0, &async_transid, NULL);
--btrfs_util_wait_sync("/", async_transid);
--
- struct btrfs_util_qgroup_inherit *qgroups;
- btrfs_util_create_qgroup_inherit(0, &qgroups);
- btrfs_util_qgroup_inherit_add_group(&qgroups, 256);
-@@ -276,9 +271,6 @@ btrfs_util_destroy_qgroup_inherit(qgroups);
- ```python
- btrfsutil.create_subvolume('/subvol2')
+Then at least at that time, it's not corrupted.
 
--async_transid = btrfsutil.create_subvolume('/subvol2', async_=True)
--btrfsutil.wait_sync('/', async_transid)
--
- qgroups = btrfsutil.QgroupInherit()
- qgroups.add_group(256)
- btrfsutil.create_subvolume('/subvol2', qgroup_inherit=qgroups)
-@@ -292,8 +284,8 @@ The equivalent `btrfs-progs` command is `btrfs subvolume create`.
- #### Snapshotting
+Is there any sudden powerloss happened in recent days?
+Another potential cause is out of spec FLUSH/FUA behavior, which means
+the hard disk controller is not reporting correct FLUSH/FUA finish.
 
- Snapshots are created with `btrfs_util_create_snapshot()`, which takes a source
--path, a destination path, and flags. It can also be asynchronous and inherit
--from quota groups; see [subvolume creation](#Creation).
-+path, a destination path, and flags. It can also inherit from quota groups;
-+see [subvolume creation](#Creation).
+That means if you use the same disk/controller, and manually to cause
+powerloss, it would fail just after several cycle.
 
- Snapshot creation can be recursive, in which case subvolumes underneath the
- subvolume being snapshotted will also be snapshotted onto the same location in
-diff --git a/libbtrfsutil/btrfs.h b/libbtrfsutil/btrfs.h
-index 944d50132456..03ac58372104 100644
---- a/libbtrfsutil/btrfs.h
-+++ b/libbtrfsutil/btrfs.h
-@@ -38,8 +38,7 @@ struct btrfs_ioctl_vol_args {
- #define BTRFS_DEVICE_SPEC_BY_ID		(1ULL << 3)
+Thanks,
+Qu
 
- #define BTRFS_VOL_ARG_V2_FLAGS_SUPPORTED		\
--			(BTRFS_SUBVOL_CREATE_ASYNC |	\
--			BTRFS_SUBVOL_RDONLY |		\
-+			(BTRFS_SUBVOL_RDONLY |		\
- 			BTRFS_SUBVOL_QGROUP_INHERIT |	\
- 			BTRFS_DEVICE_SPEC_BY_ID)
+>=20
+> btrfs filesystem stats also shows no errors:
+>=20
+> # btrfs device stats /data/lxd
+> [/dev/sda2].write_io_errs=C2=A0=C2=A0=C2=A0 0
+> [/dev/sda2].read_io_errs=C2=A0=C2=A0=C2=A0=C2=A0 0
+> [/dev/sda2].flush_io_errs=C2=A0=C2=A0=C2=A0 0
+> [/dev/sda2].corruption_errs=C2=A0 0
+> [/dev/sda2].generation_errs=C2=A0 0
+> [/dev/sdd2].write_io_errs=C2=A0=C2=A0=C2=A0 0
+> [/dev/sdd2].read_io_errs=C2=A0=C2=A0=C2=A0=C2=A0 0
+> [/dev/sdd2].flush_io_errs=C2=A0=C2=A0=C2=A0 0
+> [/dev/sdd2].corruption_errs=C2=A0 0
+> [/dev/sdd2].generation_errs=C2=A0 0
+> [/dev/sdc2].write_io_errs=C2=A0=C2=A0=C2=A0 0
+> [/dev/sdc2].read_io_errs=C2=A0=C2=A0=C2=A0=C2=A0 0
+> [/dev/sdc2].flush_io_errs=C2=A0=C2=A0=C2=A0 0
+> [/dev/sdc2].corruption_errs=C2=A0 0
+> [/dev/sdc2].generation_errs=C2=A0 0
+> [/dev/sdb2].write_io_errs=C2=A0=C2=A0=C2=A0 0
+> [/dev/sdb2].read_io_errs=C2=A0=C2=A0=C2=A0=C2=A0 0
+> [/dev/sdb2].flush_io_errs=C2=A0=C2=A0=C2=A0 0
+> [/dev/sdb2].corruption_errs=C2=A0 0
+> [/dev/sdb2].generation_errs=C2=A0 0
+>=20
+>=20
+> Tomasz Chmielewski
+> https://lxadm.com
 
-@@ -101,7 +100,6 @@ struct btrfs_ioctl_qgroup_limit_args {
-  * - BTRFS_IOC_SUBVOL_GETFLAGS
-  * - BTRFS_IOC_SUBVOL_SETFLAGS
-  */
--#define BTRFS_SUBVOL_CREATE_ASYNC	(1ULL << 0)
- #define BTRFS_SUBVOL_RDONLY		(1ULL << 1)
- #define BTRFS_SUBVOL_QGROUP_INHERIT	(1ULL << 2)
 
-diff --git a/libbtrfsutil/btrfsutil.h b/libbtrfsutil/btrfsutil.h
-index 0442af6ed67f..47d4cf1e5fe9 100644
---- a/libbtrfsutil/btrfsutil.h
-+++ b/libbtrfsutil/btrfsutil.h
-@@ -366,7 +366,7 @@ struct btrfs_util_qgroup_inherit;
-  * btrfs_util_create_subvolume() - Create a new subvolume.
-  * @path: Where to create the subvolume.
-  * @flags: Must be zero.
-- * @async_transid: If not NULL, create the subvolume asynchronously (i.e.,
-+ * @unused: No longer used
-  * without waiting for it to commit it to disk) and return the transaction ID
-  * that it was created in. This transaction ID can be waited on with
-  * btrfs_util_wait_sync().
-@@ -375,7 +375,7 @@ struct btrfs_util_qgroup_inherit;
-  * Return: %BTRFS_UTIL_OK on success, non-zero error code on failure.
-  */
- enum btrfs_util_error btrfs_util_create_subvolume(const char *path, int flags,
--						  uint64_t *async_transid,
-+						  uint64_t *unused,
- 						  struct btrfs_util_qgroup_inherit *qgroup_inherit);
+--20NaT6GESZufje66xlKtdhdLPbOta5LLr--
 
- /**
-@@ -385,7 +385,7 @@ enum btrfs_util_error btrfs_util_create_subvolume(const char *path, int flags,
-  * should be created.
-  * @name: Name of the subvolume to create.
-  * @flags: See btrfs_util_create_subvolume().
-- * @async_transid: See btrfs_util_create_subvolume().
-+ * @unused: See btrfs_util_create_subvolume().
-  * @qgroup_inherit: See btrfs_util_create_subvolume().
-  *
-  * Return: %BTRFS_UTIL_OK on success, non-zero error code on failure.
-@@ -393,7 +393,7 @@ enum btrfs_util_error btrfs_util_create_subvolume(const char *path, int flags,
- enum btrfs_util_error btrfs_util_create_subvolume_fd(int parent_fd,
- 						     const char *name,
- 						     int flags,
--						     uint64_t *async_transid,
-+						     uint64_t *unused,
- 						     struct btrfs_util_qgroup_inherit *qgroup_inherit);
+--dtzcB8zm70kdD7MT5XwOHk7SW9m29jyBG
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
- /**
-@@ -418,7 +418,7 @@ enum btrfs_util_error btrfs_util_create_subvolume_fd(int parent_fd,
-  * @source: Path of the existing subvolume to snapshot.
-  * @path: Where to create the snapshot.
-  * @flags: Bitmask of BTRFS_UTIL_CREATE_SNAPSHOT_* flags.
-- * @async_transid: See btrfs_util_create_subvolume(). If
-+ * @unused: See btrfs_util_create_subvolume(). If
-  * %BTRFS_UTIL_CREATE_SNAPSHOT_RECURSIVE was in @flags, then this will contain
-  * the largest transaction ID of all created subvolumes.
-  * @qgroup_inherit: See btrfs_util_create_subvolume().
-@@ -427,7 +427,7 @@ enum btrfs_util_error btrfs_util_create_subvolume_fd(int parent_fd,
-  */
- enum btrfs_util_error btrfs_util_create_snapshot(const char *source,
- 						 const char *path, int flags,
--						 uint64_t *async_transid,
-+						 uint64_t *unused,
- 						 struct btrfs_util_qgroup_inherit *qgroup_inherit);
+-----BEGIN PGP SIGNATURE-----
 
- /**
-@@ -435,7 +435,7 @@ enum btrfs_util_error btrfs_util_create_snapshot(const char *source,
-  */
- enum btrfs_util_error btrfs_util_create_snapshot_fd(int fd, const char *path,
- 						    int flags,
--						    uint64_t *async_transid,
-+						    uint64_t *unused,
- 						    struct btrfs_util_qgroup_inherit *qgroup_inherit);
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAl5vVHMACgkQwj2R86El
+/qjtVQf+JWQe224fWPnC0ct5ZaRq6CJrQefhxgOw73kWy62/vlOp7iH761wcT87p
+BRuowbOt0ZMhj9BgkJTuTiNJMifHWZ6lVYKZa+p4fxfHoz3kOLTp6DyFWk6J5aUy
+C59OQjyqAFkFq4v93UiLChBFeyvu4tZ1mHSnMrLaP40P7NwXjfsEmX4VlMCQcNs6
+QSiti64zD/OoBX/KQFhXiAG0eT+0RRJisLKyf9/X8h1bY4iZe06Ja5uj5EV7qLGm
+wtTuMUiJRI04TfzbIZ0H+JXdR2aaQVSGg3d2n1bRYBiivwFSC4BPhDZfNY0NDsh0
+zBdE3sSGVK5TyuVWC9yBl/EjeNbDSw==
+=FjLi
+-----END PGP SIGNATURE-----
 
- /**
-@@ -446,13 +446,13 @@ enum btrfs_util_error btrfs_util_create_snapshot_fd(int fd, const char *path,
-  * be created.
-  * @name: Name of the snapshot to create.
-  * @flags: See btrfs_util_create_snapshot().
-- * @async_transid: See btrfs_util_create_snapshot().
-+ * @unused: See btrfs_util_create_snapshot().
-  * @qgroup_inherit: See btrfs_util_create_snapshot().
-  */
- enum btrfs_util_error btrfs_util_create_snapshot_fd2(int fd, int parent_fd,
- 						     const char *name,
- 						     int flags,
--						     uint64_t *async_transid,
-+						     uint64_t *unused,
- 						     struct btrfs_util_qgroup_inherit *qgroup_inherit);
-
- /**
-diff --git a/libbtrfsutil/python/module.c b/libbtrfsutil/python/module.c
-index f8260c84ec76..a8aa50bdd7ed 100644
---- a/libbtrfsutil/python/module.c
-+++ b/libbtrfsutil/python/module.c
-@@ -237,8 +237,7 @@ static PyMethodDef btrfsutil_methods[] = {
- 	 "Create a new subvolume.\n\n"
- 	 "Arguments:\n"
- 	 "path -- string, bytes, or path-like object\n"
--	 "async_ -- create the subvolume without waiting for it to commit to\n"
--	 "disk and return the transaction ID\n"
-+	 "async_ -- No longer used\n"
- 	 "qgroup_inherit -- optional QgroupInherit object of qgroups to\n"
- 	 "inherit from"},
- 	{"create_snapshot", (PyCFunction)create_snapshot,
-@@ -251,8 +250,7 @@ static PyMethodDef btrfsutil_methods[] = {
- 	 "path -- string, bytes, or path-like object\n"
- 	 "recursive -- also snapshot child subvolumes\n"
- 	 "read_only -- create a read-only snapshot\n"
--	 "async_ -- create the subvolume without waiting for it to commit to\n"
--	 "disk and return the transaction ID\n"
-+	 "async_ -- No longer used\n"
- 	 "qgroup_inherit -- optional QgroupInherit object of qgroups to\n"
- 	 "inherit from"},
- 	{"delete_subvolume", (PyCFunction)delete_subvolume,
-diff --git a/libbtrfsutil/python/tests/test_subvolume.py b/libbtrfsutil/python/tests/test_subvolume.py
-index 61055f53f484..0e0ecb20e0f4 100644
---- a/libbtrfsutil/python/tests/test_subvolume.py
-+++ b/libbtrfsutil/python/tests/test_subvolume.py
-@@ -244,10 +244,6 @@ from tests import (
-         btrfsutil.create_subvolume(subvol + '6//')
-         self.assertTrue(btrfsutil.is_subvolume(subvol + '6'))
-
--        transid = btrfsutil.create_subvolume(subvol + '7', async_=True)
--        self.assertTrue(btrfsutil.is_subvolume(subvol + '7'))
--        self.assertGreater(transid, 0)
--
-         # Test creating subvolumes under '/' in a chroot.
-         pid = os.fork()
-         if pid == 0:
-@@ -307,12 +303,8 @@ from tests import (
-         btrfsutil.create_snapshot(subvol, snapshot + '2', recursive=True)
-         self.assertTrue(os.path.exists(os.path.join(snapshot + '2', 'nested/more_nested/nested_dir')))
-
--        transid = btrfsutil.create_snapshot(subvol, snapshot + '3', recursive=True, async_=True)
--        self.assertTrue(os.path.exists(os.path.join(snapshot + '3', 'nested/more_nested/nested_dir')))
--        self.assertGreater(transid, 0)
--
--        btrfsutil.create_snapshot(subvol, snapshot + '4', read_only=True)
--        self.assertTrue(btrfsutil.get_subvolume_read_only(snapshot + '4'))
-+        btrfsutil.create_snapshot(subvol, snapshot + '3', read_only=True)
-+        self.assertTrue(btrfsutil.get_subvolume_read_only(snapshot + '3'))
-
-     def test_delete_subvolume(self):
-         subvol = os.path.join(self.mountpoint, 'subvol')
-diff --git a/libbtrfsutil/subvolume.c b/libbtrfsutil/subvolume.c
-index 3f8343a245e9..4f94a8137f48 100644
---- a/libbtrfsutil/subvolume.c
-+++ b/libbtrfsutil/subvolume.c
-@@ -683,7 +683,7 @@ static enum btrfs_util_error openat_parent_and_name(int dirfd, const char *path,
-
- PUBLIC enum btrfs_util_error btrfs_util_create_subvolume(const char *path,
- 							 int flags,
--							 uint64_t *async_transid,
-+							 uint64_t *unused,
- 							 struct btrfs_util_qgroup_inherit *qgroup_inherit)
- {
- 	char name[BTRFS_SUBVOL_NAME_MAX + 1];
-@@ -696,7 +696,7 @@ PUBLIC enum btrfs_util_error btrfs_util_create_subvolume(const char *path,
- 		return err;
-
- 	err = btrfs_util_create_subvolume_fd(parent_fd, name, flags,
--					    async_transid, qgroup_inherit);
-+					    unused, qgroup_inherit);
- 	SAVE_ERRNO_AND_CLOSE(parent_fd);
- 	return err;
- }
-@@ -704,7 +704,7 @@ PUBLIC enum btrfs_util_error btrfs_util_create_subvolume(const char *path,
- PUBLIC enum btrfs_util_error btrfs_util_create_subvolume_fd(int parent_fd,
- 							    const char *name,
- 							    int flags,
--							    uint64_t *async_transid,
-+							    uint64_t *unused,
- 							    struct btrfs_util_qgroup_inherit *qgroup_inherit)
- {
- 	struct btrfs_ioctl_vol_args_v2 args = {};
-@@ -716,8 +716,6 @@ PUBLIC enum btrfs_util_error btrfs_util_create_subvolume_fd(int parent_fd,
- 		return BTRFS_UTIL_ERROR_INVALID_ARGUMENT;
- 	}
-
--	if (async_transid)
--		args.flags |= BTRFS_SUBVOL_CREATE_ASYNC;
- 	if (qgroup_inherit) {
- 		args.flags |= BTRFS_SUBVOL_QGROUP_INHERIT;
- 		args.qgroup_inherit = (struct btrfs_qgroup_inherit *)qgroup_inherit;
-@@ -738,9 +736,6 @@ PUBLIC enum btrfs_util_error btrfs_util_create_subvolume_fd(int parent_fd,
- 	if (ret == -1)
- 		return BTRFS_UTIL_ERROR_SUBVOL_CREATE_FAILED;
-
--	if (async_transid)
--		*async_transid = args.transid;
--
- 	return BTRFS_UTIL_OK;
- }
-
-@@ -1022,8 +1017,7 @@ PUBLIC enum btrfs_util_error btrfs_util_create_subvolume_iterator_fd(int fd,
- }
-
- static enum btrfs_util_error snapshot_subvolume_children(int fd, int parent_fd,
--							 const char *name,
--							 uint64_t *async_transid)
-+							 const char *name)
- {
- 	struct btrfs_util_subvolume_iterator *iter;
- 	enum btrfs_util_error err;
-@@ -1041,7 +1035,6 @@ static enum btrfs_util_error snapshot_subvolume_children(int fd, int parent_fd,
- 		char child_name[BTRFS_SUBVOL_NAME_MAX + 1];
- 		char *child_path;
- 		int child_fd, new_parent_fd;
--		uint64_t tmp_transid;
-
- 		err = btrfs_util_subvolume_iterator_next(iter, &child_path,
- 							 NULL);
-@@ -1076,14 +1069,11 @@ static enum btrfs_util_error snapshot_subvolume_children(int fd, int parent_fd,
-
- 		err = btrfs_util_create_snapshot_fd2(child_fd, new_parent_fd,
- 						     child_name, 0,
--						     async_transid ? &tmp_transid : NULL,
--						     NULL);
-+						     NULL, NULL);
- 		SAVE_ERRNO_AND_CLOSE(child_fd);
- 		SAVE_ERRNO_AND_CLOSE(new_parent_fd);
- 		if (err)
- 			break;
--		if (async_transid && tmp_transid > *async_transid)
--			*async_transid = tmp_transid;
- 	}
-
- 	btrfs_util_destroy_subvolume_iterator(iter);
-@@ -1095,7 +1085,7 @@ static enum btrfs_util_error snapshot_subvolume_children(int fd, int parent_fd,
- PUBLIC enum btrfs_util_error btrfs_util_create_snapshot(const char *source,
- 							const char *path,
- 							int flags,
--							uint64_t *async_transid,
-+							uint64_t *unused,
- 							struct btrfs_util_qgroup_inherit *qgroup_inherit)
- {
- 	enum btrfs_util_error err;
-@@ -1105,7 +1095,7 @@ PUBLIC enum btrfs_util_error btrfs_util_create_snapshot(const char *source,
- 	if (fd == -1)
- 		return BTRFS_UTIL_ERROR_OPEN_FAILED;
-
--	err = btrfs_util_create_snapshot_fd(fd, path, flags, async_transid,
-+	err = btrfs_util_create_snapshot_fd(fd, path, flags, unused,
- 					    qgroup_inherit);
- 	SAVE_ERRNO_AND_CLOSE(fd);
- 	return err;
-@@ -1114,7 +1104,7 @@ PUBLIC enum btrfs_util_error btrfs_util_create_snapshot(const char *source,
- PUBLIC enum btrfs_util_error btrfs_util_create_snapshot_fd(int fd,
- 							   const char *path,
- 							   int flags,
--							   uint64_t *async_transid,
-+							   uint64_t *unused,
- 							   struct btrfs_util_qgroup_inherit *qgroup_inherit)
- {
- 	char name[BTRFS_SUBVOL_NAME_MAX + 1];
-@@ -1127,7 +1117,7 @@ PUBLIC enum btrfs_util_error btrfs_util_create_snapshot_fd(int fd,
- 		return err;
-
- 	err = btrfs_util_create_snapshot_fd2(fd, parent_fd, name, flags,
--					     async_transid, qgroup_inherit);
-+					     unused, qgroup_inherit);
- 	SAVE_ERRNO_AND_CLOSE(parent_fd);
- 	return err;
- }
-@@ -1136,7 +1126,7 @@ PUBLIC enum btrfs_util_error btrfs_util_create_snapshot_fd2(int fd,
- 							    int parent_fd,
- 							    const char *name,
- 							    int flags,
--							    uint64_t *async_transid,
-+							    uint64_t *unused,
- 							    struct btrfs_util_qgroup_inherit *qgroup_inherit)
- {
- 	struct btrfs_ioctl_vol_args_v2 args = {.fd = fd};
-@@ -1153,8 +1143,6 @@ PUBLIC enum btrfs_util_error btrfs_util_create_snapshot_fd2(int fd,
-
- 	if (flags & BTRFS_UTIL_CREATE_SNAPSHOT_READ_ONLY)
- 		args.flags |= BTRFS_SUBVOL_RDONLY;
--	if (async_transid)
--		args.flags |= BTRFS_SUBVOL_CREATE_ASYNC;
- 	if (qgroup_inherit) {
- 		args.flags |= BTRFS_SUBVOL_QGROUP_INHERIT;
- 		args.qgroup_inherit = (struct btrfs_qgroup_inherit *)qgroup_inherit;
-@@ -1175,12 +1163,8 @@ PUBLIC enum btrfs_util_error btrfs_util_create_snapshot_fd2(int fd,
- 	if (ret == -1)
- 		return BTRFS_UTIL_ERROR_SUBVOL_CREATE_FAILED;
-
--	if (async_transid)
--		*async_transid = args.transid;
--
- 	if (flags & BTRFS_UTIL_CREATE_SNAPSHOT_RECURSIVE) {
--		err = snapshot_subvolume_children(fd, parent_fd, name,
--						  async_transid);
-+		err = snapshot_subvolume_children(fd, parent_fd, name);
- 		if (err)
- 			return err;
- 	}
---
-2.17.1
-
+--dtzcB8zm70kdD7MT5XwOHk7SW9m29jyBG--

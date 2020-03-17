@@ -2,86 +2,73 @@ Return-Path: <SRS0=Lj+Q=5C=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+X-Spam-Status: No, score=-9.9 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0D7C1C0044D
-	for <linux-btrfs@archiver.kernel.org>; Tue, 17 Mar 2020 00:30:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 485DDC18E5B
+	for <linux-btrfs@archiver.kernel.org>; Tue, 17 Mar 2020 06:40:19 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id CF3BD20674
-	for <linux-btrfs@archiver.kernel.org>; Tue, 17 Mar 2020 00:30:16 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id EF2E220674
+	for <linux-btrfs@archiver.kernel.org>; Tue, 17 Mar 2020 06:40:18 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b="mEV/5lzu"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1733038AbgCQAaP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 16 Mar 2020 20:30:15 -0400
-Received: from mx2.suse.de ([195.135.220.15]:46116 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1733026AbgCQAaP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 16 Mar 2020 20:30:15 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id DF923ACD0;
-        Tue, 17 Mar 2020 00:30:13 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 3E001DA726; Tue, 17 Mar 2020 01:29:46 +0100 (CET)
-Date:   Tue, 17 Mar 2020 01:29:46 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Andrea Gelmini <gelma@gelma.net>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: Request about "Page cache invalidation failure on direct I/O."
-Message-ID: <20200317002945.GV12659@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Andrea Gelmini <gelma@gelma.net>,
-        linux-btrfs@vger.kernel.org
-References: <20200311204204.GA21905@li61-168.members.linode.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20200311204204.GA21905@li61-168.members.linode.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+        id S1725916AbgCQGkS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 17 Mar 2020 02:40:18 -0400
+Received: from mail.synology.com ([211.23.38.101]:34916 "EHLO synology.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1725536AbgCQGkR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 17 Mar 2020 02:40:17 -0400
+X-Greylist: delayed 541 seconds by postgrey-1.27 at vger.kernel.org; Tue, 17 Mar 2020 02:40:17 EDT
+Received: from localhost.localdomain (unknown [10.17.32.181])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by synology.com (Postfix) with ESMTPSA id 65D55DB18374;
+        Tue, 17 Mar 2020 14:31:15 +0800 (CST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=synology.com; s=123;
+        t=1584426675; bh=Lh9iSPfSVcgqea/3F5iZg07vm7hQvgHQi8/FpeorqqA=;
+        h=From:To:Cc:Subject:Date;
+        b=mEV/5lzuoy1bIyC4fRxM3av6hdOAAStIh0ojUqhhO+w+2QfBm9F9hhmoxNwq7+DOE
+         AQ6uMkjDFB0jjZisjxiLRc4lnfEivqf2NjvbKxb0HkPf/8nxZfYPscJpQmC7ETt+kE
+         Yj9SZ7gieD1BBO3humYyRo8XnH2bm8bNzpkD5DaI=
+From:   robbieko <robbieko@synology.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Robbie Ko <robbieko@synology.com>
+Subject: [PATCH] Btrfs: fix missing semaphore unlock
+Date:   Tue, 17 Mar 2020 14:31:02 +0800
+Message-Id: <20200317063102.8869-1-robbieko@synology.com>
+X-Mailer: git-send-email 2.17.1
+X-Synology-MCP-Status: no
+X-Synology-Spam-Flag: no
+X-Synology-Spam-Status: score=0, required 6, WHITELIST_FROM_ADDRESS 0
+X-Synology-Virus-Status: no
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Mar 11, 2020 at 08:42:04PM +0000, Andrea Gelmini wrote:
->    On my laptop (Ubuntu 19.10, Kernel 5.5.7, VirtualBox 6.1.4-136177)
->    I have an SSD (Samsung SSD 860 EVO 4TB + luks + lvm + ext4)
->    with a virtual machine, without troubles, since months.
-> 
->    Now, I move the virtual machine on external USB
->    disk (Seagate M3 Portable 4TB + luks + BTRFS).
->    Run it, and after a few minutes of simple boot and Windows updating
->    (the guest system), I find this in dmesg:
-> 
-> [376827.145222] Page cache invalidation failure on direct I/O.  Possible data corruption due to collision with buffered I/O!
-> [376827.145225] File: /mnt/4TB/piastrelli/home/virtual/VirtualBox VMs/Zuccotti/Snapshots/{badf36e0-30a3-4fef-b723-4cdab32f2ef0}.vdi PID: 48667 Comm: kworker/1:0
-> [376827.145230] Page cache invalidation failure on direct I/O.  Possible data corruption due to collision with buffered I/O!
-> [376827.145231] File: /mnt/4TB/piastrelli/home/virtual/VirtualBox VMs/Zuccotti/Snapshots/{badf36e0-30a3-4fef-b723-4cdab32f2ef0}.vdi PID: 48667 Comm: kworker/1:0
-> [376827.145234] Page cache invalidation failure on direct I/O.  Possible data corruption due to collision with buffered I/O!
-> [376827.145234] File: /mnt/4TB/piastrelli/home/virtual/VirtualBox VMs/Zuccotti/Snapshots/{badf36e0-30a3-4fef-b723-4cdab32f2ef0}.vdi PID: 48667 Comm: kworker/1:0
-> [376827.145236] Page cache invalidation failure on direct I/O.  Possible data corruption due to collision with buffered I/O!
-> [376827.145237] File: /mnt/4TB/piastrelli/home/virtual/VirtualBox VMs/Zuccotti/Snapshots/{badf36e0-30a3-4fef-b723-4cdab32f2ef0}.vdi PID: 48667 Comm: kworker/1:0
-> [376827.145240] Page cache invalidation failure on direct I/O.  Possible data corruption due to collision with buffered I/O!
-> [376827.145241] File: /mnt/4TB/piastrelli/home/virtual/VirtualBox VMs/Zuccotti/Snapshots/{badf36e0-30a3-4fef-b723-4cdab32f2ef0}.vdi PID: 48667 Comm: kworker/1:0
-> 
->    I kindly ask your advice. At the moment the virtual seems to work
->    without problem.
+From: Robbie Ko <robbieko@synology.com>
 
-The warning is there to point out use of buffered writes and direct io
-on the same range. More details are in the commits that added the code,
-eg.
+Fixes: aab15e8ec2576 ("Btrfs: fix rare chances for data loss when doing a fast fsync")
+Signed-off-by: Robbie Ko <robbieko@synology.com>
+---
+ fs/btrfs/file.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-5a9d929d6e13278  iomap: report collisions between directio and buffered writes to userspace
-a92853b6746fe5f  fs/direct-io.c: keep dio_warn_stale_pagecache() when CONFIG_BLOCK=n
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index a16da274c9aa..ae903da21588 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -2124,6 +2124,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+ 	 */
+ 	ret = start_ordered_ops(inode, start, end);
+ 	if (ret) {
++		up_write(&BTRFS_I(inode)->dio_sem);
+ 		inode_unlock(inode);
+ 		goto out;
+ 	}
+-- 
+2.17.1
 
-whether the corruption really happens depends. If the collision happens
-then fsync will report EIO at some point but if you haven't observed any
-problems I think it's ok.
-
-According to the timestamps, the reads happen in a quick sequence.
-It could be that something during the VM startup reads parts of the
-image as buffered and then it goes only DIO.  Looking to the code, the
-message is rate limited so the burst would appear once per day and
-without tuning of the rate I can't say if the buffered vs dio happens
-all the time or just once. For the 'once' case I would not be worried.

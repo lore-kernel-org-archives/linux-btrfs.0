@@ -6,27 +6,27 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E5B17C18E5B
-	for <linux-btrfs@archiver.kernel.org>; Tue, 17 Mar 2020 08:11:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5AAD8C10F29
+	for <linux-btrfs@archiver.kernel.org>; Tue, 17 Mar 2020 08:11:58 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C6928206EC
-	for <linux-btrfs@archiver.kernel.org>; Tue, 17 Mar 2020 08:11:56 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2F49A20719
+	for <linux-btrfs@archiver.kernel.org>; Tue, 17 Mar 2020 08:11:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726278AbgCQIL4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 17 Mar 2020 04:11:56 -0400
-Received: from mx2.suse.de ([195.135.220.15]:42350 "EHLO mx2.suse.de"
+        id S1726329AbgCQIL5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 17 Mar 2020 04:11:57 -0400
+Received: from mx2.suse.de ([195.135.220.15]:42332 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726207AbgCQILz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 17 Mar 2020 04:11:55 -0400
+        id S1725906AbgCQIL5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 17 Mar 2020 04:11:57 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id EFA79AD31
-        for <linux-btrfs@vger.kernel.org>; Tue, 17 Mar 2020 08:11:54 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id B2E33ADC2
+        for <linux-btrfs@vger.kernel.org>; Tue, 17 Mar 2020 08:11:51 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH RFC 07/39] btrfs: relocation: Make reloc root search specific for relocation backref cache
-Date:   Tue, 17 Mar 2020 16:10:53 +0800
-Message-Id: <20200317081125.36289-8-wqu@suse.com>
+Subject: [PATCH RFC 05/39] btrfs: relocation: Add backref_cache::pending_edge and backref_cache::useless_node members
+Date:   Tue, 17 Mar 2020 16:10:51 +0800
+Message-Id: <20200317081125.36289-6-wqu@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <20200317081125.36289-1-wqu@suse.com>
 References: <20200317081125.36289-1-wqu@suse.com>
@@ -37,166 +37,247 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-find_reloc_root() searches reloc_control::reloc_root_tree to find the
-reloc root.
-This behavior is only useful for relocation backref cache.
+These two new members will act the same as the existing local lists,
+@useless and @list in build_backref_tree().
 
-For the incoming more generic purposed backref cache, we don't care
-about who owns the reloc root, but only care if it's a reloc root.
+Currently build_backref_tree() is only executed serially, thus moving
+such local list into backref_cache is still safe.
 
-So this patch makes the following modifications to make the reloc root
-search more specific to relocation backref:
-- Add backref_node::is_reloc_root
-  This will be an extra indicator for generic purposed backref cache.
-  User doesn't need to read root key from backref_node::root to
-  determine if it's a reloc root.
-  Also for reloc tree root, it's useless and will be queued to useless
-  list.
-
-- Add backref_cache::is_reloc
-  This will allow backref cache code to do different behavior for
-  generic purposed backref cache and relocation backref cache.
-
-- Make find_reloc_root() to accept fs_info
-  Just a personal taste.
-
-- Export find_reloc_root()
-  So backref.c can utilize this function.
+Also since we're here, use list_first_entry() to replace a lot of
+list_entry() calls after !list_empty().
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/ctree.h      |  2 ++
- fs/btrfs/relocation.c | 50 +++++++++++++++++++++++++++++++++----------
- 2 files changed, 41 insertions(+), 11 deletions(-)
+ fs/btrfs/relocation.c | 74 +++++++++++++++++++++++++++----------------
+ 1 file changed, 46 insertions(+), 28 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index ea5d0675465a..b57bb3e5f1f2 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3381,6 +3381,8 @@ void btrfs_reloc_pre_snapshot(struct btrfs_pending_snapshot *pending,
- 			      u64 *bytes_to_reserve);
- int btrfs_reloc_post_snapshot(struct btrfs_trans_handle *trans,
- 			      struct btrfs_pending_snapshot *pending);
-+struct btrfs_root *find_reloc_root(struct btrfs_fs_info *fs_info,
-+				   u64 bytenr);
- 
- /* scrub.c */
- int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
 diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 560a144d5b95..37d102564e72 100644
+index 40f3268290e9..837a8a9a3434 100644
 --- a/fs/btrfs/relocation.c
 +++ b/fs/btrfs/relocation.c
-@@ -121,6 +121,12 @@ struct backref_node {
- 	 * backref node.
- 	 */
- 	unsigned int detached:1;
+@@ -157,6 +157,12 @@ struct backref_cache {
+ 
+ 	int nr_nodes;
+ 	int nr_edges;
 +
-+	/*
-+	 * For generic purpose backref cache, where we only care if it's a reloc
-+	 * root, doesn't care the source subvolid.
-+	 */
-+	unsigned int is_reloc_root:1;
++	/* The list of unchecked backref edges during backref cache build */
++	struct list_head pending_edge;
++
++	/* The list of useless backref nodes during backref cache build */
++	struct list_head useless_node;
  };
  
  /*
-@@ -165,6 +171,14 @@ struct backref_cache {
- 	struct list_head useless_node;
- 
- 	struct btrfs_fs_info *fs_info;
-+
-+	/*
-+	 * Whether this cache is for relocation
-+	 *
-+	 * Reloction backref cache require more info for reloc root compared
-+	 * to generic backref cache.
-+	 */
-+	unsigned int is_reloc;
- };
- 
- /*
-@@ -267,7 +281,7 @@ static void mapping_tree_init(struct mapping_tree *tree)
- }
- 
- static void backref_cache_init(struct btrfs_fs_info *fs_info,
--			       struct backref_cache *cache)
-+			       struct backref_cache *cache, int is_reloc)
- {
- 	int i;
- 	cache->rb_root = RB_ROOT;
-@@ -279,6 +293,7 @@ static void backref_cache_init(struct btrfs_fs_info *fs_info,
- 	INIT_LIST_HEAD(&cache->pending_edge);
- 	INIT_LIST_HEAD(&cache->useless_node);
- 	cache->fs_info = fs_info;
-+	cache->is_reloc = is_reloc;
+@@ -267,6 +273,8 @@ static void backref_cache_init(struct backref_cache *cache)
+ 	INIT_LIST_HEAD(&cache->changed);
+ 	INIT_LIST_HEAD(&cache->detached);
+ 	INIT_LIST_HEAD(&cache->leaves);
++	INIT_LIST_HEAD(&cache->pending_edge);
++	INIT_LIST_HEAD(&cache->useless_node);
  }
  
  static void backref_cache_cleanup(struct backref_cache *cache)
-@@ -651,13 +666,14 @@ static int should_ignore_root(struct btrfs_root *root)
- /*
-  * find reloc tree by address of tree root
-  */
--static struct btrfs_root *find_reloc_root(struct reloc_control *rc,
--					  u64 bytenr)
-+struct btrfs_root *find_reloc_root(struct btrfs_fs_info *fs_info, u64 bytenr)
- {
-+	struct reloc_control *rc = fs_info->reloc_ctl;
+@@ -290,6 +298,8 @@ static void backref_cache_cleanup(struct backref_cache *cache)
+ 
+ 	for (i = 0; i < BTRFS_MAX_LEVEL; i++)
+ 		ASSERT(list_empty(&cache->pending[i]));
++	ASSERT(list_empty(&cache->pending_edge));
++	ASSERT(list_empty(&cache->useless_node));
+ 	ASSERT(list_empty(&cache->changed));
+ 	ASSERT(list_empty(&cache->detached));
+ 	ASSERT(RB_EMPTY_ROOT(&cache->rb_root));
+@@ -696,8 +706,6 @@ struct backref_node *build_backref_tree(struct reloc_control *rc,
+ 	struct backref_node *exist = NULL;
+ 	struct backref_edge *edge;
  	struct rb_node *rb_node;
- 	struct mapping_node *node;
- 	struct btrfs_root *root = NULL;
- 
-+	ASSERT(rc);
- 	spin_lock(&rc->reloc_root_tree.lock);
- 	rb_node = tree_search(&rc->reloc_root_tree.rb_root, bytenr);
- 	if (rb_node) {
-@@ -701,6 +717,7 @@ struct backref_node *build_backref_tree(struct reloc_control *rc,
- {
- 	struct btrfs_backref_iter *iter;
- 	struct backref_cache *cache = &rc->backref_cache;
-+	struct btrfs_fs_info *fs_info = cache->fs_info;
- 	struct btrfs_path *path; /* For searching parent of TREE_BLOCK_REF */
- 	struct btrfs_root *root;
- 	struct backref_node *cur;
-@@ -823,13 +840,24 @@ struct backref_node *build_backref_tree(struct reloc_control *rc,
- 		/* SHARED_BLOCK_REF means key.offset is the parent bytenr */
- 		if (key.type == BTRFS_SHARED_BLOCK_REF_KEY) {
- 			if (key.objectid == key.offset) {
--				/*
--				 * Only root blocks of reloc trees use backref
--				 * pointing to itself.
--				 */
--				root = find_reloc_root(rc, cur->bytenr);
--				ASSERT(root);
--				cur->root = root;
-+				cur->is_reloc_root = 1;
-+				/* Only reloc backref cache cares exact root */
-+				if (cache->is_reloc) {
-+					root = find_reloc_root(fs_info,
-+							cur->bytenr);
-+					if (WARN_ON(!root)) {
-+						err = -ENOENT;
-+						goto out;
-+					}
-+					cur->root = root;
-+				} else {
-+					/*
-+					 * For generic purpose backref cache,
-+					 * reloc root node is useless.
-+					 */
-+					list_add(&cur->list,
-+						&cache->useless_node);
-+				}
- 				break;
+-	LIST_HEAD(list); /* Pending edge list, upper node needs to be checked */
+-	LIST_HEAD(useless);
+ 	int cowonly;
+ 	int ret;
+ 	int err = 0;
+@@ -762,7 +770,7 @@ struct backref_node *build_backref_tree(struct reloc_control *rc,
+ 		 * check its backrefs
+ 		 */
+ 		if (!exist->checked)
+-			list_add_tail(&edge->list[UPPER], &list);
++			list_add_tail(&edge->list[UPPER], &cache->pending_edge);
+ 	} else {
+ 		exist = NULL;
+ 	}
+@@ -840,7 +848,8 @@ struct backref_node *build_backref_tree(struct reloc_control *rc,
+ 				 *  backrefs for the upper level block isn't
+ 				 *  cached, add the block to pending list
+ 				 */
+-				list_add_tail(&edge->list[UPPER], &list);
++				list_add_tail(&edge->list[UPPER],
++					      &cache->pending_edge);
+ 			} else {
+ 				upper = rb_entry(rb_node, struct backref_node,
+ 						 rb_node);
+@@ -882,7 +891,7 @@ struct backref_node *build_backref_tree(struct reloc_control *rc,
+ 			       cur->bytenr);
+ 			if (should_ignore_root(root)) {
+ 				btrfs_put_root(root);
+-				list_add(&cur->list, &useless);
++				list_add(&cur->list, &cache->useless_node);
+ 			} else {
+ 				cur->root = root;
  			}
+@@ -928,7 +937,8 @@ struct backref_node *build_backref_tree(struct reloc_control *rc,
+ 				       lower->bytenr);
+ 				if (should_ignore_root(root)) {
+ 					btrfs_put_root(root);
+-					list_add(&lower->list, &useless);
++					list_add(&lower->list,
++						 &cache->useless_node);
+ 				} else {
+ 					lower->root = root;
+ 				}
+@@ -977,7 +987,7 @@ struct backref_node *build_backref_tree(struct reloc_control *rc,
+ 				if (!upper->checked && need_check) {
+ 					need_check = false;
+ 					list_add_tail(&edge->list[UPPER],
+-						      &list);
++						      &cache->pending_edge);
+ 				} else {
+ 					if (upper->checked)
+ 						need_check = true;
+@@ -1015,8 +1025,9 @@ struct backref_node *build_backref_tree(struct reloc_control *rc,
+ 	WARN_ON(exist);
  
-@@ -4307,7 +4335,7 @@ static struct reloc_control *alloc_reloc_control(struct btrfs_fs_info *fs_info)
+ 	/* the pending list isn't empty, take the first block to process */
+-	if (!list_empty(&list)) {
+-		edge = list_entry(list.next, struct backref_edge, list[UPPER]);
++	if (!list_empty(&cache->pending_edge)) {
++		edge = list_entry(cache->pending_edge.next,
++				  struct backref_edge, list[UPPER]);
+ 		list_del_init(&edge->list[UPPER]);
+ 		cur = edge->node[UPPER];
+ 		goto again;
+@@ -1037,10 +1048,11 @@ struct backref_node *build_backref_tree(struct reloc_control *rc,
+ 	}
  
- 	INIT_LIST_HEAD(&rc->reloc_roots);
- 	INIT_LIST_HEAD(&rc->dirty_subvol_roots);
--	backref_cache_init(fs_info, &rc->backref_cache);
-+	backref_cache_init(fs_info, &rc->backref_cache, 1);
- 	mapping_tree_init(&rc->reloc_root_tree);
- 	extent_io_tree_init(fs_info, &rc->processed_blocks,
- 			    IO_TREE_RELOC_BLOCKS, NULL);
+ 	list_for_each_entry(edge, &node->upper, list[LOWER])
+-		list_add_tail(&edge->list[UPPER], &list);
++		list_add_tail(&edge->list[UPPER], &cache->pending_edge);
+ 
+-	while (!list_empty(&list)) {
+-		edge = list_entry(list.next, struct backref_edge, list[UPPER]);
++	while (!list_empty(&cache->pending_edge)) {
++		edge = list_first_entry(&cache->pending_edge,
++				struct backref_edge, list[UPPER]);
+ 		list_del_init(&edge->list[UPPER]);
+ 		upper = edge->node[UPPER];
+ 		if (upper->detached) {
+@@ -1048,7 +1060,7 @@ struct backref_node *build_backref_tree(struct reloc_control *rc,
+ 			lower = edge->node[LOWER];
+ 			free_backref_edge(cache, edge);
+ 			if (list_empty(&lower->upper))
+-				list_add(&lower->list, &useless);
++				list_add(&lower->list, &cache->useless_node);
+ 			continue;
+ 		}
+ 
+@@ -1088,7 +1100,7 @@ struct backref_node *build_backref_tree(struct reloc_control *rc,
+ 		list_add_tail(&edge->list[UPPER], &upper->lower);
+ 
+ 		list_for_each_entry(edge, &upper->upper, list[LOWER])
+-			list_add_tail(&edge->list[UPPER], &list);
++			list_add_tail(&edge->list[UPPER], &cache->pending_edge);
+ 	}
+ 	/*
+ 	 * process useless backref nodes. backref nodes for tree leaves
+@@ -1096,8 +1108,9 @@ struct backref_node *build_backref_tree(struct reloc_control *rc,
+ 	 * tree blocks are left in the cache to avoid unnecessary backref
+ 	 * lookup.
+ 	 */
+-	while (!list_empty(&useless)) {
+-		upper = list_entry(useless.next, struct backref_node, list);
++	while (!list_empty(&cache->useless_node)) {
++		upper = list_first_entry(&cache->useless_node,
++				   struct backref_node, list);
+ 		list_del_init(&upper->list);
+ 		ASSERT(list_empty(&upper->upper));
+ 		if (upper == node)
+@@ -1107,7 +1120,7 @@ struct backref_node *build_backref_tree(struct reloc_control *rc,
+ 			upper->lowest = 0;
+ 		}
+ 		while (!list_empty(&upper->lower)) {
+-			edge = list_entry(upper->lower.next,
++			edge = list_first_entry(&upper->lower,
+ 					  struct backref_edge, list[UPPER]);
+ 			list_del(&edge->list[UPPER]);
+ 			list_del(&edge->list[LOWER]);
+@@ -1115,7 +1128,7 @@ struct backref_node *build_backref_tree(struct reloc_control *rc,
+ 			free_backref_edge(cache, edge);
+ 
+ 			if (list_empty(&lower->upper))
+-				list_add(&lower->list, &useless);
++				list_add(&lower->list, &cache->useless_node);
+ 		}
+ 		mark_block_processed(rc, upper);
+ 		if (upper->level > 0) {
+@@ -1130,14 +1143,14 @@ struct backref_node *build_backref_tree(struct reloc_control *rc,
+ 	btrfs_backref_iter_free(iter);
+ 	btrfs_free_path(path);
+ 	if (err) {
+-		while (!list_empty(&useless)) {
+-			lower = list_entry(useless.next,
++		while (!list_empty(&cache->useless_node)) {
++			lower = list_first_entry(&cache->useless_node,
+ 					   struct backref_node, list);
+ 			list_del_init(&lower->list);
+ 		}
+-		while (!list_empty(&list)) {
+-			edge = list_first_entry(&list, struct backref_edge,
+-						list[UPPER]);
++		while (!list_empty(&cache->pending_edge)) {
++			edge = list_first_entry(&cache->pending_edge,
++					struct backref_edge, list[UPPER]);
+ 			list_del(&edge->list[UPPER]);
+ 			list_del(&edge->list[LOWER]);
+ 			lower = edge->node[LOWER];
+@@ -1150,20 +1163,21 @@ struct backref_node *build_backref_tree(struct reloc_control *rc,
+ 			 */
+ 			if (list_empty(&lower->upper) &&
+ 			    RB_EMPTY_NODE(&lower->rb_node))
+-				list_add(&lower->list, &useless);
++				list_add(&lower->list, &cache->useless_node);
+ 
+ 			if (!RB_EMPTY_NODE(&upper->rb_node))
+ 				continue;
+ 
+ 			/* Add this guy's upper edges to the list to process */
+ 			list_for_each_entry(edge, &upper->upper, list[LOWER])
+-				list_add_tail(&edge->list[UPPER], &list);
++				list_add_tail(&edge->list[UPPER],
++					      &cache->pending_edge);
+ 			if (list_empty(&upper->upper))
+-				list_add(&upper->list, &useless);
++				list_add(&upper->list, &cache->useless_node);
+ 		}
+ 
+-		while (!list_empty(&useless)) {
+-			lower = list_entry(useless.next,
++		while (!list_empty(&cache->useless_node)) {
++			lower = list_first_entry(&cache->useless_node,
+ 					   struct backref_node, list);
+ 			list_del_init(&lower->list);
+ 			if (lower == node)
+@@ -1172,9 +1186,13 @@ struct backref_node *build_backref_tree(struct reloc_control *rc,
+ 		}
+ 
+ 		free_backref_node(cache, node);
++		ASSERT(list_empty(&cache->useless_node) &&
++		       list_empty(&cache->pending_edge));
+ 		return ERR_PTR(err);
+ 	}
+ 	ASSERT(!node || !node->detached);
++	ASSERT(list_empty(&cache->useless_node) &&
++	       list_empty(&cache->pending_edge));
+ 	return node;
+ }
+ 
 -- 
 2.25.1
 

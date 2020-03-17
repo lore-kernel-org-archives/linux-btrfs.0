@@ -6,28 +6,28 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E56EEC10F29
-	for <linux-btrfs@archiver.kernel.org>; Tue, 17 Mar 2020 08:11:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 552D5C18E5B
+	for <linux-btrfs@archiver.kernel.org>; Tue, 17 Mar 2020 08:11:52 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C6AD520674
-	for <linux-btrfs@archiver.kernel.org>; Tue, 17 Mar 2020 08:11:43 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3329E206EC
+	for <linux-btrfs@archiver.kernel.org>; Tue, 17 Mar 2020 08:11:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726082AbgCQILn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 17 Mar 2020 04:11:43 -0400
-Received: from mx2.suse.de ([195.135.220.15]:42256 "EHLO mx2.suse.de"
+        id S1726148AbgCQILv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 17 Mar 2020 04:11:51 -0400
+Received: from mx2.suse.de ([195.135.220.15]:42306 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725837AbgCQILn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 17 Mar 2020 04:11:43 -0400
+        id S1726005AbgCQILv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 17 Mar 2020 04:11:51 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 1B49CAC6B;
-        Tue, 17 Mar 2020 08:11:41 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id BAC8BADA1;
+        Tue, 17 Mar 2020 08:11:48 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Cc:     Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH RFC 02/39] btrfs: backref: Implement btrfs_backref_iter_next()
-Date:   Tue, 17 Mar 2020 16:10:48 +0800
-Message-Id: <20200317081125.36289-3-wqu@suse.com>
+Cc:     Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH RFC 04/39] btrfs: relocation: Rename mark_block_processed() and __mark_block_processed()
+Date:   Tue, 17 Mar 2020 16:10:50 +0800
+Message-Id: <20200317081125.36289-5-wqu@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <20200317081125.36289-1-wqu@suse.com>
 References: <20200317081125.36289-1-wqu@suse.com>
@@ -38,129 +38,137 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This function will go next inline/keyed backref for
-btrfs_backref_iter infrastructure.
+These two functions are weirdly named, mark_block_processed() in fact
+just mark a range dirty unconditionally, while __mark_block_processed()
+does extra check before doing the marking.
 
+This patch will open code old mark_block_processed, and rename
+__mark_block_processed() to remove the "__" prefix.
+
+Since we're here, also kill the forward declaration, which could also
+kill in_block_group() with in_range() macro.
+
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 Signed-off-by: Qu Wenruo <wqu@suse.com>
-Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
- fs/btrfs/backref.c | 58 ++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/backref.h | 34 +++++++++++++++++++++++++++
- 2 files changed, 92 insertions(+)
+ fs/btrfs/relocation.c | 55 +++++++++++++++++--------------------------
+ 1 file changed, 21 insertions(+), 34 deletions(-)
 
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index 33fec39bf5ef..45cd8d998e40 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -2410,3 +2410,61 @@ int btrfs_backref_iter_start(struct btrfs_backref_iter *iter, u64 bytenr)
- 	btrfs_backref_iter_release(iter);
- 	return ret;
- }
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 6b548439ab6f..40f3268290e9 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -236,8 +236,21 @@ struct reloc_control {
+ 
+ static void remove_backref_node(struct backref_cache *cache,
+ 				struct backref_node *node);
+-static void __mark_block_processed(struct reloc_control *rc,
+-				   struct backref_node *node);
 +
-+/*
-+ * Go to next backref item of current bytenr, can be either inlined or keyed.
-+ *
-+ * Caller need to check whether it's inline ref or not by iter->cur_key.
-+ *
-+ * Return 0 if we get next backref without problem.
-+ * Return >0 if there is no extra backref for this bytenr.
-+ * Return <0 if there is something wrong happened.
-+ */
-+int btrfs_backref_iter_next(struct btrfs_backref_iter *iter)
++static void mark_block_processed(struct reloc_control *rc,
++				 struct backref_node *node)
 +{
-+	struct extent_buffer *eb = btrfs_backref_get_eb(iter);
-+	struct btrfs_path *path = iter->path;
-+	struct btrfs_extent_inline_ref *iref;
-+	int ret;
-+	u32 size;
-+
-+	if (btrfs_backref_iter_is_inline_ref(iter)) {
-+		/* We're still inside the inline refs */
-+		ASSERT(iter->cur_ptr < iter->end_ptr);
-+
-+		if (btrfs_backref_has_tree_block_info(iter)) {
-+			/* First tree block info */
-+			size = sizeof(struct btrfs_tree_block_info);
-+		} else {
-+			/* Use inline ref type to determine the size */
-+			int type;
-+
-+			iref = (struct btrfs_extent_inline_ref *)
-+				((unsigned long)iter->cur_ptr);
-+			type = btrfs_extent_inline_ref_type(eb, iref);
-+
-+			size = btrfs_extent_inline_ref_size(type);
-+		}
-+		iter->cur_ptr += size;
-+		if (iter->cur_ptr < iter->end_ptr)
-+			return 0;
-+
-+		/* All inline items iterated, fall through */
++	u32 blocksize;
++	if (node->level == 0 ||
++	    in_range(node->bytenr, rc->block_group->start,
++		     rc->block_group->length)) {
++		blocksize = rc->extent_root->fs_info->nodesize;
++		set_extent_bits(&rc->processed_blocks, node->bytenr,
++				node->bytenr + blocksize - 1, EXTENT_DIRTY);
 +	}
-+	/* We're at keyed items, there is no inline item, just go next item */
-+	ret = btrfs_next_item(iter->fs_info->extent_root, iter->path);
-+	if (ret)
-+		return ret;
-+
-+	btrfs_item_key_to_cpu(path->nodes[0], &iter->cur_key, path->slots[0]);
-+	if (iter->cur_key.objectid != iter->bytenr ||
-+	    (iter->cur_key.type != BTRFS_TREE_BLOCK_REF_KEY &&
-+	     iter->cur_key.type != BTRFS_SHARED_BLOCK_REF_KEY))
-+		return 1;
-+	iter->item_ptr = (u32)btrfs_item_ptr_offset(path->nodes[0],
-+					path->slots[0]);
-+	iter->cur_ptr = iter->item_ptr;
-+	iter->end_ptr = iter->item_ptr + (u32)btrfs_item_size_nr(path->nodes[0],
-+						path->slots[0]);
-+	return 0;
++	node->processed = 1;
 +}
-diff --git a/fs/btrfs/backref.h b/fs/btrfs/backref.h
-index 3ca9604981f8..29cc74eabda3 100644
---- a/fs/btrfs/backref.h
-+++ b/fs/btrfs/backref.h
-@@ -100,8 +100,42 @@ static inline void btrfs_backref_iter_free(struct btrfs_backref_iter *iter)
- 	kfree(iter);
++
+ 
+ static void mapping_tree_init(struct mapping_tree *tree)
+ {
+@@ -1104,7 +1117,7 @@ struct backref_node *build_backref_tree(struct reloc_control *rc,
+ 			if (list_empty(&lower->upper))
+ 				list_add(&lower->list, &useless);
+ 		}
+-		__mark_block_processed(rc, upper);
++		mark_block_processed(rc, upper);
+ 		if (upper->level > 0) {
+ 			list_add(&upper->list, &cache->detached);
+ 			upper->detached = 1;
+@@ -1570,14 +1583,6 @@ static struct inode *find_next_inode(struct btrfs_root *root, u64 objectid)
+ 	return NULL;
  }
  
-+static inline struct extent_buffer *
-+btrfs_backref_get_eb(struct btrfs_backref_iter *iter)
-+{
-+	if (!iter)
-+		return NULL;
-+	return iter->path->nodes[0];
-+}
-+
-+/*
-+ * For metadata with EXTENT_ITEM key (non-skinny) case, the first inline data
-+ * is btrfs_tree_block_info, without a btrfs_extent_inline_ref header.
-+ *
-+ * This helper is here to determine if that's the case.
-+ */
-+static inline bool btrfs_backref_has_tree_block_info(
-+		struct btrfs_backref_iter *iter)
-+{
-+	if (iter->cur_key.type == BTRFS_EXTENT_ITEM_KEY &&
-+	    iter->cur_ptr - iter->item_ptr == sizeof(struct btrfs_extent_item))
-+		return true;
-+	return false;
-+}
-+
- int btrfs_backref_iter_start(struct btrfs_backref_iter *iter, u64 bytenr);
+-static int in_block_group(u64 bytenr, struct btrfs_block_group *block_group)
+-{
+-	if (bytenr >= block_group->start &&
+-	    bytenr < block_group->start + block_group->length)
+-		return 1;
+-	return 0;
+-}
+-
+ /*
+  * get new location of data
+  */
+@@ -1675,7 +1680,8 @@ int replace_file_extents(struct btrfs_trans_handle *trans,
+ 		num_bytes = btrfs_file_extent_disk_num_bytes(leaf, fi);
+ 		if (bytenr == 0)
+ 			continue;
+-		if (!in_block_group(bytenr, rc->block_group))
++		if (!in_range(bytenr, rc->block_group->start,
++			      rc->block_group->length))
+ 			continue;
  
-+int btrfs_backref_iter_next(struct btrfs_backref_iter *iter);
-+
-+static inline bool
-+btrfs_backref_iter_is_inline_ref(struct btrfs_backref_iter *iter)
-+{
-+	if (iter->cur_key.type == BTRFS_EXTENT_ITEM_KEY ||
-+	    iter->cur_key.type == BTRFS_METADATA_ITEM_KEY)
-+		return true;
-+	return false;
-+}
-+
- static inline void
- btrfs_backref_iter_release(struct btrfs_backref_iter *iter)
- {
+ 		/*
+@@ -2605,7 +2611,7 @@ struct btrfs_root *select_reloc_root(struct btrfs_trans_handle *trans,
+ 			ASSERT(next->root);
+ 			list_add_tail(&next->list,
+ 				      &rc->backref_cache.changed);
+-			__mark_block_processed(rc, next);
++			mark_block_processed(rc, next);
+ 			break;
+ 		}
+ 
+@@ -2955,25 +2961,6 @@ static int finish_pending_nodes(struct btrfs_trans_handle *trans,
+ 	return err;
+ }
+ 
+-static void mark_block_processed(struct reloc_control *rc,
+-				 u64 bytenr, u32 blocksize)
+-{
+-	set_extent_bits(&rc->processed_blocks, bytenr, bytenr + blocksize - 1,
+-			EXTENT_DIRTY);
+-}
+-
+-static void __mark_block_processed(struct reloc_control *rc,
+-				   struct backref_node *node)
+-{
+-	u32 blocksize;
+-	if (node->level == 0 ||
+-	    in_block_group(node->bytenr, rc->block_group)) {
+-		blocksize = rc->extent_root->fs_info->nodesize;
+-		mark_block_processed(rc, node->bytenr, blocksize);
+-	}
+-	node->processed = 1;
+-}
+-
+ /*
+  * mark a block and all blocks directly/indirectly reference the block
+  * as processed.
+@@ -2992,7 +2979,7 @@ static void update_processed_blocks(struct reloc_control *rc,
+ 			if (next->processed)
+ 				break;
+ 
+-			__mark_block_processed(rc, next);
++			mark_block_processed(rc, next);
+ 
+ 			if (list_empty(&next->upper))
+ 				break;
+@@ -4744,7 +4731,7 @@ int btrfs_reloc_cow_block(struct btrfs_trans_handle *trans,
+ 		}
+ 
+ 		if (first_cow)
+-			__mark_block_processed(rc, node);
++			mark_block_processed(rc, node);
+ 
+ 		if (first_cow && level > 0)
+ 			rc->nodes_relocated += buf->len;
 -- 
 2.25.1
 

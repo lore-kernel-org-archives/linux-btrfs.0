@@ -7,59 +7,59 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C5FA5C4332D
-	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Mar 2020 18:34:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 49305C4332D
+	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Mar 2020 18:34:52 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9DDC420739
-	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Mar 2020 18:34:47 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 217A020739
+	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Mar 2020 18:34:52 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="MEulx42Y"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="BCycgyk+"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727217AbgCTSeq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 20 Mar 2020 14:34:46 -0400
-Received: from mail-qt1-f195.google.com ([209.85.160.195]:41622 "EHLO
-        mail-qt1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726809AbgCTSep (ORCPT
+        id S1727281AbgCTSev (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 20 Mar 2020 14:34:51 -0400
+Received: from mail-qt1-f196.google.com ([209.85.160.196]:45838 "EHLO
+        mail-qt1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727232AbgCTSes (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Mar 2020 14:34:45 -0400
-Received: by mail-qt1-f195.google.com with SMTP id i3so1968816qtv.8
-        for <linux-btrfs@vger.kernel.org>; Fri, 20 Mar 2020 11:34:45 -0700 (PDT)
+        Fri, 20 Mar 2020 14:34:48 -0400
+Received: by mail-qt1-f196.google.com with SMTP id z8so5769620qto.12
+        for <linux-btrfs@vger.kernel.org>; Fri, 20 Mar 2020 11:34:48 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references:mime-version
          :content-transfer-encoding;
-        bh=5adH6MggDAH55cINMwdcWIGtFjcV/w8PAQJMxEIYmNA=;
-        b=MEulx42YKSkCa/dNOwGZayebaI/N0iLkORvsKQqKT9kTRQNQWmlhcl6aE31YqVczaV
-         TrEYvXXpxXjJhGLW/OIAzGyzHEYyGnf82lbo5mC+1CUfKtdGcb5B7yOaw6lruUeV/Qzk
-         112xwSJO3x/CU2Lux8e6Za3G4k9hqv81R6v8HY3Il/HuFiZRU8Mu2HjTanId1fzIYVfV
-         wGI2U8tNNISQdNWQh1Pli4FGNprbwOof2T+DVb7VCECgMxYg4dnvQkHiwh2qeoaa3oA4
-         CnqtXp4vYvV32h2ZqZlc/ErXFbYWeW9qkanqqOqjQcwEDzuMDVaIgAnP6QA4GLCeYIHO
-         X5lw==
+        bh=nuRiJsp0hGWSv076MkcmRVQ1AsfI5+HaZD08/Cdax2c=;
+        b=BCycgyk+P4dZRj441Ci1Ybo9l7ibUamTq+37gvG1JjmKcH2qKIoYGsqNYglUTJxEYR
+         T6Rt8QTG087JR+IJmloiTgiG5pW8dFZWfMaPz1CoiLg0yMNoQ8La1VDTPrW0v2FLuw4g
+         xw0UPDKolsJv63qMYirekQRWGGpCGTjIQEPOclQZHxFUldWOeiSjDpyiOzlAi9LwpcBh
+         HLKv7QOT0waiYv/8T7QqCjM6PugziY2i7hnCuQg1rI/3zt+eEvHuSztIfVg8PPq+B5bx
+         Ohpv+QcR+NS/RLSOrWnI7tEK/kUdkkxvFtOGqf77hdhKPm+3LBlPORmX+iScE203jV06
+         iybA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=5adH6MggDAH55cINMwdcWIGtFjcV/w8PAQJMxEIYmNA=;
-        b=VkMGdhtlmOfZwZvXJrmzykeRS7h1x6cqES+qhL43oj8jxJ8nMPEqQCtr9bjgJi5AlD
-         wcCsUYiErJMtEnPPv/IOTTQ7zneJKyDkc9qYV36jXdTLpU+KINn8kt82zc2pIL+pwqyF
-         gKm7yBPx+Jn6YNAPB6xEVhMpgnZA4ufUeIbut5/AyLV51Lp6yatfxYqmhPP2mnhu34cP
-         zTTMHUftQfq/wBMNWVeM3evD/xPRg/p5zJ/tFoXc2DAOn3S9VvbtFjrSCTxajA33orCP
-         tqDRg/CCosihMY/MMp2mekjDqJAhuGecZt84zWJD9frF+GYxO4xbGZBvv4phZkjQJ9Cr
-         Tlpw==
-X-Gm-Message-State: ANhLgQ3WjttvvyuQ5+PzBCpd+nnCC+YUPlV3IFM4ZaVEU2n8Ntp6pBII
-        EXQSXr6BE/Z56vs5CGX6e3CEwkspLbk1SQ==
-X-Google-Smtp-Source: ADFU+vtxSpL49m5iXVewsf4oNCkLJEnDsOSHSoOSJ3QP3Fb7vjlwX1VOJTOd3lX/rSNVC9YFuPNkZA==
-X-Received: by 2002:ac8:3f62:: with SMTP id w31mr9514048qtk.171.1584729283771;
-        Fri, 20 Mar 2020 11:34:43 -0700 (PDT)
+        bh=nuRiJsp0hGWSv076MkcmRVQ1AsfI5+HaZD08/Cdax2c=;
+        b=DC2j5gYheiBQrzo9MkPs59O6HlhTM8SpMhBcv/0FHDAbkbCyT93wAbWZYlT92IFRDQ
+         mSnoqb7VmJJ7PnDVFD4OBFRF0DHsUPyrzte4xsrSVHn/yMfs436whnNcETPbrJb7fBsO
+         XACy7uzYxrPYS4tjJZHNSj2ieZlTQ11J3biM/RMYstGonT6MFvC4ytOGdAv9BM12q5hr
+         BEXRuKyyiFg+GRP/E+XPCiut4tPMO2s0w0oG/SCM2LNOU/qTLwv9x9Bzk8hvDajcyjHe
+         l7jYEzRd7eBUyGwfyXnsyU6zuXfACDhZPg8S1YJKNeeHhKQA7UPwoZ4tHaB60WN1ywRI
+         PRtA==
+X-Gm-Message-State: ANhLgQ2bDHVMvKdYwyWfbl7bkJzqLOyfS0EoEoC0PY50mY7LRqTpkXoP
+        hY7satxlX7A2bRSRI0sEAQ3WCxvLsiBc8w==
+X-Google-Smtp-Source: ADFU+vv1Rj2il0s9N+66oAngigzA1ADENo7ood0Ef1WbpmtUCri94U+ZP6nKWaqx0EyxZ7Q449iWPg==
+X-Received: by 2002:ac8:4e2e:: with SMTP id d14mr9978401qtw.179.1584729287454;
+        Fri, 20 Mar 2020 11:34:47 -0700 (PDT)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id z18sm5537216qtz.77.2020.03.20.11.34.42
+        by smtp.gmail.com with ESMTPSA id x65sm4693001qkd.65.2020.03.20.11.34.46
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 20 Mar 2020 11:34:43 -0700 (PDT)
+        Fri, 20 Mar 2020 11:34:46 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 2/5] btrfs: restart relocate_tree_blocks properly
-Date:   Fri, 20 Mar 2020 14:34:33 -0400
-Message-Id: <20200320183436.16908-3-josef@toxicpanda.com>
+Subject: [PATCH 4/5] btrfs: do not resolve backrefs for roots that are being deleted
+Date:   Fri, 20 Mar 2020 14:34:35 -0400
+Message-Id: <20200320183436.16908-5-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.24.1
 In-Reply-To: <20200320183436.16908-1-josef@toxicpanda.com>
 References: <20200320183436.16908-1-josef@toxicpanda.com>
@@ -70,62 +70,67 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-There are two bugs here, but fixing them independently would just result
-in pain if you happened to bisect between the two patches.
+Zygo reported a deadlock where a task was stuck in the inode logical
+resolve code.  The deadlock looks like this
 
-First is how we handle the -EAGAIN from relocate_tree_block().  We don't
-set error, unless we happen to be the first node, which makes 0 sense, I
-have no idea what the code was trying to accomplish here.
+Task 1
+btrfs_ioctl_logical_to_ino
+->iterate_inodes_from_logical
+ ->iterate_extent_inodes
+  ->path->search_commit_root isn't set, so a transaction is started
+    ->resolve_indirect_ref for a root that's being deleted
+      ->search for our key, attempt to lock a node, DEADLOCK
 
-We in fact _do_ want err set here so that we know we need to restart in
-relocate_block_group().  Also we need finish_pending_nodes() to not
-actually call link_to_upper(), because we didn't actually relocate the
-block.
+Task 2
+btrfs_drop_snapshot
+->walk down to a leaf, lock it, walk up, lock node
+ ->end transaction
+  ->start transaction
+    -> wait_cur_trans
 
-And then if we do get -EAGAIN we do not want to set our backref cache
-last_trans to the one before ours.  This would force us to update our
-backref cache if we didn't cross trans id's, which would mean we'd have
-some nodes updated to their new_bytenr, but still able to find their old
-bytenr because we're searching the same commit root as the last time we
-went through relocate_tree_blocks.
+Task 3
+btrfs_commit_transaction
+->wait_event(cur_trans->write_wait, num_writers == 1) DEADLOCK
 
-Fixing these two things keeps us from panicing when we start breaking
-out of relocate_tree_blocks() either for delayed ref flushing or enospc.
+We are holding a transaction open in btrfs_ioctl_logical_to_ino while we
+try to resolve our references.  btrfs_drop_snapshot() holds onto its
+locks while it stops and starts transaction handles, because it assumes
+nobody is going to touch the root now.  Commit just does what commit
+does, waiting for the writers to finish, blocking any new trans handles
+from starting.
 
+Fix this by making the backref code not try to resolve backrefs of roots
+that are currently being deleted.  This will keep us from walking into a
+snapshot that's currently being deleted.
+
+This problem was harder to hit before because we rarely broke out of the
+snapshot delete halfway through, but with my delayed ref throttling code
+it happened much more often.  However we've always been able to do this,
+so it's not a new problem.
+
+Fixes: 8da6d5815c59 ("Btrfs: added btrfs_find_all_roots()")
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/relocation.c | 11 ++---------
- 1 file changed, 2 insertions(+), 9 deletions(-)
+ fs/btrfs/backref.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index df33649c592c..66a344df4f05 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -3226,9 +3226,8 @@ int relocate_tree_blocks(struct btrfs_trans_handle *trans,
- 		ret = relocate_tree_block(trans, rc, node, &block->key,
- 					  path);
- 		if (ret < 0) {
--			if (ret != -EAGAIN || &block->rb_node == rb_first(blocks))
--				err = ret;
--			goto out;
-+			err = ret;
-+			break;
- 		}
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index 9d0f87df2c35..0dcc11644be4 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -523,6 +523,12 @@ static int resolve_indirect_ref(struct btrfs_fs_info *fs_info,
+ 		goto out_free;
  	}
- out:
-@@ -4204,12 +4203,6 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
- 		if (!RB_EMPTY_ROOT(&blocks)) {
- 			ret = relocate_tree_blocks(trans, rc, &blocks);
- 			if (ret < 0) {
--				/*
--				 * if we fail to relocate tree blocks, force to update
--				 * backref cache when committing transaction.
--				 */
--				rc->backref_cache.last_trans = trans->transid - 1;
--
- 				if (ret != -EAGAIN) {
- 					err = ret;
- 					break;
+ 
++	if (!path->search_commit_root &&
++	    test_bit(BTRFS_ROOT_DELETING, &root->state)) {
++		ret = -ENOENT;
++		goto out;
++	}
++
+ 	if (btrfs_is_testing(fs_info)) {
+ 		ret = -ENOENT;
+ 		goto out;
 -- 
 2.24.1
 

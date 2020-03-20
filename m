@@ -2,114 +2,86 @@ Return-Path: <SRS0=zDud=5F=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B7610C4332B
-	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Mar 2020 14:25:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0E973C4332D
+	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Mar 2020 14:35:03 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8F29220739
-	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Mar 2020 14:25:32 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CF3082070A
+	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Mar 2020 14:35:02 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="bB1YkUN+"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="VhUVee2g"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727838AbgCTOZQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 20 Mar 2020 10:25:16 -0400
-Received: from bombadil.infradead.org ([198.137.202.133]:59706 "EHLO
+        id S1727350AbgCTOfC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 20 Mar 2020 10:35:02 -0400
+Received: from bombadil.infradead.org ([198.137.202.133]:36824 "EHLO
         bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726893AbgCTOWd (ORCPT
+        with ESMTP id S1726816AbgCTOfB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Mar 2020 10:22:33 -0400
+        Fri, 20 Mar 2020 10:35:01 -0400
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20170209; h=Content-Transfer-Encoding:
-        MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
-        :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=kZSWYbADCDtb2xc4p+R2B9mS5JBLfDUqpyTeSWepChg=; b=bB1YkUN+c4hb4E+15c2Bv0iGay
-        +SDBgbKmQNnw8WCVEzkD9AjSyAG/Duc0mSxeBzm9vNFiqgVBCga/ONv1sC9Z/x2gLeLsprFdD7d55
-        fb4fU4tE6hAVru9RD3+fkzUAhnvT5hqpWAYaDS2ta9B6vW7QnE3Ad6BWDMyL6yXMC7AhsTnap/D7o
-        CLkw8bitrOE2eV3BOGbVDrKqlEe6AhWvpt1Zi3HXruIh/gOfKr+eE1uk9dMdYEuWb3zeetZaFyHNP
-        3jwyYZ7/vNQrxMti6w5s9Lj/pMBfx+duk9APtD5AhxIl+FrG8GmaHBNWJGs7UohjuOF+HnlGyhL31
-        SdKSXPUg==;
-Received: from willy by bombadil.infradead.org with local (Exim 4.92.3 #3 (Red Hat Linux))
-        id 1jFIXh-0000h8-3h; Fri, 20 Mar 2020 14:22:33 +0000
-From:   Matthew Wilcox <willy@infradead.org>
-To:     Andrew Morton <akpm@linux-foundation.org>
-Cc:     "Matthew Wilcox (Oracle)" <willy@infradead.org>,
-        linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
-        linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        linux-erofs@lists.ozlabs.org, linux-ext4@vger.kernel.org,
-        linux-f2fs-devel@lists.sourceforge.net, cluster-devel@redhat.com,
-        ocfs2-devel@oss.oracle.com, linux-xfs@vger.kernel.org,
-        Christoph Hellwig <hch@lst.de>,
-        Dave Chinner <dchinner@redhat.com>,
-        John Hubbard <jhubbard@nvidia.com>,
-        William Kucharski <william.kucharski@oracle.com>
-Subject: [PATCH v9 03/25] mm: Ignore return value of ->readpages
-Date:   Fri, 20 Mar 2020 07:22:09 -0700
-Message-Id: <20200320142231.2402-4-willy@infradead.org>
-X-Mailer: git-send-email 2.21.1
-In-Reply-To: <20200320142231.2402-1-willy@infradead.org>
-References: <20200320142231.2402-1-willy@infradead.org>
+        d=infradead.org; s=bombadil.20170209; h=In-Reply-To:Content-Type:MIME-Version
+        :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+        Content-Transfer-Encoding:Content-ID:Content-Description;
+        bh=LASMtyJcflOe2DO3cMPw3KuweMH8ZRP8HrjCuN3ZWuw=; b=VhUVee2gbMU0XK1vhhZ6TcLOmc
+        sraKGYo+YoBXNwcurStnG0TgfV6N3p0YhFOZRrWy1SZDDqYsRkj/SJgCwF/460LuladY5ZiH4saWL
+        iQ4O7KqQ41MoNhnTKuDc6Lw7FATmy+teB6laEaMzOvxzncKUBUmPZkv/Qc3wDDGbpvNSUzwkhsb9d
+        t87WoEcIsU5ZqMyUvEp2YFL1kyrZ2Kvk3ec30ZUzOFzhXkUmtL9iPnFK4SzqmsH5F/tXWFSjW135w
+        X/Qr2l+kf/HbbjpDjWKYRIeWRtCMDz7oJPZzsw+hhuhW7gPUCnlO/dX9CZPRf5Mo3Rm7NLuawm7/k
+        ArIxTO8w==;
+Received: from hch by bombadil.infradead.org with local (Exim 4.92.3 #3 (Red Hat Linux))
+        id 1jFIjk-0006Jc-O9; Fri, 20 Mar 2020 14:35:00 +0000
+Date:   Fri, 20 Mar 2020 07:35:00 -0700
+From:   Christoph Hellwig <hch@infradead.org>
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     Christoph Hellwig <hch@infradead.org>,
+        Goldwyn Rodrigues <rgoldwyn@suse.de>,
+        linux-fsdevel@vger.kernel.org, riteshh@linux.ibm.com,
+        linux-ext4@vger.kernel.org, darrick.wong@oracle.com,
+        willy@infradead.org, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2] iomap: return partial I/O count on error in
+ iomap_dio_bio_actor
+Message-ID: <20200320143500.GA16143@infradead.org>
+References: <20200319150805.uaggnfue5xgaougx@fiona>
+ <20200320140538.GA27895@infradead.org>
+ <02209ec3-62b4-595f-b84e-2cd8838ac41b@toxicpanda.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <02209ec3-62b4-595f-b84e-2cd8838ac41b@toxicpanda.com>
+X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: "Matthew Wilcox (Oracle)" <willy@infradead.org>
+On Fri, Mar 20, 2020 at 10:23:43AM -0400, Josef Bacik wrote:
+> I'm not sure what you're looking at specifically wrt error handling, but I
+> can explain __endio_write_update_ordered.
+> 
+> Btrfs has ordered extents to keep track of an extent that currently has IO
+> being done on it.  Generally that IO takes multiple bio's, so we keep track
+> of the outstanding size of the IO being done, and each bio completes and
+> thus removes its size from the pending size.  If any one of those bios has
+> an error we need to make sure we discard the whole ordered extent, as part
+> of it won't be valid. Just a cursory look at the current code I assume
+> that's what's confusing you, we call this when we have an error in the
+> O_DIRECT code.  This is just so we get the proper cleanup for the ordered
+> extent.  People will wait on the ordered extent to be completed, so if we've
+> started an ordered extent and aren't able to complete the range we need to
+> do __endio_write_update_ordered() so that the ordered extent is finished and
+> we wakeup any waiters.
+> 
+> Does this help?  If I need to I can context switch into whatever you're
+> looking at, but I'm going to avoid looking and hope I can just shout useful
+> information in your direction ;).  Thanks,
 
-We used to assign the return value to a variable, which we then ignored.
-Remove the pretence of caring.
-
-Signed-off-by: Matthew Wilcox (Oracle) <willy@infradead.org>
-Reviewed-by: Christoph Hellwig <hch@lst.de>
-Reviewed-by: Dave Chinner <dchinner@redhat.com>
-Reviewed-by: John Hubbard <jhubbard@nvidia.com>
-Reviewed-by: William Kucharski <william.kucharski@oracle.com>
----
- mm/readahead.c | 8 ++------
- 1 file changed, 2 insertions(+), 6 deletions(-)
-
-diff --git a/mm/readahead.c b/mm/readahead.c
-index 41a592886da7..61b15b6b9e72 100644
---- a/mm/readahead.c
-+++ b/mm/readahead.c
-@@ -113,17 +113,16 @@ int read_cache_pages(struct address_space *mapping, struct list_head *pages,
- 
- EXPORT_SYMBOL(read_cache_pages);
- 
--static int read_pages(struct address_space *mapping, struct file *filp,
-+static void read_pages(struct address_space *mapping, struct file *filp,
- 		struct list_head *pages, unsigned int nr_pages, gfp_t gfp)
- {
- 	struct blk_plug plug;
- 	unsigned page_idx;
--	int ret;
- 
- 	blk_start_plug(&plug);
- 
- 	if (mapping->a_ops->readpages) {
--		ret = mapping->a_ops->readpages(filp, mapping, pages, nr_pages);
-+		mapping->a_ops->readpages(filp, mapping, pages, nr_pages);
- 		/* Clean up the remaining pages */
- 		put_pages_list(pages);
- 		goto out;
-@@ -136,12 +135,9 @@ static int read_pages(struct address_space *mapping, struct file *filp,
- 			mapping->a_ops->readpage(filp, page);
- 		put_page(page);
- 	}
--	ret = 0;
- 
- out:
- 	blk_finish_plug(&plug);
--
--	return ret;
- }
- 
- /*
--- 
-2.25.1
-
+Yes, this helps a lot.  This is about the patches from Goldwyn to
+convert btrfs to use the iomap direct I/O code.  And in that series
+he currently calls __endio_write_update_ordered from the ->iomap_end
+method, which for direct I/O is called after all bios are submitted
+to complete ordered extents for a range after an I/O error, that
+is one that no I/O has been submitted to, and the accounting for that
+is a little complicated..

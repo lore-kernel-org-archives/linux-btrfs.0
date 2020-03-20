@@ -7,33 +7,33 @@ X-Spam-Status: No, score=-9.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8F1EBC54FCD
-	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Mar 2020 14:24:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 73988C4332E
+	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Mar 2020 14:24:26 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 657E42070A
-	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Mar 2020 14:24:14 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 416382072D
+	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Mar 2020 14:24:26 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="o94Py0hr"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="QIcbvGfZ"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727280AbgCTOWe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 20 Mar 2020 10:22:34 -0400
-Received: from bombadil.infradead.org ([198.137.202.133]:59744 "EHLO
+        id S1727690AbgCTOYT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 20 Mar 2020 10:24:19 -0400
+Received: from bombadil.infradead.org ([198.137.202.133]:59774 "EHLO
         bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727207AbgCTOWd (ORCPT
+        with ESMTP id S1727236AbgCTOWe (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Mar 2020 10:22:33 -0400
+        Fri, 20 Mar 2020 10:22:34 -0400
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20170209; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=a3v6yDLu6YVVgdwzNLLzwkeJ8vT0YawbuKhMcViKfm0=; b=o94Py0hrY2AL21Hit1xuWJSO58
-        b3uQ1Vvk04RTNAbcWTzolol1KMnng7zWbWv52EwLbpj1XBoup/RzOPmz1V4raWQ3pQCrBs21nHaNv
-        dSNdUhpaDb8IOqTtc4tFiAITtcpZcFzqXjDMxerSgduKkfq7dtKNERhluzZ501Bh1NXH4HGBOL4ef
-        d4Yai/iczKhLrrO/a8Da2lhxeCUpzll/39IQrofVoeps/R8GaqM/3g8EdQ80KvS4tJMiqhp4s1TwF
-        g8FvwkzVXA7iGAStYHVgrJYN2/YmMDewTTgjZakUAsdlUcUqIm2D6OngLFKzrNCvt3WKyGA9zzGwm
-        UoY/5d1g==;
+        bh=MRxRO1fcwbFnyNnTRcoLLuE0j9WLLNVBpiFAzDcHLGo=; b=QIcbvGfZA3PeGw0fYUhbdqz6SR
+        RgrMY+rOF7L8CM9S/WFa2bEkx9vFrp29udQWW8L0PrK7WuSKP3z53dTw98tPq3Jgr/bDTc8eVbky6
+        rOUWqzb/Q4P31uLOhIH9jFMQdyagN+2MtzFHU8EEX0vgNw0AkKvjyVyZ0dBqQWhHWGbM9ub8ePtpC
+        aae7Dk3lcGbgWNHit9uRy9lUx2vIGoqePKDT/XJaMGh78pxENGo2GIukQPX2hAn43WWr4bddZP9rH
+        ByqFx1ZKTLHsrReJEjgiZ90r7LTz2OmBgvEOYWHJw6NndPF9D2J9yLew19Wnivz1q63l3h6+W9VGW
+        0RlSNrWQ==;
 Received: from willy by bombadil.infradead.org with local (Exim 4.92.3 #3 (Red Hat Linux))
-        id 1jFIXh-0000hn-CY; Fri, 20 Mar 2020 14:22:33 +0000
+        id 1jFIXh-0000iX-Nr; Fri, 20 Mar 2020 14:22:33 +0000
 From:   Matthew Wilcox <willy@infradead.org>
 To:     Andrew Morton <akpm@linux-foundation.org>
 Cc:     "Matthew Wilcox (Oracle)" <willy@infradead.org>,
@@ -42,12 +42,11 @@ Cc:     "Matthew Wilcox (Oracle)" <willy@infradead.org>,
         linux-erofs@lists.ozlabs.org, linux-ext4@vger.kernel.org,
         linux-f2fs-devel@lists.sourceforge.net, cluster-devel@redhat.com,
         ocfs2-devel@oss.oracle.com, linux-xfs@vger.kernel.org,
-        John Hubbard <jhubbard@nvidia.com>,
-        Dave Chinner <dchinner@redhat.com>,
+        Christoph Hellwig <hch@lst.de>,
         William Kucharski <william.kucharski@oracle.com>
-Subject: [PATCH v9 08/25] mm: rename readahead loop variable to 'i'
-Date:   Fri, 20 Mar 2020 07:22:14 -0700
-Message-Id: <20200320142231.2402-9-willy@infradead.org>
+Subject: [PATCH v9 14/25] mm: Document why we don't set PageReadahead
+Date:   Fri, 20 Mar 2020 07:22:20 -0700
+Message-Id: <20200320142231.2402-15-willy@infradead.org>
 X-Mailer: git-send-email 2.21.1
 In-Reply-To: <20200320142231.2402-1-willy@infradead.org>
 References: <20200320142231.2402-1-willy@infradead.org>
@@ -60,56 +59,35 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: "Matthew Wilcox (Oracle)" <willy@infradead.org>
 
-Change the type of page_idx to unsigned long, and rename it -- it's
-just a loop counter, not a page index.
+If the page is already in cache, we don't set PageReadahead on it.
 
-Suggested-by: John Hubbard <jhubbard@nvidia.com>
 Signed-off-by: Matthew Wilcox (Oracle) <willy@infradead.org>
-Reviewed-by: Dave Chinner <dchinner@redhat.com>
+Reviewed-by: Christoph Hellwig <hch@lst.de>
 Reviewed-by: William Kucharski <william.kucharski@oracle.com>
 ---
- mm/readahead.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ mm/readahead.c | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
 
 diff --git a/mm/readahead.c b/mm/readahead.c
-index 8a65d6bd97e0..7ce320854bad 100644
+index 8ee9036fd681..0afb55a49909 100644
 --- a/mm/readahead.c
 +++ b/mm/readahead.c
-@@ -163,13 +163,13 @@ void __do_page_cache_readahead(struct address_space *mapping,
- 	struct page *page;
- 	unsigned long end_index;	/* The last page we want to read */
- 	LIST_HEAD(page_pool);
--	int page_idx;
- 	loff_t isize = i_size_read(inode);
- 	gfp_t gfp_mask = readahead_gfp_mask(mapping);
- 	struct readahead_control rac = {
- 		.mapping = mapping,
- 		.file = filp,
- 	};
-+	unsigned long i;
+@@ -195,9 +195,12 @@ void page_cache_readahead_unbounded(struct address_space *mapping,
  
- 	if (isize == 0)
- 		return;
-@@ -179,8 +179,8 @@ void __do_page_cache_readahead(struct address_space *mapping,
- 	/*
- 	 * Preallocate as many pages as we will need.
- 	 */
--	for (page_idx = 0; page_idx < nr_to_read; page_idx++) {
--		pgoff_t page_offset = index + page_idx;
-+	for (i = 0; i < nr_to_read; i++) {
-+		pgoff_t page_offset = index + i;
- 
- 		if (page_offset > end_index)
- 			break;
-@@ -201,7 +201,7 @@ void __do_page_cache_readahead(struct address_space *mapping,
- 			break;
- 		page->index = page_offset;
- 		list_add(&page->lru, &page_pool);
--		if (page_idx == nr_to_read - lookahead_size)
-+		if (i == nr_to_read - lookahead_size)
- 			SetPageReadahead(page);
- 		rac._nr_pages++;
- 	}
+ 		if (page && !xa_is_value(page)) {
+ 			/*
+-			 * Page already present?  Kick off the current batch of
+-			 * contiguous pages before continuing with the next
+-			 * batch.
++			 * Page already present?  Kick off the current batch
++			 * of contiguous pages before continuing with the
++			 * next batch.  This page may be the one we would
++			 * have intended to mark as Readahead, but we don't
++			 * have a stable reference to this page, and it's
++			 * not worth getting one just for that.
+ 			 */
+ 			read_pages(&rac, &page_pool, true);
+ 			continue;
 -- 
 2.25.1
 

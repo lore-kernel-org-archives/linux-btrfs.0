@@ -2,191 +2,72 @@ Return-Path: <SRS0=zDud=5F=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 12B89C4332B
-	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Mar 2020 03:29:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2F017C4332D
+	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Mar 2020 14:05:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id DD61920714
-	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Mar 2020 03:29:44 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id ED0412072D
+	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Mar 2020 14:05:40 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=mpdesouza.com header.i=@mpdesouza.com header.b="Tv/l/Wcx"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="KGA9sdjQ"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727048AbgCTD3o (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 19 Mar 2020 23:29:44 -0400
-Received: from gateway30.websitewelcome.com ([192.185.197.25]:18107 "EHLO
-        gateway30.websitewelcome.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1726103AbgCTD3n (ORCPT
+        id S1726971AbgCTOFk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 20 Mar 2020 10:05:40 -0400
+Received: from bombadil.infradead.org ([198.137.202.133]:52268 "EHLO
+        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726809AbgCTOFk (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Mar 2020 23:29:43 -0400
-Received: from cm14.websitewelcome.com (cm14.websitewelcome.com [100.42.49.7])
-        by gateway30.websitewelcome.com (Postfix) with ESMTP id 4333A27FB
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Mar 2020 22:29:42 -0500 (CDT)
-Received: from br540.hostgator.com.br ([108.179.252.180])
-        by cmsmtp with SMTP
-        id F8LujQhFlXVkQF8LujhlTh; Thu, 19 Mar 2020 22:29:42 -0500
-X-Authority-Reason: nr=8
+        Fri, 20 Mar 2020 10:05:40 -0400
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=mpdesouza.com; s=default; h=Content-Transfer-Encoding:MIME-Version:
-        References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:
-        Content-Type:Content-ID:Content-Description:Resent-Date:Resent-From:
-        Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
-        List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-        bh=Y6uj2Arc6Jv66n5a65JZRSK32idgjM4QgUN2ISLmWZc=; b=Tv/l/WcxW6Hf2nH3mAPLaAmgZe
-        KjWmTm3MwG4McnNmqwd9YwWPFur1+OJld3iqL/7RD8loRGY6zoFhnPeQiBYeQYiWterpJoca5Zx0U
-        4rh+74yohPAhMgmrnkaA9vxjKIbkBCvIvIbQfYInlgb8hgQgmtr0BjRCjTXVk275KayK5Fz1kFfuw
-        i3PPdD829Xuybacv5SQgseZiZnkILw//nzKMTk0Ujj8FbyZqkoszWEoZ9SpesEtf18fVmozr9bxKK
-        2WxvFLp5g9A+9V1zxVEuDGTtl1hByN4RA75ivDHKUuKMwm2I6BqZ2gTiMfWkqSQIdjJ9jCIsTz/DL
-        6Nyn3QfQ==;
-Received: from [191.249.66.103] (port=39060 helo=hephaestus.prv.suse.net)
-        by br540.hostgator.com.br with esmtpsa (TLSv1.2:ECDHE-RSA-AES128-GCM-SHA256:128)
-        (Exim 4.92)
-        (envelope-from <marcos@mpdesouza.com>)
-        id 1jF8Lt-0023Ig-LT; Fri, 20 Mar 2020 00:29:42 -0300
-From:   Marcos Paulo de Souza <marcos@mpdesouza.com>
-To:     dsterba@suse.com, wqu@suse.com, linux-btrfs@vger.kernel.org
-Cc:     Marcos Paulo de Souza <mpdesouza@suse.com>
-Subject: [PATCHv2 2/2] btrfs-progs: replace: New argument to resize the fs after replace
-Date:   Fri, 20 Mar 2020 00:32:27 -0300
-Message-Id: <20200320033227.3721-3-marcos@mpdesouza.com>
-X-Mailer: git-send-email 2.25.0
-In-Reply-To: <20200320033227.3721-1-marcos@mpdesouza.com>
-References: <20200320033227.3721-1-marcos@mpdesouza.com>
+        d=infradead.org; s=bombadil.20170209; h=In-Reply-To:Content-Type:MIME-Version
+        :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+        Content-Transfer-Encoding:Content-ID:Content-Description;
+        bh=n/bVoNnai1Z8EXWktYzvjCdfjvG9IjTbEvaQWdguc00=; b=KGA9sdjQ6eq6QDNOVK8h4ctiJ1
+        /gV7+CS9MAOMaFFmpVVrRlxA2A1cNVTAH9Sq5UJPx/qrYuBmi1Cn0SvgaJ9d4i3ro7AOicxt8v2t4
+        RFWU+EulSXyA+okLM07zYfw4iM+Y5zW5srrU+S2L6xBeL5TXTsDCeAVmB2Ka1HEqzbb8NhjYostj4
+        +iautOBEwNfRV1kHmqzd5AeLbM0CYkK5fanTBby5q9JQHfRWJVf2vAPyXSQbayIfL6e5U+wLDCp8h
+        XuAiN304YJULVS0U4+uWWstaw97IsQcQ/+N9AJcUOANkwXJYfhC/KB2FU1ES0mz6wp6FFLAe+e6c2
+        Ic9Q557A==;
+Received: from hch by bombadil.infradead.org with local (Exim 4.92.3 #3 (Red Hat Linux))
+        id 1jFIHK-0002Cq-37; Fri, 20 Mar 2020 14:05:38 +0000
+Date:   Fri, 20 Mar 2020 07:05:38 -0700
+From:   Christoph Hellwig <hch@infradead.org>
+To:     Goldwyn Rodrigues <rgoldwyn@suse.de>
+Cc:     linux-fsdevel@vger.kernel.org, riteshh@linux.ibm.com,
+        linux-ext4@vger.kernel.org, hch@infradead.org,
+        darrick.wong@oracle.com, willy@infradead.org,
+        linux-btrfs@vger.kernel.org, Josef Bacik <josef@toxicpanda.com>
+Subject: Re: [PATCH v2] iomap: return partial I/O count on error in
+ iomap_dio_bio_actor
+Message-ID: <20200320140538.GA27895@infradead.org>
+References: <20200319150805.uaggnfue5xgaougx@fiona>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-AntiAbuse: This header was added to track abuse, please include it with any abuse report
-X-AntiAbuse: Primary Hostname - br540.hostgator.com.br
-X-AntiAbuse: Original Domain - vger.kernel.org
-X-AntiAbuse: Originator/Caller UID/GID - [47 12] / [47 12]
-X-AntiAbuse: Sender Address Domain - mpdesouza.com
-X-BWhitelist: no
-X-Source-IP: 191.249.66.103
-X-Source-L: No
-X-Exim-ID: 1jF8Lt-0023Ig-LT
-X-Source: 
-X-Source-Args: 
-X-Source-Dir: 
-X-Source-Sender: (hephaestus.prv.suse.net) [191.249.66.103]:39060
-X-Source-Auth: marcos@mpdesouza.com
-X-Email-Count: 10
-X-Source-Cap: bXBkZXNvNTM7bXBkZXNvNTM7YnI1NDAuaG9zdGdhdG9yLmNvbS5icg==
-X-Local-Domain: yes
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20200319150805.uaggnfue5xgaougx@fiona>
+X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Marcos Paulo de Souza <mpdesouza@suse.com>
+I spent a fair amount of time looking over this change, and I am
+starting to feel very bad about it.  iomap_apply() has pretty clear
+semantics of either return an error, or return the bytes processed,
+and in general these semantics work just fine.
 
-By using the -a flag on replace makes btrfs issue a resize ioctl after
-the replace finishes. This argument is a shortcut for
+The thing that breaks this concept is the btrfs submit_bio hook,
+which allows the file system to keep state for each bio actually
+submitted.  But I think you can simply keep the length internally
+in btrfs - use the space in iomap->private as a counter of how
+much was allocated, pass the iomap to the submit_io hook, and
+update it there, and then deal with the rest in ->iomap_end.
 
-btrfs replace start -f 3 /dev/sdf BTRFS/
-btrfs fi resize 3:max BTRFS/
-
-The -a stands for "automatically resize"
-
-Fixes: #21
-
-Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
----
-Changes from v1:
-* Reworded the help message and the docs telling the user that the fs will be
-  resized to it's max size (suggested by Wenruo)
-* Added a warning message saying that the resize failed, asking the user to
-  resize manually. (suggested by Wenruo)
-
- Documentation/btrfs-replace.asciidoc |  5 ++++-
- cmds/replace.c                       | 21 +++++++++++++++++++--
- 2 files changed, 23 insertions(+), 3 deletions(-)
-
-diff --git a/Documentation/btrfs-replace.asciidoc b/Documentation/btrfs-replace.asciidoc
-index b73bf1b3..07cf2ae9 100644
---- a/Documentation/btrfs-replace.asciidoc
-+++ b/Documentation/btrfs-replace.asciidoc
-@@ -18,7 +18,7 @@ SUBCOMMAND
- *cancel* <mount_point>::
- Cancel a running device replace operation.
- 
--*start* [-Bfr] <srcdev>|<devid> <targetdev> <path>::
-+*start* [-aBfr] <srcdev>|<devid> <targetdev> <path>::
- Replace device of a btrfs filesystem.
- +
- On a live filesystem, duplicate the data to the target device which
-@@ -53,6 +53,9 @@ never allowed to be used as the <targetdev>.
- +
- -B::::
- no background replace.
-++a::::
-+automatically resizes the filesystem to it's max size if the <targetdev> is
-+bigger than <srcdev>.
- 
- *status* [-1] <mount_point>::
- Print status and progress information of a running device replace operation.
-diff --git a/cmds/replace.c b/cmds/replace.c
-index 2321aa15..8761bfc0 100644
---- a/cmds/replace.c
-+++ b/cmds/replace.c
-@@ -91,7 +91,7 @@ static int dev_replace_handle_sigint(int fd)
- }
- 
- static const char *const cmd_replace_start_usage[] = {
--	"btrfs replace start [-Bfr] <srcdev>|<devid> <targetdev> <mount_point>",
-+	"btrfs replace start [-aBfr] <srcdev>|<devid> <targetdev> <mount_point>",
- 	"Replace device of a btrfs filesystem.",
- 	"On a live filesystem, duplicate the data to the target device which",
- 	"is currently stored on the source device. If the source device is not",
-@@ -104,6 +104,8 @@ static const char *const cmd_replace_start_usage[] = {
- 	"from the system, you have to use the <devid> parameter format.",
- 	"The <targetdev> needs to be same size or larger than the <srcdev>.",
- 	"",
-+	"-a     automatically resizes the filesystem to it's max size if the",
-+	"       <targetdev> is bigger than <srcdev>",
- 	"-r     only read from <srcdev> if no other zero-defect mirror exists",
- 	"       (enable this if your drive has lots of read errors, the access",
- 	"       would be very slow)",
-@@ -129,6 +131,7 @@ static int cmd_replace_start(const struct cmd_struct *cmd,
- 	char *path;
- 	char *srcdev;
- 	char *dstdev = NULL;
-+	bool auto_resize = false;
- 	int avoid_reading_from_srcdev = 0;
- 	int force_using_targetdev = 0;
- 	u64 dstdev_block_count;
-@@ -138,8 +141,11 @@ static int cmd_replace_start(const struct cmd_struct *cmd,
- 	u64 dstdev_size;
- 
- 	optind = 0;
--	while ((c = getopt(argc, argv, "Brf")) != -1) {
-+	while ((c = getopt(argc, argv, "aBrf")) != -1) {
- 		switch (c) {
-+		case 'a':
-+			auto_resize = true;
-+			break;
- 		case 'B':
- 			do_not_background = 1;
- 			break;
-@@ -309,6 +315,17 @@ static int cmd_replace_start(const struct cmd_struct *cmd,
- 			goto leave_with_error;
- 		}
- 	}
-+
-+	if (ret == 0 && auto_resize && dstdev_size > srcdev_size) {
-+		char amount[BTRFS_PATH_NAME_MAX + 1];
-+		snprintf(amount, BTRFS_PATH_NAME_MAX, "%s:max", srcdev);
-+
-+		if (resize_filesystem(amount, path)) {
-+			warning("resize failed, please resize the filesystem manually");
-+			goto leave_with_error;
-+		}
-+	}
-+
- 	close_file_or_dir(fdmnt, dirstream);
- 	return 0;
- 
--- 
-2.25.0
-
+That assumes ->iomap_end actually is the right place - can someone
+explain what the expected call site for __endio_write_update_ordered
+is?  It kinda sorta looks to me like something that would want to
+be called after I/O completion, not after I/O submission, but maybe
+I misunderstand the code.

@@ -2,66 +2,126 @@ Return-Path: <SRS0=Lw6u=5H=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
-	SPF_HELO_NONE,SPF_PASS autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A7D2EC54FCF
-	for <linux-btrfs@archiver.kernel.org>; Sun, 22 Mar 2020 18:40:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E5D8EC1975A
+	for <linux-btrfs@archiver.kernel.org>; Sun, 22 Mar 2020 23:49:36 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 7D1E420724
-	for <linux-btrfs@archiver.kernel.org>; Sun, 22 Mar 2020 18:40:10 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1584902410;
-	bh=JQVVJ1Nx7F+YEJ+mzsN8JazYuZhxd4EDSs9Czs3OvIY=;
-	h=Subject:From:In-Reply-To:References:Date:To:Cc:List-ID:From;
-	b=tCNsgtHdGOd3lt+fMmnHm+ExzXWDED55Dv7rvVQJpojvdM3K5eyYEO+ch82g/99tu
-	 xZEpH360ud5OeTRunj1CagOXGTtG8CZeR1qSIE0Ndp+0sRssBvmFw4a+ozpPkTSaGL
-	 uB1Nt5YJkvE7E+U3hz1mVWB6OEqpjUQmXtoaGEBU=
+	by mail.kernel.org (Postfix) with ESMTP id BFE892072D
+	for <linux-btrfs@archiver.kernel.org>; Sun, 22 Mar 2020 23:49:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726082AbgCVSkH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 22 Mar 2020 14:40:07 -0400
-Received: from mail.kernel.org ([198.145.29.99]:46460 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725785AbgCVSkH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 22 Mar 2020 14:40:07 -0400
-Subject: Re: [GIT PULL] Btrfs fixes for 5.6-rc7
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1584902407;
-        bh=JQVVJ1Nx7F+YEJ+mzsN8JazYuZhxd4EDSs9Czs3OvIY=;
-        h=From:In-Reply-To:References:Date:To:Cc:From;
-        b=AClqTZmkAOqkER3KxzCSZAUOy8pM9T/PfmLoepgBAMbx/XWVehqwgNjnKtS54yjJS
-         jHebEd3LWbNZMH8MORFipPGvCkBNRAS6M4Jzzqk/rHchjczcBRYvZD4SN42+RhkJHE
-         h72xbOfwgZYd1jXEjEaMDrBFcjsWPQA4xkcjKFLk=
-From:   pr-tracker-bot@kernel.org
-In-Reply-To: <cover.1584893030.git.dsterba@suse.com>
-References: <cover.1584893030.git.dsterba@suse.com>
-X-PR-Tracked-List-Id: <linux-kernel.vger.kernel.org>
-X-PR-Tracked-Message-Id: <cover.1584893030.git.dsterba@suse.com>
-X-PR-Tracked-Remote: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.6-rc6-tag
-X-PR-Tracked-Commit-Id: d8e6fd5c7991033037842b32c9774370a038e902
-X-PR-Merge-Tree: torvalds/linux.git
-X-PR-Merge-Refname: refs/heads/master
-X-PR-Merge-Commit-Id: 67d584e33e54c3f33c8541928aa7115388c97433
-Message-Id: <158490240717.3351.13363017113089060704.pr-tracker-bot@kernel.org>
-Date:   Sun, 22 Mar 2020 18:40:07 +0000
-To:     David Sterba <dsterba@suse.com>
-Cc:     torvalds@linux-foundation.org, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+        id S1726945AbgCVXtf convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 22 Mar 2020 19:49:35 -0400
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:40402 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726872AbgCVXtf (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 22 Mar 2020 19:49:35 -0400
+Received: by james.kirk.hungrycats.org (Postfix, from userid 1002)
+        id 9764F62716C; Sun, 22 Mar 2020 19:49:34 -0400 (EDT)
+Date:   Sun, 22 Mar 2020 19:49:34 -0400
+From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To:     Goffredo Baroncelli <kreijack@inwind.it>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Question: how understand the raid profile of a btrfs filesystem
+Message-ID: <20200322234934.GE2693@hungrycats.org>
+References: <517dac49-5f57-2754-2134-92d716e50064@alice.it>
+ <20200321032911.GR13306@hungrycats.org>
+ <fd306b0b-8987-e1e7-dee5-4502e34902c3@inwind.it>
+ <20200321232638.GD2693@hungrycats.org>
+ <3fb93a14-3608-0f64-cf5c-ca37869a76ef@inwind.it>
+ <d472962c-c669-3004-7ab4-be65a6ed72ba@inwind.it>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: 8BIT
+In-Reply-To: <d472962c-c669-3004-7ab4-be65a6ed72ba@inwind.it>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The pull request you sent on Sun, 22 Mar 2020 17:37:40 +0100:
+On Sun, Mar 22, 2020 at 09:38:30AM +0100, Goffredo Baroncelli wrote:
+> On 3/22/20 9:34 AM, Goffredo Baroncelli wrote:
+> 
+> > 
+> > To me it seems complicated to
+> [sorry I push the send button too early]
+> 
+> To me it seems too complicated (and error prone) to derive the target profile from an analysis of the filesystem.
+> 
+> Any thoughts ?
 
-> git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.6-rc6-tag
+I still don't understand the use case you are trying to support.
 
-has been merged into torvalds/linux.git:
-https://git.kernel.org/torvalds/c/67d584e33e54c3f33c8541928aa7115388c97433
+There are 3 states for a btrfs filesystem:
 
-Thank you!
+	1.  All block groups use the same profile.  Pick any one,
+	use its profile for future block groups.  Avoid deleting the
+	last one.  Simple and easy to implement.
 
--- 
-Deet-doot-dot, I am a bot.
-https://korg.wiki.kernel.org/userdoc/prtracker
+	2.  A conversion is in progress.  Look in fs_info->balance_ctl
+	for a 'convert' filter.  If there is one, that's the profile for
+	new block groups.  Old block groups will be emptied and destroyed
+	by conversion, and then we automatically go back to state #1.
+
+	3.  A conversion is interrupted prior to completion.  Sysadmin is
+	expected to proceed immediately back to state #2, possibly after
+	taking any necessary recovery actions that triggered entry into
+	state #3.  It doesn't really matter what the current allocation
+	profile is, since it is likely to change before we allocate
+	any more block groups.
+
+You seem to be trying to sustain or support a filesystem in state #3 for
+a prolonged period of time.  Why would we do that?  If your use case is
+providing information or guidance to a user, tell them how to get back
+to state #2 ASAP, so that they can then return to state #1 where they
+should be.
+
+Suppose your use case does involve staying in state #3 for a prolonged
+period of time--let's say e.g. you want to be able to use file attributes
+to put some file data on single profile while putting other files on raid5
+profile.  That use case would need to come with a bunch of infrastructure
+to support it, i.e. you'd need to define what the attributes are, and
+how btrfs could map those to device subsets and raid profiles.  None of
+this exists, and even if it did, it would conflict with the "store the
+[singular] target profile on disk" idea.
+
+There could be a warning message in dmesg if we enter state #3.
+This message would appear after a converting balance is cancelled or
+aborted, and on mount when we scan block groups (which we would still need
+to do even after we added a "target profile" field to the superblock).
+Userspace like 'btrfs fi df' could also put out a warning like "multiple
+allocation profiles detected, but conversion is not in progress.  Please
+finish conversion at your earliest convenience to avoid disappointment."
+I don't see the need to do anything more about it.
+
+We only get to state #3 if the automation has already failed, or has
+been explicitly cancelled at sysadmin request.  It is better to wait
+for the sysadmin to decide what to do next, especially if the sysadmin's
+prior choice led to us entering this state (e.g. not enough space to
+complete a conversion to the target profile, so we can no longer use
+the target profile for new allocations).  Picking a target profile
+at random (from the set of profiles already used in the filesystem)
+is no better or worse than any deterministic algorithm--it will always
+be wrong in some situations, and a good choice in other situations.
+
+I'd even consider removing the heuristics that are already there for
+prioritizing profiles.  They are just surprising and undocumented
+behavior, and it would be better to document it as "random, BTW you
+should finish your conversion now."  It doesn't help if e.g. you
+want to convert from raid6 to raid1, since the heuristic assumes you
+only want to go the other way.
+
+
+> BR
+> G.Baroncelli
+> 
+> -- 
+> gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+> Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+> 

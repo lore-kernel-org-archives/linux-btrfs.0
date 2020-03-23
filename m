@@ -7,33 +7,33 @@ X-Spam-Status: No, score=-9.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 84A73C54FD4
-	for <linux-btrfs@archiver.kernel.org>; Mon, 23 Mar 2020 20:24:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D325AC54FD0
+	for <linux-btrfs@archiver.kernel.org>; Mon, 23 Mar 2020 20:24:58 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5C30820780
-	for <linux-btrfs@archiver.kernel.org>; Mon, 23 Mar 2020 20:24:53 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9B82120786
+	for <linux-btrfs@archiver.kernel.org>; Mon, 23 Mar 2020 20:24:58 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="cful21T9"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="Bl0IT1ha"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727301AbgCWUXH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 23 Mar 2020 16:23:07 -0400
-Received: from bombadil.infradead.org ([198.137.202.133]:36930 "EHLO
+        id S1727272AbgCWUXG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 23 Mar 2020 16:23:06 -0400
+Received: from bombadil.infradead.org ([198.137.202.133]:36894 "EHLO
         bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727282AbgCWUXH (ORCPT
+        with ESMTP id S1725830AbgCWUXF (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 23 Mar 2020 16:23:07 -0400
+        Mon, 23 Mar 2020 16:23:05 -0400
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20170209; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=a3v6yDLu6YVVgdwzNLLzwkeJ8vT0YawbuKhMcViKfm0=; b=cful21T9r3bVU98Icr24dfrJyn
-        kHFGsNuTm37ajb0PTC7EhOpjwRvV2C8UWCqRCj4X5NaN4lqUXZEJv2zsnY3tsXREFwBthl696zrh5
-        w/n3es3aFrUXZcPXNIhDGIfeT7wMfXMu44CfU1sTA+yqYfNZ8FuwAM16U8W2tOJ+zQAyPbag4FZrI
-        7AdhoSkTthn9CJYF+rTvr4JzL6GJ3IL/HECYDus+kk6x6XQtEFdifvYUjajTPg5GGPhG/SDspAcec
-        64yEPuz4hF66+ytNKqmPHAhGNlfKKWbVSyYYhRLD/aFyEi0XwYBbPyqFEjUAraa7Pzr0/Bi+68CSF
-        e9nRWANA==;
+        bh=JFRF4LsFsvvc8HAYc+8jlXVGxAuiY2/t/XzP76877Pg=; b=Bl0IT1hasawOgERx/BDTEE9lBO
+        LKthTOKWHeI0VlEFHI9yHNOdKb+OFuea8WTlZrivlQC893dhUg2goDmA2oeKzTxQp7N2LHWcElDzD
+        BE5fzIjocSKiCgavNNGGBDYXB+485hLPgqukzvhc4m7PyAKwwwabcq9LX0KyMSkFE/ys47hK5C8z9
+        CHYIYq7iv+fN94tDgDHWn5Al1WIN+iZ9LyuEsicXyAq72dpqdxmhqKcHU9r3XAW/39/920sHttbro
+        bjqWSj+R35xX53mGrBEirz1aaAlxLhacT7g8NKAUAtBtndYyjqWjLqTx19lDo72wyOp//wXoNHVS2
+        iZ533bVg==;
 Received: from willy by bombadil.infradead.org with local (Exim 4.92.3 #3 (Red Hat Linux))
-        id 1jGTbB-0003Ux-KV; Mon, 23 Mar 2020 20:23:01 +0000
+        id 1jGTbB-0003Ul-HO; Mon, 23 Mar 2020 20:23:01 +0000
 From:   Matthew Wilcox <willy@infradead.org>
 To:     Andrew Morton <akpm@linux-foundation.org>
 Cc:     "Matthew Wilcox (Oracle)" <willy@infradead.org>,
@@ -42,12 +42,11 @@ Cc:     "Matthew Wilcox (Oracle)" <willy@infradead.org>,
         linux-erofs@lists.ozlabs.org, linux-ext4@vger.kernel.org,
         linux-f2fs-devel@lists.sourceforge.net, cluster-devel@redhat.com,
         ocfs2-devel@oss.oracle.com, linux-xfs@vger.kernel.org,
-        John Hubbard <jhubbard@nvidia.com>,
-        Dave Chinner <dchinner@redhat.com>,
+        Christoph Hellwig <hch@lst.de>,
         William Kucharski <william.kucharski@oracle.com>
-Subject: [PATCH v10 08/25] mm: rename readahead loop variable to 'i'
-Date:   Mon, 23 Mar 2020 13:22:42 -0700
-Message-Id: <20200323202259.13363-9-willy@infradead.org>
+Subject: [PATCH v10 05/25] mm: Add new readahead_control API
+Date:   Mon, 23 Mar 2020 13:22:39 -0700
+Message-Id: <20200323202259.13363-6-willy@infradead.org>
 X-Mailer: git-send-email 2.21.1
 In-Reply-To: <20200323202259.13363-1-willy@infradead.org>
 References: <20200323202259.13363-1-willy@infradead.org>
@@ -60,56 +59,169 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: "Matthew Wilcox (Oracle)" <willy@infradead.org>
 
-Change the type of page_idx to unsigned long, and rename it -- it's
-just a loop counter, not a page index.
+Filesystems which implement the upcoming ->readahead method will get
+their pages by calling readahead_page() or readahead_page_batch().
+These functions support large pages, even though none of the filesystems
+to be converted do yet.
 
-Suggested-by: John Hubbard <jhubbard@nvidia.com>
 Signed-off-by: Matthew Wilcox (Oracle) <willy@infradead.org>
-Reviewed-by: Dave Chinner <dchinner@redhat.com>
+Reviewed-by: Christoph Hellwig <hch@lst.de>
 Reviewed-by: William Kucharski <william.kucharski@oracle.com>
 ---
- mm/readahead.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ include/linux/pagemap.h | 140 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 140 insertions(+)
 
-diff --git a/mm/readahead.c b/mm/readahead.c
-index 8a65d6bd97e0..7ce320854bad 100644
---- a/mm/readahead.c
-+++ b/mm/readahead.c
-@@ -163,13 +163,13 @@ void __do_page_cache_readahead(struct address_space *mapping,
- 	struct page *page;
- 	unsigned long end_index;	/* The last page we want to read */
- 	LIST_HEAD(page_pool);
--	int page_idx;
- 	loff_t isize = i_size_read(inode);
- 	gfp_t gfp_mask = readahead_gfp_mask(mapping);
- 	struct readahead_control rac = {
- 		.mapping = mapping,
- 		.file = filp,
- 	};
-+	unsigned long i;
+diff --git a/include/linux/pagemap.h b/include/linux/pagemap.h
+index 7d43a464b2a4..89fd6a62bfa5 100644
+--- a/include/linux/pagemap.h
++++ b/include/linux/pagemap.h
+@@ -636,6 +636,146 @@ static inline int add_to_page_cache(struct page *page,
+ 	return error;
+ }
  
- 	if (isize == 0)
- 		return;
-@@ -179,8 +179,8 @@ void __do_page_cache_readahead(struct address_space *mapping,
- 	/*
- 	 * Preallocate as many pages as we will need.
- 	 */
--	for (page_idx = 0; page_idx < nr_to_read; page_idx++) {
--		pgoff_t page_offset = index + page_idx;
-+	for (i = 0; i < nr_to_read; i++) {
-+		pgoff_t page_offset = index + i;
- 
- 		if (page_offset > end_index)
- 			break;
-@@ -201,7 +201,7 @@ void __do_page_cache_readahead(struct address_space *mapping,
- 			break;
- 		page->index = page_offset;
- 		list_add(&page->lru, &page_pool);
--		if (page_idx == nr_to_read - lookahead_size)
-+		if (i == nr_to_read - lookahead_size)
- 			SetPageReadahead(page);
- 		rac._nr_pages++;
- 	}
++/**
++ * struct readahead_control - Describes a readahead request.
++ *
++ * A readahead request is for consecutive pages.  Filesystems which
++ * implement the ->readahead method should call readahead_page() or
++ * readahead_page_batch() in a loop and attempt to start I/O against
++ * each page in the request.
++ *
++ * Most of the fields in this struct are private and should be accessed
++ * by the functions below.
++ *
++ * @file: The file, used primarily by network filesystems for authentication.
++ *	  May be NULL if invoked internally by the filesystem.
++ * @mapping: Readahead this filesystem object.
++ */
++struct readahead_control {
++	struct file *file;
++	struct address_space *mapping;
++/* private: use the readahead_* accessors instead */
++	pgoff_t _index;
++	unsigned int _nr_pages;
++	unsigned int _batch_count;
++};
++
++/**
++ * readahead_page - Get the next page to read.
++ * @rac: The current readahead request.
++ *
++ * Context: The page is locked and has an elevated refcount.  The caller
++ * should decreases the refcount once the page has been submitted for I/O
++ * and unlock the page once all I/O to that page has completed.
++ * Return: A pointer to the next page, or %NULL if we are done.
++ */
++static inline struct page *readahead_page(struct readahead_control *rac)
++{
++	struct page *page;
++
++	BUG_ON(rac->_batch_count > rac->_nr_pages);
++	rac->_nr_pages -= rac->_batch_count;
++	rac->_index += rac->_batch_count;
++
++	if (!rac->_nr_pages) {
++		rac->_batch_count = 0;
++		return NULL;
++	}
++
++	page = xa_load(&rac->mapping->i_pages, rac->_index);
++	VM_BUG_ON_PAGE(!PageLocked(page), page);
++	rac->_batch_count = hpage_nr_pages(page);
++
++	return page;
++}
++
++static inline unsigned int __readahead_batch(struct readahead_control *rac,
++		struct page **array, unsigned int array_sz)
++{
++	unsigned int i = 0;
++	XA_STATE(xas, &rac->mapping->i_pages, 0);
++	struct page *page;
++
++	BUG_ON(rac->_batch_count > rac->_nr_pages);
++	rac->_nr_pages -= rac->_batch_count;
++	rac->_index += rac->_batch_count;
++	rac->_batch_count = 0;
++
++	xas_set(&xas, rac->_index);
++	rcu_read_lock();
++	xas_for_each(&xas, page, rac->_index + rac->_nr_pages - 1) {
++		VM_BUG_ON_PAGE(!PageLocked(page), page);
++		VM_BUG_ON_PAGE(PageTail(page), page);
++		array[i++] = page;
++		rac->_batch_count += hpage_nr_pages(page);
++
++		/*
++		 * The page cache isn't using multi-index entries yet,
++		 * so the xas cursor needs to be manually moved to the
++		 * next index.  This can be removed once the page cache
++		 * is converted.
++		 */
++		if (PageHead(page))
++			xas_set(&xas, rac->_index + rac->_batch_count);
++
++		if (i == array_sz)
++			break;
++	}
++	rcu_read_unlock();
++
++	return i;
++}
++
++/**
++ * readahead_page_batch - Get a batch of pages to read.
++ * @rac: The current readahead request.
++ * @array: An array of pointers to struct page.
++ *
++ * Context: The pages are locked and have an elevated refcount.  The caller
++ * should decreases the refcount once the page has been submitted for I/O
++ * and unlock the page once all I/O to that page has completed.
++ * Return: The number of pages placed in the array.  0 indicates the request
++ * is complete.
++ */
++#define readahead_page_batch(rac, array)				\
++	__readahead_batch(rac, array, ARRAY_SIZE(array))
++
++/**
++ * readahead_pos - The byte offset into the file of this readahead request.
++ * @rac: The readahead request.
++ */
++static inline loff_t readahead_pos(struct readahead_control *rac)
++{
++	return (loff_t)rac->_index * PAGE_SIZE;
++}
++
++/**
++ * readahead_length - The number of bytes in this readahead request.
++ * @rac: The readahead request.
++ */
++static inline loff_t readahead_length(struct readahead_control *rac)
++{
++	return (loff_t)rac->_nr_pages * PAGE_SIZE;
++}
++
++/**
++ * readahead_index - The index of the first page in this readahead request.
++ * @rac: The readahead request.
++ */
++static inline pgoff_t readahead_index(struct readahead_control *rac)
++{
++	return rac->_index;
++}
++
++/**
++ * readahead_count - The number of pages in this readahead request.
++ * @rac: The readahead request.
++ */
++static inline unsigned int readahead_count(struct readahead_control *rac)
++{
++	return rac->_nr_pages;
++}
++
+ static inline unsigned long dir_pages(struct inode *inode)
+ {
+ 	return (unsigned long)(inode->i_size + PAGE_SIZE - 1) >>
 -- 
 2.25.1
 

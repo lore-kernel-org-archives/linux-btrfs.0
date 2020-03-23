@@ -6,27 +6,27 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 828DBC4332E
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A0A92C4332B
 	for <linux-btrfs@archiver.kernel.org>; Mon, 23 Mar 2020 10:25:45 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 6028B20722
+	by mail.kernel.org (Postfix) with ESMTP id 80A2B20769
 	for <linux-btrfs@archiver.kernel.org>; Mon, 23 Mar 2020 10:25:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727986AbgCWKZo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 23 Mar 2020 06:25:44 -0400
-Received: from mx2.suse.de ([195.135.220.15]:38928 "EHLO mx2.suse.de"
+        id S1727989AbgCWKZp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 23 Mar 2020 06:25:45 -0400
+Received: from mx2.suse.de ([195.135.220.15]:39050 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727948AbgCWKZo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 23 Mar 2020 06:25:44 -0400
+        id S1727983AbgCWKZp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 23 Mar 2020 06:25:45 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id A91E2AF79
-        for <linux-btrfs@vger.kernel.org>; Mon, 23 Mar 2020 10:25:41 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id EBE61B2E9
+        for <linux-btrfs@vger.kernel.org>; Mon, 23 Mar 2020 10:25:42 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 25/40] btrfs: Rename backref_cache_cleanup() to btrfs_backref_release_cache() and move it to backref.c
-Date:   Mon, 23 Mar 2020 18:24:01 +0800
-Message-Id: <20200323102416.112862-26-wqu@suse.com>
+Subject: [PATCH 27/40] btrfs: Rename should_ignore_root() to btrfs_should_ignore_reloc_root() and export it
+Date:   Mon, 23 Mar 2020 18:24:03 +0800
+Message-Id: <20200323102416.112862-28-wqu@suse.com>
 X-Mailer: git-send-email 2.25.2
 In-Reply-To: <20200323102416.112862-1-wqu@suse.com>
 References: <20200323102416.112862-1-wqu@suse.com>
@@ -37,116 +37,80 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Since we're releasing all existing nodes/edges, other than cleanup the
-mess after error, "release" is a more proper naming here.
+This function is mostly single purpose to relocation backref cache, but
+since we're moving the main part of backref cache to backref.c, we need
+to export such function.
+
+And to avoid confusing, rename the function to
+btrfs_should_ignore_reloc_root() make the name a little more clear.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/backref.c    | 30 ++++++++++++++++++++++++++++++
- fs/btrfs/backref.h    |  3 +++
- fs/btrfs/relocation.c | 32 +-------------------------------
- 3 files changed, 34 insertions(+), 31 deletions(-)
+ fs/btrfs/ctree.h      |  1 +
+ fs/btrfs/relocation.c | 10 ++++++----
+ 2 files changed, 7 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index 0c8950750682..e1bf23b2bbcd 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -2553,3 +2553,33 @@ void btrfs_backref_cleanup_node(struct btrfs_backref_cache *cache,
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index b57bb3e5f1f2..7ee38faf91e8 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3383,6 +3383,7 @@ int btrfs_reloc_post_snapshot(struct btrfs_trans_handle *trans,
+ 			      struct btrfs_pending_snapshot *pending);
+ struct btrfs_root *find_reloc_root(struct btrfs_fs_info *fs_info,
+ 				   u64 bytenr);
++int btrfs_should_ignore_reloc_root(struct btrfs_root *root);
  
- 	btrfs_backref_drop_node(cache, node);
- }
-+
-+void btrfs_backref_release_cache(struct btrfs_backref_cache *cache)
-+{
-+	struct btrfs_backref_node *node;
-+	int i;
-+
-+	while (!list_empty(&cache->detached)) {
-+		node = list_entry(cache->detached.next,
-+				  struct btrfs_backref_node, list);
-+		btrfs_backref_cleanup_node(cache, node);
-+	}
-+
-+	while (!list_empty(&cache->leaves)) {
-+		node = list_entry(cache->leaves.next,
-+				  struct btrfs_backref_node, lower);
-+		btrfs_backref_cleanup_node(cache, node);
-+	}
-+
-+	cache->last_trans = 0;
-+
-+	for (i = 0; i < BTRFS_MAX_LEVEL; i++)
-+		ASSERT(list_empty(&cache->pending[i]));
-+	ASSERT(list_empty(&cache->pending_edge));
-+	ASSERT(list_empty(&cache->useless_node));
-+	ASSERT(list_empty(&cache->changed));
-+	ASSERT(list_empty(&cache->detached));
-+	ASSERT(RB_EMPTY_ROOT(&cache->rb_root));
-+	ASSERT(!cache->nr_nodes);
-+	ASSERT(!cache->nr_edges);
-+}
-diff --git a/fs/btrfs/backref.h b/fs/btrfs/backref.h
-index 068a28c8e37b..60ee191a71fe 100644
---- a/fs/btrfs/backref.h
-+++ b/fs/btrfs/backref.h
-@@ -358,4 +358,7 @@ static inline void btrfs_backref_drop_node(struct btrfs_backref_cache *tree,
-  */
- void btrfs_backref_cleanup_node(struct btrfs_backref_cache *cache,
- 				struct btrfs_backref_node *node);
-+
-+/* Release all nodes/edges from current cache */
-+void btrfs_backref_release_cache(struct btrfs_backref_cache *cache);
- #endif
+ /* scrub.c */
+ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
 diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 4c687318f70b..2f241b542f6b 100644
+index b54c78f39f25..29bf34b1114c 100644
 --- a/fs/btrfs/relocation.c
 +++ b/fs/btrfs/relocation.c
-@@ -182,36 +182,6 @@ static void mapping_tree_init(struct mapping_tree *tree)
- 	spin_lock_init(&tree->lock);
+@@ -312,7 +312,8 @@ static bool reloc_root_is_dead(struct btrfs_root *root)
+  *
+  * Reloc tree after swap is considered dead, thus not considered as valid.
+  * This is enough for most callers, as they don't distinguish dead reloc root
+- * from no reloc root.  But should_ignore_root() below is a special case.
++ * from no reloc root.  But btrfs_should_ignore_reloc_root() below is a
++ * special case.
+  */
+ static bool have_reloc_root(struct btrfs_root *root)
+ {
+@@ -323,7 +324,7 @@ static bool have_reloc_root(struct btrfs_root *root)
+ 	return true;
  }
  
--static void backref_cache_cleanup(struct btrfs_backref_cache *cache)
--{
--	struct btrfs_backref_node *node;
--	int i;
--
--	while (!list_empty(&cache->detached)) {
--		node = list_entry(cache->detached.next,
--				  struct btrfs_backref_node, list);
--		btrfs_backref_cleanup_node(cache, node);
--	}
--
--	while (!list_empty(&cache->leaves)) {
--		node = list_entry(cache->leaves.next,
--				  struct btrfs_backref_node, lower);
--		btrfs_backref_cleanup_node(cache, node);
--	}
--
--	cache->last_trans = 0;
--
--	for (i = 0; i < BTRFS_MAX_LEVEL; i++)
--		ASSERT(list_empty(&cache->pending[i]));
--	ASSERT(list_empty(&cache->pending_edge));
--	ASSERT(list_empty(&cache->useless_node));
--	ASSERT(list_empty(&cache->changed));
--	ASSERT(list_empty(&cache->detached));
--	ASSERT(RB_EMPTY_ROOT(&cache->rb_root));
--	ASSERT(!cache->nr_nodes);
--	ASSERT(!cache->nr_edges);
--}
--
- static void backref_tree_panic(struct rb_node *rb_node, int errno, u64 bytenr)
+-static int should_ignore_root(struct btrfs_root *root)
++int btrfs_should_ignore_reloc_root(struct btrfs_root *root)
  {
+ 	struct btrfs_root *reloc_root;
  
-@@ -4082,7 +4052,7 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
- 	rc->create_reloc_tree = 0;
- 	set_reloc_control(rc);
- 
--	backref_cache_cleanup(&rc->backref_cache);
-+	btrfs_backref_release_cache(&rc->backref_cache);
- 	btrfs_block_rsv_release(fs_info, rc->block_rsv, (u64)-1);
- 
- 	err = prepare_to_merge(rc, err);
+@@ -349,6 +350,7 @@ static int should_ignore_root(struct btrfs_root *root)
+ 	 */
+ 	return 1;
+ }
++
+ /*
+  * find reloc tree by address of tree root
+  */
+@@ -494,7 +496,7 @@ static int handle_indirect_tree_backref(struct btrfs_backref_cache *cache,
+ 		/* tree root */
+ 		ASSERT(btrfs_root_bytenr(&root->root_item) ==
+ 		       cur->bytenr);
+-		if (should_ignore_root(root)) {
++		if (btrfs_should_ignore_reloc_root(root)) {
+ 			btrfs_put_root(root);
+ 			list_add(&cur->list, &cache->useless_node);
+ 		} else {
+@@ -535,7 +537,7 @@ static int handle_indirect_tree_backref(struct btrfs_backref_cache *cache,
+ 		if (!path->nodes[level]) {
+ 			ASSERT(btrfs_root_bytenr(&root->root_item) ==
+ 			       lower->bytenr);
+-			if (should_ignore_root(root)) {
++			if (btrfs_should_ignore_reloc_root(root)) {
+ 				btrfs_put_root(root);
+ 				list_add(&lower->list, &cache->useless_node);
+ 			} else {
 -- 
 2.25.2
 

@@ -2,118 +2,68 @@ Return-Path: <SRS0=rDfT=5I=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.3 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,
-	SPF_PASS,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4BE5FC4332B
-	for <linux-btrfs@archiver.kernel.org>; Mon, 23 Mar 2020 12:51:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 19CA4C3F2CD
+	for <linux-btrfs@archiver.kernel.org>; Mon, 23 Mar 2020 17:11:22 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1562820735
-	for <linux-btrfs@archiver.kernel.org>; Mon, 23 Mar 2020 12:51:26 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="BxeA6Ls1"
+	by mail.kernel.org (Postfix) with ESMTP id E71F12074D
+	for <linux-btrfs@archiver.kernel.org>; Mon, 23 Mar 2020 17:11:21 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727881AbgCWMvZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 23 Mar 2020 08:51:25 -0400
-Received: from mail-qv1-f66.google.com ([209.85.219.66]:45431 "EHLO
-        mail-qv1-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727627AbgCWMvY (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 23 Mar 2020 08:51:24 -0400
-Received: by mail-qv1-f66.google.com with SMTP id g4so354015qvo.12
-        for <linux-btrfs@vger.kernel.org>; Mon, 23 Mar 2020 05:51:24 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=subject:to:cc:references:from:message-id:date:user-agent
-         :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=M83pCfW4UR/+hTYKgGBSJvkvkUInpjBt2rUVsG0xoLo=;
-        b=BxeA6Ls1JR9XZXOx7QTvWeFA8xi6at1kjnDwfQegDQYFbzJAS7lt6+db2CEG/WpYrE
-         i4XMuZeeIhyBLrjXg91o5KlqkiBaeQiPY8cid8n6Q4fAqC1isxpI1IUhWPPn/IsCvHIz
-         wPhOiLFJpD5ai3vqhK6umRnrddt7d5oLOoKRHd2siNU4ev3ZCeWwQafj6C9ZeC4wB1K9
-         4fp8VBiU5j7zyys9tAI5WW6Zlg3DOIZH/dZHtHgOcEqErgvrJD1vqf1qZtoeg5NuA62n
-         v/HX65tPBaxo37LXCCEv1zQxKwd7CNVc75kR4kCltiw++jhm02SdFkY3kR8UW1bg4xuc
-         ip5A==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=M83pCfW4UR/+hTYKgGBSJvkvkUInpjBt2rUVsG0xoLo=;
-        b=EfMFF2jR7m1GLBYRvTj0k7mP2uLzv0SRu+0ThnJK7vianD/+FX9/TKFSNPQLQ98ugY
-         vN1rfhaICIJHx485WqfUKFvSYMHkp77/5SV6JtHFtfadvjT9DVhTlISvvhNsT+3AFeuE
-         UZ91O0HaoD40oRCPB2u7Ix38gZ5HFFGYM3TI57KC2TmRb6GX2AIYKXKHLOE2RJnJIPHH
-         Rxc3kAzJNvnGHqAhQXAZk6vQt4x1hcLII7ueakSCZfnauujwjCC/jtIFyZNOAxUAAatF
-         cWL8nE8HhYqgXMWrjbrqgUXK9x0a3joWjd4LH1Bz8gs6wZ/DWDTq9TFk0Y78zCwXlONa
-         cOYg==
-X-Gm-Message-State: ANhLgQ1VvqgO3vN/XBSVdwngqFS3/HqqHYHdBAHzlHdTUKCG2Vo7T4hN
-        FJ6TbwABcbyNur4WzjK3aWdWPg==
-X-Google-Smtp-Source: ADFU+vuzu1nN15MNCeaOONH1QmlG3R4bOGRM8rm0BBeKf6WmXRGwjHzBspj4IJKhqDMEcvXqwUwM4g==
-X-Received: by 2002:a0c:e98c:: with SMTP id z12mr20936298qvn.64.1584967883399;
-        Mon, 23 Mar 2020 05:51:23 -0700 (PDT)
-Received: from [192.168.1.106] ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id c40sm12542703qtk.18.2020.03.23.05.51.22
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 23 Mar 2020 05:51:22 -0700 (PDT)
-Subject: Re: [PATCH 01/40] btrfs: backref: Introduce the skeleton of
- btrfs_backref_iter
-To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Cc:     Johannes Thumshirn <johannes.thumshirn@wdc.com>
-References: <20200323102416.112862-1-wqu@suse.com>
- <20200323102416.112862-2-wqu@suse.com>
-From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <48072b84-3c49-5cfc-521e-c71a62f182d4@toxicpanda.com>
-Date:   Mon, 23 Mar 2020 08:51:21 -0400
-User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:68.0)
- Gecko/20100101 Thunderbird/68.6.0
+        id S1727848AbgCWRLV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 23 Mar 2020 13:11:21 -0400
+Received: from mx2.suse.de ([195.135.220.15]:58906 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727743AbgCWRLU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 23 Mar 2020 13:11:20 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 921D2ADE2;
+        Mon, 23 Mar 2020 17:11:19 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 1C730DA811; Mon, 23 Mar 2020 18:10:49 +0100 (CET)
+Date:   Mon, 23 Mar 2020 18:10:48 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Takashi Iwai <tiwai@suse.de>
+Cc:     linux-btrfs@vger.kernel.org, Anand Jain <anand.jain@oracle.com>,
+        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>
+Subject: Re: [PATCH v2] btrfs: sysfs: Use scnprintf() instead of snprintf()
+Message-ID: <20200323171048.GL12659@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Takashi Iwai <tiwai@suse.de>,
+        linux-btrfs@vger.kernel.org, Anand Jain <anand.jain@oracle.com>,
+        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>
+References: <20200322090911.25296-1-tiwai@suse.de>
 MIME-Version: 1.0
-In-Reply-To: <20200323102416.112862-2-wqu@suse.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20200322090911.25296-1-tiwai@suse.de>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 3/23/20 6:23 AM, Qu Wenruo wrote:
-> Due to the complex nature of btrfs extent tree, when we want to iterate
-> all backrefs of one extent, it involves quite a lot of work, like
-> searching the EXTENT_ITEM/METADATA_ITEM, iteration through inline and keyed
-> backrefs.
+On Sun, Mar 22, 2020 at 10:09:11AM +0100, Takashi Iwai wrote:
+> snprintf() is a hard-to-use function, and it's especially difficult to
+> use it properly for concatenating substrings in a buffer with a
+> limited size.  Since snprintf() returns the would-be-output size, not
+> the actual size, the subsequent use of snprintf() may point to the
+> incorrect position easily.  Also, returning the value from snprintf()
+> directly to sysfs show function would pass a bogus value that is
+> higher than the actually truncated string.
 > 
-> Normally this would result pretty complex code, something like:
->    btrfs_search_slot()
->    /* Ensure we are at EXTENT_ITEM/METADATA_ITEM */
->    while (1) {	/* Loop for extent tree items */
-> 	while (ptr < end) { /* Loop for inlined items */
-> 		/* REAL WORK HERE */
-> 	}
->    next:
->    	ret = btrfs_next_item()
-> 	/* Ensure we're still at keyed item for specified bytenr */
->    }
+> That said, although the current code doesn't actually overflow the
+> buffer with PAGE_SIZE, it's a usage that shouldn't be done.  Or it's
+> worse; this gives a wrong confidence as if it were doing safe
+> operations.
 > 
-> The idea of btrfs_backref_iter is to avoid such complex and hard to
-> read code structure, but something like the following:
-> 
->    iter = btrfs_backref_iter_alloc();
->    ret = btrfs_backref_iter_start(iter, bytenr);
->    if (ret < 0)
-> 	goto out;
->    for (; ; ret = btrfs_backref_iter_next(iter)) {
-> 	/* REAL WORK HERE */
->    }
->    out:
->    btrfs_backref_iter_free(iter);
-> 
-> This patch is just the skeleton + btrfs_backref_iter_start() code.
-> 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+> This patch replaces such snprintf() calls with a safer version,
+> scnprintf().  It returns the actual output size, hence it's more
+> intuitive and the code does what's expected.
 
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
-
-Thanks,
-
-Josef
+Thanks, added to patch queue.

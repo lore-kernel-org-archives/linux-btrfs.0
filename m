@@ -6,27 +6,27 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7A33FC4332E
-	for <linux-btrfs@archiver.kernel.org>; Mon, 23 Mar 2020 10:25:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D2C12C54FCE
+	for <linux-btrfs@archiver.kernel.org>; Mon, 23 Mar 2020 10:25:22 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5A26E20722
-	for <linux-btrfs@archiver.kernel.org>; Mon, 23 Mar 2020 10:25:21 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A86F620722
+	for <linux-btrfs@archiver.kernel.org>; Mon, 23 Mar 2020 10:25:22 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727954AbgCWKZU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 23 Mar 2020 06:25:20 -0400
-Received: from mx2.suse.de ([195.135.220.15]:37692 "EHLO mx2.suse.de"
+        id S1727959AbgCWKZW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 23 Mar 2020 06:25:22 -0400
+Received: from mx2.suse.de ([195.135.220.15]:37730 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727948AbgCWKZU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 23 Mar 2020 06:25:20 -0400
+        id S1727948AbgCWKZV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 23 Mar 2020 06:25:21 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id ECE06ADF1
-        for <linux-btrfs@vger.kernel.org>; Mon, 23 Mar 2020 10:25:16 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 8A292ADF1
+        for <linux-btrfs@vger.kernel.org>; Mon, 23 Mar 2020 10:25:20 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 16/40] btrfs: Move btrfs_backref_(node|edge|cache) structures to backref.h
-Date:   Mon, 23 Mar 2020 18:23:52 +0800
-Message-Id: <20200323102416.112862-17-wqu@suse.com>
+Subject: [PATCH 18/40] btrfs: Rename backref_cache_init() to btrfs_backref_cache_init() and move it to backref.c
+Date:   Mon, 23 Mar 2020 18:23:54 +0800
+Message-Id: <20200323102416.112862-19-wqu@suse.com>
 X-Mailer: git-send-email 2.25.2
 In-Reply-To: <20200323102416.112862-1-wqu@suse.com>
 References: <20200323102416.112862-1-wqu@suse.com>
@@ -37,268 +37,85 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-These 3 structures are the main part of btrfs backref cache, move them
-to backref.h to build the basis for later reuse.
-
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/backref.h    | 119 ++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/relocation.c | 113 ---------------------------------------
- 2 files changed, 119 insertions(+), 113 deletions(-)
+ fs/btrfs/backref.c    | 17 +++++++++++++++++
+ fs/btrfs/backref.h    |  2 ++
+ fs/btrfs/relocation.c | 18 +-----------------
+ 3 files changed, 20 insertions(+), 17 deletions(-)
 
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index aee06eff3a04..3a54226b22da 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -2467,3 +2467,20 @@ int btrfs_backref_iter_next(struct btrfs_backref_iter *iter)
+ 						path->slots[0]);
+ 	return 0;
+ }
++
++void btrfs_backref_init_cache(struct btrfs_fs_info *fs_info,
++			      struct btrfs_backref_cache *cache, int is_reloc)
++{
++	int i;
++
++	cache->rb_root = RB_ROOT;
++	for (i = 0; i < BTRFS_MAX_LEVEL; i++)
++		INIT_LIST_HEAD(&cache->pending[i]);
++	INIT_LIST_HEAD(&cache->changed);
++	INIT_LIST_HEAD(&cache->detached);
++	INIT_LIST_HEAD(&cache->leaves);
++	INIT_LIST_HEAD(&cache->pending_edge);
++	INIT_LIST_HEAD(&cache->useless_node);
++	cache->fs_info = fs_info;
++	cache->is_reloc = is_reloc;
++}
 diff --git a/fs/btrfs/backref.h b/fs/btrfs/backref.h
-index 29cc74eabda3..4b4c1418d526 100644
+index 4908f47ed84d..39b1532413aa 100644
 --- a/fs/btrfs/backref.h
 +++ b/fs/btrfs/backref.h
-@@ -147,4 +147,123 @@ btrfs_backref_iter_release(struct btrfs_backref_iter *iter)
- 	memset(&iter->cur_key, 0, sizeof(iter->cur_key));
- }
- 
-+/*
-+ * Backref cache related structures.
-+ *
-+ * The whole objective of backref_cache is to build a bi-directional map
-+ * of tree blocks (represented by backref_node) and all their parents.
-+ */
-+
-+/*
-+ * present a tree block in the backref cache
-+ */
-+struct btrfs_backref_node {
-+	struct rb_node rb_node;
-+	u64 bytenr;
-+
-+	u64 new_bytenr;
-+	/* objectid of tree block owner, can be not uptodate */
-+	u64 owner;
-+	/* link to pending, changed or detached list */
-+	struct list_head list;
-+
-+	/* List of upper level edges, which links this node to its parent(s) */
-+	struct list_head upper;
-+	/* List of lower level edges, which links this node to its child(ren) */
-+	struct list_head lower;
-+
-+	/* NULL if this node is not tree root */
-+	struct btrfs_root *root;
-+	/* extent buffer got by COW the block */
-+	struct extent_buffer *eb;
-+	/* level of tree block */
-+	unsigned int level:8;
-+	/* is the block in non-reference counted tree */
-+	unsigned int cowonly:1;
-+	/* 1 if no child node in the cache */
-+	unsigned int lowest:1;
-+	/* is the extent buffer locked */
-+	unsigned int locked:1;
-+	/* has the block been processed */
-+	unsigned int processed:1;
-+	/* have backrefs of this block been checked */
-+	unsigned int checked:1;
-+	/*
-+	 * 1 if corresponding block has been cowed but some upper
-+	 * level block pointers may not point to the new location
-+	 */
-+	unsigned int pending:1;
-+	/*
-+	 * 1 if the backref node isn't connected to any other
-+	 * backref node.
-+	 */
-+	unsigned int detached:1;
-+
-+	/*
-+	 * For generic purpose backref cache, where we only care if it's a reloc
-+	 * root, doesn't care the source subvolid.
-+	 */
-+	unsigned int is_reloc_root:1;
-+};
-+
-+#define LOWER	0
-+#define UPPER	1
-+/*
-+ * present an edge connecting upper and lower backref nodes.
-+ */
-+struct btrfs_backref_edge {
-+	/*
-+	 * list[LOWER] is linked to btrfs_backref_node::upper of lower level
-+	 * node, and list[UPPER] is linked to btrfs_backref_node::lower of
-+	 * upper level node.
-+	 *
-+	 * Also, build_backref_tree() uses list[UPPER] for pending edges, before
-+	 * linking list[UPPER] to its upper level nodes.
-+	 */
-+	struct list_head list[2];
-+
-+	/* Two related nodes */
-+	struct btrfs_backref_node *node[2];
-+};
-+
-+struct btrfs_backref_cache {
-+	/* red black tree of all backref nodes in the cache */
-+	struct rb_root rb_root;
-+	/* for passing backref nodes to btrfs_reloc_cow_block */
-+	struct btrfs_backref_node *path[BTRFS_MAX_LEVEL];
-+	/*
-+	 * list of blocks that have been cowed but some block
-+	 * pointers in upper level blocks may not reflect the
-+	 * new location
-+	 */
-+	struct list_head pending[BTRFS_MAX_LEVEL];
-+	/* list of backref nodes with no child node */
-+	struct list_head leaves;
-+	/* list of blocks that have been cowed in current transaction */
-+	struct list_head changed;
-+	/* list of detached backref node. */
-+	struct list_head detached;
-+
-+	u64 last_trans;
-+
-+	int nr_nodes;
-+	int nr_edges;
-+
-+	/* The list of unchecked backref edges during backref cache build */
-+	struct list_head pending_edge;
-+
-+	/* The list of useless backref nodes during backref cache build */
-+	struct list_head useless_node;
-+
-+	struct btrfs_fs_info *fs_info;
-+
-+	/*
-+	 * Whether this cache is for relocation
-+	 *
-+	 * Reloction backref cache require more info for reloc root compared
-+	 * to generic backref cache.
-+	 */
-+	unsigned int is_reloc;
-+};
-+
- #endif
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 5f12b96e47a4..0b7d92f70eba 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -79,120 +79,7 @@ struct tree_entry {
- 	u64 bytenr;
+@@ -268,4 +268,6 @@ struct btrfs_backref_cache {
+ 	unsigned int is_reloc;
  };
  
--/*
-- * present a tree block in the backref cache
-- */
--struct btrfs_backref_node {
--	struct rb_node rb_node;
--	u64 bytenr;
++void btrfs_backref_init_cache(struct btrfs_fs_info *fs_info,
++			      struct btrfs_backref_cache *cache, int is_reloc);
+ #endif
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 6c7e409662a4..b7536deb6d5e 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -185,22 +185,6 @@ static void mapping_tree_init(struct mapping_tree *tree)
+ 	spin_lock_init(&tree->lock);
+ }
+ 
+-static void backref_cache_init(struct btrfs_fs_info *fs_info,
+-			       struct btrfs_backref_cache *cache, int is_reloc)
+-{
+-	int i;
+-	cache->rb_root = RB_ROOT;
+-	for (i = 0; i < BTRFS_MAX_LEVEL; i++)
+-		INIT_LIST_HEAD(&cache->pending[i]);
+-	INIT_LIST_HEAD(&cache->changed);
+-	INIT_LIST_HEAD(&cache->detached);
+-	INIT_LIST_HEAD(&cache->leaves);
+-	INIT_LIST_HEAD(&cache->pending_edge);
+-	INIT_LIST_HEAD(&cache->useless_node);
+-	cache->fs_info = fs_info;
+-	cache->is_reloc = is_reloc;
+-}
 -
--	u64 new_bytenr;
--	/* objectid of tree block owner, can be not uptodate */
--	u64 owner;
--	/* link to pending, changed or detached list */
--	struct list_head list;
--
--	/* List of upper level edges, which links this node to its parent(s) */
--	struct list_head upper;
--	/* List of lower level edges, which links this node to its child(ren) */
--	struct list_head lower;
--
--	/* NULL if this node is not tree root */
--	struct btrfs_root *root;
--	/* extent buffer got by COW the block */
--	struct extent_buffer *eb;
--	/* level of tree block */
--	unsigned int level:8;
--	/* is the block in non-reference counted tree */
--	unsigned int cowonly:1;
--	/* 1 if no child node in the cache */
--	unsigned int lowest:1;
--	/* is the extent buffer locked */
--	unsigned int locked:1;
--	/* has the block been processed */
--	unsigned int processed:1;
--	/* have backrefs of this block been checked */
--	unsigned int checked:1;
--	/*
--	 * 1 if corresponding block has been cowed but some upper
--	 * level block pointers may not point to the new location
--	 */
--	unsigned int pending:1;
--	/*
--	 * 1 if the backref node isn't connected to any other
--	 * backref node.
--	 */
--	unsigned int detached:1;
--
--	/*
--	 * For generic purpose backref cache, where we only care if it's a reloc
--	 * root, doesn't care the source subvolid.
--	 */
--	unsigned int is_reloc_root:1;
--};
--
--#define LOWER	0
--#define UPPER	1
- #define RELOCATION_RESERVED_NODES	256
--/*
-- * present an edge connecting upper and lower backref nodes.
-- */
--struct btrfs_backref_edge {
--	/*
--	 * list[LOWER] is linked to btrfs_backref_node::upper of lower level
--	 * node, and list[UPPER] is linked to btrfs_backref_node::lower of
--	 * upper level node.
--	 *
--	 * Also, build_backref_tree() uses list[UPPER] for pending edges, before
--	 * linking list[UPPER] to its upper level nodes.
--	 */
--	struct list_head list[2];
--
--	/* Two related nodes */
--	struct btrfs_backref_node *node[2];
--};
--
--
--struct btrfs_backref_cache {
--	/* red black tree of all backref nodes in the cache */
--	struct rb_root rb_root;
--	/* for passing backref nodes to btrfs_reloc_cow_block */
--	struct btrfs_backref_node *path[BTRFS_MAX_LEVEL];
--	/*
--	 * list of blocks that have been cowed but some block
--	 * pointers in upper level blocks may not reflect the
--	 * new location
--	 */
--	struct list_head pending[BTRFS_MAX_LEVEL];
--	/* list of backref nodes with no child node */
--	struct list_head leaves;
--	/* list of blocks that have been cowed in current transaction */
--	struct list_head changed;
--	/* list of detached backref node. */
--	struct list_head detached;
--
--	u64 last_trans;
--
--	int nr_nodes;
--	int nr_edges;
--
--	/* The list of unchecked backref edges during backref cache build */
--	struct list_head pending_edge;
--
--	/* The list of useless backref nodes during backref cache build */
--	struct list_head useless_node;
--
--	struct btrfs_fs_info *fs_info;
--
--	/*
--	 * Whether this cache is for relocation
--	 *
--	 * Reloction backref cache require more info for reloc root compared
--	 * to generic backref cache.
--	 */
--	unsigned int is_reloc;
--};
--
- /*
-  * map address of tree root to tree
-  */
+ static void backref_cache_cleanup(struct btrfs_backref_cache *cache)
+ {
+ 	struct btrfs_backref_node *node;
+@@ -4356,7 +4340,7 @@ static struct reloc_control *alloc_reloc_control(struct btrfs_fs_info *fs_info)
+ 
+ 	INIT_LIST_HEAD(&rc->reloc_roots);
+ 	INIT_LIST_HEAD(&rc->dirty_subvol_roots);
+-	backref_cache_init(fs_info, &rc->backref_cache, 1);
++	btrfs_backref_init_cache(fs_info, &rc->backref_cache, 1);
+ 	mapping_tree_init(&rc->reloc_root_tree);
+ 	extent_io_tree_init(fs_info, &rc->processed_blocks,
+ 			    IO_TREE_RELOC_BLOCKS, NULL);
 -- 
 2.25.2
 

@@ -2,71 +2,127 @@ Return-Path: <SRS0=Vq+E=5J=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,
-	SPF_PASS autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E0E93C10DCE
-	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Mar 2020 08:40:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CA354C4332B
+	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Mar 2020 10:53:22 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B18CC20724
-	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Mar 2020 08:40:52 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="FvZ8B03F"
+	by mail.kernel.org (Postfix) with ESMTP id A66D9208CA
+	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Mar 2020 10:53:22 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727063AbgCXIku (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 24 Mar 2020 04:40:50 -0400
-Received: from bombadil.infradead.org ([198.137.202.133]:33290 "EHLO
-        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726129AbgCXIku (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Mar 2020 04:40:50 -0400
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20170209; h=In-Reply-To:Content-Type:MIME-Version
-        :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-        Content-Transfer-Encoding:Content-ID:Content-Description;
-        bh=yann1UJ6E2VSa2Ey9do+WcXl7l36OBhp3PfHyqllino=; b=FvZ8B03FLHuCWauhakrJWvuqXJ
-        IAzx6qcf0+KoM/Z+p0yevvoMHHcWXQd9G+DAEZNcSZ1PohZsfWqg7Rw8JYFMdxVa2hk3Aua7cWVy9
-        bj2fR+gtIJvIcSYNs5397dHwzgh2FBbNb56PWa6jkU1Iw3oKPx/J3WQxg55XrNsblo0PVJ12GyJSa
-        BmA06eJTfdo1vrvDdR2Og9lyQs8H2LUK6mI6Q4WkVyMDVlKZCnd7wev6oDgUbb9yMva78kGzeBNfN
-        c1CvGrF4NltPJwnVGtyzRY9Rzval5a35nIeyFwo3yMb4VctCeyII/9pxOThd+SaREhiuXiK4wmjej
-        8zONTRrA==;
-Received: from hch by bombadil.infradead.org with local (Exim 4.92.3 #3 (Red Hat Linux))
-        id 1jGf7B-0003Xw-12; Tue, 24 Mar 2020 08:40:49 +0000
-Date:   Tue, 24 Mar 2020 01:40:49 -0700
-From:   Christoph Hellwig <hch@infradead.org>
-To:     Matthew Wilcox <willy@infradead.org>
-Cc:     Andrew Morton <akpm@linux-foundation.org>,
-        linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
-        linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        linux-erofs@lists.ozlabs.org, linux-ext4@vger.kernel.org,
-        linux-f2fs-devel@lists.sourceforge.net, cluster-devel@redhat.com,
-        ocfs2-devel@oss.oracle.com, linux-xfs@vger.kernel.org,
-        John Hubbard <jhubbard@nvidia.com>,
-        William Kucharski <william.kucharski@oracle.com>
-Subject: Re: [PATCH v10 12/25] mm: Move end_index check out of readahead loop
-Message-ID: <20200324084049.GB32036@infradead.org>
-References: <20200323202259.13363-1-willy@infradead.org>
- <20200323202259.13363-13-willy@infradead.org>
+        id S1727347AbgCXKxV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 24 Mar 2020 06:53:21 -0400
+Received: from mx2.suse.de ([195.135.220.15]:33642 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727253AbgCXKxV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 24 Mar 2020 06:53:21 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 0E295AF39
+        for <linux-btrfs@vger.kernel.org>; Tue, 24 Mar 2020 10:53:19 +0000 (UTC)
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/6] btrfs-progs: Fixes for valgrind errors during fsck-tests
+Date:   Tue, 24 Mar 2020 18:53:09 +0800
+Message-Id: <20200324105315.136569-1-wqu@suse.com>
+X-Mailer: git-send-email 2.25.2
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20200323202259.13363-13-willy@infradead.org>
-X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Mar 23, 2020 at 01:22:46PM -0700, Matthew Wilcox wrote:
-> From: "Matthew Wilcox (Oracle)" <willy@infradead.org>
-> 
-> By reducing nr_to_read, we can eliminate this check from inside the loop.
-> 
-> Signed-off-by: Matthew Wilcox (Oracle) <willy@infradead.org>
-> Reviewed-by: John Hubbard <jhubbard@nvidia.com>
-> Reviewed-by: William Kucharski <william.kucharski@oracle.com>
+This patchset can be fetched from github:
+https://github.com/adam900710/btrfs-progs/tree/valgrind_fixes
 
-Looks good,
+Inspired by that long-existing-but-I-can't-reproduce v5.1 bug, I will
+never trust D=asan/D=uban anymore, and run valgrind on all fsck-tests.
 
-Reviewed-by: Christoph Hellwig <hch@lst.de>
+The patchset is the result from the latest valgrind runs.
+
+The first patch is to make "make INSTRUMENT=valgrind test-fsck" run
+smoothly without false alerts due to mount/umount failure with valgrind.
+
+The rest are the fixes for the error reports.
+
+There are 2 more error reports, which I tend to believe they are just
+false alerts.
+Both are from fsck/012:
+==122119== Syscall param pwrite64(buf) points to uninitialised byte(s)
+==122119==    at 0x49F303A: pwrite (in /usr/lib/libpthread-2.31.so)
+==122119==    by 0x1A5CA1: write_extent_to_disk (extent_io.c:816)
+==122119==    by 0x1B2523: write_and_map_eb (disk-io.c:512)
+==122119==    by 0x1B26C3: write_tree_block (disk-io.c:545)
+==122119==    by 0x1D481B: __commit_transaction (transaction.c:148)
+==122119==    by 0x1D4A9B: btrfs_commit_transaction (transaction.c:213)
+==122119==    by 0x16360D: fixup_extent_refs (main.c:7662)
+==122119==    by 0x16449F: check_extent_refs (main.c:8033)
+==122119==    by 0x166199: check_chunks_and_extents (main.c:8786)
+==122119==    by 0x166441: do_check_chunks_and_extents (main.c:8842)
+==122119==    by 0x169D13: cmd_check (main.c:10324)
+==122119==    by 0x11CDC6: cmd_execute (commands.h:125)
+==122119==  Address 0x4e8aeb0 is 128 bytes inside a block of size 4,224 alloc'd
+==122119==    at 0x483BB65: calloc (vg_replace_malloc.c:762)
+==122119==    by 0x1A54C5: __alloc_extent_buffer (extent_io.c:609)
+==122119==    by 0x1A5AED: alloc_extent_buffer (extent_io.c:753)
+==122119==    by 0x1B1A26: btrfs_find_create_tree_block (disk-io.c:222)
+==122119==    by 0x1BD4BE: btrfs_alloc_free_block (extent-tree.c:2538)
+==122119==    by 0x1A8CFF: __btrfs_cow_block (ctree.c:322)
+==122119==    by 0x1A91E2: btrfs_cow_block (ctree.c:415)
+==122119==    by 0x1AB188: btrfs_search_slot (ctree.c:1185)
+==122119==    by 0x160BBC: delete_extent_records (main.c:6652)
+==122119==    by 0x16343F: fixup_extent_refs (main.c:7629)
+==122119==    by 0x16449F: check_extent_refs (main.c:8033)
+==122119==    by 0x166199: check_chunks_and_extents (main.c:8786)
+==122119==
+
+These 128 bytes are just the extent buffer in-memory header, which is
+properly initialized, and we don't write that in-memory header on to
+disk.
+
+==122119== Conditional jump or move depends on uninitialised value(s)
+==122119==    at 0x1B63A9: warning_trace (kerncompat.h:102)
+==122119==    by 0x1BBF74: __free_extent (extent-tree.c:2042)
+==122119==    by 0x1C0501: run_delayed_tree_ref (extent-tree.c:3758)
+==122119==    by 0x1C058D: run_one_delayed_ref (extent-tree.c:3778)
+==122119==    by 0x1C079F: btrfs_run_delayed_refs (extent-tree.c:3862)
+==122119==    by 0x1D4903: btrfs_commit_transaction (transaction.c:172)
+==122119==    by 0x1581AC: repair_btree (main.c:3508)
+==122119==    by 0x158A76: check_fs_root (main.c:3671)
+==122119==    by 0x158EAB: check_fs_roots (main.c:3771)
+==122119==    by 0x159291: do_check_fs_roots (main.c:3888)
+==122119==    by 0x169EFB: cmd_check (main.c:10364)
+==122119==    by 0x11CDC6: cmd_execute (commands.h:125)
+==122119==
+
+I checked all related members, from the delayed tree ref to related
+members, can't really find out what's wrong, as all memory looks
+initialized without problem.
+
+With this patchset applied (along with that fix for v5.1), fsck tests
+all passes without valgrind error except mentioned fsck/012 above.
+
+Qu Wenruo (6):
+  btrfs-progs: tests/common: Don't call INSTRUMENT on mount command
+  btrfs-progs: check/original: Fix uninitialized stack memory access for
+    deal_root_from_list()
+  btrfs-progs: check/original: Fix uninitialized memory for newly
+    allocated data_backref
+  btrfs-progs: check/original: Fix uninitialized return value from
+    btrfs_write_dirty_block_groups()
+  btrfs-progs: check/original: Fix uninitialized extent buffer contents
+  btrfs-progs: extent-tree: Fix wrong post order rb tree cleanup for
+    block groups
+
+ check/main.c  | 4 ++--
+ extent-tree.c | 3 +--
+ extent_io.c   | 1 +
+ tests/common  | 8 +++++++-
+ 4 files changed, 11 insertions(+), 5 deletions(-)
+
+-- 
+2.25.2
+

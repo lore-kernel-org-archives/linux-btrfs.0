@@ -2,137 +2,170 @@ Return-Path: <SRS0=KM0e=5K=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,
-	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.8 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,UNWANTED_LANGUAGE_BODY,URIBL_BLOCKED
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4AFF8C18E5B
-	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Mar 2020 08:32:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 35CC7C54FD0
+	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Mar 2020 09:43:09 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1D27C20409
-	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Mar 2020 08:32:31 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0E26820714
+	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Mar 2020 09:43:09 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="NZhMirwm"
+	dkim=fail reason="key not found in DNS" (0-bit key) header.d=szeredi.hu header.i=@szeredi.hu header.b="DMyiJnaz"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727391AbgCYIca (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 25 Mar 2020 04:32:30 -0400
-Received: from userp2120.oracle.com ([156.151.31.85]:42486 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726313AbgCYIca (ORCPT
+        id S1726103AbgCYJnI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 25 Mar 2020 05:43:08 -0400
+Received: from mail-il1-f196.google.com ([209.85.166.196]:33052 "EHLO
+        mail-il1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727360AbgCYJnI (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 25 Mar 2020 04:32:30 -0400
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 02P8TBvJ151014
-        for <linux-btrfs@vger.kernel.org>; Wed, 25 Mar 2020 08:32:29 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
- date : message-id; s=corp-2020-01-29;
- bh=AzKIRxdIP8t73YquvZuUjM2hATGGga6l6fWcSTJRp4o=;
- b=NZhMirwmW3ZwLghCLL6DhRAZRIhe5stUTgiE5A17PqwkmX1OM3I2rQM1rBCBtUBaQYJ5
- kqSgmh+n6y93xj/3qjtnf1Pv/C1AbLbn0OnJTXGmAYB+XSpskEioaGqrJCPnPS7MYXip
- 5vVu0Tj3Vieune1VwhH8MA6OmZ81p7n81+WcVQEwVEDGH7dqEK4IFeI8m9+wAXuAsH+0
- de6VqnZdnU9hwMpoZOirrkk9TWZqLWbz5ptysuhaMTnIN0fUYfa8aDpeW6lp1+dyyfPy
- Resj9+oynv0jk35WpJKTyS5srbnIDXLJyHuXHC5TM7m+Rp/g00f+q1WZfF8qhv+4JvIN nw== 
-Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
-        by userp2120.oracle.com with ESMTP id 2yx8ac5cde-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 25 Mar 2020 08:32:28 +0000
-Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
-        by userp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 02P8WQhr071292
-        for <linux-btrfs@vger.kernel.org>; Wed, 25 Mar 2020 08:32:28 GMT
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by userp3030.oracle.com with ESMTP id 2yxw4r2366-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 25 Mar 2020 08:32:27 +0000
-Received: from abhmp0001.oracle.com (abhmp0001.oracle.com [141.146.116.7])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 02P8WGIU025601
-        for <linux-btrfs@vger.kernel.org>; Wed, 25 Mar 2020 08:32:16 GMT
-Received: from tp.localdomain (/39.109.145.141)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Wed, 25 Mar 2020 01:32:16 -0700
-From:   Anand Jain <anand.jain@oracle.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/2] btrfs-progs: fix fsck-test/037 skip corrupt FREE_SPACE_BITMAP
-Date:   Wed, 25 Mar 2020 16:32:08 +0800
-Message-Id: <1585125129-11224-1-git-send-email-anand.jain@oracle.com>
-X-Mailer: git-send-email 1.8.3.1
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9570 signatures=668685
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 malwarescore=0 suspectscore=4
- spamscore=0 mlxlogscore=999 adultscore=0 phishscore=0 mlxscore=0
- bulkscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2003020000 definitions=main-2003250072
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9570 signatures=668685
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 spamscore=0 clxscore=1015
- lowpriorityscore=0 suspectscore=4 priorityscore=1501 malwarescore=0
- mlxscore=0 adultscore=0 phishscore=0 impostorscore=0 mlxlogscore=999
- bulkscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2003020000 definitions=main-2003250071
+        Wed, 25 Mar 2020 05:43:08 -0400
+Received: by mail-il1-f196.google.com with SMTP id k29so1245861ilg.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 25 Mar 2020 02:43:07 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=szeredi.hu; s=google;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=WJC80u+Ifj4HCTJaBhCcmeQxlknM9aDMikhj5e78Hk4=;
+        b=DMyiJnazMqjl2qfzafo7tIFEtefoZjrSvPvqu5sHfAPRBEZ/A1uRJU7icYztbxoEQB
+         g5CF3/s4HPa6oNzbsswDGOeOH6b8cPtSAM9SODfnMoawOYaqGUMD64MMEV4CyYGxaNCK
+         u3cNVaqIoy9X6Y4p8jTdkYJcnnoetQuPBsAYU=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=WJC80u+Ifj4HCTJaBhCcmeQxlknM9aDMikhj5e78Hk4=;
+        b=M++BSQIQJfXyRvyg5HwGVUCB6N7gp3divChEBUb2dHViJP0AijvhMw/hV29iGr/YBh
+         I8jy7P3dQzfRWmuGiW9JpQKOH51AwUQuPk0+0NXM1/J/b2D3IKJHtRclhUghzgX5WcGN
+         Fc28xoTF/lzl5ZzlqbjLKBaAlZkKBxQKxm8y30groNA7YO4zqckhgHTuu0BWBxWpSdKJ
+         z6zvDLrtWXfHXuSkj0e/Sl6gyMVHTH1SMIhGsO7X+G0kbBoaVheADbsW4BYdxnn51nMJ
+         RTzzEUr7hrJirhR7nQ1LZRZvDumRjUPUXXUP8BtAdfkkztb95Y9iKb4kyZljxwqmjv8k
+         rR1A==
+X-Gm-Message-State: ANhLgQ3UPxVar4cEhaXq6dt8KzTZhmPS5GDwBhValAvcoohk5D62l9zO
+        WgZfaq9x8zYQ9eiD+hYf612qJaxmpwaaZErYz7pFAA==
+X-Google-Smtp-Source: ADFU+vsgfIWqTVfFvZZGiDAww03tclKMezpcFsmTHkThxRNJbwZiwKmblFARFxQj+PxAwoovscn7WyTAXThKOCyBwVE=
+X-Received: by 2002:a92:9fd0:: with SMTP id z77mr2593848ilk.257.1585129387289;
+ Wed, 25 Mar 2020 02:43:07 -0700 (PDT)
+MIME-Version: 1.0
+References: <20200323202259.13363-1-willy@infradead.org> <20200323202259.13363-25-willy@infradead.org>
+In-Reply-To: <20200323202259.13363-25-willy@infradead.org>
+From:   Miklos Szeredi <miklos@szeredi.hu>
+Date:   Wed, 25 Mar 2020 10:42:56 +0100
+Message-ID: <CAJfpegu7EFcWrg3bP+-2BX_kb52RrzBCo_U3QKYzUkZfe4EjDA@mail.gmail.com>
+Subject: Re: [PATCH v10 24/25] fuse: Convert from readpages to readahead
+To:     Matthew Wilcox <willy@infradead.org>
+Cc:     Andrew Morton <akpm@linux-foundation.org>,
+        linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
+        linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-erofs@lists.ozlabs.org, linux-ext4@vger.kernel.org,
+        linux-f2fs-devel@lists.sourceforge.net, cluster-devel@redhat.com,
+        ocfs2-devel@oss.oracle.com, linux-xfs <linux-xfs@vger.kernel.org>,
+        Dave Chinner <dchinner@redhat.com>,
+        William Kucharski <william.kucharski@oracle.com>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We don't have the FREE_SPACE_BITMAP in the default filesystem,
-skip the sub test by checking if the objectid is null for the
-FREE_SPACE_BITMAP. The null objectid check for the FREE_SPACE_EXTENT
-is not actually required, it is added to maintain similar flow in
-the code above it.
+On Mon, Mar 23, 2020 at 9:23 PM Matthew Wilcox <willy@infradead.org> wrote:
+>
+> From: "Matthew Wilcox (Oracle)" <willy@infradead.org>
+>
+> Use the new readahead operation in fuse.  Switching away from the
+> read_cache_pages() helper gets rid of an implicit call to put_page(),
+> so we can get rid of the get_page() call in fuse_readpages_fill().
+>
+> Signed-off-by: Matthew Wilcox (Oracle) <willy@infradead.org>
+> Reviewed-by: Dave Chinner <dchinner@redhat.com>
+> Reviewed-by: William Kucharski <william.kucharski@oracle.com>
+> ---
+>  fs/fuse/file.c | 46 +++++++++++++++++++---------------------------
+>  1 file changed, 19 insertions(+), 27 deletions(-)
+>
+> diff --git a/fs/fuse/file.c b/fs/fuse/file.c
+> index 9d67b830fb7a..5749505bcff6 100644
+> --- a/fs/fuse/file.c
+> +++ b/fs/fuse/file.c
+> @@ -923,9 +923,8 @@ struct fuse_fill_data {
+>         unsigned int max_pages;
+>  };
+>
+> -static int fuse_readpages_fill(void *_data, struct page *page)
+> +static int fuse_readpages_fill(struct fuse_fill_data *data, struct page *page)
+>  {
+> -       struct fuse_fill_data *data = _data;
+>         struct fuse_io_args *ia = data->ia;
+>         struct fuse_args_pages *ap = &ia->ap;
+>         struct inode *inode = data->inode;
+> @@ -941,10 +940,8 @@ static int fuse_readpages_fill(void *_data, struct page *page)
+>                                         fc->max_pages);
+>                 fuse_send_readpages(ia, data->file);
+>                 data->ia = ia = fuse_io_alloc(NULL, data->max_pages);
+> -               if (!ia) {
+> -                       unlock_page(page);
+> +               if (!ia)
+>                         return -ENOMEM;
+> -               }
+>                 ap = &ia->ap;
+>         }
+>
+> @@ -954,7 +951,6 @@ static int fuse_readpages_fill(void *_data, struct page *page)
+>                 return -EIO;
+>         }
+>
+> -       get_page(page);
+>         ap->pages[ap->num_pages] = page;
+>         ap->descs[ap->num_pages].length = PAGE_SIZE;
+>         ap->num_pages++;
+> @@ -962,37 +958,33 @@ static int fuse_readpages_fill(void *_data, struct page *page)
+>         return 0;
+>  }
+>
+> -static int fuse_readpages(struct file *file, struct address_space *mapping,
+> -                         struct list_head *pages, unsigned nr_pages)
+> +static void fuse_readahead(struct readahead_control *rac)
+>  {
+> -       struct inode *inode = mapping->host;
+> +       struct inode *inode = rac->mapping->host;
+>         struct fuse_conn *fc = get_fuse_conn(inode);
+>         struct fuse_fill_data data;
+> -       int err;
+> +       struct page *page;
+>
+> -       err = -EIO;
+>         if (is_bad_inode(inode))
+> -               goto out;
+> +               return;
+>
+> -       data.file = file;
+> +       data.file = rac->file;
+>         data.inode = inode;
+> -       data.nr_pages = nr_pages;
+> -       data.max_pages = min_t(unsigned int, nr_pages, fc->max_pages);
+> -;
+> +       data.nr_pages = readahead_count(rac);
+> +       data.max_pages = min_t(unsigned int, data.nr_pages, fc->max_pages);
+>         data.ia = fuse_io_alloc(NULL, data.max_pages);
+> -       err = -ENOMEM;
+>         if (!data.ia)
+> -               goto out;
+> +               return;
+>
+> -       err = read_cache_pages(mapping, pages, fuse_readpages_fill, &data);
+> -       if (!err) {
+> -               if (data.ia->ap.num_pages)
+> -                       fuse_send_readpages(data.ia, file);
+> -               else
+> -                       fuse_io_free(data.ia);
+> +       while ((page = readahead_page(rac))) {
+> +               if (fuse_readpages_fill(&data, page) != 0)
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- tests/fsck-tests/037-freespacetree-repair/test.sh | 14 ++++++++++----
- 1 file changed, 10 insertions(+), 4 deletions(-)
+Shouldn't this unlock + put page on error?
 
-diff --git a/tests/fsck-tests/037-freespacetree-repair/test.sh b/tests/fsck-tests/037-freespacetree-repair/test.sh
-index d7ee0f217a09..39cdd5c8b89a 100755
---- a/tests/fsck-tests/037-freespacetree-repair/test.sh
-+++ b/tests/fsck-tests/037-freespacetree-repair/test.sh
-@@ -29,6 +29,9 @@ corrupt_fst_item()
- 		objectid=$("$TOP/btrfs" inspect-internal dump-tree -t 10 "$TEST_DEV" | \
- 			grep -o "[[:digit:]]* FREE_SPACE_BITMAP [[:digit:]]*" | \
- 			cut -d' ' -f1 | tail -2 | head -1)
-+		if [[ $objectid == "" ]]; then
-+			return 1
-+		fi
- 		offset=$("$TOP/btrfs" inspect-internal dump-tree -t 10 "$TEST_DEV" | \
- 			grep -o "[[:digit:]]* FREE_SPACE_BITMAP [[:digit:]]*" | \
- 			cut -d' ' -f3 | tail -2 | head -1)
-@@ -38,6 +41,9 @@ corrupt_fst_item()
- 		objectid=$("$TOP/btrfs" inspect-internal dump-tree -t 10 "$TEST_DEV" | \
- 			grep -o "[[:digit:]]* FREE_SPACE_EXTENT [[:digit:]]*" | \
- 			cut -d' ' -f1 | tail -2 | head -1)
-+		if [[ $objectid == "" ]]; then
-+			return 1
-+		fi
- 		offset=$("$TOP/btrfs" inspect-internal dump-tree -t 10 "$TEST_DEV" | \
- 			grep -o "[[:digit:]]* FREE_SPACE_EXTENT [[:digit:]]*" | \
- 			cut -d' ' -f3 | tail -2 | head -1)
-@@ -48,6 +54,8 @@ corrupt_fst_item()
- 
- 	run_check "$TOP/btrfs-corrupt-block" -r 10 -K "$objectid,$type,$offset" \
- 		-f offset "$TEST_DEV"
-+
-+	return 0
- }
- 
- if ! [ -f "/sys/fs/btrfs/features/free_space_tree" ]; then
-@@ -69,8 +77,7 @@ done
- run_check_umount_test_dev
- 
- # now corrupt one of the bitmap items
--corrupt_fst_item "bitmap"
--check_image "$TEST_DEV"
-+corrupt_fst_item "bitmap" && check_image "$TEST_DEV"
- 
- # change the freespace such that we now have at least one free_space_extent
- # object
-@@ -80,5 +87,4 @@ run_check $SUDO_HELPER fallocate -l 50m "$TEST_MNT/file"
- run_check_umount_test_dev
- 
- # now corrupt an extent
--corrupt_fst_item "extent"
--check_image "$TEST_DEV"
-+corrupt_fst_item "extent" && check_image "$TEST_DEV"
--- 
-1.8.3.1
+Otherwise looks good.
 
+Thanks,
+Miklos

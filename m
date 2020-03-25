@@ -2,138 +2,220 @@ Return-Path: <SRS0=KM0e=5K=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_GIT autolearn=no autolearn_force=no version=3.4.0
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C7CF0C2D0E5
-	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Mar 2020 20:10:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9BF7BC2D0E6
+	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Mar 2020 20:10:51 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9F6FD2074D
-	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Mar 2020 20:10:50 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 71B8320719
+	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Mar 2020 20:10:51 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=libero.it header.i=@libero.it header.b="mBqpTKxr"
+	dkim=pass (2048-bit key) header.d=libero.it header.i=@libero.it header.b="NF61Vws3"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727461AbgCYUKu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S1727466AbgCYUKu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Wed, 25 Mar 2020 16:10:50 -0400
-Received: from smtp-16.italiaonline.it ([213.209.10.16]:49843 "EHLO libero.it"
+Received: from smtp-16.italiaonline.it ([213.209.10.16]:52186 "EHLO libero.it"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727391AbgCYUKs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 25 Mar 2020 16:10:48 -0400
+        id S1727395AbgCYUKt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 25 Mar 2020 16:10:49 -0400
 Received: from venice.bhome ([94.37.173.46])
         by smtp-16.iol.local with ESMTPA
-        id HCMOjh5MEjfNYHCMOjKIfG; Wed, 25 Mar 2020 21:10:45 +0100
+        id HCMOjh5MEjfNYHCMQjKIfh; Wed, 25 Mar 2020 21:10:46 +0100
 x-libjamoibt: 1601
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=libero.it; s=s2014;
-        t=1585167045; bh=cAxVH6hLWzDRu/JCKHeQjQOhNxzp9oNLDmVQr13rN0E=;
+        t=1585167046; bh=YIjE1eCyiG7QzggbWK4TDni1mYOZ3BuIOiQPQi+wiYk=;
         h=From;
-        b=mBqpTKxr1zJ/aITeQ5F71+mdYGazifanI1F0mJjgcEA+QnizbYYEddBhBJ+sTN1rc
-         NtzgnMoMWlXrc2yCcpqHaPRe2v5Fvgu3y3E4QpprMAP74KdGNNqu9HUvwvSP6ETodo
-         jNfGwacyAQTmjOCg6ubwiCM7kwBQoj0YFmaGcLnloPrtAtQhstEqJuV53eYOT2l0dF
-         wvN2Lcfq86FUgKN/+lf9C8RiwIRQ5gEPwCY8BgesdOTuGYA2B8G71y8tAhC0Uq6P8B
-         5tkNuUBaoqdp4vVZ5u7MbCCQvAGevpvXDFiWDU3R0aVl9pG1ZOtZ4Wg7WK/07D2M36
-         GohQ9kRY7kRWg==
+        b=NF61Vws30MPPmV20JknwVGRUiYNncCK5WaG4PPCtW6RCvf9cOrHvYRJru2FbTn1eM
+         pj7m777s2wg7DBZCeMeboXZ36B+q9jRykYokX5F0jZgF98CJI4vdcCJXlWxldMjtkl
+         XUmLFReWvVvtRtIgGeowi9udHEslYCJGOGFdw0Bhpm/S9QozBhvgslkeLC1XXguY/J
+         LuzG3ZWkkUbbu6qfUq4Yjk/k/m7d4yVjkQL839wVSX+nnwQT7ZYau4HmmM66SSvBQ7
+         0Dc+YO76QHDyPaCCDagmrdasWKEH+yGJO0S7K7TcYMSTZs9SN2o3TpPyPfGipr25mU
+         XxtBUY1+SMM5A==
 X-CNFS-Analysis: v=2.3 cv=av7M9hRV c=1 sm=1 tr=0
  a=TpQr5eyM7/bznjVQAbUtjA==:117 a=TpQr5eyM7/bznjVQAbUtjA==:17
- a=X8O9t2tcqu8mHWPlI2QA:9
+ a=jpOVt7BSZ2e4Z31A5e1TngXxSK0=:19 a=vSNmOmVH6_Tz5GIeFn8A:9
+ a=pHzHmUro8NiASowvMSCR:22 a=nt3jZW36AmriUCFCBwmW:22
 From:   Goffredo Baroncelli <kreijack@libero.it>
 To:     linux-btrfs@vger.kernel.org
-Cc:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-Subject: [RFC][PATCH] btrfs-progs: add warning for mixed prfofiles filesystem
-Date:   Wed, 25 Mar 2020 21:10:38 +0100
-Message-Id: <20200325201042.190332-1-kreijack@libero.it>
+Cc:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
+        Goffredo Baroncelli <kreijack@inwind.it>
+Subject: [PATCH 3/4] btrfs-progs: Add btrfs_check_for_mixed_profiles_by_* function
+Date:   Wed, 25 Mar 2020 21:10:41 +0100
+Message-Id: <20200325201042.190332-4-kreijack@libero.it>
 X-Mailer: git-send-email 2.26.0.rc2
+In-Reply-To: <20200325201042.190332-1-kreijack@libero.it>
+References: <20200325201042.190332-1-kreijack@libero.it>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-CMAE-Envelope: MS4wfEuCnovtdD+TRoeabWypWzplUOR+GkQayJ7V99CQYO85L74ziUcBkhKEpmAheyuIWsJLjTH4xPCec77502nddjJO1i3YdjhU/zRctjhI8g7IdiRAsFz7
- Ld9XB5oxruih8lCZ98VZVF+dW0G66Y90aZGvPLGotlKEWhD9uUTCSPJ6jd9gRsFeDElpw53O1SLvnQ77+7PmxVbQulvNAOj0weXuSebh9mia8c5X7r3XAX8H
+X-CMAE-Envelope: MS4wfGkYcP/Y0c4qDFI5CyhfgKhAV9x4PrkfrfGxzSAkIbUt7yhQbguy7KdkSX9Lfi9dlZZlWkPGO4CWTvZoJ7dRC800nf3ZrGgrHItlj0Hn4XOtc7wuUh+P
+ QdDKcPBN8Y4bJLHIfN+NZ9efykl50U0PIxwuBzVfTLRM5AeEr15cQ8/G7KaZNZiGVIfAY5EDMsDSlrZTpw/utLY1AgBzUYBy24j080Wz7AiQuJaxg3Rqg4jt
+ FnlI9KkkOaiqfjgBkZKHrA==
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+From: Goffredo Baroncelli <kreijack@inwind.it>
 
-Hi all,
+Show a warning if a mixed profiles filesystem
+is detected.
 
-the aim of this patch set is to issue a warning when a mixed profiles
-filesystem is detected. This happens when the filesystems contains
-(i.e.) raid1c3 and single chunk for data.
+Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
+---
+ common/utils.c | 126 +++++++++++++++++++++++++++++++++++++++++++++++++
+ common/utils.h |   3 ++
+ 2 files changed, 129 insertions(+)
 
-BTRFS has the capability to support a filesystem with mixed profiles.
-However this could lead to an unexpected behavior when a new chunk is
-allocated (i.e. the chunk profile is not what is wanted). Moreover
-if the user is not aware of this, he could assume a redundancy which
-doesn't exist (for example because there is some 'single' chunk when
-it is expected the filesystem to be full raid1).
-A possible cause of a mixed profiles filesystem is an interrupted
-balance operation or a not fully balance due to very specific filter.
-
-In this first attempt the check is only added to the 'btrfs fi us'
-command. I hope to receive suggestion about which commands should
-have this check (I think all the commands which interact with a
-mounted filesystem).
-
-Example of output:
-
-$ sudo ./btrfs fi us /tmp/t/
-WARNING: ------------------------------------------------------
-WARNING: Detection of multiple profiles for a block group type:
-WARNING:
-WARNING: * DATA ->          [raid1c3, single]
-WARNING: * METADATA ->      [raid1, single]
-WARNING:
-WARNING: Please consider using 'btrfs balance ...' commands set
-WARNING: to solve this issue.
-WARNING: ------------------------------------------------------
-Overall:
-    Device size:		  30.00GiB
-    Device allocated:		   7.78GiB
-    Device unallocated:		  22.22GiB
-    Device missing:		     0.00B
-    Used:			   1.84GiB
-    Free (estimated):		  11.93GiB	(min: 9.82GiB)
-    Data ratio:			      2.33
-    Metadata ratio:		      1.50
-    Global reserve:		   3.25MiB	(used: 0.00B)
-
-Data,single: Size:1.00GiB, Used:1023.91MiB (99.99%)
-   /dev/loop0	   1.00GiB
-
-Data,RAID1C3: Size:2.00GiB, Used:128.90MiB (6.29%)
-   /dev/loop0	   2.00GiB
-   /dev/loop1	   2.00GiB
-   /dev/loop2	   2.00GiB
-
-Metadata,single: Size:256.00MiB, Used:88.67MiB (34.64%)
-   /dev/loop1	 256.00MiB
-
-Metadata,RAID1: Size:256.00MiB, Used:194.28MiB (75.89%)
-   /dev/loop1	 256.00MiB
-   /dev/loop2	 256.00MiB
-
-System,single: Size:32.00MiB, Used:16.00KiB (0.05%)
-   /dev/loop2	  32.00MiB
-
-Unallocated:
-   /dev/loop0	   7.00GiB
-   /dev/loop1	   7.50GiB
-   /dev/loop2	   7.72GiB
-
-
-In this case there are two kind of chunks for data (raid1c3 and single)
-and metadata (raid1, single).
-
-Patch #1 and #2 are preparatory ones.
-Patch #3 contains the code for the check.
-Patch #4 adds the check to the command 'btrfs fi us'
-
-Comments are welcome
-
-BR
-G.Baroncelli
-
+diff --git a/common/utils.c b/common/utils.c
+index 4ce36836..e7cd66eb 100644
+--- a/common/utils.c
++++ b/common/utils.c
+@@ -1710,3 +1710,129 @@ void print_all_devices(struct list_head *devices)
+ 		print_device_info(dev, "\t");
+ 	printf("\n");
+ }
++
++static int bit_count(u64 x)
++{
++	int ret = 0;
++
++	while (x) {
++		if (x & 1)
++			ret++;
++		x >>= 1;
++	}
++	return ret;
++}
++
++static void print_profiles(FILE *out, u64 profiles)
++{
++	int i;
++	int first = true;
++
++	for (i = 0 ; i < BTRFS_NR_RAID_TYPES ; i++) {
++		if (!(btrfs_raid_array[i].bg_flag & profiles))
++			continue;
++
++		if (!first)
++			fprintf(out, ", ");
++		fprintf(out, "%s", btrfs_raid_array[i].raid_name);
++		first = false;
++	}
++	if (profiles & BTRFS_AVAIL_ALLOC_BIT_SINGLE) {
++		if (!first)
++			fprintf(out, ", ");
++		fprintf(out, "%s",
++			btrfs_raid_array[BTRFS_RAID_SINGLE].raid_name);
++	}
++}
++
++int btrfs_check_for_mixed_profiles_by_path(char *path)
++{
++	int fd;
++	int ret;
++	DIR *dirstream;
++
++	fd = btrfs_open_dir(path, &dirstream, 0);
++	if (fd < 0)
++		return -1;
++	closedir(dirstream);
++
++	ret = btrfs_check_for_mixed_profiles_by_fd(fd);
++	close(fd);
++
++	return ret;
++}
++
++int btrfs_check_for_mixed_profiles_by_fd(int fd)
++{
++	int ret;
++	int i;
++	struct btrfs_ioctl_space_args *sargs;
++	u64 data_profiles = 0;
++	u64 metadata_profiles = 0;
++	u64 system_profiles = 0;
++	u64 mixed_profiles = 0;
++	static const u64 mixed_profile_fl = BTRFS_BLOCK_GROUP_METADATA |
++		BTRFS_BLOCK_GROUP_DATA;
++
++	ret = get_df(fd, &sargs);
++	if (ret < 0)
++		return -1;
++
++	for (i = 0 ; i < sargs->total_spaces ; i++) {
++		u64 flags = sargs->spaces[i].flags;
++
++		if (!(flags & BTRFS_BLOCK_GROUP_PROFILE_MASK))
++			flags |= BTRFS_AVAIL_ALLOC_BIT_SINGLE;
++
++		if ((flags & mixed_profile_fl) == mixed_profile_fl)
++			mixed_profiles |= flags;
++		else if (flags & BTRFS_BLOCK_GROUP_DATA)
++			data_profiles |= flags;
++		else if (flags & BTRFS_BLOCK_GROUP_METADATA)
++			metadata_profiles |= flags;
++		else if (flags & BTRFS_BLOCK_GROUP_SYSTEM)
++			system_profiles |= flags;
++	}
++	free(sargs);
++
++	data_profiles &= BTRFS_EXTENDED_PROFILE_MASK;
++	system_profiles &= BTRFS_EXTENDED_PROFILE_MASK;
++	mixed_profiles &= BTRFS_EXTENDED_PROFILE_MASK;
++	metadata_profiles &= BTRFS_EXTENDED_PROFILE_MASK;
++
++	if ((bit_count(data_profiles) <= 1) &&
++	    (bit_count(metadata_profiles) <= 1) &&
++	    (bit_count(system_profiles) <= 1) &&
++	    (bit_count(mixed_profiles) <= 1))
++		return 0;
++
++	fprintf(stderr, "WARNING: ------------------------------------------------------\n");
++	fprintf(stderr, "WARNING: Detection of multiple profiles for a block group type:\n");
++	fprintf(stderr, "WARNING:\n");
++	if (bit_count(data_profiles) > 1) {
++		fprintf(stderr, "WARNING: * DATA ->          [");
++		print_profiles(stderr, data_profiles);
++		fprintf(stderr, "]\n");
++	}
++	if (bit_count(metadata_profiles) > 1) {
++		fprintf(stderr, "WARNING: * METADATA ->      [");
++		print_profiles(stderr, metadata_profiles);
++		fprintf(stderr, "]\n");
++	}
++	if (bit_count(mixed_profiles) > 1) {
++		fprintf(stderr, "WARNING: * DATA+METADATA -> [");
++		print_profiles(stderr, mixed_profiles);
++		fprintf(stderr, "]\n");
++	}
++	if (bit_count(system_profiles) > 1) {
++		fprintf(stderr, "WARNING: * SYSTEM ->        [");
++		print_profiles(stderr, system_profiles);
++		fprintf(stderr, "]\n");
++	}
++	fprintf(stderr, "WARNING:\n");
++	fprintf(stderr, "WARNING: Please consider using 'btrfs balance ...' commands set\n");
++	fprintf(stderr, "WARNING: to solve this issue.\n");
++	fprintf(stderr, "WARNING: ------------------------------------------------------\n");
++
++	return 1;
++}
+diff --git a/common/utils.h b/common/utils.h
+index 5c1afda9..662c9e38 100644
+--- a/common/utils.h
++++ b/common/utils.h
+@@ -137,4 +137,7 @@ u64 rand_u64(void);
+ unsigned int rand_range(unsigned int upper);
+ void init_rand_seed(u64 seed);
+ 
++int btrfs_check_for_mixed_profiles_by_path(char *path);
++int btrfs_check_for_mixed_profiles_by_fd(int fd);
++
+ #endif
 -- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+2.26.0.rc2
 

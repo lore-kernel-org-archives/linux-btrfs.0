@@ -2,77 +2,70 @@ Return-Path: <SRS0=l4CM=5L=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_SANE_1 autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B26FCC43331
-	for <linux-btrfs@archiver.kernel.org>; Thu, 26 Mar 2020 15:46:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D8160C2D0E5
+	for <linux-btrfs@archiver.kernel.org>; Thu, 26 Mar 2020 16:54:34 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8690720737
-	for <linux-btrfs@archiver.kernel.org>; Thu, 26 Mar 2020 15:46:44 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BAD6B2076A
+	for <linux-btrfs@archiver.kernel.org>; Thu, 26 Mar 2020 16:54:34 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727984AbgCZPqn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 26 Mar 2020 11:46:43 -0400
-Received: from mx2.suse.de ([195.135.220.15]:59210 "EHLO mx2.suse.de"
+        id S1727920AbgCZQyc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 26 Mar 2020 12:54:32 -0400
+Received: from mx2.suse.de ([195.135.220.15]:44322 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727835AbgCZPqn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 26 Mar 2020 11:46:43 -0400
+        id S1726954AbgCZQyb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 26 Mar 2020 12:54:31 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 9CF88AC0C;
-        Thu, 26 Mar 2020 15:46:42 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 9B509ADF1;
+        Thu, 26 Mar 2020 16:54:29 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 8F480DA730; Thu, 26 Mar 2020 16:46:10 +0100 (CET)
-Date:   Thu, 26 Mar 2020 16:46:09 +0100
+        id 350BDDA730; Thu, 26 Mar 2020 17:53:56 +0100 (CET)
+Date:   Thu, 26 Mar 2020 17:53:56 +0100
 From:   David Sterba <dsterba@suse.cz>
-To:     Anand Jain <anand.jain@oracle.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/2] btrfs-progs: fix misc-test/029 provide device for
- mount
-Message-ID: <20200326154609.GH5920@twin.jikos.cz>
+To:     Matthew Wilcox <willy@infradead.org>
+Cc:     Andrew Morton <akpm@linux-foundation.org>,
+        linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
+        linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-erofs@lists.ozlabs.org, linux-ext4@vger.kernel.org,
+        linux-f2fs-devel@lists.sourceforge.net, cluster-devel@redhat.com,
+        ocfs2-devel@oss.oracle.com, linux-xfs@vger.kernel.org,
+        William Kucharski <william.kucharski@oracle.com>
+Subject: Re: [PATCH v10 17/25] btrfs: Convert from readpages to readahead
+Message-ID: <20200326165356.GI5920@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
-        linux-btrfs@vger.kernel.org
-References: <1585125129-11224-1-git-send-email-anand.jain@oracle.com>
- <1585125129-11224-2-git-send-email-anand.jain@oracle.com>
+Mail-Followup-To: dsterba@suse.cz, Matthew Wilcox <willy@infradead.org>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
+        linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-erofs@lists.ozlabs.org, linux-ext4@vger.kernel.org,
+        linux-f2fs-devel@lists.sourceforge.net, cluster-devel@redhat.com,
+        ocfs2-devel@oss.oracle.com, linux-xfs@vger.kernel.org,
+        William Kucharski <william.kucharski@oracle.com>
+References: <20200323202259.13363-1-willy@infradead.org>
+ <20200323202259.13363-18-willy@infradead.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <1585125129-11224-2-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <20200323202259.13363-18-willy@infradead.org>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Mar 25, 2020 at 04:32:09PM +0800, Anand Jain wrote:
-> The mount fails with 'file exists' error. Fix it by providing the device
-> name.
-
-Can you be more specific about the environment where it fails? The test
-passes for me.
-
+On Mon, Mar 23, 2020 at 01:22:51PM -0700, Matthew Wilcox wrote:
+> From: "Matthew Wilcox (Oracle)" <willy@infradead.org>
 > 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
->  tests/misc-tests/029-send-p-different-mountpoints/test.sh | 4 +++-
->  1 file changed, 3 insertions(+), 1 deletion(-)
+> Implement the new readahead method in btrfs using the new
+> readahead_page_batch() function.
 > 
-> diff --git a/tests/misc-tests/029-send-p-different-mountpoints/test.sh b/tests/misc-tests/029-send-p-different-mountpoints/test.sh
-> index a478b3d26495..e34402d9ec06 100755
-> --- a/tests/misc-tests/029-send-p-different-mountpoints/test.sh
-> +++ b/tests/misc-tests/029-send-p-different-mountpoints/test.sh
-> @@ -19,8 +19,10 @@ run_mayfail $SUDO_HELPER mkdir -p "$SUBVOL_MNT" ||
->  run_check_mkfs_test_dev
->  run_check_mount_test_dev
->  
-> +# The sed part is to replace double forward-slash with single forward-slash
-> +lodev=$(losetup  | grep $(echo $TEST_DEV | sed 's/\/\//\//') | awk '{print $1}')
+> Signed-off-by: Matthew Wilcox (Oracle) <willy@infradead.org>
+> Reviewed-by: William Kucharski <william.kucharski@oracle.com>
 
-There's a simpler way to canonicalize a path, eg using readlink or
-realpath.
+Sorry for late reply,
 
-And I don't see why would two slashes appear in a path. IIRC a path
-starting with two slashes is standardized as a network path and
-recognized by VFS but why this is a concern for the testsuite?
+Reviewed-by: David Sterba <dsterba@suse.com>

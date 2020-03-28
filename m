@@ -2,190 +2,122 @@ Return-Path: <SRS0=/lGw=5N=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.4 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2520DC43331
-	for <linux-btrfs@archiver.kernel.org>; Sat, 28 Mar 2020 05:48:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1A682C43331
+	for <linux-btrfs@archiver.kernel.org>; Sat, 28 Mar 2020 18:26:59 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D689520716
-	for <linux-btrfs@archiver.kernel.org>; Sat, 28 Mar 2020 05:48:10 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="Q+oLuWxz"
+	by mail.kernel.org (Postfix) with ESMTP id EC7A92071B
+	for <linux-btrfs@archiver.kernel.org>; Sat, 28 Mar 2020 18:26:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725999AbgC1FsJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 28 Mar 2020 01:48:09 -0400
-Received: from userp2130.oracle.com ([156.151.31.86]:37776 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725372AbgC1FsJ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 28 Mar 2020 01:48:09 -0400
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 02S5hqdA079096;
-        Sat, 28 Mar 2020 05:48:06 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : from : to :
- references : message-id : date : mime-version : in-reply-to : content-type
- : content-transfer-encoding; s=corp-2020-01-29;
- bh=fP/hcis8YtSR+9fKvciwApZhel6QSXK/vCAWmEhsorU=;
- b=Q+oLuWxzpetq/fc9sO7aI4I4vvEBEQkgbqR0y9MXRFcvL4djWLnu3JU3DIvbFVov9uqp
- 6rLse7R9dG+8KvvRWlEs2ctD6GeF/NsM0sesQde+ITm/DMn7B7ipabQ2wVdUX1H7UgRR
- UnMIQwUMUf724f0hIikQiLJIonROpJj2iipzBySGNCFJU0gMrm//+6LijyaCQ1pIZdhf
- 9rVcZLrF9X7oMbwqKwFoeTE6oua3EsBed3wPE1wovVow+9INvwr4XR2UTpsW/Q7f5Bq9
- fb8AqXMtzfzM6FogPcyKXDdGvD7w1CwbNNsWBiM51q7bLKiPQAObzpWt9rWcsbh52mGX QQ== 
-Received: from aserp3030.oracle.com (aserp3030.oracle.com [141.146.126.71])
-        by userp2130.oracle.com with ESMTP id 301x0qr6hr-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Sat, 28 Mar 2020 05:48:06 +0000
-Received: from pps.filterd (aserp3030.oracle.com [127.0.0.1])
-        by aserp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 02S5m5xA106112;
-        Sat, 28 Mar 2020 05:48:05 GMT
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by aserp3030.oracle.com with ESMTP id 301vm88pw9-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Sat, 28 Mar 2020 05:48:05 +0000
-Received: from abhmp0010.oracle.com (abhmp0010.oracle.com [141.146.116.16])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 02S5m33k004690;
-        Sat, 28 Mar 2020 05:48:04 GMT
-Received: from [192.168.1.119] (/39.109.145.141)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Fri, 27 Mar 2020 22:48:03 -0700
-Subject: Re: [PATCH v7 0/5] readmirror feature (sysfs and in-memory only
- approach; with new read_policy device)
-From:   Anand Jain <anand.jain@oracle.com>
-To:     linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
-References: <20200221061538.4508-1-anand.jain@oracle.com>
-Message-ID: <1a97735c-b71d-2b19-2f55-f92deb7ccfa0@oracle.com>
-Date:   Sat, 28 Mar 2020 13:48:00 +0800
-User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:52.0)
- Gecko/20100101 Thunderbird/52.9.1
+        id S1727178AbgC1S06 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 28 Mar 2020 14:26:58 -0400
+Received: from 4brad.ctyme.com ([184.105.182.90]:46640 "EHLO 4brad.ctyme.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727115AbgC1S06 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 28 Mar 2020 14:26:58 -0400
+Received: from [192.168.123.14] (c-76-102-119-11.hsd1.ca.comcast.net [76.102.119.11])
+        by 4brad.ctyme.com (Postfix) with ESMTPSA id BF7336340A37
+        for <linux-btrfs@vger.kernel.org>; Sat, 28 Mar 2020 14:26:57 -0400 (EDT)
+To:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From:   Brad Templeton <4brad@templetons.com>
+Subject: btrfs-transacti hangs system for several seconds every few minutes
+Organization: http://www.templetons.com/brad
+Message-ID: <7c0a1398-322f-400a-abe4-dfea98fd46e1@templetons.com>
+Date:   Sat, 28 Mar 2020 11:26:56 -0700
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.4.1
 MIME-Version: 1.0
-In-Reply-To: <20200221061538.4508-1-anand.jain@oracle.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-GB
 Content-Transfer-Encoding: 7bit
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9573 signatures=668685
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 bulkscore=0 suspectscore=0
- malwarescore=0 mlxscore=0 spamscore=0 mlxlogscore=999 phishscore=0
- adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2003020000 definitions=main-2003280052
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9573 signatures=668685
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
- clxscore=1015 adultscore=0 mlxscore=0 priorityscore=1501
- lowpriorityscore=0 mlxlogscore=999 bulkscore=0 phishscore=0 spamscore=0
- impostorscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2003020000 definitions=main-2003280051
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+I have a decent sized 3 disk Raid 1 that I have had on btrfs for many
+years. Over time, a serious problem has emerged, in that from time to
+time all I/O will pause, freezing any programs attempting to use the
+btrfs filesystem.   Performance has degraded over the years as well, so
+that just browsing around in directories with 300 or so files often
+takes many seconds just to autocomplete a filename or do an ls.
 
-  Could I ping you on this?
+But the big problem is that during periods of active but not heavy use,
+every few minutes the i/o system will hang for periods of 1 to 10
+seconds.   During these hangs, btrfs-transacti is doing very heavy I/O.
+  Programs waiting on I/O block -- the most frustrating is typing in vi
+and having the echo stop.  It's getting close to unusable and may be
+time to leave btrfs after many years for a different FS.
 
-Thanks, Anand
+During these incidents iotop will look like this:
+
+Total DISK READ :     499.57 K/s | Total DISK WRITE :    1639.00 K/s
+Actual DISK READ:     492.73 K/s | Actual DISK WRITE:       0.00 B/s
+  TID  PRIO  USER     DISK READ  DISK WRITE  SWAPIN      IO    COMMAND
+  882 be/4 root      499.57 K/s 1604.78 K/s  0.00 % 98.60 %
+[btrfs-transacti]
+21829 be/4 root        0.00 B/s    0.00 B/s  0.00 %  0.23 %
+[kworker/u32:1-btrfs-endio-meta]
+14662 be/4 root        0.00 B/s    0.00 B/s  0.00 %  0.17 %
+[kworker/u32:0-btrfs-endio-meta]
+22184 be/4 root        0.00 B/s    0.00 B/s  0.00 %  0.11 %
+[kworker/u32:3-events_freezable_power_]
+13063 be/4 root        0.00 B/s    0.00 B/s  0.00 %  0.06 %
+[kworker/u32:6-events_freezable_power_]
+  486 be/3 root        0.00 B/s    6.84 K/s  0.00 %  0.00 % systemd-journald
+22213 be/4 brad        0.00 B/s    6.84 K/s  0.00 %  0.00 % chrome
+--no-startup-window [ThreadPoolForeg]
+
+A way to reliably generate it, I have found, is to quickly skim through
+my large video collection  (looking for videos) I would be hitting
+"next" every second or so -- lots of read, but very little write.
+After doing about 40 seconds of this, it is sure to hang.
+
+I am running kernel 5.3.0 on Ubuntu 18.04.4, but have seen this problem
+gong back into much older kernels.
+
+My array looks like this:
+
+/dev/sda, ID: 2
+   Device size:             3.64TiB
+   Device slack:              0.00B
+   Data,RAID1:              1.79TiB
+   Metadata,RAID1:          8.00GiB
+   Unallocated:             1.84TiB
+
+/dev/sdg, ID: 1
+   Device size:             9.10TiB
+   Device slack:              0.00B
+   Data,RAID1:              7.21TiB
+   Metadata,RAID1:         14.00GiB
+   System,RAID1:           32.00MiB
+   Unallocated:             1.87TiB
+
+/dev/sdh, ID: 3
+   Device size:             7.28TiB
+   Device slack:          344.00KiB
+   Data,RAID1:              5.43TiB
+   Metadata,RAID1:          8.00GiB
+   System,RAID1:           32.00MiB
+   Unallocated:             1.84TiB
+
+/dev/sdg on /home type btrfs
+(rw,relatime,space_cache,subvolid=256,subvol=/home)
+
+I have 16gb of ram with 16gb of swap on a flash drive, the swap is in use
+
+KiB Mem : 16393944 total,   398800 free, 13538088 used,  2457056 buff/cache
+KiB Swap: 16777212 total,  6804352 free,  9972860 used.  2045812 avail Mem
 
 
+What other information would be useful in attempting to diagnose or fix
+this?   I like a number of things about BTFS.  One of them that I don't
+want to give up is the ability to do RAID with different sized disks,
+which seems like the only way it should work.  Switching to ZFS or mdadm
+again would involve disk upgrades and a very large amount of time
+copying this much data, but I'll have to do it if I can't diagnose this.
 
-On 21/2/20 2:15 PM, Anand Jain wrote:
-> v7:
-> Fix switch's fall through warning. Changle logs updates where necessary.
-> 
-> v6:
-> Patch 4/5 - If there is no change in device's read prefer then don't log
-> Patch 4/5 - Add pid to the logs
-> Patch 5/5 - If there isn't read preferred device in the chunk don't reset
-> read policy to default, instead just use stripe 0. As this is in
-> the read path it avoids going through the device list to find
-> read preferred device. So inline to this drop to check if there
-> is read preferred device before setting read policy to device.
-> 
-> __ Original email: __
-> 
-> v5:
-> Worked on review comments as received in its previous version.
-> Please refer to individual patches for the specific changes.
-> Introduces the new read_policy 'device'.
-> 
-> v4:
-> Rename readmirror attribute to read_policy. Drop separate kobj for
-> readmirror instead create read_policy attribute in fsid kobj.
-> merge v2:2/3 and v2:3/3 into v4:2/2. Patch titles have changed.
->   
-> v3:
-> v2:
-> Mainly fixes the fs_devices::readmirror declaration type from atomic_t
-> to u8. (Thanks Josef).
-> 
-> v1:
-> As of now we use only %pid method to read stripped mirrored data. So
-> application's process id determines the stripe id to be read. This type
-> of routing typically helps in a system with many small independent
-> applications tying to read random data. On the other hand the %pid
-> based read IO distribution policy is inefficient if there is a single
-> application trying to read large data as because the overall disk
-> bandwidth would remains under utilized.
-> 
-> One type of readmirror policy isn't good enough and other choices are
-> routing the IO based on device's waitqueue or manual when we have a
-> read-preferred device or a readmirror policy based on the target storage
-> caching. So this patch-set introduces a framework where we could add more
-> readmirror policies.
-> 
-> This policy is a filesystem wide policy as of now, and though the
-> readmirror policy at the subvolume level is a novel approach as it
-> provides maximum flexibility in the data center, but as of now its not
-> practical to implement such a granularity as you can't really ensure
-> reflinked extents will be read from the stripe of its desire and so
-> there will be more limitations and it can be assessed separately.
-> 
-> The approach in this patch-set is sys interface with in-memory policy.
-> And does not add any new readmirror type in this set, which can be add
-> once we are ok with the framework. Also the default policy remains %pid.
-> 
-> Previous works:
-> ----------------------------------------------------------------------
-> There were few RFCs [1] before, mainly to figure out storage
-> (or in memory only) for the readmirror policy and the interface needed.
-> 
-> [1]
-> https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg86368.html
-> 
-> https://lore.kernel.org/linux-btrfs/20190826090438.7044-1-anand.jain@oracle.com/
-> 
-> https://lore.kernel.org/linux-btrfs/5fcf9c23-89b5-b167-1f80-a0f4ac107d0b@oracle.com/
-> 
-> https://patchwork.kernel.org/cover/10859213/
-> 
-> Mount -o:
-> In the first trial it was attempted to use the mount -o option to carry
-> the readmirror policy, this is good for debugging which can make sure
-> even the mount thread metadata tree blocks are read from the disk desired.
-> It was very effective in testing radi1/raid10 write-holes.
-> 
-> Extended attribute:
-> As extended attribute is associated with the inode, to implement this
-> there is bit of extended attribute abuse or else makes it mandatory to
-> mount the rootid 5. Its messy unless readmirror policy is applied at the
-> subvol level which is not possible as of now.
-> 
-> An item type:
-> The proposed patch was to create an item to hold the readmirror policy,
-> it makes sense when compared to the abusive extended attribute approach
-> but introduces a new item and so no backward compatibility.
-> -----------------------------------------------------------------------
-> 
-> Anand Jain (5):
->    btrfs: add btrfs_strmatch helper
->    btrfs: create read policy framework
->    btrfs: create read policy sysfs attribute, pid
->    btrfs: introduce new device-state read_preferred
->    btrfs: introduce new read_policy device
-> 
->   fs/btrfs/sysfs.c   | 128 +++++++++++++++++++++++++++++++++++++++++++++
->   fs/btrfs/volumes.c |  39 +++++++++++++-
->   fs/btrfs/volumes.h |  16 ++++++
->   3 files changed, 182 insertions(+), 1 deletion(-)
-> 
 

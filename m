@@ -8,53 +8,53 @@ X-Spam-Status: No, score=-9.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8D86EC43331
-	for <linux-btrfs@archiver.kernel.org>; Tue, 31 Mar 2020 19:10:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4272AC2D0EF
+	for <linux-btrfs@archiver.kernel.org>; Tue, 31 Mar 2020 19:10:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5DD5D212CC
-	for <linux-btrfs@archiver.kernel.org>; Tue, 31 Mar 2020 19:10:54 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1E56E212CC
+	for <linux-btrfs@archiver.kernel.org>; Tue, 31 Mar 2020 19:10:55 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=libero.it header.i=@libero.it header.b="gdMTnS2k"
+	dkim=pass (2048-bit key) header.d=libero.it header.i=@libero.it header.b="hu6AkePh"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727740AbgCaTKx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 31 Mar 2020 15:10:53 -0400
-Received: from smtp-16.italiaonline.it ([213.209.10.16]:59717 "EHLO libero.it"
+        id S1728091AbgCaTKy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 31 Mar 2020 15:10:54 -0400
+Received: from smtp-16.italiaonline.it ([213.209.10.16]:56339 "EHLO libero.it"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727509AbgCaTKx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 31 Mar 2020 15:10:53 -0400
+        id S1727575AbgCaTKy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 31 Mar 2020 15:10:54 -0400
 Received: from venice.bhome ([94.37.173.46])
         by smtp-16.iol.local with ESMTPA
-        id JMHijXV70jfNYJMHjj3qIS; Tue, 31 Mar 2020 21:10:51 +0200
+        id JMHijXV70jfNYJMHkj3qIq; Tue, 31 Mar 2020 21:10:52 +0200
 x-libjamoibt: 1601
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=libero.it; s=s2014;
-        t=1585681851; bh=jiB7VSegMmHun/qtf1IscaDsX3ydWWc+sMSu9KK9XX0=;
+        t=1585681852; bh=at9o5w250skn0GTKQQ8ooc9pRYpcGLL8iMwCqqqupEM=;
         h=From;
-        b=gdMTnS2kQYneRdX1HODsqF3WDVlpvqsvI6Cee0WOH9sdFN4ueZPocIuriAwZIpsiH
-         gznlpxiS8pCGD9aKVe7lQoPvXE9YTPuRnmNF+uZXyCR85+4f+k+0q839UgtyodB28M
-         JhxsmML3oxtlARXUk8vQmbbbyYYTXv23/hyxdpX6mSHZ5drkqPb6gsQFx5tEPIkfog
-         Gam7IoAhXK6NDm1LqKYLBarZ1EydurDGlFm0dO5huAvpNC5AogduNHJk+G4H9DCxoS
-         3pFpnC+cHh53IduDnZfUNyyE4dLI3ceGoOLG74Lj3xLr4vMn7S92ExNs6ysfHlWY86
-         5poRZfmJFC4Dw==
+        b=hu6AkePhRX5wDSlFr440yrGGMmMoJZCaq+kc9uFA3Z1504M2zo2ykDcGpor/CZLmg
+         1OGApe7IcPsJjaqzlUydao13Qwbp0EYWoyNz+fO/SPSzGTO2zlywsLzE3cS9wyell0
+         5A4ljqGYykyFODJ6TH0rE0jjUihG8SvVkWBuSfk27REQR4gTdyiLTCraoVAxj2TeL6
+         fkjfRgq7nuJFTD8iZnHG9dLuLdaH48JmWuaEo2Z2kPfGBkzrv+/r7FwtDMDH0YLsNT
+         xj2pVGb6TaaclcTUguF260pOQ0rd4HF8U7XM3nuH+zXQZqGmKbuDEbvGcDGHnvi+Bz
+         q8t7DJ7wYK9Iw==
 X-CNFS-Analysis: v=2.3 cv=av7M9hRV c=1 sm=1 tr=0
  a=TpQr5eyM7/bznjVQAbUtjA==:117 a=TpQr5eyM7/bznjVQAbUtjA==:17
- a=jpOVt7BSZ2e4Z31A5e1TngXxSK0=:19 a=4G7CR4st1VtwzTxLfKwA:9
+ a=jpOVt7BSZ2e4Z31A5e1TngXxSK0=:19 a=mUxrmllu26sYn3iLKTUA:9
 From:   Goffredo Baroncelli <kreijack@libero.it>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
         Qu Wenruo <quwenruo.btrfs@gmx.com>,
         David Sterba <dsterba@suse.com>,
         Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH 1/4] Complete the implementation of RAID1C[34].
-Date:   Tue, 31 Mar 2020 21:10:42 +0200
-Message-Id: <20200331191045.8991-2-kreijack@libero.it>
+Subject: [PATCH 4/4] btrfs-progs: Add mixed profiles check to some btrfs sub-commands.
+Date:   Tue, 31 Mar 2020 21:10:45 +0200
+Message-Id: <20200331191045.8991-5-kreijack@libero.it>
 X-Mailer: git-send-email 2.26.0
 In-Reply-To: <20200331191045.8991-1-kreijack@libero.it>
 References: <20200331191045.8991-1-kreijack@libero.it>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-CMAE-Envelope: MS4wfGNfLIHCkLZha9d5dLtr7lsKmMdrqTXWKjPExfzL24rKaiOhP05e2IuAS8mgYOBQ7n/WFTWzKxrs8waBs59DvmAOYl0UHtvoESmNGPjQQbe1Ct9ywePY
- cLjDv3yncj3M9CTr4Fnt06QQUtAUgp+oqHrlLNDVhAi2n5CQZTLaBYqNNx+HBp0wH5PLeOkL/D3SCMGfquR0QMF308wzWPbLVsXXTrS5GDT+YzW/HdlMcPrF
- Aj0OEcDmKJF7eKrmljdqxCa0FUZgSqsHX2Lja0lIaKUMElcIW733xuWE3etbT0otLV8Ar6e8zctT50v2X/QvOA==
+X-CMAE-Envelope: MS4wfDNnDyr6Or4O2Gr6C/oqRlRS2OV+OrtORSLl/djSPY53+IHTiAnavn0FwbDscIeMzoXxMMrYcHUZAY9up/WvQt6khxHQXHEFQehJ9EMYlK8bqb3HXmF2
+ bYaXZRjSpuZ2yoEadSBCxEAkZKZYSqFgoN0umsdY83rSbIj5GiPzcBbK6NjasLLVjZ/BcNtwpBNJGaGEsqc2ZkZNeK3NofeMbQTz4EafrrPosH0acWRLRJ5Z
+ AXsLJppxXx72MWLQE/gyY6SznOMN9Ad1ZBcwWsVEVLh36zG0JxKvxocVEudzWa8d8D5SlPfDZm+lu99FyZK7NQ==
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -62,72 +62,90 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Goffredo Baroncelli <kreijack@inwind.it>
 
-- Complete the function btrfs_err_str adding some missing cases.
-- Sync the enum btrfs_err_code (in ibbtrfsutil/btrfs.h) with the
-rest of the codes (user space and kernel space).
-- Add missing fields to btrfs_raid_array[] for raid1c[34]
+Add a check in some btrfs subcommands to detect if a filesystem
+has mixed profiles for data/metadata/system. In this case
+a warning is showed.
 
 Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
 ---
- ioctl.h              | 4 ++++
- libbtrfsutil/btrfs.h | 4 +++-
- volumes.c            | 6 ++++++
- 3 files changed, 13 insertions(+), 1 deletion(-)
+ cmds/balance.c          | 2 ++
+ cmds/device.c           | 3 +++
+ cmds/filesystem-usage.c | 1 +
+ cmds/filesystem.c       | 1 +
+ 4 files changed, 7 insertions(+)
 
-diff --git a/ioctl.h b/ioctl.h
-index 4e7efd94..ade6dcb9 100644
---- a/ioctl.h
-+++ b/ioctl.h
-@@ -798,6 +798,10 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
- 	switch (err_code) {
- 		case BTRFS_ERROR_DEV_RAID1_MIN_NOT_MET:
- 			return "unable to go below two devices on raid1";
-+		case BTRFS_ERROR_DEV_RAID1C3_MIN_NOT_MET:
-+			return "unable to go below three devices on raid1c3";
-+		case BTRFS_ERROR_DEV_RAID1C4_MIN_NOT_MET:
-+			return "unable to go below four devices on raid1c4";
- 		case BTRFS_ERROR_DEV_RAID10_MIN_NOT_MET:
- 			return "unable to go below four devices on raid10";
- 		case BTRFS_ERROR_DEV_RAID5_MIN_NOT_MET:
-diff --git a/libbtrfsutil/btrfs.h b/libbtrfsutil/btrfs.h
-index 4bc12754..60d51ff6 100644
---- a/libbtrfsutil/btrfs.h
-+++ b/libbtrfsutil/btrfs.h
-@@ -830,7 +830,9 @@ enum btrfs_err_code {
- 	BTRFS_ERROR_DEV_TGT_REPLACE,
- 	BTRFS_ERROR_DEV_MISSING_NOT_FOUND,
- 	BTRFS_ERROR_DEV_ONLY_WRITABLE,
--	BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS
-+	BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS,
-+	BTRFS_ERROR_DEV_RAID1C3_MIN_NOT_MET,
-+	BTRFS_ERROR_DEV_RAID1C4_MIN_NOT_MET,
- };
+diff --git a/cmds/balance.c b/cmds/balance.c
+index 5392a604..20d0ebc1 100644
+--- a/cmds/balance.c
++++ b/cmds/balance.c
+@@ -716,6 +716,7 @@ static int cmd_balance_pause(const struct cmd_struct *cmd,
+ 			ret = 1;
+ 	}
  
- #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
-diff --git a/volumes.c b/volumes.c
-index b46bf598..7f84fbba 100644
---- a/volumes.c
-+++ b/volumes.c
-@@ -65,6 +65,9 @@ const struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
- 		.tolerated_failures = 2,
- 		.devs_increment	= 3,
- 		.ncopies	= 3,
-+		.raid_name	= "raid1c3",
-+		.bg_flag	= BTRFS_BLOCK_GROUP_RAID1C3,
-+		.mindev_error	= BTRFS_ERROR_DEV_RAID1C3_MIN_NOT_MET,
- 	},
- 	[BTRFS_RAID_RAID1C4] = {
- 		.sub_stripes	= 1,
-@@ -74,6 +77,9 @@ const struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
- 		.tolerated_failures = 3,
- 		.devs_increment	= 4,
- 		.ncopies	= 4,
-+		.raid_name	= "raid1c4",
-+		.bg_flag	= BTRFS_BLOCK_GROUP_RAID1C4,
-+		.mindev_error	= BTRFS_ERROR_DEV_RAID1C4_MIN_NOT_MET,
- 	},
- 	[BTRFS_RAID_DUP] = {
- 		.sub_stripes	= 1,
++	btrfs_check_for_mixed_profiles_by_fd(fd);
+ 	close_file_or_dir(fd, dirstream);
+ 	return ret;
+ }
+@@ -756,6 +757,7 @@ static int cmd_balance_cancel(const struct cmd_struct *cmd,
+ 			ret = 1;
+ 	}
+ 
++	btrfs_check_for_mixed_profiles_by_fd(fd);
+ 	close_file_or_dir(fd, dirstream);
+ 	return ret;
+ }
+diff --git a/cmds/device.c b/cmds/device.c
+index 24158308..d83f92a7 100644
+--- a/cmds/device.c
++++ b/cmds/device.c
+@@ -143,6 +143,7 @@ static int cmd_device_add(const struct cmd_struct *cmd,
+ 	}
+ 
+ error_out:
++	btrfs_check_for_mixed_profiles_by_fd(fdmnt);
+ 	close_file_or_dir(fdmnt, dirstream);
+ 	return !!ret;
+ }
+@@ -225,6 +226,7 @@ static int _cmd_device_remove(const struct cmd_struct *cmd,
+ 		}
+ 	}
+ 
++	btrfs_check_for_mixed_profiles_by_fd(fdmnt);
+ 	close_file_or_dir(fdmnt, dirstream);
+ 	return !!ret;
+ }
+@@ -659,6 +661,7 @@ static int cmd_device_usage(const struct cmd_struct *cmd, int argc, char **argv)
+ 		}
+ 
+ 		ret = _cmd_device_usage(fd, argv[i], unit_mode);
++		btrfs_check_for_mixed_profiles_by_fd(fd);
+ 		close_file_or_dir(fd, dirstream);
+ 
+ 		if (ret)
+diff --git a/cmds/filesystem-usage.c b/cmds/filesystem-usage.c
+index aa7065d5..ce07d80f 100644
+--- a/cmds/filesystem-usage.c
++++ b/cmds/filesystem-usage.c
+@@ -1043,6 +1043,7 @@ static int cmd_filesystem_usage(const struct cmd_struct *cmd,
+ 		ret = print_filesystem_usage_by_chunk(fd, chunkinfo, chunkcount,
+ 				devinfo, devcount, argv[i], unit_mode, tabular);
+ cleanup:
++		btrfs_check_for_mixed_profiles_by_fd(fd);
+ 		close_file_or_dir(fd, dirstream);
+ 		free(chunkinfo);
+ 		free(devinfo);
+diff --git a/cmds/filesystem.c b/cmds/filesystem.c
+index 4f22089a..c4bb13dd 100644
+--- a/cmds/filesystem.c
++++ b/cmds/filesystem.c
+@@ -111,6 +111,7 @@ static int cmd_filesystem_df(const struct cmd_struct *cmd,
+ 		error("get_df failed: %m");
+ 	}
+ 
++	btrfs_check_for_mixed_profiles_by_fd(fd);
+ 	close_file_or_dir(fd, dirstream);
+ 	return !!ret;
+ }
 -- 
 2.26.0
 

@@ -2,68 +2,132 @@ Return-Path: <SRS0=zgmC=5Q=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no
+X-Spam-Status: No, score=-9.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EFB24C43331
-	for <linux-btrfs@archiver.kernel.org>; Tue, 31 Mar 2020 17:42:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8D86EC43331
+	for <linux-btrfs@archiver.kernel.org>; Tue, 31 Mar 2020 19:10:54 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C238920BED
-	for <linux-btrfs@archiver.kernel.org>; Tue, 31 Mar 2020 17:42:32 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5DD5D212CC
+	for <linux-btrfs@archiver.kernel.org>; Tue, 31 Mar 2020 19:10:54 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=libero.it header.i=@libero.it header.b="gdMTnS2k"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726150AbgCaRmc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 31 Mar 2020 13:42:32 -0400
-Received: from len.romanrm.net ([91.121.86.59]:34412 "EHLO len.romanrm.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725976AbgCaRmb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 31 Mar 2020 13:42:31 -0400
-Received: from natsu (natsu.40.romanrm.net [IPv6:fd39:aa:c499:6515:e99e:8f1b:cfc9:ccb8])
-        by len.romanrm.net (Postfix) with SMTP id CBB8640044;
-        Tue, 31 Mar 2020 17:42:29 +0000 (UTC)
-Date:   Tue, 31 Mar 2020 22:42:29 +0500
-From:   Roman Mamedov <rm@romanrm.net>
-To:     Eli V <eliventer@gmail.com>
-Cc:     Paul Jones <paul@pauljones.id.au>,
-        Andrei Borzenkov <arvidjaar@gmail.com>,
-        Victor Hooi <victorhooi@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Using Intel Optane to accelerate a BTRFS array? (equivalent of
- ZLOG/SIL for ZFS?)
-Message-ID: <20200331224229.1c216ab2@natsu>
-In-Reply-To: <CAJtFHUQbcVSQw1tQzCKEtHegJT81QzTu9OkCo2bonVpMyryRyQ@mail.gmail.com>
-References: <CAMnnoULAX9Oc+O3gRbVow54H2p_aAENr8daAtyLR_0wi8Tx7xg@mail.gmail.com>
-        <a9b73920-65d5-b973-8578-9659717434b5@gmail.com>
-        <SYBPR01MB38978D6654705941C50AF95E9ECB0@SYBPR01MB3897.ausprd01.prod.outlook.com>
-        <CAJtFHUSjwBKGyjSQfB-aZwsvV=4AcnG+-h5uF_4zmBOESxd=hA@mail.gmail.com>
-        <20200331221749.52b10248@natsu>
-        <CAJtFHUQbcVSQw1tQzCKEtHegJT81QzTu9OkCo2bonVpMyryRyQ@mail.gmail.com>
+        id S1727740AbgCaTKx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 31 Mar 2020 15:10:53 -0400
+Received: from smtp-16.italiaonline.it ([213.209.10.16]:59717 "EHLO libero.it"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727509AbgCaTKx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 31 Mar 2020 15:10:53 -0400
+Received: from venice.bhome ([94.37.173.46])
+        by smtp-16.iol.local with ESMTPA
+        id JMHijXV70jfNYJMHjj3qIS; Tue, 31 Mar 2020 21:10:51 +0200
+x-libjamoibt: 1601
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=libero.it; s=s2014;
+        t=1585681851; bh=jiB7VSegMmHun/qtf1IscaDsX3ydWWc+sMSu9KK9XX0=;
+        h=From;
+        b=gdMTnS2kQYneRdX1HODsqF3WDVlpvqsvI6Cee0WOH9sdFN4ueZPocIuriAwZIpsiH
+         gznlpxiS8pCGD9aKVe7lQoPvXE9YTPuRnmNF+uZXyCR85+4f+k+0q839UgtyodB28M
+         JhxsmML3oxtlARXUk8vQmbbbyYYTXv23/hyxdpX6mSHZ5drkqPb6gsQFx5tEPIkfog
+         Gam7IoAhXK6NDm1LqKYLBarZ1EydurDGlFm0dO5huAvpNC5AogduNHJk+G4H9DCxoS
+         3pFpnC+cHh53IduDnZfUNyyE4dLI3ceGoOLG74Lj3xLr4vMn7S92ExNs6ysfHlWY86
+         5poRZfmJFC4Dw==
+X-CNFS-Analysis: v=2.3 cv=av7M9hRV c=1 sm=1 tr=0
+ a=TpQr5eyM7/bznjVQAbUtjA==:117 a=TpQr5eyM7/bznjVQAbUtjA==:17
+ a=jpOVt7BSZ2e4Z31A5e1TngXxSK0=:19 a=4G7CR4st1VtwzTxLfKwA:9
+From:   Goffredo Baroncelli <kreijack@libero.it>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
+        Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        David Sterba <dsterba@suse.com>,
+        Goffredo Baroncelli <kreijack@inwind.it>
+Subject: [PATCH 1/4] Complete the implementation of RAID1C[34].
+Date:   Tue, 31 Mar 2020 21:10:42 +0200
+Message-Id: <20200331191045.8991-2-kreijack@libero.it>
+X-Mailer: git-send-email 2.26.0
+In-Reply-To: <20200331191045.8991-1-kreijack@libero.it>
+References: <20200331191045.8991-1-kreijack@libero.it>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
+X-CMAE-Envelope: MS4wfGNfLIHCkLZha9d5dLtr7lsKmMdrqTXWKjPExfzL24rKaiOhP05e2IuAS8mgYOBQ7n/WFTWzKxrs8waBs59DvmAOYl0UHtvoESmNGPjQQbe1Ct9ywePY
+ cLjDv3yncj3M9CTr4Fnt06QQUtAUgp+oqHrlLNDVhAi2n5CQZTLaBYqNNx+HBp0wH5PLeOkL/D3SCMGfquR0QMF308wzWPbLVsXXTrS5GDT+YzW/HdlMcPrF
+ Aj0OEcDmKJF7eKrmljdqxCa0FUZgSqsHX2Lja0lIaKUMElcIW733xuWE3etbT0otLV8Ar6e8zctT50v2X/QvOA==
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, 31 Mar 2020 13:31:19 -0400
-Eli V <eliventer@gmail.com> wrote:
+From: Goffredo Baroncelli <kreijack@inwind.it>
 
-> Yes using lvm cache is an option, and will give you actual caching of
-> the data files as well. However, in my experience it doesn't do much
-> caching of metadata so using it on large filesystems doesn't seem to
-> improve interactive usage much at all, i.e. ls -l, or btrfs filesystem
-> usage etc.
+- Complete the function btrfs_err_str adding some missing cases.
+- Sync the enum btrfs_err_code (in ibbtrfsutil/btrfs.h) with the
+rest of the codes (user space and kernel space).
+- Add missing fields to btrfs_raid_array[] for raid1c[34]
 
-Forgot to mention that in my case (on a large media server) I had great
-results with the described setup, especially noticeable in the mount time.
-Walking large directories in a GUI file manager was more responsive too. Not
-to mention mass deletion of snapshots. LVM cache seemed to know well to avoid
-polluting itself with infrequently accessed sequential-pattern bulk operations
-(i.e. copying or reading back the actual file data) and appeared to cache
-mostly the metadata as it should. For anyone considering this, give it a try,
-and give it at least a few days of normal usage to properly warm up.
+Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
+---
+ ioctl.h              | 4 ++++
+ libbtrfsutil/btrfs.h | 4 +++-
+ volumes.c            | 6 ++++++
+ 3 files changed, 13 insertions(+), 1 deletion(-)
 
+diff --git a/ioctl.h b/ioctl.h
+index 4e7efd94..ade6dcb9 100644
+--- a/ioctl.h
++++ b/ioctl.h
+@@ -798,6 +798,10 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
+ 	switch (err_code) {
+ 		case BTRFS_ERROR_DEV_RAID1_MIN_NOT_MET:
+ 			return "unable to go below two devices on raid1";
++		case BTRFS_ERROR_DEV_RAID1C3_MIN_NOT_MET:
++			return "unable to go below three devices on raid1c3";
++		case BTRFS_ERROR_DEV_RAID1C4_MIN_NOT_MET:
++			return "unable to go below four devices on raid1c4";
+ 		case BTRFS_ERROR_DEV_RAID10_MIN_NOT_MET:
+ 			return "unable to go below four devices on raid10";
+ 		case BTRFS_ERROR_DEV_RAID5_MIN_NOT_MET:
+diff --git a/libbtrfsutil/btrfs.h b/libbtrfsutil/btrfs.h
+index 4bc12754..60d51ff6 100644
+--- a/libbtrfsutil/btrfs.h
++++ b/libbtrfsutil/btrfs.h
+@@ -830,7 +830,9 @@ enum btrfs_err_code {
+ 	BTRFS_ERROR_DEV_TGT_REPLACE,
+ 	BTRFS_ERROR_DEV_MISSING_NOT_FOUND,
+ 	BTRFS_ERROR_DEV_ONLY_WRITABLE,
+-	BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS
++	BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS,
++	BTRFS_ERROR_DEV_RAID1C3_MIN_NOT_MET,
++	BTRFS_ERROR_DEV_RAID1C4_MIN_NOT_MET,
+ };
+ 
+ #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
+diff --git a/volumes.c b/volumes.c
+index b46bf598..7f84fbba 100644
+--- a/volumes.c
++++ b/volumes.c
+@@ -65,6 +65,9 @@ const struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
+ 		.tolerated_failures = 2,
+ 		.devs_increment	= 3,
+ 		.ncopies	= 3,
++		.raid_name	= "raid1c3",
++		.bg_flag	= BTRFS_BLOCK_GROUP_RAID1C3,
++		.mindev_error	= BTRFS_ERROR_DEV_RAID1C3_MIN_NOT_MET,
+ 	},
+ 	[BTRFS_RAID_RAID1C4] = {
+ 		.sub_stripes	= 1,
+@@ -74,6 +77,9 @@ const struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
+ 		.tolerated_failures = 3,
+ 		.devs_increment	= 4,
+ 		.ncopies	= 4,
++		.raid_name	= "raid1c4",
++		.bg_flag	= BTRFS_BLOCK_GROUP_RAID1C4,
++		.mindev_error	= BTRFS_ERROR_DEV_RAID1C4_MIN_NOT_MET,
+ 	},
+ 	[BTRFS_RAID_DUP] = {
+ 		.sub_stripes	= 1,
 -- 
-With respect,
-Roman
+2.26.0
+

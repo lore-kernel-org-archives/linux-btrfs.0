@@ -2,62 +2,96 @@ Return-Path: <SRS0=q+/I=5R=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-2.2 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 395B4C43331
-	for <linux-btrfs@archiver.kernel.org>; Wed,  1 Apr 2020 20:37:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5C28EC2BA12
+	for <linux-btrfs@archiver.kernel.org>; Wed,  1 Apr 2020 20:40:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1077120784
-	for <linux-btrfs@archiver.kernel.org>; Wed,  1 Apr 2020 20:37:10 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 31DA520784
+	for <linux-btrfs@archiver.kernel.org>; Wed,  1 Apr 2020 20:40:17 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="gJBZuzMD"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732537AbgDAUhJ convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 1 Apr 2020 16:37:09 -0400
-Received: from mailgw-02.dd24.net ([193.46.215.43]:50540 "EHLO
-        mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1732337AbgDAUhJ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Apr 2020 16:37:09 -0400
-Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.26])
-        by mailgw-02.dd24.net (Postfix) with ESMTP id E257F60083;
-        Wed,  1 Apr 2020 20:37:07 +0000 (UTC)
-X-Virus-Scanned: Debian amavisd-new at
-        mailpolicy-01.live.igb.homer.key-systems.net
-Received: from smtp.dd24.net ([192.168.1.36])
-        by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10236)
-        with ESMTP id 55eDwMhumpGF; Wed,  1 Apr 2020 20:37:06 +0000 (UTC)
-Received: from galois.fritz.box (ppp-46-244-252-139.dynamic.mnet-online.de [46.244.252.139])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by smtp.dd24.net (Postfix) with ESMTPSA;
-        Wed,  1 Apr 2020 20:37:05 +0000 (UTC)
-Date:   Wed, 01 Apr 2020 22:37:08 +0200
-In-Reply-To: <a8a1e614-d5f0-d4b6-2f0b-626a34761758@toxicpanda.com>
-References: <800B6BF0-64AA-45F5-A539-9D2868C2835C@scientia.net> <a8a1e614-d5f0-d4b6-2f0b-626a34761758@toxicpanda.com>
-MIME-Version: 1.0
-Content-Type: text/plain;
- charset=utf-8
-Content-Transfer-Encoding: 8BIT
+        id S1732742AbgDAUkQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 1 Apr 2020 16:40:16 -0400
+Received: from mail-qt1-f171.google.com ([209.85.160.171]:43383 "EHLO
+        mail-qt1-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1732350AbgDAUkP (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Apr 2020 16:40:15 -0400
+Received: by mail-qt1-f171.google.com with SMTP id a5so1356334qtw.10
+        for <linux-btrfs@vger.kernel.org>; Wed, 01 Apr 2020 13:40:13 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
+        h=subject:to:references:from:message-id:date:user-agent:mime-version
+         :in-reply-to:content-language:content-transfer-encoding;
+        bh=H14W9xiP7ER9jsEi3D3RO4QojoUJN0h08bYSv/2dyrg=;
+        b=gJBZuzMD1ThZE27OIYxzE6x08FPbJXrPag8R5PIo5LOHuzHq62m8v31y12IpXK2v2f
+         G0qochZ2PtCI8QP9VDef37po/VO/NN4BCQD4r5trJEjXT/kGJtJrNbkNEy3u27RiJXh8
+         O8QighOTtdX3WjKx8es+EuA9+VQUcehyTu1gyfZ6AzHOnf3pyyISHaUBpHJiGPH6Ququ
+         2Z0wVD3mTZb6ZfZJo+tlB1Qsz/qRhGZq0vtBtig7QFPN1k+0YjMiwJC+UXqtjzNnRgud
+         X6zTFOaKQNTVDZZoZ4OHT/LvM+qVqeDrmS1wketcr5GrJUB/g9KsYxiskYbNwyBYY/87
+         H7hg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:to:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=H14W9xiP7ER9jsEi3D3RO4QojoUJN0h08bYSv/2dyrg=;
+        b=gN9s3UOzjlANfguK/IlwRAZSL76oQ2/bpiotU+3M0JgoEoRowIqQhQNQHA7H0J1T2q
+         VQ7DsjFT80BdiJjp/vgA7t5jRecuqBhMO5WYYESXAun3QZgnNmho7PDNWKv+BSZR9R9T
+         /2/k472pdoOscCtuduuKa9RhyA5pB458VpGAQDuRngrhUXeZTBos8H+T0wmJHGSW1HM4
+         6ZG10gPZyAtcxy6Y140vLQ1q6J1nv8+ltBrJxmaTBdsDPxfwaUk/QRSBlak2ckqI8uxf
+         jLmItIeI++y4BCNlrxGlhUXPo0fVzisisG+BJASvbzgLSBoij2ChCv7eciGh8ZuimY66
+         /dLg==
+X-Gm-Message-State: ANhLgQ3TnSiGr9xJQgfDbUXBUzKd/lqgtMvqNbbeUql46GKo/Gpsq+Go
+        tI7VMrNHoE0Qk1UzXB64VHPyuzpq0qiq0w==
+X-Google-Smtp-Source: ADFU+vsmdZxLqb6FyjGZv2QOcjgCeZBvGgTHeNjMWsBzUZKM4iwcccQRHTQ3K0voUbt2PzZBsCwRfQ==
+X-Received: by 2002:aed:2c06:: with SMTP id f6mr12290169qtd.337.1585773612711;
+        Wed, 01 Apr 2020 13:40:12 -0700 (PDT)
+Received: from [192.168.1.106] ([107.15.81.208])
+        by smtp.gmail.com with ESMTPSA id 27sm196267qkv.7.2020.04.01.13.40.11
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 01 Apr 2020 13:40:12 -0700 (PDT)
 Subject: Re: Btrfs transid corruption
-To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org
-From:   Christoph Anton Mitterer <calestyo@scientia.net>
-Message-ID: <2FA13CAC-C259-41BF-BA9E-F9032DFA185C@scientia.net>
+To:     Christoph Anton Mitterer <calestyo@scientia.net>,
+        linux-btrfs@vger.kernel.org
+References: <800B6BF0-64AA-45F5-A539-9D2868C2835C@scientia.net>
+ <a8a1e614-d5f0-d4b6-2f0b-626a34761758@toxicpanda.com>
+ <2FA13CAC-C259-41BF-BA9E-F9032DFA185C@scientia.net>
+From:   Josef Bacik <josef@toxicpanda.com>
+Message-ID: <c0e5cc1b-ddfa-270e-2934-a6470584193e@toxicpanda.com>
+Date:   Wed, 1 Apr 2020 16:40:11 -0400
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:68.0)
+ Gecko/20100101 Thunderbird/68.6.0
+MIME-Version: 1.0
+In-Reply-To: <2FA13CAC-C259-41BF-BA9E-F9032DFA185C@scientia.net>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Am 1. April 2020 22:31:58 MESZ schrieb Josef Bacik <josef@toxicpanda.com>:
->On 4/1/20 4:06 PM, Christoph Anton Mitterer wrote:
->Looks like the tree log got corrupted, you can use mount -o nologreplay
->to get 
->it mounted, and then you should be good to go (hopefully).  Thanks,
+On 4/1/20 4:37 PM, Christoph Anton Mitterer wrote:
+> Am 1. April 2020 22:31:58 MESZ schrieb Josef Bacik <josef@toxicpanda.com>:
+>> On 4/1/20 4:06 PM, Christoph Anton Mitterer wrote:
+>> Looks like the tree log got corrupted, you can use mount -o nologreplay
+>> to get
+>> it mounted, and then you should be good to go (hopefully).  Thanks,
+> 
+> 
+> I can mount it then, but only with ro...without ro I got another ctree open error (see Google drive for screenshot).
+> 
+> But this is then only to rescue the data...I cannot repair the fs, right?
+> 
 
+Oops sorry, boot into rescue mode and while the fs is unmounted do
 
-I can mount it then, but only with ro...without ro I got another ctree open error (see Google drive for screenshot).
+btrfs rescue zero-log /dev/whatever
 
-But this is then only to rescue the data...I cannot repair the fs, right? 
+and then you'll be fine.  Thanks,
 
-Thanks,
-Chris
+Josef

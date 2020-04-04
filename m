@@ -2,114 +2,167 @@ Return-Path: <SRS0=Rh/l=5U=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+X-Spam-Status: No, score=-3.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_GIT autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0FE41C2BA1A
-	for <linux-btrfs@archiver.kernel.org>; Sat,  4 Apr 2020 10:32:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9BEB9C2BA17
+	for <linux-btrfs@archiver.kernel.org>; Sat,  4 Apr 2020 10:32:23 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D907F20719
-	for <linux-btrfs@archiver.kernel.org>; Sat,  4 Apr 2020 10:32:21 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7231A206C3
+	for <linux-btrfs@archiver.kernel.org>; Sat,  4 Apr 2020 10:32:23 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=libero.it header.i=@libero.it header.b="AoTqIbq+"
+	dkim=pass (2048-bit key) header.d=libero.it header.i=@libero.it header.b="CS5mSy7Y"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726272AbgDDKcV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 4 Apr 2020 06:32:21 -0400
-Received: from smtp-16-i2.italiaonline.it ([213.209.12.16]:53448 "EHLO
-        libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726157AbgDDKcU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 4 Apr 2020 06:32:20 -0400
+        id S1726220AbgDDKcT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 4 Apr 2020 06:32:19 -0400
+Received: from smtp-16.italiaonline.it ([213.209.10.16]:34685 "EHLO libero.it"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726057AbgDDKcT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 4 Apr 2020 06:32:19 -0400
 Received: from venice.bhome ([94.37.173.46])
         by smtp-16.iol.local with ESMTPA
-        id Kg63jDxJE6Q7RKg66jI6Wo; Sat, 04 Apr 2020 12:32:18 +0200
+        id Kg63jDxJE6Q7RKg63jI6VM; Sat, 04 Apr 2020 12:32:16 +0200
 x-libjamoibt: 1601
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=libero.it; s=s2014;
-        t=1585996338; bh=NvzAaTARaLJ96vxBk5dd3zVfmf+EeFgB/b1nhVCFYZU=;
+        t=1585996336; bh=ylwoHzlX+CBoiLOl5561Dt0xmE3eZ8MVGZjeaL2ygqg=;
         h=From;
-        b=AoTqIbq+7jt+9U1Oe3dqFFZmHE/LS9OCmnlK62yGBEGQaSTVUvPsWh1G0iIHWxJxo
-         EQr2X9Kes/lLG2vf2Fcxa6N+Akqd9rs7h4FRo3l2DWsRNMzzkz12zUn0kDwF88awAP
-         eo47prsCKe4u2cJ+6N4UV9CTg0bZz0/B8i4G2878DlbkK3dos2A0wBIgd4gLmlnNKB
-         SfC+2sOA2WPwAfviBc3634X6wmHXhqidkwTk3XIizCGs1jppL1d+GfPkd7bI8eWcf9
-         8esk+HG5l4+c84r7ZtDvEbMyIXHvEhEm/FcvKUwsLinEk589gizkcJXuEYSlBKMG0m
-         6g7wPWi6ynX6A==
+        b=CS5mSy7Ynm4MQ4LTpoWPKPY1MWRrBXkacsfezqczO0qc155RBVGclxhXXLaOYHsIE
+         0mSTusCwEMvfrtmI29tIXnzpheqiAVdK9oOJEtyOSMqGR/2LNV7BekRBr3h5b0PIsT
+         L2k9tLTyxORIQTSOWAYWjlwg5/KXWHR4ucTBbWxCqR/Vy5wX0tc1SCpgESzDIsq2NB
+         +n5TIFo9YZNim2SsmcePBrGbSMrAIV16+WhX7WeNOZouV/V5/KOjXSNBmrAmJufUev
+         Xe77VNsm7LElp266SFXgyi6tVldo6ma2U8Se/WPrFAAnpKURf8ORvWukALFtfhoz3I
+         7mckn3bCgD+kQ==
 X-CNFS-Analysis: v=2.3 cv=LelCFQXi c=1 sm=1 tr=0
  a=TpQr5eyM7/bznjVQAbUtjA==:117 a=TpQr5eyM7/bznjVQAbUtjA==:17
- a=jpOVt7BSZ2e4Z31A5e1TngXxSK0=:19 a=T92Z9xJX5iHLdJxoEloA:9
+ a=QQ43WuYAYlusJQpJd6cA:9
 From:   Goffredo Baroncelli <kreijack@libero.it>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
         Qu Wenruo <quwenruo.btrfs@gmx.com>,
         David Sterba <dsterba@suse.com>,
-        Graham Cobb <g.btrfs@cobb.uk.net>,
-        Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH 5/5] Update the man page in order to give a guideline about mixed profiles.
-Date:   Sat,  4 Apr 2020 12:32:12 +0200
-Message-Id: <20200404103212.40986-6-kreijack@libero.it>
+        Graham Cobb <g.btrfs@cobb.uk.net>
+Subject: [PATCH v3] btrfs-progs: add warning for mixed profiles filesystem
+Date:   Sat,  4 Apr 2020 12:32:07 +0200
+Message-Id: <20200404103212.40986-1-kreijack@libero.it>
 X-Mailer: git-send-email 2.26.0
-In-Reply-To: <20200404103212.40986-1-kreijack@libero.it>
-References: <20200404103212.40986-1-kreijack@libero.it>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-CMAE-Envelope: MS4wfKAGwLMXXr86U8TsKLPeJGlM+Q5SkBcu5LXuqJE0AUZ3SD8jePIyqFazIUOPNZKtP7UTnBT/YGIHndjwJAVetsrOQ8Cp2j97j7vaQVrpe/4YoqPkcRQc
- JtFUMFANXp6j0977pueoUYGdoc/cmd53kdzMaqQ3SyLf3tfq+qoPAO51P47QDAOJyabDXcrWovCwKw6/Dod3kPZZCCG2DDvjtaGVETf2mDylX7Y1/cki8mot
- 71x3cl/Me0b3BfG7wM3s/nCekk9Mniw2FD26Wn7P8+bCkb7FpiaZLhhKFoCPNei2cbHrOX0732vS+D5dMzY7CcLpa59jxw2DgeA5Gn39sgI=
+X-CMAE-Envelope: MS4wfPSDX67fsdy9QFomiqD3SNPtTGSZ/x1zjl1FCYcXFQqYcHgBYBPvCFgnB+LAO/PnVqIQn5+7dWYL0v2MpW9flJxgYApXZOQ3f5j46GTgIW+9hfRIZrqj
+ lWPfAfY7ZGjCsfcoL3qHxejnp+/zhi5rCX6j+U0QU97t1b6f0CZ7h0OXRf/uyK/LFeIvqYBm301sABrffvchO56rmqGSdX/TkQuGwiNKbWnZ9pZ4Nq8xAWAl
+ 18/pVyilpc0GEsHk2TgyhWUYIEOQhe1ck+jkRCmCjMMmWtNAEiNC21jjv/l53ffwRXJYz8jm0IBX/+qGHkre4g==
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Goffredo Baroncelli <kreijack@inwind.it>
 
-Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
----
- Documentation/btrfs-man5.asciidoc | 31 +++++++++++++++++++++++++++++++
- 1 file changed, 31 insertions(+)
+Hi all,
 
-diff --git a/Documentation/btrfs-man5.asciidoc b/Documentation/btrfs-man5.asciidoc
-index 56b1ed58..88f1c5ed 100644
---- a/Documentation/btrfs-man5.asciidoc
-+++ b/Documentation/btrfs-man5.asciidoc
-@@ -846,6 +846,37 @@ work and a workaround would need to be used to mount a multi-device filesystem.
- The mount option 'device' can trigger the device scanning during mount.
- 
- 
-+FILESYSTEM WITH MULTIPLE PROFILES
-+---------------------------------
-+
-+It is possible that a btrfs filesystem features block group of the same
-+type (e.g. data) with different profiles.
-+This could happen when a profile conversion is interrupted (see
-+`btrfs-balance(8)`).
-+Some 'btrfs' commands perform a test to detect this kind of condition. In such
-+case a warning like this is showed:
-+
-+--------------------
-+WARNING: Multiple profiles detected.  See 'man btrfs(5)'.
-+WARNING: data -> [raid1, single], metadata -> [raid1, single]
-+--------------------
-+
-+In a case like this, it is suggested to complete the conversion running
-+`btrfs balance`. This because the next block group allocation
-+is performed on the basis of the set of the profiles present on the disks,
-+according to the following priorities:
-+
-+* RAID6
-+* RAID5
-+* RAID10
-+* RAID1
-+* RAID0
-+
-+For example if both the profile RAID6 and RAID1 are present on the disks,
-+the next block group allocation will be RAID6, regardeless of the last
-+`btrfs balance`.
-+
-+
- SEE ALSO
- --------
- `acl`(5),
+the aim of this patch set is to issue a warning when a mixed profiles
+filesystem is detected. This happens when the filesystems contains
+(i.e.) raid1c3 and single chunk for data.
+
+BTRFS has the capability to support a filesystem with mixed profiles.
+However this could lead to an unexpected behavior when a new chunk is
+allocated (i.e. the chunk profile is not what is wanted). Moreover
+if the user is not aware of this, he could assume a redundancy which
+doesn't exist (for example because there is some 'single' chunk when
+it is expected the filesystem to be full raid1).
+A possible cause of a mixed profiles filesystem is an interrupted
+balance operation or a not fully balance due to very specific filter.
+
+The check is added to the following btrfs commands:
+- btrfs balance pause
+- btrfs balance cancel
+- btrfs device add
+- btrfs device del
+
+The warning is shorter than the before one. Below an example and
+it is printed after the normal output of the command.
+
+   WARNING: Multiple profiles detected.  See 'man btrfs(5)'.
+   WARNING: data -> [raid1c3, single], metadata -> [raid1, single]
+
+The command "btrfs fi us" doesn't show the warning above, instead
+it was added a further line in the "Overall" section. The output now
+is this:
+
+$ sudo ./btrfs fi us /tmp/t/
+[sudo] password for ghigo: 
+Overall:
+    Device size:		  30.00GiB
+    Device allocated:		   4.78GiB
+    Device unallocated:		  25.22GiB
+    Device missing:		     0.00B
+    Used:			   1.95GiB
+    Free (estimated):		  13.87GiB	(min: 9.67GiB)
+    Data ratio:			      2.00
+    Metadata ratio:		      1.50
+    Global reserve:		   3.25MiB	(used: 0.00B)
+    Multiple profile:		       YES
+
+Data,single: Size:1.00GiB, Used:974.04MiB (95.12%)
+   /dev/loop0	   1.00GiB
+
+Data,RAID1C3: Size:1.00GiB, Used:178.59MiB (17.44%)
+   /dev/loop0	   1.00GiB
+   /dev/loop1	   1.00GiB
+   /dev/loop2	   1.00GiB
+
+Metadata,single: Size:256.00MiB, Used:76.22MiB (29.77%)
+   /dev/loop1	 256.00MiB
+
+Metadata,RAID1: Size:256.00MiB, Used:206.92MiB (80.83%)
+   /dev/loop1	 256.00MiB
+   /dev/loop2	 256.00MiB
+
+System,single: Size:32.00MiB, Used:16.00KiB (0.05%)
+   /dev/loop2	  32.00MiB
+
+Unallocated:
+   /dev/loop0	   8.00GiB
+   /dev/loop1	   8.50GiB
+   /dev/loop2	   8.72GiB
+
+
+In this case there are two kind of chunks for data (raid1c3 and single)
+and metadata (raid1, single).
+
+As the previous patch set, the warning is added also to the command
+'btrfs fi df' and 'btrfs dev us' as separate patch. If even in this
+review nobody likes it, we can simply drop this patch.
+
+Suggestion about which commands should (not) have this check are 
+welcome.
+
+v1 
+- first issue
+v2 
+- add some needed missing pieces about raid1c[34]
+- add the check to more btrfs commands
+v3
+- add a section in btrfs(5) 'FILESYSTEM WITH MULTIPLE PROFILES'
+- 'btrfs fi us': changed the worning in a info in the 'overall' section
+
+Patch #1 contains the code for the check.
+Patch #3 adds the check to the command 'btrfs dev {add,del}' and 'btrfs
+bal {pause, stop}'
+Patch #3 adds the check to the command 'btrfs fi us'
+Patch #5 add the check to the command 'btrfs fi df' and 'btrfs dev us'
+Patch #5 add the info in btrfs(5) man page
+
+Comments are welcome
+
+BR
+G.Baroncelli
+
 -- 
-2.26.0
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+
+
+
+
 

@@ -2,68 +2,101 @@ Return-Path: <SRS0=Rh/l=5U=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EAE3AC2BA15
-	for <linux-btrfs@archiver.kernel.org>; Sat,  4 Apr 2020 19:49:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F3A6EC2BA15
+	for <linux-btrfs@archiver.kernel.org>; Sat,  4 Apr 2020 20:20:27 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B353E206CC
-	for <linux-btrfs@archiver.kernel.org>; Sat,  4 Apr 2020 19:49:09 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 993BB206C3
+	for <linux-btrfs@archiver.kernel.org>; Sat,  4 Apr 2020 20:20:27 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1586031627;
+	bh=ghqe8WbLkHiNHmCPDN2B2mLrBzCG3shSYsacd+svo6Y=;
+	h=From:To:Subject:Date:List-ID:From;
+	b=w0g98VxiTDYeOFJ/mQ3W9tuGILCzX1Bc3MNG8usalXpUNjgEpnFaY1SkFo2fSDhAe
+	 SaC3NTEuxQAuFlldBXQF5A+YMtr6eJey8p/irm8MDzZ9d3qgcy+Ovp/nOOgs24dWVF
+	 5CLZiQl6lZYGDEIJ65LsGZdlvsJFCYWPBCdxwKAg=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726294AbgDDTqc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 4 Apr 2020 15:46:32 -0400
-Received: from freki.datenkhaos.de ([81.7.17.101]:54472 "EHLO
-        freki.datenkhaos.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726269AbgDDTqc (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 4 Apr 2020 15:46:32 -0400
-X-Greylist: delayed 457 seconds by postgrey-1.27 at vger.kernel.org; Sat, 04 Apr 2020 15:46:31 EDT
-Received: from localhost (localhost [127.0.0.1])
-        by freki.datenkhaos.de (Postfix) with ESMTP id 09F8526D8E87
-        for <linux-btrfs@vger.kernel.org>; Sat,  4 Apr 2020 21:38:53 +0200 (CEST)
-Received: from freki.datenkhaos.de ([127.0.0.1])
-        by localhost (freki.datenkhaos.de [127.0.0.1]) (amavisd-new, port 10024)
-        with ESMTP id VMnir62_KxfN for <linux-btrfs@vger.kernel.org>;
-        Sat,  4 Apr 2020 21:38:51 +0200 (CEST)
-Received: from latitude (x4d0b1289.dyn.telefonica.de [77.11.18.137])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
+        id S1726332AbgDDUU0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 4 Apr 2020 16:20:26 -0400
+Received: from mail.kernel.org ([198.145.29.99]:54400 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726327AbgDDUU0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 4 Apr 2020 16:20:26 -0400
+Received: from debian6.Home (bl8-197-74.dsl.telepac.pt [85.241.197.74])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by freki.datenkhaos.de (Postfix) with ESMTPSA
-        for <linux-btrfs@vger.kernel.org>; Sat,  4 Apr 2020 21:38:51 +0200 (CEST)
-Date:   Sat, 4 Apr 2020 21:38:46 +0200
-From:   Johannes Hirte <johannes.hirte@datenkhaos.de>
-To:     linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: unexpected truncated files
-Message-ID: <20200404193846.GA432065@latitude>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
+        by mail.kernel.org (Postfix) with ESMTPSA id AFBF8206C3
+        for <linux-btrfs@vger.kernel.org>; Sat,  4 Apr 2020 20:20:25 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1586031626;
+        bh=ghqe8WbLkHiNHmCPDN2B2mLrBzCG3shSYsacd+svo6Y=;
+        h=From:To:Subject:Date:From;
+        b=Y3l0O7LdnieQs/KS8HmTRdMoXg3iiZ6dbQFgNqe+OPt6HQleBYIT4iToAvlubxQjU
+         tK2WS8i1zmkiRHs1BDPxncRhVmE/U/wuQLg7HJ9ZJZMw1mnAF2UMoGjjzstpnhy151
+         sPvOrJSgZKUn8HgC9rsp/jrBzUyadc0kCtCLFLm8=
+From:   fdmanana@kernel.org
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: fix lost i_size update after cloning inline extent
+Date:   Sat,  4 Apr 2020 21:20:22 +0100
+Message-Id: <20200404202022.30192-1-fdmanana@kernel.org>
+X-Mailer: git-send-email 2.11.0
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-While testing with the current 5.7 development kernel, I've encountered
-some strange behaviour. I'm using Gentoo linux, and during updating the
-system I got some unexpected errors. It looked like some files were
-missing. Some investigations showed me, that files from shortly
-installed packages were truncated to zero. So for example the config
-files for apache webserver were affected. I've reinstalled apache,
-verified that the config was ok and continued the system update with the
-next package. After this, the apache config files were truncated again.
-I've found several files from different packages that were affed too,
-but only text files (configs, cmake-files, headers). Files which were
-writen, are truncated by some other write operation to the filesystem.
+From: Filipe Manana <fdmanana@suse.com>
 
-I'm not sure, if this is really caused by btrfs, but it's the most
-obvious candidate. After switching back to 5.6-kernel, the truncation
-stopped und I was able to (re-)install the packages without any trouble.
+When not using the NO_HOLES feature we were not marking the destination's
+file range as written after cloning an inline extent into it. This can
+lead to a data loss if the current destination file size is smaller than
+the source file's size.
 
-Has anyone ideas what could cause this behaviour?
+Example:
 
+  $ mkfs.btrfs -f -O ^no-holes /dev/sdc
+  $ mount /mnt/sdc /mnt
+
+  $ echo "hello world" > /mnt/foo
+  $ cp --reflink=always /mnt/foo /mnt/bar
+  $ rm -f /mnt/foo
+  $ umount /mnt
+
+  $ mount /mnt/sdc /mnt
+  $ cat /mnt/bar
+  $
+  $ stat -c %s /mnt/bar
+  0
+
+  # -> the file is empty, since we deleted foo, the data lost is forever
+
+Fix that by calling btrfs_inode_set_file_extent_range() after cloning an
+inline extent.
+
+A test case for fstests will follow soon.
+
+Fixes: 9ddc959e802bf ("btrfs: use the file extent tree infrastructure")
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/reflink.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/fs/btrfs/reflink.c b/fs/btrfs/reflink.c
+index d1973141d3bb..040009d1cc31 100644
+--- a/fs/btrfs/reflink.c
++++ b/fs/btrfs/reflink.c
+@@ -264,6 +264,7 @@ static int clone_copy_inline_extent(struct inode *dst,
+ 			    size);
+ 	inode_add_bytes(dst, datal);
+ 	set_bit(BTRFS_INODE_NEEDS_FULL_SYNC, &BTRFS_I(dst)->runtime_flags);
++	ret = btrfs_inode_set_file_extent_range(BTRFS_I(dst), 0, aligned_end);
+ out:
+ 	if (!ret && !trans) {
+ 		/*
 -- 
-Regards,
-  Johannes Hirte
+2.11.0
 

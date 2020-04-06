@@ -2,193 +2,122 @@ Return-Path: <SRS0=ixrC=5W=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.3 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.0 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,
+	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 279BFC2BA2B
-	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Apr 2020 10:51:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CF7EDC2BA1E
+	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Apr 2020 11:51:35 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id EF2B1206F8
-	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Apr 2020 10:51:40 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1586170301;
-	bh=Ca5AY7KsqNITjQOHY21bYkfRx1xXHnlK/a6mqp/qpPc=;
-	h=From:To:Cc:Subject:Date:List-ID:From;
-	b=wKAp++/Kk0kMoLMqEJ7lk/JzcQoxtZ03EJ6Jg+Gmo8e6fi5HMUFDmACtrwP04e2+f
-	 cFgII446dDhOp/1dm8R80Rimn2LViMFX6kOtBAc2xsm2cgVFUs513srBOoy5uYZymV
-	 HDwj6XV64va2bJSD6xwHGMQ5TKg56gwbBxgD+aac=
+	by mail.kernel.org (Postfix) with ESMTP id A52B020780
+	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Apr 2020 11:51:35 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="ns/JMUsI"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727078AbgDFKvk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 6 Apr 2020 06:51:40 -0400
-Received: from mail.kernel.org ([198.145.29.99]:36356 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726841AbgDFKvk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 6 Apr 2020 06:51:40 -0400
-Received: from debian6.Home (bl8-197-74.dsl.telepac.pt [85.241.197.74])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 305D620678;
-        Mon,  6 Apr 2020 10:51:38 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1586170298;
-        bh=Ca5AY7KsqNITjQOHY21bYkfRx1xXHnlK/a6mqp/qpPc=;
-        h=From:To:Cc:Subject:Date:From;
-        b=Geg0e20D/JSBdo5V153kYXLMr87UvS44iarqoy/JFYyz3KXc0+0YB0vPMowS1fcsk
-         pfu6vDdgb3DeBcu+zuq8008+IQvkfJO62Zso7ZIi6HWlrCBtq7lZgfEc/otF048GyH
-         q9ca+ppsgrP4bRwMgzCA/8agx6Mmr56JF/LjqD8g=
-From:   fdmanana@kernel.org
-To:     fstests@vger.kernel.org
-Cc:     linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] btrfs: check that cloning an inline extent does not lead to data loss
-Date:   Mon,  6 Apr 2020 11:51:34 +0100
-Message-Id: <20200406105134.2233-1-fdmanana@kernel.org>
-X-Mailer: git-send-email 2.11.0
+        id S1727575AbgDFLve (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 6 Apr 2020 07:51:34 -0400
+Received: from userp2120.oracle.com ([156.151.31.85]:40632 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726329AbgDFLve (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Apr 2020 07:51:34 -0400
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 036BnHj6027615
+        for <linux-btrfs@vger.kernel.org>; Mon, 6 Apr 2020 11:51:32 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
+ date : message-id : in-reply-to : references; s=corp-2020-01-29;
+ bh=bszKer2+tebRvMuF2lhAhjztr5cP3v/1OBY0PY660F8=;
+ b=ns/JMUsI6FDu5ISrFbA/3P5yiksji5kj0FGZmF8nVcs1+M9+nk8MqV/vvwlIcM2CuBa8
+ 4zkaLIt14BCjoFTRdVitApo9BEehu83eOX0tnaQdK6s2jIQEDBFtfzCVdIr5HsFhQzsU
+ LbJfYkKZF+T3Qa0qRyDAwTjGa8Up4WM+WkQqdzeYiNQ6QwE5RmboV6KjFHKBTVAOx/kr
+ VVSqD7BDc5mKW5C6xxE83ZcNh1fg4ijs9mD5PxFG5v2HI9WwC86BBwdrdo+tlSBOvLQy
+ ahQE498Sf9oAnVR42l+XmH3N4M0JOoM6uRcb5yzN4Tr7WaYLN4FbTvTjx02CcJH86z0/ xg== 
+Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
+        by userp2120.oracle.com with ESMTP id 306jvmx8eb-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Mon, 06 Apr 2020 11:51:32 +0000
+Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
+        by userp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 036BlEPo064708
+        for <linux-btrfs@vger.kernel.org>; Mon, 6 Apr 2020 11:51:32 GMT
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by userp3030.oracle.com with ESMTP id 3073qcw4tp-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Mon, 06 Apr 2020 11:51:32 +0000
+Received: from abhmp0008.oracle.com (abhmp0008.oracle.com [141.146.116.14])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id 036BpV94000660
+        for <linux-btrfs@vger.kernel.org>; Mon, 6 Apr 2020 11:51:31 GMT
+Received: from tp.localdomain (/39.109.145.141)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Mon, 06 Apr 2020 04:51:31 -0700
+From:   Anand Jain <anand.jain@oracle.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH v7 1/5] btrfs: add btrfs_strmatch helper
+Date:   Mon,  6 Apr 2020 19:51:07 +0800
+Message-Id: <1586173871-5559-2-git-send-email-anand.jain@oracle.com>
+X-Mailer: git-send-email 1.8.3.1
+In-Reply-To: <1586173871-5559-1-git-send-email-anand.jain@oracle.com>
+References: <1586173871-5559-1-git-send-email-anand.jain@oracle.com>
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9582 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 phishscore=0 mlxscore=0 mlxlogscore=999
+ spamscore=0 bulkscore=0 adultscore=0 malwarescore=0 suspectscore=1
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2003020000
+ definitions=main-2004060104
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9582 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 phishscore=0 suspectscore=1
+ mlxlogscore=999 mlxscore=0 bulkscore=0 adultscore=0 priorityscore=1501
+ lowpriorityscore=0 clxscore=1015 malwarescore=0 impostorscore=0
+ spamscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2003020000 definitions=main-2004060104
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+Add a generic helper to match the golden-string in the given-string,
+and ignore the leading and trailing whitespaces if any.
 
-We have a bug in the current kernel merge window (for 5.7) that results
-in data loss when cloning an inline extent into a new file (or an empty
-file. This change adds a test for such case into the existing test case
-btrfs/205, because it's the test case that tests all the supported
-scenarios for cloning inline extents in btrfs.
-
-The btrfs patch for the linux kernel that fixes the regression has the
-following sibject:
-
-  "Btrfs: fix lost i_size update after cloning inline extent"
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Suggested-by: David Sterba <dsterba@suse.com>
 ---
- tests/btrfs/205     | 13 +++++++++++++
- tests/btrfs/205.out | 32 ++++++++++++++++++++++++++++++++
- 2 files changed, 45 insertions(+)
+v5: born
 
-diff --git a/tests/btrfs/205 b/tests/btrfs/205
-index 9bec2bfa..66355678 100755
---- a/tests/btrfs/205
-+++ b/tests/btrfs/205
-@@ -128,6 +128,18 @@ run_tests()
+ fs/btrfs/sysfs.c | 23 +++++++++++++++++++++++
+ 1 file changed, 23 insertions(+)
+
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index 93cf76118a04..7bb68cef98ab 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -809,6 +809,29 @@ static ssize_t btrfs_checksum_show(struct kobject *kobj,
  
-     echo "File bar6 digest = $(_md5_checksum $SCRATCH_MNT/bar6)"
+ BTRFS_ATTR(, checksum, btrfs_checksum_show);
  
-+    # File foo3 a single inline extent of 500 bytes.
-+    echo "Creating file foo3"
-+    $XFS_IO_PROG -f -c "pwrite -S 0xbf 0 500" $SCRATCH_MNT/foo3 | _filter_xfs_io
++/*
++ * Match the %golden in the %given. Ignore the leading and trailing whitespaces
++ * if any.
++ */
++static int btrfs_strmatch(const char *given, const char *golden)
++{
++	size_t len = strlen(golden);
++	char *stripped;
 +
-+    # File bar7 is an empty file, has no extents.
-+    touch $SCRATCH_MNT/bar7
++	/* strip leading whitespace */
++	stripped = skip_spaces(given);
 +
-+    echo "Cloning foo3 into bar7"
-+    $XFS_IO_PROG -c "reflink $SCRATCH_MNT/foo3" $SCRATCH_MNT/bar7 | _filter_xfs_io
++	if (strncmp(stripped, golden, len) == 0) {
++		/* strip trailing whitespace */
++		if (strlen(skip_spaces(stripped + len)))
++			return -EINVAL;
 +
-+    echo "File bar7 digest = $(_md5_checksum $SCRATCH_MNT/bar7)"
++		return 0;
++	}
 +
-     # Unmount and mount again the filesystem. We want to verify the reflink
-     # operations were durably persisted.
-     _scratch_cycle_mount
-@@ -139,6 +151,7 @@ run_tests()
-     echo "File bar4 digest = $(_md5_checksum $SCRATCH_MNT/bar4)"
-     echo "File bar5 digest = $(_md5_checksum $SCRATCH_MNT/bar5)"
-     echo "File bar6 digest = $(_md5_checksum $SCRATCH_MNT/bar6)"
-+    echo "File bar7 digest = $(_md5_checksum $SCRATCH_MNT/bar7)"
- }
- 
- _scratch_mkfs "-O ^no-holes" >>$seqres.full 2>&1
-diff --git a/tests/btrfs/205.out b/tests/btrfs/205.out
-index 948e0634..d9932fc0 100644
---- a/tests/btrfs/205.out
-+++ b/tests/btrfs/205.out
-@@ -52,6 +52,13 @@ Cloning foo1 into bar6
- linked 131072/131072 bytes at offset 0
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
- File bar6 digest = 4b48829714d20a4e73a0cf1565270076
-+Creating file foo3
-+wrote 500/500 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+Cloning foo3 into bar7
-+linked 0/0 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+File bar7 digest = 67679afda6f846539ca7138452de0171
- File digests after mounting again the filesystem:
- File bar1 digest = e9d03fb5fff30baf3c709f2384dfde67
- File bar2 digest = 85678cf32ed48f92ca42ad06d0b63f2a
-@@ -59,6 +66,7 @@ File bar3 digest = 85678cf32ed48f92ca42ad06d0b63f2a
- File bar4 digest = 4b48829714d20a4e73a0cf1565270076
- File bar5 digest = 4b48829714d20a4e73a0cf1565270076
- File bar6 digest = 4b48829714d20a4e73a0cf1565270076
-+File bar7 digest = 67679afda6f846539ca7138452de0171
- 
- Testing with -o compress
- 
-@@ -112,6 +120,13 @@ Cloning foo1 into bar6
- linked 131072/131072 bytes at offset 0
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
- File bar6 digest = 4b48829714d20a4e73a0cf1565270076
-+Creating file foo3
-+wrote 500/500 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+Cloning foo3 into bar7
-+linked 0/0 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+File bar7 digest = 67679afda6f846539ca7138452de0171
- File digests after mounting again the filesystem:
- File bar1 digest = e9d03fb5fff30baf3c709f2384dfde67
- File bar2 digest = 85678cf32ed48f92ca42ad06d0b63f2a
-@@ -119,6 +134,7 @@ File bar3 digest = 85678cf32ed48f92ca42ad06d0b63f2a
- File bar4 digest = 4b48829714d20a4e73a0cf1565270076
- File bar5 digest = 4b48829714d20a4e73a0cf1565270076
- File bar6 digest = 4b48829714d20a4e73a0cf1565270076
-+File bar7 digest = 67679afda6f846539ca7138452de0171
- 
- Testing with -o nodatacow
- 
-@@ -172,6 +188,13 @@ Cloning foo1 into bar6
- linked 131072/131072 bytes at offset 0
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
- File bar6 digest = 4b48829714d20a4e73a0cf1565270076
-+Creating file foo3
-+wrote 500/500 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+Cloning foo3 into bar7
-+linked 0/0 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+File bar7 digest = 67679afda6f846539ca7138452de0171
- File digests after mounting again the filesystem:
- File bar1 digest = e9d03fb5fff30baf3c709f2384dfde67
- File bar2 digest = 85678cf32ed48f92ca42ad06d0b63f2a
-@@ -179,6 +202,7 @@ File bar3 digest = 85678cf32ed48f92ca42ad06d0b63f2a
- File bar4 digest = 4b48829714d20a4e73a0cf1565270076
- File bar5 digest = 4b48829714d20a4e73a0cf1565270076
- File bar6 digest = 4b48829714d20a4e73a0cf1565270076
-+File bar7 digest = 67679afda6f846539ca7138452de0171
- 
- Testing with -O no-holes
- 
-@@ -232,6 +256,13 @@ Cloning foo1 into bar6
- linked 131072/131072 bytes at offset 0
- XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
- File bar6 digest = 4b48829714d20a4e73a0cf1565270076
-+Creating file foo3
-+wrote 500/500 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+Cloning foo3 into bar7
-+linked 0/0 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+File bar7 digest = 67679afda6f846539ca7138452de0171
- File digests after mounting again the filesystem:
- File bar1 digest = e9d03fb5fff30baf3c709f2384dfde67
- File bar2 digest = 85678cf32ed48f92ca42ad06d0b63f2a
-@@ -239,3 +270,4 @@ File bar3 digest = 85678cf32ed48f92ca42ad06d0b63f2a
- File bar4 digest = 4b48829714d20a4e73a0cf1565270076
- File bar5 digest = 4b48829714d20a4e73a0cf1565270076
- File bar6 digest = 4b48829714d20a4e73a0cf1565270076
-+File bar7 digest = 67679afda6f846539ca7138452de0171
++	return -EINVAL;
++}
++
+ static const struct attribute *btrfs_attrs[] = {
+ 	BTRFS_ATTR_PTR(, label),
+ 	BTRFS_ATTR_PTR(, nodesize),
 -- 
-2.11.0
+2.23.0
 

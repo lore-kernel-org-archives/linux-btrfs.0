@@ -2,235 +2,174 @@ Return-Path: <SRS0=ixrC=5W=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.9 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-4.0 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 222E0C2BA19
-	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Apr 2020 11:51:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C905EC2BA19
+	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Apr 2020 11:53:33 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id DE598206F8
-	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Apr 2020 11:51:42 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9215B2072A
+	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Apr 2020 11:53:33 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="G/s2qAh+"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="qDP0Sb+0"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727831AbgDFLvm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 6 Apr 2020 07:51:42 -0400
-Received: from userp2120.oracle.com ([156.151.31.85]:40718 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727717AbgDFLvl (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Apr 2020 07:51:41 -0400
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 036BmsVG027369
-        for <linux-btrfs@vger.kernel.org>; Mon, 6 Apr 2020 11:51:40 GMT
+        id S1727512AbgDFLxc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 6 Apr 2020 07:53:32 -0400
+Received: from aserp2120.oracle.com ([141.146.126.78]:34214 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727376AbgDFLxc (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Apr 2020 07:53:32 -0400
+Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
+        by aserp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 036Blfvv078926
+        for <linux-btrfs@vger.kernel.org>; Mon, 6 Apr 2020 11:53:31 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
- date : message-id : in-reply-to : references; s=corp-2020-01-29;
- bh=b8D3KCYlcHlSc8ubkZB8GxPYL1MW6t6EH36FG0m0ifM=;
- b=G/s2qAh+An6B5OvM0+iNFCGJopAMmRQvyol2fhxv9UuJMtXfvDRCcs6pJRQCUdoeRYmY
- ioAAIhvs//676tezxhzIaR69DyBacWQfn8SBlNVDjgh3KsPrvG5VtJB24t4/jLwFG+RA
- l9HSaRgzjtVYMtByYiR+CqdiAR9lqf02tvmpw573AjyoO0gc/mLWVM6/kqY6pT7k+f44
- R92QKmUoIbsU4mpHSU+n3kP7nJee03Ck6E5jkOwKpqFiXH4MvWCYPLu5RP+U3cYC4WGa
- thV0zjf4LFE/OTo/4e63rVDyLrAR1gv3ddA11d8RqgTTNFiu4my3jcqng8BGkjBEPMkY fA== 
+ date : message-id; s=corp-2020-01-29;
+ bh=0rtjslhY8mSKNkHG4Rj96Lp2huNXxcgmDcxkfnMn39Q=;
+ b=qDP0Sb+02M2yyZn/3CSUcutPCtNMWSPyZ7yNfeQskAp2bDOSMq3/44hkrU9jrIYoQnyW
+ nc5mGZy+ATzvzyFJX3UYVfu8liR7S7ExaGORFEFxSagg+jDNNrUuiyCH8iNyUmUncMF5
+ fKRoHkERyOxNZFtcMNyxezXCSb5+V6trGSXermMW2RSPZRbtWgJf2XDmpylWnV2Gtyjd
+ hWV9dqbKe/5RLf4LMTicaPqW/xsbZjfw4PMFv4Npzl3CxnQf3tlWZjMrLJlBpFOk+ZMy
+ JhnI+aaNtmKqSLoVQbGBATqnH5HPi5p4OZKU8Z4iGBrGGXEtNhaGDvJtlpC4OYofaf5v jg== 
 Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
-        by userp2120.oracle.com with ESMTP id 306jvmx8f3-1
+        by aserp2120.oracle.com with ESMTP id 306j6m6b0u-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 06 Apr 2020 11:51:40 +0000
+        for <linux-btrfs@vger.kernel.org>; Mon, 06 Apr 2020 11:53:30 +0000
 Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
-        by userp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 036BlEJo064751
-        for <linux-btrfs@vger.kernel.org>; Mon, 6 Apr 2020 11:51:40 GMT
+        by userp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 036BlDxK064678
+        for <linux-btrfs@vger.kernel.org>; Mon, 6 Apr 2020 11:51:30 GMT
 Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by userp3030.oracle.com with ESMTP id 3073qcw523-1
+        by userp3030.oracle.com with ESMTP id 3073qcw4qw-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 06 Apr 2020 11:51:40 +0000
+        for <linux-btrfs@vger.kernel.org>; Mon, 06 Apr 2020 11:51:30 +0000
 Received: from abhmp0008.oracle.com (abhmp0008.oracle.com [141.146.116.14])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 036BpdnM009335
-        for <linux-btrfs@vger.kernel.org>; Mon, 6 Apr 2020 11:51:39 GMT
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 036BpTlT009203
+        for <linux-btrfs@vger.kernel.org>; Mon, 6 Apr 2020 11:51:29 GMT
 Received: from tp.localdomain (/39.109.145.141)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Mon, 06 Apr 2020 04:51:39 -0700
+        with ESMTP ; Mon, 06 Apr 2020 04:51:28 -0700
 From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v7 5/5] btrfs: introduce new read_policy device
-Date:   Mon,  6 Apr 2020 19:51:11 +0800
-Message-Id: <1586173871-5559-6-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH v7 rebased 0/5] readmirror feature (sysfs and in-memory only approach; with new read_policy device)
+Date:   Mon,  6 Apr 2020 19:51:06 +0800
+Message-Id: <1586173871-5559-1-git-send-email-anand.jain@oracle.com>
 X-Mailer: git-send-email 1.8.3.1
-In-Reply-To: <1586173871-5559-1-git-send-email-anand.jain@oracle.com>
-References: <1586173871-5559-1-git-send-email-anand.jain@oracle.com>
 X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9582 signatures=668685
 X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 phishscore=0 mlxscore=0 mlxlogscore=999
- spamscore=0 bulkscore=0 adultscore=0 malwarescore=0 suspectscore=1
+ spamscore=0 bulkscore=0 adultscore=0 malwarescore=0 suspectscore=0
  classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2003020000
  definitions=main-2004060104
 X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9582 signatures=668685
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 phishscore=0 suspectscore=1
- mlxlogscore=999 mlxscore=0 bulkscore=0 adultscore=0 priorityscore=1501
- lowpriorityscore=0 clxscore=1015 malwarescore=0 impostorscore=0
- spamscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2003020000 definitions=main-2004060104
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 bulkscore=0 mlxlogscore=999 spamscore=0
+ priorityscore=1501 suspectscore=0 lowpriorityscore=0 malwarescore=0
+ impostorscore=0 mlxscore=0 phishscore=0 adultscore=0 clxscore=1015
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2003020000
+ definitions=main-2004060104
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Read-policy type 'device' and device flag 'read-preferred':
+v7:
+Fix switch's fall through warning. Changle logs updates where necessary.
 
-The read-policy type device picks the device(s) flagged as
-read-preferred for reading chunks of type raid1, raid10,
-raid1c3 and raid1c4.
-
-As system might contain ssd, nvme, iscsi or san lun, and which are all
-a non-rotational device its not a good idea to set the read-preferred
-automatically. Instead device read-policy along with the read-preferred
-flag provides an ability to do it manually. This advance tuning is
-useful in more than one situation, like for example,
- - In heterogeneous-disk volume it provides an ability to choose the
-   low latency disks for reading.
- - Useful for more accurate testing.
- - Avoid known problematic device from reading the chunk until it is
-   replaced (by mark the good devices as read-preferred).
-
-Note:
-
-If the read-policy type is set to 'device', but there isn't any device
-which is flagged as read-preferred, then stripe 0 is used for reading.
-
-The device replace won't migrate the read-preferred flag to the new
-replace target device.
-
-As of now this is in-memory only feature.
-
-Its point less to set the read-preferred flag on the missing device,
-as IOs aren't submitted to the missing device.
-
-If there are more than one read-preferred device in a chunk, the read IO
-shall go to the stripe 0 (as of now, when qdepth patches are integrated
-we will use the least busy device among the read-preferred devices).
-
-Usage example:
-
-Consider a typical two disks raid1.
-
-Configure devid1 for reading.
-
-$ echo 1 > devinfo/1/read_preferred
-$ cat devinfo/1/read_preferred; cat devinfo/2/read_preferred
-1
-0
-
-$ pwd
-/sys/fs/btrfs/12345678-1234-1234-1234-123456789abc
-
-$ cat read_policy; echo device > ./read_policy; cat read_policy
-[pid] device
-pid [device]
-
-Now read IOs are sent to devid 1 (sdb).
-
-$ echo 3 > /proc/sys/vm/drop_caches; md5sum /btrfs/YkZI
-
-$ iostat -zy 1 | egrep 'sdb|sdc' (from another terminal)
-sdb              50.00     40048.00         0.00      40048          0
-
-Change the read-preferred device from devid 1 to devid 2 (sdc).
-
-$ echo 0 > ./devinfo/1/read_preferred; echo 1 > ./devinfo/2/read_preferred;
-
-[ 3343.918658] BTRFS info (device sdb): reset read preferred on devid 1 (1334)
-[ 3343.919876] BTRFS info (device sdb): set read preferred on devid 2 (1334)
-
-Further read ios are sent to devid 2 (sdc).
-
-$ echo 3 > /proc/sys/vm/drop_caches; md5sum /btrfs/YkZI
-
-$ iostat -zy 1 | egrep 'sdb|sdc' (from another terminal)
-sdc              49.00     40048.00         0.00      40048          0
-
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
-v7: Change log updated.
 v6:
-. If there isn't read preferred device in the chunk don't reset
+Patch 4/5 - If there is no change in device's read prefer then don't log
+Patch 4/5 - Add pid to the logs
+Patch 5/5 - If there isn't read preferred device in the chunk don't reset
 read policy to default, instead just use stripe 0. As this is in
 the read path it avoids going through the device list to find
 read preferred device. So inline to this drop to check if there
 is read preferred device before setting read policy to device.
-. Commit log updated. Adds more info about this new feature.
-v5: born
 
- fs/btrfs/sysfs.c   |  3 ++-
- fs/btrfs/volumes.c | 24 ++++++++++++++++++++++++
- fs/btrfs/volumes.h |  1 +
- 3 files changed, 27 insertions(+), 1 deletion(-)
+__ Original email: __
 
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index 72daaedb7b04..af53ed879dd6 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -832,7 +832,8 @@ static int btrfs_strmatch(const char *given, const char *golden)
- 	return -EINVAL;
- }
+v5:
+Worked on review comments as received in its previous version.
+Please refer to individual patches for the specific changes.
+Introduces the new read_policy 'device'.
+
+v4:
+Rename readmirror attribute to read_policy. Drop separate kobj for
+readmirror instead create read_policy attribute in fsid kobj.
+merge v2:2/3 and v2:3/3 into v4:2/2. Patch titles have changed.
  
--static const char* const btrfs_read_policy_name[] = { "pid" };
-+/* Must follow the order as in enum btrfs_read_policy */
-+static const char* const btrfs_read_policy_name[] = { "pid", "device" };
- 
- static ssize_t btrfs_read_policy_show(struct kobject *kobj,
- 				      struct kobj_attribute *a, char *buf)
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 9dd7e3687463..5e53380e1d8d 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -5380,6 +5380,26 @@ int btrfs_is_parity_mirror(struct btrfs_fs_info *fs_info, u64 logical, u64 len)
- 	return ret;
- }
- 
-+static int btrfs_find_read_preferred(struct map_lookup *map, int num_stripe)
-+{
-+	int i;
-+
-+	/*
-+	 * If there are more than one read preferred devices, then just pick the
-+	 * first found read preferred device as of now. Once we have the Qdepth
-+	 * based device selection, we could pick the least busy device among the
-+	 * read preferred devices.
-+	 */
-+	for (i = 0; i < num_stripe; i++) {
-+		if (test_bit(BTRFS_DEV_STATE_READ_PREFERRED,
-+			     &map->stripes[i].dev->dev_state))
-+			return i;
-+        }
-+
-+	/* If there is no read preferred device then just use stripe 0 */
-+	return 0;
-+}
-+
- static int find_live_mirror(struct btrfs_fs_info *fs_info,
- 			    struct map_lookup *map, int first,
- 			    int dev_replace_is_ongoing)
-@@ -5399,6 +5419,10 @@ static int find_live_mirror(struct btrfs_fs_info *fs_info,
- 		num_stripes = map->num_stripes;
- 
- 	switch (fs_info->fs_devices->read_policy) {
-+	case BTRFS_READ_POLICY_DEVICE:
-+		preferred_mirror = btrfs_find_read_preferred(map, num_stripes);
-+		preferred_mirror = first + preferred_mirror;
-+		break;
- 	default:
- 		/*
- 		 * Shouldn't happen, just warn and use pid instead of failing.
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 487a54c3140e..efa9635a4748 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -214,6 +214,7 @@ BTRFS_DEVICE_GETSET_FUNCS(bytes_used);
-  */
- enum btrfs_read_policy {
- 	BTRFS_READ_POLICY_PID,
-+	BTRFS_READ_POLICY_DEVICE,
- 	BTRFS_NR_READ_POLICY,
- };
- 
+v3:
+v2:
+Mainly fixes the fs_devices::readmirror declaration type from atomic_t
+to u8. (Thanks Josef).
+
+v1:
+As of now we use only %pid method to read stripped mirrored data. So
+application's process id determines the stripe id to be read. This type
+of routing typically helps in a system with many small independent
+applications tying to read random data. On the other hand the %pid
+based read IO distribution policy is inefficient if there is a single
+application trying to read large data as because the overall disk
+bandwidth would remains under utilized.
+
+One type of readmirror policy isn't good enough and other choices are
+routing the IO based on device's waitqueue or manual when we have a
+read-preferred device or a readmirror policy based on the target storage
+caching. So this patch-set introduces a framework where we could add more
+readmirror policies.
+
+This policy is a filesystem wide policy as of now, and though the
+readmirror policy at the subvolume level is a novel approach as it
+provides maximum flexibility in the data center, but as of now its not
+practical to implement such a granularity as you can't really ensure
+reflinked extents will be read from the stripe of its desire and so
+there will be more limitations and it can be assessed separately.
+
+The approach in this patch-set is sys interface with in-memory policy.
+And does not add any new readmirror type in this set, which can be add
+once we are ok with the framework. Also the default policy remains %pid.
+
+Previous works:
+----------------------------------------------------------------------
+There were few RFCs [1] before, mainly to figure out storage
+(or in memory only) for the readmirror policy and the interface needed.
+
+[1]
+https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg86368.html
+
+https://lore.kernel.org/linux-btrfs/20190826090438.7044-1-anand.jain@oracle.com/
+
+https://lore.kernel.org/linux-btrfs/5fcf9c23-89b5-b167-1f80-a0f4ac107d0b@oracle.com/
+
+https://patchwork.kernel.org/cover/10859213/
+
+Mount -o:
+In the first trial it was attempted to use the mount -o option to carry
+the readmirror policy, this is good for debugging which can make sure
+even the mount thread metadata tree blocks are read from the disk desired.
+It was very effective in testing radi1/raid10 write-holes.
+
+Extended attribute:
+As extended attribute is associated with the inode, to implement this
+there is bit of extended attribute abuse or else makes it mandatory to
+mount the rootid 5. Its messy unless readmirror policy is applied at the
+subvol level which is not possible as of now. 
+
+An item type:
+The proposed patch was to create an item to hold the readmirror policy,
+it makes sense when compared to the abusive extended attribute approach
+but introduces a new item and so no backward compatibility.
+-----------------------------------------------------------------------
+
+Anand Jain (5):
+  btrfs: add btrfs_strmatch helper
+  btrfs: create read policy framework
+  btrfs: create read policy sysfs attribute, pid
+  btrfs: introduce new device-state read_preferred
+  btrfs: introduce new read_policy device
+
+ fs/btrfs/sysfs.c   | 128 +++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/volumes.c |  39 +++++++++++++-
+ fs/btrfs/volumes.h |  16 ++++++
+ 3 files changed, 182 insertions(+), 1 deletion(-)
+
 -- 
 2.23.0
 

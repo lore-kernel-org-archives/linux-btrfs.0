@@ -2,129 +2,144 @@ Return-Path: <SRS0=ixrC=5W=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 51EC7C2BA17
-	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Apr 2020 16:43:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 26540C2BA17
+	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Apr 2020 17:21:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0DDBD24982
-	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Apr 2020 16:43:10 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=libero.it header.i=@libero.it header.b="WCiboZqK"
+	by mail.kernel.org (Postfix) with ESMTP id 0408A249C7
+	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Apr 2020 17:21:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729716AbgDFQnJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 6 Apr 2020 12:43:09 -0400
-Received: from smtp-35.italiaonline.it ([213.209.10.35]:36802 "EHLO libero.it"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1729445AbgDFQnJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 6 Apr 2020 12:43:09 -0400
-Received: from venice.bhome ([94.37.173.46])
-        by smtp-35.iol.local with ESMTPA
-        id LUq0jHXpdMAUpLUq1jXbjt; Mon, 06 Apr 2020 18:43:05 +0200
-x-libjamoibt: 1601
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=libero.it; s=s2014;
-        t=1586191385; bh=0vDfdNjzLEarT9+IYNzGZXlP4Xxfslmv+Y+S/OuxlT8=;
-        h=From;
-        b=WCiboZqKyatmDubGXCq14EDsgnTh8xRrvxe5tmlLLCOaVtClb7qUC7F3rujkrreEA
-         8RS/RTjOb5xSrBfsv6ltROe2InnR35fW7624NgGKlSoppS/Nk36x2mTtD3GW2YP+yT
-         5Q7ApwgnvNVUid0sQZzBtdIFOw6S29c1XchJgDKXRuMgpwhIoRmcSpMtVDSrDCK5iv
-         xsiSAyKz51miGKIpXklHSiGKMyh/uYRS/yWn80oW9z9gOogEdjpasVQcNbO3tpHo9w
-         hg/85BZ8735rDfANOliuN+XeIl6xUoXL99rkdItFrbTgnAqTW2VuDfb4pmr4aNHfYm
-         oyrgQqnwIUc/A==
-X-CNFS-Analysis: v=2.3 cv=B/fHL9lM c=1 sm=1 tr=0
- a=TpQr5eyM7/bznjVQAbUtjA==:117 a=TpQr5eyM7/bznjVQAbUtjA==:17
- a=jpOVt7BSZ2e4Z31A5e1TngXxSK0=:19 a=IkcTkHD0fZMA:10 a=gyxUEgA9x9P_OGeTqXEA:9
- a=QEXdDO2ut3YA:10
-Reply-To: kreijack@inwind.it
+        id S1729666AbgDFRVG convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 6 Apr 2020 13:21:06 -0400
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:40494 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728569AbgDFRVG (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Apr 2020 13:21:06 -0400
+Received: by james.kirk.hungrycats.org (Postfix, from userid 1002)
+        id AB42065812C; Mon,  6 Apr 2020 13:21:04 -0400 (EDT)
+Date:   Mon, 6 Apr 2020 13:21:04 -0400
+From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To:     kreijack@inwind.it
+Cc:     Graham Cobb <g.btrfs@cobb.uk.net>, linux-btrfs@vger.kernel.org
 Subject: Re: [RFC][PATCH V3] btrfs: ssd_metadata: storing metadata on SSD
-To:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
-        Graham Cobb <g.btrfs@cobb.uk.net>
-Cc:     linux-btrfs@vger.kernel.org
+Message-ID: <20200406172104.GK2693@hungrycats.org>
 References: <20200405082636.18016-1-kreijack@libero.it>
  <58e315a1-0307-9a26-8fb4-fd5220c1d5a6@cobb.uk.net>
  <20200406022441.GM13306@hungrycats.org>
-From:   Goffredo Baroncelli <kreijack@libero.it>
-Message-ID: <69396573-b5b3-b349-06f5-f5b74eb9720d@libero.it>
-Date:   Mon, 6 Apr 2020 18:43:04 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.6.0
+ <69396573-b5b3-b349-06f5-f5b74eb9720d@libero.it>
 MIME-Version: 1.0
-In-Reply-To: <20200406022441.GM13306@hungrycats.org>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
-X-CMAE-Envelope: MS4wfKGIqZB1vJShMxNVz4JeJQMvEkw4WcFo4e103WDtGA7zK/JhJDzTpMfCHTqEwkm5zWM2iRc2qSyoADug+Vc2Rc/fBQWf4AkAHkxMHPDZ9ptGYamU/MFB
- s3GXsqKNPvaaEInOCktgRd3gcixvbDVrvVYEFbeuGUAVEKONj55KbJa2USxfZzbH4GToLr5lCDhZg44wuEM2T6oGrWIfqtjlsMQ9qTObh+OlLHwlJiAGjOj0
- uWWfRivWR5M6zWNfZb5unA==
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: 8BIT
+In-Reply-To: <69396573-b5b3-b349-06f5-f5b74eb9720d@libero.it>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 4/6/20 4:24 AM, Zygo Blaxell wrote:
->>> Of course btrfs is slower than ext4 when a lot of sync/flush are involved. Using
->>> apt on a rotational was a dramatic experience. And IMHO  this should be replaced
->>> by using the btrfs snapshot capabilities. But this is another (not easy) story.
-> flushoncommit and eatmydata work reasonably well...once you patch out the
-> noise warnings from fs-writeback.
+On Mon, Apr 06, 2020 at 06:43:04PM +0200, Goffredo Baroncelli wrote:
+> On 4/6/20 4:24 AM, Zygo Blaxell wrote:
+> > > > Of course btrfs is slower than ext4 when a lot of sync/flush are involved. Using
+> > > > apt on a rotational was a dramatic experience. And IMHO  this should be replaced
+> > > > by using the btrfs snapshot capabilities. But this is another (not easy) story.
+> > flushoncommit and eatmydata work reasonably well...once you patch out the
+> > noise warnings from fs-writeback.
+> > 
 > 
+> You wrote flushoncommit, but did you mean "noflushoncommit" ?
 
-You wrote flushoncommit, but did you mean "noflushoncommit" ?
+No.  "noflushoncommit" means applications have to call fsync() all the
+time, or their files get trashed on a crash.  I meant flushoncommit
+and eatmydata.
 
-Regarding eatmydata, I used it too. However I was never happy. Below my script:
-----------------------------------
-ghigo@venice:/etc/apt/apt.conf.d$ cat 10btrfs.conf
+While dpkg runs, it must never call fsync, or it breaks the write
+ordering provided by flushoncommit (or you have to zero-log on boot).
+btrfs effectively does a point-in-time snapshot at every commit interval.
+dpkg's ordering of write operations and renames does the rest.
 
-DPkg::Pre-Invoke {"bash /var/btrfs/btrfs-apt.sh snapshot";};
-DPkg::Post-Invoke {"bash /var/btrfs/btrfs-apt.sh clean";};
-Dpkg::options {"--force-unsafe-io";};
----------------------------------
-ghigo@venice:/etc/apt/apt.conf.d$ cat /var/btrfs/btrfs-apt.sh
-
-btrfsroot=/var/btrfs/debian
-btrfsrollback=/var/btrfs/debian-rollback
+dpkg runs much faster, so the window for interruption is smaller, and
+if it is interrupted, then the result is more or less the same as if
+you had run with fsync() on noflushoncommit.  The difference is that
+the filesystem might roll back to an earlier state after a crash, which
+could be a problem e.g. if your maintainer scripts are manipulating data
+on multiple filesystems.
 
 
-do_snapshot() {
-	if [ -d "$btrfsrollback" ]; then
-		btrfs subvolume delete "$btrfsrollback"
-	fi
+> Regarding eatmydata, I used it too. However I was never happy. Below my script:
+> ----------------------------------
+> ghigo@venice:/etc/apt/apt.conf.d$ cat 10btrfs.conf
+> 
+> DPkg::Pre-Invoke {"bash /var/btrfs/btrfs-apt.sh snapshot";};
+> DPkg::Post-Invoke {"bash /var/btrfs/btrfs-apt.sh clean";};
+> Dpkg::options {"--force-unsafe-io";};
+> ---------------------------------
+> ghigo@venice:/etc/apt/apt.conf.d$ cat /var/btrfs/btrfs-apt.sh
+> 
+> btrfsroot=/var/btrfs/debian
+> btrfsrollback=/var/btrfs/debian-rollback
+> 
+> 
+> do_snapshot() {
+> 	if [ -d "$btrfsrollback" ]; then
+> 		btrfs subvolume delete "$btrfsrollback"
+> 	fi
+> 
+> 	i=20
+> 	while [ $i -gt 0 -a -d "$btrfsrollback" ]; do
+> 		i=$(( $i + 1 ))
+> 		sleep 0.1
+> 	done
+> 	if [ $i -eq 0 ]; then
+> 		exit 100
+> 	fi
+> 
+> 	btrfs subvolume snapshot "$btrfsroot" "$btrfsrollback"
+> 	
+> }
+> 
+> do_removerollback() {
+> 	if [ -d "$btrfsrollback" ]; then
+> 		btrfs subvolume delete "$btrfsrollback"
+> 	fi
+> }
+> 
+> if [ "$1" = "snapshot" ]; then
+> 	do_snapshot
+> elif [ "$1" = "clean" ]; then
+> 	do_removerollback
+> else
+> 	echo "usage: $0  snapshot|clean"
+> fi
+> --------------------------------------------------------------
+> 
+> Suggestion are welcome how detect automatically where is mount the
+> btrfs root (subvolume=/) and  my root subvolume name (debian in my
+> case). So I will avoid to wrote directly in my script.
 
-	i=20
-	while [ $i -gt 0 -a -d "$btrfsrollback" ]; do
-		i=$(( $i + 1 ))
-		sleep 0.1
-	done
-	if [ $i -eq 0 ]; then
-		exit 100
-	fi
+You can figure out where "/" is within a btrfs filesystem by recusively
+looking up parent subvol IDs with TREE_SEARCH_V2 until you get to 5
+FS_ROOT (sort of like the way pwd works on traditional Unix); however,
+root can be a bind mount, so "path from fs_root to /" is not guaranteed
+to end at a subvol root.
 
-	btrfs subvolume snapshot "$btrfsroot" "$btrfsrollback"
-	
-}
+Also, sometimes people put /var on its own subvol, so you'd need to
+find "the set of all subvols relevant to dpkg" and that's definitely
+not trivial in the general case.
 
-do_removerollback() {
-	if [ -d "$btrfsrollback" ]; then
-		btrfs subvolume delete "$btrfsrollback"
-	fi
-}
+It's not as easy to figure out if there's an existing fs_root mount
+point (partly because namespacing mangles every path in /proc/mounts
+and mountinfo), but if you know the btrfs device (and can access it
+from your namespace) you can just mount it somewhere and then you do
+know where it is.
 
-if [ "$1" = "snapshot" ]; then
-	do_snapshot
-elif [ "$1" = "clean" ]; then
-	do_removerollback
-else
-	echo "usage: $0  snapshot|clean"
-fi
---------------------------------------------------------------
-
-Suggestion are welcome how detect automatically where is mount the btrfs root (subvolume=/) and  my root subvolume name (debian in my case). So I will avoid to wrote directly in my script.
-
-BR
-G.Baroncelli
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+> BR
+> G.Baroncelli
+> -- 
+> gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+> Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+> 

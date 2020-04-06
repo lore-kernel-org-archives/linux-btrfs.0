@@ -2,174 +2,273 @@ Return-Path: <SRS0=ixrC=5W=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-4.0 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.0 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C905EC2BA19
-	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Apr 2020 11:53:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D672CC2BA19
+	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Apr 2020 12:00:42 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9215B2072A
-	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Apr 2020 11:53:33 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9DC592078A
+	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Apr 2020 12:00:42 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="qDP0Sb+0"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="fI0OOzAU"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727512AbgDFLxc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 6 Apr 2020 07:53:32 -0400
-Received: from aserp2120.oracle.com ([141.146.126.78]:34214 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727376AbgDFLxc (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Apr 2020 07:53:32 -0400
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 036Blfvv078926
-        for <linux-btrfs@vger.kernel.org>; Mon, 6 Apr 2020 11:53:31 GMT
+        id S1727736AbgDFMAl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 6 Apr 2020 08:00:41 -0400
+Received: from userp2120.oracle.com ([156.151.31.85]:47594 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726329AbgDFMAl (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Apr 2020 08:00:41 -0400
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 036Bws35046510
+        for <linux-btrfs@vger.kernel.org>; Mon, 6 Apr 2020 12:00:39 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
- date : message-id; s=corp-2020-01-29;
- bh=0rtjslhY8mSKNkHG4Rj96Lp2huNXxcgmDcxkfnMn39Q=;
- b=qDP0Sb+02M2yyZn/3CSUcutPCtNMWSPyZ7yNfeQskAp2bDOSMq3/44hkrU9jrIYoQnyW
- nc5mGZy+ATzvzyFJX3UYVfu8liR7S7ExaGORFEFxSagg+jDNNrUuiyCH8iNyUmUncMF5
- fKRoHkERyOxNZFtcMNyxezXCSb5+V6trGSXermMW2RSPZRbtWgJf2XDmpylWnV2Gtyjd
- hWV9dqbKe/5RLf4LMTicaPqW/xsbZjfw4PMFv4Npzl3CxnQf3tlWZjMrLJlBpFOk+ZMy
- JhnI+aaNtmKqSLoVQbGBATqnH5HPi5p4OZKU8Z4iGBrGGXEtNhaGDvJtlpC4OYofaf5v jg== 
-Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
-        by aserp2120.oracle.com with ESMTP id 306j6m6b0u-1
+ date : message-id : in-reply-to : references; s=corp-2020-01-29;
+ bh=YvrPtbhkfOvzNJGBgb8NX74fEeshnOwtpHBfiNBbBz4=;
+ b=fI0OOzAU0KWrE36ZebLfNmT8pU0BU3Re4463UhugIXWvWiNOewiWc9+uLMN55I6lLD6v
+ LItDQP0juRoLbgAkTtuMnpP7kca/m6FofEDsO5u9WWm7smQdYTkyfBc66i5FsJV4u4oN
+ 6GU2jUHhYuySPSyfN0TNTvfGk6UbeaqVInBuGnkZklmkNOyCg9q+unKjScyItuS7ijC1
+ daG1GycMHVjIpbCEPakTLg+sP5D25BnRxJ6AzoM6F1/mMa1aVwgLeEY8qILpBS0EwJjk
+ 48rBLyCi9EB5J7E22qo3cYXuq5PRoqZPCrRLl0dOTsgDo+CeWGy3+guYa/xlH3eenGPW HQ== 
+Received: from userp3020.oracle.com (userp3020.oracle.com [156.151.31.79])
+        by userp2120.oracle.com with ESMTP id 306jvmx9n8-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 06 Apr 2020 11:53:30 +0000
-Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
-        by userp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 036BlDxK064678
-        for <linux-btrfs@vger.kernel.org>; Mon, 6 Apr 2020 11:51:30 GMT
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by userp3030.oracle.com with ESMTP id 3073qcw4qw-1
+        for <linux-btrfs@vger.kernel.org>; Mon, 06 Apr 2020 12:00:39 +0000
+Received: from pps.filterd (userp3020.oracle.com [127.0.0.1])
+        by userp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 036BwN9n039410
+        for <linux-btrfs@vger.kernel.org>; Mon, 6 Apr 2020 12:00:39 GMT
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by userp3020.oracle.com with ESMTP id 30839pusn3-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 06 Apr 2020 11:51:30 +0000
-Received: from abhmp0008.oracle.com (abhmp0008.oracle.com [141.146.116.14])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 036BpTlT009203
-        for <linux-btrfs@vger.kernel.org>; Mon, 6 Apr 2020 11:51:29 GMT
+        for <linux-btrfs@vger.kernel.org>; Mon, 06 Apr 2020 12:00:39 +0000
+Received: from abhmp0003.oracle.com (abhmp0003.oracle.com [141.146.116.9])
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id 036C0cXR029395
+        for <linux-btrfs@vger.kernel.org>; Mon, 6 Apr 2020 12:00:38 GMT
 Received: from tp.localdomain (/39.109.145.141)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Mon, 06 Apr 2020 04:51:28 -0700
+        with ESMTP ; Mon, 06 Apr 2020 05:00:38 -0700
 From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v7 rebased 0/5] readmirror feature (sysfs and in-memory only approach; with new read_policy device)
-Date:   Mon,  6 Apr 2020 19:51:06 +0800
-Message-Id: <1586173871-5559-1-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH v2] fstests: btrfs test read from disks of different generation
+Date:   Mon,  6 Apr 2020 20:00:26 +0800
+Message-Id: <1586174426-6016-1-git-send-email-anand.jain@oracle.com>
 X-Mailer: git-send-email 1.8.3.1
+In-Reply-To: <1552995330-28927-2-git-send-email-anand.jain@oracle.com>
+References: <1552995330-28927-2-git-send-email-anand.jain@oracle.com>
 X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9582 signatures=668685
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 phishscore=0 mlxscore=0 mlxlogscore=999
- spamscore=0 bulkscore=0 adultscore=0 malwarescore=0 suspectscore=0
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 phishscore=0 spamscore=0 malwarescore=0
+ mlxscore=0 mlxlogscore=999 bulkscore=0 suspectscore=1 adultscore=0
  classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2003020000
- definitions=main-2004060104
+ definitions=main-2004060105
 X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9582 signatures=668685
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 bulkscore=0 mlxlogscore=999 spamscore=0
- priorityscore=1501 suspectscore=0 lowpriorityscore=0 malwarescore=0
- impostorscore=0 mlxscore=0 phishscore=0 adultscore=0 clxscore=1015
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2003020000
- definitions=main-2004060104
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 phishscore=0 suspectscore=1
+ mlxlogscore=999 mlxscore=0 bulkscore=0 adultscore=0 priorityscore=1501
+ lowpriorityscore=0 clxscore=1015 malwarescore=0 impostorscore=0
+ spamscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2003020000 definitions=main-2004060105
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-v7:
-Fix switch's fall through warning. Changle logs updates where necessary.
+Verify file read from disks assembled with different generations.
 
-v6:
-Patch 4/5 - If there is no change in device's read prefer then don't log
-Patch 4/5 - Add pid to the logs
-Patch 5/5 - If there isn't read preferred device in the chunk don't reset
-read policy to default, instead just use stripe 0. As this is in
-the read path it avoids going through the device list to find
-read preferred device. So inline to this drop to check if there
-is read preferred device before setting read policy to device.
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+(Not yet for the integration, prerequisites are not yet integrated)
 
-__ Original email: __
+v2: rebase.
+    use the sysfs interface to set the read_policy instead of mount
 
-v5:
-Worked on review comments as received in its previous version.
-Please refer to individual patches for the specific changes.
-Introduces the new read_policy 'device'.
+ tests/btrfs/210     | 147 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/210.out |  12 +++++
+ tests/btrfs/group   |   1 +
+ 3 files changed, 160 insertions(+)
+ create mode 100755 tests/btrfs/210
+ create mode 100644 tests/btrfs/210.out
 
-v4:
-Rename readmirror attribute to read_policy. Drop separate kobj for
-readmirror instead create read_policy attribute in fsid kobj.
-merge v2:2/3 and v2:3/3 into v4:2/2. Patch titles have changed.
- 
-v3:
-v2:
-Mainly fixes the fs_devices::readmirror declaration type from atomic_t
-to u8. (Thanks Josef).
-
-v1:
-As of now we use only %pid method to read stripped mirrored data. So
-application's process id determines the stripe id to be read. This type
-of routing typically helps in a system with many small independent
-applications tying to read random data. On the other hand the %pid
-based read IO distribution policy is inefficient if there is a single
-application trying to read large data as because the overall disk
-bandwidth would remains under utilized.
-
-One type of readmirror policy isn't good enough and other choices are
-routing the IO based on device's waitqueue or manual when we have a
-read-preferred device or a readmirror policy based on the target storage
-caching. So this patch-set introduces a framework where we could add more
-readmirror policies.
-
-This policy is a filesystem wide policy as of now, and though the
-readmirror policy at the subvolume level is a novel approach as it
-provides maximum flexibility in the data center, but as of now its not
-practical to implement such a granularity as you can't really ensure
-reflinked extents will be read from the stripe of its desire and so
-there will be more limitations and it can be assessed separately.
-
-The approach in this patch-set is sys interface with in-memory policy.
-And does not add any new readmirror type in this set, which can be add
-once we are ok with the framework. Also the default policy remains %pid.
-
-Previous works:
-----------------------------------------------------------------------
-There were few RFCs [1] before, mainly to figure out storage
-(or in memory only) for the readmirror policy and the interface needed.
-
-[1]
-https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg86368.html
-
-https://lore.kernel.org/linux-btrfs/20190826090438.7044-1-anand.jain@oracle.com/
-
-https://lore.kernel.org/linux-btrfs/5fcf9c23-89b5-b167-1f80-a0f4ac107d0b@oracle.com/
-
-https://patchwork.kernel.org/cover/10859213/
-
-Mount -o:
-In the first trial it was attempted to use the mount -o option to carry
-the readmirror policy, this is good for debugging which can make sure
-even the mount thread metadata tree blocks are read from the disk desired.
-It was very effective in testing radi1/raid10 write-holes.
-
-Extended attribute:
-As extended attribute is associated with the inode, to implement this
-there is bit of extended attribute abuse or else makes it mandatory to
-mount the rootid 5. Its messy unless readmirror policy is applied at the
-subvol level which is not possible as of now. 
-
-An item type:
-The proposed patch was to create an item to hold the readmirror policy,
-it makes sense when compared to the abusive extended attribute approach
-but introduces a new item and so no backward compatibility.
------------------------------------------------------------------------
-
-Anand Jain (5):
-  btrfs: add btrfs_strmatch helper
-  btrfs: create read policy framework
-  btrfs: create read policy sysfs attribute, pid
-  btrfs: introduce new device-state read_preferred
-  btrfs: introduce new read_policy device
-
- fs/btrfs/sysfs.c   | 128 +++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/volumes.c |  39 +++++++++++++-
- fs/btrfs/volumes.h |  16 ++++++
- 3 files changed, 182 insertions(+), 1 deletion(-)
-
+diff --git a/tests/btrfs/210 b/tests/btrfs/210
+new file mode 100755
+index 000000000000..df51ab584688
+--- /dev/null
++++ b/tests/btrfs/210
+@@ -0,0 +1,147 @@
++#! /bin/bash
++# SPDX-License-Identifier: GPL-2.0
++# Copyright (c) 2019 Oracle.  All Rights Reserved.
++#
++# FS QA Test ?
++#
++# Test read on raid1 assembled with disks of different generations.
++#  Steps:
++#   . Use btrfs snapshot on the test_dir to create disk images of
++#     different generations (lets say generation a and generation b).
++#   . Mount one disk from generation a and another disk from generation
++#     b, and verify the file md5sum.
++#  Note: readmirror feature (in the btrfs ml) helps to reproduce the
++#     problem consistently.
++#  Fix-by: kernel patch
++#   NA
++#  Temp workaroud fix for two disk raid1:
++#   [PATCH] btrfs: fix read corrpution on disks of different generation
++#  Needs read_policy patch-set to test:
++#   [PATCH v7 0/5] readmirror feature (sysfs and in-memory only approach; with new read_policy device)
++
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++	cd /
++	rm -f $tmp.*
++	_scratch_unmount > /dev/null 2>&1
++	_destroy_loop_device $dev1
++	_destroy_loop_device $dev2
++	btrfs subvolume delete $img_subvol > /dev/null 2>&1
++	btrfs subvolume delete $img_subvol_at_gen_a > /dev/null 2>&1
++	[[ -z $scratch_dev_pool_saved ]] || \
++			SCRATCH_DEV_POOL="$scratch_dev_pool_saved"
++	_scratch_dev_pool_put
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# remove previous $seqres.full before test
++rm -f $seqres.full
++
++# real QA test starts here
++
++# Modify as appropriate.
++_supported_fs generic
++_supported_os Linux
++_require_test
++_require_scratch_dev_pool 2
++_require_btrfs_forget_or_module_loadable
++
++_btrfs_forget_or_module_reload
++
++_scratch_dev_pool_get 2
++scratch_dev_pool_saved=""
++
++img_subvol=$TEST_DIR/img_subvol
++img_subvol_at_gen_a=$TEST_DIR/img_subvol_at_gen_a
++dev1_img=$img_subvol/d1
++dev2_img=$img_subvol/d2
++dev1_img_at_gen_a=$img_subvol_at_gen_a/d1
++dev2_img_at_gen_a=$img_subvol_at_gen_a/d2
++
++$BTRFS_UTIL_PROG subvolume create $img_subvol >> /dev/null 2>&1 || \
++					_fail "subvol create failed"
++
++$XFS_IO_PROG -f -c "pwrite -S 0xdd 0 256m" $dev1_img >> /dev/null 2>&1
++$XFS_IO_PROG -f -c "pwrite -S 0xdd 0 256m" $dev2_img >> /dev/null 2>&1
++
++dev1=$(_create_loop_device $dev1_img)
++dev2=$(_create_loop_device $dev2_img)
++
++scratch_dev_pool_saved="$SCRATCH_DEV_POOL"
++SCRATCH_DEV_POOL="$dev1 $dev2"
++_scratch_pool_mkfs -U 12345678-1234-1234-1234-123456789abc -d raid1 -m raid1 >>\
++		$seqres.full 2>&1 || _fail  "mkfs failed on $SCRATCH_DEV_POOL"
++
++
++_mount "-o max_inline=0,nodatacow,device=$dev1" $dev2 $SCRATCH_MNT || \
++					_fail "mount for gen a failed"
++
++$XFS_IO_PROG -f -c "pwrite -S 0xaa 0 4K" $SCRATCH_MNT/foobar >> /dev/null 2>&1
++
++echo md5sum at generation aa
++md5sum $SCRATCH_MNT/foobar | _filter_scratch
++echo
++_scratch_unmount
++
++$BTRFS_UTIL_PROG subvolume snapshot $img_subvol $img_subvol_at_gen_a \
++		>> /dev/null 2>&1 || _fail "subvol create failed"
++
++_mount "-o max_inline=0,nodatacow,device=$dev1" $dev2 $SCRATCH_MNT || \
++					_fail "mount for gen b failed"
++
++$XFS_IO_PROG -f -c "pwrite -S 0xbb 0 4K" $SCRATCH_MNT/foobar >> /dev/null 2>&1
++
++echo md5sum at generation bb
++md5sum $SCRATCH_MNT/foobar | _filter_scratch
++echo
++
++_scratch_unmount
++
++_destroy_loop_device $dev1
++_destroy_loop_device $dev2
++
++_test_unmount
++_btrfs_forget_or_module_reload
++_test_mount
++
++dev1=$(_create_loop_device $dev1_img_at_gen_a)
++dev2=$(_create_loop_device $dev2_img)
++
++_mount "-o ro,device=$dev1" $dev2 $SCRATCH_MNT || _fail "mount at gen ab failed"
++
++SCRATCH_SYSFS_PATH="/sys/fs/btrfs/12345678-1234-1234-1234-123456789abc"
++
++devid_for_read=$($BTRFS_UTIL_PROG filesystem show -m $SCRATCH_MNT| grep $dev1 |\
++							awk '{print $2}')
++echo 1 > $SCRATCH_SYSFS_PATH/devinfo/$devid_for_read/read_preferred
++echo "device" > $SCRATCH_SYSFS_PATH/read_policy
++
++echo md5sum at generation ab read from devid=$devid_for_read
++md5sum $SCRATCH_MNT/foobar | _filter_scratch
++
++echo 1 > /proc/sys/vm/drop_caches
++echo 0 > $SCRATCH_SYSFS_PATH/devinfo/$devid_for_read/read_preferred
++devid_for_read=$($BTRFS_UTIL_PROG filesystem show -m $SCRATCH_MNT| grep $dev2 |\
++							awk '{print $2}')
++echo 1 > $SCRATCH_SYSFS_PATH/devinfo/$devid_for_read/read_preferred
++
++echo
++echo md5sum at generation ab read from devid=$devid_for_read
++md5sum $SCRATCH_MNT/foobar | _filter_scratch
++
++# success, all done
++status=0
++exit
+diff --git a/tests/btrfs/210.out b/tests/btrfs/210.out
+new file mode 100644
+index 000000000000..b55030fea1fa
+--- /dev/null
++++ b/tests/btrfs/210.out
+@@ -0,0 +1,12 @@
++QA output created by 210
++md5sum at generation aa
++3e4309c7cc81f23d45e260a8f13ca860  SCRATCH_MNT/foobar
++
++md5sum at generation bb
++055a2a7342c0528969e1b6e32aadeee3  SCRATCH_MNT/foobar
++
++md5sum at generation ab read from devid=1
++055a2a7342c0528969e1b6e32aadeee3  SCRATCH_MNT/foobar
++
++md5sum at generation ab read from devid=2
++055a2a7342c0528969e1b6e32aadeee3  SCRATCH_MNT/foobar
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index 657ec548159b..3f71ce235d96 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -212,3 +212,4 @@
+ 207 auto rw raid
+ 208 auto quick subvol
+ 209 auto quick log
++210 auto quick volume
 -- 
-2.23.0
+1.8.3.1
 

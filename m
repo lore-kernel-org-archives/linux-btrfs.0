@@ -2,150 +2,125 @@ Return-Path: <SRS0=tPet=5Y=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
-	SPF_HELO_NONE,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5BD93C2D0EA
-	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Apr 2020 11:17:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E73E2C2D0EA
+	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Apr 2020 12:34:32 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2343420787
-	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Apr 2020 11:17:31 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6F89F20747
+	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Apr 2020 12:34:32 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="cp8NY7zw";
-	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b="kxjhnJQw"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=mpdesouza.com header.i=@mpdesouza.com header.b="cqUkQvpA"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728205AbgDHLRa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 8 Apr 2020 07:17:30 -0400
-Received: from esa6.hgst.iphmx.com ([216.71.154.45]:59256 "EHLO
-        esa6.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727902AbgDHLR3 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Apr 2020 07:17:29 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1586344650; x=1617880650;
-  h=from:to:cc:subject:date:message-id:references:
-   content-transfer-encoding:mime-version;
-  bh=fGf1CQVTfBr1/sdRumE7KfFF5qOCAoX5RkqtjbcZdwM=;
-  b=cp8NY7zwDR79ygBeUmHcG62UTN2wrR1Aeb9IxKH0ljYRoMdQSgcPROEj
-   fWufFJueO+zCuN1s0Mrsn9BlnW8WnTiMy/UipgJGhq1XWp8iYF4UAKmrf
-   jF2UmrdiKVdhgivBo3c/SFKHDzbNxXzDYibWycBT+37bKqnOy8lHEFWq7
-   qheNeGin4GyNiEhP00FeShUGCzqcBmfe0yJcRVmTgojST5QSBZwSHohY2
-   VkJk6bRvjf6Dd+6UxbZZQYKw2dfsOspXl+cmMbU9IC0dQHknXbLbokjUs
-   vVLN87ZQM9Sh2rYeeNVihZTQs3dd7wlwBSnvL/ma8oWXyXpK0M1g/7mTB
-   g==;
-IronPort-SDR: nWrYT7ENlAd2tVeFTloov2WHhcgQaz6bRilunG4VM7kghgDXkiTB16by/zQkaKTV1HeRITFgs7
- nnK7Ziu9WizxC2jA4QlQXCiw9hmfzg1VD+3PKYGWof6P/NGXpsqQI1ZDNfeotZq5gGnOrZAIEE
- vsftgKF5YkJfUvoMtEWLMAI+wS5/6tNr3iKliDobOcVx0RynagPmeQOGPU20/JjO52AoTpLcLc
- Afii6dnL7divLY8iEIiuMMZjKvpTPb61fqWkyVtrQWX8d+CySdGHsxooIs+H0rzXVVWC2t8Fi2
- 5io=
-X-IronPort-AV: E=Sophos;i="5.72,358,1580745600"; 
-   d="scan'208";a="136314214"
-Received: from mail-bl2nam02lp2057.outbound.protection.outlook.com (HELO NAM02-BL2-obe.outbound.protection.outlook.com) ([104.47.38.57])
-  by ob1.hgst.iphmx.com with ESMTP; 08 Apr 2020 19:17:25 +0800
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
- b=J6j8Tf4Zha0v6oKK6c8nIfcbBLSm2oJcKu7cYRHe5mTKUJGqxSr3oSbu2DQhuelFk61zD1lhIWrYkX3D0Z/7dt6LaVJKVRajw/WHAarr6smApZw5gQfoFibJr4kJ4BBdXaKOZaHAHbair96De4JWNMg2Fjy2fpApdanNNRgPuJ1aF/150Mz8xDxeLXJhmt5WDaxYms4TEQnlWZPmHtw+GIs2lik5wuceYxatnJSCpzQjHZgELGVYMjKijmo0qV9OqjoKm6ae3SK1cZVTpfKhPx8HT9wo99bJMaqB1NDk4O+LGwFlZQ7gLaMjD2h0KaP1+h2nYjeTAKN3G6RfkFZ6vA==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector9901;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=o4PUGOHEQgslMahW8Jvvov5B2kJunwSEi8w9b2jhXoI=;
- b=ZE5rU6SrnEgWVn6EwHXsqQq3M5nT3/aef5IRb5zYoxEy5o44bzSOoOJQDGj1qwoBnhLpamzRyDJcvjmhKvVMg4lclrxCO4ofusiJBJzV3+uH7iuns3rGYlac0rohEPbSGd5GlW8vkdEE68zGAGj+1NTakJ51wUD2MqYj8LbY8GW0EbEBE6+F0AzfD7v5KFhWDr14U7xw1jarpxZuQAdYy1u+rQK7wC097o5xipPcwPAFSjtKqCJs/r3NJLFVRe7k/zhjH3bPISXdXq0h/B191bSgq6xXPB5uxQwKV0jlHiyTAQ3hX5EKCeNROtQFfAjoJgya3GoF1bBltstv7LDRGw==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
- header.d=wdc.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=o4PUGOHEQgslMahW8Jvvov5B2kJunwSEi8w9b2jhXoI=;
- b=kxjhnJQwcESre3A9OalZXjyaypq+p8rIVV3PFgSkPpZD19wuHCNumObs+ULMA9raKRzfjUhN4JvMZzdbey0A3i5ECIbBOj11zCYGlAk4cWXSgYog3+1n8m9WgZZJROfVOVMikGMnUoh1+VDPfMi/dRJE0hzczScJ9EwfNzgwLxY=
-Received: from SN4PR0401MB3598.namprd04.prod.outlook.com
- (2603:10b6:803:47::21) by SN4PR0401MB3630.namprd04.prod.outlook.com
- (2603:10b6:803:47::15) with Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.2878.20; Wed, 8 Apr
- 2020 11:17:21 +0000
-Received: from SN4PR0401MB3598.namprd04.prod.outlook.com
- ([fe80::9854:2bc6:1ad2:f655]) by SN4PR0401MB3598.namprd04.prod.outlook.com
- ([fe80::9854:2bc6:1ad2:f655%4]) with mapi id 15.20.2878.018; Wed, 8 Apr 2020
- 11:17:21 +0000
-From:   Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
-To:     Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-CC:     "jth@kernel.org" <jth@kernel.org>
-Subject: Re: authenticated file systems using HMAC(SHA256)
-Thread-Topic: authenticated file systems using HMAC(SHA256)
-Thread-Index: AQHWDQbERVNaVh/cw0i4WbDgZROyhA==
-Date:   Wed, 8 Apr 2020 11:17:21 +0000
-Message-ID: <SN4PR0401MB35987317CD0E2B97CD5A499E9BC00@SN4PR0401MB3598.namprd04.prod.outlook.com>
-References: <CAJCQCtSLOgj7MHKNeGOHu1DPa=xC=sR7cZzR88hN1y_mTYRFKw@mail.gmail.com>
-Accept-Language: en-US
-Content-Language: en-US
-X-MS-Has-Attach: 
-X-MS-TNEF-Correlator: 
-authentication-results: spf=none (sender IP is )
- smtp.mailfrom=Johannes.Thumshirn@wdc.com; 
-x-originating-ip: [129.253.240.72]
-x-ms-publictraffictype: Email
-x-ms-office365-filtering-ht: Tenant
-x-ms-office365-filtering-correlation-id: 0fdce155-afd3-4aa4-9f99-08d7dbae6831
-x-ms-traffictypediagnostic: SN4PR0401MB3630:
-x-microsoft-antispam-prvs: <SN4PR0401MB363008B578B97DBDCDA84A189BC00@SN4PR0401MB3630.namprd04.prod.outlook.com>
-wdcipoutbound: EOP-TRUE
-x-ms-oob-tlc-oobclassifiers: OLM:10000;
-x-forefront-prvs: 0367A50BB1
-x-forefront-antispam-report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SN4PR0401MB3598.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFTY:;SFS:(10019020)(4636009)(136003)(376002)(396003)(346002)(366004)(39860400002)(86362001)(8936002)(110136005)(966005)(66556008)(81156014)(4326008)(64756008)(8676002)(66946007)(26005)(316002)(66476007)(76116006)(91956017)(7696005)(66446008)(33656002)(478600001)(186003)(2906002)(81166007)(71200400001)(6506007)(53546011)(9686003)(55016002)(5660300002)(52536014);DIR:OUT;SFP:1102;
-x-ms-exchange-senderadcheck: 1
-x-microsoft-antispam: BCL:0;
-x-microsoft-antispam-message-info: 4jv7ksyAV5wzGPyDdto9bsrQ5OKwstLZ2cQYdGbgyc4ULOKhFYppnwZOWnCkKOnLq7fEmfkTwcXszCQRUtiZKY+TLa2r9Ntvkoujx+cq8W9aVo9kY6J/If5W7Ajwdyd9xzTSWeIsWZJVul5zUZYndZTtdyrAnkcigAUj0kD8VygWE50ks8+m/9Hv2OICU2YUYF9QLzTxUE+Ix9lUImd2lX1N2IVcME3F2Z9K0XLSQYyKDpeYeCjKZyqUV3rfHIrIVcqQHl5EdP7pZFouuxNECtquHCeNfzfygE/lWjX6EL+JslJ2yxRPxoJXZ9b1EMvXrxAjNxzYCtz7u3cr9jr00xJHAGGfw7GfcbUAg6thYy1TDKje3+DJkg2ibkUapY2BTAB3pPHSy1Z1K+nQtd3t+4us4Kd9muPP5d9tK5OG2upyTB6HwaemL8Pi+aGyx3I7UCKrNvpWlqxH706zHro1nAptP02wfJrjmzp9T+0T0sPFnYxzc+nlx3l6l67NjuPnBL0ZudHU9CTE2bfdp8irhg==
-x-ms-exchange-antispam-messagedata: mGQ9aIfpRSLqolh+RUpIiZuMUPmyiKQfDZQXZHFJ7M5QPCNdvVL7Kz/5udenb6XHu+0hh+Is1+ZbwbGI/ekemyH+ebUgO75QNkTTMwFfSs5nV51bHdCan5h6afCYpn496vPHkgksB5f54HC4N+8Qdw==
-x-ms-exchange-transport-forked: True
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: quoted-printable
+        id S1728627AbgDHMeb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 8 Apr 2020 08:34:31 -0400
+Received: from gateway32.websitewelcome.com ([192.185.145.119]:43876 "EHLO
+        gateway32.websitewelcome.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1728207AbgDHMeb (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 8 Apr 2020 08:34:31 -0400
+Received: from cm17.websitewelcome.com (cm17.websitewelcome.com [100.42.49.20])
+        by gateway32.websitewelcome.com (Postfix) with ESMTP id E1047140EA41
+        for <linux-btrfs@vger.kernel.org>; Wed,  8 Apr 2020 07:34:29 -0500 (CDT)
+Received: from br540.hostgator.com.br ([108.179.252.180])
+        by cmsmtp with SMTP
+        id M9uXjj9zbAGTXM9uXj5Zpo; Wed, 08 Apr 2020 07:34:29 -0500
+X-Authority-Reason: nr=8
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=mpdesouza.com; s=default; h=Content-Transfer-Encoding:MIME-Version:
+        Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:Content-Type:Content-ID:
+        Content-Description:Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc
+        :Resent-Message-ID:In-Reply-To:References:List-Id:List-Help:List-Unsubscribe:
+        List-Subscribe:List-Post:List-Owner:List-Archive;
+        bh=EVCnFQ+tLiPpiNNY00+WS8gzMQPEMnd2klKj8+mNtNs=; b=cqUkQvpABigXXxWyy5aqitF+Bo
+        hO7KC8cKulGZt1pgLRr+t1lnOvgdSKGanEe7W21gEVMP/tu41eQIPEoUXgUw41XJe/YCanpc3q4U0
+        X6fZgoTnlnzPT2Xwm5Hu+2Y29FjZa8O9vRSm79luTTToxod0G5oRMKH0CCzG6lDWpjxop9rBwKzkG
+        jFmvEnkvKJkB6hRYmX/Q7/XNe0PKDzF3ot3EUtZSTGsBj8EjzK7n1cq9I8y/qDigm8aDkAkGN8POT
+        Rqbvy1ydsr1lI+tifR+EANl7zQb1pe67tyVfY8OYhejEU87U6yWmiNqRPCdcxLxsjjQP7TQkR5zYD
+        4+vEo7zg==;
+Received: from 189.26.187.141.dynamic.adsl.gvt.net.br ([189.26.187.141]:43120 helo=hephaestus.prv.suse.net)
+        by br540.hostgator.com.br with esmtpsa (TLSv1.2:ECDHE-RSA-AES128-GCM-SHA256:128)
+        (Exim 4.92)
+        (envelope-from <marcos@mpdesouza.com>)
+        id 1jM9uX-002ssy-2A; Wed, 08 Apr 2020 09:34:29 -0300
+From:   Marcos Paulo de Souza <marcos@mpdesouza.com>
+To:     linux-btrfs@vger.kernel.org, dsterba@suse.com
+Cc:     Marcos Paulo de Souza <mpdesouza@suse.com>,
+        Erhard Furtner <erhard_f@mailbox.org>
+Subject: [PATCH] btrfs-progs: mkfs-test: Fix check for truncate command failing
+Date:   Wed,  8 Apr 2020 09:37:28 -0300
+Message-Id: <20200408123728.19595-1-marcos@mpdesouza.com>
+X-Mailer: git-send-email 2.25.1
 MIME-Version: 1.0
-X-OriginatorOrg: wdc.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: 0fdce155-afd3-4aa4-9f99-08d7dbae6831
-X-MS-Exchange-CrossTenant-originalarrivaltime: 08 Apr 2020 11:17:21.3490
- (UTC)
-X-MS-Exchange-CrossTenant-fromentityheader: Hosted
-X-MS-Exchange-CrossTenant-id: b61c8803-16f3-4c35-9b17-6f65f441df86
-X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
-X-MS-Exchange-CrossTenant-userprincipalname: 6MXgP5L7W/D4dSL9ucimdF47/KwnsZgwJZN3xUUcWr/EJ0r9tNhA5o9r5DVbSJzZE93cClXyqhYA4FvGew2WPIpjs66LEnr7XSYABUvkufs=
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: SN4PR0401MB3630
+Content-Transfer-Encoding: 8bit
+X-AntiAbuse: This header was added to track abuse, please include it with any abuse report
+X-AntiAbuse: Primary Hostname - br540.hostgator.com.br
+X-AntiAbuse: Original Domain - vger.kernel.org
+X-AntiAbuse: Originator/Caller UID/GID - [47 12] / [47 12]
+X-AntiAbuse: Sender Address Domain - mpdesouza.com
+X-BWhitelist: no
+X-Source-IP: 189.26.187.141
+X-Source-L: No
+X-Exim-ID: 1jM9uX-002ssy-2A
+X-Source: 
+X-Source-Args: 
+X-Source-Dir: 
+X-Source-Sender: 189.26.187.141.dynamic.adsl.gvt.net.br (hephaestus.prv.suse.net) [189.26.187.141]:43120
+X-Source-Auth: marcos@mpdesouza.com
+X-Email-Count: 4
+X-Source-Cap: bXBkZXNvNTM7bXBkZXNvNTM7YnI1NDAuaG9zdGdhdG9yLmNvbS5icg==
+X-Local-Domain: yes
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 07/04/2020 20:02, Chris Murphy wrote:=0A=
-> Hi,=0A=
-> =0A=
-> What's the status of this work?=0A=
-> https://lore.kernel.org/linux-btrfs/20191015121405.19066-1-jthumshirn@sus=
-e.de/=0A=
-=0A=
-It's done but no-one was interested in it and as I haven't received any =0A=
-answers from Dave if he's going to merge it, I did not bring it to =0A=
-attention again. After all it was for a specific use-case SUSE has/had =0A=
-and I left the company.=0A=
-=0A=
-> Also I'm curious if it could use blake2b as an option? It's a bit=0A=
-> faster I guess.=0A=
-=0A=
-Probably yes, I haven't researched if blake2b can be used in a HMAC =0A=
-context, but from what I can see there should be no problem. SHA-256 was =
-=0A=
-chooses because SUSE Product Management needed SHA for their use-case.=0A=
-=0A=
-If there is still interest in this work I can re-base my branches [1][2] =
-=0A=
-and add blake2b as well, this /should/ be trivially done.=0A=
-=0A=
-[1] =0A=
-https://git.kernel.org/pub/scm/linux/kernel/git/jth/linux.git/log/?h=3Dbtrf=
-s-integrity=0A=
-[2] https://github.com/morbidrsa/btrfs-progs/tree/mkfs-hmac=0A=
-=0A=
-I just don't want to spend time on it again when it's not going to be =0A=
-merged in the end (for what ever reason).=0A=
-=0A=
-Byte,=0A=
-	Johannes=0A=
+From: Marcos Paulo de Souza <mpdesouza@suse.com>
+
+Commit 31f477ee ("btrfs-progs: mkfs-tests: skip test if truncate fails
+with EFBIG") tried to detect a failure in truncate command by checking
+the $? expecting it to be an errno, when it actually returns 0 or 1.
+
+To fix this test just check if the command failed (returned 1) and look
+for the output, skipping the test if the OS cannot create a 6E file.
+
+Fixes: #241
+
+Tested-by: Erhard Furtner <erhard_f@mailbox.org>
+Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
+---
+ tests/mkfs-tests/018-multidevice-overflow/test.sh | 13 +++++++------
+ 1 file changed, 7 insertions(+), 6 deletions(-)
+
+diff --git a/tests/mkfs-tests/018-multidevice-overflow/test.sh b/tests/mkfs-tests/018-multidevice-overflow/test.sh
+index eb5c0a43..55ec1289 100755
+--- a/tests/mkfs-tests/018-multidevice-overflow/test.sh
++++ b/tests/mkfs-tests/018-multidevice-overflow/test.sh
+@@ -15,14 +15,15 @@ run_check_mkfs_test_dev
+ run_check_mount_test_dev
+ 
+ # truncate can fail with EFBIG if the OS cannot create a 6EiB file
+-run_mayfail $SUDO_HELPER truncate -s 6E "$TEST_MNT/img1"
++out=$(run_mayfail_stdout $SUDO_HELPER truncate -s 6E "$TEST_MNT/img1" 2>&1)
+ ret=$?
+-if [ $ret == 27 ]; then
+-	_not_run "Current kernel could not create a 6E file"
+-fi
+ 
+-if [ $ret -gt 0 ]; then
+-	_fail "truncate -s 6E failed: $ret"
++if [ $ret -ne 0 ]; then
++	run_check_umount_test_dev
++	if [[ "$out" == *"File too large"* ]]; then
++		_not_run "Current kernel could not create a 6E file"
++	fi
++	_fail "Command failed: $out"
+ fi
+ 
+ run_check $SUDO_HELPER truncate -s 6E "$TEST_MNT/img2"
+-- 
+2.25.1
+

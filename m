@@ -2,26 +2,26 @@ Return-Path: <SRS0=OBYC=5Z=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A2DA2C2BA2B
-	for <linux-btrfs@archiver.kernel.org>; Thu,  9 Apr 2020 13:11:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BD9D9C2BA2B
+	for <linux-btrfs@archiver.kernel.org>; Thu,  9 Apr 2020 13:26:32 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 80E242082D
-	for <linux-btrfs@archiver.kernel.org>; Thu,  9 Apr 2020 13:11:31 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9A56D2072F
+	for <linux-btrfs@archiver.kernel.org>; Thu,  9 Apr 2020 13:26:32 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726726AbgDINLa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 9 Apr 2020 09:11:30 -0400
-Received: from mx2.suse.de ([195.135.220.15]:55608 "EHLO mx2.suse.de"
+        id S1726749AbgDIN0b (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 9 Apr 2020 09:26:31 -0400
+Received: from mx2.suse.de ([195.135.220.15]:39082 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726632AbgDINL3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 9 Apr 2020 09:11:29 -0400
+        id S1726681AbgDIN0b (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 9 Apr 2020 09:26:31 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 34718B16F;
-        Thu,  9 Apr 2020 13:11:27 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 49F60AF6E;
+        Thu,  9 Apr 2020 13:26:27 +0000 (UTC)
 Subject: Re: [PATCH 07/13] btrfs: kick off async delayed ref flushing if we
  are over time budget
 To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
@@ -71,8 +71,8 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <7b611adf-3bba-a2d3-d6eb-592bb15ce97e@suse.com>
-Date:   Thu, 9 Apr 2020 16:11:26 +0300
+Message-ID: <e55347cd-d107-65cd-ce78-e959dada6aac@suse.com>
+Date:   Thu, 9 Apr 2020 16:26:26 +0300
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
  Thunderbird/68.4.1
 MIME-Version: 1.0
@@ -114,6 +114,13 @@ On 13.03.20 г. 23:23 ч., Josef Bacik wrote:
 
 <snip>
 
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 645ae95f465e..0e81990b57e0 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -2249,6 +2249,50 @@ int btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
+>  	return 0;
+>  }
 >  
 > +static void btrfs_async_run_delayed_refs(struct work_struct *work)
 > +{
@@ -132,6 +139,18 @@ On 13.03.20 г. 23:23 ч., Josef Bacik wrote:
 > +			break;
 > +
 > +		smp_rmb();
+
+What is this barrier ordering? IMO its usage is bogus here, because in
+btrfs_should_end_transaction we use a full barrier and here only an RMB.
+Further more in btrfs_should_end_transaction we don't have any memory
+accesses preceding the check of the flushing state. Looking at the
+callers of btrfs_should_end_transaction I also don't see any ordering
+guaranteed i.e I think it could be removed altogether. Or perhahps we
+really want acquire/release semantics e.g. accesses to
+delayed_refs.flushing should be done via
+smp_load_acquire/smp_store_release functions?
+
+
 > +		if (trans->transaction->delayed_refs.flushing) {
 > +			btrfs_end_transaction(trans);
 > +			break;
@@ -144,14 +163,6 @@ On 13.03.20 г. 23:23 ч., Josef Bacik wrote:
 > +		}
 > +
 > +		count = atomic_read(&trans->transaction->delayed_refs.num_entries);
-
-Don't you want to actually read num_heads_ready rather than num_entries,
-i.e isn't this introducing the same issues as the one fixed by:
-
-[PATCH 2/5] btrfs: delayed refs pre-flushing should only run the heads
-we have
-
-
 > +		count >>= 2;
 > +
 > +		ret = btrfs_run_delayed_refs(trans, count);
@@ -160,5 +171,6 @@ we have
 > +			break;
 > +	}
 > +}
+> +
 
 <snip>

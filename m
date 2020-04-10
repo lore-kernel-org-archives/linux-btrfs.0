@@ -7,48 +7,48 @@ X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CC271C2BB1D
-	for <linux-btrfs@archiver.kernel.org>; Fri, 10 Apr 2020 03:51:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B2A6AC2BB85
+	for <linux-btrfs@archiver.kernel.org>; Fri, 10 Apr 2020 03:51:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A375221655
-	for <linux-btrfs@archiver.kernel.org>; Fri, 10 Apr 2020 03:51:12 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8CBE0214DB
+	for <linux-btrfs@archiver.kernel.org>; Fri, 10 Apr 2020 03:51:24 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1586490672;
-	bh=RTTT6ylmnIwd7feHib5TM6vULfkqz5sxbfJ+CfGssH4=;
+	s=default; t=1586490684;
+	bh=EpreRY4bMnPgHjQHgFvmmqBOrNaiPhQwMWKf8fFhGrE=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=1zrhNkIpsKFANhJHn4n/2ovugU9xEln5yP3q1CMZBA9OZVNBBk5HKRKLAC4zPZ1Fz
-	 hWihAMu9MXodLYITiDjITDIHhqQHiblA0po5QYerkRweFYNGMC8GM/nFLc9Eo6R7Ue
-	 Q4dLd2RKr2rQDK7pey6ahefo7QFr0T/MpurVVF/o=
+	b=wI7zcN3cvvywtJ940IHzKZgIaeamPOBDUXd368sivNur9ybQMeNriUnuoagtu+DnQ
+	 oYdxIQ7UAWJuDAldqqpSRAa0mG+mhq53Lel1EXe74gNlOeHULlWNyktqdYdyTyZ9c8
+	 jgrXcoczdcjEApgPkG2zMTutHUcjU64VAqZwpJPc=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729113AbgDJDvL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 9 Apr 2020 23:51:11 -0400
-Received: from mail.kernel.org ([198.145.29.99]:36212 "EHLO mail.kernel.org"
+        id S1728026AbgDJDvX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 9 Apr 2020 23:51:23 -0400
+Received: from mail.kernel.org ([198.145.29.99]:36560 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1729100AbgDJDvK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 9 Apr 2020 23:51:10 -0400
+        id S1729172AbgDJDvV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 9 Apr 2020 23:51:21 -0400
 Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 5AAED206C0;
-        Fri, 10 Apr 2020 03:51:09 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 70439214DB;
+        Fri, 10 Apr 2020 03:51:20 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1586490670;
-        bh=RTTT6ylmnIwd7feHib5TM6vULfkqz5sxbfJ+CfGssH4=;
+        s=default; t=1586490681;
+        bh=EpreRY4bMnPgHjQHgFvmmqBOrNaiPhQwMWKf8fFhGrE=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=G7ZsiyT3kMzuse4ppxkyOAt3MkPEWlmtEo1oMYuk3CK4rtMUmrxmvsxvn68uZ9YWf
-         zQYjJpKYxML2lSKWsgUtBj8UP4rT+zjJt+kMQ4avNb+oSVYYVhpSkNBNJ1XCTho+1h
-         wdcKpwKm+ZmrP8OoO07S3IEyXT5UEJZp14/t/Jpc=
+        b=faBT3Y0eDhlKFT/oVFz+Tv9nenP1y/1FvsXVkXMRXBX0ri76rwhbZyAOfkZSKb/PF
+         uuCYwcBHFnCERNxsH39nQCZeHN1sobCHUjVag2CBjHYS3vnYGxARJb2jFlj9PJN5ZF
+         Y2/13qnRgQJAObdQBCtAN0Y/nYp0SwPWkeXWM57E=
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
 Cc:     Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 4.14 22/22] btrfs: track reloc roots based on their commit root bytenr
-Date:   Thu,  9 Apr 2020 23:50:44 -0400
-Message-Id: <20200410035044.9698-22-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 4.9 9/9] btrfs: track reloc roots based on their commit root bytenr
+Date:   Thu,  9 Apr 2020 23:51:10 -0400
+Message-Id: <20200410035111.9938-9-sashal@kernel.org>
 X-Mailer: git-send-email 2.20.1
-In-Reply-To: <20200410035044.9698-1-sashal@kernel.org>
-References: <20200410035044.9698-1-sashal@kernel.org>
+In-Reply-To: <20200410035111.9938-1-sashal@kernel.org>
+References: <20200410035111.9938-1-sashal@kernel.org>
 MIME-Version: 1.0
 X-stable: review
 X-Patchwork-Hint: Ignore
@@ -99,10 +99,10 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
  1 file changed, 7 insertions(+), 10 deletions(-)
 
 diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 3bb89d09d128b..ba54bc43b1215 100644
+index 97bc85ca508c2..8d98e8e248b7a 100644
 --- a/fs/btrfs/relocation.c
 +++ b/fs/btrfs/relocation.c
-@@ -1306,7 +1306,7 @@ static int __must_check __add_reloc_root(struct btrfs_root *root)
+@@ -1296,7 +1296,7 @@ static int __must_check __add_reloc_root(struct btrfs_root *root)
  	if (!node)
  		return -ENOMEM;
  
@@ -111,7 +111,7 @@ index 3bb89d09d128b..ba54bc43b1215 100644
  	node->data = root;
  
  	spin_lock(&rc->reloc_root_tree.lock);
-@@ -1337,10 +1337,11 @@ static void __del_reloc_root(struct btrfs_root *root)
+@@ -1328,10 +1328,11 @@ static void __del_reloc_root(struct btrfs_root *root)
  	if (rc && root->node) {
  		spin_lock(&rc->reloc_root_tree.lock);
  		rb_node = tree_search(&rc->reloc_root_tree.rb_root,
@@ -124,16 +124,16 @@ index 3bb89d09d128b..ba54bc43b1215 100644
  		}
  		spin_unlock(&rc->reloc_root_tree.lock);
  		if (!node)
-@@ -1358,7 +1359,7 @@ static void __del_reloc_root(struct btrfs_root *root)
+@@ -1349,7 +1350,7 @@ static void __del_reloc_root(struct btrfs_root *root)
   * helper to update the 'address of tree root -> reloc tree'
   * mapping
   */
 -static int __update_reloc_root(struct btrfs_root *root, u64 new_bytenr)
 +static int __update_reloc_root(struct btrfs_root *root)
  {
- 	struct btrfs_fs_info *fs_info = root->fs_info;
  	struct rb_node *rb_node;
-@@ -1367,7 +1368,7 @@ static int __update_reloc_root(struct btrfs_root *root, u64 new_bytenr)
+ 	struct mapping_node *node = NULL;
+@@ -1357,7 +1358,7 @@ static int __update_reloc_root(struct btrfs_root *root, u64 new_bytenr)
  
  	spin_lock(&rc->reloc_root_tree.lock);
  	rb_node = tree_search(&rc->reloc_root_tree.rb_root,
@@ -142,7 +142,7 @@ index 3bb89d09d128b..ba54bc43b1215 100644
  	if (rb_node) {
  		node = rb_entry(rb_node, struct mapping_node, rb_node);
  		rb_erase(&node->rb_node, &rc->reloc_root_tree.rb_root);
-@@ -1379,7 +1380,7 @@ static int __update_reloc_root(struct btrfs_root *root, u64 new_bytenr)
+@@ -1369,7 +1370,7 @@ static int __update_reloc_root(struct btrfs_root *root, u64 new_bytenr)
  	BUG_ON((struct btrfs_root *)node->data != root);
  
  	spin_lock(&rc->reloc_root_tree.lock);
@@ -151,7 +151,7 @@ index 3bb89d09d128b..ba54bc43b1215 100644
  	rb_node = tree_insert(&rc->reloc_root_tree.rb_root,
  			      node->bytenr, &node->rb_node);
  	spin_unlock(&rc->reloc_root_tree.lock);
-@@ -1524,6 +1525,7 @@ int btrfs_update_reloc_root(struct btrfs_trans_handle *trans,
+@@ -1519,6 +1520,7 @@ int btrfs_update_reloc_root(struct btrfs_trans_handle *trans,
  	}
  
  	if (reloc_root->commit_root != reloc_root->node) {
@@ -159,7 +159,7 @@ index 3bb89d09d128b..ba54bc43b1215 100644
  		btrfs_set_root_node(root_item, reloc_root->node);
  		free_extent_buffer(reloc_root->commit_root);
  		reloc_root->commit_root = btrfs_root_node(reloc_root);
-@@ -4727,11 +4729,6 @@ int btrfs_reloc_cow_block(struct btrfs_trans_handle *trans,
+@@ -4717,11 +4719,6 @@ int btrfs_reloc_cow_block(struct btrfs_trans_handle *trans,
  	BUG_ON(rc->stage == UPDATE_DATA_PTRS &&
  	       root->root_key.objectid == BTRFS_DATA_RELOC_TREE_OBJECTID);
  

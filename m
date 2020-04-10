@@ -7,48 +7,48 @@ X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B23D1C2BB85
-	for <linux-btrfs@archiver.kernel.org>; Fri, 10 Apr 2020 03:53:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1AE24C2BB85
+	for <linux-btrfs@archiver.kernel.org>; Fri, 10 Apr 2020 03:55:29 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8BD9B212CC
-	for <linux-btrfs@archiver.kernel.org>; Fri, 10 Apr 2020 03:53:43 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E6EDD20936
+	for <linux-btrfs@archiver.kernel.org>; Fri, 10 Apr 2020 03:55:28 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1586490823;
-	bh=XjXYzZA3Blto0KWDpihAXvG8nbtE6sMohic1rqCj6FI=;
+	s=default; t=1586490929;
+	bh=S+7+beaz5/RJ0NAlCU5OJ+8QC+v+mGFfrqkrr2LeSro=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=QO9cB8O+Sf7sYocqJ6gqnUPaN0JjrmIuIEkIGwJO+EZYrxFxElbnduT6PBh+BZ4l4
-	 CxYwMLlsLJfyWHEeFnpXb7SjKHMJvsZLYWCpkJhy7AgwpY68ugzX2yZXHLIlPBk1Od
-	 E0fJ5O5c54EX2ZTHHQRCKU9haVbUWfiy1eEE4dKY=
+	b=JgQ4NjaM/yyGg6TG3O7QDrILe1YY131mvPJp+2clisErt5gJrL2jaGAtrw/1e3qhV
+	 nb8IULBFenWlWfwEw1Zxd26Jsg+VRyUcSInnbFALXvdIXfWdUKpkwRuH4L4a9LznV8
+	 3gIig1phww/WzW9HPkLmEnYAjSZmTa+oeTCAh3fg=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728512AbgDJDxg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 9 Apr 2020 23:53:36 -0400
-Received: from mail.kernel.org ([198.145.29.99]:35350 "EHLO mail.kernel.org"
+        id S1728777AbgDJDuC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 9 Apr 2020 23:50:02 -0400
+Received: from mail.kernel.org ([198.145.29.99]:34392 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728946AbgDJDuj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 9 Apr 2020 23:50:39 -0400
+        id S1728769AbgDJDuC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 9 Apr 2020 23:50:02 -0400
 Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 8DA5B2137B;
-        Fri, 10 Apr 2020 03:50:38 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 8C11820CC7;
+        Fri, 10 Apr 2020 03:50:01 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1586490639;
-        bh=XjXYzZA3Blto0KWDpihAXvG8nbtE6sMohic1rqCj6FI=;
+        s=default; t=1586490602;
+        bh=S+7+beaz5/RJ0NAlCU5OJ+8QC+v+mGFfrqkrr2LeSro=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=OaTeNasiwsux7DhKGzDGKPpG47NYqvn0UD60o5aTobdkMF/QRP3ZKAHXOO+d8T/ru
-         BjlaSkFqeW19IzuqduYueOVlKpexeBqw32URyNm/oMEoro7LpFrZWtlV0YYEimIjGh
-         f+QJDRUpUUJQt+HrhoWVivuS8OVi7NTn9tYsECI4=
+        b=Mu/BJqr+AYCl5Kivh6cHWHATWSbNhSRO3WjoRKM3HNWN1BY6XDD73axvFhcr54U5z
+         39v9SfV5HmUnOcsjhdNIyHke5N8CjDxlSmm+Bv9CsRgmahX1lMAkJwAxL4lJEcE/MO
+         xFpCjwQvjdyRh4YGa0Xclqx3uQC1PhW9SwqZOQuY=
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
 Cc:     Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 4.19 29/32] btrfs: hold a ref on the root in btrfs_recover_relocation
-Date:   Thu,  9 Apr 2020 23:50:02 -0400
-Message-Id: <20200410035005.9371-29-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 5.4 45/46] btrfs: restart relocate_tree_blocks properly
+Date:   Thu,  9 Apr 2020 23:49:08 -0400
+Message-Id: <20200410034909.8922-45-sashal@kernel.org>
 X-Mailer: git-send-email 2.20.1
-In-Reply-To: <20200410035005.9371-1-sashal@kernel.org>
-References: <20200410035005.9371-1-sashal@kernel.org>
+In-Reply-To: <20200410034909.8922-1-sashal@kernel.org>
+References: <20200410034909.8922-1-sashal@kernel.org>
 MIME-Version: 1.0
 X-stable: review
 X-Patchwork-Hint: Ignore
@@ -60,71 +60,66 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Josef Bacik <josef@toxicpanda.com>
 
-[ Upstream commit 932fd26df8125a5b14438563c4d3e33f59ba80f7 ]
+[ Upstream commit 50dbbb71c79df89532ec41d118d59386e5a877e3 ]
 
-We look up the fs root in various places in here when recovering from a
-crashed relcoation.  Make sure we hold a ref on the root whenever we
-look them up.
+There are two bugs here, but fixing them independently would just result
+in pain if you happened to bisect between the two patches.
+
+First is how we handle the -EAGAIN from relocate_tree_block().  We don't
+set error, unless we happen to be the first node, which makes no sense,
+I have no idea what the code was trying to accomplish here.
+
+We in fact _do_ want err set here so that we know we need to restart in
+relocate_block_group().  Also we need finish_pending_nodes() to not
+actually call link_to_upper(), because we didn't actually relocate the
+block.
+
+And then if we do get -EAGAIN we do not want to set our backref cache
+last_trans to the one before ours.  This would force us to update our
+backref cache if we didn't cross transaction ids, which would mean we'd
+have some nodes updated to their new_bytenr, but still able to find
+their old bytenr because we're searching the same commit root as the
+last time we went through relocate_tree_blocks.
+
+Fixing these two things keeps us from panicing when we start breaking
+out of relocate_tree_blocks() either for delayed ref flushing or enospc.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-Reviewed-by: David Sterba <dsterba@suse.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
- fs/btrfs/relocation.c | 21 ++++++++++++++++++---
- 1 file changed, 18 insertions(+), 3 deletions(-)
+ fs/btrfs/relocation.c | 11 ++---------
+ 1 file changed, 2 insertions(+), 9 deletions(-)
 
 diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index f98913061a40c..377cf3785fbbd 100644
+index e1337598d15ea..e3ba1c12008a9 100644
 --- a/fs/btrfs/relocation.c
 +++ b/fs/btrfs/relocation.c
-@@ -4428,6 +4428,12 @@ int btrfs_recover_relocation(struct btrfs_root *root)
+@@ -3176,9 +3176,8 @@ int relocate_tree_blocks(struct btrfs_trans_handle *trans,
+ 		ret = relocate_tree_block(trans, rc, node, &block->key,
+ 					  path);
+ 		if (ret < 0) {
+-			if (ret != -EAGAIN || &block->rb_node == rb_first(blocks))
+-				err = ret;
+-			goto out;
++			err = ret;
++			break;
+ 		}
+ 	}
+ out:
+@@ -4154,12 +4153,6 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
+ 		if (!RB_EMPTY_ROOT(&blocks)) {
+ 			ret = relocate_tree_blocks(trans, rc, &blocks);
+ 			if (ret < 0) {
+-				/*
+-				 * if we fail to relocate tree blocks, force to update
+-				 * backref cache when committing transaction.
+-				 */
+-				rc->backref_cache.last_trans = trans->transid - 1;
+-
+ 				if (ret != -EAGAIN) {
  					err = ret;
- 					goto out;
- 				}
-+			} else {
-+				if (!btrfs_grab_fs_root(fs_root)) {
-+					err = -ENOENT;
-+					goto out;
-+				}
-+				btrfs_put_fs_root(fs_root);
- 			}
- 		}
- 
-@@ -4477,10 +4483,15 @@ int btrfs_recover_relocation(struct btrfs_root *root)
- 			list_add_tail(&reloc_root->root_list, &reloc_roots);
- 			goto out_free;
- 		}
-+		if (!btrfs_grab_fs_root(fs_root)) {
-+			err = -ENOENT;
-+			goto out_free;
-+		}
- 
- 		err = __add_reloc_root(reloc_root);
- 		BUG_ON(err < 0); /* -ENOMEM or logic error */
- 		fs_root->reloc_root = reloc_root;
-+		btrfs_put_fs_root(fs_root);
- 	}
- 
- 	err = btrfs_commit_transaction(trans);
-@@ -4508,10 +4519,14 @@ int btrfs_recover_relocation(struct btrfs_root *root)
- 	if (err == 0) {
- 		/* cleanup orphan inode in data relocation tree */
- 		fs_root = read_fs_root(fs_info, BTRFS_DATA_RELOC_TREE_OBJECTID);
--		if (IS_ERR(fs_root))
-+		if (IS_ERR(fs_root)) {
- 			err = PTR_ERR(fs_root);
--		else
--			err = btrfs_orphan_cleanup(fs_root);
-+		} else {
-+			if (btrfs_grab_fs_root(fs_root)) {
-+				err = btrfs_orphan_cleanup(fs_root);
-+				btrfs_put_fs_root(fs_root);
-+			}
-+		}
- 	}
- 	return err;
- }
+ 					break;
 -- 
 2.20.1
 

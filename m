@@ -2,136 +2,175 @@ Return-Path: <SRS0=bDrN=52=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.7 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7ADE6C2BA19
-	for <linux-btrfs@archiver.kernel.org>; Fri, 10 Apr 2020 01:35:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4CED1C2BB85
+	for <linux-btrfs@archiver.kernel.org>; Fri, 10 Apr 2020 03:48:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 3AFFC20A8B
-	for <linux-btrfs@archiver.kernel.org>; Fri, 10 Apr 2020 01:35:43 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="ZsN7N9Qw"
+	by mail.kernel.org (Postfix) with ESMTP id 2648920BED
+	for <linux-btrfs@archiver.kernel.org>; Fri, 10 Apr 2020 03:48:06 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1586490486;
+	bh=kL6G3/ayMij2CqJ8JV2gKiPLDNMXwZ0nMDPpdkCpaYU=;
+	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
+	b=Qonimx47qC6zzsQ5i7XmQ4Rl90Uohr/6BYhETNoCjIHi1s8oU1aidyhm7ItOfvoOy
+	 A5iK48GCfmJc4OO3jf9O6Y0vKw/gzyyDIEk5hGtSfjNMOlwLt55dLgjehh6T+YHzZn
+	 u3T16nq3Zc5kXveH2oWsfGw3xV+mLqG0oiMbSYXI=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726654AbgDJBfm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 9 Apr 2020 21:35:42 -0400
-Received: from mail-wr1-f65.google.com ([209.85.221.65]:46895 "EHLO
-        mail-wr1-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725987AbgDJBfl (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Apr 2020 21:35:41 -0400
-Received: by mail-wr1-f65.google.com with SMTP id f13so591276wrm.13
-        for <linux-btrfs@vger.kernel.org>; Thu, 09 Apr 2020 18:35:39 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=5OWrGajWxtXcdiauj3eRB2E9v2o5Ilj13ODsYerCXbo=;
-        b=ZsN7N9QweTPtTr2eiIRh3LDcQzOui0a9fDsLzvZtSST0ObYXwJlcCZCRytsP2gvMaD
-         yTE0H8N/Bmj3RRHUSsiGGsjwidOrOpq4oDrsEg8t/dWVSHWDEYG/+BUmGHMAL9MoYJMm
-         P5vWTklb7qHIdCCHC5lV/eOJGiy7lC4LN2CzF/FnKAd0bqbJAeAvTN10+eVW5627pnyc
-         O09xzHV8xbvqB3MbpfG5ZorVPe34FAEU5RYP7lYI9AxWZVRlZnAy/jjatFgGRG5cGzXd
-         kwPzWjAOcB0j9Cdi5aMg9x4oas6PL8gGaXGJtz8rXFwfJIiyhtQzgNwsXBsHfxwvWU7/
-         ymxw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=5OWrGajWxtXcdiauj3eRB2E9v2o5Ilj13ODsYerCXbo=;
-        b=Q8hAtfl0fklolrpQ8UyHu7CQd/iTVfQQM4NrluLHS3p17ukuLEhE6wUBacxKQIAHtT
-         oAm/4fTt1SwPf7TT69TpupIMvYXg0MJoOh2gM2WnR+30YVR20Gi9PKuMUjEPUroUndj4
-         fm7zHkb6eOZLYMu+2k8f7wa2scrXlmrxessvRBoCi1hqs6K81zgvkb+y6ZhQTqnJRd6C
-         FqAr8UeAuK9pMA6Kyz5wfHQAF4991uXbwkwITg53QX3LTnmyctK9O+TnhvG7yfe92+sg
-         2XKydZ9Jb39zAN1ZNkXGEFJj2H69DfM4278tDGBmEb6L4YR55gBATsP+wuhNBeqAVV7A
-         fiFA==
-X-Gm-Message-State: AGi0PubU7e1GGyw28Z5dI/irb+KRds//V3x1UJhYcOtG1UjMkZuiuChj
-        /2I7JLn1bByQYS2wbAJI05E4qBgjjg7D7xkl9TT8nA==
-X-Google-Smtp-Source: APiQypLU5UyK8ErcxtTdjvy7y95K3Ge/Shhjby8EORi1wW4scZ786gGOpQU13Je3P0I3Dun0ucg+JoUT26Yzk4Sk7os=
-X-Received: by 2002:a5d:6148:: with SMTP id y8mr1965184wrt.236.1586482538181;
- Thu, 09 Apr 2020 18:35:38 -0700 (PDT)
+        id S1727986AbgDJDsA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 9 Apr 2020 23:48:00 -0400
+Received: from mail.kernel.org ([198.145.29.99]:59072 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727966AbgDJDr4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 9 Apr 2020 23:47:56 -0400
+Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id DDBFF2145D;
+        Fri, 10 Apr 2020 03:47:55 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1586490476;
+        bh=kL6G3/ayMij2CqJ8JV2gKiPLDNMXwZ0nMDPpdkCpaYU=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+        b=w/clrej8oLdVZEXc5gstYCILjPSyH5c2q1MWAUlj/T6JkvoZSQYkpfTKB1T6or0Ed
+         5dQ5n7B9tEC0uXt63NPYMYqJfplvrium1CwoJWkreWokeHaOJ0DelfB2MsKAgpXSC8
+         CimbHUdRJTRrbJxredvPCqGrkA9kBoS3/R+HaF7U=
+From:   Sasha Levin <sashal@kernel.org>
+To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
+Cc:     Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>,
+        Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
+Subject: [PATCH AUTOSEL 5.6 68/68] btrfs: track reloc roots based on their commit root bytenr
+Date:   Thu,  9 Apr 2020 23:46:33 -0400
+Message-Id: <20200410034634.7731-68-sashal@kernel.org>
+X-Mailer: git-send-email 2.20.1
+In-Reply-To: <20200410034634.7731-1-sashal@kernel.org>
+References: <20200410034634.7731-1-sashal@kernel.org>
 MIME-Version: 1.0
-References: <CAJCQCtSLOgj7MHKNeGOHu1DPa=xC=sR7cZzR88hN1y_mTYRFKw@mail.gmail.com>
- <SN4PR0401MB35987317CD0E2B97CD5A499E9BC00@SN4PR0401MB3598.namprd04.prod.outlook.com>
- <CAJCQCtRtxqy7eMPg+eWoz36MMNBM48-mec8h182p4HmQqX-48Q@mail.gmail.com>
- <SN4PR0401MB3598FDECC128D251AB7B73459BC10@SN4PR0401MB3598.namprd04.prod.outlook.com>
- <CAJCQCtSiSBQfonL-zVacZAOT7_Z1vNC0NKSiDvib+MoLv27DWA@mail.gmail.com> <CAJCQCtSGCQ6j94XfN3CNCzq8AEzopqnd_YL4NaExe9W2-SY-sg@mail.gmail.com>
-In-Reply-To: <CAJCQCtSGCQ6j94XfN3CNCzq8AEzopqnd_YL4NaExe9W2-SY-sg@mail.gmail.com>
-From:   Chris Murphy <lists@colorremedies.com>
-Date:   Thu, 9 Apr 2020 19:35:21 -0600
-Message-ID: <CAJCQCtQOTk_B=J2V85eqMioyec9zNLOD_jvq_9TKtAg_4K3ufQ@mail.gmail.com>
-Subject: Re: authenticated file systems using HMAC(SHA256)
-To:     Chris Murphy <lists@colorremedies.com>
-Cc:     Johannes Thumshirn <Johannes.Thumshirn@wdc.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        David Sterba <dsterba@suse.cz>
-Content-Type: text/plain; charset="UTF-8"
+X-stable: review
+X-Patchwork-Hint: Ignore
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Apr 9, 2020 at 6:32 PM Chris Murphy <lists@colorremedies.com> wrote:
->
-> On Thu, Apr 9, 2020 at 6:31 PM Chris Murphy <lists@colorremedies.com> wrote:
-> >
-> > On Thu, Apr 9, 2020 at 2:50 AM Johannes Thumshirn
-> > <Johannes.Thumshirn@wdc.com> wrote:
-> > >
-> > > On 09/04/2020 02:18, Chris Murphy wrote:
-> > > > On Wed, Apr 8, 2020 at 5:17 AM Johannes Thumshirn
-> > > > <Johannes.Thumshirn@wdc.com> wrote:
-> > > >>
-> > > >> On 07/04/2020 20:02, Chris Murphy wrote:
-> > > >>> Hi,
-> > > >>>
-> > > >>> What's the status of this work?
-> > > >>> https://lore.kernel.org/linux-btrfs/20191015121405.19066-1-jthumshirn@suse.de/
-> > > >>
-> > > >> It's done but no-one was interested in it and as I haven't received any
-> > > >> answers from Dave if he's going to merge it, I did not bring it to
-> > > >> attention again. After all it was for a specific use-case SUSE has/had
-> > > >> and I left the company.
-> > > >
-> > > > I'm thinking of a way to verify that a non-encrypted generic
-> > > > boot+startup data hasn't been tampered with. That is, a generic,
-> > > > possibly read-only boot, can be authenticated on the fly. Basically,
-> > > > it's fs-verity for Btrfs, correct?
-> > > >
-> > >
-> > > Correct, example deployments would be embedded devices, or container
-> > > images. I've written a paper [1] for the 2019 SUSE Labs Conference
-> > > describing some of the scenarios, if you're interested.
-> >
-> > "downside to this is, on every unmount, the new hash value needs to be
-> > stored safely" [in e.g. a TPM]
-> >
-> > Could this make the file system not crash safe? As in, would you use
-> > authenticated btrfs in a read-only context, like seed-device? Or some
-> > industrial application where you're very, very certain, that the use
-> > case never calls for unplanned power failure or forced power off by a
-> > user? Seems difficult to use it in a desktop or laptop use case.
->
-> Nevermind... :D
->
-> \subsubsection{HMAC}
->
-> I'm just gonna read the whole thing.
+From: Josef Bacik <josef@toxicpanda.com>
 
+[ Upstream commit ea287ab157c2816bf12aad4cece41372f9d146b4 ]
 
-"the used key has to be deployed at File System creation time and
-cannot easily be modified afterwards"
+We always search the commit root of the extent tree for looking up back
+references, however we track the reloc roots based on their current
+bytenr.
 
-Could a new HMAC be defined when adding a rw sprout device to a seed?
-i.e. in this case you'd need two HMACs, until the seed device is
-removed. Hmmm, maybe difficult. I don't think data checksums are
-recomputed on seed being removed; the balance replicated metadata
-block groups fairly intact including the csum tree.
+This is wrong, if we commit the transaction between relocating tree
+blocks we could end up in this code in build_backref_tree
 
-Regarding the key being stored in the TPM. I know the Windows 10
-hardware requirements say a TPM 2.0 must be present and enabled. But I
-don't know to what degree such hardware is prevalent and supported by
-the kernel.
+  if (key.objectid == key.offset) {
+	  /*
+	   * Only root blocks of reloc trees use backref
+	   * pointing to itself.
+	   */
+	  root = find_reloc_root(rc, cur->bytenr);
+	  ASSERT(root);
+	  cur->root = root;
+	  break;
+  }
 
+find_reloc_root() is looking based on the bytenr we had in the commit
+root, but if we've COWed this reloc root we will not find that bytenr,
+and we will trip over the ASSERT(root).
 
+Fix this by using the commit_root->start bytenr for indexing the commit
+root.  Then we change the __update_reloc_root() caller to be used when
+we switch the commit root for the reloc root during commit.
+
+This fixes the panic I was seeing when we started throttling relocation
+for delayed refs.
+
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ fs/btrfs/relocation.c | 17 +++++++----------
+ 1 file changed, 7 insertions(+), 10 deletions(-)
+
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 4779a3a542f08..fae3e341658a3 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -1298,7 +1298,7 @@ static int __must_check __add_reloc_root(struct btrfs_root *root)
+ 	if (!node)
+ 		return -ENOMEM;
+ 
+-	node->bytenr = root->node->start;
++	node->bytenr = root->commit_root->start;
+ 	node->data = root;
+ 
+ 	spin_lock(&rc->reloc_root_tree.lock);
+@@ -1329,10 +1329,11 @@ static void __del_reloc_root(struct btrfs_root *root)
+ 	if (rc && root->node) {
+ 		spin_lock(&rc->reloc_root_tree.lock);
+ 		rb_node = tree_search(&rc->reloc_root_tree.rb_root,
+-				      root->node->start);
++				      root->commit_root->start);
+ 		if (rb_node) {
+ 			node = rb_entry(rb_node, struct mapping_node, rb_node);
+ 			rb_erase(&node->rb_node, &rc->reloc_root_tree.rb_root);
++			RB_CLEAR_NODE(&node->rb_node);
+ 		}
+ 		spin_unlock(&rc->reloc_root_tree.lock);
+ 		if (!node)
+@@ -1350,7 +1351,7 @@ static void __del_reloc_root(struct btrfs_root *root)
+  * helper to update the 'address of tree root -> reloc tree'
+  * mapping
+  */
+-static int __update_reloc_root(struct btrfs_root *root, u64 new_bytenr)
++static int __update_reloc_root(struct btrfs_root *root)
+ {
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
+ 	struct rb_node *rb_node;
+@@ -1359,7 +1360,7 @@ static int __update_reloc_root(struct btrfs_root *root, u64 new_bytenr)
+ 
+ 	spin_lock(&rc->reloc_root_tree.lock);
+ 	rb_node = tree_search(&rc->reloc_root_tree.rb_root,
+-			      root->node->start);
++			      root->commit_root->start);
+ 	if (rb_node) {
+ 		node = rb_entry(rb_node, struct mapping_node, rb_node);
+ 		rb_erase(&node->rb_node, &rc->reloc_root_tree.rb_root);
+@@ -1371,7 +1372,7 @@ static int __update_reloc_root(struct btrfs_root *root, u64 new_bytenr)
+ 	BUG_ON((struct btrfs_root *)node->data != root);
+ 
+ 	spin_lock(&rc->reloc_root_tree.lock);
+-	node->bytenr = new_bytenr;
++	node->bytenr = root->node->start;
+ 	rb_node = tree_insert(&rc->reloc_root_tree.rb_root,
+ 			      node->bytenr, &node->rb_node);
+ 	spin_unlock(&rc->reloc_root_tree.lock);
+@@ -1529,6 +1530,7 @@ int btrfs_update_reloc_root(struct btrfs_trans_handle *trans,
+ 	}
+ 
+ 	if (reloc_root->commit_root != reloc_root->node) {
++		__update_reloc_root(reloc_root);
+ 		btrfs_set_root_node(root_item, reloc_root->node);
+ 		free_extent_buffer(reloc_root->commit_root);
+ 		reloc_root->commit_root = btrfs_root_node(reloc_root);
+@@ -4742,11 +4744,6 @@ int btrfs_reloc_cow_block(struct btrfs_trans_handle *trans,
+ 	BUG_ON(rc->stage == UPDATE_DATA_PTRS &&
+ 	       root->root_key.objectid == BTRFS_DATA_RELOC_TREE_OBJECTID);
+ 
+-	if (root->root_key.objectid == BTRFS_TREE_RELOC_OBJECTID) {
+-		if (buf == root->node)
+-			__update_reloc_root(root, cow->start);
+-	}
+-
+ 	level = btrfs_header_level(buf);
+ 	if (btrfs_header_generation(buf) <=
+ 	    btrfs_root_last_snapshot(&root->root_item))
 -- 
-Chris Murphy
+2.20.1
+

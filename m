@@ -4,51 +4,51 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C46EBC2BB85
-	for <linux-btrfs@archiver.kernel.org>; Fri, 10 Apr 2020 03:52:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 05176C2BB1D
+	for <linux-btrfs@archiver.kernel.org>; Fri, 10 Apr 2020 03:52:38 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9D70120936
-	for <linux-btrfs@archiver.kernel.org>; Fri, 10 Apr 2020 03:52:07 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D224620936
+	for <linux-btrfs@archiver.kernel.org>; Fri, 10 Apr 2020 03:52:37 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1586490727;
-	bh=ZYbwXhYowYbtrutQRkQ/iDxc67+bXJ9149QcEAIzph8=;
+	s=default; t=1586490757;
+	bh=sorB6QZOqUF2DLawZLjk+Gktu2oZcteNNnpfHF256Mg=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=gkdiWRN2hcC67okyzdvhbfKIXVqdF5aTyjpmUanWIPwbdSBarj0IX4az3gYNtOV5F
-	 aZZ3N9RMDqI38aOp8sH1INKR74igO3+3Cn0TJNvxLuX1BqplBNTlBvKowE9sUmUl5T
-	 1J9tt3rf21xFPVW+ToeLsWyvwhrYg2tAHq5lBVrY=
+	b=BOmchqSJcWBWoGfKgsjEJL5TtQTH2nxZ5HJpQemcELqQ7T/Qaa+2Vnh/uBfwHWk8T
+	 iiOK971RVp1Kx6YMVkDvArgA3vp/tJomMjlZTICGYDighB6oLI56t2f1hY+RXQelI2
+	 hF3nuRJCysRvbvI6xc1a/vS4RBPkrQOavITZ9/mA=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728353AbgDJDwG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 9 Apr 2020 23:52:06 -0400
-Received: from mail.kernel.org ([198.145.29.99]:36508 "EHLO mail.kernel.org"
+        id S1728781AbgDJDwe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 9 Apr 2020 23:52:34 -0400
+Received: from mail.kernel.org ([198.145.29.99]:36202 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1729163AbgDJDvU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 9 Apr 2020 23:51:20 -0400
+        id S1729097AbgDJDvJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 9 Apr 2020 23:51:09 -0400
 Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 56FAA2173E;
-        Fri, 10 Apr 2020 03:51:19 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 3E823214D8;
+        Fri, 10 Apr 2020 03:51:08 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1586490680;
-        bh=ZYbwXhYowYbtrutQRkQ/iDxc67+bXJ9149QcEAIzph8=;
+        s=default; t=1586490669;
+        bh=sorB6QZOqUF2DLawZLjk+Gktu2oZcteNNnpfHF256Mg=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=c+KP46RPIAOg4ZfQxAV/lMjT9gkgStufsaCfW/IQh5yXFHdgpRSY1Mvbntw3q3yUZ
-         AbBgseJqByQoe/pJFdB3aQLgF5Y4SP0rrmgcQ0F3pAUux9B6qi84B9TJ83veACpUZ6
-         aYc2hzgMJcF1oNlmj8m6wLWj81p31MqYQQZV+RvQ=
+        b=RTeudXHED6de+AauDETYpUslhGSGB3uO3OYX9Qf5Z6RUU0fOIr3zVO01rGmgyXG7a
+         oTgDB4agJ/ExlXwqKd13v444ZG2N5QtjOp2i74pGTyvRKYPjPkM4fI67etVAcMrgll
+         aPsVRoTegQPxJkEmgnPLIMGIZDRDyk+jkRurJJHU=
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
 Cc:     Josef Bacik <josef@toxicpanda.com>, Qu Wenruo <wqu@suse.com>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 4.9 8/9] btrfs: remove a BUG_ON() from merge_reloc_roots()
-Date:   Thu,  9 Apr 2020 23:51:09 -0400
-Message-Id: <20200410035111.9938-8-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 4.14 21/22] btrfs: remove a BUG_ON() from merge_reloc_roots()
+Date:   Thu,  9 Apr 2020 23:50:43 -0400
+Message-Id: <20200410035044.9698-21-sashal@kernel.org>
 X-Mailer: git-send-email 2.20.1
-In-Reply-To: <20200410035111.9938-1-sashal@kernel.org>
-References: <20200410035111.9938-1-sashal@kernel.org>
+In-Reply-To: <20200410035044.9698-1-sashal@kernel.org>
+References: <20200410035044.9698-1-sashal@kernel.org>
 MIME-Version: 1.0
 X-stable: review
 X-Patchwork-Hint: Ignore
@@ -101,10 +101,10 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
  1 file changed, 15 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index b106d365257d3..97bc85ca508c2 100644
+index ef83fb0ffc784..3bb89d09d128b 100644
 --- a/fs/btrfs/relocation.c
 +++ b/fs/btrfs/relocation.c
-@@ -2457,7 +2457,21 @@ void merge_reloc_roots(struct reloc_control *rc)
+@@ -2480,7 +2480,21 @@ void merge_reloc_roots(struct reloc_control *rc)
  			free_reloc_roots(&reloc_roots);
  	}
  

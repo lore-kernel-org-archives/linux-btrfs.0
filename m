@@ -1,155 +1,248 @@
-Return-Path: <SRS0=KIno=54=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=jYZ0=55=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS autolearn=ham autolearn_force=no
-	version=3.4.0
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3F883C2BA2B
-	for <linux-btrfs@archiver.kernel.org>; Sun, 12 Apr 2020 08:57:24 +0000 (UTC)
-Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id F277020708
-	for <linux-btrfs@archiver.kernel.org>; Sun, 12 Apr 2020 08:57:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1DAD3C2BA19
+	for <linux-btrfs@archiver.kernel.org>; Mon, 13 Apr 2020 10:14:45 +0000 (UTC)
+Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
+	by mail.kernel.org (Postfix) with ESMTP id B03E220678
+	for <linux-btrfs@archiver.kernel.org>; Mon, 13 Apr 2020 10:14:43 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="oWRZDqFH"
+	dkim=pass (1024-bit key) header.d=yandex.ru header.i=@yandex.ru header.b="B4D9zljg"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725907AbgDLI5S (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 12 Apr 2020 04:57:18 -0400
-Received: from mail-qt1-f182.google.com ([209.85.160.182]:33335 "EHLO
-        mail-qt1-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725832AbgDLI5S (ORCPT
+        id S1728138AbgDMKOk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 13 Apr 2020 06:14:40 -0400
+Received: from forward105j.mail.yandex.net ([5.45.198.248]:55178 "EHLO
+        forward105j.mail.yandex.net" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1726552AbgDMKOj (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 12 Apr 2020 04:57:18 -0400
-Received: by mail-qt1-f182.google.com with SMTP id x2so4993762qtr.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 12 Apr 2020 01:57:16 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:from:date:message-id:subject:to;
-        bh=6pD3nrZnTMZ7AVuyl49L1slWpdN/MQYroJhleW81+V8=;
-        b=oWRZDqFHpNTdnUH2diNJrhj5eCIkc48TZzFPnpRfpW+au/VSNJMpcb1RxeqbYt97U1
-         rDxg9JZ45IAqZXwwZTVS1rxq11yLH/3siHEwWfPLtq8z/oa8Jsi+VW3NygpokkYTUQWA
-         cxAuqYLkdESaV7mfGZKomDjZBYuxxbLCZvChwMtTEu5igDHlCtprFSXL4sphDb0H+DlK
-         6uAi40/4aXXqYCzULTFFM4BkRTniv61l3GjlrNC35zcTj/s/K9GS5lVTgPBHNaKHG7Dt
-         TVK1MSBLWvjg/SdzUOdpbVhEhaRCynWHWXL32cVKmpooR2ckMmv2NrwJ+1lvrvp0LUFb
-         qwsA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:from:date:message-id:subject:to;
-        bh=6pD3nrZnTMZ7AVuyl49L1slWpdN/MQYroJhleW81+V8=;
-        b=tEu0JI9kZR23abJMyq/tlBOva4xVDsOme/iWi/OCpAjvGGhVBpA1rz9xCrfm281IqN
-         ZOTBUABR0X0TbigtRMfIJeuAfB4i4/bRJRVk2eJLB6n1W2f8Ox+Cxu0F/TlxLcxVBWp2
-         Q66w4ULuhNoTcc92ToRBAFOr0sXcHbX2PLiGOwFvj47uZJvfw3k8Ftq2oH8n1MZmZWlG
-         4jVyG1P9xDdtrdwJbHm9CrM7SsVg2SNsP8vTSArmuKXDKHcV9EMt5pP9PRUbfT4uruBA
-         q7ENjPZNxu3iwespMp+oDTeluvpXrRLKmAkwIM7EtsYtvSykxhr9Pn2VDCQ9CME5P3Th
-         bLpQ==
-X-Gm-Message-State: AGi0PubWyprucEYXlYOn40MiA27AzW6ZFN20kG4gtFiNtFJQ0cqzvUtA
-        +V3HKQQ/7rUjpDya8zYxcnoPWnTTPWM9EJoyfxV0hB5eTXk=
-X-Google-Smtp-Source: APiQypI8QXsKaMlqzQLoCbJ+4/GF2UEP11+4w236PXQvdGHC0XRzyRgm8DIchAPNo96Zvv7zmP4or1t+o3ParIPiRC8=
-X-Received: by 2002:ac8:1b70:: with SMTP id p45mr6656749qtk.258.1586681835206;
- Sun, 12 Apr 2020 01:57:15 -0700 (PDT)
-MIME-Version: 1.0
-From:   stijn rutjens <rutjensstijn@gmail.com>
-Date:   Sun, 12 Apr 2020 10:57:03 +0200
-Message-ID: <CA+UfgrWR1rn-VbHHcK0+2cN08m0C529NtY-ofUMNX3mM4NoTaw@mail.gmail.com>
-Subject: [PATCH] btrfs: allow setting per extent compression
+        Mon, 13 Apr 2020 06:14:39 -0400
+X-Greylist: delayed 339 seconds by postgrey-1.27 at vger.kernel.org; Mon, 13 Apr 2020 06:14:38 EDT
+Received: from forward102q.mail.yandex.net (forward102q.mail.yandex.net [IPv6:2a02:6b8:c0e:1ba:0:640:516:4e7d])
+        by forward105j.mail.yandex.net (Yandex) with ESMTP id D1B45B2183C;
+        Mon, 13 Apr 2020 13:08:53 +0300 (MSK)
+Received: from mxback9q.mail.yandex.net (mxback9q.mail.yandex.net [IPv6:2a02:6b8:c0e:6b:0:640:b813:52e4])
+        by forward102q.mail.yandex.net (Yandex) with ESMTP id CD2AA7F2001C;
+        Mon, 13 Apr 2020 13:08:53 +0300 (MSK)
+Received: from vla4-a16f3368381d.qloud-c.yandex.net (vla4-a16f3368381d.qloud-c.yandex.net [2a02:6b8:c17:d85:0:640:a16f:3368])
+        by mxback9q.mail.yandex.net (mxback/Yandex) with ESMTP id Y4wR8RvBsY-8r3e2hDZ;
+        Mon, 13 Apr 2020 13:08:53 +0300
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=yandex.ru; s=mail; t=1586772533;
+        bh=DCvIuZcTKcoieQMidfY/C6yATm/BE9mNkbKRAb3+n2U=;
+        h=In-Reply-To:Subject:To:From:Cc:References:Date:Message-ID;
+        b=B4D9zljgxLPTHJP7w7G96UWg1sgxiJ31Jv+D99PfqONYmqi5HuShQlFcbUs2WnmKY
+         x/dOhC6k8pKZ5osr7jYNTk79PqMjreKof/U4aZcIvo+1GZyK+9J9TsQ2S8euAcwEvn
+         Ymmx3VJiIEXgJieE+cbjmZVjKugNVweDFaDq0pwQ=
+Authentication-Results: mxback9q.mail.yandex.net; dkim=pass header.i=@yandex.ru
+Received: by vla4-a16f3368381d.qloud-c.yandex.net (smtp/Yandex) with ESMTPSA id SkogZ2Ttgg-8qXqLDgq;
+        Mon, 13 Apr 2020 13:08:53 +0300
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits))
+        (Client certificate not present)
+From:   Joshua Houghton <joshua.houghton@yandex.ru>
 To:     linux-btrfs@vger.kernel.org
-Content-Type: multipart/mixed; boundary="00000000000028e51e05a3142712"
+Cc:     Goffredo Baroncelli <kreijack@libero.it>,
+        DanglingPointer <danglingpointerexception@gmail.com>,
+        Torstein Eide <torsteine@gmail.com>
+Subject: Re: [PATCH] btrfs-progs: add RAID5/6 support to btrfs fi us
+Date:   Mon, 13 Apr 2020 10:08:50 +0000
+Message-ID: <4521727.GXAFRqVoOG@arch>
+In-Reply-To: <20200318211157.11090-1-kreijack@libero.it>
+References: <20200318211157.11090-1-kreijack@libero.it>
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7Bit
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
---00000000000028e51e05a3142712
-Content-Type: text/plain; charset="UTF-8"
+On Wednesday, 18 March 2020 21:11:56 UTC Goffredo Baroncelli wrote:
+> Hi all,
+> 
+> this patch adds support for the raid5/6 profiles in the command
+> 'btrfs filesystem usage'.
+> 
+> Until now the problem was that the value r_{data,metadata}_used is not
+> easy to get for a RAID5/6, because it depends by the number of disks.
+> And in a filesystem it is possible to have several raid5/6 chunks with a
+> different number of disks.
+> 
+> In order to bypass this issue, I reworked the code to get rid of these
+> values where possible and to use the l_{data,metadata}_used ones.
+> Notably the biggest differences is in how the free space estimation
+> is computed. Before it was:
+> 
+> 	free_estimated = (r_data_chunks - r_data_used) / data_ratio;
+> 
+> After it is:
+> 
+> 	free_estimated = l_data_chunks - l_data_used;
+> 
+> which give the same results when there is no mixed raid level, but a
+> better result in the other case. I have to point out that before in the
+> code there was a comment that said the opposite.
+> 
+> The other place where the r_{data,metadata}_used are use is for the
+> "Used:" field. For this case I estimated these values using the
+> following formula (only for raid5/6 profiles):
+> 
+> 	r_data_used += (double)r_data_chunks * l_data_used /
+>                                l_data_chunks;
+> 
+> Note that this is not fully accurate. Eg. suppose to have two raid5 chunks,
+> the first one with 3 disks, the second one with 4 disks, and that each
+> chunk is 1GB.
+> r_data_chunks_r56, l_data_used_r56, l_data_chunks_r56 are completely
+> defined, but real r_data_used is completely different in these two cases:
+> - the first chunk is full and the second one id empty
+> - the first chunk is full empty and the second one is full
+> However now this error affect only the "Used:" field.
+> 
+> 
+> So now if you run btrfs fi us in a raid6 filesystem you get:
+> 
+> $ sudo btrfs fi us /
+> Overall:
+>     Device size:		  40.00GiB
+>     Device allocated:		   8.28GiB
+>     Device unallocated:		  31.72GiB
+>     Device missing:		     0.00B
+>     Used:			   5.00GiB
+>     Free (estimated):		  17.36GiB	(min: 17.36GiB)
+>     Data ratio:			      2.00
+>     Metadata ratio:		      0.00
+>     Global reserve:		   3.25MiB	(used: 0.00B)
+> 
+> Data,RAID6: Size:4.00GiB, Used:2.50GiB (62.53%)
+> [...]
+> 
+> Instead before:
+> 
+> $ sudo btrfs fi us /
+> WARNING: RAID56 detected, not implemented
+> WARNING: RAID56 detected, not implemented
+> WARNING: RAID56 detected, not implemented
+> Overall:
+>     Device size:		  40.00GiB
+>     Device allocated:		     0.00B
+>     Device unallocated:		  40.00GiB
+>     Device missing:		     0.00B
+>     Used:			     0.00B
+>     Free (estimated):		     0.00B	(min: 8.00EiB)
+>     Data ratio:			      0.00
+>     Metadata ratio:		      0.00
+>     Global reserve:		   3.25MiB	(used: 0.00B)
+> 
+> Data,RAID6: Size:4.00GiB, Used:2.50GiB (62.53%)
+> [...]
+> 
+> 
+> I want to point out that this patch should be compatible with my
+> previous patches set (the ones related to the new ioctl
+> BTRFS_IOC_GET_CHUNK_INFO). If both are merged we will have a 'btrfs fi us'
+> commands with full support a raid5/6 filesystem without needing root
+> capability.
+> 
+> Comments are welcome.
+> BR
+> G.Baroncelli
 
-Hi all,
-As mentioned in https://github.com/kdave/btrfs-progs/issues/184 it
-would be nice to be able to set the compression level per extent (or
-file) from the IOCTL interface.
-I'm not sure how submitting patches to mailing lists works, but I have
-attached a patch which implements this. Any and all feedback is
-appreciated.
-Kind regards,
-Stijn Rutjens
+Hi Goffredo
 
---00000000000028e51e05a3142712
-Content-Type: text/x-patch; charset="US-ASCII"; name="allow-per-extent-compression.patch"
-Content-Disposition: attachment; 
-	filename="allow-per-extent-compression.patch"
-Content-Transfer-Encoding: base64
-Content-ID: <f_k8wta1rr0>
-X-Attachment-Id: f_k8wta1rr0
+Thanks you for this. It's something I've been wanting for a while. Do 
+you know why I get significantly different results in the overall summary when I 
+do not run it as root. I'm not sure if this is a bug or a limitation.
 
-ZGlmZiAtLWdpdCBhL2ZzL2J0cmZzL2ZpbGUtaXRlbS5jIGIvZnMvYnRyZnMvZmlsZS1pdGVtLmMK
-aW5kZXggYmIzNzQwNDJkLi5lMTYwM2UxY2YgMTAwNjQ0Ci0tLSBhL2ZzL2J0cmZzL2ZpbGUtaXRl
-bS5jCisrKyBiL2ZzL2J0cmZzL2ZpbGUtaXRlbS5jCkBAIC02Nyw3ICs2Nyw3IEBAIGludCBidHJm
-c19pbnNlcnRfZmlsZV9leHRlbnQoc3RydWN0IGJ0cmZzX3RyYW5zX2hhbmRsZSAqdHJhbnMsCiAJ
-YnRyZnNfc2V0X2ZpbGVfZXh0ZW50X3JhbV9ieXRlcyhsZWFmLCBpdGVtLCByYW1fYnl0ZXMpOwog
-CWJ0cmZzX3NldF9maWxlX2V4dGVudF9nZW5lcmF0aW9uKGxlYWYsIGl0ZW0sIHRyYW5zLT50cmFu
-c2lkKTsKIAlidHJmc19zZXRfZmlsZV9leHRlbnRfdHlwZShsZWFmLCBpdGVtLCBCVFJGU19GSUxF
-X0VYVEVOVF9SRUcpOwotCWJ0cmZzX3NldF9maWxlX2V4dGVudF9jb21wcmVzc2lvbihsZWFmLCBp
-dGVtLCBjb21wcmVzc2lvbik7CisJYnRyZnNfc2V0X2ZpbGVfZXh0ZW50X2NvbXByZXNzaW9uKGxl
-YWYsIGl0ZW0sIGNvbXByZXNzaW9uICYgMHhGKTsKIAlidHJmc19zZXRfZmlsZV9leHRlbnRfZW5j
-cnlwdGlvbihsZWFmLCBpdGVtLCBlbmNyeXB0aW9uKTsKIAlidHJmc19zZXRfZmlsZV9leHRlbnRf
-b3RoZXJfZW5jb2RpbmcobGVhZiwgaXRlbSwgb3RoZXJfZW5jb2RpbmcpOwogCmRpZmYgLS1naXQg
-YS9mcy9idHJmcy9pbm9kZS5jIGIvZnMvYnRyZnMvaW5vZGUuYwppbmRleCBkYmM5YmNhZjUuLjMy
-ODVkNGJkMyAxMDA2NDQKLS0tIGEvZnMvYnRyZnMvaW5vZGUuYworKysgYi9mcy9idHJmcy9pbm9k
-ZS5jCkBAIC0yMjcsNyArMjI3LDcgQEAgc3RhdGljIGludCBpbnNlcnRfaW5saW5lX2V4dGVudChz
-dHJ1Y3QgYnRyZnNfdHJhbnNfaGFuZGxlICp0cmFucywKIAkJCWNvbXByZXNzZWRfc2l6ZSAtPSBj
-dXJfc2l6ZTsKIAkJfQogCQlidHJmc19zZXRfZmlsZV9leHRlbnRfY29tcHJlc3Npb24obGVhZiwg
-ZWksCi0JCQkJCQkgIGNvbXByZXNzX3R5cGUpOworCQkJCQkJICBjb21wcmVzc190eXBlICYgMFhG
-KTsKIAl9IGVsc2UgewogCQlwYWdlID0gZmluZF9nZXRfcGFnZShpbm9kZS0+aV9tYXBwaW5nLAog
-CQkJCSAgICAgc3RhcnQgPj4gUEFHRV9TSElGVCk7CkBAIC01NzMsMTQgKzU3MywzMSBAQCBzdGF0
-aWMgbm9pbmxpbmUgaW50IGNvbXByZXNzX2ZpbGVfcmFuZ2Uoc3RydWN0IGFzeW5jX2NodW5rICph
-c3luY19jaHVuaykKIAkJfQogCiAJCS8qIENvbXByZXNzaW9uIGxldmVsIGlzIGFwcGxpZWQgaGVy
-ZSBhbmQgb25seSBoZXJlICovCi0JCXJldCA9IGJ0cmZzX2NvbXByZXNzX3BhZ2VzKAotCQkJY29t
-cHJlc3NfdHlwZSB8IChmc19pbmZvLT5jb21wcmVzc19sZXZlbCA8PCA0KSwKLQkJCQkJICAgaW5v
-ZGUtPmlfbWFwcGluZywgc3RhcnQsCi0JCQkJCSAgIHBhZ2VzLAotCQkJCQkgICAmbnJfcGFnZXMs
-Ci0JCQkJCSAgICZ0b3RhbF9pbiwKLQkJCQkJICAgJnRvdGFsX2NvbXByZXNzZWQpOwotCisJCS8q
-CisJCSAqIENoZWNrIGlmIHRoZSB1cHBlciBiaXRzIGFyZSBzZXQsIGFuZCBpZiBzbywKKwkJICog
-dGFrZSB0aGVtIGFzIHRoZSBjb21wcmVzc2lvbiBsZXZlbC4KKwkJICogdGhlIGlub2RlIGNvbXBy
-ZXNzaW9uIGxldmVsIHRha2VzIHByZWNlbmRlbmNlLCBpZiBzZXQKKwkJICovCisJCWlmICgoY29t
-cHJlc3NfdHlwZSAmIDB4RikgPT0gY29tcHJlc3NfdHlwZSkgeworCQkJcmV0ID0gYnRyZnNfY29t
-cHJlc3NfcGFnZXMoCisJCQkJY29tcHJlc3NfdHlwZSB8IChmc19pbmZvLT5jb21wcmVzc19sZXZl
-bCA8PCA0KSwKKwkJCQkJCWlub2RlLT5pX21hcHBpbmcsIHN0YXJ0LAorCQkJCQkJcGFnZXMsCisJ
-CQkJCQkmbnJfcGFnZXMsCisJCQkJCQkmdG90YWxfaW4sCisJCQkJCQkmdG90YWxfY29tcHJlc3Nl
-ZCk7CisJCX0gZWxzZSB7CisJCQlpbnQgY29tcHJlc3NfbGV2ZWwgPSBidHJmc19jb21wcmVzc19z
-ZXRfbGV2ZWwoCisJCQkJCQljb21wcmVzc190eXBlICYgMHhGLAorCQkJCQkJY29tcHJlc3NfdHlw
-ZT4+NCk7CisJCQlyZXQgPSBidHJmc19jb21wcmVzc19wYWdlcygKKwkJCQljb21wcmVzc190eXBl
-IHwgKGNvbXByZXNzX2xldmVsIDw8IDQpLAorCQkJCWlub2RlLT5pX21hcHBpbmcsIHN0YXJ0LAor
-CQkJCXBhZ2VzLAorCQkJCSZucl9wYWdlcywKKwkJCQkmdG90YWxfaW4sCisJCQkJJnRvdGFsX2Nv
-bXByZXNzZWQpOworCQl9CiAJCWlmICghcmV0KSB7CiAJCQl1bnNpZ25lZCBsb25nIG9mZnNldCA9
-IG9mZnNldF9pbl9wYWdlKHRvdGFsX2NvbXByZXNzZWQpOwogCQkJc3RydWN0IHBhZ2UgKnBhZ2Ug
-PSBwYWdlc1tucl9wYWdlcyAtIDFdOwpAQCAtMjM2Miw3ICsyMzc5LDcgQEAgc3RhdGljIGludCBp
-bnNlcnRfcmVzZXJ2ZWRfZmlsZV9leHRlbnQoc3RydWN0IGJ0cmZzX3RyYW5zX2hhbmRsZSAqdHJh
-bnMsCiAJYnRyZnNfc2V0X2ZpbGVfZXh0ZW50X29mZnNldChsZWFmLCBmaSwgMCk7CiAJYnRyZnNf
-c2V0X2ZpbGVfZXh0ZW50X251bV9ieXRlcyhsZWFmLCBmaSwgbnVtX2J5dGVzKTsKIAlidHJmc19z
-ZXRfZmlsZV9leHRlbnRfcmFtX2J5dGVzKGxlYWYsIGZpLCByYW1fYnl0ZXMpOwotCWJ0cmZzX3Nl
-dF9maWxlX2V4dGVudF9jb21wcmVzc2lvbihsZWFmLCBmaSwgY29tcHJlc3Npb24pOworCWJ0cmZz
-X3NldF9maWxlX2V4dGVudF9jb21wcmVzc2lvbihsZWFmLCBmaSwgY29tcHJlc3Npb24gJiAweEYp
-OwogCWJ0cmZzX3NldF9maWxlX2V4dGVudF9lbmNyeXB0aW9uKGxlYWYsIGZpLCBlbmNyeXB0aW9u
-KTsKIAlidHJmc19zZXRfZmlsZV9leHRlbnRfb3RoZXJfZW5jb2RpbmcobGVhZiwgZmksIG90aGVy
-X2VuY29kaW5nKTsKIApkaWZmIC0tZ2l0IGEvZnMvYnRyZnMvaW9jdGwuYyBiL2ZzL2J0cmZzL2lv
-Y3RsLmMKaW5kZXggMGZhMWMzODZkLi4yYTljMWYzMTIgMTAwNjQ0Ci0tLSBhL2ZzL2J0cmZzL2lv
-Y3RsLmMKKysrIGIvZnMvYnRyZnMvaW9jdGwuYwpAQCAtMTQxNCw3ICsxNDE0LDExIEBAIGludCBi
-dHJmc19kZWZyYWdfZmlsZShzdHJ1Y3QgaW5vZGUgKmlub2RlLCBzdHJ1Y3QgZmlsZSAqZmlsZSwK
-IAkJcmV0dXJuIC1FSU5WQUw7CiAKIAlpZiAoZG9fY29tcHJlc3MpIHsKLQkJaWYgKHJhbmdlLT5j
-b21wcmVzc190eXBlID49IEJUUkZTX05SX0NPTVBSRVNTX1RZUEVTKQorCQkvKgorCQkqIFRoZSBi
-b3R0b20gNCBiaXRzIG9mIGNvbXByZXNzX3R5cGUgYXJlIGZvciB1c2VkIGZvciB0aGUKKwkJKiBj
-b21wcmVzc2lvbiB0eXBlLCB0aGUgb3RoZXIgYml0cyBmb3IgdGhlIGNvbXByZXNzaW9uIGxldmVs
-CisJCSovCisJCWlmICgocmFuZ2UtPmNvbXByZXNzX3R5cGUgJiAweEYpID49IEJUUkZTX05SX0NP
-TVBSRVNTX1RZUEVTKQogCQkJcmV0dXJuIC1FSU5WQUw7CiAJCWlmIChyYW5nZS0+Y29tcHJlc3Nf
-dHlwZSkKIAkJCWNvbXByZXNzX3R5cGUgPSByYW5nZS0+Y29tcHJlc3NfdHlwZTsKQEAgLTE1NzIs
-OSArMTU3Niw5IEBAIGludCBidHJmc19kZWZyYWdfZmlsZShzdHJ1Y3QgaW5vZGUgKmlub2RlLCBz
-dHJ1Y3QgZmlsZSAqZmlsZSwKIAkJCWZpbGVtYXBfZmx1c2goaW5vZGUtPmlfbWFwcGluZyk7CiAJ
-fQogCi0JaWYgKHJhbmdlLT5jb21wcmVzc190eXBlID09IEJUUkZTX0NPTVBSRVNTX0xaTykgewor
-CWlmICgocmFuZ2UtPmNvbXByZXNzX3R5cGUgJiAweEYpID09IEJUUkZTX0NPTVBSRVNTX0xaTykg
-ewogCQlidHJmc19zZXRfZnNfaW5jb21wYXQoZnNfaW5mbywgQ09NUFJFU1NfTFpPKTsKLQl9IGVs
-c2UgaWYgKHJhbmdlLT5jb21wcmVzc190eXBlID09IEJUUkZTX0NPTVBSRVNTX1pTVEQpIHsKKwl9
-IGVsc2UgaWYgKChyYW5nZS0+Y29tcHJlc3NfdHlwZSAmIDB4RikgPT0gQlRSRlNfQ09NUFJFU1Nf
-WlNURCkgewogCQlidHJmc19zZXRfZnNfaW5jb21wYXQoZnNfaW5mbywgQ09NUFJFU1NfWlNURCk7
-CiAJfQogCg==
---00000000000028e51e05a3142712--
+When I run it as root it looks to be showing the correct values.
+
+joshua@r2400g:~/development/btrfs-progs$ colordiff -u <(./btrfs fi us /mnt/raid/) <(sudo ./btrfs fi us /mnt/raid/)
+WARNING: cannot read detailed chunk info, per-device usage will not be shown, run as root
+--- /dev/fd/63  2020-04-13 10:54:26.833747190 +0100
++++ /dev/fd/62  2020-04-13 10:54:26.843746984 +0100
+@@ -1,17 +1,32 @@
+ Overall:
+     Device size:                 29.11TiB
+-    Device allocated:           284.06GiB
+-    Device unallocated:                  28.83TiB
+-    Device missing:              29.11TiB
+-    Used:                       280.99GiB
+-    Free (estimated):               0.00B      (min: 14.95TiB)
+-    Data ratio:                              0.00
++    Device allocated:            19.39TiB
++    Device unallocated:                   9.72TiB
++    Device missing:                 0.00B
++    Used:                        18.67TiB
++    Free (estimated):             7.82TiB      (min: 5.39TiB)
++    Data ratio:                              1.33
+     Metadata ratio:                  2.00
+     Global reserve:             512.00MiB      (used: 0.00B)
+ 
+ Data,RAID5: Size:14.33TiB, Used:13.80TiB (96.27%)
++   /dev/mapper/traid3     4.78TiB
++   /dev/mapper/traid1     4.78TiB
++   /dev/mapper/traid2     4.78TiB
++   /dev/mapper/traid4     4.78TiB
+ 
+ Metadata,RAID1: Size:142.00GiB, Used:140.49GiB (98.94%)
++   /dev/mapper/traid3    63.00GiB
++   /dev/mapper/traid1    64.00GiB
++   /dev/mapper/traid2    63.00GiB
++   /dev/mapper/traid4    94.00GiB
+ 
+ System,RAID1: Size:32.00MiB, Used:1.00MiB (3.12%)
++   /dev/mapper/traid1    32.00MiB
++   /dev/mapper/traid4    32.00MiB
+ 
++Unallocated:
++   /dev/mapper/traid3     2.44TiB
++   /dev/mapper/traid1     2.44TiB
++   /dev/mapper/traid2     2.44TiB
++   /dev/mapper/traid4     2.41TiB
+
+
+This is in contrast to raid1 which seems to be mostly correct, irrespective
+of what user I run as.
+
+
+joshua@arch:/var/joshua$ colordiff -u <(btrfs fi us raid/) <(sudo btrfs fi us raid/)
+WARNING: cannot read detailed chunk info, per-device usage will not be shown, run as root
+--- /dev/fd/63  2020-04-13 09:52:54.630750079 +0000
++++ /dev/fd/62  2020-04-13 09:52:54.637416835 +0000
+@@ -2,7 +2,7 @@
+     Device size:                  8.00GiB
+     Device allocated:             1.32GiB
+     Device unallocated:                   6.68GiB
+-    Device missing:               8.00GiB
++    Device missing:                 0.00B
+     Used:                       383.40MiB
+     Free (estimated):             3.55GiB      (min: 3.55GiB)
+     Data ratio:                              2.00
+@@ -10,8 +10,17 @@
+     Global reserve:               3.25MiB      (used: 0.00B)
+ 
+ Data,RAID1: Size:409.56MiB, Used:191.28MiB (46.70%)
++   /dev/loop0   409.56MiB
++   /dev/loop1   409.56MiB
+ 
+ Metadata,RAID1: Size:256.00MiB, Used:416.00KiB (0.16%)
++   /dev/loop0   256.00MiB
++   /dev/loop1   256.00MiB
+ 
+ System,RAID1: Size:8.00MiB, Used:16.00KiB (0.20%)
++   /dev/loop0     8.00MiB
++   /dev/loop1     8.00MiB
+ 
++Unallocated:
++   /dev/loop0     3.34GiB
++   /dev/loop1     3.34GiB
+
+Does anyone know if this is something we can fix? I'm happy to take a look.
+
+Joshua Houghton
+
+

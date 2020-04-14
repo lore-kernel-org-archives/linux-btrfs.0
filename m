@@ -2,215 +2,238 @@ Return-Path: <SRS0=PiMA=56=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.3 required=3.0
-	tests=HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=ham
+X-Spam-Status: No, score=-9.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8142CC2BA19
-	for <linux-btrfs@archiver.kernel.org>; Tue, 14 Apr 2020 14:58:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 64408C38A29
+	for <linux-btrfs@archiver.kernel.org>; Tue, 14 Apr 2020 15:02:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 6500420578
-	for <linux-btrfs@archiver.kernel.org>; Tue, 14 Apr 2020 14:58:48 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 43B1D20768
+	for <linux-btrfs@archiver.kernel.org>; Tue, 14 Apr 2020 15:02:57 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="Cx0yhCqy"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2405496AbgDNO6r (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 14 Apr 2020 10:58:47 -0400
-Received: from mx2.suse.de ([195.135.220.15]:58364 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2405178AbgDNO6n (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 14 Apr 2020 10:58:43 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id A049DACE3;
-        Tue, 14 Apr 2020 14:58:40 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 07FF3DA72D; Tue, 14 Apr 2020 16:58:01 +0200 (CEST)
-Date:   Tue, 14 Apr 2020 16:58:01 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     stijn rutjens <rutjensstijn@gmail.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: allow setting per extent compression
-Message-ID: <20200414145801.GR5920@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, stijn rutjens <rutjensstijn@gmail.com>,
-        linux-btrfs@vger.kernel.org
-References: <CA+UfgrWR1rn-VbHHcK0+2cN08m0C529NtY-ofUMNX3mM4NoTaw@mail.gmail.com>
+        id S2405719AbgDNPCw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 14 Apr 2020 11:02:52 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43522 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2405590AbgDNPCk (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 14 Apr 2020 11:02:40 -0400
+Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:e::133])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C841DC061A0F;
+        Tue, 14 Apr 2020 08:02:39 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=bombadil.20170209; h=Content-Transfer-Encoding:
+        MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
+        :Reply-To:Content-Type:Content-ID:Content-Description;
+        bh=BSXkd/MXEKboFrx2T84+Qz425WXNvnk5TauhZiTVZ6w=; b=Cx0yhCqyGrVr7UMRgrBleEFrY0
+        apeREFtl9HtLGiZfDd3o6+jd3UOwl475s8qJv1haWT1w/d2ZCZ4rvT541l5zqNPY09kOdz6tqNgkU
+        /R5qTmMwf2dxm5Ry8/8r9vOldzcj1yYSSZ879rcczwUpglPDPnFvzcEyZkOUf3l1bbgOAhHx+B65W
+        iPhK6DXxPiagHsIbr/1G3QIJ1NxOcCimwPa2UxC1olXellTZKEbyzwpYxT2kD1SOwipIchmdNXZN/
+        zHcbZ3AlGg2M9w2PFUKcxVSh2p3THFA1pDWblCo1F1dWUBgWWiXhV54ZG6+JHd2XEfFFoIdo6Mqa6
+        +TsjDynA==;
+Received: from willy by bombadil.infradead.org with local (Exim 4.92.3 #3 (Red Hat Linux))
+        id 1jON5A-0006PX-Gu; Tue, 14 Apr 2020 15:02:36 +0000
+From:   Matthew Wilcox <willy@infradead.org>
+To:     Andrew Morton <akpm@linux-foundation.org>
+Cc:     "Matthew Wilcox (Oracle)" <willy@infradead.org>,
+        linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
+        linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-erofs@lists.ozlabs.org, linux-ext4@vger.kernel.org,
+        linux-f2fs-devel@lists.sourceforge.net, cluster-devel@redhat.com,
+        ocfs2-devel@oss.oracle.com, linux-xfs@vger.kernel.org,
+        William Kucharski <william.kucharski@oracle.com>,
+        Eric Biggers <ebiggers@google.com>,
+        Chao Yu <yuchao0@huawei.com>, Jaegeuk Kim <jaegeuk@kernel.org>
+Subject: [PATCH v11 22/25] f2fs: Convert from readpages to readahead
+Date:   Tue, 14 Apr 2020 08:02:30 -0700
+Message-Id: <20200414150233.24495-23-willy@infradead.org>
+X-Mailer: git-send-email 2.21.1
+In-Reply-To: <20200414150233.24495-1-willy@infradead.org>
+References: <20200414150233.24495-1-willy@infradead.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <CA+UfgrWR1rn-VbHHcK0+2cN08m0C529NtY-ofUMNX3mM4NoTaw@mail.gmail.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi,
+From: "Matthew Wilcox (Oracle)" <willy@infradead.org>
 
-On Sun, Apr 12, 2020 at 10:57:03AM +0200, stijn rutjens wrote:
-> Hi all,
-> As mentioned in https://github.com/kdave/btrfs-progs/issues/184 it
-> would be nice to be able to set the compression level per extent (or
-> file) from the IOCTL interface.
-> I'm not sure how submitting patches to mailing lists works, but I have
-> attached a patch which implements this. Any and all feedback is
-> appreciated.
+Use the new readahead operation in f2fs
 
-thanks for sending it, I don't insist on the patch formatting etc as
-long as we have code to discuss, adding the signed-off-by tags is easy
-and not the most imporatnt thing at the moment.
+Signed-off-by: Matthew Wilcox (Oracle) <willy@infradead.org>
+Reviewed-by: William Kucharski <william.kucharski@oracle.com>
+Reviewed-by: Eric Biggers <ebiggers@google.com>
+Reviewed-by: Chao Yu <yuchao0@huawei.com>
+Acked-by: Jaegeuk Kim <jaegeuk@kernel.org>
+---
+ fs/f2fs/data.c              | 47 +++++++++++++++----------------------
+ include/trace/events/f2fs.h |  6 ++---
+ 2 files changed, 22 insertions(+), 31 deletions(-)
 
-So the idea is to allow passing compression level to the defrag ioctl
-where it applies to the files, regardless of other compression settings
-like mount options or properties.
+diff --git a/fs/f2fs/data.c b/fs/f2fs/data.c
+index ae14e952df4f..5b72945bf9f1 100644
+--- a/fs/f2fs/data.c
++++ b/fs/f2fs/data.c
+@@ -2178,8 +2178,7 @@ int f2fs_read_multi_pages(struct compress_ctx *cc, struct bio **bio_ret,
+  * from read-ahead.
+  */
+ static int f2fs_mpage_readpages(struct address_space *mapping,
+-			struct list_head *pages, struct page *page,
+-			unsigned nr_pages, bool is_readahead)
++		struct readahead_control *rac, struct page *page)
+ {
+ 	struct bio *bio = NULL;
+ 	sector_t last_block_in_bio = 0;
+@@ -2197,6 +2196,7 @@ static int f2fs_mpage_readpages(struct address_space *mapping,
+ 		.nr_cpages = 0,
+ 	};
+ #endif
++	unsigned nr_pages = rac ? readahead_count(rac) : 1;
+ 	unsigned max_nr_pages = nr_pages;
+ 	int ret = 0;
+ 
+@@ -2210,15 +2210,9 @@ static int f2fs_mpage_readpages(struct address_space *mapping,
+ 	map.m_may_create = false;
+ 
+ 	for (; nr_pages; nr_pages--) {
+-		if (pages) {
+-			page = list_last_entry(pages, struct page, lru);
+-
++		if (rac) {
++			page = readahead_page(rac);
+ 			prefetchw(&page->flags);
+-			list_del(&page->lru);
+-			if (add_to_page_cache_lru(page, mapping,
+-						  page_index(page),
+-						  readahead_gfp_mask(mapping)))
+-				goto next_page;
+ 		}
+ 
+ #ifdef CONFIG_F2FS_FS_COMPRESSION
+@@ -2228,7 +2222,7 @@ static int f2fs_mpage_readpages(struct address_space *mapping,
+ 				ret = f2fs_read_multi_pages(&cc, &bio,
+ 							max_nr_pages,
+ 							&last_block_in_bio,
+-							is_readahead, false);
++							rac != NULL, false);
+ 				f2fs_destroy_compress_ctx(&cc);
+ 				if (ret)
+ 					goto set_error_page;
+@@ -2251,7 +2245,7 @@ static int f2fs_mpage_readpages(struct address_space *mapping,
+ #endif
+ 
+ 		ret = f2fs_read_single_page(inode, page, max_nr_pages, &map,
+-					&bio, &last_block_in_bio, is_readahead);
++					&bio, &last_block_in_bio, rac);
+ 		if (ret) {
+ #ifdef CONFIG_F2FS_FS_COMPRESSION
+ set_error_page:
+@@ -2260,8 +2254,10 @@ static int f2fs_mpage_readpages(struct address_space *mapping,
+ 			zero_user_segment(page, 0, PAGE_SIZE);
+ 			unlock_page(page);
+ 		}
++#ifdef CONFIG_F2FS_FS_COMPRESSION
+ next_page:
+-		if (pages)
++#endif
++		if (rac)
+ 			put_page(page);
+ 
+ #ifdef CONFIG_F2FS_FS_COMPRESSION
+@@ -2271,16 +2267,15 @@ static int f2fs_mpage_readpages(struct address_space *mapping,
+ 				ret = f2fs_read_multi_pages(&cc, &bio,
+ 							max_nr_pages,
+ 							&last_block_in_bio,
+-							is_readahead, false);
++							rac != NULL, false);
+ 				f2fs_destroy_compress_ctx(&cc);
+ 			}
+ 		}
+ #endif
+ 	}
+-	BUG_ON(pages && !list_empty(pages));
+ 	if (bio)
+ 		__submit_bio(F2FS_I_SB(inode), bio, DATA);
+-	return pages ? 0 : ret;
++	return ret;
+ }
+ 
+ static int f2fs_read_data_page(struct file *file, struct page *page)
+@@ -2299,28 +2294,24 @@ static int f2fs_read_data_page(struct file *file, struct page *page)
+ 	if (f2fs_has_inline_data(inode))
+ 		ret = f2fs_read_inline_data(inode, page);
+ 	if (ret == -EAGAIN)
+-		ret = f2fs_mpage_readpages(page_file_mapping(page),
+-						NULL, page, 1, false);
++		ret = f2fs_mpage_readpages(page_file_mapping(page), NULL, page);
+ 	return ret;
+ }
+ 
+-static int f2fs_read_data_pages(struct file *file,
+-			struct address_space *mapping,
+-			struct list_head *pages, unsigned nr_pages)
++static void f2fs_readahead(struct readahead_control *rac)
+ {
+-	struct inode *inode = mapping->host;
+-	struct page *page = list_last_entry(pages, struct page, lru);
++	struct inode *inode = rac->mapping->host;
+ 
+-	trace_f2fs_readpages(inode, page, nr_pages);
++	trace_f2fs_readpages(inode, readahead_index(rac), readahead_count(rac));
+ 
+ 	if (!f2fs_is_compress_backend_ready(inode))
+-		return 0;
++		return;
+ 
+ 	/* If the file has inline data, skip readpages */
+ 	if (f2fs_has_inline_data(inode))
+-		return 0;
++		return;
+ 
+-	return f2fs_mpage_readpages(mapping, pages, NULL, nr_pages, true);
++	f2fs_mpage_readpages(rac->mapping, rac, NULL);
+ }
+ 
+ int f2fs_encrypt_one_page(struct f2fs_io_info *fio)
+@@ -3805,7 +3796,7 @@ static void f2fs_swap_deactivate(struct file *file)
+ 
+ const struct address_space_operations f2fs_dblock_aops = {
+ 	.readpage	= f2fs_read_data_page,
+-	.readpages	= f2fs_read_data_pages,
++	.readahead	= f2fs_readahead,
+ 	.writepage	= f2fs_write_data_page,
+ 	.writepages	= f2fs_write_data_pages,
+ 	.write_begin	= f2fs_write_begin,
+diff --git a/include/trace/events/f2fs.h b/include/trace/events/f2fs.h
+index d97adfc327f0..24c2557c37f0 100644
+--- a/include/trace/events/f2fs.h
++++ b/include/trace/events/f2fs.h
+@@ -1376,9 +1376,9 @@ TRACE_EVENT(f2fs_writepages,
+ 
+ TRACE_EVENT(f2fs_readpages,
+ 
+-	TP_PROTO(struct inode *inode, struct page *page, unsigned int nrpage),
++	TP_PROTO(struct inode *inode, pgoff_t start, unsigned int nrpage),
+ 
+-	TP_ARGS(inode, page, nrpage),
++	TP_ARGS(inode, start, nrpage),
+ 
+ 	TP_STRUCT__entry(
+ 		__field(dev_t,	dev)
+@@ -1390,7 +1390,7 @@ TRACE_EVENT(f2fs_readpages,
+ 	TP_fast_assign(
+ 		__entry->dev	= inode->i_sb->s_dev;
+ 		__entry->ino	= inode->i_ino;
+-		__entry->start	= page->index;
++		__entry->start	= start;
+ 		__entry->nrpage	= nrpage;
+ 	),
+ 
+-- 
+2.25.1
 
-This has several parts:
-
-* make the code accept the type and level, ie. it has to filter out the
-  level which is what your patch mostly does
-
-* keep compatibility with older kernels and newer tools, so the
-  type+level is refused by older kernels
-
-* priority of the level when there are more settings to choose from
-  (inode, mount, ioctl)
-
-* on-disk format
-
-> diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-> index bb374042d..e1603e1cf 100644
-> --- a/fs/btrfs/file-item.c
-> +++ b/fs/btrfs/file-item.c
-> @@ -67,7 +67,7 @@ int btrfs_insert_file_extent(struct btrfs_trans_handle *trans,
->  	btrfs_set_file_extent_ram_bytes(leaf, item, ram_bytes);
->  	btrfs_set_file_extent_generation(leaf, item, trans->transid);
->  	btrfs_set_file_extent_type(leaf, item, BTRFS_FILE_EXTENT_REG);
-> -	btrfs_set_file_extent_compression(leaf, item, compression);
-> +	btrfs_set_file_extent_compression(leaf, item, compression & 0xF);
-
-As a general comment, open coding the level as "& 0xf" should be replaced
-with a helper.
-
-But in all cases where btrfs_set_file_extent_compression is called,
-there shluld be already only the type. Ie. it's up to the calling code
-to pass the correct value. An assert would be good.
-
-The number of entry points where the type and level are available is
-limited to ioctls or properties and the level is not part of the on-disk
-format so all code that handles the format should assume the value is
-valid.
-
->  	btrfs_set_file_extent_encryption(leaf, item, encryption);
->  	btrfs_set_file_extent_other_encoding(leaf, item, other_encoding);
->  
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index dbc9bcaf5..3285d4bd3 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -227,7 +227,7 @@ static int insert_inline_extent(struct btrfs_trans_handle *trans,
->  			compressed_size -= cur_size;
->  		}
->  		btrfs_set_file_extent_compression(leaf, ei,
-> -						  compress_type);
-> +						  compress_type & 0XF);
->  	} else {
->  		page = find_get_page(inode->i_mapping,
->  				     start >> PAGE_SHIFT);
-> @@ -573,14 +573,31 @@ static noinline int compress_file_range(struct async_chunk *async_chunk)
->  		}
->  
->  		/* Compression level is applied here and only here */
-> -		ret = btrfs_compress_pages(
-> -			compress_type | (fs_info->compress_level << 4),
-> -					   inode->i_mapping, start,
-> -					   pages,
-> -					   &nr_pages,
-> -					   &total_in,
-> -					   &total_compressed);
-> -
-> +		/*
-> +		 * Check if the upper bits are set, and if so,
-> +		 * take them as the compression level.
-> +		 * the inode compression level takes precendence, if set
-> +		 */
-> +		if ((compress_type & 0xF) == compress_type) {
-
-So this is a default behaviour, if no level is specified, take whatever
-default is there. Ok.
-
-> +			ret = btrfs_compress_pages(
-> +				compress_type | (fs_info->compress_level << 4),
-> +						inode->i_mapping, start,
-> +						pages,
-> +						&nr_pages,
-> +						&total_in,
-> +						&total_compressed);
-> +		} else {
-> +			int compress_level = btrfs_compress_set_level(
-> +						compress_type & 0xF,
-> +						compress_type>>4);
-
-Otherwise use the level specified by the user, that's the intended
-usecase.
-
-> +			ret = btrfs_compress_pages(
-> +				compress_type | (compress_level << 4),
-> +				inode->i_mapping, start,
-> +				pages,
-> +				&nr_pages,
-> +				&total_in,
-> +				&total_compressed);
-> +		}
->  		if (!ret) {
->  			unsigned long offset = offset_in_page(total_compressed);
->  			struct page *page = pages[nr_pages - 1];
-> @@ -2362,7 +2379,7 @@ static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
->  	btrfs_set_file_extent_offset(leaf, fi, 0);
->  	btrfs_set_file_extent_num_bytes(leaf, fi, num_bytes);
->  	btrfs_set_file_extent_ram_bytes(leaf, fi, ram_bytes);
-> -	btrfs_set_file_extent_compression(leaf, fi, compression);
-> +	btrfs_set_file_extent_compression(leaf, fi, compression & 0xF);
->  	btrfs_set_file_extent_encryption(leaf, fi, encryption);
->  	btrfs_set_file_extent_other_encoding(leaf, fi, other_encoding);
->  
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 0fa1c386d..2a9c1f312 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -1414,7 +1414,11 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
->  		return -EINVAL;
->  
->  	if (do_compress) {
-> -		if (range->compress_type >= BTRFS_NR_COMPRESS_TYPES)
-> +		/*
-> +		* The bottom 4 bits of compress_type are for used for the
-> +		* compression type, the other bits for the compression level
-> +		*/
-> +		if ((range->compress_type & 0xF) >= BTRFS_NR_COMPRESS_TYPES)
->  			return -EINVAL;
-
-For the backward compatibility, the check without "& 0xf" is sufficient,
-but a new flag is needed to actually tell the ioctl code to read the
-level. I'm not sure that relying on automatic parsing of the high 4 bits
-is a good idea, usually all new data are accompanied by new flags.
-
->  		if (range->compress_type)
->  			compress_type = range->compress_type;
-> @@ -1572,9 +1576,9 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
->  			filemap_flush(inode->i_mapping);
->  	}
->  
-> -	if (range->compress_type == BTRFS_COMPRESS_LZO) {
-> +	if ((range->compress_type & 0xF) == BTRFS_COMPRESS_LZO) {
->  		btrfs_set_fs_incompat(fs_info, COMPRESS_LZO);
-> -	} else if (range->compress_type == BTRFS_COMPRESS_ZSTD) {
-> +	} else if ((range->compress_type & 0xF) == BTRFS_COMPRESS_ZSTD) {
->  		btrfs_set_fs_incompat(fs_info, COMPRESS_ZSTD);
->  	}
-
-For further iterations of the patch, I suggest to split it into more
-patches by logical change, like adding helpers, extending the ioctl,
-adding asserts, etc.
-
-I haven't found any obstacles, the core of the work is already in this
-patch, remaining is the interface bits and polishing the code.

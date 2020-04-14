@@ -2,66 +2,98 @@ Return-Path: <SRS0=PiMA=56=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
-	SPF_HELO_NONE,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.9 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C49D5C2BB1D
-	for <linux-btrfs@archiver.kernel.org>; Tue, 14 Apr 2020 19:24:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 76CAFC2BB1D
+	for <linux-btrfs@archiver.kernel.org>; Tue, 14 Apr 2020 19:30:05 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id A37E620575
-	for <linux-btrfs@archiver.kernel.org>; Tue, 14 Apr 2020 19:24:48 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1586892288;
-	bh=Mi6b47e7sZxf4lucQ8ES01EeyQZOSRxAHXiLRU0VwDg=;
-	h=Subject:From:In-Reply-To:References:Date:To:Cc:List-ID:From;
-	b=oqryTuMMEtYGsUQzHcHfyfBreqGlaD6dvIgDFVwRx5Qe/O8JZz/KFUfWIKUSiNOhM
-	 C8rZ4B4tvJzsagSzf4ju0nKWJmi2IBoeTCLl++OCZGzTNq/fmx5jcq0jZgVlWHySIO
-	 hhlT9Je/7sSy/1QzmNTdDwbMlo4QrfOZ+vLTnfXE=
+	by mail.kernel.org (Postfix) with ESMTP id 4BF852074D
+	for <linux-btrfs@archiver.kernel.org>; Tue, 14 Apr 2020 19:30:05 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="TmBQD0Cn"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2504648AbgDNTYe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 14 Apr 2020 15:24:34 -0400
-Received: from mail.kernel.org ([198.145.29.99]:33970 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2504638AbgDNTYU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 14 Apr 2020 15:24:20 -0400
-Subject: Re: [GIT PULL] Btrfs fixes for 5.7-rc2
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1586891123;
-        bh=Mi6b47e7sZxf4lucQ8ES01EeyQZOSRxAHXiLRU0VwDg=;
-        h=From:In-Reply-To:References:Date:To:Cc:From;
-        b=IN4H6DoD4MgQSG7CApDYBhwspxleLmWgsm6N3H3bGJEZX5lr+v9/ifDqmDzxlwy5y
-         lUbFRG0wmIQwQjjwXeDUW8qdTB5nsFzqfMpL5u9NE48gWNgLZ1LOiMckYudtLLvVqu
-         hmOoJeVbqtnqx2BiYEfA2gefveLIfd1m2TyoV840=
-From:   pr-tracker-bot@kernel.org
-In-Reply-To: <cover.1586868872.git.dsterba@suse.com>
-References: <cover.1586868872.git.dsterba@suse.com>
-X-PR-Tracked-List-Id: <linux-kernel.vger.kernel.org>
-X-PR-Tracked-Message-Id: <cover.1586868872.git.dsterba@suse.com>
-X-PR-Tracked-Remote: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.7-rc1-tag
-X-PR-Tracked-Commit-Id: 34c51814b2b87cb2e5a98c92fe957db2ee8e27f4
-X-PR-Merge-Tree: torvalds/linux.git
-X-PR-Merge-Refname: refs/heads/master
-X-PR-Merge-Commit-Id: 6cc9306b8fc03019e81e4f10c93ff0528cba5217
-Message-Id: <158689112373.29674.16323985983606188540.pr-tracker-bot@kernel.org>
-Date:   Tue, 14 Apr 2020 19:05:23 +0000
-To:     David Sterba <dsterba@suse.com>
-Cc:     torvalds@linux-foundation.org, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+        id S2504794AbgDNTaC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 14 Apr 2020 15:30:02 -0400
+Received: from us-smtp-1.mimecast.com ([205.139.110.61]:44493 "EHLO
+        us-smtp-delivery-1.mimecast.com" rhost-flags-OK-OK-OK-FAIL)
+        by vger.kernel.org with ESMTP id S2504786AbgDNTaA (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 14 Apr 2020 15:30:00 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+        s=mimecast20190719; t=1586892599;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc:in-reply-to:in-reply-to:references:references;
+        bh=4nt9rcH2RnKfJzDA58agnsCRn6rTIqNaptR/6NgozyU=;
+        b=TmBQD0Cnhi97wuS+XJSLFilq6/WfEO7bI3aZn9qaIu4O/EeUhBxspf5vauRN49iFGFwCmD
+        4h7uGVv1okTokBqdAtN6K5AXDEO1smBYNV/bRT9zYReBlHbMVTiIXbaUxJ0U4UcrT+lw1f
+        FhEBN8qvwhPNMgRij4sLmbch7IE9D5E=
+Received: from mimecast-mx01.redhat.com (mimecast-mx01.redhat.com
+ [209.132.183.4]) (Using TLS) by relay.mimecast.com with ESMTP id
+ us-mta-194-Xc2oPvfjP7mbYjWGtjiEGA-1; Tue, 14 Apr 2020 15:29:55 -0400
+X-MC-Unique: Xc2oPvfjP7mbYjWGtjiEGA-1
+Received: from smtp.corp.redhat.com (int-mx08.intmail.prod.int.phx2.redhat.com [10.5.11.23])
+        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+        (No client certificate requested)
+        by mimecast-mx01.redhat.com (Postfix) with ESMTPS id 6723C107ACC9;
+        Tue, 14 Apr 2020 19:29:52 +0000 (UTC)
+Received: from llong.com (ovpn-118-173.rdu2.redhat.com [10.10.118.173])
+        by smtp.corp.redhat.com (Postfix) with ESMTP id F1F4419C70;
+        Tue, 14 Apr 2020 19:29:46 +0000 (UTC)
+From:   Waiman Long <longman@redhat.com>
+To:     Andrew Morton <akpm@linux-foundation.org>,
+        David Howells <dhowells@redhat.com>,
+        Jarkko Sakkinen <jarkko.sakkinen@linux.intel.com>,
+        James Morris <jmorris@namei.org>,
+        "Serge E. Hallyn" <serge@hallyn.com>,
+        Linus Torvalds <torvalds@linux-foundation.org>,
+        Joe Perches <joe@perches.com>,
+        Matthew Wilcox <willy@infradead.org>,
+        David Rientjes <rientjes@google.com>, Chris Mason <clm@fb.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>
+Cc:     linux-mm@kvack.org, keyrings@vger.kernel.org,
+        linux-kernel@vger.kernel.org, x86@kernel.org,
+        linux-crypto@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        Waiman Long <longman@redhat.com>
+Subject: [PATCH v2 3/3] btrfs: Use kfree() in btrfs_ioctl_get_subvol_info()
+Date:   Tue, 14 Apr 2020 15:29:33 -0400
+Message-Id: <20200414192933.26846-1-longman@redhat.com>
+In-Reply-To: <20200413211550.8307-1-longman@redhat.com>
+References: <20200413211550.8307-1-longman@redhat.com>
+X-Scanned-By: MIMEDefang 2.84 on 10.5.11.23
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The pull request you sent on Tue, 14 Apr 2020 15:59:45 +0200:
+In btrfs_ioctl_get_subvol_info(), there is a classic case where kzalloc()
+was incorrectly paired with kzfree(). According to David Sterba, there
+isn't any sensitive information in the subvol_info that needs to be
+cleared before freeing. So kfree_sensitive() isn't really needed,
+use kfree() instead.
 
-> git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.7-rc1-tag
+Reported-by: David Sterba <dsterba@suse.cz>
+Signed-off-by: Waiman Long <longman@redhat.com>
+---
+ fs/btrfs/ioctl.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-has been merged into torvalds/linux.git:
-https://git.kernel.org/torvalds/c/6cc9306b8fc03019e81e4f10c93ff0528cba5217
-
-Thank you!
-
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index eab3f8510426..5070bd2436b7 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2691,7 +2691,7 @@ static int btrfs_ioctl_get_subvol_info(struct file *file, void __user *argp)
+ 	btrfs_put_root(root);
+ out_free:
+ 	btrfs_free_path(path);
+-	kfree_sensitive(subvol_info);
++	kfree(subvol_info);
+ 	return ret;
+ }
+ 
 -- 
-Deet-doot-dot, I am a bot.
-https://korg.wiki.kernel.org/userdoc/prtracker
+2.18.1
+

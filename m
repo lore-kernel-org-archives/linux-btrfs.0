@@ -7,36 +7,36 @@ X-Spam-Status: No, score=-9.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AFE6BC38A29
-	for <linux-btrfs@archiver.kernel.org>; Tue, 14 Apr 2020 15:20:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AB0D6C38A29
+	for <linux-btrfs@archiver.kernel.org>; Tue, 14 Apr 2020 15:20:18 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 8A7C02076D
-	for <linux-btrfs@archiver.kernel.org>; Tue, 14 Apr 2020 15:20:04 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8C3392063A
+	for <linux-btrfs@archiver.kernel.org>; Tue, 14 Apr 2020 15:20:18 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="JF06wYtS"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="tls3uVI8"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2407343AbgDNPSE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 14 Apr 2020 11:18:04 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43548 "EHLO
+        id S2440187AbgDNPUR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 14 Apr 2020 11:20:17 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43538 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2405602AbgDNPCn (ORCPT
+        with ESMTP id S2405603AbgDNPCn (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Tue, 14 Apr 2020 11:02:43 -0400
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:e::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 15786C03C1A8;
-        Tue, 14 Apr 2020 08:02:40 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D385BC0610D6;
+        Tue, 14 Apr 2020 08:02:39 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20170209; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=a3v6yDLu6YVVgdwzNLLzwkeJ8vT0YawbuKhMcViKfm0=; b=JF06wYtSwL1/xSUUuID+BwdjlM
-        1NYosnZkLH42PLmhP3iMKOqAlZszbhrqz4D+kq7FA2pgvQhft14Lm+6SRBGUSSv1a8P5HTEtG+7mV
-        xBnPeuqODdxGkFtC31NnJHGdcW2kl5gAuW5wuW6Zy5B4d/dCDTGZMWeKU50cYs0y6JG3WkZykQJhO
-        g1SQUuso+kDJd1ICcMsmBWTDTrfyPgb9Q924l433/98srGm/NmJYOv35sk3Oeeo9qSyvh/Ib97jci
-        IZdGfINaRsh/KW/SHDZpDVM2DvdFp5M5cIQlkjOqLiQXR4qs0QwF0saDh4eOiv7TFcJY6KvRbSjc8
-        GYuwfeNg==;
+        bh=d2DvrmSJqp0uKsr0TxRufY8xZPJveItO/T9BCxXFlS8=; b=tls3uVI8IspMisj9EUAIb1g489
+        IMlQIrIY+yuIFrFbEZAmahxkdU/+2btxHwhbbmnXO2fdvSgSh5APNIA7PBPw+ew1/96Xx+zYBDagK
+        eu01FN1NCNaxls/3nJAU2P2OdEro6enSmEbc2k4yQs0gk1g1CDMMEjUlhgFRhAPBKGosrnwkgGGyj
+        0ia7tHYNkK+HIbEHfo+9KIVhwhuHs5Vy4kJ3Iopl5rrgIYMSKjavpSG+Qmi9Fqo+bIhIgqsVCbLPN
+        Q7UA29s6ASP1fxGMFV7ToAuoQRucVR84TNS5M6ay1+vBsBMbDPQYo0KC/t9RGnt4ZKgP4oga5NAmi
+        f9Nr02vQ==;
 Received: from willy by bombadil.infradead.org with local (Exim 4.92.3 #3 (Red Hat Linux))
-        id 1jON59-0006OS-Vg; Tue, 14 Apr 2020 15:02:35 +0000
+        id 1jON5A-0006Pb-I8; Tue, 14 Apr 2020 15:02:36 +0000
 From:   Matthew Wilcox <willy@infradead.org>
 To:     Andrew Morton <akpm@linux-foundation.org>
 Cc:     "Matthew Wilcox (Oracle)" <willy@infradead.org>,
@@ -45,12 +45,12 @@ Cc:     "Matthew Wilcox (Oracle)" <willy@infradead.org>,
         linux-erofs@lists.ozlabs.org, linux-ext4@vger.kernel.org,
         linux-f2fs-devel@lists.sourceforge.net, cluster-devel@redhat.com,
         ocfs2-devel@oss.oracle.com, linux-xfs@vger.kernel.org,
-        John Hubbard <jhubbard@nvidia.com>,
-        Dave Chinner <dchinner@redhat.com>,
-        William Kucharski <william.kucharski@oracle.com>
-Subject: [PATCH v11 08/25] mm: rename readahead loop variable to 'i'
-Date:   Tue, 14 Apr 2020 08:02:16 -0700
-Message-Id: <20200414150233.24495-9-willy@infradead.org>
+        William Kucharski <william.kucharski@oracle.com>,
+        Eric Biggers <ebiggers@google.com>,
+        Chao Yu <yuchao0@huawei.com>, Jaegeuk Kim <jaegeuk@kernel.org>
+Subject: [PATCH v11 23/25] f2fs: Pass the inode to f2fs_mpage_readpages
+Date:   Tue, 14 Apr 2020 08:02:31 -0700
+Message-Id: <20200414150233.24495-24-willy@infradead.org>
 X-Mailer: git-send-email 2.21.1
 In-Reply-To: <20200414150233.24495-1-willy@infradead.org>
 References: <20200414150233.24495-1-willy@infradead.org>
@@ -63,56 +63,55 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: "Matthew Wilcox (Oracle)" <willy@infradead.org>
 
-Change the type of page_idx to unsigned long, and rename it -- it's
-just a loop counter, not a page index.
+This function now only uses the mapping argument to look up the inode,
+and both callers already have the inode, so just pass the inode instead
+of the mapping.
 
-Suggested-by: John Hubbard <jhubbard@nvidia.com>
 Signed-off-by: Matthew Wilcox (Oracle) <willy@infradead.org>
-Reviewed-by: Dave Chinner <dchinner@redhat.com>
 Reviewed-by: William Kucharski <william.kucharski@oracle.com>
+Reviewed-by: Eric Biggers <ebiggers@google.com>
+Reviewed-by: Chao Yu <yuchao0@huawei.com>
+Acked-by: Jaegeuk Kim <jaegeuk@kernel.org>
 ---
- mm/readahead.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ fs/f2fs/data.c | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
 
-diff --git a/mm/readahead.c b/mm/readahead.c
-index 8a65d6bd97e0..7ce320854bad 100644
---- a/mm/readahead.c
-+++ b/mm/readahead.c
-@@ -163,13 +163,13 @@ void __do_page_cache_readahead(struct address_space *mapping,
- 	struct page *page;
- 	unsigned long end_index;	/* The last page we want to read */
- 	LIST_HEAD(page_pool);
--	int page_idx;
- 	loff_t isize = i_size_read(inode);
- 	gfp_t gfp_mask = readahead_gfp_mask(mapping);
- 	struct readahead_control rac = {
- 		.mapping = mapping,
- 		.file = filp,
- 	};
-+	unsigned long i;
+diff --git a/fs/f2fs/data.c b/fs/f2fs/data.c
+index 5b72945bf9f1..03ec97f28235 100644
+--- a/fs/f2fs/data.c
++++ b/fs/f2fs/data.c
+@@ -2177,12 +2177,11 @@ int f2fs_read_multi_pages(struct compress_ctx *cc, struct bio **bio_ret,
+  * use ->readpage() or do the necessary surgery to decouple ->readpages()
+  * from read-ahead.
+  */
+-static int f2fs_mpage_readpages(struct address_space *mapping,
++static int f2fs_mpage_readpages(struct inode *inode,
+ 		struct readahead_control *rac, struct page *page)
+ {
+ 	struct bio *bio = NULL;
+ 	sector_t last_block_in_bio = 0;
+-	struct inode *inode = mapping->host;
+ 	struct f2fs_map_blocks map;
+ #ifdef CONFIG_F2FS_FS_COMPRESSION
+ 	struct compress_ctx cc = {
+@@ -2294,7 +2293,7 @@ static int f2fs_read_data_page(struct file *file, struct page *page)
+ 	if (f2fs_has_inline_data(inode))
+ 		ret = f2fs_read_inline_data(inode, page);
+ 	if (ret == -EAGAIN)
+-		ret = f2fs_mpage_readpages(page_file_mapping(page), NULL, page);
++		ret = f2fs_mpage_readpages(inode, NULL, page);
+ 	return ret;
+ }
  
- 	if (isize == 0)
+@@ -2311,7 +2310,7 @@ static void f2fs_readahead(struct readahead_control *rac)
+ 	if (f2fs_has_inline_data(inode))
  		return;
-@@ -179,8 +179,8 @@ void __do_page_cache_readahead(struct address_space *mapping,
- 	/*
- 	 * Preallocate as many pages as we will need.
- 	 */
--	for (page_idx = 0; page_idx < nr_to_read; page_idx++) {
--		pgoff_t page_offset = index + page_idx;
-+	for (i = 0; i < nr_to_read; i++) {
-+		pgoff_t page_offset = index + i;
  
- 		if (page_offset > end_index)
- 			break;
-@@ -201,7 +201,7 @@ void __do_page_cache_readahead(struct address_space *mapping,
- 			break;
- 		page->index = page_offset;
- 		list_add(&page->lru, &page_pool);
--		if (page_idx == nr_to_read - lookahead_size)
-+		if (i == nr_to_read - lookahead_size)
- 			SetPageReadahead(page);
- 		rac._nr_pages++;
- 	}
+-	f2fs_mpage_readpages(rac->mapping, rac, NULL);
++	f2fs_mpage_readpages(inode, rac, NULL);
+ }
+ 
+ int f2fs_encrypt_one_page(struct f2fs_io_info *fio)
 -- 
 2.25.1
 

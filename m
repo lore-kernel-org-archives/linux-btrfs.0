@@ -2,137 +2,161 @@ Return-Path: <SRS0=PiMA=56=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.9 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1,
-	USER_IN_DEF_DKIM_WL autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7F407C2BA2B
-	for <linux-btrfs@archiver.kernel.org>; Tue, 14 Apr 2020 00:30:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CF51FC2BA2B
+	for <linux-btrfs@archiver.kernel.org>; Tue, 14 Apr 2020 01:34:12 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 5C0B8216FD
-	for <linux-btrfs@archiver.kernel.org>; Tue, 14 Apr 2020 00:30:05 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b="PMRE9MFB"
+	by mail.kernel.org (Postfix) with ESMTP id A67922075E
+	for <linux-btrfs@archiver.kernel.org>; Tue, 14 Apr 2020 01:34:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2390468AbgDNAaC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 13 Apr 2020 20:30:02 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47862 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2390461AbgDNAaB (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 13 Apr 2020 20:30:01 -0400
-Received: from mail-pg1-x544.google.com (mail-pg1-x544.google.com [IPv6:2607:f8b0:4864:20::544])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DD228C00860E
-        for <linux-btrfs@vger.kernel.org>; Mon, 13 Apr 2020 17:30:00 -0700 (PDT)
-Received: by mail-pg1-x544.google.com with SMTP id i3so1209891pgk.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 13 Apr 2020 17:30:00 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=google.com; s=20161025;
-        h=date:from:to:cc:subject:in-reply-to:message-id:references
-         :user-agent:mime-version;
-        bh=GtP40NBc6K+wY7TevCqJVJVyGGxw6eyhk3x6njvRZbI=;
-        b=PMRE9MFBjRNguCLZJxvQ0tC6cbj5HN/L0mNJHOjg1H5naWvyPaji8Uw6CjXqOQ2azW
-         MhWs/LuNrHlvICFisvb7Cy6SJ3VKQrmiHJlokad5hGoOXcGXzDY3vorrrgpyAZrAVUDE
-         dUN76VdbMCLvs9G10TRyVoj/R2uKEUPKhrkRhwWPh9Qq6Oj8zqhrDAXwnWHye+K8R3ym
-         lDZQumSHVx6+RupP9U0o1EyjztcXPr7zTXefIIyzd+nYkxQBJg3bKkumuWN4k6N/hrZC
-         eN210smaNX58gX6QVglgalvDGfi5xzWfnOSt7/cWPG1d3xQeaexIo7gZ03EO3NRYAH/8
-         2wUQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:date:from:to:cc:subject:in-reply-to:message-id
-         :references:user-agent:mime-version;
-        bh=GtP40NBc6K+wY7TevCqJVJVyGGxw6eyhk3x6njvRZbI=;
-        b=Y/s3A+4Lc720pYGOyvbL8W56Oq7Z83ZdYzB2JrQzo96vQb4IUCAtQ+TlyhPmDHsIAL
-         U8rnqRNQoCzcK0PzyVJhS8zTbY4C87os7ytwY7Ean2uaDCyQ5+rb8ZwhS4hGi8lP8Fnz
-         zzUiBTBm0ST24In//dbeSSZlWV0AtOtUX5/cbIIco/wBECWqOETobPE9Q2G0vG9Ix6rU
-         kBiWEZQda76QH67PImcGJkqvUsZ/Fw3tKrznt8nyqops2jzhgJz7cQhwAheG4GzaICZ+
-         Gl0O3DkKMxb3hBQgmmoL7qsjrcXYDC1ve5F9RZUTKILmVeH725dM2gqxKo0o6K68Q6e/
-         pWPg==
-X-Gm-Message-State: AGi0PubDRHcYBvlfjZInDLOafIxUgn9yy+UzgLG0WKGnDftWI4B0Z+N2
-        NkM+DtAaDMcdJuUKbA2FeLEFMw==
-X-Google-Smtp-Source: APiQypL5W5g7xmsU3GZXO1UecYYPwVLK1dPD412glciRM3pdZ8NSkRu/LjnNHn8Pg6Fxg4L/cgCpIw==
-X-Received: by 2002:a62:dd48:: with SMTP id w69mr10144721pff.86.1586824199909;
-        Mon, 13 Apr 2020 17:29:59 -0700 (PDT)
-Received: from [2620:15c:17:3:3a5:23a7:5e32:4598] ([2620:15c:17:3:3a5:23a7:5e32:4598])
-        by smtp.gmail.com with ESMTPSA id g11sm10055136pjs.17.2020.04.13.17.29.58
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 13 Apr 2020 17:29:59 -0700 (PDT)
-Date:   Mon, 13 Apr 2020 17:29:58 -0700 (PDT)
-From:   David Rientjes <rientjes@google.com>
-X-X-Sender: rientjes@chino.kir.corp.google.com
-To:     Waiman Long <longman@redhat.com>
-cc:     Andrew Morton <akpm@linux-foundation.org>,
-        David Howells <dhowells@redhat.com>,
-        Jarkko Sakkinen <jarkko.sakkinen@linux.intel.com>,
-        James Morris <jmorris@namei.org>,
-        "Serge E. Hallyn" <serge@hallyn.com>,
-        Linus Torvalds <torvalds@linux-foundation.org>,
-        Joe Perches <joe@perches.com>,
-        Matthew Wilcox <willy@infradead.org>, linux-mm@kvack.org,
-        keyrings@vger.kernel.org, linux-kernel@vger.kernel.org,
-        x86@kernel.org, linux-crypto@vger.kernel.org,
-        linux-s390@vger.kernel.org, linux-pm@vger.kernel.org,
-        linux-stm32@st-md-mailman.stormreply.com,
-        linux-arm-kernel@lists.infradead.org,
-        linux-amlogic@lists.infradead.org,
-        linux-mediatek@lists.infradead.org, linuxppc-dev@lists.ozlabs.org,
-        virtualization@lists.linux-foundation.org, netdev@vger.kernel.org,
-        intel-wired-lan@lists.osuosl.org, linux-ppp@vger.kernel.org,
-        wireguard@lists.zx2c4.com, linux-wireless@vger.kernel.org,
-        devel@driverdev.osuosl.org, linux-scsi@vger.kernel.org,
-        target-devel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        linux-cifs@vger.kernel.org, samba-technical@lists.samba.org,
-        linux-fscrypt@vger.kernel.org, ecryptfs@vger.kernel.org,
-        kasan-dev@googlegroups.com, linux-bluetooth@vger.kernel.org,
-        linux-wpan@vger.kernel.org, linux-sctp@vger.kernel.org,
-        linux-nfs@vger.kernel.org, tipc-discussion@lists.sourceforge.net,
-        cocci@systeme.lip6.fr, linux-security-module@vger.kernel.org,
-        linux-integrity@vger.kernel.org
-Subject: Re: [PATCH 1/2] mm, treewide: Rename kzfree() to kfree_sensitive()
-In-Reply-To: <20200413211550.8307-2-longman@redhat.com>
-Message-ID: <alpine.DEB.2.21.2004131729410.260270@chino.kir.corp.google.com>
-References: <20200413211550.8307-1-longman@redhat.com> <20200413211550.8307-2-longman@redhat.com>
-User-Agent: Alpine 2.21 (DEB 202 2017-01-01)
+        id S2403798AbgDNBeL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 13 Apr 2020 21:34:11 -0400
+Received: from mx2.suse.de ([195.135.220.15]:47186 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727867AbgDNBeK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 13 Apr 2020 21:34:10 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 534EEABC7
+        for <linux-btrfs@vger.kernel.org>; Tue, 14 Apr 2020 01:34:07 +0000 (UTC)
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs-progs: Remove extent_buffer::tree member
+Date:   Tue, 14 Apr 2020 09:34:04 +0800
+Message-Id: <20200414013404.41830-1-wqu@suse.com>
+X-Mailer: git-send-email 2.26.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, 13 Apr 2020, Waiman Long wrote:
+This member can be fetched from eb::fs_info, and no caller really
+depends on that member to determine if an eb is dummy. We have eb::flags
+to determine that.
 
-> As said by Linus:
-> 
->   A symmetric naming is only helpful if it implies symmetries in use.
->   Otherwise it's actively misleading.
-> 
->   In "kzalloc()", the z is meaningful and an important part of what the
->   caller wants.
-> 
->   In "kzfree()", the z is actively detrimental, because maybe in the
->   future we really _might_ want to use that "memfill(0xdeadbeef)" or
->   something. The "zero" part of the interface isn't even _relevant_.
-> 
-> The main reason that kzfree() exists is to clear sensitive information
-> that should not be leaked to other future users of the same memory
-> objects.
-> 
-> Rename kzfree() to kfree_sensitive() to follow the example of the
-> recently added kvfree_sensitive() and make the intention of the API
-> more explicit. In addition, memzero_explicit() is used to clear the
-> memory to make sure that it won't get optimized away by the compiler.
-> 
-> The renaming is done by using the command sequence:
-> 
->   git grep -w --name-only kzfree |\
->   xargs sed -i 's/\bkzfree\b/kfree_sensitive/'
-> 
-> followed by some editing of the kfree_sensitive() kerneldoc and the
-> use of memzero_explicit() instead of memset().
-> 
-> Suggested-by: Joe Perches <joe@perches.com>
-> Signed-off-by: Waiman Long <longman@redhat.com>
+Kernel doesn't have such member either.
 
-Acked-by: David Rientjes <rientjes@google.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+NOTE: Another candidate to cleanup is eb::cache_node, in kernel we use
+radix tree, thus no need for any structure in eb.
+
+But in btrfs-progs, we also rely on extent_io_tree to do cache size
+limitation, and for U-boot there is no radix tree implemented yet.
+
+Thus eb::cache_node may live for a longer time.
+---
+ disk-io.c   |  7 ++++---
+ extent_io.c | 14 +++++---------
+ extent_io.h |  1 -
+ 3 files changed, 9 insertions(+), 13 deletions(-)
+
+diff --git a/disk-io.c b/disk-io.c
+index c895bd277491..093a87cc9c48 100644
+--- a/disk-io.c
++++ b/disk-io.c
+@@ -371,8 +371,8 @@ struct extent_buffer* read_tree_block(struct btrfs_fs_info *fs_info, u64 bytenr,
+ 		ret = read_whole_eb(fs_info, eb, mirror_num);
+ 		if (ret == 0 && csum_tree_block(fs_info, eb, 1) == 0 &&
+ 		    check_tree_block(fs_info, eb) == 0 &&
+-		    verify_parent_transid(eb->tree, eb, parent_transid, ignore)
+-		    == 0) {
++		    verify_parent_transid(&fs_info->extent_cache, eb,
++					  parent_transid, ignore) == 0) {
+ 			if (eb->flags & EXTENT_BAD_TRANSID &&
+ 			    list_empty(&eb->recow)) {
+ 				list_add_tail(&eb->recow,
+@@ -1951,7 +1951,8 @@ int btrfs_buffer_uptodate(struct extent_buffer *buf, u64 parent_transid)
+ 	if (!ret)
+ 		return ret;
+ 
+-	ret = verify_parent_transid(buf->tree, buf, parent_transid, 1);
++	ret = verify_parent_transid(&buf->fs_info->extent_cache, buf,
++				    parent_transid, 1);
+ 	return !ret;
+ }
+ 
+diff --git a/extent_io.c b/extent_io.c
+index 4b5acb1aabf0..5ec8f41de265 100644
+--- a/extent_io.c
++++ b/extent_io.c
+@@ -619,7 +619,6 @@ static struct extent_buffer *__alloc_extent_buffer(struct btrfs_fs_info *info,
+ 	eb->cache_node.start = bytenr;
+ 	eb->cache_node.size = blocksize;
+ 	eb->fs_info = info;
+-	eb->tree = &info->extent_cache;
+ 	INIT_LIST_HEAD(&eb->recow);
+ 	INIT_LIST_HEAD(&eb->lru);
+ 	memset_extent_buffer(eb, 0, 0, blocksize);
+@@ -634,8 +633,6 @@ struct extent_buffer *btrfs_clone_extent_buffer(struct extent_buffer *src)
+ 	new = __alloc_extent_buffer(src->fs_info, src->start, src->len);
+ 	if (!new)
+ 		return NULL;
+-	/* cloned eb is not linked into fs_info->extent_cache */
+-	new->tree = NULL;
+ 
+ 	copy_extent_buffer(new, src, 0, 0, src->len);
+ 	new->flags |= EXTENT_BUFFER_DUMMY;
+@@ -645,13 +642,13 @@ struct extent_buffer *btrfs_clone_extent_buffer(struct extent_buffer *src)
+ 
+ static void free_extent_buffer_final(struct extent_buffer *eb)
+ {
+-	struct extent_io_tree *tree = eb->tree;
+-
+ 	BUG_ON(eb->refs);
+-	BUG_ON(tree && tree->cache_size < eb->len);
+ 	list_del_init(&eb->lru);
+ 	if (!(eb->flags & EXTENT_BUFFER_DUMMY)) {
++		struct extent_io_tree *tree = &eb->fs_info->extent_cache;
++
+ 		remove_cache_extent(&tree->cache, &eb->cache_node);
++		BUG_ON(tree->cache_size < eb->len);
+ 		tree->cache_size -= eb->len;
+ 	}
+ 	free(eb);
+@@ -786,7 +783,6 @@ struct extent_buffer *alloc_dummy_extent_buffer(struct btrfs_fs_info *fs_info,
+ 	if (!ret)
+ 		return NULL;
+ 
+-	ret->tree = NULL;
+ 	ret->flags |= EXTENT_BUFFER_DUMMY;
+ 
+ 	return ret;
+@@ -970,7 +966,7 @@ out:
+ 
+ int set_extent_buffer_dirty(struct extent_buffer *eb)
+ {
+-	struct extent_io_tree *tree = eb->tree;
++	struct extent_io_tree *tree = &eb->fs_info->extent_cache;
+ 	if (!(eb->flags & EXTENT_DIRTY)) {
+ 		eb->flags |= EXTENT_DIRTY;
+ 		set_extent_dirty(tree, eb->start, eb->start + eb->len - 1);
+@@ -981,7 +977,7 @@ int set_extent_buffer_dirty(struct extent_buffer *eb)
+ 
+ int clear_extent_buffer_dirty(struct extent_buffer *eb)
+ {
+-	struct extent_io_tree *tree = eb->tree;
++	struct extent_io_tree *tree = &eb->fs_info->extent_cache;
+ 	if (eb->flags & EXTENT_DIRTY) {
+ 		eb->flags &= ~EXTENT_DIRTY;
+ 		clear_extent_dirty(tree, eb->start, eb->start + eb->len - 1);
+diff --git a/extent_io.h b/extent_io.h
+index 8b65e2d2181b..bf934dfcbdf1 100644
+--- a/extent_io.h
++++ b/extent_io.h
+@@ -89,7 +89,6 @@ struct extent_buffer {
+ 	struct cache_extent cache_node;
+ 	u64 start;
+ 	u64 dev_bytenr;
+-	struct extent_io_tree *tree;
+ 	struct list_head lru;
+ 	struct list_head recow;
+ 	u32 len;
+-- 
+2.26.0
+

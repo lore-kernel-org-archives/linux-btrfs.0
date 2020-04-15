@@ -6,31 +6,31 @@ X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5CB9CC2BA19
-	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Apr 2020 15:27:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8F3B8C2BA19
+	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Apr 2020 15:42:32 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 3DD2C2078B
-	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Apr 2020 15:27:21 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7520B20857
+	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Apr 2020 15:42:32 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1414707AbgDOP1T (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 15 Apr 2020 11:27:19 -0400
-Received: from mx2.suse.de ([195.135.220.15]:45904 "EHLO mx2.suse.de"
+        id S1414830AbgDOPm3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 15 Apr 2020 11:42:29 -0400
+Received: from mx2.suse.de ([195.135.220.15]:51792 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726083AbgDOP1R (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Apr 2020 11:27:17 -0400
+        id S1414839AbgDOPmW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 15 Apr 2020 11:42:22 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id C7838ABCF;
-        Wed, 15 Apr 2020 15:27:14 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 1E5EEABCF;
+        Wed, 15 Apr 2020 15:42:21 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 903C3DA727; Wed, 15 Apr 2020 17:26:35 +0200 (CEST)
-Date:   Wed, 15 Apr 2020 17:26:35 +0200
+        id 0706ADA727; Wed, 15 Apr 2020 17:41:41 +0200 (CEST)
+Date:   Wed, 15 Apr 2020 17:41:41 +0200
 From:   David Sterba <dsterba@suse.cz>
 To:     Nikolay Borisov <nborisov@suse.com>
 Cc:     linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH] btrfs: Make btrfs_read_disk_super return struct
  btrfs_disk_super
-Message-ID: <20200415152635.GE5920@twin.jikos.cz>
+Message-ID: <20200415154141.GF5920@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
         linux-btrfs@vger.kernel.org
@@ -46,15 +46,20 @@ List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 On Wed, Apr 15, 2020 at 03:53:46PM +0300, Nikolay Borisov wrote:
-> @@ -1337,7 +1336,8 @@ struct btrfs_device *btrfs_scan_one_device(const char *path, fmode_t flags,
->  	if (IS_ERR(bdev))
->  		return ERR_CAST(bdev);
->  
-> -	if (btrfs_read_disk_super(bdev, bytenr, &page, &disk_super)) {
-> +	disk_super = btrfs_read_disk_super(bdev, bytenr);
-> +	if (IS_ERR(disk_super)) {
->  		device = ERR_PTR(-EINVAL);
+> -	if (btrfs_super_bytenr(*disk_super) != bytenr ||
+> -	    btrfs_super_magic(*disk_super) != BTRFS_MAGIC) {
+> +	if (btrfs_super_bytenr(disk_super) != bytenr ||
+> +	    btrfs_super_magic(disk_super) != BTRFS_MAGIC) {
+>  		btrfs_release_disk_super(p);
+> -		return 1;
+> +		return ERR_PTR(-EUCLEAN);
 
-This should forward the error value from btrfs_read_disk_super, like
+One more question: what's the reason for -EUCLEAN? The condition fails
+if the superblock offset is wrong or there's no magic number. Clearly
+not a btrfs superblock, this could be returned to the scanning ioctl, or
+is called during mount.
 
-		device = disk_super;
+At this point the decision is 'is this potentially a btrfs device?' and
+the lightest check we do is the offset and magic number. Only after that
+the checksum is verified and all the superblock items and from that
+point on it's all EUCLEAN, but before that it's EINVAL.

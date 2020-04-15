@@ -4,52 +4,52 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 54DD1C2BB55
-	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Apr 2020 12:27:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0E170C2BA19
+	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Apr 2020 12:45:01 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 26B1A21556
-	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Apr 2020 12:27:50 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D1283206A2
+	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Apr 2020 12:45:00 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1586953670;
-	bh=qEF+NLnH7ImKjZXKW/8C3QiHyjlN7qavn8C4vwb9Qn8=;
+	s=default; t=1586954700;
+	bh=11+yfY8Y1kvsmgFku4OKBQdXqF3Jq2UVnZHZWG+pGb8=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=nBCN0HU40Hcwo1YXj/JCA6cozn9lsN2GzDmz68bF34NOaH6uI5nF/JQwFTKF1/vAY
-	 YzSYFFOeXB1MDkbNiWbqujpGBkGDizoPPp95xstUpHiP5/r4QUjzEamG06XaxnDHOM
-	 aqdpXQGLyGpfVrxU/9DtUfhyBzJwKJfuqievSb/M=
+	b=XPdcO3Vvtyf/WNtf+3IKbXyEqQZULoTPvtGDRxtZA4AJfnB2Qb/uIi+hAXioWKLyP
+	 wQh3SSIFzG0VZes+30oAiKnqEoZnUAAfCBN1A2LVdCUQrDwhGl3CY7PFIfgKKtNRYQ
+	 fbbOgsGbOKvaPyO/VOHAqLTYFry0KuHXK5V7hh2Y=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S369289AbgDOM1s (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 15 Apr 2020 08:27:48 -0400
-Received: from mail.kernel.org ([198.145.29.99]:38200 "EHLO mail.kernel.org"
+        id S2409001AbgDOLnU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 15 Apr 2020 07:43:20 -0400
+Received: from mail.kernel.org ([198.145.29.99]:35152 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2409152AbgDOLpP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Apr 2020 07:45:15 -0400
+        id S2408990AbgDOLnR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 15 Apr 2020 07:43:17 -0400
 Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 8322F21569;
-        Wed, 15 Apr 2020 11:45:14 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id C85DC21556;
+        Wed, 15 Apr 2020 11:43:16 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1586951115;
-        bh=qEF+NLnH7ImKjZXKW/8C3QiHyjlN7qavn8C4vwb9Qn8=;
+        s=default; t=1586950997;
+        bh=11+yfY8Y1kvsmgFku4OKBQdXqF3Jq2UVnZHZWG+pGb8=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=FzzqEieY17UYVOnpRgCaj8e7WeUPJFUdr/+1eAM8QqS0hytENwSs1QLTC899/9gro
-         oMv6EkzVyZh6oa3hqM9NYTpcatrN7qNKOztszMxMptzFKPPCe/NYgZkTUQd4srj7bF
-         53ulGsTI3P7Mkkf/yLzp79JxzG7Bxy9e5CUbY6Lw=
+        b=arIgAKtBF4RQgIk+y6PH26aZoLv8Y1+irFXOSCLRDP9tv34xQuCppUUawpP/dTPko
+         DGBAy3Wq68dCvA0Qt2Sk/2AHMAkDJerZRAMq9DN00pyiehHAVV07gThCbX2gdiwEah
+         3SdaEG0P0WCnOvWgV1TU4NP01mwij/iSUhTTAZd8=
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
 Cc:     Josef Bacik <josef@toxicpanda.com>,
         Nikolay Borisov <nborisov@suse.com>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.4 29/84] btrfs: handle NULL roots in btrfs_put/btrfs_grab_fs_root
-Date:   Wed, 15 Apr 2020 07:43:46 -0400
-Message-Id: <20200415114442.14166-29-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 5.5 043/106] btrfs: handle NULL roots in btrfs_put/btrfs_grab_fs_root
+Date:   Wed, 15 Apr 2020 07:41:23 -0400
+Message-Id: <20200415114226.13103-43-sashal@kernel.org>
 X-Mailer: git-send-email 2.20.1
-In-Reply-To: <20200415114442.14166-1-sashal@kernel.org>
-References: <20200415114442.14166-1-sashal@kernel.org>
+In-Reply-To: <20200415114226.13103-1-sashal@kernel.org>
+References: <20200415114226.13103-1-sashal@kernel.org>
 MIME-Version: 1.0
 X-stable: review
 X-Patchwork-Hint: Ignore
@@ -78,7 +78,7 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
  1 file changed, 4 insertions(+)
 
 diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
-index a6958103d87e7..ee6a75f03b551 100644
+index 76f123ebb2921..3c63b0965ad64 100644
 --- a/fs/btrfs/disk-io.h
 +++ b/fs/btrfs/disk-io.h
 @@ -97,6 +97,8 @@ struct btrfs_root *btrfs_alloc_dummy_root(struct btrfs_fs_info *fs_info);

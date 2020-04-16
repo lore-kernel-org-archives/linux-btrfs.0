@@ -2,195 +2,230 @@ Return-Path: <SRS0=CVGX=6A=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+X-Spam-Status: No, score=-2.4 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E804DC2BB55
-	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Apr 2020 13:18:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 74922C3815B
+	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Apr 2020 13:42:42 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id C5743206E9
-	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Apr 2020 13:18:00 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4FDCD2222E
+	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Apr 2020 13:42:42 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="oIJVC/Ds"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="IaiNMPay"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2894986AbgDPNR6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 16 Apr 2020 09:17:58 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53976 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-FAIL-OK-FAIL)
-        by vger.kernel.org with ESMTP id S2894890AbgDPNRc (ORCPT
+        id S2441527AbgDPNmk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 16 Apr 2020 09:42:40 -0400
+Received: from aserp2120.oracle.com ([141.146.126.78]:45066 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2441485AbgDPNmd (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 16 Apr 2020 09:17:32 -0400
-Received: from mail-vk1-xa42.google.com (mail-vk1-xa42.google.com [IPv6:2607:f8b0:4864:20::a42])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 89FEBC061A0C
-        for <linux-btrfs@vger.kernel.org>; Thu, 16 Apr 2020 06:16:55 -0700 (PDT)
-Received: by mail-vk1-xa42.google.com with SMTP id y129so1852089vkf.6
-        for <linux-btrfs@vger.kernel.org>; Thu, 16 Apr 2020 06:16:55 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
-         :subject:to:cc:content-transfer-encoding;
-        bh=omDMy6ztrQY+7IXlbc9RcSGiU3JTT7fWsOMWbuDNU9Q=;
-        b=oIJVC/Dsv3WJsziO10cKDn8TWRfkgwlcNmeHtq/6KqqX7R0j9Pmj6nH6yIyW/e9/kZ
-         8ipEY+Y/xAxIQLv/2dYwhEngL+0VjapkMk0YSK/yWMFsGFds7eJl9BekapdUlFr+JftR
-         3DNB6r/fMORjXGRaGFw6N94bH2edLxgOKoSGxoIUNTyATXWcI7Y9UUAJNvmzWiMCX1ML
-         XVm1pGlPUueRuYXqXKY72WcADdr8OKgp/YOf57i5Nc+zn49k1w9K3bBbDmFkOEgYT+EB
-         Vl/jWStD0e75rt09fhb1QSQ/MS6m+t0OI/Q6mV+SHEutUOncXLCfQUyWtmhVzFf+qifz
-         M41Q==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
-         :from:date:message-id:subject:to:cc:content-transfer-encoding;
-        bh=omDMy6ztrQY+7IXlbc9RcSGiU3JTT7fWsOMWbuDNU9Q=;
-        b=lkFaAN2wli6ci9S3nP6E3i9w9j4jxtmWruv/ZZlfVXp0PoE/QzHGGYKjAeZeV1g4GV
-         yECUdQrIWuCTfwi/TpuimabEBoDDJBzVsWFpwJODkWeHu23feBCDWCc3wzqS40ihOvRK
-         rJvrAPxgSElLQO64b9RYQR2GOTE9VosxYowMmUZAm4P/Iy8UwlUM57nJ/s/DMdAbnElc
-         EQrup02chQ6aPg6FBL82yV4gJ28U5JGdAS+tGnYWW9CwVZyoxeZEqYqAjRLvaFTJjQ1p
-         104jwk1QfaE1qYJ30d1YEIirzJcfi6T8LrWmlRTcnyPQQ3stpIcGU8lA/G1Vfgz6GK2F
-         dWbA==
-X-Gm-Message-State: AGi0PuazS845NbgM493IyxJBAGNKxVUOr02okrcg1kRqyh+NuXcWc/rd
-        k6KRTJ9A8Y/TRNEKrxA5CXNdxeSpFaGo6gRf1I0=
-X-Google-Smtp-Source: APiQypIdtFqiEoLfiXLLkPKAZQ2lsxlyoH6eZIJXxoWkOs7IRga0QAFOhZI477/0YMZgvbCNVXuX1vxRoPo4qTcLODs=
-X-Received: by 2002:a1f:2c50:: with SMTP id s77mr23305003vks.14.1587043014621;
- Thu, 16 Apr 2020 06:16:54 -0700 (PDT)
+        Thu, 16 Apr 2020 09:42:33 -0400
+Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
+        by aserp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 03GAigAx188594;
+        Thu, 16 Apr 2020 10:45:48 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : subject : to :
+ cc : references : message-id : date : mime-version : in-reply-to :
+ content-type : content-transfer-encoding; s=corp-2020-01-29;
+ bh=uhQkGBV7R+x83HlBMoixgXSEKiPtSgWLhfzGJ+KG+P8=;
+ b=IaiNMPaySMFmx60JgF1eG6gTtW7Fq64hJms52nt+AN8FrTG9vSE7//bXqo5lwbnFKseA
+ eS6aDYa89oWjwEuYbBa/Y38hdR2eGDznIRjcGexRBs5pfjl0lOUVQp1KarcceXqCf+jE
+ DfNkbJ5nrRZmlv82/nAZlPu4t2K+jhUJXIM13lk76tQl1HF7y6cOzjsgN0yL0odI/qy/
+ UFKI2nDjEHb7Wk2toOamYWfL+gnESvUEvpK9LRFWs+1w+3TXQrUH5zbXWQIiog9edQ6/
+ F4yhv8U309IH9EE8C333m2p+2EBB+rst6meFErsTQsAgzbhs8F48x4W0DaO1MxQc+GCU IA== 
+Received: from aserp3020.oracle.com (aserp3020.oracle.com [141.146.126.70])
+        by aserp2120.oracle.com with ESMTP id 30dn95rn1b-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Thu, 16 Apr 2020 10:45:48 +0000
+Received: from pps.filterd (aserp3020.oracle.com [127.0.0.1])
+        by aserp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 03GAg7J8068645;
+        Thu, 16 Apr 2020 10:43:48 GMT
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by aserp3020.oracle.com with ESMTP id 30dn9f1k55-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Thu, 16 Apr 2020 10:43:48 +0000
+Received: from abhmp0004.oracle.com (abhmp0004.oracle.com [141.146.116.10])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 03GAhif1021798;
+        Thu, 16 Apr 2020 10:43:45 GMT
+Received: from [10.191.61.208] (/10.191.61.208)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Thu, 16 Apr 2020 03:43:43 -0700
+From:   Anand Jain <anand.jain@oracle.com>
+Subject: Re: 5.4.20: cannot mount device that blipped off the bus: duplicate
+ device fsid:devid for
+To:     Marc MERLIN <marc@merlins.org>
+Cc:     Nikolay Borisov <nborisov@suse.com>, dsterba@suse.com,
+        linux-btrfs@vger.kernel.org, kernel-team@fb.com
+References: <20200321202307.GA15906@merlins.org>
+ <1aaae706-0029-be4f-9f6f-194b03087b35@suse.com>
+ <20200325201455.GO29461@merlins.org>
+ <a9dd1b1a-b38e-a0f4-91e1-b89063e8ae1e@oracle.com>
+ <20200326013007.GS15123@merlins.org>
+ <0d2ea8e2-cbe8-ca64-d0d4-fa70b8cad8b1@oracle.com>
+ <20200326042624.GT15123@merlins.org> <20200414003854.GA6639@merlins.org>
+Message-ID: <f85fccf5-eeb4-28ef-4dc4-500cf9221619@oracle.com>
+Date:   Thu, 16 Apr 2020 18:43:39 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.6.0
 MIME-Version: 1.0
-References: <20200324144752.9541-1-josef@toxicpanda.com>
-In-Reply-To: <20200324144752.9541-1-josef@toxicpanda.com>
-Reply-To: fdmanana@gmail.com
-From:   Filipe Manana <fdmanana@gmail.com>
-Date:   Thu, 16 Apr 2020 14:16:43 +0100
-Message-ID: <CAL3q7H6rrXEYgQ+yE97nOrYxEKarDci0qjs0hM8VtOMOF6=khw@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: drop logs when we've aborted a transaction
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>, kernel-team@fb.com
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+In-Reply-To: <20200414003854.GA6639@merlins.org>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9592 signatures=668686
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 mlxlogscore=999 mlxscore=0 adultscore=0
+ spamscore=0 phishscore=0 bulkscore=0 suspectscore=0 malwarescore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2003020000
+ definitions=main-2004160074
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9592 signatures=668686
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 adultscore=0 clxscore=1015
+ malwarescore=0 bulkscore=0 priorityscore=1501 lowpriorityscore=0
+ mlxscore=0 phishscore=0 spamscore=0 impostorscore=0 suspectscore=0
+ mlxlogscore=999 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2003020000 definitions=main-2004160074
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Mar 24, 2020 at 2:48 PM Josef Bacik <josef@toxicpanda.com> wrote:
->
-> Dave reported a problem where we were panicing with generic/475 with
-> misc-5.7.  This is because we were doing IO after we had stopped all of
-> the worker threads, because we do the log tree cleanup on roots at drop
-> time.  Cleaning up the log tree may need to do reads if we happened to
-> have evicted the blocks from memory.
-
-Here the "may need" is actually a "will always need", because before
-calling btrfs_free_fs_roots() at close_ctree(),
-we drop all the extent buffers from memory from the btree inode
-through the call to invalidate_inode_pages2().
-
-So this causes a use-after-free on the workqueues used for reads while
-traversing the log trees during the log dropping, since the workqueues
-were freed before right after invalidate_inode_pages2(),
-everytime we abort a transaction and we have at least one log root
-around that is big enough to not consist of only one leaf.
-
->
-> Because of this simply add a helper to btrfs_cleanup_transaction() that
-> will go through and drop all of the log roots.  This gets run before we
-> do the close_ctree() work, and thus we are allowed to do any reads that
-> we would need.  I ran this through many iterations of generic/475 with
-> constrained memory and I did not see the issue.
->
-> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-
-Fixes: 8c38938c7bb096 ("btrfs: move the root freeing stuff into btrfs_put_r=
-oot")
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
-
-Thanks.
-
->
-> ---
->  fs/btrfs/disk-io.c | 36 ++++++++++++++++++++++++++++++++----
->  1 file changed, 32 insertions(+), 4 deletions(-)
->
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index a6cb5cbbdb9f..d10c7be10f3b 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -2036,9 +2036,6 @@ void btrfs_free_fs_roots(struct btrfs_fs_info *fs_i=
-nfo)
->                 for (i =3D 0; i < ret; i++)
->                         btrfs_drop_and_free_fs_root(fs_info, gang[i]);
->         }
-> -
-> -       if (test_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state))
-> -               btrfs_free_log_root_tree(NULL, fs_info);
->  }
->
->  static void btrfs_init_scrub(struct btrfs_fs_info *fs_info)
-> @@ -3888,7 +3885,7 @@ void btrfs_drop_and_free_fs_root(struct btrfs_fs_in=
-fo *fs_info,
->         spin_unlock(&fs_info->fs_roots_radix_lock);
->
->         if (test_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state)) {
-> -               btrfs_free_log(NULL, root);
-> +               ASSERT(root->log_root =3D=3D NULL);
->                 if (root->reloc_root) {
->                         btrfs_put_root(root->reloc_root);
->                         root->reloc_root =3D NULL;
-> @@ -4211,6 +4208,36 @@ static void btrfs_error_commit_super(struct btrfs_=
-fs_info *fs_info)
->         up_write(&fs_info->cleanup_work_sem);
->  }
->
-> +static void btrfs_drop_all_logs(struct btrfs_fs_info *fs_info)
-> +{
-> +       struct btrfs_root *gang[8];
-> +       u64 root_objectid =3D 0;
-> +       int ret;
-> +
-> +       spin_lock(&fs_info->fs_roots_radix_lock);
-> +       while ((ret =3D radix_tree_gang_lookup(&fs_info->fs_roots_radix,
-> +                                            (void **)gang, root_objectid=
-,
-> +                                            ARRAY_SIZE(gang))) !=3D 0) {
-> +               int i;
-> +
-> +               for (i =3D 0; i < ret; i++)
-> +                       gang[i] =3D btrfs_grab_root(gang[i]);
-> +               spin_unlock(&fs_info->fs_roots_radix_lock);
-> +
-> +               for (i =3D 0; i < ret; i++) {
-> +                       if (!gang[i])
-> +                               continue;
-> +                       root_objectid =3D gang[i]->root_key.objectid;
-> +                       btrfs_free_log(NULL, gang[i]);
-> +                       btrfs_put_root(gang[i]);
-> +               }
-> +               root_objectid++;
-> +               spin_lock(&fs_info->fs_roots_radix_lock);
-> +       }
-> +       spin_unlock(&fs_info->fs_roots_radix_lock);
-> +       btrfs_free_log_root_tree(NULL, fs_info);
-> +}
-> +
->  static void btrfs_destroy_ordered_extents(struct btrfs_root *root)
->  {
->         struct btrfs_ordered_extent *ordered;
-> @@ -4603,6 +4630,7 @@ static int btrfs_cleanup_transaction(struct btrfs_f=
-s_info *fs_info)
->         btrfs_destroy_delayed_inodes(fs_info);
->         btrfs_assert_delayed_root_empty(fs_info);
->         btrfs_destroy_all_delalloc_inodes(fs_info);
-> +       btrfs_drop_all_logs(fs_info);
->         mutex_unlock(&fs_info->transaction_kthread_mutex);
->
->         return 0;
-> --
-> 2.17.1
->
 
 
---=20
-Filipe David Manana,
+On 4/14/20 8:38 AM, Marc MERLIN wrote:
+> Anaud, I had this happen agin with 5.5.11, and it was impossible to do
+> anything to fix it, I had to reboot again.
+> btrfs device scan --forget
+> did nothing.
+> 
+> See details:
+> BTRFS: device label btrfs_space devid 1 transid 35178413 /dev/sde1
+> BTRFS info (device sde1): use lzo compression, level 0
+> BTRFS info (device sde1): disk space caching is enabled
+> BTRFS info (device sde1): has skinny extents
+> BTRFS info (device sde1): enabling ssd optimizations
+> sd 6:1:3:0: [sde] tag#642 FAILED Result: hostbyte=DID_NO_CONNECT driverbyte=DRIVER_OK cmd_age=2s
+> sd 6:1:3:0: [sde] tag#640 FAILED Result: hostbyte=DID_NO_CONNECT driverbyte=DRIVER_OK cmd_age=2s
+> sd 6:1:3:0: [sde] tag#702 FAILED Result: hostbyte=DID_NO_CONNECT driverbyte=DRIVER_OK cmd_age=2s
+> sd 6:1:3:0: [sde] tag#702 CDB: Write(16) 8a 00 00 00 00 00 f1 a7 3a 68 00 00 01 f0 00 00
+> blk_update_request: I/O error, dev sde, sector 4054268520 op 0x1:(WRITE) flags 0x100000 phys_seg 62 prio class 0
+> sd 6:1:3:0: [sde] tag#701 FAILED Result: hostbyte=DID_NO_CONNECT driverbyte=DRIVER_OK cmd_age=2s
+> sd 6:1:3:0: [sde] tag#701 CDB: Write(16) 8a 00 00 00 00 00 f1 a7 38 68 00 00 02 00 00 00
+> blk_update_request: I/O error, dev sde, sector 4054268008 op 0x1:(WRITE) flags 0x104000 phys_seg 64 prio class 0
+> sd 6:1:3:0: [sde] tag#700 FAILED Result: hostbyte=DID_NO_CONNECT driverbyte=DRIVER_OK cmd_age=2s
+> sd 6:1:3:0: [sde] tag#700 CDB: Write(16) 8a 00 00 00 00 00 f1 a7 36 68 00 00 02 00 00 00
+> blk_update_request: I/O error, dev sde, sector 4054267496 op 0x1:(WRITE) flags 0x104000 phys_seg 64 prio class 0
+> BTRFS error (device sde1): bdev /dev/sde1 errs: wr 1, rd 0, flush 0, corrupt 0, gen 0
+> sd 6:1:3:0: [sde] tag#641 FAILED Result: hostbyte=DID_NO_CONNECT driverbyte=DRIVER_OK cmd_age=10s
+> sd 6:1:3:0: [sde] tag#641 CDB: Unmap/Read sub-channel 42 00 00 00 00 00 00 00 18 00
 
-=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
- right.=E2=80=9D
+
+> BTRFS info (device sde1): forced readonly
+
+Unfortunately that's the only thing we do as of now.
+
+> BTRFS warning (device sde1): Skipping commit of aborted transaction.
+> BTRFS: error (device sde1) in cleanup_transaction:1894: errno=-5 IO failure
+> BTRFS info (device sde1): delayed_refs has NO entry
+> btrfs_dev_stat_print_on_error: 244 callbacks suppressed
+> 
+> gargamel:~# dmtail 3
+> [1887142.765448] BTRFS error (device sde1): bdev /dev/sde1 errs: wr 1038, rd 4529, flush 0, corrupt 0, gen 0
+> [1887142.795820] BTRFS error (device sde1): bdev /dev/sde1 errs: wr 1038, rd 4530, flush 0, corrupt 0, gen 0
+> [1887142.826176] BTRFS error (device sde1): bdev /dev/sde1 errs: wr 1038, rd 4531, flush 0, corrupt 0, gen 0
+
+> gargamel:~# cat /proc/partitions  |grep sd[ep]
+>     8      240 3750738264 sdp
+>     8      241 3750737223 sdp1
+
+So the same device reappears as sdp. But btrfs does not close a failed 
+device yet (patches are in the mailing list) the old path sde
+is still in the block layer and opened. I guess /proc/partitions
+doesn't show non working sde.
+
+> gargamel:~# mount | grep sde 
+> /dev/sde1 on /mnt/btrfs_space type btrfs (ro,noatime,compress=lzo,ssd,discard,space_cache,skip_balance,subvolid=5,subvol=/)
+> /dev/sde1 on /var/local/space type btrfs (ro,noexec,noatime,compress=lzo,ssd,discard,space_cache,skip_balance,subvolid=257,subvol=/varlocalspace)
+> /dev/sde1 on /var/cache/zoneminder type btrfs (ro,nosuid,nodev,noatime,compress=lzo,ssd,discard,space_cache,skip_balance,subvolid=257,subvol=/varlocalspace/zoneminder)
+> /dev/sde1 on /var/lib/mysql type btrfs (ro,nosuid,nodev,noatime,compress=lzo,ssd,discard,space_cache,skip_balance,subvolid=3648,subvol=/mysql)
+
+
+> gargamel:~# umount /mnt/btrfs_space; umount /var/local/space; umount /var/cache/zoneminder; umount /var/lib/mysql
+
+
+> gargamel:~# mount | grep sde
+better to have grep-ed sdp also, here.
+And /proc/self/mounts will be more accurate as it probes the fs module.
+
+> gargamel:~# mount /dev/sdp1 /mnt/mnt
+> mount: /mnt/mnt: mount(2) system call failed: File exists.
+
+> gargamel:~# dmtail 2
+> [1887142.826176] BTRFS error (device sde1): bdev /dev/sde1 errs: wr 1038, rd 4531, flush 0, corrupt 0, gen 0
+> [1887453.610947] BTRFS warning (device sde1): duplicate device fsid:devid for 727c7ba3-f6f9-462a-8472-453dd7d46d8a:1 old:/dev/sde1 new:/dev/sdp1
+
+Unmount wasn't successful above. Or it was remounted by automount? just 
+guessing.
+
+> 
+> gargamel:/usr/local/bin# btrfs device scan --forget
+> gargamel:/usr/local/bin# mount /dev/sdp1 /mnt/mnt
+> mount: /mnt/mnt: mount(2) system call failed: File exists.
+> 
+
+  Can you please send a complete kernel logs.
+
+> After reboot, I made sure sde is not used by anything weird, just simple mounts:
+> gargamel:~# lsblk  | grep sde
+> sde                                 8:64   1 931.5G  0 disk
+> ├─sde1                              8:65   1 488.3M  0 part
+> ├─sde2                              8:66   1  14.9G  0 part
+> ├─sde3                              8:67   1    80G  0 part
+> └─sde4                              8:68   1 836.1G  0 part
+> 
+
+
+So in summary the chronological order of events are...
+
+  sde disappears.
+  btrfs does not close the device.
+  block layer creates sdp when the disappeared device reappears.
+  unmount of sde was tried but it might not have completely successful 
+we don't have sufficient logs to prove it.
+  mount of sdp fails per log indicates that sde is still mounted.
+
+So thing(s) to fix is/are:
+  The root of the issue - When sde fails we need to close the device
+  so that block layer can reuse sde when it reappears (not sdp).
+  In btrfs as we have closed the failed device btrfs dev scan --forget
+  can work to cleanup the stale entries left behind during unmount.
+
+  We can do something better here:
+  When two different device with same fsid uuid and devid and one of it
+  is mounted we have to fail the scan/mount of the newer device for
+  obvious reasons. That's when we get the log - 'duplicate device fsid'.
+  But here the case it bit skewed that both are same device with same
+  major number but different minor number (sde sdp). I need to figure
+  out a way so that we don't treat these two device paths as different
+  device. Probably should check the guid/wwid assigned by the block
+  layer which should be same for both of these devices, or in the
+  last resort check scsi inquiry_VPD page and get the serial number
+  but its going too much beyond what FS should do. Let me check with
+  block layer experts what they suggest.
+
+  We might need a workaround tool to force clean a given FSID to avoid
+  reboot.
+
+Still unknown:
+  unmount is successful? And mount logs shows that device sde still 
+exists in btrfs.
+
+Sorry I was diverted into other stuffs when you reported last time, let 
+me take a fresh look.
+
+Thanks, Anand
+
+
+> Any ideas?
+> 
+> Marc
+> 

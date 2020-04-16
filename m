@@ -7,64 +7,64 @@ X-Spam-Status: No, score=-9.7 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D0A50C2BA2B
-	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Apr 2020 21:46:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C07DEC352BE
+	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Apr 2020 21:46:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id AC596221F4
-	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Apr 2020 21:46:50 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 957DE221F4
+	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Apr 2020 21:46:53 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="cl8+w/2g"
+	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="pu2ItKPM"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728516AbgDPVqt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 16 Apr 2020 17:46:49 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48912 "EHLO
+        id S1728568AbgDPVqx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 16 Apr 2020 17:46:53 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48934 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-FAIL-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1728471AbgDPVqs (ORCPT
+        by vger.kernel.org with ESMTP id S1728526AbgDPVqw (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 16 Apr 2020 17:46:48 -0400
-Received: from mail-pj1-x1042.google.com (mail-pj1-x1042.google.com [IPv6:2607:f8b0:4864:20::1042])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BC760C061A0F
-        for <linux-btrfs@vger.kernel.org>; Thu, 16 Apr 2020 14:46:46 -0700 (PDT)
-Received: by mail-pj1-x1042.google.com with SMTP id t40so129404pjb.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 16 Apr 2020 14:46:46 -0700 (PDT)
+        Thu, 16 Apr 2020 17:46:52 -0400
+Received: from mail-pl1-x642.google.com (mail-pl1-x642.google.com [IPv6:2607:f8b0:4864:20::642])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D5852C061A0C
+        for <linux-btrfs@vger.kernel.org>; Thu, 16 Apr 2020 14:46:51 -0700 (PDT)
+Received: by mail-pl1-x642.google.com with SMTP id y22so129046pll.4
+        for <linux-btrfs@vger.kernel.org>; Thu, 16 Apr 2020 14:46:51 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=osandov-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=fkubIkbm5CTH8PCM726ZLHiYyoY1I6Mws16fl26l+jU=;
-        b=cl8+w/2g60vEsnsozNZlsix+djwjbQ1ywtXLsKFeSORay6MA7kh8efCiTpcihFiCKz
-         OYebUQ/An6PQKzHYPlcG+kptDA9SzXKnanUYIkBRqPMODvRCQ6rQ4DsUgXCdes85PHTE
-         HrypErUmHEqbdXhKrweZ63RWlko5TiYIsSbnffQL4OEPUKCXq2o4kw3wy7Ny00dI39lp
-         y4Arklsn4rJfgt4DHB8sgIqQlKbW6McY2SbmAWwkjdni6/CjkJhu+46tuM/O+0WTlxXA
-         PDVjEDTBDBAs7RQ8YCIcVSKNqKauzhmz0D2htln39FNOnaPXmIykmw7J9RYAQtW7payB
-         iwxA==
+        bh=LcoO5JXWi6U7hEw7U4/GAhMEvthRp0rDTrpYyehIiys=;
+        b=pu2ItKPMmCAPQpe8ZDw1JYhmPmvKSabf9m4nwrmqkBBQ0DwiNIisUFrj5MIkyPHcPJ
+         54f3gQmvVV3uXJECbslaJ1Q5OAej2RqbBvjatgVSj1EPeEwrtFsy5cfb0ZYIvMmaNMl7
+         va/IPLjTFV/8RfOMwei1epbDK+4r/QFcX0VfMLdoKrw+s2sgKbjaBdw4ZesbrK8q21Y4
+         caU+JOK9rYsrUm5DF8CKjx4dWt6EFVgYfjJizekEKKh4ZvlQCdHZ5U3fE6RbpFZMOGOj
+         smZDdZbu1urbBbjtb1XUzftcAaPbZkGU084O/gcdwlVteFwqGeOFKjTJeoMsPgMvXFj6
+         GWmQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=fkubIkbm5CTH8PCM726ZLHiYyoY1I6Mws16fl26l+jU=;
-        b=ep7iMRXE/JtgznAbBo3sOVo9cUv825CkbekuQ3vA//VHvIiIKsUwFUm906rCak5akd
-         KqgyOFQY3le5Lv8eGv3Ei12qNbhs60lJC586sGLCFr0+6hs24SnC9/q0RF84PNsAixib
-         h5c/tYZzgTs1zPKsbp5voxStRD1d3ztYDk6m8uVlm1fOXV+Cv69ql5YllSiWxYIm8d4r
-         Szleb/rpleBzdV4cOKk7bzyT+Qu6iFyLNhyevBYADW4yfmzF9oDoWUOxtqiO84PSvPKw
-         KdXi7jqYJSpuWfImF8/zi5t9df5y0d/VLjHh70md52icWjIsZYlQ1diI70yz/zS9MvAw
-         +NWA==
-X-Gm-Message-State: AGi0PubzAtSHS/tqcFUwvsLZwlz1on0VdKTf9Fu/0X3lMW66IkGng96+
-        k8Qt3J9mlsobYnpWwdH/JXTsAIRUDuA=
-X-Google-Smtp-Source: APiQypJ2Oj4lYcsrbalIEeOM7G4R0nkmqwLCAsAfX9qj0tbEUzVsCoyft6UDjy6IUZPCSOdFtU22RQ==
-X-Received: by 2002:a17:90a:3268:: with SMTP id k95mr395975pjb.185.1587073605918;
-        Thu, 16 Apr 2020 14:46:45 -0700 (PDT)
+        bh=LcoO5JXWi6U7hEw7U4/GAhMEvthRp0rDTrpYyehIiys=;
+        b=rzFlSdQMRmJLuxMFJsA6uBWevJTfHqW0PZQNIM94coJo/U4B0SnD0PDXB8BKHeWZVK
+         BjeocrtjH2hD+7tDf43K8kacTEsJ35LddXcf95DUthvLBkN4k8TYefJyFr0ObvQSBBFa
+         s0IHkpi3NDZGgmZ+sZGhkv4V6jpF0QWTIl1+THdrpYDM+7nuWQIFS+OYNCRVp95MRhJc
+         yxtz7hLewR3CZrHDk4xcqIMomMn0l3Wptx/F7xUYLGfFoa8cgOlF2EuGyXdA5Fc3nxe0
+         KfH8d9qUyWrnV+r5D3+HZewdQ7zEGKnZhitqwL3DXi/pEYRN4qR3zABuz2yJrw2CmGea
+         Cr8A==
+X-Gm-Message-State: AGi0PuYP1TNfvsLlTSUFbeoqO6bi8SFRdrG+SPPX0jpvVlDdjqgwT8YP
+        m1bxhi4uKTV0MUQPAXadTuTxjasDQ6I=
+X-Google-Smtp-Source: APiQypJJscN43vnYJiWVdA2zTQ7JNzb/ySyzE6gWbOuM90fP/Up3eYhefm0SBcrYDVDKcn+Ak+MD8w==
+X-Received: by 2002:a17:90a:7d09:: with SMTP id g9mr427034pjl.105.1587073610903;
+        Thu, 16 Apr 2020 14:46:50 -0700 (PDT)
 Received: from vader.tfbnw.net ([2620:10d:c090:400::5:844e])
-        by smtp.gmail.com with ESMTPSA id 17sm12440228pgg.76.2020.04.16.14.46.45
+        by smtp.gmail.com with ESMTPSA id 17sm12440228pgg.76.2020.04.16.14.46.49
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 16 Apr 2020 14:46:45 -0700 (PDT)
+        Thu, 16 Apr 2020 14:46:50 -0700 (PDT)
 From:   Omar Sandoval <osandov@osandov.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     kernel-team@fb.com, Jens Axboe <axboe@kernel.dk>,
         Christoph Hellwig <hch@lst.de>
-Subject: [PATCH v2 11/15] btrfs: put direct I/O checksums in btrfs_dio_private instead of bio
-Date:   Thu, 16 Apr 2020 14:46:21 -0700
-Message-Id: <c6a8fd5e2811e07532c63cec0aee48047b8f32a2.1587072977.git.osandov@fb.com>
+Subject: [PATCH v2 15/15] btrfs: unify buffered and direct I/O read repair
+Date:   Thu, 16 Apr 2020 14:46:25 -0700
+Message-Id: <65f462557c05818d83fe8e141b24f143e2af347e.1587072977.git.osandov@fb.com>
 X-Mailer: git-send-email 2.26.1
 In-Reply-To: <cover.1587072977.git.osandov@fb.com>
 References: <cover.1587072977.git.osandov@fb.com>
@@ -77,159 +77,388 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Omar Sandoval <osandov@fb.com>
 
-The next commit will get rid of btrfs_dio_private->orig_bio. The only
-thing we really need it for is containing all of the checksums, but we
-can easily put the checksum array in btrfs_dio_private and have the
-submitted bios reference the array. We can also look the checksums up
-while we're setting up instead of the current awkward logic that looks
-them up for orig_bio when the first split bio is submitted.
+Currently, direct I/O has its own versions of bio_readpage_error() and
+btrfs_check_repairable() (dio_read_error() and
+btrfs_check_dio_repairable(), respectively). The main difference is that
+the direct I/O version doesn't do read validation. The rework of direct
+I/O repair makes it possible to do validation, so we can get rid of
+btrfs_check_dio_repairable() and combine bio_readpage_error() and
+dio_read_error() into a new helper, btrfs_submit_read_repair().
 
-(Interestingly, btrfs_dio_private did contain the
-checksums before commit 23ea8e5a0767 ("Btrfs: load checksum data once
-when submitting a direct read io"), but it didn't look them up up
-front.)
-
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- fs/btrfs/btrfs_inode.h |  3 ++
- fs/btrfs/inode.c       | 70 +++++++++++++++++++-----------------------
- 2 files changed, 34 insertions(+), 39 deletions(-)
+ fs/btrfs/extent_io.c | 130 ++++++++++++++++++++-----------------------
+ fs/btrfs/extent_io.h |  17 ++++--
+ fs/btrfs/inode.c     | 103 ++++------------------------------
+ 3 files changed, 82 insertions(+), 168 deletions(-)
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index b965fa5429ec..94476a8be4cc 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -324,6 +324,9 @@ struct btrfs_dio_private {
- 	 */
- 	blk_status_t (*subio_endio)(struct inode *, struct btrfs_io_bio *,
- 			blk_status_t);
-+
-+	/* Checksums. */
-+	u8 sums[];
- };
- 
- /*
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 4b1102f2e6b8..fe87c465b13c 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -7712,7 +7712,6 @@ static void btrfs_endio_direct_read(struct bio *bio)
- 
- 	dio_bio->bi_status = err;
- 	dio_end_io(dio_bio);
--	btrfs_io_bio_free_csum(io_bio);
- 	bio_put(bio);
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 6e1d97bb7652..4c59ff5b0e3c 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2602,41 +2602,6 @@ static bool btrfs_check_repairable(struct inode *inode,
+ 	return true;
  }
  
-@@ -7824,39 +7823,6 @@ static void btrfs_end_dio_bio(struct bio *bio)
- 	bio_put(bio);
- }
- 
--static inline blk_status_t btrfs_lookup_and_bind_dio_csum(struct inode *inode,
--						 struct btrfs_dio_private *dip,
--						 struct bio *bio,
--						 u64 file_offset)
--{
--	struct btrfs_io_bio *io_bio = btrfs_io_bio(bio);
--	struct btrfs_io_bio *orig_io_bio = btrfs_io_bio(dip->orig_bio);
--	u16 csum_size;
--	blk_status_t ret;
 -
--	/*
--	 * We load all the csum data we need when we submit
--	 * the first bio to reduce the csum tree search and
--	 * contention.
--	 */
--	if (dip->logical_offset == file_offset) {
--		ret = btrfs_lookup_bio_sums(inode, dip->orig_bio, file_offset,
--					    NULL);
--		if (ret)
--			return ret;
+-struct bio *btrfs_create_repair_bio(struct inode *inode, struct bio *failed_bio,
+-				    struct io_failure_record *failrec,
+-				    struct page *page, int pg_offset, int icsum,
+-				    bio_end_io_t *endio_func, void *data)
+-{
+-	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+-	struct bio *bio;
+-	struct btrfs_io_bio *btrfs_failed_bio;
+-	struct btrfs_io_bio *btrfs_bio;
+-
+-	bio = btrfs_io_bio_alloc(1);
+-	bio->bi_end_io = endio_func;
+-	bio->bi_iter.bi_sector = failrec->logical >> 9;
+-	bio->bi_iter.bi_size = 0;
+-	bio->bi_private = data;
+-
+-	btrfs_failed_bio = btrfs_io_bio(failed_bio);
+-	if (btrfs_failed_bio->csum) {
+-		u16 csum_size = btrfs_super_csum_size(fs_info->super_copy);
+-
+-		btrfs_bio = btrfs_io_bio(bio);
+-		btrfs_bio->csum = btrfs_bio->csum_inline;
+-		icsum *= csum_size;
+-		memcpy(btrfs_bio->csum, btrfs_failed_bio->csum + icsum,
+-		       csum_size);
 -	}
 -
--	if (bio == dip->orig_bio)
--		return 0;
+-	bio_add_page(bio, page, failrec->len, pg_offset);
+-	btrfs_io_bio(bio)->logical = failrec->start;
+-	btrfs_io_bio(bio)->iter = bio->bi_iter;
 -
--	file_offset -= dip->logical_offset;
--	file_offset >>= inode->i_sb->s_blocksize_bits;
--	csum_size = btrfs_super_csum_size(btrfs_sb(inode->i_sb)->super_copy);
--	io_bio->csum = orig_io_bio->csum + csum_size * file_offset;
--
--	return 0;
+-	return bio;
 -}
 -
- static inline blk_status_t btrfs_submit_dio_bio(struct bio *bio,
- 		struct inode *inode, u64 file_offset, int async_submit)
+ static bool btrfs_io_needs_validation(struct inode *inode, struct bio *bio)
  {
-@@ -7892,10 +7858,12 @@ static inline blk_status_t btrfs_submit_dio_bio(struct bio *bio,
- 		if (ret)
- 			goto err;
- 	} else {
--		ret = btrfs_lookup_and_bind_dio_csum(inode, dip, bio,
--						     file_offset);
--		if (ret)
--			goto err;
-+		u64 csum_offset;
-+
-+		csum_offset = file_offset - dip->logical_offset;
-+		csum_offset >>= inode->i_sb->s_blocksize_bits;
-+		csum_offset *= btrfs_super_csum_size(fs_info->super_copy);
-+		btrfs_io_bio(bio)->csum = dip->sums + csum_offset;
+ 	struct bio_vec *bvec;
+@@ -2654,72 +2619,96 @@ static bool btrfs_io_needs_validation(struct inode *inode, struct bio *bio)
+ 	/*
+ 	 * We need to validate each sector individually if the failed I/O was
+ 	 * for multiple sectors.
++	 *
++	 * There are a few possible bios that can end up here:
++	 * 1. A buffered read bio, which is not cloned.
++	 * 2. A direct I/O read bio, which is cloned.
++	 * 3. A (buffered or direct) repair bio, which is not cloned.
++	 *
++	 * For cloned bios (case 2), we can get the size from
++	 * btrfs_io_bio->iter; for non-cloned bios (cases 1 and 3), we can get
++	 * it from the bvecs.
+ 	 */
+-	bio_for_each_bvec_all(bvec, bio, i) {
+-		len += bvec->bv_len;
+-		if (len > inode->i_sb->s_blocksize)
++	if (bio_flagged(bio, BIO_CLONED)) {
++		if (btrfs_io_bio(bio)->iter.bi_size > inode->i_sb->s_blocksize)
+ 			return true;
++	} else {
++		bio_for_each_bvec_all(bvec, bio, i) {
++			len += bvec->bv_len;
++			if (len > inode->i_sb->s_blocksize)
++				return true;
++		}
  	}
- map:
- 	ret = btrfs_map_bio(fs_info, bio, 0);
-@@ -7912,10 +7880,22 @@ static struct btrfs_dio_private *btrfs_create_dio_private(struct bio *dio_bio,
- 							  loff_t file_offset)
- {
- 	const bool write = (bio_op(dio_bio) == REQ_OP_WRITE);
-+	const bool csum = !(BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM);
-+	size_t dip_size;
- 	struct btrfs_dio_private *dip;
- 	struct bio *bio;
+ 	return false;
+ }
  
--	dip = kzalloc(sizeof(*dip), GFP_NOFS);
-+	dip_size = sizeof(*dip);
-+	if (!write && csum) {
-+		struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+-/*
+- * This is a generic handler for readpage errors. If other copies exist, read
+- * those and write back good data to the failed position. Does not investigate
+- * in remapping the failed extent elsewhere, hoping the device will be smart
+- * enough to do this as needed
+- */
+-static int bio_readpage_error(struct bio *failed_bio, u64 phy_offset,
+-			      struct page *page, u64 start, u64 end,
+-			      int failed_mirror)
++blk_status_t btrfs_submit_read_repair(struct inode *inode,
++				      struct bio *failed_bio, u64 phy_offset,
++				      struct page *page, unsigned int pgoff,
++				      u64 start, u64 end, int failed_mirror,
++				      submit_bio_hook_t *submit_bio_hook)
+ {
+ 	struct io_failure_record *failrec;
+-	struct inode *inode = page->mapping->host;
++	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+ 	struct extent_io_tree *tree = &BTRFS_I(inode)->io_tree;
+ 	struct extent_io_tree *failure_tree = &BTRFS_I(inode)->io_failure_tree;
++	struct btrfs_io_bio *failed_io_bio = btrfs_io_bio(failed_bio);
++	int icsum = phy_offset >> inode->i_sb->s_blocksize_bits;
+ 	bool need_validation;
+-	struct bio *bio;
+-	int read_mode = 0;
++	struct bio *repair_bio;
++	struct btrfs_io_bio *repair_io_bio;
+ 	blk_status_t status;
+ 	int ret;
+ 
++	btrfs_info(btrfs_sb(inode->i_sb),
++		   "Repair Read Error: read error at %llu", start);
++
+ 	BUG_ON(bio_op(failed_bio) == REQ_OP_WRITE);
+ 
+ 	ret = btrfs_get_io_failure_record(inode, start, end, &failrec);
+ 	if (ret)
+-		return ret;
++		return errno_to_blk_status(ret);
+ 
+ 	need_validation = btrfs_io_needs_validation(inode, failed_bio);
+ 
+ 	if (!btrfs_check_repairable(inode, need_validation, failrec,
+ 				    failed_mirror)) {
+ 		free_io_failure(failure_tree, tree, failrec);
+-		return -EIO;
++		return BLK_STS_IOERR;
+ 	}
+ 
++	repair_bio = btrfs_io_bio_alloc(1);
++	repair_io_bio = btrfs_io_bio(repair_bio);
++	repair_bio->bi_opf = REQ_OP_READ;
+ 	if (need_validation)
+-		read_mode |= REQ_FAILFAST_DEV;
++		repair_bio->bi_opf |= REQ_FAILFAST_DEV;
++	repair_bio->bi_end_io = failed_bio->bi_end_io;
++	repair_bio->bi_iter.bi_sector = failrec->logical >> 9;
++	repair_bio->bi_private = failed_bio->bi_private;
+ 
+-	phy_offset >>= inode->i_sb->s_blocksize_bits;
+-	bio = btrfs_create_repair_bio(inode, failed_bio, failrec, page,
+-				      start - page_offset(page),
+-				      (int)phy_offset, failed_bio->bi_end_io,
+-				      NULL);
+-	bio->bi_opf = REQ_OP_READ | read_mode;
++	if (failed_io_bio->csum) {
 +		u16 csum_size = btrfs_super_csum_size(fs_info->super_copy);
-+		size_t nblocks;
 +
-+		nblocks = dio_bio->bi_iter.bi_size >> inode->i_sb->s_blocksize_bits;
-+		dip_size += csum_size * nblocks;
++		repair_io_bio->csum = repair_io_bio->csum_inline;
++		memcpy(repair_io_bio->csum,
++		       failed_io_bio->csum + csum_size * icsum, csum_size);
 +	}
 +
-+	dip = kzalloc(dip_size, GFP_NOFS);
- 	if (!dip)
- 		return NULL;
++	bio_add_page(repair_bio, page, failrec->len, pgoff);
++	repair_io_bio->logical = failrec->start;
++	repair_io_bio->iter = repair_bio->bi_iter;
  
-@@ -7951,6 +7931,7 @@ static void btrfs_submit_direct(struct bio *dio_bio, struct inode *inode,
- 				loff_t file_offset)
- {
- 	const bool write = (bio_op(dio_bio) == REQ_OP_WRITE);
-+	const bool csum = !(BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM);
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
- 	struct btrfs_dio_private *dip;
- 	struct bio *bio;
-@@ -7975,6 +7956,17 @@ static void btrfs_submit_direct(struct bio *dio_bio, struct inode *inode,
- 		return;
+ 	btrfs_debug(btrfs_sb(inode->i_sb),
+-		"Repair Read Error: submitting new read[%#x] to this_mirror=%d, in_validation=%d",
+-		read_mode, failrec->this_mirror, failrec->in_validation);
++"Repair Read Error: submitting new read to this_mirror=%d, in_validation=%d",
++		    failrec->this_mirror, failrec->in_validation);
+ 
+-	status = tree->ops->submit_bio_hook(tree->private_data, bio, failrec->this_mirror,
+-					 failrec->bio_flags);
++	status = submit_bio_hook(inode, repair_bio, failrec->this_mirror,
++				 failrec->bio_flags);
+ 	if (status) {
+ 		free_io_failure(failure_tree, tree, failrec);
+-		bio_put(bio);
+-		ret = blk_status_to_errno(status);
++		bio_put(repair_bio);
  	}
+-
+-	return ret;
++	return status;
+ }
  
-+	if (!write && csum) {
-+		/*
-+		 * Load the csums up front to reduce csum tree searches and
-+		 * contention when submitting bios.
-+		 */
-+		status = btrfs_lookup_bio_sums(inode, dio_bio, file_offset,
-+					       dip->sums);
-+		if (status != BLK_STS_OK)
-+			goto out_err;
-+	}
+ /* lots and lots of room for performance fixes in the end_bio funcs */
+@@ -2891,9 +2880,10 @@ static void end_bio_extent_readpage(struct bio *bio)
+ 			 * If it can't handle the error it will return -EIO and
+ 			 * we remain responsible for that page.
+ 			 */
+-			ret = bio_readpage_error(bio, offset, page, start, end,
+-						 mirror);
+-			if (ret == 0) {
++			if (!btrfs_submit_read_repair(inode, bio, offset, page,
++						start - page_offset(page),
++						start, end, mirror,
++						tree->ops->submit_bio_hook)) {
+ 				uptodate = !bio->bi_status;
+ 				offset += len;
+ 				continue;
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index f4dfac756455..a2842b2d9a98 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -66,6 +66,10 @@ struct btrfs_io_bio;
+ struct io_failure_record;
+ struct extent_io_tree;
+ 
++typedef blk_status_t (submit_bio_hook_t)(struct inode *inode, struct bio *bio,
++					 int mirror_num,
++					 unsigned long bio_flags);
 +
- 	orig_bio = dip->orig_bio;
- 	start_sector = orig_bio->bi_iter.bi_sector;
- 	submit_len = orig_bio->bi_iter.bi_size;
+ typedef blk_status_t (extent_submit_bio_start_t)(void *private_data,
+ 		struct bio *bio, u64 bio_offset);
+ 
+@@ -74,8 +78,7 @@ struct extent_io_ops {
+ 	 * The following callbacks must be always defined, the function
+ 	 * pointer will be called unconditionally.
+ 	 */
+-	blk_status_t (*submit_bio_hook)(struct inode *inode, struct bio *bio,
+-					int mirror_num, unsigned long bio_flags);
++	submit_bio_hook_t *submit_bio_hook;
+ 	int (*readpage_end_io_hook)(struct btrfs_io_bio *io_bio, u64 phy_offset,
+ 				    struct page *page, u64 start, u64 end,
+ 				    int mirror);
+@@ -312,10 +315,12 @@ struct io_failure_record {
+ };
+ 
+ 
+-struct bio *btrfs_create_repair_bio(struct inode *inode, struct bio *failed_bio,
+-				    struct io_failure_record *failrec,
+-				    struct page *page, int pg_offset, int icsum,
+-				    bio_end_io_t *endio_func, void *data);
++blk_status_t btrfs_submit_read_repair(struct inode *inode,
++				      struct bio *failed_bio, u64 phy_offset,
++				      struct page *page, unsigned int pgoff,
++				      u64 start, u64 end, int failed_mirror,
++				      submit_bio_hook_t *submit_bio_hook);
++
+ #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
+ bool find_lock_delalloc_range(struct inode *inode,
+ 			     struct page *locked_page, u64 *start,
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 72fb398a88f7..a4e9f9d0a43d 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -7379,10 +7379,11 @@ static void btrfs_dio_private_put(struct btrfs_dio_private *dip)
+ 	kfree(dip);
+ }
+ 
+-static inline blk_status_t submit_dio_repair_bio(struct inode *inode,
+-						 struct bio *bio,
+-						 int mirror_num)
++static blk_status_t submit_dio_repair_bio(struct inode *inode, struct bio *bio,
++					  int mirror_num,
++					  unsigned long bio_flags)
+ {
++	struct btrfs_dio_private *dip = bio->bi_private;
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+ 	blk_status_t ret;
+ 
+@@ -7392,96 +7393,11 @@ static inline blk_status_t submit_dio_repair_bio(struct inode *inode,
+ 	if (ret)
+ 		return ret;
+ 
++	refcount_inc(&dip->refs);
+ 	ret = btrfs_map_bio(fs_info, bio, mirror_num);
+-
+-	return ret;
+-}
+-
+-static int btrfs_check_dio_repairable(struct inode *inode,
+-				      struct bio *failed_bio,
+-				      struct io_failure_record *failrec,
+-				      int failed_mirror)
+-{
+-	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+-	int num_copies;
+-
+-	num_copies = btrfs_num_copies(fs_info, failrec->logical, failrec->len);
+-	if (num_copies == 1) {
+-		/*
+-		 * we only have a single copy of the data, so don't bother with
+-		 * all the retry and error correction code that follows. no
+-		 * matter what the error is, it is very likely to persist.
+-		 */
+-		btrfs_debug(fs_info,
+-			"Check DIO Repairable: cannot repair, num_copies=%d, next_mirror %d, failed_mirror %d",
+-			num_copies, failrec->this_mirror, failed_mirror);
+-		return 0;
+-	}
+-
+-	failrec->failed_mirror = failed_mirror;
+-	failrec->this_mirror++;
+-	if (failrec->this_mirror == failed_mirror)
+-		failrec->this_mirror++;
+-
+-	if (failrec->this_mirror > num_copies) {
+-		btrfs_debug(fs_info,
+-			"Check DIO Repairable: (fail) num_copies=%d, next_mirror %d, failed_mirror %d",
+-			num_copies, failrec->this_mirror, failed_mirror);
+-		return 0;
+-	}
+-
+-	return 1;
+-}
+-
+-static blk_status_t dio_read_error(struct inode *inode, struct bio *failed_bio,
+-				   struct page *page, unsigned int pgoff,
+-				   u64 start, u64 end, int failed_mirror)
+-{
+-	struct btrfs_dio_private *dip = failed_bio->bi_private;
+-	struct io_failure_record *failrec;
+-	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
+-	struct extent_io_tree *failure_tree = &BTRFS_I(inode)->io_failure_tree;
+-	struct bio *bio;
+-	int isector;
+-	unsigned int read_mode = 0;
+-	int ret;
+-	blk_status_t status;
+-
+-	BUG_ON(bio_op(failed_bio) == REQ_OP_WRITE);
+-
+-	ret = btrfs_get_io_failure_record(inode, start, end, &failrec);
+ 	if (ret)
+-		return errno_to_blk_status(ret);
+-
+-	ret = btrfs_check_dio_repairable(inode, failed_bio, failrec,
+-					 failed_mirror);
+-	if (!ret) {
+-		free_io_failure(failure_tree, io_tree, failrec);
+-		return BLK_STS_IOERR;
+-	}
+-
+-	if (btrfs_io_bio(failed_bio)->iter.bi_size > inode->i_sb->s_blocksize)
+-		read_mode |= REQ_FAILFAST_DEV;
+-
+-	isector = start - btrfs_io_bio(failed_bio)->logical;
+-	isector >>= inode->i_sb->s_blocksize_bits;
+-	bio = btrfs_create_repair_bio(inode, failed_bio, failrec, page, pgoff,
+-				      isector, failed_bio->bi_end_io, dip);
+-	bio->bi_opf = REQ_OP_READ | read_mode;
+-
+-	btrfs_debug(BTRFS_I(inode)->root->fs_info,
+-		    "repair DIO read error: submitting new dio read[%#x] to this_mirror=%d, in_validation=%d",
+-		    read_mode, failrec->this_mirror, failrec->in_validation);
+-
+-	refcount_inc(&dip->refs);
+-	status = submit_dio_repair_bio(inode, bio, failrec->this_mirror);
+-	if (status) {
+-		free_io_failure(failure_tree, io_tree, failrec);
+-		bio_put(bio);
+ 		refcount_dec(&dip->refs);
+-	}
+-
+-	return status;
++	return ret;
+ }
+ 
+ static blk_status_t btrfs_check_read_dio_bio(struct inode *inode,
+@@ -7517,11 +7433,14 @@ static blk_status_t btrfs_check_read_dio_bio(struct inode *inode,
+ 			} else {
+ 				blk_status_t status;
+ 
+-				status = dio_read_error(inode, &io_bio->bio,
++				status = btrfs_submit_read_repair(inode,
++							&io_bio->bio,
++							start - io_bio->logical,
+ 							bvec.bv_page, pgoff,
+ 							start,
+ 							start + sectorsize - 1,
+-							io_bio->mirror_num);
++							io_bio->mirror_num,
++							submit_dio_repair_bio);
+ 				if (status)
+ 					err = status;
+ 			}
 -- 
 2.26.1
 

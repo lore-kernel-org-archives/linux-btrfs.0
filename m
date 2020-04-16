@@ -2,70 +2,68 @@ Return-Path: <SRS0=CVGX=6A=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+X-Spam-Status: No, score=-5.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS autolearn=unavailable autolearn_force=no version=3.4.0
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
+	SPF_HELO_NONE,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 338C2C2BB55
-	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Apr 2020 11:39:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 439DDC2BB55
+	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Apr 2020 11:54:12 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 0E81821D7F
-	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Apr 2020 11:39:59 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1947221D91
+	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Apr 2020 11:54:12 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="lWiY20D/"
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="t5y+tTsX"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2506321AbgDPLjm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 16 Apr 2020 07:39:42 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60836 "EHLO
+        id S2634241AbgDPLyJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 16 Apr 2020 07:54:09 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41094 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2505933AbgDPK7s (ORCPT
+        with ESMTP id S2634153AbgDPLx4 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 16 Apr 2020 06:59:48 -0400
-Received: from mail-vs1-xe41.google.com (mail-vs1-xe41.google.com [IPv6:2607:f8b0:4864:20::e41])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 82AA6C061BD3;
-        Thu, 16 Apr 2020 03:52:15 -0700 (PDT)
-Received: by mail-vs1-xe41.google.com with SMTP id z1so2085672vsn.11;
-        Thu, 16 Apr 2020 03:52:15 -0700 (PDT)
+        Thu, 16 Apr 2020 07:53:56 -0400
+Received: from mail-ua1-x942.google.com (mail-ua1-x942.google.com [IPv6:2607:f8b0:4864:20::942])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E32A8C061A0C
+        for <linux-btrfs@vger.kernel.org>; Thu, 16 Apr 2020 04:53:55 -0700 (PDT)
+Received: by mail-ua1-x942.google.com with SMTP id t8so2700123uap.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 16 Apr 2020 04:53:55 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
         h=mime-version:references:in-reply-to:reply-to:from:date:message-id
          :subject:to:cc:content-transfer-encoding;
-        bh=R999l9LMEfWOXIrr5j0qOkSLT5yFE9m+5jm7Ilic1U8=;
-        b=lWiY20D/1VSh8sWY3yKQDGAvErw9nBKKouE2c4N36u1RnVKhrK++MEhiSOn/fmX0En
-         xhMiKT4ix5gqFgSkk8MI1m54sU6waHD/WICK5oaSNH0m1ToUqB8W70PRByr7QBjTmQoT
-         clPpIFwBPIbtcbrGngUyMYaJLoJZWhN0JKS+xitf2ohq5tfiLbzlpxmnm8srwb5x27Z6
-         e16LxpRo4Udx6HiT0EOKifWKwF921wHxaw077+Vu/5WX7a05yVWscC0soVIgGwYpRIBl
-         gk8ofZOK6jFS+vg0aQt3pTn+5kpzV94BaUDXXLdcpiJd3NksGvsesZqpOP29w/HFv/zN
-         P4EA==
+        bh=ai02csrIwWn1vKnp4o6/bLVh7VivJj/gD9gFxRiSKX0=;
+        b=t5y+tTsX4QDB0RtToDiMPe20+aAWYLy3/hYnf0P+pVm0trQjlD2iSpRi+OglIEBwNV
+         eha/Jdfg8wIbl4wwY3zNUnaPuOtmEc2yyGNRZUMPuS4YPrI8VhNKmpz2M++/GCgAe7w1
+         AOV5hsm2SrEeP795zgSW6Pz6oACW7Pykdn5b3ES6ri+pyHe6+1MWw8HO2EyMU4P1T6eu
+         4hMqnc6305PvDNnCDmnnGP5X0dcYJUks74HVk9woc5rkeoVR4Ug0sRYby81shRCMuCyP
+         Ozuz+taVsbRnXFFhFU9KckEY8pTU13ojATZZLRWJ8UJhwkt5ONbJ9aPdDkul9jBfSuuc
+         Gc0A==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
          :from:date:message-id:subject:to:cc:content-transfer-encoding;
-        bh=R999l9LMEfWOXIrr5j0qOkSLT5yFE9m+5jm7Ilic1U8=;
-        b=MhJCZ93ZYkYfNzbfsFk6oY3/8yKy/gGOnZwRwm/qUcc85mIOFOszYZ1+EpdDW9EljA
-         iAqUcZk4iC6EyzCN9e0ViGs7KClB2oIqMZ6s8pQk1Kb2BygYsP53hOelH+r3B9ls3IP8
-         bLynnPWsqP3MIesQFuaRLnhVrkpCDodkjNj3S97jBbID61EJU2HWsRSfZvWAR6+N45Hb
-         INQXaHH/kZBbxqQAk+69b3Plk0LLTqC0NPqh0pYO4k+/++4ItsRp0x8A9PexTr2+pMCP
-         eZxe+y5wmAR6tpQd/1a6JMvo7ucONQ85ITKTpfPOt25OfdZMyNukTC29lDTCO6jXumpB
-         kFYA==
-X-Gm-Message-State: AGi0PubZp/I5hHSGLeodGj0D+e9L/qWsT/0HyI9XUOQ0IR4XzzxCS4cB
-        cqrTxFfiUuFz4P6Gt/sdBK2CSWsAoZeBU9rhYrRuUQ==
-X-Google-Smtp-Source: APiQypLm5EuLKI6Xqign9n0mJpOh8o3VNKYbMWKN94pIx32VJuUzFu2I7tNDJAuJhJ5vk9PzPSSo2qBJjXSEFczEUWM=
-X-Received: by 2002:a67:f4ce:: with SMTP id s14mr7453985vsn.99.1587034334665;
- Thu, 16 Apr 2020 03:52:14 -0700 (PDT)
+        bh=ai02csrIwWn1vKnp4o6/bLVh7VivJj/gD9gFxRiSKX0=;
+        b=oqooln4ZsqfHy3P47xf/YC2giUxSdl0cvL9FiW0/Fxb4E5srhzcGJGiBVI7eQCDAF1
+         mAm16sj6F06IXt99BF25972fFq78D/6lK+ozSOEZq4GOvX7/l9WLG5LDRc9rC442rcJT
+         OSOwEO7YUCqLXXu5XuwcZFRNalbr9lUQ7XjFP2cyR6YOLMNsXccdjWBhE9FAPLdpQi+g
+         C82s52Zr1uwmlDsKhAFOjOCeEh1OkRlI89TenREA3gfvtC3KAQ8eR2d/rKnwSqvmuliJ
+         I5Vv49VOVPvkni4jpc1fEIn4I5raRo3LUWPNM7jF9MYf0FM9B8/paZqHCJRgznqqsj7G
+         Px1w==
+X-Gm-Message-State: AGi0PubbrrYA6dUvL3md0CP8hFx2JhP1RwjVgSP8AXIn4aJlZVfLW6jd
+        uzH/dMrsRY5LGin431GGz8WaJaWfYtGiOmJk09w=
+X-Google-Smtp-Source: APiQypI5xjG4LZF4LXlsIdVbxKsZ0Dx3BXOVqYpV8eI0zJAfXg7OwS1C4Djx/MVrer/KWvHX6nph5uOZjhPlEi2BBxI=
+X-Received: by 2002:ab0:e5:: with SMTP id 92mr8310187uaj.83.1587038034275;
+ Thu, 16 Apr 2020 04:53:54 -0700 (PDT)
 MIME-Version: 1.0
-References: <20200415064916.49958-1-wqu@suse.com>
-In-Reply-To: <20200415064916.49958-1-wqu@suse.com>
+References: <87blnsuv7m.fsf@gmail.com>
+In-Reply-To: <87blnsuv7m.fsf@gmail.com>
 Reply-To: fdmanana@gmail.com
 From:   Filipe Manana <fdmanana@gmail.com>
-Date:   Thu, 16 Apr 2020 11:52:03 +0100
-Message-ID: <CAL3q7H5Z7t20jpuz40qDTjFEFmmR0Oa-92B27FPQ1KfZJoKo=A@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: Test snapshot creation with qgroup inherit would
- mark qgroup inconsistent
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>,
-        fstests <fstests@vger.kernel.org>
+Date:   Thu, 16 Apr 2020 12:53:43 +0100
+Message-ID: <CAL3q7H58UOROQMe-AXhZ39u=oy93zExgYgj1R+pHOs=Tk5psrA@mail.gmail.com>
+Subject: Re: Backup failing with "failed to clone extents" error
+To:     Matt Huszagh <huszaghmatt@gmail.com>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -73,127 +71,130 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Apr 15, 2020 at 11:12 PM Qu Wenruo <wqu@suse.com> wrote:
+On Thu, Apr 16, 2020 at 2:16 AM Matt Huszagh <huszaghmatt@gmail.com> wrote:
 >
-> Test that a new snapshot created with qgroup inherit passed should mark
-> qgroup numbers inconsistent.
+> I'm attempting to perform a backup to an external hard drive. Both the
+> native drive and external drive use a BTRFS filesystem. I do this by
+> first creating a read-only snapshot of my home directory:
 >
-> Such inconsistent flag is required to show that we need a qgroup rescan
-> to make qgroup numbers correct again.
+> # btrfs subvolume snapshot -r /home /.snapshots/home/BACKUP
 >
-> This is unavoidable since snapshot creation with qgroup inherit acts as
-> snapshot creation + qgroup relationship assign.
-> See btrfs(5) for why such operation needs qgroup rescan.
+> Followed by a send/receive to the backup drive:
 >
-> This test failed on current kernel, the fix is submitted to the btrfs
-> mail list titled:
->   "btrfs: qgroup: Mark qgroup inconsistent if we're inherting snapshot to=
- a new qgroup"
+> # btrfs send /.snapshots/home/BACKUP | btrfs receive /.backup/home
 >
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> I get this output:
+>
+> At subvol /.snapshots/home/BACKUP
+> At subvol BACKUP
+> ERROR: failed to clone extents to matt/.local/share/Anki2/Matt/collection=
+.anki2: Invalid argument
+>
+> There several files that trigger this error (most of them .sqlite
+> files). I can delete the offending files, which causes the backup to
+> work. However, new offending files are created that recreate the error
+> (e.g. Firefox generates lots of offending .sqlite files).
+>
+> I performed
+>
+> # btrfs scrub start -B /
+>
+> which exited without errors and failed to resolve the issue and I even
+> ran check --repair on my filesystem unmounted:
+>
+> # btrfs check --repair /dev/mapper/...
+>
+> which didn't make a difference.
+>
+> uname -a:
+> Linux ryzen3950 5.5.0 #1-NixOS SMP Mon Jan 27 00:23:03 UTC 2020 x86_64 GN=
+U/Linux
 
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
+The issue you are hitting is very likely what was fixed by:
 
-Looks good, thanks.
+https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?=
+id=3D9722b10148504c4153a74a9c89725af271e490fc
 
-> ---
->  tests/btrfs/210     | 62 +++++++++++++++++++++++++++++++++++++++++++++
->  tests/btrfs/210.out |  2 ++
->  tests/btrfs/group   |  1 +
->  3 files changed, 65 insertions(+)
->  create mode 100755 tests/btrfs/210
->  create mode 100644 tests/btrfs/210.out
+Upgrade your kernel from 5.5.0 to at least 5.5.3 (latest 5.5 stable
+release is 5.5.17).
+
+And rest assured that kind of problem is not because of any
+corruption, so need to do a scrub or 'check --repair'.
+
+
 >
-> diff --git a/tests/btrfs/210 b/tests/btrfs/210
-> new file mode 100755
-> index 00000000..daa76a87
-> --- /dev/null
-> +++ b/tests/btrfs/210
-> @@ -0,0 +1,62 @@
-> +#! /bin/bash
-> +# SPDX-License-Identifier: GPL-2.0
-> +# Copyright (C) 2020 SUSE Linux Products GmbH. All Rights Reserved.
-> +#
-> +# FS QA Test 210
-> +#
-> +# Test that a new snapshot created with qgroup inherit passed should mar=
-k
-> +# qgroup numbers inconsistent.
-> +#
-> +seq=3D`basename $0`
-> +seqres=3D$RESULT_DIR/$seq
-> +echo "QA output created by $seq"
-> +
-> +here=3D`pwd`
-> +tmp=3D/tmp/$$
-> +status=3D1       # failure is the default!
-> +trap "_cleanup; exit \$status" 0 1 2 3 15
-> +
-> +_cleanup()
-> +{
-> +       cd /
-> +       rm -f $tmp.*
-> +}
-> +
-> +# get standard environment, filters and checks
-> +. ./common/rc
-> +. ./common/filter
-> +
-> +# remove previous $seqres.full before test
-> +rm -f $seqres.full
-> +
-> +# real QA test starts here
-> +
-> +# Modify as appropriate.
-> +_supported_fs btrfs
-> +_supported_os Linux
-> +_require_scratch
-> +
-> +_scratch_mkfs >/dev/null
-> +_scratch_mount
-> +
-> +$BTRFS_UTIL_PROG subvolume create "$SCRATCH_MNT/src" > /dev/null
-> +_pwrite_byte 0xcd 0 16M "$SCRATCH_MNT/src/file" > /dev/null
-> +
-> +# Sync the fs to ensure data written to disk so that they can be account=
-ed
-> +# by qgroup
-> +sync
-> +$BTRFS_UTIL_PROG quota enable "$SCRATCH_MNT"
-> +$BTRFS_UTIL_PROG quota rescan -w "$SCRATCH_MNT"
-> +$BTRFS_UTIL_PROG qgroup create 1/0 "$SCRATCH_MNT"
-> +
-> +# Create a snapshot with qgroup inherit
-> +$BTRFS_UTIL_PROG subvolume snapshot -i 1/0 "$SCRATCH_MNT/src" \
-> +       "$SCRATCH_MNT/snapshot" > /dev/null
-> +
-> +echo "Silence is golden"
-> +# If qgroup is not marked inconsistent automatically, btrfs check would
-> +# report error.
-> +
-> +# success, all done
-> +status=3D0
-> +exit
-> diff --git a/tests/btrfs/210.out b/tests/btrfs/210.out
-> new file mode 100644
-> index 00000000..0d9f3fa0
-> --- /dev/null
-> +++ b/tests/btrfs/210.out
-> @@ -0,0 +1,2 @@
-> +QA output created by 210
-> +Silence is golden
-> diff --git a/tests/btrfs/group b/tests/btrfs/group
-> index 657ec548..e7255c46 100644
-> --- a/tests/btrfs/group
-> +++ b/tests/btrfs/group
-> @@ -212,3 +212,4 @@
->  207 auto rw raid
->  208 auto quick subvol
->  209 auto quick log
-> +210 auto quick qgroup snapshot
-> --
-> 2.23.0
+> btrfs --version
+> btrfs-progs v5.4.1
 >
+> btrfs fi show
+> Label: 'btrfs'  uuid: d31878d6-3a77-4f0f-9fdd-bb9a2c4e578b
+>         Total devices 2 FS bytes used 737.53GiB
+>         devid    1 size 931.01GiB used 853.03GiB path /dev/mapper/cryptnv=
+me
+>         devid    2 size 931.50GiB used 853.03GiB path /dev/mapper/cryptnv=
+me1
+>
+> Label: 'backup'  uuid: 0bd10808-0330-4736-9425-059d4a0a300e
+>         Total devices 2 FS bytes used 473.34GiB
+>         devid    1 size 1.82TiB used 475.01GiB path /dev/mapper/cryptsda1
+>         devid    2 size 1.82TiB used 475.01GiB path /dev/mapper/cryptsdb1
+>
+> btrfs fi df /
+> Data, RAID0: total=3D1.44TiB, used=3D730.13GiB
+> System, RAID1: total=3D32.00MiB, used=3D144.00KiB
+> Metadata, RAID1: total=3D20.00GiB, used=3D7.40GiB
+> GlobalReserve, single: total=3D512.00MiB, used=3D0.00B
+>
+> Here's the output of dmesg. I've only taken the lines containing
+> dmesg. Please let me know if this is insufficient and I'll provide the
+> full log.
+>
+> [    1.168132] stage-1-init: loading module btrfs...
+> [    1.442869] Btrfs loaded, crc32c=3Dcrc32c-intel
+> [   14.552850] BTRFS: device label backup devid 2 transid 303 /dev/mapper=
+/cryptsdb1 scanned by btrfs (857)
+> [   14.553396] BTRFS: device label backup devid 1 transid 303 /dev/mapper=
+/cryptsda1 scanned by btrfs (857)
+> [   14.553487] BTRFS: device label btrfs devid 2 transid 409463 /dev/mapp=
+er/cryptnvme1 scanned by btrfs (857)
+> [   14.553573] BTRFS: device label btrfs devid 1 transid 409463 /dev/mapp=
+er/cryptnvme scanned by btrfs (857)
+> [   14.553634] stage-1-init: Scanning for Btrfs filesystems
+> [   14.561445] BTRFS info (device dm-0): use lzo compression, level 0
+> [   14.561447] BTRFS info (device dm-0): enabling ssd optimizations
+> [   14.561447] BTRFS info (device dm-0): disk space caching is enabled
+> [   14.561448] BTRFS info (device dm-0): has skinny extents
+> [   14.637769] BTRFS info (device dm-0): checking UUID tree
+> [   14.786327] BTRFS info (device dm-0): disk space caching is enabled
+> [   15.926714] BTRFS info (device dm-0): device fsid d31878d6-3a77-4f0f-9=
+fdd-bb9a2c4e578b devid 1 moved old:/dev/mapper/cryptnvme new:/dev/dm-0
+> [   15.926763] BTRFS info (device dm-0): device fsid d31878d6-3a77-4f0f-9=
+fdd-bb9a2c4e578b devid 2 moved old:/dev/disk/by-uuid/d31878d6-3a77-4f0f-9fd=
+d-bb9a2c4e578b new:/dev/dm-1
+> [   16.043567] BTRFS info (device dm-0): disk space caching is enabled
+> [   16.074722] BTRFS info (device dm-2): use lzo compression, level 0
+> [   16.074723] BTRFS info (device dm-2): disk space caching is enabled
+> [   16.074724] BTRFS info (device dm-2): has skinny extents
+> [27057.785935] BTRFS info (device dm-0): scrub: started on devid 1
+> [27057.800078] BTRFS info (device dm-0): scrub: started on devid 2
+> [27107.287558] BTRFS info (device dm-0): scrub: not finished on devid 1 w=
+ith status: -125
+> [27107.316437] BTRFS info (device dm-0): scrub: not finished on devid 2 w=
+ith status: -125
+> [27109.542589] BTRFS info (device dm-0): scrub: started on devid 1
+> [27109.556751] BTRFS info (device dm-0): scrub: started on devid 2
+> [27243.975463] BTRFS info (device dm-0): scrub: finished on devid 1 with =
+status: 0
+> [27247.857511] BTRFS info (device dm-0): scrub: finished on devid 2 with =
+status: 0
+> [250470.993201] [  23284]     0 23284     3204       25    45056        0=
+             0 btrfs
+> [250470.993203] [  23286]     0 23286     1155       53    40960        0=
+             0 btrfs
+>
+> Thanks!
+> Matt
+
 
 
 --=20

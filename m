@@ -2,161 +2,254 @@ Return-Path: <SRS0=CVGX=6A=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.3 required=3.0 tests=DKIM_ADSP_CUSTOM_MED,
-	DKIM_INVALID,DKIM_SIGNED,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 29B92C2BA19
-	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Apr 2020 00:32:18 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2218DC2BA19
+	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Apr 2020 01:04:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id EC9572078B
-	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Apr 2020 00:32:17 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D4C2620725
+	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Apr 2020 01:04:36 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="PDknfNKa"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=mpdesouza.com header.i=@mpdesouza.com header.b="kLLnY7jw"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2404396AbgDPAcO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 15 Apr 2020 20:32:14 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47848 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-FAIL-OK-FAIL)
-        by vger.kernel.org with ESMTP id S2404155AbgDPAcD (ORCPT
+        id S2405868AbgDPBEf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 15 Apr 2020 21:04:35 -0400
+Received: from gateway30.websitewelcome.com ([192.185.180.41]:22521 "EHLO
+        gateway30.websitewelcome.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S2405821AbgDPBEc (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Apr 2020 20:32:03 -0400
-Received: from mail-pl1-x634.google.com (mail-pl1-x634.google.com [IPv6:2607:f8b0:4864:20::634])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D1FB3C061A0C
-        for <linux-btrfs@vger.kernel.org>; Wed, 15 Apr 2020 17:32:02 -0700 (PDT)
-Received: by mail-pl1-x634.google.com with SMTP id v2so682125plp.9
-        for <linux-btrfs@vger.kernel.org>; Wed, 15 Apr 2020 17:32:02 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=from:to:cc:subject:date:message-id:mime-version;
-        bh=gnj9iCo7L54WYunG3/3l1pdtUyEGUOMLqw1I52a04zY=;
-        b=PDknfNKa5zNauJbFzMQa7Z2qtb90v/ui3OA0/f9/XEXvfQGYSctFLpK7Cb2EFDjrv+
-         86ckbohr/ozxAp+iR/7QyGTDALacQJUDdfBGZpKQm6bQ5/5RIC569VRSPahhpJkVIGge
-         K9PQNZI7edMux5Vn4Zzj60r03RUYeU3VANTWHsmyE3aVmxAlhcihVWmxyGtCUSjxNOOj
-         utYAkNW+OdR2/9+k3afQW7S6V6OgpRpHPk3KZNfxedT8lCr5SQV4yCx8eH18kXfKlI0Y
-         mkoHNyGiFsW4dX45FPT6QVXl4lfKdF9X6/Oa5ycvsGTJ0YoFcu+ordsNNO5Ppcsj3dNB
-         CBpQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version;
-        bh=gnj9iCo7L54WYunG3/3l1pdtUyEGUOMLqw1I52a04zY=;
-        b=eQ+c6/ZlaTMCxx0nGZDxAJWbpQpMdfDUg1iBmNnw/yo9GGtz5H+vxns+JpIR5ka1KI
-         R2A/ZBY+/eTs568FxR6rEmRGghklf1AtCx4R7KdVCyK0xSgwijbUSfv/2lyj1IACn5q3
-         8l9bMCc1w5BjdIvUBilLlmeDYiRZV3Gymy7+pNC385PzX5VVZMO3eUyw87jeUc/iXXn5
-         g2iTxPoPdjdvTeZAvNg+X03590nDo4bAKsGnfc2YIuZxj5fGqh+Ir7T0mdjMjvq1zBkr
-         BxhSWSpD/GLTv5IFuj/xhH8D6fTFDpFT+BOcw7wtyGlZRybYjPDq/PfmXfcQeu9ra7nu
-         8lCw==
-X-Gm-Message-State: AGi0PuY2nCdzQdUAdxpURypCkjzjDC62bswH/mdqJHf17eKa8PI1fgqU
-        P7l9/p6IRmKusdweWc2ZfuZBfB23Mhs=
-X-Google-Smtp-Source: APiQypKsWsxeigVobKApffk8IRl7f+pmsyS3ZrVr7t8TU8J9DS9kgze1RchOW1h7nh/9GKytEcHqvw==
-X-Received: by 2002:a17:902:d716:: with SMTP id w22mr7662173ply.200.1586997121740;
-        Wed, 15 Apr 2020 17:32:01 -0700 (PDT)
-Received: from ryzen3950 (c-73-71-89-135.hsd1.ca.comcast.net. [73.71.89.135])
-        by smtp.gmail.com with ESMTPSA id a13sm2637992pfo.96.2020.04.15.17.31.59
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 15 Apr 2020 17:32:00 -0700 (PDT)
-From:   Matt Huszagh <huszaghmatt@gmail.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: Backup failing with "failed to clone extents" error
-Date:   Wed, 15 Apr 2020 17:31:57 -0700
-Message-ID: <87blnsuv7m.fsf@gmail.com>
+        Wed, 15 Apr 2020 21:04:32 -0400
+X-Greylist: delayed 1205 seconds by postgrey-1.27 at vger.kernel.org; Wed, 15 Apr 2020 21:04:31 EDT
+Received: from cm13.websitewelcome.com (cm13.websitewelcome.com [100.42.49.6])
+        by gateway30.websitewelcome.com (Postfix) with ESMTP id 93D2DBA712
+        for <linux-btrfs@vger.kernel.org>; Wed, 15 Apr 2020 19:44:22 -0500 (CDT)
+Received: from br540.hostgator.com.br ([108.179.252.180])
+        by cmsmtp with SMTP
+        id OsdijnV8MVQh0OsdijxSz5; Wed, 15 Apr 2020 19:44:22 -0500
+X-Authority-Reason: nr=8
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=mpdesouza.com; s=default; h=Content-Transfer-Encoding:MIME-Version:
+        References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:
+        Content-Type:Content-ID:Content-Description:Resent-Date:Resent-From:
+        Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
+        List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
+        bh=Kp9uLZU//RbzdWsCumY2HiyuXj9Q52SB5U6JH6t6D0w=; b=kLLnY7jwUWx4pJLQpa0qdFK/XH
+        aKijh4fQVLqXYNKpd1eCAIQPsbhF9nHJgRyqF/xUU1QxiVj733cTTYAqJmWk2ZtGPgo6/SJH8qwSP
+        TAbNg4KQGdZiq0CTxgH1vAEW0fZJkQrSvuyenyBNFvNniSFj0S+IOfkuKzl5oBeeDYVBmcZcwL8sP
+        qYbR+9uzFp+Q8rtUg/lFhzYkgJLEODf6Gent54MlPqKNqSmYRd39ReJNqSq1PnxFKwRZJywhHNVAa
+        JtEIbSAjMpaKm48DgChCnRDIJeH39Wf+F6pceBbHhClbKf6J10zxOAFF6BTsM2m/iISruRvVMoWoi
+        oLG4LZKw==;
+Received: from [177.132.129.218] (port=35128 helo=hephaestus.suse.de)
+        by br540.hostgator.com.br with esmtpsa (TLSv1.2:ECDHE-RSA-AES128-GCM-SHA256:128)
+        (Exim 4.92)
+        (envelope-from <marcos@mpdesouza.com>)
+        id 1jOsdi-0046UY-01; Wed, 15 Apr 2020 21:44:22 -0300
+From:   Marcos Paulo de Souza <marcos@mpdesouza.com>
+To:     dsterba@suse.com, linux-btrfs@vger.kernel.org, wqu@suse.com
+Cc:     Marcos Paulo de Souza <mpdesouza@suse.com>
+Subject: [PATCHv3 1/3] btrfs-progs: Move resize into functionaly into utils.c
+Date:   Wed, 15 Apr 2020 21:46:40 -0300
+Message-Id: <20200416004642.9941-2-marcos@mpdesouza.com>
+X-Mailer: git-send-email 2.25.1
+In-Reply-To: <20200416004642.9941-1-marcos@mpdesouza.com>
+References: <20200416004642.9941-1-marcos@mpdesouza.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Transfer-Encoding: 8bit
+X-AntiAbuse: This header was added to track abuse, please include it with any abuse report
+X-AntiAbuse: Primary Hostname - br540.hostgator.com.br
+X-AntiAbuse: Original Domain - vger.kernel.org
+X-AntiAbuse: Originator/Caller UID/GID - [47 12] / [47 12]
+X-AntiAbuse: Sender Address Domain - mpdesouza.com
+X-BWhitelist: no
+X-Source-IP: 177.132.129.218
+X-Source-L: No
+X-Exim-ID: 1jOsdi-0046UY-01
+X-Source: 
+X-Source-Args: 
+X-Source-Dir: 
+X-Source-Sender: (hephaestus.suse.de) [177.132.129.218]:35128
+X-Source-Auth: marcos@mpdesouza.com
+X-Email-Count: 7
+X-Source-Cap: bXBkZXNvNTM7bXBkZXNvNTM7YnI1NDAuaG9zdGdhdG9yLmNvbS5icg==
+X-Local-Domain: yes
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-I'm attempting to perform a backup to an external hard drive. Both the
-native drive and external drive use a BTRFS filesystem. I do this by
-first creating a read-only snapshot of my home directory:
+From: Marcos Paulo de Souza <mpdesouza@suse.com>
 
-# btrfs subvolume snapshot -r /home /.snapshots/home/BACKUP
+This function will be used in the next patch to auto resize the
+filesystem when a bigger disk is added.
 
-Followed by a send/receive to the backup drive:
+Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
+---
+ cmds/filesystem.c | 58 ++-------------------------------------------
+ common/utils.c    | 60 +++++++++++++++++++++++++++++++++++++++++++++++
+ common/utils.h    |  2 ++
+ 3 files changed, 64 insertions(+), 56 deletions(-)
 
-# btrfs send /.snapshots/home/BACKUP | btrfs receive /.backup/home
+diff --git a/cmds/filesystem.c b/cmds/filesystem.c
+index c4bb13dd..cb7c3806 100644
+--- a/cmds/filesystem.c
++++ b/cmds/filesystem.c
+@@ -1075,11 +1075,7 @@ static const char * const cmd_filesystem_resize_usage[] = {
+ static int cmd_filesystem_resize(const struct cmd_struct *cmd,
+ 				 int argc, char **argv)
+ {
+-	struct btrfs_ioctl_vol_args	args;
+-	int	fd, res, len, e;
+-	char	*amount, *path;
+-	DIR	*dirstream = NULL;
+-	struct stat st;
++	char *amount, *path;
+ 
+ 	clean_args_no_options_relaxed(cmd, argc, argv);
+ 
+@@ -1089,57 +1085,7 @@ static int cmd_filesystem_resize(const struct cmd_struct *cmd,
+ 	amount = argv[optind];
+ 	path = argv[optind + 1];
+ 
+-	len = strlen(amount);
+-	if (len == 0 || len >= BTRFS_VOL_NAME_MAX) {
+-		error("resize value too long (%s)", amount);
+-		return 1;
+-	}
+-
+-	res = stat(path, &st);
+-	if (res < 0) {
+-		error("resize: cannot stat %s: %m", path);
+-		return 1;
+-	}
+-	if (!S_ISDIR(st.st_mode)) {
+-		error("resize works on mounted filesystems and accepts only\n"
+-			"directories as argument. Passing file containing a btrfs image\n"
+-			"would resize the underlying filesystem instead of the image.\n");
+-		return 1;
+-	}
+-
+-	fd = btrfs_open_dir(path, &dirstream, 1);
+-	if (fd < 0)
+-		return 1;
+-
+-	printf("Resize '%s' of '%s'\n", path, amount);
+-	memset(&args, 0, sizeof(args));
+-	strncpy_null(args.name, amount);
+-	res = ioctl(fd, BTRFS_IOC_RESIZE, &args);
+-	e = errno;
+-	close_file_or_dir(fd, dirstream);
+-	if( res < 0 ){
+-		switch (e) {
+-		case EFBIG:
+-			error("unable to resize '%s': no enough free space",
+-				path);
+-			break;
+-		default:
+-			error("unable to resize '%s': %m", path);
+-			break;
+-		}
+-		return 1;
+-	} else if (res > 0) {
+-		const char *err_str = btrfs_err_str(res);
+-
+-		if (err_str) {
+-			error("resizing of '%s' failed: %s", path, err_str);
+-		} else {
+-			error("resizing of '%s' failed: unknown error %d",
+-				path, res);
+-		}
+-		return 1;
+-	}
+-	return 0;
++	return resize_filesystem(amount, path);
+ }
+ static DEFINE_SIMPLE_COMMAND(filesystem_resize, "resize");
+ 
+diff --git a/common/utils.c b/common/utils.c
+index 2517bb34..99d638cc 100644
+--- a/common/utils.c
++++ b/common/utils.c
+@@ -461,6 +461,66 @@ int pretty_size_snprintf(u64 size, char *str, size_t str_size, unsigned unit_mod
+ 	return snprintf(str, str_size, "%.2f%s", fraction, suffix[num_divs]);
+ }
+ 
++int resize_filesystem(const char *amount, const char *path)
++{
++	struct btrfs_ioctl_vol_args args;
++	int fd, res, len, e;
++	DIR *dirstream = NULL;
++	struct stat st;
++
++	len = strlen(amount);
++	if (len == 0 || len >= BTRFS_VOL_NAME_MAX) {
++		error("resize value too long (%s)", amount);
++		return 1;
++	}
++
++	res = stat(path, &st);
++	if (res < 0) {
++		error("resize: cannot stat %s: %m", path);
++		return 1;
++	}
++	if (!S_ISDIR(st.st_mode)) {
++		error("resize works on mounted filesystems and accepts only\n"
++			"directories as argument. Passing file containing a btrfs image\n"
++			"would resize the underlying filesystem instead of the image.\n");
++		return 1;
++	}
++
++	fd = btrfs_open_dir(path, &dirstream, 1);
++	if (fd < 0)
++		return 1;
++
++	printf("Resize '%s' of '%s'\n", path, amount);
++	memset(&args, 0, sizeof(args));
++	strncpy_null(args.name, amount);
++	res = ioctl(fd, BTRFS_IOC_RESIZE, &args);
++	e = errno;
++	close_file_or_dir(fd, dirstream);
++	if( res < 0 ){
++		switch (e) {
++		case EFBIG:
++			error("unable to resize '%s': no enough free space",
++				path);
++			break;
++		default:
++			error("unable to resize '%s': %m", path);
++			break;
++		}
++		return 1;
++	} else if (res > 0) {
++		const char *err_str = btrfs_err_str(res);
++
++		if (err_str) {
++			error("resizing of '%s' failed: %s", path, err_str);
++		} else {
++			error("resizing of '%s' failed: unknown error %d",
++				path, res);
++		}
++		return 1;
++	}
++	return 0;
++}
++
+ /*
+  * Checks to make sure that the label matches our requirements.
+  * Returns:
+diff --git a/common/utils.h b/common/utils.h
+index 79c168c5..ba873c02 100644
+--- a/common/utils.h
++++ b/common/utils.h
+@@ -147,4 +147,6 @@ static inline int btrfs_test_for_mixed_profiles_by_fd(int fd)
+ int btrfs_check_for_mixed_profiles_by_path(const char *path);
+ int btrfs_check_for_mixed_profiles_by_fd(int fd);
+ 
++int resize_filesystem(const char *amount, const char *path);
++
+ #endif
+-- 
+2.25.1
 
-I get this output:
-
-At subvol /.snapshots/home/BACKUP
-At subvol BACKUP
-ERROR: failed to clone extents to matt/.local/share/Anki2/Matt/collection.anki2: Invalid argument
-
-There several files that trigger this error (most of them .sqlite
-files). I can delete the offending files, which causes the backup to
-work. However, new offending files are created that recreate the error
-(e.g. Firefox generates lots of offending .sqlite files).
-
-I performed
-
-# btrfs scrub start -B /
-
-which exited without errors and failed to resolve the issue and I even
-ran check --repair on my filesystem unmounted:
-
-# btrfs check --repair /dev/mapper/...
-
-which didn't make a difference.
-
-uname -a:
-Linux ryzen3950 5.5.0 #1-NixOS SMP Mon Jan 27 00:23:03 UTC 2020 x86_64 GNU/Linux
-
-btrfs --version
-btrfs-progs v5.4.1
-
-btrfs fi show
-Label: 'btrfs'  uuid: d31878d6-3a77-4f0f-9fdd-bb9a2c4e578b
-        Total devices 2 FS bytes used 737.53GiB
-        devid    1 size 931.01GiB used 853.03GiB path /dev/mapper/cryptnvme
-        devid    2 size 931.50GiB used 853.03GiB path /dev/mapper/cryptnvme1
-
-Label: 'backup'  uuid: 0bd10808-0330-4736-9425-059d4a0a300e
-        Total devices 2 FS bytes used 473.34GiB
-        devid    1 size 1.82TiB used 475.01GiB path /dev/mapper/cryptsda1
-        devid    2 size 1.82TiB used 475.01GiB path /dev/mapper/cryptsdb1
-
-btrfs fi df /
-Data, RAID0: total=1.44TiB, used=730.13GiB
-System, RAID1: total=32.00MiB, used=144.00KiB
-Metadata, RAID1: total=20.00GiB, used=7.40GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
-
-Here's the output of dmesg. I've only taken the lines containing
-dmesg. Please let me know if this is insufficient and I'll provide the
-full log.
-
-[    1.168132] stage-1-init: loading module btrfs...
-[    1.442869] Btrfs loaded, crc32c=crc32c-intel
-[   14.552850] BTRFS: device label backup devid 2 transid 303 /dev/mapper/cryptsdb1 scanned by btrfs (857)
-[   14.553396] BTRFS: device label backup devid 1 transid 303 /dev/mapper/cryptsda1 scanned by btrfs (857)
-[   14.553487] BTRFS: device label btrfs devid 2 transid 409463 /dev/mapper/cryptnvme1 scanned by btrfs (857)
-[   14.553573] BTRFS: device label btrfs devid 1 transid 409463 /dev/mapper/cryptnvme scanned by btrfs (857)
-[   14.553634] stage-1-init: Scanning for Btrfs filesystems
-[   14.561445] BTRFS info (device dm-0): use lzo compression, level 0
-[   14.561447] BTRFS info (device dm-0): enabling ssd optimizations
-[   14.561447] BTRFS info (device dm-0): disk space caching is enabled
-[   14.561448] BTRFS info (device dm-0): has skinny extents
-[   14.637769] BTRFS info (device dm-0): checking UUID tree
-[   14.786327] BTRFS info (device dm-0): disk space caching is enabled
-[   15.926714] BTRFS info (device dm-0): device fsid d31878d6-3a77-4f0f-9fdd-bb9a2c4e578b devid 1 moved old:/dev/mapper/cryptnvme new:/dev/dm-0
-[   15.926763] BTRFS info (device dm-0): device fsid d31878d6-3a77-4f0f-9fdd-bb9a2c4e578b devid 2 moved old:/dev/disk/by-uuid/d31878d6-3a77-4f0f-9fdd-bb9a2c4e578b new:/dev/dm-1
-[   16.043567] BTRFS info (device dm-0): disk space caching is enabled
-[   16.074722] BTRFS info (device dm-2): use lzo compression, level 0
-[   16.074723] BTRFS info (device dm-2): disk space caching is enabled
-[   16.074724] BTRFS info (device dm-2): has skinny extents
-[27057.785935] BTRFS info (device dm-0): scrub: started on devid 1
-[27057.800078] BTRFS info (device dm-0): scrub: started on devid 2
-[27107.287558] BTRFS info (device dm-0): scrub: not finished on devid 1 with status: -125
-[27107.316437] BTRFS info (device dm-0): scrub: not finished on devid 2 with status: -125
-[27109.542589] BTRFS info (device dm-0): scrub: started on devid 1
-[27109.556751] BTRFS info (device dm-0): scrub: started on devid 2
-[27243.975463] BTRFS info (device dm-0): scrub: finished on devid 1 with status: 0
-[27247.857511] BTRFS info (device dm-0): scrub: finished on devid 2 with status: 0
-[250470.993201] [  23284]     0 23284     3204       25    45056        0             0 btrfs
-[250470.993203] [  23286]     0 23286     1155       53    40960        0             0 btrfs
-
-Thanks!
-Matt

@@ -2,129 +2,202 @@ Return-Path: <SRS0=CVGX=6A=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 53285C2BB55
-	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Apr 2020 11:29:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 338C2C2BB55
+	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Apr 2020 11:39:59 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 2A6C021D7F
-	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Apr 2020 11:29:32 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0E81821D7F
+	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Apr 2020 11:39:59 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="chB3GVQf";
-	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b="GjyKu7QL"
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="lWiY20D/"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2633087AbgDPL3S (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 16 Apr 2020 07:29:18 -0400
-Received: from esa4.hgst.iphmx.com ([216.71.154.42]:63619 "EHLO
-        esa4.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2506282AbgDPL26 (ORCPT
+        id S2506321AbgDPLjm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 16 Apr 2020 07:39:42 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60836 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2505933AbgDPK7s (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 16 Apr 2020 07:28:58 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1587036537; x=1618572537;
-  h=from:to:subject:date:message-id:references:
-   content-transfer-encoding:mime-version;
-  bh=oM61iUUYT6LOjssaH/tWciiiPthQVaG0Mbm2KY3zsAk=;
-  b=chB3GVQfZNDCzlCXmfDyb3FbuH1CLBxGnOdEngGu/xqtJVDQ0TfcP+Jl
-   +TBRmh9WnXY/JcXgifjiLu2MkXrYOo7Rsk1p0LtM0H8mC5H/t7E6Mbypk
-   aOOSYzwrOeBn658ufY/PgmX8iZLZJUHn6H1QjD8ayYdZD+4e89iA4FVxh
-   5tQYnJSze7Qa77IdAqXx1QOzw6PQyBL7QyDhN/vFtBUrfkPCpcaN1PSpv
-   Kv5IUNmfFWUxTYj5SGSoesa39ptd2s0So2MANiY06LpA1qEpQYcicTaJm
-   7k6eewjQHYMfQlVlKO3VNsqsIf3FKXEG3iou562Aj8chy6XnPfb8R6Kr+
-   g==;
-IronPort-SDR: z3WhfbARXdSQuLcZn4Cz5ynhRNrU1yJS/m/j+Q0i1L7Mz+sW4pt1mIG/P8nb9O7s4m/kNH1VAt
- 4MvIeGvCQ+f1kljs4+MRiawoVxrMf/pbDS4lcYrUhBx1tJ/kaIFI+hWiB2n7vy5746OTrbbTDu
- 5+K8QLF8y2oustMug9jVhxbepoykaDfyzt7guFJVel4GSgpm/zgR+ljtK7igNXPMIG8a03pwaB
- FxkO/IML9NRV827DUKKLlmvxqgw7fiJs9xaYX11HAOfx5VyyaD59PCRRJHiuyzp6RHvySi44Pz
- QMA=
-X-IronPort-AV: E=Sophos;i="5.72,390,1580745600"; 
-   d="scan'208";a="135472264"
-Received: from mail-bl2nam02lp2051.outbound.protection.outlook.com (HELO NAM02-BL2-obe.outbound.protection.outlook.com) ([104.47.38.51])
-  by ob1.hgst.iphmx.com with ESMTP; 16 Apr 2020 19:28:41 +0800
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
- b=YEIHLzgsv9Hh3xyrmpPRafzmPivE1pPalFW9ho68ftAlPe6WnGSui1wiaxYu0bMKxJv9K3IGBb+txFg7h15VLmX3N1/zn8mJvlMonMqGR5r1qW+sZtq8phN5UyTBxDBpXPs0xXAx9QOCUcfpdoAW3mXccDiDsMRsAgVHUTotvwfbUydRb9jQD58CPde0efCNXY3hc7Z3zv7dzLUCuecIi/85a1MXE7+j45XrhRm3+U0j72xkV3eassxGTWCFBBqmbzS9atCDEnP27uPoDXCrci2+YWn8x8Rc30mS+c8sokG9gUNH+MvSdGiEmsvajemjtWVm/zXIG07lYcszHgSR7A==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector9901;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=oM61iUUYT6LOjssaH/tWciiiPthQVaG0Mbm2KY3zsAk=;
- b=N/aijFREA0bO26IqboARt/YsHUzzc3RwJ8C5q9GFLY6TysZ5t9ku3KfguLqFIYDxYljqVWBGkfQgNiEThr4QOnGedbVfAtd/3iECP7kyuBfmajHnsW98cwANoJKw+9U3P1QFcN2LgDkkWLH7xab95BzvFryTHpagozv8RuBLGoHZoX0r/FJqcQzEO5lHW3LveLNMffJHjXJwpxkJowiZaU+0Gwmyej5RPicTi0rfMuSoIzxPI1OSHwXhKQRaNXnMh7b6lYE8PeM/7EMwyjtXkqo2/xTpWUUrWAyHhQY/KEsvz5Iyt6vhM2ZYyQoK6c5YVRZDgzYbAsU6ptMJUYHN2g==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
- header.d=wdc.com; arc=none
+        Thu, 16 Apr 2020 06:59:48 -0400
+Received: from mail-vs1-xe41.google.com (mail-vs1-xe41.google.com [IPv6:2607:f8b0:4864:20::e41])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 82AA6C061BD3;
+        Thu, 16 Apr 2020 03:52:15 -0700 (PDT)
+Received: by mail-vs1-xe41.google.com with SMTP id z1so2085672vsn.11;
+        Thu, 16 Apr 2020 03:52:15 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=oM61iUUYT6LOjssaH/tWciiiPthQVaG0Mbm2KY3zsAk=;
- b=GjyKu7QL8NJpP+g5V9Yw6UyA288ew9MPjXBACgNYnY0WiBsqkBIWgC34yZjJ5vsVdfae2cvTCUGCFRbaW+TM2qTbnerMgCiUUSomJQrKc8u7EGfQMLEEEeVXKWgwp7nslO/teK7Be4iIa06z91ovaWLKLUSfYeZDNjMqKS6+dAM=
-Received: from SN4PR0401MB3598.namprd04.prod.outlook.com
- (2603:10b6:803:47::21) by SN4PR0401MB3679.namprd04.prod.outlook.com
- (2603:10b6:803:46::15) with Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.2900.26; Thu, 16 Apr
- 2020 11:28:39 +0000
-Received: from SN4PR0401MB3598.namprd04.prod.outlook.com
- ([fe80::9854:2bc6:1ad2:f655]) by SN4PR0401MB3598.namprd04.prod.outlook.com
- ([fe80::9854:2bc6:1ad2:f655%4]) with mapi id 15.20.2921.027; Thu, 16 Apr 2020
- 11:28:39 +0000
-From:   Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
-To:     Nikolay Borisov <nborisov@suse.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v2] btrfs: Make btrfs_read_disk_super return struct
- btrfs_disk_super
-Thread-Topic: [PATCH v2] btrfs: Make btrfs_read_disk_super return struct
- btrfs_disk_super
-Thread-Index: AQHWE+HokABaAoRzS0iGDT9E2f1djA==
-Date:   Thu, 16 Apr 2020 11:28:39 +0000
-Message-ID: <SN4PR0401MB35988847438ADA88EB95E8099BD80@SN4PR0401MB3598.namprd04.prod.outlook.com>
-References: <20200416112608.8095-1-nborisov@suse.com>
-Accept-Language: en-US
-Content-Language: en-US
-X-MS-Has-Attach: 
-X-MS-TNEF-Correlator: 
-authentication-results: spf=none (sender IP is )
- smtp.mailfrom=Johannes.Thumshirn@wdc.com; 
-x-originating-ip: [129.253.240.72]
-x-ms-publictraffictype: Email
-x-ms-office365-filtering-ht: Tenant
-x-ms-office365-filtering-correlation-id: fe06a85d-7ec5-4655-150c-08d7e1f94fbe
-x-ms-traffictypediagnostic: SN4PR0401MB3679:
-x-microsoft-antispam-prvs: <SN4PR0401MB36796BB14B2C6C45DBB3411C9BD80@SN4PR0401MB3679.namprd04.prod.outlook.com>
-wdcipoutbound: EOP-TRUE
-x-ms-oob-tlc-oobclassifiers: OLM:6790;
-x-forefront-prvs: 0375972289
-x-forefront-antispam-report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SN4PR0401MB3598.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFTY:;SFS:(10019020)(4636009)(136003)(396003)(366004)(39860400002)(346002)(376002)(8676002)(4744005)(5660300002)(76116006)(8936002)(2906002)(478600001)(71200400001)(55016002)(66556008)(66476007)(66946007)(86362001)(81156014)(9686003)(66446008)(186003)(7696005)(33656002)(110136005)(6506007)(26005)(64756008)(53546011)(316002)(52536014)(91956017);DIR:OUT;SFP:1102;
-x-ms-exchange-senderadcheck: 1
-x-microsoft-antispam: BCL:0;
-x-microsoft-antispam-message-info: myKNbm8TVLAE/ZxEgQBCIez8WlBderTcJrMuBXqfGuwlUu5cYC/UbWZMScKLbg95lah5zQ52cnh5BMPA45A7aFamQbt3tdh+1KmnO82tSriZPMVDrBQb1Ip+hmEDZNLhEoXvXzYlfP6wLJnVWqTUKgUbTGGLq7KLW/mzkvCfkuzNt/y0jVsjXLoZkHQIa3FFcgtbHR1WleXyC5b7w7k3/UAJcEhgj09YvumTpS88RIJdfXvxJGT3nobA9RoYXctQKA7sgkHfdpvBLVhS8vup3zadh8ZLZ7BCMHeDj9o3F/03V4vLxvLBLlcbKebhIa1LrQfTmPYMxSpSNpKTLKvI5RhK9Hgc4Sg3CT94q3zsjqaagSJ9xrNHp5ya1UvqrbgYmJpfp2NiQl9SUw6AhrsIa5xd+dDYJl2Rs79hWLeC/5FmHwo52/u59Z0TJU7FaLiT
-x-ms-exchange-antispam-messagedata: r2M0oELTLj/yGqvCBztXx9NyX8zWpEjQbQfDjEcaAgaddGEi167IGvprWy45Lax6lU5ilh42nTHsA6bFPiBMS4lHwJCEUnGLNEtwPVePj5gF7V7SrUHMCB/UwyB3yZ8SxYKEizDar+Udo1yXYreb1g==
-x-ms-exchange-transport-forked: True
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: quoted-printable
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
+         :subject:to:cc:content-transfer-encoding;
+        bh=R999l9LMEfWOXIrr5j0qOkSLT5yFE9m+5jm7Ilic1U8=;
+        b=lWiY20D/1VSh8sWY3yKQDGAvErw9nBKKouE2c4N36u1RnVKhrK++MEhiSOn/fmX0En
+         xhMiKT4ix5gqFgSkk8MI1m54sU6waHD/WICK5oaSNH0m1ToUqB8W70PRByr7QBjTmQoT
+         clPpIFwBPIbtcbrGngUyMYaJLoJZWhN0JKS+xitf2ohq5tfiLbzlpxmnm8srwb5x27Z6
+         e16LxpRo4Udx6HiT0EOKifWKwF921wHxaw077+Vu/5WX7a05yVWscC0soVIgGwYpRIBl
+         gk8ofZOK6jFS+vg0aQt3pTn+5kpzV94BaUDXXLdcpiJd3NksGvsesZqpOP29w/HFv/zN
+         P4EA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
+         :from:date:message-id:subject:to:cc:content-transfer-encoding;
+        bh=R999l9LMEfWOXIrr5j0qOkSLT5yFE9m+5jm7Ilic1U8=;
+        b=MhJCZ93ZYkYfNzbfsFk6oY3/8yKy/gGOnZwRwm/qUcc85mIOFOszYZ1+EpdDW9EljA
+         iAqUcZk4iC6EyzCN9e0ViGs7KClB2oIqMZ6s8pQk1Kb2BygYsP53hOelH+r3B9ls3IP8
+         bLynnPWsqP3MIesQFuaRLnhVrkpCDodkjNj3S97jBbID61EJU2HWsRSfZvWAR6+N45Hb
+         INQXaHH/kZBbxqQAk+69b3Plk0LLTqC0NPqh0pYO4k+/++4ItsRp0x8A9PexTr2+pMCP
+         eZxe+y5wmAR6tpQd/1a6JMvo7ucONQ85ITKTpfPOt25OfdZMyNukTC29lDTCO6jXumpB
+         kFYA==
+X-Gm-Message-State: AGi0PubZp/I5hHSGLeodGj0D+e9L/qWsT/0HyI9XUOQ0IR4XzzxCS4cB
+        cqrTxFfiUuFz4P6Gt/sdBK2CSWsAoZeBU9rhYrRuUQ==
+X-Google-Smtp-Source: APiQypLm5EuLKI6Xqign9n0mJpOh8o3VNKYbMWKN94pIx32VJuUzFu2I7tNDJAuJhJ5vk9PzPSSo2qBJjXSEFczEUWM=
+X-Received: by 2002:a67:f4ce:: with SMTP id s14mr7453985vsn.99.1587034334665;
+ Thu, 16 Apr 2020 03:52:14 -0700 (PDT)
 MIME-Version: 1.0
-X-OriginatorOrg: wdc.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: fe06a85d-7ec5-4655-150c-08d7e1f94fbe
-X-MS-Exchange-CrossTenant-originalarrivaltime: 16 Apr 2020 11:28:39.5950
- (UTC)
-X-MS-Exchange-CrossTenant-fromentityheader: Hosted
-X-MS-Exchange-CrossTenant-id: b61c8803-16f3-4c35-9b17-6f65f441df86
-X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
-X-MS-Exchange-CrossTenant-userprincipalname: T4m9ANvZQA6RTaCsVWRlsXCh6ia3LxtEIMdhbdHxyNft5y2f39Is1oQ/9ogSS3NUF39/8Kv7bg3oUR7AyUO39bZfLNKaHew/RwArCEL9jAI=
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: SN4PR0401MB3679
+References: <20200415064916.49958-1-wqu@suse.com>
+In-Reply-To: <20200415064916.49958-1-wqu@suse.com>
+Reply-To: fdmanana@gmail.com
+From:   Filipe Manana <fdmanana@gmail.com>
+Date:   Thu, 16 Apr 2020 11:52:03 +0100
+Message-ID: <CAL3q7H5Z7t20jpuz40qDTjFEFmmR0Oa-92B27FPQ1KfZJoKo=A@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: Test snapshot creation with qgroup inherit would
+ mark qgroup inconsistent
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>,
+        fstests <fstests@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 16/04/2020 13:26, Nikolay Borisov wrote:=0A=
-> Instead of returning both the page and the super block structure, make=0A=
-> btrfs_read_disk_super just return a pointer to struct btrfs_disk_super.=
-=0A=
-> As a result the function signature is simplified.=0A=
-=0A=
-Uh I was under the impression I had done this when removing the buffer =0A=
-heads.=0A=
-=0A=
-Thanks for cleaning up behind me,=0A=
-Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>=0A=
+On Wed, Apr 15, 2020 at 11:12 PM Qu Wenruo <wqu@suse.com> wrote:
+>
+> Test that a new snapshot created with qgroup inherit passed should mark
+> qgroup numbers inconsistent.
+>
+> Such inconsistent flag is required to show that we need a qgroup rescan
+> to make qgroup numbers correct again.
+>
+> This is unavoidable since snapshot creation with qgroup inherit acts as
+> snapshot creation + qgroup relationship assign.
+> See btrfs(5) for why such operation needs qgroup rescan.
+>
+> This test failed on current kernel, the fix is submitted to the btrfs
+> mail list titled:
+>   "btrfs: qgroup: Mark qgroup inconsistent if we're inherting snapshot to=
+ a new qgroup"
+>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
+
+Looks good, thanks.
+
+> ---
+>  tests/btrfs/210     | 62 +++++++++++++++++++++++++++++++++++++++++++++
+>  tests/btrfs/210.out |  2 ++
+>  tests/btrfs/group   |  1 +
+>  3 files changed, 65 insertions(+)
+>  create mode 100755 tests/btrfs/210
+>  create mode 100644 tests/btrfs/210.out
+>
+> diff --git a/tests/btrfs/210 b/tests/btrfs/210
+> new file mode 100755
+> index 00000000..daa76a87
+> --- /dev/null
+> +++ b/tests/btrfs/210
+> @@ -0,0 +1,62 @@
+> +#! /bin/bash
+> +# SPDX-License-Identifier: GPL-2.0
+> +# Copyright (C) 2020 SUSE Linux Products GmbH. All Rights Reserved.
+> +#
+> +# FS QA Test 210
+> +#
+> +# Test that a new snapshot created with qgroup inherit passed should mar=
+k
+> +# qgroup numbers inconsistent.
+> +#
+> +seq=3D`basename $0`
+> +seqres=3D$RESULT_DIR/$seq
+> +echo "QA output created by $seq"
+> +
+> +here=3D`pwd`
+> +tmp=3D/tmp/$$
+> +status=3D1       # failure is the default!
+> +trap "_cleanup; exit \$status" 0 1 2 3 15
+> +
+> +_cleanup()
+> +{
+> +       cd /
+> +       rm -f $tmp.*
+> +}
+> +
+> +# get standard environment, filters and checks
+> +. ./common/rc
+> +. ./common/filter
+> +
+> +# remove previous $seqres.full before test
+> +rm -f $seqres.full
+> +
+> +# real QA test starts here
+> +
+> +# Modify as appropriate.
+> +_supported_fs btrfs
+> +_supported_os Linux
+> +_require_scratch
+> +
+> +_scratch_mkfs >/dev/null
+> +_scratch_mount
+> +
+> +$BTRFS_UTIL_PROG subvolume create "$SCRATCH_MNT/src" > /dev/null
+> +_pwrite_byte 0xcd 0 16M "$SCRATCH_MNT/src/file" > /dev/null
+> +
+> +# Sync the fs to ensure data written to disk so that they can be account=
+ed
+> +# by qgroup
+> +sync
+> +$BTRFS_UTIL_PROG quota enable "$SCRATCH_MNT"
+> +$BTRFS_UTIL_PROG quota rescan -w "$SCRATCH_MNT"
+> +$BTRFS_UTIL_PROG qgroup create 1/0 "$SCRATCH_MNT"
+> +
+> +# Create a snapshot with qgroup inherit
+> +$BTRFS_UTIL_PROG subvolume snapshot -i 1/0 "$SCRATCH_MNT/src" \
+> +       "$SCRATCH_MNT/snapshot" > /dev/null
+> +
+> +echo "Silence is golden"
+> +# If qgroup is not marked inconsistent automatically, btrfs check would
+> +# report error.
+> +
+> +# success, all done
+> +status=3D0
+> +exit
+> diff --git a/tests/btrfs/210.out b/tests/btrfs/210.out
+> new file mode 100644
+> index 00000000..0d9f3fa0
+> --- /dev/null
+> +++ b/tests/btrfs/210.out
+> @@ -0,0 +1,2 @@
+> +QA output created by 210
+> +Silence is golden
+> diff --git a/tests/btrfs/group b/tests/btrfs/group
+> index 657ec548..e7255c46 100644
+> --- a/tests/btrfs/group
+> +++ b/tests/btrfs/group
+> @@ -212,3 +212,4 @@
+>  207 auto rw raid
+>  208 auto quick subvol
+>  209 auto quick log
+> +210 auto quick qgroup snapshot
+> --
+> 2.23.0
+>
+
+
+--=20
+Filipe David Manana,
+
+=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
+ right.=E2=80=9D

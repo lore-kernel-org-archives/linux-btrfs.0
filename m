@@ -7,64 +7,64 @@ X-Spam-Status: No, score=-9.7 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E5A3CC352BE
-	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Apr 2020 21:46:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C1B38C38A29
+	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Apr 2020 21:46:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id C05C4221F4
-	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Apr 2020 21:46:39 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9FCFF221F4
+	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Apr 2020 21:46:41 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="ualXZmN2"
+	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="AHuZiJ/I"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728441AbgDPVqi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 16 Apr 2020 17:46:38 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48866 "EHLO
+        id S1728462AbgDPVqk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 16 Apr 2020 17:46:40 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48882 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-FAIL-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1726456AbgDPVqh (ORCPT
+        by vger.kernel.org with ESMTP id S1728445AbgDPVqk (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 16 Apr 2020 17:46:37 -0400
-Received: from mail-pl1-x643.google.com (mail-pl1-x643.google.com [IPv6:2607:f8b0:4864:20::643])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3DDF6C061A0C
-        for <linux-btrfs@vger.kernel.org>; Thu, 16 Apr 2020 14:46:36 -0700 (PDT)
-Received: by mail-pl1-x643.google.com with SMTP id k18so125426pll.6
-        for <linux-btrfs@vger.kernel.org>; Thu, 16 Apr 2020 14:46:36 -0700 (PDT)
+        Thu, 16 Apr 2020 17:46:40 -0400
+Received: from mail-pg1-x542.google.com (mail-pg1-x542.google.com [IPv6:2607:f8b0:4864:20::542])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0AC40C061A0F
+        for <linux-btrfs@vger.kernel.org>; Thu, 16 Apr 2020 14:46:40 -0700 (PDT)
+Received: by mail-pg1-x542.google.com with SMTP id w11so21212pga.12
+        for <linux-btrfs@vger.kernel.org>; Thu, 16 Apr 2020 14:46:40 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=osandov-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=q/mzJgos1XgRNub/iLArtVT11nSXAVRo/sPPRfNFoYA=;
-        b=ualXZmN2Hcfi4j39kglPHWtAfyGoA0sVV87C8mT3ys2zFkNbTnXyUQRkcjpTbRS53H
-         becuxBTtd5k17XvGEf6cHmJyY2GL6v0fI66JDOn97bQijslyrNFJ7HFNODvTmd3yFX5o
-         RONXgwtc9g/t8p+hx6G7OG4XfGx3fQkJ4S/l4X5rgcYZMrSczj7vxy6r2JoIFUlG8R52
-         IXQlVpQXiNGtu7D73zYfFxKxslZN2fr5FG8SHYQRaS9u5DOPutD2Ah9OyS2RVUsPQxdL
-         ODhDw5cxOoWuWVLHEjjI+z112WJKgdiMaSe+zQDH2QMYFgy8NwXzTN2MYkqvOgWFWxjy
-         hIEg==
+        bh=KgrlD/bFbuJ+7ycGARpz9SjCx8tAPM2/16UcN5GB4v0=;
+        b=AHuZiJ/IT0n10haLQJKannFT10VsuDGjHlGrZE2TWWxDKo/wulFag8Az7bg9Kv4bwj
+         PuC5vbVvkBZ+JeOuqv6ecMG5wjqc2a8CeAGiYhk5LqAvHWxq8roFJKTPvLEksyTHIBUx
+         xG2V3TpaDc4+7IPga76/VZ7pZSA7V4XuL/Ssg92TOKvvyYYinMRpLrQOK/ijs1jL4YDP
+         NCHLGrDZAIyvmWJBQjMKK/TNruZHR1+Uy+1Vt5wzAZu1Y9j7uyj9YasC8FgUchfniacp
+         BqiXAT1elyXsoD4WDv3VP64mUMdXmOLJqmt7sxGvoX1npzxYXLZUw9+VKVulMCRQY4U7
+         UXkw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=q/mzJgos1XgRNub/iLArtVT11nSXAVRo/sPPRfNFoYA=;
-        b=Y6tzMzXBd/PyF6MOJIhBXzoIKLmdyGASpyaKwMZXhT+QtFK0tcKlEssLa/jbpaVQ9p
-         TlpsL5ary1AZVJLev4ftyJ9Vx7MzstYliaCvWcR392M90qaD3qYHe9RA9fkrRMN/Ntxo
-         XvJH1EbKrkfUCNADGm3VtW99cB40QYpt04XzClB882VYqmbdCI/46APsGe8h1qedQU15
-         NKWrTnr8jdqbz/k8ectPfrMuNVdpxOXIMH8S6tnE8aTKhZs29+oSNnSdyO15KgC1Gjrf
-         LzO6LEyK2sa0RnP6PLXyVYTdwWex5kN2cWRK13PdaQrFHFhdZ6kCC8sZjRgKULRuIEgh
-         ZzdA==
-X-Gm-Message-State: AGi0PuaTKNzpnSydLCRezZ6LFQ9gXf3WXfhdpKBAj/vPpF0IpecNiBjd
-        YzQjhNluk39HPi39t8Q65xapHp8xB1M=
-X-Google-Smtp-Source: APiQypIglHbhRYwjv7Mtv4fDNsAxRWKr/WNnEOADkmjHUQ/lSGM4/zKRQCLumImlxPwNL/yk+n/TVA==
-X-Received: by 2002:a17:90a:1f4b:: with SMTP id y11mr473243pjy.136.1587073595444;
-        Thu, 16 Apr 2020 14:46:35 -0700 (PDT)
+        bh=KgrlD/bFbuJ+7ycGARpz9SjCx8tAPM2/16UcN5GB4v0=;
+        b=Awyl5N8mFjPbfSZTWTpwd1FzKYg6hho9F5+HMIGXtb1U2PUR4jhS5EFoR2RINNjOwb
+         HMNQcTcx9F63JGQcRQNTPRHQF6hZ0FG5u4o3CGZJmA7kpibxi9JjbQi2/c8cHT6HIBtt
+         pMHGCf2fYXDPts6lXqddCOeRg11WTx4M6alYMzF7FV2KfD8omg5vT6RTWeo21n47W00M
+         EeHzoSllACU9nFyPR770egjcMgoZqJRuhrAuVsiQd4Ox/mGnP24inPkkFLBqrep9k2as
+         dcd2v3skYif7Dv7Zy9U+VzvcVFdXT9/eVsLIKYtdcpRBAsdaf7yPo9gMNucOJdlTd/y5
+         w4Mw==
+X-Gm-Message-State: AGi0PubmcfS2SvMvZ7nRS+UO6WoqRMoYPg++x+c6q5FKj1T9Sz3+ZaNL
+        x/lN50WQyFcxq/5B+R+2tpFsQvz4Yqo=
+X-Google-Smtp-Source: APiQypJRG+qprwH3A9ByVRVAJGg6bv4AXgnOCXiJYunLF/x33aPZl8DT3LX82nbP7z7fMFKzakAu8A==
+X-Received: by 2002:a62:3784:: with SMTP id e126mr14559469pfa.303.1587073599269;
+        Thu, 16 Apr 2020 14:46:39 -0700 (PDT)
 Received: from vader.tfbnw.net ([2620:10d:c090:400::5:844e])
-        by smtp.gmail.com with ESMTPSA id 17sm12440228pgg.76.2020.04.16.14.46.34
+        by smtp.gmail.com with ESMTPSA id 17sm12440228pgg.76.2020.04.16.14.46.38
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 16 Apr 2020 14:46:34 -0700 (PDT)
+        Thu, 16 Apr 2020 14:46:38 -0700 (PDT)
 From:   Omar Sandoval <osandov@osandov.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     kernel-team@fb.com, Jens Axboe <axboe@kernel.dk>,
         Christoph Hellwig <hch@lst.de>
-Subject: [PATCH v2 02/15] btrfs: fix error handling when submitting direct I/O bio
-Date:   Thu, 16 Apr 2020 14:46:12 -0700
-Message-Id: <6953c2afd9ba307568ca03604c76a767320d56ca.1587072977.git.osandov@fb.com>
+Subject: [PATCH v2 05/15] btrfs: don't do repair validation for checksum errors
+Date:   Thu, 16 Apr 2020 14:46:15 -0700
+Message-Id: <a66720d2e8acfb7370e4eca6ce3db87f847f9046.1587072977.git.osandov@fb.com>
 X-Mailer: git-send-email 2.26.1
 In-Reply-To: <cover.1587072977.git.osandov@fb.com>
 References: <cover.1587072977.git.osandov@fb.com>
@@ -77,57 +77,37 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Omar Sandoval <osandov@fb.com>
 
-In btrfs_submit_direct_hook(), if a direct I/O write doesn't span a RAID
-stripe or chunk, we submit orig_bio without cloning it. In this case, we
-don't increment pending_bios. Then, if btrfs_submit_dio_bio() fails, we
-decrement pending_bios to -1, and we never complete orig_bio. Fix it by
-initializing pending_bios to 1 instead of incrementing later.
+The purpose of the validation step is to distinguish between good and
+bad sectors in a failed multi-sector read. If a multi-sector read
+succeeded but some of those sectors had checksum errors, we don't need
+to validate anything; we know the sectors with bad checksums need to be
+repaired.
 
-Fixing this exposes another bug: we put orig_bio prematurely and then
-put it again from end_io. Fix it by not putting orig_bio.
-
-After this change, pending_bios is really more of a reference count, but
-I'll leave that cleanup separate to keep the fix small.
-
-Fixes: e65e15355429 ("btrfs: fix panic caused by direct IO")
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- fs/btrfs/inode.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ fs/btrfs/extent_io.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 259239b33370..b628c319a5b6 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -7939,7 +7939,6 @@ static int btrfs_submit_direct_hook(struct btrfs_dio_private *dip)
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 712f49607d3a..25dd42437cbd 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2640,6 +2640,14 @@ static bool btrfs_io_needs_validation(struct inode *inode, struct bio *bio)
+ 	u64 len = 0;
+ 	int i;
  
- 	/* bio split */
- 	ASSERT(geom.len <= INT_MAX);
--	atomic_inc(&dip->pending_bios);
- 	do {
- 		clone_len = min_t(int, submit_len, geom.len);
- 
-@@ -7989,7 +7988,8 @@ static int btrfs_submit_direct_hook(struct btrfs_dio_private *dip)
- 	if (!status)
- 		return 0;
- 
--	bio_put(bio);
-+	if (bio != orig_bio)
-+		bio_put(bio);
- out_err:
- 	dip->errors = 1;
++	/*
++	 * If bi_status is BLK_STS_OK, then this was a checksum error, not an
++	 * I/O error. In this case, we already know exactly which sector was
++	 * bad, so we don't need to validate.
++	 */
++	if (bio->bi_status == BLK_STS_OK)
++		return false;
++
  	/*
-@@ -8030,7 +8030,7 @@ static void btrfs_submit_direct(struct bio *dio_bio, struct inode *inode,
- 	bio->bi_private = dip;
- 	dip->orig_bio = bio;
- 	dip->dio_bio = dio_bio;
--	atomic_set(&dip->pending_bios, 0);
-+	atomic_set(&dip->pending_bios, 1);
- 	io_bio = btrfs_io_bio(bio);
- 	io_bio->logical = file_offset;
- 
+ 	 * We need to validate each sector individually if the failed I/O was
+ 	 * for multiple sectors.
 -- 
 2.26.1
 

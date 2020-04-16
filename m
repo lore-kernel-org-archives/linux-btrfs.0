@@ -2,53 +2,149 @@ Return-Path: <SRS0=CVGX=6A=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 73C13C352BE
-	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Apr 2020 10:25:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5A4B8C2BB55
+	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Apr 2020 11:26:29 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 5B59721D82
-	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Apr 2020 10:25:15 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4215721D95
+	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Apr 2020 11:26:29 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2504833AbgDPKYw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 16 Apr 2020 06:24:52 -0400
-Received: from mx2.suse.de ([195.135.220.15]:52744 "EHLO mx2.suse.de"
+        id S2633161AbgDPL0W (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 16 Apr 2020 07:26:22 -0400
+Received: from mx2.suse.de ([195.135.220.15]:54066 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2504724AbgDPKVP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 16 Apr 2020 06:21:15 -0400
+        id S2633129AbgDPL0O (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 16 Apr 2020 07:26:14 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 0A3C1AC77;
-        Thu, 16 Apr 2020 10:21:03 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id F2B68DA727; Thu, 16 Apr 2020 12:20:22 +0200 (CEST)
-Date:   Thu, 16 Apr 2020 12:20:21 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v4 2/2] btrfs: Reformat btrfs_tree.h comments
-Message-ID: <20200416102021.GH5920@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20200415084113.64378-1-wqu@suse.com>
- <20200415084113.64378-3-wqu@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20200415084113.64378-3-wqu@suse.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+        by mx2.suse.de (Postfix) with ESMTP id E17EDAC6D;
+        Thu, 16 Apr 2020 11:26:09 +0000 (UTC)
+From:   Nikolay Borisov <nborisov@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH v2] btrfs: Make btrfs_read_disk_super return struct btrfs_disk_super
+Date:   Thu, 16 Apr 2020 14:26:08 +0300
+Message-Id: <20200416112608.8095-1-nborisov@suse.com>
+X-Mailer: git-send-email 2.17.1
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Apr 15, 2020 at 04:41:13PM +0800, Qu Wenruo wrote:
-> Since we're here, modify btrfs_tree.h to follow the latest comment
-> style.
+Instead of returning both the page and the super block structure, make
+btrfs_read_disk_super just return a pointer to struct btrfs_disk_super.
+As a result the function signature is simplified.
 
-Well, the point was to make the changes when moving the code so it's not
-split into two patches, but this patch seems to update more code so it's
-probably fine to have them separate.
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
+
+V2:
+ * Make btrfs_scan_one_device forward the error it got from btrfs_read_disk_super
+ to its callers.
+ * Return EINVAL in case sb byte offset or magic value don't match in btrfs_read_disk_super
+ * Removed explicit mention that read_cache_page_gfp can't return a NULL value.
+
+ fs/btrfs/volumes.c | 48 +++++++++++++++++++++++-----------------------
+ 1 file changed, 24 insertions(+), 24 deletions(-)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index c1909e5f4506..58a2c23ab91e 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1251,49 +1251,49 @@ void btrfs_release_disk_super(struct btrfs_super_block *super)
+ 	put_page(page);
+ }
+
+-static int btrfs_read_disk_super(struct block_device *bdev, u64 bytenr,
+-				 struct page **page,
+-				 struct btrfs_super_block **disk_super)
++static struct btrfs_super_block *btrfs_read_disk_super(struct block_device *bdev,
++						       u64 bytenr)
+ {
++	struct btrfs_super_block *disk_super;
++	struct page *page;
+ 	void *p;
+ 	pgoff_t index;
+
+ 	/* make sure our super fits in the device */
+ 	if (bytenr + PAGE_SIZE >= i_size_read(bdev->bd_inode))
+-		return 1;
++		return ERR_PTR(-EINVAL);
+
+ 	/* make sure our super fits in the page */
+-	if (sizeof(**disk_super) > PAGE_SIZE)
+-		return 1;
++	if (sizeof(*disk_super) > PAGE_SIZE)
++		return ERR_PTR(-EINVAL);
+
+ 	/* make sure our super doesn't straddle pages on disk */
+ 	index = bytenr >> PAGE_SHIFT;
+-	if ((bytenr + sizeof(**disk_super) - 1) >> PAGE_SHIFT != index)
+-		return 1;
++	if ((bytenr + sizeof(*disk_super) - 1) >> PAGE_SHIFT != index)
++		return ERR_PTR(-EINVAL);
+
+ 	/* pull in the page with our super */
+-	*page = read_cache_page_gfp(bdev->bd_inode->i_mapping,
+-				   index, GFP_KERNEL);
++	page = read_cache_page_gfp(bdev->bd_inode->i_mapping, index,
++				   GFP_KERNEL);
+
+-	if (IS_ERR(*page))
+-		return 1;
++	if (IS_ERR(page))
++		return ERR_CAST(page);
+
+-	p = page_address(*page);
++	p = page_address(page);
+
+ 	/* align our pointer to the offset of the super block */
+-	*disk_super = p + offset_in_page(bytenr);
++	disk_super = p + offset_in_page(bytenr);
+
+-	if (btrfs_super_bytenr(*disk_super) != bytenr ||
+-	    btrfs_super_magic(*disk_super) != BTRFS_MAGIC) {
++	if (btrfs_super_bytenr(disk_super) != bytenr ||
++	    btrfs_super_magic(disk_super) != BTRFS_MAGIC) {
+ 		btrfs_release_disk_super(p);
+-		return 1;
++		return ERR_PTR(-EINVAL);
+ 	}
+
+-	if ((*disk_super)->label[0] &&
+-		(*disk_super)->label[BTRFS_LABEL_SIZE - 1])
+-		(*disk_super)->label[BTRFS_LABEL_SIZE - 1] = '\0';
++	if (disk_super->label[0] && disk_super->label[BTRFS_LABEL_SIZE - 1])
++		disk_super->label[BTRFS_LABEL_SIZE - 1] = '\0';
+
+-	return 0;
++	return disk_super;
+ }
+
+ int btrfs_forget_devices(const char *path)
+@@ -1319,7 +1319,6 @@ struct btrfs_device *btrfs_scan_one_device(const char *path, fmode_t flags,
+ 	bool new_device_added = false;
+ 	struct btrfs_device *device = NULL;
+ 	struct block_device *bdev;
+-	struct page *page;
+ 	u64 bytenr;
+
+ 	lockdep_assert_held(&uuid_mutex);
+@@ -1337,8 +1336,9 @@ struct btrfs_device *btrfs_scan_one_device(const char *path, fmode_t flags,
+ 	if (IS_ERR(bdev))
+ 		return ERR_CAST(bdev);
+
+-	if (btrfs_read_disk_super(bdev, bytenr, &page, &disk_super)) {
+-		device = ERR_PTR(-EINVAL);
++	disk_super = btrfs_read_disk_super(bdev, bytenr);
++	if (IS_ERR(disk_super)) {
++		device = disk_super;
+ 		goto error_bdev_put;
+ 	}
+
+--
+2.17.1
+

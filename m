@@ -2,189 +2,170 @@ Return-Path: <SRS0=V6R8=6B=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.7 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 796DDC2BA2B
-	for <linux-btrfs@archiver.kernel.org>; Fri, 17 Apr 2020 02:12:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6A72EC352BE
+	for <linux-btrfs@archiver.kernel.org>; Fri, 17 Apr 2020 07:08:30 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 189E921841
-	for <linux-btrfs@archiver.kernel.org>; Fri, 17 Apr 2020 02:12:35 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=mpdesouza.com header.i=@mpdesouza.com header.b="Iqz6xb0Z"
+	by mail.kernel.org (Postfix) with ESMTP id 54D8B21D94
+	for <linux-btrfs@archiver.kernel.org>; Fri, 17 Apr 2020 07:08:30 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729168AbgDQCMe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 16 Apr 2020 22:12:34 -0400
-Received: from gateway21.websitewelcome.com ([192.185.45.36]:25088 "EHLO
-        gateway21.websitewelcome.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1728969AbgDQCMd (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 16 Apr 2020 22:12:33 -0400
-Received: from cm12.websitewelcome.com (cm12.websitewelcome.com [100.42.49.8])
-        by gateway21.websitewelcome.com (Postfix) with ESMTP id 0C7B2400C9276
-        for <linux-btrfs@vger.kernel.org>; Thu, 16 Apr 2020 21:12:32 -0500 (CDT)
-Received: from br540.hostgator.com.br ([108.179.252.180])
-        by cmsmtp with SMTP
-        id PGUajiHyg1s2xPGUajLSa4; Thu, 16 Apr 2020 21:12:32 -0500
-X-Authority-Reason: nr=8
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=mpdesouza.com; s=default; h=Content-Transfer-Encoding:MIME-Version:
-        Content-Type:References:In-Reply-To:Date:To:From:Subject:Message-ID:Sender:
-        Reply-To:Cc:Content-ID:Content-Description:Resent-Date:Resent-From:
-        Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
-        List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-        bh=id2ptJnAXOCcmAaHxMs6pbDtap1U6usfKCBZCAa0PLc=; b=Iqz6xb0ZTEj4EBFwBeFrIAs8m4
-        Z08+UdO+Okn6w5jvimov7Y6emF53VDYMhjMMwMxOduujs60kc+rkSy+e19EeIjpMzSNMC9QgfSUBH
-        TRdRdheoGphIXySx98JZVn38Jn10S7o0FKGrbd2tDWqNtb+m/jx1kCmWgArlPTosBzCnvd/TAbUu3
-        8HScXN+dYGDKvcnAqIwFEvSyxXi1GAIAVRji34rrM8lSJRGp5nxiF+x5Dhu8KXz8+OrbGMt8trWaT
-        MpUVDRE8YwYE9utOJuw+/vdC/NbG/tuAM95KXfYl08o3/A7Slk9QwzS25gI5kXz+B9Y9G5DxN5UIG
-        2HWtMaMA==;
-Received: from [177.132.134.142] (port=51354 helo=[192.168.0.172])
-        by br540.hostgator.com.br with esmtpsa (TLSv1.2:ECDHE-RSA-AES256-GCM-SHA384:256)
-        (Exim 4.92)
-        (envelope-from <marcos@mpdesouza.com>)
-        id 1jPGUZ-002j8A-HC; Thu, 16 Apr 2020 23:12:31 -0300
-Message-ID: <b1854ac17381cda81e40b29fd8d4035d798b908c.camel@mpdesouza.com>
-Subject: Re: [PATCHv3 0/3] btrfs-progs: Auto resize fs after device replace
-From:   Marcos Paulo de Souza <marcos@mpdesouza.com>
-To:     devel@roosoftl.ltd.uk,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Date:   Thu, 16 Apr 2020 23:15:48 -0300
-In-Reply-To: <706b6fae-94d6-62bf-d52e-d0db057e3bd3@casa-di-locascio.net>
-References: <20200416004642.9941-1-marcos@mpdesouza.com>
-         <706b6fae-94d6-62bf-d52e-d0db057e3bd3@casa-di-locascio.net>
-Content-Type: text/plain; charset="UTF-8"
-User-Agent: Evolution 3.34.4 
+        id S1728738AbgDQHI3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 17 Apr 2020 03:08:29 -0400
+Received: from mx2.suse.de ([195.135.220.15]:57010 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1728625AbgDQHI2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 17 Apr 2020 03:08:28 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 34FD3AC53;
+        Fri, 17 Apr 2020 07:08:26 +0000 (UTC)
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Marek Behun <marek.behun@nic.cz>
+Subject: [PATCH] btrfs: Remove the duplicated @level parameter for btrfs_bin_search()
+Date:   Fri, 17 Apr 2020 15:08:21 +0800
+Message-Id: <20200417070821.65806-1-wqu@suse.com>
+X-Mailer: git-send-email 2.26.0
 MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-X-AntiAbuse: This header was added to track abuse, please include it with any abuse report
-X-AntiAbuse: Primary Hostname - br540.hostgator.com.br
-X-AntiAbuse: Original Domain - vger.kernel.org
-X-AntiAbuse: Originator/Caller UID/GID - [47 12] / [47 12]
-X-AntiAbuse: Sender Address Domain - mpdesouza.com
-X-BWhitelist: no
-X-Source-IP: 177.132.134.142
-X-Source-L: No
-X-Exim-ID: 1jPGUZ-002j8A-HC
-X-Source: 
-X-Source-Args: 
-X-Source-Dir: 
-X-Source-Sender: ([192.168.0.172]) [177.132.134.142]:51354
-X-Source-Auth: marcos@mpdesouza.com
-X-Email-Count: 1
-X-Source-Cap: bXBkZXNvNTM7bXBkZXNvNTM7YnI1NDAuaG9zdGdhdG9yLmNvbS5icg==
-X-Local-Domain: yes
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, 2020-04-16 at 07:18 +0100, devel@roosoftl.ltd.uk wrote:
-> On 16/04/2020 01:46, Marcos Paulo de Souza wrote:
-> > From: Marcos Paulo de Souza <mpdesouza@suse.com>
-> >
-> > Changes from v2:
-> > * Fixed the code format after moving function resize_filesystem in
-> patch 0001
-> >   (suggested by David)
-> > * Sorted the resize_filesystem function prototype in patch 0001
-> (suggested by
-> >   David)
-> > * Changed the -a into long argument --autoresize in patch 0002
-> (suggested by
-> >   David)
-> > * Translate srcdev if the argument is not a devid (suggested by
-> David)
-> > * This also changes the way we use the ioctl, now only passing
-> devid to the
-> >   kernel, instead of passing the path and letting the kernel to
-> translate
-> > * Add tests to check the autoresize functionality
-> >
-> > Changes from v1:
-> > * Reworded the help message and the docs telling the user that the
-> fs will be
-> >   resized to it's max size (suggested by Qu)
-> > * Added a warning message saying that the resize failed, asking the
-> user to
-> >   resize manually. (suggested by Qu)
-> >
-> > Both changes were done only in patch 0002.
-> >
-> > Anand suggested this job to be done in kernel side, atomically, but
-> as I
-> > received a good review from Qu I decided to send a v3 of this
-> patchset.
-> >
-> > Please review, thanks!
-> >
-> > Original cover-letter[1]:
-> > These two patches make possible to resize the fs after a successful
-> replace
-> > finishes. The flag -a is responsible for doing it (-r is already
-> use, so -a in
-> > this context means "automatically").
-> >
-> > The first patch just moves the resize rationale to utils.c and the
-> second patch
-> > adds the flag an calls resize if -a is informed replace finishes
-> successfully.
-> >
-> > Please review!
-> >
-> > Marcos Paulo de Souza (3):
-> >   btrfs-progs: Move resize into functionaly into utils.c
-> >   btrfs-progs: replace: New argument to resize the fs after replace
-> >   btrfs-progs: tests: misc: Add some replace tests
-> >
-> >  Documentation/btrfs-replace.asciidoc        |   5 +-
-> >  cmds/filesystem.c                           |  58 +----------
-> >  cmds/replace.c                              | 105 +++++++++++++---
-> ----
-> >  common/utils.c                              |  60 +++++++++++
-> >  common/utils.h                              |   2 +
-> >  tests/misc-tests/039-replace-device/test.sh |  56 +++++++++++
-> >  6 files changed, 192 insertions(+), 94 deletions(-)
-> >  create mode 100755 tests/misc-tests/039-replace-device/test.sh
-> >
-> Hmm,
-> 
-> 
-> Does this take into account if different raid levels are used for
-> data
-> and meta data. When I last was upgrading a fs with larger drive it
-> was
-> not just a case of making the over all file size different I had to
-> also
-> change the ratio of metadata to data. And then I had to balance a
-> whole
-> lot (which found a bug in memory at the time)
+We can easily get the level from @eb parameter, thus the level is not
+needed.
 
-What do you mean about "ratio of metadata to data"? The new disk will
-receive the same content of the old disk, so, it the metadata wasn't
-balanced before the replace, it might be a good idea to execute balance
-after adding a maybe larger disk.
+This is inspired by the work of Marek in U-boot.
 
-Can you please describe in more details you problem, or the problem you
-had at the time you did the replace last time? It seems it's not
-related to the resize itself, so these patches do not change the
-current behavior.
+Cc: Marek Behun <marek.behun@nic.cz>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/ctree.c      | 14 +++++++-------
+ fs/btrfs/ctree.h      |  2 +-
+ fs/btrfs/relocation.c |  8 +++-----
+ fs/btrfs/tree-log.c   |  3 +--
+ 4 files changed, 12 insertions(+), 15 deletions(-)
 
-> 
-> 
-> How do you deal with these edge cases ? Especially if you replacing
-> with
-> a smaller disk and then have to shrink the metadata ratio?
-
-Replace does not accept a smaller disk to replace a larger one.
-
-> 
-> 
-> Just curious.
-
-Me too. These patches were meant to help people to avoid executing two
-different command for a pretty common action, all details behind
-replace and resize are the same, it's just a "helper" to make users to
-use the full capacity of a newly added disk.
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index bfedbbe2311f..6c28efe5b14a 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -1733,9 +1733,9 @@ static noinline int generic_bin_search(struct extent_buffer *eb,
+  * leaves vs nodes
+  */
+ int btrfs_bin_search(struct extent_buffer *eb, const struct btrfs_key *key,
+-		     int level, int *slot)
++		     int *slot)
+ {
+-	if (level == 0)
++	if (btrfs_header_level(eb) == 0)
+ 		return generic_bin_search(eb,
+ 					  offsetof(struct btrfs_leaf, items),
+ 					  sizeof(struct btrfs_item),
+@@ -2502,10 +2502,10 @@ setup_nodes_for_search(struct btrfs_trans_handle *trans,
+ }
+ 
+ static int key_search(struct extent_buffer *b, const struct btrfs_key *key,
+-		      int level, int *prev_cmp, int *slot)
++		      int *prev_cmp, int *slot)
+ {
+ 	if (*prev_cmp != 0) {
+-		*prev_cmp = btrfs_bin_search(b, key, level, slot);
++		*prev_cmp = btrfs_bin_search(b, key, slot);
+ 		return *prev_cmp;
+ 	}
+ 
+@@ -2783,7 +2783,7 @@ int btrfs_search_slot(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 			}
+ 		}
+ 
+-		ret = key_search(b, key, level, &prev_cmp, &slot);
++		ret = key_search(b, key, &prev_cmp, &slot);
+ 		if (ret < 0)
+ 			goto done;
+ 
+@@ -2947,7 +2947,7 @@ int btrfs_search_old_slot(struct btrfs_root *root, const struct btrfs_key *key,
+ 		 * time.
+ 		 */
+ 		prev_cmp = -1;
+-		ret = key_search(b, key, level, &prev_cmp, &slot);
++		ret = key_search(b, key, &prev_cmp, &slot);
+ 		if (ret < 0)
+ 			goto done;
+ 
+@@ -5103,7 +5103,7 @@ int btrfs_search_forward(struct btrfs_root *root, struct btrfs_key *min_key,
+ 	while (1) {
+ 		nritems = btrfs_header_nritems(cur);
+ 		level = btrfs_header_level(cur);
+-		sret = btrfs_bin_search(cur, min_key, level, &slot);
++		sret = btrfs_bin_search(cur, min_key, &slot);
+ 		if (sret < 0) {
+ 			ret = sret;
+ 			goto out;
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 4d787d749315..dfbcf794d895 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2305,7 +2305,7 @@ void btrfs_wait_for_snapshot_creation(struct btrfs_root *root);
+ 
+ /* ctree.c */
+ int btrfs_bin_search(struct extent_buffer *eb, const struct btrfs_key *key,
+-		     int level, int *slot);
++		     int *slot);
+ int __pure btrfs_comp_cpu_keys(const struct btrfs_key *k1, const struct btrfs_key *k2);
+ int btrfs_previous_item(struct btrfs_root *root,
+ 			struct btrfs_path *path, u64 min_objectid,
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index f65595602aa8..6f2dd203a1c6 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -1925,7 +1925,7 @@ int replace_path(struct btrfs_trans_handle *trans, struct reloc_control *rc,
+ 		level = btrfs_header_level(parent);
+ 		BUG_ON(level < lowest_level);
+ 
+-		ret = btrfs_bin_search(parent, &key, level, &slot);
++		ret = btrfs_bin_search(parent, &key, &slot);
+ 		if (ret < 0)
+ 			break;
+ 		if (ret && slot > 0)
+@@ -2914,8 +2914,7 @@ static int do_relocation(struct btrfs_trans_handle *trans,
+ 
+ 		if (upper->eb && !upper->locked) {
+ 			if (!lowest) {
+-				ret = btrfs_bin_search(upper->eb, key,
+-						       upper->level, &slot);
++				ret = btrfs_bin_search(upper->eb, key, &slot);
+ 				if (ret < 0) {
+ 					err = ret;
+ 					goto next;
+@@ -2953,8 +2952,7 @@ static int do_relocation(struct btrfs_trans_handle *trans,
+ 			slot = path->slots[upper->level];
+ 			btrfs_release_path(path);
+ 		} else {
+-			ret = btrfs_bin_search(upper->eb, key, upper->level,
+-					       &slot);
++			ret = btrfs_bin_search(upper->eb, key, &slot);
+ 			if (ret < 0) {
+ 				err = ret;
+ 				goto next;
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 58c111474ba5..981a3df9c7ff 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -3816,8 +3816,7 @@ static int drop_objectid_items(struct btrfs_trans_handle *trans,
+ 
+ 		found_key.offset = 0;
+ 		found_key.type = 0;
+-		ret = btrfs_bin_search(path->nodes[0], &found_key, 0,
+-				       &start_slot);
++		ret = btrfs_bin_search(path->nodes[0], &found_key, &start_slot);
+ 		if (ret < 0)
+ 			break;
+ 
+-- 
+2.26.0
 

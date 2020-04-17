@@ -2,127 +2,138 @@ Return-Path: <SRS0=V6R8=6B=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.9 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C7839C2D0EF
-	for <linux-btrfs@archiver.kernel.org>; Fri, 17 Apr 2020 17:26:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 00679C38A2B
+	for <linux-btrfs@archiver.kernel.org>; Fri, 17 Apr 2020 17:32:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 985F52078E
-	for <linux-btrfs@archiver.kernel.org>; Fri, 17 Apr 2020 17:26:14 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="H+r+DBWg"
+	by mail.kernel.org (Postfix) with ESMTP id D79F42223F
+	for <linux-btrfs@archiver.kernel.org>; Fri, 17 Apr 2020 17:32:16 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1587144736;
+	bh=+gLEtmxGpMJDt7gNbvlK3Ej15VaM5j4DQBKXCE4SCdA=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc:List-ID:From;
+	b=wCjRRNt0VzygtFypnVc9lP/hKrpv7meDHWYSaf1o7p1cH4cdBu8ZpdxFkp3jj9GBT
+	 Nyd4JaLVh+NSp3KUcJenaVswsglXy9JLVpOQBdqCp+Yb/0LUQKe8n5yJklimGlYoOo
+	 c8eS6L27lHPGZ7MxhdjD7iKk+so7uUB2B4V4ya2o=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729325AbgDQR0N (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 17 Apr 2020 13:26:13 -0400
-Received: from us-smtp-2.mimecast.com ([207.211.31.81]:52564 "EHLO
-        us-smtp-delivery-1.mimecast.com" rhost-flags-OK-OK-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1728667AbgDQR0N (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 17 Apr 2020 13:26:13 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-        s=mimecast20190719; t=1587144372;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=YDAN40yeguM7zJx98CdNUetg8184ljZinxF3eiulLV8=;
-        b=H+r+DBWg0JawVwmqYogyjNQwotAT9Nft0lHh06v7tbnipaLWC12jwj82ZfNFYrwhW+1Aw6
-        gwG3Ti4s3Jsd9X2bz10Sg+3Iw6lmuAJJg1L5XvsAplwvgLyHA65JNqpMkHvDKFyb8ejOsT
-        qrrkVdw2X0klDdLTi6HwMwUkL6Gl5BY=
-Received: from mimecast-mx01.redhat.com (mimecast-mx01.redhat.com
- [209.132.183.4]) (Using TLS) by relay.mimecast.com with ESMTP id
- us-mta-327-Zq3WiIGgOpe_EMB3g6_iTw-1; Fri, 17 Apr 2020 13:26:10 -0400
-X-MC-Unique: Zq3WiIGgOpe_EMB3g6_iTw-1
-Received: from smtp.corp.redhat.com (int-mx01.intmail.prod.int.phx2.redhat.com [10.5.11.11])
-        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+        id S1729404AbgDQRcQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 17 Apr 2020 13:32:16 -0400
+Received: from mail.kernel.org ([198.145.29.99]:41372 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1728602AbgDQRcQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 17 Apr 2020 13:32:16 -0400
+Received: from mail-vs1-f43.google.com (mail-vs1-f43.google.com [209.85.217.43])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mimecast-mx01.redhat.com (Postfix) with ESMTPS id 3BFAB107ACC7;
-        Fri, 17 Apr 2020 17:26:09 +0000 (UTC)
-Received: from bfoster (dhcp-41-2.bos.redhat.com [10.18.41.2])
-        by smtp.corp.redhat.com (Postfix) with ESMTPS id 8BF2318A85;
-        Fri, 17 Apr 2020 17:26:08 +0000 (UTC)
-Date:   Fri, 17 Apr 2020 13:26:06 -0400
-From:   Brian Foster <bfoster@redhat.com>
-To:     Filipe Manana <fdmanana@kernel.org>
+        by mail.kernel.org (Postfix) with ESMTPSA id 3E6AB208E4;
+        Fri, 17 Apr 2020 17:32:15 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1587144735;
+        bh=+gLEtmxGpMJDt7gNbvlK3Ej15VaM5j4DQBKXCE4SCdA=;
+        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+        b=Megzn2Ay5+J/8TwTmRw/hUYTxztVEMnKTEYzrgPGgU7M6osbHhi1XBy3FfMHI9Xdu
+         ZUYfrGQgsEmwbexGN0HXB+rZc3DJzCUvlMl1R6GJwUmDbkGM5l98hMoch6em4BI2hF
+         0x4uXrUW9yxzXAHkJFwkpO7CVgTbbyt5TUI48/Z8=
+Received: by mail-vs1-f43.google.com with SMTP id s2so1654797vsm.10;
+        Fri, 17 Apr 2020 10:32:15 -0700 (PDT)
+X-Gm-Message-State: AGi0Pua3ntYoGcLLP+unKCqs7bmN5YzhCHJ+Komt/eyJbPSyq0UJb4D1
+        8/sHeoRzlMsQv1Z7BDkeVvopnZnXeXolqiA3S0s=
+X-Google-Smtp-Source: APiQypLfftZP5l4WPKb9V9LKrQM8cqkrLT1tQ8Qd0+1PB49ov8NDCiVf/LIiiG2u+nu29g0bb82SN3vvLoEOfHojHFM=
+X-Received: by 2002:a05:6102:2414:: with SMTP id j20mr3538511vsi.206.1587144734299;
+ Fri, 17 Apr 2020 10:32:14 -0700 (PDT)
+MIME-Version: 1.0
+References: <20200408103552.11339-1-fdmanana@kernel.org> <20200417171020.GB13463@bfoster>
+ <CAL3q7H5nxP5tt8i=i0uQoG7VBs94O=ZkcAz8khS-DGCTTQG1=g@mail.gmail.com> <20200417172606.GF13463@bfoster>
+In-Reply-To: <20200417172606.GF13463@bfoster>
+From:   Filipe Manana <fdmanana@kernel.org>
+Date:   Fri, 17 Apr 2020 18:32:03 +0100
+X-Gmail-Original-Message-ID: <CAL3q7H5YSrV6Z+aB=ncSQiUfbACWgMArVRB9xu0Dhx0mTp3bZA@mail.gmail.com>
+Message-ID: <CAL3q7H5YSrV6Z+aB=ncSQiUfbACWgMArVRB9xu0Dhx0mTp3bZA@mail.gmail.com>
+Subject: Re: [PATCH 1/4] fsx: add missing file size update on zero range operations
+To:     Brian Foster <bfoster@redhat.com>
 Cc:     fstests <fstests@vger.kernel.org>,
         linux-btrfs <linux-btrfs@vger.kernel.org>,
         Filipe Manana <fdmanana@suse.com>
-Subject: Re: [PATCH 1/4] fsx: add missing file size update on zero range
- operations
-Message-ID: <20200417172606.GF13463@bfoster>
-References: <20200408103552.11339-1-fdmanana@kernel.org>
- <20200417171020.GB13463@bfoster>
- <CAL3q7H5nxP5tt8i=i0uQoG7VBs94O=ZkcAz8khS-DGCTTQG1=g@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <CAL3q7H5nxP5tt8i=i0uQoG7VBs94O=ZkcAz8khS-DGCTTQG1=g@mail.gmail.com>
-X-Scanned-By: MIMEDefang 2.79 on 10.5.11.11
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Apr 17, 2020 at 06:20:24PM +0100, Filipe Manana wrote:
-> On Fri, Apr 17, 2020 at 6:10 PM Brian Foster <bfoster@redhat.com> wrote:
+On Fri, Apr 17, 2020 at 6:26 PM Brian Foster <bfoster@redhat.com> wrote:
+>
+> On Fri, Apr 17, 2020 at 06:20:24PM +0100, Filipe Manana wrote:
+> > On Fri, Apr 17, 2020 at 6:10 PM Brian Foster <bfoster@redhat.com> wrote:
+> > >
+> > > On Wed, Apr 08, 2020 at 11:35:52AM +0100, fdmanana@kernel.org wrote:
+> > > > From: Filipe Manana <fdmanana@suse.com>
+> > > >
+> > > > When a zero range operation increases the size of the test file we were
+> > > > not updating the global variable 'file_size' which tracks the current
+> > > > size of the test file. This variable is used to for example compute the
+> > > > offset for a source range of clone, dedupe and copy file range operations.
+> > > >
+> > > > So just fix it by updating the 'file_size' global variable whenever a zero
+> > > > range operation does not use the keep size flag and its range goes beyond
+> > > > the current file size.
+> > > >
+> > > > Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> > > > ---
+> > > >  ltp/fsx.c | 2 ++
+> > > >  1 file changed, 2 insertions(+)
+> > > >
+> > > > diff --git a/ltp/fsx.c b/ltp/fsx.c
+> > > > index 9d598a4f..fa383c94 100644
+> > > > --- a/ltp/fsx.c
+> > > > +++ b/ltp/fsx.c
+> > > > @@ -1212,6 +1212,8 @@ do_zero_range(unsigned offset, unsigned length, int keep_size)
+> > > >       }
+> > > >
+> > > >       end_offset = keep_size ? 0 : offset + length;
+> > > > +     if (!keep_size && end_offset > file_size)
+> > > > +             file_size = end_offset;
+> > >
+> > > Should this ever happen if the caller uses TRIM_OFF_LEN() on the
+> > > offset and length?
 > >
-> > On Wed, Apr 08, 2020 at 11:35:52AM +0100, fdmanana@kernel.org wrote:
-> > > From: Filipe Manana <fdmanana@suse.com>
-> > >
-> > > When a zero range operation increases the size of the test file we were
-> > > not updating the global variable 'file_size' which tracks the current
-> > > size of the test file. This variable is used to for example compute the
-> > > offset for a source range of clone, dedupe and copy file range operations.
-> > >
-> > > So just fix it by updating the 'file_size' global variable whenever a zero
-> > > range operation does not use the keep size flag and its range goes beyond
-> > > the current file size.
-> > >
-> > > Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> > > ---
-> > >  ltp/fsx.c | 2 ++
-> > >  1 file changed, 2 insertions(+)
-> > >
-> > > diff --git a/ltp/fsx.c b/ltp/fsx.c
-> > > index 9d598a4f..fa383c94 100644
-> > > --- a/ltp/fsx.c
-> > > +++ b/ltp/fsx.c
-> > > @@ -1212,6 +1212,8 @@ do_zero_range(unsigned offset, unsigned length, int keep_size)
-> > >       }
-> > >
-> > >       end_offset = keep_size ? 0 : offset + length;
-> > > +     if (!keep_size && end_offset > file_size)
-> > > +             file_size = end_offset;
+> > TRIM_OFF_LEN only trims the range, not the file_size.
+> > Or did I miss something?
 > >
-> > Should this ever happen if the caller uses TRIM_OFF_LEN() on the
-> > offset and length?
-> 
-> TRIM_OFF_LEN only trims the range, not the file_size.
-> Or did I miss something?
-> 
+>
+> Right, but TRIM_LEN() does:
+>
+>         if ((off) + (len) > (size))             \
+>                 (len) = (size) - (off);         \
+>
+> ... where size is file_size. Hm?
 
-Right, but TRIM_LEN() does:
+That only updates the range's length, not the file_size.
 
-        if ((off) + (len) > (size))             \                               
-                (len) = (size) - (off);         \
+Also, if you check the global style, you'll see that in the function
+for every operation that can change file size we do update file_size
+explicitly (e.g. do_preallocate(), and we call TRIM_OFF_LEN before
+calling it as well).
 
-... where size is file_size. Hm?
+Thanks.
 
-Brian
-
-> Thanks.
-> 
-> >
-> > Brian
+>
+> Brian
+>
+> > Thanks.
 > >
 > > >
-> > >       if (end_offset > biggest) {
-> > >               biggest = end_offset;
-> > > --
-> > > 2.11.0
+> > > Brian
+> > >
+> > > >
+> > > >       if (end_offset > biggest) {
+> > > >               biggest = end_offset;
+> > > > --
+> > > > 2.11.0
+> > > >
 > > >
 > >
-> 
-
+>

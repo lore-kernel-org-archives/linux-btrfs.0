@@ -2,124 +2,109 @@ Return-Path: <SRS0=/aO0=6D=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.4 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E1F5FC3A5A9
-	for <linux-btrfs@archiver.kernel.org>; Sun, 19 Apr 2020 10:14:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BC4A6C54F70
+	for <linux-btrfs@archiver.kernel.org>; Sun, 19 Apr 2020 14:36:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id BCE9321927
-	for <linux-btrfs@archiver.kernel.org>; Sun, 19 Apr 2020 10:14:40 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9928A21973
+	for <linux-btrfs@archiver.kernel.org>; Sun, 19 Apr 2020 14:36:55 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="UwlL/VrP"
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="GoZcy8G1"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725990AbgDSKOh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 19 Apr 2020 06:14:37 -0400
-Received: from us-smtp-delivery-1.mimecast.com ([207.211.31.120]:30626 "EHLO
-        us-smtp-1.mimecast.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1725927AbgDSKOh (ORCPT
+        id S1726069AbgDSOgx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 19 Apr 2020 10:36:53 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54972 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725793AbgDSOgw (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 19 Apr 2020 06:14:37 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-        s=mimecast20190719; t=1587291274;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:content-type:content-type;
-        bh=8baLkYkh/KcmTrmqVwBM6+ZAc7sVyDzY0epJyjGRumI=;
-        b=UwlL/VrPRJRfuISzF5Bneo8vyScJMyDeTi1ZYqYjsCl2d0x2BLB5EIgRYKmlmMBltFQ/lc
-        jTYDNz3kwkRkv+HlMqHtsYVK/I3cUmeAeliURztWzBvSp0N1AI1STGk4ksDv0NoHOc1XTN
-        C3bpHQLOJZYPB+ZSLlI5KsznThWvsio=
-Received: from mimecast-mx01.redhat.com (mimecast-mx01.redhat.com
- [209.132.183.4]) (Using TLS) by relay.mimecast.com with ESMTP id
- us-mta-239-IW6iJNaTNWq4C8M4BsYEhA-1; Sun, 19 Apr 2020 06:14:32 -0400
-X-MC-Unique: IW6iJNaTNWq4C8M4BsYEhA-1
-Received: from smtp.corp.redhat.com (int-mx01.intmail.prod.int.phx2.redhat.com [10.5.11.11])
-        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
-        (No client certificate requested)
-        by mimecast-mx01.redhat.com (Postfix) with ESMTPS id 261DD107ACC9;
-        Sun, 19 Apr 2020 10:14:31 +0000 (UTC)
-Received: from asgard.redhat.com (unknown [10.36.110.6])
-        by smtp.corp.redhat.com (Postfix) with ESMTPS id DFB6D7E7FA;
-        Sun, 19 Apr 2020 10:14:28 +0000 (UTC)
-Date:   Sun, 19 Apr 2020 12:14:32 +0200
-From:   Eugene Syromiatnikov <esyr@redhat.com>
-To:     linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        Sun, 19 Apr 2020 10:36:52 -0400
+Received: from mail-pj1-x1044.google.com (mail-pj1-x1044.google.com [IPv6:2607:f8b0:4864:20::1044])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 88993C061A0C;
+        Sun, 19 Apr 2020 07:36:52 -0700 (PDT)
+Received: by mail-pj1-x1044.google.com with SMTP id t9so1268986pjw.0;
+        Sun, 19 Apr 2020 07:36:52 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=date:from:to:cc:subject:message-id:mime-version:content-disposition
+         :user-agent;
+        bh=IDIECCisquzaV8ZCzfD3JDX13iNAOofTEfjuBz5AXHs=;
+        b=GoZcy8G1ywtTQai2IObTXbl++Y9rRnRU3A0UVS9ItQ2F3pYP12laql/O2+D0uUnnAs
+         INkylgOVCm7RYiMtbuSf9+6v1tN1eZRJWhubmClUmht5XC6YN0/i4jJFrIWlPF9BtDE7
+         JD7hsWIPd1SmgO4b/y4Vq4ZGmGhsxcZoFViqKI7a89hamwjefuh9CjAj4HH6AHZ0YNhO
+         OYuhSdUacmlppvSFoHMdEJyJAxg8m2p1c4Gk12t7f+ifLrCi1Ui5UHWx/SdnjO/SGPF7
+         pAWirrJQU3QczQtFALznAhRuR/aMEUaGX+ld7z7FAiagzw7UUjodpEDhoxcJsJYkZqs5
+         1wTg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:mime-version
+         :content-disposition:user-agent;
+        bh=IDIECCisquzaV8ZCzfD3JDX13iNAOofTEfjuBz5AXHs=;
+        b=tqNBpFnfVTfJC3T2EXWdpFhRDwet+i/PNFOtWH0qtFK8obZxgBrpjBRn66oE1OXVLO
+         YsgOtaRIRGIq8bMYY6ySSTA4JLf6/4Aa+aA1pbN5gsGvLqlcoIsPO6xKXMKKip7UvDN1
+         NlUIMQnUMB9M17twhfW3Iv7yhDQS3sYWpaDEJWPI5uBETnxvRpAXVn1ertc3wc1hBuNI
+         BxQR3s3OyeNWESoCWYXCJ8hL5tq04WNk1VcPG6LUlTlDeSxGyXh8MgKXRrAm2gnIAnMB
+         WcrefbvTIFpmIgN+Z4cpRRkPXxti5MsWfluqm8Gt0jtNYzYxS9p0/mFgxt7VPhWnUBGj
+         2QBw==
+X-Gm-Message-State: AGi0Pubzs5GPt4Gakj99Qxduz137Z843FIRb9MgsKwDXx1Sy5+KuG4gd
+        tJ1I+TRpfMaivTV3am8h7r4=
+X-Google-Smtp-Source: APiQypLX6UyHOrp4l0hfC8oGW73twHo8Vy3OBCU5kUBGmwSiZ357qU52NzltC7QC4kWIJmEV7EpfQQ==
+X-Received: by 2002:a17:90a:2bc9:: with SMTP id n9mr10246750pje.131.1587307011956;
+        Sun, 19 Apr 2020 07:36:51 -0700 (PDT)
+Received: from nishad ([106.51.232.103])
+        by smtp.gmail.com with ESMTPSA id g2sm24672403pfh.193.2020.04.19.07.36.48
+        (version=TLS1_2 cipher=ECDHE-ECDSA-CHACHA20-POLY1305 bits=256/256);
+        Sun, 19 Apr 2020 07:36:51 -0700 (PDT)
+Date:   Sun, 19 Apr 2020 20:06:44 +0530
+From:   Nishad Kamdar <nishadkamdar@gmail.com>
+To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>,
-        Josef Bacik <josef@toxicpanda.com>, Chris Mason <clm@fb.com>
-Cc:     Jeff Mahoney <jeffm@suse.com>
-Subject: [PATCH] btrfs: move enum btrfs_compression_type to the UAPI header
-Message-ID: <20200419101432.GA32249@asgard.redhat.com>
+        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+        Uwe =?utf-8?Q?Kleine-K=C3=B6nig?= 
+        <u.kleine-koenig@pengutronix.de>,
+        Pengutronix Kernel Team <kernel@pengutronix.de>,
+        Joe Perches <joe@perches.com>
+Cc:     linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: [PATCH] btrfs: Use the correct style for SPDX License Identifier
+Message-ID: <20200419143640.GA8776@nishad>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-User-Agent: Mutt/1.5.23 (2014-03-12)
-X-Scanned-By: MIMEDefang 2.79 on 10.5.11.11
+User-Agent: Mutt/1.9.4 (2018-02-28)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-It is passed in struct btrfs_ioctl_defrag_range_args.compress_type
-to BTRFS_IOC_DEFRAG_RANGE, so it has to be a part of UAPI.
-Also, rely on enum definition rules to get BTRFS_NR_COMPRESS_TYPES
-value and mark it as non-ABI.
+This patch corrects the SPDX License Identifier style in
+header file related to Btrfs File System support.
+For C header files Documentation/process/license-rules.rst
+mandates C-like comments (opposed to C source files where
+C++ style should be used).
 
-Complements: 33ca913349962208 ("btrfs: uapi/linux/btrfs.h migration, move struct btrfs_ioctl_defrag_range_args")
-Signed-off-by: Eugene Syromiatnikov <esyr@redhat.com>
+Changes made by using a script provided by Joe Perches here:
+https://lkml.org/lkml/2019/2/7/46.
+
+Suggested-by: Joe Perches <joe@perches.com>
+Signed-off-by: Nishad Kamdar <nishadkamdar@gmail.com>
 ---
- fs/btrfs/compression.h     |  9 +--------
- include/uapi/linux/btrfs.h | 10 ++++++++++
- 2 files changed, 11 insertions(+), 8 deletions(-)
+ fs/btrfs/discard.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/compression.h b/fs/btrfs/compression.h
-index d253f7a..3483b26 100644
---- a/fs/btrfs/compression.h
-+++ b/fs/btrfs/compression.h
-@@ -6,6 +6,7 @@
- #ifndef BTRFS_COMPRESSION_H
- #define BTRFS_COMPRESSION_H
+diff --git a/fs/btrfs/discard.h b/fs/btrfs/discard.h
+index 21a15776dac4..353228d62f5a 100644
+--- a/fs/btrfs/discard.h
++++ b/fs/btrfs/discard.h
+@@ -1,4 +1,4 @@
+-// SPDX-License-Identifier: GPL-2.0
++/* SPDX-License-Identifier: GPL-2.0 */
  
-+#include <linux/btrfs.h>
- #include <linux/sizes.h>
- 
- /*
-@@ -100,14 +101,6 @@ blk_status_t btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
- 
- unsigned int btrfs_compress_str2level(unsigned int type, const char *str);
- 
--enum btrfs_compression_type {
--	BTRFS_COMPRESS_NONE  = 0,
--	BTRFS_COMPRESS_ZLIB  = 1,
--	BTRFS_COMPRESS_LZO   = 2,
--	BTRFS_COMPRESS_ZSTD  = 3,
--	BTRFS_NR_COMPRESS_TYPES = 4,
--};
--
- struct workspace_manager {
- 	struct list_head idle_ws;
- 	spinlock_t ws_lock;
-diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index e6b6cb0f..82cc9ac 100644
---- a/include/uapi/linux/btrfs.h
-+++ b/include/uapi/linux/btrfs.h
-@@ -558,6 +558,16 @@ struct btrfs_ioctl_clone_range_args {
-  */
- #define BTRFS_DEFRAG_RANGE_COMPRESS 1
- #define BTRFS_DEFRAG_RANGE_START_IO 2
-+
-+enum btrfs_compression_type {
-+	BTRFS_COMPRESS_NONE  = 0,
-+	BTRFS_COMPRESS_ZLIB  = 1,
-+	BTRFS_COMPRESS_LZO   = 2,
-+	BTRFS_COMPRESS_ZSTD  = 3,
-+
-+	BTRFS_NR_COMPRESS_TYPES /* non-ABI */
-+};
-+
- struct btrfs_ioctl_defrag_range_args {
- 	/* start of the defrag operation */
- 	__u64 start;
+ #ifndef BTRFS_DISCARD_H
+ #define BTRFS_DISCARD_H
 -- 
-2.1.4
+2.17.1
 

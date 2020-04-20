@@ -2,202 +2,203 @@ Return-Path: <SRS0=AUj1=6E=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.4 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+X-Spam-Status: No, score=-6.9 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
-	autolearn=unavailable autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 09ACEC54FD3
-	for <linux-btrfs@archiver.kernel.org>; Mon, 20 Apr 2020 13:48:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6DC4EC3815B
+	for <linux-btrfs@archiver.kernel.org>; Mon, 20 Apr 2020 14:34:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id DED8A20672
-	for <linux-btrfs@archiver.kernel.org>; Mon, 20 Apr 2020 13:48:43 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4633A20735
+	for <linux-btrfs@archiver.kernel.org>; Mon, 20 Apr 2020 14:34:06 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="MjROekO0"
+	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="RhkySmNo"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728798AbgDTNsn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 20 Apr 2020 09:48:43 -0400
-Received: from us-smtp-delivery-1.mimecast.com ([207.211.31.120]:42811 "EHLO
+        id S1728144AbgDTOeF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 20 Apr 2020 10:34:05 -0400
+Received: from us-smtp-delivery-1.mimecast.com ([207.211.31.120]:59794 "EHLO
         us-smtp-1.mimecast.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1726451AbgDTNsi (ORCPT
+        with ESMTP id S1726895AbgDTOeF (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 20 Apr 2020 09:48:38 -0400
+        Mon, 20 Apr 2020 10:34:05 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-        s=mimecast20190719; t=1587390517;
+        s=mimecast20190719; t=1587393244;
         h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
          to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=g7y4WU1T9l13UE4AeSAMeV0dvLVDo/1wJoF790VrkXE=;
-        b=MjROekO0eJQYdahTnITYjsf30ZZtcQjDLV0W3qbOSfWc7rEFKCdyVOsLe+xA4KEf15rvTR
-        qOx4x5/cqn2UmQ495TJGzl9GgcpRwyND4gTMCaERDRlvhyV5JdWzisYc/aLYdEe071Ooya
-        3oRRZpnvVFfPKKI2fAxDvSyfiLiBDTs=
+        bh=DpVbr6tSMcRmTg3645/1+FPULSloVrxfzPfzAFBRWS0=;
+        b=RhkySmNoCArHWpevDP0x1lDHpmYJK12u8hJaaZTzIwN49uy7N3fFMoW/0khxKahmnFypOC
+        SK7Wrve7YxhjqR3A22meqrJGklV2iX9oOtYkma8axyygXYBz5q5JcKM/USGY01CDZ1TBLL
+        8KrRjZ1WKjeTgN5yaPSqQsWJeY+VLPY=
 Received: from mimecast-mx01.redhat.com (mimecast-mx01.redhat.com
  [209.132.183.4]) (Using TLS) by relay.mimecast.com with ESMTP id
- us-mta-21-N9UYrC5qPM-27Q4o2iNAMA-1; Mon, 20 Apr 2020 09:48:34 -0400
-X-MC-Unique: N9UYrC5qPM-27Q4o2iNAMA-1
-Received: from smtp.corp.redhat.com (int-mx01.intmail.prod.int.phx2.redhat.com [10.5.11.11])
+ us-mta-71-n9SG6eiKM5Ww_gzN2n39Kg-1; Mon, 20 Apr 2020 10:34:02 -0400
+X-MC-Unique: n9SG6eiKM5Ww_gzN2n39Kg-1
+Received: from smtp.corp.redhat.com (int-mx08.intmail.prod.int.phx2.redhat.com [10.5.11.23])
         (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
         (No client certificate requested)
-        by mimecast-mx01.redhat.com (Postfix) with ESMTPS id 3D87F190D343;
-        Mon, 20 Apr 2020 13:48:33 +0000 (UTC)
-Received: from [IPv6:::1] (ovpn04.gateway.prod.ext.phx2.redhat.com [10.5.9.4])
-        by smtp.corp.redhat.com (Postfix) with ESMTPS id 6011312656B;
-        Mon, 20 Apr 2020 13:48:32 +0000 (UTC)
-Subject: Re: [PATCH 2/2 V2] man2: New page documenting filesystem get/set
- label ioctls
-To:     mtk.manpages@gmail.com, Eric Sandeen <sandeen@sandeen.net>
-Cc:     fsdevel <linux-fsdevel@vger.kernel.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Linux API <linux-api@vger.kernel.org>,
-        linux-man <linux-man@vger.kernel.org>
-References: <d2979d75-5e45-b145-9ca5-2c315d8ead9c@redhat.com>
- <708b8e2a-2bc2-df38-ec9c-c605203052b5@sandeen.net>
- <7d74cc3b-52cc-be60-0a69-1a5ee1499f47@sandeen.net>
- <CAKgNAkgLekaA6jBtUYTD2F=7u_GgBbXDvq-jc8RCBswYvvZmtg@mail.gmail.com>
-From:   Eric Sandeen <sandeen@redhat.com>
-Message-ID: <5ac17186-4463-4f61-4733-125f2af9b73d@redhat.com>
-Date:   Mon, 20 Apr 2020 08:48:31 -0500
-User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:68.0)
- Gecko/20100101 Thunderbird/68.7.0
+        by mimecast-mx01.redhat.com (Postfix) with ESMTPS id 4F361113784B;
+        Mon, 20 Apr 2020 14:34:01 +0000 (UTC)
+Received: from bfoster (dhcp-41-2.bos.redhat.com [10.18.41.2])
+        by smtp.corp.redhat.com (Postfix) with ESMTPS id CE6AF27BD8;
+        Mon, 20 Apr 2020 14:34:00 +0000 (UTC)
+Date:   Mon, 20 Apr 2020 10:33:59 -0400
+From:   Brian Foster <bfoster@redhat.com>
+To:     fdmanana@kernel.org
+Cc:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        Filipe Manana <fdmanana@suse.com>
+Subject: Re: [PATCH 4/4] fsx: move range generation logic into a common helper
+Message-ID: <20200420143359.GL27516@bfoster>
+References: <20200408103627.11514-1-fdmanana@kernel.org>
+ <20200417173221.6380-1-fdmanana@kernel.org>
 MIME-Version: 1.0
-In-Reply-To: <CAKgNAkgLekaA6jBtUYTD2F=7u_GgBbXDvq-jc8RCBswYvvZmtg@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
-X-Scanned-By: MIMEDefang 2.79 on 10.5.11.11
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20200417173221.6380-1-fdmanana@kernel.org>
+X-Scanned-By: MIMEDefang 2.84 on 10.5.11.23
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 4/20/20 7:04 AM, Michael Kerrisk (man-pages) wrote:
-> Hello Eric,
+On Fri, Apr 17, 2020 at 06:32:21PM +0100, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
 > 
-> So it seems like this feature eventually got merged in Linux 4.18. Is
-> this page up to date with what went into the kernel?
+> We have very similar code that generates the destination range for clone,
+> dedupe and copy_file_range operations, so avoid duplicating the code three
+> times and move it into a helper function.
+> 
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> ---
+> 
+> V2: Turned the first parameter of the helper into a boolean as Darrick suggested.
+> V3: Added destination offset align by writebdy when bdy_align is true.
+> 
+>  ltp/fsx.c | 94 ++++++++++++++++++++++++++-------------------------------------
+>  1 file changed, 39 insertions(+), 55 deletions(-)
+> 
+> diff --git a/ltp/fsx.c b/ltp/fsx.c
+> index 89a5f60e..2e51169b 100644
+> --- a/ltp/fsx.c
+> +++ b/ltp/fsx.c
+> @@ -1930,6 +1930,39 @@ range_overlaps(
+>  	return llabs((unsigned long long)off1 - off0) < size;
+>  }
+>  
+> +static void generate_dest_range(bool bdy_align,
+> +				unsigned long max_range_end,
+> +				unsigned long *src_offset,
+> +				unsigned long *size,
+> +				unsigned long *dst_offset)
+> +{
+> +	int tries = 0;
+> +
+> +	TRIM_OFF_LEN(*src_offset, *size, file_size);
+> +	if (bdy_align) {
+> +		*src_offset -= *src_offset % readbdy;
+> +		if (o_direct)
+> +			*size -= *size % readbdy;
+> +	} else {
+> +		*src_offset = *src_offset & ~(block_size - 1);
+> +		*size = *size & ~(block_size - 1);
+> +	}
+> +
+> +	do {
+> +		if (tries++ >= 30) {
+> +			*size = 0;
+> +			break;
+> +		}
+> +		*dst_offset = random();
+> +		TRIM_OFF(*dst_offset, max_range_end);
+> +		if (bdy_align)
+> +			*dst_offset = *dst_offset & writebdy;
 
-Yes, I believe that it's all still accurate.
+That still doesn't look right (and either way we might as well use
+consistent logic for readbdy and writebdy).
 
-Thanks,
--Eric
+Brian
 
-> Thanks,
-> 
-> Michael
-> 
-> On Thu, 10 May 2018 at 19:29, Eric Sandeen <sandeen@sandeen.net> wrote:
->>
->> This documents the proposed new vfs-level ioctls which can
->> get or set a mounted filesytem's label.
->>
->> Signed-off-by: Eric Sandeen <sandeen@redhat.com>
->> ---
->>
->> V2: make primary file ioctl_getfslabel, link ioctl_setfslabel to it
->>     note that getfslabel requires CAP_SYS_ADMIN
->>
->> diff --git a/man2/ioctl_getfslabel.2 b/man2/ioctl_getfslabel.2
->> new file mode 100644
->> index 0000000..2c3375c
->> --- /dev/null
->> +++ b/man2/ioctl_getfslabel.2
->> @@ -0,0 +1,87 @@
->> +.\" Copyright (c) 2018, Red Hat, Inc.  All rights reserved.
->> +.\"
->> +.\" %%%LICENSE_START(GPLv2+_DOC_FULL)
->> +.\" This is free documentation; you can redistribute it and/or
->> +.\" modify it under the terms of the GNU General Public License as
->> +.\" published by the Free Software Foundation; either version 2 of
->> +.\" the License, or (at your option) any later version.
->> +.\"
->> +.\" The GNU General Public License's references to "object code"
->> +.\" and "executables" are to be interpreted as the output of any
->> +.\" document formatting or typesetting system, including
->> +.\" intermediate and printed output.
->> +.\"
->> +.\" This manual is distributed in the hope that it will be useful,
->> +.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
->> +.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
->> +.\" GNU General Public License for more details.
->> +.\"
->> +.\" You should have received a copy of the GNU General Public
->> +.\" License along with this manual; if not, see
->> +.\" <http://www.gnu.org/licenses/>.
->> +.\" %%%LICENSE_END
->> +.TH IOCTL-FSLABEL 2 2018-05-02 "Linux" "Linux Programmer's Manual"
->> +.SH NAME
->> +ioctl_fslabel \- get or set a filesystem label
->> +.SH SYNOPSIS
->> +.br
->> +.B #include <sys/ioctl.h>
->> +.br
->> +.B #include <linux/fs.h>
->> +.sp
->> +.BI "int ioctl(int " fd ", FS_IOC_GETFSLABEL, char " label [FSLABEL_MAX]);
->> +.br
->> +.BI "int ioctl(int " fd ", FS_IOC_SETFSLABEL, char " label [FSLABEL_MAX]);
->> +.SH DESCRIPTION
->> +If a filesystem supports online label manipulation, these
->> +.BR ioctl (2)
->> +operations can be used to get or set the filesystem label for the filesystem
->> +on which
->> +.B fd
->> +resides.
->> +The
->> +.B FS_IOC_SETFSLABEL
->> +operation requires privilege
->> +.RB ( CAP_SYS_ADMIN ).
->> +.SH RETURN VALUE
->> +On success zero is returned.  On error, \-1 is returned, and
->> +.I errno
->> +is set to indicate the error.
->> +.PP
->> +.SH ERRORS
->> +Error codes can be one of, but are not limited to, the following:
->> +.TP
->> +.B EINVAL
->> +The specified label exceeds the maximum label length for the filesystem.
->> +.TP
->> +.B ENOTTY
->> +This can appear if the filesystem does not support online label manipulation.
->> +.TP
->> +.B EPERM
->> +The calling process does not have sufficient permissions to set the label.
->> +.TP
->> +.B EFAULT
->> +.I label
->> +references an inaccessible memory area.
->> +.SH VERSIONS
->> +These ioctl operations first appeared in Linux 4.18.
->> +They were previously known as
->> +.B BTRFS_IOC_GET_FSLABEL
->> +and
->> +.B BTRFS_IOC_SET_FSLABEL
->> +and were private to Btrfs.
->> +.SH CONFORMING TO
->> +This API is Linux-specific.
->> +.SH NOTES
->> +The maximum string length for this interface is
->> +.BR FSLABEL_MAX ,
->> +including the terminating null byte (\(aq\\0\(aq).
->> +Filesystems have differing maximum label lengths, which may or
->> +may not include the terminating null.  The string provided to
->> +.B FS_IOC_SETFSLABEL
->> +must always be null-terminated, and the string returned by
->> +.B FS_IOC_GETFSLABEL
->> +will always be null-terminated.
->> +.SH SEE ALSO
->> +.BR ioctl (2),
->> +.BR blkid (8)
->> diff --git a/man2/ioctl_setfslabel.2 b/man2/ioctl_setfslabel.2
->> new file mode 100644
->> index 0000000..2119835
->> --- /dev/null
->> +++ b/man2/ioctl_setfslabel.2
->> @@ -0,0 +1 @@
->> +.so man2/ioctl_getfslabel.2
->>
-> 
+> +		else
+> +			*dst_offset = *dst_offset & ~(block_size - 1);
+> +	} while (range_overlaps(*src_offset, *dst_offset, *size) ||
+> +		 *dst_offset + *size > max_range_end);
+> +}
+> +
+>  int
+>  test(void)
+>  {
+> @@ -2004,63 +2037,14 @@ test(void)
+>  			keep_size = random() % 2;
+>  		break;
+>  	case OP_CLONE_RANGE:
+> -		{
+> -			int tries = 0;
+> -
+> -			TRIM_OFF_LEN(offset, size, file_size);
+> -			offset = offset & ~(block_size - 1);
+> -			size = size & ~(block_size - 1);
+> -			do {
+> -				if (tries++ >= 30) {
+> -					size = 0;
+> -					break;
+> -				}
+> -				offset2 = random();
+> -				TRIM_OFF(offset2, maxfilelen);
+> -				offset2 = offset2 & ~(block_size - 1);
+> -			} while (range_overlaps(offset, offset2, size) ||
+> -				 offset2 + size > maxfilelen);
+> -			break;
+> -		}
+> +		generate_dest_range(false, maxfilelen, &offset, &size, &offset2);
+> +		break;
+>  	case OP_DEDUPE_RANGE:
+> -		{
+> -			int tries = 0;
+> -
+> -			TRIM_OFF_LEN(offset, size, file_size);
+> -			offset = offset & ~(block_size - 1);
+> -			size = size & ~(block_size - 1);
+> -			do {
+> -				if (tries++ >= 30) {
+> -					size = 0;
+> -					break;
+> -				}
+> -				offset2 = random();
+> -				TRIM_OFF(offset2, file_size);
+> -				offset2 = offset2 & ~(block_size - 1);
+> -			} while (range_overlaps(offset, offset2, size) ||
+> -				 offset2 + size > file_size);
+> -			break;
+> -		}
+> +		generate_dest_range(false, file_size, &offset, &size, &offset2);
+> +		break;
+>  	case OP_COPY_RANGE:
+> -		{
+> -			int tries = 0;
+> -
+> -			TRIM_OFF_LEN(offset, size, file_size);
+> -			offset -= offset % readbdy;
+> -			if (o_direct)
+> -				size -= size % readbdy;
+> -			do {
+> -				if (tries++ >= 30) {
+> -					size = 0;
+> -					break;
+> -				}
+> -				offset2 = random();
+> -				TRIM_OFF(offset2, maxfilelen);
+> -				offset2 -= offset2 % writebdy;
+> -			} while (range_overlaps(offset, offset2, size) ||
+> -				 offset2 + size > maxfilelen);
+> -			break;
+> -		}
+> +		generate_dest_range(true, maxfilelen, &offset, &size, &offset2);
+> +		break;
+>  	}
+>  
+>  have_op:
+> -- 
+> 2.11.0
 > 
 

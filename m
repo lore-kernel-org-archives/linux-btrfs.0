@@ -2,79 +2,86 @@ Return-Path: <SRS0=dx4s=6G=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0E167C54FD0
-	for <linux-btrfs@archiver.kernel.org>; Wed, 22 Apr 2020 00:50:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0BB44C38A30
+	for <linux-btrfs@archiver.kernel.org>; Wed, 22 Apr 2020 05:54:34 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id DB6C42071C
-	for <linux-btrfs@archiver.kernel.org>; Wed, 22 Apr 2020 00:50:11 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1587516611;
-	bh=bF7X9h26ISAZy0y8EdjOKnsOs24egAoS183uGUzNkmw=;
-	h=Date:From:To:Subject:References:In-Reply-To:List-ID:From;
-	b=GHhjjz81+Vvln1RSFl7hQOcdFPiQzXJBSo4WUOFQgu1l18qztuAKQh5eH7W1LsfLP
-	 NmFWlLYP/iu2iiVFWWMwTCWVAT9ndmQzoaTIL3x0RhdIynXxjgm97CgBgsdvgew1oP
-	 3TEcGlr9K7RShuyyhiVL8L+NB314zD5wa32MowdM=
+	by mail.kernel.org (Postfix) with ESMTP id E4208206B8
+	for <linux-btrfs@archiver.kernel.org>; Wed, 22 Apr 2020 05:54:33 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726419AbgDVAuI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 21 Apr 2020 20:50:08 -0400
-Received: from mail.kernel.org ([198.145.29.99]:42390 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726061AbgDVAuI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Apr 2020 20:50:08 -0400
-Received: from localhost (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 087D02070B;
-        Wed, 22 Apr 2020 00:50:07 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1587516608;
-        bh=bF7X9h26ISAZy0y8EdjOKnsOs24egAoS183uGUzNkmw=;
-        h=Date:From:To:Subject:References:In-Reply-To:From;
-        b=FHKSEzZYJriFNaeXlgiLofnNxLG2IBj7Y9yYcZbdKeX0pJ5Kg13MuZPPih3jeRgWT
-         L52QEt9VbtHWQuRPpT/r9Jc6+tNVwpodXMREih72C0twWl2KdifAQddOp4hEjASf+i
-         g4tyJwyHpZCNzF7xBGwqMiFTTzr6CwQIZviWIFEM=
-Date:   Tue, 21 Apr 2020 20:50:06 -0400
-From:   Sasha Levin <sashal@kernel.org>
-To:     dsterba@suse.cz, linux-kernel@vger.kernel.org,
-        stable@vger.kernel.org, Josef Bacik <josef@toxicpanda.com>,
-        Nikolay Borisov <nborisov@suse.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH AUTOSEL 5.6 051/129] btrfs: handle NULL roots in
- btrfs_put/btrfs_grab_fs_root
-Message-ID: <20200422005006.GU1809@sasha-vm>
-References: <20200415113445.11881-1-sashal@kernel.org>
- <20200415113445.11881-51-sashal@kernel.org>
- <20200415132224.GB5920@suse.cz>
+        id S1726485AbgDVFyc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 22 Apr 2020 01:54:32 -0400
+Received: from magic.merlins.org ([209.81.13.136]:57442 "EHLO
+        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726476AbgDVFyb (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 22 Apr 2020 01:54:31 -0400
+Received: from svh-gw.merlins.org ([173.11.111.145]:53686 helo=saruman.merlins.org)
+        by mail1.merlins.org with esmtps 
+        (Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128) (Exim 4.92 #3)
+        id 1jR8L1-0003sk-VH; Tue, 21 Apr 2020 22:54:23 -0700
+Received: from merlin by saruman.merlins.org with local (Exim 4.80)
+        (envelope-from <marc@merlins.org>)
+        id 1jR8L1-00047l-LH; Tue, 21 Apr 2020 22:54:23 -0700
+Date:   Tue, 21 Apr 2020 22:54:23 -0700
+From:   Marc MERLIN <marc@merlins.org>
+To:     Anand Jain <anand.jain@oracle.com>
+Cc:     Nikolay Borisov <nborisov@suse.com>, dsterba@suse.com,
+        linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: Re: 5.4.20: cannot mount device that blipped off the bus: duplicate
+ device fsid:devid for
+Message-ID: <20200422055423.GB21716@merlins.org>
+References: <1aaae706-0029-be4f-9f6f-194b03087b35@suse.com>
+ <20200325201455.GO29461@merlins.org>
+ <a9dd1b1a-b38e-a0f4-91e1-b89063e8ae1e@oracle.com>
+ <20200326013007.GS15123@merlins.org>
+ <0d2ea8e2-cbe8-ca64-d0d4-fa70b8cad8b1@oracle.com>
+ <20200326042624.GT15123@merlins.org>
+ <20200414003854.GA6639@merlins.org>
+ <07166dd6-4554-a545-9774-a622890095a7@oracle.com>
+ <20200420145659.GA26389@merlins.org>
+ <0333488d-79d1-7252-cfce-df12ddb424ea@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii; format=flowed
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20200415132224.GB5920@suse.cz>
+In-Reply-To: <0333488d-79d1-7252-cfce-df12ddb424ea@oracle.com>
+X-Sysadmin: BOFH
+X-URL:  http://marc.merlins.org/
 User-Agent: Mutt/1.10.1 (2018-07-13)
+X-SA-Exim-Connect-IP: 173.11.111.145
+X-SA-Exim-Mail-From: marc@merlins.org
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Apr 15, 2020 at 03:22:24PM +0200, David Sterba wrote:
->On Wed, Apr 15, 2020 at 07:33:26AM -0400, Sasha Levin wrote:
->> From: Josef Bacik <josef@toxicpanda.com>
->>
->> [ Upstream commit 4cdfd93002cb84471ed85b4999cd38077a317873 ]
->>
->> We want to use this for dropping all roots, and in some error cases we
->> may not have a root, so handle this to make the cleanup code easier.
->> Make btrfs_grab_fs_root the same so we can use it in cases where the
->> root may not exist (like the quota root).
->
->This is another patch from the preparatory series, not needed for
->stable. Please drop it, thanks.
+On Tue, Apr 21, 2020 at 03:33:24PM +0800, Anand Jain wrote:
+> 
+> Marc,
+> 
+>  Could you please use the kernel patch (sent to the list or at
+>  git@github.com:asj/btrfs-boilerplate.git boilerplate-v5.6) it can dump
 
-Dropped, thanks!
+Thanks.
+Since it might not be super obvious to someone else how to get it, 
+the actual patch is:
+https://github.com/asj/btrfs-boilerplate/commit/f6874237fbe66c281b5bf84ead41983fb43ed9b9
 
--- 
+or wget https://github.com/asj/btrfs-boilerplate/commit/f6874237fbe66c281b5bf84ead41983fb43ed9b9.patch
+
+> $ cat /proc/fs/btrfs/devlist
+
+I patched this in my 5.6 kernel, installed, rebooted, and I can confirm
+it's working.
+
+I'll report back in due time :)
+
 Thanks,
-Sasha
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+ 
+Home page: http://marc.merlins.org/                       | PGP 7F55D5F27AAF9D08

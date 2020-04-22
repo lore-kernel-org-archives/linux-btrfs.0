@@ -2,70 +2,94 @@ Return-Path: <SRS0=dx4s=6G=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.4 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS,USER_AGENT_SANE_2 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8D484C54FCB
-	for <linux-btrfs@archiver.kernel.org>; Wed, 22 Apr 2020 20:44:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F12F2C54FCB
+	for <linux-btrfs@archiver.kernel.org>; Wed, 22 Apr 2020 20:45:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 367A42077D
-	for <linux-btrfs@archiver.kernel.org>; Wed, 22 Apr 2020 20:44:29 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BE1A72082E
+	for <linux-btrfs@archiver.kernel.org>; Wed, 22 Apr 2020 20:45:06 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=nic.cz header.i=@nic.cz header.b="HXSw9cFa"
+	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="hg/KZ5/o"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726151AbgDVUo2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 22 Apr 2020 16:44:28 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47560 "EHLO
+        id S1726173AbgDVUpF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 22 Apr 2020 16:45:05 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47656 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725779AbgDVUo2 (ORCPT
+        with ESMTP id S1725779AbgDVUpF (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 22 Apr 2020 16:44:28 -0400
-Received: from mail.nic.cz (mail.nic.cz [IPv6:2001:1488:800:400::400])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 07ACFC03C1A9
-        for <linux-btrfs@vger.kernel.org>; Wed, 22 Apr 2020 13:44:28 -0700 (PDT)
-Received: from localhost (unknown [172.20.6.135])
-        by mail.nic.cz (Postfix) with ESMTPSA id 9098B141340;
-        Wed, 22 Apr 2020 22:44:25 +0200 (CEST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=nic.cz; s=default;
-        t=1587588265; bh=WDQ42LdzczTenRLuytqjSBvxu5tdbcx8rSz2JcqfxGo=;
-        h=Date:From:To;
-        b=HXSw9cFamsPGRbInXulRlpStlAksFM9QHPmjJ6m7GsfdtLmRlxD2AOBhTdQ3mkg7F
-         KRpYO+VuUWO70tlGfRv+qUKjsBH9W5UnU2VjL1lNrvqjW10R3txytk79UTedYNHMAs
-         jqRmU+snHnzpO7euU6r50FG+tv+aG5uD88EvlOTQ=
-Date:   Wed, 22 Apr 2020 22:44:25 +0200
-From:   Marek Behun <marek.behun@nic.cz>
-To:     Chris Murphy <lists@colorremedies.com>
-Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: when does btrfs create sparse extents?
-Message-ID: <20200422224425.7f2c6459@nic.cz>
-In-Reply-To: <CAJCQCtTDGb1hAAdp1-ph0wzFcfQNyAh-+hNMipdRmK0iTZA8Xw@mail.gmail.com>
-References: <20200422205209.0e2efd53@nic.cz>
-        <CAJCQCtTDGb1hAAdp1-ph0wzFcfQNyAh-+hNMipdRmK0iTZA8Xw@mail.gmail.com>
-X-Mailer: Claws Mail 3.17.3 (GTK+ 2.24.32; x86_64-pc-linux-gnu)
+        Wed, 22 Apr 2020 16:45:05 -0400
+Received: from mail-wr1-x42f.google.com (mail-wr1-x42f.google.com [IPv6:2a00:1450:4864:20::42f])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C875EC03C1A9
+        for <linux-btrfs@vger.kernel.org>; Wed, 22 Apr 2020 13:45:03 -0700 (PDT)
+Received: by mail-wr1-x42f.google.com with SMTP id s10so4237325wrr.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 22 Apr 2020 13:45:03 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=EH0UcMZ9EGk2MKpR05y7EIrtWI2KIS5eLuh8UMj1M68=;
+        b=hg/KZ5/o8+0bLgTdhdof62YS6fAPiZ2tR9yvRAENdFx95CPOxRvF+R9kKGc+JVCPTS
+         7NMjykuMxzUAdLaxacm6HxjNU89R5XagTggCr1Vcl7BQCw+AplCOi8HaqbwcPg3VuQjq
+         fawMF4MsNSRRH3tkVkbcrMRnacEsiM8IQxiXDePO9KOXTS/unAeF4CMmndvyOkNqBCjY
+         xxXXQ1uX14B8t3J65MleIDIDkKqLmmVAy7hOkc/8ftA8uJOBsS0UBERdRoPnTEGjmGNm
+         ES0FdfI3WWNsQrZGVONv/L6iZZ3vPJd9XL9f2rPS2G3SRyBaq4xHuq96rJbb5nw+hfc4
+         ilmQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=EH0UcMZ9EGk2MKpR05y7EIrtWI2KIS5eLuh8UMj1M68=;
+        b=rkE/uhojXCXOaT1JnifCX3AXDlfDmae3FqgfedvGu/zWtURHk5OO8GFgpRqGROmPlq
+         YyGWVNe2vvqKyOW7TMhp0ARGHoMks1GlLG2TtHwGmIzfQB/fPGwb81Aje3rU/z7L9GoB
+         XjLGqysmC+54Sr/ixqvZoXJT5S7qRstlLgEUZoYunaW/CKstoFDb29GzgfKnDsfo50JL
+         +xzQBBJex5kyjEH+JPgFVyDYX7mSdAlcL/4tdMB63bacb/FUQhnlAdJLWpUnGr1iJi+3
+         4t3Gh3LITB7pOwjOSNDqAwTcd3Pav7qFD2qjj3/wScduvW8vfDtSP3JP2GVDerN02SyG
+         0UrQ==
+X-Gm-Message-State: AGi0PuaBsFaqbd5OGoWAbcG+LJ85C7CaDx4PIdVGqHOUwoSQoqIvbApf
+        aFooQ9AP2+/IR+V3IOL66dPe1K7e4Iafqd57G9OloCmtV+c=
+X-Google-Smtp-Source: APiQypJ/q3i/jQ4Ue+iLaxgWmkU0+5zQpLU2hxxVt4YHy+AtXddE1fy50Qe9uoKEqrqOlwob3WzK0RFLvG6RJ/tYiLU=
+X-Received: by 2002:adf:84c2:: with SMTP id 60mr938368wrg.65.1587588302522;
+ Wed, 22 Apr 2020 13:45:02 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
-X-Virus-Scanned: clamav-milter 0.101.4 at mail
-X-Virus-Status: Clean
+References: <20200422205209.0e2efd53@nic.cz> <CAJCQCtTDGb1hAAdp1-ph0wzFcfQNyAh-+hNMipdRmK0iTZA8Xw@mail.gmail.com>
+In-Reply-To: <CAJCQCtTDGb1hAAdp1-ph0wzFcfQNyAh-+hNMipdRmK0iTZA8Xw@mail.gmail.com>
+From:   Chris Murphy <lists@colorremedies.com>
+Date:   Wed, 22 Apr 2020 14:44:46 -0600
+Message-ID: <CAJCQCtTEY347CwHGz3QKaBfxvPg0pTz_CF+OaiZNaCEGcnLfYA@mail.gmail.com>
+Subject: Re: when does btrfs create sparse extents?
+To:     Chris Murphy <lists@colorremedies.com>
+Cc:     Marek Behun <marek.behun@nic.cz>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, 22 Apr 2020 14:26:31 -0600
-Chris Murphy <lists@colorremedies.com> wrote:
+e.g. from a 10m file created with truncate on two Btrfs file systems
 
-> But I wonder if other sources of this sparseness has been considered?
-> Maybe the build system is creating or preserving sparseness? e.g. `tar
-> --hole-detection` or `--sparse` is used.
+original holes format (default)
 
-I don't actually know how the kernel is copied into the /boot directory
-in this case.
+    item 6 key (257 EXTENT_DATA 0) itemoff 15768 itemsize 53
+        generation 7412 type 1 (regular)
+        extent data disk byte 0 nr 0
+        extent data offset 0 nr 10485760 ram 10485760
+        extent compression 0 (none)
 
-> Another possibility is Btrfs supports two kinds of holes in the
-> on-disk format for sparse files. Maybe uboot only supported the
-> original (current default) type, and the bug really fixed the newer
-> 'no-holes' feature version?
+On a file system with no-holes feature set, this item simply doesn't
+exist. I think basically it works by inference. Both kinds of files
+have size in the INODE_ITEM, e.g.
 
-No, U-Boot did not support holes at all.
+    item 4 key (257 INODE_ITEM 0) itemoff 32245 itemsize 160
+        generation 889509 transid 889509 size 10485760 nbytes 0
+
+Sparse extents are explicitly stated in the original format with disk
+byte 0 in an EXTENT_DATA item; whereas in the newer format, sparse
+extents exist whenever EXTENT_DATA items don't completely describe the
+file's size.
+
+--
+Chris Murphy

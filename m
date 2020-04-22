@@ -2,33 +2,34 @@ Return-Path: <SRS0=dx4s=6G=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+X-Spam-Status: No, score=-9.7 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_GIT autolearn=unavailable autolearn_force=no version=3.4.0
+	URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 63120C38A30
-	for <linux-btrfs@archiver.kernel.org>; Wed, 22 Apr 2020 06:51:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F1CE0C55181
+	for <linux-btrfs@archiver.kernel.org>; Wed, 22 Apr 2020 06:51:46 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 3DB1F20706
-	for <linux-btrfs@archiver.kernel.org>; Wed, 22 Apr 2020 06:51:43 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DCD2220706
+	for <linux-btrfs@archiver.kernel.org>; Wed, 22 Apr 2020 06:51:46 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726540AbgDVGvm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 22 Apr 2020 02:51:42 -0400
-Received: from mx2.suse.de ([195.135.220.15]:51846 "EHLO mx2.suse.de"
+        id S1726545AbgDVGvq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 22 Apr 2020 02:51:46 -0400
+Received: from mx2.suse.de ([195.135.220.15]:51910 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726003AbgDVGvm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 22 Apr 2020 02:51:42 -0400
+        id S1726003AbgDVGvq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 22 Apr 2020 02:51:46 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id CDB1DABCF;
-        Wed, 22 Apr 2020 06:51:37 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 78F77ABCF;
+        Wed, 22 Apr 2020 06:51:44 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org, fstests@vger.kernel.org,
         u-boot@lists.denx.de
 Cc:     marek.behun@nic.cz
-Subject: [PATCH U-BOOT 24/26] fs: btrfs: Implement btrfs_file_read()
-Date:   Wed, 22 Apr 2020 14:50:07 +0800
-Message-Id: <20200422065009.69392-25-wqu@suse.com>
+Subject: [PATCH U-BOOT 26/26] MAINTAINERS: Add btrfs mail list
+Date:   Wed, 22 Apr 2020 14:50:09 +0800
+Message-Id: <20200422065009.69392-27-wqu@suse.com>
 X-Mailer: git-send-email 2.26.0
 In-Reply-To: <20200422065009.69392-1-wqu@suse.com>
 References: <20200422065009.69392-1-wqu@suse.com>
@@ -39,256 +40,27 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This version of btrfs_file_read() will have the following new features:
-- Try all mirrors
-- More hanlding on unaligned size
-- Better compressed extent handling
-  The old implementation doesn't handle compressed extent with offset
-  properly.
-  As we need to read out the whole compressed extent, then decompress
-  the whole extent, then only copy the referred part.
+Since the current code base is mostly from btrfs-progs, anyone
+contributing to U-boot btrfs code could also help us to improve
+btrfs-progs and btrfs kernel module.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/btrfs.c |  42 ++++++++------
- fs/btrfs/btrfs.h |   2 +
- fs/btrfs/inode.c | 146 +++++++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 173 insertions(+), 17 deletions(-)
+ MAINTAINERS | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/fs/btrfs/btrfs.c b/fs/btrfs/btrfs.c
-index 3916696ab909..023268152319 100644
---- a/fs/btrfs/btrfs.c
-+++ b/fs/btrfs/btrfs.c
-@@ -251,37 +251,45 @@ out:
- int btrfs_read(const char *file, void *buf, loff_t offset, loff_t len,
- 	       loff_t *actread)
- {
--	struct __btrfs_root root = btrfs_info.fs_root;
--	struct btrfs_inode_item inode;
--	u64 inr, rd;
-+	struct btrfs_fs_info *fs_info = current_fs_info;
-+	struct btrfs_root *root;
-+	loff_t real_size;
-+	u64 ino;
- 	u8 type;
-+	int ret;
+diff --git a/MAINTAINERS b/MAINTAINERS
+index b50652bd85d0..2bb69aeb72eb 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -529,6 +529,7 @@ F:	tools/binman/
  
--	inr = __btrfs_lookup_path(&root, root.root_dirid, file, &type, &inode,
--				40);
--
--	if (inr == -1ULL) {
-+	ASSERT(fs_info);
-+	ret = btrfs_lookup_path(fs_info->fs_root, BTRFS_FIRST_FREE_OBJECTID,
-+				file, &root, &ino, &type, 40);
-+	if (ret < 0) {
- 		printf("Cannot lookup file %s\n", file);
--		return -1;
-+		return ret;
- 	}
- 
- 	if (type != BTRFS_FT_REG_FILE) {
- 		printf("Not a regular file: %s\n", file);
--		return -1;
-+		return -EINVAL;
- 	}
- 
--	if (!len)
--		len = inode.size;
-+	if (!len) {
-+		ret = btrfs_size(file, &real_size);
-+		if (ret < 0) {
-+			printf("Failed to get inode size: %s\n", file);
-+			return ret;
-+		}
-+		len = real_size;
-+	}
- 
--	if (len > inode.size - offset)
--		len = inode.size - offset;
-+	if (len > real_size - offset)
-+		len = real_size - offset;
- 
--	rd = __btrfs_file_read(&root, inr, offset, len, buf);
--	if (rd == -1ULL) {
-+	ret = btrfs_file_read(root, ino, offset, len, buf);
-+	if (ret < 0) {
- 		printf("An error occured while reading file %s\n", file);
--		return -1;
-+		return ret;
- 	}
- 
--	*actread = rd;
-+	*actread = len;
- 	return 0;
- }
- 
-diff --git a/fs/btrfs/btrfs.h b/fs/btrfs/btrfs.h
-index 025cf4007503..6963e5ac447e 100644
---- a/fs/btrfs/btrfs.h
-+++ b/fs/btrfs/btrfs.h
-@@ -59,6 +59,8 @@ int btrfs_readlink(struct btrfs_root *root, u64 ino, char *target);
- u64 __btrfs_lookup_path(struct __btrfs_root *, u64, const char *, u8 *,
- 		       struct btrfs_inode_item *, int);
- u64 __btrfs_file_read(const struct __btrfs_root *, u64, u64, u64, char *);
-+int btrfs_file_read(struct btrfs_root *root, u64 ino, u64 file_offset, u64 len,
-+		    char *dest);
- 
- /* subvolume.c */
- u64 btrfs_get_default_subvol_objectid(void);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 3332055ff840..faa8e3dbb76a 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -915,3 +915,149 @@ check_next:
- 	*next_offset = key.offset;
- 	return 1;
- }
-+
-+static int read_and_truncate_page(struct btrfs_path *path,
-+				  struct btrfs_file_extent_item *fi,
-+				  int start, int len, char *dest)
-+{
-+	struct extent_buffer *leaf = path->nodes[0];
-+	struct btrfs_fs_info *fs_info = leaf->fs_info;
-+	u64 aligned_start = round_down(start, fs_info->sectorsize);
-+	u8 extent_type;
-+	char *buf;
-+	int page_off = start - aligned_start;
-+	int page_len = fs_info->sectorsize - page_off;
-+	int ret;
-+
-+	ASSERT(start + len <= aligned_start + fs_info->sectorsize);
-+	buf = malloc_cache_aligned(fs_info->sectorsize);
-+	if (!buf)
-+		return -ENOMEM;
-+
-+	extent_type = btrfs_file_extent_type(leaf, fi);
-+	if (extent_type == BTRFS_FILE_EXTENT_INLINE) {
-+		ret = btrfs_read_extent_inline(path, fi, buf);
-+		memcpy(dest, buf + page_off, min(page_len, ret));
-+		free(buf);
-+		return len;
-+	}
-+
-+	ret = btrfs_read_extent_reg(path, fi,
-+			round_down(start, fs_info->sectorsize),
-+			fs_info->sectorsize, buf);
-+	if (ret < 0) {
-+		free(buf);
-+		return ret;
-+	}
-+	memcpy(dest, buf + page_off, page_len);
-+	free(buf);
-+	return len;
-+}
-+
-+int btrfs_file_read(struct btrfs_root *root, u64 ino, u64 file_offset, u64 len,
-+		    char *dest)
-+{
-+	struct btrfs_fs_info *fs_info = root->fs_info;
-+	struct btrfs_file_extent_item *fi;
-+	struct btrfs_path path;
-+	struct btrfs_key key;
-+	u64 aligned_start = round_down(file_offset, fs_info->sectorsize);
-+	u64 aligned_end = round_down(file_offset + len, fs_info->sectorsize);
-+	u64 next_offset;
-+	u64 cur = aligned_start;
-+	int ret = 0;
-+
-+	btrfs_init_path(&path);
-+
-+	/* Set the whole dest all zero, so we won't need to bother holes */
-+	memset(dest, 0, len);
-+
-+	/* Read out the leading unaligned part */
-+	if (aligned_start != file_offset) {
-+		ret = lookup_data_extent(root, &path, ino, aligned_start,
-+					 &next_offset); 
-+		if (ret < 0)
-+			goto out;
-+		if (ret == 0) {
-+			/* Read the unaligned part out*/
-+			fi = btrfs_item_ptr(path.nodes[0], path.slots[0],
-+					struct btrfs_file_extent_item);
-+			ret = read_and_truncate_page(&path, fi, file_offset,
-+					round_up(file_offset, fs_info->sectorsize) -
-+					file_offset, dest);
-+			if (ret < 0)
-+				goto out;
-+			cur += fs_info->sectorsize;
-+		} else {
-+			/* The whole file is a hole */
-+			if (!next_offset) {
-+				memset(dest, 0, len);
-+				return len;
-+			}
-+			cur = next_offset;
-+		}
-+	}
-+
-+	/* Read the aligned part */
-+	while (cur < aligned_end) {
-+		u64 extent_num_bytes;
-+		u8 type;
-+
-+		btrfs_release_path(&path);
-+		ret = lookup_data_extent(root, &path, ino, cur, &next_offset);
-+		if (ret < 0)
-+			goto out;
-+		if (ret > 0) {
-+			/* No next, direct exit */
-+			if (!next_offset) {
-+				ret = 0;
-+				goto out;
-+			}
-+		}
-+		fi = btrfs_item_ptr(path.nodes[0], path.slots[0],
-+				    struct btrfs_file_extent_item);
-+		btrfs_item_key_to_cpu(path.nodes[0], &key, path.slots[0]);
-+		type = btrfs_file_extent_type(path.nodes[0], fi);
-+		if (type == BTRFS_FILE_EXTENT_INLINE) {
-+			ret = btrfs_read_extent_inline(&path, fi, dest);
-+			goto out;
-+		}
-+		/* Skip holes, as we have zeroed the dest */
-+		if (type == BTRFS_FILE_EXTENT_PREALLOC ||
-+		    btrfs_file_extent_disk_bytenr(path.nodes[0], fi) == 0) {
-+			cur = key.offset + btrfs_file_extent_num_bytes(
-+					path.nodes[0], fi);
-+			continue;
-+		}
-+
-+		/* Read the remaining part of the extent */
-+		extent_num_bytes = btrfs_file_extent_num_bytes(path.nodes[0],
-+							       fi);
-+		ret = btrfs_read_extent_reg(&path, fi, cur,
-+				min(extent_num_bytes, aligned_end - cur),
-+				dest + cur - file_offset);
-+		if (ret < 0)
-+			goto out;
-+		cur += min(extent_num_bytes, aligned_end - cur);
-+	}
-+
-+	/* Read the tailing unaligned part*/
-+	if (file_offset + len != aligned_end) {
-+		btrfs_release_path(&path);
-+		ret = lookup_data_extent(root, &path, ino, aligned_end,
-+					 &next_offset);
-+		/* <0 is error, >0 means no extent */
-+		if (ret)
-+			goto out;
-+		fi = btrfs_item_ptr(path.nodes[0], path.slots[0],
-+				    struct btrfs_file_extent_item);
-+		ret = read_and_truncate_page(&path, fi, aligned_end,
-+				file_offset + len - aligned_end,
-+				dest + aligned_end - file_offset);
-+	}
-+out:
-+	btrfs_release_path(&path);
-+	if (ret < 0)
-+		return ret;
-+	return len;
-+}
+ BTRFS
+ M:	Marek Behun <marek.behun@nic.cz>
++L:	linux-btrfs@vger.kernel.org
+ S:	Maintained
+ F:	cmd/btrfs.c
+ F:	fs/btrfs/
 -- 
 2.26.0
 

@@ -2,67 +2,73 @@ Return-Path: <SRS0=Tw2U=6H=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.4 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS,USER_AGENT_SANE_2 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 95C30C2BA19
-	for <linux-btrfs@archiver.kernel.org>; Thu, 23 Apr 2020 06:45:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AC187C55186
+	for <linux-btrfs@archiver.kernel.org>; Thu, 23 Apr 2020 09:39:32 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 6BC99214AF
-	for <linux-btrfs@archiver.kernel.org>; Thu, 23 Apr 2020 06:45:29 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=nic.cz header.i=@nic.cz header.b="EF9zwzXp"
+	by mail.kernel.org (Postfix) with ESMTP id 8962121707
+	for <linux-btrfs@archiver.kernel.org>; Thu, 23 Apr 2020 09:39:32 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726032AbgDWGp2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 23 Apr 2020 02:45:28 -0400
-Received: from lists.nic.cz ([217.31.204.67]:48052 "EHLO mail.nic.cz"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725562AbgDWGp2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 23 Apr 2020 02:45:28 -0400
-Received: from localhost (unknown [172.20.6.135])
-        by mail.nic.cz (Postfix) with ESMTPSA id 538E1141357;
-        Thu, 23 Apr 2020 08:45:26 +0200 (CEST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=nic.cz; s=default;
-        t=1587624326; bh=/PcD3tg0VT8rpqDZb/DwBImC7BKWUEdivatN5l55dL4=;
-        h=Date:From:To;
-        b=EF9zwzXpX/AVephQXga0Hn40K02c3RbmGt1ISn4D9RWVamksZ6AEs1aQYB+jQ1pPR
-         RGEsEzlMG1RVoKtxMF/URHqZn2oOtaHiyAlP85QkJS/RCykt18mTJcTTzDefm51QuV
-         G3+ZniRhbDIIwakeAMf7qIsgm0eeY+6gvoUvui8E=
-Date:   Thu, 23 Apr 2020 08:45:25 +0200
-From:   Marek Behun <marek.behun@nic.cz>
-To:     Andrei Borzenkov <arvidjaar@gmail.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: when does btrfs create sparse extents?
-Message-ID: <20200423084525.6885e978@nic.cz>
-In-Reply-To: <9f96fe0c-cbe5-12c8-67f5-2981c9273c5d@gmail.com>
-References: <20200422205209.0e2efd53@nic.cz>
-        <9f96fe0c-cbe5-12c8-67f5-2981c9273c5d@gmail.com>
-X-Mailer: Claws Mail 3.17.3 (GTK+ 2.24.32; x86_64-pc-linux-gnu)
+        id S1726806AbgDWJjb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 23 Apr 2020 05:39:31 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55120 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726661AbgDWJjb (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 23 Apr 2020 05:39:31 -0400
+Received: from wp558.webpack.hosteurope.de (wp558.webpack.hosteurope.de [IPv6:2a01:488:42:1000:50ed:8250::])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8BD55C03C1AF
+        for <linux-btrfs@vger.kernel.org>; Thu, 23 Apr 2020 02:39:31 -0700 (PDT)
+Received: from mail1.i-concept.de ([130.180.70.237] helo=[192.168.122.235]); authenticated
+        by wp558.webpack.hosteurope.de running ExIM with esmtpsa (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128)
+        id 1jRYKP-0007nu-KW; Thu, 23 Apr 2020 11:39:29 +0200
+Subject: Re: Recommended Partitioning & Subvolume Layout | Newbie Question
+To:     Chris Murphy <lists@colorremedies.com>
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <03fdc397-4fca-335f-03d8-f93a96d92105@peter-speer.de>
+ <CAJCQCtTnA6Dro2XwEm0S7ohUnf_CMGb7giHsBfh4_KtWE4vR6g@mail.gmail.com>
+From:   Stefanie Leisestreichler <stefanie.leisestreichler@peter-speer.de>
+Message-ID: <7019baf9-5064-4d16-a09a-5dc5672672de@peter-speer.de>
+Date:   Thu, 23 Apr 2020 11:39:27 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.7.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
-X-Virus-Scanned: clamav-milter 0.101.4 at mail
-X-Virus-Status: Clean
+In-Reply-To: <CAJCQCtTnA6Dro2XwEm0S7ohUnf_CMGb7giHsBfh4_KtWE4vR6g@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: de-DE
+Content-Transfer-Encoding: 7bit
+X-bounce-key: webpack.hosteurope.de;stefanie.leisestreichler@peter-speer.de;1587634771;ebc7d34b;
+X-HE-SMSGID: 1jRYKP-0007nu-KW
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, 23 Apr 2020 08:57:59 +0300
-Andrei Borzenkov <arvidjaar@gmail.com> wrote:
 
-> 22.04.2020 21:52, Marek Behun =D0=BF=D0=B8=D1=88=D0=B5=D1=82:
-> > Hello,
-> >=20
-> > there was a bug fixed recently in U-Boot's btrfs driver - the driver
-> > failed to read files with sparse extents. This causes that sometimes
-> > device failes to boot Linux, since the kernel fails to load from
-> > storage.
-> >  =20
->=20
-> Do you mean that kernel image (vmlinuz?) had holes? Or there were some
-> other files that caused U-Boot to fail?
 
-Kernel image (non-compressed Image for arm64) had ~200 PAGE_SIZEd
-all-zero blocks.
+On 22.04.20 23:03, Chris Murphy wrote:
+> What's the gotcha? Well, my /var has been rolled back, and also the
+> systemd journal. OK so I could make /var/lib/libvirt and /var/log
+> subvolumes so they don't get snapshot and rolled back. What I tend to
+> do is put those in the top level of the file system, and have fstab
+> entries to mount them to the proper location during startup, that way
+> I don't have to worry about manually fixing things on a rollback.
+
+Thanks for your time and answer.
+
+I tend to lean on the fedora layout as far as my limited knowledge 
+allows to calculate the impacts so far :-(
+
+I do not understand what is meant by the statement:> What I tend to do 
+is put those in the top level of the file system
+
+I guess the storage for the snapshots is meant. So if I understand right 
+you have a directory /snapshots in the dir tree where they will be 
+stored. I know about the fact that a nested subvolume (subvolume in 
+another subvolume) will not get snapshotted. But it is not clear to me 
+if you are using this fact in your layout (make i.e. /var/log a separate 
+subvolume) or not. Also it is not clear to me, why you put the snapshots 
+in the top level of your filesystem.

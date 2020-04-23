@@ -2,106 +2,168 @@ Return-Path: <SRS0=Tw2U=6H=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+X-Spam-Status: No, score=-2.1 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 48326C54FCB
-	for <linux-btrfs@archiver.kernel.org>; Thu, 23 Apr 2020 12:39:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3826BC55186
+	for <linux-btrfs@archiver.kernel.org>; Thu, 23 Apr 2020 13:57:51 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 19D062074F
-	for <linux-btrfs@archiver.kernel.org>; Thu, 23 Apr 2020 12:39:52 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="D4mVDZz2"
+	by mail.kernel.org (Postfix) with ESMTP id D57C02076C
+	for <linux-btrfs@archiver.kernel.org>; Thu, 23 Apr 2020 13:57:47 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726867AbgDWMjv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 23 Apr 2020 08:39:51 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54900 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-FAIL-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1726117AbgDWMju (ORCPT
+        id S1728593AbgDWN5p (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 23 Apr 2020 09:57:45 -0400
+Received: from zaphod.cobb.me.uk ([213.138.97.131]:49406 "EHLO
+        zaphod.cobb.me.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727927AbgDWN5o (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 23 Apr 2020 08:39:50 -0400
-Received: from mail-pf1-x429.google.com (mail-pf1-x429.google.com [IPv6:2607:f8b0:4864:20::429])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8505BC08E934
-        for <linux-btrfs@vger.kernel.org>; Thu, 23 Apr 2020 05:39:49 -0700 (PDT)
-Received: by mail-pf1-x429.google.com with SMTP id z1so1189608pfn.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 23 Apr 2020 05:39:49 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
-         :subject:to:cc:content-transfer-encoding;
-        bh=YWEYk5CIpEC0NGFaZvf5WuiZBOimQdihoVj9pRN+jyU=;
-        b=D4mVDZz2CzCfKHZLu0iZw2WcGtDY5IFdcv9dxFdssPj4pVD+0jlNtGi76j+gRjVumZ
-         P7UjSVdA01PKohz4fKlmvzD0Qgz/n/kpL99ZpCf92twJXe1GLXCtZfr6HHAKH6B6BoWh
-         d+piznN0748Wgi69lGM4dmz3PwAVyxwtjt+pucdza645ovjcu6ZygJULU0Eutdb6pnhs
-         RWNXbonZmwHklr4maOKXxOUcYzOHmWVSZ3aVxVbOT7XmzFDS2No6ENIC16gj6Y/5XY1i
-         NZSqxA0WwFIJNxrQvvKSHT9UgS6eWlF43H/8IHOadfcbgI3lLyqhhl3IIsE98AsoCoNJ
-         BmVw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
-         :from:date:message-id:subject:to:cc:content-transfer-encoding;
-        bh=YWEYk5CIpEC0NGFaZvf5WuiZBOimQdihoVj9pRN+jyU=;
-        b=AMbXM4rnx6dgeGM7raYx4FpmX1Dlu5WD24iBbsX3h+Iw1tj6D+UGBCB6ySD6JdBlIC
-         50Km/alC6qw0LIjTrrb7zxjIdml/YMkP9clF9McHFf6Rx+EjTcjTnodjeCS+G7P45rso
-         l4n+sU9HQflDelEYXjFRVuLHbCgnZ+gl/vaC/qaav1+9sRxZkJLrbUGLMqZTmmnx5oDl
-         bxk9dhDT9hT3zfOTkgLfzkP/MRvvexf28MStCuppme+xH+qvNNNugDCeLz5myThFnT1n
-         boSuQEPIvchlb83Eo1B+LjtoBD0JigMWZSga4nBD/GSXOw+8Qq9OSt1qsKk7CKRlD0MK
-         j3tA==
-X-Gm-Message-State: AGi0PuZJBgbeRRJ3iYJY6AFNx2/FJwwX6xU8xElGFbAmCKRAcIyQifyY
-        spHgiYuTAtf6mBGUrk5c79zrXG1y12e/S+xbhEo/Nw==
-X-Google-Smtp-Source: APiQypII4j9A2x1uKZUz2BaAS0H/M5yaGDMdx5COatq64somFZH49ONsOQP20eL1+XwQ3ceEBupIwLMTj6A8L6D55jU=
-X-Received: by 2002:a05:6102:308b:: with SMTP id l11mr2781099vsb.14.1587645587589;
- Thu, 23 Apr 2020 05:39:47 -0700 (PDT)
+        Thu, 23 Apr 2020 09:57:44 -0400
+Received: by zaphod.cobb.me.uk (Postfix, from userid 107)
+        id 5A23B9C3CB; Thu, 23 Apr 2020 14:57:38 +0100 (BST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=cobb.uk.net;
+        s=201703; t=1587650258;
+        bh=8Ntzt/t4sO91fe6qTSIkwOuBb94Sa0XQNYESL37bOoY=;
+        h=Subject:To:Cc:References:From:Date:In-Reply-To:From;
+        b=ElQYzUmqs8R2sIUmisb80qlW8dD1WeHK2e9zY8roJ9WIrC3WEKTWP2nBpWt8TH58a
+         9GQyRizng9BLMcdsBxvAOBqSWW6Ui9RC9DAles9fb74wRmkidy13DJ5Ftw78JY5bgS
+         BTwwIsIyf2MNH5jsJguBQuCDb/KCNdKWyprTmUY8TyJbcaPSltDR5leLP0vkQLmpAY
+         ybH58WzqVJRX1FUyUsl/H7+Rb4TcHH0MTVVyXLk7Mor+Z5rJiuJ3YxfrcVrVc0B1z9
+         KBzIcRHVs6yztGl6IEQ3sGh7AilzoPSzdclaLLu1iv6GWPbrl8s2HA3cM+dWBe2oN/
+         HBYZHebvFXMGw==
+Received: from black.home.cobb.me.uk (unknown [192.168.0.205])
+        by zaphod.cobb.me.uk (Postfix) with ESMTP id ED9259BBB7;
+        Thu, 23 Apr 2020 14:57:34 +0100 (BST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=cobb.uk.net;
+        s=201703; t=1587650255;
+        bh=8Ntzt/t4sO91fe6qTSIkwOuBb94Sa0XQNYESL37bOoY=;
+        h=Subject:To:Cc:References:From:Date:In-Reply-To:From;
+        b=RZrl2+pQrJd+Uc/Melevy03onmkcEJf+4KHiGoJUugrdFkvAQ/6dLvsPwts75vNWw
+         2jXFV0SOY6skzHlEKZ0qqqLO8jEl4VyJGNwZNiiJrdzJhcQHJUyiJ1mZV30SsZUjaD
+         mkzCTFzXM+mR23ybewKeEEwaYqC5SkTLrt3G0d/BHWPAE4KRIG4P8rps29iRhvTlBC
+         4eyyf2lNE3Vpoj+2UBd40tGBV4GRy+1VZks/+o3kolysLckztP74b8mv7SYugxEQ4k
+         oRCK42C9AzNFnilm5MowIf9GjqbCfbfCuv/o+XgTJY2YDmr3ljhhYeMt91lz4nnJY0
+         Vz0MBEvIYEQTw==
+Received: from [192.168.0.211] (novatech.home.cobb.me.uk [192.168.0.211])
+        by black.home.cobb.me.uk (Postfix) with ESMTPS id A646AF3979;
+        Thu, 23 Apr 2020 14:57:34 +0100 (BST)
+Subject: Re: Recommended Partitioning & Subvolume Layout | Newbie Question
+To:     Stefanie Leisestreichler 
+        <stefanie.leisestreichler@peter-speer.de>,
+        Chris Murphy <lists@colorremedies.com>
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <03fdc397-4fca-335f-03d8-f93a96d92105@peter-speer.de>
+ <CAJCQCtTnA6Dro2XwEm0S7ohUnf_CMGb7giHsBfh4_KtWE4vR6g@mail.gmail.com>
+ <7019baf9-5064-4d16-a09a-5dc5672672de@peter-speer.de>
+From:   Graham Cobb <g.btrfs@cobb.uk.net>
+Openpgp: preference=signencrypt
+Autocrypt: addr=g.btrfs@cobb.uk.net; prefer-encrypt=mutual; keydata=
+ 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 myxb
+Message-ID: <af3bc48a-4752-345e-e245-828c27b1d5fe@cobb.uk.net>
+Date:   Thu, 23 Apr 2020 14:57:34 +0100
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.9.0
 MIME-Version: 1.0
-References: <20200422205209.0e2efd53@nic.cz> <CAJCQCtTDGb1hAAdp1-ph0wzFcfQNyAh-+hNMipdRmK0iTZA8Xw@mail.gmail.com>
- <CAJCQCtTEY347CwHGz3QKaBfxvPg0pTz_CF+OaiZNaCEGcnLfYA@mail.gmail.com>
- <20200422225851.3d031d88@nic.cz> <CAL3q7H7eE4wFi95JaTYRPOrTQiihOSEqV-W4hT1t-9-ptUHGrg@mail.gmail.com>
- <20200423134248.458cd87c@nic.cz> <CAL3q7H41C6do6SdBCfCmA==TT1nPJQ4dB0vTi_jsm0tYuvvsUA@mail.gmail.com>
- <20200423140559.2762bb0c@nic.cz>
-In-Reply-To: <20200423140559.2762bb0c@nic.cz>
-Reply-To: fdmanana@gmail.com
-From:   Filipe Manana <fdmanana@gmail.com>
-Date:   Thu, 23 Apr 2020 13:39:36 +0100
-Message-ID: <CAL3q7H4Vx0-vfxCHpdhwg0rSby6rphxVnDFYX=NnfJ_96gEfdQ@mail.gmail.com>
-Subject: Re: when does btrfs create sparse extents?
-To:     Marek Behun <marek.behun@nic.cz>
-Cc:     Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+In-Reply-To: <7019baf9-5064-4d16-a09a-5dc5672672de@peter-speer.de>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-GB
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Apr 23, 2020 at 1:06 PM Marek Behun <marek.behun@nic.cz> wrote:
->
-> On Thu, 23 Apr 2020 12:51:32 +0100
-> Filipe Manana <fdmanana@gmail.com> wrote:
->
-> > There's nothing in btrfs that converts a sequence of zeroes
-> > automatically to a hole.
-> >
-> > It always has to be done by user space, either by writes that leave
-> > holes intentionally (e.g. create file, write 64K to offset 0, write 4K
-> > to offset 128, leaves a hole from range 64K to 128K) or by hole
-> > punching through fallocate().
->
-> Thanks for this information. If you ever come to Prague, let me know,
-> we can have a beer :D
+On 23/04/2020 10:39, Stefanie Leisestreichler wrote:
+> On 22.04.20 23:03, Chris Murphy wrote:
+>> What's the gotcha? Well, my /var has been rolled back, and also the
+>> systemd journal. OK so I could make /var/lib/libvirt and /var/log
+>> subvolumes so they don't get snapshot and rolled back. What I tend to
+>> do is put those in the top level of the file system, and have fstab
+>> entries to mount them to the proper location during startup, that way
+>> I don't have to worry about manually fixing things on a rollback.
+> 
+> Thanks for your time and answer.
+> 
+> I tend to lean on the fedora layout as far as my limited knowledge
+> allows to calculate the impacts so far :-(
+> 
+> I do not understand what is meant by the statement:> What I tend to do
+> is put those in the top level of the file system
+> 
+> I guess the storage for the snapshots is meant. So if I understand right
+> you have a directory /snapshots in the dir tree where they will be
+> stored. I know about the fact that a nested subvolume (subvolume in
+> another subvolume) will not get snapshotted. But it is not clear to me
+> if you are using this fact in your layout (make i.e. /var/log a separate
+> subvolume) or not. Also it is not clear to me, why you put the snapshots
+> in the top level of your filesystem.
 
-Noted! (Through it will be a long while until travel is allowed and safe)
+I can't speak for Chris, who is much more experienced than I am. But
+what I do (for all my btrfs filesystems, not just the root disk) is that
+in the top level directory of the filesystem I only put subvolumes. No
+files or ordinary directories. Those subvolumes are then mounted into
+the correct places in the filesystem. The top level is mounted somewhere
+else for maintenance activities.
 
-Another case I forgot is a hole created by truncation - truncate a
-file to a larger size, then you get a hole for the range that goes
-from the old file size to the new file size.
+So, for example, take my root disk. I create the filesystem, mount it
+somewhere temporarily (let's say it is on /mnt/rootdisk) and create
+subvoumes for /mnt/rootdisk/rootfs and /mnt/rootdisk/varfs. I also set
+rootfs to be the default subvolume that is mounted if no subvolume is
+specified.
 
+I can then mount the filesystem somewhere else (say /mnt/newroot) by
+mounting the rootfs subvolume, creating var as a directory and mounting
+the varfs subvolume into that. That can then be installed in the normal way.
 
+In the fstab on the new filesystem, I have entries like (leaving out
+unimportant stuff):
 
---=20
-Filipe David Manana,
+LABEL=root / btrfs defaults,noatime,nodiratime
+LABEL=root /var btrfs defaults,noatime,nodiratime,subvol=/varfs
+LABEL=root /mnt/rootdisk btrfs defaults,noatime,nodiratime,subvolid=5
 
-=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
- right.=E2=80=9D
+So, the result is that the root and /var appear set up as normal but the
+actual filesystem toplevel directory is mounted at /mnt/rootdisk. This
+is really useful if you want to be able to (temporarily or permanently)
+replace one of those subvolumes with a different snapshot.
+
+I do the same for data disks (so the top level is mounted at
+/mnt/datadisk, the homefs subvolume is mounted at /home, the fred
+subvolume is mounted at /home/fred, etc).
+

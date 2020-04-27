@@ -6,71 +6,72 @@ X-Spam-Status: No, score=-0.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 13AFDC54FD0
-	for <linux-btrfs@archiver.kernel.org>; Mon, 27 Apr 2020 11:29:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A220DC54FD0
+	for <linux-btrfs@archiver.kernel.org>; Mon, 27 Apr 2020 11:44:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id EA634206A4
-	for <linux-btrfs@archiver.kernel.org>; Mon, 27 Apr 2020 11:29:50 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7AA8A2063A
+	for <linux-btrfs@archiver.kernel.org>; Mon, 27 Apr 2020 11:44:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726831AbgD0L3t (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 27 Apr 2020 07:29:49 -0400
-Received: from mail.nethype.de ([5.9.56.24]:46733 "EHLO mail.nethype.de"
+        id S1727025AbgD0Lok (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 27 Apr 2020 07:44:40 -0400
+Received: from len.romanrm.net ([91.121.86.59]:47338 "EHLO len.romanrm.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726390AbgD0L3t (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 27 Apr 2020 07:29:49 -0400
-Received: from [10.0.0.5] (helo=doom.schmorp.de)
-        by mail.nethype.de with esmtp (Exim 4.92)
-        (envelope-from <schmorp@schmorp.de>)
-        id 1jT1xL-001J4k-Ab; Mon, 27 Apr 2020 11:29:47 +0000
-Received: from [10.0.0.1] (helo=cerebro.laendle)
-        by doom.schmorp.de with esmtp (Exim 4.92)
-        (envelope-from <schmorp@schmorp.de>)
-        id 1jT1xL-00060v-66; Mon, 27 Apr 2020 11:29:47 +0000
-Received: from root by cerebro.laendle with local (Exim 4.92)
-        (envelope-from <root@schmorp.de>)
-        id 1jT1xL-0001fh-5Z; Mon, 27 Apr 2020 13:29:47 +0200
-Date:   Mon, 27 Apr 2020 13:29:47 +0200
-From:   Marc Lehmann <schmorp@schmorp.de>
-To:     Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
+        id S1726989AbgD0Lok (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 27 Apr 2020 07:44:40 -0400
+Received: from natsu (natsu.40.romanrm.net [IPv6:fd39:aa:c499:6515:e99e:8f1b:cfc9:ccb8])
+        by len.romanrm.net (Postfix) with SMTP id 70A3340229;
+        Mon, 27 Apr 2020 11:44:36 +0000 (UTC)
+Date:   Mon, 27 Apr 2020 16:44:36 +0500
+From:   Roman Mamedov <rm@romanrm.net>
+To:     Marc Lehmann <schmorp@schmorp.de>
+Cc:     Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
 Subject: Re: questoin about Data=single on multi-device fs
-Message-ID: <20200427112946.GA3648@schmorp.de>
+Message-ID: <20200427164436.05c5c257@natsu>
+In-Reply-To: <20200427112946.GA3648@schmorp.de>
 References: <20200426100405.GA5270@schmorp.de>
- <20200426102547.GM32577@savella.carfax.org.uk>
+        <20200426102547.GM32577@savella.carfax.org.uk>
+        <20200427112946.GA3648@schmorp.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20200426102547.GM32577@savella.carfax.org.uk>
-OpenPGP: id=904ad2f81fb16978e7536f726dea2ba30bc39eb6;
- url=http://pgp.schmorp.de/schmorp-pgpkey.txt; preference=signencrypt
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sun, Apr 26, 2020 at 11:25:47AM +0100, Hugo Mills <hugo@carfax.org.uk> wrote:
-> > The reason I chose data=single was specifically to help in case of device
-> > loss at the cost of performance.
+On Mon, 27 Apr 2020 13:29:47 +0200
+Marc Lehmann <schmorp@schmorp.de> wrote:
+
+> On Sun, Apr 26, 2020 at 11:25:47AM +0100, Hugo Mills <hugo@carfax.org.uk> wrote:
+> > > The reason I chose data=single was specifically to help in case of device
+> > > loss at the cost of performance.
+> > 
+> >    Make backups. That's the only way to be sure about this sort of thing.
 > 
->    Make backups. That's the only way to be sure about this sort of thing.
+> I think you are unthinkingly repeating a wrong (and slightly dangerous)
+> claim - backups cannot actually do that sort of thing: a raid will protect
+> against (some amount of) disk failures with no data loss, but backups
+> cannot: Backups can protect against complete data loss, but cannot
+> completely protect against data loss.
 
-I think you are unthinkingly repeating a wrong (and slightly dangerous)
-claim - backups cannot actually do that sort of thing: a raid will protect
-against (some amount of) disk failures with no data loss, but backups
-cannot: Backups can protect against complete data loss, but cannot
-completely protect against data loss.
+With backups it is at least clear enough to anyone that only the data that has
+been backed up will be recoverable from the backup;
 
->    With single data, *chunk allocation* will go to the device with the
-> largest amount of unallocated space. If your data is WORM
+On the other hand you follow a much more dangerous theory, that a low-level
+JBOD-style merging of disks can be of any significant "help" in case of a
+device failure. That's often heard applied to LVM LVs spanned across multiple
+devices, or MD Linear, or in this case Btrfs "single". In all of those cases I
+have to wonder how getting to keep a few chunks of what some time ago was a
+filesystem, or in your case, *random pieces of random files* being luckily
+intact, will be of any help and alleviate the need to restore from backups.
 
-That is definitely not the case with 5.4 - I added two disks to an
-existing filesystem and copied 8TB onto it with btrfs receive, resulting
-in about 3800G used on both new disks, with Data=single. I repeated it by
-creating a 5 disk-fs and 1TB of data and got prettyx even distribution.
+If you really want a JBOD-style storage merged into a single pool, with device
+failures having impact limited only to that device, better look into FUSE
+file-level overlay filesystems, such as MergerFS and MHDDFS. At least with
+those you are guaranteed to have whole files intact on still running devices.
+Exactly what Btrfs doesn't guarantee you now (seemingly even more so), but most
+importantly never did, not even on any prior kernel version.
 
 -- 
-                The choice of a       Deliantra, the free code+content MORPG
-      -----==-     _GNU_              http://www.deliantra.net
-      ----==-- _       generation
-      ---==---(_)__  __ ____  __      Marc Lehmann
-      --==---/ / _ \/ // /\ \/ /      schmorp@schmorp.de
-      -=====/_/_//_/\_,_/ /_/\_\
+With respect,
+Roman

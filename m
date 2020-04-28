@@ -7,55 +7,55 @@ X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8A7DAC83007
-	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Apr 2020 11:11:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F25CCC83008
+	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Apr 2020 11:11:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 6627D206D9
-	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Apr 2020 11:11:36 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D25B920661
+	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Apr 2020 11:11:37 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1588072296;
-	bh=tcGkap6fFCBOxgM+btAgvgkPWEM6R5VxQy6qOt/vrWw=;
+	s=default; t=1588072297;
+	bh=cD4hopKZzWDdqMRANabmnTROoUWoBklp59+9Y5gOkic=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=F68R6TTHkDnS1OtEs4bZHjBnziYoWPSZ2TDdZ7BdLvUQKy3TJ20jnx8pnFLXukTY7
-	 JGSnR80MoRdiKhzkFYBGnayxW36EPOdEIrxOJ6izyyXWxgPs3hJ9JF3yXPUqMsSP6e
-	 ekp8txrZiG005NelZLox2aBMPZc9sd9hP6NuH1Tg=
+	b=1kEOn9tsL4Td2F5B5lPe6CvB9AAo7N6aKoEpv7bgg1Wew5L5J8dP4+AxossmFvCyR
+	 07grQWtwPaR82Lq6Gz3BBHr+1x21jb/FjaCdJm0K64kUunb2y4CBH0i+Bn5vdlpRxf
+	 XX8pogqyf707F0w/ntpuCJFUOz2SnsEMhGHaOVGQ=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726527AbgD1LLf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 28 Apr 2020 07:11:35 -0400
-Received: from mail-wm1-f67.google.com ([209.85.128.67]:38109 "EHLO
-        mail-wm1-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726345AbgD1LLf (ORCPT
+        id S1726573AbgD1LLh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 28 Apr 2020 07:11:37 -0400
+Received: from mail-wr1-f47.google.com ([209.85.221.47]:39612 "EHLO
+        mail-wr1-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726345AbgD1LLg (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 28 Apr 2020 07:11:35 -0400
-Received: by mail-wm1-f67.google.com with SMTP id g12so2381351wmh.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 28 Apr 2020 04:11:33 -0700 (PDT)
+        Tue, 28 Apr 2020 07:11:36 -0400
+Received: by mail-wr1-f47.google.com with SMTP id b11so24146331wrs.6
+        for <linux-btrfs@vger.kernel.org>; Tue, 28 Apr 2020 04:11:35 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references;
-        bh=BZDShdABhW1MlOdMwy8WfWW/XDbxm2PlwhBsIZNnHmI=;
-        b=EOceWHObN4RN3H4VbAsE+7DkPv8oh/5Fipk+UsfCR8WRfrMhOg7WiNkO7a7ne3PfL6
-         OEFY06XmaSxqvXcQBxXdGX9Zq/PTAVysiDfTSbvQ0SRK6TgyPOb+vXHIf+C9C4+/Cihw
-         A8uHlV097Y6qON2aPOJDE2D9ZZex9eulJFqZhaB3xgXrnQzDrYHJs8pmkf53081UcVZn
-         oRk2BuDV+piNp9CUbH6z5lZNrrZXkkTtvTtCZBIdDf08XTWF5Iaut00sv96iHOGZsvKb
-         sHCr4gCErJd7D/B+Mpzc4CUqAeCVIOWYjDvljQN1X55uEQoRrfKH+dhOtkyi4O1tsE0w
-         saLQ==
-X-Gm-Message-State: AGi0PubF42wbyX1ManDlslm1L0KYNAy3WVp54H8keuAU+9LkqWV9b0gF
-        Y+kl4F38i3FPUnwKCITFgFk=
-X-Google-Smtp-Source: APiQypJBwWFOOLliGFmM83tU04czrzw3wlLlr+wbB/OuL+WxFZIaAXPu2Trny1OmkMI85OZmwjhCgw==
-X-Received: by 2002:a05:600c:210b:: with SMTP id u11mr4236000wml.133.1588072292358;
-        Tue, 28 Apr 2020 04:11:32 -0700 (PDT)
+        bh=M4ZOxt1Qnb5lU5irlFJ+1IjPbeLOUOM6A9VglJ4tt+k=;
+        b=tP/hzMy2Tf8cr3I30W5kSJCLsJ+aBWqg56eX4zFI3V601PXbB6S3eCay+qeOsWWy5D
+         Ot/UsfDhm9tsUsk429BP2a6c/chBIlUDtpOnveoSaZrJgN4xlBlParLnZBw+IlS5DMyg
+         32ylHqUvBp22RTP1RLhqtlVwp9eisB7pwH8OuoqLxNk2DW940p7BgDiewQxFHB9bKVI7
+         9tcomtkc+t80siUJSUbEGth5Ne9ea4roGIKetNgZL9p/rmmWVypRlLx0bNYa9N5EDoaK
+         VYdroi5HsBnnH/yVhskKLt0InLZjVhfotY6fGUpNCuYWb1IzCu1FjmrlaKugzmYvAiPE
+         kIUA==
+X-Gm-Message-State: AGi0PubK11ufxTUjkyXh/KUu2wG6AOXS7+VbQOd894V2XjH/iWGoDJnS
+        ky/9+yEEFU3bKz3Gvv3nfaE=
+X-Google-Smtp-Source: APiQypI3f/6sqcPGtlex7QjHzxW2L6Z9rx9IgTz/AgSHh9RE8C2kqSw/VOabWz9WjCOVJMNicsSO1g==
+X-Received: by 2002:a5d:68ca:: with SMTP id p10mr32877242wrw.154.1588072295218;
+        Tue, 28 Apr 2020 04:11:35 -0700 (PDT)
 Received: from linux-t19r.fritz.box (ppp-46-244-205-206.dynamic.mnet-online.de. [46.244.205.206])
-        by smtp.gmail.com with ESMTPSA id b191sm3126291wmd.39.2020.04.28.04.11.31
+        by smtp.gmail.com with ESMTPSA id b191sm3126291wmd.39.2020.04.28.04.11.34
         (version=TLS1_2 cipher=ECDHE-ECDSA-AES128-GCM-SHA256 bits=128/128);
-        Tue, 28 Apr 2020 04:11:31 -0700 (PDT)
+        Tue, 28 Apr 2020 04:11:34 -0700 (PDT)
 From:   Johannes Thumshirn <jth@kernel.org>
 To:     David Sterba <dsterba@suse.cz>
 Cc:     "linux-btrfs @ vger . kernel . org" <linux-btrfs@vger.kernel.org>,
         Johannes Thumshirn <jthumshirn@suse.de>
-Subject: [PATCH 1/5] btrfs-progs: pass in fs_info to btrfs_csum_data
-Date:   Tue, 28 Apr 2020 13:11:04 +0200
-Message-Id: <20200428111109.5687-2-jth@kernel.org>
+Subject: [PATCH 4/5] btrfs-progs: add --auth-key to dump-super
+Date:   Tue, 28 Apr 2020 13:11:07 +0200
+Message-Id: <20200428111109.5687-5-jth@kernel.org>
 X-Mailer: git-send-email 2.16.4
 In-Reply-To: <20200428111109.5687-1-jth@kernel.org>
 References: <20200428111109.5687-1-jth@kernel.org>
@@ -66,186 +66,150 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Johannes Thumshirn <jthumshirn@suse.de>
 
-For passing authentication keys to the checksumming functions we need a
-container for the key.
-
-Pass in a btrfs_fs_info to btrfs_csum_data() so we can use the fs_info as
-a container for the authentication key.
-
-Note this is not always possible for all callers of btrfs_csum_data() so
-we're just passing in NULL if it is not directly possible.
-
-Functions calling btrfs_csum_data() with a NULL fs_info argument are
-currently not supported in the context of an authenticated file-system.
+Add auth-key option for btrfs inspect-internal dump-super so we can dump an
+authenticated super-block and check for it's integrity.
 
 Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
 ---
- btrfs-sb-mod.c              |  4 ++--
- check/main.c                |  2 +-
- cmds/inspect-dump-super.c   |  2 +-
- cmds/rescue-chunk-recover.c |  2 +-
- convert/common.c            |  2 +-
- disk-io.c                   | 16 +++++++++-------
- disk-io.h                   |  3 ++-
- file-item.c                 |  2 +-
- 8 files changed, 18 insertions(+), 15 deletions(-)
+ cmds/inspect-dump-super.c | 35 ++++++++++++++++++++++++-----------
+ 1 file changed, 24 insertions(+), 11 deletions(-)
 
-diff --git a/btrfs-sb-mod.c b/btrfs-sb-mod.c
-index ad143ca0..53700268 100644
---- a/btrfs-sb-mod.c
-+++ b/btrfs-sb-mod.c
-@@ -36,7 +36,7 @@ static int check_csum_superblock(void *sb)
- 	u8 result[BTRFS_CSUM_SIZE];
- 	u16 csum_type = btrfs_super_csum_type(sb);
- 
--	btrfs_csum_data(csum_type, (unsigned char *)sb + BTRFS_CSUM_SIZE,
-+	btrfs_csum_data(NULL, csum_type, (unsigned char *)sb + BTRFS_CSUM_SIZE,
- 			result, BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
- 
- 	return !memcmp(sb, result, csum_size);
-@@ -48,7 +48,7 @@ static void update_block_csum(void *block)
- 	struct btrfs_header *hdr;
- 	u16 csum_type = btrfs_super_csum_type(block);
- 
--	btrfs_csum_data(csum_type, (unsigned char *)block + BTRFS_CSUM_SIZE,
-+	btrfs_csum_data(NULL, csum_type, (unsigned char *)block + BTRFS_CSUM_SIZE,
- 			result, BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
- 
- 	memset(block, 0, BTRFS_CSUM_SIZE);
-diff --git a/check/main.c b/check/main.c
-index bb17623f..06f32933 100644
---- a/check/main.c
-+++ b/check/main.c
-@@ -5741,7 +5741,7 @@ static int check_extent_csums(struct btrfs_root *root, u64 bytenr,
- 			while (data_checked < read_len) {
- 				tmp = offset + data_checked;
- 
--				btrfs_csum_data(csum_type, data + tmp,
-+				btrfs_csum_data(fs_info, csum_type, data + tmp,
- 						result, fs_info->sectorsize);
- 
- 				csum_offset = leaf_offset +
 diff --git a/cmds/inspect-dump-super.c b/cmds/inspect-dump-super.c
-index f22633b9..99f35def 100644
+index dd42d180..1bc806e9 100644
 --- a/cmds/inspect-dump-super.c
 +++ b/cmds/inspect-dump-super.c
-@@ -39,7 +39,7 @@ static int check_csum_sblock(void *sb, int csum_size, u16 csum_type)
+@@ -35,11 +35,13 @@
+ #include "crypto/crc32c.h"
+ #include "common/help.h"
+ 
+-static int check_csum_sblock(void *sb, int csum_size, u16 csum_type)
++static int check_csum_sblock(void *sb, int csum_size, u16 csum_type,
++			     char *auth_key)
  {
++	struct btrfs_fs_info dummy_fs_info = { .auth_key = auth_key };
  	u8 result[BTRFS_CSUM_SIZE];
  
--	btrfs_csum_data(csum_type, (u8 *)sb + BTRFS_CSUM_SIZE,
-+	btrfs_csum_data(NULL, csum_type, (u8 *)sb + BTRFS_CSUM_SIZE,
+-	btrfs_csum_data(NULL, csum_type, (u8 *)sb + BTRFS_CSUM_SIZE,
++	btrfs_csum_data(&dummy_fs_info, csum_type, (u8 *)sb + BTRFS_CSUM_SIZE,
  			result, BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
  
  	return !memcmp(sb, result, csum_size);
-diff --git a/cmds/rescue-chunk-recover.c b/cmds/rescue-chunk-recover.c
-index a13acc01..1f26425b 100644
---- a/cmds/rescue-chunk-recover.c
-+++ b/cmds/rescue-chunk-recover.c
-@@ -1912,7 +1912,7 @@ static int check_one_csum(int fd, u64 start, u32 len, u32 tree_csum,
- 	}
- 	ret = 0;
- 	put_unaligned_le32(tree_csum, expected_csum);
--	btrfs_csum_data(csum_type, (u8 *)data, result, len);
-+	btrfs_csum_data(NULL, csum_type, (u8 *)data, result, len);
- 	if (memcmp(result, expected_csum, csum_size) != 0)
- 		ret = 1;
- out:
-diff --git a/convert/common.c b/convert/common.c
-index 3cb2d9d4..54ed52b5 100644
---- a/convert/common.c
-+++ b/convert/common.c
-@@ -66,7 +66,7 @@ static inline int write_temp_super(int fd, struct btrfs_super_block *sb,
-        u16 csum_type = btrfs_super_csum_type(sb);
-        int ret;
- 
--       btrfs_csum_data(csum_type, (u8 *)sb + BTRFS_CSUM_SIZE,
-+       btrfs_csum_data(NULL, csum_type, (u8 *)sb + BTRFS_CSUM_SIZE,
- 		       result, BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
-        memcpy(&sb->csum[0], result, BTRFS_CSUM_SIZE);
-        ret = pwrite(fd, sb, BTRFS_SUPER_INFO_SIZE, sb_bytenr);
-diff --git a/disk-io.c b/disk-io.c
-index 529e8706..5e54a4b3 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -139,7 +139,8 @@ static void print_tree_block_error(struct btrfs_fs_info *fs_info,
+@@ -326,7 +328,8 @@ static bool is_valid_csum_type(u16 csum_type)
  	}
  }
  
--int btrfs_csum_data(u16 csum_type, const u8 *data, u8 *out, size_t len)
-+int btrfs_csum_data(struct btrfs_fs_info *fs_info, u16 csum_type,
-+		    const u8 *data, u8 *out, size_t len)
+-static void dump_superblock(struct btrfs_super_block *sb, int full)
++static void dump_superblock(struct btrfs_super_block *sb, int full,
++			    char *auth_key)
  {
- 	memset(out, 0, BTRFS_CSUM_SIZE);
+ 	int i;
+ 	char *s, buf[BTRFS_UUID_UNPARSED_SIZE];
+@@ -353,11 +356,11 @@ static void dump_superblock(struct btrfs_super_block *sb, int full)
+ 	printf("csum\t\t\t0x");
+ 	for (i = 0, p = sb->csum; i < csum_size; i++)
+ 		printf("%02x", p[i]);
+-	if (csum_type == BTRFS_CSUM_TYPE_HMAC_SHA256)
++	if (csum_type == BTRFS_CSUM_TYPE_HMAC_SHA256 && !auth_key)
+ 		printf(" [NO KEY FOR HMAC]");
+ 	else if (!is_valid_csum_type(csum_type))
+ 		printf(" [UNKNOWN CSUM TYPE OR SIZE]");
+-	else if (check_csum_sblock(sb, csum_size, csum_type))
++	else if (check_csum_sblock(sb, csum_size, csum_type, auth_key))
+ 		printf(" [match]");
+ 	else
+ 		printf(" [DON'T MATCH]");
+@@ -485,7 +488,7 @@ static void dump_superblock(struct btrfs_super_block *sb, int full)
+ }
  
-@@ -167,7 +168,8 @@ static int __csum_tree_block_size(struct extent_buffer *buf, u16 csum_size,
- 	u32 len;
- 
- 	len = buf->len - BTRFS_CSUM_SIZE;
--	btrfs_csum_data(csum_type, (u8 *)buf->data + BTRFS_CSUM_SIZE,
-+	btrfs_csum_data(buf->fs_info, csum_type,
-+			(u8 *)buf->data + BTRFS_CSUM_SIZE,
- 			result, len);
- 
- 	if (verify) {
-@@ -1411,7 +1413,7 @@ int btrfs_check_super(struct btrfs_super_block *sb, unsigned sbflags)
+ static int load_and_dump_sb(char *filename, int fd, u64 sb_bytenr, int full,
+-		int force)
++		int force, char *auth_key)
+ {
+ 	u8 super_block_data[BTRFS_SUPER_INFO_SIZE];
+ 	struct btrfs_super_block *sb;
+@@ -510,7 +513,7 @@ static int load_and_dump_sb(char *filename, int fd, u64 sb_bytenr, int full,
+ 		error("bad magic on superblock on %s at %llu",
+ 				filename, (unsigned long long)sb_bytenr);
+ 	} else {
+-		dump_superblock(sb, full);
++		dump_superblock(sb, full, auth_key);
  	}
- 	csum_size = btrfs_super_csum_size(sb);
+ 	return 0;
+ }
+@@ -524,6 +527,7 @@ static const char * const cmd_inspect_dump_super_usage[] = {
+ 	"-s|--super <super>    specify which copy to print out (values: 0, 1, 2)",
+ 	"-F|--force            attempt to dump superblocks with bad magic",
+ 	"--bytenr <offset>     specify alternate superblock offset",
++	"--auth-key <key>      specify authentication key for authenticated file-system",
+ 	"",
+ 	"Deprecated syntax:",
+ 	"-s <bytenr>           specify alternate superblock offset, values other than 0, 1, 2",
+@@ -546,16 +550,19 @@ static int cmd_inspect_dump_super(const struct cmd_struct *cmd,
+ 	int ret = 0;
+ 	u64 arg;
+ 	u64 sb_bytenr = btrfs_sb_offset(0);
++	char *auth_key = NULL;
  
--	btrfs_csum_data(csum_type, (u8 *)sb + BTRFS_CSUM_SIZE,
-+	btrfs_csum_data(NULL, csum_type, (u8 *)sb + BTRFS_CSUM_SIZE,
- 			result, BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
+ 	while (1) {
+ 		int c;
+-		enum { GETOPT_VAL_BYTENR = 257 };
++		enum { GETOPT_VAL_BYTENR = 257, GETOPT_VAL_AUTHKEY, };
+ 		static const struct option long_options[] = {
+ 			{"all", no_argument, NULL, 'a'},
+ 			{"bytenr", required_argument, NULL, GETOPT_VAL_BYTENR },
+ 			{"full", no_argument, NULL, 'f'},
+ 			{"force", no_argument, NULL, 'F'},
+ 			{"super", required_argument, NULL, 's' },
++			{"auth-key", required_argument, NULL,
++				GETOPT_VAL_AUTHKEY },
+ 			{NULL, 0, NULL, 0}
+ 		};
  
- 	if (memcmp(result, sb->csum, csum_size)) {
-@@ -1665,8 +1667,8 @@ static int write_dev_supers(struct btrfs_fs_info *fs_info,
+@@ -602,13 +609,16 @@ static int cmd_inspect_dump_super(const struct cmd_struct *cmd,
+ 			sb_bytenr = arg;
+ 			all = 0;
+ 			break;
++		case GETOPT_VAL_AUTHKEY:
++			auth_key = strdup(optarg);
++			break;
+ 		default:
+ 			usage_unknown_option(cmd, argv);
+ 		}
  	}
- 	if (fs_info->super_bytenr != BTRFS_SUPER_INFO_OFFSET) {
- 		btrfs_set_super_bytenr(sb, fs_info->super_bytenr);
--		btrfs_csum_data(csum_type, (u8 *)sb + BTRFS_CSUM_SIZE, result,
--				BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
-+		btrfs_csum_data(fs_info, csum_type, (u8 *)sb + BTRFS_CSUM_SIZE,
-+			result, BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
- 		memcpy(&sb->csum[0], result, BTRFS_CSUM_SIZE);
  
- 		/*
-@@ -1700,8 +1702,8 @@ static int write_dev_supers(struct btrfs_fs_info *fs_info,
+ 	if (check_argc_min(argc - optind, 1))
+-		return 1;
++		goto out;
  
- 		btrfs_set_super_bytenr(sb, bytenr);
+ 	for (i = optind; i < argc; i++) {
+ 		filename = argv[i];
+@@ -625,7 +635,8 @@ static int cmd_inspect_dump_super(const struct cmd_struct *cmd,
+ 			for (idx = 0; idx < BTRFS_SUPER_MIRROR_MAX; idx++) {
+ 				sb_bytenr = btrfs_sb_offset(idx);
+ 				if (load_and_dump_sb(filename, fd,
+-						sb_bytenr, full, force)) {
++						sb_bytenr, full, force,
++						auth_key)) {
+ 					close(fd);
+ 					ret = 1;
+ 					goto out;
+@@ -634,13 +645,15 @@ static int cmd_inspect_dump_super(const struct cmd_struct *cmd,
+ 				putchar('\n');
+ 			}
+ 		} else {
+-			load_and_dump_sb(filename, fd, sb_bytenr, full, force);
++			load_and_dump_sb(filename, fd, sb_bytenr, full, force,
++					 auth_key);
+ 			putchar('\n');
+ 		}
+ 		close(fd);
+ 	}
  
--		btrfs_csum_data(csum_type, (u8 *)sb + BTRFS_CSUM_SIZE, result,
--				      BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
-+		btrfs_csum_data(fs_info, csum_type, (u8 *)sb + BTRFS_CSUM_SIZE,
-+			result, BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
- 		memcpy(&sb->csum[0], result, BTRFS_CSUM_SIZE);
- 
- 		/*
-diff --git a/disk-io.h b/disk-io.h
-index b450149e..630d4754 100644
---- a/disk-io.h
-+++ b/disk-io.h
-@@ -189,7 +189,8 @@ int btrfs_free_fs_root(struct btrfs_root *root);
- void btrfs_mark_buffer_dirty(struct extent_buffer *buf);
- int btrfs_buffer_uptodate(struct extent_buffer *buf, u64 parent_transid);
- int btrfs_set_buffer_uptodate(struct extent_buffer *buf);
--int btrfs_csum_data(u16 csum_type, const u8 *data, u8 *out, size_t len);
-+int btrfs_csum_data(struct btrfs_fs_info *fs_info, u16 csum_type,
-+		    const u8 *data, u8 *out, size_t len);
- 
- int btrfs_open_device(struct btrfs_device *dev);
- int csum_tree_block_size(struct extent_buffer *buf, u16 csum_sectorsize,
-diff --git a/file-item.c b/file-item.c
-index 64af5769..fb84fbd6 100644
---- a/file-item.c
-+++ b/file-item.c
-@@ -315,7 +315,7 @@ csum:
- 	item = (struct btrfs_csum_item *)((unsigned char *)item +
- 					  csum_offset * csum_size);
- found:
--	btrfs_csum_data(csum_type, (u8 *)data, csum_result, len);
-+	btrfs_csum_data(root->fs_info, csum_type, (u8 *)data, csum_result, len);
- 	/* FIXME: does not make sense for non-crc32c */
- 	if (csum_result == 0) {
- 		printk("csum result is 0 for block %llu\n",
+ out:
++	free(auth_key);
+ 	return ret;
+ }
+ DEFINE_SIMPLE_COMMAND(inspect_dump_super, "dump-super");
 -- 
 2.16.4
 

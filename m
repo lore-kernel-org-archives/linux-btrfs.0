@@ -7,55 +7,55 @@ X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F25CCC83008
-	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Apr 2020 11:11:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1ABF5C83007
+	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Apr 2020 11:11:39 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D25B920661
-	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Apr 2020 11:11:37 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E9F4E20661
+	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Apr 2020 11:11:38 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1588072297;
-	bh=cD4hopKZzWDdqMRANabmnTROoUWoBklp59+9Y5gOkic=;
+	s=default; t=1588072299;
+	bh=PwD8uFCHwxFuAW/07icf8Z34lG7UytXX1h8jFMcO2s8=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=1kEOn9tsL4Td2F5B5lPe6CvB9AAo7N6aKoEpv7bgg1Wew5L5J8dP4+AxossmFvCyR
-	 07grQWtwPaR82Lq6Gz3BBHr+1x21jb/FjaCdJm0K64kUunb2y4CBH0i+Bn5vdlpRxf
-	 XX8pogqyf707F0w/ntpuCJFUOz2SnsEMhGHaOVGQ=
+	b=nn/o0VQc4c3GIFfPbvTjtHQ2nnI6AdJX+qbRyHMqgE9PcR+wnXYzYu7b47flBXoZ5
+	 TVBmoB4jpOF5DToZtvu55h2X3MI/iZpMGDZsOHcZapm3JLibhK8X3qidty+QMd17r1
+	 8g5Zgrz3SxetTsDhhNUHBmfP1DfjfyaO4oRMIkfA=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726573AbgD1LLh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 28 Apr 2020 07:11:37 -0400
-Received: from mail-wr1-f47.google.com ([209.85.221.47]:39612 "EHLO
-        mail-wr1-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726345AbgD1LLg (ORCPT
+        id S1726579AbgD1LLi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 28 Apr 2020 07:11:38 -0400
+Received: from mail-wr1-f66.google.com ([209.85.221.66]:34306 "EHLO
+        mail-wr1-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726360AbgD1LLh (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 28 Apr 2020 07:11:36 -0400
-Received: by mail-wr1-f47.google.com with SMTP id b11so24146331wrs.6
-        for <linux-btrfs@vger.kernel.org>; Tue, 28 Apr 2020 04:11:35 -0700 (PDT)
+        Tue, 28 Apr 2020 07:11:37 -0400
+Received: by mail-wr1-f66.google.com with SMTP id j1so24171463wrt.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 28 Apr 2020 04:11:33 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references;
-        bh=M4ZOxt1Qnb5lU5irlFJ+1IjPbeLOUOM6A9VglJ4tt+k=;
-        b=tP/hzMy2Tf8cr3I30W5kSJCLsJ+aBWqg56eX4zFI3V601PXbB6S3eCay+qeOsWWy5D
-         Ot/UsfDhm9tsUsk429BP2a6c/chBIlUDtpOnveoSaZrJgN4xlBlParLnZBw+IlS5DMyg
-         32ylHqUvBp22RTP1RLhqtlVwp9eisB7pwH8OuoqLxNk2DW940p7BgDiewQxFHB9bKVI7
-         9tcomtkc+t80siUJSUbEGth5Ne9ea4roGIKetNgZL9p/rmmWVypRlLx0bNYa9N5EDoaK
-         VYdroi5HsBnnH/yVhskKLt0InLZjVhfotY6fGUpNCuYWb1IzCu1FjmrlaKugzmYvAiPE
-         kIUA==
-X-Gm-Message-State: AGi0PubK11ufxTUjkyXh/KUu2wG6AOXS7+VbQOd894V2XjH/iWGoDJnS
-        ky/9+yEEFU3bKz3Gvv3nfaE=
-X-Google-Smtp-Source: APiQypI3f/6sqcPGtlex7QjHzxW2L6Z9rx9IgTz/AgSHh9RE8C2kqSw/VOabWz9WjCOVJMNicsSO1g==
-X-Received: by 2002:a5d:68ca:: with SMTP id p10mr32877242wrw.154.1588072295218;
-        Tue, 28 Apr 2020 04:11:35 -0700 (PDT)
+        bh=V1IfCw/m1lX4/nXIY8wTgWUiPYxdsi4jk1GZskZ0cXQ=;
+        b=X8wE4cEQv4IPAIZdeniPoMFFv8AIEqg/RmroxeMmNrJF2HFZudSAQb5QXxr/i4hnzt
+         DUXEjP1COmqiJYUo0PmzD24NP72yeAMsPn91/WNGQUvdEjEccYMJXemH1edRZefwvni4
+         J72fRIwXKTGYVb8Fb1n1NmYlyTn+63r4fFJKdDR5WEUbMpmf2W0Q/j1DDSsb9V2HNwNM
+         Y30D4bJwCBw22yqCejubmwO4yRP14NKg+L5I3A7OaVOBkRU1hcqPHZnekhebnOPKJyp3
+         deKPnzufq3y5wGb0qHAZb1CXzSusjIBSidDVsjFiSJHE6cr1eqt0+L22lyNhU72RUswF
+         ixFQ==
+X-Gm-Message-State: AGi0PuYsSYvRAme1Dbioi6VOfgSxKwLxj+Ol+WGoLoo/wMEknazW8d62
+        n3tQammq4FDjzzUKbJqaZCg=
+X-Google-Smtp-Source: APiQypLeaFZSn0oI3mqufm/wox//+DZqpbEM5P4wkF4zl3lwywLStx5BRSvSb++03aTbTmkmWIYANQ==
+X-Received: by 2002:adf:f8c7:: with SMTP id f7mr31928762wrq.125.1588072293188;
+        Tue, 28 Apr 2020 04:11:33 -0700 (PDT)
 Received: from linux-t19r.fritz.box (ppp-46-244-205-206.dynamic.mnet-online.de. [46.244.205.206])
-        by smtp.gmail.com with ESMTPSA id b191sm3126291wmd.39.2020.04.28.04.11.34
+        by smtp.gmail.com with ESMTPSA id b191sm3126291wmd.39.2020.04.28.04.11.32
         (version=TLS1_2 cipher=ECDHE-ECDSA-AES128-GCM-SHA256 bits=128/128);
-        Tue, 28 Apr 2020 04:11:34 -0700 (PDT)
+        Tue, 28 Apr 2020 04:11:32 -0700 (PDT)
 From:   Johannes Thumshirn <jth@kernel.org>
 To:     David Sterba <dsterba@suse.cz>
 Cc:     "linux-btrfs @ vger . kernel . org" <linux-btrfs@vger.kernel.org>,
         Johannes Thumshirn <jthumshirn@suse.de>
-Subject: [PATCH 4/5] btrfs-progs: add --auth-key to dump-super
-Date:   Tue, 28 Apr 2020 13:11:07 +0200
-Message-Id: <20200428111109.5687-5-jth@kernel.org>
+Subject: [PATCH 2/5] btrfs-progs: add auth_key argument to open_ctree_fs_info
+Date:   Tue, 28 Apr 2020 13:11:05 +0200
+Message-Id: <20200428111109.5687-3-jth@kernel.org>
 X-Mailer: git-send-email 2.16.4
 In-Reply-To: <20200428111109.5687-1-jth@kernel.org>
 References: <20200428111109.5687-1-jth@kernel.org>
@@ -66,150 +66,244 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Johannes Thumshirn <jthumshirn@suse.de>
 
-Add auth-key option for btrfs inspect-internal dump-super so we can dump an
-authenticated super-block and check for it's integrity.
+Add auth_key argument to open_ctree_fs_info() so we have the key once we
+create a new fs_info.
 
 Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
 ---
- cmds/inspect-dump-super.c | 35 ++++++++++++++++++++++++-----------
- 1 file changed, 24 insertions(+), 11 deletions(-)
+ btrfs-find-root.c           |  2 +-
+ check/main.c                |  2 +-
+ cmds/filesystem.c           |  2 +-
+ cmds/inspect-dump-tree.c    |  2 +-
+ cmds/rescue-chunk-recover.c |  2 +-
+ cmds/rescue.c               |  2 +-
+ cmds/restore.c              |  2 +-
+ disk-io.c                   | 16 +++++++++-------
+ disk-io.h                   |  5 +++--
+ image/main.c                |  5 +++--
+ mkfs/main.c                 |  3 ++-
+ 11 files changed, 24 insertions(+), 19 deletions(-)
 
-diff --git a/cmds/inspect-dump-super.c b/cmds/inspect-dump-super.c
-index dd42d180..1bc806e9 100644
---- a/cmds/inspect-dump-super.c
-+++ b/cmds/inspect-dump-super.c
-@@ -35,11 +35,13 @@
- #include "crypto/crc32c.h"
- #include "common/help.h"
+diff --git a/btrfs-find-root.c b/btrfs-find-root.c
+index 741eb9a9..4cde76d8 100644
+--- a/btrfs-find-root.c
++++ b/btrfs-find-root.c
+@@ -202,7 +202,7 @@ int main(int argc, char **argv)
  
--static int check_csum_sblock(void *sb, int csum_size, u16 csum_type)
-+static int check_csum_sblock(void *sb, int csum_size, u16 csum_type,
-+			     char *auth_key)
- {
-+	struct btrfs_fs_info dummy_fs_info = { .auth_key = auth_key };
- 	u8 result[BTRFS_CSUM_SIZE];
+ 	fs_info = open_ctree_fs_info(argv[optind], 0, 0, 0,
+ 			OPEN_CTREE_CHUNK_ROOT_ONLY |
+-			OPEN_CTREE_IGNORE_CHUNK_TREE_ERROR);
++			OPEN_CTREE_IGNORE_CHUNK_TREE_ERROR, NULL);
+ 	if (!fs_info) {
+ 		error("open ctree failed");
+ 		return 1;
+diff --git a/check/main.c b/check/main.c
+index 06f32933..21b37e66 100644
+--- a/check/main.c
++++ b/check/main.c
+@@ -10162,7 +10162,7 @@ static int cmd_check(const struct cmd_struct *cmd, int argc, char **argv)
+ 		ctree_flags |= OPEN_CTREE_PARTIAL;
  
--	btrfs_csum_data(NULL, csum_type, (u8 *)sb + BTRFS_CSUM_SIZE,
-+	btrfs_csum_data(&dummy_fs_info, csum_type, (u8 *)sb + BTRFS_CSUM_SIZE,
- 			result, BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
+ 	info = open_ctree_fs_info(argv[optind], bytenr, tree_root_bytenr,
+-				  chunk_root_bytenr, ctree_flags);
++				  chunk_root_bytenr, ctree_flags, NULL);
+ 	if (!info) {
+ 		error("cannot open file system");
+ 		ret = -EIO;
+diff --git a/cmds/filesystem.c b/cmds/filesystem.c
+index c4bb13dd..f9a3a456 100644
+--- a/cmds/filesystem.c
++++ b/cmds/filesystem.c
+@@ -586,7 +586,7 @@ static int map_seed_devices(struct list_head *all_uuids)
+ 		 * open_ctree_* detects seed/sprout mapping
+ 		 */
+ 		fs_info = open_ctree_fs_info(device->name, 0, 0, 0,
+-						OPEN_CTREE_PARTIAL);
++						OPEN_CTREE_PARTIAL, NULL);
+ 		if (!fs_info)
+ 			continue;
  
- 	return !memcmp(sb, result, csum_size);
-@@ -326,7 +328,8 @@ static bool is_valid_csum_type(u16 csum_type)
+diff --git a/cmds/inspect-dump-tree.c b/cmds/inspect-dump-tree.c
+index 1fdbb9a6..662c7a85 100644
+--- a/cmds/inspect-dump-tree.c
++++ b/cmds/inspect-dump-tree.c
+@@ -459,7 +459,7 @@ static int cmd_inspect_dump_tree(const struct cmd_struct *cmd,
+ 
+ 	printf("%s\n", PACKAGE_STRING);
+ 
+-	info = open_ctree_fs_info(argv[optind], 0, 0, 0, open_ctree_flags);
++	info = open_ctree_fs_info(argv[optind], 0, 0, 0, open_ctree_flags, NULL);
+ 	if (!info) {
+ 		error("unable to open %s", argv[optind]);
+ 		goto out;
+diff --git a/cmds/rescue-chunk-recover.c b/cmds/rescue-chunk-recover.c
+index 1f26425b..668f00b6 100644
+--- a/cmds/rescue-chunk-recover.c
++++ b/cmds/rescue-chunk-recover.c
+@@ -1439,7 +1439,7 @@ open_ctree_with_broken_chunk(struct recover_control *rc)
+ 	u64 features;
+ 	int ret;
+ 
+-	fs_info = btrfs_new_fs_info(1, BTRFS_SUPER_INFO_OFFSET);
++	fs_info = btrfs_new_fs_info(1, BTRFS_SUPER_INFO_OFFSET, NULL);
+ 	if (!fs_info) {
+ 		fprintf(stderr, "Failed to allocate memory for fs_info\n");
+ 		return ERR_PTR(-ENOMEM);
+diff --git a/cmds/rescue.c b/cmds/rescue.c
+index 087c33be..1bff279a 100644
+--- a/cmds/rescue.c
++++ b/cmds/rescue.c
+@@ -242,7 +242,7 @@ static int cmd_rescue_fix_device_size(const struct cmd_struct *cmd,
  	}
- }
  
--static void dump_superblock(struct btrfs_super_block *sb, int full)
-+static void dump_superblock(struct btrfs_super_block *sb, int full,
-+			    char *auth_key)
- {
- 	int i;
- 	char *s, buf[BTRFS_UUID_UNPARSED_SIZE];
-@@ -353,11 +356,11 @@ static void dump_superblock(struct btrfs_super_block *sb, int full)
- 	printf("csum\t\t\t0x");
- 	for (i = 0, p = sb->csum; i < csum_size; i++)
- 		printf("%02x", p[i]);
--	if (csum_type == BTRFS_CSUM_TYPE_HMAC_SHA256)
-+	if (csum_type == BTRFS_CSUM_TYPE_HMAC_SHA256 && !auth_key)
- 		printf(" [NO KEY FOR HMAC]");
- 	else if (!is_valid_csum_type(csum_type))
- 		printf(" [UNKNOWN CSUM TYPE OR SIZE]");
--	else if (check_csum_sblock(sb, csum_size, csum_type))
-+	else if (check_csum_sblock(sb, csum_size, csum_type, auth_key))
- 		printf(" [match]");
- 	else
- 		printf(" [DON'T MATCH]");
-@@ -485,7 +488,7 @@ static void dump_superblock(struct btrfs_super_block *sb, int full)
- }
- 
- static int load_and_dump_sb(char *filename, int fd, u64 sb_bytenr, int full,
--		int force)
-+		int force, char *auth_key)
- {
- 	u8 super_block_data[BTRFS_SUPER_INFO_SIZE];
- 	struct btrfs_super_block *sb;
-@@ -510,7 +513,7 @@ static int load_and_dump_sb(char *filename, int fd, u64 sb_bytenr, int full,
- 		error("bad magic on superblock on %s at %llu",
- 				filename, (unsigned long long)sb_bytenr);
- 	} else {
--		dump_superblock(sb, full);
-+		dump_superblock(sb, full, auth_key);
- 	}
- 	return 0;
- }
-@@ -524,6 +527,7 @@ static const char * const cmd_inspect_dump_super_usage[] = {
- 	"-s|--super <super>    specify which copy to print out (values: 0, 1, 2)",
- 	"-F|--force            attempt to dump superblocks with bad magic",
- 	"--bytenr <offset>     specify alternate superblock offset",
-+	"--auth-key <key>      specify authentication key for authenticated file-system",
- 	"",
- 	"Deprecated syntax:",
- 	"-s <bytenr>           specify alternate superblock offset, values other than 0, 1, 2",
-@@ -546,16 +550,19 @@ static int cmd_inspect_dump_super(const struct cmd_struct *cmd,
- 	int ret = 0;
- 	u64 arg;
- 	u64 sb_bytenr = btrfs_sb_offset(0);
-+	char *auth_key = NULL;
- 
- 	while (1) {
- 		int c;
--		enum { GETOPT_VAL_BYTENR = 257 };
-+		enum { GETOPT_VAL_BYTENR = 257, GETOPT_VAL_AUTHKEY, };
- 		static const struct option long_options[] = {
- 			{"all", no_argument, NULL, 'a'},
- 			{"bytenr", required_argument, NULL, GETOPT_VAL_BYTENR },
- 			{"full", no_argument, NULL, 'f'},
- 			{"force", no_argument, NULL, 'F'},
- 			{"super", required_argument, NULL, 's' },
-+			{"auth-key", required_argument, NULL,
-+				GETOPT_VAL_AUTHKEY },
- 			{NULL, 0, NULL, 0}
- 		};
- 
-@@ -602,13 +609,16 @@ static int cmd_inspect_dump_super(const struct cmd_struct *cmd,
- 			sb_bytenr = arg;
- 			all = 0;
+ 	fs_info = open_ctree_fs_info(devname, 0, 0, 0, OPEN_CTREE_WRITES |
+-				     OPEN_CTREE_PARTIAL);
++				     OPEN_CTREE_PARTIAL, NULL);
+ 	if (!fs_info) {
+ 		error("could not open btrfs");
+ 		ret = -EIO;
+diff --git a/cmds/restore.c b/cmds/restore.c
+index 08f5b7e7..5821dc9b 100644
+--- a/cmds/restore.c
++++ b/cmds/restore.c
+@@ -1280,7 +1280,7 @@ static struct btrfs_root *open_fs(const char *dev, u64 root_location,
+ 		 */
+ 		fs_info = open_ctree_fs_info(dev, bytenr, root_location, 0,
+ 					     OPEN_CTREE_PARTIAL |
+-					     OPEN_CTREE_NO_BLOCK_GROUPS);
++					     OPEN_CTREE_NO_BLOCK_GROUPS, NULL);
+ 		if (fs_info)
  			break;
-+		case GETOPT_VAL_AUTHKEY:
-+			auth_key = strdup(optarg);
-+			break;
- 		default:
- 			usage_unknown_option(cmd, argv);
- 		}
- 	}
- 
- 	if (check_argc_min(argc - optind, 1))
--		return 1;
-+		goto out;
- 
- 	for (i = optind; i < argc; i++) {
- 		filename = argv[i];
-@@ -625,7 +635,8 @@ static int cmd_inspect_dump_super(const struct cmd_struct *cmd,
- 			for (idx = 0; idx < BTRFS_SUPER_MIRROR_MAX; idx++) {
- 				sb_bytenr = btrfs_sb_offset(idx);
- 				if (load_and_dump_sb(filename, fd,
--						sb_bytenr, full, force)) {
-+						sb_bytenr, full, force,
-+						auth_key)) {
- 					close(fd);
- 					ret = 1;
- 					goto out;
-@@ -634,13 +645,15 @@ static int cmd_inspect_dump_super(const struct cmd_struct *cmd,
- 				putchar('\n');
- 			}
- 		} else {
--			load_and_dump_sb(filename, fd, sb_bytenr, full, force);
-+			load_and_dump_sb(filename, fd, sb_bytenr, full, force,
-+					 auth_key);
- 			putchar('\n');
- 		}
- 		close(fd);
- 	}
- 
- out:
-+	free(auth_key);
- 	return ret;
+ 		fprintf(stderr, "Could not open root, trying backup super\n");
+diff --git a/disk-io.c b/disk-io.c
+index 5e54a4b3..6221c3ce 100644
+--- a/disk-io.c
++++ b/disk-io.c
+@@ -789,7 +789,8 @@ void btrfs_free_fs_info(struct btrfs_fs_info *fs_info)
+ 	free(fs_info);
  }
- DEFINE_SIMPLE_COMMAND(inspect_dump_super, "dump-super");
+ 
+-struct btrfs_fs_info *btrfs_new_fs_info(int writable, u64 sb_bytenr)
++struct btrfs_fs_info *btrfs_new_fs_info(int writable, u64 sb_bytenr,
++					char *auth_key)
+ {
+ 	struct btrfs_fs_info *fs_info;
+ 
+@@ -1189,7 +1190,7 @@ static struct btrfs_fs_info *__open_ctree_fd(int fp, const char *path,
+ 					     u64 sb_bytenr,
+ 					     u64 root_tree_bytenr,
+ 					     u64 chunk_root_bytenr,
+-					     unsigned flags)
++					     unsigned flags, char *auth_key)
+ {
+ 	struct btrfs_fs_info *fs_info;
+ 	struct btrfs_super_block *disk_super;
+@@ -1206,7 +1207,8 @@ static struct btrfs_fs_info *__open_ctree_fd(int fp, const char *path,
+ 	if (posix_fadvise(fp, 0, 0, POSIX_FADV_DONTNEED))
+ 		fprintf(stderr, "Warning, could not drop caches\n");
+ 
+-	fs_info = btrfs_new_fs_info(flags & OPEN_CTREE_WRITES, sb_bytenr);
++	fs_info = btrfs_new_fs_info(flags & OPEN_CTREE_WRITES, sb_bytenr,
++				    auth_key);
+ 	if (!fs_info) {
+ 		fprintf(stderr, "Failed to allocate memory for fs_info\n");
+ 		return NULL;
+@@ -1317,7 +1319,7 @@ out:
+ struct btrfs_fs_info *open_ctree_fs_info(const char *filename,
+ 					 u64 sb_bytenr, u64 root_tree_bytenr,
+ 					 u64 chunk_root_bytenr,
+-					 unsigned flags)
++					 unsigned flags, char *auth_key)
+ {
+ 	int fp;
+ 	int ret;
+@@ -1344,7 +1346,7 @@ struct btrfs_fs_info *open_ctree_fs_info(const char *filename,
+ 		return NULL;
+ 	}
+ 	info = __open_ctree_fd(fp, filename, sb_bytenr, root_tree_bytenr,
+-			       chunk_root_bytenr, flags);
++			       chunk_root_bytenr, flags, auth_key);
+ 	close(fp);
+ 	return info;
+ }
+@@ -1356,7 +1358,7 @@ struct btrfs_root *open_ctree(const char *filename, u64 sb_bytenr,
+ 
+ 	/* This flags may not return fs_info with any valid root */
+ 	BUG_ON(flags & OPEN_CTREE_IGNORE_CHUNK_TREE_ERROR);
+-	info = open_ctree_fs_info(filename, sb_bytenr, 0, 0, flags);
++	info = open_ctree_fs_info(filename, sb_bytenr, 0, 0, flags, NULL);
+ 	if (!info)
+ 		return NULL;
+ 	if (flags & __OPEN_CTREE_RETURN_CHUNK_ROOT)
+@@ -1375,7 +1377,7 @@ struct btrfs_root *open_ctree_fd(int fp, const char *path, u64 sb_bytenr,
+ 				(unsigned long long)flags);
+ 		return NULL;
+ 	}
+-	info = __open_ctree_fd(fp, path, sb_bytenr, 0, 0, flags);
++	info = __open_ctree_fd(fp, path, sb_bytenr, 0, 0, flags, NULL);
+ 	if (!info)
+ 		return NULL;
+ 	if (flags & __OPEN_CTREE_RETURN_CHUNK_ROOT)
+diff --git a/disk-io.h b/disk-io.h
+index 630d4754..79a2cf73 100644
+--- a/disk-io.h
++++ b/disk-io.h
+@@ -143,7 +143,8 @@ void btrfs_setup_root(struct btrfs_root *root, struct btrfs_fs_info *fs_info,
+ int clean_tree_block(struct extent_buffer *buf);
+ 
+ void btrfs_free_fs_info(struct btrfs_fs_info *fs_info);
+-struct btrfs_fs_info *btrfs_new_fs_info(int writable, u64 sb_bytenr);
++struct btrfs_fs_info *btrfs_new_fs_info(int writable, u64 sb_bytenr,
++					char *auth_key);
+ int btrfs_check_fs_compatibility(struct btrfs_super_block *sb,
+ 				 unsigned int flags);
+ int btrfs_setup_all_roots(struct btrfs_fs_info *fs_info, u64 root_tree_bytenr,
+@@ -163,7 +164,7 @@ struct btrfs_root *open_ctree_fd(int fp, const char *path, u64 sb_bytenr,
+ struct btrfs_fs_info *open_ctree_fs_info(const char *filename,
+ 					 u64 sb_bytenr, u64 root_tree_bytenr,
+ 					 u64 chunk_root_bytenr,
+-					 unsigned flags);
++					 unsigned flags, char *auth_key);
+ int close_ctree_fs_info(struct btrfs_fs_info *fs_info);
+ static inline int close_ctree(struct btrfs_root *root)
+ {
+diff --git a/image/main.c b/image/main.c
+index 0d286b8f..39bca429 100644
+--- a/image/main.c
++++ b/image/main.c
+@@ -2549,7 +2549,8 @@ static int restore_metadump(const char *input, FILE *out, int old_restore,
+ 		info = open_ctree_fs_info(target, 0, 0, 0,
+ 					  OPEN_CTREE_WRITES |
+ 					  OPEN_CTREE_RESTORE |
+-					  OPEN_CTREE_PARTIAL);
++					  OPEN_CTREE_PARTIAL,
++					  NULL);
+ 		if (!info) {
+ 			error("open ctree failed");
+ 			ret = -EIO;
+@@ -2913,7 +2914,7 @@ int BOX_MAIN(image)(int argc, char *argv[])
+ 
+ 		info = open_ctree_fs_info(target, 0, 0, 0,
+ 					  OPEN_CTREE_PARTIAL |
+-					  OPEN_CTREE_RESTORE);
++					  OPEN_CTREE_RESTORE, NULL);
+ 		if (!info) {
+ 			error("open ctree failed at %s", target);
+ 			return 1;
+diff --git a/mkfs/main.c b/mkfs/main.c
+index 316ea82e..e830de4e 100644
+--- a/mkfs/main.c
++++ b/mkfs/main.c
+@@ -1206,7 +1206,8 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
+ 	}
+ 
+ 	fs_info = open_ctree_fs_info(file, 0, 0, 0,
+-			OPEN_CTREE_WRITES | OPEN_CTREE_TEMPORARY_SUPER);
++			OPEN_CTREE_WRITES | OPEN_CTREE_TEMPORARY_SUPER,
++			auth_key);
+ 	if (!fs_info) {
+ 		error("open ctree failed");
+ 		goto error;
 -- 
 2.16.4
 

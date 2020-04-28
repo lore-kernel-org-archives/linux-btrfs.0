@@ -2,75 +2,78 @@ Return-Path: <SRS0=dRQQ=6M=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,
-	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.4 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 23587C8300A
-	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Apr 2020 15:24:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 11F08C83008
+	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Apr 2020 15:26:27 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 05ADC206E2
-	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Apr 2020 15:24:49 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E5A4B206D8
+	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Apr 2020 15:26:26 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="ub6/DUTQ"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="F8Jgk6v0"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728766AbgD1PYr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 28 Apr 2020 11:24:47 -0400
-Received: from userp2120.oracle.com ([156.151.31.85]:44574 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728778AbgD1PYq (ORCPT
+        id S1728394AbgD1P00 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 28 Apr 2020 11:26:26 -0400
+Received: from userp2130.oracle.com ([156.151.31.86]:56864 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728624AbgD1P0Z (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 28 Apr 2020 11:24:46 -0400
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 03SFHLFu141305;
-        Tue, 28 Apr 2020 15:24:41 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
- subject : date : message-id : in-reply-to : references : mime-version :
- content-transfer-encoding; s=corp-2020-01-29;
- bh=0BgW6oM+w0l2X72GICsuS5oMD9KsqZo7DG5b6J9vzFk=;
- b=ub6/DUTQxPIxyEaWkAEF39OQn7bQE93c4s5irn4vS2Y++pNDx2gBcMugXFwPTY/VZKOy
- 7ysfb0w+KP4IyYYsoPIVhQGqdfB5eFi7WJdVBdBJ+M8LpcJ9irKYvuhk4WY/YuGOXVnB
- zQO9MN5l84T8aeYZ+qs8VR9yGYVuBbye3msU2Ch6cKb3bT0W62Np3yKpXygf9nE24AyZ
- r+whODwM3NYtRG2LbE8BtnFO6bTkfOeLXMJLbPKQPoBitvpQXzGEZFoqBm4pQYTaZkGM
- 8W62GE8ezIU7lzBUpGRqyZuIl+U0mHdVD7hXy3QpTEfK5YjsHdBAUzqdQoBg8lFjng2Q aA== 
-Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
-        by userp2120.oracle.com with ESMTP id 30p2p061uf-1
+        Tue, 28 Apr 2020 11:26:25 -0400
+Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
+        by userp2130.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 03SFJJ9m181575;
+        Tue, 28 Apr 2020 15:26:20 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
+ references : from : message-id : date : mime-version : in-reply-to :
+ content-type : content-transfer-encoding; s=corp-2020-01-29;
+ bh=jVJDunWLz+Xcykb4FZHQ3k/pcx9Ztn20GwEppCiHnKs=;
+ b=F8Jgk6v0xWs0xPvkOJG+/ndu6pd6RNM2m+dOcepRKDSLgVGmuZjsABxq94I79WUSUeHc
+ 731BT9cmt0Z8hfRpIthYF4c7S4zTDd2CRWIpxV5EkCGH5POSGXyVA/wCoRqumpTs7Gus
+ g/S+e2rApgwE3oHnN/DMTS1dBAIXnvNOmIg6fpZjg/iH6INkjleiczkl8tjrxUGOwa2y
+ MoJJwKmtBZ73dF3YLE5RUK4CqKAwtfKzlS02IcY3l09mzI1DLv/8h3YJKi1CP3IB6L0r
+ jhSzKL0SeVjYgkdoBORJ6JITyg7fV8FDAIEqLHXWgWPm00qejiu9HrmX/sN6hN+AbIHw bQ== 
+Received: from aserp3020.oracle.com (aserp3020.oracle.com [141.146.126.70])
+        by userp2130.oracle.com with ESMTP id 30p01nq6hj-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Tue, 28 Apr 2020 15:24:41 +0000
-Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
-        by userp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 03SFCf5l086564;
-        Tue, 28 Apr 2020 15:22:40 GMT
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by userp3030.oracle.com with ESMTP id 30mxpg9720-1
+        Tue, 28 Apr 2020 15:26:20 +0000
+Received: from pps.filterd (aserp3020.oracle.com [127.0.0.1])
+        by aserp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 03SFD30I134384;
+        Tue, 28 Apr 2020 15:26:20 GMT
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by aserp3020.oracle.com with ESMTP id 30my0depnf-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Tue, 28 Apr 2020 15:22:40 +0000
-Received: from abhmp0006.oracle.com (abhmp0006.oracle.com [141.146.116.12])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 03SFMdh3010222;
-        Tue, 28 Apr 2020 15:22:39 GMT
-Received: from localhost.localdomain (/39.109.243.230)
+        Tue, 28 Apr 2020 15:26:20 +0000
+Received: from abhmp0015.oracle.com (abhmp0015.oracle.com [141.146.116.21])
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id 03SFQJQH007153;
+        Tue, 28 Apr 2020 15:26:19 GMT
+Received: from [192.168.1.119] (/39.109.243.230)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Tue, 28 Apr 2020 08:22:39 -0700
+        with ESMTP ; Tue, 28 Apr 2020 08:26:19 -0700
+Subject: Re: [PATCH 1/2] btrfs: sort error decoder entries
+To:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+References: <cover.1588086487.git.dsterba@suse.com>
+ <a848755b7943f0f15fd87af15cff99ab3c484f00.1588086487.git.dsterba@suse.com>
 From:   Anand Jain <anand.jain@oracle.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     dsterba@suse.com, nborisov@suse.com, josef@toxicpanda.com
-Subject: [PATCH 2/3] btrfs: include non-missing as a qualifier for the latest_bdev
-Date:   Tue, 28 Apr 2020 23:22:26 +0800
-Message-Id: <20200428152227.8331-3-anand.jain@oracle.com>
-X-Mailer: git-send-email 2.23.0
-In-Reply-To: <20200428152227.8331-1-anand.jain@oracle.com>
-References: <20200428152227.8331-1-anand.jain@oracle.com>
+Message-ID: <ee7c2139-202f-b039-d884-08baab2d938e@oracle.com>
+Date:   Tue, 28 Apr 2020 23:26:10 +0800
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:52.0)
+ Gecko/20100101 Thunderbird/52.9.1
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <a848755b7943f0f15fd87af15cff99ab3c484f00.1588086487.git.dsterba@suse.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9605 signatures=668686
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 mlxlogscore=999 malwarescore=0
- mlxscore=0 bulkscore=0 adultscore=0 phishscore=0 suspectscore=3
- spamscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 malwarescore=0 spamscore=0
+ suspectscore=0 adultscore=0 mlxlogscore=999 bulkscore=0 phishscore=0
+ mlxscore=0 classifier=spam adjust=0 reason=mlx scancount=1
  engine=8.12.0-2003020000 definitions=main-2004280120
 X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9605 signatures=668686
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 spamscore=0 phishscore=0 clxscore=1015
- bulkscore=0 adultscore=0 lowpriorityscore=0 impostorscore=0 malwarescore=0
- mlxscore=0 suspectscore=3 mlxlogscore=999 priorityscore=1501
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 bulkscore=0 spamscore=0 clxscore=1015
+ phishscore=0 mlxlogscore=999 adultscore=0 priorityscore=1501 mlxscore=0
+ suspectscore=0 malwarescore=0 lowpriorityscore=0 impostorscore=0
  classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2003020000
  definitions=main-2004280120
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -78,64 +81,4 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-btrfs_free_extra_devids() reorgs fs_devices::latest_bdev
-to point to the bdev with greatest device::generation number.
-For a typical-missing device the generation number is zero so
-fs_devices::latest_bdev will never point to it.
-
-But if the missing device is due to alienation [1], then
-device::generation is not-zero and if it is >= to rest of
-device::generation in the list, then fs_devices::latest_bdev
-ends up pointing to the missing device and reports the error
-like this [2]
-
-[1] We maintain devices of a fsid (as in fs_device::fsid) in the
-fs_devices::devices list, a device is considered as an alien device
-if its fsid does not match with the fs_device::fsid
-
-$ mkfs.btrfs -fq /dev/sdd && mount /dev/sdd /btrfs
-
-$ mkfs.btrfs -fq -draid1 -mraid1 /dev/sdb /dev/sdc
-$ sleep 3 # avoid racing with udev's useless scans if needed
-$ btrfs dev add -f /dev/sdb /btrfs
-$ mount -o degraded /dev/sdc /btrfs1
-
-[2]
-mount: wrong fs type, bad option, bad superblock on /dev/sdc,
-       missing codepage or helper program, or other error
-
-       In some cases useful info is found in syslog - try
-       dmesg | tail or so.
-
-kernel: BTRFS warning (device sdc): devid 1 uuid 072a0192-675b-4d5a-8640-a5cf2b2c704d is missing
-kernel: BTRFS error (device sdc): failed to read devices
-kernel: BTRFS error (device sdc): open_ctree failed
-
-Fix the root of the issue, by checking if the the device is not
-missing before it can be a contender for the fs_devices::latest_bdev
-title.
-
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
----
-v3-rebased: update change log.
-
- fs/btrfs/volumes.c | 2 ++
- 1 file changed, 2 insertions(+)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 914402d3c1de..a67af16d960d 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1042,6 +1042,8 @@ void btrfs_free_extra_devids(struct btrfs_fs_devices *fs_devices, int step)
- 							&device->dev_state)) {
- 			if (!test_bit(BTRFS_DEV_STATE_REPLACE_TGT,
- 			     &device->dev_state) &&
-+			    !test_bit(BTRFS_DEV_STATE_MISSING,
-+			     &device->dev_state) &&
- 			     (!latest_dev ||
- 			      device->generation > latest_dev->generation)) {
- 				latest_dev = device;
--- 
-2.23.0
-
+Reviewed-by: Anand Jain <anand.jain@oracle.com>

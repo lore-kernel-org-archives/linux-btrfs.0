@@ -2,398 +2,236 @@ Return-Path: <SRS0=dRQQ=6M=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1B58CC83004
-	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Apr 2020 11:11:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1C9E8C83000
+	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Apr 2020 14:52:03 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id EBA6820661
-	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Apr 2020 11:11:40 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1588072301;
-	bh=SsYtrIm5wWFLiAamObwWo32hCpt0wAQrL7jDN1W2G7M=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=eM2IO9xenGgm7pfSdzzDww/AgnwnxL5Ade5pgaE7PnYw3H1A9kv6F+8hQIk/v0aCs
-	 uSLoDj15WzfuYsGBhMrcdBWnOS2+OqjAzwqM2p8OHQZRNFBLxlQ4CSM2iTJIRJbgw3
-	 JaTU5Dan6RetGUTFmJ/gSqxL8pFpxe/nGZm+5Rm8=
+	by mail.kernel.org (Postfix) with ESMTP id 004DD206B9
+	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Apr 2020 14:52:02 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726590AbgD1LLi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 28 Apr 2020 07:11:38 -0400
-Received: from mail-wm1-f68.google.com ([209.85.128.68]:38115 "EHLO
-        mail-wm1-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726364AbgD1LLg (ORCPT
+        id S1727889AbgD1OwC convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 28 Apr 2020 10:52:02 -0400
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:45550 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727878AbgD1OwB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 28 Apr 2020 07:11:36 -0400
-Received: by mail-wm1-f68.google.com with SMTP id g12so2381443wmh.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 28 Apr 2020 04:11:34 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
-         :references;
-        bh=j8lTiPyjL2UXCV8oXFmBTZNTZbM4gghzDjYM/gjEC2Q=;
-        b=SG4vLKMQKkVbdx3xL5JXIJ44k8igaH3suCPdPpfjcEDf0kHuFrmmPdPfTyR0htXhpU
-         mn8dZJywbxTnWhHpbg1nGFU+fzrHEPGrKNRo6YLMIZajA4mU+TeXGRvpIWoqvSxi65n5
-         zJCdGpjeIhLWM2t7zJOYr5KXnOQRuL+I8kT9WrnPYagf5EhL7DQQVDZ9ogcMoSfD1p5g
-         Scao+DAM17/AgZpCE9iSTpPTKlptTnTrVGWYSIzm3IU39h/PBx3dN0UO7hspETorntSV
-         W4I4VwT4eHin6wQ+ffw5RTkePqviAXo4pGHoacIIQ6G519j9rtsPopl91rklVCmhEjLe
-         jOPg==
-X-Gm-Message-State: AGi0Pua+eM06KrnCjD94sxNcw0DOnJr98+iXngS0pUjcY6dYCmIr3+1Y
-        J/QYDUyRrCWAwT2AZl1baHLplEYb/FlDXw==
-X-Google-Smtp-Source: APiQypJC4i3akY8aSGTpOQsT1SQx2r6Z9b1Wl63Zr5XaRQDGj0A63+VEiFCiibiIpFJvuxBUE5Gqsg==
-X-Received: by 2002:a1c:1dc3:: with SMTP id d186mr3992769wmd.90.1588072294134;
-        Tue, 28 Apr 2020 04:11:34 -0700 (PDT)
-Received: from linux-t19r.fritz.box (ppp-46-244-205-206.dynamic.mnet-online.de. [46.244.205.206])
-        by smtp.gmail.com with ESMTPSA id b191sm3126291wmd.39.2020.04.28.04.11.33
-        (version=TLS1_2 cipher=ECDHE-ECDSA-AES128-GCM-SHA256 bits=128/128);
-        Tue, 28 Apr 2020 04:11:33 -0700 (PDT)
-From:   Johannes Thumshirn <jth@kernel.org>
-To:     David Sterba <dsterba@suse.cz>
-Cc:     "linux-btrfs @ vger . kernel . org" <linux-btrfs@vger.kernel.org>,
-        Johannes Thumshirn <jthumshirn@suse.de>,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH 3/5] btrfs-progs: Add HMAC(SHA256) support
-Date:   Tue, 28 Apr 2020 13:11:06 +0200
-Message-Id: <20200428111109.5687-4-jth@kernel.org>
-X-Mailer: git-send-email 2.16.4
-In-Reply-To: <20200428111109.5687-1-jth@kernel.org>
-References: <20200428111109.5687-1-jth@kernel.org>
+        Tue, 28 Apr 2020 10:52:01 -0400
+Received: by james.kirk.hungrycats.org (Postfix, from userid 1002)
+        id 1E7B2695CA3; Tue, 28 Apr 2020 10:51:46 -0400 (EDT)
+Date:   Tue, 28 Apr 2020 10:51:46 -0400
+From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: Balance loops: what we know so far
+Message-ID: <20200428145145.GB10796@hungrycats.org>
+References: <20200411211414.GP13306@hungrycats.org>
+ <b3e80e75-5d27-ec58-19af-11ba5a20e08c@gmx.com>
+ <20200428045500.GA10769@hungrycats.org>
+ <ea42b9cb-3754-3f47-8d3c-208760e1c2ac@gmx.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: 8BIT
+In-Reply-To: <ea42b9cb-3754-3f47-8d3c-208760e1c2ac@gmx.com>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Johannes Thumshirn <jthumshirn@suse.de>
+On Tue, Apr 28, 2020 at 05:54:21PM +0800, Qu Wenruo wrote:
+> 
+> 
+> On 2020/4/28 下午12:55, Zygo Blaxell wrote:
+> > On Mon, Apr 27, 2020 at 03:07:29PM +0800, Qu Wenruo wrote:
+> >>
+> >>
+> >> On 2020/4/12 上午5:14, Zygo Blaxell wrote:
+> >>> Since 5.1, btrfs has been prone to getting stuck in semi-infinite loops
+> >>> in balance and device shrink/remove:
+> >>>
+> >>> 	[Sat Apr 11 16:59:32 2020] BTRFS info (device dm-0): found 29 extents, stage: update data pointers
+> >>> 	[Sat Apr 11 16:59:33 2020] BTRFS info (device dm-0): found 29 extents, stage: update data pointers
+> >>> 	[Sat Apr 11 16:59:34 2020] BTRFS info (device dm-0): found 29 extents, stage: update data pointers
+> >>> 	[Sat Apr 11 16:59:34 2020] BTRFS info (device dm-0): found 29 extents, stage: update data pointers
+> >>> 	[Sat Apr 11 16:59:35 2020] BTRFS info (device dm-0): found 29 extents, stage: update data pointers
+> >>>
+> >>> This is a block group while it's looping, as seen by python-btrfs:
+> >>>
+> >>> 	# share/python-btrfs/examples/show_block_group_contents.py 1934913175552 /media/testfs/
+> >>> 	block group vaddr 1934913175552 length 1073741824 flags DATA used 939167744 used_pct 87
+> [...]
+> >>>
+> >>> All of the extent data backrefs are removed by the balance, but the
+> >>> loop keeps trying to get rid of the shared data backrefs.  It has
+> >>> no effect on them, but keeps trying anyway.
+> >>
+> >> I guess this shows a pretty good clue.
+> >>
+> >> I was always thinking about the reloc tree, but in your case, it's data
+> >> reloc tree owning them.
+> > 
+> > In that case, yes.  Metadata balances loop too, in the "move data extents"
+> > stage while data balances loop in the "update data pointers" stage.
+> 
+> Would you please take an image dump of the fs when runaway balance happened?
+> 
+> Both metadata and data block group loop would greatly help.
 
-Add support for authenticated file systems using HMAC(SHA256) as
-checksumming algorithm.
+There's two problems with this:
 
-Example:
-mkfs.btrfs --csum hmac-sha256 --auth-key 0123456789 -f test.img
+	1) my smallest test filesystems have 29GB of metadata,
 
-Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
----
- cmds/inspect-dump-super.c |  5 ++++-
- common/utils.c            |  3 +++
- configure.ac              |  1 -
- crypto/hash.c             | 23 +++++++++++++++++++++++
- crypto/hash.h             |  2 ++
- ctree.c                   |  1 +
- ctree.h                   |  3 +++
- disk-io.c                 |  7 ++++++-
- mkfs/common.c             | 10 ++++++++++
- mkfs/common.h             |  3 +++
- mkfs/main.c               | 22 +++++++++++++++++++++-
- 11 files changed, 76 insertions(+), 4 deletions(-)
+	2) the problem is not reproducible with an image.
 
-diff --git a/cmds/inspect-dump-super.c b/cmds/inspect-dump-super.c
-index 99f35def..dd42d180 100644
---- a/cmds/inspect-dump-super.c
-+++ b/cmds/inspect-dump-super.c
-@@ -319,6 +319,7 @@ static bool is_valid_csum_type(u16 csum_type)
- 	case BTRFS_CSUM_TYPE_XXHASH:
- 	case BTRFS_CSUM_TYPE_SHA256:
- 	case BTRFS_CSUM_TYPE_BLAKE2:
-+	case BTRFS_CSUM_TYPE_HMAC_SHA256:
- 		return true;
- 	default:
- 		return false;
-@@ -352,7 +353,9 @@ static void dump_superblock(struct btrfs_super_block *sb, int full)
- 	printf("csum\t\t\t0x");
- 	for (i = 0, p = sb->csum; i < csum_size; i++)
- 		printf("%02x", p[i]);
--	if (!is_valid_csum_type(csum_type))
-+	if (csum_type == BTRFS_CSUM_TYPE_HMAC_SHA256)
-+		printf(" [NO KEY FOR HMAC]");
-+	else if (!is_valid_csum_type(csum_type))
- 		printf(" [UNKNOWN CSUM TYPE OR SIZE]");
- 	else if (check_csum_sblock(sb, csum_size, csum_type))
- 		printf(" [match]");
-diff --git a/common/utils.c b/common/utils.c
-index 2517bb34..9c1d9a1b 100644
---- a/common/utils.c
-+++ b/common/utils.c
-@@ -774,6 +774,9 @@ enum btrfs_csum_type parse_csum_type(const char *s)
- 	} else if (strcasecmp(s, "blake2b") == 0 ||
- 		   strcasecmp(s, "blake2") == 0) {
- 		return BTRFS_CSUM_TYPE_BLAKE2;
-+	} else if (strcasecmp(s, "hmac-sha256") == 0 ||
-+		   strcasecmp(s, "hmac(sha256)") == 0) {
-+		return BTRFS_CSUM_TYPE_HMAC_SHA256;
- 	} else {
- 		error("unknown csum type %s", s);
- 		exit(1);
-diff --git a/configure.ac b/configure.ac
-index 24b1641f..c842570c 100644
---- a/configure.ac
-+++ b/configure.ac
-@@ -295,7 +295,6 @@ AC_SUBST([LZO2_LIBS])
- AC_SUBST([LZO2_LIBS_STATIC])
- AC_SUBST([LZO2_CFLAGS])
- 
--
- dnl library stuff
- AC_SUBST([LIBBTRFS_MAJOR])
- AC_SUBST([LIBBTRFS_MINOR])
-diff --git a/crypto/hash.c b/crypto/hash.c
-index fc658475..94d782d1 100644
---- a/crypto/hash.c
-+++ b/crypto/hash.c
-@@ -1,3 +1,7 @@
-+#include <gcrypt.h>
-+
-+#include "ctree.h"
-+
- #include "crypto/hash.h"
- #include "crypto/crc32c.h"
- #include "crypto/xxhash.h"
-@@ -72,12 +76,25 @@ int hash_blake2b(const u8 *buf, size_t len, u8 *out)
- 	return 0;
- }
- 
-+int hash_hmac_sha256(struct btrfs_fs_info *fs_info, const u8 *buf,
-+		     size_t length, u8 *out)
-+{
-+	gcry_mac_hd_t mac;
-+	gcry_mac_open(&mac, GCRY_MAC_HMAC_SHA256, 0, NULL);
-+	gcry_mac_setkey(mac, fs_info->auth_key, strlen(fs_info->auth_key));
-+	gcry_mac_write(mac, buf, length);
-+	gcry_mac_read(mac, out, &length);
-+
-+	return 0;
-+}
-+
- #endif
- 
- #if CRYPTOPROVIDER_LIBSODIUM == 1
- 
- #include <sodium/crypto_hash_sha256.h>
- #include <sodium/crypto_generichash_blake2b.h>
-+#include <sodium/crypto_auth_hmacsha256.h>
- 
- int hash_sha256(const u8 *buf, size_t len, u8 *out)
- {
-@@ -90,4 +107,10 @@ int hash_blake2b(const u8 *buf, size_t len, u8 *out)
- 			NULL, 0);
- }
- 
-+int hash_hmac_sha256(struct btrfs_fs_info *fs_info, const u8 *buf,
-+		     size_t length, u8 *out)
-+{
-+	return crypto_auth_hmacsha256(out, buf, length, (u8 *)fs_info->auth_key);
-+}
-+
- #endif
-diff --git a/crypto/hash.h b/crypto/hash.h
-index fefccbd5..252ce9f9 100644
---- a/crypto/hash.h
-+++ b/crypto/hash.h
-@@ -9,5 +9,7 @@ int hash_crc32c(const u8 *buf, size_t length, u8 *out);
- int hash_xxhash(const u8 *buf, size_t length, u8 *out);
- int hash_sha256(const u8 *buf, size_t length, u8 *out);
- int hash_blake2b(const u8 *buf, size_t length, u8 *out);
-+int hash_hmac_sha256(struct btrfs_fs_info *fs_info, const u8 *buf,
-+		     size_t length, u8 *out);
- 
- #endif
-diff --git a/ctree.c b/ctree.c
-index 3559680f..25a1e865 100644
---- a/ctree.c
-+++ b/ctree.c
-@@ -46,6 +46,7 @@ static const struct btrfs_csum {
- 	[BTRFS_CSUM_TYPE_XXHASH]	= {  8, "xxhash64" },
- 	[BTRFS_CSUM_TYPE_SHA256]	= { 32, "sha256" },
- 	[BTRFS_CSUM_TYPE_BLAKE2]	= { 32, "blake2" },
-+	[BTRFS_CSUM_TYPE_HMAC_SHA256]	= { 32, "hmac-sha256" },
- };
- 
- u16 btrfs_super_csum_size(const struct btrfs_super_block *sb)
-diff --git a/ctree.h b/ctree.h
-index 2a871187..e1ff00f5 100644
---- a/ctree.h
-+++ b/ctree.h
-@@ -172,6 +172,7 @@ enum btrfs_csum_type {
- 	BTRFS_CSUM_TYPE_XXHASH		= 1,
- 	BTRFS_CSUM_TYPE_SHA256		= 2,
- 	BTRFS_CSUM_TYPE_BLAKE2		= 3,
-+	BTRFS_CSUM_TYPE_HMAC_SHA256	= 32,
- };
- 
- #define BTRFS_EMPTY_DIR_SIZE 0
-@@ -1212,6 +1213,8 @@ struct btrfs_fs_info {
- 	u32 nodesize;
- 	u32 sectorsize;
- 	u32 stripesize;
-+
-+	char *auth_key;
- };
- 
- /*
-diff --git a/disk-io.c b/disk-io.c
-index 6221c3ce..5fa1f0c3 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -153,6 +153,10 @@ int btrfs_csum_data(struct btrfs_fs_info *fs_info, u16 csum_type,
- 		return hash_sha256(data, len, out);
- 	case BTRFS_CSUM_TYPE_BLAKE2:
- 		return hash_blake2b(data, len, out);
-+	case BTRFS_CSUM_TYPE_HMAC_SHA256:
-+		if (!fs_info || !fs_info->auth_key)
-+			return 0;
-+		return hash_hmac_sha256(fs_info, data, len, out);
- 	default:
- 		fprintf(stderr, "ERROR: unknown csum type: %d\n", csum_type);
- 		ASSERT(0);
-@@ -837,6 +841,7 @@ struct btrfs_fs_info *btrfs_new_fs_info(int writable, u64 sb_bytenr,
- 	fs_info->data_alloc_profile = (u64)-1;
- 	fs_info->metadata_alloc_profile = (u64)-1;
- 	fs_info->system_alloc_profile = fs_info->metadata_alloc_profile;
-+	fs_info->auth_key = auth_key;
- 	return fs_info;
- free_all:
- 	btrfs_free_fs_info(fs_info);
-@@ -1418,7 +1423,7 @@ int btrfs_check_super(struct btrfs_super_block *sb, unsigned sbflags)
- 	btrfs_csum_data(NULL, csum_type, (u8 *)sb + BTRFS_CSUM_SIZE,
- 			result, BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
- 
--	if (memcmp(result, sb->csum, csum_size)) {
-+	if (memcmp(result, sb->csum, csum_size) && csum_type != BTRFS_CSUM_TYPE_HMAC_SHA256) {
- 		error("superblock checksum mismatch");
- 		return -EIO;
- 	}
-diff --git a/mkfs/common.c b/mkfs/common.c
-index 469b88d6..81d0b5c1 100644
---- a/mkfs/common.c
-+++ b/mkfs/common.c
-@@ -160,6 +160,13 @@ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg)
- 	if (!buf)
- 		return -ENOMEM;
- 
-+	buf->fs_info = calloc(1, sizeof(struct btrfs_fs_info));
-+	if (!buf->fs_info) {
-+		free(buf);
-+		return -ENOMEM;
-+	}
-+
-+
- 	first_free = BTRFS_SUPER_INFO_OFFSET + cfg->sectorsize * 2 - 1;
- 	first_free &= ~((u64)cfg->sectorsize - 1);
- 
-@@ -224,6 +231,8 @@ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg)
- 			    btrfs_header_chunk_tree_uuid(buf),
- 			    BTRFS_UUID_SIZE);
- 
-+	buf->fs_info->auth_key = cfg->auth_key;
-+
- 	ret = btrfs_create_tree_root(fd, cfg, buf);
- 	if (ret < 0)
- 		goto out;
-@@ -474,6 +483,7 @@ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg)
- 	ret = 0;
- 
- out:
-+	free(buf->fs_info);
- 	free(buf);
- 	return ret;
- }
-diff --git a/mkfs/common.h b/mkfs/common.h
-index 426852be..7aea13cd 100644
---- a/mkfs/common.h
-+++ b/mkfs/common.h
-@@ -65,6 +65,9 @@ struct btrfs_mkfs_config {
- 
- 	/* Superblock offset after make_btrfs */
- 	u64 super_bytenr;
-+
-+	/* authentication key */
-+	char *auth_key;
- };
- 
- int make_btrfs(int fd, struct btrfs_mkfs_config *cfg);
-diff --git a/mkfs/main.c b/mkfs/main.c
-index e830de4e..9f783cc1 100644
---- a/mkfs/main.c
-+++ b/mkfs/main.c
-@@ -343,6 +343,7 @@ static void print_usage(int ret)
- 	printf("  features:\n");
- 	printf("\t--csum TYPE\n");
- 	printf("\t--checksum TYPE         checksum algorithm to use (default: crc32c)\n");
-+	printf("\t--auth-key KEY          authentication key to use for authenticated file-systems\n");
- 	printf("\t-n|--nodesize SIZE      size of btree nodes\n");
- 	printf("\t-s|--sectorsize SIZE    data block size (may not be mountable by current kernel)\n");
- 	printf("\t-O|--features LIST      comma separated list of filesystem features (use '-O list-all' to list features)\n");
-@@ -839,14 +840,21 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
- 	struct mkfs_allocation allocation = { 0 };
- 	struct btrfs_mkfs_config mkfs_cfg;
- 	enum btrfs_csum_type csum_type = BTRFS_CSUM_TYPE_CRC32;
-+	char *auth_key = NULL;
- 
- 	crc32c_optimization_init();
- 
- 	while(1) {
- 		int c;
--		enum { GETOPT_VAL_SHRINK = 257, GETOPT_VAL_CHECKSUM };
-+		enum {
-+			GETOPT_VAL_SHRINK = 257,
-+			GETOPT_VAL_CHECKSUM,
-+			GETOPT_VAL_AUTHKEY,
-+		};
- 		static const struct option long_options[] = {
- 			{ "alloc-start", required_argument, NULL, 'A'},
-+			{ "auth-key", required_argument, NULL,
-+				GETOPT_VAL_AUTHKEY },
- 			{ "byte-count", required_argument, NULL, 'b' },
- 			{ "csum", required_argument, NULL,
- 				GETOPT_VAL_CHECKSUM },
-@@ -952,6 +960,9 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
- 			case GETOPT_VAL_CHECKSUM:
- 				csum_type = parse_csum_type(optarg);
- 				break;
-+			case GETOPT_VAL_AUTHKEY:
-+				auth_key = strdup(optarg);
-+				break;
- 			case GETOPT_VAL_HELP:
- 			default:
- 				print_usage(c != GETOPT_VAL_HELP);
-@@ -979,6 +990,12 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
- 		goto error;
- 	}
- 
-+	if ((auth_key && csum_type != BTRFS_CSUM_TYPE_HMAC_SHA256) ||
-+	    (csum_type == BTRFS_CSUM_TYPE_HMAC_SHA256 && !auth_key)) {
-+		error("the option --auth-key must be used with --csum hmac(sha256)");
-+		goto error;
-+	}
-+
- 	if (*fs_uuid) {
- 		uuid_t dummy_uuid;
- 
-@@ -1197,6 +1214,7 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
- 	mkfs_cfg.stripesize = stripesize;
- 	mkfs_cfg.features = features;
- 	mkfs_cfg.csum_type = csum_type;
-+	mkfs_cfg.auth_key = auth_key;
- 
- 	ret = make_btrfs(fd, &mkfs_cfg);
- 	if (ret) {
-@@ -1413,6 +1431,7 @@ out:
- 
- 	btrfs_close_all_devices();
- 	free(label);
-+	free(auth_key);
- 
- 	return !!ret;
- error:
-@@ -1420,6 +1439,7 @@ error:
- 		close(fd);
- 
- 	free(label);
-+	free(auth_key);
- 	exit(1);
- success:
- 	exit(0);
--- 
-2.16.4
+I've tried using VM snapshots to put a filesystem into a reproducible
+looping state.  A block group that loops on one boot doesn't repeatably
+loop on another boot from the same initial state; however, once a
+booted system starts looping, it continues to loop even if the balance
+is cancelled, and I restart balance on the same block group or other
+random block groups.
+
+I have production filesystems with tens of thousands of block groups
+and almost all of them loop (as I said before, I cannot complete any
+RAID reshapes with 5.1+ kernels).  They can't _all_ be bad.
+
+Cancelling a balance (usually) doesn't recover.  Rebooting does.
+The change that triggered this changes the order of operations in
+the kernel.  That smells like a runtime thing to me.
+
+> >> In that case, data reloc tree is only cleaned up at the end of
+> >> btrfs_relocate_block_group().
+> >>
+> >> Thus it is never cleaned up until we exit the balance loop.
+> >>
+> >> I'm not sure why this is happening only after I extended the lifespan of
+> >> reloc tree (not data reloc tree).
+> > 
+> > I have been poking around with printk to trace what it's doing in the
+> > looping and non-looping cases.  It seems to be very similar up to
+> > calling merge_reloc_root, merge_reloc_roots, unset_reloc_control,
+> > btrfs_block_rsv_release, btrfs_commit_transaction, clean_dirty_subvols,
+> > btrfs_free_block_rsv.  In the looping cases, everything up to those
+> > functions seems the same on every loop except the first one.
+> > 
+> > In the non-looping cases, those functions do something different than
+> > the looping cases:  the extents disappear in the next loop, and the
+> > balance finishes.
+> > 
+> > I haven't figured out _what_ is different yet.  I need more cycles to
+> > look at it.
+> > 
+> > Your extend-the-lifespan-of-reloc-tree patch moves one of the
+> > functions--clean_dirty_subvols (or btrfs_drop_snapshot)--to a different
+> > place in the call sequence.  It was in merge_reloc_roots before the
+> > transaction commit, now it's in relocate_block_group after transaction
+> > commit.  My guess is that the problem lies somewhere in how the behavior
+> > of these functions has been changed by calling them in a different
+> > sequence.
+> > 
+> >> But anyway, would you like to give a try of the following patch?
+> >> https://patchwork.kernel.org/patch/11511241/
+> > 
+> > I'm not sure how this patch could work.  We are hitting the found_extents
+> > counter every time through the loop.  It's returning thousands of extents
+> > each time.
+> > 
+> >> It should make us exit the the balance so long as we have no extra
+> >> extent to relocate.
+> > 
+> > The problem is not that we have no extents to relocate.  The problem is
+> > that we don't successfully get rid of the extents we do find, so we keep
+> > finding them over and over again.
+> 
+> That's very strange.
+> 
+> As you can see, for relocate_block_group(), it will cleanup reloc trees.
+> 
+> This means either we have reloc trees in use and not cleaned up, or some
+> tracing mechanism is not work properly.
+
+Can you point out where in the kernel that happens?  If we throw some
+printks at it we might see something.
+
+> Anyway, if image dump with the dead looping block group specified, it
+> would provide good hint to this long problem.
+> 
+> Thanks,
+> Qu
+> 
+> > 
+> > In testing, the patch has no effect:
+> > 
+> > 	[Mon Apr 27 23:36:15 2020] BTRFS info (device dm-0): found 4800 extents, stage: update data pointers
+> > 	[Mon Apr 27 23:36:21 2020] BTRFS info (device dm-0): found 4800 extents, stage: update data pointers
+> > 	[Mon Apr 27 23:36:27 2020] BTRFS info (device dm-0): found 4800 extents, stage: update data pointers
+> > 	[Mon Apr 27 23:36:32 2020] BTRFS info (device dm-0): found 4800 extents, stage: update data pointers
+> > 	[Mon Apr 27 23:36:38 2020] BTRFS info (device dm-0): found 4800 extents, stage: update data pointers
+> > 	[Mon Apr 27 23:36:44 2020] BTRFS info (device dm-0): found 4800 extents, stage: update data pointers
+> > 	[Mon Apr 27 23:36:50 2020] BTRFS info (device dm-0): found 4800 extents, stage: update data pointers
+> > 	[Mon Apr 27 23:36:56 2020] BTRFS info (device dm-0): found 4800 extents, stage: update data pointers
+> > 	[Mon Apr 27 23:37:01 2020] BTRFS info (device dm-0): found 4800 extents, stage: update data pointers
+> > 	[Mon Apr 27 23:37:07 2020] BTRFS info (device dm-0): found 4800 extents, stage: update data pointers
+> > 	[Mon Apr 27 23:37:13 2020] BTRFS info (device dm-0): found 4800 extents, stage: update data pointers
+> > 	[Mon Apr 27 23:37:19 2020] BTRFS info (device dm-0): found 4800 extents, stage: update data pointers
+> > 	[Mon Apr 27 23:37:24 2020] BTRFS info (device dm-0): found 4800 extents, stage: update data pointers
+> > 	[Mon Apr 27 23:37:30 2020] BTRFS info (device dm-0): found 4800 extents, stage: update data pointers
+> > 
+> > The above is the tail end of 3320 loops on a single block group.
+> > 
+> > I switched to a metadata block group and it's on the 9th loop:
+> > 
+> > 	# btrfs balance start -mconvert=raid1 /media/testfs/
+> > 	[Tue Apr 28 00:09:47 2020] BTRFS info (device dm-0): found 34977 extents, stage: move data extents
+> > 	[Tue Apr 28 00:12:24 2020] BTRFS info (device dm-0): found 26475 extents, stage: move data extents
+> > 	[Tue Apr 28 00:18:46 2020] BTRFS info (device dm-0): found 26475 extents, stage: move data extents
+> > 	[Tue Apr 28 00:23:24 2020] BTRFS info (device dm-0): found 26475 extents, stage: move data extents
+> > 	[Tue Apr 28 00:25:54 2020] BTRFS info (device dm-0): found 26475 extents, stage: move data extents
+> > 	[Tue Apr 28 00:28:17 2020] BTRFS info (device dm-0): found 26475 extents, stage: move data extents
+> > 	[Tue Apr 28 00:30:35 2020] BTRFS info (device dm-0): found 26475 extents, stage: move data extents
+> > 	[Tue Apr 28 00:32:45 2020] BTRFS info (device dm-0): found 26475 extents, stage: move data extents
+> > 	[Tue Apr 28 00:37:01 2020] BTRFS info (device dm-0): found 26475 extents, stage: move data extents
+> > 
+> > 
+> >> Thanks,
+> >> Qu
+> >>
+> >>>
+> >>> This is "semi-infinite" because it is possible for the balance to
+> >>> terminate if something removes those 29 extents (e.g. by looking up the
+> >>> extent vaddrs with 'btrfs ins log' then feeding the references to 'btrfs
+> >>> fi defrag' will reduce the number of inline shared data backref objects.
+> >>> When it's reduced all the way to zero, balance starts up again, usually
+> >>> promptly getting stuck on the very next block group.  If the _only_
+> >>> thing running on the filesystem is balance, it will not stop looping.
+> >>>
+> >>> Bisection points to commit d2311e698578 "btrfs: relocation: Delay reloc
+> >>> tree deletion after merge_reloc_roots" as the first commit where the
+> >>> balance loops can be reproduced.
+> >>>
+> >>> I tested with commit 59b2c371052c "btrfs: check commit root generation
+> >>> in should_ignore_root" as well as the rest of misc-next, but the balance
+> >>> loops are still easier to reproduce than to avoid.
+> >>>
+> >>> Once it starts happening on a filesystem, it seems to happen very
+> >>> frequently.  It is not possible to reshape a RAID array of more than a
+> >>> few hundred GB on kernels after 5.0.  I can get maybe 50-100 block groups
+> >>> completed in a resize or balance after a fresh boot, then balance gets
+> >>> stuck in loops after that.  With the fast balance cancel patches it's
+> >>> possibly to recover from the loop, but futile, since the next balance
+> >>> will almost always also loop, even if it is passed a different block
+> >>> group.  I've had to downgrade to 5.0 or 4.19 to complete any RAID
+> >>> reshaping work.
+> >>>
+> >>
+> > 
+> > 
+> > 
+> 
+
+
 

@@ -2,187 +2,351 @@ Return-Path: <SRS0=dRQQ=6M=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.3 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.0 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 81E8BC83000
-	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Apr 2020 07:22:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B42E5C83000
+	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Apr 2020 09:54:43 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 5352120661
-	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Apr 2020 07:22:25 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 855AB206D6
+	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Apr 2020 09:54:43 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=ka9q-net.20150623.gappssmtp.com header.i=@ka9q-net.20150623.gappssmtp.com header.b="p9jmt4Lu"
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="D19U/yGy"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726259AbgD1HWY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 28 Apr 2020 03:22:24 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51802 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725917AbgD1HWY (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 28 Apr 2020 03:22:24 -0400
-Received: from mail-pg1-x541.google.com (mail-pg1-x541.google.com [IPv6:2607:f8b0:4864:20::541])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EC8CFC03C1A9
-        for <linux-btrfs@vger.kernel.org>; Tue, 28 Apr 2020 00:22:23 -0700 (PDT)
-Received: by mail-pg1-x541.google.com with SMTP id n16so9872932pgb.7
-        for <linux-btrfs@vger.kernel.org>; Tue, 28 Apr 2020 00:22:23 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=ka9q-net.20150623.gappssmtp.com; s=20150623;
-        h=to:from:autocrypt:subject:message-id:date:user-agent:mime-version
-         :content-transfer-encoding:content-language;
-        bh=HE8i9mdh761YpJw84xxMUQIXtxyRaErQD4EvbUKob40=;
-        b=p9jmt4Lu2Km6A8pSwlHzSlEQaDaEnKowpyEquM9OvfcIQ+xGjlzj+r5h0xub9lq3Mu
-         DG1pIsSxaHhfV1L2MrRNu8FYBCzjtaoms9aAvfXpqnUniTo3p0RMQhdccragjgctj9Yx
-         Rv3ifdoJwahonq5fLrYPzRan5FF3ySEC0lpFeRxLNUnJT7S0rAwWHnZNwiat7u0oTE7v
-         5ZXMcU+RSrEewTowFXAi5DSKMYIncVAmUxm79XJoH1+hkfJ88QLULH8y7mCY9HF9Nasd
-         hfGH8YcPtFfdXOCtThzqqU+JkOvNFm8/OEGhG5WJsQL2wzLDVnQEqjUnwDb8IyEkdg47
-         2kPQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:to:from:autocrypt:subject:message-id:date
-         :user-agent:mime-version:content-transfer-encoding:content-language;
-        bh=HE8i9mdh761YpJw84xxMUQIXtxyRaErQD4EvbUKob40=;
-        b=hxhT//7hdA5VtkYW6xj48rnyD4LNDfPMCRNk1Psmu/3YU3ONAdjNGxpz0m8jS9ExhF
-         AM3t2H6bIcxUsGHGK1EdUVikIkPXUxwkRQk0Dbsr7WUEOCZX2ketgLIWB0UbA18KcFvT
-         6Z5WfGXCTQRBQLuRHbuJZsJ40iehpiyrN4JM27yN206dIEkqtfV3bJKWMKQm8LgdIslB
-         lYaBPHkNRzAvgt4cbxGewI+8dc2bAp5E+L1Sh7qeX5AlVSq7DgBHA80K4UMOCEDOanx6
-         Q+gyYH2r3zJnOjFppmb4Q0LwrMBezMgg3hM/fG1MM2QrRYPFVcW8nVHP6Q3jXGLYFugU
-         S6vQ==
-X-Gm-Message-State: AGi0PuZ/xkGdJUYfQVhhvHlQtcU/Cm86YXCyO3LqBbG41k+PSmgOHHED
-        vbC8rlCPCIyBnPWwYU+Fs9q17A==
-X-Google-Smtp-Source: APiQypJJUMfAY4Wr2a+bckbEJf7zLwo43A06GQqJ06aSIowmun1xMhKRblF6av108NYz5Av2bUQ5Sw==
-X-Received: by 2002:a62:1549:: with SMTP id 70mr26871893pfv.43.1588058543365;
-        Tue, 28 Apr 2020 00:22:23 -0700 (PDT)
-Received: from selma.local ([2605:e000:1c0e:43f7:2543:a594:4e32:2f52])
-        by smtp.gmail.com with ESMTPSA id a30sm12180928pgm.44.2020.04.28.00.22.21
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 28 Apr 2020 00:22:22 -0700 (PDT)
-To:     linux-btrfs@vger.kernel.org
-From:   Phil Karn <karn@ka9q.net>
-Autocrypt: addr=karn@ka9q.net; keydata=
- mQENBEw2mJ4BCADELiPsLFHDwapoSU7d2xNHxmwzzrFUCZWhO34kM6G5+o9GUNmGgMQ0BmXp
- I6hx77HHnrj9FC6kWh/bxBt3+o8HW+NTWzJSvf6kW7ThaNt7v9iewkS23JOMarAZs4qy6MhT
- 1RW1/yWY7RimWxrmkKPTKKa0Ad4CWT6fcP3t+doqGslSQIeoTh0C33ZT+LY59Wcr224iXohN
- 4Uu/nFe4yAHjtA+4Sesveo3Tyi8cbOgkcO6vij+pXesCcuhtGMlnE2dxRqbenrfVGLUVxNug
- LkQdLWezaGGm+dcjWYk1xjtaDnsCpVaYCMsfYNADQPJAjAFu37pVdoXhseVXfzOUN2EXABEB
- AAG0GVBoaWwgS2FybiA8a2FybkBrYTlxLm5ldD6JATgEEwECACIFAkw2mJ4CGwMGCwkIBwMC
- BhUIAgkKCwQWAgMBAh4BAheAAAoJEPFOQ1TtRjRGU98H/Atsb/N4lNbzNdzdIRcHD9XgCEa1
- UdR4mxgjwvLxS1nYRNdHwfTxvA5nxWfMx/0CB26VaNFdI3lkg/S0vYsSUu6M7l8Zb8v4JMyU
- 4B4yvkFHZ3II5oilzIMa3e2cMfDz7TSwO1JcXyI5y9vHnvH65/LQF+QojDgzf3vXKiNdTXJp
- 3nEa5IgMAB0rcSNsXFx8xbHi8s5niL9+1I7XTPvVMeXrMe8h4AG1nM/dK96WwmV+tLyXKYXn
- xVeb9F4X9CNQbkn/xAH+egvKHHT3V7K9cAhrDfu9Qwpo7zKk/akBpLWG2kmkTOfhXjm3UQhv
- MVgDmpeQIYa1HgAsKrsDQMzrIFm5AQ0ETDaYngEIAJmFdm0MmENzLEosD1FvGPJleWDYb0ah
- 8dOk4XUug1RhW40f7AsugT75pKs9PolXt92920GdU727X3Jpgdj4kLDtIQA0KZrOXiEOZjIZ
- WcROAyvTGyMs/P7Um1AGNM161Ga6/Wtlc076FN7EUQtzPbthH26M3lGWUX0Ccls/8Ep4qbnF
- IrMRBxjaxKbqfKPTeU10pDykzA7s5hiNe7qaegvqD6YLseZ+6FqCn988YnLiIaFeNbWxUY5G
- spjAsfesnAmpn5vhUqAGiizkNlAMIN31xvpLd93oM4/vORszIuN1UP2RlxL3s30BncZl2XOd
- Mk1/59Sy70zVqF1ANyMrA18AEQEAAYkBHwQYAQIACQUCTDaYngIbDAAKCRDxTkNU7UY0Rszt
- B/9ZPH9xw47lPkVJRbhgf0G7fdsxsyiuouAqOKklUNFSy4+qeGomjwE6YvdMybwGtaUGla7t
- 2mDzrva+7Gzb0inXIgmahQPmM16F3GVxGoFL+QJ+7gD8Hco6e0/2kju7ZREDE7SOEwKb3lhD
- eNLccfX2AqAHfCT/LVLbgBpMRmwUJQThM+33Z2L9BqIM3awj2mOTmeDumpxiDfroU90mGc9c
- pXe4YrNIkL/N8eMzLe1bpu+mpPCiIrEO+dFA7N8jjVcOCQ4Lr8sU6cOsEdkaACZiNFKT99eb
- NkKigK8sEkDZc/AKhPCEsnaZpwBZPScOL88LLi7FHj9Osznt+uhWfbLe
-Subject: Extremely slow device removals
-Message-ID: <8b647a7f-1223-fa9f-57c0-9a81a9bbeb27@ka9q.net>
-Date:   Tue, 28 Apr 2020 00:22:20 -0700
-User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:68.0)
- Gecko/20100101 Thunderbird/68.7.0
+        id S1727086AbgD1Jym (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 28 Apr 2020 05:54:42 -0400
+Received: from mout.gmx.net ([212.227.17.21]:48493 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726974AbgD1Jyl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 28 Apr 2020 05:54:41 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1588067665;
+        bh=X249P7Ht7J/+FMsZH5ubwZmceeMkdF+kvTqq153rHFk=;
+        h=X-UI-Sender-Class:Subject:To:Cc:References:From:Date:In-Reply-To;
+        b=D19U/yGynr6kdt6FfC7myk9MW/Ztgf/v1eaPlm8RRtUo3B/k+f2W5HgdaZGRFykJT
+         lQcgpDDSvXpCYFBixpnn7nemNTxapskKor8d9mM618Ndsf3LUPyyqBksK1tBSLAcyA
+         vBxBbq6r2MlvBqpLq0eknm+jQfosAgbatDlo4GfY=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx104
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1N0X8u-1jEqIO1Ly0-00wV0D; Tue, 28
+ Apr 2020 11:54:24 +0200
+Subject: Re: Balance loops: what we know so far
+To:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+Cc:     linux-btrfs@vger.kernel.org
+References: <20200411211414.GP13306@hungrycats.org>
+ <b3e80e75-5d27-ec58-19af-11ba5a20e08c@gmx.com>
+ <20200428045500.GA10769@hungrycats.org>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAU4EEwEIADgCGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1oQAKCRDC
+ PZHzoSX+qCY6CACd+mWu3okGwRKXju6bou+7VkqCaHTdyXwWFTsr+/0ly5nUdDtT3yEVggPJ
+ 3VP70wjlrxUjNjFb6iIvGYxiPOrop1NGwGYvQktgRhaIhALG6rPoSSAhGNjwGVRw0km0PlIN
+ D29BTj/lYEk+jVM1YL0QLgAE1AI3krihg/lp/fQT53wLhR8YZIF8ETXbClQG1vJ0cllPuEEv
+ efKxRyiTSjB+PsozSvYWhXsPeJ+KKjFen7ebE5reQTPFzSHctCdPnoR/4jSPlnTlnEvLeqcD
+ ZTuKfQe1gWrPeevQzgCtgBF/WjIOeJs41klnYzC3DymuQlmFubss0jShLOW8eSOOWhLRuQEN
+ BFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcgaCbPEwhLj
+ 1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj/IrRUUka
+ 68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fNGSsRb+pK
+ EKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0q1eW4Jrv
+ 0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEvABEBAAGJ
+ ATwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1rgUJCWpOfwAKCRDCPZHz
+ oSX+qFcEB/95cs8cM1OQdE/GgOfCGxwgckMeWyzOR7bkAWW0lDVp2hpgJuxBW/gyfmtBnUai
+ fnggx3EE3ev8HTysZU9q0h+TJwwJKGv6sUc8qcTGFDtavnnl+r6xDUY7A6GvXEsSoCEEynby
+ 72byGeSovfq/4AWGNPBG1L61Exl+gbqfvbECP3ziXnob009+z9I4qXodHSYINfAkZkA523JG
+ ap12LndJeLk3gfWNZfXEWyGnuciRGbqESkhIRav8ootsCIops/SqXm0/k+Kcl4gGUO/iD/T5
+ oagaDh0QtOd8RWSMwLxwn8uIhpH84Q4X1LadJ5NCgGa6xPP5qqRuiC+9gZqbq4Nj
+Message-ID: <ea42b9cb-3754-3f47-8d3c-208760e1c2ac@gmx.com>
+Date:   Tue, 28 Apr 2020 17:54:21 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.7.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
-Content-Language: en-US
+In-Reply-To: <20200428045500.GA10769@hungrycats.org>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="EJxBSCGY7B0HYMRZL388McqKV1N0bHYa1"
+X-Provags-ID: V03:K1:emH2aEtPwkH4+8Ygd3bmXHbZkEMSB9YMLlRj8GGQoDIgRib6TD6
+ pk6lerC+wEEzLhq7CR8UrobDIhEm0jSXk1oc9/UdJ6CT9lC/d9oNId4a79LtNesFAr0NZzC
+ 0GZM9h+iqHHyYN7pxVtuhiHTCe7irykGd3h8sLCJuGg6mGlzZEw/xVI9ZBlx4bTAyLMu9OJ
+ 9eKxnGW5wlXKgk1Y2ipBg==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:1AO3ATaAhH0=:XiHgYx0eCjukCJsALR4Z98
+ 4qez7voXEqvafraY2xwB3fomNMnWp5MGYr+7JfCftLsWW0AIObufgr22MTL8SjB78P88cVIKu
+ Qwmwm/1QPkaMDgIIKg04djSGM5ifWmvVyAkcqUmgR3xxc+/7YQJAVdJ6YowcQwp0ngK3dV36m
+ GE/zRp5eMcEf1Dy8puQ5eKk/UBWmXWixUu3PKAgfGm95NUAFyOeskSjKwQN3ZWIyQKmf+mwFY
+ CJSCb4efYgbHS+/NQWdqwnsCJvNsp56MR/qBDNPi6DjvzwPZRHdiYcOGI2w8C3P0PG/8DqzSZ
+ scQEXmXc+P0BPSxXyr/ze2XmoVVD4UXpSUubnv+pCUa5+l2vp/zq96SmhOfu1pT92LEbcbo1u
+ TDLTRCTvJLChiZt7d6IOufMqxhc3XSf2C8gEd43xxfRqKkbA4IhNCiUgd7EqjmRbGC8qFnnSS
+ Nn52W5UgWoCFoi4qBP3j5otQoVmtk1p32HIiENNNJTxgJG5tFWCRia1V679KoPewFQwqNyZaZ
+ h0nl8bMcRQ6BVcOTXB1CzBxteM62hBezfdqX7BSAK3sOzSOzhXI8LxjepQN0Av9KUz8OtvQNZ
+ q2J7aPfGSg/DecAhW/fG2x8mbPCHjkmt7pBUTFhbRmxTs1pYA4j/uWdfSeKI1AenvAQ7fIUf5
+ w8IPr0ht5Z8jonrCOxfw7SzSFcmtovk1WDxjau9FZivyVwQOV623XerVg867BVbdd0lg1p0Nf
+ k0D4xAWN2phENw3aipb5LKRlgSTDAf1wnX/OsA0W3Rbo2Mcv6inQfEkPXQCoT/FDwUg581oaj
+ iXp1N83L6urjBArBX547Mtd7t5acA3tyWR6LpCw5zuWzEJq9auFQTyVaz/bPxqCQp9an+2ZR0
+ J31fYYhvLxo6JxwTlMV0DJn+vFyFdaJ9VQg/MV0tdKMeZx+ETxK0LDDLrbvZRDvlefLI7ZhiC
+ 5a9D0wqJMCyiM6wAI+DQKQ/DxfxT7OxDFwSCJBgkYs2Q74auQZNYk5pFkrzafJkoYCv6CI1XV
+ oLQnxGBq+2O/Rv7sAMx72CsvY+SH/fBL4miat16XFshtfXYxFn4JYEzvXQ28s2o70fBwmqzx4
+ o7Re/75EwXlHIH21SswGvDeiWUga/uHhURHf5v4Xqu+VITkp879IM0v0zoDrJQlMhKk3KpzMn
+ a1tvA/fucni7J9nSLmNhE5tXuFzUkG4mIWTFmDyxcXkH86ciBor/Pd2SSw2Y5PfnuQfyccWUM
+ u/pIEjDrMIvT53+qx
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-I've been running btrfs in RAID1 mode on four 6TB drives for years. They
-have 35+K hours (4 years) of running time, and while they're still
-passing SMART scans I I wanted to stop tempting fate. They were also
-starting to get full (about 92%) and performance was beginning to suffer.=
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--EJxBSCGY7B0HYMRZL388McqKV1N0bHYa1
+Content-Type: multipart/mixed; boundary="yQUgy9zMIEQ6P8irzw14jRwW6qNHL2pQJ"
 
-
-My plan: replace them with two new 16TB EXOS (Enterprise) drives from
-Seagate.
-
-My first false start was a "device add" of one of the new drives
-followed by a "device remove" on an old one. (I'd been a while, and I'd
-forgotten "device replace"). This went extremely slowly, and by morning
-it had bombed with a message in the kernel log about running out of
-space on (I think) the *old* drive. This seemed odd since the new drive
-was still mostly empty.
-
-The filesystem also refused to remount right away, but given the furious
-drive activity I decided to be patient. The file system mounted by
-itself an hour or so later. There were plenty of "task hung" messages in
-the kernel log, but they all seemed to be warnings. No lost data. Whew.
-
-By now I remembered "device replace". But I'd already done "device add"
-on the first new 16 TB drive. That gave me 5 drives online and no spare
-slot for the second new drive.
-
-I didn't want to repeat the "device remove" for fear of another
-out-of-space failure. So I took a gamble.=C2=A0 I pulled one of the old 6=
-TB
-drives to make room for the second new 16TB drive, brought the array up
-in degraded mode and started a "device replace missing" operation onto
-the second new drive. 'iostat' showed just what I expected: a burst of
-reads from one or more of the three old drives alternating with big
-writes to the new drive. The data rates were reasonably consistent with
-the I/O bandwidth limitations of my 10-year-old server. When it finished
-the next day I pulled the old 6TB drive and replaced it with the second
-new 16 TB drive. So far so good.
-
-I then began another "device replace". Since I wasn't forced to degrade
-the array this time, I didn't. It's been several days, and it's nowhere
-near half done. As far as I can tell, it's only making headway of maybe
-100-200 GB/day so at this rate it might finish in several weeks!
-Moreover, when I run 'iostat' I see lots of writes **to** the drive
-being replaced, usually in parallel with the same amount of data going
-to one of the other drives.
-
-I'd expect lots of *reads from* the drive being replaced, but why are
-there any writes to it at all? Is this just to keep the filesystem
-consistent in case of a crash?
-
-I'd already run data and metadata balance operations up to about 95%.
-
-I hesitate to tempt fate by forcing the system down to do another
-"device replace missing" operation. Can anyone explain why replacing a
-missing device is so much faster than replacing an existing device? Is
-it simply because, without no redundancy left against a drive loss, less
-work needs to (or can) be done to protect against a crash?
-
-Thanks.
-
-Phil Karn
-
-Here's some current system information.
-
-Linux homer.ka9q.net 4.19.0-8-rt-amd64 #1 SMP PREEMPT RT Debian
-4.19.98-1 (2020-01-26) x86_64 GNU/Linux
-
-btrfs-progs v4.20.1
-
-Label: 'homer-btrfs'=C2=A0 uuid: 0d090428-8af8-4d23-99da-92f7176f82a7
-
-Total devices 5 FS bytes used 9.89TiB
-=C2=A0=C2=A0=C2=A0 devid=C2=A0=C2=A0=C2=A0 1 size 5.46TiB used 3.81TiB pa=
-th /dev/sdd3
-=C2=A0=C2=A0=C2=A0 devid=C2=A0=C2=A0=C2=A0 2 size 0.00B used 2.72TiB path=
- /dev/sde3 [device currently
-being replaced]
-=C2=A0=C2=A0=C2=A0 devid=C2=A0=C2=A0=C2=A0 4 size 5.46TiB used 5.10TiB pa=
-th /dev/sdc3
-=C2=A0=C2=A0=C2=A0 devid=C2=A0=C2=A0=C2=A0 5 size 14.32TiB used 6.08TiB p=
-ath /dev/sdb4
-=C2=A0=C2=A0=C2=A0 devid=C2=A0=C2=A0=C2=A0 6 size 14.32TiB used 2.08TiB p=
-ath /dev/sda4
-
-Data, RAID1: total=3D9.84TiB, used=3D9.84TiB
-System, RAID1: total=3D32.00MiB, used=3D1.73MiB
-Metadata, RAID1: total=3D52.00GiB, used=3D48.32GiB
-GlobalReserve, single: total=3D512.00MiB, used=3D0.00B
+--yQUgy9zMIEQ6P8irzw14jRwW6qNHL2pQJ
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
 
 
+On 2020/4/28 =E4=B8=8B=E5=8D=8812:55, Zygo Blaxell wrote:
+> On Mon, Apr 27, 2020 at 03:07:29PM +0800, Qu Wenruo wrote:
+>>
+>>
+>> On 2020/4/12 =E4=B8=8A=E5=8D=885:14, Zygo Blaxell wrote:
+>>> Since 5.1, btrfs has been prone to getting stuck in semi-infinite loo=
+ps
+>>> in balance and device shrink/remove:
+>>>
+>>> 	[Sat Apr 11 16:59:32 2020] BTRFS info (device dm-0): found 29 extent=
+s, stage: update data pointers
+>>> 	[Sat Apr 11 16:59:33 2020] BTRFS info (device dm-0): found 29 extent=
+s, stage: update data pointers
+>>> 	[Sat Apr 11 16:59:34 2020] BTRFS info (device dm-0): found 29 extent=
+s, stage: update data pointers
+>>> 	[Sat Apr 11 16:59:34 2020] BTRFS info (device dm-0): found 29 extent=
+s, stage: update data pointers
+>>> 	[Sat Apr 11 16:59:35 2020] BTRFS info (device dm-0): found 29 extent=
+s, stage: update data pointers
+>>>
+>>> This is a block group while it's looping, as seen by python-btrfs:
+>>>
+>>> 	# share/python-btrfs/examples/show_block_group_contents.py 193491317=
+5552 /media/testfs/
+>>> 	block group vaddr 1934913175552 length 1073741824 flags DATA used 93=
+9167744 used_pct 87
+[...]
+>>>
+>>> All of the extent data backrefs are removed by the balance, but the
+>>> loop keeps trying to get rid of the shared data backrefs.  It has
+>>> no effect on them, but keeps trying anyway.
+>>
+>> I guess this shows a pretty good clue.
+>>
+>> I was always thinking about the reloc tree, but in your case, it's dat=
+a
+>> reloc tree owning them.
+>=20
+> In that case, yes.  Metadata balances loop too, in the "move data exten=
+ts"
+> stage while data balances loop in the "update data pointers" stage.
+
+Would you please take an image dump of the fs when runaway balance happen=
+ed?
+
+Both metadata and data block group loop would greatly help.
+
+>=20
+>> In that case, data reloc tree is only cleaned up at the end of
+>> btrfs_relocate_block_group().
+>>
+>> Thus it is never cleaned up until we exit the balance loop.
+>>
+>> I'm not sure why this is happening only after I extended the lifespan =
+of
+>> reloc tree (not data reloc tree).
+>=20
+> I have been poking around with printk to trace what it's doing in the
+> looping and non-looping cases.  It seems to be very similar up to
+> calling merge_reloc_root, merge_reloc_roots, unset_reloc_control,
+> btrfs_block_rsv_release, btrfs_commit_transaction, clean_dirty_subvols,=
+
+> btrfs_free_block_rsv.  In the looping cases, everything up to those
+> functions seems the same on every loop except the first one.
+>=20
+> In the non-looping cases, those functions do something different than
+> the looping cases:  the extents disappear in the next loop, and the
+> balance finishes.
+>=20
+> I haven't figured out _what_ is different yet.  I need more cycles to
+> look at it.
+>=20
+> Your extend-the-lifespan-of-reloc-tree patch moves one of the
+> functions--clean_dirty_subvols (or btrfs_drop_snapshot)--to a different=
+
+> place in the call sequence.  It was in merge_reloc_roots before the
+> transaction commit, now it's in relocate_block_group after transaction
+> commit.  My guess is that the problem lies somewhere in how the behavio=
+r
+> of these functions has been changed by calling them in a different
+> sequence.
+>=20
+>> But anyway, would you like to give a try of the following patch?
+>> https://patchwork.kernel.org/patch/11511241/
+>=20
+> I'm not sure how this patch could work.  We are hitting the found_exten=
+ts
+> counter every time through the loop.  It's returning thousands of exten=
+ts
+> each time.
+>=20
+>> It should make us exit the the balance so long as we have no extra
+>> extent to relocate.
+>=20
+> The problem is not that we have no extents to relocate.  The problem is=
+
+> that we don't successfully get rid of the extents we do find, so we kee=
+p
+> finding them over and over again.
+
+That's very strange.
+
+As you can see, for relocate_block_group(), it will cleanup reloc trees.
+
+This means either we have reloc trees in use and not cleaned up, or some
+tracing mechanism is not work properly.
+
+Anyway, if image dump with the dead looping block group specified, it
+would provide good hint to this long problem.
+
+Thanks,
+Qu
+
+>=20
+> In testing, the patch has no effect:
+>=20
+> 	[Mon Apr 27 23:36:15 2020] BTRFS info (device dm-0): found 4800 extent=
+s, stage: update data pointers
+> 	[Mon Apr 27 23:36:21 2020] BTRFS info (device dm-0): found 4800 extent=
+s, stage: update data pointers
+> 	[Mon Apr 27 23:36:27 2020] BTRFS info (device dm-0): found 4800 extent=
+s, stage: update data pointers
+> 	[Mon Apr 27 23:36:32 2020] BTRFS info (device dm-0): found 4800 extent=
+s, stage: update data pointers
+> 	[Mon Apr 27 23:36:38 2020] BTRFS info (device dm-0): found 4800 extent=
+s, stage: update data pointers
+> 	[Mon Apr 27 23:36:44 2020] BTRFS info (device dm-0): found 4800 extent=
+s, stage: update data pointers
+> 	[Mon Apr 27 23:36:50 2020] BTRFS info (device dm-0): found 4800 extent=
+s, stage: update data pointers
+> 	[Mon Apr 27 23:36:56 2020] BTRFS info (device dm-0): found 4800 extent=
+s, stage: update data pointers
+> 	[Mon Apr 27 23:37:01 2020] BTRFS info (device dm-0): found 4800 extent=
+s, stage: update data pointers
+> 	[Mon Apr 27 23:37:07 2020] BTRFS info (device dm-0): found 4800 extent=
+s, stage: update data pointers
+> 	[Mon Apr 27 23:37:13 2020] BTRFS info (device dm-0): found 4800 extent=
+s, stage: update data pointers
+> 	[Mon Apr 27 23:37:19 2020] BTRFS info (device dm-0): found 4800 extent=
+s, stage: update data pointers
+> 	[Mon Apr 27 23:37:24 2020] BTRFS info (device dm-0): found 4800 extent=
+s, stage: update data pointers
+> 	[Mon Apr 27 23:37:30 2020] BTRFS info (device dm-0): found 4800 extent=
+s, stage: update data pointers
+>=20
+> The above is the tail end of 3320 loops on a single block group.
+>=20
+> I switched to a metadata block group and it's on the 9th loop:
+>=20
+> 	# btrfs balance start -mconvert=3Draid1 /media/testfs/
+> 	[Tue Apr 28 00:09:47 2020] BTRFS info (device dm-0): found 34977 exten=
+ts, stage: move data extents
+> 	[Tue Apr 28 00:12:24 2020] BTRFS info (device dm-0): found 26475 exten=
+ts, stage: move data extents
+> 	[Tue Apr 28 00:18:46 2020] BTRFS info (device dm-0): found 26475 exten=
+ts, stage: move data extents
+> 	[Tue Apr 28 00:23:24 2020] BTRFS info (device dm-0): found 26475 exten=
+ts, stage: move data extents
+> 	[Tue Apr 28 00:25:54 2020] BTRFS info (device dm-0): found 26475 exten=
+ts, stage: move data extents
+> 	[Tue Apr 28 00:28:17 2020] BTRFS info (device dm-0): found 26475 exten=
+ts, stage: move data extents
+> 	[Tue Apr 28 00:30:35 2020] BTRFS info (device dm-0): found 26475 exten=
+ts, stage: move data extents
+> 	[Tue Apr 28 00:32:45 2020] BTRFS info (device dm-0): found 26475 exten=
+ts, stage: move data extents
+> 	[Tue Apr 28 00:37:01 2020] BTRFS info (device dm-0): found 26475 exten=
+ts, stage: move data extents
+>=20
+>=20
+>> Thanks,
+>> Qu
+>>
+>>>
+>>> This is "semi-infinite" because it is possible for the balance to
+>>> terminate if something removes those 29 extents (e.g. by looking up t=
+he
+>>> extent vaddrs with 'btrfs ins log' then feeding the references to 'bt=
+rfs
+>>> fi defrag' will reduce the number of inline shared data backref objec=
+ts.
+>>> When it's reduced all the way to zero, balance starts up again, usual=
+ly
+>>> promptly getting stuck on the very next block group.  If the _only_
+>>> thing running on the filesystem is balance, it will not stop looping.=
+
+>>>
+>>> Bisection points to commit d2311e698578 "btrfs: relocation: Delay rel=
+oc
+>>> tree deletion after merge_reloc_roots" as the first commit where the
+>>> balance loops can be reproduced.
+>>>
+>>> I tested with commit 59b2c371052c "btrfs: check commit root generatio=
+n
+>>> in should_ignore_root" as well as the rest of misc-next, but the bala=
+nce
+>>> loops are still easier to reproduce than to avoid.
+>>>
+>>> Once it starts happening on a filesystem, it seems to happen very
+>>> frequently.  It is not possible to reshape a RAID array of more than =
+a
+>>> few hundred GB on kernels after 5.0.  I can get maybe 50-100 block gr=
+oups
+>>> completed in a resize or balance after a fresh boot, then balance get=
+s
+>>> stuck in loops after that.  With the fast balance cancel patches it's=
+
+>>> possibly to recover from the loop, but futile, since the next balance=
+
+>>> will almost always also loop, even if it is passed a different block
+>>> group.  I've had to downgrade to 5.0 or 4.19 to complete any RAID
+>>> reshaping work.
+>>>
+>>
+>=20
+>=20
+>=20
+
+
+--yQUgy9zMIEQ6P8irzw14jRwW6qNHL2pQJ--
+
+--EJxBSCGY7B0HYMRZL388McqKV1N0bHYa1
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAl6n/U0ACgkQwj2R86El
+/qgeqAf/SNqAHBLvABlqc8imZEEl1YoNEtX1ez/Zhr0S4LN3XDTOQUdsmnznCaOf
+b/3Nh8V9Q8mNulSToAeYtz9XLuca1IU4EYrNBhOHyZ3oNWZxOPpw3erpW09HyQIA
+EOmtBB1H2V8yUY86+htk4ICSRmONTq7YvT5VLRnu5mCORfNAPop9Tl3P08ezZMGW
+wBDOcw+Wt9TSyt7CaJizelnCclr2cu+BourMqesvH2yoZQNHFEFk+qpazizzuacf
+DX+jTk3F0qvkVvHMkBDDiQfDuedvczzGigyfJgRTs35E/TkrB5OBOXrMQd3WmBQL
+SA/jCm8iRg0Yvzb1FnLuvoW928VD4Q==
+=o5SM
+-----END PGP SIGNATURE-----
+
+--EJxBSCGY7B0HYMRZL388McqKV1N0bHYa1--

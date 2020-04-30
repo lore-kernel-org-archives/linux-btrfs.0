@@ -2,108 +2,135 @@ Return-Path: <SRS0=+YqI=6O=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.7 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 875DDC47247
-	for <linux-btrfs@archiver.kernel.org>; Thu, 30 Apr 2020 18:56:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5A227C4724C
+	for <linux-btrfs@archiver.kernel.org>; Thu, 30 Apr 2020 18:59:03 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 6B5B22073E
-	for <linux-btrfs@archiver.kernel.org>; Thu, 30 Apr 2020 18:56:23 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D69562073E
+	for <linux-btrfs@archiver.kernel.org>; Thu, 30 Apr 2020 18:59:02 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="nIW+hwLr"
+	dkim=pass (1024-bit key) header.d=protonmail.com header.i=@protonmail.com header.b="cfdpLp4q"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726394AbgD3S4W (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 30 Apr 2020 14:56:22 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46486 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726272AbgD3S4W (ORCPT
+        id S1726766AbgD3S7C (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 30 Apr 2020 14:59:02 -0400
+Received: from mail-40137.protonmail.ch ([185.70.40.137]:10479 "EHLO
+        mail-40137.protonmail.ch" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726375AbgD3S7B (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 30 Apr 2020 14:56:22 -0400
-Received: from mail-wr1-x42c.google.com (mail-wr1-x42c.google.com [IPv6:2a00:1450:4864:20::42c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1403CC035494
-        for <linux-btrfs@vger.kernel.org>; Thu, 30 Apr 2020 11:56:22 -0700 (PDT)
-Received: by mail-wr1-x42c.google.com with SMTP id o27so3078736wra.12
-        for <linux-btrfs@vger.kernel.org>; Thu, 30 Apr 2020 11:56:21 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=mjgFmu6mPXxgjkPtgS0yFvSj3QbA8zkO219ueyTvEHw=;
-        b=nIW+hwLrvytp8l7qujahd1Rm0wUXU1/HE01V2bKsXkCEM9sAmrmdwOnvfoVlsKTlaK
-         U9cLCnCe9cXoTteQ1n/j+n2BXbBSB/tUTD4UluD/QPkJVVClo89lTwEWn4BofBGQ7ZqC
-         VySl4NhlMuErGqllH3HOBTk6q5VoMZCfcqPSk8FcL9ddEheQ3LH7c54oeNrK7pCtxICi
-         7r3KMTmkDQqctaw58vyOqB2Fk+hhTO8fIJY6M/j9ao1qna44fCUgucY/s89Qr4BBqL7E
-         9QuXoUi8u5RhDu/Mk6dFUDhoH5jjGy0UJ9sZE8RPCbBGoIwVwbDs6NA02Pu/xSgefez0
-         gAPQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=mjgFmu6mPXxgjkPtgS0yFvSj3QbA8zkO219ueyTvEHw=;
-        b=LAIyKhp8R0edcs7+8FpS5IXS9nJM1Fl5+SqLsGRdU9snEyrfxjWx0FB6ob1Ez4ZJX/
-         DW6ReAJYFZi4tE54U93Gg2yA/Oi93KDDIGUTSL+mYNXT/SiERI+HaHWHZAoO/cBLRCmF
-         8WnrCN/XfqziO6vkUeoY5o0MdaPJQLfwZFqLXaReXQ9cVrtr/W9/FDDFdys2N8rc2NtU
-         xzxTPfXiVnG9heJi4nYCepIHENklHFODkjLz9E3HH0Os+Jr3Tb2ExzLiJb3IayRM1BYr
-         jJ4sn5MYFaZekETQxSuSJG8+uzwSX9ClnRD5pt7/4W5KMIwxEeg5fSDwV6M+q8mEdTBc
-         qKIA==
-X-Gm-Message-State: AGi0PubQlisdt+nAeNpO6TFsArXQW8nxaG8mcZkvu8EOiPyn1kAz5Vwr
-        pBxtRY2BVE7VbPv1gKWNt5RgBqkQb1XqRCBQ9w7umQ==
-X-Google-Smtp-Source: APiQypLfjzP6nKlKLD3PEzO8twwX03/AZ036MV/MIyDDPIu2E1YqpDoJC7cDhEkoj3FV39j3rKrFIDUinfBySkmKWM4=
-X-Received: by 2002:adf:e702:: with SMTP id c2mr5671638wrm.252.1588272980686;
- Thu, 30 Apr 2020 11:56:20 -0700 (PDT)
-MIME-Version: 1.0
-References: <8B7A1A74-4AFC-4B85-AF99-5EEDBB3B94ED@cisco.com>
-In-Reply-To: <8B7A1A74-4AFC-4B85-AF99-5EEDBB3B94ED@cisco.com>
-From:   Chris Murphy <lists@colorremedies.com>
-Date:   Thu, 30 Apr 2020 12:56:04 -0600
-Message-ID: <CAJCQCtRSt5pi=H5Ohy=zv-pu71Cbc9vWjnQeJSX80HDvkiaLhg@mail.gmail.com>
-Subject: Re: Can I create a new fileystem, using Read-only Seed device, to
- change the ownership of the files in the seed device.
-To:     "Saravanan Shanmugham (sarvi)" <sarvi@cisco.com>
+        Thu, 30 Apr 2020 14:59:01 -0400
+X-Greylist: delayed 599 seconds by postgrey-1.27 at vger.kernel.org; Thu, 30 Apr 2020 14:58:59 EDT
+Date:   Thu, 30 Apr 2020 18:40:28 +0000
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=protonmail.com;
+        s=protonmail; t=1588272033;
+        bh=rCVj53QwszqZZr8EVUCceN7F1ONvTFvgMsssjv5OVzI=;
+        h=Date:To:From:Cc:Reply-To:Subject:In-Reply-To:References:From;
+        b=cfdpLp4qK8LyWnHEoES6KmT8vSsw2g3n8vVimw7xh8Dafb/gS2ZcrMDKkiRwU3vyQ
+         O91pTc5QzFBkYTYHgQ5dqAP35BJ3oDQZN/GZ2rfvgS2KDYfeBFbnxP/4kq9C3SOoyU
+         GY0G0M6CXD1znlWVTdsGpVRv4gFw5X0FGVgV0090=
+To:     Chris Murphy <lists@colorremedies.com>
+From:   Nouts <nouts@protonmail.com>
 Cc:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Reply-To: Nouts <nouts@protonmail.com>
+Subject: Re: Troubleshoot help needed - RAID1 not mounting : failed to read block groups
+Message-ID: <NmjvBWGDb0a1ZnPep0UnBmeFG4uSUMrxyiYDCir6RRsMyZzizVtCH_8tdd6Y_glmPbbusrKtVBCgGvV7Cc5UFCDqcvJ1PTgWi87x-0FacQ4=@protonmail.com>
+In-Reply-To: <CAJCQCtT0mSYvN7FeCavsmKP9j_69JmZ0JdGz8ommhqag=GiM=Q@mail.gmail.com>
+References: <EvtqVyP9SQGLLtX4spGcgzbLaK45gh3h00n6u9QU19nuQi6g13oqfZf6dmGm-N8Rdd2ZCFl7zOeEBXRc_Whom2KYJA1eDUSQxgZPZgmI7Dc=@protonmail.com>
+ <5oMc__tPC-OFYhHTtUghYtHMzySzDXlSlYC_S5_WjIFiA8eXfvsSxQpfaglOag0sNz7qtvMUzhCqdRzBOMokxeo2dFrfkWrLbBmmuWvME5s=@protonmail.com>
+ <CAJCQCtT0mSYvN7FeCavsmKP9j_69JmZ0JdGz8ommhqag=GiM=Q@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Apr 30, 2020 at 12:44 PM Saravanan Shanmugham (sarvi)
-<sarvi@cisco.com> wrote:
+Thanks for your help. I compiled btrfs-progs v5.6 from github.
+
+Here is the dump from /dev/sda : https://pastebin.com/e3YZxxsZ
+
+And btrfs check returned an error instantly :
+Opening filesystem to check...
+ERROR: child eb corrupted: parent bytenr=3D5923702292480 item=3D2 parent le=
+vel=3D2 child level=3D0
+ERROR: failed to read block groups: Input/output error
+ERROR: cannot open file system
+
+
+=E2=80=90=E2=80=90=E2=80=90=E2=80=90=E2=80=90=E2=80=90=E2=80=90 Original Me=
+ssage =E2=80=90=E2=80=90=E2=80=90=E2=80=90=E2=80=90=E2=80=90=E2=80=90
+On Thursday, April 30, 2020 7:38 PM, Chris Murphy <lists@colorremedies.com>=
+ wrote:
+
+> On Thu, Apr 30, 2020 at 5:57 AM Nouts nouts@protonmail.com wrote:
 >
-> I have a problem that needs solving and I am trying to understand if BTRFS can solve it.
+> > > [ 4645.402880] BTRFS info (device sdb): disk space caching is enabled
+> > > [ 4645.405687] BTRFS info (device sdb): has skinny extents
+> > > [ 4645.451484] BTRFS error (device sdb): failed to read block groups:=
+ -117
+> > > [ 4645.472062] BTRFS error (device sdb): open_ctree failed
+> > > mount: wrong fs type, bad option, bad superblock on /dev/sdb,missing =
+codepage or helper program, or other error
+> > > In some cases useful info is found in syslog - trydmesg | tail or so.
 >
-> I have diskimage(currently using ext4).  And I am considering btrfs for,
-> Lets call this filesystemA
-> This contains a software build tree done by userA and hence all files are owned by userA
+> > > I attached you the smartctl result from the day before and the last s=
+crub report I got from a month ago. From my understanding, it was ok.
+> > > I use hardlink (on the same partition/pool) and I deleted some data j=
+ust the day before. I suspect my daily scrub routine triggered something th=
+at night and next day /home was gone.
+> > > I can't scrub anymore as it's not mounted. Mounting with usebackuproo=
+t or degraded or ro produce the same error.
+> > > I tried "btrfs check /dev/sda" :
+> > > checking extents
+> > > leaf parent key incorrect 5909107507200
+> > > bad block 5909107507200
+> > > Errors found in extent allocation tree or chunk allocation
+> > > Checking filesystem on /dev/sda
+> > > UUID: 3720251f-ef92-4e21-bad0-eae1c97cff03
 >
-> I want an almost instantaneous way to create or copy or clone or seed a new filesystem or directory tree filesystem B, with all the content in filesystem A but is owned by userB
+> What do you get for:
 >
-> Question:
-> 1. if I created fileSystemA in btrfs and used it as a seed device in creating filesystem B, What file ownership does the filesystem B have?
+> btrfs insp dump-t -b 5909107507200 /dev/sda
+>
+> > > Then "btrfs rescue zero-log /dev/sda", which produced a weird stacktr=
+ace...
+>
+> btrfs-progs is really old
+>
+> > > Finally I tried "btrfs rescue chunk-recover /dev/sda", which run on a=
+ll 3 drives at the same time during 8+ hours...
+> > > It asks to rebuild some metadata tree, which I accepted (I did not sa=
+ved the full output sorry) and it ended with the same stacktrace as above.
+> > > The only command left is "btrfs check --repair" but I afraid it might=
+ do more bad than good.
+>
+> With that version of btrfs-progs it's not advised.
+>
+> > > I'm running Debian 9 (still, because of some dependencies). My kernel=
+ is already backported : 4.19.0-0.bpo.6-amd64 #1 SMP Debian 4.19.67-2+deb10=
+u2~bpo9+1 (2019-11-12) x86_64 GNU/Linux
+> > > btrfs version : v4.7.3
+>
+> I suggest finding newer btrfs-progs, 5.4 or better, or compiling it from =
+git.
+> https://github.com/kdave//btrfs-progs
+>
+> And then run:
+>
+> btrfs check /dev/sda
+>
+> Let's see what that says.
+>
+>
+> -------------------------------------------------------------------------=
+---------------------------------------------------------------------------=
+-----------------------------------
+>
+> Chris Murphy
 
-You mean unix owner and group? It will still be userA. The only thing
-that changes when making a sprout file system is the volume and device
-UUIDs.
 
-> 2. Can that be changed to userB with any option.
-
-Yes, you can use chown. The seed is not changed, just the sprout (the
-read write device).
-
-
-> 3. What happens when userB tries to modify a fileX on filesystemB that was seeded with filesystemA and has fileX owned by userA
-
-userB needs permission to make the change, unix owner or group or ACL,
-same as any file.
-
-
-> 3. I understand btrfs supports snapshots and clones. Does the cloned volume and all its files keep the original owners as in the original volume/snapshot, or can it be specified as part of the cloning process.
-
-It's unchanged, you can change it before or after removing the seed device.
-
-
-
--- 
-Chris Murphy

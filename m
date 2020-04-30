@@ -2,191 +2,170 @@ Return-Path: <SRS0=+YqI=6O=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.4 required=3.0 tests=DATE_IN_FUTURE_06_12,
-	DKIMWL_WL_HIGH,DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.0 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3921AC83007
-	for <linux-btrfs@archiver.kernel.org>; Thu, 30 Apr 2020 01:04:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A9F99C83000
+	for <linux-btrfs@archiver.kernel.org>; Thu, 30 Apr 2020 01:46:58 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 156C5208E0
-	for <linux-btrfs@archiver.kernel.org>; Thu, 30 Apr 2020 01:04:38 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 881902083B
+	for <linux-btrfs@archiver.kernel.org>; Thu, 30 Apr 2020 01:46:58 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="opH0YXxY"
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="UecffErN"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726620AbgD3BEi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 29 Apr 2020 21:04:38 -0400
-Received: from aserp2120.oracle.com ([141.146.126.78]:54916 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726279AbgD3BEh (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 29 Apr 2020 21:04:37 -0400
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 03U131Jf018331;
-        Thu, 30 Apr 2020 01:04:34 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : from : to :
- references : cc : message-id : date : mime-version : in-reply-to :
- content-type : content-transfer-encoding; s=corp-2020-01-29;
- bh=GblXpjhWUDuwNKY33m2UNS52qSQxUHZqS0OQPCiW5hs=;
- b=opH0YXxYpKRhiZNxSQAVVV89zEuV4l3FV2uU1/oPXwY3/lohrmKtVWmp6zIUWPlIV8go
- cEimY5QwlOnr3TAjSuFVjaFfCmMs8j9Bc6Zj4T1M8jf5IEHyz3BhXc8Jecg1qgLH13Tn
- xUIX8QsEdq5REzc0Wdut2T4p0GpHiIOSt0v5X/0lUyXnB2PEGb8RS2WYBUfHmkl1atvV
- dS2C22SV3d7YNRPY++gc+O7m1dz2ub3LBXd5vi8rVcGlyX8fywd70Ie23pTLtbE5gnUf
- JENCwtWDjrD/aH5F7hkNBdNINlthqerCdpBuo9LVkQsGqBqAOnZbdP9AbxtIUdoDbM5r 3g== 
-Received: from userp3020.oracle.com (userp3020.oracle.com [156.151.31.79])
-        by aserp2120.oracle.com with ESMTP id 30nucg8rht-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Thu, 30 Apr 2020 01:04:33 +0000
-Received: from pps.filterd (userp3020.oracle.com [127.0.0.1])
-        by userp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 03U127Ys140697;
-        Thu, 30 Apr 2020 01:02:33 GMT
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by userp3020.oracle.com with ESMTP id 30pvd29545-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Thu, 30 Apr 2020 01:02:32 +0000
-Received: from abhmp0001.oracle.com (abhmp0001.oracle.com [141.146.116.7])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 03U12VMU017203;
-        Thu, 30 Apr 2020 01:02:31 GMT
-Received: from [192.168.1.102] (/39.109.243.230)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Thu, 30 Apr 2020 01:02:31 +0000
-Subject: Re: [PATCH v7 rebased 0/5] readmirror feature (sysfs and in-memory
- only approach; with new read_policy device)
-From:   Anand Jain <anand.jain@oracle.com>
-To:     dsterba@suse.com
-References: <1586173871-5559-1-git-send-email-anand.jain@oracle.com>
-Cc:     linux-btrfs@vger.kernel.org
-Message-ID: <a963d6c8-f0ec-7d41-ff0a-26d3ef9d013d@oracle.com>
-Date:   Thu, 30 Apr 2020 17:02:27 +0800
+        id S1726701AbgD3Bq5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 29 Apr 2020 21:46:57 -0400
+Received: from mout.gmx.net ([212.227.17.20]:54927 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726634AbgD3Bq4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 29 Apr 2020 21:46:56 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1588211213;
+        bh=4URtmLtlf+RK81wlvJvrlPFlMtxGS+ECsIs1sHxA32M=;
+        h=X-UI-Sender-Class:Subject:To:Cc:References:From:Date:In-Reply-To;
+        b=UecffErNgGpH2sw+4qQwt8JLnHUk3LQDtlknmAIV7t5/pfhz26OU/2hIYJLwtu92R
+         AsZv0XgCqN5hXGeMKoVZsD/hIrOs7Fok8NGFuemov5qUeeOarzrna1jyFBMDGs+1pw
+         djHs8gVAE5wTMGG4TynZWb97Whg0o/lDwf9eIMHM=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx104
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1N63RQ-1j5xES3lM0-016M2g; Thu, 30
+ Apr 2020 03:46:53 +0200
+Subject: Re: many csum warning/errors on qemu guests using btrfs
+To:     Chris Murphy <lists@colorremedies.com>,
+        Michal Soltys <msoltyspl@yandex.pl>
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <0ee3844d-830f-9f29-2cd5-61e3c9744979@yandex.pl>
+ <76ec883b-3e44-fcda-d981-93a9e120f56d@yandex.pl>
+ <CAJCQCtTxGRqA4SZFnC+G+=b0bK2ahpym+9eG31pRTv9FH1_-3w@mail.gmail.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAU4EEwEIADgCGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1oQAKCRDC
+ PZHzoSX+qCY6CACd+mWu3okGwRKXju6bou+7VkqCaHTdyXwWFTsr+/0ly5nUdDtT3yEVggPJ
+ 3VP70wjlrxUjNjFb6iIvGYxiPOrop1NGwGYvQktgRhaIhALG6rPoSSAhGNjwGVRw0km0PlIN
+ D29BTj/lYEk+jVM1YL0QLgAE1AI3krihg/lp/fQT53wLhR8YZIF8ETXbClQG1vJ0cllPuEEv
+ efKxRyiTSjB+PsozSvYWhXsPeJ+KKjFen7ebE5reQTPFzSHctCdPnoR/4jSPlnTlnEvLeqcD
+ ZTuKfQe1gWrPeevQzgCtgBF/WjIOeJs41klnYzC3DymuQlmFubss0jShLOW8eSOOWhLRuQEN
+ BFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcgaCbPEwhLj
+ 1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj/IrRUUka
+ 68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fNGSsRb+pK
+ EKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0q1eW4Jrv
+ 0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEvABEBAAGJ
+ ATwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1rgUJCWpOfwAKCRDCPZHz
+ oSX+qFcEB/95cs8cM1OQdE/GgOfCGxwgckMeWyzOR7bkAWW0lDVp2hpgJuxBW/gyfmtBnUai
+ fnggx3EE3ev8HTysZU9q0h+TJwwJKGv6sUc8qcTGFDtavnnl+r6xDUY7A6GvXEsSoCEEynby
+ 72byGeSovfq/4AWGNPBG1L61Exl+gbqfvbECP3ziXnob009+z9I4qXodHSYINfAkZkA523JG
+ ap12LndJeLk3gfWNZfXEWyGnuciRGbqESkhIRav8ootsCIops/SqXm0/k+Kcl4gGUO/iD/T5
+ oagaDh0QtOd8RWSMwLxwn8uIhpH84Q4X1LadJ5NCgGa6xPP5qqRuiC+9gZqbq4Nj
+Message-ID: <cc0b6672-a65a-5c7b-d561-21cc585ead62@gmx.com>
+Date:   Thu, 30 Apr 2020 09:46:49 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
  Thunderbird/68.7.0
 MIME-Version: 1.0
-In-Reply-To: <1586173871-5559-1-git-send-email-anand.jain@oracle.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9606 signatures=668686
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 spamscore=0 mlxlogscore=999
- suspectscore=0 malwarescore=0 adultscore=0 bulkscore=0 phishscore=0
- mlxscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2003020000 definitions=main-2004300003
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9606 signatures=668686
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 clxscore=1015 priorityscore=1501
- mlxlogscore=999 impostorscore=0 suspectscore=0 malwarescore=0
- lowpriorityscore=0 mlxscore=0 spamscore=0 adultscore=0 phishscore=0
- bulkscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2003020000 definitions=main-2004300003
+In-Reply-To: <CAJCQCtTxGRqA4SZFnC+G+=b0bK2ahpym+9eG31pRTv9FH1_-3w@mail.gmail.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="2elsNlWMoDLS1naF3lapWn8fAybx4NJLC"
+X-Provags-ID: V03:K1:v5SIylk+s1HQ2oCRJk7IvlqyNHvlKCpkBm/K1Dp1AR3dUrwTjyL
+ eu7FTLNqM2mFJq5afO9KuW1pY38M0MBvBc9s+I30cM/CIGyRXfb8WR224A6oAmRt9Sic3+V
+ a0pGyuwF6T7Yjinp7Ul5s6mHnYm6xFJD3b5om01f6UgN4zCR5ERZsfLQRIloNzI/6YM38n0
+ 7ef/BIeetnkotSi8Zdcpw==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:+dplnMF8ZqU=:IzORSRGwf2Kmxvq0TOPal3
+ 8A81qKRo6OGboAj7jkd3VnC059ITCRVSVW6JhZgotdLeHvei1Yhmvl3iP0i+oyVsqVZgiHAWb
+ IPW/oF9wiei3TNgOm/D/4PnrzXfWodOIqDSV6M5SyHa8lejrvlyyvVHz6EnqgsafBblzTgbNU
+ LM0PjtkMtAB76p+mhzNMaD2sS+tJxONhgBM9msWN4/o5bB8tmbQQmXBRDifabX8wr2YQUOnSs
+ KxL6K9QC5pF/ozwaa8EqlPX2sKe2q70e8jVMTzui+loB0HXDmg0hkBf24vh9Oh2Abn9Y99P/B
+ x7S84kupq48CORhNNoc8hz/3BRgHacryZK6y5vG38jo/vkb2s56tbFti0GWOuUpaNrvMdKuo/
+ 25f2Q8IBs5vu8zwwJT2z9ryYJqcBqZZzFJQxDj3tBffNG63z0A90Frv42u72K4BvQvV6Z1n0W
+ QMChYom99RsOsQQBbN4USUo+ww5RDFKJeesW3eLaf5dEHzZMp45VqxvY//jqRKqYvDXA/aDK7
+ eMDizv+HNMlwmcOXEcKwSEkWTxVgZaXoB13GT3IVHBBD9t9kQgRrfJDuWkoNY0suuqUWqcMhg
+ gpKj1dIEuyqj9ULAFuggiVZhaOyt1v1e8sJyLGQDZ2mFvKs+rgiFUwbrbyNSfTsazpembM9VG
+ FIDYh0TFtjsGaLKJBs69a8DzBcXvl6fkWo+TFP+N+Vp3xLFhiMO9j+1esMgSD856hZj8zLWZ+
+ CHnQzGGFZ0idkK+HgpPZkbafJvOM26SBWZ8EXAQ4Fd1Ev9RKk7Kl5IH95u3NbQGW35/f+I0dA
+ pFohlbOv4BBYbYgOc1wkY27Culb+kXLnSmFMrDB88n6uxxc8UbHzAdYozJLQvH7Z4DATj15j4
+ esEFGuribp9mbZHpocxk+GOoxQHZgBMG/zfqmQtRAZxU5Ikuq6kVCcA9uQzIZEKOvsH3q5esQ
+ X+wQJYJmScpKl6ZXkL5EB3ixNZv6F+eM5rl/P1PEiGZrOc8AGdHOpPEwMDw7Tz/rJxqLZjWY2
+ nZTClHkGRkd3KssC6bzM5fpbTh5Ow83ChDFVzCI6zgLE0l/aTZxUCm1hyCQExek+6fn4ujfHk
+ PinmJ3Bgp9anH4SJaNyy4FKcbZhkIhmXxbgvcl5NNVmBw2B5yLcmmSkQMFaGlpBybrnfQmb5q
+ NEIO7DNayK2fiJ/heNAvnssRrZdqiJsB2ctZCRuknVFUJxcYYlxUo2wyNCzMJy8wdVr0sykB5
+ KtLhJyOOD4bJXNVn0
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--2elsNlWMoDLS1naF3lapWn8fAybx4NJLC
+Content-Type: multipart/mixed; boundary="MsOWPtIYmuHjtIRoze0J1hffUOZSwJlaT"
 
-David,
+--MsOWPtIYmuHjtIRoze0J1hffUOZSwJlaT
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-  I am not sure if this will be integrated in 5.8 and worth the time to
-  rebase. Kindly suggest.
 
--Anand
 
-On 6/4/20 7:51 pm, Anand Jain wrote:
-> v7:
-> Fix switch's fall through warning. Changle logs updates where necessary.
-> 
-> v6:
-> Patch 4/5 - If there is no change in device's read prefer then don't log
-> Patch 4/5 - Add pid to the logs
-> Patch 5/5 - If there isn't read preferred device in the chunk don't reset
-> read policy to default, instead just use stripe 0. As this is in
-> the read path it avoids going through the device list to find
-> read preferred device. So inline to this drop to check if there
-> is read preferred device before setting read policy to device.
-> 
-> __ Original email: __
-> 
-> v5:
-> Worked on review comments as received in its previous version.
-> Please refer to individual patches for the specific changes.
-> Introduces the new read_policy 'device'.
-> 
-> v4:
-> Rename readmirror attribute to read_policy. Drop separate kobj for
-> readmirror instead create read_policy attribute in fsid kobj.
-> merge v2:2/3 and v2:3/3 into v4:2/2. Patch titles have changed.
->   
-> v3:
-> v2:
-> Mainly fixes the fs_devices::readmirror declaration type from atomic_t
-> to u8. (Thanks Josef).
-> 
-> v1:
-> As of now we use only %pid method to read stripped mirrored data. So
-> application's process id determines the stripe id to be read. This type
-> of routing typically helps in a system with many small independent
-> applications tying to read random data. On the other hand the %pid
-> based read IO distribution policy is inefficient if there is a single
-> application trying to read large data as because the overall disk
-> bandwidth would remains under utilized.
-> 
-> One type of readmirror policy isn't good enough and other choices are
-> routing the IO based on device's waitqueue or manual when we have a
-> read-preferred device or a readmirror policy based on the target storage
-> caching. So this patch-set introduces a framework where we could add more
-> readmirror policies.
-> 
-> This policy is a filesystem wide policy as of now, and though the
-> readmirror policy at the subvolume level is a novel approach as it
-> provides maximum flexibility in the data center, but as of now its not
-> practical to implement such a granularity as you can't really ensure
-> reflinked extents will be read from the stripe of its desire and so
-> there will be more limitations and it can be assessed separately.
-> 
-> The approach in this patch-set is sys interface with in-memory policy.
-> And does not add any new readmirror type in this set, which can be add
-> once we are ok with the framework. Also the default policy remains %pid.
-> 
-> Previous works:
-> ----------------------------------------------------------------------
-> There were few RFCs [1] before, mainly to figure out storage
-> (or in memory only) for the readmirror policy and the interface needed.
-> 
-> [1]
-> https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg86368.html
-> 
-> https://lore.kernel.org/linux-btrfs/20190826090438.7044-1-anand.jain@oracle.com/
-> 
-> https://lore.kernel.org/linux-btrfs/5fcf9c23-89b5-b167-1f80-a0f4ac107d0b@oracle.com/
-> 
-> https://patchwork.kernel.org/cover/10859213/
-> 
-> Mount -o:
-> In the first trial it was attempted to use the mount -o option to carry
-> the readmirror policy, this is good for debugging which can make sure
-> even the mount thread metadata tree blocks are read from the disk desired.
-> It was very effective in testing radi1/raid10 write-holes.
-> 
-> Extended attribute:
-> As extended attribute is associated with the inode, to implement this
-> there is bit of extended attribute abuse or else makes it mandatory to
-> mount the rootid 5. Its messy unless readmirror policy is applied at the
-> subvol level which is not possible as of now.
-> 
-> An item type:
-> The proposed patch was to create an item to hold the readmirror policy,
-> it makes sense when compared to the abusive extended attribute approach
-> but introduces a new item and so no backward compatibility.
-> -----------------------------------------------------------------------
-> 
-> Anand Jain (5):
->    btrfs: add btrfs_strmatch helper
->    btrfs: create read policy framework
->    btrfs: create read policy sysfs attribute, pid
->    btrfs: introduce new device-state read_preferred
->    btrfs: introduce new read_policy device
-> 
->   fs/btrfs/sysfs.c   | 128 +++++++++++++++++++++++++++++++++++++++++++++
->   fs/btrfs/volumes.c |  39 +++++++++++++-
->   fs/btrfs/volumes.h |  16 ++++++
->   3 files changed, 182 insertions(+), 1 deletion(-)
-> 
+On 2020/4/30 =E4=B8=8A=E5=8D=883:21, Chris Murphy wrote:
+> On Wed, Apr 29, 2020 at 9:45 AM Michal Soltys <msoltyspl@yandex.pl> wro=
+te:
+>>
+>> Short update:
+>>
+>> 1) turned out to not be btrfs fault in any way or form, as we recreate=
+d
+>> the same issue with ext4 while manually checksumming the files; so if
+>> anything, btrfs told us we have actual issues somewhere =3D)
+
+Is that related to mixing buffered write with DIO write?
+
+If so, maybe changing the qemu cache mode may help?
+
+Thanks,
+Qu
+
+>>
+>> 2) qemu/vm scenario is also not to be blamed, as we recreated the issu=
+e
+>> directly on the host as well
+>>
+>> So as far as I can see, both of the above narrows the potential culpri=
+ts
+>> to either faulty/buggy hardware/firmware somewhere - or - some subtle
+>> lvm/md/kernel issues. Though so far pinpointing the issue is proving
+>> rather frustrating.
+>>
+>>
+>> Anyway, sorry for the noise.
+>=20
+> It's not noise. I think it's useful to see how Btrfs can help isolate
+> such cases.
+>=20
+
+
+--MsOWPtIYmuHjtIRoze0J1hffUOZSwJlaT--
+
+--2elsNlWMoDLS1naF3lapWn8fAybx4NJLC
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAl6qLgkACgkQwj2R86El
+/qgeawf8C0LZ/EVioR1X4cA8PxrSKal/WrbExTuE1olrsyOVO/l6AtZ7ZgIGQMDe
+tiNPv11wut/k+gIwLkMD5nkaoMNVBE9totdtwsTOEF6QcL+BQWofU3BMPtAxnp7y
+NTAnmUImy5MoZCEiK7mCN59yOKRGhKRJqZDGF1COnjroudh2aeW5QIEbhuJmUw7R
+RYPm+12KA22yL1+5+3mq8NrKCD/NaQ53VqZcILe6DbURFFjcwAXQp9ZxDz5InfN8
+K5/smWgFTfPt1eeJZDEu1ffq4eToJ7dHlkFGt5wo8/yhgfaVUw6YYWdhDTQ4vgM8
+114evnkvsbBt4PpooYuBJjOet/bDrA==
+=d0rw
+-----END PGP SIGNATURE-----
+
+--2elsNlWMoDLS1naF3lapWn8fAybx4NJLC--

@@ -2,89 +2,204 @@ Return-Path: <SRS0=+YqI=6O=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9CDF6C4724C
-	for <linux-btrfs@archiver.kernel.org>; Thu, 30 Apr 2020 21:40:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 18068C47257
+	for <linux-btrfs@archiver.kernel.org>; Thu, 30 Apr 2020 21:53:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 7B3322064C
-	for <linux-btrfs@archiver.kernel.org>; Thu, 30 Apr 2020 21:40:23 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1588282823;
-	bh=mJs5hluqduo9dtI8ms49qYStG1gIgUgTJaDMGc0TwsY=;
-	h=Date:From:To:Cc:Subject:In-Reply-To:References:List-ID:From;
-	b=r3hWvcWOaUkAuwLDbVrGLG7SJgAsNqSDkvg6+mYLBQ/qkU3YiWwuJXxgN+7H703A9
-	 fuc9METYMIxEGYuXjFi5vJj79S0MuFq8sbefDIneYeR0jm17UucqMp/xAbWhOBDMH8
-	 tPNYOC4gqrhgAQSijyEkAkkqCAuDJudu7AtGGuQc=
+	by mail.kernel.org (Postfix) with ESMTP id E85A920731
+	for <linux-btrfs@archiver.kernel.org>; Thu, 30 Apr 2020 21:53:06 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=cloud.ionos.com header.i=@cloud.ionos.com header.b="coBxNrXx"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726926AbgD3VkU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 30 Apr 2020 17:40:20 -0400
-Received: from mail.kernel.org ([198.145.29.99]:48196 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726447AbgD3VkU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 30 Apr 2020 17:40:20 -0400
-Received: from localhost.localdomain (c-73-231-172-41.hsd1.ca.comcast.net [73.231.172.41])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 872792064C;
-        Thu, 30 Apr 2020 21:40:18 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1588282819;
-        bh=mJs5hluqduo9dtI8ms49qYStG1gIgUgTJaDMGc0TwsY=;
-        h=Date:From:To:Cc:Subject:In-Reply-To:References:From;
-        b=bC8IorIvBOl0MDL52/kEKkObD8oM2TuQj0h4qMWCgw91RtBB3hNmYby7KsliyZY/M
-         zZl0imt5lRxodssgDt7UYZkzSoJBk7pK5roliimn5FjgWANZtHDXpfsNqtHfYlO33c
-         JCGyBuuntmyuEFjLJdo7KY8mjVnUhjBCyuK81QjY=
-Date:   Thu, 30 Apr 2020 14:40:18 -0700
-From:   Andrew Morton <akpm@linux-foundation.org>
-To:     fdmanana@kernel.org
-Cc:     linux-mm@kvack.org, linux-kernel@vger.kernel.org,
-        dennis@kernel.org, tj@kernel.org, cl@linux.com,
-        linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: Re: [PATCH] percpu: make pcpu_alloc() aware of current gfp context
-Message-Id: <20200430144018.c855f031b321d68e5c89b30c@linux-foundation.org>
-In-Reply-To: <20200430164356.15543-1-fdmanana@kernel.org>
-References: <20200430164356.15543-1-fdmanana@kernel.org>
-X-Mailer: Sylpheed 3.5.1 (GTK+ 2.24.31; x86_64-pc-linux-gnu)
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
+        id S1727856AbgD3Vwo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 30 Apr 2020 17:52:44 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45986 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727788AbgD3Vwm (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 30 Apr 2020 17:52:42 -0400
+Received: from mail-ej1-x642.google.com (mail-ej1-x642.google.com [IPv6:2a00:1450:4864:20::642])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EEF02C08E934
+        for <linux-btrfs@vger.kernel.org>; Thu, 30 Apr 2020 14:52:40 -0700 (PDT)
+Received: by mail-ej1-x642.google.com with SMTP id gr25so5963774ejb.10
+        for <linux-btrfs@vger.kernel.org>; Thu, 30 Apr 2020 14:52:40 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=cloud.ionos.com; s=google;
+        h=from:to:cc:subject:date:message-id:in-reply-to:references;
+        bh=A09pnxCtmHNFxtu5/7SWNRBZ57kuvjkQtubB+do4qv0=;
+        b=coBxNrXxFKfsgd7ezmeRSMXArxrt4d5nG71g2m2wa3tS/g6U6HEWU9BoF6/hkAXZoG
+         577qwNithCoeR1JzQnF6A6JRGXpAqNL/fRuja5anAhDdJq+TkHUONmaDVzJlSNgkhc2I
+         dk1pmVRAlGg9aVQ8aELP8PYAzHz0JrF3DN9gQryz1pVoAsJMJVIRe1Pd1N3gCghHC9yL
+         yqSQiDQ4el0qSc//QT9+h3Ogegpsh3a/5yhPvrkMTmpnw7OE+Mow6HAZhgv8VOKOTUyE
+         IIQVwnF5yomS1DIMau0s9YDJqLuIR0w15xpkZXu6XOffLWkGdQhWNRbqXSNiibl6KsAh
+         vDjg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
+         :references;
+        bh=A09pnxCtmHNFxtu5/7SWNRBZ57kuvjkQtubB+do4qv0=;
+        b=lzPXuNxLyewM0QB7xvsXqdjd8OV9XsGu3Hjhkd6FyfxQlJ00UwUwz3PaYE1HA17GA1
+         X6ow6JZF46zVNq4vQlTbjqwop0zHT7knQY9luKhqHavFuPPOocxIFHwZk8c9PYdTrXrJ
+         zdHF2pexpIwsGo5dtShY1uYK2jE+RRhx1Zao0o7LFumNdsCqP1TofDzXWoxy+aQ5C43b
+         L7zRPYec38RIRWTD4PT9trPzJ2Q4Lvt1lB4cmc/FSBbSeX+IwowLUKYAk+Yo2FaAWWBa
+         +ugcW0+m0VDBLjweUo1cNIEt0iDNdVl7DS07E+KJss8AIdSLO3DEtkxHJCB5wqeeYCQa
+         syaQ==
+X-Gm-Message-State: AGi0PubElmvNKl6JonbZC2IAxwU+vK0Nvd1xIyIh9l8eoga/Wa2nUGD+
+        Sys5cesowJd85pqPGAD6dxUHig==
+X-Google-Smtp-Source: APiQypK91YmJ/zypDwWYeiUGGTtRcY3r6jBUkl5+7k4v01U2o6zcWTEhskl4b2aH+/9BYKgT54UQQw==
+X-Received: by 2002:a17:906:90cc:: with SMTP id v12mr504911ejw.211.1588283559260;
+        Thu, 30 Apr 2020 14:52:39 -0700 (PDT)
+Received: from ls00508.pb.local ([2001:1438:4010:2540:b82f:dfc:5e2a:e7cc])
+        by smtp.gmail.com with ESMTPSA id f13sm92022ejd.2.2020.04.30.14.52.38
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Thu, 30 Apr 2020 14:52:38 -0700 (PDT)
+From:   Guoqing Jiang <guoqing.jiang@cloud.ionos.com>
+To:     linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc:     hch@infradead.org, david@fromorbit.com, willy@infradead.org,
+        Guoqing Jiang <guoqing.jiang@cloud.ionos.com>,
+        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+Subject: [RFC PATCH V2 3/9] btrfs: use attach/clear_page_private
+Date:   Thu, 30 Apr 2020 23:44:44 +0200
+Message-Id: <20200430214450.10662-4-guoqing.jiang@cloud.ionos.com>
+X-Mailer: git-send-email 2.17.1
+In-Reply-To: <20200430214450.10662-1-guoqing.jiang@cloud.ionos.com>
+References: <20200430214450.10662-1-guoqing.jiang@cloud.ionos.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, 30 Apr 2020 17:43:56 +0100 fdmanana@kernel.org wrote:
+Since the new pair function is introduced, we can call them to clean the
+code in btrfs.
 
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> Since 5.7-rc1, on btrfs we have a percpu counter initialization for which
-> we always pass a GFP_KERNEL gfp_t argument (this happens since commit
-> 2992df73268f78 ("btrfs: Implement DREW lock")).  That is safe in some
-> contextes but not on others where allowing fs reclaim could lead to a
-> deadlock because we are either holding some btrfs lock needed for a
-> transaction commit or holding a btrfs transaction handle open.  Because
-> of that we surround the call to the function that initializes the percpu
-> counter with a NOFS context using memalloc_nofs_save() (this is done at
-> btrfs_init_fs_root()).
-> 
-> However it turns out that this is not enough to prevent a possible
-> deadlock because percpu_alloc() determines if it is in an atomic context
-> by looking exclusively at the gfp flags passed to it (GFP_KERNEL in this
-> case) and it is not aware that a NOFS context is set.  Because it thinks
-> it is in a non atomic context it locks the pcpu_alloc_mutex, which can
-> result in a btrfs deadlock when pcpu_balance_workfn() is running, has
-> acquired that mutex and is waiting for reclaim, while the btrfs task that
-> called percpu_counter_init() (and therefore percpu_alloc()) is holding
-> either the btrfs commit_root semaphore or a transaction handle (done at
-> fs/btrfs/backref.c:iterate_extent_inodes()), which prevents reclaim from
-> finishing as an attempt to commit the current btrfs transaction will
-> deadlock.
-> 
+Cc: Chris Mason <clm@fb.com>
+Cc: Josef Bacik <josef@toxicpanda.com>
+Cc: David Sterba <dsterba@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Signed-off-by: Guoqing Jiang <guoqing.jiang@cloud.ionos.com>
+---
+RFC -> RFC V2
+1. change the name of new functions to attach/clear_page_private.
+2. call attach_page_private(newpage, clear_page_private(page)) to
+   cleanup code further as suggested by Dave Chinner.
 
-Patch looks good and seems sensible, thanks.
+ fs/btrfs/disk-io.c   |  4 +---
+ fs/btrfs/extent_io.c | 21 ++++++---------------
+ fs/btrfs/inode.c     | 23 +++++------------------
+ 3 files changed, 12 insertions(+), 36 deletions(-)
 
-But why did btrfs use memalloc_nofs_save()/restore() rather than
-s/GFP_KERNEL/GFP_NOFS/?
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index a6cb5cbbdb9f..fe4acf821110 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -980,9 +980,7 @@ static void btree_invalidatepage(struct page *page, unsigned int offset,
+ 		btrfs_warn(BTRFS_I(page->mapping->host)->root->fs_info,
+ 			   "page private not zero on page %llu",
+ 			   (unsigned long long)page_offset(page));
+-		ClearPagePrivate(page);
+-		set_page_private(page, 0);
+-		put_page(page);
++		clear_page_private(page);
+ 	}
+ }
+ 
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 39e45b8a5031..095a5e83e660 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3076,22 +3076,16 @@ static int submit_extent_page(unsigned int opf,
+ static void attach_extent_buffer_page(struct extent_buffer *eb,
+ 				      struct page *page)
+ {
+-	if (!PagePrivate(page)) {
+-		SetPagePrivate(page);
+-		get_page(page);
+-		set_page_private(page, (unsigned long)eb);
+-	} else {
++	if (!PagePrivate(page))
++		attach_page_private(page, eb);
++	else
+ 		WARN_ON(page->private != (unsigned long)eb);
+-	}
+ }
+ 
+ void set_page_extent_mapped(struct page *page)
+ {
+-	if (!PagePrivate(page)) {
+-		SetPagePrivate(page);
+-		get_page(page);
+-		set_page_private(page, EXTENT_PAGE_PRIVATE);
+-	}
++	if (!PagePrivate(page))
++		attach_page_private(page, (void *)EXTENT_PAGE_PRIVATE);
+ }
+ 
+ static struct extent_map *
+@@ -4929,10 +4923,7 @@ static void btrfs_release_extent_buffer_pages(struct extent_buffer *eb)
+ 			 * We need to make sure we haven't be attached
+ 			 * to a new eb.
+ 			 */
+-			ClearPagePrivate(page);
+-			set_page_private(page, 0);
+-			/* One for the page private */
+-			put_page(page);
++			clear_page_private(page);
+ 		}
+ 
+ 		if (mapped)
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 320d1062068d..34b09ab2c32a 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -8303,11 +8303,8 @@ btrfs_readpages(struct file *file, struct address_space *mapping,
+ static int __btrfs_releasepage(struct page *page, gfp_t gfp_flags)
+ {
+ 	int ret = try_release_extent_mapping(page, gfp_flags);
+-	if (ret == 1) {
+-		ClearPagePrivate(page);
+-		set_page_private(page, 0);
+-		put_page(page);
+-	}
++	if (ret == 1)
++		clear_page_private(page);
+ 	return ret;
+ }
+ 
+@@ -8329,14 +8326,8 @@ static int btrfs_migratepage(struct address_space *mapping,
+ 	if (ret != MIGRATEPAGE_SUCCESS)
+ 		return ret;
+ 
+-	if (page_has_private(page)) {
+-		ClearPagePrivate(page);
+-		get_page(newpage);
+-		set_page_private(newpage, page_private(page));
+-		set_page_private(page, 0);
+-		put_page(page);
+-		SetPagePrivate(newpage);
+-	}
++	if (page_has_private(page))
++		attach_page_private(newpage, clear_page_private(page));
+ 
+ 	if (PagePrivate2(page)) {
+ 		ClearPagePrivate2(page);
+@@ -8458,11 +8449,7 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
+ 	}
+ 
+ 	ClearPageChecked(page);
+-	if (PagePrivate(page)) {
+-		ClearPagePrivate(page);
+-		set_page_private(page, 0);
+-		put_page(page);
+-	}
++	clear_page_private(page);
+ }
+ 
+ /*
+-- 
+2.17.1
+

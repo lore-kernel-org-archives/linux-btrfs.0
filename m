@@ -2,138 +2,186 @@ Return-Path: <SRS0=+YqI=6O=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.0 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3E83BC83001
-	for <linux-btrfs@archiver.kernel.org>; Thu, 30 Apr 2020 06:05:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2560FC83001
+	for <linux-btrfs@archiver.kernel.org>; Thu, 30 Apr 2020 07:02:01 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 25CB62173E
-	for <linux-btrfs@archiver.kernel.org>; Thu, 30 Apr 2020 06:05:11 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id F06FA20838
+	for <linux-btrfs@archiver.kernel.org>; Thu, 30 Apr 2020 07:02:00 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="HQjLT/Xt"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726404AbgD3GFK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 30 Apr 2020 02:05:10 -0400
-Received: from mx2.suse.de ([195.135.220.15]:42702 "EHLO mx2.suse.de"
+        id S1726502AbgD3HCA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 30 Apr 2020 03:02:00 -0400
+Received: from mout.gmx.net ([212.227.17.22]:59837 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726180AbgD3GFJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 30 Apr 2020 02:05:09 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id EC7EDAB76;
-        Thu, 30 Apr 2020 06:05:06 +0000 (UTC)
-Subject: Re: [PATCH v3 REBASED 0/3] btrfs: fix issues due to alien device
-To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
-Cc:     dsterba@suse.com, josef@toxicpanda.com
-References: <20200428152227.8331-1-anand.jain@oracle.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <55a5fd3a-dddb-df52-7f22-01e3407c0325@suse.com>
-Date:   Thu, 30 Apr 2020 09:05:06 +0300
+        id S1726337AbgD3HB7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 30 Apr 2020 03:01:59 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1588230117;
+        bh=ZN61G0cKkNYGu/zBQwfC8CPlrWXnzKrly6XnzWnqALY=;
+        h=X-UI-Sender-Class:Subject:To:Cc:References:From:Date:In-Reply-To;
+        b=HQjLT/Xt0LD2psSBxaZQ+64yjiWy/3SBiz37rw4ez4xY0T7bG16Rn3LcKuGX2IIBJ
+         nva107ntYloVEG3z9MttDV18R1GpmMyKo1V5+wpaSVbHr+tVN602+gtgx1OfnzaJLk
+         LIoO3V+QhrQKzt2Ul7xDGAfxqIY79RpGlo2PYwCY=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx105
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1MbivG-1itLHG2WsA-00dGww; Thu, 30
+ Apr 2020 09:01:57 +0200
+Subject: Re: many csum warning/errors on qemu guests using btrfs
+To:     Chris Murphy <lists@colorremedies.com>
+Cc:     Michal Soltys <msoltyspl@yandex.pl>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <0ee3844d-830f-9f29-2cd5-61e3c9744979@yandex.pl>
+ <76ec883b-3e44-fcda-d981-93a9e120f56d@yandex.pl>
+ <CAJCQCtTxGRqA4SZFnC+G+=b0bK2ahpym+9eG31pRTv9FH1_-3w@mail.gmail.com>
+ <cc0b6672-a65a-5c7b-d561-21cc585ead62@gmx.com>
+ <CAJCQCtTwH54CEhcGwv1S9P-i8JOgSHZFg3sKkQxAL1ppeG1cwQ@mail.gmail.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAU4EEwEIADgCGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1oQAKCRDC
+ PZHzoSX+qCY6CACd+mWu3okGwRKXju6bou+7VkqCaHTdyXwWFTsr+/0ly5nUdDtT3yEVggPJ
+ 3VP70wjlrxUjNjFb6iIvGYxiPOrop1NGwGYvQktgRhaIhALG6rPoSSAhGNjwGVRw0km0PlIN
+ D29BTj/lYEk+jVM1YL0QLgAE1AI3krihg/lp/fQT53wLhR8YZIF8ETXbClQG1vJ0cllPuEEv
+ efKxRyiTSjB+PsozSvYWhXsPeJ+KKjFen7ebE5reQTPFzSHctCdPnoR/4jSPlnTlnEvLeqcD
+ ZTuKfQe1gWrPeevQzgCtgBF/WjIOeJs41klnYzC3DymuQlmFubss0jShLOW8eSOOWhLRuQEN
+ BFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcgaCbPEwhLj
+ 1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj/IrRUUka
+ 68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fNGSsRb+pK
+ EKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0q1eW4Jrv
+ 0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEvABEBAAGJ
+ ATwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1rgUJCWpOfwAKCRDCPZHz
+ oSX+qFcEB/95cs8cM1OQdE/GgOfCGxwgckMeWyzOR7bkAWW0lDVp2hpgJuxBW/gyfmtBnUai
+ fnggx3EE3ev8HTysZU9q0h+TJwwJKGv6sUc8qcTGFDtavnnl+r6xDUY7A6GvXEsSoCEEynby
+ 72byGeSovfq/4AWGNPBG1L61Exl+gbqfvbECP3ziXnob009+z9I4qXodHSYINfAkZkA523JG
+ ap12LndJeLk3gfWNZfXEWyGnuciRGbqESkhIRav8ootsCIops/SqXm0/k+Kcl4gGUO/iD/T5
+ oagaDh0QtOd8RWSMwLxwn8uIhpH84Q4X1LadJ5NCgGa6xPP5qqRuiC+9gZqbq4Nj
+Message-ID: <869f0156-64a9-3b53-001a-57e3efeba157@gmx.com>
+Date:   Thu, 30 Apr 2020 15:01:53 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
  Thunderbird/68.7.0
 MIME-Version: 1.0
-In-Reply-To: <20200428152227.8331-1-anand.jain@oracle.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <CAJCQCtTwH54CEhcGwv1S9P-i8JOgSHZFg3sKkQxAL1ppeG1cwQ@mail.gmail.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="DORbZ1oVXT8x316RINNdzBVzpvMA1oIZw"
+X-Provags-ID: V03:K1:nlxr32Z94HcarrCKX9FFTD2J+wwy0po9opjKzR0tjrh0lHcukLn
+ GoRvlQ2v38sbRpAtdHMZj7IV8Xp79q5o8RiuGP+ZUVXE1Tl2lGaamwGJIefslhjMYiVPGkB
+ UA8wocBTEYiYGsvyy8bRSrdL7k1fq5vUgMBEL9mhO6Vsaqv+hn+PPo40LMYcJJv8nsVlatr
+ zfH2ebwPkdO+wbHMJEv+A==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:BEYvGkfrSD0=:pwINJpprvyenWJZoPRx1/x
+ Bnya2dtHq9GAtX+9CGvlAcNJNNiCs/toskuPxpmx76EDGcApLppn9HFscsROGosk0RQs1PsdL
+ mwd8FbBDg25Kt9E/7Qk8d38wXpTjDNyh+YdTA5Z9RRZW/0Nrw6gke/cMMUeTxdb+HfIoNMl6d
+ Mg2MJOT92TjZQ073BeffhHIo02LjG6drcIugZIjoI0dnh4T8Q2KkzuX0d0PDp8k97gSGF7hHT
+ MtA63XMoESiT7aktxy5pS2Z6GxGSkyeut0XslDN1ifV2gdXGtIW669jRukjZKMICqIB2poiW8
+ y/WsbhoCgWcbtkFBXixg269PPpoBLqtBdNbhDhOUXuhe9OjPHi3PEP4Gnf4th5CnTI6jD1T86
+ 0TgsfmtSkmWDX+UqDz8xZVdFEKKFNuIIBPxaZk+wO1cfDaoPl5ke13suGyZDYD1drH9eDquo7
+ g0T+FI+dunJas/NC9KQD4QraosP8rygo0l3aFbybEkSL7DX468LC/SxxLl9R2JcZdj9toFEB6
+ yb23guqoUy5/sAmTbB2gzkhp9dlow2boQI59XER/XETbF73+Sz0BlSIztU79OKGn+xeNtNWvd
+ InDD2Y2gSAiQq2APGJxAf09pbLfPOnr5wUqKpF57sZpLybcIESF6llxBohbkgBhhf2pl0D73C
+ W4PfSEE92b8ErVCdk/xFhoIo4v+/858xZsOfGUeT+loB33m9nAc335to1KFVVa5UzcLSY+e6N
+ 6dNXWICqvY3xkSYPv0EeRKKbhfEr6f5+MiuOLC2HUbF7xvY2HKodCRY12hO1Dk2MY9EyvjgQv
+ K5Ti8KEn6u+r5uv+3J9RXezK9FQUpoytWUIk3LJ3qGLpUJ6OYEkCVXKVdzbFP0fmneFgTNm6q
+ v1rfEOA5jKx6DDchXW9VDsn5gKw0rZZkPCgkgaiZwxxRoXYDAioOy44vHViFQUNzG7mxPs+KC
+ pKIpI9/LQYpi2xZ31/kFQEwomZDtLe7vncBawndPqkve0DBkeGlRGI73cgdo4gkXmfIVS6wuP
+ a9XD/Vg7BzVFIIrXBNOK+GMyO00X5811QVghHbAh4ZeL25HNnfiJUplYMcNXw05jLDAVNM6St
+ FIgBCoA5M8UpT1VXfPIo0LpiF6G/Fj3hBQZUb9k/BlTC4kmV/pbTKXHGaiTCC/LSy7KUeEhG+
+ 7WtVi9NY2a+U5UrezA7DIpPciSu0g7Cn23gzYTvK5Yr2tsEAKEiDaK74WtcuJZ4fRHy2Xbiyq
+ d4aaL287oMgAFUrdv
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--DORbZ1oVXT8x316RINNdzBVzpvMA1oIZw
+Content-Type: multipart/mixed; boundary="Kzrb04bbiu2iPIVdLHdZNcknX3H3HhOZ4"
+
+--Kzrb04bbiu2iPIVdLHdZNcknX3H3HhOZ4
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
 
-On 28.04.20 г. 18:22 ч., Anand Jain wrote:
-> v3 REBASED: Based on the latest misc-next. for for-5.8.
->    Dropped the following patches as there were concerns about the usage
->    of error code -EUCLEAN
-> 	btrfs: remove identified alien device in open_fs_devices
-> 	btrfs: remove identified alien btrfs device in open_fs_devices
-> 
->    Rmaining 3 patches here have obtained reviewed-by. With this pathset
->    the pertaining fstests btrfs/197 and btrfs/198 (which tests 3 bugs)
->    would pass as the patch 2/3 fixed a bug and 3/3 fixed the trigger
->    of 2 other bugs (patch 1/3 is just a cleanup). Further at the moment
->    I am not sure if there is any other trigger where it could again leave
->    an alien device in the fs_devices leading to the same/similar bugs.
-> 
-> ==== original email ====
-> v3: Fix alien device is due to wipefs in Patch4.
->     Fix a nit in Patch3.
->     Patches are reordered.
-> 
-> Alien device is a device in fs_devices list having a different fsid than
-> the expected fsid or no btrfs_magic. This patch set fixes issues found due
-> to the same.
-> 
-> Patch1: is a cleanup patch, not related.
-> Patch2: fixes failing to mount a degraded RAIDs (RAID1/5/6/10), by
-> 	hardening the function btrfs_free_extra_devids().
-> Patch3: fixes the missing device (due to alien btrfs-device) not missing in
-> 	the userland, by hardening the function btrfs_open_one_device().
-> Patch4: fixes the missing device (due to alien device) not missing in
-> 	the userland, by returning EUCLEAN in btrfs_read_dev_one_super().
-> Patch5: eliminates the source of the alien device in the fs_devices.
-> 
-> PS: Fundamentally its wrong approach that btrfs-progs deduces the device
-> missing state in the userland instead of obtaining it from the kernel.
-> I remember objecting on the btrfs-progs patch which did that, but still
-> it got merged, bugs in p3 and p4 are its side effects. I wrote
-> patches to read device_state from the kernel using ioctl, procfs and
-> sysfs but it didn't get the due attention till a merger.
-> 
-> Anand Jain (3):
->   btrfs: drop useless goto in open_fs_devices
->   btrfs: include non-missing as a qualifier for the latest_bdev
->   btrfs: free alien device due to device add
-> 
->  fs/btrfs/volumes.c | 30 ++++++++++++++++++++++--------
->  1 file changed, 22 insertions(+), 8 deletions(-)
-> 
+
+On 2020/4/30 =E4=B8=8B=E5=8D=881:01, Chris Murphy wrote:
+> On Wed, Apr 29, 2020 at 7:46 PM Qu Wenruo <quwenruo.btrfs@gmx.com> wrot=
+e:
+>>
+>>
+>>
+>> On 2020/4/30 =E4=B8=8A=E5=8D=883:21, Chris Murphy wrote:
+>>> On Wed, Apr 29, 2020 at 9:45 AM Michal Soltys <msoltyspl@yandex.pl> w=
+rote:
+>>>>
+>>>> Short update:
+>>>>
+>>>> 1) turned out to not be btrfs fault in any way or form, as we recrea=
+ted
+>>>> the same issue with ext4 while manually checksumming the files; so i=
+f
+>>>> anything, btrfs told us we have actual issues somewhere =3D)
+>>
+>> Is that related to mixing buffered write with DIO write?
+>>
+>> If so, maybe changing the qemu cache mode may help?
+>=20
+> I thought this would only happen if the host is Btrfs?
+
+Mixed buffered write with direct IO is known to cause problem, not only
+for btrfs, but almost all fses.
+
+> Maybe it's a
+> bit crazy but these days I only use Btrfs on Btrfs with cache=3Dunsafe.=
 
 
-One thing I'm not clear is how can we get into a situation of an alien
-device. I.e devices should be in fs_devices iff they are part of the
-filesystem, no ?
+Unlike the name, if you're using cache=3Dunsafe, all writes are buffered,=
+
+thus you won't hit any csum mismatch problem caused by this.
+
+But you can hit other problems though, e.g. if memory pressure is
+forcing some image data to be written, it can break the COW requirement
+of the VM (but the file is still completely sane).
+
+> I do lots of VM force quits, never see any problems. I haven't tested
+> it, but I think unsafe is quite unsafe if the host crashes/power fails
+> while the guest is active. Performance is much better though.
+>=20
+Yeah, host power loss is another problem.
+
+But at least, cache=3Dunsafe actually avoids the csum problem.
+
+Thanks,
+Qu
+
+
+--Kzrb04bbiu2iPIVdLHdZNcknX3H3HhOZ4--
+
+--DORbZ1oVXT8x316RINNdzBVzpvMA1oIZw
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAl6qd+EACgkQwj2R86El
+/qjtOQgAp/wRvocUNEcBY4OIlElqCTOINvGtMorgFe0IHQKFSNUAmhgrm5AXXNRv
+R43WpIVWiF0cewIRPLtJyNYB5isrNLN4VvipHOYsxd1RWl3Cl1/aG5lzQgYRSB83
+PAO8A7bECDLINz3ym59zJK27Bkv8G2+dJvph55ntgR9XkOO7EMvRrlSKd9MfEcVw
+RCx8I9z6APcvAoLFu3snqRkf0WvA2tbQomTUV2J3C7eZ/qEggvuTrRHoDOZpr40o
+IBJ2Nx3X1mvVFzBeRI34ZrviRerkWnCOW3R0dRcDdeXGXcWO04pnZO8s7gNrhUbB
+2KU4+hIZ6FVd5pN2czxbHwtG6teVFg==
+=HgGa
+-----END PGP SIGNATURE-----
+
+--DORbZ1oVXT8x316RINNdzBVzpvMA1oIZw--

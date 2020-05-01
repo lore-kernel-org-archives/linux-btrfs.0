@@ -2,216 +2,90 @@ Return-Path: <SRS0=UUkT=6P=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
-	SPF_HELO_NONE,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1FF42C35280
-	for <linux-btrfs@archiver.kernel.org>; Fri,  1 May 2020 19:59:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EF864C35280
+	for <linux-btrfs@archiver.kernel.org>; Fri,  1 May 2020 21:26:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id E9F8E2166E
-	for <linux-btrfs@archiver.kernel.org>; Fri,  1 May 2020 19:59:06 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CA0C421835
+	for <linux-btrfs@archiver.kernel.org>; Fri,  1 May 2020 21:26:53 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="L7xAyv94"
+	dkim=pass (2048-bit key) header.d=zx2c4.com header.i=@zx2c4.com header.b="Ri8cPWQy"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727774AbgEAT7G (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 1 May 2020 15:59:06 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55512 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726377AbgEAT7F (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 May 2020 15:59:05 -0400
-Received: from mail-oo1-xc43.google.com (mail-oo1-xc43.google.com [IPv6:2607:f8b0:4864:20::c43])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BA1D0C061A0C
-        for <linux-btrfs@vger.kernel.org>; Fri,  1 May 2020 12:59:05 -0700 (PDT)
-Received: by mail-oo1-xc43.google.com with SMTP id q204so975993ooq.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 01 May 2020 12:59:05 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=9o41ZOZdkZnmDCeb+txJzc+aYR3RspfDqQSNyPkD7kE=;
-        b=L7xAyv94YKqs0toEJ+HmVusGtjfHxxYXIldS7b6icMsteBbKSIVhjJKOMeVf7nTwee
-         jjg2e2tYpqNT+cNJZKyeZy03ue5PZtbeOR7tjQgaP8Q0mqsSRiaxuUBU4qFMQBMECTj2
-         w3MXB9Px17fNpqtJ5QjAthmrarN5Iabxv7c3Lc+zeXNZOATdByE/VCxPJpzKsTSan3Iy
-         U+27wYk/YRnjeq+vssz5iawKdFu7BhhIk5klz3v8SAHJ4vGzhRA0yPqU3qp+32k1NZpP
-         Qqykg5hqmc7AZs3jVTxVk0QgXU2m8hPyZwzLBl5r8C6DquRFi3BPa5+psYbpOIn/TEgu
-         UNpQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=9o41ZOZdkZnmDCeb+txJzc+aYR3RspfDqQSNyPkD7kE=;
-        b=jteElSyc2/ojH5xeq7QyQ4niPUYdeM5HREXYP+P1f6HHbQZKDL7fFsACDB6LW6O/XO
-         9Syv+biN5uxxcLOfkv7O5fQhOV9vvF0irKx+ZUfU/CLSGiFvfpnkllmjxVh8JDcGYSAm
-         aUYoUzFOtYgiPhJMk5L/gSUP5JSaaYaCkTEW3L9lKKJ/BaNGCsNA0LdK7S3OFeMjR/eF
-         DQaUdwB70p2kmokXfJ394mYI69RH1UNP6O7EcS9++Mcpa6uA22+UUBA1vKpPxLx7ouRJ
-         Fm2JJJDLhbnrqJhESNKLuBgIa7BmlPaCBJU6Hb0fDo0AWKrGJ4pVB+VsowgVA5/YVj5L
-         ZjAw==
-X-Gm-Message-State: AGi0PubXaB3gO0mXZ0la5CH69iIWBjHPeAGi4n/Uh5XEarX28y0QEqMV
-        jLA1LjbC4iiR5zoeS/XCMP8SDJh925Iu9A+nvLkCx1t5w5U=
-X-Google-Smtp-Source: APiQypLowKwX6KD+NnxXO/psUcIDyLjchn3GxGnAMHjoNRCUf93c4s4vOG1QdBNqLPY8E71VJ0xsHW3LygNUHttU7t4=
-X-Received: by 2002:a4a:ea91:: with SMTP id r17mr1847265ooh.18.1588363144965;
- Fri, 01 May 2020 12:59:04 -0700 (PDT)
+        id S1726654AbgEAV0x (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 1 May 2020 17:26:53 -0400
+Received: from mail.zx2c4.com ([192.95.5.64]:60731 "EHLO mail.zx2c4.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726045AbgEAV0w (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 1 May 2020 17:26:52 -0400
+Received: by mail.zx2c4.com (ZX2C4 Mail Server) with ESMTP id 969305ee;
+        Fri, 1 May 2020 21:14:45 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha1; c=relaxed; d=zx2c4.com; h=date:from:to
+        :cc:subject:message-id:references:mime-version:content-type
+        :in-reply-to; s=mail; bh=Rh6xj7VSHsXpYqNI0fr453COz6c=; b=Ri8cPWQ
+        ym7a7UOrLp4K3siXQff8GIM8c3tKIaKedUvptR4G8MJgmC2eUkARTEZZy3BQ6HxA
+        op9jAKubI0F0ZBjjEwZjZ2gQUwF6ogtaYslvw2glHNfVfbUFmxaO8G9cxQBqEnFV
+        c4BKD91ZXS4WMr66nbTzs4NkqOaDAKOGmXOXtw87R1wlceUkbKdvq0hfQLTNFSWh
+        Z8m476S/dlYkk2tavE2XVuQtVujA9XqMMsRYxrntDtUvkXs9hPmk83AMDYfGfZEw
+        C1gUV/S61zTioEF4KH/AzLpl8rab7O+YkCgcS8MgSFRNXO6zSPFoRF2a11UdUWlR
+        veQ9BETwiAAU3Nw==
+Received: by mail.zx2c4.com (ZX2C4 Mail Server) with ESMTPSA id 4e20e9e3 (TLSv1.3:TLS_AES_256_GCM_SHA384:256:NO);
+        Fri, 1 May 2020 21:14:45 +0000 (UTC)
+Date:   Fri, 1 May 2020 15:26:48 -0600
+From:   "Jason A. Donenfeld" <Jason@zx2c4.com>
+To:     Johannes Thumshirn <jth@kernel.org>
+Cc:     David Sterba <dsterba@suse.cz>, linux-fsdevel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, Eric Biggers <ebiggers@google.com>,
+        Richard Weinberger <richard@nod.at>,
+        Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Subject: Re: [PATCH v2 0/2] Add file-system authentication to BTRFS
+Message-ID: <20200501212648.GA521030@zx2c4.com>
+References: <20200428105859.4719-1-jth@kernel.org>
 MIME-Version: 1.0
-References: <CAAhjAp1zghNnRpbA2WypBU9+Azeui8kTQiTj+DfbK-iX-z71WQ@mail.gmail.com>
- <CAJCQCtS7mbjEVchwbJS86ujAW+TrKHBk23oYtTNQnruiUr0XSg@mail.gmail.com>
-In-Reply-To: <CAJCQCtS7mbjEVchwbJS86ujAW+TrKHBk23oYtTNQnruiUr0XSg@mail.gmail.com>
-From:   Rollo ro <rollodroid@gmail.com>
-Date:   Fri, 1 May 2020 21:58:29 +0200
-Message-ID: <CAAhjAp33Kan3Aco1CWBVh54tatexNs3w=qJqLHq6yQjxzRjjjQ@mail.gmail.com>
-Subject: Re: Can't repair raid 1 array after drive failure
-To:     Chris Murphy <lists@colorremedies.com>
-Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+In-Reply-To: <20200428105859.4719-1-jth@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Am Fr., 1. Mai 2020 um 19:52 Uhr schrieb Chris Murphy <lists@colorremedies.com>:
->
-> On Fri, May 1, 2020 at 11:02 AM Rollo ro <rollodroid@gmail.com> wrote:
-> >
-> > Hi again,
-> > I'm still running into problems with btrfs. For testing purposes, I
-> > created a raid 1 filesystem yesterday and let the computer copy a ton
-> > of data on it over night:
-> >
-> > Label: 'BTRFS1'  uuid: 61e5aba9-6811-46ae-9396-35a72d3b1117
-> >         Total devices 3 FS bytes used 1.15TiB
-> >         devid    1 size 5.46TiB used 1.16TiB path /dev/sdc1
-> >         devid    3 size 698.64GiB used 10.00GiB path /dev/sdf
-> >         devid    4 size 1.82TiB used 1.15TiB path /dev/sde
-> >
-> > Today I started scrub and looked at the status some hours later, which
-> > gave thousands of errors on drive 4:
->
-> What happened to devid 2?
+Hi Johannes,
 
-I added number 3 and removed 2 earlier. That worked without problems.
+On Tue, Apr 28, 2020 at 12:58:57PM +0200, Johannes Thumshirn wrote:
+> Currently BRTFS supports CRC32C, XXHASH64, SHA256 and Blake2b for checksumming
+> these blocks. This series adds a new checksum algorithm, HMAC(SHA-256), which
+> does need an authentication key. When no, or an incoreect authentication key
+> is supplied no valid checksum can be generated and a read, fsck or scrub
+> operation would detect invalid or tampered blocks once the file-system is
+> mounted again with the correct key. 
 
->
-> >
-> > root@OMV:/var# btrfs scrub status /srv/dev-disk-by-label-BTRFS1/
-> > scrub status for 61e5aba9-6811-46ae-9396-35a72d3b1117
-> >         scrub started at Fri May  1 11:37:36 2020, running for 04:37:48
-> >         total bytes scrubbed: 1.58TiB with 75751000 errors
-> >         error details: read=75751000
-> >         corrected errors: 0, uncorrectable errors: 75750996,
-> > unverified errors: 0
-> >
-> > (Not shown here that it was drive 4, but it was)
-> >
-> > Then found that the drive is missing:
-> >
-> > Label: 'BTRFS1'  uuid: 61e5aba9-6811-46ae-9396-35a72d3b1117
-> >         Total devices 3 FS bytes used 1.15TiB
-> >         devid    1 size 5.46TiB used 1.16TiB path /dev/sdc1
-> >         devid    3 size 698.64GiB used 10.00GiB path /dev/sdf
-> >         *** Some devices missing
-> >
-> > Canceled scrub:
-> > root@OMV:/var# btrfs scrub cancel /srv/dev-disk-by-label-BTRFS1/
-> > scrub cancelled
-> >
-> > Stats showing lots of error on sde, which is the missing drive:
-> > root@OMV:/var# btrfs device stats /srv/dev-disk-by-label-BTRFS1/
-> > [/dev/sdc1].write_io_errs    0
-> > [/dev/sdc1].read_io_errs     0
-> > [/dev/sdc1].flush_io_errs    0
-> > [/dev/sdc1].corruption_errs  0
-> > [/dev/sdc1].generation_errs  0
-> > [/dev/sdf].write_io_errs    0
-> > [/dev/sdf].read_io_errs     0
-> > [/dev/sdf].flush_io_errs    0
-> > [/dev/sdf].corruption_errs  0
-> > [/dev/sdf].generation_errs  0
-> > [/dev/sde].write_io_errs    154997860
-> > [/dev/sde].read_io_errs     77170574
-> > [/dev/sde].flush_io_errs    310
-> > [/dev/sde].corruption_errs  0
-> > [/dev/sde].generation_errs  0
-> >
-> >
-> > I tried to replace
-> > root@OMV:/var# btrfs replace start 2 /dev/sdb /srv/dev-disk-by-label-BTRFS1/ &
-> > [1] 1809
-> > root@OMV:/var# ERROR: '2' is not a valid devid for filesystem
-> > '/srv/dev-disk-by-label-BTRFS1/'
-> >
-> > --> That's inconsistent with the device remove syntax, as it allows to
-> > use a non-existing number? I try again using the /dev/sdx syntax, but
-> > as sde is gone, I rescan and now it's sdi!
->
-> devid 2 was missing from the very start of the email, so it is not a
-> valid source for removal.
+In case you're interested, Blake2b and Blake2s both have "keyed" modes,
+which are more efficient than HMAC and achieve basically the same thing
+-- they provide a PRF/MAC. There are normal crypto API interfaces for
+these, and there's also an easy library interface:
 
-OK, I thought that any non-existing number can be used.
+#include <crypto/blake2s.h>
+blake2s(output_mac, input_data, secret_key,
+        output_mac_length, input_data_length, secret_key_length);
 
->
-> And devices vanishing and reappearing as other nodes suggests they're
-> on a flakey or transient bus. Are these SATA drives in USB enclosures?
-> And if so how are they connected?
+You might find that the performance of Blake2b and Blake2s is better
+than HMAC-SHA2-256.
 
-No, all the hard drives are internal drives connected to the
-mainboard's SATA connectors. Additionaly there is an USB flash drive
-for booting but that is not used for btrfs.
+But more generally, I'm wondering about the general design and what
+properties you're trying to provide. Is the block counter being hashed
+in to prevent rearranging? Are there generation counters to prevent
+replay/rollback?
 
->
-> A complete dmesg please (not trimmed, starting at boot) would be useful.
+Also, I'm wondering if this is the kind of feature you'd consider
+pairing with a higher speed AEAD, and maybe in a way that would
+integrate with the existing fscrypt tooling, without the need to manage
+two sets of keys. Ever looked at bcachefs' design for this?
+https://bcachefs.org/Encryption/
 
-dmesg is spammed with btrfs warnings and errors, so all earlier
-content is already gone. I can increase the buffer in grub
-configuration and provide the complete dmesg next time.
+Either way, I'm happy to learn that btrfs is a filesystem with some
+space baked in for authentication tags.
 
->
-> One device is missing, and another one vanished and reappeared, I
-> don't know whether Btrfs can really handle this case perfectly.
-
-But the first device I have removed, which worked without problems. I
-had a healthy raid 1 of two disks then. I don't know why the other
-drive got a new device name, but that may cause some extra problems.
-Meanwhile I read about the timeout mismatch and will add the small
-script from https://raid.wiki.kernel.org/index.php/Timeout_Mismatch
-Maybe this prevents the drive to disappear in first place.
-
->
-> > Version info:
-> > btrfs-progs v4.20.1
-> > Kernel 5.4.0-0.bpo.4-amd64
->
-> It's probably not related to the problem, which seems to be hardware
-> related.
-
-I also guess there could be hardware problems. This is for testing and
-practicing now. Later I will only keep the 6TB drive of my old drives
-and get two new drives. And new cables.
-
-> But btrfs-progs v4.20.1 is ~16 months development behind v5.6
-> which is current. And thousands of changes in the kernel just for
-> Btrfs.
-> https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/diff/?id=v5.6.8&id2=v5.4&dt=2
-
-I use a Debian based NAS distribution (OpenMediaVault) that doesn't
-provide a more recent version. I havn't figured out yet how to get a
-more recent version as my Linux knowledge is quite limited.
-
-While looking at dmesg I found this:
-[Fri May  1 16:25:15 2020] BTRFS warning (device sdc1): lost page
-write due to IO error on /dev/sde
-[Fri May  1 16:25:15 2020] BTRFS error (device sdc1): error writing
-primary super block to device 4
-[Fri May  1 16:25:15 2020] BTRFS info (device sdc1): disk added /dev/sdb
-[Fri May  1 16:25:49 2020] BUG: kernel NULL pointer dereference,
-address: 0000000000000000
-
-So I guess things are really messed up now. Maybe adding sdb has not
-even worked correctly. I will increase the dmesg buffer and the fix of
-the timeout problem and start again with a new filesystem.
-Thanks for your help so far!
-
->
->
-> --
-> Chris Murphy
+Jason

@@ -2,82 +2,82 @@ Return-Path: <SRS0=UUkT=6P=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.4 required=3.0 tests=DATE_IN_FUTURE_06_12,
+X-Spam-Status: No, score=-8.3 required=3.0 tests=DATE_IN_FUTURE_06_12,
 	DKIMWL_WL_HIGH,DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 99D5BC4724C
-	for <linux-btrfs@archiver.kernel.org>; Fri,  1 May 2020 11:47:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6DDABC47253
+	for <linux-btrfs@archiver.kernel.org>; Fri,  1 May 2020 12:03:59 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 7304A208C3
-	for <linux-btrfs@archiver.kernel.org>; Fri,  1 May 2020 11:47:54 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 42098206F0
+	for <linux-btrfs@archiver.kernel.org>; Fri,  1 May 2020 12:03:59 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="XgMmOaXw"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="FIZQqsvV"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728646AbgEALrx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 1 May 2020 07:47:53 -0400
-Received: from aserp2120.oracle.com ([141.146.126.78]:54620 "EHLO
+        id S1728668AbgEAMD6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 1 May 2020 08:03:58 -0400
+Received: from aserp2120.oracle.com ([141.146.126.78]:37206 "EHLO
         aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728575AbgEALrx (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 May 2020 07:47:53 -0400
+        with ESMTP id S1728585AbgEAMD6 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 May 2020 08:03:58 -0400
 Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 041BdAZU123563;
-        Fri, 1 May 2020 11:47:47 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to : cc :
+        by aserp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 041C2xo9151758;
+        Fri, 1 May 2020 12:03:50 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
  references : from : message-id : date : mime-version : in-reply-to :
  content-type : content-transfer-encoding; s=corp-2020-01-29;
- bh=oa0rQ9GQca1mZwn9rP/dbvOifjMvKKMtSjBKGCiZTPM=;
- b=XgMmOaXwWI3MDDItGA4LAFMvPfpfgxNkNyc+UbhCSz/m5A8eIOde6qN2/Bnwu+NBsDuS
- vfnh/cvCPgyrQg0J6f0b/D4Pqi/hnCAWq1vDDOLgr1yVdG+eb/sunqKpz+Y7zlt0bGQE
- 6y+PsYmfitoH5VLbfW53iZWkovulN9Pv7YOSVvaMZ4lSQuwrU0CQ3vEAld8VzyhICU5A
- O1tleAqPEEJe/vEST7aY5D/YpXbIEfEy4yddkUrnto18/HTTEMB043aa9H2+3TmqnE7u
- S7CTWxTf+NPlioW4KLHi0gkFjLTWQiFJhrvoGkYDznBujJk/ZgipAGsSIT25A/B7UOQd 4A== 
-Received: from aserp3020.oracle.com (aserp3020.oracle.com [141.146.126.70])
-        by aserp2120.oracle.com with ESMTP id 30r7f3hvns-1
+ bh=6+lWGoZN1WaaPkACnaadGK7eaF4ZAyO1fxIKRwe4rYo=;
+ b=FIZQqsvVKvMISQlF1XMc8OqDItyKLjkPT7omM7chKomcQLQkq9R2wJXXwi3FTfkOVJX2
+ fxq6Mvra3YYAPJmk+9oEjdhtizMlsv2GgOmdDbRzAseoJlNIODxRwTUdda1yRa283quL
+ OziHYqM41rWAKUA8vPa86VbdZRAN1J6eVHWlgWhFcZP+TbUy8G505iDFMWgEeeFKKFSC
+ xZEuB7xANye8+wsBUIaqydFkcS8fOhfwkLeBeO2taTofiyxhbc0g7Egafea3XzfTSuzE
+ 9cQQq2wbqLbIc7uQsNFijpoHV++LG8/JpWEMwn59ElTn5YtQT7Xv0rTMe1VPODD9b1x7 CA== 
+Received: from aserp3030.oracle.com (aserp3030.oracle.com [141.146.126.71])
+        by aserp2120.oracle.com with ESMTP id 30r7f3hx1k-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Fri, 01 May 2020 11:47:47 +0000
-Received: from pps.filterd (aserp3020.oracle.com [127.0.0.1])
-        by aserp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 041BbChT110073;
-        Fri, 1 May 2020 11:45:47 GMT
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by aserp3020.oracle.com with ESMTP id 30r7faak2h-1
+        Fri, 01 May 2020 12:03:50 +0000
+Received: from pps.filterd (aserp3030.oracle.com [127.0.0.1])
+        by aserp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 041BqVcB079130;
+        Fri, 1 May 2020 12:01:50 GMT
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by aserp3030.oracle.com with ESMTP id 30r7f3swpd-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Fri, 01 May 2020 11:45:47 +0000
-Received: from abhmp0008.oracle.com (abhmp0008.oracle.com [141.146.116.14])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 041BjiNx016062;
-        Fri, 1 May 2020 11:45:45 GMT
+        Fri, 01 May 2020 12:01:50 +0000
+Received: from abhmp0019.oracle.com (abhmp0019.oracle.com [141.146.116.25])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 041C1nXA023159;
+        Fri, 1 May 2020 12:01:49 GMT
 Received: from [192.168.1.102] (/39.109.243.230)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Fri, 01 May 2020 04:45:43 -0700
-Subject: Re: [PATCH v3 REBASED 0/3] btrfs: fix issues due to alien device
-To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
-Cc:     dsterba@suse.com, josef@toxicpanda.com
+        with ESMTP ; Fri, 01 May 2020 05:01:49 -0700
+Subject: Re: [PATCH 3/3] btrfs: free alien device due to device add
+To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org, dsterba@suse.com,
+        nborisov@suse.com, josef@toxicpanda.com
 References: <20200428152227.8331-1-anand.jain@oracle.com>
- <55a5fd3a-dddb-df52-7f22-01e3407c0325@suse.com>
- <36da56d2-2384-87fb-8003-814e9c72ddbb@oracle.com>
- <547c4cc1-fe6b-8bcd-ff98-c45293ec7ce9@suse.com>
+ <20200428152227.8331-4-anand.jain@oracle.com>
+ <20200430133111.GL18421@twin.jikos.cz>
 From:   Anand Jain <anand.jain@oracle.com>
-Message-ID: <c8a27fb4-7e9e-c261-82f3-f359f4655712@oracle.com>
-Date:   Sat, 2 May 2020 03:45:20 +0800
+Message-ID: <af735fb7-e03d-b143-5eef-5b1b32c283bd@oracle.com>
+Date:   Sat, 2 May 2020 04:01:28 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
  Thunderbird/68.7.0
 MIME-Version: 1.0
-In-Reply-To: <547c4cc1-fe6b-8bcd-ff98-c45293ec7ce9@suse.com>
+In-Reply-To: <20200430133111.GL18421@twin.jikos.cz>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: 7bit
 X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9607 signatures=668687
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 adultscore=0 suspectscore=2
- phishscore=0 malwarescore=0 mlxscore=0 spamscore=0 mlxlogscore=999
- bulkscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2003020000 definitions=main-2005010091
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=2 phishscore=0
+ adultscore=0 spamscore=0 mlxlogscore=999 bulkscore=0 mlxscore=0
+ malwarescore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2003020000 definitions=main-2005010093
 X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9607 signatures=668687
 X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 adultscore=0 bulkscore=0 suspectscore=2
  phishscore=0 mlxlogscore=999 impostorscore=0 spamscore=0 mlxscore=0
  priorityscore=1501 lowpriorityscore=0 malwarescore=0 clxscore=1015
  classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2003020000
- definitions=main-2005010091
+ definitions=main-2005010094
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -85,86 +85,114 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 30/4/20 6:28 pm, Nikolay Borisov wrote:
-> 
-> 
-> On 30.04.20 г. 20:54 ч., Anand Jain wrote:
+On 30/4/20 9:31 pm, David Sterba wrote:
+> On Tue, Apr 28, 2020 at 11:22:27PM +0800, Anand Jain wrote:
+>> When the old device has new fsid through btrfs device add -f <dev> our
+>> fs_devices list has an alien device in one of the fs_devices. So this is
+>> a trigger and not the root cause of the issue. This patch fixes the trigger.
 >>
+>> By having an alien device in fs_devices, we have two issues so far
 >>
->> On 30/4/20 2:05 pm, Nikolay Borisov wrote:
->>>
->>>
->>> On 28.04.20 г. 18:22 ч., Anand Jain wrote:
->>>> v3 REBASED: Based on the latest misc-next. for for-5.8.
->>>>      Dropped the following patches as there were concerns about the usage
->>>>      of error code -EUCLEAN
->>>>      btrfs: remove identified alien device in open_fs_devices
->>>>      btrfs: remove identified alien btrfs device in open_fs_devices
->>>>
->>>>      Rmaining 3 patches here have obtained reviewed-by. With this pathset
->>>>      the pertaining fstests btrfs/197 and btrfs/198 (which tests 3 bugs)
->>>>      would pass as the patch 2/3 fixed a bug and 3/3 fixed the trigger
->>>>      of 2 other bugs (patch 1/3 is just a cleanup). Further at the moment
->>>>      I am not sure if there is any other trigger where it could again
->>>> leave
->>>>      an alien device in the fs_devices leading to the same/similar bugs.
->>>>
->>>> ==== original email ====
->>>> v3: Fix alien device is due to wipefs in Patch4.
->>>>       Fix a nit in Patch3.
->>>>       Patches are reordered.
->>>>
->>>> Alien device is a device in fs_devices list having a different fsid than
->>>> the expected fsid or no btrfs_magic. This patch set fixes issues
->>>> found due
->>>> to the same.
->>>>
->>>> Patch1: is a cleanup patch, not related.
->>>> Patch2: fixes failing to mount a degraded RAIDs (RAID1/5/6/10), by
->>>>      hardening the function btrfs_free_extra_devids().
->>>> Patch3: fixes the missing device (due to alien btrfs-device) not
->>>> missing in
->>>>      the userland, by hardening the function btrfs_open_one_device().
->>>> Patch4: fixes the missing device (due to alien device) not missing in
->>>>      the userland, by returning EUCLEAN in btrfs_read_dev_one_super().
->>>> Patch5: eliminates the source of the alien device in the fs_devices.
->>>>
->>>> PS: Fundamentally its wrong approach that btrfs-progs deduces the device
->>>> missing state in the userland instead of obtaining it from the kernel.
->>>> I remember objecting on the btrfs-progs patch which did that, but still
->>>> it got merged, bugs in p3 and p4 are its side effects. I wrote
->>>> patches to read device_state from the kernel using ioctl, procfs and
->>>> sysfs but it didn't get the due attention till a merger.
->>>>
->>>> Anand Jain (3):
->>>>     btrfs: drop useless goto in open_fs_devices
->>>>     btrfs: include non-missing as a qualifier for the latest_bdev
->>>>     btrfs: free alien device due to device add
->>>>
->>>>    fs/btrfs/volumes.c | 30 ++++++++++++++++++++++--------
->>>>    1 file changed, 22 insertions(+), 8 deletions(-)
->>>>
->>>
->>>
->>> One thing I'm not clear is how can we get into a situation of an alien
->>> device. I.e devices should be in fs_devices iff they are part of the>
->>> filesystem, no ?
->>>
+>> 1. missing device is not shows as missing in the userland
 >>
->> I think you are missing the point that, when the devices (of a
->> raid1/raid5/raid6) are unmounted, we don't free any of their
->> fs_devices::device. So in this situation if one of those devices is
->> added to any another fsid (using btrfs device add) or wiped using wipefs
->> -a, we still don't free the device's former fs_devices::device entry in
->> the kernel and it acts as an alien device among its former partners when
->> it is mounting.
+>> Which is due to cracks in the function btrfs_open_one_device() and
+>> hardened by the pending patches in the ml.
+>>   btrfs: remove identified alien device in open_fs_devices
+>>   btrfs: remove identified alien btrfs device in open_fs_devices
+>>
+>> 2. mount of a degraded fs_devices fails
+>>
+>> Which is due to cracks in the function btrfs_free_extra_devids() and
+>> hardened by patch (included in the set).
+>>   btrfs: include non-missing as a qualifier for the latest_bdev
+>>
+>> Now the trigger for both of this issue is that there is an alien (does not
+>> contain the intended fsid/btrfs_magic) device in the fs_devices.
+>>
+>> We know a device can be scanned/added through
+>> btrfs-control::BTRFS_IOC_SCAN_DEV|BTRFS_IOC_DEVICES_READY
+>> or by
+>> ioctl::BTRFS_IOC_ADD_DEV
+>>
+>> And device coming through btrfs-control is checked against the all other
+>> devices in btrfs kernel but not coming through BTRFS_IOC_ADD_DEV.
+>>
+>> This patch checks if the device add is alienating any other scanned
+>> device and deletes it.
+>>
+>> In fact, this patch fixes both the issues 1 and 2 (above) by eliminating
+>> the trigger of the issue, but still they have their own patch as well
+>> because its the right way to harden the functions and fill the cracks.
+>>
+>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+>> Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+>> ---
+>> v3-rebased: change log updated.
+>>
+>>   fs/btrfs/volumes.c | 13 +++++++++++++
+>>   1 file changed, 13 insertions(+)
+>>
+>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+>> index a67af16d960d..300ee5f0bfa2 100644
+>> --- a/fs/btrfs/volumes.c
+>> +++ b/fs/btrfs/volumes.c
+>> @@ -2665,6 +2665,19 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
+>>   
+>>   	/* Update ctime/mtime for libblkid */
+>>   	update_dev_time(device_path);
+>> +
+>> +	/*
+>> +	 * Now that we have written a new sb into this device, check all other
+>> +	 * fs_devices list if it alienates any scanned device.
+>> +	 */
+>> +	mutex_lock(&uuid_mutex);
+>> +	/*
+>> +	 * Ignore the return as we are successfull in the core task - to added
+>> +	 * the device
+>> +	 */
+>> +	btrfs_free_stale_devices(device_path, NULL);
 > 
-> So it could happen only due to a deliberate action by the user
-> and not during normal operation. In this case is it not the user's
-> responsibility to remove/forget the device from that file system?
+> So this is open coding btrfs_forget_devices, so the helper should be
+> used.
 > 
 
-Anyone can run into it. I did. Instead of confusing them with showing
-that a device belongs to two FSID its better to fix. A device can't
-belong to two fsid.
+  Ah. I didn't notice that. Will fix.
 
+> As there's NULL passed, 
+
+  NULL is passed to the 2nd argument skip_device
+
+> all stale devices will be removed from the list,
+
+  No, It means it does not have any particular device to skip.
+  Added device is already part of mounted fs_device list,
+  the loop skips its check. So no need to skip_device.
+
+> but we can remove just the device being added, no?
+
+  It does exactly that.
+  btrfs_free_stale_devices(device_path, NULL);
+
+  It removes the device from all other fs_devices which are _unmounted_.
+
+> And before the whole
+> operation starts, not after. 
+
+  What if the add fails? Then we have to add scanned device back to avoid
+  that mess. why not remove after we have successfully add the device
+  to the mounted fsid.
+
+> The closest moment is before
+> btrfs_commit_transaction, that's where the superblock gets overwritten.
+> 
+
+Thanks, Anand
+
+
+>> +	mutex_unlock(&uuid_mutex);
+>> +
+>>   	return ret;
+>>   
+>>   error_sysfs:
+>> -- 
+>> 2.23.0

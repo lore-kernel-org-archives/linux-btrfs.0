@@ -2,138 +2,209 @@ Return-Path: <SRS0=UUkT=6P=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.4 required=3.0 tests=DATE_IN_FUTURE_06_12,
-	DKIMWL_WL_HIGH,DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AD51CC4724C
-	for <linux-btrfs@archiver.kernel.org>; Fri,  1 May 2020 14:55:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 29900C47253
+	for <linux-btrfs@archiver.kernel.org>; Fri,  1 May 2020 17:02:32 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 89C1C20857
-	for <linux-btrfs@archiver.kernel.org>; Fri,  1 May 2020 14:55:15 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id F3855206B8
+	for <linux-btrfs@archiver.kernel.org>; Fri,  1 May 2020 17:02:31 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="xS9FiykU"
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="DXwkS7ja"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729115AbgEAOzP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 1 May 2020 10:55:15 -0400
-Received: from userp2130.oracle.com ([156.151.31.86]:40934 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728737AbgEAOzO (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 May 2020 10:55:14 -0400
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 041ErN4D132377;
-        Fri, 1 May 2020 14:55:05 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
- references : from : message-id : date : mime-version : in-reply-to :
- content-type : content-transfer-encoding; s=corp-2020-01-29;
- bh=oY9xFcMStXAxAmUY0swjNVrh+5D8Ahs7VbBVHhTum3w=;
- b=xS9FiykUmq9HOLve8uL4FqbPNp3EYLxwTQ0Rt5onxGPeGVCNlQ8LgGcTK0kbcVpjCBw9
- lPunFaxI6Kjkxv0qJrstalJLbenxSBixC2DCMo1MaIJ0V9XUsUSPkY2kfWfJSnqtXhg+
- YrFBVSMPiedeeBX87OOfg9HEDzJt3ezGDLOqAgLfUdwBN5LBalZ+RxFxvREKpW3EnjqI
- 5puLfoW3XLHGk2swOcr+ds6CUueoVz22zgy9bGdWcy0S5xee6ivHvUasVHBYQA9LnJ/R
- YvCiN9bHVcLDnLUTfEqN1Ze22DTeqMAFgA9sDmWCWxCHO7v8OgF9/pwri6OiFDu33Aco CQ== 
-Received: from aserp3020.oracle.com (aserp3020.oracle.com [141.146.126.70])
-        by userp2130.oracle.com with ESMTP id 30r7f82kag-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Fri, 01 May 2020 14:55:05 +0000
-Received: from pps.filterd (aserp3020.oracle.com [127.0.0.1])
-        by aserp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 041Er0a2067083;
-        Fri, 1 May 2020 14:55:05 GMT
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by aserp3020.oracle.com with ESMTP id 30r7fau9sb-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Fri, 01 May 2020 14:55:04 +0000
-Received: from abhmp0002.oracle.com (abhmp0002.oracle.com [141.146.116.8])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 041Et2Y1019360;
-        Fri, 1 May 2020 14:55:03 GMT
-Received: from [192.168.1.102] (/39.109.243.230)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Fri, 01 May 2020 07:55:02 -0700
-Subject: Re: [PATCH 2/3] btrfs: include non-missing as a qualifier for the
- latest_bdev
-To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org, dsterba@suse.com,
-        nborisov@suse.com, josef@toxicpanda.com
-References: <20200428152227.8331-1-anand.jain@oracle.com>
- <20200428152227.8331-3-anand.jain@oracle.com>
- <20200430134602.GM18421@twin.jikos.cz>
-From:   Anand Jain <anand.jain@oracle.com>
-Message-ID: <95c7db9e-70bc-ff14-b380-7de677ccbe9a@oracle.com>
-Date:   Sat, 2 May 2020 06:54:35 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.7.0
+        id S1729391AbgEARCb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 1 May 2020 13:02:31 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55860 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-FAIL-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1728975AbgEARCa (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 1 May 2020 13:02:30 -0400
+Received: from mail-oo1-xc2c.google.com (mail-oo1-xc2c.google.com [IPv6:2607:f8b0:4864:20::c2c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A6D0BC061A0C
+        for <linux-btrfs@vger.kernel.org>; Fri,  1 May 2020 10:02:30 -0700 (PDT)
+Received: by mail-oo1-xc2c.google.com with SMTP id c83so850878oob.6
+        for <linux-btrfs@vger.kernel.org>; Fri, 01 May 2020 10:02:30 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:from:date:message-id:subject:to;
+        bh=yYl7Dsez+0Y3rKqMBM3c7JN7PneKl+lk3kgpLpwIJp0=;
+        b=DXwkS7jakeFZR2CkGhgmW14yLT2WQZajocmA4n3ReHnzOGC/sSoJp5KU58ETVVIKwf
+         7KW/q6kElr6/hu2SksDWo90gfPPKiRoSQgwVTlq1kRzNcv57piiLjcbrltuf1IIBuHiR
+         xZFTeYGBUs6RGvZxtJvPOQRWN5GK88PkCcQAUve5sBcpazUl7EILgUJuewI5VlC8+l/p
+         aOiiQUQ9RXK1FZSmUPXkpUm+Skav9OC4LH4A5IeCUzScuV8Z/7F9sc9ZTGjz8FPdFgCb
+         p9+05XAFzT9OUq2tJJMv6VQ1aUEGvqsDUtKrMhMhflS/ni6Phi/hZ1I8qP38svEDbcYa
+         EWww==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:from:date:message-id:subject:to;
+        bh=yYl7Dsez+0Y3rKqMBM3c7JN7PneKl+lk3kgpLpwIJp0=;
+        b=ewQWf7vWg5BqQEHpxLxLCIFQOReK7BZNNlNPxOc5rSjf25YpQYlURECPBwHXM8lofx
+         oo5sw3i12CAziEcBBbh0enxBVx0cAau9RdfjTJyVl6VjNrn4Oy6K/0x5aWUCfTHeEuAy
+         EjvLmzAJ8oMjTsIcUKfTYolX8lu1TF9YnZd4DrmoGfOOxIwlC6IQh1HFcwc25WweHCIg
+         AvPMJsIxApsyzEkEGetfAJHezPAWdgGv+36FL/I0VCGATlZxOp9sKUB8Tnp7a75oneyk
+         sn9UP7FfHW3eYc7ga/PD8hy2cAhXNoCBPFEFJAH2V/mt/kKjKlNmY9JdFiI4V7GUzBGr
+         F/5A==
+X-Gm-Message-State: AGi0PuYhXq13He8y4UEp0vaahNDphXx5b7lKDFEX2/n0fYQzJePiBi5r
+        eNryb5ta1j138Km3Bx3QDhdc3HwjdsCkEUaogMJSgI/c1R4=
+X-Google-Smtp-Source: APiQypIVNbZwnYqqJ2Hbv/xGmvFHVMb746eLN6A2Z2Eixd3RWO6nWHKBNp9UF84lQlGAbQ3X7tPqDV+53yNWbZivcJo=
+X-Received: by 2002:a4a:ca14:: with SMTP id w20mr4589247ooq.42.1588352549367;
+ Fri, 01 May 2020 10:02:29 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20200430134602.GM18421@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9608 signatures=668687
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 adultscore=0 suspectscore=2
- phishscore=0 malwarescore=0 mlxscore=0 spamscore=0 mlxlogscore=999
- bulkscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2003020000 definitions=main-2005010119
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9608 signatures=668687
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 impostorscore=0 mlxlogscore=999
- spamscore=0 malwarescore=0 clxscore=1015 phishscore=0 mlxscore=0
- lowpriorityscore=0 suspectscore=2 adultscore=0 priorityscore=1501
- bulkscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2003020000 definitions=main-2005010119
+From:   Rollo ro <rollodroid@gmail.com>
+Date:   Fri, 1 May 2020 19:01:53 +0200
+Message-ID: <CAAhjAp1zghNnRpbA2WypBU9+Azeui8kTQiTj+DfbK-iX-z71WQ@mail.gmail.com>
+Subject: Can't repair raid 1 array after drive failure
+To:     linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+Hi again,
+I'm still running into problems with btrfs. For testing purposes, I
+created a raid 1 filesystem yesterday and let the computer copy a ton
+of data on it over night:
+
+Label: 'BTRFS1'  uuid: 61e5aba9-6811-46ae-9396-35a72d3b1117
+        Total devices 3 FS bytes used 1.15TiB
+        devid    1 size 5.46TiB used 1.16TiB path /dev/sdc1
+        devid    3 size 698.64GiB used 10.00GiB path /dev/sdf
+        devid    4 size 1.82TiB used 1.15TiB path /dev/sde
+
+Today I started scrub and looked at the status some hours later, which
+gave thousands of errors on drive 4:
+
+root@OMV:/var# btrfs scrub status /srv/dev-disk-by-label-BTRFS1/
+scrub status for 61e5aba9-6811-46ae-9396-35a72d3b1117
+        scrub started at Fri May  1 11:37:36 2020, running for 04:37:48
+        total bytes scrubbed: 1.58TiB with 75751000 errors
+        error details: read=75751000
+        corrected errors: 0, uncorrectable errors: 75750996,
+unverified errors: 0
+
+(Not shown here that it was drive 4, but it was)
+
+Then found that the drive is missing:
+
+Label: 'BTRFS1'  uuid: 61e5aba9-6811-46ae-9396-35a72d3b1117
+        Total devices 3 FS bytes used 1.15TiB
+        devid    1 size 5.46TiB used 1.16TiB path /dev/sdc1
+        devid    3 size 698.64GiB used 10.00GiB path /dev/sdf
+        *** Some devices missing
+
+Canceled scrub:
+root@OMV:/var# btrfs scrub cancel /srv/dev-disk-by-label-BTRFS1/
+scrub cancelled
+
+Stats showing lots of error on sde, which is the missing drive:
+root@OMV:/var# btrfs device stats /srv/dev-disk-by-label-BTRFS1/
+[/dev/sdc1].write_io_errs    0
+[/dev/sdc1].read_io_errs     0
+[/dev/sdc1].flush_io_errs    0
+[/dev/sdc1].corruption_errs  0
+[/dev/sdc1].generation_errs  0
+[/dev/sdf].write_io_errs    0
+[/dev/sdf].read_io_errs     0
+[/dev/sdf].flush_io_errs    0
+[/dev/sdf].corruption_errs  0
+[/dev/sdf].generation_errs  0
+[/dev/sde].write_io_errs    154997860
+[/dev/sde].read_io_errs     77170574
+[/dev/sde].flush_io_errs    310
+[/dev/sde].corruption_errs  0
+[/dev/sde].generation_errs  0
 
 
-On 30/4/20 9:46 pm, David Sterba wrote:
-> On Tue, Apr 28, 2020 at 11:22:26PM +0800, Anand Jain wrote:
->> btrfs_free_extra_devids() reorgs fs_devices::latest_bdev
->> to point to the bdev with greatest device::generation number.
->> For a typical-missing device the generation number is zero so
->> fs_devices::latest_bdev will never point to it.
->>
->> But if the missing device is due to alienation [1], then
->> device::generation is not-zero and if it is >= to rest of
->> device::generation in the list, then fs_devices::latest_bdev
->> ends up pointing to the missing device and reports the error
->> like this [2]
->>
->> [1] We maintain devices of a fsid (as in fs_device::fsid) in the
->> fs_devices::devices list, a device is considered as an alien device
->> if its fsid does not match with the fs_device::fsid
->>
->> $ mkfs.btrfs -fq /dev/sdd && mount /dev/sdd /btrfs
-> 
-> Please put each command on one line for clarity
-> 
+I tried to replace
+root@OMV:/var# btrfs replace start 2 /dev/sdb /srv/dev-disk-by-label-BTRFS1/ &
+[1] 1809
+root@OMV:/var# ERROR: '2' is not a valid devid for filesystem
+'/srv/dev-disk-by-label-BTRFS1/'
 
-yep.
+--> That's inconsistent with the device remove syntax, as it allows to
+use a non-existing number? I try again using the /dev/sdx syntax, but
+as sde is gone, I rescan and now it's sdi!
 
->> $ mkfs.btrfs -fq -draid1 -mraid1 /dev/sdb /dev/sdc
->> $ sleep 3 # avoid racing with udev's useless scans if needed
->> $ btrfs dev add -f /dev/sdb /btrfs
->> $ mount -o degraded /dev/sdc /btrfs1
-> 
-> So the cause is a second mkfs on some devices, but is the degraded mount
-> supposed to work? The example goes:
-> 
-Yes. It must work. We don't know if the user is mounting B just after
-mkfs or if it already contains some data.
+root@OMV:/var# btrfs replace start /dev/sdi /dev/sdb
+/srv/dev-disk-by-label-BTRFS1/
+root@OMV:/var# ERROR: target device smaller than source device
+(required 2000398934016 bytes)
 
-> - create first filesystem with device A
-> - create second filesystem with device B and C
-> - add device B to the first filesystem, effectively making it missing
-> - mount first filesystem, degraded because of the missing device
-> 
-> For a reproducer that's ok, but is this something that we can expect to
-> happen in practice? The flag -f should prevent accidental overwrite, but
-> yes the kernel code needs to deal with that in any case.
-> 
+--> OK, there is a rerstriction in drive size. Not sure if this is
+relly necessary because the size is sufficient to hold all data in
+raid 1 profile, but ok, if it's implemented like that. I have no
+larger drive available. So I try to replace by adding another drive
+and removing the failed drive
 
-Its a configuration related, so is left the user how they arrive at
-their understanding of what configuration is suitable for them. Yes its
-better to fix loop holes in its path. I encountered it when testing
-something else.
+root@OMV:/var# btrfs dev add /dev/sdb /srv/dev-disk-by-label-BTRFS1/
+root@OMV:/var# btrfs fi show
 
+Label: 'BTRFS1'  uuid: 61e5aba9-6811-46ae-9396-35a72d3b1117
+        Total devices 4 FS bytes used 1.15TiB
+        devid    1 size 5.46TiB used 1.16TiB path /dev/sdc1
+        devid    3 size 698.64GiB used 10.00GiB path /dev/sdf
+        devid    5 size 931.51GiB used 0.00B path /dev/sdb
+        *** Some devices missing
 
+root@OMV:/var# btrfs device remove missing /srv/dev-disk-by-label-BTRFS1/
+ERROR: error removing device 'missing': no missing devices found to remove
 
+--> But fi show tells there is are devices missing??
+
+root@OMV:/var# btrfs device remove 2 /srv/dev-disk-by-label-BTRFS1/
+Killed
+
+--> What does "Killed" tell?
+
+Try again with a non-existent number:
+root@OMV:/var# btrfs device remove 8 /srv/dev-disk-by-label-BTRFS1/
+ERROR: error removing devid 8: add/delete/balance/replace/resize
+operation in progress
+
+--> Seems like there is some operation going on, but fi show doesn't
+show any progress:
+
+root@OMV:/var# btrfs fi show
+Label: 'BTRFS1'  uuid: 61e5aba9-6811-46ae-9396-35a72d3b1117
+        Total devices 4 FS bytes used 1.15TiB
+        devid    1 size 5.46TiB used 1.16TiB path /dev/sdc1
+        devid    3 size 698.64GiB used 10.00GiB path /dev/sdf
+        devid    5 size 931.51GiB used 0.00B path /dev/sdb
+        *** Some devices missing
+
+--> The used space on drive 5 should be increasing, but isn't. Also no
+hdd activity LED flashing.
+
+Try to start balance, but balance status reporting that no balance found:
+
+root@OMV:/var# btrfs balance start --bg /srv/dev-disk-by-label-BTRFS1/
+root@OMV:/var# btrfs balance status /srv/dev-disk-by-label-BTRFS1/
+No balance found on '/srv/dev-disk-by-label-BTRFS1/'
+
+I think that the data is still OK. There are messages like
+
+May  1 14:05:44 OMV kernel: [235034.853573] BTRFS warning (device
+sdc1): i/o error at logical 774427533312 on dev /dev/sde, physical
+656521453568, root 471, inode 458, offset 64360448, length 4096, links
+1 (path: Filme/Meine erfundene Frau.mkv)
+
+I calculated sha256 on the file (which is a crappy movie) and compared
+with the original. The file is read correct. I have not checked all
+files, but guess they are readable. But how to return to a healthy and
+redundant filesystem now? I'd try next if a reboot does help, but
+wanted to ask for further steps before. And, are there any log files
+or other information that will be useful for the developers?
+
+Note: The 2TB drive is not the bad drive that I mentioned in my other
+mail, but a drive that has worked without showing problems and has
+been removed from my old NAS to increase capacity a couple of years
+ago. It's possible that there are some hardware issues with the
+mainboard, SATA cables or drives, though. It's all old hardware.
+
+Version info:
+btrfs-progs v4.20.1
+Kernel 5.4.0-0.bpo.4-amd64

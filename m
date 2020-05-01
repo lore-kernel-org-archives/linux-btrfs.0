@@ -2,158 +2,138 @@ Return-Path: <SRS0=UUkT=6P=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-2.2 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 98837C47254
-	for <linux-btrfs@archiver.kernel.org>; Fri,  1 May 2020 06:53:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1427EC47254
+	for <linux-btrfs@archiver.kernel.org>; Fri,  1 May 2020 07:29:56 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 777032054F
-	for <linux-btrfs@archiver.kernel.org>; Fri,  1 May 2020 06:53:35 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1588316015;
-	bh=59tjm6JIXvVmrkBM4hZ/cU7zPM0wNrLnx/EX5O0vItY=;
-	h=From:To:Subject:Date:List-ID:From;
-	b=B6n8VasS5E1AfIwlsBBSBgNosr6qqY9rZBdnJjhdgbevccXbt5um5e8l6b1qs5qH1
-	 5UkH/RiWrYZFJFu6xO1Ujezd/kx8ZiiVmjfue9iksjEaN0CrdPLSq2G9oFZHiur2Go
-	 kqXglMsjEKm8+/DUmYqyZjMGYKtW9S15uD6sgAHQ=
+	by mail.kernel.org (Postfix) with ESMTP id D32CE2071C
+	for <linux-btrfs@archiver.kernel.org>; Fri,  1 May 2020 07:29:55 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=ka9q-net.20150623.gappssmtp.com header.i=@ka9q-net.20150623.gappssmtp.com header.b="Ar5uBRdD"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728310AbgEAGxe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 1 May 2020 02:53:34 -0400
-Received: from mail.kernel.org ([198.145.29.99]:55850 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728126AbgEAGxe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 1 May 2020 02:53:34 -0400
-Received: from sol.hsd1.ca.comcast.net (c-107-3-166-239.hsd1.ca.comcast.net [107.3.166.239])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id C275F2054F
-        for <linux-btrfs@vger.kernel.org>; Fri,  1 May 2020 06:53:33 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1588316013;
-        bh=59tjm6JIXvVmrkBM4hZ/cU7zPM0wNrLnx/EX5O0vItY=;
-        h=From:To:Subject:Date:From;
-        b=O5t4eccbmmP1Q8E4gXdakKQKCcskOXxO0u083XDAU2VO1Hf97Ui5s0Eae9sa1/LoX
-         deG0J0nPaxkTOTlFrXlvVPg93vhi+QPZJOGNUqtJQER6L3MqfPZ5BDvzxnyS2vm1C6
-         li4nLHoLATvAnAJF1bcHe4Creg1ywhigiO6BRDeo=
-From:   Eric Biggers <ebiggers@kernel.org>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: use crypto_shash_digest()
-Date:   Thu, 30 Apr 2020 23:51:59 -0700
-Message-Id: <20200501065159.738746-1-ebiggers@kernel.org>
-X-Mailer: git-send-email 2.26.2
+        id S1728287AbgEAH3z (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 1 May 2020 03:29:55 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50848 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726452AbgEAH3y (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 May 2020 03:29:54 -0400
+Received: from mail-pj1-x1042.google.com (mail-pj1-x1042.google.com [IPv6:2607:f8b0:4864:20::1042])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 23439C035494
+        for <linux-btrfs@vger.kernel.org>; Fri,  1 May 2020 00:29:53 -0700 (PDT)
+Received: by mail-pj1-x1042.google.com with SMTP id t40so2067277pjb.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 01 May 2020 00:29:53 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=ka9q-net.20150623.gappssmtp.com; s=20150623;
+        h=to:cc:references:from:autocrypt:subject:message-id:date:user-agent
+         :mime-version:in-reply-to:content-transfer-encoding:content-language;
+        bh=1+CQ2qGbdFGpwZNB8QkyFli2y0KOrjYpLjYZV+rhhQs=;
+        b=Ar5uBRdDgxTRWeLum9uP2/JAO0PRft0siD5uvv4cQ68RgsVHa3Da8NvrwY6LsaCUZF
+         1px28AF7uL/UrJ2MLlK5rWxh4h8wX01Ynbi/dVwSA1bFPbQo6P3WqvGT+T7hToo6ddC6
+         qvbeUe8x97FlSeh8VF7IsVHzz0X0adP9vYWDGl7kH87uIdFalt6MOySGJ7t/PFii5T2t
+         Ix2mIocM/5ldpFZqhvORa5z97pSW0HRvv37oWd19idq4BlhQcBNuvLh992tHOKBNzruB
+         3/6lskeSZGOgQ46UHrFJX26AnkYBqyRw/Kk8w5d7UbhdGyrYlZ1IKB9MdAXQFhuQ8EOb
+         eeVQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:to:cc:references:from:autocrypt:subject
+         :message-id:date:user-agent:mime-version:in-reply-to
+         :content-transfer-encoding:content-language;
+        bh=1+CQ2qGbdFGpwZNB8QkyFli2y0KOrjYpLjYZV+rhhQs=;
+        b=IIoWNyCyw7DPyue3SkkoJWyFJ36z/1uGsIopJ0oJOxxRIq72zjHcP71nqKYQVI/e7N
+         i/vllgYTV3Cv0TaJ23ywgK3cXJl1eMzZM1XpaQSgo+ZEAAr8czAbOiZixTQXXEmbuNG6
+         4+p9vO10KOOwCSoJu0Gx7bLk2lerHV8z7oZQg9Fm41dr6hT7JNagXgghEbxTNWqfpfSt
+         WFExJ4kkKmevctt0aX1NXZ2g39CNc8SRsuxThhRRNagCtxiNMIfY5P6EDditZPDDiMc+
+         jQdV8tDYfg63T3YQ9OCKzzi+oryn+s5YhxOEUStMS1puV3/UPolq8lU9trWvP65qcRLy
+         UbLA==
+X-Gm-Message-State: AGi0PuYnkguClf9oDx3YIxS6GAn3CPPUOx+eg4nXcusScAFy8TsaRit1
+        tQHLVesBYTcJkJFHtP5sBsojWA==
+X-Google-Smtp-Source: APiQypJ1QLIMEvyyIrkSzW1DCy9SvYFrxmrcwP6dnNILMLBjU6dBIWq4e3iMb/jpvJrQe08G2dfdUQ==
+X-Received: by 2002:a17:902:ec04:: with SMTP id l4mr3264758pld.6.1588318192568;
+        Fri, 01 May 2020 00:29:52 -0700 (PDT)
+Received: from selma.local ([2605:e000:1c0e:43f7:b590:149f:4376:a841])
+        by smtp.gmail.com with ESMTPSA id c80sm1532390pfb.82.2020.05.01.00.29.50
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Fri, 01 May 2020 00:29:51 -0700 (PDT)
+To:     Alexandru Dordea <alex@dordea.net>
+Cc:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
+        Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <8b647a7f-1223-fa9f-57c0-9a81a9bbeb27@ka9q.net>
+ <14a8e382-0541-0f18-b969-ccf4b3254461@ka9q.net>
+ <CAJCQCtQqdk3FAyc27PoyTXZkhcmvgDwt=oCR7Yw3yuqeOkr2oA@mail.gmail.com>
+ <bfa161e9-7389-6a83-edee-2c3adbcc7bda@ka9q.net>
+ <20200501024753.GE10769@hungrycats.org>
+ <b2cd0c70-b955-197c-d68b-cf77e102690c@ka9q.net>
+ <6F06C333-0C27-482A-9AE4-3C0123CC550A@dordea.net>
+From:   Phil Karn <karn@ka9q.net>
+Autocrypt: addr=karn@ka9q.net; keydata=
+ mQENBEw2mJ4BCADELiPsLFHDwapoSU7d2xNHxmwzzrFUCZWhO34kM6G5+o9GUNmGgMQ0BmXp
+ I6hx77HHnrj9FC6kWh/bxBt3+o8HW+NTWzJSvf6kW7ThaNt7v9iewkS23JOMarAZs4qy6MhT
+ 1RW1/yWY7RimWxrmkKPTKKa0Ad4CWT6fcP3t+doqGslSQIeoTh0C33ZT+LY59Wcr224iXohN
+ 4Uu/nFe4yAHjtA+4Sesveo3Tyi8cbOgkcO6vij+pXesCcuhtGMlnE2dxRqbenrfVGLUVxNug
+ LkQdLWezaGGm+dcjWYk1xjtaDnsCpVaYCMsfYNADQPJAjAFu37pVdoXhseVXfzOUN2EXABEB
+ AAG0GVBoaWwgS2FybiA8a2FybkBrYTlxLm5ldD6JATgEEwECACIFAkw2mJ4CGwMGCwkIBwMC
+ BhUIAgkKCwQWAgMBAh4BAheAAAoJEPFOQ1TtRjRGU98H/Atsb/N4lNbzNdzdIRcHD9XgCEa1
+ UdR4mxgjwvLxS1nYRNdHwfTxvA5nxWfMx/0CB26VaNFdI3lkg/S0vYsSUu6M7l8Zb8v4JMyU
+ 4B4yvkFHZ3II5oilzIMa3e2cMfDz7TSwO1JcXyI5y9vHnvH65/LQF+QojDgzf3vXKiNdTXJp
+ 3nEa5IgMAB0rcSNsXFx8xbHi8s5niL9+1I7XTPvVMeXrMe8h4AG1nM/dK96WwmV+tLyXKYXn
+ xVeb9F4X9CNQbkn/xAH+egvKHHT3V7K9cAhrDfu9Qwpo7zKk/akBpLWG2kmkTOfhXjm3UQhv
+ MVgDmpeQIYa1HgAsKrsDQMzrIFm5AQ0ETDaYngEIAJmFdm0MmENzLEosD1FvGPJleWDYb0ah
+ 8dOk4XUug1RhW40f7AsugT75pKs9PolXt92920GdU727X3Jpgdj4kLDtIQA0KZrOXiEOZjIZ
+ WcROAyvTGyMs/P7Um1AGNM161Ga6/Wtlc076FN7EUQtzPbthH26M3lGWUX0Ccls/8Ep4qbnF
+ IrMRBxjaxKbqfKPTeU10pDykzA7s5hiNe7qaegvqD6YLseZ+6FqCn988YnLiIaFeNbWxUY5G
+ spjAsfesnAmpn5vhUqAGiizkNlAMIN31xvpLd93oM4/vORszIuN1UP2RlxL3s30BncZl2XOd
+ Mk1/59Sy70zVqF1ANyMrA18AEQEAAYkBHwQYAQIACQUCTDaYngIbDAAKCRDxTkNU7UY0Rszt
+ B/9ZPH9xw47lPkVJRbhgf0G7fdsxsyiuouAqOKklUNFSy4+qeGomjwE6YvdMybwGtaUGla7t
+ 2mDzrva+7Gzb0inXIgmahQPmM16F3GVxGoFL+QJ+7gD8Hco6e0/2kju7ZREDE7SOEwKb3lhD
+ eNLccfX2AqAHfCT/LVLbgBpMRmwUJQThM+33Z2L9BqIM3awj2mOTmeDumpxiDfroU90mGc9c
+ pXe4YrNIkL/N8eMzLe1bpu+mpPCiIrEO+dFA7N8jjVcOCQ4Lr8sU6cOsEdkaACZiNFKT99eb
+ NkKigK8sEkDZc/AKhPCEsnaZpwBZPScOL88LLi7FHj9Osznt+uhWfbLe
+Subject: Re: Extremely slow device removals
+Message-ID: <bc37ccb3-119e-24da-4852-56962c93fd2d@ka9q.net>
+Date:   Fri, 1 May 2020 00:29:50 -0700
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:68.0)
+ Gecko/20100101 Thunderbird/68.7.0
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <6F06C333-0C27-482A-9AE4-3C0123CC550A@dordea.net>
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+Content-Language: en-US
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Eric Biggers <ebiggers@google.com>
+On 4/30/20 23:05, Alexandru Dordea wrote:
+> Don=E2=80=99t get me wrong, the single 100% CPU is only during balance =
+process.
+> By running "btrfs device delete missing /storage=E2=80=9Dthere is no im=
+pact on CPU/RAM. I do have 64GB DDR4 ECC but there is no more of 3GB ram =
+usage.
+3GB used for what, does that include the system buffer cache?
+>
+> I can see that @Chris Murphy mention that disabling the cache will impa=
+ct performance. Did you tried that?=20
+> On my devices I do have cache enabled and till now this is the only thi=
+ng that I didn't tried :)
 
-Use crypto_shash_digest() instead of crypto_shash_init() +
-crypto_shash_update() + crypto_shash_final().  This is more efficient.
 
-Signed-off-by: Eric Biggers <ebiggers@google.com>
----
- fs/btrfs/compression.c |  4 +---
- fs/btrfs/disk-io.c     | 13 +++++--------
- fs/btrfs/file-item.c   |  7 +++----
- fs/btrfs/inode.c       |  4 +---
- 4 files changed, 10 insertions(+), 18 deletions(-)
+It didn't seem to make an obvious difference, which surprised me a
+little since the I/O seems so random. Maybe btrfs is already sticking a
+lot of fences (barriers) into the write stream so the drive can't do
+much reordering anyway?
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index 9ab610cc911420..1b624f9ef97d59 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -194,11 +194,9 @@ static int check_compressed_csum(struct btrfs_inode *inode,
- 	for (i = 0; i < cb->nr_pages; i++) {
- 		page = cb->compressed_pages[i];
- 
--		crypto_shash_init(shash);
- 		kaddr = kmap_atomic(page);
--		crypto_shash_update(shash, kaddr, PAGE_SIZE);
-+		crypto_shash_digest(shash, kaddr, PAGE_SIZE, csum);
- 		kunmap_atomic(kaddr);
--		crypto_shash_final(shash, (u8 *)&csum);
- 
- 		if (memcmp(&csum, cb_sum, csum_size)) {
- 			btrfs_print_data_csum_error(inode, disk_start,
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index d10c7be10f3b80..8050172b39ef57 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -358,16 +358,14 @@ static int btrfs_check_super_csum(struct btrfs_fs_info *fs_info,
- 	SHASH_DESC_ON_STACK(shash, fs_info->csum_shash);
- 
- 	shash->tfm = fs_info->csum_shash;
--	crypto_shash_init(shash);
- 
- 	/*
- 	 * The super_block structure does not span the whole
- 	 * BTRFS_SUPER_INFO_SIZE range, we expect that the unused space is
- 	 * filled with zeros and is included in the checksum.
- 	 */
--	crypto_shash_update(shash, raw_disk_sb + BTRFS_CSUM_SIZE,
--			    BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
--	crypto_shash_final(shash, result);
-+	crypto_shash_digest(shash, raw_disk_sb + BTRFS_CSUM_SIZE,
-+			    BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE, result);
- 
- 	if (memcmp(disk_sb->csum, result, btrfs_super_csum_size(disk_sb)))
- 		return 1;
-@@ -3510,10 +3508,9 @@ static int write_dev_supers(struct btrfs_device *device,
- 
- 		btrfs_set_super_bytenr(sb, bytenr);
- 
--		crypto_shash_init(shash);
--		crypto_shash_update(shash, (const char *)sb + BTRFS_CSUM_SIZE,
--				    BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
--		crypto_shash_final(shash, sb->csum);
-+		crypto_shash_digest(shash, (const char *)sb + BTRFS_CSUM_SIZE,
-+				    BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE,
-+				    sb->csum);
- 
- 		page = find_or_create_page(mapping, bytenr >> PAGE_SHIFT,
- 					   GFP_NOFS);
-diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index 22cbb4da6d429e..8cdd06ea0e67a8 100644
---- a/fs/btrfs/file-item.c
-+++ b/fs/btrfs/file-item.c
-@@ -601,13 +601,12 @@ blk_status_t btrfs_csum_one_bio(struct inode *inode, struct bio *bio,
- 				index = 0;
- 			}
- 
--			crypto_shash_init(shash);
- 			data = kmap_atomic(bvec.bv_page);
--			crypto_shash_update(shash, data + bvec.bv_offset
-+			crypto_shash_digest(shash, data + bvec.bv_offset
- 					    + (i * fs_info->sectorsize),
--					    fs_info->sectorsize);
-+					    fs_info->sectorsize,
-+					    sums->sums + index);
- 			kunmap_atomic(data);
--			crypto_shash_final(shash, (char *)(sums->sums + index));
- 			index += csum_size;
- 			offset += fs_info->sectorsize;
- 			this_sum_bytes += fs_info->sectorsize;
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 1462f64c2c4b52..3b119bb11549fd 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2742,9 +2742,7 @@ static int check_data_csum(struct inode *inode, struct btrfs_io_bio *io_bio,
- 	kaddr = kmap_atomic(page);
- 	shash->tfm = fs_info->csum_shash;
- 
--	crypto_shash_init(shash);
--	crypto_shash_update(shash, kaddr + pgoff, len);
--	crypto_shash_final(shash, csum);
-+	crypto_shash_digest(shash, kaddr + pgoff, len, csum);
- 
- 	if (memcmp(csum, csum_expected, csum_size))
- 		goto zeroit;
--- 
-2.26.2
+I've always left write caching enabled in my drives since my system is
+plugged into reliable power. I assume the only reason to turn it off is
+to reduce the chance of filesystem corruption in case I have to force
+the machine to reboot while the operation is still going.
+
+Down to only 1.99 TB now! Wow!
+
+--Phil
+
+
 

@@ -6,94 +6,84 @@ X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 66668C3A5A9
-	for <linux-btrfs@archiver.kernel.org>; Sat,  2 May 2020 07:42:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 254F5C3A5A9
+	for <linux-btrfs@archiver.kernel.org>; Sat,  2 May 2020 07:52:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 4C2BC2072E
-	for <linux-btrfs@archiver.kernel.org>; Sat,  2 May 2020 07:42:43 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 007732173E
+	for <linux-btrfs@archiver.kernel.org>; Sat,  2 May 2020 07:52:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727101AbgEBHmk convert rfc822-to-8bit (ORCPT
+        id S1726654AbgEBHwg convert rfc822-to-8bit (ORCPT
         <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 2 May 2020 03:42:40 -0400
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:38014 "EHLO
+        Sat, 2 May 2020 03:52:36 -0400
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:39824 "EHLO
         james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726486AbgEBHmj (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 2 May 2020 03:42:39 -0400
+        with ESMTP id S1726520AbgEBHwf (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 2 May 2020 03:52:35 -0400
 Received: by james.kirk.hungrycats.org (Postfix, from userid 1002)
-        id 0608D69FD4C; Sat,  2 May 2020 03:42:37 -0400 (EDT)
-Date:   Sat, 2 May 2020 03:42:37 -0400
+        id D5EFC69FD92; Sat,  2 May 2020 03:52:33 -0400 (EDT)
+Date:   Sat, 2 May 2020 03:52:33 -0400
 From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
 To:     Phil Karn <karn@ka9q.net>
 Cc:     Paul Jones <paul@pauljones.id.au>,
+        Jean-Denis Girard <jd.girard@sysnux.pf>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Subject: Re: Extremely slow device removals
-Message-ID: <20200502074237.GM10769@hungrycats.org>
+Message-ID: <20200502075233.GN10769@hungrycats.org>
 References: <8b647a7f-1223-fa9f-57c0-9a81a9bbeb27@ka9q.net>
  <14a8e382-0541-0f18-b969-ccf4b3254461@ka9q.net>
  <r8f4gb$8qt$1@ciao.gmane.io>
  <bc4c477a-dd68-9584-f383-369b65113d21@ka9q.net>
  <20200502033509.GG10769@hungrycats.org>
  <SYBPR01MB3897D20A8185249BF2A26B139EA80@SYBPR01MB3897.ausprd01.prod.outlook.com>
- <20200502060038.GK10769@hungrycats.org>
- <SYBPR01MB389730010988EC44E7D109EE9EA80@SYBPR01MB3897.ausprd01.prod.outlook.com>
- <CAMwB8mhGkcM3DCTusuHAi-cQcr-FrA5cq4hVYfv+65zn_QjAig@mail.gmail.com>
+ <CAMwB8mi62y+9BfXYSmS0-VStGFnqDi8_UkskrdfPg5LsexaRNQ@mail.gmail.com>
+ <20200502072053.GL10769@hungrycats.org>
+ <CAMwB8miVfp_vpJaak=W_PK-xYtb=Py1zqqVYXWo_3NN4a9Dk7Q@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
 Content-Transfer-Encoding: 8BIT
-In-Reply-To: <CAMwB8mhGkcM3DCTusuHAi-cQcr-FrA5cq4hVYfv+65zn_QjAig@mail.gmail.com>
+In-Reply-To: <CAMwB8miVfp_vpJaak=W_PK-xYtb=Py1zqqVYXWo_3NN4a9Dk7Q@mail.gmail.com>
 User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sat, May 02, 2020 at 12:20:42AM -0700, Phil Karn wrote:
-> So I'm trying to figure out the advantage of including RAID 1 inside
-> btrfs instead of just running it over a conventional (fs-agnostic)
-> RAID subsystem.
+On Sat, May 02, 2020 at 12:27:27AM -0700, Phil Karn wrote:
+> > deleted the originals in logical extent order.  Sometimes people call this
+> > "defrag free space" but the use of the word "defrag" can be confusing.
+> >
+> > balance is not btrfs defrag.  defrag is concerned with making data extents
+> > contiguous, while balance is concerned with making free space contiguous.
 > 
-> I was originally really intrigued by the idea of integrating RAID into
-> the file system since it seemed like you could do more that way, or at
-> least do things more efficiently. For example, when adding or
-> replacing a mirror you'd only have to copy those parts of the disk
-> that actually contain data. That promised better performance. But if
-> those actually-used blocks are copied in small pieces and in random
-> order so the operation is far slower than the logical equivalent of
-> "dd if=disk1 of=disk2', 
-
-If you use btrfs replace to move data between drives then you get all
-the advantages you describe.  Don't do 'device remove' if you can possibly
-avoid it.
-
-Array reshapes in btrfs are currently slower than they need to be, but
-there's no on-disk-format reason why they can't be as fast as replace
-in many cases.
-
-> then what's left?
-
-If there's data corruption on one disk, btrfs can detect it and replace
-the lost data from the good copy.  Most block-level raid1's have a 50%
-chance of corrupting the good copy with the bad one, and can only report
-corruption as a difference in content between the drives (i.e. you have
-to guess which is correct), if they bother to report corruption at all.
-
-This allows you to take advantage of diverse redundant storage (e.g.
-raid1 pairs composed of disks made by different vendors).  In btrfs
-raid1, heterogeonous drive firmware maximizes the chance of having one
-bug-free firmware, and scrub will tell you exactly which drive is bad.
-In other raid1 implementations, a heterogeneous raid1 pair maximizes the
-chance of one firmware in the array having a bug that corrupts the data
-on the good drives, and doesn't tell you which drive is bad.
-
-btrfs does not rely on lower level hardware for error detection, so you
-can use cheap SSDs and SD cards that have no firmware capability to detect
-or report the flash equivalent of UNC sectors as btrfs raid1 members.
-I usually can squeeze about six months of extra life out of some very
-substandard storage hardware with btrfs.
-
-> Even the ability to use drives of different sizes isn't unique to
-> btrfs. You can use LVM to concatenate smaller volumes into larger
-> logical ones.
+> Got it. I actually would have understood "defrag free space" and that
+> it differed from file defragmentation (btrfs defrag, xfs_fsr,
+> e4defrag, etc).  "Balance" confused me.
 > 
+> How do you balance free space when you've got drives of unequal sizes,
+> like my (current) case of a 4-drive array consisting of two 16-TB
+> drives and two 6-TB drives?
+
+Depends on the RAID profile.  For single, dup, raid1, raid1c3, and raid1c4,
+the drives with the most unallocated space are filled first, using devid
+to break ties.  For raid0, raid5, and raid6, drives with free space are
+filled equally.  raid10 fills disks in even-numbered groups of 4 or more
+drives at a time, filling disks with the most unallocated space first.
+There are some other rules (e.g. at most 10 disks are used in a single
+block group) but they're not relevant at this scale.
+
+raid1 and single profiles would fill the 16TB drives first, until there
+was only 6 TB remaining.  At this point all the drives would have equal
+free space, then all drives fill equally until they are all full.
+
+raid0 and raid5 would fill all the disks at first, until the 6TB drives are
+full and the 16TB drives have 10TB of free space, then they'd fill the
+16TB drives the rest of the way.
+
+raid1c3, raid1c4, raid6 and raid10 would fill all the drives at first,
+then stop with ENOSPC when the 6TB disks are full and the 16TB disks
+have 10TB of free space.  These profiles have a minimum of 3 or more
+disks, and you don't have that number of the largest size disks.
+Once all the smaller disks are full no further allocation can be done.
+
 > Phil

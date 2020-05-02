@@ -2,92 +2,101 @@ Return-Path: <SRS0=372E=6Q=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.7 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0961BC3A5A9
-	for <linux-btrfs@archiver.kernel.org>; Sat,  2 May 2020 07:53:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6A5EEC3A5A9
+	for <linux-btrfs@archiver.kernel.org>; Sat,  2 May 2020 07:56:03 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D8E04216FD
-	for <linux-btrfs@archiver.kernel.org>; Sat,  2 May 2020 07:53:14 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3F1082173E
+	for <linux-btrfs@archiver.kernel.org>; Sat,  2 May 2020 07:56:03 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="xL3OK+QX"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726759AbgEBHxO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 2 May 2020 03:53:14 -0400
-Received: from aarghimedes.fi ([92.223.105.234]:48636 "EHLO aarghimedes.fi"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726520AbgEBHxN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 2 May 2020 03:53:13 -0400
-X-Greylist: delayed 566 seconds by postgrey-1.27 at vger.kernel.org; Sat, 02 May 2020 03:53:13 EDT
-Received: from [192.168.2.148] (77-246-193-133.cust.suomicom.net [77.246.193.133])
-        by aarghimedes.fi (Postfix) with ESMTPSA id 786041FF71
-        for <linux-btrfs@vger.kernel.org>; Sat,  2 May 2020 07:43:15 +0000 (UTC)
-Subject: Re: Extremely slow device removals
-To:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <8b647a7f-1223-fa9f-57c0-9a81a9bbeb27@ka9q.net>
- <14a8e382-0541-0f18-b969-ccf4b3254461@ka9q.net> <r8f4gb$8qt$1@ciao.gmane.io>
- <bc4c477a-dd68-9584-f383-369b65113d21@ka9q.net>
- <20200502033509.GG10769@hungrycats.org>
- <SYBPR01MB3897D20A8185249BF2A26B139EA80@SYBPR01MB3897.ausprd01.prod.outlook.com>
- <20200502060038.GK10769@hungrycats.org>
- <SYBPR01MB389730010988EC44E7D109EE9EA80@SYBPR01MB3897.ausprd01.prod.outlook.com>
- <CAMwB8mhGkcM3DCTusuHAi-cQcr-FrA5cq4hVYfv+65zn_QjAig@mail.gmail.com>
-From:   Jukka Larja <roskakori@aarghimedes.fi>
-Message-ID: <9b17cb65-1772-52b0-5b30-bfa890fbe83a@aarghimedes.fi>
-Date:   Sat, 2 May 2020 10:43:15 +0300
-User-Agent: Mozilla/5.0 (Windows; U; Windows NT 6.0; fi; rv:1.8.1.23)
- Gecko/20090812 Thunderbird/2.0.0.23 Mnenhy/0.7.6.666
+        id S1726782AbgEBH4C (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 2 May 2020 03:56:02 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53946 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-FAIL-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1726741AbgEBH4B (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 2 May 2020 03:56:01 -0400
+Received: from mail-wr1-x443.google.com (mail-wr1-x443.google.com [IPv6:2a00:1450:4864:20::443])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7BAB8C061A0C
+        for <linux-btrfs@vger.kernel.org>; Sat,  2 May 2020 00:56:01 -0700 (PDT)
+Received: by mail-wr1-x443.google.com with SMTP id k1so14517614wrx.4
+        for <linux-btrfs@vger.kernel.org>; Sat, 02 May 2020 00:56:01 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=0j+Xh4CjW5ElVZzS7RRjztVExT/WMDWx3UfbLAIyv0I=;
+        b=xL3OK+QXgtHg0Fr0cK/Ygfyq24tDbc9mtq04BHW/fVBqAKsBVOAMJ2uxtu6KObUEzL
+         npAl56R3xuFCAKO2oViGzzfF1ja7/oxyTkmwiKOOy/3C7YAd/VgnZ9xuiTK/yp5KFlZZ
+         70WhqctAPTP7YNDR+LhusZcRXsZtbLMLutnJKWdaOzEZlg0QOPpQtJmPX1YzICBLSUk1
+         SAiUDWurFEA3SNfpgdF84Oup8WVPCPUdWvHHybcf+ncGjQ4yd6dQscd45s1jKWnBvxr+
+         JvcqjDyQDd7tYiCs8vko/LjHHLiTpi/thJ7oq6P6yybzVDgTaSiYAHFytuPdIioeEaOQ
+         y8ow==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=0j+Xh4CjW5ElVZzS7RRjztVExT/WMDWx3UfbLAIyv0I=;
+        b=WqxTZeEQ6qrkMAwupxsJJvY7JqqnsLfNJ2bFwqXf2dvBIVsA/0j5xA4SB/yoNg0TOt
+         /o1bMH6fS8ydf0Fxso1HMso3vMhOF8jUu3pRyIu7H83Z+O6k+GC1gk2/q4AN90bfCSz6
+         aXhgudv0NWc3ZQC+LYQvmcH4frzi6bJgavmggoa4ba7ZNFtHq6MbLE4wpOjqsUaINTga
+         D6XB6qy8b3myVZMdEXj1Om6kD0bfoC4a3nL8mTHAxPurEPPKyKYO42mAMgcWZMsFg/np
+         aUkY+geXZZ15VsTtSaFHcKrIKaIRrSIISKzshubthkYYafj3pC5OPv5mRrA6idpStRaF
+         ntOQ==
+X-Gm-Message-State: AGi0PuY/YXZ7/Ae6Q2HguXQO46/6OAFt4Pqa9OLRVARRmjaSUz8zTyYZ
+        RKZDBfH86pJZMVMTqFUEpFNME51AE/XIljtB0JVJMTwp
+X-Google-Smtp-Source: APiQypLzicTRwdexF8tMb5Ud9mLgpDlSuX+eLkH7p6fT7xioefa+8hU+CPD1ztckBiP7xJNbDnBa0FXaTMlb82WH1nc=
+X-Received: by 2002:a5d:6148:: with SMTP id y8mr7927737wrt.236.1588406160116;
+ Sat, 02 May 2020 00:56:00 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAMwB8mhGkcM3DCTusuHAi-cQcr-FrA5cq4hVYfv+65zn_QjAig@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Transfer-Encoding: 8bit
+References: <CAAhjAp1zghNnRpbA2WypBU9+Azeui8kTQiTj+DfbK-iX-z71WQ@mail.gmail.com>
+ <CAJCQCtS7mbjEVchwbJS86ujAW+TrKHBk23oYtTNQnruiUr0XSg@mail.gmail.com> <CAAhjAp33Kan3Aco1CWBVh54tatexNs3w=qJqLHq6yQjxzRjjjQ@mail.gmail.com>
+In-Reply-To: <CAAhjAp33Kan3Aco1CWBVh54tatexNs3w=qJqLHq6yQjxzRjjjQ@mail.gmail.com>
+From:   Chris Murphy <lists@colorremedies.com>
+Date:   Sat, 2 May 2020 01:55:43 -0600
+Message-ID: <CAJCQCtTTwD1Dq0h3JMPXi1z+yTA8SGFbvft+VLAk_24pGDp0Pg@mail.gmail.com>
+Subject: Re: Can't repair raid 1 array after drive failure
+To:     Rollo ro <rollodroid@gmail.com>
+Cc:     Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Phil Karn kirjoitti 2.5.2020 klo 10.20:
+On Fri, May 1, 2020 at 1:59 PM Rollo ro <rollodroid@gmail.com> wrote:
+>
+> Am Fr., 1. Mai 2020 um 19:52 Uhr schrieb Chris Murphy <lists@colorremedies.com>:
+> >
+> > A complete dmesg please (not trimmed, starting at boot) would be useful.
+>
+> dmesg is spammed with btrfs warnings and errors, so all earlier
+> content is already gone. I can increase the buffer in grub
+> configuration and provide the complete dmesg next time.
 
-> So I'm trying to figure out the advantage of including RAID 1 inside
-> btrfs instead of just running it over a conventional (fs-agnostic)
-> RAID subsystem.
-> 
-> I was originally really intrigued by the idea of integrating RAID into
-> the file system since it seemed like you could do more that way, or at
-> least do things more efficiently. For example, when adding or
-> replacing a mirror you'd only have to copy those parts of the disk
-> that actually contain data. That promised better performance. But if
-> those actually-used blocks are copied in small pieces and in random
-> order so the operation is far slower than the logical equivalent of
-> "dd if=disk1 of=disk2', then what's left?
-> 
-> Even the ability to use drives of different sizes isn't unique to
-> btrfs. You can use LVM to concatenate smaller volumes into larger
-> logical ones.
+For the current boot:
+# journalctl -k
+For previous boot:
+# journalctl -b -1 -k
 
- From the point of view of someone who has set up mdadm just twice and at 
-both times needed to start again at some point, due to messing something up, 
-I think one great point of Btrfs is ease of setting up. That's especially 
-true when adding or deleting disks semi regularly. I don't have any 
-experience with LVM, but adding it to the mix will probably complicate 
-things more.
+> While looking at dmesg I found this:
+> [Fri May  1 16:25:15 2020] BTRFS warning (device sdc1): lost page
+> write due to IO error on /dev/sde
+> [Fri May  1 16:25:15 2020] BTRFS error (device sdc1): error writing
+> primary super block to device 4
+> [Fri May  1 16:25:15 2020] BTRFS info (device sdc1): disk added /dev/sdb
+> [Fri May  1 16:25:49 2020] BUG: kernel NULL pointer dereference,
+> address: 0000000000000000
 
-There are, of course, lot of more or less "edge cases" that require knowing 
-things, or doing sufficient research before proceding. Like using replace 
-instead of add+delete. And if add+delete is requires (I recently replaced 
-6x4TB disks with 2x16TB in an array that also has 2x10TB and 2x8TB disk), 
-it's better to resize deleted disk in small increments instead of just 
-deleting (and I think adding some balance would help too, though I came up 
-with the idea too late), to avoid lot of unnecessary rewrites during delete, 
-and getting stuck with long running operation that can't be cancelled.
+This might be related to the device vanishing. The actual problem(s)
+happened before this. This is just the consequence of the problem.
+
 
 -- 
-      ...Elämälle vierasta toimintaa...
-     Jukka Larja, Roskakori@aarghimedes.fi
-
-<saylan> I just set up port forwards to defense.gov
-<saylan> anyone scanning me now will be scanning/attacking the DoD :D
-<renderbod> O.o
-<bolt> that's... not exactly how port forwarding works
-<saylan> ?
-- Quote Database, http://www.bash.org/?954232 -
+Chris Murphy

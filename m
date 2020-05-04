@@ -2,147 +2,99 @@ Return-Path: <SRS0=eotd=6S=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.8 required=3.0 tests=DATE_IN_FUTURE_06_12,
-	DKIMWL_WL_HIGH,DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2A4BCC47247
-	for <linux-btrfs@archiver.kernel.org>; Mon,  4 May 2020 10:58:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 822F7C3A5A9
+	for <linux-btrfs@archiver.kernel.org>; Mon,  4 May 2020 18:55:11 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 08F0A206A5
-	for <linux-btrfs@archiver.kernel.org>; Mon,  4 May 2020 10:58:54 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 50096206B9
+	for <linux-btrfs@archiver.kernel.org>; Mon,  4 May 2020 18:55:11 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="Ium6GaOL"
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="nTZlPKyC"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728311AbgEDK6x (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 4 May 2020 06:58:53 -0400
-Received: from userp2120.oracle.com ([156.151.31.85]:52748 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728130AbgEDK6x (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 May 2020 06:58:53 -0400
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 044AvdfG042882
-        for <linux-btrfs@vger.kernel.org>; Mon, 4 May 2020 10:58:51 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
- date : message-id : in-reply-to : references : mime-version :
- content-transfer-encoding; s=corp-2020-01-29;
- bh=c1KtcoMlsTGaTPpm2/1VJX530+arEWtG2zIU+EwBEHI=;
- b=Ium6GaOLEKYfVGqRvz5ZT+ZgOgCunFHkvPuFi/WakQOVyR5YrkZ52re36AEkCUJiLKpo
- 2wQVbrmWv8we3gH0mL6YL84BFwpdXGH+Wu7MjWqWf6/IfSEp6fRgzVuPLrss2BvcTLR7
- e2/49dHmswNwkROxuZKWaPNLdkENs8n9Apsb8stVfMK3ud5yp1YhWS3gn63nfsQXfPGl
- 7OkJs1rPJ28Dcxs4FHxE7bUHxFKJ5CgHpN2K+A7T7yxtLsA1ejUMBirIrPMmcN5R4keP
- 1Ovohm50yevF43Bz1vaQci2o/uysUqi6l4zvk+ac6B3YlwgDvfN6Xwqnrs4TSZp3x2in Eg== 
-Received: from aserp3030.oracle.com (aserp3030.oracle.com [141.146.126.71])
-        by userp2120.oracle.com with ESMTP id 30s1gmwypv-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 May 2020 10:58:51 +0000
-Received: from pps.filterd (aserp3030.oracle.com [127.0.0.1])
-        by aserp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 044Aue9X008515
-        for <linux-btrfs@vger.kernel.org>; Mon, 4 May 2020 10:58:50 GMT
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by aserp3030.oracle.com with ESMTP id 30sjdqa6f3-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 May 2020 10:58:50 +0000
-Received: from abhmp0010.oracle.com (abhmp0010.oracle.com [141.146.116.16])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id 044Awois006448
-        for <linux-btrfs@vger.kernel.org>; Mon, 4 May 2020 10:58:50 GMT
-Received: from localhost.localdomain (/39.109.243.230)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Mon, 04 May 2020 03:58:49 -0700
-From:   Anand Jain <anand.jain@oracle.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v4 3/3] btrfs: free alien device due to device add
-Date:   Tue,  5 May 2020 02:58:26 +0800
-Message-Id: <20200504185826.9954-2-anand.jain@oracle.com>
-X-Mailer: git-send-email 2.25.1
-In-Reply-To: <20200428152227.8331-4-anand.jain@oracle.com>
-References: <20200428152227.8331-4-anand.jain@oracle.com>
+        id S1726410AbgEDSzK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 4 May 2020 14:55:10 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37384 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-FAIL-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1725956AbgEDSzK (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 4 May 2020 14:55:10 -0400
+Received: from mail-qk1-x732.google.com (mail-qk1-x732.google.com [IPv6:2607:f8b0:4864:20::732])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D3576C061A0E
+        for <linux-btrfs@vger.kernel.org>; Mon,  4 May 2020 11:55:09 -0700 (PDT)
+Received: by mail-qk1-x732.google.com with SMTP id f13so700127qkh.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 04 May 2020 11:55:09 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=b55riKebKIuodP45FjgT5oUWng13z38QCNAKl6Q6iZs=;
+        b=nTZlPKyCKfCicG7hseEz4EDY6WB8gJX25vEBcTgExO41Ma3T2YmteqmECZVOgLKqCI
+         F2wO5YVU7FYxNzDwYTWSJ4E3BBYNM5C2T/OQoyfxl9YFSalfYmsKrVHYvfBjxFgoHhsI
+         K5gtQWPFftW7wy/gLn/zffTjLEZ3Gw62kCfHd/YQwvCMxlpcHPjGWqNgiiJaCeE/LKx0
+         NOfAIGOF5cALf8AkdOk42fHBE8E41zgsUCgGAN0psGAVuhh1t6GgvxKAQyXFUGEANs+M
+         xhcEebhFtywSOJexaPjSgEBzwb2/FFnWBj2nFWL0jM4tyAkav+vymNHCe7rtN5RdjNS1
+         VCWg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=b55riKebKIuodP45FjgT5oUWng13z38QCNAKl6Q6iZs=;
+        b=mXzAfW/C6WAGJHhUAtpExGzeu1NW1jcOTiIdAWzckl+r8H6EgZVXawZSaYSgwlTBL1
+         eb7xjLvW0CffsQ1UlWgMYrwZdcfBAK/XIZ7ptf+Vdarq+jXTeLzf7JsdFYHiqlIhbBTi
+         MS2/F5YYKsapm+5LyDr5Ycd3ZQdjwj2KRvD8wzkGtoKeIOty9/NQXopRD7vHZTX3K19k
+         77QUbRqa8W8NuVRY2CtquohBFnDzDf6fLdMRSjFDzq3LmpFdOpNlAsuZC27zGeKYrflk
+         8afANpYTgLp4iD3hYXQmSIeZLtDG0/ytp7ubKNU7vHgTclVjdSKErHsNP0jyijrU2CpD
+         jl7w==
+X-Gm-Message-State: AGi0PualGXa1phGIc5D51A1gBNGYaZvciHwyxMy8VbaD5EM3WAJ5ialF
+        u1enbi6vCKyigD8KnMLT+8FZRKL+9mwfy1vO4uRwPKVG
+X-Google-Smtp-Source: APiQypImhb+r7OatxMqyS2E+SuG/uxGbN9JZfgLXuVvnvdicKdz7eJ8k6xdfWXsekaKsD9RHvVz91s0+JGOlxBhF+bo=
+X-Received: by 2002:a05:620a:662:: with SMTP id a2mr634956qkh.304.1588618508825;
+ Mon, 04 May 2020 11:55:08 -0700 (PDT)
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9610 signatures=668687
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 spamscore=0 suspectscore=3 mlxscore=0
- bulkscore=0 adultscore=0 phishscore=0 mlxlogscore=999 malwarescore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2003020000
- definitions=main-2005040094
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9610 signatures=668687
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 adultscore=0 suspectscore=3 mlxscore=0
- spamscore=0 clxscore=1015 priorityscore=1501 bulkscore=0 phishscore=0
- impostorscore=0 malwarescore=0 lowpriorityscore=0 mlxlogscore=999
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2003020000
- definitions=main-2005040094
+References: <20200411211414.GP13306@hungrycats.org> <b3e80e75-5d27-ec58-19af-11ba5a20e08c@gmx.com>
+ <20200428045500.GA10769@hungrycats.org> <ea42b9cb-3754-3f47-8d3c-208760e1c2ac@gmx.com>
+In-Reply-To: <ea42b9cb-3754-3f47-8d3c-208760e1c2ac@gmx.com>
+From:   Andrea Gelmini <andrea.gelmini@gmail.com>
+Date:   Mon, 4 May 2020 20:54:57 +0200
+Message-ID: <CAK-xaQYvgXuUtX6DKpOZ2NrvkYBfW9qgGOvMUCovAjVBO2Ay7g@mail.gmail.com>
+Subject: Re: Balance loops: what we know so far
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
+        Linux BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-When the old device has new fsid through btrfs device add -f <dev> our
-fs_devices list has an alien device in one of the fs_devices. So this is
-a trigger and not the root cause of the issue. This patch fixes the trigger.
+Il giorno mar 28 apr 2020 alle ore 12:00 Qu Wenruo
+<quwenruo.btrfs@gmx.com> ha scritto:
 
-By having an alien device in fs_devices, we have two issues so far
+>
+> Would you please take an image dump of the fs when runaway balance happened?
+>
+> Both metadata and data block group loop would greatly help.
 
-1. missing device is not shows as missing in the userland
+Hi Qu, and thanks a lot for your work.
 
-Which is due to cracks in the function btrfs_open_one_device() and
-hardened by the pending patches in the ml.
- btrfs: remove identified alien device in open_fs_devices
- btrfs: remove identified alien btrfs device in open_fs_devices
+I have a VirtualBox machine (in save-state) with the problem running.
 
-2. mount of a degraded fs_devices fails
+So, I can send it to you, if you are comfortable with VirtulBox, or we
+can work together on my machine.
 
-Which is due to cracks in the function btrfs_free_extra_devids() and
-hardened by patch (included in the set).
- btrfs: include non-missing as a qualifier for the latest_bdev
+Short story:
+a) system running is live CD ubuntu 20.04 with kernel 5.4.0-21
+b) partition of 10 giga (not /) mounted;
+c) shrinked to 4 giga;
+d) then removed files and left just 59 mega of data;
+e) started balance -m (not -d), then it loops forever (or, at least, I
+left it running for hours, guess it should be enough).
 
-The trigger for both of this issue is that there is an alien (does not
-contain the intended fsid/btrfs_magic) device in the fs_devices.
+If I reset it, at restart no more loop.
 
-We know a device can be scanned/added through
-btrfs-control::BTRFS_IOC_SCAN_DEV|BTRFS_IOC_DEVICES_READY
-or by
-ioctl::BTRFS_IOC_ADD_DEV
-
-And device coming through btrfs-control is checked against the all other
-devices in btrfs kernel but not coming through BTRFS_IOC_ADD_DEV.
-
-This patch checks if the device add is alienating any other scanned
-device and deletes it.
-
-In fact, this patch fixes both the issues 1 and 2 (above) by eliminating
-the trigger of the issue, but still they have their own patch as well
-because its the right way to harden the functions and fill the cracks.
-
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
----
-v3-rebased: change log updated.
-v4: use the helper btrfs_forget_devices().
-
- fs/btrfs/volumes.c | 9 +++++++++
- 1 file changed, 9 insertions(+)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index f93739afe681..8e6f110b375d 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2664,6 +2664,15 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
- 
- 	/* Update ctime/mtime for libblkid */
- 	update_dev_time(device_path);
-+
-+	/*
-+	 * Now that we have written a new sb into this device, check all other
-+	 * fs_devices list if device_path alienates any other scanned device.
-+	 * Ignore the return as we are successfull in the core task - add
-+	 * the device.
-+	 */
-+	btrfs_forget_devices(device_path);
-+
- 	return ret;
- 
- error_sysfs:
--- 
-2.25.1
-
+Thanks again,
+Gelma

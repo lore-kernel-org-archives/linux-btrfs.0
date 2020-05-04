@@ -2,99 +2,159 @@ Return-Path: <SRS0=eotd=6S=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
 	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 822F7C3A5A9
-	for <linux-btrfs@archiver.kernel.org>; Mon,  4 May 2020 18:55:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 38BA1C3A5A9
+	for <linux-btrfs@archiver.kernel.org>; Mon,  4 May 2020 20:59:40 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 50096206B9
-	for <linux-btrfs@archiver.kernel.org>; Mon,  4 May 2020 18:55:11 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="nTZlPKyC"
+	by mail.kernel.org (Postfix) with ESMTP id 0DF56206C0
+	for <linux-btrfs@archiver.kernel.org>; Mon,  4 May 2020 20:59:39 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1588625980;
+	bh=53OHInTw9sNfsV+8pEntSpT2NrmGF+EPe5Sli3OSZ0w=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:List-ID:From;
+	b=buY0TIJEjTBdECIaT0M27C/aUBtz/1FtIDcWiKpHVj7Zmfm54DtXoF8s1qe0+JEYl
+	 7+7l9ydb56ZWeOiRzyBUyOj4TEX156Sug6dImCA2/SsCjC/YLnxKL9PI4v5H8RYaIy
+	 p5EcMZyZi0bhWpa0UNq2KtQaOT0Kn0NcdAIBxWuo=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726410AbgEDSzK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 4 May 2020 14:55:10 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37384 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-FAIL-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1725956AbgEDSzK (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 4 May 2020 14:55:10 -0400
-Received: from mail-qk1-x732.google.com (mail-qk1-x732.google.com [IPv6:2607:f8b0:4864:20::732])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D3576C061A0E
-        for <linux-btrfs@vger.kernel.org>; Mon,  4 May 2020 11:55:09 -0700 (PDT)
-Received: by mail-qk1-x732.google.com with SMTP id f13so700127qkh.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 May 2020 11:55:09 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=b55riKebKIuodP45FjgT5oUWng13z38QCNAKl6Q6iZs=;
-        b=nTZlPKyCKfCicG7hseEz4EDY6WB8gJX25vEBcTgExO41Ma3T2YmteqmECZVOgLKqCI
-         F2wO5YVU7FYxNzDwYTWSJ4E3BBYNM5C2T/OQoyfxl9YFSalfYmsKrVHYvfBjxFgoHhsI
-         K5gtQWPFftW7wy/gLn/zffTjLEZ3Gw62kCfHd/YQwvCMxlpcHPjGWqNgiiJaCeE/LKx0
-         NOfAIGOF5cALf8AkdOk42fHBE8E41zgsUCgGAN0psGAVuhh1t6GgvxKAQyXFUGEANs+M
-         xhcEebhFtywSOJexaPjSgEBzwb2/FFnWBj2nFWL0jM4tyAkav+vymNHCe7rtN5RdjNS1
-         VCWg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=b55riKebKIuodP45FjgT5oUWng13z38QCNAKl6Q6iZs=;
-        b=mXzAfW/C6WAGJHhUAtpExGzeu1NW1jcOTiIdAWzckl+r8H6EgZVXawZSaYSgwlTBL1
-         eb7xjLvW0CffsQ1UlWgMYrwZdcfBAK/XIZ7ptf+Vdarq+jXTeLzf7JsdFYHiqlIhbBTi
-         MS2/F5YYKsapm+5LyDr5Ycd3ZQdjwj2KRvD8wzkGtoKeIOty9/NQXopRD7vHZTX3K19k
-         77QUbRqa8W8NuVRY2CtquohBFnDzDf6fLdMRSjFDzq3LmpFdOpNlAsuZC27zGeKYrflk
-         8afANpYTgLp4iD3hYXQmSIeZLtDG0/ytp7ubKNU7vHgTclVjdSKErHsNP0jyijrU2CpD
-         jl7w==
-X-Gm-Message-State: AGi0PualGXa1phGIc5D51A1gBNGYaZvciHwyxMy8VbaD5EM3WAJ5ialF
-        u1enbi6vCKyigD8KnMLT+8FZRKL+9mwfy1vO4uRwPKVG
-X-Google-Smtp-Source: APiQypImhb+r7OatxMqyS2E+SuG/uxGbN9JZfgLXuVvnvdicKdz7eJ8k6xdfWXsekaKsD9RHvVz91s0+JGOlxBhF+bo=
-X-Received: by 2002:a05:620a:662:: with SMTP id a2mr634956qkh.304.1588618508825;
- Mon, 04 May 2020 11:55:08 -0700 (PDT)
+        id S1727121AbgEDU7i (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 4 May 2020 16:59:38 -0400
+Received: from mail.kernel.org ([198.145.29.99]:32790 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726334AbgEDU7h (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 4 May 2020 16:59:37 -0400
+Received: from gmail.com (unknown [104.132.1.76])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 8DA9F206A5;
+        Mon,  4 May 2020 20:59:36 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1588625976;
+        bh=53OHInTw9sNfsV+8pEntSpT2NrmGF+EPe5Sli3OSZ0w=;
+        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+        b=tLttWRN5A1goAYEow/hG9CmSC5n0sBoT3OwEP9sTeDC4lvmDh2G+4YPyOmFT6W3Ia
+         aabiSYWQBExhG5VO5KJLW4qPb3pY3DXQQbM6qF3BlMytp2CAXKKjMiJoODFyZJu8EK
+         MiYIoNX0EDj8r9mGp/KaCpzRM4YgBibKVZakg5lk=
+Date:   Mon, 4 May 2020 13:59:35 -0700
+From:   Eric Biggers <ebiggers@kernel.org>
+To:     Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
+Cc:     Johannes Thumshirn <jth@kernel.org>,
+        David Sterba <dsterba@suse.cz>,
+        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Richard Weinberger <richard@nod.at>
+Subject: Re: [PATCH v2 1/2] btrfs: add authentication support
+Message-ID: <20200504205935.GA51650@gmail.com>
+References: <20200428105859.4719-1-jth@kernel.org>
+ <20200428105859.4719-2-jth@kernel.org>
+ <20200501053908.GC1003@sol.localdomain>
+ <SN4PR0401MB3598198E5FB728B68B39A1589BA60@SN4PR0401MB3598.namprd04.prod.outlook.com>
 MIME-Version: 1.0
-References: <20200411211414.GP13306@hungrycats.org> <b3e80e75-5d27-ec58-19af-11ba5a20e08c@gmx.com>
- <20200428045500.GA10769@hungrycats.org> <ea42b9cb-3754-3f47-8d3c-208760e1c2ac@gmx.com>
-In-Reply-To: <ea42b9cb-3754-3f47-8d3c-208760e1c2ac@gmx.com>
-From:   Andrea Gelmini <andrea.gelmini@gmail.com>
-Date:   Mon, 4 May 2020 20:54:57 +0200
-Message-ID: <CAK-xaQYvgXuUtX6DKpOZ2NrvkYBfW9qgGOvMUCovAjVBO2Ay7g@mail.gmail.com>
-Subject: Re: Balance loops: what we know so far
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
-        Linux BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <SN4PR0401MB3598198E5FB728B68B39A1589BA60@SN4PR0401MB3598.namprd04.prod.outlook.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Il giorno mar 28 apr 2020 alle ore 12:00 Qu Wenruo
-<quwenruo.btrfs@gmx.com> ha scritto:
+On Mon, May 04, 2020 at 10:09:44AM +0000, Johannes Thumshirn wrote:
+> On 01/05/2020 07:39, Eric Biggers wrote:
+> [...]
+> 
+> Thanks for taking the time to look through this.
+> 
+> > 
+> > This is a good idea, but can you explain exactly what security properties you
+> > aim to achieve?
+> 
+> My goal is to protect the file-system against offline modifications. 
+> Offline in this context means when the filesystem is not mounted.
+> 
+> This could be a switched off laptop in a hotel room or a container 
+> image, or a powered off embedded system. When the file-system is mounted 
+> normal read/write access is possible.
 
->
-> Would you please take an image dump of the fs when runaway balance happened?
->
-> Both metadata and data block group loop would greatly help.
+But your proposed design doesn't do this completely, since some times of offline
+modifications are still possible.
 
-Hi Qu, and thanks a lot for your work.
+So that's why I'm asking *exactly* what security properties it will provide.
 
-I have a VirtualBox machine (in save-state) with the problem running.
+> 
+> > As far as I can tell, btrfs hashes each data block individually.  There's no
+> > contextual information about where eaech block is located or which file(s) it
+> > belongs to.  So, with this proposal, an attacker can still replace any data
+> > block with any other data block.  Is that what you have in mind?  Have you
+> > considered including contextual information in the hashes, to prevent this?
+> > 
+> > What about metadata blocks -- how well are they authenticated?  Can they be
+> > moved around?  And does this proposal authenticate *everything* on the
+> > filesystem, or is there any part that is missed?  What about the superblock?
+> 
+> In btrfs every metadata block is started by a checksum (see struct 
+> btrfs_header or struct btrfs_super_block). This checksum protects the 
+> whole meta-data block (minus the checksum field, obviously).
+> 
+> The two main structure of the trees are btrfs_node and btrfs_leaf (both 
+> started by a btrfs_header). struct btrfs_node holds the generation and 
+> the block pointers of child nodes (and leafs). Struct btrfs_leaf holds 
+> the items, which can be inodes, directories, extents, checksums, 
+> block-groups, etc...
+> 
+> As each FS meta-data item, beginning with the super block, downwards to 
+> the meta-data items themselves is protected be a checksum, so the FS 
+> tree (including locations, generation, etc) is protected by a checksum, 
+> for which the attacker would need to know the key to generate.
+> 
+> The checksum for data blocks is saved in a separate on-disk btree, the 
+> checksum tree. The structure of the checksum tree consists of 
+> btrfs_leafs and btrfs_nodes as well, both of which do have a 
+> btrfs_header and thus are protected by the checksums.
 
-So, I can send it to you, if you are comfortable with VirtulBox, or we
-can work together on my machine.
+Does this mean that a parent node's checksum doesn't cover the checksum of its
+child nodes, but rather only their locations?  Doesn't that allow subtrees to be
+swapped around without being detected?
 
-Short story:
-a) system running is live CD ubuntu 20.04 with kernel 5.4.0-21
-b) partition of 10 giga (not /) mounted;
-c) shrinked to 4 giga;
-d) then removed files and left just 59 mega of data;
-e) started balance -m (not -d), then it loops forever (or, at least, I
-left it running for hours, guess it should be enough).
+> 
+> > 
+> > You also mentioned preventing replay of filesystem operations, which suggests
+> > you're trying to achieve rollback protection.  But actually this scheme doesn't
+> > provide rollback protection.  For one, an attacker can always just rollback the
+> > entire filesystem to a previous state.
+> 
+> You're right, replay is the wrong wording there and it's actually 
+> harmful in the used context. What I had in mind was, in order to change 
+> the structure of the filesystem, an attacker would need the key to 
+> update the checksums, otherwise the next read will detect a corruption.
+> 
+> As for a real replay case, an attacker would need to increase the 
+> generation of the tree block, in order to roll back to a older state, an 
+> attacker still would need to modify the super-block's generation, which 
+> is protected by the checksum as well.
 
-If I reset it, at restart no more loop.
+Actually, nothing in the current design prevents the whole filesystem from being
+rolled back to an earlier state.  So, an attacker can actually both "change the
+structure of the filesystem" and "roll back to an earlier state".
 
-Thanks again,
-Gelma
+It very well might not be practical to provide rollback protection, and this
+feature would still be useful without it.  But I'm concerned that you're
+claiming that this feature provides rollback protection when it doesn't.
+
+> > The hash algorithm needs to be passed as a mount option.  Otherwise the attacker
+> > gets to choose it for you among all the supported keyed hash algorithms, as soon
+> > as support for a second one is added.  Maybe use 'auth_hash_name' like UBIFS
+> > does?
+> 
+> Can you elaborate a bit more on that? As far as I know, UBIFS doesn't 
+> save the 'auth_hash_name' on disk, whereas 'BTRFS_CSUM_TYPE_HMAC_SHA256' 
+> is part of the on-disk format. As soon as we add a 2nd keyed hash, say 
+> BTRFS_CSUM_TYPE_BLAKE2B_KEYED, this will be in the superblock as well, 
+> as struct btrfs_super_block::csum_type.
+> 
+
+The data on disk isn't trusted.  Isn't that the whole point?  The filesystem
+doesn't trust it until it is MAC'ed, and to do that it needs the MAC algorithm.
+
+- Eric

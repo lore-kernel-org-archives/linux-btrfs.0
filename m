@@ -2,127 +2,99 @@ Return-Path: <SRS0=42Hc=6T=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.4 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=ham
+X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 00C30C47247
-	for <linux-btrfs@archiver.kernel.org>; Tue,  5 May 2020 22:41:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4AABDC47247
+	for <linux-btrfs@archiver.kernel.org>; Tue,  5 May 2020 22:47:03 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id CAA7C2073B
-	for <linux-btrfs@archiver.kernel.org>; Tue,  5 May 2020 22:41:22 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="Zbi5BU+4"
+	by mail.kernel.org (Postfix) with ESMTP id 19E4C206B8
+	for <linux-btrfs@archiver.kernel.org>; Tue,  5 May 2020 22:47:03 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728717AbgEEWlW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 5 May 2020 18:41:22 -0400
-Received: from aserp2120.oracle.com ([141.146.126.78]:33708 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727089AbgEEWlV (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 May 2020 18:41:21 -0400
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 045MT9sq069511;
-        Tue, 5 May 2020 22:41:18 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
- references : from : message-id : date : mime-version : in-reply-to :
- content-type : content-transfer-encoding; s=corp-2020-01-29;
- bh=SinBHC75KjAJdIOWuN2SlOqEFq7A2/Ufd9n5mVXftjU=;
- b=Zbi5BU+40sncyJEjh9PbKXpdv4yj30Wo+4ywiXjl+R8Q1kCo2VBtjnFw6DEkGEvvUhMt
- LRZUQBo9cfsi1RDbjAE54hRyQ1lktD88L0TbuBqU5dmCOIkPRXQiBxYaDBefG/9fAN7j
- wntoS06qTQYIPDeVATMPguLJ5CFMj85CTkFRI5H7Rv3JJBHA1yBsb906iGrg+qPoI7JK
- x15EJqYgDvDpelhgIQqfWcFtos2qZ5IMoTx+ubATTAq7QwyTjxrRZOW4D4pxqW3Prf60
- NbvbomuZIJTzAXWefZ0yu/zY3d3GJhi0oDRLLejNiOstOQ0TINqgJlM+TdqnvF7ylgxD fQ== 
-Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
-        by aserp2120.oracle.com with ESMTP id 30s0tmfdpn-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Tue, 05 May 2020 22:41:18 +0000
-Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
-        by userp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 045MZpqY054086;
-        Tue, 5 May 2020 22:41:17 GMT
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by userp3030.oracle.com with ESMTP id 30t1r65ccq-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Tue, 05 May 2020 22:41:17 +0000
-Received: from abhmp0013.oracle.com (abhmp0013.oracle.com [141.146.116.19])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id 045MfGA3012766;
-        Tue, 5 May 2020 22:41:16 GMT
-Received: from [192.168.1.102] (/39.109.243.230)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Tue, 05 May 2020 15:41:16 -0700
-Subject: Re: [PATCH v4 3/3] btrfs: free alien device due to device add
-To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
-References: <20200428152227.8331-4-anand.jain@oracle.com>
- <20200504185826.9954-2-anand.jain@oracle.com>
- <20200505193431.GV18421@twin.jikos.cz>
-From:   Anand Jain <anand.jain@oracle.com>
-Message-ID: <bb507bb4-09a6-e9e5-db84-df4140447be9@oracle.com>
-Date:   Wed, 6 May 2020 07:40:56 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.7.0
+        id S1729196AbgEEWrC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 5 May 2020 18:47:02 -0400
+Received: from mx2.suse.de ([195.135.220.15]:53876 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726568AbgEEWrC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 5 May 2020 18:47:02 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 052FDAE64;
+        Tue,  5 May 2020 22:47:02 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 4ECC4DA7AD; Wed,  6 May 2020 00:46:12 +0200 (CEST)
+Date:   Wed, 6 May 2020 00:46:11 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Eric Biggers <ebiggers@kernel.org>
+Cc:     dsterba@suse.cz, Johannes Thumshirn <Johannes.Thumshirn@wdc.com>,
+        Johannes Thumshirn <jth@kernel.org>,
+        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Richard Weinberger <richard@nod.at>
+Subject: Re: [PATCH v2 1/2] btrfs: add authentication support
+Message-ID: <20200505224611.GA18421@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Eric Biggers <ebiggers@kernel.org>,
+        Johannes Thumshirn <Johannes.Thumshirn@wdc.com>,
+        Johannes Thumshirn <jth@kernel.org>,
+        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Richard Weinberger <richard@nod.at>
+References: <20200428105859.4719-1-jth@kernel.org>
+ <20200428105859.4719-2-jth@kernel.org>
+ <20200501053908.GC1003@sol.localdomain>
+ <SN4PR0401MB3598198E5FB728B68B39A1589BA60@SN4PR0401MB3598.namprd04.prod.outlook.com>
+ <20200504205935.GA51650@gmail.com>
+ <20200505221448.GW18421@twin.jikos.cz>
+ <20200505223120.GC128280@sol.localdomain>
 MIME-Version: 1.0
-In-Reply-To: <20200505193431.GV18421@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9612 signatures=668687
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 bulkscore=0 adultscore=0 suspectscore=0
- spamscore=0 mlxlogscore=999 malwarescore=0 phishscore=0 mlxscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2003020000
- definitions=main-2005050170
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9612 signatures=668687
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 malwarescore=0 mlxscore=0
- priorityscore=1501 lowpriorityscore=0 spamscore=0 suspectscore=0
- phishscore=0 clxscore=1015 bulkscore=0 mlxlogscore=999 adultscore=0
- impostorscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2003020000 definitions=main-2005050170
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20200505223120.GC128280@sol.localdomain>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-
-
-
->>
->> Signed-off-by: Anand Jain <anand.jain@oracle.com>
->> Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+On Tue, May 05, 2020 at 03:31:20PM -0700, Eric Biggers wrote:
+> > Using that example, the authenticated checksum cannot be subverted on
+> > the superblock. So even if there are untrusted superblock data used, it
+> > won't even pass the verification of the superblock itself.
 > 
-> So I'm not sure how much the review holds when the code changes between
-> iterations. The right way is to drop the rev-by and CC the person for
-> any non-trivial or maybe for all changes.
-> 
+> You're missing the point.  For unkeyed hashes, there's no need to provide the
+> hash algorithm name at mount time, as there's no authentication anyway.  But for
+> keyed hashes (as added by this patch) it is needed.  If the attacker gets to
+> choose the algorithms for you, you don't have a valid cryptosystem.
 
-  only thing that changed is use of helper function
-  btrfs_forget_devices() instead of the open-code, so I kept the rev-by.
-  Yeah I kind of noticed late that cc list added during git format-patch
-  didn't actually add cc in the git send <patch-file>
+I think we need to be more specific as I don't see how this contradicts
+what I've said, perhaps you'll show me the exact point where I missed
+it.
 
+An example superblock contains:
 
->> --- a/fs/btrfs/volumes.c
->> +++ b/fs/btrfs/volumes.c
->> @@ -2664,6 +2664,15 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
->>   
->>   	/* Update ctime/mtime for libblkid */
->>   	update_dev_time(device_path);
->> +
->> +	/*
->> +	 * Now that we have written a new sb into this device, check all other
->> +	 * fs_devices list if device_path alienates any other scanned device.
->> +	 * Ignore the return as we are successfull in the core task - add
->> +	 * the device.
->> +	 */
->> +	btrfs_forget_devices(device_path);
-> 
-> Actually this should go before update_dev_time, as this is the point
-> when the file change could be detected by udev and rescanned, which
-> increases the window between commit and removal from fs_devices.
-> 
+	u8 checksum[32];
+	int hash_type;
+	u8 the_rest[256];
 
-  You are right, theoretically btrfs_forget_devices() should be before
-  update_dev_time()
+The checksum is calculated from offsetof(hash_type) to the end of the
+structure. Then it is stored to the checksum array, and whole block is
+stored on disk.
 
+Valid superblock created by user contains may look like:
 
-Noted and agreed on rest of the stuffs.
+	.checksum = 0x123456
+	.hash_type = 0x1	/* hmac(sha256) */
+	.the_rest = ...;
 
-Thanks, Anand
+Without a valid key, none of the hash_type or the_rest can be changed
+without producing a valid checksum.
+
+When you say 'if attacker gets to chose the algorithms' I understand it
+as change to hash_type, eg. setting it to 0x2 which would be
+hmac(blake2b).
+
+So maybe it violates some principle of not letting the attacker choice
+happen at all, but how would the attack continue to produce a valid
+checksum?

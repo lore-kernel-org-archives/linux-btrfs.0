@@ -2,96 +2,127 @@ Return-Path: <SRS0=42Hc=6T=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.4 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CEC6AC47247
-	for <linux-btrfs@archiver.kernel.org>; Tue,  5 May 2020 22:37:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 00C30C47247
+	for <linux-btrfs@archiver.kernel.org>; Tue,  5 May 2020 22:41:23 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id A338520721
-	for <linux-btrfs@archiver.kernel.org>; Tue,  5 May 2020 22:37:09 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1588718229;
-	bh=UdZ1HFCFDP6+pG52oE+2tMcVpq+n7qYIuAWKP/UAw+E=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:List-ID:From;
-	b=AnIkhOhZhzecGyORSP4rEBDzCaDIsMM1YFmAs3hgdcKpEiikBPI0dKjrl6rZJBc6W
-	 oAuq2SRIGCYwhjiRw3o13oODOo8WMFKaEq/u8K3VaI1uaV+6ZmEHvKFKUeydQ7Vy0r
-	 G3NVScSC0UKBjAjdJYOXfBinUNcH5jj+nMPQ42L0=
+	by mail.kernel.org (Postfix) with ESMTP id CAA7C2073B
+	for <linux-btrfs@archiver.kernel.org>; Tue,  5 May 2020 22:41:22 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="Zbi5BU+4"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729557AbgEEWhI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 5 May 2020 18:37:08 -0400
-Received: from mail.kernel.org ([198.145.29.99]:34708 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728642AbgEEWhH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 5 May 2020 18:37:07 -0400
-Received: from sol.localdomain (c-107-3-166-239.hsd1.ca.comcast.net [107.3.166.239])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id D2528206FA;
-        Tue,  5 May 2020 22:37:06 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1588718227;
-        bh=UdZ1HFCFDP6+pG52oE+2tMcVpq+n7qYIuAWKP/UAw+E=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=CLLQrHiyI6r0PMHl+ZFLUZAEoPzJUouVkuj6gki9wWdNwifcCIdwPFxii+KxDnIE4
-         pbKNiv4zO9kxTZ4u8ROfqZ9s9ntdBf+laCTtT+uyEaxLIOuxPcvCQYylB871xYiiLn
-         DASjzcAYFN4HWHVb7c7pCp/BBoL278fHTHCVnsas=
-Date:   Tue, 5 May 2020 15:37:05 -0700
-From:   Eric Biggers <ebiggers@kernel.org>
-To:     Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
-Cc:     Johannes Thumshirn <jth@kernel.org>,
-        David Sterba <dsterba@suse.cz>,
-        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Richard Weinberger <richard@nod.at>
-Subject: Re: [PATCH v2 1/2] btrfs: add authentication support
-Message-ID: <20200505223705.GD128280@sol.localdomain>
-References: <20200428105859.4719-1-jth@kernel.org>
- <20200428105859.4719-2-jth@kernel.org>
- <20200501053908.GC1003@sol.localdomain>
- <SN4PR0401MB3598198E5FB728B68B39A1589BA60@SN4PR0401MB3598.namprd04.prod.outlook.com>
- <20200504205935.GA51650@gmail.com>
- <SN4PR0401MB359843476634082E8329168A9BA70@SN4PR0401MB3598.namprd04.prod.outlook.com>
+        id S1728717AbgEEWlW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 5 May 2020 18:41:22 -0400
+Received: from aserp2120.oracle.com ([141.146.126.78]:33708 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727089AbgEEWlV (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 May 2020 18:41:21 -0400
+Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
+        by aserp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 045MT9sq069511;
+        Tue, 5 May 2020 22:41:18 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
+ references : from : message-id : date : mime-version : in-reply-to :
+ content-type : content-transfer-encoding; s=corp-2020-01-29;
+ bh=SinBHC75KjAJdIOWuN2SlOqEFq7A2/Ufd9n5mVXftjU=;
+ b=Zbi5BU+40sncyJEjh9PbKXpdv4yj30Wo+4ywiXjl+R8Q1kCo2VBtjnFw6DEkGEvvUhMt
+ LRZUQBo9cfsi1RDbjAE54hRyQ1lktD88L0TbuBqU5dmCOIkPRXQiBxYaDBefG/9fAN7j
+ wntoS06qTQYIPDeVATMPguLJ5CFMj85CTkFRI5H7Rv3JJBHA1yBsb906iGrg+qPoI7JK
+ x15EJqYgDvDpelhgIQqfWcFtos2qZ5IMoTx+ubATTAq7QwyTjxrRZOW4D4pxqW3Prf60
+ NbvbomuZIJTzAXWefZ0yu/zY3d3GJhi0oDRLLejNiOstOQ0TINqgJlM+TdqnvF7ylgxD fQ== 
+Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
+        by aserp2120.oracle.com with ESMTP id 30s0tmfdpn-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Tue, 05 May 2020 22:41:18 +0000
+Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
+        by userp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 045MZpqY054086;
+        Tue, 5 May 2020 22:41:17 GMT
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by userp3030.oracle.com with ESMTP id 30t1r65ccq-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Tue, 05 May 2020 22:41:17 +0000
+Received: from abhmp0013.oracle.com (abhmp0013.oracle.com [141.146.116.19])
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id 045MfGA3012766;
+        Tue, 5 May 2020 22:41:16 GMT
+Received: from [192.168.1.102] (/39.109.243.230)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Tue, 05 May 2020 15:41:16 -0700
+Subject: Re: [PATCH v4 3/3] btrfs: free alien device due to device add
+To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
+References: <20200428152227.8331-4-anand.jain@oracle.com>
+ <20200504185826.9954-2-anand.jain@oracle.com>
+ <20200505193431.GV18421@twin.jikos.cz>
+From:   Anand Jain <anand.jain@oracle.com>
+Message-ID: <bb507bb4-09a6-e9e5-db84-df4140447be9@oracle.com>
+Date:   Wed, 6 May 2020 07:40:56 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.7.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <SN4PR0401MB359843476634082E8329168A9BA70@SN4PR0401MB3598.namprd04.prod.outlook.com>
+In-Reply-To: <20200505193431.GV18421@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9612 signatures=668687
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 bulkscore=0 adultscore=0 suspectscore=0
+ spamscore=0 mlxlogscore=999 malwarescore=0 phishscore=0 mlxscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2003020000
+ definitions=main-2005050170
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9612 signatures=668687
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 malwarescore=0 mlxscore=0
+ priorityscore=1501 lowpriorityscore=0 spamscore=0 suspectscore=0
+ phishscore=0 clxscore=1015 bulkscore=0 mlxlogscore=999 adultscore=0
+ impostorscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2003020000 definitions=main-2005050170
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, May 05, 2020 at 08:11:56AM +0000, Johannes Thumshirn wrote:
-> On 04/05/2020 22:59, Eric Biggers wrote:
-> [...]
+
+
+
+>>
+>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+>> Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 > 
-> > But your proposed design doesn't do this completely, since some times of offline
-> > modifications are still possible.
-> > 
-> > So that's why I'm asking *exactly* what security properties it will provide.
-> 
-> [...]
-> 
-> > Does this mean that a parent node's checksum doesn't cover the checksum of its
-> > child nodes, but rather only their locations?  Doesn't that allow subtrees to be
-> > swapped around without being detected?
-> 
-> I was about to say "no you can't swap the subtrees as the header also 
-> stores the address of the block", but please give me some more time to 
-> think about it. I don't want to give a wrong answer.
-> 
-> [...]
-> 
-> > Actually, nothing in the current design prevents the whole filesystem from being
-> > rolled back to an earlier state.  So, an attacker can actually both "change the
-> > structure of the filesystem" and "roll back to an earlier state".
-> 
-> Can you give an example how an attacker could do a rollback of the whole 
-> filesystem without the key? What am I missing?
+> So I'm not sure how much the review holds when the code changes between
+> iterations. The right way is to drop the rev-by and CC the person for
+> any non-trivial or maybe for all changes.
 > 
 
-They replace the current content of the block device with the content at an
-earlier time.
+  only thing that changed is use of helper function
+  btrfs_forget_devices() instead of the open-code, so I kept the rev-by.
+  Yeah I kind of noticed late that cc list added during git format-patch
+  didn't actually add cc in the git send <patch-file>
 
-- Eric
+
+>> --- a/fs/btrfs/volumes.c
+>> +++ b/fs/btrfs/volumes.c
+>> @@ -2664,6 +2664,15 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
+>>   
+>>   	/* Update ctime/mtime for libblkid */
+>>   	update_dev_time(device_path);
+>> +
+>> +	/*
+>> +	 * Now that we have written a new sb into this device, check all other
+>> +	 * fs_devices list if device_path alienates any other scanned device.
+>> +	 * Ignore the return as we are successfull in the core task - add
+>> +	 * the device.
+>> +	 */
+>> +	btrfs_forget_devices(device_path);
+> 
+> Actually this should go before update_dev_time, as this is the point
+> when the file change could be detected by udev and rescanned, which
+> increases the window between commit and removal from fs_devices.
+> 
+
+  You are right, theoretically btrfs_forget_devices() should be before
+  update_dev_time()
+
+
+Noted and agreed on rest of the stuffs.
+
+Thanks, Anand

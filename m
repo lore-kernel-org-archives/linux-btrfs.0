@@ -2,137 +2,82 @@ Return-Path: <SRS0=Eiyt=6U=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.7 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7123FC28CBC
-	for <linux-btrfs@archiver.kernel.org>; Wed,  6 May 2020 08:30:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 50739C38A2A
+	for <linux-btrfs@archiver.kernel.org>; Wed,  6 May 2020 13:23:15 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 43B1520714
-	for <linux-btrfs@archiver.kernel.org>; Wed,  6 May 2020 08:30:50 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="bz/BwaLI";
-	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b="mZUI3baC"
+	by mail.kernel.org (Postfix) with ESMTP id 37A4220746
+	for <linux-btrfs@archiver.kernel.org>; Wed,  6 May 2020 13:23:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728797AbgEFIat (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 6 May 2020 04:30:49 -0400
-Received: from esa4.hgst.iphmx.com ([216.71.154.42]:15003 "EHLO
-        esa4.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727956AbgEFIas (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 May 2020 04:30:48 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1588753848; x=1620289848;
-  h=from:to:cc:subject:date:message-id:references:
-   content-transfer-encoding:mime-version;
-  bh=7yMtI+CGsMn2YEP12PUn8wyPWV8T4bHcrqRQaho+IWM=;
-  b=bz/BwaLI2HLu7o+hrfZAVB/atJ0oNb5W1xfLG8hhyyCUEr3VVdI+ZLog
-   zSSdF/yuTaIaYAx5I4nvLmGw9+lzyKjbwzDP2JUnFU8eOJETdoyDHTyUt
-   E9AA80rb1LoMWM1gs7gt4ohXA3vU4L05V63eVt5eb+0gOj+PTzUzCmEMz
-   3Ip+PdLESOjbs3wLI9V3cCge332+gtQMY1gSs8xNA/bQGzoJRhyS8tZ4j
-   iV8WvUBPiWg4J+Sk4UGt5gBl9x42VL42IHZMEP61zem/bqqcIGReG25J1
-   3CUdZGp6uSDMhq/L+ShdPoIbTkgwlYtCvSEM3IUhE74UATq2crUYQgFoR
-   w==;
-IronPort-SDR: tYPyYdMecbHhsPBM6ZzucEhSLLX5ZDXsRrchUgewIa0S/WyS/llNxy2lZ5bv/LWxUMf96r6uo3
- Vdo/lQoX5P+bCaZsw+WzisErDdRoZtraITMGeQVQOTGvQPB78FFM8PJcLaOR/dIYSBDA5osXG2
- CT5qb45zrTGiniX3avGTcdH0qxZsSZgMglKvRgPlf8cHBKLqtKbcXm56e4w5U7XV+BiD3VaDp8
- r9uljxLCoGxzmHrzKkwz0XEgZdU3ZhTBhYH0canm+TK6gfc69wqcdEvl4FNDf5HXKLGVTsk4d2
- ks0=
-X-IronPort-AV: E=Sophos;i="5.73,358,1583164800"; 
-   d="scan'208";a="137034794"
-Received: from mail-bn8nam11lp2172.outbound.protection.outlook.com (HELO NAM11-BN8-obe.outbound.protection.outlook.com) ([104.47.58.172])
-  by ob1.hgst.iphmx.com with ESMTP; 06 May 2020 16:30:47 +0800
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
- b=GoT/LvmUgw3oLiU6zJClo+dGLD2uFp1Im3R13Ug2mLKWjBzVm6ARiYYgYG80C/EGuIV5rCn0xyNnYwbXCkwxQONr0VTS914V4vPhOMh2IedgyIoVTdHLPXUTPSzzeocm4TMdqGlK0IFRh7fM99hb68E/unWJ1pIu3OooVWpTRB2/+4eCbcbWOX43L8l8rJKp/dOFo7/NJ8G60Cw+kxJE+1CiPrhwc07+ofMc0TPVLaOVxhGHhbodxPji01x8DtKjmNDC30Ag2yDJAcP+/FocmX9sH25tqbwjTzcGlRm9PM7mfnkMD0+r/i9Y399CQ/vwGRpZxJSRjfrNMCMcldzFGg==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector9901;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=7yMtI+CGsMn2YEP12PUn8wyPWV8T4bHcrqRQaho+IWM=;
- b=X3E3KRQBQ+5tp7Jb4gRC9u3hHfyPgLYXLb5m/kTOmD0dD4P1xZivu+yEGQuUp1aYYzBn7dPA0wMFMXAvxgoJVHs4wkb10gpok9JsYfIF0lEBEYgpgvIJsCNqcnyCQE7cnQGd5Ox/SuYITbZgzLGNuSecUpmXAXxsXIG4Rtl3j2LI1UkPH/s1NexgNn+KU8eSzOE85EDz4vMkhkW7ef/z2k6OaBksNFgolc8ShcEYmffVyPDzQIF3L57LUy856g7O+/Zn+4fFk8oKf7SpTcRsnBeXw7gQRsXSx2ZqIg7EE1UEdA1KL6wIj5CiNDoZFrmJLRQIqJhEyCm6yEyCSgxOLg==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
- header.d=wdc.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=7yMtI+CGsMn2YEP12PUn8wyPWV8T4bHcrqRQaho+IWM=;
- b=mZUI3baC2186WoaYYzQ8AQnF1QWI64sb/2ATkkLAwSk657CyLW6OorY4MWLPGWOxTDFo0Cj4CdyJpM4KnhIj+06RDsg2MKa2pPKkIaTfwcaTjLjnRT0koKh2QRAiSkLKpIzpdF9o4tDJemiWsUjqFFXBAVp0KkfuxGE1S5iE9qc=
-Received: from SN4PR0401MB3598.namprd04.prod.outlook.com
- (2603:10b6:803:47::21) by SN4PR0401MB3629.namprd04.prod.outlook.com
- (2603:10b6:803:49::30) with Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.2958.29; Wed, 6 May
- 2020 08:30:46 +0000
-Received: from SN4PR0401MB3598.namprd04.prod.outlook.com
- ([fe80::9854:2bc6:1ad2:f655]) by SN4PR0401MB3598.namprd04.prod.outlook.com
- ([fe80::9854:2bc6:1ad2:f655%4]) with mapi id 15.20.2979.027; Wed, 6 May 2020
- 08:30:46 +0000
-From:   Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
-To:     Eric Biggers <ebiggers@kernel.org>
-CC:     Johannes Thumshirn <jth@kernel.org>,
-        David Sterba <dsterba@suse.cz>,
-        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Richard Weinberger <richard@nod.at>
-Subject: Re: [PATCH v2 1/2] btrfs: add authentication support
-Thread-Topic: [PATCH v2 1/2] btrfs: add authentication support
-Thread-Index: AQHWHUw3Fjk34p8J2kWvUrIfOj4HzQ==
-Date:   Wed, 6 May 2020 08:30:46 +0000
-Message-ID: <SN4PR0401MB3598CC5E31C02D98198038609BA40@SN4PR0401MB3598.namprd04.prod.outlook.com>
-References: <20200428105859.4719-1-jth@kernel.org>
- <20200428105859.4719-2-jth@kernel.org>
- <20200501053908.GC1003@sol.localdomain>
- <SN4PR0401MB3598198E5FB728B68B39A1589BA60@SN4PR0401MB3598.namprd04.prod.outlook.com>
- <20200504205935.GA51650@gmail.com>
- <SN4PR0401MB359843476634082E8329168A9BA70@SN4PR0401MB3598.namprd04.prod.outlook.com>
- <20200505223705.GD128280@sol.localdomain>
-Accept-Language: en-US
-Content-Language: en-US
-X-MS-Has-Attach: 
-X-MS-TNEF-Correlator: 
-authentication-results: kernel.org; dkim=none (message not signed)
- header.d=none;kernel.org; dmarc=none action=none header.from=wdc.com;
-x-originating-ip: [129.253.240.72]
-x-ms-publictraffictype: Email
-x-ms-office365-filtering-ht: Tenant
-x-ms-office365-filtering-correlation-id: 1ab90a8e-3e82-43f5-2ab3-08d7f197c629
-x-ms-traffictypediagnostic: SN4PR0401MB3629:
-x-microsoft-antispam-prvs: <SN4PR0401MB3629C173F3433B46D4305BE29BA40@SN4PR0401MB3629.namprd04.prod.outlook.com>
-wdcipoutbound: EOP-TRUE
-x-ms-oob-tlc-oobclassifiers: OLM:6790;
-x-forefront-prvs: 03950F25EC
-x-ms-exchange-senderadcheck: 1
-x-microsoft-antispam: BCL:0;
-x-microsoft-antispam-message-info: BEVyydf6k1yoGj4atlZqouOm016IOtl7KGVbEj4/73oYByCS4Zld14rncyDMzy16k16Bt28UTag2X5d7/eBXxYPGYQuPQIFXDZULCHkzb5PYNkXrQXi3mGwncJXUXdoXUV12IFp1oGIFTJ+a9XZ5dEgJtAg2BVhYvqV+HV45um9Ct8poZ8J8Qvp1+/OWogE/3dMRtLQYhIHsml6Lw91e0eu7nzgJeY788RlbOTYsBbFpHlaw45+ySeSI1CqRmrkvxq9JjN7v0C6s3MLGegmXstrNNLggS0KQsEzwaLuSp09VN+9HEv9ji2YFpE7/5ZMrBmAi232JhAF89/SmTNQaPUaEClZZlDK+JsIR2Hv9SrShUA8IFGSJjkBc5BZqXDG3Nitb5U6KyOV6qKGh5IPbARykQzgVn9+XH0LFAivc2nGfpBtwkCnXcM9x8HO2YoUZTtuf8MgNXP3lLw0p1e72/AbumzVVQUrZcrCd6I3hpjAv3Go9/6glfOtxsboCx/Lf83IYNL/e8OM3hM+7ZWGDoBeoRzXwa+xyYH/+wDKEmENjKyo9Zsuyfu3vlrYz1mMv
-x-forefront-antispam-report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SN4PR0401MB3598.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFTY:;SFS:(4636009)(39860400002)(346002)(376002)(366004)(136003)(396003)(33430700001)(91956017)(2906002)(316002)(4744005)(54906003)(9686003)(4326008)(33656002)(55016002)(86362001)(8936002)(6916009)(478600001)(66446008)(66476007)(66556008)(33440700001)(8676002)(64756008)(71200400001)(186003)(6506007)(53546011)(7696005)(5660300002)(52536014)(66946007)(26005)(76116006)(387924003);DIR:OUT;SFP:1102;
-x-ms-exchange-antispam-messagedata: VoLVA/DOaQj77nvfJcHvAVtWTm9hOZRp+NaQFFN062wp4F60EtHISysFzlqh+LjvG1ROD6WxAH03N2Z+/GSCZ7xmJkKK4S1S6EYe6oaxr1aH/2BpvKCmYG3N1If9RKDB8qk47/BfJFAnaPm9lMzrQAXawNg4gmvKqk1AETQV1xujJNAZEF2GXidy+fP8Hahd53Y+BxZlznzJMh6Ha0AAR+yVauzXmEI7ADOPUkKSpd/+0otRjSiqQvlojQwW+hFPCFdFVk6SIWlb4tSA+C138nkdrbZ1DDJ1F4azeSCUHodgh1bpeOQVsJXW2PADaYDdegXX0YviffrD4D32+nmb7E1qCPeJlyl9X1ijT53VZ3DgMgewPuAw2zg6P0JXLJJfMhy2jTTVVvEOXp+tli3jGll6eag4BQ3nyDMyW+GEQ1xpjIe51E12QxpgnUDpkzio5r9OydOVrAYqNb9BlSbMkLZmOZ1Pe9xgRpqOGptQJ3yYvLgul6CiVIErbI66ttYuzGJKlfVG9ZzHeoKhM76I0AsmdTQeP7lkigjLb0mzM/Taiv86oBPoExwwinGO/g4J4Ym/DgjC8yitc8/sZ4FgC+Zn5ddtyP6jY6WMtqSi8D5wTgiJxxO84sN0e/iwohA+FPNbqejkuUkCh8pjzP5/o+6xjOxEqzv0ScEFo59cvd2txwYaZE0DNZ9xz8P6xxQoRdXANEHB2+mwpnVzPm9yaWMd8kvqXXj2f44LvsIkY8rXRILeWXoaQIUGyiOIu67SiFDXuIgHn+dn0BVtbi1Gaao3p8X8/iMbGJ/ZZAlCmVo=
-x-ms-exchange-transport-forked: True
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: quoted-printable
+        id S1728293AbgEFNXM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 6 May 2020 09:23:12 -0400
+Received: from szxga07-in.huawei.com ([45.249.212.35]:42640 "EHLO huawei.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1728058AbgEFNXM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 6 May 2020 09:23:12 -0400
+Received: from DGGEMS403-HUB.china.huawei.com (unknown [172.30.72.58])
+        by Forcepoint Email with ESMTP id 9B9D2CFD35C662F401BB;
+        Wed,  6 May 2020 21:23:07 +0800 (CST)
+Received: from localhost (10.166.215.154) by DGGEMS403-HUB.china.huawei.com
+ (10.3.19.203) with Microsoft SMTP Server id 14.3.487.0; Wed, 6 May 2020
+ 21:23:00 +0800
+From:   YueHaibing <yuehaibing@huawei.com>
+To:     <clm@fb.com>, <josef@toxicpanda.com>, <dsterba@suse.com>
+CC:     <linux-btrfs@vger.kernel.org>, <linux-kernel@vger.kernel.org>,
+        YueHaibing <yuehaibing@huawei.com>
+Subject: [PATCH -next] btrfs: Remove unused inline function heads_to_leaves
+Date:   Wed, 6 May 2020 21:22:39 +0800
+Message-ID: <20200506132239.3252-1-yuehaibing@huawei.com>
+X-Mailer: git-send-email 2.10.2.windows.1
 MIME-Version: 1.0
-X-OriginatorOrg: wdc.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: 1ab90a8e-3e82-43f5-2ab3-08d7f197c629
-X-MS-Exchange-CrossTenant-originalarrivaltime: 06 May 2020 08:30:46.2307
- (UTC)
-X-MS-Exchange-CrossTenant-fromentityheader: Hosted
-X-MS-Exchange-CrossTenant-id: b61c8803-16f3-4c35-9b17-6f65f441df86
-X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
-X-MS-Exchange-CrossTenant-userprincipalname: xmjBeW9hXCe+vVfW96AWPy70FY4zOuycFF9L1dItp+nUctHl5WqnZgw/sAWbtTXzKDuPK0tGclFErlATVDW1A6sS2JvlcB1CWkPIPtw3xnw=
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: SN4PR0401MB3629
+Content-Type: text/plain
+X-Originating-IP: [10.166.215.154]
+X-CFilter-Loop: Reflected
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 06/05/2020 00:37, Eric Biggers wrote:=0A=
-> They replace the current content of the block device with the content at =
-an=0A=
-> earlier time.=0A=
-=0A=
-We could mitigate this (at a later time probably), by writing the super =0A=
-block generation into some trusted store like a TPM.=0A=
-=0A=
-But I think this would need general support from the kernel.=0A=
-=0A=
-But thanks for showing me this attack, I'll document that this attack =0A=
-will still work.=0A=
+There's no callers in-tree anymore since commit 64403612b73a ("btrfs:
+rework btrfs_check_space_for_delayed_refs")
+
+Signed-off-by: YueHaibing <yuehaibing@huawei.com>
+---
+ fs/btrfs/extent-tree.c | 16 ----------------
+ 1 file changed, 16 deletions(-)
+
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index faa585d54eb7..3593f8cce9e5 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2114,22 +2114,6 @@ static u64 find_middle(struct rb_root *root)
+ }
+ #endif
+ 
+-static inline u64 heads_to_leaves(struct btrfs_fs_info *fs_info, u64 heads)
+-{
+-	u64 num_bytes;
+-
+-	num_bytes = heads * (sizeof(struct btrfs_extent_item) +
+-			     sizeof(struct btrfs_extent_inline_ref));
+-	if (!btrfs_fs_incompat(fs_info, SKINNY_METADATA))
+-		num_bytes += heads * sizeof(struct btrfs_tree_block_info);
+-
+-	/*
+-	 * We don't ever fill up leaves all the way so multiply by 2 just to be
+-	 * closer to what we're really going to want to use.
+-	 */
+-	return div_u64(num_bytes, BTRFS_LEAF_DATA_SIZE(fs_info));
+-}
+-
+ /*
+  * Takes the number of bytes to be csumm'ed and figures out how many leaves it
+  * would require to store the csums for that many bytes.
+-- 
+2.17.1
+
+

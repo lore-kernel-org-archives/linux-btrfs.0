@@ -6,30 +6,30 @@ X-Spam-Status: No, score=-9.7 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B3CD5C38A2A
-	for <linux-btrfs@archiver.kernel.org>; Thu,  7 May 2020 20:20:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4500AC38A2A
+	for <linux-btrfs@archiver.kernel.org>; Thu,  7 May 2020 20:20:52 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 8036624978
-	for <linux-btrfs@archiver.kernel.org>; Thu,  7 May 2020 20:20:47 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2AF6424979
+	for <linux-btrfs@archiver.kernel.org>; Thu,  7 May 2020 20:20:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728697AbgEGUUq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 7 May 2020 16:20:46 -0400
-Received: from mx2.suse.de ([195.135.220.15]:56368 "EHLO mx2.suse.de"
+        id S1728711AbgEGUUv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 7 May 2020 16:20:51 -0400
+Received: from mx2.suse.de ([195.135.220.15]:56412 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728410AbgEGUUq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 7 May 2020 16:20:46 -0400
+        id S1726926AbgEGUUv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 7 May 2020 16:20:51 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 4DEB6AD2C;
-        Thu,  7 May 2020 20:20:47 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id E83E6AE0A;
+        Thu,  7 May 2020 20:20:51 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id F0C33DA732; Thu,  7 May 2020 22:19:55 +0200 (CEST)
+        id 973ECDA732; Thu,  7 May 2020 22:20:00 +0200 (CEST)
 From:   David Sterba <dsterba@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     David Sterba <dsterba@suse.com>
-Subject: [PATCH 12/19] btrfs: remove unused map_private_extent_buffer
-Date:   Thu,  7 May 2020 22:19:55 +0200
-Message-Id: <301e4ce1e53eb6044ceb412c44ff439210911491.1588853772.git.dsterba@suse.com>
+Subject: [PATCH 14/19] btrfs: drop unnecessary offset_in_page in extent buffer helpers
+Date:   Thu,  7 May 2020 22:20:00 +0200
+Message-Id: <1adbed2929f7a9d390e62cca943c78ebe4b4e9fe.1588853772.git.dsterba@suse.com>
 X-Mailer: git-send-email 2.25.0
 In-Reply-To: <cover.1588853772.git.dsterba@suse.com>
 References: <cover.1588853772.git.dsterba@suse.com>
@@ -40,86 +40,191 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-All uses of map_private_extent_buffer have been replaced by more
-effective way. The set/get helpers have their own bounds checker.
-The function name was confusing since the non-private helper was removed
-in a65917156e34 ("Btrfs: stop using highmem for extent_buffers") many
-years ago.
+Helpers that iterate over extent buffer pages set up several variables,
+one of them is finding out offset of the extent buffer start within a
+page. Right now we have extent buffers aligned to page sizes so this is
+effectively storing zero. This makes the code harder the follow and can
+be simplified.
+
+The same change is done in all the helpers:
+
+* remove: size_t start_offset = offset_in_page(eb->start);
+* simplify code using start_offset
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/extent_io.c | 42 ------------------------------------------
- fs/btrfs/extent_io.h |  4 ----
- 2 files changed, 46 deletions(-)
+ fs/btrfs/extent_io.c | 51 ++++++++++++++++++--------------------------
+ 1 file changed, 21 insertions(+), 30 deletions(-)
 
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 22db0b234ffe..67ee46a0a9c8 100644
+index da6f0c1ed80c..c59e07360083 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -5685,48 +5685,6 @@ int read_extent_buffer_to_user(const struct extent_buffer *eb,
- 	return ret;
- }
- 
--/*
-- * return 0 if the item is found within a page.
-- * return 1 if the item spans two pages.
-- * return -EINVAL otherwise.
-- */
--int map_private_extent_buffer(const struct extent_buffer *eb,
--			      unsigned long start, unsigned long min_len,
--			      char **map, unsigned long *map_start,
--			      unsigned long *map_len)
--{
--	size_t offset;
--	char *kaddr;
--	struct page *p;
+@@ -5622,8 +5622,7 @@ void read_extent_buffer(const struct extent_buffer *eb, void *dstv,
+ 	struct page *page;
+ 	char *kaddr;
+ 	char *dst = (char *)dstv;
 -	size_t start_offset = offset_in_page(eb->start);
 -	unsigned long i = (start_offset + start) >> PAGE_SHIFT;
--	unsigned long end_i = (start_offset + start + min_len - 1) >>
--		PAGE_SHIFT;
--
--	if (start + min_len > eb->len) {
--		WARN(1, KERN_ERR "btrfs bad mapping eb start %llu len %lu, wanted %lu %lu\n",
--		       eb->start, eb->len, start, min_len);
--		return -EINVAL;
--	}
--
--	if (i != end_i)
--		return 1;
--
--	if (i == 0) {
--		offset = start_offset;
--		*map_start = 0;
--	} else {
--		offset = 0;
--		*map_start = ((u64)i << PAGE_SHIFT) - start_offset;
--	}
--
--	p = eb->pages[i];
--	kaddr = page_address(p);
--	*map = kaddr + offset;
--	*map_len = PAGE_SIZE - offset;
--	return 0;
--}
--
- int memcmp_extent_buffer(const struct extent_buffer *eb, const void *ptrv,
- 			 unsigned long start, unsigned long len)
++	unsigned long i = start >> PAGE_SHIFT;
+ 
+ 	if (start + len > eb->len) {
+ 		WARN(1, KERN_ERR "btrfs bad mapping eb start %llu len %lu, wanted %lu %lu\n",
+@@ -5632,7 +5631,7 @@ void read_extent_buffer(const struct extent_buffer *eb, void *dstv,
+ 		return;
+ 	}
+ 
+-	offset = offset_in_page(start_offset + start);
++	offset = offset_in_page(start);
+ 
+ 	while (len > 0) {
+ 		page = eb->pages[i];
+@@ -5657,14 +5656,13 @@ int read_extent_buffer_to_user(const struct extent_buffer *eb,
+ 	struct page *page;
+ 	char *kaddr;
+ 	char __user *dst = (char __user *)dstv;
+-	size_t start_offset = offset_in_page(eb->start);
+-	unsigned long i = (start_offset + start) >> PAGE_SHIFT;
++	unsigned long i = start >> PAGE_SHIFT;
+ 	int ret = 0;
+ 
+ 	WARN_ON(start > eb->len);
+ 	WARN_ON(start + len > eb->start + eb->len);
+ 
+-	offset = offset_in_page(start_offset + start);
++	offset = offset_in_page(start);
+ 
+ 	while (len > 0) {
+ 		page = eb->pages[i];
+@@ -5693,14 +5691,13 @@ int memcmp_extent_buffer(const struct extent_buffer *eb, const void *ptrv,
+ 	struct page *page;
+ 	char *kaddr;
+ 	char *ptr = (char *)ptrv;
+-	size_t start_offset = offset_in_page(eb->start);
+-	unsigned long i = (start_offset + start) >> PAGE_SHIFT;
++	unsigned long i = start >> PAGE_SHIFT;
+ 	int ret = 0;
+ 
+ 	WARN_ON(start > eb->len);
+ 	WARN_ON(start + len > eb->start + eb->len);
+ 
+-	offset = offset_in_page(start_offset + start);
++	offset = offset_in_page(start);
+ 
+ 	while (len > 0) {
+ 		page = eb->pages[i];
+@@ -5749,13 +5746,12 @@ void write_extent_buffer(const struct extent_buffer *eb, const void *srcv,
+ 	struct page *page;
+ 	char *kaddr;
+ 	char *src = (char *)srcv;
+-	size_t start_offset = offset_in_page(eb->start);
+-	unsigned long i = (start_offset + start) >> PAGE_SHIFT;
++	unsigned long i = start >> PAGE_SHIFT;
+ 
+ 	WARN_ON(start > eb->len);
+ 	WARN_ON(start + len > eb->start + eb->len);
+ 
+-	offset = offset_in_page(start_offset + start);
++	offset = offset_in_page(start);
+ 
+ 	while (len > 0) {
+ 		page = eb->pages[i];
+@@ -5779,13 +5775,12 @@ void memzero_extent_buffer(const struct extent_buffer *eb, unsigned long start,
+ 	size_t offset;
+ 	struct page *page;
+ 	char *kaddr;
+-	size_t start_offset = offset_in_page(eb->start);
+-	unsigned long i = (start_offset + start) >> PAGE_SHIFT;
++	unsigned long i = start >> PAGE_SHIFT;
+ 
+ 	WARN_ON(start > eb->len);
+ 	WARN_ON(start + len > eb->start + eb->len);
+ 
+-	offset = offset_in_page(start_offset + start);
++	offset = offset_in_page(start);
+ 
+ 	while (len > 0) {
+ 		page = eb->pages[i];
+@@ -5825,12 +5820,11 @@ void copy_extent_buffer(const struct extent_buffer *dst,
+ 	size_t offset;
+ 	struct page *page;
+ 	char *kaddr;
+-	size_t start_offset = offset_in_page(dst->start);
+-	unsigned long i = (start_offset + dst_offset) >> PAGE_SHIFT;
++	unsigned long i = dst_offset >> PAGE_SHIFT;
+ 
+ 	WARN_ON(src->len != dst_len);
+ 
+-	offset = offset_in_page(start_offset + dst_offset);
++	offset = offset_in_page(dst_offset);
+ 
+ 	while (len > 0) {
+ 		page = dst->pages[i];
+@@ -5866,7 +5860,6 @@ static inline void eb_bitmap_offset(const struct extent_buffer *eb,
+ 				    unsigned long *page_index,
+ 				    size_t *page_offset)
  {
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index a2842b2d9a98..9ed89c01e2da 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -271,10 +271,6 @@ bool set_extent_buffer_dirty(struct extent_buffer *eb);
- void set_extent_buffer_uptodate(struct extent_buffer *eb);
- void clear_extent_buffer_uptodate(struct extent_buffer *eb);
- int extent_buffer_under_io(struct extent_buffer *eb);
--int map_private_extent_buffer(const struct extent_buffer *eb,
--			      unsigned long offset, unsigned long min_len,
--			      char **map, unsigned long *map_start,
--			      unsigned long *map_len);
- void extent_range_clear_dirty_for_io(struct inode *inode, u64 start, u64 end);
- void extent_range_redirty_for_io(struct inode *inode, u64 start, u64 end);
- void extent_clear_unlock_delalloc(struct inode *inode, u64 start, u64 end,
+-	size_t start_offset = offset_in_page(eb->start);
+ 	size_t byte_offset = BIT_BYTE(nr);
+ 	size_t offset;
+ 
+@@ -5875,7 +5868,7 @@ static inline void eb_bitmap_offset(const struct extent_buffer *eb,
+ 	 * the bitmap item in the extent buffer + the offset of the byte in the
+ 	 * bitmap item.
+ 	 */
+-	offset = start_offset + start + byte_offset;
++	offset = start + byte_offset;
+ 
+ 	*page_index = offset >> PAGE_SHIFT;
+ 	*page_offset = offset_in_page(offset);
+@@ -6022,7 +6015,6 @@ void memcpy_extent_buffer(const struct extent_buffer *dst,
+ 	size_t cur;
+ 	size_t dst_off_in_page;
+ 	size_t src_off_in_page;
+-	size_t start_offset = offset_in_page(dst->start);
+ 	unsigned long dst_i;
+ 	unsigned long src_i;
+ 
+@@ -6040,11 +6032,11 @@ void memcpy_extent_buffer(const struct extent_buffer *dst,
+ 	}
+ 
+ 	while (len > 0) {
+-		dst_off_in_page = offset_in_page(start_offset + dst_offset);
+-		src_off_in_page = offset_in_page(start_offset + src_offset);
++		dst_off_in_page = offset_in_page(dst_offset);
++		src_off_in_page = offset_in_page(src_offset);
+ 
+-		dst_i = (start_offset + dst_offset) >> PAGE_SHIFT;
+-		src_i = (start_offset + src_offset) >> PAGE_SHIFT;
++		dst_i = dst_offset >> PAGE_SHIFT;
++		src_i = src_offset >> PAGE_SHIFT;
+ 
+ 		cur = min(len, (unsigned long)(PAGE_SIZE -
+ 					       src_off_in_page));
+@@ -6070,7 +6062,6 @@ void memmove_extent_buffer(const struct extent_buffer *dst,
+ 	size_t src_off_in_page;
+ 	unsigned long dst_end = dst_offset + len - 1;
+ 	unsigned long src_end = src_offset + len - 1;
+-	size_t start_offset = offset_in_page(dst->start);
+ 	unsigned long dst_i;
+ 	unsigned long src_i;
+ 
+@@ -6091,11 +6082,11 @@ void memmove_extent_buffer(const struct extent_buffer *dst,
+ 		return;
+ 	}
+ 	while (len > 0) {
+-		dst_i = (start_offset + dst_end) >> PAGE_SHIFT;
+-		src_i = (start_offset + src_end) >> PAGE_SHIFT;
++		dst_i = dst_end >> PAGE_SHIFT;
++		src_i = src_end >> PAGE_SHIFT;
+ 
+-		dst_off_in_page = offset_in_page(start_offset + dst_end);
+-		src_off_in_page = offset_in_page(start_offset + src_end);
++		dst_off_in_page = offset_in_page(dst_end);
++		src_off_in_page = offset_in_page(src_end);
+ 
+ 		cur = min_t(unsigned long, len, src_off_in_page + 1);
+ 		cur = min(cur, dst_off_in_page + 1);
 -- 
 2.25.0
 

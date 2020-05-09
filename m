@@ -2,72 +2,76 @@ Return-Path: <SRS0=K7fm=6X=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_GIT autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B704DC47254
-	for <linux-btrfs@archiver.kernel.org>; Sat,  9 May 2020 11:23:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 59ADCC28CBC
+	for <linux-btrfs@archiver.kernel.org>; Sat,  9 May 2020 11:35:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id A0EA824956
-	for <linux-btrfs@archiver.kernel.org>; Sat,  9 May 2020 11:23:11 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 34DD3218AC
+	for <linux-btrfs@archiver.kernel.org>; Sat,  9 May 2020 11:35:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728182AbgEILXJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 9 May 2020 07:23:09 -0400
-Received: from szxga05-in.huawei.com ([45.249.212.191]:4321 "EHLO huawei.com"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726600AbgEILXI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 9 May 2020 07:23:08 -0400
-Received: from DGGEMS404-HUB.china.huawei.com (unknown [172.30.72.59])
-        by Forcepoint Email with ESMTP id DD8CBFC340B6D1C401E5;
-        Sat,  9 May 2020 19:23:03 +0800 (CST)
-Received: from localhost (10.166.215.154) by DGGEMS404-HUB.china.huawei.com
- (10.3.19.204) with Microsoft SMTP Server id 14.3.487.0; Sat, 9 May 2020
- 19:22:57 +0800
-From:   YueHaibing <yuehaibing@huawei.com>
-To:     <clm@fb.com>, <josef@toxicpanda.com>, <dsterba@suse.com>
-CC:     <linux-btrfs@vger.kernel.org>, <linux-kernel@vger.kernel.org>,
-        YueHaibing <yuehaibing@huawei.com>
-Subject: [PATCH -next] btrfs: Remove unused inline function btrfs_dev_extent_chunk_tree_uuid
-Date:   Sat, 9 May 2020 19:22:43 +0800
-Message-ID: <20200509112243.54176-1-yuehaibing@huawei.com>
-X-Mailer: git-send-email 2.10.2.windows.1
+        id S1728223AbgEILfg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 9 May 2020 07:35:36 -0400
+Received: from bang.steev.me.uk ([81.2.120.65]:44557 "EHLO smtp.steev.me.uk"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726063AbgEILfg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 9 May 2020 07:35:36 -0400
+X-Greylist: delayed 1460 seconds by postgrey-1.27 at vger.kernel.org; Sat, 09 May 2020 07:35:35 EDT
+Received: from localhost ([::1] helo=webmail.steev.me.uk)
+        by smtp.steev.me.uk with esmtp (Exim 4.92.3)
+        id 1jXNNy-007uB1-Sb
+        for linux-btrfs@vger.kernel.org; Sat, 09 May 2020 12:11:14 +0100
 MIME-Version: 1.0
-Content-Type: text/plain
-X-Originating-IP: [10.166.215.154]
-X-CFilter-Loop: Reflected
+Content-Type: text/plain; charset=US-ASCII;
+ format=flowed
+Content-Transfer-Encoding: 7bit
+Date:   Sat, 09 May 2020 12:11:14 +0100
+From:   Steven Davies <btrfs-list@steev.me.uk>
+To:     linux-btrfs@vger.kernel.org
+Subject: Exploring referenced extents
+Message-ID: <c9a53b726880c5d7dc8092c2078e23a5@steev.me.uk>
+X-Sender: btrfs-list@steev.me.uk
+User-Agent: Roundcube Webmail/1.3.8
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-There's no callers in-tree anymore since
-commit d24ee97b96db ("btrfs: use new helpers to set uuids in eb")
+For curiosity I'm trying to write a tool which will show me the size of 
+data extents belonging to which files in a snapshot are exclusive to 
+that snapshot as a way to show how much space would be freed if the 
+snapshot were to be deleted, and which files in the snapshot are taking 
+up the most space.
 
-Signed-off-by: YueHaibing <yuehaibing@huawei.com>
----
- fs/btrfs/ctree.h | 7 -------
- 1 file changed, 7 deletions(-)
+I'm working with Hans van Kranenburg's python-btrfs python library but 
+my knowledge of the filesystem structures isn't good enough to allow me 
+to figure out which bits of data I need to be able to achieve this. I'd 
+be grateful if anyone could help me along with this.
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 03ea7370aea7..0b78ab0213bb 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1643,13 +1643,6 @@ BTRFS_SETGET_FUNCS(dev_extent_chunk_objectid, struct btrfs_dev_extent,
- BTRFS_SETGET_FUNCS(dev_extent_chunk_offset, struct btrfs_dev_extent,
- 		   chunk_offset, 64);
- BTRFS_SETGET_FUNCS(dev_extent_length, struct btrfs_dev_extent, length, 64);
--
--static inline unsigned long btrfs_dev_extent_chunk_tree_uuid(struct btrfs_dev_extent *dev)
--{
--	unsigned long ptr = offsetof(struct btrfs_dev_extent, chunk_tree_uuid);
--	return (unsigned long)dev + ptr;
--}
--
- BTRFS_SETGET_FUNCS(extent_refs, struct btrfs_extent_item, refs, 64);
- BTRFS_SETGET_FUNCS(extent_generation, struct btrfs_extent_item,
- 		   generation, 64);
+So far my idea is:
+
+for each OS file in a subvolume:
+   find its data extents
+   for each extent:
+     find what files reference it #1
+     for each referencing file:
+       determine which subvolumes it lives in #2
+     if all references are within this subvolume:
+       record the OS file path and extents it references
+
+for each recorded file path
+   find its data extents
+   output its path and the total number of bytes in all recorded extents 
+(those which are not shared)
+
+#1 and #2 are where my understanding breaks down. How do I find which 
+files reference an extent and which subvolume those files are in?
+
+Alternatively, if such a script already exists I would be happy to use 
+it.
+
+Thanks for any pointers.
 -- 
-2.17.1
-
-
+Steven Davies

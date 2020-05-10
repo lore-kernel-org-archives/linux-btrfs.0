@@ -2,36 +2,36 @@ Return-Path: <SRS0=0CDI=6Y=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-5.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DB708C54E8A
-	for <linux-btrfs@archiver.kernel.org>; Sun, 10 May 2020 10:55:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E74F3C38A2A
+	for <linux-btrfs@archiver.kernel.org>; Sun, 10 May 2020 11:08:01 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id C5F8B2098B
-	for <linux-btrfs@archiver.kernel.org>; Sun, 10 May 2020 10:55:24 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CBD4820737
+	for <linux-btrfs@archiver.kernel.org>; Sun, 10 May 2020 11:08:01 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728681AbgEJKzQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 10 May 2020 06:55:16 -0400
-Received: from bang.steev.me.uk ([81.2.120.65]:41459 "EHLO smtp.steev.me.uk"
+        id S1726704AbgEJLIA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 10 May 2020 07:08:00 -0400
+Received: from bang.steev.me.uk ([81.2.120.65]:52751 "EHLO smtp.steev.me.uk"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726913AbgEJKzQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 10 May 2020 06:55:16 -0400
+        id S1726043AbgEJLIA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 10 May 2020 07:08:00 -0400
 Received: from smtp.steev.me.uk ([2001:8b0:162c:10::25] helo=webmail.steev.me.uk)
         by smtp.steev.me.uk with esmtp (Exim 4.92.3)
-        id 1jXjc1-009WE0-V3; Sun, 10 May 2020 11:55:13 +0100
+        id 1jXjoN-009XtU-By; Sun, 10 May 2020 12:07:59 +0100
 MIME-Version: 1.0
-Date:   Sun, 10 May 2020 11:55:13 +0100
+Date:   Sun, 10 May 2020 12:07:59 +0100
 From:   Steven Davies <btrfs-list@steev.me.uk>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+To:     Graham Cobb <g.btrfs@cobb.uk.net>
 Cc:     linux-btrfs@vger.kernel.org
 Subject: Re: Exploring referenced extents
-In-Reply-To: <13d76c35-fbbf-c5e1-20ee-70a9a716d11f@gmx.com>
+In-Reply-To: <d89caa53-a3b6-5c4e-a577-a89490064a40@cobb.uk.net>
 References: <c9a53b726880c5d7dc8092c2078e23a5@steev.me.uk>
- <13d76c35-fbbf-c5e1-20ee-70a9a716d11f@gmx.com>
+ <d89caa53-a3b6-5c4e-a577-a89490064a40@cobb.uk.net>
 User-Agent: Roundcube Webmail/1.4.4
-Message-ID: <f2784429472cb7f9cb4d5cbe4b609494@steev.me.uk>
+Message-ID: <d52ff5969b6026285729bb12d3533dfb@steev.me.uk>
 X-Sender: btrfs-list@steev.me.uk
 Content-Type: text/plain; charset=UTF-8;
  format=flowed
@@ -41,22 +41,19 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 2020-05-10 02:20, Qu Wenruo wrote:
-> On 2020/5/9 下午7:11, Steven Davies wrote:
+On 2020-05-09 22:32, Graham Cobb wrote:
+> On 09/05/2020 12:11, Steven Davies wrote:
 >> For curiosity I'm trying to write a tool which will show me the size 
 >> of
 >> data extents belonging to which files in a snapshot are exclusive to
 >> that snapshot as a way to show how much space would be freed if the
->> snapshot were to be deleted,
-> 
-> Isn't that what btrfs qgroup doing?
-> 
->> and which files in the snapshot are taking
+>> snapshot were to be deleted, and which files in the snapshot are 
+>> taking
 >> up the most space.
 > 
-> That would be interesting as qgroup only works at subvolume level.
+> I have some scripts to do that. They are slow but seem to pretty much
+> work. See https://github.com/GrahamCobb/extents-lists
 > 
->> 
 >> I'm working with Hans van Kranenburg's python-btrfs python library but
 >> my knowledge of the filesystem structures isn't good enough to allow 
 >> me
@@ -64,41 +61,17 @@ On 2020-05-10 02:20, Qu Wenruo wrote:
 >> I'd
 >> be grateful if anyone could help me along with this.
 > 
-> You may want to look into the on-disk format first.
+> Rewriting them to use Hans' library is one of the things I plan to do
+> one day!
 > 
-> But spoiler alert, since qgroup has its performance impact (although
-> hugely reduced in recent releases), it's unavoidable.
-> 
-> So would be any similar methods.
-> In fact, in your particular case, you need more work than qgroup, thus
-> it would be slower than qgroup.
-> Considering how many extra ioctl and context switches needed, I won't 
-> be
-> surprised if it's way slower than qgroup.
-> 
->> 
 >> So far my idea is:
 >> 
 >> for each OS file in a subvolume:
-> 
-> This can be done by ftw(), and don't cross subvolume boundary.
-> 
 >>   find its data extents
-> 
-> Fiemap.
-> 
 >>   for each extent:
 >>     find what files reference it #1
-> 
-> Btrfs tree search ioctl, to search extent tree, and do backref walk 
-> just
-> like what we did in qgroup code.
-> 
 >>     for each referencing file:
 >>       determine which subvolumes it lives in #2
-> 
-> Unlike kernel, you also need to do this using btrfs tree search ioctl.
-> 
 >>     if all references are within this subvolume:
 >>       record the OS file path and extents it references
 >> 
@@ -107,41 +80,37 @@ On 2020-05-10 02:20, Qu Wenruo wrote:
 >>   output its path and the total number of bytes in all recorded 
 >> extents
 >> (those which are not shared)
->> 
->> #1 and #2 are where my understanding breaks down. How do I find which
->> files reference an extent and which subvolume those files are in?
 > 
-> In short, you need the following skills (which would make you a btrfs
-> developer already):
-> - Basic btrfs tree search
->   Things like how btrfs btree works, and how to iterate them.
+> My approach is different. I don't attempt to understand which files
+> share extents, or which subvolumes they are in. Instead, I just try to
+> analyse which extents are in use by a subvolume (or, actually, any set
+> of files you specify).
 > 
-> - Basic user space file system interface understanding
->   Know tools like fiemap().
+> This is easy (but slow) to do. And makes answering some questions easy.
+> However, it makes answering questions like "how many extents would
+> really be freed if I deleted this subvolume" hard (the scripts end up
+> working out the complete list of extents in use on the filesystem, and,
+> separately,  the list of which would be in use if the subvolume was
+> removed - the difference is the space freed up by deleting the 
+> subvolume).
+
+The original goal for my script was to answer the question "why does 
+qgroups show this snapshot has so much exclusive data?". I keep a record 
+of the qgroups reported exclusive sizes over time and occasionally check 
+whether backups or snapshotting need to be reconfigured. I figured that 
+a list of files and their exclusive extent sizes would show what is 
+contributing the most to the exclusive data shown by qgroups.
+
+I suppose what I'm effectively doing is writing a more granular version 
+of qgroups, as Qu said. Like yours, it'll be slow for large trees.
+
+> This often takes a day or two.
 > 
-> - Btrfs extent tree understanding
->   Know how to interpret inline/keyed data/metadata indirect/direct
->   backref item.
->   This is the key and the most complex thing.
->   IIRC I have added some comments about this in recent backref.c code.
-
-Yes, I'm now stuck with a btrfs_extent_inline_ref of type 
-BTRFS_SHARED_DATA_REF_KEY which I understand is a direct backref to a 
-metadata block[1], but I don't understand how to search for that block 
-itself. I got lucky with the rest of the code and have found all 
-EXTENT_ITEM_KEYs for a file. The python library makes looking through 
-the EXTENT_DATA_REF_KEYs easy but not the shared data refs.
-
-> - Btrfs subvolume tree understanding
->   Know how btrfs organize files/dirs in its subvolume trees.
->   This is the key to locate which (subvolume, ino) owns a file extent.
->   There are some pitfalls, like the backref item to file extent 
-> mapping.
->   But should be easier than extent tree.
-
-[1] 
-https://btrfs.wiki.kernel.org/index.php/Data_Structures#btrfs_extent_inline_ref
-
-Thanks,
+> I would be interested if you find a more efficient approach to working
+> out how much space will be freed up if a set of files (such as
+> particular subvolumes) are removed, allowing for snapshots, reflink
+> copies and dedup.
+> 
+> Graham
 -- 
 Steven Davies

@@ -6,67 +6,53 @@ X-Spam-Status: No, score=-2.1 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
 	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A0EAFC38A2A
-	for <linux-btrfs@archiver.kernel.org>; Sun, 10 May 2020 11:57:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6595BC54E8A
+	for <linux-btrfs@archiver.kernel.org>; Sun, 10 May 2020 12:15:59 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 550832080C
-	for <linux-btrfs@archiver.kernel.org>; Sun, 10 May 2020 11:57:13 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 323CA2082E
+	for <linux-btrfs@archiver.kernel.org>; Sun, 10 May 2020 12:15:56 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727784AbgEJLw2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 10 May 2020 07:52:28 -0400
-Received: from zaphod.cobb.me.uk ([213.138.97.131]:36282 "EHLO
+        id S1728315AbgEJMPz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 10 May 2020 08:15:55 -0400
+Received: from zaphod.cobb.me.uk ([213.138.97.131]:36610 "EHLO
         zaphod.cobb.me.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726629AbgEJLw1 (ORCPT
+        with ESMTP id S1726863AbgEJMPz (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 10 May 2020 07:52:27 -0400
+        Sun, 10 May 2020 08:15:55 -0400
 Received: by zaphod.cobb.me.uk (Postfix, from userid 107)
-        id 137599C3DC; Sun, 10 May 2020 12:52:21 +0100 (BST)
+        id 12FA99C3DD; Sun, 10 May 2020 13:15:53 +0100 (BST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=cobb.uk.net;
-        s=201703; t=1589111541;
-        bh=Z7P+RCQa9JQykNGP/wXeBRE0+DWQh4Bh1d0qrKVLKUg=;
+        s=201703; t=1589112953;
+        bh=oDYcu0d1a+jhxvv4E7qcIR5w0OfdI+t/Hp+Bkxf+1GY=;
         h=Subject:To:Cc:References:From:Date:In-Reply-To:From;
-        b=FCn+xHrL0jOnp9R/lclHRqfCD3ecEtGE4HVaayAUppJ4t8B0kp3FOaOoTmNaQ+K1+
-         3pYC2EEm9lWhUjHLAyhCBx6SdxOTGmkuValIaBFIw8BU3faEnzabkmaDrOs1lda4hy
-         6pg469v7DO7zqXuVbCgfcnpfZEq4EL79LSUWeSlTVF/O20MtAa/90P9rUJdL/dm2zC
-         rqYCaCBQQ+LC80JJy1Yl/5UN/WmaJsCtWxRMRBTnLWf85H3+bI8zzDqGGiWzvsRH2P
-         FlmKkuRLGQKkiOA2ESkGh5kSl1AUd8b2G4jjZ07niKH4tB9+tL0GBO7XrpkrtnIjCf
-         Iop3nLJHK/86Q==
+        b=FSTmOCA8P2a52CQDGLnjRmvOI2ezVHqvPH5VKgNXICl8dnH+jgBYPJqK5d6NcE6ur
+         zBWrakpGJmVzMrCj+JmRFE2WcH5J/AxNkpq/dIFrtCLFJABhHBYULQGG0qy4TT7Nns
+         7ORjrrGykHU8XtL5CEK9QddL3bwz3OF8R5LsCK7aMVKAaRCd7Zj8UQa05EDk3BqGtK
+         fWxqKun5y1rbukPBSyDFeLF2qrptx/VktR74dvEGXHCWz1LZzgDuG/HuOugRsovbiL
+         DHtrpiJTQAPYe57NaSPT+b/xsLP8rD+kgOkqDJtt5t9rSaOaZhsJd72DOKKjKXh7a8
+         mhpNyaaIFYXhw==
 Received: from black.home.cobb.me.uk (unknown [192.168.0.205])
-        by zaphod.cobb.me.uk (Postfix) with ESMTP id 085049B9D5;
-        Sun, 10 May 2020 12:52:18 +0100 (BST)
+        by zaphod.cobb.me.uk (Postfix) with ESMTP id B1DD19B9D5;
+        Sun, 10 May 2020 13:15:47 +0100 (BST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=cobb.uk.net;
-        s=201703; t=1589111538;
-        bh=Z7P+RCQa9JQykNGP/wXeBRE0+DWQh4Bh1d0qrKVLKUg=;
+        s=201703; t=1589112947;
+        bh=oDYcu0d1a+jhxvv4E7qcIR5w0OfdI+t/Hp+Bkxf+1GY=;
         h=Subject:To:Cc:References:From:Date:In-Reply-To:From;
-        b=WcVCkqnFRYtrY3gKhMf+4SFL+evRBjYIdVkADrcgTWZhzTXhaN5whED8eEqsLCvAK
-         ZVdTbieKPDxOh+PvFE/+xLnGxIRLx7QbGJOQJ7mBRL8b/KidYotOHodLtuzcEUU6aQ
-         UprNCYGzocw5EHLMQ0mkffyaBbi63db0wx5vRyir+Si+odKbhkNYL8T+QNFVCW9Me0
-         T+1IwFKFtC7W6jEQKpY5zdyfG+cLONv4GxayX7J8IURdWm/PkXGuSi+91oRrm/xen7
-         Z2vh2XmnZOm+B+pvquGi1g9nJXr90Pat8MJ8G88xfgJrVozxRggVi7qOG8/zHb97v4
-         E6OfgcM732QyQ==
+        b=gMiMGmQ+Xc3BckJQvSl2WoMUai6NwD+gpD6lDVEv6da4u5bcKxlcih61oiRyPd389
+         zzC0PcLaE2XDA/M7yYLy2lm2cIJM9t60L8DZ+hdKrl093gz3hCrynMUvkl1cJniBkv
+         oxqijVOCxA3WdWQMTwOr6ltsXgK/6RfXNB/nIm2AO3JJp/ad9//twYzBmAvZEKd4LX
+         GX1+4jFjnUrx7mIvv/bwYH4cMTQZGV7EOXy/idc10Tf9DAoFgtC47zaWZPZs3Vt5Nd
+         SXJZlaQgawCw4sTtz0xwFWPi+gBNWAgXgltkrq8NDhi2GRDpH/pqhFyB+VavqJjMkK
+         LyFxeyTvj3E4g==
 Received: from [192.168.0.211] (novatech.home.cobb.me.uk [192.168.0.211])
-        by black.home.cobb.me.uk (Postfix) with ESMTPS id 891381020C5;
-        Sun, 10 May 2020 12:52:17 +0100 (BST)
-Subject: Re: btrfs-progs reports nonsense scrub status
-To:     Chris Murphy <lists@colorremedies.com>
-Cc:     Andrew Pam <andrew@sericyb.com.au>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <0d1cceb6-9295-1bdf-c427-60ba9b1ef0b3@sericyb.com.au>
- <709e4c3f-15b3-3c8a-2b25-ea95f4958999@sericyb.com.au>
- <CAJCQCtTGygd22TYvsPS6RPydsAZoqQYDDV=K4w1yFgTn0+ba6A@mail.gmail.com>
- <8ceacc86-96b7-44d2-d48d-234c6c4b45de@sericyb.com.au>
- <CAJCQCtQ4xOdNH79XDQdy=ExkNHbpbYdMMHG1fTeN7SeA+dTo7w@mail.gmail.com>
- <8ab9f20d-eff0-93bf-a4a4-042473b4059e@sericyb.com.au>
- <CAJCQCtQvyncTMqATX2PkVkR1bRPaUvDUqCmj-bRJzfHEU2k4JQ@mail.gmail.com>
- <ff173eb0-b6e8-5365-43a8-8f67d0da6c96@sericyb.com.au>
- <CAJCQCtTdHQAkaagTvCO-0SguakQx9p5iKmNbvmNYyxsBCqQ6Vw@mail.gmail.com>
- <ac6be0fa-96a7-fe0b-20c7-d7082ff66905@sericyb.com.au>
- <c2b89240-38fd-7749-3f1a-8aeaec8470e0@cobb.uk.net>
- <ace72f18-724c-9f2c-082f-cb478b8a63ef@sericyb.com.au>
- <CAJCQCtSq7Ocar4hJM0Z+Y7UeRM6Cfi_uwN=QM77F2Eg+MtnNWw@mail.gmail.com>
- <04f481fd-b8e5-7df6-d547-ece9ab6b8154@sericyb.com.au>
- <CAJCQCtTdSSX15Y7YX7fAg+iKncZf09ZG6KnHmmo4S77OtGWWXw@mail.gmail.com>
- <CAJCQCtTcwGm8WF+AKX4CBBRQ2vYjj-ZPx66So3Qxvp8Y9j5rJg@mail.gmail.com>
+        by black.home.cobb.me.uk (Postfix) with ESMTPS id E7F611020E3;
+        Sun, 10 May 2020 13:15:46 +0100 (BST)
+Subject: Re: Exploring referenced extents
+To:     Steven Davies <btrfs-list@steev.me.uk>
+Cc:     linux-btrfs@vger.kernel.org
+References: <c9a53b726880c5d7dc8092c2078e23a5@steev.me.uk>
+ <d89caa53-a3b6-5c4e-a577-a89490064a40@cobb.uk.net>
+ <d52ff5969b6026285729bb12d3533dfb@steev.me.uk>
 From:   Graham Cobb <g.btrfs@cobb.uk.net>
 Openpgp: preference=signencrypt
 Autocrypt: addr=g.btrfs@cobb.uk.net; prefer-encrypt=mutual; keydata=
@@ -107,12 +93,12 @@ Autocrypt: addr=g.btrfs@cobb.uk.net; prefer-encrypt=mutual; keydata=
  LO/FP87yHpEDbbKQKW6Guf6/TKJ7iaG3DDpE7CNCNLfFG/skhrh5Ut4zrG9SjA+0oDkfZ4dI
  B8+QpH3mP9PxkydnxGiGQxvLxI5Q+vQa+1qA5TcCM9SlVLVGelR2+Wj2In+t2GgigTV3PJS4
  tMlN++mrgpjfq4DMYv1AzIBi6/bSR6QGKPYYOOjbk+8Sfao0fmjQeOhj1tAHZuI4hoQbowR+ myxb
-Message-ID: <e2a308d2-690d-e6dd-8166-c56765aef54e@cobb.uk.net>
-Date:   Sun, 10 May 2020 12:52:16 +0100
+Message-ID: <998f31cf-6fe8-a753-b6b9-e357cd534e8f@cobb.uk.net>
+Date:   Sun, 10 May 2020 13:15:44 +0100
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.9.0
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtTcwGm8WF+AKX4CBBRQ2vYjj-ZPx66So3Qxvp8Y9j5rJg@mail.gmail.com>
+In-Reply-To: <d52ff5969b6026285729bb12d3533dfb@steev.me.uk>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-GB
 Content-Transfer-Encoding: 7bit
@@ -121,39 +107,27 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 10/05/2020 02:14, Chris Murphy wrote:
-> I don't know how the kernel and user space communicate scrub progress.
-> I don't see anything in sysfs.
+On 10/05/2020 12:07, Steven Davies wrote:
+> The original goal for my script was to answer the question "why does
+> qgroups show this snapshot has so much exclusive data?". I keep a record
+> of the qgroups reported exclusive sizes over time and occasionally check
+> whether backups or snapshotting need to be reconfigured. I figured that
+> a list of files and their exclusive extent sizes would show what is
+> contributing the most to the exclusive data shown by qgroups.
 
-I did some work on btrfs-scrub a while ago to fix a bug in the way
-last_physical was being saved between cancel and restore.
+Ah. In my case I have found the notion of "exclusive" to be useless. I
+don't use qgroups but I have on-disk snapshots of pretty much every
+subvolume so nothing is really exclusive.
 
-If I remember correctly, the way this works is that the scrub process
-receives stats about the scrub progress directly from the kernel on a
-socket it creates in /var/lib/btrfs, then writes updated stats into a
-file in /var/lib/btrfs/scrub.status.<UUID> to share with scrub status
-and keep a record. At the end of the scrub, the final stats are provided
-by the kernel into a buffer provided in the ioctl which are also then
-used to update the scrub.status file.
+However, I do like to be able to answer questions like "if I was to
+remove these three old snapshots, how much space would be freed", and
+the other examples in the README for my scripts.
 
-I don't remember how often the stats are received from the kernel but it
-is frequently (not just at the end).
+Still, I am very interested to see how you get on -- my scripts only use
+FIEMAP today (effectively, using filefrag(8)).
 
-Unless I am confused, if the bytes scrubbed numbers are going up, then
-the progress updates are being received from the kernel. The update
-includes the last_finished so there should be no way the scrub process
-can receive updated bytes scrubbed numbers without updated last_finished
-from the kernel.
-
-HOWEVER, I think (I may be wrong) btrfs scrub status normally reads the
-stats from the file, not directly from the kernel. So it is actually
-reporting the data in the file written by scrub process. That does
-processing on the numbers (that was where the bug was which I found). It
-is possible there is still a bug in that processing -- if so it is
-possible that last_finished in the file could be zero even though it was
-received as non-zero from the kernel. So, we can't be sure, without
-adding logging to the scrub command, whether the kernel is really
-reporting zero.
-
-This is from memory. Sorry, I don't have time, at the moment, to go back
-to the scrub usermode code to check.
+I am seriously considering, after I switch to using the Python library,
+building a userspace database of extent usage for files and directory
+trees so that the queries can be fast. The challenge, then, is to
+maintain it. It would, again, be very much like a usermode version of
+qgroups.

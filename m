@@ -2,509 +2,299 @@ Return-Path: <SRS0=9t/X=63=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.0 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E3770C2D0F8
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 May 2020 06:16:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id ADE4FC2D0F8
+	for <linux-btrfs@archiver.kernel.org>; Wed, 13 May 2020 06:36:32 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id C59C4206F5
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 May 2020 06:16:23 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 80BAA206F5
+	for <linux-btrfs@archiver.kernel.org>; Wed, 13 May 2020 06:36:32 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="Kii7sBo7"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729376AbgEMGQX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 13 May 2020 02:16:23 -0400
-Received: from mx2.suse.de ([195.135.220.15]:33964 "EHLO mx2.suse.de"
+        id S1729451AbgEMGgb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 13 May 2020 02:36:31 -0400
+Received: from mout.gmx.net ([212.227.15.18]:52437 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728784AbgEMGQW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 13 May 2020 02:16:22 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 9C749AF2A
-        for <linux-btrfs@vger.kernel.org>; Wed, 13 May 2020 06:16:22 +0000 (UTC)
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/2] btrfs: Rename BTRFS_ROOT_REF_COWS to BTRFS_ROOT_SHAREABLE
-Date:   Wed, 13 May 2020 14:16:10 +0800
-Message-Id: <20200513061611.111807-2-wqu@suse.com>
-X-Mailer: git-send-email 2.26.2
-In-Reply-To: <20200513061611.111807-1-wqu@suse.com>
-References: <20200513061611.111807-1-wqu@suse.com>
+        id S1729355AbgEMGga (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 13 May 2020 02:36:30 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1589351785;
+        bh=TszCI+9cyS0tpMjrRVDhfEENtRQQzyQpEPxsH4VaC4s=;
+        h=X-UI-Sender-Class:Subject:To:Cc:References:From:Date:In-Reply-To;
+        b=Kii7sBo7zuczVBIPdLze1dV9tkg6o/E3hZ4z/2Ww2EhR8ziaNzUwJ9omwJAcnURba
+         LVRCZPjUrI3QhEK2GfWhDR2SBt05yZBDq8jXe7RblDFFgMt3uaziFF+N7UYWRUICBs
+         Q3Z6bC0EZROv5d/k0A3mXh3Vy14HmmwoW1eiRvXg=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx005
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1MWRRZ-1jaE9T32Mt-00Xwjv; Wed, 13
+ May 2020 08:36:25 +0200
+Subject: Re: Balance loops: what we know so far
+To:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+Cc:     linux-btrfs@vger.kernel.org
+References: <20200411211414.GP13306@hungrycats.org>
+ <b3e80e75-5d27-ec58-19af-11ba5a20e08c@gmx.com>
+ <20200428045500.GA10769@hungrycats.org>
+ <4bebdd24-ccaa-1128-7870-b59b08086d83@gmx.com>
+ <20200512134306.GV10769@hungrycats.org>
+ <20200512141108.GW10769@hungrycats.org>
+ <b7b8bbf8-119b-02ea-5fad-0f7c3abab07d@gmx.com>
+ <20200513050204.GX10769@hungrycats.org>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAU4EEwEIADgCGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1oQAKCRDC
+ PZHzoSX+qCY6CACd+mWu3okGwRKXju6bou+7VkqCaHTdyXwWFTsr+/0ly5nUdDtT3yEVggPJ
+ 3VP70wjlrxUjNjFb6iIvGYxiPOrop1NGwGYvQktgRhaIhALG6rPoSSAhGNjwGVRw0km0PlIN
+ D29BTj/lYEk+jVM1YL0QLgAE1AI3krihg/lp/fQT53wLhR8YZIF8ETXbClQG1vJ0cllPuEEv
+ efKxRyiTSjB+PsozSvYWhXsPeJ+KKjFen7ebE5reQTPFzSHctCdPnoR/4jSPlnTlnEvLeqcD
+ ZTuKfQe1gWrPeevQzgCtgBF/WjIOeJs41klnYzC3DymuQlmFubss0jShLOW8eSOOWhLRuQEN
+ BFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcgaCbPEwhLj
+ 1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj/IrRUUka
+ 68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fNGSsRb+pK
+ EKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0q1eW4Jrv
+ 0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEvABEBAAGJ
+ ATwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1rgUJCWpOfwAKCRDCPZHz
+ oSX+qFcEB/95cs8cM1OQdE/GgOfCGxwgckMeWyzOR7bkAWW0lDVp2hpgJuxBW/gyfmtBnUai
+ fnggx3EE3ev8HTysZU9q0h+TJwwJKGv6sUc8qcTGFDtavnnl+r6xDUY7A6GvXEsSoCEEynby
+ 72byGeSovfq/4AWGNPBG1L61Exl+gbqfvbECP3ziXnob009+z9I4qXodHSYINfAkZkA523JG
+ ap12LndJeLk3gfWNZfXEWyGnuciRGbqESkhIRav8ootsCIops/SqXm0/k+Kcl4gGUO/iD/T5
+ oagaDh0QtOd8RWSMwLxwn8uIhpH84Q4X1LadJ5NCgGa6xPP5qqRuiC+9gZqbq4Nj
+Message-ID: <437bf0bc-b308-5b41-67cc-5b84ba6a88d2@gmx.com>
+Date:   Wed, 13 May 2020 14:36:21 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.8.0
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <20200513050204.GX10769@hungrycats.org>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="cFx1aHECXyjdCh4tFtoN575UNIPIt6zaC"
+X-Provags-ID: V03:K1:J+9xYgBkvEiLwbiKPbO+O6p1ALvUQrvgRLBhjsEuhl8s0W1uPZZ
+ Gl+4vGrBjZfWv7zSQbgfcDBh451bu1cucjvFlhd3UMS/pLvI9poX69spMsUriMIku4V6KOH
+ 2M7ZpPz44MPdyQxsCHJly6udXrfmlbIe5voZrDZqMYpH30vWtZsAw/djMzqPo6q9aLu0GdI
+ l1tJJvOb+Pe9sdbRT0MRA==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:Y5V4noDGCfg=:M/XFAQmEzOcToK8qlrn/jw
+ McaUUn1f+CP4FfTxf53Gq47ZhRriorGjgzuoUbDh/M+yNuBiAbD2wheegfvnaaFKrp9GMAwq/
+ /awdyeAiKRBkDl3OKzmoBqsBcdjSru6e5GDDMPtxzDIufvcvFWvUbA5tvYOmX+NwP+LsonW5u
+ SMjXx+3y/AZSXWqQudVSuz0zvDG72Oh46LNnmZw/rT5B9/OSXiF2a7/+NfexnRUnR+fFlFXWy
+ 08eW7EmrexIh/rQoLZMdPHcGzCyh5/pHVNzE/UFhqDHHZmP1I2pjjmIuJl2FZJGVvPOYcq3Xn
+ +g/qiKnElG/pzySajfSH4+yAPnke23cduwbuRvH01nD+g7m1ej5irUpkafbw5QKQn4jvKptZv
+ ZCgPsiK3N/j072+HR5oCFR0EwC3ESSgi42kdX0aXVRIwWjgRECz7GPRPVb2avlVVA4lMht4Cb
+ MRa8lZukVdXJuZoqAkkQQ7wtfSzPBDJqlct0wMk7mkiTWHhHZdnHrgvaKxCb6C8jfECQVBQzS
+ Sb3enHRMHXWtJJ+sO+QqIzdfa7v6epRnXSsmbtXxL5p5IrP2r+PWmYvTyzSbsXNi2qhiNm9fN
+ MOKTgWwDgSFx8BDlKyds1Qm16MXTZgpMvWTY3TdrVMI3IiYtZqZK3FcNnGLKzJ1R4r3dIZAzh
+ czVW/lHo2uuBQX622SuiG+XYLiAhMZ4aQglxLsK/zLyDGN8E73/sgbva3pqWt1jlYXV/xrBIl
+ Pv3L4/8RVAL6Ld5csqoE6biI7N+ep8mLUxHePa4QupDabRMRmczoFQ4MEN30YJgwZ12KgCJ8h
+ QT5sCqzm45zAtKxMvHhSBlpacq5odK/zRtfLSUyldrqrhdJ9QvX2PPEp+49QcQ49iBBdcWTA+
+ ySuJPjbbykDERIVJhhGS4QJs+uFqtTopZBjXCPfg5+fWM8rtHmnN6G4w6qAAVDJL00wv4BmQz
+ 3yOzM9U/5Pk07Pqo6rJlqC2WQ5VBsx1iOvmTU3sl+/FJGTepIgGGlxcHvVA9tiHL8X9ll+q3q
+ n42NzmrAkcaykzPO1SVgJCfX07xR5DWIJ4lUjkI+WqV2r/SvHASz6WnaE+luNlmQ1z2y/KM7O
+ VoTRMQq9OjieXMhzh+/zx43hQLTb4f/akAy4czUr+ixV4uEbjcvsdtOgFk6Chbw0VF1XUcy8t
+ +2utXK5B8eNGLDKCUkR0uF9DYqoVX88GZqH1LhWNjCfl3VY2REB2SHJli3/Lqbh1aJfWY/pGS
+ 9KZ745u1pYOTArF6N
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The name BTRFS_ROOT_REF_COWS is not helpful to show what it really
-means.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--cFx1aHECXyjdCh4tFtoN575UNIPIt6zaC
+Content-Type: multipart/mixed; boundary="gRRQNVHmvDP6tU5PC85fj7kBiG3nderxz"
 
-In fact, that bit can only be set to those trees:
-- Subvolume roots
-- Data reloc root
-- Reloc roots for above roots
+--gRRQNVHmvDP6tU5PC85fj7kBiG3nderxz
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-All other trees won't get this bit set.
-So just by the result, it is obvious that, roots with this bit set can
-have tree blocks shared with other trees.
-Either shared by snapshots, or by reloc roots (an special snapshot
-created by relocation).
 
-This patch will rename BTRFS_ROOT_REF_COWS to BTRFS_ROOT_SHAREABLE to
-make it easier to understand, and update all comment mentioning
-"reference counted" to follow the rename.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/backref.c     |  4 ++--
- fs/btrfs/backref.h     |  2 +-
- fs/btrfs/block-rsv.c   |  2 +-
- fs/btrfs/ctree.c       | 26 +++++++++++++-------------
- fs/btrfs/ctree.h       | 24 ++++++++++++++++++++++--
- fs/btrfs/disk-io.c     | 13 +++++++------
- fs/btrfs/extent-tree.c |  2 +-
- fs/btrfs/file.c        |  2 +-
- fs/btrfs/inode.c       | 20 ++++++++++++--------
- fs/btrfs/ioctl.c       |  2 +-
- fs/btrfs/relocation.c  | 24 +++++++++++++-----------
- fs/btrfs/transaction.c | 12 ++++++------
- fs/btrfs/tree-defrag.c |  2 +-
- 13 files changed, 81 insertions(+), 54 deletions(-)
+On 2020/5/13 =E4=B8=8B=E5=8D=881:02, Zygo Blaxell wrote:
+> On Wed, May 13, 2020 at 10:28:37AM +0800, Qu Wenruo wrote:
+>>
+>>
+[...]
+>> I'm a little surprised about the it's using logical ino ioctl, not jus=
+t
+>> TREE_SEARCH.
+>=20
+> Tree search can't read shared backrefs because they refer directly to
+> disk blocks, not to object/type/offset tuples.  It would be nice to hav=
+e
+> an ioctl that can read a metadata block (or even a data block) by byten=
+r.
 
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index 60a69f7c0b36..f1ff92eb14f3 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -2702,7 +2702,7 @@ static int handle_indirect_tree_backref(struct btrfs_backref_cache *cache,
- 	root = btrfs_get_fs_root(fs_info, &root_key, false);
- 	if (IS_ERR(root))
- 		return PTR_ERR(root);
--	if (!test_bit(BTRFS_ROOT_REF_COWS, &root->state))
-+	if (!test_bit(BTRFS_ROOT_SHAREABLE, &root->state))
- 		cur->cowonly = 1;
- 
- 	if (btrfs_root_level(&root->root_item) == cur->level) {
-@@ -2789,7 +2789,7 @@ static int handle_indirect_tree_backref(struct btrfs_backref_cache *cache,
- 				goto out;
- 			}
- 			upper->owner = btrfs_header_owner(eb);
--			if (!test_bit(BTRFS_ROOT_REF_COWS, &root->state))
-+			if (!test_bit(BTRFS_ROOT_SHAREABLE, &root->state))
- 				upper->cowonly = 1;
- 
- 			/*
-diff --git a/fs/btrfs/backref.h b/fs/btrfs/backref.h
-index 18393cc05ca2..ff705cc564a9 100644
---- a/fs/btrfs/backref.h
-+++ b/fs/btrfs/backref.h
-@@ -184,7 +184,7 @@ struct btrfs_backref_node {
- 	struct extent_buffer *eb;
- 	/* Level of the tree block */
- 	unsigned int level:8;
--	/* Is the block in non-reference counted tree */
-+	/* Is the block in a non-shareable tree */
- 	unsigned int cowonly:1;
- 	/* 1 if no child node is in the cache */
- 	unsigned int lowest:1;
-diff --git a/fs/btrfs/block-rsv.c b/fs/btrfs/block-rsv.c
-index dbba53e712e6..7e1549a84fcc 100644
---- a/fs/btrfs/block-rsv.c
-+++ b/fs/btrfs/block-rsv.c
-@@ -458,7 +458,7 @@ static struct btrfs_block_rsv *get_block_rsv(
- 	struct btrfs_fs_info *fs_info = root->fs_info;
- 	struct btrfs_block_rsv *block_rsv = NULL;
- 
--	if (test_bit(BTRFS_ROOT_REF_COWS, &root->state) ||
-+	if (test_bit(BTRFS_ROOT_SHAREABLE, &root->state) ||
- 	    (root == fs_info->csum_root && trans->adding_csums) ||
- 	    (root == fs_info->uuid_root))
- 		block_rsv = trans->block_rsv;
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 6c28efe5b14a..90a9e238ead8 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -144,9 +144,10 @@ struct extent_buffer *btrfs_root_node(struct btrfs_root *root)
- 	return eb;
- }
- 
--/* cowonly root (everything not a reference counted cow subvolume), just get
-- * put onto a simple dirty list.  transaction.c walks this to make sure they
-- * get properly updated on disk.
-+/*
-+ * Cowonly root (not shareable trees, everything not subvolume roots or reloc
-+ * roots), just get put onto a simple dirty list.  transaction.c walks this to
-+ * make sure they get properly updated on disk.
-  */
- static void add_root_to_dirty_list(struct btrfs_root *root)
- {
-@@ -185,9 +186,9 @@ int btrfs_copy_root(struct btrfs_trans_handle *trans,
- 	int level;
- 	struct btrfs_disk_key disk_key;
- 
--	WARN_ON(test_bit(BTRFS_ROOT_REF_COWS, &root->state) &&
-+	WARN_ON(test_bit(BTRFS_ROOT_SHAREABLE, &root->state) &&
- 		trans->transid != fs_info->running_transaction->transid);
--	WARN_ON(test_bit(BTRFS_ROOT_REF_COWS, &root->state) &&
-+	WARN_ON(test_bit(BTRFS_ROOT_SHAREABLE, &root->state) &&
- 		trans->transid != root->last_trans);
- 
- 	level = btrfs_header_level(buf);
-@@ -826,12 +827,11 @@ int btrfs_block_can_be_shared(struct btrfs_root *root,
- 			      struct extent_buffer *buf)
- {
- 	/*
--	 * Tree blocks not in reference counted trees and tree roots
--	 * are never shared. If a block was allocated after the last
--	 * snapshot and the block was not allocated by tree relocation,
--	 * we know the block is not shared.
-+	 * Tree blocks not in shareable trees and tree roots are never shared.
-+	 * If a block was allocated after the last snapshot and the block was
-+	 * not allocated by tree relocation, we know the block is not shared.
- 	 */
--	if (test_bit(BTRFS_ROOT_REF_COWS, &root->state) &&
-+	if (test_bit(BTRFS_ROOT_SHAREABLE, &root->state) &&
- 	    buf != root->node && buf != root->commit_root &&
- 	    (btrfs_header_generation(buf) <=
- 	     btrfs_root_last_snapshot(&root->root_item) ||
-@@ -1024,9 +1024,9 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
- 
- 	btrfs_assert_tree_locked(buf);
- 
--	WARN_ON(test_bit(BTRFS_ROOT_REF_COWS, &root->state) &&
-+	WARN_ON(test_bit(BTRFS_ROOT_SHAREABLE, &root->state) &&
- 		trans->transid != fs_info->running_transaction->transid);
--	WARN_ON(test_bit(BTRFS_ROOT_REF_COWS, &root->state) &&
-+	WARN_ON(test_bit(BTRFS_ROOT_SHAREABLE, &root->state) &&
- 		trans->transid != root->last_trans);
- 
- 	level = btrfs_header_level(buf);
-@@ -1065,7 +1065,7 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
- 		return ret;
- 	}
- 
--	if (test_bit(BTRFS_ROOT_REF_COWS, &root->state)) {
-+	if (test_bit(BTRFS_ROOT_SHAREABLE, &root->state)) {
- 		ret = btrfs_reloc_cow_block(trans, root, buf, cow);
- 		if (ret) {
- 			btrfs_abort_transaction(trans, ret);
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 03ea7370aea7..65c09aea4cb9 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -969,7 +969,27 @@ enum {
- 	 * is used to tell us when more checks are required
- 	 */
- 	BTRFS_ROOT_IN_TRANS_SETUP,
--	BTRFS_ROOT_REF_COWS,
-+
-+	/*
-+	 * If tree blocks of this root can be shared between other roots.
-+	 * Only subvolume trees and their reloc trees have this bit set.
-+	 * Conflicts with TRACK_DIRTY bit.
-+	 *
-+	 * This affects two things:
-+	 * - How balance works
-+	 *   For shareable roots, btrfs needs to use reloc tree and do path
-+	 *   replacement for balance, and needs various pre/post hooks for
-+	 *   snapshot creation to handle them.
-+	 *
-+	 *   While for non shareable trees, we just simply do a tree search
-+	 *   with COW.
-+	 *
-+	 * - How dirty roots are tracked
-+	 *   For shareable roots, btrfs_record_root_in_trans() is needed to
-+	 *   trace them, while non subvolume roots have TRACK_DIRTY bit, they
-+	 *   don't need manual record.
-+	 */
-+	BTRFS_ROOT_SHAREABLE,
- 	BTRFS_ROOT_TRACK_DIRTY,
- 	BTRFS_ROOT_IN_RADIX,
- 	BTRFS_ROOT_ORPHAN_ITEM_INSERTED,
-@@ -1055,7 +1075,7 @@ struct btrfs_root {
- 	struct btrfs_key defrag_progress;
- 	struct btrfs_key defrag_max;
- 
--	/* the dirty list is only used by non-reference counted roots */
-+	/* the dirty list is only used by non-shareable roots */
- 	struct list_head dirty_list;
- 
- 	struct list_head root_list;
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 8ad451695d49..4dd3206c1ace 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1275,12 +1275,13 @@ static struct btrfs_root *alloc_log_tree(struct btrfs_trans_handle *trans,
- 	root->root_key.offset = BTRFS_TREE_LOG_OBJECTID;
- 
- 	/*
--	 * DON'T set REF_COWS for log trees
-+	 * DON'T set SHAREABLE bit for log trees.
- 	 *
--	 * log trees do not get reference counted because they go away
--	 * before a real commit is actually done.  They do store pointers
--	 * to file data extents, and those reference counts still get
--	 * updated (along with back refs to the log tree).
-+	 * User has no way to create snapshot for log trees, and they go away
-+	 * before a real commit is actually done.
-+	 *
-+	 * They do store pointers to file data extents, and those reference
-+	 * counts still get updated (along with back refs to the log tree).
- 	 */
- 
- 	leaf = btrfs_alloc_tree_block(trans, root, 0, BTRFS_TREE_LOG_OBJECTID,
-@@ -1419,7 +1420,7 @@ static int btrfs_init_fs_root(struct btrfs_root *root)
- 		goto fail;
- 
- 	if (root->root_key.objectid != BTRFS_TREE_LOG_OBJECTID) {
--		set_bit(BTRFS_ROOT_REF_COWS, &root->state);
-+		set_bit(BTRFS_ROOT_SHAREABLE, &root->state);
- 		btrfs_check_and_init_root_item(&root->root_item);
- 	}
- 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index faa585d54eb7..36d8014ce452 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2442,7 +2442,7 @@ static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
- 	nritems = btrfs_header_nritems(buf);
- 	level = btrfs_header_level(buf);
- 
--	if (!test_bit(BTRFS_ROOT_REF_COWS, &root->state) && level == 0)
-+	if (!test_bit(BTRFS_ROOT_SHAREABLE, &root->state) && level == 0)
- 		return 0;
- 
- 	if (full_backref)
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 719e68ab552c..606c2f3c1a38 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -775,7 +775,7 @@ int __btrfs_drop_extents(struct btrfs_trans_handle *trans,
- 	if (start >= BTRFS_I(inode)->disk_i_size && !replace_extent)
- 		modify_tree = 0;
- 
--	update_refs = (test_bit(BTRFS_ROOT_REF_COWS, &root->state) ||
-+	update_refs = (test_bit(BTRFS_ROOT_SHAREABLE, &root->state) ||
- 		       root == fs_info->tree_root);
- 	while (1) {
- 		recow = 0;
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 5d567082f95a..13bbb6b0d495 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4107,11 +4107,13 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
- 	BUG_ON(new_size > 0 && min_type != BTRFS_EXTENT_DATA_KEY);
- 
- 	/*
--	 * for non-free space inodes and ref cows, we want to back off from
--	 * time to time
-+	 * for non-free space inodes and non-shareable roots, we want to back
-+	 * off from time to time.
-+	 * This means all inodes in subvolume roots, reloc roots, and data
-+	 * reloc roots.
- 	 */
- 	if (!btrfs_is_free_space_inode(BTRFS_I(inode)) &&
--	    test_bit(BTRFS_ROOT_REF_COWS, &root->state))
-+	    test_bit(BTRFS_ROOT_SHAREABLE, &root->state))
- 		be_nice = true;
- 
- 	path = btrfs_alloc_path();
-@@ -4127,8 +4129,10 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
- 	 * We want to drop from the next block forward in case this new size is
- 	 * not block aligned since we will be keeping the last block of the
- 	 * extent just the way it is.
-+	 * This covers all inodes, including free space cache inodes, and btree
-+	 * inode.
- 	 */
--	if (test_bit(BTRFS_ROOT_REF_COWS, &root->state) ||
-+	if (test_bit(BTRFS_ROOT_SHAREABLE, &root->state) ||
- 	    root == fs_info->tree_root)
- 		btrfs_drop_extent_cache(BTRFS_I(inode), ALIGN(new_size,
- 					fs_info->sectorsize),
-@@ -4240,7 +4244,7 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
- 							 extent_num_bytes);
- 				num_dec = (orig_num_bytes -
- 					   extent_num_bytes);
--				if (test_bit(BTRFS_ROOT_REF_COWS,
-+				if (test_bit(BTRFS_ROOT_SHAREABLE,
- 					     &root->state) &&
- 				    extent_start != 0)
- 					inode_sub_bytes(inode, num_dec);
-@@ -4256,7 +4260,7 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
- 				num_dec = btrfs_file_extent_num_bytes(leaf, fi);
- 				if (extent_start != 0) {
- 					found_extent = 1;
--					if (test_bit(BTRFS_ROOT_REF_COWS,
-+					if (test_bit(BTRFS_ROOT_SHAREABLE,
- 						     &root->state))
- 						inode_sub_bytes(inode, num_dec);
- 				}
-@@ -4292,7 +4296,7 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
- 				clear_len = fs_info->sectorsize;
- 			}
- 
--			if (test_bit(BTRFS_ROOT_REF_COWS, &root->state))
-+			if (test_bit(BTRFS_ROOT_SHAREABLE, &root->state))
- 				inode_sub_bytes(inode, item_end + 1 - new_size);
- 		}
- delete:
-@@ -4333,7 +4337,7 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
- 		should_throttle = false;
- 
- 		if (found_extent &&
--		    (test_bit(BTRFS_ROOT_REF_COWS, &root->state) ||
-+		    (test_bit(BTRFS_ROOT_SHAREABLE, &root->state) ||
- 		     root == fs_info->tree_root)) {
- 			struct btrfs_ref ref = { 0 };
- 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 40b729dce91c..709d9446896a 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -750,7 +750,7 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
- 	int ret;
- 	bool snapshot_force_cow = false;
- 
--	if (!test_bit(BTRFS_ROOT_REF_COWS, &root->state))
-+	if (!test_bit(BTRFS_ROOT_SHAREABLE, &root->state))
- 		return -EINVAL;
- 
- 	if (atomic_read(&root->nr_swapfiles)) {
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index f25deca18a5d..437b782c57e6 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -321,7 +321,7 @@ int btrfs_should_ignore_reloc_root(struct btrfs_root *root)
- {
- 	struct btrfs_root *reloc_root;
- 
--	if (!test_bit(BTRFS_ROOT_REF_COWS, &root->state))
-+	if (!test_bit(BTRFS_ROOT_SHAREABLE, &root->state))
- 		return 0;
- 
- 	/* This root has been merged with its reloc tree, we can ignore it */
-@@ -808,7 +808,7 @@ static struct btrfs_root *create_reloc_root(struct btrfs_trans_handle *trans,
- 
- 	reloc_root = btrfs_read_tree_root(fs_info->tree_root, &root_key);
- 	BUG_ON(IS_ERR(reloc_root));
--	set_bit(BTRFS_ROOT_REF_COWS, &reloc_root->state);
-+	set_bit(BTRFS_ROOT_SHAREABLE, &reloc_root->state);
- 	reloc_root->last_trans = trans->transid;
- 	return reloc_root;
- }
-@@ -2018,7 +2018,7 @@ struct btrfs_root *select_reloc_root(struct btrfs_trans_handle *trans,
- 		next = walk_up_backref(next, edges, &index);
- 		root = next->root;
- 		BUG_ON(!root);
--		BUG_ON(!test_bit(BTRFS_ROOT_REF_COWS, &root->state));
-+		BUG_ON(!test_bit(BTRFS_ROOT_SHAREABLE, &root->state));
- 
- 		if (root->root_key.objectid == BTRFS_TREE_RELOC_OBJECTID) {
- 			record_reloc_root_in_trans(trans, root);
-@@ -2062,10 +2062,12 @@ struct btrfs_root *select_reloc_root(struct btrfs_trans_handle *trans,
- }
- 
- /*
-- * select a tree root for relocation. return NULL if the block
-- * is reference counted. we should use do_relocation() in this
-- * case. return a tree root pointer if the block isn't reference
-- * counted. return -ENOENT if the block is root of reloc tree.
-+ * Select a tree root for relocation.
-+ *
-+ * Return NULL if the block is not shareable. we should use do_relocation() in this
-+ * case.
-+ * Return a tree root pointer if the block is shareable.
-+ * Return -ENOENT if the block is root of reloc tree.
-  */
- static noinline_for_stack
- struct btrfs_root *select_one_root(struct btrfs_backref_node *node)
-@@ -2083,8 +2085,8 @@ struct btrfs_root *select_one_root(struct btrfs_backref_node *node)
- 		root = next->root;
- 		BUG_ON(!root);
- 
--		/* no other choice for non-references counted tree */
--		if (!test_bit(BTRFS_ROOT_REF_COWS, &root->state))
-+		/* no other choice for non-shareable tree */
-+		if (!test_bit(BTRFS_ROOT_SHAREABLE, &root->state))
- 			return root;
- 
- 		if (root->root_key.objectid != BTRFS_TREE_RELOC_OBJECTID)
-@@ -2480,7 +2482,7 @@ static int relocate_tree_block(struct btrfs_trans_handle *trans,
- 	}
- 
- 	if (root) {
--		if (test_bit(BTRFS_ROOT_REF_COWS, &root->state)) {
-+		if (test_bit(BTRFS_ROOT_SHAREABLE, &root->state)) {
- 			BUG_ON(node->new_bytenr);
- 			BUG_ON(!list_empty(&node->list));
- 			btrfs_record_root_in_trans(trans, root);
-@@ -3765,7 +3767,7 @@ int btrfs_recover_relocation(struct btrfs_root *root)
- 			goto out;
- 		}
- 
--		set_bit(BTRFS_ROOT_REF_COWS, &reloc_root->state);
-+		set_bit(BTRFS_ROOT_SHAREABLE, &reloc_root->state);
- 		list_add(&reloc_root->root_list, &reloc_roots);
- 
- 		if (btrfs_root_refs(&reloc_root->root_item) > 0) {
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 96eb313a5080..a04b5442ac39 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -349,10 +349,10 @@ static noinline int join_transaction(struct btrfs_fs_info *fs_info,
- }
- 
- /*
-- * this does all the record keeping required to make sure that a reference
-- * counted root is properly recorded in a given transaction.  This is required
-+ * This does all the record keeping required to make sure that a shareable
-+ * root is properly recorded in a given transaction.  This is required
-  * to make sure the old root from before we joined the transaction is deleted
-- * when the transaction commits
-+ * when the transaction commits.
-  */
- static int record_root_in_trans(struct btrfs_trans_handle *trans,
- 			       struct btrfs_root *root,
-@@ -360,7 +360,7 @@ static int record_root_in_trans(struct btrfs_trans_handle *trans,
- {
- 	struct btrfs_fs_info *fs_info = root->fs_info;
- 
--	if ((test_bit(BTRFS_ROOT_REF_COWS, &root->state) &&
-+	if ((test_bit(BTRFS_ROOT_SHAREABLE, &root->state) &&
- 	    root->last_trans < trans->transid) || force) {
- 		WARN_ON(root == fs_info->extent_root);
- 		WARN_ON(!force && root->commit_root != root->node);
-@@ -439,7 +439,7 @@ int btrfs_record_root_in_trans(struct btrfs_trans_handle *trans,
- {
- 	struct btrfs_fs_info *fs_info = root->fs_info;
- 
--	if (!test_bit(BTRFS_ROOT_REF_COWS, &root->state))
-+	if (!test_bit(BTRFS_ROOT_SHAREABLE, &root->state))
- 		return 0;
- 
- 	/*
-@@ -504,7 +504,7 @@ static inline bool need_reserve_reloc_root(struct btrfs_root *root)
- 	struct btrfs_fs_info *fs_info = root->fs_info;
- 
- 	if (!fs_info->reloc_ctl ||
--	    !test_bit(BTRFS_ROOT_REF_COWS, &root->state) ||
-+	    !test_bit(BTRFS_ROOT_SHAREABLE, &root->state) ||
- 	    root->root_key.objectid == BTRFS_TREE_RELOC_OBJECTID ||
- 	    root->reloc_root)
- 		return false;
-diff --git a/fs/btrfs/tree-defrag.c b/fs/btrfs/tree-defrag.c
-index 5f9e2dd413af..16c3a6d2586d 100644
---- a/fs/btrfs/tree-defrag.c
-+++ b/fs/btrfs/tree-defrag.c
-@@ -35,7 +35,7 @@ int btrfs_defrag_leaves(struct btrfs_trans_handle *trans,
- 		goto out;
- 	}
- 
--	if (!test_bit(BTRFS_ROOT_REF_COWS, &root->state))
-+	if (!test_bit(BTRFS_ROOT_SHAREABLE, &root->state))
- 		goto out;
- 
- 	path = btrfs_alloc_path();
--- 
-2.26.2
+Sorry, I mean we can use tree search to search extent tree, and only
+search the backref for specified bytenr to inspect it.
 
+In such hanging case, what I really want is to inspect if the tree block
+4374646833152 belongs to data reloc tree.
+
+>=20
+> Or even better, just a fd that can be obtained by some ioctl to access
+> the btrfs virtual address space with pread().
+
+If we want the content of 4374646833152, we can easily go btrfs ins
+dump-tree -b 4374646833152.
+
+As balance works on commit root, at the time of looping, that tree block
+should still be on disk, and dump-tree can get it.
+
+
+Another way to workaround this is, to provide full extent tree dump.
+(I know this is a bad idea, but it would still be faster than interact
+with mail).
+
+>=20
+>> I guess if we could get a plain tree search based one (it only search
+>> commit root, which is exactly balance based on), it would be easier to=
+
+>> do the digging.
+>=20
+> That would be nice.  I have an application for it.  ;)
+>=20
+>>> 	OSError: [Errno 22] Invalid argument
+>>>
+>>> 	root@tester:~# btrfs ins log 4368594108416 /media/testfs/
+>>> 	/media/testfs//snap-1589258042/testhost/var/log/messages.6.lzma
+>>> 	/media/testfs//current/testhost/var/log/messages.6.lzma
+>>> 	/media/testfs//snap-1589249822/testhost/var/log/messages.6.lzma
+>>> 	ERROR: ino paths ioctl: No such file or directory
+>>> 	/media/testfs//snap-1589249547/testhost/var/log/messages.6.lzma
+>>> 	ERROR: ino paths ioctl: No such file or directory
+>>> 	/media/testfs//snap-1589248407/testhost/var/log/messages.6.lzma
+>>> 	/media/testfs//snap-1589256422/testhost/var/log/messages.6.lzma
+>>> 	ERROR: ino paths ioctl: No such file or directory
+>>> 	/media/testfs//snap-1589251322/testhost/var/log/messages.6.lzma
+>>> 	/media/testfs//snap-1589251682/testhost/var/log/messages.6.lzma
+>>> 	/media/testfs//snap-1589253842/testhost/var/log/messages.6.lzma
+>>> 	/media/testfs//snap-1589246727/testhost/var/log/messages.6.lzma
+>>> 	/media/testfs//snap-1589258582/testhost/var/log/messages.6.lzma
+>>> 	/media/testfs//snap-1589244027/testhost/var/log/messages.6.lzma
+>>> 	/media/testfs//snap-1589245227/testhost/var/log/messages.6.lzma
+>>> 	ERROR: ino paths ioctl: No such file or directory
+>>> 	ERROR: ino paths ioctl: No such file or directory
+>>> 	/media/testfs//snap-1589246127/testhost/var/log/messages.6.lzma
+>>> 	/media/testfs//snap-1589247327/testhost/var/log/messages.6.lzma
+>>> 	ERROR: ino paths ioctl: No such file or directory
+>>>
+>>> Hmmm, I wonder if there's a problem with deleted snapshots?
+>>
+>> Yes, also what I'm guessing.
+>>
+>> The cleanup of data reloc tree doesn't look correct to me.
+>>
+>> Thanks for the new clues,
+>> Qu
+>=20
+> Here's a fun one:
+>=20
+> 1.  Delete all the files on a filesystem where balance loops
+> have occurred.
+
+I tried with newly created fs, and failed to reproduce.
+
+>=20
+> 2.  Verify there are no data blocks (one data block group
+> with used =3D 0):
+>=20
+> # show_block_groups.py /testfs/
+> block group vaddr 435969589248 length 1073741824 flags METADATA|RAID1 u=
+sed 180224 used_pct 0
+> block group vaddr 4382686969856 length 33554432 flags SYSTEM|RAID1 used=
+ 16384 used_pct 0
+> block group vaddr 4383794266112 length 1073741824 flags DATA used 0 use=
+d_pct 0
+>=20
+> 3.  Create a new file with a single reference in the only (root) subvol=
+:
+> # head -c 1024m > file
+> # sync
+> # show_block_groups.py .
+> block group vaddr 435969589248 length 1073741824 flags METADATA|RAID1 u=
+sed 1245184 used_pct 0
+> block group vaddr 4382686969856 length 33554432 flags SYSTEM|RAID1 used=
+ 16384 used_pct 0
+> block group vaddr 4384868007936 length 1073741824 flags DATA used 96170=
+8032 used_pct 90
+> block group vaddr 4385941749760 length 1073741824 flags DATA used 11203=
+3792 used_pct 10
+>=20
+> 4.  Run balance, and it immediately loops on a single extent:
+> # btrfs balance start -d .
+> [Wed May 13 00:41:58 2020] BTRFS info (device dm-0): balance: start -d
+> [Wed May 13 00:41:58 2020] BTRFS info (device dm-0): relocating block g=
+roup 4385941749760 flags data
+> [Wed May 13 00:42:00 2020] BTRFS info (device dm-0): found 1 extents, l=
+oops 1, stage: move data extents
+> [Wed May 13 00:42:00 2020] BTRFS info (device dm-0): found 1 extents, l=
+oops 2, stage: update data pointers
+> [Wed May 13 00:42:01 2020] BTRFS info (device dm-0): found 1 extents, l=
+oops 3, stage: update data pointers
+> [Wed May 13 00:42:01 2020] BTRFS info (device dm-0): found 1 extents, l=
+oops 4, stage: update data pointers
+> [Wed May 13 00:42:01 2020] BTRFS info (device dm-0): found 1 extents, l=
+oops 5, stage: update data pointers
+> [Wed May 13 00:42:01 2020] BTRFS info (device dm-0): found 1 extents, l=
+oops 6, stage: update data pointers
+> [Wed May 13 00:42:01 2020] BTRFS info (device dm-0): found 1 extents, l=
+oops 7, stage: update data pointers
+> [Wed May 13 00:42:02 2020] BTRFS info (device dm-0): found 1 extents, l=
+oops 8, stage: update data pointers
+> [Wed May 13 00:42:02 2020] BTRFS info (device dm-0): found 1 extents, l=
+oops 9, stage: update data pointers
+> [Wed May 13 00:42:02 2020] BTRFS info (device dm-0): found 1 extents, l=
+oops 10, stage: update data pointers
+> [Wed May 13 00:42:02 2020] BTRFS info (device dm-0): found 1 extents, l=
+oops 11, stage: update data pointers
+> [etc...]
+>=20
+> I tried it a 3 more times time and there was no loop.  The 5th try loop=
+ed again.
+
+10 loops, no reproduce.
+I guess there are some other factors involved, like newly created fs
+won't trigger it?
+
+BTW, for the reproducible case (or the looping case), would you like to
+dump the data_reloc root?
+
+My current guess is some orphan cleanup doesn't get kicked, but it
+shouldn't affect metadata with my patch :(
+
+Thanks,
+Qu
+>=20
+> There might be a correlation with cancels.  After a fresh boot, I can
+> often balance a few dozen block groups before there's a loop, but if I
+> cancel a balance, the next balance almost always loops.
+>=20
+
+
+--gRRQNVHmvDP6tU5PC85fj7kBiG3nderxz--
+
+--cFx1aHECXyjdCh4tFtoN575UNIPIt6zaC
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAl67lWUACgkQwj2R86El
+/qiAOQgAgeSslRZkTtUYBmEheB+I2iO3BLKvNsjXonrEn4kLqxtb8fpVdypPkw9H
+Va2SLv6jCTRsgZfaATIdz5IX6FoSA5HMaEA77RZsu/B3aQzPzIP311oIviX4CcAQ
+BgFB1OkcAG3gHIlfmma85KJlbzoSd5oQxmfomTN/lHlUjUgTBmZ6G9+nZaFNPqs/
+QIa5yCxbIIfZIeO/BXZulWOUG5o/aWXjhBo7sH4+RY0l20/Ljw+r6IyueTmGhcKX
+hEQmNFa0OyPArLY5SPBrghl3/I2WkpPOK56QIpF+Gn1aooLoaKgcUHx0VL2IiuRi
+L33+twYQjHUZoWCNqt9duDzC+VlUKA==
+=tU+K
+-----END PGP SIGNATURE-----
+
+--cFx1aHECXyjdCh4tFtoN575UNIPIt6zaC--

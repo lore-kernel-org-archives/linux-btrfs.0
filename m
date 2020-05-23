@@ -2,125 +2,112 @@ Return-Path: <SRS0=aoAP=7F=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY autolearn=no autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-0.7 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0BE7AC433E0
-	for <linux-btrfs@archiver.kernel.org>; Sat, 23 May 2020 17:57:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DBB50C433DF
+	for <linux-btrfs@archiver.kernel.org>; Sat, 23 May 2020 23:21:52 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D6FA120738
-	for <linux-btrfs@archiver.kernel.org>; Sat, 23 May 2020 17:57:37 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id ADD4A20735
+	for <linux-btrfs@archiver.kernel.org>; Sat, 23 May 2020 23:21:52 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="E6gqI+Bn"
+	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="N5jN8EiH"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2387518AbgEWR5h (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 23 May 2020 13:57:37 -0400
-Received: from aserp2120.oracle.com ([141.146.126.78]:32960 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726868AbgEWR5g (ORCPT
+        id S2388047AbgEWXVv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 23 May 2020 19:21:51 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49282 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2388010AbgEWXVv (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 23 May 2020 13:57:36 -0400
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 04NHq0I0155269;
-        Sat, 23 May 2020 17:57:34 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=date : from : to : cc
- : subject : message-id : mime-version : content-type; s=corp-2020-01-29;
- bh=CjI9AVCHfj9Toe4lOhYPDvGyueNErd7wJE2ADjxl8Bo=;
- b=E6gqI+BnoT33zs6u7yUszk+LKaCkvzVtJ3lNKYGeLMlBRVpym44IcNxKNJqthS2AOsc5
- mrF2Btv24FitEDPT45hVH8RrrjEJq0RJRcNZv6a+hqx9jslPxN1MEYiE4eLI+0LM2RcP
- HI4pDfphY0PgabYKsORI6Ca96kqb1I2bZ1W8BNVwVVdmrJi9dVbg1qVVDB4ZEUxMXUvf
- /T7Mu1I5+WrEwbRE9Oi3MBtDBm/XdmWJ4Kk28s5a+GwEvXVoBpwoF6fI/6MY66Zz7wNP
- T2J6XRiZdqhy8qsDmtjvawmz8/df4q1o+9ADplZY6eopvv/jw4BUOz0/TfFcVus7LlAb qQ== 
-Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
-        by aserp2120.oracle.com with ESMTP id 316uskh9ht-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
-        Sat, 23 May 2020 17:57:34 +0000
-Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
-        by userp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 04NHqkHa147277;
-        Sat, 23 May 2020 17:57:34 GMT
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by userp3030.oracle.com with ESMTP id 316rxrxmy3-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Sat, 23 May 2020 17:57:34 +0000
-Received: from abhmp0019.oracle.com (abhmp0019.oracle.com [141.146.116.25])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 04NHvXLx027682;
-        Sat, 23 May 2020 17:57:33 GMT
-Received: from mwanda (/41.57.98.10)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Sat, 23 May 2020 10:57:32 -0700
-Date:   Sat, 23 May 2020 20:57:27 +0300
-From:   Dan Carpenter <dan.carpenter@oracle.com>
-To:     josef@toxicpanda.com
-Cc:     linux-btrfs@vger.kernel.org
-Subject: [bug report] btrfs: push btrfs_grab_fs_root into btrfs_get_fs_root
-Message-ID: <20200523175727.GA105997@mwanda>
+        Sat, 23 May 2020 19:21:51 -0400
+Received: from mail-wm1-x333.google.com (mail-wm1-x333.google.com [IPv6:2a00:1450:4864:20::333])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B4230C061A0E
+        for <linux-btrfs@vger.kernel.org>; Sat, 23 May 2020 16:21:50 -0700 (PDT)
+Received: by mail-wm1-x333.google.com with SMTP id c71so1527453wmd.5
+        for <linux-btrfs@vger.kernel.org>; Sat, 23 May 2020 16:21:50 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :content-transfer-encoding;
+        bh=5LD3PHJkCZ//stLTmXPZ9wkFEdR5qZBQ+05z24HzKQo=;
+        b=N5jN8EiHWQDeipblaSDtZlQrJc7I8pjP5Zy6hJton3csaXAyHg1IrFD/Ot1gpNXbAw
+         pbvLosv9PFit3F4cBfwjXQFujvL0i3zPvECZ9He9oNoWM9wKJNH1gkoF30YR/XyZAowf
+         53FSQrOrcBmMwo51NgCLV+krE4GXoMmmO5l691wrzpAOp+vtu54TY3VjEB/UiBm8fdd+
+         Eg3G95VysHbIRZk4YJS1qBAenk75RtHv6DmJXJiEvUokGFC63eWKYJ24uPQWRNLL/vYU
+         i8a90pTb3W2tz7LGJb9jYbAdV5QIIbBZxXUJah2vb9dKtXMKR+SDckHeKZUBnfNULQSB
+         2vlw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:content-transfer-encoding;
+        bh=5LD3PHJkCZ//stLTmXPZ9wkFEdR5qZBQ+05z24HzKQo=;
+        b=JmtUf8f/bb39bV8pCeH9NiYo5nYELmUfTR+b9cCGMu4p0ED5AlyWqKQvcy2CPJ/FFS
+         8y8jYCdPLLTj84gUvw6uN5xJjTSWGEsRa1aOjJrIuc0Rj7WTVgHEs7Fxq7tthKM1PpAC
+         GVZ2mVTGa83470NndW3jsBPALP1nsCXW4fnlgZC8O5xlq+nzOG2L8yRHZWP0nteCa/R5
+         iTVKqPWKchLB2bDa2O33KuNE3AIUg6413nvW73mUxQQho78Nm1WiqTCL4CSc1qCg5Vrs
+         ealpy6/ESGjhB+lXcp1faASCKOrDidAtHxsYT0pyV3GTq/lbCldB/V21B2VQYruiX9V9
+         Z4kw==
+X-Gm-Message-State: AOAM530PKCa4Q15tA91GyWeWvdmgKQJ8XXDMQHGqZlL5p2zGUL12QVtW
+        l6W0+VTBC+IIJpRRJ5SwvXw/fXS/fpJ3AoxMtE3Scw==
+X-Google-Smtp-Source: ABdhPJyVJgxxJVpDY9insgMX6W4W7G8Oh6wrR0fBtN3/ValDDe+pJNsgheDGKqmofXkzKWCVe0Ap8/pllpiRBgywY/0=
+X-Received: by 2002:a05:600c:2219:: with SMTP id z25mr18406362wml.128.1590276109183;
+ Sat, 23 May 2020 16:21:49 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9630 signatures=668686
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=10 mlxlogscore=868
- phishscore=0 spamscore=0 adultscore=0 bulkscore=0 malwarescore=0
- mlxscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2004280000 definitions=main-2005230149
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9630 signatures=668686
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 malwarescore=0 lowpriorityscore=0
- suspectscore=10 spamscore=0 priorityscore=1501 clxscore=1011
- impostorscore=0 bulkscore=0 mlxlogscore=883 phishscore=0
- cotscore=-2147483648 adultscore=0 mlxscore=0 classifier=spam adjust=0
- reason=mlx scancount=1 engine=8.12.0-2004280000
- definitions=main-2005230149
+References: <1e6bc0e299901f90613550570446777fbccdc21e.camel@seznam.cz>
+ <CAJCQCtSWX0J69SokSOgAhdcQ6qkKHfaPVhbF4anjCtVFACOVnQ@mail.gmail.com>
+ <139f40a70cf37da2fef682c5c3d660671d8af88d.camel@seznam.cz>
+ <CAJCQCtQXBphGneiHJT_O7VHgZkfqfHaxmkAwFEzGPXY5E7U_cA@mail.gmail.com> <3bc39223e567b7a4eca13bc554c74ef0c36fbaf2.camel@seznam.cz>
+In-Reply-To: <3bc39223e567b7a4eca13bc554c74ef0c36fbaf2.camel@seznam.cz>
+From:   Chris Murphy <lists@colorremedies.com>
+Date:   Sat, 23 May 2020 17:21:33 -0600
+Message-ID: <CAJCQCtQmTan=rrRJ2ALM25DnUt05Xdsuae9GR88L5mB=OR+QVA@mail.gmail.com>
+Subject: Re: I can't mount image
+To:     =?UTF-8?B?SmnFmcOtIExpc2lja8O9?= <jiri_lisicky@seznam.cz>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hello Josef Bacik,
+On Sat, May 23, 2020 at 8:38 AM Ji=C5=99=C3=AD Lisick=C3=BD <jiri_lisicky@s=
+eznam.cz> wrote:
+>
+> [root@localhost-live tmp] # btrfs rescue super -v /dev/loop4
+> All Devices:
+>         Device: id =3D 1, name =3D /dev/loop4
+>
+> Before Recovering:
+>         [All good supers]:
+>                 device name =3D /dev/loop4
+>                 superblock bytenr =3D 65536
+>
+>                 device name =3D /dev/loop4
+>                 superblock bytenr =3D 67108864
+>
+>         [All bad supers]:
+>
+> All supers are valid, no need to recover
 
-The patch bc44d7c4b2b1: "btrfs: push btrfs_grab_fs_root into
-btrfs_get_fs_root" from Jan 24, 2020, leads to the following static
-checker warning:
+OK. So they're good.
 
-	fs/btrfs/backref.c:565 resolve_indirect_ref()
-	warn: 'root' can also be NULL
+>
+>
+>
+> [root@localhost-live tmp]# mount -o ro,recovery /dev/loop4 ./mnt
+> mount: /home/jirka/tmp/mnt: can't read superblock on /dev/loop4.
 
-fs/btrfs/backref.c
-  1537  struct btrfs_root *btrfs_get_fs_root(struct btrfs_fs_info *fs_info,
-  1538                                       u64 objectid, bool check_ref)
-  1539  {
-  1540          struct btrfs_root *root;
-  1541          struct btrfs_path *path;
-  1542          struct btrfs_key key;
-  1543          int ret;
-  1544  
-  1545          if (objectid == BTRFS_ROOT_TREE_OBJECTID)
-  1546                  return btrfs_grab_root(fs_info->tree_root);
-                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  1547          if (objectid == BTRFS_EXTENT_TREE_OBJECTID)
-  1548                  return btrfs_grab_root(fs_info->extent_root);
-                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-These return NULL on error and it leads to an OOps in the caller.
 
-  1549          if (objectid == BTRFS_CHUNK_TREE_OBJECTID)
-  1550                  return btrfs_grab_root(fs_info->chunk_root);
-  1551          if (objectid == BTRFS_DEV_TREE_OBJECTID)
-  1552                  return btrfs_grab_root(fs_info->dev_root);
-  1553          if (objectid == BTRFS_CSUM_TREE_OBJECTID)
-  1554                  return btrfs_grab_root(fs_info->csum_root);
-  1555          if (objectid == BTRFS_QUOTA_TREE_OBJECTID)
-  1556                  return btrfs_grab_root(fs_info->quota_root) ?
-  1557                          fs_info->quota_root : ERR_PTR(-ENOENT);
+But it can't be read? This doesn't make sense. What kernel messages
+are reported at the time of the mount attempt? When using a newer
+kernel, the recovery command is deprecated but should still work. The
+new command is 'usebackuproot'
 
-It should probably return ERR_PTR(-ENOENT).
+What do you get for:
 
-  1558          if (objectid == BTRFS_UUID_TREE_OBJECTID)
-  1559                  return btrfs_grab_root(fs_info->uuid_root) ?
-  1560                          fs_info->uuid_root : ERR_PTR(-ENOENT);
-  1561          if (objectid == BTRFS_FREE_SPACE_TREE_OBJECTID)
-  1562                  return btrfs_grab_root(fs_info->free_space_root) ?
-  1563                          fs_info->free_space_root : ERR_PTR(-ENOENT);
-  1564  again:
+# btrfs insp dump-s -fa /dev/
 
-regards,
-dan carpenter
+--=20
+Chris Murphy

@@ -2,132 +2,84 @@ Return-Path: <SRS0=8zrQ=7J=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.5 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BCA68C433E1
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 May 2020 08:12:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 58533C433E0
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 May 2020 09:32:51 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 97BC621531
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 May 2020 08:12:43 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="lVzKKT2s"
+	by mail.kernel.org (Postfix) with ESMTP id 305E4208B8
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 May 2020 09:32:51 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2387811AbgE0IMm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 27 May 2020 04:12:42 -0400
-Received: from esa1.hgst.iphmx.com ([68.232.141.245]:15289 "EHLO
-        esa1.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2387775AbgE0IMd (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 May 2020 04:12:33 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1590567153; x=1622103153;
-  h=from:to:cc:subject:date:message-id:in-reply-to:
-   references:mime-version:content-transfer-encoding;
-  bh=RtXp2JkcAgZd33XjOKlvLt4nU9bdMxQXaBrp5ggLE9E=;
-  b=lVzKKT2sqNU5jlykiMTq0k3BI/bK5F6pVhHNJ8u25XWCrfitYI7trAf6
-   e1zxNGj7r3jLHm0SLBSOJRVJQ9K0i5EUsWB1iZiJENN8HDoEqn7o8HakR
-   exUQQ67q27jx5OPB96ouR7b6bje4k2SkKkRBqyIaA0m9UNMnYMBMXEuTh
-   8pEFPFlB0TtVKp9rTiR+8t3Q9auDRAs+XAy87OU16OUvHoZairh5Qubh+
-   KRvTswhz0qrzgSm/LpBRxpn2XjV6zvHve3MkhErZMWM1WL9e2sIPdDv/n
-   i5EGg1MwKdmCe+4Q8h7xF2im4Ye7Zx3MS4FcWWggm6zX4Ij8D7iEaDkuB
-   w==;
-IronPort-SDR: XQ7n+p5JUdxK+OkPqDTV0cN1gwfkwbyO1QRXZO03G5HYiAqnvEdwUrMkItfIQxOmpMKc5W0aj0
- wAGrR9T9HY9qXaNjjlsjSokgJvm9Pyw1vAPmX7O20IvJMkFeSevVG3GsQqwMQG0rWnHb54LF1a
- 8EY7UfqBbv1Ogaf+vSOwi1ucqJZ1d2rN3R9iukvE6ryoITmg8K4zMS8H563F6KVQgDX0/xrVKe
- K2IGSDfVyNNlD3hENXEJuDvgfIzGl4JECuEP4+GaWMAw9JhAA/zPl/FDfREuy8kcU+tEMZB2v3
- h7E=
-X-IronPort-AV: E=Sophos;i="5.73,440,1583164800"; 
-   d="scan'208";a="247648699"
-Received: from h199-255-45-14.hgst.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 27 May 2020 16:12:31 +0800
-IronPort-SDR: p6uge7cMGTrRix/ZZdXmdIKDdadL0CyaOTYc+gqUFhnEICPwTI9UF52vWI8nsQBZecUE/lMBsG
- RdRyc44O0sAjJP3I+H6bczpHIOfBjk6OA=
-Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 27 May 2020 01:02:22 -0700
-IronPort-SDR: 3pewpqWvWrc8AgA2uduCGgg+BnmPbltUgN74SOKWNNaLYAw3dwIbeYfPO2lE16SgA5J16kSf6U
- UfY/Z5X0WesQ==
-WDCIronportException: Internal
-Received: from unknown (HELO redsun60.ssa.fujisawa.hgst.com) ([10.149.66.36])
-  by uls-op-cesaip01.wdc.com with ESMTP; 27 May 2020 01:12:31 -0700
-From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
-To:     David Sterba <dsterba@suse.cz>
-Cc:     linux-btrfs@vger.kernel.org,
+        id S1726350AbgE0Jcu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 27 May 2020 05:32:50 -0400
+Received: from mx2.suse.de ([195.135.220.15]:37976 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1725882AbgE0Jct (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 27 May 2020 05:32:49 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 76620ABD1;
+        Wed, 27 May 2020 09:32:51 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id D7D9FDA72D; Wed, 27 May 2020 11:31:50 +0200 (CEST)
+Date:   Wed, 27 May 2020 11:31:50 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Nikolay Borisov <nborisov@suse.com>
+Cc:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+        David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/3] btrfs: remove pointless out label in
+ find_first_block_group
+Message-ID: <20200527093150.GZ18421@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
         Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-        Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v2 1/3] btrfs: remove pointless out label in find_first_block_group
-Date:   Wed, 27 May 2020 17:12:25 +0900
-Message-Id: <20200527081227.3408-2-johannes.thumshirn@wdc.com>
-X-Mailer: git-send-email 2.24.1
-In-Reply-To: <20200527081227.3408-1-johannes.thumshirn@wdc.com>
-References: <20200527081227.3408-1-johannes.thumshirn@wdc.com>
+        linux-btrfs@vger.kernel.org
+References: <20200526142124.36202-1-johannes.thumshirn@wdc.com>
+ <20200526142124.36202-2-johannes.thumshirn@wdc.com>
+ <fce3d7f8-23b8-b417-f5d3-3f6af7738118@suse.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
+In-Reply-To: <fce3d7f8-23b8-b417-f5d3-3f6af7738118@suse.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The 'out' label in find_first_block_group() does not do anything in terms
-of cleanup.
+On Tue, May 26, 2020 at 06:24:49PM +0300, Nikolay Borisov wrote:
+> 
+> 
+> On 26.05.20 г. 17:21 ч., Johannes Thumshirn wrote:
+> > The 'out' label in find_first_block_group() does not do anything in terms
+> > of cleanup.
+> > 
+> > It is better to directly return 'ret' instead of jumping to out to not
+> > confuse readers. Additionally there is no need to initialize ret with 0.
+> > 
+> > Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+> 
+> I personally prefer returning fast aka the way you've done it but dunno
+> if David is a fan of this. In any case:
 
-It is better to directly return 'ret' instead of jumping to out to not
-confuse readers. Additionally there is no need to initialize ret with 0.
+I'm not and the pattern that should be used is a mix of both. The first
+part is for the 'obvious' cases:
 
-Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
----
- fs/btrfs/block-group.c | 10 +++++-----
- 1 file changed, 5 insertions(+), 5 deletions(-)
+Early exit from function can use return, eg. when a feature is not
+enabled, when there's no cleanup needed, when the return is inside an if
+and is not nested
 
-diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index 176e8a292fd1..c5acd89c864c 100644
---- a/fs/btrfs/block-group.c
-+++ b/fs/btrfs/block-group.c
-@@ -1527,7 +1527,7 @@ static int find_first_block_group(struct btrfs_fs_info *fs_info,
- 				  struct btrfs_key *key)
- {
- 	struct btrfs_root *root = fs_info->extent_root;
--	int ret = 0;
-+	int ret;
- 	struct btrfs_key found_key;
- 	struct extent_buffer *leaf;
- 	struct btrfs_block_group_item bg;
-@@ -1536,7 +1536,7 @@ static int find_first_block_group(struct btrfs_fs_info *fs_info,
- 
- 	ret = btrfs_search_slot(NULL, root, key, path, 0, 0);
- 	if (ret < 0)
--		goto out;
-+		return ret;
- 
- 	while (1) {
- 		slot = path->slots[0];
-@@ -1546,7 +1546,7 @@ static int find_first_block_group(struct btrfs_fs_info *fs_info,
- 			if (ret == 0)
- 				continue;
- 			if (ret < 0)
--				goto out;
-+				return ret;
- 			break;
- 		}
- 		btrfs_item_key_to_cpu(leaf, &found_key, slot);
-@@ -1594,11 +1594,11 @@ static int find_first_block_group(struct btrfs_fs_info *fs_info,
- 				}
- 			}
- 			free_extent_map(em);
--			goto out;
-+			return ret;
- 		}
- 		path->slots[0]++;
- 	}
--out:
-+
- 	return ret;
- }
- 
--- 
-2.24.1
+For the rest it's recommended to use the goto and single return as it
+may be a big chunk of code with a lot of nesting and a return somewhere
+in the middle reads harder.
 
+In example of find_first_block_group the first 'goto out' after
+btrfs_search_slot would be a candidate to convert to return, but the
+rest is inside a while loop so goto is preferred.
+
+It is also important to keep one style and switch to it eventually and I
+think that the goto + single return is quite common nowadays, exceptions
+exist in the old code.

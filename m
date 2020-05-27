@@ -6,53 +6,71 @@ X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 66B0BC433E0
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 May 2020 13:07:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E5464C433DF
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 May 2020 13:12:36 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 5175A208C3
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 May 2020 13:07:27 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BF57A208FE
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 May 2020 13:12:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730202AbgE0NH0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 27 May 2020 09:07:26 -0400
-Received: from mx2.suse.de ([195.135.220.15]:33384 "EHLO mx2.suse.de"
+        id S2387627AbgE0NMg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 27 May 2020 09:12:36 -0400
+Received: from mx2.suse.de ([195.135.220.15]:37210 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1729834AbgE0NH0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 May 2020 09:07:26 -0400
+        id S2387581AbgE0NMf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 27 May 2020 09:12:35 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 31820AD5D;
-        Wed, 27 May 2020 13:07:28 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 529DCAEE2;
+        Wed, 27 May 2020 13:12:36 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id E5640DA72D; Wed, 27 May 2020 15:06:27 +0200 (CEST)
-Date:   Wed, 27 May 2020 15:06:27 +0200
+        id 8D7D2DA72D; Wed, 27 May 2020 15:11:35 +0200 (CEST)
+Date:   Wed, 27 May 2020 15:11:35 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Cc:     David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org,
-        Nikolay Borisov <nborisov@suse.com>
-Subject: Re: [PATCH v2 1/3] btrfs: remove pointless out label in
- find_first_block_group
-Message-ID: <20200527130627.GC18421@twin.jikos.cz>
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     Johannes Thumshirn <jth@kernel.org>,
+        David Sterba <dsterba@suse.cz>, linux-fsdevel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, Eric Biggers <ebiggers@google.com>,
+        Richard Weinberger <richard@nod.at>,
+        Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Subject: Re: [PATCH v3 0/3] Add file-system authentication to BTRFS
+Message-ID: <20200527131135.GD18421@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-        linux-btrfs@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>
-References: <20200527081227.3408-1-johannes.thumshirn@wdc.com>
- <20200527081227.3408-2-johannes.thumshirn@wdc.com>
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Johannes Thumshirn <jth@kernel.org>, linux-fsdevel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, Eric Biggers <ebiggers@google.com>,
+        Richard Weinberger <richard@nod.at>,
+        Johannes Thumshirn <johannes.thumshirn@wdc.com>
+References: <20200514092415.5389-1-jth@kernel.org>
+ <5663c6ca-87d4-8a98-3338-e9a077f4c82f@gmx.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20200527081227.3408-2-johannes.thumshirn@wdc.com>
+In-Reply-To: <5663c6ca-87d4-8a98-3338-e9a077f4c82f@gmx.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, May 27, 2020 at 05:12:25PM +0900, Johannes Thumshirn wrote:
-> The 'out' label in find_first_block_group() does not do anything in terms
-> of cleanup.
+On Wed, May 27, 2020 at 10:08:06AM +0800, Qu Wenruo wrote:
+> > Changes since v2:
+> > - Select CONFIG_CRYPTO_HMAC and CONFIG_KEYS (kbuild robot)
+> > - Fix double free in error path
+> > - Fix memory leak in error path
+> > - Disallow nodatasum and nodatacow when authetication is use (Eric)
 > 
-> It is better to directly return 'ret' instead of jumping to out to not
-> confuse readers. Additionally there is no need to initialize ret with 0.
+> Since we're disabling NODATACOW usages, can we also disable the
+> following features?
+> - v1 space cache
+>   V1 space cache uses NODATACOW file to store space cache, althouhg it
+>   has inline csum, but it's fixed to crc32c. So attacker can easily
+>   utilize this hole to mess space cache, and do some DoS attack.
+> 
+> - fallocate
+>   I'm not 100% sure about this, but since nodatacow is already a second
+>   class citizen in btrfs, maybe not supporting fallocate is not a
+>   strange move.
 
-https://www.kernel.org/doc/html/latest/process/coding-style.html#centralized-exiting-of-functions
+- swapfile
+  NODATACOW is required for swapfile, so authentication and swapfile are
+  mutualy exclusive.

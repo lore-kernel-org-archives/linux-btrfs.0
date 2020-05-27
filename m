@@ -2,136 +2,117 @@ Return-Path: <SRS0=8zrQ=7J=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.7 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A9D60C433E0
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 May 2020 18:05:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 80F04C433E0
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 May 2020 18:48:11 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 881E12145D
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 May 2020 18:05:35 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5BFE12089D
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 May 2020 18:48:11 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="BwrYgp1f";
-	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b="YrPb6GhD"
+	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="O5BNeYRD"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388996AbgE0SFe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 27 May 2020 14:05:34 -0400
-Received: from esa1.hgst.iphmx.com ([68.232.141.245]:58140 "EHLO
-        esa1.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2387706AbgE0SFe (ORCPT
+        id S1726974AbgE0Srw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 27 May 2020 14:47:52 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56646 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726770AbgE0Srg (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 May 2020 14:05:34 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1590602733; x=1622138733;
-  h=from:to:cc:subject:date:message-id:references:
-   content-transfer-encoding:mime-version;
-  bh=g5nuOytbkdnVtKnQy58zG/fe2zBg5FJTM3s277N6WsQ=;
-  b=BwrYgp1fg19+OESDWANHO/asEAfXkVjSfWr48gzJrAk8ee+7N81oKN1N
-   I1/wi+mY2zwVGFkv/QR3h7h4xoWHqW2edehb06YS3M3FH6xUH27AEvVz2
-   JJldg35lQCtLBEphK90PJDLpxFXqcDHadCeNKj2SUmbm+vTwdieTTKHy4
-   omQlFzrlXtRpWGdgUypbj5MOIYldJU/7Smq3bs33D0viJqSgfLKEzyW/C
-   8zbZGd73OBY4I5wH1gya9JIHHgByjCeXVnLSNEcMEqvUInOiE3HRSBz0G
-   Iinb8XgUxQNRAtPkR4bgcYJv1Vve53hYJZzx1TN5VcdvxYaFI1jvS+EtM
-   w==;
-IronPort-SDR: 3vP4prG2jeXoMpaew6ilkjeZaNPC0AwaWCgl4zPYTMG1pigH0M2elpYyvqFedu81aDHnXAvf8i
- 091ayvGfAXCbEoHhYPJ+Ah/RfGBM54sSgnZNl0dJaCFKn2iO1M13Vwd2IJqhg6LMbE6iN/qAwT
- EezgdIb4QyRETvH5Owpadt2AE7BTzbKp0Srr4I2/tl4LA4Yk9wW+HNvd3+Q62GIpm1hcrkQ69+
- M/OgE8MYTpKKBo+dVxO+x/FN25RX6H2dubk46bIyMWQuWs1wzh7Xeq+EbiOl4JFs2NObcH1/Uq
- w6o=
-X-IronPort-AV: E=Sophos;i="5.73,442,1583164800"; 
-   d="scan'208";a="247693619"
-Received: from mail-bn7nam10lp2103.outbound.protection.outlook.com (HELO NAM10-BN7-obe.outbound.protection.outlook.com) ([104.47.70.103])
-  by ob1.hgst.iphmx.com with ESMTP; 28 May 2020 02:04:58 +0800
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
- b=B7k8TGudKK/pyS/5vVr5m8TgU8p38uoNu1dJ4/++UNkFQa2bBUArO/cgQHzWq6twJPArMi/cBf6um3T9/jy8dGedr6gVwuUStgyvZ7pA7GQC2YgguBzdgtPrrBBqdiCSRpNzGIqlrtHdEA9A+j9u8rpgIQA8N/MtrHquUfa3qYq1j3bSgFWL1ufpCjAx5ZMKC3r6tpBpO7mAz5QC/Zw54LDomU+w4q9prwjyYGp/uKFbsS6d8zA7zW65lR1tspe04fnLZzeneNWRRc7X7Bas/a6X3G/EiH8fMsCiIiOtwpG0qN5j9uIJAJwI7tSJjYYPMNSNdoRIBo6vJg3eqRWwHQ==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector9901;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=g5nuOytbkdnVtKnQy58zG/fe2zBg5FJTM3s277N6WsQ=;
- b=A8g3FRODjJU1bIHtGPY8kbQUzw7n5xHj4hjqnCbEs/FYYeTLm7W6VnQPbh1W3j8J/ZUicYkYi0kBeEhmk7G5CqvDfSoMXM6sREXhepxlbQqJg/Hd//vbxKgsLw59APl7oxzkbZLWgp9J5sutMf89Wd9rZI+Rc6gw72Ra6px0XzTuW2ukvLGskI65HNORghLOktE3WGs1QFBCzPhtf8oAM5E0GjgOB0Bd76kAdLzYKE93mKAx6jxDz33g34zL0pdVhVqLpe0nHC+maaYJNtKctUHcW/lGveqelyJjiCGAE+lEwv45lbKlQOOmH5KJ95/GImR1Mh0YXSOVmOy6JE311A==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
- header.d=wdc.com; arc=none
+        Wed, 27 May 2020 14:47:36 -0400
+Received: from mail-wr1-x444.google.com (mail-wr1-x444.google.com [IPv6:2a00:1450:4864:20::444])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 583CDC008634
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 May 2020 11:41:12 -0700 (PDT)
+Received: by mail-wr1-x444.google.com with SMTP id q11so13001705wrp.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 May 2020 11:41:12 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=g5nuOytbkdnVtKnQy58zG/fe2zBg5FJTM3s277N6WsQ=;
- b=YrPb6GhDE7/N3HoLI++MCzvDkrxY3dtuZ1rXIcNzIe0Sd0PJph9zLQq9/Zf4gfvSwiDxst4u54UuWZSz72wmmlrrCPko46nvllHNIvZQcGEl/CjvCCRJkGFjMCSxH5uytgslRu/Ufb3MHXx2wvg3VgLFVy8BJU+SdzeWQlOBcPc=
-Received: from SN4PR0401MB3598.namprd04.prod.outlook.com
- (2603:10b6:803:47::21) by SN4PR0401MB3568.namprd04.prod.outlook.com
- (2603:10b6:803:46::23) with Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.3021.29; Wed, 27 May
- 2020 18:04:57 +0000
-Received: from SN4PR0401MB3598.namprd04.prod.outlook.com
- ([fe80::1447:186c:326e:30b2]) by SN4PR0401MB3598.namprd04.prod.outlook.com
- ([fe80::1447:186c:326e:30b2%7]) with mapi id 15.20.3021.029; Wed, 27 May 2020
- 18:04:57 +0000
-From:   Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
-To:     "dsterba@suse.cz" <dsterba@suse.cz>,
-        Johannes Thumshirn <jth@kernel.org>
-CC:     "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Eric Biggers <ebiggers@google.com>,
-        Richard Weinberger <richard@nod.at>,
-        Johannes Thumshirn <jthumshirn@suse.de>
-Subject: Re: [PATCH v3 2/3] btrfs: add authentication support
-Thread-Topic: [PATCH v3 2/3] btrfs: add authentication support
-Thread-Index: AQHWKdGCuxq5LET6vEqLmo6XtFxQPg==
-Date:   Wed, 27 May 2020 18:04:57 +0000
-Message-ID: <SN4PR0401MB3598E973D98DB9A0363BD3C29BB10@SN4PR0401MB3598.namprd04.prod.outlook.com>
-References: <20200514092415.5389-1-jth@kernel.org>
- <20200514092415.5389-3-jth@kernel.org> <20200527132428.GE18421@twin.jikos.cz>
-Accept-Language: en-US
-Content-Language: en-US
-X-MS-Has-Attach: 
-X-MS-TNEF-Correlator: 
-authentication-results: suse.cz; dkim=none (message not signed)
- header.d=none;suse.cz; dmarc=none action=none header.from=wdc.com;
-x-originating-ip: [129.253.240.72]
-x-ms-publictraffictype: Email
-x-ms-office365-filtering-ht: Tenant
-x-ms-office365-filtering-correlation-id: 53faeda6-aa09-4642-fdbb-08d80268776d
-x-ms-traffictypediagnostic: SN4PR0401MB3568:
-x-microsoft-antispam-prvs: <SN4PR0401MB3568EDB7DC8F1EF4223BDDD39BB10@SN4PR0401MB3568.namprd04.prod.outlook.com>
-wdcipoutbound: EOP-TRUE
-x-ms-oob-tlc-oobclassifiers: OLM:8882;
-x-forefront-prvs: 04163EF38A
-x-ms-exchange-senderadcheck: 1
-x-microsoft-antispam: BCL:0;
-x-microsoft-antispam-message-info: T8GsjkvPXlgIwitFyOkdJAhHucjTSG4tjGlaIlDYAuv3KaHMr9KlBzL5x+Hirq8P86OU6XD6dlmkNdlfk+5b66qIVycn1kVqvn1g26GnmYvuYgIrZcVFPdGsNqoyd5cQMiru703NvVqKOkVemFuFoRG4y7ImLri8N/Rqva92MyRKyH3HBSfcgX2goK+pnaEZP0vivmMF6TpRlqtIGTLvsSHLIC5KhmDeklyLWuCdy4+W5xDRtzw8x4hPx7XXWoJr8xuxyMNDBzXcmPKMw6ZH+7Gumpw6LoEfge6IXeVogomSfi9JfOCqILbftdVTtsRmQKk9UyBcGsfw/wsw0OTllQ==
-x-forefront-antispam-report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SN4PR0401MB3598.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFTY:;SFS:(4636009)(136003)(396003)(346002)(376002)(366004)(39860400002)(66946007)(33656002)(76116006)(66476007)(66556008)(66446008)(52536014)(71200400001)(64756008)(4744005)(86362001)(4326008)(8676002)(478600001)(9686003)(54906003)(5660300002)(91956017)(55016002)(8936002)(53546011)(110136005)(316002)(2906002)(186003)(7696005)(26005)(6506007);DIR:OUT;SFP:1102;
-x-ms-exchange-antispam-messagedata: 7BMwKhih6R11QCOHdYh2ngcLpxYTEUL0ou91sZoDNpS7Nilxy8J0Novw9gITLN8iurP1iSjQtprLcEZMG6Ws6dZMBaJUoPNZV9vIxIyQFpJJXE7XEHDTL4ibM/MlutoVL3lOBCo1Eh9MLnt9tkG2LO2K5z736hcvnKBgj9G9bD8Oweqc/jkivz9ImTBFMFcdHm1V0t6SjheJFHuZ9+9IOx3DGgp0geVHXnMc8aIkQy4ie9GDzbccKOnIoLnzTu2yv69J5eg71AOFjhxuG6MxutejMbKmpQp0LogqYwl+N+AucA9wkdoudsTagsP8iizBut/Re1GXYHhKdCyKfmQnZesUCRQHQEdvy6hGvPTOkzlmbDeaARlSu4FI+gT3SjbiT06hH8Wz7if4otaoCjia6mLuX3uIAGCRb3EFcs8q1NgXEb9wHNKX4HGuIMnNbyQp85bx/2SqQRf7yteYXYZ8QAF5iAhHUI/sfX75gFE1n8q8+l3OchURdrrXEsoF/ONj
-x-ms-exchange-transport-forked: True
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: quoted-printable
+        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc:content-transfer-encoding;
+        bh=PWNMZFYDlyQB4xa2P67RaXs3SsINgtYYV4uVegCiE50=;
+        b=O5BNeYRDou/1Ddic0mE/rtmpYGt9KXsU111IPk+JrGiywMmKTtvO1ZYKMWSqRqyH1J
+         NkpmYi2Y6hjV04x1KBfZVW8lFdcf00D3pxKuIr4Mf324hpNl+0IGVkg+Y1zV0xPVtddU
+         HbGUbm6/0yzl6XgPs77NdRPeXxb6HtWcvY2boceEOvwDWIrifIIj7p2KwENgF/nV1bXi
+         peSzFJPnNb7gthQMSij4smJErwdD8UPT9CDjRlkJDyoMRMSzlcMw7idF7AxeEgQEgLBc
+         0MNSn/K4Re6nnWAAzODhjPaNzlCBEs/ZKIivUArogl+PbgNHioUmcsu9p9FnS6ZjB/xr
+         OjJw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc:content-transfer-encoding;
+        bh=PWNMZFYDlyQB4xa2P67RaXs3SsINgtYYV4uVegCiE50=;
+        b=NeN24ihqJpsON4BVghyudyR5Htv3ElcdxKfziQ2kdadJA0h+ad84hdBre1v9iHaRt9
+         ai64G6lDb2GUnXEibkW/br5NGoE3ov2v3idFarTrveRVqrjytXvlUrCmDzTmpxcwLR5+
+         E3Iq7Q82FcitVkDQLHAcxjqfil2ix8U2yJQKUH/0vt+VPam4+RUmDrAFdNHFxgupoN0Q
+         bSTVSBPNyXeco9pJ756XkfU2PdU5fnl1WYh5AAhQM46WPi7rcjTq3CHgNJK7a02DjhrC
+         i36Kp7pTmcXNPFc0d4Z/+F9h4vp6CZXbux/XzThUgC3UvY4CjxA3T9+XqdU02Djsc8Cd
+         RxBw==
+X-Gm-Message-State: AOAM533BGouRuGQJXkW8i/Vx+8l11Xgm0W7MhLSMVKBfv0prc7cRdTdN
+        2MrtRTQAAVYVkBYZBKWlw/XugS1BHp3W7Jzs+gSMqw==
+X-Google-Smtp-Source: ABdhPJx5h6fA9dSeSHd5qX+wLv/eEgrw6zjx2jHRdX1nGjNWWnYXzuTt+UQLlN3DlXnhbD5u2kc/O6FRbxPmmgH4FBg=
+X-Received: by 2002:a5d:4d4d:: with SMTP id a13mr17118329wru.252.1590604871090;
+ Wed, 27 May 2020 11:41:11 -0700 (PDT)
 MIME-Version: 1.0
-X-OriginatorOrg: wdc.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: 53faeda6-aa09-4642-fdbb-08d80268776d
-X-MS-Exchange-CrossTenant-originalarrivaltime: 27 May 2020 18:04:57.5717
- (UTC)
-X-MS-Exchange-CrossTenant-fromentityheader: Hosted
-X-MS-Exchange-CrossTenant-id: b61c8803-16f3-4c35-9b17-6f65f441df86
-X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
-X-MS-Exchange-CrossTenant-userprincipalname: TaO4TDrjP2Dpc3Qslekc44QVWSO9C+6iOvSKi/xUQZNaF9RRclwt4B3//QjpnCsSgfMA1iiueAko/YjcKkcmqlAVMz8Oo6yiPVj9YTQpqII=
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: SN4PR0401MB3568
+References: <CAGAeKut52ymR5WVDTxJgQ=-fZzJ+pU8oVF89p4mBO-eaoAHiKw@mail.gmail.com>
+ <CAJCQCtSyJp0LiaO246NcEX-p7rk8-h1NocW4o4rJgN=B1Kwrug@mail.gmail.com>
+ <46fa65a3-137b-3164-0998-12bb996c15ef@gmail.com> <CAJCQCtTmcRfrZEtdnUgF0CkFFWDW-d5-LtM4SFKO4F7Xr9ai_A@mail.gmail.com>
+ <0d3b740d-a431-cca0-3841-a85e49ffff9e@libero.it>
+In-Reply-To: <0d3b740d-a431-cca0-3841-a85e49ffff9e@libero.it>
+From:   Chris Murphy <lists@colorremedies.com>
+Date:   Wed, 27 May 2020 12:40:55 -0600
+Message-ID: <CAJCQCtTt0cusvmo-W3vUqmWNbGeH1f3JFSD4gLNBE2_38avd9A@mail.gmail.com>
+Subject: Re: Planning out new fs. Am I missing anything?
+To:     Goffredo Baroncelli <kreijack@inwind.it>
+Cc:     Chris Murphy <lists@colorremedies.com>,
+        Andrei Borzenkov <arvidjaar@gmail.com>,
+        Justin Engwer <justin@mautobu.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 27/05/2020 15:25, David Sterba wrote:=0A=
-> The key for all userspace commands needs to be specified the same way as=
-=0A=
-> for kernel, ie. "--auth-key btrfs:foo" and use the appropriate ioctls to=
-=0A=
-> read the key bytes.=0A=
-=0A=
-Up to now I haven't been able to add a key to the kernel's keyring which =
-=0A=
-can be read back to user-space.=0A=
-=0A=
-How about passing in a key file, like it is done in UBIFS? Should be doable=
-=0A=
-both with libsodium and libgcrypt.=0A=
+On Wed, May 27, 2020 at 10:23 AM Goffredo Baroncelli <kreijack@libero.it> w=
+rote:
+>
+> Hi All,
+>
+> On 5/27/20 8:25 AM, Chris Murphy wrote:
+> > On Tue, May 26, 2020 at 11:22 PM Andrei Borzenkov <arvidjaar@gmail.com>=
+ wrote:
+> >>
+> >> 27.05.2020 05:20, Chris Murphy =D0=BF=D0=B8=D1=88=D0=B5=D1=82:
+> >>>
+> >>> single, dup, raid0, raid1 (all), raid10 are safe and stable.
+> >>
+> >> Until btrfs can reliably detect and automatically handle outdated devi=
+ce
+> >> I would not call any multi-device profiles "safe", at least unconditio=
+nally.
+> >
+> > I agree.
+> >
+>
+> Checking the generation of each device should be sufficient to detect "ou=
+tdated" devices. Why this check is not performed ?
+> May be that I am missing something ?
+
+But transid isn't unique enough except in isolation. Degraded volumes
+are treated completely independently. So if I take a 2x raid1 and
+mount each one degraded on separate computers and modify them. Then
+join them back together, how can Btrfs resolve the differences? It's a
+mess. Yes that is obviously a kind of sabotage. While not literal
+sabotage, the effect is the same if you have alternating degraded
+drives in successive boots.
+
+So you just cannot use degraded with either fstab or rootflags. It's
+bad advice to anyone who gives it and we need to be vigilant about
+recommending against it. Maybe the man 5 btrfs page should expressly
+say not to include degraded in fstab, or at least warn there are
+consequences.
+
+--=20
+Chris Murphy

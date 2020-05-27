@@ -3,65 +3,59 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-5.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
-	autolearn=ham autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5CA58C433E0
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 May 2020 13:55:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 915FAC433E0
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 May 2020 13:57:10 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 42D25208C3
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 May 2020 13:55:04 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7AF94208DB
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 May 2020 13:57:10 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388988AbgE0NzD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 27 May 2020 09:55:03 -0400
-Received: from mx2.suse.de ([195.135.220.15]:39988 "EHLO mx2.suse.de"
+        id S2389041AbgE0N5J (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 27 May 2020 09:57:09 -0400
+Received: from mx2.suse.de ([195.135.220.15]:42092 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2388984AbgE0NzB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 May 2020 09:55:01 -0400
+        id S2388697AbgE0N5I (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 27 May 2020 09:57:08 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 93A40B03C;
-        Wed, 27 May 2020 13:55:03 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 4E2E3B036;
+        Wed, 27 May 2020 13:57:10 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 4F499DA72D; Wed, 27 May 2020 15:54:03 +0200 (CEST)
-Date:   Wed, 27 May 2020 15:54:03 +0200
+        id 0F41CDA72D; Wed, 27 May 2020 15:56:10 +0200 (CEST)
+Date:   Wed, 27 May 2020 15:56:09 +0200
 From:   David Sterba <dsterba@suse.cz>
 To:     Nikolay Borisov <nborisov@suse.com>
 Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: Open code key_search
-Message-ID: <20200527135403.GF18421@twin.jikos.cz>
+Subject: Re: [PATCH] btrfs: remove redundant local var in
+ read_block_for_search
+Message-ID: <20200527135609.GG18421@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
         linux-btrfs@vger.kernel.org
-References: <20200527101053.7340-1-nborisov@suse.com>
+References: <20200527101059.7391-1-nborisov@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20200527101053.7340-1-nborisov@suse.com>
+In-Reply-To: <20200527101059.7391-1-nborisov@suse.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, May 27, 2020 at 01:10:53PM +0300, Nikolay Borisov wrote:
-> This function wraps the optimisation implemented by d7396f07358a,
-> however this optimisation is really used in only one place -
-> btrfs_search_slot. Just open code the optimisation and also add a
-> comment explaining how it works since it's not clear just by looking
-> at the code - the key point here is it depends on an internal invariant
-> that BTRFS' btree provides, namely intermediate pointers always contain
-> the key at slot0 at the child node. So in the case of exact match we
-> can safely assume that the given key will always be in slot 0 on lower
-> levels.
-> 
-> Furthermore this results in a reduction of btrfs_search_slot's size:
+On Wed, May 27, 2020 at 01:10:59PM +0300, Nikolay Borisov wrote:
+> The local 'b' variable is only used to directly read values from passed
+> extent buffer. So eliminate  it and directly use the input parameter. Furthermore
+> this shrinks the size of the following functions:
 > 
 > ./scripts/bloat-o-meter ctree.orig fs/btrfs/ctree.o
-> add/remove: 0/0 grow/shrink: 0/1 up/down: 0/-75 (-75)
+> add/remove: 0/0 grow/shrink: 0/2 up/down: 0/-73 (-73)
 > Function                                     old     new   delta
-> btrfs_search_slot                           2783    2708     -75
-> Total: Before=50423, After=50348, chg -0.15%
+> read_block_for_search.isra                   876     871      -5
+> push_node_left                              1112    1044     -68
+> Total: Before=50348, After=50275, chg -0.14%
 > 
 > Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 

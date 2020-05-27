@@ -2,134 +2,110 @@ Return-Path: <SRS0=8zrQ=7J=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 523CAC433E0
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 May 2020 02:21:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 818CBC433E0
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 May 2020 04:47:56 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 2ADA1207CB
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 May 2020 02:21:09 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="L98gcpZa"
+	by mail.kernel.org (Postfix) with ESMTP id 6755F20776
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 May 2020 04:47:56 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726277AbgE0CVI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 26 May 2020 22:21:08 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44700 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725836AbgE0CVI (ORCPT
+        id S1725944AbgE0Erz convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 27 May 2020 00:47:55 -0400
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:43406 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725294AbgE0Erz (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 26 May 2020 22:21:08 -0400
-Received: from mail-wr1-x442.google.com (mail-wr1-x442.google.com [IPv6:2a00:1450:4864:20::442])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A1872C061A0F
-        for <linux-btrfs@vger.kernel.org>; Tue, 26 May 2020 19:21:06 -0700 (PDT)
-Received: by mail-wr1-x442.google.com with SMTP id c3so18183664wru.12
-        for <linux-btrfs@vger.kernel.org>; Tue, 26 May 2020 19:21:06 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=710liskjMynXDxkmidpoFhbrjw8fu7pPM4yNQswldmA=;
-        b=L98gcpZaTCoH19noiIVvoizwKEkMGTb+XDfrVC2wPVLQVOC/CYuiMQ+xsl735OIRhz
-         lPn5ZJslgzyFE+052ZtzF+0v+iK+ZgflJzJaPEMo9qCczh5lE9suiNIil1RZulI1xWAi
-         mgJ5IWZo/MZqriMthG86GsxJqoSXMo9b2ueNh2jC+NBIewohLEd/A9ts8huNLPUNO0og
-         gADzN1NOrM+I8Kbdif9dz2BV4tsqIpU2RXMyscsf5L7nUoVeYsvNsLU37pcDYqlOvmS2
-         wQUnRn6HEM89es9tqX4+uyX753oku46NtuM7i9dv4B/Vy3r7298RS0ME2YHQ4Xi0HVlF
-         jONQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=710liskjMynXDxkmidpoFhbrjw8fu7pPM4yNQswldmA=;
-        b=hDN3nMEatyqJd/G9EuRm8om7iVKGwSoKek+dXa39HmhG0y8ECdu3pzyk+sCBjGO758
-         QJWX1+Qwk1tx+89Z0Zwri4veWIDJsKex6EYPdx3dBUGuSmcxtDYFzpskvR8rTGPogg8G
-         Ulse1tm+ve14RZeG5dY0GfEE1JEICBGWrJgysnO2VkmkhoPKuClQcwOghkknq2KQWXyr
-         WcdCCe5uK/kXiUn7KlPNoi4Vi3lHX2QPnd54CYomnkK0WCc0/xhz7Bwq6QqMuHwYKTfI
-         N3qzIz1hcWuDnoiWCK6tsqN4kgCVZCUt8RBzpnq3UbnPagu77INq01YcNuFMlx2f4bxD
-         VaDg==
-X-Gm-Message-State: AOAM531I0UnNDdp2jowIFJ5UfgcqvnYmta648+JfxdDPrtaB1Zl1QzOW
-        s5qDkjUEMghVk4r95fOqzpvVhrOp43X9/HVQ15K5XnyBoxQbxw==
-X-Google-Smtp-Source: ABdhPJxxdCbJQA2zdD5FmxznEzq3DXQvo0poCg37eDqap7IKm4qkbvVw7AAGFgYIg6MlRMMo2hrHlsSaRRrQyqEEF2M=
-X-Received: by 2002:adf:e883:: with SMTP id d3mr12754589wrm.274.1590546062958;
- Tue, 26 May 2020 19:21:02 -0700 (PDT)
+        Wed, 27 May 2020 00:47:55 -0400
+Received: by james.kirk.hungrycats.org (Postfix, from userid 1002)
+        id 810EC6E1C55; Wed, 27 May 2020 00:47:37 -0400 (EDT)
+Date:   Wed, 27 May 2020 00:47:37 -0400
+From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To:     Michael Thomas <mt@bxx5.de>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: Any news about rescue data from a raid5 in the last years?
+Message-ID: <20200527044737.GF10769@hungrycats.org>
+References: <41c53dd1-b553-bc2e-115d-b227f97c43c2@merkens.info>
 MIME-Version: 1.0
-References: <CAGAeKut52ymR5WVDTxJgQ=-fZzJ+pU8oVF89p4mBO-eaoAHiKw@mail.gmail.com>
-In-Reply-To: <CAGAeKut52ymR5WVDTxJgQ=-fZzJ+pU8oVF89p4mBO-eaoAHiKw@mail.gmail.com>
-From:   Chris Murphy <lists@colorremedies.com>
-Date:   Tue, 26 May 2020 20:20:46 -0600
-Message-ID: <CAJCQCtSyJp0LiaO246NcEX-p7rk8-h1NocW4o4rJgN=B1Kwrug@mail.gmail.com>
-Subject: Re: Planning out new fs. Am I missing anything?
-To:     Justin Engwer <justin@mautobu.com>
-Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: 8BIT
+In-Reply-To: <41c53dd1-b553-bc2e-115d-b227f97c43c2@merkens.info>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sun, May 24, 2020 at 7:13 PM Justin Engwer <justin@mautobu.com> wrote:
->
-> Hi, I'm the guy who lost all his VMs due to a massive configuration oversight.
->
-> I'm looking to implement the remaining 4 x 3tb drives into a new fs
-> and just want someone to look over things. I'm intending to use them
-> for backup storage (veeam).
->
-> Centos 7 Kernel 5.5.2-1.el7.elrepo.x86_64
-> btrfs-progs v4.9.1
+On Tue, May 26, 2020 at 04:44:25AM +0200, Michael Thomas wrote:
+> Hey,
+> 
+> I just wanted to ask if it's maybe possible to restore data from an old,
+> failed, raid5 btrfs fs. There are some files on it which I lost lately and
+> before I format the drives I wanted to give it another shot after some (6?)
+> years.
+> I'm not sure what I tried before, but there are 3 drives there, was 4 before
+> but 1 died (and this seems to be the problem of the disaster).
+> I tried to add 1 new, but that didn't worked.
+> So, there are 3 devices and as far as I understand, there are still no good
+> tools to rescue data from them, are they? btrfs restore and other seems only
+> compatible with 1 drive.
+> 
+> But maybe someone can give me a hint what I can try before giving up.
+> 
+> If I try to mount:
+> mount -o degraded,subvol=data,ro,device=/dev/mapper/sdb,device=/dev/mapper/sdd,device=/dev/mapper/sde
+> /dev/mapper/sde /mnt/test
+> 
+> dmesg give this errors:
+> BTRFS warning (device dm-4): suspicious: generation < chunk_root_generation:
+> 176279 < 176413
+> BTRFS info (device dm-4): allowing degraded mounts
+> BTRFS info (device dm-4): disk space caching is enabled
+> BTRFS warning (device dm-4): devid 4 uuid
+> 16490fb1-df5e-4c81-9c07-4f799d0fc132 is missing
+> BTRFS warning (device dm-4): devid 5 uuid
+> 36436209-c0d4-4a5e-9176-d44c94cb4b39 is missing
 
-I suggest updating the btrfs-progs, that's old.
->
-> mkfs.btrfs -m raid1c4 -d raid1 /dev/disk/by-id/ata-ST3000*-part1
-> echo "UUID=whatever /mnt/btrfs/ btrfs defaults,space_cache=v2 0 2" >> /etc/fstab
-> mount /mnt/btrfs
+That's 2 missing disks.  Assuming that is accurate (were there 5 in
+total?), it is not likely recoverable with raid5.
 
-Add noatime.
-https://lwn.net/Articles/499293/
+raid5 tolerates only one disk failure--two or more failures, and you'll
+only be able to get 64K contiguous chunks of data without any idea
+what files they belong to.
 
-I don't recommend space_cache=v2 in fstab. Use it once manually with
-clear_cache,space_cache=v2, and a feature flag will be set to use it
-from that point on. Soon v2 will be the default and you won't have to
-worry about this at all.
+If the messages are _not_ accurate, you might have a corrupted superblock
+on one of the disks that is making 'btrfs dev scan' fail.  If you can
+identify which disk that is, 'btrfs rescue super-recover' might help
+(though it sounds like you already tried and it didn't).
 
-fs_passno should be 0 for btrfs. man fsck.btrfs - it's a no op, it's
-not designed for unattended use during startup. XFS is the same.
+> BTRFS critical (device dm-4): corrupt leaf: block=1095416938496 slot=151
+> extent bytenr=1095389085696 len=16384 invalid generation, have 176581 expect
+> (0, 176280]
+> BTRFS error (device dm-4): block=1095416938496 read time tree block
+> corruption detected
 
+You may have more luck with kernel 4.19, which is a LTS kernel without
+the read time tree block corruption detector; however, that won't be able
+to read past the corrupted tree block, it will only let you mount the
+filesystem to try to salvage other data.
 
-> RAID1 over 4 disks and RAID1C4 metadata. Mounting with space_cache=v2.
-> Any other mount switches or btrfs creation switches I should be aware
-> of? Should I consider RAID5/6 instead? 6tb should be sufficient, so
-> it's not like I'd get anything out of RAID5, but RAID6 I suppose could
-> provide a little more safety in the case of multiple drive failures at
-> once.
-
-single, dup, raid0, raid1 (all), raid10 are safe and stable. raid56
-has caveats and you need to take precautions that kinda amount to hand
-holding. If there is a crash or power fail you need to do a scrub
-(full file system scrub) when raid56. It's a good idea, but not "very
-necessary" with other profiles. If you mount raid56 degraided, you
-seriously need to consider not doing writes or being very skeptical of
-depending on those writes because there's some evidence of degraded
-writes being corrupted.
-
-You can check the archives for more information from Zygo, about
-raid56 pitfalls. It is table on stable storage. But the point of any
-raid is to withstand a non-stable situation like a device failure. And
-there's still work needed on raid56 to get to that point, without
-handholding.
-
-If you need raid5, you might consider mdadm for the raid5, and then
-format it with btrfs using defaults which will get you DUP metadata
-and single copy data. You'll get cheap snapshots. Faster scrubs. And
-warnings for any corruptions of metadata or data.
-
-Also consider mkfs.btrfs --checksum=xxhash, but you definitely need
-btrfs-progs 5.5 or newer, and kernel 5.6 or newer. If those are too
-new for your use case, skip it. crc32c is fine, but it is intended for
-detection of casual incidental corruption and can't be  used for
-dedup. xxhash64 is about as fast, but much better collision
-resistance.
-
--- 
-Chris Murphy
+> BTRFS critical (device dm-4): corrupt leaf: block=1095416938496 slot=151
+> extent bytenr=1095389085696 len=16384 invalid generation, have 176581 expect
+> (0, 176280]
+> BTRFS error (device dm-4): block=1095416938496 read time tree block
+> corruption detected
+> BTRFS warning (device dm-4): failed to read root (objectid=4): -5
+> BTRFS error (device dm-4): open_ctree failed
+> 
+> (usebackuproot changed nothing and super-recover prints "All supers are
+> valid, no need to recover")
+> 
+> Do you have any hint, advice to get (some of) this data back?
+> 
+> 
+> Best,
+> Michael

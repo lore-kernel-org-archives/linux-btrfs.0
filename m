@@ -6,60 +6,53 @@ X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A41BDC433DF
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 May 2020 13:05:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 66B0BC433E0
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 May 2020 13:07:27 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 8EB6420899
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 May 2020 13:05:23 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5175A208C3
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 May 2020 13:07:27 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730219AbgE0NFS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 27 May 2020 09:05:18 -0400
-Received: from mx2.suse.de ([195.135.220.15]:60442 "EHLO mx2.suse.de"
+        id S1730202AbgE0NH0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 27 May 2020 09:07:26 -0400
+Received: from mx2.suse.de ([195.135.220.15]:33384 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1730142AbgE0NFR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 May 2020 09:05:17 -0400
+        id S1729834AbgE0NH0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 27 May 2020 09:07:26 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 5C796AD5D;
-        Wed, 27 May 2020 13:05:19 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 31820AD5D;
+        Wed, 27 May 2020 13:07:28 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id D16E2DA72D; Wed, 27 May 2020 15:04:18 +0200 (CEST)
-Date:   Wed, 27 May 2020 15:04:18 +0200
+        id E5640DA72D; Wed, 27 May 2020 15:06:27 +0200 (CEST)
+Date:   Wed, 27 May 2020 15:06:27 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
-Cc:     Nikolay Borisov <nborisov@suse.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs: Open code key_search
-Message-ID: <20200527130418.GB18421@twin.jikos.cz>
+To:     Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Cc:     David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org,
+        Nikolay Borisov <nborisov@suse.com>
+Subject: Re: [PATCH v2 1/3] btrfs: remove pointless out label in
+ find_first_block_group
+Message-ID: <20200527130627.GC18421@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 Mail-Followup-To: dsterba@suse.cz,
-        Johannes Thumshirn <Johannes.Thumshirn@wdc.com>,
-        Nikolay Borisov <nborisov@suse.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <20200527101053.7340-1-nborisov@suse.com>
- <SN4PR0401MB3598A1745DF9F32092AFD2269BB10@SN4PR0401MB3598.namprd04.prod.outlook.com>
- <d8b4ec4c-2741-f677-2667-61a249d37fc4@suse.com>
- <SN4PR0401MB35980C66F84370D7BD778A919BB10@SN4PR0401MB3598.namprd04.prod.outlook.com>
+        Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+        linux-btrfs@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>
+References: <20200527081227.3408-1-johannes.thumshirn@wdc.com>
+ <20200527081227.3408-2-johannes.thumshirn@wdc.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <SN4PR0401MB35980C66F84370D7BD778A919BB10@SN4PR0401MB3598.namprd04.prod.outlook.com>
+In-Reply-To: <20200527081227.3408-2-johannes.thumshirn@wdc.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, May 27, 2020 at 12:39:01PM +0000, Johannes Thumshirn wrote:
-> On 27/05/2020 14:36, Nikolay Borisov wrote:
-> > True, AFAIK David is not a fan of multiple assignments on the same line ;)
+On Wed, May 27, 2020 at 05:12:25PM +0900, Johannes Thumshirn wrote:
+> The 'out' label in find_first_block_group() does not do anything in terms
+> of cleanup.
 > 
-> Yes I remember him saying something like this.
+> It is better to directly return 'ret' instead of jumping to out to not
+> confuse readers. Additionally there is no need to initialize ret with 0.
 
-I can point you to the kernel coding style any number of times:
-
-https://www.kernel.org/doc/html/latest/process/coding-style.html#indentation
-
-"Don’t put multiple assignments on a single line either. Kernel coding
- style is super simple. Avoid tricky expressions."
+https://www.kernel.org/doc/html/latest/process/coding-style.html#centralized-exiting-of-functions

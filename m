@@ -2,81 +2,90 @@ Return-Path: <SRS0=T3D7=7K=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 687A3C433DF
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 May 2020 18:05:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B531CC433E0
+	for <linux-btrfs@archiver.kernel.org>; Thu, 28 May 2020 18:35:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 4B5822089D
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 May 2020 18:05:09 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 445F5206A1
+	for <linux-btrfs@archiver.kernel.org>; Thu, 28 May 2020 18:35:07 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=libero.it header.i=@libero.it header.b="HavJfKbJ"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2391433AbgE1SFI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 28 May 2020 14:05:08 -0400
-Received: from mx2.suse.de ([195.135.220.15]:39120 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2391258AbgE1SFG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 May 2020 14:05:06 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id CC299ADB3;
-        Thu, 28 May 2020 18:05:04 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 01E63DA72D; Thu, 28 May 2020 20:05:04 +0200 (CEST)
-Date:   Thu, 28 May 2020 20:05:04 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 0/6] btrfs-progs: btrfs-image related fixes
-Message-ID: <20200528180504.GP18421@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20200527102810.147999-1-wqu@suse.com>
- <51ac5cc9-5902-663e-da51-b5a5004ec719@suse.com>
+        id S2405880AbgE1SfB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 28 May 2020 14:35:01 -0400
+Received: from smtp-35.italiaonline.it ([213.209.10.35]:47090 "EHLO libero.it"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S2405868AbgE1Se7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 28 May 2020 14:34:59 -0400
+Received: from venice.bhome ([78.12.136.199])
+        by smtp-35.iol.local with ESMTPA
+        id eNMjjt6vcLNQWeNMnjtDeO; Thu, 28 May 2020 20:34:57 +0200
+x-libjamoibt: 1601
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=libero.it; s=s2014;
+        t=1590690897; bh=H9WRSFd82hbCDotLF6a/tKsukwxA6ocUzLx0ZSBBwwI=;
+        h=From;
+        b=HavJfKbJA0qh+niC3RXbBFeM0gw1gdMwrcviaAbVvh3ZXA6kWTdrN4ZrNFHIMPcMa
+         v95+C49F0YZJKFuDnpZCCZ99sR5+XO62sfYAEeFqu1TvP1ojtFHWfjFdAcICL+mfra
+         gSAyN+N/lJid0LIGl3RohEQaYpJqwAfUdNLgjRS9oxBZh6cSSH52XvyH3xBnGxIaQO
+         s0rR5PdXYhJnjhs8n2AwU+J6D9vpCu7SemURoV6r1a2/efzpZ0SoLfBZifNnrNXloS
+         M3CIxqWPRy8qpzFUOfuAfC/0WOEHbHrI0EVRd1d9SQ4+sVBMSCbOA/NiHlM4gNggM1
+         bfpztHILfnn4A==
+X-CNFS-Analysis: v=2.3 cv=LKsYv6e9 c=1 sm=1 tr=0
+ a=kx39m2EDZI1V9vDwKCQCcA==:117 a=kx39m2EDZI1V9vDwKCQCcA==:17
+ a=V5MRcGaKH_fqCW5OQCMA:9
+From:   Goffredo Baroncelli <kreijack@libero.it>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Michael <mclaud@roznica.com.ua>, Hugo Mills <hugo@carfax.org.uk>,
+        Martin Svec <martin.svec@zoner.cz>,
+        Wang Yugui <wangyugui@e16-tech.com>,
+        Paul Jones <paul@pauljones.id.au>,
+        Adam Borowski <kilobyte@angband.pl>,
+        Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
+        Goffredo Baroncelli <kreijack@inwind.it>
+Subject: [PATCH 2/4] Add flags for dedicated metadata disks
+Date:   Thu, 28 May 2020 20:34:49 +0200
+Message-Id: <20200528183451.16654-3-kreijack@libero.it>
+X-Mailer: git-send-email 2.27.0.rc2
+In-Reply-To: <20200528183451.16654-1-kreijack@libero.it>
+References: <20200528183451.16654-1-kreijack@libero.it>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <51ac5cc9-5902-663e-da51-b5a5004ec719@suse.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-CMAE-Envelope: MS4wfDrXuWwqW9ik1CG+woYMSGvNfWh9IhnmcXwPbE8nfDLRf4NfgySGejXwrgFP7yFQQnItySqGDeTWk+6WpDrHqrs7f5/5Q+dXlaH5VbLUDBl3F059ypjE
+ X3Xtq4rMt2ZBHXvPUzalvLQ+8Jl9bHdA69EVN399/ZGPOlgSD1658C0hf9mc6TjEErDwSyLmVwkZFwJBEnzaEngys9yzvq7AKE3802VxIxk4UsesQytgqLkO
+ zurn1hiwQZ7sRGSWpGD5ol8FlF4Cp82U+gB/NCojpIkXkxlNIxvdxaSrBTxE6+/JlicmdJZuXrSDO/rtxIvqMBDq+NMOIvkb/7gAbIZCiSzHT5fIpX+ODEkd
+ vh0ml1XrsIwk0c5Ul7kzpUZ8CN1l4vFWVIeZPsasJCikVh5lg6hPzSa1ocg6K1a6CyJKBrjQi51gH3ZptvB0l3oc8orHCg==
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, May 27, 2020 at 06:46:53PM +0800, Qu Wenruo wrote:
-> On 2020/5/27 下午6:28, Qu Wenruo wrote:
-> > This branch can be fetched from github:
-> > https://github.com/adam900710/btrfs-progs/tree/image_fixes
-> > 
-> > Since there are two binary files updates, and one big code move, it's
-> > recommended to fetch github repo, in case some patches didn't reach mail
-> > list.
-> > 
-> > This is inspried by one log tree replay dead loop bug, where the kind
-> > reporter, Pierre Abbat <phma@bezitopo.org>, gave the btrfs-image to
-> > reproduce it.
-> > 
-> > Then the image fails to pass check due to the existing log tree
-> > conflicting with device/chunk fixup.
-> > As log tree blocks are not recorded in extent tree, later COW can use
-> > log tree blocks and cause transid mismatch.
-> > 
-> > To address the problem, this patchset will:
-> > - Don't do any fixup if the source dump is single device
-> >   Since the dump has the full super block contents, we can easily check
-> >   if the source fs is single deivce.
-> > 
-> >   The chunk/device fixup is mostly for older btrfs-image behavior, which
-> >   always restores the fs into SINGLE profile.
-> >   However since commit 9088ab6a1067 ("btrfs-progs: make btrfs-image
-> >   restore to support dup"), btrfs-image can restore into DUP profile,
-> >   allowing us to do exact replay for single device fs.
-> >   This is patch 5.
-> 
-> As expected, patch 3 can't survive the mail list filter.
-> It's 402K, so I guess one needs to grab it from github anyway.
+From: Goffredo Baroncelli <kreijack@inwind.it>
 
-Thanks, patch picked from git and the whole patchset is now in devel.
+Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
+
+---
+ include/uapi/linux/btrfs_tree.h | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tree.h
+index 8e322e2c7e78..a45d09591db8 100644
+--- a/include/uapi/linux/btrfs_tree.h
++++ b/include/uapi/linux/btrfs_tree.h
+@@ -355,6 +355,9 @@ struct btrfs_key {
+ 	__u64 offset;
+ } __attribute__ ((__packed__));
+ 
++/* dev_item.type */
++#define BTRFS_DEV_PREFERRED_METADATA	(1ULL << 0)
++
+ struct btrfs_dev_item {
+ 	/* the internal btrfs device id */
+ 	__le64 devid;
+-- 
+2.27.0.rc2
+

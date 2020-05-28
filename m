@@ -2,120 +2,74 @@ Return-Path: <SRS0=T3D7=7K=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_GIT autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 24F74C433E0
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 May 2020 18:38:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D4A13C433DF
+	for <linux-btrfs@archiver.kernel.org>; Thu, 28 May 2020 18:43:16 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 117F92078C
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 May 2020 18:38:56 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B6C172078C
+	for <linux-btrfs@archiver.kernel.org>; Thu, 28 May 2020 18:43:16 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=libero.it header.i=@libero.it header.b="SEUIZGQW"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2405920AbgE1Siz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 28 May 2020 14:38:55 -0400
-Received: from mx2.suse.de ([195.135.220.15]:55448 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2405898AbgE1Siy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 May 2020 14:38:54 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id B14D2AC96;
-        Thu, 28 May 2020 18:38:51 +0000 (UTC)
-Date:   Thu, 28 May 2020 13:38:48 -0500
-From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
-To:     Filipe Manana <fdmanana@gmail.com>
-Cc:     Johannes Thumshirn <Johannes.Thumshirn@wdc.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "hch@infradead.org" <hch@infradead.org>,
-        "dsterba@suse.cz" <dsterba@suse.cz>
-Subject: Re: [PATCH 4/7] btrfs: Switch to iomap_dio_rw() for dio
-Message-ID: <20200528183848.siuljkvqmxbqa436@fiona>
-References: <20200522123837.1196-1-rgoldwyn@suse.de>
- <20200522123837.1196-5-rgoldwyn@suse.de>
- <SN4PR0401MB35981C3BAEDA15CC85D13AE79BB00@SN4PR0401MB3598.namprd04.prod.outlook.com>
- <20200526164428.sirhx6yjsghxpnqt@fiona>
- <CAL3q7H6eVOTggceRgZakmoh8jNRJm5BXwNqE0Mx3By5_GgH5YA@mail.gmail.com>
- <20200528163450.uykayisbrn6hfm2z@fiona>
- <CAL3q7H700X4E5-NjTWcWwosBwLuKeFPOPx00f+OVn=2fBfmJbQ@mail.gmail.com>
+        id S2391490AbgE1SnP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 28 May 2020 14:43:15 -0400
+Received: from smtp-35-i2.italiaonline.it ([213.209.12.35]:59032 "EHLO
+        libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S2387957AbgE1SnN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 28 May 2020 14:43:13 -0400
+X-Greylist: delayed 490 seconds by postgrey-1.27 at vger.kernel.org; Thu, 28 May 2020 14:43:12 EDT
+Received: from venice.bhome ([78.12.136.199])
+        by smtp-35.iol.local with ESMTPA
+        id eNMpjt6z1LNQWeNMqjtDfS; Thu, 28 May 2020 20:35:00 +0200
+x-libjamoibt: 1601
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=libero.it; s=s2014;
+        t=1590690900; bh=noAwzcPQ+LvYU4yAYTCyOY4PPHoDTXAQOrs9V9ZnZ5E=;
+        h=From;
+        b=SEUIZGQWf86L+6R/BKqwLARj030NLkdGIyA50d9VnSeKTgtw6Gcilcmn+iNeDE2K4
+         CCu76Dsm5cQZoICPRM8WuNTon8pj5phMR2Jb5S1UFipRJWu/AmA3bceCWaxc+3NqES
+         5PA7lx13P/0tVx/HkDCtvnZp/sNUu7JlyYvnXfdEf77IRUUfjUqKbuYhbYgX4HHd95
+         Fb/mpaNMwJI2IMyue3xip7Sr8wAgJQV0YO/lbaVayMJn3BpAbSdRlrB+brMKMhDXVS
+         9W3bx7FQz80V970dFb+3oSbCv1yRzmqIZYEJSC1rEaDcCp4IfJGI0n0HGMe1slefuc
+         VeCItxj4n6WUg==
+X-CNFS-Analysis: v=2.3 cv=LKsYv6e9 c=1 sm=1 tr=0
+ a=kx39m2EDZI1V9vDwKCQCcA==:117 a=kx39m2EDZI1V9vDwKCQCcA==:17
+ a=kwJbIOCL_PGvz6YFjioA:9
+From:   Goffredo Baroncelli <kreijack@libero.it>
+To:     linux-btrfs@vger.kernel.org
+Subject: [RFC][PATCH V4] btrfs-progs: preferred_metadata: preferred device for metadata
+Date:   Thu, 28 May 2020 20:34:53 +0200
+Message-Id: <20200528183456.18030-1-kreijack@libero.it>
+X-Mailer: git-send-email 2.27.0.rc2
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <CAL3q7H700X4E5-NjTWcWwosBwLuKeFPOPx00f+OVn=2fBfmJbQ@mail.gmail.com>
-User-Agent: NeoMutt/20180716
+Content-Transfer-Encoding: 8bit
+X-CMAE-Envelope: MS4wfLMktXZF/NLz8gW5JWErp17mvovLSk3VXUW20thWXTr8hbT3unapcCAqjKxNdJdNwAd8tMv4+ohQzRZLbu+2QPw2PdfPhyaZShww1V9z/wKAKOF51aTC
+ tYvZXiM25snZBJOYh+4ddTKC029/0uh0VbG7AFsDEnsqjee4Z2tvzAoHK4X1dlWN5q3vwcjJeo55Aw==
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 17:45 28/05, Filipe Manana wrote:
-> On Thu, May 28, 2020 at 5:34 PM Goldwyn Rodrigues <rgoldwyn@suse.de> wrote:
-> > > And who locked the extent range before?
-> >
-> > This is usually locked by a previous buffered write or read.
-> 
-> A previous buffered write/read that has already finished or is still
-> in progress?
-> 
-> Because if it has finished we're not supposed to have the file range
-> locked anymore.
+Hi all,
 
-In progress. Mixing buffered I/O with direct writes.
+this is the user space part of the patches set "[RFC][PATCH V4] btrfs:
+preferred_metadata: preferred device for metadata".
+Refer to this patches set for the info.
 
-> 
-> >
-> > >
-> > > That seems alarming to me, specially if it's a direct IO write failing
-> > > to invalidate the page cache, since a subsequent buffered read could
-> > > get stale data (what's in the page cache), and not what the direct IO
-> > > write wrote.
-> > >
-> > > Can you elaborate more on all those details?
-> >
-> > The origin of the message is when iomap_dio_rw() tries to invalidate the
-> > inode pages, but fails and calls dio_warn_stale_pagecache().
-> >
-> > In the vanilla code, generic_file_direct_write() aborts direct writes
-> > and returns 0 so that it may fallback to buffered I/O. Perhaps this
-> > should be changed in iomap_dio_rw() as well. I will write a patch to
-> > accomodate that.
-> 
-> On vanilla we have no problems of mixing buffered and direct
-> operations as long as they are done sequentially at least.
-> And even if done concurrently we take several measures to ensure that
-> are no surprises (locking ranges, waiting for any ordered extents in
-> progress, etc).
+This patch set implements the "btrfs property get/set preferred_metadata".
 
-Yes, it is because of the code in generic_file_direct_write(). Anyways,
-I did some tests with the following patch, and it seems to work. I will
-send a formal patch to so that it gets incorporated in iomap sequence as
-well.
+The first patch adds the ioctl support.
+The second patch adds the property handler.
+The third patch adds an update of the man page.
 
-diff --git a/fs/iomap/direct-io.c b/fs/iomap/direct-io.c
-index e4addfc58107..215315be6233 100644
---- a/fs/iomap/direct-io.c
-+++ b/fs/iomap/direct-io.c
-@@ -483,9 +483,15 @@ iomap_dio_rw(struct kiocb *iocb, struct iov_iter *iter,
-         */
-        ret = invalidate_inode_pages2_range(mapping,
-                        pos >> PAGE_SHIFT, end >> PAGE_SHIFT);
--       if (ret)
--               dio_warn_stale_pagecache(iocb->ki_filp);
--       ret = 0;
-+       /*
-+        * If a page can not be invalidated, return 0 to fall back
-+        * to buffered write.
-+        */
-+       if (ret) {
-+               if (ret == -EBUSY)
-+                       ret = 0;
-+               goto out_free_dio;
-+       }
- 
-        if (iov_iter_rw(iter) == WRITE && !wait_for_completion &&
-            !inode->i_sb->s_dio_done_wq) {
-
-
+BR
+G.Baroncelli
 
 -- 
-Goldwyn
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B
+
+

@@ -2,74 +2,243 @@ Return-Path: <SRS0=T3D7=7K=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+X-Spam-Status: No, score=-9.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_GIT autolearn=no autolearn_force=no version=3.4.0
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D4A13C433DF
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 May 2020 18:43:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B09CFC433E0
+	for <linux-btrfs@archiver.kernel.org>; Thu, 28 May 2020 18:43:22 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id B6C172078C
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 May 2020 18:43:16 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 975BA208A7
+	for <linux-btrfs@archiver.kernel.org>; Thu, 28 May 2020 18:43:22 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=libero.it header.i=@libero.it header.b="SEUIZGQW"
+	dkim=pass (2048-bit key) header.d=libero.it header.i=@libero.it header.b="RVa3rKtW"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2391490AbgE1SnP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 28 May 2020 14:43:15 -0400
-Received: from smtp-35-i2.italiaonline.it ([213.209.12.35]:59032 "EHLO
+        id S2391495AbgE1SnT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 28 May 2020 14:43:19 -0400
+Received: from smtp-35-i2.italiaonline.it ([213.209.12.35]:40341 "EHLO
         libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2387957AbgE1SnN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 May 2020 14:43:13 -0400
-X-Greylist: delayed 490 seconds by postgrey-1.27 at vger.kernel.org; Thu, 28 May 2020 14:43:12 EDT
+        id S2391483AbgE1SnO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 28 May 2020 14:43:14 -0400
 Received: from venice.bhome ([78.12.136.199])
         by smtp-35.iol.local with ESMTPA
-        id eNMpjt6z1LNQWeNMqjtDfS; Thu, 28 May 2020 20:35:00 +0200
+        id eNMpjt6z1LNQWeNMqjtDfZ; Thu, 28 May 2020 20:35:00 +0200
 x-libjamoibt: 1601
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=libero.it; s=s2014;
-        t=1590690900; bh=noAwzcPQ+LvYU4yAYTCyOY4PPHoDTXAQOrs9V9ZnZ5E=;
+        t=1590690900; bh=Z/c8sPKQZF5X+1S7c3rx9dxUlgk3AQKaQLOkAqa2tOU=;
         h=From;
-        b=SEUIZGQWf86L+6R/BKqwLARj030NLkdGIyA50d9VnSeKTgtw6Gcilcmn+iNeDE2K4
-         CCu76Dsm5cQZoICPRM8WuNTon8pj5phMR2Jb5S1UFipRJWu/AmA3bceCWaxc+3NqES
-         5PA7lx13P/0tVx/HkDCtvnZp/sNUu7JlyYvnXfdEf77IRUUfjUqKbuYhbYgX4HHd95
-         Fb/mpaNMwJI2IMyue3xip7Sr8wAgJQV0YO/lbaVayMJn3BpAbSdRlrB+brMKMhDXVS
-         9W3bx7FQz80V970dFb+3oSbCv1yRzmqIZYEJSC1rEaDcCp4IfJGI0n0HGMe1slefuc
-         VeCItxj4n6WUg==
+        b=RVa3rKtW7CRnANIeegddRT6g4uWuYjMdpucVCpXMZNBiJmvOC/Ncd58gcq7g/bbIF
+         lAgc7WMjKlK3SVmpTD31Rh/OFUb4XXq/RdcWk18kNqCFXWoKSpoCIbJ8fgXz2GZIzP
+         BILGYPrEJCSFK+1BgYXV8PhEJPNtG6dd6zvF1lGfUzxU63th+0NvdDWm7KFT96UmfF
+         y6aRmMt/Ya3X1gZklUSrz/QURWGNGlOjqrYvBGCAIjgtfuGVg5BrAU8NbKhkAiaeWt
+         vE/zFR5O/QKMG+9vlMQaz5IfZehbYEGHGG8dw0lVIatIEpOsPsVmdC104dLhqLbDV1
+         45SeEm38VbuUw==
 X-CNFS-Analysis: v=2.3 cv=LKsYv6e9 c=1 sm=1 tr=0
  a=kx39m2EDZI1V9vDwKCQCcA==:117 a=kx39m2EDZI1V9vDwKCQCcA==:17
- a=kwJbIOCL_PGvz6YFjioA:9
+ a=LLAD7uNQPy0wFs_dbF8A:9
 From:   Goffredo Baroncelli <kreijack@libero.it>
 To:     linux-btrfs@vger.kernel.org
-Subject: [RFC][PATCH V4] btrfs-progs: preferred_metadata: preferred device for metadata
-Date:   Thu, 28 May 2020 20:34:53 +0200
-Message-Id: <20200528183456.18030-1-kreijack@libero.it>
+Cc:     Goffredo Baroncelli <kreijack@inwind.it>
+Subject: [PATCH 2/3] Add property "preferred_metadata" to the btrfs property cmd.
+Date:   Thu, 28 May 2020 20:34:55 +0200
+Message-Id: <20200528183456.18030-3-kreijack@libero.it>
 X-Mailer: git-send-email 2.27.0.rc2
+In-Reply-To: <20200528183456.18030-1-kreijack@libero.it>
+References: <20200528183456.18030-1-kreijack@libero.it>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-CMAE-Envelope: MS4wfLMktXZF/NLz8gW5JWErp17mvovLSk3VXUW20thWXTr8hbT3unapcCAqjKxNdJdNwAd8tMv4+ohQzRZLbu+2QPw2PdfPhyaZShww1V9z/wKAKOF51aTC
- tYvZXiM25snZBJOYh+4ddTKC029/0uh0VbG7AFsDEnsqjee4Z2tvzAoHK4X1dlWN5q3vwcjJeo55Aw==
+ tYvZXiM25snZBOsDgVi9Mum4NM9uvkOOY7tnew8yBYCsmnOhud85lJdLN7ld/DcGAMASlhyrFMN5lwba9g0/euCjkwTidlfwQMQ=
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi all,
+From: Goffredo Baroncelli <kreijack@inwind.it>
 
-this is the user space part of the patches set "[RFC][PATCH V4] btrfs:
-preferred_metadata: preferred device for metadata".
-Refer to this patches set for the info.
+Handle the property preferred_metadata to a btrfs device. Below
+an example of use:
 
-This patch set implements the "btrfs property get/set preferred_metadata".
+$ # set a new value
+$ sudo btrfs property set /dev/vde preferred_metadata 1
 
-The first patch adds the ioctl support.
-The second patch adds the property handler.
-The third patch adds an update of the man page.
+$ # get the current value
+$ sudo btrfs property get /dev/vde preferred_metadata
+devid=4, path=/dev/vde: dedicated_metadata=1
 
-BR
-G.Baroncelli
+Root privileges are required.
 
+Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
+---
+ props.c | 140 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 140 insertions(+)
+
+diff --git a/props.c b/props.c
+index 67d106af..123b3813 100644
+--- a/props.c
++++ b/props.c
+@@ -20,6 +20,7 @@
+ #include <sys/xattr.h>
+ #include <fcntl.h>
+ #include <unistd.h>
++#include <sys/sysmacros.h>
+ 
+ #include <btrfsutil.h>
+ 
+@@ -166,6 +167,139 @@ out:
+ 	return ret;
+ }
+ 
++static int btrfs_find_devid_and_mnt(const char *devpath, int *devid,
++				    char *path, int maxpath)
++{
++	int ret, i, fd;
++	DIR *dir;
++	struct stat stdevpath;
++	struct btrfs_ioctl_fs_info_args fi_args;
++	struct btrfs_ioctl_dev_info_args dev_info;
++
++	ret = get_btrfs_mount(devpath, path, maxpath);
++	if (ret)
++		return ret;
++
++	fd = btrfs_open_dir(path, &dir, 1);
++	if (fd < 0)
++		return fd;
++
++	ret = stat(devpath, &stdevpath);
++	if (ret) {
++		error("cannot stat '%s'", devpath);
++		goto out;
++	}
++
++	ret = ioctl(fd, BTRFS_IOC_FS_INFO, &fi_args);
++        if (ret < 0) {
++                if (errno == EPERM)
++                        return -errno;
++                error("cannot get filesystem info: %m");
++		ret = -10;
++		goto out;
++        }
++
++	for (i = 0 ; i <= fi_args.max_id ; i++) {
++		struct stat st;
++                memset(&dev_info, 0, sizeof(dev_info));
++                ret = get_device_info(fd, i, &dev_info);
++                if (ret == -ENODEV)
++                        continue;
++                if (ret) {
++                        error("cannot get info about device devid=%d", i);
++                        goto out;
++                }
++
++		if (!dev_info.path)
++			/* missing devices */
++			continue;
++
++		ret = stat((char*)dev_info.path, &st);
++		if (ret) {
++			error("cannot stat '%s'", devpath);
++			goto out;
++		}
++
++		if (major(st.st_rdev) == major(stdevpath.st_rdev) &&
++		    minor(st.st_rdev) == minor(stdevpath.st_rdev)) {
++			*devid = dev_info.devid;
++			ret = 0;
++			goto out;
++		}
++	}
++
++	ret = -12;
++
++out:
++	close_file_or_dir(fd, dir);
++	return ret;
++}
++
++static int prop_preferred_metadata(enum prop_object_type type,
++				   const char *object,
++				   const char *name,
++				   const char *value)
++{
++	int ret, devid, fd, ival;
++	char path[PATH_MAX];
++	DIR *dir;
++	struct btrfs_ioctl_dev_properties props;
++
++	ret = btrfs_find_devid_and_mnt(object, &devid, path, sizeof(path));
++	if (ret)
++                return -5;
++
++	fd = btrfs_open_dir(path, &dir, 1);
++	if (fd < 0)
++		return fd;
++
++	memset(&props, 0, sizeof(props));
++	props.devid = devid;
++	props.properties = BTRFS_DEV_PROPERTY_TYPE|BTRFS_DEV_PROPERTY_READ;
++	ret = ioctl(fd, BTRFS_IOC_DEV_PROPERTIES, &props);
++	if (ret < 0) {
++		error("Cannot perform BTRFS_IOC_DEV_PROPERTIES ioctl on '%s'",
++				path);
++		ret = -1;
++		goto out;
++	}
++
++	if (!value) {
++		printf("devid=%d, path=%s: dedicated_metadata=%d\n",
++			devid, object,
++			!!(props.type & BTRFS_DEV_DEDICATED_METADATA));
++		ret = 0;
++		goto out;
++	}
++
++	ret = sscanf(value, "%d", &ival);
++	if (ret != 1) {
++		error("Cannot parse '%s'", value);
++		ret = -3;
++		goto out;
++	}
++
++	if (ival)
++		props.type |= BTRFS_DEV_DEDICATED_METADATA;
++	else
++		props.type &= ~BTRFS_DEV_DEDICATED_METADATA;
++
++	props.properties = BTRFS_DEV_PROPERTY_TYPE;
++	props.devid = devid;
++	ret = ioctl(fd, BTRFS_IOC_DEV_PROPERTIES, &props);
++	if (ret < 0) {
++		error("Cannot perform BTRFS_IOC_DEV_PROPERTIES ioctl on '%s'",
++			path);
++		ret = -4;
++		goto out;
++	}
++
++	ret = 0;
++out:
++	close_file_or_dir(fd, dir);
++	return ret;
++}
++
+ const struct prop_handler prop_handlers[] = {
+ 	{
+ 		.name ="ro",
+@@ -187,5 +321,11 @@ const struct prop_handler prop_handlers[] = {
+ 		.read_only = 0,
+ 	 	.types = prop_object_inode, prop_compression
+ 	},
++	{
++		.name = "preferred_metadata",
++		.desc = "preferred disk for storing metadata information",
++		.types = prop_object_dev,
++		.handler = prop_preferred_metadata,
++	},
+ 	{NULL, NULL, 0, 0, NULL}
+ };
 -- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B
-
+2.27.0.rc2
 

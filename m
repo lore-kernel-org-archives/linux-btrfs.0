@@ -8,36 +8,36 @@ X-Spam-Status: No, score=-9.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B531CC433E0
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 May 2020 18:35:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CDFC7C433E0
+	for <linux-btrfs@archiver.kernel.org>; Thu, 28 May 2020 18:35:09 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 445F5206A1
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 May 2020 18:35:07 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B53AB206A1
+	for <linux-btrfs@archiver.kernel.org>; Thu, 28 May 2020 18:35:09 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=libero.it header.i=@libero.it header.b="HavJfKbJ"
+	dkim=pass (2048-bit key) header.d=libero.it header.i=@libero.it header.b="QL8a9syv"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2405880AbgE1SfB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 28 May 2020 14:35:01 -0400
-Received: from smtp-35.italiaonline.it ([213.209.10.35]:47090 "EHLO libero.it"
+        id S2405883AbgE1SfH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 28 May 2020 14:35:07 -0400
+Received: from smtp-35.italiaonline.it ([213.209.10.35]:39096 "EHLO libero.it"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2405868AbgE1Se7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S2405869AbgE1Se7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Thu, 28 May 2020 14:34:59 -0400
 Received: from venice.bhome ([78.12.136.199])
         by smtp-35.iol.local with ESMTPA
-        id eNMjjt6vcLNQWeNMnjtDeO; Thu, 28 May 2020 20:34:57 +0200
+        id eNMjjt6vcLNQWeNMnjtDeb; Thu, 28 May 2020 20:34:57 +0200
 x-libjamoibt: 1601
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=libero.it; s=s2014;
-        t=1590690897; bh=H9WRSFd82hbCDotLF6a/tKsukwxA6ocUzLx0ZSBBwwI=;
+        t=1590690897; bh=I3afqNPYrT3PRTlHcsNgFKQRiwQgzimU035ThZUYgZo=;
         h=From;
-        b=HavJfKbJA0qh+niC3RXbBFeM0gw1gdMwrcviaAbVvh3ZXA6kWTdrN4ZrNFHIMPcMa
-         v95+C49F0YZJKFuDnpZCCZ99sR5+XO62sfYAEeFqu1TvP1ojtFHWfjFdAcICL+mfra
-         gSAyN+N/lJid0LIGl3RohEQaYpJqwAfUdNLgjRS9oxBZh6cSSH52XvyH3xBnGxIaQO
-         s0rR5PdXYhJnjhs8n2AwU+J6D9vpCu7SemURoV6r1a2/efzpZ0SoLfBZifNnrNXloS
-         M3CIxqWPRy8qpzFUOfuAfC/0WOEHbHrI0EVRd1d9SQ4+sVBMSCbOA/NiHlM4gNggM1
-         bfpztHILfnn4A==
+        b=QL8a9syvwKd3WgLOpHbZ3LlqtVgicqgQtY0d0qNhCeHrRHeLbsXTAnM2+QFvZ0YVf
+         lwb9otoYyBOLB0QADtP0TSBxXQelNAEM1LjnioMi59m6UHpDj0qwkf26C7N1LXeKB5
+         ClvFWO1iexnQOcf+SJa9oDeeraoZoggfooI4q5DvR6TN7y9fKQbTqpG6L0OABKNz71
+         vbaE+3FaJujCUbJDyqxJGoRMRYgkK41R5o7UNwMG38S0gO58nd2cFLg/QnuP+96OYU
+         oNkbyEtUyHc0yGGJVY0mJkvAtjfD4SpS6WtVgj1BeCPFHlDH8MgQbtXvFCc1ONvJhC
+         LdNLzBzKiu5BQ==
 X-CNFS-Analysis: v=2.3 cv=LKsYv6e9 c=1 sm=1 tr=0
  a=kx39m2EDZI1V9vDwKCQCcA==:117 a=kx39m2EDZI1V9vDwKCQCcA==:17
- a=V5MRcGaKH_fqCW5OQCMA:9
+ a=1s11hCFB_oFSRyqhbgYA:9 a=pHzHmUro8NiASowvMSCR:22 a=Ew2E2A-JSTLzCXPT_086:22
 From:   Goffredo Baroncelli <kreijack@libero.it>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Michael <mclaud@roznica.com.ua>, Hugo Mills <hugo@carfax.org.uk>,
@@ -47,9 +47,9 @@ Cc:     Michael <mclaud@roznica.com.ua>, Hugo Mills <hugo@carfax.org.uk>,
         Adam Borowski <kilobyte@angband.pl>,
         Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
         Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH 2/4] Add flags for dedicated metadata disks
-Date:   Thu, 28 May 2020 20:34:49 +0200
-Message-Id: <20200528183451.16654-3-kreijack@libero.it>
+Subject: [PATCH 3/4] Export dev_item.type in sysfs /sys/fs/btrfs/<uuid>/devinfo/<devid>/type
+Date:   Thu, 28 May 2020 20:34:50 +0200
+Message-Id: <20200528183451.16654-4-kreijack@libero.it>
 X-Mailer: git-send-email 2.27.0.rc2
 In-Reply-To: <20200528183451.16654-1-kreijack@libero.it>
 References: <20200528183451.16654-1-kreijack@libero.it>
@@ -69,23 +69,36 @@ From: Goffredo Baroncelli <kreijack@inwind.it>
 Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
 
 ---
- include/uapi/linux/btrfs_tree.h | 3 +++
- 1 file changed, 3 insertions(+)
+ fs/btrfs/sysfs.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
-diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tree.h
-index 8e322e2c7e78..a45d09591db8 100644
---- a/include/uapi/linux/btrfs_tree.h
-+++ b/include/uapi/linux/btrfs_tree.h
-@@ -355,6 +355,9 @@ struct btrfs_key {
- 	__u64 offset;
- } __attribute__ ((__packed__));
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index a39bff64ff24..c189fd7f9afd 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -1244,11 +1244,22 @@ static ssize_t btrfs_devinfo_writeable_show(struct kobject *kobj,
+ }
+ BTRFS_ATTR(devid, writeable, btrfs_devinfo_writeable_show);
  
-+/* dev_item.type */
-+#define BTRFS_DEV_PREFERRED_METADATA	(1ULL << 0)
++static ssize_t btrfs_devinfo_type_show(struct kobject *kobj,
++					    struct kobj_attribute *a, char *buf)
++{
++	struct btrfs_device *device = container_of(kobj, struct btrfs_device,
++						   devid_kobj);
 +
- struct btrfs_dev_item {
- 	/* the internal btrfs device id */
- 	__le64 devid;
++	return scnprintf(buf, PAGE_SIZE, "0x%08llx\n",device->type);
++}
++BTRFS_ATTR(devid, type, btrfs_devinfo_type_show);
++
+ static struct attribute *devid_attrs[] = {
+ 	BTRFS_ATTR_PTR(devid, in_fs_metadata),
+ 	BTRFS_ATTR_PTR(devid, missing),
+ 	BTRFS_ATTR_PTR(devid, replace_target),
+ 	BTRFS_ATTR_PTR(devid, writeable),
++	BTRFS_ATTR_PTR(devid, type),
+ 	NULL
+ };
+ ATTRIBUTE_GROUPS(devid);
 -- 
 2.27.0.rc2
 

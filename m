@@ -2,142 +2,97 @@ Return-Path: <SRS0=XB0s=7L=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F0074C433E0
-	for <linux-btrfs@archiver.kernel.org>; Fri, 29 May 2020 18:59:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B90C5C433E1
+	for <linux-btrfs@archiver.kernel.org>; Fri, 29 May 2020 20:27:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D5E452074B
-	for <linux-btrfs@archiver.kernel.org>; Fri, 29 May 2020 18:59:05 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 92E542067B
+	for <linux-btrfs@archiver.kernel.org>; Fri, 29 May 2020 20:27:37 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="XqOxZivM"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727888AbgE2S7F (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 29 May 2020 14:59:05 -0400
-Received: from syrinx.knorrie.org ([82.94.188.77]:39912 "EHLO
-        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725865AbgE2S7D (ORCPT
+        id S1728124AbgE2U1e (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 29 May 2020 16:27:34 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40036 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726926AbgE2U1e (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 29 May 2020 14:59:03 -0400
-Received: from [IPv6:2a02:a213:2b80:f000::12] (unknown [IPv6:2a02:a213:2b80:f000::12])
-        (using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
-         key-exchange X25519 server-signature RSA-PSS (2048 bits))
-        (No client certificate requested)
-        by syrinx.knorrie.org (Postfix) with ESMTPSA id 660B960927CCE;
-        Fri, 29 May 2020 20:59:01 +0200 (CEST)
-Subject: Re: [PATCH rfc v3] New ioctl BTRFS_IOC_GET_CHUNK_INFO.
-From:   Hans van Kranenburg <hans@knorrie.org>
-To:     kreijack@inwind.it, dsterba@suse.cz, linux-btrfs@vger.kernel.org,
-        Josef Bacik <josef@toxicpanda.com>
-References: <20200319203913.3103-1-kreijack@libero.it>
- <20200319203913.3103-2-kreijack@libero.it>
- <20200525171430.GX18421@twin.jikos.cz>
- <f1a34303-3b1a-dcda-8e67-458b3522e863@libero.it>
- <c879054a-c002-8b9b-4db5-e32caf8a732b@knorrie.org>
- <5d757a91-503b-64b7-3416-5a26bb03022f@inwind.it>
- <f5f75774-0a35-bd35-7d80-71d1f1a285a1@knorrie.org>
-Autocrypt: addr=hans@knorrie.org; keydata=
- mQINBFo2pooBEADwTBe/lrCa78zuhVkmpvuN+pXPWHkYs0LuAgJrOsOKhxLkYXn6Pn7e3xm+
- ySfxwtFmqLUMPWujQYF0r5C6DteypL7XvkPP+FPVlQnDIifyEoKq8JZRPsAFt1S87QThYPC3
- mjfluLUKVBP21H3ZFUGjcf+hnJSN9d9MuSQmAvtJiLbRTo5DTZZvO/SuQlmafaEQteaOswme
- DKRcIYj7+FokaW9n90P8agvPZJn50MCKy1D2QZwvw0g2ZMR8yUdtsX6fHTe7Ym+tHIYM3Tsg
- 2KKgt17NTxIqyttcAIaVRs4+dnQ23J98iFmVHyT+X2Jou+KpHuULES8562QltmkchA7YxZpT
- mLMZ6TPit+sIocvxFE5dGiT1FMpjM5mOVCNOP+KOup/N7jobCG15haKWtu9k0kPz+trT3NOn
- gZXecYzBmasSJro60O4bwBayG9ILHNn+v/ZLg/jv33X2MV7oYXf+ustwjXnYUqVmjZkdI/pt
- 30lcNUxCANvTF861OgvZUR4WoMNK4krXtodBoEImjmT385LATGFt9HnXd1rQ4QzqyMPBk84j
- roX5NpOzNZrNJiUxj+aUQZcINtbpmvskGpJX0RsfhOh2fxfQ39ZP/0a2C59gBQuVCH6C5qsY
- rc1qTIpGdPYT+J1S2rY88AvPpr2JHZbiVqeB3jIlwVSmkYeB/QARAQABtCZIYW5zIHZhbiBL
- cmFuZW5idXJnIDxoYW5zQGtub3JyaWUub3JnPokCTgQTAQoAOBYhBOJv1o/B6NS2GUVGTueB
- VzIYDCpVBQJaNq7KAhsDBQsJCAcDBRUKCQgLBRYCAwEAAh4BAheAAAoJEOeBVzIYDCpVgDMQ
- ANSQMebh0Rr6RNhfA+g9CKiCDMGWZvHvvq3BNo9TqAo9BC4neAoVciSmeZXIlN8xVALf6rF8
- lKy8L1omocMcWw7TlvZHBr2gZHKlFYYC34R2NvxS0xO8Iw5rhEU6paYaKzlrvxuXuHMVXgjj
- bM3zBiN8W4b9VW1MoynP9nvm1WaGtFI9GIyK9j6mBCU+N5hpvFtt4DBmuWjzdDkd3sWUufYd
- nQhGimWHEg95GWhQUiFvr4HRvYJpbjRRRQG3O/5Fm0YyTYZkI5CDzQIm5lhqKNqmuf2ENstS
- 8KcBImlbwlzEpK9Pa3Z5MUeLZ5Ywwv+d11fyhk53aT9bipdEipvcGa6DrA0DquO4WlQR+RKU
- ywoGTgntwFu8G0+tmD8J1UE6kIzFwE5kiFWjM0rxv1tAgV9ZWqmp3sbI7vzbZXn+KI/wosHV
- iDeW5rYg+PdmnOlYXQIJO+t0KmF5zJlSe7daylKZKTYtk7w1Fq/Oh1Rps9h1C4sXN8OAUO7h
- 1SAnEtehHfv52nPxwZiI6eqbvqV0uEEyLFS5pCuuwmPpC8AmOrciY2T8T+4pmkJNO2Nd3jOP
- cnJgAQrxPvD7ACp/85LParnoz5c9/nPHJB1FgbAa7N5d8ubqJgi+k9Q2lAL9vBxK67aZlFZ0
- Kd7u1w1rUlY12KlFWzxpd4TuHZJ8rwi7PUceuQINBFo2sK8BEADSZP5cKnGl2d7CHXdpAzVF
- 6K4Hxwn5eHyKC1D/YvsY+otq3PnfLJeMf1hzv2OSrGaEAkGJh/9yXPOkQ+J1OxJJs9CY0fqB
- MvHZ98iTyeFAq+4CwKcnZxLiBchQJQd0dFPujtcoMkWgzp3QdzONdkK4P7+9XfryPECyCSUF
- ib2aEkuU3Ic4LYfsBqGR5hezbJqOs96ExMnYUCEAS5aeejr3xNb8NqZLPqU38SQCTLrAmPAX
- glKVnYyEVxFUV8EXXY6AK31lRzpCqmPxLoyhPAPda9BXchRluy+QOyg+Yn4Q2DSwbgCYPrxo
- HTZKxH+E+JxCMfSW35ZE5ufvAbY3IrfHIhbNnHyxbTRgYMDbTQCDyN9F2Rvx3EButRMApj+v
- OuaMBJF/fWfxL3pSIosG9Q7uPc+qJvVMHMRNnS0Y1QQ5ZPLG0zI5TeHzMnGmSTbcvn/NOxDe
- 6EhumcclFS0foHR78l1uOhUItya/48WCJE3FvOS3+KBhYvXCsG84KVsJeen+ieX/8lnSn0d2
- ZvUsj+6wo+d8tcOAP+KGwJ+ElOilqW29QfV4qvqmxnWjDYQWzxU9WGagU3z0diN97zMEO4D8
- SfUu72S5O0o9ATgid9lEzMKdagXP94x5CRvBydWu1E5CTgKZ3YZv+U3QclOG5p9/4+QNbhqH
- W4SaIIg90CFMiwARAQABiQRsBBgBCgAgFiEE4m/Wj8Ho1LYZRUZO54FXMhgMKlUFAlo2sK8C
- GwICQAkQ54FXMhgMKlXBdCAEGQEKAB0WIQRJbJ13A1ob3rfuShiywd9yY2FfbAUCWjawrwAK
- CRCywd9yY2FfbMKbEACIGLdFrD5j8rz/1fm8xWTJlOb3+o5A6fdJ2eyPwr5njJZSG9i5R28c
- dMmcwLtVisfedBUYLaMBmCEHnj7ylOgJi60HE74ZySX055hKECNfmA9Q7eidxta5WeXeTPSb
- PwTQkAgUZ576AO129MKKP4jkEiNENePMuYugCuW7XGR+FCEC2efYlVwDQy24ZfR9Q1dNK2ny
- 0gH1c+313l0JcNTKjQ0e7M9KsQSKUr6Tk0VGTFZE2dp+dJF1sxtWhJ6Ci7N1yyj3buFFpD9c
- kj5YQFqBkEwt3OGtYNuLfdwR4d47CEGdQSm52n91n/AKdhRDG5xvvADG0qLGBXdWvbdQFllm
- v47TlJRDc9LmwpIqgtaUGTVjtkhw0SdiwJX+BjhtWTtrQPbseDe2pN3gWte/dPidJWnj8zzS
- ggZ5otY2reSvM+79w/odUlmtaFx+IyFITuFnBVcMF0uGmQBBxssew8rePQejYQHz0bZUDNbD
- VaZiXqP4njzBJu5+nzNxQKzQJ0VDF6ve5K49y0RpT4IjNOupZ+OtlZTQyM7moag+Y6bcJ7KK
- 8+MRdRjGFFWP6H/RCSFAfoOGIKTlZHubjgetyQhMwKJQ5KnGDm+XUkeIWyevPfCVPNvqF2q3
- viQm0taFit8L+x7ATpolZuSCat5PSXtgx1liGjBpPKnERxyNLQ/erRNcEACwEJliFbQm+c2i
- 6ccpx2cdtyAI1yzWuE0nr9DqpsEbIZzTCIVyry/VZgdJ27YijGJWesj/ie/8PtpDu0Cf1pty
- QOKSpC9WvRCFGJPGS8MmvzepmX2DYQ5MSKTO5tRJZ8EwCFfd9OxX2g280rdcDyCFkY3BYrf9
- ic2PTKQokx+9sLCHAC/+feSx/MA/vYpY1EJwkAr37mP7Q8KA9PCRShJziiljh5tKQeIG4sz1
- QjOrS8WryEwI160jKBBNc/M5n2kiIPCrapBGsL58MumrtbL53VimFOAJaPaRWNSdWCJSnVSv
- kCHMl/1fRgzXEMpEmOlBEY0Kdd1Ut3S2cuwejzI+WbrQLgeps2N70Ztq50PkfWkj0jeethhI
- FqIJzNlUqVkHl1zCWSFsghxiMyZmqULaGcSDItYQ+3c9fxIO/v0zDg7bLeG9Zbj4y8E47xqJ
- 6brtAAEJ1RIM42gzF5GW71BqZrbFFoI0C6AzgHjaQP1xfj7nBRSBz4ObqnsuvRr7H6Jme5rl
- eg7COIbm8R7zsFjF4tC6k5HMc1tZ8xX+WoDsurqeQuBOg7rggmhJEpDK2f+g8DsvKtP14Vs0
- Sn7fVJi87b5HZojry1lZB2pXUH90+GWPF7DabimBki4QLzmyJ/ENH8GspFulVR3U7r3YYQ5K
- ctOSoRq9pGmMi231Q+xx9LkCDQRaOtArARAA50ylThKbq0ACHyomxjQ6nFNxa9ICp6byU9Lh
- hKOax0GB6l4WebMsQLhVGRQ8H7DT84E7QLRYsidEbneB1ciToZkL5YFFaVxY0Hj1wKxCFcVo
- CRNtOfoPnHQ5m/eDLaO4o0KKL/kaxZwTn2jnl6BQDGX1Aak0u4KiUlFtoWn/E/NIv5QbTGSw
- IYuzWqqYBIzFtDbiQRvGw0NuKxAGMhwXy8VP05mmNwRdyh/CC4rWQPBTvTeMwr3nl8/G+16/
- cn4RNGhDiGTTXcX03qzZ5jZ5N7GLY5JtE6pTpLG+EXn5pAnQ7MvuO19cCbp6Dj8fXRmI0SVX
- WKSo0A2C8xH6KLCRfUMzD7nvDRU+bAHQmbi5cZBODBZ5yp5CfIL1KUCSoiGOMpMin3FrarIl
- cxhNtoE+ya23A+JVtOwtM53ESra9cJL4WPkyk/E3OvNDmh8U6iZXn4ZaKQTHaxN9yvmAUhZQ
- iQi/sABwxCcQQ2ydRb86Vjcbx+FUr5OoEyQS46gc3KN5yax9D3H9wrptOzkNNMUhFj0oK0fX
- /MYDWOFeuNBTYk1uFRJDmHAOp01rrMHRogQAkMBuJDMrMHfolivZw8RKfdPzgiI500okLTzH
- C0wgSSAOyHKGZjYjbEwmxsl3sLJck9IPOKvqQi1DkvpOPFSUeX3LPBIav5UUlXt0wjbzInUA
- EQEAAYkCNgQYAQoAIBYhBOJv1o/B6NS2GUVGTueBVzIYDCpVBQJaOtArAhsMAAoJEOeBVzIY
- DCpV4kgP+wUh3BDRhuKaZyianKroStgr+LM8FIUwQs3Fc8qKrcDaa35vdT9cocDZjkaGHprp
- mlN0OuT2PB+Djt7am2noV6Kv1C8EnCPpyDBCwa7DntGdGcGMjH9w6aR4/ruNRUGS1aSMw8sR
- QgpTVWEyzHlnIH92D+k+IhdNG+eJ6o1fc7MeC0gUwMt27Im+TxVxc0JRfniNk8PUAg4kvJq7
- z7NLBUcJsIh3hM0WHQH9AYe/mZhQq5oyZTsz4jo/dWFRSlpY7zrDS2TZNYt4cCfZj1bIdpbf
- SpRi9M3W/yBF2WOkwYgbkqGnTUvr+3r0LMCH2H7nzENrYxNY2kFmDX9bBvOWsWpcMdOEo99/
- Iayz5/q2d1rVjYVFRm5U9hG+C7BYvtUOnUvSEBeE4tnJBMakbJPYxWe61yANDQubPsINB10i
- ngzsm553yqEjLTuWOjzdHLpE4lzD416ExCoZy7RLEHNhM1YQSI2RNs8umlDfZM9Lek1+1kgB
- vT3RH0/CpPJgveWV5xDOKuhD8j5l7FME+t2RWP+gyLid6dE0C7J03ir90PlTEkMEHEzyJMPt
- OhO05Phy+d51WPTo1VSKxhL4bsWddHLfQoXW8RQ388Q69JG4m+JhNH/XvWe3aQFpYP+GZuzO
- hkMez0lHCaVOOLBSKHkAHh9i0/pH+/3hfEa4NsoHCpyy
-Message-ID: <8d62d259-a073-97ff-5f21-8417c445d48b@knorrie.org>
-Date:   Fri, 29 May 2020 20:59:01 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.4.1
+        Fri, 29 May 2020 16:27:34 -0400
+Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:e::133])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F0137C03E969;
+        Fri, 29 May 2020 13:27:33 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=bombadil.20170209; h=In-Reply-To:Content-Type:MIME-Version
+        :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+        Content-Transfer-Encoding:Content-ID:Content-Description;
+        bh=zPMXHGinvpmbOO2uHJoJ8DYwUQB9G7uW/4dEVS7cJ0I=; b=XqOxZivMEezkHFFqWL9Ubo1yCp
+        jYuOb6sadXa65JFn7RehjWvI6opK1yjZQNHP+FDKbzLYVhzNUNA0D7wftRwkHW+pgbPcxnB0sEqaL
+        sJhErbLN7ury7gOpdmM/R/bMc1mCd5cQQnOMfSMcdISKzShPzjyGTcZUh+Ep89jaovMmp1tWEn9ct
+        kRirdyfCQoBe/cDzS1Xc/MQRw4h5hxdPUopYIEJ0glXskivBMitIDKEJj39t9CkkbIZdGp+f9dJXh
+        +2HTf7n8uxWwyxrZuZN981ukwk2fuHPhi1ap6J+VubHIq6FfJrVSsQf4pMRUdII6H59MXDlDUQOJd
+        a14fe67A==;
+Received: from willy by bombadil.infradead.org with local (Exim 4.92.3 #3 (Red Hat Linux))
+        id 1jelaz-0008Ci-I1; Fri, 29 May 2020 20:27:13 +0000
+Date:   Fri, 29 May 2020 13:27:13 -0700
+From:   Matthew Wilcox <willy@infradead.org>
+To:     Kaitao Cheng <pilgrimtao@gmail.com>
+Cc:     axboe@kernel.dk, hch@lst.de, sth@linux.ibm.com,
+        viro@zeniv.linux.org.uk, clm@fb.com, jaegeuk@kernel.org,
+        hch@infradead.org, mark@fasheh.com, dhowells@redhat.com,
+        balbi@kernel.org, damien.lemoal@wdc.com, bvanassche@acm.org,
+        ming.lei@redhat.com, martin.petersen@oracle.com, satyat@google.com,
+        chaitanya.kulkarni@wdc.com, houtao1@huawei.com,
+        asml.silence@gmail.com, ajay.joshi@wdc.com,
+        linux-kernel@vger.kernel.org, songmuchun@bytedance.com,
+        hoeppner@linux.ibm.com, heiko.carstens@de.ibm.com,
+        gor@linux.ibm.com, borntraeger@de.ibm.com,
+        linux-s390@vger.kernel.org, sagi@grimberg.me,
+        linux-nvme@lists.infradead.org, gregkh@linuxfoundation.org,
+        linux-usb@vger.kernel.org, josef@toxicpanda.com, dsterba@suse.com,
+        linux-btrfs@vger.kernel.org, chao@kernel.org,
+        linux-f2fs-devel@lists.sourceforge.net, darrick.wong@oracle.com,
+        linux-xfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        jlbec@evilplan.org, joseph.qi@linux.alibaba.com,
+        ocfs2-devel@oss.oracle.com, deepa.kernel@gmail.com
+Subject: Re: [PATCH v2] blkdev: Replace blksize_bits() with ilog2()
+Message-ID: <20200529202713.GC19604@bombadil.infradead.org>
+References: <20200529141100.37519-1-pilgrimtao@gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <f5f75774-0a35-bd35-7d80-71d1f1a285a1@knorrie.org>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20200529141100.37519-1-pilgrimtao@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 5/29/20 8:54 PM, Hans van Kranenburg wrote:
-> On 5/29/20 6:23 PM, Goffredo Baroncelli wrote:
-> 
->> Another case use is to visulize how
->> the chunk are filled, or how the disks are used..
-> 
-> An example of that is btrfs-heatmap.
+On Fri, May 29, 2020 at 10:11:00PM +0800, Kaitao Cheng wrote:
+> There is a function named ilog2() exist which can replace blksize.
+> The generated code will be shorter and more efficient on some
+> architecture, such as arm64. And ilog2() can be optimized according
+> to different architecture.
 
-Oops, forgot the example. Here's it showing data and metadata getting
-sorted out while doing some balance after setting things up for the
-preferred metadata/data placement. It's two 10G disks, and it's the
-'physical' view, so the left half is the "slow" part and the right half
-is the "fast" part of the filesystem, fun. :)
+We'd get the same benefit from a smaller patch with just:
 
-https://syrinx.knorrie.org/~knorrie/btrfs/keep/2020-05-29-ssd_metadata.mp4
-
-Hans
+--- a/include/linux/blkdev.h
++++ b/include/linux/blkdev.h
+@@ -1502,15 +1502,9 @@ static inline int blk_rq_aligned(struct request_queue *q, unsigned long addr,
+ 	return !(addr & alignment) && !(len & alignment);
+ }
+ 
+-/* assumes size > 256 */
+ static inline unsigned int blksize_bits(unsigned int size)
+ {
+-	unsigned int bits = 8;
+-	do {
+-		bits++;
+-		size >>= 1;
+-	} while (size > 256);
+-	return bits;
++	return ilog2(size);
+ }
+ 
+ static inline unsigned int block_size(struct block_device *bdev)

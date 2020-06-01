@@ -6,28 +6,28 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E8CB3C433E1
-	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jun 2020 15:37:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BBC06C433E3
+	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jun 2020 15:37:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D30FD2065C
-	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jun 2020 15:37:56 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9A9082065C
+	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jun 2020 15:37:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728129AbgFAPh4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 1 Jun 2020 11:37:56 -0400
-Received: from mx2.suse.de ([195.135.220.15]:34084 "EHLO mx2.suse.de"
+        id S1728145AbgFAPh5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 1 Jun 2020 11:37:57 -0400
+Received: from mx2.suse.de ([195.135.220.15]:34068 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728031AbgFAPhy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 1 Jun 2020 11:37:54 -0400
+        id S1728059AbgFAPhz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 1 Jun 2020 11:37:55 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id DC4B4B230;
-        Mon,  1 Jun 2020 15:37:54 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 531A6B20E;
+        Mon,  1 Jun 2020 15:37:55 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 29/46] btrfs: Make btrfs_run_delalloc_range take btrfs_inode
-Date:   Mon,  1 Jun 2020 18:37:27 +0300
-Message-Id: <20200601153744.31891-30-nborisov@suse.com>
+Subject: [PATCH 31/46] btrfs: Make btrfs_create_dio_extent take btrfs_inode
+Date:   Mon,  1 Jun 2020 18:37:29 +0300
+Message-Id: <20200601153744.31891-32-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20200601153744.31891-1-nborisov@suse.com>
 References: <20200601153744.31891-1-nborisov@suse.com>
@@ -36,95 +36,72 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-All children now take btrfs_inode so convert it to taking it as a parameter
-as well.
+Take btrfs_inode directly and stop using superfulous BTRFS_I calls.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/ctree.h     |  2 +-
- fs/btrfs/extent_io.c |  6 ++++--
- fs/btrfs/inode.c     | 26 +++++++++++++-------------
- 3 files changed, 18 insertions(+), 16 deletions(-)
+ fs/btrfs/inode.c | 19 +++++++++----------
+ 1 file changed, 9 insertions(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index bd69e912e8d6..e6f47bdf6f0a 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2927,7 +2927,7 @@ int btrfs_prealloc_file_range_trans(struct inode *inode,
- 				    struct btrfs_trans_handle *trans, int mode,
- 				    u64 start, u64 num_bytes, u64 min_size,
- 				    loff_t actual_len, u64 *alloc_hint);
--int btrfs_run_delalloc_range(struct inode *inode, struct page *locked_page,
-+int btrfs_run_delalloc_range(struct btrfs_inode *inode, struct page *locked_page,
- 		u64 start, u64 end, int *page_started, unsigned long *nr_written,
- 		struct writeback_control *wbc);
- int btrfs_writepage_cow_fixup(struct page *page, u64 start, u64 end);
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 4d19cb930d57..e2a033e77b25 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -3444,8 +3444,10 @@ static noinline_for_stack int writepage_delalloc(struct inode *inode,
- 			delalloc_start = delalloc_end + 1;
- 			continue;
- 		}
--		ret = btrfs_run_delalloc_range(inode, page, delalloc_start,
--				delalloc_end, &page_started, nr_written, wbc);
-+		ret = btrfs_run_delalloc_range(BTRFS_I(inode), page,
-+					       delalloc_start,
-+					       delalloc_end, &page_started,
-+					       nr_written, wbc);
- 		if (ret) {
- 			SetPageError(page);
- 			/*
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 709253e2470a..54e291c94214 100644
+index 96cb7cc42930..ac330d6c7c3d 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -1795,31 +1795,31 @@ static inline int need_force_cow(struct btrfs_inode *inode, u64 start, u64 end)
-  * Function to process delayed allocation (create CoW) for ranges which are
-  * being touched for the first time.
-  */
--int btrfs_run_delalloc_range(struct inode *inode, struct page *locked_page,
-+int btrfs_run_delalloc_range(struct btrfs_inode *inode, struct page *locked_page,
- 		u64 start, u64 end, int *page_started, unsigned long *nr_written,
- 		struct writeback_control *wbc)
- {
- 	int ret;
--	int force_cow = need_force_cow(BTRFS_I(inode), start, end);
-+	int force_cow = need_force_cow(inode, start, end);
-
--	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODATACOW && !force_cow) {
--		ret = run_delalloc_nocow(BTRFS_I(inode), locked_page, start, end,
-+	if (inode->flags & BTRFS_INODE_NODATACOW && !force_cow) {
-+		ret = run_delalloc_nocow(inode, locked_page, start, end,
- 					 page_started, 1, nr_written);
--	} else if (BTRFS_I(inode)->flags & BTRFS_INODE_PREALLOC && !force_cow) {
--		ret = run_delalloc_nocow(BTRFS_I(inode), locked_page, start, end,
-+	} else if (inode->flags & BTRFS_INODE_PREALLOC && !force_cow) {
-+		ret = run_delalloc_nocow(inode, locked_page, start, end,
- 					 page_started, 0, nr_written);
--	} else if (!inode_can_compress(BTRFS_I(inode)) ||
--		   !inode_need_compress(BTRFS_I(inode), start, end)) {
--		ret = cow_file_range(BTRFS_I(inode), locked_page, start, end,
--				      page_started, nr_written, 1);
-+	} else if (!inode_can_compress(inode) ||
-+		   !inode_need_compress(inode, start, end)) {
-+		ret = cow_file_range(inode, locked_page, start, end,
-+				     page_started, nr_written, 1);
- 	} else {
- 		set_bit(BTRFS_INODE_HAS_ASYNC_EXTENT,
--			&BTRFS_I(inode)->runtime_flags);
--		ret = cow_file_range_async(BTRFS_I(inode), wbc, locked_page, start, end,
-+			&inode->runtime_flags);
-+		ret = cow_file_range_async(inode, wbc, locked_page, start, end,
- 					   page_started, nr_written);
- 	}
- 	if (ret)
--		btrfs_cleanup_ordered_extents(BTRFS_I(inode), locked_page, start,
-+		btrfs_cleanup_ordered_extents(inode, locked_page, start,
- 					      end - start + 1);
- 	return ret;
+@@ -6823,7 +6823,7 @@ struct extent_map *btrfs_get_extent_fiemap(struct btrfs_inode *inode,
+ 	return em;
  }
+
+-static struct extent_map *btrfs_create_dio_extent(struct inode *inode,
++static struct extent_map *btrfs_create_dio_extent(struct btrfs_inode *inode,
+ 						  const u64 start,
+ 						  const u64 len,
+ 						  const u64 orig_start,
+@@ -6837,21 +6837,20 @@ static struct extent_map *btrfs_create_dio_extent(struct inode *inode,
+ 	int ret;
+
+ 	if (type != BTRFS_ORDERED_NOCOW) {
+-		em = create_io_em(BTRFS_I(inode), start, len, orig_start,
+-				  block_start, block_len, orig_block_len,
+-				  ram_bytes,
++		em = create_io_em(inode, start, len, orig_start, block_start,
++				  block_len, orig_block_len, ram_bytes,
+ 				  BTRFS_COMPRESS_NONE, /* compress_type */
+ 				  type);
+ 		if (IS_ERR(em))
+ 			goto out;
+ 	}
+-	ret = btrfs_add_ordered_extent_dio(BTRFS_I(inode), start, block_start,
+-					   len, block_len, type);
++	ret = btrfs_add_ordered_extent_dio(inode, start, block_start, len,
++					   block_len, type);
+ 	if (ret) {
+ 		if (em) {
+ 			free_extent_map(em);
+-			btrfs_drop_extent_cache(BTRFS_I(inode), start,
+-						start + len - 1, 0);
++			btrfs_drop_extent_cache(inode, start, start + len - 1,
++						0);
+ 		}
+ 		em = ERR_PTR(ret);
+ 	}
+@@ -6876,7 +6875,7 @@ static struct extent_map *btrfs_new_extent_direct(struct inode *inode,
+ 	if (ret)
+ 		return ERR_PTR(ret);
+
+-	em = btrfs_create_dio_extent(inode, start, ins.offset, start,
++	em = btrfs_create_dio_extent(BTRFS_I(inode), start, ins.offset, start,
+ 				     ins.objectid, ins.offset, ins.offset,
+ 				     ins.offset, BTRFS_ORDERED_REGULAR);
+ 	btrfs_dec_block_group_reservations(fs_info, ins.objectid);
+@@ -7210,7 +7209,7 @@ static int btrfs_get_blocks_direct_write(struct extent_map **map,
+ 		    btrfs_inc_nocow_writers(fs_info, block_start)) {
+ 			struct extent_map *em2;
+
+-			em2 = btrfs_create_dio_extent(inode, start, len,
++			em2 = btrfs_create_dio_extent(BTRFS_I(inode), start, len,
+ 						      orig_start, block_start,
+ 						      len, orig_block_len,
+ 						      ram_bytes, type);
 --
 2.17.1
 

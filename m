@@ -2,146 +2,296 @@ Return-Path: <SRS0=ZM7b=7O=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-9.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7F50FC433E0
-	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jun 2020 18:41:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5EB36C433DF
+	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jun 2020 20:10:15 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 5C99B206E2
-	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jun 2020 18:41:51 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1591036911;
-	bh=USC3x+YRzLRh/Bb8LPSZ3DWCyO3i7bWnYorOw+JTiB8=;
-	h=From:To:Subject:Date:List-ID:From;
-	b=mCQM/MLBjpB72rHguAVcuI4MB79pU7IZg7EfeyvQTR9lbhyUwkdmQI0qIQQT7/6KI
-	 BeY/bfh1AWGKevLw/g5uscak8BE/cxHqyQK+lLggWZPiki/FUTkAOvO4xgAAobqnwe
-	 Um02moI6kzdAXmcFXLDk732hJF126++cr1Not7HI=
+	by mail.kernel.org (Postfix) with ESMTP id 33D6120734
+	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jun 2020 20:10:15 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=mpdesouza.com header.i=@mpdesouza.com header.b="BXucgNdg"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731197AbgFASMP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 1 Jun 2020 14:12:15 -0400
-Received: from mail.kernel.org ([198.145.29.99]:59558 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1730745AbgFASMN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 1 Jun 2020 14:12:13 -0400
-Received: from debian8.Home (bl8-197-74.dsl.telepac.pt [85.241.197.74])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id BEC4B2065C
-        for <linux-btrfs@vger.kernel.org>; Mon,  1 Jun 2020 18:12:11 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1591035132;
-        bh=USC3x+YRzLRh/Bb8LPSZ3DWCyO3i7bWnYorOw+JTiB8=;
-        h=From:To:Subject:Date:From;
-        b=bnqa4WZd+hUTorN46rvpxN8O7rR+4T0zDI0Z6CaVcd/e3kXBFE9Snt+Xce66cKBnM
-         zBb/cytNjt5KD9xkOZa3zGziJUoQB98Sg7tEDPaRX/h44zO4m0CXfZj5OCjNNl+vSb
-         MOTZ+ObZiFmUMm3c3vfpRTbZNuCQChBsBCWNRmOI=
-From:   fdmanana@kernel.org
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/3] Btrfs: fix a block group ref counter leak after failure to remove block group
-Date:   Mon,  1 Jun 2020 19:12:06 +0100
-Message-Id: <20200601181206.24852-1-fdmanana@kernel.org>
-X-Mailer: git-send-email 2.11.0
+        id S1728445AbgFAUKO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 1 Jun 2020 16:10:14 -0400
+Received: from gateway34.websitewelcome.com ([192.185.149.222]:36517 "EHLO
+        gateway34.websitewelcome.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1726944AbgFAUKO (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 1 Jun 2020 16:10:14 -0400
+X-Greylist: delayed 1488 seconds by postgrey-1.27 at vger.kernel.org; Mon, 01 Jun 2020 16:10:12 EDT
+Received: from cm14.websitewelcome.com (cm14.websitewelcome.com [100.42.49.7])
+        by gateway34.websitewelcome.com (Postfix) with ESMTP id 9C1532171A32
+        for <linux-btrfs@vger.kernel.org>; Mon,  1 Jun 2020 14:45:24 -0500 (CDT)
+Received: from br540.hostgator.com.br ([108.179.252.180])
+        by cmsmtp with SMTP
+        id fqNAjjJiHXVkQfqNAjkoOK; Mon, 01 Jun 2020 14:45:24 -0500
+X-Authority-Reason: nr=8
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=mpdesouza.com; s=default; h=Content-Transfer-Encoding:MIME-Version:
+        Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:Content-Type:Content-ID:
+        Content-Description:Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc
+        :Resent-Message-ID:In-Reply-To:References:List-Id:List-Help:List-Unsubscribe:
+        List-Subscribe:List-Post:List-Owner:List-Archive;
+        bh=Q1JreXTZjrSrmapWwl5nnZf/bmirF8RiJudrX89Jpk8=; b=BXucgNdg2y94QtR6EokKp9ulvQ
+        EsT1Ycq/0jYdhHzqz85wMsZLVVy/Q7aV9BiCkFBmAdbeHPpyP68BciBjMsjUJQLjXC/GPtOrOBPVQ
+        ilUp3ZHdyXqkotXuLbd+YtNY113ffYw29fN3GueGZxDEcv7u9s7f/1VVgg8s5uTyrxNjpS/o67BQS
+        8FJULRmFFPj7QbDgeXO4qcOBPf5SnFEat3KD7EBwDaBmuexeDpCdz51iaA2nt0z31sCHOgABIMoGV
+        za74wB5UPyBhHerLBHnZLBY8+o6nqk7SnoiCjSzoSrN0em2j/GCBZwp/SvR4bWcIZEv4lBTXxOYDD
+        r9D46a4g==;
+Received: from 179.187.207.6.dynamic.adsl.gvt.net.br ([179.187.207.6]:60492 helo=hephaestus.suse.de)
+        by br540.hostgator.com.br with esmtpsa  (TLS1.2) tls TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+        (Exim 4.93)
+        (envelope-from <marcos@mpdesouza.com>)
+        id 1jfqN9-002a1h-TG; Mon, 01 Jun 2020 16:45:24 -0300
+From:   Marcos Paulo de Souza <marcos@mpdesouza.com>
+To:     dsterba@suse.com, linux-btrfs@vger.kernel.org, fdmanana@suse.com,
+        fstests@vger.kernel.org
+Cc:     Marcos Paulo de Souza <mpdesouza@suse.com>
+Subject: [PATCH v2] btrfs: test if the capability is kept on incremental send
+Date:   Mon,  1 Jun 2020 16:48:45 -0300
+Message-Id: <20200601194845.11829-1-marcos@mpdesouza.com>
+X-Mailer: git-send-email 2.26.2
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
+X-AntiAbuse: This header was added to track abuse, please include it with any abuse report
+X-AntiAbuse: Primary Hostname - br540.hostgator.com.br
+X-AntiAbuse: Original Domain - vger.kernel.org
+X-AntiAbuse: Originator/Caller UID/GID - [47 12] / [47 12]
+X-AntiAbuse: Sender Address Domain - mpdesouza.com
+X-BWhitelist: no
+X-Source-IP: 179.187.207.6
+X-Source-L: No
+X-Exim-ID: 1jfqN9-002a1h-TG
+X-Source: 
+X-Source-Args: 
+X-Source-Dir: 
+X-Source-Sender: 179.187.207.6.dynamic.adsl.gvt.net.br (hephaestus.suse.de) [179.187.207.6]:60492
+X-Source-Auth: marcos@mpdesouza.com
+X-Email-Count: 4
+X-Source-Cap: bXBkZXNvNTM7bXBkZXNvNTM7YnI1NDAuaG9zdGdhdG9yLmNvbS5icg==
+X-Local-Domain: yes
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+From: Marcos Paulo de Souza <mpdesouza@suse.com>
 
-When removing a block group, if we fail to delete the block group's item
-from the extent tree, we jump to the 'out' label and end up decrementing
-the block group's reference count once only (by 1), resulting in a counter
-leak because the block group at that point was already removed from the
-block group cache rbtree - so we have to decrement the reference count
-twice, once for the rbtree and once for our lookup at the start of the
-function.
+This test exercises full send and incremental send operations for cases
+where files have capabilities, ensuring the capabilities aren't lost in
+the process.
 
-To make things less error prone, decrement the reference count for the
-rbtree immediately after removing the block group from it. This also
-eleminates the need for two different exit labels on error, renaming
-'out_put_label' to just 'out' and removing the old 'out'.
+There was a problem with kernel <=5.7 that was making capabilities to be lost
+after a combination of full + incremental send. This behavior was fixed by the
+following patch:
 
-Fixes: f6033c5e333238 ("btrfs: fix block group leak when removing fails")
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
+btrfs: send: Emit file capabilities after chown
+
+Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
 ---
- fs/btrfs/block-group.c | 19 +++++++++----------
- 1 file changed, 9 insertions(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index 176e8a292fd1..5bb76a437f5b 100644
---- a/fs/btrfs/block-group.c
-+++ b/fs/btrfs/block-group.c
-@@ -940,7 +940,7 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
- 	path = btrfs_alloc_path();
- 	if (!path) {
- 		ret = -ENOMEM;
--		goto out_put_group;
-+		goto out;
- 	}
- 
- 	/*
-@@ -978,7 +978,7 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
- 		ret = btrfs_orphan_add(trans, BTRFS_I(inode));
- 		if (ret) {
- 			btrfs_add_delayed_iput(inode);
--			goto out_put_group;
-+			goto out;
- 		}
- 		clear_nlink(inode);
- 		/* One for the block groups ref */
-@@ -1001,13 +1001,13 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
- 
- 	ret = btrfs_search_slot(trans, tree_root, &key, path, -1, 1);
- 	if (ret < 0)
--		goto out_put_group;
-+		goto out;
- 	if (ret > 0)
- 		btrfs_release_path(path);
- 	if (ret == 0) {
- 		ret = btrfs_del_item(trans, tree_root, path);
- 		if (ret)
--			goto out_put_group;
-+			goto out;
- 		btrfs_release_path(path);
- 	}
- 
-@@ -1016,6 +1016,9 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
- 		 &fs_info->block_group_cache_tree);
- 	RB_CLEAR_NODE(&block_group->cache_node);
- 
-+	/* Once for the block groups rbtree. */
-+	btrfs_put_block_group(block_group);
+ Changes from v1:
+ * Remove the steps to reproduce a problem fixes in btrfs code. (Filipe)
+ * Remove the underscore from the local function names (Filipe)
+ * Change function name _check_xattr -> check_capabilities (Filipe)
+ * Rename all local variables to be lowercase (Filipe)
+ * Put FS1 and FS2 variables in the global context of the test (Filipe)
+ * Changes all occurrences of _fail into a simple echo (Filipe)
+ * Declare some local variables as "local" (Filipe)
+ * Some Capability -> Capabilities, since we are dealing with multiple capabilities (Filipe)
+ * Some cap -> capabilities, inc -> incremental (Filipe)
+ * Add missing "send group" (Filipe)
+
+ tests/btrfs/214     | 152 ++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/214.out |   6 ++
+ tests/btrfs/group   |   1 +
+ 3 files changed, 159 insertions(+)
+ create mode 100755 tests/btrfs/214
+ create mode 100644 tests/btrfs/214.out
+
+diff --git a/tests/btrfs/214 b/tests/btrfs/214
+new file mode 100755
+index 00000000..113bbb27
+--- /dev/null
++++ b/tests/btrfs/214
+@@ -0,0 +1,152 @@
++#! /bin/bash
++# SPDX-License-Identifier: GPL-2.0
++# Copyright (C) 2020 SUSE Linux Products GmbH. All Rights Reserved.
++#
++# FS QA Test 214
++#
++# Test if the file capabilities aren't lost after full and incremental send
++#
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
 +
- 	if (fs_info->first_logical_byte == block_group->start)
- 		fs_info->first_logical_byte = (u64)-1;
- 	spin_unlock(&fs_info->block_group_cache_lock);
-@@ -1125,10 +1128,7 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
- 
- 	ret = remove_block_group_free_space(trans, block_group);
- 	if (ret)
--		goto out_put_group;
--
--	/* Once for the block groups rbtree */
--	btrfs_put_block_group(block_group);
-+		goto out;
- 
- 	ret = remove_block_group_item(trans, path, block_group);
- 	if (ret < 0)
-@@ -1145,10 +1145,9 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
- 		free_extent_map(em);
- 	}
- 
--out_put_group:
-+out:
- 	/* Once for the lookup reference */
- 	btrfs_put_block_group(block_group);
--out:
- 	if (remove_rsv)
- 		btrfs_delayed_refs_rsv_release(fs_info, 1);
- 	btrfs_free_path(path);
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "cleanup; exit \$status" 0 1 2 3 15
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# remove previous $seqres.full before test
++rm -f $seqres.full
++
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch
++_require_command "$SETCAP_PROG" setcap
++_require_command "$GETCAP_PROG" getcap
++
++FS1="$SCRATCH_MNT/fs1"
++FS2="$SCRATCH_MNT/fs2"
++
++cleanup()
++{
++	cd /
++	rm -f $tmp.*
++}
++
++check_capabilities()
++{
++	local file
++	local cap
++	local ret
++	file="$1"
++	cap="$2"
++	ret=$($GETCAP_PROG "$file")
++	if [ -z "$ret" ]; then
++		echo "$ret"
++		echo "missing capability in file $file"
++	fi
++	if [[ "$ret" != *$cap* ]]; then
++		echo "$cap"
++		echo "Capabilities do not match. Output: $ret"
++	fi
++}
++
++setup()
++{
++	_scratch_mkfs >/dev/null
++	_scratch_mount
++
++	$BTRFS_UTIL_PROG subvolume create "$FS1" > /dev/null
++	$BTRFS_UTIL_PROG subvolume create "$FS2" > /dev/null
++}
++
++full_nocap_inc_withcap_send()
++{
++	local ret
++
++	setup
++
++	# Test full send containing a file without capabilities
++	touch "$FS1/foo.bar"
++	$BTRFS_UTIL_PROG subvolume snapshot -r "$FS1" "$FS1/snap_init" >/dev/null
++	$BTRFS_UTIL_PROG send "$FS1/snap_init" -q | $BTRFS_UTIL_PROG receive "$FS2" -q
++	# ensure that we don't have capabilities set
++	ret=$($GETCAP_PROG "$FS2/snap_init/foo.bar")
++	if [ -n "$ret" ]; then
++		echo "File contains capabilities when it shouldn't"
++	fi
++
++	# Test if incremental send brings the newly added capability
++	$SETCAP_PROG "cap_sys_ptrace+ep cap_sys_nice+ep" "$FS1/foo.bar"
++	$BTRFS_UTIL_PROG subvolume snapshot -r "$FS1" "$FS1/snap_inc" >/dev/null
++	$BTRFS_UTIL_PROG send -p "$FS1/snap_init" "$FS1/snap_inc" -q | \
++					$BTRFS_UTIL_PROG receive "$FS2" -q
++	check_capabilities "$FS2/snap_inc/foo.bar" "cap_sys_ptrace,cap_sys_nice+ep"
++
++	_scratch_unmount
++}
++
++roundtrip_send()
++{
++	local files
++
++	# files should include foo.bar
++	files="$1"
++
++	setup
++
++	# create files on fs1, must contain foo.bar
++	for f in $files; do
++		touch "$FS1/$f"
++	done
++
++	# Test full send, checking if the receiving side keeps the capabilities
++	$SETCAP_PROG "cap_sys_ptrace+ep cap_sys_nice+ep" "$FS1/foo.bar"
++	$BTRFS_UTIL_PROG subvolume snapshot -r "$FS1" "$FS1/snap_init" >/dev/null
++	$BTRFS_UTIL_PROG send "$FS1/snap_init" -q | $BTRFS_UTIL_PROG receive "$FS2" -q
++	check_capabilities "$FS2/snap_init/foo.bar" "cap_sys_ptrace,cap_sys_nice+ep"
++
++	# Test incremental send with different owner/group but same capabilities
++	chgrp 100 "$FS1/foo.bar"
++	$SETCAP_PROG "cap_sys_ptrace+ep cap_sys_nice+ep" "$FS1/foo.bar"
++	$BTRFS_UTIL_PROG subvolume snapshot -r "$FS1" "$FS1/snap_inc" >/dev/null
++	check_capabilities "$FS1/snap_inc/foo.bar" "cap_sys_ptrace,cap_sys_nice+ep"
++	$BTRFS_UTIL_PROG send -p "$FS1/snap_init" "$FS1/snap_inc" -q | \
++				$BTRFS_UTIL_PROG receive "$FS2" -q
++	check_capabilities "$FS2/snap_inc/foo.bar" "cap_sys_ptrace,cap_sys_nice+ep"
++
++	# Test capabilities after incremental send with different group and capabilities
++	chgrp 0 "$FS1/foo.bar"
++	$SETCAP_PROG "cap_sys_time+ep cap_syslog+ep" "$FS1/foo.bar"
++	$BTRFS_UTIL_PROG subvolume snapshot -r "$FS1" "$FS1/snap_inc2" >/dev/null
++	check_capabilities "$FS1/snap_inc2/foo.bar" "cap_sys_time,cap_syslog+ep"
++	$BTRFS_UTIL_PROG send -p "$FS1/snap_inc" "$FS1/snap_inc2" -q | \
++				$BTRFS_UTIL_PROG receive "$FS2"  -q
++	check_capabilities "$FS2/snap_inc2/foo.bar" "cap_sys_time,cap_syslog+ep"
++
++	_scratch_unmount
++}
++
++# real QA test starts here
++
++echo "Test full send + file without capabilities, then incremental send bringing a new capability"
++full_nocap_inc_withcap_send
++
++echo "Testing if foo.bar alone can keep its capabilities"
++roundtrip_send "foo.bar"
++
++echo "Test foo.bar being the first item among other files"
++roundtrip_send "foo.bar foo.bax foo.baz"
++
++echo "Test foo.bar with objectid between two other files"
++roundtrip_send "foo1 foo.bar foo3"
++
++echo "Test foo.bar being the last item among other files"
++roundtrip_send "foo1 foo2 foo.bar"
++
++status=0
++exit
+diff --git a/tests/btrfs/214.out b/tests/btrfs/214.out
+new file mode 100644
+index 00000000..197a39a9
+--- /dev/null
++++ b/tests/btrfs/214.out
+@@ -0,0 +1,6 @@
++QA output created by 214
++Test full send + file without capabilities, then incremental send bringing a new capability
++Testing if foo.bar alone can keep its capabilities
++Test foo.bar being the first item among other files
++Test foo.bar with objectid between two other files
++Test foo.bar being the last item among other files
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index 9e48ecc1..505665b5 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -216,3 +216,4 @@
+ 211 auto quick log prealloc
+ 212 auto balance dangerous
+ 213 auto balance dangerous
++214 auto quick send snapshot
 -- 
-2.11.0
+2.26.2
 

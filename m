@@ -2,75 +2,84 @@ Return-Path: <SRS0=ZM7b=7O=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9CCADC433E0
-	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jun 2020 15:34:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4ED10C433DF
+	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jun 2020 15:37:49 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 6E127206C3
-	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jun 2020 15:34:54 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 325172065C
+	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jun 2020 15:37:49 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727769AbgFAPex (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 1 Jun 2020 11:34:53 -0400
-Received: from mx2.suse.de ([195.135.220.15]:33426 "EHLO mx2.suse.de"
+        id S1727096AbgFAPhs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 1 Jun 2020 11:37:48 -0400
+Received: from mx2.suse.de ([195.135.220.15]:34012 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726075AbgFAPex (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 1 Jun 2020 11:34:53 -0400
+        id S1726232AbgFAPhs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 1 Jun 2020 11:37:48 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 28797B1EF;
-        Mon,  1 Jun 2020 15:34:54 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id F1D5EDA79B; Mon,  1 Jun 2020 17:34:49 +0200 (CEST)
-Date:   Mon, 1 Jun 2020 17:34:49 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
-Cc:     "dsterba@suse.cz" <dsterba@suse.cz>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Nikolay Borisov <nborisov@suse.com>
-Subject: Re: [PATCH v2 1/3] btrfs: remove pointless out label in
- find_first_block_group
-Message-ID: <20200601153449.GY18421@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz,
-        Johannes Thumshirn <Johannes.Thumshirn@wdc.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Nikolay Borisov <nborisov@suse.com>
-References: <20200527081227.3408-1-johannes.thumshirn@wdc.com>
- <20200527081227.3408-2-johannes.thumshirn@wdc.com>
- <20200527130627.GC18421@twin.jikos.cz>
- <SN4PR0401MB3598E23D6533D813874F4E3C9BB10@SN4PR0401MB3598.namprd04.prod.outlook.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <SN4PR0401MB3598E23D6533D813874F4E3C9BB10@SN4PR0401MB3598.namprd04.prod.outlook.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+        by mx2.suse.de (Postfix) with ESMTP id E78F7B1FD;
+        Mon,  1 Jun 2020 15:37:48 +0000 (UTC)
+From:   Nikolay Borisov <nborisov@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH 02/46] btrfs: Make get_extent_allocation_hint take btrfs_inode
+Date:   Mon,  1 Jun 2020 18:37:00 +0300
+Message-Id: <20200601153744.31891-3-nborisov@suse.com>
+X-Mailer: git-send-email 2.17.1
+In-Reply-To: <20200601153744.31891-1-nborisov@suse.com>
+References: <20200601153744.31891-1-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, May 27, 2020 at 01:45:47PM +0000, Johannes Thumshirn wrote:
-> On 27/05/2020 15:07, David Sterba wrote:
-> > On Wed, May 27, 2020 at 05:12:25PM +0900, Johannes Thumshirn wrote:
-> >> The 'out' label in find_first_block_group() does not do anything in terms
-> >> of cleanup.
-> >>
-> >> It is better to directly return 'ret' instead of jumping to out to not
-> >> confuse readers. Additionally there is no need to initialize ret with 0.
-> > 
-> > https://www.kernel.org/doc/html/latest/process/coding-style.html#centralized-exiting-of-functions
-> > 
-> 
-> To cite the Link you posted:
-> 
-> "The goto statement comes in handy when a function exits from multiple 
-> locations and some common work such as cleanup has to be done. If there 
-> is no cleanup needed then just return directly."
+It doesn't use the vfs inode for anything, can just as easily take btrfs_inode.
+Follow up patches will convert callers as well.
 
-The preference in btrfs code has been to avoid returns from the middle
-of while loops. The kernel coding style does not cover everything, we've
-settled on some style in btrfs and that's what I'm arguing for and
-fixing up in many patches so it's consistent.
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
+ fs/btrfs/inode.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 1242d0aa108d..bc94051e3b4a 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -928,10 +928,10 @@ static noinline void submit_compressed_extents(struct async_chunk *async_chunk)
+ 	goto again;
+ }
+
+-static u64 get_extent_allocation_hint(struct inode *inode, u64 start,
++static u64 get_extent_allocation_hint(struct btrfs_inode *inode, u64 start,
+ 				      u64 num_bytes)
+ {
+-	struct extent_map_tree *em_tree = &BTRFS_I(inode)->extent_tree;
++	struct extent_map_tree *em_tree = &inode->extent_tree;
+ 	struct extent_map *em;
+ 	u64 alloc_hint = 0;
+
+@@ -1030,7 +1030,8 @@ static noinline int cow_file_range(struct inode *inode,
+ 		}
+ 	}
+
+-	alloc_hint = get_extent_allocation_hint(inode, start, num_bytes);
++	alloc_hint = get_extent_allocation_hint(BTRFS_I(inode), start,
++						num_bytes);
+ 	btrfs_drop_extent_cache(BTRFS_I(inode), start,
+ 			start + num_bytes - 1, 0);
+
+@@ -6875,7 +6876,7 @@ static struct extent_map *btrfs_new_extent_direct(struct inode *inode,
+ 	u64 alloc_hint;
+ 	int ret;
+
+-	alloc_hint = get_extent_allocation_hint(inode, start, len);
++	alloc_hint = get_extent_allocation_hint(BTRFS_I(inode), start, len);
+ 	ret = btrfs_reserve_extent(root, len, len, fs_info->sectorsize,
+ 				   0, alloc_hint, &ins, 1, 1);
+ 	if (ret)
+--
+2.17.1
+

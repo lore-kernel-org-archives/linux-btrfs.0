@@ -6,28 +6,28 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F1DE9C433E0
-	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jun 2020 15:37:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5C5E2C433E1
+	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jun 2020 15:37:52 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id DAF832065C
-	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jun 2020 15:37:50 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4702E2074B
+	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jun 2020 15:37:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727863AbgFAPhu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 1 Jun 2020 11:37:50 -0400
-Received: from mx2.suse.de ([195.135.220.15]:34026 "EHLO mx2.suse.de"
+        id S1727953AbgFAPhv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 1 Jun 2020 11:37:51 -0400
+Received: from mx2.suse.de ([195.135.220.15]:34040 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726944AbgFAPht (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 1 Jun 2020 11:37:49 -0400
+        id S1727099AbgFAPhu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 1 Jun 2020 11:37:50 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 57D06B20D;
+        by mx2.suse.de (Postfix) with ESMTP id CAA4FB210;
         Mon,  1 Jun 2020 15:37:49 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 04/46] btrfs: Make btrfs_reloc_clone_csums take btrfs_inode
-Date:   Mon,  1 Jun 2020 18:37:02 +0300
-Message-Id: <20200601153744.31891-5-nborisov@suse.com>
+Subject: [PATCH 06/46] btrfs: Make extent_clear_unlock_delalloc take btrfs_inode
+Date:   Mon,  1 Jun 2020 18:37:04 +0300
+Message-Id: <20200601153744.31891-7-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20200601153744.31891-1-nborisov@suse.com>
 References: <20200601153744.31891-1-nborisov@suse.com>
@@ -36,79 +36,169 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-It really wants btrfs_inode and not a vfs inode.
+It has 1 vfs and 1 btrfs inode usages but converting it to btrfs_inode interface
+will allow seamless conversion of its callers.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/ctree.h      | 2 +-
- fs/btrfs/inode.c      | 4 ++--
- fs/btrfs/relocation.c | 8 ++++----
- 3 files changed, 7 insertions(+), 7 deletions(-)
+ fs/btrfs/extent_io.c |  7 +++----
+ fs/btrfs/extent_io.h |  2 +-
+ fs/btrfs/inode.c     | 29 ++++++++++++++++-------------
+ 3 files changed, 20 insertions(+), 18 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 161533040978..3e8063f9b30a 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3380,7 +3380,7 @@ int btrfs_init_reloc_root(struct btrfs_trans_handle *trans,
- int btrfs_update_reloc_root(struct btrfs_trans_handle *trans,
- 			    struct btrfs_root *root);
- int btrfs_recover_relocation(struct btrfs_root *root);
--int btrfs_reloc_clone_csums(struct inode *inode, u64 file_pos, u64 len);
-+int btrfs_reloc_clone_csums(struct btrfs_inode *inode, u64 file_pos, u64 len);
- int btrfs_reloc_cow_block(struct btrfs_trans_handle *trans,
- 			  struct btrfs_root *root, struct extent_buffer *buf,
- 			  struct extent_buffer *cow);
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index c59e07360083..4d19cb930d57 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2017,15 +2017,14 @@ static int __process_pages_contig(struct address_space *mapping,
+ 	return err;
+ }
+
+-void extent_clear_unlock_delalloc(struct inode *inode, u64 start, u64 end,
++void extent_clear_unlock_delalloc(struct btrfs_inode *inode, u64 start, u64 end,
+ 				  struct page *locked_page,
+ 				  unsigned clear_bits,
+ 				  unsigned long page_ops)
+ {
+-	clear_extent_bit(&BTRFS_I(inode)->io_tree, start, end, clear_bits, 1, 0,
+-			 NULL);
++	clear_extent_bit(&inode->io_tree, start, end, clear_bits, 1, 0, NULL);
+
+-	__process_pages_contig(inode->i_mapping, locked_page,
++	__process_pages_contig(inode->vfs_inode.i_mapping, locked_page,
+ 			       start >> PAGE_SHIFT, end >> PAGE_SHIFT,
+ 			       page_ops, NULL);
+ }
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index 9a10681b12bf..8e693cf2f89c 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -277,7 +277,7 @@ void clear_extent_buffer_uptodate(struct extent_buffer *eb);
+ int extent_buffer_under_io(const struct extent_buffer *eb);
+ void extent_range_clear_dirty_for_io(struct inode *inode, u64 start, u64 end);
+ void extent_range_redirty_for_io(struct inode *inode, u64 start, u64 end);
+-void extent_clear_unlock_delalloc(struct inode *inode, u64 start, u64 end,
++void extent_clear_unlock_delalloc(struct btrfs_inode *inode, u64 start, u64 end,
+ 				  struct page *locked_page,
+ 				  unsigned bits_to_clear,
+ 				  unsigned long page_ops);
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 09a0c6a9a73a..56015fdd46c9 100644
+index 00ad7bdb7d34..7615b73feb30 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -1067,7 +1067,7 @@ static noinline int cow_file_range(struct inode *inode,
-
- 		if (root->root_key.objectid ==
- 		    BTRFS_DATA_RELOC_TREE_OBJECTID) {
--			ret = btrfs_reloc_clone_csums(inode, start,
-+			ret = btrfs_reloc_clone_csums(BTRFS_I(inode), start,
- 						      cur_alloc_size);
- 			/*
- 			 * Only drop cache here, and process as normal.
-@@ -1725,7 +1725,7 @@ static noinline int run_delalloc_nocow(struct inode *inode,
- 			 * extent_clear_unlock_delalloc() in error handler
- 			 * from freeing metadata of created ordered extent.
+@@ -641,7 +641,8 @@ static noinline int compress_file_range(struct async_chunk *async_chunk)
+ 			 * our outstanding extent for clearing delalloc for this
+ 			 * range.
  			 */
--			ret = btrfs_reloc_clone_csums(inode, cur_offset,
-+			ret = btrfs_reloc_clone_csums(BTRFS_I(inode), cur_offset,
+-			extent_clear_unlock_delalloc(inode, start, end, NULL,
++			extent_clear_unlock_delalloc(BTRFS_I(inode), start, end,
++						     NULL,
+ 						     clear_flags,
+ 						     PAGE_UNLOCK |
+ 						     PAGE_CLEAR_DIRTY |
+@@ -877,7 +878,7 @@ static noinline void submit_compressed_extents(struct async_chunk *async_chunk)
+ 		/*
+ 		 * clear dirty, set writeback and unlock the pages.
+ 		 */
+-		extent_clear_unlock_delalloc(inode, async_extent->start,
++		extent_clear_unlock_delalloc(BTRFS_I(inode), async_extent->start,
+ 				async_extent->start +
+ 				async_extent->ram_size - 1,
+ 				NULL, EXTENT_LOCKED | EXTENT_DELALLOC,
+@@ -899,7 +900,7 @@ static noinline void submit_compressed_extents(struct async_chunk *async_chunk)
+ 			btrfs_writepage_endio_finish_ordered(p, start, end, 0);
+
+ 			p->mapping = NULL;
+-			extent_clear_unlock_delalloc(inode, start, end,
++			extent_clear_unlock_delalloc(BTRFS_I(inode), start, end,
+ 						     NULL, 0,
+ 						     PAGE_END_WRITEBACK |
+ 						     PAGE_SET_ERROR);
+@@ -914,7 +915,7 @@ static noinline void submit_compressed_extents(struct async_chunk *async_chunk)
+ 	btrfs_dec_block_group_reservations(fs_info, ins.objectid);
+ 	btrfs_free_reserved_extent(fs_info, ins.objectid, ins.offset, 1);
+ out_free:
+-	extent_clear_unlock_delalloc(inode, async_extent->start,
++	extent_clear_unlock_delalloc(BTRFS_I(inode), async_extent->start,
+ 				     async_extent->start +
+ 				     async_extent->ram_size - 1,
+ 				     NULL, EXTENT_LOCKED | EXTENT_DELALLOC |
+@@ -1015,7 +1016,8 @@ static noinline int cow_file_range(struct inode *inode,
+ 			 * our outstanding extent for clearing delalloc for this
+ 			 * range.
+ 			 */
+-			extent_clear_unlock_delalloc(inode, start, end, NULL,
++			extent_clear_unlock_delalloc(BTRFS_I(inode), start, end,
++				     NULL,
+ 				     EXTENT_LOCKED | EXTENT_DELALLOC |
+ 				     EXTENT_DELALLOC_NEW | EXTENT_DEFRAG |
+ 				     EXTENT_DO_ACCOUNTING, PAGE_UNLOCK |
+@@ -1097,7 +1099,7 @@ static noinline int cow_file_range(struct inode *inode,
+ 		page_ops = unlock ? PAGE_UNLOCK : 0;
+ 		page_ops |= PAGE_SET_PRIVATE2;
+
+-		extent_clear_unlock_delalloc(inode, start,
++		extent_clear_unlock_delalloc(BTRFS_I(inode), start,
+ 					     start + ram_size - 1,
+ 					     locked_page,
+ 					     EXTENT_LOCKED | EXTENT_DELALLOC,
+@@ -1142,7 +1144,7 @@ static noinline int cow_file_range(struct inode *inode,
+ 	 * it the flag EXTENT_CLEAR_DATA_RESV.
+ 	 */
+ 	if (extent_reserved) {
+-		extent_clear_unlock_delalloc(inode, start,
++		extent_clear_unlock_delalloc(BTRFS_I(inode), start,
+ 					     start + cur_alloc_size - 1,
+ 					     locked_page,
+ 					     clear_bits,
+@@ -1151,7 +1153,7 @@ static noinline int cow_file_range(struct inode *inode,
+ 		if (start >= end)
+ 			goto out;
+ 	}
+-	extent_clear_unlock_delalloc(inode, start, end, locked_page,
++	extent_clear_unlock_delalloc(BTRFS_I(inode), start, end, locked_page,
+ 				     clear_bits | EXTENT_CLEAR_DATA_RESV,
+ 				     page_ops);
+ 	goto out;
+@@ -1259,8 +1261,8 @@ static int cow_file_range_async(struct inode *inode,
+ 			PAGE_SET_WRITEBACK | PAGE_END_WRITEBACK |
+ 			PAGE_SET_ERROR;
+
+-		extent_clear_unlock_delalloc(inode, start, end, locked_page,
+-					     clear_bits, page_ops);
++		extent_clear_unlock_delalloc(BTRFS_I(inode), start, end,
++					     locked_page, clear_bits, page_ops);
+ 		return -ENOMEM;
+ 	}
+
+@@ -1443,7 +1445,8 @@ static noinline int run_delalloc_nocow(struct inode *inode,
+
+ 	path = btrfs_alloc_path();
+ 	if (!path) {
+-		extent_clear_unlock_delalloc(inode, start, end, locked_page,
++		extent_clear_unlock_delalloc(BTRFS_I(inode), start, end,
++					     locked_page,
+ 					     EXTENT_LOCKED | EXTENT_DELALLOC |
+ 					     EXTENT_DO_ACCOUNTING |
+ 					     EXTENT_DEFRAG, PAGE_UNLOCK |
+@@ -1728,7 +1731,7 @@ static noinline int run_delalloc_nocow(struct inode *inode,
+ 			ret = btrfs_reloc_clone_csums(BTRFS_I(inode), cur_offset,
  						      num_bytes);
 
- 		extent_clear_unlock_delalloc(inode, cur_offset,
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 2a49115ee4c6..3d708a929b04 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -3872,9 +3872,9 @@ int btrfs_recover_relocation(struct btrfs_root *root)
-  * cloning checksum properly handles the nodatasum extents.
-  * it also saves CPU time to re-calculate the checksum.
-  */
--int btrfs_reloc_clone_csums(struct inode *inode, u64 file_pos, u64 len)
-+int btrfs_reloc_clone_csums(struct btrfs_inode *inode, u64 file_pos, u64 len)
- {
--	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
-+	struct btrfs_fs_info *fs_info = inode->root->fs_info;
- 	struct btrfs_ordered_sum *sums;
- 	struct btrfs_ordered_extent *ordered;
- 	int ret;
-@@ -3882,10 +3882,10 @@ int btrfs_reloc_clone_csums(struct inode *inode, u64 file_pos, u64 len)
- 	u64 new_bytenr;
- 	LIST_HEAD(list);
+-		extent_clear_unlock_delalloc(inode, cur_offset,
++		extent_clear_unlock_delalloc(BTRFS_I(inode), cur_offset,
+ 					     cur_offset + num_bytes - 1,
+ 					     locked_page, EXTENT_LOCKED |
+ 					     EXTENT_DELALLOC |
+@@ -1765,7 +1768,7 @@ static noinline int run_delalloc_nocow(struct inode *inode,
+ 		btrfs_dec_nocow_writers(fs_info, disk_bytenr);
 
--	ordered = btrfs_lookup_ordered_extent(BTRFS_I(inode), file_pos);
-+	ordered = btrfs_lookup_ordered_extent(inode, file_pos);
- 	BUG_ON(ordered->file_offset != file_pos || ordered->num_bytes != len);
-
--	disk_bytenr = file_pos + BTRFS_I(inode)->index_cnt;
-+	disk_bytenr = file_pos + inode->index_cnt;
- 	ret = btrfs_lookup_csums_range(fs_info->csum_root, disk_bytenr,
- 				       disk_bytenr + len - 1, &list, 0);
- 	if (ret)
+ 	if (ret && cur_offset < end)
+-		extent_clear_unlock_delalloc(inode, cur_offset, end,
++		extent_clear_unlock_delalloc(BTRFS_I(inode), cur_offset, end,
+ 					     locked_page, EXTENT_LOCKED |
+ 					     EXTENT_DELALLOC | EXTENT_DEFRAG |
+ 					     EXTENT_DO_ACCOUNTING, PAGE_UNLOCK |
 --
 2.17.1
 

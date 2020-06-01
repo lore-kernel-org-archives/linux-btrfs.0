@@ -6,28 +6,28 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DDE0BC433E2
-	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jun 2020 15:38:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1D544C433E1
+	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jun 2020 15:38:21 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id BED662065C
-	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jun 2020 15:38:20 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 082622065C
+	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jun 2020 15:38:21 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728239AbgFAPiS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 1 Jun 2020 11:38:18 -0400
-Received: from mx2.suse.de ([195.135.220.15]:34070 "EHLO mx2.suse.de"
+        id S1727996AbgFAPhw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 1 Jun 2020 11:37:52 -0400
+Received: from mx2.suse.de ([195.135.220.15]:34042 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727963AbgFAPhx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 1 Jun 2020 11:37:53 -0400
+        id S1726232AbgFAPhu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 1 Jun 2020 11:37:50 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 8D239B224;
-        Mon,  1 Jun 2020 15:37:53 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 93A75B20E;
+        Mon,  1 Jun 2020 15:37:49 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 23/46] btrfs: Make btrfs_dec_test_first_ordered_pending take btrfs_inode
-Date:   Mon,  1 Jun 2020 18:37:21 +0300
-Message-Id: <20200601153744.31891-24-nborisov@suse.com>
+Subject: [PATCH 05/46] btrfs: Make create_io_em take btrfs_inode
+Date:   Mon,  1 Jun 2020 18:37:03 +0300
+Message-Id: <20200601153744.31891-6-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20200601153744.31891-1-nborisov@suse.com>
 References: <20200601153744.31891-1-nborisov@suse.com>
@@ -36,75 +36,96 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-It doesn't really need vfs_inode but btrfs_inode.
+It really wants a btrfs_inode and will allow submit_compressed_extents
+to be completely converted to btrfs_inode in follow up patches.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/inode.c        | 8 ++++----
- fs/btrfs/ordered-data.c | 7 +++----
- fs/btrfs/ordered-data.h | 2 +-
- 3 files changed, 8 insertions(+), 9 deletions(-)
+ fs/btrfs/inode.c | 22 +++++++++++-----------
+ 1 file changed, 11 insertions(+), 11 deletions(-)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 192a2f0ce4ba..561bd8b4d7f3 100644
+index 56015fdd46c9..00ad7bdb7d34 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -7558,10 +7558,10 @@ static void __endio_write_update_ordered(struct inode *inode,
+@@ -83,8 +83,8 @@ static noinline int cow_file_range(struct inode *inode,
+ 				   struct page *locked_page,
+ 				   u64 start, u64 end, int *page_started,
+ 				   unsigned long *nr_written, int unlock);
+-static struct extent_map *create_io_em(struct inode *inode, u64 start, u64 len,
+-				       u64 orig_start, u64 block_start,
++static struct extent_map *create_io_em(struct btrfs_inode *inode, u64 start,
++				       u64 len, u64 orig_start, u64 block_start,
+ 				       u64 block_len, u64 orig_block_len,
+ 				       u64 ram_bytes, int compress_type,
+ 				       int type);
+@@ -844,7 +844,7 @@ static noinline void submit_compressed_extents(struct async_chunk *async_chunk)
+ 		 * here we're doing allocation and writeback of the
+ 		 * compressed pages
+ 		 */
+-		em = create_io_em(inode, async_extent->start,
++		em = create_io_em(BTRFS_I(inode), async_extent->start,
+ 				  async_extent->ram_size, /* len */
+ 				  async_extent->start, /* orig_start */
+ 				  ins.objectid, /* block_start */
+@@ -1046,7 +1046,7 @@ static noinline int cow_file_range(struct inode *inode,
+ 		extent_reserved = true;
 
- 	while (ordered_offset < offset + bytes) {
- 		last_offset = ordered_offset;
--		if (btrfs_dec_test_first_ordered_pending(inode, &ordered,
--							   &ordered_offset,
--							   ordered_bytes,
--							   uptodate)) {
-+		if (btrfs_dec_test_first_ordered_pending(BTRFS_I(inode), &ordered,
-+							 &ordered_offset,
-+							 ordered_bytes,
-+							 uptodate)) {
- 			btrfs_init_work(&ordered->work, finish_ordered_fn, NULL,
- 					NULL);
- 			btrfs_queue_work(wq, &ordered->work);
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index b3e3ab28dd78..4d32876649a5 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -290,12 +290,12 @@ void btrfs_add_ordered_sum(struct btrfs_ordered_extent *entry,
-  * file_offset is updated to one byte past the range that is recorded as
-  * complete.  This allows you to walk forward in the file.
-  */
--int btrfs_dec_test_first_ordered_pending(struct inode *inode,
-+int btrfs_dec_test_first_ordered_pending(struct btrfs_inode *inode,
- 				   struct btrfs_ordered_extent **cached,
- 				   u64 *file_offset, u64 io_size, int uptodate)
- {
--	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
--	struct btrfs_ordered_inode_tree *tree;
-+	struct btrfs_fs_info *fs_info = inode->root->fs_info;
-+	struct btrfs_ordered_inode_tree *tree = &inode->ordered_tree;
- 	struct rb_node *node;
- 	struct btrfs_ordered_extent *entry = NULL;
+ 		ram_size = ins.offset;
+-		em = create_io_em(inode, start, ins.offset, /* len */
++		em = create_io_em(BTRFS_I(inode), start, ins.offset, /* len */
+ 				  start, /* orig_start */
+ 				  ins.objectid, /* block_start */
+ 				  ins.offset, /* block_len */
+@@ -1679,7 +1679,7 @@ static noinline int run_delalloc_nocow(struct inode *inode,
+ 			u64 orig_start = found_key.offset - extent_offset;
+ 			struct extent_map *em;
+
+-			em = create_io_em(inode, cur_offset, num_bytes,
++			em = create_io_em(BTRFS_I(inode), cur_offset, num_bytes,
+ 					  orig_start,
+ 					  disk_bytenr, /* block_start */
+ 					  num_bytes, /* block_len */
+@@ -6843,7 +6843,7 @@ static struct extent_map *btrfs_create_dio_extent(struct inode *inode,
  	int ret;
-@@ -304,7 +304,6 @@ int btrfs_dec_test_first_ordered_pending(struct inode *inode,
- 	u64 dec_start;
- 	u64 to_dec;
 
--	tree = &BTRFS_I(inode)->ordered_tree;
- 	spin_lock_irqsave(&tree->lock, flags);
- 	node = tree_search(tree, *file_offset);
- 	if (!node) {
-diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
-index a0c6c31fc79b..d9819bfcd3ec 100644
---- a/fs/btrfs/ordered-data.h
-+++ b/fs/btrfs/ordered-data.h
-@@ -150,7 +150,7 @@ void btrfs_remove_ordered_extent(struct inode *inode,
- int btrfs_dec_test_ordered_pending(struct inode *inode,
- 				   struct btrfs_ordered_extent **cached,
- 				   u64 file_offset, u64 io_size, int uptodate);
--int btrfs_dec_test_first_ordered_pending(struct inode *inode,
-+int btrfs_dec_test_first_ordered_pending(struct btrfs_inode *inode,
- 				   struct btrfs_ordered_extent **cached,
- 				   u64 *file_offset, u64 io_size,
- 				   int uptodate);
+ 	if (type != BTRFS_ORDERED_NOCOW) {
+-		em = create_io_em(inode, start, len, orig_start,
++		em = create_io_em(BTRFS_I(inode), start, len, orig_start,
+ 				  block_start, block_len, orig_block_len,
+ 				  ram_bytes,
+ 				  BTRFS_COMPRESS_NONE, /* compress_type */
+@@ -7122,8 +7122,8 @@ static int lock_extent_direct(struct inode *inode, u64 lockstart, u64 lockend,
+ }
+
+ /* The callers of this must take lock_extent() */
+-static struct extent_map *create_io_em(struct inode *inode, u64 start, u64 len,
+-				       u64 orig_start, u64 block_start,
++static struct extent_map *create_io_em(struct btrfs_inode *inode, u64 start,
++				       u64 len, u64 orig_start, u64 block_start,
+ 				       u64 block_len, u64 orig_block_len,
+ 				       u64 ram_bytes, int compress_type,
+ 				       int type)
+@@ -7137,7 +7137,7 @@ static struct extent_map *create_io_em(struct inode *inode, u64 start, u64 len,
+ 	       type == BTRFS_ORDERED_NOCOW ||
+ 	       type == BTRFS_ORDERED_REGULAR);
+
+-	em_tree = &BTRFS_I(inode)->extent_tree;
++	em_tree = &inode->extent_tree;
+ 	em = alloc_extent_map();
+ 	if (!em)
+ 		return ERR_PTR(-ENOMEM);
+@@ -7159,8 +7159,8 @@ static struct extent_map *create_io_em(struct inode *inode, u64 start, u64 len,
+ 	}
+
+ 	do {
+-		btrfs_drop_extent_cache(BTRFS_I(inode), em->start,
+-				em->start + em->len - 1, 0);
++		btrfs_drop_extent_cache(inode, em->start,
++					em->start + em->len - 1, 0);
+ 		write_lock(&em_tree->lock);
+ 		ret = add_extent_mapping(em_tree, em, 1);
+ 		write_unlock(&em_tree->lock);
 --
 2.17.1
 

@@ -6,28 +6,28 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D3092C433E0
-	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jun 2020 15:38:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F3FC0C433DF
+	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jun 2020 15:38:31 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id BD1092065C
-	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jun 2020 15:38:28 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DDD652065C
+	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jun 2020 15:38:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728275AbgFAPi1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 1 Jun 2020 11:38:27 -0400
-Received: from mx2.suse.de ([195.135.220.15]:34050 "EHLO mx2.suse.de"
+        id S1728285AbgFAPi2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 1 Jun 2020 11:38:28 -0400
+Received: from mx2.suse.de ([195.135.220.15]:34040 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727935AbgFAPhv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1727906AbgFAPhv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Mon, 1 Jun 2020 11:37:51 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 6E0A3B1FB;
+        by mx2.suse.de (Postfix) with ESMTP id 14456B1EF;
         Mon,  1 Jun 2020 15:37:52 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 18/46] btrfs: Make btrfs_qgroup_release_data take btrfs_inode
-Date:   Mon,  1 Jun 2020 18:37:16 +0300
-Message-Id: <20200601153744.31891-19-nborisov@suse.com>
+Subject: [PATCH 16/46] btrfs: Make btrfs_submit_compressed_write take btrfs_inode
+Date:   Mon,  1 Jun 2020 18:37:14 +0300
+Message-Id: <20200601153744.31891-17-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20200601153744.31891-1-nborisov@suse.com>
 References: <20200601153744.31891-1-nborisov@suse.com>
@@ -36,57 +36,118 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-It just forwards its argument to __btrfs_qgroup_release_data.
+Majority of its uses are for btrfs_inode so take it as an argument directly.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/inode.c  | 2 +-
- fs/btrfs/qgroup.c | 4 ++--
- fs/btrfs/qgroup.h | 2 +-
- 3 files changed, 4 insertions(+), 4 deletions(-)
+ fs/btrfs/compression.c | 15 +++++++--------
+ fs/btrfs/compression.h |  4 +++-
+ fs/btrfs/inode.c       |  2 +-
+ 3 files changed, 11 insertions(+), 10 deletions(-)
 
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index 4f52cd8af517..c2d5ca583dbf 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -405,7 +405,7 @@ static void end_compressed_bio_write(struct bio *bio)
+  * This also checksums the file bytes and gets things ready for
+  * the end io hooks.
+  */
+-blk_status_t btrfs_submit_compressed_write(struct inode *inode, u64 start,
++blk_status_t btrfs_submit_compressed_write(struct btrfs_inode *inode, u64 start,
+ 				 unsigned long len, u64 disk_start,
+ 				 unsigned long compressed_len,
+ 				 struct page **compressed_pages,
+@@ -413,7 +413,7 @@ blk_status_t btrfs_submit_compressed_write(struct inode *inode, u64 start,
+ 				 unsigned int write_flags,
+ 				 struct cgroup_subsys_state *blkcg_css)
+ {
+-	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
++	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+ 	struct bio *bio = NULL;
+ 	struct compressed_bio *cb;
+ 	unsigned long bytes_left;
+@@ -421,7 +421,7 @@ blk_status_t btrfs_submit_compressed_write(struct inode *inode, u64 start,
+ 	struct page *page;
+ 	u64 first_byte = disk_start;
+ 	blk_status_t ret;
+-	int skip_sum = BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM;
++	int skip_sum = inode->flags & BTRFS_INODE_NODATASUM;
+
+ 	WARN_ON(!PAGE_ALIGNED(start));
+ 	cb = kmalloc(compressed_bio_size(fs_info, compressed_len), GFP_NOFS);
+@@ -429,7 +429,7 @@ blk_status_t btrfs_submit_compressed_write(struct inode *inode, u64 start,
+ 		return BLK_STS_RESOURCE;
+ 	refcount_set(&cb->pending_bios, 0);
+ 	cb->errors = 0;
+-	cb->inode = inode;
++	cb->inode = &inode->vfs_inode;
+ 	cb->start = start;
+ 	cb->len = len;
+ 	cb->mirror_num = 0;
+@@ -455,7 +455,7 @@ blk_status_t btrfs_submit_compressed_write(struct inode *inode, u64 start,
+ 		int submit = 0;
+
+ 		page = compressed_pages[pg_index];
+-		page->mapping = inode->i_mapping;
++		page->mapping = inode->vfs_inode.i_mapping;
+ 		if (bio->bi_iter.bi_size)
+ 			submit = btrfs_bio_fits_in_stripe(page, PAGE_SIZE, bio,
+ 							  0);
+@@ -475,8 +475,7 @@ blk_status_t btrfs_submit_compressed_write(struct inode *inode, u64 start,
+ 			BUG_ON(ret); /* -ENOMEM */
+
+ 			if (!skip_sum) {
+-				ret = btrfs_csum_one_bio(BTRFS_I(inode), bio,
+-							 start, 1);
++				ret = btrfs_csum_one_bio(inode, bio, start, 1);
+ 				BUG_ON(ret); /* -ENOMEM */
+ 			}
+
+@@ -508,7 +507,7 @@ blk_status_t btrfs_submit_compressed_write(struct inode *inode, u64 start,
+ 	BUG_ON(ret); /* -ENOMEM */
+
+ 	if (!skip_sum) {
+-		ret = btrfs_csum_one_bio(BTRFS_I(inode), bio, start, 1);
++		ret = btrfs_csum_one_bio(inode, bio, start, 1);
+ 		BUG_ON(ret); /* -ENOMEM */
+ 	}
+
+diff --git a/fs/btrfs/compression.h b/fs/btrfs/compression.h
+index 284a3ad31350..9f3dbe372631 100644
+--- a/fs/btrfs/compression.h
++++ b/fs/btrfs/compression.h
+@@ -8,6 +8,8 @@
+
+ #include <linux/sizes.h>
+
++struct btrfs_inode;
++
+ /*
+  * We want to make sure that amount of RAM required to uncompress an extent is
+  * reasonable, so we limit the total size in ram of a compressed extent to
+@@ -88,7 +90,7 @@ int btrfs_decompress_buf2page(const char *buf, unsigned long buf_start,
+ 			      unsigned long total_out, u64 disk_start,
+ 			      struct bio *bio);
+
+-blk_status_t btrfs_submit_compressed_write(struct inode *inode, u64 start,
++blk_status_t btrfs_submit_compressed_write(struct btrfs_inode *inode, u64 start,
+ 				  unsigned long len, u64 disk_start,
+ 				  unsigned long compressed_len,
+ 				  struct page **compressed_pages,
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 9794895d16fe..28dfadb97a6a 100644
+index a106c9857315..a527848c57d5 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -2523,7 +2523,7 @@ static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
- 	 * Release the reserved range from inode dirty range map, as it is
- 	 * already moved into delayed_ref_head
- 	 */
--	ret = btrfs_qgroup_release_data(inode, file_pos, ram_bytes);
-+	ret = btrfs_qgroup_release_data(BTRFS_I(inode), file_pos, ram_bytes);
- 	if (ret < 0)
- 		goto out;
- 	qg_released = ret;
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 4a09aa2fd975..c884f3ec89a0 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -3570,9 +3570,9 @@ int btrfs_qgroup_free_data(struct btrfs_inode *inode,
-  *
-  * NOTE: This function may sleep for memory allocation.
-  */
--int btrfs_qgroup_release_data(struct inode *inode, u64 start, u64 len)
-+int btrfs_qgroup_release_data(struct btrfs_inode *inode, u64 start, u64 len)
- {
--	return __btrfs_qgroup_release_data(BTRFS_I(inode), NULL, start, len, 0);
-+	return __btrfs_qgroup_release_data(inode, NULL, start, len, 0);
- }
-
- static void add_root_meta_rsv(struct btrfs_root *root, int num_bytes,
-diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-index a40ea1c187d7..139cad24a95d 100644
---- a/fs/btrfs/qgroup.h
-+++ b/fs/btrfs/qgroup.h
-@@ -346,7 +346,7 @@ int btrfs_verify_qgroup_counts(struct btrfs_fs_info *fs_info, u64 qgroupid,
- /* New io_tree based accurate qgroup reserve API */
- int btrfs_qgroup_reserve_data(struct inode *inode,
- 			struct extent_changeset **reserved, u64 start, u64 len);
--int btrfs_qgroup_release_data(struct inode *inode, u64 start, u64 len);
-+int btrfs_qgroup_release_data(struct btrfs_inode *inode, u64 start, u64 len);
- int btrfs_qgroup_free_data(struct btrfs_inode *inode,
- 			   struct extent_changeset *reserved, u64 start,
- 			   u64 len);
+@@ -886,7 +886,7 @@ static noinline void submit_compressed_extents(struct async_chunk *async_chunk)
+ 				NULL, EXTENT_LOCKED | EXTENT_DELALLOC,
+ 				PAGE_UNLOCK | PAGE_CLEAR_DIRTY |
+ 				PAGE_SET_WRITEBACK);
+-		if (btrfs_submit_compressed_write(inode,
++		if (btrfs_submit_compressed_write(BTRFS_I(inode),
+ 				    async_extent->start,
+ 				    async_extent->ram_size,
+ 				    ins.objectid,
 --
 2.17.1
 

@@ -2,33 +2,32 @@ Return-Path: <SRS0=ZM7b=7O=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	UNWANTED_LANGUAGE_BODY,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1827AC433E0
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 61DF1C433DF
 	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jun 2020 15:38:02 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id F374B2065C
-	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jun 2020 15:38:01 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3FBB42074B
+	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jun 2020 15:38:02 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728175AbgFAPiB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 1 Jun 2020 11:38:01 -0400
-Received: from mx2.suse.de ([195.135.220.15]:34044 "EHLO mx2.suse.de"
+        id S1728170AbgFAPiA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 1 Jun 2020 11:38:00 -0400
+Received: from mx2.suse.de ([195.135.220.15]:34082 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727959AbgFAPh6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 1 Jun 2020 11:37:58 -0400
+        id S1728144AbgFAPh5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 1 Jun 2020 11:37:57 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 4D46BB232;
-        Mon,  1 Jun 2020 15:37:57 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 9D224B1FB;
+        Mon,  1 Jun 2020 15:37:58 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 40/46] btrfs: Make btrfs_delalloc_release_space take btrfs_inode
-Date:   Mon,  1 Jun 2020 18:37:38 +0300
-Message-Id: <20200601153744.31891-41-nborisov@suse.com>
+Subject: [PATCH 46/46] btrfs: Make btrfs_qgroup_check_reserved_leak take btrfs_inode
+Date:   Mon,  1 Jun 2020 18:37:44 +0300
+Message-Id: <20200601153744.31891-47-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20200601153744.31891-1-nborisov@suse.com>
 References: <20200601153744.31891-1-nborisov@suse.com>
@@ -37,197 +36,79 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-It needs btrfs_inode so take it as a parameter directly.
 
+vfs_inode is used only for the inode number everything else requires btrfs_inode.
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/delalloc-space.c |  6 +++---
- fs/btrfs/delalloc-space.h |  2 +-
- fs/btrfs/file.c           |  5 +++--
- fs/btrfs/inode.c          | 28 +++++++++++++++-------------
- fs/btrfs/ioctl.c          |  4 ++--
- fs/btrfs/reflink.c        |  4 ++--
- 6 files changed, 26 insertions(+), 23 deletions(-)
+ fs/btrfs/inode.c  |  2 +-
+ fs/btrfs/qgroup.c | 12 ++++++------
+ fs/btrfs/qgroup.h |  2 +-
+ 3 files changed, 8 insertions(+), 8 deletions(-)
 
-diff --git a/fs/btrfs/delalloc-space.c b/fs/btrfs/delalloc-space.c
-index bf5420ad3af5..776e671902bf 100644
---- a/fs/btrfs/delalloc-space.c
-+++ b/fs/btrfs/delalloc-space.c
-@@ -582,10 +582,10 @@ int btrfs_delalloc_reserve_space(struct inode *inode,
-  * list if there are no delalloc bytes left.
-  * Also it will handle the qgroup reserved space.
-  */
--void btrfs_delalloc_release_space(struct inode *inode,
-+void btrfs_delalloc_release_space(struct btrfs_inode *inode,
- 				  struct extent_changeset *reserved,
- 				  u64 start, u64 len, bool qgroup_free)
- {
--	btrfs_delalloc_release_metadata(BTRFS_I(inode), len, qgroup_free);
--	btrfs_free_reserved_data_space(BTRFS_I(inode), reserved, start, len);
-+	btrfs_delalloc_release_metadata(inode, len, qgroup_free);
-+	btrfs_free_reserved_data_space(inode, reserved, start, len);
- }
-diff --git a/fs/btrfs/delalloc-space.h b/fs/btrfs/delalloc-space.h
-index 16a6f9320e39..853a9ac3de35 100644
---- a/fs/btrfs/delalloc-space.h
-+++ b/fs/btrfs/delalloc-space.h
-@@ -10,7 +10,7 @@ int btrfs_check_data_free_space(struct inode *inode,
- 			struct extent_changeset **reserved, u64 start, u64 len);
- void btrfs_free_reserved_data_space(struct btrfs_inode *inode,
- 			struct extent_changeset *reserved, u64 start, u64 len);
--void btrfs_delalloc_release_space(struct inode *inode,
-+void btrfs_delalloc_release_space(struct btrfs_inode *inode,
- 				  struct extent_changeset *reserved,
- 				  u64 start, u64 len, bool qgroup_free);
- void btrfs_free_reserved_data_space_noquota(struct btrfs_fs_info *fs_info,
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 71e055800609..3a8b8bda9824 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1732,7 +1732,7 @@ static noinline ssize_t btrfs_buffered_write(struct kiocb *iocb,
- 				__pos = round_down(pos,
- 						   fs_info->sectorsize) +
- 					(dirty_pages << PAGE_SHIFT);
--				btrfs_delalloc_release_space(inode,
-+				btrfs_delalloc_release_space(BTRFS_I(inode),
- 						data_reserved, __pos,
- 						release_bytes, true);
- 			}
-@@ -1800,7 +1800,8 @@ static noinline ssize_t btrfs_buffered_write(struct kiocb *iocb,
- 			btrfs_delalloc_release_metadata(BTRFS_I(inode),
- 					release_bytes, true);
- 		} else {
--			btrfs_delalloc_release_space(inode, data_reserved,
-+			btrfs_delalloc_release_space(BTRFS_I(inode),
-+					data_reserved,
- 					round_down(pos, fs_info->sectorsize),
- 					release_bytes, true);
- 		}
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 7c9fc5b0f894..687b06458f1a 100644
+index df1a347c1814..2991ac7142d6 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -2312,7 +2312,8 @@ static void btrfs_writepage_fixup_worker(struct btrfs_work *work)
- 		if (!ret) {
- 			btrfs_delalloc_release_extents(BTRFS_I(inode),
- 						       PAGE_SIZE);
--			btrfs_delalloc_release_space(inode, data_reserved,
-+			btrfs_delalloc_release_space(BTRFS_I(inode),
-+						     data_reserved,
- 						     page_start, PAGE_SIZE,
- 						     true);
- 		}
-@@ -2362,8 +2363,8 @@ static void btrfs_writepage_fixup_worker(struct btrfs_work *work)
- out_reserved:
- 	btrfs_delalloc_release_extents(BTRFS_I(inode), PAGE_SIZE);
- 	if (free_delalloc_space)
--		btrfs_delalloc_release_space(inode, data_reserved, page_start,
--					     PAGE_SIZE, true);
-+		btrfs_delalloc_release_space(BTRFS_I(inode), data_reserved,
-+					     page_start, PAGE_SIZE, true);
- 	unlock_extent_cached(&BTRFS_I(inode)->io_tree, page_start, page_end,
- 			     &cached_state);
- out_page:
-@@ -4510,7 +4511,7 @@ int btrfs_truncate_block(struct inode *inode, loff_t from, loff_t len,
- again:
- 	page = find_or_create_page(mapping, index, mask);
- 	if (!page) {
--		btrfs_delalloc_release_space(inode, data_reserved,
-+		btrfs_delalloc_release_space(BTRFS_I(inode), data_reserved,
- 					     block_start, blocksize, true);
- 		btrfs_delalloc_release_extents(BTRFS_I(inode), blocksize);
- 		ret = -ENOMEM;
-@@ -4577,8 +4578,8 @@ int btrfs_truncate_block(struct inode *inode, loff_t from, loff_t len,
-
- out_unlock:
- 	if (ret)
--		btrfs_delalloc_release_space(inode, data_reserved, block_start,
--					     blocksize, true);
-+		btrfs_delalloc_release_space(BTRFS_I(inode), data_reserved,
-+					     block_start, blocksize, true);
- 	btrfs_delalloc_release_extents(BTRFS_I(inode), blocksize);
- 	unlock_page(page);
- 	put_page(page);
-@@ -7393,8 +7394,9 @@ static int btrfs_dio_iomap_begin(struct inode *inode, loff_t start,
- 			     &cached_state);
- err:
- 	if (dio_data) {
--		btrfs_delalloc_release_space(inode, dio_data->data_reserved,
--				start, dio_data->reserve, true);
-+		btrfs_delalloc_release_space(BTRFS_I(inode),
-+					     dio_data->data_reserved,
-+					     start, dio_data->reserve, true);
- 		btrfs_delalloc_release_extents(BTRFS_I(inode), dio_data->reserve);
- 		extent_changeset_free(dio_data->data_reserved);
- 		kfree(dio_data);
-@@ -7430,7 +7432,7 @@ static int btrfs_dio_iomap_end(struct inode *inode, loff_t pos, loff_t length,
-
- 	if (write) {
- 		if (dio_data->reserve)
--			btrfs_delalloc_release_space(inode,
-+			btrfs_delalloc_release_space(BTRFS_I(inode),
- 					dio_data->data_reserved, pos,
- 					dio_data->reserve, true);
- 		btrfs_delalloc_release_extents(BTRFS_I(inode), dio_data->length);
-@@ -8144,9 +8146,9 @@ vm_fault_t btrfs_page_mkwrite(struct vm_fault *vmf)
- 					  fs_info->sectorsize);
- 		if (reserved_space < PAGE_SIZE) {
- 			end = page_start + reserved_space - 1;
--			btrfs_delalloc_release_space(inode, data_reserved,
--					page_start, PAGE_SIZE - reserved_space,
--					true);
-+			btrfs_delalloc_release_space(BTRFS_I(inode),
-+					data_reserved, page_start,
-+					PAGE_SIZE - reserved_space, true);
+@@ -8499,7 +8499,7 @@ void btrfs_destroy_inode(struct inode *inode)
+ 			btrfs_put_ordered_extent(ordered);
  		}
  	}
+-	btrfs_qgroup_check_reserved_leak(inode);
++	btrfs_qgroup_check_reserved_leak(BTRFS_I(inode));
+ 	inode_tree_del(inode);
+ 	btrfs_drop_extent_cache(BTRFS_I(inode), 0, (u64)-1, 0);
+ 	btrfs_inode_clear_file_extent_range(BTRFS_I(inode), 0, (u64)-1);
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index e5fab553afb7..453545ea2f41 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -3741,7 +3741,7 @@ void btrfs_qgroup_convert_reserved_meta(struct btrfs_root *root, int num_bytes)
+  * Check qgroup reserved space leaking, normally at destroy inode
+  * time
+  */
+-void btrfs_qgroup_check_reserved_leak(struct inode *inode)
++void btrfs_qgroup_check_reserved_leak(struct btrfs_inode *inode)
+ {
+ 	struct extent_changeset changeset;
+ 	struct ulist_node *unode;
+@@ -3749,19 +3749,19 @@ void btrfs_qgroup_check_reserved_leak(struct inode *inode)
+ 	int ret;
 
-@@ -8201,7 +8203,7 @@ vm_fault_t btrfs_page_mkwrite(struct vm_fault *vmf)
- 	unlock_page(page);
- out:
- 	btrfs_delalloc_release_extents(BTRFS_I(inode), PAGE_SIZE);
--	btrfs_delalloc_release_space(inode, data_reserved, page_start,
-+	btrfs_delalloc_release_space(BTRFS_I(inode), data_reserved, page_start,
- 				     reserved_space, (ret != 0));
- out_noreserve:
- 	sb_end_pagefault(inode->i_sb);
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 4dc308048d8c..37072628149d 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1333,7 +1333,7 @@ static int cluster_pages_for_defrag(struct inode *inode,
- 		spin_lock(&BTRFS_I(inode)->lock);
- 		btrfs_mod_outstanding_extents(BTRFS_I(inode), 1);
- 		spin_unlock(&BTRFS_I(inode)->lock);
--		btrfs_delalloc_release_space(inode, data_reserved,
-+		btrfs_delalloc_release_space(BTRFS_I(inode), data_reserved,
- 				start_index << PAGE_SHIFT,
- 				(page_cnt - i_done) << PAGE_SHIFT, true);
+ 	extent_changeset_init(&changeset);
+-	ret = clear_record_extent_bits(&BTRFS_I(inode)->io_tree, 0, (u64)-1,
++	ret = clear_record_extent_bits(&inode->io_tree, 0, (u64)-1,
+ 			EXTENT_QGROUP_RESERVED, &changeset);
+
+ 	WARN_ON(ret < 0);
+ 	if (WARN_ON(changeset.bytes_changed)) {
+ 		ULIST_ITER_INIT(&iter);
+ 		while ((unode = ulist_next(&changeset.range_changed, &iter))) {
+-			btrfs_warn(BTRFS_I(inode)->root->fs_info,
++			btrfs_warn(inode->root->fs_info,
+ 				"leaking qgroup reserved space, ino: %lu, start: %llu, end: %llu",
+-				inode->i_ino, unode->val, unode->aux);
++				inode->vfs_inode.i_ino, unode->val, unode->aux);
+ 		}
+-		btrfs_qgroup_free_refroot(BTRFS_I(inode)->root->fs_info,
+-				BTRFS_I(inode)->root->root_key.objectid,
++		btrfs_qgroup_free_refroot(inode->root->fs_info,
++				inode->root->root_key.objectid,
+ 				changeset.bytes_changed, BTRFS_QGROUP_RSV_DATA);
+
  	}
-@@ -1361,7 +1361,7 @@ static int cluster_pages_for_defrag(struct inode *inode,
- 		unlock_page(pages[i]);
- 		put_page(pages[i]);
- 	}
--	btrfs_delalloc_release_space(inode, data_reserved,
-+	btrfs_delalloc_release_space(BTRFS_I(inode), data_reserved,
- 			start_index << PAGE_SHIFT,
- 			page_cnt << PAGE_SHIFT, true);
- 	btrfs_delalloc_release_extents(BTRFS_I(inode), page_cnt << PAGE_SHIFT);
-diff --git a/fs/btrfs/reflink.c b/fs/btrfs/reflink.c
-index fe3e05b51691..9da0f101548f 100644
---- a/fs/btrfs/reflink.c
-+++ b/fs/btrfs/reflink.c
-@@ -134,8 +134,8 @@ static int copy_inline_to_page(struct inode *inode,
- 		put_page(page);
- 	}
- 	if (ret)
--		btrfs_delalloc_release_space(inode, data_reserved, file_offset,
--					     block_size, true);
-+		btrfs_delalloc_release_space(BTRFS_I(inode), data_reserved,
-+					     file_offset, block_size, true);
- 	btrfs_delalloc_release_extents(BTRFS_I(inode), block_size);
- out:
- 	extent_changeset_free(data_reserved);
+diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
+index a22a1d3dae25..741d21a4147a 100644
+--- a/fs/btrfs/qgroup.h
++++ b/fs/btrfs/qgroup.h
+@@ -399,7 +399,7 @@ void btrfs_qgroup_free_meta_all_pertrans(struct btrfs_root *root);
+  */
+ void btrfs_qgroup_convert_reserved_meta(struct btrfs_root *root, int num_bytes);
+
+-void btrfs_qgroup_check_reserved_leak(struct inode *inode);
++void btrfs_qgroup_check_reserved_leak(struct btrfs_inode *inode);
+
+ /* btrfs_qgroup_swapped_blocks related functions */
+ void btrfs_qgroup_init_swapped_blocks(
 --
 2.17.1
 

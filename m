@@ -6,28 +6,28 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C2B38C433DF
-	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jun 2020 15:38:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F0EE7C433E2
+	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jun 2020 15:38:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id A1D2A2074B
-	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jun 2020 15:38:16 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D231F2074B
+	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jun 2020 15:38:17 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728222AbgFAPiN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 1 Jun 2020 11:38:13 -0400
-Received: from mx2.suse.de ([195.135.220.15]:34050 "EHLO mx2.suse.de"
+        id S1728232AbgFAPiR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 1 Jun 2020 11:38:17 -0400
+Received: from mx2.suse.de ([195.135.220.15]:34072 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727924AbgFAPhz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 1 Jun 2020 11:37:55 -0400
+        id S1726232AbgFAPhx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 1 Jun 2020 11:37:53 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id F3670B216;
-        Mon,  1 Jun 2020 15:37:55 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 6AA9FB229;
+        Mon,  1 Jun 2020 15:37:54 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 34/46] btrfs: Make writepage_delalloc take btrfs_inode
-Date:   Mon,  1 Jun 2020 18:37:32 +0300
-Message-Id: <20200601153744.31891-35-nborisov@suse.com>
+Subject: [PATCH 27/46] btrfs: Make inode_need_compress take btrfs_inode
+Date:   Mon,  1 Jun 2020 18:37:25 +0300
+Message-Id: <20200601153744.31891-28-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20200601153744.31891-1-nborisov@suse.com>
 References: <20200601153744.31891-1-nborisov@suse.com>
@@ -36,54 +36,75 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Only find_lock_delalloc_range uses vfs_inode so let's take the btrfs_inode
-as a parameter.
+Simply gets rid of superfluous BTRFS_I() calls.
+
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/extent_io.c | 10 +++++-----
- 1 file changed, 5 insertions(+), 5 deletions(-)
+ fs/btrfs/inode.c | 23 ++++++++++++-----------
+ 1 file changed, 12 insertions(+), 11 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 58a07587efcd..2068a2c38e0c 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -3424,7 +3424,7 @@ static void update_nr_written(struct writeback_control *wbc,
-  * This returns 0 if all went well (page still locked)
-  * This returns < 0 if there were errors (page still locked)
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 1c3704b18f3a..c44e2ded2597 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -423,29 +423,30 @@ static inline bool inode_can_compress(struct btrfs_inode *inode)
+  * Check if the inode needs to be submitted to compression, based on mount
+  * options, defragmentation, properties or heuristics.
   */
--static noinline_for_stack int writepage_delalloc(struct inode *inode,
-+static noinline_for_stack int writepage_delalloc(struct btrfs_inode *inode,
- 		struct page *page, struct writeback_control *wbc,
- 		u64 delalloc_start, unsigned long *nr_written)
+-static inline int inode_need_compress(struct inode *inode, u64 start, u64 end)
++static inline int inode_need_compress(struct btrfs_inode *inode, u64 start,
++				      u64 end)
  {
-@@ -3437,15 +3437,14 @@ static noinline_for_stack int writepage_delalloc(struct inode *inode,
+-	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
++	struct btrfs_fs_info *fs_info = inode->root->fs_info;
 
+-	if (!inode_can_compress(BTRFS_I(inode))) {
++	if (!inode_can_compress(inode)) {
+ 		WARN(IS_ENABLED(CONFIG_BTRFS_DEBUG),
+ 			KERN_ERR "BTRFS: unexpected compression for ino %llu\n",
+-			btrfs_ino(BTRFS_I(inode)));
++			btrfs_ino(inode));
+ 		return 0;
+ 	}
+ 	/* force compress */
+ 	if (btrfs_test_opt(fs_info, FORCE_COMPRESS))
+ 		return 1;
+ 	/* defrag ioctl */
+-	if (BTRFS_I(inode)->defrag_compress)
++	if (inode->defrag_compress)
+ 		return 1;
+ 	/* bad compression ratios */
+-	if (BTRFS_I(inode)->flags & BTRFS_INODE_NOCOMPRESS)
++	if (inode->flags & BTRFS_INODE_NOCOMPRESS)
+ 		return 0;
+ 	if (btrfs_test_opt(fs_info, COMPRESS) ||
+-	    BTRFS_I(inode)->flags & BTRFS_INODE_COMPRESS ||
+-	    BTRFS_I(inode)->prop_compress)
+-		return btrfs_compress_heuristic(inode, start, end);
++	    inode->flags & BTRFS_INODE_COMPRESS ||
++	    inode->prop_compress)
++		return btrfs_compress_heuristic(&inode->vfs_inode, start, end);
+ 	return 0;
+ }
 
- 	while (delalloc_end < page_end) {
--		found = find_lock_delalloc_range(inode, page,
-+		found = find_lock_delalloc_range(&inode->vfs_inode, page,
- 					       &delalloc_start,
- 					       &delalloc_end);
- 		if (!found) {
- 			delalloc_start = delalloc_end + 1;
- 			continue;
- 		}
--		ret = btrfs_run_delalloc_range(BTRFS_I(inode), page,
--					       delalloc_start,
-+		ret = btrfs_run_delalloc_range(inode, page, delalloc_start,
- 					       delalloc_end, &page_started,
- 					       nr_written, wbc);
- 		if (ret) {
-@@ -3664,7 +3663,8 @@ static int __extent_writepage(struct page *page, struct writeback_control *wbc,
- 	set_page_extent_mapped(page);
-
- 	if (!epd->extent_locked) {
--		ret = writepage_delalloc(inode, page, wbc, start, &nr_written);
-+		ret = writepage_delalloc(BTRFS_I(inode), page, wbc, start,
-+					 &nr_written);
- 		if (ret == 1)
- 			return 0;
- 		if (ret)
+@@ -551,7 +552,7 @@ static noinline int compress_file_range(struct async_chunk *async_chunk)
+ 	 * inode has not been flagged as nocompress.  This flag can
+ 	 * change at any time if we discover bad compression ratios.
+ 	 */
+-	if (inode_need_compress(inode, start, end)) {
++	if (inode_need_compress(BTRFS_I(inode), start, end)) {
+ 		WARN_ON(pages);
+ 		pages = kcalloc(nr_pages, sizeof(struct page *), GFP_NOFS);
+ 		if (!pages) {
+@@ -1809,7 +1810,7 @@ int btrfs_run_delalloc_range(struct inode *inode, struct page *locked_page,
+ 		ret = run_delalloc_nocow(BTRFS_I(inode), locked_page, start, end,
+ 					 page_started, 0, nr_written);
+ 	} else if (!inode_can_compress(BTRFS_I(inode)) ||
+-		   !inode_need_compress(inode, start, end)) {
++		   !inode_need_compress(BTRFS_I(inode), start, end)) {
+ 		ret = cow_file_range(BTRFS_I(inode), locked_page, start, end,
+ 				      page_started, nr_written, 1);
+ 	} else {
 --
 2.17.1
 

@@ -4,30 +4,30 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 02624C433E0
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DDE0BC433E2
 	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jun 2020 15:38:20 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D48B32065C
-	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jun 2020 15:38:19 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BED662065C
+	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jun 2020 15:38:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728243AbgFAPiS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S1728239AbgFAPiS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Mon, 1 Jun 2020 11:38:18 -0400
-Received: from mx2.suse.de ([195.135.220.15]:34040 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:34070 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727998AbgFAPhx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1727963AbgFAPhx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Mon, 1 Jun 2020 11:37:53 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 39FCCB221;
-        Mon,  1 Jun 2020 15:37:54 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 8D239B224;
+        Mon,  1 Jun 2020 15:37:53 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 26/46] btrfs: Make inode_can_compress take btrfs_inode
-Date:   Mon,  1 Jun 2020 18:37:24 +0300
-Message-Id: <20200601153744.31891-27-nborisov@suse.com>
+Subject: [PATCH 23/46] btrfs: Make btrfs_dec_test_first_ordered_pending take btrfs_inode
+Date:   Mon,  1 Jun 2020 18:37:21 +0300
+Message-Id: <20200601153744.31891-24-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20200601153744.31891-1-nborisov@suse.com>
 References: <20200601153744.31891-1-nborisov@suse.com>
@@ -36,49 +36,75 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Gets rid of superfluous BTRFS_I() calls.
+It doesn't really need vfs_inode but btrfs_inode.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/inode.c | 10 +++++-----
- 1 file changed, 5 insertions(+), 5 deletions(-)
+ fs/btrfs/inode.c        | 8 ++++----
+ fs/btrfs/ordered-data.c | 7 +++----
+ fs/btrfs/ordered-data.h | 2 +-
+ 3 files changed, 8 insertions(+), 9 deletions(-)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index a8a41c19b0bb..1c3704b18f3a 100644
+index 192a2f0ce4ba..561bd8b4d7f3 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -411,10 +411,10 @@ static noinline int add_async_extent(struct async_chunk *cow,
- /*
-  * Check if the inode has flags compatible with compression
-  */
--static inline bool inode_can_compress(struct inode *inode)
-+static inline bool inode_can_compress(struct btrfs_inode *inode)
- {
--	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODATACOW ||
--	    BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM)
-+	if (inode->flags & BTRFS_INODE_NODATACOW ||
-+	    inode->flags & BTRFS_INODE_NODATASUM)
- 		return false;
- 	return true;
- }
-@@ -427,7 +427,7 @@ static inline int inode_need_compress(struct inode *inode, u64 start, u64 end)
- {
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+@@ -7558,10 +7558,10 @@ static void __endio_write_update_ordered(struct inode *inode,
 
--	if (!inode_can_compress(inode)) {
-+	if (!inode_can_compress(BTRFS_I(inode))) {
- 		WARN(IS_ENABLED(CONFIG_BTRFS_DEBUG),
- 			KERN_ERR "BTRFS: unexpected compression for ino %llu\n",
- 			btrfs_ino(BTRFS_I(inode)));
-@@ -1808,7 +1808,7 @@ int btrfs_run_delalloc_range(struct inode *inode, struct page *locked_page,
- 	} else if (BTRFS_I(inode)->flags & BTRFS_INODE_PREALLOC && !force_cow) {
- 		ret = run_delalloc_nocow(BTRFS_I(inode), locked_page, start, end,
- 					 page_started, 0, nr_written);
--	} else if (!inode_can_compress(inode) ||
-+	} else if (!inode_can_compress(BTRFS_I(inode)) ||
- 		   !inode_need_compress(inode, start, end)) {
- 		ret = cow_file_range(BTRFS_I(inode), locked_page, start, end,
- 				      page_started, nr_written, 1);
+ 	while (ordered_offset < offset + bytes) {
+ 		last_offset = ordered_offset;
+-		if (btrfs_dec_test_first_ordered_pending(inode, &ordered,
+-							   &ordered_offset,
+-							   ordered_bytes,
+-							   uptodate)) {
++		if (btrfs_dec_test_first_ordered_pending(BTRFS_I(inode), &ordered,
++							 &ordered_offset,
++							 ordered_bytes,
++							 uptodate)) {
+ 			btrfs_init_work(&ordered->work, finish_ordered_fn, NULL,
+ 					NULL);
+ 			btrfs_queue_work(wq, &ordered->work);
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index b3e3ab28dd78..4d32876649a5 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -290,12 +290,12 @@ void btrfs_add_ordered_sum(struct btrfs_ordered_extent *entry,
+  * file_offset is updated to one byte past the range that is recorded as
+  * complete.  This allows you to walk forward in the file.
+  */
+-int btrfs_dec_test_first_ordered_pending(struct inode *inode,
++int btrfs_dec_test_first_ordered_pending(struct btrfs_inode *inode,
+ 				   struct btrfs_ordered_extent **cached,
+ 				   u64 *file_offset, u64 io_size, int uptodate)
+ {
+-	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+-	struct btrfs_ordered_inode_tree *tree;
++	struct btrfs_fs_info *fs_info = inode->root->fs_info;
++	struct btrfs_ordered_inode_tree *tree = &inode->ordered_tree;
+ 	struct rb_node *node;
+ 	struct btrfs_ordered_extent *entry = NULL;
+ 	int ret;
+@@ -304,7 +304,6 @@ int btrfs_dec_test_first_ordered_pending(struct inode *inode,
+ 	u64 dec_start;
+ 	u64 to_dec;
+
+-	tree = &BTRFS_I(inode)->ordered_tree;
+ 	spin_lock_irqsave(&tree->lock, flags);
+ 	node = tree_search(tree, *file_offset);
+ 	if (!node) {
+diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
+index a0c6c31fc79b..d9819bfcd3ec 100644
+--- a/fs/btrfs/ordered-data.h
++++ b/fs/btrfs/ordered-data.h
+@@ -150,7 +150,7 @@ void btrfs_remove_ordered_extent(struct inode *inode,
+ int btrfs_dec_test_ordered_pending(struct inode *inode,
+ 				   struct btrfs_ordered_extent **cached,
+ 				   u64 file_offset, u64 io_size, int uptodate);
+-int btrfs_dec_test_first_ordered_pending(struct inode *inode,
++int btrfs_dec_test_first_ordered_pending(struct btrfs_inode *inode,
+ 				   struct btrfs_ordered_extent **cached,
+ 				   u64 *file_offset, u64 io_size,
+ 				   int uptodate);
 --
 2.17.1
 

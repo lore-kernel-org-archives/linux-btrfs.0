@@ -2,33 +2,32 @@ Return-Path: <SRS0=ZM7b=7O=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	UNWANTED_LANGUAGE_BODY,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9E49EC433E1
-	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jun 2020 15:38:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 88D70C433DF
+	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jun 2020 15:38:35 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 84BAC2065C
-	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jun 2020 15:38:34 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 735182074B
+	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jun 2020 15:38:35 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727769AbgFAPhu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 1 Jun 2020 11:37:50 -0400
-Received: from mx2.suse.de ([195.135.220.15]:34018 "EHLO mx2.suse.de"
+        id S1728304AbgFAPie (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 1 Jun 2020 11:38:34 -0400
+Received: from mx2.suse.de ([195.135.220.15]:34044 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726751AbgFAPht (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 1 Jun 2020 11:37:49 -0400
+        id S1727113AbgFAPhu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 1 Jun 2020 11:37:50 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 28091B208;
+        by mx2.suse.de (Postfix) with ESMTP id 05108B212;
         Mon,  1 Jun 2020 15:37:49 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 03/46] btrfs: Make btrfs_lookup_ordered_extent take btrfs_inode
-Date:   Mon,  1 Jun 2020 18:37:01 +0300
-Message-Id: <20200601153744.31891-4-nborisov@suse.com>
+Subject: [PATCH 07/46] btrfs: Make btrfs_csum_one_bio takae btrfs_inode
+Date:   Mon,  1 Jun 2020 18:37:05 +0300
+Message-Id: <20200601153744.31891-8-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20200601153744.31891-1-nborisov@suse.com>
 References: <20200601153744.31891-1-nborisov@suse.com>
@@ -37,118 +36,111 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-It doesn't use the generic vfs inode for anything use btrfs_inode directly.
+Will enable converting btrfs_submit_compressed_write to btrfs_inode more
+easily.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/file-item.c    | 5 +++--
- fs/btrfs/inode.c        | 2 +-
- fs/btrfs/ioctl.c        | 2 +-
- fs/btrfs/ordered-data.c | 6 +++---
- fs/btrfs/ordered-data.h | 2 +-
- fs/btrfs/relocation.c   | 2 +-
- 6 files changed, 10 insertions(+), 9 deletions(-)
+ fs/btrfs/compression.c | 5 +++--
+ fs/btrfs/ctree.h       | 4 ++--
+ fs/btrfs/file-item.c   | 3 +--
+ fs/btrfs/inode.c       | 8 ++++----
+ 4 files changed, 10 insertions(+), 10 deletions(-)
 
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index c6e648603f85..4f52cd8af517 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -475,7 +475,8 @@ blk_status_t btrfs_submit_compressed_write(struct inode *inode, u64 start,
+ 			BUG_ON(ret); /* -ENOMEM */
+
+ 			if (!skip_sum) {
+-				ret = btrfs_csum_one_bio(inode, bio, start, 1);
++				ret = btrfs_csum_one_bio(BTRFS_I(inode), bio,
++							 start, 1);
+ 				BUG_ON(ret); /* -ENOMEM */
+ 			}
+
+@@ -507,7 +508,7 @@ blk_status_t btrfs_submit_compressed_write(struct inode *inode, u64 start,
+ 	BUG_ON(ret); /* -ENOMEM */
+
+ 	if (!skip_sum) {
+-		ret = btrfs_csum_one_bio(inode, bio, start, 1);
++		ret = btrfs_csum_one_bio(BTRFS_I(inode), bio, start, 1);
+ 		BUG_ON(ret); /* -ENOMEM */
+ 	}
+
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 3e8063f9b30a..55add0881615 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2830,8 +2830,8 @@ int btrfs_lookup_file_extent(struct btrfs_trans_handle *trans,
+ int btrfs_csum_file_blocks(struct btrfs_trans_handle *trans,
+ 			   struct btrfs_root *root,
+ 			   struct btrfs_ordered_sum *sums);
+-blk_status_t btrfs_csum_one_bio(struct inode *inode, struct bio *bio,
+-		       u64 file_start, int contig);
++blk_status_t btrfs_csum_one_bio(struct btrfs_inode *inode, struct bio *bio,
++				u64 file_start, int contig);
+ int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
+ 			     struct list_head *list, int search_commit);
+ void btrfs_extent_item_to_extent_map(struct btrfs_inode *inode,
 diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index 706a3128e192..9d311e834b20 100644
+index 9d311e834b20..7d5ec71615b8 100644
 --- a/fs/btrfs/file-item.c
 +++ b/fs/btrfs/file-item.c
-@@ -522,10 +522,11 @@ int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
+@@ -522,10 +522,9 @@ int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
   *		 means this bio can contains potentially discontigous bio vecs
   *		 so the logical offset of each should be calculated separately.
   */
--blk_status_t btrfs_csum_one_bio(struct inode *inode, struct bio *bio,
-+blk_status_t btrfs_csum_one_bio(struct inode *vfsinode, struct bio *bio,
+-blk_status_t btrfs_csum_one_bio(struct inode *vfsinode, struct bio *bio,
++blk_status_t btrfs_csum_one_bio(struct btrfs_inode *inode, struct bio *bio,
  		       u64 file_start, int contig)
  {
--	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
-+	struct btrfs_inode *inode = BTRFS_I(vfsinode);
-+	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+-	struct btrfs_inode *inode = BTRFS_I(vfsinode);
+ 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
  	SHASH_DESC_ON_STACK(shash, fs_info->csum_shash);
  	struct btrfs_ordered_sum *sums;
- 	struct btrfs_ordered_extent *ordered = NULL;
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index bc94051e3b4a..09a0c6a9a73a 100644
+index 7615b73feb30..d20afd95ab4d 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -4543,7 +4543,7 @@ int btrfs_truncate_block(struct inode *inode, loff_t from, loff_t len,
- 	lock_extent_bits(io_tree, block_start, block_end, &cached_state);
- 	set_page_extent_mapped(page);
+@@ -2149,7 +2149,7 @@ static blk_status_t btrfs_submit_bio_start(void *private_data, struct bio *bio,
+ 	struct inode *inode = private_data;
+ 	blk_status_t ret = 0;
 
--	ordered = btrfs_lookup_ordered_extent(inode, block_start);
-+	ordered = btrfs_lookup_ordered_extent(BTRFS_I(inode), block_start);
- 	if (ordered) {
- 		unlock_extent_cached(io_tree, block_start, block_end,
- 				     &cached_state);
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 168deb8ef68a..4dc308048d8c 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1265,7 +1265,7 @@ static int cluster_pages_for_defrag(struct inode *inode,
- 		while (1) {
- 			lock_extent_bits(tree, page_start, page_end,
- 					 &cached_state);
--			ordered = btrfs_lookup_ordered_extent(inode,
-+			ordered = btrfs_lookup_ordered_extent(BTRFS_I(inode),
- 							      page_start);
- 			unlock_extent_cached(tree, page_start, page_end,
- 					     &cached_state);
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index 7bf7edbb994c..4139de966c74 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -697,14 +697,14 @@ int btrfs_wait_ordered_range(struct inode *inode, u64 start, u64 len)
-  * find an ordered extent corresponding to file_offset.  return NULL if
-  * nothing is found, otherwise take a reference on the extent and return it
-  */
--struct btrfs_ordered_extent *btrfs_lookup_ordered_extent(struct inode *inode,
-+struct btrfs_ordered_extent *btrfs_lookup_ordered_extent(struct btrfs_inode *inode,
- 							 u64 file_offset)
+-	ret = btrfs_csum_one_bio(inode, bio, 0, 0);
++	ret = btrfs_csum_one_bio(BTRFS_I(inode), bio, 0, 0);
+ 	BUG_ON(ret); /* -ENOMEM */
+ 	return 0;
+ }
+@@ -2214,7 +2214,7 @@ static blk_status_t btrfs_submit_bio_hook(struct inode *inode, struct bio *bio,
+ 					  0, inode, btrfs_submit_bio_start);
+ 		goto out;
+ 	} else if (!skip_sum) {
+-		ret = btrfs_csum_one_bio(inode, bio, 0, 0);
++		ret = btrfs_csum_one_bio(BTRFS_I(inode), bio, 0, 0);
+ 		if (ret)
+ 			goto out;
+ 	}
+@@ -7597,7 +7597,7 @@ static blk_status_t btrfs_submit_bio_start_direct_io(void *private_data,
  {
- 	struct btrfs_ordered_inode_tree *tree;
- 	struct rb_node *node;
- 	struct btrfs_ordered_extent *entry = NULL;
-
--	tree = &BTRFS_I(inode)->ordered_tree;
-+	tree = &inode->ordered_tree;
- 	spin_lock_irq(&tree->lock);
- 	node = tree_search(tree, file_offset);
- 	if (!node)
-@@ -802,7 +802,7 @@ int btrfs_find_ordered_sum(struct inode *inode, u64 offset, u64 disk_bytenr,
- 	const u16 csum_size = btrfs_super_csum_size(fs_info->super_copy);
- 	int index = 0;
-
--	ordered = btrfs_lookup_ordered_extent(inode, offset);
-+	ordered = btrfs_lookup_ordered_extent(BTRFS_I(inode), offset);
- 	if (!ordered)
- 		return 0;
-
-diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
-index c01c9698250b..6afa9d98e84e 100644
---- a/fs/btrfs/ordered-data.h
-+++ b/fs/btrfs/ordered-data.h
-@@ -166,7 +166,7 @@ int btrfs_add_ordered_extent_compress(struct inode *inode, u64 file_offset,
- 				      int compress_type);
- void btrfs_add_ordered_sum(struct btrfs_ordered_extent *entry,
- 			   struct btrfs_ordered_sum *sum);
--struct btrfs_ordered_extent *btrfs_lookup_ordered_extent(struct inode *inode,
-+struct btrfs_ordered_extent *btrfs_lookup_ordered_extent(struct btrfs_inode *inode,
- 							 u64 file_offset);
- void btrfs_start_ordered_extent(struct inode *inode,
- 				struct btrfs_ordered_extent *entry, int wait);
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 3bbae80c752f..2a49115ee4c6 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -3882,7 +3882,7 @@ int btrfs_reloc_clone_csums(struct inode *inode, u64 file_pos, u64 len)
- 	u64 new_bytenr;
- 	LIST_HEAD(list);
-
--	ordered = btrfs_lookup_ordered_extent(inode, file_pos);
-+	ordered = btrfs_lookup_ordered_extent(BTRFS_I(inode), file_pos);
- 	BUG_ON(ordered->file_offset != file_pos || ordered->num_bytes != len);
-
- 	disk_bytenr = file_pos + BTRFS_I(inode)->index_cnt;
+ 	struct inode *inode = private_data;
+ 	blk_status_t ret;
+-	ret = btrfs_csum_one_bio(inode, bio, offset, 1);
++	ret = btrfs_csum_one_bio(BTRFS_I(inode), bio, offset, 1);
+ 	BUG_ON(ret); /* -ENOMEM */
+ 	return 0;
+ }
+@@ -7658,7 +7658,7 @@ static inline blk_status_t btrfs_submit_dio_bio(struct bio *bio,
+ 		 * If we aren't doing async submit, calculate the csum of the
+ 		 * bio now.
+ 		 */
+-		ret = btrfs_csum_one_bio(inode, bio, file_offset, 1);
++		ret = btrfs_csum_one_bio(BTRFS_I(inode), bio, file_offset, 1);
+ 		if (ret)
+ 			goto err;
+ 	} else {
 --
 2.17.1
 

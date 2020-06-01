@@ -6,28 +6,28 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AA226C433DF
-	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jun 2020 15:37:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 56851C433E0
+	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jun 2020 15:37:56 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 958D92065C
-	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jun 2020 15:37:54 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3E146207D5
+	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jun 2020 15:37:56 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728076AbgFAPhy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 1 Jun 2020 11:37:54 -0400
-Received: from mx2.suse.de ([195.135.220.15]:34044 "EHLO mx2.suse.de"
+        id S1728103AbgFAPhz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 1 Jun 2020 11:37:55 -0400
+Received: from mx2.suse.de ([195.135.220.15]:34136 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727924AbgFAPhv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 1 Jun 2020 11:37:51 -0400
+        id S1727959AbgFAPhx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 1 Jun 2020 11:37:53 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 3FFE9B1FD;
-        Mon,  1 Jun 2020 15:37:52 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 1BA0FB20D;
+        Mon,  1 Jun 2020 15:37:53 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 17/46] btrfs: Make submit_compressed_extents take btrfs_inode
-Date:   Mon,  1 Jun 2020 18:37:15 +0300
-Message-Id: <20200601153744.31891-18-nborisov@suse.com>
+Subject: [PATCH 21/46] btrfs: Make run_delalloc_nocow take btrfs_inode
+Date:   Mon,  1 Jun 2020 18:37:19 +0300
+Message-Id: <20200601153744.31891-22-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20200601153744.31891-1-nborisov@suse.com>
 References: <20200601153744.31891-1-nborisov@suse.com>
@@ -36,134 +36,139 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-All but 3 uses require vfs_inode so convert the logic to have btrfs_inode be
-the main inode struct.
+It only really uses btrfs_inode.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/inode.c | 34 +++++++++++++++-------------------
- 1 file changed, 15 insertions(+), 19 deletions(-)
+ fs/btrfs/inode.c | 38 ++++++++++++++++++--------------------
+ 1 file changed, 18 insertions(+), 20 deletions(-)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index a527848c57d5..9794895d16fe 100644
+index 27051e8a7013..2798154f2c48 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -763,14 +763,14 @@ static void free_async_extent_pages(struct async_extent *async_extent)
+@@ -1419,28 +1419,27 @@ static int fallback_to_cow(struct btrfs_inode *inode, struct page *locked_page,
+  * If no cow copies or snapshots exist, we write directly to the existing
+  * blocks on disk
   */
- static noinline void submit_compressed_extents(struct async_chunk *async_chunk)
+-static noinline int run_delalloc_nocow(struct inode *inode,
++static noinline int run_delalloc_nocow(struct btrfs_inode *inode,
+ 				       struct page *locked_page,
+ 				       const u64 start, const u64 end,
+ 				       int *page_started, int force,
+ 				       unsigned long *nr_written)
  {
--	struct inode *inode = async_chunk->inode;
 -	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
-+	struct btrfs_inode *inode = BTRFS_I(async_chunk->inode);
-+	struct btrfs_fs_info *fs_info = inode->root->fs_info;
- 	struct async_extent *async_extent;
- 	u64 alloc_hint = 0;
- 	struct btrfs_key ins;
- 	struct extent_map *em;
 -	struct btrfs_root *root = BTRFS_I(inode)->root;
--	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
++	struct btrfs_fs_info *fs_info = inode->root->fs_info;
 +	struct btrfs_root *root = inode->root;
-+	struct extent_io_tree *io_tree = &inode->io_tree;
- 	int ret = 0;
+ 	struct btrfs_path *path;
+ 	u64 cow_start = (u64)-1;
+ 	u64 cur_offset = start;
+ 	int ret;
+ 	bool check_prev = true;
+-	const bool freespace_inode = btrfs_is_free_space_inode(BTRFS_I(inode));
+-	u64 ino = btrfs_ino(BTRFS_I(inode));
++	const bool freespace_inode = btrfs_is_free_space_inode(inode);
++	u64 ino = btrfs_ino(inode);
+ 	bool nocow = false;
+ 	u64 disk_bytenr = 0;
 
- again:
-@@ -788,8 +788,7 @@ static noinline void submit_compressed_extents(struct async_chunk *async_chunk)
- 			unsigned long nr_written = 0;
+ 	path = btrfs_alloc_path();
+ 	if (!path) {
+-		extent_clear_unlock_delalloc(BTRFS_I(inode), start, end,
+-					     locked_page,
++		extent_clear_unlock_delalloc(inode, start, end, locked_page,
+ 					     EXTENT_LOCKED | EXTENT_DELALLOC |
+ 					     EXTENT_DO_ACCOUNTING |
+ 					     EXTENT_DEFRAG, PAGE_UNLOCK |
+@@ -1660,7 +1659,7 @@ static noinline int run_delalloc_nocow(struct inode *inode,
+ 		 * NOCOW, following one which needs to be COW'ed
+ 		 */
+ 		if (cow_start != (u64)-1) {
+-			ret = fallback_to_cow(BTRFS_I(inode), locked_page,
++			ret = fallback_to_cow(inode, locked_page,
+ 					      cow_start, found_key.offset - 1,
+ 					      page_started, nr_written);
+ 			if (ret) {
+@@ -1676,7 +1675,7 @@ static noinline int run_delalloc_nocow(struct inode *inode,
+ 			u64 orig_start = found_key.offset - extent_offset;
+ 			struct extent_map *em;
 
- 			/* allocate blocks */
--			ret = cow_file_range(BTRFS_I(inode),
--					     async_chunk->locked_page,
-+			ret = cow_file_range(inode, async_chunk->locked_page,
- 					     async_extent->start,
- 					     async_extent->start +
- 					     async_extent->ram_size - 1,
-@@ -804,7 +803,7 @@ static noinline void submit_compressed_extents(struct async_chunk *async_chunk)
- 			 * all those pages down to the drive.
+-			em = create_io_em(BTRFS_I(inode), cur_offset, num_bytes,
++			em = create_io_em(inode, cur_offset, num_bytes,
+ 					  orig_start,
+ 					  disk_bytenr, /* block_start */
+ 					  num_bytes, /* block_len */
+@@ -1691,19 +1690,18 @@ static noinline int run_delalloc_nocow(struct inode *inode,
+ 				goto error;
+ 			}
+ 			free_extent_map(em);
+-			ret = btrfs_add_ordered_extent(BTRFS_I(inode), cur_offset,
++			ret = btrfs_add_ordered_extent(inode, cur_offset,
+ 						       disk_bytenr, num_bytes,
+ 						       num_bytes,
+ 						       BTRFS_ORDERED_PREALLOC);
+ 			if (ret) {
+-				btrfs_drop_extent_cache(BTRFS_I(inode),
+-							cur_offset,
++				btrfs_drop_extent_cache(inode, cur_offset,
+ 							cur_offset + num_bytes - 1,
+ 							0);
+ 				goto error;
+ 			}
+ 		} else {
+-			ret = btrfs_add_ordered_extent(BTRFS_I(inode), cur_offset,
++			ret = btrfs_add_ordered_extent(inode, cur_offset,
+ 						       disk_bytenr, num_bytes,
+ 						       num_bytes,
+ 						       BTRFS_ORDERED_NOCOW);
+@@ -1722,10 +1720,10 @@ static noinline int run_delalloc_nocow(struct inode *inode,
+ 			 * extent_clear_unlock_delalloc() in error handler
+ 			 * from freeing metadata of created ordered extent.
  			 */
- 			if (!page_started && !ret)
--				extent_write_locked_range(inode,
-+				extent_write_locked_range(&inode->vfs_inode,
- 						  async_extent->start,
- 						  async_extent->start +
- 						  async_extent->ram_size - 1,
-@@ -834,7 +833,7 @@ static noinline void submit_compressed_extents(struct async_chunk *async_chunk)
- 				 * will not submit these pages down to lower
- 				 * layers.
- 				 */
--				extent_range_redirty_for_io(inode,
-+				extent_range_redirty_for_io(&inode->vfs_inode,
- 						async_extent->start,
- 						async_extent->start +
- 						async_extent->ram_size - 1);
-@@ -847,7 +846,7 @@ static noinline void submit_compressed_extents(struct async_chunk *async_chunk)
- 		 * here we're doing allocation and writeback of the
- 		 * compressed pages
- 		 */
--		em = create_io_em(BTRFS_I(inode), async_extent->start,
-+		em = create_io_em(inode, async_extent->start,
- 				  async_extent->ram_size, /* len */
- 				  async_extent->start, /* orig_start */
- 				  ins.objectid, /* block_start */
-@@ -861,7 +860,7 @@ static noinline void submit_compressed_extents(struct async_chunk *async_chunk)
- 			goto out_free_reserve;
- 		free_extent_map(em);
+-			ret = btrfs_reloc_clone_csums(BTRFS_I(inode), cur_offset,
++			ret = btrfs_reloc_clone_csums(inode, cur_offset,
+ 						      num_bytes);
 
--		ret = btrfs_add_ordered_extent_compress(BTRFS_I(inode),
-+		ret = btrfs_add_ordered_extent_compress(inode,
- 						async_extent->start,
- 						ins.objectid,
- 						async_extent->ram_size,
-@@ -869,8 +868,7 @@ static noinline void submit_compressed_extents(struct async_chunk *async_chunk)
- 						BTRFS_ORDERED_COMPRESSED,
- 						async_extent->compress_type);
- 		if (ret) {
--			btrfs_drop_extent_cache(BTRFS_I(inode),
--						async_extent->start,
-+			btrfs_drop_extent_cache(inode, async_extent->start,
- 						async_extent->start +
- 						async_extent->ram_size - 1, 0);
- 			goto out_free_reserve;
-@@ -880,14 +878,13 @@ static noinline void submit_compressed_extents(struct async_chunk *async_chunk)
- 		/*
- 		 * clear dirty, set writeback and unlock the pages.
- 		 */
--		extent_clear_unlock_delalloc(BTRFS_I(inode), async_extent->start,
-+		extent_clear_unlock_delalloc(inode, async_extent->start,
- 				async_extent->start +
- 				async_extent->ram_size - 1,
- 				NULL, EXTENT_LOCKED | EXTENT_DELALLOC,
- 				PAGE_UNLOCK | PAGE_CLEAR_DIRTY |
- 				PAGE_SET_WRITEBACK);
--		if (btrfs_submit_compressed_write(BTRFS_I(inode),
--				    async_extent->start,
-+		if (btrfs_submit_compressed_write(inode, async_extent->start,
- 				    async_extent->ram_size,
- 				    ins.objectid,
- 				    ins.offset, async_extent->pages,
-@@ -898,12 +895,11 @@ static noinline void submit_compressed_extents(struct async_chunk *async_chunk)
- 			const u64 start = async_extent->start;
- 			const u64 end = start + async_extent->ram_size - 1;
+-		extent_clear_unlock_delalloc(BTRFS_I(inode), cur_offset,
++		extent_clear_unlock_delalloc(inode, cur_offset,
+ 					     cur_offset + num_bytes - 1,
+ 					     locked_page, EXTENT_LOCKED |
+ 					     EXTENT_DELALLOC |
+@@ -1751,8 +1749,8 @@ static noinline int run_delalloc_nocow(struct inode *inode,
 
--			p->mapping = inode->i_mapping;
-+			p->mapping = inode->vfs_inode.i_mapping;
- 			btrfs_writepage_endio_finish_ordered(p, start, end, 0);
+ 	if (cow_start != (u64)-1) {
+ 		cur_offset = end;
+-		ret = fallback_to_cow(BTRFS_I(inode), locked_page, cow_start,
+-				      end, page_started, nr_written);
++		ret = fallback_to_cow(inode, locked_page, cow_start, end,
++				      page_started, nr_written);
+ 		if (ret)
+ 			goto error;
+ 	}
+@@ -1762,7 +1760,7 @@ static noinline int run_delalloc_nocow(struct inode *inode,
+ 		btrfs_dec_nocow_writers(fs_info, disk_bytenr);
 
- 			p->mapping = NULL;
--			extent_clear_unlock_delalloc(BTRFS_I(inode), start, end,
--						     NULL, 0,
-+			extent_clear_unlock_delalloc(inode, start, end, NULL, 0,
- 						     PAGE_END_WRITEBACK |
- 						     PAGE_SET_ERROR);
- 			free_async_extent_pages(async_extent);
-@@ -917,7 +913,7 @@ static noinline void submit_compressed_extents(struct async_chunk *async_chunk)
- 	btrfs_dec_block_group_reservations(fs_info, ins.objectid);
- 	btrfs_free_reserved_extent(fs_info, ins.objectid, ins.offset, 1);
- out_free:
--	extent_clear_unlock_delalloc(BTRFS_I(inode), async_extent->start,
-+	extent_clear_unlock_delalloc(inode, async_extent->start,
- 				     async_extent->start +
- 				     async_extent->ram_size - 1,
- 				     NULL, EXTENT_LOCKED | EXTENT_DELALLOC |
+ 	if (ret && cur_offset < end)
+-		extent_clear_unlock_delalloc(BTRFS_I(inode), cur_offset, end,
++		extent_clear_unlock_delalloc(inode, cur_offset, end,
+ 					     locked_page, EXTENT_LOCKED |
+ 					     EXTENT_DELALLOC | EXTENT_DEFRAG |
+ 					     EXTENT_DO_ACCOUNTING, PAGE_UNLOCK |
+@@ -1805,10 +1803,10 @@ int btrfs_run_delalloc_range(struct inode *inode, struct page *locked_page,
+ 	int force_cow = need_force_cow(inode, start, end);
+
+ 	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODATACOW && !force_cow) {
+-		ret = run_delalloc_nocow(inode, locked_page, start, end,
++		ret = run_delalloc_nocow(BTRFS_I(inode), locked_page, start, end,
+ 					 page_started, 1, nr_written);
+ 	} else if (BTRFS_I(inode)->flags & BTRFS_INODE_PREALLOC && !force_cow) {
+-		ret = run_delalloc_nocow(inode, locked_page, start, end,
++		ret = run_delalloc_nocow(BTRFS_I(inode), locked_page, start, end,
+ 					 page_started, 0, nr_written);
+ 	} else if (!inode_can_compress(inode) ||
+ 		   !inode_need_compress(inode, start, end)) {
 --
 2.17.1
 

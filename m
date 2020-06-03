@@ -6,28 +6,28 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 481EFC433DF
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 05:56:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CC810C433E1
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 05:56:43 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 2E5E02068D
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 05:56:42 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B8DDF2074B
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 05:56:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725985AbgFCFz4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 3 Jun 2020 01:55:56 -0400
-Received: from mx2.suse.de ([195.135.220.15]:42444 "EHLO mx2.suse.de"
+        id S1726182AbgFCF4n (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 3 Jun 2020 01:56:43 -0400
+Received: from mx2.suse.de ([195.135.220.15]:42464 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725877AbgFCFzz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 3 Jun 2020 01:55:55 -0400
+        id S1725959AbgFCFz4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 3 Jun 2020 01:55:56 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id D06BFAFF4;
-        Wed,  3 Jun 2020 05:55:55 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 44E3EAFC3;
+        Wed,  3 Jun 2020 05:55:58 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 05/46] btrfs: Make create_io_em take btrfs_inode
-Date:   Wed,  3 Jun 2020 08:55:05 +0300
-Message-Id: <20200603055546.3889-6-nborisov@suse.com>
+Subject: [PATCH 16/46] btrfs: Make btrfs_submit_compressed_write take btrfs_inode
+Date:   Wed,  3 Jun 2020 08:55:16 +0300
+Message-Id: <20200603055546.3889-17-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20200603055546.3889-1-nborisov@suse.com>
 References: <20200603055546.3889-1-nborisov@suse.com>
@@ -36,96 +36,118 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-It really wants a btrfs_inode and will allow submit_compressed_extents
-to be completely converted to btrfs_inode in follow up patches.
+Majority of its uses are for btrfs_inode so take it as an argument directly.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/inode.c | 22 +++++++++++-----------
- 1 file changed, 11 insertions(+), 11 deletions(-)
+ fs/btrfs/compression.c | 15 +++++++--------
+ fs/btrfs/compression.h |  4 +++-
+ fs/btrfs/inode.c       |  2 +-
+ 3 files changed, 11 insertions(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 56015fdd46c9..00ad7bdb7d34 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -83,8 +83,8 @@ static noinline int cow_file_range(struct inode *inode,
- 				   struct page *locked_page,
- 				   u64 start, u64 end, int *page_started,
- 				   unsigned long *nr_written, int unlock);
--static struct extent_map *create_io_em(struct inode *inode, u64 start, u64 len,
--				       u64 orig_start, u64 block_start,
-+static struct extent_map *create_io_em(struct btrfs_inode *inode, u64 start,
-+				       u64 len, u64 orig_start, u64 block_start,
- 				       u64 block_len, u64 orig_block_len,
- 				       u64 ram_bytes, int compress_type,
- 				       int type);
-@@ -844,7 +844,7 @@ static noinline void submit_compressed_extents(struct async_chunk *async_chunk)
- 		 * here we're doing allocation and writeback of the
- 		 * compressed pages
- 		 */
--		em = create_io_em(inode, async_extent->start,
-+		em = create_io_em(BTRFS_I(inode), async_extent->start,
- 				  async_extent->ram_size, /* len */
- 				  async_extent->start, /* orig_start */
- 				  ins.objectid, /* block_start */
-@@ -1046,7 +1046,7 @@ static noinline int cow_file_range(struct inode *inode,
- 		extent_reserved = true;
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index 4f52cd8af517..c2d5ca583dbf 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -405,7 +405,7 @@ static void end_compressed_bio_write(struct bio *bio)
+  * This also checksums the file bytes and gets things ready for
+  * the end io hooks.
+  */
+-blk_status_t btrfs_submit_compressed_write(struct inode *inode, u64 start,
++blk_status_t btrfs_submit_compressed_write(struct btrfs_inode *inode, u64 start,
+ 				 unsigned long len, u64 disk_start,
+ 				 unsigned long compressed_len,
+ 				 struct page **compressed_pages,
+@@ -413,7 +413,7 @@ blk_status_t btrfs_submit_compressed_write(struct inode *inode, u64 start,
+ 				 unsigned int write_flags,
+ 				 struct cgroup_subsys_state *blkcg_css)
+ {
+-	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
++	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+ 	struct bio *bio = NULL;
+ 	struct compressed_bio *cb;
+ 	unsigned long bytes_left;
+@@ -421,7 +421,7 @@ blk_status_t btrfs_submit_compressed_write(struct inode *inode, u64 start,
+ 	struct page *page;
+ 	u64 first_byte = disk_start;
+ 	blk_status_t ret;
+-	int skip_sum = BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM;
++	int skip_sum = inode->flags & BTRFS_INODE_NODATASUM;
 
- 		ram_size = ins.offset;
--		em = create_io_em(inode, start, ins.offset, /* len */
-+		em = create_io_em(BTRFS_I(inode), start, ins.offset, /* len */
- 				  start, /* orig_start */
- 				  ins.objectid, /* block_start */
- 				  ins.offset, /* block_len */
-@@ -1679,7 +1679,7 @@ static noinline int run_delalloc_nocow(struct inode *inode,
- 			u64 orig_start = found_key.offset - extent_offset;
- 			struct extent_map *em;
+ 	WARN_ON(!PAGE_ALIGNED(start));
+ 	cb = kmalloc(compressed_bio_size(fs_info, compressed_len), GFP_NOFS);
+@@ -429,7 +429,7 @@ blk_status_t btrfs_submit_compressed_write(struct inode *inode, u64 start,
+ 		return BLK_STS_RESOURCE;
+ 	refcount_set(&cb->pending_bios, 0);
+ 	cb->errors = 0;
+-	cb->inode = inode;
++	cb->inode = &inode->vfs_inode;
+ 	cb->start = start;
+ 	cb->len = len;
+ 	cb->mirror_num = 0;
+@@ -455,7 +455,7 @@ blk_status_t btrfs_submit_compressed_write(struct inode *inode, u64 start,
+ 		int submit = 0;
 
--			em = create_io_em(inode, cur_offset, num_bytes,
-+			em = create_io_em(BTRFS_I(inode), cur_offset, num_bytes,
- 					  orig_start,
- 					  disk_bytenr, /* block_start */
- 					  num_bytes, /* block_len */
-@@ -6843,7 +6843,7 @@ static struct extent_map *btrfs_create_dio_extent(struct inode *inode,
- 	int ret;
+ 		page = compressed_pages[pg_index];
+-		page->mapping = inode->i_mapping;
++		page->mapping = inode->vfs_inode.i_mapping;
+ 		if (bio->bi_iter.bi_size)
+ 			submit = btrfs_bio_fits_in_stripe(page, PAGE_SIZE, bio,
+ 							  0);
+@@ -475,8 +475,7 @@ blk_status_t btrfs_submit_compressed_write(struct inode *inode, u64 start,
+ 			BUG_ON(ret); /* -ENOMEM */
 
- 	if (type != BTRFS_ORDERED_NOCOW) {
--		em = create_io_em(inode, start, len, orig_start,
-+		em = create_io_em(BTRFS_I(inode), start, len, orig_start,
- 				  block_start, block_len, orig_block_len,
- 				  ram_bytes,
- 				  BTRFS_COMPRESS_NONE, /* compress_type */
-@@ -7122,8 +7122,8 @@ static int lock_extent_direct(struct inode *inode, u64 lockstart, u64 lockend,
- }
+ 			if (!skip_sum) {
+-				ret = btrfs_csum_one_bio(BTRFS_I(inode), bio,
+-							 start, 1);
++				ret = btrfs_csum_one_bio(inode, bio, start, 1);
+ 				BUG_ON(ret); /* -ENOMEM */
+ 			}
 
- /* The callers of this must take lock_extent() */
--static struct extent_map *create_io_em(struct inode *inode, u64 start, u64 len,
--				       u64 orig_start, u64 block_start,
-+static struct extent_map *create_io_em(struct btrfs_inode *inode, u64 start,
-+				       u64 len, u64 orig_start, u64 block_start,
- 				       u64 block_len, u64 orig_block_len,
- 				       u64 ram_bytes, int compress_type,
- 				       int type)
-@@ -7137,7 +7137,7 @@ static struct extent_map *create_io_em(struct inode *inode, u64 start, u64 len,
- 	       type == BTRFS_ORDERED_NOCOW ||
- 	       type == BTRFS_ORDERED_REGULAR);
+@@ -508,7 +507,7 @@ blk_status_t btrfs_submit_compressed_write(struct inode *inode, u64 start,
+ 	BUG_ON(ret); /* -ENOMEM */
 
--	em_tree = &BTRFS_I(inode)->extent_tree;
-+	em_tree = &inode->extent_tree;
- 	em = alloc_extent_map();
- 	if (!em)
- 		return ERR_PTR(-ENOMEM);
-@@ -7159,8 +7159,8 @@ static struct extent_map *create_io_em(struct inode *inode, u64 start, u64 len,
+ 	if (!skip_sum) {
+-		ret = btrfs_csum_one_bio(BTRFS_I(inode), bio, start, 1);
++		ret = btrfs_csum_one_bio(inode, bio, start, 1);
+ 		BUG_ON(ret); /* -ENOMEM */
  	}
 
- 	do {
--		btrfs_drop_extent_cache(BTRFS_I(inode), em->start,
--				em->start + em->len - 1, 0);
-+		btrfs_drop_extent_cache(inode, em->start,
-+					em->start + em->len - 1, 0);
- 		write_lock(&em_tree->lock);
- 		ret = add_extent_mapping(em_tree, em, 1);
- 		write_unlock(&em_tree->lock);
+diff --git a/fs/btrfs/compression.h b/fs/btrfs/compression.h
+index 284a3ad31350..9f3dbe372631 100644
+--- a/fs/btrfs/compression.h
++++ b/fs/btrfs/compression.h
+@@ -8,6 +8,8 @@
+
+ #include <linux/sizes.h>
+
++struct btrfs_inode;
++
+ /*
+  * We want to make sure that amount of RAM required to uncompress an extent is
+  * reasonable, so we limit the total size in ram of a compressed extent to
+@@ -88,7 +90,7 @@ int btrfs_decompress_buf2page(const char *buf, unsigned long buf_start,
+ 			      unsigned long total_out, u64 disk_start,
+ 			      struct bio *bio);
+
+-blk_status_t btrfs_submit_compressed_write(struct inode *inode, u64 start,
++blk_status_t btrfs_submit_compressed_write(struct btrfs_inode *inode, u64 start,
+ 				  unsigned long len, u64 disk_start,
+ 				  unsigned long compressed_len,
+ 				  struct page **compressed_pages,
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index a106c9857315..a527848c57d5 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -886,7 +886,7 @@ static noinline void submit_compressed_extents(struct async_chunk *async_chunk)
+ 				NULL, EXTENT_LOCKED | EXTENT_DELALLOC,
+ 				PAGE_UNLOCK | PAGE_CLEAR_DIRTY |
+ 				PAGE_SET_WRITEBACK);
+-		if (btrfs_submit_compressed_write(inode,
++		if (btrfs_submit_compressed_write(BTRFS_I(inode),
+ 				    async_extent->start,
+ 				    async_extent->ram_size,
+ 				    ins.objectid,
 --
 2.17.1
 

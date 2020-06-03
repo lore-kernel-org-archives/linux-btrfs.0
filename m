@@ -2,169 +2,241 @@ Return-Path: <SRS0=7Enz=7Q=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.8 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,
+	URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DC8A7C433E0
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 13:37:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3BE5AC433E0
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 19:03:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id B8F07206C3
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 13:37:35 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1803620678
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 19:03:13 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="INtW4yap"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="exHuLHlP"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725965AbgFCNhf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 3 Jun 2020 09:37:35 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48286 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725810AbgFCNhe (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Jun 2020 09:37:34 -0400
-Received: from mail-vs1-xe43.google.com (mail-vs1-xe43.google.com [IPv6:2607:f8b0:4864:20::e43])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 99E6EC08C5C0
-        for <linux-btrfs@vger.kernel.org>; Wed,  3 Jun 2020 06:37:33 -0700 (PDT)
-Received: by mail-vs1-xe43.google.com with SMTP id y123so1392696vsb.6
-        for <linux-btrfs@vger.kernel.org>; Wed, 03 Jun 2020 06:37:33 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:from:date:message-id:subject:to;
-        bh=B6kU6YsH8+v6lRnrEBnjU77lMQrxZSMuDt4AvqFz+4A=;
-        b=INtW4yapCobcpH/ZP4a0kNd6h6SOtZlwY0RT5XdZmoCMfB1KIOh1m/FPXOWtrvww7U
-         qR4qrdX071+o9XlrTG/ILF8gy6KpuTPZ4stjBEnydtG0emCLKR35yYWqEpm1avTy/1tx
-         J+5/Au3PCsBbH5m+moizBR8zFpdjcHgypxW2L4V6xmkTONaKZdEYbVKp7odmmS/kRwl7
-         gJSQa102VUNRxi0fLLqmBdJH/7qHeE/UZ1EUZYbmBJNu2VIHATMZhOouJqph8lvT/iTB
-         VY978abOh+FjJQBE290m08iaGrVF5vkHqLz+JiampYC5Tc9acK7lXX054asnaqR16ueZ
-         8ktw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:from:date:message-id:subject:to;
-        bh=B6kU6YsH8+v6lRnrEBnjU77lMQrxZSMuDt4AvqFz+4A=;
-        b=RtH7he3vLyvckPRE1AyL1tvuwMm4/KNLQyqa0r9RCmm0wRtvhySN9oy9BCDyk8u6ff
-         BwHtHefcMK6yZHBzZki9ksY3Ly1mAMpMXyv7c9oRVflXYJROvFk4gzL2Nve5gLSnCo2E
-         AsuENLrl0OHYWOp5g3oATJbkbNczWJexNb7UkLkHzbblWj6lDwVRGSN0SJQakLw8pN8/
-         I4YeMYjeSABc17bLZZV1NO331qKXsOt7huBZ0DbPHpwPE1m6kdIy9RUDUDiDKKGRhJTl
-         drXvNrF6YNtYrsPlTBrtEkrxjVdNDJHYL5zzG8f6IBFvyhEkCOk0gKA29IftRPCvsQTf
-         qBfA==
-X-Gm-Message-State: AOAM531wqYnpKmGazZ7wra7KTFFR0+S2sUE5nCq8FhuXjX7yAL5uq89n
-        EhDdgDcr8YugrkmyozP2+eUlzgAyxA2rw9smbfzcr4YP
-X-Google-Smtp-Source: ABdhPJxe+ct1ZsQv9Yp3UezUNYFQJLxHk0tj/djmxrAQ5iziC7Y9thU5RPlY+PIeyTl92ZmmAzUMJ67AzJIzV8xvY1A=
-X-Received: by 2002:a67:1c04:: with SMTP id c4mr23018632vsc.133.1591191452525;
- Wed, 03 Jun 2020 06:37:32 -0700 (PDT)
+        id S1726096AbgFCTDM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 3 Jun 2020 15:03:12 -0400
+Received: from aserp2120.oracle.com ([141.146.126.78]:52426 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725821AbgFCTDL (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Jun 2020 15:03:11 -0400
+Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
+        by aserp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 053J2UA9103435;
+        Wed, 3 Jun 2020 19:02:58 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=date : from : to : cc
+ : subject : message-id : references : mime-version : content-type :
+ content-transfer-encoding : in-reply-to; s=corp-2020-01-29;
+ bh=o7+fler5zTGTJ+y6IwAfjprQ49fo/OV69viq3ZJ03Z8=;
+ b=exHuLHlPmoKUl/g6Df8m0R4b/kBt8w5qmGL8h1QMwiMg4ZJn5xh6zcI5uOWJ/QAJteae
+ 9sjTEPNflDCgZI3NXnLOAEh/X3kLauv5JLGXp9gwjq8hmCpEIkC2Lviuyidsdcu7vMNR
+ oaUEBDAzUQgZfI7/4o74jbMclbCkLURv3vSvr10zj8qaVL7uFG8LAIllmvVg35oH3IIG
+ MGeJL/9J1nb3Ze5OypiWemywiczFIDUoa0mZKKrMllvKhdkq1rhwH1L4Zpwa/jeeroq7
+ 0xKmeGl6hioq9o3uLi9ASYFLvD1+WpUdHjI1lJz9vNFBGq85w73HBBq2wG70yXOnwkLz oA== 
+Received: from aserp3030.oracle.com (aserp3030.oracle.com [141.146.126.71])
+        by aserp2120.oracle.com with ESMTP id 31bfemawu1-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
+        Wed, 03 Jun 2020 19:02:57 +0000
+Received: from pps.filterd (aserp3030.oracle.com [127.0.0.1])
+        by aserp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 053IvTIL093545;
+        Wed, 3 Jun 2020 19:02:57 GMT
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by aserp3030.oracle.com with ESMTP id 31c12rb6bx-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Wed, 03 Jun 2020 19:02:57 +0000
+Received: from abhmp0002.oracle.com (abhmp0002.oracle.com [141.146.116.8])
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id 053J2tJM023799;
+        Wed, 3 Jun 2020 19:02:55 GMT
+Received: from localhost (/10.159.239.239)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Wed, 03 Jun 2020 12:02:55 -0700
+Date:   Wed, 3 Jun 2020 12:02:52 -0700
+From:   "Darrick J. Wong" <darrick.wong@oracle.com>
+To:     Filipe Manana <fdmanana@gmail.com>
+Cc:     Goldwyn Rodrigues <rgoldwyn@suse.de>,
+        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Johannes Thumshirn <Johannes.Thumshirn@wdc.com>,
+        Christoph Hellwig <hch@infradead.org>, dsterba@suse.cz
+Subject: Re: [PATCH] iomap: Return zero in case of unsuccessful pagecache
+ invalidation before DIO
+Message-ID: <20200603190252.GG8204@magnolia>
+References: <20200528192103.xm45qoxqmkw7i5yl@fiona>
+ <20200529002319.GQ252930@magnolia>
+ <20200601151614.pxy7in4jrvuuy7nx@fiona>
+ <CAL3q7H60xa0qW4XdneDdeQyNcJZx7DxtwDiYkuWB5NoUVPYdwQ@mail.gmail.com>
+ <CAL3q7H4=N2pfnBSiJ+TApy9kwvcPE5sB92sxcVZN10bxZqQpaA@mail.gmail.com>
 MIME-Version: 1.0
-From:   Thorsten Rehm <thorsten.rehm@gmail.com>
-Date:   Wed, 3 Jun 2020 15:37:21 +0200
-Message-ID: <CABT3_pzBdRqe7SRBptM1E5MPJfwEGF6=YBovmZdj1Vxjs21iNQ@mail.gmail.com>
-Subject: corrupt leaf; invalid root item size
-To:     linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <CAL3q7H4=N2pfnBSiJ+TApy9kwvcPE5sB92sxcVZN10bxZqQpaA@mail.gmail.com>
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9641 signatures=668686
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 mlxscore=0 phishscore=0 malwarescore=0
+ adultscore=0 suspectscore=5 spamscore=0 bulkscore=0 mlxlogscore=999
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2004280000
+ definitions=main-2006030146
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9641 signatures=668686
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 malwarescore=0 suspectscore=5
+ mlxlogscore=999 priorityscore=1501 bulkscore=0 phishscore=0 clxscore=1015
+ impostorscore=0 adultscore=0 spamscore=0 mlxscore=0 lowpriorityscore=0
+ cotscore=-2147483648 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2004280000 definitions=main-2006030147
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi,
+On Wed, Jun 03, 2020 at 12:32:15PM +0100, Filipe Manana wrote:
+> On Wed, Jun 3, 2020 at 12:23 PM Filipe Manana <fdmanana@gmail.com> wrote:
+> >
+> > On Mon, Jun 1, 2020 at 4:16 PM Goldwyn Rodrigues <rgoldwyn@suse.de> wrote:
+> > >
+> > > On 17:23 28/05, Darrick J. Wong wrote:
+> > > > On Thu, May 28, 2020 at 02:21:03PM -0500, Goldwyn Rodrigues wrote:
+> > > > >
+> > > > > Filesystems such as btrfs are unable to guarantee page invalidation
+> > > > > because pages could be locked as a part of the extent. Return zero
+> > > >
+> > > > Locked for what?  filemap_write_and_wait_range should have just cleaned
+> > > > them off.
+> > > >
+> > > > > in case a page cache invalidation is unsuccessful so filesystems can
+> > > > > fallback to buffered I/O. This is similar to
+> > > > > generic_file_direct_write().
+> > > > >
+> > > > > This takes care of the following invalidation warning during btrfs
+> > > > > mixed buffered and direct I/O using iomap_dio_rw():
+> > > > >
+> > > > > Page cache invalidation failure on direct I/O.  Possible data
+> > > > > corruption due to collision with buffered I/O!
+> > > > >
+> > > > > Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
+> > > > >
+> > > > > diff --git a/fs/iomap/direct-io.c b/fs/iomap/direct-io.c
+> > > > > index e4addfc58107..215315be6233 100644
+> > > > > --- a/fs/iomap/direct-io.c
+> > > > > +++ b/fs/iomap/direct-io.c
+> > > > > @@ -483,9 +483,15 @@ iomap_dio_rw(struct kiocb *iocb, struct iov_iter *iter,
+> > > > >      */
+> > > > >     ret = invalidate_inode_pages2_range(mapping,
+> > > > >                     pos >> PAGE_SHIFT, end >> PAGE_SHIFT);
+> > > > > -   if (ret)
+> > > > > -           dio_warn_stale_pagecache(iocb->ki_filp);
+> > > > > -   ret = 0;
+> > > > > +   /*
+> > > > > +    * If a page can not be invalidated, return 0 to fall back
+> > > > > +    * to buffered write.
+> > > > > +    */
+> > > > > +   if (ret) {
+> > > > > +           if (ret == -EBUSY)
+> > > > > +                   ret = 0;
+> > > > > +           goto out_free_dio;
+> > > >
+> > > > XFS doesn't fall back to buffered io when directio fails, which means
+> > > > this will cause a regression there.
+> > > >
+> > > > Granted mixing write types is bogus...
+> > > >
+> > >
+> > > I have not seen page invalidation failure errors on XFS, but what should
 
-I've updated my system (Debian testing) [1] several months ago (~
-December) and I noticed a lot of corrupt leaf messages flooding my
-kern.log [2]. Furthermore my system had some trouble, e.g.
-applications were terminated after some uptime, due to the btrfs
-filesystem errors. This was with kernel 5.3.
-The last time I tried was with Kernel 5.6.0-1-amd64 and the problem persists.
+What happens if you try to dirty an mmap page at the same time as
+issuing a directio?
 
-I've downgraded my kernel to 4.19.0-8-amd64 from the Debian Stable
-release and with this kernel there aren't any corrupt leaf messages
-and the problem is gone. IMHO, it must be something coming with kernel
-5.3 (or 5.x).
+> > > happen hypothetically if they do occur? Carry on with the direct I/O?
+> > > Would an error return like -ENOTBLK be better?
 
-My harddisk is a SSD which is responsible for the root partition. I've
-encrypted my filesystem with LUKS and just right after I entered my
-password at the boot, the first corrupt leaf errors appear.
+In the old days, we would only WARN when we encountered collisions like
+this.  How about only setting EIO in the mapping if we fail the
+pagecache invalidation in directio completion?  If a buffered write
+dirties the page after the direct write thread flushes the dirty pages
+but before invalidation, we can argue that we didn't lose anything; the
+direct write simply happened after the buffered write.
 
-An error message looks like this:
-May  7 14:39:34 foo kernel: [  100.162145] BTRFS critical (device
-dm-0): corrupt leaf: root=1 block=35799040 slot=32, invalid root item
-size, have 239 expect 439
+XFS doesn't implement buffered write fallback, and it never has.  Either
+the entire directio succeeds, or it returns a negative error code.  Some
+of the iomap_dio_rw callers (ext4, jfs2) will notice a short direct
+write and try to finish the rest with buffered io, but xfs and zonefs do
+not.
 
-"root=1", "slot=32", "have 239 expect 439" is always the same at every
-error line. Only the block number changes.
+The net effect of this (on xfs anyway) is that when buffered and direct
+writes collide, before we'd make the buffered writer lose, now we make
+the direct writer lose.
 
-Interestingly it's the very same as reported to the ML here [3]. I've
-contacted the reporter, but he didn't have a solution for me, because
-he changed to a different filesystem.
+You also /could/ propose teaching xfs how to fall back to an
+invalidating synchronous buffered write like ext4 does, but that's not
+part of this patch set, and that's not a behavior I want to introduce
+suddenly during the merge window.
 
-I've already tried "btrfs scrub" and "btrfs check --readonly /" in
-rescue mode, but w/o any errors. I've also checked the S.M.A.R.T.
-values of the SSD, which are fine. Furthermore I've tested my RAM, but
-again, w/o any errors.
+> > It doesn't make much to me to emit the warning and then proceed to the
+> > direct IO write path anyway, as if nothing happened.
+> > If we are concerned about possible corruption, we should either return
+> > an error or fallback to buffered IO just like
+> > generic_file_direct_write() did, and not allow the possibility for
+> > corruptions.
+> >
+> > Btw, this is causing a regression in Btrfs now. The problem is that
+> > dio_warn_stale_pagecache() sets an EIO error in the inode's mapping:
+> >
+> > errseq_set(&inode->i_mapping->wb_err, -EIO);
+> >
+> > So the next fsync on the file will return that error, despite the
+> > fsync having completed successfully with any errors.
+> >
+> > Since patchset to make btrfs direct IO use iomap is already in Linus'
+> > tree, we need to fix this somehow.
 
-So, I have no more ideas what I can do. Could you please help me to
-investigate this further? Could it be a bug?
+Y'all /just/ sent the pull request containing that conversion 2 days
+ago.  Why did you move forward with that when you knew there were
+unresolved fstests failures?
 
-Thank you very much.
+> > This makes generic/547 fail often for example - buffered write against
+> > file + direct IO write + fsync - the later returns -EIO.
+> 
+> Just to make it clear, despite the -EIO error, there was actually no
+> data loss or corruption (generic/547 checks that),
+> since the direct IO write path in btrfs figures out there's a buffered
+> write still ongoing and waits for it to complete before proceeding
+> with the dio write.
+> 
+> Nevertheless, it's still a regression, -EIO shouldn't be returned as
+> everything went fine.
 
-Best regards,
-Thorsten
+Now I'm annoyed because I feel like you're trying to strong-arm me into
+making last minute changes to iomap when you could have held off for
+another cycle.
 
+While I'm pretty sure your analysis is correct that we could /probably/
+get away with only setting EIO if we can't invalidate the cache after
+we've already written the disk blocks directly (because then we really
+did lose something), I /really/ want these kinds of behavioral changes
+to shared code to soak in for-next for long enough that we can work out
+the kinks without exposing the upstream kernel to unnecessary risk.
 
+This conversation would be /much/ different had you not just merged the
+btrfs directio iomap conversion yesterday.
 
-1:
-$ cat /etc/debian_version
-bullseye/sid
+--D
 
-$ uname -a
-[no problem with this kernel]
-Linux foo 4.19.0-8-amd64 #1 SMP Debian 4.19.98-1 (2020-01-26) x86_64 GNU/Linux
-
-$ btrfs --version
-btrfs-progs v5.6
-
-$ sudo btrfs fi show
-Label: 'slash'  uuid: 65005d0f-f8ea-4f77-8372-eb8b53198685
-        Total devices 1 FS bytes used 7.33GiB
-        devid    1 size 115.23GiB used 26.08GiB path /dev/mapper/sda5_crypt
-
-$ btrfs fi df /
-Data, single: total=22.01GiB, used=7.16GiB
-System, DUP: total=32.00MiB, used=4.00KiB
-System, single: total=4.00MiB, used=0.00B
-Metadata, DUP: total=2.00GiB, used=168.19MiB
-Metadata, single: total=8.00MiB, used=0.00B
-GlobalReserve, single: total=25.42MiB, used=0.00B
-
-
-2:
-[several messages per second]
-May  7 14:39:34 foo kernel: [  100.162145] BTRFS critical (device
-dm-0): corrupt leaf: root=1 block=35799040 slot=32, invalid root item
-size, have 239 expect 439
-May  7 14:39:35 foo kernel: [  100.998530] BTRFS critical (device
-dm-0): corrupt leaf: root=1 block=35885056 slot=32, invalid root item
-size, have 239 expect 439
-May  7 14:39:35 foo kernel: [  101.348650] BTRFS critical (device
-dm-0): corrupt leaf: root=1 block=35926016 slot=32, invalid root item
-size, have 239 expect 439
-May  7 14:39:36 foo kernel: [  101.619437] BTRFS critical (device
-dm-0): corrupt leaf: root=1 block=35995648 slot=32, invalid root item
-size, have 239 expect 439
-May  7 14:39:36 foo kernel: [  101.874069] BTRFS critical (device
-dm-0): corrupt leaf: root=1 block=36184064 slot=32, invalid root item
-size, have 239 expect 439
-May  7 14:39:36 foo kernel: [  102.339087] BTRFS critical (device
-dm-0): corrupt leaf: root=1 block=36319232 slot=32, invalid root item
-size, have 239 expect 439
-May  7 14:39:37 foo kernel: [  102.629429] BTRFS critical (device
-dm-0): corrupt leaf: root=1 block=36380672 slot=32, invalid root item
-size, have 239 expect 439
-May  7 14:39:37 foo kernel: [  102.839669] BTRFS critical (device
-dm-0): corrupt leaf: root=1 block=36487168 slot=32, invalid root item
-size, have 239 expect 439
-May  7 14:39:37 foo kernel: [  103.109183] BTRFS critical (device
-dm-0): corrupt leaf: root=1 block=36597760 slot=32, invalid root item
-size, have 239 expect 439
-May  7 14:39:37 foo kernel: [  103.299101] BTRFS critical (device
-dm-0): corrupt leaf: root=1 block=36626432 slot=32, invalid root item
-size, have 239 expect 439
-
-3:
-https://lore.kernel.org/linux-btrfs/19acbd39-475f-bd72-e280-5f6c6496035c@web.de/
+> 
+> >
+> > Thanks.
+> >
+> > >
+> > > --
+> > > Goldwyn
+> >
+> >
+> >
+> > --
+> > Filipe David Manana,
+> >
+> > “Whether you think you can, or you think you can't — you're right.”
+> 
+> 
+> 
+> -- 
+> Filipe David Manana,
+> 
+> “Whether you think you can, or you think you can't — you're right.”

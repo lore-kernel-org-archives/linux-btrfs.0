@@ -6,28 +6,28 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 90FF2C433E0
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 05:56:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A7954C433E1
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 05:56:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 7723A20678
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 05:56:07 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 89ED52068D
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 05:56:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726105AbgFCF4H (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S1726108AbgFCF4H (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Wed, 3 Jun 2020 01:56:07 -0400
-Received: from mx2.suse.de ([195.135.220.15]:42472 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:42534 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726044AbgFCF4A (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1726050AbgFCF4A (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 3 Jun 2020 01:56:00 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 5547EAFC3;
+        by mx2.suse.de (Postfix) with ESMTP id B934EAF8D;
         Wed,  3 Jun 2020 05:56:01 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 30/46] btrfs: Make btrfs_add_ordered_extent_dio take btrfs_inode
-Date:   Wed,  3 Jun 2020 08:55:30 +0300
-Message-Id: <20200603055546.3889-31-nborisov@suse.com>
+Subject: [PATCH 32/46] btrfs: Make btrfs_new_extent_direct take btrfs_inode
+Date:   Wed,  3 Jun 2020 08:55:32 +0300
+Message-Id: <20200603055546.3889-33-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20200603055546.3889-1-nborisov@suse.com>
 References: <20200603055546.3889-1-nborisov@suse.com>
@@ -36,60 +36,64 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Simply forwards its argument so let's get rid of one extra BTRFS_I by
-taking btrfs_inode directly.
+This function really needs a btrfs_inode and not a generic vfs one. Take it
+as a parameter and get rid of superfluous BTRFS_I() calls.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/inode.c        | 2 +-
- fs/btrfs/ordered-data.c | 4 ++--
- fs/btrfs/ordered-data.h | 2 +-
- 3 files changed, 4 insertions(+), 4 deletions(-)
+ fs/btrfs/inode.c | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 54e291c94214..96cb7cc42930 100644
+index ac330d6c7c3d..331a576170c0 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -6845,7 +6845,7 @@ static struct extent_map *btrfs_create_dio_extent(struct inode *inode,
- 		if (IS_ERR(em))
- 			goto out;
- 	}
--	ret = btrfs_add_ordered_extent_dio(inode, start, block_start,
-+	ret = btrfs_add_ordered_extent_dio(BTRFS_I(inode), start, block_start,
- 					   len, block_len, type);
- 	if (ret) {
- 		if (em) {
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index 4d32876649a5..648c3f06c463 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -243,11 +243,11 @@ int btrfs_add_ordered_extent(struct btrfs_inode *inode, u64 file_offset,
- 					  BTRFS_COMPRESS_NONE);
+@@ -6859,29 +6859,29 @@ static struct extent_map *btrfs_create_dio_extent(struct btrfs_inode *inode,
+ 	return em;
  }
 
--int btrfs_add_ordered_extent_dio(struct inode *inode, u64 file_offset,
-+int btrfs_add_ordered_extent_dio(struct btrfs_inode *inode, u64 file_offset,
- 				 u64 disk_bytenr, u64 num_bytes,
- 				 u64 disk_num_bytes, int type)
+-static struct extent_map *btrfs_new_extent_direct(struct inode *inode,
++static struct extent_map *btrfs_new_extent_direct(struct btrfs_inode *inode,
+ 						  u64 start, u64 len)
  {
--	return __btrfs_add_ordered_extent(BTRFS_I(inode), file_offset, disk_bytenr,
-+	return __btrfs_add_ordered_extent(inode, file_offset, disk_bytenr,
- 					  num_bytes, disk_num_bytes, type, 1,
- 					  BTRFS_COMPRESS_NONE);
+-	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+-	struct btrfs_root *root = BTRFS_I(inode)->root;
++	struct btrfs_root *root = inode->root;
++	struct btrfs_fs_info *fs_info = root->fs_info;
+ 	struct extent_map *em;
+ 	struct btrfs_key ins;
+ 	u64 alloc_hint;
+ 	int ret;
+
+-	alloc_hint = get_extent_allocation_hint(BTRFS_I(inode), start, len);
++	alloc_hint = get_extent_allocation_hint(inode, start, len);
+ 	ret = btrfs_reserve_extent(root, len, len, fs_info->sectorsize,
+ 				   0, alloc_hint, &ins, 1, 1);
+ 	if (ret)
+ 		return ERR_PTR(ret);
+
+-	em = btrfs_create_dio_extent(BTRFS_I(inode), start, ins.offset, start,
++	em = btrfs_create_dio_extent(inode, start, ins.offset, start,
+ 				     ins.objectid, ins.offset, ins.offset,
+ 				     ins.offset, BTRFS_ORDERED_REGULAR);
+ 	btrfs_dec_block_group_reservations(fs_info, ins.objectid);
+ 	if (IS_ERR(em))
+-		btrfs_free_reserved_extent(fs_info, ins.objectid,
+-					   ins.offset, 1);
++		btrfs_free_reserved_extent(fs_info, ins.objectid, ins.offset,
++					   1);
+
+ 	return em;
  }
-diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
-index d9819bfcd3ec..708603a0f708 100644
---- a/fs/btrfs/ordered-data.h
-+++ b/fs/btrfs/ordered-data.h
-@@ -157,7 +157,7 @@ int btrfs_dec_test_first_ordered_pending(struct btrfs_inode *inode,
- int btrfs_add_ordered_extent(struct btrfs_inode *inode, u64 file_offset,
- 			     u64 disk_bytenr, u64 num_bytes, u64 disk_num_bytes,
- 			     int type);
--int btrfs_add_ordered_extent_dio(struct inode *inode, u64 file_offset,
-+int btrfs_add_ordered_extent_dio(struct btrfs_inode *inode, u64 file_offset,
- 				 u64 disk_bytenr, u64 num_bytes,
- 				 u64 disk_num_bytes, int type);
- int btrfs_add_ordered_extent_compress(struct btrfs_inode *inode, u64 file_offset,
+@@ -7236,7 +7236,7 @@ static int btrfs_get_blocks_direct_write(struct extent_map **map,
+
+ 	/* this will cow the extent */
+ 	free_extent_map(em);
+-	*map = em = btrfs_new_extent_direct(inode, start, len);
++	*map = em = btrfs_new_extent_direct(BTRFS_I(inode), start, len);
+ 	if (IS_ERR(em)) {
+ 		ret = PTR_ERR(em);
+ 		goto out;
 --
 2.17.1
 

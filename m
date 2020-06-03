@@ -2,74 +2,73 @@ Return-Path: <SRS0=7Enz=7Q=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7E90DC433E0
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 12:08:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 56AF1C433E0
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 13:08:30 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 5F0B320679
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 12:08:33 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=fail reason="key not found in DNS" (0-bit key) header.d=adamgold.net header.i=@adamgold.net header.b="U2QdGTu6"
+	by mail.kernel.org (Postfix) with ESMTP id 3502B20679
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 13:08:30 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726165AbgFCMIc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 3 Jun 2020 08:08:32 -0400
-Received: from mail.adamgold.net ([165.22.16.18]:42672 "EHLO mail.adamgold.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725859AbgFCMIb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 3 Jun 2020 08:08:31 -0400
-X-Greylist: delayed 557 seconds by postgrey-1.27 at vger.kernel.org; Wed, 03 Jun 2020 08:08:31 EDT
-From:   "Adam Gold" <adam@adamgold.net>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=adamgold.net;
-        s=dkim; t=1591185553;
-        h=from:from:sender:reply-to:reply-to:subject:subject:date:date:
-         message-id:message-id:to:to:cc:mime-version:mime-version:
-         content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:in-reply-to:
-         references; bh=Iqzoi6HuUo57XbcgDQ7JkRprhiEB7dt6hbVTU42NJWE=;
-        b=U2QdGTu6+h3R54t3O11Mp0TA1od3+oZsbRazyZrcaG7tlWMDEHBO2kd5FcSCx0k7tQvO7/
-        qZ9g6tBPzIb/mNmyAC7/9HFx3MDP1129QYp3zdY2zKd3+U3PFEfgJCSqvHqDPZnXPIMQWJ
-        DIhEjjNodHN6OSlKLfUsDqvgmMa6HEUnT/4hpJH8yrKZ1IesRl4uaXOV2u/i3zsG0E3n3E
-        1MuYEFQU403uGWwHJ57TWJ2L+AaEHj8oTlGSKE9jU6X8IL0IdM6Upqx+/zVyTT7g0JPVE+
-        2GFUVmd2D44mWANJADEGp3LHNtU+QD1cypOn6/nbLlQB5f3LxZMKdH/wZ1NyNQ==
-To:     linux-btrfs@vger.kernel.org
-Subject: btrfs raid1 encryption alternatives
-Date:   Wed, 03 Jun 2020 11:59:12 +0000
-Message-Id: <em5570d4e3-0ca2-4d92-91a4-3e9eec9a337b@desktop-31mlcgh>
-Reply-To: "Adam Gold" <adam@adamgold.net>
-Mime-Version: 1.0
-Content-Type: text/plain; format=flowed; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
+        id S1725936AbgFCNI3 convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 3 Jun 2020 09:08:29 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43750 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725854AbgFCNI3 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Jun 2020 09:08:29 -0400
+X-Greylist: delayed 395 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Wed, 03 Jun 2020 06:08:29 PDT
+Received: from mail.lichtvoll.de (lichtvoll.de [IPv6:2001:67c:14c:12f::11:100])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1D0BDC08C5C0
+        for <linux-btrfs@vger.kernel.org>; Wed,  3 Jun 2020 06:08:29 -0700 (PDT)
+Received: from 127.0.0.1 (localhost [127.0.0.1])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+        (No client certificate requested)
+        by mail.lichtvoll.de (Postfix) with ESMTPSA id D1609F5E3B;
+        Wed,  3 Jun 2020 15:01:51 +0200 (CEST)
+From:   Martin Steigerwald <martin@lichtvoll.de>
+To:     Xuanrui Qi <me@xuanruiqi.com>, linux-btrfs@vger.kernel.org,
+        =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
+Subject: Re: Massive filesystem corruption, potentially related to eCryptfs-on-btrfs
+Date:   Wed, 03 Jun 2020 15:01:52 +0200
+Message-ID: <1673026.qcCv5XE2zU@merkaba>
+In-Reply-To: <cf91b9ae-8f70-96f9-97cf-4ddd464b4ec4@petaramesh.org>
+References: <DM6PR02MB44274C6B16F173291A82C4A8C98A0@DM6PR02MB4427.namprd02.prod.outlook.com> <cf91b9ae-8f70-96f9-97cf-4ddd464b4ec4@petaramesh.org>
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8BIT
+Content-Type: text/plain; charset="UTF-8"
+Authentication-Results: mail.lichtvoll.de;
+        auth=pass smtp.auth=martin smtp.mailfrom=martin@lichtvoll.de
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-I'm intending to create a raid1 mirror using usb3 disks attached to an=20
-overclocked Raspberry Pi 4. It might not be going into a data center any=20
-time soon but I've done it before and it ran without fault. It will be=20
-used for used for general backup and media.
+Hi.
 
-Last time I used btrfs only, but I want an encryption layer this time=20
-for which I'm going to use plain-dmcrypt. My understanding is that, like=20
-with zfs, btrfs should be proximate to the disk sectors so one can make=20
-best use of all its features (compression, scrubbing etc). I'm=20
-considering the following two options:
+Swâmi Petaramesh - 02.06.20, 08:04:59 CEST:
+> Le 01/06/2020 à 23:08, Xuanrui Qi a écrit :
+> > I have just recovered from a massive filesystem corruption problem
+> > which turned out to be a total nightmare, and I have strong reason
+> > to
+> > suspect that it is related to eCryptfs-encrypted folders on btrfs.
+[…]
+> For the record, I've been using ecryptfs on BTRFS for years on more
+> than 10 different machines (including the one on which I'm presently
+> writing this) and *NEVER* went into a corruption problem relating
+> BTRFS and ecryptfs.
 
-1) sda+sdb --> PV --> VG --> btrfs_pool_LV (100% of VG) -->=20
-plain-dmcrypt
-2) sda+sdb --> plain-dmcrypt --> /dev/mapper/btrfs_raid1 --> /mnt/btrfs
+I have been using ecryptfs on BTRFS just on one machine, but also for 
+years. No issues either.
 
-I look at 1) and wonder whether the lvm layers are redundant but they (I=20
-believe transparently) allow btrfs to format sda+sdb directly .
+So I do not believe that there is a principal issue with running 
+ecryptfs on BTRFS.
 
-My question is, then, in 2) once /dev/mapper/btrfs_raid1 has been=20
-opened, is it de facto identical to /dev/sda+/dev/sdb from scenario 1)=20
-and will therefore allow btrfs to use all its capabilities. I believe=20
-that in scenario 1) will only have to decrypt the LV whereas in 2) I'll=20
-have to decrypt both disks but I'm not too fussed about that.
+Best,
+-- 
+Martin
 
-Thanks in advance for your attention.
 

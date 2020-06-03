@@ -6,28 +6,28 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 24F19C433DF
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3C645C433E0
 	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 05:56:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 0F3602068D
+	by mail.kernel.org (Postfix) with ESMTP id 23D5D20678
 	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 05:56:28 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726046AbgFCFz6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 3 Jun 2020 01:55:58 -0400
-Received: from mx2.suse.de ([195.135.220.15]:42468 "EHLO mx2.suse.de"
+        id S1726054AbgFCFz7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 3 Jun 2020 01:55:59 -0400
+Received: from mx2.suse.de ([195.135.220.15]:42496 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725916AbgFCFz4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1725944AbgFCFz4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 3 Jun 2020 01:55:56 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 524F7AFF8;
-        Wed,  3 Jun 2020 05:55:56 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 5812BB012;
+        Wed,  3 Jun 2020 05:55:57 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 07/46] btrfs: Make btrfs_csum_one_bio takae btrfs_inode
-Date:   Wed,  3 Jun 2020 08:55:07 +0300
-Message-Id: <20200603055546.3889-8-nborisov@suse.com>
+Subject: [PATCH 12/46] btrfs: Make cow_file_range_inline take btrfs_inode
+Date:   Wed,  3 Jun 2020 08:55:12 +0300
+Message-Id: <20200603055546.3889-13-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20200603055546.3889-1-nborisov@suse.com>
 References: <20200603055546.3889-1-nborisov@suse.com>
@@ -36,111 +36,114 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Will enable converting btrfs_submit_compressed_write to btrfs_inode more
-easily.
+It has only 2 uses for the vfs_inode - insert_inline_extent and i_size_read.
+On the flipside it will allow converting its callers to btrfs_inode,
+so convert it to taking btrfs_inode.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/compression.c | 5 +++--
- fs/btrfs/ctree.h       | 4 ++--
- fs/btrfs/file-item.c   | 3 +--
- fs/btrfs/inode.c       | 8 ++++----
- 4 files changed, 10 insertions(+), 10 deletions(-)
+ fs/btrfs/inode.c | 31 ++++++++++++++++---------------
+ 1 file changed, 16 insertions(+), 15 deletions(-)
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index c6e648603f85..4f52cd8af517 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -475,7 +475,8 @@ blk_status_t btrfs_submit_compressed_write(struct inode *inode, u64 start,
- 			BUG_ON(ret); /* -ENOMEM */
-
- 			if (!skip_sum) {
--				ret = btrfs_csum_one_bio(inode, bio, start, 1);
-+				ret = btrfs_csum_one_bio(BTRFS_I(inode), bio,
-+							 start, 1);
- 				BUG_ON(ret); /* -ENOMEM */
- 			}
-
-@@ -507,7 +508,7 @@ blk_status_t btrfs_submit_compressed_write(struct inode *inode, u64 start,
- 	BUG_ON(ret); /* -ENOMEM */
-
- 	if (!skip_sum) {
--		ret = btrfs_csum_one_bio(inode, bio, start, 1);
-+		ret = btrfs_csum_one_bio(BTRFS_I(inode), bio, start, 1);
- 		BUG_ON(ret); /* -ENOMEM */
- 	}
-
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 3e8063f9b30a..55add0881615 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2830,8 +2830,8 @@ int btrfs_lookup_file_extent(struct btrfs_trans_handle *trans,
- int btrfs_csum_file_blocks(struct btrfs_trans_handle *trans,
- 			   struct btrfs_root *root,
- 			   struct btrfs_ordered_sum *sums);
--blk_status_t btrfs_csum_one_bio(struct inode *inode, struct bio *bio,
--		       u64 file_start, int contig);
-+blk_status_t btrfs_csum_one_bio(struct btrfs_inode *inode, struct bio *bio,
-+				u64 file_start, int contig);
- int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
- 			     struct list_head *list, int search_commit);
- void btrfs_extent_item_to_extent_map(struct btrfs_inode *inode,
-diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index 9d311e834b20..7d5ec71615b8 100644
---- a/fs/btrfs/file-item.c
-+++ b/fs/btrfs/file-item.c
-@@ -522,10 +522,9 @@ int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
-  *		 means this bio can contains potentially discontigous bio vecs
-  *		 so the logical offset of each should be calculated separately.
-  */
--blk_status_t btrfs_csum_one_bio(struct inode *vfsinode, struct bio *bio,
-+blk_status_t btrfs_csum_one_bio(struct btrfs_inode *inode, struct bio *bio,
- 		       u64 file_start, int contig)
- {
--	struct btrfs_inode *inode = BTRFS_I(vfsinode);
- 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
- 	SHASH_DESC_ON_STACK(shash, fs_info->csum_shash);
- 	struct btrfs_ordered_sum *sums;
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 7615b73feb30..d20afd95ab4d 100644
+index 70ed320cd1fa..a05ffc129967 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -2149,7 +2149,7 @@ static blk_status_t btrfs_submit_bio_start(void *private_data, struct bio *bio,
- 	struct inode *inode = private_data;
- 	blk_status_t ret = 0;
-
--	ret = btrfs_csum_one_bio(inode, bio, 0, 0);
-+	ret = btrfs_csum_one_bio(BTRFS_I(inode), bio, 0, 0);
- 	BUG_ON(ret); /* -ENOMEM */
- 	return 0;
- }
-@@ -2214,7 +2214,7 @@ static blk_status_t btrfs_submit_bio_hook(struct inode *inode, struct bio *bio,
- 					  0, inode, btrfs_submit_bio_start);
- 		goto out;
- 	} else if (!skip_sum) {
--		ret = btrfs_csum_one_bio(inode, bio, 0, 0);
-+		ret = btrfs_csum_one_bio(BTRFS_I(inode), bio, 0, 0);
- 		if (ret)
- 			goto out;
- 	}
-@@ -7597,7 +7597,7 @@ static blk_status_t btrfs_submit_bio_start_direct_io(void *private_data,
+@@ -273,15 +273,15 @@ static int insert_inline_extent(struct btrfs_trans_handle *trans,
+  * does the checks required to make sure the data is small enough
+  * to fit as an inline extent.
+  */
+-static noinline int cow_file_range_inline(struct inode *inode, u64 start,
++static noinline int cow_file_range_inline(struct btrfs_inode *inode, u64 start,
+ 					  u64 end, size_t compressed_size,
+ 					  int compress_type,
+ 					  struct page **compressed_pages)
  {
- 	struct inode *inode = private_data;
- 	blk_status_t ret;
--	ret = btrfs_csum_one_bio(inode, bio, offset, 1);
-+	ret = btrfs_csum_one_bio(BTRFS_I(inode), bio, offset, 1);
- 	BUG_ON(ret); /* -ENOMEM */
- 	return 0;
- }
-@@ -7658,7 +7658,7 @@ static inline blk_status_t btrfs_submit_dio_bio(struct bio *bio,
- 		 * If we aren't doing async submit, calculate the csum of the
- 		 * bio now.
- 		 */
--		ret = btrfs_csum_one_bio(inode, bio, file_offset, 1);
-+		ret = btrfs_csum_one_bio(BTRFS_I(inode), bio, file_offset, 1);
- 		if (ret)
- 			goto err;
- 	} else {
+-	struct btrfs_root *root = BTRFS_I(inode)->root;
++	struct btrfs_root *root = inode->root;
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
+ 	struct btrfs_trans_handle *trans;
+-	u64 isize = i_size_read(inode);
++	u64 isize = i_size_read(&inode->vfs_inode);
+ 	u64 actual_end = min(end + 1, isize);
+ 	u64 inline_len = actual_end - start;
+ 	u64 aligned_end = ALIGN(end, fs_info->sectorsize);
+@@ -313,7 +313,7 @@ static noinline int cow_file_range_inline(struct inode *inode, u64 start,
+ 		btrfs_free_path(path);
+ 		return PTR_ERR(trans);
+ 	}
+-	trans->block_rsv = &BTRFS_I(inode)->block_rsv;
++	trans->block_rsv = &inode->block_rsv;
+
+ 	if (compressed_size && compressed_pages)
+ 		extent_item_size = btrfs_file_extent_calc_inline_size(
+@@ -322,9 +322,9 @@ static noinline int cow_file_range_inline(struct inode *inode, u64 start,
+ 		extent_item_size = btrfs_file_extent_calc_inline_size(
+ 		    inline_len);
+
+-	ret = __btrfs_drop_extents(trans, root, BTRFS_I(inode), path,
+-				   start, aligned_end, NULL,
+-				   1, 1, extent_item_size, &extent_inserted);
++	ret = __btrfs_drop_extents(trans, root, inode, path, start, aligned_end,
++				   NULL, 1, 1, extent_item_size,
++				   &extent_inserted);
+ 	if (ret) {
+ 		btrfs_abort_transaction(trans, ret);
+ 		goto out;
+@@ -333,7 +333,7 @@ static noinline int cow_file_range_inline(struct inode *inode, u64 start,
+ 	if (isize > actual_end)
+ 		inline_len = min_t(u64, isize, actual_end);
+ 	ret = insert_inline_extent(trans, path, extent_inserted,
+-				   root, inode, start,
++				   root, &inode->vfs_inode, start,
+ 				   inline_len, compressed_size,
+ 				   compress_type, compressed_pages);
+ 	if (ret && ret != -ENOSPC) {
+@@ -344,8 +344,8 @@ static noinline int cow_file_range_inline(struct inode *inode, u64 start,
+ 		goto out;
+ 	}
+
+-	set_bit(BTRFS_INODE_NEEDS_FULL_SYNC, &BTRFS_I(inode)->runtime_flags);
+-	btrfs_drop_extent_cache(BTRFS_I(inode), start, aligned_end - 1, 0);
++	set_bit(BTRFS_INODE_NEEDS_FULL_SYNC, &inode->runtime_flags);
++	btrfs_drop_extent_cache(inode, start, aligned_end - 1, 0);
+ out:
+ 	/*
+ 	 * Don't forget to free the reserved space, as for inlined extent
+@@ -353,7 +353,7 @@ static noinline int cow_file_range_inline(struct inode *inode, u64 start,
+ 	 * And at reserve time, it's always aligned to page size, so
+ 	 * just free one page here.
+ 	 */
+-	btrfs_qgroup_free_data(BTRFS_I(inode), NULL, 0, PAGE_SIZE);
++	btrfs_qgroup_free_data(inode, NULL, 0, PAGE_SIZE);
+ 	btrfs_free_path(path);
+ 	btrfs_end_transaction(trans);
+ 	return ret;
+@@ -615,11 +615,12 @@ static noinline int compress_file_range(struct async_chunk *async_chunk)
+ 			/* we didn't compress the entire range, try
+ 			 * to make an uncompressed inline extent.
+ 			 */
+-			ret = cow_file_range_inline(inode, start, end, 0,
+-						    BTRFS_COMPRESS_NONE, NULL);
++			ret = cow_file_range_inline(BTRFS_I(inode), start, end,
++						    0, BTRFS_COMPRESS_NONE,
++						    NULL);
+ 		} else {
+ 			/* try making a compressed inline extent */
+-			ret = cow_file_range_inline(inode, start, end,
++			ret = cow_file_range_inline(BTRFS_I(inode), start, end,
+ 						    total_compressed,
+ 						    compress_type, pages);
+ 		}
+@@ -1007,7 +1008,7 @@ static noinline int cow_file_range(struct inode *inode,
+
+ 	if (start == 0) {
+ 		/* lets try to make an inline extent */
+-		ret = cow_file_range_inline(inode, start, end, 0,
++		ret = cow_file_range_inline(BTRFS_I(inode), start, end, 0,
+ 					    BTRFS_COMPRESS_NONE, NULL);
+ 		if (ret == 0) {
+ 			/*
 --
 2.17.1
 

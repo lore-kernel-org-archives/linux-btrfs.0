@@ -6,28 +6,28 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 033ECC433E0
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 56254C433DF
 	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 05:55:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D7FE820678
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 05:55:54 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3FC2C20678
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 05:55:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725859AbgFCFzx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 3 Jun 2020 01:55:53 -0400
-Received: from mx2.suse.de ([195.135.220.15]:42396 "EHLO mx2.suse.de"
+        id S1725909AbgFCFzy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 3 Jun 2020 01:55:54 -0400
+Received: from mx2.suse.de ([195.135.220.15]:42380 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725828AbgFCFzx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 3 Jun 2020 01:55:53 -0400
+        id S1725823AbgFCFzy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 3 Jun 2020 01:55:54 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 2D281AFC3;
-        Wed,  3 Jun 2020 05:55:55 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id E983CAE96;
+        Wed,  3 Jun 2020 05:55:54 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 02/46] btrfs: Make get_extent_allocation_hint take btrfs_inode
-Date:   Wed,  3 Jun 2020 08:55:02 +0300
-Message-Id: <20200603055546.3889-3-nborisov@suse.com>
+Subject: [PATCH 01/46] btrfs: Make __btrfs_add_ordered_extent take struct btrfs_inode
+Date:   Wed,  3 Jun 2020 08:55:01 +0300
+Message-Id: <20200603055546.3889-2-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20200603055546.3889-1-nborisov@suse.com>
 References: <20200603055546.3889-1-nborisov@suse.com>
@@ -36,50 +36,99 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-It doesn't use the vfs inode for anything, can just as easily take btrfs_inode.
-Follow up patches will convert callers as well.
+This is internal btrfs function what really needs the vfs_inode only for
+igrab and a tracepoint.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/inode.c | 9 +++++----
- 1 file changed, 5 insertions(+), 4 deletions(-)
+ fs/btrfs/ordered-data.c | 25 ++++++++++++-------------
+ 1 file changed, 12 insertions(+), 13 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 1242d0aa108d..bc94051e3b4a 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -928,10 +928,10 @@ static noinline void submit_compressed_extents(struct async_chunk *async_chunk)
- 	goto again;
- }
-
--static u64 get_extent_allocation_hint(struct inode *inode, u64 start,
-+static u64 get_extent_allocation_hint(struct btrfs_inode *inode, u64 start,
- 				      u64 num_bytes)
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index e13b3d28c063..7bf7edbb994c 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -157,18 +157,17 @@ static inline struct rb_node *tree_search(struct btrfs_ordered_inode_tree *tree,
+  * The tree is given a single reference on the ordered extent that was
+  * inserted.
+  */
+-static int __btrfs_add_ordered_extent(struct inode *inode, u64 file_offset,
++static int __btrfs_add_ordered_extent(struct btrfs_inode *inode, u64 file_offset,
+ 				      u64 disk_bytenr, u64 num_bytes,
+ 				      u64 disk_num_bytes, int type, int dio,
+ 				      int compress_type)
  {
--	struct extent_map_tree *em_tree = &BTRFS_I(inode)->extent_tree;
-+	struct extent_map_tree *em_tree = &inode->extent_tree;
- 	struct extent_map *em;
- 	u64 alloc_hint = 0;
+-	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+-	struct btrfs_root *root = BTRFS_I(inode)->root;
+-	struct btrfs_ordered_inode_tree *tree;
++	struct btrfs_root *root = inode->root;
++	struct btrfs_fs_info *fs_info = root->fs_info;
++	struct btrfs_ordered_inode_tree *tree = &inode->ordered_tree;
+ 	struct rb_node *node;
+ 	struct btrfs_ordered_extent *entry;
 
-@@ -1030,7 +1030,8 @@ static noinline int cow_file_range(struct inode *inode,
- 		}
- 	}
+-	tree = &BTRFS_I(inode)->ordered_tree;
+ 	entry = kmem_cache_zalloc(btrfs_ordered_extent_cache, GFP_NOFS);
+ 	if (!entry)
+ 		return -ENOMEM;
+@@ -178,7 +177,7 @@ static int __btrfs_add_ordered_extent(struct inode *inode, u64 file_offset,
+ 	entry->num_bytes = num_bytes;
+ 	entry->disk_num_bytes = disk_num_bytes;
+ 	entry->bytes_left = num_bytes;
+-	entry->inode = igrab(inode);
++	entry->inode = igrab(&inode->vfs_inode);
+ 	entry->compress_type = compress_type;
+ 	entry->truncated_len = (u64)-1;
+ 	if (type != BTRFS_ORDERED_IO_DONE && type != BTRFS_ORDERED_COMPLETE)
+@@ -200,7 +199,7 @@ static int __btrfs_add_ordered_extent(struct inode *inode, u64 file_offset,
+ 	INIT_LIST_HEAD(&entry->log_list);
+ 	INIT_LIST_HEAD(&entry->trans_list);
 
--	alloc_hint = get_extent_allocation_hint(inode, start, num_bytes);
-+	alloc_hint = get_extent_allocation_hint(BTRFS_I(inode), start,
-+						num_bytes);
- 	btrfs_drop_extent_cache(BTRFS_I(inode), start,
- 			start + num_bytes - 1, 0);
+-	trace_btrfs_ordered_extent_add(inode, entry);
++	trace_btrfs_ordered_extent_add(&inode->vfs_inode, entry);
 
-@@ -6875,7 +6876,7 @@ static struct extent_map *btrfs_new_extent_direct(struct inode *inode,
- 	u64 alloc_hint;
- 	int ret;
+ 	spin_lock_irq(&tree->lock);
+ 	node = tree_insert(&tree->tree, file_offset,
+@@ -228,9 +227,9 @@ static int __btrfs_add_ordered_extent(struct inode *inode, u64 file_offset,
+ 	 * that work has been done at higher layers, so this is truly the
+ 	 * smallest the extent is going to get.
+ 	 */
+-	spin_lock(&BTRFS_I(inode)->lock);
+-	btrfs_mod_outstanding_extents(BTRFS_I(inode), 1);
+-	spin_unlock(&BTRFS_I(inode)->lock);
++	spin_lock(&inode->lock);
++	btrfs_mod_outstanding_extents(inode, 1);
++	spin_unlock(&inode->lock);
 
--	alloc_hint = get_extent_allocation_hint(inode, start, len);
-+	alloc_hint = get_extent_allocation_hint(BTRFS_I(inode), start, len);
- 	ret = btrfs_reserve_extent(root, len, len, fs_info->sectorsize,
- 				   0, alloc_hint, &ins, 1, 1);
- 	if (ret)
+ 	return 0;
+ }
+@@ -239,7 +238,7 @@ int btrfs_add_ordered_extent(struct inode *inode, u64 file_offset,
+ 			     u64 disk_bytenr, u64 num_bytes, u64 disk_num_bytes,
+ 			     int type)
+ {
+-	return __btrfs_add_ordered_extent(inode, file_offset, disk_bytenr,
++	return __btrfs_add_ordered_extent(BTRFS_I(inode), file_offset, disk_bytenr,
+ 					  num_bytes, disk_num_bytes, type, 0,
+ 					  BTRFS_COMPRESS_NONE);
+ }
+@@ -248,7 +247,7 @@ int btrfs_add_ordered_extent_dio(struct inode *inode, u64 file_offset,
+ 				 u64 disk_bytenr, u64 num_bytes,
+ 				 u64 disk_num_bytes, int type)
+ {
+-	return __btrfs_add_ordered_extent(inode, file_offset, disk_bytenr,
++	return __btrfs_add_ordered_extent(BTRFS_I(inode), file_offset, disk_bytenr,
+ 					  num_bytes, disk_num_bytes, type, 1,
+ 					  BTRFS_COMPRESS_NONE);
+ }
+@@ -258,7 +257,7 @@ int btrfs_add_ordered_extent_compress(struct inode *inode, u64 file_offset,
+ 				      u64 disk_num_bytes, int type,
+ 				      int compress_type)
+ {
+-	return __btrfs_add_ordered_extent(inode, file_offset, disk_bytenr,
++	return __btrfs_add_ordered_extent(BTRFS_I(inode), file_offset, disk_bytenr,
+ 					  num_bytes, disk_num_bytes, type, 0,
+ 					  compress_type);
+ }
 --
 2.17.1
 

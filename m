@@ -6,28 +6,28 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7F799C433E1
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 05:55:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 770F7C433E0
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 05:55:58 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 69DE92068D
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 05:55:56 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5879020678
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 05:55:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725956AbgFCFzz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 3 Jun 2020 01:55:55 -0400
-Received: from mx2.suse.de ([195.135.220.15]:42416 "EHLO mx2.suse.de"
+        id S1726032AbgFCFz6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 3 Jun 2020 01:55:58 -0400
+Received: from mx2.suse.de ([195.135.220.15]:42472 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725853AbgFCFzx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 3 Jun 2020 01:55:53 -0400
+        id S1725823AbgFCFz4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 3 Jun 2020 01:55:56 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 93BADAEBE;
-        Wed,  3 Jun 2020 05:55:55 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id E8057B004;
+        Wed,  3 Jun 2020 05:55:56 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 04/46] btrfs: Make btrfs_reloc_clone_csums take btrfs_inode
-Date:   Wed,  3 Jun 2020 08:55:04 +0300
-Message-Id: <20200603055546.3889-5-nborisov@suse.com>
+Subject: [PATCH 10/46] btrfs: Make __btrfs_qgroup_release_data take btrfs_inode
+Date:   Wed,  3 Jun 2020 08:55:10 +0300
+Message-Id: <20200603055546.3889-11-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20200603055546.3889-1-nborisov@suse.com>
 References: <20200603055546.3889-1-nborisov@suse.com>
@@ -36,79 +36,81 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-It really wants btrfs_inode and not a vfs inode.
+It uses vfs_inode only for a tracepoint so convert its interface to take
+btrfs_inode directly.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/ctree.h      | 2 +-
- fs/btrfs/inode.c      | 4 ++--
- fs/btrfs/relocation.c | 8 ++++----
- 3 files changed, 7 insertions(+), 7 deletions(-)
+ fs/btrfs/qgroup.c | 22 ++++++++++------------
+ 1 file changed, 10 insertions(+), 12 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 161533040978..3e8063f9b30a 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3380,7 +3380,7 @@ int btrfs_init_reloc_root(struct btrfs_trans_handle *trans,
- int btrfs_update_reloc_root(struct btrfs_trans_handle *trans,
- 			    struct btrfs_root *root);
- int btrfs_recover_relocation(struct btrfs_root *root);
--int btrfs_reloc_clone_csums(struct inode *inode, u64 file_pos, u64 len);
-+int btrfs_reloc_clone_csums(struct btrfs_inode *inode, u64 file_pos, u64 len);
- int btrfs_reloc_cow_block(struct btrfs_trans_handle *trans,
- 			  struct btrfs_root *root, struct extent_buffer *buf,
- 			  struct extent_buffer *cow);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 09a0c6a9a73a..56015fdd46c9 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1067,7 +1067,7 @@ static noinline int cow_file_range(struct inode *inode,
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index dcde4f9cba6c..008e44446bd6 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -3502,7 +3502,7 @@ static int qgroup_free_reserved_data(struct btrfs_inode *inode,
+ 	return ret;
+ }
 
- 		if (root->root_key.objectid ==
- 		    BTRFS_DATA_RELOC_TREE_OBJECTID) {
--			ret = btrfs_reloc_clone_csums(inode, start,
-+			ret = btrfs_reloc_clone_csums(BTRFS_I(inode), start,
- 						      cur_alloc_size);
- 			/*
- 			 * Only drop cache here, and process as normal.
-@@ -1725,7 +1725,7 @@ static noinline int run_delalloc_nocow(struct inode *inode,
- 			 * extent_clear_unlock_delalloc() in error handler
- 			 * from freeing metadata of created ordered extent.
- 			 */
--			ret = btrfs_reloc_clone_csums(inode, cur_offset,
-+			ret = btrfs_reloc_clone_csums(BTRFS_I(inode), cur_offset,
- 						      num_bytes);
-
- 		extent_clear_unlock_delalloc(inode, cur_offset,
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 2a49115ee4c6..3d708a929b04 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -3872,9 +3872,9 @@ int btrfs_recover_relocation(struct btrfs_root *root)
-  * cloning checksum properly handles the nodatasum extents.
-  * it also saves CPU time to re-calculate the checksum.
-  */
--int btrfs_reloc_clone_csums(struct inode *inode, u64 file_pos, u64 len)
-+int btrfs_reloc_clone_csums(struct btrfs_inode *inode, u64 file_pos, u64 len)
+-static int __btrfs_qgroup_release_data(struct inode *inode,
++static int __btrfs_qgroup_release_data(struct btrfs_inode *inode,
+ 			struct extent_changeset *reserved, u64 start, u64 len,
+ 			int free)
  {
--	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
-+	struct btrfs_fs_info *fs_info = inode->root->fs_info;
- 	struct btrfs_ordered_sum *sums;
- 	struct btrfs_ordered_extent *ordered;
+@@ -3510,28 +3510,26 @@ static int __btrfs_qgroup_release_data(struct inode *inode,
+ 	int trace_op = QGROUP_RELEASE;
  	int ret;
-@@ -3882,10 +3882,10 @@ int btrfs_reloc_clone_csums(struct inode *inode, u64 file_pos, u64 len)
- 	u64 new_bytenr;
- 	LIST_HEAD(list);
 
--	ordered = btrfs_lookup_ordered_extent(BTRFS_I(inode), file_pos);
-+	ordered = btrfs_lookup_ordered_extent(inode, file_pos);
- 	BUG_ON(ordered->file_offset != file_pos || ordered->num_bytes != len);
+-	if (!test_bit(BTRFS_FS_QUOTA_ENABLED,
+-		      &BTRFS_I(inode)->root->fs_info->flags))
++	if (!test_bit(BTRFS_FS_QUOTA_ENABLED, &inode->root->fs_info->flags))
+ 		return 0;
 
--	disk_bytenr = file_pos + BTRFS_I(inode)->index_cnt;
-+	disk_bytenr = file_pos + inode->index_cnt;
- 	ret = btrfs_lookup_csums_range(fs_info->csum_root, disk_bytenr,
- 				       disk_bytenr + len - 1, &list, 0);
- 	if (ret)
+ 	/* In release case, we shouldn't have @reserved */
+ 	WARN_ON(!free && reserved);
+ 	if (free && reserved)
+-		return qgroup_free_reserved_data(BTRFS_I(inode), reserved,
+-						 start, len);
++		return qgroup_free_reserved_data(inode, reserved, start, len);
+ 	extent_changeset_init(&changeset);
+-	ret = clear_record_extent_bits(&BTRFS_I(inode)->io_tree, start,
+-			start + len -1, EXTENT_QGROUP_RESERVED, &changeset);
++	ret = clear_record_extent_bits(&inode->io_tree, start, start + len -1,
++				       EXTENT_QGROUP_RESERVED, &changeset);
+ 	if (ret < 0)
+ 		goto out;
+
+ 	if (free)
+ 		trace_op = QGROUP_FREE;
+-	trace_btrfs_qgroup_release_data(inode, start, len,
++	trace_btrfs_qgroup_release_data(&inode->vfs_inode, start, len,
+ 					changeset.bytes_changed, trace_op);
+ 	if (free)
+-		btrfs_qgroup_free_refroot(BTRFS_I(inode)->root->fs_info,
+-				BTRFS_I(inode)->root->root_key.objectid,
++		btrfs_qgroup_free_refroot(inode->root->fs_info,
++				inode->root->root_key.objectid,
+ 				changeset.bytes_changed, BTRFS_QGROUP_RSV_DATA);
+ 	ret = changeset.bytes_changed;
+ out:
+@@ -3554,7 +3552,7 @@ static int __btrfs_qgroup_release_data(struct inode *inode,
+ int btrfs_qgroup_free_data(struct inode *inode,
+ 			struct extent_changeset *reserved, u64 start, u64 len)
+ {
+-	return __btrfs_qgroup_release_data(inode, reserved, start, len, 1);
++	return __btrfs_qgroup_release_data(BTRFS_I(inode), reserved, start, len, 1);
+ }
+
+ /*
+@@ -3574,7 +3572,7 @@ int btrfs_qgroup_free_data(struct inode *inode,
+  */
+ int btrfs_qgroup_release_data(struct inode *inode, u64 start, u64 len)
+ {
+-	return __btrfs_qgroup_release_data(inode, NULL, start, len, 0);
++	return __btrfs_qgroup_release_data(BTRFS_I(inode), NULL, start, len, 0);
+ }
+
+ static void add_root_meta_rsv(struct btrfs_root *root, int num_bytes,
 --
 2.17.1
 

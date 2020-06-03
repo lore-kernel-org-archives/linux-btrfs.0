@@ -2,66 +2,84 @@ Return-Path: <SRS0=7Enz=7Q=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
-	SPF_HELO_NONE,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E5841C433DF
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 03:50:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 033ECC433E0
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 05:55:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id C3ED9206E6
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 03:50:12 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1591156212;
-	bh=uxLBNfsO/YI2tyqQItJTfnnheIwxdADpEhCmBIFstxw=;
-	h=Subject:From:In-Reply-To:References:Date:To:Cc:List-ID:From;
-	b=rsn+4NKjDgyKpFM0ttxmz/yAPVhxq4ZfYOdo6gSdgy+35uOnRkHUYBTztJpWPtYCS
-	 pr9uex5bVp+q+WlemqtfNN5zWMJo7N3ejMOhHO0HGL0d1jhdGJaGmGREU81Mc5p14o
-	 hCQ9n4NK4t8x0LmPuOyDmLwGQ6Lk+QR/B+SVTqb8=
+	by mail.kernel.org (Postfix) with ESMTP id D7FE820678
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 05:55:54 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726774AbgFCDuM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 2 Jun 2020 23:50:12 -0400
-Received: from mail.kernel.org ([198.145.29.99]:50122 "EHLO mail.kernel.org"
+        id S1725859AbgFCFzx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 3 Jun 2020 01:55:53 -0400
+Received: from mx2.suse.de ([195.135.220.15]:42396 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725922AbgFCDuJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 2 Jun 2020 23:50:09 -0400
-Subject: Re: [GIT PULL] Btrfs updates for 5.8
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1591156209;
-        bh=uxLBNfsO/YI2tyqQItJTfnnheIwxdADpEhCmBIFstxw=;
-        h=From:In-Reply-To:References:Date:To:Cc:From;
-        b=Gt6pipdcoelkT5803FBU39++5b9k27KCsZR6u6Oz9Be31HU0GoA5Z+xYyfuOCby1u
-         9S2YxL9oIvZmc4qj9CVc7blBlpkWld/6Z/hhrg8nQbQZDsjMwywpe9JzWbuK8fxGWg
-         frtl39jOviqSMjArjiwJyjhD6Jf4f5jTi2Wxj8hA=
-From:   pr-tracker-bot@kernel.org
-In-Reply-To: <cover.1591014060.git.dsterba@suse.com>
-References: <cover.1591014060.git.dsterba@suse.com>
-X-PR-Tracked-List-Id: <linux-kernel.vger.kernel.org>
-X-PR-Tracked-Message-Id: <cover.1591014060.git.dsterba@suse.com>
-X-PR-Tracked-Remote: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.8-tag
-X-PR-Tracked-Commit-Id: 2166e5edce9ac1edf3b113d6091ef72fcac2d6c4
-X-PR-Merge-Tree: torvalds/linux.git
-X-PR-Merge-Refname: refs/heads/master
-X-PR-Merge-Commit-Id: f3cdc8ae116e27d84e1f33c7a2995960cebb73ac
-Message-Id: <159115620927.30123.8464936394919802236.pr-tracker-bot@kernel.org>
-Date:   Wed, 03 Jun 2020 03:50:09 +0000
-To:     David Sterba <dsterba@suse.com>
-Cc:     torvalds@linux-foundation.org, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+        id S1725828AbgFCFzx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 3 Jun 2020 01:55:53 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 2D281AFC3;
+        Wed,  3 Jun 2020 05:55:55 +0000 (UTC)
+From:   Nikolay Borisov <nborisov@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH 02/46] btrfs: Make get_extent_allocation_hint take btrfs_inode
+Date:   Wed,  3 Jun 2020 08:55:02 +0300
+Message-Id: <20200603055546.3889-3-nborisov@suse.com>
+X-Mailer: git-send-email 2.17.1
+In-Reply-To: <20200603055546.3889-1-nborisov@suse.com>
+References: <20200603055546.3889-1-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The pull request you sent on Mon,  1 Jun 2020 14:37:21 +0200:
+It doesn't use the vfs inode for anything, can just as easily take btrfs_inode.
+Follow up patches will convert callers as well.
 
-> git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.8-tag
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
+ fs/btrfs/inode.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
 
-has been merged into torvalds/linux.git:
-https://git.kernel.org/torvalds/c/f3cdc8ae116e27d84e1f33c7a2995960cebb73ac
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 1242d0aa108d..bc94051e3b4a 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -928,10 +928,10 @@ static noinline void submit_compressed_extents(struct async_chunk *async_chunk)
+ 	goto again;
+ }
 
-Thank you!
+-static u64 get_extent_allocation_hint(struct inode *inode, u64 start,
++static u64 get_extent_allocation_hint(struct btrfs_inode *inode, u64 start,
+ 				      u64 num_bytes)
+ {
+-	struct extent_map_tree *em_tree = &BTRFS_I(inode)->extent_tree;
++	struct extent_map_tree *em_tree = &inode->extent_tree;
+ 	struct extent_map *em;
+ 	u64 alloc_hint = 0;
 
--- 
-Deet-doot-dot, I am a bot.
-https://korg.wiki.kernel.org/userdoc/prtracker
+@@ -1030,7 +1030,8 @@ static noinline int cow_file_range(struct inode *inode,
+ 		}
+ 	}
+
+-	alloc_hint = get_extent_allocation_hint(inode, start, num_bytes);
++	alloc_hint = get_extent_allocation_hint(BTRFS_I(inode), start,
++						num_bytes);
+ 	btrfs_drop_extent_cache(BTRFS_I(inode), start,
+ 			start + num_bytes - 1, 0);
+
+@@ -6875,7 +6876,7 @@ static struct extent_map *btrfs_new_extent_direct(struct inode *inode,
+ 	u64 alloc_hint;
+ 	int ret;
+
+-	alloc_hint = get_extent_allocation_hint(inode, start, len);
++	alloc_hint = get_extent_allocation_hint(BTRFS_I(inode), start, len);
+ 	ret = btrfs_reserve_extent(root, len, len, fs_info->sectorsize,
+ 				   0, alloc_hint, &ins, 1, 1);
+ 	if (ret)
+--
+2.17.1
+

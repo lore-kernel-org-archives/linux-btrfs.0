@@ -6,28 +6,28 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DE42CC433E0
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F0F0CC433DF
 	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 05:56:14 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id C599C20678
+	by mail.kernel.org (Postfix) with ESMTP id DBC8C2074B
 	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 05:56:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726084AbgFCF4N (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 3 Jun 2020 01:56:13 -0400
-Received: from mx2.suse.de ([195.135.220.15]:42534 "EHLO mx2.suse.de"
+        id S1726103AbgFCF4G (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 3 Jun 2020 01:56:06 -0400
+Received: from mx2.suse.de ([195.135.220.15]:42444 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726026AbgFCF4C (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 3 Jun 2020 01:56:02 -0400
+        id S1725917AbgFCFz7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 3 Jun 2020 01:55:59 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id B3D75B009;
-        Wed,  3 Jun 2020 05:56:03 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 14EDAAE96;
+        Wed,  3 Jun 2020 05:56:01 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 41/46] btrfs: Make btrfs_check_data_free_space take btrfs_inode
-Date:   Wed,  3 Jun 2020 08:55:41 +0300
-Message-Id: <20200603055546.3889-42-nborisov@suse.com>
+Subject: [PATCH 29/46] btrfs: Make btrfs_run_delalloc_range take btrfs_inode
+Date:   Wed,  3 Jun 2020 08:55:29 +0300
+Message-Id: <20200603055546.3889-30-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20200603055546.3889-1-nborisov@suse.com>
 References: <20200603055546.3889-1-nborisov@suse.com>
@@ -36,113 +36,95 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Instead of calling BTRFS_I on the passed vfs_inode take btrfs_inode directly.
+All children now take btrfs_inode so convert it to taking it as a parameter
+as well.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/block-group.c    |  3 ++-
- fs/btrfs/delalloc-space.c | 10 +++++-----
- fs/btrfs/delalloc-space.h |  2 +-
- fs/btrfs/file.c           |  3 ++-
- fs/btrfs/relocation.c     |  3 ++-
- 5 files changed, 12 insertions(+), 9 deletions(-)
+ fs/btrfs/ctree.h     |  2 +-
+ fs/btrfs/extent_io.c |  6 ++++--
+ fs/btrfs/inode.c     | 26 +++++++++++++-------------
+ 3 files changed, 18 insertions(+), 16 deletions(-)
 
-diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index 176e8a292fd1..9ff6d44415ad 100644
---- a/fs/btrfs/block-group.c
-+++ b/fs/btrfs/block-group.c
-@@ -2511,7 +2511,8 @@ static int cache_save_setup(struct btrfs_block_group *block_group,
- 	num_pages *= 16;
- 	num_pages *= PAGE_SIZE;
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index bd69e912e8d6..e6f47bdf6f0a 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2927,7 +2927,7 @@ int btrfs_prealloc_file_range_trans(struct inode *inode,
+ 				    struct btrfs_trans_handle *trans, int mode,
+ 				    u64 start, u64 num_bytes, u64 min_size,
+ 				    loff_t actual_len, u64 *alloc_hint);
+-int btrfs_run_delalloc_range(struct inode *inode, struct page *locked_page,
++int btrfs_run_delalloc_range(struct btrfs_inode *inode, struct page *locked_page,
+ 		u64 start, u64 end, int *page_started, unsigned long *nr_written,
+ 		struct writeback_control *wbc);
+ int btrfs_writepage_cow_fixup(struct page *page, u64 start, u64 end);
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 4d19cb930d57..e2a033e77b25 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3444,8 +3444,10 @@ static noinline_for_stack int writepage_delalloc(struct inode *inode,
+ 			delalloc_start = delalloc_end + 1;
+ 			continue;
+ 		}
+-		ret = btrfs_run_delalloc_range(inode, page, delalloc_start,
+-				delalloc_end, &page_started, nr_written, wbc);
++		ret = btrfs_run_delalloc_range(BTRFS_I(inode), page,
++					       delalloc_start,
++					       delalloc_end, &page_started,
++					       nr_written, wbc);
+ 		if (ret) {
+ 			SetPageError(page);
+ 			/*
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 709253e2470a..54e291c94214 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1795,31 +1795,31 @@ static inline int need_force_cow(struct btrfs_inode *inode, u64 start, u64 end)
+  * Function to process delayed allocation (create CoW) for ranges which are
+  * being touched for the first time.
+  */
+-int btrfs_run_delalloc_range(struct inode *inode, struct page *locked_page,
++int btrfs_run_delalloc_range(struct btrfs_inode *inode, struct page *locked_page,
+ 		u64 start, u64 end, int *page_started, unsigned long *nr_written,
+ 		struct writeback_control *wbc)
+ {
+ 	int ret;
+-	int force_cow = need_force_cow(BTRFS_I(inode), start, end);
++	int force_cow = need_force_cow(inode, start, end);
 
--	ret = btrfs_check_data_free_space(inode, &data_reserved, 0, num_pages);
-+	ret = btrfs_check_data_free_space(BTRFS_I(inode), &data_reserved, 0,
-+					  num_pages);
+-	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODATACOW && !force_cow) {
+-		ret = run_delalloc_nocow(BTRFS_I(inode), locked_page, start, end,
++	if (inode->flags & BTRFS_INODE_NODATACOW && !force_cow) {
++		ret = run_delalloc_nocow(inode, locked_page, start, end,
+ 					 page_started, 1, nr_written);
+-	} else if (BTRFS_I(inode)->flags & BTRFS_INODE_PREALLOC && !force_cow) {
+-		ret = run_delalloc_nocow(BTRFS_I(inode), locked_page, start, end,
++	} else if (inode->flags & BTRFS_INODE_PREALLOC && !force_cow) {
++		ret = run_delalloc_nocow(inode, locked_page, start, end,
+ 					 page_started, 0, nr_written);
+-	} else if (!inode_can_compress(BTRFS_I(inode)) ||
+-		   !inode_need_compress(BTRFS_I(inode), start, end)) {
+-		ret = cow_file_range(BTRFS_I(inode), locked_page, start, end,
+-				      page_started, nr_written, 1);
++	} else if (!inode_can_compress(inode) ||
++		   !inode_need_compress(inode, start, end)) {
++		ret = cow_file_range(inode, locked_page, start, end,
++				     page_started, nr_written, 1);
+ 	} else {
+ 		set_bit(BTRFS_INODE_HAS_ASYNC_EXTENT,
+-			&BTRFS_I(inode)->runtime_flags);
+-		ret = cow_file_range_async(BTRFS_I(inode), wbc, locked_page, start, end,
++			&inode->runtime_flags);
++		ret = cow_file_range_async(inode, wbc, locked_page, start, end,
+ 					   page_started, nr_written);
+ 	}
  	if (ret)
- 		goto out_put;
-
-diff --git a/fs/btrfs/delalloc-space.c b/fs/btrfs/delalloc-space.c
-index 776e671902bf..e5580262e4dd 100644
---- a/fs/btrfs/delalloc-space.c
-+++ b/fs/btrfs/delalloc-space.c
-@@ -237,10 +237,10 @@ int btrfs_alloc_data_chunk_ondemand(struct btrfs_inode *inode, u64 bytes)
- 	return 0;
+-		btrfs_cleanup_ordered_extents(BTRFS_I(inode), locked_page, start,
++		btrfs_cleanup_ordered_extents(inode, locked_page, start,
+ 					      end - start + 1);
+ 	return ret;
  }
-
--int btrfs_check_data_free_space(struct inode *inode,
-+int btrfs_check_data_free_space(struct btrfs_inode *inode,
- 			struct extent_changeset **reserved, u64 start, u64 len)
- {
--	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
-+	struct btrfs_fs_info *fs_info = inode->root->fs_info;
- 	int ret;
-
- 	/* align the range */
-@@ -248,12 +248,12 @@ int btrfs_check_data_free_space(struct inode *inode,
- 	      round_down(start, fs_info->sectorsize);
- 	start = round_down(start, fs_info->sectorsize);
-
--	ret = btrfs_alloc_data_chunk_ondemand(BTRFS_I(inode), len);
-+	ret = btrfs_alloc_data_chunk_ondemand(inode, len);
- 	if (ret < 0)
- 		return ret;
-
- 	/* Use new btrfs_qgroup_reserve_data to reserve precious data space. */
--	ret = btrfs_qgroup_reserve_data(BTRFS_I(inode), reserved, start, len);
-+	ret = btrfs_qgroup_reserve_data(inode, reserved, start, len);
- 	if (ret < 0)
- 		btrfs_free_reserved_data_space_noquota(fs_info, start, len);
- 	else
-@@ -561,7 +561,7 @@ int btrfs_delalloc_reserve_space(struct inode *inode,
- {
- 	int ret;
-
--	ret = btrfs_check_data_free_space(inode, reserved, start, len);
-+	ret = btrfs_check_data_free_space(BTRFS_I(inode), reserved, start, len);
- 	if (ret < 0)
- 		return ret;
- 	ret = btrfs_delalloc_reserve_metadata(BTRFS_I(inode), len);
-diff --git a/fs/btrfs/delalloc-space.h b/fs/btrfs/delalloc-space.h
-index 853a9ac3de35..2722fb6d2e5b 100644
---- a/fs/btrfs/delalloc-space.h
-+++ b/fs/btrfs/delalloc-space.h
-@@ -6,7 +6,7 @@
- struct extent_changeset;
-
- int btrfs_alloc_data_chunk_ondemand(struct btrfs_inode *inode, u64 bytes);
--int btrfs_check_data_free_space(struct inode *inode,
-+int btrfs_check_data_free_space(struct btrfs_inode *inode,
- 			struct extent_changeset **reserved, u64 start, u64 len);
- void btrfs_free_reserved_data_space(struct btrfs_inode *inode,
- 			struct extent_changeset *reserved, u64 start, u64 len);
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 3a8b8bda9824..28c18ff5fbc1 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1627,7 +1627,8 @@ static noinline ssize_t btrfs_buffered_write(struct kiocb *iocb,
- 				fs_info->sectorsize);
-
- 		extent_changeset_release(data_reserved);
--		ret = btrfs_check_data_free_space(inode, &data_reserved, pos,
-+		ret = btrfs_check_data_free_space(BTRFS_I(inode),
-+						  &data_reserved, pos,
- 						  write_bytes);
- 		if (ret < 0) {
- 			if ((BTRFS_I(inode)->flags & (BTRFS_INODE_NODATACOW |
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index a884addec7bd..fd8710837430 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -2590,7 +2590,8 @@ int prealloc_file_extent_cluster(struct inode *inode,
- 	BUG_ON(cluster->start != cluster->boundary[0]);
- 	inode_lock(inode);
-
--	ret = btrfs_check_data_free_space(inode, &data_reserved, prealloc_start,
-+	ret = btrfs_check_data_free_space(BTRFS_I(inode), &data_reserved,
-+					  prealloc_start,
- 					  prealloc_end + 1 - prealloc_start);
- 	if (ret)
- 		goto out;
 --
 2.17.1
 

@@ -4,30 +4,30 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BA746C433E0
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 05:56:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 466B5C433E0
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 05:56:34 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id A249620678
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 05:56:30 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 285C320678
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 05:56:34 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726155AbgFCF4a (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 3 Jun 2020 01:56:30 -0400
-Received: from mx2.suse.de ([195.135.220.15]:42466 "EHLO mx2.suse.de"
+        id S1726159AbgFCF4c (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 3 Jun 2020 01:56:32 -0400
+Received: from mx2.suse.de ([195.135.220.15]:42550 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726016AbgFCFz6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1726009AbgFCFz6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 3 Jun 2020 01:55:58 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 8F73FAFF8;
-        Wed,  3 Jun 2020 05:55:59 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id ECE77AF9C;
+        Wed,  3 Jun 2020 05:55:58 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 22/46] btrfs: Make cow_file_range_async take btrfs_inode
-Date:   Wed,  3 Jun 2020 08:55:22 +0300
-Message-Id: <20200603055546.3889-23-nborisov@suse.com>
+Subject: [PATCH 19/46] btrfs: Make insert_reserved_file_extent take btrfs_inode
+Date:   Wed,  3 Jun 2020 08:55:19 +0300
+Message-Id: <20200603055546.3889-20-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20200603055546.3889-1-nborisov@suse.com>
 References: <20200603055546.3889-1-nborisov@suse.com>
@@ -36,77 +36,98 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-It only uses vfs inode for assigning it to the async_chunk function.
-
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/inode.c | 18 +++++++++---------
- 1 file changed, 9 insertions(+), 9 deletions(-)
+ fs/btrfs/inode.c | 22 ++++++++++------------
+ 1 file changed, 10 insertions(+), 12 deletions(-)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 2798154f2c48..192a2f0ce4ba 100644
+index 28dfadb97a6a..2f6460241c61 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -1215,13 +1215,13 @@ static noinline void async_cow_free(struct btrfs_work *work)
- 		kvfree(async_chunk->pending);
+@@ -2446,13 +2446,13 @@ int btrfs_writepage_cow_fixup(struct page *page, u64 start, u64 end)
  }
-
--static int cow_file_range_async(struct inode *inode,
-+static int cow_file_range_async(struct btrfs_inode *inode,
- 				struct writeback_control *wbc,
- 				struct page *locked_page,
- 				u64 start, u64 end, int *page_started,
- 				unsigned long *nr_written)
+ 
+ static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
+-				       struct inode *inode, u64 file_pos,
++				       struct btrfs_inode *inode, u64 file_pos,
+ 				       u64 disk_bytenr, u64 disk_num_bytes,
+ 				       u64 num_bytes, u64 ram_bytes,
+ 				       u8 compression, u8 encryption,
+ 				       u16 other_encoding, int extent_type)
  {
--	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
-+	struct btrfs_fs_info *fs_info = inode->root->fs_info;
- 	struct cgroup_subsys_state *blkcg_css = wbc_blkcg_css(wbc);
- 	struct async_cow *ctx;
- 	struct async_chunk *async_chunk;
-@@ -1233,9 +1233,9 @@ static int cow_file_range_async(struct inode *inode,
- 	unsigned nofs_flag;
- 	const unsigned int write_flags = wbc_to_write_flags(wbc);
-
--	unlock_extent(&BTRFS_I(inode)->io_tree, start, end);
-+	unlock_extent(&inode->io_tree, start, end);
-
--	if (BTRFS_I(inode)->flags & BTRFS_INODE_NOCOMPRESS &&
-+	if (inode->flags & BTRFS_INODE_NOCOMPRESS &&
- 	    !btrfs_test_opt(fs_info, FORCE_COMPRESS)) {
- 		num_chunks = 1;
- 		should_compress = false;
-@@ -1255,8 +1255,8 @@ static int cow_file_range_async(struct inode *inode,
- 			PAGE_SET_WRITEBACK | PAGE_END_WRITEBACK |
- 			PAGE_SET_ERROR;
-
--		extent_clear_unlock_delalloc(BTRFS_I(inode), start, end,
--					     locked_page, clear_bits, page_ops);
-+		extent_clear_unlock_delalloc(inode, start, end, locked_page,
-+					     clear_bits, page_ops);
- 		return -ENOMEM;
- 	}
-
-@@ -1273,9 +1273,9 @@ static int cow_file_range_async(struct inode *inode,
- 		 * igrab is called higher up in the call chain, take only the
- 		 * lightweight reference for the callback lifetime
- 		 */
--		ihold(inode);
-+		ihold(&inode->vfs_inode);
- 		async_chunk[i].pending = &ctx->num_chunks;
--		async_chunk[i].inode = inode;
-+		async_chunk[i].inode = &inode->vfs_inode;
- 		async_chunk[i].start = start;
- 		async_chunk[i].end = cur_end;
- 		async_chunk[i].write_flags = write_flags;
-@@ -1815,7 +1815,7 @@ int btrfs_run_delalloc_range(struct inode *inode, struct page *locked_page,
- 	} else {
- 		set_bit(BTRFS_INODE_HAS_ASYNC_EXTENT,
- 			&BTRFS_I(inode)->runtime_flags);
--		ret = cow_file_range_async(inode, wbc, locked_page, start, end,
-+		ret = cow_file_range_async(BTRFS_I(inode), wbc, locked_page, start, end,
- 					   page_started, nr_written);
- 	}
+-	struct btrfs_root *root = BTRFS_I(inode)->root;
++	struct btrfs_root *root = inode->root;
+ 	struct btrfs_file_extent_item *fi;
+ 	struct btrfs_path *path;
+ 	struct extent_buffer *leaf;
+@@ -2474,14 +2474,14 @@ static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
+ 	 * the caller is expected to unpin it and allow it to be merged
+ 	 * with the others.
+ 	 */
+-	ret = __btrfs_drop_extents(trans, root, BTRFS_I(inode), path, file_pos,
++	ret = __btrfs_drop_extents(trans, root, inode, path, file_pos,
+ 				   file_pos + num_bytes, NULL, 0,
+ 				   1, sizeof(*fi), &extent_inserted);
  	if (ret)
---
+ 		goto out;
+ 
+ 	if (!extent_inserted) {
+-		ins.objectid = btrfs_ino(BTRFS_I(inode));
++		ins.objectid = btrfs_ino(inode);
+ 		ins.offset = file_pos;
+ 		ins.type = BTRFS_EXTENT_DATA_KEY;
+ 
+@@ -2508,14 +2508,13 @@ static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
+ 	btrfs_mark_buffer_dirty(leaf);
+ 	btrfs_release_path(path);
+ 
+-	inode_add_bytes(inode, num_bytes);
++	inode_add_bytes(&inode->vfs_inode, num_bytes);
+ 
+ 	ins.objectid = disk_bytenr;
+ 	ins.offset = disk_num_bytes;
+ 	ins.type = BTRFS_EXTENT_ITEM_KEY;
+ 
+-	ret = btrfs_inode_set_file_extent_range(BTRFS_I(inode), file_pos,
+-						ram_bytes);
++	ret = btrfs_inode_set_file_extent_range(inode, file_pos, ram_bytes);
+ 	if (ret)
+ 		goto out;
+ 
+@@ -2523,12 +2522,11 @@ static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
+ 	 * Release the reserved range from inode dirty range map, as it is
+ 	 * already moved into delayed_ref_head
+ 	 */
+-	ret = btrfs_qgroup_release_data(BTRFS_I(inode), file_pos, ram_bytes);
++	ret = btrfs_qgroup_release_data(inode, file_pos, ram_bytes);
+ 	if (ret < 0)
+ 		goto out;
+ 	qg_released = ret;
+-	ret = btrfs_alloc_reserved_file_extent(trans, root,
+-					       btrfs_ino(BTRFS_I(inode)),
++	ret = btrfs_alloc_reserved_file_extent(trans, root, btrfs_ino(inode),
+ 					       file_pos, qg_released, &ins);
+ out:
+ 	btrfs_free_path(path);
+@@ -2653,7 +2651,7 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
+ 						logical_len);
+ 	} else {
+ 		BUG_ON(root == fs_info->tree_root);
+-		ret = insert_reserved_file_extent(trans, inode, start,
++		ret = insert_reserved_file_extent(trans, BTRFS_I(inode), start,
+ 						ordered_extent->disk_bytenr,
+ 						ordered_extent->disk_num_bytes,
+ 						logical_len, logical_len,
+@@ -9545,7 +9543,7 @@ static int __btrfs_prealloc_file_range(struct inode *inode, int mode,
+ 		btrfs_dec_block_group_reservations(fs_info, ins.objectid);
+ 
+ 		last_alloc = ins.offset;
+-		ret = insert_reserved_file_extent(trans, inode,
++		ret = insert_reserved_file_extent(trans, BTRFS_I(inode),
+ 						  cur_offset, ins.objectid,
+ 						  ins.offset, ins.offset,
+ 						  ins.offset, 0, 0, 0,
+-- 
 2.17.1
 

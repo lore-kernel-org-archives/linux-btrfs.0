@@ -2,110 +2,97 @@ Return-Path: <SRS0=7Enz=7Q=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+X-Spam-Status: No, score=-0.3 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,FREEMAIL_REPLYTO_END_DIGIT,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
 	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 29042C433DF
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 11:54:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3A653C433E0
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 12:01:03 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id F23D620678
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 11:54:26 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 14C0820678
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 12:01:03 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="gR2oZdg4"
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="VCJWCaj7"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725995AbgFCLyZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 3 Jun 2020 07:54:25 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60484 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725922AbgFCLyZ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Jun 2020 07:54:25 -0400
-Received: from mail-vk1-xa43.google.com (mail-vk1-xa43.google.com [IPv6:2607:f8b0:4864:20::a43])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 96AC7C08C5C0
-        for <linux-btrfs@vger.kernel.org>; Wed,  3 Jun 2020 04:54:25 -0700 (PDT)
-Received: by mail-vk1-xa43.google.com with SMTP id w188so403639vkf.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 03 Jun 2020 04:54:25 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
-         :subject:to:cc:content-transfer-encoding;
-        bh=qFxdAefoC3rXLlFySXI9XXIHkUyodskMUHpgZx8e2pE=;
-        b=gR2oZdg49eIHAIucbB4TaaYycQpbH8wAnanHzMzTy/gF0EiYawPVDdo5/y8iSchFzM
-         oVPmDWPsoPvDkgE8CnPU04dUXc2zlSR4Usj+lQ55k//sjNfGHCyG+EmwOXYhNS8G+axP
-         cd9NJs54TXMf0pLoNqUdFuKUTPtfCq8PwRGn+hKrZH1L3GRobzPXRGba3Ij18smGLCoV
-         HZUYZ7k+jagadwvAhIjRdyvNhsGCoQO/rGqXMMOpkqCTBg0Ff40NsFsUvYBsv6SBH9ZY
-         SghX+0r/o34rHdZrf11lxEP/2co4TY51QMPUX2N1X9qka55yoUmc6bhRxleqyDjxkZOZ
-         SzbQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
-         :from:date:message-id:subject:to:cc:content-transfer-encoding;
-        bh=qFxdAefoC3rXLlFySXI9XXIHkUyodskMUHpgZx8e2pE=;
-        b=qkHwvszDhEqR0TeokvwHlPmetlBEAVJWLYYG0tFTKNeegm2crD6zxevpbM6wwS7skc
-         /i21umb+rKqONoCqP3W6WvH2DLwQQ/5SzoR/uWNDijC2on3TUDUxd9sqT3raVzs/5K2E
-         UbkQ9oo4WGX69tBZtc1kdlCU5C7Y3h07UUPN2lE7gyrQ6iRrReQFW4mk5aF+feoeJqs5
-         mb1xmiHNmlo1Ycw1T8j8JQhQt49a2M0lb0jxq/Em+dkNR6ThamfDAp1rHyo1UmSjGotK
-         FkBMRxYgUtdRgpn4sempFn9Prt54Pxl+KeSN5NeIPC4UpjZFNfNvX9LgSdWHm5KUm2tm
-         l4EA==
-X-Gm-Message-State: AOAM532ofRIjIzegG5YIwUxSFP2wI2mhoL3tjaMivGiAwNw2ERy3Z9ca
-        0XnFpe7f53s6f3V434kJKMyjVv2cwJIN3RbWqpQwxQ==
-X-Google-Smtp-Source: ABdhPJxTSpvCrkcsjDAp3cxtoNht2J5LGOumnq3RUR+wEEinkgfUqufQSjRnJNfp/BSilUfJyc5xpiqotj738xyKiHo=
-X-Received: by 2002:a1f:ae51:: with SMTP id x78mr21022380vke.24.1591185264737;
- Wed, 03 Jun 2020 04:54:24 -0700 (PDT)
-MIME-Version: 1.0
-References: <20200603101020.143372-1-anand.jain@oracle.com>
- <20200603101020.143372-3-anand.jain@oracle.com> <CAL3q7H7g6DA7S27RM8o=uG7wbXbvKYKvc6ot2qnnaY1A73kPhA@mail.gmail.com>
- <f01398d6-2a0a-95e3-9372-2029626a3447@oracle.com> <CAL3q7H50fugFVM5Hq7fEg29SjmUi+jfetMBS5LCph9LRP525ZQ@mail.gmail.com>
- <bed5d4b9-928d-6f7a-87f5-34bbeff08f2a@oracle.com>
-In-Reply-To: <bed5d4b9-928d-6f7a-87f5-34bbeff08f2a@oracle.com>
-Reply-To: fdmanana@gmail.com
-From:   Filipe Manana <fdmanana@gmail.com>
-Date:   Wed, 3 Jun 2020 12:54:13 +0100
-Message-ID: <CAL3q7H5Ysm+jwFzKU89F8rZy0FrhkS6qAatekVUBJ6uZnSvnhw@mail.gmail.com>
-Subject: Re: [PATCH 2/3] btrfs: rename btrfs_block_group::count
-To:     Anand Jain <anandsuveer@gmail.com>
-Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+        id S1726181AbgFCMBC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 3 Jun 2020 08:01:02 -0400
+Received: from mout.gmx.net ([212.227.15.19]:43647 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1725833AbgFCMBB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 3 Jun 2020 08:01:01 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1591185660;
+        bh=Iqzoi6HuUo57XbcgDQ7JkRprhiEB7dt6hbVTU42NJWE=;
+        h=X-UI-Sender-Class:From:To:Subject:Date:Reply-To;
+        b=VCJWCaj7X7D1wNIGIbMXK46N/L9TGSrofZBqEO9LhG8i0cJLEzEI6OlSCMyhb7iSB
+         Pd+F4hzNQxFdwrtTCIIDeZl4jvMAo8Rd+g9L/pf6OenO0wCw04Es8p96phE3jYoXiK
+         nbgWpbP2p3T89coVL1meC6CEjShUUDH6mvEGfpmg=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [10.63.0.34] ([194.99.106.9]) by mail.gmx.com (mrgmx004
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1N8XTv-1itjEA28rB-014TIr for
+ <linux-btrfs@vger.kernel.org>; Wed, 03 Jun 2020 14:01:00 +0200
+From:   "Adam Gold" <awg1@gmx.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: btrfs raid1 encryption alternatives
+Date:   Wed, 03 Jun 2020 12:00:58 +0000
+Message-Id: <em0da60a8d-9abc-4bc5-a91e-ebe48a4503f6@desktop-31mlcgh>
+Reply-To: "Adam Gold" <awg1@gmx.com>
+User-Agent: eM_Client/7.2.38732.0
+Mime-Version: 1.0
+Content-Type: text/plain; format=flowed; charset=utf-8
 Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:VLVZy0fF357RlwBZVBHp0PvG3Fiz+NMVHOumWk59/C3IAp4x2w0
+ Jrxo5EEYGWwIXGjGQpQGwHZy1ICr4yz6YBOwBCaVmlDFLV5DQK2BJloHUwKnsUZGyN+P787
+ A9PIh2wlDNrL8vAKiVDwsmJCoXWOwbb6qZuRGq4jVSaZr6p8YM3l10ih5L4CnzCLRzpQl/9
+ 8Xwuk3N0XZda4W5jvaFEg==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:F0/gd2Lho4A=:Q+K23O0SR3+jJ6IkY147uz
+ t+z0w27E1veJ6jHx5Q/iMF+OgeVXDlnAeXnlzof9KREFIk86Bt4qDEVDRR7wNiVVSuNviDY0O
+ F/XZTxHaXhG8DNSJfwb66Wgn2eL90zUcKSVcwMAo7tw51SUeEPju6GhpLst/h151/R2v018X9
+ H1IFEU4umcK07g+ZA66ruSer/QYCQVpP+Noml4nqKagANotktMPwGEgLeD1zRAnyWHQ3IXPYT
+ rn8mLtCvTSpYhXtxGsHFrvdoFS7mlJFS9Xtou3E3fPwiylgzGwh0goDKxdoEAsJkdAq83smE9
+ OYt+lWXuXlP5FPOlbuVceLaa0kueQiqEBXJfPLsEf5HSzuPweGQ6EQA0w378zF97EsIAwgCe2
+ Jf/krXgyL1lQBvBRxvKv8qRBlp4cyX3Dl582xOvXefxLg1SY+Nh5Dqw6xEchLrruEzTaHmjxc
+ zCMuOV5wuyeQRV80jEButOb5eccwEC5vOMO3fQunuI+pcbadcppwjryzHtC2asC9qQ5QoQyKk
+ OI/8/p5VPLQFk8M6PfIoRNVtfpGytkt5p6YA5sjGKuuo3nvhF2VPlBAU3GfQzym9KuIHvcKEu
+ ShqKwd2QBvul9FdDX1F0weXunq+EFpqp+PV3Uqp/KOfFDY0jyX/AlvJyDGEN4dE0wojOYVMUU
+ YCUp8EYFvdBAJ/C5rXKoSlTAXfr5PolEGB7wCz5db9OcDIi6yVcWPWJDUOV45A7SjoXCcuuPC
+ Z3Gj3yfxlxNYDTMauyhlCFd6lp0ohalHJaujaIJr6OXWVre28De50+2pIH+l0Nu1CYT2OW8x4
+ 3pxlTzKyaDYSK8j2W917GN3i0SgtXG0Ws2O7umM2IYROnBw5r3MzJKRo3vGE0cmrG5DDhUqHI
+ UnCyA05OhzFfLm7a/6TFkiSKZGooVH4NU6dn5BSLI/vRZXDI6qRi1/tVMH4/AfqbfYm+SnkNS
+ kRnuBPh8fhcgWrdZfplxtrSeQK10k+t0VZjGOKJlRMTwJJSslCu6jlZNkQmkrVtxe2MDGWi+b
+ n+AJj56uhHgpAOPoy1sBa72jkY4vz+xhi6/pdQSRnJ8rsrpPfyHoRvccAq8EpvwveP0DVCEqy
+ BK/PCenJZ0WrMgymOyIX6Tejao7r2/4TswJPonhURdMRgqbazeiQGRPgNgYC9/5FXs/XGwual
+ yT5isnmkVZl5ysK0u938b7R5FRc3L8SyoI3+xuJ8XzKiOLgMfCx05L3jyTOl+AaGAbY98U5rX
+ qOAt0CP8meJiAvxK8
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Jun 3, 2020 at 12:38 PM Anand Jain <anandsuveer@gmail.com> wrote:
->
->
-> >
-> > Why rename at all?
-> > It's pretty obvious it's a reference count. Count/counter is not an
-> > unusual name to use for a reference count, it even has get and put
-> > helpers...
->
-> I understand as the member count is in btrfs_block_group so prefix bg_
-> looks redundant, but prefix bg_ is still useful. With out the prefix,
-> the grep ">count" *.c didn't help straight away to verify where is
+I'm intending to create a raid1 mirror using usb3 disks attached to an=20
+overclocked Raspberry Pi 4. It might not be going into a data center any=20
+time soon but I've done it before and it ran without fault. It will be=20
+used for used for general backup and media.
 
-Following that logic, we would add the bg_ prefix to most members of
-block_group...
-It has members named 'start', 'length', 'flags', etc. Those are
-generic too, many other structures have members with exactly those
-names...
+Last time I used btrfs only, but I want an encryption layer this time=20
+for which I'm going to use plain-dmcrypt. My understanding is that, like=20
+with zfs, btrfs should be proximate to the disk sectors so one can make=20
+best use of all its features (compression, scrubbing etc). I'm=20
+considering the following two options:
 
-Don't take it wrong, but I don't find it useful at all.
+1) sda+sdb --> PV --> VG --> btrfs_pool_LV (100% of VG) -->=20
+plain-dmcrypt
+2) sda+sdb --> plain-dmcrypt --> /dev/mapper/btrfs_raid1 --> /mnt/btrfs
 
-Thanks.
+I look at 1) and wonder whether the lvm layers are redundant but they (I=20
+believe transparently) allow btrfs to format sda+sdb directly .
 
-> block_group count used. At two places we missed using the get helper
-> which the patch 3/3 fixed.
->
-> It's ok to drop this rename patch if you find it's not inline with the
-> rest of the codes.
+My question is, then, in 2) once /dev/mapper/btrfs_raid1 has been=20
+opened, is it de facto identical to /dev/sda+/dev/sdb from scenario 1)=20
+and will therefore allow btrfs to use all its capabilities. I believe=20
+that in scenario 1) will only have to decrypt the LV whereas in 2) I'll=20
+have to decrypt both disks but I'm not too fussed about that.
 
+Thanks in advance for your attention.
 
-
---=20
-Filipe David Manana,
-
-=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
- right.=E2=80=9D

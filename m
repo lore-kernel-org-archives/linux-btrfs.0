@@ -2,153 +2,172 @@ Return-Path: <SRS0=7Enz=7Q=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.9 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 28115C433DF
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 09:37:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 87B7CC433E0
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 10:10:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 00C632074B
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 09:37:35 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 67AA8206A2
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jun 2020 10:10:41 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="a4av9FXu"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726099AbgFCJhe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 3 Jun 2020 05:37:34 -0400
-Received: from mx2.suse.de ([195.135.220.15]:56704 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725854AbgFCJhd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 3 Jun 2020 05:37:33 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id C83C6AD09;
-        Wed,  3 Jun 2020 09:37:34 +0000 (UTC)
-Subject: Re: [PATCH 1/3] Btrfs: fix a block group ref counter leak after
- failure to remove block group
-To:     Filipe Manana <fdmanana@kernel.org>
-Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <20200601181206.24852-1-fdmanana@kernel.org>
- <0b010680-f286-f858-8cfd-94dc888ca7a4@suse.com>
- <CAL3q7H7XMfhH3Z8RCzXGrnMeT9NBNRyAdKRNZAF9n0hFH_xkrw@mail.gmail.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <8d5dd2b3-28d3-2fc5-470e-dfb6ff89296f@suse.com>
-Date:   Wed, 3 Jun 2020 12:37:30 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.8.0
+        id S1726958AbgFCKKk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 3 Jun 2020 06:10:40 -0400
+Received: from aserp2120.oracle.com ([141.146.126.78]:49172 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726935AbgFCKKe (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Jun 2020 06:10:34 -0400
+Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
+        by aserp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 053A6wtI156632
+        for <linux-btrfs@vger.kernel.org>; Wed, 3 Jun 2020 10:10:33 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
+ date : message-id : in-reply-to : references : mime-version :
+ content-transfer-encoding; s=corp-2020-01-29;
+ bh=BNMpI8zAdG7p/Ux1BsXW8txaixkLmmqCmrjNTkdGQ9k=;
+ b=a4av9FXuf0b/zn2V3dSTa8gXL1p7I1OLCyzqf+bvbn7TMBogCjzHbamYT3Ho9xC9H591
+ gNCN5Kq8eoKTdjuMfIlA8nSqKLAIMm2cep7JUmMEVTTXvfnljYkTGdLRStd1CDVrMy5Y
+ Fp1sxjoYM/VAtQs/Jb/FlKy6JOvuE3tSL5y9jXmZlfhdgb7xty/IK6syL3WjEfbpNAOb
+ eSRB6bhhYAgOZlqMDLGe+Nf55TIWllTUF1QcPifwKhA6DvC6Pk1u+IqCNOw21hO6GYjC
+ DsV4Prs7oQKOz1I8aq6IEfD4YpSXgVfvUInrUjxyyECm3uWi7mm/JIAe8UAj9nJ8nXWh 0g== 
+Received: from aserp3020.oracle.com (aserp3020.oracle.com [141.146.126.70])
+        by aserp2120.oracle.com with ESMTP id 31bfem8dad-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
+        for <linux-btrfs@vger.kernel.org>; Wed, 03 Jun 2020 10:10:32 +0000
+Received: from pps.filterd (aserp3020.oracle.com [127.0.0.1])
+        by aserp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 053A80E2034791
+        for <linux-btrfs@vger.kernel.org>; Wed, 3 Jun 2020 10:10:32 GMT
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by aserp3020.oracle.com with ESMTP id 31c25rpnmb-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Wed, 03 Jun 2020 10:10:32 +0000
+Received: from abhmp0009.oracle.com (abhmp0009.oracle.com [141.146.116.15])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 053AAWYc003600
+        for <linux-btrfs@vger.kernel.org>; Wed, 3 Jun 2020 10:10:32 GMT
+Received: from localhost.localdomain (/39.109.231.106)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Wed, 03 Jun 2020 03:10:31 -0700
+From:   Anand Jain <anand.jain@oracle.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/3] btrfs: fix btrfs_return_cluster_to_free_space() return
+Date:   Wed,  3 Jun 2020 18:10:18 +0800
+Message-Id: <20200603101020.143372-2-anand.jain@oracle.com>
+X-Mailer: git-send-email 2.25.1
+In-Reply-To: <20200603101020.143372-1-anand.jain@oracle.com>
+References: <20200603101020.143372-1-anand.jain@oracle.com>
 MIME-Version: 1.0
-In-Reply-To: <CAL3q7H7XMfhH3Z8RCzXGrnMeT9NBNRyAdKRNZAF9n0hFH_xkrw@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
 Content-Transfer-Encoding: 8bit
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9640 signatures=668686
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 adultscore=0 suspectscore=3 spamscore=0
+ malwarescore=0 bulkscore=0 mlxscore=0 phishscore=0 mlxlogscore=999
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2004280000
+ definitions=main-2006030079
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9640 signatures=668686
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 malwarescore=0 suspectscore=3
+ mlxlogscore=999 priorityscore=1501 bulkscore=0 phishscore=0 clxscore=1015
+ impostorscore=0 adultscore=0 spamscore=0 mlxscore=0 lowpriorityscore=0
+ cotscore=-2147483648 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2004280000 definitions=main-2006030079
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+__btrfs_return_cluster_to_free_space() returns only 0. And all its parent
+functions don't need the return value either so make this a void function.
 
+Further, as none of the callers of btrfs_return_cluster_to_free_space() is
+actually using the return from this function, make this function also
+return void.
 
-On 3.06.20 г. 12:30 ч., Filipe Manana wrote:
-> On Wed, Jun 3, 2020 at 8:32 AM Nikolay Borisov <nborisov@suse.com> wrote:
->>
->>
->>
->> On 1.06.20 г. 21:12 ч., fdmanana@kernel.org wrote:
->>> From: Filipe Manana <fdmanana@suse.com>
->>>
->>> When removing a block group, if we fail to delete the block group's item
->>> from the extent tree, we jump to the 'out' label and end up decrementing
->>> the block group's reference count once only (by 1), resulting in a counter
->>> leak because the block group at that point was already removed from the
->>> block group cache rbtree - so we have to decrement the reference count
->>> twice, once for the rbtree and once for our lookup at the start of the
->>> function.
->>
->> However I'm having hard time reconciling this. The block group is
->> removed from the block_group_cache_tree after we've called
->> btrfs_del_item. So if btrfs_del_item or btrfs_search_slot fail the code
->> jumps at out_put_group and puts the reference acquired at the beginning
->> of the function via btrfs_lookup_block_group.
->>
->> I think what you meant is if we fail to delete the block group's item
->> from the freespace tree, that is if we fail
->> remove_block_group_free_space, then we'd have a ref leak.
-> 
-> What I meant is exactly what I wrote:
-> if we fail to delete the block group's item from the extent tree (the
-> call to remove_block_group_item()),
-> we end up decrementing the reference count only once because we jump
-> to the out label - but we
-> should have decremented it twice, once for the rbtree removal, which
-> happened before, and once for
-> the lookup at the start of the function.
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ fs/btrfs/free-space-cache.c | 13 +++++--------
+ fs/btrfs/free-space-cache.h |  2 +-
+ 2 files changed, 6 insertions(+), 9 deletions(-)
 
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 55955bd424d7..1bf08c855edb 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -2703,7 +2703,7 @@ void btrfs_init_free_space_ctl(struct btrfs_block_group *block_group)
+  * pointed to by the cluster, someone else raced in and freed the
+  * cluster already.  In that case, we just return without changing anything
+  */
+-static int
++static void
+ __btrfs_return_cluster_to_free_space(
+ 			     struct btrfs_block_group *block_group,
+ 			     struct btrfs_free_cluster *cluster)
+@@ -2756,7 +2756,6 @@ __btrfs_return_cluster_to_free_space(
+ out:
+ 	spin_unlock(&cluster->lock);
+ 	btrfs_put_block_group(block_group);
+-	return 0;
+ }
+ 
+ static void __btrfs_remove_free_space_cache_locked(
+@@ -2907,12 +2906,11 @@ u64 btrfs_find_space_for_alloc(struct btrfs_block_group *block_group,
+  * Otherwise, it'll get a reference on the block group pointed to by the
+  * cluster and remove the cluster from it.
+  */
+-int btrfs_return_cluster_to_free_space(
++void btrfs_return_cluster_to_free_space(
+ 			       struct btrfs_block_group *block_group,
+ 			       struct btrfs_free_cluster *cluster)
+ {
+ 	struct btrfs_free_space_ctl *ctl;
+-	int ret;
+ 
+ 	/* first, get a safe pointer to the block group */
+ 	spin_lock(&cluster->lock);
+@@ -2920,12 +2918,12 @@ int btrfs_return_cluster_to_free_space(
+ 		block_group = cluster->block_group;
+ 		if (!block_group) {
+ 			spin_unlock(&cluster->lock);
+-			return 0;
++			return;
+ 		}
+ 	} else if (cluster->block_group != block_group) {
+ 		/* someone else has already freed it don't redo their work */
+ 		spin_unlock(&cluster->lock);
+-		return 0;
++		return;
+ 	}
+ 	atomic_inc(&block_group->count);
+ 	spin_unlock(&cluster->lock);
+@@ -2934,14 +2932,13 @@ int btrfs_return_cluster_to_free_space(
+ 
+ 	/* now return any extents the cluster had on it */
+ 	spin_lock(&ctl->tree_lock);
+-	ret = __btrfs_return_cluster_to_free_space(block_group, cluster);
++	__btrfs_return_cluster_to_free_space(block_group, cluster);
+ 	spin_unlock(&ctl->tree_lock);
+ 
+ 	btrfs_discard_queue_work(&block_group->fs_info->discard_ctl, block_group);
+ 
+ 	/* finally drop our ref */
+ 	btrfs_put_block_group(block_group);
+-	return ret;
+ }
+ 
+ static u64 btrfs_alloc_from_bitmap(struct btrfs_block_group *block_group,
+diff --git a/fs/btrfs/free-space-cache.h b/fs/btrfs/free-space-cache.h
+index 2e0a8077aa74..e3d5e0ad8f8e 100644
+--- a/fs/btrfs/free-space-cache.h
++++ b/fs/btrfs/free-space-cache.h
+@@ -136,7 +136,7 @@ void btrfs_init_free_cluster(struct btrfs_free_cluster *cluster);
+ u64 btrfs_alloc_from_cluster(struct btrfs_block_group *block_group,
+ 			     struct btrfs_free_cluster *cluster, u64 bytes,
+ 			     u64 min_start, u64 *max_extent_size);
+-int btrfs_return_cluster_to_free_space(
++void btrfs_return_cluster_to_free_space(
+ 			       struct btrfs_block_group *block_group,
+ 			       struct btrfs_free_cluster *cluster);
+ int btrfs_trim_block_group(struct btrfs_block_group *block_group,
+-- 
+2.25.1
 
-Right, and this is case 2 I described in my 2nd email. However my
-initial email referred to case 1 from my 2nd email. There are
-essentially 2 bugs w.r.t missing a put_block_group: one happens when
-remove_block-group_free_space fails and the 2nd one (which you have
-described) when remove_block_group_item fails. IMO the change log should
-describe the 2 issues.
-
-> 
-> Thanks.
-> 
->> With this
->> modification to the changelog:
->>
->> Reviewed-by: Nikolay Borisov <nborisov@suse.com>
->>
->>>
->>> To make things less error prone, decrement the reference count for the
->>> rbtree immediately after removing the block group from it. This also
->>> eleminates the need for two different exit labels on error, renaming
->>> 'out_put_label' to just 'out' and removing the old 'out'.
->>
->> I agree with this.
->>
->>>
->>> Fixes: f6033c5e333238 ("btrfs: fix block group leak when removing fails")
->>> Signed-off-by: Filipe Manana <fdmanana@suse.com>
->>
->> <snip>

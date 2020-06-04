@@ -2,60 +2,80 @@ Return-Path: <SRS0=4qIE=7R=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3CBC4C433DF
-	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Jun 2020 16:56:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8EF04C433E0
+	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Jun 2020 17:11:18 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 116C820738
-	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Jun 2020 16:56:26 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 740DA20772
+	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Jun 2020 17:11:18 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729963AbgFDQ4Z (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 4 Jun 2020 12:56:25 -0400
-Received: from mx2.suse.de ([195.135.220.15]:53656 "EHLO mx2.suse.de"
+        id S1730039AbgFDRLR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 4 Jun 2020 13:11:17 -0400
+Received: from mx2.suse.de ([195.135.220.15]:59074 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1729115AbgFDQ4Z (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 4 Jun 2020 12:56:25 -0400
+        id S1729866AbgFDRLQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 4 Jun 2020 13:11:16 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 729D6ACB1;
-        Thu,  4 Jun 2020 16:56:27 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 1DB18AC20;
+        Thu,  4 Jun 2020 17:11:19 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 32FE4DA818; Thu,  4 Jun 2020 18:56:19 +0200 (CEST)
-Date:   Thu, 4 Jun 2020 18:56:18 +0200
+        id 0CD35DA818; Thu,  4 Jun 2020 19:11:11 +0200 (CEST)
+Date:   Thu, 4 Jun 2020 19:11:11 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     Anand Jain <anand.jain@oracle.com>
+To:     fdmanana@kernel.org
 Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 0/3] btrfs: minor block group cleanups
-Message-ID: <20200604165618.GE27034@twin.jikos.cz>
+Subject: Re: [PATCH v2 1/3] Btrfs: fix a block group ref counter leak after
+ failure to remove block group
+Message-ID: <20200604171111.GF27034@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
+Mail-Followup-To: dsterba@suse.cz, fdmanana@kernel.org,
         linux-btrfs@vger.kernel.org
-References: <20200603101020.143372-1-anand.jain@oracle.com>
+References: <20200601181206.24852-1-fdmanana@kernel.org>
+ <20200603101112.23369-1-fdmanana@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20200603101020.143372-1-anand.jain@oracle.com>
+In-Reply-To: <20200603101112.23369-1-fdmanana@kernel.org>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Jun 03, 2020 at 06:10:17PM +0800, Anand Jain wrote:
-> Minor cleanup patches.
-> 1/3 cleansup the return value of btrfs_return_cluster_to_free_space().
-> 2/3 and 3/3 together cleanups block group reference count.
+On Wed, Jun 03, 2020 at 11:11:12AM +0100, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
 > 
-> 2/3 and 3/3 are related. However 1/3 is independent to the rest of the
-> patches in this set.
+> When removing a block group, if we fail to delete the block group's item
+> from the extent tree, we jump to the 'out' label and end up decrementing
+> the block group's reference count once only (by 1), resulting in a counter
+> leak because the block group at that point was already removed from the
+> block group cache rbtree - so we have to decrement the reference count
+> twice, once for the rbtree and once for our lookup at the start of the
+> function.
 > 
-> Anand Jain (3):
->   btrfs: fix btrfs_return_cluster_to_free_space() return
->   btrfs: rename btrfs_block_group::count
->   btrfs: use helper btrfs_get_block_group
+> There is a second bug where if removing the free space tree entries (the
+> call to remove_block_group_free_space()) fails we end up jumping to the
+> 'out_put_group' label but end up decrementing the reference count only
+> once, when we should have done it twice, since we have already removed
+> the block group from the block group cache rbtree. This happens because
+> the reference count decrement for the rbtree reference happens after
+> attempting to remove the free space tree entries, which is far away from
+> the place where we remove the block group from the rbtree.
+> 
+> To make things less error prone, decrement the reference count for the
+> rbtree immediately after removing the block group from it. This also
+> eleminates the need for two different exit labels on error, renaming
+> 'out_put_label' to just 'out' and removing the old 'out'.
+> 
+> Fixes: f6033c5e333238 ("btrfs: fix block group leak when removing fails")
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> ---
+> 
+> V2: Updated changelog to describe a second bug the patch fixes, pointed
+>     out by Nikolay.
 
-1 and 3 applied but I don't recommend to spend time on cleaning up
-free-space-cache.[ch] as it's going to be phased out.
+V2 updated in misc-next, thanks.

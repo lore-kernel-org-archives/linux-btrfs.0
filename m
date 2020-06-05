@@ -2,64 +2,99 @@ Return-Path: <SRS0=RMw4=7S=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.4 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9B54CC433DF
-	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Jun 2020 09:24:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 261E5C433E0
+	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Jun 2020 10:04:12 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 81090207D0
-	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Jun 2020 09:24:19 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 003D3207D3
+	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Jun 2020 10:04:11 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="uFufchX3"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726205AbgFEJYS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 5 Jun 2020 05:24:18 -0400
-Received: from mx2.suse.de ([195.135.220.15]:42712 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726188AbgFEJYS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 5 Jun 2020 05:24:18 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id B4E04AD25;
-        Fri,  5 Jun 2020 09:24:20 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 42895DA811; Fri,  5 Jun 2020 11:24:13 +0200 (CEST)
-Date:   Fri, 5 Jun 2020 11:24:13 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Anand Jain <anand.jain@oracle.com>
-Cc:     dsterba@suse.cz, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 00/16] btrfs-progs: global verbose and quiet option
-Message-ID: <20200605092413.GA27795@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-References: <1574678357-22222-1-git-send-email-anand.jain@oracle.com>
- <8a2bac99-5c07-2aa9-fe3b-e09f2ad16213@oracle.com>
- <20200114114047.GC3929@suse.cz>
- <d38e842d-e2a7-5d27-3157-72532c3526b4@oracle.com>
- <b3981267-d64c-ebbf-233c-ea821cb7257f@oracle.com>
+        id S1726416AbgFEKEL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 5 Jun 2020 06:04:11 -0400
+Received: from userp2120.oracle.com ([156.151.31.85]:47066 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726262AbgFEKEK (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Jun 2020 06:04:10 -0400
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 0559wGmb065285;
+        Fri, 5 Jun 2020 10:04:07 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
+ references : from : message-id : date : mime-version : in-reply-to :
+ content-type : content-transfer-encoding; s=corp-2020-01-29;
+ bh=gm7PwiKrtBsF1SnDZTy22GCvD0tLElb1Aior99aXyiI=;
+ b=uFufchX367+HvzkXWpOIwOuCfhDtRdC0tzQ7dcHJMBVFHvMzAPtY5qRwy6I8OjnURqXg
+ SYh72KKojD9QqSCe1iYXNwMWcWDtV2goV2UTWKwsd+TfC5KA3wlIraSeFOHInZxvF2Jz
+ tQ95w4BYbvZGPo0jChzdg4QNm3A+sqHLkG7lL7t+BlZVCoFQQDIDboMDkgJYXou9zc4P
+ 2kZ23YXlXE/a1fqv1H8cb7i9C2KNcJTpDwYcub4b4rL2DV0mIIYBrTsyTpccvAMb7lF1
+ ZTgw1Lv4NdVdUtc6U6/JxK5AF8037MVlwuS5oLGS6M2t3UoSIduTW5PbQUa/TSCWP8/k Kw== 
+Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
+        by userp2120.oracle.com with ESMTP id 31f92624d8-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
+        Fri, 05 Jun 2020 10:04:07 +0000
+Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
+        by userp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 055A3Qku152873;
+        Fri, 5 Jun 2020 10:04:06 GMT
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by userp3030.oracle.com with ESMTP id 31f92shung-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Fri, 05 Jun 2020 10:04:06 +0000
+Received: from abhmp0003.oracle.com (abhmp0003.oracle.com [141.146.116.9])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 055A46EN002777;
+        Fri, 5 Jun 2020 10:04:06 GMT
+Received: from [192.168.1.102] (/39.109.231.106)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Fri, 05 Jun 2020 03:04:05 -0700
+Subject: Re: [PATCH v7 1/2] btrfs: Introduce "rescue=" mount option
+To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20200604071807.61345-1-wqu@suse.com>
+ <20200604071807.61345-2-wqu@suse.com>
+From:   Anand Jain <anand.jain@oracle.com>
+Message-ID: <3659322f-0687-d179-ff89-f3a303fe2379@oracle.com>
+Date:   Fri, 5 Jun 2020 18:04:01 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.8.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <b3981267-d64c-ebbf-233c-ea821cb7257f@oracle.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <20200604071807.61345-2-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9642 signatures=668680
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 adultscore=0 bulkscore=0 mlxscore=0
+ malwarescore=0 spamscore=0 suspectscore=0 mlxlogscore=999 phishscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2004280000
+ definitions=main-2006050076
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9642 signatures=668680
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 phishscore=0 adultscore=0
+ suspectscore=0 cotscore=-2147483648 bulkscore=0 clxscore=1015
+ impostorscore=0 priorityscore=1501 malwarescore=0 mlxlogscore=999
+ spamscore=0 lowpriorityscore=0 mlxscore=0 classifier=spam adjust=0
+ reason=mlx scancount=1 engine=8.12.0-2004280000
+ definitions=main-2006050075
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, May 20, 2020 at 06:01:28PM +0800, Anand Jain wrote:
->    A ping on this series.
+On 4/6/20 3:18 pm, Qu Wenruo wrote:
+> This patch introduces a new "rescue=" mount option group for all those
+> mount options for data recovery.
+> 
+> Different rescue sub options are seperated by ':'. E.g
+> "ro,rescue=nologreplay:usebackuproot".
+> (The original plan is to use ';', but ';' needs to be escaped/quoted,
+> or it will be interpreted by bash)
 
-So I want to merge the series but I think it's unfinished. There are
-mostly --verbose options added, while --quiet is only for send and
-receive. My first test was 'btrfs -q subvolume create' and 'delete' and
-that -q did not work is surprising. The -v/-q options need to come in
-the same release.
+  I fell ':' isn't suitable here.
 
-Also, many options that have their own --verbose option should update
-the help text to note that it's an alias of the global.
+> And obviously, user can specify rescue options one by one like:
+> "ro,rescue=nologreplay,rescue=usebackuproot"
 
-I'm going to take another look today, the scope of the change might be
-too big to do in one go so some incremental steps might be needed.
+  This should suffice right?
+
+Thanks, Anand

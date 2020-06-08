@@ -4,48 +4,49 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B0F06C433DF
-	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Jun 2020 00:03:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4E5ACC433E1
+	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Jun 2020 00:11:54 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 8F5362074B
-	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Jun 2020 00:03:07 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 21DDE2072F
+	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Jun 2020 00:11:54 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1591660987;
-	bh=Hqb3JCTnyLZlBBfWXKLb88KwmLzBABnD3JY3uKw1hDQ=;
+	s=default; t=1591661514;
+	bh=MkhQdYmlwhdXAwRMV4INdW/RGVcDVH26f6kH/J+KPUo=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=gpBo70rEA6W9ATDqFiRI9F8o8Grsmhdl8/ppiVGT2nIjXHaDTmJeYVNIinA86Cg6o
-	 Yhvl3hDv4BQV+3mhr7KYTkSp6FY2un82syF29hbwK4XyGprpsBg1annRFW0yAG2agw
-	 syZECo7lWISNMvtHdz0vElmZRjAC3V1Ow5TlrS6g=
+	b=PN97+JrIy6zRfosonUFJeIRCAk8TShpUB6cv4srSoqhL5cL+BAz6hOjjesnH2K9RB
+	 3TXmsACfeJlek9Xr/JL+Cap+nz0+HUxTGl5+uLdKh4ILhsxfFpo2gLPearu4q5Cgpu
+	 jHYkNoOpQCPHve983Xk/G4k5w0UsTDTMRgxFiHkY=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2387620AbgFIADG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 8 Jun 2020 20:03:06 -0400
-Received: from mail.kernel.org ([198.145.29.99]:46382 "EHLO mail.kernel.org"
+        id S1732424AbgFIALv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 8 Jun 2020 20:11:51 -0400
+Received: from mail.kernel.org ([198.145.29.99]:43020 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1730847AbgFHXV7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 8 Jun 2020 19:21:59 -0400
+        id S1730080AbgFHXTu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 8 Jun 2020 19:19:50 -0400
 Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 82F9B2089D;
-        Mon,  8 Jun 2020 23:21:58 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id C902E20899;
+        Mon,  8 Jun 2020 23:19:49 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1591658519;
-        bh=Hqb3JCTnyLZlBBfWXKLb88KwmLzBABnD3JY3uKw1hDQ=;
+        s=default; t=1591658390;
+        bh=MkhQdYmlwhdXAwRMV4INdW/RGVcDVH26f6kH/J+KPUo=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=s+S4BDD0WIXqw8XxemUKew6NKbNcrWVM7gVEmrB3awo/MypafECEYF2CuD6EeMQY/
-         IxMkGrz0BDroUB80klR92fU10FdvBFyzWnqsIyPRwC3NOTk/uH6UiP4LvnP5xyyhKK
-         HFpfgN1vd14+dikFZM0iFDc/uTN4pVzPWcbaO9yo=
+        b=iJ07D4TKpueQZ21+OYPz0Ek4jNOaUup5ox8YW0k+BJZs3nmcQs6rVH9nnUGctb/Dk
+         sUyoWT/r/h6KpIGnbUuiv8mUzSzwGjT8oQ1KNb2/CH9n7LwXQyQ90trB3Jl5gxBey+
+         Lkd+U21AeZiabDNpuIwD5qZDm3iOrIGGDWeUqODQ=
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Qu Wenruo <wqu@suse.com>, Josef Bacik <josef@toxicpanda.com>,
+Cc:     Josef Bacik <josef@toxicpanda.com>,
+        Nikolay Borisov <nborisov@suse.com>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.4 145/175] btrfs: qgroup: mark qgroup inconsistent if we're inherting snapshot to a new qgroup
-Date:   Mon,  8 Jun 2020 19:18:18 -0400
-Message-Id: <20200608231848.3366970-145-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 5.4 048/175] btrfs: account for trans_block_rsv in may_commit_transaction
+Date:   Mon,  8 Jun 2020 19:16:41 -0400
+Message-Id: <20200608231848.3366970-48-sashal@kernel.org>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <20200608231848.3366970-1-sashal@kernel.org>
 References: <20200608231848.3366970-1-sashal@kernel.org>
@@ -58,121 +59,53 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Qu Wenruo <wqu@suse.com>
+From: Josef Bacik <josef@toxicpanda.com>
 
-[ Upstream commit cbab8ade585a18c4334b085564d9d046e01a3f70 ]
+[ Upstream commit bb4f58a747f0421b10645fbf75a6acc88da0de50 ]
 
-[BUG]
-For the following operation, qgroup is guaranteed to be screwed up due
-to snapshot adding to a new qgroup:
+On ppc64le with 64k page size (respectively 64k block size) generic/320
+was failing and debug output showed we were getting a premature ENOSPC
+with a bunch of space in btrfs_fs_info::trans_block_rsv.
 
-  # mkfs.btrfs -f $dev
-  # mount $dev $mnt
-  # btrfs qgroup en $mnt
-  # btrfs subv create $mnt/src
-  # xfs_io -f -c "pwrite 0 1m" $mnt/src/file
-  # sync
-  # btrfs qgroup create 1/0 $mnt/src
-  # btrfs subv snapshot -i 1/0 $mnt/src $mnt/snapshot
-  # btrfs qgroup show -prce $mnt/src
-  qgroupid         rfer         excl     max_rfer     max_excl parent  child
-  --------         ----         ----     --------     -------- ------  -----
-  0/5          16.00KiB     16.00KiB         none         none ---     ---
-  0/257         1.02MiB     16.00KiB         none         none ---     ---
-  0/258         1.02MiB     16.00KiB         none         none 1/0     ---
-  1/0             0.00B        0.00B         none         none ---     0/258
-	        ^^^^^^^^^^^^^^^^^^^^
+This meant there were still open transaction handles holding space, yet
+the flusher didn't commit the transaction because it deemed the freed
+space won't be enough to satisfy the current reserve ticket. Fix this
+by accounting for space in trans_block_rsv when deciding whether the
+current transaction should be committed or not.
 
-[CAUSE]
-The problem is in btrfs_qgroup_inherit(), we don't have good enough
-check to determine if the new relation would break the existing
-accounting.
-
-Unlike btrfs_add_qgroup_relation(), which has proper check to determine
-if we can do quick update without a rescan, in btrfs_qgroup_inherit() we
-can even assign a snapshot to multiple qgroups.
-
-[FIX]
-Fix it by manually marking qgroup inconsistent for snapshot inheritance.
-
-For subvolume creation, since all its extents are exclusively owned, we
-don't need to rescan.
-
-In theory, we should call relation check like quick_update_accounting()
-when doing qgroup inheritance and inform user about qgroup accounting
-inconsistency.
-
-But we don't have good mechanism to relay that back to the user in the
-snapshot creation context, thus we can only silently mark the qgroup
-inconsistent.
-
-Anyway, user shouldn't use qgroup inheritance during snapshot creation,
-and should add qgroup relationship after snapshot creation by 'btrfs
-qgroup assign', which has a much better UI to inform user about qgroup
-inconsistent and kick in rescan automatically.
-
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
-Signed-off-by: Qu Wenruo <wqu@suse.com>
-Reviewed-by: David Sterba <dsterba@suse.com>
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+Tested-by: Nikolay Borisov <nborisov@suse.com>
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
- fs/btrfs/qgroup.c | 14 ++++++++++++++
- 1 file changed, 14 insertions(+)
+ fs/btrfs/space-info.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 590defdf8860..b94f6f99e90d 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -2636,6 +2636,7 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans, u64 srcid,
- 	struct btrfs_root *quota_root;
- 	struct btrfs_qgroup *srcgroup;
- 	struct btrfs_qgroup *dstgroup;
-+	bool need_rescan = false;
- 	u32 level_size = 0;
- 	u64 nums;
- 
-@@ -2779,6 +2780,13 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans, u64 srcid,
- 				goto unlock;
- 		}
- 		++i_qgroups;
+diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
+index e8a4b0ebe97f..5b47e3c44c8f 100644
+--- a/fs/btrfs/space-info.c
++++ b/fs/btrfs/space-info.c
+@@ -462,6 +462,7 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
+ 	struct reserve_ticket *ticket = NULL;
+ 	struct btrfs_block_rsv *delayed_rsv = &fs_info->delayed_block_rsv;
+ 	struct btrfs_block_rsv *delayed_refs_rsv = &fs_info->delayed_refs_rsv;
++	struct btrfs_block_rsv *trans_rsv = &fs_info->trans_block_rsv;
+ 	struct btrfs_trans_handle *trans;
+ 	u64 bytes_needed;
+ 	u64 reclaim_bytes = 0;
+@@ -524,6 +525,11 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
+ 	spin_lock(&delayed_refs_rsv->lock);
+ 	reclaim_bytes += delayed_refs_rsv->reserved;
+ 	spin_unlock(&delayed_refs_rsv->lock);
 +
-+		/*
-+		 * If we're doing a snapshot, and adding the snapshot to a new
-+		 * qgroup, the numbers are guaranteed to be incorrect.
-+		 */
-+		if (srcid)
-+			need_rescan = true;
- 	}
- 
- 	for (i = 0; i <  inherit->num_ref_copies; ++i, i_qgroups += 2) {
-@@ -2798,6 +2806,9 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans, u64 srcid,
- 
- 		dst->rfer = src->rfer - level_size;
- 		dst->rfer_cmpr = src->rfer_cmpr - level_size;
++	spin_lock(&trans_rsv->lock);
++	reclaim_bytes += trans_rsv->reserved;
++	spin_unlock(&trans_rsv->lock);
 +
-+		/* Manually tweaking numbers certainly needs a rescan */
-+		need_rescan = true;
- 	}
- 	for (i = 0; i <  inherit->num_excl_copies; ++i, i_qgroups += 2) {
- 		struct btrfs_qgroup *src;
-@@ -2816,6 +2827,7 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans, u64 srcid,
- 
- 		dst->excl = src->excl + level_size;
- 		dst->excl_cmpr = src->excl_cmpr + level_size;
-+		need_rescan = true;
- 	}
- 
- unlock:
-@@ -2823,6 +2835,8 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans, u64 srcid,
- out:
- 	if (!committing)
- 		mutex_unlock(&fs_info->qgroup_ioctl_lock);
-+	if (need_rescan)
-+		fs_info->qgroup_flags |= BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT;
- 	return ret;
- }
- 
+ 	if (reclaim_bytes >= bytes_needed)
+ 		goto commit;
+ 	bytes_needed -= reclaim_bytes;
 -- 
 2.25.1
 

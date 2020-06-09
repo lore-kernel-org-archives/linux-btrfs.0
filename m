@@ -2,295 +2,281 @@ Return-Path: <SRS0=csn1=7W=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.0 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 24B19C433E1
-	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Jun 2020 00:47:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EC6CDC433DF
+	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Jun 2020 01:01:34 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id EA8E52078C
-	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Jun 2020 00:47:52 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1591663673;
-	bh=UYYNl0Yb/dq/K1p1LK/ZDi5h3/DWZcAP6Qa7A1d8NYA=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=qUq6UtYu24LW8y7RBVf1b65m/u73VTZI8FFJZzccDXJqENKvymoXO8J1Mw0Rt759Y
-	 Ey3EnxsNnrbLeZaVSKruKrU92pLyizWXGp5nh2fwBpJXUZLydKEQZAGWfwcoybA4cO
-	 vdolyxETqJRHE8RAgRVMfdYvlnvbonwQsURRSH5k=
+	by mail.kernel.org (Postfix) with ESMTP id A720520737
+	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Jun 2020 01:01:34 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="LxzIdUWt"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730507AbgFIArt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 8 Jun 2020 20:47:49 -0400
-Received: from mail.kernel.org ([198.145.29.99]:57952 "EHLO mail.kernel.org"
+        id S1729219AbgFIBBc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 8 Jun 2020 21:01:32 -0400
+Received: from mout.gmx.net ([212.227.17.20]:50701 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728870AbgFHXLQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 8 Jun 2020 19:11:16 -0400
-Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 2926320890;
-        Mon,  8 Jun 2020 23:11:14 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1591657874;
-        bh=UYYNl0Yb/dq/K1p1LK/ZDi5h3/DWZcAP6Qa7A1d8NYA=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=m2FhsHaNATtLcT+7a2uGsJZswE4RkB4JRKulfBb1QqRnsTrqdPzqT6CoG0xFoN0xm
-         1eM4iFYvbH1v8sKQ+yS9cS/+bOT+dKLaewr3H/PuRCj6vEs6QK7yM2yIXOwiWVsQFg
-         U6HEwyujYXiw/SmAtk50ORBOS5vF3et4ckOXDtkQ=
-From:   Sasha Levin <sashal@kernel.org>
-To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Josef Bacik <josef@toxicpanda.com>,
-        Nikolay Borisov <nborisov@suse.com>,
-        David Sterba <dsterba@suse.com>,
-        Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.7 232/274] btrfs: improve global reserve stealing logic
-Date:   Mon,  8 Jun 2020 19:05:25 -0400
-Message-Id: <20200608230607.3361041-232-sashal@kernel.org>
-X-Mailer: git-send-email 2.25.1
-In-Reply-To: <20200608230607.3361041-1-sashal@kernel.org>
-References: <20200608230607.3361041-1-sashal@kernel.org>
+        id S1729220AbgFIBBW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 8 Jun 2020 21:01:22 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1591664475;
+        bh=o52laFJCMzyEAVJh7ap9uP5HTp7raUUxx9vSTW0liYI=;
+        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
+        b=LxzIdUWtFq4a+W7dfmQeZVg6J4IHhd0gmGmVCI40eYr99YvraWx5ifkuypfsaHwuL
+         sr5Zzwk0e+/NEMwShVAQf0nPeNdG92kxHcNEopfWmv0P+gvQbIJCrkrdmmfNWR/dev
+         nfTE7SCkFT1XDFRzY9mdRzBCR1Z39JGsHgJNqGEE=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx104
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1M1HZi-1jfhTs3JJy-002p1I; Tue, 09
+ Jun 2020 03:01:15 +0200
+Subject: Re: [PATCH 1/2] btrfs: extent_io: fix qgroup reserved data space
+ leakage when releasing a page
+To:     Josef Bacik <josef@toxicpanda.com>, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20200607072512.31721-1-wqu@suse.com>
+ <20200607072512.31721-2-wqu@suse.com>
+ <2d098492-b927-fc01-d33e-9f89452d26fa@toxicpanda.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAU4EEwEIADgCGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1oQAKCRDC
+ PZHzoSX+qCY6CACd+mWu3okGwRKXju6bou+7VkqCaHTdyXwWFTsr+/0ly5nUdDtT3yEVggPJ
+ 3VP70wjlrxUjNjFb6iIvGYxiPOrop1NGwGYvQktgRhaIhALG6rPoSSAhGNjwGVRw0km0PlIN
+ D29BTj/lYEk+jVM1YL0QLgAE1AI3krihg/lp/fQT53wLhR8YZIF8ETXbClQG1vJ0cllPuEEv
+ efKxRyiTSjB+PsozSvYWhXsPeJ+KKjFen7ebE5reQTPFzSHctCdPnoR/4jSPlnTlnEvLeqcD
+ ZTuKfQe1gWrPeevQzgCtgBF/WjIOeJs41klnYzC3DymuQlmFubss0jShLOW8eSOOWhLRuQEN
+ BFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcgaCbPEwhLj
+ 1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj/IrRUUka
+ 68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fNGSsRb+pK
+ EKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0q1eW4Jrv
+ 0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEvABEBAAGJ
+ ATwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1rgUJCWpOfwAKCRDCPZHz
+ oSX+qFcEB/95cs8cM1OQdE/GgOfCGxwgckMeWyzOR7bkAWW0lDVp2hpgJuxBW/gyfmtBnUai
+ fnggx3EE3ev8HTysZU9q0h+TJwwJKGv6sUc8qcTGFDtavnnl+r6xDUY7A6GvXEsSoCEEynby
+ 72byGeSovfq/4AWGNPBG1L61Exl+gbqfvbECP3ziXnob009+z9I4qXodHSYINfAkZkA523JG
+ ap12LndJeLk3gfWNZfXEWyGnuciRGbqESkhIRav8ootsCIops/SqXm0/k+Kcl4gGUO/iD/T5
+ oagaDh0QtOd8RWSMwLxwn8uIhpH84Q4X1LadJ5NCgGa6xPP5qqRuiC+9gZqbq4Nj
+Message-ID: <f6015ca7-5ab4-b924-e734-7574d12d795b@gmx.com>
+Date:   Tue, 9 Jun 2020 09:01:11 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.8.1
 MIME-Version: 1.0
-X-stable: review
-X-Patchwork-Hint: Ignore
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <2d098492-b927-fc01-d33e-9f89452d26fa@toxicpanda.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="5AF4cBT5OW0qeu3eObhdLaoofQTR8Nl7J"
+X-Provags-ID: V03:K1:1k83A91fl90PHdRYLu14+wtMi9weQWQlOoyB3fDpyZI3zEt0PXc
+ rqlODh1sExKgALR2SLAobSvjMIJ00bDK9jxolDHp+fqmYG13V/8s1+/8ZxOkbyGYt6HHWbH
+ UcHqemm/hYyKtPcUo8SbdBRtww7tsv9RTdGPwEazw58MzZHaEQ+JxeZpDzeGNXva3JxuRbm
+ dDSw4Eel+ZcUUIZGxR14A==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:jbnyNiBLF44=:ArFhjHXX3JPpCWEciXGZAq
+ JTQw7a0MGnUOwVBbUhn0MmeFP375Xre3za9Ttv7h7dfRp0Ku5weYMwjpEmsRHFpKHJgDbRv3+
+ TBBv/VXaukoQ+kHbZceQdycnORSKi2K39/ZP8P1dR6lvd5BIyJGTAAtyeHh9cJfRMnw9qasG4
+ WJQ8pkq1VvdN04p+rlxre78EfzyLM3gUQw/5orhO68/Xdnn7bFIYNTFj15sV8RQqUUc4bcs/o
+ fF5lc14+YHe3WJBKPBVq3wrOmpcNu80GNTXe0KIUXKXBzxjg8AzHFyjzDV4n1+hHHQbEOVLLs
+ iYGOrk+7Fcd5j7gm3GbM0A7nCWzT5h9Km4Jw9pF8Y9XeO9QtKvofS7eewCDhMr+YuZxLDkXlx
+ wGmnbb+VpIAQ97J6ezp/o6WP7+h+gmbT1VY9v4iprvhLCvIn6ZqLmZFllkqxbnlMz3lbklzqt
+ eFSabPTRkJhVwlf/HDmcg6AqKMGOfaXRMoFWwaLF+UfpwVlI7L6PJ6Eel5SWkJu/WAkWAq5Rc
+ D/rBx+QdVcpUTSBw1It6X861fGGExHzcKAmQmb3y4+9ccXY3ZdUKRJ1f9U5bXb+sKusKZs+wM
+ WWOhXuYA7cua9UP+4ZpXgWgIo0sDbas/N0brglLAAg1g+vt6V7YmN6bGQ7PoBRwBxihyiT2R8
+ 4cNR9mARqw0H5AzUm9JZ58cUZcnhd5fYmodjW3bhVPikQrJfsdtSiVyEdnJhT/uKV/Fu35ghW
+ vxQjiy/TUro11nRZ9Lv3p2Icj9O3icq59QGYqtCCiCzmXlYDdrMarMVL/q2ronF4/ovpUU+1A
+ xGICCFBFY0e5aaqO2grWfyOFcNVmsNabTgC9ZHHkKtc2WuM/WctQEYdDiIPrs0FYusMugDNto
+ h4E8S9WIFh99nMyz9OWV2hfyGL2j8KvqKIQY3uQcV/Ma9s5V5q40upYznYgQ4vQVJAzSXuGjk
+ MJATmpQOYzbbP/7ASsdQFwgbLWBGHEdtInt2MI41+ayaBSaHYAbYSEwddv5o7pQGlWrUxGIXB
+ 3PcCaZxBWRBvMbab/HkS0lMebU9zE/DNG7cZU6qQsVhLwHGcnXQvP+9qcM+CycYyqOx8P0Uly
+ uHGqww7ND73yMaEjBf6DPuyCIg5WvMZMTmaEZi/Y9rSvAtVCZZxl1oFksYmOBD9IYZU7Kd7Tf
+ bR7on+JQikNP2gKLZpOPOz08pOUDhuxyil6IXCuYrxVbEhCt4za9W3rj4oe72lhaDnD5Ah4uH
+ tKFeEpp0rzCOQQFg/
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Josef Bacik <josef@toxicpanda.com>
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--5AF4cBT5OW0qeu3eObhdLaoofQTR8Nl7J
+Content-Type: multipart/mixed; boundary="6YpGylukv1bBNpJaMMdU0AxOLNnuxrrTT"
 
-[ Upstream commit 7f9fe614407692f670601a634621138233ac00d7 ]
+--6YpGylukv1bBNpJaMMdU0AxOLNnuxrrTT
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-For unlink transactions and block group removal
-btrfs_start_transaction_fallback_global_rsv will first try to start an
-ordinary transaction and if it fails it will fall back to reserving the
-required amount by stealing from the global reserve. This is problematic
-because of all the same reasons we had with previous iterations of the
-ENOSPC handling, thundering herd.  We get a bunch of failures all at
-once, everybody tries to allocate from the global reserve, some win and
-some lose, we get an ENSOPC.
 
-Fix this behavior by introducing BTRFS_RESERVE_FLUSH_ALL_STEAL. It's
-used to mark unlink reservation. To fix this we need to integrate this
-logic into the normal ENOSPC infrastructure.  We still go through all of
-the normal flushing work, and at the moment we begin to fail all the
-tickets we try to satisfy any tickets that are allowed to steal by
-stealing from the global reserve.  If this works we start the flushing
-system over again just like we would with a normal ticket satisfaction.
-This serializes our global reserve stealing, so we don't have the
-thundering herd problem.
 
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-Tested-by: Nikolay Borisov <nborisov@suse.com>
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
-Signed-off-by: Sasha Levin <sashal@kernel.org>
----
- fs/btrfs/block-group.c |  2 +-
- fs/btrfs/ctree.h       |  1 +
- fs/btrfs/inode.c       |  2 +-
- fs/btrfs/space-info.c  | 37 ++++++++++++++++++++++++++++++++++++-
- fs/btrfs/space-info.h  |  1 +
- fs/btrfs/transaction.c | 42 +++++-------------------------------------
- fs/btrfs/transaction.h |  3 +--
- 7 files changed, 46 insertions(+), 42 deletions(-)
+On 2020/6/8 =E4=B8=8B=E5=8D=8811:17, Josef Bacik wrote:
+> On 6/7/20 3:25 AM, Qu Wenruo wrote:
+>> [BUG]
+>> The following simple workload from fsstress can lead to qgroup reserve=
+d
+>> data space leakage:
+>> =C2=A0=C2=A0 0/0: creat f0 x:0 0 0
+>> =C2=A0=C2=A0 0/0: creat add id=3D0,parent=3D-1
+>> =C2=A0=C2=A0 0/1: write f0[259 1 0 0 0 0] [600030,27288] 0
+>> =C2=A0=C2=A0 0/4: dwrite - xfsctl(XFS_IOC_DIOINFO) f0[259 1 0 0 64 627=
+318]
+>> return 25, fallback to stat()
+>> =C2=A0=C2=A0 0/4: dwrite f0[259 1 0 0 64 627318] [610304,106496] 0
+>>
+>> This would cause btrfs qgroup to leak 20480 bytes for data reserved
+>> space.
+>> If btrfs qgroup limit is enabled, such leakage can lead to unexpected
+>> early EDQUOT and unusable space.
+>>
+>> [CAUSE]
+>> When doing direct IO, kernel will try to writeback existing buffered
+>> page cache, then invalidate them:
+>> =C2=A0=C2=A0 iomap_dio_rw()
+>> =C2=A0=C2=A0 |- filemap_write_and_wait_range();
+>> =C2=A0=C2=A0 |- invalidate_inode_pages2_range();
+>>
+>> However for btrfs, the bi_end_io hook doesn't finish all its heavy wor=
+k
+>> right after bio ends.
+>> In fact, it delays its work further:
+>> =C2=A0=C2=A0 submit_extent_page(end_io_func=3Dend_bio_extent_writepage=
+);
+>> =C2=A0=C2=A0 end_bio_extent_writepage()
+>> =C2=A0=C2=A0 |- btrfs_writepage_endio_finish_ordered()
+>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 |- btrfs_init_work(finish_ordered_fn);
+>>
+>> =C2=A0=C2=A0 <<< Work queue execution >>>
+>> =C2=A0=C2=A0 finish_ordered_fn()
+>> =C2=A0=C2=A0 |- btrfs_finish_ordered_io();
+>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 |- Clear qgroup bits
+>>
+>> This means, when filemap_write_and_wait_range() returns,
+>> btrfs_finish_ordered_io() is not ensured to be executed, thus the
+>> qgroup bits for related range is not cleared.
+>>
+>> Now into how the leakage happens, this will only focus on the
+>> overlapping part of buffered and direct IO part.
+>>
+>> 1. After buffered write
+>> =C2=A0=C2=A0=C2=A0 The inode had the following range with QGROUP_RESER=
+VED bit:
+>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 596=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0=C2=A0=C2=A0 616K
+>> =C2=A0=C2=A0=C2=A0=C2=A0|///////////////|
+>> =C2=A0=C2=A0=C2=A0 Qgroup reserved data space: 20K
+>>
+>> 2. Writeback part for range [596K, 616K)
+>> =C2=A0=C2=A0=C2=A0 Write back finished, but btrfs_finish_ordered_io() =
+not get called
+>> =C2=A0=C2=A0=C2=A0 yet.
+>> =C2=A0=C2=A0=C2=A0 So we still have:
+>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 596K=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0=C2=A0=C2=A0 616K
+>> =C2=A0=C2=A0=C2=A0=C2=A0|///////////////|
+>> =C2=A0=C2=A0=C2=A0 Qgroup reserved data space: 20K
+>>
+>> 3. Pages for range [596K, 616K) get released
+>> =C2=A0=C2=A0=C2=A0 This will clear all qgroup bits, but don't update t=
+he reserved data
+>> =C2=A0=C2=A0=C2=A0 space.
+>> =C2=A0=C2=A0=C2=A0 So we have:
+>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 596K=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0=C2=A0=C2=A0 616K
+>> =C2=A0=C2=A0=C2=A0=C2=A0|=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 |
+>> =C2=A0=C2=A0=C2=A0 Qgroup reserved data space: 20K
+>> =C2=A0=C2=A0=C2=A0 That number doesn't match with the qgroup bit range=
+ anymore.
+>>
+>> 4. Dio prepare space for range [596K, 700K)
+>> =C2=A0=C2=A0=C2=A0 Qgroup reserved data space for that range, we got:
+>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 596K=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0=C2=A0=C2=A0 616K=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0 700K
+>> =C2=A0=C2=A0=C2=A0=C2=A0|///////////////|///////////////////////|
+>> =C2=A0=C2=A0=C2=A0 Qgroup reserved data space: 20K + 104K =3D 124K
+>>
+>> 5. btrfs_finish_ordered_range() get executed for range [596K, 616K)
+>> =C2=A0=C2=A0=C2=A0 Qgroup free reserved space for that range, we got:
+>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 596K=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0=C2=A0=C2=A0 616K=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0 700K
+>> =C2=A0=C2=A0=C2=A0=C2=A0|=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 |/=
+//////////////////////|
+>> =C2=A0=C2=A0=C2=A0 We need to free that range of reserved space.
+>> =C2=A0=C2=A0=C2=A0 Qgroup reserved data space: 124K - 20K =3D 104K
+>>
+>> 6. btrfs_finish_ordered_range() get executed for range [596K, 700K)
+>> =C2=A0=C2=A0=C2=A0 However qgroup bit for range [596K, 616K) is alread=
+y cleared in
+>> =C2=A0=C2=A0=C2=A0 previous step, so we only free 84K for qgroup reser=
+ved space.
+>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 596K=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0=C2=A0=C2=A0 616K=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0 700K
+>> =C2=A0=C2=A0=C2=A0=C2=A0|=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 |=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 |
+>> =C2=A0=C2=A0=C2=A0 We need to free that range of reserved space.
+>> =C2=A0=C2=A0=C2=A0 Qgroup reserved data space: 104K - 84K =3D 20K
+>>
+>> =C2=A0=C2=A0=C2=A0 Now there is no way to release that 20K unless disa=
+bling qgroup or
+>> =C2=A0=C2=A0=C2=A0 unmount the fs.
+>>
+>> [FIX]
+>> This patch will fix the problem by calling btrfs_qgroup_free_data() wh=
+en
+>> a page is released.
+>>
+>> So that even a dirty page is released, its qgroup reserved data space
+>> will get freed along with it.
+>>
+>> Fixes: f695fdcef83a ("btrfs: qgroup: Introduce functions to
+>> release/free qgroup reserve data space")
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>=20
+> This seems backwards to me, and not in keeping with the actual lifetime=
 
-diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index 696f47103cfc..233c5663f233 100644
---- a/fs/btrfs/block-group.c
-+++ b/fs/btrfs/block-group.c
-@@ -1175,7 +1175,7 @@ struct btrfs_trans_handle *btrfs_start_trans_remove_block_group(
- 	free_extent_map(em);
- 
- 	return btrfs_start_transaction_fallback_global_rsv(fs_info->extent_root,
--							   num_items, 1);
-+							   num_items);
- }
- 
- /*
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 8aa7b9dac405..3510e33706c1 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2512,6 +2512,7 @@ enum btrfs_reserve_flush_enum {
- 	BTRFS_RESERVE_FLUSH_LIMIT,
- 	BTRFS_RESERVE_FLUSH_EVICT,
- 	BTRFS_RESERVE_FLUSH_ALL,
-+	BTRFS_RESERVE_FLUSH_ALL_STEAL,
- };
- 
- enum btrfs_flush_state {
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 320d1062068d..259239b33370 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3618,7 +3618,7 @@ static struct btrfs_trans_handle *__unlink_start_trans(struct inode *dir)
- 	 * 1 for the inode ref
- 	 * 1 for the inode
- 	 */
--	return btrfs_start_transaction_fallback_global_rsv(root, 5, 5);
-+	return btrfs_start_transaction_fallback_global_rsv(root, 5);
- }
- 
- static int btrfs_unlink(struct inode *dir, struct dentry *dentry)
-diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-index 3c0e9999bfd7..eee6748c49e4 100644
---- a/fs/btrfs/space-info.c
-+++ b/fs/btrfs/space-info.c
-@@ -862,6 +862,34 @@ static inline int need_do_async_reclaim(struct btrfs_fs_info *fs_info,
- 		!test_bit(BTRFS_FS_STATE_REMOUNTING, &fs_info->fs_state));
- }
- 
-+static bool steal_from_global_rsv(struct btrfs_fs_info *fs_info,
-+				  struct btrfs_space_info *space_info,
-+				  struct reserve_ticket *ticket)
-+{
-+	struct btrfs_block_rsv *global_rsv = &fs_info->global_block_rsv;
-+	u64 min_bytes;
-+
-+	if (global_rsv->space_info != space_info)
-+		return false;
-+
-+	spin_lock(&global_rsv->lock);
-+	min_bytes = div_factor(global_rsv->size, 5);
-+	if (global_rsv->reserved < min_bytes + ticket->bytes) {
-+		spin_unlock(&global_rsv->lock);
-+		return false;
-+	}
-+	global_rsv->reserved -= ticket->bytes;
-+	ticket->bytes = 0;
-+	list_del_init(&ticket->list);
-+	wake_up(&ticket->wait);
-+	space_info->tickets_id++;
-+	if (global_rsv->reserved < global_rsv->size)
-+		global_rsv->full = 0;
-+	spin_unlock(&global_rsv->lock);
-+
-+	return true;
-+}
-+
- /*
-  * maybe_fail_all_tickets - we've exhausted our flushing, start failing tickets
-  * @fs_info - fs_info for this fs
-@@ -894,6 +922,10 @@ static bool maybe_fail_all_tickets(struct btrfs_fs_info *fs_info,
- 		ticket = list_first_entry(&space_info->tickets,
- 					  struct reserve_ticket, list);
- 
-+		if (ticket->steal &&
-+		    steal_from_global_rsv(fs_info, space_info, ticket))
-+			return true;
-+
- 		/*
- 		 * may_commit_transaction will avoid committing the transaction
- 		 * if it doesn't feel like the space reclaimed by the commit
-@@ -1110,6 +1142,7 @@ static int handle_reserve_ticket(struct btrfs_fs_info *fs_info,
- 
- 	switch (flush) {
- 	case BTRFS_RESERVE_FLUSH_ALL:
-+	case BTRFS_RESERVE_FLUSH_ALL_STEAL:
- 		wait_reserve_ticket(fs_info, space_info, ticket);
- 		break;
- 	case BTRFS_RESERVE_FLUSH_LIMIT:
-@@ -1209,7 +1242,9 @@ static int __reserve_metadata_bytes(struct btrfs_fs_info *fs_info,
- 		ticket.error = 0;
- 		space_info->reclaim_size += ticket.bytes;
- 		init_waitqueue_head(&ticket.wait);
--		if (flush == BTRFS_RESERVE_FLUSH_ALL) {
-+		ticket.steal = (flush == BTRFS_RESERVE_FLUSH_ALL_STEAL);
-+		if (flush == BTRFS_RESERVE_FLUSH_ALL ||
-+		    flush == BTRFS_RESERVE_FLUSH_ALL_STEAL) {
- 			list_add_tail(&ticket.list, &space_info->tickets);
- 			if (!space_info->flush) {
- 				space_info->flush = 1;
-diff --git a/fs/btrfs/space-info.h b/fs/btrfs/space-info.h
-index 0a5001ef1481..c3c64019950a 100644
---- a/fs/btrfs/space-info.h
-+++ b/fs/btrfs/space-info.h
-@@ -78,6 +78,7 @@ struct btrfs_space_info {
- struct reserve_ticket {
- 	u64 bytes;
- 	int error;
-+	bool steal;
- 	struct list_head list;
- 	wait_queue_head_t wait;
- };
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 2d5498136e5e..b5da5d8342dc 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -563,7 +563,8 @@ start_transaction(struct btrfs_root *root, unsigned int num_items,
- 		 * refill that amount for whatever is missing in the reserve.
- 		 */
- 		num_bytes = btrfs_calc_insert_metadata_size(fs_info, num_items);
--		if (delayed_refs_rsv->full == 0) {
-+		if (flush == BTRFS_RESERVE_FLUSH_ALL &&
-+		    delayed_refs_rsv->full == 0) {
- 			delayed_refs_bytes = num_bytes;
- 			num_bytes <<= 1;
- 		}
-@@ -699,43 +700,10 @@ struct btrfs_trans_handle *btrfs_start_transaction(struct btrfs_root *root,
- 
- struct btrfs_trans_handle *btrfs_start_transaction_fallback_global_rsv(
- 					struct btrfs_root *root,
--					unsigned int num_items,
--					int min_factor)
-+					unsigned int num_items)
- {
--	struct btrfs_fs_info *fs_info = root->fs_info;
--	struct btrfs_trans_handle *trans;
--	u64 num_bytes;
--	int ret;
--
--	/*
--	 * We have two callers: unlink and block group removal.  The
--	 * former should succeed even if we will temporarily exceed
--	 * quota and the latter operates on the extent root so
--	 * qgroup enforcement is ignored anyway.
--	 */
--	trans = start_transaction(root, num_items, TRANS_START,
--				  BTRFS_RESERVE_FLUSH_ALL, false);
--	if (!IS_ERR(trans) || PTR_ERR(trans) != -ENOSPC)
--		return trans;
--
--	trans = btrfs_start_transaction(root, 0);
--	if (IS_ERR(trans))
--		return trans;
--
--	num_bytes = btrfs_calc_insert_metadata_size(fs_info, num_items);
--	ret = btrfs_cond_migrate_bytes(fs_info, &fs_info->trans_block_rsv,
--				       num_bytes, min_factor);
--	if (ret) {
--		btrfs_end_transaction(trans);
--		return ERR_PTR(ret);
--	}
--
--	trans->block_rsv = &fs_info->trans_block_rsv;
--	trans->bytes_reserved = num_bytes;
--	trace_btrfs_space_reservation(fs_info, "transaction",
--				      trans->transid, num_bytes, 1);
--
--	return trans;
-+	return start_transaction(root, num_items, TRANS_START,
-+				 BTRFS_RESERVE_FLUSH_ALL_STEAL, false);
- }
- 
- struct btrfs_trans_handle *btrfs_join_transaction(struct btrfs_root *root)
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index 31ae8d273065..bf102e64bfb2 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -193,8 +193,7 @@ struct btrfs_trans_handle *btrfs_start_transaction(struct btrfs_root *root,
- 						   unsigned int num_items);
- struct btrfs_trans_handle *btrfs_start_transaction_fallback_global_rsv(
- 					struct btrfs_root *root,
--					unsigned int num_items,
--					int min_factor);
-+					unsigned int num_items);
- struct btrfs_trans_handle *btrfs_join_transaction(struct btrfs_root *root);
- struct btrfs_trans_handle *btrfs_join_transaction_spacecache(struct btrfs_root *root);
- struct btrfs_trans_handle *btrfs_join_transaction_nostart(struct btrfs_root *root);
--- 
-2.25.1
+> of the changes.=C2=A0 At the point that the ordered extent is created i=
+t is
+> now in charge of the qgroup reservation, so it should be the ultimate
+> arbiter of what is done with that qgroup reservation.=C2=A0 So fix
+> try_release_extent_state to not remove EXTENT_QGROUP_RESERVED, because
+> it's going to get dropped elsewhere.=C2=A0 Thanks,
 
+Indeed, doing the qgroup rsv work in ordered extent looks more reasonable=
+=2E
+
+Although that change would make a lot of timing completely different,
+and won't go as smooth in the first run, it still looks like a more
+proper fix.
+
+Thanks for the advice,
+Qu
+
+>=20
+> Josef
+
+
+--6YpGylukv1bBNpJaMMdU0AxOLNnuxrrTT--
+
+--5AF4cBT5OW0qeu3eObhdLaoofQTR8Nl7J
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAl7e31cACgkQwj2R86El
+/qjm2Qf/QU6kQq5iOzDtjgv0vpZL2R83zxsfXnUtMAPOazDiqzxXzK7NNGbTND05
+kI1NxTJTwg8VV7c1HeExojJeRpE78GpOGHqfzEXbnKlzrZ08s4oamAKt8ZSATSL4
+hqymkP5fqO3O/Vfnim79ztahSwJPmCD12qt+XrE3pAtU6L3kv0BNugkTkrj3w1se
+1vBWn5Qkkxxz+J6TYJ92pPdPMgIXJ5QDV2MGTp/9nf0SNDyM/fzj595RNnouLvb6
+Lavq6X/JsvZ3VG6p9uOS2Wgc8Scpt6vY97MFo5hJXlE9Alyauj9P/qOBF3fQeb1f
+5DSUgxCxZltupujuNAzY9XfHtOAcWg==
+=To1u
+-----END PGP SIGNATURE-----
+
+--5AF4cBT5OW0qeu3eObhdLaoofQTR8Nl7J--

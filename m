@@ -2,329 +2,155 @@ Return-Path: <SRS0=csn1=7W=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.7 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 664B9C433E0
-	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Jun 2020 06:54:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BA775C433DF
+	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Jun 2020 10:19:39 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 416CF2074B
-	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Jun 2020 06:54:17 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 982A22078D
+	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Jun 2020 10:19:39 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1591697979;
+	bh=2XRX3g3R8uIlE0Y2IL5cfbenXlr/6V5HfNNqRsbq98s=;
+	h=From:To:Subject:Date:List-ID:From;
+	b=hCw8pO0OHe4eblEXgLbb9evg+MLZibF291Rjh0Mpa9IxTl2gW028cIieHohEQvZMp
+	 EC33BYHl8N6Iw4V4pnpxF8H+SLFtJ1CHIFNtU5dn321sjQNJ0B2ATNPCpQwy+aKSNl
+	 hYirzGkWs3xOM4JvNTI5chnYa4gXi2fBwcGxhypU=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727023AbgFIGyJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 9 Jun 2020 02:54:09 -0400
-Received: from ex13-edg-ou-001.vmware.com ([208.91.0.189]:8734 "EHLO
-        EX13-EDG-OU-001.vmware.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1727837AbgFIGyJ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 9 Jun 2020 02:54:09 -0400
-Received: from sc9-mailhost2.vmware.com (10.113.161.72) by
- EX13-EDG-OU-001.vmware.com (10.113.208.155) with Microsoft SMTP Server id
- 15.0.1156.6; Mon, 8 Jun 2020 23:51:15 -0700
-Received: from vikash-ubuntu-virtual-machine.eng.vmware.com (unknown [10.197.103.194])
-        by sc9-mailhost2.vmware.com (Postfix) with ESMTP id 2882CB2774;
-        Tue,  9 Jun 2020 02:51:16 -0400 (EDT)
-From:   Vikash Bansal <bvikas@vmware.com>
-To:     <gregkh@linuxfoundation.org>
-CC:     <stable@vger.kernel.org>, <srivatsab@vmware.com>,
-        <srivatsa@csail.mit.edu>, <amakhalov@vmware.com>,
-        <srinidhir@vmware.com>, <bvikas@vmware.com>, <anishs@vmware.com>,
-        <vsirnapalli@vmware.com>, <akaher@vmware.com>, <clm@fb.com>,
-        <josef@toxicpanda.com>, <dsterba@suse.com>,
-        <anand.jain@oracle.com>, <linux-btrfs@vger.kernel.org>,
-        <linux-kernel@vger.kernel.org>
-Subject: [PATCH v4.19.y 1/2] btrfs: merge btrfs_find_device and find_device
-Date:   Tue, 9 Jun 2020 12:20:17 +0530
-Message-ID: <20200609065018.26378-2-bvikas@vmware.com>
-X-Mailer: git-send-email 2.17.1
-In-Reply-To: <20200609065018.26378-1-bvikas@vmware.com>
-References: <20200609065018.26378-1-bvikas@vmware.com>
-MIME-Version: 1.0
-Content-Type: text/plain
-Received-SPF: None (EX13-EDG-OU-001.vmware.com: bvikas@vmware.com does not
- designate permitted sender hosts)
+        id S1728820AbgFIKTj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 9 Jun 2020 06:19:39 -0400
+Received: from mail.kernel.org ([198.145.29.99]:41262 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1728676AbgFIKTh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 9 Jun 2020 06:19:37 -0400
+Received: from debian8.Home (bl8-197-74.dsl.telepac.pt [85.241.197.74])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id F04DD2078D
+        for <linux-btrfs@vger.kernel.org>; Tue,  9 Jun 2020 10:19:35 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1591697976;
+        bh=2XRX3g3R8uIlE0Y2IL5cfbenXlr/6V5HfNNqRsbq98s=;
+        h=From:To:Subject:Date:From;
+        b=fbQ0yyc7oL0xnnQ6NCrcjFflYZqMD4fA8jD0AY43L1k5wPUB9+2yoUXYL5ADPjYHk
+         OzxsOlBblbefQKBiS341xsgmMh20YSsZvYJJbq2JDDAvr4gHZ6KkAtbm9hSkuMfnDV
+         E0CZFy/eVN/q83gLUcz0fTZBu5q3DLSfiQzL5uQU=
+From:   fdmanana@kernel.org
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/3] Btrfs: remove the start argument from btrfs_free_reserved_data_space_noquota()
+Date:   Tue,  9 Jun 2020 11:19:33 +0100
+Message-Id: <20200609101933.29459-1-fdmanana@kernel.org>
+X-Mailer: git-send-email 2.11.0
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Anand Jain <anand.jain@oracle.com>
+From: Filipe Manana <fdmanana@suse.com>
 
-commit 09ba3bc9dd150457c506e4661380a6183af651c1 upstream
+The start argument for btrfs_free_reserved_data_space_noquota() is only
+used to make sure the amount of bytes we decrement from the bytes_may_use
+counter of the data space_info object is aligned to the filesystem's
+sector size. It serves no other purpose.
 
-Both btrfs_find_device() and find_device() does the same thing except
-that the latter does not take the seed device onto account in the device
-scanning context. We can merge them.
+All its current callers always pass a length argument that is already
+aligned to the sector size, so we can make the start argument go away.
+In fact its presence makes it impossible to use it in a context where we
+just want to free a number of bytes for a range for which either we do
+not know its start offset or for freeing multiple ranges at once (which
+are not contiguous).
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
-Reviewed-by: David Sterba <dsterba@suse.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
-[4.19.y backport notes:
-Vikash : - To apply this patch, a portion of commit e4319cd9cace
-           was used to change the first argument of function
-           "btrfs_find_device" from "struct btrfs_fs_info" to
-           "struct btrfs_fs_devices".
-Signed-off-by: Vikash Bansal <bvikas@vmware.com>
+This change is preparatory work for a patch (third patch in this series)
+that makes relocation of data block groups that are not full reserve less
+data space.
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/dev-replace.c |  8 ++--
- fs/btrfs/ioctl.c       |  5 ++-
- fs/btrfs/scrub.c       |  4 +-
- fs/btrfs/volumes.c     | 84 +++++++++++++++++++++---------------------
- fs/btrfs/volumes.h     |  4 +-
- 5 files changed, 53 insertions(+), 52 deletions(-)
+ fs/btrfs/delalloc-space.c | 11 ++++-------
+ fs/btrfs/delalloc-space.h |  2 +-
+ fs/btrfs/inode.c          |  5 ++---
+ 3 files changed, 7 insertions(+), 11 deletions(-)
 
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 96763805787e..1b9c8ffb038f 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -112,11 +112,11 @@ int btrfs_init_dev_replace(struct btrfs_fs_info *fs_info)
- 		break;
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_STARTED:
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_SUSPENDED:
--		dev_replace->srcdev = btrfs_find_device(fs_info, src_devid,
--							NULL, NULL);
--		dev_replace->tgtdev = btrfs_find_device(fs_info,
-+		dev_replace->srcdev = btrfs_find_device(fs_info->fs_devices,
-+						src_devid, NULL, NULL, true);
-+		dev_replace->tgtdev = btrfs_find_device(fs_info->fs_devices,
- 							BTRFS_DEV_REPLACE_DEVID,
--							NULL, NULL);
-+							NULL, NULL, true);
- 		/*
- 		 * allow 'btrfs dev replace_cancel' if src/tgt device is
- 		 * missing
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 199c70b8f7d8..a5ae02bf3652 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1642,7 +1642,7 @@ static noinline int btrfs_ioctl_resize(struct file *file,
- 		btrfs_info(fs_info, "resizing devid %llu", devid);
- 	}
- 
--	device = btrfs_find_device(fs_info, devid, NULL, NULL);
-+	device = btrfs_find_device(fs_info->fs_devices, devid, NULL, NULL, true);
- 	if (!device) {
- 		btrfs_info(fs_info, "resizer unable to find device %llu",
- 			   devid);
-@@ -3178,7 +3178,8 @@ static long btrfs_ioctl_dev_info(struct btrfs_fs_info *fs_info,
- 		s_uuid = di_args->uuid;
- 
- 	rcu_read_lock();
--	dev = btrfs_find_device(fs_info, di_args->devid, s_uuid, NULL);
-+	dev = btrfs_find_device(fs_info->fs_devices, di_args->devid, s_uuid,
-+				NULL, true);
- 
- 	if (!dev) {
- 		ret = -ENODEV;
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 6b6008db3e03..fee8995c9a0c 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -3835,7 +3835,7 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
- 		return PTR_ERR(sctx);
- 
- 	mutex_lock(&fs_info->fs_devices->device_list_mutex);
--	dev = btrfs_find_device(fs_info, devid, NULL, NULL);
-+	dev = btrfs_find_device(fs_info->fs_devices, devid, NULL, NULL, true);
- 	if (!dev || (test_bit(BTRFS_DEV_STATE_MISSING, &dev->dev_state) &&
- 		     !is_dev_replace)) {
- 		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
-@@ -4019,7 +4019,7 @@ int btrfs_scrub_progress(struct btrfs_fs_info *fs_info, u64 devid,
- 	struct scrub_ctx *sctx = NULL;
- 
- 	mutex_lock(&fs_info->fs_devices->device_list_mutex);
--	dev = btrfs_find_device(fs_info, devid, NULL, NULL);
-+	dev = btrfs_find_device(fs_info->fs_devices, devid, NULL, NULL, true);
- 	if (dev)
- 		sctx = dev->scrub_ctx;
- 	if (sctx)
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 9c3b394b99fa..5b0d00c63fbb 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -347,27 +347,6 @@ static struct btrfs_device *__alloc_device(void)
- 	return dev;
- }
- 
--/*
-- * Find a device specified by @devid or @uuid in the list of @fs_devices, or
-- * return NULL.
-- *
-- * If devid and uuid are both specified, the match must be exact, otherwise
-- * only devid is used.
-- */
--static struct btrfs_device *find_device(struct btrfs_fs_devices *fs_devices,
--		u64 devid, const u8 *uuid)
--{
--	struct btrfs_device *dev;
--
--	list_for_each_entry(dev, &fs_devices->devices, dev_list) {
--		if (dev->devid == devid &&
--		    (!uuid || !memcmp(dev->uuid, uuid, BTRFS_UUID_SIZE))) {
--			return dev;
--		}
--	}
--	return NULL;
--}
--
- static noinline struct btrfs_fs_devices *find_fsid(u8 *fsid)
- {
- 	struct btrfs_fs_devices *fs_devices;
-@@ -772,8 +751,8 @@ static noinline struct btrfs_device *device_list_add(const char *path,
- 		device = NULL;
- 	} else {
- 		mutex_lock(&fs_devices->device_list_mutex);
--		device = find_device(fs_devices, devid,
--				disk_super->dev_item.uuid);
-+		device = btrfs_find_device(fs_devices, devid,
-+				disk_super->dev_item.uuid, NULL, false);
- 	}
- 
- 	if (!device) {
-@@ -2144,7 +2123,8 @@ static int btrfs_find_device_by_path(struct btrfs_fs_info *fs_info,
- 	disk_super = (struct btrfs_super_block *)bh->b_data;
- 	devid = btrfs_stack_device_id(&disk_super->dev_item);
- 	dev_uuid = disk_super->dev_item.uuid;
--	*device = btrfs_find_device(fs_info, devid, dev_uuid, disk_super->fsid);
-+	*device = btrfs_find_device(fs_info->fs_devices, devid, dev_uuid,
-+				    disk_super->fsid, true);
- 	brelse(bh);
- 	if (!*device)
- 		ret = -ENOENT;
-@@ -2190,7 +2170,8 @@ int btrfs_find_device_by_devspec(struct btrfs_fs_info *fs_info, u64 devid,
- 
- 	if (devid) {
+diff --git a/fs/btrfs/delalloc-space.c b/fs/btrfs/delalloc-space.c
+index 1245739a3a6e..d05648f882ca 100644
+--- a/fs/btrfs/delalloc-space.c
++++ b/fs/btrfs/delalloc-space.c
+@@ -255,7 +255,7 @@ int btrfs_check_data_free_space(struct inode *inode,
+ 	/* Use new btrfs_qgroup_reserve_data to reserve precious data space. */
+ 	ret = btrfs_qgroup_reserve_data(inode, reserved, start, len);
+ 	if (ret < 0)
+-		btrfs_free_reserved_data_space_noquota(inode, start, len);
++		btrfs_free_reserved_data_space_noquota(inode, len);
+ 	else
  		ret = 0;
--		*device = btrfs_find_device(fs_info, devid, NULL, NULL);
-+		*device = btrfs_find_device(fs_info->fs_devices, devid,
-+					    NULL, NULL, true);
- 		if (!*device)
- 			ret = -ENOENT;
- 	} else {
-@@ -2322,7 +2303,8 @@ static int btrfs_finish_sprout(struct btrfs_trans_handle *trans,
- 				   BTRFS_UUID_SIZE);
- 		read_extent_buffer(leaf, fs_uuid, btrfs_device_fsid(dev_item),
- 				   BTRFS_FSID_SIZE);
--		device = btrfs_find_device(fs_info, devid, dev_uuid, fs_uuid);
-+		device = btrfs_find_device(fs_info->fs_devices, devid, dev_uuid,
-+					   fs_uuid, true);
- 		BUG_ON(!device); /* Logic error */
- 
- 		if (device->fs_devices->seeding) {
-@@ -6254,21 +6236,36 @@ blk_status_t btrfs_map_bio(struct btrfs_fs_info *fs_info, struct bio *bio,
- 	return BLK_STS_OK;
- }
- 
--struct btrfs_device *btrfs_find_device(struct btrfs_fs_info *fs_info, u64 devid,
--				       u8 *uuid, u8 *fsid)
-+/*
-+ * Find a device specified by @devid or @uuid in the list of @fs_devices, or
-+ * return NULL.
-+ *
-+ * If devid and uuid are both specified, the match must be exact, otherwise
-+ * only devid is used.
-+ *
-+ * If @seed is true, traverse through the seed devices.
-+ */
-+struct btrfs_device *btrfs_find_device(struct btrfs_fs_devices *fs_devices,
-+					u64 devid, u8 *uuid, u8 *fsid,
-+					bool seed)
+ 	return ret;
+@@ -269,16 +269,13 @@ int btrfs_check_data_free_space(struct inode *inode,
+  * which we can't sleep and is sure it won't affect qgroup reserved space.
+  * Like clear_bit_hook().
+  */
+-void btrfs_free_reserved_data_space_noquota(struct inode *inode, u64 start,
++void btrfs_free_reserved_data_space_noquota(struct inode *inode,
+ 					    u64 len)
  {
- 	struct btrfs_device *device;
--	struct btrfs_fs_devices *cur_devices;
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+ 	struct btrfs_space_info *data_sinfo;
  
--	cur_devices = fs_info->fs_devices;
--	while (cur_devices) {
-+	while (fs_devices) {
- 		if (!fsid ||
--		    !memcmp(cur_devices->fsid, fsid, BTRFS_FSID_SIZE)) {
--			device = find_device(cur_devices, devid, uuid);
--			if (device)
--				return device;
-+		    !memcmp(fs_devices->fsid, fsid, BTRFS_FSID_SIZE)) {
-+			list_for_each_entry(device, &fs_devices->devices,
-+					    dev_list) {
-+				if (device->devid == devid &&
-+				    (!uuid || memcmp(device->uuid, uuid,
-+						     BTRFS_UUID_SIZE) == 0))
-+					return device;
-+			}
- 		}
--		cur_devices = cur_devices->seed;
-+		if (seed)
-+			fs_devices = fs_devices->seed;
-+		else
-+			return NULL;
- 	}
- 	return NULL;
+-	/* Make sure the range is aligned to sectorsize */
+-	len = round_up(start + len, fs_info->sectorsize) -
+-	      round_down(start, fs_info->sectorsize);
+-	start = round_down(start, fs_info->sectorsize);
++	ASSERT(IS_ALIGNED(len, fs_info->sectorsize));
+ 
+ 	data_sinfo = fs_info->data_sinfo;
+ 	spin_lock(&data_sinfo->lock);
+@@ -303,7 +300,7 @@ void btrfs_free_reserved_data_space(struct inode *inode,
+ 	      round_down(start, root->fs_info->sectorsize);
+ 	start = round_down(start, root->fs_info->sectorsize);
+ 
+-	btrfs_free_reserved_data_space_noquota(inode, start, len);
++	btrfs_free_reserved_data_space_noquota(inode, len);
+ 	btrfs_qgroup_free_data(inode, reserved, start, len);
  }
-@@ -6513,8 +6510,8 @@ static int read_one_chunk(struct btrfs_fs_info *fs_info, struct btrfs_key *key,
- 		read_extent_buffer(leaf, uuid, (unsigned long)
- 				   btrfs_stripe_dev_uuid_nr(chunk, i),
- 				   BTRFS_UUID_SIZE);
--		map->stripes[i].dev = btrfs_find_device(fs_info, devid,
--							uuid, NULL);
-+		map->stripes[i].dev = btrfs_find_device(fs_info->fs_devices,
-+						devid, uuid, NULL, true);
- 		if (!map->stripes[i].dev &&
- 		    !btrfs_test_opt(fs_info, DEGRADED)) {
- 			free_extent_map(em);
-@@ -6653,7 +6650,8 @@ static int read_one_dev(struct btrfs_fs_info *fs_info,
- 			return PTR_ERR(fs_devices);
+ 
+diff --git a/fs/btrfs/delalloc-space.h b/fs/btrfs/delalloc-space.h
+index 54466fbd7075..fe8c6aafb25b 100644
+--- a/fs/btrfs/delalloc-space.h
++++ b/fs/btrfs/delalloc-space.h
+@@ -13,7 +13,7 @@ void btrfs_free_reserved_data_space(struct inode *inode,
+ void btrfs_delalloc_release_space(struct inode *inode,
+ 				  struct extent_changeset *reserved,
+ 				  u64 start, u64 len, bool qgroup_free);
+-void btrfs_free_reserved_data_space_noquota(struct inode *inode, u64 start,
++void btrfs_free_reserved_data_space_noquota(struct inode *inode,
+ 					    u64 len);
+ void btrfs_delalloc_release_metadata(struct btrfs_inode *inode, u64 num_bytes,
+ 				     bool qgroup_free);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index e75a77a4e068..2173df2da9c7 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2093,7 +2093,7 @@ void btrfs_clear_delalloc_extent(struct inode *vfs_inode,
+ 		    (*bits & EXTENT_CLEAR_DATA_RESV))
+ 			btrfs_free_reserved_data_space_noquota(
+ 					&inode->vfs_inode,
+-					state->start, len);
++					len);
+ 
+ 		percpu_counter_add_batch(&fs_info->delalloc_bytes, -len,
+ 					 fs_info->delalloc_batch);
+@@ -7258,8 +7258,7 @@ static int btrfs_get_blocks_direct_write(struct extent_map **map,
+ 			 * use the existing or preallocated extent, so does not
+ 			 * need to adjust btrfs_space_info's bytes_may_use.
+ 			 */
+-			btrfs_free_reserved_data_space_noquota(inode, start,
+-							       len);
++			btrfs_free_reserved_data_space_noquota(inode, len);
+ 			goto skip_cow;
+ 		}
  	}
- 
--	device = btrfs_find_device(fs_info, devid, dev_uuid, fs_uuid);
-+	device = btrfs_find_device(fs_info->fs_devices, devid, dev_uuid,
-+				   fs_uuid, true);
- 	if (!device) {
- 		if (!btrfs_test_opt(fs_info, DEGRADED)) {
- 			btrfs_report_missing_device(fs_info, devid,
-@@ -7243,7 +7241,8 @@ int btrfs_get_dev_stats(struct btrfs_fs_info *fs_info,
- 	int i;
- 
- 	mutex_lock(&fs_devices->device_list_mutex);
--	dev = btrfs_find_device(fs_info, stats->devid, NULL, NULL);
-+	dev = btrfs_find_device(fs_info->fs_devices, stats->devid,
-+				NULL, NULL, true);
- 	mutex_unlock(&fs_devices->device_list_mutex);
- 
- 	if (!dev) {
-@@ -7460,7 +7459,7 @@ static int verify_one_dev_extent(struct btrfs_fs_info *fs_info,
- 	}
- 
- 	/* Make sure no dev extent is beyond device bondary */
--	dev = btrfs_find_device(fs_info, devid, NULL, NULL);
-+	dev = btrfs_find_device(fs_info->fs_devices, devid, NULL, NULL, true);
- 	if (!dev) {
- 		btrfs_err(fs_info, "failed to find devid %llu", devid);
- 		ret = -EUCLEAN;
-@@ -7469,7 +7468,8 @@ static int verify_one_dev_extent(struct btrfs_fs_info *fs_info,
- 
- 	/* It's possible this device is a dummy for seed device */
- 	if (dev->disk_total_bytes == 0) {
--		dev = find_device(fs_info->fs_devices->seed, devid, NULL);
-+		dev = btrfs_find_device(fs_info->fs_devices->seed, devid,
-+					NULL, NULL, false);
- 		if (!dev) {
- 			btrfs_err(fs_info, "failed to find seed devid %llu",
- 				  devid);
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index ac703b15d679..ddd30c162f98 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -430,8 +430,8 @@ void __exit btrfs_cleanup_fs_uuids(void);
- int btrfs_num_copies(struct btrfs_fs_info *fs_info, u64 logical, u64 len);
- int btrfs_grow_device(struct btrfs_trans_handle *trans,
- 		      struct btrfs_device *device, u64 new_size);
--struct btrfs_device *btrfs_find_device(struct btrfs_fs_info *fs_info, u64 devid,
--				       u8 *uuid, u8 *fsid);
-+struct btrfs_device *btrfs_find_device(struct btrfs_fs_devices *fs_devices,
-+				       u64 devid, u8 *uuid, u8 *fsid, bool seed);
- int btrfs_shrink_device(struct btrfs_device *device, u64 new_size);
- int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *path);
- int btrfs_balance(struct btrfs_fs_info *fs_info,
 -- 
-2.23.1
+2.11.0
 

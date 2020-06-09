@@ -2,396 +2,124 @@ Return-Path: <SRS0=csn1=7W=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0DB30C433E1
-	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Jun 2020 10:50:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6F80CC433DF
+	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Jun 2020 10:50:54 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D8C892078D
-	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Jun 2020 10:50:01 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=linaro.org header.i=@linaro.org header.b="QhdV7PMa"
+	by mail.kernel.org (Postfix) with ESMTP id 47EA42078D
+	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Jun 2020 10:50:54 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728916AbgFIKt4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 9 Jun 2020 06:49:56 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60754 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728864AbgFIKrl (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Jun 2020 06:47:41 -0400
-Received: from mail-ej1-x642.google.com (mail-ej1-x642.google.com [IPv6:2a00:1450:4864:20::642])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DD42AC08C5C4
-        for <linux-btrfs@vger.kernel.org>; Tue,  9 Jun 2020 03:47:38 -0700 (PDT)
-Received: by mail-ej1-x642.google.com with SMTP id gl26so21803735ejb.11
-        for <linux-btrfs@vger.kernel.org>; Tue, 09 Jun 2020 03:47:38 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=linaro.org; s=google;
-        h=from:to:cc:subject:date:message-id:in-reply-to:references;
-        bh=4/0Vkm5vDfo1bNDCqLsz+PhAJXt0YTLeInxH19lPC3A=;
-        b=QhdV7PMawCedJj6lnvoPx0JPU8A93/u1U0uXlVTjpCXvh5CxZKNLOPT/mYxcCWE/A1
-         Y1RnVAXRL5dikNKzGKX40hNXN8gniQqI8orbHE5fEG9HpiM+hHCBGDkvCR4kjgifAMnX
-         qL9apEeFsd4xVmR8MqopEemPmnGTqCDmt7lhrSnQg5H9GC5khbx9GttIWiZo3VYjK58l
-         +IYSN4R6LZWlY66jV79ZjQStPnNZ9k3CNQ4NJrN4wKa4xvaz/kcxPDHePCEGZ00KZuX6
-         G7f41RyhV/v33Ocp/09xS45klC7rXm2t86Y0tPAKwsSnFiu1yWXUIsFy2NIABrrw+aqT
-         XwuQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
-         :references;
-        bh=4/0Vkm5vDfo1bNDCqLsz+PhAJXt0YTLeInxH19lPC3A=;
-        b=YPC0oGWvuxwkugwaEB5G/13zvJ7lciHBuwn85PEEDOCBA6MYORc/meBx3mU/Nu0TfB
-         j9Ua0oFVuu3KXBB9qZ/UQ+Deb559I2yhjlO/dHnIHJ2CumeWR42FypHemODp4rF9JYwf
-         Hb9zn1CNhb4BGzKqOxo7mueCBUASgaQniqBu9QZu+jNTiWq5YZOdWwNMo0ylPbKFiVR9
-         sa823xpbFZYDKk2ivAeUvisdWqu21Hn5ZYL9+m9WO1NmE3GMlIpF8nKLppNw3Bb48bXK
-         3sjuAjDxikqbLRODjjpy6+7k49lZ8aK/yP9zeIo76UHmUIgxvmOTHzZktoMViBpTvRPg
-         laDw==
-X-Gm-Message-State: AOAM530YyXb9s36Wm3kJr+fIekdyIS4rBGtRChpwyeBpzumZikCpLdzl
-        rQakbeXz1Mgf0DOpTmPGlxJ3VqJMRvs=
-X-Google-Smtp-Source: ABdhPJypj4I58d5TLz8Xdh5fIHk7lhmauggjZSsXsMJ+fyzaf+ai9uzB3MPfXxtvkYH9C+7Bn3qKGw==
-X-Received: by 2002:a17:906:7712:: with SMTP id q18mr859739ejm.140.1591699657572;
-        Tue, 09 Jun 2020 03:47:37 -0700 (PDT)
-Received: from localhost.localdomain (hst-221-69.medicom.bg. [84.238.221.69])
-        by smtp.gmail.com with ESMTPSA id qt19sm12267763ejb.14.2020.06.09.03.47.35
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 09 Jun 2020 03:47:37 -0700 (PDT)
-From:   Stanimir Varbanov <stanimir.varbanov@linaro.org>
-To:     linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-media@vger.kernel.org, linux-arm-msm@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-acpi@vger.kernel.org,
-        netdev@vger.kernel.org
-Cc:     Joe Perches <joe@perches.com>,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        Jason Baron <jbaron@akamai.com>,
-        Stanimir Varbanov <stanimir.varbanov@linaro.org>,
-        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>,
-        "Rafael J. Wysocki" <rjw@rjwysocki.net>,
-        Len Brown <lenb@kernel.org>,
-        "David S. Miller" <davem@davemloft.net>,
-        Jakub Kicinski <kuba@kernel.org>,
-        Petr Mladek <pmladek@suse.com>,
-        Sergey Senozhatsky <sergey.senozhatsky@gmail.com>,
-        Steven Rostedt <rostedt@goodmis.org>
-Subject: [PATCH v3 2/7] dynamic_debug: Group debug messages by level bitmask
-Date:   Tue,  9 Jun 2020 13:45:59 +0300
-Message-Id: <20200609104604.1594-3-stanimir.varbanov@linaro.org>
-X-Mailer: git-send-email 2.17.1
-In-Reply-To: <20200609104604.1594-1-stanimir.varbanov@linaro.org>
-References: <20200609104604.1594-1-stanimir.varbanov@linaro.org>
+        id S1727883AbgFIKux (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 9 Jun 2020 06:50:53 -0400
+Received: from mx2.suse.de ([195.135.220.15]:44266 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726886AbgFIKuv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 9 Jun 2020 06:50:51 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 621D5AD78;
+        Tue,  9 Jun 2020 10:50:53 +0000 (UTC)
+Subject: Re: [PATCH 3/3] Btrfs: only allocate necessary space when relocating
+ a data block group
+To:     fdmanana@kernel.org, linux-btrfs@vger.kernel.org
+References: <20200609101953.29559-1-fdmanana@kernel.org>
+From:   Nikolay Borisov <nborisov@suse.com>
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <b7c4a96d-df7c-b0b5-d1c5-aff5c458b032@suse.com>
+Date:   Tue, 9 Jun 2020 13:50:48 +0300
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.8.0
+MIME-Version: 1.0
+In-Reply-To: <20200609101953.29559-1-fdmanana@kernel.org>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This will allow dynamic debug users and driver writers to group
-debug messages by level bitmask.  The level bitmask should be a
-hex number.
 
-Done this functionality by extending dynamic debug metadata with
-new level member and propagate it over all the users.  Also
-introduce new dynamic_pr_debug_level and dynamic_dev_dbg_level
-macros to be used by the drivers.
 
-Cc: Jason Baron <jbaron@akamai.com>
-Cc: Chris Mason <clm@fb.com>
-Cc: Josef Bacik <josef@toxicpanda.com>
-Cc: David Sterba <dsterba@suse.com>
-Cc: "Rafael J. Wysocki" <rjw@rjwysocki.net>
-Cc: Len Brown <lenb@kernel.org>
-Cc: "David S. Miller" <davem@davemloft.net>
-Cc: Jakub Kicinski <kuba@kernel.org>
-Cc: Petr Mladek <pmladek@suse.com>
-Cc: Sergey Senozhatsky <sergey.senozhatsky@gmail.com>
-Cc: Steven Rostedt <rostedt@goodmis.org>
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+On 9.06.20 г. 13:19 ч., fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+> 
+> When relocating a data block group we group extents from the block group
+> into a cluster and when the cluster reaches a certain number of extents
+> we do the relocation.
 
-Suggested-by: Joe Perches <joe@perches.com>
-Signed-off-by: Stanimir Varbanov <stanimir.varbanov@linaro.org>
----
- fs/btrfs/ctree.h              | 12 +++++---
- include/linux/acpi.h          |  3 +-
- include/linux/dev_printk.h    |  3 +-
- include/linux/dynamic_debug.h | 55 ++++++++++++++++++++++++-----------
- include/linux/net.h           |  3 +-
- include/linux/printk.h        |  3 +-
- lib/dynamic_debug.c           | 30 +++++++++++++++++++
- 7 files changed, 84 insertions(+), 25 deletions(-)
+We don't reserve more space because the cluster is guaranteed to contain
+contiguous extents, namely in relocate_data_extent we have:
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 161533040978..f6a778789056 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3081,16 +3081,20 @@ void btrfs_printk(const struct btrfs_fs_info *fs_info, const char *fmt, ...);
- 
- #if defined(CONFIG_DYNAMIC_DEBUG)
- #define btrfs_debug(fs_info, fmt, args...)				\
--	_dynamic_func_call_no_desc(fmt, btrfs_printk,			\
-+	_dynamic_func_call_no_desc(fmt, _DPRINTK_LEVEL_DEFAULT,		\
-+				   btrfs_printk,			\
- 				   fs_info, KERN_DEBUG fmt, ##args)
- #define btrfs_debug_in_rcu(fs_info, fmt, args...)			\
--	_dynamic_func_call_no_desc(fmt, btrfs_printk_in_rcu,		\
-+	_dynamic_func_call_no_desc(fmt, _DPRINTK_LEVEL_DEFAULT,		\
-+				   btrfs_printk_in_rcu,			\
- 				   fs_info, KERN_DEBUG fmt, ##args)
- #define btrfs_debug_rl_in_rcu(fs_info, fmt, args...)			\
--	_dynamic_func_call_no_desc(fmt, btrfs_printk_rl_in_rcu,		\
-+	_dynamic_func_call_no_desc(fmt, _DPRINTK_LEVEL_DEFAULT,		\
-+				   btrfs_printk_rl_in_rcu,		\
- 				   fs_info, KERN_DEBUG fmt, ##args)
- #define btrfs_debug_rl(fs_info, fmt, args...)				\
--	_dynamic_func_call_no_desc(fmt, btrfs_printk_ratelimited,	\
-+	_dynamic_func_call_no_desc(fmt, _DPRINTK_LEVEL_DEFAULT,		\
-+				   btrfs_printk_ratelimited,		\
- 				   fs_info, KERN_DEBUG fmt, ##args)
- #elif defined(DEBUG)
- #define btrfs_debug(fs_info, fmt, args...) \
-diff --git a/include/linux/acpi.h b/include/linux/acpi.h
-index d661cd0ee64d..6e51438f7635 100644
---- a/include/linux/acpi.h
-+++ b/include/linux/acpi.h
-@@ -1043,7 +1043,8 @@ void __acpi_handle_debug(struct _ddebug *descriptor, acpi_handle handle, const c
- #else
- #if defined(CONFIG_DYNAMIC_DEBUG)
- #define acpi_handle_debug(handle, fmt, ...)				\
--	_dynamic_func_call(fmt, __acpi_handle_debug,			\
-+	_dynamic_func_call(fmt, _DPRINTK_LEVEL_DEFAULT,			\
-+			   __acpi_handle_debug,				\
- 			   handle, pr_fmt(fmt), ##__VA_ARGS__)
- #else
- #define acpi_handle_debug(handle, fmt, ...)				\
-diff --git a/include/linux/dev_printk.h b/include/linux/dev_printk.h
-index 5aad06b4ca7b..7b50551833e1 100644
---- a/include/linux/dev_printk.h
-+++ b/include/linux/dev_printk.h
-@@ -188,7 +188,8 @@ do {									\
- 	static DEFINE_RATELIMIT_STATE(_rs,				\
- 				      DEFAULT_RATELIMIT_INTERVAL,	\
- 				      DEFAULT_RATELIMIT_BURST);		\
--	DEFINE_DYNAMIC_DEBUG_METADATA(descriptor, fmt);			\
-+	DEFINE_DYNAMIC_DEBUG_METADATA(descriptor, fmt,			\
-+				      _DPRINTK_LEVEL_DEFAULT);		\
- 	if (DYNAMIC_DEBUG_BRANCH(descriptor) &&				\
- 	    __ratelimit(&_rs))						\
- 		__dynamic_dev_dbg(&descriptor, dev, dev_fmt(fmt),	\
-diff --git a/include/linux/dynamic_debug.h b/include/linux/dynamic_debug.h
-index 4cf02ecd67de..95e97260c517 100644
---- a/include/linux/dynamic_debug.h
-+++ b/include/linux/dynamic_debug.h
-@@ -38,6 +38,8 @@ struct _ddebug {
- #define _DPRINTK_FLAGS_DEFAULT 0
- #endif
- 	unsigned int flags:8;
-+#define _DPRINTK_LEVEL_DEFAULT 0
-+	unsigned int level:5;
- #ifdef CONFIG_JUMP_LABEL
- 	union {
- 		struct static_key_true dd_key_true;
-@@ -78,7 +80,7 @@ void __dynamic_ibdev_dbg(struct _ddebug *descriptor,
- 			 const struct ib_device *ibdev,
- 			 const char *fmt, ...);
- 
--#define DEFINE_DYNAMIC_DEBUG_METADATA(name, fmt)		\
-+#define DEFINE_DYNAMIC_DEBUG_METADATA(name, fmt, lvl)		\
- 	static struct _ddebug  __aligned(8)			\
- 	__attribute__((section("__verbose"))) name = {		\
- 		.modname = KBUILD_MODNAME,			\
-@@ -87,6 +89,7 @@ void __dynamic_ibdev_dbg(struct _ddebug *descriptor,
- 		.format = (fmt),				\
- 		.lineno = __LINE__,				\
- 		.flags = _DPRINTK_FLAGS_DEFAULT,		\
-+		.level = (lvl),					\
- 		_DPRINTK_KEY_INIT				\
- 	}
- 
-@@ -119,16 +122,16 @@ void __dynamic_ibdev_dbg(struct _ddebug *descriptor,
- 
- #endif
- 
--#define __dynamic_func_call(id, fmt, func, ...) do {	\
--	DEFINE_DYNAMIC_DEBUG_METADATA(id, fmt);		\
--	if (DYNAMIC_DEBUG_BRANCH(id))			\
--		func(&id, ##__VA_ARGS__);		\
-+#define __dynamic_func_call(id, fmt, level, func, ...) do {	\
-+	DEFINE_DYNAMIC_DEBUG_METADATA(id, fmt, level);		\
-+	if (DYNAMIC_DEBUG_BRANCH(id))				\
-+		func(&id, ##__VA_ARGS__);			\
- } while (0)
- 
--#define __dynamic_func_call_no_desc(id, fmt, func, ...) do {	\
--	DEFINE_DYNAMIC_DEBUG_METADATA(id, fmt);			\
--	if (DYNAMIC_DEBUG_BRANCH(id))				\
--		func(__VA_ARGS__);				\
-+#define __dynamic_func_call_no_desc(id, fmt, level, func, ...) do {	\
-+	DEFINE_DYNAMIC_DEBUG_METADATA(id, fmt, level);			\
-+	if (DYNAMIC_DEBUG_BRANCH(id))					\
-+		func(__VA_ARGS__);					\
- } while (0)
- 
- /*
-@@ -139,35 +142,49 @@ void __dynamic_ibdev_dbg(struct _ddebug *descriptor,
-  * the varargs. Note that fmt is repeated in invocations of this
-  * macro.
-  */
--#define _dynamic_func_call(fmt, func, ...)				\
--	__dynamic_func_call(__UNIQUE_ID(ddebug), fmt, func, ##__VA_ARGS__)
-+#define _dynamic_func_call(fmt, lvl, func, ...)				\
-+	__dynamic_func_call(__UNIQUE_ID(ddebug), fmt, lvl, func, ##__VA_ARGS__)
- /*
-  * A variant that does the same, except that the descriptor is not
-  * passed as the first argument to the function; it is only called
-  * with precisely the macro's varargs.
-  */
--#define _dynamic_func_call_no_desc(fmt, func, ...)	\
--	__dynamic_func_call_no_desc(__UNIQUE_ID(ddebug), fmt, func, ##__VA_ARGS__)
-+#define _dynamic_func_call_no_desc(fmt, lvl, func, ...)			\
-+	__dynamic_func_call_no_desc(__UNIQUE_ID(ddebug), fmt, lvl,	\
-+				    func, ##__VA_ARGS__)
- 
- #define dynamic_pr_debug(fmt, ...)				\
--	_dynamic_func_call(fmt,	__dynamic_pr_debug,		\
-+	_dynamic_func_call(fmt, _DPRINTK_LEVEL_DEFAULT,		\
-+			   __dynamic_pr_debug,			\
-+			   pr_fmt(fmt), ##__VA_ARGS__)
-+
-+#define dynamic_pr_debug_level(lvl, fmt, ...)			\
-+	_dynamic_func_call(fmt, lvl, __dynamic_pr_debug,	\
- 			   pr_fmt(fmt), ##__VA_ARGS__)
- 
- #define dynamic_dev_dbg(dev, fmt, ...)				\
--	_dynamic_func_call(fmt,__dynamic_dev_dbg, 		\
-+	_dynamic_func_call(fmt, _DPRINTK_LEVEL_DEFAULT,		\
-+			   __dynamic_dev_dbg,			\
-+			   dev, fmt, ##__VA_ARGS__)
-+
-+#define dynamic_dev_dbg_level(dev, lvl, fmt, ...)		\
-+	_dynamic_func_call(fmt, lvl, __dynamic_dev_dbg,		\
- 			   dev, fmt, ##__VA_ARGS__)
- 
- #define dynamic_netdev_dbg(dev, fmt, ...)			\
--	_dynamic_func_call(fmt, __dynamic_netdev_dbg,		\
-+	_dynamic_func_call(fmt, _DPRINTK_LEVEL_DEFAULT,		\
-+			   __dynamic_netdev_dbg,		\
- 			   dev, fmt, ##__VA_ARGS__)
- 
- #define dynamic_ibdev_dbg(dev, fmt, ...)			\
--	_dynamic_func_call(fmt, __dynamic_ibdev_dbg,		\
-+	_dynamic_func_call(fmt, _DPRINTK_LEVEL_DEFAULT,		\
-+			   __dynamic_ibdev_dbg,			\
- 			   dev, fmt, ##__VA_ARGS__)
- 
- #define dynamic_hex_dump(prefix_str, prefix_type, rowsize,		\
- 			 groupsize, buf, len, ascii)			\
- 	_dynamic_func_call_no_desc(__builtin_constant_p(prefix_str) ? prefix_str : "hexdump", \
-+				   _DPRINTK_LEVEL_DEFAULT,		\
- 				   print_hex_dump,			\
- 				   KERN_DEBUG, prefix_str, prefix_type,	\
- 				   rowsize, groupsize, buf, len, ascii)
-@@ -202,8 +219,12 @@ static inline int ddebug_dyndbg_module_param_cb(char *param, char *val,
- 
- #define dynamic_pr_debug(fmt, ...)					\
- 	do { if (0) printk(KERN_DEBUG pr_fmt(fmt), ##__VA_ARGS__); } while (0)
-+#define dynamic_pr_debug_level(lvl, fmt, ...)				\
-+	do { if (0) printk(KERN_DEBUG pr_fmt(fmt), ##__VA_ARGS__); } while (0)
- #define dynamic_dev_dbg(dev, fmt, ...)					\
- 	do { if (0) dev_printk(KERN_DEBUG, dev, fmt, ##__VA_ARGS__); } while (0)
-+#define dynamic_dev_dbg_level(dev, lvl, fmt, ...)			\
-+	do { if (0) dev_printk(KERN_DEBUG, dev, fmt, ##__VA_ARGS__); } while (0)
- #define dynamic_hex_dump(prefix_str, prefix_type, rowsize,		\
- 			 groupsize, buf, len, ascii)			\
- 	do { if (0)							\
-diff --git a/include/linux/net.h b/include/linux/net.h
-index e10f378194a5..bcf6f010bc67 100644
---- a/include/linux/net.h
-+++ b/include/linux/net.h
-@@ -267,7 +267,8 @@ do {								\
- #if defined(CONFIG_DYNAMIC_DEBUG)
- #define net_dbg_ratelimited(fmt, ...)					\
- do {									\
--	DEFINE_DYNAMIC_DEBUG_METADATA(descriptor, fmt);			\
-+	DEFINE_DYNAMIC_DEBUG_METADATA(descriptor, fmt,			\
-+				      _DPRINTK_LEVEL_DEFAULT);		\
- 	if (DYNAMIC_DEBUG_BRANCH(descriptor) &&				\
- 	    net_ratelimit())						\
- 		__dynamic_pr_debug(&descriptor, pr_fmt(fmt),		\
-diff --git a/include/linux/printk.h b/include/linux/printk.h
-index 3cc2f178bf06..ceea84aa705b 100644
---- a/include/linux/printk.h
-+++ b/include/linux/printk.h
-@@ -542,7 +542,8 @@ do {									\
- 	static DEFINE_RATELIMIT_STATE(_rs,				\
- 				      DEFAULT_RATELIMIT_INTERVAL,	\
- 				      DEFAULT_RATELIMIT_BURST);		\
--	DEFINE_DYNAMIC_DEBUG_METADATA(descriptor, pr_fmt(fmt));		\
-+	DEFINE_DYNAMIC_DEBUG_METADATA(descriptor, pr_fmt(fmt),		\
-+				      _DPRINTK_LEVEL_DEFAULT);		\
- 	if (DYNAMIC_DEBUG_BRANCH(descriptor) &&				\
- 	    __ratelimit(&_rs))						\
- 		__dynamic_pr_debug(&descriptor, pr_fmt(fmt), ##__VA_ARGS__);	\
-diff --git a/lib/dynamic_debug.c b/lib/dynamic_debug.c
-index 8f199f403ab5..5d28d388f6dd 100644
---- a/lib/dynamic_debug.c
-+++ b/lib/dynamic_debug.c
-@@ -55,6 +55,7 @@ struct ddebug_query {
- 	const char *function;
- 	const char *format;
- 	unsigned int first_lineno, last_lineno;
-+	unsigned int level;
- };
- 
- struct ddebug_iter {
-@@ -187,6 +188,18 @@ static int ddebug_change(const struct ddebug_query *query,
- 
- 			nfound++;
- 
-+#ifdef CONFIG_JUMP_LABEL
-+			if (query->level && query->level & dp->level) {
-+				if (flags & _DPRINTK_FLAGS_PRINT)
-+					static_branch_enable(&dp->key.dd_key_true);
-+				else
-+					static_branch_disable(&dp->key.dd_key_true);
-+			} else if (query->level &&
-+				   flags & _DPRINTK_FLAGS_PRINT) {
-+				static_branch_disable(&dp->key.dd_key_true);
-+				continue;
-+			}
-+#endif
- 			newflags = (dp->flags & mask) | flags;
- 			if (newflags == dp->flags)
- 				continue;
-@@ -289,6 +302,20 @@ static inline int parse_lineno(const char *str, unsigned int *val)
- 	return 0;
- }
- 
-+static inline int parse_level(const char *str, unsigned int *val)
-+{
-+	WARN_ON(str == NULL);
-+	if (*str == '\0') {
-+		*val = 0;
-+		return 0;
-+	}
-+	if (kstrtouint(str, 0, val) < 0) {
-+		pr_err("bad level-number: %s\n", str);
-+		return -EINVAL;
-+	}
-+	return 0;
-+}
-+
- static int check_set(const char **dest, char *src, char *name)
- {
- 	int rc = 0;
-@@ -375,6 +402,9 @@ static int ddebug_parse_query(char *words[], int nwords,
- 			} else {
- 				query->last_lineno = query->first_lineno;
- 			}
-+		} else if (!strcmp(words[i], "level")) {
-+			if (parse_level(words[i+1], &query->level) < 0)
-+				return -EINVAL;
- 		} else {
- 			pr_err("unknown keyword \"%s\"\n", words[i]);
- 			return -EINVAL;
--- 
-2.17.1
+if (cluster->nr > 0 && extent_key->objectid != cluster->end + 1)
+{
+   ret = relocate_file_extent_cluster(inode, cluster);
+   if (ret)
+      return ret;
+   cluster->nr = 0;
+}
 
+Cluster->end points to the end offset of the last added extent and the
+check above ensures that the one which is currently added is also
+contiguous. So relocate_file_extent_cluster is always called with
+contiguous range of data extents, which might actually be less than
+MAX_EXTENTS.
+
+As a matter of fact this is a rather hard requirement since
+prealloc_file_extent_cluster assumes that since when it iterates the
+extents in the cluster it does:
+
+if (nr + 1 < cluster->nr)
+
+   end = cluster->boundary[nr + 1] - 1 - offset;
+
+else
+
+   end = cluster->end - offset;
+
+If those extents weren't contiguous we'd be preallocating more space in
+the data reloc inode.

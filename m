@@ -2,134 +2,170 @@ Return-Path: <SRS0=J01l=7X=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.5 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+X-Spam-Status: No, score=-8.3 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8B59FC433E1
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Jun 2020 12:33:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 78DFBC433E0
+	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Jun 2020 13:29:39 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 6B66D206F4
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Jun 2020 12:33:42 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 56AAB2072E
+	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Jun 2020 13:29:39 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="jj48q9xw"
+	dkim=pass (2048-bit key) header.d=linaro.org header.i=@linaro.org header.b="EqyUKU7p"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729195AbgFJMdj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 10 Jun 2020 08:33:39 -0400
-Received: from esa4.hgst.iphmx.com ([216.71.154.42]:12382 "EHLO
-        esa4.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729168AbgFJMda (ORCPT
+        id S1726482AbgFJN3c (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 10 Jun 2020 09:29:32 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54340 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726414AbgFJN3b (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 10 Jun 2020 08:33:30 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1591792409; x=1623328409;
-  h=from:to:cc:subject:date:message-id:in-reply-to:
-   references:mime-version:content-transfer-encoding;
-  bh=hSbU88BxRVzAR6Lx9GsMNeT0Ej/jclkKY5xRxSd8v0Q=;
-  b=jj48q9xwNEkGm4rFcNAJ5BqI0cI1Q/AQXigHoDwRyLsZcOgLIlWg9pfr
-   gNhA+womChzUTpAFhU6AwMUGrOIR1U0IuSjz0Gwsh0b9ty3zMAiaY0BIK
-   eFIS6JoA2TlR0ZhP/ND2b8Sew1+bLMhsuu+H8DFeyLvboDvzOyDcQlxlV
-   UVl48tKXNb6/V4Fv4kZmsBunG9PeY6rGilOleEKDwMQ8pXkAUc/h3zDt/
-   4zBIll/jp73x39AqIfZNHUxn3Ew64IWPKYHREwPQ0+FHeSbDGVGxy7esw
-   TdvUFETBUMRLnp3wyocHZ5Wok5wQV0KKVcHyet8jCtUiRwgedOds2VtXa
-   Q==;
-IronPort-SDR: CaPg0IfP3IggowjlnadT7QaLUTscdsaUfsth3IYJ39by3FRIFnkfmlfPS/EYegNjYYiFS0hw6d
- Ysk4JElF9QYxZspIcyzB9f2/J1x02otD0Abohpx/BF47q3EEej2cKMWGWeYLt0MaxjzRHJ2DZU
- Lhb6bVN5LHEKiFqDJQSmOyElwB8fIscbtYTjTRj1xV/VgDYVNQkf8MbO7IRnVhr60G/h+hNx6m
- Ixr5itZ0g7Y/jB65bq4ZaqQ62sb0+d3rEJ9clqiFA1T/zrtxc8SRQSWMexgrwzzU7edQW66py6
- opM=
-X-IronPort-AV: E=Sophos;i="5.73,496,1583164800"; 
-   d="scan'208";a="139632711"
-Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 10 Jun 2020 20:33:14 +0800
-IronPort-SDR: 2Hhz4QqM3sRXOkJYn7ZCinjapLXNRynH54WdO56it/tRx014qe8WLqoNmvFXC7eUpVkZQBBpMx
- 7yKStunlz/W+82T6FGvA41PBIpysW8rTg=
-Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 10 Jun 2020 05:22:40 -0700
-IronPort-SDR: ZAeCQ6IQFtWsUryKfJdfll4n4v+R+eN2DNpiC074nbErL+uGyxLosDw7qA/JePEWewDF77+nBY
- P6nHWZtoDElw==
-WDCIronportException: Internal
-Received: from unknown (HELO redsun60.ssa.fujisawa.hgst.com) ([10.149.66.36])
-  by uls-op-cesaip01.wdc.com with ESMTP; 10 Jun 2020 05:33:13 -0700
-From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
-To:     David Sterba <dsterba@suse.cz>
-Cc:     linux-btrfs@vger.kernel.org,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH 12/15] btrfs-progs: compactify num_stripe setting in btrfs_alloc_chunk
-Date:   Wed, 10 Jun 2020 21:32:55 +0900
-Message-Id: <20200610123258.12382-13-johannes.thumshirn@wdc.com>
-X-Mailer: git-send-email 2.26.2
-In-Reply-To: <20200610123258.12382-1-johannes.thumshirn@wdc.com>
-References: <20200610123258.12382-1-johannes.thumshirn@wdc.com>
+        Wed, 10 Jun 2020 09:29:31 -0400
+Received: from mail-ed1-x542.google.com (mail-ed1-x542.google.com [IPv6:2a00:1450:4864:20::542])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 558EEC03E96F
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jun 2020 06:29:31 -0700 (PDT)
+Received: by mail-ed1-x542.google.com with SMTP id m32so1387934ede.8
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jun 2020 06:29:31 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=linaro.org; s=google;
+        h=subject:to:cc:references:from:message-id:date:user-agent
+         :mime-version:in-reply-to:content-language:content-transfer-encoding;
+        bh=3e8bC/Ax9BOA2Qqmdvlceg2Mrom20tLBb9FMDRoA6eo=;
+        b=EqyUKU7po/7+hPZYV1Dj3uiGUPJ5ITBTEk/rMgp6ak0CGVbHBllGnUD5h/aqefJnxj
+         /fIenwtADhXRg1T8lK0QzyOetyHvPME+edY3lZDbqiiddexxk7FqSyrB6KT3Qz+LL9tv
+         CEG3hyWmOtXRTyiK8VrNvo0sde7JNe1hyGs3nxdvvFhkhah1MlEnqi8R3OElWDeKgQiv
+         jrkDOtnAiou8e0oZMOgOJrJVRgD049QpA+kMw5tIZfGt2xfbCLsVJPy3VmBYZjQPDNXE
+         X2uJTGCrp2u13QWmsHWxc5x3UMBmW9+ewZ+bPoMzvBOfVh2qsrSkuR3v6bv7bgw1mvqW
+         mgLA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=3e8bC/Ax9BOA2Qqmdvlceg2Mrom20tLBb9FMDRoA6eo=;
+        b=aqlXbwNMcrz7X6QiAw9AHJjbC/tZIA1C7ONGfzioJjyzWWhv/L4OWtlXIvSs86vfxZ
+         V2+gNBQyXyCEuZ0Gm6ur7KPN2nxhUIZLeB6sEZO9t8TGVEuJ07t0HdgLzUiT1hhZt7fy
+         prXL5OlMEfX/RQWPCPGLe3XDFlFwUV9ROaKzkKe/bhb3heMzFMbsPlz1ckbad1aaDrcq
+         npJdGL65ZBaEgzDZwqVzN48seWXr0Vcru8NH1SyeAiJBR9nfKihHOH3HILKAWAFYhCh5
+         7ZJpLF366dd2IYJiij1B9Tj6GHTe1YC0etlnEl/3IC7pUxHfFczpiFcRwTrOjYpI2bcG
+         v7JA==
+X-Gm-Message-State: AOAM531AVGcdGwlKWlVQGfkXsOo4RBmA94V8Q3OJcvnl/EpOSEBzs5TA
+        fq/gajtJgUI9c/SMOaNU8rb88L5yTNV2GA==
+X-Google-Smtp-Source: ABdhPJzVyANva+fJza2/Sfu3EJMVyNZvktU+OpnQzj6FWgSjEETySHwTT+qPdA8idoQZQ2NiKDwjVQ==
+X-Received: by 2002:a50:f9cc:: with SMTP id a12mr2492130edq.227.1591795769805;
+        Wed, 10 Jun 2020 06:29:29 -0700 (PDT)
+Received: from [192.168.1.5] (212-5-158-114.ip.btc-net.bg. [212.5.158.114])
+        by smtp.googlemail.com with ESMTPSA id b14sm15221126ejq.105.2020.06.10.06.29.27
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 10 Jun 2020 06:29:29 -0700 (PDT)
+Subject: Re: [PATCH v3 6/7] venus: Make debug infrastructure more flexible
+To:     Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc:     linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-media@vger.kernel.org, linux-arm-msm@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-acpi@vger.kernel.org,
+        netdev@vger.kernel.org, Joe Perches <joe@perches.com>,
+        Jason Baron <jbaron@akamai.com>
+References: <20200609104604.1594-1-stanimir.varbanov@linaro.org>
+ <20200609104604.1594-7-stanimir.varbanov@linaro.org>
+ <20200609111414.GC780233@kroah.com>
+From:   Stanimir Varbanov <stanimir.varbanov@linaro.org>
+Message-ID: <dc85bf9e-e3a6-15a1-afaa-0add3e878573@linaro.org>
+Date:   Wed, 10 Jun 2020 16:29:27 +0300
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.8.0
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <20200609111414.GC780233@kroah.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Now that most of the RAID profile dependent chunk allocation parameters
-have been converted to table lookus and moved out of the if-statement
-maze, all that remains is the actual calculation of the number of stripes.
 
-Compact the 5 if statements into a single switch statemnt to make the code
-a bit more compact and more intuitive to follow.
 
-Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
----
- volumes.c | 27 +++++++++++++++------------
- 1 file changed, 15 insertions(+), 12 deletions(-)
+On 6/9/20 2:14 PM, Greg Kroah-Hartman wrote:
+> On Tue, Jun 09, 2020 at 01:46:03PM +0300, Stanimir Varbanov wrote:
+>> Here we introduce few debug macros with levels (low, medium and
+>> high) and debug macro for firmware. Enabling the particular level
+>> will be done by dynamic debug with levels.
+>>
+>> For example to enable debug messages with low level:
+>> echo 'module venus_dec level 0x01 +p' > debugfs/dynamic_debug/control
+>>
+>> If you want to enable all levels:
+>> echo 'module venus_dec level 0x07 +p' > debugfs/dynamic_debug/control
+>>
+>> All the features which dynamic debugging provide are preserved.
+>>
+>> And finaly all dev_dbg are translated to VDBGX with appropriate
+>> debug levels.
+>>
+>> Signed-off-by: Stanimir Varbanov <stanimir.varbanov@linaro.org>
+>> ---
+>>  drivers/media/platform/qcom/venus/core.h      |  5 ++
+>>  drivers/media/platform/qcom/venus/helpers.c   |  2 +-
+>>  drivers/media/platform/qcom/venus/hfi_msgs.c  | 30 ++++-----
+>>  drivers/media/platform/qcom/venus/hfi_venus.c | 20 ++++--
+>>  .../media/platform/qcom/venus/pm_helpers.c    |  3 +-
+>>  drivers/media/platform/qcom/venus/vdec.c      | 63 +++++++++++++++++--
+>>  drivers/media/platform/qcom/venus/venc.c      |  4 ++
+>>  7 files changed, 96 insertions(+), 31 deletions(-)
+>>
+>> diff --git a/drivers/media/platform/qcom/venus/core.h b/drivers/media/platform/qcom/venus/core.h
+>> index b48782f9aa95..63eabf5ff96d 100644
+>> --- a/drivers/media/platform/qcom/venus/core.h
+>> +++ b/drivers/media/platform/qcom/venus/core.h
+>> @@ -15,6 +15,11 @@
+>>  #include "dbgfs.h"
+>>  #include "hfi.h"
+>>  
+>> +#define VDBGL(fmt, args...)	pr_debug_level(0x01, fmt, ##args)
+>> +#define VDBGM(fmt, args...)	pr_debug_level(0x02, fmt, ##args)
+>> +#define VDBGH(fmt, args...)	pr_debug_level(0x04, fmt, ##args)
+>> +#define VDBGFW(fmt, args...)	pr_debug_level(0x08, fmt, ##args)
+>> +
+>>  #define VIDC_CLKS_NUM_MAX		4
+>>  #define VIDC_VCODEC_CLKS_NUM_MAX	2
+>>  #define VIDC_PMDOMAINS_NUM_MAX		3
+>> diff --git a/drivers/media/platform/qcom/venus/helpers.c b/drivers/media/platform/qcom/venus/helpers.c
+>> index 0143af7822b2..115a9a2af1d6 100644
+>> --- a/drivers/media/platform/qcom/venus/helpers.c
+>> +++ b/drivers/media/platform/qcom/venus/helpers.c
+>> @@ -396,7 +396,7 @@ put_ts_metadata(struct venus_inst *inst, struct vb2_v4l2_buffer *vbuf)
+>>  	}
+>>  
+>>  	if (slot == -1) {
+>> -		dev_dbg(inst->core->dev, "%s: no free slot\n", __func__);
+>> +		VDBGH("no free slot for timestamp\n");
+> 
+> So you just lost the information that dev_dbg() gave you with regards to
+> the device/driver/instance creating that message?
 
-diff --git a/volumes.c b/volumes.c
-index 80144a763b72..57d0db5463ef 100644
---- a/volumes.c
-+++ b/volumes.c
-@@ -1129,28 +1129,31 @@ int btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 			ctl.max_stripes = BTRFS_MAX_DEVS(info);
- 		}
- 	}
--	if (ctl.type == BTRFS_RAID_RAID1 ||
--	    ctl.type == BTRFS_RAID_RAID1C3 ||
--	    ctl.type == BTRFS_RAID_RAID1C4) {
-+	switch (ctl.type) {
-+	case BTRFS_RAID_RAID1:
-+	case BTRFS_RAID_RAID1C3:
-+	case BTRFS_RAID_RAID1C4:
- 		ctl.num_stripes = min(ctl.min_stripes, ctl.total_devs);
--	}
--	if (ctl.type == BTRFS_RAID_RAID0) {
-+		break;
-+	case BTRFS_RAID_RAID0:
- 		ctl.num_stripes = min(ctl.max_stripes, ctl.total_devs);
--		ctl.min_stripes = btrfs_raid_profile_table[ctl.type].min_stripes;
--	}
--	if (ctl.type == BTRFS_RAID_RAID10) {
-+		break;
-+	case BTRFS_RAID_RAID10:
- 		ctl.num_stripes = min(ctl.max_stripes, ctl.total_devs);
- 		ctl.num_stripes &= ~(u32)1;
--	}
--	if (ctl.type == BTRFS_RAID_RAID5) {
-+		break;
-+	case BTRFS_RAID_RAID5:
- 		ctl.num_stripes = min(ctl.max_stripes, ctl.total_devs);
- 		ctl.stripe_len = find_raid56_stripe_len(ctl.num_stripes - 1,
- 				    btrfs_super_stripesize(info->super_copy));
--	}
--	if (ctl.type == BTRFS_RAID_RAID6) {
-+		break;
-+	case BTRFS_RAID_RAID6:
- 		ctl.num_stripes = min(ctl.max_stripes, ctl.total_devs);
- 		ctl.stripe_len = find_raid56_stripe_len(ctl.num_stripes - 2,
- 				    btrfs_super_stripesize(info->super_copy));
-+		break;
-+	default:
-+		break;
- 	}
- 	if (ctl.num_stripes < ctl.min_stripes)
- 		return -ENOSPC;
+No, I don't lose anything.  When I do debug I know that all debug
+messages comes from my driver.  dev_dbg will give me few device
+identifiers which I don't care so much. IMO, the device information
+makes more sense to dev_err/warn/err variants.  On the other side we
+will have dev_dbg_level(group) if still someone needs the device
+information.
+
+> 
+> Ick, no, don't do that.
+> 
+> And why is this driver somehow "special" compared to all the rest of
+
+Of course it is special ... to me ;-)
+
+> the kernel?  Why is the current dev_dbg() control not sufficient that
+> you need to change the core for just this tiny thing?
+> 
+> thanks,
+> 
+> greg k-h
+> 
+
 -- 
-2.26.2
-
+regards,
+Stan

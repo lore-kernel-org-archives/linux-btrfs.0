@@ -7,59 +7,59 @@ X-Spam-Status: No, score=-9.5 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A22F4C433E0
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Jun 2020 12:33:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8B59FC433E1
+	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Jun 2020 12:33:42 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 80EB6206F4
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Jun 2020 12:33:41 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6B66D206F4
+	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Jun 2020 12:33:42 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="dUpXwU8Z"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="jj48q9xw"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729199AbgFJMdk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 10 Jun 2020 08:33:40 -0400
-Received: from esa4.hgst.iphmx.com ([216.71.154.42]:12377 "EHLO
+        id S1729195AbgFJMdj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 10 Jun 2020 08:33:39 -0400
+Received: from esa4.hgst.iphmx.com ([216.71.154.42]:12382 "EHLO
         esa4.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729174AbgFJMdb (ORCPT
+        with ESMTP id S1729168AbgFJMda (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 10 Jun 2020 08:33:31 -0400
+        Wed, 10 Jun 2020 08:33:30 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1591792410; x=1623328410;
+  t=1591792409; x=1623328409;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=XUoazRuMF0oKCxTYEC1yElCPHbLq/WobG1xmOBAUBBg=;
-  b=dUpXwU8Z2xldkgVOHN2C0oMcy9k3zp2Ol5JU7Pdkc/MzNmnze1uNbuxA
-   g3P5LkxQJ6f3s7Kkbyfo5teoL5JQ4mDWKJmB01oMSx1aCbBN4s4WONaaN
-   G8dIzXyIMBxzQw+M0RohQ+Duit1Jk/Sy9F/ZsxJ8GiY9+JvKDMbUuGDHN
-   /4SarupW6bg91D7GNOT/14uANB7I/5VKcUA1WMh80w+o/x3j7FBhGZ1OG
-   SGfbVKLWBOFWMMz8JBA0Xi7bWrDrT7RrRzsrDrLWTI5ACpNBN5YfLrWo2
-   o2gE88efRv8TIuiY8rBNvMPJHwWkHEuu86J0toNZPgT4mzC/Ve65yWbhw
-   w==;
-IronPort-SDR: T4DvCzm9mjCRGOnmiQ0gB6gUqgtq3EuFN+gHz721GMJ52FdW0bXFzF1eOQev0LO9pcU0i4JJtg
- S7jPSzNtKFdrLKCujHYCM+0ou1PizBTGSWCGf5JdHFguIXgUgwoIKn4jY7ycvD0i95F+YP1ciX
- gwNiJQHbA2B+wvBAFdJ2FJdpCAjXpkxDJsHM0gsgHilEnXvh8qRI8Zoqcj/tTI+ROsoYmBrTpI
- 7CrBAbVyGxvXSYNpnSicRfs7wqHXJtrcWG0T2yvnR1BSbVvWi2KkkVytXQGdlfXO5G5fqQQtR5
- FpM=
+  bh=hSbU88BxRVzAR6Lx9GsMNeT0Ej/jclkKY5xRxSd8v0Q=;
+  b=jj48q9xwNEkGm4rFcNAJ5BqI0cI1Q/AQXigHoDwRyLsZcOgLIlWg9pfr
+   gNhA+womChzUTpAFhU6AwMUGrOIR1U0IuSjz0Gwsh0b9ty3zMAiaY0BIK
+   eFIS6JoA2TlR0ZhP/ND2b8Sew1+bLMhsuu+H8DFeyLvboDvzOyDcQlxlV
+   UVl48tKXNb6/V4Fv4kZmsBunG9PeY6rGilOleEKDwMQ8pXkAUc/h3zDt/
+   4zBIll/jp73x39AqIfZNHUxn3Ew64IWPKYHREwPQ0+FHeSbDGVGxy7esw
+   TdvUFETBUMRLnp3wyocHZ5Wok5wQV0KKVcHyet8jCtUiRwgedOds2VtXa
+   Q==;
+IronPort-SDR: CaPg0IfP3IggowjlnadT7QaLUTscdsaUfsth3IYJ39by3FRIFnkfmlfPS/EYegNjYYiFS0hw6d
+ Ysk4JElF9QYxZspIcyzB9f2/J1x02otD0Abohpx/BF47q3EEej2cKMWGWeYLt0MaxjzRHJ2DZU
+ Lhb6bVN5LHEKiFqDJQSmOyElwB8fIscbtYTjTRj1xV/VgDYVNQkf8MbO7IRnVhr60G/h+hNx6m
+ Ixr5itZ0g7Y/jB65bq4ZaqQ62sb0+d3rEJ9clqiFA1T/zrtxc8SRQSWMexgrwzzU7edQW66py6
+ opM=
 X-IronPort-AV: E=Sophos;i="5.73,496,1583164800"; 
-   d="scan'208";a="139632715"
+   d="scan'208";a="139632711"
 Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 10 Jun 2020 20:33:15 +0800
-IronPort-SDR: JOoWqAVlWxzvmG8sd/xk9KMOM4KOB2yOlNj74+3bBNEzRtH2VnQZ4Rl+PBg/s8flN1GeQ8QcB+
- eFloJ+9WgJXMDUBgaIQ1xxqi/6SDQMcTM=
+  by ob1.hgst.iphmx.com with ESMTP; 10 Jun 2020 20:33:14 +0800
+IronPort-SDR: 2Hhz4QqM3sRXOkJYn7ZCinjapLXNRynH54WdO56it/tRx014qe8WLqoNmvFXC7eUpVkZQBBpMx
+ 7yKStunlz/W+82T6FGvA41PBIpysW8rTg=
 Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 10 Jun 2020 05:22:42 -0700
-IronPort-SDR: shEmx+lrmPHWaLh0s1A18kjLeCyf9qWopJaM4J3kX5feLni5dVI5QEPiDMKiDD1EcmRxwGN2Tw
- pKoBambZKC1w==
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 10 Jun 2020 05:22:40 -0700
+IronPort-SDR: ZAeCQ6IQFtWsUryKfJdfll4n4v+R+eN2DNpiC074nbErL+uGyxLosDw7qA/JePEWewDF77+nBY
+ P6nHWZtoDElw==
 WDCIronportException: Internal
 Received: from unknown (HELO redsun60.ssa.fujisawa.hgst.com) ([10.149.66.36])
-  by uls-op-cesaip01.wdc.com with ESMTP; 10 Jun 2020 05:33:15 -0700
+  by uls-op-cesaip01.wdc.com with ESMTP; 10 Jun 2020 05:33:13 -0700
 From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
 To:     David Sterba <dsterba@suse.cz>
 Cc:     linux-btrfs@vger.kernel.org,
         Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH 14/15] btrfs-progs: don't pretend RAID56 has a different stripe length
-Date:   Wed, 10 Jun 2020 21:32:57 +0900
-Message-Id: <20200610123258.12382-15-johannes.thumshirn@wdc.com>
+Subject: [PATCH 12/15] btrfs-progs: compactify num_stripe setting in btrfs_alloc_chunk
+Date:   Wed, 10 Jun 2020 21:32:55 +0900
+Message-Id: <20200610123258.12382-13-johannes.thumshirn@wdc.com>
 X-Mailer: git-send-email 2.26.2
 In-Reply-To: <20200610123258.12382-1-johannes.thumshirn@wdc.com>
 References: <20200610123258.12382-1-johannes.thumshirn@wdc.com>
@@ -70,50 +70,66 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Since it's addition in 2009 BTRFS RAID5/6 uses a constant stripe length
-and we're lacking the meta-data to define a per stripe length, so it's
-unlikely to change in the near future for RAID5/6.
+Now that most of the RAID profile dependent chunk allocation parameters
+have been converted to table lookus and moved out of the if-statement
+maze, all that remains is the actual calculation of the number of stripes.
 
-So let's not pretend something we don't do and remove the RAID5/6 stripe
-length special casing.
+Compact the 5 if statements into a single switch statemnt to make the code
+a bit more compact and more intuitive to follow.
 
 Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
- volumes.c | 11 -----------
- 1 file changed, 11 deletions(-)
+ volumes.c | 27 +++++++++++++++------------
+ 1 file changed, 15 insertions(+), 12 deletions(-)
 
 diff --git a/volumes.c b/volumes.c
-index aacff6e0656b..ec31acd57aa7 100644
+index 80144a763b72..57d0db5463ef 100644
 --- a/volumes.c
 +++ b/volumes.c
-@@ -900,13 +900,6 @@ static u64 chunk_bytes_by_type(u64 type, u64 calc_size,
- 		return calc_size * ctl->num_stripes;
- }
- 
--
--static u32 find_raid56_stripe_len(u32 data_devices, u32 dev_stripe_target)
--{
--	/* TODO, add a way to store the preferred stripe size */
--	return BTRFS_STRIPE_LEN;
--}
--
- /*
-  * btrfs_device_avail_bytes - count bytes available for alloc_chunk
-  *
-@@ -1092,13 +1085,9 @@ static void init_alloc_chunk_ctl(struct btrfs_fs_info *info,
- 		break;
- 	case BTRFS_RAID_RAID5:
- 		ctl->num_stripes = min(ctl->max_stripes, ctl->total_devs);
--		ctl->stripe_len = find_raid56_stripe_len(ctl->num_stripes - 1,
--				    btrfs_super_stripesize(info->super_copy));
- 		break;
- 	case BTRFS_RAID_RAID6:
- 		ctl->num_stripes = min(ctl->max_stripes, ctl->total_devs);
--		ctl->stripe_len = find_raid56_stripe_len(ctl->num_stripes - 2,
--				    btrfs_super_stripesize(info->super_copy));
- 		break;
- 	default:
- 		break;
+@@ -1129,28 +1129,31 @@ int btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+ 			ctl.max_stripes = BTRFS_MAX_DEVS(info);
+ 		}
+ 	}
+-	if (ctl.type == BTRFS_RAID_RAID1 ||
+-	    ctl.type == BTRFS_RAID_RAID1C3 ||
+-	    ctl.type == BTRFS_RAID_RAID1C4) {
++	switch (ctl.type) {
++	case BTRFS_RAID_RAID1:
++	case BTRFS_RAID_RAID1C3:
++	case BTRFS_RAID_RAID1C4:
+ 		ctl.num_stripes = min(ctl.min_stripes, ctl.total_devs);
+-	}
+-	if (ctl.type == BTRFS_RAID_RAID0) {
++		break;
++	case BTRFS_RAID_RAID0:
+ 		ctl.num_stripes = min(ctl.max_stripes, ctl.total_devs);
+-		ctl.min_stripes = btrfs_raid_profile_table[ctl.type].min_stripes;
+-	}
+-	if (ctl.type == BTRFS_RAID_RAID10) {
++		break;
++	case BTRFS_RAID_RAID10:
+ 		ctl.num_stripes = min(ctl.max_stripes, ctl.total_devs);
+ 		ctl.num_stripes &= ~(u32)1;
+-	}
+-	if (ctl.type == BTRFS_RAID_RAID5) {
++		break;
++	case BTRFS_RAID_RAID5:
+ 		ctl.num_stripes = min(ctl.max_stripes, ctl.total_devs);
+ 		ctl.stripe_len = find_raid56_stripe_len(ctl.num_stripes - 1,
+ 				    btrfs_super_stripesize(info->super_copy));
+-	}
+-	if (ctl.type == BTRFS_RAID_RAID6) {
++		break;
++	case BTRFS_RAID_RAID6:
+ 		ctl.num_stripes = min(ctl.max_stripes, ctl.total_devs);
+ 		ctl.stripe_len = find_raid56_stripe_len(ctl.num_stripes - 2,
+ 				    btrfs_super_stripesize(info->super_copy));
++		break;
++	default:
++		break;
+ 	}
+ 	if (ctl.num_stripes < ctl.min_stripes)
+ 		return -ENOSPC;
 -- 
 2.26.2
 

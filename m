@@ -2,32 +2,34 @@ Return-Path: <SRS0=J01l=7X=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 29988C433DF
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Jun 2020 00:58:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4FFF5C433E0
+	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Jun 2020 00:58:03 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 0D310206C3
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Jun 2020 00:58:00 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 38864206C3
+	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Jun 2020 00:58:03 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726112AbgFJA56 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 9 Jun 2020 20:57:58 -0400
-Received: from mx2.suse.de ([195.135.220.15]:33382 "EHLO mx2.suse.de"
+        id S1726123AbgFJA6C (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 9 Jun 2020 20:58:02 -0400
+Received: from mx2.suse.de ([195.135.220.15]:33424 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726039AbgFJA55 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 9 Jun 2020 20:57:57 -0400
+        id S1726039AbgFJA6B (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 9 Jun 2020 20:58:01 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 6E873ACBD
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jun 2020 00:57:59 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 2FC3BACF2
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jun 2020 00:58:03 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 0/5] btrfs: qgroup: detect and fix leaked data reserved space
-Date:   Wed, 10 Jun 2020 08:57:46 +0800
-Message-Id: <20200610005751.10645-1-wqu@suse.com>
+Subject: [PATCH v2 2/5] btrfs: inode: move the qgroup reserved data space release into the callers of insert_reserved_file_extent()
+Date:   Wed, 10 Jun 2020 08:57:48 +0800
+Message-Id: <20200610005751.10645-3-wqu@suse.com>
 X-Mailer: git-send-email 2.26.2
+In-Reply-To: <20200610005751.10645-1-wqu@suse.com>
+References: <20200610005751.10645-1-wqu@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -35,94 +37,97 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-There is an internal report complaining that qgroup is only half of the
-limit, but they still get EDQUOT errors.
+This is to prepare for the incoming timing change of qgroup reserved
+data space and ordered extent.
 
-With some extra debugging patch added, it turns out that even fsstress
-with 10 steps can sometimes cause qgroup reserved data space to leak.
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/inode.c | 26 +++++++++++++-------------
+ 1 file changed, 13 insertions(+), 13 deletions(-)
 
-The root cause is the chaotic lifespan of qgroup data rsv.
-Here is the chart explaining the difference between the old and new
-lifespan of qgroup data rsv:
-  ||: Qgroup data rsv is reserved
-   |: Qgroup data rsv is released but not freed
-    : Qgroup data rsv is freed
-
-	The old		The new
-
-	   TT		   TT		Page get dirtied
- 	   ||		   ||
-           ||		   ||
-  	   || ------------ || --------- btrfs_run_delalloc_range()
-	   ||		    |		|- btrfs_add_ordered_extent()
-	   ||		    |
-	    | ------------  | --------- btrfs_finish_ordered_io()
-	    |		    |
-	      ------------    --------- btrfs_account_extents()
-
-Since there is a large window between btrfs_add_ordered_extent() and
-btrfs_finish_ordered_io(), during which page can be released and clear
-the QGROUP_RESERVED bit.
-
-In fact during dio, dio will try to flush the range, and then invalidate
-the pages before submitting direct IO.
-
-Due to the fact that filemap_write_and_wait_range() will only wait for
-page writeback get cleared, not page dirty cleared, so it will release
-pages before btrfs_finish_ordered_io() get executed, and clearing
-QGROUP_RESERVED bit without triggering qgroup rsv release, leading to
-qgroup data rsv leakage.
-
-With the new timing, QGROUP_RESERVED bit is cleared before
-filemap_write_and_wait_range() returns, and doing proper qgroup rsv
-releasing, so there is no window to screw up qgroup rsv anymore.
-
-Although to co-operate the timing change, quite some existing chaotic
-btrfs_qgroup_release/free_data() calls must be modified/removed to
-follow the more restrict calling protocol.
-
-But overall, this make the qgroup data rsv lifespan more clear, so it
-should be still worthy.
-
-After all the big timing change and fixes, add an extra and hopefully
-final safe net to catch qgroup data rsv leakage.
-Now extent io tree based QGROUP_RESERVED bit should detect case like
-missing btrfs_qgroup_release/free_data() call, while the unmount check
-should detect unexpected QGROUP_RESERVED bit clearing.
-
-The existing test case btrfs/022 can already catch the bug pretty
-reliably.
-
-Changelog:
-v2:
-- Change the lifespan of qgroup data rsv
-  From the original whac-a-mole method to a more proper timing, to
-  use ordered extents as the proper owner of qgroup data rsv.
-
-- Add commit message for the final patch
-
-- Adds extra refactor to make insert_reserved_file_extent() use less
-  parameters
-
-Qu Wenruo (5):
-  btrfs: inode: refactor the parameters of insert_reserved_file_extent()
-  btrfs: inode: move the qgroup reserved data space release into the
-    callers of insert_reserved_file_extent()
-  btrfs: file: reserve qgroup space after the hole punch range locked
-  btrfs: change the timing for qgroup reserved space for ordered extents
-    to fix reserved space leak
-  btrfs: qgroup: catch reserved space leakage at unmount time
-
- fs/btrfs/ctree.h        |   6 +-
- fs/btrfs/disk-io.c      |   6 ++
- fs/btrfs/file.c         |   8 +--
- fs/btrfs/inode.c        | 119 +++++++++++++++++++++++-----------------
- fs/btrfs/ordered-data.c |  22 +++++++-
- fs/btrfs/ordered-data.h |   3 +
- fs/btrfs/qgroup.c       |  43 +++++++++++++++
- fs/btrfs/qgroup.h       |   2 +-
- 8 files changed, 152 insertions(+), 57 deletions(-)
-
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index c076cbe9f492..09e1724d620a 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2449,7 +2449,8 @@ int btrfs_writepage_cow_fixup(struct page *page, u64 start, u64 end)
+ 
+ static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
+ 				       struct inode *inode, u64 file_pos,
+-				       struct btrfs_file_extent_item *stack_fi)
++				       struct btrfs_file_extent_item *stack_fi,
++				       u64 qgroup_reserved)
+ {
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	struct btrfs_path *path;
+@@ -2459,7 +2460,6 @@ static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
+ 	u64 disk_bytenr = btrfs_stack_file_extent_disk_bytenr(stack_fi);
+ 	u64 num_bytes = btrfs_stack_file_extent_num_bytes(stack_fi);
+ 	u64 ram_bytes = btrfs_stack_file_extent_ram_bytes(stack_fi);
+-	u64 qg_released;
+ 	int extent_inserted = 0;
+ 	int ret;
+ 
+@@ -2513,17 +2513,9 @@ static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
+ 	if (ret)
+ 		goto out;
+ 
+-	/*
+-	 * Release the reserved range from inode dirty range map, as it is
+-	 * already moved into delayed_ref_head
+-	 */
+-	ret = btrfs_qgroup_release_data(inode, file_pos, ram_bytes);
+-	if (ret < 0)
+-		goto out;
+-	qg_released = ret;
+ 	ret = btrfs_alloc_reserved_file_extent(trans, root,
+ 					       btrfs_ino(BTRFS_I(inode)),
+-					       file_pos, qg_released, &ins);
++					       file_pos, qgroup_reserved, &ins);
+ out:
+ 	btrfs_free_path(path);
+ 
+@@ -2551,6 +2543,7 @@ static int insert_ordered_extent_file_extent(struct btrfs_trans_handle *trans,
+ {
+ 	struct btrfs_file_extent_item stack_fi;
+ 	u64 logical_len;
++	int ret;
+ 
+ 	memset(&stack_fi, 0, sizeof(stack_fi));
+ 	btrfs_set_stack_file_extent_type(&stack_fi, BTRFS_FILE_EXTENT_REG);
+@@ -2566,8 +2559,11 @@ static int insert_ordered_extent_file_extent(struct btrfs_trans_handle *trans,
+ 	btrfs_set_stack_file_extent_compression(&stack_fi, oe->compress_type);
+ 	/* Encryption and other encoding is reserved and all 0 */
+ 
++	ret = btrfs_qgroup_release_data(inode, oe->file_offset, logical_len);
++	if (ret < 0)
++		return ret;
+ 	return insert_reserved_file_extent(trans, inode, oe->file_offset,
+-					   &stack_fi);
++					   &stack_fi, ret);
+ }
+ 
+ /*
+@@ -9508,6 +9504,7 @@ static int insert_prealloc_file_extent(struct btrfs_trans_handle *trans,
+ 	struct btrfs_file_extent_item stack_fi;
+ 	u64 start = ins->objectid;
+ 	u64 len = ins->offset;
++	int ret;
+ 
+ 	memset(&stack_fi, 0, sizeof(stack_fi));
+ 
+@@ -9519,8 +9516,11 @@ static int insert_prealloc_file_extent(struct btrfs_trans_handle *trans,
+ 	btrfs_set_stack_file_extent_compression(&stack_fi, BTRFS_COMPRESS_NONE);
+ 	/* Encryption and other encoding is reserved and all 0 */
+ 
++	ret = btrfs_qgroup_release_data(inode, file_offset, len);
++	if (ret < 0)
++		return ret;
+ 	return insert_reserved_file_extent(trans, inode, file_offset,
+-					   &stack_fi);
++					   &stack_fi, ret);
+ }
+ static int __btrfs_prealloc_file_range(struct inode *inode, int mode,
+ 				       u64 start, u64 num_bytes, u64 min_size,
 -- 
 2.26.2
 

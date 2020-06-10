@@ -2,87 +2,106 @@ Return-Path: <SRS0=J01l=7X=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5DE3AC433E0
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Jun 2020 05:34:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C8F73C433E0
+	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Jun 2020 06:31:14 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 2CA5F20734
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Jun 2020 05:34:15 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9D8292081A
+	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Jun 2020 06:31:14 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1591770674;
+	bh=HWqfOjSKZShVNILAl4Rwx3P52sNZxPeoQVKJIj6dIEU=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:List-ID:From;
+	b=ms+Yxv1yK0yvXe/EyKYuxxq/JiHSk2Gj2MbMMPCUVgSP7hZutp6ozrYBSwOH2x2Ft
+	 frd7N2ON7b2HQ3u7/vMRPUUivy6fruBA8tXvOZp9FvZFfKbiz4tWR82I5xur9rt0aG
+	 VmvUx+Y6+T+XaRSADmgO0SKe4b2anZiTfD4jUvmw=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726138AbgFJFeO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 10 Jun 2020 01:34:14 -0400
-Received: from mail110.syd.optusnet.com.au ([211.29.132.97]:52298 "EHLO
-        mail110.syd.optusnet.com.au" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1726035AbgFJFeN (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 10 Jun 2020 01:34:13 -0400
-X-Greylist: delayed 1735 seconds by postgrey-1.27 at vger.kernel.org; Wed, 10 Jun 2020 01:34:12 EDT
-Received: from dread.disaster.area (pa49-180-124-177.pa.nsw.optusnet.com.au [49.180.124.177])
-        by mail110.syd.optusnet.com.au (Postfix) with ESMTPS id A3E12108DD1;
-        Wed, 10 Jun 2020 15:05:14 +1000 (AEST)
-Received: from dave by dread.disaster.area with local (Exim 4.92.3)
-        (envelope-from <david@fromorbit.com>)
-        id 1jisvG-0003Er-1u; Wed, 10 Jun 2020 15:05:10 +1000
-Date:   Wed, 10 Jun 2020 15:05:10 +1000
-From:   Dave Chinner <david@fromorbit.com>
-To:     Goldwyn Rodrigues <rgoldwyn@suse.de>
-Cc:     darrick.wong@oracle.com, linux-btrfs@vger.kernel.org,
-        fdmanana@gmail.com, linux-fsdevel@vger.kernel.org, hch@lst.de,
-        linux-xfs@vger.kernel.org
-Subject: Re: [PATCH 0/3] Transient errors in Direct I/O
-Message-ID: <20200610050510.GL2040@dread.disaster.area>
-References: <20200605204838.10765-1-rgoldwyn@suse.de>
- <20200610025900.GA2005@dread.disaster.area>
+        id S1726251AbgFJGbH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 10 Jun 2020 02:31:07 -0400
+Received: from mail.kernel.org ([198.145.29.99]:46980 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1725988AbgFJGbG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 10 Jun 2020 02:31:06 -0400
+Received: from localhost (83-86-89-107.cable.dynamic.v4.ziggo.nl [83.86.89.107])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 77AC320760;
+        Wed, 10 Jun 2020 06:31:05 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1591770666;
+        bh=HWqfOjSKZShVNILAl4Rwx3P52sNZxPeoQVKJIj6dIEU=;
+        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+        b=E8Cvgegk66cCXmlxVRnTbOP7DpmPu5rN+pO2KqHRyhnv/CabF0fwKFwbWzu+l0hYQ
+         IM90rm9VemBskzD0IvXHXOA9jewhU/xl7ji+nePWuDVYBIvD//3KQwBdgJHupS60Cb
+         Mp4tTOCmUlP2s0Dvu08GFR/RNf9CfM/iCqVNvE2o=
+Date:   Wed, 10 Jun 2020 08:31:03 +0200
+From:   Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+To:     Joe Perches <joe@perches.com>
+Cc:     Stanimir Varbanov <stanimir.varbanov@linaro.org>,
+        linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-media@vger.kernel.org, linux-arm-msm@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-acpi@vger.kernel.org,
+        netdev@vger.kernel.org, Jason Baron <jbaron@akamai.com>,
+        Jonathan Corbet <corbet@lwn.net>,
+        Jim Cromie <jim.cromie@gmail.com>
+Subject: Re: [PATCH v3 1/7] Documentation: dynamic-debug: Add description of
+ level bitmask
+Message-ID: <20200610063103.GD1907120@kroah.com>
+References: <20200609104604.1594-1-stanimir.varbanov@linaro.org>
+ <20200609104604.1594-2-stanimir.varbanov@linaro.org>
+ <20200609111615.GD780233@kroah.com>
+ <ba32bfa93ac2e147c2e0d3a4724815a7bbf41c59.camel@perches.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20200610025900.GA2005@dread.disaster.area>
-User-Agent: Mutt/1.10.1 (2018-07-13)
-X-Optus-CM-Score: 0
-X-Optus-CM-Analysis: v=2.3 cv=X6os11be c=1 sm=1 tr=0
-        a=k3aV/LVJup6ZGWgigO6cSA==:117 a=k3aV/LVJup6ZGWgigO6cSA==:17
-        a=kj9zAlcOel0A:10 a=nTHF0DUjJn0A:10 a=7-415B0cAAAA:8
-        a=5l335YXG8XPxeSgPGoIA:9 a=CjuIK1q_8ugA:10 a=biEYGPWJfzWAr4FL6Ov7:22
+In-Reply-To: <ba32bfa93ac2e147c2e0d3a4724815a7bbf41c59.camel@perches.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Jun 10, 2020 at 12:59:00PM +1000, Dave Chinner wrote:
-> [ Please cc the XFS list on XFS and iomap infrastructure changes.]
+On Tue, Jun 09, 2020 at 09:58:07AM -0700, Joe Perches wrote:
+> On Tue, 2020-06-09 at 13:16 +0200, Greg Kroah-Hartman wrote:
+> > What is wrong with the existing control of dynamic
+> > debug messages that you want to add another type of arbitrary grouping
+> > to it? 
 > 
-> On Fri, Jun 05, 2020 at 03:48:35PM -0500, Goldwyn Rodrigues wrote:
-> > In current scenarios, for XFS, it would mean that a page invalidation
-> > would end up being a writeback error. So, if iomap returns zero, fall
-> > back to biffered I/O. XFS has never supported fallback to buffered I/O.
-> > I hope it is not "never will" ;)
+> There is no existing grouping mechanism.
+
+info/warn/err/dbg is what I am referring to.
+
+> Many drivers and some subsystems used an internal one
+> before dynamic debug.
 > 
-> I wouldn't say "never", but we are not going to change XFS behaviour
-> because btrfs has a page invalidation vs DIO bug in it...
+> $ git grep "MODULE_PARM.*\bdebug\b"|wc -l
+> 501
 
-Let me point out a specific "oh shit, I didn't think of that" sort
-of problem that your blind fallback to buffered IO causes. Do this
-via direct IO:
+Yes, and it's horrid and needs to be cleaned up, not added to.
 
-	pwritev2(RWF_NOWAIT)
+In the beginning, yes, adding loads of different types of debugging
+options to a driver is needed by the author, but by the time it is added
+to the kernel, all of that should be able to be removed and only a
+single "enable debug" should be all that is needed.
 
-now have it fail invalidation in the direct IO path and fallback to
-buffered write. What does buffered write do with it?
+We do not need each individual driver thinking it needs to have some
+sort of special classification of each type of debug message.  Just use
+the framework that we have, you can enable/disable them on a
+line-by-line basis as needed.
 
+> This is an attempt to unify those homebrew mechanisms.
 
-	if (iocb->ki_flags & IOCB_NOWAIT)
-		return -EOPNOTSUPP;
+All of those should just be removed.
 
-Yup, userspace gets a completely spurious and bogus -EOPNOTSUPP
-error to pwritev2() because some 3rd party is accessing the same
-file via mmap or buffered IO.
+> Stanimir attempted to add one for his driver via a
+> driver specific standardized format substring for level.
+> 
+> > And who defines that grouping?
+> 
+> Individual driver authors
 
-Cheers,
+That way lies madness, let's try to fix all of that up.
 
-Dave.
--- 
-Dave Chinner
-david@fromorbit.com
+greg k-h

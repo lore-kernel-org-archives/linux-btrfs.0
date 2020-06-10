@@ -7,59 +7,59 @@ X-Spam-Status: No, score=-9.5 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 312F5C433DF
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Jun 2020 12:33:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8957BC433E1
+	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Jun 2020 12:33:35 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 08BA020734
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Jun 2020 12:33:34 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5C81A206F4
+	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Jun 2020 12:33:35 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="ggemvFnN"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="R75EmNR/"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729182AbgFJMdd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 10 Jun 2020 08:33:33 -0400
-Received: from esa4.hgst.iphmx.com ([216.71.154.42]:12377 "EHLO
+        id S1729185AbgFJMde (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 10 Jun 2020 08:33:34 -0400
+Received: from esa4.hgst.iphmx.com ([216.71.154.42]:12382 "EHLO
         esa4.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729132AbgFJMd3 (ORCPT
+        with ESMTP id S1729162AbgFJMd2 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 10 Jun 2020 08:33:29 -0400
+        Wed, 10 Jun 2020 08:33:28 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
   t=1591792408; x=1623328408;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=oMfoutGETTP0olztKA64IXtyFkR9BV6V/NZVlxq+TJw=;
-  b=ggemvFnNM++pavZHt46LpKnVZCzo2HT43Ep6HRZmWeY0U0h+cbu8yti7
-   PZzZlOtqIZTup7H/cQNAFgkvRWVV64vCGMZPFV4R8r9xbqe94gKIzIrIz
-   pbQjmAlp431yKSxsvEvaBpV9ljB2bolZ0BhwIIo4ZyYA/zbGPm9O/cwl/
-   MB3aEGGLAul7mabAG6RoUK4mzbg1IBERB2aWkasq6KV7S+IwanW5stdXn
-   cbty0zLO8hy7pzueGnUcNX9iQw/R9DwfSoDKoBX13nmfO+Id4cZNwxzqJ
-   dEklVIpp+io5kMZ5dJiyIyHnHcauTGx0PeBu7401dirJn0OeuPj4v+8AJ
-   A==;
-IronPort-SDR: X0T7O/xREKT7rk831JGLqqxKPjGaHlpggEpoK2nzMaQTdexPEILmsCizRWO0RBv66zP4xpxtj2
- eC9FbBodMU0M0B2TTD6m+Vaj7XSgSPWprbH5OTgMNy7SdkFW1z0ODS7zWN8kf53b3biRGn7TlB
- bpmeSXwCnVRxNZL3m8FqlXqjlWN2SfYebcBXPQVPuHkBm4dCReLnikdIOT44RznIZA+L30ql3U
- tbDPactKVTN34yLYiwRkZQYjgvWIsoNGPzecgJ9KGyP6MnFFSW8QwXMpQ+6PgvTjwe2pEv+Me2
- YCQ=
+  bh=1FcJZjdTxkREy1X3S1iMZVT1/faVLCWruKgGFYb/ZC0=;
+  b=R75EmNR/3wOGZ3kIhf2BZBZArb08wSkMWLED+a9SqbWTHVUCHMLh+zMc
+   mJK5gQAV/CNbr7PdUT3rwgq77P5KV7WVd1FzNV3jjlhp6cLd2gbNwdt31
+   1WM170NdFYzNuczLkW+1qK0Jg1QNtQucrZo8k6KDr4zpeRedHWvRj96T9
+   glEfBdETj5sSPeGCv1MaAOR1EAhSsz7ay/aw4BCw4HDYsviVYewkYgMQy
+   C5PrI8GXv+uPZWb+W7aHZ2IYOyOHItIYNSRqvhLHi0mwhJQTCGgq7/A/D
+   p6ap8v84dG4pR9icpx5XnTmZLD5DCRoReyAaZDFfX/BZgYUxdrvAmsQuj
+   g==;
+IronPort-SDR: lmP7C+4yCTg+p+mQ6gbPbQLGQ4Il1vWnI0kSwdQ24vmxyvIOTxoR4KZYqIxREPBIKDhwUEvVnI
+ xoeuHx5ZMFSYKt7Gblcuw4dXWWc20Zjt/Ge02BU0c1EmL7bbVGM2LOufxH7S2LLz7vIj+iXZCS
+ 5ikLV8aALMCv/ARczvfhirweh95MiDLSxyaPiIL9n+hDcJs5uSi5owqFiTpAENkjmeaPfe6rhK
+ LGQTymBh9ZFZE9SI2hyxtAIv6JHB/0UZxO96G46QNjbfWIL/DlFkijpxuz3NhCLO0txMGegnvP
+ a8g=
 X-IronPort-AV: E=Sophos;i="5.73,496,1583164800"; 
-   d="scan'208";a="139632709"
+   d="scan'208";a="139632704"
 Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 10 Jun 2020 20:33:13 +0800
-IronPort-SDR: SMv6d/trapU147e4PXveToQTpOlVS6O6Gbc0eFlWQC/HHnAAdPZbDoissDIZm1SSsFnuD/M83W
- x35RNhuXlpzD6YJfcphs9rSamiFZTFZNc=
+  by ob1.hgst.iphmx.com with ESMTP; 10 Jun 2020 20:33:10 +0800
+IronPort-SDR: 0J+8dcHfm14vs+vKLGQqKmRX/zqvP+8vN+R/IcTplJdLzVEl6G/R34yqUhwGkttOIDW8FnqWa1
+ OeXQPiGYj79cLAOHbYqQyC86rI9Q+3uts=
 Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 10 Jun 2020 05:22:40 -0700
-IronPort-SDR: hzT8yQZfP3dobmkE53s8/dkyt5pYh3sx0X+fEK/fFbH1snxAHmw6cNV6vJ06Po7aWpZws6kNo8
- gO2Sg/7619FQ==
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 10 Jun 2020 05:22:37 -0700
+IronPort-SDR: /JsKXHT7rUjMF/iLqa/ptNDUInm1cghCnBjoXrMvgHx7y8iOdvgzf7k1C20gMrwMJP9wtpxukA
+ 2cXi+vBlvx/Q==
 WDCIronportException: Internal
 Received: from unknown (HELO redsun60.ssa.fujisawa.hgst.com) ([10.149.66.36])
-  by uls-op-cesaip01.wdc.com with ESMTP; 10 Jun 2020 05:33:12 -0700
+  by uls-op-cesaip01.wdc.com with ESMTP; 10 Jun 2020 05:33:10 -0700
 From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
 To:     David Sterba <dsterba@suse.cz>
 Cc:     linux-btrfs@vger.kernel.org,
         Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH 11/15] btrfs-progs: consolidate num_stripes sanity check
-Date:   Wed, 10 Jun 2020 21:32:54 +0900
-Message-Id: <20200610123258.12382-12-johannes.thumshirn@wdc.com>
+Subject: [PATCH 08/15] btrfs-progs: consolidate assignment of sub_stripes
+Date:   Wed, 10 Jun 2020 21:32:51 +0900
+Message-Id: <20200610123258.12382-9-johannes.thumshirn@wdc.com>
 X-Mailer: git-send-email 2.26.2
 In-Reply-To: <20200610123258.12382-1-johannes.thumshirn@wdc.com>
 References: <20200610123258.12382-1-johannes.thumshirn@wdc.com>
@@ -70,61 +70,35 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-For all RAID profiles in btrfs_alloc_chunk() we're doing a sanity check if
-the number of stripes is smaller than the minimal number of stripes
-needed for this profile.
-
-Consolidate this per-profile check to a single check after assigning the
-number of stripes to further reduce code.
+Now that we have a table holding the sub_stripes value we can consolidate
+all setting of alloc_chunk_ctl::sub_stripes to a signle table lookup.
 
 Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
- volumes.c | 13 ++-----------
- 1 file changed, 2 insertions(+), 11 deletions(-)
+ volumes.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
 diff --git a/volumes.c b/volumes.c
-index 80b4b373f012..80144a763b72 100644
+index 9076f055f6bd..32d3dfe0decd 100644
 --- a/volumes.c
 +++ b/volumes.c
-@@ -1133,36 +1133,27 @@ int btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 	    ctl.type == BTRFS_RAID_RAID1C3 ||
- 	    ctl.type == BTRFS_RAID_RAID1C4) {
- 		ctl.num_stripes = min(ctl.min_stripes, ctl.total_devs);
--		if (ctl.num_stripes < ctl.min_stripes)
--			return -ENOSPC;
- 	}
- 	if (ctl.type == BTRFS_RAID_RAID0) {
- 		ctl.num_stripes = min(ctl.max_stripes, ctl.total_devs);
- 		ctl.min_stripes = btrfs_raid_profile_table[ctl.type].min_stripes;
- 	}
- 	if (ctl.type == BTRFS_RAID_RAID10) {
--		ctl.min_stripes = btrfs_raid_profile_table[ctl.type].min_stripes;
- 		ctl.num_stripes = min(ctl.max_stripes, ctl.total_devs);
--		if (ctl.num_stripes < ctl.min_stripes)
--			return -ENOSPC;
+@@ -1103,7 +1103,7 @@ int btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+ 	ctl.num_stripes = 1;
+ 	ctl.max_stripes = 0;
+ 	ctl.min_stripes = btrfs_raid_profile_table[ctl.type].min_stripes;
+-	ctl.sub_stripes = 1;
++	ctl.sub_stripes = btrfs_raid_profile_table[ctl.type].sub_stripes;
+ 	ctl.stripe_len = BTRFS_STRIPE_LEN;
+ 	ctl.total_devs = btrfs_super_num_devices(info->super_copy);
+ 
+@@ -1160,7 +1160,6 @@ int btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+ 		if (ctl.num_stripes < ctl.min_stripes)
+ 			return -ENOSPC;
  		ctl.num_stripes &= ~(u32)1;
+-		ctl.sub_stripes = 2;
  	}
  	if (ctl.type == BTRFS_RAID_RAID5) {
--		ctl.min_stripes = btrfs_raid_profile_table[ctl.type].min_stripes;
- 		ctl.num_stripes = min(ctl.max_stripes, ctl.total_devs);
--		if (ctl.num_stripes < ctl.min_stripes)
--			return -ENOSPC;
- 		ctl.stripe_len = find_raid56_stripe_len(ctl.num_stripes - 1,
- 				    btrfs_super_stripesize(info->super_copy));
- 	}
- 	if (ctl.type == BTRFS_RAID_RAID6) {
--		ctl.min_stripes = btrfs_raid_profile_table[ctl.type].min_stripes;
- 		ctl.num_stripes = min(ctl.max_stripes, ctl.total_devs);
--		if (ctl.num_stripes < ctl.min_stripes)
--			return -ENOSPC;
- 		ctl.stripe_len = find_raid56_stripe_len(ctl.num_stripes - 2,
- 				    btrfs_super_stripesize(info->super_copy));
- 	}
-+	if (ctl.num_stripes < ctl.min_stripes)
-+		return -ENOSPC;
- 
- 	/* we don't want a chunk larger than 10% of the FS */
- 	percent_max = div_factor(btrfs_super_total_bytes(info->super_copy), 1);
+ 		ctl.min_stripes = btrfs_raid_profile_table[ctl.type].min_stripes;
 -- 
 2.26.2
 

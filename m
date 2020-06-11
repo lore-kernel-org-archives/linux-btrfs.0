@@ -2,70 +2,73 @@ Return-Path: <SRS0=xGl5=7Y=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.8 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1C2CEC433DF
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Jun 2020 17:41:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 39F31C433DF
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Jun 2020 17:42:00 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id F0CBD207ED
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Jun 2020 17:41:47 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 186B7207ED
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Jun 2020 17:42:00 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="dO3fOHrn"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="ZODM27CW"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727019AbgFKRlq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 11 Jun 2020 13:41:46 -0400
-Received: from userp2120.oracle.com ([156.151.31.85]:49132 "EHLO
+        id S1727035AbgFKRl7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 11 Jun 2020 13:41:59 -0400
+Received: from userp2120.oracle.com ([156.151.31.85]:49274 "EHLO
         userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726109AbgFKRlp (ORCPT
+        with ESMTP id S1726109AbgFKRl6 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 Jun 2020 13:41:45 -0400
+        Thu, 11 Jun 2020 13:41:58 -0400
 Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 05BHaVtD039822
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jun 2020 17:41:43 GMT
+        by userp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 05BHaXwW039833
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jun 2020 17:41:57 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
- date : message-id : mime-version : content-transfer-encoding;
- s=corp-2020-01-29; bh=9FzUIGJOSimQqHKTqeZsBeZAdMFz9wTVAJb3oVSSZWQ=;
- b=dO3fOHrnnPmVf6d8h9D24BMU/sRRQsZqJB1b3elzXzNPVK0JJPShjwRm8bWNhD6rqHlW
- 0W+1jp6AyvszFtV0RLfgtK9bQibI8Ct1q3vqAFMW+KxqC3LXIN7Y6vknp6Fx7pYwbZCN
- SMh/71ySckSn0B58W8hjkGUXKcXhoPJRRlUBY4rOEPP/TR8DCUTueIT9gm1wMO3wgfjq
- 9FMEDe3fdhjPkVHZA4kuBOWJHY1gZ+riEUYMtz3mv7CJeLRpOfzYj367r2LTUn+H8laA
- tutkNmYOLdS6dmTRWM9Z+TbWecRD44X5/RV5y2j5WVN3bHdb7QWkALpMABq9oWQx/jWR gA== 
-Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
-        by userp2120.oracle.com with ESMTP id 31g3sn92te-1
+ date : message-id : in-reply-to : references : mime-version :
+ content-transfer-encoding; s=corp-2020-01-29;
+ bh=W2Tr5j/ycx1kT/zr8zjKbzx8H7OmAoFwgB1vLiHgtA4=;
+ b=ZODM27CW7cOOi8gPvS3tdAY+OLhtv0XG416CtMO3hX/XPBrppgnDhpOE+qJ0PmaJTppF
+ iET8LY2cxohHSwyc7kAcHFaKXNVZHiNrfc6iAWGFK2IQugb1hkuh8e4cDvEYEEN18cbJ
+ OHj57Ayc16gM3H8PbxNstxKyGP8u1teQrQsLGIZ9pHQU5Wv/qK1Vc6E3ffy09z98aKgJ
+ rroXJvU8Y00zwxeOr/HOUtBgM9K+sLkEgp7YPhuQQCNTeNqp82MpARGjTCFqOQABpN+F
+ GI8kkql9JmHwDhYxkI6Q/jmSchY+J8ukc23/hfYGFUCxwYK8Z46+GU4JRL6/YAklNHq3 /A== 
+Received: from userp3020.oracle.com (userp3020.oracle.com [156.151.31.79])
+        by userp2120.oracle.com with ESMTP id 31g3sn92uk-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jun 2020 17:41:43 +0000
-Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
-        by userp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 05BHbnjt065919
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jun 2020 17:41:43 GMT
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by userp3030.oracle.com with ESMTP id 31gn326f0c-1
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jun 2020 17:41:57 +0000
+Received: from pps.filterd (userp3020.oracle.com [127.0.0.1])
+        by userp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 05BHcVVD121626
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jun 2020 17:41:57 GMT
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by userp3020.oracle.com with ESMTP id 31gmwvsjh0-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jun 2020 17:41:43 +0000
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jun 2020 17:41:57 +0000
 Received: from abhmp0010.oracle.com (abhmp0010.oracle.com [141.146.116.16])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id 05BHfgls019773
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jun 2020 17:41:42 GMT
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 05BHfuG8009593
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jun 2020 17:41:56 GMT
 Received: from localhost.localdomain (/39.109.231.106)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Thu, 11 Jun 2020 10:41:41 -0700
+        with ESMTP ; Thu, 11 Jun 2020 10:41:55 -0700
 From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/8 v2 PART2] btrfs-progs: add quiet option
-Date:   Fri, 12 Jun 2020 01:41:15 +0800
-Message-Id: <20200611174123.38382-1-anand.jain@oracle.com>
+Subject: [PATCH v2 2/8] btrfs-progs: subvolume create: add quiet option
+Date:   Fri, 12 Jun 2020 01:41:17 +0800
+Message-Id: <20200611174123.38382-3-anand.jain@oracle.com>
 X-Mailer: git-send-email 2.25.1
+In-Reply-To: <20200611174123.38382-1-anand.jain@oracle.com>
+References: <20200611174123.38382-1-anand.jain@oracle.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9649 signatures=668680
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 mlxscore=0 phishscore=0 malwarescore=0
- bulkscore=0 adultscore=0 mlxlogscore=999 spamscore=0 suspectscore=0
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=1 spamscore=0 adultscore=0
+ mlxscore=0 mlxlogscore=999 bulkscore=0 malwarescore=0 phishscore=0
  classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2004280000
  definitions=main-2006110139
 X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9649 signatures=668680
 X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 adultscore=0 priorityscore=1501
- lowpriorityscore=0 impostorscore=0 cotscore=-2147483648 suspectscore=0
+ lowpriorityscore=0 impostorscore=0 cotscore=-2147483648 suspectscore=1
  spamscore=0 bulkscore=0 malwarescore=0 phishscore=0 mlxscore=0
  mlxlogscore=999 clxscore=1015 classifier=spam adjust=0 reason=mlx
  scancount=1 engine=8.12.0-2004280000 definitions=main-2006110139
@@ -74,65 +77,39 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-v2: pr_verbose()'s first argument %level can accept -1, and if the
-    quiet option is not set, pr_verbose() shall print the message
-    overriding the verbose level set during the command option.
-    We need this -1 level to make sure we continue to print the
-    messages which have been printed with the default log level,
-    so that backward compatibility is maintained.
+Enable the quiet option to the btrfs(8) subvolume create command.
+Does the job quietly. For example:
+   btrfs --quiet subvolume create <path>
 
-    Now in v2 value: -1 is defined as MUST_LOG. The relevant patch
-    is sent as a reroll patch v3 
-[PATCH v3 02/16] btrfs-progs: add global verbose and quiet options and helper functions
-    in the part-1 set. So replace -1 with the new define wherever
-    necessary.
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+v2: use MUST_LOG
 
-    The whole series (both part-1 and part-2) has been pushed to
-    the git repo branch as below [2].
+ cmds/subvolume.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
------ main cover-letter -------
-The part-1 patchset [1] 'btrfs-progs: global verbose and quiet option'
-[1]
-https://patchwork.kernel.org/project/linux-btrfs/list/?series=207709
-
-provided a global structure to communicate the verbose and quiet options
-down to the individual sub-commands where the actual printf happens.
-So each of the sub-command could enable the verbose or quiet option as
-needed.
-But some of the sub-commands already had the verbose and quiet options
-locally at the sub-command level. So the aim of part-1 of this series
-was to merge the local verbose and quiet option with the global verbose
-and quiet, which it did successfully.
-
-In this series, part-2, adds the global quiet option to the found
-chatty sub-commands. So each of the sub-commands outputs were 
-individually checked and brought those logs under the global quiet
-option. As this process is nondeterministic (unless like in part-1 where
-sub-commands with -v or -q were checked) so there might have few logs
-left behind and those can be fixed as moved along.
-
-The whole series can be fetched from [2], which is based on latest devel
-branch, last commit: c1d6d654a3f9 (btrfs-progs: docs: update balance).
-
-[2]
-https://github.com/asj/btrfs-progs.git verbose
-
-Anand Jain (8):
-  btrfs-progs: quota rescan: add quiet option
-  btrfs-progs: subvolume create: add quiet option
-  btrfs-progs: subvolume delete: add quiet option
-  btrfs-progs: balance start: add quiet option
-  btrfs-progs: balance resume: add quiet option
-  btrfs-progs: subvolume snapshot: add quiet option
-  btrfs-progs: scrub start|resume: use global quiet option
-  btrfs-progs: scrub cancel: add quiet option
-
- cmds/balance.c   | 17 +++++++++++------
- cmds/quota.c     |  4 +++-
- cmds/scrub.c     | 27 +++++++++++++++++----------
- cmds/subvolume.c | 24 +++++++++++++++---------
- 4 files changed, 46 insertions(+), 26 deletions(-)
-
+diff --git a/cmds/subvolume.c b/cmds/subvolume.c
+index 279c75d0669a..459661a93e31 100644
+--- a/cmds/subvolume.c
++++ b/cmds/subvolume.c
+@@ -88,6 +88,8 @@ static const char * const cmd_subvol_create_usage[] = {
+ 	"",
+ 	"-i <qgroupid>  add the newly created subvolume to a qgroup. This",
+ 	"               option can be given multiple times.",
++	HELPINFO_INSERT_GLOBALS,
++	HELPINFO_INSERT_QUIET,
+ 	NULL
+ };
+ 
+@@ -169,7 +171,7 @@ static int cmd_subvol_create(const struct cmd_struct *cmd,
+ 	if (fddst < 0)
+ 		goto out;
+ 
+-	printf("Create subvolume '%s/%s'\n", dstdir, newname);
++	pr_verbose(MUST_LOG, "Create subvolume '%s/%s'\n", dstdir, newname);
+ 	if (inherit) {
+ 		struct btrfs_ioctl_vol_args_v2	args;
+ 
 -- 
 2.25.1
 

@@ -2,114 +2,117 @@ Return-Path: <SRS0=xGl5=7Y=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.4 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 476B6C433DF
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Jun 2020 17:43:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1BE2FC433DF
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Jun 2020 18:27:00 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 255ED207ED
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Jun 2020 17:43:58 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id EAA1B206D7
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Jun 2020 18:26:59 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="YRm2WOa3"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="sbPV9P5l"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727019AbgFKRn5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 11 Jun 2020 13:43:57 -0400
-Received: from userp2130.oracle.com ([156.151.31.86]:54486 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726972AbgFKRn4 (ORCPT
+        id S1727105AbgFKS06 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 11 Jun 2020 14:26:58 -0400
+Received: from userp2120.oracle.com ([156.151.31.85]:51112 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726673AbgFKS06 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 Jun 2020 13:43:56 -0400
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 05BHSl7A164475
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jun 2020 17:43:55 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
- date : message-id : in-reply-to : references : mime-version :
- content-transfer-encoding; s=corp-2020-01-29;
- bh=lDBL/EhEy/CLk2OzvkuwkekYm1vyvhw/fzOHdqRvOes=;
- b=YRm2WOa32cclVuB4j+0olsR/QjGvYFwp9LiD/5Ykak+MPH3zKUgWSw1lj83ySLBUqRos
- MMb/UijR0WEth7H6EAsMQ3j1dtQGlKWvJlFMtt8LUYdZ6elI1W6cwqNKJ4/fhuulSSF2
- 0TTDBHdoN3B3uobxIfDngOwOv/56NP7M2BNqmmKcnC1CXLxNUJ3dIJdEao0BN6ruKpWy
- wW/u3KcAV/ruWNQnkfL6apzRY+ajM0mZdIqyf8zKD9BQIUUM222n4xSpyL9QNxyJ8LTB
- 5+FLF/qvcdGDC4PuE8e0u2ZtIsc2P3U8rZn0cDeUR4UZ9xymRj1rTKUJS+dOQQc5pVrU jA== 
-Received: from aserp3030.oracle.com (aserp3030.oracle.com [141.146.126.71])
-        by userp2130.oracle.com with ESMTP id 31g2jrh8cj-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jun 2020 17:43:55 +0000
-Received: from pps.filterd (aserp3030.oracle.com [127.0.0.1])
-        by aserp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 05BHc8CG048315
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jun 2020 17:41:54 GMT
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by aserp3030.oracle.com with ESMTP id 31gmqsg0q1-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jun 2020 17:41:54 +0000
-Received: from abhmp0010.oracle.com (abhmp0010.oracle.com [141.146.116.16])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 05BHfsu1004828
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jun 2020 17:41:54 GMT
-Received: from localhost.localdomain (/39.109.231.106)
+        Thu, 11 Jun 2020 14:26:58 -0400
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 05BICp31093364;
+        Thu, 11 Jun 2020 18:15:43 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
+ references : from : message-id : date : mime-version : in-reply-to :
+ content-type : content-transfer-encoding; s=corp-2020-01-29;
+ bh=yY9mgjAZBq115x8OhOWw0g8V2RMnEBoWyNyFIiniJZw=;
+ b=sbPV9P5le7JGBLoLAw2SMfl/+aWZXq0es+BZ+ijBK9z0sF72qx0RyzXTuR8wtAIHzkxV
+ iZqs0d9EnG4EOrKe3ThEdgUw0g2CiOh7sCFxUUWyGghY6rj3Y/CqAp0B6Pm+koWzC9fs
+ 1wqSlOzUaQg5i1YfOJ0SxouJtW2ezr8NesSWZ+lc8Gg1Yu9kU52Aq+XpYsItGd263wsE
+ qmwLorc+fa6lvfpzpA0Gz0sh29fFwjX5WMOOZHY31fCP/vrbdoyIEaOZly0UeDwJ9kjN
+ zStOMOa0fzwRropvu91lAVn4m3rGr+1ZqRGHII1FmxgWnGjz0PsoBqEvXhO8SmP1isYZ 9w== 
+Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
+        by userp2120.oracle.com with ESMTP id 31g3sn97my-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
+        Thu, 11 Jun 2020 18:15:43 +0000
+Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
+        by userp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 05BI3o05186190;
+        Thu, 11 Jun 2020 18:13:43 GMT
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by userp3030.oracle.com with ESMTP id 31gn327rpu-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Thu, 11 Jun 2020 18:13:43 +0000
+Received: from abhmp0002.oracle.com (abhmp0002.oracle.com [141.146.116.8])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 05BIDfRJ024508;
+        Thu, 11 Jun 2020 18:13:41 GMT
+Received: from [192.168.1.102] (/39.109.231.106)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Thu, 11 Jun 2020 10:41:51 -0700
+        with ESMTP ; Thu, 11 Jun 2020 11:13:41 -0700
+Subject: Re: [PATCH v2 00/16] btrfs-progs: global verbose and quiet option
+To:     dsterba@suse.cz, David Sterba <dsterba@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <1574678357-22222-1-git-send-email-anand.jain@oracle.com>
+ <8a2bac99-5c07-2aa9-fe3b-e09f2ad16213@oracle.com>
+ <20200114114047.GC3929@suse.cz>
+ <d38e842d-e2a7-5d27-3157-72532c3526b4@oracle.com>
+ <b3981267-d64c-ebbf-233c-ea821cb7257f@oracle.com>
+ <20200605092413.GA27795@twin.jikos.cz>
 From:   Anand Jain <anand.jain@oracle.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 1/8] btrfs-progs: quota rescan: add quiet option
-Date:   Fri, 12 Jun 2020 01:41:16 +0800
-Message-Id: <20200611174123.38382-2-anand.jain@oracle.com>
-X-Mailer: git-send-email 2.25.1
-In-Reply-To: <20200611174123.38382-1-anand.jain@oracle.com>
-References: <20200611174123.38382-1-anand.jain@oracle.com>
+Message-ID: <17ad44fb-3e32-76f8-50f6-88160e7225fe@oracle.com>
+Date:   Fri, 12 Jun 2020 02:13:29 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.8.0
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <20200605092413.GA27795@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9649 signatures=668680
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 phishscore=0 bulkscore=0 mlxscore=0
- mlxlogscore=999 adultscore=0 spamscore=0 suspectscore=1 malwarescore=0
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 mlxscore=0 phishscore=0 malwarescore=0
+ bulkscore=0 adultscore=0 mlxlogscore=999 spamscore=0 suspectscore=0
  classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2004280000
- definitions=main-2006110139
+ definitions=main-2006110143
 X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9649 signatures=668680
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 adultscore=0 impostorscore=0
- cotscore=-2147483648 priorityscore=1501 spamscore=0 suspectscore=1
- lowpriorityscore=0 bulkscore=0 mlxlogscore=999 malwarescore=0 mlxscore=0
- phishscore=0 clxscore=1015 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2004280000 definitions=main-2006110138
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 adultscore=0 priorityscore=1501
+ lowpriorityscore=0 impostorscore=0 cotscore=-2147483648 suspectscore=0
+ spamscore=0 bulkscore=0 malwarescore=0 phishscore=0 mlxscore=0
+ mlxlogscore=999 clxscore=1015 classifier=spam adjust=0 reason=mlx
+ scancount=1 engine=8.12.0-2004280000 definitions=main-2006110143
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Enable the quiet option to the btrfs(8) quota rescan command.
-Does the job quietly. For example:
-  btrfs --quiet quota rescan
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
-v2: Use MUST_LOG
 
- cmds/quota.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+> Also, many options that have their own --verbose option should update
+> the help text to note that it's an alias of the global.
+> 
+> I'm going to take another look today, the scope of the change might be
+> too big to do in one go so some incremental steps might be needed.
 
-diff --git a/cmds/quota.c b/cmds/quota.c
-index 075fc79816ad..d84c8ad327d3 100644
---- a/cmds/quota.c
-+++ b/cmds/quota.c
-@@ -108,6 +108,8 @@ static const char * const cmd_quota_rescan_usage[] = {
- 	"",
- 	"-s   show status of a running rescan operation",
- 	"-w   wait for rescan operation to finish (can be already in progress)",
-+	HELPINFO_INSERT_GLOBALS,
-+	HELPINFO_INSERT_QUIET,
- 	NULL
- };
- 
-@@ -172,7 +174,7 @@ static int cmd_quota_rescan(const struct cmd_struct *cmd, int argc, char **argv)
- 	}
- 
- 	if (ret == 0) {
--		printf("quota rescan started\n");
-+		pr_verbose(MUST_LOG, "quota rescan started\n");
- 		fflush(stdout);
- 	} else if (ret < 0 && (!wait_for_completion || e != EINPROGRESS)) {
- 		error("quota rescan failed: %m");
--- 
-2.25.1
+  As global verbose depends on the local verbose to log messages, if
+  local verbose used stderr then the global verbose uses the stderr.
+  For example
+  patch:
+     btrfs-progs: send: use global verbose and quiet options
 
+  ------------------
+   ./btrfs send --help
+  <snip>
+     -v|--verbose     enable verbose output to stderr, each occurrence of
+                      this option increases verbosity
+     -q|--quiet       suppress all messages, except errors
+
+     Global options:
+     -v|--verbose       increase output verbosity
+     -q|--quiet         print only errors
+  ------------------
+
+  IMO verbose should be stdout. Should it be ok to change to stdout as it
+  is under verbose?
+
+Thanks.

@@ -1,130 +1,171 @@
-Return-Path: <SRS0=xGl5=7Y=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=a0ua=7Z=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0314FC433E0
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Jun 2020 22:34:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B2C22C433E1
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Jun 2020 00:09:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id DD8482073E
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Jun 2020 22:33:59 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 801B62087E
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Jun 2020 00:09:24 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="SM9Ay2c/"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726328AbgFKWdv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 11 Jun 2020 18:33:51 -0400
-Received: from smtprelay0239.hostedemail.com ([216.40.44.239]:43012 "EHLO
-        smtprelay.hostedemail.com" rhost-flags-OK-OK-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1726270AbgFKWdu (ORCPT
+        id S1726385AbgFLAJS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 11 Jun 2020 20:09:18 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36470 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726285AbgFLAJR (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 Jun 2020 18:33:50 -0400
-Received: from filter.hostedemail.com (clb03-v110.bra.tucows.net [216.40.38.60])
-        by smtprelay05.hostedemail.com (Postfix) with ESMTP id D65CC18029123;
-        Thu, 11 Jun 2020 22:33:48 +0000 (UTC)
-X-Session-Marker: 6A6F6540706572636865732E636F6D
-X-HE-Tag: cakes14_3209fc126dd7
-X-Filterd-Recvd-Size: 4066
-Received: from XPS-9350.home (unknown [47.151.136.130])
-        (Authenticated sender: joe@perches.com)
-        by omf14.hostedemail.com (Postfix) with ESMTPA;
-        Thu, 11 Jun 2020 22:33:46 +0000 (UTC)
-Message-ID: <3518483f1836bdfbc193292dc1639509ac33fe7c.camel@perches.com>
+        Thu, 11 Jun 2020 20:09:17 -0400
+Received: from mail-vs1-xe43.google.com (mail-vs1-xe43.google.com [IPv6:2607:f8b0:4864:20::e43])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1C0C0C08C5C1;
+        Thu, 11 Jun 2020 17:09:16 -0700 (PDT)
+Received: by mail-vs1-xe43.google.com with SMTP id y123so4376330vsb.6;
+        Thu, 11 Jun 2020 17:09:15 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=dQ0wVuVD5mbnL9oat3E9xbZZtGvABVpYY6zoc/gC/as=;
+        b=SM9Ay2c/2xgFdaM32eJi+cNPWo3yB3m6cBPUuiHhkD3ji1sb4saRSL6ZbZzg4xzfzC
+         Ego6OC6WRzAMugcreC7TNtKgVF2EXQj5tjsLBlWwGNxQd3g+pQo1WSDsHq8gLQPslSb3
+         qYCUJmIec6mluqiRWzPf7jmgb+UcRBbbgiD+kkwOSmXamFlGeqv4rRicZwBjhtddJv8N
+         hxYqaMTbKHEVg/CCboYR7XW4a4Mnh8K11q8r45irojfEgdFCz0TStwMS5vbQsV1yQuJY
+         XpiGeICTU6PeKdq0oLyX0cd2FXsHe8XhKZDRY8wtP+TxgbhYLu4/yAGowrLOVRya4fhn
+         VDdw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=dQ0wVuVD5mbnL9oat3E9xbZZtGvABVpYY6zoc/gC/as=;
+        b=KxVcX1WSjbFHFxzJsNjm66+1Nd8fZIjUBOxWAqCjBfSZtvAr2lYizKv4e8yHS8Pn2B
+         CBfj8hpvuoQAnr64xhYDZYFPiiPjWczM+DXEq4iRYFxTMxWUFyulST957AqmE3Vu7O/o
+         QJ6J14ZTaDCLHmJFGFL+zYxuxlFN2ucjvQgk/UisurfWDFETR9WHIu/BZxin5adIqLdJ
+         ECbusvOyIaJl2Iwr0R5jcZLbWMIAf9C3STo7J0AN9edJGCNnUk6IwVjX85AbOU133g4l
+         IYRRp2et5mQ9mbxbUZanVsTDbukPslQMqHZdHUldjXomyAFV4awQLe1DadD1AQN2NFb9
+         3r9g==
+X-Gm-Message-State: AOAM5338trVPdixgOYMt+U9XtV2SoiQxdJBkqn04IAv/+1Pji2z1D+sg
+        WRDH9EU/fscAkwkgyrU39rEx9PZRJcUGybdCBU0Yn2zJ
+X-Google-Smtp-Source: ABdhPJxKR4zwGXMlhODAP+l4ncod5fB9+ttu3+isDcOuBHeikejSU3l6mGXzKvhEiYWPJ02PLPMfcY/lN2W1EhnbQIk=
+X-Received: by 2002:a67:f918:: with SMTP id t24mr8872355vsq.18.1591920554784;
+ Thu, 11 Jun 2020 17:09:14 -0700 (PDT)
+MIME-Version: 1.0
+References: <20200609104604.1594-7-stanimir.varbanov@linaro.org>
+ <20200609111414.GC780233@kroah.com> <dc85bf9e-e3a6-15a1-afaa-0add3e878573@linaro.org>
+ <20200610133717.GB1906670@kroah.com> <31e1aa72b41f9ff19094476033511442bb6ccda0.camel@perches.com>
+ <2fab7f999a6b5e5354b23d06aea31c5018b9ce18.camel@perches.com>
+ <20200611062648.GA2529349@kroah.com> <bc92ee5948c3e71b8f1de1930336bbe162d00b34.camel@perches.com>
+ <20200611105217.73xwkd2yczqotkyo@holly.lan> <ed7dd5b4-aace-7558-d012-fb16ce8c92d6@linaro.org>
+ <20200611121817.narzkqf5x7cvl6hp@holly.lan> <CAJfuBxzE=A0vzsjNai_jU_16R_P0haYA-FHnjZcaHOR_3fy__A@mail.gmail.com>
+In-Reply-To: <CAJfuBxzE=A0vzsjNai_jU_16R_P0haYA-FHnjZcaHOR_3fy__A@mail.gmail.com>
+From:   jim.cromie@gmail.com
+Date:   Thu, 11 Jun 2020 18:08:48 -0600
+Message-ID: <CAJfuBxyUfzM-Jmf_39YJHgfy0jLXdRjhdsNLuUacZbJA2unjcg@mail.gmail.com>
 Subject: Re: [PATCH v3 6/7] venus: Make debug infrastructure more flexible
-From:   Joe Perches <joe@perches.com>
-To:     Jason Baron <jbaron@akamai.com>, jim.cromie@gmail.com,
-        Daniel Thompson <daniel.thompson@linaro.org>
+To:     Daniel Thompson <daniel.thompson@linaro.org>
 Cc:     Stanimir Varbanov <stanimir.varbanov@linaro.org>,
+        Joe Perches <joe@perches.com>,
         Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
         Linux Documentation List <linux-doc@vger.kernel.org>,
         LKML <linux-kernel@vger.kernel.org>, linux-media@vger.kernel.org,
         linux-arm-msm@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        linux-acpi@vger.kernel.org, netdev@vger.kernel.org
-Date:   Thu, 11 Jun 2020 15:33:45 -0700
-In-Reply-To: <e65d2c81-6d0b-3c1e-582c-56d707c0d1f1@akamai.com>
-References: <20200609104604.1594-7-stanimir.varbanov@linaro.org>
-         <20200609111414.GC780233@kroah.com>
-         <dc85bf9e-e3a6-15a1-afaa-0add3e878573@linaro.org>
-         <20200610133717.GB1906670@kroah.com>
-         <31e1aa72b41f9ff19094476033511442bb6ccda0.camel@perches.com>
-         <2fab7f999a6b5e5354b23d06aea31c5018b9ce18.camel@perches.com>
-         <20200611062648.GA2529349@kroah.com>
-         <bc92ee5948c3e71b8f1de1930336bbe162d00b34.camel@perches.com>
-         <20200611105217.73xwkd2yczqotkyo@holly.lan>
-         <ed7dd5b4-aace-7558-d012-fb16ce8c92d6@linaro.org>
-         <20200611121817.narzkqf5x7cvl6hp@holly.lan>
-         <CAJfuBxzE=A0vzsjNai_jU_16R_P0haYA-FHnjZcaHOR_3fy__A@mail.gmail.com>
-         <e65d2c81-6d0b-3c1e-582c-56d707c0d1f1@akamai.com>
-Content-Type: text/plain; charset="ISO-8859-1"
-User-Agent: Evolution 3.36.2-0ubuntu1 
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
+        linux-acpi@vger.kernel.org, netdev@vger.kernel.org,
+        Jason Baron <jbaron@akamai.com>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, 2020-06-11 at 17:59 -0400, Jason Baron wrote:
-> 
-> On 6/11/20 5:19 PM, jim.cromie@gmail.com wrote:
-> > trimmed..
-> > 
-> > > > > Currently I think there not enough "levels" to map something like
-> > > > > drm.debug to the new dyn dbg feature. I don't think it is intrinsic
-> > > > > but I couldn't find the bit of the code where the 5-bit level in struct
-> > > > > _ddebug is converted from a mask to a bit number and vice-versa.
-> > > > 
-> > > > Here [1] is Joe's initial suggestion. But I decided that bitmask is a
-> > > > good start for the discussion.
-> > > > 
-> > > > I guess we can add new member uint "level" in struct _ddebug so that we
-> > > > can cover more "levels" (types, groups).
-> > > 
-> > > I don't think it is allocating only 5 bits that is the problem!
+calling out some thinkos
 
-There were 6 unused bits in struct _ddebug;
+On Thu, Jun 11, 2020 at 3:19 PM <jim.cromie@gmail.com> wrote:
+>
+> heres what I have in mind.  whats described here is working.
+> I'll send it out soon
+>
+> commit 20298ec88cc2ed64269c8be7b287a24e60a5347e
+> Author: Jim Cromie <jim.cromie@gmail.com>
+> Date:   Wed Jun 10 12:55:08 2020 -0600
+>
+>     dyndbg: WIP towards module->debugflags based callsite controls
+>
+>     There are *lots* of ad-hoc debug printing solutions in kernel,
+>     this is a 1st attempt at providing a common mechanism for many of them.
+>
+>     Basically, there are 2 styles of debug printing:
+>     - levels, with increasing verbosity, 1-10 forex
+>     - bits/flags, independently controlling separate groups of dprints
+>
+>     This patch does bits/flags (with no distinction made yet between 2)
+>
+>     API:
+>
+>     - change pr_debug(...)  -->  pr_debug_typed(type_id=0, ...)
 
-The original idea was to avoid expanding the already somewhat
-large struct _ddebug uses and the __verbose/__dyndbg section
-that can have quite a lot of these structs.
+pr_debug, pr_debug_n now in printk.h
 
-I imagine adding another int or long wouldn't be too bad.
+_?_?dynamic_.+_cl  adaptations in dynamic_debug.h
 
-> > > The problem is that those 5 bits need not be encoded as a bitmask by
-> > > dyndbg, that can simply be the category code for the message. They only
-> > > need be converted into a mask when we compare them to the mask provided
-> > > by the user.
-> > > 
+>     - all existing uses have type_id=0
+>     - developer creates exclusive types of log messages with type_id>0
+>       1, 2, 3 are disjoint groups, for example: hi, mid, low
+>
+>     - !!type_id is just an additional callsite selection criterion
+>
+>       Qfoo() { echo module foo $* >/proc/dynamic_debug/control }
+>       Qfoo +p               # all groups, including default 0
+>       Qfoo mflags 1 +p      # only group 1
+>       Qfoo mflags 12 +p     # TBD[1]: groups 1 or 2
+>       Qfoo mflags 0 +p      # ignored atm TBD[2]
+>       Qfoo mflags af +p     # TBD[3]: groups a or f (10 or 15)
+>
+>     so patch does:
+>
+>     - add u32 debugflags to struct module. Each bit is a separate print-class.
 
-I also suggested adding a pointer to whatever is provided
-by the developer so the address of something like
-MODULE_PARM_DESC(variable, ...) can be also be used.
+this is feeling wrong now.
+setting these bits would have to trigger an update via ddebug_exec_query
+kinda like setting a bit would trigger
+       echo module $foo mflags $bitpos +p > control
 
-> > heres what I have in mind.  whats described here is working.
-> > I'll send it out soon
-> 
-> Cool. thanks for working on this!
+its possible, but not 1st, or 2nd perhaps.
+In general Im quite leery of rigging up some callback to do it.
 
-Truly, thank you both Jim and Stanimir.
+its prudent to effect all debug changes via >control
 
-Please remember that dynamic_debug is not required and
-pr_debug should still work.
+>     - in ddebug_change()
+>       filter on !! module->debugflags,
+>       IFF query->module is given, and matches dt->mod_name
+>       and query->mflags is given, and bitmatches module->debugflags
 
-> >     API:
-> > 
-> >     - change pr_debug(...)  -->  pr_debug_typed(type_id=0, ...)
-> >     - all existing uses have type_id=0
-> >     - developer creates exclusive types of log messages with type_id>0
-> >       1, 2, 3 are disjoint groups, for example: hi, mid, low
+wrong, ddebug_change cannot respond to changes of debugflags,
+most it could do is consult it on queries
 
-You could have a u8 for type if there are to be 3 classes
 
-	bitmask
-	level
-	group by value
+>     - in parse_query()
+>       accept new query term: mflags $arg
+>       populate query->mflags
+>       arg-type needs some attention, but basic plumbing is there
+>
+>     WIP: not included:
+>
+>     - pr_debug_typed( bitpos=0, ....)'
 
-though I believe group by value might as well just be bitmask
-and bool is_bitmask is enough (!is_bitmask would be level)
+now done, as pr_debug_n, pr_debug in printk.h
 
-cheers, Joe
+Ive adapted the macros with a "_cl(cl, " insertion,
 
+also added trailing prcls to control output
+
+>
+>     - no way to exersize new code in ddebug_change
+>       need pr_debug_typed() to make a (not-null) typed callsite.
+>       also no way to set module->debugflags
+
+close enough to see the thinkos

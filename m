@@ -5,61 +5,61 @@ X-Spam-Level:
 X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,
-	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6D0E2C433E0
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Jun 2020 11:26:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 68431C433E0
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Jun 2020 11:28:02 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 340FF207D8
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Jun 2020 11:26:54 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 43D0520792
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Jun 2020 11:28:02 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="dd+PsrUS"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="FwPg0kIB"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726053AbgFLL0x (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 12 Jun 2020 07:26:53 -0400
-Received: from userp2120.oracle.com ([156.151.31.85]:42012 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725886AbgFLL0x (ORCPT
+        id S1726272AbgFLL2B (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 12 Jun 2020 07:28:01 -0400
+Received: from aserp2120.oracle.com ([141.146.126.78]:59144 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726044AbgFLL2A (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 Jun 2020 07:26:53 -0400
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 05CBQXhq176445;
-        Fri, 12 Jun 2020 11:26:49 GMT
+        Fri, 12 Jun 2020 07:28:00 -0400
+Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
+        by aserp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 05CBR4VX113567;
+        Fri, 12 Jun 2020 11:27:57 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
  subject : date : message-id : in-reply-to : references : mime-version :
  content-transfer-encoding; s=corp-2020-01-29;
- bh=lwlZjU42kMH0F/Iqs/etoB26xP/PGAOgtdB1XZlzssA=;
- b=dd+PsrUS4MG28qsP8BM7DMcKqfUozkj3/53gJDYNfwFPPnsqcHtLa3ZLyaSzRed09aak
- 9wK6wuKP3Umx8fhX1iRs3pDyV7Ylp6NryQCTVWg+4MXSfqYKYKWavygIgA++ABbsh2nH
- S0rFEozO97XAI41S7GmkztWnSxOKvS2Upu1Up5TGy+DXQi0mLrut3+2TXc/Mr9f54h3i
- oNdiA2d9I014LZ7zDLNW2riN/bNOFlROeMX5lNIhe8XhVnpS7iqYYMxWlxjH55HytH84
- P4BTAYTuxfiBaA+shjrsZ8QYRLiGkYlD7am3Ttd/YIrtdIjwQqajBrFlc5P7zAgCq5Xy xw== 
+ bh=SqbMjTQYEg5OqrG5J46mVyPIEQm6jD/BtUDvA9xajcQ=;
+ b=FwPg0kIB5yiGlVpvc0u+q+hN7oEvTh678us3CySbGES1UUKeppynZZjWum6Qtdrcmbn0
+ AldGnjJLnDaY9pm1kjyhkVa6RgGDL/7vgaMC9KyGp5rGGvWwUf4DXcdK4UqVoGGs98TK
+ 6zO3nKWiwEP33e2EHjD+e3bN0qaLMj65TwdI+zl17Z6EGxY9XKqptJ3waNrIOU8ptR/Z
+ 0lD0eWD/4DFMxkGUxndpGZAr5cTd0R3S7LZ+bPjiZD03qG4qPdgSd+4aWIiENRev7uzQ
+ 0sYG2kWMwiusgqJmtDVeVhFQQmNeN+ls3dyWX9CGxmhxOEzKACqK9NJu72G9oQzo5eng jw== 
 Received: from aserp3030.oracle.com (aserp3030.oracle.com [141.146.126.71])
-        by userp2120.oracle.com with ESMTP id 31g3sncfku-1
+        by aserp2120.oracle.com with ESMTP id 31jepp6eub-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
-        Fri, 12 Jun 2020 11:26:48 +0000
+        Fri, 12 Jun 2020 11:27:57 +0000
 Received: from pps.filterd (aserp3030.oracle.com [127.0.0.1])
-        by aserp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 05CBOtgb156293;
-        Fri, 12 Jun 2020 11:26:48 GMT
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by aserp3030.oracle.com with ESMTP id 31m8te01rb-1
+        by aserp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 05CBOhik156099;
+        Fri, 12 Jun 2020 11:25:57 GMT
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by aserp3030.oracle.com with ESMTP id 31m8te0114-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Fri, 12 Jun 2020 11:26:48 +0000
+        Fri, 12 Jun 2020 11:25:56 +0000
 Received: from abhmp0016.oracle.com (abhmp0016.oracle.com [141.146.116.22])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id 05CBQl9A026214;
-        Fri, 12 Jun 2020 11:26:47 GMT
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id 05CBPtPs000570;
+        Fri, 12 Jun 2020 11:25:55 GMT
 Received: from localhost.localdomain (/39.109.231.106)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Fri, 12 Jun 2020 04:26:47 -0700
+        with ESMTP ; Fri, 12 Jun 2020 04:25:54 -0700
 From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     dsterba@suse.com
-Subject: [PATCH v3 13/16] btrfs-progs: inspect-internal logical-resolve: use global verbose option
-Date:   Fri, 12 Jun 2020 19:26:38 +0800
-Message-Id: <20200612112638.4018-1-anand.jain@oracle.com>
+Subject: [PATCH v3 09/16] btrfs-progs: rescue chunk-recover: use global verbose option
+Date:   Fri, 12 Jun 2020 19:25:45 +0800
+Message-Id: <20200612112545.3793-1-anand.jain@oracle.com>
 X-Mailer: git-send-email 2.25.1
-In-Reply-To: <1574678357-22222-14-git-send-email-anand.jain@oracle.com>
-References: <1574678357-22222-14-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1574678357-22222-10-git-send-email-anand.jain@oracle.com>
+References: <1574678357-22222-10-git-send-email-anand.jain@oracle.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9649 signatures=668680
@@ -68,123 +68,150 @@ X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 mlxlogscore=999 m
  classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2004280000
  definitions=main-2006120085
 X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9649 signatures=668680
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 adultscore=0 priorityscore=1501
- lowpriorityscore=0 impostorscore=0 cotscore=-2147483648 suspectscore=1
- spamscore=0 bulkscore=0 malwarescore=0 phishscore=0 mlxscore=0
- mlxlogscore=999 clxscore=1015 classifier=spam adjust=0 reason=mlx
- scancount=1 engine=8.12.0-2004280000 definitions=main-2006120086
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 lowpriorityscore=0 suspectscore=1
+ priorityscore=1501 bulkscore=0 clxscore=1015 phishscore=0 impostorscore=0
+ malwarescore=0 mlxscore=0 cotscore=-2147483648 adultscore=0 spamscore=0
+ mlxlogscore=999 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2004280000 definitions=main-2006120086
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Transpire global --verbose option down to the
-btrfs inspect-internal logical-resolve sub-command.
+Transpire global --verbose option down to the btrfs rescue chunk-recover
+sub-command.
 
-Command btrfs inspect-internal logical-resolve provides local verbose
-option this patch makes it enable-able by using the global --verbose
-option.
+For example: Both global and local verbose options are now supported.
+ btrfs -v|--verbose rescue chunk-recover
+ btrfs rescue chunk-recover -v
 
 Suggested-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
 v3: update help and documentation
-v2: Use new helper function bconf_be_verbose()
+v2: Use new helper functions and defines
+     HELPINFO_INSERT_GLOBALS, BTRFS_BCONF_UNSET, BTRFS_BCONF_QUIET
+     bconf_be_verbose(), bconf_be_quiet()
+    Drop verbose argument in init_recover_control()
 
- Documentation/btrfs-inspect-internal.asciidoc |  1 +
- cmds/inspect.c                                | 25 ++++++++-----------
- 2 files changed, 12 insertions(+), 14 deletions(-)
+ Documentation/btrfs-rescue.asciidoc |  2 +-
+ cmds/rescue-chunk-recover.c         |  9 ++++-----
+ cmds/rescue.c                       | 14 ++++++++++----
+ cmds/rescue.h                       |  2 +-
+ 4 files changed, 16 insertions(+), 11 deletions(-)
 
-diff --git a/Documentation/btrfs-inspect-internal.asciidoc b/Documentation/btrfs-inspect-internal.asciidoc
-index e8d4c861603d..c0009e2e5382 100644
---- a/Documentation/btrfs-inspect-internal.asciidoc
-+++ b/Documentation/btrfs-inspect-internal.asciidoc
-@@ -152,6 +152,7 @@ resolve paths to all files at given 'logical' address in the linear filesystem s
- skip the path resolving and print the inodes instead
+diff --git a/Documentation/btrfs-rescue.asciidoc b/Documentation/btrfs-rescue.asciidoc
+index f94a0ff2b45e..995515890e9e 100644
+--- a/Documentation/btrfs-rescue.asciidoc
++++ b/Documentation/btrfs-rescue.asciidoc
+@@ -24,7 +24,7 @@ Recover the chunk tree by scanning the devices
+ -y::::
+ assume an answer of 'yes' to all questions.
  -v::::
- verbose mode, print count of returned paths and all ioctl() return values
-+This option is merged to the global verbose option
- -o::::
- ignore offsets, find all references to an extent instead of a single block.
- Requires kernel support for the V2 ioctl (added in 4.15). The results might need
-diff --git a/cmds/inspect.c b/cmds/inspect.c
-index b0d3c8102400..bbbac4431ac7 100644
---- a/cmds/inspect.c
-+++ b/cmds/inspect.c
-@@ -38,7 +38,7 @@ static const char * const inspect_cmd_group_usage[] = {
- 	NULL
- };
+-verbose mode.
++verbose mode. This option is merged to the global verbose option.
+ -h::::
+ help.
  
--static int __ino_to_path_fd(u64 inum, int fd, int verbose, const char *prepend)
-+static int __ino_to_path_fd(u64 inum, int fd, const char *prepend)
+diff --git a/cmds/rescue-chunk-recover.c b/cmds/rescue-chunk-recover.c
+index a13acc015d11..1854e7984127 100644
+--- a/cmds/rescue-chunk-recover.c
++++ b/cmds/rescue-chunk-recover.c
+@@ -194,8 +194,7 @@ static struct btrfs_chunk *create_chunk_item(struct chunk_record *record)
+ 	return ret;
+ }
+ 
+-static void init_recover_control(struct recover_control *rc, int verbose,
+-		int yes)
++static void init_recover_control(struct recover_control *rc, int yes)
  {
- 	int ret;
- 	int i;
-@@ -117,8 +117,7 @@ static int cmd_inspect_inode_resolve(const struct cmd_struct *cmd,
- 	if (fd < 0)
- 		return 1;
+ 	memset(rc, 0, sizeof(struct recover_control));
+ 	cache_tree_init(&rc->chunk);
+@@ -208,7 +207,7 @@ static void init_recover_control(struct recover_control *rc, int verbose,
+ 	INIT_LIST_HEAD(&rc->rebuild_chunks);
+ 	INIT_LIST_HEAD(&rc->unrepaired_chunks);
  
--	ret = __ino_to_path_fd(arg_strtou64(argv[optind]), fd,
--			       bconf.verbose, argv[optind+1]);
-+	ret = __ino_to_path_fd(arg_strtou64(argv[optind]), fd, argv[optind+1]);
- 	close_file_or_dir(fd, dirstream);
- 	return !!ret;
+-	rc->verbose = verbose;
++	rc->verbose = bconf.verbose;
+ 	rc->yes = yes;
+ 	pthread_mutex_init(&rc->rc_lock, NULL);
+ }
+@@ -2319,14 +2318,14 @@ static void validate_rebuild_chunks(struct recover_control *rc)
+ /*
+  * Return 0 when successful, < 0 on error and > 0 if aborted by user
+  */
+-int btrfs_recover_chunk_tree(const char *path, int verbose, int yes)
++int btrfs_recover_chunk_tree(const char *path, int yes)
+ {
+ 	int ret = 0;
+ 	struct btrfs_root *root = NULL;
+ 	struct btrfs_trans_handle *trans;
+ 	struct recover_control rc;
  
-@@ -137,6 +136,8 @@ static const char * const cmd_inspect_logical_resolve_usage[] = {
- 	"            container's size in case it is not enough to read all the ",
- 	"            resolved results. The max value one can set is 64k with the",
- 	"            v1 ioctl. Sizes over 64k will use the v2 ioctl (kernel 4.15+)",
+-	init_recover_control(&rc, verbose, yes);
++	init_recover_control(&rc, yes);
+ 
+ 	ret = recover_prepare(&rc, path);
+ 	if (ret) {
+diff --git a/cmds/rescue.c b/cmds/rescue.c
+index 087c33befeff..bb65a672bbf3 100644
+--- a/cmds/rescue.c
++++ b/cmds/rescue.c
+@@ -38,8 +38,11 @@ static const char * const cmd_rescue_chunk_recover_usage[] = {
+ 	"Recover the chunk tree by scanning the devices one by one.",
+ 	"",
+ 	"-y	Assume an answer of `yes' to all questions",
+-	"-v	Verbose mode",
++	"-v	Verbose mode. This option is merged to the global verbose",
++        "       option",
+ 	"-h	Help",
 +	HELPINFO_INSERT_GLOBALS,
 +	HELPINFO_INSERT_VERBOSE,
  	NULL
  };
  
-@@ -146,7 +147,6 @@ static int cmd_inspect_logical_resolve(const struct cmd_struct *cmd,
- 	int ret;
- 	int fd;
- 	int i;
+@@ -49,7 +52,10 @@ static int cmd_rescue_chunk_recover(const struct cmd_struct *cmd,
+ 	int ret = 0;
+ 	char *file;
+ 	int yes = 0;
 -	int verbose = 0;
- 	int getpath = 1;
- 	int bytes_left;
- 	struct btrfs_ioctl_logical_ino_args loi = { 0 };
-@@ -169,7 +169,7 @@ static int cmd_inspect_logical_resolve(const struct cmd_struct *cmd,
- 			getpath = 0;
++
++	/* If verbose is unset, set it to 0 */
++	if (bconf.verbose == BTRFS_BCONF_UNSET)
++		bconf.verbose = BTRFS_BCONF_QUIET;
+ 
+ 	optind = 0;
+ 	while (1) {
+@@ -61,7 +67,7 @@ static int cmd_rescue_chunk_recover(const struct cmd_struct *cmd,
+ 			yes = 1;
  			break;
  		case 'v':
 -			verbose = 1;
-+			bconf_be_verbose();
++			bconf.verbose++;
  			break;
- 		case 'o':
- 			flags |= BTRFS_LOGICAL_INO_ARGS_IGNORE_OFFSET;
-@@ -211,13 +211,11 @@ static int cmd_inspect_logical_resolve(const struct cmd_struct *cmd,
- 		goto out;
+ 		default:
+ 			usage_unknown_option(cmd, argv);
+@@ -83,7 +89,7 @@ static int cmd_rescue_chunk_recover(const struct cmd_struct *cmd,
+ 		return 1;
  	}
  
--	if (verbose)
--		printf("ioctl ret=%d, total_size=%llu, bytes_left=%lu, "
--			"bytes_missing=%lu, cnt=%d, missed=%d\n",
--			ret, size,
--			(unsigned long)inodes->bytes_left,
--			(unsigned long)inodes->bytes_missing,
--			inodes->elem_cnt, inodes->elem_missed);
-+	pr_verbose(1,
-+"ioctl ret=%d, total_size=%llu, bytes_left=%lu, bytes_missing=%lu, cnt=%d, missed=%d\n",
-+		   ret, size, (unsigned long)inodes->bytes_left,
-+		   (unsigned long)inodes->bytes_missing, inodes->elem_cnt,
-+		   inodes->elem_missed);
+-	ret = btrfs_recover_chunk_tree(file, verbose, yes);
++	ret = btrfs_recover_chunk_tree(file, yes);
+ 	if (!ret) {
+ 		fprintf(stdout, "Chunk tree recovered successfully\n");
+ 	} else if (ret > 0) {
+diff --git a/cmds/rescue.h b/cmds/rescue.h
+index de486e2e2004..e594954f78e2 100644
+--- a/cmds/rescue.h
++++ b/cmds/rescue.h
+@@ -16,6 +16,6 @@
+ #define __BTRFS_RESCUE_H__
  
- 	bytes_left = sizeof(full_path);
- 	ret = snprintf(full_path, bytes_left, "%s/", argv[optind+1]);
-@@ -262,8 +260,7 @@ static int cmd_inspect_logical_resolve(const struct cmd_struct *cmd,
- 					goto out;
- 				}
- 			}
--			ret = __ino_to_path_fd(inum, path_fd, verbose,
--						full_path);
-+			ret = __ino_to_path_fd(inum, path_fd, full_path);
- 			if (path_fd != fd)
- 				close_file_or_dir(path_fd, dirs);
- 		} else {
+ int btrfs_recover_superblocks(const char *path, int verbose, int yes);
+-int btrfs_recover_chunk_tree(const char *path, int verbose, int yes);
++int btrfs_recover_chunk_tree(const char *path, int yes);
+ 
+ #endif
 -- 
 2.25.1
 

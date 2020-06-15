@@ -1,68 +1,105 @@
-Return-Path: <SRS0=tMoA=73=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=tCue=74=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
-	SPF_HELO_NONE,SPF_PASS autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6B684C433DF
-	for <linux-btrfs@archiver.kernel.org>; Sun, 14 Jun 2020 18:56:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1F8A0C433DF
+	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Jun 2020 09:52:45 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 4796F20739
-	for <linux-btrfs@archiver.kernel.org>; Sun, 14 Jun 2020 18:56:04 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E457120714
+	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Jun 2020 09:52:44 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1592160964;
-	bh=K4xDUOtGypMVSxo0Vi1uThZVPbJLPemsQEnMFSr/HGE=;
-	h=Subject:From:In-Reply-To:References:Date:To:Cc:List-ID:From;
-	b=y6n59Cc1djtuFQxhVbvCPf9tIDwvdG7/ZxVHIOaj7nDv4X93dC36Ohd9eVVZEU6fr
-	 xVi8yVS72mSR7g/YvLD0Wc6ge2/OnGEscjd/Pqmg85zahndHNGwKCKQd3moOqW21Ja
-	 FXx73gMiadMZ0UfyozW/gpzfPoaYs+58IrEDIdiU=
+	s=default; t=1592214765;
+	bh=2CP6EME2eUoiPvgl2wvbLj9LgbsufaXJf5cJEQAnS80=;
+	h=From:To:Subject:Date:List-ID:From;
+	b=Wxo3L4wzbAyGerMpDRBLYcsrwMKuX8CQRODuDeiaauJmbaOrh8jCnJ9x2/G2ovDqI
+	 wEhmP/fo4G023zKksAxrfj+tCBAG9x5m9ifhLuW1Ed9MBzTOUjAb3eQtiEBPhB7a26
+	 /CxFPzlBeqyxl44Veu4qhxg9BuY0uQW3Imx5jxKs=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727027AbgFNSza (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 14 Jun 2020 14:55:30 -0400
-Received: from mail.kernel.org ([198.145.29.99]:51942 "EHLO mail.kernel.org"
+        id S1728813AbgFOJwn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 15 Jun 2020 05:52:43 -0400
+Received: from mail.kernel.org ([198.145.29.99]:47648 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726648AbgFNSz2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 14 Jun 2020 14:55:28 -0400
-Subject: Re: [GIT PULL] Btrfs updates for 5.8, part 2
+        id S1728368AbgFOJwn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 15 Jun 2020 05:52:43 -0400
+Received: from debian8.Home (bl8-197-74.dsl.telepac.pt [85.241.197.74])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 31FC42068E
+        for <linux-btrfs@vger.kernel.org>; Mon, 15 Jun 2020 09:52:42 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1592160928;
-        bh=K4xDUOtGypMVSxo0Vi1uThZVPbJLPemsQEnMFSr/HGE=;
-        h=From:In-Reply-To:References:Date:To:Cc:From;
-        b=maXewfQQyTyPay1Rfp+i3bcLD1g/E6BJsHPlSxmGT7jSHRmdzRisu5AIDI/vHkdTl
-         0A0rA84wy4zsWFArpkEhN8ELroBhnvST2bDCsYlZiK43kkuO5NEDKZJxPVvc/gnaVp
-         ThayHSu7xO3bfkx8O264EpIfpLTQr0mTXeeH55AY=
-From:   pr-tracker-bot@kernel.org
-In-Reply-To: <cover.1592135316.git.dsterba@suse.com>
-References: <cover.1592135316.git.dsterba@suse.com>
-X-PR-Tracked-List-Id: <linux-kernel.vger.kernel.org>
-X-PR-Tracked-Message-Id: <cover.1592135316.git.dsterba@suse.com>
-X-PR-Tracked-Remote: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git
- for-5.8-part2-tag
-X-PR-Tracked-Commit-Id: 55e20bd12a56e06c38b953177bb162cbbaa96004
-X-PR-Merge-Tree: torvalds/linux.git
-X-PR-Merge-Refname: refs/heads/master
-X-PR-Merge-Commit-Id: 9d645db853a4cd1b7077931491d0055602d3d420
-Message-Id: <159216092857.5153.16082036974540107892.pr-tracker-bot@kernel.org>
-Date:   Sun, 14 Jun 2020 18:55:28 +0000
-To:     David Sterba <dsterba@suse.com>
-Cc:     torvalds@linux-foundation.org, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+        s=default; t=1592214762;
+        bh=2CP6EME2eUoiPvgl2wvbLj9LgbsufaXJf5cJEQAnS80=;
+        h=From:To:Subject:Date:From;
+        b=rvYNcp9WHZmsKvXxfK9J5ptiIDpv8oZ5ryk4ACRJRKyIGCIxe2HMipX7ejC/cq8g1
+         4v0bzVMnpW1OD5IRMgZ+dCbP66oDTLcwFSJ2pqpqORyVW7weAhhVLKL69eD/M59jvw
+         yAb4Koew1M8+ZE+cJnUFksQN/V0zQ8H9oTTukQys=
+From:   fdmanana@kernel.org
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/2] Btrfs: remove no longer used log_list member of struct btrfs_ordered_extent
+Date:   Mon, 15 Jun 2020 10:36:48 +0100
+Message-Id: <20200615093648.287105-1-fdmanana@kernel.org>
+X-Mailer: git-send-email 2.26.2
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The pull request you sent on Sun, 14 Jun 2020 13:56:05 +0200:
+From: Filipe Manana <fdmanana@suse.com>
 
-> git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.8-part2-tag
+The 'log_list' member of an ordered extent was used keep track of which
+ordered extents we needed to wait after logging metadata, but is not used
+anymore since commit 5636cf7d6dc86f ("btrfs: remove the logged extents
+infrastructure"), as we now always wait on ordered extent completion
+before logging metadata. So just remove it since it's doing nothing and
+making each ordered extent structure waste more memory (2 pointers).
 
-has been merged into torvalds/linux.git:
-https://git.kernel.org/torvalds/c/9d645db853a4cd1b7077931491d0055602d3d420
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/ordered-data.c | 2 --
+ fs/btrfs/ordered-data.h | 3 ---
+ 2 files changed, 5 deletions(-)
 
-Thank you!
-
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index e13b3d28c063..73d5352c401b 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -197,7 +197,6 @@ static int __btrfs_add_ordered_extent(struct inode *inode, u64 file_offset,
+ 	INIT_LIST_HEAD(&entry->root_extent_list);
+ 	INIT_LIST_HEAD(&entry->work_list);
+ 	init_completion(&entry->completion);
+-	INIT_LIST_HEAD(&entry->log_list);
+ 	INIT_LIST_HEAD(&entry->trans_list);
+ 
+ 	trace_btrfs_ordered_extent_add(inode, entry);
+@@ -429,7 +428,6 @@ void btrfs_put_ordered_extent(struct btrfs_ordered_extent *entry)
+ 	trace_btrfs_ordered_extent_put(entry->inode, entry);
+ 
+ 	if (refcount_dec_and_test(&entry->refs)) {
+-		ASSERT(list_empty(&entry->log_list));
+ 		ASSERT(list_empty(&entry->trans_list));
+ 		ASSERT(list_empty(&entry->root_extent_list));
+ 		ASSERT(RB_EMPTY_NODE(&entry->rb_node));
+diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
+index c01c9698250b..35e81b80bd5d 100644
+--- a/fs/btrfs/ordered-data.h
++++ b/fs/btrfs/ordered-data.h
+@@ -101,9 +101,6 @@ struct btrfs_ordered_extent {
+ 	/* list of checksums for insertion when the extent io is done */
+ 	struct list_head list;
+ 
+-	/* If we need to wait on this to be done */
+-	struct list_head log_list;
+-
+ 	/* If the transaction needs to wait on this ordered extent */
+ 	struct list_head trans_list;
+ 
 -- 
-Deet-doot-dot, I am a bot.
-https://korg.wiki.kernel.org/userdoc/prtracker
+2.26.2
+

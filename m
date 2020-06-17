@@ -2,54 +2,100 @@ Return-Path: <SRS0=y2QO=76=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BECBAC433E1
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Jun 2020 09:17:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D086BC433E0
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Jun 2020 11:08:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id AB0B72082F
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Jun 2020 09:17:29 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B05C120DD4
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Jun 2020 11:08:53 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="uEnXH1vp"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726758AbgFQJR0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 17 Jun 2020 05:17:26 -0400
-Received: from mx2.suse.de ([195.135.220.15]:49518 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725773AbgFQJRW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 Jun 2020 05:17:22 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 9923EAE0E;
-        Wed, 17 Jun 2020 09:17:25 +0000 (UTC)
-From:   Nikolay Borisov <nborisov@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 0/3] Refactor prealloc_file_extent_cluster
-Date:   Wed, 17 Jun 2020 12:10:41 +0300
-Message-Id: <20200617091044.27846-1-nborisov@suse.com>
-X-Mailer: git-send-email 2.17.1
+        id S1726652AbgFQLIk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 17 Jun 2020 07:08:40 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56104 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725554AbgFQLIj (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 17 Jun 2020 07:08:39 -0400
+Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:e::133])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3E515C061573;
+        Wed, 17 Jun 2020 04:08:37 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=bombadil.20170209; h=In-Reply-To:Content-Type:MIME-Version
+        :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+        Content-Transfer-Encoding:Content-ID:Content-Description;
+        bh=6UMFO2TmbdpnJT0c5EXP2Aydp2MaQ5RYJc+GA8ZrxVg=; b=uEnXH1vpZaG2U8FFM/pYkfHc5Y
+        SeAjiiS0wb4uxVIyAse/Mlkd6U3qaJ4r4kEh9T7lE+/o5L5t1dNjJ28G/NIqVe0DWG/fV4/lQHo1o
+        QDwGZP0qomelniIocS0ybLZQjvlRxX/INLpmjUp5+LL4fh2HQo9F6qYCqhyg1imU2AHxFgkQk0jvm
+        8nOqGDFYb7CZcfryOG0jsO4VWYAKfvslQU5aBRvXZEAb7odmsPQzoqooHS6qL3UZV2AdZFQmkWhak
+        uKTLzMfmXR1ZbqokaLQoFEtbowD5zP+hhe/qVdQ+y0/QB4rOvsOqTW0JOhm+R3UUkEQZTtPszFNR9
+        vDBLz4ZQ==;
+Received: from willy by bombadil.infradead.org with local (Exim 4.92.3 #3 (Red Hat Linux))
+        id 1jlVvY-0007BQ-88; Wed, 17 Jun 2020 11:08:20 +0000
+Date:   Wed, 17 Jun 2020 04:08:20 -0700
+From:   Matthew Wilcox <willy@infradead.org>
+To:     Michal Hocko <mhocko@kernel.org>
+Cc:     dsterba@suse.cz, Joe Perches <joe@perches.com>,
+        Waiman Long <longman@redhat.com>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        David Howells <dhowells@redhat.com>,
+        Jarkko Sakkinen <jarkko.sakkinen@linux.intel.com>,
+        James Morris <jmorris@namei.org>,
+        "Serge E. Hallyn" <serge@hallyn.com>,
+        Linus Torvalds <torvalds@linux-foundation.org>,
+        David Rientjes <rientjes@google.com>,
+        Johannes Weiner <hannes@cmpxchg.org>,
+        Dan Carpenter <dan.carpenter@oracle.com>,
+        "Jason A . Donenfeld" <Jason@zx2c4.com>, linux-mm@kvack.org,
+        keyrings@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-crypto@vger.kernel.org, linux-pm@vger.kernel.org,
+        linux-stm32@st-md-mailman.stormreply.com,
+        linux-amlogic@lists.infradead.org,
+        linux-mediatek@lists.infradead.org, linuxppc-dev@lists.ozlabs.org,
+        virtualization@lists.linux-foundation.org, netdev@vger.kernel.org,
+        linux-ppp@vger.kernel.org, wireguard@lists.zx2c4.com,
+        linux-wireless@vger.kernel.org, devel@driverdev.osuosl.org,
+        linux-scsi@vger.kernel.org, target-devel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-cifs@vger.kernel.org,
+        linux-fscrypt@vger.kernel.org, ecryptfs@vger.kernel.org,
+        kasan-dev@googlegroups.com, linux-bluetooth@vger.kernel.org,
+        linux-wpan@vger.kernel.org, linux-sctp@vger.kernel.org,
+        linux-nfs@vger.kernel.org, tipc-discussion@lists.sourceforge.net,
+        linux-security-module@vger.kernel.org,
+        linux-integrity@vger.kernel.org
+Subject: Re: [PATCH v4 0/3] mm, treewide: Rename kzfree() to kfree_sensitive()
+Message-ID: <20200617110820.GG8681@bombadil.infradead.org>
+References: <20200616015718.7812-1-longman@redhat.com>
+ <fe3b9a437be4aeab3bac68f04193cb6daaa5bee4.camel@perches.com>
+ <20200616230130.GJ27795@twin.jikos.cz>
+ <20200617003711.GD8681@bombadil.infradead.org>
+ <20200617071212.GJ9499@dhcp22.suse.cz>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20200617071212.GJ9499@dhcp22.suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Those 3 minor patches refactor prealloc_file_extent_cluster by:
+On Wed, Jun 17, 2020 at 09:12:12AM +0200, Michal Hocko wrote:
+> On Tue 16-06-20 17:37:11, Matthew Wilcox wrote:
+> > Not just performance critical, but correctness critical.  Since kvfree()
+> > may allocate from the vmalloc allocator, I really think that kvfree()
+> > should assert that it's !in_atomic().  Otherwise we can get into trouble
+> > if we end up calling vfree() and have to take the mutex.
+> 
+> FWIW __vfree already checks for atomic context and put the work into a
+> deferred context. So this should be safe. It should be used as a last
+> resort, though.
 
-1. Removing useless check
-2. Re-order code around to make heavyweight operations outside of inode lock,
-(not that it matters for performance) and also get rid of the out label
-3. Switch a while to a for loop to make the loop intentino more explicit.
-
-
-Nikolay Borisov (3):
-  btrfs: Remove hole  check in prealloc_file_extent_cluster
-  btrfs: Perform data management operations outside of inode lock
-  btrfs: Use for loop in prealloc_file_extent_cluster
-
- fs/btrfs/relocation.c | 20 +++++++-------------
- 1 file changed, 7 insertions(+), 13 deletions(-)
-
---
-2.17.1
-
+Actually, it only checks for in_interrupt().  If you call vfree() under
+a spinlock, you're in trouble.  in_atomic() only knows if we hold a
+spinlock for CONFIG_PREEMPT, so it's not safe to check for in_atomic()
+in __vfree().  So we need the warning in order that preempt people can
+tell those without that there is a bug here.

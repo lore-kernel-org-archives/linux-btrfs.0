@@ -6,48 +6,50 @@ X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 47643C433E0
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Jun 2020 15:52:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 08A69C433DF
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Jun 2020 16:07:27 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 2A95720888
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Jun 2020 15:52:37 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E0B292065F
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Jun 2020 16:07:26 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726833AbgFQPwg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 17 Jun 2020 11:52:36 -0400
-Received: from mx2.suse.de ([195.135.220.15]:50318 "EHLO mx2.suse.de"
+        id S1726853AbgFQQH0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 17 Jun 2020 12:07:26 -0400
+Received: from mx2.suse.de ([195.135.220.15]:57434 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726496AbgFQPwg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 Jun 2020 11:52:36 -0400
+        id S1726597AbgFQQHZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 17 Jun 2020 12:07:25 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 62C5DAE91;
-        Wed, 17 Jun 2020 15:52:39 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id D21C0AF7C;
+        Wed, 17 Jun 2020 16:07:28 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id A5D48DA728; Wed, 17 Jun 2020 17:52:25 +0200 (CEST)
-Date:   Wed, 17 Jun 2020 17:52:25 +0200
+        id 87961DA728; Wed, 17 Jun 2020 18:07:14 +0200 (CEST)
+Date:   Wed, 17 Jun 2020 18:07:14 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v4 0/5] btrfs: qgroup: detect and fix leaked data
- reserved space
-Message-ID: <20200617155225.GM27795@twin.jikos.cz>
+To:     Marcos Paulo de Souza <marcos@mpdesouza.com>
+Cc:     dsterba@suse.com, linux-btrfs@vger.kernel.org,
+        Marcos Paulo de Souza <mpdesouza@suse.com>
+Subject: Re: [PATCH] btrfs: Use fallthrough;
+Message-ID: <20200617160714.GN27795@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20200616235955.21385-1-wqu@suse.com>
+Mail-Followup-To: dsterba@suse.cz,
+        Marcos Paulo de Souza <marcos@mpdesouza.com>, dsterba@suse.com,
+        linux-btrfs@vger.kernel.org,
+        Marcos Paulo de Souza <mpdesouza@suse.com>
+References: <20200616185429.1648-1-marcos@mpdesouza.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20200616235955.21385-1-wqu@suse.com>
+In-Reply-To: <20200616185429.1648-1-marcos@mpdesouza.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Jun 17, 2020 at 07:59:50AM +0800, Qu Wenruo wrote:
-> v4:
-> - Pure changelog update to co-operate with the dio iomap revert
->   Only the 1st and the 4th patches get updated.
+On Tue, Jun 16, 2020 at 03:54:29PM -0300, Marcos Paulo de Souza wrote:
+> From: Marcos Paulo de Souza <mpdesouza@suse.com>
+> 
+> Convert /* Fallthrough */ comments to fallthrough;
 
-Updated, thanks.
+You should convert all instances of the fall through comments.

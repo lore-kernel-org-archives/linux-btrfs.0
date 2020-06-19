@@ -2,124 +2,68 @@ Return-Path: <SRS0=CkC6=AA=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	UNWANTED_LANGUAGE_BODY,UPPERCASE_50_75,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D453CC433DF
-	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Jun 2020 12:27:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AF7D8C433DF
+	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Jun 2020 12:27:50 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id B1320206C3
-	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Jun 2020 12:27:48 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 989AE206C3
+	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Jun 2020 12:27:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730934AbgFSM1r (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 19 Jun 2020 08:27:47 -0400
-Received: from mx2.suse.de ([195.135.220.15]:46050 "EHLO mx2.suse.de"
+        id S1732029AbgFSM1t (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 19 Jun 2020 08:27:49 -0400
+Received: from mx2.suse.de ([195.135.220.15]:45486 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1733005AbgFSMZS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 19 Jun 2020 08:25:18 -0400
+        id S1732985AbgFSMY7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 19 Jun 2020 08:24:59 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id C42B4B1C8;
-        Fri, 19 Jun 2020 12:24:54 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 6C9B5ACB8;
+        Fri, 19 Jun 2020 12:24:53 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 6/6] btrfs: tracepoints: Convert flush states to using EM macros
-Date:   Fri, 19 Jun 2020 15:24:51 +0300
-Message-Id: <20200619122451.31162-7-nborisov@suse.com>
+Subject: [PATCH 0/6] Fix enum values print in tracepoints
+Date:   Fri, 19 Jun 2020 15:24:45 +0300
+Message-Id: <20200619122451.31162-1-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
-In-Reply-To: <20200619122451.31162-1-nborisov@suse.com>
-References: <20200619122451.31162-1-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Only 6 out of all flush states were being printed correctly since
-only they were exported via the TRACE_DEFINE_ENUM macro. This patch
-converts all flush states to use the newly introduced EM macro so that
-they can all be printed correctly.
+While looking at tracepoint dumps with trace-cmd report I observed that
+tracepoints that should have printed text instead of raw values weren't
+doing so:
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
- include/trace/events/btrfs.h | 34 ++++++++++++++--------------------
- 1 file changed, 14 insertions(+), 20 deletions(-)
+13 kworker/u8:1-61    [000]    66.299527: btrfs_flush_space:    5302ee13-c65e-45bb-98ef-8fe3835bd943: state=3(0x3) flags=4(METADATA) num_bytes=2621440 ret=0
 
-diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index 8a758892bdbe..b0e98823c0a3 100644
---- a/include/trace/events/btrfs.h
-+++ b/include/trace/events/btrfs.h
-@@ -31,13 +31,6 @@ struct extent_io_tree;
- struct prelim_ref;
- struct btrfs_space_info;
- 
--TRACE_DEFINE_ENUM(FLUSH_DELAYED_ITEMS_NR);
--TRACE_DEFINE_ENUM(FLUSH_DELAYED_ITEMS);
--TRACE_DEFINE_ENUM(FLUSH_DELALLOC);
--TRACE_DEFINE_ENUM(FLUSH_DELALLOC_WAIT);
--TRACE_DEFINE_ENUM(ALLOC_CHUNK);
--TRACE_DEFINE_ENUM(COMMIT_TRANS);
--
- #define show_ref_type(type)						\
- 	__print_symbolic(type,						\
- 		{ BTRFS_TREE_BLOCK_REF_KEY, 	"TREE_BLOCK_REF" },	\
-@@ -95,6 +88,18 @@ TRACE_DEFINE_ENUM(COMMIT_TRANS);
- 	EM( IO_TREE_LOG_CSUM_RANGE,	  "LOG_CSUM_RANGE")         \
- 	EMe( IO_TREE_SELFTEST,		  "SELFTEST")
- 
-+#define FLUSH_STATES							\
-+	EM( FLUSH_DELAYED_ITEMS_NR,	"FLUSH_DELAYED_ITEMS_NR")	\
-+	EM( FLUSH_DELAYED_ITEMS,	"FLUSH_DELAYED_ITEMS")		\
-+	EM( FLUSH_DELALLOC,		"FLUSH_DELALLOC")		\
-+	EM( FLUSH_DELALLOC_WAIT,	"FLUSH_DELALLOC_WAIT")		\
-+	EM( FLUSH_DELAYED_REFS_NR,	"FLUSH_DELAYED_REFS_NR")	\
-+	EM( FLUSH_DELAYED_REFS,		"FLUSH_ELAYED_REFS")		\
-+	EM( ALLOC_CHUNK,		"ALLOC_CHUNK")			\
-+	EM( ALLOC_CHUNK_FORCE,		"ALLOC_CHUNK_FORCE")		\
-+	EM( RUN_DELAYED_IPUTS,		"RUN_DELAYED_IPUTS")		\
-+	EMe( COMMIT_TRANS,		"COMMIT_TRANS")
-+
- #undef EM
- #undef EMe
- #define EM(a, b) TRACE_DEFINE_ENUM(a);
-@@ -104,6 +109,7 @@ FLUSH_ACTIONS
- FI_TYPES
- QGROUP_RSV_TYPES
- IO_TREE_OWNER
-+FLUSH_STATES
- 
- #undef EM
- #undef EMe
-@@ -1092,18 +1098,6 @@ TRACE_EVENT(btrfs_trigger_flush,
- 		  __entry->bytes)
- );
- 
--#define show_flush_state(state)							\
--	__print_symbolic(state,							\
--		{ FLUSH_DELAYED_ITEMS_NR,	"FLUSH_DELAYED_ITEMS_NR"},	\
--		{ FLUSH_DELAYED_ITEMS,		"FLUSH_DELAYED_ITEMS"},		\
--		{ FLUSH_DELALLOC,		"FLUSH_DELALLOC"},		\
--		{ FLUSH_DELALLOC_WAIT,		"FLUSH_DELALLOC_WAIT"},		\
--		{ FLUSH_DELAYED_REFS_NR,	"FLUSH_DELAYED_REFS_NR"},	\
--		{ FLUSH_DELAYED_REFS,		"FLUSH_ELAYED_REFS"},		\
--		{ ALLOC_CHUNK,			"ALLOC_CHUNK"},			\
--		{ ALLOC_CHUNK_FORCE,		"ALLOC_CHUNK_FORCE"},		\
--		{ RUN_DELAYED_IPUTS,		"RUN_DELAYED_IPUTS"},		\
--		{ COMMIT_TRANS,			"COMMIT_TRANS"})
- 
- TRACE_EVENT(btrfs_flush_space,
- 
-@@ -1128,7 +1122,7 @@ TRACE_EVENT(btrfs_flush_space,
- 
- 	TP_printk_btrfs("state=%d(%s) flags=%llu(%s) num_bytes=%llu ret=%d",
- 		  __entry->state,
--		  show_flush_state(__entry->state),
-+		  __print_symbolic(__entry->state, FLUSH_STATES),
- 		  __entry->flags,
- 		  __print_flags((unsigned long)__entry->flags, "|",
- 				BTRFS_GROUP_FLAGS),
--- 
+In the above line instead of (0x3) BTRFS_RESERVE_FLUSH_ALL should be printed. I.e
+the correct output should be:
+
+6 fio-370   [002]    56.762402: btrfs_trigger_flush:  d04cd7ac-38e2-452f-a7f5-8157529fd5f0: preempt: flush=3(BTRFS_RESERVE_FLUSH_ALL) flags=4(METADATA) bytes=655360
+
+Investigating this turned out to be caused  because enum values weren't exported
+to user space via TRACE_DEFINE_ENUM. This is required in order for user space
+tools to correctly map the raw binary values to their textual representation.
+More information can be found in commit 190f0b76ca49 ("mm: tracing: Export enums in tracepoints to user space")
+
+This series follows the approach taken by 190f0b76ca49 in defining the various
+enum mapping structures.
+
+Nikolay Borisov (6):
+  btrfs: tracepoints: Fix btrfs_trigger_flush printout
+  btrfs: tracepoints: Fix extent type symbolic name print
+  btrfs: tracepoints: Move FLUSH_ACTIONS define
+  btrfs: tracepoints: Fix qgroup reservation type printing
+  btrfs: tracepoints: Switch extent_io_tree_owner to using EM macro
+  btrfs: tracepoints: Convert flush states to using EM macros
+
+ include/trace/events/btrfs.h | 128 +++++++++++++++++++----------------
+ 1 file changed, 68 insertions(+), 60 deletions(-)
+
+--
 2.17.1
 

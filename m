@@ -7,55 +7,55 @@ X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C2E92C433E1
-	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Jun 2020 14:10:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id ED610C433DF
+	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Jun 2020 14:10:52 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id A111B20706
-	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Jun 2020 14:10:51 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CD7AA20706
+	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Jun 2020 14:10:52 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1592921451;
-	bh=8Ri5c4guQ5YL9ZRSvFFB+S8kQg1w+lrqLfYLIxHYx8s=;
+	s=default; t=1592921452;
+	bh=ERIt5bsIDNsDxB3w5QMhCDMAvWpICehJ29o9RBPvLzo=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=r+YaQayxnvMFXRp6gW62y7cIb7f7fjj8Z4oSmAE3PNdLoIm3K3tDrXs7n7N50GJDT
-	 B8luManQDYGcddPlOzfi6TX5/N4cfAmj885xEQonLsv31keQE6ZUnuLf1FmMZ0ReSb
-	 V8zke1otNMZlxSlsjjTVBK3n//tjn1eRJPyWAihc=
+	b=vZ0pafhfQG5lJaoJJ7GAKtkkaXxp7GwtDoEZZGwUlpkXB1QYQlvguUqLxjEarjIVL
+	 RMm+V3nPykgq5xE6sbcKWj23oawytxjj7OOfz4yR8kymqy72BpcCMsbYci8wFSEdeP
+	 IR++BvGxgfce5lSLuodtgnvz8p70M9tO4iwnJB/0=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732789AbgFWOKt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 23 Jun 2020 10:10:49 -0400
-Received: from mail-wr1-f66.google.com ([209.85.221.66]:37211 "EHLO
-        mail-wr1-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1732698AbgFWOKs (ORCPT
+        id S1732809AbgFWOKv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 23 Jun 2020 10:10:51 -0400
+Received: from mail-wm1-f68.google.com ([209.85.128.68]:40869 "EHLO
+        mail-wm1-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1732720AbgFWOKu (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 23 Jun 2020 10:10:48 -0400
-Received: by mail-wr1-f66.google.com with SMTP id a6so18727058wrm.4
-        for <linux-btrfs@vger.kernel.org>; Tue, 23 Jun 2020 07:10:47 -0700 (PDT)
+        Tue, 23 Jun 2020 10:10:50 -0400
+Received: by mail-wm1-f68.google.com with SMTP id f139so1958098wmf.5
+        for <linux-btrfs@vger.kernel.org>; Tue, 23 Jun 2020 07:10:48 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=QmcKcZAjsn3+F4CzWeBv+oaA/7LF00tvvPTLk7owBR0=;
-        b=MVhVwTtaXrWioOwOEk9/dTNoTlGWEG2u5aCqmeYjWHpTT+0P9++iJCgooawBM8SzVU
-         wLZk0sUZ6Tln+PkMSETBzHmYtsu31RdzGTLl2AyXI3zc5XApleaVjDRv67RBKxd/EfcW
-         J3ZwC4toCNEzY819mU1W/qinaQuLwzj5YX+8piiDT0ZedEUO/c2rZbO+iyGfjbbvmvHD
-         GBkrtvQB0C710U8QjK38Gk0i6CuO4MaNa568ERi2OrJupqu40D/nJor6Ipjhpe99e76D
-         PcXTe0BudgQ6rLU3McnclhC3+KqZg96dFTVebpgUZ42uqrVKVi3xHhwfsj0acE+qDcbl
-         Moqw==
-X-Gm-Message-State: AOAM532eWq70f7g24tHhRzhr6GzqN8FcHlJaNeMk71Mq6cg6guwnZfo0
-        td3IH9OzBsZuvYwq2qG9Sw/XU+u/
-X-Google-Smtp-Source: ABdhPJzoeYLCjlajl2DD7v7/hLzNzEIqI5bOwJJZjDoZ4kv6+wwBmYDdlcnfqlaT2jeyCUGW0t/how==
-X-Received: by 2002:adf:ec01:: with SMTP id x1mr4093309wrn.59.1592921446521;
-        Tue, 23 Jun 2020 07:10:46 -0700 (PDT)
+        bh=8HQtq6/PsEMVkFh06uQcpZoI2BZq3AK+tD+s3Fzskfs=;
+        b=HMQEIYV52Jpsxu19xq+vlFy0/x62KeOS/HEfbl9wN+ytyrFf8Kna7ow79znqxjpG8B
+         q+UrPJIE+w3TUwilQW/FoSyvTFtk49Pt0AQc6WEQAi02Fm0/WPfpw5WW46tsUrBzrSwh
+         0MHf8vY47Kx1F1HgRgxgd+CYcqsIg4a5lutpmtfiOX+6od3V9lJ3m9kjS46crrqu4mRU
+         pvMMBc6PqSgMsUQ242c5khw8zptbnWfHy/8THlQ8+efcEQPCFny7Drw0SVGve5lNf1OE
+         8yw/iVkb9sV57N6bvamrEoJiv8ei8aV9O6Ctb8COPwf+WCdUQcqB3nBOVhXysGWmff1G
+         I0fw==
+X-Gm-Message-State: AOAM530NhepsA4GOsz6BI1WbuJgCg+E4kRGzysABrRMZCBQNDiAUGMYA
+        XE3DdONmFRKl2shgR9wIeIo=
+X-Google-Smtp-Source: ABdhPJy768BpjQy9p0nAhjCH1VWZX4Hts+sFMDKaJLEP6bYG974hp0SbhFot7fuDjrYdA9QkcnL8kQ==
+X-Received: by 2002:a1c:449:: with SMTP id 70mr22591932wme.149.1592921448368;
+        Tue, 23 Jun 2020 07:10:48 -0700 (PDT)
 Received: from NUC.fritz.box ([2001:a62:1515:bd01:f64d:30ff:fe6c:acb5])
-        by smtp.gmail.com with ESMTPSA id n1sm22529497wrp.10.2020.06.23.07.10.45
+        by smtp.gmail.com with ESMTPSA id n1sm22529497wrp.10.2020.06.23.07.10.47
         (version=TLS1_2 cipher=ECDHE-ECDSA-AES128-GCM-SHA256 bits=128/128);
-        Tue, 23 Jun 2020 07:10:46 -0700 (PDT)
+        Tue, 23 Jun 2020 07:10:47 -0700 (PDT)
 From:   Johannes Thumshirn <jth@kernel.org>
 To:     David Sterba <dsterba@suse.com>
 Cc:     linux-btrfs@vger.kernel.org, Qu Wenruo <wqu@suse.com>,
         Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH 2/4] btrfs-progs: use minimal number of stripes from btrfs_raid_attr
-Date:   Tue, 23 Jun 2020 16:10:17 +0200
-Message-Id: <20200623141019.23991-3-jth@kernel.org>
+Subject: [PATCH 4/4] btrfs-progs: remove btrfs_raid_profile_table
+Date:   Tue, 23 Jun 2020 16:10:19 +0200
+Message-Id: <20200623141019.23991-5-jth@kernel.org>
 X-Mailer: git-send-email 2.26.2
 In-Reply-To: <20200623141019.23991-1-jth@kernel.org>
 References: <20200623141019.23991-1-jth@kernel.org>
@@ -68,90 +68,68 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 
-Both btrfs_raid_attr and btrfs_raid_profile define the minimal number of
-stripes for each raid profile.
+For SINGLE and DUP RAID profiles we can get the num_stripes values from
+btrfs_raid_attr::dev:stripes. For all other RAID profiles the value is
+calculated anyways.
 
-The difference is in btrfs_raid_attr the number of stripes is called
-devs_min and in btrfs_raid_profile its called min_stripes.
+As this was the last remaining member of the btrfs_raid_profile_table we
+can remove it as well.
 
 Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
- volumes.c | 15 ++++-----------
- 1 file changed, 4 insertions(+), 11 deletions(-)
+ volumes.c | 34 +---------------------------------
+ 1 file changed, 1 insertion(+), 33 deletions(-)
 
 diff --git a/volumes.c b/volumes.c
-index 9d0eeed5..82d7a872 100644
+index 71c3735d..e8b4aad8 100644
 --- a/volumes.c
 +++ b/volumes.c
-@@ -1001,52 +1001,42 @@ error:
- static const struct btrfs_raid_profile {
- 	int	num_stripes;
- 	int	max_stripes;
--	int	min_stripes;
- } btrfs_raid_profile_table[BTRFS_NR_RAID_TYPES] = {
- 	[BTRFS_RAID_RAID10] = {
- 		.num_stripes = 0,
- 		.max_stripes = 0,
--		.min_stripes = 4,
- 	},
- 	[BTRFS_RAID_RAID1] = {
- 		.num_stripes = 0,
- 		.max_stripes = 0,
--		.min_stripes = 2,
- 	},
- 	[BTRFS_RAID_RAID1C3] = {
- 		.num_stripes = 0,
- 		.max_stripes = 0,
--		.min_stripes = 3,
- 	},
- 	[BTRFS_RAID_RAID1C4] = {
- 		.num_stripes = 0,
- 		.max_stripes = 0,
--		.min_stripes = 4,
- 	},
- 	[BTRFS_RAID_DUP] = {
- 		.num_stripes = 2,
- 		.max_stripes = 0,
--		.min_stripes = 2,
- 	},
- 	[BTRFS_RAID_RAID0] = {
- 		.num_stripes = 0,
- 		.max_stripes = 0,
--		.min_stripes = 2,
- 	},
- 	[BTRFS_RAID_SINGLE] = {
- 		.num_stripes = 1,
- 		.max_stripes = 0,
--		.min_stripes = 1,
- 	},
- 	[BTRFS_RAID_RAID5] = {
- 		.num_stripes = 0,
- 		.max_stripes = 0,
--		.min_stripes = 2,
- 	},
- 	[BTRFS_RAID_RAID6] = {
- 		.num_stripes = 0,
- 		.max_stripes = 0,
--		.min_stripes = 3,
- 	},
- };
+@@ -998,44 +998,12 @@ error:
+ 				- 2 * sizeof(struct btrfs_chunk))	\
+ 				/ sizeof(struct btrfs_stripe) + 1)
  
-@@ -1056,11 +1046,14 @@ static void init_alloc_chunk_ctl(struct btrfs_fs_info *info,
+-static const struct btrfs_raid_profile {
+-	int	num_stripes;
+-} btrfs_raid_profile_table[BTRFS_NR_RAID_TYPES] = {
+-	[BTRFS_RAID_RAID10] = {
+-		.num_stripes = 0,
+-	},
+-	[BTRFS_RAID_RAID1] = {
+-		.num_stripes = 0,
+-	},
+-	[BTRFS_RAID_RAID1C3] = {
+-		.num_stripes = 0,
+-	},
+-	[BTRFS_RAID_RAID1C4] = {
+-		.num_stripes = 0,
+-	},
+-	[BTRFS_RAID_DUP] = {
+-		.num_stripes = 2,
+-	},
+-	[BTRFS_RAID_RAID0] = {
+-		.num_stripes = 0,
+-	},
+-	[BTRFS_RAID_SINGLE] = {
+-		.num_stripes = 1,
+-	},
+-	[BTRFS_RAID_RAID5] = {
+-		.num_stripes = 0,
+-	},
+-	[BTRFS_RAID_RAID6] = {
+-		.num_stripes = 0,
+-	},
+-};
+-
+ static void init_alloc_chunk_ctl(struct btrfs_fs_info *info,
+ 				 struct alloc_chunk_ctl *ctl)
+ {
  	int type = ctl->type;
  
- 	ctl->num_stripes = btrfs_raid_profile_table[type].num_stripes;
--	ctl->min_stripes = btrfs_raid_profile_table[type].min_stripes;
-+	ctl->min_stripes = btrfs_raid_array[type].devs_min;
+-	ctl->num_stripes = btrfs_raid_profile_table[type].num_stripes;
++	ctl->num_stripes = btrfs_raid_array[type].dev_stripes;
+ 	ctl->min_stripes = btrfs_raid_array[type].devs_min;
  	ctl->sub_stripes = btrfs_raid_array[type].sub_stripes;
  	ctl->stripe_len = BTRFS_STRIPE_LEN;
- 
- 	switch (type) {
-+	case BTRFS_RAID_DUP:
-+		ctl->min_stripes = 2;
-+		break;
- 	case BTRFS_RAID_RAID1:
- 	case BTRFS_RAID_RAID1C3:
- 	case BTRFS_RAID_RAID1C4:
 -- 
 2.26.2
 

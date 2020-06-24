@@ -2,34 +2,38 @@ Return-Path: <SRS0=nWHZ=AF=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.3 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,UNWANTED_LANGUAGE_BODY,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9D8E3C433E1
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Jun 2020 16:04:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7D9E1C433E0
+	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Jun 2020 16:04:04 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 728C520781
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Jun 2020 16:04:01 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5728B20781
+	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Jun 2020 16:04:04 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=nic.cz header.i=@nic.cz header.b="qBY/slww"
+	dkim=pass (1024-bit key) header.d=nic.cz header.i=@nic.cz header.b="jYKXAeaV"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2404843AbgFXQEA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 24 Jun 2020 12:04:00 -0400
-Received: from lists.nic.cz ([217.31.204.67]:47738 "EHLO mail.nic.cz"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2404235AbgFXQD1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 24 Jun 2020 12:03:27 -0400
+        id S2404844AbgFXQEC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 24 Jun 2020 12:04:02 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37004 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2404721AbgFXQD0 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 24 Jun 2020 12:03:26 -0400
+Received: from mail.nic.cz (lists.nic.cz [IPv6:2001:1488:800:400::400])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 90D79C061798
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 Jun 2020 09:03:25 -0700 (PDT)
 Received: from dellmb.labs.office.nic.cz (unknown [IPv6:2001:1488:fffe:6:cac7:3539:7f1f:463])
-        by mail.nic.cz (Postfix) with ESMTP id C6FCE14099B;
-        Wed, 24 Jun 2020 18:03:21 +0200 (CEST)
+        by mail.nic.cz (Postfix) with ESMTP id 2D0291409CF;
+        Wed, 24 Jun 2020 18:03:23 +0200 (CEST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=nic.cz; s=default;
-        t=1593014602; bh=kZoJz7Hd38u8I56V2nsDZtpd+fJQvX4dGhIToZjIRHc=;
+        t=1593014603; bh=IPyaeIrLXohd1TOVnWR7WvC6VJHvMWGok7eBFNIQ6uY=;
         h=From:To:Date;
-        b=qBY/slwwiSxTCYnvDnTSrk3KGLh9vIaqaTYOcCKaLQypY8w2Ejha7lAxhG+aD4r9f
-         2rMscyp0dNM1X+uQEUgeOnSINSFKuTM81aV18MCwzERmB6cLtvmMsdvEh+CveubBs0
-         KRwXgrQx+VLhEoCBhgiV6gk+D8+GQqzHjlI7oZmg=
+        b=jYKXAeaVZ2UAxCVwSxlzhXp+O/OC8g4JUVccb/OW5bG5DH8bQhQR784/akgLPSCge
+         8WRQdJyAHib94SaAlMysx5u7mLIHfGjquBc45ZujOpYxG+gpk8A9RnKl7h5YL4vKPo
+         643Kf8uwV1Il5+bFWMO1WeewQINDPyQhvJ/3lehM=
 From:   =?UTF-8?q?Marek=20Beh=C3=BAn?= <marek.behun@nic.cz>
 To:     u-boot@lists.denx.de
 Cc:     =?UTF-8?q?Alberto=20S=C3=A1nchez=20Molero?= <alsamolero@gmail.com>,
@@ -39,9 +43,9 @@ Cc:     =?UTF-8?q?Alberto=20S=C3=A1nchez=20Molero?= <alsamolero@gmail.com>,
         Yevgeny Popovych <yevgenyp@pointgrab.com>,
         linux-btrfs@vger.kernel.org, Qu Wenruo <wqu@suse.com>,
         =?UTF-8?q?Marek=20Beh=C3=BAn?= <marek.behun@nic.cz>
-Subject: [PATCH U-BOOT v3 03/30] fs: btrfs: Crossport btrfs_read_dev_super() from btrfs-progs
-Date:   Wed, 24 Jun 2020 18:02:49 +0200
-Message-Id: <20200624160316.5001-4-marek.behun@nic.cz>
+Subject: [PATCH U-BOOT v3 10/30] fs: btrfs: Rename struct btrfs_path to struct __btrfs_path
+Date:   Wed, 24 Jun 2020 18:02:56 +0200
+Message-Id: <20200624160316.5001-11-marek.behun@nic.cz>
 X-Mailer: git-send-email 2.26.2
 In-Reply-To: <20200624160316.5001-1-marek.behun@nic.cz>
 References: <20200624160316.5001-1-marek.behun@nic.cz>
@@ -58,790 +62,408 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Qu Wenruo <wqu@suse.com>
 
-This patch uses generic code from btrfs-progs to read one super block
-from block device.
+To avoid name conflicting between the extent buffer based btrfs_path
+from btrfs-progs, rename struct btrfs_path to struct __btrfs_path.
 
-To support the btrfs-progs coding style, the following is also
-crossported:
-- BTRFS_SETGET_FUNC for btrfs_super_block
-- btrfs_check_super() function
-- Move btrfs_read_superblock() to disk-io.[ch]
-  Since super.c only contains pretty small amount of code, and
-  the extra check will be covered in later root read patches.
-
-Differences between this implementation and btrfs-progs:
-- No sbflags/sb_bytenr support
-  Since we only need to read the primary super block (like kernel),
-  sbflags/sb_bytenr used by super block recovery is not needed.
-
-This also changes the following behavior of U-Boot btrfs:
-- Only reads the primary super block
-  The old implementation reads all 3 super blocks, and also one
-  non-existing backup.
-  This is not correct, especially if there is another filesystem created
-  on the device but old superblocks are not rewritten.
-
-  Just like kernel, we only check the primary super block.
+Also rename btrfs_free_path() to __btrfs_free_path() to avoid conflicts.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 Reviewed-by: Marek Behún <marek.behun@nic.cz>
 ---
- fs/btrfs/Makefile  |   2 +-
- fs/btrfs/btrfs.c   |   1 +
- fs/btrfs/compat.h  |  63 +++++++++++
- fs/btrfs/ctree.c   |  32 ++++++
- fs/btrfs/ctree.h   |  67 ++++++++++++
- fs/btrfs/disk-io.c | 213 +++++++++++++++++++++++++++++++++++++
- fs/btrfs/disk-io.h |   7 ++
- fs/btrfs/super.c   | 258 ---------------------------------------------
- 8 files changed, 384 insertions(+), 259 deletions(-)
- create mode 100644 fs/btrfs/compat.h
- delete mode 100644 fs/btrfs/super.c
+ fs/btrfs/btrfs.h     |  4 ++--
+ fs/btrfs/chunk-map.c |  4 ++--
+ fs/btrfs/ctree.c     | 16 ++++++++--------
+ fs/btrfs/ctree.h     | 20 ++++++++++----------
+ fs/btrfs/dir-item.c  | 10 +++++-----
+ fs/btrfs/extent-io.c |  4 ++--
+ fs/btrfs/inode.c     | 16 ++++++++--------
+ fs/btrfs/root.c      | 10 +++++-----
+ fs/btrfs/subvolume.c |  4 ++--
+ 9 files changed, 44 insertions(+), 44 deletions(-)
 
-diff --git a/fs/btrfs/Makefile b/fs/btrfs/Makefile
-index 84b3b5ec0e..bd4b848d1b 100644
---- a/fs/btrfs/Makefile
-+++ b/fs/btrfs/Makefile
-@@ -3,4 +3,4 @@
- # 2017 Marek Behun, CZ.NIC, marek.behun@nic.cz
+diff --git a/fs/btrfs/btrfs.h b/fs/btrfs/btrfs.h
+index 1aacbc8cbb..a52fd34489 100644
+--- a/fs/btrfs/btrfs.h
++++ b/fs/btrfs/btrfs.h
+@@ -67,10 +67,10 @@ u64 btrfs_file_read(const struct btrfs_root *, u64, u64, u64, char *);
+ u64 btrfs_get_default_subvol_objectid(void);
  
- obj-y := btrfs.o chunk-map.o compression.o ctree.o dev.o dir-item.o \
--	extent-io.o inode.o root.o subvolume.o super.o crypto/hash.o disk-io.o
-+	extent-io.o inode.o root.o subvolume.o crypto/hash.o disk-io.o
-diff --git a/fs/btrfs/btrfs.c b/fs/btrfs/btrfs.c
-index d5a87c175c..78a32497b5 100644
---- a/fs/btrfs/btrfs.c
-+++ b/fs/btrfs/btrfs.c
-@@ -11,6 +11,7 @@
- #include <linux/time.h>
- #include "btrfs.h"
- #include "crypto/hash.h"
-+#include "disk-io.h"
+ /* extent-io.c */
+-u64 btrfs_read_extent_inline(struct btrfs_path *,
++u64 btrfs_read_extent_inline(struct __btrfs_path *,
+ 			      struct btrfs_file_extent_item *, u64, u64,
+ 			      char *);
+-u64 btrfs_read_extent_reg(struct btrfs_path *, struct btrfs_file_extent_item *,
++u64 btrfs_read_extent_reg(struct __btrfs_path *, struct btrfs_file_extent_item *,
+ 			   u64, u64, char *);
  
- struct btrfs_info btrfs_info;
+ #endif /* !__BTRFS_BTRFS_H__ */
+diff --git a/fs/btrfs/chunk-map.c b/fs/btrfs/chunk-map.c
+index 2e5be65067..8e3d13c4a9 100644
+--- a/fs/btrfs/chunk-map.c
++++ b/fs/btrfs/chunk-map.c
+@@ -144,7 +144,7 @@ int btrfs_chunk_map_init(void)
  
-diff --git a/fs/btrfs/compat.h b/fs/btrfs/compat.h
-new file mode 100644
-index 0000000000..e7d7dc9f6e
---- /dev/null
-+++ b/fs/btrfs/compat.h
-@@ -0,0 +1,63 @@
-+// SPDX-License-Identifier: GPL-2.0+
-+
-+#ifndef __BTRFS_COMPAT_H__
-+#define __BTRFS_COMPAT_H__
-+
-+#include <linux/errno.h>
-+#include <fs_internal.h>
-+#include <uuid.h>
-+
-+/* Provide a compatibility layer to make code syncing easier */
-+
-+/* A simple wraper to for error() used in btrfs-progs */
-+__attribute__((format (__printf__, 1, 2)))
-+static inline void error(const char *fmt, ...)
-+{
-+	printf("BTRFS: ");
-+	printf(fmt, __builtin_va_arg_pack());
-+	printf("\n");
-+}
-+
-+#define BTRFS_UUID_UNPARSED_SIZE	37
-+
-+/*
-+ * Macros to generate set/get funcs for the struct fields
-+ * assume there is a lefoo_to_cpu for every type, so lets make a simple
-+ * one for u8:
-+ */
-+#define le8_to_cpu(v) (v)
-+#define cpu_to_le8(v) (v)
-+#define __le8 u8
-+
-+/*
-+ * Read data from device specified by @desc and @part
-+ *
-+ * U-boot equivalent of pread().
-+ *
-+ * Return the bytes of data read.
-+ * Return <0 for error.
-+ */
-+static inline int __btrfs_devread(struct blk_desc *desc,
-+				  struct disk_partition *part,
-+				  void *buf, size_t size, u64 offset)
-+{
-+	lbaint_t sector;
-+	int byte_offset;
-+	int ret;
-+
-+	sector = offset >> desc->log2blksz;
-+	byte_offset = offset % desc->blksz;
-+
-+	/* fs_devread() return 0 for error, >0 for success */
-+	ret = fs_devread(desc, part, sector, byte_offset, size, buf);
-+	if (!ret)
-+		return -EIO;
-+	return size;
-+}
-+
-+static inline void uuid_unparse(const u8 *uuid, char *out)
-+{
-+	return uuid_bin_to_str((unsigned char *)uuid, out, 0);
-+}
-+
-+#endif
+ int btrfs_read_chunk_tree(void)
+ {
+-	struct btrfs_path path;
++	struct __btrfs_path path;
+ 	struct btrfs_key key, *found_key;
+ 	struct btrfs_chunk *chunk;
+ 	int res = 0;
+@@ -169,7 +169,7 @@ int btrfs_read_chunk_tree(void)
+ 		}
+ 	} while (!(res = btrfs_next_slot(&path)));
+ 
+-	btrfs_free_path(&path);
++	__btrfs_free_path(&path);
+ 
+ 	if (res < 0)
+ 		return -1;
 diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 28f98d43ad..1d8f7e168f 100644
+index d97e195e5e..7bd12c2a1b 100644
 --- a/fs/btrfs/ctree.c
 +++ b/fs/btrfs/ctree.c
-@@ -10,6 +10,38 @@
- #include <malloc.h>
- #include <memalign.h>
+@@ -115,7 +115,7 @@ int btrfs_bin_search(union btrfs_tree_node *p, struct btrfs_key *key,
+ 	return generic_bin_search(addr, size, key, p->header.nritems, slot);
+ }
  
-+static const struct btrfs_csum {
-+	u16 size;
-+	const char name[14];
-+} btrfs_csums[] = {
-+	[BTRFS_CSUM_TYPE_CRC32]		= {  4, "crc32c" },
-+	[BTRFS_CSUM_TYPE_XXHASH]	= {  8, "xxhash64" },
-+	[BTRFS_CSUM_TYPE_SHA256]	= { 32, "sha256" },
-+	[BTRFS_CSUM_TYPE_BLAKE2]	= { 32, "blake2" },
-+};
-+
-+u16 btrfs_super_csum_size(const struct btrfs_super_block *sb)
-+{
-+	const u16 csum_type = btrfs_super_csum_type(sb);
-+
-+	return btrfs_csums[csum_type].size;
-+}
-+
-+const char *btrfs_super_csum_name(u16 csum_type)
-+{
-+	return btrfs_csums[csum_type].name;
-+}
-+
-+size_t btrfs_super_num_csums(void)
-+{
-+	return ARRAY_SIZE(btrfs_csums);
-+}
-+
-+u16 btrfs_csum_type_size(u16 csum_type)
-+{
-+	return btrfs_csums[csum_type].size;
-+}
-+
- int btrfs_comp_keys(struct btrfs_key *a, struct btrfs_key *b)
+-static void clear_path(struct btrfs_path *p)
++static void clear_path(struct __btrfs_path *p)
  {
- 	if (a->objectid > b->objectid)
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 156ce69ed0..02125e5e10 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -12,6 +12,7 @@
- #include <common.h>
- #include <compiler.h>
- #include "kernel-shared/btrfs_tree.h"
-+#include "compat.h"
+ 	int i;
  
- #define BTRFS_MAX_MIRRORS 3
- 
-@@ -47,6 +48,16 @@
- #define BTRFS_FS_STATE_DEV_REPLACING	3
- #define BTRFS_FS_STATE_DUMMY_FS_INFO	4
- 
-+#define BTRFS_SETGET_STACK_FUNCS(name, type, member, bits)		\
-+static inline u##bits btrfs_##name(const type *s)			\
-+{									\
-+	return le##bits##_to_cpu(s->member);				\
-+}									\
-+static inline void btrfs_set_##name(type *s, u##bits val)		\
-+{									\
-+	s->member = cpu_to_le##bits(val);				\
-+}
-+
- union btrfs_tree_node {
- 	struct btrfs_header header;
- 	struct btrfs_leaf leaf;
-@@ -122,4 +133,60 @@ static inline void *btrfs_path_leaf_data(struct btrfs_path *p)
- #define btrfs_path_item_ptr(p,t)		\
- 	((t *) btrfs_path_leaf_data((p)))
- 
-+u16 btrfs_super_csum_size(const struct btrfs_super_block *s);
-+const char *btrfs_super_csum_name(u16 csum_type);
-+u16 btrfs_csum_type_size(u16 csum_type);
-+size_t btrfs_super_num_csums(void);
-+
-+/* struct btrfs_super_block */
-+
-+BTRFS_SETGET_STACK_FUNCS(super_bytenr, struct btrfs_super_block, bytenr, 64);
-+BTRFS_SETGET_STACK_FUNCS(super_flags, struct btrfs_super_block, flags, 64);
-+BTRFS_SETGET_STACK_FUNCS(super_generation, struct btrfs_super_block,
-+			 generation, 64);
-+BTRFS_SETGET_STACK_FUNCS(super_root, struct btrfs_super_block, root, 64);
-+BTRFS_SETGET_STACK_FUNCS(super_sys_array_size,
-+			 struct btrfs_super_block, sys_chunk_array_size, 32);
-+BTRFS_SETGET_STACK_FUNCS(super_chunk_root_generation,
-+			 struct btrfs_super_block, chunk_root_generation, 64);
-+BTRFS_SETGET_STACK_FUNCS(super_root_level, struct btrfs_super_block,
-+			 root_level, 8);
-+BTRFS_SETGET_STACK_FUNCS(super_chunk_root, struct btrfs_super_block,
-+			 chunk_root, 64);
-+BTRFS_SETGET_STACK_FUNCS(super_chunk_root_level, struct btrfs_super_block,
-+			 chunk_root_level, 8);
-+BTRFS_SETGET_STACK_FUNCS(super_log_root, struct btrfs_super_block,
-+			 log_root, 64);
-+BTRFS_SETGET_STACK_FUNCS(super_log_root_transid, struct btrfs_super_block,
-+			 log_root_transid, 64);
-+BTRFS_SETGET_STACK_FUNCS(super_log_root_level, struct btrfs_super_block,
-+			 log_root_level, 8);
-+BTRFS_SETGET_STACK_FUNCS(super_total_bytes, struct btrfs_super_block,
-+			 total_bytes, 64);
-+BTRFS_SETGET_STACK_FUNCS(super_bytes_used, struct btrfs_super_block,
-+			 bytes_used, 64);
-+BTRFS_SETGET_STACK_FUNCS(super_sectorsize, struct btrfs_super_block,
-+			 sectorsize, 32);
-+BTRFS_SETGET_STACK_FUNCS(super_nodesize, struct btrfs_super_block,
-+			 nodesize, 32);
-+BTRFS_SETGET_STACK_FUNCS(super_stripesize, struct btrfs_super_block,
-+			 stripesize, 32);
-+BTRFS_SETGET_STACK_FUNCS(super_root_dir, struct btrfs_super_block,
-+			 root_dir_objectid, 64);
-+BTRFS_SETGET_STACK_FUNCS(super_num_devices, struct btrfs_super_block,
-+			 num_devices, 64);
-+BTRFS_SETGET_STACK_FUNCS(super_compat_flags, struct btrfs_super_block,
-+			 compat_flags, 64);
-+BTRFS_SETGET_STACK_FUNCS(super_compat_ro_flags, struct btrfs_super_block,
-+			 compat_ro_flags, 64);
-+BTRFS_SETGET_STACK_FUNCS(super_incompat_flags, struct btrfs_super_block,
-+			 incompat_flags, 64);
-+BTRFS_SETGET_STACK_FUNCS(super_csum_type, struct btrfs_super_block,
-+			 csum_type, 16);
-+BTRFS_SETGET_STACK_FUNCS(super_cache_generation, struct btrfs_super_block,
-+			 cache_generation, 64);
-+BTRFS_SETGET_STACK_FUNCS(super_uuid_tree_generation, struct btrfs_super_block,
-+			 uuid_tree_generation, 64);
-+BTRFS_SETGET_STACK_FUNCS(super_magic, struct btrfs_super_block, magic, 64);
-+
- #endif /* __BTRFS_CTREE_H__ */
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 58c32b548e..edebf741fd 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1,7 +1,12 @@
- // SPDX-License-Identifier: GPL-2.0+
- #include <common.h>
- #include <fs_internal.h>
-+#include <uuid.h>
-+#include <memalign.h>
-+#include "kernel-shared/btrfs_tree.h"
- #include "disk-io.h"
-+#include "ctree.h"
-+#include "btrfs.h"
- #include "crypto/hash.h"
- 
- int btrfs_csum_data(u16 csum_type, const u8 *data, u8 *out, size_t len)
-@@ -20,3 +25,211 @@ int btrfs_csum_data(u16 csum_type, const u8 *data, u8 *out, size_t len)
- 		return -EINVAL;
+@@ -125,7 +125,7 @@ static void clear_path(struct btrfs_path *p)
  	}
  }
-+
-+/*
-+ * Check if the super is valid:
-+ * - nodesize/sectorsize - minimum, maximum, alignment
-+ * - tree block starts   - alignment
-+ * - number of devices   - something sane
-+ * - sys array size      - maximum
-+ */
-+static int btrfs_check_super(struct btrfs_super_block *sb)
-+{
-+	u8 result[BTRFS_CSUM_SIZE];
-+	u16 csum_type;
-+	int csum_size;
-+	u8 *metadata_uuid;
-+
-+	if (btrfs_super_magic(sb) != BTRFS_MAGIC)
-+		return -EIO;
-+
-+	csum_type = btrfs_super_csum_type(sb);
-+	if (csum_type >= btrfs_super_num_csums()) {
-+		error("unsupported checksum algorithm %u", csum_type);
-+		return -EIO;
-+	}
-+	csum_size = btrfs_super_csum_size(sb);
-+
-+	btrfs_csum_data(csum_type, (u8 *)sb + BTRFS_CSUM_SIZE,
-+			result, BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
-+
-+	if (memcmp(result, sb->csum, csum_size)) {
-+		error("superblock checksum mismatch");
-+		return -EIO;
-+	}
-+	if (btrfs_super_root_level(sb) >= BTRFS_MAX_LEVEL) {
-+		error("tree_root level too big: %d >= %d",
-+			btrfs_super_root_level(sb), BTRFS_MAX_LEVEL);
-+		goto error_out;
-+	}
-+	if (btrfs_super_chunk_root_level(sb) >= BTRFS_MAX_LEVEL) {
-+		error("chunk_root level too big: %d >= %d",
-+			btrfs_super_chunk_root_level(sb), BTRFS_MAX_LEVEL);
-+		goto error_out;
-+	}
-+	if (btrfs_super_log_root_level(sb) >= BTRFS_MAX_LEVEL) {
-+		error("log_root level too big: %d >= %d",
-+			btrfs_super_log_root_level(sb), BTRFS_MAX_LEVEL);
-+		goto error_out;
-+	}
-+
-+	if (!IS_ALIGNED(btrfs_super_root(sb), 4096)) {
-+		error("tree_root block unaligned: %llu", btrfs_super_root(sb));
-+		goto error_out;
-+	}
-+	if (!IS_ALIGNED(btrfs_super_chunk_root(sb), 4096)) {
-+		error("chunk_root block unaligned: %llu",
-+			btrfs_super_chunk_root(sb));
-+		goto error_out;
-+	}
-+	if (!IS_ALIGNED(btrfs_super_log_root(sb), 4096)) {
-+		error("log_root block unaligned: %llu",
-+			btrfs_super_log_root(sb));
-+		goto error_out;
-+	}
-+	if (btrfs_super_nodesize(sb) < 4096) {
-+		error("nodesize too small: %u < 4096",
-+			btrfs_super_nodesize(sb));
-+		goto error_out;
-+	}
-+	if (!IS_ALIGNED(btrfs_super_nodesize(sb), 4096)) {
-+		error("nodesize unaligned: %u", btrfs_super_nodesize(sb));
-+		goto error_out;
-+	}
-+	if (btrfs_super_sectorsize(sb) < 4096) {
-+		error("sectorsize too small: %u < 4096",
-+			btrfs_super_sectorsize(sb));
-+		goto error_out;
-+	}
-+	if (!IS_ALIGNED(btrfs_super_sectorsize(sb), 4096)) {
-+		error("sectorsize unaligned: %u", btrfs_super_sectorsize(sb));
-+		goto error_out;
-+	}
-+	if (btrfs_super_total_bytes(sb) == 0) {
-+		error("invalid total_bytes 0");
-+		goto error_out;
-+	}
-+	if (btrfs_super_bytes_used(sb) < 6 * btrfs_super_nodesize(sb)) {
-+		error("invalid bytes_used %llu", btrfs_super_bytes_used(sb));
-+		goto error_out;
-+	}
-+	if ((btrfs_super_stripesize(sb) != 4096)
-+		&& (btrfs_super_stripesize(sb) != btrfs_super_sectorsize(sb))) {
-+		error("invalid stripesize %u", btrfs_super_stripesize(sb));
-+		goto error_out;
-+	}
-+
-+	if (btrfs_super_incompat_flags(sb) & BTRFS_FEATURE_INCOMPAT_METADATA_UUID)
-+		metadata_uuid = sb->metadata_uuid;
-+	else
-+		metadata_uuid = sb->fsid;
-+
-+	if (memcmp(metadata_uuid, sb->dev_item.fsid, BTRFS_FSID_SIZE) != 0) {
-+		char fsid[BTRFS_UUID_UNPARSED_SIZE];
-+		char dev_fsid[BTRFS_UUID_UNPARSED_SIZE];
-+
-+		uuid_unparse(sb->metadata_uuid, fsid);
-+		uuid_unparse(sb->dev_item.fsid, dev_fsid);
-+		error("dev_item UUID does not match fsid: %s != %s",
-+			dev_fsid, fsid);
-+		goto error_out;
-+	}
-+
-+	/*
-+	 * Hint to catch really bogus numbers, bitflips or so
-+	 */
-+	if (btrfs_super_num_devices(sb) > (1UL << 31)) {
-+		error("suspicious number of devices: %llu",
-+			btrfs_super_num_devices(sb));
-+	}
-+
-+	if (btrfs_super_num_devices(sb) == 0) {
-+		error("number of devices is 0");
-+		goto error_out;
-+	}
-+
-+	/*
-+	 * Obvious sys_chunk_array corruptions, it must hold at least one key
-+	 * and one chunk
-+	 */
-+	if (btrfs_super_sys_array_size(sb) > BTRFS_SYSTEM_CHUNK_ARRAY_SIZE) {
-+		error("system chunk array too big %u > %u",
-+		      btrfs_super_sys_array_size(sb),
-+		      BTRFS_SYSTEM_CHUNK_ARRAY_SIZE);
-+		goto error_out;
-+	}
-+	if (btrfs_super_sys_array_size(sb) < sizeof(struct btrfs_disk_key)
-+			+ sizeof(struct btrfs_chunk)) {
-+		error("system chunk array too small %u < %zu",
-+		      btrfs_super_sys_array_size(sb),
-+		      sizeof(struct btrfs_disk_key) +
-+		      sizeof(struct btrfs_chunk));
-+		goto error_out;
-+	}
-+
-+	return 0;
-+
-+error_out:
-+	error("superblock checksum matches but it has invalid members");
-+	return -EIO;
-+}
-+
-+/*
-+ * btrfs_read_dev_super - read a valid primary superblock from a block device
-+ * @desc,@part:	file descriptor of the device
-+ * @sb:		buffer where the superblock is going to be read in
-+ *
-+ * Unlike the btrfs-progs/kernel version, here we ony care about the first
-+ * super block, thus it's much simpler.
-+ */
-+int btrfs_read_dev_super(struct blk_desc *desc, struct disk_partition *part,
-+			 struct btrfs_super_block *sb)
-+{
-+	char tmp[BTRFS_SUPER_INFO_SIZE];
-+	struct btrfs_super_block *buf = (struct btrfs_super_block *)tmp;
-+	int ret;
-+
-+	ret = __btrfs_devread(desc, part, tmp, BTRFS_SUPER_INFO_SIZE,
-+			      BTRFS_SUPER_INFO_OFFSET);
-+	if (ret < BTRFS_SUPER_INFO_SIZE)
-+		return -EIO;
-+
-+	if (btrfs_super_bytenr(buf) != BTRFS_SUPER_INFO_OFFSET)
-+		return -EIO;
-+
-+	if (btrfs_check_super(buf))
-+		return -EIO;
-+
-+	memcpy(sb, buf, BTRFS_SUPER_INFO_SIZE);
-+	return 0;
-+}
-+
-+int btrfs_read_superblock(void)
-+{
-+	ALLOC_CACHE_ALIGN_BUFFER(char, raw_sb, BTRFS_SUPER_INFO_SIZE);
-+	struct btrfs_super_block *sb = (struct btrfs_super_block *) raw_sb;
-+	int ret;
-+
-+
-+	btrfs_info.sb.generation = 0;
-+
-+	ret = btrfs_read_dev_super(btrfs_blk_desc, btrfs_part_info, sb);
-+	if (ret < 0) {
-+		pr_debug("%s: No valid BTRFS superblock found!\n", __func__);
-+		return ret;
-+	}
-+	btrfs_super_block_to_cpu(sb);
-+	memcpy(&btrfs_info.sb, sb, sizeof(*sb));
-+
-+	if (btrfs_info.sb.num_devices != 1) {
-+		printf("%s: Unsupported number of devices (%lli). This driver "
-+		       "only supports filesystem on one device.\n", __func__,
-+		       btrfs_info.sb.num_devices);
-+		return -1;
-+	}
-+
-+	pr_debug("Chosen superblock with generation = %llu\n",
-+	      btrfs_info.sb.generation);
-+
-+	return 0;
-+}
-diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
-index efb715828c..fe4093cbd8 100644
---- a/fs/btrfs/disk-io.h
-+++ b/fs/btrfs/disk-io.h
-@@ -2,10 +2,14 @@
- #ifndef __BTRFS_DISK_IO_H__
- #define __BTRFS_DISK_IO_H__
  
-+#include <linux/sizes.h>
-+#include <fs_internal.h>
- #include "crypto/hash.h"
- #include "ctree.h"
+-void btrfs_free_path(struct btrfs_path *p)
++void __btrfs_free_path(struct __btrfs_path *p)
+ {
+ 	int i;
+ 
+@@ -182,7 +182,7 @@ static int read_tree_node(u64 physical, union btrfs_tree_node **buf)
+ }
+ 
+ int btrfs_search_tree(const struct btrfs_root *root, struct btrfs_key *key,
+-		      struct btrfs_path *p)
++		      struct __btrfs_path *p)
+ {
+ 	u8 lvl, prev_lvl;
+ 	int i, slot, ret;
+@@ -236,13 +236,13 @@ int btrfs_search_tree(const struct btrfs_root *root, struct btrfs_key *key,
+ 
+ 	return 0;
+ err:
+-	btrfs_free_path(p);
++	__btrfs_free_path(p);
+ 	return -1;
+ }
+ 
+-static int jump_leaf(struct btrfs_path *path, int dir)
++static int jump_leaf(struct __btrfs_path *path, int dir)
+ {
+-	struct btrfs_path p;
++	struct __btrfs_path p;
+ 	u32 slot;
+ 	int level = 1, from_level, i;
+ 
+@@ -302,7 +302,7 @@ err:
+ 	return -1;
+ }
+ 
+-int btrfs_prev_slot(struct btrfs_path *p)
++int btrfs_prev_slot(struct __btrfs_path *p)
+ {
+ 	if (!p->slots[0])
+ 		return jump_leaf(p, -1);
+@@ -311,7 +311,7 @@ int btrfs_prev_slot(struct btrfs_path *p)
+ 	return 0;
+ }
+ 
+-int btrfs_next_slot(struct btrfs_path *p)
++int btrfs_next_slot(struct __btrfs_path *p)
+ {
+ 	struct btrfs_leaf *leaf = &p->nodes[0]->leaf;
+ 
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 7f024c0145..4562be9381 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1177,7 +1177,7 @@ union btrfs_tree_node {
+ 	struct btrfs_node node;
+ };
+ 
+-struct btrfs_path {
++struct __btrfs_path {
+ 	union btrfs_tree_node *nodes[BTRFS_MAX_LEVEL];
+ 	u32 slots[BTRFS_MAX_LEVEL];
+ };
+@@ -1191,20 +1191,20 @@ struct btrfs_root {
+ int __btrfs_comp_keys(struct btrfs_key *, struct btrfs_key *);
+ int btrfs_comp_keys_type(struct btrfs_key *, struct btrfs_key *);
+ int btrfs_bin_search(union btrfs_tree_node *, struct btrfs_key *, int *);
+-void btrfs_free_path(struct btrfs_path *);
++void __btrfs_free_path(struct __btrfs_path *);
+ int btrfs_search_tree(const struct btrfs_root *, struct btrfs_key *,
+-		      struct btrfs_path *);
+-int btrfs_prev_slot(struct btrfs_path *);
+-int btrfs_next_slot(struct btrfs_path *);
++		      struct __btrfs_path *);
++int btrfs_prev_slot(struct __btrfs_path *);
++int btrfs_next_slot(struct __btrfs_path *);
+ 
+-static inline struct btrfs_key *btrfs_path_leaf_key(struct btrfs_path *p) {
++static inline struct btrfs_key *btrfs_path_leaf_key(struct __btrfs_path *p) {
+ 	/* At tree read time we have converted the endian for btrfs_disk_key */
+ 	return (struct btrfs_key *)&p->nodes[0]->leaf.items[p->slots[0]].key;
+ }
+ 
+ static inline struct btrfs_key *
+ btrfs_search_tree_key_type(const struct btrfs_root *root, u64 objectid,
+-			   u8 type, struct btrfs_path *path)
++			   u8 type, struct __btrfs_path *path)
+ {
+ 	struct btrfs_key key, *res;
+ 
+@@ -1217,14 +1217,14 @@ btrfs_search_tree_key_type(const struct btrfs_root *root, u64 objectid,
+ 
+ 	res = btrfs_path_leaf_key(path);
+ 	if (btrfs_comp_keys_type(&key, res)) {
+-		btrfs_free_path(path);
++		__btrfs_free_path(path);
+ 		return NULL;
+ 	}
+ 
+ 	return res;
+ }
+ 
+-static inline u32 btrfs_path_item_size(struct btrfs_path *p)
++static inline u32 btrfs_path_item_size(struct __btrfs_path *p)
+ {
+ 	return p->nodes[0]->leaf.items[p->slots[0]].size;
+ }
+@@ -1235,7 +1235,7 @@ static inline void *__btrfs_leaf_data(struct btrfs_leaf *leaf, u32 slot)
+ 	       + leaf->items[slot].offset;
+ }
+ 
+-static inline void *btrfs_path_leaf_data(struct btrfs_path *p)
++static inline void *btrfs_path_leaf_data(struct __btrfs_path *p)
+ {
+ 	return __btrfs_leaf_data(&p->nodes[0]->leaf, p->slots[0]);
+ }
+diff --git a/fs/btrfs/dir-item.c b/fs/btrfs/dir-item.c
+index 1ff446a45a..5595542dab 100644
+--- a/fs/btrfs/dir-item.c
++++ b/fs/btrfs/dir-item.c
+@@ -32,7 +32,7 @@ static int verify_dir_item(struct btrfs_dir_item *item, u32 start, u32 total)
+ }
+ 
+ static struct btrfs_dir_item *
+-btrfs_match_dir_item_name(struct btrfs_path *path, const char *name,
++btrfs_match_dir_item_name(struct __btrfs_path *path, const char *name,
+ 			  int name_len)
+ {
+ 	struct btrfs_dir_item *item;
+@@ -65,7 +65,7 @@ int btrfs_lookup_dir_item(const struct btrfs_root *root, u64 dir,
+ 			  const char *name, int name_len,
+ 			  struct btrfs_dir_item *item)
+ {
+-	struct btrfs_path path;
++	struct __btrfs_path path;
+ 	struct btrfs_key key;
+ 	struct btrfs_dir_item *res = NULL;
+ 
+@@ -83,14 +83,14 @@ int btrfs_lookup_dir_item(const struct btrfs_root *root, u64 dir,
+ 	if (res)
+ 		*item = *res;
+ out:
+-	btrfs_free_path(&path);
++	__btrfs_free_path(&path);
+ 	return res ? 0 : -1;
+ }
+ 
+ int btrfs_readdir(const struct btrfs_root *root, u64 dir,
+ 		  btrfs_readdir_callback_t callback)
+ {
+-	struct btrfs_path path;
++	struct __btrfs_path path;
+ 	struct btrfs_key key, *found_key;
+ 	struct btrfs_dir_item *item;
+ 	int res = 0;
+@@ -119,7 +119,7 @@ int btrfs_readdir(const struct btrfs_root *root, u64 dir,
+ 			break;
+ 	} while (!(res = btrfs_next_slot(&path)));
+ 
+-	btrfs_free_path(&path);
++	__btrfs_free_path(&path);
+ 
+ 	return res < 0 ? -1 : 0;
+ }
+diff --git a/fs/btrfs/extent-io.c b/fs/btrfs/extent-io.c
+index eec89d152e..a524145a66 100644
+--- a/fs/btrfs/extent-io.c
++++ b/fs/btrfs/extent-io.c
+@@ -14,7 +14,7 @@
+ #include "extent-io.h"
  #include "disk-io.h"
  
-+#define BTRFS_SUPER_INFO_OFFSET SZ_64K
-+#define BTRFS_SUPER_INFO_SIZE	SZ_4K
- static inline u64 btrfs_name_hash(const char *name, int len)
+-u64 btrfs_read_extent_inline(struct btrfs_path *path,
++u64 btrfs_read_extent_inline(struct __btrfs_path *path,
+ 			     struct btrfs_file_extent_item *extent, u64 offset,
+ 			     u64 size, char *out)
  {
- 	u32 crc;
-@@ -17,4 +21,7 @@ static inline u64 btrfs_name_hash(const char *name, int len)
+@@ -66,7 +66,7 @@ err:
+ 	return -1ULL;
+ }
  
- int btrfs_csum_data(u16 csum_type, const u8 *data, u8 *out, size_t len);
+-u64 btrfs_read_extent_reg(struct btrfs_path *path,
++u64 btrfs_read_extent_reg(struct __btrfs_path *path,
+ 			  struct btrfs_file_extent_item *extent, u64 offset,
+ 			  u64 size, char *out)
+ {
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 55f431a289..c0778726a0 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -11,7 +11,7 @@
+ u64 btrfs_lookup_inode_ref(struct btrfs_root *root, u64 inr,
+ 			   struct btrfs_inode_ref *refp, char *name)
+ {
+-	struct btrfs_path path;
++	struct __btrfs_path path;
+ 	struct btrfs_key *key;
+ 	struct btrfs_inode_ref *ref;
+ 	u64 res = -1ULL;
+@@ -40,7 +40,7 @@ u64 btrfs_lookup_inode_ref(struct btrfs_root *root, u64 inr,
  
-+int btrfs_read_dev_super(struct blk_desc *desc, struct disk_partition *part,
-+			 struct btrfs_super_block *sb);
-+int btrfs_read_superblock(void);
- #endif
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-deleted file mode 100644
-index d67d5a2447..0000000000
---- a/fs/btrfs/super.c
-+++ /dev/null
-@@ -1,258 +0,0 @@
--// SPDX-License-Identifier: GPL-2.0+
--/*
-- * BTRFS filesystem implementation for U-Boot
-- *
-- * 2017 Marek Behun, CZ.NIC, marek.behun@nic.cz
-- */
--
--#include <common.h>
--#include <log.h>
--#include <memalign.h>
--#include <part.h>
--#include <linux/compat.h>
--#include "btrfs.h"
--#include "disk-io.h"
--
--#define BTRFS_SUPER_FLAG_SUPP	(BTRFS_HEADER_FLAG_WRITTEN	\
--				 | BTRFS_HEADER_FLAG_RELOC	\
--				 | BTRFS_SUPER_FLAG_ERROR	\
--				 | BTRFS_SUPER_FLAG_SEEDING	\
--				 | BTRFS_SUPER_FLAG_METADUMP)
--
--#define BTRFS_SUPER_INFO_SIZE	4096
--
--/*
-- * checks if a valid root backup is present.
-- * considers the case when all root backups empty valid.
-- * returns -1 in case of invalid root backup and 0 for valid.
-- */
--static int btrfs_check_super_roots(struct btrfs_super_block *sb)
--{
--	struct btrfs_root_backup *root_backup;
--	int i, newest = -1;
--	int num_empty = 0;
--
--	for (i = 0; i < BTRFS_NUM_BACKUP_ROOTS; ++i) {
--		root_backup = sb->super_roots + i;
--
--		if (root_backup->tree_root == 0 && root_backup->tree_root_gen == 0)
--			num_empty++;
--
--		if (root_backup->tree_root_gen == sb->generation)
--			newest = i;
--	}
--
--	if (num_empty == BTRFS_NUM_BACKUP_ROOTS) {
--		return 0;
--	} else if (newest >= 0) {
--		return 0;
--	}
--
--	return -1;
--}
--
--static inline int is_power_of_2(u64 x)
--{
--	return !(x & (x - 1));
--}
--
--static int btrfs_check_super_csum(char *raw_disk_sb)
--{
--	struct btrfs_super_block *disk_sb =
--		(struct btrfs_super_block *) raw_disk_sb;
--	u16 csum_type = le16_to_cpu(disk_sb->csum_type);
--
--	if (csum_type == BTRFS_CSUM_TYPE_CRC32 ||
--	    csum_type == BTRFS_CSUM_TYPE_SHA256 ||
--	    csum_type == BTRFS_CSUM_TYPE_XXHASH) {
--		u8 result[BTRFS_CSUM_SIZE];
--
--		btrfs_csum_data(csum_type, (u8 *)raw_disk_sb + BTRFS_CSUM_SIZE,
--			result, BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
--
--		if (memcmp(raw_disk_sb, result, BTRFS_CSUM_SIZE))
--			return -EIO;
--	} else if (csum_type == BTRFS_CSUM_TYPE_BLAKE2) {
--		printf("Blake2 csum type is not supported yet\n");
--		return -ENOTSUPP;
--	}
--
--	return 0;
--}
--
--static int btrfs_check_super(struct btrfs_super_block *sb)
--{
--	int ret = 0;
--
--	if (sb->flags & ~BTRFS_SUPER_FLAG_SUPP) {
--		printf("%s: Unsupported flags: %llu\n", __func__,
--		       sb->flags & ~BTRFS_SUPER_FLAG_SUPP);
--	}
--
--	if (sb->root_level > BTRFS_MAX_LEVEL) {
--		printf("%s: tree_root level too big: %d >= %d\n", __func__,
--		       sb->root_level, BTRFS_MAX_LEVEL);
--		ret = -1;
--	}
--
--	if (sb->chunk_root_level > BTRFS_MAX_LEVEL) {
--		printf("%s: chunk_root level too big: %d >= %d\n", __func__,
--		       sb->chunk_root_level, BTRFS_MAX_LEVEL);
--		ret = -1;
--	}
--
--	if (sb->log_root_level > BTRFS_MAX_LEVEL) {
--		printf("%s: log_root level too big: %d >= %d\n", __func__,
--		       sb->log_root_level, BTRFS_MAX_LEVEL);
--		ret = -1;
--	}
--
--	if (!is_power_of_2(sb->sectorsize) || sb->sectorsize < 4096 ||
--	    sb->sectorsize > BTRFS_MAX_METADATA_BLOCKSIZE) {
--		printf("%s: invalid sectorsize %u\n", __func__,
--		       sb->sectorsize);
--		ret = -1;
--	}
--
--	if (!is_power_of_2(sb->nodesize) || sb->nodesize < sb->sectorsize ||
--	    sb->nodesize > BTRFS_MAX_METADATA_BLOCKSIZE) {
--		printf("%s: invalid nodesize %u\n", __func__, sb->nodesize);
--		ret = -1;
--	}
--
--	if (sb->nodesize != sb->__unused_leafsize) {
--		printf("%s: invalid leafsize %u, should be %u\n", __func__,
--		       sb->__unused_leafsize, sb->nodesize);
--		ret = -1;
--	}
--
--	if (!IS_ALIGNED(sb->root, sb->sectorsize)) {
--		printf("%s: tree_root block unaligned: %llu\n", __func__,
--		       sb->root);
--		ret = -1;
--	}
--
--	if (!IS_ALIGNED(sb->chunk_root, sb->sectorsize)) {
--		printf("%s: chunk_root block unaligned: %llu\n", __func__,
--		       sb->chunk_root);
--		ret = -1;
--	}
--
--	if (!IS_ALIGNED(sb->log_root, sb->sectorsize)) {
--		printf("%s: log_root block unaligned: %llu\n", __func__,
--		       sb->log_root);
--		ret = -1;
--	}
--
--	if (memcmp(sb->fsid, sb->dev_item.fsid, BTRFS_UUID_SIZE) != 0) {
--		printf("%s: dev_item UUID does not match fsid\n", __func__);
--		ret = -1;
--	}
--
--	if (sb->bytes_used < 6*sb->nodesize) {
--		printf("%s: bytes_used is too small %llu\n", __func__,
--		       sb->bytes_used);
--		ret = -1;
--	}
--
--	if (!is_power_of_2(sb->stripesize)) {
--		printf("%s: invalid stripesize %u\n", __func__, sb->stripesize);
--		ret = -1;
--	}
--
--	if (sb->sys_chunk_array_size > BTRFS_SYSTEM_CHUNK_ARRAY_SIZE) {
--		printf("%s: system chunk array too big %u > %u\n", __func__,
--		       sb->sys_chunk_array_size, BTRFS_SYSTEM_CHUNK_ARRAY_SIZE);
--		ret = -1;
--	}
--
--	if (sb->sys_chunk_array_size < sizeof(struct btrfs_key) +
--	    sizeof(struct btrfs_chunk)) {
--		printf("%s: system chunk array too small %u < %zu\n", __func__,
--		       sb->sys_chunk_array_size, sizeof(struct btrfs_key)
--		       + sizeof(struct btrfs_chunk));
--		ret = -1;
--	}
--
--	return ret;
--}
--
--int btrfs_read_superblock(void)
--{
--	const u64 superblock_offsets[4] = {
--		0x10000ull,
--		0x4000000ull,
--		0x4000000000ull,
--		0x4000000000000ull
--	};
--	ALLOC_CACHE_ALIGN_BUFFER(char, raw_sb, BTRFS_SUPER_INFO_SIZE);
--	struct btrfs_super_block *sb = (struct btrfs_super_block *) raw_sb;
--	u64 dev_total_bytes;
--	int i;
--
--	dev_total_bytes = (u64) btrfs_part_info->size * btrfs_part_info->blksz;
--
--	btrfs_info.sb.generation = 0;
--
--	for (i = 0; i < 4; ++i) {
--		if (superblock_offsets[i] + sizeof(sb) > dev_total_bytes)
--			break;
--
--		if (!btrfs_devread(superblock_offsets[i], BTRFS_SUPER_INFO_SIZE,
--				   raw_sb))
--			break;
--
--		if (btrfs_check_super_csum(raw_sb)) {
--			debug("%s: invalid checksum at superblock mirror %i\n",
--			      __func__, i);
--			continue;
--		}
--
--		btrfs_super_block_to_cpu(sb);
--
--		if (sb->magic != BTRFS_MAGIC) {
--			debug("%s: invalid BTRFS magic 0x%016llX at "
--			      "superblock mirror %i\n", __func__, sb->magic, i);
--		} else if (sb->bytenr != superblock_offsets[i]) {
--			printf("%s: invalid bytenr 0x%016llX (expected "
--			       "0x%016llX) at superblock mirror %i\n",
--			       __func__, sb->bytenr, superblock_offsets[i], i);
--		} else if (btrfs_check_super(sb)) {
--			printf("%s: Checking superblock mirror %i failed\n",
--			       __func__, i);
--		} else if (sb->generation > btrfs_info.sb.generation) {
--			memcpy(&btrfs_info.sb, sb, sizeof(*sb));
--		} else {
--			/* Nothing */
--		}
--	}
--
--	if (!btrfs_info.sb.generation) {
--		debug("%s: No valid BTRFS superblock found!\n", __func__);
--		return -1;
--	}
--
--	if (btrfs_check_super_roots(&btrfs_info.sb)) {
--		printf("%s: No valid root_backup found!\n", __func__);
--		return -1;
--	}
--
--	if (sb->sectorsize != PAGE_SIZE) {
--		printf(
--	"%s: Unsupported sector size (%u), only supports %u as sector size\n",
--			__func__, sb->sectorsize, PAGE_SIZE);
--		return -1;
--	}
--
--	if (btrfs_info.sb.num_devices != 1) {
--		printf("%s: Unsupported number of devices (%lli). This driver "
--		       "only supports filesystem on one device.\n", __func__,
--		       btrfs_info.sb.num_devices);
--		return -1;
--	}
--
--	debug("Chosen superblock with generation = %llu\n",
--	      btrfs_info.sb.generation);
--
--	return 0;
--}
+ 	res = key->offset;
+ out:
+-	btrfs_free_path(&path);
++	__btrfs_free_path(&path);
+ 	return res;
+ }
+ 
+@@ -50,7 +50,7 @@ int btrfs_lookup_inode(const struct btrfs_root *root,
+ 		       struct btrfs_root *new_root)
+ {
+ 	struct btrfs_root tmp_root = *root;
+-	struct btrfs_path path;
++	struct __btrfs_path path;
+ 	int res = -1;
+ 
+ 	if (location->type == BTRFS_ROOT_ITEM_KEY) {
+@@ -79,13 +79,13 @@ int btrfs_lookup_inode(const struct btrfs_root *root,
+ 	res = 0;
+ 
+ out:
+-	btrfs_free_path(&path);
++	__btrfs_free_path(&path);
+ 	return res;
+ }
+ 
+ int btrfs_readlink(const struct btrfs_root *root, u64 inr, char *target)
+ {
+-	struct btrfs_path path;
++	struct __btrfs_path path;
+ 	struct btrfs_key key;
+ 	struct btrfs_file_extent_item *extent;
+ 	const char *data_ptr;
+@@ -131,7 +131,7 @@ int btrfs_readlink(const struct btrfs_root *root, u64 inr, char *target)
+ 	target[extent->ram_bytes] = '\0';
+ 	res = 0;
+ out:
+-	btrfs_free_path(&path);
++	__btrfs_free_path(&path);
+ 	return res;
+ }
+ 
+@@ -320,7 +320,7 @@ u64 btrfs_lookup_path(struct btrfs_root *root, u64 inr, const char *path,
+ u64 btrfs_file_read(const struct btrfs_root *root, u64 inr, u64 offset,
+ 		    u64 size, char *buf)
+ {
+-	struct btrfs_path path;
++	struct __btrfs_path path;
+ 	struct btrfs_key key;
+ 	struct btrfs_file_extent_item *extent;
+ 	int res = 0;
+@@ -379,6 +379,6 @@ u64 btrfs_file_read(const struct btrfs_root *root, u64 inr, u64 offset,
+ 		return -1ULL;
+ 
+ out:
+-	btrfs_free_path(&path);
++	__btrfs_free_path(&path);
+ 	return rd_all;
+ }
+diff --git a/fs/btrfs/root.c b/fs/btrfs/root.c
+index 61155e8918..9b5f645015 100644
+--- a/fs/btrfs/root.c
++++ b/fs/btrfs/root.c
+@@ -7,7 +7,7 @@
+ 
+ #include "btrfs.h"
+ 
+-static void read_root_item(struct btrfs_path *p, struct btrfs_root_item *item)
++static void read_root_item(struct __btrfs_path *p, struct btrfs_root_item *item)
+ {
+ 	u32 len;
+ 	int reset = 0;
+@@ -34,7 +34,7 @@ static void read_root_item(struct btrfs_path *p, struct btrfs_root_item *item)
+ int btrfs_find_root(u64 objectid, struct btrfs_root *root,
+ 		    struct btrfs_root_item *root_item)
+ {
+-	struct btrfs_path path;
++	struct __btrfs_path path;
+ 	struct btrfs_root_item my_root_item;
+ 
+ 	if (!btrfs_search_tree_key_type(&btrfs_info.tree_root, objectid,
+@@ -51,13 +51,13 @@ int btrfs_find_root(u64 objectid, struct btrfs_root *root,
+ 		root->root_dirid = root_item->root_dirid;
+ 	}
+ 
+-	btrfs_free_path(&path);
++	__btrfs_free_path(&path);
+ 	return 0;
+ }
+ 
+ u64 btrfs_lookup_root_ref(u64 subvolid, struct btrfs_root_ref *refp, char *name)
+ {
+-	struct btrfs_path path;
++	struct __btrfs_path path;
+ 	struct btrfs_key *key;
+ 	struct btrfs_root_ref *ref;
+ 	u64 res = -1ULL;
+@@ -86,7 +86,7 @@ u64 btrfs_lookup_root_ref(u64 subvolid, struct btrfs_root_ref *refp, char *name)
+ 
+ 	res = key->offset;
+ out:
+-	btrfs_free_path(&path);
++	__btrfs_free_path(&path);
+ 	return res;
+ }
+ 
+diff --git a/fs/btrfs/subvolume.c b/fs/btrfs/subvolume.c
+index dbe92d13cb..fa5ef1e0ac 100644
+--- a/fs/btrfs/subvolume.c
++++ b/fs/btrfs/subvolume.c
+@@ -81,7 +81,7 @@ u64 btrfs_get_default_subvol_objectid(void)
+ static void list_subvols(u64 tree, char *nameptr, int max_name_len, int level)
+ {
+ 	struct btrfs_key key, *found_key;
+-	struct btrfs_path path;
++	struct __btrfs_path path;
+ 	struct btrfs_root_ref *ref;
+ 	int res;
+ 
+@@ -116,7 +116,7 @@ static void list_subvols(u64 tree, char *nameptr, int max_name_len, int level)
+ 			       "subvolumes\n", __func__);
+ 	} while (!(res = btrfs_next_slot(&path)));
+ 
+-	btrfs_free_path(&path);
++	__btrfs_free_path(&path);
+ }
+ 
+ void btrfs_list_subvols(void)
 -- 
 2.26.2
 

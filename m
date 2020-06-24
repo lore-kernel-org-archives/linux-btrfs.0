@@ -7,33 +7,33 @@ X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 48B5DC433E0
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Jun 2020 16:03:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8B6B9C433E1
+	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Jun 2020 16:03:35 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 1C3442073E
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Jun 2020 16:03:34 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 67E222073E
+	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Jun 2020 16:03:35 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=nic.cz header.i=@nic.cz header.b="uUrJ88V0"
+	dkim=pass (1024-bit key) header.d=nic.cz header.i=@nic.cz header.b="VlxII1TQ"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2404798AbgFXQDd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 24 Jun 2020 12:03:33 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37028 "EHLO
+        id S2404800AbgFXQDe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 24 Jun 2020 12:03:34 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37030 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2404782AbgFXQD2 (ORCPT
+        with ESMTP id S2404783AbgFXQD2 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 24 Jun 2020 12:03:28 -0400
 Received: from mail.nic.cz (lists.nic.cz [IPv6:2001:1488:800:400::400])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4285CC0617BA
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4AD68C0617BC
         for <linux-btrfs@vger.kernel.org>; Wed, 24 Jun 2020 09:03:27 -0700 (PDT)
 Received: from dellmb.labs.office.nic.cz (unknown [IPv6:2001:1488:fffe:6:cac7:3539:7f1f:463])
-        by mail.nic.cz (Postfix) with ESMTP id BFF451409DA;
-        Wed, 24 Jun 2020 18:03:23 +0200 (CEST)
+        by mail.nic.cz (Postfix) with ESMTP id 5323D140649;
+        Wed, 24 Jun 2020 18:03:24 +0200 (CEST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=nic.cz; s=default;
-        t=1593014603; bh=BhX0LV3ImPIiAkTNlO7J1Sj2xioLYtsoLvla0OOe/6U=;
+        t=1593014604; bh=CduAvAQtNKW5Nu7fYOC1TBw0UdJ43jPLLHGrceLu1bQ=;
         h=From:To:Date;
-        b=uUrJ88V0qbptzjTIWayCzCs+63T2F4uEowzypa2hYZmMw/Z4S7qTGqe+3fGshaTay
-         DQSTfnegt8sZ0OB8RUOYYlhmcZVWtAqKWMBaYg2eU7OiCOwt+vYtChS1Xmpx9Pqm5R
-         oLf2j3VrpKLenW995eeItWF1Gys6ixeZXCZMFNyo=
+        b=VlxII1TQWzlEnxtyAuAWU/9B6yDWbZQ/XnFjOSKdBGk0x6B78E1VnPOsp44ErI1jS
+         PEn9MTClmQBmcP/qzJ9KAJ/+CdfzA14mqzye4LWQDTLAdcxm0pISHF4oDbq4wRDYqG
+         21VNNvdxT+RdO44Rcc5jPvGPlDjoiDx30frfnXUk=
 From:   =?UTF-8?q?Marek=20Beh=C3=BAn?= <marek.behun@nic.cz>
 To:     u-boot@lists.denx.de
 Cc:     =?UTF-8?q?Alberto=20S=C3=A1nchez=20Molero?= <alsamolero@gmail.com>,
@@ -43,9 +43,9 @@ Cc:     =?UTF-8?q?Alberto=20S=C3=A1nchez=20Molero?= <alsamolero@gmail.com>,
         Yevgeny Popovych <yevgenyp@pointgrab.com>,
         linux-btrfs@vger.kernel.org, Qu Wenruo <wqu@suse.com>,
         =?UTF-8?q?Marek=20Beh=C3=BAn?= <marek.behun@nic.cz>
-Subject: [PATCH U-BOOT v3 14/30] fs: btrfs: Crossport btrfs_read_sys_array() and btrfs_read_chunk_tree()
-Date:   Wed, 24 Jun 2020 18:03:00 +0200
-Message-Id: <20200624160316.5001-15-marek.behun@nic.cz>
+Subject: [PATCH U-BOOT v3 17/30] fs: btrfs: Use btrfs_readlink() to implement __btrfs_readlink()
+Date:   Wed, 24 Jun 2020 18:03:03 +0200
+Message-Id: <20200624160316.5001-18-marek.behun@nic.cz>
 X-Mailer: git-send-email 2.26.2
 In-Reply-To: <20200624160316.5001-1-marek.behun@nic.cz>
 References: <20200624160316.5001-1-marek.behun@nic.cz>
@@ -62,402 +62,164 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Qu Wenruo <wqu@suse.com>
 
-These two functions play a big role in btrfs bootstrap.
+The existing __btrfs_readlink() can be easily re-implemented using the
+extent buffer based btrfs_readlink().
 
-The following function is removed:
-- Seed device support
-
-Although in theory we can still support multiple devices, we don't have
-a facility in U-Boot to do device scan without opening them.
+This is the first step to re-implement U-Boot's btrfs code.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 Reviewed-by: Marek Behún <marek.behun@nic.cz>
 ---
- fs/btrfs/btrfs.c     |   2 +-
- fs/btrfs/btrfs.h     |   2 +-
- fs/btrfs/chunk-map.c |   2 +-
- fs/btrfs/volumes.c   | 301 +++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/volumes.h   |   2 +
- 5 files changed, 306 insertions(+), 3 deletions(-)
+ fs/btrfs/btrfs.h |   1 +
+ fs/btrfs/inode.c | 101 ++++++++++++++++++++++++++++++-----------------
+ 2 files changed, 65 insertions(+), 37 deletions(-)
 
-diff --git a/fs/btrfs/btrfs.c b/fs/btrfs/btrfs.c
-index b4535c9551..f5266f1b91 100644
---- a/fs/btrfs/btrfs.c
-+++ b/fs/btrfs/btrfs.c
-@@ -100,7 +100,7 @@ int btrfs_probe(struct blk_desc *fs_dev_desc,
- 	btrfs_info.chunk_root.objectid = 0;
- 	btrfs_info.chunk_root.bytenr = btrfs_info.sb.chunk_root;
- 
--	if (btrfs_read_chunk_tree()) {
-+	if (__btrfs_read_chunk_tree()) {
- 		printf("%s: failed to read chunk tree\n", __func__);
- 		return -1;
- 	}
 diff --git a/fs/btrfs/btrfs.h b/fs/btrfs/btrfs.h
-index ae29226e9a..7dfdaf77ba 100644
+index e8197391a2..53d53f310b 100644
 --- a/fs/btrfs/btrfs.h
 +++ b/fs/btrfs/btrfs.h
-@@ -33,7 +33,7 @@ int btrfs_devread(u64, int, void *);
- u64 btrfs_map_logical_to_physical(u64);
- int btrfs_chunk_map_init(void);
- void btrfs_chunk_map_exit(void);
--int btrfs_read_chunk_tree(void);
-+int __btrfs_read_chunk_tree(void);
+@@ -60,6 +60,7 @@ u64 __btrfs_lookup_inode_ref(struct __btrfs_root *, u64, struct btrfs_inode_ref
+ int __btrfs_lookup_inode(const struct __btrfs_root *, struct btrfs_key *,
+ 		        struct btrfs_inode_item *, struct __btrfs_root *);
+ int __btrfs_readlink(const struct __btrfs_root *, u64, char *);
++int btrfs_readlink(struct btrfs_root *root, u64 ino, char *target);
+ u64 __btrfs_lookup_path(struct __btrfs_root *, u64, const char *, u8 *,
+ 		       struct btrfs_inode_item *, int);
+ u64 btrfs_file_read(const struct __btrfs_root *, u64, u64, u64, char *);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index eb34f546b5..007cf32c16 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -5,8 +5,9 @@
+  * 2017 Marek Behun, CZ.NIC, marek.behun@nic.cz
+  */
  
- /* compression.c */
- u32 btrfs_decompress(u8 type, const char *, u32, char *, u32);
-diff --git a/fs/btrfs/chunk-map.c b/fs/btrfs/chunk-map.c
-index 8e3d13c4a9..bff83e4dc8 100644
---- a/fs/btrfs/chunk-map.c
-+++ b/fs/btrfs/chunk-map.c
-@@ -142,7 +142,7 @@ int btrfs_chunk_map_init(void)
- 	return 0;
+-#include "btrfs.h"
+ #include <malloc.h>
++#include "btrfs.h"
++#include "disk-io.h"
+ 
+ u64 __btrfs_lookup_inode_ref(struct __btrfs_root *root, u64 inr,
+ 			   struct btrfs_inode_ref *refp, char *name)
+@@ -83,56 +84,82 @@ out:
+ 	return res;
  }
  
--int btrfs_read_chunk_tree(void)
-+int __btrfs_read_chunk_tree(void)
- {
- 	struct __btrfs_path path;
- 	struct btrfs_key key, *found_key;
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 7c72c4267f..be3752bb75 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -5,6 +5,7 @@
- #include "ctree.h"
- #include "disk-io.h"
- #include "volumes.h"
-+#include "extent-io.h"
- 
- const struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
- 	[BTRFS_RAID_RAID10] = {
-@@ -369,6 +370,14 @@ struct btrfs_device *btrfs_find_device(struct btrfs_fs_info *fs_info, u64 devid,
- 	return NULL;
- }
- 
-+static struct btrfs_device *fill_missing_device(u64 devid)
-+{
-+	struct btrfs_device *device;
-+
-+	device = kzalloc(sizeof(*device), GFP_NOFS);
-+	return device;
-+}
-+
- /*
-  * slot == -1: SYSTEM chunk
-  * return -EIO on error, otherwise return 0
-@@ -498,6 +507,298 @@ int btrfs_check_chunk_valid(struct btrfs_fs_info *fs_info,
- 	return 0;
- }
- 
+-int __btrfs_readlink(const struct __btrfs_root *root, u64 inr, char *target)
 +/*
-+ * Slot is used to verify the chunk item is valid
++ * Read the content of symlink inode @ino of @root, into @target.
++ * NOTE: @target will not be \0 termiated, caller should handle it properly.
 + *
-+ * For sys chunk in superblock, pass -1 to indicate sys chunk.
++ * Return the number of read data.
++ * Return <0 for error.
 + */
-+static int read_one_chunk(struct btrfs_fs_info *fs_info, struct btrfs_key *key,
-+			  struct extent_buffer *leaf,
-+			  struct btrfs_chunk *chunk, int slot)
-+{
-+	struct btrfs_mapping_tree *map_tree = &fs_info->mapping_tree;
-+	struct map_lookup *map;
-+	struct cache_extent *ce;
-+	u64 logical;
-+	u64 length;
-+	u64 devid;
-+	u8 uuid[BTRFS_UUID_SIZE];
-+	int num_stripes;
++int btrfs_readlink(struct btrfs_root *root, u64 ino, char *target)
+ {
+-	struct __btrfs_path path;
++	struct btrfs_path path;
+ 	struct btrfs_key key;
+-	struct btrfs_file_extent_item *extent;
+-	const char *data_ptr;
+-	int res = -1;
++	struct btrfs_file_extent_item *fi;
 +	int ret;
-+	int i;
-+
-+	logical = key->offset;
-+	length = btrfs_chunk_length(leaf, chunk);
-+	num_stripes = btrfs_chunk_num_stripes(leaf, chunk);
-+	/* Validation check */
-+	ret = btrfs_check_chunk_valid(fs_info, leaf, chunk, slot, logical);
-+	if (ret) {
-+		error("%s checksums match, but it has an invalid chunk, %s",
-+		      (slot == -1) ? "Superblock" : "Metadata",
-+		      (slot == -1) ? "try btrfsck --repair -s <superblock> ie, 0,1,2" : "");
-+		return ret;
-+	}
-+
-+	ce = search_cache_extent(&map_tree->cache_tree, logical);
-+
-+	/* already mapped? */
-+	if (ce && ce->start <= logical && ce->start + ce->size > logical) {
-+		return 0;
-+	}
-+
-+	map = kmalloc(btrfs_map_lookup_size(num_stripes), GFP_NOFS);
-+	if (!map)
-+		return -ENOMEM;
-+
-+	map->ce.start = logical;
-+	map->ce.size = length;
-+	map->num_stripes = num_stripes;
-+	map->io_width = btrfs_chunk_io_width(leaf, chunk);
-+	map->io_align = btrfs_chunk_io_align(leaf, chunk);
-+	map->sector_size = btrfs_chunk_sector_size(leaf, chunk);
-+	map->stripe_len = btrfs_chunk_stripe_len(leaf, chunk);
-+	map->type = btrfs_chunk_type(leaf, chunk);
-+	map->sub_stripes = btrfs_chunk_sub_stripes(leaf, chunk);
-+
-+	for (i = 0; i < num_stripes; i++) {
-+		map->stripes[i].physical =
-+			btrfs_stripe_offset_nr(leaf, chunk, i);
-+		devid = btrfs_stripe_devid_nr(leaf, chunk, i);
-+		read_extent_buffer(leaf, uuid, (unsigned long)
-+				   btrfs_stripe_dev_uuid_nr(chunk, i),
-+				   BTRFS_UUID_SIZE);
-+		map->stripes[i].dev = btrfs_find_device(fs_info, devid, uuid,
-+							NULL);
-+		if (!map->stripes[i].dev) {
-+			map->stripes[i].dev = fill_missing_device(devid);
-+			printf("warning, device %llu is missing\n",
-+			       (unsigned long long)devid);
-+			list_add(&map->stripes[i].dev->dev_list,
-+				 &fs_info->fs_devices->devices);
-+		}
-+
-+	}
-+	ret = insert_cache_extent(&map_tree->cache_tree, &map->ce);
-+	if (ret < 0) {
-+		errno = -ret;
-+		error("failed to add chunk map start=%llu len=%llu: %d (%m)",
-+		      map->ce.start, map->ce.size, ret);
-+	}
-+
-+	return ret;
-+}
-+
-+static int fill_device_from_item(struct extent_buffer *leaf,
-+				 struct btrfs_dev_item *dev_item,
-+				 struct btrfs_device *device)
-+{
-+	unsigned long ptr;
-+
-+	device->devid = btrfs_device_id(leaf, dev_item);
-+	device->total_bytes = btrfs_device_total_bytes(leaf, dev_item);
-+	device->bytes_used = btrfs_device_bytes_used(leaf, dev_item);
-+	device->type = btrfs_device_type(leaf, dev_item);
-+	device->io_align = btrfs_device_io_align(leaf, dev_item);
-+	device->io_width = btrfs_device_io_width(leaf, dev_item);
-+	device->sector_size = btrfs_device_sector_size(leaf, dev_item);
-+
-+	ptr = (unsigned long)btrfs_device_uuid(dev_item);
-+	read_extent_buffer(leaf, device->uuid, ptr, BTRFS_UUID_SIZE);
-+
-+	return 0;
-+}
-+
-+static int read_one_dev(struct btrfs_fs_info *fs_info,
-+			struct extent_buffer *leaf,
-+			struct btrfs_dev_item *dev_item)
-+{
-+	struct btrfs_device *device;
-+	u64 devid;
-+	int ret = 0;
-+	u8 fs_uuid[BTRFS_UUID_SIZE];
-+	u8 dev_uuid[BTRFS_UUID_SIZE];
-+
-+	devid = btrfs_device_id(leaf, dev_item);
-+	read_extent_buffer(leaf, dev_uuid,
-+			   (unsigned long)btrfs_device_uuid(dev_item),
-+			   BTRFS_UUID_SIZE);
-+	read_extent_buffer(leaf, fs_uuid,
-+			   (unsigned long)btrfs_device_fsid(dev_item),
-+			   BTRFS_FSID_SIZE);
-+
-+	if (memcmp(fs_uuid, fs_info->fs_devices->fsid, BTRFS_UUID_SIZE)) {
-+		error("Seed device is not yet supported\n");
-+		return -ENOTSUPP;
-+	}
-+
-+	device = btrfs_find_device(fs_info, devid, dev_uuid, fs_uuid);
-+	if (!device) {
-+		device = kzalloc(sizeof(*device), GFP_NOFS);
-+		if (!device)
-+			return -ENOMEM;
-+		list_add(&device->dev_list,
-+			 &fs_info->fs_devices->devices);
-+	}
-+
-+	fill_device_from_item(leaf, dev_item, device);
-+	fs_info->fs_devices->total_rw_bytes +=
-+		btrfs_device_total_bytes(leaf, dev_item);
-+	return ret;
-+}
-+
-+int btrfs_read_sys_array(struct btrfs_fs_info *fs_info)
-+{
-+	struct btrfs_super_block *super_copy = fs_info->super_copy;
-+	struct extent_buffer *sb;
-+	struct btrfs_disk_key *disk_key;
-+	struct btrfs_chunk *chunk;
-+	u8 *array_ptr;
-+	unsigned long sb_array_offset;
-+	int ret = 0;
-+	u32 num_stripes;
-+	u32 array_size;
-+	u32 len = 0;
-+	u32 cur_offset;
-+	struct btrfs_key key;
-+
-+	if (fs_info->nodesize < BTRFS_SUPER_INFO_SIZE) {
-+		printf("ERROR: nodesize %u too small to read superblock\n",
-+				fs_info->nodesize);
-+		return -EINVAL;
-+	}
-+	sb = alloc_dummy_extent_buffer(fs_info, BTRFS_SUPER_INFO_OFFSET,
-+				       BTRFS_SUPER_INFO_SIZE);
-+	if (!sb)
-+		return -ENOMEM;
-+	btrfs_set_buffer_uptodate(sb);
-+	write_extent_buffer(sb, super_copy, 0, sizeof(*super_copy));
-+	array_size = btrfs_super_sys_array_size(super_copy);
-+
-+	array_ptr = super_copy->sys_chunk_array;
-+	sb_array_offset = offsetof(struct btrfs_super_block, sys_chunk_array);
-+	cur_offset = 0;
-+
-+	while (cur_offset < array_size) {
-+		disk_key = (struct btrfs_disk_key *)array_ptr;
-+		len = sizeof(*disk_key);
-+		if (cur_offset + len > array_size)
-+			goto out_short_read;
-+
-+		btrfs_disk_key_to_cpu(&key, disk_key);
-+
-+		array_ptr += len;
-+		sb_array_offset += len;
-+		cur_offset += len;
-+
-+		if (key.type == BTRFS_CHUNK_ITEM_KEY) {
-+			chunk = (struct btrfs_chunk *)sb_array_offset;
-+			/*
-+			 * At least one btrfs_chunk with one stripe must be
-+			 * present, exact stripe count check comes afterwards
-+			 */
-+			len = btrfs_chunk_item_size(1);
-+			if (cur_offset + len > array_size)
-+				goto out_short_read;
-+
-+			num_stripes = btrfs_chunk_num_stripes(sb, chunk);
-+			if (!num_stripes) {
-+				printk(
-+	    "ERROR: invalid number of stripes %u in sys_array at offset %u\n",
-+					num_stripes, cur_offset);
-+				ret = -EIO;
-+				break;
-+			}
-+
-+			len = btrfs_chunk_item_size(num_stripes);
-+			if (cur_offset + len > array_size)
-+				goto out_short_read;
-+
-+			ret = read_one_chunk(fs_info, &key, sb, chunk, -1);
-+			if (ret)
-+				break;
-+		} else {
-+			printk(
-+		"ERROR: unexpected item type %u in sys_array at offset %u\n",
-+				(u32)key.type, cur_offset);
-+			ret = -EIO;
-+			break;
-+		}
-+		array_ptr += len;
-+		sb_array_offset += len;
-+		cur_offset += len;
-+	}
-+	free_extent_buffer(sb);
-+	return ret;
-+
-+out_short_read:
-+	printk("ERROR: sys_array too short to read %u bytes at offset %u\n",
-+			len, cur_offset);
-+	free_extent_buffer(sb);
-+	return -EIO;
-+}
-+
-+int btrfs_read_chunk_tree(struct btrfs_fs_info *fs_info)
-+{
-+	struct btrfs_path *path;
-+	struct extent_buffer *leaf;
-+	struct btrfs_key key;
-+	struct btrfs_key found_key;
-+	struct btrfs_root *root = fs_info->chunk_root;
-+	int ret;
-+	int slot;
-+
-+	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
-+
-+	/*
-+	 * Read all device items, and then all the chunk items. All
-+	 * device items are found before any chunk item (their object id
-+	 * is smaller than the lowest possible object id for a chunk
-+	 * item - BTRFS_FIRST_CHUNK_TREE_OBJECTID).
-+	 */
-+	key.objectid = BTRFS_DEV_ITEMS_OBJECTID;
-+	key.offset = 0;
-+	key.type = 0;
-+	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
+ 
+-	key.objectid = inr;
++	key.objectid = ino;
+ 	key.type = BTRFS_EXTENT_DATA_KEY;
+ 	key.offset = 0;
++	btrfs_init_path(&path);
+ 
+-	if (btrfs_search_tree(root, &key, &path))
+-		return -1;
+-
+-	if (__btrfs_comp_keys(&key, btrfs_path_leaf_key(&path)))
+-		goto out;
+-
+-	extent = btrfs_path_item_ptr(&path, struct btrfs_file_extent_item);
+-	if (extent->type != BTRFS_FILE_EXTENT_INLINE) {
+-		printf("%s: Extent for symlink %llu not of INLINE type\n",
+-		       __func__, inr);
++	ret = btrfs_search_slot(NULL, root, &key, &path, 0, 0);
 +	if (ret < 0)
-+		goto error;
-+	while(1) {
-+		leaf = path->nodes[0];
-+		slot = path->slots[0];
-+		if (slot >= btrfs_header_nritems(leaf)) {
-+			ret = btrfs_next_leaf(root, path);
-+			if (ret == 0)
-+				continue;
-+			if (ret < 0)
-+				goto error;
-+			break;
-+		}
-+		btrfs_item_key_to_cpu(leaf, &found_key, slot);
-+		if (found_key.type == BTRFS_DEV_ITEM_KEY) {
-+			struct btrfs_dev_item *dev_item;
-+			dev_item = btrfs_item_ptr(leaf, slot,
-+						  struct btrfs_dev_item);
-+			ret = read_one_dev(fs_info, leaf, dev_item);
-+			if (ret < 0)
-+				goto error;
-+		} else if (found_key.type == BTRFS_CHUNK_ITEM_KEY) {
-+			struct btrfs_chunk *chunk;
-+			chunk = btrfs_item_ptr(leaf, slot, struct btrfs_chunk);
-+			ret = read_one_chunk(fs_info, &found_key, leaf, chunk,
-+					     slot);
-+			if (ret < 0)
-+				goto error;
-+		}
-+		path->slots[0]++;
++		return ret;
++	if (ret > 0) {
++		ret = -ENOENT;
+ 		goto out;
+ 	}
+-
+-	btrfs_file_extent_item_to_cpu_inl(extent);
+-
+-	if (extent->compression != BTRFS_COMPRESS_NONE) {
+-		printf("%s: Symlink %llu extent data compressed!\n", __func__,
+-		       inr);
++	fi = btrfs_item_ptr(path.nodes[0], path.slots[0],
++			    struct btrfs_file_extent_item);
++	if (btrfs_file_extent_type(path.nodes[0], fi) !=
++	    BTRFS_FILE_EXTENT_INLINE) {
++		ret = -EUCLEAN;
++		error("Extent for symlink %llu must be INLINE type!", ino);
+ 		goto out;
+-	} else if (extent->encryption != 0) {
+-		printf("%s: Symlink %llu extent data encrypted!\n", __func__,
+-		       inr);
 +	}
-+
-+	ret = 0;
-+error:
-+	btrfs_free_path(path);
++	if (btrfs_file_extent_compression(path.nodes[0], fi) !=
++	    BTRFS_COMPRESS_NONE) {
++		ret = -EUCLEAN;
++		error("Extent for symlink %llu must not be compressed!", ino);
+ 		goto out;
+-	} else if (extent->ram_bytes >= btrfs_info.sb.sectorsize) {
+-		printf("%s: Symlink %llu extent data too long (%llu)!\n",
+-		       __func__, inr, extent->ram_bytes);
++	}
++	if (btrfs_file_extent_ram_bytes(path.nodes[0], fi) >=
++	    root->fs_info->sectorsize) {
++		ret = -EUCLEAN;
++		error("Symlink %llu extent data too large (%llu)!\n",
++			ino, btrfs_file_extent_ram_bytes(path.nodes[0], fi));
+ 		goto out;
+ 	}
++	read_extent_buffer(path.nodes[0], target,
++			btrfs_file_extent_inline_start(fi),
++			btrfs_file_extent_ram_bytes(path.nodes[0], fi));
++	ret = btrfs_file_extent_ram_bytes(path.nodes[0], fi);
++out:
++	btrfs_release_path(&path);
 +	return ret;
 +}
+ 
+-	data_ptr = (const char *) extent
+-		   + offsetof(struct btrfs_file_extent_item, disk_bytenr);
++int __btrfs_readlink(const struct __btrfs_root *root, u64 inr, char *target)
++{
++	struct btrfs_root *subvolume;
++	struct btrfs_fs_info *fs_info = current_fs_info;
++	struct btrfs_key key;
++	int ret;
 +
- /*
-  * Get stripe length from chunk item and its stripe items
-  *
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 32e39382a8..9d1a07ae78 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -182,6 +182,8 @@ static inline int btrfs_next_bg_system(struct btrfs_fs_info *fs_info,
- 	return btrfs_next_bg(fs_info, logical, size,
- 			BTRFS_BLOCK_GROUP_SYSTEM);
++	ASSERT(fs_info);
++	key.objectid = root->objectid;
++	key.type = BTRFS_ROOT_ITEM_KEY;
++	key.offset = (u64)-1;
++	subvolume = btrfs_read_fs_root(fs_info, &key);
++	if (IS_ERR(subvolume))
++		return -1;
+ 
+-	memcpy(target, data_ptr, extent->ram_bytes);
+-	target[extent->ram_bytes] = '\0';
+-	res = 0;
+-out:
+-	__btrfs_free_path(&path);
+-	return res;
++	ret = btrfs_readlink(subvolume, inr, target);
++	if (ret < 0)
++		return -1;
++	target[ret] = '\0';
++	return 0;
  }
-+int btrfs_read_sys_array(struct btrfs_fs_info *fs_info);
-+int btrfs_read_chunk_tree(struct btrfs_fs_info *fs_info);
- int btrfs_open_devices(struct btrfs_fs_devices *fs_devices);
- int btrfs_close_devices(struct btrfs_fs_devices *fs_devices);
- void btrfs_close_all_devices(void);
+ 
+ /* inr must be a directory (for regular files with multiple hard links this
 -- 
 2.26.2
 

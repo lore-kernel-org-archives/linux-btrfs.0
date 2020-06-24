@@ -7,33 +7,33 @@ X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A3A4DC433E0
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Jun 2020 16:03:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 135B1C433E1
+	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Jun 2020 16:03:58 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 75C6420781
+	by mail.kernel.org (Postfix) with ESMTP id D6F1F20781
 	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Jun 2020 16:03:57 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=nic.cz header.i=@nic.cz header.b="OM+/hQe8"
+	dkim=pass (1024-bit key) header.d=nic.cz header.i=@nic.cz header.b="Lqpviksj"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2404838AbgFXQD4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 24 Jun 2020 12:03:56 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37020 "EHLO
+        id S2404832AbgFXQDx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 24 Jun 2020 12:03:53 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37024 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2404769AbgFXQD1 (ORCPT
+        with ESMTP id S2404770AbgFXQD1 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 24 Jun 2020 12:03:27 -0400
 Received: from mail.nic.cz (mail.nic.cz [IPv6:2001:1488:800:400::400])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3EC4DC061799
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4268DC06179B
         for <linux-btrfs@vger.kernel.org>; Wed, 24 Jun 2020 09:03:27 -0700 (PDT)
 Received: from dellmb.labs.office.nic.cz (unknown [IPv6:2001:1488:fffe:6:cac7:3539:7f1f:463])
-        by mail.nic.cz (Postfix) with ESMTP id 9B68D1409D5;
+        by mail.nic.cz (Postfix) with ESMTP id EC4AB1409DB;
         Wed, 24 Jun 2020 18:03:23 +0200 (CEST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=nic.cz; s=default;
-        t=1593014603; bh=spICajiE88wNQ/eAfuBEWRlJm1iArQPm4+FKw48huQc=;
+        t=1593014604; bh=qWiXjzOHr8zWJS0ZlptXsB3cPP0PKGBcswKjOvfzh0I=;
         h=From:To:Date;
-        b=OM+/hQe8qC9WzfmqhHTOLz/BvcgyhniRpPIC+UCIstXHGh7fJhY5uNA4b9lmcd9Nh
-         UUWu1H77lj7xLVr4Z3fleWcJ/mTG4R4nCoOw4n2tDIgBsxhr6nhG7aFA72fZO1DCJy
-         8fKFVDWcYqYxpbvzBrUchu7XC/yiHQ9EzYmZ+o5c=
+        b=LqpviksjbDxbuD+kFWA/wDkZLhrKVCUQ/vdWDkwQG9iXHYR24VpIDgh7Y1g9ulFQp
+         /+Gy8yWTd2deFTnfxDhbGqS8dWZWU/Vt6L6U2R23SaKm9awOG9O4I0TSsF2Bv9TCgo
+         J62FEZMd/royDx5icnHqkPDDfxiUKmAgsVcpuabg=
 From:   =?UTF-8?q?Marek=20Beh=C3=BAn?= <marek.behun@nic.cz>
 To:     u-boot@lists.denx.de
 Cc:     =?UTF-8?q?Alberto=20S=C3=A1nchez=20Molero?= <alsamolero@gmail.com>,
@@ -43,9 +43,9 @@ Cc:     =?UTF-8?q?Alberto=20S=C3=A1nchez=20Molero?= <alsamolero@gmail.com>,
         Yevgeny Popovych <yevgenyp@pointgrab.com>,
         linux-btrfs@vger.kernel.org, Qu Wenruo <wqu@suse.com>,
         =?UTF-8?q?Marek=20Beh=C3=BAn?= <marek.behun@nic.cz>
-Subject: [PATCH U-BOOT v3 13/30] fs: btrfs: Crossport btrfs_search_slot() from btrfs-progs
-Date:   Wed, 24 Jun 2020 18:02:59 +0200
-Message-Id: <20200624160316.5001-14-marek.behun@nic.cz>
+Subject: [PATCH U-BOOT v3 15/30] fs: btrfs: Crossport open_ctree_fs_info() from btrfs-progs
+Date:   Wed, 24 Jun 2020 18:03:01 +0200
+Message-Id: <20200624160316.5001-16-marek.behun@nic.cz>
 X-Mailer: git-send-email 2.26.2
 In-Reply-To: <20200624160316.5001-1-marek.behun@nic.cz>
 References: <20200624160316.5001-1-marek.behun@nic.cz>
@@ -62,717 +62,746 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Qu Wenruo <wqu@suse.com>
 
-This patch copies the core function, btrfs_search_slot(), from
-btrfs-progs.
+open_ctree_fs_info() is the main entry point to open btrfs.
 
-This version has the following functionality removed:
-- The ability to COW tree block
-  Related code is commented out, and can be enabled in the future.
+This version is a simplfied version of __open_ctree_fd() of btrfs-progs,
+the main differences are:
+- Parameters on how to specify a block device
+  Instead of @fd and @path, U-Boot uses blk_desc and disk_partition_t.
 
-- The readahead functionality
-  This is abused in kernel. Remove it completely.
+- Remove open_ctree flags
+  There won't be multiple open ctree modes in U-Boot.
 
-With the core function in place, btrfs developers should feel at home now.
+Otherwise functions structures are all kept the same.
 
-This also crossports supporting code like btrfs_previous_item() to
-ctree.[ch].
+With open_ctree_fs_info() implemented, also introduce the global
+current_fs_info pointer to show the current opened btrfs.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 Reviewed-by: Marek Behún <marek.behun@nic.cz>
 ---
- fs/btrfs/ctree.c | 537 ++++++++++++++++++++++++++++++++++++++++++++++-
- fs/btrfs/ctree.h |  61 +++++-
- 2 files changed, 591 insertions(+), 7 deletions(-)
+ fs/btrfs/Makefile    |   2 +-
+ fs/btrfs/btrfs.c     |  15 +-
+ fs/btrfs/btrfs.h     |   1 +
+ fs/btrfs/compat.h    |   2 +
+ fs/btrfs/ctree.h     |   4 +
+ fs/btrfs/disk-io.c   | 509 +++++++++++++++++++++++++++++++++++++++++--
+ fs/btrfs/disk-io.h   |  19 ++
+ fs/btrfs/root-tree.c |  47 ++++
+ 8 files changed, 579 insertions(+), 20 deletions(-)
+ create mode 100644 fs/btrfs/root-tree.c
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 2956fe2cea..98c08d353a 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -5,10 +5,12 @@
-  * 2017 Marek Behun, CZ.NIC, marek.behun@nic.cz
-  */
+diff --git a/fs/btrfs/Makefile b/fs/btrfs/Makefile
+index ec30aae765..8d76422ce2 100644
+--- a/fs/btrfs/Makefile
++++ b/fs/btrfs/Makefile
+@@ -4,4 +4,4 @@
  
--#include "btrfs.h"
-+#include <linux/kernel.h>
- #include <log.h>
- #include <malloc.h>
- #include <memalign.h>
-+#include "btrfs.h"
-+#include "disk-io.h"
+ obj-y := btrfs.o chunk-map.o compression.o ctree.o dev.o dir-item.o \
+ 	extent-io.o inode.o root.o subvolume.o crypto/hash.o disk-io.o \
+-	common/rbtree-utils.o extent-cache.o volumes.o
++	common/rbtree-utils.o extent-cache.o volumes.o root-tree.o
+diff --git a/fs/btrfs/btrfs.c b/fs/btrfs/btrfs.c
+index f5266f1b91..2bd2ec9ed9 100644
+--- a/fs/btrfs/btrfs.c
++++ b/fs/btrfs/btrfs.c
+@@ -14,6 +14,7 @@
+ #include "disk-io.h"
  
- static const struct btrfs_csum {
- 	u16 size;
-@@ -42,6 +44,32 @@ u16 btrfs_csum_type_size(u16 csum_type)
- 	return btrfs_csums[csum_type].size;
- }
+ struct btrfs_info btrfs_info;
++struct btrfs_fs_info *current_fs_info;
  
-+struct btrfs_path *btrfs_alloc_path(void)
-+{
-+	struct btrfs_path *path;
-+	path = kzalloc(sizeof(struct btrfs_path), GFP_NOFS);
-+	return path;
-+}
-+
-+void btrfs_free_path(struct btrfs_path *p)
-+{
-+	if (!p)
-+		return;
-+	btrfs_release_path(p);
-+	kfree(p);
-+}
-+
-+void btrfs_release_path(struct btrfs_path *p)
-+{
-+	int i;
-+	for (i = 0; i < BTRFS_MAX_LEVEL; i++) {
-+		if (!p->nodes[i])
-+			continue;
-+		free_extent_buffer(p->nodes[i]);
-+	}
-+	memset(p, 0, sizeof(*p));
-+}
-+
- int __btrfs_comp_keys(struct btrfs_key *a, struct btrfs_key *b)
+ static int readdir_callback(const struct __btrfs_root *root,
+ 			    struct btrfs_dir_item *item)
+@@ -81,6 +82,9 @@ static int readdir_callback(const struct __btrfs_root *root,
+ int btrfs_probe(struct blk_desc *fs_dev_desc,
+ 		struct disk_partition *fs_partition)
  {
- 	if (a->objectid > b->objectid)
-@@ -72,7 +100,17 @@ int btrfs_comp_keys_type(struct btrfs_key *a, struct btrfs_key *b)
- 	return 0;
- }
++	struct btrfs_fs_info *fs_info;
++	int ret = -1;
++
+ 	btrfs_blk_desc = fs_dev_desc;
+ 	btrfs_part_info = fs_partition;
  
--static int generic_bin_search(void *addr, int item_size, struct btrfs_key *key,
-+/*
-+ * search for key in the extent_buffer.  The items start at offset p,
-+ * and they are item_size apart.  There are 'max' items in p.
-+ *
-+ * the slot in the array is returned via slot, and it points to
-+ * the place where you would insert key if it is not found in
-+ * the array.
-+ *
-+ * slot may point to max if the key is bigger than all of the keys
-+ */
-+static int __generic_bin_search(void *addr, int item_size, struct btrfs_key *key,
- 			      int max, int *slot)
- {
- 	int low = 0, high = max, mid, ret;
-@@ -98,8 +136,8 @@ static int generic_bin_search(void *addr, int item_size, struct btrfs_key *key,
- 	return 1;
- }
- 
--int btrfs_bin_search(union btrfs_tree_node *p, struct btrfs_key *key,
--		     int *slot)
-+int __btrfs_bin_search(union btrfs_tree_node *p, struct btrfs_key *key,
-+		       int *slot)
- {
- 	void *addr;
- 	unsigned long size;
-@@ -112,7 +150,7 @@ int btrfs_bin_search(union btrfs_tree_node *p, struct btrfs_key *key,
- 		size = sizeof(struct btrfs_item);
+@@ -111,7 +115,12 @@ int btrfs_probe(struct blk_desc *fs_dev_desc,
+ 		return -1;
  	}
  
--	return generic_bin_search(addr, size, key, p->header.nritems, slot);
-+	return __generic_bin_search(addr, size, key, p->header.nritems, slot);
- }
- 
- static void clear_path(struct __btrfs_path *p)
-@@ -209,7 +247,7 @@ int btrfs_search_tree(const struct __btrfs_root *root, struct btrfs_key *key,
- 		}
- 		prev_lvl = lvl;
- 
--		ret = btrfs_bin_search(buf, key, &slot);
-+		ret = __btrfs_bin_search(buf, key, &slot);
- 		if (ret < 0)
- 			goto err;
- 		if (ret && slot > 0 && lvl)
-@@ -464,6 +502,349 @@ fail:
- 	return ret;
- }
- 
-+static int noinline check_block(struct btrfs_fs_info *fs_info,
-+				struct btrfs_path *path, int level)
-+{
-+	struct btrfs_disk_key key;
-+	struct btrfs_disk_key *key_ptr = NULL;
-+	struct extent_buffer *parent;
-+	enum btrfs_tree_block_status ret;
-+
-+	if (path->nodes[level + 1]) {
-+		parent = path->nodes[level + 1];
-+		btrfs_node_key(parent, &key, path->slots[level + 1]);
-+		key_ptr = &key;
-+	}
-+	if (level == 0)
-+		ret = btrfs_check_leaf(fs_info, key_ptr, path->nodes[0]);
-+	else
-+		ret = btrfs_check_node(fs_info, key_ptr, path->nodes[level]);
-+	if (ret == BTRFS_TREE_BLOCK_CLEAN)
-+		return 0;
-+	return -EIO;
-+}
-+
-+/*
-+ * search for key in the extent_buffer.  The items start at offset p,
-+ * and they are item_size apart.  There are 'max' items in p.
-+ *
-+ * the slot in the array is returned via slot, and it points to
-+ * the place where you would insert key if it is not found in
-+ * the array.
-+ *
-+ * slot may point to max if the key is bigger than all of the keys
-+ */
-+static int generic_bin_search(struct extent_buffer *eb, unsigned long p,
-+			      int item_size, const struct btrfs_key *key,
-+			      int max, int *slot)
-+{
-+	int low = 0;
-+	int high = max;
-+	int mid;
-+	int ret;
-+	unsigned long offset;
-+	struct btrfs_disk_key *tmp;
-+
-+	while(low < high) {
-+		mid = (low + high) / 2;
-+		offset = p + mid * item_size;
-+
-+		tmp = (struct btrfs_disk_key *)(eb->data + offset);
-+		ret = btrfs_comp_keys(tmp, key);
-+
-+		if (ret < 0)
-+			low = mid + 1;
-+		else if (ret > 0)
-+			high = mid;
-+		else {
-+			*slot = mid;
-+			return 0;
-+		}
-+	}
-+	*slot = low;
-+	return 1;
-+}
-+
-+/*
-+ * simple bin_search frontend that does the right thing for
-+ * leaves vs nodes
-+ */
-+int btrfs_bin_search(struct extent_buffer *eb, const struct btrfs_key *key,
-+		     int *slot)
-+{
-+	if (btrfs_header_level(eb) == 0)
-+		return generic_bin_search(eb,
-+					  offsetof(struct btrfs_leaf, items),
-+					  sizeof(struct btrfs_item),
-+					  key, btrfs_header_nritems(eb),
-+					  slot);
-+	else
-+		return generic_bin_search(eb,
-+					  offsetof(struct btrfs_node, ptrs),
-+					  sizeof(struct btrfs_key_ptr),
-+					  key, btrfs_header_nritems(eb),
-+					  slot);
-+}
-+
-+struct extent_buffer *read_node_slot(struct btrfs_fs_info *fs_info,
-+				   struct extent_buffer *parent, int slot)
-+{
-+	struct extent_buffer *ret;
-+	int level = btrfs_header_level(parent);
-+
-+	if (slot < 0)
-+		return NULL;
-+	if (slot >= btrfs_header_nritems(parent))
-+		return NULL;
-+
-+	if (level == 0)
-+		return NULL;
-+
-+	ret = read_tree_block(fs_info, btrfs_node_blockptr(parent, slot),
-+		       btrfs_node_ptr_generation(parent, slot));
-+	if (!extent_buffer_uptodate(ret))
-+		return ERR_PTR(-EIO);
-+
-+	if (btrfs_header_level(ret) != level - 1) {
-+		error("child eb corrupted: parent bytenr=%llu item=%d parent level=%d child level=%d",
-+		      btrfs_header_bytenr(parent), slot,
-+		      btrfs_header_level(parent), btrfs_header_level(ret));
-+		free_extent_buffer(ret);
-+		return ERR_PTR(-EIO);
+-	return 0;
++	fs_info = open_ctree_fs_info(fs_dev_desc, fs_partition);
++	if (fs_info) {
++		current_fs_info = fs_info;
++		ret = 0;
 +	}
 +	return ret;
-+}
-+
-+int btrfs_find_item(struct btrfs_root *fs_root, struct btrfs_path *found_path,
-+		u64 iobjectid, u64 ioff, u8 key_type,
-+		struct btrfs_key *found_key)
-+{
-+	int ret;
-+	struct btrfs_key key;
-+	struct extent_buffer *eb;
-+	struct btrfs_path *path;
-+
-+	key.type = key_type;
-+	key.objectid = iobjectid;
-+	key.offset = ioff;
-+
-+	if (found_path == NULL) {
-+		path = btrfs_alloc_path();
-+		if (!path)
-+			return -ENOMEM;
-+	} else
-+		path = found_path;
-+
-+	ret = btrfs_search_slot(NULL, fs_root, &key, path, 0, 0);
-+	if ((ret < 0) || (found_key == NULL))
-+		goto out;
-+
-+	eb = path->nodes[0];
-+	if (ret && path->slots[0] >= btrfs_header_nritems(eb)) {
-+		ret = btrfs_next_leaf(fs_root, path);
-+		if (ret)
-+			goto out;
-+		eb = path->nodes[0];
-+	}
-+
-+	btrfs_item_key_to_cpu(eb, found_key, path->slots[0]);
-+	if (found_key->type != key.type ||
-+			found_key->objectid != key.objectid) {
-+		ret = 1;
-+		goto out;
-+	}
-+
-+out:
-+	if (path != found_path)
-+		btrfs_free_path(path);
-+	return ret;
-+}
-+
-+/*
-+ * look for key in the tree.  path is filled in with nodes along the way
-+ * if key is found, we return zero and you can find the item in the leaf
-+ * level of the path (level 0)
-+ *
-+ * If the key isn't found, the path points to the slot where it should
-+ * be inserted, and 1 is returned.  If there are other errors during the
-+ * search a negative error number is returned.
-+ *
-+ * if ins_len > 0, nodes and leaves will be split as we walk down the
-+ * tree.  if ins_len < 0, nodes will be merged as we walk down the tree (if
-+ * possible)
-+ *
-+ * NOTE: This version has no COW ability, thus we expect trans == NULL,
-+ * ins_len == 0 and cow == 0.
-+ */
-+int btrfs_search_slot(struct btrfs_trans_handle *trans,
-+		struct btrfs_root *root, const struct btrfs_key *key,
-+		struct btrfs_path *p, int ins_len, int cow)
-+{
-+	struct extent_buffer *b;
-+	int slot;
-+	int ret;
-+	int level;
-+	struct btrfs_fs_info *fs_info = root->fs_info;
-+	u8 lowest_level = 0;
-+
-+	assert(trans == NULL && ins_len == 0 && cow == 0);
-+	lowest_level = p->lowest_level;
-+	WARN_ON(lowest_level && ins_len > 0);
-+	WARN_ON(p->nodes[0] != NULL);
-+
-+	b = root->node;
-+	extent_buffer_get(b);
-+	while (b) {
-+		level = btrfs_header_level(b);
-+		/*
-+		if (cow) {
-+			int wret;
-+			wret = btrfs_cow_block(trans, root, b,
-+					       p->nodes[level + 1],
-+					       p->slots[level + 1],
-+					       &b);
-+			if (wret) {
-+				free_extent_buffer(b);
-+				return wret;
-+			}
-+		}
-+		*/
-+		BUG_ON(!cow && ins_len);
-+		if (level != btrfs_header_level(b))
-+			WARN_ON(1);
-+		level = btrfs_header_level(b);
-+		p->nodes[level] = b;
-+		ret = check_block(fs_info, p, level);
-+		if (ret)
-+			return -1;
-+		ret = btrfs_bin_search(b, key, &slot);
-+		if (level != 0) {
-+			if (ret && slot > 0)
-+				slot -= 1;
-+			p->slots[level] = slot;
-+			/*
-+			if ((p->search_for_split || ins_len > 0) &&
-+			    btrfs_header_nritems(b) >=
-+			    BTRFS_NODEPTRS_PER_BLOCK(fs_info) - 3) {
-+				int sret = split_node(trans, root, p, level);
-+				BUG_ON(sret > 0);
-+				if (sret)
-+					return sret;
-+				b = p->nodes[level];
-+				slot = p->slots[level];
-+			} else if (ins_len < 0) {
-+				int sret = balance_level(trans, root, p,
-+							 level);
-+				if (sret)
-+					return sret;
-+				b = p->nodes[level];
-+				if (!b) {
-+					btrfs_release_path(p);
-+					goto again;
-+				}
-+				slot = p->slots[level];
-+				BUG_ON(btrfs_header_nritems(b) == 1);
-+			}
-+			*/
-+			/* this is only true while dropping a snapshot */
-+			if (level == lowest_level)
-+				break;
-+
-+			b = read_node_slot(fs_info, b, slot);
-+			if (!extent_buffer_uptodate(b))
-+				return -EIO;
-+		} else {
-+			p->slots[level] = slot;
-+			/*
-+			if (ins_len > 0 &&
-+			    ins_len > btrfs_leaf_free_space(b)) {
-+				int sret = split_leaf(trans, root, key,
-+						      p, ins_len, ret == 0);
-+				BUG_ON(sret > 0);
-+				if (sret)
-+					return sret;
-+			}
-+			*/
-+			return ret;
-+		}
-+	}
-+	return 1;
-+}
-+
-+/*
-+ * Helper to use instead of search slot if no exact match is needed but
-+ * instead the next or previous item should be returned.
-+ * When find_higher is true, the next higher item is returned, the next lower
-+ * otherwise.
-+ * When return_any and find_higher are both true, and no higher item is found,
-+ * return the next lower instead.
-+ * When return_any is true and find_higher is false, and no lower item is found,
-+ * return the next higher instead.
-+ * It returns 0 if any item is found, 1 if none is found (tree empty), and
-+ * < 0 on error
-+ */
-+int btrfs_search_slot_for_read(struct btrfs_root *root,
-+			       const struct btrfs_key *key,
-+			       struct btrfs_path *p, int find_higher,
-+			       int return_any)
-+{
-+	int ret;
-+	struct extent_buffer *leaf;
-+
-+again:
-+	ret = btrfs_search_slot(NULL, root, key, p, 0, 0);
-+	if (ret <= 0)
-+		 return ret;
-+	/*
-+	 * A return value of 1 means the path is at the position where the item
-+	 * should be inserted. Normally this is the next bigger item, but in
-+	 * case the previous item is the last in a leaf, path points to the
-+	 * first free slot in the previous leaf, i.e. at an invalid item.
-+	 */
-+	leaf = p->nodes[0];
-+
-+	if (find_higher) {
-+		if (p->slots[0] >= btrfs_header_nritems(leaf)) {
-+			ret = btrfs_next_leaf(root, p);
-+			if (ret <= 0)
-+				return ret;
-+			if (!return_any)
-+				return 1;
-+			/*
-+			 * No higher item found, return the next lower instead
-+			 */
-+			return_any = 0;
-+			find_higher = 0;
-+			btrfs_release_path(p);
-+			goto again;
-+		}
-+	} else {
-+		if (p->slots[0] == 0) {
-+			ret = btrfs_prev_leaf(root, p);
-+			if (ret < 0)
-+				return ret;
-+			if (!ret) {
-+				leaf = p->nodes[0];
-+				if (p->slots[0] == btrfs_header_nritems(leaf))
-+					p->slots[0]--;
-+				return 0;
-+			}
-+			if (!return_any)
-+				return 1;
-+			/*
-+			 * No lower item found, return the next higher instead
-+			 */
-+			return_any = 0;
-+			find_higher = 1;
-+			btrfs_release_path(p);
-+			goto again;
-+		} else {
-+			--p->slots[0];
-+		}
-+	}
-+	return 0;
-+}
-+
- /*
-  * how many bytes are required to store the items in a leaf.  start
-  * and nr indicate which items in the leaf to check.  This totals up the
-@@ -505,3 +886,147 @@ int btrfs_leaf_free_space(struct extent_buffer *leaf)
- 	}
- 	return ret;
  }
-+
-+/*
-+ * walk up the tree as far as required to find the previous leaf.
-+ * returns 0 if it found something or 1 if there are no lesser leaves.
-+ * returns < 0 on io errors.
-+ */
-+int btrfs_prev_leaf(struct btrfs_root *root, struct btrfs_path *path)
-+{
-+	int slot;
-+	int level = 1;
-+	struct extent_buffer *c;
-+	struct extent_buffer *next = NULL;
-+	struct btrfs_fs_info *fs_info = root->fs_info;
-+
-+	while(level < BTRFS_MAX_LEVEL) {
-+		if (!path->nodes[level])
-+			return 1;
-+
-+		slot = path->slots[level];
-+		c = path->nodes[level];
-+		if (slot == 0) {
-+			level++;
-+			if (level == BTRFS_MAX_LEVEL)
-+				return 1;
-+			continue;
-+		}
-+		slot--;
-+
-+		next = read_node_slot(fs_info, c, slot);
-+		if (!extent_buffer_uptodate(next)) {
-+			if (IS_ERR(next))
-+				return PTR_ERR(next);
-+			return -EIO;
-+		}
-+		break;
-+	}
-+	path->slots[level] = slot;
-+	while(1) {
-+		level--;
-+		c = path->nodes[level];
-+		free_extent_buffer(c);
-+		slot = btrfs_header_nritems(next);
-+		if (slot != 0)
-+			slot--;
-+		path->nodes[level] = next;
-+		path->slots[level] = slot;
-+		if (!level)
-+			break;
-+		next = read_node_slot(fs_info, next, slot);
-+		if (!extent_buffer_uptodate(next)) {
-+			if (IS_ERR(next))
-+				return PTR_ERR(next);
-+			return -EIO;
-+		}
-+	}
-+	return 0;
-+}
-+
-+/*
-+ * Walk up the tree as far as necessary to find the next sibling tree block.
-+ * More generic version of btrfs_next_leaf(), as it could find sibling nodes
-+ * if @path->lowest_level is not 0.
-+ *
-+ * returns 0 if it found something or 1 if there are no greater leaves.
-+ * returns < 0 on io errors.
-+ */
-+int btrfs_next_sibling_tree_block(struct btrfs_fs_info *fs_info,
-+				  struct btrfs_path *path)
-+{
-+	int slot;
-+	int level = path->lowest_level + 1;
-+	struct extent_buffer *c;
-+	struct extent_buffer *next = NULL;
-+
-+	BUG_ON(path->lowest_level + 1 >= BTRFS_MAX_LEVEL);
-+	do {
-+		if (!path->nodes[level])
-+			return 1;
-+
-+		slot = path->slots[level] + 1;
-+		c = path->nodes[level];
-+		if (slot >= btrfs_header_nritems(c)) {
-+			level++;
-+			if (level == BTRFS_MAX_LEVEL)
-+				return 1;
-+			continue;
-+		}
-+
-+		next = read_node_slot(fs_info, c, slot);
-+		if (!extent_buffer_uptodate(next))
-+			return -EIO;
-+		break;
-+	} while (level < BTRFS_MAX_LEVEL);
-+	path->slots[level] = slot;
-+	while(1) {
-+		level--;
-+		c = path->nodes[level];
-+		free_extent_buffer(c);
-+		path->nodes[level] = next;
-+		path->slots[level] = 0;
-+		if (level == path->lowest_level)
-+			break;
-+		next = read_node_slot(fs_info, next, 0);
-+		if (!extent_buffer_uptodate(next))
-+			return -EIO;
-+	}
-+	return 0;
-+}
-+
-+int btrfs_previous_item(struct btrfs_root *root,
-+			struct btrfs_path *path, u64 min_objectid,
-+			int type)
-+{
-+	struct btrfs_key found_key;
-+	struct extent_buffer *leaf;
-+	u32 nritems;
-+	int ret;
-+
-+	while(1) {
-+		if (path->slots[0] == 0) {
-+			ret = btrfs_prev_leaf(root, path);
-+			if (ret != 0)
-+				return ret;
-+		} else {
-+			path->slots[0]--;
-+		}
-+		leaf = path->nodes[0];
-+		nritems = btrfs_header_nritems(leaf);
-+		if (nritems == 0)
-+			return 1;
-+		if (path->slots[0] == nritems)
-+			path->slots[0]--;
-+
-+		btrfs_item_key_to_cpu(leaf, &found_key, path->slots[0]);
-+		if (found_key.objectid < min_objectid)
-+			break;
-+		if (found_key.type == type)
-+			return 0;
-+		if (found_key.objectid == min_objectid &&
-+		    found_key.type < type)
-+			break;
-+	}
-+	return 1;
-+}
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index e658c88aee..7c814fd2a9 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -52,6 +52,15 @@ static inline unsigned long btrfs_chunk_item_size(int num_stripes)
- #define __BTRFS_LEAF_DATA_SIZE(bs) ((bs) - sizeof(struct btrfs_header))
- #define BTRFS_LEAF_DATA_SIZE(fs_info) \
- 				(__BTRFS_LEAF_DATA_SIZE(fs_info->nodesize))
-+
-+struct btrfs_path {
-+	struct extent_buffer *nodes[BTRFS_MAX_LEVEL];
-+	int slots[BTRFS_MAX_LEVEL];
-+
-+	/* keep some upper locks as we walk down */
-+	u8 lowest_level;
-+};
-+
- /* ioprio of readahead is set to idle */
- #define BTRFS_IOPRIO_READA (IOPRIO_PRIO_VALUE(IOPRIO_CLASS_IDLE, 0))
  
-@@ -86,6 +95,7 @@ struct btrfs_root {
- 	struct rb_node rb_node;
+ int btrfs_ls(const char *path)
+@@ -215,6 +224,10 @@ int btrfs_read(const char *file, void *buf, loff_t offset, loff_t len,
+ void btrfs_close(void)
+ {
+ 	btrfs_chunk_map_exit();
++	if (current_fs_info) {
++		close_ctree_fs_info(current_fs_info);
++		current_fs_info = NULL;
++	}
+ }
+ 
+ int btrfs_uuid(char *uuid_str)
+diff --git a/fs/btrfs/btrfs.h b/fs/btrfs/btrfs.h
+index 7dfdaf77ba..a52ff942f2 100644
+--- a/fs/btrfs/btrfs.h
++++ b/fs/btrfs/btrfs.h
+@@ -22,6 +22,7 @@ struct btrfs_info {
  };
  
-+struct btrfs_trans_handle;
- struct btrfs_device;
- struct btrfs_fs_devices;
- struct btrfs_fs_info {
-@@ -1207,7 +1217,7 @@ struct __btrfs_root {
+ extern struct btrfs_info btrfs_info;
++extern struct btrfs_fs_info *current_fs_info;
  
- int __btrfs_comp_keys(struct btrfs_key *, struct btrfs_key *);
- int btrfs_comp_keys_type(struct btrfs_key *, struct btrfs_key *);
--int btrfs_bin_search(union btrfs_tree_node *, struct btrfs_key *, int *);
-+int __btrfs_bin_search(union btrfs_tree_node *, struct btrfs_key *, int *);
- void __btrfs_free_path(struct __btrfs_path *);
- int btrfs_search_tree(const struct __btrfs_root *, struct btrfs_key *,
- 		      struct __btrfs_path *);
-@@ -1273,5 +1283,54 @@ btrfs_check_node(struct btrfs_fs_info *fs_info,
+ /* dev.c */
+ extern struct blk_desc *btrfs_blk_desc;
+diff --git a/fs/btrfs/compat.h b/fs/btrfs/compat.h
+index b6b75deb3e..4da88fc311 100644
+--- a/fs/btrfs/compat.h
++++ b/fs/btrfs/compat.h
+@@ -18,6 +18,8 @@ static inline void error(const char *fmt, ...)
+ 	printf("\n");
+ }
+ 
++#define ASSERT(c) assert(c)
++
+ #define BTRFS_UUID_UNPARSED_SIZE	37
+ 
+ /*
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 7c814fd2a9..b050b5844d 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1275,6 +1275,10 @@ const char *btrfs_super_csum_name(u16 csum_type);
+ u16 btrfs_csum_type_size(u16 csum_type);
+ size_t btrfs_super_num_csums(void);
+ 
++/* root-tree.c */
++int btrfs_find_last_root(struct btrfs_root *root, u64 objectid,
++			struct btrfs_root_item *item, struct btrfs_key *key);
++
+ /* ctree.c */
+ int btrfs_comp_cpu_keys(const struct btrfs_key *k1, const struct btrfs_key *k2);
  enum btrfs_tree_block_status
- btrfs_check_leaf(struct btrfs_fs_info *fs_info,
- 		 struct btrfs_disk_key *parent_key, struct extent_buffer *buf);
-+struct extent_buffer *read_node_slot(struct btrfs_fs_info *fs_info,
-+				   struct extent_buffer *parent, int slot);
-+int btrfs_previous_item(struct btrfs_root *root,
-+			struct btrfs_path *path, u64 min_objectid,
-+			int type);
-+int btrfs_next_sibling_tree_block(struct btrfs_fs_info *fs_info,
-+				  struct btrfs_path *path);
-+/*
-+ * Walk up the tree as far as necessary to find the next leaf.
-+ *
-+ * returns 0 if it found something or 1 if there are no greater leaves.
-+ * returns < 0 on io errors.
-+ */
-+static inline int btrfs_next_leaf(struct btrfs_root *root,
-+				  struct btrfs_path *path)
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 65b4020ebe..4d08b0204a 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -4,6 +4,7 @@
+ #include <uuid.h>
+ #include <memalign.h>
+ #include "kernel-shared/btrfs_tree.h"
++#include "common/rbtree-utils.h"
+ #include "disk-io.h"
+ #include "ctree.h"
+ #include "btrfs.h"
+@@ -424,24 +425,6 @@ out:
+ 
+ }
+ 
+-int btrfs_buffer_uptodate(struct extent_buffer *buf, u64 parent_transid)
+-{
+-	int ret;
+-
+-	ret = extent_buffer_uptodate(buf);
+-	if (!ret)
+-		return ret;
+-
+-	ret = verify_parent_transid(&buf->fs_info->extent_cache, buf,
+-				    parent_transid, 1);
+-	return !ret;
+-}
+-
+-int btrfs_set_buffer_uptodate(struct extent_buffer *eb)
+-{
+-	return set_extent_buffer_uptodate(eb);
+-}
+-
+ int read_whole_eb(struct btrfs_fs_info *info, struct extent_buffer *eb, int mirror)
+ {
+ 	unsigned long offset = 0;
+@@ -581,3 +564,493 @@ struct extent_buffer* read_tree_block(struct btrfs_fs_info *fs_info, u64 bytenr,
+ 	free_extent_buffer(eb);
+ 	return ERR_PTR(ret);
+ }
++
++void btrfs_setup_root(struct btrfs_root *root, struct btrfs_fs_info *fs_info,
++		      u64 objectid)
 +{
-+	path->lowest_level = 0;
-+	return btrfs_next_sibling_tree_block(root->fs_info, path);
++	root->node = NULL;
++	root->track_dirty = 0;
++
++	root->fs_info = fs_info;
++	root->objectid = objectid;
++	root->last_trans = 0;
++	root->last_inode_alloc = 0;
++
++	memset(&root->root_key, 0, sizeof(root->root_key));
++	memset(&root->root_item, 0, sizeof(root->root_item));
++	root->root_key.objectid = objectid;
 +}
 +
-+static inline int btrfs_next_item(struct btrfs_root *root,
-+				  struct btrfs_path *p)
++static int find_and_setup_root(struct btrfs_root *tree_root,
++			       struct btrfs_fs_info *fs_info,
++			       u64 objectid, struct btrfs_root *root)
 +{
-+	++p->slots[0];
-+	if (p->slots[0] >= btrfs_header_nritems(p->nodes[0]))
-+		return btrfs_next_leaf(root, p);
++	int ret;
++	u64 generation;
++
++	btrfs_setup_root(root, fs_info, objectid);
++	ret = btrfs_find_last_root(tree_root, objectid,
++				   &root->root_item, &root->root_key);
++	if (ret)
++		return ret;
++
++	generation = btrfs_root_generation(&root->root_item);
++	root->node = read_tree_block(fs_info,
++			btrfs_root_bytenr(&root->root_item), generation);
++	if (!extent_buffer_uptodate(root->node))
++		return -EIO;
++
 +	return 0;
 +}
 +
-+int btrfs_prev_leaf(struct btrfs_root *root, struct btrfs_path *path);
- int btrfs_leaf_free_space(struct extent_buffer *leaf);
-+int btrfs_search_slot(struct btrfs_trans_handle *trans,
-+		struct btrfs_root *root, const struct btrfs_key *key,
-+		struct btrfs_path *p, int ins_len, int cow);
-+int btrfs_search_slot_for_read(struct btrfs_root *root,
-+			       const struct btrfs_key *key,
-+			       struct btrfs_path *p, int find_higher,
-+			       int return_any);
-+void btrfs_release_path(struct btrfs_path *p);
-+struct btrfs_path *btrfs_alloc_path(void);
-+void btrfs_free_path(struct btrfs_path *p);
-+static inline void btrfs_init_path(struct btrfs_path *p)
++int btrfs_free_fs_root(struct btrfs_root *root)
 +{
-+	memset(p, 0, sizeof(*p));
++	if (root->node)
++		free_extent_buffer(root->node);
++	kfree(root);
++	return 0;
 +}
-+int btrfs_bin_search(struct extent_buffer *eb, const struct btrfs_key *key,
-+		     int *slot);
-+int btrfs_find_item(struct btrfs_root *fs_root, struct btrfs_path *found_path,
-+		u64 iobjectid, u64 ioff, u8 key_type,
-+		struct btrfs_key *found_key);
- #endif /* __BTRFS_CTREE_H__ */
++
++static void __free_fs_root(struct rb_node *node)
++{
++	struct btrfs_root *root;
++
++	root = container_of(node, struct btrfs_root, rb_node);
++	btrfs_free_fs_root(root);
++}
++
++FREE_RB_BASED_TREE(fs_roots, __free_fs_root);
++
++struct btrfs_root *btrfs_read_fs_root_no_cache(struct btrfs_fs_info *fs_info,
++					       struct btrfs_key *location)
++{
++	struct btrfs_root *root;
++	struct btrfs_root *tree_root = fs_info->tree_root;
++	struct btrfs_path *path;
++	struct extent_buffer *l;
++	u64 generation;
++	int ret = 0;
++
++	root = calloc(1, sizeof(*root));
++	if (!root)
++		return ERR_PTR(-ENOMEM);
++	if (location->offset == (u64)-1) {
++		ret = find_and_setup_root(tree_root, fs_info,
++					  location->objectid, root);
++		if (ret) {
++			free(root);
++			return ERR_PTR(ret);
++		}
++		goto insert;
++	}
++
++	btrfs_setup_root(root, fs_info,
++			 location->objectid);
++
++	path = btrfs_alloc_path();
++	if (!path) {
++		free(root);
++		return ERR_PTR(-ENOMEM);
++	}
++
++	ret = btrfs_search_slot(NULL, tree_root, location, path, 0, 0);
++	if (ret != 0) {
++		if (ret > 0)
++			ret = -ENOENT;
++		goto out;
++	}
++	l = path->nodes[0];
++	read_extent_buffer(l, &root->root_item,
++	       btrfs_item_ptr_offset(l, path->slots[0]),
++	       sizeof(root->root_item));
++	memcpy(&root->root_key, location, sizeof(*location));
++
++	/* If this root is already an orphan, no need to read */
++	if (btrfs_root_refs(&root->root_item) == 0) {
++		ret = -ENOENT;
++		goto out;
++	}
++	ret = 0;
++out:
++	btrfs_free_path(path);
++	if (ret) {
++		free(root);
++		return ERR_PTR(ret);
++	}
++	generation = btrfs_root_generation(&root->root_item);
++	root->node = read_tree_block(fs_info,
++			btrfs_root_bytenr(&root->root_item), generation);
++	if (!extent_buffer_uptodate(root->node)) {
++		free(root);
++		return ERR_PTR(-EIO);
++	}
++insert:
++	root->ref_cows = 1;
++	return root;
++}
++
++static int btrfs_fs_roots_compare_objectids(struct rb_node *node,
++					    void *data)
++{
++	u64 objectid = *((u64 *)data);
++	struct btrfs_root *root;
++
++	root = rb_entry(node, struct btrfs_root, rb_node);
++	if (objectid > root->objectid)
++		return 1;
++	else if (objectid < root->objectid)
++		return -1;
++	else
++		return 0;
++}
++
++int btrfs_fs_roots_compare_roots(struct rb_node *node1, struct rb_node *node2)
++{
++	struct btrfs_root *root;
++
++	root = rb_entry(node2, struct btrfs_root, rb_node);
++	return btrfs_fs_roots_compare_objectids(node1, (void *)&root->objectid);
++}
++
++struct btrfs_root *btrfs_read_fs_root(struct btrfs_fs_info *fs_info,
++				      struct btrfs_key *location)
++{
++	struct btrfs_root *root;
++	struct rb_node *node;
++	int ret;
++	u64 objectid = location->objectid;
++
++	if (location->objectid == BTRFS_ROOT_TREE_OBJECTID)
++		return fs_info->tree_root;
++	if (location->objectid == BTRFS_CHUNK_TREE_OBJECTID)
++		return fs_info->chunk_root;
++	if (location->objectid == BTRFS_CSUM_TREE_OBJECTID)
++		return fs_info->csum_root;
++	BUG_ON(location->objectid == BTRFS_TREE_RELOC_OBJECTID ||
++	       location->offset != (u64)-1);
++
++	node = rb_search(&fs_info->fs_root_tree, (void *)&objectid,
++			 btrfs_fs_roots_compare_objectids, NULL);
++	if (node)
++		return container_of(node, struct btrfs_root, rb_node);
++
++	root = btrfs_read_fs_root_no_cache(fs_info, location);
++	if (IS_ERR(root))
++		return root;
++
++	ret = rb_insert(&fs_info->fs_root_tree, &root->rb_node,
++			btrfs_fs_roots_compare_roots);
++	BUG_ON(ret);
++	return root;
++}
++
++void btrfs_free_fs_info(struct btrfs_fs_info *fs_info)
++{
++	free(fs_info->tree_root);
++	free(fs_info->chunk_root);
++	free(fs_info->csum_root);
++	free(fs_info->super_copy);
++	free(fs_info);
++}
++
++struct btrfs_fs_info *btrfs_new_fs_info(void)
++{
++	struct btrfs_fs_info *fs_info;
++
++	fs_info = calloc(1, sizeof(struct btrfs_fs_info));
++	if (!fs_info)
++		return NULL;
++
++	fs_info->tree_root = calloc(1, sizeof(struct btrfs_root));
++	fs_info->chunk_root = calloc(1, sizeof(struct btrfs_root));
++	fs_info->csum_root = calloc(1, sizeof(struct btrfs_root));
++	fs_info->super_copy = calloc(1, BTRFS_SUPER_INFO_SIZE);
++
++	if (!fs_info->tree_root || !fs_info->chunk_root ||
++	    !fs_info->csum_root || !fs_info->super_copy)
++		goto free_all;
++
++	extent_io_tree_init(&fs_info->extent_cache);
++
++	fs_info->fs_root_tree = RB_ROOT;
++	cache_tree_init(&fs_info->mapping_tree.cache_tree);
++
++	mutex_init(&fs_info->fs_mutex);
++
++	return fs_info;
++free_all:
++	btrfs_free_fs_info(fs_info);
++	return NULL;
++}
++
++static int setup_root_or_create_block(struct btrfs_fs_info *fs_info,
++				      struct btrfs_root *info_root,
++				      u64 objectid, char *str)
++{
++	struct btrfs_root *root = fs_info->tree_root;
++	int ret;
++
++	ret = find_and_setup_root(root, fs_info, objectid, info_root);
++	if (ret) {
++		error("could not setup %s tree", str);
++		return -EIO;
++	}
++
++	return 0;
++}
++
++int btrfs_setup_all_roots(struct btrfs_fs_info *fs_info)
++{
++	struct btrfs_super_block *sb = fs_info->super_copy;
++	struct btrfs_root *root;
++	struct btrfs_key key;
++	u64 root_tree_bytenr;
++	u64 generation;
++	int ret;
++
++	root = fs_info->tree_root;
++	btrfs_setup_root(root, fs_info, BTRFS_ROOT_TREE_OBJECTID);
++	generation = btrfs_super_generation(sb);
++
++	root_tree_bytenr = btrfs_super_root(sb);
++
++	root->node = read_tree_block(fs_info, root_tree_bytenr, generation);
++	if (!extent_buffer_uptodate(root->node)) {
++		fprintf(stderr, "Couldn't read tree root\n");
++		return -EIO;
++	}
++
++	ret = setup_root_or_create_block(fs_info, fs_info->csum_root,
++					 BTRFS_CSUM_TREE_OBJECTID, "csum");
++	if (ret)
++		return ret;
++	fs_info->csum_root->track_dirty = 1;
++
++	fs_info->last_trans_committed = generation;
++
++	key.objectid = BTRFS_FS_TREE_OBJECTID;
++	key.type = BTRFS_ROOT_ITEM_KEY;
++	key.offset = (u64)-1;
++	fs_info->fs_root = btrfs_read_fs_root(fs_info, &key);
++
++	if (IS_ERR(fs_info->fs_root))
++		return -EIO;
++	return 0;
++}
++
++void btrfs_release_all_roots(struct btrfs_fs_info *fs_info)
++{
++	if (fs_info->csum_root)
++		free_extent_buffer(fs_info->csum_root->node);
++	if (fs_info->tree_root)
++		free_extent_buffer(fs_info->tree_root->node);
++	if (fs_info->chunk_root)
++		free_extent_buffer(fs_info->chunk_root->node);
++}
++
++static void free_map_lookup(struct cache_extent *ce)
++{
++	struct map_lookup *map;
++
++	map = container_of(ce, struct map_lookup, ce);
++	kfree(map);
++}
++
++FREE_EXTENT_CACHE_BASED_TREE(mapping_cache, free_map_lookup);
++
++void btrfs_cleanup_all_caches(struct btrfs_fs_info *fs_info)
++{
++	free_mapping_cache_tree(&fs_info->mapping_tree.cache_tree);
++	extent_io_tree_cleanup(&fs_info->extent_cache);
++}
++
++static int btrfs_scan_fs_devices(struct blk_desc *desc,
++				 struct disk_partition *part,
++				 struct btrfs_fs_devices **fs_devices)
++{
++	u64 total_devs;
++	int ret;
++
++	if (round_up(BTRFS_SUPER_INFO_SIZE + BTRFS_SUPER_INFO_OFFSET,
++		     desc->blksz) > (part->size << desc->log2blksz)) {
++		error("superblock end %u is larger than device size " LBAFU,
++				BTRFS_SUPER_INFO_SIZE + BTRFS_SUPER_INFO_OFFSET,
++				part->size << desc->log2blksz);
++		return -EINVAL;
++	}
++
++	ret = btrfs_scan_one_device(desc, part, fs_devices, &total_devs);
++	if (ret) {
++		fprintf(stderr, "No valid Btrfs found\n");
++		return ret;
++	}
++	return 0;
++}
++
++int btrfs_check_fs_compatibility(struct btrfs_super_block *sb)
++{
++	u64 features;
++
++	features = btrfs_super_incompat_flags(sb) &
++		   ~BTRFS_FEATURE_INCOMPAT_SUPP;
++	if (features) {
++		printk("couldn't open because of unsupported "
++		       "option features (%llx).\n",
++		       (unsigned long long)features);
++		return -ENOTSUPP;
++	}
++
++	features = btrfs_super_incompat_flags(sb);
++	if (!(features & BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF)) {
++		features |= BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF;
++		btrfs_set_super_incompat_flags(sb, features);
++	}
++
++	return 0;
++}
++
++static int btrfs_setup_chunk_tree_and_device_map(struct btrfs_fs_info *fs_info)
++{
++	struct btrfs_super_block *sb = fs_info->super_copy;
++	u64 chunk_root_bytenr;
++	u64 generation;
++	int ret;
++
++	btrfs_setup_root(fs_info->chunk_root, fs_info,
++			BTRFS_CHUNK_TREE_OBJECTID);
++
++	ret = btrfs_read_sys_array(fs_info);
++	if (ret)
++		return ret;
++
++	generation = btrfs_super_chunk_root_generation(sb);
++	chunk_root_bytenr = btrfs_super_chunk_root(sb);
++
++	fs_info->chunk_root->node = read_tree_block(fs_info,
++						    chunk_root_bytenr,
++						    generation);
++	if (!extent_buffer_uptodate(fs_info->chunk_root->node)) {
++		error("cannot read chunk root");
++		return -EIO;
++	}
++
++	ret = btrfs_read_chunk_tree(fs_info);
++	if (ret) {
++		fprintf(stderr, "Couldn't read chunk tree\n");
++		return ret;
++	}
++	return 0;
++}
++
++struct btrfs_fs_info *open_ctree_fs_info(struct blk_desc *desc,
++					 struct disk_partition *part)
++{
++	struct btrfs_fs_info *fs_info;
++	struct btrfs_super_block *disk_super;
++	struct btrfs_fs_devices *fs_devices = NULL;
++	struct extent_buffer *eb;
++	int ret;
++
++	fs_info = btrfs_new_fs_info();
++	if (!fs_info) {
++		fprintf(stderr, "Failed to allocate memory for fs_info\n");
++		return NULL;
++	}
++
++	ret = btrfs_scan_fs_devices(desc, part, &fs_devices);
++	if (ret)
++		goto out;
++
++	fs_info->fs_devices = fs_devices;
++
++	ret = btrfs_open_devices(fs_devices);
++	if (ret)
++		goto out;
++
++	disk_super = fs_info->super_copy;
++	ret = btrfs_read_dev_super(desc, part, disk_super);
++	if (ret) {
++		printk("No valid btrfs found\n");
++		goto out_devices;
++	}
++
++	if (btrfs_super_flags(disk_super) & BTRFS_SUPER_FLAG_CHANGING_FSID) {
++		fprintf(stderr, "ERROR: Filesystem UUID change in progress\n");
++		goto out_devices;
++	}
++
++	ASSERT(!memcmp(disk_super->fsid, fs_devices->fsid, BTRFS_FSID_SIZE));
++	if (btrfs_fs_incompat(fs_info, METADATA_UUID))
++		ASSERT(!memcmp(disk_super->metadata_uuid,
++			       fs_devices->metadata_uuid, BTRFS_FSID_SIZE));
++
++	fs_info->sectorsize = btrfs_super_sectorsize(disk_super);
++	fs_info->nodesize = btrfs_super_nodesize(disk_super);
++	fs_info->stripesize = btrfs_super_stripesize(disk_super);
++
++	ret = btrfs_check_fs_compatibility(fs_info->super_copy);
++	if (ret)
++		goto out_devices;
++
++	ret = btrfs_setup_chunk_tree_and_device_map(fs_info);
++	if (ret)
++		goto out_chunk;
++
++	/* Chunk tree root is unable to read, return directly */
++	if (!fs_info->chunk_root)
++		return fs_info;
++
++	eb = fs_info->chunk_root->node;
++	read_extent_buffer(eb, fs_info->chunk_tree_uuid,
++			   btrfs_header_chunk_tree_uuid(eb),
++			   BTRFS_UUID_SIZE);
++
++	ret = btrfs_setup_all_roots(fs_info);
++	if (ret)
++		goto out_chunk;
++
++	return fs_info;
++
++out_chunk:
++	btrfs_release_all_roots(fs_info);
++	btrfs_cleanup_all_caches(fs_info);
++out_devices:
++	btrfs_close_devices(fs_devices);
++out:
++	btrfs_free_fs_info(fs_info);
++	return NULL;
++}
++
++int close_ctree_fs_info(struct btrfs_fs_info *fs_info)
++{
++	int ret;
++	int err = 0;
++
++	free_fs_roots_tree(&fs_info->fs_root_tree);
++
++	btrfs_release_all_roots(fs_info);
++	ret = btrfs_close_devices(fs_info->fs_devices);
++	btrfs_cleanup_all_caches(fs_info);
++	btrfs_free_fs_info(fs_info);
++	if (!err)
++		err = ret;
++	return err;
++}
++
++int btrfs_buffer_uptodate(struct extent_buffer *buf, u64 parent_transid)
++{
++	int ret;
++
++	ret = extent_buffer_uptodate(buf);
++	if (!ret)
++		return ret;
++
++	ret = verify_parent_transid(&buf->fs_info->extent_cache, buf,
++				    parent_transid, 1);
++	return !ret;
++}
++
++int btrfs_set_buffer_uptodate(struct extent_buffer *eb)
++{
++	return set_extent_buffer_uptodate(eb);
++}
+diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
+index ca731a5245..9daf959c57 100644
+--- a/fs/btrfs/disk-io.h
++++ b/fs/btrfs/disk-io.h
+@@ -22,6 +22,25 @@ struct extent_buffer* btrfs_find_create_tree_block(
+ 		struct btrfs_fs_info *fs_info, u64 bytenr);
+ struct extent_buffer *btrfs_find_tree_block(struct btrfs_fs_info *fs_info,
+ 					    u64 bytenr, u32 blocksize);
++struct btrfs_root *btrfs_read_fs_root_no_cache(struct btrfs_fs_info *fs_info,
++					       struct btrfs_key *location);
++struct btrfs_root *btrfs_read_fs_root(struct btrfs_fs_info *fs_info,
++				      struct btrfs_key *location);
++
++void btrfs_setup_root(struct btrfs_root *root, struct btrfs_fs_info *fs_info,
++		      u64 objectid);
++
++void btrfs_free_fs_info(struct btrfs_fs_info *fs_info);
++struct btrfs_fs_info *btrfs_new_fs_info(void);
++int btrfs_check_fs_compatibility(struct btrfs_super_block *sb);
++int btrfs_setup_all_roots(struct btrfs_fs_info *fs_info);
++void btrfs_release_all_roots(struct btrfs_fs_info *fs_info);
++void btrfs_cleanup_all_caches(struct btrfs_fs_info *fs_info);
++
++struct btrfs_fs_info *open_ctree_fs_info(struct blk_desc *desc,
++					 struct disk_partition *part);
++int close_ctree_fs_info(struct btrfs_fs_info *fs_info);
++
+ int btrfs_read_dev_super(struct blk_desc *desc, struct disk_partition *part,
+ 			 struct btrfs_super_block *sb);
+ int btrfs_buffer_uptodate(struct extent_buffer *buf, u64 parent_transid);
+diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c
+new file mode 100644
+index 0000000000..a39ad72067
+--- /dev/null
++++ b/fs/btrfs/root-tree.c
+@@ -0,0 +1,47 @@
++// SPDX-License-Identifier: GPL-2.0+
++
++#include "ctree.h"
++
++int btrfs_find_last_root(struct btrfs_root *root, u64 objectid,
++			struct btrfs_root_item *item, struct btrfs_key *key)
++{
++	struct btrfs_path *path;
++	struct btrfs_key search_key;
++	struct btrfs_key found_key;
++	struct extent_buffer *l;
++	int ret;
++	int slot;
++
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
++
++	search_key.objectid = objectid;
++	search_key.type = BTRFS_ROOT_ITEM_KEY;
++	search_key.offset = (u64)-1;
++
++	ret = btrfs_search_slot(NULL, root, &search_key, path, 0, 0);
++	if (ret < 0)
++		goto out;
++	if (path->slots[0] == 0) {
++		ret = -ENOENT;
++		goto out;
++	}
++
++	BUG_ON(ret == 0);
++	l = path->nodes[0];
++	slot = path->slots[0] - 1;
++	btrfs_item_key_to_cpu(l, &found_key, slot);
++	if (found_key.type != BTRFS_ROOT_ITEM_KEY ||
++	    found_key.objectid != objectid) {
++		ret = -ENOENT;
++		goto out;
++	}
++	read_extent_buffer(l, item, btrfs_item_ptr_offset(l, slot),
++			   sizeof(*item));
++	memcpy(key, &found_key, sizeof(found_key));
++	ret = 0;
++out:
++	btrfs_free_path(path);
++	return ret;
++}
 -- 
 2.26.2
 

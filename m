@@ -7,29 +7,33 @@ X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 43527C433DF
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Jun 2020 16:03:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 039E6C433E0
+	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Jun 2020 16:03:47 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 1C2A02073E
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Jun 2020 16:03:45 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D10F720A8B
+	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Jun 2020 16:03:46 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=nic.cz header.i=@nic.cz header.b="gL22A25U"
+	dkim=pass (1024-bit key) header.d=nic.cz header.i=@nic.cz header.b="hOP8VmB+"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2404828AbgFXQDo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 24 Jun 2020 12:03:44 -0400
-Received: from lists.nic.cz ([217.31.204.67]:48138 "EHLO mail.nic.cz"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2404757AbgFXQD3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 24 Jun 2020 12:03:29 -0400
+        id S2404829AbgFXQDp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 24 Jun 2020 12:03:45 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37038 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2404786AbgFXQD2 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 24 Jun 2020 12:03:28 -0400
+Received: from mail.nic.cz (lists.nic.cz [IPv6:2001:1488:800:400::400])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C0976C0613ED
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 Jun 2020 09:03:28 -0700 (PDT)
 Received: from dellmb.labs.office.nic.cz (unknown [IPv6:2001:1488:fffe:6:cac7:3539:7f1f:463])
-        by mail.nic.cz (Postfix) with ESMTP id 536671409E8;
-        Wed, 24 Jun 2020 18:03:25 +0200 (CEST)
+        by mail.nic.cz (Postfix) with ESMTP id 235D81409B8;
+        Wed, 24 Jun 2020 18:03:26 +0200 (CEST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=nic.cz; s=default;
-        t=1593014605; bh=DNyuLdqLlxDwPiOJnpqSx/dV+iLiLSR9PKYUEbGExCc=;
+        t=1593014606; bh=iQjWRiYOmP+RTADycA6LPFjvVll++ZVg30ZXd+vYsmo=;
         h=From:To:Date;
-        b=gL22A25UWWtmLGdBmmb/1MqQ7lGrKRztPmUxZQ8Zepue6Bc6aufBeSxvtbI+tibO9
-         MDq4GVyZbHqw92yywtiKitIPupZ3Fzlom06EkSAE+dx+lhOQ9gdjJXQNsgB/TeyFFr
-         RRX5DjYcXMqO4fw56M1CPWMCiLFwCEa1nGwvbeTE=
+        b=hOP8VmB+aWhPkOD9mqopO2xl9nSm5utZN+/tDNrxOb0hpXW4OClyV8vQyTgGbWhit
+         8YM2Eop3XljEPsmsixMPMqFPfCw6vvCm8qOjlCsH7bi+qQAzBds9Fjh0izBjy/EFpJ
+         hfj3XeRlwaDY7HrjxZKGXTbNVaAg3EfD590YC7Jw=
 From:   =?UTF-8?q?Marek=20Beh=C3=BAn?= <marek.behun@nic.cz>
 To:     u-boot@lists.denx.de
 Cc:     =?UTF-8?q?Alberto=20S=C3=A1nchez=20Molero?= <alsamolero@gmail.com>,
@@ -39,9 +43,9 @@ Cc:     =?UTF-8?q?Alberto=20S=C3=A1nchez=20Molero?= <alsamolero@gmail.com>,
         Yevgeny Popovych <yevgenyp@pointgrab.com>,
         linux-btrfs@vger.kernel.org, Qu Wenruo <wqu@suse.com>,
         =?UTF-8?q?Marek=20Beh=C3=BAn?= <marek.behun@nic.cz>
-Subject: [PATCH U-BOOT v3 23/30] fs: btrfs: Introduce btrfs_read_extent_inline() and btrfs_read_extent_reg()
-Date:   Wed, 24 Jun 2020 18:03:09 +0200
-Message-Id: <20200624160316.5001-24-marek.behun@nic.cz>
+Subject: [PATCH U-BOOT v3 28/30] fs: btrfs: Imeplement btrfs_list_subvols() using new infrastructure
+Date:   Wed, 24 Jun 2020 18:03:14 +0200
+Message-Id: <20200624160316.5001-29-marek.behun@nic.cz>
 X-Mailer: git-send-email 2.26.2
 In-Reply-To: <20200624160316.5001-1-marek.behun@nic.cz>
 References: <20200624160316.5001-1-marek.behun@nic.cz>
@@ -58,274 +62,109 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Qu Wenruo <wqu@suse.com>
 
-These two functions are used to do sector aligned read, which will be
-later used to implement btrfs_file_read().
+Reimplement btrfs_list_subvols() to use new code.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 Reviewed-by: Marek Behún <marek.behun@nic.cz>
 ---
- fs/btrfs/ctree.h   |   5 ++
- fs/btrfs/disk-io.c |  36 ++++++++++
- fs/btrfs/disk-io.h |   2 +
- fs/btrfs/inode.c   | 162 +++++++++++++++++++++++++++++++++++++++++++++
- 4 files changed, 205 insertions(+)
+ fs/btrfs/subvolume.c | 78 +++++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 73 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 0cf5e63451..c4b25189dc 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1294,6 +1294,11 @@ int btrfs_iter_dir(struct btrfs_root *root, u64 ino,
- int btrfs_lookup_path(struct btrfs_root *root, u64 ino, const char *filename,
- 			struct btrfs_root **root_ret, u64 *ino_ret,
- 			u8 *type_ret, int symlink_limit);
-+int btrfs_read_extent_inline(struct btrfs_path *path,
-+			     struct btrfs_file_extent_item *fi, char *dest);
-+int btrfs_read_extent_reg(struct btrfs_path *path,
-+			  struct btrfs_file_extent_item *fi, u64 offset,
-+			  int len, char *dest);
- 
- /* ctree.c */
- int btrfs_comp_cpu_keys(const struct btrfs_key *k1, const struct btrfs_key *k2);
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 4d08b0204a..4da1b80038 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -565,6 +565,42 @@ struct extent_buffer* read_tree_block(struct btrfs_fs_info *fs_info, u64 bytenr,
- 	return ERR_PTR(ret);
+diff --git a/fs/btrfs/subvolume.c b/fs/btrfs/subvolume.c
+index 258c3dafef..6fc28d53e5 100644
+--- a/fs/btrfs/subvolume.c
++++ b/fs/btrfs/subvolume.c
+@@ -155,6 +155,72 @@ out:
+ 	return ret;
  }
  
-+int read_extent_data(struct btrfs_fs_info *fs_info, char *data, u64 logical,
-+		     u64 *len, int mirror)
++static int list_subvolums(struct btrfs_fs_info *fs_info)
 +{
-+	u64 offset = 0;
-+	struct btrfs_multi_bio *multi = NULL;
-+	struct btrfs_device *device;
-+	int ret = 0;
-+	u64 max_len = *len;
-+
-+	ret = btrfs_map_block(fs_info, READ, logical, len, &multi, mirror,
-+			      NULL);
-+	if (ret) {
-+		fprintf(stderr, "Couldn't map the block %llu\n",
-+				logical + offset);
-+		goto err;
-+	}
-+	device = multi->stripes[0].dev;
-+
-+	if (*len > max_len)
-+		*len = max_len;
-+	if (!device->desc || !device->part) {
-+		ret = -EIO;
-+		goto err;
-+	}
-+
-+	ret = __btrfs_devread(device->desc, device->part, data, *len,
-+			      multi->stripes[0].physical);
-+	if (ret != *len)
-+		ret = -EIO;
-+	else
-+		ret = 0;
-+err:
-+	kfree(multi);
-+	return ret;
-+}
-+
- void btrfs_setup_root(struct btrfs_root *root, struct btrfs_fs_info *fs_info,
- 		      u64 objectid)
- {
-diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
-index 9daf959c57..424bb01dcd 100644
---- a/fs/btrfs/disk-io.h
-+++ b/fs/btrfs/disk-io.h
-@@ -18,6 +18,8 @@ int read_whole_eb(struct btrfs_fs_info *info, struct extent_buffer *eb, int mirr
- struct extent_buffer* read_tree_block(struct btrfs_fs_info *fs_info, u64 bytenr,
- 		u64 parent_transid);
- 
-+int read_extent_data(struct btrfs_fs_info *fs_info, char *data, u64 logical,
-+		     u64 *len, int mirror);
- struct extent_buffer* btrfs_find_create_tree_block(
- 		struct btrfs_fs_info *fs_info, u64 bytenr);
- struct extent_buffer *btrfs_find_tree_block(struct btrfs_fs_info *fs_info,
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 83d21467d9..ab45db87a6 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -5,9 +5,12 @@
-  * 2017 Marek Behun, CZ.NIC, marek.behun@nic.cz
-  */
- 
-+#include <linux/kernel.h>
- #include <malloc.h>
-+#include <memalign.h>
- #include "btrfs.h"
- #include "disk-io.h"
-+#include "volumes.h"
- 
- u64 __btrfs_lookup_inode_ref(struct __btrfs_root *root, u64 inr,
- 			   struct btrfs_inode_ref *refp, char *name)
-@@ -663,3 +666,162 @@ out:
- 	__btrfs_free_path(&path);
- 	return rd_all;
- }
-+
-+/*
-+ * Read out inline extent.
-+ *
-+ * Since inline extent should only exist for offset 0, no need for extra
-+ * parameters.
-+ * Truncating should be handled by the caller.
-+ *
-+ * Return the number of bytes read.
-+ * Return <0 for error.
-+ */
-+int btrfs_read_extent_inline(struct btrfs_path *path,
-+			     struct btrfs_file_extent_item *fi, char *dest)
-+{
-+	struct extent_buffer *leaf = path->nodes[0];
-+	int slot = path->slots[0];
-+	char *cbuf = NULL;
-+	char *dbuf = NULL;
-+	u32 csize;
-+	u32 dsize;
-+	int ret;
-+
-+	csize = btrfs_file_extent_inline_item_len(leaf, btrfs_item_nr(slot));
-+	if (btrfs_file_extent_compression(leaf, fi) == BTRFS_COMPRESS_NONE) {
-+		/* Uncompressed, just read it out */
-+		read_extent_buffer(leaf, dest,
-+				btrfs_file_extent_inline_start(fi),
-+				csize);
-+		return csize;
-+	}
-+
-+	/* Compressed extent, prepare the compressed and data buffer */
-+	dsize = btrfs_file_extent_ram_bytes(leaf, fi);
-+	cbuf = malloc(csize);
-+	dbuf = malloc(dsize);
-+	if (!cbuf || !dbuf) {
-+		ret = -ENOMEM;
-+		goto out;
-+	}
-+	read_extent_buffer(leaf, cbuf, btrfs_file_extent_inline_start(fi),
-+			   csize);
-+	ret = btrfs_decompress(btrfs_file_extent_compression(leaf, fi),
-+			       cbuf, csize, dbuf, dsize);
-+	if (ret < 0 || ret != dsize) {
-+		ret = -EIO;
-+		goto out;
-+	}
-+	memcpy(dest, dbuf, dsize);
-+	ret = dsize;
-+out:
-+	free(cbuf);
-+	free(dbuf);
-+	return ret;
-+}
-+
-+/*
-+ * Read out regular extent.
-+ *
-+ * Truncating should be handled by the caller.
-+ *
-+ * @offset and @len should not cross the extent boundary.
-+ * Return the number of bytes read.
-+ * Return <0 for error.
-+ */
-+int btrfs_read_extent_reg(struct btrfs_path *path,
-+			  struct btrfs_file_extent_item *fi, u64 offset,
-+			  int len, char *dest)
-+{
-+	struct extent_buffer *leaf = path->nodes[0];
-+	struct btrfs_fs_info *fs_info = leaf->fs_info;
++	struct btrfs_root *tree_root = fs_info->tree_root;
++	struct btrfs_root *root;
++	struct btrfs_path path;
 +	struct btrfs_key key;
-+	u64 extent_num_bytes;
-+	u64 disk_bytenr;
-+	u64 read;
-+	char *cbuf = NULL;
-+	char *dbuf = NULL;
-+	u32 csize;
-+	u32 dsize;
-+	bool finished = false;
-+	int num_copies;
-+	int i;
-+	int slot = path->slots[0];
-+	int ret;
++	char *result;
++	int ret = 0;
 +
-+	btrfs_item_key_to_cpu(leaf, &key, slot);
-+	extent_num_bytes = btrfs_file_extent_num_bytes(leaf, fi);
-+	ASSERT(IS_ALIGNED(offset, fs_info->sectorsize) &&
-+	       IS_ALIGNED(len, fs_info->sectorsize));
-+	ASSERT(offset >= key.offset &&
-+	       offset + len <= key.offset + extent_num_bytes);
++	result = malloc(PATH_MAX);
++	if (!result)
++		return -ENOMEM;
 +
-+	/* Preallocated or hole , fill @dest with zero */
-+	if (btrfs_file_extent_type(leaf, fi) == BTRFS_FILE_EXTENT_PREALLOC ||
-+	    btrfs_file_extent_disk_bytenr(leaf, fi) == 0) {
-+		memset(dest, 0, len);
-+		return len;
-+	}
++	ret = list_one_subvol(fs_info->fs_root, result);
++	if (ret < 0)
++		goto out;
++	root = fs_info->fs_root;
++	printf("ID %llu gen %llu path %.*s\n",
++		root->root_key.objectid, btrfs_root_generation(&root->root_item),
++		PATH_MAX, result);
 +
-+	if (btrfs_file_extent_compression(leaf, fi) == BTRFS_COMPRESS_NONE) {
-+		u64 logical;
++	key.objectid = BTRFS_FIRST_FREE_OBJECTID;
++	key.type = BTRFS_ROOT_ITEM_KEY;
++	key.offset = 0;
++	btrfs_init_path(&path);
++	ret = btrfs_search_slot(NULL, tree_root, &key, &path, 0, 0);
++	if (ret < 0)
++		goto out;
++	while (1) {
++		if (path.slots[0] >= btrfs_header_nritems(path.nodes[0]))
++			goto next;
 +
-+		logical = btrfs_file_extent_disk_bytenr(leaf, fi) +
-+			  btrfs_file_extent_offset(leaf, fi) +
-+			  offset - key.offset;
-+		read = len;
-+
-+		num_copies = btrfs_num_copies(fs_info, logical, len);
-+		for (i = 1; i <= num_copies; i++) {
-+			ret = read_extent_data(fs_info, dest, logical, &read, i);
-+			if (ret < 0 || read != len)
-+				continue;
-+			finished = true;
++		btrfs_item_key_to_cpu(path.nodes[0], &key, path.slots[0]);
++		if (key.objectid > BTRFS_LAST_FREE_OBJECTID)
++			break;
++		if (key.objectid < BTRFS_FIRST_FREE_OBJECTID ||
++		    key.type != BTRFS_ROOT_ITEM_KEY)
++			goto next;
++		key.offset = (u64)-1;
++		root = btrfs_read_fs_root(fs_info, &key);
++		if (IS_ERR(root)) {
++			ret = PTR_ERR(root);
++			if (ret == -ENOENT)
++				goto next;
++		}
++		ret = list_one_subvol(root, result);
++		if (ret < 0)
++			goto out;
++		printf("ID %llu gen %llu path %.*s\n",
++			root->root_key.objectid,
++			btrfs_root_generation(&root->root_item),
++			PATH_MAX, result);
++next:
++		ret = btrfs_next_item(tree_root, &path);
++		if (ret < 0)
++			goto out;
++		if (ret > 0) {
++			ret = 0;
 +			break;
 +		}
-+		if (!finished)
-+			return -EIO;
-+		return len;
 +	}
-+
-+	csize = btrfs_file_extent_disk_num_bytes(leaf, fi);
-+	dsize = btrfs_file_extent_ram_bytes(leaf, fi);
-+	disk_bytenr = btrfs_file_extent_disk_bytenr(leaf, fi);
-+	num_copies = btrfs_num_copies(fs_info, disk_bytenr, csize);
-+
-+	cbuf = malloc_cache_aligned(csize);
-+	dbuf = malloc_cache_aligned(dsize);
-+	if (!cbuf || !dbuf) {
-+		ret = -ENOMEM;
-+		goto out;
-+	}
-+	/* For compressed extent, we must read the whole on-disk extent */
-+	for (i = 1; i <= num_copies; i++) {
-+		read = csize;
-+		ret = read_extent_data(fs_info, cbuf, disk_bytenr,
-+				       &read, i);
-+		if (ret < 0 || read != csize)
-+			continue;
-+		finished = true;
-+		break;
-+	}
-+	if (!finished) {
-+		ret = -EIO;
-+		goto out;
-+	}
-+
-+	ret = btrfs_decompress(btrfs_file_extent_compression(leaf, fi), cbuf,
-+			       csize, dbuf, dsize);
-+	if (ret != dsize) {
-+		ret = -EIO;
-+		goto out;
-+	}
-+	/* Then copy the needed part */
-+	memcpy(dest, dbuf + btrfs_file_extent_offset(leaf, fi), len);
-+	ret = len;
 +out:
-+	free(cbuf);
-+	free(dbuf);
++	free(result);
 +	return ret;
 +}
++
+ static int get_subvol_name(u64 subvolid, char *name, int max_len)
+ {
+ 	struct btrfs_root_ref rref;
+@@ -268,10 +334,12 @@ static void list_subvols(u64 tree, char *nameptr, int max_name_len, int level)
+ 
+ void btrfs_list_subvols(void)
+ {
+-	char *nameptr = malloc(4096);
+-
+-	list_subvols(BTRFS_FS_TREE_OBJECTID, nameptr, nameptr ? 4096 : 0, 40);
++	struct btrfs_fs_info *fs_info = current_fs_info;
++	int ret;
+ 
+-	if (nameptr)
+-		free(nameptr);
++	if (!fs_info)
++		return;
++	ret = list_subvolums(fs_info);
++	if (ret < 0)
++		error("failed to list subvolume: %d", ret);
+ }
 -- 
 2.26.2
 

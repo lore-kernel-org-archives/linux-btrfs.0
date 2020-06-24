@@ -7,29 +7,33 @@ X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 895DBC433DF
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Jun 2020 16:03:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C2090C433E1
+	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Jun 2020 16:03:56 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 6693E20781
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Jun 2020 16:03:55 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9DDD520781
+	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Jun 2020 16:03:56 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=nic.cz header.i=@nic.cz header.b="cV8QrnD2"
+	dkim=pass (1024-bit key) header.d=nic.cz header.i=@nic.cz header.b="qZqdIPfD"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2404835AbgFXQDy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 24 Jun 2020 12:03:54 -0400
-Received: from mail.nic.cz ([217.31.204.67]:48130 "EHLO mail.nic.cz"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2404752AbgFXQD1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S2404837AbgFXQDz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 24 Jun 2020 12:03:55 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37018 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2404765AbgFXQD1 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 24 Jun 2020 12:03:27 -0400
+Received: from mail.nic.cz (lists.nic.cz [IPv6:2001:1488:800:400::400])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 42B09C0617BB
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 Jun 2020 09:03:27 -0700 (PDT)
 Received: from dellmb.labs.office.nic.cz (unknown [IPv6:2001:1488:fffe:6:cac7:3539:7f1f:463])
-        by mail.nic.cz (Postfix) with ESMTP id 2F4121409E5;
-        Wed, 24 Jun 2020 18:03:25 +0200 (CEST)
+        by mail.nic.cz (Postfix) with ESMTP id 71D111408B2;
+        Wed, 24 Jun 2020 18:03:24 +0200 (CEST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=nic.cz; s=default;
-        t=1593014605; bh=AapOGgBQ7fnDzrATd4tl0bUbbbk7nghQbf4nY6twS4Y=;
+        t=1593014604; bh=otqhNz+BRRpXbdY4iHCXuU5HASYzdeF1JrrlY4iku9U=;
         h=From:To:Date;
-        b=cV8QrnD2jrbyFeu2gmcDS0b+mTgEmyI3HcJI5Z5LSMR+JqbmnUAOiKn7RKbiQrXO8
-         jZenzhFoTlNDQAwaxPaeAI7aO+oS0wymqSt+5JPOWxFISrzNPpK7JP0NwMUx+CY390
-         WwDTH4Vkp7UWc6fB77A+8WQ+8x024ieOcmWX5IMY=
+        b=qZqdIPfDRUdrjkxV5HxGGElGwDMh/y2+ziaVykglS79T6FOVsbCH/FvFHdrmhgDqJ
+         MeST+peI99lqUU0dRLnZJzbKQEdQt8vYzYwuD/dkLSvK6jXdFxu1/IK8xwCRcSk3Nw
+         Jt53Vl+1uZ/flmCdhW1dliZ4u+S2EZYD6EmuI5yg=
 From:   =?UTF-8?q?Marek=20Beh=C3=BAn?= <marek.behun@nic.cz>
 To:     u-boot@lists.denx.de
 Cc:     =?UTF-8?q?Alberto=20S=C3=A1nchez=20Molero?= <alsamolero@gmail.com>,
@@ -39,9 +43,9 @@ Cc:     =?UTF-8?q?Alberto=20S=C3=A1nchez=20Molero?= <alsamolero@gmail.com>,
         Yevgeny Popovych <yevgenyp@pointgrab.com>,
         linux-btrfs@vger.kernel.org, Qu Wenruo <wqu@suse.com>,
         =?UTF-8?q?Marek=20Beh=C3=BAn?= <marek.behun@nic.cz>
-Subject: [PATCH U-BOOT v3 22/30] fs: btrfs: Rename btrfs_file_read() and its callees to avoid name conflicts
-Date:   Wed, 24 Jun 2020 18:03:08 +0200
-Message-Id: <20200624160316.5001-23-marek.behun@nic.cz>
+Subject: [PATCH U-BOOT v3 18/30] fs: btrfs: inode: Allow next_length() to return value > BTRFS_NAME_LEN
+Date:   Wed, 24 Jun 2020 18:03:04 +0200
+Message-Id: <20200624160316.5001-19-marek.behun@nic.cz>
 X-Mailer: git-send-email 2.26.2
 In-Reply-To: <20200624160316.5001-1-marek.behun@nic.cz>
 References: <20200624160316.5001-1-marek.behun@nic.cz>
@@ -58,103 +62,36 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Qu Wenruo <wqu@suse.com>
 
-Rename btrfs_file_read() and its callees to avoid name conflicts with
-the incoming new code.
+All existing next_length() caller handles return value > BTRFS_NAME_LEN,
+so there is no need to do BTRFS_NAME_LEN check in next_length().
+
+But still, we want to exit early if we're beyond BTRFS_NAME_LEN, so this
+patch makes next_length() exit as soon as we're beyond BTRFS_NAME_LEN.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 Reviewed-by: Marek Behún <marek.behun@nic.cz>
 ---
- fs/btrfs/btrfs.c     | 2 +-
- fs/btrfs/btrfs.h     | 6 +++---
- fs/btrfs/extent-io.c | 4 ++--
- fs/btrfs/inode.c     | 6 +++---
- 4 files changed, 9 insertions(+), 9 deletions(-)
+ fs/btrfs/inode.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/btrfs.c b/fs/btrfs/btrfs.c
-index aec91a57ec..7eb01c4ff9 100644
---- a/fs/btrfs/btrfs.c
-+++ b/fs/btrfs/btrfs.c
-@@ -277,7 +277,7 @@ int btrfs_read(const char *file, void *buf, loff_t offset, loff_t len,
- 	if (len > inode.size - offset)
- 		len = inode.size - offset;
- 
--	rd = btrfs_file_read(&root, inr, offset, len, buf);
-+	rd = __btrfs_file_read(&root, inr, offset, len, buf);
- 	if (rd == -1ULL) {
- 		printf("An error occured while reading file %s\n", file);
- 		return -1;
-diff --git a/fs/btrfs/btrfs.h b/fs/btrfs/btrfs.h
-index e36bd89827..32ea2fc53a 100644
---- a/fs/btrfs/btrfs.h
-+++ b/fs/btrfs/btrfs.h
-@@ -58,16 +58,16 @@ int __btrfs_readlink(const struct __btrfs_root *, u64, char *);
- int btrfs_readlink(struct btrfs_root *root, u64 ino, char *target);
- u64 __btrfs_lookup_path(struct __btrfs_root *, u64, const char *, u8 *,
- 		       struct btrfs_inode_item *, int);
--u64 btrfs_file_read(const struct __btrfs_root *, u64, u64, u64, char *);
-+u64 __btrfs_file_read(const struct __btrfs_root *, u64, u64, u64, char *);
- 
- /* subvolume.c */
- u64 btrfs_get_default_subvol_objectid(void);
- 
- /* extent-io.c */
--u64 btrfs_read_extent_inline(struct __btrfs_path *,
-+u64 __btrfs_read_extent_inline(struct __btrfs_path *,
- 			      struct btrfs_file_extent_item *, u64, u64,
- 			      char *);
--u64 btrfs_read_extent_reg(struct __btrfs_path *, struct btrfs_file_extent_item *,
-+u64 __btrfs_read_extent_reg(struct __btrfs_path *, struct btrfs_file_extent_item *,
- 			   u64, u64, char *);
- 
- #endif /* !__BTRFS_BTRFS_H__ */
-diff --git a/fs/btrfs/extent-io.c b/fs/btrfs/extent-io.c
-index a524145a66..ccf4da3177 100644
---- a/fs/btrfs/extent-io.c
-+++ b/fs/btrfs/extent-io.c
-@@ -14,7 +14,7 @@
- #include "extent-io.h"
- #include "disk-io.h"
- 
--u64 btrfs_read_extent_inline(struct __btrfs_path *path,
-+u64 __btrfs_read_extent_inline(struct __btrfs_path *path,
- 			     struct btrfs_file_extent_item *extent, u64 offset,
- 			     u64 size, char *out)
- {
-@@ -66,7 +66,7 @@ err:
- 	return -1ULL;
- }
- 
--u64 btrfs_read_extent_reg(struct __btrfs_path *path,
-+u64 __btrfs_read_extent_reg(struct __btrfs_path *path,
- 			  struct btrfs_file_extent_item *extent, u64 offset,
- 			  u64 size, char *out)
- {
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 2e3fcad5a8..83d21467d9 100644
+index 007cf32c16..da2a5e90a1 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -598,7 +598,7 @@ u64 __btrfs_lookup_path(struct __btrfs_root *root, u64 inr, const char *path,
- 	return inr;
- }
- 
--u64 btrfs_file_read(const struct __btrfs_root *root, u64 inr, u64 offset,
-+u64 __btrfs_file_read(const struct __btrfs_root *root, u64 inr, u64 offset,
- 		    u64 size, char *buf)
+@@ -217,8 +217,12 @@ static u64 __get_parent_inode(struct __btrfs_root *root, u64 inr,
+ static inline int next_length(const char *path)
  {
- 	struct __btrfs_path path;
-@@ -633,11 +633,11 @@ u64 btrfs_file_read(const struct __btrfs_root *root, u64 inr, u64 offset,
- 
- 		if (extent->type == BTRFS_FILE_EXTENT_INLINE) {
- 			btrfs_file_extent_item_to_cpu_inl(extent);
--			rd = btrfs_read_extent_inline(&path, extent, offset,
-+			rd = __btrfs_read_extent_inline(&path, extent, offset,
- 						      size, buf);
- 		} else {
- 			btrfs_file_extent_item_to_cpu(extent);
--			rd = btrfs_read_extent_reg(&path, extent, offset, size,
-+			rd = __btrfs_read_extent_reg(&path, extent, offset, size,
- 						   buf);
- 		}
+ 	int res = 0;
+-	while (*path != '\0' && *path != '/' && res <= BTRFS_NAME_LEN)
+-		++res, ++path;
++	while (*path != '\0' && *path != '/') {
++		++res;
++		++path;
++		if (res > BTRFS_NAME_LEN)
++			break;
++	}
+ 	return res;
+ }
  
 -- 
 2.26.2

@@ -2,37 +2,39 @@ Return-Path: <SRS0=nWHZ=AF=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-4.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS,USER_AGENT_GIT autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4C8CDC433DF
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 34F35C433E0
 	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Jun 2020 16:03:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 2E2CD2073E
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Jun 2020 16:03:28 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DD93E2077D
+	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Jun 2020 16:03:27 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=nic.cz header.i=@nic.cz header.b="qJqOnuA6"
+	dkim=pass (1024-bit key) header.d=nic.cz header.i=@nic.cz header.b="ecYT8vqZ"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2404762AbgFXQD1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 24 Jun 2020 12:03:27 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36990 "EHLO
+        id S2404693AbgFXQDZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 24 Jun 2020 12:03:25 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36988 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2404665AbgFXQDY (ORCPT
+        with ESMTP id S2404503AbgFXQDY (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 24 Jun 2020 12:03:24 -0400
+X-Greylist: delayed 89870 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Wed, 24 Jun 2020 09:03:23 PDT
 Received: from mail.nic.cz (mail.nic.cz [IPv6:2001:1488:800:400::400])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E542EC0613ED
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DD7F7C061573
         for <linux-btrfs@vger.kernel.org>; Wed, 24 Jun 2020 09:03:23 -0700 (PDT)
 Received: from dellmb.labs.office.nic.cz (unknown [IPv6:2001:1488:fffe:6:cac7:3539:7f1f:463])
-        by mail.nic.cz (Postfix) with ESMTP id 48E15140649;
+        by mail.nic.cz (Postfix) with ESMTP id 9C6F01408B2;
         Wed, 24 Jun 2020 18:03:21 +0200 (CEST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=nic.cz; s=default;
-        t=1593014601; bh=ptR7h3DS3TGGee3QPjNfDFKzkXpNWXRw/mk2YNQrM8M=;
+        t=1593014601; bh=kuj8cKutuVqtaXvsDLgcKgCBPnEEA7CX2JFXNMt1G0A=;
         h=From:To:Date;
-        b=qJqOnuA6f3s1cSpvY13zqbVYs1Bxn/nXz+5vtzBoVZoHuyudAIe1O3XWSeR28qwbG
-         o/3djhZap5EVGHfF3057FD1q90ki//uDH2VyIoNqQvyVJNuf2YZX2wLAZDO8l3UyiA
-         /K2MWVBLlh3xqmL7JgYBiqPCvDHzKUs9aW7FEtog=
+        b=ecYT8vqZjOgxpOvuBjfCme51wP4WGo+pTD6T211lqszKuCaHLoZ1qtSRtfOOEqTTN
+         jbYjxdk4AzhjJr0VrMcY61DxJWw7v3Be6DGnNKxp/R3lwWzm59GhMntlv7JrXfdml0
+         mZrESDF21KA7INK4N7Oro+zX2K2yF9Qe2Tnbb7bc=
 From:   =?UTF-8?q?Marek=20Beh=C3=BAn?= <marek.behun@nic.cz>
 To:     u-boot@lists.denx.de
 Cc:     =?UTF-8?q?Alberto=20S=C3=A1nchez=20Molero?= <alsamolero@gmail.com>,
@@ -40,12 +42,14 @@ Cc:     =?UTF-8?q?Alberto=20S=C3=A1nchez=20Molero?= <alsamolero@gmail.com>,
         Pierre Bourdon <delroth@gmail.com>,
         Simon Glass <sjg@chromium.org>, Tom Rini <trini@konsulko.com>,
         Yevgeny Popovych <yevgenyp@pointgrab.com>,
-        linux-btrfs@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, Qu Wenruo <wqu@suse.com>,
         =?UTF-8?q?Marek=20Beh=C3=BAn?= <marek.behun@nic.cz>
-Subject: [PATCH U-BOOT v3 00/30] PLEASE TEST fs: btrfs: Re-implement btrfs support using code from btrfs-progs
-Date:   Wed, 24 Jun 2020 18:02:46 +0200
-Message-Id: <20200624160316.5001-1-marek.behun@nic.cz>
+Subject: [PATCH U-BOOT v3 02/30] fs: btrfs: Add more checksum algorithms
+Date:   Wed, 24 Jun 2020 18:02:48 +0200
+Message-Id: <20200624160316.5001-3-marek.behun@nic.cz>
 X-Mailer: git-send-email 2.26.2
+In-Reply-To: <20200624160316.5001-1-marek.behun@nic.cz>
+References: <20200624160316.5001-1-marek.behun@nic.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -57,194 +61,329 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hello,
+From: Qu Wenruo <wqu@suse.com>
 
-this is a cleaned up version of Qu's patches that reimplements U-Boot's
-btrfs driver with code from btrfs-progs.
+This mostly crossports crypto/hash.[ch] from btrfs-progs.
 
-I have tested this series, found and corrected one bug (failure when
-accesing files via symlinks), and it looks it is working now, but I
-would like more people to do some testing.
+The differences are:
+- No blake2 support
+  No blake2 related library in U-Boot yet.
 
-There are a lot of checkpatch warnings and errors left, I shall fix
-this in the future.
+- Use uboot xxhash/sha256 directly
+  No need to implement the code as U-Boot has already provided the
+  interface.
 
-Marek
+This adds the support for the following csums:
+- SHA256
+- XXHASH
 
-Changes since v2:
-- fixed btrfs_lookup_path() in patch 19 to correctly handle symlinks
-- commit messages were updated some
-  - for example they used the word "crossport" in 3 formats:
-    "crossport", "cross-port" and "cross port", this was changed
-    to "crossport"
-  - corrected some typos
-  - some English sentences were a bit weirdly written
-- fixed 2 compiler warnings (one use of maybe uninitialized variable and
-  one printf specifier warning)
-- indentation in some places was wrong (usage of 8 spaces instead of a
-  tab, for example)
-- added my Reviewed-by
-- the last patch, adding btrfs mailing list to MAINTAINRES, also adds
-  Qu as designated reviewer, so that people add him to Cc when they send
-  patches
-
-Changes since v1:
-- Implement btrfs_list_subvols()
-  In v1 it's completely removed thus would cause problem if btrfsolume
-  command is compiled in.
-- Rebased to latest master
-  Only minor conflicts due to header changes.
-- Allow next_legnth() to return value > BTRFS_NAME_LEN
-
-Below is Qu's explanation, from cover letter of v2:
-
-The current btrfs code in U-boot is using a creative way to read on-disk
-data.
-It's pretty simple, involving the least amount of code, but pretty
-different from btrfs-progs nor kernel, making it pretty hard to sync
-code between different projects.
-
-This big patchset will rework the btrfs support, to use code mostly from
-btrfs-progs, thus all existing btrfs developers will feel at home.
-
-During the rework, the following new features are added:
-- More hash algorithm support
-  SHA256 and XXHASH support are added.
-  BLAKE2 needs more backport, will happen in a separate patchset.
-
-- The ability to read degraded RAID1
-  Although we still only support one device btrfs, the new code base
-  can choose from different copies already.
-  As long as new device scan interface is provided, multi-device support
-  is pretty simple.
-
-- More correct handling of compressed extents with offset
-  For compressed extent with offset, we should read the whole compressed
-  extent, decompress them, then copy the referred part.
-
-There are some more features incoming, with the new code base it would
-be much easier to implement:
-- Data checksum support
-  The check would happen in read_extent_data(), btrfs-progs has the
-  needed facility to locate data csum.
-
-- BLAKE2 support
-  Need BLAKE2 library cross ported.
-  For btrfs it's just several lines of modification.
-
-- Multi-device support along wit degraded RAID support
-  We only need an interface to scan one device without opening it.
-  The infrastructure is already provided in this patchset.
-
-These new features would be submitted after the patchset get merged,
-since the patchset is already large, I don't want to make it more scary.
-
-Although this patchset look horribly large, most of them are code copy
-from btrfs-progs.
-E.g extent-cache.[ch], rbtree-utils.[ch], btrfs_btree.h.
-And ctree.h has over 1000 lines copied just for various accessors.
-
-While for disk-io.[ch] and volumes-io.[ch], they have some small
-modifications to adapt the interface of U-boot.
-E.g. btrfs_device::fd is replace with blkdev_desc and disk_partition_t.
-
-The new code for U-boot are related to the following functions:
-- btrfs_readlink()
-- btrfs_lookup_path()
-- btrfs_read_extent_inline()
-- btrfs_read_extent_reg()
-- lookup_data_extent()
-- btrfs_file_read()
-- btrfs_list_subvols()
-
-Qu Wenruo (30):
-  fs: btrfs: Sync btrfs_btree.h from kernel
-  fs: btrfs: Add more checksum algorithms
-  fs: btrfs: Crossport btrfs_read_dev_super() from btrfs-progs
-  fs: btrfs: Crossport rbtree-utils from btrfs-progs
-  fs: btrfs: Crossport extent-cache.[ch] from btrfs-progs
-  fs: btrfs: Crossport extent-io.[ch] from btrfs-progs
-  fs: btrfs: Crossport structure accessor into ctree.h
-  fs: btrfs: Crossport volumes.[ch] from btrfs-progs
-  fs: btrfs: Crossport read_tree_block() from btrfs-progs
-  fs: btrfs: Rename struct btrfs_path to struct __btrfs_path
-  fs: btrfs: Rename btrfs_root to __btrfs_root
-  fs: btrfs: Crossport struct btrfs_root to ctree.h
-  fs: btrfs: Crossport btrfs_search_slot() from btrfs-progs
-  fs: btrfs: Crossport btrfs_read_sys_array() and
-    btrfs_read_chunk_tree()
-  fs: btrfs: Crossport open_ctree_fs_info() from btrfs-progs
-  fs: btrfs: Rename path resolve related functions to avoid name
-    conflicts
-  fs: btrfs: Use btrfs_readlink() to implement __btrfs_readlink()
-  fs: btrfs: inode: Allow next_length() to return value > BTRFS_NAME_LEN
-  fs: btrfs: Implement btrfs_lookup_path()
-  fs: btrfs: Use btrfs_iter_dir() to replace btrfs_readdir()
-  fs: btrfs: Use btrfs_lookup_path() to implement btrfs_exists() and
-    btrfs_size()
-  fs: btrfs: Rename btrfs_file_read() and its callees to avoid name
-    conflicts
-  fs: btrfs: Introduce btrfs_read_extent_inline() and
-    btrfs_read_extent_reg()
-  fs: btrfs: Introduce lookup_data_extent() for later use
-  fs: btrfs: Implement btrfs_file_read()
-  fs: btrfs: Introduce function to resolve path in one subvolume
-  fs: btrfs: Introduce function to resolve the path of one subvolume
-  fs: btrfs: Imeplement btrfs_list_subvols() using new infrastructure
-  fs: btrfs: Cleanup the old implementation
-  MAINTAINERS: Add btrfs mailing list and myself as reviewer
-
- MAINTAINERS                         |    2 +
- fs/btrfs/Makefile                   |    5 +-
- fs/btrfs/btrfs.c                    |  319 +++---
- fs/btrfs/btrfs.h                    |   67 +-
- fs/btrfs/btrfs_tree.h               |  766 --------------
- fs/btrfs/chunk-map.c                |  178 ----
- fs/btrfs/common/rbtree-utils.c      |   83 ++
- fs/btrfs/common/rbtree-utils.h      |   53 +
- fs/btrfs/compat.h                   |   88 ++
- fs/btrfs/compression.c              |    2 +-
- fs/btrfs/crypto/hash.c              |   55 +
- fs/btrfs/crypto/hash.h              |   17 +
- fs/btrfs/ctree.c                    |  859 ++++++++++++----
- fs/btrfs/ctree.h                    | 1453 ++++++++++++++++++++++-----
- fs/btrfs/dir-item.c                 |  192 ++--
- fs/btrfs/disk-io.c                  | 1062 ++++++++++++++++++++
- fs/btrfs/disk-io.h                  |   50 +
- fs/btrfs/extent-cache.c             |  318 ++++++
- fs/btrfs/extent-cache.h             |  104 ++
- fs/btrfs/extent-io.c                |  847 ++++++++++++++--
- fs/btrfs/extent-io.h                |  164 +++
- fs/btrfs/hash.c                     |   38 -
- fs/btrfs/inode.c                    |  884 +++++++++++-----
- fs/btrfs/kernel-shared/btrfs_tree.h | 1333 ++++++++++++++++++++++++
- fs/btrfs/root-tree.c                |   47 +
- fs/btrfs/root.c                     |   92 --
- fs/btrfs/subvolume.c                |  310 ++++--
- fs/btrfs/super.c                    |  257 -----
- fs/btrfs/volumes.c                  | 1173 +++++++++++++++++++++
- fs/btrfs/volumes.h                  |  204 ++++
- 30 files changed, 8531 insertions(+), 2491 deletions(-)
- delete mode 100644 fs/btrfs/btrfs_tree.h
- delete mode 100644 fs/btrfs/chunk-map.c
- create mode 100644 fs/btrfs/common/rbtree-utils.c
- create mode 100644 fs/btrfs/common/rbtree-utils.h
- create mode 100644 fs/btrfs/compat.h
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+Reviewed-by: Marek Behún <marek.behun@nic.cz>
+---
+ fs/btrfs/Makefile      |  2 +-
+ fs/btrfs/btrfs.c       |  3 ++-
+ fs/btrfs/btrfs.h       | 11 ---------
+ fs/btrfs/crypto/hash.c | 55 ++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/crypto/hash.h | 17 +++++++++++++
+ fs/btrfs/dir-item.c    |  1 +
+ fs/btrfs/disk-io.c     | 22 +++++++++++++++++
+ fs/btrfs/disk-io.h     | 20 +++++++++++++++
+ fs/btrfs/hash.c        | 38 -----------------------------
+ fs/btrfs/super.c       | 23 +++++++++---------
+ 10 files changed, 130 insertions(+), 62 deletions(-)
  create mode 100644 fs/btrfs/crypto/hash.c
  create mode 100644 fs/btrfs/crypto/hash.h
  create mode 100644 fs/btrfs/disk-io.c
  create mode 100644 fs/btrfs/disk-io.h
- create mode 100644 fs/btrfs/extent-cache.c
- create mode 100644 fs/btrfs/extent-cache.h
- create mode 100644 fs/btrfs/extent-io.h
  delete mode 100644 fs/btrfs/hash.c
- create mode 100644 fs/btrfs/kernel-shared/btrfs_tree.h
- create mode 100644 fs/btrfs/root-tree.c
- delete mode 100644 fs/btrfs/root.c
- delete mode 100644 fs/btrfs/super.c
- create mode 100644 fs/btrfs/volumes.c
- create mode 100644 fs/btrfs/volumes.h
 
+diff --git a/fs/btrfs/Makefile b/fs/btrfs/Makefile
+index 9b3159296f..84b3b5ec0e 100644
+--- a/fs/btrfs/Makefile
++++ b/fs/btrfs/Makefile
+@@ -3,4 +3,4 @@
+ # 2017 Marek Behun, CZ.NIC, marek.behun@nic.cz
+ 
+ obj-y := btrfs.o chunk-map.o compression.o ctree.o dev.o dir-item.o \
+-	extent-io.o hash.o inode.o root.o subvolume.o super.o
++	extent-io.o inode.o root.o subvolume.o super.o crypto/hash.o disk-io.o
+diff --git a/fs/btrfs/btrfs.c b/fs/btrfs/btrfs.c
+index 9f2888bab3..d5a87c175c 100644
+--- a/fs/btrfs/btrfs.c
++++ b/fs/btrfs/btrfs.c
+@@ -5,11 +5,12 @@
+  * 2017 Marek Behun, CZ.NIC, marek.behun@nic.cz
+  */
+ 
+-#include "btrfs.h"
+ #include <config.h>
+ #include <malloc.h>
+ #include <uuid.h>
+ #include <linux/time.h>
++#include "btrfs.h"
++#include "crypto/hash.h"
+ 
+ struct btrfs_info btrfs_info;
+ 
+diff --git a/fs/btrfs/btrfs.h b/fs/btrfs/btrfs.h
+index 25a8cf6a87..1aacbc8cbb 100644
+--- a/fs/btrfs/btrfs.h
++++ b/fs/btrfs/btrfs.h
+@@ -23,17 +23,6 @@ struct btrfs_info {
+ 
+ extern struct btrfs_info btrfs_info;
+ 
+-/* hash.c */
+-void btrfs_hash_init(void);
+-u32 btrfs_crc32c(u32, const void *, size_t);
+-u32 btrfs_csum_data(char *, u32, size_t);
+-void btrfs_csum_final(u32, void *);
+-
+-static inline u64 btrfs_name_hash(const char *name, int len)
+-{
+-	return btrfs_crc32c((u32) ~1, name, len);
+-}
+-
+ /* dev.c */
+ extern struct blk_desc *btrfs_blk_desc;
+ extern struct disk_partition *btrfs_part_info;
+diff --git a/fs/btrfs/crypto/hash.c b/fs/btrfs/crypto/hash.c
+new file mode 100644
+index 0000000000..fb51f6386c
+--- /dev/null
++++ b/fs/btrfs/crypto/hash.c
+@@ -0,0 +1,55 @@
++// SPDX-License-Identifier: GPL-2.0+
++
++#include <linux/xxhash.h>
++#include <linux/unaligned/access_ok.h>
++#include <linux/types.h>
++#include <u-boot/sha256.h>
++#include <u-boot/crc.h>
++
++static u32 btrfs_crc32c_table[256];
++
++void btrfs_hash_init(void)
++{
++	static int inited = 0;
++
++	if (!inited) {
++		crc32c_init(btrfs_crc32c_table, 0x82F63B78);
++		inited = 1;
++	}
++}
++
++int hash_sha256(const u8 *buf, size_t length, u8 *out)
++{
++	sha256_context ctx;
++
++	sha256_starts(&ctx);
++	sha256_update(&ctx, buf, length);
++	sha256_finish(&ctx, out);
++
++	return 0;
++}
++
++int hash_xxhash(const u8 *buf, size_t length, u8 *out)
++{
++	u64 hash;
++
++	hash = xxh64(buf, length, 0);
++	put_unaligned_le64(hash, out);
++
++	return 0;
++}
++
++int hash_crc32c(const u8 *buf, size_t length, u8 *out)
++{
++	u32 crc;
++
++	crc = crc32c_cal((u32)~0, (char *)buf, length, btrfs_crc32c_table);
++	put_unaligned_le32(~crc, out);
++
++	return 0;
++}
++
++u32 crc32c(u32 seed, const void * data, size_t len)
++{
++	return crc32c_cal(seed, data, len, btrfs_crc32c_table);
++}
+diff --git a/fs/btrfs/crypto/hash.h b/fs/btrfs/crypto/hash.h
+new file mode 100644
+index 0000000000..d1ba1fa374
+--- /dev/null
++++ b/fs/btrfs/crypto/hash.h
+@@ -0,0 +1,17 @@
++#ifndef CRYPTO_HASH_H
++#define CRYPTO_HASH_H
++
++#include <linux/types.h>
++
++#define CRYPTO_HASH_SIZE_MAX	32
++
++void btrfs_hash_init(void);
++int hash_crc32c(const u8 *buf, size_t length, u8 *out);
++int hash_xxhash(const u8 *buf, size_t length, u8 *out);
++int hash_sha256(const u8 *buf, size_t length, u8 *out);
++
++u32 crc32c(u32 seed, const void * data, size_t len);
++
++/* Blake2B is not yet supported due to lack of library */
++
++#endif
+diff --git a/fs/btrfs/dir-item.c b/fs/btrfs/dir-item.c
+index 63b5bf0a86..1ff446a45a 100644
+--- a/fs/btrfs/dir-item.c
++++ b/fs/btrfs/dir-item.c
+@@ -6,6 +6,7 @@
+  */
+ 
+ #include "btrfs.h"
++#include "disk-io.h"
+ 
+ static int verify_dir_item(struct btrfs_dir_item *item, u32 start, u32 total)
+ {
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+new file mode 100644
+index 0000000000..58c32b548e
+--- /dev/null
++++ b/fs/btrfs/disk-io.c
+@@ -0,0 +1,22 @@
++// SPDX-License-Identifier: GPL-2.0+
++#include <common.h>
++#include <fs_internal.h>
++#include "disk-io.h"
++#include "crypto/hash.h"
++
++int btrfs_csum_data(u16 csum_type, const u8 *data, u8 *out, size_t len)
++{
++	memset(out, 0, BTRFS_CSUM_SIZE);
++
++	switch (csum_type) {
++	case BTRFS_CSUM_TYPE_CRC32:
++		return hash_crc32c(data, len, out);
++	case BTRFS_CSUM_TYPE_XXHASH:
++		return hash_xxhash(data, len, out);
++	case BTRFS_CSUM_TYPE_SHA256:
++		return hash_sha256(data, len, out);
++	default:
++		printf("Unknown csum type %d\n", csum_type);
++		return -EINVAL;
++	}
++}
+diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
+new file mode 100644
+index 0000000000..efb715828c
+--- /dev/null
++++ b/fs/btrfs/disk-io.h
+@@ -0,0 +1,20 @@
++// SPDX-License-Identifier: GPL-2.0+
++#ifndef __BTRFS_DISK_IO_H__
++#define __BTRFS_DISK_IO_H__
++
++#include "crypto/hash.h"
++#include "ctree.h"
++#include "disk-io.h"
++
++static inline u64 btrfs_name_hash(const char *name, int len)
++{
++	u32 crc;
++
++	crc = crc32c((u32)~1, (unsigned char *)name, len);
++
++	return (u64)crc;
++}
++
++int btrfs_csum_data(u16 csum_type, const u8 *data, u8 *out, size_t len);
++
++#endif
+diff --git a/fs/btrfs/hash.c b/fs/btrfs/hash.c
+deleted file mode 100644
+index 52a8ceaf0c..0000000000
+--- a/fs/btrfs/hash.c
++++ /dev/null
+@@ -1,38 +0,0 @@
+-// SPDX-License-Identifier: GPL-2.0+
+-/*
+- * BTRFS filesystem implementation for U-Boot
+- *
+- * 2017 Marek Behun, CZ.NIC, marek.behun@nic.cz
+- */
+-
+-#include "btrfs.h"
+-#include <u-boot/crc.h>
+-#include <asm/unaligned.h>
+-
+-static u32 btrfs_crc32c_table[256];
+-
+-void btrfs_hash_init(void)
+-{
+-	static int inited = 0;
+-
+-	if (!inited) {
+-		crc32c_init(btrfs_crc32c_table, 0x82F63B78);
+-		inited = 1;
+-	}
+-}
+-
+-u32 btrfs_crc32c(u32 crc, const void *data, size_t length)
+-{
+-	return crc32c_cal(crc, (const char *) data, length,
+-			  btrfs_crc32c_table);
+-}
+-
+-u32 btrfs_csum_data(char *data, u32 seed, size_t len)
+-{
+-	return btrfs_crc32c(seed, data, len);
+-}
+-
+-void btrfs_csum_final(u32 crc, void *result)
+-{
+-	put_unaligned(cpu_to_le32(~crc), (u32 *)result);
+-}
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 913a4d402e..d67d5a2447 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -11,6 +11,7 @@
+ #include <part.h>
+ #include <linux/compat.h>
+ #include "btrfs.h"
++#include "disk-io.h"
+ 
+ #define BTRFS_SUPER_FLAG_SUPP	(BTRFS_HEADER_FLAG_WRITTEN	\
+ 				 | BTRFS_HEADER_FLAG_RELOC	\
+@@ -61,19 +62,19 @@ static int btrfs_check_super_csum(char *raw_disk_sb)
+ 		(struct btrfs_super_block *) raw_disk_sb;
+ 	u16 csum_type = le16_to_cpu(disk_sb->csum_type);
+ 
+-	if (csum_type == BTRFS_CSUM_TYPE_CRC32) {
+-		u32 crc = ~(u32) 0;
+-		const int csum_size = sizeof(crc);
+-		char result[csum_size];
++	if (csum_type == BTRFS_CSUM_TYPE_CRC32 ||
++	    csum_type == BTRFS_CSUM_TYPE_SHA256 ||
++	    csum_type == BTRFS_CSUM_TYPE_XXHASH) {
++		u8 result[BTRFS_CSUM_SIZE];
+ 
+-		crc = btrfs_csum_data(raw_disk_sb + BTRFS_CSUM_SIZE, crc,
+-				      BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
+-		btrfs_csum_final(crc, result);
++		btrfs_csum_data(csum_type, (u8 *)raw_disk_sb + BTRFS_CSUM_SIZE,
++			result, BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
+ 
+-		if (memcmp(raw_disk_sb, result, csum_size))
+-			return -1;
+-	} else {
+-		return -1;
++		if (memcmp(raw_disk_sb, result, BTRFS_CSUM_SIZE))
++			return -EIO;
++	} else if (csum_type == BTRFS_CSUM_TYPE_BLAKE2) {
++		printf("Blake2 csum type is not supported yet\n");
++		return -ENOTSUPP;
+ 	}
+ 
+ 	return 0;
 -- 
 2.26.2
 

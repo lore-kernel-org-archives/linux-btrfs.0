@@ -2,32 +2,35 @@ Return-Path: <SRS0=riWC=AJ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-4.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=no
+X-Spam-Status: No, score=-10.0 required=3.0
+	tests=HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4ADB9C433E0
-	for <linux-btrfs@archiver.kernel.org>; Sun, 28 Jun 2020 05:18:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2D199C433E1
+	for <linux-btrfs@archiver.kernel.org>; Sun, 28 Jun 2020 05:19:39 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 2CE49207E8
-	for <linux-btrfs@archiver.kernel.org>; Sun, 28 Jun 2020 05:18:48 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 06335212CC
+	for <linux-btrfs@archiver.kernel.org>; Sun, 28 Jun 2020 05:19:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726010AbgF1FSr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 28 Jun 2020 01:18:47 -0400
-Received: from mx2.suse.de ([195.135.220.15]:52014 "EHLO mx2.suse.de"
+        id S1726075AbgF1FS4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 28 Jun 2020 01:18:56 -0400
+Received: from mx2.suse.de ([195.135.220.15]:52104 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725965AbgF1FSr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 28 Jun 2020 01:18:47 -0400
+        id S1725965AbgF1FS4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 28 Jun 2020 01:18:56 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 8D7C0AEFB
-        for <linux-btrfs@vger.kernel.org>; Sun, 28 Jun 2020 05:18:45 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 71F84AE55
+        for <linux-btrfs@vger.kernel.org>; Sun, 28 Jun 2020 05:18:54 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v6 0/3] btrfs: allow btrfs_truncate_block() to fallback to nocow for data space reservation
-Date:   Sun, 28 Jun 2020 13:18:36 +0800
-Message-Id: <20200628051839.63142-1-wqu@suse.com>
+Subject: [PATCH v6 2/3] btrfs: add comments for btrfs_check_can_nocow() and can_nocow_extent()
+Date:   Sun, 28 Jun 2020 13:18:38 +0800
+Message-Id: <20200628051839.63142-3-wqu@suse.com>
 X-Mailer: git-send-email 2.27.0
+In-Reply-To: <20200628051839.63142-1-wqu@suse.com>
+References: <20200628051839.63142-1-wqu@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -35,72 +38,81 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Before this patch, btrfs_truncate_block() never checks the NODATACOW
-bit, thus when we run out of data space, we can return ENOSPC for
-truncate for NODATACOW inode.
+These two functions have extra conditions that their callers need to
+meet, and some not-that-common parameters used for return value.
 
-This patchset will address this problem by doing the same behavior as
-buffered write to address it.
+So adding some comments may save reviewers some time.
 
-Changelog:
-v2:
-- Rebased to misc-next
-  Only one minor conflict in ctree.h
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/file.c  | 21 +++++++++++++++++++++
+ fs/btrfs/inode.c | 21 +++++++++++++++++++--
+ 2 files changed, 40 insertions(+), 2 deletions(-)
 
-v3:
-- Added two new patches
-- Refactor check_can_nocow()
-  Since the introduction of nowait, check_can_nocow() are in fact split
-  into two usage patterns: check_can_nocow(nowait = false) with
-  btrfs_drew_write_unlock(), and single check_can_nocow(nowait = true).
-  Refactor them into two functions: start_nocow_check() paired with
-  end_nocow_check(), and single try_nocow_check(). With comment added.
-
-- Rebased to latest misc-next
-
-- Added btrfs_assert_drew_write_locked() for btrfs_end_nocow_check()
-  This is a little concerning one, as it's in the hot path of buffered
-  write.
-  It has percpu_counter_sum() called in that hot path, causing
-  obvious performance drop for CONFIG_BTRFS_DEBUG build.
-  Not sure if the assert is worthy since there aren't any other users.
-
-v4:
-- Rebased to latest misc-next
-
-- Comment update to follow the relaxed kernel-doc format
-
-- Re-order the patches
-  So the fix comes first, then refactors.
-
-- Naming updates for the refactor patch
-  Now the exported pair is btrfs_check_nocow_lock() and
-  btrfs_check_nocow_unlock().
-
-- Remove the btrfs_assert_drew_write_lock()
-  It's extremely slow for btrfs/187, and we only have two call sites so
-  far, thus it's not really worthy.
-
-v5:
-- Fix a stupid bug that check_nocow_nolock() passes wrong bool
-
-- Update the comment for btrfs_check_nocow_lock() as there is no
-  "nowait" parameter anymore
-
-v6:
-- Replace one btrfs_drew_write_unlock() with the wrapper
-
-Qu Wenruo (3):
-  btrfs: allow btrfs_truncate_block() to fallback to nocow for data
-    space reservation
-  btrfs: add comments for btrfs_check_can_nocow() and can_nocow_extent()
-  btrfs: refactor btrfs_check_can_nocow() into two variants
-
- fs/btrfs/ctree.h |  3 +++
- fs/btrfs/file.c  | 61 +++++++++++++++++++++++++++++++++++-----------
- fs/btrfs/inode.c | 63 +++++++++++++++++++++++++++++++++++++++++-------
- 3 files changed, 104 insertions(+), 23 deletions(-)
-
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 0115ef7f7943..2bee888cb929 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1533,6 +1533,27 @@ lock_and_cleanup_extent_if_need(struct btrfs_inode *inode, struct page **pages,
+ 	return ret;
+ }
+ 
++/*
++ * Check if we can do nocow write into the range [@pos, @pos + @write_bytes)
++ *
++ * @pos:	 File offset
++ * @write_bytes: The length to write, will be updated to the nocow writeable
++ *		 range
++ * @nowait:	 Whether this function could sleep.
++ *
++ * This function will flush ordered extents in the range to ensure proper
++ * nocow checks for (nowait == false) case.
++ *
++ * Return:
++ * >0 and update @write_bytes if we can do nocow write.
++ * 0 if we can't do nocow write.
++ * -EAGAIN if we can't get the needed lock or there are ordered extents for
++ * (nowait == true) case.
++ * <0 if other error happened.
++ *
++ * NOTE: For wait (nowait==false) calls, callers need to release the drew write
++ * 	 lock of inode->root->snapshot_lock when return value > 0.
++ */
+ int btrfs_check_can_nocow(struct btrfs_inode *inode, loff_t pos,
+ 			  size_t *write_bytes, bool nowait)
+ {
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 9d9ec7838f13..339d739b2d29 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -6952,8 +6952,25 @@ static struct extent_map *btrfs_new_extent_direct(struct inode *inode,
+ }
+ 
+ /*
+- * returns 1 when the nocow is safe, < 1 on error, 0 if the
+- * block must be cow'd
++ * Check if we can do nocow write into the range [@offset, @offset+ @len)
++ *
++ * @offset:	File offset
++ * @len:	The length to write, will be updated to the nocow writeable
++ *		range
++ * @orig_start:	(Optional) Return the original file offset of the file extent
++ * @orig_len:	(Optional) Return the original on-disk length of the file extent
++ * @ram_bytes:	(Optional) Return the ram_bytes of the file extent
++ *
++ * This function will flush ordered extents in the range to ensure proper
++ * nocow checks for (nowait == false) case.
++ *
++ * Return:
++ * >0 and update @len if we can do nocow write.
++ * 0 if we can't do nocow write.
++ * <0 if error happened.
++ *
++ * NOTE: This only checks the file extents, caller is responsible to wait for
++ *	 any ordered extents.
+  */
+ noinline int can_nocow_extent(struct inode *inode, u64 offset, u64 *len,
+ 			      u64 *orig_start, u64 *orig_block_len,
 -- 
 2.27.0
 

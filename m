@@ -5,34 +5,32 @@ X-Spam-Level:
 X-Spam-Status: No, score=-10.0 required=3.0
 	tests=HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 34776C433E0
-	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Jun 2020 19:24:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 372BFC433E0
+	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Jun 2020 19:24:30 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 1E943206E2
-	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Jun 2020 19:24:25 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 17DCD206E2
+	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Jun 2020 19:24:30 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732364AbgF2TYY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 29 Jun 2020 15:24:24 -0400
-Received: from mx2.suse.de ([195.135.220.15]:60794 "EHLO mx2.suse.de"
+        id S1732352AbgF2TYR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 29 Jun 2020 15:24:17 -0400
+Received: from mx2.suse.de ([195.135.220.15]:60728 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1732357AbgF2TYU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 29 Jun 2020 15:24:20 -0400
+        id S1732274AbgF2TYP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 29 Jun 2020 15:24:15 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 030CAAAC5;
-        Mon, 29 Jun 2020 19:24:19 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 7BE52AAC5;
+        Mon, 29 Jun 2020 19:24:13 +0000 (UTC)
 From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
 To:     linux-fsdevel@vger.kernel.org
 Cc:     linux-btrfs@vger.kernel.org, fdmanana@gmail.com, dsterba@suse.cz,
         david@fromorbit.com, darrick.wong@oracle.com, hch@lst.de,
-        Goldwyn Rodrigues <rgoldwyn@suse.com>,
-        Nikolay Borisov <nborisov@suse.com>,
-        Johannes Thumshirn <jthumshirn@suse.de>
-Subject: [PATCH 4/6] fs: remove dio_end_io()
-Date:   Mon, 29 Jun 2020 14:23:51 -0500
-Message-Id: <20200629192353.20841-5-rgoldwyn@suse.de>
+        Goldwyn Rodrigues <rgoldwyn@suse.com>
+Subject: [PATCH 2/6] iomap: IOMAP_DIO_RWF_NO_STALE_PAGECACHE return if page invalidation fails
+Date:   Mon, 29 Jun 2020 14:23:49 -0500
+Message-Id: <20200629192353.20841-3-rgoldwyn@suse.de>
 X-Mailer: git-send-email 2.26.2
 In-Reply-To: <20200629192353.20841-1-rgoldwyn@suse.de>
 References: <20200629192353.20841-1-rgoldwyn@suse.de>
@@ -45,61 +43,63 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Goldwyn Rodrigues <rgoldwyn@suse.com>
 
-Since we removed the last user of dio_end_io(), remove the helper
-function dio_end_io().
+For direct I/O, add the flag IOMAP_DIO_RWF_NO_STALE_PAGECACHE to indicate
+that if the page invalidation fails, return back control to the
+filesystem so it may fallback to buffered mode.
 
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
-Reviewed-by: Christoph Hellwig <hch@lst.de>
+Reviewed-by: Darrick J. Wong <darrick.wong@oracle.com>
 Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
 ---
- fs/direct-io.c     | 19 -------------------
- include/linux/fs.h |  2 --
- 2 files changed, 21 deletions(-)
+ fs/iomap/direct-io.c  |  8 +++++++-
+ include/linux/iomap.h | 14 ++++++++++++++
+ 2 files changed, 21 insertions(+), 1 deletion(-)
 
-diff --git a/fs/direct-io.c b/fs/direct-io.c
-index 6d5370eac2a8..1543b5af400e 100644
---- a/fs/direct-io.c
-+++ b/fs/direct-io.c
-@@ -386,25 +386,6 @@ static void dio_bio_end_io(struct bio *bio)
- 	spin_unlock_irqrestore(&dio->bio_lock, flags);
- }
+diff --git a/fs/iomap/direct-io.c b/fs/iomap/direct-io.c
+index fd22bff61569..2459c76e41ab 100644
+--- a/fs/iomap/direct-io.c
++++ b/fs/iomap/direct-io.c
+@@ -484,8 +484,14 @@ iomap_dio_rw(struct kiocb *iocb, struct iov_iter *iter,
+ 	 */
+ 	ret = invalidate_inode_pages2_range(mapping,
+ 			pos >> PAGE_SHIFT, end >> PAGE_SHIFT);
+-	if (ret)
++	if (ret) {
++		if (dio_flags & IOMAP_DIO_RWF_NO_STALE_PAGECACHE) {
++			if (ret == -EBUSY)
++				ret = 0;
++			goto out_free_dio;
++		}
+ 		dio_warn_stale_pagecache(iocb->ki_filp);
++	}
+ 	ret = 0;
  
--/**
-- * dio_end_io - handle the end io action for the given bio
-- * @bio: The direct io bio thats being completed
-- *
-- * This is meant to be called by any filesystem that uses their own dio_submit_t
-- * so that the DIO specific endio actions are dealt with after the filesystem
-- * has done it's completion work.
-- */
--void dio_end_io(struct bio *bio)
--{
--	struct dio *dio = bio->bi_private;
--
--	if (dio->is_async)
--		dio_bio_end_aio(bio);
--	else
--		dio_bio_end_io(bio);
--}
--EXPORT_SYMBOL_GPL(dio_end_io);
--
- static inline void
- dio_bio_alloc(struct dio *dio, struct dio_submit *sdio,
- 	      struct block_device *bdev,
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index 3f881a892ea7..9b3f250d634c 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -3202,8 +3202,6 @@ enum {
- 	DIO_SKIP_HOLES	= 0x02,
- };
+ 	if (iov_iter_rw(iter) == WRITE && !wait_for_completion &&
+diff --git a/include/linux/iomap.h b/include/linux/iomap.h
+index 8a4ba1635202..2ebb8a298cd8 100644
+--- a/include/linux/iomap.h
++++ b/include/linux/iomap.h
+@@ -262,7 +262,21 @@ struct iomap_dio_ops {
+ /*
+  * Wait for completion of DIO
+  */
++
+ #define IOMAP_DIO_RWF_SYNCIO			(1 << 0)
++/*
++ * Direct IO will attempt to keep the page cache coherent by
++ * invalidating the inode's page cache over the range of the DIO.
++ * That can fail if something else is actively using the page cache.
++ * If this happens and the DIO continues, the data in the page
++ * cache will become stale.
++ *
++ * Set this flag if you want the DIO to abort without issuing any IO
++ * or error if it fails to invalidate the page cache successfully.
++ * This allows the IO submitter to fallback to buffered IO to resubmit
++ * IO
++ */
++#define IOMAP_DIO_RWF_NO_STALE_PAGECACHE	(1 << 1)
  
--void dio_end_io(struct bio *bio);
--
- ssize_t __blockdev_direct_IO(struct kiocb *iocb, struct inode *inode,
- 			     struct block_device *bdev, struct iov_iter *iter,
- 			     get_block_t get_block,
+ ssize_t iomap_dio_rw(struct kiocb *iocb, struct iov_iter *iter,
+ 		const struct iomap_ops *ops, const struct iomap_dio_ops *dops,
 -- 
 2.26.2
 

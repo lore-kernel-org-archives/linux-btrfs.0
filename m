@@ -2,83 +2,68 @@ Return-Path: <SRS0=dUu7=AK=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.0 required=3.0
-	tests=HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 00255C433E0
-	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Jun 2020 19:34:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 22F57C433E0
+	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Jun 2020 20:29:50 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id E2D2720702
-	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Jun 2020 19:34:41 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 088522067D
+	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Jun 2020 20:29:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730844AbgF2Tei (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 29 Jun 2020 15:34:38 -0400
-Received: from mx2.suse.de ([195.135.220.15]:36734 "EHLO mx2.suse.de"
+        id S1733095AbgF2U3t (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 29 Jun 2020 16:29:49 -0400
+Received: from mx2.suse.de ([195.135.220.15]:34436 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1733153AbgF2Tb0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 29 Jun 2020 15:31:26 -0400
+        id S1731827AbgF2U3s (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 29 Jun 2020 16:29:48 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id E4172AD04;
-        Mon, 29 Jun 2020 14:16:41 +0000 (UTC)
-From:   Nikolay Borisov <nborisov@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH] btrfs: Always initialize btrfs_bio::tgtdev_map/raid_map pointers
-Date:   Mon, 29 Jun 2020 17:16:39 +0300
-Message-Id: <20200629141639.7580-1-nborisov@suse.com>
-X-Mailer: git-send-email 2.17.1
+        by mx2.suse.de (Postfix) with ESMTP id 18AFAAB76;
+        Mon, 29 Jun 2020 20:29:47 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 15815DA791; Mon, 29 Jun 2020 22:29:31 +0200 (CEST)
+Date:   Mon, 29 Jun 2020 22:29:31 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     Johannes Thumshirn <Johannes.Thumshirn@wdc.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Anand Jain <anand.jain@oracle.com>
+Subject: Re: [PATCH v6 3/3] btrfs: refactor btrfs_check_can_nocow() into two
+ variants
+Message-ID: <20200629202931.GM27795@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        Johannes Thumshirn <Johannes.Thumshirn@wdc.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Anand Jain <anand.jain@oracle.com>
+References: <20200628051839.63142-1-wqu@suse.com>
+ <20200628051839.63142-4-wqu@suse.com>
+ <SN4PR0401MB359839A2E5EA48ED5D0B2E2B9B6E0@SN4PR0401MB3598.namprd04.prod.outlook.com>
+ <239aeeb4-df67-6a9b-d71e-8855404ad004@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <239aeeb4-df67-6a9b-d71e-8855404ad004@suse.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Since btrfs_bio always contains the extra space for the tgtdev_map and
-raid_maps it's pointless to make the assignment iff specific conditions
-are met. Instead, always assign the pointers to their correct value at
-allocation time.
+On Mon, Jun 29, 2020 at 03:20:42PM +0800, Qu Wenruo wrote:
+> 
+> 
+> On 2020/6/29 下午3:13, Johannes Thumshirn wrote:
+> > On 28/06/2020 07:19, Qu Wenruo wrote:
+> >> -		btrfs_drew_write_unlock(&BTRFS_I(inode)->root->snapshot_lock);
+> >> +		btrfs_check_nocow_unlock(BTRF_I(inode));
+> > 
+> > Huhz?
+> > 
+> That's why there is a v7 update...
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
- fs/btrfs/volumes.c | 9 +++------
- 1 file changed, 3 insertions(+), 6 deletions(-)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index cb9883c7f8b7..1b1fc1485a41 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -5522,6 +5522,9 @@ static struct btrfs_bio *alloc_btrfs_bio(int total_stripes, int real_stripes)
- 	atomic_set(&bbio->error, 0);
- 	refcount_set(&bbio->refs, 1);
- 
-+	bbio->tgtdev_map = (int *)(bbio->stripes + total_stripes);
-+	bbio->raid_map = (u64 *)(bbio->tgtdev_map + real_stripes);
-+
- 	return bbio;
- }
- 
-@@ -6144,8 +6147,6 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
- 		ret = -ENOMEM;
- 		goto out;
- 	}
--	if (dev_replace_is_ongoing && dev_replace->tgtdev != NULL)
--		bbio->tgtdev_map = (int *)(bbio->stripes + num_alloc_stripes);
- 
- 	/* build raid_map */
- 	if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK && need_raid_map &&
-@@ -6153,10 +6154,6 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
- 		u64 tmp;
- 		unsigned rot;
- 
--		bbio->raid_map = (u64 *)((void *)bbio->stripes +
--				 sizeof(struct btrfs_bio_stripe) *
--				 num_alloc_stripes +
--				 sizeof(int) * tgtdev_indexes);
- 
- 		/* Work out the disk rotation on this stripe-set */
- 		div_u64_rem(stripe_nr, num_stripes, &rot);
--- 
-2.17.1
-
+vger.kernel.org was down today, I replied that you should not have sent
+v7 but rather point out the issue.

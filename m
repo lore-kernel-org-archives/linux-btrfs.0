@@ -5,32 +5,34 @@ X-Spam-Level:
 X-Spam-Status: No, score=-10.0 required=3.0
 	tests=HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 372BFC433E0
-	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Jun 2020 19:24:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 00537C433DF
+	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Jun 2020 19:24:33 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 17DCD206E2
-	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Jun 2020 19:24:30 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D939520723
+	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Jun 2020 19:24:32 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732352AbgF2TYR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 29 Jun 2020 15:24:17 -0400
-Received: from mx2.suse.de ([195.135.220.15]:60728 "EHLO mx2.suse.de"
+        id S1732253AbgF2TYb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 29 Jun 2020 15:24:31 -0400
+Received: from mx2.suse.de ([195.135.220.15]:60830 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1732274AbgF2TYP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 29 Jun 2020 15:24:15 -0400
+        id S1730057AbgF2TYX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 29 Jun 2020 15:24:23 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 7BE52AAC5;
-        Mon, 29 Jun 2020 19:24:13 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id D3CC5AC12;
+        Mon, 29 Jun 2020 19:24:21 +0000 (UTC)
 From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
 To:     linux-fsdevel@vger.kernel.org
 Cc:     linux-btrfs@vger.kernel.org, fdmanana@gmail.com, dsterba@suse.cz,
         david@fromorbit.com, darrick.wong@oracle.com, hch@lst.de,
-        Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: [PATCH 2/6] iomap: IOMAP_DIO_RWF_NO_STALE_PAGECACHE return if page invalidation fails
-Date:   Mon, 29 Jun 2020 14:23:49 -0500
-Message-Id: <20200629192353.20841-3-rgoldwyn@suse.de>
+        Goldwyn Rodrigues <rgoldwyn@suse.com>,
+        Nikolay Borisov <nborisov@suse.com>,
+        Johannes Thumshirn <jth@kernel.org>
+Subject: [PATCH 5/6] btrfs: remove BTRFS_INODE_READDIO_NEED_LOCK
+Date:   Mon, 29 Jun 2020 14:23:52 -0500
+Message-Id: <20200629192353.20841-6-rgoldwyn@suse.de>
 X-Mailer: git-send-email 2.26.2
 In-Reply-To: <20200629192353.20841-1-rgoldwyn@suse.de>
 References: <20200629192353.20841-1-rgoldwyn@suse.de>
@@ -43,63 +45,71 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Goldwyn Rodrigues <rgoldwyn@suse.com>
 
-For direct I/O, add the flag IOMAP_DIO_RWF_NO_STALE_PAGECACHE to indicate
-that if the page invalidation fails, return back control to the
-filesystem so it may fallback to buffered mode.
+Since we now perform direct reads using i_rwsem, we can remove this
+inode flag used to co-ordinate unlocked reads.
 
-Reviewed-by: Darrick J. Wong <darrick.wong@oracle.com>
+The truncate call takes i_rwsem. This means it is correctly synchronized
+with concurrent direct reads.
+
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+Reviewed-by: Johannes Thumshirn <jth@kernel.org>
 Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
 ---
- fs/iomap/direct-io.c  |  8 +++++++-
- include/linux/iomap.h | 14 ++++++++++++++
- 2 files changed, 21 insertions(+), 1 deletion(-)
+ fs/btrfs/btrfs_inode.h | 18 ------------------
+ fs/btrfs/inode.c       |  3 ---
+ 2 files changed, 21 deletions(-)
 
-diff --git a/fs/iomap/direct-io.c b/fs/iomap/direct-io.c
-index fd22bff61569..2459c76e41ab 100644
---- a/fs/iomap/direct-io.c
-+++ b/fs/iomap/direct-io.c
-@@ -484,8 +484,14 @@ iomap_dio_rw(struct kiocb *iocb, struct iov_iter *iter,
- 	 */
- 	ret = invalidate_inode_pages2_range(mapping,
- 			pos >> PAGE_SHIFT, end >> PAGE_SHIFT);
--	if (ret)
-+	if (ret) {
-+		if (dio_flags & IOMAP_DIO_RWF_NO_STALE_PAGECACHE) {
-+			if (ret == -EBUSY)
-+				ret = 0;
-+			goto out_free_dio;
-+		}
- 		dio_warn_stale_pagecache(iocb->ki_filp);
-+	}
- 	ret = 0;
+diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+index e7d709505cb1..aeff56a0e105 100644
+--- a/fs/btrfs/btrfs_inode.h
++++ b/fs/btrfs/btrfs_inode.h
+@@ -28,7 +28,6 @@ enum {
+ 	BTRFS_INODE_NEEDS_FULL_SYNC,
+ 	BTRFS_INODE_COPY_EVERYTHING,
+ 	BTRFS_INODE_IN_DELALLOC_LIST,
+-	BTRFS_INODE_READDIO_NEED_LOCK,
+ 	BTRFS_INODE_HAS_PROPS,
+ 	BTRFS_INODE_SNAPSHOT_FLUSH,
+ };
+@@ -313,23 +312,6 @@ struct btrfs_dio_private {
+ 	u8 csums[];
+ };
  
- 	if (iov_iter_rw(iter) == WRITE && !wait_for_completion &&
-diff --git a/include/linux/iomap.h b/include/linux/iomap.h
-index 8a4ba1635202..2ebb8a298cd8 100644
---- a/include/linux/iomap.h
-+++ b/include/linux/iomap.h
-@@ -262,7 +262,21 @@ struct iomap_dio_ops {
- /*
-  * Wait for completion of DIO
-  */
-+
- #define IOMAP_DIO_RWF_SYNCIO			(1 << 0)
-+/*
-+ * Direct IO will attempt to keep the page cache coherent by
-+ * invalidating the inode's page cache over the range of the DIO.
-+ * That can fail if something else is actively using the page cache.
-+ * If this happens and the DIO continues, the data in the page
-+ * cache will become stale.
-+ *
-+ * Set this flag if you want the DIO to abort without issuing any IO
-+ * or error if it fails to invalidate the page cache successfully.
-+ * This allows the IO submitter to fallback to buffered IO to resubmit
-+ * IO
-+ */
-+#define IOMAP_DIO_RWF_NO_STALE_PAGECACHE	(1 << 1)
+-/*
+- * Disable DIO read nolock optimization, so new dio readers will be forced
+- * to grab i_mutex. It is used to avoid the endless truncate due to
+- * nonlocked dio read.
+- */
+-static inline void btrfs_inode_block_unlocked_dio(struct btrfs_inode *inode)
+-{
+-	set_bit(BTRFS_INODE_READDIO_NEED_LOCK, &inode->runtime_flags);
+-	smp_mb();
+-}
+-
+-static inline void btrfs_inode_resume_unlocked_dio(struct btrfs_inode *inode)
+-{
+-	smp_mb__before_atomic();
+-	clear_bit(BTRFS_INODE_READDIO_NEED_LOCK, &inode->runtime_flags);
+-}
+-
+ /* Array of bytes with variable length, hexadecimal format 0x1234 */
+ #define CSUM_FMT				"0x%*phN"
+ #define CSUM_FMT_VALUE(size, bytes)		size, bytes
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 0fa75af35a1f..264b676ebf29 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -4835,10 +4835,7 @@ static int btrfs_setsize(struct inode *inode, struct iattr *attr)
  
- ssize_t iomap_dio_rw(struct kiocb *iocb, struct iov_iter *iter,
- 		const struct iomap_ops *ops, const struct iomap_dio_ops *dops,
+ 		truncate_setsize(inode, newsize);
+ 
+-		/* Disable nonlocked read DIO to avoid the endless truncate */
+-		btrfs_inode_block_unlocked_dio(BTRFS_I(inode));
+ 		inode_dio_wait(inode);
+-		btrfs_inode_resume_unlocked_dio(BTRFS_I(inode));
+ 
+ 		ret = btrfs_truncate(inode, newsize == oldsize);
+ 		if (ret && inode->i_nlink) {
 -- 
 2.26.2
 

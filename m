@@ -2,353 +2,147 @@ Return-Path: <SRS0=P7ik=AL=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.2 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,UNWANTED_LANGUAGE_BODY,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CC7E3C433DF
-	for <linux-btrfs@archiver.kernel.org>; Tue, 30 Jun 2020 14:00:18 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 709DFC433DF
+	for <linux-btrfs@archiver.kernel.org>; Tue, 30 Jun 2020 14:08:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id A58D9206BE
-	for <linux-btrfs@archiver.kernel.org>; Tue, 30 Jun 2020 14:00:18 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="F9QYl8Cw"
+	by mail.kernel.org (Postfix) with ESMTP id 557C92073E
+	for <linux-btrfs@archiver.kernel.org>; Tue, 30 Jun 2020 14:08:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388468AbgF3OAR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 30 Jun 2020 10:00:17 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49142 "EHLO
+        id S1733246AbgF3OIX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 30 Jun 2020 10:08:23 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50394 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2388748AbgF3OAO (ORCPT
+        with ESMTP id S1731037AbgF3OIW (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 30 Jun 2020 10:00:14 -0400
-Received: from mail-qv1-xf42.google.com (mail-qv1-xf42.google.com [IPv6:2607:f8b0:4864:20::f42])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6E256C061755
-        for <linux-btrfs@vger.kernel.org>; Tue, 30 Jun 2020 07:00:14 -0700 (PDT)
-Received: by mail-qv1-xf42.google.com with SMTP id m9so9307020qvx.5
-        for <linux-btrfs@vger.kernel.org>; Tue, 30 Jun 2020 07:00:14 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:cc:subject:date:message-id:in-reply-to:references
-         :mime-version:content-transfer-encoding;
-        bh=DfVkz+2UGd3pKpWLk7eMITHTv6YrhNmgPwwAkCDHqPA=;
-        b=F9QYl8Cw0MKqv7arFdC3XCgBr4f4iUw31eQAa9jXFk/BVvOXMuNeYcO5T3diY6x8Qx
-         6xPRywW/D5bRx5TMXfPiP9I39KmiFWusMXONHZRx88DlTaySOVKCFI0NG3wmzEOvwl7i
-         vKn5p4nH76MgRC6Bk0e39tldhkVtw/M9czhk8gg4Vdcbea/S/Osa9Vao55+vQBssGvqb
-         O+B37xrJs0KMlpYwF3HbhwAFn5ngww0Vrn9TrRSuwRLH1EIc8EYWv4V/EaEktupvcH2x
-         URwD2g10cuuVjPZc0Re7GX+FZvNNv455cyFECgZqJEGTbrFJXJo0M4B+YLSZJmlxQR03
-         6Blg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=DfVkz+2UGd3pKpWLk7eMITHTv6YrhNmgPwwAkCDHqPA=;
-        b=aC2zEUADhPpqqIPrVfxTmUNvJ4sb7czJQww3oOFu0MpcOY/a2ECqJTMhlvGVBTpX4O
-         okn87YjwMnOaVksOl+xf5N0a5OQM3qKMYPvgP7sUijyuR0hiyFi+EDuOkF31Wm3ZRkOe
-         gCOv2PX7lj7u4YLFv2i4xzYDG/v3d1dcEVSWnXcYVlZjsIn+5sOFN6jdlZ50fqQr2gKN
-         MmaoKbpxRpse082YO27IoDpUGgAxYWNE6+teEy9Q62IvJ65sgTy3K78wvVU7RYOkdmrQ
-         0c933gtsdtafZN9v0cvXoT/QjtM5rrBwfbndDKMRc9XqbkAluDmnX/1G0QmiN9mg50Mt
-         3zAw==
-X-Gm-Message-State: AOAM530Q78PXPvbm86HwN2lCvjIxvh7Tt5JhUQjlQPgFXwVZHHJ15Bzj
-        rVfrzj8Ey7SyAZCyNW21MSj0bQSnG4R2jQ==
-X-Google-Smtp-Source: ABdhPJwi0AqOhBAO+beSGmQTFIUNDh3qEwL1VRyZ6okrmgS16fNyFMvHK5rzsZYTwVG6/ehbygInoA==
-X-Received: by 2002:a0c:b791:: with SMTP id l17mr20613821qve.44.1593525612635;
-        Tue, 30 Jun 2020 07:00:12 -0700 (PDT)
-Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id w18sm2880054qtn.3.2020.06.30.07.00.11
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 30 Jun 2020 07:00:11 -0700 (PDT)
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 22/23] btrfs: do async reclaim for data reservations
-Date:   Tue, 30 Jun 2020 09:59:20 -0400
-Message-Id: <20200630135921.745612-23-josef@toxicpanda.com>
-X-Mailer: git-send-email 2.24.1
-In-Reply-To: <20200630135921.745612-1-josef@toxicpanda.com>
-References: <20200630135921.745612-1-josef@toxicpanda.com>
+        Tue, 30 Jun 2020 10:08:22 -0400
+Received: from syrinx.knorrie.org (syrinx.knorrie.org [IPv6:2001:888:2177::4d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 30CB7C061755;
+        Tue, 30 Jun 2020 07:08:22 -0700 (PDT)
+Received: from [IPv6:2a02:a213:2b80:f000::12] (unknown [IPv6:2a02:a213:2b80:f000::12])
+        (using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+         key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
+        (No client certificate requested)
+        by syrinx.knorrie.org (Postfix) with ESMTPSA id A93A260977E6F;
+        Tue, 30 Jun 2020 16:08:20 +0200 (CEST)
+Subject: Re: [PATCH v4] btrfs: pass checksum type via BTRFS_IOC_FS_INFO ioctl
+To:     Johannes Thumshirn <Johannes.Thumshirn@wdc.com>,
+        David Sterba <dsterba@suse.cz>
+Cc:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "stable@vger.kernel.org" <stable@vger.kernel.org>
+References: <20200629075329.36969-1-johannes.thumshirn@wdc.com>
+ <c9145a96-95ba-6f6d-c22a-8ba0d324e39e@knorrie.org>
+ <SN4PR0401MB359836571F4572136EF1981F9B6F0@SN4PR0401MB3598.namprd04.prod.outlook.com>
+From:   Hans van Kranenburg <hans@knorrie.org>
+Autocrypt: addr=hans@knorrie.org; keydata=
+ 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
+Message-ID: <3f159319-e8cb-6fae-af52-cd5a542688f3@knorrie.org>
+Date:   Tue, 30 Jun 2020 16:08:20 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.4.1
 MIME-Version: 1.0
+In-Reply-To: <SN4PR0401MB359836571F4572136EF1981F9B6F0@SN4PR0401MB3598.namprd04.prod.outlook.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Now that we have the data ticketing stuff in place, move normal data
-reservations to use an async reclaim helper to satisfy tickets.  Before
-we could have multiple tasks race in and both allocate chunks, resulting
-in more data chunks than we would necessarily need.  Serializing these
-allocations and making a single thread responsible for flushing will
-only allocate chunks as needed, as well as cut down on transaction
-commits and other flush related activities.
+On 6/30/20 3:09 PM, Johannes Thumshirn wrote:
+> On 30/06/2020 02:25, Hans van Kranenburg wrote:
+>> So, (apologies if I'm already causing you a headache right at the
+>> beginning of the week), I'd say... Let's for now park everything I just
+>> wrote and drop the whole idea of using input flags for FS_INFO, and keep
+>> it output-only and just properly document the output values that have a
+>> meaning with the flags bits. Because at least we know that the unused
+>> output fields were zeroed before (phew!!).
+> 
+> So basically you say we're going back to v3? David, do you want me to 
+> resend v3 as v5?
 
-Priority reservations will still work as they have before, simply
-trying to allocate a chunk until they can make their reservation.
+I have been thinking out loud, mostly, and then after a night of sleep I
+would think: "wait, no, what I thought was a very good idea isn't at
+all, actually".
 
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-Tested-by: Nikolay Borisov <nborisov@suse.com>
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
----
- fs/btrfs/ctree.h      |   3 +-
- fs/btrfs/disk-io.c    |   3 +-
- fs/btrfs/space-info.c | 123 ++++++++++++++++++++++++++++++------------
- fs/btrfs/super.c      |   1 +
- 4 files changed, 93 insertions(+), 37 deletions(-)
+I hope that does not come across as "telling you what to do". ;] I'd
+rather hear if someone can spot new flaws in my reasoning.
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index efa72a204b91..998bda3132fd 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -494,7 +494,7 @@ enum btrfs_orphan_cleanup_state {
- 	ORPHAN_CLEANUP_DONE	= 2,
- };
- 
--void btrfs_init_async_reclaim_work(struct work_struct *work);
-+void btrfs_init_async_reclaim_work(struct btrfs_fs_info *fs_info);
- 
- /* fs_info */
- struct reloc_control;
-@@ -916,6 +916,7 @@ struct btrfs_fs_info {
- 
- 	/* Used to reclaim the metadata space in the background. */
- 	struct work_struct async_reclaim_work;
-+	struct work_struct async_data_reclaim_work;
- 
- 	spinlock_t unused_bgs_lock;
- 	struct list_head unused_bgs;
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 7c07578866f3..0907e02eea54 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2713,7 +2713,7 @@ void btrfs_init_fs_info(struct btrfs_fs_info *fs_info)
- 	fs_info->check_integrity_print_mask = 0;
- #endif
- 	btrfs_init_balance(fs_info);
--	btrfs_init_async_reclaim_work(&fs_info->async_reclaim_work);
-+	btrfs_init_async_reclaim_work(fs_info);
- 
- 	spin_lock_init(&fs_info->block_group_cache_lock);
- 	fs_info->block_group_cache_tree = RB_ROOT;
-@@ -4033,6 +4033,7 @@ void __cold close_ctree(struct btrfs_fs_info *fs_info)
- 	btrfs_cleanup_defrag_inodes(fs_info);
- 
- 	cancel_work_sync(&fs_info->async_reclaim_work);
-+	cancel_work_sync(&fs_info->async_data_reclaim_work);
- 
- 	/* Cancel or finish ongoing discard work */
- 	btrfs_discard_cleanup(fs_info);
-diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-index 8b1a5b644d2f..0a2fdfaa9fe6 100644
---- a/fs/btrfs/space-info.c
-+++ b/fs/btrfs/space-info.c
-@@ -996,9 +996,83 @@ static void btrfs_async_reclaim_metadata_space(struct work_struct *work)
- 	} while (flush_state <= COMMIT_TRANS);
- }
- 
--void btrfs_init_async_reclaim_work(struct work_struct *work)
-+static const enum btrfs_flush_state data_flush_states[] = {
-+	FLUSH_DELALLOC_WAIT,
-+	RUN_DELAYED_IPUTS,
-+	FLUSH_DELAYED_REFS,
-+	COMMIT_TRANS,
-+};
-+
-+static void btrfs_async_reclaim_data_space(struct work_struct *work)
- {
--	INIT_WORK(work, btrfs_async_reclaim_metadata_space);
-+	struct btrfs_fs_info *fs_info;
-+	struct btrfs_space_info *space_info;
-+	u64 last_tickets_id;
-+	int flush_state = 0;
-+
-+	fs_info = container_of(work, struct btrfs_fs_info,
-+			       async_data_reclaim_work);
-+	space_info = fs_info->data_sinfo;
-+
-+	spin_lock(&space_info->lock);
-+	if (list_empty(&space_info->tickets)) {
-+		space_info->flush = 0;
-+		spin_unlock(&space_info->lock);
-+		return;
-+	}
-+	last_tickets_id = space_info->tickets_id;
-+	spin_unlock(&space_info->lock);
-+
-+	while (!space_info->full) {
-+		flush_space(fs_info, space_info, U64_MAX, ALLOC_CHUNK_FORCE);
-+		spin_lock(&space_info->lock);
-+		if (list_empty(&space_info->tickets)) {
-+			space_info->flush = 0;
-+			spin_unlock(&space_info->lock);
-+			return;
-+		}
-+		last_tickets_id = space_info->tickets_id;
-+		spin_unlock(&space_info->lock);
-+	}
-+
-+	while (flush_state < ARRAY_SIZE(data_flush_states)) {
-+		flush_space(fs_info, space_info, U64_MAX,
-+			    data_flush_states[flush_state]);
-+		spin_lock(&space_info->lock);
-+		if (list_empty(&space_info->tickets)) {
-+			space_info->flush = 0;
-+			spin_unlock(&space_info->lock);
-+			return;
-+		}
-+
-+		if (last_tickets_id == space_info->tickets_id) {
-+			flush_state++;
-+		} else {
-+			last_tickets_id = space_info->tickets_id;
-+			flush_state = 0;
-+		}
-+
-+		if (flush_state >= ARRAY_SIZE(data_flush_states)) {
-+			if (space_info->full) {
-+				if (maybe_fail_all_tickets(fs_info,
-+							   space_info))
-+					flush_state = 0;
-+				else
-+					space_info->flush = 0;
-+			} else {
-+				flush_state = 0;
-+			}
-+		}
-+		spin_unlock(&space_info->lock);
-+	}
-+}
-+
-+void btrfs_init_async_reclaim_work(struct btrfs_fs_info *fs_info)
-+{
-+	INIT_WORK(&fs_info->async_reclaim_work,
-+		  btrfs_async_reclaim_metadata_space);
-+	INIT_WORK(&fs_info->async_data_reclaim_work,
-+		  btrfs_async_reclaim_data_space);
- }
- 
- static const enum btrfs_flush_state priority_flush_states[] = {
-@@ -1018,13 +1092,6 @@ static const enum btrfs_flush_state evict_flush_states[] = {
- 	COMMIT_TRANS,
- };
- 
--static const enum btrfs_flush_state data_flush_states[] = {
--	FLUSH_DELALLOC_WAIT,
--	RUN_DELAYED_IPUTS,
--	FLUSH_DELAYED_REFS,
--	COMMIT_TRANS,
--};
--
- static void priority_reclaim_metadata_space(struct btrfs_fs_info *fs_info,
- 				struct btrfs_space_info *space_info,
- 				struct reserve_ticket *ticket,
-@@ -1057,12 +1124,8 @@ static void priority_reclaim_metadata_space(struct btrfs_fs_info *fs_info,
- 
- static void priority_reclaim_data_space(struct btrfs_fs_info *fs_info,
- 					struct btrfs_space_info *space_info,
--					struct reserve_ticket *ticket,
--					const enum btrfs_flush_state *states,
--					int states_nr)
-+					struct reserve_ticket *ticket)
- {
--	int flush_state = 0;
--
- 	while (!space_info->full) {
- 		flush_space(fs_info, space_info, U64_MAX, ALLOC_CHUNK_FORCE);
- 		spin_lock(&space_info->lock);
-@@ -1072,17 +1135,6 @@ static void priority_reclaim_data_space(struct btrfs_fs_info *fs_info,
- 		}
- 		spin_unlock(&space_info->lock);
- 	}
--
--	while (flush_state < states_nr) {
--		flush_space(fs_info, space_info, U64_MAX, states[flush_state]);
--		spin_lock(&space_info->lock);
--		if (ticket->bytes == 0) {
--			spin_unlock(&space_info->lock);
--			return;
--		}
--		spin_unlock(&space_info->lock);
--		flush_state++;
--	}
- }
- 
- static void wait_reserve_ticket(struct btrfs_fs_info *fs_info,
-@@ -1137,6 +1189,7 @@ static int handle_reserve_ticket(struct btrfs_fs_info *fs_info,
- 	int ret;
- 
- 	switch (flush) {
-+	case BTRFS_RESERVE_FLUSH_DATA:
- 	case BTRFS_RESERVE_FLUSH_ALL:
- 	case BTRFS_RESERVE_FLUSH_ALL_STEAL:
- 		wait_reserve_ticket(fs_info, space_info, ticket);
-@@ -1151,14 +1204,8 @@ static int handle_reserve_ticket(struct btrfs_fs_info *fs_info,
- 						evict_flush_states,
- 						ARRAY_SIZE(evict_flush_states));
- 		break;
--	case BTRFS_RESERVE_FLUSH_DATA:
--		priority_reclaim_data_space(fs_info, space_info, ticket,
--					data_flush_states,
--					ARRAY_SIZE(data_flush_states));
--		break;
- 	case BTRFS_RESERVE_FLUSH_FREE_SPACE_INODE:
--		priority_reclaim_data_space(fs_info, space_info, ticket,
--					    NULL, 0);
-+		priority_reclaim_data_space(fs_info, space_info, ticket);
- 		break;
- 	default:
- 		ASSERT(0);
-@@ -1223,6 +1270,7 @@ static int __reserve_bytes(struct btrfs_fs_info *fs_info,
- 			   struct btrfs_space_info *space_info, u64 orig_bytes,
- 			   enum btrfs_reserve_flush_enum flush)
- {
-+	struct work_struct *async_work;
- 	struct reserve_ticket ticket;
- 	u64 used;
- 	int ret = 0;
-@@ -1231,6 +1279,11 @@ static int __reserve_bytes(struct btrfs_fs_info *fs_info,
- 	ASSERT(orig_bytes);
- 	ASSERT(!current->journal_info || flush != BTRFS_RESERVE_FLUSH_ALL);
- 
-+	if (flush == BTRFS_RESERVE_FLUSH_DATA)
-+		async_work = &fs_info->async_data_reclaim_work;
-+	else
-+		async_work = &fs_info->async_reclaim_work;
-+
- 	spin_lock(&space_info->lock);
- 	ret = -ENOSPC;
- 	used = btrfs_space_info_used(space_info, true);
-@@ -1272,7 +1325,8 @@ static int __reserve_bytes(struct btrfs_fs_info *fs_info,
- 		init_waitqueue_head(&ticket.wait);
- 		ticket.steal = (flush == BTRFS_RESERVE_FLUSH_ALL_STEAL);
- 		if (flush == BTRFS_RESERVE_FLUSH_ALL ||
--		    flush == BTRFS_RESERVE_FLUSH_ALL_STEAL) {
-+		    flush == BTRFS_RESERVE_FLUSH_ALL_STEAL ||
-+		    flush == BTRFS_RESERVE_FLUSH_DATA) {
- 			list_add_tail(&ticket.list, &space_info->tickets);
- 			if (!space_info->flush) {
- 				space_info->flush = 1;
-@@ -1280,8 +1334,7 @@ static int __reserve_bytes(struct btrfs_fs_info *fs_info,
- 							  space_info->flags,
- 							  orig_bytes, flush,
- 							  "enospc");
--				queue_work(system_unbound_wq,
--					   &fs_info->async_reclaim_work);
-+				queue_work(system_unbound_wq, async_work);
- 			}
- 		} else {
- 			list_add_tail(&ticket.list,
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 3c9ebd4f2b61..66094f076385 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1880,6 +1880,7 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
- 		 * the filesystem is busy.
- 		 */
- 		cancel_work_sync(&fs_info->async_reclaim_work);
-+		cancel_work_sync(&fs_info->async_data_reclaim_work);
- 
- 		btrfs_discard_cleanup(fs_info);
- 
--- 
-2.24.1
+Hans
 

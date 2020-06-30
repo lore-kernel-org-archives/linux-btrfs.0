@@ -2,69 +2,68 @@ Return-Path: <SRS0=P7ik=AL=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.2 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+X-Spam-Status: No, score=-10.0 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,UNWANTED_LANGUAGE_BODY,USER_AGENT_GIT autolearn=ham
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 02867C433E0
-	for <linux-btrfs@archiver.kernel.org>; Tue, 30 Jun 2020 13:59:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 27A1BC433DF
+	for <linux-btrfs@archiver.kernel.org>; Tue, 30 Jun 2020 13:59:43 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D488A20774
-	for <linux-btrfs@archiver.kernel.org>; Tue, 30 Jun 2020 13:59:36 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 040A020774
+	for <linux-btrfs@archiver.kernel.org>; Tue, 30 Jun 2020 13:59:43 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="BLrsBDt9"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="shv+V0ia"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388224AbgF3N7f (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 30 Jun 2020 09:59:35 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48996 "EHLO
+        id S2388340AbgF3N7l (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 30 Jun 2020 09:59:41 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49012 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2388159AbgF3N7e (ORCPT
+        with ESMTP id S2388263AbgF3N7i (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 30 Jun 2020 09:59:34 -0400
-Received: from mail-qt1-x843.google.com (mail-qt1-x843.google.com [IPv6:2607:f8b0:4864:20::843])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 63A3EC061755
-        for <linux-btrfs@vger.kernel.org>; Tue, 30 Jun 2020 06:59:34 -0700 (PDT)
-Received: by mail-qt1-x843.google.com with SMTP id g13so15595313qtv.8
-        for <linux-btrfs@vger.kernel.org>; Tue, 30 Jun 2020 06:59:34 -0700 (PDT)
+        Tue, 30 Jun 2020 09:59:38 -0400
+Received: from mail-qk1-x743.google.com (mail-qk1-x743.google.com [IPv6:2607:f8b0:4864:20::743])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 787A1C061755
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 Jun 2020 06:59:38 -0700 (PDT)
+Received: by mail-qk1-x743.google.com with SMTP id 80so18620533qko.7
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 Jun 2020 06:59:38 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=G701bsI8IliaVfeT9eLjM7iHLcC7Fvjl92brNTxJI4s=;
-        b=BLrsBDt9z6R8jN1SBp+dORIjca8JDkxrkhExpWaqgyUj8PydNbHhA33lTubFNwE7XI
-         y6SLwNeEGxz2kR0+HKyEwrGSql/+4l+hJYqXuFHaqTsf5x1QdhSqwWCOMB8K0vynRDjw
-         tA9GhVb6LAqZWoKEiQUgYG1OU3zTdpPj+59sbRLKHGOfLYOuP1yG3XeJIFTBsCIWPLxc
-         huRYvOL0gLn467iXoa1JD5eaSzaSH1suW46kCfsVcq/qN8DIGafjiCwX4CCbf+1z74ga
-         X9PmyHhun6T+iQHudWI1YySpqPJ5zKH9HcBq8HZjRojUR1Ya3LH01TrtdLsJH0LWzlkc
-         4fHA==
+        bh=pTMh1XdIBMBbevjWIsHmClI1dbdzDP2/JU+FBcW3VOM=;
+        b=shv+V0iaGC2PXnKdKrvjgXPQt0ZWEtp0bSFG+f8nz4uq27JwIL5Ahcye+zPSdYcNet
+         RQHqu/X29xiZRwH2DblBqdzexO6OdVUmzbUmaNidvHgeUKB2RnX+10mbz5hzv4N76ncU
+         TLm32ZjeEjgFa3RVQl4ZrqrRVt5Sh3qEjJvGYpROleBmkqR35czbwdbsP5QLUbL59TpP
+         z7snoAuZK0xXiq4OlIr+JRgrz7AZ73DMDjZGxXK5oQl0CJ8AyU+LPvXAJ+EC2hEs44N0
+         B+HVdFAHz0DwaVbsbDG0V+sV7hxWQ62SQXzOTzh1hw08pEAivo7Lkh7C5nUi3H7wu2H4
+         i3qg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=G701bsI8IliaVfeT9eLjM7iHLcC7Fvjl92brNTxJI4s=;
-        b=iZYtypE/15TmXXxe/pXjgpCnxfeC8Dc5hU5CHVCqUOhVDlGSF0fLJndPfDNWsw+G7R
-         R8pIiQcU5JHqdfIKbkSMQsi/qsUx4hQaRq8WUEkurbyPU5WRL+cdvLbRMLUhyC+XtDui
-         eggx9KUKBc0cA5SfTBrz8yXqoErWuc0pZMzNJB8Qk7UXUnrA19vOrcMzL8niHxXMcp9l
-         QJkGXDCq4D9sujgq0uH35c6+P6EzFlfykpkgbiyZ0JPJbmRDzmcXD/KEcR2FYVUtkHUN
-         QMaVK8vv97F1lgs+KfY+xJxyhfOvbjNoCS45SbCkHShlHh8wL7Z6PtQh7AlKyVL1lS1w
-         /rmA==
-X-Gm-Message-State: AOAM531307+LlY4BoZsMxyzJAgQpbqpv1Ox2x3i4rcYJ5/i/YfUGvYSX
-        Q/7GI5+DVfILq6oiFkICBUxxdtYOQCwTqw==
-X-Google-Smtp-Source: ABdhPJzBbsrxGaDh34KVRo96fRU480LgocJb85PWxm2WDJtiqsWuDSR2z1TJhSr214lJylDNnEgBYQ==
-X-Received: by 2002:aed:3e2e:: with SMTP id l43mr21001410qtf.287.1593525573241;
-        Tue, 30 Jun 2020 06:59:33 -0700 (PDT)
+        bh=pTMh1XdIBMBbevjWIsHmClI1dbdzDP2/JU+FBcW3VOM=;
+        b=jcKx2h0JxzVC8qQ4Q8xhNR66g/544A9hkPTvyeVLZxC+4cKCrzVAnFb9+/SdA0khil
+         5Wb+pA/B+peJirHgSl7TLT2uIMbWoUsCfb53R6PlGmOR4ULy8FFADXKaJ+J/47jphJBR
+         3pJ6uciKN8nkXnM/D2ge7yTKsp+YTkyG69k5aAFzo60HK5dJGzCyavQknlFDk2aj1uYb
+         v05CnjVwIrPyi0wcPnHYlVVjQLhqod7cy2IXa2DleRD45xjM0J7DXEQTNGKKAHa3MzwI
+         A1/R7wfzXaCuCubKeA9Oxff4L8IT6SjxkNO6N2oFxZzfYEPbylKWZjTBNhdAKkiHpdtM
+         gkLw==
+X-Gm-Message-State: AOAM533Z6gLf5sK3APmMyNz65qbqtylZEpMAZT7PGJThd3bYgFlE5eAI
+        gGKSHn3cFxIPdvZ+Rc3WVBV0gPL4LV58Lg==
+X-Google-Smtp-Source: ABdhPJwN9PYrFX8S3cntJW+vZnBqvp0DXs5HxwXUQ7+XRYzQ8A72ZkxUAMYlKtM3eQi65e+gFmObNw==
+X-Received: by 2002:a37:a444:: with SMTP id n65mr19418517qke.289.1593525577338;
+        Tue, 30 Jun 2020 06:59:37 -0700 (PDT)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id c27sm2853402qkl.125.2020.06.30.06.59.31
+        by smtp.gmail.com with ESMTPSA id u22sm3274156qtb.23.2020.06.30.06.59.36
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 30 Jun 2020 06:59:32 -0700 (PDT)
+        Tue, 30 Jun 2020 06:59:36 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Cc:     Nikolay Borisov <nborisov@suse.com>,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH 04/23] btrfs: make shrink_delalloc take space_info as an arg
-Date:   Tue, 30 Jun 2020 09:59:02 -0400
-Message-Id: <20200630135921.745612-5-josef@toxicpanda.com>
+Cc:     Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH 06/23] btrfs: call btrfs_try_granting_tickets when freeing reserved bytes
+Date:   Tue, 30 Jun 2020 09:59:04 -0400
+Message-Id: <20200630135921.745612-7-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.24.1
 In-Reply-To: <20200630135921.745612-1-josef@toxicpanda.com>
 References: <20200630135921.745612-1-josef@toxicpanda.com>
@@ -75,54 +74,30 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Currently shrink_delalloc just looks up the metadata space info, but
-this won't work if we're trying to reclaim space for data chunks.  We
-get the right space_info we want passed into flush_space, so simply pass
-that along to shrink_delalloc.
+We were missing a call to btrfs_try_granting_tickets in
+btrfs_free_reserved_bytes, so add it to handle the case where we're able
+to satisfy an allocation because we've freed a pending reservation.
 
 Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 Tested-by: Nikolay Borisov <nborisov@suse.com>
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/space-info.c | 9 ++++-----
- 1 file changed, 4 insertions(+), 5 deletions(-)
+ fs/btrfs/block-group.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-index c2a2326f9a79..dda0e9ec68e3 100644
---- a/fs/btrfs/space-info.c
-+++ b/fs/btrfs/space-info.c
-@@ -516,10 +516,10 @@ static inline u64 calc_reclaim_items_nr(struct btrfs_fs_info *fs_info,
- /*
-  * shrink metadata reservation for delalloc
-  */
--static void shrink_delalloc(struct btrfs_fs_info *fs_info, u64 to_reclaim,
--			    bool wait_ordered)
-+static void shrink_delalloc(struct btrfs_fs_info *fs_info,
-+			    struct btrfs_space_info *space_info,
-+			    u64 to_reclaim, bool wait_ordered)
- {
--	struct btrfs_space_info *space_info;
- 	struct btrfs_trans_handle *trans;
- 	u64 delalloc_bytes;
- 	u64 dio_bytes;
-@@ -545,7 +545,6 @@ static void shrink_delalloc(struct btrfs_fs_info *fs_info, u64 to_reclaim,
- 	}
+diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+index 09b796a081dd..7b04cf4eeff3 100644
+--- a/fs/btrfs/block-group.c
++++ b/fs/btrfs/block-group.c
+@@ -3090,6 +3090,8 @@ void btrfs_free_reserved_bytes(struct btrfs_block_group *cache,
+ 	if (delalloc)
+ 		cache->delalloc_bytes -= num_bytes;
+ 	spin_unlock(&cache->lock);
++
++	btrfs_try_granting_tickets(cache->fs_info, space_info);
+ 	spin_unlock(&space_info->lock);
+ }
  
- 	trans = (struct btrfs_trans_handle *)current->journal_info;
--	space_info = btrfs_find_space_info(fs_info, BTRFS_BLOCK_GROUP_METADATA);
- 
- 	delalloc_bytes = percpu_counter_sum_positive(
- 						&fs_info->delalloc_bytes);
-@@ -753,7 +752,7 @@ static void flush_space(struct btrfs_fs_info *fs_info,
- 		break;
- 	case FLUSH_DELALLOC:
- 	case FLUSH_DELALLOC_WAIT:
--		shrink_delalloc(fs_info, num_bytes,
-+		shrink_delalloc(fs_info, space_info, num_bytes,
- 				state == FLUSH_DELALLOC_WAIT);
- 		break;
- 	case FLUSH_DELAYED_REFS_NR:
 -- 
 2.24.1
 

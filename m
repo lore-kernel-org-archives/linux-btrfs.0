@@ -2,68 +2,91 @@ Return-Path: <SRS0=P7ik=AL=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E7B16C433E0
-	for <linux-btrfs@archiver.kernel.org>; Tue, 30 Jun 2020 08:51:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8D021C433E0
+	for <linux-btrfs@archiver.kernel.org>; Tue, 30 Jun 2020 09:30:04 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id CC81E20759
-	for <linux-btrfs@archiver.kernel.org>; Tue, 30 Jun 2020 08:51:07 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 686A6204EC
+	for <linux-btrfs@archiver.kernel.org>; Tue, 30 Jun 2020 09:30:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731665AbgF3IvH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 30 Jun 2020 04:51:07 -0400
-Received: from mx2.suse.de ([195.135.220.15]:36244 "EHLO mx2.suse.de"
+        id S1731548AbgF3JaD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 30 Jun 2020 05:30:03 -0400
+Received: from mail.itouring.de ([188.40.134.68]:53580 "EHLO mail.itouring.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728132AbgF3IvG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 30 Jun 2020 04:51:06 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 1F12CADF8;
-        Tue, 30 Jun 2020 08:51:05 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 01F78DA790; Tue, 30 Jun 2020 10:50:49 +0200 (CEST)
-Date:   Tue, 30 Jun 2020 10:50:49 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Hans van Kranenburg <hans@knorrie.org>
-Cc:     dsterba@suse.cz, Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-        linux-btrfs@vger.kernel.org, stable@vger.kernel.org
-Subject: Re: [PATCH v3] btrfs: pass checksum type via BTRFS_IOC_FS_INFO ioctl
-Message-ID: <20200630085049.GV27795@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Hans van Kranenburg <hans@knorrie.org>,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-        linux-btrfs@vger.kernel.org, stable@vger.kernel.org
-References: <20200626150107.19666-1-johannes.thumshirn@wdc.com>
- <20200626200619.GI27795@twin.jikos.cz>
- <e59c3b69-d10c-198d-2f69-b3936f908a73@knorrie.org>
+        id S1730256AbgF3JaD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 30 Jun 2020 05:30:03 -0400
+X-Greylist: delayed 472 seconds by postgrey-1.27 at vger.kernel.org; Tue, 30 Jun 2020 05:30:02 EDT
+Received: from tux.applied-asynchrony.com (p5ddd79e0.dip0.t-ipconnect.de [93.221.121.224])
+        by mail.itouring.de (Postfix) with ESMTPSA id BEA5341604DD;
+        Tue, 30 Jun 2020 11:22:09 +0200 (CEST)
+Received: from [192.168.100.223] (ragnarok.applied-asynchrony.com [192.168.100.223])
+        by tux.applied-asynchrony.com (Postfix) with ESMTP id BA158F01600;
+        Tue, 30 Jun 2020 11:22:08 +0200 (CEST)
+Subject: Re: [PATCH][RESEND] btrfs: kill update_block_group_flags
+To:     dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
+        linux-btrfs@vger.kernel.org, kernel-team@fb.com
+References: <20200117140826.42616-1-josef@toxicpanda.com>
+ <2e16f37e-014e-6d86-76c6-801d6cb7bc20@applied-asynchrony.com>
+ <20200302201804.GX2902@twin.jikos.cz>
+From:   =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>
+Organization: Applied Asynchrony, Inc.
+Message-ID: <bbd85d2d-5490-0797-0649-616531c977fe@applied-asynchrony.com>
+Date:   Tue, 30 Jun 2020 11:22:08 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <e59c3b69-d10c-198d-2f69-b3936f908a73@knorrie.org>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <20200302201804.GX2902@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sat, Jun 27, 2020 at 11:01:36PM +0200, Hans van Kranenburg wrote:
-> > There's effectively no change in the implementation, other than
-> > documenting the 'in' semantics.
-> > 
-> > Although this is basically the same situation as in the LOGICAL_INO v1
-> > and v2, the number of users of FS_INFO ioctl is presumably not high and
-> > the buffer has been write-only so far, there's no existing logic that
-> > would had to be tweaked.
-> > 
-> > Once the flags are there, all new implementations should take the
-> > semantics into account. Therefore I think this is a safe plan, but feel
-> > free to poke more holes to that.
+On 2020-03-02 21:18, David Sterba wrote:
+> On Sun, Mar 01, 2020 at 06:58:02PM +0100, Holger Hoffstätte wrote:
+>> On 1/17/20 3:08 PM, Josef Bacik wrote:
+>>> +		alloc_flags = btrfs_get_alloc_profile(fs_info, cache->flags);
+>>>    		if (alloc_flags != cache->flags) {
+>>>    			ret = btrfs_chunk_alloc(trans, alloc_flags,
+>>>    						CHUNK_ALLOC_FORCE);
+>>> @@ -2252,7 +2204,7 @@ int btrfs_inc_block_group_ro(struct btrfs_block_group *cache,
+>>>    	ret = inc_block_group_ro(cache, 0);
+>>>    out:
+>>>    	if (cache->flags & BTRFS_BLOCK_GROUP_SYSTEM) {
+>>> -		alloc_flags = update_block_group_flags(fs_info, cache->flags);
+>>> +		alloc_flags = btrfs_get_alloc_profile(fs_info, cache->flags);
+>>>    		mutex_lock(&fs_info->chunk_mutex);
+>>>    		check_system_chunk(trans, alloc_flags);
+>>>    		mutex_unlock(&fs_info->chunk_mutex);
+>>>
+>>
+>> It seems that this patch breaks forced metadata rebalance from dup to single;
+>> all chunks remain dup (or are rewritten as dup again). I bisected the broken
+>> balance behaviour to this commit which for some reason was in my tree ;-) and
+>> reverting it immediately fixed things.
+>>
+>> I don't (yet) see this applied anywhere, but couldn't find any discussion or
+>> revocation either. Maybe the logic between update_block_group_flags() and
+>> btrfs_get_alloc_profile() is not completely exchangeable?
 > 
-> In the V2 thread you mentioned generation, metadata_uuid, total_bytes as
-> interesting missing ones. What about adding them just right now directly?
+> The patch was not applied because I was not sure about it and had some
+> suspicion, https://lore.kernel.org/linux-btrfs/20200108170340.GK3929@twin.jikos.cz/
+> I don't want to apply the patch until I try the mentioned test with
+> raid1c34 but it's possible that it gets fixed by the updated patch.
 
-If you mean in the same patch, that would be mixing interface fix with
-interface extension, so no, unless there's a really good reason to do
-that in one patch.
+I don't see this in misc-next or anywhere else, so a gentle reminder..
+
+Original thread:
+https://lore.kernel.org/linux-btrfs/20200117140826.42616-1-josef@toxicpanda.com/
+
+As I wrote in the replies, the update to the patch fixed the balancing for me
+(used with various profiles since then, no observed issues).
+
+Josef, what about that xfstest?
+David, can you try again with raid1c34?
+
+thanks
+Holger

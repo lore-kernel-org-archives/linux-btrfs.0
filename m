@@ -2,82 +2,126 @@ Return-Path: <SRS0=5Fjf=AM=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BBF20C433E0
-	for <linux-btrfs@archiver.kernel.org>; Wed,  1 Jul 2020 09:07:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4D55FC433E1
+	for <linux-btrfs@archiver.kernel.org>; Wed,  1 Jul 2020 09:30:33 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 9FA992074D
-	for <linux-btrfs@archiver.kernel.org>; Wed,  1 Jul 2020 09:07:02 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 30E2A2077D
+	for <linux-btrfs@archiver.kernel.org>; Wed,  1 Jul 2020 09:30:33 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="AhI5YsV1"
+	dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b="q9oIf2mk"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729317AbgGAJG6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 1 Jul 2020 05:06:58 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56910 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726946AbgGAJG3 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Jul 2020 05:06:29 -0400
-Received: from casper.infradead.org (casper.infradead.org [IPv6:2001:8b0:10b:1236::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id ED599C03E979;
-        Wed,  1 Jul 2020 02:06:28 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=casper.20170209; h=Content-Transfer-Encoding:MIME-Version:
-        References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:
-        Content-Type:Content-ID:Content-Description;
-        bh=dEDCWXfjhVQGOOrCUmr0J53WrGJ1BtJhis14QIiQIQk=; b=AhI5YsV13Iv7q6tUnnLzpio3XP
-        uAnzpDzGCx6Ne6ojt9Q+KH1At6DZKdynwMnkdI7IGyo995agZAB2NSOTiBd+k3DHKYC8B4CLEtNKE
-        TtveQ2NbJsuJBjtkhUCvdfcJHAfgI2c/EtuxG/XKf8oPBGJwkkW5zSkOe/ljCB8bu2JfgRYUCFnIe
-        rydsCUFaIKQYUGqxkAEPTNu7R8xCBYr5/7/x0U6Sua8CbuGNZu7da7vhukC4ljxsIpqvwi+UcNaYv
-        tJJ6g6Avyvsz13KgZDujJKiTYSeikkjJhpUn+t/sqWC6SJT1aq3a15v82WckDhWs2sK8ooGi2mECN
-        62jUTcnA==;
-Received: from [2001:4bb8:184:76e3:ea38:596b:3e9e:422a] (helo=localhost)
-        by casper.infradead.org with esmtpsa (Exim 4.92.3 #3 (Red Hat Linux))
-        id 1jqYhF-0000hb-3M; Wed, 01 Jul 2020 09:06:25 +0000
-From:   Christoph Hellwig <hch@lst.de>
-To:     Jens Axboe <axboe@kernel.dk>
-Cc:     Tejun Heo <tj@kernel.org>, dm-devel@redhat.com,
-        cgroups@vger.kernel.org, linux-block@vger.kernel.org,
-        drbd-dev@lists.linbit.com, linux-bcache@vger.kernel.org,
-        linux-raid@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        linux-mm@kvack.org, linux-kernel@vger.kernel.org
-Subject: [PATCH 1/4] drbd: remove a bogus bdi_rw_congested call
-Date:   Wed,  1 Jul 2020 11:06:19 +0200
-Message-Id: <20200701090622.3354860-2-hch@lst.de>
-X-Mailer: git-send-email 2.26.2
-In-Reply-To: <20200701090622.3354860-1-hch@lst.de>
-References: <20200701090622.3354860-1-hch@lst.de>
-MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by casper.infradead.org. See http://www.infradead.org/rpr.html
+        id S1729453AbgGAJac (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 1 Jul 2020 05:30:32 -0400
+Received: from mail.synology.com ([211.23.38.101]:41244 "EHLO synology.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726715AbgGAJac (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 1 Jul 2020 05:30:32 -0400
+X-Greylist: delayed 327 seconds by postgrey-1.27 at vger.kernel.org; Wed, 01 Jul 2020 05:30:30 EDT
+Received: from localhost.localdomain (unknown [10.17.32.181])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by synology.com (Postfix) with ESMTPSA id 22797CE78031;
+        Wed,  1 Jul 2020 17:25:02 +0800 (CST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=synology.com; s=123;
+        t=1593595502; bh=vmaLzrgyXsA/w7RySgTkfZcXycOo9zcOG7ic0XlP7Rk=;
+        h=From:To:Cc:Subject:Date;
+        b=q9oIf2mkYJjrChhJVmEYYu2lkwIsJeGav0EByfPgGb62Zg8Rqh6dr+m7ncc/S49NC
+         8kKQU4/Y0SYZ6EiGJrrN1nJ6Adn6wOzbxyti9xmHZg6DY6vQm4ZK8IFcJa41q2DAVN
+         3TwrXM389v5SgWGo3/zjWIJAIWuzjrouMYiskxjw=
+From:   robbieko <robbieko@synology.com>
+To:     fstests@vger.kernel.org
+Cc:     linux-btrfs@vger.kernel.org, Robbie Ko <robbieko@synology.com>
+Subject: [PATCH] btrfs: speedup mount time with force readahead chunk tree
+Date:   Wed,  1 Jul 2020 17:24:49 +0800
+Message-Id: <20200701092449.19545-1-robbieko@synology.com>
+X-Mailer: git-send-email 2.17.1
+X-Synology-MCP-Status: no
+X-Synology-Spam-Flag: no
+X-Synology-Spam-Status: score=0, required 6, WHITELIST_FROM_ADDRESS 0
+X-Synology-Virus-Status: no
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-bdi_rw_congested returns congestion state, so calling it without
-looking at the return value doesn't make much sense.
+From: Robbie Ko <robbieko@synology.com>
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
+When mounting, we always need to read the whole chunk tree,
+when there are too many chunk items, most of the time is
+spent on btrfs_read_chunk_tree, because we only read one
+leaf at a time.
+
+We fix this by adding a new readahead mode READA_FORWARD_FORCE,
+which reads all the leaves after the key in the node when
+reading a level 1 node.
+
+Signed-off-by: Robbie Ko <robbieko@synology.com>
 ---
- drivers/block/drbd/drbd_proc.c | 1 -
- 1 file changed, 1 deletion(-)
+ fs/btrfs/ctree.c   | 7 +++++--
+ fs/btrfs/ctree.h   | 2 +-
+ fs/btrfs/volumes.c | 1 +
+ 3 files changed, 7 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/block/drbd/drbd_proc.c b/drivers/block/drbd/drbd_proc.c
-index 1c41cd9982a257..3c0193de249830 100644
---- a/drivers/block/drbd/drbd_proc.c
-+++ b/drivers/block/drbd/drbd_proc.c
-@@ -265,7 +265,6 @@ int drbd_seq_show(struct seq_file *seq, void *v)
- 			seq_printf(seq, "%2d: cs:Unconfigured\n", i);
- 		} else {
- 			/* reset device->congestion_reason */
--			bdi_rw_congested(device->rq_queue->backing_dev_info);
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 3a7648bff42c..abb9108e2d7d 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -2194,7 +2194,7 @@ static void reada_for_search(struct btrfs_fs_info *fs_info,
+ 			if (nr == 0)
+ 				break;
+ 			nr--;
+-		} else if (path->reada == READA_FORWARD) {
++		} else if (path->reada == READA_FORWARD || path->reada == READA_FORWARD_FORCE) {
+ 			nr++;
+ 			if (nr >= nritems)
+ 				break;
+@@ -2205,12 +2205,15 @@ static void reada_for_search(struct btrfs_fs_info *fs_info,
+ 				break;
+ 		}
+ 		search = btrfs_node_blockptr(node, nr);
+-		if ((search <= target && target - search <= 65536) ||
++		if ((path->reada == READA_FORWARD_FORCE) ||
++		    (search <= target && target - search <= 65536) ||
+ 		    (search > target && search - target <= 65536)) {
+ 			readahead_tree_block(fs_info, search);
+ 			nread += blocksize;
+ 		}
+ 		nscan++;
++		if (path->reada == READA_FORWARD_FORCE)
++			continue;
+ 		if ((nread > 65536 || nscan > 32))
+ 			break;
+ 	}
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index d404cce8ae40..808bcbdc9530 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -353,7 +353,7 @@ struct btrfs_node {
+  * The slots array records the index of the item or block pointer
+  * used while walking the tree.
+  */
+-enum { READA_NONE, READA_BACK, READA_FORWARD };
++enum { READA_NONE, READA_BACK, READA_FORWARD, READA_FORWARD_FORCE };
+ struct btrfs_path {
+ 	struct extent_buffer *nodes[BTRFS_MAX_LEVEL];
+ 	int slots[BTRFS_MAX_LEVEL];
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 0d6e785bcb98..78fd65abff69 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -7043,6 +7043,7 @@ int btrfs_read_chunk_tree(struct btrfs_fs_info *fs_info)
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+ 		return -ENOMEM;
++	path->reada = READA_FORWARD_FORCE;
  
- 			nc = rcu_dereference(first_peer_device(device)->connection->net_conf);
- 			wp = nc ? nc->wire_protocol - DRBD_PROT_A + 'A' : ' ';
+ 	/*
+ 	 * uuid_mutex is needed only if we are mounting a sprout FS
 -- 
-2.26.2
+2.17.1
 

@@ -7,28 +7,28 @@ X-Spam-Status: No, score=-10.0 required=3.0
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E8839C433E0
-	for <linux-btrfs@archiver.kernel.org>; Thu,  2 Jul 2020 12:44:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DE643C433E0
+	for <linux-btrfs@archiver.kernel.org>; Thu,  2 Jul 2020 12:44:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D077D20885
-	for <linux-btrfs@archiver.kernel.org>; Thu,  2 Jul 2020 12:44:10 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C191120885
+	for <linux-btrfs@archiver.kernel.org>; Thu,  2 Jul 2020 12:44:13 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729048AbgGBMoK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 2 Jul 2020 08:44:10 -0400
-Received: from mx2.suse.de ([195.135.220.15]:55368 "EHLO mx2.suse.de"
+        id S1729052AbgGBMoM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 2 Jul 2020 08:44:12 -0400
+Received: from mx2.suse.de ([195.135.220.15]:55750 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728808AbgGBMoJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 2 Jul 2020 08:44:09 -0400
+        id S1728808AbgGBMoM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 2 Jul 2020 08:44:12 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id C61238779;
-        Thu,  2 Jul 2020 12:44:06 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id F35A0C87E;
+        Thu,  2 Jul 2020 12:44:10 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 1/8] btrfs: Make get_state_failrec return failrec directly
-Date:   Thu,  2 Jul 2020 15:23:28 +0300
-Message-Id: <20200702122335.9117-2-nborisov@suse.com>
+Subject: [PATCH 6/8] btrfs: Remove needless ASSERT
+Date:   Thu,  2 Jul 2020 15:23:33 +0300
+Message-Id: <20200702122335.9117-7-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20200702122335.9117-1-nborisov@suse.com>
 References: <20200702122335.9117-1-nborisov@suse.com>
@@ -37,99 +37,27 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Only failure that get_state_failrec can get is if there is no failurec
-for the given address. There is no reason why the function should return
-a status code and use a separate parameter for returning the actual
-failure rec (if one is found). Simplify it by making the return type
-a pointer and return ERR_PTR value in case of errors.
+compressed_bio::orig_bio is always set in btrfs_submit_compressed_read
+before any bio submission is performed. Since that function is always
+called with a valid bio it renders the ASSERT unnecessary.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/extent-io-tree.h |  4 ++--
- fs/btrfs/extent_io.c      | 23 ++++++++++++-----------
- 2 files changed, 14 insertions(+), 13 deletions(-)
+ fs/btrfs/compression.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/fs/btrfs/extent-io-tree.h b/fs/btrfs/extent-io-tree.h
-index b6561455b3c4..62eef5b1dfc6 100644
---- a/fs/btrfs/extent-io-tree.h
-+++ b/fs/btrfs/extent-io-tree.h
-@@ -233,8 +233,8 @@ bool btrfs_find_delalloc_range(struct extent_io_tree *tree, u64 *start,
- 			       struct extent_state **cached_state);
- 
- /* This should be reworked in the future and put elsewhere. */
--int get_state_failrec(struct extent_io_tree *tree, u64 start,
--		      struct io_failure_record **failrec);
-+struct io_failure_record *get_state_failrec(struct extent_io_tree *tree,
-+					    u64 start);
- int set_state_failrec(struct extent_io_tree *tree, u64 start,
- 		      struct io_failure_record *failrec);
- void btrfs_free_io_failure_record(struct btrfs_inode *inode, u64 start,
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 8a7e9da74b87..6f0891ad353b 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2121,12 +2121,12 @@ int set_state_failrec(struct extent_io_tree *tree, u64 start,
- 	return ret;
- }
- 
--int get_state_failrec(struct extent_io_tree *tree, u64 start,
--		      struct io_failure_record **failrec)
-+struct io_failure_record *get_state_failrec(struct extent_io_tree *tree,
-+					    u64 start)
- {
- 	struct rb_node *node;
- 	struct extent_state *state;
--	int ret = 0;
-+	struct io_failure_record *failrec;
- 
- 	spin_lock(&tree->lock);
- 	/*
-@@ -2135,18 +2135,19 @@ int get_state_failrec(struct extent_io_tree *tree, u64 start,
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index c2d5ca583dbf..db80c3fa6c08 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -244,7 +244,6 @@ static void end_compressed_bio_read(struct bio *bio)
+ 	 * Record the correct mirror_num in cb->orig_bio so that
+ 	 * read-repair can work properly.
  	 */
- 	node = tree_search(tree, start);
- 	if (!node) {
--		ret = -ENOENT;
-+		failrec = ERR_PTR(-ENOENT);
- 		goto out;
- 	}
- 	state = rb_entry(node, struct extent_state, rb_node);
- 	if (state->start != start) {
--		ret = -ENOENT;
-+		failrec = ERR_PTR(-ENOENT);
- 		goto out;
- 	}
--	*failrec = state->failrec;
-+
-+	failrec = state->failrec;
- out:
- 	spin_unlock(&tree->lock);
--	return ret;
-+	return failrec;
- }
+-	ASSERT(btrfs_io_bio(cb->orig_bio));
+ 	btrfs_io_bio(cb->orig_bio)->mirror_num = mirror;
+ 	cb->mirror_num = mirror;
  
- /*
-@@ -2376,8 +2377,8 @@ int clean_io_failure(struct btrfs_fs_info *fs_info,
- 	if (!ret)
- 		return 0;
- 
--	ret = get_state_failrec(failure_tree, start, &failrec);
--	if (ret)
-+	failrec = get_state_failrec(failure_tree, start);
-+	if (IS_ERR(failrec))
- 		return 0;
- 
- 	BUG_ON(!failrec->this_mirror);
-@@ -2461,8 +2462,8 @@ int btrfs_get_io_failure_record(struct inode *inode, u64 start, u64 end,
- 	int ret;
- 	u64 logical;
- 
--	ret = get_state_failrec(failure_tree, start, &failrec);
--	if (ret) {
-+	failrec = get_state_failrec(failure_tree, start);
-+	if (IS_ERR(failrec)) {
- 		failrec = kzalloc(sizeof(*failrec), GFP_NOFS);
- 		if (!failrec)
- 			return -ENOMEM;
 -- 
 2.17.1
 

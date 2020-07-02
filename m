@@ -2,67 +2,105 @@ Return-Path: <SRS0=RJN2=AN=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.0 required=3.0
+	tests=HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6ACDCC433E0
-	for <linux-btrfs@archiver.kernel.org>; Thu,  2 Jul 2020 11:44:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AC662C433E0
+	for <linux-btrfs@archiver.kernel.org>; Thu,  2 Jul 2020 12:40:20 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 50D1120780
-	for <linux-btrfs@archiver.kernel.org>; Thu,  2 Jul 2020 11:44:07 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 68E8220885
+	for <linux-btrfs@archiver.kernel.org>; Thu,  2 Jul 2020 12:40:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728489AbgGBLoG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 2 Jul 2020 07:44:06 -0400
-Received: from mx2.suse.de ([195.135.220.15]:45966 "EHLO mx2.suse.de"
+        id S1728893AbgGBMkT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 2 Jul 2020 08:40:19 -0400
+Received: from mx2.suse.de ([195.135.220.15]:48238 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727016AbgGBLoG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 2 Jul 2020 07:44:06 -0400
+        id S1728812AbgGBMkT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 2 Jul 2020 08:40:19 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 2C249BAE4;
-        Thu,  2 Jul 2020 11:44:05 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id EB3A2DA781; Thu,  2 Jul 2020 13:43:48 +0200 (CEST)
-Date:   Thu, 2 Jul 2020 13:43:48 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     "Rebraca Dejan (BSOT/PJ-ES1-Bg)" <Dejan.Rebraca@rs.bosch.com>
-Cc:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: FIEMAP ioctl gets "wrong" address for the extent
-Message-ID: <20200702114348.GJ27795@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz,
-        "Rebraca Dejan (BSOT/PJ-ES1-Bg)" <Dejan.Rebraca@rs.bosch.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <cfd1d2842b4840b99539f00c34dc5701@rs.bosch.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <cfd1d2842b4840b99539f00c34dc5701@rs.bosch.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+        by mx2.suse.de (Postfix) with ESMTP id BB07F101DA;
+        Thu,  2 Jul 2020 12:40:17 +0000 (UTC)
+From:   Nikolay Borisov <nborisov@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH 3/8] btrfs: Record btrfs_device directly btrfs_io_bio
+Date:   Thu,  2 Jul 2020 15:23:30 +0300
+Message-Id: <20200702122335.9117-4-nborisov@suse.com>
+X-Mailer: git-send-email 2.17.1
+In-Reply-To: <20200702122335.9117-1-nborisov@suse.com>
+References: <20200702122335.9117-1-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Jul 02, 2020 at 09:11:20AM +0000, Rebraca Dejan (BSOT/PJ-ES1-Bg) wrote:
-> Hi all,
-> 
-> I'm collecting file extents for our application from BtrFs filesystem image.
-> I've noticed that for some files a get the "wrong" physical offset for
-> start of the extent. I verified it using hexdump of the filesystem
-> image: when dump the content starting from the address returned from
-> FIEMAP ioctl, I see that the content is absolutely different from the
-> content of the file itself. Also, the FIEMAP ioctl reports regular
-> extent, it is not inline.
+Instead of recording stripe_index and using that to access correct
+btrfs_device from btrfs_bio::stripes record the btrfs_device in
+btrfs_io_bio. This will enable endio handlers to increment device
+error counters on checksum errors.
 
-There are 3 address spaces:
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
+ fs/btrfs/raid56.c  | 1 +
+ fs/btrfs/volumes.c | 9 ++-------
+ fs/btrfs/volumes.h | 2 +-
+ 3 files changed, 4 insertions(+), 8 deletions(-)
 
-- device physical offsets
-- filesystem physical offsets
-- filesystem logical offsets
+diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+index c870ef70f817..4efd9ed1a30e 100644
+--- a/fs/btrfs/raid56.c
++++ b/fs/btrfs/raid56.c
+@@ -1117,6 +1117,7 @@ static int rbio_add_io_page(struct btrfs_raid_bio *rbio,
+ 
+ 	/* put a new bio on the list */
+ 	bio = btrfs_io_bio_alloc(bio_max_len >> PAGE_SHIFT ?: 1);
++	btrfs_io_bio(bio)->dev = stripe->dev;
+ 	bio->bi_iter.bi_size = 0;
+ 	bio_set_dev(bio, stripe->dev->bdev);
+ 	bio->bi_iter.bi_sector = disk_start >> 9;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index aabc6c922e04..9560ac7e9ac9 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -6261,12 +6261,7 @@ static void btrfs_end_bio(struct bio *bio)
+ 		atomic_inc(&bbio->error);
+ 		if (bio->bi_status == BLK_STS_IOERR ||
+ 		    bio->bi_status == BLK_STS_TARGET) {
+-			unsigned int stripe_index =
+-				btrfs_io_bio(bio)->stripe_index;
+-			struct btrfs_device *dev;
+-
+-			BUG_ON(stripe_index >= bbio->num_stripes);
+-			dev = bbio->stripes[stripe_index].dev;
++			struct btrfs_device *dev = btrfs_io_bio(bio)->dev;
+ 			if (dev->bdev) {
+ 				if (bio_op(bio) == REQ_OP_WRITE)
+ 					btrfs_dev_stat_inc_and_print(dev,
+@@ -6319,7 +6314,7 @@ static void submit_stripe_bio(struct btrfs_bio *bbio, struct bio *bio,
+ 	struct btrfs_fs_info *fs_info = bbio->fs_info;
+ 
+ 	bio->bi_private = bbio;
+-	btrfs_io_bio(bio)->stripe_index = dev_nr;
++	btrfs_io_bio(bio)->dev = dev;
+ 	bio->bi_end_io = btrfs_end_bio;
+ 	bio->bi_iter.bi_sector = physical >> 9;
+ 	btrfs_debug_in_rcu(fs_info,
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 75af2334b2e3..95aa0cca21e6 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -288,7 +288,7 @@ struct btrfs_fs_devices {
+  */
+ struct btrfs_io_bio {
+ 	unsigned int mirror_num;
+-	unsigned int stripe_index;
++	struct btrfs_device *dev;
+ 	u64 logical;
+ 	u8 *csum;
+ 	u8 csum_inline[BTRFS_BIO_INLINE_CSUM_SIZE];
+-- 
+2.17.1
 
-What you seem to expect is that device physical and filesystem physical
-and the same. This is not true in general in btrfs and fiemap will
-return only the filesystem offsets. To get to the device offsets you'd
-need to do the reverse mapping.

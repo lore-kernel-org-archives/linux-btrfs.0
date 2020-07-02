@@ -2,115 +2,92 @@ Return-Path: <SRS0=RJN2=AN=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=no
+X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 868FAC433DF
-	for <linux-btrfs@archiver.kernel.org>; Thu,  2 Jul 2020 01:11:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A346EC433E0
+	for <linux-btrfs@archiver.kernel.org>; Thu,  2 Jul 2020 01:26:26 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 6AB16207E8
-	for <linux-btrfs@archiver.kernel.org>; Thu,  2 Jul 2020 01:11:38 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7037320884
+	for <linux-btrfs@archiver.kernel.org>; Thu,  2 Jul 2020 01:26:26 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1593653186;
+	bh=73609KfXOAIqlc6B/woCVMBcJsoRgZARJtEgN0Js7a4=;
+	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
+	b=I7Ca+xSRfDENhMVMqFXAchesKPG6JCgUeWM109Vyad2osMpJOz1Id7t1MiG6N161t
+	 5qMzZ4NMVwu0HyB7n9+Jfzf2EbtxyulieE4KPnrwgN7k9w2kOt1/BkUqX4MAaTXA1L
+	 88B2B9YA5fPT81MoAazncFu+K2UCWjHKF9hiyTEc=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727797AbgGBBLh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 1 Jul 2020 21:11:37 -0400
-Received: from mail.nethype.de ([5.9.56.24]:42351 "EHLO mail.nethype.de"
+        id S1729153AbgGBB0Y (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 1 Jul 2020 21:26:24 -0400
+Received: from mail.kernel.org ([198.145.29.99]:57644 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726783AbgGBBLg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 1 Jul 2020 21:11:36 -0400
-Received: from [10.0.0.5] (helo=doom.schmorp.de)
-        by mail.nethype.de with esmtp (Exim 4.92)
-        (envelope-from <schmorp@schmorp.de>)
-        id 1jqnlG-002Crg-T7; Thu, 02 Jul 2020 01:11:35 +0000
-Received: from [10.0.0.1] (helo=cerebro.laendle)
-        by doom.schmorp.de with esmtp (Exim 4.92)
-        (envelope-from <schmorp@schmorp.de>)
-        id 1jqnlG-00057x-OZ; Thu, 02 Jul 2020 01:11:34 +0000
-Received: from root by cerebro.laendle with local (Exim 4.92)
-        (envelope-from <root@schmorp.de>)
-        id 1jqnlG-0001PF-OC; Thu, 02 Jul 2020 03:11:34 +0200
-Date:   Thu, 2 Jul 2020 03:11:34 +0200
-From:   Marc Lehmann <schmorp@schmorp.de>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: first mount(s) after unclean shutdown always fail
-Message-ID: <20200702011134.GA5037@schmorp.de>
-References: <20200701005116.GA5478@schmorp.de>
- <36fcfc97-ce4c-cce8-ee96-b723a1b68ec7@gmx.com>
- <20200701201419.GB1889@schmorp.de>
- <cc42d4dc-b46f-7868-6a05-187949136eae@gmx.com>
- <20200701235512.GA3231@schmorp.de>
- <25e94ec6-842c-310f-e105-6d8f1e6dfdce@gmx.com>
+        id S1728328AbgGBB0W (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 1 Jul 2020 21:26:22 -0400
+Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 366022083E;
+        Thu,  2 Jul 2020 01:26:21 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1593653181;
+        bh=73609KfXOAIqlc6B/woCVMBcJsoRgZARJtEgN0Js7a4=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+        b=PyJzOPbjdXTykmA2AtsLAJrBLBqP3Hq1VIIOhIK6bZAm3mL7Mws7iBOAjJYIwb+aN
+         2qohf5S9xY2IwVEJZ47TOx3e0oUhO0kJjkv9ZrZ9rORAHqow7wLkyQqufBHyIjE4Bh
+         TbR7fLhpgACV/RHLKgS5CqlkjRwSs67gBnfmkqj8=
+From:   Sasha Levin <sashal@kernel.org>
+To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
+Cc:     Waiman Long <longman@redhat.com>, David Sterba <dsterba@suse.com>,
+        Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
+Subject: [PATCH AUTOSEL 4.19 05/27] btrfs: use kfree() in btrfs_ioctl_get_subvol_info()
+Date:   Wed,  1 Jul 2020 21:25:53 -0400
+Message-Id: <20200702012615.2701532-5-sashal@kernel.org>
+X-Mailer: git-send-email 2.25.1
+In-Reply-To: <20200702012615.2701532-1-sashal@kernel.org>
+References: <20200702012615.2701532-1-sashal@kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <25e94ec6-842c-310f-e105-6d8f1e6dfdce@gmx.com>
-OpenPGP: id=904ad2f81fb16978e7536f726dea2ba30bc39eb6;
- url=http://pgp.schmorp.de/schmorp-pgpkey.txt; preference=signencrypt
+X-stable: review
+X-Patchwork-Hint: Ignore
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Jul 02, 2020 at 08:02:52AM +0800, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
-> Well, if you want to go this way, let me show the code here.
-> 
-> From fs/btrfs/volumes.c:btrfs_read_chunk_tree():
-> 
->         if (btrfs_super_total_bytes(fs_info->super_copy) <
->             fs_info->fs_devices->total_rw_bytes) {
->                 btrfs_err(fs_info,
->         "super_total_bytes %llu mismatch with fs_devices total_rw_bytes
-> %llu",
->                           btrfs_super_total_bytes(fs_info->super_copy),
->                           fs_info->fs_devices->total_rw_bytes);
->                 ret = -EINVAL;
->                 goto error;
->         }
-> 
-> Doesn't this explain why we abort the mount?
+From: Waiman Long <longman@redhat.com>
 
-I wouldn't see how, especially if the code doesn't do anything _unless_ it
-also prints the message.
+[ Upstream commit b091f7fede97cc64f7aaad3eeb37965aebee3082 ]
 
-When it doesn't produce the message, all it does is compare two numbers
-(unless btrfs_super_total_bytes does something very funny) - how does this
-explain that the mount fails, then succeeds, in the cases where the message
-is _not_ logged, as reported?
+In btrfs_ioctl_get_subvol_info(), there is a classic case where kzalloc()
+was incorrectly paired with kzfree(). According to David Sterba, there
+isn't any sensitive information in the subvol_info that needs to be
+cleared before freeing. So kzfree() isn't really needed, use kfree()
+instead.
 
-> > Also, shouldn't btrfs be fixed instead? I was under the impression that
-> > one of the goals of btrfs is to be safe w.r.t. crashes.
-> 
-> That's why we provide the btrfs rescue fix-device-size.
+Signed-off-by: Waiman Long <longman@redhat.com>
+Reviewed-by: David Sterba <dsterba@suse.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ fs/btrfs/ioctl.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Not sure how that follows - there is a bug in the kernel filesystem and
-you provide a userspace tool that should be run on every crash, to what
-end?
-
-Spurious mount failures are a bug in the btrfs kernel driver.
-
-> > The bug I reported has very little or nothing to with strict checking.
-> 
-> I have provide the code to prove why it's related.
-
-The code proves only that you are wrong - the code _always_ prints the
-message. Unless btrfs_super_total_bytes does more than just read some
-data, it cannot explain the bug I reported, simply because the message is
-not always produced, and the mount is not always aborted.
-
-> Whether you believe is your problem then.
-
-No, it's not, simply because I don't have a problem...
-
-btrfs has problems, and I reported one, that's all that has happened.
-
-I slowly get the distinct feeling that reporting bugs in btrfs us a futile
-exercise, though.
-
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index a5ae02bf3652b..60418b1fcef5b 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2723,7 +2723,7 @@ static int btrfs_ioctl_get_subvol_info(struct file *file, void __user *argp)
+ 
+ out:
+ 	btrfs_free_path(path);
+-	kzfree(subvol_info);
++	kfree(subvol_info);
+ 	return ret;
+ }
+ 
 -- 
-                The choice of a       Deliantra, the free code+content MORPG
-      -----==-     _GNU_              http://www.deliantra.net
-      ----==-- _       generation
-      ---==---(_)__  __ ____  __      Marc Lehmann
-      --==---/ / _ \/ // /\ \/ /      schmorp@schmorp.de
-      -=====/_/_//_/\_,_/ /_/\_\
+2.25.1
+

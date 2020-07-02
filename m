@@ -2,92 +2,90 @@ Return-Path: <SRS0=RJN2=AN=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3DF1EC433DF
-	for <linux-btrfs@archiver.kernel.org>; Thu,  2 Jul 2020 01:36:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2416AC433E0
+	for <linux-btrfs@archiver.kernel.org>; Thu,  2 Jul 2020 02:05:47 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 0E2F020781
-	for <linux-btrfs@archiver.kernel.org>; Thu,  2 Jul 2020 01:36:46 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1593653806;
-	bh=q5PPXSNYwYNETXLnW13CPZbxXCtQGH4Z5Ed2lgifHKU=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=UFytGUynp9lAehYppA7VNtgnkXspYwAMbNjm8ZiYBMMWjztG6DYG6N50qcBjX8/0T
-	 tU9/W/ZWAKbXmLqvjKPTQTBK+fDDjIdGi2l9vf1H6K5OTnLnNbeRvMrZREnK3frJkK
-	 gmH8WjIFA5rv17zHdBj6ueupx1kxY6DufxGdXfOI=
+	by mail.kernel.org (Postfix) with ESMTP id 08CF2206DD
+	for <linux-btrfs@archiver.kernel.org>; Thu,  2 Jul 2020 02:05:47 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729115AbgGBBgh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 1 Jul 2020 21:36:37 -0400
-Received: from mail.kernel.org ([198.145.29.99]:53494 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728214AbgGBBXI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 1 Jul 2020 21:23:08 -0400
-Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id D555D2083E;
-        Thu,  2 Jul 2020 01:23:07 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1593652988;
-        bh=q5PPXSNYwYNETXLnW13CPZbxXCtQGH4Z5Ed2lgifHKU=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=LpZu+6ITCM7D6W613S3GngtsubwK2JuZojxXDueLpyIwOAJFNsfsjBPTP5Iem9PkD
-         TGRYMOU2rn6/HILD81dJlDiZJrG5ZDWuPbA+CytnBDYVuEy9qmj9LBzEi2det92pDC
-         uCDFSLJfwR6728jqDcbmMuQRu25vqmI1FcW6X00k=
-From:   Sasha Levin <sashal@kernel.org>
-To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Waiman Long <longman@redhat.com>, David Sterba <dsterba@suse.com>,
-        Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.7 11/53] btrfs: use kfree() in btrfs_ioctl_get_subvol_info()
-Date:   Wed,  1 Jul 2020 21:21:20 -0400
-Message-Id: <20200702012202.2700645-11-sashal@kernel.org>
-X-Mailer: git-send-email 2.25.1
-In-Reply-To: <20200702012202.2700645-1-sashal@kernel.org>
-References: <20200702012202.2700645-1-sashal@kernel.org>
+        id S1728050AbgGBCFq convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 1 Jul 2020 22:05:46 -0400
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:42744 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727778AbgGBCFp (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Jul 2020 22:05:45 -0400
+Received: by james.kirk.hungrycats.org (Postfix, from userid 1002)
+        id 103E1741649; Wed,  1 Jul 2020 22:05:43 -0400 (EDT)
+Date:   Wed, 1 Jul 2020 22:05:43 -0400
+From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To:     dsterba@suse.cz, Lukas Straub <lukasstraub2@web.de>,
+        Josef Bacik <josef@toxicpanda.com>,
+        linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: Re: [PATCH][RFC] btrfs: introduce rescue=onlyfs
+Message-ID: <20200702020543.GZ10769@hungrycats.org>
+References: <20200701144438.7613-1-josef@toxicpanda.com>
+ <20200701172218.01c0197d@luklap>
+ <20200701153919.GD27795@twin.jikos.cz>
 MIME-Version: 1.0
-X-stable: review
-X-Patchwork-Hint: Ignore
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: 8BIT
+In-Reply-To: <20200701153919.GD27795@twin.jikos.cz>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Waiman Long <longman@redhat.com>
+On Wed, Jul 01, 2020 at 05:39:19PM +0200, David Sterba wrote:
+> On Wed, Jul 01, 2020 at 05:22:18PM +0200, Lukas Straub wrote:
+> > On Wed,  1 Jul 2020 10:44:38 -0400
+> > Josef Bacik <josef@toxicpanda.com> wrote:
+> > 
+> > > One of the things that came up consistently in talking with Fedora about
+> > > switching to btrfs as default is that btrfs is particularly vulnerable
+> > > to metadata corruption.  If any of the core global roots are corrupted,
+> > > the fs is unmountable and fsck can't usually do anything for you without
+> > > some special options.
+> > > 
+> > > Qu addressed this sort of with rescue=skipbg, but that's poorly named as
+> > > what it really does is just allow you to operate without an extent root.
+> > > However there are a lot of other roots, and I'd rather not have to do
+> > > 
+> > > mount -o rescue=skipbg,rescue=nocsum,rescue=nofreespacetree,rescue=blah
+> > > 
+> > > Instead take his original idea and modify it so it just works for
+> > > everything.  Turn it into rescue=onlyfs, and then any major root we fail
+> > > to read just gets left empty and we carry on.
+> > > 
+> > > Obviously if the fs roots are screwed then the user is in trouble, but
+> > > otherwise this makes it much easier to pull stuff off the disk without
+> > > needing our special rescue tools.  I tested this with my TEST_DEV that
+> > > had a bunch of data on it by corrupting the csum tree and then reading
+> > > files off the disk.
+> > > 
+> > > Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+> > > ---
+> > > 
+> > > I'm not married to the rescue=onlyfs name, if we can think of something better
+> > > I'm good.
+> > 
+> > Maybe you could go a step further and automatically switch to rescue
+> > mode if something is corrupt. This is easier for the user than having
+> > to remember the mount flags.
+> 
+> We don't want to do the auto-switching in general as it's a non-standard
+> situation.  It's better to get user attention than to silently mount
+> with limited capabilities and then let the user find out that something
+> went wrong, eg. system services randomly failing to start or work.
 
-[ Upstream commit b091f7fede97cc64f7aaad3eeb37965aebee3082 ]
-
-In btrfs_ioctl_get_subvol_info(), there is a classic case where kzalloc()
-was incorrectly paired with kzfree(). According to David Sterba, there
-isn't any sensitive information in the subvol_info that needs to be
-cleared before freeing. So kzfree() isn't really needed, use kfree()
-instead.
-
-Signed-off-by: Waiman Long <longman@redhat.com>
-Reviewed-by: David Sterba <dsterba@suse.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
-Signed-off-by: Sasha Levin <sashal@kernel.org>
----
- fs/btrfs/ioctl.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 40b729dce91cd..5070bd2436b76 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2691,7 +2691,7 @@ static int btrfs_ioctl_get_subvol_info(struct file *file, void __user *argp)
- 	btrfs_put_root(root);
- out_free:
- 	btrfs_free_path(path);
--	kzfree(subvol_info);
-+	kfree(subvol_info);
- 	return ret;
- }
- 
--- 
-2.25.1
-
+To be fair, auto-switching is almost exactly what happens now, with mounts
+being the exception.  If the tree corruption is detected after mounting,
+we panic and flip the RO bit right in the middle of the work day.
+When mounting with default options and a tree error detected during the
+mount, we fail to mount at all--IMHO that's the non-standard situation.

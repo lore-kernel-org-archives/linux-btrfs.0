@@ -7,28 +7,28 @@ X-Spam-Status: No, score=-10.0 required=3.0
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AC662C433E0
-	for <linux-btrfs@archiver.kernel.org>; Thu,  2 Jul 2020 12:40:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id ADF60C433DF
+	for <linux-btrfs@archiver.kernel.org>; Thu,  2 Jul 2020 12:41:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 68E8220885
-	for <linux-btrfs@archiver.kernel.org>; Thu,  2 Jul 2020 12:40:20 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 97C9520885
+	for <linux-btrfs@archiver.kernel.org>; Thu,  2 Jul 2020 12:41:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728893AbgGBMkT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 2 Jul 2020 08:40:19 -0400
-Received: from mx2.suse.de ([195.135.220.15]:48238 "EHLO mx2.suse.de"
+        id S1728966AbgGBMlw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 2 Jul 2020 08:41:52 -0400
+Received: from mx2.suse.de ([195.135.220.15]:50202 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728812AbgGBMkT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 2 Jul 2020 08:40:19 -0400
+        id S1728893AbgGBMlw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 2 Jul 2020 08:41:52 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id BB07F101DA;
-        Thu,  2 Jul 2020 12:40:17 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 204A610271;
+        Thu,  2 Jul 2020 12:41:51 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 3/8] btrfs: Record btrfs_device directly btrfs_io_bio
-Date:   Thu,  2 Jul 2020 15:23:30 +0300
-Message-Id: <20200702122335.9117-4-nborisov@suse.com>
+Subject: [PATCH 5/8] btrfs: Increment device corruption error in case of checksum error
+Date:   Thu,  2 Jul 2020 15:23:32 +0300
+Message-Id: <20200702122335.9117-6-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20200702122335.9117-1-nborisov@suse.com>
 References: <20200702122335.9117-1-nborisov@suse.com>
@@ -37,70 +37,32 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Instead of recording stripe_index and using that to access correct
-btrfs_device from btrfs_bio::stripes record the btrfs_device in
-btrfs_io_bio. This will enable endio handlers to increment device
-error counters on checksum errors.
+Now that btrfs_io_bio have access to btrfs_device we can safely
+increment the device corruption counter on error. There is one notable
+exception - repair bios for raid. Since those don't go through the
+normal submit_stripe_bio callpath but through raid56_parity_recover thus
+repair bios won't have their device set.
 
+Link: https://lore.kernel.org/linux-btrfs/4857863.FCrPRfMyHP@liv/
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/raid56.c  | 1 +
- fs/btrfs/volumes.c | 9 ++-------
- fs/btrfs/volumes.h | 2 +-
- 3 files changed, 4 insertions(+), 8 deletions(-)
+ fs/btrfs/inode.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index c870ef70f817..4efd9ed1a30e 100644
---- a/fs/btrfs/raid56.c
-+++ b/fs/btrfs/raid56.c
-@@ -1117,6 +1117,7 @@ static int rbio_add_io_page(struct btrfs_raid_bio *rbio,
- 
- 	/* put a new bio on the list */
- 	bio = btrfs_io_bio_alloc(bio_max_len >> PAGE_SHIFT ?: 1);
-+	btrfs_io_bio(bio)->dev = stripe->dev;
- 	bio->bi_iter.bi_size = 0;
- 	bio_set_dev(bio, stripe->dev->bdev);
- 	bio->bi_iter.bi_sector = disk_start >> 9;
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index aabc6c922e04..9560ac7e9ac9 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -6261,12 +6261,7 @@ static void btrfs_end_bio(struct bio *bio)
- 		atomic_inc(&bbio->error);
- 		if (bio->bi_status == BLK_STS_IOERR ||
- 		    bio->bi_status == BLK_STS_TARGET) {
--			unsigned int stripe_index =
--				btrfs_io_bio(bio)->stripe_index;
--			struct btrfs_device *dev;
--
--			BUG_ON(stripe_index >= bbio->num_stripes);
--			dev = bbio->stripes[stripe_index].dev;
-+			struct btrfs_device *dev = btrfs_io_bio(bio)->dev;
- 			if (dev->bdev) {
- 				if (bio_op(bio) == REQ_OP_WRITE)
- 					btrfs_dev_stat_inc_and_print(dev,
-@@ -6319,7 +6314,7 @@ static void submit_stripe_bio(struct btrfs_bio *bbio, struct bio *bio,
- 	struct btrfs_fs_info *fs_info = bbio->fs_info;
- 
- 	bio->bi_private = bbio;
--	btrfs_io_bio(bio)->stripe_index = dev_nr;
-+	btrfs_io_bio(bio)->dev = dev;
- 	bio->bi_end_io = btrfs_end_bio;
- 	bio->bi_iter.bi_sector = physical >> 9;
- 	btrfs_debug_in_rcu(fs_info,
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 75af2334b2e3..95aa0cca21e6 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -288,7 +288,7 @@ struct btrfs_fs_devices {
-  */
- struct btrfs_io_bio {
- 	unsigned int mirror_num;
--	unsigned int stripe_index;
-+	struct btrfs_device *dev;
- 	u64 logical;
- 	u8 *csum;
- 	u8 csum_inline[BTRFS_BIO_INLINE_CSUM_SIZE];
--- 
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index e7600b0fd9b5..c6824d0ce59d 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2822,6 +2822,9 @@ static int check_data_csum(struct inode *inode, struct btrfs_io_bio *io_bio,
+ zeroit:
+ 	btrfs_print_data_csum_error(BTRFS_I(inode), start, csum, csum_expected,
+ 				    io_bio->mirror_num);
++	if (io_bio->dev)
++		btrfs_dev_stat_inc_and_print(io_bio->dev,
++					     BTRFS_DEV_STAT_CORRUPTION_ERRS);
+ 	memset(kaddr + pgoff, 1, len);
+ 	flush_dcache_page(page);
+ 	kunmap_atomic(kaddr);
+--
 2.17.1
 

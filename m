@@ -4,70 +4,71 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-5.5 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,
-	SPF_PASS,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+	SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BB849C433DF
-	for <linux-btrfs@archiver.kernel.org>; Thu,  2 Jul 2020 13:00:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 48B14C433DF
+	for <linux-btrfs@archiver.kernel.org>; Thu,  2 Jul 2020 13:01:43 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 9557A20890
-	for <linux-btrfs@archiver.kernel.org>; Thu,  2 Jul 2020 13:00:06 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 15B5D20772
+	for <linux-btrfs@archiver.kernel.org>; Thu,  2 Jul 2020 13:01:43 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="UXBf/dR0"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="QdgaU5q4"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729012AbgGBNAF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 2 Jul 2020 09:00:05 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33594 "EHLO
+        id S1729017AbgGBNBm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 2 Jul 2020 09:01:42 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33842 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728851AbgGBNAF (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Jul 2020 09:00:05 -0400
-Received: from mail-qt1-x842.google.com (mail-qt1-x842.google.com [IPv6:2607:f8b0:4864:20::842])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1947BC08C5C1
-        for <linux-btrfs@vger.kernel.org>; Thu,  2 Jul 2020 06:00:05 -0700 (PDT)
-Received: by mail-qt1-x842.google.com with SMTP id j10so21078641qtq.11
-        for <linux-btrfs@vger.kernel.org>; Thu, 02 Jul 2020 06:00:05 -0700 (PDT)
+        with ESMTP id S1728697AbgGBNBl (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Jul 2020 09:01:41 -0400
+Received: from mail-qv1-xf44.google.com (mail-qv1-xf44.google.com [IPv6:2607:f8b0:4864:20::f44])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A0563C08C5C1
+        for <linux-btrfs@vger.kernel.org>; Thu,  2 Jul 2020 06:01:41 -0700 (PDT)
+Received: by mail-qv1-xf44.google.com with SMTP id a14so12585707qvq.6
+        for <linux-btrfs@vger.kernel.org>; Thu, 02 Jul 2020 06:01:41 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=subject:to:references:from:message-id:date:user-agent:mime-version
          :in-reply-to:content-language:content-transfer-encoding;
-        bh=65R/e5CJxwdEMY00s+ld9tnLhtV6OuqjmlZArYFW0YA=;
-        b=UXBf/dR0QdC8swM1LwBWfAHCUVPfogGjXdigypP3NIWuhsTe8TUbR966kfMdKvw7Y8
-         fc8TdxIYvfc7X0cUlhMfkzIKCOaYfmlaGg21GE+VPWd35ICcMjW/Btd62l801KsDku2m
-         hdWPXeI1CAP4dWjFIKFuspjvtC9IbjZXMv/vtDhQ+ODHCMYmDgqxgGp0EoeAOaYQ5VEl
-         XgzDVvB+Rbh+Y31epQON500FQfTwlpW5vMIdgo+pzs3W9X+5tPFpOkYnX6DHCw84H9Kz
-         IOPbuTnxNdXfUG2PZYCm10yB5Ayzm5I7/6PXB4eTwINbR7+5J2FobYEeLCJJeKyxOc0I
-         oi1w==
+        bh=RpAPBBuP2S33yMGEA6woHRAlJlVTRbTNV2jocETBp/M=;
+        b=QdgaU5q4L27QrELwMf1JfdmamS7sqWBahtCLisDOi1vfDNPA9Tn9JZeoiViTu4+YTA
+         0G1UtcC5Fwr6gtGPDsnctAjHNHO8dki7Mlkm/Fo7c2lsbHGUUAlRGAJYULvrWrdbeADN
+         VuxBp4XorhTbOapnWwablU60WN7l0hFgZsoSdQ423rrULVeZTB7/8wNn7miVIdyOFMSm
+         Wwt2WqTpstOkR3WbhD0JCFEDSZ1a+JBE2pKb9EYXFCJqrFNWPxVUnFaZIBeFWe2w4teQ
+         n/WsTltf8FCM7tiMKQaDIJEA1koVheT0r6aPEKOHsPPpyw4qSZ7X1FZ/ll4aAz+Q9d/1
+         6jJg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:subject:to:references:from:message-id:date
          :user-agent:mime-version:in-reply-to:content-language
          :content-transfer-encoding;
-        bh=65R/e5CJxwdEMY00s+ld9tnLhtV6OuqjmlZArYFW0YA=;
-        b=JjR61rm9Tr1XXV9m4BZwJQ29UQxKqutOI0RBfQYHp5d9ulVaALvcrIHe2yJPyrOwNV
-         iEMpOPicpIpbutydzhvz5sqtU/hhKig27zDTK/aaub69EoQfzJjX9nM9H7TlFBQnaSm6
-         lMSLI2+tuks9LUUbXSSuuAGwnET8oixZ7tuuzx78hkPrvK3xCEZtN691o0Ppvnk6wcEw
-         8++LjqQIoOkEvjhWyN/j9ibYXzIwt3d8/uwCw7eAsTx/asrR0qB2GojSxMdPp7ddlOCG
-         PXYH8mFan9m8yKjFMKIiSdYVjgwHD/95CtT6ba5fj3oS2A6MCVBygWRlsdR4/C7RV0b2
-         WSMw==
-X-Gm-Message-State: AOAM531sO9G6SXBTEy1CtFklpMeO6SxpW15W5zvrFqfDfeF5aGAx1m9m
-        YxaYxcorJ1+nfhDEBAQMr0BAF56JmQC65g==
-X-Google-Smtp-Source: ABdhPJx8qYjqqr0Qlc2IYcvhHjTkB5i/WgJ/k4IIcYozruq7DJ1QmJFxAEVm0mAxImkaH666J3HJqw==
-X-Received: by 2002:ac8:1c36:: with SMTP id a51mr31306410qtk.138.1593694803828;
-        Thu, 02 Jul 2020 06:00:03 -0700 (PDT)
+        bh=RpAPBBuP2S33yMGEA6woHRAlJlVTRbTNV2jocETBp/M=;
+        b=r8sJ4nARBGyxocAQdNXnvJptIlfHXCrhn4LD6TqpaBq9jY87tkQtRVYLGAaELGk2Kn
+         idvjY/HRaHHAS/HEzJ3CVl51WGXgdpyOhYNQEDwUexIeQodHmzMVIzRQkAS9WOo1khhp
+         OlXOuk2d85BJIeMtGeMx/5KwTHHOayGug3/T+ZTi7C1wh4CDs5yc7GMkjEaVhkhwnEaw
+         j2Us/oskflwmQdEDZ1GK33I754atEqtATUgt5bmhOo1cm/Rqr3Tx40FDQ3vIf/t38qyo
+         8Y4GvbNEikt0OxmW9f206GEtSzFO/INTQNn8gHgMTdcOYGEkTMIufGMdHGrlBQ/3w6tP
+         nrpA==
+X-Gm-Message-State: AOAM530GIgJkvHofBznhMgEHkEYwN5qrktmFu5eU+QL0zazBiOGPEf2d
+        6YSgXsAwEKbymoOFmbN+584x8Z2fED0VSQ==
+X-Google-Smtp-Source: ABdhPJyIfpgrhGWl2hm2EiNK3AZ1XUxs1P4LG4kftPENE9xpZfZs77/3OceEYKHDlMpvdNkcpENZMw==
+X-Received: by 2002:a0c:f486:: with SMTP id i6mr29210499qvm.229.1593694900165;
+        Thu, 02 Jul 2020 06:01:40 -0700 (PDT)
 Received: from [192.168.1.45] (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id d13sm7986717qkc.105.2020.07.02.06.00.02
+        by smtp.gmail.com with ESMTPSA id c27sm7473790qkl.125.2020.07.02.06.01.38
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 02 Jul 2020 06:00:03 -0700 (PDT)
-Subject: Re: [PATCH 1/4] btrfs: only commit the delayed inode when doing a
- full fsync
+        Thu, 02 Jul 2020 06:01:39 -0700 (PDT)
+Subject: Re: [PATCH 2/4] btrfs: only commit delayed items at fsync if we are
+ logging a directory
 To:     fdmanana@kernel.org, linux-btrfs@vger.kernel.org
-References: <20200702113159.153135-1-fdmanana@kernel.org>
+References: <20200702113220.163855-1-fdmanana@kernel.org>
 From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <fea5eee9-95ff-c8a8-4f1f-3682378d1813@toxicpanda.com>
-Date:   Thu, 2 Jul 2020 09:00:02 -0400
+Message-ID: <9fec8d31-b0b3-7f89-e9af-09f86a31bb56@toxicpanda.com>
+Date:   Thu, 2 Jul 2020 09:01:38 -0400
 User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:68.0)
  Gecko/20100101 Thunderbird/68.9.0
 MIME-Version: 1.0
-In-Reply-To: <20200702113159.153135-1-fdmanana@kernel.org>
+In-Reply-To: <20200702113220.163855-1-fdmanana@kernel.org>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
 Content-Transfer-Encoding: 7bit
@@ -76,28 +77,34 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 7/2/20 7:31 AM, fdmanana@kernel.org wrote:
+On 7/2/20 7:32 AM, fdmanana@kernel.org wrote:
 > From: Filipe Manana <fdmanana@suse.com>
 > 
-> Commit 2c2c452b0cafdc ("Btrfs: fix fsync when extend references are added
-> to an inode") forced a commit of the delayed inode when logging an inode
-> in order to ensure we would end up logging the inode item during a full
-> fsync. By committing the delayed inode, we updated the inode item in the
-> fs/subvolume tree and then later when copying items from leafs modified in
-> the current transaction into the log tree (with copy_inode_items_to_log())
-> we ended up copying the inode item from the fs/subvolume tree into the log
-> tree. Logging an up to date version of the inode item is required to make
-> sure at log replay time we get the link count fixup triggered among other
-> things (replay xattr deletes, etc). The test case generic/040 from fstests
-> exercises the bug which that commit fixed.
+> When logging an inode we are committing its delayed items if either the
+> inode is a directory or if it is a new inode, created in the current
+> transaction.
 > 
-> However for a fast fsync we don't need to commit the delayed inode because
-> we always log an up to date version of the inode item based on the struct
-> btrfs_inode we have in-memory. We started doing this for fast fsyncs since
-> commit e4545de5b035c7 ("Btrfs: fix fsync data loss after append write").
+> We need to do it for directories, since new directory indexes are stored
+> as delayed items of the inode and when logging a directory we need to be
+> able to access all indexes from the fs/subvolume tree in order to figure
+> out which index ranges need to be logged.
 > 
-> So just stop committing the delayed inode if we are doing a fast fsync,
-> we are only wasting time and adding contention on fs/subvolume tree.
+> However for new inodes that are not directories, we do not need to do it
+> because the only type of delayed item they can have is the inode item, and
+> we are guaranteed to always log an up to date version of the inode item:
+> 
+> *) for a full fsync we do it by committing the delayed inode and then
+>     copying the item from the fs/subvolume tree with
+>     copy_inode_items_to_log();
+> 
+> *) for a fast fsync we always log the inode item based on the contents of
+>     the in-memory struct btrfs_inode. We guarantee this is always done since
+>     commit e4545de5b035c7 ("Btrfs: fix fsync data loss after append write").
+> 
+> So stop running delayed items for a new inodes that are not directories,
+> since that forces committing the delayed inode into the fs/subvolume tree,
+> wasting time and adding contention to the tree when a full fsync is not
+> required. We will only do it in case a fast fsync is needed.
 > 
 > This patch is part of a series that has the following patches:
 > 

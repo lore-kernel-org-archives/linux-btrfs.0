@@ -6,148 +6,84 @@ X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 09A87C433E0
-	for <linux-btrfs@archiver.kernel.org>; Fri,  3 Jul 2020 08:31:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2924BC433E0
+	for <linux-btrfs@archiver.kernel.org>; Fri,  3 Jul 2020 09:16:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id E46F4207FF
-	for <linux-btrfs@archiver.kernel.org>; Fri,  3 Jul 2020 08:31:05 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0902120836
+	for <linux-btrfs@archiver.kernel.org>; Fri,  3 Jul 2020 09:16:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726258AbgGCIbF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 3 Jul 2020 04:31:05 -0400
-Received: from mx2.suse.de ([195.135.220.15]:53120 "EHLO mx2.suse.de"
+        id S1726615AbgGCJQy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 3 Jul 2020 05:16:54 -0400
+Received: from mx2.suse.de ([195.135.220.15]:47786 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725648AbgGCIbE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 3 Jul 2020 04:31:04 -0400
+        id S1725796AbgGCJQy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 3 Jul 2020 05:16:54 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 2EEFBB5E0;
-        Fri,  3 Jul 2020 08:31:03 +0000 (UTC)
-Subject: Re: [PATCH 01/10] btrfs: Always initialize
- btrfs_bio::tgtdev_map/raid_map pointers
-To:     Johannes Thumshirn <Johannes.Thumshirn@wdc.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <20200702134650.16550-1-nborisov@suse.com>
- <20200702134650.16550-2-nborisov@suse.com>
- <SN4PR0401MB359800E3D7D379E9161318379B6D0@SN4PR0401MB3598.namprd04.prod.outlook.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <ac973720-9d3b-1824-e7de-16e15b364c9c@suse.com>
-Date:   Fri, 3 Jul 2020 11:31:02 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.8.0
+        by mx2.suse.de (Postfix) with ESMTP id E53C2AD78;
+        Fri,  3 Jul 2020 09:16:52 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 23CA2DA87C; Fri,  3 Jul 2020 11:16:36 +0200 (CEST)
+Date:   Fri, 3 Jul 2020 11:16:35 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Alberto Bursi <bobafetthotmail@gmail.com>
+Cc:     dsterba@suse.cz, Lukas Straub <lukasstraub2@web.de>,
+        Josef Bacik <josef@toxicpanda.com>,
+        linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: Re: [PATCH][RFC] btrfs: introduce rescue=onlyfs
+Message-ID: <20200703091635.GV27795@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz,
+        Alberto Bursi <bobafetthotmail@gmail.com>,
+        Lukas Straub <lukasstraub2@web.de>,
+        Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
+        kernel-team@fb.com
+References: <20200701144438.7613-1-josef@toxicpanda.com>
+ <20200701172218.01c0197d@luklap>
+ <20200701153919.GD27795@twin.jikos.cz>
+ <17ef97b5-ef27-f56c-7b86-c22f9036d253@gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <SN4PR0401MB359800E3D7D379E9161318379B6D0@SN4PR0401MB3598.namprd04.prod.outlook.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <17ef97b5-ef27-f56c-7b86-c22f9036d253@gmail.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-
-
-On 2.07.20 г. 17:04 ч., Johannes Thumshirn wrote:
-> On 02/07/2020 15:47, Nikolay Borisov wrote:
-> [...]
->> -		bbio->raid_map = (u64 *)((void *)bbio->stripes +
->> -				 sizeof(struct btrfs_bio_stripe) *
->> -				 num_alloc_stripes +
->> -				 sizeof(int) * tgtdev_indexes);
+On Wed, Jul 01, 2020 at 09:16:55PM +0200, Alberto Bursi wrote:
+> On 01/07/20 17:39, David Sterba wrote:
+> > On Wed, Jul 01, 2020 at 05:22:18PM +0200, Lukas Straub wrote:
+> >>> I'm not married to the rescue=onlyfs name, if we can think of something better
+> >>> I'm good.
+> >>
+> >> Maybe you could go a step further and automatically switch to rescue
+> >> mode if something is corrupt. This is easier for the user than having
+> >> to remember the mount flags.
+> > 
+> > We don't want to do the auto-switching in general as it's a non-standard
+> > situation.  It's better to get user attention than to silently mount
+> > with limited capabilities and then let the user find out that something
+> > went wrong, eg. system services randomly failing to start or work.
 > 
-> That one took me a while to be convinced it is correct.
+> Eh. I'm sure stopping boot and dropping to initramfs shell is a great 
+> way to get someone's attention.
 
-There are 2 aspects to this:
+I'm not saying it's pretty and these rescue tasks are only chosing
+lesser evil. As I understand it, users want a single option to do the
+magic, aka. fix all problems and continue, but the hard part is how to
+implement that. The analysis is a necessary step, and it cannot be
+always automated to the point where autor-repair will not cause more
+harm than good.
 
-1. I think the original code is harder to grasp because the calculations
- for initializing raid_map/tgtdev ponters are apart from the initial
-allocation of memory. Having them predicated on 2 separate checks
-doesn't help that either... So by moving the initialisation in
-alloc_btrfs_bio puts everything together.
+> Afaik in mdadm or hardware raid the main way to notify the administrator 
+> of issues is sending an email, or send the error through the server 
+> fleet management software.
 
-2. The second is that tgtdev/raid_maps are now always initialized
-despite sometimes they might be equal i.e __btrfs_map_block_for_discard
-calls alloc_btrfs_bio with tgtdev = 0 but their usage should be
-predicated on external checks i.e. just because those pointers are
-non-null doesn't mean they are valid per-se. And actually while taking
-another look at __btrfs_map_block I saw a discrepancy:
-
-Original code initialised tgtdev_map if the following check is true:
-if (dev_replace_is_ongoing && dev_replace->tgtdev != NULL)
-
-However, further down tgtdev_map is only used if the following check is
-true:
-if (dev_replace_is_ongoing && dev_replace->tgtdev != NULL &&
-need_full_stripe(op))
-
-e.g. the additional need_full_stripe(op) predicate is there.
-
-
-> 
->>  
->>  		/* Work out the disk rotation on this stripe-set */
->>  		div_u64_rem(stripe_nr, num_stripes, &rot);
->> @@ -6171,25 +6178,14 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
->>  		if (map->type & BTRFS_BLOCK_GROUP_RAID6)
->>  			bbio->raid_map[(i+rot+1) % num_stripes] =
->>  				RAID6_Q_STRIPE;
->> -	}
->> -
->>  
->> -	for (i = 0; i < num_stripes; i++) {
->> -		bbio->stripes[i].physical =
->> -			map->stripes[stripe_index].physical +
->> -			stripe_offset +
->> -			stripe_nr * map->stripe_len;
->> -		bbio->stripes[i].dev =
->> -			map->stripes[stripe_index].dev;
->> -		stripe_index++;
->> +		sort_parity_stripes(bbio, num_stripes);
->>  	}
->>  
->> +
-> 
-> Stray newline.
-> 
-> 
+That's for monitoring tools, I'm not familiar with that topic but seems
+that hat it could be done. Let's say there's a problem during mount,
+auto-repair tries something, system boots but is not in ideal state.
+The status is saved in system log and perhaps in some sysfs file to be
+grabbed any time later. And the monitoring tools can read that and react
+(send email).

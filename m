@@ -1,108 +1,119 @@
-Return-Path: <SRS0=qDml=AO=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=gECa=AP=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4505CC433DF
-	for <linux-btrfs@archiver.kernel.org>; Fri,  3 Jul 2020 16:30:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 65AE7C433DF
+	for <linux-btrfs@archiver.kernel.org>; Sat,  4 Jul 2020 14:56:22 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 2DDD720899
-	for <linux-btrfs@archiver.kernel.org>; Fri,  3 Jul 2020 16:30:49 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4ECB821D81
+	for <linux-btrfs@archiver.kernel.org>; Sat,  4 Jul 2020 14:56:22 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726417AbgGCQas (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 3 Jul 2020 12:30:48 -0400
-Received: from mx2.suse.de ([195.135.220.15]:44326 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726098AbgGCQar (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 3 Jul 2020 12:30:47 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id E2117AB98;
-        Fri,  3 Jul 2020 16:30:45 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id AE1A0DA87C; Fri,  3 Jul 2020 18:30:28 +0200 (CEST)
-Date:   Fri, 3 Jul 2020 18:30:28 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH 00/23] Change data reservations to use the ticketing infra
-Message-ID: <20200703163028.GG27795@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
-        linux-btrfs@vger.kernel.org, kernel-team@fb.com
-References: <20200630135921.745612-1-josef@toxicpanda.com>
+        id S1726948AbgGDO4V (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 4 Jul 2020 10:56:21 -0400
+Received: from ipmail03.adl2.internode.on.net ([150.101.137.141]:23770 "EHLO
+        ipmail03.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1726488AbgGDO4V (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 4 Jul 2020 10:56:21 -0400
+X-Greylist: delayed 302 seconds by postgrey-1.27 at vger.kernel.org; Sat, 04 Jul 2020 10:56:18 EDT
+X-IronPort-Anti-Spam-Filtered: true
+X-IronPort-Anti-Spam-Result: =?us-ascii?q?A2BdAAA3lgBf/9y5pztgGgEBAQEBAQE?=
+ =?us-ascii?q?BAQEDAQEBARIBAQEBAgIBAQEBQIFKgxlUAV6EMZEVnAQLATMJAQIEAQGERwK?=
+ =?us-ascii?q?CIAIkOBMCEAEBBgEBAQEBBgSGSAyFbwEFI1YQCw4KAgImAgI8GwYBDAgBAYM?=
+ =?us-ascii?q?iAYJ7EKsRgTKJG4FAImwqiGaEBBqCAIE4D4JaPmmBcwOEdIJgBI56izqBV5h?=
+ =?us-ascii?q?/gUKBJIELmDMFCh2CYQGcO5FZoHKBeDMaCBcZgyQJRxkNkEmMLi8DMAI1AgY?=
+ =?us-ascii?q?IAQEDCVkBAYx5K4IbAQE?=
+Received: from podling.glasswings.com.au ([59.167.185.220])
+  by ipmail03.adl2.internode.on.net with ESMTP; 05 Jul 2020 00:21:13 +0930
+Received: from dash ([192.168.21.15])
+        by podling.glasswings.com.au with esmtp (Exim 4.89)
+        (envelope-from <andrew@sericyb.com.au>)
+        id 1jrjVU-0006ec-R2; Sun, 05 Jul 2020 00:51:08 +1000
+Subject: Re: btrfs-progs reports nonsense scrub status
+From:   Andrew Pam <andrew@sericyb.com.au>
+To:     Graham Cobb <g.btrfs@cobb.uk.net>,
+        Chris Murphy <lists@colorremedies.com>
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <0d1cceb6-9295-1bdf-c427-60ba9b1ef0b3@sericyb.com.au>
+ <CAJCQCtQvyncTMqATX2PkVkR1bRPaUvDUqCmj-bRJzfHEU2k4JQ@mail.gmail.com>
+ <ff173eb0-b6e8-5365-43a8-8f67d0da6c96@sericyb.com.au>
+ <CAJCQCtTdHQAkaagTvCO-0SguakQx9p5iKmNbvmNYyxsBCqQ6Vw@mail.gmail.com>
+ <ac6be0fa-96a7-fe0b-20c7-d7082ff66905@sericyb.com.au>
+ <c2b89240-38fd-7749-3f1a-8aeaec8470e0@cobb.uk.net>
+ <ace72f18-724c-9f2c-082f-cb478b8a63ef@sericyb.com.au>
+ <CAJCQCtSq7Ocar4hJM0Z+Y7UeRM6Cfi_uwN=QM77F2Eg+MtnNWw@mail.gmail.com>
+ <04f481fd-b8e5-7df6-d547-ece9ab6b8154@sericyb.com.au>
+ <CAJCQCtTdSSX15Y7YX7fAg+iKncZf09ZG6KnHmmo4S77OtGWWXw@mail.gmail.com>
+ <b41da576-55b2-4599-10e9-e8aeb0e9ad20@sericyb.com.au>
+ <CAJCQCtSWwypfm2xjtJ2vP8O4LT2bFOY=omHMMPe8_Jq6jG_3qA@mail.gmail.com>
+ <65cdf796-02f6-d20f-4b7f-b258d1685e2c@sericyb.com.au>
+ <CAJCQCtS3OKrM2_bEVVhTEnqtOrV4aN80bpkYa60QfB9dz97anQ@mail.gmail.com>
+ <17b75152-10c7-d44f-bf0d-38e7cfcd4eb0@cobb.uk.net>
+ <80853990-b894-e4c6-a4d3-9b47a1055211@sericyb.com.au>
+Autocrypt: addr=andrew@sericyb.com.au; prefer-encrypt=mutual; keydata=
+ mQGiBEPPxa8RBACcBTuSu02Fi+ZhvFj8wYJa8P2xF2djPveAkV5iuv/b1OTlzcdC7yJwNKq8
+ STgXoe2C9orhZ+3lO0iIwCkZpYj3purc1CojYE0bFh8EAW85usWox+Nrqsb6JYaoJk0ekyfM
+ gogjKGf7MUg4lDwfg1D6iiWJ0Dk6OZwARo9u97sqswCgwki1jozMbKx8LhkzbeNAonRxADED
+ /2HcSy+OsR2byqdX2BbaZppXZJEzclQNR7BiSwTPVoOX0jcHY0Sn8rdBUlagSEhv4YJ4Tdwd
+ QhPs3qcrFm2GQnStV19cLJ1DvO3TfLEikSetWotBv/6RanXRZRweRE4pm/zZMxX6+zcib+jb
+ +UlFg7MSyu+z50g0Bf4b5xH6AW/DBACAsgsJaaD1lDOdFMK7jnUiYXI0Y+LfHJ6xOukYUNqC
+ Yaxbw4Bk60DeP7hwUfVPMMxIJZdN+WsrtkijppJG6La9KqapYPu3ByapaLoIjtBOeTJfhcDN
+ mcAqZaxDhZ6eIMi+IOyS6/2MK76aLEpYY+0+M8mzUZ3LXi/blYVbS7urobQkQW5kcmV3IFBh
+ bSA8eGFubmlAZ2xhc3N3aW5ncy5jb20uYXU+iGEEExECACECGwMGCwkIBwMCAxUCAwMWAgEC
+ HgECF4AFAkPPySICGQEACgkQGk9LI6KtAU50ZwCeJfVJEMTSK71XD+WR8z9stEhPovYAniEn
+ wBEAHXMO4MlxJPMmnYJWG/rbuQINBEPPxbQQCADZy6E8nqM+1s3t1UaIKzGzF8PuA0R+/Zx3
+ 5Uh4jHHoJyFt/uuJxyJzOrq9Ilz+fWXOrXK44Ga3wOQ6yR9tIhrGNoQ97Y2S5RSufjNVstS1
+ otA0N3a6nUz44rAPwXfFhMKTlUjfUwuvQik3yEF1kyXEU7o78G/XG06M/9s1ur1k4hFvAfCE
+ y/fXztx86bC5vlDq2r1MAwE+fMJG/Ok21OekdY0D3KrZ1kOi4kYgRoVIGlgfJE3OXi6W8Lko
+ c/oO0UUtEoiKGGOBTewmU8N6G2F3OXiONnZIY+FD/NIe+3YAEWAIc5SoXQs4KCmNxaF6vxRQ
+ STBOX2A9Y+LfY4lx5+HzAAMFB/9g0VGTdvnQvogs/0b+FdfvPVflwhbW9VMF12kWwgx9q0Gw
+ xcWO8IJWlFQouam5u2QMVMKxsscphAPjWDYP8BVGWFx32/Z5XZnp2xOqjaFSG9BfbEqIUizL
+ 9AEClL04eBKGmVrhPzr2d0Z7DgF5gxehVYZ7m9dW7heFnuiC+ZaYEGRvfyWsWsOihoDkbify
+ Ms1RluUU23wKJFaZzafAX4caD9u3bIUaujKUGCh64nLkaxwmZD2QBw0T9jGCIssVCRHwQmTV
+ 25eADYmSEwf3ONk4ljzfupTOpCLtNapGc3vZO84CQSv9bl3l24uBvVRWaqLJMO0NzAn+qbes
+ U3w6WMBCiEkEGBECAAkFAkPPxbUCGwwACgkQGk9LI6KtAU59IACggRqLORG73pZUK1pRh02T
+ 5kUwjTQAn1F0m2Mx72juiYwF0IKljJ7lR0TR
+Organization: Serious Cybernetics
+Face:   iVBORw0KGgoAAAANSUhEUgAAADAAAAAwBAMAAAClLOS0AAAALVBMVEUrHhk8LSRTQTZuVkmC
+ UkaKalykaGZ3h7KmgG+ahH68lYWXn7mxmpTSqZ3CvLqleibHAAACZElEQVQ4y3XUPWvbQBgH8FOg
+ Qzef3EKnEp+qIaOlGJzFi+Xg0YMFcoeMod/AFDpksMpxeHCSZhAYUxoo8mF16NylLYXUCG2F1uSW
+ eCimJp+hz+nNctKesTH30/P87ySf0e1/Bsq/hZ4X/Qu+XxiEHNyH9blBsEoOorvwzSQVjAnRJtuw
+ Mkk6MknhnGBSIQRiiF6ElZzNxlEBzpIuEKMSrG1gbaQXQz7GaiOHVd5GSpISw42cg0vlJ6TFC0NJ
+ BOwuAaKZBmlkQGAKIwWrmrnv2K66l8KqUlFxCSFFo5T5jMchEpYyEqFS+bkQgge8qqVwI6ehoB4I
+ ORYdNYUvGCswr3ORwImSA4KXzpICIU7QJIHTkoIVnaUFQoxQIwVopTi8AEcJVHFJ2QGAxUK3qTfK
+ WlUhAYD6rsXEomt3snAAJMGtWW3xo+V0djKAxe4w7jf33rSDS3IxepjCLuyuzAJOx/RF4Pfo26cZ
+ QMVjyPUpo8HPY/Y5u7tVqHhEYUELzgN4v4tSOEWK8ozG2wAIxK/sCS5RmeiUSfCDhRAfMljjJ4NW
+ AvH9ivJnXn3wvhXvesGYCDYQjtAhAIRw65BynsMZLMqiVC7Jtdqc5z+4pYn0rsM453PP7s1nOawN
+ pTaQMPW45403cLvENWoDuA6bTZ0CfC3VqQ0Z/BgGnRQqUJ26stdrAD/aAh6X+F2rPS0cnBWAbycl
+ bFg8UbsAru3wQISzqAgf63xOu7YXhqG3dWr7tWHgD0yz53lbx/lP/+U4hNvRNMza1h/A737/U3h9
+ 1d1vNnt3oR9eh65tO8N78CoMr2CT4wz+AgHlxhkkWxq2AAAAAElFTkSuQmCC
+Message-ID: <4360c228-5a2d-08f2-0ebc-bcd05dd2dd7b@sericyb.com.au>
+Date:   Sun, 5 Jul 2020 00:51:08 +1000
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.8.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20200630135921.745612-1-josef@toxicpanda.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <80853990-b894-e4c6-a4d3-9b47a1055211@sericyb.com.au>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-AU
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Jun 30, 2020 at 09:58:58AM -0400, Josef Bacik wrote:
-> We've had two different things in place to reserve data and metadata space,
-> because generally speaking data is much simpler.  However the data reservations
-> still suffered from the same issues that plagued metadata reservations, you
-> could get multiple tasks racing in to get reservations.  This causes problems
-> with cases like write/delete loops where we should be able to fill up the fs,
-> delete everything, and go again.  You would sometimes race with a flusher that's
-> trying to unpin the free space, take it's reservations, and then it would fail.
-> 
-> Fix this by moving the data reservations under the metadata ticketing
-> infrastructure.  This gets rid of that problem, and simplifies our enospc code
-> more by consolidating it into a single path.  Thanks,
+On 15/5/20 12:37 pm, Andrew Pam wrote:
+> After the resume from suspend-to-RAM, no "btrfs" process is running
+> and the status still shows as "aborted". This suggests that the
+> "btrfs resume -B" fails when run from within the systemd post-resume
+> script.
 
-I created a for-next-20200703 snapshot with this branch included, and it
-went up to generic/102 and got stuck due to softlockups. This could mean
-the machine is overloaded but it usually recovers from that, while not
-in this case as it took more than 7 hours before I killed the VM.
+Here's what I ultimately ended up with:
 
-There is the dio-iomap so the patchsets could interact in some way, I'll
-do more tests next week, this is an early warning that something might
-be going on.
+http://www.sericyb.com.au/HOWTO-btrfs-scrub-suspend.html
 
-generic/102             [02:56:08][11376.253779] run fstests generic/102 at 2020-07-03 02:56:08
-[11376.582218] BTRFS info (device vda): disk space caching is enabled
-[11376.585713] BTRFS info (device vda): has skinny extents
-[11376.692139] BTRFS: device fsid 55b09ca8-60e8-4488-8fa0-3ff05c3e6906 devid 1 transid 5 /dev/vdb scanned by mkfs.btrfs (5196)
-[11376.717361] BTRFS info (device vdb): disk space caching is enabled
-[11376.720437] BTRFS info (device vdb): has skinny extents
-[11376.722974] BTRFS info (device vdb): flagging fs with big metadata feature
-[11376.731535] BTRFS info (device vdb): checking UUID tree
-[11436.612816] watchdog: BUG: soft lockup - CPU#1 stuck for 23s! [kworker/u8:17:8005]
-[11436.615341] Modules linked in: dm_snapshot dm_thin_pool dm_persistent_data dm_bio_prison dm_bufio dm_log_writes dm_flakey dm_mod dax btrfs blake2b_generic libcrc32c crc32c_intel xor zstd_decompress zstd_compres
-[11436.621957] irq event stamp: 0
-[11436.623062] hardirqs last  enabled at (0): [<0000000000000000>] 0x0
-[11436.624882] hardirqs last disabled at (0): [<ffffffff9a07fd9b>] copy_process+0x67b/0x1b00
-[11436.627545] softirqs last  enabled at (0): [<ffffffff9a07fd9b>] copy_process+0x67b/0x1b00
-[11436.630161] softirqs last disabled at (0): [<0000000000000000>] 0x0
-[11436.631919] CPU: 1 PID: 8005 Comm: kworker/u8:17 Tainted: G             L    5.8.0-rc3-default+ #1173
-[11436.634311] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.12.0-59-gc9ba527-rebuilt.opensuse.org 04/01/2014
-[11436.637193] Workqueue: events_unbound btrfs_async_reclaim_data_space [btrfs]
-[11436.638878] RIP: 0010:__slab_alloc+0x5c/0x70
-[11436.644622] RSP: 0018:ffffbc1dc60f7cd0 EFLAGS: 00000246
-[11436.645961] RAX: 0000000000000000 RBX: 0000000000000246 RCX: 0000000000120001
-[11436.647989] RDX: ffffa2a70b349cc0 RSI: ffffffff9a262774 RDI: ffffffff9a2639ba
-[11436.649924] RBP: 0000000000000d40 R08: ffffa2a76d1cf138 R09: 0000000000000001
-[11436.652014] R10: 0000000000000000 R11: ffffa2a76d1cec10 R12: ffffa2a76d1cf138
-[11436.654134] R13: 00000000ffffffff R14: ffffffffc0149633 R15: ffffdc1dbf802b50
-[11436.656186] FS:  0000000000000000(0000) GS:ffffa2a77d800000(0000) knlGS:0000000000000000
-[11436.658920] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-[11436.660679] CR2: 00005641be0178b8 CR3: 0000000041011002 CR4: 0000000000160ee0
-[11436.662693] Call Trace:
-[11436.663642]  ? start_transaction+0x133/0x5e0 [btrfs]
-[11436.664991]  kmem_cache_alloc+0x1a2/0x2f0
-[11436.666248]  start_transaction+0x133/0x5e0 [btrfs]
-[11436.667733]  flush_space+0x315/0x670 [btrfs]
-[11436.669116]  btrfs_async_reclaim_data_space+0xd8/0x1a0 [btrfs]
-[11436.670853]  process_one_work+0x22c/0x600
-[11436.672182]  worker_thread+0x50/0x3b0
-[11436.673436]  ? process_one_work+0x600/0x600
-[11436.674675]  kthread+0x137/0x150
-[11436.675795]  ? kthread_stop+0x2a0/0x2a0
-[11436.677099]  ret_from_fork+0x1f/0x30
+Hope that helps,
+		Andrew

@@ -6,22 +6,22 @@ X-Spam-Status: No, score=-8.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	USER_AGENT_SANE_1 autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5AB6AC433E1
-	for <linux-btrfs@archiver.kernel.org>; Sun,  5 Jul 2020 14:48:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D2DD6C433E1
+	for <linux-btrfs@archiver.kernel.org>; Sun,  5 Jul 2020 14:48:40 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 403E020739
-	for <linux-btrfs@archiver.kernel.org>; Sun,  5 Jul 2020 14:48:24 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BBDBA20739
+	for <linux-btrfs@archiver.kernel.org>; Sun,  5 Jul 2020 14:48:40 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726942AbgGEOsV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 5 Jul 2020 10:48:21 -0400
-Received: from mx2.suse.de ([195.135.220.15]:54460 "EHLO mx2.suse.de"
+        id S1727115AbgGEOsh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 5 Jul 2020 10:48:37 -0400
+Received: from mx2.suse.de ([195.135.220.15]:54554 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726826AbgGEOsV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 5 Jul 2020 10:48:21 -0400
+        id S1726826AbgGEOsh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 5 Jul 2020 10:48:37 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 283E7AB7D;
-        Sun,  5 Jul 2020 14:48:19 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 90A5FAB7D;
+        Sun,  5 Jul 2020 14:48:35 +0000 (UTC)
 Subject: Re: [PATCH] btfrs: initialize return of btrfs_extent_same
 To:     trix@redhat.com, clm@fb.com, josef@toxicpanda.com, dsterba@suse.com
 Cc:     linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
@@ -69,8 +69,8 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <885129e4-d6d6-57d3-21d3-a83bd98c3994@suse.com>
-Date:   Sun, 5 Jul 2020 17:48:17 +0300
+Message-ID: <6b1d0837-e898-c5b2-c212-4ce1f2d41cdb@suse.com>
+Date:   Sun, 5 Jul 2020 17:48:34 +0300
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
  Thunderbird/68.8.0
 MIME-Version: 1.0
@@ -100,29 +100,9 @@ On 5.07.20 г. 17:20 ч., trix@redhat.com wrote:
 > 
 > Signed-off-by: Tom Rix <trix@redhat.com>
 
-Patch itself is good however, the bug cannot currently be triggered, due
-to the following code in the sole caller (btrfs_remap_file_range):
+And I forgot:
 
-
-
-   15         if (ret < 0 || len == 0)
-
-   14                 goto out_unlock;
-
-   13
-
-   12         if (remap_flags & REMAP_FILE_DEDUP)
-
-   11                 ret = btrfs_extent_same(src_inode, off, len,
-dst_inode, destoff);
-   10         else
-
-    9                 ret = btrfs_clone_files(dst_file, src_file, off,
-len, destoff);
-
-
-
-i.e len is guaranteed to be non-zero
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
 > ---
 >  fs/btrfs/reflink.c | 2 +-

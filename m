@@ -2,119 +2,132 @@ Return-Path: <SRS0=Izu+=AR=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-5.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
+	SPF_HELO_NONE,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EFED7C433E0
-	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Jul 2020 15:21:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 99CAAC433E1
+	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Jul 2020 17:10:31 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id B3AE6206CD
-	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Jul 2020 15:21:54 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 75B2C205CB
+	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Jul 2020 17:10:31 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=mpdesouza.com header.i=@mpdesouza.com header.b="FH9z66vM"
+	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="Z6oIRUIz"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729293AbgGFPVx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 6 Jul 2020 11:21:53 -0400
-Received: from gateway30.websitewelcome.com ([192.185.168.15]:20005 "EHLO
-        gateway30.websitewelcome.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1729197AbgGFPVx (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 6 Jul 2020 11:21:53 -0400
-X-Greylist: delayed 1307 seconds by postgrey-1.27 at vger.kernel.org; Mon, 06 Jul 2020 11:21:53 EDT
-Received: from cm16.websitewelcome.com (cm16.websitewelcome.com [100.42.49.19])
-        by gateway30.websitewelcome.com (Postfix) with ESMTP id 831CE1623B
-        for <linux-btrfs@vger.kernel.org>; Mon,  6 Jul 2020 09:59:57 -0500 (CDT)
-Received: from br540.hostgator.com.br ([108.179.252.180])
-        by cmsmtp with SMTP
-        id sSb6jAtyPQyTQsSb6jBnfz; Mon, 06 Jul 2020 09:59:57 -0500
-X-Authority-Reason: nr=8
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=mpdesouza.com; s=default; h=Content-Transfer-Encoding:MIME-Version:
-        Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:Content-Type:Content-ID:
-        Content-Description:Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc
-        :Resent-Message-ID:In-Reply-To:References:List-Id:List-Help:List-Unsubscribe:
-        List-Subscribe:List-Post:List-Owner:List-Archive;
-        bh=NTTQwd3YU5No2P/Mhy7cy/iX08Ngw8EzoUPzxyYK7yg=; b=FH9z66vMCfglWdtoFYpc2Lh8ZJ
-        UiZO41oQp5dgSsZsNN/rgi8IRrwskgeXV7FRWt5n3/c6vZHyB+k+OwYrrm6H7tOj7LoBV4uTdB2s+
-        7OGSRCWfgBTL7cYvqsTlW+AvuAlgP/U6hLE9ck/hs5ovy9klg1pannbdImE/WfczusTPXaArjjuda
-        kJ2q7Zw7gYl+tLzdt8sgKUloXPLPQS2hV3n/P+M211UOiYMfLUqe5TIO8+W5cWHyufbHb5Yl8hr7U
-        jDkV/rb8isLb6pd/zbYL0Y70E8o58Xh8BJYZIosPLu08n3gpvpI/Wl2NMDi1oo4Dk405nJscjaFEn
-        c5WXc/BQ==;
-Received: from 189.26.189.59.dynamic.adsl.gvt.net.br ([189.26.189.59]:46096 helo=hephaestus.suse.de)
-        by br540.hostgator.com.br with esmtpsa  (TLS1.2) tls TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
-        (Exim 4.93)
-        (envelope-from <marcos@mpdesouza.com>)
-        id 1jsSb5-003CkR-HZ; Mon, 06 Jul 2020 11:59:55 -0300
-From:   Marcos Paulo de Souza <marcos@mpdesouza.com>
-To:     dsterba@suse.com, linux-btrfs@vger.kernel.org
-Cc:     Marcos Paulo de Souza <mpdesouza@suse.com>
-Subject: [PATCH] btrfs: ctree: Add do {} while (0) in btrfs_{set|clear}_and_info
-Date:   Mon,  6 Jul 2020 11:59:36 -0300
-Message-Id: <20200706145936.13620-1-marcos@mpdesouza.com>
-X-Mailer: git-send-email 2.26.2
+        id S1729579AbgGFRKa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 6 Jul 2020 13:10:30 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52712 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1729386AbgGFRKa (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Jul 2020 13:10:30 -0400
+Received: from mail-pf1-x443.google.com (mail-pf1-x443.google.com [IPv6:2607:f8b0:4864:20::443])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6834CC061755
+        for <linux-btrfs@vger.kernel.org>; Mon,  6 Jul 2020 10:10:30 -0700 (PDT)
+Received: by mail-pf1-x443.google.com with SMTP id a14so12645170pfi.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 06 Jul 2020 10:10:30 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=osandov-com.20150623.gappssmtp.com; s=20150623;
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:content-transfer-encoding:in-reply-to;
+        bh=JrfaYyazSb7kWxVYSMV2VYHC+l6Y2+vcmWB3sVhZagA=;
+        b=Z6oIRUIzkjqQOsnw1gu5k+643AGkAtgaZBTk9VuFKBhhHCSLr2EkzXgNFnaAGmBQ0w
+         a/CUi270UPtNhV5a8/gO4NVHrT3E7MrqacUe+r6l2al7RDn4npSfsZHEfjREn6LAcVfk
+         Hfr/rkw++fMYvkW8nnL/JD5/fKopsIp4pbrYgZ69ouvtqM7pZ4b31xmySVKkTbTKOjnq
+         AWbDsBBV1SS5bfKyVPVSM6qfOKzdG7i2ro1zpNZV7gG36F4UXAoYwOSIouZ+iRWH4MnI
+         lRv94Th4NTDzDi1DVqGGGtNyOUUM6wSsvOGt+zG6TvcqjO7NoP80Iq89Fo+/Qrqwuwlt
+         4wGA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:content-transfer-encoding
+         :in-reply-to;
+        bh=JrfaYyazSb7kWxVYSMV2VYHC+l6Y2+vcmWB3sVhZagA=;
+        b=aUDnp0ZSzxKo0zeRAUh3FyVOjA0Sj7bxUi3XKZzsA7bya02pNjZZ0+mqg7XuchOywl
+         rW4K1YuU8REa5K8nOtxjMwVVU9a85O4Dyjg/IF4WKvdyNooHOqMNMbW+m0KmWMhAFAKa
+         bV1cEUT+gAjvkBlHlmnZi1JCB5lim6FUXeUACQ5KgWSiT4nnIuykXTOihLwJW3GHj48V
+         DlCFDnrtBE5y0S04ZzJttsSQwUeSkBMveARS+tc+2OSX6mGX1AB3DGYco8UhNUvYq7j5
+         CB+aZlvIRG2xhMsdoqeuGbvBTu8jwhbbkvJXrxkWq4zwl1nC7ncuAyjRcLw6iLyx2ApY
+         Lajw==
+X-Gm-Message-State: AOAM531Ix+GH7a7AFVl3qr0E8sQyFNxkvvVgp9hW9R0ZQnwERa2npU+Z
+        Jv6QhLj25ADUqk3QtE8H9sFz+FZkBNI=
+X-Google-Smtp-Source: ABdhPJxJB002gzSoVMwUCFF3YgsDphKSu7WbZWcRKHgbOk3FLFybvgwRKZouRRyS3LYEwH9jaSF7gA==
+X-Received: by 2002:a63:c60f:: with SMTP id w15mr22121255pgg.113.1594055429835;
+        Mon, 06 Jul 2020 10:10:29 -0700 (PDT)
+Received: from vader ([2601:602:8b80:8e0::6fa7])
+        by smtp.gmail.com with ESMTPSA id 198sm20871797pfb.27.2020.07.06.10.10.28
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 06 Jul 2020 10:10:28 -0700 (PDT)
+Date:   Mon, 6 Jul 2020 10:10:28 -0700
+From:   Omar Sandoval <osandov@osandov.com>
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     "Rebraca Dejan (BSOT/PJ-ES1-Bg)" <Dejan.Rebraca@rs.bosch.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: FIEMAP ioctl gets "wrong" address for the extent
+Message-ID: <20200706171028.GA16070@vader>
+References: <cfd1d2842b4840b99539f00c34dc5701@rs.bosch.com>
+ <1d41a247-a4f7-124a-4842-f7d886e9aa70@gmx.com>
+ <c3b2c46ca5314285a79536cb3c233e1b@rs.bosch.com>
+ <a18bcf27-4c65-6033-0ea7-45da2b521864@gmx.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
-X-AntiAbuse: This header was added to track abuse, please include it with any abuse report
-X-AntiAbuse: Primary Hostname - br540.hostgator.com.br
-X-AntiAbuse: Original Domain - vger.kernel.org
-X-AntiAbuse: Originator/Caller UID/GID - [47 12] / [47 12]
-X-AntiAbuse: Sender Address Domain - mpdesouza.com
-X-BWhitelist: no
-X-Source-IP: 189.26.189.59
-X-Source-L: No
-X-Exim-ID: 1jsSb5-003CkR-HZ
-X-Source: 
-X-Source-Args: 
-X-Source-Dir: 
-X-Source-Sender: 189.26.189.59.dynamic.adsl.gvt.net.br (hephaestus.suse.de) [189.26.189.59]:46096
-X-Source-Auth: marcos@mpdesouza.com
-X-Email-Count: 2
-X-Source-Cap: bXBkZXNvNTM7bXBkZXNvNTM7YnI1NDAuaG9zdGdhdG9yLmNvbS5icg==
-X-Local-Domain: yes
+In-Reply-To: <a18bcf27-4c65-6033-0ea7-45da2b521864@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Marcos Paulo de Souza <mpdesouza@suse.com>
+On Thu, Jul 02, 2020 at 07:21:42PM +0800, Qu Wenruo wrote:
+> 
+> 
+> On 2020/7/2 下午7:08, Rebraca Dejan (BSOT/PJ-ES1-Bg) wrote:
+> > Hi Qu,
+> > 
+> > I'm using this structure to get the address of file extent:
+> > 
+> > struct fiemap_extent {
+> > 	__u64	fe_logical;  /* logical offset in bytes for the start of
+> > 			      * the extent */
+> > 	__u64	fe_physical; /* physical offset in bytes for the start
+> > 			      * of the extent */
+> 
+> fe_physical in btrfs is btrfs logical address.
+> 
+> > 	__u64	fe_length;   /* length in bytes for the extent */
+> > 	__u64	fe_reserved64[2];
+> > 	__u32	fe_flags;    /* FIEMAP_EXTENT_* flags for this extent */
+> > 	__u32	fe_reserved[3];
+> > };
+> > 
+> > And using fe_physical field I verified that it really reflects the offset in filesystem image - I can see that file content begins at this offset.
+> > The problem is that I run into some specific case where file content doesn't begin at fe_physical, I rather have something else at this offset.
+> 
+> As said, there is no guarantee that btrfs logical address is mapped 1:1
+> on disk.
+> It's possible, but never guaranteed.
+> 
+> You need to pass that fe_physical number to btrfs-map-logical to find
+> the real on-disk offset.
+> 
+> Thanks,
+> Qu
 
-Without this change it's not possible to use these macros and having an
-if-else construction without using braces.
+FYI, I have a utility that does this mapping for all extents in a file:
+https://github.com/osandov/osandov-linux/blob/master/scripts/btrfs_map_physical.c
 
-Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
----
- fs/btrfs/ctree.h | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
-
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index a256961c0dbe..cef0489a1523 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1278,18 +1278,18 @@ static inline u32 BTRFS_MAX_XATTR_SIZE(const struct btrfs_fs_info *info)
- 					 BTRFS_MOUNT_##opt)
- 
- #define btrfs_set_and_info(fs_info, opt, fmt, args...)			\
--{									\
-+do {									\
- 	if (!btrfs_test_opt(fs_info, opt))				\
- 		btrfs_info(fs_info, fmt, ##args);			\
- 	btrfs_set_opt(fs_info->mount_opt, opt);				\
--}
-+} while (0)
- 
- #define btrfs_clear_and_info(fs_info, opt, fmt, args...)		\
--{									\
-+do {									\
- 	if (btrfs_test_opt(fs_info, opt))				\
- 		btrfs_info(fs_info, fmt, ##args);			\
- 	btrfs_clear_opt(fs_info->mount_opt, opt);			\
--}
-+} while (0)
- 
- /*
-  * Requests for changes that need to be done during transaction commit.
--- 
-2.26.2
-
+$ sudo ./btrfs_map_physical archlinux-2020.07.01-x86_64.iso | column -ts $'\t'        
+FILE OFFSET  FILE SIZE  EXTENT OFFSET  EXTENT TYPE  LOGICAL SIZE  LOGICAL OFFSET  PHYSICAL SIZE  DEVID  PHYSICAL OFFSET
+0            6811648    0              regular      6815744       304680529920    6815744        1      89898610688
+6811648      4096       0              regular      4096          304594616320    4096           1      89812697088
+6815744      70250496   0              regular      70254592      419517255680    70254592       1      168228114432
+77066240     4096       0              regular      4096          419587510272    4096           1      168298369024
+77070336     127647744  0              regular      127647744     443648155648    127647744      1      209538883584
+204718080    552960     0              regular      557056        304605401088    557056         1      89823481856
+205271040    134217728  0              regular      134217728     491017764864    134217728      1      238654881792
+339488768    43814912   0              regular      43814912      419587514368    43814912       1      168298373120
+383303680    241664     0              regular      245760        304605958144    245760         1      89824038912
+383545344    4096       0              regular      4096          304594620416    4096           1      89812701184
+383549440    134217728  0              regular      134217728     517290700800    134217728      1      255264141312
+517767168    78376960   0              regular      78381056      451287601152    78381056       1      213957103616
+596144128    82284544   0              regular      82284544      517424918528    82284544       1      255398359040

@@ -7,193 +7,114 @@ X-Spam-Status: No, score=-9.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 827FEC433DF
-	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Jul 2020 15:09:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EFED7C433E0
+	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Jul 2020 15:21:54 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 62B6420715
-	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Jul 2020 15:09:31 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B3AE6206CD
+	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Jul 2020 15:21:54 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="JnFLUbg9"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=mpdesouza.com header.i=@mpdesouza.com header.b="FH9z66vM"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729293AbgGFPJa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 6 Jul 2020 11:09:30 -0400
-Received: from esa6.hgst.iphmx.com ([216.71.154.45]:48384 "EHLO
-        esa6.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729235AbgGFPJa (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Jul 2020 11:09:30 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1594048170; x=1625584170;
-  h=from:to:cc:subject:date:message-id:mime-version:
-   content-transfer-encoding;
-  bh=2pNpRzFkcVF1COKX8mt6dXf/Ifz9X8ic6aabtkv6JxI=;
-  b=JnFLUbg9yFXekeNF78saGw3Gh+6IHgaZhl5SYDy5eYDXu9bO+JbmVAvn
-   PsLmxqHqQpPO7wuTtBdhw75u073r5QTfEZd8A3EPrHD+rr03LAtBQZDg6
-   0xvUM2nIe58VetMifNzxEuv+IlorqoTBoEpdbNQyS5fWIO9J6tcHZeLQN
-   gWyGNS2fxzWcHxwD3yYzGAwG+801P3ENe3IL3I+mh4T8mfoh9cZiky/+1
-   zyZYC7ayZ10JfTbrzFhv+QQt+WvWs2c5ShnydVRmHO0jHjL28eelzYzU2
-   SrPJkuI+yTvbpeFOJuFOgXqladvlSsNb2z9DS31FDz20d/C8wjIJ7jmML
-   g==;
-IronPort-SDR: 7m82vEiGQtl/i99NGjikCSQeInhW7Yx9N3e6zxSdAC5Ny8FLrnzOt0DF+Z+HOJIWVFHQsRzj4E
- Gbe8NWq1x0bBew7eBkMVitZHJy8nlrRWO0k9oR4fWsayvctl9Xqt0sRzduwN81K4kG9BFSRqi8
- zi79aeJ6l61ooKylVx+KvNkPchE+10RSkOuP1DCp/reaqK4QyBFEelGpaVf5Nr+QIG0J3WPNUr
- vF5OU2gWMlE79UwtleSTD80uj8Ok0/HUeyFWf/HveQg2SY9Q3dWMzaOELRlwpCg0lHYohC/ioO
- raI=
-X-IronPort-AV: E=Sophos;i="5.75,320,1589212800"; 
-   d="scan'208";a="143073969"
-Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 06 Jul 2020 23:09:29 +0800
-IronPort-SDR: OBWpHrNoM9jxieK9xylTz7PXSVhI4MriSLKCdM8bacdqYA+Ysxsp60VsOjYoOkOkQoopMF4FVN
- nqrZm94oFzzOKf+eYbkDs6GOTJ10MoDcw=
-Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 06 Jul 2020 07:58:10 -0700
-IronPort-SDR: gn7E3jS01VcDrRfv8aZOrhn7DaLY8J4Q3UxBYyqPhYePp9lt/AjuZL2JBmTt8dhixNZ/btFa75
- LxKmPYxWp4xw==
-WDCIronportException: Internal
-Received: from unknown (HELO redsun60.ssa.fujisawa.hgst.com) ([10.149.66.36])
-  by uls-op-cesaip01.wdc.com with ESMTP; 06 Jul 2020 08:09:28 -0700
-From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
-To:     David Sterba <dsterba@suse.cz>
-Cc:     linux-btrfs@vger.kernel.org,
-        Hans van Kranenburg <hans@knorrie.org>,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-        stable@vger.kernel.org
-Subject: [PATCH v5] btrfs: pass checksum type via BTRFS_IOC_FS_INFO ioctl
-Date:   Tue,  7 Jul 2020 00:09:24 +0900
-Message-Id: <20200706150924.40218-1-johannes.thumshirn@wdc.com>
+        id S1729293AbgGFPVx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 6 Jul 2020 11:21:53 -0400
+Received: from gateway30.websitewelcome.com ([192.185.168.15]:20005 "EHLO
+        gateway30.websitewelcome.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1729197AbgGFPVx (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 6 Jul 2020 11:21:53 -0400
+X-Greylist: delayed 1307 seconds by postgrey-1.27 at vger.kernel.org; Mon, 06 Jul 2020 11:21:53 EDT
+Received: from cm16.websitewelcome.com (cm16.websitewelcome.com [100.42.49.19])
+        by gateway30.websitewelcome.com (Postfix) with ESMTP id 831CE1623B
+        for <linux-btrfs@vger.kernel.org>; Mon,  6 Jul 2020 09:59:57 -0500 (CDT)
+Received: from br540.hostgator.com.br ([108.179.252.180])
+        by cmsmtp with SMTP
+        id sSb6jAtyPQyTQsSb6jBnfz; Mon, 06 Jul 2020 09:59:57 -0500
+X-Authority-Reason: nr=8
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=mpdesouza.com; s=default; h=Content-Transfer-Encoding:MIME-Version:
+        Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:Content-Type:Content-ID:
+        Content-Description:Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc
+        :Resent-Message-ID:In-Reply-To:References:List-Id:List-Help:List-Unsubscribe:
+        List-Subscribe:List-Post:List-Owner:List-Archive;
+        bh=NTTQwd3YU5No2P/Mhy7cy/iX08Ngw8EzoUPzxyYK7yg=; b=FH9z66vMCfglWdtoFYpc2Lh8ZJ
+        UiZO41oQp5dgSsZsNN/rgi8IRrwskgeXV7FRWt5n3/c6vZHyB+k+OwYrrm6H7tOj7LoBV4uTdB2s+
+        7OGSRCWfgBTL7cYvqsTlW+AvuAlgP/U6hLE9ck/hs5ovy9klg1pannbdImE/WfczusTPXaArjjuda
+        kJ2q7Zw7gYl+tLzdt8sgKUloXPLPQS2hV3n/P+M211UOiYMfLUqe5TIO8+W5cWHyufbHb5Yl8hr7U
+        jDkV/rb8isLb6pd/zbYL0Y70E8o58Xh8BJYZIosPLu08n3gpvpI/Wl2NMDi1oo4Dk405nJscjaFEn
+        c5WXc/BQ==;
+Received: from 189.26.189.59.dynamic.adsl.gvt.net.br ([189.26.189.59]:46096 helo=hephaestus.suse.de)
+        by br540.hostgator.com.br with esmtpsa  (TLS1.2) tls TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+        (Exim 4.93)
+        (envelope-from <marcos@mpdesouza.com>)
+        id 1jsSb5-003CkR-HZ; Mon, 06 Jul 2020 11:59:55 -0300
+From:   Marcos Paulo de Souza <marcos@mpdesouza.com>
+To:     dsterba@suse.com, linux-btrfs@vger.kernel.org
+Cc:     Marcos Paulo de Souza <mpdesouza@suse.com>
+Subject: [PATCH] btrfs: ctree: Add do {} while (0) in btrfs_{set|clear}_and_info
+Date:   Mon,  6 Jul 2020 11:59:36 -0300
+Message-Id: <20200706145936.13620-1-marcos@mpdesouza.com>
 X-Mailer: git-send-email 2.26.2
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
+X-AntiAbuse: This header was added to track abuse, please include it with any abuse report
+X-AntiAbuse: Primary Hostname - br540.hostgator.com.br
+X-AntiAbuse: Original Domain - vger.kernel.org
+X-AntiAbuse: Originator/Caller UID/GID - [47 12] / [47 12]
+X-AntiAbuse: Sender Address Domain - mpdesouza.com
+X-BWhitelist: no
+X-Source-IP: 189.26.189.59
+X-Source-L: No
+X-Exim-ID: 1jsSb5-003CkR-HZ
+X-Source: 
+X-Source-Args: 
+X-Source-Dir: 
+X-Source-Sender: 189.26.189.59.dynamic.adsl.gvt.net.br (hephaestus.suse.de) [189.26.189.59]:46096
+X-Source-Auth: marcos@mpdesouza.com
+X-Email-Count: 2
+X-Source-Cap: bXBkZXNvNTM7bXBkZXNvNTM7YnI1NDAuaG9zdGdhdG9yLmNvbS5icg==
+X-Local-Domain: yes
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-With the recent addition of filesystem checksum types other than CRC32c,
-it is not anymore hard-coded which checksum type a btrfs filesystem uses.
+From: Marcos Paulo de Souza <mpdesouza@suse.com>
 
-Up to now there is no good way to read the filesystem checksum, apart from
-reading the filesystem UUID and then query sysfs for the checksum type.
+Without this change it's not possible to use these macros and having an
+if-else construction without using braces.
 
-Add a new csum_type and csum_size fields to the BTRFS_IOC_FS_INFO ioctl
-command which usually is used to query filesystem features. Also add a
-flags member indicating that the kernel responded with a set csum_type and
-csum_size field.
-
-For compatibility reasons, only return the csum_type and csum_size if the
-BTRFS_FS_INFO_FLAG_CSUM_TYPE_SIZE flag was passed to the kernel. Also
-clear any unknown flags so we don't pass false positives to user-space
-newer than the kernel.
-
-To simplify further additions to the ioctl, also switch the padding to a
-u8 array. Pahole was used to verify the result of this switch:
-
-pahole -C btrfs_ioctl_fs_info_args fs/btrfs/btrfs.ko
-struct btrfs_ioctl_fs_info_args {
-        __u64                      max_id;               /*     0     8 */
-        __u64                      num_devices;          /*     8     8 */
-        __u8                       fsid[16];             /*    16    16 */
-        __u32                      nodesize;             /*    32     4 */
-        __u32                      sectorsize;           /*    36     4 */
-        __u32                      clone_alignment;      /*    40     4 */
-        __u32                      flags;                /*    44     4 */
-        __u16                      csum_type;            /*    48     2 */
-        __u16                      csum_size;            /*    50     2 */
-        __u8                       reserved[972];        /*    52   972 */
-
-        /* size: 1024, cachelines: 16, members: 10 */
-};
-
-Fixes: 3951e7f050ac ("btrfs: add xxhash64 to checksumming algorithms")
-Fixes: 3831bf0094ab ("btrfs: add sha256 to checksumming algorithm")
-CC: stable@vger.kernel.org # 5.5+
-Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
 ---
-Changes to v4:
-* zero all data passed in from user-space
-  (I've chosen this variant as I think it is the most complete)
+ fs/btrfs/ctree.h | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-Changes to v3:
-* make flags in/out (David)
-* make csum return opt-in (Hans)
-
-Changes to v2:
-* add additional csum_size (David)
-* rename flag value to BTRFS_FS_INFO_FLAG_CSUM_TYPE_SIZE to reflect
-  additional size
-
-Changes to v1:
-* add 'out' comment to be consistent (Hans)
-* remove le16_to_cpu() (kbuild robot)
-* switch padding to be all u8 (David)
----
- fs/btrfs/ioctl.c           | 16 +++++++++++++---
- include/uapi/linux/btrfs.h | 14 ++++++++++++--
- 2 files changed, 25 insertions(+), 5 deletions(-)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index ab34179d7cbc..df8a6ba91055 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -3217,11 +3217,15 @@ static long btrfs_ioctl_fs_info(struct btrfs_fs_info *fs_info,
- 	struct btrfs_ioctl_fs_info_args *fi_args;
- 	struct btrfs_device *device;
- 	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
-+	u32 inflags;
- 	int ret = 0;
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index a256961c0dbe..cef0489a1523 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1278,18 +1278,18 @@ static inline u32 BTRFS_MAX_XATTR_SIZE(const struct btrfs_fs_info *info)
+ 					 BTRFS_MOUNT_##opt)
  
--	fi_args = kzalloc(sizeof(*fi_args), GFP_KERNEL);
--	if (!fi_args)
--		return -ENOMEM;
-+	fi_args = memdup_user(arg, sizeof(*fi_args));
-+	if (IS_ERR(fi_args))
-+		return PTR_ERR(fi_args);
-+
-+	inflags = fi_args->flags;
-+	memset(fi_args, 0, sizeof(*fi_args));
+ #define btrfs_set_and_info(fs_info, opt, fmt, args...)			\
+-{									\
++do {									\
+ 	if (!btrfs_test_opt(fs_info, opt))				\
+ 		btrfs_info(fs_info, fmt, ##args);			\
+ 	btrfs_set_opt(fs_info->mount_opt, opt);				\
+-}
++} while (0)
  
- 	rcu_read_lock();
- 	fi_args->num_devices = fs_devices->num_devices;
-@@ -3237,6 +3241,12 @@ static long btrfs_ioctl_fs_info(struct btrfs_fs_info *fs_info,
- 	fi_args->sectorsize = fs_info->sectorsize;
- 	fi_args->clone_alignment = fs_info->sectorsize;
+ #define btrfs_clear_and_info(fs_info, opt, fmt, args...)		\
+-{									\
++do {									\
+ 	if (btrfs_test_opt(fs_info, opt))				\
+ 		btrfs_info(fs_info, fmt, ##args);			\
+ 	btrfs_clear_opt(fs_info->mount_opt, opt);			\
+-}
++} while (0)
  
-+	if (inflags & BTRFS_FS_INFO_FLAG_CSUM_TYPE_SIZE) {
-+		fi_args->csum_type = btrfs_super_csum_type(fs_info->super_copy);
-+		fi_args->csum_size = btrfs_super_csum_size(fs_info->super_copy);
-+		fi_args->flags |= BTRFS_FS_INFO_FLAG_CSUM_TYPE_SIZE;
-+	}
-+
- 	if (copy_to_user(arg, fi_args, sizeof(*fi_args)))
- 		ret = -EFAULT;
- 
-diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index e6b6cb0f8bc6..c130eaea416e 100644
---- a/include/uapi/linux/btrfs.h
-+++ b/include/uapi/linux/btrfs.h
-@@ -250,10 +250,20 @@ struct btrfs_ioctl_fs_info_args {
- 	__u32 nodesize;				/* out */
- 	__u32 sectorsize;			/* out */
- 	__u32 clone_alignment;			/* out */
--	__u32 reserved32;
--	__u64 reserved[122];			/* pad to 1k */
-+	__u32 flags;				/* in/out */
-+	__u16 csum_type;			/* out */
-+	__u16 csum_size;			/* out */
-+	__u8 reserved[972];			/* pad to 1k */
- };
- 
-+/*
-+ * fs_info ioctl flags
-+ *
-+ * Used by:
-+ * struct btrfs_ioctl_fs_info_args
-+ */
-+#define BTRFS_FS_INFO_FLAG_CSUM_TYPE_SIZE		(1 << 0)
-+
  /*
-  * feature flags
-  *
+  * Requests for changes that need to be done during transaction commit.
 -- 
 2.26.2
 

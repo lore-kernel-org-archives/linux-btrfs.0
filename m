@@ -3,111 +3,97 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E65B9C433DF
-	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Jul 2020 10:07:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AD00FC433E0
+	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Jul 2020 10:46:45 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id AD65420739
-	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Jul 2020 10:07:16 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 86CB52074D
+	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Jul 2020 10:46:45 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b="HTfqfw2g"
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="YHeBjrj6"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728609AbgGFKHO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 6 Jul 2020 06:07:14 -0400
-Received: from mail.synology.com ([211.23.38.101]:45938 "EHLO synology.com"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728264AbgGFKHO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 6 Jul 2020 06:07:14 -0400
-Subject: Re: [PATCH] btrfs: speedup mount time with force readahead chunk tree
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=synology.com; s=123;
-        t=1594030032; bh=Swn5q4leTSSMBbi6dgHqpx+++L8AGuHVAJ5GOZwdh4o=;
-        h=Subject:To:References:From:Date:In-Reply-To;
-        b=HTfqfw2gfIozHdFFq+fVD4ED0P4++fg3AoZY+RAkNdE1M+yTMnVIxCO/RKE2rMaB9
-         stiEVoPjN/8bSuG1kxAgArAkPTF6M6AI1yS1886HwB+czL2+oo7WkxrlOyvT/C6xAT
-         yfXvHVNu97uAHKjqV4ku6RGoJrLG0eiZsuEjD0o8=
-To:     Nikolay Borisov <nborisov@suse.com>,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        linux-btrfs@vger.kernel.org, dsterba@suse.cz
-References: <20200701092957.20870-1-robbieko@synology.com>
- <aeb651c8-0739-100b-90ad-9f36ecdc26e6@synology.com>
- <7da55a96-131c-b987-edfb-97375a940cd2@gmx.com>
- <375407fc-3c3c-6628-3e80-a5300a897e4e@synology.com>
- <497f7ba0-4efb-b1a2-79a1-62ed2621c743@gmx.com>
- <d46206f1-0f6e-1f28-347b-6feb46657e26@suse.com>
-From:   Robbie Ko <robbieko@synology.com>
-Message-ID: <49129199-a7a5-007b-f639-62adbe800148@synology.com>
-Date:   Mon, 6 Jul 2020 18:07:12 +0800
+        id S1728529AbgGFKqp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 6 Jul 2020 06:46:45 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49438 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728521AbgGFKqo (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Jul 2020 06:46:44 -0400
+Received: from mail-ej1-x641.google.com (mail-ej1-x641.google.com [IPv6:2a00:1450:4864:20::641])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 37DDDC061794
+        for <linux-btrfs@vger.kernel.org>; Mon,  6 Jul 2020 03:46:44 -0700 (PDT)
+Received: by mail-ej1-x641.google.com with SMTP id f12so15620455eja.9
+        for <linux-btrfs@vger.kernel.org>; Mon, 06 Jul 2020 03:46:44 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=sjeH1GSbRCTJnXCfqyrgwMgIBnLTtK4DV64ZAMwFe6I=;
+        b=YHeBjrj6hRA4kb8dDWxCplmbk6n2osFXRYOF3I1EJNphzbAuRj+1qxprHox9nuktos
+         dLTCyF0KS6bn11tZdBmw7bLjKMo84SVMzuu5DcuDrFEk/6dJsUTKjzyAnIr7sSLnbxmd
+         ugbISfIiYB/Rulg/0AUVwNtcE+CH1zmC9p/58qqjlsvPn7X0gnuVAYwn9X8+E72xMLcT
+         wuX3P3Mi5umgkDFSytJkJL1DdZoNn8xHYjnU+AAs8Ck5BZXTEO2BXoWb/I4JZKQ6qBvN
+         SErpOPcE/+vf5Ytv7GUKMWTuKy+bk2TDsRrgIWXlDoutQ+ArmIeHFCXwb7+eg4B03PW+
+         n6Lw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=sjeH1GSbRCTJnXCfqyrgwMgIBnLTtK4DV64ZAMwFe6I=;
+        b=H/ZSkpS4C+i4Jtx4MH3OPzPeRer1oG3+aMlf8D9Z4aFfrxQr4x8q4tsDcNRThWIVgL
+         tW+4g6MfwkxosQCcfb6njIBjJue7wmcKJtOejhWt3IIuvZJXbVjbzaTs+9U4JIsq2lvZ
+         dH9EByuvCxqW52mGtQtUnMt9NGXW3oIVzWH0AVgY5G+0CtSSjbLIE3Lr0OTS1sGoNAZ4
+         ljoeU0S2A71JeVAtKi0jNbvyID0+n9skphJ/YoeqOBOtx3PUGOHX4FSIbI5Wrb0tdU86
+         hKzmLtrVYesh6iSZYOJ311YXQV/shYi40Hy4E9/QHWNC+uHJH74L+h0ePVbSwsxV72X9
+         IP9g==
+X-Gm-Message-State: AOAM532yQ+S9Ku7wFLlNOaTtnmxSLa1KyzUD9VmmQ3irBn2td8iaLHjd
+        hrw8XnydBK0ij8TyKEMtShQci/uAFgAF3LD1Lk8=
+X-Google-Smtp-Source: ABdhPJwxxbUnzBrBu67iwSChud04uVQIIeWFqDj6bC3e/OkWmMq/nhymKQobYdNujwCrIT1136PbUXBq1j0NgWEcxlo=
+X-Received: by 2002:a17:906:1751:: with SMTP id d17mr26008824eje.140.1594032402947;
+ Mon, 06 Jul 2020 03:46:42 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <d46206f1-0f6e-1f28-347b-6feb46657e26@suse.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Transfer-Encoding: 8bit
-Content-Language: en-US
-X-Synology-MCP-Status: no
-X-Synology-Spam-Flag: no
-X-Synology-Spam-Status: score=0, required 6, WHITELIST_FROM_ADDRESS 0
-X-Synology-Virus-Status: no
+References: <16bc2efa-8e88-319f-e90e-cf8536460860@gmail.com>
+ <20200618204317.GM10769@hungrycats.org> <65eeb90a-e983-2ae8-14ad-79bcd2960851@gmail.com>
+ <20200619050402.GN10769@hungrycats.org> <20200619131117.GD27795@twin.jikos.cz>
+ <79672577-6189-10fe-b4bc-8cf45547b192@libero.it> <20200622224556.GP10769@hungrycats.org>
+ <CAKuJGC_eDi3isqJHxn6XG8GerOthYeVTb1j5cTPYSiuV_oFgaA@mail.gmail.com> <20200703031611.GD10769@hungrycats.org>
+In-Reply-To: <20200703031611.GD10769@hungrycats.org>
+From:   "Lakshmipathi.G" <lakshmipathi.g@gmail.com>
+Date:   Mon, 6 Jul 2020 16:16:05 +0530
+Message-ID: <CAKuJGC8u7h1R2ojyuSjZzbGziQf+phZvMZGg9Vm+ER=RfTJe2A@mail.gmail.com>
+Subject: Re: btrfs-dedupe broken and unsupported but in official wiki
+To:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+Cc:     kreijack@inwind.it, dsterba <dsterba@suse.cz>,
+        DanglingPointer <danglingpointerexception@gmail.com>,
+        btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+Hi Zygo,
 
-Nikolay Borisov 於 2020/7/6 下午4:37 寫道:
->
-> On 6.07.20 г. 11:28 ч., Qu Wenruo wrote:
->>
->> On 2020/7/6 下午4:05, Robbie Ko wrote:
->>> I've known btrfs_read_block_groups for a long time,
->>>
->>> we can use BG_TREE freature to speed up btrfs_read_block_groups.
->>>
->>> https://lwn.net/Articles/801990/
->>>
->>>
->>> But reading the chunk tree also takes some time,
->>>
->>> we can speed up the chunk tree by using the readahead mechanism.
->>>
->>> Why we not just use regular forward readahead?
->>> - Because the regular forward readahead ,
->>>    reads only the logical address adjacent to the 64k,
->>>    but the logical address of the next leaf may not be in 64k.
->> Great, please add these into the changelog for the need of
->> READA_FORWARD_FORCE.
-> <nod> Performance patches should come with data backing their
-> performance improvements claims.
+Thanks for the extensive details about the data-set and how the environment
+is set up and tests are executed. I'll try to create some windows raw
+disk images for testing and follow your test environment setup as
+much as possible. Performance numbers are really interesting between
+bees, duperemove and dduper!
 
-Ok, I will add these into the changelog.
+As you mentioned previously, dduper is more like poc and I didn't spend
+much time in testing with different data sets. Mostly created few GB files
+with `dd urandom` and tested them. I guess that is why it performs better
+with files that are entirely duplicate and small extents :-)
 
+Let me spend some time investigating these issues, I'm pretty sure dduper
+can be made a little bit more reliable that its current form.
 
->
->> But on the other hand, it looks like we could change READA_FORWARD
->> without introducing the _FORCE version,
->> as _FORCE variant is what we really want.
->>
->>
->> That logical bytenr limit looks not reasonable to me, which makes that
->> READA_FORWARD near useless to me.
->>
->> Although in that direction, we also need to verify all existing
->> READA_FORWARD are really correctly.
->>
->> Personally I tend to prefer change existing READA_FORWARD and review all
->> existing callers.
-> I agree, we should ideally revise the existing READA_FORWARD and give it
-> better semantics if the current ones are needlessly rigid. Only if this
-> improves way too cumbersome i.e breaking assumption which are made
-> should we introduce yet another mode. Because this other mode is really
-> just special casing and we should avoid special cases as much as possible.
+Reg compressed file system tests, will check this after resolving
+poor disk-space issues on non-compressed filesystems. thanks!
 
-
-Ok, I'll modify the existing READA_FORWARD mechanism to make it better
-
-and send a V2 patch.
-
-
->
->
-> <snip>
+----
+Cheers,
+Lakshmipathi.G
+http://www.giis.co.in https://www.webminal.org

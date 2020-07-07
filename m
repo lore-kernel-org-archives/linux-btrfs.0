@@ -2,189 +2,110 @@ Return-Path: <SRS0=Adlh=AS=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.4 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B4DA4C433E0
-	for <linux-btrfs@archiver.kernel.org>; Tue,  7 Jul 2020 03:59:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0D746C433E0
+	for <linux-btrfs@archiver.kernel.org>; Tue,  7 Jul 2020 07:20:56 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 5610A2053B
-	for <linux-btrfs@archiver.kernel.org>; Tue,  7 Jul 2020 03:59:51 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DFB9920738
+	for <linux-btrfs@archiver.kernel.org>; Tue,  7 Jul 2020 07:20:55 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b="NssxO/6/"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="pTwLAI/Q"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727107AbgGGD7u (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 6 Jul 2020 23:59:50 -0400
-Received: from mail.synology.com ([211.23.38.101]:50320 "EHLO synology.com"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726478AbgGGD7u (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 6 Jul 2020 23:59:50 -0400
-Received: from localhost.localdomain (unknown [10.17.32.181])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by synology.com (Postfix) with ESMTPSA id 401DACE782D5;
-        Tue,  7 Jul 2020 11:59:48 +0800 (CST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=synology.com; s=123;
-        t=1594094388; bh=+159Bbp0cMWw7t/PKZ8gbPP+Pvq1tDBaJGnj+W6YzQ4=;
-        h=From:To:Cc:Subject:Date;
-        b=NssxO/6/ne4DDPvm2uCFVi/zcmQy3G7CkSaHG4dyu3vXgjd9DwArWNmjhNfdDCGA3
-         VTdE7SFHG43JdWjOWAeMT7nMhSw/YJo6AZ3DVvK3Z7mbAZmfMNbLZhZm9Uz6yQfG5w
-         fRHZWY4X90w/SBIhXnAVbpoGeN4+zR+6/0+beIbU=
-From:   robbieko <robbieko@synology.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     Robbie Ko <robbieko@synology.com>
-Subject: [PATCH v2] btrfs: speedup mount time with readahead chunk tree
-Date:   Tue,  7 Jul 2020 11:59:44 +0800
-Message-Id: <20200707035944.15150-1-robbieko@synology.com>
-X-Mailer: git-send-email 2.17.1
-X-Synology-MCP-Status: no
-X-Synology-Spam-Flag: no
-X-Synology-Spam-Status: score=0, required 6, WHITELIST_FROM_ADDRESS 0
-X-Synology-Virus-Status: no
+        id S1727981AbgGGHUz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 7 Jul 2020 03:20:55 -0400
+Received: from userp2130.oracle.com ([156.151.31.86]:38920 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725825AbgGGHUz (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Jul 2020 03:20:55 -0400
+Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
+        by userp2130.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 0677IRoD009856;
+        Tue, 7 Jul 2020 07:20:49 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to : cc :
+ references : from : message-id : date : mime-version : in-reply-to :
+ content-type : content-transfer-encoding; s=corp-2020-01-29;
+ bh=byjPc4hqCTlcHQfWBSUDmZOjADuGIE/3j/fv9vyId40=;
+ b=pTwLAI/QUfMmd8QlYMRv9sQpcvHIM7WGIvHpFCBILsHp6HuazqvdUTMU5uy0smFGrEGh
+ wgRCjHTK5lJ48pY/McZj+6nik8caU1BvTGVQC7dKVnOkvr1gVFeDe4IC/DaD7SOfolMT
+ 1f4mfIHCkfR0fAo1apgKSmjGGZKyPJaUCDI1cV2xhpnEyaz6eRZedUgjs8nI5I/S4Z0N
+ J4NPR3IhmSwHZzl2RIgwMmkzBEsQ6OGjAwjKsNcLbMQoFzN7NM8AfgBuFQBP98Nz82vQ
+ c5orTBk+HD/3lFa6b4GFXbBUMISsDf20IqBVMia7CZsws+eInloSlHG/7hMqdeTSgqAb 7g== 
+Received: from aserp3030.oracle.com (aserp3030.oracle.com [141.146.126.71])
+        by userp2130.oracle.com with ESMTP id 323waceemb-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
+        Tue, 07 Jul 2020 07:20:48 +0000
+Received: from pps.filterd (aserp3030.oracle.com [127.0.0.1])
+        by aserp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 0677JARc027918;
+        Tue, 7 Jul 2020 07:20:48 GMT
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by aserp3030.oracle.com with ESMTP id 3233bnp7s8-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Tue, 07 Jul 2020 07:20:48 +0000
+Received: from abhmp0006.oracle.com (abhmp0006.oracle.com [141.146.116.12])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 0677Kgnt026844;
+        Tue, 7 Jul 2020 07:20:42 GMT
+Received: from [192.168.1.102] (/39.109.231.106)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Tue, 07 Jul 2020 00:20:42 -0700
+Subject: Re: [PATCH v5] btrfs: pass checksum type via BTRFS_IOC_FS_INFO ioctl
+To:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+        David Sterba <dsterba@suse.cz>
+Cc:     linux-btrfs@vger.kernel.org,
+        Hans van Kranenburg <hans@knorrie.org>,
+        stable@vger.kernel.org
+References: <20200706150924.40218-1-johannes.thumshirn@wdc.com>
+From:   Anand Jain <anand.jain@oracle.com>
+Message-ID: <9ca06611-8adc-2a1b-106c-1bc983a27576@oracle.com>
+Date:   Tue, 7 Jul 2020 15:20:38 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.8.0
+MIME-Version: 1.0
+In-Reply-To: <20200706150924.40218-1-johannes.thumshirn@wdc.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9674 signatures=668680
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 phishscore=0 mlxscore=0 adultscore=0
+ malwarescore=0 spamscore=0 mlxlogscore=999 bulkscore=0 suspectscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2004280000
+ definitions=main-2007070055
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9674 signatures=668680
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 lowpriorityscore=0 priorityscore=1501
+ phishscore=0 spamscore=0 mlxlogscore=999 adultscore=0 cotscore=-2147483648
+ suspectscore=0 impostorscore=0 bulkscore=0 mlxscore=0 clxscore=1011
+ malwarescore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2004280000 definitions=main-2007070055
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Robbie Ko <robbieko@synology.com>
 
-When mounting, we always need to read the whole chunk tree,
-when there are too many chunk items, most of the time is
-spent on btrfs_read_chunk_tree, because we only read one
-leaf at a time.
+> pahole -C btrfs_ioctl_fs_info_args fs/btrfs/btrfs.ko
+> struct btrfs_ioctl_fs_info_args {
+>          __u64                      max_id;               /*     0     8 */
+>          __u64                      num_devices;          /*     8     8 */
+>          __u8                       fsid[16];             /*    16    16 */
+>          __u32                      nodesize;             /*    32     4 */
+>          __u32                      sectorsize;           /*    36     4 */
+>          __u32                      clone_alignment;      /*    40     4 */
 
-It is unreasonable to limit the readahead mechanism to a
-range of 64k, so we have removed that limit.
+>          __u32                      flags;                /*    44     4 */
+>          __u16                      csum_type;            /*    48     2 */
+>          __u16                      csum_size;            /*    50     2 */
 
-In addition we added reada_maximum_size to customize the
-size of the pre-reader, The default is 64k to maintain the
-original behavior.
+>          __u8                       reserved[972];        /*    52   972 */
+> 
+>          /* size: 1024, cachelines: 16, members: 10 */
+> };
 
-So we fix this by used readahead mechanism, and set readahead
-max size to ULLONG_MAX which reads all the leaves after the
-key in the node when reading a level 1 node.
 
-I have a test environment as follows:
+Newer progs shall read the value of flags/csum_type/csum_size from the 
+updated kernel and zeros from the older kernel. Nice fix.
 
-200TB btrfs volume: used 192TB
+Reviewed-by: Anand Jain <anand.jain@oracle.com>
 
-Data, single: total=192.00TiB, used=192.00TiB
-System, DUP: total=40.00MiB, used=19.91MiB
-Metadata, DUP: total=63.00GiB, used=46.46GiB
-GlobalReserve, single: total=2.00GiB, used=0.00B
-
-chunk tree level : 2
-chunk tree tree:
-   nodes: 4
-   leaves: 1270
-   total: 1274
-chunk tree size: 19.9 MB
-SYSTEM chunks count : 2 (8MB, 32MB)
-
-btrfs_read_chunk_tree spends the following time:
-before: 1.89s
-patch: 0.27s
-Speed increase of about 85%.
-
-Signed-off-by: Robbie Ko <robbieko@synology.com>
----
-Changelog:
-v2:
-- add performance testing
-- remove readahead logical bytenr 64k limit
-- add reada_maximum_size for customize
----
- fs/btrfs/ctree.c   | 23 +++++++++++------------
- fs/btrfs/ctree.h   |  1 +
- fs/btrfs/volumes.c |  2 ++
- 3 files changed, 14 insertions(+), 12 deletions(-)
-
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 3a7648bff42c..dc84f526cd93 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -75,7 +75,14 @@ size_t __const btrfs_get_num_csums(void)
- 
- struct btrfs_path *btrfs_alloc_path(void)
- {
--	return kmem_cache_zalloc(btrfs_path_cachep, GFP_NOFS);
-+	struct btrfs_path *path;
-+
-+	path = kmem_cache_zalloc(btrfs_path_cachep, GFP_NOFS);
-+
-+	if (path)
-+		path->reada_maximum_size = 65536;
-+
-+	return path;
- }
- 
- /* this also releases the path */
-@@ -2161,12 +2168,10 @@ static void reada_for_search(struct btrfs_fs_info *fs_info,
- 	struct btrfs_disk_key disk_key;
- 	u32 nritems;
- 	u64 search;
--	u64 target;
- 	u64 nread = 0;
- 	struct extent_buffer *eb;
- 	u32 nr;
- 	u32 blocksize;
--	u32 nscan = 0;
- 
- 	if (level != 1)
- 		return;
-@@ -2184,8 +2189,6 @@ static void reada_for_search(struct btrfs_fs_info *fs_info,
- 		return;
- 	}
- 
--	target = search;
--
- 	nritems = btrfs_header_nritems(node);
- 	nr = slot;
- 
-@@ -2205,13 +2208,9 @@ static void reada_for_search(struct btrfs_fs_info *fs_info,
- 				break;
- 		}
- 		search = btrfs_node_blockptr(node, nr);
--		if ((search <= target && target - search <= 65536) ||
--		    (search > target && search - target <= 65536)) {
--			readahead_tree_block(fs_info, search);
--			nread += blocksize;
--		}
--		nscan++;
--		if ((nread > 65536 || nscan > 32))
-+		readahead_tree_block(fs_info, search);
-+		nread += blocksize;
-+		if (nread > path->reada_maximum_size)
- 			break;
- 	}
- }
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index d404cce8ae40..ea88a6473eb8 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -360,6 +360,7 @@ struct btrfs_path {
- 	/* if there is real range locking, this locks field will change */
- 	u8 locks[BTRFS_MAX_LEVEL];
- 	u8 reada;
-+	u64 reada_maximum_size;
- 	/* keep some upper locks as we walk down */
- 	u8 lowest_level;
- 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 0d6e785bcb98..fc87b2e9e865 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -7043,6 +7043,8 @@ int btrfs_read_chunk_tree(struct btrfs_fs_info *fs_info)
- 	path = btrfs_alloc_path();
- 	if (!path)
- 		return -ENOMEM;
-+	path->reada = READA_FORWARD;
-+	path->reada_maximum_size = ULLONG_MAX;
- 
- 	/*
- 	 * uuid_mutex is needed only if we are mounting a sprout FS
--- 
-2.17.1
-
+Thanks.

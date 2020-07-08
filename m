@@ -2,133 +2,114 @@ Return-Path: <SRS0=56wv=AT=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.2 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,
-	SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-0.5 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7652FC433DF
-	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Jul 2020 14:13:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B99CAC433E0
+	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Jul 2020 14:15:14 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 52D4A2078B
-	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Jul 2020 14:13:16 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 993B720774
+	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Jul 2020 14:15:14 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="Xze050uw"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="UeWTs1yn"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729477AbgGHONP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 8 Jul 2020 10:13:15 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47772 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728148AbgGHONP (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Jul 2020 10:13:15 -0400
-Received: from mail-qk1-x741.google.com (mail-qk1-x741.google.com [IPv6:2607:f8b0:4864:20::741])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E2684C061A0B
-        for <linux-btrfs@vger.kernel.org>; Wed,  8 Jul 2020 07:13:14 -0700 (PDT)
-Received: by mail-qk1-x741.google.com with SMTP id z63so41558470qkb.8
-        for <linux-btrfs@vger.kernel.org>; Wed, 08 Jul 2020 07:13:14 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=subject:to:references:from:message-id:date:user-agent:mime-version
-         :in-reply-to:content-language:content-transfer-encoding;
-        bh=wrzGgF1zolhO7imZLJMJG0lZOCaNIENOcFsoOZV3tMU=;
-        b=Xze050uw4Qln4MCXaiWfuMM93KPtMwLKM/k7TlC4f5ggy1G9KG3gk0PzvYrl+F4ho4
-         1FQ+7zwOprHjZpobz61PDOH/rK88DkKovgm3rrlx92VONgHuWNYrsL0G0K0yRi8rB93c
-         mAK1yEMXKsuH8X1wFa8RHRI5+qvwni2Ox0vRPKzlVax4uVHmte86LWlDscleGBOt4l2Q
-         idD7oBmjoRq+J9I3CIbuZtIYd+R95LyaF02FhXL/v0K0KaTf5UyZl7TTOd5OwaEyr3At
-         flBu83tBCfRx8XAfCrCS3K7pdzXb9DllER+SLt4+RRx49BYu/VFKcjq59fWva2MGrJbt
-         hsdw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=wrzGgF1zolhO7imZLJMJG0lZOCaNIENOcFsoOZV3tMU=;
-        b=QuApUHJsLbSo8tpRYEVgvoG0UAI8oRbBapRXAjEw5z5h0azi2w6xIBv8dJ67rTU4+a
-         8VLtlBAtwo151laQ7Xhh0nb1p68m/bQf+gUhdxgO8wXAN1ifd4Tvgd/5MGaPUwuEH9Lm
-         ACFPC/BhgcjhZ4VIVDPuw4q9efsDCwDlTgV53IV/dArgm+L7a0+aPttItJ8fRFt1aaXA
-         cLzGgBJZ+JEnAov7ZGw1U7VyyX264/kX7Z+GaFerxzY0dIVatLf+LuUBgZubGCF/JNxX
-         wDQS68Re0OBa1JFAYYKDz4u5ulRNop/FKrSmJYuULlV25q4Sj25RT7VKV8ufqB4R+p+J
-         p4ow==
-X-Gm-Message-State: AOAM532tiXdu0xD04O27nfprJta1kVCOJwlj8aQ+01uaXA9O+y10Eyid
-        Fn99JrFajMb/vn1lye7Y83zKuzlUQwolpw==
-X-Google-Smtp-Source: ABdhPJxNYjXmtAlaRMBTlBDHqgJnjPeZ1/4KJEUSJUFYbjukIaLduS+GeJMkQkS4tfuQs1QlrXZjJg==
-X-Received: by 2002:a37:9f56:: with SMTP id i83mr54957805qke.134.1594217593710;
-        Wed, 08 Jul 2020 07:13:13 -0700 (PDT)
-Received: from [192.168.1.45] (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id c24sm33042940qtd.82.2020.07.08.07.13.12
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 08 Jul 2020 07:13:13 -0700 (PDT)
-Subject: Re: [PATCH 1/2] btrfs: avoid possible signal interruption for
- btrfs_drop_snapshot() on relocation tree
-To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <20200708100022.90085-1-wqu@suse.com>
-From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <0b168157-3dad-ddba-e616-ae82eb2d6501@toxicpanda.com>
-Date:   Wed, 8 Jul 2020 10:13:12 -0400
-User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:68.0)
- Gecko/20100101 Thunderbird/68.10.0
+        id S1729495AbgGHOPO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 8 Jul 2020 10:15:14 -0400
+Received: from casper.infradead.org ([90.155.50.34]:35888 "EHLO
+        casper.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728148AbgGHOPN (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Jul 2020 10:15:13 -0400
+X-Greylist: delayed 1186 seconds by postgrey-1.27 at vger.kernel.org; Wed, 08 Jul 2020 10:15:13 EDT
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Type:MIME-Version:
+        References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+        Content-Transfer-Encoding:Content-ID:Content-Description;
+        bh=UB2tdF87tFQumNjUF6URWsZKnhuGKxYkdOBfeGqgmNc=; b=UeWTs1ynUHzLfr+5s7N2jufuZq
+        hVJMkoOaL51orUJ2U6d/jXiD65aMw5gc4OGO/iGGnU4H5d+7sRGEgTEwnJmjw0Wvojw1vz0K1jIhX
+        ROyUmisDAxlU1Qaw8C8IOh9jCz/mFEYKYXFV0g01q144YSfPf1SFBQs5YNmhGkhRtkHfecJm//rjj
+        z0mzg63OZ9bdyw2OW79uVfvsYz2zBTM1edW2wTP9uRo6ZkQKXz/zcFQyxn440w3YjX89PhiFI6E5G
+        fva+HWNLqN3VKzlfYtsID3IerAPVQF5Thq/MfdWQu4E8tRwiYt/HoJ/GNzJIU335YmyDNl7Fzxs0v
+        a01ZHrsA==;
+Received: from willy by casper.infradead.org with local (Exim 4.92.3 #3 (Red Hat Linux))
+        id 1jtAX1-0005vm-5p; Wed, 08 Jul 2020 13:54:43 +0000
+Date:   Wed, 8 Jul 2020 14:54:37 +0100
+From:   Matthew Wilcox <willy@infradead.org>
+To:     Dave Chinner <david@fromorbit.com>
+Cc:     Christoph Hellwig <hch@lst.de>,
+        Goldwyn Rodrigues <rgoldwyn@suse.de>,
+        linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        fdmanana@gmail.com, dsterba@suse.cz, darrick.wong@oracle.com,
+        cluster-devel@redhat.com, linux-ext4@vger.kernel.org,
+        linux-xfs@vger.kernel.org
+Subject: Re: always fall back to buffered I/O after invalidation failures,
+ was: Re: [PATCH 2/6] iomap: IOMAP_DIO_RWF_NO_STALE_PAGECACHE return if page
+ invalidation fails
+Message-ID: <20200708135437.GP25523@casper.infradead.org>
+References: <20200629192353.20841-1-rgoldwyn@suse.de>
+ <20200629192353.20841-3-rgoldwyn@suse.de>
+ <20200701075310.GB29884@lst.de>
+ <20200707124346.xnr5gtcysuzehejq@fiona>
+ <20200707125705.GK25523@casper.infradead.org>
+ <20200707130030.GA13870@lst.de>
+ <20200708065127.GM2005@dread.disaster.area>
 MIME-Version: 1.0
-In-Reply-To: <20200708100022.90085-1-wqu@suse.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20200708065127.GM2005@dread.disaster.area>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 7/8/20 6:00 AM, Qu Wenruo wrote:
-> [BUG]
-> There is a bug report about bad signal timing could lead to read-only
-> fs during balance:
+On Wed, Jul 08, 2020 at 04:51:27PM +1000, Dave Chinner wrote:
+> On Tue, Jul 07, 2020 at 03:00:30PM +0200, Christoph Hellwig wrote:
+> > On Tue, Jul 07, 2020 at 01:57:05PM +0100, Matthew Wilcox wrote:
+> > > Indeed, I'm in favour of not invalidating
+> > > the page cache at all for direct I/O.  For reads, I think the page cache
+> > > should be used to satisfy any portion of the read which is currently
+> > > cached.  For writes, I think we should write into the page cache pages
+> > > which currently exist, and then force those pages to be written back,
+> > > but left in cache.
+> > 
+> > Something like that, yes.
 > 
->    BTRFS info (device xvdb): balance: start -d -m -s
->    BTRFS info (device xvdb): relocating block group 73001861120 flags metadata
->    BTRFS info (device xvdb): found 12236 extents, stage: move data extents
->    BTRFS info (device xvdb): relocating block group 71928119296 flags data
->    BTRFS info (device xvdb): found 3 extents, stage: move data extents
->    BTRFS info (device xvdb): found 3 extents, stage: update data pointers
->    BTRFS info (device xvdb): relocating block group 60922265600 flags metadata
->    BTRFS: error (device xvdb) in btrfs_drop_snapshot:5505: errno=-4 unknown
->    BTRFS info (device xvdb): forced readonly
->    BTRFS info (device xvdb): balance: ended with status: -4
+> So are we really willing to take the performance regression that
+> occurs from copying out of the page cache consuming lots more CPU
+> than an actual direct IO read? Or that direct IO writes suddenly
+> serialise because there are page cache pages and now we have to do
+> buffered IO?
 > 
-> [CAUSE]
-> The direct cause is the -EINTR from the following call chain when a
-> fatal signal is pending:
-> 
->   relocate_block_group()
->   |- clean_dirty_subvols()
->      |- btrfs_drop_snapshot()
->         |- btrfs_start_transaction()
->            |- btrfs_delayed_refs_rsv_refill()
->               |- btrfs_reserve_metadata_bytes()
->                  |- __reserve_metadata_bytes()
->                     |- wait_reserve_ticket()
->                        |- prepare_to_wait_event();
->                        |- ticket->error = -EINTR;
-> 
-> Normally this behavior is fine for most btrfs_start_transaction()
-> callers, as they need to catch the fatal signal and exit asap.
-> 
-> However to balance, especially for the clean_dirty_subvols() case, we're
-> already doing cleanup works, such -EINTR from btrfs_drop_snapshot()
-> could cause a lot of unexpected problems.
-> 
->  From the mentioned forced read-only, to later balance error due to half
-> dropped reloc trees.
-> 
-> [FIX]
-> Fix this problem by using btrfs_join_transaction() if
-> btrfs_drop_snapshot() is called from relocation context.
-> 
-> As btrfs_join_transaction() won't wait full tickets, it won't get
-> interrupted from signal.
-> 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> Direct IO should be a deterministic, zero-copy IO path to/from
+> storage. Using the CPU to copy data during direct IO is the complete
+> opposite of the intended functionality, not to mention the behaviour
+> that many applications have been careful designed and tuned for.
 
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+Direct I/O isn't deterministic though.  If the file isn't shared, then
+it works great, but as soon as you get mixed buffered and direct I/O,
+everything is already terrible.  Direct I/Os perform pagecache lookups
+already, but instead of using the data that we found in the cache, we
+(if it's dirty) write it back, wait for the write to complete, remove
+the page from the pagecache and then perform another I/O to get the data
+that we just wrote out!  And then the app that's using buffered I/O has
+to read it back in again.
 
-Thanks,
+Nobody's proposing changing Direct I/O to exclusively work through the
+pagecache.  The proposal is to behave less weirdly when there's already
+data in the pagecache.
 
-Josef
+I have had an objection raised off-list.  In a scenario with a block
+device shared between two systems and an application which does direct
+I/O, everything is normally fine.  If one of the systems uses tar to
+back up the contents of the block device then the application on that
+system will no longer see the writes from the other system because
+there's nothing to invalidate the pagecache on the first system.
+
+Unfortunately, this is in direct conflict with the performance
+problem caused by some little arsewipe deciding to do:
+
+$ while true; do dd if=/lib/x86_64-linux-gnu/libc-2.30.so iflag=direct of=/dev/null; done
+
+... doesn't hurt me because my root filesystem is on ext4 which doesn't
+purge the cache.  But anything using iomap gets all the pages for libc
+kicked out of the cache, and that's a lot of fun.

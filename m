@@ -2,114 +2,99 @@ Return-Path: <SRS0=56wv=AT=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.5 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.7 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B99CAC433E0
-	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Jul 2020 14:15:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 55036C433E0
+	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Jul 2020 14:57:59 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 993B720774
-	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Jul 2020 14:15:14 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="UeWTs1yn"
+	by mail.kernel.org (Postfix) with ESMTP id 36E5620720
+	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Jul 2020 14:57:59 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729495AbgGHOPO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 8 Jul 2020 10:15:14 -0400
-Received: from casper.infradead.org ([90.155.50.34]:35888 "EHLO
-        casper.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728148AbgGHOPN (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Jul 2020 10:15:13 -0400
-X-Greylist: delayed 1186 seconds by postgrey-1.27 at vger.kernel.org; Wed, 08 Jul 2020 10:15:13 EDT
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Type:MIME-Version:
-        References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-        Content-Transfer-Encoding:Content-ID:Content-Description;
-        bh=UB2tdF87tFQumNjUF6URWsZKnhuGKxYkdOBfeGqgmNc=; b=UeWTs1ynUHzLfr+5s7N2jufuZq
-        hVJMkoOaL51orUJ2U6d/jXiD65aMw5gc4OGO/iGGnU4H5d+7sRGEgTEwnJmjw0Wvojw1vz0K1jIhX
-        ROyUmisDAxlU1Qaw8C8IOh9jCz/mFEYKYXFV0g01q144YSfPf1SFBQs5YNmhGkhRtkHfecJm//rjj
-        z0mzg63OZ9bdyw2OW79uVfvsYz2zBTM1edW2wTP9uRo6ZkQKXz/zcFQyxn440w3YjX89PhiFI6E5G
-        fva+HWNLqN3VKzlfYtsID3IerAPVQF5Thq/MfdWQu4E8tRwiYt/HoJ/GNzJIU335YmyDNl7Fzxs0v
-        a01ZHrsA==;
-Received: from willy by casper.infradead.org with local (Exim 4.92.3 #3 (Red Hat Linux))
-        id 1jtAX1-0005vm-5p; Wed, 08 Jul 2020 13:54:43 +0000
-Date:   Wed, 8 Jul 2020 14:54:37 +0100
-From:   Matthew Wilcox <willy@infradead.org>
-To:     Dave Chinner <david@fromorbit.com>
-Cc:     Christoph Hellwig <hch@lst.de>,
-        Goldwyn Rodrigues <rgoldwyn@suse.de>,
-        linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        fdmanana@gmail.com, dsterba@suse.cz, darrick.wong@oracle.com,
-        cluster-devel@redhat.com, linux-ext4@vger.kernel.org,
-        linux-xfs@vger.kernel.org
-Subject: Re: always fall back to buffered I/O after invalidation failures,
- was: Re: [PATCH 2/6] iomap: IOMAP_DIO_RWF_NO_STALE_PAGECACHE return if page
- invalidation fails
-Message-ID: <20200708135437.GP25523@casper.infradead.org>
-References: <20200629192353.20841-1-rgoldwyn@suse.de>
- <20200629192353.20841-3-rgoldwyn@suse.de>
- <20200701075310.GB29884@lst.de>
- <20200707124346.xnr5gtcysuzehejq@fiona>
- <20200707125705.GK25523@casper.infradead.org>
- <20200707130030.GA13870@lst.de>
- <20200708065127.GM2005@dread.disaster.area>
+        id S1729922AbgGHO56 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 8 Jul 2020 10:57:58 -0400
+Received: from mail.itouring.de ([188.40.134.68]:57354 "EHLO mail.itouring.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1729206AbgGHO56 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 8 Jul 2020 10:57:58 -0400
+Received: from tux.applied-asynchrony.com (p5ddd79e0.dip0.t-ipconnect.de [93.221.121.224])
+        by mail.itouring.de (Postfix) with ESMTPSA id B6ECE4160341;
+        Wed,  8 Jul 2020 16:57:56 +0200 (CEST)
+Received: from [192.168.100.223] (ragnarok.applied-asynchrony.com [192.168.100.223])
+        by tux.applied-asynchrony.com (Postfix) with ESMTP id 63009F01600;
+        Wed,  8 Jul 2020 16:57:56 +0200 (CEST)
+Subject: Re: [PATCH v2] btrfs: speedup mount time with readahead chunk tree
+To:     dsterba@suse.cz, Robbie Ko <robbieko@synology.com>,
+        linux-btrfs@vger.kernel.org
+References: <20200707035944.15150-1-robbieko@synology.com>
+ <20200707192511.GE16141@twin.jikos.cz>
+ <3b3f9eb4-96ef-d039-5d86-a4c165e6d993@synology.com>
+ <20200708140455.GA28832@twin.jikos.cz>
+From:   =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>
+Organization: Applied Asynchrony, Inc.
+Message-ID: <de7bfbe5-7d83-2437-701c-700bbe5d3adc@applied-asynchrony.com>
+Date:   Wed, 8 Jul 2020 16:57:56 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20200708065127.GM2005@dread.disaster.area>
+In-Reply-To: <20200708140455.GA28832@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Jul 08, 2020 at 04:51:27PM +1000, Dave Chinner wrote:
-> On Tue, Jul 07, 2020 at 03:00:30PM +0200, Christoph Hellwig wrote:
-> > On Tue, Jul 07, 2020 at 01:57:05PM +0100, Matthew Wilcox wrote:
-> > > Indeed, I'm in favour of not invalidating
-> > > the page cache at all for direct I/O.  For reads, I think the page cache
-> > > should be used to satisfy any portion of the read which is currently
-> > > cached.  For writes, I think we should write into the page cache pages
-> > > which currently exist, and then force those pages to be written back,
-> > > but left in cache.
-> > 
-> > Something like that, yes.
+On 2020-07-08 16:04, David Sterba wrote:
+> On Wed, Jul 08, 2020 at 10:19:22AM +0800, Robbie Ko wrote:
+>> David Sterba 於 2020/7/8 上午3:25 寫道:
+>>> On Tue, Jul 07, 2020 at 11:59:44AM +0800, robbieko wrote:
+>>>> From: Robbie Ko <robbieko@synology.com>
+>>>>
+>>>> When mounting, we always need to read the whole chunk tree,
+>>>> when there are too many chunk items, most of the time is
+>>>> spent on btrfs_read_chunk_tree, because we only read one
+>>>> leaf at a time.
+>>>>
+>>>> It is unreasonable to limit the readahead mechanism to a
+>>>> range of 64k, so we have removed that limit.
+>>>>
+>>>> In addition we added reada_maximum_size to customize the
+>>>> size of the pre-reader, The default is 64k to maintain the
+>>>> original behavior.
+>>>>
+>>>> So we fix this by used readahead mechanism, and set readahead
+>>>> max size to ULLONG_MAX which reads all the leaves after the
+>>>> key in the node when reading a level 1 node.
+>>> The readahead of chunk tree is a special case as we know we will need
+>>> the whole tree, in all other cases the search readahead needs is
+>>> supposed to read only one leaf.
+>>
+>> If, in most cases, readahead requires that only one leaf be read, then
+>> reada_ maximum_size should be nodesize instead of 64k, or use
+>> reada_maximum_ nr (default:1) seems better.
+>>
+>>>
+>>> For that reason I don't want to touch the current path readahead logic
+>>> at all and do the chunk tree readahead in one go instead of the
+>>> per-search.
+>>
+>> I don't know why we don't make the change to readahead, because the current
+>> readahead is limited to the logical address in 64k is very unreasonable,
+>> and there is a good chance that the logical address of the next leaf
+>> node will
+>> not appear in 64k, so the existing readahead is almost useless.
 > 
-> So are we really willing to take the performance regression that
-> occurs from copying out of the page cache consuming lots more CPU
-> than an actual direct IO read? Or that direct IO writes suddenly
-> serialise because there are page cache pages and now we have to do
-> buffered IO?
-> 
-> Direct IO should be a deterministic, zero-copy IO path to/from
-> storage. Using the CPU to copy data during direct IO is the complete
-> opposite of the intended functionality, not to mention the behaviour
-> that many applications have been careful designed and tuned for.
+> I see and it seems that the assumption about layout and chances
+> succesfuly read blocks ahead is not valid. The logic of readahead could
+> be improved but that would need more performance evaluation.
 
-Direct I/O isn't deterministic though.  If the file isn't shared, then
-it works great, but as soon as you get mixed buffered and direct I/O,
-everything is already terrible.  Direct I/Os perform pagecache lookups
-already, but instead of using the data that we found in the cache, we
-(if it's dirty) write it back, wait for the write to complete, remove
-the page from the pagecache and then perform another I/O to get the data
-that we just wrote out!  And then the app that's using buffered I/O has
-to read it back in again.
+FWIW I gave this a try and see the following numbers, averaged over multiple
+mount/unmount cycles on spinning rust:
 
-Nobody's proposing changing Direct I/O to exclusively work through the
-pagecache.  The proposal is to behave less weirdly when there's already
-data in the pagecache.
+without patch : ~2.7s
+with patch    : ~4.5s
 
-I have had an objection raised off-list.  In a scenario with a block
-device shared between two systems and an application which does direct
-I/O, everything is normally fine.  If one of the systems uses tar to
-back up the contents of the block device then the application on that
-system will no longer see the writes from the other system because
-there's nothing to invalidate the pagecache on the first system.
+..ahem..
 
-Unfortunately, this is in direct conflict with the performance
-problem caused by some little arsewipe deciding to do:
-
-$ while true; do dd if=/lib/x86_64-linux-gnu/libc-2.30.so iflag=direct of=/dev/null; done
-
-... doesn't hurt me because my root filesystem is on ext4 which doesn't
-purge the cache.  But anything using iomap gets all the pages for libc
-kicked out of the cache, and that's a lot of fun.
+-h

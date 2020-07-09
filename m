@@ -2,79 +2,110 @@ Return-Path: <SRS0=i7A4=AU=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
 	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 68DA9C433E1
-	for <linux-btrfs@archiver.kernel.org>; Thu,  9 Jul 2020 22:28:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id ED6C4C433E0
+	for <linux-btrfs@archiver.kernel.org>; Thu,  9 Jul 2020 22:59:45 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 4113020720
-	for <linux-btrfs@archiver.kernel.org>; Thu,  9 Jul 2020 22:28:21 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1594333701;
-	bh=vth7oOQ5CwiMgzvmWzAb0BCz7GgvktX0waV9e0XtVoc=;
-	h=Date:From:To:Subject:References:In-Reply-To:List-ID:From;
-	b=x870AmXu1QltHMSZQW94SMKO+/qUHU+PiNw3DuWLzPptYlDe0F/1jMiyX46QBq/Uh
-	 Nv9uUlu69rEP1zTBikBm1D66isoXr9+oHanMF0SmMp4p8sFGV7psOVpoIPrbLPSKve
-	 3jFHWRnya5lXs2AMUhyQy97cMOhHFSelgpBOEUZU=
+	by mail.kernel.org (Postfix) with ESMTP id C630020775
+	for <linux-btrfs@archiver.kernel.org>; Thu,  9 Jul 2020 22:59:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726482AbgGIW2S (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 9 Jul 2020 18:28:18 -0400
-Received: from mail.kernel.org ([198.145.29.99]:53414 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726213AbgGIW2R (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 9 Jul 2020 18:28:17 -0400
-Received: from localhost (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 1504B2070E;
-        Thu,  9 Jul 2020 22:28:16 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1594333697;
-        bh=vth7oOQ5CwiMgzvmWzAb0BCz7GgvktX0waV9e0XtVoc=;
-        h=Date:From:To:Subject:References:In-Reply-To:From;
-        b=DJmyEEKSnVjzen9FvYhBmCdwG6lqyHu4BDgbKQ8uVt8Lpl3sgaoHu0pMq6zjhHXFj
-         3uSN+MA8SFzj1nW1NNAgPvf1ccok2ekLcrkXjSZmyOvMT4z5G+7LSoqGydB23cwTVR
-         qEG3t/NbMbswdLntV59tSOUjQZPS6DREr/PPtqPE=
-Date:   Thu, 9 Jul 2020 18:28:15 -0400
-From:   Sasha Levin <sashal@kernel.org>
-To:     dsterba@suse.cz, linux-kernel@vger.kernel.org,
-        stable@vger.kernel.org, Waiman Long <longman@redhat.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH AUTOSEL 5.7 11/53] btrfs: use kfree() in
- btrfs_ioctl_get_subvol_info()
-Message-ID: <20200709222815.GB2722994@sasha-vm>
-References: <20200702012202.2700645-1-sashal@kernel.org>
- <20200702012202.2700645-11-sashal@kernel.org>
- <20200702082558.GH27795@twin.jikos.cz>
+        id S1727062AbgGIW7p (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 9 Jul 2020 18:59:45 -0400
+Received: from mail109.syd.optusnet.com.au ([211.29.132.80]:34184 "EHLO
+        mail109.syd.optusnet.com.au" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1726228AbgGIW7o (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 9 Jul 2020 18:59:44 -0400
+Received: from dread.disaster.area (pa49-180-53-24.pa.nsw.optusnet.com.au [49.180.53.24])
+        by mail109.syd.optusnet.com.au (Postfix) with ESMTPS id 484E0D7A54F;
+        Fri, 10 Jul 2020 08:59:37 +1000 (AEST)
+Received: from dave by dread.disaster.area with local (Exim 4.92.3)
+        (envelope-from <david@fromorbit.com>)
+        id 1jtfVw-00018A-GA; Fri, 10 Jul 2020 08:59:36 +1000
+Date:   Fri, 10 Jul 2020 08:59:36 +1000
+From:   Dave Chinner <david@fromorbit.com>
+To:     "Darrick J. Wong" <darrick.wong@oracle.com>
+Cc:     Matthew Wilcox <willy@infradead.org>,
+        Christoph Hellwig <hch@lst.de>,
+        Goldwyn Rodrigues <rgoldwyn@suse.de>,
+        linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        fdmanana@gmail.com, dsterba@suse.cz, cluster-devel@redhat.com,
+        linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org
+Subject: Re: always fall back to buffered I/O after invalidation failures,
+ was: Re: [PATCH 2/6] iomap: IOMAP_DIO_RWF_NO_STALE_PAGECACHE return if page
+ invalidation fails
+Message-ID: <20200709225936.GZ2005@dread.disaster.area>
+References: <20200701075310.GB29884@lst.de>
+ <20200707124346.xnr5gtcysuzehejq@fiona>
+ <20200707125705.GK25523@casper.infradead.org>
+ <20200707130030.GA13870@lst.de>
+ <20200708065127.GM2005@dread.disaster.area>
+ <20200708135437.GP25523@casper.infradead.org>
+ <20200709022527.GQ2005@dread.disaster.area>
+ <20200709160926.GO7606@magnolia>
+ <20200709170519.GH12769@casper.infradead.org>
+ <20200709171038.GE7625@magnolia>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii; format=flowed
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20200702082558.GH27795@twin.jikos.cz>
+In-Reply-To: <20200709171038.GE7625@magnolia>
+User-Agent: Mutt/1.10.1 (2018-07-13)
+X-Optus-CM-Score: 0
+X-Optus-CM-Analysis: v=2.3 cv=X6os11be c=1 sm=1 tr=0
+        a=moVtWZxmCkf3aAMJKIb/8g==:117 a=moVtWZxmCkf3aAMJKIb/8g==:17
+        a=kj9zAlcOel0A:10 a=_RQrkK6FrEwA:10 a=7-415B0cAAAA:8
+        a=CAmLY35Qp_Y7Zt_JOjoA:9 a=CjuIK1q_8ugA:10 a=biEYGPWJfzWAr4FL6Ov7:22
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Jul 02, 2020 at 10:25:58AM +0200, David Sterba wrote:
->On Wed, Jul 01, 2020 at 09:21:20PM -0400, Sasha Levin wrote:
->> From: Waiman Long <longman@redhat.com>
->>
->> [ Upstream commit b091f7fede97cc64f7aaad3eeb37965aebee3082 ]
->>
->> In btrfs_ioctl_get_subvol_info(), there is a classic case where kzalloc()
->> was incorrectly paired with kzfree(). According to David Sterba, there
->> isn't any sensitive information in the subvol_info that needs to be
->> cleared before freeing. So kzfree() isn't really needed, use kfree()
->> instead.
->
->I don't think this patch is necessary for any stable tree, it's meant
->only to ease merging a tree-wide patchset to rename kzfree.  In btrfs
->code there was no point using it so it's plain kfree.
+On Thu, Jul 09, 2020 at 10:10:38AM -0700, Darrick J. Wong wrote:
+> On Thu, Jul 09, 2020 at 06:05:19PM +0100, Matthew Wilcox wrote:
+> > On Thu, Jul 09, 2020 at 09:09:26AM -0700, Darrick J. Wong wrote:
+> > > On Thu, Jul 09, 2020 at 12:25:27PM +1000, Dave Chinner wrote:
+> > > > -	 */
+> > > > -	ret = invalidate_inode_pages2_range(mapping,
+> > > > -			pos >> PAGE_SHIFT, end >> PAGE_SHIFT);
+> > > > -	if (ret)
+> > > > -		dio_warn_stale_pagecache(iocb->ki_filp);
+> > > > -	ret = 0;
+> > > > +	if (iov_iter_rw(iter) == WRITE) {
+> > > > +		/*
+> > > > +		 * Try to invalidate cache pages for the range we're direct
+> > > > +		 * writing.  If this invalidation fails, tough, the write will
+> > > > +		 * still work, but racing two incompatible write paths is a
+> > > > +		 * pretty crazy thing to do, so we don't support it 100%.
+> > > > +		 */
+> > > > +		ret = invalidate_inode_pages2_range(mapping,
+> > > > +				pos >> PAGE_SHIFT, end >> PAGE_SHIFT);
+> > > > +		if (ret)
+> > > > +			dio_warn_stale_pagecache(iocb->ki_filp);
+> > > > +		ret = 0;
+> > > >  
+> > > > -	if (iov_iter_rw(iter) == WRITE && !wait_for_completion &&
+> > > > -	    !inode->i_sb->s_dio_done_wq) {
+> > > > -		ret = sb_init_dio_done_wq(inode->i_sb);
+> > > > -		if (ret < 0)
+> > > > -			goto out_free_dio;
+> > > > +		if (!wait_for_completion &&
+> > > > +		    !inode->i_sb->s_dio_done_wq) {
+> > > > +			ret = sb_init_dio_done_wq(inode->i_sb);
+> > > > +			if (ret < 0)
+> > > > +				goto out_free_dio;
+> 
+> ...and yes I did add in the closing brace here. :P
 
-I've dropped it, thanks!
+Doh! I forgot to refresh the patch after fixing that. :/
 
+Thanks!
+
+Cheers,
+
+Dave.
 -- 
-Thanks,
-Sasha
+Dave Chinner
+david@fromorbit.com

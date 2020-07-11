@@ -2,84 +2,123 @@ Return-Path: <SRS0=9x/W=AW=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.2 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C9EB1C433DF
-	for <linux-btrfs@archiver.kernel.org>; Sat, 11 Jul 2020 16:03:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1CB91C433E2
+	for <linux-btrfs@archiver.kernel.org>; Sat, 11 Jul 2020 16:16:42 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 9C1E120786
-	for <linux-btrfs@archiver.kernel.org>; Sat, 11 Jul 2020 16:03:27 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E8BB72075F
+	for <linux-btrfs@archiver.kernel.org>; Sat, 11 Jul 2020 16:16:41 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="BmQVm7xm"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728596AbgGKQD0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 11 Jul 2020 12:03:26 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53510 "EHLO
+        id S1728612AbgGKQQl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 11 Jul 2020 12:16:41 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55534 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728412AbgGKQD0 (ORCPT
+        with ESMTP id S1728532AbgGKQQl (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 11 Jul 2020 12:03:26 -0400
-X-Greylist: delayed 2615 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Sat, 11 Jul 2020 09:03:26 PDT
-Received: from savella.carfax.org.uk (2001-ba8-1f1-f0e6-0-0-0-2.autov6rev.bitfolk.space [IPv6:2001:ba8:1f1:f0e6::2])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 777A6C08C5DD
-        for <linux-btrfs@vger.kernel.org>; Sat, 11 Jul 2020 09:03:26 -0700 (PDT)
-Received: from hrm by savella.carfax.org.uk with local (Exim 4.92)
-        (envelope-from <hrm@savella.carfax.org.uk>)
-        id 1juHI3-0007NM-AV; Sat, 11 Jul 2020 16:19:47 +0100
-Date:   Sat, 11 Jul 2020 16:19:47 +0100
-From:   Hugo Mills <hugo@carfax.org.uk>
-To:     Stirling Westrup <swestrup@gmail.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: Rebalancing Question
-Message-ID: <20200711151947.GA12186@savella.carfax.org.uk>
-Mail-Followup-To: Hugo Mills <hugo@carfax.org.uk>,
-        Stirling Westrup <swestrup@gmail.com>, linux-btrfs@vger.kernel.org
-References: <CAJt7KB-c4vRYgjJ1WZJyNZuey6nH=y2BcQNVYJa6YAG9MTfKhQ@mail.gmail.com>
+        Sat, 11 Jul 2020 12:16:41 -0400
+Received: from mail-wm1-x32d.google.com (mail-wm1-x32d.google.com [IPv6:2a00:1450:4864:20::32d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9D8CBC08C5DD
+        for <linux-btrfs@vger.kernel.org>; Sat, 11 Jul 2020 09:16:40 -0700 (PDT)
+Received: by mail-wm1-x32d.google.com with SMTP id a6so10518276wmm.0
+        for <linux-btrfs@vger.kernel.org>; Sat, 11 Jul 2020 09:16:40 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc:content-transfer-encoding;
+        bh=teHR+Mbi25ZrcwxHJN5rOBgLfpkeFI4h8KNBGtAunjE=;
+        b=BmQVm7xmGf0QDkOIA05Uxm7tCMF7zZrreilipLMXgktxqIpQWnaoQqJcuwtvFTDVaj
+         5J2zFn5TD+Y2GqbnlhZ9TKBI2IA/5iFIhJtP3OEFDJ9hMH8PTeJsBDVlif2BnI4ALemF
+         BUGuP+CZ/mRlyUMe42MbqsSUwmxCCCjWmpJHtTuMJWBT07U6qpue9qVuFh//xXrmcVcM
+         +zz8VF3YMTXR5uJX/E3NOzUXiix4i09GisoeiKWolGDW9g+ucswotX4GNAZclIRqrpxx
+         qDtMmPj2R/6VpcluWCLWbKX+d4lQzWHJlr6qN6bx/p03PGIDu0HhiUlc9Ie4NWWsaAOy
+         YeUg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc:content-transfer-encoding;
+        bh=teHR+Mbi25ZrcwxHJN5rOBgLfpkeFI4h8KNBGtAunjE=;
+        b=f73PfshKWROarbRW5M52wNxUI/wb8ppM1YUg+10xSRxC0rU4E9WcQqef4cRRylG+jc
+         yGv++BMWnjZqwLRVelBAEskuTyXfpLQPAJSfyV4pT51nqoDv1vTOXwQUd03i6PVcT74r
+         00W/LbjYF99eZ0FO3x3ntw7rqUXcZra5ND8ZXdvMkBsMqlcvwzDAJfbxWP755Tmn+ek/
+         MKqG51A6e/0v93Y3zKeovaiPNKTWfFFSoLsPa6AzB2fbdfGWCdPjqULq9kssw1QXNqN+
+         BASJHb51CdnrLaP2URhkkhKd9P5insNyJO/FyE4KB3gqiDhwq2U/ir3sEbdnexd2SPC7
+         513A==
+X-Gm-Message-State: AOAM530jz7NTTONuC/W5NBdMh286k0XUf+EAEddpYZkLcaT64ZX8fuQ4
+        r64dNQcU05srCnmPaCT7qiXsVOYSh3y4U3qQsa+A5g==
+X-Google-Smtp-Source: ABdhPJzbMZ53XmK3oawUsIbemKyox3DgcG3286ZzgtdLDoH+PyqghH7V4aPz7SjWs20LlJ6c89iuVh6ByNOGjjPTJ0k=
+X-Received: by 2002:a1c:e383:: with SMTP id a125mr10732735wmh.11.1594484199303;
+ Sat, 11 Jul 2020 09:16:39 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <CAJt7KB-c4vRYgjJ1WZJyNZuey6nH=y2BcQNVYJa6YAG9MTfKhQ@mail.gmail.com>
-X-GPG-Fingerprint: DD84 D558 9D81 DDEE 930D  2054 585E 1475 E2AB 1DE4
-X-GPG-Key: E2AB1DE4
-X-Parrot: It is no more. It has joined the choir invisible.
-X-IRC-Nicks: darksatanic darkersatanic darkling darkthing
-User-Agent: Mutt/1.10.1 (2018-07-13)
+References: <CAJCQCtRfXy9YDqZQgYz0_djd78oEMwiYY7Og2x=J=w361FENWg@mail.gmail.com>
+ <7f9a8467-6b03-6699-f124-2833fffef4ab@gmail.com>
+In-Reply-To: <7f9a8467-6b03-6699-f124-2833fffef4ab@gmail.com>
+From:   Chris Murphy <lists@colorremedies.com>
+Date:   Sat, 11 Jul 2020 10:16:23 -0600
+Message-ID: <CAJCQCtS7cYVDQ9mn3BrsO=OFPt=05ZgZEer=g2=1vGjHPLCREw@mail.gmail.com>
+Subject: Re: raid0 and different sized devices
+To:     Andrei Borzenkov <arvidjaar@gmail.com>
+Cc:     Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sat, Jul 11, 2020 at 10:42:30AM -0400, Stirling Westrup wrote:
-> I have a BTRFS built with two devices md0 and md1 on a server. I wish
-> to move as much data as will fit from md0 to md1, but I cannot figure
-> out a balance command that will do that.
-> 
-> My use case is a file server with a fixed number of hard drive slots
-> and two raids. md0 is a raid using most of the slots with small
-> drives, and md1 is a raid using the remaining slots with large drives.
-> I'm trying to shrink md0, so I can remove some small drives and put in
-> new large drives to add to md1.
-> 
-> I have read the notes on the balance command several times but I can't
-> figure out how to get it to do what I want, if it's even possible.
+On Sat, Jul 11, 2020 at 12:28 AM Andrei Borzenkov <arvidjaar@gmail.com> wro=
+te:
+>
+> 11.07.2020 04:37, Chris Murphy =D0=BF=D0=B8=D1=88=D0=B5=D1=82:
+> > Summary:
+> >
+> > df claims this volume is full, which is how it actually behaves. Rsync
+> > fails with an out of space message. But 'btrfs fi us' reports
+> > seemingly misleading/incorrect information:
+> >
+> >     Free (estimated):          12.64GiB    (min: 6.33GiB)
+> >
+> > If Btrfs can't do single device raid0, and it seems it can't, then
+> > this free space reporting seems wrong twice. (Both values.)
+> >
+>
+> This space can be used with single or dup profiles so it is actually
+> correct (second number being for dup). It would of course be nice to get
+> extended output "how much space for each profile", but as "estimation of
+> theoretical free space" it is absolutely correct.
+>
+> Of course I do not know whether it is correct by design or by coincidence=
+ :)
 
-   Balance isn't the right tool for this. You can reduce the size that
-the FS takes up on md0, using "btrfs fi resize 0:10G /mount/btrfs",
-where the 0 is the device ID of md0 (see btrfs fi show), and the 10G
-is the target size for the device. You can then use the mdadm tools to
-reduce the size of md0 (but no smaller than 10G, in this example).
+I also wonder about the effect of metadata raid1 in this case. For
+sure it can't allocate another raid1 chunk, even if raid0 profile were
+able to support single stripe raid0 block groups on a single device.
 
-   I would definitely recommend reducing the FS by more than the
-device, just to cope with any rounding errors in tooling.
+And in fact we end up with a weird situation where premature out of
+space can still happen with -d single -m raid1. What should be true is
+data block groups are only created on the large device, in effect
+making the small device metadata only. But since in this extreme
+example it's only ~700M, it's just a matter of time before we're in
+metadata exhaustion because there's no fall back to single metadata.
 
-   If you're removing md0 entirely from the FS, and have space to do
-so, then btrfs dev delete is what you need -- but it sounds like
-that's not the case here.
+This is a peculiar case in a VM, where it's easy to create such
+(somewhat) contrived scenarios. In the real world we're not likely to
+see these kinds of problems, I think. A 2G device is rare indeed, let
+alone matched with a ~16 GiB device. We could also argue the UI/UX of
+an installer allowing multiple device selection for automatic
+partitioning. But alas it is allowed, and currently defaults to
+LVM+ext4. So it becomes a concat/linear arrangement and just works, no
+matter how possibly fragile it is to device failure. So the closest
+approximation for Btrfs would be mkfs.btrfs -d single -m single. The
+next closest is -d single -m raid1, which at least allows the
+possibility of salvaging the data on the surviving drive, and probably
+worth the risk of metadata exhaustion in the rare case of including a
+small second device in the pool.
 
-   Hugo.
-
--- 
-Hugo Mills             | Great films about cricket: Monster's No-Ball
-hugo@... carfax.org.uk |
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |
+--=20
+Chris Murphy

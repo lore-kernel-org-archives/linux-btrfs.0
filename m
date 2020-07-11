@@ -1,271 +1,129 @@
-Return-Path: <SRS0=n2qC=AV=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=9x/W=AW=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3E039C433E0
-	for <linux-btrfs@archiver.kernel.org>; Fri, 10 Jul 2020 18:55:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D08D5C433E0
+	for <linux-btrfs@archiver.kernel.org>; Sat, 11 Jul 2020 01:37:58 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id CB1C92076A
-	for <linux-btrfs@archiver.kernel.org>; Fri, 10 Jul 2020 18:55:50 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7D12B20674
+	for <linux-btrfs@archiver.kernel.org>; Sat, 11 Jul 2020 01:37:58 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=mpdesouza.com header.i=@mpdesouza.com header.b="RTj6yif/"
+	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="mjdpRy5P"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727091AbgGJSzu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 10 Jul 2020 14:55:50 -0400
-Received: from gateway36.websitewelcome.com ([192.185.193.12]:44204 "EHLO
-        gateway36.websitewelcome.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1726872AbgGJSzt (ORCPT
+        id S1726684AbgGKBh5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 10 Jul 2020 21:37:57 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34374 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726605AbgGKBh5 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 10 Jul 2020 14:55:49 -0400
-Received: from cm14.websitewelcome.com (cm14.websitewelcome.com [100.42.49.7])
-        by gateway36.websitewelcome.com (Postfix) with ESMTP id 80A08400C6172
-        for <linux-btrfs@vger.kernel.org>; Fri, 10 Jul 2020 13:18:05 -0500 (CDT)
-Received: from br540.hostgator.com.br ([108.179.252.180])
-        by cmsmtp with SMTP
-        id tyBTj6mgDSxZVtyBTjy6Bt; Fri, 10 Jul 2020 13:55:43 -0500
-X-Authority-Reason: nr=8
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=mpdesouza.com; s=default; h=Content-Transfer-Encoding:MIME-Version:
-        Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:Content-Type:Content-ID:
-        Content-Description:Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc
-        :Resent-Message-ID:In-Reply-To:References:List-Id:List-Help:List-Unsubscribe:
-        List-Subscribe:List-Post:List-Owner:List-Archive;
-        bh=BvvZbSEm1ZNc4JoyGf7Fm8POI2KzDPaSJ+MThuXX69Q=; b=RTj6yif/Cr5jh+yrf4jiC+8t20
-        vgznRV+d7NuCPPQ4RVMUytH68DyImy//xFwfp2SlsniD/eXKFI+Q2tfB4kaABN3a+GsllBeRHkQdl
-        iNblPBfdsEs68eVpmAqbD1tApMgHGEKl9XozsdIfkyd5o2koXO6loB34ISY1sLwTKLp/pkcjybb7x
-        rMscgEbOS8uFLVn0ljad1T/wocr7vY9JikWF+bauM7M+t64e754obLSjk6nlD4VavGB6U7vAvx/wF
-        v+mnNeH+usc9HEHRwEfwMNRlf0U/ZM9w8pmoaPPrB/hmSCfMnjF9YkbUDRqwJbA8BXju/fcYcsfk6
-        g4fxWHdw==;
-Received: from 189.26.190.158.dynamic.adsl.gvt.net.br ([189.26.190.158]:53932 helo=hephaestus.suse.de)
-        by br540.hostgator.com.br with esmtpsa  (TLS1.2) tls TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
-        (Exim 4.93)
-        (envelope-from <marcos@mpdesouza.com>)
-        id 1jtyBS-00049a-Of; Fri, 10 Jul 2020 15:55:43 -0300
-From:   Marcos Paulo de Souza <marcos@mpdesouza.com>
-To:     dsterba@suse.com, linux-btrfs@vger.kernel.org,
-        fstests@vger.kernel.org
-Cc:     Marcos Paulo de Souza <mpdesouza@suse.com>
-Subject: [PATCH] btrfs: Ignore output of "btrfs quota rescan"
-Date:   Fri, 10 Jul 2020 15:55:19 -0300
-Message-Id: <20200710185519.10322-1-marcos@mpdesouza.com>
-X-Mailer: git-send-email 2.26.2
+        Fri, 10 Jul 2020 21:37:57 -0400
+Received: from mail-wm1-x333.google.com (mail-wm1-x333.google.com [IPv6:2a00:1450:4864:20::333])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8B734C08C5DC
+        for <linux-btrfs@vger.kernel.org>; Fri, 10 Jul 2020 18:37:55 -0700 (PDT)
+Received: by mail-wm1-x333.google.com with SMTP id 22so7898750wmg.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 10 Jul 2020 18:37:55 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:from:date:message-id:subject:to;
+        bh=n6UFJ/excSM439dp6N0giI+YVh73oslynMlKHNiB8hk=;
+        b=mjdpRy5PEI4IM2yCJ2vwdT/KuwNFKHWWVydLc4io1a3IYA2/UpljjmZV3T65e3Xly9
+         jrRX3eL4/Q+F8JluciO1rKiCmr2zfNtxkcjXaC35tfQYVmboFGEJbiaBuz1qTsCxslYm
+         dcqVIr+IkRuJPv3ttwy104e+RQKoOTlqvK5k/RlHWhZxwmHf7LTsQvcxcuE3uL777Jlr
+         jhwp9pyGNW01h88I4x6VV6nk7WsmQ+FS2arjPWESQEpp0KOeljz8gz+ryPVHJoEHHDQ2
+         7ZJn+0VPN5c/bijo03qTVHFLTnCRNlWNlt+WBgRF/U1iuNf+XmwLjq/dUYX0VaCZDKwM
+         ZYMA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:from:date:message-id:subject:to;
+        bh=n6UFJ/excSM439dp6N0giI+YVh73oslynMlKHNiB8hk=;
+        b=Qnb4kEPfm/uofx15QU+JAYkTFrLZfBUheMchBiW26ZRWHyigAkaQvRTRrsd0EFXTHx
+         aKXtOv+HWlAkR66fI85xIfZZLvlPBZUWJ/xiqu+LRxsbHmH2BGlh721Wn+coyf1Cvvd0
+         5RkAGo7eM/qqCPBOUM6ucMHOKhVrPiyMR4JAK5cvroa2OZG6kx/dnPcBq3BiwWZmNz6D
+         HOoqz51NBiVZDANB//DUNrjXcJPXqRVIFz7EkgzuA8fSzT4OjZWswY8Oq5H+48TiTNS4
+         GZ72+E+C2LliHDq5BnKhrRr58ROFuEZL1QDiVIPUTV4RcpU9P3ggRyox0k+e6XoByXz1
+         QKTA==
+X-Gm-Message-State: AOAM5319E8cQ6A8QJBWw378qd+gYjWbFEybJEdPG2X63ObJ6fDvj3KSJ
+        yQen7f+eNTYwmnokGJuNK6VJx3RYdmsk1GTLILxKphoVkJY=
+X-Google-Smtp-Source: ABdhPJwvpniBgCO3DRX/K33AXBHfUlNYdXKZa8QxpDug88um8ZMC4Qsylhqm6UI65bt5yV0a1EPRu+Q4Gumr9EOc3Uo=
+X-Received: by 2002:a05:600c:410f:: with SMTP id j15mr7578671wmi.128.1594431473209;
+ Fri, 10 Jul 2020 18:37:53 -0700 (PDT)
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-AntiAbuse: This header was added to track abuse, please include it with any abuse report
-X-AntiAbuse: Primary Hostname - br540.hostgator.com.br
-X-AntiAbuse: Original Domain - vger.kernel.org
-X-AntiAbuse: Originator/Caller UID/GID - [47 12] / [47 12]
-X-AntiAbuse: Sender Address Domain - mpdesouza.com
-X-BWhitelist: no
-X-Source-IP: 189.26.190.158
-X-Source-L: No
-X-Exim-ID: 1jtyBS-00049a-Of
-X-Source: 
-X-Source-Args: 
-X-Source-Dir: 
-X-Source-Sender: 189.26.190.158.dynamic.adsl.gvt.net.br (hephaestus.suse.de) [189.26.190.158]:53932
-X-Source-Auth: marcos@mpdesouza.com
-X-Email-Count: 3
-X-Source-Cap: bXBkZXNvNTM7bXBkZXNvNTM7YnI1NDAuaG9zdGdhdG9yLmNvbS5icg==
-X-Local-Domain: yes
+From:   Chris Murphy <lists@colorremedies.com>
+Date:   Fri, 10 Jul 2020 19:37:37 -0600
+Message-ID: <CAJCQCtRfXy9YDqZQgYz0_djd78oEMwiYY7Og2x=J=w361FENWg@mail.gmail.com>
+Subject: raid0 and different sized devices
+To:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Marcos Paulo de Souza <mpdesouza@suse.com>
+Summary:
 
-Some recent test already ignore this output, while older ones do not.
-It can sometimes make tests fail because "quota rescan" can show the
-message "quota rescan started". Ignoring the output of the command
-solves this problem.
+df claims this volume is full, which is how it actually behaves. Rsync
+fails with an out of space message. But 'btrfs fi us' reports
+seemingly misleading/incorrect information:
 
-Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
----
- tests/btrfs/017 | 2 +-
- tests/btrfs/022 | 4 ++--
- tests/btrfs/028 | 2 +-
- tests/btrfs/057 | 2 +-
- tests/btrfs/091 | 2 +-
- tests/btrfs/104 | 2 +-
- tests/btrfs/123 | 2 +-
- tests/btrfs/126 | 2 +-
- tests/btrfs/139 | 2 +-
- tests/btrfs/153 | 2 +-
- tests/btrfs/193 | 2 +-
- tests/btrfs/210 | 2 +-
- 12 files changed, 13 insertions(+), 13 deletions(-)
+    Free (estimated):          12.64GiB    (min: 6.33GiB)
 
-diff --git a/tests/btrfs/017 b/tests/btrfs/017
-index 1bb8295b..a888b8db 100755
---- a/tests/btrfs/017
-+++ b/tests/btrfs/017
-@@ -64,7 +64,7 @@ $CLONER_PROG -s 0 -d 0 -l $EXTENT_SIZE $SCRATCH_MNT/foo \
- 	     $SCRATCH_MNT/snap/foo-reflink2
- 
- _run_btrfs_util_prog quota enable $SCRATCH_MNT
--_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
-+_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT >/dev/null
- 
- rm -fr $SCRATCH_MNT/foo*
- rm -fr $SCRATCH_MNT/snap/foo*
-diff --git a/tests/btrfs/022 b/tests/btrfs/022
-index aaa27aaa..442cc05c 100755
---- a/tests/btrfs/022
-+++ b/tests/btrfs/022
-@@ -38,7 +38,7 @@ _basic_test()
- 	echo "=== basic test ===" >> $seqres.full
- 	_run_btrfs_util_prog subvolume create $SCRATCH_MNT/a
- 	_run_btrfs_util_prog quota enable $SCRATCH_MNT/a
--	_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
-+	_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT >/dev/null
- 	subvolid=$(_btrfs_get_subvolid $SCRATCH_MNT a)
- 	$BTRFS_UTIL_PROG qgroup show $units $SCRATCH_MNT | grep $subvolid >> \
- 		$seqres.full 2>&1
-@@ -77,7 +77,7 @@ _rescan_test()
- 	echo "qgroup values before rescan: $output" >> $seqres.full
- 	refer=$(echo $output | awk '{ print $2 }')
- 	excl=$(echo $output | awk '{ print $3 }')
--	_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
-+	_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT >/dev/null
- 	output=$($BTRFS_UTIL_PROG qgroup show $units $SCRATCH_MNT | grep "0/$subvolid")
- 	echo "qgroup values after rescan: $output" >> $seqres.full
- 	[ $refer -eq $(echo $output | awk '{ print $2 }') ] || \
-diff --git a/tests/btrfs/028 b/tests/btrfs/028
-index 98b9c8b9..4a574b8b 100755
---- a/tests/btrfs/028
-+++ b/tests/btrfs/028
-@@ -42,7 +42,7 @@ _scratch_mkfs >/dev/null
- _scratch_mount
- 
- _run_btrfs_util_prog quota enable $SCRATCH_MNT
--_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
-+_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT >/dev/null
- 
- # Increase the probability of generating de-refer extent, and decrease
- # other.
-diff --git a/tests/btrfs/057 b/tests/btrfs/057
-index 82e3162e..aa1d429c 100755
---- a/tests/btrfs/057
-+++ b/tests/btrfs/057
-@@ -47,7 +47,7 @@ run_check $FSSTRESS_PROG -d $SCRATCH_MNT/snap1 -w -p 5 -n 1000 \
-        $FSSTRESS_AVOID >&/dev/null
- 
- _run_btrfs_util_prog quota enable $SCRATCH_MNT
--_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
-+_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT >/dev/null
- 
- echo "Silence is golden"
- # btrfs check will detect any qgroup number mismatch.
-diff --git a/tests/btrfs/091 b/tests/btrfs/091
-index 6d2a23c8..a4aeebc3 100755
---- a/tests/btrfs/091
-+++ b/tests/btrfs/091
-@@ -59,7 +59,7 @@ _run_btrfs_util_prog subvolume create $SCRATCH_MNT/subv2
- _run_btrfs_util_prog subvolume create $SCRATCH_MNT/subv3
- 
- _run_btrfs_util_prog quota enable $SCRATCH_MNT
--_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
-+_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT >/dev/null
- 
- # if we don't support noinode_cache mount option, then we should double check
- # whether inode cache is enabled before executing the real test payload.
-diff --git a/tests/btrfs/104 b/tests/btrfs/104
-index f0cc67d6..d3338e35 100755
---- a/tests/btrfs/104
-+++ b/tests/btrfs/104
-@@ -113,7 +113,7 @@ _explode_fs_tree 1 $SCRATCH_MNT/snap2/files-snap2
- # Enable qgroups now that we have our filesystem prepared. This
- # will kick off a scan which we will have to wait for.
- _run_btrfs_util_prog quota enable $SCRATCH_MNT
--_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
-+_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT >/dev/null
- 
- # Remount to clear cache, force everything to disk
- _scratch_cycle_mount
-diff --git a/tests/btrfs/123 b/tests/btrfs/123
-index 65177159..63b6d428 100755
---- a/tests/btrfs/123
-+++ b/tests/btrfs/123
-@@ -56,7 +56,7 @@ sync
- 
- # enable quota and rescan to get correct number
- _run_btrfs_util_prog quota enable $SCRATCH_MNT
--_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
-+_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT >/dev/null
- 
- # now balance data block groups to corrupt qgroup
- _run_btrfs_balance_start -d $SCRATCH_MNT >> $seqres.full
-diff --git a/tests/btrfs/126 b/tests/btrfs/126
-index 8635791e..eceaabb2 100755
---- a/tests/btrfs/126
-+++ b/tests/btrfs/126
-@@ -41,7 +41,7 @@ _scratch_mkfs >/dev/null
- _scratch_mount "-o enospc_debug"
- 
- _run_btrfs_util_prog quota enable $SCRATCH_MNT
--_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
-+_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT >/dev/null
- _run_btrfs_util_prog qgroup limit 512K 0/5 $SCRATCH_MNT
- 
- # The amount of written data may change due to different nodesize at mkfs time,
-diff --git a/tests/btrfs/139 b/tests/btrfs/139
-index 1b636e81..44168e2a 100755
---- a/tests/btrfs/139
-+++ b/tests/btrfs/139
-@@ -43,7 +43,7 @@ SUBVOL=$SCRATCH_MNT/subvol
- 
- _run_btrfs_util_prog subvolume create $SUBVOL
- _run_btrfs_util_prog quota enable $SCRATCH_MNT
--_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
-+_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT >/dev/null
- _run_btrfs_util_prog qgroup limit -e 1G $SUBVOL
- 
- 
-diff --git a/tests/btrfs/153 b/tests/btrfs/153
-index f343da32..1f8e37e7 100755
---- a/tests/btrfs/153
-+++ b/tests/btrfs/153
-@@ -41,7 +41,7 @@ _scratch_mkfs >/dev/null
- _scratch_mount
- 
- _run_btrfs_util_prog quota enable $SCRATCH_MNT
--_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
-+_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT >/dev/null
- _run_btrfs_util_prog qgroup limit 100M 0/5 $SCRATCH_MNT
- 
- testfile1=$SCRATCH_MNT/testfile1
-diff --git a/tests/btrfs/193 b/tests/btrfs/193
-index 16b7650c..8bdc7566 100755
---- a/tests/btrfs/193
-+++ b/tests/btrfs/193
-@@ -43,7 +43,7 @@ _scratch_mkfs > /dev/null
- _scratch_mount
- 
- $BTRFS_UTIL_PROG quota enable "$SCRATCH_MNT" > /dev/null
--$BTRFS_UTIL_PROG quota rescan -w "$SCRATCH_MNT" > /dev/null
-+$BTRFS_UTIL_PROG quota rescan -w "$SCRATCH_MNT" >/dev/null
- $BTRFS_UTIL_PROG qgroup limit -e 256M "$SCRATCH_MNT"
- 
- # Create a file with the following layout:
-diff --git a/tests/btrfs/210 b/tests/btrfs/210
-index daa76a87..a9a04951 100755
---- a/tests/btrfs/210
-+++ b/tests/btrfs/210
-@@ -46,7 +46,7 @@ _pwrite_byte 0xcd 0 16M "$SCRATCH_MNT/src/file" > /dev/null
- # by qgroup
- sync
- $BTRFS_UTIL_PROG quota enable "$SCRATCH_MNT"
--$BTRFS_UTIL_PROG quota rescan -w "$SCRATCH_MNT"
-+$BTRFS_UTIL_PROG quota rescan -w "$SCRATCH_MNT" >/dev/null
- $BTRFS_UTIL_PROG qgroup create 1/0 "$SCRATCH_MNT"
- 
- # Create a snapshot with qgroup inherit
+If Btrfs can't do single device raid0, and it seems it can't, then
+this free space reporting seems wrong twice. (Both values.)
+
+Details:
+
+# uname -r
+5.8.0-0.rc3.20200701git7c30b859a947.1.fc33.x86_64
+# btrfs --version
+btrfs-progs v5.7
+
+
+# btrfs fi show
+Label: 'fedora_localhost-live'  uuid: 1fa3ab85-2dec-46f8-9a35-264c0f412dcc
+    Total devices 2 FS bytes used 885.83MiB
+    devid    1 size 730.00MiB used 709.00MiB path /dev/vda3
+    devid    2 size 13.30GiB used 709.00MiB path /dev/vdb1
+
+
+# df -h
+Filesystem           Size  Used Avail Use% Mounted on
+/dev/vda3             15G  905M   60M  94% /mnt/sysroot
+
+
+# btrfs fi us /mnt/sysroot
+Overall:
+    Device size:          14.01GiB
+    Device allocated:           1.38GiB
+    Device unallocated:          12.63GiB
+    Device missing:             0.00B
+    Used:             901.58MiB
+    Free (estimated):          12.64GiB    (min: 6.33GiB)
+    Data ratio:                  1.00
+    Metadata ratio:              2.00
+    Global reserve:           3.25MiB    (used: 0.00B)
+    Multiple profiles:                no
+
+Data,RAID0: Size:890.00MiB, Used:870.08MiB (97.76%)
+   /dev/vda3     445.00MiB
+   /dev/vdb1     445.00MiB
+
+Metadata,RAID1: Size:256.00MiB, Used:15.73MiB (6.15%)
+   /dev/vda3     256.00MiB
+   /dev/vdb1     256.00MiB
+
+System,RAID1: Size:8.00MiB, Used:16.00KiB (0.20%)
+   /dev/vda3       8.00MiB
+   /dev/vdb1       8.00MiB
+
+Unallocated:
+   /dev/vda3      21.00MiB
+   /dev/vdb1      12.61GiB
+#
+
+
 -- 
-2.26.2
-
+Chris Murphy

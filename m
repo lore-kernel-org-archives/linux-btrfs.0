@@ -2,64 +2,64 @@ Return-Path: <SRS0=tdFO=AY=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIM_INVALID,
+X-Spam-Status: No, score=-10.0 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,UNWANTED_LANGUAGE_BODY,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 815E0C433E4
-	for <linux-btrfs@archiver.kernel.org>; Mon, 13 Jul 2020 12:29:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 91942C433E6
+	for <linux-btrfs@archiver.kernel.org>; Mon, 13 Jul 2020 12:29:12 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 5DEDA20738
-	for <linux-btrfs@archiver.kernel.org>; Mon, 13 Jul 2020 12:29:14 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7010520738
+	for <linux-btrfs@archiver.kernel.org>; Mon, 13 Jul 2020 12:29:12 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="Snv1vcH1"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="NlESBrr3"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729779AbgGMM3N (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 13 Jul 2020 08:29:13 -0400
+        id S1729761AbgGMM3L (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 13 Jul 2020 08:29:11 -0400
 Received: from esa4.hgst.iphmx.com ([216.71.154.42]:19772 "EHLO
         esa4.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729735AbgGMM3K (ORCPT
+        with ESMTP id S1729771AbgGMM3L (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 13 Jul 2020 08:29:10 -0400
+        Mon, 13 Jul 2020 08:29:11 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1594643348; x=1626179348;
+  t=1594643350; x=1626179350;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=+xA6xZfQbYpVOG6CLdU4tovv5U0Sd9oi2wfTHzhpWiU=;
-  b=Snv1vcH1jhJXNxH500il4Obb/JIzSzv91tlybsuJYTxiEBjWsD3av/pF
-   5gO6l3V9v0D3X3AAloguc4Cgc4yThxvCh6grEx1Xk9XVLHhFvuE/Odm3Q
-   o8SU85d254wLKm+8IpUr7Ig7WXHMevaCxeJfBKI8gbb8kE78c8DZXs5dV
-   ceLHfg56ql2UKKcLWV4JvEVI0DHZ54xpon+NIWKLkqhIOgBmGeB7Gfa91
-   uCZQHh9qXnnT6smbOSDcLmKYR9eOu7DYTkY7NQtbsPhQIu1WMNJhy8xdr
-   2bgMSu+gazlTXK4BPDR9kx3q/Wr8GD6J+RkqvY+EhiVY8KNUZKkvNrdhu
-   w==;
-IronPort-SDR: A4FuUOmqrpkWxp9Elpabz1VOnKg70QhrlrgsDZz4xI3cZYbCQwISlX0+UUN/uIiQbNQEgER71M
- Gcr+9oFzwGAMx6g2jNK1x9TkXuTL92hAvbRQYgnjQ9d/9HMh36ferjUKhMVvMz823ceW0zYXdm
- 1jtAOrtWEZ1EyA7vAeWM4WUNwLW7azTRjw325FxVXjuYc4dUCLmd8ccvy6+Px9JIoMyvtK93J6
- mlFUfznF74iVGPC0XY96daMT3LUrE765XH8SVrLuL57M0TqImWzk1ZqHQ6yTa8esnbxMhFgdM2
- xEE=
+  bh=CUKhAJ1tQoDa8nujkZUVHJztYhKoDRlqd/pD4jO0HKs=;
+  b=NlESBrr3jD2vGSOvDj5WgcjZAPZnpM+8grsSxKY5qFBaSIE8rLZEvV4g
+   jkg49DiZV6/I+Uq7jREjcdltwGJjdxo5F5Xima17wJT8uVhfW2Ak2oXaF
+   x+q6/ZImUk53iLGqHKFKphoFRhA3+g1/gVDyJNusVX2BFKFp2Vg3IMlx+
+   1y7KKcmibT0Eqt0y5ArJQ0dmvkInEx5mygPJ/8RFcciedk/HU27W4G7Lw
+   Oqz0gGGty2MugtUxcFQLQRb/OEaXZ8G3Gbq9ZrreLuzN2SnjGzYq4fcrW
+   LT/LkpsDBsk/wRrYtS1SIwg+TnlOrScdSyrghMKY5NUcg588j5Qm4pB2Q
+   A==;
+IronPort-SDR: c/kkOf6hid6wIHIxl2vM29x5wzzhHyce5yjZqNqK9UjQC/i1efyDXEi2OT6bkXqJ61uDxzfvQV
+ hg7ws1pWzxJv77406Sd62caLMWEDVyd4tdwtcSrvHSBXp5ZdGLzbwiMFZjfVsC67rxLtq21tbh
+ u9QcTn7vGIzVMG2U/5DoCMQFfHdD51Afevr0vuF30LKh7CTlb2gl/Iajx5ncaWs2aRKPyFo0Zg
+ 8M52HCEWctBn6sfggnlzylL5hR3E6+71A22UtvelsIDfypszeAgZi66XJPlYNhGcJ+/dWo6MTu
+ M04=
 X-IronPort-AV: E=Sophos;i="5.75,347,1589212800"; 
-   d="scan'208";a="142312951"
+   d="scan'208";a="142312954"
 Received: from h199-255-45-14.hgst.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 13 Jul 2020 20:29:08 +0800
-IronPort-SDR: ZrEy51MGEvBbPz/cVXf2Jwz381QfctpI2UioLIqMz0ureMesUcWfjL/MupNuD5gevBtikrDm0A
- iM2ZHxOqfroWxP5SNcJCJc3yi9OhV0wYU=
+  by ob1.hgst.iphmx.com with ESMTP; 13 Jul 2020 20:29:10 +0800
+IronPort-SDR: 8PFbZIVxLBU0kR8busD5rfzyISQLRh6orSCZ0Nw9IyGNRW2cFfWTdw3sII+2OBq/cmFmbetcKc
+ LlUHpQJazm0kaLN304qfYJxCI1Gjc3S24=
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 13 Jul 2020 05:17:37 -0700
-IronPort-SDR: Qky5Lg1Hw+IMtDt65UfVP8xACAayJrk115Y9+eGDBv1ghPxbT5JwcsDRtrfinOKkZ+zA2HEBdd
- 4LAOOH6bNvWw==
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 13 Jul 2020 05:17:39 -0700
+IronPort-SDR: 4xTtActgkdkSOHTIONV5BXEliGhx9rLhm2ecd4GoPk+i4PURpHigiLmo2ul3rIbiq5VOpJunrz
+ LV/vmg/X2rCQ==
 WDCIronportException: Internal
 Received: from unknown (HELO redsun60.ssa.fujisawa.hgst.com) ([10.149.66.36])
-  by uls-op-cesaip02.wdc.com with ESMTP; 13 Jul 2020 05:29:08 -0700
+  by uls-op-cesaip02.wdc.com with ESMTP; 13 Jul 2020 05:29:09 -0700
 From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
 To:     David Sterba <dsterba@suse.cz>
 Cc:     linux-btrfs@vger.kernel.org,
         Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH v2 2/4] btrfs: add filesystem generation to fsinfo ioctl
-Date:   Mon, 13 Jul 2020 21:28:59 +0900
-Message-Id: <20200713122901.1773-3-johannes.thumshirn@wdc.com>
+Subject: [PATCH v2 4/4] btrfs: assert sizes of ioctl structures
+Date:   Mon, 13 Jul 2020 21:29:01 +0900
+Message-Id: <20200713122901.1773-5-johannes.thumshirn@wdc.com>
 X-Mailer: git-send-email 2.26.2
 In-Reply-To: <20200713122901.1773-1-johannes.thumshirn@wdc.com>
 References: <20200713122901.1773-1-johannes.thumshirn@wdc.com>
@@ -70,56 +70,95 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Add retrieval of the filesystem's generation to the fsinfo ioctl. This is
-driven by setting the BTRFS_FS_INFO_FLAG_GENERATION flag in
-btrfs_ioctl_fs_info_args::flags.
+When expanding ioctl interfaces we want to make sure we're not changing
+the size of the structures, otherwise it can lead to incorrect transfers
+between kernel and user-space.
+
+Build time assert the size of each structure so we're not running into any
+incompatibilities.
 
 Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
- fs/btrfs/ioctl.c           | 5 +++++
- include/uapi/linux/btrfs.h | 6 +++++-
- 2 files changed, 10 insertions(+), 1 deletion(-)
+ include/uapi/linux/btrfs.h | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 3a566cf71fc6..f1b433ec09e8 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -3247,6 +3247,11 @@ static long btrfs_ioctl_fs_info(struct btrfs_fs_info *fs_info,
- 		fi_args->flags |= BTRFS_FS_INFO_FLAG_CSUM_INFO;
- 	}
- 
-+	if (flags_in & BTRFS_FS_INFO_FLAG_GENERATION) {
-+		fi_args->generation = fs_info->generation;
-+		fi_args->flags |= BTRFS_FS_INFO_FLAG_GENERATION;
-+	}
-+
- 	if (copy_to_user(arg, fi_args, sizeof(*fi_args)))
- 		ret = -EFAULT;
- 
 diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index b3e0af77642f..b8373723eb4a 100644
+index 69b88f6cb57f..d3c363398e10 100644
 --- a/include/uapi/linux/btrfs.h
 +++ b/include/uapi/linux/btrfs.h
-@@ -250,6 +250,9 @@ struct btrfs_ioctl_dev_info_args {
- /* Request information about checksum type and size */
- #define BTRFS_FS_INFO_FLAG_CSUM_INFO			(1 << 0)
- 
-+/* Request information about filesystem generation */
-+#define BTRFS_FS_INFO_FLAG_GENERATION			(1 << 1)
-+
- struct btrfs_ioctl_fs_info_args {
- 	__u64 max_id;				/* out */
- 	__u64 num_devices;			/* out */
-@@ -261,7 +264,8 @@ struct btrfs_ioctl_fs_info_args {
- 	__u16 csum_type;			/* out */
- 	__u16 csum_size;			/* out */
- 	__u64 flags;				/* in/out */
--	__u8 reserved[968];			/* pad to 1k */
-+	__u64 generation;			/* out */
-+	__u8 reserved[960];			/* pad to 1k */
+@@ -32,6 +32,7 @@ struct btrfs_ioctl_vol_args {
+ 	__s64 fd;
+ 	char name[BTRFS_PATH_NAME_MAX + 1];
  };
++static_assert(sizeof(struct btrfs_ioctl_vol_args) == 4096);
  
+ #define BTRFS_DEVICE_PATH_NAME_MAX	1024
+ #define BTRFS_SUBVOL_NAME_MAX 		4039
+@@ -190,6 +191,7 @@ struct btrfs_ioctl_scrub_args {
+ 	/* pad to 1k */
+ 	__u64 unused[(1024-32-sizeof(struct btrfs_scrub_progress))/8];
+ };
++static_assert(sizeof(struct btrfs_ioctl_scrub_args) == 1024);
  
+ #define BTRFS_IOCTL_DEV_REPLACE_CONT_READING_FROM_SRCDEV_MODE_ALWAYS	0
+ #define BTRFS_IOCTL_DEV_REPLACE_CONT_READING_FROM_SRCDEV_MODE_AVOID	1
+@@ -242,6 +244,7 @@ struct btrfs_ioctl_dev_info_args {
+ 	__u64 unused[379];			/* pad to 4k */
+ 	__u8 path[BTRFS_DEVICE_PATH_NAME_MAX];	/* out */
+ };
++static_assert(sizeof(struct btrfs_ioctl_dev_info_args) == 4096);
+ 
+ /*
+  * Retrieve information about the filesystem
+@@ -270,7 +273,7 @@ struct btrfs_ioctl_fs_info_args {
+ 	__u8 metadata_uuid[BTRFS_FSID_SIZE];	/* out */
+ 	__u8 reserved[944];			/* pad to 1k */
+ };
+-
++static_assert(sizeof(struct btrfs_ioctl_fs_info_args) == 1024);
+ 
+ /*
+  * feature flags
+@@ -453,6 +456,7 @@ struct btrfs_ioctl_balance_args {
+ 
+ 	__u64 unused[72];			/* pad to 1k */
+ };
++static_assert(sizeof(struct btrfs_ioctl_balance_args) == 1024);
+ 
+ #define BTRFS_INO_LOOKUP_PATH_MAX 4080
+ struct btrfs_ioctl_ino_lookup_args {
+@@ -460,6 +464,7 @@ struct btrfs_ioctl_ino_lookup_args {
+ 	__u64 objectid;
+ 	char name[BTRFS_INO_LOOKUP_PATH_MAX];
+ };
++static_assert(sizeof(struct btrfs_ioctl_ino_lookup_args) == 4096);
+ 
+ #define BTRFS_INO_LOOKUP_USER_PATH_MAX (4080 - BTRFS_VOL_NAME_MAX - 1)
+ struct btrfs_ioctl_ino_lookup_user_args {
+@@ -475,6 +480,7 @@ struct btrfs_ioctl_ino_lookup_user_args {
+ 	 */
+ 	char path[BTRFS_INO_LOOKUP_USER_PATH_MAX];
+ };
++static_assert(sizeof(struct btrfs_ioctl_ino_lookup_user_args) == 4096);
+ 
+ /* Search criteria for the btrfs SEARCH ioctl family. */
+ struct btrfs_ioctl_search_key {
+@@ -553,6 +559,7 @@ struct btrfs_ioctl_search_args {
+ 	struct btrfs_ioctl_search_key key;
+ 	char buf[BTRFS_SEARCH_ARGS_BUFSIZE];
+ };
++static_assert(sizeof(struct btrfs_ioctl_search_args) == 4096);
+ 
+ struct btrfs_ioctl_search_args_v2 {
+ 	struct btrfs_ioctl_search_key key; /* in/out - search parameters */
+@@ -710,6 +717,7 @@ struct btrfs_ioctl_get_dev_stats {
+ 	 */
+ 	__u64 unused[128 - 2 - BTRFS_DEV_STAT_VALUES_MAX];
+ };
++static_assert(sizeof(struct btrfs_ioctl_get_dev_stats) == 1032);
+ 
+ #define BTRFS_QUOTA_CTL_ENABLE	1
+ #define BTRFS_QUOTA_CTL_DISABLE	2
 -- 
 2.26.2
 

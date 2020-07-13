@@ -2,276 +2,199 @@ Return-Path: <SRS0=tdFO=AY=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.0 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-13.1 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	UNPARSEABLE_RELAY,USER_AGENT_GIT autolearn=unavailable autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C4369C433E5
-	for <linux-btrfs@archiver.kernel.org>; Mon, 13 Jul 2020 10:51:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 50778C433E1
+	for <linux-btrfs@archiver.kernel.org>; Mon, 13 Jul 2020 11:00:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id A49F520758
-	for <linux-btrfs@archiver.kernel.org>; Mon, 13 Jul 2020 10:51:01 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2FDDE20809
+	for <linux-btrfs@archiver.kernel.org>; Mon, 13 Jul 2020 11:00:37 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="vW/EQV0r"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729505AbgGMKvA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 13 Jul 2020 06:51:00 -0400
-Received: from mx2.suse.de ([195.135.220.15]:60208 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728382AbgGMKvA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 13 Jul 2020 06:51:00 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 8110DAE54
-        for <linux-btrfs@vger.kernel.org>; Mon, 13 Jul 2020 10:50:59 +0000 (UTC)
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v4 2/3] btrfs: qgroup: try to flush qgroup space when we get -EDQUOT
-Date:   Mon, 13 Jul 2020 18:50:48 +0800
-Message-Id: <20200713105049.90663-3-wqu@suse.com>
-X-Mailer: git-send-email 2.27.0
-In-Reply-To: <20200713105049.90663-1-wqu@suse.com>
-References: <20200713105049.90663-1-wqu@suse.com>
+        id S1728883AbgGMLAg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 13 Jul 2020 07:00:36 -0400
+Received: from userp2130.oracle.com ([156.151.31.86]:46410 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727890AbgGMLAg (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 13 Jul 2020 07:00:36 -0400
+Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
+        by userp2130.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 06DAw2vk126308;
+        Mon, 13 Jul 2020 11:00:30 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
+ subject : date : message-id : in-reply-to : references : mime-version :
+ content-transfer-encoding; s=corp-2020-01-29;
+ bh=DeKsFHBQb6a/5X9HR/exaAS+b3sjY4j4JCfrUfPa2Cc=;
+ b=vW/EQV0r39WSFVd4XWECVbCtwBCaaHt05nrrMgM/KuGm4nLKrnIsKEfjLJbmK4uftucG
+ qqZi7eO1XSOxZuUbvZIgJ/wZvpgk8RdDLvTLXAbIqvy2yqWYmwOp2DDA0jTCq4A8fZlH
+ 5zKB6emdBabcqFKcP3JNGMSo9aQ6P+NtxwyP+5yzKYzAhCbKWUtmxFztz+igYtOu84U4
+ yDY48M1NNLoI0fvGxU5Af5tFHmOxo444ol2vSGmuOi95DOpjET1OMaqlkKqZMudPectq
+ tsvaOxCjkss5X2ziXj4GvKTBdX7z0boDEFZmVBirnuyBOwqhLYV2Pz5GS0M7gXN13xy7 Cw== 
+Received: from aserp3030.oracle.com (aserp3030.oracle.com [141.146.126.71])
+        by userp2130.oracle.com with ESMTP id 3274uqxcsj-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
+        Mon, 13 Jul 2020 11:00:29 +0000
+Received: from pps.filterd (aserp3030.oracle.com [127.0.0.1])
+        by aserp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 06DAvpbn140638;
+        Mon, 13 Jul 2020 11:00:28 GMT
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by aserp3030.oracle.com with ESMTP id 327q0m64d5-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Mon, 13 Jul 2020 11:00:28 +0000
+Received: from abhmp0006.oracle.com (abhmp0006.oracle.com [141.146.116.12])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 06DB0QZq014029;
+        Mon, 13 Jul 2020 11:00:26 GMT
+Received: from localhost.localdomain (/39.109.231.106)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Mon, 13 Jul 2020 04:00:25 -0700
+From:   Anand Jain <anand.jain@oracle.com>
+To:     fstests@vger.kernel.org
+Cc:     linux-btrfs@vger.kernel.org, josef@toxicpanda.com,
+        nborisov@suse.com
+Subject: [PATCH v2] fstests: btrfs test if show_devname returns sprout device
+Date:   Mon, 13 Jul 2020 19:00:17 +0800
+Message-Id: <20200713110017.66825-1-anand.jain@oracle.com>
+X-Mailer: git-send-email 2.25.1
+In-Reply-To: <6dcd6b3c-06a9-51a7-988b-63cb254d7749@suse.com>
+References: <6dcd6b3c-06a9-51a7-988b-63cb254d7749@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9680 signatures=668680
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 mlxscore=0 malwarescore=0 spamscore=0
+ mlxlogscore=999 bulkscore=0 adultscore=0 phishscore=0 suspectscore=13
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2006250000
+ definitions=main-2007130083
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9680 signatures=668680
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 lowpriorityscore=0 impostorscore=0
+ suspectscore=13 phishscore=0 spamscore=0 mlxlogscore=999 malwarescore=0
+ mlxscore=0 priorityscore=1501 adultscore=0 bulkscore=0 clxscore=1015
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2006250000
+ definitions=main-2007130083
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-[PROBLEM]
-There are known problem related to how btrfs handles qgroup reserved
-space.
-One of the most obvious case is the the test case btrfs/153, which do
-fallocate, then write into the preallocated range.
+Test if the show_devname() returns sprout device instead of seed device.
 
-  btrfs/153 1s ... - output mismatch (see xfstests-dev/results//btrfs/153.out.bad)
-      --- tests/btrfs/153.out     2019-10-22 15:18:14.068965341 +0800
-      +++ xfstests-dev/results//btrfs/153.out.bad      2020-07-01 20:24:40.730000089 +0800
-      @@ -1,2 +1,5 @@
-       QA output created by 153
-      +pwrite: Disk quota exceeded
-      +/mnt/scratch/testfile2: Disk quota exceeded
-      +/mnt/scratch/testfile2: Disk quota exceeded
-       Silence is golden
-      ...
-      (Run 'diff -u xfstests-dev/tests/btrfs/153.out xfstests-dev/results//btrfs/153.out.bad'  to see the entire diff)
-
-[CAUSE]
-Since commit c6887cd11149 ("Btrfs: don't do nocow check unless we have to"),
-we always reserve space no matter if it's COW or not.
-
-Such behavior change is mostly for performance, and reverting it is not
-a good idea anyway.
-
-For preallcoated extent, we reserve qgroup data space for it already,
-and since we also reserve data space for qgroup at buffered write time,
-it needs twice the space for us to write into preallocated space.
-
-This leads to the -EDQUOT in buffered write routine.
-
-And we can't follow the same solution, unlike data/meta space check,
-qgroup reserved space is shared between data/meta.
-The EDQUOT can happen at the metadata reservation, so doing NODATACOW
-check after qgroup reservation failure is not a solution.
-
-[FIX]
-To solve the problem, we don't return -EDQUOT directly, but every time
-we got a -EDQUOT, we try to flush qgroup space by:
-- Flush all inodes of the root
-  NODATACOW writes will free the qgroup reserved at run_dealloc_range().
-  However we don't have the infrastructure to only flush NODATACOW
-  inodes, here we flush all inodes anyway.
-
-- Wait ordered extents
-  This would convert the preallocated metadata space into per-trans
-  metadata, which can be freed in later transaction commit.
-
-- Commit transaction
-  This will free all per-trans metadata space.
-
-Also we don't want to trigger flush too racy, so here we introduce a
-per-root wait head and a new root status, to ensure if there is a running
-qgroup flushing, we wait for it to end and don't start re-flush.
-
-Fixes: c6887cd11149 ("Btrfs: don't do nocow check unless we have to")
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/ctree.h   |   4 ++
- fs/btrfs/disk-io.c |   1 +
- fs/btrfs/qgroup.c  | 101 +++++++++++++++++++++++++++++++++++++++++----
- 3 files changed, 98 insertions(+), 8 deletions(-)
+v2: check for presence of needed sprout device.
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index c96c27f66999..318fad8e9908 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1012,6 +1012,9 @@ enum {
- 	BTRFS_ROOT_DEAD_TREE,
- 	/* The root has a log tree. Used only for subvolume roots. */
- 	BTRFS_ROOT_HAS_LOG_TREE,
-+
-+	/* Qgroup flushing is in progress */
-+	BTRFS_ROOT_QGROUP_FLUSHING,
- };
- 
- /*
-@@ -1164,6 +1167,7 @@ struct btrfs_root {
- 	spinlock_t qgroup_meta_rsv_lock;
- 	u64 qgroup_meta_rsv_pertrans;
- 	u64 qgroup_meta_rsv_prealloc;
-+	wait_queue_head_t qgroup_flush_wait;
- 
- 	/* Number of active swapfiles */
- 	atomic_t nr_swapfiles;
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index aa97a39e4b15..2fb0b43bc1c5 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1116,6 +1116,7 @@ static void __setup_root(struct btrfs_root *root, struct btrfs_fs_info *fs_info,
- 	mutex_init(&root->log_mutex);
- 	mutex_init(&root->ordered_extent_mutex);
- 	mutex_init(&root->delalloc_mutex);
-+	init_waitqueue_head(&root->qgroup_flush_wait);
- 	init_waitqueue_head(&root->log_writer_wait);
- 	init_waitqueue_head(&root->log_commit_wait[0]);
- 	init_waitqueue_head(&root->log_commit_wait[1]);
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 28bf9bb6746f..1c3998ea45a3 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -3513,17 +3513,59 @@ static int qgroup_unreserve_range(struct btrfs_inode *inode,
+ common/filter       |  8 ++++++
+ tests/btrfs/215     | 59 +++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/215.out |  2 ++
+ tests/btrfs/group   |  1 +
+ 4 files changed, 70 insertions(+)
+ create mode 100755 tests/btrfs/215
+ create mode 100644 tests/btrfs/215.out
+
+diff --git a/common/filter b/common/filter
+index 2477f3860151..992783aba187 100644
+--- a/common/filter
++++ b/common/filter
+@@ -284,6 +284,14 @@ _filter_test_dir()
+ 	    -e "s,\B$TEST_DEV,TEST_DEV,g"
  }
  
- /*
-- * Reserve qgroup space for range [start, start + len).
-+ * Try to free some space for qgroup.
-  *
-- * This function will either reserve space from related qgroups or doing
-- * nothing if the range is already reserved.
-+ * For qgroup, there are only 3 ways to free qgroup space:
-+ * - Flush nodatacow write
-+ *   Any nodatacow write will free its reserved data space at
-+ *   run_delalloc_range().
-+ *   In theory, we should only flush nodatacow inodes, but it's
-+ *   not yet possible, so we need to flush the whole root.
-  *
-- * Return 0 for successful reserve
-- * Return <0 for error (including -EQUOT)
-+ * - Wait for ordered extents
-+ *   When ordered extents are finished, their reserved metadata
-+ *   is finally converted to per_trans status, which can be freed
-+ *   by later commit transaction.
-  *
-- * NOTE: this function may sleep for memory allocation.
-+ * - Commit transaction
-+ *   This would free the meta_per_trans space.
-+ *   In theory this shouldn't provide much space, but any more qgroup space
-+ *   is needed.
-  */
--int btrfs_qgroup_reserve_data(struct btrfs_inode *inode,
-+static int try_flush_qgroup(struct btrfs_root *root)
++_filter_devs()
 +{
-+	struct btrfs_trans_handle *trans;
-+	int ret;
++	local filter_devs
 +
-+	/*
-+	 * We don't want to run flush again and again, so if there is a running
-+	 * one, we won't try to start a new flush, but exit directly.
-+	 */
-+	if (test_and_set_bit(BTRFS_ROOT_QGROUP_FLUSHING, &root->state)) {
-+		wait_event(root->qgroup_flush_wait,
-+			!test_bit(BTRFS_ROOT_QGROUP_FLUSHING, &root->state));
-+		return 0;
-+	}
-+
-+	ret = btrfs_start_delalloc_snapshot(root);
-+	if (ret < 0)
-+		goto unlock;
-+	btrfs_wait_ordered_extents(root, U64_MAX, 0, (u64)-1);
-+
-+	trans = btrfs_join_transaction(root);
-+	if (IS_ERR(trans)) {
-+		ret = PTR_ERR(trans);
-+		goto unlock;
-+	}
-+
-+	ret = btrfs_commit_transaction(trans);
-+unlock:
-+	clear_bit(BTRFS_ROOT_QGROUP_FLUSHING, &root->state);
-+	wake_up(&root->qgroup_flush_wait);
-+	return ret;
++	filter_devs=$(echo $1 | sed -e 's/\s\+/\\\|/g')
++	sed -e "s,$filter_devs,SCRATCH_DEV,g"
 +}
 +
-+static int qgroup_reserve_data(struct btrfs_inode *inode,
- 			struct extent_changeset **reserved_ret, u64 start,
- 			u64 len)
+ _filter_scratch()
  {
-@@ -3576,6 +3618,34 @@ int btrfs_qgroup_reserve_data(struct btrfs_inode *inode,
- 	return ret;
- }
- 
-+/*
-+ * Reserve qgroup space for range [start, start + len).
-+ *
-+ * This function will either reserve space from related qgroups or doing
-+ * nothing if the range is already reserved.
-+ *
-+ * Return 0 for successful reserve
-+ * Return <0 for error (including -EQUOT)
-+ *
-+ * NOTE: This function may sleep for memory allocation, dirty page flushing and
-+ *	 commit transaction. So caller should not hold any dirty page locked.
-+ */
-+int btrfs_qgroup_reserve_data(struct btrfs_inode *inode,
-+			struct extent_changeset **reserved_ret, u64 start,
-+			u64 len)
+ 	# SCRATCH_DEV may be a prefix of SCRATCH_MNT (e.g. /mnt, /mnt/ovl-mnt)
+diff --git a/tests/btrfs/215 b/tests/btrfs/215
+new file mode 100755
+index 000000000000..cf5e360d14b1
+--- /dev/null
++++ b/tests/btrfs/215
+@@ -0,0 +1,59 @@
++#! /bin/bash
++# SPDX-License-Identifier: GPL-2.0
++# Copyright (c) 2020 Oracle.  All Rights Reserved.
++#
++# FS QA Test 215
++#
++# Test if the show_devname() returns sprout device instead of seed device.
++#
++# Fixed in kernel patch:
++#   btrfs: btrfs_show_devname don't traverse into the seed fsid
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
 +{
-+	int ret;
-+
-+	ret = qgroup_reserve_data(inode, reserved_ret, start, len);
-+	if (ret <= 0 && ret != -EDQUOT)
-+		return ret;
-+
-+	ret = try_flush_qgroup(inode->root);
-+	if (ret < 0)
-+		return ret;
-+	return qgroup_reserve_data(inode, reserved_ret, start, len);
++	cd /
++	rm -f $tmp.*
 +}
 +
- /* Free ranges specified by @reserved, normally in error path */
- static int qgroup_free_reserved_data(struct btrfs_inode *inode,
- 			struct extent_changeset *reserved, u64 start, u64 len)
-@@ -3744,7 +3814,7 @@ static int sub_root_meta_rsv(struct btrfs_root *root, int num_bytes,
- 	return num_bytes;
- }
- 
--int __btrfs_qgroup_reserve_meta(struct btrfs_root *root, int num_bytes,
-+static int qgroup_reserve_meta(struct btrfs_root *root, int num_bytes,
- 				enum btrfs_qgroup_rsv_type type, bool enforce)
- {
- 	struct btrfs_fs_info *fs_info = root->fs_info;
-@@ -3771,6 +3841,21 @@ int __btrfs_qgroup_reserve_meta(struct btrfs_root *root, int num_bytes,
- 	return ret;
- }
- 
-+int __btrfs_qgroup_reserve_meta(struct btrfs_root *root, int num_bytes,
-+				enum btrfs_qgroup_rsv_type type, bool enforce)
-+{
-+	int ret;
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
 +
-+	ret = qgroup_reserve_meta(root, num_bytes, type, enforce);
-+	if (ret <= 0 && ret != -EDQUOT)
-+		return ret;
++# remove previous $seqres.full before test
++rm -f $seqres.full
 +
-+	ret = try_flush_qgroup(root);
-+	if (ret < 0)
-+		return ret;
-+	return qgroup_reserve_meta(root, num_bytes, type, enforce);
-+}
++# real QA test starts here
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch_dev_pool 2
 +
- void btrfs_qgroup_free_meta_all_pertrans(struct btrfs_root *root)
- {
- 	struct btrfs_fs_info *fs_info = root->fs_info;
++_scratch_dev_pool_get 2
++
++seed=$(echo $SCRATCH_DEV_POOL | awk '{print $1}')
++sprout=$(echo $SCRATCH_DEV_POOL | awk '{print $2}')
++
++_mkfs_dev $seed
++$BTRFS_TUNE_PROG -S 1 $seed
++_mount $seed $SCRATCH_MNT >> $seqres.full 2>&1
++cat /proc/self/mounts | grep $seed >> $seqres.full
++$BTRFS_UTIL_PROG device add -f $sprout $SCRATCH_MNT
++cat /proc/self/mounts | grep $sprout >> $seqres.full
++
++# check if the show_devname() returns the sprout device instead of seed device.
++cat /proc/self/mounts | grep $SCRATCH_MNT | awk '{print $1}' | \
++							_filter_devs $sprout
++
++_scratch_dev_pool_put
++
++# success, all done
++status=0
++exit
+diff --git a/tests/btrfs/215.out b/tests/btrfs/215.out
+new file mode 100644
+index 000000000000..ed3207851653
+--- /dev/null
++++ b/tests/btrfs/215.out
+@@ -0,0 +1,2 @@
++QA output created by 215
++SCRATCH_DEV
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index 505665b54d61..76c8b78d08f9 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -217,3 +217,4 @@
+ 212 auto balance dangerous
+ 213 auto balance dangerous
+ 214 auto quick send snapshot
++215 auto quick seed
 -- 
-2.27.0
+2.25.1
 

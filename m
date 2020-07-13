@@ -7,28 +7,28 @@ X-Spam-Status: No, score=-13.0 required=3.0 tests=BAYES_00,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E05ECC433E4
-	for <linux-btrfs@archiver.kernel.org>; Mon, 13 Jul 2020 10:50:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0E304C433E1
+	for <linux-btrfs@archiver.kernel.org>; Mon, 13 Jul 2020 10:51:03 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id C957B20758
-	for <linux-btrfs@archiver.kernel.org>; Mon, 13 Jul 2020 10:50:58 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id ED2FE20758
+	for <linux-btrfs@archiver.kernel.org>; Mon, 13 Jul 2020 10:51:02 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729473AbgGMKu6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 13 Jul 2020 06:50:58 -0400
-Received: from mx2.suse.de ([195.135.220.15]:60174 "EHLO mx2.suse.de"
+        id S1729518AbgGMKvC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 13 Jul 2020 06:51:02 -0400
+Received: from mx2.suse.de ([195.135.220.15]:60218 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728382AbgGMKu5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 13 Jul 2020 06:50:57 -0400
+        id S1729485AbgGMKvB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 13 Jul 2020 06:51:01 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id D2719AE53;
-        Mon, 13 Jul 2020 10:50:57 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 6EBA2AE65;
+        Mon, 13 Jul 2020 10:51:01 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Josef Bacik <josef@toxicpanda.com>
-Subject: [PATCH v4 1/3] btrfs: qgroup: allow btrfs_qgroup_reserve_data() to revert the range it just set without releasing other existing ranges
-Date:   Mon, 13 Jul 2020 18:50:47 +0800
-Message-Id: <20200713105049.90663-2-wqu@suse.com>
+Subject: [PATCH v4 3/3] btrfs: qgroup: remove the ASYNC_COMMIT mechanism in favor of qgroup reserve retry-after-EDQUOT
+Date:   Mon, 13 Jul 2020 18:50:49 +0800
+Message-Id: <20200713105049.90663-4-wqu@suse.com>
 X-Mailer: git-send-email 2.27.0
 In-Reply-To: <20200713105049.90663-1-wqu@suse.com>
 References: <20200713105049.90663-1-wqu@suse.com>
@@ -39,187 +39,171 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-[PROBLEM]
-Before this patch, when btrfs_qgroup_reserve_data() fails, we free all
-reserved space of the changeset.
+commit a514d63882c3 ("btrfs: qgroup: Commit transaction in advance to
+reduce early EDQUOT") tries to reduce the early EDQUOT problems by
+checking the qgroup free against threshold and try to wake up commit
+kthread to free some space.
 
-For example:
-	ret = btrfs_qgroup_reserve_data(inode, changeset, 0, SZ_1M);
-	ret = btrfs_qgroup_reserve_data(inode, changeset, SZ_1M, SZ_1M);
-	ret = btrfs_qgroup_reserve_data(inode, changeset, SZ_2M, SZ_1M);
+The problem of that mechanism is, it can only free qgroup per-trans
+metadata space, can't do anything to data, nor prealloc qgroup space.
 
-If the last btrfs_qgroup_reserve_data() failed, it will release all [0,
-3M) range.
+Now since we have the ability to flush qgroup space, and implements
+retry-after-EDQUOT behavior, such mechanism is completely replaced.
 
-This behavior is kinda OK for now, as when we hit -EDQUOT, we normally
-go error handling and need to release all reserved ranges anyway.
+So this patch will cleanup such mechanism in favor of
+retry-after-EDQUOT.
 
-But this also means the following call is not possible:
-	ret = btrfs_qgroup_reserve_data();
-	if (ret == -EDQUOT) {
-		/* Do something to free some qgroup space */
-		ret = btrfs_qgroup_reserve_data();
-	}
-
-As if the first btrfs_qgroup_reserve_data() fails, it will free all
-reserved qgroup space.
-
-[CAUSE]
-This is because we release all reserved ranges when
-btrfs_qgroup_reserve_data() fails.
-
-[FIX]
-This patch will implement a new function, qgroup_unreserve_range(), to
-iterate through the ulist nodes, to find any nodes in the failure range,
-and remove the EXTENT_QGROUP_RESERVED bits from the io_tree, and decrease
-the extent_changeset::bytes_changed, so that we can revert to previous
-status.
-
-This allows later patches to retry btrfs_qgroup_reserve_data() if EDQUOT
-happens.
-
-Suggested-by: Josef Bacik <josef@toxicpanda.com>
 Signed-off-by: Qu Wenruo <wqu@suse.com>
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/qgroup.c | 90 +++++++++++++++++++++++++++++++++++++++--------
- 1 file changed, 75 insertions(+), 15 deletions(-)
+ fs/btrfs/ctree.h       |  5 -----
+ fs/btrfs/disk-io.c     |  1 -
+ fs/btrfs/qgroup.c      | 43 ++----------------------------------------
+ fs/btrfs/transaction.c |  1 -
+ fs/btrfs/transaction.h | 14 --------------
+ 5 files changed, 2 insertions(+), 62 deletions(-)
 
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 318fad8e9908..379b61e56ff0 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -545,11 +545,6 @@ enum {
+ 	 * (device replace, resize, device add/delete, balance)
+ 	 */
+ 	BTRFS_FS_EXCL_OP,
+-	/*
+-	 * To info transaction_kthread we need an immediate commit so it
+-	 * doesn't need to wait for commit_interval
+-	 */
+-	BTRFS_FS_NEED_ASYNC_COMMIT,
+ 	/*
+ 	 * Indicate that balance has been set up from the ioctl and is in the
+ 	 * main phase. The fs_info::balance_ctl is initialized.
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 2fb0b43bc1c5..e124e3376208 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1810,7 +1810,6 @@ static int transaction_kthread(void *arg)
+ 
+ 		now = ktime_get_seconds();
+ 		if (cur->state < TRANS_STATE_COMMIT_START &&
+-		    !test_bit(BTRFS_FS_NEED_ASYNC_COMMIT, &fs_info->flags) &&
+ 		    (now < cur->start_time ||
+ 		     now - cur->start_time < fs_info->commit_interval)) {
+ 			spin_unlock(&fs_info->trans_lock);
 diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index ee0ad33b659c..28bf9bb6746f 100644
+index 1c3998ea45a3..781319dfa886 100644
 --- a/fs/btrfs/qgroup.c
 +++ b/fs/btrfs/qgroup.c
-@@ -3447,6 +3447,71 @@ btrfs_qgroup_rescan_resume(struct btrfs_fs_info *fs_info)
- 	}
+@@ -11,7 +11,6 @@
+ #include <linux/slab.h>
+ #include <linux/workqueue.h>
+ #include <linux/btrfs.h>
+-#include <linux/sizes.h>
+ 
+ #include "ctree.h"
+ #include "transaction.h"
+@@ -2895,20 +2894,8 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans, u64 srcid,
+ 	return ret;
  }
  
-+#define rbtree_iterate_from_safe(node, next, start)			\
-+	for (node = start; node && ({ next = rb_next(node); 1;});	\
-+	     node = next)
-+
-+static int qgroup_unreserve_range(struct btrfs_inode *inode,
-+				  struct extent_changeset *reserved, u64 start,
-+				  u64 len)
-+{
-+	struct rb_node *node = reserved->range_changed.root.rb_node;
-+	struct rb_node *next;
-+	struct ulist_node *entry = NULL;
-+	int ret = 0;
-+
-+	while (node) {
-+		entry = rb_entry(node, struct ulist_node, rb_node);
-+		if (entry->val < start)
-+			node = node->rb_right;
-+		else if (entry)
-+			node = node->rb_left;
-+		else
-+			break;
-+	}
-+	/* Empty changeset */
-+	if (!entry)
-+		return ret;
-+
-+	if (entry->val > start && rb_prev(&entry->rb_node))
-+		entry = rb_entry(rb_prev(&entry->rb_node), struct ulist_node,
-+				 rb_node);
-+
-+	rbtree_iterate_from_safe(node, next, &entry->rb_node) {
-+		u64 entry_start;
-+		u64 entry_end;
-+		u64 entry_len;
-+		int clear_ret;
-+
-+		entry = rb_entry(node, struct ulist_node, rb_node);
-+		entry_start = entry->val;
-+		entry_end = entry->aux;
-+		entry_len = entry_end - entry_start + 1;
-+
-+		if (entry_start >= start + len)
-+			break;
-+		if (entry_start + entry_len <= start)
-+			continue;
-+		/*
-+		 * Now the entry is in [start, start + len), revert the
-+		 * EXTENT_QGROUP_RESERVED bit.
-+		 */
-+		clear_ret = clear_extent_bits(&inode->io_tree, entry_start,
-+					      entry_end, EXTENT_QGROUP_RESERVED);
-+		if (!ret && clear_ret < 0)
-+			ret = clear_ret;
-+
-+		ulist_del(&reserved->range_changed, entry->val, entry->aux);
-+		if (likely(reserved->bytes_changed >= entry_len)) {
-+			reserved->bytes_changed -= entry_len;
-+		} else {
-+			WARN_ON(1);
-+			reserved->bytes_changed = 0;
-+		}
-+	}
-+	return ret;
-+}
-+
- /*
-  * Reserve qgroup space for range [start, start + len).
-  *
-@@ -3457,18 +3522,14 @@ btrfs_qgroup_rescan_resume(struct btrfs_fs_info *fs_info)
-  * Return <0 for error (including -EQUOT)
-  *
-  * NOTE: this function may sleep for memory allocation.
-- *       if btrfs_qgroup_reserve_data() is called multiple times with
-- *       same @reserved, caller must ensure when error happens it's OK
-- *       to free *ALL* reserved space.
-  */
- int btrfs_qgroup_reserve_data(struct btrfs_inode *inode,
- 			struct extent_changeset **reserved_ret, u64 start,
- 			u64 len)
+-/*
+- * Two limits to commit transaction in advance.
+- *
+- * For RATIO, it will be 1/RATIO of the remaining limit as threshold.
+- * For SIZE, it will be in byte unit as threshold.
+- */
+-#define QGROUP_FREE_RATIO		32
+-#define QGROUP_FREE_SIZE		SZ_32M
+-static bool qgroup_check_limits(struct btrfs_fs_info *fs_info,
+-				const struct btrfs_qgroup *qg, u64 num_bytes)
++static bool qgroup_check_limits(const struct btrfs_qgroup *qg, u64 num_bytes)
  {
- 	struct btrfs_root *root = inode->root;
--	struct ulist_node *unode;
--	struct ulist_iterator uiter;
- 	struct extent_changeset *reserved;
-+	bool new_reserved = false;
- 	u64 orig_reserved;
- 	u64 to_reserve;
- 	int ret;
-@@ -3481,6 +3542,7 @@ int btrfs_qgroup_reserve_data(struct btrfs_inode *inode,
- 	if (WARN_ON(!reserved_ret))
- 		return -EINVAL;
- 	if (!*reserved_ret) {
-+		new_reserved = true;
- 		*reserved_ret = extent_changeset_alloc();
- 		if (!*reserved_ret)
- 			return -ENOMEM;
-@@ -3496,7 +3558,7 @@ int btrfs_qgroup_reserve_data(struct btrfs_inode *inode,
- 	trace_btrfs_qgroup_reserve_data(&inode->vfs_inode, start, len,
- 					to_reserve, QGROUP_RESERVE);
- 	if (ret < 0)
--		goto cleanup;
-+		goto out;
- 	ret = qgroup_reserve(root, to_reserve, true, BTRFS_QGROUP_RSV_DATA);
- 	if (ret < 0)
- 		goto cleanup;
-@@ -3504,15 +3566,13 @@ int btrfs_qgroup_reserve_data(struct btrfs_inode *inode,
- 	return ret;
+-	u64 free;
+-	u64 threshold;
+-
+ 	if ((qg->lim_flags & BTRFS_QGROUP_LIMIT_MAX_RFER) &&
+ 	    qgroup_rsv_total(qg) + (s64)qg->rfer + num_bytes > qg->max_rfer)
+ 		return false;
+@@ -2917,32 +2904,6 @@ static bool qgroup_check_limits(struct btrfs_fs_info *fs_info,
+ 	    qgroup_rsv_total(qg) + (s64)qg->excl + num_bytes > qg->max_excl)
+ 		return false;
  
- cleanup:
--	/* cleanup *ALL* already reserved ranges */
--	ULIST_ITER_INIT(&uiter);
--	while ((unode = ulist_next(&reserved->range_changed, &uiter)))
--		clear_extent_bit(&inode->io_tree, unode->val,
--				 unode->aux, EXTENT_QGROUP_RESERVED, 0, 0, NULL);
--	/* Also free data bytes of already reserved one */
--	btrfs_qgroup_free_refroot(root->fs_info, root->root_key.objectid,
--				  orig_reserved, BTRFS_QGROUP_RSV_DATA);
--	extent_changeset_release(reserved);
-+	qgroup_unreserve_range(inode, reserved, start, len);
-+out:
-+	if (new_reserved) {
-+		extent_changeset_release(reserved);
-+		kfree(reserved);
-+		*reserved_ret = NULL;
-+	}
- 	return ret;
+-	/*
+-	 * Even if we passed the check, it's better to check if reservation
+-	 * for meta_pertrans is pushing us near limit.
+-	 * If there is too much pertrans reservation or it's near the limit,
+-	 * let's try commit transaction to free some, using transaction_kthread
+-	 */
+-	if ((qg->lim_flags & (BTRFS_QGROUP_LIMIT_MAX_RFER |
+-			      BTRFS_QGROUP_LIMIT_MAX_EXCL))) {
+-		if (qg->lim_flags & BTRFS_QGROUP_LIMIT_MAX_EXCL) {
+-			free = qg->max_excl - qgroup_rsv_total(qg) - qg->excl;
+-			threshold = min_t(u64, qg->max_excl / QGROUP_FREE_RATIO,
+-					  QGROUP_FREE_SIZE);
+-		} else {
+-			free = qg->max_rfer - qgroup_rsv_total(qg) - qg->rfer;
+-			threshold = min_t(u64, qg->max_rfer / QGROUP_FREE_RATIO,
+-					  QGROUP_FREE_SIZE);
+-		}
+-
+-		/*
+-		 * Use transaction_kthread to commit transaction, so we no
+-		 * longer need to bother nested transaction nor lock context.
+-		 */
+-		if (free < threshold)
+-			btrfs_commit_transaction_locksafe(fs_info);
+-	}
+-
+ 	return true;
  }
  
+@@ -2990,7 +2951,7 @@ static int qgroup_reserve(struct btrfs_root *root, u64 num_bytes, bool enforce,
+ 
+ 		qg = unode_aux_to_qgroup(unode);
+ 
+-		if (enforce && !qgroup_check_limits(fs_info, qg, num_bytes)) {
++		if (enforce && !qgroup_check_limits(qg, num_bytes)) {
+ 			ret = -EDQUOT;
+ 			goto out;
+ 		}
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 3a7c392fbcc9..efafc286323c 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -2351,7 +2351,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
+ 	 */
+ 	cur_trans->state = TRANS_STATE_COMPLETED;
+ 	wake_up(&cur_trans->commit_wait);
+-	clear_bit(BTRFS_FS_NEED_ASYNC_COMMIT, &fs_info->flags);
+ 
+ 	spin_lock(&fs_info->trans_lock);
+ 	list_del_init(&cur_trans->list);
+diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+index 98f7860af5e9..d60b055b8695 100644
+--- a/fs/btrfs/transaction.h
++++ b/fs/btrfs/transaction.h
+@@ -210,20 +210,6 @@ int btrfs_clean_one_deleted_snapshot(struct btrfs_root *root);
+ int btrfs_commit_transaction(struct btrfs_trans_handle *trans);
+ int btrfs_commit_transaction_async(struct btrfs_trans_handle *trans,
+ 				   int wait_for_unblock);
+-
+-/*
+- * Try to commit transaction asynchronously, so this is safe to call
+- * even holding a spinlock.
+- *
+- * It's done by informing transaction_kthread to commit transaction without
+- * waiting for commit interval.
+- */
+-static inline void btrfs_commit_transaction_locksafe(
+-		struct btrfs_fs_info *fs_info)
+-{
+-	set_bit(BTRFS_FS_NEED_ASYNC_COMMIT, &fs_info->flags);
+-	wake_up_process(fs_info->transaction_kthread);
+-}
+ int btrfs_end_transaction_throttle(struct btrfs_trans_handle *trans);
+ int btrfs_should_end_transaction(struct btrfs_trans_handle *trans);
+ void btrfs_throttle(struct btrfs_fs_info *fs_info);
 -- 
 2.27.0
 

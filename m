@@ -2,45 +2,47 @@ Return-Path: <SRS0=psRg=A2=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-15.1 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-4.1 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9604CC433E3
-	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Jul 2020 02:05:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 000CDC433E1
+	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Jul 2020 02:45:44 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 75E0A20729
-	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Jul 2020 02:05:33 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C5A4320674
+	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Jul 2020 02:45:44 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b="kHqL3YjT"
+	dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b="Nfgl23aW"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728179AbgGOCFa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 14 Jul 2020 22:05:30 -0400
-Received: from mail.synology.com ([211.23.38.101]:60084 "EHLO synology.com"
+        id S1728337AbgGOCpl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 14 Jul 2020 22:45:41 -0400
+Received: from mail.synology.com ([211.23.38.101]:40820 "EHLO synology.com"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726356AbgGOCF3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 14 Jul 2020 22:05:29 -0400
+        id S1727071AbgGOCpl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 14 Jul 2020 22:45:41 -0400
 Subject: Re: [PATCH] mm : fix pte _PAGE_DIRTY bit when fallback migrate page
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=synology.com; s=123;
-        t=1594778727; bh=YDrsMEH4rB9HXHNVRExpD6LMr7xokp4y9XlpkI3qsRo=;
+        t=1594781139; bh=5fo2vbPQ7m0yDE7a+ouN9kyFBdQ4CHGkaiwDsK86hQk=;
         h=Subject:To:Cc:References:From:Date:In-Reply-To;
-        b=kHqL3YjTUkLKU+mFo39ywmRMf4qTO8txj2I5J34NwSQiOHh7HNklZCY4H6mFUzXBV
-         GeVsjmCAtIkNCO5Tbt3orFAbv3EVXejLhZTOuEmhwhypkLlUBzhS7jeKCw1GPp25tH
-         deYTKO02Sk3S3YYJTWoYOUAfLmaIUyQO2wW/66S8=
-To:     Vlastimil Babka <vbabka@suse.cz>, linux-mm@kvack.org
-Cc:     LKML <linux-kernel@vger.kernel.org>, linux-btrfs@vger.kernel.org,
-        Roman Gushchin <guro@fb.com>, David Sterba <dsterba@suse.com>,
+        b=Nfgl23aWE5cPGhbzZyBHoHpDRntBMrczkLPs8jSdjooB7SYTCWFOjF8xRl90nIgsP
+         BTF44JCfl8U7+nDG/G3rY0jQawU3ZVk/MNbC363MoOJt3uW+Rmy/hCSDvvLbPDq7bu
+         9UnavLI1Faun19PsxcBq241LLszwx83kkXJaQuus=
+To:     "Kirill A. Shutemov" <kirill@shutemov.name>,
+        Vlastimil Babka <vbabka@suse.cz>
+Cc:     linux-mm@kvack.org, LKML <linux-kernel@vger.kernel.org>,
+        linux-btrfs@vger.kernel.org, Roman Gushchin <guro@fb.com>,
+        David Sterba <dsterba@suse.com>,
         "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>
 References: <20200709024808.18466-1-robbieko@synology.com>
  <859c810e-376e-5e8b-e8a5-0da3f83315d1@suse.cz>
  <80b55fcf-def1-8a83-8f53-a22f2be56244@synology.com>
  <433e26b0-5201-129a-4afe-4881e42781fa@suse.cz>
+ <20200714101951.6osakxdgbhrnfrbd@box>
 From:   Robbie Ko <robbieko@synology.com>
-Message-ID: <13d4b937-23e8-2d6f-919c-deb2f4284951@synology.com>
-Date:   Wed, 15 Jul 2020 10:05:26 +0800
+Message-ID: <a7bb68ef-9b33-3ed7-8eff-91feb2223d80@synology.com>
+Date:   Wed, 15 Jul 2020 10:45:39 +0800
 MIME-Version: 1.0
-In-Reply-To: <433e26b0-5201-129a-4afe-4881e42781fa@suse.cz>
+In-Reply-To: <20200714101951.6osakxdgbhrnfrbd@box>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: 8bit
 Content-Language: en-US
@@ -54,77 +56,43 @@ List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
-Vlastimil Babka 於 2020/7/14 下午5:46 寫道:
-> On 7/13/20 3:57 AM, Robbie Ko wrote:
->> Vlastimil Babka 於 2020/7/10 下午11:31 寫道:
->>> On 7/9/20 4:48 AM, robbieko wrote:
->>>> From: Robbie Ko <robbieko@synology.com>
->>>>
->>>> When a migrate page occurs, we first create a migration entry
->>>> to replace the original pte, and then go to fallback_migrate_page
->>>> to execute a writeout if the migratepage is not supported.
->>>>
->>>> In the writeout, we will clear the dirty bit of the page and use
->>>> page_mkclean to clear the dirty bit along with the corresponding pte,
->>>> but page_mkclean does not support migration entry.
->>>>
->>>> The page ditry bit is cleared, but the dirty bit of the pte still exists,
->>>> so if mmap continues to write, it will result in data loss.
->>> Curious, did you observe this data loss? What filesystem? If yes, it seems
->>> serious enough to
->>> CC stable and determine a Fixes: tag?
->> Yes, there is data loss.
->> I'm using a btrfs environment, but not the following patch
-> And the kernel is otherwise upstream? Which version?
-> Anyway we better let btrfs guys know (+CC) even if the fix is in MM code.
-
-Kernel verion is 4.4.
-I think this is a bug that has been around for a long time.
-
-I think the problem is not limited to btrfs, as long as other fs
-have not implemented the migrationpage, they will encounter
-the problem. (Eg ecryptfs, fat, nfs...)
-
->> btrfs: implement migratepage callback for data pages
->> https://git.kernel.org/pub/scm/linux/kernel
->> /git/torvalds/linux.git/commit/?h=v5.8-rc5&
->> id=f8e6608180a31cc72a23b74969da428da236dbd1
-> That's a new commit, so if this is really affecting upstream btrfs pre-5.8 we
-> should either backport that commit, or your fix (after review).
+Kirill A. Shutemov 於 2020/7/14 下午6:19 寫道:
+> On Tue, Jul 14, 2020 at 11:46:12AM +0200, Vlastimil Babka wrote:
+>> On 7/13/20 3:57 AM, Robbie Ko wrote:
+>>> Vlastimil Babka 於 2020/7/10 下午11:31 寫道:
+>>>> On 7/9/20 4:48 AM, robbieko wrote:
+>>>>> From: Robbie Ko <robbieko@synology.com>
+>>>>>
+>>>>> When a migrate page occurs, we first create a migration entry
+>>>>> to replace the original pte, and then go to fallback_migrate_page
+>>>>> to execute a writeout if the migratepage is not supported.
+>>>>>
+>>>>> In the writeout, we will clear the dirty bit of the page and use
+>>>>> page_mkclean to clear the dirty bit along with the corresponding pte,
+>>>>> but page_mkclean does not support migration entry.
+> I don't follow the scenario.
 >
->>>> We fix the by first remove the migration entry and then clearing
->>>> the dirty bits of the page, which also clears the pte's dirty bits.
->>>>
->>>> Signed-off-by: Robbie Ko <robbieko@synology.com>
->>>> ---
->>>>    mm/migrate.c | 8 ++++----
->>>>    1 file changed, 4 insertions(+), 4 deletions(-)
->>>>
->>>> diff --git a/mm/migrate.c b/mm/migrate.c
->>>> index f37729673558..5c407434b9ba 100644
->>>> --- a/mm/migrate.c
->>>> +++ b/mm/migrate.c
->>>> @@ -875,10 +875,6 @@ static int writeout(struct address_space *mapping, struct page *page)
->>>>    		/* No write method for the address space */
->>>>    		return -EINVAL;
->>>>    
->>>> -	if (!clear_page_dirty_for_io(page))
->>>> -		/* Someone else already triggered a write */
->>>> -		return -EAGAIN;
->>>> -
->>>>    	/*
->>>>    	 * A dirty page may imply that the underlying filesystem has
->>>>    	 * the page on some queue. So the page must be clean for
->>>> @@ -889,6 +885,10 @@ static int writeout(struct address_space *mapping, struct page *page)
->>>>    	 */
->>>>    	remove_migration_ptes(page, page, false);
->>>>    
->>>> +	if (!clear_page_dirty_for_io(page))
->>>> +		/* Someone else already triggered a write */
->>>> +		return -EAGAIN;
->>>> +
->>>>    	rc = mapping->a_ops->writepage(page, &wbc);
->>>>    
->>>>    	if (rc != AOP_WRITEPAGE_ACTIVATE)
->>>>
->
+> When we establish migration entries with try_to_unmap(), it transfers
+> dirty bit from PTE to the page.
+
+Sorry, I mean is _PAGE_RW with pte_write
+
+When we establish migration entries with try_to_unmap(),
+we create a migration entry, and if pte_write we set it to SWP_MIGRATION_WRITE,
+which will replace the migration entry with the original pte.
+
+When migratepage,  we go to fallback_migrate_page to execute a writeout
+if the migratepage is not supported.
+
+In the writeout, we call clear_page_dirty_for_io to  clear the dirty bit of the page
+and use page_mkclean to clear pte _PAGE_RW with pte_wrprotect in page_mkclean_one.
+
+However, page_mkclean_one does not support migration entries, so the
+migration entry is still SWP_MIGRATION_WRITE.
+
+In writeout, then we call remove_migration_ptes to remove the migration entry,
+because it is still SWP_MIGRATION_WRITE so set _PAGE_RW to pte via pte_mkwrite.
+
+Therefore, subsequent mmap wirte will not trigger page_mkwrite to cause data loss.
+
+

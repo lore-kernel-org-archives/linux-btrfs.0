@@ -1,111 +1,223 @@
-Return-Path: <SRS0=9Op2=AZ=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=psRg=A2=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-5.5 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
-	SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
-	version=3.4.0
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A2A4CC433E0
-	for <linux-btrfs@archiver.kernel.org>; Tue, 14 Jul 2020 18:05:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DAE4BC433E1
+	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Jul 2020 01:18:45 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 8388A20657
-	for <linux-btrfs@archiver.kernel.org>; Tue, 14 Jul 2020 18:05:29 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B90BF2071B
+	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Jul 2020 01:18:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728268AbgGNSF2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 14 Jul 2020 14:05:28 -0400
-Received: from mx2.suse.de ([195.135.220.15]:39802 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725906AbgGNSF2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 14 Jul 2020 14:05:28 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 68BDFAE65;
-        Tue, 14 Jul 2020 18:05:29 +0000 (UTC)
-Subject: Re: [RFC] btrfs: volumes: Drop chunk_mutex lock/unlock on
- btrfs_read_chunk_tree
-From:   Nikolay Borisov <nborisov@suse.com>
-To:     Marcos Paulo de Souza <marcos@mpdesouza.com>, dsterba@suse.com,
-        linux-btrfs@vger.kernel.org
-Cc:     Marcos Paulo de Souza <mpdesouza@suse.com>
-References: <20200714172153.12956-1-marcos@mpdesouza.com>
- <93d4e5d9-cd4b-f8ea-19f5-50feaf89fdc3@suse.com>
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <1c3bb714-c10a-324b-89b1-7128542bd73c@suse.com>
-Date:   Tue, 14 Jul 2020 21:05:25 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.10.0
+        id S1727938AbgGOBSo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 14 Jul 2020 21:18:44 -0400
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:46098 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727927AbgGOBSo (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 14 Jul 2020 21:18:44 -0400
+Received: by james.kirk.hungrycats.org (Postfix, from userid 1002)
+        id 4590A761A3C; Tue, 14 Jul 2020 21:18:43 -0400 (EDT)
+Date:   Tue, 14 Jul 2020 21:18:43 -0400
+From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To:     John Petrini <john.d.petrini@gmail.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: Filesystem Went Read Only During Raid-10 to Raid-6 Data
+ Conversion
+Message-ID: <20200715011843.GH10769@hungrycats.org>
+References: <CADvYWxeiNynEWUYwfQxP7fQTK4k2Q+eDZsA8j7rLcaTSeND9fg@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <93d4e5d9-cd4b-f8ea-19f5-50feaf89fdc3@suse.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <CADvYWxeiNynEWUYwfQxP7fQTK4k2Q+eDZsA8j7rLcaTSeND9fg@mail.gmail.com>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On Tue, Jul 14, 2020 at 12:13:56PM -0400, John Petrini wrote:
+> Hello All,
+> 
+> My filesystem went read only while converting data from raid-10 to
+> raid-6. 
 
+When the filesystem forces itself read-only, the filesystem goes into
+an inert but broken state:  there's enough filesytem left to avoid having
+to kill all processes using it, it no longer writes to the disk so it
+doesn't damage any data, but the filesystem doesn't really work any more.
 
-On 14.07.20 г. 20:43 ч., Nikolay Borisov wrote:
-> 
-> 
-> On 14.07.20 г. 20:21 ч., Marcos Paulo de Souza wrote:
->> From: Marcos Paulo de Souza <mpdesouza@suse.com>
->>
->> There is a lockdep report when running xfstests btrfs/161 (seed + sprout
->> devices) related to chunk_mutex:
->>
-> 
-> For whatever reason this submission seems garbled. In any case my
-> proposal was to replace the chunk mutex with FS_EXCL_OP in
-> btrfs_read_chunk_tree which you haven't done. You simply remove the
-> chunk mutex.
-> 
+The next thing you should do is umount and mount the filesystem again,
+because...
 
-Actually the mutex could possibly be removed because in order to
-add/remove a device we need a well-formed mount i.e the mount process
-must have been completed. Given that chunk tree read happens as part of
-this I'd assume it's safe to drop it altogether.
+> I attempted a scrub but it immediately aborted. 
+
+...none of the tools will work properly until the filesystem is mounted
+again.
+
+You may need to mount with -o skip_balance, then run 'btrfs balance
+cancel' on the filesystem to abort the balance; otherwise, it will
+resume when you mount the filesystem again and probably have the same
+problem.
+
+> Can anyone
+> provide some guidance on possibly recovering?
+> 
+> Thank you!
+
+Aside:  data-raid6 metadata-raid10 isn't a sane configuration.  It
+has 2 redundant disks for data and 1 redundant disk for metadata, so
+the second parity disk in raid6 is wasted space.
+
+The sane configurations for parity raid are:
+
+	data-raid6 metadata-raid1c3 (2 parity stripes for data, 3 copies
+	for metadata, 2 disks can fail, requires 3 or more disks)
+
+	data-raid5 metadata-raid10 (1 parity stripe for data, 2 copies
+	for metadata, 1 disk can fail, requires 4 or more disks)
+
+	data-raid5 metadata-raid1 (1 parity stripe for data, 2 copies
+	for metadata, 1 disk can fail, requires 2 or more disks)
+
+> ##System Details##
+> Ubuntu 18.04
+> 
+> # This shows some read errors but they are not new. I had a SATA cable
+> come loose on a drive some months back that caused these. They haven't
+> increased since I reseated the cable
+> sudo btrfs device stats /mnt/storage-array/ | grep sde
+> [/dev/sde].write_io_errs    0
+> [/dev/sde].read_io_errs     237
+> [/dev/sde].flush_io_errs    0
+> [/dev/sde].corruption_errs  0
+> [/dev/sde].generation_errs  0
+
+You can clear these numbers with 'btrfs dev stats -z' once the cause
+has been resolved.
+
+> btrfs fi df /mnt/storage-array/
+> Data, RAID10: total=32.68TiB, used=32.64TiB
+> Data, RAID6: total=1.04TiB, used=1.04TiB
+> System, RAID10: total=96.00MiB, used=3.06MiB
+> Metadata, RAID10: total=40.84GiB, used=39.94GiB
+> GlobalReserve, single: total=512.00MiB, used=512.00MiB
+
+Please post 'btrfs fi usage' output.  'btrfs fi usage' reports how much
+is unallocated, allocated, and used on each drive.  This information is
+required to understand and correct ENOSPC issues.
+
+You didn't post the dmesg messages from when the filesystem went
+read-only, but metadata 'total' is very close to 'used', you were doing
+a balance, and the filesystem went read-only, so I'm guessing you hit
+ENOSPC for metadata due to lack of unallocated space on at least 4 drives
+(minimum for raid10).
+
+If you have a cron job or similar scheduled task that does 'btrfs balance
+start -m', remove it, as that command will reduce metadata allocation,
+which will lead directly to ENOSPC panic as the filesystem gets full.
+
+If the filesystem became read-only for non-ENOSPC reasons, it is likely
+in-memory or on-disk metadata corruption.  The former is trivially
+recoverable, just mount again (preferably with an updated kernel,
+see below).  The latter is not trivially recoverable, and with 40 GB
+of metadata you may not want to wait for btrfs check.  Hopefully it's
+just ENOSPC.
+
+> uname -r
+> 5.3.0-40-generic
+
+Please upgrade to 5.4.13 or later.  Kernels 5.1 through 5.4.12 have a
+rare but nasty bug that is triggered by writing at exactly the wrong
+moment during balance.  5.3 has some internal defenses against that bug
+(the "write time tree checker"), but if they fail, the result is metadata
+corruption that requires btrfs check to repair.
+
+> ##dmesg##
+> [3813499.479570] BTRFS info (device sdd): no csum found for inode
+> 44197278 start 401276928
+> [3813499.480211] BTRFS warning (device sdd): csum failed root 5 ino
+> 44197278 off 401276928 csum 0x0573112f expected csum 0x00000000 mirror
+> 2
+
+All of these are likely because you haven't umounted the filesystem yet.
+The filesystem in memory is no longer in sync with the disk, and will
+remain out of sync until umounted.
+
+If umounting and mounting doesn't resolve the problem, please post the
+kernel messages starting from before the mount.  We need to see the
+_first_ errors.
+
+> [3813506.750924] BTRFS error (device sdd): parent transid verify
+> failed on 98952926429184 wanted 6618521 found 6618515
+> [3813506.751395] BTRFS error (device sdd): parent transid verify
+> failed on 98952926429184 wanted 6618521 found 6618515
+> [3813506.751783] BTRFS info (device sdd): no csum found for inode
+> 44197278 start 152698880
+> [3813506.773031] BTRFS warning (device sdd): csum failed root 5 ino
+> 44197278 off 152698880 csum 0x9b7d599f expected csum 0x00000000 mirror
+> 1
+> [3813506.773070] BTRFS error (device sdd): parent transid verify
+> failed on 98952926429184 wanted 6618521 found 6618515
+> [3813506.773596] BTRFS error (device sdd): parent transid verify
+> failed on 98952926429184 wanted 6618521 found 6618515
+> [3813506.774073] BTRFS info (device sdd): no csum found for inode
+> 44197278 start 152698880
+> [3813506.813401] BTRFS warning (device sdd): csum failed root 5 ino
+> 44197278 off 152698880 csum 0x9b7d599f expected csum 0x00000000 mirror
+> 2
+> [3813506.813431] BTRFS error (device sdd): parent transid verify
+> failed on 98952926429184 wanted 6618521 found 6618515
+> [3813506.813439] BTRFS error (device sdd): parent transid verify
+> failed on 98952926429184 wanted 6618521 found 6618515
+> [3813506.813444] BTRFS info (device sdd): no csum found for inode
+> 44197278 start 152698880
+> [3813506.813612] BTRFS warning (device sdd): csum failed root 5 ino
+> 44197278 off 152698880 csum 0x9b7d599f expected csum 0x00000000 mirror
+> 3
+> [3813506.813624] BTRFS error (device sdd): parent transid verify
+> failed on 98952926429184 wanted 6618521 found 6618515
+> [3813506.813628] BTRFS error (device sdd): parent transid verify
+> failed on 98952926429184 wanted 6618521 found 6618515
+> [3813506.813632] BTRFS info (device sdd): no csum found for inode
+> 44197278 start 152698880
+> [3813506.816222] BTRFS warning (device sdd): csum failed root 5 ino
+> 44197278 off 152698880 csum 0x9b7d599f expected csum 0x00000000 mirror
+> 4
+> [3813510.542147] BTRFS error (device sdd): parent transid verify
+> failed on 104091430649856 wanted 6618521 found 6618516
+> [3813510.542731] BTRFS error (device sdd): parent transid verify
+> failed on 104091430649856 wanted 6618521 found 6618516
+> [3813510.543216] BTRFS info (device sdd): no csum found for inode
+> 44197278 start 288227328
+> [3813510.558299] BTRFS warning (device sdd): csum failed root 5 ino
+> 44197278 off 288227328 csum 0xa0775535 expected csum 0x00000000 mirror
+> 1
+> [3813510.558341] BTRFS info (device sdd): no csum found for inode
+> 44197278 start 288227328
+> [3813510.574681] BTRFS warning (device sdd): csum failed root 5 ino
+> 44197278 off 288227328 csum 0xa0775535 expected csum 0x00000000 mirror
+> 2
+> [3813510.574714] BTRFS info (device sdd): no csum found for inode
+> 44197278 start 288227328
+> [3813510.574965] BTRFS warning (device sdd): csum failed root 5 ino
+> 44197278 off 288227328 csum 0xa0775535 expected csum 0x00000000 mirror
+> 3
+> [3813510.574980] BTRFS info (device sdd): no csum found for inode
+> 44197278 start 288227328
+> [3813510.576050] BTRFS warning (device sdd): csum failed root 5 ino
+> 44197278 off 288227328 csum 0xa0775535 expected csum 0x00000000 mirror
+> 4
+> [3813510.576070] BTRFS info (device sdd): no csum found for inode
+> 44197278 start 288227328
+> [3813510.577198] BTRFS warning (device sdd): csum failed root 5 ino
+> 44197278 off 288227328 csum 0xa0775535 expected csum 0x00000000 mirror
+> 5
+> [3813510.577214] BTRFS info (device sdd): no csum found for inode
+> 44197278 start 288227328
+> [3813510.578222] BTRFS warning (device sdd): csum failed root 5 ino
+> 44197278 off 288227328 csum 0xa0775535 expected csum 0x00000000 mirror
+> 6

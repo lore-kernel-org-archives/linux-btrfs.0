@@ -7,28 +7,28 @@ X-Spam-Status: No, score=-13.0 required=3.0 tests=BAYES_00,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 602F7C433E4
-	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Jul 2020 10:48:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4B497C433E8
+	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Jul 2020 10:48:59 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 4B68620656
-	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Jul 2020 10:48:56 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 29E37206F4
+	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Jul 2020 10:48:59 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729445AbgGOKsz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 15 Jul 2020 06:48:55 -0400
-Received: from [195.135.220.15] ([195.135.220.15]:37950 "EHLO mx2.suse.de"
+        id S1731182AbgGOKs6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 15 Jul 2020 06:48:58 -0400
+Received: from [195.135.220.15] ([195.135.220.15]:37938 "EHLO mx2.suse.de"
         rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S1729363AbgGOKsy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1729337AbgGOKsy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 15 Jul 2020 06:48:54 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id B33A8B0B6;
+        by mx2.suse.de (Postfix) with ESMTP id 7A129AD93;
         Wed, 15 Jul 2020 10:48:55 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 4/5] btrfs: Simplify setting/clearing fs_info to btrfs_fs_devices
-Date:   Wed, 15 Jul 2020 13:48:49 +0300
-Message-Id: <20200715104850.19071-5-nborisov@suse.com>
+Subject: [PATCH 3/5] btrfs: Make close_fs_devices return void
+Date:   Wed, 15 Jul 2020 13:48:48 +0300
+Message-Id: <20200715104850.19071-4-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20200715104850.19071-1-nborisov@suse.com>
 References: <20200715104850.19071-1-nborisov@suse.com>
@@ -37,113 +37,77 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-It makes no sense to have sysfs-related routines be responsible for
-properly initialising the fs_info pointer of struct btrfs_fs_device.
-Instead this can be streamlined by making it the responsibility of
-btrfs_init_devices_late to initialize it. That function already
-initializes fs_info of every individual device in btrfs_fs_devices.
-
-As far as clearing it is concerned it makes sense to move it to
-close_fs_devices. That function is only called when struct
-btrfs_fs_devices is no longer in use - either for holding seeds or main
-devices for a mounted filesystem.
+The return value of this function conveys absolutely no information.
+All callers already check the state of  fs_devices->opened to decide
+how to proceed. So conver the function to returning void. While at it
+make btrfs_close_devices also return void.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/sysfs.c   |  4 ----
- fs/btrfs/volumes.c | 22 ++--------------------
- fs/btrfs/volumes.h |  2 --
- 3 files changed, 2 insertions(+), 26 deletions(-)
+ fs/btrfs/volumes.c | 12 ++++--------
+ fs/btrfs/volumes.h |  2 +-
+ 2 files changed, 5 insertions(+), 9 deletions(-)
 
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index 38c0b95e0e7f..24f6bbd655e3 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -939,8 +939,6 @@ void btrfs_sysfs_remove_mounted(struct btrfs_fs_info *fs_info)
- {
- 	struct kobject *fsid_kobj = &fs_info->fs_devices->fsid_kobj;
- 
--	btrfs_reset_fs_info_ptr(fs_info);
--
- 	sysfs_remove_link(fsid_kobj, "bdi");
- 
- 	if (fs_info->space_info_kobj) {
-@@ -1397,8 +1395,6 @@ int btrfs_sysfs_add_mounted(struct btrfs_fs_info *fs_info)
- 	struct btrfs_fs_devices *fs_devs = fs_info->fs_devices;
- 	struct kobject *fsid_kobj = &fs_devs->fsid_kobj;
- 
--	btrfs_set_fs_info_ptr(fs_info);
--
- 	error = btrfs_sysfs_add_devices_dir(fs_devs, NULL);
- 	if (error)
- 		return error;
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 6de021c78277..a0cdd027e99c 100644
+index db29fc4fbe89..6de021c78277 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -1163,6 +1163,7 @@ static void close_fs_devices(struct btrfs_fs_devices *fs_devices)
+@@ -1146,12 +1146,12 @@ static void btrfs_close_one_device(struct btrfs_device *device)
+ 	ASSERT(atomic_read(&device->reada_in_flight) == 0);
+ }
+ 
+-static int close_fs_devices(struct btrfs_fs_devices *fs_devices)
++static void close_fs_devices(struct btrfs_fs_devices *fs_devices)
+ {
+ 	struct btrfs_device *device, *tmp;
+ 
+ 	if (--fs_devices->opened > 0)
+-		return 0;
++		return;
+ 
+ 	mutex_lock(&fs_devices->device_list_mutex);
+ 	list_for_each_entry_safe(device, tmp, &fs_devices->devices, dev_list) {
+@@ -1163,17 +1163,14 @@ static int close_fs_devices(struct btrfs_fs_devices *fs_devices)
  	WARN_ON(fs_devices->rw_devices);
  	fs_devices->opened = 0;
  	fs_devices->seeding = false;
-+	fs_devices->fs_info = NULL;
+-
+-	return 0;
  }
  
- void btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
-@@ -7149,6 +7150,7 @@ void btrfs_init_devices_late(struct btrfs_fs_info *fs_info)
- 			device->fs_info = fs_info;
- 		mutex_unlock(&fs_devices->device_list_mutex);
+-int btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
++void btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
+ {
+ 	struct btrfs_fs_devices *seed_devices = NULL;
+-	int ret;
  
-+		fs_devices->fs_info = fs_info;
- 		fs_devices = fs_devices->seed;
+ 	mutex_lock(&uuid_mutex);
+-	ret = close_fs_devices(fs_devices);
++	close_fs_devices(fs_devices);
+ 	if (!fs_devices->opened) {
+ 		seed_devices = fs_devices->seed;
+ 		fs_devices->seed = NULL;
+@@ -1186,7 +1183,6 @@ int btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
+ 		close_fs_devices(fs_devices);
+ 		free_fs_devices(fs_devices);
  	}
- }
-@@ -7447,24 +7449,6 @@ void btrfs_commit_device_sizes(struct btrfs_transaction *trans)
- 	mutex_unlock(&trans->fs_info->chunk_mutex);
+-	return ret;
  }
  
--void btrfs_set_fs_info_ptr(struct btrfs_fs_info *fs_info)
--{
--	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
--	while (fs_devices) {
--		fs_devices->fs_info = fs_info;
--		fs_devices = fs_devices->seed;
--	}
--}
--
--void btrfs_reset_fs_info_ptr(struct btrfs_fs_info *fs_info)
--{
--	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
--	while (fs_devices) {
--		fs_devices->fs_info = NULL;
--		fs_devices = fs_devices->seed;
--	}
--}
--
- /*
-  * Multiplicity factor for simple profiles: DUP, RAID1-like and RAID10.
-  */
-@@ -7475,8 +7459,6 @@ int btrfs_bg_type_to_factor(u64 flags)
- 	return btrfs_raid_array[index].ncopies;
- }
- 
--
--
- static int verify_one_dev_extent(struct btrfs_fs_info *fs_info,
- 				 u64 chunk_offset, u64 devid,
- 				 u64 physical_offset, u64 physical_len)
+ static int open_fs_devices(struct btrfs_fs_devices *fs_devices,
 diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 76e5470e19a8..fc283fdbcece 100644
+index 5eea93916fbf..76e5470e19a8 100644
 --- a/fs/btrfs/volumes.h
 +++ b/fs/btrfs/volumes.h
-@@ -569,8 +569,6 @@ static inline enum btrfs_raid_types btrfs_bg_flags_to_raid_index(u64 flags)
- void btrfs_commit_device_sizes(struct btrfs_transaction *trans);
- 
- struct list_head * __attribute_const__ btrfs_get_fs_uuids(void);
--void btrfs_set_fs_info_ptr(struct btrfs_fs_info *fs_info);
--void btrfs_reset_fs_info_ptr(struct btrfs_fs_info *fs_info);
- bool btrfs_check_rw_degradable(struct btrfs_fs_info *fs_info,
- 					struct btrfs_device *failing_dev);
- 
+@@ -435,7 +435,7 @@ int btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
+ struct btrfs_device *btrfs_scan_one_device(const char *path,
+ 					   fmode_t flags, void *holder);
+ int btrfs_forget_devices(const char *path);
+-int btrfs_close_devices(struct btrfs_fs_devices *fs_devices);
++void btrfs_close_devices(struct btrfs_fs_devices *fs_devices);
+ void btrfs_free_extra_devids(struct btrfs_fs_devices *fs_devices, int step);
+ void btrfs_assign_next_active_device(struct btrfs_device *device,
+ 				     struct btrfs_device *this_dev);
 -- 
 2.17.1
 

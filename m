@@ -2,81 +2,48 @@ Return-Path: <SRS0=psRg=A2=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.5 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-4.0 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 898BAC433E0
-	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Jul 2020 14:38:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F26C3C433E6
+	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Jul 2020 14:56:02 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 64C8E20658
-	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Jul 2020 14:38:14 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D879A206D5
+	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Jul 2020 14:56:02 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728851AbgGOOiN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 15 Jul 2020 10:38:13 -0400
-Received: from [195.135.220.15] ([195.135.220.15]:35696 "EHLO mx2.suse.de"
-        rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org with ESMTP
-        id S1727044AbgGOOiN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Jul 2020 10:38:13 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 8FC60B643;
-        Wed, 15 Jul 2020 14:38:15 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id E92E8DA790; Wed, 15 Jul 2020 16:37:49 +0200 (CEST)
-Date:   Wed, 15 Jul 2020 16:37:49 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v3 0/4] btrfs: handle signal interruption during
- relocation more gracefully
-Message-ID: <20200715143749.GZ3703@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20200713010322.18507-1-wqu@suse.com>
+        id S1727055AbgGOOzz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 15 Jul 2020 10:55:55 -0400
+Received: from bang.steev.me.uk ([81.2.120.65]:39457 "EHLO smtp.steev.me.uk"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1725882AbgGOOzy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 15 Jul 2020 10:55:54 -0400
+Received: from smtp.steev.me.uk ([2001:8b0:162c:10::25] helo=webmail.steev.me.uk)
+        by smtp.steev.me.uk with esmtp (Exim 4.93.0.4)
+        id 1jvip7-00Eg69-MD
+        for linux-btrfs@vger.kernel.org; Wed, 15 Jul 2020 15:55:53 +0100
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20200713010322.18507-1-wqu@suse.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+Date:   Wed, 15 Jul 2020 15:55:53 +0100
+From:   Steven Davies <btrfs-list@steev.me.uk>
+To:     linux-btrfs@vger.kernel.org
+Subject: Wiki updates - source location
+User-Agent: Roundcube Webmail/1.4.4
+Message-ID: <2fd9b9626b55cf738dbe81ca45552950@steev.me.uk>
+X-Sender: btrfs-list@steev.me.uk
+Content-Type: text/plain; charset=US-ASCII;
+ format=flowed
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Jul 13, 2020 at 09:03:18AM +0800, Qu Wenruo wrote:
-> This bug is reported by Hans van Kranenburg <hans@knorrie.org>, that
-> when a running btrfs balance get fatal signals (including SIGINT), some
-> bad things can happen, mostly forced RO caused by -EINTR.
-> 
-> It turns out that, although we have addressed the btrfs balance cancel
-> problems, we haven't addressed the signal related problems.
-> 
-> In theory, processes trapped into kernel space won't get interrupted by
-> signals, as signal callbacks happen in user space, but kernel code can
-> still check pending signals and change behavior accordingly.
-> 
-> In this case, the culprit is that, wait_reserve_ticket() can return
-> -EINTR if there is a pending fatal signal.
-> 
-> While for balance, a lot of situations can't handle the -EINTR from it,
-> especially for critical cleanup phase.
-> 
-> This patchset will address the bug in two directions:
-> - Catch fatal signal early
->   Now btrfs_should_cancel_balance() will also check pending signals.
->   And will exit gracefully and treat it as a canceled balance.
+Could someone with the relevant access update the btrfs wiki main 
+page[1] to point at the kdave repository rather than mason? I think a 
+pointer to where to find the misc-next branch could be useful too.
 
-This should be safe as it's checked in known locations.
+[1] 
+https://btrfs.wiki.kernel.org/index.php/Main_Page#Source_code_download
 
-> - Don't allow -EINTR for critical cleanup
->   For btrfs_drop_snapshot() for reloc trees, we shouldn't be interrupted
->   by signal, thus we use btrfs_join_transaction() instead of
->   btrfs_start_transaction().
-
-This one is a bit more scary, but the interruption has been there
-already so we're not changing anything.
-
-I haven't spotted anything obviously wrong so I'll add the patches to
-misc-next, thanks.
+-- 
+Steven Davies

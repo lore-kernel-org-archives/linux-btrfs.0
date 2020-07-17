@@ -7,62 +7,62 @@ X-Spam-Status: No, score=-13.0 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9EC85C43445
-	for <linux-btrfs@archiver.kernel.org>; Fri, 17 Jul 2020 19:12:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 00F61C433E2
+	for <linux-btrfs@archiver.kernel.org>; Fri, 17 Jul 2020 19:12:43 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 7924F2064C
-	for <linux-btrfs@archiver.kernel.org>; Fri, 17 Jul 2020 19:12:38 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CD8BC2064C
+	for <linux-btrfs@archiver.kernel.org>; Fri, 17 Jul 2020 19:12:42 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="wQzeHKfK"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="fVyxOdI9"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728556AbgGQTMh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 17 Jul 2020 15:12:37 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59816 "EHLO
+        id S1728737AbgGQTMm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 17 Jul 2020 15:12:42 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59830 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728183AbgGQTMh (ORCPT
+        with ESMTP id S1728183AbgGQTMl (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 17 Jul 2020 15:12:37 -0400
-Received: from mail-qk1-x744.google.com (mail-qk1-x744.google.com [IPv6:2607:f8b0:4864:20::744])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0CC8FC0619D2
-        for <linux-btrfs@vger.kernel.org>; Fri, 17 Jul 2020 12:12:37 -0700 (PDT)
-Received: by mail-qk1-x744.google.com with SMTP id r22so9714750qke.13
-        for <linux-btrfs@vger.kernel.org>; Fri, 17 Jul 2020 12:12:37 -0700 (PDT)
+        Fri, 17 Jul 2020 15:12:41 -0400
+Received: from mail-qt1-x841.google.com (mail-qt1-x841.google.com [IPv6:2607:f8b0:4864:20::841])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 30C3DC0619D2
+        for <linux-btrfs@vger.kernel.org>; Fri, 17 Jul 2020 12:12:41 -0700 (PDT)
+Received: by mail-qt1-x841.google.com with SMTP id b25so8486999qto.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 17 Jul 2020 12:12:41 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references:mime-version
          :content-transfer-encoding;
-        bh=WZaTgkz+toL0ks6pm7S5kqWZiCxYJvKY9gKBvelmH/U=;
-        b=wQzeHKfK4abjshFsoUJvMz2JAETNuDEgnweQsmvKHGKfpySNK/wiV3KTIyZDRZSFMR
-         FJkin9HvSIH03CGG1q8HIc4ajpk7s5JkTiMbvCCcMeHZJdjIc1ExEzmuigJf3KToJlCg
-         gpky6D11KVMF747WmVzfLYgntcgax4MB7wo81zI5iQgtGxOZwFkR4+lTEUz6on+e49Z+
-         6IZYrszA5GrhmdVKNgvDfF3XI4lEYlSRJl3Mby6sUmyILqIRHkH2w/RUvg58bpVZoyNo
-         USmDuwS34mDLYdkbHnAQfyw6lF2b0/RpQNGgWD3OZX7a8U2eBNU7FSdkDvuLlQ+MPARe
-         QL8w==
+        bh=BvXIJ8QeWxfjVrC3Irmo+Yr13qeJMFlOttxCdY3q194=;
+        b=fVyxOdI9RH8eKCNiDjjhCVhTUYOPmegZoF9kRHfRr9eM7A71U9ZBS0a8E9b+kvagAK
+         Fsh6RyiROXIvC4CNLGTA0fn1T04DbTB69V4OTuCxkBI+qzVquM3ZcU4kOltpTeNLIhEB
+         j+3kt/EWWulHg6n0bCvJ0CqvAOg1L7T3f5oZW7/VahNQC9oq7Ck5exX7ZFe2eOA3tFpE
+         XiS190srxWPADfyHXm7sOenW9kNSKj+tEG2T8QIk0bBEwl8NNJ+KXHhsY/t7wUModZbj
+         0/ltzfaPc1j1Jkbx92Vhn0Yz0S4EScPZM1BUqUvRv13QccHu76bTXoIoTvWoTYxs3a39
+         YeGQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=WZaTgkz+toL0ks6pm7S5kqWZiCxYJvKY9gKBvelmH/U=;
-        b=IlzRExFURBGCPg+NXVmmBXkL9WIVHR+iabzuIxtRyTE9FHOFcptw7+SeueMe66R8+e
-         A3xF+cwCmBlpa+rCXAs9T1fm8bFMZjqe2CKevCjUXwIAMUO0vNfYJZ+dNLDpwS3iT4Cx
-         rvBBQ70NBtqijGSLUpDB9vmq2eOeK2SzBSKaqzkqkwtO42p2WDpYTjsvPIG5kq0bnYOo
-         Ixc6bkPqdBeYroFerTLVDfDf4ljCMBnrFHe3p0aUhQt65eoUjNK6N2/BWpKQ75xmdqx5
-         NOQa9vUuPG9GEYfFQsEFAk3ijmMIqjV3zcIjmboM7fl1ff/oae65i6C9YDQV6is/FyN9
-         U4yQ==
-X-Gm-Message-State: AOAM533F3+URLUSzoVZ3sOEP/YKLNw6SG8kP8xEVE40KU5E1QLiyLmJj
-        GNhTt5JGzBAASzVzHhy5atZYGSyniv3cGw==
-X-Google-Smtp-Source: ABdhPJzav08iNL9YI7xKsW5WvAptBOEQC2rfLW8LJzhlYBjjukeUBRgC6+0yCQlnpKt+A2hQMH2SsA==
-X-Received: by 2002:a37:a38e:: with SMTP id m136mr10127612qke.162.1595013155701;
-        Fri, 17 Jul 2020 12:12:35 -0700 (PDT)
+        bh=BvXIJ8QeWxfjVrC3Irmo+Yr13qeJMFlOttxCdY3q194=;
+        b=REn43fvKbpo32xoNQO/PeqqqpZ+wX1si/gtE5SB6z/YIaGGC8QhCYL4Yn610u4R2Du
+         QO6oe25Yu+MSY+O46RqGFxmSUi+RlsMrnx9+eo0IyUveNacg9TXK8jTwSJDMKg7ucILJ
+         q0GT3oIZv5IVbFIAQ5jZPpsvKP3EzpmbzVOW2u8Xw+J8KRg3uNt8btm9f5l4v0pHcGuI
+         oYgiCgwU18dQTGLEBt8GBxhtJkxzxx+fok7KOxnH7Co13khmL1AYZZpG9om/di58FZaA
+         2KT2m6qzxdNu8C3kXh7OtiLGSK3rK5dMazjNVfU1/wwnu9vjprKVxpkrhaubY9pQsJRI
+         3Kog==
+X-Gm-Message-State: AOAM531m3+f4+7/z97kSlFBPgFHAjFcphcCefPE7TbWj3OHiRAMlo4v3
+        nwFCzMTXdPkZX+hM9XZ+BwpLLeKAwXUq6Q==
+X-Google-Smtp-Source: ABdhPJzv3v3X0FlOXnRKR5WLVwFQjYnvgrEldd8aG0WwSknHc4NfRMF6tZsXKHH+66qNVOjuJwf0lQ==
+X-Received: by 2002:ac8:168d:: with SMTP id r13mr12101672qtj.207.1595013159935;
+        Fri, 17 Jul 2020 12:12:39 -0700 (PDT)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id d13sm10516231qkj.27.2020.07.17.12.12.34
+        by smtp.gmail.com with ESMTPSA id i35sm10803476qtd.96.2020.07.17.12.12.39
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 17 Jul 2020 12:12:35 -0700 (PDT)
+        Fri, 17 Jul 2020 12:12:39 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 1/3] btrfs: fix lockdep splat in open_fs_devices
-Date:   Fri, 17 Jul 2020 15:12:27 -0400
-Message-Id: <20200717191229.2283043-2-josef@toxicpanda.com>
+Subject: [PATCH 3/3] btrfs: fix lockdep splat from btrfs_dump_space_info
+Date:   Fri, 17 Jul 2020 15:12:29 -0400
+Message-Id: <20200717191229.2283043-4-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.24.1
 In-Reply-To: <20200717191229.2283043-1-josef@toxicpanda.com>
 References: <20200717191229.2283043-1-josef@toxicpanda.com>
@@ -73,227 +73,189 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-There's long existed a lockdep splat because we open our bdev's under
-the ->device_list_mutex at mount time, which acquires the bd_mutex.
-Usually this goes unnoticed, but if you do loopback devices at all
-suddenly the bd_mutex comes with a whole host of other dependencies,
-which results in the splat when you mount a btrfs file system.
+When running with -o enospc_debug you can get the following splat if one
+of the dump_space_info's trip
 
 ======================================================
 WARNING: possible circular locking dependency detected
-5.8.0-0.rc3.1.fc33.x86_64+debug #1 Not tainted
+5.8.0-rc5+ #20 Tainted: G           OE
 ------------------------------------------------------
-systemd-journal/509 is trying to acquire lock:
-ffff970831f84db0 (&fs_info->reloc_mutex){+.+.}-{3:3}, at: btrfs_record_root_in_trans+0x44/0x70 [btrfs]
+dd/563090 is trying to acquire lock:
+ffff9e7dbf4f1e18 (&ctl->tree_lock){+.+.}-{2:2}, at: btrfs_dump_free_space+0x2b/0xa0 [btrfs]
 
 but task is already holding lock:
-ffff97083144d598 (sb_pagefaults){.+.+}-{0:0}, at: btrfs_page_mkwrite+0x59/0x560 [btrfs]
+ffff9e7e2284d428 (&cache->lock){+.+.}-{2:2}, at: btrfs_dump_space_info+0xaa/0x120 [btrfs]
 
 which lock already depends on the new lock.
 
 the existing dependency chain (in reverse order) is:
 
- -> #6 (sb_pagefaults){.+.+}-{0:0}:
-       __sb_start_write+0x13e/0x220
-       btrfs_page_mkwrite+0x59/0x560 [btrfs]
-       do_page_mkwrite+0x4f/0x130
-       do_wp_page+0x3b0/0x4f0
-       handle_mm_fault+0xf47/0x1850
-       do_user_addr_fault+0x1fc/0x4b0
-       exc_page_fault+0x88/0x300
-       asm_exc_page_fault+0x1e/0x30
+-> #3 (&cache->lock){+.+.}-{2:2}:
+       _raw_spin_lock+0x25/0x30
+       btrfs_add_reserved_bytes+0x3c/0x3c0 [btrfs]
+       find_free_extent+0x7ef/0x13b0 [btrfs]
+       btrfs_reserve_extent+0x9b/0x180 [btrfs]
+       btrfs_alloc_tree_block+0xc1/0x340 [btrfs]
+       alloc_tree_block_no_bg_flush+0x4a/0x60 [btrfs]
+       __btrfs_cow_block+0x122/0x530 [btrfs]
+       btrfs_cow_block+0x106/0x210 [btrfs]
+       commit_cowonly_roots+0x55/0x300 [btrfs]
+       btrfs_commit_transaction+0x4ed/0xac0 [btrfs]
+       sync_filesystem+0x74/0x90
+       generic_shutdown_super+0x22/0x100
+       kill_anon_super+0x14/0x30
+       btrfs_kill_super+0x12/0x20 [btrfs]
+       deactivate_locked_super+0x36/0x70
+       cleanup_mnt+0x104/0x160
+       task_work_run+0x5f/0x90
+       __prepare_exit_to_usermode+0x1bd/0x1c0
+       do_syscall_64+0x5e/0xb0
+       entry_SYSCALL_64_after_hwframe+0x44/0xa9
 
- -> #5 (&mm->mmap_lock#2){++++}-{3:3}:
-       __might_fault+0x60/0x80
-       _copy_from_user+0x20/0xb0
-       get_sg_io_hdr+0x9a/0xb0
-       scsi_cmd_ioctl+0x1ea/0x2f0
-       cdrom_ioctl+0x3c/0x12b4
-       sr_block_ioctl+0xa4/0xd0
-       block_ioctl+0x3f/0x50
-       ksys_ioctl+0x82/0xc0
-       __x64_sys_ioctl+0x16/0x20
+-> #2 (&space_info->lock){+.+.}-{2:2}:
+       _raw_spin_lock+0x25/0x30
+       btrfs_block_rsv_release+0x1a6/0x3f0 [btrfs]
+       btrfs_inode_rsv_release+0x4f/0x170 [btrfs]
+       btrfs_clear_delalloc_extent+0x155/0x480 [btrfs]
+       clear_state_bit+0x81/0x1a0 [btrfs]
+       __clear_extent_bit+0x25c/0x5d0 [btrfs]
+       clear_extent_bit+0x15/0x20 [btrfs]
+       btrfs_invalidatepage+0x2b7/0x3c0 [btrfs]
+       truncate_cleanup_page+0x47/0xe0
+       truncate_inode_pages_range+0x238/0x840
+       truncate_pagecache+0x44/0x60
+       btrfs_setattr+0x202/0x5e0 [btrfs]
+       notify_change+0x33b/0x490
+       do_truncate+0x76/0xd0
+       path_openat+0x687/0xa10
+       do_filp_open+0x91/0x100
+       do_sys_openat2+0x215/0x2d0
+       do_sys_open+0x44/0x80
        do_syscall_64+0x52/0xb0
        entry_SYSCALL_64_after_hwframe+0x44/0xa9
 
- -> #4 (&cd->lock){+.+.}-{3:3}:
-       __mutex_lock+0x7b/0x820
-       sr_block_open+0xa2/0x180
-       __blkdev_get+0xdd/0x550
-       blkdev_get+0x38/0x150
-       do_dentry_open+0x16b/0x3e0
-       path_openat+0x3c9/0xa00
-       do_filp_open+0x75/0x100
-       do_sys_openat2+0x8a/0x140
-       __x64_sys_openat+0x46/0x70
-       do_syscall_64+0x52/0xb0
+-> #1 (&tree->lock#2){+.+.}-{2:2}:
+       _raw_spin_lock+0x25/0x30
+       find_first_extent_bit+0x32/0x150 [btrfs]
+       write_pinned_extent_entries.isra.0+0xc5/0x100 [btrfs]
+       __btrfs_write_out_cache+0x172/0x480 [btrfs]
+       btrfs_write_out_cache+0x7a/0xf0 [btrfs]
+       btrfs_write_dirty_block_groups+0x286/0x3b0 [btrfs]
+       commit_cowonly_roots+0x245/0x300 [btrfs]
+       btrfs_commit_transaction+0x4ed/0xac0 [btrfs]
+       close_ctree+0xf9/0x2f5 [btrfs]
+       generic_shutdown_super+0x6c/0x100
+       kill_anon_super+0x14/0x30
+       btrfs_kill_super+0x12/0x20 [btrfs]
+       deactivate_locked_super+0x36/0x70
+       cleanup_mnt+0x104/0x160
+       task_work_run+0x5f/0x90
+       __prepare_exit_to_usermode+0x1bd/0x1c0
+       do_syscall_64+0x5e/0xb0
        entry_SYSCALL_64_after_hwframe+0x44/0xa9
 
- -> #3 (&bdev->bd_mutex){+.+.}-{3:3}:
-       __mutex_lock+0x7b/0x820
-       __blkdev_get+0x6a/0x550
-       blkdev_get+0x85/0x150
-       blkdev_get_by_path+0x2c/0x70
-       btrfs_get_bdev_and_sb+0x1b/0xb0 [btrfs]
-       open_fs_devices+0x88/0x240 [btrfs]
-       btrfs_open_devices+0x92/0xa0 [btrfs]
-       btrfs_mount_root+0x250/0x490 [btrfs]
-       legacy_get_tree+0x30/0x50
-       vfs_get_tree+0x28/0xc0
-       vfs_kern_mount.part.0+0x71/0xb0
-       btrfs_mount+0x119/0x380 [btrfs]
-       legacy_get_tree+0x30/0x50
-       vfs_get_tree+0x28/0xc0
-       do_mount+0x8c6/0xca0
-       __x64_sys_mount+0x8e/0xd0
+-> #0 (&ctl->tree_lock){+.+.}-{2:2}:
+       __lock_acquire+0x1240/0x2460
+       lock_acquire+0xab/0x360
+       _raw_spin_lock+0x25/0x30
+       btrfs_dump_free_space+0x2b/0xa0 [btrfs]
+       btrfs_dump_space_info+0xf4/0x120 [btrfs]
+       btrfs_reserve_extent+0x176/0x180 [btrfs]
+       __btrfs_prealloc_file_range+0x145/0x550 [btrfs]
+       cache_save_setup+0x28d/0x3b0 [btrfs]
+       btrfs_start_dirty_block_groups+0x1fc/0x4f0 [btrfs]
+       btrfs_commit_transaction+0xcc/0xac0 [btrfs]
+       btrfs_alloc_data_chunk_ondemand+0x162/0x4c0 [btrfs]
+       btrfs_check_data_free_space+0x4c/0xa0 [btrfs]
+       btrfs_buffered_write.isra.0+0x19b/0x740 [btrfs]
+       btrfs_file_write_iter+0x3cf/0x610 [btrfs]
+       new_sync_write+0x11e/0x1b0
+       vfs_write+0x1c9/0x200
+       ksys_write+0x68/0xe0
        do_syscall_64+0x52/0xb0
        entry_SYSCALL_64_after_hwframe+0x44/0xa9
-
- -> #2 (&fs_devs->device_list_mutex){+.+.}-{3:3}:
-       __mutex_lock+0x7b/0x820
-       btrfs_run_dev_stats+0x36/0x420 [btrfs]
-       commit_cowonly_roots+0x91/0x2d0 [btrfs]
-       btrfs_commit_transaction+0x4e6/0x9f0 [btrfs]
-       btrfs_sync_file+0x38a/0x480 [btrfs]
-       __x64_sys_fdatasync+0x47/0x80
-       do_syscall_64+0x52/0xb0
-       entry_SYSCALL_64_after_hwframe+0x44/0xa9
-
- -> #1 (&fs_info->tree_log_mutex){+.+.}-{3:3}:
-       __mutex_lock+0x7b/0x820
-       btrfs_commit_transaction+0x48e/0x9f0 [btrfs]
-       btrfs_sync_file+0x38a/0x480 [btrfs]
-       __x64_sys_fdatasync+0x47/0x80
-       do_syscall_64+0x52/0xb0
-       entry_SYSCALL_64_after_hwframe+0x44/0xa9
-
- -> #0 (&fs_info->reloc_mutex){+.+.}-{3:3}:
-       __lock_acquire+0x1241/0x20c0
-       lock_acquire+0xb0/0x400
-       __mutex_lock+0x7b/0x820
-       btrfs_record_root_in_trans+0x44/0x70 [btrfs]
-       start_transaction+0xd2/0x500 [btrfs]
-       btrfs_dirty_inode+0x44/0xd0 [btrfs]
-       file_update_time+0xc6/0x120
-       btrfs_page_mkwrite+0xda/0x560 [btrfs]
-       do_page_mkwrite+0x4f/0x130
-       do_wp_page+0x3b0/0x4f0
-       handle_mm_fault+0xf47/0x1850
-       do_user_addr_fault+0x1fc/0x4b0
-       exc_page_fault+0x88/0x300
-       asm_exc_page_fault+0x1e/0x30
 
 other info that might help us debug this:
 
 Chain exists of:
-  &fs_info->reloc_mutex --> &mm->mmap_lock#2 --> sb_pagefaults
+  &ctl->tree_lock --> &space_info->lock --> &cache->lock
 
-Possible unsafe locking scenario:
+ Possible unsafe locking scenario:
 
-     CPU0                    CPU1
-     ----                    ----
- lock(sb_pagefaults);
-                             lock(&mm->mmap_lock#2);
-                             lock(sb_pagefaults);
- lock(&fs_info->reloc_mutex);
+       CPU0                    CPU1
+       ----                    ----
+  lock(&cache->lock);
+                               lock(&space_info->lock);
+                               lock(&cache->lock);
+  lock(&ctl->tree_lock);
 
  *** DEADLOCK ***
 
-3 locks held by systemd-journal/509:
- #0: ffff97083bdec8b8 (&mm->mmap_lock#2){++++}-{3:3}, at: do_user_addr_fault+0x12e/0x4b0
- #1: ffff97083144d598 (sb_pagefaults){.+.+}-{0:0}, at: btrfs_page_mkwrite+0x59/0x560 [btrfs]
- #2: ffff97083144d6a8 (sb_internal){.+.+}-{0:0}, at: start_transaction+0x3f8/0x500 [btrfs]
+6 locks held by dd/563090:
+ #0: ffff9e7e21d18448 (sb_writers#14){.+.+}-{0:0}, at: vfs_write+0x195/0x200
+ #1: ffff9e7dd0410ed8 (&sb->s_type->i_mutex_key#19){++++}-{3:3}, at: btrfs_file_write_iter+0x86/0x610 [btrfs]
+ #2: ffff9e7e21d18638 (sb_internal#2){.+.+}-{0:0}, at: start_transaction+0x40b/0x5b0 [btrfs]
+ #3: ffff9e7e1f05d688 (&cur_trans->cache_write_mutex){+.+.}-{3:3}, at: btrfs_start_dirty_block_groups+0x158/0x4f0 [btrfs]
+ #4: ffff9e7e2284ddb8 (&space_info->groups_sem){++++}-{3:3}, at: btrfs_dump_space_info+0x69/0x120 [btrfs]
+ #5: ffff9e7e2284d428 (&cache->lock){+.+.}-{2:2}, at: btrfs_dump_space_info+0xaa/0x120 [btrfs]
 
 stack backtrace:
-CPU: 0 PID: 509 Comm: systemd-journal Not tainted 5.8.0-0.rc3.1.fc33.x86_64+debug #1
-Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 0.0.0 02/06/2015
+CPU: 3 PID: 563090 Comm: dd Tainted: G           OE     5.8.0-rc5+ #20
+Hardware name: To Be Filled By O.E.M. To Be Filled By O.E.M./890FX Deluxe5, BIOS P1.40 05/03/2011
 Call Trace:
- dump_stack+0x92/0xc8
- check_noncircular+0x134/0x150
- __lock_acquire+0x1241/0x20c0
- lock_acquire+0xb0/0x400
- ? btrfs_record_root_in_trans+0x44/0x70 [btrfs]
- ? lock_acquire+0xb0/0x400
- ? btrfs_record_root_in_trans+0x44/0x70 [btrfs]
- __mutex_lock+0x7b/0x820
- ? btrfs_record_root_in_trans+0x44/0x70 [btrfs]
- ? kvm_sched_clock_read+0x14/0x30
- ? sched_clock+0x5/0x10
- ? sched_clock_cpu+0xc/0xb0
- btrfs_record_root_in_trans+0x44/0x70 [btrfs]
- start_transaction+0xd2/0x500 [btrfs]
- btrfs_dirty_inode+0x44/0xd0 [btrfs]
- file_update_time+0xc6/0x120
- btrfs_page_mkwrite+0xda/0x560 [btrfs]
- ? sched_clock+0x5/0x10
- do_page_mkwrite+0x4f/0x130
- do_wp_page+0x3b0/0x4f0
- handle_mm_fault+0xf47/0x1850
- do_user_addr_fault+0x1fc/0x4b0
- exc_page_fault+0x88/0x300
- ? asm_exc_page_fault+0x8/0x30
- asm_exc_page_fault+0x1e/0x30
-RIP: 0033:0x7fa3972fdbfe
-Code: Bad RIP value.
+ dump_stack+0x96/0xd0
+ check_noncircular+0x162/0x180
+ __lock_acquire+0x1240/0x2460
+ ? wake_up_klogd.part.0+0x30/0x40
+ lock_acquire+0xab/0x360
+ ? btrfs_dump_free_space+0x2b/0xa0 [btrfs]
+ _raw_spin_lock+0x25/0x30
+ ? btrfs_dump_free_space+0x2b/0xa0 [btrfs]
+ btrfs_dump_free_space+0x2b/0xa0 [btrfs]
+ btrfs_dump_space_info+0xf4/0x120 [btrfs]
+ btrfs_reserve_extent+0x176/0x180 [btrfs]
+ __btrfs_prealloc_file_range+0x145/0x550 [btrfs]
+ ? btrfs_qgroup_reserve_data+0x1d/0x60 [btrfs]
+ cache_save_setup+0x28d/0x3b0 [btrfs]
+ btrfs_start_dirty_block_groups+0x1fc/0x4f0 [btrfs]
+ btrfs_commit_transaction+0xcc/0xac0 [btrfs]
+ ? start_transaction+0xe0/0x5b0 [btrfs]
+ btrfs_alloc_data_chunk_ondemand+0x162/0x4c0 [btrfs]
+ btrfs_check_data_free_space+0x4c/0xa0 [btrfs]
+ btrfs_buffered_write.isra.0+0x19b/0x740 [btrfs]
+ ? ktime_get_coarse_real_ts64+0xa8/0xd0
+ ? trace_hardirqs_on+0x1c/0xe0
+ btrfs_file_write_iter+0x3cf/0x610 [btrfs]
+ new_sync_write+0x11e/0x1b0
+ vfs_write+0x1c9/0x200
+ ksys_write+0x68/0xe0
+ do_syscall_64+0x52/0xb0
+ entry_SYSCALL_64_after_hwframe+0x44/0xa9
 
-Fix this by not holding the ->device_list_mutex at this point.  The
-device_list_mutex exists to protect us from modifying the device list
-while the file system is running.
-
-However it can also be modified by doing a scan on a device.  But this
-action is specifically protected by the uuid_mutex, which we are holding
-here.  We cannot race with opening at this point because we have the
-->s_mount lock held during the mount.  Not having the
-->device_list_mutex here is perfectly safe as we're not going to change
-the devices at this point.
+This is because we're holding the block_group->lock while trying to dump
+the free space cache.  However we don't need this lock, we just need it
+to read the values for the printk, so move the free space cache dumping
+outside of the block group lock.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/volumes.c | 10 ++++++++--
- 1 file changed, 8 insertions(+), 2 deletions(-)
+ fs/btrfs/space-info.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index ce01e44f8134..20295441251a 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -258,6 +258,9 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
-  * may be used to exclude some operations from running concurrently without any
-  * modifications to the list (see write_all_supers)
-  *
-+ * Is not required at mount and close times, because our device list is
-+ * protected by the uuid_mutex at that point.
-+ *
-  * balance_mutex
-  * -------------
-  * protects balance structures (status, state) and context accessed from
-@@ -602,6 +605,11 @@ static int btrfs_free_stale_devices(const char *path,
- 	return ret;
- }
- 
-+/*
-+ * This is only used on mount, and we are protected from competing things
-+ * messing with our fs_devices by the uuid_mutex, thus we do not need the
-+ * fs_devices->device_list_mutex here.
-+ */
- static int btrfs_open_one_device(struct btrfs_fs_devices *fs_devices,
- 			struct btrfs_device *device, fmode_t flags,
- 			void *holder)
-@@ -1230,7 +1238,6 @@ int btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
- 
- 	lockdep_assert_held(&uuid_mutex);
- 
--	mutex_lock(&fs_devices->device_list_mutex);
- 	if (fs_devices->opened) {
- 		fs_devices->opened++;
- 		ret = 0;
-@@ -1238,7 +1245,6 @@ int btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
- 		list_sort(NULL, &fs_devices->devices, devid_cmp);
- 		ret = open_fs_devices(fs_devices, flags, holder);
+diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
+index c7bd3fdd7792..475968ccbd1d 100644
+--- a/fs/btrfs/space-info.c
++++ b/fs/btrfs/space-info.c
+@@ -468,8 +468,8 @@ void btrfs_dump_space_info(struct btrfs_fs_info *fs_info,
+ 			"block group %llu has %llu bytes, %llu used %llu pinned %llu reserved %s",
+ 			cache->start, cache->length, cache->used, cache->pinned,
+ 			cache->reserved, cache->ro ? "[readonly]" : "");
+-		btrfs_dump_free_space(cache, bytes);
+ 		spin_unlock(&cache->lock);
++		btrfs_dump_free_space(cache, bytes);
  	}
--	mutex_unlock(&fs_devices->device_list_mutex);
- 
- 	return ret;
- }
+ 	if (++index < BTRFS_NR_RAID_TYPES)
+ 		goto again;
 -- 
 2.24.1
 

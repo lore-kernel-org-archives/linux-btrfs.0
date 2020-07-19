@@ -2,80 +2,64 @@ Return-Path: <SRS0=sdTP=A6=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-4.1 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0C5C0C433DF
-	for <linux-btrfs@archiver.kernel.org>; Sun, 19 Jul 2020 21:01:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5525DC433E0
+	for <linux-btrfs@archiver.kernel.org>; Sun, 19 Jul 2020 21:42:46 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id BB84A20B1F
-	for <linux-btrfs@archiver.kernel.org>; Sun, 19 Jul 2020 21:01:31 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E111A20B1F
+	for <linux-btrfs@archiver.kernel.org>; Sun, 19 Jul 2020 21:42:45 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="feHdtLy+"
+	dkim=pass (2048-bit key) header.d=lechevalier.se header.i=@lechevalier.se header.b="rpWZDo55"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726428AbgGSVB3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 19 Jul 2020 17:01:29 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36040 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726073AbgGSVB3 (ORCPT
+        id S1726679AbgGSVmM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 19 Jul 2020 17:42:12 -0400
+Received: from mailrelay3-3.pub.mailoutpod1-cph3.one.com ([46.30.212.12]:49972
+        "EHLO mailrelay3-3.pub.mailoutpod1-cph3.one.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1726126AbgGSVmM (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 19 Jul 2020 17:01:29 -0400
-Received: from mail-wm1-x341.google.com (mail-wm1-x341.google.com [IPv6:2a00:1450:4864:20::341])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A9497C0619D2
-        for <linux-btrfs@vger.kernel.org>; Sun, 19 Jul 2020 14:01:28 -0700 (PDT)
-Received: by mail-wm1-x341.google.com with SMTP id q15so20419132wmj.2
-        for <linux-btrfs@vger.kernel.org>; Sun, 19 Jul 2020 14:01:28 -0700 (PDT)
+        Sun, 19 Jul 2020 17:42:12 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=XV6xIzMlAJ44yCDu0QOacX6qdfxbB9ArZRwDGrk/V78=;
-        b=feHdtLy+02eoyVcvGkFizbd9fNguVVNQxChU4F/dgMYHN7RmvWuuwuTZIRYCzGeTQw
-         q7TZDJezbszrILuvnKFSFlyeDb17JElSzxZV9XUXUp8sWiqaDyn/skeZK6R/vj39q1NL
-         5MKhJVRTk0PKPFxIEXPa/G9Oaz/8unKS9i8qyR88MEQSXprm9xhvhohSpUYvYiGm9cZk
-         Ck/z7oA4h1UEvIoJdix8iZuBr5tx4iarhzD6mQeKVIo5TNYqTJynl418VZpjlFcnma6U
-         EtUXXQX6VJGXHyCNNDSc7ap9TqvJF4DpOIKXtZQKJUA9LgpP9e7wJArX9sQuaXLqxhnC
-         q69A==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=XV6xIzMlAJ44yCDu0QOacX6qdfxbB9ArZRwDGrk/V78=;
-        b=mQDbbDzHat8qfkirMG+C0Hp4BNvZA46oAdmFGDdvKtICGpLEuaFgvC65JLy+leQh6u
-         DlD4yJCWfHKK997fegMkcto2eJdwP1bNMbjL437cDswGqyQhioAIKbIqyTfGb12kJXA8
-         CKkQZIPCdYHejYWkSde7vLNzet99KONVerTmaWGbqaUPMH6B8Ecmes8gdrq2fMB2IOt/
-         Ax9I+UhcjrDVFXb3ljDhN4vI9ldDJjg5uhndRogQ3ujHfvGNadaDzCg4zQ7v16IYI76E
-         OOptrwzkVAmVubpUmfRXdx26+4HcEn2T55jZGqNbeLNvJEFK725XOmFfRXQOjDQZwdMH
-         c7XQ==
-X-Gm-Message-State: AOAM5316LY2Lm7WN+53eQ2xln0dkEbo7+x/3bm+wlA5zrfLej5e4bU+m
-        HI2+NW9LQwY8RMKWP+Ch89bKYggj7E5FMDgVildbDA==
-X-Google-Smtp-Source: ABdhPJz6mQ4GOn00HZ4bbar6PtHXMkg1bzwXgHQmxAm9qXtZW12yN0EOngeXMLzwDXRoOecbZ0JFLEfkCjRtZaEjgtc=
-X-Received: by 2002:a1c:dfc5:: with SMTP id w188mr19505367wmg.182.1595192487083;
- Sun, 19 Jul 2020 14:01:27 -0700 (PDT)
-MIME-Version: 1.0
-References: <CANUBKXi6yLPrisTy8ym_Q-6yyubLcTz2LtrSAvGK_SjMJR1sHA@mail.gmail.com>
-In-Reply-To: <CANUBKXi6yLPrisTy8ym_Q-6yyubLcTz2LtrSAvGK_SjMJR1sHA@mail.gmail.com>
-From:   Chris Murphy <lists@colorremedies.com>
-Date:   Sun, 19 Jul 2020 15:01:11 -0600
-Message-ID: <CAJCQCtQnBK-mAoNZKi+d73X9RPTgd27V8ZtfA_Cyg_rmEd3dpA@mail.gmail.com>
+        d=lechevalier.se; s=20191106;
+        h=content-transfer-encoding:content-type:mime-version:subject:message-id:to:
+         from:date:from;
+        bh=n9/o52VDq2r1Rp01Dx0/JeVLMoNVB1QHDX+s+nTKr3M=;
+        b=rpWZDo55DGlndXRFpzf+qoRw8ClHqyqVkc3dE6vJqg2CiGlImPeeDWmbvaVbM4S4AWidcjUggCFDY
+         f1JNAlDCUaOoENi9v5/SqlM2CKHoFiEOxYOaGu9nu7DURDaOSg9coEFC6UMJt2mykLw6k6gSTrX7Gm
+         oh4NZSAXNnIm4FS1dMEAO2wnPj3Mk6Ibt/Fsri/k6y3q7haSDPvT8AHgIBWKScs/aTUG1kkigIWnhq
+         1qgr2iaO3nPyyh2FM3xuEhbJr2RDg9wgKw26Z+yaBN+BWlEXnOfG/LJhu5UOayxZXAcC+gO8akKDPo
+         gMEkUTcJx6L16wc524rJx0iZyqY2C8Q==
+X-HalOne-Cookie: bdd2cb80c086dfb34066a6422dd71ae12a121541
+X-HalOne-ID: b2f160bc-ca08-11ea-86e9-d0431ea8bb03
+Received: from [192.168.0.126] (h-131-138.a357.priv.bahnhof.se [81.170.131.138])
+        by mailrelay3.pub.mailoutpod1-cph3.one.com (Halon) with ESMTPSA
+        id b2f160bc-ca08-11ea-86e9-d0431ea8bb03;
+        Sun, 19 Jul 2020 21:42:10 +0000 (UTC)
+Date:   Sun, 19 Jul 2020 23:42:09 +0200 (GMT+02:00)
+From:   A L <mail@lechevalier.se>
+To:     Falk Bay <falkartis@gmail.com>, linux-btrfs@vger.kernel.org
+Message-ID: <a85c20.e6b39479.1736906f225@lechevalier.se>
 Subject: Re: Possible bug detected, need help
-To:     Falk Bay <falkartis@gmail.com>
-Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Transfer-Encoding: quoted-printable
+X-Mailer: R2Mail2
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sun, Jul 19, 2020 at 2:24 PM Falk Bay <falkartis@gmail.com> wrote:
->
+
+
+---- From: Falk Bay <falkartis@gmail.com> -- Sent: 2020-07-19 - 22:24 ----
+
 > Hi,
->
+>=20
 > First of all I want to thank you for this great piece of software,
 > I've been using it for a long time and it perfectly suits my needs.
->
+>=20
 > After a unclean shutdown, with a balancing in progress and very little
 > free space in my RAID1 filesystem I ended up with a btrfs filesystem
 > that only works in ro mode.
@@ -84,74 +68,71 @@ On Sun, Jul 19, 2020 at 2:24 PM Falk Bay <falkartis@gmail.com> wrote:
 > As a side note, if I mount it as normally I have to force my machine
 > to power off since the normal shutdown will wait until any filesystem
 > is unmounted.
-
-There are a few problems, I'm not sure to what degree they relate to
-the problem you're having:
-
-> [ 4417.160608] BTRFS info (device sda5): bdev /dev/sda5 errs: wr 10, rd 696, flush 0, corrupt 0, gen 0
-
-Prior problems with writes and reads being dropped. It suggests some
-kind of hardware problem. To learn more, you'd need to look through
-logs prior to these read and write errors and see why they happened.
-Let's put that on hold for now.
-
-> 4.15.0-111-generic #112-Ubuntu
-
-Kinda old. If you need to run an older kernel, see if you can track
-down the latest 4.19 series. But the newer you can run, the better,
-5.1 series or 5.4 series.
-
-> [ 4419.982525] BTRFS info (device sda5): continuing balance
-
-Try mounting with 'skip_balance' mount option.
-
->[ 4466.848327] RIP: btrfs_set_root_node+0x5/0x60 [btrfs] RSP: ffffb52a4340fda8
-
-This is not a message I've seen before.
-
->[ 4466.847846] general protection fault: 0000 [#1] SMP PTI
-
-That's not Btrfs specific. It could be the result of a bug somewhere,
-it could be the result of a transient memory problem. My suggestion is
-to upgrade the kernel, and at your next opportunity run memtest86+ for
-a few days (terrible that it could take that long to find a problem,
-but sometimes true). But in terms of priority, you probably want to
-get the kernel updated.
-
+>=20
+> Here are my technical details:
+>=20
+> uname -a
+> Linux poloni 4.15.0-111-generic #112-Ubuntu SMP Thu Jul 9 20:32:34 UTC
+> 2020 x86_64 x86_64 x86_64 GNU/Linux
+>=20
+> btrfs --version
 > btrfs-progs v4.15.1
-
-Also old and needs to be updated. A 'btrfs check' may or may not
-provide useful information, but for sure you don't want to use
---repair with this version.
-
-
+>=20
+> sudo btrfs fi show
+> Label: none  uuid: aa1f67a3-8cd3-4d1b-87de-a04b48efbcfd
+>     Total devices 2 FS bytes used 27.58GiB
+>     devid    1 size 32.00GiB used 31.00GiB path /dev/sda7
+>     devid    2 size 32.00GiB used 31.00GiB path /dev/sdb7
+>=20
+> Label: 'my-btrfs'  uuid: 5ea692ab-c7b1-4618-be39-d82eaf5c6b34
+>     Total devices 2 FS bytes used 888.89GiB
+>     devid    3 size 891.51GiB used 891.51GiB path /dev/sda5
+>     devid    5 size 891.51GiB used 891.51GiB path /dev/sdb5
+>=20
+> this aa1f67a3-8cd3-4d1b-87de-a04b48efbcfd works fine.
+> this 5ea692ab-c7b1-4618-be39-d82eaf5c6b34, my-btrfs is the one that
+> causes problems
+>=20
 > btrfs fi df /mnt/
-> Data, RAID1: total=888.48GiB, used=886.92GiB
-> System, RAID1: total=32.00MiB, used=208.00KiB
-> Metadata, RAID1: total=3.00GiB, used=1.97GiB
-> GlobalReserve, single: total=512.00MiB, used=0.00B
+> Data, RAID1: total=3D888.48GiB, used=3D886.92GiB
+> System, RAID1: total=3D32.00MiB, used=3D208.00KiB
+> Metadata, RAID1: total=3D3.00GiB, used=3D1.97GiB
+> GlobalReserve, single: total=3D512.00MiB, used=3D0.00B
+>=20
+> I was willing, but unable, to remove some large files to have enough
+> free space to operate normally.
+>=20
+> I add the dmesg.log file in the attachment.
+>=20
+> I wonder if I should try to fix it or if I should format the partition
+> and recover a backup.
+>=20
+> Thanks in advance,
+> Falk
 
-It's pretty much full.
+The dmesg suggest a balance in running. The skip_balance is a good option h=
+ere.
 
-You can try to learn more about it just by: 'mount -o ro,skip_balance'
-- hopefully that will work. And the provide two additional things (you
-don't need any upgrades for these):
+I'd to see the output of `btrfs fi us /mnt/` as it will show the allocation=
+s better. You may have a situation with not enough space to allocate a new =
+data or metadata block and the balance is not very good at handling this.
 
-btrfs-dump-super  /dev/sdXY   ## safe to use while mounted, this is
-now 'btrfs insp dump-s' but progs 4.14 doesn't have that I think
+A note is that deleting files actually can increase metadata usage.
 
-This is from upstream btrfs-progs git.
-https://github.com/kdave/btrfs-progs/blob/master/btrfs-debugfs
+To solve that youd have to do very specific balancing options. But the sugg=
+ested memtest is good! Do you have earlier kernel outputs with errors to sh=
+are?=20
 
-Grab it, get the permissions set correctly, and run it like this:
+https://wiki.tnonline.net/w/Btrfs/ENOSPC shows a high level on how block al=
+location work..=20
+Official FAQ is here: https://btrfs.wiki.kernel.org/index.php/FAQ#Help.21_I=
+_ran_out_of_disk_space.21
 
-./btrfs-debugfs -b /mnt
+I suggest you do look for those earlier logs and do the testing suggested b=
+y Chris Murphy.=20
 
-And report the results.
+Good luck!=20
 
-The file system is pretty full but it might be possible to do some
-filtered data chunk only balancing to free up some space.
+/Anders=20
 
 
---
-Chris Murphy

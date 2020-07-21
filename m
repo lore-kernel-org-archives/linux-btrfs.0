@@ -2,66 +2,123 @@ Return-Path: <SRS0=UEav=BA=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.8 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS,USER_AGENT_GIT autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.1 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_GIT autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A9494C433F7
-	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Jul 2020 18:32:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8BDDCC433E1
+	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Jul 2020 20:33:47 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 86FA7207BB
-	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Jul 2020 18:32:22 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5760820720
+	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Jul 2020 20:33:47 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="XFvfug7U"
+	dkim=pass (2048-bit key) header.d=libero.it header.i=@libero.it header.b="UkY5eDA0"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730267AbgGUScU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 21 Jul 2020 14:32:20 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35776 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728750AbgGUScI (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Jul 2020 14:32:08 -0400
-Received: from casper.infradead.org (casper.infradead.org [IPv6:2001:8b0:10b:1236::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3C2E4C0619DA;
-        Tue, 21 Jul 2020 11:32:07 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=casper.20170209; h=Content-Transfer-Encoding:MIME-Version:
-        Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:Content-Type:Content-ID:
-        Content-Description:In-Reply-To:References;
-        bh=wjd9uUGiHUCjYx9puh8uha+RMiUWI8gxjnv7qGgpe28=; b=XFvfug7UE/CC5zFqkvgqCe0216
-        VvJ8zyvmyUwmgvzrTDBTvgLWqwuItZpxjQrwu1dw89/Lhp2LFsFPUw8mSEaHzi5Ting9+66nRduHY
-        kUR5iTNCr2Xje7OeEEegthbUmUjOTYsotgH0cJE+Ch403ZJ8ExcMyXkQ1Zz8SKczui6VCx2BS/Rsn
-        2KbRwK9u7lgylkeIOqh3MN4jBVlIe6HmjVHYbRZkpEYaLn5u7hEYWZSBaB+yeYoiQBzcwAGYOJL5O
-        rnGEnz4UdMYvFVCPD2PwuD5xvhvTyuTE4L08KY4dtfh/lVVybeLeYoEeLhwrK8uxiHA3jUjfL4vX/
-        cKcImh3Q==;
-Received: from [2001:4bb8:18c:2acc:5b1c:6483:bd6d:e406] (helo=localhost)
-        by casper.infradead.org with esmtpsa (Exim 4.92.3 #3 (Red Hat Linux))
-        id 1jxx3X-00062K-3m; Tue, 21 Jul 2020 18:31:59 +0000
-From:   Christoph Hellwig <hch@lst.de>
-To:     Dave Chinner <david@fromorbit.com>,
-        Goldwyn Rodrigues <rgoldwyn@suse.de>
-Cc:     Damien Le Moal <damien.lemoal@wdc.com>,
-        Naohiro Aota <naohiro.aota@wdc.com>,
-        Johannes Thumshirn <jth@kernel.org>,
-        Matthew Wilcox <willy@infradead.org>,
-        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        cluster-devel@redhat.com, linux-ext4@vger.kernel.org,
-        linux-xfs@vger.kernel.org
-Subject: iomap write invalidation v2
-Date:   Tue, 21 Jul 2020 20:31:54 +0200
-Message-Id: <20200721183157.202276-1-hch@lst.de>
-X-Mailer: git-send-email 2.27.0
+        id S1729300AbgGUUdp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 21 Jul 2020 16:33:45 -0400
+Received: from smtp-31.italiaonline.it ([213.209.10.31]:48998 "EHLO libero.it"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726658AbgGUUdp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 21 Jul 2020 16:33:45 -0400
+Received: from venice.bhome ([78.12.13.37])
+        by smtp-31.iol.local with ESMTPA
+        id xyxKjpuK2GrpJxyxKjhpqG; Tue, 21 Jul 2020 22:33:42 +0200
+x-libjamoibt: 1601
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=libero.it; s=s2014;
+        t=1595363622; bh=Pw8bp6fG8a3fG2wUCdALMcb9cY/KsSkSfVV799030l8=;
+        h=From;
+        b=UkY5eDA0ZRNHnoFA/FwMUPGK96+PrgdveDrPzp0ipGLO9B1B1YE15t6P40gnoXg09
+         XkDWTWnaJJA4gJScTWx4c4vpy5e6vObIPodnD6rZ8vx/MnF94Jrw4KJL0UbGoZsbau
+         NBPjNdgLRA5VTnnmVHQEQwDen//n6EWyi28Y8hu77Jv/55oe7rZ175xk/iA9LrFt/z
+         PXz1blVZOOVSc6rCKhxFCexyDbr4sZpj8nmkRYXsSAjDXALPmgvaLL2hMmKx93h6JY
+         wNZnWQb19riocqct5gEtN6gySfWW1TQIwWAgi1DbCwcoIcZCmb4rQbaSWXbyvsiZpR
+         Ptw3GRRn/Q5kA==
+X-CNFS-Analysis: v=2.3 cv=Ief5plia c=1 sm=1 tr=0
+ a=XJAbuhTEZzHZh8gzL9OeLg==:117 a=XJAbuhTEZzHZh8gzL9OeLg==:17 a=VwQbUJbxAAAA:8
+ a=NLn4WoTWf1AU9Q_8NQgA:9 a=AjGcO6oz07-iQ99wixmX:22
+From:   Goffredo Baroncelli <kreijack@libero.it>
+To:     linux-btrfs@vger.kernel.org
+Subject: [RFC] btrfs: strategy to perform a rollback at boot time
+Date:   Tue, 21 Jul 2020 22:33:39 +0200
+Message-Id: <20200721203340.275921-1-kreijack@libero.it>
+X-Mailer: git-send-email 2.28.0.rc1
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by casper.infradead.org. See http://www.infradead.org/rpr.html
+X-CMAE-Envelope: MS4wfFnyMiGBkS12e7x70Wbv3tP59gwjBrDi/2JrUb+BY3d3th1wJW5gLaDN6NCZlT7M0Bvaia+uXmvQHPVdBtYtQT8ecglcuqVZz4v9m5tNoWvhvyU0reiA
+ SInoA9BCRr5XLkQKosCeD1TKUnmyq/MEFPwACFRpQnA/ZY3s7v+jH0XW
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
+Hi all,
 
-Changes since v1:
- - use -ENOTBLK for the direct to buffered I/O fallback everywhere
- - document the choice of -ENOTBLK better
- - update a comment in XFS
+this is an RFC to discuss a my idea to allow a simple rollback of the
+root filesystem at boot time.
+
+The problem that I want to solve is the following: DPKG is very slow on
+a BTRFS filesystem. The reason is that DPKG massively uses
+sync()/fsync() to guarantee that the filesystem is always coherent even
+in case of sudden shutdown.
+
+The same can be useful even to the RPM Linux based distribution (which however
+suffer less than DPKG).
+
+A way to avoid the sync()/fsync() calls without loosing the DPKG
+guarantees, is:
+1) perform a snapshot of the root filesystem (the rollback one)
+2) upgrade the filesystem without using sync/fsync
+3) final (global) sync
+4) destroy the rollback snapshot
+
+If an unclean shutdown happens between 1) and 4), two subvolume exists:
+the 'main' one and the 'rollback' one (which is the snapshot before the
+update). In this case the system at boot time should mount the "rollback"
+subvolume instead of the "main" one. Otherwise in case of a "clean" boot, the
+"rollback" subvolume doesn't exist and only the "main" one can be
+mounted.
+
+In [1] I discussed a way to implement the steps 1 to 4. (ok, I missed
+the point 3) ).
+
+The part that was missed until now, is an automatic way to mount the rollback
+subvolume at boot time when it is present.
+
+My idea is to allow more 'subvol=' option. In this case BTRFS tries all the
+passed subvolumes until the first succeed. So invoking the kernel as:
+
+  linux root=UUID=xxxx rootflags=subvol=rollback,subvol=main ro 
+
+First, the kernel tries to mount the 'rollback' subvolume. If the rollback
+subvolume doesn't exist then it mounts the 'main' subvolume.
+
+Of course after the mount, the system should perform a cleanup of the
+subvolumes: i.e. if a rollback subvolume exists, the system should destroy
+the "main" one (which contains garbage) and rename "rollback" to "main".
+To be more precise:
+
+	if test -d "rollback"; then
+		if test -d "old"; then
+			btrfs sub del "old"
+		fi
+		if test -d "main"; then
+			mv "main" "old"
+		fi
+		mv "rollback" "main"
+		btrfs sub del "old"
+	fi
+
+Comments are welcome
+BR
+G.Baroncelli
+
+[1] http://lore.kernel.org/linux-btrfs/69396573-b5b3-b349-06f5-f5b74eb9720d@libero.it/
+
+P.S.
+I am guessing if an idea like this can be applied to a file. E.g. a sqlite
+database that instead of reling to sync/fsync, creates a reflink file as
+"rollback" if something goes wrong.... The ordering is preserved. Not the
+duration.
+

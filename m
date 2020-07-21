@@ -7,63 +7,63 @@ X-Spam-Status: No, score=-13.0 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E81BAC433F7
-	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Jul 2020 14:23:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D2EC7C433FB
+	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Jul 2020 14:23:11 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id C865020702
-	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Jul 2020 14:23:08 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B28222070A
+	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Jul 2020 14:23:11 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="sQbPRCHR"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="N6fOeYmx"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729031AbgGUOXG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 21 Jul 2020 10:23:06 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53294 "EHLO
+        id S1729091AbgGUOXL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 21 Jul 2020 10:23:11 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53312 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728971AbgGUOXE (ORCPT
+        with ESMTP id S1728685AbgGUOXK (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Jul 2020 10:23:04 -0400
-Received: from mail-qt1-x841.google.com (mail-qt1-x841.google.com [IPv6:2607:f8b0:4864:20::841])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 54545C061794
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Jul 2020 07:23:04 -0700 (PDT)
-Received: by mail-qt1-x841.google.com with SMTP id 6so16255328qtt.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Jul 2020 07:23:04 -0700 (PDT)
+        Tue, 21 Jul 2020 10:23:10 -0400
+Received: from mail-qk1-x741.google.com (mail-qk1-x741.google.com [IPv6:2607:f8b0:4864:20::741])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C9D7EC061794
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Jul 2020 07:23:09 -0700 (PDT)
+Received: by mail-qk1-x741.google.com with SMTP id z15so12615662qki.10
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Jul 2020 07:23:09 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=tQxqsUrlp4x7HrENuHXKxmhsqNJWIRD3LhIamFg7tBc=;
-        b=sQbPRCHRqrLq8uQzrtSrkNtmd3eGdxl5ikMqo8z770FJRCKmPSx2P/EeBMAA/ByvWY
-         DBhUZkZMrOzGIJSfHdrNrM84LADvCcmyBU71gGNPfpAgoge6LCOWpwca3UnUqXxf+sAx
-         PGN6ejvs1fYjb+1+QGqBvKYlBrHoRDbsQ0H7RQs2kvH1WDV8BfQtmvkPB56dcEDYcY6w
-         bBJ+BUQTc34loCC5IBmS1L8MBqMJfxWoorUm6T8+QzhdPaazzBNKrnF5JNZmLGUswcwO
-         h3xX5+bhynwAB0mPeqKwVKK0XUNNnw2bhkdNXqxKTdhtLHfGpKl9Vg4/lIsYeOKfXeOi
-         f00g==
+        bh=46HbDWQcKmcttSQB7AW4PupurGGvNNNEWKfXAY7s/Ks=;
+        b=N6fOeYmx1KX9h9Ur+xgavuZWVuF3zF6WG7WH5sadDx9DbqK/VP/j+VRiEpjvb2QUtk
+         ywSHBvAyIzN5u6WGAkEy+Xvch+LB+eKlZXHTdOktUGm3sk3UKwDWtoybLHsE9R2uMzTG
+         hc9n4t9O3DRNEl35edwUUZa395LeJNN15kLu2oEt1CrJSchl0CijqJNIPPyjb1iR0prz
+         Kf3pNsUABGZ+U6WWL075FORIkQSvD2hW33cisa4CY8b/UghSTivZj+xYAwYEGdnIpZhC
+         gYtotpxm2EobAYzo581oC/m+Lzqu1JjL/T0RI4GQp/ENONfHX4LuVoJF3kHqyrrrU4Ga
+         wy5g==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=tQxqsUrlp4x7HrENuHXKxmhsqNJWIRD3LhIamFg7tBc=;
-        b=TkH0wlZHTEVJXn2NbtfbyQcmx0CYvsfQ6wIB6mqJeyO2BbEcYPappycBiYuavA7JB0
-         lKRppXMa7a02lfZVXsUCaa1NMQ/SGQDkJHKqzZf2Hv2OuIFo1la8sOdd4j7wxDE05ywB
-         fKSk5zawC4/8BSvfsBlacKzVIL3W/ys8vM8LJHPpY5oOQMR7NYXMUaVxnRUo2HKdsQyP
-         5Z5EdYFnZwq4kKkAnZ74dSeOcQ7gum9+qYX4PwIpjSKPA+L/fYBrXfcwIedmYx3zf3Ds
-         3TP6t6eacEQNg8T+r0oXNT5WskTz2lwYmpeN4fD0N+cR9sDooHgM1yye82icNns4hGWD
-         pcFg==
-X-Gm-Message-State: AOAM530N8GhtNOuytliYfNquMNBZ6stZhCOnZ/24AsK4p5Co2j8cy28n
-        bIR4xM3IDoKmeY/BivsZm8QU7G88S6lQ4Q==
-X-Google-Smtp-Source: ABdhPJz3aNDcy4JKZV1Cs99/WREN1HXxoa1Rmid7Rb6vruLILflyB0JKrRCplxUovprbgunel+vaAw==
-X-Received: by 2002:aed:3904:: with SMTP id l4mr28701557qte.370.1595341383071;
-        Tue, 21 Jul 2020 07:23:03 -0700 (PDT)
+        bh=46HbDWQcKmcttSQB7AW4PupurGGvNNNEWKfXAY7s/Ks=;
+        b=lbqqJxCHcJkDFQUrHiUaLsrUrDhUFnjsAj3HQFo1LP76vymVVA1WZJY4LxxocRyp9E
+         C9H+1g5WtsfaqgmNqdcFhww/khJua/YLSlXFQZweD0Y59f9OSYe6QQ8piWWsys+Oh2bG
+         lDNeyANcjFptK5wB3EhwFKrjIFSq2VsOtSGDVjC7RGGy3fXeZbbWrm9buvXaojPxDtBN
+         UNegBylN31IQn+tbNHxfpC86QUsAZNHiJxKhR0PLalBnawJRzBWHk25hnZhTyPSPn/4S
+         vvn5JhU3JTOGzSm7QPbLJOL3u2h6RLvUtiBgLo3KQHtK4ZabGPSirDhN62Rl1lnZoazc
+         LcQA==
+X-Gm-Message-State: AOAM5318cfNv2SH4kO7EZa06F+DLW/ZppRPdmR8yhumZkomX64Jx9iQm
+        AWpUDjYHNzPCM98b33VpJpbjiBC+Wso66A==
+X-Google-Smtp-Source: ABdhPJwl0mne9GjuIm9TfBm2n59apwiiyTvfmmH9btPrLhUULOf38rw8VPZnIXjCzoHcnNl4wrjitw==
+X-Received: by 2002:a37:7683:: with SMTP id r125mr27179468qkc.39.1595341388713;
+        Tue, 21 Jul 2020 07:23:08 -0700 (PDT)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id n184sm2511341qkn.49.2020.07.21.07.23.02
+        by smtp.gmail.com with ESMTPSA id 142sm2640826qki.35.2020.07.21.07.23.07
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 21 Jul 2020 07:23:02 -0700 (PDT)
+        Tue, 21 Jul 2020 07:23:08 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 13/23] btrfs: add the data transaction commit logic into may_commit_transaction
-Date:   Tue, 21 Jul 2020 10:22:24 -0400
-Message-Id: <20200721142234.2680-14-josef@toxicpanda.com>
+Subject: [PATCH 16/23] btrfs: serialize data reservations if we are flushing
+Date:   Tue, 21 Jul 2020 10:22:27 -0400
+Message-Id: <20200721142234.2680-17-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.24.1
 In-Reply-To: <20200721142234.2680-1-josef@toxicpanda.com>
 References: <20200721142234.2680-1-josef@toxicpanda.com>
@@ -74,114 +74,55 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Data space flushing currently unconditionally commits the transaction
-twice in a row, and the last time it checks if there's enough pinned
-extents to satisfy it's reservation before deciding to commit the
-transaction for the 3rd and final time.
+Nikolay reported a problem where generic/371 would fail sometimes with a
+slow drive.  The gist of the test is that we fallocate a file in
+parallel with a pwrite of a different file.  These two files combined
+are smaller than the file system, but sometimes the pwrite would ENOSPC.
 
-Encode this logic into may_commit_transaction().  In the next patch we
-will pass in U64_MAX for bytes_needed the first two times, and the final
-time we will pass in the actual bytes we need so the normal logic will
-apply.
+A fair bit of investigation uncovered the fact that the fallocate
+workload was racing in and grabbing the free space that the pwrite
+workload was trying to free up so it could make its own reservation.
+After a few loops of this eventually the pwrite workload would error out
+with an ENOSPC.
 
-This patch exists soley to make the logical changes I will make to the
-flushing state machine separate to make it easier to bisect any
-performance related regressions.
+We've had the same problem with metadata as well, and we serialized all
+metadata allocations to satisfy this problem.  This wasn't usually a
+problem with data because data reservations are more straightforward,
+but obviously could still happen.
+
+Fix this by not allowing reservations to occur if there are any pending
+tickets waiting to be satisfied on the space info.
 
 Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 Tested-by: Nikolay Borisov <nborisov@suse.com>
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/space-info.c | 28 ++++++++++++++++++++++------
- 1 file changed, 22 insertions(+), 6 deletions(-)
+ fs/btrfs/space-info.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-index 94da7b43e152..be0f117d4ccf 100644
+index a107370d144c..afdc774cebe9 100644
 --- a/fs/btrfs/space-info.c
 +++ b/fs/btrfs/space-info.c
-@@ -579,21 +579,33 @@ static void shrink_delalloc(struct btrfs_fs_info *fs_info,
-  * will return -ENOSPC.
-  */
- static int may_commit_transaction(struct btrfs_fs_info *fs_info,
--				  struct btrfs_space_info *space_info)
-+				  struct btrfs_space_info *space_info,
-+				  u64 bytes_needed)
- {
- 	struct reserve_ticket *ticket = NULL;
- 	struct btrfs_block_rsv *delayed_rsv = &fs_info->delayed_block_rsv;
- 	struct btrfs_block_rsv *delayed_refs_rsv = &fs_info->delayed_refs_rsv;
- 	struct btrfs_block_rsv *trans_rsv = &fs_info->trans_block_rsv;
- 	struct btrfs_trans_handle *trans;
--	u64 bytes_needed;
- 	u64 reclaim_bytes = 0;
- 	u64 cur_free_bytes = 0;
-+	bool do_commit = false;
+@@ -1402,13 +1402,17 @@ int btrfs_reserve_data_bytes(struct btrfs_fs_info *fs_info, u64 bytes,
+ 	struct btrfs_space_info *data_sinfo = fs_info->data_sinfo;
+ 	u64 used;
+ 	int ret = -ENOSPC;
++	bool pending_tickets;
  
- 	trans = (struct btrfs_trans_handle *)current->journal_info;
- 	if (trans)
- 		return -EAGAIN;
+ 	ASSERT(!current->journal_info || flush != BTRFS_RESERVE_FLUSH_DATA);
  
-+	/*
-+	 * If we are data and have passed in U64_MAX we just want to
-+	 * unconditionally commit the transaction to match the previous data
-+	 * flushing behavior.
-+	 */
-+	if ((space_info->flags & BTRFS_BLOCK_GROUP_DATA) &&
-+	   bytes_needed == U64_MAX) {
-+		do_commit = true;
-+		goto check_pinned;
-+	}
-+
- 	spin_lock(&space_info->lock);
- 	cur_free_bytes = btrfs_space_info_used(space_info, true);
- 	if (cur_free_bytes < space_info->total_bytes)
-@@ -607,7 +619,7 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
- 	else if (!list_empty(&space_info->tickets))
- 		ticket = list_first_entry(&space_info->tickets,
- 					  struct reserve_ticket, list);
--	bytes_needed = (ticket) ? ticket->bytes : 0;
-+	bytes_needed = (ticket) ? ticket->bytes : bytes_needed;
+ 	spin_lock(&data_sinfo->lock);
+ 	used = btrfs_space_info_used(data_sinfo, true);
++	pending_tickets = !list_empty(&data_sinfo->tickets) ||
++		!list_empty(&data_sinfo->priority_tickets);
  
- 	if (bytes_needed > cur_free_bytes)
- 		bytes_needed -= cur_free_bytes;
-@@ -618,6 +630,7 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
- 	if (!bytes_needed)
- 		return 0;
+-	if (used + bytes > data_sinfo->total_bytes) {
++	if (pending_tickets ||
++	    used + bytes > data_sinfo->total_bytes) {
+ 		struct reserve_ticket ticket;
  
-+check_pinned:
- 	trans = btrfs_join_transaction(fs_info->extent_root);
- 	if (IS_ERR(trans))
- 		return PTR_ERR(trans);
-@@ -627,7 +640,8 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
- 	 * we have block groups that are going to be freed, allowing us to
- 	 * possibly do a chunk allocation the next loop through.
- 	 */
--	if (test_bit(BTRFS_TRANS_HAVE_FREE_BGS, &trans->transaction->flags) ||
-+	if (do_commit ||
-+	    test_bit(BTRFS_TRANS_HAVE_FREE_BGS, &trans->transaction->flags) ||
- 	    __percpu_counter_compare(&space_info->total_bytes_pinned,
- 				     bytes_needed,
- 				     BTRFS_TOTAL_BYTES_PINNED_BATCH) >= 0)
-@@ -635,7 +649,9 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
- 
- 	/*
- 	 * See if there is some space in the delayed insertion reservation for
--	 * this reservation.
-+	 * this reservation.  If the space_info's don't match (like for DATA or
-+	 * SYSTEM) then just enospc, reclaiming this space won't recover any
-+	 * space to satisfy those reservations.
- 	 */
- 	if (space_info != delayed_rsv->space_info)
- 		goto enospc;
-@@ -743,7 +759,7 @@ static void flush_space(struct btrfs_fs_info *fs_info,
- 		btrfs_wait_on_delayed_iputs(fs_info);
- 		break;
- 	case COMMIT_TRANS:
--		ret = may_commit_transaction(fs_info, space_info);
-+		ret = may_commit_transaction(fs_info, space_info, num_bytes);
- 		break;
- 	default:
- 		ret = -ENOSPC;
+ 		init_waitqueue_head(&ticket.wait);
 -- 
 2.24.1
 

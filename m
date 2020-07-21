@@ -7,64 +7,63 @@ X-Spam-Status: No, score=-13.0 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DD9A6C433EA
-	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Jul 2020 14:22:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 511A4C433F1
+	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Jul 2020 14:23:02 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id BF18220702
-	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Jul 2020 14:22:53 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2979820702
+	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Jul 2020 14:23:02 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="QGFGlXkx"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="bCSl3uur"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728931AbgGUOWx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 21 Jul 2020 10:22:53 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53252 "EHLO
+        id S1728993AbgGUOXB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 21 Jul 2020 10:23:01 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53280 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726710AbgGUOWw (ORCPT
+        with ESMTP id S1728971AbgGUOXA (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Jul 2020 10:22:52 -0400
+        Tue, 21 Jul 2020 10:23:00 -0400
 Received: from mail-qt1-x843.google.com (mail-qt1-x843.google.com [IPv6:2607:f8b0:4864:20::843])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 786D3C061794
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Jul 2020 07:22:52 -0700 (PDT)
-Received: by mail-qt1-x843.google.com with SMTP id x62so16244417qtd.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Jul 2020 07:22:52 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 95183C061794
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Jul 2020 07:23:00 -0700 (PDT)
+Received: by mail-qt1-x843.google.com with SMTP id j10so16221769qtq.11
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Jul 2020 07:23:00 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=WorHgh3XdORBwTTO2L96ZEeCw22GHFGFH11maoGi0Bg=;
-        b=QGFGlXkxPeJG3ELaUBiAqavmzxpGRwzZoXl7dA72J3nFgyU3pUbWQwkexy9uMKPRy4
-         ylwgUe0wSk6KhbBtFlfEGv0BQLvUDIMHyiKyVdseVtY5k7RNwef5RcrOba6S5TPvVU/o
-         FXQHrLBmHlE13Q25j4aYhwgbTC1bf+KkpVNLHf2+2sua38slCQfVDx+wH1hnG/A94+QQ
-         r4O9ZwOT+1WkYbwdbRqusUpKtKF1ppQ3ovHhWpYaRSpz52HSVQYUU7g6Nk5cFYzZ8UAH
-         za1kLjxSTl95BV7sCqebbX5KDnv9WEBJellO7Xxfbt5uH4A/gqbEVGdczwjnmNkvAhKI
-         tr3Q==
+        bh=F24Fb8VJoZFaPNYAY7Qby2wBX99HVjadR1H3fE1tv5s=;
+        b=bCSl3uurhqJNpjie5W5PSGWnknSNoaGVKefz69QfSb6ptplrQiY6YV238D7jmlJVaq
+         84LOerdxVK7fDmXbPe+s9x1MNf7LoeQa+ZAl+4169b4nPvAYgIE8rEXMCjR7AB/NaUne
+         lccyc2tG67lmhjc0AiHiroUR9ivJ6Rn4YDxNoaGYyyxN0ijzfFnRUR7f88ZzTujiI8Ne
+         fPqijyIxHh4ir+2as9hsdMYtfHUoNwV4++r1CGUHJIkPCG0KI+oqR5FGMBSClqRXzZQE
+         r0yQM5vVVmMwGZ94YdXviZlkJPhSAmGFYGqr7mFXmjw9j+p/7aSiAuOZxjWQOQeIOqIl
+         8SzA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=WorHgh3XdORBwTTO2L96ZEeCw22GHFGFH11maoGi0Bg=;
-        b=W+hzPAO2QIbNAylzB04kW+Sg9JN/2Pn+g/7LfoVFMbWbEOFC89QQwRDV4MVMH2hp7n
-         52W2eLACHH2pd4EloqUJCgFT6rSWasTQFBgIxAVbh0Fh9qzXnAY/4HnUVPWLjjZ6LZ7f
-         xUl0x3qyIObtJFyDtFcI4dJZOvey6/2llhhj0yRAB5qznmzwZ/JwCdlQzZKaxsls9XO3
-         xcX6zZeH+stP+P/7p+lS4fzMOCsv87OEQwoU+vCCz/09/TqpiWF8Rw7opurcm20twUiF
-         cv4KHL52NnyNob9lPL755FF+tw3KpF/rvpXSe7jpDI/QkaMXeme3D+Mq5XRorm/wQU75
-         aQxw==
-X-Gm-Message-State: AOAM530ToVZX1p+Z2oeDLfsI80jZK3lpMJ+q31AYI+/ErtRQFq8KRrU5
-        VmekIKTCf6k+KB3W6FjTDW6A8Bd5I10skA==
-X-Google-Smtp-Source: ABdhPJxTREqwkHwh2CHZiF/XQcrFauVcLe8yw1NiJ0CU6o0FF+TUZEk0T2keLcBufEL2PeTidHzcmw==
-X-Received: by 2002:ac8:c8:: with SMTP id d8mr30745544qtg.221.1595341371348;
-        Tue, 21 Jul 2020 07:22:51 -0700 (PDT)
+        bh=F24Fb8VJoZFaPNYAY7Qby2wBX99HVjadR1H3fE1tv5s=;
+        b=ofLKZVLBk7yFsp485FOp24F1y7GQPttEpcAitjgXs3UDX0AV6iCU5wJpk/lDgD5C4j
+         qbdjwRCB025AYB0JdVDFp8YHdtUxdDxzI/t2FXEd4uqFVhdmm3Ym/eGMXvB/iKwgB350
+         iBi7Pdwvq4JqSvmaA5QrXeFP75+/0kj0wP4Jc10jcZJSW8rfgyQjtdNA4Iw4nXm62/b8
+         n5sPHPBCFklr1uhMPeyxsfpHd3PSN5bhe4hRF5Ve4CcxDTZwoftjJOYh6ytQcORtHMb4
+         2SrCpbvcKLu5a2h8cZoLwxU1VptKs6DYPWDhb9qldNKKRT8BDFfIvFasAyBeuJu2OB5T
+         oNfA==
+X-Gm-Message-State: AOAM5310giVzRmVJRumJeeYKTCL7Mxg72LlDiF55lISEfxaVIcUBgr1H
+        pe4ijxkplMux6+PUCcIvAEPoUsTgrHWTUw==
+X-Google-Smtp-Source: ABdhPJymy/TnG1rX8TJgGUOX9PI7sJoErvOixxxfJiDO32Y1H8gV+yJrA5Zvbj5z2IQaIQKiV3Z3SQ==
+X-Received: by 2002:ac8:3a27:: with SMTP id w36mr29635057qte.196.1595341379458;
+        Tue, 21 Jul 2020 07:22:59 -0700 (PDT)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id n184sm2510839qkn.49.2020.07.21.07.22.50
+        by smtp.gmail.com with ESMTPSA id t36sm23722809qtj.58.2020.07.21.07.22.58
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 21 Jul 2020 07:22:50 -0700 (PDT)
+        Tue, 21 Jul 2020 07:22:58 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Cc:     Nikolay Borisov <nborisov@suse.com>,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH 07/23] btrfs: call btrfs_try_granting_tickets when unpinning anything
-Date:   Tue, 21 Jul 2020 10:22:18 -0400
-Message-Id: <20200721142234.2680-8-josef@toxicpanda.com>
+Cc:     Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH 11/23] btrfs: check tickets after waiting on ordered extents
+Date:   Tue, 21 Jul 2020 10:22:22 -0400
+Message-Id: <20200721142234.2680-12-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.24.1
 In-Reply-To: <20200721142234.2680-1-josef@toxicpanda.com>
 References: <20200721142234.2680-1-josef@toxicpanda.com>
@@ -75,38 +74,53 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-When unpinning we were only calling btrfs_try_granting_tickets() if
-global_rsv->space_info == space_info, which is problematic because we
-use ticketing for SYSTEM chunks, and want to use it for DATA as well.
-Fix this by moving this call outside of that if statement.
+Right now if the space is free'd up after the ordered extents complete
+(which is likely since the reservations are held until they complete),
+we would do extra delalloc flushing before we'd notice that we didn't
+have any more tickets.  Fix this by moving the tickets check after our
+wait_ordered_extents check.
 
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 Tested-by: Nikolay Borisov <nborisov@suse.com>
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/extent-tree.c | 7 +++----
- 1 file changed, 3 insertions(+), 4 deletions(-)
+ fs/btrfs/space-info.c | 17 +++++++++--------
+ 1 file changed, 9 insertions(+), 8 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 61ede335f6c3..fcef024a2934 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2844,11 +2844,10 @@ static int unpin_extent_range(struct btrfs_fs_info *fs_info,
- 				len -= to_add;
- 			}
- 			spin_unlock(&global_rsv->lock);
--			/* Add to any tickets we may have */
--			if (len)
--				btrfs_try_granting_tickets(fs_info,
--							   space_info);
- 		}
-+		/* Add to any tickets we may have */
-+		if (!readonly && return_free_space && len)
-+			btrfs_try_granting_tickets(fs_info, space_info);
- 		spin_unlock(&space_info->lock);
- 	}
+diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
+index de8a49de5fdb..3b5064a2a972 100644
+--- a/fs/btrfs/space-info.c
++++ b/fs/btrfs/space-info.c
+@@ -545,14 +545,6 @@ static void shrink_delalloc(struct btrfs_fs_info *fs_info,
+ 	while ((delalloc_bytes || dio_bytes) && loops < 3) {
+ 		btrfs_start_delalloc_roots(fs_info, items);
  
+-		spin_lock(&space_info->lock);
+-		if (list_empty(&space_info->tickets) &&
+-		    list_empty(&space_info->priority_tickets)) {
+-			spin_unlock(&space_info->lock);
+-			break;
+-		}
+-		spin_unlock(&space_info->lock);
+-
+ 		loops++;
+ 		if (wait_ordered && !trans) {
+ 			btrfs_wait_ordered_roots(fs_info, items, 0, (u64)-1);
+@@ -561,6 +553,15 @@ static void shrink_delalloc(struct btrfs_fs_info *fs_info,
+ 			if (time_left)
+ 				break;
+ 		}
++
++		spin_lock(&space_info->lock);
++		if (list_empty(&space_info->tickets) &&
++		    list_empty(&space_info->priority_tickets)) {
++			spin_unlock(&space_info->lock);
++			break;
++		}
++		spin_unlock(&space_info->lock);
++
+ 		delalloc_bytes = percpu_counter_sum_positive(
+ 						&fs_info->delalloc_bytes);
+ 		dio_bytes = percpu_counter_sum_positive(&fs_info->dio_bytes);
 -- 
 2.24.1
 

@@ -2,177 +2,168 @@ Return-Path: <SRS0=UEav=BA=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.5 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-11.6 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=unavailable autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B5F8BC433E7
-	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Jul 2020 00:57:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C049EC433E5
+	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Jul 2020 04:51:03 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 994752080D
-	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Jul 2020 00:57:28 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9F3A420792
+	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Jul 2020 04:51:03 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="dms/AtPy"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728270AbgGUA51 convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 20 Jul 2020 20:57:27 -0400
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:36232 "EHLO
-        james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727048AbgGUA5Z (ORCPT
+        id S1726749AbgGUEvC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 21 Jul 2020 00:51:02 -0400
+Received: from us-smtp-2.mimecast.com ([207.211.31.81]:34567 "EHLO
+        us-smtp-delivery-1.mimecast.com" rhost-flags-OK-OK-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1726677AbgGUEvC (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 20 Jul 2020 20:57:25 -0400
-Received: by james.kirk.hungrycats.org (Postfix, from userid 1002)
-        id 500A5770CD4; Mon, 20 Jul 2020 20:57:24 -0400 (EDT)
-Date:   Mon, 20 Jul 2020 20:57:24 -0400
-From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To:     Edmund Urbani <edmund.urbani@liland.com>
+        Tue, 21 Jul 2020 00:51:02 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+        s=mimecast20190719; t=1595307061;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=vb2UOgFRAfaLx63n3vDlxINfD7qAtaGzrBh7ybUpiyY=;
+        b=dms/AtPyPdGjTZ77Vqw1V1PaVrBO1uOzhg8NszVAa6JPSum6ptDE46SJAPBoLJteP2Oc4N
+        kRYPvaveGHX/MqDCwgSBM8TISm3lhE7FOJXLoaOdSSbooVclxdI8WgCUohn2z2yObCGpCh
+        ot+DDx6FqZMDBiNdQvlIDAE3Gz/IjJQ=
+Received: from mimecast-mx01.redhat.com (mimecast-mx01.redhat.com
+ [209.132.183.4]) (Using TLS) by relay.mimecast.com with ESMTP id
+ us-mta-499-8BVx8wJCNt2zkE3gnSG7Iw-1; Tue, 21 Jul 2020 00:50:56 -0400
+X-MC-Unique: 8BVx8wJCNt2zkE3gnSG7Iw-1
+Received: from smtp.corp.redhat.com (int-mx03.intmail.prod.int.phx2.redhat.com [10.5.11.13])
+        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+        (No client certificate requested)
+        by mimecast-mx01.redhat.com (Postfix) with ESMTPS id F3A6F1005504;
+        Tue, 21 Jul 2020 04:50:55 +0000 (UTC)
+Received: from localhost (dhcp-12-102.nay.redhat.com [10.66.12.102])
+        by smtp.corp.redhat.com (Postfix) with ESMTP id 6C82A74F45;
+        Tue, 21 Jul 2020 04:50:55 +0000 (UTC)
+Date:   Tue, 21 Jul 2020 13:03:01 +0800
+From:   Zorro Lang <zlang@redhat.com>
+To:     fstests@vger.kernel.org
 Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: Troubles removing missing device from RAID 6
-Message-ID: <20200721005724.GK10769@hungrycats.org>
-References: <23712d34-1787-058d-b49a-6b3e78969920@liland.com>
+Subject: Re: [PATCH v4] generic: add a test for umount racing mount
+Message-ID: <20200721050301.GA3495@dhcp-12-102.nay.redhat.com>
+Mail-Followup-To: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+References: <20200719171853.GE2557159@desktop>
+ <20200720190556.3292884-1-boris@bur.io>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-Content-Transfer-Encoding: 8BIT
-In-Reply-To: <23712d34-1787-058d-b49a-6b3e78969920@liland.com>
+In-Reply-To: <20200720190556.3292884-1-boris@bur.io>
 User-Agent: Mutt/1.10.1 (2018-07-13)
+X-Scanned-By: MIMEDefang 2.79 on 10.5.11.13
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sun, Jul 19, 2020 at 04:13:29PM +0200, Edmund Urbani wrote:
-> Hello everyone,
+On Mon, Jul 20, 2020 at 12:05:56PM -0700, Boris Burkov wrote:
+> Test if dirtying many inodes (which can delay umount) then
+> unmounting and quickly mounting again causes the mount to fail.
 > 
-> after having RMA'd a faulty HDD from my RAID6 and having received the
-> replacement, I added the new disk to the filesystem. At that point the
-> missing device was still listed and I went ahead to remove it like so:
+> A race, which breaks the test in btrfs, is fixed by the patch:
+> "btrfs: fix mount failure caused by race with umount"
 > 
-> btrfs device delete missing /mnt/shared/
-> 
-> After a few hours that command aborted with an I/O error and the logs
-> revealed this problem:
-> 
-> [284564.279190] BTRFS info (device sda1): relocating block group
-> 51490279391232 flags data|raid6
-> [284572.319649] btrfs_print_data_csum_error: 75 callbacks suppressed
-> [284572.319656] BTRFS warning (device sda1): csum failed root -9 ino 433 off
-> 386727936 csum 0x791e44cc expected csum 0xbd1725d0 mirror 2
-> [284572.320165] BTRFS warning (device sda1): csum failed root -9 ino 433 off
-> 386732032 csum 0xec5f6097 expected csum 0x9114b5fa mirror 2
-> [284572.320211] BTRFS warning (device sda1): csum failed root -9 ino 433 off
-> 386736128 csum 0x4d2fa4b9 expected csum 0xf8a923f9 mirror 2
-> [284572.320225] BTRFS warning (device sda1): csum failed root -9 ino 433 off
-> 386740224 csum 0xcad08362 expected csum 0xa9361ed3 mirror 2
-> [284572.320266] BTRFS warning (device sda1): csum failed root -9 ino 433 off
-> 386744320 csum 0x469ac192 expected csum 0xb1e94692 mirror 2
-> [284572.320279] BTRFS warning (device sda1): csum failed root -9 ino 433 off
-> 386748416 csum 0x69759c1f expected csum 0xb3b9aa86 mirror 2
-> [284572.320290] BTRFS warning (device sda1): csum failed root -9 ino 433 off
-> 386752512 csum 0xd3a7c5d5 expected csum 0xd351862f mirror 2
-> [284572.320465] BTRFS warning (device sda1): csum failed root -9 ino 433 off
-> 386756608 csum 0x1264af83 expected csum 0x3a2c0ed5 mirror 2
-> [284572.320480] BTRFS warning (device sda1): csum failed root -9 ino 433 off
-> 386760704 csum 0x260a13ef expected csum 0xb3b4aec0 mirror 2
-> [284572.320492] BTRFS warning (device sda1): csum failed root -9 ino 433 off
-> 386764800 csum 0x6b615cd9 expected csum 0x99eaf560 mirror 2
-> 
-> I ran a long SMART self-test on the drives in the array which found no
-> problem. 
+> Signed-off-by: Boris Burkov <boris@bur.io>
+> ---
 
-You are hitting a few of the known bugs in btrfs raid5/6.  See
+This version looks good to me,
+Reviewed-by: Zorro Lang <zlang@redhat.com>
 
-	https://lore.kernel.org/linux-btrfs/20200627032414.GX10769@hungrycats.org/
-
-TL;DR don't expect anything to work right until 'btrfs replace' is done.
-
-> Currently I am running scrub to attempt and fix the block group.
-
-Scrub can only correct errors that exist on the disk, so scrub has no
-effect here.  Wait until 'btrfs replace' is done, then scrub the other
-disks in the array.
-
-btrfs raid6 has broken read code for degraded mode.  The errors above
-all originate from trees inside the kernel (root -9 isn't a normal
-on-disk root).  Those errors don't exist on disk.  The errors are
-triggered repeatably by on-disk structures, so the errors will _appear_
-to be persistent (i.e.  if you try to balance the same block group twice
-it will usually fail at the same spot); however, the on-disk structures
-are valid, and should not produce an error if the kernel code was correct,
-or if the missing disk is replaced.
-
-> scrub status:
+> - dd to XFS_IO_PROG
+> - 1M writes to 4k writes
 > 
-> UUID:             9c3c3f8d-a601-4bd3-8871-d068dd500a15
+>  tests/generic/603     | 53 +++++++++++++++++++++++++++++++++++++++++++
+>  tests/generic/603.out |  2 ++
+>  tests/generic/group   |  1 +
+>  3 files changed, 56 insertions(+)
+>  create mode 100755 tests/generic/603
+>  create mode 100644 tests/generic/603.out
 > 
-> Scrub started:    Fri Jul 17 07:52:06 2020
-> Status:           running
-> Duration:         14:47:07
-> Time left:        202:05:46
-> ETA:              Tue Jul 28 00:07:36 2020
-> Total to scrub:   16.80TiB
-> Bytes scrubbed:   1.14TiB
-> Rate:             22.56MiB/s
-> Error summary:    read=295132162
->   Corrected:      0
->   Uncorrectable:  295132162
->   Unverified:     0
-> 
-> device stats:
-> 
-> Label: none  uuid: 9c3c3f8d-a601-4bd3-8871-d068dd500a15
->         Total devices 5 FS bytes used 16.80TiB
->         devid    3 size 9.09TiB used 8.76TiB path /dev/sda1
->         devid    4 size 9.09TiB used 8.76TiB path /dev/sdb1
->         devid    5 size 9.09TiB used 8.74TiB path /dev/sdd1
->         devid    6 size 9.09TiB used 498.53GiB path /dev/sdc1
->         *** Some devices missing
-> 
-> Is there anything else I can do to try and specifically fix that one block
-> group rather than scrubbing the entire filesytem? Also, is it "normal" that
-> scrub stats would show a huge number of "uncorrectable" errors when a device
-> is missing or should I be worried about that?
-
-There might be a few dozen KB of uncorrectable data after the 'btrfs
-replace' is done, depending on how messy the original disk failure was.
-
-You may want to zero the dev stats once the btrfs replace is done,
-as the stats collected during degraded mode will be mostly garbage.
-
-> Kind regards,
->  Edmund
-> 
-> 
+> diff --git a/tests/generic/603 b/tests/generic/603
+> new file mode 100755
+> index 00000000..90f0d1d3
+> --- /dev/null
+> +++ b/tests/generic/603
+> @@ -0,0 +1,53 @@
+> +#! /bin/bash
+> +# SPDX-License-Identifier: GPL-2.0
+> +# Copyright (c) 2020 Facebook  All Rights Reserved.
+> +#
+> +# FS QA Test 603
+> +#
+> +# Evicting dirty inodes can take a long time during umount.
+> +# Check that a new mount racing with such a delayed umount succeeds.
+> +#
+> +seq=`basename $0`
+> +seqres=$RESULT_DIR/$seq
+> +echo "QA output created by $seq"
+> +
+> +here=`pwd`
+> +tmp=/tmp/$$
+> +status=1	# failure is the default!
+> +trap "_cleanup; exit \$status" 0 1 2 3 15
+> +
+> +_cleanup()
+> +{
+> +	cd /
+> +	rm -f $tmp.*
+> +}
+> +
+> +# get standard environment, filters and checks
+> +. ./common/rc
+> +. ./common/filter
+> +
+> +# remove previous $seqres.full before test
+> +rm -f $seqres.full
+> +
+> +# real QA test starts here
+> +
+> +# Modify as appropriate.
+> +_supported_fs generic
+> +_supported_os Linux
+> +_require_scratch
+> +
+> +_scratch_mkfs > /dev/null 2>&1
+> +_scratch_mount
+> +for i in $(seq 0 500)
+> +do
+> +	$XFS_IO_PROG -c "pwrite 0 4K" $SCRATCH_MNT/$i >/dev/null 2>&1
+> +done
+> +_scratch_unmount &
+> +_scratch_mount
+> +wait
+> +
+> +echo "Silence is golden"
+> +
+> +# success, all done
+> +status=0
+> +exit
+> diff --git a/tests/generic/603.out b/tests/generic/603.out
+> new file mode 100644
+> index 00000000..6810da89
+> --- /dev/null
+> +++ b/tests/generic/603.out
+> @@ -0,0 +1,2 @@
+> +QA output created by 603
+> +Silence is golden
+> diff --git a/tests/generic/group b/tests/generic/group
+> index d9ab9a31..c0ace35b 100644
+> --- a/tests/generic/group
+> +++ b/tests/generic/group
+> @@ -605,3 +605,4 @@
+>  600 auto quick quota
+>  601 auto quick quota
+>  602 auto quick encrypt
+> +603 auto quick
 > -- 
-> Auch Liland ist in der Krise für Sie da! #WirBleibenZuhause und liefern
-> Ihnen trotzdem weiterhin hohe Qualität und besten Service. 
-> Unser Support <mailto:support@liland.com> steht weiterhin wie gewohnt zur
-> Verfügung.
-> Ihr Team LILAND
-> *
-> *
-> *Liland IT GmbH*
+> 2.24.1
 > 
-> 
-> Ferlach ● Wien ● München
-> Tel: +43 463 220111
-> Tel: +49 89 458 15 940
-> office@Liland.com
-> https://Liland.com <https://Liland.com> 
-> <https://twitter.com/lilandit>  <https://www.instagram.com/liland_com/> 
-> <https://www.facebook.com/LilandIT/>
-> 
-> Copyright © 2020 Liland IT GmbH 
-> 
-> 
-> Diese Mail enthaelt vertrauliche und/oder rechtlich geschuetzte 
-> Informationen. 
-> Wenn Sie nicht der richtige Adressat sind oder diese Email
-> irrtuemlich erhalten haben, informieren Sie bitte sofort den Absender und
-> vernichten Sie diese Mail. Das unerlaubte Kopieren sowie die unbefugte
-> Weitergabe dieser Mail ist nicht gestattet. 
-> 
-> This email may contain confidential and/or privileged information. 
-> If you are not the intended recipient (or have received this email in error)
-> please notify the sender immediately and destroy this email.
-> Any unauthorised copying, disclosure or distribution of the material in
-> this email is strictly forbidden.
+

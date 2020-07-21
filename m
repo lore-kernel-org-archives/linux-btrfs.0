@@ -7,64 +7,63 @@ X-Spam-Status: No, score=-13.0 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 521F0C433E3
-	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Jul 2020 14:22:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E8C6FC433E7
+	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Jul 2020 14:22:59 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 2EFAA20702
-	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Jul 2020 14:22:50 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C91AE20702
+	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Jul 2020 14:22:59 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="ZVN7TBL7"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="T2CSDLu9"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728896AbgGUOWt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 21 Jul 2020 10:22:49 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53236 "EHLO
+        id S1728902AbgGUOW7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 21 Jul 2020 10:22:59 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53274 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726710AbgGUOWs (ORCPT
+        with ESMTP id S1728971AbgGUOW6 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Jul 2020 10:22:48 -0400
-Received: from mail-qk1-x744.google.com (mail-qk1-x744.google.com [IPv6:2607:f8b0:4864:20::744])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id ADF09C061794
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Jul 2020 07:22:48 -0700 (PDT)
-Received: by mail-qk1-x744.google.com with SMTP id h7so3509301qkk.7
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Jul 2020 07:22:48 -0700 (PDT)
+        Tue, 21 Jul 2020 10:22:58 -0400
+Received: from mail-qt1-x842.google.com (mail-qt1-x842.google.com [IPv6:2607:f8b0:4864:20::842])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6F117C061794
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Jul 2020 07:22:58 -0700 (PDT)
+Received: by mail-qt1-x842.google.com with SMTP id s16so410600qtn.7
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Jul 2020 07:22:58 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=nNbN8KMVo5bDXJEMK3qzoB8OXC6pwWVBEBIb751xZOI=;
-        b=ZVN7TBL74JT8zs7zSHjchXD2w2SmoE4ZuTwhlMwoTudhRn0VCb+13r5KTbs+ogoqM4
-         oaVywgD+NYjb0prsa6xxgFkHgqXjFSoi4/cIssvu+WTBEY6SyTTO6FpL3jYJbX1Zviuk
-         /YdieS0kR8UdYe+BAVxwnWgNXQ0F09g8EStOgRoo2BkHSIA0P+UdPq/XvPEFrWchVU3i
-         881pcizzBm9JCHwGN5PA5fyzHx4UvW7sjZkKDkIyiiUCviCdkabYigjVuqTyHM97mGy+
-         fJ036HgaEYjl+2usavG5v9rSfOH8c9jSf9ZpUeIGTsHZLzgMFcr6D01kIB+aaj0M57Wr
-         /e0Q==
+        bh=ZRKc63P5E/fKmHUwzOTIMk+4mmOzl1OUpVjs2y9i3Qw=;
+        b=T2CSDLu9C2YBc/MjoahruamjAyScjld+2gy9GzNKvwHuhEiPQPgyff79LtHzXiR9Fc
+         Y6vu1bHm4XcOAFQUrPRgNvuujDc8iZCSG+P+bBcvXD7FwiFphU/+gc5jzvtbocisPtTi
+         kxnw5MsUlrw0x0JxgzoFfZ3Aqrnq8x47XgkS+CWPIZ57OngKxpNdM+FAZxYGIzzZN5rr
+         i/c5GXvV08lHDlADIDIzw+oHa5MqoSaRIO3y2eN9ayqgvtHSyBdBVkAA7+2NsWStkm5d
+         2+ZKyECKgvylX9izbmK0vUQXJF1h3kSMz7A+GXE8RJ2NDyfV5T7gfRihUvyZcCmgXs2a
+         KRQQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=nNbN8KMVo5bDXJEMK3qzoB8OXC6pwWVBEBIb751xZOI=;
-        b=R2nYGFJb95RwXwu6KH5hfHzmUKFicvo6PCbkRglDKPD+u/eQ6byL3eE6R6zei1+bgT
-         1XozJzQiAhYIC5RmeWpvmS+XKBcFaVjuJFJ1tCVNGpsMcNLVC02sJfrrhr1D9jCkcVxW
-         lSHX771IBphGuOlv12/f4gAl594IPmTwyUu3Zlxu1VAhcDOHMb/36yi9Qys2rn+qHYVC
-         NakkAODRStZiAb/YQdhD1Cfw2qezeOSfYc4X7yXjST037LO0aYpSa0GGM9mLixcV8/f2
-         GinllouoYYzg9ldUuLsP0RXgm6RyPB/rbANfXn5nJgiEOp6QrAR92Iww4him1+3FblUd
-         fiiQ==
-X-Gm-Message-State: AOAM530HIc5gFRKeon20I7SWEN+CGDsUG0suup8dkN15Sr18YCmDCty7
-        k4TdkcAgeAS8Hd0It5BSVF5DVii25mjISw==
-X-Google-Smtp-Source: ABdhPJwkULvkQ0lymLZg/yqKCZG8F7hzXtLjCqq2go4yARZUtygbOgst/nwlsb8j13tST1W58RDEhQ==
-X-Received: by 2002:a05:620a:1478:: with SMTP id j24mr10299574qkl.347.1595341367616;
-        Tue, 21 Jul 2020 07:22:47 -0700 (PDT)
+        bh=ZRKc63P5E/fKmHUwzOTIMk+4mmOzl1OUpVjs2y9i3Qw=;
+        b=P6a6T5TqWIDFgrG5CXia3qvQz3DKKhrmPkPdfkA0srx3VdG8TuufYVX3lgR8wCePp+
+         +4N1+7iJepmkT7cklun0V0NHXVSojKXETPVbwQjZqABeIgQPeggP40fHBA0wPYXS1lgl
+         Ze5qpxI12CQqmUpamFJ+On1yWK9OkyCqWaNK80yjIFj3bkOvgo+DhvTURDD5oHUOhQUd
+         9cF6KQox20j/HF+z3fT2wegvnPRr9ole0AyO91wEd7hVTfKQSFOQFzGKaD4SAo6zt9Uf
+         q/J3Lllczr5HZbfr55IKQNTeahFZ3KqGKmFGmZatxq1HgQ6hPuVEF+q9QlOfkQwjX6k5
+         pYfQ==
+X-Gm-Message-State: AOAM533NTbgVyUnG/S7TCPRl3TSP4dkAYpGnxDGZ4X43jmMF6HrDwvGW
+        bohR3+J3lxTGlXITH+nPt/1GatU4wQDghg==
+X-Google-Smtp-Source: ABdhPJxmuS08CfgOG4MKn5aOUem2qNVtLwNMZAstC9wlIRQc6bnJY75LgiZZ/WcHw5HclXXih9N2Wg==
+X-Received: by 2002:ac8:4d85:: with SMTP id a5mr28694352qtw.60.1595341377093;
+        Tue, 21 Jul 2020 07:22:57 -0700 (PDT)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id d14sm22489318qti.41.2020.07.21.07.22.46
+        by smtp.gmail.com with ESMTPSA id v184sm2741335qki.12.2020.07.21.07.22.55
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 21 Jul 2020 07:22:46 -0700 (PDT)
+        Tue, 21 Jul 2020 07:22:55 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Cc:     Nikolay Borisov <nborisov@suse.com>,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH 05/23] btrfs: make ALLOC_CHUNK use the space info flags
-Date:   Tue, 21 Jul 2020 10:22:16 -0400
-Message-Id: <20200721142234.2680-6-josef@toxicpanda.com>
+Cc:     Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH 10/23] btrfs: use btrfs_start_delalloc_roots in shrink_delalloc
+Date:   Tue, 21 Jul 2020 10:22:21 -0400
+Message-Id: <20200721142234.2680-11-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.24.1
 In-Reply-To: <20200721142234.2680-1-josef@toxicpanda.com>
 References: <20200721142234.2680-1-josef@toxicpanda.com>
@@ -75,34 +74,110 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We have traditionally used flush_space() to flush metadata space, so
-we've been unconditionally using btrfs_metadata_alloc_profile() for our
-profile to allocate a chunk.  However if we're going to use this for
-data we need to use btrfs_get_alloc_profile() on the space_info we pass
-in.
+The original iteration of flushing had us flushing delalloc and then
+checking to see if we could make our reservation, thus we were very
+careful about how many pages we would flush at once.
+
+But now that everything is async and we satisfy tickets as the space
+becomes available we don't have to keep track of any of this, simply try
+and flush the number of dirty inodes we may have in order to reclaim
+space to make our reservation.  This cleans up our delalloc flushing
+significantly.
+
+The async_pages stuff is dropped because btrfs_start_delalloc_roots()
+handles the case that we generate async extents for us, so we no longer
+require this extra logic.
 
 Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 Tested-by: Nikolay Borisov <nborisov@suse.com>
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/space-info.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ fs/btrfs/space-info.c | 55 +------------------------------------------
+ 1 file changed, 1 insertion(+), 54 deletions(-)
 
 diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-index 1bf40328b0ee..8450864c5b77 100644
+index 8450864c5b77..de8a49de5fdb 100644
 --- a/fs/btrfs/space-info.c
 +++ b/fs/btrfs/space-info.c
-@@ -777,7 +777,8 @@ static void flush_space(struct btrfs_fs_info *fs_info,
- 			break;
- 		}
- 		ret = btrfs_chunk_alloc(trans,
--				btrfs_metadata_alloc_profile(fs_info),
-+				btrfs_get_alloc_profile(fs_info,
-+							space_info->flags),
- 				(state == ALLOC_CHUNK) ? CHUNK_ALLOC_NO_FORCE :
- 					CHUNK_ALLOC_FORCE);
- 		btrfs_end_transaction(trans);
+@@ -476,28 +476,6 @@ void btrfs_dump_space_info(struct btrfs_fs_info *fs_info,
+ 	up_read(&info->groups_sem);
+ }
+ 
+-static void btrfs_writeback_inodes_sb_nr(struct btrfs_fs_info *fs_info,
+-					 unsigned long nr_pages, u64 nr_items)
+-{
+-	struct super_block *sb = fs_info->sb;
+-
+-	if (down_read_trylock(&sb->s_umount)) {
+-		writeback_inodes_sb_nr(sb, nr_pages, WB_REASON_FS_FREE_SPACE);
+-		up_read(&sb->s_umount);
+-	} else {
+-		/*
+-		 * We needn't worry the filesystem going from r/w to r/o though
+-		 * we don't acquire ->s_umount mutex, because the filesystem
+-		 * should guarantee the delalloc inodes list be empty after
+-		 * the filesystem is readonly(all dirty pages are written to
+-		 * the disk).
+-		 */
+-		btrfs_start_delalloc_roots(fs_info, nr_items);
+-		if (!current->journal_info)
+-			btrfs_wait_ordered_roots(fs_info, nr_items, 0, (u64)-1);
+-	}
+-}
+-
+ static inline u64 calc_reclaim_items_nr(struct btrfs_fs_info *fs_info,
+ 					u64 to_reclaim)
+ {
+@@ -523,10 +501,8 @@ static void shrink_delalloc(struct btrfs_fs_info *fs_info,
+ 	struct btrfs_trans_handle *trans;
+ 	u64 delalloc_bytes;
+ 	u64 dio_bytes;
+-	u64 async_pages;
+ 	u64 items;
+ 	long time_left;
+-	unsigned long nr_pages;
+ 	int loops;
+ 
+ 	/* Calc the number of the pages we need flush for space reservation */
+@@ -567,37 +543,8 @@ static void shrink_delalloc(struct btrfs_fs_info *fs_info,
+ 
+ 	loops = 0;
+ 	while ((delalloc_bytes || dio_bytes) && loops < 3) {
+-		nr_pages = min(delalloc_bytes, to_reclaim) >> PAGE_SHIFT;
+-
+-		/*
+-		 * Triggers inode writeback for up to nr_pages. This will invoke
+-		 * ->writepages callback and trigger delalloc filling
+-		 *  (btrfs_run_delalloc_range()).
+-		 */
+-		btrfs_writeback_inodes_sb_nr(fs_info, nr_pages, items);
+-
+-		/*
+-		 * We need to wait for the compressed pages to start before
+-		 * we continue.
+-		 */
+-		async_pages = atomic_read(&fs_info->async_delalloc_pages);
+-		if (!async_pages)
+-			goto skip_async;
+-
+-		/*
+-		 * Calculate how many compressed pages we want to be written
+-		 * before we continue. I.e if there are more async pages than we
+-		 * require wait_event will wait until nr_pages are written.
+-		 */
+-		if (async_pages <= nr_pages)
+-			async_pages = 0;
+-		else
+-			async_pages -= nr_pages;
++		btrfs_start_delalloc_roots(fs_info, items);
+ 
+-		wait_event(fs_info->async_submit_wait,
+-			   atomic_read(&fs_info->async_delalloc_pages) <=
+-			   (int)async_pages);
+-skip_async:
+ 		spin_lock(&space_info->lock);
+ 		if (list_empty(&space_info->tickets) &&
+ 		    list_empty(&space_info->priority_tickets)) {
 -- 
 2.24.1
 

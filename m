@@ -2,104 +2,144 @@ Return-Path: <SRS0=Ghwh=BB=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-4.0 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 204C0C433E0
-	for <linux-btrfs@archiver.kernel.org>; Wed, 22 Jul 2020 15:18:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 62881C433E3
+	for <linux-btrfs@archiver.kernel.org>; Wed, 22 Jul 2020 15:18:12 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id ED54120717
-	for <linux-btrfs@archiver.kernel.org>; Wed, 22 Jul 2020 15:18:14 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 36DC220709
+	for <linux-btrfs@archiver.kernel.org>; Wed, 22 Jul 2020 15:18:12 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="TOplPoRN"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732679AbgGVPSO convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 22 Jul 2020 11:18:14 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59380 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728046AbgGVPSO (ORCPT
+        id S1732673AbgGVPSL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 22 Jul 2020 11:18:11 -0400
+Received: from esa5.hgst.iphmx.com ([216.71.153.144]:26302 "EHLO
+        esa5.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728046AbgGVPSL (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 22 Jul 2020 11:18:14 -0400
-X-Greylist: delayed 468 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Wed, 22 Jul 2020 08:18:13 PDT
-Received: from mail.lichtvoll.de (lichtvoll.de [IPv6:2001:67c:14c:12f::11:100])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E117CC0619DC
-        for <linux-btrfs@vger.kernel.org>; Wed, 22 Jul 2020 08:18:13 -0700 (PDT)
-Received: from 127.0.0.1 (localhost [127.0.0.1])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-        (No client certificate requested)
-        by mail.lichtvoll.de (Postfix) with ESMTPSA id 767B812176A
-        for <linux-btrfs@vger.kernel.org>; Wed, 22 Jul 2020 17:10:20 +0200 (CEST)
-From:   Martin Steigerwald <martin@lichtvoll.de>
-To:     linux-btrfs@vger.kernel.org
-Subject: Understanding "Used" in df
-Date:   Wed, 22 Jul 2020 17:10:19 +0200
-Message-ID: <3225288.0drLW0cIUP@merkaba>
+        Wed, 22 Jul 2020 11:18:11 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1595431091; x=1626967091;
+  h=from:to:cc:subject:date:message-id:mime-version:
+   content-transfer-encoding;
+  bh=4ti7NNkD/qKZs8Lw4siE1lKQ2DzfPYxF+fc7HNLD5OI=;
+  b=TOplPoRNMREWIeaLxu8EgoqC0UW+wWOg2/946mOlNr3l9pq/ytVJWdvg
+   rgdmIRIlyJVE7ha5zprQxMSq7eqVvo8xqMoPVOpMOueMA5mQlSckV9LRn
+   0Ompz9mYibx2ec6CzioN4XOmPvBXtbD1/B2oHX5WLJuLl7aOeZR3L+kiU
+   nu3J9nnP71Le6GtBW5/DuAcfo9ErDmXe6HC39zhvyP5zBLB4MI3x3sS2i
+   adwiJnDBOMWXe/s9e1E+CTyOoDfDS6WvSTbZOCdCtEk7JHIZ4Pijoubuh
+   76RzKQ8kUP5Cqc1zzg0OSkkWrWsNnL4i4sG4TyI3hQFrpLuisoEVM4i5d
+   g==;
+IronPort-SDR: eGJc3hvmvQJumH1EPPBoB0QtwI1W1KYuAZi6SqtWNCcxB97flrE6JBSoaNAL/j+m+IMfHwQ4AC
+ YB0Osxd/9aVG1sPIRxRAr2JVPSv/KSPPWK2yMKfRNJKpPJJlGymER0xUtfEHZHYbLHpvGZcOIS
+ ObXn+IxgZnkjQ8vzZYDdqWlgFWsYbn0ibqSgoxrSXRSUo9VLfG+A4F9uWibUQPFLkQGIul6M9w
+ uQCUYFlsvlmiUaStmLUHzBpWo3Q/NSgGBpX7HtBj+Aj4gWo8z7mTu03HI0xnybil6A7eteeh/U
+ lk0=
+X-IronPort-AV: E=Sophos;i="5.75,383,1589212800"; 
+   d="scan'208";a="143215272"
+Received: from uls-op-cesaip02.wdc.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
+  by ob1.hgst.iphmx.com with ESMTP; 22 Jul 2020 23:18:11 +0800
+IronPort-SDR: Bn/FB4bF135GchUbZAUAKd1F9d/EMhJNOzh8oB5LEgoUDofbshnaflygPK3HBeZgFHRJFSqYaS
+ KWPmqBX9xCwqa2TDl4MHRuoua5THDBrew=
+Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 22 Jul 2020 08:05:51 -0700
+IronPort-SDR: EnW665RWFvU6j13DJVPhJwpArRMYAjNR0CPrc3TkeqkaOyXfrOczfnMyjSZVKJZFNFKGyp4c8v
+ Q0wWDg3OJDkg==
+WDCIronportException: Internal
+Received: from unknown (HELO redsun60.ssa.fujisawa.hgst.com) ([10.149.66.36])
+  by uls-op-cesaip01.wdc.com with ESMTP; 22 Jul 2020 08:18:10 -0700
+From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
+To:     David Sterba <dsterba@suse.cz>
+Cc:     linux-btrfs@vger.kernel.org,
+        Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Subject: [PATCH v2] btrfs: open-code remount flag setting in btrfs_remount
+Date:   Thu, 23 Jul 2020 00:18:04 +0900
+Message-Id: <20200722151804.33590-1-johannes.thumshirn@wdc.com>
+X-Mailer: git-send-email 2.26.2
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8BIT
-Content-Type: text/plain; charset="UTF-8"
-Authentication-Results: mail.lichtvoll.de;
-        auth=pass smtp.auth=martin smtp.mailfrom=martin@lichtvoll.de
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-I have:
+When we're (re)mounting a btrfs filesystem we set the
+BTRFS_FS_STATE_REMOUNTING state in fs_info to serialize against async
+reclaim or defrags.
 
-% LANG=en df -hT /home
-Filesystem            Type   Size  Used Avail Use% Mounted on
-/dev/mapper/sata-home btrfs  300G  175G  123G  59% /home
+This flag is set in btrfs_remount_prepare() called by btrfs_remount(). As
+btrfs_remount_prepare() does nothing but setting this flag and doesn't
+have a second caller, we can just open-code the flag setting in
+btrfs_remount().
 
-And:
+Similarly do for so clearing of the flag by moving it out of
+btrfs_remount_cleanup() into btrfs_remount() to be symmetrical.
 
-merkaba:~> btrfs fi sh /home   
-Label: 'home'  uuid: […]
-        Total devices 2 FS bytes used 173.91GiB
-        devid    1 size 300.00GiB used 223.03GiB path /dev/mapper/sata-home
-        devid    2 size 300.00GiB used 223.03GiB path /dev/mapper/msata-home
+Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+---
+Changes to v1:
+- Move clearing of the flag as well (David)
+---
+ fs/btrfs/super.c | 13 +++++--------
+ 1 file changed, 5 insertions(+), 8 deletions(-)
 
-merkaba:~> btrfs fi df /home
-Data, RAID1: total=218.00GiB, used=171.98GiB
-System, RAID1: total=32.00MiB, used=64.00KiB
-Metadata, RAID1: total=5.00GiB, used=1.94GiB
-GlobalReserve, single: total=490.48MiB, used=0.00B
-
-As well as:
-
-merkaba:~> btrfs fi usage -T /home
-Overall:
-    Device size:                 600.00GiB
-    Device allocated:            446.06GiB
-    Device unallocated:          153.94GiB
-    Device missing:                  0.00B
-    Used:                        347.82GiB
-    Free (estimated):            123.00GiB      (min: 123.00GiB)
-    Data ratio:                       2.00
-    Metadata ratio:                   2.00
-    Global reserve:              490.45MiB      (used: 0.00B)
-    Multiple profiles:                  no
-
-                          Data      Metadata System              
-Id Path                   RAID1     RAID1    RAID1    Unallocated
--- ---------------------- --------- -------- -------- -----------
- 1 /dev/mapper/sata-home  218.00GiB  5.00GiB 32.00MiB    76.97GiB
- 2 /dev/mapper/msata-home 218.00GiB  5.00GiB 32.00MiB    76.97GiB
--- ---------------------- --------- -------- -------- -----------
-   Total                  218.00GiB  5.00GiB 32.00MiB   153.94GiB
-   Used                   171.97GiB  1.94GiB 64.00KiB   
-
-
-I think I understand all of it, including just 123G instead of
-300 - 175 = 125 GiB "Avail" in df -hT.
-
-But why 175 GiB "Used" in 'df -hT' when just 173.91GiB (see 'btrfs fi sh')
-is allocated *within* the block group / chunks?
-
-Does this have something to do with that global reserve thing?
-
-Thank you,
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index a4f0bb29b8d6..5a9dc31d95c9 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1782,11 +1782,6 @@ static void btrfs_resize_thread_pool(struct btrfs_fs_info *fs_info,
+ 				new_pool_size);
+ }
+ 
+-static inline void btrfs_remount_prepare(struct btrfs_fs_info *fs_info)
+-{
+-	set_bit(BTRFS_FS_STATE_REMOUNTING, &fs_info->fs_state);
+-}
+-
+ static inline void btrfs_remount_begin(struct btrfs_fs_info *fs_info,
+ 				       unsigned long old_opts, int flags)
+ {
+@@ -1820,8 +1815,6 @@ static inline void btrfs_remount_cleanup(struct btrfs_fs_info *fs_info,
+ 	else if (btrfs_raw_test_opt(old_opts, DISCARD_ASYNC) &&
+ 		 !btrfs_test_opt(fs_info, DISCARD_ASYNC))
+ 		btrfs_discard_cleanup(fs_info);
+-
+-	clear_bit(BTRFS_FS_STATE_REMOUNTING, &fs_info->fs_state);
+ }
+ 
+ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
+@@ -1837,7 +1830,7 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
+ 	int ret;
+ 
+ 	sync_filesystem(sb);
+-	btrfs_remount_prepare(fs_info);
++	set_bit(BTRFS_FS_STATE_REMOUNTING, &fs_info->fs_state);
+ 
+ 	if (data) {
+ 		void *new_sec_opts = NULL;
+@@ -1959,6 +1952,8 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
+ out:
+ 	wake_up_process(fs_info->transaction_kthread);
+ 	btrfs_remount_cleanup(fs_info, old_opts);
++	clear_bit(BTRFS_FS_STATE_REMOUNTING, &fs_info->fs_state);
++
+ 	return 0;
+ 
+ restore:
+@@ -1973,6 +1968,8 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
+ 		old_thread_pool_size, fs_info->thread_pool_size);
+ 	fs_info->metadata_ratio = old_metadata_ratio;
+ 	btrfs_remount_cleanup(fs_info, old_opts);
++	clear_bit(BTRFS_FS_STATE_REMOUNTING, &fs_info->fs_state);
++
+ 	return ret;
+ }
+ 
 -- 
-Martin
-
+2.26.2
 

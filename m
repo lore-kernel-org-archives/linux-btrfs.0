@@ -2,130 +2,104 @@ Return-Path: <SRS0=Ghwh=BB=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.0 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-4.0 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B13C4C433E1
-	for <linux-btrfs@archiver.kernel.org>; Wed, 22 Jul 2020 15:12:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 204C0C433E0
+	for <linux-btrfs@archiver.kernel.org>; Wed, 22 Jul 2020 15:18:15 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 8AD6420709
-	for <linux-btrfs@archiver.kernel.org>; Wed, 22 Jul 2020 15:12:50 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="b97fPUgp"
+	by mail.kernel.org (Postfix) with ESMTP id ED54120717
+	for <linux-btrfs@archiver.kernel.org>; Wed, 22 Jul 2020 15:18:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732677AbgGVPMt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 22 Jul 2020 11:12:49 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58528 "EHLO
+        id S1732679AbgGVPSO convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 22 Jul 2020 11:18:14 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59380 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1732568AbgGVPMt (ORCPT
+        with ESMTP id S1728046AbgGVPSO (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 22 Jul 2020 11:12:49 -0400
-Received: from mail-qk1-x742.google.com (mail-qk1-x742.google.com [IPv6:2607:f8b0:4864:20::742])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4DDA0C0619DC
-        for <linux-btrfs@vger.kernel.org>; Wed, 22 Jul 2020 08:12:49 -0700 (PDT)
-Received: by mail-qk1-x742.google.com with SMTP id q2so2266764qkc.8
-        for <linux-btrfs@vger.kernel.org>; Wed, 22 Jul 2020 08:12:49 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:cc:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=oqykr6pB0W4qi+KVxqWgdECqU+5jEZAU98WQmmf1aFw=;
-        b=b97fPUgpw1f3jOEfagiFDUsxeQLIKZ5ZcTaW/M5e+Ov0xqzSbdZ06WxWywwmoSTEU7
-         nbjERBijO2i9m22Bfwl3KMJjYEp8yj08EJ18Y9zhFdBv/tfOYxPBSlCGBNwIMLwssSSc
-         ffYfdh1JLQh3YETQ6MMJax9fxKkUco4sy8Uz9GGzJ/2+fkrxAwAjz8ZmjzDrHwx3GANY
-         lUOrdGZ+BQ2DavhUfwrPRVe6Yg6Pvr1co1mFZ3bNvF5B5jQh56p3rEIzii0puxtStEdr
-         9V9J7D/862Z4P+TpyCR7/ApoH14pFD7AdiHtroJG/YETfxJYzfwCzoehD+EJtHZ2km+B
-         KDig==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=oqykr6pB0W4qi+KVxqWgdECqU+5jEZAU98WQmmf1aFw=;
-        b=QgkQc6FS9/7N17B6LCh033hlsWNJhiY1+9Nd/C51JsAlI3llOzcOuR1pf1vF+7ydMR
-         5eYxw5vkyvMJhbPqpl0LHO/4ub5/wzhNBbCbLZMPae8i1VrsNCPFAiVPGqd49oRx/Y/W
-         MQAU2nRik+E2zoXu2h6kGkeIby3z2i7DT8uLxmgwmqkSbBFoAl06Vh9frKUglBD95obs
-         OFhRAipnT9GN0cn7RxdvJMxUWbgO2tMnTJdwJAYj+9MVQk6/vRgYYLJW3VEO/CPqfoA+
-         5UVWUPuLoZFQUQIb2flrwbMVYapdbX+gu2H7SUBGpv9V8tqEhtFFqz+dsc0cPwzr6/s2
-         fH1A==
-X-Gm-Message-State: AOAM530q4tu6Wx01pwADpg882RSHa+HvLeBGSbcz8uKf5eWeIloXE/Xm
-        U60KZnX+VFreOhPQWzVMwB0I0m5wEqvLrg==
-X-Google-Smtp-Source: ABdhPJzl4IX3KB1FTsLtzw4MLQ33ioI4+C90IjzXpG8MUrXK1LkdxuabUd9Q1gKUvYjzKCTuVApywA==
-X-Received: by 2002:ae9:f409:: with SMTP id y9mr359031qkl.383.1595430768090;
-        Wed, 22 Jul 2020 08:12:48 -0700 (PDT)
-Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id z68sm110596qke.113.2020.07.22.08.12.47
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 22 Jul 2020 08:12:47 -0700 (PDT)
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Cc:     Chris Murphy <chris@colorremedies.com>
-Subject: [PATCH][v2] btrfs: don't show full path of bind mounts in subvol=
-Date:   Wed, 22 Jul 2020 11:12:46 -0400
-Message-Id: <20200722151246.3789-1-josef@toxicpanda.com>
-X-Mailer: git-send-email 2.24.1
+        Wed, 22 Jul 2020 11:18:14 -0400
+X-Greylist: delayed 468 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Wed, 22 Jul 2020 08:18:13 PDT
+Received: from mail.lichtvoll.de (lichtvoll.de [IPv6:2001:67c:14c:12f::11:100])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E117CC0619DC
+        for <linux-btrfs@vger.kernel.org>; Wed, 22 Jul 2020 08:18:13 -0700 (PDT)
+Received: from 127.0.0.1 (localhost [127.0.0.1])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+        (No client certificate requested)
+        by mail.lichtvoll.de (Postfix) with ESMTPSA id 767B812176A
+        for <linux-btrfs@vger.kernel.org>; Wed, 22 Jul 2020 17:10:20 +0200 (CEST)
+From:   Martin Steigerwald <martin@lichtvoll.de>
+To:     linux-btrfs@vger.kernel.org
+Subject: Understanding "Used" in df
+Date:   Wed, 22 Jul 2020 17:10:19 +0200
+Message-ID: <3225288.0drLW0cIUP@merkaba>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: 8BIT
+Content-Type: text/plain; charset="UTF-8"
+Authentication-Results: mail.lichtvoll.de;
+        auth=pass smtp.auth=martin smtp.mailfrom=martin@lichtvoll.de
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Chris Murphy reported a problem where rpm ostree will bind mount a bunch
-of things for whatever voodoo it's doing.  But when it does this
-/proc/mounts shows something like
+I have:
 
-/dev/mapper/vg0-lv0 /mnt/test btrfs rw,seclabel,relatime,ssd,space_cache,subvolid=256,subvol=/foo 0 0
-/dev/mapper/vg0-lv0 /mnt/test/baz btrfs rw,seclabel,relatime,ssd,space_cache,subvolid=256,subvol=/foo/bar 0 0
+% LANG=en df -hT /home
+Filesystem            Type   Size  Used Avail Use% Mounted on
+/dev/mapper/sata-home btrfs  300G  175G  123G  59% /home
 
-Despite subvolid=256 being subvol=/roo.  This is because we're just
-spitting out the dentry of the mount point, which in the case of bind
-mounts is the source path for the mountpoint.  Instead we should spit
-out the path to the actual subvol.  Fix this by looking up the name for
-the subvolid we have mounted.  With this fix the same test looks like
-this
+And:
 
-/dev/mapper/vg0-lv0 /mnt/test btrfs rw,seclabel,relatime,ssd,space_cache,subvolid=256,subvol=/foo 0 0
-/dev/mapper/vg0-lv0 /mnt/test/baz btrfs rw,seclabel,relatime,ssd,space_cache,subvolid=256,subvol=/foo 0 0
+merkaba:~> btrfs fi sh /home   
+Label: 'home'  uuid: […]
+        Total devices 2 FS bytes used 173.91GiB
+        devid    1 size 300.00GiB used 223.03GiB path /dev/mapper/sata-home
+        devid    2 size 300.00GiB used 223.03GiB path /dev/mapper/msata-home
 
-Reported-by: Chris Murphy <chris@colorremedies.com>
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
----
-v1->v2:
-- Dropped the RFC.
-- Added examples of before and after.
+merkaba:~> btrfs fi df /home
+Data, RAID1: total=218.00GiB, used=171.98GiB
+System, RAID1: total=32.00MiB, used=64.00KiB
+Metadata, RAID1: total=5.00GiB, used=1.94GiB
+GlobalReserve, single: total=490.48MiB, used=0.00B
 
- fs/btrfs/super.c | 9 +++++++--
- 1 file changed, 7 insertions(+), 2 deletions(-)
+As well as:
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 58f890f73650..0e1647c08610 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1367,6 +1367,7 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
- {
- 	struct btrfs_fs_info *info = btrfs_sb(dentry->d_sb);
- 	const char *compress_type;
-+	const char *subvol_name;
- 
- 	if (btrfs_test_opt(info, DEGRADED))
- 		seq_puts(seq, ",degraded");
-@@ -1453,8 +1454,12 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
- 		seq_puts(seq, ",ref_verify");
- 	seq_printf(seq, ",subvolid=%llu",
- 		  BTRFS_I(d_inode(dentry))->root->root_key.objectid);
--	seq_puts(seq, ",subvol=");
--	seq_dentry(seq, dentry, " \t\n\\");
-+	subvol_name = btrfs_get_subvol_name_from_objectid(info,
-+			BTRFS_I(d_inode(dentry))->root->root_key.objectid);
-+	if (subvol_name) {
-+		seq_printf(seq, ",subvol=%s", subvol_name);
-+		kfree(subvol_name);
-+	}
- 	return 0;
- }
- 
+merkaba:~> btrfs fi usage -T /home
+Overall:
+    Device size:                 600.00GiB
+    Device allocated:            446.06GiB
+    Device unallocated:          153.94GiB
+    Device missing:                  0.00B
+    Used:                        347.82GiB
+    Free (estimated):            123.00GiB      (min: 123.00GiB)
+    Data ratio:                       2.00
+    Metadata ratio:                   2.00
+    Global reserve:              490.45MiB      (used: 0.00B)
+    Multiple profiles:                  no
+
+                          Data      Metadata System              
+Id Path                   RAID1     RAID1    RAID1    Unallocated
+-- ---------------------- --------- -------- -------- -----------
+ 1 /dev/mapper/sata-home  218.00GiB  5.00GiB 32.00MiB    76.97GiB
+ 2 /dev/mapper/msata-home 218.00GiB  5.00GiB 32.00MiB    76.97GiB
+-- ---------------------- --------- -------- -------- -----------
+   Total                  218.00GiB  5.00GiB 32.00MiB   153.94GiB
+   Used                   171.97GiB  1.94GiB 64.00KiB   
+
+
+I think I understand all of it, including just 123G instead of
+300 - 175 = 125 GiB "Avail" in df -hT.
+
+But why 175 GiB "Used" in 'df -hT' when just 173.91GiB (see 'btrfs fi sh')
+is allocated *within* the block group / chunks?
+
+Does this have something to do with that global reserve thing?
+
+Thank you,
 -- 
-2.24.1
+Martin
+
 

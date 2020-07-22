@@ -2,85 +2,111 @@ Return-Path: <SRS0=Ghwh=BB=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-4.1 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9527AC433DF
-	for <linux-btrfs@archiver.kernel.org>; Wed, 22 Jul 2020 08:45:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 21D87C433E1
+	for <linux-btrfs@archiver.kernel.org>; Wed, 22 Jul 2020 09:00:46 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 62B29205CB
-	for <linux-btrfs@archiver.kernel.org>; Wed, 22 Jul 2020 08:45:12 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DEB632077D
+	for <linux-btrfs@archiver.kernel.org>; Wed, 22 Jul 2020 09:00:45 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="GcF+E3W4"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="pHlQ0P7S"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726526AbgGVIpL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 22 Jul 2020 04:45:11 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54788 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726147AbgGVIpL (ORCPT
+        id S1730781AbgGVJAp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 22 Jul 2020 05:00:45 -0400
+Received: from esa2.hgst.iphmx.com ([68.232.143.124]:44273 "EHLO
+        esa2.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1730189AbgGVJAo (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 22 Jul 2020 04:45:11 -0400
-Received: from mail-ej1-x642.google.com (mail-ej1-x642.google.com [IPv6:2a00:1450:4864:20::642])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E4D90C0619DC
-        for <linux-btrfs@vger.kernel.org>; Wed, 22 Jul 2020 01:45:10 -0700 (PDT)
-Received: by mail-ej1-x642.google.com with SMTP id n26so1374148ejx.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 22 Jul 2020 01:45:10 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=message-id:date:subject:from:to:mime-version
-         :content-transfer-encoding;
-        bh=akV/dRYzdAbVJUqudH2g82YqoeLVqbQtmqc5P09QKO0=;
-        b=GcF+E3W4K8vOpgmizEKcG0Sd6FgZP5JZ/cDx4TEt8l8dxFxFT9riuLYiNCvFZKMC08
-         yM4t1elPwuY1WjsRuyv+vNhg5Xjfxb0fEf81PX9TNjNhYyYj+K8a9IQhLx76Ct4fghZp
-         iv9lsgfVrYKo/z+D4aQr0I6zGUrHh+nF1Rx36+mNbM099gRPboYO6Xh8kjYb2CEdDI1T
-         UO8+FNDN73PfqNLyEJvDCfrQUZyrsMBh60FTFejOfRlJeMwtvvk4rlExugsY/9uQFuhp
-         u8/JbaLN99pu86QANpDM2PJM7UclxPUu10isfxqe72rheEOaFtIzgcv4Cvy9wo/oWcDT
-         L25g==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:message-id:date:subject:from:to:mime-version
-         :content-transfer-encoding;
-        bh=akV/dRYzdAbVJUqudH2g82YqoeLVqbQtmqc5P09QKO0=;
-        b=gbUpdkL/bNEMGwPGO2z/U3Q+QuvY0hDF3IBCDMJmoBMxwcQIfiX5YqtRrNCmWKR6jK
-         qElfaPmj7ut1if+qc2ckx2tHGlZ5ro6JxUtDXX6lSnTh5vl/OMNhugVVsnZ9PxnAX59V
-         MsQExm+ocB+Ha4EdOAej8Ci+oCGBzdlN0f7b1XH0OUOQyAqAya6KbKSuTtN8b4LpqAAb
-         AMY8YyHH1BqntlpjFemArvK3DAXcV3tt9KWiKxGb7Mi44qlbLgUDRDWJvHmfrdLP7dYq
-         1Y7DkmknTlZZgHHDuu9Liup+jSsr+HNWcucxIk5uChiaonW7z1+g1ZsiIrB6Vb4m3Jil
-         mdcw==
-X-Gm-Message-State: AOAM533VXfvkAlPL1t4nTGigX6QMEl+Ml1kXomCw+4Asljp6SHyZqk9+
-        oOJIEMot3EjjqkTQed4rcUz8t4Tv
-X-Google-Smtp-Source: ABdhPJxLbNRnwqKeInbHjQXO7pBpj+PFybGPVAiouq2ovIXuRm+KW1s1YhrTMYenQr2ZJrA9Nn9XeQ==
-X-Received: by 2002:a17:906:8542:: with SMTP id h2mr28700929ejy.517.1595407509355;
-        Wed, 22 Jul 2020 01:45:09 -0700 (PDT)
-Received: from [127.0.0.1] (178.115.129.56.wireless.dyn.drei.com. [178.115.129.56])
-        by smtp.gmail.com with ESMTPSA id u13sm18765591eds.10.2020.07.22.01.45.07
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-ECDSA-AES128-GCM-SHA256 bits=128/128);
-        Wed, 22 Jul 2020 01:45:08 -0700 (PDT)
-Message-ID: <bb7c5ff8ee271c53d34c41026c6faab6@swift.generated>
-Date:   Wed, 22 Jul 2020 09:25:17 +0200
-Subject: Re: media-style.de
-From:   Karl Geringer <ggeringerkarl3@gmail.com>
-To:     "" <linux-btrfs@vger.kernel.org>
+        Wed, 22 Jul 2020 05:00:44 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1595408446; x=1626944446;
+  h=from:to:cc:subject:date:message-id:mime-version:
+   content-transfer-encoding;
+  bh=i23Db2/vl160bgTBfaWzoMJ2zWexaUO1h+ZKRlAJke8=;
+  b=pHlQ0P7S8gj67wrh9rpc9OSTKTtizghWWe6av7pigXv76KzunYT8hGbK
+   1HWq/Rxuf2N+gAPBbMjyk8bLynU6PzqDn7T8us4sLXFTaczgc4QZDKuP/
+   xkk4mp4RGXbN4Jj1q12n3EE+gS5gSpaokP9JZF4BnRMGnB8ahvZ3vMf+t
+   gtvqtwFVOYc5nI0KBNqVqYby9Ksw404ugIy2LzwC8ezUrnxQnLjW7swDE
+   9nXHok6JVDupMgWEtw3VZGKyPN7W+EjlUE0GxiZ+qAcEJHRStONNEl2q+
+   7Epb90nxiedd79jjgoDz/hFV8xSWfsasEMO7K6IBFMyEuTOAW2iUFobbt
+   w==;
+IronPort-SDR: TXpayqXD+Fm5l1V/YKJxt0LLMm48GEygH6rSGbmJ4p5nAyk9vFPmSeoZ8EA+wNVX1BhlY70HHR
+ SDkGf3AiwXgf5xUZoXFKIRXE4UAq0ozBlUmkiHCnvXCCtpbP+E50JLFi6F0BbJmhvB7TBlZ2Dl
+ xbgVlC5RQBVKuVfXBucili9FtGlWgv25wXqdJWyWqcBscYAVAs5LNRIs8FRkILuHWxzHZp2PrG
+ tlMcQkOJ17/9uMX7k+Ao0Y6DvQGMNiV9uYPoj4lZf4x+f3PY2vhK/J1D5zDcLWaSFs5x0eLb5F
+ oj0=
+X-IronPort-AV: E=Sophos;i="5.75,381,1589212800"; 
+   d="scan'208";a="246143154"
+Received: from h199-255-45-14.hgst.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
+  by ob1.hgst.iphmx.com with ESMTP; 22 Jul 2020 17:00:45 +0800
+IronPort-SDR: LZpomrcC3bFWtCbG+JeeKCm8Ug+cexmShQECtRA/saQcLm1lL39dQU8PXQwSeoUG9Q6PMX10RC
+ /rZMItaaQZiPAhXzo9YULTMUMcR6uaUjM=
+Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 22 Jul 2020 01:49:01 -0700
+IronPort-SDR: EP+fQv1hPUkfuUcoXKFxsa7fuv9WPHHebnWOjP3zSUUMZ1cVMExlvSKtvG63wtuJbK7hh2aB3B
+ NPJmve7zqO0A==
+WDCIronportException: Internal
+Received: from unknown (HELO redsun60.ssa.fujisawa.hgst.com) ([10.149.66.36])
+  by uls-op-cesaip02.wdc.com with ESMTP; 22 Jul 2020 02:00:44 -0700
+From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
+To:     David Sterba <dsterba@suse.cz>
+Cc:     linux-btrfs@vger.kernel.org,
+        Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Subject: [PATCH] btrfs: open-code remount flag setting in btrfs_remount
+Date:   Wed, 22 Jul 2020 18:00:39 +0900
+Message-Id: <20200722090039.17402-1-johannes.thumshirn@wdc.com>
+X-Mailer: git-send-email 2.26.2
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Guten Tag
+When we're (re)mounting a btrfs filesystem we set the
+BTRFS_FS_STATE_REMOUNTING state in fs_info to serialize against async
+reclaim or defrags.
 
-media-style.de wird nicht mehr ben=C3=B6tigt, und deshalb zu=
-r Feilbietung ausgeschrieben.
-Vielen Dank im Voraus.
+This flag is set in btrfs_remount_prepare() called by btrfs_remount(). As
+btrfs_remount_prepare() does nothing but setting this flag and doesn't
+have a second caller, we can just open-code the flag setting in
+btrfs_remount().
 
-Mit lieben Gr=
-=C3=BC=C3=9Fen
+Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+---
+ fs/btrfs/super.c | 7 +------
+ 1 file changed, 1 insertion(+), 6 deletions(-)
 
-Karl Geringer
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index a4f0bb29b8d6..19b1f0e8034e 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1782,11 +1782,6 @@ static void btrfs_resize_thread_pool(struct btrfs_fs_info *fs_info,
+ 				new_pool_size);
+ }
+ 
+-static inline void btrfs_remount_prepare(struct btrfs_fs_info *fs_info)
+-{
+-	set_bit(BTRFS_FS_STATE_REMOUNTING, &fs_info->fs_state);
+-}
+-
+ static inline void btrfs_remount_begin(struct btrfs_fs_info *fs_info,
+ 				       unsigned long old_opts, int flags)
+ {
+@@ -1837,7 +1832,7 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
+ 	int ret;
+ 
+ 	sync_filesystem(sb);
+-	btrfs_remount_prepare(fs_info);
++	set_bit(BTRFS_FS_STATE_REMOUNTING, &fs_info->fs_state);
+ 
+ 	if (data) {
+ 		void *new_sec_opts = NULL;
+-- 
+2.26.2
 
-..................................

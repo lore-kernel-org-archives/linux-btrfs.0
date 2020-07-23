@@ -2,89 +2,66 @@ Return-Path: <SRS0=EXPL=BC=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.2 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
-	SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.5 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AA58BC433E1
-	for <linux-btrfs@archiver.kernel.org>; Thu, 23 Jul 2020 21:48:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BCAE5C433E1
+	for <linux-btrfs@archiver.kernel.org>; Thu, 23 Jul 2020 21:54:34 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 774D620825
-	for <linux-btrfs@archiver.kernel.org>; Thu, 23 Jul 2020 21:48:33 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9C9F520714
+	for <linux-btrfs@archiver.kernel.org>; Thu, 23 Jul 2020 21:54:34 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726967AbgGWVsc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 23 Jul 2020 17:48:32 -0400
-Received: from ns.bouton.name ([109.74.195.142]:44522 "EHLO mail.bouton.name"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726390AbgGWVsc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 23 Jul 2020 17:48:32 -0400
-X-Greylist: delayed 505 seconds by postgrey-1.27 at vger.kernel.org; Thu, 23 Jul 2020 17:48:31 EDT
-Received: from [192.168.0.39] (adsl.bouton.name [82.234.193.23])
-        by mail.bouton.name (Postfix) with ESMTP id C4169B84C;
-        Thu, 23 Jul 2020 23:40:05 +0200 (CEST)
-Subject: Re: Error: Failed to read chunk root, fs destroyed
-To:     Davide Palma <dpfuturehacker@gmail.com>,
+        id S1726436AbgGWVyd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 23 Jul 2020 17:54:33 -0400
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:48248 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726304AbgGWVyd (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 23 Jul 2020 17:54:33 -0400
+Received: by james.kirk.hungrycats.org (Postfix, from userid 1002)
+        id 4072E77BA3C; Thu, 23 Jul 2020 17:54:31 -0400 (EDT)
+Date:   Thu, 23 Jul 2020 17:54:30 -0400
+From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
         linux-btrfs@vger.kernel.org
-References: <CAPtuuyEM7YZe8oaqhLivMJLshcsuQWvGuvrmHO1=5ZhYVN7hHA@mail.gmail.com>
-From:   Lionel Bouton <lionel-subscription@bouton.name>
-Message-ID: <b92eebb7-7a19-c853-f79c-f5eae669c817@bouton.name>
-Date:   Thu, 23 Jul 2020 23:40:04 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.10.0
+Subject: Re: [PATCH 0/2] btrfs: balance root leak and runaway balance fix
+Message-ID: <20200723215430.GC5890@hungrycats.org>
+References: <20200520065851.12689-1-wqu@suse.com>
+ <20200522111347.GJ18421@twin.jikos.cz>
 MIME-Version: 1.0
-In-Reply-To: <CAPtuuyEM7YZe8oaqhLivMJLshcsuQWvGuvrmHO1=5ZhYVN7hHA@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: 8bit
-Content-Language: en-US
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20200522111347.GJ18421@twin.jikos.cz>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi,
+On Fri, May 22, 2020 at 01:13:47PM +0200, David Sterba wrote:
+> On Wed, May 20, 2020 at 02:58:49PM +0800, Qu Wenruo wrote:
+> > This patchset will fix the most wanted balance bug, runaway balance.
+> > All my fault, and all small fixes.
+> 
+> Well, that happens.
+> 
+> d2311e698578 ("btrfs: relocation: Delay reloc tree deletion after merge_reloc_roots")
+> 
+> is the most broken patch in recent history (5.1+), there were so many
+> fixups but hopefully this is the last one. I've tagged the patches for
+> 5.1+ stable but we'll need manual backports due to the root refcount
+> changes in 5.7.
 
-Le 23/07/2020 à 23:15, Davide Palma a écrit :
-> Hello,
-> What happened:
->
-> I had a Gentoo linux install on a standard, ssd, btrfs partition.
-> After I removed lots of files, I wanted to shrink the partition, so i
-> shrunk it as much as possible and started a balance operation to
-> squeeze out more unallocated space. However, the balance operation was
-> not progressing. (the behaviour was identical to the one described
-> here https://www.opensuse-forum.de/thread/43376-btrfs-balance-caught-in-write-loop/
-> ). So I cancelled the balance and, following a piece of advice found
-> on the net, created a ramdisk that worked as a second device for a
-> raid1 setup.
->
-> dd if=/dev/zero of=/var/tmp/btrfs bs=1G count=5
->
-> losetup -v -f /var/tmp/btrfs
-> btrfs device add /dev/loop0 .
->
-> I tried running the balance again, but, as before, it wasn't
-> progressing. So I decided to remove the ramdisk and reconvert the now
-> raid1 partition to a single one.
+The patch 1dae7e0e58b4 "btrfs: reloc: clear DEAD_RELOC_TREE bit for
+orphan roots to prevent runaway balance" does apply to 5.7 itself, but
+it is not present in 5.7.10.  I've been running it in test (and even a
+few pre-prod) systems since May.
 
-I probably won't be able to help but while this is fresh in your memory
-please try to remember the exact sequence.
+We still get someone in IRC with a runaway balance every week or so.
+Currently we can only tell them to wait for 5.8, or roll all the way
+back to 4.19.
 
-If I'm not mistaken the sequence of operations above isn't enough to
-store data in raid1 block groups.
-
-After device add you should still be using the same allocation policy as
-the one chosen during mkfs. By default this should be :
-metadata/system : dup,
-data : single.
-
-If that's indeed the case, removing the loop device later on will indeed
-break the filesystem as several metadata block groups will be entirely
-missing (dup will probably have allocated the two duplicates on the loop
-block device where space was available).
-
-If you managed to create raid1 block groups the exact sequence of events
-will probably be useful for more knowledgeable people.
-
-Best regards,
-
-Lionel
+> I reproduced the umount crash and verified the fix, the runaway balance
+> does not happen anymore in the test so I guess we have all the needed
+> fixes in place to allow the fast balance cancel. Thanks.

@@ -2,32 +2,36 @@ Return-Path: <SRS0=3GY2=BG=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_GIT autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-13.0 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 78301C433E1
-	for <linux-btrfs@archiver.kernel.org>; Mon, 27 Jul 2020 22:04:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D0685C433EC
+	for <linux-btrfs@archiver.kernel.org>; Mon, 27 Jul 2020 22:05:05 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 58FFF206D7
-	for <linux-btrfs@archiver.kernel.org>; Mon, 27 Jul 2020 22:04:58 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B768D20809
+	for <linux-btrfs@archiver.kernel.org>; Mon, 27 Jul 2020 22:05:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726194AbgG0WE5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 27 Jul 2020 18:04:57 -0400
-Received: from mx2.suse.de ([195.135.220.15]:58034 "EHLO mx2.suse.de"
+        id S1726946AbgG0WFF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 27 Jul 2020 18:05:05 -0400
+Received: from mx2.suse.de ([195.135.220.15]:58082 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726140AbgG0WE5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 27 Jul 2020 18:04:57 -0400
+        id S1726140AbgG0WFD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 27 Jul 2020 18:05:03 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 79505AB7A
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Jul 2020 22:05:06 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 84574AB7A;
+        Mon, 27 Jul 2020 22:05:12 +0000 (UTC)
 From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/3] btrfs: Enumerate and export exclusive operations
-Date:   Mon, 27 Jul 2020 17:04:48 -0500
-Message-Id: <20200727220451.30680-1-rgoldwyn@suse.de>
+Cc:     Goldwyn Rodrigues <rgoldwyn@suse.com>
+Subject: [PATCH 2/3] btrfs: export currently executing exclusive operation via sysfs
+Date:   Mon, 27 Jul 2020 17:04:50 -0500
+Message-Id: <20200727220451.30680-3-rgoldwyn@suse.de>
 X-Mailer: git-send-email 2.26.2
+In-Reply-To: <20200727220451.30680-1-rgoldwyn@suse.de>
+References: <20200727220451.30680-1-rgoldwyn@suse.de>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -35,28 +39,74 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This would enable our tools to specify precisely which operation is
-running on why starting an exclusive operation failed. The series also
-adds a sysfs_notify() to alert userspace when the state changes, so
-userspace can perform select() on it to get notified of the change.
-This would enable us to enqueue a command which will wait for current
-exclusive operation to complete before issuing the next exclusive
-operation. This has been done synchronously as opposed to a background
-process, or else error collection (if any) will become a nightmare.
+From: Goldwyn Rodrigues <rgoldwyn@suse.com>
 
-This third patch further expands the balance information such as the
-state and the current statistics. I am hoping that it could be used to
-move the logic of guessing/managing the right ioctls out of the kernel
-and into the tools. However, if you feel that it is inappropriate, the
-patch can be ignored.
+/sys/fs/<fsid>/exclusive_operation contains the currently executing
+exclusive operation. Add a sysfs_notify() when operation end, so
+userspace can be notified of exclusive operation is finished.
 
-For backward compatibility, the tools ignore if the sys file is not
-present. Would you prefer an error if "--enqueue" option is issued on an
-older kernel?
+Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
+---
+ fs/btrfs/ioctl.c |  2 ++
+ fs/btrfs/sysfs.c | 25 +++++++++++++++++++++++++
+ 2 files changed, 27 insertions(+)
 
-Regards,
-
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 2f45b88d7eed..a00d6d5c42c1 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -373,6 +373,8 @@ bool btrfs_exclop_start(struct btrfs_fs_info *fs_info, int type)
+ void btrfs_exclop_finish(struct btrfs_fs_info *fs_info)
+ {
+ 	atomic_set(&fs_info->exclusive_operation, BTRFS_EXCLOP_NONE);
++	sysfs_notify(&fs_info->fs_devices->fsid_kobj, NULL,
++			"exclusive_operation");
+ }
+ 
+ /*
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index a39bff64ff24..71950c121588 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -808,6 +808,30 @@ static ssize_t btrfs_checksum_show(struct kobject *kobj,
+ 
+ BTRFS_ATTR(, checksum, btrfs_checksum_show);
+ 
++static ssize_t btrfs_exclusive_operation_show(struct kobject *kobj,
++		struct kobj_attribute *a, char *buf)
++{
++	struct btrfs_fs_info *fs_info = to_fs_info(kobj);
++	switch (atomic_read(&fs_info->exclusive_operation)) {
++		case  BTRFS_EXCLOP_NONE:
++			return scnprintf(buf, PAGE_SIZE, "none\n");
++		case BTRFS_EXCLOP_BALANCE:
++			return scnprintf(buf, PAGE_SIZE, "balance\n");
++		case BTRFS_EXCLOP_DEV_ADD:
++			return scnprintf(buf, PAGE_SIZE, "device add\n");
++		case BTRFS_EXCLOP_DEV_REPLACE:
++			return scnprintf(buf, PAGE_SIZE, "device replace\n");
++		case BTRFS_EXCLOP_DEV_REMOVE:
++			return scnprintf(buf, PAGE_SIZE, "device remove\n");
++		case BTRFS_EXCLOP_SWAP_ACTIVATE:
++			return scnprintf(buf, PAGE_SIZE, "swap activate\n");
++		case BTRFS_EXCLOP_RESIZE:
++			return scnprintf(buf, PAGE_SIZE, "resize\n");
++	}
++	return 0;
++}
++BTRFS_ATTR(, exclusive_operation, btrfs_exclusive_operation_show);
++
+ static const struct attribute *btrfs_attrs[] = {
+ 	BTRFS_ATTR_PTR(, label),
+ 	BTRFS_ATTR_PTR(, nodesize),
+@@ -816,6 +840,7 @@ static const struct attribute *btrfs_attrs[] = {
+ 	BTRFS_ATTR_PTR(, quota_override),
+ 	BTRFS_ATTR_PTR(, metadata_uuid),
+ 	BTRFS_ATTR_PTR(, checksum),
++	BTRFS_ATTR_PTR(, exclusive_operation),
+ 	NULL,
+ };
+ 
 -- 
-Goldwyn
-
+2.26.2
 

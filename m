@@ -7,28 +7,28 @@ X-Spam-Status: No, score=-13.0 required=3.0 tests=BAYES_00,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CCBADC433E0
-	for <linux-btrfs@archiver.kernel.org>; Mon, 27 Jul 2020 22:08:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E78C7C433E1
+	for <linux-btrfs@archiver.kernel.org>; Mon, 27 Jul 2020 22:08:35 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id B3D9A2075D
-	for <linux-btrfs@archiver.kernel.org>; Mon, 27 Jul 2020 22:08:41 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CFAF22075D
+	for <linux-btrfs@archiver.kernel.org>; Mon, 27 Jul 2020 22:08:35 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726731AbgG0WIl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 27 Jul 2020 18:08:41 -0400
-Received: from mx2.suse.de ([195.135.220.15]:58626 "EHLO mx2.suse.de"
+        id S1726590AbgG0WIf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 27 Jul 2020 18:08:35 -0400
+Received: from mx2.suse.de ([195.135.220.15]:58608 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726140AbgG0WIk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 27 Jul 2020 18:08:40 -0400
+        id S1726140AbgG0WIe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 27 Jul 2020 18:08:34 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 6A9D0AB7A;
-        Mon, 27 Jul 2020 22:08:49 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id B4F01B1B3;
+        Mon, 27 Jul 2020 22:08:43 +0000 (UTC)
 From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: [PATCH 4/4] btrfs-progs: Enqueue command if it can't be performed immediately
-Date:   Mon, 27 Jul 2020 17:08:12 -0500
-Message-Id: <20200727220812.2187-4-rgoldwyn@suse.de>
+Subject: [PATCH 2/4] btrfs-progs: add sysfs file reading functions
+Date:   Mon, 27 Jul 2020 17:08:10 -0500
+Message-Id: <20200727220812.2187-2-rgoldwyn@suse.de>
 X-Mailer: git-send-email 2.26.2
 In-Reply-To: <20200727220812.2187-1-rgoldwyn@suse.de>
 References: <20200727220451.30680-1-rgoldwyn@suse.de>
@@ -42,228 +42,111 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Goldwyn Rodrigues <rgoldwyn@suse.com>
 
-Wait for the current exclusive operation to finish before issuing the
-command ioctl, so we have a better chance of success.
-
-Q: The resize argument parsing is hackish. Is there a better way to do
-this?
+Functions to read and and open sysfs files.
+Given a fd, find the fsid associated with the mount and convert into
+the sysfs directory to look. Read the exclusive_operation file to find
+the current exclusive operation running.
 
 Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
 ---
- cmds/device.c     | 56 +++++++++++++++++++++++++++++++++++++++--------
- cmds/filesystem.c | 25 +++++++++++++++++----
- common/sysfs.c    | 26 ++++++++++++++++++++++
- common/utils.h    |  1 +
- 4 files changed, 95 insertions(+), 13 deletions(-)
+ Makefile       |  4 ++--
+ common/sysfs.c | 60 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ common/utils.h |  3 +++
+ 3 files changed, 65 insertions(+), 2 deletions(-)
+ create mode 100644 common/sysfs.c
 
-diff --git a/cmds/device.c b/cmds/device.c
-index 6acd4ae6..12d92dac 100644
---- a/cmds/device.c
-+++ b/cmds/device.c
-@@ -49,6 +49,7 @@ static const char * const cmd_device_add_usage[] = {
- 	"",
- 	"-K|--nodiscard    do not perform whole device TRIM on devices that report such capability",
- 	"-f|--force        force overwrite existing filesystem on the disk",
-+	"-q|--enqueue	   enqueue if an exclusive operation is running",
- 	NULL
- };
- 
-@@ -62,6 +63,7 @@ static int cmd_device_add(const struct cmd_struct *cmd,
- 	int force = 0;
- 	int last_dev;
- 	char exop[BTRFS_SYSFS_EXOP_SIZE];
-+	bool enqueue = false;
- 
- 	optind = 0;
- 	while (1) {
-@@ -69,10 +71,11 @@ static int cmd_device_add(const struct cmd_struct *cmd,
- 		static const struct option long_options[] = {
- 			{ "nodiscard", optional_argument, NULL, 'K'},
- 			{ "force", no_argument, NULL, 'f'},
-+			{ "enqueue", no_argument, NULL, 'q'},
- 			{ NULL, 0, NULL, 0}
- 		};
- 
--		c = getopt_long(argc, argv, "Kf", long_options, NULL);
-+		c = getopt_long(argc, argv, "Kfq", long_options, NULL);
- 		if (c < 0)
- 			break;
- 		switch (c) {
-@@ -82,6 +85,9 @@ static int cmd_device_add(const struct cmd_struct *cmd,
- 		case 'f':
- 			force = 1;
- 			break;
-+		case 'q':
-+			enqueue = true;
-+			break;
- 		default:
- 			usage_unknown_option(cmd, argv);
- 		}
-@@ -98,9 +104,15 @@ static int cmd_device_add(const struct cmd_struct *cmd,
- 		return 1;
- 
- 	if (get_exclusive_operation(fdmnt, exop) > 0 && strcmp(exop, "none")) {
--		error("unable to add device: %s in progress", exop);
--		close_file_or_dir(fdmnt, dirstream);
--		return 1;
-+		if (enqueue) {
-+			printf("%s in progress. Waiting for %s to finish.\n",
-+					exop, exop);
-+			wait_for_exclusive_operation(fdmnt);
-+		} else {
-+			error("unable to add: %s in progress", exop);
-+			close_file_or_dir(fdmnt, dirstream);
-+			return 1;
-+		}
- 	}
- 
- 	for (i = optind; i < last_dev; i++){
-@@ -163,8 +175,27 @@ static int _cmd_device_remove(const struct cmd_struct *cmd,
- 	int i, fdmnt, ret = 0;
- 	DIR	*dirstream = NULL;
- 	char exop[BTRFS_SYSFS_EXOP_SIZE];
-+	bool enqueue = false;
- 
--	clean_args_no_options(cmd, argc, argv);
-+
-+	while (1) {
-+		int c;
-+		static const struct option long_options[] = {
-+			{ "enqueue", no_argument, NULL, 'q'},
-+			{ NULL, 0, NULL, 0}
-+		};
-+
-+		c = getopt_long(argc, argv, "q", long_options, NULL);
-+		if (c < 0)
-+			break;
-+		switch (c) {
-+		case 'q':
-+			enqueue = true;
-+			break;
-+		default:
-+			usage_unknown_option(cmd, argv);
-+		}
-+	}
- 
- 	if (check_argc_min(argc - optind, 2))
- 		return 1;
-@@ -176,9 +207,15 @@ static int _cmd_device_remove(const struct cmd_struct *cmd,
- 		return 1;
- 
- 	if (get_exclusive_operation(fdmnt, exop) > 0 && strcmp(exop, "none")) {
--		error("unable to remove device: %s in progress", exop);
--		close_file_or_dir(fdmnt, dirstream);
--		return 1;
-+		if (enqueue) {
-+			printf("%s in progress. Waiting for %s to finish.\n",
-+					exop, exop);
-+			wait_for_exclusive_operation(fdmnt);
-+		} else {
-+			error("unable to remove device: %s in progress", exop);
-+			close_file_or_dir(fdmnt, dirstream);
-+			return 1;
-+		}
- 	}
- 
- 	for(i = optind; i < argc - 1; i++) {
-@@ -251,7 +288,8 @@ static int _cmd_device_remove(const struct cmd_struct *cmd,
- 	"the device.",								\
- 	"If 'missing' is specified for <device>, the first device that is",	\
- 	"described by the filesystem metadata, but not present at the mount",	\
--	"time will be removed. (only in degraded mode)"
-+	"time will be removed. (only in degraded mode)", \
-+	"-q|--enqueue	   enqueue if an exclusive operation is running"
- 
- static const char * const cmd_device_remove_usage[] = {
- 	"btrfs device remove <device>|<devid> [<device>|<devid>...] <path>",
-diff --git a/cmds/filesystem.c b/cmds/filesystem.c
-index c3efb405..a584b1d3 100644
---- a/cmds/filesystem.c
-+++ b/cmds/filesystem.c
-@@ -1080,8 +1080,19 @@ static int cmd_filesystem_resize(const struct cmd_struct *cmd,
- 	DIR	*dirstream = NULL;
- 	struct stat st;
- 	char exop[BTRFS_SYSFS_EXOP_SIZE];
-+	bool enqueue = false;
- 
--	clean_args_no_options_relaxed(cmd, argc, argv);
-+	while(1) {
-+		int c = getopt(argc - 2, argv, "q");
-+		if (c < 0)
-+			break;
-+
-+		switch(c) {
-+		case 'q':
-+			enqueue = true;
-+			break;
-+		}
-+	}
- 
- 	if (check_argc_exact(argc - optind, 2))
- 		return 1;
-@@ -1112,9 +1123,15 @@ static int cmd_filesystem_resize(const struct cmd_struct *cmd,
- 		return 1;
- 
- 	if (get_exclusive_operation(fd, exop) > 0 && strcmp(exop, "none")) {
--		error("unable to resize: %s in progress", exop);
--		close_file_or_dir(fd, dirstream);
--		return 1;
-+		if (enqueue) {
-+			printf("%s in progress. Waiting for %s to finish.\n",
-+					exop, exop);
-+			wait_for_exclusive_operation(fd);
-+		} else {
-+			error("unable to resize: %s in progress", exop);
-+			close_file_or_dir(fd, dirstream);
-+			return 1;
-+		}
- 	}
- 
- 	printf("Resize '%s' of '%s'\n", path, amount);
+diff --git a/Makefile b/Makefile
+index ee57d9f8..8a267c45 100644
+--- a/Makefile
++++ b/Makefile
+@@ -168,8 +168,8 @@ libbtrfs_objects = send-stream.o send-utils.o kernel-lib/rbtree.o btrfs-list.o \
+ 		   kernel-shared/free-space-tree.o repair.o kernel-shared/inode-item.o \
+ 		   kernel-shared/file-item.o \
+ 		   kernel-lib/raid56.o kernel-lib/tables.o \
+-		   common/device-scan.o common/path-utils.o \
+-		   common/utils.o libbtrfsutil/subvolume.o libbtrfsutil/stubs.o \
++		   common/device-scan.o common/path-utils.o common/utils.o \
++		   common/sysfs.o libbtrfsutil/subvolume.o libbtrfsutil/stubs.o \
+ 		   crypto/hash.o crypto/xxhash.o $(CRYPTO_OBJECTS)
+ libbtrfs_headers = send-stream.h send-utils.h send.h kernel-lib/rbtree.h btrfs-list.h \
+ 	       crypto/crc32c.h kernel-lib/list.h kerncompat.h \
 diff --git a/common/sysfs.c b/common/sysfs.c
-index 91ed270c..0067d098 100644
---- a/common/sysfs.c
+new file mode 100644
+index 00000000..91ed270c
+--- /dev/null
 +++ b/common/sysfs.c
-@@ -58,3 +58,29 @@ int get_exclusive_operation(int mp_fd, char *val)
- 	*s = '\0';
- 	return strlen(val);
- }
+@@ -0,0 +1,60 @@
 +
-+int sysfs_wait(int fd, int seconds)
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <fcntl.h>
++
++#include <unistd.h>
++#include <sys/select.h>
++#include <uuid/uuid.h>
++
++#include "common/utils.h"
++
++static u8 fsid[BTRFS_UUID_SIZE] = {0};
++
++int sysfs_open(int fd, const char *filename)
 +{
-+	fd_set fds;
-+	struct timeval tv;
++	char fsid_str[BTRFS_UUID_UNPARSED_SIZE];
++	int ret;
++	char sysfs_file[128];
 +
-+	FD_ZERO(&fds);
-+	FD_SET(fd, &fds);
++	if (fsid[0] == 0) {
++		ret = get_fsid_fd(fd, fsid);
++		if (ret < 0)
++			return ret;
++	}
 +
-+	tv.tv_sec = seconds;
-+	tv.tv_usec = 0;
-+
-+	return select(fd+1, NULL, NULL, &fds, &tv);
++	uuid_unparse(fsid, fsid_str);
++	snprintf(sysfs_file, 128, "/sys/fs/btrfs/%s/%s", fsid_str, filename);
++	return open(sysfs_file, O_RDONLY);
 +}
 +
-+void wait_for_exclusive_operation(int dirfd)
++int sysfs_get_str_fd(int fd, char *val, int size)
 +{
-+        char exop[BTRFS_SYSFS_EXOP_SIZE];
-+	int fd;
++	lseek(fd, 0, SEEK_SET);
++	memset(val, '\0', size);
++	return read(fd, val, size);
++}
 +
-+        fd = sysfs_open(dirfd, "exclusive_operation");
-+        while ((sysfs_get_str_fd(fd, exop, BTRFS_SYSFS_EXOP_SIZE) > 0) &&
-+		strncmp(exop, "none", 4))
-+			sysfs_wait(fd, 1);
++int get_exclusive_operation(int mp_fd, char *val)
++{
++	char *s;
++	int fd;
++	int n;
++
++	fd = sysfs_open(mp_fd, "exclusive_operation");
++	if (fd < 0)
++		return fd;
++
++	n = sysfs_get_str_fd(fd, val, BTRFS_SYSFS_EXOP_SIZE);
 +	close(fd);
++
++	if (n < 0)
++		return n;
++
++	s = strchr(val, '\n');
++	if (!s)
++		return n;
++
++	*s = '\0';
++	return strlen(val);
 +}
 diff --git a/common/utils.h b/common/utils.h
-index be8aab58..f141edb6 100644
+index e34bb5a4..be8aab58 100644
 --- a/common/utils.h
 +++ b/common/utils.h
-@@ -155,5 +155,6 @@ int btrfs_warn_multiple_profiles(int fd);
+@@ -153,4 +153,7 @@ void init_rand_seed(u64 seed);
+ char *btrfs_test_for_multiple_profiles(int fd);
+ int btrfs_warn_multiple_profiles(int fd);
  
- #define BTRFS_SYSFS_EXOP_SIZE		16
- int get_exclusive_operation(int fd, char *val);
-+void wait_for_exclusive_operation(int fd);
- 
++#define BTRFS_SYSFS_EXOP_SIZE		16
++int get_exclusive_operation(int fd, char *val);
++
  #endif
 -- 
 2.26.2

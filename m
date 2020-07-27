@@ -6,68 +6,81 @@ X-Spam-Status: No, score=-5.5 required=3.0 tests=BAYES_00,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
 	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B9647C43445
-	for <linux-btrfs@archiver.kernel.org>; Mon, 27 Jul 2020 14:41:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A6E8FC433EC
+	for <linux-btrfs@archiver.kernel.org>; Mon, 27 Jul 2020 15:17:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id A0F7322B3F
-	for <linux-btrfs@archiver.kernel.org>; Mon, 27 Jul 2020 14:41:37 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8FEFE2070B
+	for <linux-btrfs@archiver.kernel.org>; Mon, 27 Jul 2020 15:17:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729350AbgG0OIB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 27 Jul 2020 10:08:01 -0400
-Received: from mx2.suse.de ([195.135.220.15]:48556 "EHLO mx2.suse.de"
+        id S1729200AbgG0PRy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 27 Jul 2020 11:17:54 -0400
+Received: from mx2.suse.de ([195.135.220.15]:48554 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1729341AbgG0OH7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 27 Jul 2020 10:07:59 -0400
+        id S1728824AbgG0PRq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 27 Jul 2020 11:17:46 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 60EDBAE47;
-        Mon, 27 Jul 2020 14:08:08 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 07B93AC97;
+        Mon, 27 Jul 2020 15:17:56 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id D36F6DA701; Mon, 27 Jul 2020 16:07:29 +0200 (CEST)
-Date:   Mon, 27 Jul 2020 16:07:29 +0200
+        id 5AD42DA701; Mon, 27 Jul 2020 17:17:17 +0200 (CEST)
+Date:   Mon, 27 Jul 2020 17:17:17 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH 2/2] btrfs: fix root leak printk to use %lld instead of
- %llu
-Message-ID: <20200727140729.GM3703@twin.jikos.cz>
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     dsterba@suse.cz, linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: Re: [PATCH 1/2] btrfs: free fs roots on failed mount
+Message-ID: <20200727151717.GO3703@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
-        kernel-team@fb.com
+Mail-Followup-To: dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
+        linux-btrfs@vger.kernel.org, kernel-team@fb.com
 References: <20200722160722.8641-1-josef@toxicpanda.com>
- <20200722160722.8641-2-josef@toxicpanda.com>
- <20200723142041.GD3703@twin.jikos.cz>
- <ce52445d-b104-252c-005f-9bc13b2141d7@gmx.com>
- <20200727140314.GL3703@twin.jikos.cz>
+ <20200727141947.GN3703@twin.jikos.cz>
+ <b8a83f87-752d-98a5-3674-fde808b77af4@toxicpanda.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20200727140314.GL3703@twin.jikos.cz>
+In-Reply-To: <b8a83f87-752d-98a5-3674-fde808b77af4@toxicpanda.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Jul 27, 2020 at 04:03:14PM +0200, David Sterba wrote:
-> On Fri, Jul 24, 2020 at 08:40:17AM +0800, Qu Wenruo wrote:
-> > Nope. We won't have that many roots.
+On Mon, Jul 27, 2020 at 10:33:32AM -0400, Josef Bacik wrote:
+> >> @@ -3441,6 +3440,7 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
+> >>   	btrfs_put_block_group_cache(fs_info);
+> >>   
+> >>   fail_tree_roots:
+> >> +	btrfs_free_fs_roots(fs_info);
+> >>   	free_root_pointers(fs_info, true);
 > > 
-> > In fact, for subvolumes, the highest id is only 2 ^ 48, an special limit
-> > introduced for qgroup.
+> > The data reloc tree is freed inside free_root_pointers, that it's also
+> > in the radix tree is for convenience so I'd rather fix it inside
+> > free_root_pointers and not reorder btrfs_free_fs_roots.
 > 
-> It's not a hard limit and certainly can have subvolumes with numbers
-> that high. That qgoups interpret the qgroup in some way is not a
-> limitation on subvolumes. We'll have to start reusing the subvolume ids
-> eventually, with qgroups we can on.
+> We can't do that, because free_root_pointers() is called to drop the extent 
+> buffers when we're looping through the backup roots.  btrfs_free_fs_roots() is 
+> the correct thing to do here, it goes through anything that ended up in the 
+> radix tree.  Thanks,
 
-Let me rephrase without the typos:
+I see, free_root_pointers is used elsewhere. I'm concerned about the
+reordeing because there are several functions that are now called after
+the roots are freed.
 
-It's not a hard limit and we certainly can have subvolumes with numbers
-that high. That qgroups interpret the qgroup id in some way is not a
-limitation on subvolumes. We'll have to start reusing the subvolume ids
-eventually, when qgroups are turned on.
+(before)	btrfs_free_fs_roots(fs_info);
 
-(The comment about 2^32/2^48 was incorrect.)
+		kthread_stop(fs_info->cleaner_kthread);
+		filemap_write_and_wait(fs_info->btree_inode->i_mapping);
+		btrfs_sysfs_remove_mounted(fs_info);
+		btrfs_sysfs_remove_fsid(fs_info->fs_devices);
+		btrfs_put_block_group_cache(fs_info);
+
+(after)		btrfs_free_fs_roots(fs_info);
+
+If something called by btrfs_free_fs_roots depends on structures
+removed/cleaned by the other functions, eg. btrfs_put_block_group_cache
+ti could be a problem.
+
+I haven't spotted anything so far, the functions are called after
+failure still during mount, this is easier than shutdown sequence after
+a full mount.

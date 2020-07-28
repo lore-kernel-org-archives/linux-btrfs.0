@@ -2,62 +2,122 @@ Return-Path: <SRS0=QcMt=BH=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.5 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.1 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 10FBBC433DF
-	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Jul 2020 15:09:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C6D49C433E1
+	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Jul 2020 17:25:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id ED985204EA
-	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Jul 2020 15:09:47 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6967C20786
+	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Jul 2020 17:25:06 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=dxuuu.xyz header.i=@dxuuu.xyz header.b="HqAA/xkq";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="hRwdwqpD"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730635AbgG1PJr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 28 Jul 2020 11:09:47 -0400
-Received: from mx2.suse.de ([195.135.220.15]:33010 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1730573AbgG1PJq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 28 Jul 2020 11:09:46 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 49308B58D;
-        Tue, 28 Jul 2020 15:09:56 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 6AE67DA6FD; Tue, 28 Jul 2020 17:09:16 +0200 (CEST)
-Date:   Tue, 28 Jul 2020 17:09:16 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
-        linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH 2/2] btrfs: fix root leak printk to use %lld instead of
- %llu
-Message-ID: <20200728150916.GX3703@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
-        kernel-team@fb.com
-References: <20200722160722.8641-1-josef@toxicpanda.com>
- <20200722160722.8641-2-josef@toxicpanda.com>
- <20200723142041.GD3703@twin.jikos.cz>
- <ce52445d-b104-252c-005f-9bc13b2141d7@gmx.com>
- <20200727140314.GL3703@twin.jikos.cz>
- <dfdb8641-99ce-a2e1-ea4f-8489d3cb5757@gmx.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <dfdb8641-99ce-a2e1-ea4f-8489d3cb5757@gmx.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+        id S1731931AbgG1RZF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 28 Jul 2020 13:25:05 -0400
+Received: from out3-smtp.messagingengine.com ([66.111.4.27]:37267 "EHLO
+        out3-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1731684AbgG1RZF (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 28 Jul 2020 13:25:05 -0400
+Received: from compute4.internal (compute4.nyi.internal [10.202.2.44])
+        by mailout.nyi.internal (Postfix) with ESMTP id 49A9F5C00EE;
+        Tue, 28 Jul 2020 13:25:04 -0400 (EDT)
+Received: from mailfrontend2 ([10.202.2.163])
+  by compute4.internal (MEProxy); Tue, 28 Jul 2020 13:25:04 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=dxuuu.xyz; h=
+        mime-version:content-transfer-encoding:content-type:cc:subject
+        :from:to:date:message-id:in-reply-to; s=fm1; bh=TVHW4Yzu5y8ZEU3/
+        zWhzLSsjif6OERBdpdBOXAJIVJ0=; b=HqAA/xkqsV5dC/Wz/rloyj9lV6/LpD/a
+        aWAem4BQ2lSVG1PMCMgb9nCwwoRfYoq9ppddmEMHnD9GdFfSyFKkGeuh/a3eQdXK
+        ADFK7oIN89zKir7NzkVtCxWKtRPV7a+NYAguVIcWJDTtugMYWVFHcf2yePjnYe9t
+        Be9s88Y555EFtFxdc7ggX4brydoXsdzuVZTStn8LpsyxhEh1jTXGO6wljMAJr2sT
+        x0yUQUtKscj2R0HqtSkkFRrtn/ah7shsJMBtyze1MtS/L9666ze38NFryMO/09qn
+        j/4v3+FMQKZgd0O4dfZZv7Qfc8Ej4FTVZW62vHD2QaYedVq69k69FQ==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+        messagingengine.com; h=cc:content-transfer-encoding:content-type
+        :date:from:in-reply-to:message-id:mime-version:subject:to
+        :x-me-proxy:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=
+        fm3; bh=TVHW4Yzu5y8ZEU3/zWhzLSsjif6OERBdpdBOXAJIVJ0=; b=hRwdwqpD
+        W3vn3E/SV9K9A9Y44e45ukaommYns8UqlHX5zqD+MwW6AQY3MrRs2HxiUg2brv2j
+        qNnNtscWv9fuHHYGrIkfsrN41bug0z3BD686GLkDpu/JRWE3Rv2jdrL4FeDmd7yB
+        JI1bU1QLbtJ+sS6Mt1hU80ViW2iP0Lw0ijvpPn0PXsGJUCrXJCr0CKAMiO6YlqK7
+        6oN7o9DfSweyKlEnEa9f79dQkAjF+f4CPjxgJNPyLN50lXzJQlZpIQjOaD9vkgVI
+        cGV/ZzJuCBV3FkDLOX/rmBYNS8iLCTAlcavYfBI22+3URpZKB7nqC17IBmStnw4E
+        DaB2DHmvRcuWxQ==
+X-ME-Sender: <xms:b18gXyzqp6x5UgEz6IuK0MQK7IeWIlyHooj0kVpMWmWwD6JCRkTYVQ>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeduiedriedvgdduudduucetufdoteggodetrfdotf
+    fvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfqfgfvpdfurfetoffkrfgpnffqhgen
+    uceurghilhhouhhtmecufedttdenucgfrhhlucfvnfffucdlfeehmdenucfjughrpegggf
+    gtuffhvfffkfgjsehtqhertddttdejnecuhfhrohhmpedfffgrnhhivghlucgiuhdfuceo
+    ugiguhesugiguhhuuhdrgiihiieqnecuggftrfgrthhtvghrnhepgfffleeuveeghfdvve
+    dvvdelieetgeehgeeuffffgeeuleekueektddtkeeivedtnecuffhomhgrihhnpehgihht
+    hhhusgdrtghomhenucfkphepjeefrdelfedrvdegjedrudefgeenucevlhhushhtvghruf
+    hiiigvpedtnecurfgrrhgrmhepmhgrihhlfhhrohhmpegugihusegugihuuhhurdighiii
+X-ME-Proxy: <xmx:b18gX-RYaLDWzxRYGnG97UG12Q4i3C8r9lnb4hlHhQPD7AirubGW0g>
+    <xmx:b18gX0UJ233kTpQnfkakCr_wF2QMWL_y-2sUtJuF4_eDEb4sqKGeIg>
+    <xmx:b18gX4hcFgdUAim0O__vMBLFMn9mzjlUs0d2IBeJDAzyO9AQlLpf9A>
+    <xmx:cF8gX95wWcDJ6B6BOlGW_5GxdMI2FLjC9PI5d6aDHRmz-YYD7li-IA>
+Received: from localhost (c-73-93-247-134.hsd1.ca.comcast.net [73.93.247.134])
+        by mail.messagingengine.com (Postfix) with ESMTPA id 6A18430600A9;
+        Tue, 28 Jul 2020 13:25:02 -0400 (EDT)
+Mime-Version: 1.0
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=UTF-8
+Cc:     "Daniel Xu" <dxu@dxuuu.xyz>, <linux-btrfs@vger.kernel.org>,
+        <kernel-team@fb.com>
+Subject: Re: [PATCH v2] btrfs-progs: Add basic .editorconfig
+From:   "Daniel Xu" <dxu@dxuuu.xyz>
+To:     <dsterba@suse.cz>, "Qu Wenruo" <quwenruo.btrfs@gmx.com>
+Date:   Tue, 28 Jul 2020 10:24:31 -0700
+Message-Id: <C4IFKD9DTBS7.15BFX5LGQB0O5@maharaja>
+In-Reply-To: <20200728125732.GS3703@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Jul 28, 2020 at 07:47:00AM +0800, Qu Wenruo wrote:
-> I still remember that we put that limit as a hard limit for subvolume
-> creation.
+On Tue Jul 28, 2020 at 5:57 AM PDT, David Sterba wrote:
+> On Tue, Jul 28, 2020 at 08:12:40PM +0800, Qu Wenruo wrote:
+> > >>> +trim_trailing_whitespace =3D true
+> > >>
+> > >> Does this setting apply on lines that get changed or does it affect =
+the
+> > >> whole file? If it's just for the lines, then it's what we want.
+> > >>
+> > > At least from the vim plugin code, it's just for the new lines:
+> > >=20
+> > > https://github.com/editorconfig/editorconfig-vim/blob/0a3c1d8082e38a5=
+ebadcba7bb3a608d88a9ff044/plugin/editorconfig.vim#L494
+> > >=20
+> > > It just call the replace on the current line.
+> >=20
+> > My bad, %s, it replaces all existing lines...
+>
+> So this would introduce unrelated changes, but it seems that we don't
+> have much trailing whitespaces in progs codebase:
+>
+> $ git grep '\s\+$'
+> btrfs-fragments.c:
+> btrfs-fragments.c: black =3D gdImageColorAllocate(im, 0, 0, 0);
+> crypto/crc32c.c:/*
+> crypto/crc32c.c: *
+> crypto/crc32c.c: * Software Foundation; either version 2 of the License,
+> or (at your option)
+> crypto/crc32c.c: * Steps through buffer one byte at at time, calculates
+> reflected
+> crypto/crc32c.c: * Steps through buffer one byte at at time, calculates
+> reflected
+> kernel-lib/radix-tree.h: *
+> kernel-lib/radix-tree.h: *
+> kernel-lib/rbtree.c: node =3D node->rb_right;
+> kernel-lib/rbtree.c: node =3D node->rb_left;
+> kernel-lib/rbtree.h:
+>
+> filtering only the sources. So let's keep it in the config.
 
-Ok, I found it, added by your patch e09fe2d2119800e6 in 2015. It's not
-documented anywhere, eg. manual page 5 states the limit is 2^64.
-
-2^48 should be enough for everyone and we can't probably changed it
-right now as it's part of API and ABI. Oh well.
+Sounds good. Should I send a followup patch to delete the existing
+trailing lines?

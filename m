@@ -2,187 +2,141 @@ Return-Path: <SRS0=QcMt=BH=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-11.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
-	NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-4.1 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 02794C433E5
-	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Jul 2020 13:00:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 29EA7C433EA
+	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Jul 2020 13:14:59 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D2C4E20663
-	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Jul 2020 13:00:57 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0466C206D4
+	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Jul 2020 13:14:59 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="FH8xTcWb"
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="aaIDLhD/"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729854AbgG1NA5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 28 Jul 2020 09:00:57 -0400
-Received: from mout.gmx.net ([212.227.17.22]:55211 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1729431AbgG1NA4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 28 Jul 2020 09:00:56 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1595941247;
-        bh=gLszeCibTiblcGe6WhfLumcSuC2I5TTADba8enLjSJk=;
-        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
-        b=FH8xTcWbXoKEj7jsAE6QgXeJEc0tmoB7aOZPxvSVJIyF+1VgdYcjVGbErlWBu1nEp
-         5rb8OvzzDuXaZYzVlBcN4PRqBPDSJzQjqMxWYCSAyZ8qDqN1/RyqO7+81fbYmaTzxS
-         aaRFxBD8ogrSBKxqFKa0A7Oax0q1df4vW+BIeuao=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx104
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1MjjCF-1kTwTF37Zj-00lE5E; Tue, 28
- Jul 2020 15:00:47 +0200
-Subject: Re: [PATCH v2] btrfs-progs: Add basic .editorconfig
-To:     dsterba@suse.cz, Daniel Xu <dxu@dxuuu.xyz>,
-        linux-btrfs@vger.kernel.org, kernel-team@fb.com
-References: <20200728015715.142747-1-dxu@dxuuu.xyz>
- <20200728113837.GR3703@twin.jikos.cz>
- <0ccb18f3-d4eb-9978-b4b6-157cd7c922f0@gmx.com>
- <0f91c4fa-e9b4-c170-78d8-0e8fe932ccd0@gmx.com>
- <20200728125732.GS3703@twin.jikos.cz>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAU4EEwEIADgCGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1oQAKCRDC
- PZHzoSX+qCY6CACd+mWu3okGwRKXju6bou+7VkqCaHTdyXwWFTsr+/0ly5nUdDtT3yEVggPJ
- 3VP70wjlrxUjNjFb6iIvGYxiPOrop1NGwGYvQktgRhaIhALG6rPoSSAhGNjwGVRw0km0PlIN
- D29BTj/lYEk+jVM1YL0QLgAE1AI3krihg/lp/fQT53wLhR8YZIF8ETXbClQG1vJ0cllPuEEv
- efKxRyiTSjB+PsozSvYWhXsPeJ+KKjFen7ebE5reQTPFzSHctCdPnoR/4jSPlnTlnEvLeqcD
- ZTuKfQe1gWrPeevQzgCtgBF/WjIOeJs41klnYzC3DymuQlmFubss0jShLOW8eSOOWhLRuQEN
- BFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcgaCbPEwhLj
- 1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj/IrRUUka
- 68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fNGSsRb+pK
- EKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0q1eW4Jrv
- 0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEvABEBAAGJ
- ATwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1rgUJCWpOfwAKCRDCPZHz
- oSX+qFcEB/95cs8cM1OQdE/GgOfCGxwgckMeWyzOR7bkAWW0lDVp2hpgJuxBW/gyfmtBnUai
- fnggx3EE3ev8HTysZU9q0h+TJwwJKGv6sUc8qcTGFDtavnnl+r6xDUY7A6GvXEsSoCEEynby
- 72byGeSovfq/4AWGNPBG1L61Exl+gbqfvbECP3ziXnob009+z9I4qXodHSYINfAkZkA523JG
- ap12LndJeLk3gfWNZfXEWyGnuciRGbqESkhIRav8ootsCIops/SqXm0/k+Kcl4gGUO/iD/T5
- oagaDh0QtOd8RWSMwLxwn8uIhpH84Q4X1LadJ5NCgGa6xPP5qqRuiC+9gZqbq4Nj
-Message-ID: <0b039506-577f-05a1-2109-565e8c5c2a04@gmx.com>
-Date:   Tue, 28 Jul 2020 21:00:41 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.10.0
+        id S1730008AbgG1NO6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 28 Jul 2020 09:14:58 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52396 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1729853AbgG1NO6 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 28 Jul 2020 09:14:58 -0400
+Received: from mail-io1-xd43.google.com (mail-io1-xd43.google.com [IPv6:2607:f8b0:4864:20::d43])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id ED3A8C061794
+        for <linux-btrfs@vger.kernel.org>; Tue, 28 Jul 2020 06:14:57 -0700 (PDT)
+Received: by mail-io1-xd43.google.com with SMTP id d18so20676599ion.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 28 Jul 2020 06:14:57 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc:content-transfer-encoding;
+        bh=wBbpxXe88STB9KjmaWhsjSYXpMq0wp1WBH8pKpGZ8IY=;
+        b=aaIDLhD/aif/ECnSg19ggS/9vLYJZYZ7B/slK5vfEwDYwgqzxFQ4B3j6OhvH5Y4+lo
+         YlNIq4RlfGDDR+HrWrB+9D+6OhOnxgULbpxw+RWS3xHzkQjv77mSk7hdlNjWJd/Z2wNP
+         aYanehuFWFe3drdzHRTGix/qUkFyv83DKXi2t7mrioU9atgZlvVR33c/O4XbajVLT9vM
+         Nq3oMoKziMsbOjmpeYK0JZEYkxNd68kfyQpkKKhIioR6HOivxYEmyehzG11VXMPtc6Td
+         m8rFeUvjV9tXhyotms3GFcXnLc121tR+GWj80Yr5zEbWpZmhZsNnrNwTx/IXuRfh42qs
+         BJGA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc:content-transfer-encoding;
+        bh=wBbpxXe88STB9KjmaWhsjSYXpMq0wp1WBH8pKpGZ8IY=;
+        b=mXxPDHaDVSRmotoJGk8rdGg9frzLh3heiuVvK3caSs8SC96fSY+6mAGyBS4R9u9+c5
+         uy2iOXNLj6gUhvx7ka4Z38u1bIWHouwPrde0pFW801iEBeO76ONwt7/76rSTthV6hsNo
+         /WnR2ZkLWbt0ZLuWp5kZkbHJN+Xv6lJFW+VPoH1rP9eUfjulsi32sgcU8l3aupSGRZ3h
+         t4KsOvw53PcFkeuLMty2F3gQQ+4OYocBp65ylWocMJ3XtTUcUcXIbAKevk6GMLO1cx4z
+         u/adShwlx7fxnobjuE62lpGDrxOzwuiFFgss+L+Ty2gFSJ/0hW8BRb5YRinai0Qj8dkq
+         oULw==
+X-Gm-Message-State: AOAM5328QSDpS2Hc1bb3/R+WtVIkJ67DyFpZEs8umDFwSL3/NgOeOL2O
+        nlxqEiW3N+mDA1oporZNZnmMASIAvUqPn9iMhzY=
+X-Google-Smtp-Source: ABdhPJwXbUB+zQlCWcm6fDWpJjdnbXavUOKu0RoO32BJvGG1SHS5X+o51bNglCXVco50oARGYHWerZW4gdzxlgngeck=
+X-Received: by 2002:a02:b610:: with SMTP id h16mr18512058jam.74.1595942097297;
+ Tue, 28 Jul 2020 06:14:57 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20200728125732.GS3703@twin.jikos.cz>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="800biynXSYZtTS0YFd2ThR9SdstyfKEEE"
-X-Provags-ID: V03:K1:Y8BlDpOzbbfjpb3XQkYcLw+wUNjZhrVQX+7NLLgdrLN1im40I3S
- Fy+I9TtjJs7aI+naStycmJVTXSap60TWEzRKb//ggt2PTlQaIfQWYsnMn4GUshFPhymarYi
- VV7RM+SrmLhVN7dINWCAdg87d71L5A4vetUke0rW7kfkY+wxqC263kGrjokJZeCNjpxyDIO
- BDKuNGgRgw5SeDLp/JX0g==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:pwqthcofWZk=:Fw4spnIGbOu17ar00RnqqD
- jntbTRn1mpUJ6eb+dtBDgWIE1gTY0jn46wdDpv6U3hSj5biw2TrWgS+vggfn+BdzsRgOylgyg
- C0Jlan/puuwkZVcAjKZhGz9hmywCWnTrxHjWj9IE5sbtka5kyK0TRYjs3I4O7ga+vMCtIlqBy
- qFCWRs2QQ3UQfvRqdvqp6ZXmntNJA/lkRKE5rseEfC/l8LcZWCdtsZiRfWQS5GOHrW2lxmcje
- EcyXGcuo0OkAmH/+hg7X+HGmo8vQZxaOqXQQwUm8cwPiJkAObfxETGHcmSsRNbVP1Q7/WUvWI
- RSjjHZtQfthFDzDMxlN9uTKXArmVya3vVkQf4puZ7WuB8K4WKlNoc5aq0yiX5LiLDWsiL4s1H
- UvqUr/P/px/4QPRqWeA8sDN+2bEwhnuL2dmBXOQLZYVekP09K6Sag7mjO3TRpI5w24f3+1dHL
- 6inLIRdZ2HRGitfINQOIey+4I26pQXjiiDlQ/vkSv+Iky8hqJ5YeF0tANMY1VeET4QojKtn0q
- EmLzo1jcGkkXFvFV69SxJQN7Bf/nEXmEcce2jUMn8z0TH6SioSX1NE54SzAjj8VlL6CiEEt+w
- caWF83Rw4+9jwzk2mJeEukGyu9FukKEjhXsG4XmfJ6BoPYQo8cC3NLlwkNrTzJLrzPXBx1c4o
- af8zhcQgYyD4/b1oh2gsoWghUcxxcd4qPXCFxaxUJ1KuX1g2TOwJs5+W1/solFk2DweqRbw/K
- 8RXfVTE2RXfCLZnvx2Uu20cRYrUgcgAunJ0pQj833ntUJTbKbmZXrsHUBK6owextO3BRRVr1E
- qXRdVi+7Yh/ZlWy7/GPE1SMUD/niJEVA/u2yVro/bNahRjryx6QtP/yBB4fU83mSCs1s/UQSw
- LZ1P/V2kZftVIXm/LLXkKIFBkrRP+TuziXcrPaLrgV4eeE+hXNJU0orbNRzoyDpTshxfIVHUT
- riQNdB1ci/iNWT8NbnM/MAgVRYscTNQyKOAjkLZkPVrpyvoXz+jW3T9RRh9QysH+XL3liX48N
- LznxZhrg9sACWhe/q/jfxFuUdZjFbsSNi+D6nyUjficrVESTRHhobsphbTW2LUQURixbUJCj5
- KyVq4Uf2L/d0g5+hduDgWs2rBwsq7D4zAlLD4LLcNiefjC2yXKPOObdZVALx9kZeccxr453py
- kVHqXBkD0dr7ZmB/i+IBY+BufF2Qjuln+gvAD16+peNrdnLCLVwFVdRBInPOdrRMIbf2j4y7+
- MxF6bF5DekJBu6i0JeY9jXFrsIZJdQgX6YLa/Ng==
+References: <20200720125109.93970-1-wqu@suse.com> <20200720160945.GH3703@twin.jikos.cz>
+ <cf6386e1-a13b-e7cf-a365-db33a3afe2a9@gmx.com> <20200721095826.GJ3703@twin.jikos.cz>
+ <0d3eb6c1-f88a-e7cd-7d12-92bce0f2025c@suse.com> <20200721135533.GL3703@twin.jikos.cz>
+ <cccdcdc8-db5a-779d-7b99-346ef14133e5@gmx.com> <20200722113220.GR3703@twin.jikos.cz>
+ <CAEg-Je-QVTWQeFg1gJMSXcBHzniSjMNxSXiN2L++_YVeTwZH_g@mail.gmail.com> <493ab1f9-9f58-6d8e-647a-9092e1e0480f@gmx.com>
+In-Reply-To: <493ab1f9-9f58-6d8e-647a-9092e1e0480f@gmx.com>
+From:   Neal Gompa <ngompa13@gmail.com>
+Date:   Tue, 28 Jul 2020 09:14:21 -0400
+Message-ID: <CAEg-Je-VLKs1XO+PocCDVPb8mQPFbXZxYmC7CRnCqkSxVk1EBw@mail.gmail.com>
+Subject: Re: [PATCH 1/2] btrfs-progs: convert: Prevent bit overflow for cctx->total_bytes
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        Christian Zangl <coralllama@gmail.com>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---800biynXSYZtTS0YFd2ThR9SdstyfKEEE
-Content-Type: multipart/mixed; boundary="Is5Vofe1apYUy1lMeOQmkSYGewMujXIKd"
+On Thu, Jul 23, 2020 at 8:02 PM Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+>
+>
+>
+> On 2020/7/23 =E4=B8=8B=E5=8D=889:31, Neal Gompa wrote:
+> > On Wed, Jul 22, 2020 at 7:33 AM David Sterba <dsterba@suse.cz> wrote:
+> >>
+> >> On Wed, Jul 22, 2020 at 06:58:39AM +0800, Qu Wenruo wrote:
+> >>>>> Thus casting both would definitely be right, without the need to re=
+fer
+> >>>>> to the complex rule book, thus save the reviewer several minutes.
+> >>>>
+> >>>> The opposite, if you send me code that's not following known schemes=
+ or
+> >>>> idiomatic schemes I'll be highly suspicious and looking for the reas=
+ons
+> >>>> why it's that way and making sure it's correct costs way more time.
+> >>>>
+> >>> OK, then would you please remove one casting at merge time, or do I n=
+eed
+> >>> to resend?
+> >>
+> >> Yeah, I fix such things routinely no need to resend.
+> >
+> > I have a report[1] that seems to look like this patch solves it, is
+> > that correct?
+> >
+> > [1]: https://bugzilla.redhat.com/show_bug.cgi?id=3D1851674#c7
+> >
+> Yep, looks like the same bug.
+>
 
---Is5Vofe1apYUy1lMeOQmkSYGewMujXIKd
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+So I backported this fix into btrfs-progs-5.7-4.fc32[1], and the
+reporter is still seeing issues[2].
 
+Pasting from the bug comment[2]:
 
+[liveuser@localhost-live ~]$ sudo btrfs-convert /dev/sda2
+create btrfs filesystem:
+    blocksize: 4096
+    nodesize:  16384
+    features:  extref, skinny-metadata (default)
+    checksum:  crc32c
+creating ext2 image file
+creating btrfs metadata
+convert/source-ext2.c:845: ext2_copy_inodes: BUG_ON `ret` triggered, value =
+-28
+btrfs-convert(+0x13589)[0x558cfe4a6589]
+btrfs-convert(+0x14549)[0x558cfe4a7549]
+btrfs-convert(main+0xfc0)[0x558cfe4a22b0]
+/lib64/libc.so.6(__libc_start_main+0xf2)[0x7fd2c6666042]
+btrfs-convert(_start+0x2e)[0x558cfe4a35ce]
+Aborted
 
-On 2020/7/28 =E4=B8=8B=E5=8D=888:57, David Sterba wrote:
-> On Tue, Jul 28, 2020 at 08:12:40PM +0800, Qu Wenruo wrote:
->>>>> +trim_trailing_whitespace =3D true
->>>>
->>>> Does this setting apply on lines that get changed or does it affect =
-the
->>>> whole file? If it's just for the lines, then it's what we want.
->>>>
->>> At least from the vim plugin code, it's just for the new lines:
->>>
->>> https://github.com/editorconfig/editorconfig-vim/blob/0a3c1d8082e38a5=
-ebadcba7bb3a608d88a9ff044/plugin/editorconfig.vim#L494
->>>
->>> It just call the replace on the current line.
->>
->> My bad, %s, it replaces all existing lines...
->=20
-> So this would introduce unrelated changes, but it seems that we don't
-> have much trailing whitespaces in progs codebase:
->=20
->   $ git grep '\s\+$'
->   btrfs-fragments.c:
->   btrfs-fragments.c:                              black =3D gdImageColo=
-rAllocate(im, 0, 0, 0); =20
->   crypto/crc32c.c:/*=20
->   crypto/crc32c.c: *=20
->   crypto/crc32c.c: * Software Foundation; either version 2 of the Licen=
-se, or (at your option)=20
->   crypto/crc32c.c: * Steps through buffer one byte at at time, calculat=
-es reflected=20
->   crypto/crc32c.c: * Steps through buffer one byte at at time, calculat=
-es reflected=20
->   kernel-lib/radix-tree.h: *=20
->   kernel-lib/radix-tree.h: *=20
->   kernel-lib/rbtree.c:            node =3D node->rb_right;=20
->   kernel-lib/rbtree.c:            node =3D node->rb_left;=20
->   kernel-lib/rbtree.h: =20
->=20
-> filtering only the sources. So let's keep it in the config.
->=20
-Great.
-
-BTW, it would be better to mention we use editorconfig as the unified
-formatting config.
-
-As most of us are using vim, which doesn't support editorconfig by
-default, thus we need to install that plugin manually.
-
-Thanks,
-Qu
+Any idea what's going on here?
 
 
---Is5Vofe1apYUy1lMeOQmkSYGewMujXIKd--
+[1]: https://src.fedoraproject.org/rpms/btrfs-progs/c/e4a3d39e87313954cb3e8=
+214e28ee0ba50bee874
+[2]: https://bugzilla.redhat.com/show_bug.cgi?id=3D1851674#c13
 
---800biynXSYZtTS0YFd2ThR9SdstyfKEEE
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAl8gIXkACgkQwj2R86El
-/qhdLwf+IA6AMu8ISlP4yc3hPf+C8cMC8dZkFL9xNOucbgbk9zT/yB0LLdF+4U+Y
-x8V+MnId3AUd0ZAB0t33+IoTTdpt8EZAzG3K7D1C0zuwT6H4nLJ5We4g4pZqQUU7
-oKNGwzFWcwLtxao7g0+7TRfucb0FHgUSVhZDmoEimkaRHWkaiqB+TII8OMxbgFXE
-BDbAYwclxRzHmds4Qq5K5XIhIA+5qk66Uwr7icNDyPmIkMRlyWsTkhgeVJ+ysftR
-YG5/IxNmVPQS5f0J5jgJaVE5gfLwWnhpyy+x8idWXEQ1Pzv9b1WDhsaS20Ywdnv0
-ucgssY5duVosBc8mYzxZ4YGVa0TjZw==
-=atmu
------END PGP SIGNATURE-----
-
---800biynXSYZtTS0YFd2ThR9SdstyfKEEE--
+--=20
+=E7=9C=9F=E5=AE=9F=E3=81=AF=E3=81=84=E3=81=A4=E3=82=82=E4=B8=80=E3=81=A4=EF=
+=BC=81/ Always, there's only one truth!

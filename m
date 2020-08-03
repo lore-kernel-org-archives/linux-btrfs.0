@@ -2,266 +2,126 @@ Return-Path: <SRS0=qeAP=BN=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.0 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 101B1C433DF
-	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Aug 2020 20:30:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 40472C433E0
+	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Aug 2020 20:44:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 2398422CA1
-	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Aug 2020 20:30:37 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 39532207DF
+	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Aug 2020 20:44:53 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=mpdesouza.com header.i=@mpdesouza.com header.b="aoMX1JrX"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728290AbgHCUag (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 3 Aug 2020 16:30:36 -0400
-Received: from mx2.suse.de ([195.135.220.15]:51970 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726725AbgHCUaf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 3 Aug 2020 16:30:35 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 79686AE2C;
-        Mon,  3 Aug 2020 20:30:49 +0000 (UTC)
-From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
-To:     linux-btrfs@vger.kernel.org
-Cc:     Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: [PATCH 4/4] btrfs-progs: Enqueue command if it can't be performed immediately
-Date:   Mon,  3 Aug 2020 15:30:15 -0500
-Message-Id: <20200803203015.24562-4-rgoldwyn@suse.de>
-X-Mailer: git-send-email 2.26.2
-In-Reply-To: <20200803203015.24562-1-rgoldwyn@suse.de>
-References: <20200803202913.15913-1-rgoldwyn@suse.de>
- <20200803203015.24562-1-rgoldwyn@suse.de>
+        id S1728121AbgHCUow (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 3 Aug 2020 16:44:52 -0400
+Received: from gateway30.websitewelcome.com ([192.185.160.12]:29453 "EHLO
+        gateway30.websitewelcome.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1725863AbgHCUov (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 3 Aug 2020 16:44:51 -0400
+X-Greylist: delayed 1496 seconds by postgrey-1.27 at vger.kernel.org; Mon, 03 Aug 2020 16:44:51 EDT
+Received: from cm10.websitewelcome.com (cm10.websitewelcome.com [100.42.49.4])
+        by gateway30.websitewelcome.com (Postfix) with ESMTP id 638F711ABF
+        for <linux-btrfs@vger.kernel.org>; Mon,  3 Aug 2020 14:55:15 -0500 (CDT)
+Received: from br540.hostgator.com.br ([108.179.252.180])
+        by cmsmtp with SMTP
+        id 2gYFk6cldLFNk2gYFkpzuK; Mon, 03 Aug 2020 14:55:15 -0500
+X-Authority-Reason: nr=8
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=mpdesouza.com; s=default; h=Content-Transfer-Encoding:MIME-Version:
+        Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:Content-Type:Content-ID:
+        Content-Description:Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc
+        :Resent-Message-ID:In-Reply-To:References:List-Id:List-Help:List-Unsubscribe:
+        List-Subscribe:List-Post:List-Owner:List-Archive;
+        bh=zh41+pHhukeyo985XQZ/PWjl2Roj5QB0Aix5z/H9Rks=; b=aoMX1JrXJsOTjCQKIMsG8KASeR
+        xX3x+Qgm0tl477KSB3bcVPrONgiMC64icaBzuwserB19wNPtxu+JYku6CBbBH99+hOYAzxP62XHiR
+        SQQdLmbEOnvN0MulVaX2Ki5IlW3Y1j1xydGVTZmDfZIhSHboTR2EpoAl60DVWPkQlv1IZtWWO5JMi
+        4vcDLXC9L0fG9227ShTjw0gEaD0Odb0v/HHSfCqpsmBNTCMiZ+bK//4QOW+DAT57YutIERAiNZuHZ
+        DyQ+Ce0YXqTIngvwDby6HWYGlHNYL+Hvmd/PbaGjBYMaLrhXViSl+ExrhWsT3B5vBiWx4kpzzJ+g6
+        jdsjw6vQ==;
+Received: from [179.185.209.90] (port=47548 helo=hephaestus.suse.de)
+        by br540.hostgator.com.br with esmtpsa  (TLS1.2) tls TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+        (Exim 4.93)
+        (envelope-from <marcos@mpdesouza.com>)
+        id 1k2gYE-0025nW-Q1; Mon, 03 Aug 2020 16:55:15 -0300
+From:   Marcos Paulo de Souza <marcos@mpdesouza.com>
+To:     dsterba@suse.com, linux-btrfs@vger.kernel.org
+Cc:     Marcos Paulo de Souza <mpdesouza@suse.com>
+Subject: [PATCH] btrfs: super.c: Set compress_level=0 when using compress=lzo
+Date:   Mon,  3 Aug 2020 16:55:01 -0300
+Message-Id: <20200803195501.30528-1-marcos@mpdesouza.com>
+X-Mailer: git-send-email 2.27.0
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
+X-AntiAbuse: This header was added to track abuse, please include it with any abuse report
+X-AntiAbuse: Primary Hostname - br540.hostgator.com.br
+X-AntiAbuse: Original Domain - vger.kernel.org
+X-AntiAbuse: Originator/Caller UID/GID - [47 12] / [47 12]
+X-AntiAbuse: Sender Address Domain - mpdesouza.com
+X-BWhitelist: no
+X-Source-IP: 179.185.209.90
+X-Source-L: No
+X-Exim-ID: 1k2gYE-0025nW-Q1
+X-Source: 
+X-Source-Args: 
+X-Source-Dir: 
+X-Source-Sender: (hephaestus.suse.de) [179.185.209.90]:47548
+X-Source-Auth: marcos@mpdesouza.com
+X-Email-Count: 2
+X-Source-Cap: bXBkZXNvNTM7bXBkZXNvNTM7YnI1NDAuaG9zdGdhdG9yLmNvbS5icg==
+X-Local-Domain: yes
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Goldwyn Rodrigues <rgoldwyn@suse.com>
+From: Marcos Paulo de Souza <mpdesouza@suse.com>
 
-Wait for the current exclusive operation to finish before issuing the
-command ioctl, so we have a better chance of success.
+Currently a user can set mount "-o compress" which will set the
+compression algorithm to zlib, and use the default compress level for
+zlib (3):
 
-Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
+relatime,compress=zlib:3,space_cache
+
+If the user remounts the fs using "-o compress=lzo", then the old
+compress_level is used:
+
+relatime,compress=lzo:3,space_cache
+
+But lzo does not exposes any tunable compress level. The same happens if we set
+any compress argument with different level, even with zstd.
+
+Fix this issue by resetting the compress_level when compress=lzo is specified.
+With the fix applied, lzo is shown without compress level, even after remounting
+from zlib or zstd:
+
+relatime,compress=lzo,space_cache
+
+Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
 ---
- cmds/device.c     | 56 +++++++++++++++++++++++++++++++++++++++--------
- cmds/filesystem.c | 25 +++++++++++++++++----
- common/sysfs.c    | 26 ++++++++++++++++++++++
- common/utils.h    |  1 +
- 4 files changed, 95 insertions(+), 13 deletions(-)
 
-diff --git a/cmds/device.c b/cmds/device.c
-index 6acd4ae6..12d92dac 100644
---- a/cmds/device.c
-+++ b/cmds/device.c
-@@ -49,6 +49,7 @@ static const char * const cmd_device_add_usage[] = {
- 	"",
- 	"-K|--nodiscard    do not perform whole device TRIM on devices that report such capability",
- 	"-f|--force        force overwrite existing filesystem on the disk",
-+	"-q|--enqueue	   enqueue if an exclusive operation is running",
- 	NULL
- };
- 
-@@ -62,6 +63,7 @@ static int cmd_device_add(const struct cmd_struct *cmd,
- 	int force = 0;
- 	int last_dev;
- 	char exop[BTRFS_SYSFS_EXOP_SIZE];
-+	bool enqueue = false;
- 
- 	optind = 0;
- 	while (1) {
-@@ -69,10 +71,11 @@ static int cmd_device_add(const struct cmd_struct *cmd,
- 		static const struct option long_options[] = {
- 			{ "nodiscard", optional_argument, NULL, 'K'},
- 			{ "force", no_argument, NULL, 'f'},
-+			{ "enqueue", no_argument, NULL, 'q'},
- 			{ NULL, 0, NULL, 0}
- 		};
- 
--		c = getopt_long(argc, argv, "Kf", long_options, NULL);
-+		c = getopt_long(argc, argv, "Kfq", long_options, NULL);
- 		if (c < 0)
- 			break;
- 		switch (c) {
-@@ -82,6 +85,9 @@ static int cmd_device_add(const struct cmd_struct *cmd,
- 		case 'f':
- 			force = 1;
- 			break;
-+		case 'q':
-+			enqueue = true;
-+			break;
- 		default:
- 			usage_unknown_option(cmd, argv);
- 		}
-@@ -98,9 +104,15 @@ static int cmd_device_add(const struct cmd_struct *cmd,
- 		return 1;
- 
- 	if (get_exclusive_operation(fdmnt, exop) > 0 && strcmp(exop, "none")) {
--		error("unable to add device: %s in progress", exop);
--		close_file_or_dir(fdmnt, dirstream);
--		return 1;
-+		if (enqueue) {
-+			printf("%s in progress. Waiting for %s to finish.\n",
-+					exop, exop);
-+			wait_for_exclusive_operation(fdmnt);
-+		} else {
-+			error("unable to add: %s in progress", exop);
-+			close_file_or_dir(fdmnt, dirstream);
-+			return 1;
-+		}
- 	}
- 
- 	for (i = optind; i < last_dev; i++){
-@@ -163,8 +175,27 @@ static int _cmd_device_remove(const struct cmd_struct *cmd,
- 	int i, fdmnt, ret = 0;
- 	DIR	*dirstream = NULL;
- 	char exop[BTRFS_SYSFS_EXOP_SIZE];
-+	bool enqueue = false;
- 
--	clean_args_no_options(cmd, argc, argv);
-+
-+	while (1) {
-+		int c;
-+		static const struct option long_options[] = {
-+			{ "enqueue", no_argument, NULL, 'q'},
-+			{ NULL, 0, NULL, 0}
-+		};
-+
-+		c = getopt_long(argc, argv, "q", long_options, NULL);
-+		if (c < 0)
-+			break;
-+		switch (c) {
-+		case 'q':
-+			enqueue = true;
-+			break;
-+		default:
-+			usage_unknown_option(cmd, argv);
-+		}
-+	}
- 
- 	if (check_argc_min(argc - optind, 2))
- 		return 1;
-@@ -176,9 +207,15 @@ static int _cmd_device_remove(const struct cmd_struct *cmd,
- 		return 1;
- 
- 	if (get_exclusive_operation(fdmnt, exop) > 0 && strcmp(exop, "none")) {
--		error("unable to remove device: %s in progress", exop);
--		close_file_or_dir(fdmnt, dirstream);
--		return 1;
-+		if (enqueue) {
-+			printf("%s in progress. Waiting for %s to finish.\n",
-+					exop, exop);
-+			wait_for_exclusive_operation(fdmnt);
-+		} else {
-+			error("unable to remove device: %s in progress", exop);
-+			close_file_or_dir(fdmnt, dirstream);
-+			return 1;
-+		}
- 	}
- 
- 	for(i = optind; i < argc - 1; i++) {
-@@ -251,7 +288,8 @@ static int _cmd_device_remove(const struct cmd_struct *cmd,
- 	"the device.",								\
- 	"If 'missing' is specified for <device>, the first device that is",	\
- 	"described by the filesystem metadata, but not present at the mount",	\
--	"time will be removed. (only in degraded mode)"
-+	"time will be removed. (only in degraded mode)", \
-+	"-q|--enqueue	   enqueue if an exclusive operation is running"
- 
- static const char * const cmd_device_remove_usage[] = {
- 	"btrfs device remove <device>|<devid> [<device>|<devid>...] <path>",
-diff --git a/cmds/filesystem.c b/cmds/filesystem.c
-index c3efb405..a584b1d3 100644
---- a/cmds/filesystem.c
-+++ b/cmds/filesystem.c
-@@ -1080,8 +1080,19 @@ static int cmd_filesystem_resize(const struct cmd_struct *cmd,
- 	DIR	*dirstream = NULL;
- 	struct stat st;
- 	char exop[BTRFS_SYSFS_EXOP_SIZE];
-+	bool enqueue = false;
- 
--	clean_args_no_options_relaxed(cmd, argc, argv);
-+	while(1) {
-+		int c = getopt(argc - 2, argv, "q");
-+		if (c < 0)
-+			break;
-+
-+		switch(c) {
-+		case 'q':
-+			enqueue = true;
-+			break;
-+		}
-+	}
- 
- 	if (check_argc_exact(argc - optind, 2))
- 		return 1;
-@@ -1112,9 +1123,15 @@ static int cmd_filesystem_resize(const struct cmd_struct *cmd,
- 		return 1;
- 
- 	if (get_exclusive_operation(fd, exop) > 0 && strcmp(exop, "none")) {
--		error("unable to resize: %s in progress", exop);
--		close_file_or_dir(fd, dirstream);
--		return 1;
-+		if (enqueue) {
-+			printf("%s in progress. Waiting for %s to finish.\n",
-+					exop, exop);
-+			wait_for_exclusive_operation(fd);
-+		} else {
-+			error("unable to resize: %s in progress", exop);
-+			close_file_or_dir(fd, dirstream);
-+			return 1;
-+		}
- 	}
- 
- 	printf("Resize '%s' of '%s'\n", path, amount);
-diff --git a/common/sysfs.c b/common/sysfs.c
-index 9a18c753..123da97a 100644
---- a/common/sysfs.c
-+++ b/common/sysfs.c
-@@ -58,3 +58,29 @@ int get_exclusive_operation(int mp_fd, char *val)
- 	*s = '\0';
- 	return strlen(val);
- }
-+
-+int sysfs_wait(int fd, int seconds)
-+{
-+	fd_set fds;
-+	struct timeval tv;
-+
-+	FD_ZERO(&fds);
-+	FD_SET(fd, &fds);
-+
-+	tv.tv_sec = seconds;
-+	tv.tv_usec = 0;
-+
-+	return select(fd+1, NULL, NULL, &fds, &tv);
-+}
-+
-+void wait_for_exclusive_operation(int dirfd)
-+{
-+        char exop[BTRFS_SYSFS_EXOP_SIZE];
-+	int fd;
-+
-+        fd = sysfs_open(dirfd, "exclusive_operation");
-+        while ((sysfs_get_str_fd(fd, exop, BTRFS_SYSFS_EXOP_SIZE) > 0) &&
-+		strncmp(exop, "none", 4))
-+			sysfs_wait(fd, 1);
-+	close(fd);
-+}
-diff --git a/common/utils.h b/common/utils.h
-index be8aab58..f141edb6 100644
---- a/common/utils.h
-+++ b/common/utils.h
-@@ -155,5 +155,6 @@ int btrfs_warn_multiple_profiles(int fd);
- 
- #define BTRFS_SYSFS_EXOP_SIZE		16
- int get_exclusive_operation(int fd, char *val);
-+void wait_for_exclusive_operation(int fd);
- 
- #endif
+ I found this issue while testing mount options. Should we tag this fix for
+ stable since the introduction of the compress_level, or is it no worthy?
+
+ fs/btrfs/super.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index a034ed52b5f6..dd2f05f9d6c6 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -614,6 +614,8 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
+ 			} else if (strncmp(args[0].from, "lzo", 3) == 0) {
+ 				compress_type = "lzo";
+ 				info->compress_type = BTRFS_COMPRESS_LZO;
++				/* lzo does not expose compression levels */
++				info->compress_level = 0;
+ 				btrfs_set_opt(info->mount_opt, COMPRESS);
+ 				btrfs_clear_opt(info->mount_opt, NODATACOW);
+ 				btrfs_clear_opt(info->mount_opt, NODATASUM);
 -- 
-2.26.2
+2.27.0
 

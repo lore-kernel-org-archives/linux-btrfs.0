@@ -1,127 +1,112 @@
-Return-Path: <SRS0=qeAP=BN=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=HNUC=BO=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.1 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 40472C433E0
-	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Aug 2020 20:44:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4120BC433E0
+	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Aug 2020 01:25:05 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 39532207DF
-	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Aug 2020 20:44:53 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 42B532072A
+	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Aug 2020 01:25:05 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=mpdesouza.com header.i=@mpdesouza.com header.b="aoMX1JrX"
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="FMn9lmvL"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728121AbgHCUow (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 3 Aug 2020 16:44:52 -0400
-Received: from gateway30.websitewelcome.com ([192.185.160.12]:29453 "EHLO
-        gateway30.websitewelcome.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1725863AbgHCUov (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 3 Aug 2020 16:44:51 -0400
-X-Greylist: delayed 1496 seconds by postgrey-1.27 at vger.kernel.org; Mon, 03 Aug 2020 16:44:51 EDT
-Received: from cm10.websitewelcome.com (cm10.websitewelcome.com [100.42.49.4])
-        by gateway30.websitewelcome.com (Postfix) with ESMTP id 638F711ABF
-        for <linux-btrfs@vger.kernel.org>; Mon,  3 Aug 2020 14:55:15 -0500 (CDT)
-Received: from br540.hostgator.com.br ([108.179.252.180])
-        by cmsmtp with SMTP
-        id 2gYFk6cldLFNk2gYFkpzuK; Mon, 03 Aug 2020 14:55:15 -0500
-X-Authority-Reason: nr=8
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=mpdesouza.com; s=default; h=Content-Transfer-Encoding:MIME-Version:
-        Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:Content-Type:Content-ID:
-        Content-Description:Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc
-        :Resent-Message-ID:In-Reply-To:References:List-Id:List-Help:List-Unsubscribe:
-        List-Subscribe:List-Post:List-Owner:List-Archive;
-        bh=zh41+pHhukeyo985XQZ/PWjl2Roj5QB0Aix5z/H9Rks=; b=aoMX1JrXJsOTjCQKIMsG8KASeR
-        xX3x+Qgm0tl477KSB3bcVPrONgiMC64icaBzuwserB19wNPtxu+JYku6CBbBH99+hOYAzxP62XHiR
-        SQQdLmbEOnvN0MulVaX2Ki5IlW3Y1j1xydGVTZmDfZIhSHboTR2EpoAl60DVWPkQlv1IZtWWO5JMi
-        4vcDLXC9L0fG9227ShTjw0gEaD0Odb0v/HHSfCqpsmBNTCMiZ+bK//4QOW+DAT57YutIERAiNZuHZ
-        DyQ+Ce0YXqTIngvwDby6HWYGlHNYL+Hvmd/PbaGjBYMaLrhXViSl+ExrhWsT3B5vBiWx4kpzzJ+g6
-        jdsjw6vQ==;
-Received: from [179.185.209.90] (port=47548 helo=hephaestus.suse.de)
-        by br540.hostgator.com.br with esmtpsa  (TLS1.2) tls TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
-        (Exim 4.93)
-        (envelope-from <marcos@mpdesouza.com>)
-        id 1k2gYE-0025nW-Q1; Mon, 03 Aug 2020 16:55:15 -0300
-From:   Marcos Paulo de Souza <marcos@mpdesouza.com>
-To:     dsterba@suse.com, linux-btrfs@vger.kernel.org
-Cc:     Marcos Paulo de Souza <mpdesouza@suse.com>
-Subject: [PATCH] btrfs: super.c: Set compress_level=0 when using compress=lzo
-Date:   Mon,  3 Aug 2020 16:55:01 -0300
-Message-Id: <20200803195501.30528-1-marcos@mpdesouza.com>
-X-Mailer: git-send-email 2.27.0
+        id S1729084AbgHDBZE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 3 Aug 2020 21:25:04 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49634 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726276AbgHDBZE (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Aug 2020 21:25:04 -0400
+Received: from mail-io1-xd42.google.com (mail-io1-xd42.google.com [IPv6:2607:f8b0:4864:20::d42])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0D20EC06174A
+        for <linux-btrfs@vger.kernel.org>; Mon,  3 Aug 2020 18:25:04 -0700 (PDT)
+Received: by mail-io1-xd42.google.com with SMTP id l17so40555039iok.7
+        for <linux-btrfs@vger.kernel.org>; Mon, 03 Aug 2020 18:25:04 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc:content-transfer-encoding;
+        bh=LXUEzGLYAYZJ8IPXVCfqiMwBDrgk/5aXGnx8jITLgBE=;
+        b=FMn9lmvLOU8sdWDS5encnE9l4vJin8sCFhnlSid2bEWaXA5rvH4tatDFujqvXSvx0N
+         0YOXPW5cyEpyjtj340D49uLTnRUJCB3oy1pbZelfITwYy1DhGSMkIPsJ8zSCrW1hsnJg
+         GUdYmIkap52BvT2VdfqfcO6wIBTMKURCaZ2smkcWuQ+ong3CXDQWqvxz9b0ElOGxVwK8
+         tehGPiIv7mdAiiDMhsQuQaFGBy6Pr/WBcbRxVVjRmZyJ7ZOJG41kspK5r4guIOukIRe5
+         XrCjbfVUWOs/bmEbKlLmKQqR3wl2yonsXoSt2rJGr1swRM6dywTcuHzm+zRcqj4Dodwf
+         5FIA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc:content-transfer-encoding;
+        bh=LXUEzGLYAYZJ8IPXVCfqiMwBDrgk/5aXGnx8jITLgBE=;
+        b=fk501Xj9CBbeXvQbyg/6PsaG2Uk+acXgmzYNz0G91S8N9hZBEDf2bdnO84dd8NkAcm
+         96Idl5kOrIAABvIQ/xznO9teseRYrVRVLiM2FjrSWkCc4k9GV+LPQ3KvMWHU9DJqvZ3I
+         goVyNTzpOHsNdsTIJwGU/i6+r9zQ6/DRCDh01rDjA0szABy3tZAKxk1Vvjk8u7MLUtuJ
+         LhCowZaLuYDPyuy3e9lQBfluY53Wf2nrm4aaZSNu4NcdDWBuVUSe/7iugN+YG7SKLiuz
+         qKUn4XVNRjlMlovEtOJ0C7b4l3RLLygRyDa4ytbNyP2cq8tuD0NzJqif7H7aETyyhU7Z
+         9uIg==
+X-Gm-Message-State: AOAM532bhxvfG/zGoUp7AqrrTmH79USSc2eQ/IKrpU6eummzaiROlKFu
+        GtPS1dvjiMs5g0giP3yQLtJ+/CxwsU5jgnJfiRtZnRbZ
+X-Google-Smtp-Source: ABdhPJyRXspY5MMRt5kiNwnn78rHkzxyzc6DYC/81vxyc14LGydBgDwIreX3wPbF/TUGHaA/tG0aNtXNBdaMwGllUH4=
+X-Received: by 2002:a05:6638:2692:: with SMTP id o18mr2891728jat.2.1596504303330;
+ Mon, 03 Aug 2020 18:25:03 -0700 (PDT)
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-AntiAbuse: This header was added to track abuse, please include it with any abuse report
-X-AntiAbuse: Primary Hostname - br540.hostgator.com.br
-X-AntiAbuse: Original Domain - vger.kernel.org
-X-AntiAbuse: Originator/Caller UID/GID - [47 12] / [47 12]
-X-AntiAbuse: Sender Address Domain - mpdesouza.com
-X-BWhitelist: no
-X-Source-IP: 179.185.209.90
-X-Source-L: No
-X-Exim-ID: 1k2gYE-0025nW-Q1
-X-Source: 
-X-Source-Args: 
-X-Source-Dir: 
-X-Source-Sender: (hephaestus.suse.de) [179.185.209.90]:47548
-X-Source-Auth: marcos@mpdesouza.com
-X-Email-Count: 2
-X-Source-Cap: bXBkZXNvNTM7bXBkZXNvNTM7YnI1NDAuaG9zdGdhdG9yLmNvbS5icg==
-X-Local-Domain: yes
+References: <20200803042944.26465-1-marcos@mpdesouza.com>
+In-Reply-To: <20200803042944.26465-1-marcos@mpdesouza.com>
+From:   Neal Gompa <ngompa13@gmail.com>
+Date:   Mon, 3 Aug 2020 21:24:27 -0400
+Message-ID: <CAEg-Je8VCXVC=9z-cCtszKxKeVbRMUojEQzHAuYkgdv4jXm-oQ@mail.gmail.com>
+Subject: Re: [PATCH btrfs-progs] Documentation: btrfs-man5: Remove nonexistent
+ nousebackuproot option
+To:     Marcos Paulo de Souza <marcos@mpdesouza.com>
+Cc:     David Sterba <dsterba@suse.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        Marcos Paulo de Souza <mpdesouza@suse.com>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Marcos Paulo de Souza <mpdesouza@suse.com>
+On Mon, Aug 3, 2020 at 1:05 AM Marcos Paulo de Souza
+<marcos@mpdesouza.com> wrote:
+>
+> From: Marcos Paulo de Souza <mpdesouza@suse.com>
+>
+> Since it's inclusion in b3751c131 ("btrfs-progs: docs: update
+> btrfs-man5"), this option was never available in kernel, we can only
+> enable this option using usebackuproot.
+>
+> Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
+> ---
+>  Documentation/btrfs-man5.asciidoc | 1 -
+>  1 file changed, 1 deletion(-)
+>
+> diff --git a/Documentation/btrfs-man5.asciidoc b/Documentation/btrfs-man5=
+.asciidoc
+> index 064312ed..2edf721c 100644
+> --- a/Documentation/btrfs-man5.asciidoc
+> +++ b/Documentation/btrfs-man5.asciidoc
+> @@ -471,7 +471,6 @@ The tree log could contain new files/directories, the=
+se would not exist on
+>  a mounted filesystem if the log is not replayed.
+>
+>  *usebackuproot*::
+> -*nousebackuproot*::
+>  (since: 4.6, default: off)
+>  +
+>  Enable autorecovery attempts if a bad tree root is found at mount time.
+> --
+> 2.27.0
+>
 
-Currently a user can set mount "-o compress" which will set the
-compression algorithm to zlib, and use the default compress level for
-zlib (3):
+Shouldn't this option be plumbed through instead?
 
-relatime,compress=zlib:3,space_cache
-
-If the user remounts the fs using "-o compress=lzo", then the old
-compress_level is used:
-
-relatime,compress=lzo:3,space_cache
-
-But lzo does not exposes any tunable compress level. The same happens if we set
-any compress argument with different level, even with zstd.
-
-Fix this issue by resetting the compress_level when compress=lzo is specified.
-With the fix applied, lzo is shown without compress level, even after remounting
-from zlib or zstd:
-
-relatime,compress=lzo,space_cache
-
-Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
----
-
- I found this issue while testing mount options. Should we tag this fix for
- stable since the introduction of the compress_level, or is it no worthy?
-
- fs/btrfs/super.c | 2 ++
- 1 file changed, 2 insertions(+)
-
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index a034ed52b5f6..dd2f05f9d6c6 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -614,6 +614,8 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
- 			} else if (strncmp(args[0].from, "lzo", 3) == 0) {
- 				compress_type = "lzo";
- 				info->compress_type = BTRFS_COMPRESS_LZO;
-+				/* lzo does not expose compression levels */
-+				info->compress_level = 0;
- 				btrfs_set_opt(info->mount_opt, COMPRESS);
- 				btrfs_clear_opt(info->mount_opt, NODATACOW);
- 				btrfs_clear_opt(info->mount_opt, NODATASUM);
--- 
-2.27.0
-
+--=20
+=E7=9C=9F=E5=AE=9F=E3=81=AF=E3=81=84=E3=81=A4=E3=82=82=E4=B8=80=E3=81=A4=EF=
+=BC=81/ Always, there's only one truth!

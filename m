@@ -2,137 +2,124 @@ Return-Path: <SRS0=BFL5=BP=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-4.1 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.0 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7BB20C433E3
-	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Aug 2020 20:07:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 35005C433E4
+	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Aug 2020 20:09:45 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 4B5DB22B42
-	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Aug 2020 20:07:07 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="q25j3yFC"
+	by mail.kernel.org (Postfix) with ESMTP id 01A9922CA1
+	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Aug 2020 20:09:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729806AbgHEUHG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 5 Aug 2020 16:07:06 -0400
-Received: from userp2120.oracle.com ([156.151.31.85]:60878 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726925AbgHEQeG (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Aug 2020 12:34:06 -0400
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 075GM4BD038971;
-        Wed, 5 Aug 2020 16:33:33 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=date : from : to : cc
- : subject : message-id : references : mime-version : content-type :
- in-reply-to; s=corp-2020-01-29;
- bh=IQLdx5abes21j8K7iHnVnBLrSGwXYmzNR4vIr2rCepI=;
- b=q25j3yFCZq1ZH0dHoKbPHv8VCIDBkrVg3ESlEMQDIO313ZVAJL3bbCVbkb87xqQrRUCm
- DfEqdeLSynhXTeQqUjffQd7tCybsxI5V6XItsOVGvoV1y/+WTHJtLq0knW7tro0lSVOv
- ERcCwS+/uwfmQsffNQvLBPBN5QgyUMIKp368IpUQlFtCrTqLx15i/WuTy6OY49J/UwbY
- w5CSyW0Sz14pqW8luVJCotpnL5HKonN2RZYUSgpi98TmDG6IeXp7/LlW6BLkbOZjVKxf
- 84uZpBM8DSraJiNmdLk98yq/t5ykat3kqPuv/ENLvgYkV7yy2uqmZTxy6lNN7rCVXC3C WA== 
-Received: from aserp3030.oracle.com (aserp3030.oracle.com [141.146.126.71])
-        by userp2120.oracle.com with ESMTP id 32n11nb3fk-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
-        Wed, 05 Aug 2020 16:33:33 +0000
-Received: from pps.filterd (aserp3030.oracle.com [127.0.0.1])
-        by aserp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 075GJBpZ061181;
-        Wed, 5 Aug 2020 16:31:32 GMT
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by aserp3030.oracle.com with ESMTP id 32p5gu12aq-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Wed, 05 Aug 2020 16:31:30 +0000
-Received: from abhmp0018.oracle.com (abhmp0018.oracle.com [141.146.116.24])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 075GVTHY020512;
-        Wed, 5 Aug 2020 16:31:29 GMT
-Received: from localhost (/67.169.218.210)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Wed, 05 Aug 2020 09:31:29 -0700
-Date:   Wed, 5 Aug 2020 09:31:26 -0700
-From:   "Darrick J. Wong" <darrick.wong@oracle.com>
-To:     Andreas Gruenbacher <agruenba@redhat.com>
-Cc:     "Darrick J. Wong" <djwong@kernel.org>,
-        Linus Torvalds <torvalds@linux-foundation.org>,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        linux-xfs@vger.kernel.org, Dave Chinner <david@fromorbit.com>,
-        LKML <linux-kernel@vger.kernel.org>,
-        Eric Sandeen <sandeen@sandeen.net>,
-        Christoph Hellwig <hch@lst.de>,
-        linux-ext4 <linux-ext4@vger.kernel.org>,
-        "Theodore Ts'o" <tytso@mit.edu>, riteshh@linux.ibm.com,
-        Goldwyn Rodrigues <rgoldwyn@suse.de>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [GIT PULL] iomap: new code for 5.9-rc1
-Message-ID: <20200805163126.GC6107@magnolia>
-References: <20200805153214.GA6090@magnolia>
- <CAHc6FU6yMnuKdVsAXkWgwr2ViMSXJdBXksrQDvHwaaw4p8u0rQ@mail.gmail.com>
- <20200805162349.GB6107@magnolia>
+        id S1729045AbgHEUJm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 5 Aug 2020 16:09:42 -0400
+Received: from mx2.suse.de ([195.135.220.15]:56274 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726774AbgHEQ3S (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 5 Aug 2020 12:29:18 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.221.27])
+        by mx2.suse.de (Postfix) with ESMTP id B29B3AC65;
+        Wed,  5 Aug 2020 16:29:33 +0000 (UTC)
+Date:   Wed, 5 Aug 2020 11:29:14 -0500
+From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
+To:     Nikolay Borisov <nborisov@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 3/3] btrfs: add more information for balance
+Message-ID: <20200805162914.pcstf7datq2mdqqz@fiona>
+References: <20200803202913.15913-1-rgoldwyn@suse.de>
+ <20200803202913.15913-4-rgoldwyn@suse.de>
+ <fd3307e1-eb59-26b0-790f-4845968e2bce@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <20200805162349.GB6107@magnolia>
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9704 signatures=668679
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 malwarescore=0 mlxscore=0 bulkscore=0
- phishscore=0 spamscore=0 adultscore=0 suspectscore=1 mlxlogscore=999
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2006250000
- definitions=main-2008050132
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9704 signatures=668679
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 clxscore=1015 priorityscore=1501
- impostorscore=0 lowpriorityscore=0 malwarescore=0 spamscore=0 mlxscore=0
- suspectscore=1 mlxlogscore=999 phishscore=0 adultscore=0 bulkscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2006250000
- definitions=main-2008050132
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <fd3307e1-eb59-26b0-790f-4845968e2bce@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Aug 05, 2020 at 09:23:49AM -0700, Darrick J. Wong wrote:
-> On Wed, Aug 05, 2020 at 05:54:31PM +0200, Andreas Gruenbacher wrote:
-> > Hi Darrick,
-> > 
-> > On Wed, Aug 5, 2020 at 5:40 PM Darrick J. Wong <djwong@kernel.org> wrote:
-> > > ----------------------------------------------------------------
-> > > Andreas Gruenbacher (1):
-> > >       iomap: Make sure iomap_end is called after iomap_begin
-> > 
-> > that commit (d1b4f507d71de) contains the following garbage in the
-> > commit message:
-> > 
-> >     The message from this sender included one or more files
-> >     which could not be scanned for virus detection; do not
-> >     open these files unless you are certain of the sender's intent.
-> > 
-> >     ----------------------------------------------------------------------
-> > 
-> > How did it come to that?
+On 15:17 05/08, Nikolay Borisov wrote:
 > 
-> I have no idea.  It's not in the email that I turned into a patch, but
-> golly roundtripping git patches through email and back to git sucks.
+> 
+> On 3.08.20 г. 23:29 ч., Goldwyn Rodrigues wrote:
+> > From: Goldwyn Rodrigues <rgoldwyn@suse.com>
+> > 
+> > Include information about the state of the balance and expected,
+> > considered and completed statistics.
+> > 
+> > Q: I am not sure of the cancelled state, and stopping seemed more
+> > appropriate since it was a transient state to cancelling the operation.
+> > Would you prefer to call it cancelled?
+> > 
+> > This information is not used by user space as of now. We could use it
+> > for "btrfs balance status" or ignore this patch for inclusion at all.
+> > 
+> > Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
+> > ---
+> >  fs/btrfs/sysfs.c | 29 ++++++++++++++++++++++++++++-
+> >  1 file changed, 28 insertions(+), 1 deletion(-)
+> > 
+> > diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+> > index 71950c121588..001a7ae375d0 100644
+> > --- a/fs/btrfs/sysfs.c
+> > +++ b/fs/btrfs/sysfs.c
+> > @@ -808,6 +808,33 @@ static ssize_t btrfs_checksum_show(struct kobject *kobj,
+> >  
+> >  BTRFS_ATTR(, checksum, btrfs_checksum_show);
+> >  
+> > +static ssize_t btrfs_balance_show(struct btrfs_fs_info *fs_info, char *buf)
+> > +{
+> > +	ssize_t ret = 0;
+> > +	struct btrfs_balance_control *bctl;
+> > +
+> > +	ret += scnprintf(buf, PAGE_SIZE, "balance\n");
+> > +	spin_lock(&fs_info->balance_lock);
+> > +	bctl = fs_info->balance_ctl;
+> > +	if (!bctl) {
+> > +		ret += scnprintf(buf + ret, PAGE_SIZE - ret,
+> > +				"State: stopping\n");
+> 
+> nit: Shouldn't this be "stopped"?
 
-Aha-- the effing Oracle email virus scanner doesn't run on mails coming
-in via mailing lists (which is the copy that I keep in my archive) but
-the copy that you sent direct to me /did/ get a virus scan, which failed
-because it's too stupid to recognize plain text, so the virus scanner
-injected its stupid warning *into the message body*, and then I git-am'd
-that without noticing.
-
-S'ok, they're moving us to Exchange soon, so I expect never to hear from
-any of you ever again.
-
---D
+I named it stopping because it was in the phase where the request had
+come in but it had not completed the stop. This phase lasts for a couple
+of hundreds of milliseconds in my test environment.
 
 > 
-> Oh well, I guess I have to rebase the whole branch now.
+> > +		goto out;
+> > +	}
+> > +	if (test_bit(BTRFS_FS_BALANCE_RUNNING, &fs_info->flags))
+> > +		ret += scnprintf(buf + ret, PAGE_SIZE - ret,
+> > +				"State: running\n");
+> > +	else
+> > +		ret += scnprintf(buf + ret, PAGE_SIZE - ret,
+> > +				"State: paused\n");
+> > +	ret += scnprintf(buf + ret, PAGE_SIZE - ret, "%llu %llu %llu\n",
+> > +			bctl->stat.expected, bctl->stat.considered,
+> > +			bctl->stat.completed);
+> > +out:
+> > +	spin_unlock(&fs_info->balance_lock);
+> > +	return ret;
+> > +}
 > 
-> Linus: please ignore this pull request.
+> Technically I don't see anything wrong with this, however I got reminded
+> of the following text from sysfs documentation:
 > 
-> --D
+> "
+> Mixing types, expressing multiple lines of data, and doing fancy
 > 
-> > 
-> > Thanks,
-> > Andreas
-> > 
+> formatting of data is heavily frowned upon. Doing these things may get
 > 
+> you publicly humiliated and your code rewritten without notice.
+> "
+> 
+
+Yes, I think it is best to drop this. This information can be obtained
+by ioctls as well.
+
+-- 
+Goldwyn

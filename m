@@ -1,103 +1,101 @@
-Return-Path: <SRS0=BFL5=BP=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=SeVK=BQ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-4.1 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+X-Spam-Status: No, score=-20.6 required=3.0 tests=BAYES_00,DKIMWL_WL_MED,
 	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no
-	version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_GIT,USER_IN_DEF_DKIM_WL autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3ACE2C433E1
-	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Aug 2020 20:12:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 82647C4361A
+	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Aug 2020 11:04:26 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 08B3822CA1
-	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Aug 2020 20:12:37 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6C5CA221E2
+	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Aug 2020 11:04:25 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="ZLdpXk/H"
+	dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b="Dz/Hdjvk"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729655AbgHEUMT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 5 Aug 2020 16:12:19 -0400
-Received: from us-smtp-1.mimecast.com ([205.139.110.61]:41776 "EHLO
-        us-smtp-delivery-1.mimecast.com" rhost-flags-OK-OK-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1726796AbgHEQZe (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 5 Aug 2020 12:25:34 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-        s=mimecast20190719; t=1596644702;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=RDiNTwaajX9EstP2+rkOoaOqP4Sp0ty/xDldPk1nRuY=;
-        b=ZLdpXk/HNS+AUi3ROo21rtg5Qv/XEfMrWtwgHBP6n1uUNof4vHLTDb87x3rxT0koc07SI1
-        KTy/QnlzYkehHheLsKET1MfkI4cCZ3DuAAVbypP255ovHcsjVT2UagoKVgj5mgELRtEPhL
-        jo0xtTQdhi26UO7nuMhsfxoSWEsvsFk=
-Received: from mail-oi1-f199.google.com (mail-oi1-f199.google.com
- [209.85.167.199]) (Using TLS) by relay.mimecast.com with ESMTP id
- us-mta-435-U7rTSfFnOe6Y7U4dhk3dZA-1; Wed, 05 Aug 2020 11:54:43 -0400
-X-MC-Unique: U7rTSfFnOe6Y7U4dhk3dZA-1
-Received: by mail-oi1-f199.google.com with SMTP id s82so18208087oih.5
-        for <linux-btrfs@vger.kernel.org>; Wed, 05 Aug 2020 08:54:43 -0700 (PDT)
+        id S1728101AbgHFGbx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 6 Aug 2020 02:31:53 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:32822 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726051AbgHFGbw (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Aug 2020 02:31:52 -0400
+Received: from mail-yb1-xb49.google.com (mail-yb1-xb49.google.com [IPv6:2607:f8b0:4864:20::b49])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BB82CC061574
+        for <linux-btrfs@vger.kernel.org>; Wed,  5 Aug 2020 23:31:51 -0700 (PDT)
+Received: by mail-yb1-xb49.google.com with SMTP id v11so52359638ybm.22
+        for <linux-btrfs@vger.kernel.org>; Wed, 05 Aug 2020 23:31:51 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=google.com; s=20161025;
+        h=date:message-id:mime-version:subject:from:cc;
+        bh=sdm2DSoAV0iNGUec+K0quGalkY3uq/+dJP/WtuwvHz4=;
+        b=Dz/HdjvkoUUWo9ktp4AN+8Eu5BBpr4a/EmllrflWKwjXwXrg0SKoSpKcs7yMxnjyR/
+         Bp9zaS6g+08y+ewsZRlkswMfKKAL5U6qzUmTYGJr3SOliPJc6IQ/1zHQKiV48LRvN/pW
+         wLk9sqv4AaiMrLojE+9TACqI/qtdP8ASRtNjwWnRpimbaSgBQKqMf/jkXy4gDEcJze1U
+         wrR1YmFdv+uefZYS01Ux3xC3I+0bvqali35qN+VjCsh6C+4yjxTKm9mNlTMDbSgbnao6
+         rDQ9QM/aiDmKiJJDGRfO3K2IRhPXJ444un4PAvWq8rZ0IHtpGNud6cOs8miDAsCL/YLB
+         6hnw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=RDiNTwaajX9EstP2+rkOoaOqP4Sp0ty/xDldPk1nRuY=;
-        b=RaYQzK3UUGhEZ7PdvIGFnG4W2QNnYO9NdhYkjH1r799XU1/yphmfGEvknX2D6lbut6
-         SRp7OaNBHdtXSn+r9Jw1u2CIAMW5GjTIsOgpxh7FUBGNJozWLh04TYcxaapokiUSkdYF
-         hnhCgJo0W5bCUr23FxpCG2sPYguUzgAfAKEMWAMm9NEilaOEVfhezBYcRaF/RWde+M9T
-         D2OETKu1A7RzRxrqc28vaXhgwTc4w7zM0ajGBRxYaQKn1GQhii4ad0mSI2sfpnPLRUfH
-         F/QGCAvHNEJkEtb2S8D6DC5JIS8IPIi/dFLE+oS/tj4PGxxJ/lMGhMJOR8MySnKwxZih
-         nTog==
-X-Gm-Message-State: AOAM532Bo9rYu3ooWIg9pjtoCW0u8jtJCny2ZnrPNlZWwto0gPWExJp3
-        YSz8F5QFRAdzqnM1GwouPawklDK3G0cGv5scgUvhY6aoppUUc/JEfxg4mvkNUW2GkjZANUCQlw4
-        13UgUBrqdGlR7uyX1JuniPmdbUAhq/0z3/QiIe5g=
-X-Received: by 2002:a9d:3784:: with SMTP id x4mr3040069otb.95.1596642882745;
-        Wed, 05 Aug 2020 08:54:42 -0700 (PDT)
-X-Google-Smtp-Source: ABdhPJxFNuf696slwlPSZJynKjLvYPlN0RCiKIOzOVmS4vUbpxiRMAJuurwOtGRZDzCz52Sm2DXwT3decGCiphYpc3o=
-X-Received: by 2002:a9d:3784:: with SMTP id x4mr3040047otb.95.1596642882501;
- Wed, 05 Aug 2020 08:54:42 -0700 (PDT)
-MIME-Version: 1.0
-References: <20200805153214.GA6090@magnolia>
-In-Reply-To: <20200805153214.GA6090@magnolia>
-From:   Andreas Gruenbacher <agruenba@redhat.com>
-Date:   Wed, 5 Aug 2020 17:54:31 +0200
-Message-ID: <CAHc6FU6yMnuKdVsAXkWgwr2ViMSXJdBXksrQDvHwaaw4p8u0rQ@mail.gmail.com>
-Subject: Re: [GIT PULL] iomap: new code for 5.9-rc1
-To:     "Darrick J. Wong" <djwong@kernel.org>
-Cc:     Linus Torvalds <torvalds@linux-foundation.org>,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        linux-xfs@vger.kernel.org, Dave Chinner <david@fromorbit.com>,
-        LKML <linux-kernel@vger.kernel.org>,
-        Eric Sandeen <sandeen@sandeen.net>,
-        Christoph Hellwig <hch@lst.de>,
-        linux-ext4 <linux-ext4@vger.kernel.org>,
-        "Theodore Ts'o" <tytso@mit.edu>, riteshh@linux.ibm.com,
-        Goldwyn Rodrigues <rgoldwyn@suse.de>,
-        linux-btrfs@vger.kernel.org
+        h=x-gm-message-state:date:message-id:mime-version:subject:from:cc;
+        bh=sdm2DSoAV0iNGUec+K0quGalkY3uq/+dJP/WtuwvHz4=;
+        b=tthfGB/xfDYxbULKbzOgErT5xlv1qe96x1DE2wMRFnIEPoukg7Gt71298KmajILIA3
+         Pr+dR03TcllXwq5Velb6UIadMpejczQvoySO2ykxn3tu3wOlrD2sMjG8tAninAExXuKb
+         a1Q5gyzMIzAnVr7vZKz5glVchql033jexERUx3EfuHpakEkDJMcKNVP9mfZd2l3q/Tnf
+         UH67+KbBLtnT+Luz163GgaPPy3NZK6tvMsgCN5J5E6K3983RNdEYHKBv7Jq9uVfBTBVx
+         gVgD8pS4mlKF/ilyGlLWJ5FftgKJbMRKGDPXKq0hchtanKBBLSq2vxjN4EceK0oxcdQN
+         BwTA==
+X-Gm-Message-State: AOAM530kXiqOR60+t3l0cMeUBJcG+ckrL1Ie7PD/J6MQMw1+I3GMjaEI
+        gKWT3QBxWnMcQIKQcaE9p/02u+YfwNpokQ==
+X-Google-Smtp-Source: ABdhPJxGaII+/qbjF7Uvyf5gZlZqH56A+HG7xenfRX9BwK2d3d5JfoTv/2mkn5I/qz1+imvJ4rnrUOxEi0womg==
+X-Received: by 2002:a25:aa14:: with SMTP id s20mr10163258ybi.292.1596695510923;
+ Wed, 05 Aug 2020 23:31:50 -0700 (PDT)
+Date:   Thu,  6 Aug 2020 15:31:44 +0900
+Message-Id: <20200806063144.2119712-1-boleynsu@google.com>
+Mime-Version: 1.0
+X-Mailer: git-send-email 2.28.0.163.g6104cc2f0b6-goog
+Subject: [PATCH] btrfs: backref: this patch fixes a null pointer dereference bug.
+From:   Boleyn Su <boleynsu@google.com>
+Cc:     Boleyn Su <boleynsu@google.com>, Chris Mason <clm@fb.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>,
+        Boleyn Su <boleyn.su@gmail.com>, linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
+To:     unlisted-recipients:; (no To-header on input)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi Darrick,
+The `if (!ret)` check will always be false and it may result in ret->path
+being dereferenced while it is a null pointer.
 
-On Wed, Aug 5, 2020 at 5:40 PM Darrick J. Wong <djwong@kernel.org> wrote:
-> ----------------------------------------------------------------
-> Andreas Gruenbacher (1):
->       iomap: Make sure iomap_end is called after iomap_begin
+Fixes: a37f232b7b65 ("btrfs: backref: introduce the skeleton of btrfs_backref_iter")
+Cc: Chris Mason <clm@fb.com>
+Cc: Josef Bacik <josef@toxicpanda.com>
+Cc: David Sterba <dsterba@suse.com>
+Cc: Boleyn Su <boleyn.su@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Signed-off-by: Boleyn Su <boleynsu@google.com>
+---
+ fs/btrfs/backref.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-that commit (d1b4f507d71de) contains the following garbage in the
-commit message:
-
-    The message from this sender included one or more files
-    which could not be scanned for virus detection; do not
-    open these files unless you are certain of the sender's intent.
-
-    ----------------------------------------------------------------------
-
-How did it come to that?
-
-Thanks,
-Andreas
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index ea10f7bc9..ea1c28ccb 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -2303,7 +2303,7 @@ struct btrfs_backref_iter *btrfs_backref_iter_alloc(
+ 		return NULL;
+ 
+ 	ret->path = btrfs_alloc_path();
+-	if (!ret) {
++	if (!ret->path) {
+ 		kfree(ret);
+ 		return NULL;
+ 	}
+-- 
+2.28.0.163.g6104cc2f0b6-goog
 

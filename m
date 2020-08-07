@@ -2,96 +2,159 @@ Return-Path: <SRS0=fxrp=BR=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.8 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-11.6 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8E44AC433E0
-	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Aug 2020 15:20:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9B4BBC433DF
+	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Aug 2020 20:45:42 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 36F9322CA1
-	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Aug 2020 15:20:41 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 67C862075A
+	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Aug 2020 20:45:42 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=couderc.eu header.i=@couderc.eu header.b="BUrvqEP8"
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="skjoi1HE";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="l5zS0ZY7"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726126AbgHGPUk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 7 Aug 2020 11:20:40 -0400
-Received: from smtp1-g21.free.fr ([212.27.42.1]:33315 "EHLO smtp1-g21.free.fr"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725815AbgHGPUj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 7 Aug 2020 11:20:39 -0400
-Received: from mail.tol.fr (unknown [78.234.252.95])
-        by smtp1-g21.free.fr (Postfix) with ESMTPS id 833FCB0052C
-        for <linux-btrfs@vger.kernel.org>; Fri,  7 Aug 2020 17:20:37 +0200 (CEST)
-Subject: Re: Is there some doc or some example of libbtrfs ?
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=couderc.eu; s=2017;
-        t=1596813636; h=from:from:sender:reply-to:subject:subject:date:date:
-         message-id:message-id:to:to:cc:mime-version:mime-version:
-         content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=AesxEdbnRgCIBKCTt27gaj0x/fIJgLP4lwLxvhPWmNA=;
-        b=BUrvqEP8yARAxGY9+9tEgj2oDaEnBNfMjJFYzM8oxGyyWr0j/zlmxP34WJdWrCbSlXPwQ3
-        xaKism73LiMumqWladGhkvr7go3xgq7Tsbtxw/Uv1NEk/KAsznCSRQHT35Wt43PRYGf8Uf
-        llonu6oslM2fp3RzNKZ7zK9zqGeif804uJDUpOZssJhiLdOnbmfQE4sAkmW9pgqlX0rVO2
-        r6xcV2A46sDgS0wysBNDkC8bL7orjj/ZwsK2q1daSzoR1uipag4epLVbnHHxG6Boc0NZ7q
-        SUXOFot0JJ+TOcGCfw/Jab+Rf1Pna7+tm/IxEy31ovm0yHPUXkQ0FVruuqdX7Q==
-To:     linux-btrfs@vger.kernel.org
-References: <4bf44e81-0b4f-9c99-3010-410e110aec2d@couderc.eu>
- <4700f999-7914-0453-7096-f2ca360b4be7@suse.com>
-From:   Pierre Couderc <pierre@couderc.eu>
-Message-ID: <37ddafc3-bc69-0848-ab8d-4c05d8a686b8@couderc.eu>
-Date:   Fri, 7 Aug 2020 17:20:34 +0200
+        id S1728557AbgHGUpm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 7 Aug 2020 16:45:42 -0400
+Received: from out5-smtp.messagingengine.com ([66.111.4.29]:44157 "EHLO
+        out5-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1728545AbgHGUpl (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 7 Aug 2020 16:45:41 -0400
+Received: from compute4.internal (compute4.nyi.internal [10.202.2.44])
+        by mailout.nyi.internal (Postfix) with ESMTP id 85C775C0135;
+        Fri,  7 Aug 2020 16:45:38 -0400 (EDT)
+Received: from mailfrontend2 ([10.202.2.163])
+  by compute4.internal (MEProxy); Fri, 07 Aug 2020 16:45:38 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=date
+        :from:to:cc:subject:message-id:references:mime-version
+        :content-type:content-transfer-encoding:in-reply-to; s=fm1; bh=1
+        sB9ZdDG1I4hVZ1klQFggMSurS3kilRWByI0MkUtses=; b=skjoi1HETdUUxH3RI
+        KyniUTP5pF67b9BEL15MqROBx2gA9wnuNi8DIoO0Pl0HqzKCxYrHDgc4JzniX5e9
+        JRctXE1feJUoRCTpWkzLSZcsj4sPyoTC9U6J+6/yML4XECDrZQa/jVS0sttleiRY
+        dLNbeW0A35GPXUkRFCl9S9ppeOQqog6eMoOqkBzueWknzpJ01GZ+E84kZKGSLr4l
+        Hx6R5HK4DeJHY1VMmhhDDviy+UaqyEDMn5QNLrom/3nf7sUbXRpEKh8kiJEtLf4t
+        n34kPHeGRRgz70a/Y5qoYrvPVLBXAs6AJaxrOl6KYVBUfeH91gARHXglJOSYan3F
+        U8CAw==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+        messagingengine.com; h=cc:content-transfer-encoding:content-type
+        :date:from:in-reply-to:message-id:mime-version:references
+        :subject:to:x-me-proxy:x-me-proxy:x-me-sender:x-me-sender
+        :x-sasl-enc; s=fm3; bh=1sB9ZdDG1I4hVZ1klQFggMSurS3kilRWByI0MkUts
+        es=; b=l5zS0ZY7ZkV1v6GlHDSipO2iy1DqOqJkNmV1amhDP3jFccJZXa+rZXImM
+        oaUg+TZdxnQXUx6xv22up0iPi0P+/xAE/ftkUHkvvmNTgSa+3ewva7Wehr66TkJf
+        F58aAigummR0Dkbk0h2rWGuxWDQ3G3AlX8JAz1Lfpd9TYA/BD5lWo6h8GfiE5vYX
+        1SJ/JKKDWaOcvHebT/g8q3gZrNLA+jgyofAh90QdSTYG6Qt6V5Fko3KcwghTwSh/
+        Fes7tLepWHaSWcyia7pOmDYB6eLU6BYmjhMWx6k7TU8N8HqXn9f2akW9eWwSTDuO
+        PT95SeafMn7ZOT5SDryvoh+qouE3A==
+X-ME-Sender: <xms:cb0tXyO6CCLv8n0oZAbBlOIEey1lEvt2lrKcFmdAZRdhLvBTSB1Ntw>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeduiedrkedvgddugeelucetufdoteggodetrfdotf
+    fvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfqfgfvpdfurfetoffkrfgpnffqhgen
+    uceurghilhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmne
+    cujfgurhepfffhvffukfhfgggtugfgjggfsehtkeertddtreejnecuhfhrohhmpeeuohhr
+    ihhsuceuuhhrkhhovhcuoegsohhrihhssegsuhhrrdhioheqnecuggftrfgrthhtvghrnh
+    epiefgteejhedvjeeutdefjeduffeitdehgeeuudejffdvvdejjeejieetheelgeelnecu
+    kfhppeduieefrdduudegrddufedvrdefnecuvehluhhsthgvrhfuihiivgeptdenucfrrg
+    hrrghmpehmrghilhhfrhhomhepsghorhhishessghurhdrihho
+X-ME-Proxy: <xmx:cb0tXw_PLI86YsazdYzRFE2f2Spb8GTlfJ5yHq9pr1xoIxL8B6pmhQ>
+    <xmx:cb0tX5T7TxP-zxCZyDLMYVpO4WkYBAQ-i4Z1bFr6-QUDGBapcjNeCQ>
+    <xmx:cb0tXyuCaJ5dYASkTqQQTFU_U4IQD77GuarlqCZQEzwuWfuCQYPDaw>
+    <xmx:cr0tX65dfFkbOsEG2X4GgYpNIrnjmH0WffzW8HvDNB-iVOigZHRnBg>
+Received: from localhost (unknown [163.114.132.3])
+        by mail.messagingengine.com (Postfix) with ESMTPA id 102173060067;
+        Fri,  7 Aug 2020 16:45:37 -0400 (EDT)
+Date:   Fri, 7 Aug 2020 13:45:33 -0700
+From:   Boris Burkov <boris@bur.io>
+To:     Martin Raiber <martin@urbackup.org>
+Cc:     Josef Bacik <josef@toxicpanda.com>,
+        Qu Wenruo <quwenruo.btrfs@gmx.com>, Chris Mason <clm@fb.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        kernel-team@fb.com
+Subject: Re: [PATCH RFC] btrfs: change commit txn to end txn in
+ subvol_setflags ioctl
+Message-ID: <20200807204533.GA429307@devvm842.ftw2.facebook.com>
+References: <20200804175516.2511704-1-boris@bur.io>
+ <86c25213-e961-790e-dc27-8c2a9aa118c1@gmx.com>
+ <5c0b0cd7-b04d-7715-8d0e-6466f7e802a5@toxicpanda.com>
+ <01020173bed9de46-08b668c9-e188-412b-846c-4ed33ce2fe4f-000000@eu-west-1.amazonses.com>
 MIME-Version: 1.0
-In-Reply-To: <4700f999-7914-0453-7096-f2ca360b4be7@suse.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
-Content-Language: fr
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=couderc.eu;
-        s=2017; t=1596813636; h=from:from:sender:reply-to:subject:subject:date:date:
-         message-id:message-id:to:to:cc:mime-version:mime-version:
-         content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=AesxEdbnRgCIBKCTt27gaj0x/fIJgLP4lwLxvhPWmNA=;
-        b=C9GnMmelFIoUgJXh0DzsshJFy368RzsTzhF7I7sq325nI8FEXz2mn9HSSEV1fDFVK91HuX
-        GBKrbz5guS9CeWYVL/5ZC1v5mXBLDdCGQxLN4+xpRINBSPCNyKZ1rwu4MT8BAmeb0q5VbB
-        qBT4RSpjUKlo6DF7bgfFtwkbkPntFv8I6hlqA28hafZW8v5f0T1R5umqSFVfamy8Wcxrzb
-        anmtE1+zGdL3I7kYq1qDV+Eo0+Cntyjuy44rtmPFepJZDeXK3hdqkKqBuFZeawPLuS9xJU
-        F7EX+Cum93NAV0Bfr+WwZ9AGj8g7qxGub/+VkIAfT8Lw6uOrUxjB5ZMvK0ZWeg==
-ARC-Seal: i=1; s=2017; d=couderc.eu; t=1596813636; a=rsa-sha256; cv=none;
-        b=rAJGvmmrivlI1tBIJvevbl3T44ZM6HwLu4/GJFw0NtJ1jg4dKvu2tIfAMEZI3DFRsZFPzw7saSou6w+MYBxUqx1A6dat4vL/gPIfhteirFRwRTDNPc8G3E3oS3RKihOiQSoJtf2Ap3xxUAL0ab5RuzLL7E1YXxj2vy8CHP8NEx6X4PoDrocy6kZCCYcQpeBo8P2M/2qh7spmn4ZR4OG6+DLOQUmSapeUCA7fJOBGjb/dApfzvCIN1Ic9ILTWCNjNRUMcLClShbdqp9AHwtnPjz9csxBZ+hP/wmyrB7FndEAMm1WRSZKrylaH1faT8+eHV/9Fmh4ZMPE+MfLHoCEPXA==
-ARC-Authentication-Results: i=1;
-        ORIGINATING;
-        auth=pass smtp.auth=tol smtp.mailfrom=pierre@couderc.eu
+In-Reply-To: <01020173bed9de46-08b668c9-e188-412b-846c-4ed33ce2fe4f-000000@eu-west-1.amazonses.com>
+User-Agent: Mutt/1.5.21 (2010-09-15)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On Wed, Aug 05, 2020 at 01:40:16PM +0000, Martin Raiber wrote:
+> On 05.08.2020 01:08 Josef Bacik wrote:
+> >On 8/4/20 6:48 PM, Qu Wenruo wrote:
+> >>
+> >>
+> >>On 2020/8/5 上午1:55, Boris Burkov wrote:
+> >>>Currently, btrfs_ioctl_subvol_setflags forces a
+> >>>btrfs_commit_transaction
+> >>>while holding subvol_sem. As a result, we have seen workloads where
+> >>>calling `btrfs property set -ts <subvol> ro false` hangs waiting for a
+> >>>legitimately slow commit. This gets even worse if the workload tries to
+> >>>set flags on multiple subvolumes and the ioctls pile up on subvol_sem.
+> >>>
+> >>>Change the commit to a btrfs_end_transaction so that the ioctl can
+> >>>return in a timely fashion and piggy back on a later commit.
+> >>>
+> >>>Signed-off-by: Boris Burkov <boris@bur.io>
+> >>>---
+> >>>  fs/btrfs/ioctl.c       | 2 +-
+> >>>  fs/btrfs/transaction.c | 4 ++--
+> >>>  2 files changed, 3 insertions(+), 3 deletions(-)
+> >>>
+> >>>diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> >>>index bd3511c5ca81..3ae484768ce7 100644
+> >>>--- a/fs/btrfs/ioctl.c
+> >>>+++ b/fs/btrfs/ioctl.c
+> >>>@@ -1985,7 +1985,7 @@ static noinline int
+> >>>btrfs_ioctl_subvol_setflags(struct file *file,
+> >>>          goto out_reset;
+> >>>      }
+> >>>  -    ret = btrfs_commit_transaction(trans);
+> >>>+    ret = btrfs_end_transaction(trans);
+> >>
+> >>This means the setflag is not committed to disk, and if a powerloss
+> >>happens before a transaction commit, then the setflag operation just get
+> >>lost.
+> >>
+> >>This means, previously if this ioctl returns, users can expect that the
+> >>flag is always set no matter what, but now there is no guarantee.
+> >>
+> >>Personally I'm not sure if we really want that operation to be committed
+> >>to disk.
+> >>Maybe that transaction commit can be initialized in user space, so for
+> >>multiple setflags, we only commit once, thus saves a lot of time.
+> >>
+> >
+> >I'm of the opinion that we shouldn't be committing the transaction
+> >for stuff like this, unless there's a really good reason to.
+> >Especially given we're holding the subvol lock here, we should
+> >just do end_transaction.  Thanks,
+> From a user perspective I'd appreciate having the option to set it
+> in a non-durable way (I have seen btrfs property sets hanging for a
+> long time as well). But currently my application kind of depends on
+> it being durable. Making it non-durable wouldn't break much and I
+> guess the old behaviour could be emulated by a "btrfs fi sync
+> <subvol>" afterwards, but idk how much other stuff depends on it
+> being durable. Making it consistent with btrfs subvol del with the
+> "-c" switch would be nice and consistent as well (and the -c switch
+> could be done via IOC_SYNC after setting the properties).
 
-On 8/7/20 12:17 PM, Nikolay Borisov wrote:
->
-> On 7.08.20 г. 12:36 ч., Pierre Couderc wrote:
->> Ho do I get programmatically btrfs xxxxx....?
->>
-> Well, the example is in the source code of btrfs-progs, namely :
->
-> btrfs_list_subvols_print
->   list_subvol_search
->
-> TLDR You'd have to use the TREE_SEARCH ioctl which allows you to get
-> data from btrfs' various trees. In order to figure out what data to pass
-> to  the ioctl you'd have to familiarize yourself with the internal
-> structure of btrfs trees to know which items represent a snapshot and
-> which proper subvolumes. You should check the "ROOT ITEM" description at
-> https://github.com/btrfs/btrfs-dev-docs/blob/master/tree-items.txt to
-> see when a root item is a snapshot and not a subvolume.
->
-A small tip for the next one :
+Martin,
 
-To understand how and where some function is called (here 
-btrfs_list_subvols_print), grep in in "cmds" subdirectory (here 
-logically subvolume.c).
+Thanks for your perspective, that's helpful. Could you elaborate on how
+your application relies on the durability? I would just like to learn
+more about how this might affect people.
 
+I really like the -c idea, but I fear if people are broadly depending on
+that behavior by default, it wouldn't be enough.

@@ -7,61 +7,61 @@ X-Spam-Status: No, score=-8.8 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6FBAAC433E0
-	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Aug 2020 10:38:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8E44AC433E0
+	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Aug 2020 15:20:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 1943B20866
-	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Aug 2020 10:38:15 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 36F9322CA1
+	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Aug 2020 15:20:41 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=couderc.eu header.i=@couderc.eu header.b="i8Q1vIMu"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=couderc.eu header.i=@couderc.eu header.b="BUrvqEP8"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727814AbgHGKiO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 7 Aug 2020 06:38:14 -0400
-Received: from smtp1-g21.free.fr ([212.27.42.1]:14496 "EHLO smtp1-g21.free.fr"
+        id S1726126AbgHGPUk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 7 Aug 2020 11:20:40 -0400
+Received: from smtp1-g21.free.fr ([212.27.42.1]:33315 "EHLO smtp1-g21.free.fr"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726511AbgHGKiN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 7 Aug 2020 06:38:13 -0400
+        id S1725815AbgHGPUj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 7 Aug 2020 11:20:39 -0400
 Received: from mail.tol.fr (unknown [78.234.252.95])
-        by smtp1-g21.free.fr (Postfix) with ESMTPS id 8FB6EB0059C
-        for <linux-btrfs@vger.kernel.org>; Fri,  7 Aug 2020 12:38:11 +0200 (CEST)
+        by smtp1-g21.free.fr (Postfix) with ESMTPS id 833FCB0052C
+        for <linux-btrfs@vger.kernel.org>; Fri,  7 Aug 2020 17:20:37 +0200 (CEST)
 Subject: Re: Is there some doc or some example of libbtrfs ?
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=couderc.eu; s=2017;
-        t=1596796691; h=from:from:sender:reply-to:subject:subject:date:date:
+        t=1596813636; h=from:from:sender:reply-to:subject:subject:date:date:
          message-id:message-id:to:to:cc:mime-version:mime-version:
          content-type:content-type:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=SOa6DDdLpkHArbl0myOdB+YKly2vC+QfgPW2XSCIGeo=;
-        b=i8Q1vIMu/gYiqhhGbUydGNsN0Ukj41FqQXAMLP00MLkxHRxmYFJNPInKJa32r/gI+twM1l
-        fuB8DFG16/jQ8Qu162LXxOCMCAyKUkP5j/eQRo6qLpFRzGa11yYeZJLiA93lIJU+G3TxPP
-        0IXUky6L2y9PgC/MAwBQtPtU/2UCyehcDbih1GE48nNmGXP/52LDItQHQnOrAytfDZ8dw6
-        coOCV52A+eoeX34yCwJKVIsvWqx5f/CVMFnAOmDwR2GhIrJ5oNs5+UBazH06dTADqPMw2A
-        ePVifBZ9GIJ7JRWK4FUKe3NIQLwuKP36fDXd5ChHHH7BJurnBKFfp1tPA0sEQw==
+        bh=AesxEdbnRgCIBKCTt27gaj0x/fIJgLP4lwLxvhPWmNA=;
+        b=BUrvqEP8yARAxGY9+9tEgj2oDaEnBNfMjJFYzM8oxGyyWr0j/zlmxP34WJdWrCbSlXPwQ3
+        xaKism73LiMumqWladGhkvr7go3xgq7Tsbtxw/Uv1NEk/KAsznCSRQHT35Wt43PRYGf8Uf
+        llonu6oslM2fp3RzNKZ7zK9zqGeif804uJDUpOZssJhiLdOnbmfQE4sAkmW9pgqlX0rVO2
+        r6xcV2A46sDgS0wysBNDkC8bL7orjj/ZwsK2q1daSzoR1uipag4epLVbnHHxG6Boc0NZ7q
+        SUXOFot0JJ+TOcGCfw/Jab+Rf1Pna7+tm/IxEy31ovm0yHPUXkQ0FVruuqdX7Q==
 To:     linux-btrfs@vger.kernel.org
 References: <4bf44e81-0b4f-9c99-3010-410e110aec2d@couderc.eu>
  <4700f999-7914-0453-7096-f2ca360b4be7@suse.com>
 From:   Pierre Couderc <pierre@couderc.eu>
-Message-ID: <7661cb47-7a56-51fc-b4b2-0dc3e5c6d5ab@couderc.eu>
-Date:   Fri, 7 Aug 2020 12:38:10 +0200
+Message-ID: <37ddafc3-bc69-0848-ab8d-4c05d8a686b8@couderc.eu>
+Date:   Fri, 7 Aug 2020 17:20:34 +0200
 MIME-Version: 1.0
 In-Reply-To: <4700f999-7914-0453-7096-f2ca360b4be7@suse.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: 8bit
 Content-Language: fr
 ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=couderc.eu;
-        s=2017; t=1596796691; h=from:from:sender:reply-to:subject:subject:date:date:
+        s=2017; t=1596813636; h=from:from:sender:reply-to:subject:subject:date:date:
          message-id:message-id:to:to:cc:mime-version:mime-version:
          content-type:content-type:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=SOa6DDdLpkHArbl0myOdB+YKly2vC+QfgPW2XSCIGeo=;
-        b=kJxlvJKQ+q71cpKmfmvG8yS1+JQLeDQrmYHD1fKvPM0veXDnJ0d1XkhiJ08XwbC3OuZSqZ
-        KDYeH9tFP1C410O71H682qidMx2RKsvkD5FmpC4GiMaYUtDQ426aT6K4xmhBV4KpBJmXXH
-        2DylVHJTDXr9pBgfbDiXKsDtxLavvcombcMfPCN4naz6pMK7OCe18cAuCASmWMPRGhA9uT
-        bsbuPwokoXXqxgziAR+Z4J7y+aZlCfUlMBRxwfUUDDfmA/7MSPvYsQDh/pz1OlK7etnQw3
-        +KuZB5RZ+lSR2VOcjpZLXPhMbJexsokOM5menKsp9sDGjmEvA/Rx7ph9jGBT8A==
-ARC-Seal: i=1; s=2017; d=couderc.eu; t=1596796691; a=rsa-sha256; cv=none;
-        b=E4dG/vcsC7ImQpmItghL29cjVJqs6F7RUi1qk0WKvBo86ggARQ+J44DG6c6JE3YNXFa1TnkKFQYmed/GMHmrwHUZOeXRoSGDEhTiWgnb1g6kCjl30X/zP1+1Rd0NKW+GY0E8wXIiwAj9PcPgDxlUNZZJEv2oZmi6Wu4BUfJX2goLRz93TL3Hshn0ZeiLWa417cbfR6gib0gjp/K3PpXn3Ipi/2BhVT5D51+uZ5Ix/AZKrTRBH0+JnsFGpZSQc0OcOIHwfI5DsNr47GhQ1AUNgObLGk71wPSL7GTHWgApnPNuTMGDYGZHFza+cSVB7E3g8kJuAyP48fooxy9PSvw6Fw==
+        bh=AesxEdbnRgCIBKCTt27gaj0x/fIJgLP4lwLxvhPWmNA=;
+        b=C9GnMmelFIoUgJXh0DzsshJFy368RzsTzhF7I7sq325nI8FEXz2mn9HSSEV1fDFVK91HuX
+        GBKrbz5guS9CeWYVL/5ZC1v5mXBLDdCGQxLN4+xpRINBSPCNyKZ1rwu4MT8BAmeb0q5VbB
+        qBT4RSpjUKlo6DF7bgfFtwkbkPntFv8I6hlqA28hafZW8v5f0T1R5umqSFVfamy8Wcxrzb
+        anmtE1+zGdL3I7kYq1qDV+Eo0+Cntyjuy44rtmPFepJZDeXK3hdqkKqBuFZeawPLuS9xJU
+        F7EX+Cum93NAV0Bfr+WwZ9AGj8g7qxGub/+VkIAfT8Lw6uOrUxjB5ZMvK0ZWeg==
+ARC-Seal: i=1; s=2017; d=couderc.eu; t=1596813636; a=rsa-sha256; cv=none;
+        b=rAJGvmmrivlI1tBIJvevbl3T44ZM6HwLu4/GJFw0NtJ1jg4dKvu2tIfAMEZI3DFRsZFPzw7saSou6w+MYBxUqx1A6dat4vL/gPIfhteirFRwRTDNPc8G3E3oS3RKihOiQSoJtf2Ap3xxUAL0ab5RuzLL7E1YXxj2vy8CHP8NEx6X4PoDrocy6kZCCYcQpeBo8P2M/2qh7spmn4ZR4OG6+DLOQUmSapeUCA7fJOBGjb/dApfzvCIN1Ic9ILTWCNjNRUMcLClShbdqp9AHwtnPjz9csxBZ+hP/wmyrB7FndEAMm1WRSZKrylaH1faT8+eHV/9Fmh4ZMPE+MfLHoCEPXA==
 ARC-Authentication-Results: i=1;
         ORIGINATING;
         auth=pass smtp.auth=tol smtp.mailfrom=pierre@couderc.eu
@@ -74,25 +74,24 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 On 8/7/20 12:17 PM, Nikolay Borisov wrote:
 >
 > On 7.08.20 г. 12:36 ч., Pierre Couderc wrote:
->> Ho do I get programmatically the list of the snapshots of a volume in
->> C/C++?
+>> Ho do I get programmatically btrfs xxxxx....?
 >>
->>
->> Well, the example is in the source code of btrfs-progs, namely :
->>
->> btrfs_list_subvols_print
->>   list_subvol_search
->>
->> TLDR You'd have to use the TREE_SEARCH ioctl which allows you to get
->> data from btrfs' various trees. In order to figure out what data to pass
->> to  the ioctl you'd have to familiarize yourself with the internal
->> structure of btrfs trees to know which items represent a snapshot and
->> which proper subvolumes. You should check the "ROOT ITEM" description at
->> https://github.com/btrfs/btrfs-dev-docs/blob/master/tree-items.txt to
->> see when a root item is a snapshot and not a subvolume.
->>
-Thank you, you are the light in the dark..
+> Well, the example is in the source code of btrfs-progs, namely :
+>
+> btrfs_list_subvols_print
+>   list_subvol_search
+>
+> TLDR You'd have to use the TREE_SEARCH ioctl which allows you to get
+> data from btrfs' various trees. In order to figure out what data to pass
+> to  the ioctl you'd have to familiarize yourself with the internal
+> structure of btrfs trees to know which items represent a snapshot and
+> which proper subvolumes. You should check the "ROOT ITEM" description at
+> https://github.com/btrfs/btrfs-dev-docs/blob/master/tree-items.txt to
+> see when a root item is a snapshot and not a subvolume.
+>
+A small tip for the next one :
 
-I start on that.
+To understand how and where some function is called (here 
+btrfs_list_subvols_print), grep in in "cmds" subdirectory (here 
+logically subvolume.c).
 
-PC

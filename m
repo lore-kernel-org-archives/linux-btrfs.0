@@ -1,276 +1,134 @@
-Return-Path: <SRS0=EZcw=BS=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=TuHc=BT=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-4.1 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_GIT autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id ECF15C433DF
-	for <linux-btrfs@archiver.kernel.org>; Sat,  8 Aug 2020 15:58:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 79BDDC433E0
+	for <linux-btrfs@archiver.kernel.org>; Sun,  9 Aug 2020 12:09:35 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id B5A9420747
-	for <linux-btrfs@archiver.kernel.org>; Sat,  8 Aug 2020 15:58:34 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="Uy3y/2dj"
+	by mail.kernel.org (Postfix) with ESMTP id 485D0206B6
+	for <linux-btrfs@archiver.kernel.org>; Sun,  9 Aug 2020 12:09:35 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726370AbgHHP6d (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 8 Aug 2020 11:58:33 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53604 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726248AbgHHP6d (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 8 Aug 2020 11:58:33 -0400
-Received: from mail-wm1-x342.google.com (mail-wm1-x342.google.com [IPv6:2a00:1450:4864:20::342])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EF424C061756
-        for <linux-btrfs@vger.kernel.org>; Sat,  8 Aug 2020 08:58:32 -0700 (PDT)
-Received: by mail-wm1-x342.google.com with SMTP id 9so4115911wmj.5
-        for <linux-btrfs@vger.kernel.org>; Sat, 08 Aug 2020 08:58:32 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc:content-transfer-encoding;
-        bh=uzyTMtxrb49gbboKI9iCrfCROoJ/llkvD+q3HxhSnLk=;
-        b=Uy3y/2djCqd6pQyOG3t38DVIzNkk6pERVXbVUo+OTeSwJLnyKObIpqa2fz/ONcW/iW
-         YbxxrKgKxU8OE5wJDRepPqZj3hZ6Ow9NNyc/5A4UfrlmWE1MyAZs56iaAYH1zWPY7orj
-         WdNBDz5AdvmpmPQ/3RGOvZBgVsr6DQCZ4VuC+Ah3c3FpY9K0+/ZaZ/7n9AwFJqHPlwz0
-         tgNx7tOGVFTZL++c4f2rJACbhtgrvoCPtyoBogFC71XO3+8oQP6spurETdGeOY6lPPa9
-         BGa3APXPvmCQRVFtXyyyhBl23j9miyKlUXME6/0vMsC97mXF6oUKCly75ZhdVO92nEoU
-         v4Qw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc:content-transfer-encoding;
-        bh=uzyTMtxrb49gbboKI9iCrfCROoJ/llkvD+q3HxhSnLk=;
-        b=T2S491m7M9h+9OPKGlka9OAq42MZZ9LbVWUGtP4WVmzZYLLYkWBOb7EdlacaUoPvn/
-         T4cC9dG6ovh4evj27VvARZXCUGLEfnM/e6ezya5V9gHEJjAQmHAge3+29Ck0l5Swn+Rz
-         UE4QWN1EI6DAi4RjyJ42Nkc8BBWh7iBfsFe4kCRU6Z9KHj6iqsBMDrUDHJI+1C91mCjM
-         POwZPUJASIeUzGvCl3DhZIsATeLZT3P9eZ3BkuCTVkRk+A2vu86UQK+pJHQotXsX54C3
-         IpB2ikhfM/AQYPKn79xnhkb9F333B0ZsAKGp2RSvHtawUya1uIVgD/irLax0lDgjfzsE
-         bVdw==
-X-Gm-Message-State: AOAM5305hAS7IFtG3igxvBtJBDd6NzRoPPxqlgnWwvRePSEtBFtFe1cm
-        FQrKHEVtJlxBMr6/U4TysrjegANOreL/YXQkSnjlYQ==
-X-Google-Smtp-Source: ABdhPJxMlWQT+T/MZ5VPDo0iWRCevyPLekvh/qTeC+ROJfGm2M+cnX4l1u5ELwc253l7+XwjAyvJU9jZmsXr6aJHeXk=
-X-Received: by 2002:a7b:cd83:: with SMTP id y3mr17229519wmj.105.1596902311227;
- Sat, 08 Aug 2020 08:58:31 -0700 (PDT)
+        id S1726207AbgHIMJc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 9 Aug 2020 08:09:32 -0400
+Received: from mx2.suse.de ([195.135.220.15]:56124 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726009AbgHIMJb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 9 Aug 2020 08:09:31 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.221.27])
+        by mx2.suse.de (Postfix) with ESMTP id DAEF7AD0B;
+        Sun,  9 Aug 2020 12:09:48 +0000 (UTC)
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Jungyeon Yoon <jungyeon.yoon@gmail.com>
+Subject: [PATCH v3 0/5] btrfs: Enhanced runtime defence against fuzzed images
+Date:   Sun,  9 Aug 2020 20:09:14 +0800
+Message-Id: <20200809120919.85271-1-wqu@suse.com>
+X-Mailer: git-send-email 2.28.0
 MIME-Version: 1.0
-References: <CAEYyJDyMkOBjhhVFbX_CCG0bnWC1i7OGLvPj8tFhntgxYjkRGg@mail.gmail.com>
- <e194deb8-4126-0ac6-becd-890939c99275@gmx.com>
-In-Reply-To: <e194deb8-4126-0ac6-becd-890939c99275@gmx.com>
-From:   Lu Pi <lp.contact2@gmail.com>
-Date:   Sat, 8 Aug 2020 17:57:53 +0200
-Message-ID: <CAEYyJDzojVnOqh3+egwm0FPNEhazj6idzj0YxWNr_K77Fj0UPA@mail.gmail.com>
-Subject: Re: fails to boot with "BTRFS critical (device sda2): corrupt leaf: ..."
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sat, 8 Aug 2020 at 13:46, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
->
->
->
-> On 2020/8/8 =E4=B8=8B=E5=8D=885:57, Lu Pi wrote:
-> > Hi,
-> >
-> > I have a system that fails to boot, with "BTRFS critical (device
-> > sda2): corrupt leaf: " error, and open an "initramfs" shell.
-> >
-> > I did backup /home with 'btrfs restore'. There were a few errors,
-> > though only on cache files (Google Chrome cache files).
-> >
-> > Now considering 'btrfs check --repair'.
-> >
-> > I'm contacting you as recommended here:
-> >    https://btrfs.wiki.kernel.org/index.php/Tree-checker
-> >    "Please report to btrfs mail list <linux-btrfs@vger.kernel.org> firs=
-t."
-> >    "Please *NOT* use btrfs check --repair until instructed by a develop=
-er."
-> >
-> >
-> > Can you advice?
-> >
-> >
-> >
-> >
-> > BACKGROUND
-> >
-> > - the system is Linux Mint 17
-> >
-> > - a week ago or so, after a kernel update, the system was remounting
-> > read-only after about 1 minute after boot. Downgrading the kernel
-> > solved the issue.
-> >   - 4.15.0-112-generic brought the issue
-> >   - 4.15.0-107-generic was OK
-> >
-> > - a few days ago, something else happened, though I'm unsure, as I'm
-> > not the user of the system. Possibly any of these,
-> >   - another kernel update (now I can see that 4.15.0-112 is back)
->
-> The kernel update is the direct cause, we added a lot of extra selftest
-> to ensure we detect problems before it crash the kernel.
->
-> The root cause is some even older kernel, which writes some
-> uninitialized data to disk.
->
-> >   - maybe the system was shut down by cutting electricity (?)
-> >   - could it be also that the SSD drive is failing (?)
-> >   - or?
-> >   - though as a result the system fails to boot and the drive is not mo=
-untable.
-> >
-> >
-> >
-> > SYSTEM INFORMATION
-> > ---
-> > When reporting errors or asking for support always supply the output
-> > of the following commands:
-> >   uname -a
-> >   btrfs --version
-> >   btrfs fi show
-> >   btrfs fi df /home # Replace /home with the mount point of your
-> > btrfs-filesystem
-> >   dmesg > dmesg.log
-> > ---
-> >
-> > See below, and dmesg log enclosed
-> >
-> >
-> > ---
-> > (initramfs) uname -a
-> > Linux (none) 4.15.0-112-generic #113~16.04.1-Ubuntu SMP Fri Jul 10
-> > 04:37:08 UTC 2020 x86_64 GNU/Linux
->
-> This is a little old, considering how many enhancement and bug fixes are
-> in recent kernel releases.
->
-> Thus it's recommended to use newer kernel, *after* your problem been fixe=
-d.
->
-> >
-> >
-> > (initramfs) btrfs --version
-> > btrfs-progs v4.4
->
-> Btrfs-progs is too old to even detect the problem, not to mention fix it.
-> It should only report the fs as healthy, if there are no other problems.
->
-> >
-> >
-> > (initramfs) btrfs fi show
-> > Label: none  uuid: f813bbe2-0bff-4923-822b-d3f6d6ebbb9e
-> >     Total devices 1 FS bytes used 55.22GiB
-> >     devid    1 size 107.98GiB used 85.02GiB path /dev/sda2
-> >
-> >
-> > (initramfs) btrfs fi df /home
-> > ERROR: can't access '/home': No such file or directory
-> >
-> > (initramfs) btrfs fi df /
-> > ERROR: not a btrfs filesystem: /
-> >
-> >
-> >
-> > (initramfs) mount -t btrfs /dev/sda2 /mnt/sda/
-> > [70391.973518] BTRFS critical (device sda2): corrupt leaf:
-> > block=3D353828864 slot=3D148 extent bytenr=3D242073600 len=3D16384 inva=
-lid
-> > generation, have 9367487224930631680 expect (0, 458036]
->
-> The generation is mostly garbage, it's 0x8200000000000000L, just some
-> random number not really initialized.
->
-> This is a pretty old bug in older kernels.
->
-> It's the recently added extra self check detecting them.
->
-> This can be detected by "btrfs check --repair" after btrfs-progs v5.4.1,
-> but not yet repairable. (Haven't got a real world report before this one)
->
->
-> There is a way to workaround this, by locating the offending extent, and
-> delete it manually.
->
-> Firstly, you need to mount the fs with older kernel.
->
-> Then run the following command (maybe you need latest btrfs-progs):
-> # btrfs ins logical-resolve 242073600 <mnt>
->
-> Where the 242073600 is the "extent bytenr" in the dmesg output.
->
-> There are two possible output patterns:
-> - The path of the offending file
->   Then just delete it.
->
-> - No such file or directory
->   This means it's a tree block, it's going to be a little trikcy.
->   You need to use btrfs ins again:
->   # btrfs ins dump-tree -t 402653184 <device>
->
->   Then search thing like this "EXTENT_DATA":
->         item 6 key (257 EXTENT_DATA 0) itemoff 15813 itemsize 53
->                 generation 3 type 1 (regular)
->                 extent data disk byte 138424320 nr 1048576
->                                       ^^^^^^^^^
->   Then use that "138424320" to logical-resolve command again, then
->   to remove all offending files.
->
-> I'll work on the btrfs check repair ability soon, before that, please
-> use the above workaround.
+This patch is revived after one year, as one internal report has hit one
+BUG_ON() with real world fs, so I believe this patchset still makes sense.
 
-I will do that, and report back
+- Enhanced eb accessors
+  Not really needed for the fuzzed images, as 448de471cd4c
+  ("btrfs: Check the first key and level for cached extent buffer")
+  already fixed half of the reported images.
+  Just add a final layer of safe net.
 
-Thank You so much for your fast and detailed answer
+  Just to complain here, two experienced btrfs developer have got
+  confused by @start, @len in functions like read_extent_buffer() with
+  logical address.
+  The best example to solve the confusion is to check the
+  read_extent_buffer() call in btree_read_extent_buffer_pages().
 
+  I'm not sure why this confusion happens or even get spread.
+  My guess is the extent_buffer::start naming causing the problem.
 
->
-> Sorry for the inconvenience and thanks for the first real world report.
+  If so, I would definitely rename extent_buffer::start to
+  extent_buffer::bytenr at any cost.
+  Hopes the new commend will address the problem for now.
 
-No worry, I'm glad to contribute information for a better kernel,
+- BUG_ON() hunt in __btrfs_free_extent()
+  Kill BUG_ON()s in __btrfs_free_extent(), replace with error reporting
+  and why it shouldn't happen.
 
-Thank You again, very much
+  Also add comment on what __btrfs_free_extent() is designed to do, with
+  two dump-tree examples for newcomers.
 
+- BUG_ON() hunt in __btrfs_inc_extent_ref()
+  Just like __btrfs_free_extent(), but less comment as
+  comment for __btrfs_free_extent() should also work for
+  __btrfs_inc_extent_ref(), and __btrfs_inc_extent_ref() has a better
+  structure than __btrfs_free_extent().
 
->
-> Thanks,
-> Qu
->
-> > [70391.975504] BTRFS: error (device sda2) in __btrfs_free_extent:7000:
-> > errno=3D-5 IO failure
-> > [70391.977490] BTRFS: error (device sda2) in
-> > btrfs_run_delayed_refs:3083: errno=3D-5 IO failure
-> > [70391.979490] BTRFS: error (device sda2) in btrfs_replay_log:2369:
-> > errno=3D-5 IO failure (Failed to recover log tree)
-> > [70391.980588] BTRFS error (device sda2): pending csums is 475136
-> > [70392.023935] BTRFS error (device sda2): open_ctree failed
-> > mount: mounting /dev/sda2 on /mnt/sda/ failed: Input/output error
-> >
-> >
-> >
-> > (initramfs) dmesg |grep 70391
-> > [70391.723717] BTRFS info (device sda2): disk space caching is enabled
-> > [70391.723721] BTRFS info (device sda2): has skinny extents
-> > [70391.763253] BTRFS info (device sda2): enabling ssd optimizations
-> > [70391.763256] BTRFS info (device sda2): start tree-log replay
-> > [70391.973518] BTRFS critical (device sda2): corrupt leaf:
-> > block=3D353828864 slot=3D148 extent bytenr=3D242073600 len=3D16384 inva=
-lid
-> > generation, have 9367487224930631680 expect (0, 458036]
-> > [70391.975504] BTRFS: error (device sda2) in __btrfs_free_extent:7000:
-> > errno=3D-5 IO failure
-> > [70391.977490] BTRFS: error (device sda2) in
-> > btrfs_run_delayed_refs:3083: errno=3D-5 IO failure
-> > [70391.979490] BTRFS: error (device sda2) in btrfs_replay_log:2369:
-> > errno=3D-5 IO failure (Failed to recover log tree)
-> > [70391.980588] BTRFS error (device sda2): pending csums is 475136
-> >
-> >
-> > full dmesg log enclosed.
-> > ---
-> >
->
+- Defence against unbalanced empty leaf
+
+- Defence against bad key order across two tree blocks
+
+The last two cases can't be rejected by tree-checker and they are all
+cross-eb cases.
+Thankfully we can reuse existing first_key check against unbalanced
+empty leaf, but needs extra check deep into ctree.c for tree block
+merging time check.
+
+Reported-by: Jungyeon Yoon <jungyeon.yoon@gmail.com>
+[ Not to mail bombarding the report, thus only RB tag in cover letter ]
+
+Changelog:
+v2:
+- Remove duplicated error message in WARN() call.
+  Changed to WARN_ON(IS_ENABLED(CONFIG_BTRFS_DEBUG))
+  Also move WARN() after btrfs error message.
+
+- Fix a comment error in __btrfs_free_extent()
+  It's not adding refs to a tree block, but adding the same refs
+  to an existing tree block ref.
+  It's impossible a btrfs tree owning the same tree block directly twice.
+
+- Add comment for eb accessors about @start and @len
+  If anyone could tell me why such confusion between @start @len and
+  logical address is here, I will definitely solve the root cause no
+  matter how many codes need to be modified.
+
+- Use bool to replace int where only two values are returned
+  Also rename to follow the bool type.
+
+- Remove one unrelated change for the error handler in
+  btrfs_inc_extent_ref()
+
+- Add Reviewed-by tag
+
+v3:
+- Rebased to latest misc-next branch
+  All conflicts can be auto-merged.
+
+Qu Wenruo (5):
+  btrfs: extent_io: Do extra check for extent buffer read write
+    functions
+  btrfs: extent-tree: Kill BUG_ON() in __btrfs_free_extent() and do
+    better comment
+  btrfs: Detect unbalanced tree with empty leaf before crashing btree
+    operations
+  btrfs: extent-tree: Kill the BUG_ON() in
+    insert_inline_extent_backref()
+  btrfs: ctree: Checking key orders before merged tree blocks
+
+ fs/btrfs/ctree.c       |  68 +++++++++++++++++
+ fs/btrfs/disk-io.c     |   8 ++
+ fs/btrfs/extent-tree.c | 164 +++++++++++++++++++++++++++++++++++++----
+ fs/btrfs/extent_io.c   |  76 +++++++++----------
+ 4 files changed, 265 insertions(+), 51 deletions(-)
+
+-- 
+2.28.0
+

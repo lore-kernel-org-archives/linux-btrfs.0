@@ -4,50 +4,50 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-13.1 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
 	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 93628C433E3
-	for <linux-btrfs@archiver.kernel.org>; Mon, 10 Aug 2020 19:12:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DC115C433E1
+	for <linux-btrfs@archiver.kernel.org>; Mon, 10 Aug 2020 19:16:21 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 6163322C9E
-	for <linux-btrfs@archiver.kernel.org>; Mon, 10 Aug 2020 19:12:04 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B1A712080C
+	for <linux-btrfs@archiver.kernel.org>; Mon, 10 Aug 2020 19:16:21 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1597086724;
-	bh=ObVOr0DUwToaJhdgjlbAKmKkmvclQaKXZYtibH2xuso=;
+	s=default; t=1597086981;
+	bh=rkIkLFMimB7x9/DIDpwBmJitV76NacxY2sxEGNkNxco=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=hf49Ytjlzqi+t7MsDwYQl8lND2f+j8O1k5Y7vscKdNRUggWRUxGPeLdp1Q+EVTGKM
-	 haNQUkAzCPwnFyHlQxTTRdzAGoDGUN7rFCw9Hh2szYCNeLMuia9lbdCLgeYMfOpp8P
-	 IhhXIp16QnfE0mlBKDwplUaFYfjbHEMT8eA+p0vM=
+	b=bg5j5nwnU2LS/0L3qsFbgCkUi4X+K02l4BpZjm2WnOHU+NLoq9UpMYlaLXZto8pel
+	 d3evqBcwHrViQiVOy3t9nOg4Eg0bWwHm8RhVTs16FYTJnHlBCZAiwWEC5/KyOlfFRw
+	 v6YddtSf3tIlxfYriBYFdqVFJA9utflvSgcQQUsY=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729464AbgHJTMD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 10 Aug 2020 15:12:03 -0400
-Received: from mail.kernel.org ([198.145.29.99]:40992 "EHLO mail.kernel.org"
+        id S1728913AbgHJTQS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 10 Aug 2020 15:16:18 -0400
+Received: from mail.kernel.org ([198.145.29.99]:47352 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1729450AbgHJTMB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 10 Aug 2020 15:12:01 -0400
+        id S1730092AbgHJTOt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 10 Aug 2020 15:14:49 -0400
 Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 1C4CF22B49;
-        Mon, 10 Aug 2020 19:12:00 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 0A56222BEB;
+        Mon, 10 Aug 2020 19:14:47 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1597086720;
-        bh=ObVOr0DUwToaJhdgjlbAKmKkmvclQaKXZYtibH2xuso=;
+        s=default; t=1597086888;
+        bh=rkIkLFMimB7x9/DIDpwBmJitV76NacxY2sxEGNkNxco=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=KGi1RpVWmgmfLZzkFCml/VqhbR5EBultsiByy8HFiN7+lWcFKNFHs0k5BAD6InEcS
-         S6Pf8Zn+iUMI98XqKnMJnx8tW6mptlzNYsBWDIbnPor2SXy9UQBFh0QthXgoX/wX4B
-         dv8MIDkPswafEDjIqMpAtU2V4cmPqnhO6ea6sh3M=
+        b=ReJM0dCDh3ScUBEc1PJ21OmHM8rFsNyTl6zAwYSuc06miZMFcTo9SuDmFU71VbNBQ
+         VwZZ8clKzUcl85g6zIEO9qNYyOQp+/ZrJmhR0DnvkSOTI32i8tSXcONGemy8qK3a6B
+         MVTsGOIQ0kxyL8qTqjZcFRPXTfAuebChh6+MHXF8=
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
 Cc:     "Paul E. McKenney" <paulmck@kernel.org>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.4 05/45] fs/btrfs: Add cond_resched() for try_release_extent_mapping() stalls
-Date:   Mon, 10 Aug 2020 15:11:13 -0400
-Message-Id: <20200810191153.3794446-5-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 4.4 03/16] fs/btrfs: Add cond_resched() for try_release_extent_mapping() stalls
+Date:   Mon, 10 Aug 2020 15:14:30 -0400
+Message-Id: <20200810191443.3795581-3-sashal@kernel.org>
 X-Mailer: git-send-email 2.25.1
-In-Reply-To: <20200810191153.3794446-1-sashal@kernel.org>
-References: <20200810191153.3794446-1-sashal@kernel.org>
+In-Reply-To: <20200810191443.3795581-1-sashal@kernel.org>
+References: <20200810191443.3795581-1-sashal@kernel.org>
 MIME-Version: 1.0
 X-stable: review
 X-Patchwork-Hint: Ignore
@@ -99,10 +99,10 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
  1 file changed, 2 insertions(+)
 
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 1a089a6424221..99dcb38976592 100644
+index 42b7409d4cc55..2f9f738ecf84a 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -4481,6 +4481,8 @@ int try_release_extent_mapping(struct page *page, gfp_t mask)
+@@ -4437,6 +4437,8 @@ int try_release_extent_mapping(struct extent_map_tree *map,
  
  			/* once for us */
  			free_extent_map(em);
@@ -110,7 +110,7 @@ index 1a089a6424221..99dcb38976592 100644
 +			cond_resched(); /* Allow large-extent preemption. */
  		}
  	}
- 	return try_release_extent_state(tree, page, mask);
+ 	return try_release_extent_state(map, tree, page, mask);
 -- 
 2.25.1
 

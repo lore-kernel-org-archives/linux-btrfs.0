@@ -2,129 +2,150 @@ Return-Path: <SRS0=hMak=BW=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-4.0 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-4.1 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1C11DC433E0
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Aug 2020 14:37:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E786DC433E0
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Aug 2020 16:58:23 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id CA7F320756
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Aug 2020 14:37:43 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A9BDF20838
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Aug 2020 16:58:23 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="gnfbwPdL";
-	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b="u6ooY/tN"
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="MkSml0+x"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726678AbgHLOhm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 12 Aug 2020 10:37:42 -0400
-Received: from esa5.hgst.iphmx.com ([216.71.153.144]:32155 "EHLO
-        esa5.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726573AbgHLOhl (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Aug 2020 10:37:41 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1597243061; x=1628779061;
-  h=from:to:subject:date:message-id:references:
-   content-transfer-encoding:mime-version;
-  bh=ShwVc1I3ae5QQH5wCOOAojYqzv80fD/6pF5F3aj8U6Y=;
-  b=gnfbwPdLJhtngsxR3614h4x2VjmrrPEKlnekhdelrIKxsqkXK5es01qg
-   1IpUjllTnTwwb24L7wH0SIy/LdCvVHjlCDZT540m+MmDX564qvJ55Fr7A
-   5+bEUaXRtl89ZWpj9MtW06/UTDU70g5+kc0TUuGVbFaC9XoWu+LkXVAeT
-   ynfbndst3pf+J4qOF2N/kziZ0yji80Qgb1OmIQk1d0xOWmkZGM2aEUUNT
-   7wIQTB/DosYyTUeLZYaEP7aYfWOC28s9QJlq2sGMYdGAHQhrHLxWKwt21
-   CUKztq8mchwRU99phnRkKJ5bSoiFPKniZ/ztksEMMooJZzOi/uYBD8VH4
-   w==;
-IronPort-SDR: 89Lq2/UKsRSgnLEStH159EtfQo6EfcbJotP2OYEBH2RWAkRQTM9buXcCs0dPe/1+/lxo4k18qP
- XiJ37fY3pRQiGLjns6YMl+n36wuePKn+eTaYf7HCJpelGv3NFPWrr//Y+0iwcwd3U0j4sxG1ib
- bbCC2K/6ChuBsiz83Y4FVURfY30nG/76iHIWcEXFnhuY5imqn6n2S07AMPIsoGzUMhCGbPgJ4x
- fS2Ld8XxSTs5YbuDQ4esXJ7i6y9RXl+HE91gfGfO6TEggbo0VbC1L9vj6u3c6MW2sPdcy+s/84
- E+Y=
-X-IronPort-AV: E=Sophos;i="5.76,304,1592841600"; 
-   d="scan'208";a="144811608"
-Received: from mail-bn7nam10lp2107.outbound.protection.outlook.com (HELO NAM10-BN7-obe.outbound.protection.outlook.com) ([104.47.70.107])
-  by ob1.hgst.iphmx.com with ESMTP; 12 Aug 2020 22:37:40 +0800
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
- b=XuotHu2gyD3EkzhQQhw+Gdk/5x91MmxY+HufdABsxIpzEGyC1OCwklcU0frFcC0kr+d3YIrZEoWKANlhLbOY7OnLMd6tHmceBZxmW9oarA0uXSKFabrfDHsqEtFD7vjtS5bG93U65iu59VXLhJS8V3QXRNGH3vx2FYnaGkXl/tL5I+DgLn9gQPm23p0Pe/pavvYp2NvrVRfpOZZlnqdFiocC9XhvSWPjtdqNwiqeER1ewFcsbODAjvnG45IYp0iTO4igx8Uw6+XgcMUbvj7ptEnCOZWQTUzTVwyJGgzR4DS1VBKb1f9kSZ61Usu/Lvaz+PQMS5rxoxHZqmFQMSl0mA==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector9901;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=kKCTj08EUHKha7DZGYirNO281tKuzHloF8Njoi9Q+co=;
- b=PIuldjl8Du82TmM59FkO/2jaeP+DftKFCvZDkPSiTk7q4OsceDfRGVBA7Wz7pvjNu9+0RAf1brBY242/Iw8CC0rKUaAksmi8dD8O3PcUqGmnlhKcs9LIgTDyF4TiJF4UAIigC6CTVYkaZWw9zlOmTO7u7JXZx5k9/hCT0FfBz9zRi1m81o2hkFyErQEYFmMYnU27tA46zxRTDfDxdxUjlq1phmi6Yx6rt7Lvyo/kxlEhe3KupMIbZBE8JMCW6jqlK+D+W1xsTlAx9bl5EW1AOIvNuUb2Pqe8YkYSWPAkBqUuU73SQWDz/RhfVOUWqjiNqNZnPZcOGRyVUEBQ7A+fuw==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
- header.d=wdc.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=kKCTj08EUHKha7DZGYirNO281tKuzHloF8Njoi9Q+co=;
- b=u6ooY/tNeoCVt4WfdlJZwNnUkDTPjWQyatHvKQ/RhtcZ7jzgtLbu5DfmGYJFYm9rRbwLNN8zvzIEdfrYGnMFblwt2vOml5lotbVJD1GLd8VTJdCfvJsaUV0vvh/I49PkqsNEKR3cxV0vVN0AZ0xciXbVXls5E45BeG3K6QL+Omo=
-Received: from SN4PR0401MB3598.namprd04.prod.outlook.com
- (2603:10b6:803:47::21) by SN4PR0401MB3600.namprd04.prod.outlook.com
- (2603:10b6:803:46::31) with Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.3261.18; Wed, 12 Aug
- 2020 14:37:38 +0000
-Received: from SN4PR0401MB3598.namprd04.prod.outlook.com
- ([fe80::457e:5fe9:2ae3:e738]) by SN4PR0401MB3598.namprd04.prod.outlook.com
- ([fe80::457e:5fe9:2ae3:e738%7]) with mapi id 15.20.3261.026; Wed, 12 Aug 2020
- 14:37:38 +0000
-From:   Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
-To:     Nikolay Borisov <nborisov@suse.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs: remove fsid argument from
- btrfs_sysfs_update_sprout_fsid
-Thread-Topic: [PATCH] btrfs: remove fsid argument from
- btrfs_sysfs_update_sprout_fsid
-Thread-Index: AQHWcKstkCQC7Xdyu02xKyyOvO7opw==
-Date:   Wed, 12 Aug 2020 14:37:38 +0000
-Message-ID: <SN4PR0401MB3598188428E8604EB12112079B420@SN4PR0401MB3598.namprd04.prod.outlook.com>
-References: <20200812131851.9129-1-nborisov@suse.com>
-Accept-Language: en-US
-Content-Language: en-US
-X-MS-Has-Attach: 
-X-MS-TNEF-Correlator: 
-authentication-results: suse.com; dkim=none (message not signed)
- header.d=none;suse.com; dmarc=none action=none header.from=wdc.com;
-x-originating-ip: [2001:a62:1590:f101:c4ea:9080:4326:e7b1]
-x-ms-publictraffictype: Email
-x-ms-office365-filtering-ht: Tenant
-x-ms-office365-filtering-correlation-id: 1cd8f83c-2cb5-4b00-b688-08d83ecd42db
-x-ms-traffictypediagnostic: SN4PR0401MB3600:
-x-microsoft-antispam-prvs: <SN4PR0401MB36009A662381087492009BF79B420@SN4PR0401MB3600.namprd04.prod.outlook.com>
-wdcipoutbound: EOP-TRUE
-x-ms-oob-tlc-oobclassifiers: OLM:1728;
-x-ms-exchange-senderadcheck: 1
-x-microsoft-antispam: BCL:0;
-x-microsoft-antispam-message-info: QjF4uGEjKJShQQhbBRyxZjCVURriY6LHRwWncNI7zgSoEfCz1DtP+lmTODgc6j7Cu/r5pgISsIYy6r7mP5uF4ZUEDRwm+YrikhGXg2RddPUm2MHVUIBJCRDS3puqzCHn5+bZT5CZY4j7MKH3evnW+nT8/PRy6l2ON7KXS3lLQEsTawsl/iwiQ4GrmShtiQtEv9RqMajnSVAjWNBhnoqnqNwtBFaThDRqO+jZA4OBHfBQLD/av186E71J6m253Y5kB5bz39Vx+kXmvyRrI6Tw/+IviOpGgY1njYMdV+MJX8tL2VdswsyZXSuFAlO1mJ4rCUpgskIOkATBvKHmJeyK/Q==
-x-forefront-antispam-report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SN4PR0401MB3598.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFTY:;SFS:(4636009)(366004)(52536014)(71200400001)(186003)(9686003)(66556008)(64756008)(7696005)(66946007)(66446008)(5660300002)(498600001)(66476007)(6506007)(53546011)(91956017)(76116006)(55016002)(8936002)(8676002)(2906002)(33656002)(110136005)(558084003)(86362001)(83380400001);DIR:OUT;SFP:1102;
-x-ms-exchange-antispam-messagedata: knj3wMVSFateF0Ua2YT5bfT1fpyQWrl3LODg/78muZOqVFz1hck3+BN2QBmjDkvJJdnov1XbRKgJ24diJexPuJt+U2gh7GWq3BiIajVpGNjysmOFyRVUEMubiza8TJ++MackPK2MZP6gFfM9t2ER5EfTYE7RFEiTzOn63ncXDQcgRAxveD9kQVLi07Z5CZJ7i7by2tL4DlV81N762jkYiLEaee+jPDrUJ7L8k03bYe/ZE69kRFUfdhxtMzImxNftdbGscAvQNJ2sGbU+oiLFlro0yRSwzY2JPHygt8aaQE1ywwP9Hw2jx0b1de0apZRAuFNvGyxJasQWtGk/0pPeOPriAj9xDKjbMDjVjF2YvR6M9v7Gi6KxCMBZYWO4nef+hKhQIkH//QL6l1VECJ4881KLzV40Lww0SGeOtnfjOL3N6ET42pCkEWyoYCUqMTwjTlCWF2OiqPV/3gleA2irlw5LvgtWzyJSwDINEqzYCxNmcEFswlnaHWiDkXF2xm8pavQc/8xnU5UbANm0nvq6fBuoSVmL1tq4n2uNFZ+QlTU6npO08yPV79otclqcKcvveUmgEelAxWSmhFRVKqB9H6SqY5C2fkPK4NWUPu9v4TDxhO1aEl27fxoZqQNij96lJ2IOSXi9zGsTXz5W3klEZ7quRjiqjuO3hwxJqmn1R018H04QCs4CjWlkoh/Inf/MZBMnxk5B0UMyoFH/hPYyGw==
-x-ms-exchange-transport-forked: True
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: quoted-printable
+        id S1726394AbgHLQ6W (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 12 Aug 2020 12:58:22 -0400
+Received: from mout.gmx.net ([212.227.17.22]:54049 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1725872AbgHLQ6T (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 12 Aug 2020 12:58:19 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1597251498;
+        bh=r8CkYY/epfo1JCQITS/8JwqDTurcrc2syxiM4z90NzM=;
+        h=X-UI-Sender-Class:From:To:Subject:Date;
+        b=MkSml0+xpp4Xphvw0xLwQtGivgcbPsnMIWmyOZFpdwXmYE0GGQbBnQbnf9nnH3jkj
+         kOWRDePYSOLa8RRxdnAIA5f8oIbQvtW+M3B7q0yuu8cHDakKx7/UuXgYuc4lIuStPa
+         ODCC2I4EYDZ99u3z/0jzKzJEPIWwXvGumNHdJZ4U=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from BenjaminPC ([77.109.173.80]) by mail.gmx.com (mrgmx104
+ [212.227.17.168]) with ESMTPSA (Nemesis) id 1MVvPJ-1kDyZD0kFB-00Rmv6 for
+ <linux-btrfs@vger.kernel.org>; Wed, 12 Aug 2020 18:58:18 +0200
+From:   <benjamin.haendel@gmx.net>
+To:     <linux-btrfs@vger.kernel.org>
+Subject: Tree-checker Issue / Corrupt FS after upgrade ?
+Date:   Wed, 12 Aug 2020 18:58:17 +0200
+Message-ID: <004201d670c9$c69b9230$53d2b690$@gmx.net>
 MIME-Version: 1.0
-X-OriginatorOrg: wdc.com
-X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-AuthSource: SN4PR0401MB3598.namprd04.prod.outlook.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: 1cd8f83c-2cb5-4b00-b688-08d83ecd42db
-X-MS-Exchange-CrossTenant-originalarrivaltime: 12 Aug 2020 14:37:38.3018
- (UTC)
-X-MS-Exchange-CrossTenant-fromentityheader: Hosted
-X-MS-Exchange-CrossTenant-id: b61c8803-16f3-4c35-9b17-6f65f441df86
-X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
-X-MS-Exchange-CrossTenant-userprincipalname: U642tEKRKMuHW4M2eh8Aa5LDTay8wISoXPiTgvLV5u5N1YN+2dsVdJZHoh8ZMq3VZTwJ/Z5UslCc1lhP3SSmYBNuM3mVhTls5L04bsDS5BI=
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: SN4PR0401MB3600
+Content-Type: text/plain;
+        charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+X-Mailer: Microsoft Outlook 16.0
+Thread-Index: AdZwybiKa8CAZs0bSIShgo7HGNEzTw==
+Content-Language: de
+X-Provags-ID: V03:K1:497G7/wjGE7Re2lmzayw57XaFXnbK1I2TBSVWzd57Yc9k4p9ZEl
+ ftce0AmFTrlBOi2rP+Z0vU1QNpNW2oXLOfZyaRZD9id69IJ9nsH4zBi95jsDp7ytUN0NvEQ
+ lTB8sqaFUk4lanZu1dfSEsDyvRHziAfIyNboy3mneZ2w7N/crx/TKsSaXPUGdZx3abdrCeA
+ PqMhqRB2oSf1Af/47npCA==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:tdtVA1HdK4U=:y13Q+BaUfm6cVDXt9QBJAE
+ AEeQHDLwiuw0Bg7nfna5FebItk0+3UX9Jf29eF6STW4JXpTRC0W0EJjR5xI5YqJJk/M/zcn1p
+ msPlbg4hcSuTHS9CSJEbJCl1j8pXJCljQb14u0GRHRgyXkv17lnTjHoyxsjmnEPzHYSgjnpLH
+ CdPbcelkNZMOobgm08O3SBBJWjDBjb0/i5KGZMRNTS/4jPXPs4bdi8QHbgP+b6NGjp7VrdzL1
+ M8D7A1If3qBwFWW7id9k0fNm3aAygA4cdYst6i0hWgdeoFQ0KEyh1Ma+Rbx3rvKLTAqVuSnqf
+ 35TaSDuD+dikYK0Bf9rJsSciNF4jpfl5f88BIZP6g+d4uUrD3HX+9EXJlKTtddCKnFBVVjzkp
+ 9yuTrI4mHZ2QmJ0aBdJwNx+gs4Ub8Tzz83vShwAG6DeqW/xXMKyMamzm/iJNiqBAHZdtYOEW7
+ vAcagUr58p3MOiGMYJYDZfeXfM5wHle0xqcw2ts9z/AifqHzjsb5CEoKAgEGBFKSKo5DM/3kh
+ MLiQLQSk7drW03oHn9y0Igt5Iv9xiwTC6/6E4+uKRKNXXT8LQfpC22UEPmzyIHGmX3bHKesQn
+ q5Kdl6t4g5ct6QDrNTiTHloW9VB5FkXzetoXhl2M7XJhxtgMOtlj5TqnHG76WtzZObvWLk+IJ
+ VF0pWOIkoVZQEZKYIRKt3gs6Rqxj3ygnHwnFeU1nNlriMd4uNJe1MK8HoFAZMSUOphbTtSZaT
+ wF5W1mQQGlj52QoYSoCkKCfUC8tXApfYs7MO2ov8WBTR7dXpCqBlOtTaLp3BpYt0uqLafC70W
+ HpnMHwXKIjMa4b3w+m0DhqFi3hP3A5/yde0N+CfH8RCLymaIDHBGEqVabjTgZpYGeTbOXExOL
+ PfFAuaIh819nN8o8qpQHRh8vrL9xK8Armd65dAdq3+HGpOcidV54trK0tXJvlWOCNcQzuyKe4
+ 7CLOH+eG4xRHMLgMkiex+lWnU/sBRaPinDsHoGGticC3egF7upGc05BCIq3hGi3xwOz1sF5WI
+ IlzYc5T8Sr/6jsFZyav9c/vf6NaQipvN8QXiz3fJ5SEDdgHt/+C/9i3Jp+5CJt7wJLYxIpHns
+ wPfN85VJlaLtyAez5jiEaUT+wfhj3fmMsbSuEwVgU4hygVl+SYfffwTl+WYE7gkPOjL1suHR+
+ B0jTgLEMtCSnlx1PXmw3UckQQ49lJ4MftDE3DTodsHV6ve9Ln8s4Rs9z5WdlcgypF3yux8Or7
+ rFxmnfXov654iyqcCdjFc/JJ8sqhMMz2Uw6Zawg==
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 12/08/2020 15:19, Nikolay Borisov wrote:=0A=
-> +void btrfs_sysfs_update_sprout_fsid(struct btrfs_fs_devices *fs_devices)=
-=0A=
-> +=0A=
->  {=0A=
-=0A=
-Stray newline,=0A=
-=0A=
-Otherwise =0A=
-Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>=0A=
+Hi,
+
+i have been running my little Storage (32TB) on a Ubuntu 18.04 LTS =
+Machine
+with btrfs-progs 4.17. I then did my monthly upgrade (apt dist-upgrade) =
+and
+after a reboot my Partition could not mount with the error message:=20
+"root@Userv:/home/benjamin# mount -r ro btrfs /dev/mapper/Crypto
+/media/Storage
+mount: bad usage"
+
+I then proceeded to run a btrfs check which gave thousands of errors and
+then also a super-recover:
+root@Userv:/home/benjamin# btrfs rescue super-recover -v =
+/dev/mapper/Crypto
+All Devices:
+Device: id =3D 1, name =3D /dev/mapper/Crypto
+
+Before Recovering:
+[All good supers]:
+device name =3D /dev/mapper/Crypto
+superblock bytenr =3D 65536
+
+device name =3D /dev/mapper/Crypto
+superblock bytenr =3D 67108864
+
+device name =3D /dev/mapper/Crypto
+superblock bytenr =3D 274877906944
+
+[All bad supers]:
+
+All supers are valid, no need to recover
+
+I now checked my dmesg log:
+[45907.451840] BTRFS critical (device dm-0): corrupt leaf:
+block=3D22751711027200 slot=3D1 extent bytenr=3D6754755866624 len=3D4096 =
+invalid
+generation, have 22795412619264 expect (0, 207589]
+[45907.451848] BTRFS error (device dm-0): block=3D22751711027200 read =
+time
+tree block corruption detected
+[45907.451892] BTRFS error (device dm-0): failed to read block groups: =
+-5
+[45907.510712] BTRFS error (device dm-0): open_ctree failed
+
+Google inquiries to this topic led me to this link:
+https://btrfs.wiki.kernel.org/index.php/Tree-checker
+It tells me to mail here first so thats what i am doing. I kind of =
+suspect
+since everything worked perfect (Memtest also no errors) before the =
+update,
+it has to do something with that update. I am wondering if it would help =
+if
+i deleted my OS Disk and reinstalled an older Version of Ubuntu, like
+16.04.6 LTS ?
+
+Since then i upgraded to 20.04 LTS with BTRFS-PROGS 5.7 as a lot of =
+forum
+entries said it would be wise to use the newer versions as older were =
+buggy.
+That brought no help as well.
+
+Since i am no Linux/Unix Expert i thought it might be better to ask now
+first as advised in the link above before proceeding with any other =
+plans.
+
+I find it hard to believe that all data is gone, i feel its buggy =
+behavior
+as the partition and everything is still there:
+root@Userv:/home/benjamin# btrfs fi show
+Label: 'Storage'  uuid: 46c7d04a-d6ac-45be-94cc-724919faca2b
+Total devices 1 FS bytes used 28.23TiB
+devid    1 size 29.10TiB used 29.04TiB path /dev/mapper/Crypto
+
+Best Regards,
+Benjamin H=E4ndel
+

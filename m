@@ -2,150 +2,116 @@ Return-Path: <SRS0=hMak=BW=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-4.1 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E786DC433E0
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Aug 2020 16:58:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BF90EC433DF
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Aug 2020 16:59:54 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id A9BDF20838
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Aug 2020 16:58:23 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 40CDE20838
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Aug 2020 16:59:54 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="MkSml0+x"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=mpdesouza.com header.i=@mpdesouza.com header.b="mzrj0UUI"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726394AbgHLQ6W (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 12 Aug 2020 12:58:22 -0400
-Received: from mout.gmx.net ([212.227.17.22]:54049 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725872AbgHLQ6T (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Aug 2020 12:58:19 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1597251498;
-        bh=r8CkYY/epfo1JCQITS/8JwqDTurcrc2syxiM4z90NzM=;
-        h=X-UI-Sender-Class:From:To:Subject:Date;
-        b=MkSml0+xpp4Xphvw0xLwQtGivgcbPsnMIWmyOZFpdwXmYE0GGQbBnQbnf9nnH3jkj
-         kOWRDePYSOLa8RRxdnAIA5f8oIbQvtW+M3B7q0yuu8cHDakKx7/UuXgYuc4lIuStPa
-         ODCC2I4EYDZ99u3z/0jzKzJEPIWwXvGumNHdJZ4U=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from BenjaminPC ([77.109.173.80]) by mail.gmx.com (mrgmx104
- [212.227.17.168]) with ESMTPSA (Nemesis) id 1MVvPJ-1kDyZD0kFB-00Rmv6 for
- <linux-btrfs@vger.kernel.org>; Wed, 12 Aug 2020 18:58:18 +0200
-From:   <benjamin.haendel@gmx.net>
-To:     <linux-btrfs@vger.kernel.org>
-Subject: Tree-checker Issue / Corrupt FS after upgrade ?
-Date:   Wed, 12 Aug 2020 18:58:17 +0200
-Message-ID: <004201d670c9$c69b9230$53d2b690$@gmx.net>
+        id S1726558AbgHLQ7x (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 12 Aug 2020 12:59:53 -0400
+Received: from gateway24.websitewelcome.com ([192.185.50.252]:42259 "EHLO
+        gateway24.websitewelcome.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1726526AbgHLQ7q (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 12 Aug 2020 12:59:46 -0400
+Received: from cm10.websitewelcome.com (cm10.websitewelcome.com [100.42.49.4])
+        by gateway24.websitewelcome.com (Postfix) with ESMTP id 295906394
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Aug 2020 11:37:19 -0500 (CDT)
+Received: from br540.hostgator.com.br ([108.179.252.180])
+        by cmsmtp with SMTP
+        id 5tkdkxh8ALFNk5tkdkaVfX; Wed, 12 Aug 2020 11:37:19 -0500
+X-Authority-Reason: nr=8
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=mpdesouza.com; s=default; h=Content-Transfer-Encoding:MIME-Version:
+        References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:
+        Content-Type:Content-ID:Content-Description:Resent-Date:Resent-From:
+        Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
+        List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
+        bh=Nz5hLOr319Knu6F+K422STnqvdJwNZ2qMiLxocCmbVE=; b=mzrj0UUI3UblmaA4gKwuta12/H
+        hdQr2w/hAdlGmgxKkcxrOYhvy2ZWppKE0NdU2JAnxXJt8iU9n4IogFR4wR5IfqwBzHQuw73du3FQz
+        1ELgIqLPy2Gr3FIiBN2YPCdaL7PLQU4pUVXn7F6nCl8XgjOfF9m0WrHkV3dpN1pxPLK3wMmVowsdl
+        x7GPoehY1aTjjt451SHtE+UZwwYGaYJjxRcWHrsGBHqpRa2OX1oIMgGgfIKNRoUudUVcJt6x0Gdcm
+        xQf1l1Jr4izzHkHZ7C8SYbV+99ZoIkI0OdAJGJrcNjYDOLbQ3QFz1pTXCvRF82ridU59c4G+Bv6qy
+        jbkncHgg==;
+Received: from [179.185.221.211] (port=55300 helo=hephaestus.suse.de)
+        by br540.hostgator.com.br with esmtpsa  (TLS1.2) tls TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+        (Exim 4.93)
+        (envelope-from <marcos@mpdesouza.com>)
+        id 1k5tkc-004J9r-Fg; Wed, 12 Aug 2020 13:37:18 -0300
+From:   Marcos Paulo de Souza <marcos@mpdesouza.com>
+To:     dsterba@suse.com, linux-btrfs@vger.kernel.org
+Cc:     Marcos Paulo de Souza <mpdesouza@suse.com>
+Subject: [RFC PATCH 4/8] btrfs: super: Introduce btrfs_fc_validate
+Date:   Wed, 12 Aug 2020 13:36:50 -0300
+Message-Id: <20200812163654.17080-5-marcos@mpdesouza.com>
+X-Mailer: git-send-email 2.28.0
+In-Reply-To: <20200812163654.17080-1-marcos@mpdesouza.com>
+References: <20200812163654.17080-1-marcos@mpdesouza.com>
 MIME-Version: 1.0
-Content-Type: text/plain;
-        charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-X-Mailer: Microsoft Outlook 16.0
-Thread-Index: AdZwybiKa8CAZs0bSIShgo7HGNEzTw==
-Content-Language: de
-X-Provags-ID: V03:K1:497G7/wjGE7Re2lmzayw57XaFXnbK1I2TBSVWzd57Yc9k4p9ZEl
- ftce0AmFTrlBOi2rP+Z0vU1QNpNW2oXLOfZyaRZD9id69IJ9nsH4zBi95jsDp7ytUN0NvEQ
- lTB8sqaFUk4lanZu1dfSEsDyvRHziAfIyNboy3mneZ2w7N/crx/TKsSaXPUGdZx3abdrCeA
- PqMhqRB2oSf1Af/47npCA==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:tdtVA1HdK4U=:y13Q+BaUfm6cVDXt9QBJAE
- AEeQHDLwiuw0Bg7nfna5FebItk0+3UX9Jf29eF6STW4JXpTRC0W0EJjR5xI5YqJJk/M/zcn1p
- msPlbg4hcSuTHS9CSJEbJCl1j8pXJCljQb14u0GRHRgyXkv17lnTjHoyxsjmnEPzHYSgjnpLH
- CdPbcelkNZMOobgm08O3SBBJWjDBjb0/i5KGZMRNTS/4jPXPs4bdi8QHbgP+b6NGjp7VrdzL1
- M8D7A1If3qBwFWW7id9k0fNm3aAygA4cdYst6i0hWgdeoFQ0KEyh1Ma+Rbx3rvKLTAqVuSnqf
- 35TaSDuD+dikYK0Bf9rJsSciNF4jpfl5f88BIZP6g+d4uUrD3HX+9EXJlKTtddCKnFBVVjzkp
- 9yuTrI4mHZ2QmJ0aBdJwNx+gs4Ub8Tzz83vShwAG6DeqW/xXMKyMamzm/iJNiqBAHZdtYOEW7
- vAcagUr58p3MOiGMYJYDZfeXfM5wHle0xqcw2ts9z/AifqHzjsb5CEoKAgEGBFKSKo5DM/3kh
- MLiQLQSk7drW03oHn9y0Igt5Iv9xiwTC6/6E4+uKRKNXXT8LQfpC22UEPmzyIHGmX3bHKesQn
- q5Kdl6t4g5ct6QDrNTiTHloW9VB5FkXzetoXhl2M7XJhxtgMOtlj5TqnHG76WtzZObvWLk+IJ
- VF0pWOIkoVZQEZKYIRKt3gs6Rqxj3ygnHwnFeU1nNlriMd4uNJe1MK8HoFAZMSUOphbTtSZaT
- wF5W1mQQGlj52QoYSoCkKCfUC8tXApfYs7MO2ov8WBTR7dXpCqBlOtTaLp3BpYt0uqLafC70W
- HpnMHwXKIjMa4b3w+m0DhqFi3hP3A5/yde0N+CfH8RCLymaIDHBGEqVabjTgZpYGeTbOXExOL
- PfFAuaIh819nN8o8qpQHRh8vrL9xK8Armd65dAdq3+HGpOcidV54trK0tXJvlWOCNcQzuyKe4
- 7CLOH+eG4xRHMLgMkiex+lWnU/sBRaPinDsHoGGticC3egF7upGc05BCIq3hGi3xwOz1sF5WI
- IlzYc5T8Sr/6jsFZyav9c/vf6NaQipvN8QXiz3fJ5SEDdgHt/+C/9i3Jp+5CJt7wJLYxIpHns
- wPfN85VJlaLtyAez5jiEaUT+wfhj3fmMsbSuEwVgU4hygVl+SYfffwTl+WYE7gkPOjL1suHR+
- B0jTgLEMtCSnlx1PXmw3UckQQ49lJ4MftDE3DTodsHV6ve9Ln8s4Rs9z5WdlcgypF3yux8Or7
- rFxmnfXov654iyqcCdjFc/JJ8sqhMMz2Uw6Zawg==
+Content-Transfer-Encoding: 8bit
+X-AntiAbuse: This header was added to track abuse, please include it with any abuse report
+X-AntiAbuse: Primary Hostname - br540.hostgator.com.br
+X-AntiAbuse: Original Domain - vger.kernel.org
+X-AntiAbuse: Originator/Caller UID/GID - [47 12] / [47 12]
+X-AntiAbuse: Sender Address Domain - mpdesouza.com
+X-BWhitelist: no
+X-Source-IP: 179.185.221.211
+X-Source-L: No
+X-Exim-ID: 1k5tkc-004J9r-Fg
+X-Source: 
+X-Source-Args: 
+X-Source-Dir: 
+X-Source-Sender: (hephaestus.suse.de) [179.185.221.211]:55300
+X-Source-Auth: marcos@mpdesouza.com
+X-Email-Count: 14
+X-Source-Cap: bXBkZXNvNTM7bXBkZXNvNTM7YnI1NDAuaG9zdGdhdG9yLmNvbS5icg==
+X-Local-Domain: yes
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi,
+From: Marcos Paulo de Souza <mpdesouza@suse.com>
 
-i have been running my little Storage (32TB) on a Ubuntu 18.04 LTS =
-Machine
-with btrfs-progs 4.17. I then did my monthly upgrade (apt dist-upgrade) =
-and
-after a reboot my Partition could not mount with the error message:=20
-"root@Userv:/home/benjamin# mount -r ro btrfs /dev/mapper/Crypto
-/media/Storage
-mount: bad usage"
+This function will be used in later patches in get_tree and in
+remount to ensure that we don't mount btrfs using nologreplay with a
+writable fs.
 
-I then proceeded to run a btrfs check which gave thousands of errors and
-then also a super-recover:
-root@Userv:/home/benjamin# btrfs rescue super-recover -v =
-/dev/mapper/Crypto
-All Devices:
-Device: id =3D 1, name =3D /dev/mapper/Crypto
+Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
+---
+ fs/btrfs/super.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
-Before Recovering:
-[All good supers]:
-device name =3D /dev/mapper/Crypto
-superblock bytenr =3D 65536
-
-device name =3D /dev/mapper/Crypto
-superblock bytenr =3D 67108864
-
-device name =3D /dev/mapper/Crypto
-superblock bytenr =3D 274877906944
-
-[All bad supers]:
-
-All supers are valid, no need to recover
-
-I now checked my dmesg log:
-[45907.451840] BTRFS critical (device dm-0): corrupt leaf:
-block=3D22751711027200 slot=3D1 extent bytenr=3D6754755866624 len=3D4096 =
-invalid
-generation, have 22795412619264 expect (0, 207589]
-[45907.451848] BTRFS error (device dm-0): block=3D22751711027200 read =
-time
-tree block corruption detected
-[45907.451892] BTRFS error (device dm-0): failed to read block groups: =
--5
-[45907.510712] BTRFS error (device dm-0): open_ctree failed
-
-Google inquiries to this topic led me to this link:
-https://btrfs.wiki.kernel.org/index.php/Tree-checker
-It tells me to mail here first so thats what i am doing. I kind of =
-suspect
-since everything worked perfect (Memtest also no errors) before the =
-update,
-it has to do something with that update. I am wondering if it would help =
-if
-i deleted my OS Disk and reinstalled an older Version of Ubuntu, like
-16.04.6 LTS ?
-
-Since then i upgraded to 20.04 LTS with BTRFS-PROGS 5.7 as a lot of =
-forum
-entries said it would be wise to use the newer versions as older were =
-buggy.
-That brought no help as well.
-
-Since i am no Linux/Unix Expert i thought it might be better to ask now
-first as advised in the link above before proceeding with any other =
-plans.
-
-I find it hard to believe that all data is gone, i feel its buggy =
-behavior
-as the partition and everything is still there:
-root@Userv:/home/benjamin# btrfs fi show
-Label: 'Storage'  uuid: 46c7d04a-d6ac-45be-94cc-724919faca2b
-Total devices 1 FS bytes used 28.23TiB
-devid    1 size 29.10TiB used 29.04TiB path /dev/mapper/Crypto
-
-Best Regards,
-Benjamin H=E4ndel
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 3425a77ecd57..88221d1d8bae 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1080,6 +1080,17 @@ static struct btrfs_flag_map btrfs_opt_map[Opt_err] = {
+ 	[Opt_ref_verify] = INIT_MAP(REF_VERIFY),
+ };
+ 
++static int btrfs_fc_validate(struct fs_context *fc)
++{
++	struct btrfs_fs_context *ctx = fc->fs_private;
++
++	 /* Check for current option against current flag */
++	if (btrfs_test_opt(ctx, NOLOGREPLAY) && !(fc->sb_flags & SB_RDONLY))
++		return invalf(fc, "nologreplay must be used with ro mount option");
++
++	return 0;
++}
++
+ static int btrfs_fc_parse_param(struct fs_context *fc, struct fs_parameter *param)
+ {
+ 	int opt;
+-- 
+2.28.0
 

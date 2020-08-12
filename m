@@ -2,33 +2,37 @@ Return-Path: <SRS0=hMak=BW=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_GIT autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-13.0 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1A473C433DF
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D9BFCC433E3
 	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Aug 2020 06:05:20 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 02E60206C3
+	by mail.kernel.org (Postfix) with ESMTP id C4A78206C3
 	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Aug 2020 06:05:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726607AbgHLGFS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 12 Aug 2020 02:05:18 -0400
-Received: from mx2.suse.de ([195.135.220.15]:51152 "EHLO mx2.suse.de"
+        id S1726700AbgHLGFU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 12 Aug 2020 02:05:20 -0400
+Received: from mx2.suse.de ([195.135.220.15]:51176 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726264AbgHLGFP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Aug 2020 02:05:15 -0400
+        id S1726586AbgHLGFT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 12 Aug 2020 02:05:19 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 29AD8AC12;
-        Wed, 12 Aug 2020 06:05:35 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 7E09AAC12;
+        Wed, 12 Aug 2020 06:05:38 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Cc:     Jungyeon Yoon <jungyeon.yoon@gmail.com>
-Subject: [PATCH v4 0/4] btrfs: Enhanced runtime defence against fuzzed images
-Date:   Wed, 12 Aug 2020 14:05:05 +0800
-Message-Id: <20200812060509.71590-1-wqu@suse.com>
+Cc:     Nikolay Borisov <nborisov@suse.com>,
+        Josef Bacik <josef@toxicpanda.com>
+Subject: [PATCH v4 2/4] btrfs: extent-tree: Kill BUG_ON() in __btrfs_free_extent() and do better comment
+Date:   Wed, 12 Aug 2020 14:05:07 +0800
+Message-Id: <20200812060509.71590-3-wqu@suse.com>
 X-Mailer: git-send-email 2.28.0
+In-Reply-To: <20200812060509.71590-1-wqu@suse.com>
+References: <20200812060509.71590-1-wqu@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -36,102 +40,287 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This patch is revived after one year, as one internal report has hit one
-BUG_ON() with real world fs, so I believe this patchset still makes sense.
+__btrfs_free_extent() is one of the best cases to show how optimization
+could make a function hard to read.
 
-- Enhanced eb accessors
-  Not really needed for the fuzzed images, as 448de471cd4c
-  ("btrfs: Check the first key and level for cached extent buffer")
-  already fixed half of the reported images.
-  Just add a final layer of safe net.
+In fact __btrfs_free_extent() is only doing two major works:
+1. Reduce the refs number of an extent backref
+   Either it's an inlined extent backref (inside EXTENT/METADATA item) or
+   a keyed extent backref (SHARED_* item).
+   We only need to locate that backref line, either reduce the number or
+   remove the backref line completely.
 
-  Just to complain here, two experienced btrfs developer have got
-  confused by @start, @len in functions like read_extent_buffer() with
-  logical address.
-  The best example to solve the confusion is to check the
-  read_extent_buffer() call in btree_read_extent_buffer_pages().
+2. Update the refs count in EXTENT/METADATA_ITEM
 
-  I'm not sure why this confusion happens or even get spread.
-  My guess is the extent_buffer::start naming causing the problem.
+But in real world, we do it in a complex but somewhat efficient way.
+During step 1), we will try to locate the EXTENT/METADATA_ITEM without
+triggering another btrfs_search_slot() as fast path.
 
-  If so, I would definitely rename extent_buffer::start to
-  extent_buffer::bytenr at any cost.
-  Hopes the new commend will address the problem for now.
+Only when we failed to locate that item, we will trigger another
+btrfs_search_slot() to get that EXTENT/METADATA_ITEM after we
+updated/deleted the backref line.
 
-- BUG_ON() hunt in __btrfs_free_extent()
-  Kill BUG_ON()s in __btrfs_free_extent(), replace with error reporting
-  and why it shouldn't happen.
+And we have a lot of restrict check on things like refs_to_drop against
+extent refs and special case check for single ref extent.
 
-  Also add comment on what __btrfs_free_extent() is designed to do, with
-  two dump-tree examples for newcomers.
+All of these results:
+- 7 BUG_ON()s in a single function
+  Although all these BUG_ON() are doing correct check, they're super
+  easy to get triggered for fuzzed images.
+  It's never a good idea to piss the end user.
 
-- BUG_ON() hunt in __btrfs_inc_extent_ref()
-  Just like __btrfs_free_extent(), but less comment as
-  comment for __btrfs_free_extent() should also work for
-  __btrfs_inc_extent_ref(), and __btrfs_inc_extent_ref() has a better
-  structure than __btrfs_free_extent().
+- Near 300 lines without much useful comments but a lot of hidden
+  conditions
+  I believe even the author needs several minutes to recall what the
+  code is doing
+  Not to mention a lot of BUG_ON() conditions needs to go back tens of
+  lines to find out why.
 
-- Defence against unbalanced empty leaf
+This patch address all these problems by:
+- Introduce two examples to show what __btrfs_free_extent() is doing
+  One inlined backref case and one keyed case.
+  Should cover most cases.
 
-- Defence against bad key order across two tree blocks
+- Kill all BUG_ON()s with proper error message and optional leaf dump
 
-The last two cases can't be rejected by tree-checker and they are all
-cross-eb cases.
-Thankfully we can reuse existing first_key check against unbalanced
-empty leaf, but needs extra check deep into ctree.c for tree block
-merging time check.
+- Add comment to show the overall workflow
 
-Reported-by: Jungyeon Yoon <jungyeon.yoon@gmail.com>
-[ Not to mail bombarding the report, thus only RB tag in cover letter ]
+Link: https://bugzilla.kernel.org/show_bug.cgi?id=202819
+[ The report triggers one BUG_ON() in __btrfs_free_extent() ]
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+---
+ fs/btrfs/extent-tree.c | 144 +++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 131 insertions(+), 13 deletions(-)
 
-Changelog:
-v2:
-- Remove duplicated error message in WARN() call.
-  Changed to WARN_ON(IS_ENABLED(CONFIG_BTRFS_DEBUG))
-  Also move WARN() after btrfs error message.
-
-- Fix a comment error in __btrfs_free_extent()
-  It's not adding refs to a tree block, but adding the same refs
-  to an existing tree block ref.
-  It's impossible a btrfs tree owning the same tree block directly twice.
-
-- Add comment for eb accessors about @start and @len
-  If anyone could tell me why such confusion between @start @len and
-  logical address is here, I will definitely solve the root cause no
-  matter how many codes need to be modified.
-
-- Use bool to replace int where only two values are returned
-  Also rename to follow the bool type.
-
-- Remove one unrelated change for the error handler in
-  btrfs_inc_extent_ref()
-
-- Add Reviewed-by tag
-
-v3:
-- Rebased to latest misc-next branch
-  All conflicts can be auto-merged.
-
-v4:
-- Remove one patch which is already merged
-  A little surprised by the fact that git can't detecth such case.
-
-- Add new reviewed-by tags from Josef
-
-Qu Wenruo (4):
-  btrfs: extent_io: Do extra check for extent buffer read write
-    functions
-  btrfs: extent-tree: Kill BUG_ON() in __btrfs_free_extent() and do
-    better comment
-  btrfs: extent-tree: Kill the BUG_ON() in
-    insert_inline_extent_backref()
-  btrfs: ctree: Checking key orders before merged tree blocks
-
- fs/btrfs/ctree.c       |  68 +++++++++++++++++
- fs/btrfs/extent-tree.c | 164 +++++++++++++++++++++++++++++++++++++----
- fs/btrfs/extent_io.c   |  76 +++++++++----------
- 3 files changed, 257 insertions(+), 51 deletions(-)
-
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index fa7d83051587..8e86e3524861 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2930,6 +2930,53 @@ int btrfs_finish_extent_commit(struct btrfs_trans_handle *trans)
+ 	return 0;
+ }
+ 
++/*
++ * Real work happens here to drop one or more refs of @node.
++ *
++ * The work is mostly done in two parts:
++ * 1. Locate the extent refs.
++ *    It's either inlined in EXTENT/METADATA_ITEM or in keyed SHARED_* item.
++ *    Locate it then reduces the refs number or remove the ref line completely.
++ *
++ * 2. Update the refs count in EXTENT/METADATA_ITEM
++ *
++ * Due to the above two operations and possible optimizations, the function
++ * is a little hard to read, but with the following examples, the result
++ * of this function should be pretty easy to get.
++ *
++ * Example:
++ * *** Inlined backref case ***
++ * In extent tree we have:
++ * 	item 0 key (13631488 EXTENT_ITEM 1048576) itemoff 16201 itemsize 82
++ *		refs 2 gen 6 flags DATA
++ *		extent data backref root FS_TREE objectid 258 offset 0 count 1
++ *		extent data backref root FS_TREE objectid 257 offset 0 count 1
++ *
++ * This function get called with
++ *  node->bytenr = 13631488, node->num_bytes = 1048576
++ *  root_objectid = FS_TREE, owner_objectid = 257, owner_offset = 0,
++ *  refs_to_drop = 1
++ * Then we should get some like:
++ * 	item 0 key (13631488 EXTENT_ITEM 1048576) itemoff 16201 itemsize 82
++ *		refs 1 gen 6 flags DATA
++ *		extent data backref root FS_TREE objectid 258 offset 0 count 1
++ *
++ * *** Keyed backref case ***
++ * In extent tree we have:
++ *	item 0 key (13631488 EXTENT_ITEM 1048576) itemoff 3971 itemsize 24
++ *		refs 754 gen 6 flags DATA
++ *	[...]
++ *	item 2 key (13631488 EXTENT_DATA_REF <HASH>) itemoff 3915 itemsize 28
++ *		extent data backref root FS_TREE objectid 866 offset 0 count 1
++ * This function get called with
++ *  node->bytenr = 13631488, node->num_bytes = 1048576
++ *  root_objectid = FS_TREE, owner_objectid = 866, owner_offset = 0,
++ *  refs_to_drop = 1
++ * Then we should get some like:
++ *	item 0 key (13631488 EXTENT_ITEM 1048576) itemoff 3971 itemsize 24
++ *		refs 753 gen 6 flags DATA
++ * And that (13631488 EXTENT_DATA_REF <HASH>) get removed.
++ */
+ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 			       struct btrfs_delayed_ref_node *node, u64 parent,
+ 			       u64 root_objectid, u64 owner_objectid,
+@@ -2962,7 +3009,15 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 	path->leave_spinning = 1;
+ 
+ 	is_data = owner_objectid >= BTRFS_FIRST_FREE_OBJECTID;
+-	BUG_ON(!is_data && refs_to_drop != 1);
++
++	if (unlikely(!is_data && refs_to_drop != 1)) {
++		btrfs_crit(info,
++"invalid refs_to_drop, dropping more than 1 refs for tree block %llu refs_to_drop %u",
++			   node->bytenr, refs_to_drop);
++		ret = -EINVAL;
++		btrfs_abort_transaction(trans, ret);
++		goto out;
++	}
+ 
+ 	if (is_data)
+ 		skinny_metadata = false;
+@@ -2971,6 +3026,13 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 				    parent, root_objectid, owner_objectid,
+ 				    owner_offset);
+ 	if (ret == 0) {
++		/*
++		 * Either the inline backref or the SHARED_DATA_REF/
++		 * SHARED_BLOCK_REF is found
++		 *
++		 * Here is a quick path to locate EXTENT/METADATA_ITEM.
++		 * It's possible the EXTENT/METADATA_ITEM is near current slot.
++		 */
+ 		extent_slot = path->slots[0];
+ 		while (extent_slot >= 0) {
+ 			btrfs_item_key_to_cpu(path->nodes[0], &key,
+@@ -2987,13 +3049,20 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 				found_extent = 1;
+ 				break;
+ 			}
++
++			/* Quick path didn't find the EXTEMT/METADATA_ITEM */
+ 			if (path->slots[0] - extent_slot > 5)
+ 				break;
+ 			extent_slot--;
+ 		}
+ 
+ 		if (!found_extent) {
+-			BUG_ON(iref);
++			if (unlikely(iref)) {
++				btrfs_crit(info,
++"invalid iref, no EXTENT/METADATA_ITEM found but has inline extent ref");
++				goto err_dump_abort;
++			}
++			/* Must be SHARED_* item, remove the backref first */
+ 			ret = remove_extent_backref(trans, path, NULL,
+ 						    refs_to_drop,
+ 						    is_data, &last_ref);
+@@ -3004,6 +3073,8 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 			btrfs_release_path(path);
+ 			path->leave_spinning = 1;
+ 
++
++			/* Slow path to locate EXTENT/METADATA_ITEM */
+ 			key.objectid = bytenr;
+ 			key.type = BTRFS_EXTENT_ITEM_KEY;
+ 			key.offset = num_bytes;
+@@ -3078,19 +3149,24 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 	if (owner_objectid < BTRFS_FIRST_FREE_OBJECTID &&
+ 	    key.type == BTRFS_EXTENT_ITEM_KEY) {
+ 		struct btrfs_tree_block_info *bi;
+-		BUG_ON(item_size < sizeof(*ei) + sizeof(*bi));
++		if (unlikely(item_size < sizeof(*ei) + sizeof(*bi))) {
++			btrfs_crit(info,
++"invalid extent item size for key (%llu, %u, %llu) owner %llu, has %u expect >= %lu",
++				   key.objectid, key.type, key.offset,
++				   owner_objectid, item_size,
++				   sizeof(*ei) + sizeof(*bi));
++			goto err_dump_abort;
++		}
+ 		bi = (struct btrfs_tree_block_info *)(ei + 1);
+ 		WARN_ON(owner_objectid != btrfs_tree_block_level(leaf, bi));
+ 	}
+ 
+ 	refs = btrfs_extent_refs(leaf, ei);
+ 	if (refs < refs_to_drop) {
+-		btrfs_err(info,
+-			  "trying to drop %d refs but we only have %Lu for bytenr %Lu",
++		btrfs_crit(info,
++		"trying to drop %d refs but we only have %Lu for bytenr %Lu",
+ 			  refs_to_drop, refs, bytenr);
+-		ret = -EINVAL;
+-		btrfs_abort_transaction(trans, ret);
+-		goto out;
++		goto err_dump_abort;
+ 	}
+ 	refs -= refs_to_drop;
+ 
+@@ -3102,7 +3178,11 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 		 * be updated by remove_extent_backref
+ 		 */
+ 		if (iref) {
+-			BUG_ON(!found_extent);
++			if (unlikely(!found_extent)) {
++				btrfs_crit(info,
++"invalid iref, got inlined extent ref but no EXTENT/METADATA_ITEM found");
++				goto err_dump_abort;
++			}
+ 		} else {
+ 			btrfs_set_extent_refs(leaf, ei, refs);
+ 			btrfs_mark_buffer_dirty(leaf);
+@@ -3117,13 +3197,36 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 			}
+ 		}
+ 	} else {
++		/* In this branch refs == 1 */
+ 		if (found_extent) {
+-			BUG_ON(is_data && refs_to_drop !=
+-			       extent_data_ref_count(path, iref));
++			if (is_data && refs_to_drop !=
++			    extent_data_ref_count(path, iref)) {
++				btrfs_crit(info,
++		"invalid refs_to_drop, current refs %u refs_to_drop %u",
++					   extent_data_ref_count(path, iref),
++					   refs_to_drop);
++				goto err_dump_abort;
++			}
+ 			if (iref) {
+-				BUG_ON(path->slots[0] != extent_slot);
++				if (path->slots[0] != extent_slot) {
++					btrfs_crit(info,
++"invalid iref, extent item key (%llu %u %llu) doesn't has wanted iref",
++						   key.objectid, key.type,
++						   key.offset);
++					goto err_dump_abort;
++				}
+ 			} else {
+-				BUG_ON(path->slots[0] != extent_slot + 1);
++				/*
++				 * No inline ref, we must at SHARED_* item,
++				 * And it's single ref, it must be:
++				 * |	extent_slot	  ||extent_slot + 1|
++				 * [ EXTENT/METADATA_ITEM ][ SHARED_* ITEM ]
++				 */
++				if (path->slots[0] != extent_slot + 1) {
++					btrfs_crit(info,
++	"invalid SHARED_* item, previous item is not EXTENT/METADATA_ITEM");
++					goto err_dump_abort;
++				}
+ 				path->slots[0] = extent_slot;
+ 				num_to_del = 2;
+ 			}
+@@ -3164,6 +3267,21 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ out:
+ 	btrfs_free_path(path);
+ 	return ret;
++err_dump_abort:
++	/*
++	 * Leaf dump can take up a lot of dmesg buffer since default nodesize
++	 * is already 16K.
++	 * So we only do full leaf dump for debug build.
++	 */
++	if (IS_ENABLED(CONFIG_BTRFS_DEBUG)) {
++		btrfs_crit(info, "path->slots[0]=%d extent_slot=%d",
++			   path->slots[0], extent_slot);
++		btrfs_print_leaf(path->nodes[0]);
++	}
++
++	btrfs_abort_transaction(trans, -EUCLEAN);
++	btrfs_free_path(path);
++	return -EUCLEAN;
+ }
+ 
+ /*
 -- 
 2.28.0
 

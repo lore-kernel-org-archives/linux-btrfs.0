@@ -5,42 +5,40 @@ X-Spam-Level:
 X-Spam-Status: No, score=-5.5 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	DKIM_VALID,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
-	SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
-	version=3.4.0
+	SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BC5ABC433DF
-	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Aug 2020 00:48:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3295CC433E1
+	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Aug 2020 00:52:29 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 89DB62078B
-	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Aug 2020 00:48:20 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0BDF42078B
+	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Aug 2020 00:52:28 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="c69vL6Ra"
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="BeaKjZL2"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726612AbgHNAqt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 13 Aug 2020 20:46:49 -0400
-Received: from mout.gmx.net ([212.227.15.15]:35345 "EHLO mout.gmx.net"
+        id S1726578AbgHNAw2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 13 Aug 2020 20:52:28 -0400
+Received: from mout.gmx.net ([212.227.15.18]:39997 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726567AbgHNAqs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 13 Aug 2020 20:46:48 -0400
+        id S1726205AbgHNAw1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 13 Aug 2020 20:52:27 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1597366006;
-        bh=4ZOU9uT4U1nH2U6c4K+Km+vqqaU6Gw/5q8U4GaKZUqE=;
+        s=badeba3b8450; t=1597366344;
+        bh=b10x7P55PGFzHXQJ9KH7cpbI1piLR6Dk1SMuVf1/ZeQ=;
         h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
-        b=c69vL6RadCWz9AqOgJPy7I4Chckk4vE2ACiu+vWNDV3g+8+gR2CUvPOEWbZFFPbsQ
-         kTK1vCeVh8+Z9vZUqoW8emQ/q1SnvBtjMHYa5eZSiW5jR5N4nhlqqgGx/brgNlju5N
-         2axVKAO3UOuSlrEZBleckVLZkTXAYvGupFpgVMk4=
+        b=BeaKjZL2jS5iEcOiMFkv3bml+s9jDzD5MQL3SmK6YCTtWOzK8TdaxMI5tSZd7eo6w
+         FT41O8JE9iMsPoteKjRg8Bx0CW2V6z7D+0Q8ZPPQyDA2AuBSfMl7rXtah+5qGdWEuP
+         ggDtK9C8m8yEg8YQwsw+FCxmZAQyhV9ZSgPRKxuI=
 X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx005
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1MZTqW-1kAAvT2sB4-00WVL7; Fri, 14
- Aug 2020 02:46:46 +0200
-Subject: Re: AW: AW: Tree-checker Issue / Corrupt FS after upgrade ?
-To:     benjamin.haendel@gmx.net,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <004201d670c9$c69b9230$53d2b690$@gmx.net>
- <facaa4ae-5001-13e7-3ea1-26d514f73848@gmx.com>
- <000801d670fd$bb2f62d0$318e2870$@gmx.net>
- <940c43d7-b7e0-82fa-d5a5-b81e672b85a9@gmx.com>
- <003301d671a8$b93b8b60$2bb2a220$@gmx.net>
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx004
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1MMobO-1kMosN1DCm-00IpPs; Fri, 14
+ Aug 2020 02:52:23 +0200
+Subject: Re: [PATCH v4 2/4] btrfs: extent-tree: Kill BUG_ON() in
+ __btrfs_free_extent() and do better comment
+To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>,
+        Josef Bacik <josef@toxicpanda.com>
+References: <20200812060509.71590-1-wqu@suse.com>
+ <20200812060509.71590-3-wqu@suse.com> <20200813141019.GI2026@twin.jikos.cz>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
@@ -66,143 +64,112 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  72byGeSovfq/4AWGNPBG1L61Exl+gbqfvbECP3ziXnob009+z9I4qXodHSYINfAkZkA523JG
  ap12LndJeLk3gfWNZfXEWyGnuciRGbqESkhIRav8ootsCIops/SqXm0/k+Kcl4gGUO/iD/T5
  oagaDh0QtOd8RWSMwLxwn8uIhpH84Q4X1LadJ5NCgGa6xPP5qqRuiC+9gZqbq4Nj
-Message-ID: <21a68d42-b5b2-fd74-d0ac-f59a288231e8@gmx.com>
-Date:   Fri, 14 Aug 2020 08:46:43 +0800
+Message-ID: <bf3d96a8-f19c-1b0d-9171-c82f7a4d3d0f@gmx.com>
+Date:   Fri, 14 Aug 2020 08:52:19 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
  Thunderbird/68.11.0
 MIME-Version: 1.0
-In-Reply-To: <003301d671a8$b93b8b60$2bb2a220$@gmx.net>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="wVPggP5Cy4iFC6QdV0xSJn4uexhn8wt90"
-X-Provags-ID: V03:K1:6j0dqnmWAaEIugN+s8Fxs8qJ6t45zA/yl0I07VMdDNHGt9vWd03
- JnNqLBZeT6IIRGlbixpwVItFRZ++8vtfC9u1xXpkY/+vD6JVWXi3JfZIApvF6mmZq3m1P/x
- mXKj0cnLFc5tVY6vvrP7TX+X9acsQcQPqspuoEnSU7EYj7ICg1GvWq38iH8Urn91Zz+GtLu
- jalJC5yT+aixoyP0MVpug==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:ZXrmqEwQA1E=:w+a6O1jTtgMUBtbX50VSeE
- qsr8Z65VBgOOn4YUGn6JtiPu/i30AXvx84yfuaXv1bc/WMy6eT33xbsgGEXMTXoOoTVG1LMVP
- LFwq1qhyJg2pTCHRbM+avbE8+ulhct5WABRGjXwh3aqlWdKLc+lW53TxAuSw43joJWVEkhUF+
- cLMApF1HyPwSBrD/H798F5bVZQz/treyBbUEGTIonCwK3/eCWicBIpopzKEwTGLB4BargbGev
- OzMnmk+6ytpxgGs1PV93M3sAswmQrKv1Zo0B6rH3k2Qa8CILoIToHRJTQrzSHQVS7Z9m7EN7+
- UVNvGUwH+D81o+7Q5/q8i/0D+ggjoxqW2edY0D0doJIjzGGyXvwEXcaCYGHXoaF94gZInlbtQ
- 5EOCcMRSM8HitLnSxr0qF08VO4hF40HQHX2Oz7uol+kELS7dDByAtjhsyVrGHWzQH04lIy8nt
- Mh7x4MOGERHuCRqZ50lmprd9o9B+5ygDLD7fxFL4oFel1wD3T6OC9D+4qeuGHCte4S+M3kzXG
- 0vXv4GXU2VBo+xPTYgOjeooHODHTbxX6D5N0f898fTFqWwtRhDu/dL7au0G7awy1c0HUqwEye
- xn0deX+fEuatacM/2pEK6yOyn+5EJ6b/lwK7nfOsHBG2tju14tX6XugAXGqWqtzrzoqkGnkmj
- y7NntdZ4+StSey3eQqnTzJUyqflBCBlwwmgDtr1sBzxIMyxZRYsJkvVo9Vmb7V/cWrc8VQYKI
- ldp2EhhNBwHf1zxib/LDK0t8K37ZxPxRRDA3d/w1NmGEAozrtdDPxQp5Y4zL6u9rEV++zDHTK
- fP3mm5YdBAIT6XA6nUfqgoRch037p/ZyujFX920KthBevApA2lqk6E7z9CTpRHttP8UhaWeDy
- KBZWzbmAWcMAWRNmEJD9hWrEHfSI36ZA0PsKCDBpB1umdRiUpFB8E4J4YVicLPxI1jIP45Po6
- whPauaQgG8vuwV0jmkG/QCrGFadQA3flInyfjKxOmA+QdJLmZhs+UahV5s16yuUpMa+u2hSzE
- eIAU53Vtg9JGQBy1RJMae+IEOIaLnIcfM2Ji2UoA17yCoQ9cWOlW+XAxivshFTy8rN8j2thTg
- zjxsLy49ClRGv3hqUZTV4nC1RyOTTAp7b5lSf25mEExK2JrDEAHTLhZkYdiTqLn1mI2Y/wj1F
- 92Rcf2FA6f+NoZQVrrH31z5LS3y3nD+N8NUqmC7FYHTNFeA1455zsfogFM98JWlc9l7oMTrfF
- cx/3fFd04NdLcyUT1K7weVRT98SUGAjpA8TEVNg==
+In-Reply-To: <20200813141019.GI2026@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:o+dYScEEPeEgYfrxIy3Ro4bcrjeJ5K7SuOEOv0RDBXE3utC43Z+
+ pX5ldSmqWq5F+VsvfvbeFKRCoIKY3EL/VX1iXVGaKbVXn1Au+biQT01Q5T6zKNXkm5EhDh4
+ +WMnA4u9/pqIAnRt2CbJyGZs8nH3fMJe0Yvbuz16sK23dg/ZN9wSM2QKUqAGlYsWW9OAMWh
+ /rqcYIjV7v4VIfqvFtAAA==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:E2gle4s71XY=:okEw+poON8IZORLE61mlnJ
+ JVJfuNdvS2mx8gmGlxLPHM13HOLzM7odzJedP0jEuKemOGQ5wt6uesza6LNN1wN0NP8IpyBrG
+ AHL6zjbrhEBq/zT2IBDmJcGVqzajBq8jMG4zSgpM/ILDk9h2WA8GjQNaid2l0KHSzTtlQBurW
+ N4QLYx4FoObtyFKdL2bkdEDprPDcG3RM6k0m1ZwVEWE5LuhrNhzMnTFO6tziz+eQZmwLP0S/E
+ ZZ22TjUJz1cN6b4EP5tMU6zpub3wlMwEuQ70Ftnld+bmveCfY/4QxbigrLYEWpab/3GJkOqaJ
+ T3aXwVmlilhxyjFOR8+o35+ptxD3TWMJYnrYneCgp9AAsoozlML769STCI9pgaZmRNvM86oIX
+ lGYWGduEBiLZYNO5hmjoMhHyJPtZVmb/1k4muIUNoBsL36bkjY9Rl2sPh9V1mJp0ufnBQtWnA
+ TdgsaLrmhfV6Eah1gxCPzvqegnMw1aFUmBphXvmgRekc3J/c1jVsH6brtDZIRc6koh86hlrkQ
+ hIN39bKrL80SuM+373GF4xvebID1ZuWtjv7qT2oPjg73BKWKEMrz/kz42BzDn17UPG2n+Q5bd
+ M6O1bEKXg9zMWHbfzayQ9BYUiZNYH3S4TVO5G2+A1Z4zj8Ri+eteL17mzbvFCLgKcLd1ci9vp
+ WEbyJ4fmwWvP41SPdPx5bl11Uu9rQpCHgS5pX9ihoux6mKE09PJkqjOKa7pY3Zy2S/tPzXUmn
+ LDLkYoXjhDOWbPDYMnUAtv3z4ES2LyMd8jnLqX1o3M10pcPrY4v5FEPKcic2pmUI92j2UMEmx
+ mNIznSF17tmC54Uz0Veh7PnQHPvnb38p2c8Pf58ATSaqn4+xk/TJEu20MboRCq+4X9ULRYXhG
+ ca2u5wyf4ec2nuJJj033GODykpsiF6JWPDU53W3e10eihO6kF3DMjqHG3I4qycYqZYUzb8ax+
+ Pkmlsj3HY1Jj6Lio9sbcYP3J7abR+PNbjmwl0g+VZUuzQUgwZKfx2WTH3A76M0nOhNmwAIIQm
+ SERc6hVVbb1h6sYM6ll/080x3bNwwSBG+THr2BI4D7rwZZsc8eC5Ly1SqT4oFsJXSXCpfcGub
+ wjl9+PK/nE49bRjViaIpAc3tDdkBpqpBVwvBktHcqMo2OcoAeHa7K5lectZ0lxvEhyD3JxrRf
+ t8GlMPc+yIvn83aIlGggLxRBO+YAJKA6yBLz779R6bPEBKBPn5rN87Fqp8Hzi3tLfP2Q2ic/+
+ 6+7Y3Q1HygutySzr/qFXI1nAjDnQ/OKzlKGsLzA==
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---wVPggP5Cy4iFC6QdV0xSJn4uexhn8wt90
-Content-Type: multipart/mixed; boundary="Gc5GNIhKgaYm3XcJA2Z0EkKkKZ93Zrb7t"
-
---Gc5GNIhKgaYm3XcJA2Z0EkKkKZ93Zrb7t
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
 
 
+On 2020/8/13 =E4=B8=8B=E5=8D=8810:10, David Sterba wrote:
+> On Wed, Aug 12, 2020 at 02:05:07PM +0800, Qu Wenruo wrote:
+>> @@ -2987,13 +3049,20 @@ static int __btrfs_free_extent(struct btrfs_tra=
+ns_handle *trans,
+>>  				found_extent =3D 1;
+>>  				break;
+>>  			}
+>> +
+>> +			/* Quick path didn't find the EXTEMT/METADATA_ITEM */
+>>  			if (path->slots[0] - extent_slot > 5)
+>>  				break;
+>>  			extent_slot--;
+>>  		}
+>>
+>>  		if (!found_extent) {
+>> -			BUG_ON(iref);
+>> +			if (unlikely(iref)) {
+>> +				btrfs_crit(info,
+>> +"invalid iref, no EXTENT/METADATA_ITEM found but has inline extent ref=
+");
+>> +				goto err_dump_abort;
+>
+> This is not calling transaction abort at the place where it happens,
+> here and several other places too.
 
-On 2020/8/14 =E4=B8=8A=E5=8D=883:34, benjamin.haendel@gmx.net wrote:
-> Hi Qu,
->=20
-> thanks for your help and support, but it is still not clear to me how t=
-o download and compile that branch.
-> The newest Version that i can find under releases is from "10 Dec 2014 =
-v3.18-rc1 =E2=80=A6 1519ee3  zip  tar.gz"
+Did you mean, we want the btrfs_abort_transaction() call not merged
+under one tag, so that we can get the kernel warning with the line number?
 
-You need to grab it using git, and grab that specific branch, not
-downing the zip.
+If so, that's indeed the case, we lose the exact line number.
 
->=20
-> Also if i finally do understand how to download it am i correct to assu=
-me, that i will need to remove current btrfs-progs 5.7
-> And install the branch here instead ?
+But we still have the unique error message to locate the problem without
+much hassle (it's less obvious than the line number thought).
 
-You can compile the branch, and just run that built btrfs without
-installing.
+Thus to me, we don't lose much debug info anyway.
 
-But considering the skills needed, I recommend you go the send method.
+>
+>> @@ -3164,6 +3267,21 @@ static int __btrfs_free_extent(struct btrfs_tran=
+s_handle *trans,
+>>  out:
+>>  	btrfs_free_path(path);
+>>  	return ret;
+>> +err_dump_abort:
+>> +	/*
+>> +	 * Leaf dump can take up a lot of dmesg buffer since default nodesize
+>> +	 * is already 16K.
+>> +	 * So we only do full leaf dump for debug build.
+>> +	 */
+>> +	if (IS_ENABLED(CONFIG_BTRFS_DEBUG)) {
+>> +		btrfs_crit(info, "path->slots[0]=3D%d extent_slot=3D%d",
+>> +			   path->slots[0], extent_slot);
+>> +		btrfs_print_leaf(path->nodes[0]);
+>
+> Preceded by a potentially long-running action, so this will delay the
+> acutal abort.
 
-Just boot using the last working kernel, send out the stream.
-Then re-make the fs using latest kernel, and receive the stream.
+That's why it's only for CONFIG_BTRFS_DEBUG.
 
-Or, you can wait your distro to ship v5.9 btrfs-progs (maybe months
-away), meanwhile you can still use your older kernel without any problem.=
-
+And for debug kernel, that info would definitely be more helpful for us
+to locate the problem, right?
 
 Thanks,
 Qu
 
->=20
-> Best Regards,
-> Ben
->=20
-> -----Urspr=C3=BCngliche Nachricht-----
-> Von: Qu Wenruo <quwenruo.btrfs@gmx.com>=20
-> Gesendet: Donnerstag, 13. August 2020 01:30
-> An: benjamin.haendel@gmx.net; linux-btrfs@vger.kernel.org
-> Betreff: Re: AW: Tree-checker Issue / Corrupt FS after upgrade ?
->=20
->=20
->=20
-> On 2020/8/13 =E4=B8=8A=E5=8D=887:10, benjamin.haendel@gmx.net wrote:
->> Hi Qu,
->>
->> thanks for your reply, i am not sure what to do from here on.
->> What do i have to download from here or compile/make/install etc. ?
->=20
-> You need to compile that branch.
->=20
-> For how to compile, please check the README.md.
->=20
->=20
->>
->> I'm no total idiot but i still don't understand what i have to get And=
-=20
->> how to apply it...sorry :(
->=20
-> Or you can use btrfs-send to send out the content of your fs with older=
- kernel, and create a new fs using newer kernel, then receive the stream.=
-
->=20
-> The uninitialized data is only in extent tree, which won't be sent with=
- the stream, by receiving it with newer kernel, you won't lose anything.
->=20
-> Thanks,
-> Qu=20
->=20
->=20
-
-
---Gc5GNIhKgaYm3XcJA2Z0EkKkKZ93Zrb7t--
-
---wVPggP5Cy4iFC6QdV0xSJn4uexhn8wt90
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAl813vMACgkQwj2R86El
-/qh1/wf7B5Ta0jHt/qZhbchDMvqlEgHmmEeDdqoFA9GOG/MCDikN1IN/DVNw+WId
-WjCUk77eBe/IrqI9cP8fSpcJOAHfyI4SIG33Wky36pISY1E+iqgYyRi2SSFuFPyW
-sla3M6R+j6SpUMcijxUS1/F0m+w7lFIT0pX8sarpATCVnd55ocA9Y+M2JRNiWU8Z
-mqav7BtFyWG9yQR0h4CFDz3a4jh9sRg66A0yUZDT/XWWo8MJXJ2ol4TOLXnejdhx
-hFHc0ZQKT+CMIbCq9f/cFAPvRPnU1e8jQEID3a0JSiBNob5N0qBQZzW1phszkS/9
-HVRYHbwrHbNJityE0KDwRbKIBaYoHA==
-=1O/j
------END PGP SIGNATURE-----
-
---wVPggP5Cy4iFC6QdV0xSJn4uexhn8wt90--
+>
+>> +	}
+>> +
+>> +	btrfs_abort_transaction(trans, -EUCLEAN);
+>> +	btrfs_free_path(path);
+>> +	return -EUCLEAN;
+>>  }

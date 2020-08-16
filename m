@@ -2,123 +2,188 @@ Return-Path: <SRS0=CzPf=B2=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.0 required=3.0 tests=BAYES_00,DATE_IN_PAST_12_24,
-	FAKE_REPLY_C,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-9.8 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 78AD2C433DF
-	for <linux-btrfs@archiver.kernel.org>; Sun, 16 Aug 2020 02:53:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 085BFC433DF
+	for <linux-btrfs@archiver.kernel.org>; Sun, 16 Aug 2020 15:24:48 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 56F5D20675
-	for <linux-btrfs@archiver.kernel.org>; Sun, 16 Aug 2020 02:53:07 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E4B1820735
+	for <linux-btrfs@archiver.kernel.org>; Sun, 16 Aug 2020 15:24:47 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729919AbgHPCvv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 15 Aug 2020 22:51:51 -0400
-Received: from magic.merlins.org ([209.81.13.136]:54366 "EHLO
-        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729895AbgHPCvv (ORCPT
+        id S1729058AbgHPPYq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 16 Aug 2020 11:24:46 -0400
+Received: from out20-99.mail.aliyun.com ([115.124.20.99]:49258 "EHLO
+        out20-99.mail.aliyun.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728346AbgHPPYh (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 15 Aug 2020 22:51:51 -0400
-Received: from merlin by mail1.merlins.org with local (Exim 4.92 #3)
-        id 1k6o0N-0006Uo-8f by authid <merlin>; Fri, 14 Aug 2020 21:41:19 -0700
-Date:   Fri, 14 Aug 2020 21:41:19 -0700
-From:   Marc MERLIN <marc@merlins.org>
-To:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-Cc:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Roman Mamedov <rm@romanrm.net>
-Subject: Re: 5.6 pretty massive unexplained btrfs corruption:  parent transid
- verify failed + open_ctree failed
-Message-ID: <20200815044119.GR8863@merlins.org>
+        Sun, 16 Aug 2020 11:24:37 -0400
+X-Alimail-AntiSpam: AC=CONTINUE;BC=0.07452709|-1;CH=green;DM=|CONTINUE|false|;DS=CONTINUE|ham_system_inform|0.0229668-0.0003908-0.976642;FP=0|0|0|0|0|-1|-1|-1;HT=e02c03300;MF=guan@eryu.me;NM=1;PH=DS;RN=4;RT=4;SR=0;TI=SMTPD_---.IIZu.nw_1597591466;
+Received: from localhost(mailfrom:guan@eryu.me fp:SMTPD_---.IIZu.nw_1597591466)
+          by smtp.aliyun-inc.com(10.147.44.145);
+          Sun, 16 Aug 2020 23:24:26 +0800
+Date:   Sun, 16 Aug 2020 23:24:26 +0800
+From:   Eryu Guan <guan@eryu.me>
+To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org
+Cc:     kernel-team@fb.com, linux-btrfs@vger.kernel.org,
+        fstests@vger.kernel.org
+Subject: Re: [PATCH] fstests: btrfs/217 add a test for btrfs seed device stats
+Message-ID: <20200816152426.GM2557159@desktop>
+References: <20200803192559.18330-1-josef@toxicpanda.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20200814021912.GR5890@hungrycats.org>
- <20200814014359.GQ5890@hungrycats.org>
-X-Sysadmin: BOFH
-X-URL:  http://marc.merlins.org/
-User-Agent: Mutt/1.10.1 (2018-07-13)
-X-SA-Exim-Connect-IP: <locally generated>
-X-SA-Exim-Mail-From: marc@merlins.org
+In-Reply-To: <20200803192559.18330-1-josef@toxicpanda.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Aug 13, 2020 at 09:43:59PM -0400, Zygo Blaxell wrote:
-> That "0A80" is the last 4 bytes of "80.00A80" which I mentioned above.
-> They all need write cache turned off.
- 
-Cool. Those were different drives, not sure if they had the same bug.
-
-> I'm told that SC61 firmware has a bug fix for SC60's write cache issues;
-> however, I have some SC60 drives and haven't had write-cache problems
-> with them.  They're probably fine.  Same for WD 01.01A01--some WD Green
-> drives are OK.  I have no data for Samsung firmware.
- 
-So, as incredibly thankful as I am for you having this information, is
-that stuff you just google?
-Is there a DB of bad firmwares, and does linux maybe have a partial one
-to turn off write caching on known bad drives, or am I talking crazy and
-in happy happy land? :)
-
-> bees typically only spends a single-digit percentage of its time
-> manipulating metadata.  Most of the bees IO time is waiting for btrfs
-> to do slow metadata reads while holding a transaction lock.
- 
-Gotcha.
-
-> Anything after bcache stop is write cache flush theatre.  If the drive's
-> write cache firmware is broken, then you can put all the flushes you
-> want, but the flushes don't do anything that wouldn't also be achieved
-> by just waiting for the disks to be idle for a while.
+On Mon, Aug 03, 2020 at 03:25:59PM -0400, Josef Bacik wrote:
+> This is a regression test for the issue fixed by
 > 
-> 5 seconds seems short to me.  I'd keep the drive powered for a minute or
-> two before turning it off.  Ideally I'd set an idle timeout on the drive
-> (hdparm -S) and wait until the disk spins itself down (hdparm -C).
- 
-I see. I didn't realize it could take that long for things to flush if
-the firmware isn't doing the job of flushing when it said it did.
+>   btrfs: init device stats for seed devices
+> 
+> We create a seed device, add a sprout device, and then check the device
+> stats after a remount to make sure it succeeds.
+> 
+> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+> ---
+>  tests/btrfs/217     | 71 +++++++++++++++++++++++++++++++++++++++++++++
+>  tests/btrfs/217.out | 25 ++++++++++++++++
+>  tests/btrfs/group   |  1 +
+>  3 files changed, 97 insertions(+)
+>  create mode 100755 tests/btrfs/217
+>  create mode 100644 tests/btrfs/217.out
+> 
+> diff --git a/tests/btrfs/217 b/tests/btrfs/217
+> new file mode 100755
+> index 00000000..204298bd
+> --- /dev/null
+> +++ b/tests/btrfs/217
+> @@ -0,0 +1,71 @@
+> +#! /bin/bash
+> +# SPDX-License-Identifier: GPL-2.0
+> +# Copyright (c) 2020 Facebook.  All Rights Reserved.
+> +#
+> +# FS QA Test 217
+> +#
+> +# Regression test for the problem fixed by the patch
+> +#
+> +#  btrfs: init device stats for seed devices
+> +#
+> +# Make a seed device, add a sprout to it, and then make sure we can still read
+> +# the device stats for both devices after we remount with the new sprout device.
+> +#
+> +seq=`basename $0`
+> +seqres=$RESULT_DIR/$seq
+> +echo "QA output created by $seq"
+> +
+> +here=`pwd`
+> +tmp=/tmp/$$
+> +status=1	# failure is the default!
+> +trap "_cleanup; exit \$status" 0 1 2 3 15
+> +
+> +_cleanup()
+> +{
+> +	cd /
+> +	rm -f $tmp.*
+> +}
+> +
+> +# get standard environment, filters and checks
+> +. ./common/rc
+> +. ./common/filter
+> +. ./common/filter.btrfs
+> +
+> +# remove previous $seqres.full before test
+> +rm -f $seqres.full
+> +
+> +# real QA test starts here
+> +
+> +# Modify as appropriate.
+> +_supported_fs btrfs
+> +_supported_os Linux
+> +_require_test
+> +_require_scratch_dev_pool 2
+> +
+> +_scratch_dev_pool_get 2
+> +
+> +dev_seed=$(echo $SCRATCH_DEV_POOL | awk '{print $1}')
+> +dev_sprout=$(echo $SCRATCH_DEV_POOL | awk '{print $2}')
+> +
+> +# Create the seed device
+> +_mkfs_dev $dev_seed
+> +run_check _mount $dev_seed $SCRATCH_MNT
 
-> Note that after a bus reset while the disks are online, the write caching
-> flag might revert to default.
- 
-oh boy, thanks for the warning.
+We should avoid using run_check in new tests, as it hides too many
+details and make debug much harder.
 
-> Write cache corruption doesn't always occur at shutdown.  It can also
-> happen if there is a UNC sector or even noise on the SATA cables that
-> triggers a bus reset.  This wouldn't be detected by the host or btrfs--as
-> far as the storage stack is concerned, the drive ACKed the flush, so
-> the data's on the disk, and any losses after that point are equivalent
-> to disk-level corruption.
+Otherwise test looks fine. But I'd like to see a review from other btrfs
+folks.
 
-I see, that makes sense.
+Thanks,
+Eryu
 
-> It would be nice if price correlated to firmware quality, but that's
-> not how disk vendors make drives.  There's a firmware team that produces
-> firmware for a disk controller SoC family.  It's a lot of expensive work,
-> so it only happens once unless a major defect is found.  That firmware
-> ends up in all the drive models built around that SoC family.  So you
-> end up with White Label, WD Green, and WD Red drive models that all
-> run the same handful of firmware builds even though there are dozens of
-> distinct model numbers sold to different market segments (i.e. prices)
-> over a period of many years.
- 
-I see, so I guess I don't feel as bad buying the cheaper white label
-versions :)
-
-> WD didn't think it was important to avoid SMR in NAS drives--a
-> requirement that was so obvious that customers ultimately sued them
-> over it.  WD certainly wouldn't think it was important for their NAS
-> drives to have more correct firmware than the low-end discount model,
-> and nobody sued them over it, so they all got shipped with the same bugs.
-
-Yeah, I saw that, most BS move ever. They definitely deserve the
-backlash coming with it.
-
-Thanks for your answers.
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
- 
-Home page: http://marc.merlins.org/  
+> +$XFS_IO_PROG -f -d -c "pwrite -S 0xab 0 1M" $SCRATCH_MNT/foo > /dev/null
+> +$BTRFS_UTIL_PROG filesystem show -m $SCRATCH_MNT | \
+> +	_filter_btrfs_filesystem_show
+> +_scratch_unmount
+> +$BTRFS_TUNE_PROG -S 1 $dev_seed
+> +
+> +# Mount the seed device and add the rw device
+> +run_check _mount $dev_seed $SCRATCH_MNT
+> +_run_btrfs_util_prog device add -f $dev_sprout $SCRATCH_MNT
+> +$BTRFS_UTIL_PROG device stats $SCRATCH_MNT | _filter_scratch_pool
+> +_scratch_unmount
+> +
+> +# Now remount, validate the device stats do not fail
+> +run_check _mount $dev_sprout $SCRATCH_MNT
+> +$BTRFS_UTIL_PROG device stats $SCRATCH_MNT | _filter_scratch_pool
+> +
+> +# success, all done
+> +status=0
+> +exit
+> diff --git a/tests/btrfs/217.out b/tests/btrfs/217.out
+> new file mode 100644
+> index 00000000..86c6e775
+> --- /dev/null
+> +++ b/tests/btrfs/217.out
+> @@ -0,0 +1,25 @@
+> +QA output created by 217
+> +Label: none  uuid: <UUID>
+> +	Total devices <NUM> FS bytes used <SIZE>
+> +	devid <DEVID> size <SIZE> used <SIZE> path SCRATCH_DEV
+> +
+> +[SCRATCH_DEV].write_io_errs    0
+> +[SCRATCH_DEV].read_io_errs     0
+> +[SCRATCH_DEV].flush_io_errs    0
+> +[SCRATCH_DEV].corruption_errs  0
+> +[SCRATCH_DEV].generation_errs  0
+> +[SCRATCH_DEV].write_io_errs    0
+> +[SCRATCH_DEV].read_io_errs     0
+> +[SCRATCH_DEV].flush_io_errs    0
+> +[SCRATCH_DEV].corruption_errs  0
+> +[SCRATCH_DEV].generation_errs  0
+> +[SCRATCH_DEV].write_io_errs    0
+> +[SCRATCH_DEV].read_io_errs     0
+> +[SCRATCH_DEV].flush_io_errs    0
+> +[SCRATCH_DEV].corruption_errs  0
+> +[SCRATCH_DEV].generation_errs  0
+> +[SCRATCH_DEV].write_io_errs    0
+> +[SCRATCH_DEV].read_io_errs     0
+> +[SCRATCH_DEV].flush_io_errs    0
+> +[SCRATCH_DEV].corruption_errs  0
+> +[SCRATCH_DEV].generation_errs  0
+> diff --git a/tests/btrfs/group b/tests/btrfs/group
+> index ca90818b..32604e25 100644
+> --- a/tests/btrfs/group
+> +++ b/tests/btrfs/group
+> @@ -219,3 +219,4 @@
+>  214 auto quick send snapshot
+>  215 auto quick
+>  216 auto quick seed
+> +217 auto quick volume
+> -- 
+> 2.24.1

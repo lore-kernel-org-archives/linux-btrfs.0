@@ -2,35 +2,35 @@ Return-Path: <SRS0=Bqu+=B3=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,
+X-Spam-Status: No, score=-11.7 required=3.0 tests=BAYES_00,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+	SPF_HELO_NONE,SPF_PASS,TVD_SUBJ_WIPE_DEBT,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5CB53C433E1
-	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Aug 2020 12:12:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3B886C433DF
+	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Aug 2020 12:12:43 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 384C72072E
-	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Aug 2020 12:12:41 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 25F2E2072E
+	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Aug 2020 12:12:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727976AbgHQMMk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 17 Aug 2020 08:12:40 -0400
-Received: from mx2.suse.de ([195.135.220.15]:57088 "EHLO mx2.suse.de"
+        id S1728113AbgHQMMm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 17 Aug 2020 08:12:42 -0400
+Received: from mx2.suse.de ([195.135.220.15]:57104 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726151AbgHQMMj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 17 Aug 2020 08:12:39 -0400
+        id S1728000AbgHQMMm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 17 Aug 2020 08:12:42 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 7AB6EAEDA;
-        Mon, 17 Aug 2020 12:13:03 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 1C359AEDA;
+        Mon, 17 Aug 2020 12:13:06 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 431A2DA6EF; Mon, 17 Aug 2020 14:11:34 +0200 (CEST)
+        id D97D3DA6EF; Mon, 17 Aug 2020 14:11:36 +0200 (CEST)
 From:   David Sterba <dsterba@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     David Sterba <dsterba@suse.com>
-Subject: [PATCH 1/5] btrfs: remove const from btrfs_feature_set_name
-Date:   Mon, 17 Aug 2020 14:11:34 +0200
-Message-Id: <10b15e1509df9cfac16f3f1c1ec26574009778fd.1597666167.git.dsterba@suse.com>
+Subject: [PATCH 3/5] btrfs: remove unnecessarily shadowed variables
+Date:   Mon, 17 Aug 2020 14:11:36 +0200
+Message-Id: <f90a594dd5d9bf67e2160209d9e0e4bbd76fdfea.1597666167.git.dsterba@suse.com>
 X-Mailer: git-send-email 2.25.0
 In-Reply-To: <cover.1597666167.git.dsterba@suse.com>
 References: <cover.1597666167.git.dsterba@suse.com>
@@ -41,46 +41,42 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The function btrfs_feature_set_name returns a const char pointer, the
-second const is not necessary and reported as a warning:
+In btrfs_orphan_cleanup, there's another instance of fs_info, but it's
+the same as the one we already have.
 
- In file included from fs/btrfs/space-info.c:6:
- fs/btrfs/sysfs.h:16:1: warning: type qualifiers ignored on function return type [-Wignored-qualifiers]
-    16 | const char * const btrfs_feature_set_name(enum btrfs_feature_set set);
-       | ^~~~~
+In btrfs_backref_finish_upper_links, rb_node is same type and used
+as temporary cursor to the tree.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/sysfs.c | 2 +-
- fs/btrfs/sysfs.h | 2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+ fs/btrfs/backref.c | 1 -
+ fs/btrfs/inode.c   | 1 -
+ 2 files changed, 2 deletions(-)
 
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index 88fd4ce937b8..11e5f0a520d8 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -973,7 +973,7 @@ static const char * const btrfs_feature_set_names[FEAT_MAX] = {
- 	[FEAT_INCOMPAT]	 = "incompat",
- };
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index ea1c28ccb44f..b3268f4ea5f3 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -2997,7 +2997,6 @@ int btrfs_backref_finish_upper_links(struct btrfs_backref_cache *cache,
+ 	while (!list_empty(&pending_edge)) {
+ 		struct btrfs_backref_node *upper;
+ 		struct btrfs_backref_node *lower;
+-		struct rb_node *rb_node;
  
--const char * const btrfs_feature_set_name(enum btrfs_feature_set set)
-+const char *btrfs_feature_set_name(enum btrfs_feature_set set)
- {
- 	return btrfs_feature_set_names[set];
- }
-diff --git a/fs/btrfs/sysfs.h b/fs/btrfs/sysfs.h
-index c9efa15f96e0..4217823e255c 100644
---- a/fs/btrfs/sysfs.h
-+++ b/fs/btrfs/sysfs.h
-@@ -13,7 +13,7 @@ enum btrfs_feature_set {
- };
+ 		edge = list_first_entry(&pending_edge,
+ 				struct btrfs_backref_edge, list[UPPER]);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index dd84c4d58a56..ced88a830253 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3055,7 +3055,6 @@ int btrfs_orphan_cleanup(struct btrfs_root *root)
  
- char *btrfs_printable_features(enum btrfs_feature_set set, u64 flags);
--const char * const btrfs_feature_set_name(enum btrfs_feature_set set);
-+const char *btrfs_feature_set_name(enum btrfs_feature_set set);
- int btrfs_sysfs_add_devices_dir(struct btrfs_fs_devices *fs_devices,
- 		struct btrfs_device *one_device);
- int btrfs_sysfs_remove_devices_dir(struct btrfs_fs_devices *fs_devices,
+ 		if (ret == -ENOENT && root == fs_info->tree_root) {
+ 			struct btrfs_root *dead_root;
+-			struct btrfs_fs_info *fs_info = root->fs_info;
+ 			int is_dead_root = 0;
+ 
+ 			/*
 -- 
 2.25.0
 

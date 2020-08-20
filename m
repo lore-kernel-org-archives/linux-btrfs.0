@@ -7,62 +7,62 @@ X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E29C8C433DF
-	for <linux-btrfs@archiver.kernel.org>; Thu, 20 Aug 2020 15:46:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9342EC433E1
+	for <linux-btrfs@archiver.kernel.org>; Thu, 20 Aug 2020 15:46:50 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id BC05321734
-	for <linux-btrfs@archiver.kernel.org>; Thu, 20 Aug 2020 15:46:47 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6E22B2054F
+	for <linux-btrfs@archiver.kernel.org>; Thu, 20 Aug 2020 15:46:50 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="rjRBMTb7"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="PIlqh6In"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729388AbgHTPqp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 20 Aug 2020 11:46:45 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58816 "EHLO
+        id S1729396AbgHTPqs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 20 Aug 2020 11:46:48 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58830 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728209AbgHTPq0 (ORCPT
+        with ESMTP id S1729353AbgHTPqf (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 20 Aug 2020 11:46:26 -0400
-Received: from mail-qk1-x743.google.com (mail-qk1-x743.google.com [IPv6:2607:f8b0:4864:20::743])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D0C61C061388
-        for <linux-btrfs@vger.kernel.org>; Thu, 20 Aug 2020 08:46:25 -0700 (PDT)
-Received: by mail-qk1-x743.google.com with SMTP id b14so1909099qkn.4
-        for <linux-btrfs@vger.kernel.org>; Thu, 20 Aug 2020 08:46:25 -0700 (PDT)
+        Thu, 20 Aug 2020 11:46:35 -0400
+Received: from mail-qt1-x844.google.com (mail-qt1-x844.google.com [IPv6:2607:f8b0:4864:20::844])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 92AB0C061342
+        for <linux-btrfs@vger.kernel.org>; Thu, 20 Aug 2020 08:46:29 -0700 (PDT)
+Received: by mail-qt1-x844.google.com with SMTP id t23so1509665qto.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 20 Aug 2020 08:46:29 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references:mime-version
          :content-transfer-encoding;
-        bh=dwi//Fxn+U3xRh4MtqF97UHRk3f4TrfspnqPiPDDzew=;
-        b=rjRBMTb7hIrbH36MKy09R8/VfAagLtkM0TwT3lW3B35yCwThBmIoqDv+D7CJkAUabI
-         V3S9WRawWDacBh6AQvxtsuzT3G6dVKizmrmizcM5VTVlf5t0ZdrAFIdCAw8BMhYpgRo7
-         7zr1+Cv3+feTCpCMtlK/WXXXZ0pvHaBgk684sk1CKTYT5RKi+Zj6F0mU6Cty4uQG9PpD
-         6yQRT58QBoty9cz8e7va2lW7fVcpSEyXnXgVvLgHyKzLO6wswHhy1eA877Y98lQwoy/0
-         RVt2LcppCCapVMcgRw1e/isYGAemyZ1GGARTwKcAqmP7umxVWFRY4nns0rEryT3ZdvHL
-         8C7A==
+        bh=26LVHM657WspHmm+joVxq43rrC/e8jj0gG4dsGesC0k=;
+        b=PIlqh6InLkNnzK0KAJ1OlFJ0+m0cq8cY54ewqyoNt+As4bMuUwL19PLqJLgiO0i5w4
+         ZfnruPUkU1WhcXAXvtp/fSyVFMYfke1yfM569ypOEPrb90i43lA0SpAukA2h+qcg4AmM
+         mWCrmTiH4esbBgfVrh5uMjy8zQQWVqYxr/VacIT5cVTUlVLDIib+QEHkGtdUHiz8zmoi
+         nLx6ZAnwXmrSEpCRsKmQ4gPBrx27h7meRpkj2GqhisH7Tc4YCAWulFgLemkN6UID8w98
+         /VeEuH1/u7TOaSqzhb1gUEfsa8xYlEi7675dGWsALmXV+fQLdc4CFsXe/627mVZAfL8k
+         WglA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=dwi//Fxn+U3xRh4MtqF97UHRk3f4TrfspnqPiPDDzew=;
-        b=NH0cXJS47QR2nn4+t7anoHK/65VersPKVXrpf7actIRrf/PNq40a+ZuWnbMBx9KT2j
-         ixqhqawNqyQ58Zj83W/Z7wHbRzMLLGFHSPU8b+aKjgFtqoIk8XiMs4doAXk29EYZaz9c
-         EJj1KUba8WV13qa7XzzWadotj25qHJIzeq7ny5dUxUS3hVsvaseAirz0dHRwezA/8xKj
-         rW9+F5uDaaH8+zpUT9FzAcDCrp8VnIQvsCDA/mS4xL56YYMxL9+vsaApHsk3efkJvpxY
-         c2RpgD4iocD1uVjbyVttSX/ME5OVxoPzo9+blD7tjc4FC/nUjlcDS07TImc5vbL5OyvH
-         2lUA==
-X-Gm-Message-State: AOAM530ppwfotX1wW/F1Mldp23WLG7J7etefZKYMxIeyzKEQwOxL0ipM
-        F1KeUUxSoAhv3MfyX/N9O7axAZkerHitCSCz
-X-Google-Smtp-Source: ABdhPJzvXSjv/T36RwiXE++1IHreOrnKO4qPQmaxOJNH2PbigM5e8lxVvflP5V8XwgZ5MJB7hawm2g==
-X-Received: by 2002:a05:620a:222c:: with SMTP id n12mr3094551qkh.210.1597938384583;
-        Thu, 20 Aug 2020 08:46:24 -0700 (PDT)
+        bh=26LVHM657WspHmm+joVxq43rrC/e8jj0gG4dsGesC0k=;
+        b=c83DF9vYah4pboKfp1bx2z5fVwy0AMCdwMwVQS+Rdy4rWYwQ/qEe0Ucesm/ZqPJH4t
+         HtfzeUPqRIsbjXR5B5ijxe+77u0XB1BiavuTHP/7rVRYsbGfr3CX+q+nI4Pgo/VepzYw
+         cloyRNQg4eaiTrteJTN/i8O7/mbD7yITckg3sgtnoT5fpzPfdAmUWE6xPTD03YHaDU/r
+         q3YkMi6yMb69g5DmpcSH8Hgq+qVREsn6nfF7lR4WnZ1xiiu5sm4v6OjsN2etoQP/9e9J
+         +pcII/eZPmVrUCKp1608W/Hmhk4oFWFWAf2FEhlm1aH6KC+3Vy21aiEWnNw1C3Y3qQfW
+         ho2Q==
+X-Gm-Message-State: AOAM533MrfR8U6gQp7lQg5ZYf/4RK84Rj9jt+Qvl1qtBnrH2xvU1q0TM
+        Ao9vTI+0MfqXYzj7cejrQHycaRdJ9xQniBZX
+X-Google-Smtp-Source: ABdhPJyfsVVQd+v5gT9dHfPHeWZIoUqhSYaBiyA2crp6NB2qcmhB9m9LmwXbG2Es24jrLQFET1xe/w==
+X-Received: by 2002:ac8:3894:: with SMTP id f20mr3233303qtc.243.1597938388363;
+        Thu, 20 Aug 2020 08:46:28 -0700 (PDT)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id 15sm2490963qkm.112.2020.08.20.08.46.23
+        by smtp.gmail.com with ESMTPSA id i14sm3244701qtq.33.2020.08.20.08.46.27
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 20 Aug 2020 08:46:23 -0700 (PDT)
+        Thu, 20 Aug 2020 08:46:27 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 05/12] btrfs: introduce BTRFS_NESTING_LEFT/BTRFS_NESTING_RIGHT
-Date:   Thu, 20 Aug 2020 11:46:04 -0400
-Message-Id: <07d7ef8f401ec5b0b24ae58b4da7f0f49c9651fc.1597938191.git.josef@toxicpanda.com>
+Subject: [PATCH 07/12] btrfs: introduce BTRFS_NESTING_SPLIT for split blocks
+Date:   Thu, 20 Aug 2020 11:46:06 -0400
+Message-Id: <873113d522b5b1183a4805e1140114b64174cf00.1597938191.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.24.1
 In-Reply-To: <cover.1597938190.git.josef@toxicpanda.com>
 References: <cover.1597938190.git.josef@toxicpanda.com>
@@ -73,121 +73,65 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Our lockdep maps are based on rootid+level, however in some cases we
-will lock adjacent blocks on the same level, namely in searching forward
-or in split/balance.  Because of this lockdep will complain, so we need
-a separate subclass to indicate to lockdep that these are different
-locks.
+If we are splitting a leaf/node, we could do something like the
+following
 
-lock leaf -> BTRFS_NESTING_NORMAL
-  cow leaf -> BTRFS_NESTING_COW
-    split leaf
-       lock left -> BTRFS_NESTING_LEFT
-       lock right -> BTRFS_NESTING_RIGHT
+lock(leaf)  BTRFS_NESTING_NORMAL
+  lock(left) BTRFS_NESTING_LEFT + BTRFS_NESTING_COW
+    push from leaf -> left
+      reset path to point to left
+        split left
+          allocate new block, lock block BTRFS_NESTING_SPLIT
 
-The above graph illustrates the need for this new nesting subclass.
+at the new block point we need to have a different nesting level,
+because we have already used either BTRFS_NESTING_LEFT or
+BTRFS_NESTING_RIGHT when pushing items from the original leaf into the
+adjacent leaves.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/ctree.c   | 16 ++++++++--------
- fs/btrfs/locking.h | 12 ++++++++++++
- 2 files changed, 20 insertions(+), 8 deletions(-)
+ fs/btrfs/ctree.c   | 4 ++--
+ fs/btrfs/locking.h | 9 +++++++++
+ 2 files changed, 11 insertions(+), 2 deletions(-)
 
 diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index d8f0e128c7ba..a4b2439a398a 100644
+index ae5e3f1056d8..4b62acac31b6 100644
 --- a/fs/btrfs/ctree.c
 +++ b/fs/btrfs/ctree.c
-@@ -1896,7 +1896,7 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
- 		left = NULL;
+@@ -3473,7 +3473,7 @@ static noinline int split_node(struct btrfs_trans_handle *trans,
+ 	btrfs_node_key(c, &disk_key, mid);
  
- 	if (left) {
--		btrfs_tree_lock(left);
-+		__btrfs_tree_lock(left, BTRFS_NESTING_LEFT);
- 		btrfs_set_lock_blocking_write(left);
- 		wret = btrfs_cow_block(trans, root, left,
- 				       parent, pslot - 1, &left,
-@@ -1912,7 +1912,7 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
- 		right = NULL;
+ 	split = alloc_tree_block_no_bg_flush(trans, root, 0, &disk_key, level,
+-					     c->start, 0, BTRFS_NESTING_NORMAL);
++					     c->start, 0, BTRFS_NESTING_SPLIT);
+ 	if (IS_ERR(split))
+ 		return PTR_ERR(split);
  
- 	if (right) {
--		btrfs_tree_lock(right);
-+		__btrfs_tree_lock(right, BTRFS_NESTING_RIGHT);
- 		btrfs_set_lock_blocking_write(right);
- 		wret = btrfs_cow_block(trans, root, right,
- 				       parent, pslot + 1, &right,
-@@ -2076,7 +2076,7 @@ static noinline int push_nodes_for_insert(struct btrfs_trans_handle *trans,
- 	if (left) {
- 		u32 left_nr;
+@@ -4250,7 +4250,7 @@ static noinline int split_leaf(struct btrfs_trans_handle *trans,
+ 		btrfs_item_key(l, &disk_key, mid);
  
--		btrfs_tree_lock(left);
-+		__btrfs_tree_lock(left, BTRFS_NESTING_LEFT);
- 		btrfs_set_lock_blocking_write(left);
- 
- 		left_nr = btrfs_header_nritems(left);
-@@ -2131,7 +2131,7 @@ static noinline int push_nodes_for_insert(struct btrfs_trans_handle *trans,
- 	if (right) {
- 		u32 right_nr;
- 
--		btrfs_tree_lock(right);
-+		__btrfs_tree_lock(right, BTRFS_NESTING_RIGHT);
- 		btrfs_set_lock_blocking_write(right);
- 
- 		right_nr = btrfs_header_nritems(right);
-@@ -3742,7 +3742,7 @@ static int push_leaf_right(struct btrfs_trans_handle *trans, struct btrfs_root
+ 	right = alloc_tree_block_no_bg_flush(trans, root, 0, &disk_key, 0,
+-					     l->start, 0, BTRFS_NESTING_NORMAL);
++					     l->start, 0, BTRFS_NESTING_SPLIT);
  	if (IS_ERR(right))
- 		return 1;
+ 		return PTR_ERR(right);
  
--	btrfs_tree_lock(right);
-+	__btrfs_tree_lock(right, BTRFS_NESTING_RIGHT);
- 	btrfs_set_lock_blocking_write(right);
- 
- 	free_space = btrfs_leaf_free_space(right);
-@@ -3975,7 +3975,7 @@ static int push_leaf_left(struct btrfs_trans_handle *trans, struct btrfs_root
- 	if (IS_ERR(left))
- 		return 1;
- 
--	btrfs_tree_lock(left);
-+	__btrfs_tree_lock(left, BTRFS_NESTING_LEFT);
- 	btrfs_set_lock_blocking_write(left);
- 
- 	free_space = btrfs_leaf_free_space(left);
-@@ -5393,7 +5393,7 @@ int btrfs_next_old_leaf(struct btrfs_root *root, struct btrfs_path *path,
- 			if (!ret) {
- 				btrfs_set_path_blocking(path);
- 				__btrfs_tree_read_lock(next,
--						       BTRFS_NESTING_NORMAL,
-+						       BTRFS_NESTING_RIGHT,
- 						       path->recurse);
- 			}
- 			next_rw_lock = BTRFS_READ_LOCK;
-@@ -5430,7 +5430,7 @@ int btrfs_next_old_leaf(struct btrfs_root *root, struct btrfs_path *path,
- 			if (!ret) {
- 				btrfs_set_path_blocking(path);
- 				__btrfs_tree_read_lock(next,
--						       BTRFS_NESTING_NORMAL,
-+						       BTRFS_NESTING_RIGHT,
- 						       path->recurse);
- 			}
- 			next_rw_lock = BTRFS_READ_LOCK;
 diff --git a/fs/btrfs/locking.h b/fs/btrfs/locking.h
-index 5a4fdef197f5..3169c2bb6db9 100644
+index a88c6f59f616..3b5a948bf74f 100644
 --- a/fs/btrfs/locking.h
 +++ b/fs/btrfs/locking.h
-@@ -27,6 +27,18 @@ enum btrfs_lock_nesting {
- 	 */
- 	BTRFS_NESTING_COW,
+@@ -47,6 +47,15 @@ enum btrfs_lock_nesting {
+ 	BTRFS_NESTING_LEFT_COW,
+ 	BTRFS_NESTING_RIGHT_COW,
  
 +	/*
-+	 * Oftentimes we need to lock adjacent nodes on the same level while
-+	 * still holding the lock on the original node we searched to, such as
-+	 * for searching forward or for split/balance.
-+	 *
-+	 * Because of this we need to indicate to lockdep that this is
-+	 * acceptable by having a different subclass for each of these
-+	 * operations.
++	 * When splitting we may push nodes to the left or right, but still use
++	 * the subsequent nodes in our path, keeping our locks on those adjacent
++	 * blocks.  Thus when we go to allocate a new split block we've already
++	 * used up all of our available subclasses, so this subclass exists to
++	 * handle this case where we need to allocate a new split block.
 +	 */
-+	BTRFS_NESTING_LEFT,
-+	BTRFS_NESTING_RIGHT,
++	BTRFS_NESTING_SPLIT,
 +
  	/*
  	 * We are limited to MAX_LOCKDEP_SUBLCLASSES number of subclasses, so

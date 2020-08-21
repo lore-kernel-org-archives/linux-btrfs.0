@@ -7,48 +7,48 @@ X-Spam-Status: No, score=-13.1 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A5262C433E3
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Aug 2020 17:14:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 31DBEC433DF
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Aug 2020 17:24:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 8573420656
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Aug 2020 17:14:07 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 122202075E
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Aug 2020 17:24:17 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1598030047;
-	bh=w4uU5peIZQ4F7bVFPwEVsd6F/1DnuBQXL8LkfAhCAhw=;
+	s=default; t=1598030657;
+	bh=eRrwXSxeTs840s39vCPAEof4ZeUFt1wv1CS6+1RMabc=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=zmDvBRPY3wJw8xOquZ+kE3uq4raAOlt7fp0Kttt6Th5xBh+Rkit9h71GihuRGEYRZ
-	 6Bxl/bAxPUHBZ1iOtuDc2mTrwcXcebw7wz60F+HMGMsueeYRnzQy43RHr/5JCy5wxw
-	 pg11c6/BkghcV5crpUab/8vQ8Q3kGldX4VNx7xs4=
+	b=EJCTz/aUe3aqSQOn4abbqTkBNnIzLRxJAY7uvOC4y4BhUuPmUMNjQ5xlbAT2eoFVk
+	 ly0KtDaQN/cj91otq+TFmkHjZCehnOsNDU/fYJoCNdE6WgnH5z2aDzfmZi21mBMWbc
+	 YrLgK4Dz1U6VH/IB4Jfn6Tk2/aUWgAEhXUsoL+5w=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729021AbgHURLu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 21 Aug 2020 13:11:50 -0400
-Received: from mail.kernel.org ([198.145.29.99]:49728 "EHLO mail.kernel.org"
+        id S1729160AbgHURX7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 21 Aug 2020 13:23:59 -0400
+Received: from mail.kernel.org ([198.145.29.99]:48002 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726871AbgHUQRA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 21 Aug 2020 12:17:00 -0400
+        id S1727943AbgHUQPc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 21 Aug 2020 12:15:32 -0400
 Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 75A3122C9F;
-        Fri, 21 Aug 2020 16:16:50 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id D016022B40;
+        Fri, 21 Aug 2020 16:15:30 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1598026611;
-        bh=w4uU5peIZQ4F7bVFPwEVsd6F/1DnuBQXL8LkfAhCAhw=;
+        s=default; t=1598026531;
+        bh=eRrwXSxeTs840s39vCPAEof4ZeUFt1wv1CS6+1RMabc=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=nedJlJRo6QoRsgfjipj3cEaAmN6YbT/CcFmrQem2W3K0wJXwIYT871FpW7C8OPHGS
-         GtpRLtwHidSnNW9oiT9UWVKNqpUxX7364x9DPJ3t5RfAvRj3wkqMs9pBJg5LgYcxhV
-         4DxMc8hVIeKhFwU5bbGFMzZcYXlCN4uzrSG+zZZ8=
+        b=qn7DV+seYZkb/LsnRmkI6Kw1YPTVPf9kRs+lp6yC61UjDJUD9AmLRFra6tm/v6+eI
+         FYtp+ZK1GWHSdRftpXmdefh583hE2PQzzZBs6VsJ7KwUAo0tA+zWMHIDmUumQxbGxb
+         6t0o5mtrsdiQIb+26aVZdzkMsaGp39gEiQyVxCSg=
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.7 52/61] btrfs: make btrfs_qgroup_check_reserved_leak take btrfs_inode
-Date:   Fri, 21 Aug 2020 12:15:36 -0400
-Message-Id: <20200821161545.347622-52-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 5.8 53/62] btrfs: make btrfs_qgroup_check_reserved_leak take btrfs_inode
+Date:   Fri, 21 Aug 2020 12:14:14 -0400
+Message-Id: <20200821161423.347071-53-sashal@kernel.org>
 X-Mailer: git-send-email 2.25.1
-In-Reply-To: <20200821161545.347622-1-sashal@kernel.org>
-References: <20200821161545.347622-1-sashal@kernel.org>
+In-Reply-To: <20200821161423.347071-1-sashal@kernel.org>
+References: <20200821161423.347071-1-sashal@kernel.org>
 MIME-Version: 1.0
 X-stable: review
 X-Patchwork-Hint: Ignore
@@ -77,10 +77,10 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
  3 files changed, 9 insertions(+), 9 deletions(-)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 6cb3dc2748974..e33776d076f9d 100644
+index 3f77ec5de8ec7..0a07e0aea7f0b 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -9025,7 +9025,7 @@ void btrfs_destroy_inode(struct inode *inode)
+@@ -8632,7 +8632,7 @@ void btrfs_destroy_inode(struct inode *inode)
  			btrfs_put_ordered_extent(ordered);
  		}
  	}

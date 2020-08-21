@@ -5,65 +5,65 @@ X-Spam-Level:
 X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B01E0C433E1
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Aug 2020 07:41:18 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 25F1EC433DF
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Aug 2020 07:41:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 8C2AF207DF
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Aug 2020 07:41:18 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 02F812078D
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Aug 2020 07:41:24 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="BXNiuBbZ"
+	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="qEZIapEt"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728141AbgHUHlR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 21 Aug 2020 03:41:17 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37220 "EHLO
+        id S1728450AbgHUHlW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 21 Aug 2020 03:41:22 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37318 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728353AbgHUHkm (ORCPT
+        with ESMTP id S1726864AbgHUHky (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 21 Aug 2020 03:40:42 -0400
-Received: from mail-pl1-x641.google.com (mail-pl1-x641.google.com [IPv6:2607:f8b0:4864:20::641])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 27C97C061388
-        for <linux-btrfs@vger.kernel.org>; Fri, 21 Aug 2020 00:40:42 -0700 (PDT)
-Received: by mail-pl1-x641.google.com with SMTP id v16so525495plo.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 21 Aug 2020 00:40:42 -0700 (PDT)
+        Fri, 21 Aug 2020 03:40:54 -0400
+Received: from mail-pl1-x643.google.com (mail-pl1-x643.google.com [IPv6:2607:f8b0:4864:20::643])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 980EBC06134D
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 Aug 2020 00:40:52 -0700 (PDT)
+Received: by mail-pl1-x643.google.com with SMTP id h2so526557plr.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 Aug 2020 00:40:52 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=osandov-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=N1N4BTnl4BaaYraexKEAlh2R7kwx90CEeerw/26WSug=;
-        b=BXNiuBbZOZkAJvbBGbzKIlsbNo3cFOHkqLme1JEMS8uq9yYeDlgRPMn2BQoec8ylsr
-         8Psr06jSo9TnEsOX+E2saOj11H4du91qvpkCtPus7xGc4ygo6njrzLQ1O9ai228HjN+O
-         4QGbnLeSUUE53vvnbmUBFtHv7oWuQN9F0445cf8JCMtqP3KdsdMZnO+ZdR2F5fSTALo1
-         uZLIY4W3m2PBqsgxWpZ9uwt1PTeHKKstqFuaEO6BS6lebjSNhLK8mlPmJSfwPzUTp7kE
-         EoVHUS6oGdVsfiH0iP02qXmwAavvtSBdHfwoFEYub6EDPUAoGvC4Yyhrki02DKyRVfSz
-         HbGA==
+        bh=imB0DQxAT8UunMGY6iRGaYrAjtodauS9bVt6p7lUxh8=;
+        b=qEZIapEtUSXCOYAjJh9pfNtL2V5UP/ULp/F1qG8YiJdY62JXcBc9vIBxI4tSFJEh5I
+         4nKw60kl556qYa3kE+L3GNho9GVg3XmPF8PcVBfFoiymS5pjI8GFPfyQ7nzQdoUsPxah
+         KdC2WKm957IO1O+KzD0PGnuf2jSvuk2TLRQlRFgo/167LLjp4DQZQlImVZK38o4xpd9z
+         zDWsQiNnxdpgO0qijN51OJ/a++/HzQrZkZAvzoAgWlRuZFxoVRPgu/xzWQZ9bdTljC7S
+         zTE/g6dAEGg8sxc2uKSye0vN+i9vyrw2yb9CjB2Sv8mdNfrHX3TY1OrxdgthFlF5F861
+         dVIQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=N1N4BTnl4BaaYraexKEAlh2R7kwx90CEeerw/26WSug=;
-        b=BviawU7bQCLA37IZiorf3AomL0X0RNsHwUGk2afe01LcBrS8uv/lnnOe9mPccylXzv
-         awoG90H+Ma6o61qJPWiLPvvymPyZyTMF/bytNyQwGzJKDKTXZ7JTEgk3kNzeVOFV+LFU
-         RqNh2IdFzLuto7iM8KYIh35ZXYp47iibfZbf5Pj09xel1agMJ6tpU1fiDhq/07UO/dls
-         4o55GuUtXB4t8wF9L9GLRBcf0SDUxk40+Z+nDIdxRrsqS6KjDWbhtDWokyfHqUlmyjn2
-         X+gVMcLOwLZNbYOZ58DzVeiEL/geS6Le/kKIZ7iJ2PfNqcJ7e4O1n6/OA7S36vBjVzCe
-         i+/Q==
-X-Gm-Message-State: AOAM531oO7nDxUYIJVJBAr53AvS0tibQRqbsUDFfsck49R4LkE+YPTn7
-        odO//OYQUNodYsiKjXWqVuXJevfRnE6nWw==
-X-Google-Smtp-Source: ABdhPJz+TEw8htl0uMBxwjAa8AUNwxVt2AuNzHEQXhWxlIcalWWSvFVEjLQm4Uv2WLPemXg8RBixQg==
-X-Received: by 2002:a17:902:407:: with SMTP id 7mr1388728ple.167.1597995641064;
-        Fri, 21 Aug 2020 00:40:41 -0700 (PDT)
+        bh=imB0DQxAT8UunMGY6iRGaYrAjtodauS9bVt6p7lUxh8=;
+        b=iQG3kk+GfHIG7I95POwJ3PivYjULDGRxIGp/fRXNX1L8sAFcRFGbHfX9QeLMq1uROj
+         bud1TBInfMV31TCW5EabvvRwPG03E6Y7U8ju5zIUx07F3dw0I3LtcUfiwctHo4NFkfo7
+         EJ0prHYnyUgODZCpDuInVYEwvAsrMyhLsxtqUi3kNezClYnWfNfcHEl9/edHYW+pER9f
+         hvZq4khkdiaPe+QRJVZe246D6RKGrTOgVg26+8HQ7DLfj0PiYG8LobaNdBAgZ4x/86Uu
+         IKG1SHHpE9PDfXxOhs6zdGGRl0BAEOzz7IcdjQjMox5klI0WF+mXj4Z2Vp/XGlzWRO1v
+         p+lw==
+X-Gm-Message-State: AOAM532lLtoHJSYqe7tb+nwj4Em09rNiobta3EOyXbsUg4Fd2sovajen
+        hQHzkMPbqNPNYLRVcsfXEcgnjKZ170U1cw==
+X-Google-Smtp-Source: ABdhPJyc/afzXaSJriTeoXao7RoNflEWnzbYOs3q8ATN+UmcRjuyXEnIaiZrqdNCqgL+nyNV36CRCA==
+X-Received: by 2002:a17:90b:18b:: with SMTP id t11mr1422021pjs.105.1597995651357;
+        Fri, 21 Aug 2020 00:40:51 -0700 (PDT)
 Received: from exodia.tfbnw.net ([2620:10d:c090:400::5:f2a4])
-        by smtp.gmail.com with ESMTPSA id jb1sm1080875pjb.9.2020.08.21.00.40.39
+        by smtp.gmail.com with ESMTPSA id jb1sm1080875pjb.9.2020.08.21.00.40.49
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 21 Aug 2020 00:40:39 -0700 (PDT)
+        Fri, 21 Aug 2020 00:40:49 -0700 (PDT)
 From:   Omar Sandoval <osandov@osandov.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     linux-fsdevel@vger.kernel.org
-Subject: [PATCH 03/11] btrfs-progs: receive: support v2 send stream DATA tlv format
-Date:   Fri, 21 Aug 2020 00:40:02 -0700
-Message-Id: <fb40593fee0c6d6d6c0c2c75bbaea5c33f7523d0.1597994354.git.osandov@osandov.com>
+Subject: [PATCH 08/11] btrfs-progs: receive: process fallocate commands
+Date:   Fri, 21 Aug 2020 00:40:07 -0700
+Message-Id: <1957f12abea48a115fb27e62f7c7fc93976e80d3.1597994354.git.osandov@osandov.com>
 X-Mailer: git-send-email 2.28.0
 In-Reply-To: <cover.1597994106.git.osandov@osandov.com>
 References: <cover.1597994106.git.osandov@osandov.com>
@@ -74,84 +74,130 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Boris Burkov <borisb@fb.com>
+From: Boris Burkov <boris@bur.io>
 
-The new format privileges the BTRFS_SEND_A_DATA attribute by
-guaranteeing it will always be the last attribute in any command that
-needs it, and by implicitly encoding the data length as the difference
-between the total command length in the command header and the sizes of
-the rest of the attributes (and of course the tlv_type identifying the
-DATA attribute). To parse the new stream, we must read the tlv_type and
-if it is not DATA, we proceed normally, but if it is DATA, we don't
-parse a tlv_len but simply compute the length.
-
-In addition, we add some bounds checking when parsing each chunk of
-data, as well as for the tlv_len itself.
+Send stream v2 can emit fallocate commands, so receive must support them
+as well. The implementation simply passes along the arguments to the
+syscall. Note that mode is encoded as a u32 in send stream but fallocate
+takes an int, so there is a unsigned->signed conversion there.
 
 Signed-off-by: Boris Burkov <boris@bur.io>
 ---
- common/send-stream.c | 36 ++++++++++++++++++++++++++----------
- 1 file changed, 26 insertions(+), 10 deletions(-)
+ cmds/receive-dump.c  |  9 +++++++++
+ cmds/receive.c       | 26 ++++++++++++++++++++++++++
+ common/send-stream.c |  9 +++++++++
+ common/send-stream.h |  2 ++
+ 4 files changed, 46 insertions(+)
 
+diff --git a/cmds/receive-dump.c b/cmds/receive-dump.c
+index 20ec2b70..acc0ba32 100644
+--- a/cmds/receive-dump.c
++++ b/cmds/receive-dump.c
+@@ -329,6 +329,14 @@ static int print_encoded_write(const char *path, const void *data, u64 offset,
+ 			  unencoded_offset, compression, encryption);
+ }
+ 
++static int print_fallocate(const char *path, int mode, u64 offset, u64 len,
++			   void *user)
++{
++	return PRINT_DUMP(user, path, "fallocate",
++			  "mode=%d offset=%llu len=%llu",
++			  mode, offset, len);
++}
++
+ struct btrfs_send_ops btrfs_print_send_ops = {
+ 	.subvol = print_subvol,
+ 	.snapshot = print_snapshot,
+@@ -352,4 +360,5 @@ struct btrfs_send_ops btrfs_print_send_ops = {
+ 	.utimes = print_utimes,
+ 	.update_extent = print_update_extent,
+ 	.encoded_write = print_encoded_write,
++	.fallocate = print_fallocate,
+ };
+diff --git a/cmds/receive.c b/cmds/receive.c
+index c67d4653..5c0930cb 100644
+--- a/cmds/receive.c
++++ b/cmds/receive.c
+@@ -1356,6 +1356,31 @@ out:
+ 	return ret;
+ }
+ 
++static int process_fallocate(const char *path, int mode, u64 offset, u64 len,
++			     void *user)
++{
++	int ret;
++	struct btrfs_receive *rctx = user;
++	char full_path[PATH_MAX];
++
++	ret = path_cat_out(full_path, rctx->full_subvol_path, path);
++	if (ret < 0) {
++		error("fallocate: path invalid: %s", path);
++		goto out;
++	}
++	ret = open_inode_for_write(rctx, full_path, false);
++	if (ret < 0)
++		goto out;
++	ret = fallocate(rctx->write_fd, mode, offset, len);
++	if (ret < 0) {
++		ret = -errno;
++		error("fallocate: fallocate on %s failed: %m", path);
++		goto out;
++	}
++out:
++	return ret;
++}
++
+ static struct btrfs_send_ops send_ops = {
+ 	.subvol = process_subvol,
+ 	.snapshot = process_snapshot,
+@@ -1379,6 +1404,7 @@ static struct btrfs_send_ops send_ops = {
+ 	.utimes = process_utimes,
+ 	.update_extent = process_update_extent,
+ 	.encoded_write = process_encoded_write,
++	.fallocate = process_fallocate,
+ };
+ 
+ static int do_receive(struct btrfs_receive *rctx, const char *tomnt,
 diff --git a/common/send-stream.c b/common/send-stream.c
-index 51a6a94a..77d5cd04 100644
+index 1376e00b..d455cdfb 100644
 --- a/common/send-stream.c
 +++ b/common/send-stream.c
-@@ -165,28 +165,44 @@ static int read_cmd(struct btrfs_send_stream *sctx)
+@@ -369,6 +369,7 @@ static int read_and_process_cmd(struct btrfs_send_stream *sctx)
+ 	u64 unencoded_offset;
+ 	int len;
+ 	int xattr_len;
++	int fallocate_mode;
  
- 	pos = 0;
- 	while (pos < cmd_len) {
--		struct btrfs_tlv_header *tlv_hdr;
- 		u16 tlv_type;
--		u16 tlv_len;
- 		struct btrfs_send_attribute *send_attr;
+ 	ret = read_cmd(sctx);
+ 	if (ret)
+@@ -514,6 +515,14 @@ static int read_and_process_cmd(struct btrfs_send_stream *sctx)
+ 	case BTRFS_SEND_C_END:
+ 		ret = 1;
+ 		break;
++	case BTRFS_SEND_C_FALLOCATE:
++		TLV_GET_STRING(sctx, BTRFS_SEND_A_PATH, &path);
++		TLV_GET_U32(sctx, BTRFS_SEND_A_FALLOCATE_MODE, &fallocate_mode);
++		TLV_GET_U64(sctx, BTRFS_SEND_A_FILE_OFFSET, &offset);
++		TLV_GET_U64(sctx, BTRFS_SEND_A_SIZE, &tmp);
++		ret = sctx->ops->fallocate(path, fallocate_mode, offset, tmp,
++					   sctx->user);
++		break;
+ 	}
  
--		tlv_hdr = (struct btrfs_tlv_header *)data;
--		tlv_type = le16_to_cpu(tlv_hdr->tlv_type);
--		tlv_len = le16_to_cpu(tlv_hdr->tlv_len);
-+		if (cmd_len - pos < sizeof(__le16)) {
-+			error("send stream is truncated");
-+			ret = -EINVAL;
-+			goto out;
-+		}
-+		tlv_type = le16_to_cpu(*(__le16 *)data);
+ tlv_get_failed:
+diff --git a/common/send-stream.h b/common/send-stream.h
+index 607bc007..a58739bb 100644
+--- a/common/send-stream.h
++++ b/common/send-stream.h
+@@ -70,6 +70,8 @@ struct btrfs_send_ops {
+ 			     u64 len, u64 unencoded_file_len, u64 unencoded_len,
+ 			     u64 unencoded_offset, u32 compression,
+ 			     u32 encryption, void *user);
++	int (*fallocate)(const char *path, int mode, u64 offset, u64 len,
++			 void *user);
+ };
  
- 		if (tlv_type == 0 || tlv_type > BTRFS_SEND_A_MAX) {
--			error("invalid tlv in cmd tlv_type = %hu, tlv_len = %hu",
--					tlv_type, tlv_len);
-+			error("invalid tlv in cmd tlv_type = %hu", tlv_type);
- 			ret = -EINVAL;
- 			goto out;
- 		}
- 
- 		send_attr = &sctx->cmd_attrs[tlv_type];
- 		send_attr->tlv_type = tlv_type;
--		send_attr->tlv_len = tlv_len;
--		pos += sizeof(*tlv_hdr);
--		data += sizeof(*tlv_hdr);
- 
-+		pos += sizeof(tlv_type);
-+		data += sizeof(tlv_type);
-+		if (sctx->version == 2 && tlv_type == BTRFS_SEND_A_DATA) {
-+			send_attr->tlv_len = cmd_len - pos;
-+		} else {
-+			if (cmd_len - pos < sizeof(__le16)) {
-+				error("send stream is truncated");
-+				ret = -EINVAL;
-+				goto out;
-+			}
-+			send_attr->tlv_len = le16_to_cpu(*(__le16 *)data);
-+			pos += sizeof(__le16);
-+			data += sizeof(__le16);
-+		}
-+		if (cmd_len - pos < send_attr->tlv_len) {
-+			error("send stream is truncated");
-+			ret = -EINVAL;
-+			goto out;
-+		}
- 		send_attr->data = data;
- 		pos += send_attr->tlv_len;
- 		data += send_attr->tlv_len;
+ int btrfs_read_and_process_send_stream(int fd,
 -- 
 2.28.0
 

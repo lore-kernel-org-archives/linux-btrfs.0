@@ -5,65 +5,65 @@ X-Spam-Level:
 X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B70F5C433DF
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Aug 2020 07:41:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6CE55C433E1
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Aug 2020 07:42:02 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 948DC207DF
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Aug 2020 07:41:55 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 47DCE21741
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Aug 2020 07:42:02 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="USCEiov+"
+	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="Dlde6+uY"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728493AbgHUHly (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 21 Aug 2020 03:41:54 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37240 "EHLO
+        id S1728504AbgHUHl4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 21 Aug 2020 03:41:56 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37220 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728220AbgHUHka (ORCPT
+        with ESMTP id S1728182AbgHUHkZ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 21 Aug 2020 03:40:30 -0400
-Received: from mail-pl1-x643.google.com (mail-pl1-x643.google.com [IPv6:2607:f8b0:4864:20::643])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A9A22C061349
-        for <linux-btrfs@vger.kernel.org>; Fri, 21 Aug 2020 00:40:30 -0700 (PDT)
-Received: by mail-pl1-x643.google.com with SMTP id v16so525305plo.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 21 Aug 2020 00:40:30 -0700 (PDT)
+        Fri, 21 Aug 2020 03:40:25 -0400
+Received: from mail-pl1-x641.google.com (mail-pl1-x641.google.com [IPv6:2607:f8b0:4864:20::641])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 05956C061347
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 Aug 2020 00:40:24 -0700 (PDT)
+Received: by mail-pl1-x641.google.com with SMTP id k13so500763plk.13
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 Aug 2020 00:40:24 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=osandov-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=4GBiuBiabcY66Xi/9ClqfYhrJxdtjYE/DsOa+EGbDCM=;
-        b=USCEiov+fhm+HnznZWXrt6cguny7h+jJYBPetlZjSTgkZ3qakw8LWXxjB2WHHSnoKU
-         ZLPgTWqTBSFNWkKSthevTUmhwQDakKSBspZEaFjtn7TZuaMhbm4DVcdUSq0yOsoBQJpV
-         dO89xgOiOXXApnnGePXKu2CDGvZFQM7NmjEO370iCdpMlFHRgeFGw1F4Gdg1bxXHRRTC
-         sfWDYKkfHiG3qTjehVGQql74AgmDIKvfWj7fNHrrhur7PG4vXdrxzuevxqzwk2aO89x/
-         /434lzT+xJio8JSt/2t5LriV0I1XjWqRXrTMXrKlSRx1lIVYNg3bRKcjeoth2ZwJ/4Pu
-         AimQ==
+        bh=mgsnIgL+IvZplax195HHX4KdCvvnZvjwiqUDsUSCJTs=;
+        b=Dlde6+uYoywdVmoLmwOkSUHyy0rwvL9pwXRsfiKY7YdJt/HVf5wnwW0y01SkvSWPlZ
+         rCRy8/yFHkQjXxTdBpdGLsu/ji0vWrcdejvWQIcDYfuo8hu9T0FjTBMYR1qXkLcepFGp
+         hnaBFm+Jq0q0g+A9iusg+J/73V2mwzo8OdMxeIOufsCt5kqyGVYIp82dZ9vTZOd31Sfv
+         BuDMEu1iikUHg5BkCznnbqSPIjlSvvYB3ddqjOYHeXGCrb6LcNr32xdnSCCFo5lmBh3J
+         TQtpsHy6aBtp908+RHQu+qOuwZ9BrlT62VXiKTbA2GyYGpLGd0TFxNEGJKGZN7NDTjOJ
+         BVMw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=4GBiuBiabcY66Xi/9ClqfYhrJxdtjYE/DsOa+EGbDCM=;
-        b=egGqnY4a1GrVCHzR3lF+PXUqh8D+7KY+YS3uf3+StbaSTpRd7FrgNqOzXuMlN3Ldbd
-         O/n44bdTkAFfiX38P5D1oidczyXQi6VvmlljtIlguSVC0DwRutfIKHtGI+3cs8c20Gwi
-         5yQlUwziKjiYsmC9yuUiVFCkrr2vf54WFRpiQ0hIkVd4bebuQmq1brNA6tig48niZ+5h
-         l7XGbv42g7KOPZEXx6g7aqLrrs+UuDuHc4JzfLCJHAlTvMUkjpAmwST1LNeF0BudqfL2
-         R/gIyG/dDWpvGbLyrzw83UZFZQdXMYijFeuh55vbG6918GqBR3SBMBuXmo6IFYbh33ah
-         /MiA==
-X-Gm-Message-State: AOAM533Nbw8c348u7hMCjVpoaAf9rB2HwIxgz08uqRXcsD8LjXSewQTx
-        uMVpG6HsI/uW8XPulxXK3aCkVmE0J5C15w==
-X-Google-Smtp-Source: ABdhPJxItbccacYGbgmb6CD+tSwEulVyKHRbP8i53kk0o3R1tP7G2pM+vzmWSr9qOPIos0Gfu/u+Mw==
-X-Received: by 2002:a17:902:8608:: with SMTP id f8mr1473957plo.66.1597995629660;
-        Fri, 21 Aug 2020 00:40:29 -0700 (PDT)
+        bh=mgsnIgL+IvZplax195HHX4KdCvvnZvjwiqUDsUSCJTs=;
+        b=Hca7Y1x95nHYJzBP2iRXxJUummVYnINI0cACH/DsJeiJBHluNNoI2octQ4dwdUbU2c
+         tN6SOLfjvg5swMNKcm3WgB66d2YB2Lds3IHB+D9AFiYZ+ST011SUJomZuiy4urXoIxsX
+         ZQy4OxriKchRzIOxJS3oGv3H0LqYkqpygcHwOCSda14fByXvyTqSp1PoCD+oMsbVbL0B
+         5UStZlblLCNkvM0rGU0fKvVKyKRg7J9jgRj83YOGTmprUToIBm4UH9U3k2A/xmKvJ5ST
+         YJjve/FyrjUMRRRPtWsT/cl8hFwUKATIOjsuGtgtwl4rX5NciCaXpSGteOoCHpv32Lr+
+         MRqQ==
+X-Gm-Message-State: AOAM530KOpRK2c42p1DuspHYUEMwnHn+6MJi4MvebIlv7BTi5dMQnz0o
+        /LwaQU2krJdXk8gJwINtLClHCfXUPsdRzw==
+X-Google-Smtp-Source: ABdhPJxhhCeCersWB9PVIx9eJ0Hx+EKvXsK5RH5PjZMa0qJK2MqKAsmS18D8c2cGa01sEF4vC1Ao1A==
+X-Received: by 2002:a17:90a:c682:: with SMTP id n2mr1505058pjt.72.1597995622847;
+        Fri, 21 Aug 2020 00:40:22 -0700 (PDT)
 Received: from exodia.tfbnw.net ([2620:10d:c090:400::5:f2a4])
-        by smtp.gmail.com with ESMTPSA id jb1sm1080875pjb.9.2020.08.21.00.40.27
+        by smtp.gmail.com with ESMTPSA id jb1sm1080875pjb.9.2020.08.21.00.40.21
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 21 Aug 2020 00:40:28 -0700 (PDT)
+        Fri, 21 Aug 2020 00:40:21 -0700 (PDT)
 From:   Omar Sandoval <osandov@osandov.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     linux-fsdevel@vger.kernel.org
-Subject: [PATCH 7/9] btrfs: send: allocate send buffer with alloc_page() and vmap() for v2
-Date:   Fri, 21 Aug 2020 00:39:57 -0700
-Message-Id: <d9cae7ef205a1272579fc74a39af27f50e1d9550.1597994106.git.osandov@osandov.com>
+Subject: [PATCH 4/9] btrfs: add send_stream_version attribute to sysfs
+Date:   Fri, 21 Aug 2020 00:39:54 -0700
+Message-Id: <742f77f23ac5bd5feec8edc0b88e122303faac0d.1597994106.git.osandov@osandov.com>
 X-Mailer: git-send-email 2.28.0
 In-Reply-To: <cover.1597994106.git.osandov@osandov.com>
 References: <cover.1597994106.git.osandov@osandov.com>
@@ -76,83 +76,42 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Omar Sandoval <osandov@fb.com>
 
-For encoded writes, we need the raw pages for reading compressed data
-directly via a bio. So, replace kvmalloc() with vmap() so we have access
-to the raw pages. 144k is large enough that it usually gets allocated
-with vmalloc(), anyways.
+This reports the latest send stream version supported by the kernel.
 
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- fs/btrfs/send.c | 33 +++++++++++++++++++++++++++++++--
- 1 file changed, 31 insertions(+), 2 deletions(-)
+ fs/btrfs/sysfs.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
 
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index c0f81d302f49..efa6f8f27e4d 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -81,6 +81,7 @@ struct send_ctx {
- 	char *send_buf;
- 	u32 send_size;
- 	u32 send_max_size;
-+	struct page **send_buf_pages;
- 	u64 total_send_size;
- 	u64 cmd_send_size[BTRFS_SEND_C_MAX + 1];
- 	u64 flags;	/* 'flags' member of btrfs_ioctl_send_args is u64 */
-@@ -7072,6 +7073,7 @@ long btrfs_ioctl_send(struct file *mnt_file, struct btrfs_ioctl_send_args *arg)
- 	struct btrfs_root *clone_root;
- 	struct send_ctx *sctx = NULL;
- 	u32 i;
-+	u32 send_buf_num_pages = 0;
- 	u64 *clone_sources_tmp = NULL;
- 	int clone_sources_to_rollback = 0;
- 	unsigned alloc_size;
-@@ -7152,10 +7154,28 @@ long btrfs_ioctl_send(struct file *mnt_file, struct btrfs_ioctl_send_args *arg)
- 	if (sctx->flags & BTRFS_SEND_FLAG_STREAM_V2) {
- 		sctx->send_max_size = ALIGN(SZ_16K + BTRFS_MAX_COMPRESSED,
- 					    PAGE_SIZE);
-+		send_buf_num_pages = sctx->send_max_size >> PAGE_SHIFT;
-+		sctx->send_buf_pages = kcalloc(send_buf_num_pages,
-+					       sizeof(*sctx->send_buf_pages),
-+					       GFP_KERNEL);
-+		if (!sctx->send_buf_pages) {
-+			send_buf_num_pages = 0;
-+			ret = -ENOMEM;
-+			goto out;
-+		}
-+		for (i = 0; i < send_buf_num_pages; i++) {
-+			sctx->send_buf_pages[i] = alloc_page(GFP_KERNEL);
-+			if (!sctx->send_buf_pages[i]) {
-+				ret = -ENOMEM;
-+				goto out;
-+			}
-+		}
-+		sctx->send_buf = vmap(sctx->send_buf_pages, send_buf_num_pages,
-+				      VM_MAP, PAGE_KERNEL);
- 	} else {
- 		sctx->send_max_size = BTRFS_SEND_BUF_SIZE_V1;
-+		sctx->send_buf = kvmalloc(sctx->send_max_size, GFP_KERNEL);
- 	}
--	sctx->send_buf = kvmalloc(sctx->send_max_size, GFP_KERNEL);
- 	if (!sctx->send_buf) {
- 		ret = -ENOMEM;
- 		goto out;
-@@ -7363,7 +7383,16 @@ long btrfs_ioctl_send(struct file *mnt_file, struct btrfs_ioctl_send_args *arg)
- 			fput(sctx->send_filp);
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index 8593086d1d10..34d21edff7d7 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -14,6 +14,7 @@
+ #include "ctree.h"
+ #include "discard.h"
+ #include "disk-io.h"
++#include "send.h"
+ #include "transaction.h"
+ #include "sysfs.h"
+ #include "volumes.h"
+@@ -321,9 +322,17 @@ static ssize_t supported_checksums_show(struct kobject *kobj,
+ }
+ BTRFS_ATTR(static_feature, supported_checksums, supported_checksums_show);
  
- 		kvfree(sctx->clone_roots);
--		kvfree(sctx->send_buf);
-+		if (sctx->flags & BTRFS_SEND_FLAG_STREAM_V2) {
-+			vunmap(sctx->send_buf);
-+			for (i = 0; i < send_buf_num_pages; i++) {
-+				if (sctx->send_buf_pages[i])
-+					__free_page(sctx->send_buf_pages[i]);
-+			}
-+			kfree(sctx->send_buf_pages);
-+		} else {
-+			kvfree(sctx->send_buf);
-+		}
- 
- 		name_cache_free(sctx);
++static ssize_t send_stream_version_show(struct kobject *kobj,
++					struct kobj_attribute *ka, char *buf)
++{
++	return snprintf(buf, PAGE_SIZE, "%d\n", BTRFS_SEND_STREAM_VERSION);
++}
++BTRFS_ATTR(static_feature, send_stream_version, send_stream_version_show);
++
+ static struct attribute *btrfs_supported_static_feature_attrs[] = {
+ 	BTRFS_ATTR_PTR(static_feature, rmdir_subvol),
+ 	BTRFS_ATTR_PTR(static_feature, supported_checksums),
++	BTRFS_ATTR_PTR(static_feature, send_stream_version),
+ 	NULL
+ };
  
 -- 
 2.28.0

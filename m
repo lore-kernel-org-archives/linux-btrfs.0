@@ -2,60 +2,170 @@ Return-Path: <SRS0=Zefw=B7=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.2 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,
-	SPF_PASS,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-17.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7A703C433E1
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Aug 2020 14:39:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 92FBAC433DF
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Aug 2020 15:19:47 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 5D7E7207C3
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Aug 2020 14:39:49 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 699812086A
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Aug 2020 15:19:47 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=mpdesouza.com header.i=@mpdesouza.com header.b="eZRxoRgk"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727802AbgHUOjq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 21 Aug 2020 10:39:46 -0400
-Received: from mx2.suse.de ([195.135.220.15]:52232 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726118AbgHUOjp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 21 Aug 2020 10:39:45 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 88F92AC82;
-        Fri, 21 Aug 2020 14:40:11 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 61913DA730; Fri, 21 Aug 2020 16:38:37 +0200 (CEST)
-Date:   Fri, 21 Aug 2020 16:38:37 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Alex Dewar <alex.dewar90@gmail.com>
-Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>,
-        Goldwyn Rodrigues <rgoldwyn@suse.com>,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] btrfs: check return value of filemap_fdatawrite_range()
-Message-ID: <20200821143837.GG2026@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Alex Dewar <alex.dewar90@gmail.com>,
-        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>,
-        Goldwyn Rodrigues <rgoldwyn@suse.com>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-References: <20200821124154.10218-1-alex.dewar90@gmail.com>
+        id S1728378AbgHUPTn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 21 Aug 2020 11:19:43 -0400
+Received: from gateway32.websitewelcome.com ([192.185.145.122]:25726 "EHLO
+        gateway32.websitewelcome.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1727074AbgHUPTg (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 21 Aug 2020 11:19:36 -0400
+X-Greylist: delayed 1479 seconds by postgrey-1.27 at vger.kernel.org; Fri, 21 Aug 2020 11:19:35 EDT
+Received: from cm14.websitewelcome.com (cm14.websitewelcome.com [100.42.49.7])
+        by gateway32.websitewelcome.com (Postfix) with ESMTP id 4215D12A6C39
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 Aug 2020 09:54:53 -0500 (CDT)
+Received: from br540.hostgator.com.br ([108.179.252.180])
+        by cmsmtp with SMTP
+        id 98RRkvK0IBD8b98RRkOCNy; Fri, 21 Aug 2020 09:54:53 -0500
+X-Authority-Reason: nr=8
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=mpdesouza.com; s=default; h=Content-Transfer-Encoding:MIME-Version:
+        Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:Content-Type:Content-ID:
+        Content-Description:Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc
+        :Resent-Message-ID:In-Reply-To:References:List-Id:List-Help:List-Unsubscribe:
+        List-Subscribe:List-Post:List-Owner:List-Archive;
+        bh=7RQ2hKgl1ruA2bCIsl6ftQlYVMZxZwpcaDvYoUrDx50=; b=eZRxoRgkbHLqOMgEZ42qkSDvDX
+        Q84Xi+NFCE1L8GeeK86Yi/YI8tAASiJ5znZICE9p+nR6IYHv/dQwh3YOu7olXZeBygrMewlguCjlZ
+        hw3wLo0iyqTDXw8N4l7PyDHyR7bLRP0x710MbDnJQy4jliHJB6aXlgZwcNGWdwIGYf5gWUSwFgwM2
+        NibsmONu0HJRUZCkhE95l3f2OelMjJb0wf90suj/uBDoUEp3B08mzWIu7ZyGW0nOZPzBoJtzoAiRN
+        bCz0/x5pAIw7bXUI0EhIsv+ks/yN/w/v4L6nRff4HkZr4Tqkf4j6IzeslWDdkmNbmRW89mm86SKd9
+        bxb4ZmKA==;
+Received: from [191.248.104.145] (port=54152 helo=hephaestus.suse.de)
+        by br540.hostgator.com.br with esmtpsa  (TLS1.2) tls TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+        (Exim 4.93)
+        (envelope-from <marcos@mpdesouza.com>)
+        id 1k98RQ-001hcI-MA; Fri, 21 Aug 2020 11:54:53 -0300
+From:   Marcos Paulo de Souza <marcos@mpdesouza.com>
+To:     linux-kernel@vger.kernel.org
+Cc:     dsterba@suse.com, linux-btrfs@vger.kernel.org,
+        Marcos Paulo de Souza <mpdesouza@suse.com>,
+        stable@vger.kernel.org, Qu Wenruo <wqu@suse.com>,
+        Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH v3] btrfs: block-group: Fix free-space bitmap threshould
+Date:   Fri, 21 Aug 2020 11:54:44 -0300
+Message-Id: <20200821145444.25791-1-marcos@mpdesouza.com>
+X-Mailer: git-send-email 2.28.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20200821124154.10218-1-alex.dewar90@gmail.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+Content-Transfer-Encoding: 8bit
+X-AntiAbuse: This header was added to track abuse, please include it with any abuse report
+X-AntiAbuse: Primary Hostname - br540.hostgator.com.br
+X-AntiAbuse: Original Domain - vger.kernel.org
+X-AntiAbuse: Originator/Caller UID/GID - [47 12] / [47 12]
+X-AntiAbuse: Sender Address Domain - mpdesouza.com
+X-BWhitelist: no
+X-Source-IP: 191.248.104.145
+X-Source-L: No
+X-Exim-ID: 1k98RQ-001hcI-MA
+X-Source: 
+X-Source-Args: 
+X-Source-Dir: 
+X-Source-Sender: (hephaestus.suse.de) [191.248.104.145]:54152
+X-Source-Auth: marcos@mpdesouza.com
+X-Email-Count: 5
+X-Source-Cap: bXBkZXNvNTM7bXBkZXNvNTM7YnI1NDAuaG9zdGdhdG9yLmNvbS5icg==
+X-Local-Domain: yes
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Aug 21, 2020 at 01:41:54PM +0100, Alex Dewar wrote:
-> In btrfs_dio_imap_begin(), filemap_fdatawrite_range() is called without
-> checking the return value. Add a check to catch errors.
-> 
-> Fixes: c0aaf9b7a114f ("btrfs: switch to iomap_dio_rw() for dio")
-> Addresses-Coverity: ("Unused value")
-> Signed-off-by: Alex Dewar <alex.dewar90@gmail.com>
+From: Marcos Paulo de Souza <mpdesouza@suse.com>
 
-Folded to the patch, thanks.
+[BUG]
+After commit 9afc66498a0b ("btrfs: block-group: refactor how we read one
+block group item"), cache->length is being assigned after calling
+btrfs_create_block_group_cache. This causes a problem since
+set_free_space_tree_thresholds is calculate the free-space threshould to
+decide is the free-space tree should convert from extents to bitmaps.
+
+The current code calls set_free_space_tree_thresholds with cache->length
+being 0, which then makes cache->bitmap_high_thresh being zero. This
+implies the system will always use bitmap instead of extents, which is
+not desired if the block group is not fragmented.
+
+This behavior can be seen by a test that expects to repair systems
+with FREE_SPACE_EXTENT and FREE_SPACE_BITMAP, but the current code only
+created FREE_SPACE_BITMAP.
+
+[FIX]
+Call set_free_space_tree_thresholds after setting cache->length. There
+is now a WARN_ON in set_free_space_tree_thresholds to help preventing
+the same mistake to happen again in the future.
+
+Link: https://github.com/kdave/btrfs-progs/issues/251
+Fixes: 9afc66498a0b ("btrfs: block-group: refactor how we read one block group item")
+CC: stable@vger.kernel.org # 5.8+
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
+Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
+---
+ Changes from v2:
+ * Add a WARN_ON and changed the warn message (Filipe)
+ * Add a Reviewed-by tag from Filipe
+ Changes from v1:
+ * Add warn message (Qu)
+ * Add a Reviewed-by tag from Qu
+
+ fs/btrfs/block-group.c     | 4 +++-
+ fs/btrfs/free-space-tree.c | 4 ++++
+ 2 files changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+index 44fdfa2eeb2e..01e8ba1da1d3 100644
+--- a/fs/btrfs/block-group.c
++++ b/fs/btrfs/block-group.c
+@@ -1798,7 +1798,6 @@ static struct btrfs_block_group *btrfs_create_block_group_cache(
+ 
+ 	cache->fs_info = fs_info;
+ 	cache->full_stripe_len = btrfs_full_stripe_len(fs_info, start);
+-	set_free_space_tree_thresholds(cache);
+ 
+ 	cache->discard_index = BTRFS_DISCARD_INDEX_UNUSED;
+ 
+@@ -1908,6 +1907,8 @@ static int read_one_block_group(struct btrfs_fs_info *info,
+ 
+ 	read_block_group_item(cache, path, key);
+ 
++	set_free_space_tree_thresholds(cache);
++
+ 	if (need_clear) {
+ 		/*
+ 		 * When we mount with old space cache, we need to
+@@ -2128,6 +2129,7 @@ int btrfs_make_block_group(struct btrfs_trans_handle *trans, u64 bytes_used,
+ 		return -ENOMEM;
+ 
+ 	cache->length = size;
++	set_free_space_tree_thresholds(cache);
+ 	cache->used = bytes_used;
+ 	cache->flags = type;
+ 	cache->last_byte_to_unpin = (u64)-1;
+diff --git a/fs/btrfs/free-space-tree.c b/fs/btrfs/free-space-tree.c
+index 8b1f5c8897b7..f072c106b82b 100644
+--- a/fs/btrfs/free-space-tree.c
++++ b/fs/btrfs/free-space-tree.c
+@@ -22,6 +22,10 @@ void set_free_space_tree_thresholds(struct btrfs_block_group *cache)
+ 	size_t bitmap_size;
+ 	u64 num_bitmaps, total_bitmap_size;
+ 
++	if (WARN_ON(cache->length == 0))
++		btrfs_warn(cache->fs_info, "block group %llu length is zero",
++						cache->start);
++
+ 	/*
+ 	 * We convert to bitmaps when the disk space required for using extents
+ 	 * exceeds that required for using bitmaps.
+-- 
+2.28.0
+

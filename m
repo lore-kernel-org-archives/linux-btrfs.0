@@ -2,157 +2,206 @@ Return-Path: <SRS0=Zefw=B7=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.6 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A4B2AC433DF
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Aug 2020 07:42:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EC2D0C433E1
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Aug 2020 08:48:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 815EF2078D
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Aug 2020 07:42:03 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BD44A207DF
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Aug 2020 08:48:08 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="fQi6hg2l"
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="qVAK6qY1"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728236AbgHUHmB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 21 Aug 2020 03:42:01 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37210 "EHLO
+        id S1728106AbgHUIsH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 21 Aug 2020 04:48:07 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47696 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728252AbgHUHkX (ORCPT
+        with ESMTP id S1726433AbgHUIsG (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 21 Aug 2020 03:40:23 -0400
-Received: from mail-pf1-x443.google.com (mail-pf1-x443.google.com [IPv6:2607:f8b0:4864:20::443])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 20CBDC061345
-        for <linux-btrfs@vger.kernel.org>; Fri, 21 Aug 2020 00:40:22 -0700 (PDT)
-Received: by mail-pf1-x443.google.com with SMTP id x25so670730pff.4
-        for <linux-btrfs@vger.kernel.org>; Fri, 21 Aug 2020 00:40:22 -0700 (PDT)
+        Fri, 21 Aug 2020 04:48:06 -0400
+Received: from mail-io1-xd44.google.com (mail-io1-xd44.google.com [IPv6:2607:f8b0:4864:20::d44])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2AF85C061385;
+        Fri, 21 Aug 2020 01:48:06 -0700 (PDT)
+Received: by mail-io1-xd44.google.com with SMTP id u126so973461iod.12;
+        Fri, 21 Aug 2020 01:48:06 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=osandov-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:cc:subject:date:message-id:in-reply-to:references
-         :mime-version:content-transfer-encoding;
-        bh=WxMUvNLFoM8CqgnAU/FexkWAf/EILGzRJKuKOkapjZs=;
-        b=fQi6hg2lyIXY/tp2l5XOHtW4GiLOPYUvJ9Jr6FnWnG3kPcU99T8Gtfvit2LRq0kXAc
-         zvaztwb5qb3/YiI5V17A91xL06hsJQj6je+Avg/r4+jVP7DjEMq0U7XwbGSEICgTwRjI
-         BYzTB3Kv9npv0UhNa0l+VtyleNqkc9XT0x6Gv2mnTeG4TkOFpZvl+VEfzZuTxb6os814
-         UbTcE9PUWSlIhy59UIeNTzn2kLwQWeIYDmUptVjRclK5l51jXYp2U786nFY2cLU0fG7I
-         QspN9ijLN3riItYOBzLi2XV/YXDkpW0xpQI4E0PIKvuffJWFrgCgPmcZRaCN0JTxNBR2
-         Yj0g==
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=wj6tNb8MQ+uzd2xcElvqANcy2YGwYQy9Y2WV55I0uYo=;
+        b=qVAK6qY1jf7p/9TYvT2qpp3U6sBiDfZ6nbXQaIQKRnqpk8uYSBeuytlf4OnPvzIwik
+         4JS/MK3xnCq6TmKCp8nRSx9NDI2FKjqh7DuenpM6GHtTGQLVwSFE/zlphwYiCGRKqJlT
+         71DtJD7g0MIETL2l5ZfxJOGO+1IpHN9YHUD7W3aAqIUNQ4iPUqBJF1xEx0/H9UUrkNyu
+         bzqEDp2ZFW8WgtFd1DBLU0QdY1n5on4nuTAKxc7wkXcAnSh5AZDtXqWNLDMzdohlvROy
+         hP0QuHBr36OatbeYMvjHZ5a2whAYOSFdRzl7Jkf4tAiHM/As/EuYffepy+VK4/NwCMqL
+         5LOg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=WxMUvNLFoM8CqgnAU/FexkWAf/EILGzRJKuKOkapjZs=;
-        b=OEOKS6DSmaU6BdVpJXeChQjIK/srPCz/pW+NcYOpdjoqiZvh0W3i5ZDTa8bTS7wSul
-         P+6aTkF/D/gX5bCwCGGVJD5XhH1rcYcMFtgrdJuMRU74Sub7ED2uQ/gQtd2m49B8HQ5S
-         B8R2Nrc4Slun9LejQOnKx0rlQvbXK1zt4BRXfdO/Z6pYcdfDpiyYqt95O7spbUCGZqHA
-         zU/lTpIKrTUP/p3I/XZ7vyr0bJmY9xiO5OhKjDSzy2Sbfk4pZm5YaXzn8dwm+K2n+lfG
-         z/oRyQ8kSiVVIv1Cfo1yAtBnhpWn+r+K0GmnhOfI4GEQJdiI8TinP+93ib0KwbQQ0t3X
-         3rhA==
-X-Gm-Message-State: AOAM532VszaFFSxELtnbG9QWMxaBqo5b7AVBv+kje8WtrLH6Xz//8/co
-        Sd5qatSkB0Q/N05rO89UMAKISCLQ+5ZMNA==
-X-Google-Smtp-Source: ABdhPJzKGa7BAFakQj/fH6OwBwbA7yTK86To7UfDRqnod0zu9Ve1yVQN5nfGzPIxB8zbNFFaAKmJIw==
-X-Received: by 2002:a05:6a00:15d0:: with SMTP id o16mr1486151pfu.230.1597995620998;
-        Fri, 21 Aug 2020 00:40:20 -0700 (PDT)
-Received: from exodia.tfbnw.net ([2620:10d:c090:400::5:f2a4])
-        by smtp.gmail.com with ESMTPSA id jb1sm1080875pjb.9.2020.08.21.00.40.19
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 21 Aug 2020 00:40:19 -0700 (PDT)
-From:   Omar Sandoval <osandov@osandov.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     linux-fsdevel@vger.kernel.org
-Subject: [PATCH 3/9] btrfs: send: use btrfs_file_extent_end() in send_write_or_clone()
-Date:   Fri, 21 Aug 2020 00:39:53 -0700
-Message-Id: <af4ae9204aa3d36a2703dc1aaeb365b7340ed238.1597994106.git.osandov@osandov.com>
-X-Mailer: git-send-email 2.28.0
-In-Reply-To: <cover.1597994106.git.osandov@osandov.com>
-References: <cover.1597994106.git.osandov@osandov.com>
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=wj6tNb8MQ+uzd2xcElvqANcy2YGwYQy9Y2WV55I0uYo=;
+        b=L69OG1olOZ0wTJOvi2ehXNXM2WmOVaStjwZnBQIZegjO9aNge++9y5nsvNbxjBrc5u
+         NnPJuRGvYcfD1PQAsWZvgTtmjz3ln7gZdWj4uAReAXeUiBbd5qOFRe5LY8ZPAYH15YJ4
+         oI/um3vFF34tvr/GZv5o0pmTyqdHd1M4H/vs0xQT4AucgUW84ylFLHCvbar87A3oyLyf
+         oVb4/2MjKvc9INMAKgsU3xdedlmO+hKV8H7Vn2gg33UnhEatPhPD/zBIfoiQEPtFm8K8
+         PXdmfAjZa6aiWzURHwn8l8bm6STlQ/zOIMAAyOsDeEUJS9qUcXE6OE95FHUWlR8Z5XgK
+         uJDQ==
+X-Gm-Message-State: AOAM530YzHRiSBPmQKqJriAy/Wi7zwv5wkUqK8cqZ0yxyjTOjwEF3D3L
+        KeMh4hryh8GkB2pzmXYlN6fM2Z3vZ7cdsjinRZI=
+X-Google-Smtp-Source: ABdhPJxHUqhMsZxtSDrWWscVGlYtVkca+kgAtqvi6tmLtrLoNOYtsApmRmHHtZrm2Uj2wTLwnuVfogBmE/JlQtkcYpI=
+X-Received: by 2002:a05:6602:1405:: with SMTP id t5mr1627205iov.72.1597999685260;
+ Fri, 21 Aug 2020 01:48:05 -0700 (PDT)
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+References: <cover.1597993855.git.osandov@osandov.com> <9020a583581b644ae86b7c05de6a39fd5204f06d.1597993855.git.osandov@osandov.com>
+In-Reply-To: <9020a583581b644ae86b7c05de6a39fd5204f06d.1597993855.git.osandov@osandov.com>
+From:   Amir Goldstein <amir73il@gmail.com>
+Date:   Fri, 21 Aug 2020 11:47:54 +0300
+Message-ID: <CAOQ4uxi=QcV-Rg=bSpYGid24Qp4zOgjKuOH2E5QA+OMrA-EsLQ@mail.gmail.com>
+Subject: Re: [PATCH v5 3/9] fs: add RWF_ENCODED for reading/writing compressed data
+To:     Omar Sandoval <osandov@osandov.com>
+Cc:     linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+        Linux Btrfs <linux-btrfs@vger.kernel.org>,
+        Al Viro <viro@zeniv.linux.org.uk>,
+        Christoph Hellwig <hch@infradead.org>,
+        Dave Chinner <david@fromorbit.com>,
+        Jann Horn <jannh@google.com>, Aleksa Sarai <cyphar@cyphar.com>,
+        Linux API <linux-api@vger.kernel.org>, kernel-team@fb.com
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Omar Sandoval <osandov@fb.com>
+On Fri, Aug 21, 2020 at 10:38 AM Omar Sandoval <osandov@osandov.com> wrote:
+>
+> From: Omar Sandoval <osandov@fb.com>
+>
+> Btrfs supports transparent compression: data written by the user can be
+> compressed when written to disk and decompressed when read back.
+> However, we'd like to add an interface to write pre-compressed data
+> directly to the filesystem, and the matching interface to read
+> compressed data without decompressing it. This adds support for
+> so-called "encoded I/O" via preadv2() and pwritev2().
+>
+> A new RWF_ENCODED flags indicates that a read or write is "encoded". If
+> this flag is set, iov[0].iov_base points to a struct encoded_iov which
+> is used for metadata: namely, the compression algorithm, unencoded
+> (i.e., decompressed) length, and what subrange of the unencoded data
+> should be used (needed for truncated or hole-punched extents and when
+> reading in the middle of an extent). For reads, the filesystem returns
+> this information; for writes, the caller provides it to the filesystem.
+> iov[0].iov_len must be set to sizeof(struct encoded_iov), which can be
+> used to extend the interface in the future a la copy_struct_from_user().
+> The remaining iovecs contain the encoded extent.
+>
+> This adds the VFS helpers for supporting encoded I/O and documentation
+> for filesystem support.
+>
+> Signed-off-by: Omar Sandoval <osandov@fb.com>
+> ---
+>  Documentation/filesystems/encoded_io.rst |  74 ++++++++++
+>  Documentation/filesystems/index.rst      |   1 +
+>  include/linux/fs.h                       |  16 +++
+>  include/uapi/linux/fs.h                  |  33 ++++-
+>  mm/filemap.c                             | 166 +++++++++++++++++++++--
+>  5 files changed, 276 insertions(+), 14 deletions(-)
+>  create mode 100644 Documentation/filesystems/encoded_io.rst
+>
+> diff --git a/Documentation/filesystems/encoded_io.rst b/Documentation/filesystems/encoded_io.rst
+> new file mode 100644
+> index 000000000000..50405276d866
+> --- /dev/null
+> +++ b/Documentation/filesystems/encoded_io.rst
+> @@ -0,0 +1,74 @@
+> +===========
+> +Encoded I/O
+> +===========
+> +
+> +Encoded I/O is a mechanism for reading and writing encoded (e.g., compressed
+> +and/or encrypted) data directly from/to the filesystem. The userspace interface
+> +is thoroughly described in the :manpage:`encoded_io(7)` man page; this document
+> +describes the requirements for filesystem support.
+> +
+> +First of all, a filesystem supporting encoded I/O must indicate this by setting
+> +the ``FMODE_ENCODED_IO`` flag in its ``file_open`` file operation::
+> +
+> +    static int foo_file_open(struct inode *inode, struct file *filp)
+> +    {
+> +            ...
+> +            filep->f_mode |= FMODE_ENCODED_IO;
+> +            ...
+> +    }
+> +
+> +Encoded I/O goes through ``read_iter`` and ``write_iter``, designated by the
+> +``IOCB_ENCODED`` flag in ``kiocb->ki_flags``.
+> +
+> +Reads
+> +=====
+> +
+> +Encoded ``read_iter`` should:
+> +
+> +1. Call ``generic_encoded_read_checks()`` to validate the file and buffers
+> +   provided by userspace.
+> +2. Initialize the ``encoded_iov`` appropriately.
+> +3. Copy it to the user with ``copy_encoded_iov_to_iter()``.
+> +4. Copy the encoded data to the user.
+> +5. Advance ``kiocb->ki_pos`` by ``encoded_iov->len``.
+> +6. Return the size of the encoded data read, not including the ``encoded_iov``.
+> +
+> +There are a few details to be aware of:
+> +
+> +* Encoded ``read_iter`` should support reading unencoded data if the extent is
+> +  not encoded.
+> +* If the buffers provided by the user are not large enough to contain an entire
+> +  encoded extent, then ``read_iter`` should return ``-ENOBUFS``. This is to
+> +  avoid confusing userspace with truncated data that cannot be properly
+> +  decoded.
+> +* Reads in the middle of an encoded extent can be returned by setting
+> +  ``encoded_iov->unencoded_offset`` to non-zero.
+> +* Truncated unencoded data (e.g., because the file does not end on a block
+> +  boundary) may be returned by setting ``encoded_iov->len`` to a value smaller
+> +  value than ``encoded_iov->unencoded_len - encoded_iov->unencoded_offset``.
+> +
+> +Writes
+> +======
+> +
+> +Encoded ``write_iter`` should (in addition to the usual accounting/checks done
+> +by ``write_iter``):
+> +
+> +1. Call ``copy_encoded_iov_from_iter()`` to get and validate the
+> +   ``encoded_iov``.
+> +2. Call ``generic_encoded_write_checks()`` instead of
+> +   ``generic_write_checks()``.
+> +3. Check that the provided encoding in ``encoded_iov`` is supported.
+> +4. Advance ``kiocb->ki_pos`` by ``encoded_iov->len``.
+> +5. Return the size of the encoded data written.
+> +
+> +Again, there are a few details:
+> +
+> +* Encoded ``write_iter`` doesn't need to support writing unencoded data.
+> +* ``write_iter`` should either write all of the encoded data or none of it; it
+> +  must not do partial writes.
+> +* ``write_iter`` doesn't need to validate the encoded data; a subsequent read
+> +  may return, e.g., ``-EIO`` if the data is not valid.
+> +* The user may lie about the unencoded size of the data; a subsequent read
+> +  should truncate or zero-extend the unencoded data rather than returning an
+> +  error.
+> +* Be careful of page cache coherency.
 
-send_write_or_clone() basically has an open-coded copy of
-btrfs_file_extent_end() except that it (incorrectly) aligns to PAGE_SIZE
-instead of sectorsize. Fix and simplify the code by using
-btrfs_file_extent_end().
+Haha that rings in my head like the "Smoking kills!" warnings...
 
-Signed-off-by: Omar Sandoval <osandov@fb.com>
----
- fs/btrfs/send.c | 44 +++++++++++---------------------------------
- 1 file changed, 11 insertions(+), 33 deletions(-)
+I find it a bit odd that you mix page cache at all when reading
+unencoded extents.
+Feels like a file with FMODE_ENCODED_IO should stick to direct IO in all cases.
+I don't know how btrfs deals with mixing direct IO and page cache IO normally,
+but surely the rules could be made even stricter for an inode accessed with this
+new API?
 
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index e70f5ceb3261..37ce21361782 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -5400,51 +5400,29 @@ static int send_write_or_clone(struct send_ctx *sctx,
- 			       struct clone_root *clone_root)
- {
- 	int ret = 0;
--	struct btrfs_file_extent_item *ei;
- 	u64 offset = key->offset;
--	u64 len;
--	u8 type;
-+	u64 end;
- 	u64 bs = sctx->send_root->fs_info->sb->s_blocksize;
- 
--	ei = btrfs_item_ptr(path->nodes[0], path->slots[0],
--			struct btrfs_file_extent_item);
--	type = btrfs_file_extent_type(path->nodes[0], ei);
--	if (type == BTRFS_FILE_EXTENT_INLINE) {
--		len = btrfs_file_extent_ram_bytes(path->nodes[0], ei);
--		/*
--		 * it is possible the inline item won't cover the whole page,
--		 * but there may be items after this page.  Make
--		 * sure to send the whole thing
--		 */
--		len = PAGE_ALIGN(len);
--	} else {
--		len = btrfs_file_extent_num_bytes(path->nodes[0], ei);
--	}
--
--	if (offset >= sctx->cur_inode_size) {
--		ret = 0;
--		goto out;
--	}
--	if (offset + len > sctx->cur_inode_size)
--		len = sctx->cur_inode_size - offset;
--	if (len == 0) {
--		ret = 0;
--		goto out;
--	}
-+	end = min(btrfs_file_extent_end(path), sctx->cur_inode_size);
-+	if (offset >= end)
-+		return 0;
- 
--	if (clone_root && IS_ALIGNED(offset + len, bs)) {
-+	if (clone_root && IS_ALIGNED(end, bs)) {
-+		struct btrfs_file_extent_item *ei;
- 		u64 disk_byte;
- 		u64 data_offset;
- 
-+		ei = btrfs_item_ptr(path->nodes[0], path->slots[0],
-+				    struct btrfs_file_extent_item);
- 		disk_byte = btrfs_file_extent_disk_bytenr(path->nodes[0], ei);
- 		data_offset = btrfs_file_extent_offset(path->nodes[0], ei);
- 		ret = clone_range(sctx, clone_root, disk_byte, data_offset,
--				  offset, len);
-+				  offset, end - offset);
- 	} else {
--		ret = send_extent_data(sctx, offset, len);
-+		ret = send_extent_data(sctx, offset, end - offset);
- 	}
--	sctx->cur_inode_next_write_offset = offset + len;
--out:
-+	sctx->cur_inode_next_write_offset = end;
- 	return ret;
- }
- 
--- 
-2.28.0
+Is there something I am misunderstanding?
 
+Thanks,
+Amir.

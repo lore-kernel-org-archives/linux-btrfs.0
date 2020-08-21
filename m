@@ -2,114 +2,222 @@ Return-Path: <SRS0=Zefw=B7=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.1 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.6 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 99739C433E1
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Aug 2020 17:24:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E839EC433E3
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Aug 2020 17:27:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 7729A20738
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Aug 2020 17:24:39 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1598030679;
-	bh=gC0I3atQoVFadbAYQYFUOd5iW3TlEEIDDZlrvw3lZbU=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=IV2DZqiM/IeU6D96gKQEtLjqW2UxBr7SLzYaC2F3res8zW/OJDxAxWRewc398TYTU
-	 3sL1k9NMR2xhcTd6BLh17RgDhxwXF44SQKWcMgLR++bMJHwIb9bFnjrWbxV0DUsp2P
-	 gVMtj4GlYbZUBiA9gLm2DPpOnFIdohIW9zp5LgZY=
+	by mail.kernel.org (Postfix) with ESMTP id C565722BEA
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Aug 2020 17:27:13 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="Bj9wRRg+"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728523AbgHURYh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 21 Aug 2020 13:24:37 -0400
-Received: from mail.kernel.org ([198.145.29.99]:48196 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727941AbgHUQPa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 21 Aug 2020 12:15:30 -0400
-Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 855A122BEB;
-        Fri, 21 Aug 2020 16:15:29 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1598026530;
-        bh=gC0I3atQoVFadbAYQYFUOd5iW3TlEEIDDZlrvw3lZbU=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=qGlowEbRHBSrCXXxAEOKOYSa0k+Ku6x0+/GM0XU0MtvHXGrhwlMBggjaioJV+USIU
-         68+wsuxCO3FdJy2B8UD4Aj7PoGqtCUuEFazcC2eb8HDlte4GdqvwpZM37BRw7hZUQb
-         RGNAqhF8OFnXM/v9B99jPzbYPZq3qt7F8W0ZrANY=
-From:   Sasha Levin <sashal@kernel.org>
-To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Qu Wenruo <wqu@suse.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>,
-        Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.8 52/62] btrfs: file: reserve qgroup space after the hole punch range is locked
-Date:   Fri, 21 Aug 2020 12:14:13 -0400
-Message-Id: <20200821161423.347071-52-sashal@kernel.org>
-X-Mailer: git-send-email 2.25.1
-In-Reply-To: <20200821161423.347071-1-sashal@kernel.org>
-References: <20200821161423.347071-1-sashal@kernel.org>
+        id S1728074AbgHUR1N (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 21 Aug 2020 13:27:13 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43626 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727807AbgHUR1C (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 21 Aug 2020 13:27:02 -0400
+Received: from mail-vs1-xe42.google.com (mail-vs1-xe42.google.com [IPv6:2607:f8b0:4864:20::e42])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1C799C061573;
+        Fri, 21 Aug 2020 10:27:02 -0700 (PDT)
+Received: by mail-vs1-xe42.google.com with SMTP id b16so868089vsl.6;
+        Fri, 21 Aug 2020 10:27:02 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
+         :subject:to:cc:content-transfer-encoding;
+        bh=ZJ/SgEY6vmZqsnENuzbboQsYNBFC3MlqyIs3liaUOz8=;
+        b=Bj9wRRg+SAtCbnx135wzg9FnaNwBTJ58EScRtp5mP0abu16VpY5abDpT5pp4FW7rAQ
+         9hunUys45Fc95kO3MZvknCnrk+s7/KHhteSHYQDpyYB0wVVobDkWFW/2BrKKeTlUbzVq
+         Jw2or6oMghzyYyqadV1S6ftgUcWXy0F3gsGXcZQ6O8KfS/TGgpWpPdxI2WfKVbcEcmzX
+         NhGiC5f3b6cM38dCqCvO4NH9QuFQias+hAzGoLZPazd5USkt5LZ1cK+y0bLqUJHPKQqN
+         WMOlc2w5jxIOkINcQ9cBhJsX6VzjwJ1RG5fbhb7Xk8jrwnOMbmn24bDJKWJ67xHRDCUH
+         iCqA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
+         :from:date:message-id:subject:to:cc:content-transfer-encoding;
+        bh=ZJ/SgEY6vmZqsnENuzbboQsYNBFC3MlqyIs3liaUOz8=;
+        b=micMsIuOf+KTKHi4MGjEJBt914qwStFXtOg/29zAO8TYm0NEIlmnDwiLVVPtpf8Xit
+         ctGg9m0faojrupEGdJKHV0MX7QNBVG9Pw7IygPZvb1+507WShGDodTm3gJ0SDhG9e/0m
+         jYV0wKU9Zx7zGmFZM7uVAgUvg7Fy1jGq7aA+6d1ZoHL3QQOd06cVyMnIltppLc6VDkkq
+         3Zj5JG3ndKkg8qEZl3Nn+tUOem9vdrLkfxeLNFz7ndvezfBKbzcmrTzAdoixeddu4A9q
+         pGmr2OLd0oR0bCchipRW5t9m6qWnGOJKSoFSR/LaSNj+9bcCCmAziLrOVRZ8Sf4uC+Bu
+         e53Q==
+X-Gm-Message-State: AOAM532z1YCVI0KL8xzErBI37SlMv9fc9GZufVwGTDkCwITN9zm7/iTh
+        dbyszYHMTTFLG2N7Imea7zXOmCMWxNRSNaC7dmYbF6Vg
+X-Google-Smtp-Source: ABdhPJz0Pt0psYREaz5GhuMS21n5We/1CfqmYgv9fuo64R0BNMnEBfjOZnwffpQgSNcFQIB8eGSbX1Lf7MCt/qp4rXY=
+X-Received: by 2002:a67:3015:: with SMTP id w21mr2359672vsw.99.1598030821256;
+ Fri, 21 Aug 2020 10:27:01 -0700 (PDT)
 MIME-Version: 1.0
-X-stable: review
-X-Patchwork-Hint: Ignore
-Content-Transfer-Encoding: 8bit
+References: <cover.1597994106.git.osandov@osandov.com> <16f28691ff66e8aeb280532cc146c8ee49d6cda4.1597994106.git.osandov@osandov.com>
+In-Reply-To: <16f28691ff66e8aeb280532cc146c8ee49d6cda4.1597994106.git.osandov@osandov.com>
+Reply-To: fdmanana@gmail.com
+From:   Filipe Manana <fdmanana@gmail.com>
+Date:   Fri, 21 Aug 2020 18:26:50 +0100
+Message-ID: <CAL3q7H70xhsW5pK5pzu2mUfmcUhzRUoWd5RTFMEX_-ut5HALpQ@mail.gmail.com>
+Subject: Re: [PATCH 1/9] btrfs: send: get rid of i_size logic in send_write()
+To:     Omar Sandoval <osandov@osandov.com>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>,
+        linux-fsdevel <linux-fsdevel@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Qu Wenruo <wqu@suse.com>
+On Fri, Aug 21, 2020 at 8:42 AM Omar Sandoval <osandov@osandov.com> wrote:
+>
+> From: Omar Sandoval <osandov@fb.com>
+>
+> send_write()/fill_read_buf() have some logic for avoiding reading past
+> i_size. However, everywhere that we call
+> send_write()/send_extent_data(), we've already clamped the length down
+> to i_size. Get rid of the i_size handling, which simplifies the next
+> change.
+>
+> Signed-off-by: Omar Sandoval <osandov@fb.com>
 
-[ Upstream commit a7f8b1c2ac21bf081b41264c9cfd6260dffa6246 ]
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
 
-The incoming qgroup reserved space timing will move the data reservation
-to ordered extent completely.
+Looks good, and it passed some long duration tests with both full and
+incremental sends here (with and without compression, no-holes, etc).
 
-However in btrfs_punch_hole_lock_range() will call
-btrfs_invalidate_page(), which will clear QGROUP_RESERVED bit for the
-range.
+Thanks.
 
-In current stage it's OK, but if we're making ordered extents handle the
-reserved space, then btrfs_punch_hole_lock_range() can clear the
-QGROUP_RESERVED bit before we submit ordered extent, leading to qgroup
-reserved space leakage.
+> ---
+>  fs/btrfs/send.c | 37 ++++++++++---------------------------
+>  1 file changed, 10 insertions(+), 27 deletions(-)
+>
+> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+> index 7c7c09fc65e8..8af5e867e4ca 100644
+> --- a/fs/btrfs/send.c
+> +++ b/fs/btrfs/send.c
+> @@ -4794,7 +4794,7 @@ static int process_all_new_xattrs(struct send_ctx *=
+sctx)
+>         return ret;
+>  }
+>
+> -static ssize_t fill_read_buf(struct send_ctx *sctx, u64 offset, u32 len)
+> +static int fill_read_buf(struct send_ctx *sctx, u64 offset, u32 len)
+>  {
+>         struct btrfs_root *root =3D sctx->send_root;
+>         struct btrfs_fs_info *fs_info =3D root->fs_info;
+> @@ -4804,21 +4804,13 @@ static ssize_t fill_read_buf(struct send_ctx *sct=
+x, u64 offset, u32 len)
+>         pgoff_t index =3D offset >> PAGE_SHIFT;
+>         pgoff_t last_index;
+>         unsigned pg_offset =3D offset_in_page(offset);
+> -       ssize_t ret =3D 0;
+> +       int ret =3D 0;
+> +       size_t read =3D 0;
+>
+>         inode =3D btrfs_iget(fs_info->sb, sctx->cur_ino, root);
+>         if (IS_ERR(inode))
+>                 return PTR_ERR(inode);
+>
+> -       if (offset + len > i_size_read(inode)) {
+> -               if (offset > i_size_read(inode))
+> -                       len =3D 0;
+> -               else
+> -                       len =3D offset - i_size_read(inode);
+> -       }
+> -       if (len =3D=3D 0)
+> -               goto out;
+> -
+>         last_index =3D (offset + len - 1) >> PAGE_SHIFT;
+>
+>         /* initial readahead */
+> @@ -4859,16 +4851,15 @@ static ssize_t fill_read_buf(struct send_ctx *sct=
+x, u64 offset, u32 len)
+>                 }
+>
+>                 addr =3D kmap(page);
+> -               memcpy(sctx->read_buf + ret, addr + pg_offset, cur_len);
+> +               memcpy(sctx->read_buf + read, addr + pg_offset, cur_len);
+>                 kunmap(page);
+>                 unlock_page(page);
+>                 put_page(page);
+>                 index++;
+>                 pg_offset =3D 0;
+>                 len -=3D cur_len;
+> -               ret +=3D cur_len;
+> +               read +=3D cur_len;
+>         }
+> -out:
+>         iput(inode);
+>         return ret;
+>  }
+> @@ -4882,7 +4873,6 @@ static int send_write(struct send_ctx *sctx, u64 of=
+fset, u32 len)
+>         struct btrfs_fs_info *fs_info =3D sctx->send_root->fs_info;
+>         int ret =3D 0;
+>         struct fs_path *p;
+> -       ssize_t num_read =3D 0;
+>
+>         p =3D fs_path_alloc();
+>         if (!p)
+> @@ -4890,12 +4880,9 @@ static int send_write(struct send_ctx *sctx, u64 o=
+ffset, u32 len)
+>
+>         btrfs_debug(fs_info, "send_write offset=3D%llu, len=3D%d", offset=
+, len);
+>
+> -       num_read =3D fill_read_buf(sctx, offset, len);
+> -       if (num_read <=3D 0) {
+> -               if (num_read < 0)
+> -                       ret =3D num_read;
+> +       ret =3D fill_read_buf(sctx, offset, len);
+> +       if (ret < 0)
+>                 goto out;
+> -       }
+>
+>         ret =3D begin_cmd(sctx, BTRFS_SEND_C_WRITE);
+>         if (ret < 0)
+> @@ -4907,16 +4894,14 @@ static int send_write(struct send_ctx *sctx, u64 =
+offset, u32 len)
+>
+>         TLV_PUT_PATH(sctx, BTRFS_SEND_A_PATH, p);
+>         TLV_PUT_U64(sctx, BTRFS_SEND_A_FILE_OFFSET, offset);
+> -       TLV_PUT(sctx, BTRFS_SEND_A_DATA, sctx->read_buf, num_read);
+> +       TLV_PUT(sctx, BTRFS_SEND_A_DATA, sctx->read_buf, len);
+>
+>         ret =3D send_cmd(sctx);
+>
+>  tlv_put_failure:
+>  out:
+>         fs_path_free(p);
+> -       if (ret < 0)
+> -               return ret;
+> -       return num_read;
+> +       return ret;
+>  }
+>
+>  /*
+> @@ -5095,9 +5080,7 @@ static int send_extent_data(struct send_ctx *sctx,
+>                 ret =3D send_write(sctx, offset + sent, size);
+>                 if (ret < 0)
+>                         return ret;
+> -               if (!ret)
+> -                       break;
+> -               sent +=3D ret;
+> +               sent +=3D size;
+>         }
+>         return 0;
+>  }
+> --
+> 2.28.0
+>
 
-So here change the timing to make reserve data space after
-btrfs_punch_hole_lock_range().
-The new timing is fine for either current code or the new code.
 
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
-Signed-off-by: Qu Wenruo <wqu@suse.com>
-Reviewed-by: David Sterba <dsterba@suse.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
-Signed-off-by: Sasha Levin <sashal@kernel.org>
----
- fs/btrfs/file.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+--=20
+Filipe David Manana,
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 1523aa4eaff07..9e8f6c66788d0 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -3176,14 +3176,14 @@ static int btrfs_zero_range(struct inode *inode,
- 		if (ret < 0)
- 			goto out;
- 		space_reserved = true;
--		ret = btrfs_qgroup_reserve_data(inode, &data_reserved,
--						alloc_start, bytes_to_reserve);
--		if (ret)
--			goto out;
- 		ret = btrfs_punch_hole_lock_range(inode, lockstart, lockend,
- 						  &cached_state);
- 		if (ret)
- 			goto out;
-+		ret = btrfs_qgroup_reserve_data(inode, &data_reserved,
-+						alloc_start, bytes_to_reserve);
-+		if (ret)
-+			goto out;
- 		ret = btrfs_prealloc_file_range(inode, mode, alloc_start,
- 						alloc_end - alloc_start,
- 						i_blocksize(inode),
--- 
-2.25.1
-
+=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
+ right.=E2=80=9D

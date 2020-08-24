@@ -2,165 +2,124 @@ Return-Path: <SRS0=zwl1=CC=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.6 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
-	SPF_HELO_NONE,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 61C16C43463
-	for <linux-btrfs@archiver.kernel.org>; Mon, 24 Aug 2020 06:35:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E3252C433DF
+	for <linux-btrfs@archiver.kernel.org>; Mon, 24 Aug 2020 07:14:32 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 34D3523107
-	for <linux-btrfs@archiver.kernel.org>; Mon, 24 Aug 2020 06:19:59 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BB467206BE
+	for <linux-btrfs@archiver.kernel.org>; Mon, 24 Aug 2020 07:14:32 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=protonmail.com header.i=@protonmail.com header.b="IurQ/2jG"
+	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="n3Rc3Vqk"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725963AbgHXGT5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 24 Aug 2020 02:19:57 -0400
-Received: from mail-40130.protonmail.ch ([185.70.40.130]:47332 "EHLO
-        mail-40130.protonmail.ch" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725817AbgHXGTz (ORCPT
+        id S1725924AbgHXHOc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 24 Aug 2020 03:14:32 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49354 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725730AbgHXHOa (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 24 Aug 2020 02:19:55 -0400
-Date:   Mon, 24 Aug 2020 06:11:50 +0000
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=protonmail.com;
-        s=protonmail; t=1598249520;
-        bh=d2QOCZUCUG6sw6whnn7jTEdVI2MlLwUjMyGKvuILyos=;
-        h=Date:To:From:Cc:Reply-To:Subject:In-Reply-To:References:From;
-        b=IurQ/2jG81jDqYiFIyrQqBFJteSr4FrxRzizPkh7FX4P7iydjHOgqv/bTu8XZekk9
-         SRzB0m/o3RJFJsiMH/bBkBT1axwKfzYVfKk8ohizOa3GFCGaDZW5O5GCaycYSbSARs
-         /yaYtmwSXalOEcRrdpNrhpH32ZXVi1+tNogIuC/E=
-To:     Chris Murphy <lists@colorremedies.com>
-From:   Andrii Zymohliad <azymohliad@protonmail.com>
-Cc:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Reply-To: Andrii Zymohliad <azymohliad@protonmail.com>
-Subject: Re: [Help] Can't login to my systemd-homed user account due to fallocate failure
-Message-ID: <Yy8-04dbNru1LWPcNZ9UxsagH1b0KNsGn7tDEnxVOqS812IqGiwl37dj4rxAh05gEP8QoNJ5F_Ea6CZ8iZgvnupuq5Qzc38gl69MceWMc9s=@protonmail.com>
-In-Reply-To: <CAJCQCtTC2yi4HRqg6fkMrxw33TVSBh_yAKtnX-Z1-nXSVjBW7w@mail.gmail.com>
-References: <bdJVxLiFr_PyQSXRUbZJfFW_jAjsGgoMetqPHJMbg-hdy54Xt_ZHhRetmnJ6cJ99eBlcX76wy-AvWwV715c3YndkxneSlod11P1hlaADx0s=@protonmail.com> <CAJCQCtTC2yi4HRqg6fkMrxw33TVSBh_yAKtnX-Z1-nXSVjBW7w@mail.gmail.com>
+        Mon, 24 Aug 2020 03:14:30 -0400
+Received: from mail-wm1-x331.google.com (mail-wm1-x331.google.com [IPv6:2a00:1450:4864:20::331])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9A876C061573
+        for <linux-btrfs@vger.kernel.org>; Mon, 24 Aug 2020 00:14:30 -0700 (PDT)
+Received: by mail-wm1-x331.google.com with SMTP id c19so5504323wmd.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 24 Aug 2020 00:14:30 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc:content-transfer-encoding;
+        bh=RdfWzFt0bUrONSBmvtOrelgFLUbfEUl2sWpsj2e5mY4=;
+        b=n3Rc3VqkhW+fQp3S9J8TNBuwIKRuC9/hfgmZI0AG8+iARIv9iqQ+7c8pFUCrOtRPnJ
+         boIJkB5qHJovCQz2yWv6PaAon/T2fuaqbbmrJ3LVRFNnoFBoiUK5VuO2GepeestYPaZM
+         F1GrQsz3Oyydstgp5gPLmY1LTdNJo4TXPhXKCaJVQR4+xy81qQQidL97wvM2qZ8sOUF9
+         R7HNRLwXu2qCVXrG01P5nd/9wuqfDi+uzn1xewBWpks2VEHXV1VvfNs2RtxzY97evv7L
+         ivm0er8h/O3IeTMNcUrAJl4bSckSxF7gHFH7l8JWbic1/PT4edDBviR2dZdpB3DBV6a2
+         dRpw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc:content-transfer-encoding;
+        bh=RdfWzFt0bUrONSBmvtOrelgFLUbfEUl2sWpsj2e5mY4=;
+        b=LCDyl+TccGmCdOFFRVOsDvGTs3rociznWOryR5IwyDzm4bNBskGl30Feqb+zwgWh5j
+         B78dydcwxzRMNtF7+OwrJ69witMxPUL7JQwcBJajazExWM+FniEJN5XPNVTcN+SOoT7l
+         jjrhrq7Har0qZ8j07j5WB/Gjw2IwGt9tYmiiFtH6HlL7CYV55x+87aButerQDYIq3BOh
+         LFbZFEvWyGXihJ40u96/fYux7YvQcRgnUmCSgw4cZ2LFyTGwifowfmvDHLejyoOJUDjq
+         k0plw/iW3q2w3Gbuwtnti3i+vjCeMb2vIcxtVcgGRRvcsiSg8LBPlX0gP2xrBrrkZOS5
+         KMVw==
+X-Gm-Message-State: AOAM531PM3wAKMrZRSCeyYlxEwndtQA2gAv8YLJpvFmSwQsO2FgQniPy
+        exWIBn7Fs+2QPCzp05Hl9RFjDHSLQITz5+ZMhMsfGA==
+X-Google-Smtp-Source: ABdhPJzi+AgigA6eLlmEhNEqOoGX7Pf1euzx13PDnakojxjdZRMumjjCA0zCjb1XO+SgtEjZcTghchC8cyXnbVFI8H8=
+X-Received: by 2002:a7b:cf0b:: with SMTP id l11mr4201909wmg.128.1598253269120;
+ Mon, 24 Aug 2020 00:14:29 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+References: <bdJVxLiFr_PyQSXRUbZJfFW_jAjsGgoMetqPHJMbg-hdy54Xt_ZHhRetmnJ6cJ99eBlcX76wy-AvWwV715c3YndkxneSlod11P1hlaADx0s=@protonmail.com>
+ <CAJCQCtTC2yi4HRqg6fkMrxw33TVSBh_yAKtnX-Z1-nXSVjBW7w@mail.gmail.com> <Yy8-04dbNru1LWPcNZ9UxsagH1b0KNsGn7tDEnxVOqS812IqGiwl37dj4rxAh05gEP8QoNJ5F_Ea6CZ8iZgvnupuq5Qzc38gl69MceWMc9s=@protonmail.com>
+In-Reply-To: <Yy8-04dbNru1LWPcNZ9UxsagH1b0KNsGn7tDEnxVOqS812IqGiwl37dj4rxAh05gEP8QoNJ5F_Ea6CZ8iZgvnupuq5Qzc38gl69MceWMc9s=@protonmail.com>
+From:   Chris Murphy <lists@colorremedies.com>
+Date:   Mon, 24 Aug 2020 01:13:47 -0600
+Message-ID: <CAJCQCtSqe_oqRZWYP7iLJcGQnzZkC4vmoYVTm_9RPb8eb0-E6Q@mail.gmail.com>
+Subject: Re: [Help] Can't login to my systemd-homed user account due to
+ fallocate failure
+To:     Andrii Zymohliad <azymohliad@protonmail.com>
+Cc:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Andrei Borzenkov <arvidjaar@gmail.com>
+Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hello Chris! Thanks a lot for so many ideas, I updated this snippet with mo=
-st of the commands you asked the output for: https://gitlab.com/-/snippets/=
-2007189, more details inline.
-
-
-> I don't understand why homectl is fallocating just to activate. I'd
-> expect homectl only uses fallocate for create and resize. Can you
-> confirm the exact homectl command you're using?
-
-Any homectl command that requires authentication. For example:
-
-    homectl authenticate azymohliad
-
-After typing password, the output is the following:
-
-    Operation on home azymohliad failed: Not enough disk space for home azy=
-mohliad
-
-Here is the part about fallocate on Systemd mailing list: https://lists.fre=
-edesktop.org/archives/systemd-devel/2020-August/045074.html (from the same =
-issue discussion). Andrei Borzenkov might give more insight about it (if yo=
-u are reading this and when you have time).
-
-
-> Preferably if you could post the results from:
+On Mon, Aug 24, 2020 at 12:12 AM Andrii Zymohliad
+<azymohliad@protonmail.com> wrote:
 >
-> ls -ls /home/azymohliad.home
+> Hello Chris! Thanks a lot for so many ideas, I updated this snippet with =
+most of the commands you asked the output for: https://gitlab.com/-/snippet=
+s/2007189, more details inline.
 
-    269111212 -rw------- 1 root root 432439787520 =D1=81=D0=B5=D1=80 23 18:=
-20 /home/azymohliad.home
+>> # ls -lhs /home/azymohliad.home
+>>    257G -rw------- 1 root root 403G =D1=81=D0=B5=D1=80 23 18:20 /home/az=
+ymohliad.home
 
-Also, added to the gitlab snippet.
-
-
-> When you manually mount this luks file, what do you get for 'btrfs fi
-> us /home/azymohliad' ?
-
-Added to the gitlab snippet.
+OK so it's a sparse file..
 
 
-> Because if that file system is 403G, and sd-homed is trying to
-> fallocate a 256G file to be 403G, that's +147. And also in your
-> snippets from '/' btfs fi us
+> This one is 18k lines, uploaded here: https://gitlab.com/-/snippets/20073=
+01
+
+There are many shared extents, so it has been subject to snapshot,
+reflink copy, or dedup.
+
+To my knowledge, sd-homed doesn't do any of these things. Something
+else did it. Are you using snapper or timeshift? Have you used 'cp' to
+duplicate the home backing file?
+
+What do you get for
+
+lsattr /home/azymohliad.home
+
+> Idk, I guess it's better to go back to Systemd mailing list for that, but=
+ just in case I've added "homectl inspect azymohliad" output to the gitlab =
+snippet. Here's what it says about discard:
 >
-> > > Free (estimated): 176.17GiB (min: 176.17GiB)
->
-> The fallocate should work. Has this home file been snapshot or reflink
-> copied or deduped?
+>     LUKS Discard: online=3Dno offline=3Dyes
 
-I haven't made any explicitly, but I'm not very familiar with those concept=
-s, maybe sd-homed did it implicitly.
+I'm not sure what it means, but I'll ask on systemd list.
 
+> Here is the btrfs-debugfs output: https://gitlab.com/-/snippets/2007302
 
-> filefrag -v /home/azymohliad.home | grep shared
+OK too late, it's already been balanced.
 
-This one is 18k lines, uploaded here: https://gitlab.com/-/snippets/2007301
-
-
-> Here's the thing. /home/azymohliad.home, the file, should be the same
-> size as the Btrfs on that file. Unless it's been subject to discards,
-> and is thus sparse already for some reason.
->
-> Is it possible the file is being trimmed then fallocated then trimmed
-> then fallocated? This could be new behavior in sd-246.
-
-Idk, I guess it's better to go back to Systemd mailing list for that, but j=
-ust in case I've added "homectl inspect azymohliad" output to the gitlab sn=
-ippet. Here's what it says about discard:
-
-    LUKS Discard: online=3Dno offline=3Dyes
+I think we've got a pretty good idea what's going on. The current work
+around in your case will be to use the --luks-discard=3Dtrue option when
+activating. This will avoid the fallocate step. But the question
+remains why the fallocate fails. I suspect it has something to do with
+shared extents. Somewhere you have one or more snapshots containing
+this home file. And that's causing some confusion.
 
 
-> Grab this debug file from upstream btrfs-progs
-> https://github.com/kdave/btrfs-progs/blob/master/btrfs-debugfs
->
-> sudo ./btrfs-debugfs -b /
->
-> Mount or remount the file system with mount option enospc_debug, and
-> then reproduce the problem, i.e. exact same homectl command you're
-> using that's failing with out of space error.
-
-I didn't quite get what information I should extract from this.
-
-Here is the btrfs-debugfs output: https://gitlab.com/-/snippets/2007302
-
-I remounted root filesystem as with enospc_debug, reproduced the issue with=
- "homectl authenticate azymohliad", but it didn't print any additional info=
-, nor any additional logs in journalctl.
-
-
-> For sure my top advice, is since you can manually mount this sd-homed
-> home, freshen your backups now while you still can. Later versions
-> of sd-homed create a subvolume on that LUKS Btrfs file system, so you
-> can snapshot it and use btrfs-send if you want or however else you're
-> doing backups.
-
-Thanks! I'm unfamiliar with snapshots and btrfs-send yet, but it's the perf=
-ect time to learn.
-
-
-> There is a homectl option that might help, when activating, --luks-discar=
-d=3Dtrue
->
-> A consequence of this option, however, is it will make the backing
-> file sparse. i.e. it'll punch holes in it, freeing up space on the
-> underlying file system. You should read the warning for the
-> --allow-discards option in 'man cryptsetup' which is what 'homectl
-> --luks-discard' is using.
->
-> Also, this option will fairly quickly fstrim the user home upon
-> activation (last time I tested it on systemd-245, some things have
-> changed in 246). And that will erase all evidence about why you're
-> having this problem in the first place.
-
-Gonna read about this too, thanks!
-
-
-
+--=20
+Chris Murphy

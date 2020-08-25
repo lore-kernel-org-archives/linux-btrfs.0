@@ -7,29 +7,28 @@ X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 65809C433E1
-	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Aug 2020 15:02:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0A8ECC433E3
+	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Aug 2020 15:04:04 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 3C8162076C
-	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Aug 2020 15:02:48 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E87262075F
+	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Aug 2020 15:04:03 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726730AbgHYPCr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 25 Aug 2020 11:02:47 -0400
-Received: from mx2.suse.de ([195.135.220.15]:52304 "EHLO mx2.suse.de"
+        id S1726753AbgHYPEC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 25 Aug 2020 11:04:02 -0400
+Received: from mx2.suse.de ([195.135.220.15]:52810 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726706AbgHYPCp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 25 Aug 2020 11:02:45 -0400
+        id S1726570AbgHYPDx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 25 Aug 2020 11:03:53 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 8314EADDB;
-        Tue, 25 Aug 2020 15:03:14 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id B9F41AEAA;
+        Tue, 25 Aug 2020 15:04:22 +0000 (UTC)
 From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
 To:     linux-btrfs@vger.kernel.org
-Cc:     Goldwyn Rodrigues <rgoldwyn@suse.com>,
-        Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 2/2] btrfs: export currently executing exclusive operation via sysfs
-Date:   Tue, 25 Aug 2020 10:02:33 -0500
-Message-Id: <20200825150233.30294-3-rgoldwyn@suse.de>
+Cc:     Goldwyn Rodrigues <rgoldwyn@suse.com>
+Subject: [PATCH 1/4] btrfs-progs: get_fsid_fd() for getting fsid using fd
+Date:   Tue, 25 Aug 2020 10:03:35 -0500
+Message-Id: <20200825150338.32610-1-rgoldwyn@suse.de>
 X-Mailer: git-send-email 2.26.2
 In-Reply-To: <20200825150233.30294-1-rgoldwyn@suse.de>
 References: <20200825150233.30294-1-rgoldwyn@suse.de>
@@ -42,73 +41,80 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Goldwyn Rodrigues <rgoldwyn@suse.com>
 
-/sys/fs/<fsid>/exclusive_operation contains the currently executing
-exclusive operation. Add a sysfs_notify() when operation end, so
-userspace can be notified of exclusive operation is finished.
+Add a function get_fsid_fd() to use an open file fd to get the
+fsid of the mounted filesystem.
 
 Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/ioctl.c |  2 ++
- fs/btrfs/sysfs.c | 25 +++++++++++++++++++++++++
- 2 files changed, 27 insertions(+)
+ common/utils.c | 30 ++++++++++++++++--------------
+ common/utils.h |  1 +
+ 2 files changed, 17 insertions(+), 14 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 256e58d42a7b..97ce65c7a631 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -387,6 +387,8 @@ bool btrfs_exclop_start(struct btrfs_fs_info *fs_info, int type)
- void btrfs_exclop_finish(struct btrfs_fs_info *fs_info)
- {
- 	atomic_set(&fs_info->exclusive_operation, BTRFS_EXCLOP_NONE);
-+	sysfs_notify(&fs_info->fs_devices->fsid_kobj, NULL,
-+			"exclusive_operation");
+diff --git a/common/utils.c b/common/utils.c
+index 9742c2e1..dbe1e806 100644
+--- a/common/utils.c
++++ b/common/utils.c
+@@ -1097,32 +1097,34 @@ out:
+ 	return ret;
  }
  
- /*
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index 8593086d1d10..a301cf74336d 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -809,6 +809,30 @@ static ssize_t btrfs_checksum_show(struct kobject *kobj,
- 
- BTRFS_ATTR(, checksum, btrfs_checksum_show);
- 
-+static ssize_t btrfs_exclusive_operation_show(struct kobject *kobj,
-+		struct kobj_attribute *a, char *buf)
++int get_fsid_fd(int fd, u8 *fsid)
 +{
-+	struct btrfs_fs_info *fs_info = to_fs_info(kobj);
-+	switch (atomic_read(&fs_info->exclusive_operation)) {
-+		case  BTRFS_EXCLOP_NONE:
-+			return scnprintf(buf, PAGE_SIZE, "none\n");
-+		case BTRFS_EXCLOP_BALANCE:
-+			return scnprintf(buf, PAGE_SIZE, "balance\n");
-+		case BTRFS_EXCLOP_DEV_ADD:
-+			return scnprintf(buf, PAGE_SIZE, "device add\n");
-+		case BTRFS_EXCLOP_DEV_REPLACE:
-+			return scnprintf(buf, PAGE_SIZE, "device replace\n");
-+		case BTRFS_EXCLOP_DEV_REMOVE:
-+			return scnprintf(buf, PAGE_SIZE, "device remove\n");
-+		case BTRFS_EXCLOP_SWAP_ACTIVATE:
-+			return scnprintf(buf, PAGE_SIZE, "swap activate\n");
-+		case BTRFS_EXCLOP_RESIZE:
-+			return scnprintf(buf, PAGE_SIZE, "resize\n");
-+	}
++	int ret;
++	struct btrfs_ioctl_fs_info_args args;
++
++	ret = ioctl(fd, BTRFS_IOC_FS_INFO, &args);
++	if (ret < 0)
++		return -errno;
++
++	memcpy(fsid, args.fsid, BTRFS_FSID_SIZE);
 +	return 0;
 +}
-+BTRFS_ATTR(, exclusive_operation, btrfs_exclusive_operation_show);
 +
- static const struct attribute *btrfs_attrs[] = {
- 	BTRFS_ATTR_PTR(, label),
- 	BTRFS_ATTR_PTR(, nodesize),
-@@ -817,6 +841,7 @@ static const struct attribute *btrfs_attrs[] = {
- 	BTRFS_ATTR_PTR(, quota_override),
- 	BTRFS_ATTR_PTR(, metadata_uuid),
- 	BTRFS_ATTR_PTR(, checksum),
-+	BTRFS_ATTR_PTR(, exclusive_operation),
- 	NULL,
- };
+ int get_fsid(const char *path, u8 *fsid, int silent)
+ {
+ 	int ret;
+ 	int fd;
+-	struct btrfs_ioctl_fs_info_args args;
  
+ 	fd = open(path, O_RDONLY);
+ 	if (fd < 0) {
+-		ret = -errno;
+ 		if (!silent)
+ 			error("failed to open %s: %m", path);
+-		goto out;
+-	}
+-
+-	ret = ioctl(fd, BTRFS_IOC_FS_INFO, &args);
+-	if (ret < 0) {
+-		ret = -errno;
+-		goto out;
++		return -errno;
+ 	}
+ 
+-	memcpy(fsid, args.fsid, BTRFS_FSID_SIZE);
+-	ret = 0;
++	ret = get_fsid_fd(fd, fsid);
++	close(fd);
+ 
+-out:
+-	if (fd != -1)
+-		close(fd);
+ 	return ret;
+ }
+ 
+diff --git a/common/utils.h b/common/utils.h
+index 43e7f471..e34bb5a4 100644
+--- a/common/utils.h
++++ b/common/utils.h
+@@ -75,6 +75,7 @@ void close_file_or_dir(int fd, DIR *dirstream);
+ int get_fs_info(const char *path, struct btrfs_ioctl_fs_info_args *fi_args,
+ 		struct btrfs_ioctl_dev_info_args **di_ret);
+ int get_fsid(const char *path, u8 *fsid, int silent);
++int get_fsid_fd(int fd, u8 *fsid);
+ 
+ int get_label(const char *btrfs_dev, char *label);
+ int set_label(const char *btrfs_dev, const char *label);
 -- 
 2.26.2
 

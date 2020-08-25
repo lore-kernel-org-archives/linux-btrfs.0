@@ -2,267 +2,270 @@ Return-Path: <SRS0=8sAC=CD=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.6 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EA834C433E1
-	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Aug 2020 05:48:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B7F6DC433E1
+	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Aug 2020 06:30:46 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D2E202071E
-	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Aug 2020 05:48:39 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8560220738
+	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Aug 2020 06:30:46 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="DN9iqv5i"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728919AbgHYFsj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 25 Aug 2020 01:48:39 -0400
-Received: from mx2.suse.de ([195.135.220.15]:50582 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728890AbgHYFsc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 25 Aug 2020 01:48:32 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 7F2C9AD77;
-        Tue, 25 Aug 2020 05:49:01 +0000 (UTC)
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     Josef Bacik <josef@toxicpanda.com>
-Subject: [PATCH v3 3/4] btrfs: remove the again: tag in process_one_batch()
-Date:   Tue, 25 Aug 2020 13:48:07 +0800
-Message-Id: <20200825054808.16241-4-wqu@suse.com>
-X-Mailer: git-send-email 2.28.0
-In-Reply-To: <20200825054808.16241-1-wqu@suse.com>
-References: <20200825054808.16241-1-wqu@suse.com>
+        id S1729026AbgHYGap (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 25 Aug 2020 02:30:45 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42522 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728705AbgHYGao (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 25 Aug 2020 02:30:44 -0400
+Received: from mail-vk1-xa42.google.com (mail-vk1-xa42.google.com [IPv6:2607:f8b0:4864:20::a42])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B08EAC061574
+        for <linux-btrfs@vger.kernel.org>; Mon, 24 Aug 2020 23:30:43 -0700 (PDT)
+Received: by mail-vk1-xa42.google.com with SMTP id o2so2561133vkn.9
+        for <linux-btrfs@vger.kernel.org>; Mon, 24 Aug 2020 23:30:43 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc:content-transfer-encoding;
+        bh=nChjs9v7vzkOoVWEE3yd43CYj88/kEyBj87DH/161nw=;
+        b=DN9iqv5iCoa4Eb7uMzO0ky15nj30GJfPooak2r6BwFXvFldY4kre8x3VdY6xX3duog
+         q7R+JZw4xFuVbrV93he7q1D/RgZUcivmKvty3fMiwT8xPqRcDgOQ6jaX7FXRg+sonR2Z
+         A1X/nCu+vqbvlDGf4BoWPIWU6LkVamEkKgerTsbICTHw6rAWT6Z8gUWBiE1Qe/wWsfjQ
+         JuHnNKaQF3QYc2F/xC+8lb1AqnFCo+aFpu8sRwyVTbe8xwDlY9eaeS0Q6wmpCtLSuHG8
+         mOiSx+X9nkT07HaJ+FNUWG+JJWyJhh2rl+cIu9zuJ2OSZIQv5xXBKppdSCxBvZ4RUO+e
+         bzgQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc:content-transfer-encoding;
+        bh=nChjs9v7vzkOoVWEE3yd43CYj88/kEyBj87DH/161nw=;
+        b=YC2DauZJhqytAlHfstw4SF5hGtn3dCDydAjU9CdZnqj/uc0slXvd2xfzz2hyQVQ4W5
+         g/DszWrdNLAHBICO0yxtGgnS3F++7vbnwheNRU+3GJHS7SXAET/n/+l1UsPxJmPauUKZ
+         bSjToCHRMEMzyqLi/AeztHc8rKlsevrWzrQnTM8g0X7qq1aL8hixIQPjHpKUKAVkuirE
+         rHRk7MVyniAEzOK67apZ82998pUcyWNrWFzqYOfYkzOSRiRT01Ddoyjuk3bzdKIS4DGL
+         6jncgkvD7GDxVUNTAN0iwIwOvoDuY1lk3x+KZZBFjZWeRgms818FP3b/XB5eb7hqd0ZH
+         Iftg==
+X-Gm-Message-State: AOAM532F1EJ1vKIJXtzwfRDCv2DnsXYTAUe09IzotESpipThHaDqs/0r
+        NJ0qvSEZWKBRt5boR3ZFKD1GRVmxztUM7sH2iFbt12VkcqxXqQ==
+X-Google-Smtp-Source: ABdhPJwS6Y+cmqF5VyFGzJ6No1TH9dd+k1sISq4urUSJQpSEnPCUPg0ZCf3RCMEjDc9zCOVAS7z26cvxDzinrZ9inYQ=
+X-Received: by 2002:a1f:320b:: with SMTP id y11mr4650996vky.57.1598337042777;
+ Mon, 24 Aug 2020 23:30:42 -0700 (PDT)
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+References: <CAE8gLhn15dLELmeRy3TadcVg6UszxkhiB4tVL7NpEA_Q3m5sdg@mail.gmail.com>
+ <CAJCQCtQHnyuhq-so15vZAKW7ih3GT++gUFj5s+AGTYfh=r143Q@mail.gmail.com>
+In-Reply-To: <CAJCQCtQHnyuhq-so15vZAKW7ih3GT++gUFj5s+AGTYfh=r143Q@mail.gmail.com>
+From:   MegaBrutal <megabrutal@gmail.com>
+Date:   Tue, 25 Aug 2020 08:30:30 +0200
+Message-ID: <CAE8gLh=iBLN7OgAHYggWUYP3xcoDPqwUaxqcYC=U9uKNdSnOJA@mail.gmail.com>
+Subject: Re: Yet another guy with a "parent transid verify failed" problem
+To:     Chris Murphy <lists@colorremedies.com>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The again: tag here is for us to retry when we failed to lock extent
-range, which is only used once.
+Thanks, Chris!
 
-Instead of the open tag, integrate prepare_pages() and
-lock_and_cleanup_extent_if_need() into lock_pages_and_extent(), and do
-the retry inside the function.
+Now I got something else...
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
----
- fs/btrfs/file.c | 183 +++++++++++++++++++++++-------------------------
- 1 file changed, 86 insertions(+), 97 deletions(-)
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index f906f0910310..67d2368a8fa6 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1456,83 +1456,6 @@ static noinline int prepare_pages(struct inode *inode, struct page **pages,
- 
- }
- 
--/*
-- * This function locks the extent and properly waits for data=ordered extents
-- * to finish before allowing the pages to be modified if need.
-- *
-- * The return value:
-- * 1 - the extent is locked
-- * 0 - the extent is not locked, and everything is OK
-- * -EAGAIN - need re-prepare the pages
-- * the other < 0 number - Something wrong happens
-- */
--static noinline int
--lock_and_cleanup_extent_if_need(struct btrfs_inode *inode, struct page **pages,
--				size_t num_pages, loff_t pos,
--				size_t write_bytes,
--				u64 *lockstart, u64 *lockend,
--				struct extent_state **cached_state)
--{
--	struct btrfs_fs_info *fs_info = inode->root->fs_info;
--	u64 start_pos;
--	u64 last_pos;
--	int i;
--	int ret = 0;
--
--	start_pos = round_down(pos, fs_info->sectorsize);
--	last_pos = round_up(pos + write_bytes, fs_info->sectorsize) - 1;
--
--	if (start_pos < inode->vfs_inode.i_size) {
--		struct btrfs_ordered_extent *ordered;
--
--		lock_extent_bits(&inode->io_tree, start_pos, last_pos,
--				cached_state);
--		ordered = btrfs_lookup_ordered_range(inode, start_pos,
--						     last_pos - start_pos + 1);
--		if (ordered &&
--		    ordered->file_offset + ordered->num_bytes > start_pos &&
--		    ordered->file_offset <= last_pos) {
--			unlock_extent_cached(&inode->io_tree, start_pos,
--					last_pos, cached_state);
--			for (i = 0; i < num_pages; i++) {
--				unlock_page(pages[i]);
--				put_page(pages[i]);
--			}
--			btrfs_start_ordered_extent(&inode->vfs_inode,
--					ordered, 1);
--			btrfs_put_ordered_extent(ordered);
--			return -EAGAIN;
--		}
--		if (ordered)
--			btrfs_put_ordered_extent(ordered);
--
--		*lockstart = start_pos;
--		*lockend = last_pos;
--		ret = 1;
--	}
--
--	/*
--	 * It's possible the pages are dirty right now, but we don't want
--	 * to clean them yet because copy_from_user may catch a page fault
--	 * and we might have to fall back to one page at a time.  If that
--	 * happens, we'll unlock these pages and we'd have a window where
--	 * reclaim could sneak in and drop the once-dirty page on the floor
--	 * without writing it.
--	 *
--	 * We have the pages locked and the extent range locked, so there's
--	 * no way someone can start IO on any dirty pages in this range.
--	 *
--	 * We'll call btrfs_dirty_pages() later on, and that will flip around
--	 * delalloc bits and dirty the pages as required.
--	 */
--	for (i = 0; i < num_pages; i++) {
--		set_page_extent_mapped(pages[i]);
--		WARN_ON(!PageLocked(pages[i]));
--	}
--
--	return ret;
--}
--
- static int check_can_nocow(struct btrfs_inode *inode, loff_t pos,
- 			   size_t *write_bytes, bool nowait)
- {
-@@ -1642,6 +1565,87 @@ static int calc_nr_pages(loff_t pos, struct iov_iter *iov)
- 	return nr_pages;
- }
- 
-+/*
-+ * The helper to lock both pages and extent bits
-+ *
-+ * Return 0 if the extent is not locked and everything is OK.
-+ * Return 1 if the extent is locked and everything is OK.
-+ * Return <0 for error.
-+ */
-+static int lock_pages_and_extent(struct btrfs_inode *inode, struct page **pages,
-+				 int num_pages, loff_t pos, size_t write_bytes,
-+				 u64 *lockstart, u64 *lockend,
-+				 struct extent_state **cached_state,
-+				 bool force_uptodate)
-+{
-+	struct btrfs_fs_info *fs_info = inode->root->fs_info;
-+	u64 start_pos;
-+	u64 last_pos;
-+	int ret;
-+	int i;
-+
-+again:
-+	/* Lock the pages */
-+	ret = prepare_pages(&inode->vfs_inode, pages, num_pages, pos,
-+			    write_bytes, force_uptodate);
-+	if (ret < 0)
-+		return ret;
-+
-+	start_pos = round_down(pos, fs_info->sectorsize);
-+	last_pos = round_up(pos + write_bytes, fs_info->sectorsize) - 1;
-+
-+	if (start_pos < inode->vfs_inode.i_size) {
-+		struct btrfs_ordered_extent *ordered;
-+
-+		/* Lock the extent range */
-+		lock_extent_bits(&inode->io_tree, start_pos, last_pos,
-+				cached_state);
-+		ordered = btrfs_lookup_ordered_range(inode, start_pos,
-+						     last_pos - start_pos + 1);
-+		if (ordered &&
-+		    ordered->file_offset + ordered->num_bytes > start_pos &&
-+		    ordered->file_offset <= last_pos) {
-+			unlock_extent_cached(&inode->io_tree, start_pos,
-+					last_pos, cached_state);
-+			for (i = 0; i < num_pages; i++) {
-+				unlock_page(pages[i]);
-+				put_page(pages[i]);
-+			}
-+			btrfs_start_ordered_extent(&inode->vfs_inode,
-+					ordered, 1);
-+			btrfs_put_ordered_extent(ordered);
-+			goto again;
-+		}
-+		if (ordered)
-+			btrfs_put_ordered_extent(ordered);
-+
-+		*lockstart = start_pos;
-+		*lockend = last_pos;
-+		ret = 1;
-+	}
-+
-+	/*
-+	 * It's possible the pages are dirty right now, but we don't want
-+	 * to clean them yet because copy_from_user may catch a page fault
-+	 * and we might have to fall back to one page at a time.  If that
-+	 * happens, we'll unlock these pages and we'd have a window where
-+	 * reclaim could sneak in and drop the once-dirty page on the floor
-+	 * without writing it.
-+	 *
-+	 * We have the pages locked and the extent range locked, so there's
-+	 * no way someone can start IO on any dirty pages in this range.
-+	 *
-+	 * We'll call btrfs_dirty_pages() later on, and that will flip around
-+	 * delalloc bits and dirty the pages as required.
-+	 */
-+	for (i = 0; i < num_pages; i++) {
-+		set_page_extent_mapped(pages[i]);
-+		WARN_ON(!PageLocked(pages[i]));
-+	}
-+
-+	return ret;
-+}
-+
- /*
-  * The helper to copy one batch of data from iov to pages.
-  *
-@@ -1730,29 +1734,14 @@ static ssize_t process_one_batch(struct inode *inode, struct page **pages,
- 	release_bytes = reserve_bytes;
- 
- 	/* Lock the pages and extent range */
--again:
--	/*
--	 * This is going to setup the pages array with the number of pages we
--	 * want, so we don't really need to worry about the contents of pages
--	 * from loop to loop.
--	 */
--	ret = prepare_pages(inode, pages, num_pages, pos, write_bytes,
--			    force_uptodate);
--	if (ret) {
--		btrfs_delalloc_release_extents(BTRFS_I(inode), reserve_bytes);
--		goto out;
--	}
--
--	extents_locked = lock_and_cleanup_extent_if_need(BTRFS_I(inode), pages,
--			num_pages, pos, write_bytes, &lockstart,
--			&lockend, &cached_state);
--	if (extents_locked < 0) {
--		if (extents_locked == -EAGAIN)
--			goto again;
-+	ret = lock_pages_and_extent(BTRFS_I(inode), pages, num_pages, pos,
-+			write_bytes, &lockstart, &lockend, &cached_state,
-+			force_uptodate);
-+	if (ret < 0) {
- 		btrfs_delalloc_release_extents(BTRFS_I(inode), reserve_bytes);
--		ret = extents_locked;
- 		goto out;
- 	}
-+	extents_locked = ret;
- 
- 	/* Copy the data from iov to pages */
- 	copied = btrfs_copy_from_user(pos, write_bytes, pages, iov);
--- 
-2.28.0
+[22116.465254] BTRFS critical (device dm-160): corrupt leaf:
+block=3D28653215744 slot=3D22 extent bytenr=3D11525382144 len=3D958464 inva=
+lid
+generation, have 94701344 expect (0, 9898143]
+[22116.465866] BTRFS: error (device dm-160) in
+btrfs_run_delayed_refs:3083: errno=3D-5 IO failure
+[22116.466480] BTRFS info (device dm-160): forced readonly
 
+
+It seems a little friendlier as it doesn't lock the system like the
+earlier message. When the previous "parent transid verify failed"
+happened, it screwed up the system so much that I couldn't even do a
+graceful reboot. (I couldn't even use sudo for example.) Luckily I
+could stop the containers gracefully, but then I had to hard reset.
+
+
+root@vmhost:~# btrfs fi us /
+Overall:
+    Device size:          20.46GiB
+    Device allocated:          20.46GiB
+    Device unallocated:           1.00MiB
+    Device missing:             0.00B
+    Used:              14.46GiB
+    Free (estimated):           3.30GiB    (min: 3.30GiB)
+    Data ratio:                  1.00
+    Metadata ratio:              2.00
+    Global reserve:         512.00MiB    (used: 0.00B)
+
+Data,single: Size:16.95GiB, Used:13.64GiB
+   /dev/mapper/vmhost--vg-vmhost--rootfs      16.95GiB
+
+Metadata,DUP: Size:1.75GiB, Used:417.00MiB
+   /dev/mapper/vmhost--vg-vmhost--rootfs       3.50GiB
+
+System,DUP: Size:8.00MiB, Used:4.00KiB
+   /dev/mapper/vmhost--vg-vmhost--rootfs      16.00MiB
+
+Unallocated:
+   /dev/mapper/vmhost--vg-vmhost--rootfs       1.00MiB
+
+
+And... theoretically I started a scrub, but since the FS is read-only,
+it can't record the status...
+
+
+root@vmhost:~# btrfs scrub start /
+WARNING: failed to open the progress status socket at
+/var/lib/btrfs/scrub.progress.1b23076d-74fc-4091-9c02-fe3f02f02b96:
+Read-only file system. Progress cannot be queried
+WARNING: failed to write the progress status file: Read-only file
+system. Status recording disabled
+scrub started on /, fsid 1b23076d-74fc-4091-9c02-fe3f02f02b96 (pid=3D31845)
+root@vmhost:~# btrfs scrub status /
+scrub status for 1b23076d-74fc-4091-9c02-fe3f02f02b96
+    no stats available
+    total bytes scrubbed: 0.00B with 0 errors
+
+
+So... I don't know how I will I know what it found. :/ Probably I
+should have rebooted first or should have tried a remount,rw (no, that
+doesn't work, because "Remounting read-write after error is not
+allowed"). Now I don't know what to do because stopping all the
+containers for a reboot and then restarting them is an ordeal, I won't
+like if I have to do it often. At the moment I don't even have time
+for that, and I'm having a SMART long test still running on one of the
+drives.
+
+I had 695 days of uptime before the power failure happened, so it
+doesn't seem common, though it might be relevant that up to the day of
+the failure, I was using a 2018 kernel build, because I had that as
+the latest when I last started the system. :D And now I rebooted with
+~2 year newer kernel as I had it installed but never actually booted
+with it before. But it's the same major kernel version as the earlier
+that comes with Ubuntu 18.04 (4.15.0-112-generic).
+
+Can I add two linear LVs to BTRFS raid1, or shall I go with raw
+partitions? Reclaiming space from LVM to create partitions would be
+cumbersome, and I wouldn't like it as I couldn't resize and move the
+FS dynamically like with LVM, so I'd probably pass on that. But the
+former option would be possible.
+
+I'm going ahead with this question, but I'm planning to add two SSDs
+to the system in the following months, and move the root file system
+to the SSD. Is there anything I should watch out for when I'm moving
+and then using the file system, or can I just pvmove and then add the
+"ssd" and probably "discard" mount options?
+
+
+~ MegaBrutal
+
+
+
+Chris Murphy <lists@colorremedies.com> ezt =C3=ADrta (id=C5=91pont: 2020. a=
+ug.
+25., K, 1:41):
+>
+> On Mon, Aug 24, 2020 at 5:01 PM MegaBrutal <megabrutal@gmail.com> wrote:
+> >
+> > Hi all,
+> >
+> > My home server computer with BTRFS root file system suffered a power
+> > supply failure recently which caused a sudden power loss.
+> >
+> > Now the OS (Ubuntu 18.04) boots properly and it starts a bunch of LXC
+> > containers with the applications the server is supposed to host. After
+> > a certain time of running normally, the root filesystem gets remounted
+> > read-only and the following messages appear in dmesg. Fortunately, the
+> > file systems of the containers are not affected (they are mounted from
+> > separate LVs).
+> >
+> > [57038.544637] BTRFS error (device dm-160): parent transid verify
+> > failed on 169222144 wanted 9897860 found 9895362
+>
+> On the surface that looks like 1500 transaction IDs have been dropped.
+> But it's more likely that this location has long since been
+> deallocated and the recent commit should have been written there
+> before the super block, but for some reason (firmware bug?) the
+> current superblock was written before the metadata writes had been
+> committed to stable media.
+>
+> That is, lost writes. It could be write order failure, and then you
+> just got unlucky and had a crash so it turned into a lost write. Had
+> there been no crash, eventually the write would have happened. It
+> being out of order wouldn't matter.
+>
+> It's possible that the drive does this all the time. It's also
+> possible it's 1 in 100 fsync/fua commands.
+>
+>
+> > The usebackuproot mount was successful, but I'm not sure how it's
+> > supposed to work... does it correct the file system after one mount
+> > and then I'm supposed to mount the file system normally?
+>
+> That usebackuproot succeeded does further suggest a write order
+> failure. The super block made it, but the tree root didn't or whatever
+> exactly it's failing on that it expects but isn't there.
+>
+> The way it works it it'll try to use backup roots for mounting, these
+> backup roots are in the super block. It's sorta like a "rollback"
+> which means you are probably missing up to 1 minute's worth of data
+> loss between the time of the crash and the last properly completed
+> commit in which everything made it on stable media.
+>
+> At this point it's probably fixed. But it's possible this would have
+> gone slightly better if the setup were using Btrfs raid1, because in
+> that case there's a chance one drive didn't drop that write, and Btrfs
+> would find what it wants on that drive, automatically.
+>
+> But you should do a `btrfs scrub` to see if there are other issues.
+> And when you get a chance it's ideal to `btrfs check` because scrub
+> only checks the checksums.
+>
+> Disabling the write caches in both drives might reduce the chance of
+> this happening, but without testing it may only end up reducing write
+> performance though probably not by much.
+>
+>
+> >Or should I
+> > always use the file system with usebackuproot from now on?
+>
+> No need. But even if you use it, btrfs will figure out the current
+> root is OK and use it.
+>
+>
+> >(It doesn't
+> > feel right.) Anyway, after one mount with usebackuproot, now I started
+> > the system regularly. But I'm not sure if it solved the problem,
+> > whether usebackuproot did anything, especially that now I rebooted
+> > with regular mount options. Since the problem presents itself after
+> > hours of normal operation, I'm afraid that it might come back anytime.
+> >
+> > What to do if the problem reemerges?
+>
+> If either drive is dropping writes, there's a chance it'll really
+> confuse the file system. And md raid1 scrub check just detects
+> differences, it doesn't know which is correct. And if you do an md
+> raid1 scrub repair then it just picks one as correct and stomps on the
+> other one.
+>
+> What do you get for 'btrfs fi us /' ?
+>
+> Hopefully metadata is at least dup profile.
+>
+> In the short term I'd probably disable write caching on both drives
+> because even if it's slower, it's incrementally safer. And also stop
+> having power failures :D
+>
+> And in the longer term you want to redo this setup to use Btrfs raid1.
+> That way it will explicitly rat out which of the two drives is
+> dropping writes on power failures.
+>
+> --
+> Chris Murphy

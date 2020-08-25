@@ -2,123 +2,97 @@ Return-Path: <SRS0=8sAC=CD=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.3 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2AC28C433DF
-	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Aug 2020 15:04:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C37D9C433E1
+	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Aug 2020 16:51:12 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 106442075F
-	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Aug 2020 15:04:24 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 91B692074D
+	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Aug 2020 16:51:12 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="oawOzAj7"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726664AbgHYPEW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 25 Aug 2020 11:04:22 -0400
-Received: from mx2.suse.de ([195.135.220.15]:53124 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726598AbgHYPEV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 25 Aug 2020 11:04:21 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 2D330AEC2;
-        Tue, 25 Aug 2020 15:04:51 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 21FBADA730; Tue, 25 Aug 2020 17:03:11 +0200 (CEST)
-Date:   Tue, 25 Aug 2020 17:03:11 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org, Luciano Chavez <chavez@us.ibm.com>
-Subject: Re: [PATCH] btrfs: inode: Fix NULL pointer dereference if inode
- doesn't need compression
-Message-ID: <20200825150311.GS2026@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org, Luciano Chavez <chavez@us.ibm.com>
-References: <20200728083926.19518-1-wqu@suse.com>
- <6b8fa62c-0c42-a49b-3961-b247ef8abeb2@suse.com>
- <25e2bcc7-efb8-f9bc-ac00-c8d5f5bbba53@gmx.com>
+        id S1726225AbgHYQvL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 25 Aug 2020 12:51:11 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55594 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726119AbgHYQvK (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 25 Aug 2020 12:51:10 -0400
+Received: from mail-qk1-x742.google.com (mail-qk1-x742.google.com [IPv6:2607:f8b0:4864:20::742])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EBCB9C061574
+        for <linux-btrfs@vger.kernel.org>; Tue, 25 Aug 2020 09:51:08 -0700 (PDT)
+Received: by mail-qk1-x742.google.com with SMTP id i20so11588349qkk.8
+        for <linux-btrfs@vger.kernel.org>; Tue, 25 Aug 2020 09:51:08 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
+        h=from:to:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=Qh1+I5m3S0CUzdArGq/8+Vdc8tajBYMNIKh+mQHIE7s=;
+        b=oawOzAj7eSO33quSGfXCx8Hc5pJyrt0a8wY66QlqrTcGwkqSE2o6SRobsDTC0xSZwU
+         cayc2hvZ1sF8aymH4VcEK+HE4OrIjoD04T0hL+zVTAKEK7qizNMKAVhnhEXjUN7r9v85
+         207wF0ZLOUaMccfxvHeSGP2kEchxu1gOzwBALss3m8XIxKrJt2o8DFiFCArri+Hjsy27
+         Tj4pCPw2lAnCPAyMH6tGcVui5OXWNTn9/hUVk6iuTV4gnPrd8j579Pu/yLFSNH1xq24V
+         fN3fzDQ5k5zE0Tjl5eXEJidsDPuhpOBDxjtg/UWAetiXdcB607wzEOPTaBfd3fhdCqnw
+         C8dg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:from:to:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=Qh1+I5m3S0CUzdArGq/8+Vdc8tajBYMNIKh+mQHIE7s=;
+        b=Qy0yTrtfNo2KKDIfpWO/cJN5FsOUJMUuBjWk7K8gYxG8msjgEtXaJiBACc6M0lBZai
+         raShXgGxBAjm0gpphcyICWSGqTrxkoerRmrVCXzkYpw8JkUZ07HcCUkKOlt4C9Y3/P09
+         YZNeoPnmcKIqWwfcX2SmwQOs1S/GH/ftLZluCn572LGJCcM4WemB1PqH7IxOilfGiEtt
+         Wotq8mbc9oqTEvf9rbKXNTVWCcMK/dcd5sPH3fViHB4ErdMMsTU9Lg/Q8L7gr8NuJIcF
+         9XzNFrM6Rg9TVsEg7+K/U88HIWXo6P8X4AeH0xEQljJSSlZCpFXI1PZQzL0jEk8Qkjlz
+         +upw==
+X-Gm-Message-State: AOAM5327A4Ox5YtXngmQKkgT0bWTIUDr9dvTj3F4rIXvM360Fs23cHQo
+        zqQ7R0O/RGZ8jr/SzGFKhTyRnBsu3jHHX0nR
+X-Google-Smtp-Source: ABdhPJzrfm6H6xB2mjXxuV8SVmykMFmyeNmpRKo7kc6fpQJiT7s0RDlTjZ5vcxiMiFnCsWs5C9rdaA==
+X-Received: by 2002:a37:9245:: with SMTP id u66mr7785386qkd.471.1598374265057;
+        Tue, 25 Aug 2020 09:51:05 -0700 (PDT)
+Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
+        by smtp.gmail.com with ESMTPSA id v202sm7545901qka.5.2020.08.25.09.51.03
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 25 Aug 2020 09:51:04 -0700 (PDT)
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: [PATCH] btrfs-progs: add a warning label for RAID5/6
+Date:   Tue, 25 Aug 2020 12:51:02 -0400
+Message-Id: <bf9594ea55ce40af80548888070427ad97daf78a.1598374255.git.josef@toxicpanda.com>
+X-Mailer: git-send-email 2.24.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <25e2bcc7-efb8-f9bc-ac00-c8d5f5bbba53@gmx.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Aug 03, 2020 at 07:14:22AM +0800, Qu Wenruo wrote:
-> On 2020/8/3 上午3:16, Nikolay Borisov wrote:
-> > On 28.07.20 г. 11:39 ч., Qu Wenruo wrote:
-> >> [BUG]
-> >> There is a bug report of NULL pointer dereference caused in
-> >> compress_file_extent():
-> >>
-> >>   Oops: Kernel access of bad area, sig: 11 [#1]
-> >>   LE PAGE_SIZE=64K MMU=Hash SMP NR_CPUS=2048 NUMA pSeries
-> >>   Workqueue: btrfs-delalloc btrfs_delalloc_helper [btrfs]
-> >>   NIP [c008000006dd4d34] compress_file_range.constprop.41+0x75c/0x8a0 [btrfs]
-> >>   LR [c008000006dd4d1c] compress_file_range.constprop.41+0x744/0x8a0 [btrfs]
-> >>   Call Trace:
-> >>   [c000000c69093b00] [c008000006dd4d1c] compress_file_range.constprop.41+0x744/0x8a0 [btrfs] (unreliable)
-> >>   [c000000c69093bd0] [c008000006dd4ebc] async_cow_start+0x44/0xa0 [btrfs]
-> >>   [c000000c69093c10] [c008000006e14824] normal_work_helper+0xdc/0x598 [btrfs]
-> >>   [c000000c69093c80] [c0000000001608c0] process_one_work+0x2c0/0x5b0
-> >>   [c000000c69093d10] [c000000000160c38] worker_thread+0x88/0x660
-> >>   [c000000c69093db0] [c00000000016b55c] kthread+0x1ac/0x1c0
-> >>   [c000000c69093e20] [c00000000000b660] ret_from_kernel_thread+0x5c/0x7c
-> >>   ---[ end trace f16954aa20d822f6 ]---
-> >>
-> >> [CAUSE]
-> >> For the following execution route of compress_file_range(), it's
-> >> possible to hit NULL pointer dereference:
-> >>
-> >>  compress_file_extent()
-> >>  |- pages = NULL;
-> >>  |- start = async_chunk->start = 0;
-> >>  |- end = async_chunk = 4095;
-> >>  |- nr_pages = 1;
-> >>  |- inode_need_compress() == false; <<< Possible, see later explanation
-> >>  |  Now, we have nr_pages = 1, pages = NULL
-> >>  |- cont:
-> >>  |- 		ret = cow_file_range_inline();
-> >>  |- 		if (ret <= 0) {
-> >>  |-		for (i = 0; i < nr_pages; i++) {
-> >>  |-			WARN_ON(pages[i]->mapping);	<<< Crash
-> >>
-> >> To enter above call execution branch, we need the following race:
-> >>
-> >>     Thread 1 (chattr)     |            Thread 2 (writeback)
-> >> --------------------------+------------------------------
-> >>                           | btrfs_run_delalloc_range
-> >>                           | |- inode_need_compress = true
-> >>                           | |- cow_file_range_async()
-> >> btrfs_ioctl_set_flag()    |
-> >> |- binode_flags |=        |
-> >>    BTRFS_INODE_NOCOMPRESS |
-> >>                           | compress_file_range()
-> >>                           | |- inode_need_compress = false
-> >>                           | |- nr_page = 1 while pages = NULL
-> >>                           | |  Then hit the crash
-> >>
-> >> [FIX]
-> >> This patch will fix it by checking @pages before doing accessing it.
-> >> This patch is only designed as a hot fix and easy to backport.
-> >>
-> >> More elegant fix may make btrfs only check inode_need_compress() once to
-> >> avoid such race, but that would be another story.
-> >
-> > So why not do the elegant fix in the first place rather than adding
-> > cruft like this hotfix which later has to be cleaned up when the
-> > 'proper' fix lands?
-> 
-> For backport purpose.
-> 
-> This is reported from one vendor kernel, not upstream.
-> Thus backport is definitely required.
+We all know there's some dark and scary corners with RAID5/6, but users
+may not know.  Add a warning message in mkfs so anybody trying to use
+this will know things can go very wrong.
 
-Agreed, minimal fixes are desired when possible. For example this patch
-got to from 4.14 up to 5.8, with minimal or no conflicts.
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+---
+ mkfs/main.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/mkfs/main.c b/mkfs/main.c
+index 0a4de617..0db24ad4 100644
+--- a/mkfs/main.c
++++ b/mkfs/main.c
+@@ -1183,6 +1183,8 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
+ 	if ((data_profile | metadata_profile) &
+ 	    (BTRFS_BLOCK_GROUP_RAID5 | BTRFS_BLOCK_GROUP_RAID6)) {
+ 		features |= BTRFS_FEATURE_INCOMPAT_RAID56;
++		warning("RAID5/6 support is still experimental and has known "
++			"issues, do not rely on this for data you care about.\n");
+ 	}
+ 
+ 	if ((data_profile | metadata_profile) &
+-- 
+2.24.1
+

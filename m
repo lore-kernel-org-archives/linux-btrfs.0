@@ -7,70 +7,70 @@ X-Spam-Status: No, score=-10.5 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0DC44C433E1
-	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Aug 2020 14:34:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AE866C433DF
+	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Aug 2020 14:36:16 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id DDD24221E2
-	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Aug 2020 14:34:46 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 77CD2214F1
+	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Aug 2020 14:36:16 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="CTktiYHv"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="yr8bMwtq"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728036AbgHZOeq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 26 Aug 2020 10:34:46 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59324 "EHLO
+        id S1726442AbgHZOgO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 26 Aug 2020 10:36:14 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59472 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727823AbgHZOeb (ORCPT
+        with ESMTP id S1727794AbgHZOf0 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 26 Aug 2020 10:34:31 -0400
-Received: from mail-qk1-x742.google.com (mail-qk1-x742.google.com [IPv6:2607:f8b0:4864:20::742])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5A1CBC061574
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Aug 2020 07:34:30 -0700 (PDT)
-Received: by mail-qk1-x742.google.com with SMTP id x69so2055239qkb.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Aug 2020 07:34:30 -0700 (PDT)
+        Wed, 26 Aug 2020 10:35:26 -0400
+Received: from mail-qv1-xf43.google.com (mail-qv1-xf43.google.com [IPv6:2607:f8b0:4864:20::f43])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9700DC061756
+        for <linux-btrfs@vger.kernel.org>; Wed, 26 Aug 2020 07:35:25 -0700 (PDT)
+Received: by mail-qv1-xf43.google.com with SMTP id x7so790308qvi.5
+        for <linux-btrfs@vger.kernel.org>; Wed, 26 Aug 2020 07:35:25 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=subject:to:references:from:message-id:date:user-agent:mime-version
          :in-reply-to:content-language:content-transfer-encoding;
-        bh=D1S9lOEprpUkhqkg6yS1ZJr7NO7kj9NYFQ7JDHUK5qY=;
-        b=CTktiYHvkvIbgkUFCQMWQis390buta7LO9iBMervGfE8ZCZcnynp+lcl5IJSVxmHjW
-         PeStwybrvIirx6E9dzR9BBViC5wtZJD324ZpU2wID1MZSy2NEMypfG4ERhFoyom7vmSe
-         wurCmlcvuQHe8zczDREowpqQ+pDrykND1wn8xPhTs9Nm2gKzrApGZTgBwz3vYz2HDonT
-         JTnO45HKlYugljdbmr4p62J6LDG7SFPdxEjDaXkUtjwUYV82JOiHiJaAsjlSTdCX8aZ0
-         QD7CzZ32fF5qYiHJvllOWevVZuPcgJUFKFP9GbYH3/c8ArlL3jS3p6GVuiNkNUW3L7f8
-         Dqmw==
+        bh=dUmlD/RPvzzVNXRXOmRKzAwj1iBGewNaJ4utwTv20ME=;
+        b=yr8bMwtqah/WRrcjIP1jJIgwI3Jtt2AmQLpf9H2eqgVUJo6kesX1kvsWV8ku8bVmeL
+         xS8O/4B0DJFX+/U+QEocJwlGVRFCMvB9tH8lvYAFevwD/h+srMI8Tj3QbF9pzYaLMWJh
+         c36F3Z1enHdyeERmI0FgOZGJAMUxCndl4+e9hEFddO4rVYuGx4plk+bTafsEyQr02HWl
+         BHoG1NN4xlWjtuGyuf/FDFgQGuEoR5+/2N+wCUFyKp+89z2pGj4MI1bztL0jXt8ziawX
+         yIpBuCTNjupDREC7YvC2ymWH+lxhQ9twG6Fky01Ryt302sUfD8Hm95WpXlgvD5AjmBrl
+         BL6w==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:subject:to:references:from:message-id:date
          :user-agent:mime-version:in-reply-to:content-language
          :content-transfer-encoding;
-        bh=D1S9lOEprpUkhqkg6yS1ZJr7NO7kj9NYFQ7JDHUK5qY=;
-        b=SGJRSfMJ3VASMHoikoRU2vP4p7Z5C+T6NS1y/43RfrRkX4YGUumfoG7Dlg1QcEDOp1
-         Qtxreyv6jaQ7D5PamppdG1m5dTF+cDTYM9/QSy+BAnX7ek4Z+S5Q6+aijOqWDesA/LTb
-         dwtuJW9T6xhjxuS3Ug4LQQ3oQR3yi/OpzwwK92mh//er3AywSeHtE4u1TdOO/WKHpIci
-         XU+ywLrZHOiwv4m4sapMniAQTkKC0qZHMK3JVsrvBaXhv3VV8BXbKhp/mzHQQ+4e/hbU
-         sxU7S8pTNk3HXkRYZFGrlDl2lmY3NtGOPIJ1RZnunf852RUrG1rWZjDXw+Cf/V1rb24P
-         BGEA==
-X-Gm-Message-State: AOAM5326k5Ajub/Jg/CGC8moQ6WbUBF2oVqBGsYjgDzpO++lMVhYjDoZ
-        aWd+bBTe0EkCUSpf4r71NcgJM4w9At/8Dsjk
-X-Google-Smtp-Source: ABdhPJyjAq2MqNCk2CYe9CsQcIxxDXBFsvzR7MmUINoHP6AvU72wurdQXo6nP+/BsfDBSocSDHhp3w==
-X-Received: by 2002:a05:620a:22eb:: with SMTP id p11mr13911705qki.413.1598452469234;
-        Wed, 26 Aug 2020 07:34:29 -0700 (PDT)
+        bh=dUmlD/RPvzzVNXRXOmRKzAwj1iBGewNaJ4utwTv20ME=;
+        b=T/xTpBhCCSqdtFLD13dkdVaOzY89xOHu1Rnal+7P5qKcZc/lzAmH4AVBpRsqMCKkA0
+         RyTCnaHVZ8YTUYsj5WSlNMQCHZnHK4tknnraUOdBo2kJv0Kz0PbHrEhIBpFZxcJiJSuO
+         Jws+ukbK8nbC0m8jh30BLQNcN/TLCU0AQ8zpugP3noUW9yBDPpVwEeBTQOv3NrO5YWdv
+         t6QlRYdwQaO/YIVPZvXYgaY8PVOPwoZOhUUtTxws4yBwPnB9Pxotjia4h+yWVlzAB+iI
+         lc6xM2nQMWQA0D57p7Pl29M8bptC01ybxzudYnxYL7LSGfw+PfKuEd7Mi72n3uYUQblF
+         6PEA==
+X-Gm-Message-State: AOAM5320A+2fEEjVZwY231zHOsoNJ+s9+Yhyt5r4f+BvyJyTXMm7HvUk
+        AhHo4tvNzK2mqQdm9mUHh9bMg+t8KoaJlpBO
+X-Google-Smtp-Source: ABdhPJxLRKlYDjBhSVJkN5BkxGu6stqExVf95W3+Nn4Cmv2InhN/ryOTQmL7scDQ8ifnmNt8Tvwu+A==
+X-Received: by 2002:a0c:fa85:: with SMTP id o5mr14333439qvn.91.1598452524557;
+        Wed, 26 Aug 2020 07:35:24 -0700 (PDT)
 Received: from ?IPv6:2620:10d:c0a8:11d9::10f3? ([2620:10d:c091:480::1:efc3])
-        by smtp.gmail.com with ESMTPSA id v2sm2108960qte.25.2020.08.26.07.34.28
+        by smtp.gmail.com with ESMTPSA id v28sm2297157qtk.28.2020.08.26.07.35.23
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 26 Aug 2020 07:34:28 -0700 (PDT)
-Subject: Re: [PATCH 1/3] btrfs-progs: check/lowmem: add inode transid detect
- and repair support
+        Wed, 26 Aug 2020 07:35:24 -0700 (PDT)
+Subject: Re: [PATCH 3/3] btrfs-progs: tests/fsck: add test image for inode
+ transid repair
 To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
 References: <20200826005233.90063-1-wqu@suse.com>
- <20200826005233.90063-2-wqu@suse.com>
+ <20200826005233.90063-4-wqu@suse.com>
 From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <2df29c40-4b52-4230-7785-dd8c4e5ca6be@toxicpanda.com>
-Date:   Wed, 26 Aug 2020 10:34:27 -0400
+Message-ID: <37552722-60c1-1a2a-ab24-f9ff257a2693@toxicpanda.com>
+Date:   Wed, 26 Aug 2020 10:35:23 -0400
 User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:68.0)
  Gecko/20100101 Thunderbird/68.11.0
 MIME-Version: 1.0
-In-Reply-To: <20200826005233.90063-2-wqu@suse.com>
+In-Reply-To: <20200826005233.90063-4-wqu@suse.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
 Content-Transfer-Encoding: 7bit
@@ -80,15 +80,11 @@ List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 On 8/25/20 8:52 PM, Qu Wenruo wrote:
-> There are quite some reports on kernel rejecting invalid inode
-> generation, but it turns out to be that, kernel is just rejecting inode
-> transid. It's a bug in kernel error message.
+> The image would contain an inode with invalid transid:
 > 
-> To solve the problem and make the fs mountable again, add the detect and
-> repair support for lowmem mode.
-> 
-> The implementation is pretty much the same, just re-use the existing
-> inode generation detect and repair code.
+>          item 4 key (257 INODE_ITEM 0) itemoff 15881 itemsize 160
+>                  generation 6 transid 134217734 size 131072 nbytes 131072
+>                  block group 0 mode 100600 links 1 uid 0 gid 0 rdev 0
 > 
 > Signed-off-by: Qu Wenruo <wqu@suse.com>
 

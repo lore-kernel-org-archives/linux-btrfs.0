@@ -7,30 +7,30 @@ X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EE58AC433DF
-	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Aug 2020 00:47:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9EFAEC433E1
+	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Aug 2020 01:03:46 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id CCDB420782
-	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Aug 2020 00:47:45 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7B3F52075E
+	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Aug 2020 01:03:46 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726784AbgHZArp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 25 Aug 2020 20:47:45 -0400
-Received: from mx2.suse.de ([195.135.220.15]:45258 "EHLO mx2.suse.de"
+        id S1726802AbgHZBDo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 25 Aug 2020 21:03:44 -0400
+Received: from mx2.suse.de ([195.135.220.15]:47792 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726570AbgHZArn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 25 Aug 2020 20:47:43 -0400
+        id S1726777AbgHZBDn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 25 Aug 2020 21:03:43 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 29BCCAFFD
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Aug 2020 00:48:13 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id ED204B16E
+        for <linux-btrfs@vger.kernel.org>; Wed, 26 Aug 2020 00:53:17 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] btrfs-progs: remove the unused variable in check_chunks_and_extents_lowmem()
-Date:   Wed, 26 Aug 2020 08:47:34 +0800
-Message-Id: <20200826004734.89905-3-wqu@suse.com>
+Subject: [PATCH 3/3] btrfs-progs: tests/fsck: add test image for inode transid repair
+Date:   Wed, 26 Aug 2020 08:52:33 +0800
+Message-Id: <20200826005233.90063-4-wqu@suse.com>
 X-Mailer: git-send-email 2.28.0
-In-Reply-To: <20200826004734.89905-1-wqu@suse.com>
-References: <20200826004734.89905-1-wqu@suse.com>
+In-Reply-To: <20200826005233.90063-1-wqu@suse.com>
+References: <20200826005233.90063-1-wqu@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -38,63 +38,64 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The variable @root is only set but not utilized, while we only utilize
-@root1.
+The image would contain an inode with invalid transid:
 
-Replace @root1 with @root, then remove the @root1.
+        item 4 key (257 INODE_ITEM 0) itemoff 15881 itemsize 160
+                generation 6 transid 134217734 size 131072 nbytes 131072
+                block group 0 mode 100600 links 1 uid 0 gid 0 rdev 0
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- check/mode-lowmem.c | 15 ++++++---------
- 1 file changed, 6 insertions(+), 9 deletions(-)
+ .../bad_inode_transid.img.xz                     | Bin 0 -> 1888 bytes
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+ create mode 100644 tests/fsck-tests/043-bad-inode-generation/bad_inode_transid.img.xz
 
-diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
-index 3ce119fa0f61..837bacf920ac 100644
---- a/check/mode-lowmem.c
-+++ b/check/mode-lowmem.c
-@@ -5399,20 +5399,17 @@ int check_chunks_and_extents_lowmem(void)
- 	struct btrfs_path path;
- 	struct btrfs_key old_key;
- 	struct btrfs_key key;
--	struct btrfs_root *root1;
- 	struct btrfs_root *root;
- 	struct btrfs_root *cur_root;
- 	int err = 0;
- 	int ret;
- 
--	root = gfs_info->fs_root;
--
--	root1 = gfs_info->chunk_root;
--	ret = check_btrfs_root(root1, 1);
-+	root = gfs_info->chunk_root;
-+	ret = check_btrfs_root(root, 1);
- 	err |= ret;
- 
--	root1 = gfs_info->tree_root;
--	ret = check_btrfs_root(root1, 1);
-+	root = gfs_info->tree_root;
-+	ret = check_btrfs_root(root, 1);
- 	err |= ret;
- 
- 	btrfs_init_path(&path);
-@@ -5420,7 +5417,7 @@ int check_chunks_and_extents_lowmem(void)
- 	key.offset = 0;
- 	key.type = BTRFS_ROOT_ITEM_KEY;
- 
--	ret = btrfs_search_slot(NULL, root1, &key, &path, 0, 0);
-+	ret = btrfs_search_slot(NULL, root, &key, &path, 0, 0);
- 	if (ret) {
- 		error("cannot find extent tree in tree_root");
- 		goto out;
-@@ -5455,7 +5452,7 @@ int check_chunks_and_extents_lowmem(void)
- 		if (ret)
- 			goto out;
- next:
--		ret = btrfs_next_item(root1, &path);
-+		ret = btrfs_next_item(root, &path);
- 		if (ret)
- 			goto out;
- 	}
+diff --git a/tests/fsck-tests/043-bad-inode-generation/bad_inode_transid.img.xz b/tests/fsck-tests/043-bad-inode-generation/bad_inode_transid.img.xz
+new file mode 100644
+index 0000000000000000000000000000000000000000..91ee6947fd71b52d5426b7adeb20cb1f6fd2866b
+GIT binary patch
+literal 1888
+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
+a0lE%=7ytlV9#}ZB#Ao{g000001X)_Aj-k&0
+
+literal 0
+HcmV?d00001
+
 -- 
 2.28.0
 

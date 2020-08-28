@@ -2,124 +2,376 @@ Return-Path: <SRS0=gv4a=CG=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.1 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,NICE_REPLY_A,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.9 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FORGED_MUA_MOZILLA,HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CABDCC433E2
-	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Aug 2020 14:27:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EB34EC433E6
+	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Aug 2020 15:08:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id A8A1820848
-	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Aug 2020 14:27:44 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 44F97208C9
+	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Aug 2020 15:08:57 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=urbackup.org header.i=@urbackup.org header.b="c4BG7Dwo";
+	dkim=pass (1024-bit key) header.d=amazonses.com header.i=@amazonses.com header.b="lhtMldoR"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726887AbgH1O1n (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 28 Aug 2020 10:27:43 -0400
-Received: from mx2.suse.de ([195.135.220.15]:48006 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725985AbgH1O1i (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 28 Aug 2020 10:27:38 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id DE3D1AE02;
-        Fri, 28 Aug 2020 14:28:09 +0000 (UTC)
-Subject: Re: [PATCH] btrfs: hold the uuid_mutex for all close_fs_devices calls
-To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
-        kernel-team@fb.com
-References: <e45e00c3d31286c86b76693262266e702ed7f1a3.1598624685.git.josef@toxicpanda.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <a3fa33fc-c83c-6fe7-ccc7-6708385dafe1@suse.com>
-Date:   Fri, 28 Aug 2020 17:27:36 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.10.0
+        id S1726571AbgH1PIz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 28 Aug 2020 11:08:55 -0400
+Received: from a4-2.smtp-out.eu-west-1.amazonses.com ([54.240.4.2]:59278 "EHLO
+        a4-2.smtp-out.eu-west-1.amazonses.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1726197AbgH1PIq (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 28 Aug 2020 11:08:46 -0400
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/simple;
+        s=pqvuhxtqt36lwjpmqkszlz7wxaih4qwj; d=urbackup.org; t=1598627321;
+        h=Subject:To:References:From:Message-ID:Date:MIME-Version:In-Reply-To:Content-Type:Content-Transfer-Encoding;
+        bh=EfmPeXTkkjcbDld+k253uH14tF9IqqHQEu3GYZWgtco=;
+        b=c4BG7DwoKI7UHvBun85I4CEkdW6YeKxHFWDk4aZ+bAB9XiEbfsUTbvM4w2lc5n9K
+        QnWAjesAkt2t7ck9ISnbDrzl1lMXy4q2OvZuUuwohyCAGoHYsC06XOMkuPgluLEt6cK
+        rcmqPe6K97P6hXCQz+psjx+0r4QQLt8syJZ/2TU0=
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/simple;
+        s=shh3fegwg5fppqsuzphvschd53n6ihuv; d=amazonses.com; t=1598627321;
+        h=Subject:To:References:From:Message-ID:Date:MIME-Version:In-Reply-To:Content-Type:Content-Transfer-Encoding:Feedback-ID;
+        bh=EfmPeXTkkjcbDld+k253uH14tF9IqqHQEu3GYZWgtco=;
+        b=lhtMldoRGcb80WdXZsFXW0BF4R5gMpAtQaKyMRS3OvyDwE3BAs/hUUaC8QXtKBHR
+        0eWyefQOqIoDSF0X634vhojfzOeKnj5XobXbvZOYtB4PhmcMfMTWXOpeRSsKRFjUF6m
+        ejoyi5bLemZ+wsf30Pl76ICvkRZt/JW2xpJMhnd4=
+Subject: Re: btrfs filesystem errors
+To:     =?UTF-8?Q?Dav=c3=ad=c3=b0_Steinn_Geirsson?= <david@isnic.is>,
+        linux-btrfs@vger.kernel.org
+References: <20200821095138.GC1481@disp4150>
+ <97302309-e8d8-c74c-4b15-ac281d607d14@render-wahnsinn.de>
+ <20200821113937.GD1481@disp4150>
+From:   Martin Raiber <martin@urbackup.org>
+Message-ID: <01020174359d15e7-3b50f0e0-01cd-43f9-ac35-b0c6c3d183e3-000000@eu-west-1.amazonses.com>
+Date:   Fri, 28 Aug 2020 15:08:41 +0000
+User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:68.0) Gecko/20100101
+ Thunderbird/68.11.0
 MIME-Version: 1.0
-In-Reply-To: <e45e00c3d31286c86b76693262266e702ed7f1a3.1598624685.git.josef@toxicpanda.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
+In-Reply-To: <20200821113937.GD1481@disp4150>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Content-Transfer-Encoding: 8bit
+X-SES-Outgoing: 2020.08.28-54.240.4.2
+Feedback-ID: 1.eu-west-1.zKMZH6MF2g3oUhhjaE2f3oQ8IBjABPbvixQzV8APwT0=:AmazonSES
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On 21.08.2020 13:39 Dav�� Steinn Geirsson wrote:
+> On Fri, Aug 21, 2020 at 12:06:26PM +0200, Robert Krig wrote:
+>> On 21.08.20 11:51, Dav�� Steinn Geirsson wrote:
+>>> Hi all,
+>>>
+>>> One of our btrfs filesystems is giving us problems. This filesystem is used to
+>>> store backups, so we will most likely recreate the filesystem and take new
+>>> backups, but we are very interested in understanding what went wrong. For
+>>> now I've left the filesystem as-is.
+>>>
+>>> The machine is running fully upgraded debian buster
+>>> root@ht-backup01:/home/ansible# uname -a
+>>> Linux ht-backup01.isnic.is 4.19.0-9-amd64 #1 SMP Debian 4.19.118-2+deb10u1 (2020-06-07) x86_64 GNU/Linux
+>>> root@ht-backup01:/home/ansible# btrfs --version
+>>> btrfs-progs v4.20.1
+>>>
+>>> The layout of the filesystem is RAID10 with 6 component devices:
+>>> root@ht-backup01:/var/log/apt# btrfs  fi df /var/urbackup
+>>> Data, RAID10: total=8.37TiB, used=8.24TiB
+>>> System, RAID10: total=7.88MiB, used=848.00KiB
+>>> Metadata, RAID10: total=212.34GiB, used=210.97GiB
+>>> GlobalReserve, single: total=512.00MiB, used=0.00B
+>>> root@ht-backup01:/var/log/apt# btrfs  filesystem show /var/urbackup
+>>> Label: none  uuid: be13f041-ba50-4d37-860b-7acfcfe96248
+>>>           Total devices 6 FS bytes used 8.45TiB
+>>>           devid    1 size 9.10TiB used 2.86TiB path /dev/sda
+>>>           devid    2 size 9.10TiB used 2.86TiB path /dev/sdb
+>>>           devid    3 size 9.10TiB used 2.86TiB path /dev/sdc
+>>>           devid    4 size 9.10TiB used 2.86TiB path /dev/sdd
+>>>           devid    5 size 9.10TiB used 2.86TiB path /dev/sde
+>>>           devid    6 size 9.10TiB used 2.86TiB path /dev/sdf
+>>>
+>>>
+>>> Here's an overview of events and actions taken so far.
+>>>
+>>> A couple of days ago while running a heavy read workload, a process crashed
+>>> due to an IO error. Testing reading the same subvolume or any file under
+>>> it resulted in IO errors:
+>>> root@ht-backup01:/var/log/apt# ls /var/urbackup/consus.isnic.is/200712-1900
+>>> ls: cannot access '/var/urbackup/consus.isnic.is/200712-1900': Input/output error
+>>>
+>>> A look at the kernel log revealed a bunch of checksum errors. The earliest
+>>> ones look like this, there are more but they look the same with different
+>>> inode numbers and checksums. I can send the full kernel log (quite large)
+>>> if needed).
+>>> [2146111.297911] BTRFS info (device sda): no csum found for inode 124415604 start 12288
+>>> [2146111.297913] BTRFS error (device sda): parent transid verify failed on 16717660405760 wanted 168871 found 168866
+>>> [2146111.298084] BTRFS error (device sda): parent transid verify failed on 16717660405760 wanted 168871 found 168866
+>>> [2146111.298255] BTRFS info (device sda): no csum found for inode 124415604 start 16384
+>>> [2146111.298258] BTRFS info (device sda): no csum found for inode 124415604 start 20480
+>>> [2146111.298261] BTRFS info (device sda): no csum found for inode 124415604 start 24576
+>>> [2146111.298278] BTRFS info (device sda): no csum found for inode 124415604 start 28672
+>>> [2146111.298280] BTRFS info (device sda): no csum found for inode 124415604 start 32768
+>>> [2146111.298283] BTRFS info (device sda): no csum found for inode 124415604 start 36864
+>>> [2146111.309761] btrfs_print_data_csum_error: 61 callbacks suppressed
+>>> [2146111.309768] BTRFS warning (device sda): csum failed root 5 ino 124415604 off 0 csum 0x6576cb90 expected csum 0x00000000 mirror 2
+>>> [2146111.309822] BTRFS warning (device sda): csum failed root 5 ino 124415604 off 4096 csum 0x74736b53 expected csum 0x00000000 mirror 2
+>>> [2146111.309865] BTRFS warning (device sda): csum failed root 5 ino 124415604 off 8192 csum 0xb98e6445 expected csum 0x00000000 mirror 2
+>>> [2146111.309893] BTRFS warning (device sda): csum failed root 5 ino 124415604 off 12288 csum 0xe04aa9a0 expected csum 0x00000000 mirror 2
+>>> [2146111.309918] BTRFS warning (device sda): csum failed root 5 ino 124415604 off 16384 csum 0xc996dda7 expected csum 0x00000000 mirror 2
+>>> [2146111.309943] BTRFS warning (device sda): csum failed root 5 ino 124415604 off 20480 csum 0xe414f94c expected csum 0x00000000 mirror 2
+>>> [2146111.309969] BTRFS warning (device sda): csum failed root 5 ino 124415604 off 24576 csum 0xb80afd23 expected csum 0x00000000 mirror 2
+>>> [2146111.310966] BTRFS warning (device sda): csum failed root 5 ino 124415604 off 0 csum 0x6576cb90 expected csum 0x00000000 mirror 2
+>>> [2146111.310976] BTRFS warning (device sda): csum failed root 5 ino 124415604 off 4096 csum 0x74736b53 expected csum 0x00000000 mirror 2
+>>> [2146111.311022] BTRFS warning (device sda): csum failed root 5 ino 124415604 off 8192 csum 0xb98e6445 expected csum 0x00000000 mirror 2
+>>> [2146162.968521] verify_parent_transid: 178 callbacks suppressed
+>>> [2146162.968526] BTRFS error (device sda): parent transid verify failed on 16717271908352 wanted 168871 found 168868
+>>> [2146162.982356] BTRFS error (device sda): parent transid verify failed on 16717271908352 wanted 168871 found 168868
+>>> [2146162.983157] BTRFS error (device sda): parent transid verify failed on 16717271908352 wanted 168871 found 168868
+>>> [2146162.984230] BTRFS error (device sda): parent transid verify failed on 16717271908352 wanted 168871 found 168868
+>>> [2146163.285382] BTRFS error (device sda): parent transid verify failed on 16717271908352 wanted 168871 found 168868
+>>> [2146163.285945] BTRFS error (device sda): parent transid verify failed on 16717271908352 wanted 168871 found 168868
+>>>
+>>> First action was to try a scrub, but the scrub was immediately marked
+>>> canceled without operator action:
+>>> root@ht-backup01:/var/log/apt# btrfs scrub start /var/urbackup/
+>>> scrub started on /var/urbackup/, fsid be13f041-ba50-4d37-860b-7acfcfe96248 (pid=2475)
+>>> root@ht-backup01:/var/log/apt# btrfs scrub status /var/urbackup/
+>>> scrub status for be13f041-ba50-4d37-860b-7acfcfe96248
+>>>           scrub started at Tue Aug 18 11:32:15 2020 and was aborted after 00:00:00
+>>>           total bytes scrubbed: 0.00B with 0 errors
+>>>
+>>> Despite the checksum errors in kernel log, device stats show no IO errors:
+>>> root@ht-backup01:/home/ansible# btrfs device stats /var/urbackup/
+>>> [/dev/sda].write_io_errs    0
+>>> [/dev/sda].read_io_errs     0
+>>> [/dev/sda].flush_io_errs    0
+>>> [/dev/sda].corruption_errs  0
+>>> [/dev/sda].generation_errs  0
+>>> [/dev/sdb].write_io_errs    0
+>>> [/dev/sdb].read_io_errs     0
+>>> [/dev/sdb].flush_io_errs    0
+>>> [/dev/sdb].corruption_errs  0
+>>> [/dev/sdb].generation_errs  0
+>>> [/dev/sdc].write_io_errs    0
+>>> [/dev/sdc].read_io_errs     0
+>>> [/dev/sdc].flush_io_errs    0
+>>> [/dev/sdc].corruption_errs  0
+>>> [/dev/sdc].generation_errs  0
+>>> [/dev/sdd].write_io_errs    0
+>>> [/dev/sdd].read_io_errs     0
+>>> [/dev/sdd].flush_io_errs    0
+>>> [/dev/sdd].corruption_errs  0
+>>> [/dev/sdd].generation_errs  0
+>>> [/dev/sde].write_io_errs    0
+>>> [/dev/sde].read_io_errs     0
+>>> [/dev/sde].flush_io_errs    0
+>>> [/dev/sde].corruption_errs  0
+>>> [/dev/sde].generation_errs  0
+>>> [/dev/sdf].write_io_errs    0
+>>> [/dev/sdf].read_io_errs     0
+>>> [/dev/sdf].flush_io_errs    0
+>>> [/dev/sdf].corruption_errs  0
+>>> [/dev/sdf].generation_errs  0
+>>>
+>>> SMART data also looks fine, and there are no IO errors from the underlying
+>>> block devices in the kernel log.
+>>>
+>>> Following advice from the #btrfs IRC on freenode, I unmounted the filesystem
+>>> and ran "btrfs check --readonly /dev/sda" the stdout/stderr from the piped
+>>> file looks like:
+>>> [1/7] checking root items
+>>> [2/7] checking extents
+>>> [3/7] checking free space cache
+>>> block group 12376079204352 has wrong amount of free space, free space cache has 5619712 block group has 5718016
+>>> failed to load free space cache for block group 12376079204352
+>>> block group 12377186500608 has wrong amount of free space, free space cache has 5767168 block group has 5832704
+>>> failed to load free space cache for block group 12377186500608
+>>> [4/7] checking fs roots
+>>> [5/7] checking only csums items (without verifying data)
+>>> [6/7] checking root refs
+>>> [7/7] checking quota groups skipped (not enabled on this FS)
+>>> Opening filesystem to check...
+>>> Checking filesystem on /dev/sda
+>>> UUID: be13f041-ba50-4d37-860b-7acfcfe96248
+>>> found 9280877776896 bytes used, no error found
+>>> total csum bytes: 8846572604
+>>> total tree bytes: 226491777024
+>>> total fs tree bytes: 212365148160
+>>> total extent tree bytes: 4458266624
+>>> btree space waste bytes: 41516609810
+>>> file data blocks allocated: 1279139722285056
+>>>    referenced 38321097904128
+>>>
+>>> I remounted the filesystem, at which point the following lines were added to
+>>> kernel log:
+>>> [2238865.763060] BTRFS info (device sda): disk space caching is enabled
+>>> [2238865.763064] BTRFS info (device sda): has skinny extents
+>>> [2238889.870492] BTRFS info (device sda): start tree-log replay
+>>> [2238901.447456] BTRFS warning (device sda): block group 12376079204352 has wrong amount of free space
+>>> [2238901.447460] BTRFS warning (device sda): failed to load free space cache for block group 12376079204352, rebuilding it now
+>>> [2238901.717617] BTRFS warning (device sda): block group 12377186500608 has wrong amount of free space
+>>> [2238901.717621] BTRFS warning (device sda): failed to load free space cache for block group 12377186500608, rebuilding it now
+>>>
+>>> At this point, the subvolume and files that were previously unreadable seemed
+>>> to be working. I tried reading a couple of them and succeeded.
+>>>
+>>> At this point I ran a scrub on the filesystem, which ran normally and
+>>> finished with no errors:
+>>> root@ht-backup01:/home/ansible# btrfs scrub status /var/urbackup/
+>>> scrub status for be13f041-ba50-4d37-860b-7acfcfe96248
+>>> 	scrub started at Wed Aug 19 13:13:16 2020 and finished after 04:16:41
+>>> 	total bytes scrubbed: 16.89TiB with 0 errors
+>>>
+>>> I started our backup server again, but overnight our backup jobs failed with
+>>> "no space available" errors. In the kernel log the following messages had
+>>> appeared:
+>>> [2350368.220399] ------------[ cut here ]------------
+>>> [2350368.220401] BTRFS: Transaction aborted (error -28)
+>>> [2350368.220462] WARNING: CPU: 4 PID: 14252 at fs/btrfs/extent-tree.c:6805 __btrfs_free_extent.isra.75+0x26c/0x8c0 [btrfs]
+>>> [2350368.220463] Modules linked in: fuse ufs qnx4 hfsplus hfs minix vfat msdos fat jfs xfs ipmi_ssif nft_counter intel_rapl skx_edac nfit libnvdimm x86_pkg_temp_thermal intel_powerclamp coretemp kvm_intel kvm ast irqbypass crct10dif_pclmul crc32_pclmul ttm ghash_clmulni_intel intel_cstate drm_kms_helper intel_uncore drm intel_rapl_perf pcspkr iTCO_wdt mei_me ipmi_si i2c_algo_bit iTCO_vendor_support pcc_cpufreq joydev sg mei ioatdma wmi ipmi_devintf ipmi_msghandler evdev acpi_power_meter acpi_pad nft_ct nf_conntrack button nf_defrag_ipv6 nf_defrag_ipv4 nf_tables_set nf_tables nfnetlink ip_tables x_tables autofs4 ext4 crc16 mbcache jbd2 fscrypto ecb btrfs zstd_decompress zstd_compress xxhash dm_mod raid10 raid456 async_raid6_recov async_memcpy async_pq async_xor async_tx xor raid6_pq libcrc32c crc32c_generic
+>>> [2350368.220489]  raid1 raid0 multipath linear md_mod hid_generic usbhid hid sd_mod crc32c_intel ahci xhci_pci libahci xhci_hcd libata ixgbe i40e aesni_intel nvme usbcore aes_x86_64 scsi_mod crypto_simd cryptd glue_helper nvme_core dca mdio lpc_ich i2c_i801 mfd_core usb_common
+>>> [2350368.220504] CPU: 4 PID: 14252 Comm: kworker/4:2 Tainted: G        W         4.19.0-9-amd64 #1 Debian 4.19.118-2+deb10u1
+>>> [2350368.220505] Hardware name: Supermicro SYS-5029P-WTR/X11SPW-TF, BIOS 2.1a 09/17/2018
+>>> [2350368.220528] Workqueue: events do_async_commit [btrfs]
+>>> [2350368.220550] RIP: 0010:__btrfs_free_extent.isra.75+0x26c/0x8c0 [btrfs]
+>>> [2350368.220551] Code: 24 48 8b 40 50 f0 48 0f ba a8 00 17 00 00 02 72 1b 41 83 fd fb 0f 84 6b 25 09 00 44 89 ee 48 c7 c7 e0 81 7c c0 e8 4e 1d b6 ec <0f> 0b 48 8b 3c 24 44 89 e9 ba 95 1a 00 00 48 c7 c6 a0 da 7b c0 e8
+>>> [2350368.220553] RSP: 0018:ffffba5647217b18 EFLAGS: 00010286
+>>> [2350368.220554] RAX: 0000000000000000 RBX: 0000000000000000 RCX: 0000000000000006
+>>> [2350368.220555] RDX: 0000000000000007 RSI: 0000000000000096 RDI: ffff96dc10d166b0
+>>> [2350368.220556] RBP: 00000a4ed7910000 R08: 000000000006f2ba R09: 0000000000000004
+>>> [2350368.220557] R10: 0000000000000000 R11: 0000000000000001 R12: ffff96d8e7b50540
+>>> [2350368.220558] R13: 00000000ffffffe4 R14: 0000000000000000 R15: 0000000000000002
+>>> [2350368.220559] FS:  0000000000000000(0000) GS:ffff96dc10d00000(0000) knlGS:0000000000000000
+>>> [2350368.220560] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+>>> [2350368.220561] CR2: 00007fb20412a9c0 CR3: 0000000353a0a002 CR4: 00000000007606e0
+>>> [2350368.220562] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+>>> [2350368.220563] DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+>>> [2350368.220564] PKRU: 55555554
+>>> [2350368.220564] Call Trace:
+>>> [2350368.220594]  ? btrfs_merge_delayed_refs+0x21e/0x310 [btrfs]
+>>> [2350368.220613]  __btrfs_run_delayed_refs+0x70a/0xfe0 [btrfs]
+>>> [2350368.220633]  btrfs_run_delayed_refs+0x6a/0x180 [btrfs]
+>>> [2350368.220652]  btrfs_write_dirty_block_groups+0x165/0x3a0 [btrfs]
+>>> [2350368.220670]  ? btrfs_run_delayed_refs+0xac/0x180 [btrfs]
+>>> [2350368.220691]  commit_cowonly_roots+0x242/0x2f0 [btrfs]
+>>> [2350368.220712]  btrfs_commit_transaction+0x314/0x890 [btrfs]
+>>> [2350368.220716]  ? __switch_to_asm+0x41/0x70
+>>> [2350368.220718]  ? __switch_to+0x8c/0x440
+>>> [2350368.220720]  ? __switch_to_asm+0x35/0x70
+>>> [2350368.220741]  do_async_commit+0x22/0x30 [btrfs]
+>>> [2350368.220745]  process_one_work+0x1a7/0x3a0
+>>> [2350368.220748]  worker_thread+0x30/0x390
+>>> [2350368.220751]  ? create_worker+0x1a0/0x1a0
+>>> [2350368.220753]  kthread+0x112/0x130
+>>> [2350368.220755]  ? kthread_bind+0x30/0x30
+>>> [2350368.220757]  ret_from_fork+0x35/0x40
+>>> [2350368.220759] ---[ end trace 29a36f403bc46833 ]---
+>>> [2350368.220761] BTRFS: error (device sda) in __btrfs_free_extent:6805: errno=-28 No space left
+>>> [2350368.220800] BTRFS info (device sda): forced readonly
+>>> [2350368.220802] BTRFS: error (device sda) in btrfs_run_delayed_refs:2935: errno=-28 No space left
+>>> [2350368.238585] BTRFS warning (device sda): Skipping commit of aborted transaction.
+>>> [2350368.238587] BTRFS: error (device sda) in cleanup_transaction:1860: errno=-28 No space left
+>>>
+>>> df reports plenty of free space:
+>>> root@ht-backup01:/home/ansible# df -h /var/urbackup/
+>>> Filesystem      Size  Used Avail Use% Mounted on
+>>> /dev/sda         28T  8.6T   13T  41% /var/urbackup
+>>>
+>>>
+>>> At this point, I believe this filesystem can not be trusted, even if some
+>>> tooling managed to repair it to a seemingly working state. However, I am
+>>> interested in knowing what happened so we can prevent the same situation
+>>> in the future.
+>>>
+>>> The filesystem was created on this machine only a couple of months ago.
+>>> The machine has not been reinstalled during that period (it's been on
+>>> debian buster the entire time). This is a physical supermicro server hosted
+>>> in our primary datacenter with redundant power. To my knowledge it has
+>>> never had an unclean shutdown.
+>>>
+>>> Any ideas?
+>>>
+>>> -Dav��
+>>
+>> Can you post the current output of
+>>
+>>
+>> btrfs fi df /var/urbackup
+> Certainly.
+>
+> root@ht-backup01:/home/ansible# btrfs fi df /var/urbackup/
+> Data, RAID10: total=8.48TiB, used=8.34TiB
+> System, RAID10: total=7.88MiB, used=864.00KiB
+> Metadata, RAID10: total=213.38GiB, used=212.12GiB
+> GlobalReserve, single: total=512.00MiB, used=0.00B
+>
+>
+>>
+>> and
+>>
+>> btrfs fi usage /var/urbackup
+> root@ht-backup01:/home/ansible# btrfs fi usage /var/urbackup/
+> Overall:
+>      Device size:		  54.57TiB
+>      Device allocated:		  17.37TiB
+>      Device unallocated:		  37.20TiB
+>      Device missing:		     0.00B
+>      Used:			  17.09TiB
+>      Free (estimated):		  18.74TiB	(min: 18.74TiB)
+>      Data ratio:			      2.00
+>      Metadata ratio:		      2.00
+>      Global reserve:		 512.00MiB	(used: 0.00B)
+>
+> Data,RAID10: Size:8.48TiB, Used:8.34TiB
+>     /dev/sda	   2.83TiB
+>     /dev/sdb	   2.83TiB
+>     /dev/sdc	   2.83TiB
+>     /dev/sdd	   2.83TiB
+>     /dev/sde	   2.83TiB
+>     /dev/sdf	   2.83TiB
+>
+> Metadata,RAID10: Size:213.38GiB, Used:212.12GiB
+>     /dev/sda	  71.12GiB
+>     /dev/sdb	  71.12GiB
+>     /dev/sdc	  71.12GiB
+>     /dev/sdd	  71.12GiB
+>     /dev/sde	  71.12GiB
+>     /dev/sdf	  71.12GiB
+>
+> System,RAID10: Size:7.88MiB, Used:864.00KiB
+>     /dev/sda	   2.62MiB
+>     /dev/sdb	   2.62MiB
+>     /dev/sdc	   2.62MiB
+>     /dev/sdd	   2.62MiB
+>     /dev/sde	   2.62MiB
+>     /dev/sdf	   2.62MiB
+>
+> Unallocated:
+>     /dev/sda	   6.20TiB
+>     /dev/sdb	   6.20TiB
+>     /dev/sdc	   6.20TiB
+>     /dev/sdd	   6.20TiB
+>     /dev/sde	   6.20TiB
+>     /dev/sdf	   6.20TiB
+>
+>
+>>
+>> Can you also post your mount flags?
+> root@ht-backup01:/home/ansible# mount | grep btrfs
+> /dev/sda on /var/urbackup type btrfs (ro,noatime,space_cache,subvolid=5,subvol=/)
+>
+> The ro flag was presumably added due to the errors above ("[2350368.220800] BTRFS info (device sda): forced readonly").
+>
+> -Dav��
 
+I'd guess this is the (usual) premature ENOSPC issue. After the ENOSPC 
+it is in a state that isn't well tested.
 
-On 28.08.20 г. 17:24 ч., Josef Bacik wrote:
-> My recent change to not take the device_list_mutex for closing devices
-> added a lockdep_assert_held(&uuid_mutex) to close_fs_devices.  I then
-> went and verified all calls had that, except I overlooked
-> btrfs_close_devices() where we close seed devices.  Fix this by holding
-> the uuid_mutex for this entire operation.
-> 
-> 20cc6d129252 ("btrfs: do not hold device_list_mutex when closing devices")
-> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+There is a rework how metadata is reserved which went into the kernel 
+after 4.19.y that mostly fixes this. So I'd advise using e.g. 5.4.y. If 
+you must use 4.19.y I can also give you link to a patch set that 
+(partially) backports this to 4.19.y. I'm still having ENOSPC issues 
+(especially with compression), but it looks like there is more 
+improvements in this area in the pipeline.
 
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-
-
-> ---
->  fs/btrfs/volumes.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 6f489245eec6..3f8bd1af29eb 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -1183,13 +1183,13 @@ void btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
->  	close_fs_devices(fs_devices);
->  	if (!fs_devices->opened)
->  		list_splice_init(&fs_devices->seed_list, &list);
-> -	mutex_unlock(&uuid_mutex);
->  
->  	list_for_each_entry_safe(fs_devices, tmp, &list, seed_list) {
->  		close_fs_devices(fs_devices);
->  		list_del(&fs_devices->seed_list);
->  		free_fs_devices(fs_devices);
->  	}
-> +	mutex_unlock(&uuid_mutex);
->  }
->  
->  static int open_fs_devices(struct btrfs_fs_devices *fs_devices,
-> 

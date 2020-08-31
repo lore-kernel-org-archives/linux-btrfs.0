@@ -2,91 +2,106 @@ Return-Path: <SRS0=0DI8=CJ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-17.0 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PULL_REQUEST,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.4 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AEFB1C433E7
-	for <linux-btrfs@archiver.kernel.org>; Mon, 31 Aug 2020 23:22:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9A9D7C433E6
+	for <linux-btrfs@archiver.kernel.org>; Mon, 31 Aug 2020 23:50:47 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 954C62078B
-	for <linux-btrfs@archiver.kernel.org>; Mon, 31 Aug 2020 23:22:11 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 682A72073A
+	for <linux-btrfs@archiver.kernel.org>; Mon, 31 Aug 2020 23:50:47 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=fail reason="signature verification failed" (1024-bit key) header.d=moffatt.email header.i=@moffatt.email header.b="U+SoBWx+"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726292AbgHaXWI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 31 Aug 2020 19:22:08 -0400
-Received: from mx2.suse.de ([195.135.220.15]:53738 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725886AbgHaXWD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 31 Aug 2020 19:22:03 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 7F6F7ABF4;
-        Mon, 31 Aug 2020 23:22:01 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 3E14FDA7CF; Tue,  1 Sep 2020 01:20:50 +0200 (CEST)
-From:   David Sterba <dsterba@suse.com>
-To:     torvalds@linux-foundation.org
-Cc:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: [GIT PULL] Btrfs fixes for 5.9-rc4
-Date:   Tue,  1 Sep 2020 01:20:49 +0200
-Message-Id: <cover.1598905089.git.dsterba@suse.com>
-X-Mailer: git-send-email 2.25.0
+        id S1726144AbgHaXuq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 31 Aug 2020 19:50:46 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50212 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726068AbgHaXup (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 31 Aug 2020 19:50:45 -0400
+Received: from jemma.woof94.com (jemma.woof94.com [IPv6:2404:9400:3:0:216:3eff:fee0:fa86])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9587FC061573
+        for <linux-btrfs@vger.kernel.org>; Mon, 31 Aug 2020 16:50:45 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=moffatt.email; s=woof2014; h=Content-Transfer-Encoding:Content-Type:
+        In-Reply-To:MIME-Version:Date:Message-ID:From:References:Cc:To:Subject:Sender
+        :Reply-To:Content-ID:Content-Description:Resent-Date:Resent-From:
+        Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
+        List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
+        bh=7EhXC1vWcLbYwR0yuYPM6UpbEMJb0eynTnXHqR17WT8=; b=U+SoBWx+GCGyLSyVBCdolpzXuf
+        WSgYMEXfNrVdszj+CPVXQypv8DwOMBjR4dzusuh8OjnKtg5DLy4gxxA6EXPuEykwfCqRmKOBLgNz+
+        0wZVp320rCRCOUCq6mnYmKoKkP/TMLSKMR31S7onv//HbVFyA0mL/xSu1o9i8AfFxeF4=;
+Received: from 2403-5800-3100-142-29dd-7142-531-d249.ip6.aussiebb.net ([2403:5800:3100:142:29dd:7142:531:d249])
+        by jemma.woof94.com with esmtpsa (TLS1.3:ECDHE_RSA_AES_128_GCM_SHA256:128)
+        (Exim 4.92)
+        (envelope-from <hamish-btrfs@moffatt.email>)
+        id 1kCtZJ-0006jP-Hh; Tue, 01 Sep 2020 09:50:33 +1000
+Subject: Re: new database files not compressed
+To:     Nikolay Borisov <nborisov@suse.com>, Roman Mamedov <rm@romanrm.net>
+Cc:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
+        linux-btrfs@vger.kernel.org
+References: <6992fae3-ce87-8ae1-8dfe-1cb65578a16a@moffatt.email>
+ <20200831034731.GX5890@hungrycats.org>
+ <baadab71-61a7-704e-86f7-3607895df663@moffatt.email>
+ <20200831161505.369be693@natsu>
+ <c7415ce2-f025-6c31-60b7-f0b927ed4808@moffatt.email>
+ <41107373-cc61-ea3f-7ae9-c9eef0ee47f9@suse.com>
+From:   Hamish Moffatt <hamish-btrfs@moffatt.email>
+Message-ID: <2d060b13-7a1a-7cc5-927f-2c6a067f9c03@moffatt.email>
+Date:   Tue, 1 Sep 2020 09:50:33 +1000
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.11.0
 MIME-Version: 1.0
+In-Reply-To: <41107373-cc61-ea3f-7ae9-c9eef0ee47f9@suse.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: 8bit
+Content-Language: en-US
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi,
+On 31/8/20 10:57 pm, Nikolay Borisov wrote:
+>
+> This means the data being passed to btrfs is not compressible. I.e after
+> coompression the data is not smaller than the original, input data.
 
-two small fixes and a bunch of lockdep fixes for warnings that show up
-with an upcoming tree locking update but are valid with current locks as
-well.  Please pull, thanks.
+It is though - if I copy it, or run defrag, it compresses very well:
 
-* fix bug in free space bitmap/extent switch logic
 
-* several lockdep warning fixes
+$ mount | grep btrfs
+/dev/sdb on /mnt/test type btrfs 
+(rw,relatime,compress-force=zstd:3,space_cache,subvolid=5,subvol=/)
+$ zcat ~/*.zip | gbak -REP -page 16384 stdin test2.fdb
+$ sudo compsize test2.fdb
+Type       Perc     Disk Usage   Uncompressed Referenced
+TOTAL      100%      194M         194M         191M
+none       100%      194M         194M         191M
 
-* clarify tree-checker error message
+$ dd if=test2.fdb of=test2.fdb2 bs=16k
+12250+0 records in
+12250+0 records out
+200704000 bytes (201 MB, 191 MiB) copied, 0.151375 s, 1.3 GB/s
+$ sync
+$ sudo compsize test2.fdb2
+Type       Perc     Disk Usage   Uncompressed Referenced
+TOTAL        8%       17M         191M         191M
+zstd         8%       17M         191M         191M
 
-----------------------------------------------------------------
-The following changes since commit a84d5d429f9eb56f81b388609841ed993f0ddfca:
+$ sudo btrfs fi defrag -czstd test2.fdb
+$ sudo compsize test2.fdb
+Type       Perc     Disk Usage   Uncompressed Referenced
+TOTAL        8%       17M         191M         191M
+zstd         8%       17M         191M         191M
 
-  btrfs: detect nocow for swap after snapshot delete (2020-08-21 12:21:23 +0200)
 
-are available in the Git repository at:
+So it must be something about how Firebird is creating or writing the 
+file, as Zygo wrote. I set the page size to 16k (default 4k) and 
+although I see Firebird making 16k writes, it is not affecting the result.
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.9-rc3-tag
 
-for you to fetch changes up to f96d6960abbc52e26ad124e69e6815283d3e1674:
+Hamish
 
-  btrfs: tree-checker: fix the error message for transid error (2020-08-27 14:16:05 +0200)
-
-----------------------------------------------------------------
-Josef Bacik (5):
-      btrfs: drop path before adding new uuid tree entry
-      btrfs: fix potential deadlock in the search ioctl
-      btrfs: allocate scrub workqueues outside of locks
-      btrfs: set the correct lockdep class for new nodes
-      btrfs: set the lockdep class for log tree extent buffers
-
-Marcos Paulo de Souza (1):
-      btrfs: block-group: fix free-space bitmap threshold
-
-Qu Wenruo (1):
-      btrfs: tree-checker: fix the error message for transid error
-
- fs/btrfs/block-group.c     |   4 +-
- fs/btrfs/ctree.c           |   6 ++-
- fs/btrfs/extent-tree.c     |   2 +-
- fs/btrfs/extent_io.c       |   8 +--
- fs/btrfs/extent_io.h       |   6 +--
- fs/btrfs/free-space-tree.c |   4 ++
- fs/btrfs/ioctl.c           |  27 +++++++---
- fs/btrfs/scrub.c           | 122 ++++++++++++++++++++++++++-------------------
- fs/btrfs/tree-checker.c    |   2 +-
- fs/btrfs/volumes.c         |   3 +-
- 10 files changed, 113 insertions(+), 71 deletions(-)

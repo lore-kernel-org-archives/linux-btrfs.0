@@ -7,28 +7,28 @@ X-Spam-Status: No, score=-13.0 required=3.0 tests=BAYES_00,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 794D8C433E2
-	for <linux-btrfs@archiver.kernel.org>; Mon, 31 Aug 2020 11:53:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A9325C433E2
+	for <linux-btrfs@archiver.kernel.org>; Mon, 31 Aug 2020 11:54:00 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 50FE32098B
-	for <linux-btrfs@archiver.kernel.org>; Mon, 31 Aug 2020 11:53:54 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 90E6C2098B
+	for <linux-btrfs@archiver.kernel.org>; Mon, 31 Aug 2020 11:54:00 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727051AbgHaLxx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S1726984AbgHaLxx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Mon, 31 Aug 2020 07:53:53 -0400
-Received: from mx2.suse.de ([195.135.220.15]:38494 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:37844 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726814AbgHaLxw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 31 Aug 2020 07:53:52 -0400
+        id S1726359AbgHaLxs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 31 Aug 2020 07:53:48 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 577DEB7BF;
-        Mon, 31 Aug 2020 11:53:49 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 0375BB7D6;
+        Mon, 31 Aug 2020 11:53:46 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 06/12] btrfs: Make btrfs_invalidatepage work on btrfs_inode
-Date:   Mon, 31 Aug 2020 14:42:43 +0300
-Message-Id: <20200831114249.8360-7-nborisov@suse.com>
+Subject: [PATCH 11/12] btrfs: Make btrfs_zero_range_check_range_boundary take btrfs_inode
+Date:   Mon, 31 Aug 2020 14:42:48 +0300
+Message-Id: <20200831114249.8360-12-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20200831114249.8360-1-nborisov@suse.com>
 References: <20200831114249.8360-1-nborisov@suse.com>
@@ -39,79 +39,51 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/inode.c | 18 ++++++++----------
- 1 file changed, 8 insertions(+), 10 deletions(-)
+ fs/btrfs/file.c | 11 ++++++-----
+ 1 file changed, 6 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 41e56ccf691d..0621fbbd08be 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -8052,15 +8052,15 @@ static int btrfs_migratepage(struct address_space *mapping,
- static void btrfs_invalidatepage(struct page *page, unsigned int offset,
- 				 unsigned int length)
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 09f21ea64ecb..2cacb4424cd4 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -3072,15 +3072,15 @@ enum {
+ 	RANGE_BOUNDARY_HOLE,
+ };
+ 
+-static int btrfs_zero_range_check_range_boundary(struct inode *inode,
++static int btrfs_zero_range_check_range_boundary(struct btrfs_inode *inode,
+ 						 u64 offset)
  {
--	struct inode *inode = page->mapping->host;
--	struct extent_io_tree *tree;
-+	struct btrfs_inode *inode = BTRFS_I(page->mapping->host);
-+	struct extent_io_tree *tree = &inode->io_tree;
- 	struct btrfs_ordered_extent *ordered;
- 	struct extent_state *cached_state = NULL;
- 	u64 page_start = page_offset(page);
- 	u64 page_end = page_start + PAGE_SIZE - 1;
- 	u64 start;
- 	u64 end;
--	int inode_evicting = inode->i_state & I_FREEING;
-+	int inode_evicting = inode->vfs_inode.i_state & I_FREEING;
+-	const u64 sectorsize = btrfs_inode_sectorsize(BTRFS_I(inode));
++	const u64 sectorsize = btrfs_inode_sectorsize(inode);
+ 	struct extent_map *em;
+ 	int ret;
  
- 	/*
- 	 * we have the page locked, so new writeback can't start,
-@@ -8071,7 +8071,6 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
+ 	offset = round_down(offset, sectorsize);
+-	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, offset, sectorsize);
++	em = btrfs_get_extent(inode, NULL, 0, offset, sectorsize);
+ 	if (IS_ERR(em))
+ 		return PTR_ERR(em);
+ 
+@@ -3195,7 +3195,8 @@ static int btrfs_zero_range(struct inode *inode,
+ 	 * to cover them.
  	 */
- 	wait_on_page_writeback(page);
+ 	if (!IS_ALIGNED(offset, sectorsize)) {
+-		ret = btrfs_zero_range_check_range_boundary(inode, offset);
++		ret = btrfs_zero_range_check_range_boundary(BTRFS_I(inode),
++							    offset);
+ 		if (ret < 0)
+ 			goto out;
+ 		if (ret == RANGE_BOUNDARY_HOLE) {
+@@ -3211,7 +3212,7 @@ static int btrfs_zero_range(struct inode *inode,
+ 	}
  
--	tree = &BTRFS_I(inode)->io_tree;
- 	if (offset) {
- 		btrfs_releasepage(page, GFP_NOFS);
- 		return;
-@@ -8081,8 +8080,7 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
- 		lock_extent_bits(tree, page_start, page_end, &cached_state);
- again:
- 	start = page_start;
--	ordered = btrfs_lookup_ordered_range(BTRFS_I(inode), start,
--					page_end - start + 1);
-+	ordered = btrfs_lookup_ordered_range(inode, start, page_end - start + 1);
- 	if (ordered) {
- 		end = min(page_end,
- 			  ordered->file_offset + ordered->num_bytes - 1);
-@@ -8103,7 +8101,7 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
- 			struct btrfs_ordered_inode_tree *tree;
- 			u64 new_len;
- 
--			tree = &BTRFS_I(inode)->ordered_tree;
-+			tree = &inode->ordered_tree;
- 
- 			spin_lock_irq(&tree->lock);
- 			set_bit(BTRFS_ORDERED_TRUNCATED, &ordered->flags);
-@@ -8112,8 +8110,8 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
- 				ordered->truncated_len = new_len;
- 			spin_unlock_irq(&tree->lock);
- 
--			if (btrfs_dec_test_ordered_pending(BTRFS_I(inode),
--							   &ordered, start,
-+			if (btrfs_dec_test_ordered_pending(inode, &ordered,
-+							   start,
- 							   end - start + 1, 1))
- 				btrfs_finish_ordered_io(ordered);
- 		}
-@@ -8142,7 +8140,7 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
- 	 *    bit of its io_tree, and free the qgroup reserved data space.
- 	 *    Since the IO will never happen for this page.
- 	 */
--	btrfs_qgroup_free_data(BTRFS_I(inode), NULL, page_start, PAGE_SIZE);
-+	btrfs_qgroup_free_data(inode, NULL, page_start, PAGE_SIZE);
- 	if (!inode_evicting) {
- 		clear_extent_bit(tree, page_start, page_end, EXTENT_LOCKED |
- 				 EXTENT_DELALLOC | EXTENT_DELALLOC_NEW |
+ 	if (!IS_ALIGNED(offset + len, sectorsize)) {
+-		ret = btrfs_zero_range_check_range_boundary(inode,
++		ret = btrfs_zero_range_check_range_boundary(BTRFS_I(inode),
+ 							    offset + len);
+ 		if (ret < 0)
+ 			goto out;
 -- 
 2.17.1
 

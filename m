@@ -7,28 +7,28 @@ X-Spam-Status: No, score=-13.0 required=3.0 tests=BAYES_00,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A1CDEC433E2
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8FB54C433E6
 	for <linux-btrfs@archiver.kernel.org>; Mon, 31 Aug 2020 11:54:09 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 8725920EDD
+	by mail.kernel.org (Postfix) with ESMTP id 6A8992098B
 	for <linux-btrfs@archiver.kernel.org>; Mon, 31 Aug 2020 11:54:09 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727814AbgHaLyI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 31 Aug 2020 07:54:08 -0400
-Received: from mx2.suse.de ([195.135.220.15]:40246 "EHLO mx2.suse.de"
+        id S1727116AbgHaLyF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 31 Aug 2020 07:54:05 -0400
+Received: from mx2.suse.de ([195.135.220.15]:40248 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727077AbgHaLyE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 31 Aug 2020 07:54:04 -0400
+        id S1727088AbgHaLyD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 31 Aug 2020 07:54:03 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 85D39B814;
+        by mx2.suse.de (Postfix) with ESMTP id 5F83EB8E6;
         Mon, 31 Aug 2020 11:53:54 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 04/12] btrfs: Make btrfs_dec_test_ordered_pending take btrfs_inode
-Date:   Mon, 31 Aug 2020 14:42:41 +0300
-Message-Id: <20200831114249.8360-5-nborisov@suse.com>
+Subject: [PATCH 08/12] btrfs: Make get_extent_skip_holes take btrfs_inode
+Date:   Mon, 31 Aug 2020 14:42:45 +0300
+Message-Id: <20200831114249.8360-9-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20200831114249.8360-1-nborisov@suse.com>
 References: <20200831114249.8360-1-nborisov@suse.com>
@@ -39,83 +39,54 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/inode.c        | 8 ++++----
- fs/btrfs/ordered-data.c | 7 +++----
- fs/btrfs/ordered-data.h | 2 +-
- 3 files changed, 8 insertions(+), 9 deletions(-)
+ fs/btrfs/extent_io.c | 11 ++++++-----
+ 1 file changed, 6 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 74321962cd0f..41e56ccf691d 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2765,8 +2765,8 @@ void btrfs_writepage_endio_finish_ordered(struct page *page, u64 start,
- 	trace_btrfs_writepage_end_io_hook(page, start, end, uptodate);
- 
- 	ClearPagePrivate2(page);
--	if (!btrfs_dec_test_ordered_pending(inode, &ordered_extent, start,
--					    end - start + 1, uptodate))
-+	if (!btrfs_dec_test_ordered_pending(BTRFS_I(inode), &ordered_extent,
-+					    start, end - start + 1, uptodate))
- 		return;
- 
- 	if (btrfs_is_free_space_inode(BTRFS_I(inode)))
-@@ -8112,8 +8112,8 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
- 				ordered->truncated_len = new_len;
- 			spin_unlock_irq(&tree->lock);
- 
--			if (btrfs_dec_test_ordered_pending(inode, &ordered,
--							   start,
-+			if (btrfs_dec_test_ordered_pending(BTRFS_I(inode),
-+							   &ordered, start,
- 							   end - start + 1, 1))
- 				btrfs_finish_ordered_io(ordered);
- 		}
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index 369ddad30d9c..168a5edd939d 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -378,17 +378,16 @@ int btrfs_dec_test_first_ordered_pending(struct btrfs_inode *inode,
-  * test_and_set_bit on a flag in the struct btrfs_ordered_extent is used
-  * to make sure this function only returns 1 once for a given ordered extent.
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 3b8df647c0dc..efe6b0cbc435 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -4552,10 +4552,10 @@ int try_release_extent_mapping(struct page *page, gfp_t mask)
+  * helper function for fiemap, which doesn't want to see any holes.
+  * This maps until we find something past 'last'
   */
--int btrfs_dec_test_ordered_pending(struct inode *inode,
-+int btrfs_dec_test_ordered_pending(struct btrfs_inode *inode,
- 				   struct btrfs_ordered_extent **cached,
- 				   u64 file_offset, u64 io_size, int uptodate)
+-static struct extent_map *get_extent_skip_holes(struct inode *inode,
++static struct extent_map *get_extent_skip_holes(struct btrfs_inode *inode,
+ 						u64 offset, u64 last)
  {
--	struct btrfs_ordered_inode_tree *tree;
-+	struct btrfs_ordered_inode_tree *tree = &inode->ordered_tree;
- 	struct rb_node *node;
- 	struct btrfs_ordered_extent *entry = NULL;
- 	unsigned long flags;
- 	int ret;
+-	u64 sectorsize = btrfs_inode_sectorsize(BTRFS_I(inode));
++	u64 sectorsize = btrfs_inode_sectorsize(inode);
+ 	struct extent_map *em;
+ 	u64 len;
  
--	tree = &BTRFS_I(inode)->ordered_tree;
- 	spin_lock_irqsave(&tree->lock, flags);
- 	if (cached && *cached) {
- 		entry = *cached;
-@@ -409,7 +408,7 @@ int btrfs_dec_test_ordered_pending(struct inode *inode,
- 	}
+@@ -4567,7 +4567,7 @@ static struct extent_map *get_extent_skip_holes(struct inode *inode,
+ 		if (len == 0)
+ 			break;
+ 		len = ALIGN(len, sectorsize);
+-		em = btrfs_get_extent_fiemap(BTRFS_I(inode), offset, len);
++		em = btrfs_get_extent_fiemap(inode, offset, len);
+ 		if (IS_ERR_OR_NULL(em))
+ 			return em;
  
- 	if (io_size > entry->bytes_left) {
--		btrfs_crit(BTRFS_I(inode)->root->fs_info,
-+		btrfs_crit(inode->root->fs_info,
- 			   "bad ordered accounting left %llu size %llu",
- 		       entry->bytes_left, io_size);
- 	}
-diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
-index b287a2a403e6..1610195c6097 100644
---- a/fs/btrfs/ordered-data.h
-+++ b/fs/btrfs/ordered-data.h
-@@ -153,7 +153,7 @@ btrfs_ordered_inode_tree_init(struct btrfs_ordered_inode_tree *t)
- void btrfs_put_ordered_extent(struct btrfs_ordered_extent *entry);
- void btrfs_remove_ordered_extent(struct inode *inode,
- 				struct btrfs_ordered_extent *entry);
--int btrfs_dec_test_ordered_pending(struct inode *inode,
-+int btrfs_dec_test_ordered_pending(struct btrfs_inode *inode,
- 				   struct btrfs_ordered_extent **cached,
- 				   u64 file_offset, u64 io_size, int uptodate);
- int btrfs_dec_test_first_ordered_pending(struct btrfs_inode *inode,
+@@ -4787,7 +4787,7 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 	lock_extent_bits(&BTRFS_I(inode)->io_tree, start, start + len - 1,
+ 			 &cached_state);
+ 
+-	em = get_extent_skip_holes(inode, start, last_for_get_extent);
++	em = get_extent_skip_holes(BTRFS_I(inode), start, last_for_get_extent);
+ 	if (!em)
+ 		goto out;
+ 	if (IS_ERR(em)) {
+@@ -4876,7 +4876,8 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 		}
+ 
+ 		/* now scan forward to see if this is really the last extent. */
+-		em = get_extent_skip_holes(inode, off, last_for_get_extent);
++		em = get_extent_skip_holes(BTRFS_I(inode), off,
++					   last_for_get_extent);
+ 		if (IS_ERR(em)) {
+ 			ret = PTR_ERR(em);
+ 			goto out;
 -- 
 2.17.1
 

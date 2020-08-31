@@ -2,76 +2,116 @@ Return-Path: <SRS0=0DI8=CJ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.5 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,
-	SPF_PASS,USER_AGENT_SANE_1 autolearn=unavailable autolearn_force=no
+X-Spam-Status: No, score=-13.0 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 600EAC433E6
-	for <linux-btrfs@archiver.kernel.org>; Mon, 31 Aug 2020 11:46:18 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 794D8C433E2
+	for <linux-btrfs@archiver.kernel.org>; Mon, 31 Aug 2020 11:53:54 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 49586208CA
-	for <linux-btrfs@archiver.kernel.org>; Mon, 31 Aug 2020 11:46:18 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 50FE32098B
+	for <linux-btrfs@archiver.kernel.org>; Mon, 31 Aug 2020 11:53:54 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726312AbgHaLqR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 31 Aug 2020 07:46:17 -0400
-Received: from mx2.suse.de ([195.135.220.15]:57504 "EHLO mx2.suse.de"
+        id S1727051AbgHaLxx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 31 Aug 2020 07:53:53 -0400
+Received: from mx2.suse.de ([195.135.220.15]:38494 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726106AbgHaLqQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 31 Aug 2020 07:46:16 -0400
+        id S1726814AbgHaLxw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 31 Aug 2020 07:53:52 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id AFD9EAC4A;
-        Mon, 31 Aug 2020 11:46:14 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id E1C0BDA840; Mon, 31 Aug 2020 13:45:03 +0200 (CEST)
-Date:   Mon, 31 Aug 2020 13:45:03 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Eryu Guan <guan@eryu.me>
-Cc:     Marcos Paulo de Souza <marcos@mpdesouza.com>, dsterba@suse.com,
-        linux-btrfs@vger.kernel.org, fstests@vger.kernel.org,
-        Marcos Paulo de Souza <mpdesouza@suse.com>
-Subject: Re: [PATCH] fstests: btrfs/218 check if mount opts are applied
-Message-ID: <20200831114503.GU28318@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Eryu Guan <guan@eryu.me>,
-        Marcos Paulo de Souza <marcos@mpdesouza.com>, dsterba@suse.com,
-        linux-btrfs@vger.kernel.org, fstests@vger.kernel.org,
-        Marcos Paulo de Souza <mpdesouza@suse.com>
-References: <20200804205648.11284-1-marcos@mpdesouza.com>
- <20200830161519.GC3853@desktop>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20200830161519.GC3853@desktop>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+        by mx2.suse.de (Postfix) with ESMTP id 577DEB7BF;
+        Mon, 31 Aug 2020 11:53:49 +0000 (UTC)
+From:   Nikolay Borisov <nborisov@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH 06/12] btrfs: Make btrfs_invalidatepage work on btrfs_inode
+Date:   Mon, 31 Aug 2020 14:42:43 +0300
+Message-Id: <20200831114249.8360-7-nborisov@suse.com>
+X-Mailer: git-send-email 2.17.1
+In-Reply-To: <20200831114249.8360-1-nborisov@suse.com>
+References: <20200831114249.8360-1-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Aug 31, 2020 at 12:15:19AM +0800, Eryu Guan wrote:
-> On Tue, Aug 04, 2020 at 05:56:48PM -0300, Marcos Paulo de Souza wrote:
-> > From: Marcos Paulo de Souza <mpdesouza@suse.com>
-> > 
-> > This new test will apply different mount points and check if they were applied
-> > by reading /proc/self/mounts. Almost all available btrfs options are tested
-> > here, leaving only device=, which is tested in btrfs/125 and space_cache, tested
-> > in btrfs/131.
-> > 
-> > This test does not apply any workload after the fs is mounted, just checks is
-> > the option was set/unset correctly.
-> > 
-> > Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
-> 
-> I'm seeing this diff when testing with v5.9-rc2 kernel and v5.4
-> btrfs-progs, is that expected?
-> 
->     +Could not find 'relatime,compress=lzo,space_cache,subvolid' in 'rw,relatime,compress=lzo:3,space_cache,subvolid=5,subvol=/', using 'compress=lzo'
->     +Could not find 'relatime,compress=lzo,space_cache,subvolid' in 'rw,relatime,compress=lzo:3,space_cache,subvolid=5,subvol=/', using 'compress=lzo'
->     +Could not find 'relatime,compress-force=lzo,space_cache,subvolid' in 'rw,relatime,compress-force=lzo:4,space_cache,subvolid=5,subvol=/', using 'compress-force=lzo'
->     +Could not find 'relatime,compress-force=lzo,space_cache,subvolid' in 'rw,relatime,compress-force=lzo:4,space_cache,subvolid=5,subvol=/', using 'compress-force=lzo'
->      Silence is golden
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
+ fs/btrfs/inode.c | 18 ++++++++----------
+ 1 file changed, 8 insertions(+), 10 deletions(-)
 
-This should be fixed by 282dd7d77184 ("btrfs: reset compression level
-for lzo on remount") that is in v5.9-rc3.
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 41e56ccf691d..0621fbbd08be 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -8052,15 +8052,15 @@ static int btrfs_migratepage(struct address_space *mapping,
+ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
+ 				 unsigned int length)
+ {
+-	struct inode *inode = page->mapping->host;
+-	struct extent_io_tree *tree;
++	struct btrfs_inode *inode = BTRFS_I(page->mapping->host);
++	struct extent_io_tree *tree = &inode->io_tree;
+ 	struct btrfs_ordered_extent *ordered;
+ 	struct extent_state *cached_state = NULL;
+ 	u64 page_start = page_offset(page);
+ 	u64 page_end = page_start + PAGE_SIZE - 1;
+ 	u64 start;
+ 	u64 end;
+-	int inode_evicting = inode->i_state & I_FREEING;
++	int inode_evicting = inode->vfs_inode.i_state & I_FREEING;
+ 
+ 	/*
+ 	 * we have the page locked, so new writeback can't start,
+@@ -8071,7 +8071,6 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
+ 	 */
+ 	wait_on_page_writeback(page);
+ 
+-	tree = &BTRFS_I(inode)->io_tree;
+ 	if (offset) {
+ 		btrfs_releasepage(page, GFP_NOFS);
+ 		return;
+@@ -8081,8 +8080,7 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
+ 		lock_extent_bits(tree, page_start, page_end, &cached_state);
+ again:
+ 	start = page_start;
+-	ordered = btrfs_lookup_ordered_range(BTRFS_I(inode), start,
+-					page_end - start + 1);
++	ordered = btrfs_lookup_ordered_range(inode, start, page_end - start + 1);
+ 	if (ordered) {
+ 		end = min(page_end,
+ 			  ordered->file_offset + ordered->num_bytes - 1);
+@@ -8103,7 +8101,7 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
+ 			struct btrfs_ordered_inode_tree *tree;
+ 			u64 new_len;
+ 
+-			tree = &BTRFS_I(inode)->ordered_tree;
++			tree = &inode->ordered_tree;
+ 
+ 			spin_lock_irq(&tree->lock);
+ 			set_bit(BTRFS_ORDERED_TRUNCATED, &ordered->flags);
+@@ -8112,8 +8110,8 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
+ 				ordered->truncated_len = new_len;
+ 			spin_unlock_irq(&tree->lock);
+ 
+-			if (btrfs_dec_test_ordered_pending(BTRFS_I(inode),
+-							   &ordered, start,
++			if (btrfs_dec_test_ordered_pending(inode, &ordered,
++							   start,
+ 							   end - start + 1, 1))
+ 				btrfs_finish_ordered_io(ordered);
+ 		}
+@@ -8142,7 +8140,7 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
+ 	 *    bit of its io_tree, and free the qgroup reserved data space.
+ 	 *    Since the IO will never happen for this page.
+ 	 */
+-	btrfs_qgroup_free_data(BTRFS_I(inode), NULL, page_start, PAGE_SIZE);
++	btrfs_qgroup_free_data(inode, NULL, page_start, PAGE_SIZE);
+ 	if (!inode_evicting) {
+ 		clear_extent_bit(tree, page_start, page_end, EXTENT_LOCKED |
+ 				 EXTENT_DELALLOC | EXTENT_DELALLOC_NEW |
+-- 
+2.17.1
+

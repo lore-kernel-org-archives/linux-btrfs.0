@@ -7,28 +7,28 @@ X-Spam-Status: No, score=-13.0 required=3.0 tests=BAYES_00,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8B5C7C433E2
-	for <linux-btrfs@archiver.kernel.org>; Mon, 31 Aug 2020 11:54:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E166DC433E6
+	for <linux-btrfs@archiver.kernel.org>; Mon, 31 Aug 2020 11:54:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 6E5E720DD4
-	for <linux-btrfs@archiver.kernel.org>; Mon, 31 Aug 2020 11:54:06 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C5AA82098B
+	for <linux-btrfs@archiver.kernel.org>; Mon, 31 Aug 2020 11:54:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727783AbgHaLyF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 31 Aug 2020 07:54:05 -0400
-Received: from mx2.suse.de ([195.135.220.15]:39186 "EHLO mx2.suse.de"
+        id S1727786AbgHaLyG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 31 Aug 2020 07:54:06 -0400
+Received: from mx2.suse.de ([195.135.220.15]:39060 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727065AbgHaLx4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1726814AbgHaLx4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Mon, 31 Aug 2020 07:53:56 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 37FB7B7B3;
-        Mon, 31 Aug 2020 11:53:54 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 82BF8B8DE;
+        Mon, 31 Aug 2020 11:53:53 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 12/12] btrfs: Make extent_fiemap take btrfs_iode
-Date:   Mon, 31 Aug 2020 14:42:49 +0300
-Message-Id: <20200831114249.8360-13-nborisov@suse.com>
+Subject: [PATCH 09/12] btrfs: Make btrfs_find_ordered_sum take btrfs_inode
+Date:   Mon, 31 Aug 2020 14:42:46 +0300
+Message-Id: <20200831114249.8360-10-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20200831114249.8360-1-nborisov@suse.com>
 References: <20200831114249.8360-1-nborisov@suse.com>
@@ -39,136 +39,86 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/extent_io.c | 28 +++++++++++++---------------
- fs/btrfs/extent_io.h |  2 +-
- fs/btrfs/inode.c     |  2 +-
- 3 files changed, 15 insertions(+), 17 deletions(-)
+ fs/btrfs/file-item.c    |  4 ++--
+ fs/btrfs/ordered-data.c | 19 +++++++++----------
+ fs/btrfs/ordered-data.h |  4 ++--
+ 3 files changed, 13 insertions(+), 14 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index efe6b0cbc435..09a1a9b3f351 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -4696,7 +4696,7 @@ static int emit_last_fiemap_cache(struct fiemap_extent_info *fieinfo,
- 	return ret;
- }
+diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+index 7d5ec71615b8..8f4f2bd6d9b9 100644
+--- a/fs/btrfs/file-item.c
++++ b/fs/btrfs/file-item.c
+@@ -318,8 +318,8 @@ blk_status_t btrfs_lookup_bio_sums(struct inode *inode, struct bio *bio,
  
--int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
-+int extent_fiemap(struct btrfs_inode *inode, struct fiemap_extent_info *fieinfo,
- 		  u64 start, u64 len)
+ 		if (page_offsets)
+ 			offset = page_offset(bvec.bv_page) + bvec.bv_offset;
+-		count = btrfs_find_ordered_sum(inode, offset, disk_bytenr,
+-					       csum, nblocks);
++		count = btrfs_find_ordered_sum(BTRFS_I(inode), offset,
++					       disk_bytenr, csum, nblocks);
+ 		if (count)
+ 			goto found;
+ 
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index d39a0fe4c463..c8a13d143877 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -861,20 +861,21 @@ btrfs_lookup_first_ordered_extent(struct btrfs_inode *inode, u64 file_offset)
+  * try to find a checksum.  This is used because we allow pages to
+  * be reclaimed before their checksum is actually put into the btree
+  */
+-int btrfs_find_ordered_sum(struct inode *inode, u64 offset, u64 disk_bytenr,
+-			   u8 *sum, int len)
++int btrfs_find_ordered_sum(struct btrfs_inode *inode, u64 offset,
++			   u64 disk_bytenr, u8 *sum, int len)
  {
- 	int ret = 0;
-@@ -4707,12 +4707,12 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
- 	u64 last;
- 	u64 last_for_get_extent = 0;
- 	u64 disko = 0;
--	u64 isize = i_size_read(inode);
-+	u64 isize = i_size_read(&inode->vfs_inode);
- 	struct btrfs_key found_key;
- 	struct extent_map *em = NULL;
- 	struct extent_state *cached_state = NULL;
- 	struct btrfs_path *path;
--	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	struct btrfs_root *root = inode->root;
- 	struct fiemap_cache cache = { 0 };
- 	struct ulist *roots;
- 	struct ulist *tmp_ulist;
-@@ -4736,15 +4736,15 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
- 		goto out_free_ulist;
- 	}
+-	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
++	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+ 	struct btrfs_ordered_sum *ordered_sum;
+ 	struct btrfs_ordered_extent *ordered;
+-	struct btrfs_ordered_inode_tree *tree = &BTRFS_I(inode)->ordered_tree;
++	struct btrfs_ordered_inode_tree *tree = &inode->ordered_tree;
+ 	unsigned long num_sectors;
+ 	unsigned long i;
+-	u32 sectorsize = btrfs_inode_sectorsize(BTRFS_I(inode));
++	u32 sectorsize = btrfs_inode_sectorsize(inode);
++	const u8 blocksize_bits = inode->vfs_inode.i_sb->s_blocksize_bits;
+ 	const u16 csum_size = btrfs_super_csum_size(fs_info->super_copy);
+ 	int index = 0;
  
--	start = round_down(start, btrfs_inode_sectorsize(BTRFS_I(inode)));
--	len = round_up(max, btrfs_inode_sectorsize(BTRFS_I(inode))) - start;
-+	start = round_down(start, btrfs_inode_sectorsize(inode));
-+	len = round_up(max, btrfs_inode_sectorsize(inode)) - start;
+-	ordered = btrfs_lookup_ordered_extent(BTRFS_I(inode), offset);
++	ordered = btrfs_lookup_ordered_extent(inode, offset);
+ 	if (!ordered)
+ 		return 0;
  
- 	/*
- 	 * lookup the last file extent.  We're not using i_size here
- 	 * because there might be preallocation past i_size
- 	 */
--	ret = btrfs_lookup_file_extent(NULL, root, path,
--			btrfs_ino(BTRFS_I(inode)), -1, 0);
-+	ret = btrfs_lookup_file_extent(NULL, root, path, btrfs_ino(inode), -1,
-+				       0);
- 	if (ret < 0) {
- 		goto out_free_ulist;
- 	} else {
-@@ -4758,7 +4758,7 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
- 	found_type = found_key.type;
- 
- 	/* No extents, but there might be delalloc bits */
--	if (found_key.objectid != btrfs_ino(BTRFS_I(inode)) ||
-+	if (found_key.objectid != btrfs_ino(inode) ||
- 	    found_type != BTRFS_EXTENT_DATA_KEY) {
- 		/* have to trust i_size as the end */
- 		last = (u64)-1;
-@@ -4784,10 +4784,10 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
- 		last_for_get_extent = isize;
- 	}
- 
--	lock_extent_bits(&BTRFS_I(inode)->io_tree, start, start + len - 1,
-+	lock_extent_bits(&inode->io_tree, start, start + len - 1,
- 			 &cached_state);
- 
--	em = get_extent_skip_holes(BTRFS_I(inode), start, last_for_get_extent);
-+	em = get_extent_skip_holes(inode, start, last_for_get_extent);
- 	if (!em)
- 		goto out;
- 	if (IS_ERR(em)) {
-@@ -4853,8 +4853,7 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
- 			 * then we're just getting a count and we can skip the
- 			 * lookup stuff.
- 			 */
--			ret = btrfs_check_shared(root,
--						 btrfs_ino(BTRFS_I(inode)),
-+			ret = btrfs_check_shared(root, btrfs_ino(inode),
- 						 bytenr, roots, tmp_ulist);
- 			if (ret < 0)
- 				goto out_free;
-@@ -4876,8 +4875,7 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
- 		}
- 
- 		/* now scan forward to see if this is really the last extent. */
--		em = get_extent_skip_holes(BTRFS_I(inode), off,
--					   last_for_get_extent);
-+		em = get_extent_skip_holes(inode, off, last_for_get_extent);
- 		if (IS_ERR(em)) {
- 			ret = PTR_ERR(em);
- 			goto out;
-@@ -4899,7 +4897,7 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
- 		ret = emit_last_fiemap_cache(fieinfo, &cache);
- 	free_extent_map(em);
- out:
--	unlock_extent_cached(&BTRFS_I(inode)->io_tree, start, start + len - 1,
-+	unlock_extent_cached(&inode->io_tree, start, start + len - 1,
- 			     &cached_state);
- 
- out_free_ulist:
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 68f431ebf65c..c2864a9e7670 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -204,7 +204,7 @@ int extent_writepages(struct address_space *mapping,
- int btree_write_cache_pages(struct address_space *mapping,
- 			    struct writeback_control *wbc);
- void extent_readahead(struct readahead_control *rac);
--int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
-+int extent_fiemap(struct btrfs_inode *inode, struct fiemap_extent_info *fieinfo,
- 		  u64 start, u64 len);
- void set_page_extent_mapped(struct page *page);
- 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 663551993ca5..e584fd93872b 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -7963,7 +7963,7 @@ static int btrfs_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
- 	if (ret)
- 		return ret;
- 
--	return extent_fiemap(inode, fieinfo, start, len);
-+	return extent_fiemap(BTRFS_I(inode), fieinfo, start, len);
- }
- 
- int btrfs_readpage(struct file *file, struct page *page)
+@@ -882,10 +883,8 @@ int btrfs_find_ordered_sum(struct inode *inode, u64 offset, u64 disk_bytenr,
+ 	list_for_each_entry_reverse(ordered_sum, &ordered->list, list) {
+ 		if (disk_bytenr >= ordered_sum->bytenr &&
+ 		    disk_bytenr < ordered_sum->bytenr + ordered_sum->len) {
+-			i = (disk_bytenr - ordered_sum->bytenr) >>
+-			    inode->i_sb->s_blocksize_bits;
+-			num_sectors = ordered_sum->len >>
+-				      inode->i_sb->s_blocksize_bits;
++			i = (disk_bytenr - ordered_sum->bytenr) >> blocksize_bits;
++			num_sectors = ordered_sum->len >> blocksize_bits;
+ 			num_sectors = min_t(int, len - index, num_sectors - i);
+ 			memcpy(sum + index, ordered_sum->sums + i * csum_size,
+ 			       num_sectors * csum_size);
+diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
+index 1610195c6097..6a1d5bf5aee3 100644
+--- a/fs/btrfs/ordered-data.h
++++ b/fs/btrfs/ordered-data.h
+@@ -185,8 +185,8 @@ struct btrfs_ordered_extent *btrfs_lookup_ordered_range(
+ 		u64 len);
+ void btrfs_get_ordered_extents_for_logging(struct btrfs_inode *inode,
+ 					   struct list_head *list);
+-int btrfs_find_ordered_sum(struct inode *inode, u64 offset, u64 disk_bytenr,
+-			   u8 *sum, int len);
++int btrfs_find_ordered_sum(struct btrfs_inode *inode, u64 offset,
++			   u64 disk_bytenr, u8 *sum, int len);
+ u64 btrfs_wait_ordered_extents(struct btrfs_root *root, u64 nr,
+ 			       const u64 range_start, const u64 range_len);
+ void btrfs_wait_ordered_roots(struct btrfs_fs_info *fs_info, u64 nr,
 -- 
 2.17.1
 

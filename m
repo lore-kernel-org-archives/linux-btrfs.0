@@ -2,105 +2,52 @@ Return-Path: <SRS0=FDMB=CK=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-4.0 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.5 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 49D8CC433E2
-	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Sep 2020 15:02:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1D3D8C433E2
+	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Sep 2020 15:36:38 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 20061206CD
-	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Sep 2020 15:02:14 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="FHU/bqOb"
+	by mail.kernel.org (Postfix) with ESMTP id EA8B72158C
+	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Sep 2020 15:36:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726755AbgIAPCM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 1 Sep 2020 11:02:12 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49838 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726406AbgIAPCL (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Sep 2020 11:02:11 -0400
-Received: from mail-wm1-x344.google.com (mail-wm1-x344.google.com [IPv6:2a00:1450:4864:20::344])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CEC80C061244
-        for <linux-btrfs@vger.kernel.org>; Tue,  1 Sep 2020 08:02:10 -0700 (PDT)
-Received: by mail-wm1-x344.google.com with SMTP id s13so1485893wmh.4
-        for <linux-btrfs@vger.kernel.org>; Tue, 01 Sep 2020 08:02:10 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=HssCtA7j2xQP7IXsZGu4F0WwKUcMO1DNXhOFSVUPbkI=;
-        b=FHU/bqOb/HhE4DTNrG2INnuyKGzlC4tawMwyw2LfSn/A6vJLDzvE99cKNNN1pWwvp3
-         L4xlA9bzahmG1W9/7+//RjbD+IhT7w8LM3vkODIeFRPUHVVLjNWdYBXe6ksLrIzak9/l
-         pnEZqz1840Wm9Q3MFIc79++KZs0zGVDSX7ZGj4Plbz9x410z5vGUwxvJR1Ywu75FA3VN
-         eNivwWWs81wb/r+gOjl3ov5WZ2SJdP7Bc8KeQsDzGeIjfeQsfwsgJVpd2l4Td31M/DwV
-         8TdIf+krYLEfIqUVQmnYrckSgFfBoVSjHCgoI2MJLqUSdli3go4P2E6/P4hdtkj8Et4n
-         3o/A==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=HssCtA7j2xQP7IXsZGu4F0WwKUcMO1DNXhOFSVUPbkI=;
-        b=IcofoUpo5tuwtJxQicn7GqYmC+2NtCFXFkKEmaC7JPLWI/2K2IN9AWCewgfsJCCP3r
-         G+uOvHBS2Z5LlcYU8dQhXhwLEqgvt2KkwA8oqe6XlCOzUcl2/X/69KJt7oVyoTo/0acR
-         5MJgpZTg+iTgRIFiJk+X6JbA/POpxZQtx+TxlcPwinI0WZLgRneMzeJmPHYuwfyVk0fu
-         97rzBtHKousDYjx5RLai+1JVgafOpHiDkBBgtg+P+qQnnoAGbdkC05N5JsDMELqPT3Wi
-         zlgs7CDnFriTUu3NOvOA4Uog8/FWrhGcHYHJjlix+Xy37cyC0gKNPAS56DgxZCR/R2E4
-         2FvA==
-X-Gm-Message-State: AOAM533+6MCcnoYbM0jOxHWbvFX8RrfBkIGLFUmGVh3O1eJnlWhWBPut
-        KItgIlpj3CJpuF6T9uCRWnknyqlPcUh8DWw3L0Or4A==
-X-Google-Smtp-Source: ABdhPJxpFpsAeXZJkjGiNcpSHmN/99IwTdokNWfZ+dUrOZt3NHwT6GisjTMBxjtpq468OAyjxFc0hrf7+uIjbQoA+p4=
-X-Received: by 2002:a05:600c:4142:: with SMTP id h2mr2169015wmm.128.1598972529130;
- Tue, 01 Sep 2020 08:02:09 -0700 (PDT)
+        id S1728807AbgIAPgc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 1 Sep 2020 11:36:32 -0400
+Received: from mx2.suse.de ([195.135.220.15]:43046 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727933AbgIAPgb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 1 Sep 2020 11:36:31 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.221.27])
+        by mx2.suse.de (Postfix) with ESMTP id EB0A9AC85;
+        Tue,  1 Sep 2020 15:36:30 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id CA9D2DA7CF; Tue,  1 Sep 2020 17:35:18 +0200 (CEST)
+Date:   Tue, 1 Sep 2020 17:35:18 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: Re: [PATCH 2/2] btrfs: do not create raid sysfs entries under
+ chunk_mutex
+Message-ID: <20200901153518.GH28318@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
+        linux-btrfs@vger.kernel.org, kernel-team@fb.com
+References: <cover.1598961912.git.josef@toxicpanda.com>
+ <4bf816d4109f4fa812074124a7672db1c5cb851c.1598961912.git.josef@toxicpanda.com>
 MIME-Version: 1.0
-References: <bdJVxLiFr_PyQSXRUbZJfFW_jAjsGgoMetqPHJMbg-hdy54Xt_ZHhRetmnJ6cJ99eBlcX76wy-AvWwV715c3YndkxneSlod11P1hlaADx0s=@protonmail.com>
- <VTDsoZlxoD7U7UxD61VnBts_awxM0n5PgKgeH-fCQOy4VeCCCj27DmdMt_oP490t0cKWbsY9qlK1hci8o-1uD7vtBcVQLub1Gl3JjIGU-o0=@protonmail.com>
- <CAJCQCtT8gLGNU6E+f=eM9SBPa4+tG+K7AbiCd=KjD2o8QrpxpA@mail.gmail.com>
- <dHPyoaNUuxoqxJjpSUjcxZvk21ew2ObKWFFhX0efJKBqjG8m27px3mPupviQuM3HYQDEcYQGFQ9jOprBuAX4x1Em3oVOyDl6EhKwEJSiuXs=@protonmail.com>
- <CAJCQCtSVMAEZP5OT77yCEBw9Z3C=oyVKcicWbRV9p_+pKcRwoQ@mail.gmail.com>
- <gp99KJ83xX5hsbU2_hXblYTSDI6Rmkk2fbRYAcKNoQik1CH8siYdTw11qFuFdAqo-iC48cJcB_vbMJgY8HuSySoWoBW3hcYHewIgB87Kzzw=@protonmail.com>
- <CAJCQCtQZW2ps1i4b6kGBd_d8icYZWyz5Ha+Ozo0VjsbvVNf03w@mail.gmail.com>
- <CAJCQCtR4y180_96BGu08ePGLxo8dq7mAV7H248d8X85FcS0MOw@mail.gmail.com>
- <CAJCQCtStgn4WjisTf6628UEcB8_eP0_9WETDSB6YtGa4VDPgPw@mail.gmail.com> <KzGwc4OhDq6qR43tQSjynifhYV7E1mfeZeQjBWWRNwithi65kenn7yS22w-bbi_OHYXAkYA6y44iMYCYLAWu2g2V3s47Uor_aYMRk-NgoOU=@protonmail.com>
-In-Reply-To: <KzGwc4OhDq6qR43tQSjynifhYV7E1mfeZeQjBWWRNwithi65kenn7yS22w-bbi_OHYXAkYA6y44iMYCYLAWu2g2V3s47Uor_aYMRk-NgoOU=@protonmail.com>
-From:   Chris Murphy <lists@colorremedies.com>
-Date:   Tue, 1 Sep 2020 09:01:19 -0600
-Message-ID: <CAJCQCtSB3QrA74tAH=_Fa-f8WWXJUANgt1_0PRbLcDUgBho-GQ@mail.gmail.com>
-Subject: Re: [Help] Can't login to my systemd-homed user account due to
- fallocate failure
-To:     Andrii Zymohliad <azymohliad@protonmail.com>
-Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <4bf816d4109f4fa812074124a7672db1c5cb851c.1598961912.git.josef@toxicpanda.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Aug 27, 2020 at 12:48 AM Andrii Zymohliad
-<azymohliad@protonmail.com> wrote:
->
-> > > > OK is the sysfs output from before or after the homectl resize? And it
-> > > > matches with the second strace fallocate -l 300g ?
-> > >
-> > > Figured it out. The sysfs is the first strace before the resize.
-> >
-> > Shoot. I confused myself and am not sure, so I need you to tell me
-> > which strace that sysfs goes with, the 403g or 300g.
->
-> Sorry, I haven't put it clear. I've resized it right after I was able to log in a couple of days ago. So both straces and /sys/fs outputs are after resize. And /sys/fs output is after the second strace (-l 300G).
+On Tue, Sep 01, 2020 at 08:09:02AM -0400, Josef Bacik wrote:
+> While running xfstests I got the following lockdep splat
 
-Andrii,
-
-We're trying to reproduce this problem and need more information.
-Could you provide the following:
-
-1. ls -li  /home/azymohliad.home
-2. filefrag -v /home/azymohliad.home | grep -m 10 shared
-3. Pick any line, multiply the first extent (4th column) by 4096, this
-is the bytenr
-4. btrfs inspect-internal dump-tree -t 5 /dev/nvme0n1p2 | grep -C 10 <bytenr>
-
-Thanks!
-
--- 
-Chris Murphy
+Do you know which test was that? The stacktraces don't match any of the
+currently open issues.

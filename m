@@ -2,227 +2,206 @@ Return-Path: <SRS0=FDMB=CK=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-15.7 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,NICE_REPLY_A,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-18.6 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,NICE_REPLY_A,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 35370C433E6
-	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Sep 2020 17:17:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 01193C433E6
+	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Sep 2020 17:22:38 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 052C820866
-	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Sep 2020 17:17:53 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D21502078B
+	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Sep 2020 17:22:37 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="E4mzurmv"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="gegKvJpb"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732551AbgIARRr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 1 Sep 2020 13:17:47 -0400
-Received: from userp2120.oracle.com ([156.151.31.85]:38114 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728670AbgIARRn (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Sep 2020 13:17:43 -0400
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 081HDZTq178943;
-        Tue, 1 Sep 2020 17:17:39 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
- references : from : message-id : date : mime-version : in-reply-to :
- content-type : content-transfer-encoding; s=corp-2020-01-29;
- bh=g/JxFBTzsAGgM5odDpIp57XeeVAMWJBUMLVCxbDvr3Q=;
- b=E4mzurmv88w9aV7jJodB0T4wsOXuU4dr7SnMMh9izyPXKr2ME+z+UuTU2pJoke8oYScF
- F2imxzWhgagq00Z/4tzRlxDomlPvtXs68LY0CLTcmDATvqzCJ/kQvH5OPnZn+Hd0WOHy
- r2zb6SGqTZhqZHZ2dFnPv1i80PVHtLi3eDx0FE9etIP9zDPTF4b+PzwQAy+L2bzlldpX
- G1iKBdJlSpqIKx/G1SLcwyN5a7ToOKVUVQL0TnSsJeHXizrSbgWer5TFrt5B/dTVt0WF
- Qiv0mrRa2ducqdvYr6qtQKjEOXzUqj1hDH1UU9utRwjn7NEhKZJkU1p6MvkVM4P3mB4J RA== 
-Received: from aserp3020.oracle.com (aserp3020.oracle.com [141.146.126.70])
-        by userp2120.oracle.com with ESMTP id 339dmmv8y3-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
-        Tue, 01 Sep 2020 17:17:39 +0000
-Received: from pps.filterd (aserp3020.oracle.com [127.0.0.1])
-        by aserp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 081HEatC110020;
-        Tue, 1 Sep 2020 17:15:38 GMT
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by aserp3020.oracle.com with ESMTP id 3380x3xmnt-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Tue, 01 Sep 2020 17:15:38 +0000
-Received: from abhmp0004.oracle.com (abhmp0004.oracle.com [141.146.116.10])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 081HFbmO005674;
-        Tue, 1 Sep 2020 17:15:37 GMT
-Received: from [192.168.1.102] (/39.109.231.106)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Tue, 01 Sep 2020 10:15:37 -0700
-Subject: Re: [PATCH] btrfs: fix lockdep splat in add_missing_dev
-To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
-        kernel-team@fb.com
-References: <8cad21a9f0bcc2bd29a2b0e89e475687c44b3a59.1598885260.git.josef@toxicpanda.com>
-From:   Anand Jain <anand.jain@oracle.com>
-Message-ID: <8d906780-1507-795c-99cb-39bc11024229@oracle.com>
-Date:   Wed, 2 Sep 2020 01:15:32 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.2.1
+        id S1732710AbgIARWg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 1 Sep 2020 13:22:36 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51380 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728173AbgIAPMD (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Sep 2020 11:12:03 -0400
+Received: from mail-qt1-x843.google.com (mail-qt1-x843.google.com [IPv6:2607:f8b0:4864:20::843])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6742FC061245
+        for <linux-btrfs@vger.kernel.org>; Tue,  1 Sep 2020 08:12:03 -0700 (PDT)
+Received: by mail-qt1-x843.google.com with SMTP id t20so1136340qtr.8
+        for <linux-btrfs@vger.kernel.org>; Tue, 01 Sep 2020 08:12:03 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
+        h=subject:to:cc:references:from:message-id:date:user-agent
+         :mime-version:in-reply-to:content-language:content-transfer-encoding;
+        bh=JqVddDgzCy2CDcYA3lJ5tEqX1twunbY2Yjkw8vKji/A=;
+        b=gegKvJpb+1N6Y0ag+4KqKql6A+bkvfR8AfyRNrpKPkE6Iy98A5pXvjaJEEqdLEtuuL
+         uqYIvOTpZc2flliUM3thbEePkZ6h9hOFx2hgYsz/tnttLNG8n5G2P23qDfBLK5ZfgQTH
+         UJN/Qn7A6WVG6skRE7nH8hda6eOWdvKJpwwdWU4CAqeqnCzOQaGHOqpDT6mDyyb3Cypq
+         ZMSFZUFn/7X1jWGOLHKXLsvc+j7OrmVc5DdzTyDR7SrtXHXjx24f2ljiX3c72P7Uvzpl
+         DRuaO6FySoC21WxIeEmxylMXN4MJRULoMr3awBpi45GkKu7LcerlNEERY1vAfKmVcA4W
+         BgxQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=JqVddDgzCy2CDcYA3lJ5tEqX1twunbY2Yjkw8vKji/A=;
+        b=F/JE0+KwB50puNxGdmR7fgolOUO05hXWPYwOTQBxq6m3GDGCqK47N2BEP80KP2xBP8
+         aYWuENeJ5l5/tk70kGV5PoBbkLPcRsRXxuov0O73DpREFi1I5UVMVOL5mMp69zpubefc
+         F8pz1jJtDDhyeZ2uYu0OQdkxVyfssXQBjEyDIMDtHzoEre6uketfmjBwk2NSHi4ZbD36
+         zsGtQpNJNhRH9AUY0WysVQG4EZ3tQrDGjmE9zlpKf9wAmNH9I6m9KBieVDtceCEBCmp8
+         nNxCWGlHqKPXfwBlUbgGS/5ldV696yJdlosaQP5GHzVB8hM3svGhhvmMY1/+pxuAqU8l
+         n05A==
+X-Gm-Message-State: AOAM532s164WhBzC1g7ENZF50Bx06BotD7RN5iet6bEXOj52JGWN4IVS
+        Bd4P/xvpAlwBGH6g/vA29svysQ==
+X-Google-Smtp-Source: ABdhPJyQ+0CbvWF8aOMdp5NonUe6joJXo/pCEt7FcGIq/GLv4yJba9JKGnffw3oU9DS4ko5wzYRD+g==
+X-Received: by 2002:ac8:47c4:: with SMTP id d4mr2323721qtr.43.1598973121091;
+        Tue, 01 Sep 2020 08:12:01 -0700 (PDT)
+Received: from [192.168.1.45] (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
+        by smtp.gmail.com with ESMTPSA id r68sm1902547qkd.13.2020.09.01.08.11.59
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 01 Sep 2020 08:12:00 -0700 (PDT)
+Subject: Re: [RFC PATCH] btrfs: don't call btrfs_sync_file from iomap context
+To:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+        David Sterba <dsterba@suse.com>
+Cc:     "linux-btrfs @ vger . kernel . org" <linux-btrfs@vger.kernel.org>,
+        Filipe Manana <fdmanana@gmail.com>,
+        Christoph Hellwig <hch@lst.de>,
+        Linux FS Devel <linux-fsdevel@vger.kernel.org>
+References: <20200901130644.12655-1-johannes.thumshirn@wdc.com>
+From:   Josef Bacik <josef@toxicpanda.com>
+Message-ID: <42efa646-73cd-d884-1c9c-dd889294bde2@toxicpanda.com>
+Date:   Tue, 1 Sep 2020 11:11:58 -0400
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:68.0)
+ Gecko/20100101 Thunderbird/68.12.0
 MIME-Version: 1.0
-In-Reply-To: <8cad21a9f0bcc2bd29a2b0e89e475687c44b3a59.1598885260.git.josef@toxicpanda.com>
+In-Reply-To: <20200901130644.12655-1-johannes.thumshirn@wdc.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
 Content-Transfer-Encoding: 7bit
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9731 signatures=668679
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 mlxscore=0 spamscore=0 phishscore=0
- mlxlogscore=999 adultscore=0 suspectscore=0 bulkscore=0 malwarescore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2006250000
- definitions=main-2009010144
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9731 signatures=668679
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 bulkscore=0 phishscore=0
- mlxlogscore=999 adultscore=0 impostorscore=0 mlxscore=0 suspectscore=0
- spamscore=0 clxscore=1015 malwarescore=0 lowpriorityscore=0
- priorityscore=1501 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2006250000 definitions=main-2009010144
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 31/8/20 10:52 pm, Josef Bacik wrote:
-> Nikolay reported a lockdep splat that I could reproduce with btrfs/187.
+On 9/1/20 9:06 AM, Johannes Thumshirn wrote:
+> Fstests generic/113 exposes a deadlock introduced by the switch to iomap
+> for direct I/O.
 > 
-> ======================================================
-> WARNING: possible circular locking dependency detected
-> 5.9.0-rc2+ #1 Tainted: G        W
-> ------------------------------------------------------
-> kswapd0/100 is trying to acquire lock:
-> ffff9e8ef38b6268 (&delayed_node->mutex){+.+.}-{3:3}, at: __btrfs_release_delayed_node.part.0+0x3f/0x330
+> [ 18.291293]
+> [ 18.291532] ============================================
+> [ 18.292115] WARNING: possible recursive locking detected
+> [ 18.292723] 5.9.0-rc2+ #746 Not tainted
+> [ 18.293145] --------------------------------------------
+> [ 18.293718] aio-stress/922 is trying to acquire lock:
+> [ 18.294274] ffff888217412010 (&sb->s_type->i_mutex_key#11){++++}-{3:3}, at: btrfs_sync_file+0xf7/0x560 [btrfs]
+> [ 18.295450]
+> [ 18.295450] but task is already holding lock:
+> [ 18.296086] ffff888217412010 (&sb->s_type->i_mutex_key#11){++++}-{3:3}, at: btrfs_file_write_iter+0x6e/0x630 [btrfs]
+> [ 18.297249]
+> [ 18.297249] other info that might help us debug this:
+> [ 18.297960] Possible unsafe locking scenario:
+> [ 18.297960]
+> [ 18.298605] CPU0
+> [ 18.298880] ----
+> [ 18.299151] lock(&sb->s_type->i_mutex_key#11);
+> [ 18.299653] lock(&sb->s_type->i_mutex_key#11);
+> [ 18.300156]
+> [ 18.300156] *** DEADLOCK ***
+> [ 18.300156]
+> [ 18.300802] May be due to missing lock nesting notation
+> [ 18.300802]
+> [ 18.301542] 2 locks held by aio-stress/922:
+> [ 18.302000] #0: ffff888217412010 (&sb->s_type->i_mutex_key#11){++++}-{3:3}, at: btrfs_file_write_iter+0x6e/0x630 [btrfs]
+> [ 18.303194] #1: ffff888217411ea0 (&ei->dio_sem){++++}-{3:3}, at: btrfs_direct_IO+0x113/0x160 [btrfs]
+> [ 18.304223]
+> [ 18.304223] stack backtrace:
+> [ 18.304695] CPU: 0 PID: 922 Comm: aio-stress Not tainted 5.9.0-rc2+ #746
+> [ 18.305383] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.13.0-0-gf21b5a4-rebuilt.opensuse.org 04/01/2014
+> [ 18.306532] Call Trace:
+> [ 18.306796] dump_stack+0x78/0xa0
+> [ 18.307145] __lock_acquire.cold+0x121/0x29f
+> [ 18.307613] ? btrfs_dio_iomap_end+0x65/0x130 [btrfs]
+> [ 18.308140] lock_acquire+0x93/0x3b0
+> [ 18.308544] ? btrfs_sync_file+0xf7/0x560 [btrfs]
+> [ 18.309036] down_write+0x33/0x70
+> [ 18.309402] ? btrfs_sync_file+0xf7/0x560 [btrfs]
+> [ 18.309912] btrfs_sync_file+0xf7/0x560 [btrfs]
+> [ 18.310384] iomap_dio_complete+0x10d/0x120
+> [ 18.310824] iomap_dio_rw+0x3c8/0x520
+> [ 18.311225] btrfs_direct_IO+0xd3/0x160 [btrfs]
+> [ 18.311727] btrfs_file_write_iter+0x1fe/0x630 [btrfs]
+> [ 18.312264] ? find_held_lock+0x2b/0x80
+> [ 18.312662] aio_write+0xcd/0x180
+> [ 18.313011] ? __might_fault+0x31/0x80
+> [ 18.313408] ? find_held_lock+0x2b/0x80
+> [ 18.313817] ? __might_fault+0x31/0x80
+> [ 18.314217] io_submit_one+0x4e1/0xb30
+> [ 18.314606] ? find_held_lock+0x2b/0x80
+> [ 18.315010] __x64_sys_io_submit+0x71/0x220
+> [ 18.315449] do_syscall_64+0x33/0x40
+> [ 18.315829] entry_SYSCALL_64_after_hwframe+0x44/0xa9
+> [ 18.316363] RIP: 0033:0x7f5940881f79
+> [ 18.316740] Code: 00 c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 8b 0d e7 4e 0c 00 f7 d8 64 89 01 48
+> [ 18.318651] RSP: 002b:00007f5934f51d88 EFLAGS: 00000246 ORIG_RAX: 00000000000000d1
+> [ 18.319428] RAX: ffffffffffffffda RBX: 00007f5934f52680 RCX: 00007f5940881f79
+> [ 18.320168] RDX: 0000000000b56030 RSI: 0000000000000008 RDI: 00007f593171f000
+> [ 18.320895] RBP: 00007f593171f000 R08: 0000000000000000 R09: 0000000000b56030
+> [ 18.321630] R10: 00007fffd599e080 R11: 0000000000000246 R12: 0000000000000008
+> [ 18.322369] R13: 0000000000000000 R14: 0000000000b56030 R15: 0000000000b56070
 > 
-> but task is already holding lock:
-> ffffffffa9d74700 (fs_reclaim){+.+.}-{0:0}, at: __fs_reclaim_acquire+0x5/0x30
+> This happens because iomap_dio_complete() calls into generic_write_sync()
+> if we have the data-sync flag set. But as we're still under the
+> inode_lock() from btrfs_file_write_iter() we will deadlock once
+> btrfs_sync_file() tries to acquire the inode_lock().
 > 
-> which lock already depends on the new lock.
+> Calling into generic_write_sync() is not needed as __btrfs_direct_write()
+> already takes care of persisting the data on disk. We can temporarily drop
+> the IOCB_DSYNC flag before calling into __btrfs_direct_write() so the
+> iomap code won't try to call into the sync routines as well.
 > 
-> the existing dependency chain (in reverse order) is:
+> References: https://github.com/btrfs/fstests/issues/12
+> Fixes: da4d7c1b4c45 ("btrfs: switch to iomap for direct IO")
+> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+> ---
+>   fs/btrfs/file.c | 5 ++++-
+>   1 file changed, 4 insertions(+), 1 deletion(-)
 > 
-> -> #2 (fs_reclaim){+.+.}-{0:0}:
->         fs_reclaim_acquire+0x65/0x80
->         slab_pre_alloc_hook.constprop.0+0x20/0x200
->         kmem_cache_alloc_trace+0x3a/0x1a0
->         btrfs_alloc_device+0x43/0x210
->         add_missing_dev+0x20/0x90
->         read_one_chunk+0x301/0x430
->         btrfs_read_sys_array+0x17b/0x1b0
->         open_ctree+0xa62/0x1896
->         btrfs_mount_root.cold+0x12/0xea
->         legacy_get_tree+0x30/0x50
->         vfs_get_tree+0x28/0xc0
->         vfs_kern_mount.part.0+0x71/0xb0
->         btrfs_mount+0x10d/0x379
->         legacy_get_tree+0x30/0x50
->         vfs_get_tree+0x28/0xc0
->         path_mount+0x434/0xc00
->         __x64_sys_mount+0xe3/0x120
->         do_syscall_64+0x33/0x40
->         entry_SYSCALL_64_after_hwframe+0x44/0xa9
+> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+> index b62679382799..c75c0f2a5f72 100644
+> --- a/fs/btrfs/file.c
+> +++ b/fs/btrfs/file.c
+> @@ -2023,6 +2023,7 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
+>   		atomic_inc(&BTRFS_I(inode)->sync_writers);
+>   
+>   	if (iocb->ki_flags & IOCB_DIRECT) {
+> +		iocb->ki_flags &= ~IOCB_DSYNC;
+>   		num_written = __btrfs_direct_write(iocb, from);
+>   	} else {
+>   		num_written = btrfs_buffered_write(iocb, from);
+> @@ -2046,8 +2047,10 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
+>   	if (num_written > 0)
+>   		num_written = generic_write_sync(iocb, num_written);
+>   
+> -	if (sync)
+> +	if (sync) {
+> +		iocb->ki_flags |= IOCB_DSYNC;
+>   		atomic_dec(&BTRFS_I(inode)->sync_writers);
+> +	}
+>   out:
+>   	current->backing_dev_info = NULL;
+>   	return num_written ? num_written : err;
 > 
-> -> #1 (&fs_info->chunk_mutex){+.+.}-{3:3}:
->         __mutex_lock+0x7e/0x7e0
->         btrfs_chunk_alloc+0x125/0x3a0
->         find_free_extent+0xdf6/0x1210
->         btrfs_reserve_extent+0xb3/0x1b0
->         btrfs_alloc_tree_block+0xb0/0x310
->         alloc_tree_block_no_bg_flush+0x4a/0x60
->         __btrfs_cow_block+0x11a/0x530
->         btrfs_cow_block+0x104/0x220
->         btrfs_search_slot+0x52e/0x9d0
->         btrfs_lookup_inode+0x2a/0x8f
->         __btrfs_update_delayed_inode+0x80/0x240
->         btrfs_commit_inode_delayed_inode+0x119/0x120
->         btrfs_evict_inode+0x357/0x500
->         evict+0xcf/0x1f0
->         vfs_rmdir.part.0+0x149/0x160
->         do_rmdir+0x136/0x1a0
->         do_syscall_64+0x33/0x40
->         entry_SYSCALL_64_after_hwframe+0x44/0xa9
-> 
-> -> #0 (&delayed_node->mutex){+.+.}-{3:3}:
->         __lock_acquire+0x1184/0x1fa0
->         lock_acquire+0xa4/0x3d0
->         __mutex_lock+0x7e/0x7e0
->         __btrfs_release_delayed_node.part.0+0x3f/0x330
->         btrfs_evict_inode+0x24c/0x500
->         evict+0xcf/0x1f0
->         dispose_list+0x48/0x70
->         prune_icache_sb+0x44/0x50
->         super_cache_scan+0x161/0x1e0
->         do_shrink_slab+0x178/0x3c0
->         shrink_slab+0x17c/0x290
->         shrink_node+0x2b2/0x6d0
->         balance_pgdat+0x30a/0x670
->         kswapd+0x213/0x4c0
->         kthread+0x138/0x160
->         ret_from_fork+0x1f/0x30
-> 
-> other info that might help us debug this:
-> 
-> Chain exists of:
->    &delayed_node->mutex --> &fs_info->chunk_mutex --> fs_reclaim
-> 
->   Possible unsafe locking scenario:
-> 
->         CPU0                    CPU1
->         ----                    ----
->    lock(fs_reclaim);
->                                 lock(&fs_info->chunk_mutex);
->                                 lock(fs_reclaim);
->    lock(&delayed_node->mutex);
-> 
->   *** DEADLOCK ***
-> 
-> 3 locks held by kswapd0/100:
->   #0: ffffffffa9d74700 (fs_reclaim){+.+.}-{0:0}, at: __fs_reclaim_acquire+0x5/0x30
->   #1: ffffffffa9d65c50 (shrinker_rwsem){++++}-{3:3}, at: shrink_slab+0x115/0x290
->   #2: ffff9e8e9da260e0 (&type->s_umount_key#48){++++}-{3:3}, at: super_cache_scan+0x38/0x1e0
-> 
-> stack backtrace:
-> CPU: 1 PID: 100 Comm: kswapd0 Tainted: G        W         5.9.0-rc2+ #1
-> Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.13.0-2.fc32 04/01/2014
-> Call Trace:
->   dump_stack+0x92/0xc8
->   check_noncircular+0x12d/0x150
->   __lock_acquire+0x1184/0x1fa0
->   lock_acquire+0xa4/0x3d0
->   ? __btrfs_release_delayed_node.part.0+0x3f/0x330
->   __mutex_lock+0x7e/0x7e0
->   ? __btrfs_release_delayed_node.part.0+0x3f/0x330
->   ? __btrfs_release_delayed_node.part.0+0x3f/0x330
->   ? lock_acquire+0xa4/0x3d0
->   ? btrfs_evict_inode+0x11e/0x500
->   ? find_held_lock+0x2b/0x80
->   __btrfs_release_delayed_node.part.0+0x3f/0x330
->   btrfs_evict_inode+0x24c/0x500
->   evict+0xcf/0x1f0
->   dispose_list+0x48/0x70
->   prune_icache_sb+0x44/0x50
->   super_cache_scan+0x161/0x1e0
->   do_shrink_slab+0x178/0x3c0
->   shrink_slab+0x17c/0x290
->   shrink_node+0x2b2/0x6d0
->   balance_pgdat+0x30a/0x670
->   kswapd+0x213/0x4c0
->   ? _raw_spin_unlock_irqrestore+0x46/0x60
->   ? add_wait_queue_exclusive+0x70/0x70
->   ? balance_pgdat+0x670/0x670
->   kthread+0x138/0x160
->   ? kthread_create_worker_on_cpu+0x40/0x40
->   ret_from_fork+0x1f/0x30
-> 
-> This is because we are holding the chunk_mutex when we call
-> btrfs_alloc_device, which does a GFP_KERNEL allocation.  We don't want
-> to switch that to a GFP_NOFS lock because this is the only place where
-> it matters.  So instead use memalloc_nofs_save() around the allocation
-> in order to avoid the lockdep splat.
-> 
-> References: https://github.com/btrfs/fstests/issues/6
-> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 
+Christoph, I feel like this is broken.  Xfs and ext4 get away with this for 
+different reasons, ext4 doesn't take the inode_lock() at all in fsync, and xfs 
+takes the ILOCK instead of the IOLOCK, so it's fine.  However btrfs uses 
+inode_lock() in ->fsync (not for the IO, just for the logging part).  A long 
+time ago I specifically pushed the inode locking down into ->fsync() handlers to 
+give us this sort of control.
 
-Reviewed-by: Anand Jain <anand.jain@oracle.com>
+I'm not 100% on the iomap stuff, but the fix seems like we need to move the 
+generic_write_sync() out of iomap_dio_complete() completely, and the callers do 
+their own thing, much like the normal generic_file_write_iter() does.  And then 
+I'd like to add a WARN_ON(lockdep_is_held()) in vfs_fsync_range() so we can 
+avoid this sort of thing in the future.  What do you think?  Thanks,
 
-
-Thanks. Anand
+Josef
 

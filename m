@@ -2,204 +2,135 @@ Return-Path: <SRS0=FDMB=CK=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
+X-Spam-Status: No, score=-4.0 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
 	SPF_PASS autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C64BEC433E6
-	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Sep 2020 14:16:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A9698C433E7
+	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Sep 2020 14:21:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 89043206CD
-	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Sep 2020 14:16:03 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 69DDB206EB
+	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Sep 2020 14:21:13 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (1024-bit key) header.d=bouah.net header.i=@bouah.net header.b="ROoV5G9e"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="T4tQeOpe";
+	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b="s+ckC8SF"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728270AbgIAOP7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 1 Sep 2020 10:15:59 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42616 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727099AbgIAOPm (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Sep 2020 10:15:42 -0400
-X-Greylist: delayed 540 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Tue, 01 Sep 2020 07:15:42 PDT
-Received: from anderith.bouah.net (anderith.bouah.net [IPv6:2001:19f0:7000:8b29:5400:ff:fe05:5e62])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2F228C06125C
-        for <linux-btrfs@vger.kernel.org>; Tue,  1 Sep 2020 07:15:42 -0700 (PDT)
-Date:   Tue, 1 Sep 2020 16:06:34 +0200
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple; d=bouah.net; s=anderith;
-        t=1598969201; bh=ud6KIF8SVK3ZB710jRTtvgF2LpacpF/x6duI4v107bw=;
-        h=Date:From:To:Subject;
-        b=ROoV5G9er6jSTHAOXMXqqSTBtGI5ZBM8l/PRiotey4OvNvYoU7Yzw3F8AhRR4AKSW
-         HBFGxlMgbJzyT07YlqOx0mUFXcusbOpd05qfn+dc7gr7iYGUj0AlRIn7qYQwqxdh9g
-         CT46WoQJ40b7qD+sbqUln1pF+129zJ0qGH9R7yUI=
-From:   Maxime Buquet <pep@bouah.net>
-To:     linux-btrfs@vger.kernel.org
-Subject: "bad tree block" on Linux 5.8.5
-Message-ID: <20200901140634.GA774@caska>
-Content-Type: multipart/signed; micalg=pgp-sha256;
-        protocol="application/pgp-signature"; boundary="rwEMma7ioTxnRzrJ"
-Content-Disposition: inline
-X-PGP-Key: https://bouah.net/0x840FD3DCCA998D434FD2155DDEDA74AEECA9D0F2.asc.pub
+        id S1728362AbgIAOVK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 1 Sep 2020 10:21:10 -0400
+Received: from esa1.hgst.iphmx.com ([68.232.141.245]:35893 "EHLO
+        esa1.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727080AbgIAOUw (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Sep 2020 10:20:52 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1598970051; x=1630506051;
+  h=from:to:cc:subject:date:message-id:references:
+   content-transfer-encoding:mime-version;
+  bh=iitLIiqvDjptYh01st0IA5hffKoytQLsqPlFwC9vvdg=;
+  b=T4tQeOpehXEPB5dwNPNlasJnJMyErMcuDoucMh4VwuDDRezo0K/HjyYj
+   LvO4PM8nFnyBxBhLXCmHkry7mynDg+o5VB+ceaU//md2jOVHJFoSmnAG/
+   +XMZZ1n4/w7N3ZiIwHLp0cStiJxBG+xwSQUvgOR0lUdMkmyFjpAxogiRn
+   wQyb1m2u/6uyTqU77guAH8+Ju9a4SJz93KqbaCB7f+KpHig7WfayjmZL5
+   OiKoGfAJvAjsMLwiBIIBPvQn/yqsXeZ1Cm+DNzkLku5nBhcPbDaWbTvfh
+   YtTQs3KD0Na7Vu23bQ0UPmEhB8wBqLlj3uUAKhDp8GR2XbW8WXODm+rVz
+   w==;
+IronPort-SDR: sLxBFK95UsFSIQIYY27rZGIbiTHF9e+6wjgr/EwnaAyJ7p5Gbn/kz6cU56FriYuGZzGRpPEidy
+ MgskhpZT8RxGPjLYs61DYkHRAI8Mm4i78QXTJRDyT9Qq+PzhP8S3rDWXkyO1Qf56cm/wFpSe3Z
+ FTpcS6X4rU/0a990WUEx5Ypos+BCkF5iyur7mEJ4UC3l5VxDY9WYBCz0UDti9nJXNX7OIGnEM9
+ xa6+pCfyXfC0P8K3MIEItC5DK3J380Upwqo9sGtLNXBP8oMCnBWGwkI9UMdsnxEQUWDozjTI0E
+ Pk0=
+X-IronPort-AV: E=Sophos;i="5.76,379,1592841600"; 
+   d="scan'208";a="255848033"
+Received: from mail-bn8nam11lp2173.outbound.protection.outlook.com (HELO NAM11-BN8-obe.outbound.protection.outlook.com) ([104.47.58.173])
+  by ob1.hgst.iphmx.com with ESMTP; 01 Sep 2020 22:20:49 +0800
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=dcw/1l9w7tjLdiFrGsGbJWhHCwIF74KnPVwzW5eGMYoXKDGQQ83SE5i2aQzYIbumdExRuN2WF/zm4BchEyeCPjErQHYqgIcc2k77yrrVtSyFw7+SidS8jBZ8udYv3hZbAZ7vE/k43Q8EKFpE3taIeiBTcbHLzwvrY4plEVD+NbCUm4csCasH+jBtE2d6c4Ab1kDKqfrL/Xve3L/dbmXq+xULzmrU72PqmFDYGXtrdi5UEpiJg59ScVGHtX63XQjuvgLBC9CfkHV6pEXMg83z/a+oSVgqHRWbs98obCm3bJFGiFjmteQcv5kddpCWmLt1rk6sJYZ/iDCMgu50bHiNuw==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=iitLIiqvDjptYh01st0IA5hffKoytQLsqPlFwC9vvdg=;
+ b=UCB5iVng7Cqc7XJ5AG70lUm/QdK8rXe+YJx9R+tyvnUoeAU42FlU/Ij5j3Iykz+ozvsCpOiRsOF2cC3/L62IGY6JQQUq+epdAM0q2avxgYcrZH9Nbw6ypdilE3OTdODmc4+sQZer1EU5vw+mjIlydvlQDm+kIES+LeJgs9DfXaKJ6zQ+LHHHqlyHe4L1bS/Q5pYHqcZHb2gxygvAqbCH24Qp3uAqOpnJCZG9ibXSnTCJLhS321BrvvBH2O4eWz3DdU6npoXc22p08IvxBtzDMjFgdoW2pP43uoH0p9VeFX4aLicBrzIpfCQzh5VOR+b75XKdzNbGaGA2o40D8yKdoQ==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
+ header.d=wdc.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=iitLIiqvDjptYh01st0IA5hffKoytQLsqPlFwC9vvdg=;
+ b=s+ckC8SFyxLMfecE5seAivEDXbBjoOjQ/7FtdciG3uCiXUFhUT4p3aXHdqgcs5I9F3iirdYKyBTx4/9adP5/IGEgbaGwr10CanDrGTNO4HY3ja0YU1k8IN3zs+FOlq/gOtSXy9UqG8FNJU17kPvYBXI6tPYM8BupWdPM+pKwJfA=
+Received: from SN4PR0401MB3598.namprd04.prod.outlook.com
+ (2603:10b6:803:47::21) by SN6PR04MB4463.namprd04.prod.outlook.com
+ (2603:10b6:805:a5::12) with Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.3348.15; Tue, 1 Sep
+ 2020 14:20:47 +0000
+Received: from SN4PR0401MB3598.namprd04.prod.outlook.com
+ ([fe80::457e:5fe9:2ae3:e738]) by SN4PR0401MB3598.namprd04.prod.outlook.com
+ ([fe80::457e:5fe9:2ae3:e738%7]) with mapi id 15.20.3326.023; Tue, 1 Sep 2020
+ 14:20:46 +0000
+From:   Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
+To:     Goldwyn Rodrigues <rgoldwyn@suse.de>
+CC:     David Sterba <dsterba@suse.com>,
+        "linux-btrfs @ vger . kernel . org" <linux-btrfs@vger.kernel.org>,
+        Filipe Manana <fdmanana@gmail.com>,
+        Josef Bacik <josef@toxicpanda.com>
+Subject: Re: [RFC PATCH] btrfs: don't call btrfs_sync_file from iomap context
+Thread-Topic: [RFC PATCH] btrfs: don't call btrfs_sync_file from iomap context
+Thread-Index: AQHWgGDIsm2Q9fFDf0qcho+qy+MPJQ==
+Date:   Tue, 1 Sep 2020 14:20:46 +0000
+Message-ID: <SN4PR0401MB359823A8A58EA86D03ECAE1B9B2E0@SN4PR0401MB3598.namprd04.prod.outlook.com>
+References: <20200901130644.12655-1-johannes.thumshirn@wdc.com>
+ <20200901141715.kpemq765lwikdwoh@fiona>
+Accept-Language: en-US
+Content-Language: en-US
+X-MS-Has-Attach: 
+X-MS-TNEF-Correlator: 
+authentication-results: suse.de; dkim=none (message not signed)
+ header.d=none;suse.de; dmarc=none action=none header.from=wdc.com;
+x-originating-ip: [2001:a62:1590:f101:bd07:d1f9:7e6b:2014]
+x-ms-publictraffictype: Email
+x-ms-office365-filtering-ht: Tenant
+x-ms-office365-filtering-correlation-id: 3f995fc4-befe-4daf-8e3b-08d84e82381c
+x-ms-traffictypediagnostic: SN6PR04MB4463:
+x-microsoft-antispam-prvs: <SN6PR04MB4463483F5FAD6D9EE3006CD89B2E0@SN6PR04MB4463.namprd04.prod.outlook.com>
+wdcipoutbound: EOP-TRUE
+x-ms-oob-tlc-oobclassifiers: OLM:8882;
+x-ms-exchange-senderadcheck: 1
+x-microsoft-antispam: BCL:0;
+x-microsoft-antispam-message-info: qfCOEBxyh+YlTR7MM/L4bUT+h1s48IhvBAt0+JuODhXKw8awj4tlKHOy6EdCJ0V4jkpUwmtOWt/9tvdowy+C7y8BGaFXhnniYFK61JW9pPZSrJ17kVn7O0xatEcoP7ZGhYDb4rvoXdRiuuTHnNcoM+F/uWOOoPAdL1LPip0TZOiENCJ7OGcsqeldvSwJV4hnkj4nRm+Dj+kq88yAwx4fFQcPT18IZ7lKZVJZwQULiN1OYUvYkvxw8zhd9E81E9QEe5IdKUlbx+1WADzsw9VB2ipq3drHxD/SNCmlCJAvo+JoZDIL2mWOEMWEfI9INq1tGyV//vii5wU5h1hZ8ZM3fQ==
+x-forefront-antispam-report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SN4PR0401MB3598.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(4636009)(346002)(376002)(39860400002)(366004)(396003)(136003)(9686003)(7696005)(6506007)(53546011)(4744005)(8936002)(33656002)(55016002)(316002)(54906003)(478600001)(86362001)(2906002)(5660300002)(8676002)(52536014)(66556008)(66946007)(66446008)(64756008)(66476007)(6916009)(83380400001)(76116006)(91956017)(4326008)(186003)(71200400001);DIR:OUT;SFP:1102;
+x-ms-exchange-antispam-messagedata: aMxKSvcGdi20uXWRqNUpAruGHtv5lEzCmRrIlbxkwGL5ZKymug55xUPMmUcnIGg1L413mTUDrjW8hkjXkDXmAyLmQTV3jPR5WhgWP7zvqI31lLQfs1u49Ky9iBONS6Gmyo4FY23dCrJsvrKp6BISSdTrtsQc0+nInWjMx2i1P7r8bjEVZ8jnhMXjOBCmCHennL/7cmkqq3xGYiG6VmxXMxw8yus30U93sS9sTL+3Oz6EuCsLmaSX2zO/DKOU+9dSXlqgM5+/O0xqp/0lmFMcJ29cZjS9u3EoK3Fncwz9qPe7pvl1+OPXfwDPROCfQepQ0k1eyjNYiJFvnQbUa5TR0WlhvP6y3nFCKjrWr6Bdv19JTnUkw0Y3zECiRZ2ConBbScoE7V4ibVWXoUfsqYfIgKV9JD+q5hLzDM5TI7yHsgCXfoWN0ExNZZlm4e7VNExC4KowPZk75qyHVXjjhwZ/qZmxddXC081b0SlbQu3RFjRYaqn9nZAV43UyWbgV0ynXYVCsbxdesGwWlzfmqHzvMHg9FPdbnViYCoAx7xtV4hcHih2VwNrJRTce8FfO05u4i/LufJh+9zxLvrnSF9IMIjczvOyDdBLO8X9Nj0f23hbwmDCuDkqypTbrb7Gc7n9j+DZtaK+R6+oZoQMWJYWqhP0YP+GVRiapRd2I1ZzCFKrgEi0375YVDJAru5QqfgXJu+goCJLS6jmTS+yyz+1YaA==
+x-ms-exchange-transport-forked: True
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+X-OriginatorOrg: wdc.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-AuthSource: SN4PR0401MB3598.namprd04.prod.outlook.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 3f995fc4-befe-4daf-8e3b-08d84e82381c
+X-MS-Exchange-CrossTenant-originalarrivaltime: 01 Sep 2020 14:20:46.5326
+ (UTC)
+X-MS-Exchange-CrossTenant-fromentityheader: Hosted
+X-MS-Exchange-CrossTenant-id: b61c8803-16f3-4c35-9b17-6f65f441df86
+X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
+X-MS-Exchange-CrossTenant-userprincipalname: ShsThZMNhz4X0pzaIr/Xs6yO1Ndq6aqrnvQ/Vy5h+6YW95C9D1c0WHZaCIJ1jZP7R5alW7qUisPYTZL8IMKpCmXDB3n0V+TDM6w9+jsZr8E=
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: SN6PR04MB4463
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-
---rwEMma7ioTxnRzrJ
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-
-Hi there,
-
-I'm having bad tree block issues on Linux 5.8.5 since yesterday. I'm not
-entirely sure how it happened. Any help is appreciated to try and debug.
-
-Thanks!
-
-
-Here are some logs:
-
-
-# uname -a
-Linux caska 5.8.5-arch1-1 #1 SMP PREEMPT Thu, 27 Aug 2020 18:53:02 +0000 x8=
-6_64 GNU/Linux
-
-# btrfs --version
-btrfs-progs v5.7
-
-# cat /dev/kmsg
-[..]
- SUBSYSTEM=3Dhid
- DEVICE=3D+hid:0003:1395:0048.0001
-6,1212,55540469834,-;usb 2-1: USB disconnect, device number 5
- SUBSYSTEM=3Dusb
- DEVICE=3Dc189:132
-6,1213,55546529788,-;usb 2-1: new SuperSpeed Gen 1 USB device number 6 usin=
-g xhci_hcd
- SUBSYSTEM=3Dusb
- DEVICE=3D+usb:2-1
-6,1214,55546547041,-;usb 2-1: New USB device found, idVendor=3D1058, idProd=
-uct=3D25a1, bcdDevice=3D10.14
- SUBSYSTEM=3Dusb
- DEVICE=3Dc189:133
-6,1215,55546547043,-;usb 2-1: New USB device strings: Mfr=3D2, Product=3D3,=
- SerialNumber=3D1
- SUBSYSTEM=3Dusb
- DEVICE=3Dc189:133
-6,1216,55546547044,-;usb 2-1: Product: Elements 25A1
- SUBSYSTEM=3Dusb
- DEVICE=3Dc189:133
-6,1217,55546547045,-;usb 2-1: Manufacturer: Western Digital
- SUBSYSTEM=3Dusb
- DEVICE=3Dc189:133
-6,1218,55546547046,-;usb 2-1: SerialNumber: 575853314543374658314C38
- SUBSYSTEM=3Dusb
- DEVICE=3Dc189:133
-6,1219,55546548366,-;usb-storage 2-1:1.0: USB Mass Storage device detected
- SUBSYSTEM=3Dusb
- DEVICE=3D+usb:2-1:1.0
-6,1220,55546548538,-;scsi host3: usb-storage 2-1:1.0
- SUBSYSTEM=3Dscsi
- DEVICE=3D+scsi:host3
-5,1221,55547557024,-;scsi 3:0:0:0: Direct-Access     WD       Elements 25A1=
-    1014 PQ: 0 ANSI: 6
- SUBSYSTEM=3Dscsi
- DEVICE=3D+scsi:3:0:0:0
-5,1222,55547557710,-;sd 3:0:0:0: Attached scsi generic sg1 type 0
- SUBSYSTEM=3Dscsi
- DEVICE=3D+scsi:3:0:0:0
-5,1223,55547558772,-;sd 3:0:0:0: [sdb] Spinning up disk...
- SUBSYSTEM=3Dscsi
- DEVICE=3D+scsi:3:0:0:0
-4,1224,55548569673,c;....ready
-5,1225,55551610584,-;sd 3:0:0:0: [sdb] Very big device. Trying to use READ =
-CAPACITY(16).
- SUBSYSTEM=3Dscsi
- DEVICE=3D+scsi:3:0:0:0
-5,1226,55551610752,-;sd 3:0:0:0: [sdb] 7813969920 512-byte logical blocks: =
-(4.00 TB/3.64 TiB)
- SUBSYSTEM=3Dscsi
- DEVICE=3D+scsi:3:0:0:0
-5,1227,55551610756,-;sd 3:0:0:0: [sdb] 4096-byte physical blocks
- SUBSYSTEM=3Dscsi
- DEVICE=3D+scsi:3:0:0:0
-5,1228,55551610971,-;sd 3:0:0:0: [sdb] Write Protect is off
- SUBSYSTEM=3Dscsi
- DEVICE=3D+scsi:3:0:0:0
-7,1229,55551610975,-;sd 3:0:0:0: [sdb] Mode Sense: 47 00 10 08
- SUBSYSTEM=3Dscsi
- DEVICE=3D+scsi:3:0:0:0
-3,1230,55551611224,-;sd 3:0:0:0: [sdb] No Caching mode page found
- SUBSYSTEM=3Dscsi
- DEVICE=3D+scsi:3:0:0:0
-3,1231,55551611232,-;sd 3:0:0:0: [sdb] Assuming drive cache: write through
- SUBSYSTEM=3Dscsi
- DEVICE=3D+scsi:3:0:0:0
-6,1232,55551829992,-; sdb: sdb1
-5,1233,55551831353,-;sd 3:0:0:0: [sdb] Attached SCSI disk
- SUBSYSTEM=3Dscsi
- DEVICE=3D+scsi:3:0:0:0
-
-
-# cryptsetup open --type=3Dluks /dev/sdb1 data
-Enter passphrase for /dev/sdb1:
-
-# mount -t btrfs -o rw,subvol=3D/data /dev/mapper/data /data
-mount: /data: wrong fs type, bad option, bad superblock on /dev/mapper/data=
-, missing codepage or helper program, or other error.
-
-# file -s /dev/mapper/data
-/dev/mapper/data: symbolic link to ../dm-1
-# file -s /dev/dm-1
-/dev/dm-1: BTRFS Filesystem sectorsize 4096, nodesize 16384, leafsize 16384=
-, UUID=3Ddd439261-afed-4c9e-8685-07d46e46e917, 3829686697984/4000749432832 =
-bytes used, 1 devices
-
-# btrfs fi show
-Label: none  uuid: dd439261-afed-4c9e-8685-07d46e46e917
-        Total devices 1 FS bytes used 3.48TiB
-        devid    1 size 3.64TiB used 3.49TiB path /dev/mapper/data
-
-# btrfs check --readonly /dev/mapper/data
-Opening filesystem to check...
-checksum verify failed on 3972119019520 found 000000FC wanted FFFFFFEE
-checksum verify failed on 3972119019520 found 00000001 wanted 00000055
-checksum verify failed on 3972119019520 found 00000001 wanted 00000055
-bad tree block 3972119019520, bytenr mismatch, want=3D3972119019520, have=
-=3D5982236876204203511
-Couldn't read tree root
-ERROR: cannot open file system
-
-# btrfs rescue chunk-recover /dev/mapper/data
-Scanning: DONE in dev0
-No valid btrfs found
-open with broken chunk error
-Chunk tree recovery failed
-btrfs rescue chunk-recover /dev/mapper/data  428.09s user 3162.61s system 9=
-% cpu 10:28:53.27 total
-
---=20
-Maxime =E2=80=9Cpep=E2=80=9D Buquet
-
---rwEMma7ioTxnRzrJ
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQIzBAABCAAdFiEEhA/T3MqZjUNP0hVd3tp0ruyp0PIFAl9OVWYACgkQ3tp0ruyp
-0PJ6tRAAgKfgVmzjENnr26+1jTneUnITAWxLj47ouCsyc+3bwDxrjBNlE0jSR1C4
-Q8iwRO7AGMXtyzDAOumsVT+xV21u91d78izwHMaEiA8Jwmx8E9kvhR1wj/nJRzQi
-SfyXuAPVK3Fo8trJEwcOCOqMitHBv9wFMl1sZ48nzpm8omioWUbLq76gHZ1/Akfy
-hqH02TyfdIHJy9HZbhwHWdJaoTG5HfC7g7Ias8fHQmJsaPLYQ4Ut5i3AoIOeeZj6
-814mqMW42K0ydLYTnwYOnqw2Jj/uKdpuHZdWKRka+lGoJ9m4CzTddG4EK+XaHcjs
-u8cYP3+bhSyxZerQ+iEbJIDMg9TxyG7WhmThyAW7tIDEQWgiertWJOg/uiUtouEu
-8DIJYAhyEncybLGbUv0KnoIAEuhLOjvXOgNAXyHSrT3FSMSGnSp8nONupN9Y1vj3
-FZKCN3lKjqPCLNevnwndDnB311K8leCXtMYuvpBFsLlr/6AVQqP8CHKiu7g9POyS
-nrenCWFvi07m0VvxOltkCjXfANxH5qFdkJTnoxPHXD2hwCv6B/h//VgJlxWOxqTp
-Cnf40m8UOxArk+Ufmeime2zm1+mY+4rdNRpl3u4C1kYDKTwUNDASBBK/TuuKdoIO
-gTEGlnJR/FV1AwGT/wJD9Sg1fksJcxrOCDMd/q83/QMYfiAOZ/M=
-=Hedm
------END PGP SIGNATURE-----
-
---rwEMma7ioTxnRzrJ--
+On 01/09/2020 16:17, Goldwyn Rodrigues wrote:=0A=
+> This must be applied before calling generic_write_sync() as opposed to=0A=
+> after so generic_write_sync() can be called with the correct parameters.=
+=0A=
+> This is required for AIO cases.=0A=
+=0A=
+Thanks for spotting, will update and retest.=0A=
+=0A=
+The question I have though is, is this a correct fix or am I papering over =
+=0A=
+something (hence the RFC tag). Maybe we can relax the time we're under the =
+=0A=
+inode_lock() a bit so we can avoid this deadlock. David, Josef, Filipe any=
+=0A=
+comments?=0A=

@@ -2,136 +2,53 @@ Return-Path: <SRS0=FDMB=CK=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-4.0 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CE25AC433E2
-	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Sep 2020 17:23:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2D8DCC433E6
+	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Sep 2020 17:27:23 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id A75C92078B
-	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Sep 2020 17:23:55 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id ADFC4207D3
+	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Sep 2020 17:27:22 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="qF6pXcVJ"
+	dkim=pass (1024-bit key) header.d=protonmail.com header.i=@protonmail.com header.b="QJWVf8oL"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732587AbgIARXV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 1 Sep 2020 13:23:21 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43502 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727819AbgIARXL (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Sep 2020 13:23:11 -0400
-Received: from mail-wr1-x441.google.com (mail-wr1-x441.google.com [IPv6:2a00:1450:4864:20::441])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0AADCC061244
-        for <linux-btrfs@vger.kernel.org>; Tue,  1 Sep 2020 10:23:11 -0700 (PDT)
-Received: by mail-wr1-x441.google.com with SMTP id o5so2392473wrn.13
-        for <linux-btrfs@vger.kernel.org>; Tue, 01 Sep 2020 10:23:10 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc:content-transfer-encoding;
-        bh=C9q4KpsnPZEtIPU8sBBED8DWjwkAANS/INbGcBTyILE=;
-        b=qF6pXcVJLUfCycbQBPgdIC2CjP9kjSdVTnI6AYOVQMtdd/EyxVkSRkublyKtRelJo6
-         e6/j0XU1flKC8G3/7UBszuU+1sGbIbSMzIZXGSysLtbeJLJxaFIfPJIDFoTu+0VOOKBp
-         Z0SHXTd7HsX7cwjlMl1cvMiI+pS4w3aB8UYEpUOaREis5uLuEuY+HpQ80A9CHZik3WSe
-         17vjMha6nA8ZGqHfhpwRBT+aLWkXFtP5zENYfNxr1fXCqPVfoX68uI5OtpZqUKiehBC7
-         AxFmamSoltCRsdHxra7/VMbYmvGjk4WY6P3m3ka6bFCuk8aQ04BofuXjrXPm94a0B+iP
-         7Yvg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc:content-transfer-encoding;
-        bh=C9q4KpsnPZEtIPU8sBBED8DWjwkAANS/INbGcBTyILE=;
-        b=nxvUPG/AS8hgJF9BmngoLi4Gkz37N6QbJYxwBKzT1XgpB6mjR2ju5x6CN1SrGnEYxm
-         OOPyyHwXMDf/LkU7ziG4H5t+MIVRD9wIuKhqA/SNxGLG+r2buPmT1E7XaSfqTQ352/4r
-         I8zW9GlphJ/PEXG7KZUPs+TfyaFZxSxD5j71JMnwnp0adLLKo0P4GUDw6SmSLwOyLR3V
-         2ujjCiZPzM1GcgYrE9374U/LEb+ggLtZLxqToF71BSnNYdzbgN8kwbhf8RFTavFLXK8e
-         QMFtGq4RPrKqI3c9EfS0BbFo6TN0Zk7PtlbuH0mhluUbLmRWF8HYYXjWj6oHvy5h73vt
-         EHWw==
-X-Gm-Message-State: AOAM532nlffnYgwrynLNmqJu+ON2tk7Usu6O3eSSwemuqX6JxcmAGd5h
-        NHDBQOnCj4cOdJxojLvpklZivxnCQsBas1ZLvoAhCqP+yj2UPw==
-X-Google-Smtp-Source: ABdhPJzfUmFz2CElJa2SU2rDynRKmGFyAuvjmXRKiwkyHV3L00lqjzfnJku7hVg9kO21s1jsXTtWBNQPstFCtVOAKcc=
-X-Received: by 2002:adf:eb89:: with SMTP id t9mr2928825wrn.65.1598980989733;
- Tue, 01 Sep 2020 10:23:09 -0700 (PDT)
+        id S1728550AbgIAR1V (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 1 Sep 2020 13:27:21 -0400
+Received: from mail-40130.protonmail.ch ([185.70.40.130]:19151 "EHLO
+        mail-40130.protonmail.ch" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728376AbgIAR1T (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Sep 2020 13:27:19 -0400
+Date:   Tue, 01 Sep 2020 17:27:09 +0000
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=protonmail.com;
+        s=protonmail; t=1598981237;
+        bh=/79lamd9SiNnIF/iHraXj2ljsGIHzRiu5lHLTYlVTKM=;
+        h=Date:To:From:Cc:Reply-To:Subject:In-Reply-To:References:From;
+        b=QJWVf8oLfTdXKyyCA2JnV9Eyk2BsB+A6pNnH7P3RaAe/3/Zc8l33rO4tIGj+Lg737
+         itDT097dfHNq1SR5/PtqI3idOMfCKSIYGJdWLA5RRWXuC5i1kEq7CPIdO3opbjxhP+
+         F5CCa7zgyBd1D//xsDmBSNDHCvqOj4F57s4SMVXs=
+To:     Chris Murphy <lists@colorremedies.com>
+From:   Andrii Zymohliad <azymohliad@protonmail.com>
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Reply-To: Andrii Zymohliad <azymohliad@protonmail.com>
+Subject: Re: [Help] Can't login to my systemd-homed user account due to fallocate failure
+Message-ID: <JOmCIgo1pxy4fmswJRB8Y5jH6okgELkDeBUKOcoaxsFv5uSIEyJnw2M03lY3mLNYfFVKpZJTB76nmFwHcuuSm8bHUWtHFNtDg-8M84ZD6Lc=@protonmail.com>
+In-Reply-To: <CAJCQCtRzKvPr=wipKcg_s4mgPjHB-W10sEJM8F_cC_GgFmA=ng@mail.gmail.com>
+References: <bdJVxLiFr_PyQSXRUbZJfFW_jAjsGgoMetqPHJMbg-hdy54Xt_ZHhRetmnJ6cJ99eBlcX76wy-AvWwV715c3YndkxneSlod11P1hlaADx0s=@protonmail.com> <gp99KJ83xX5hsbU2_hXblYTSDI6Rmkk2fbRYAcKNoQik1CH8siYdTw11qFuFdAqo-iC48cJcB_vbMJgY8HuSySoWoBW3hcYHewIgB87Kzzw=@protonmail.com> <CAJCQCtQZW2ps1i4b6kGBd_d8icYZWyz5Ha+Ozo0VjsbvVNf03w@mail.gmail.com> <CAJCQCtR4y180_96BGu08ePGLxo8dq7mAV7H248d8X85FcS0MOw@mail.gmail.com> <CAJCQCtStgn4WjisTf6628UEcB8_eP0_9WETDSB6YtGa4VDPgPw@mail.gmail.com> <KzGwc4OhDq6qR43tQSjynifhYV7E1mfeZeQjBWWRNwithi65kenn7yS22w-bbi_OHYXAkYA6y44iMYCYLAWu2g2V3s47Uor_aYMRk-NgoOU=@protonmail.com> <CAJCQCtSB3QrA74tAH=_Fa-f8WWXJUANgt1_0PRbLcDUgBho-GQ@mail.gmail.com> <OpaR4q6qHHmnUMeRS6_aPu4cgwiwIXFIuVFcCyTJ5tR96gqj0wjAJDnspXY0SydaKgAD79u8CxC_8-XiSRkL7kkDf-Oqmz5-awgn4g4-eqw=@protonmail.com> <CAJCQCtRzKvPr=wipKcg_s4mgPjHB-W10sEJM8F_cC_GgFmA=ng@mail.gmail.com>
 MIME-Version: 1.0
-References: <bdJVxLiFr_PyQSXRUbZJfFW_jAjsGgoMetqPHJMbg-hdy54Xt_ZHhRetmnJ6cJ99eBlcX76wy-AvWwV715c3YndkxneSlod11P1hlaADx0s=@protonmail.com>
- <dHPyoaNUuxoqxJjpSUjcxZvk21ew2ObKWFFhX0efJKBqjG8m27px3mPupviQuM3HYQDEcYQGFQ9jOprBuAX4x1Em3oVOyDl6EhKwEJSiuXs=@protonmail.com>
- <CAJCQCtSVMAEZP5OT77yCEBw9Z3C=oyVKcicWbRV9p_+pKcRwoQ@mail.gmail.com>
- <gp99KJ83xX5hsbU2_hXblYTSDI6Rmkk2fbRYAcKNoQik1CH8siYdTw11qFuFdAqo-iC48cJcB_vbMJgY8HuSySoWoBW3hcYHewIgB87Kzzw=@protonmail.com>
- <CAJCQCtQZW2ps1i4b6kGBd_d8icYZWyz5Ha+Ozo0VjsbvVNf03w@mail.gmail.com>
- <CAJCQCtR4y180_96BGu08ePGLxo8dq7mAV7H248d8X85FcS0MOw@mail.gmail.com>
- <CAJCQCtStgn4WjisTf6628UEcB8_eP0_9WETDSB6YtGa4VDPgPw@mail.gmail.com>
- <KzGwc4OhDq6qR43tQSjynifhYV7E1mfeZeQjBWWRNwithi65kenn7yS22w-bbi_OHYXAkYA6y44iMYCYLAWu2g2V3s47Uor_aYMRk-NgoOU=@protonmail.com>
- <CAJCQCtSB3QrA74tAH=_Fa-f8WWXJUANgt1_0PRbLcDUgBho-GQ@mail.gmail.com> <OpaR4q6qHHmnUMeRS6_aPu4cgwiwIXFIuVFcCyTJ5tR96gqj0wjAJDnspXY0SydaKgAD79u8CxC_8-XiSRkL7kkDf-Oqmz5-awgn4g4-eqw=@protonmail.com>
-In-Reply-To: <OpaR4q6qHHmnUMeRS6_aPu4cgwiwIXFIuVFcCyTJ5tR96gqj0wjAJDnspXY0SydaKgAD79u8CxC_8-XiSRkL7kkDf-Oqmz5-awgn4g4-eqw=@protonmail.com>
-From:   Chris Murphy <lists@colorremedies.com>
-Date:   Tue, 1 Sep 2020 11:22:20 -0600
-Message-ID: <CAJCQCtRzKvPr=wipKcg_s4mgPjHB-W10sEJM8F_cC_GgFmA=ng@mail.gmail.com>
-Subject: Re: [Help] Can't login to my systemd-homed user account due to
- fallocate failure
-To:     Andrii Zymohliad <azymohliad@protonmail.com>
-Cc:     Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=utf-8
 Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Sep 1, 2020 at 11:06 AM Andrii Zymohliad
-<azymohliad@protonmail.com> wrote:
->
-> Hi, sure!
->
-> > 1.  ls -li /home/azymohliad.home
->
-> 43141 -rw------- 1 root root 322122547200 =D0=B2=D0=B5=D1=80  1 19:57 /ho=
-me/azymohliad.home
->
-> > 2.  filefrag -v /home/azymohliad.home | grep -m 10 shared
->
-> 87954: 52756487..52756516:  291198215.. 291198244:     30:  291722503: sh=
-ared
-> 87955: 52756518..52756522:  291198246.. 291198250:      5:             sh=
-ared
-> 87956: 52756524..52756528:  291198252.. 291198256:      5:             sh=
-ared
-> 87957: 52756530..52756530:  291198258.. 291198258:      1:             sh=
-ared
-> 87958: 52756532..52756534:  291198260.. 291198262:      3:             sh=
-ared
-> 87959: 52756536..52756546:  291198264.. 291198274:     11:             sh=
-ared
-> 87960: 52756548..52756553:  291198276.. 291198281:      6:             sh=
-ared
-> 87961: 52756555..52756557:  291198283.. 291198285:      3:             sh=
-ared
-> 87962: 52756559..52756578:  291198287.. 291198306:     20:             sh=
-ared
-> 87963: 52756582..52756595:  291198310.. 291198323:     14:             sh=
-ared
->
->
-> > 3.  Pick any line, multiply the first extent (4th column) by 4096, this
-> >     is the bytenr
-> >
-> > 4.  btrfs inspect-internal dump-tree -t 5 /dev/nvme0n1p2 | grep -C 10 <=
-bytenr>
->
-> No output for any of the extents above. For example:
->
-> 291198215 * 4096 =3D 1192747888640
->
-> Then the following produces no output:
->
->     sudo btrfs inspect-internal dump-tree -t 5 /dev/nvme0n1p2 | grep -C 1=
-0 1192747888640
+> OK it will take longer to search but omit '-t 5' and we'll just search
+> the whole tree dump.
 
+This one is also empty:
 
-OK it will take longer to search but omit '-t 5' and we'll just search
-the whole tree dump.
-
-
-
---=20
-Chris Murphy
+    sudo btrfs inspect-internal dump-tree /dev/nvme0n1p2 | grep -C 10 11927=
+47888640

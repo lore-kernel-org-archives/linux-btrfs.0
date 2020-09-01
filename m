@@ -2,75 +2,71 @@ Return-Path: <SRS0=FDMB=CK=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_GIT autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-13.0 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2E4D9C433E2
-	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Sep 2020 14:41:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F2AB0C433E2
+	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Sep 2020 14:41:19 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 09CED21534
-	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Sep 2020 14:41:16 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DB34021655
+	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Sep 2020 14:41:19 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728451AbgIAOlO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 1 Sep 2020 10:41:14 -0400
-Received: from mx2.suse.de ([195.135.220.15]:55594 "EHLO mx2.suse.de"
+        id S1728576AbgIAOlP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 1 Sep 2020 10:41:15 -0400
+Received: from mx2.suse.de ([195.135.220.15]:55638 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728484AbgIAOkD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 1 Sep 2020 10:40:03 -0400
+        id S1728581AbgIAOkF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 1 Sep 2020 10:40:05 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 51BB2AC7D;
-        Tue,  1 Sep 2020 14:40:03 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 4C41CB65A;
+        Tue,  1 Sep 2020 14:40:04 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 0/5] Improve setup_items_for_insert
-Date:   Tue,  1 Sep 2020 17:39:56 +0300
-Message-Id: <20200901144001.4265-1-nborisov@suse.com>
+Subject: [PATCH 4/5] btrfs: Add kerneldoc for setup_items_for_insert
+Date:   Tue,  1 Sep 2020 17:40:00 +0300
+Message-Id: <20200901144001.4265-5-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
+In-Reply-To: <20200901144001.4265-1-nborisov@suse.com>
+References: <20200901144001.4265-1-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-here is a series to improve setup_items_for_insert. First patch is a simple
-re-arranegement of statements to eliminate a duplication of calculation.
-Patches 2 and 3 improve leaky interface of setup_items_for_insert as they
-convey information about the function's implementation. Patch 4 adds a proper
-kernel doc. Finally, patch 5 improves the error message in an exceptional
-condition. As an added bonus after applying the whole series bloat-o-meter
-output looks like:
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
+ fs/btrfs/ctree.c | 14 ++++++++++----
+ 1 file changed, 10 insertions(+), 4 deletions(-)
 
-add/remove: 0/0 grow/shrink: 1/7 up/down: 33/-99 (-66)
-Function                                     old     new   delta
-setup_items_for_insert                      1200    1233     +33
-insert_extent                                448     445      -3
-btrfs_duplicate_item                         260     254      -6
-test_btrfs_split_item                       1784    1776      -8
-insert_inode_item_key                        156     148      -8
-__btrfs_drop_extents                        3637    3621     -16
-btrfs_insert_delayed_items                  1153    1125     -28
-btrfs_insert_empty_items                     177     147     -30
-Total: Before=1113157, After=1113091, chg -0.01%
-
-This has survived -g quick of xfstests
-
-Nikolay Borisov (5):
-  btrfs: Re-arrange statements in setup_items_for_insert
-  btrfs: Eliminate total_size parameter from setup_items_for_insert
-  btrfs: Sink total_data parameter in setup_items_for_insert
-  btrfs: Add kerneldoc for setup_items_for_insert
-  btrfs: improve error message in setup_items_for_insert
-
- fs/btrfs/ctree.c                     | 35 +++++++++++++++++-----------
- fs/btrfs/ctree.h                     |  2 +-
- fs/btrfs/delayed-inode.c             |  3 +--
- fs/btrfs/file.c                      |  6 +----
- fs/btrfs/tests/extent-buffer-tests.c |  3 +--
- fs/btrfs/tests/inode-tests.c         |  6 ++---
- 6 files changed, 28 insertions(+), 27 deletions(-)
-
---
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 26e653e92956..bb89c0954ca1 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -4744,10 +4744,16 @@ void btrfs_extend_item(struct btrfs_path *path, u32 data_size)
+ 	}
+ }
+ 
+-/*
+- * this is a helper for btrfs_insert_empty_items, the main goal here is
+- * to save stack depth by doing the bulk of the work in a function
+- * that doesn't call btrfs_search_slot
++/**
++ * setup_items_for_insert - Helper called before inserting one or more items
++ * in a leaf. Main purpose is to save stack depth by doing the bulk of the work
++ * in a function that doesn't call btrfs_search_slot
++ *
++ * @root:	root we are inserting items in
++ * @path:	points to the leaf/slot where we are going to insert new items
++ * @cpu_key:	array of keys for items to be inserted
++ * @data_size:	size of the body of each item we are going to insert
++ * @nr:		size of @cpu_key/@data_size arrays
+  */
+ void setup_items_for_insert(struct btrfs_root *root, struct btrfs_path *path,
+ 			    const struct btrfs_key *cpu_key, u32 *data_size,
+-- 
 2.17.1
 

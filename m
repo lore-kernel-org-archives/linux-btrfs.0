@@ -2,176 +2,139 @@ Return-Path: <SRS0=FDMB=CK=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.0 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-4.0 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 47A20C433E6
-	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Sep 2020 14:41:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E1FF1C433E6
+	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Sep 2020 14:45:19 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 2E0F521582
-	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Sep 2020 14:41:22 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A97C921D6C
+	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Sep 2020 14:45:19 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="S0Irv2Ve";
+	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b="Vjk5Dz+G"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728379AbgIAOlN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 1 Sep 2020 10:41:13 -0400
-Received: from mx2.suse.de ([195.135.220.15]:55630 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728580AbgIAOkF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 1 Sep 2020 10:40:05 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 11F4AB659;
-        Tue,  1 Sep 2020 14:40:04 +0000 (UTC)
-From:   Nikolay Borisov <nborisov@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 3/5] btrfs: Sink total_data parameter in setup_items_for_insert
-Date:   Tue,  1 Sep 2020 17:39:59 +0300
-Message-Id: <20200901144001.4265-4-nborisov@suse.com>
-X-Mailer: git-send-email 2.17.1
-In-Reply-To: <20200901144001.4265-1-nborisov@suse.com>
-References: <20200901144001.4265-1-nborisov@suse.com>
+        id S1728257AbgIAOpQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 1 Sep 2020 10:45:16 -0400
+Received: from esa2.hgst.iphmx.com ([68.232.143.124]:45773 "EHLO
+        esa2.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728360AbgIAOpE (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Sep 2020 10:45:04 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1598971512; x=1630507512;
+  h=from:to:cc:subject:date:message-id:references:
+   content-transfer-encoding:mime-version;
+  bh=NTHYkGylvuwyoH8TwRwMFaoyxojSN2VG5KUDlN7O7g4=;
+  b=S0Irv2Ve5nIUVcE4qv9vjV45oJOki6KQtHCubu5XYtzpxdbv55U2KKFy
+   3p1rAoolwFQOUMWBd876X6doEciAYd7MCXDNTCrc19w4c8DUyj/KMFZwg
+   peqLIHRWxRi9b4bcIaykvs4QewjelaOsCjfTjjYu4QEaJrschZGZdBWHu
+   8sAgd9xnnV3nsztCB7jcZIpwETaRXQanuBb7BwRT+rFfLU/z8Gc+2jdbm
+   HOH64QB1B9J9m3zRNNQslVolVuFmBaOQ8s6A7CM2oO72SpkPSJnfRxKU5
+   E1+ySzdt8mVeDl5FmwOtygnQy/Oa0UEFNcUBfhE4ONsiTu+wt7kPtKbsU
+   w==;
+IronPort-SDR: oqFX0O2dAp3VtFJVuY6AMznCpz7GWr4bFAVSim5cdS1Eem9CLreu7VsnW9roTkSU/lNvk9mLge
+ wucemnWAcY5yZLUwDw24/rqRUHEoTyQkkXbgsxE8LYzBeMXsbazr0vmDdiUP5OodgC9R4zoUoA
+ Qob7gvisTJFuNK9qSckiXhsbxpGz+YiQwP4kP+/YQQ2bEm3RPF+PuxO6bXcjrlNCuYQi8hQIET
+ LYENUuNsQucLEbC5xdvhRmDBgftuCHkLgvWY7BTivANiOPRVyuwC6h2LnTdLl7I/qKswnoqUBz
+ egU=
+X-IronPort-AV: E=Sophos;i="5.76,379,1592841600"; 
+   d="scan'208";a="249580551"
+Received: from mail-bn7nam10lp2104.outbound.protection.outlook.com (HELO NAM10-BN7-obe.outbound.protection.outlook.com) ([104.47.70.104])
+  by ob1.hgst.iphmx.com with ESMTP; 01 Sep 2020 22:45:10 +0800
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=Vmty9NhkwMyBIuNQkDtM+dHxeoQZFu2v9XYhDWs1iqx52cEYe5LqEOGYbYcncj11vCb45OgBKrqWJmrpSKV75EQLamTb8lxPz51qrOUCVfm4Jb6BgcwBV6lxeh/Pn1T816Nu36Zt+ZaiMP4nPrA1Ig6uGHp3IizBblBFr6Pmbh0AS4MpKTtPCljeXdlO4waFrmoI3IWw2f/9g32EqPGuf5g3O5MVaK79naJk7ehjHpaNWr4XnTNrdFE0ggf+zpcbX7tzu0FjMvwZ6mGUtfEq6kLDZUhZNVI03a5ezHbljAmoEPyIdJ9X7iHTU5Owvq2XMnfVVJzLw5COXz7RsoXLnw==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=jTjscjp3YkQ09EuKgkMekqLljGpxekEb3qWv62Xqll0=;
+ b=P2Hvzxph+ZVHHb1dCGJlbYJP3KEhCTDQUdAHSDd273N3ahjOyNX1RighlMkw4iy738haxH6r5Dni3fdg9RBNizeBX4NYq6ML9K8yIWdMf+y3fB02YYPUuq0ln4pULTP3dGsHuJcbWLrheZ3TIPhTNZt3qqRyiwvP+QP6BtCYkSqm5Vw9LHEaCaiKGzodaT4ds/aopAh99U2Q72uhf/JkFq3uEdlYI43FPKACoNUNIH8i4LaWLzELCEcYOxt6HaYtiIAzNj3KTXfSVudFJuXWwe2S82U8ZIoEZ6omdJtKhiLI+K0gLUD9KqbO+QXDAAM6GgfXOBocrUfoBCrRI70gQQ==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
+ header.d=wdc.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=jTjscjp3YkQ09EuKgkMekqLljGpxekEb3qWv62Xqll0=;
+ b=Vjk5Dz+GAXS1+0P8UjbMxkYwewEhv0Ayx6kDh8VBCfX3DaGRAqfSRRJ2QtTkAPvpY1W+FHUs19B/fOWPjWzNfTuxUvXoUKVevnziPxy9xeA3uxVFaiSN1lG2gWGuan7FaOflqBWA8cAZBwWxe3fbj9KPhkm/2v7UJV/52kFYjHE=
+Received: from SN4PR0401MB3598.namprd04.prod.outlook.com
+ (2603:10b6:803:47::21) by SN2PR04MB2239.namprd04.prod.outlook.com
+ (2603:10b6:804:15::27) with Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.3326.23; Tue, 1 Sep
+ 2020 14:44:58 +0000
+Received: from SN4PR0401MB3598.namprd04.prod.outlook.com
+ ([fe80::457e:5fe9:2ae3:e738]) by SN4PR0401MB3598.namprd04.prod.outlook.com
+ ([fe80::457e:5fe9:2ae3:e738%7]) with mapi id 15.20.3326.023; Tue, 1 Sep 2020
+ 14:44:58 +0000
+From:   Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
+To:     "fdmanana@gmail.com" <fdmanana@gmail.com>
+CC:     David Sterba <dsterba@suse.com>,
+        "linux-btrfs @ vger . kernel . org" <linux-btrfs@vger.kernel.org>,
+        Josef Bacik <josef@toxicpanda.com>,
+        Goldwyn Rodrigues <rgoldwyn@suse.com>
+Subject: Re: [RFC PATCH] btrfs: don't call btrfs_sync_file from iomap context
+Thread-Topic: [RFC PATCH] btrfs: don't call btrfs_sync_file from iomap context
+Thread-Index: AQHWgGDIsm2Q9fFDf0qcho+qy+MPJQ==
+Date:   Tue, 1 Sep 2020 14:44:58 +0000
+Message-ID: <SN4PR0401MB3598F35FDA34EF5DE377C2CE9B2E0@SN4PR0401MB3598.namprd04.prod.outlook.com>
+References: <20200901130644.12655-1-johannes.thumshirn@wdc.com>
+ <CAL3q7H6PqGagcRXoGswKhxyOJoFc23c7_1tTu183xCCiEPC5RQ@mail.gmail.com>
+Accept-Language: en-US
+Content-Language: en-US
+X-MS-Has-Attach: 
+X-MS-TNEF-Correlator: 
+authentication-results: gmail.com; dkim=none (message not signed)
+ header.d=none;gmail.com; dmarc=none action=none header.from=wdc.com;
+x-originating-ip: [2001:a62:1590:f101:bd07:d1f9:7e6b:2014]
+x-ms-publictraffictype: Email
+x-ms-office365-filtering-ht: Tenant
+x-ms-office365-filtering-correlation-id: d7b11ca0-8068-428f-100c-08d84e859998
+x-ms-traffictypediagnostic: SN2PR04MB2239:
+x-microsoft-antispam-prvs: <SN2PR04MB22399E3B759B30A554EBE76F9B2E0@SN2PR04MB2239.namprd04.prod.outlook.com>
+wdcipoutbound: EOP-TRUE
+x-ms-oob-tlc-oobclassifiers: OLM:8882;
+x-ms-exchange-senderadcheck: 1
+x-microsoft-antispam: BCL:0;
+x-microsoft-antispam-message-info: N65Q8e2yy32KoO2kq0gSGqx2XnYsPEMfJXbWHDhimkDEEtmkHSgmKw9rMr0z9gzXVJhPquT5TTYcPDCYQjPIrGOVBVHvs48U2nBQKlyX/FHBIEEOIJ5MS5ycsPE9xt2ZA+CLfx8W4DFvPYyFgyfn7vgD6dbZ904vC2mZoXEJkd0qZeCPhkJfeR0ODSV4nAcT+nW7zaK+6dzkvyQokHBGA97J+cTslR1uXdSIF3OxdbP7A3Cb81tbUrPYXR2XyCijOlxcOTKhonZoM2/iPQt+aGPvTxsPCTG7je4oMgnWTnnLvF9yez266LM6FV26EsE8RKmoQBiTLoSZFHEJxA0YlJpRvT6wYULQK2y6n8MPOyjniv7moyakwqPVjjUNevRo
+x-forefront-antispam-report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SN4PR0401MB3598.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(4636009)(396003)(136003)(346002)(366004)(39860400002)(376002)(4744005)(5660300002)(71200400001)(7696005)(8676002)(54906003)(8936002)(9686003)(6506007)(91956017)(66556008)(86362001)(64756008)(52536014)(66446008)(4326008)(55016002)(33656002)(186003)(316002)(83380400001)(2906002)(6916009)(66946007)(66476007)(76116006)(478600001)(53546011)(21314003);DIR:OUT;SFP:1102;
+x-ms-exchange-antispam-messagedata: +nVxzKSsclp9gsbnufBXPf7BBEIceJs2vBJ1haznrwh/1R7LAt1XvpMpJTWVTUE88xt5RwG9m1HrYHidMQiR0gRuPOwKkBvAVmh4RV/C1LuIjAmbDOsi+DRlkkrEA0LqZukUYIuf5OeOI/vlpGeKJBouQAab4eqepg52BygkcVaTXry5X/5z91uqumD69XvDjo4h9sXELU/DKlWmny/OMSqldCSUePuZmn/kMDL+zH+kKgEPX8Zyse9XMMz7hW6RZT3T/LU/X4xdj0lw3Zw3Ji88vNscwGry+VNvrKfg6IIUqzlFatLhhhbPdIK3cSVrZpsiskK/UQ5huGug4C4lfxI+bvmW4YIo2zsdeUqx0G9nbgUJmlckhEss9Ko7jfKDSwIl8CI3CKuMNMLKWy96oPR7Y7PJgYtILM73MIxY0xYPeSy54B5tybwJ9MuNFirR3r2NjKXykUQE8nvIPeJJfBY2RFtO+g/84nt+GpJaN2hZziw9ajYd9PYAarvIlwhECrBxwsjlw7UZZfEtEkgb/n/NRtSVR8+cQz+yIxo6SPD7zuyFbEBY8XpoNx2cg7Fb5fakQH5XxtRZAQvza85CuFLot8RBny4nQT+5f+dSEa42Pvtjxs7Dc7/pCrfBi2NKeFm7uokaCIhjUks3nphemmvAxnRbU0evnM7K8dMkBqIf7KnycMhr7TKHUnDBquuYs0/KtUtg1kUHvlyPbo8y6w==
+x-ms-exchange-transport-forked: True
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+X-OriginatorOrg: wdc.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-AuthSource: SN4PR0401MB3598.namprd04.prod.outlook.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: d7b11ca0-8068-428f-100c-08d84e859998
+X-MS-Exchange-CrossTenant-originalarrivaltime: 01 Sep 2020 14:44:58.5832
+ (UTC)
+X-MS-Exchange-CrossTenant-fromentityheader: Hosted
+X-MS-Exchange-CrossTenant-id: b61c8803-16f3-4c35-9b17-6f65f441df86
+X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
+X-MS-Exchange-CrossTenant-userprincipalname: TcPytxRWgudSLpRfIEQMiktv983rYIfpvp9Owzm9prEI8Imts33c0/pEqysb3lvbFz9DkcNgoJMbHbdK181Kb+bzqoXvYnSizHlWT+XoWEU=
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: SN2PR04MB2239
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-That parameter can easily be derived based on the "data_size" and "nr"
-parameters exploit this fact to simply the function's signature. No
-functional changes.
-
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
- fs/btrfs/ctree.c                     | 12 ++++++++----
- fs/btrfs/ctree.h                     |  2 +-
- fs/btrfs/delayed-inode.c             |  3 +--
- fs/btrfs/file.c                      |  3 +--
- fs/btrfs/tests/extent-buffer-tests.c |  2 +-
- fs/btrfs/tests/inode-tests.c         |  4 ++--
- 6 files changed, 14 insertions(+), 12 deletions(-)
-
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index f14f728c4a5d..26e653e92956 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -4571,7 +4571,7 @@ int btrfs_duplicate_item(struct btrfs_trans_handle *trans,
- 		return ret;
- 
- 	path->slots[0]++;
--	setup_items_for_insert(root, path, new_key, &item_size, item_size, 1);
-+	setup_items_for_insert(root, path, new_key, &item_size, 1);
- 	leaf = path->nodes[0];
- 	memcpy_extent_buffer(leaf,
- 			     btrfs_item_ptr_offset(leaf, path->slots[0]),
-@@ -4751,7 +4751,7 @@ void btrfs_extend_item(struct btrfs_path *path, u32 data_size)
-  */
- void setup_items_for_insert(struct btrfs_root *root, struct btrfs_path *path,
- 			    const struct btrfs_key *cpu_key, u32 *data_size,
--			    u32 total_data, int nr)
-+			    int nr)
- {
- 	struct btrfs_fs_info *fs_info = root->fs_info;
- 	struct btrfs_item *item;
-@@ -4762,8 +4762,12 @@ void setup_items_for_insert(struct btrfs_root *root, struct btrfs_path *path,
- 	struct extent_buffer *leaf;
- 	int slot;
- 	struct btrfs_map_token token;
--	const u32 total_size = total_data + (nr * sizeof(struct btrfs_item));
-+	u32 total_size;
-+	u32 total_data = 0;
- 
-+	for (i = 0; i < nr; i++)
-+		total_data += data_size[i];
-+	total_size = total_data + (nr * sizeof(struct btrfs_item));
- 
- 	if (path->slots[0] == 0) {
- 		btrfs_cpu_key_to_disk(&disk_key, cpu_key);
-@@ -4866,7 +4870,7 @@ int btrfs_insert_empty_items(struct btrfs_trans_handle *trans,
- 	slot = path->slots[0];
- 	BUG_ON(slot < 0);
- 
--	setup_items_for_insert(root, path, cpu_key, data_size, total_data, nr);
-+	setup_items_for_insert(root, path, cpu_key, data_size, nr);
- 	return 0;
- }
- 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index ac53535412a6..af5ef4dfb42c 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2713,7 +2713,7 @@ static inline int btrfs_del_item(struct btrfs_trans_handle *trans,
- 
- void setup_items_for_insert(struct btrfs_root *root, struct btrfs_path *path,
- 			    const struct btrfs_key *cpu_key, u32 *data_size,
--			    u32 total_data, int nr);
-+			    int nr);
- int btrfs_insert_item(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 		      const struct btrfs_key *key, void *data, u32 data_size);
- int btrfs_insert_empty_items(struct btrfs_trans_handle *trans,
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index 0360e07d1b0f..5aba81e16113 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -768,8 +768,7 @@ static int btrfs_batch_insert_items(struct btrfs_root *root,
- 	}
- 
- 	/* insert the keys of the items */
--	setup_items_for_insert(root, path, keys, data_size, total_data_size,
--			       nitems);
-+	setup_items_for_insert(root, path, keys, data_size, nitems);
- 
- 	/* insert the dir index items */
- 	slot = path->slots[0];
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 82f9bb78b86d..e8deb5627223 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1057,8 +1057,7 @@ int __btrfs_drop_extents(struct btrfs_trans_handle *trans,
- 			if (btrfs_comp_cpu_keys(&key, &slot_key) > 0)
- 				path->slots[0]++;
- 		}
--		setup_items_for_insert(root, path, &key, &extent_item_size,
--				       extent_item_size, 1);
-+		setup_items_for_insert(root, path, &key, &extent_item_size, 1);
- 		*key_inserted = 1;
- 	}
- 
-diff --git a/fs/btrfs/tests/extent-buffer-tests.c b/fs/btrfs/tests/extent-buffer-tests.c
-index a792a1dfd6dd..df54cdfdc250 100644
---- a/fs/btrfs/tests/extent-buffer-tests.c
-+++ b/fs/btrfs/tests/extent-buffer-tests.c
-@@ -60,7 +60,7 @@ static int test_btrfs_split_item(u32 sectorsize, u32 nodesize)
- 	key.type = BTRFS_EXTENT_CSUM_KEY;
- 	key.offset = 0;
- 
--	setup_items_for_insert(root, path, &key, &value_len, value_len, 1);
-+	setup_items_for_insert(root, path, &key, &value_len, 1);
- 	item = btrfs_item_nr(0);
- 	write_extent_buffer(eb, value, btrfs_item_ptr_offset(eb, 0),
- 			    value_len);
-diff --git a/fs/btrfs/tests/inode-tests.c b/fs/btrfs/tests/inode-tests.c
-index 068b6ef02cec..cc54d4973a74 100644
---- a/fs/btrfs/tests/inode-tests.c
-+++ b/fs/btrfs/tests/inode-tests.c
-@@ -33,7 +33,7 @@ static void insert_extent(struct btrfs_root *root, u64 start, u64 len,
- 	key.type = BTRFS_EXTENT_DATA_KEY;
- 	key.offset = start;
- 
--	setup_items_for_insert(root, &path, &key, &value_len, value_len, 1);
-+	setup_items_for_insert(root, &path, &key, &value_len, 1);
- 	fi = btrfs_item_ptr(leaf, slot, struct btrfs_file_extent_item);
- 	btrfs_set_file_extent_generation(leaf, fi, 1);
- 	btrfs_set_file_extent_type(leaf, fi, type);
-@@ -63,7 +63,7 @@ static void insert_inode_item_key(struct btrfs_root *root)
- 	key.type = BTRFS_INODE_ITEM_KEY;
- 	key.offset = 0;
- 
--	setup_items_for_insert(root, &path, &key, &value_len, value_len, 1);
-+	setup_items_for_insert(root, &path, &key, &value_len, 1);
- }
- 
- /*
--- 
-2.17.1
-
+On 01/09/2020 16:37, Filipe Manana wrote:=0A=
+>> +               iocb->ki_flags |=3D IOCB_DSYNC;=0A=
+> =0A=
+> This should be set before calling generic_write_sync() above,=0A=
+> otherwise we don't do the persistence required by dsync.=0A=
+> =0A=
+> I have to be honest, I don't like this approach that much, it's a bit=0A=
+> fragile - what if some other code, invoked in between clearing and=0A=
+> setting back the flag, needs that flag to operate correctly?=0A=
+=0A=
+Yes I don't like it either. =0A=
+=0A=
+I've compared btrfs to ext4 and xfs and both don't hold on the inode =0A=
+lock for (nearly) the whole xxx_file_write_iter() time, so I think =0A=
+the correct fix would be to relax this time. But I haven't found any =0A=
+documentation yet on which functions need to be under the inode_lock =0A=
+and which not.=0A=
+=0A=
+Any input is appreciated here.=0A=

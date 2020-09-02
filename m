@@ -2,171 +2,116 @@ Return-Path: <SRS0=S4e4=CL=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,NICE_REPLY_A,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7BD84C433E2
-	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Sep 2020 11:13:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8247FC433E2
+	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Sep 2020 11:44:40 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 4B09320758
-	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Sep 2020 11:13:45 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5C86120767
+	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Sep 2020 11:44:40 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="jaoH6qFM"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="csGgh/Ld"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726770AbgIBLNm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 2 Sep 2020 07:13:42 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38632 "EHLO
+        id S1726669AbgIBLoh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 2 Sep 2020 07:44:37 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43356 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726124AbgIBLNb (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Sep 2020 07:13:31 -0400
-Received: from mail-qv1-xf42.google.com (mail-qv1-xf42.google.com [IPv6:2607:f8b0:4864:20::f42])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 56CDCC061244
-        for <linux-btrfs@vger.kernel.org>; Wed,  2 Sep 2020 04:13:31 -0700 (PDT)
-Received: by mail-qv1-xf42.google.com with SMTP id m14so1988129qvt.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 02 Sep 2020 04:13:31 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=subject:to:cc:references:from:message-id:date:user-agent
-         :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=LkgDrodl1d6r5bSpjClpRshY9eOuHQo45vM8ms/4J2s=;
-        b=jaoH6qFMHw5EgrBQxizNvYjvUiYaYEUe7QXwg8oEk5ydlFAjhbaBw8dn6Jup8LWXyv
-         8/SgHyv2SUZvqjDeEM728sqOJzNE16ZbtE78awwwx/GUzilT11lDQd3gitvTTH9ULRRm
-         wpXJONEdH4j+wkwAQpY0BZxrE/yun0oPEbVHfeIPGIsXTbHIeNvKm3+KwPkk9mmNArZ3
-         QuzbeEdRlECgUD59VZoYYNku6d8EsCA/lSF/iGvVtclPjkpGQU4UxQdfOYg9yZYh7tpv
-         qu55XWswqLdKTaQy359KbA4TcuI/DbHgnuc35DeOEyt8MXnn+7dINqnq3PMCTw7BWfdo
-         Kwyw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=LkgDrodl1d6r5bSpjClpRshY9eOuHQo45vM8ms/4J2s=;
-        b=rgPS06dzhXeZUSGtNVeX/O37D0J7som3oLEUnuTkRDSG51zXSVshgwZOIv+TU7ZGkX
-         G09g8mB3IJaNK5/xvDFjTdaKWwTFGh1gz1oPOQSPaOX8MIOOh7cGogMKpxihmVBHwN92
-         j40M/MA4WL6RX/E2fELwibW+WqRHLPMuco+QX5BtOLVUBcrZ4vXn35CyMQP+kgkmLyRK
-         Gsu6No8OoCCyGhDBSJ4AXQ8ZDFZLBIVhYwR+1UHtkuPBZzEvYSzGZsZHrnGc7lutrcks
-         UDpZOKV1WOMmY33vBvbdx3+imy6/13XynX/4njeyCmc3NW5OGl59UQAvl6EuSi1SrF6x
-         6z7g==
-X-Gm-Message-State: AOAM531zb5U887liyuyfhLXJDEJAXm/YRFoJ28Bt46du7XMnnSHsxOKp
-        /buF8jP4dCxbOQhkdX8kj5mq79mZnaoTm+Wm/EE=
-X-Google-Smtp-Source: ABdhPJwVaRKM1LVCaGa7E9WjmT5SItgdf8xd0raK6VF9FBhkC05rwZX/MyqufYwEADXfXEvVVT92Wg==
-X-Received: by 2002:a0c:a8c7:: with SMTP id h7mr6393917qvc.181.1599045210371;
-        Wed, 02 Sep 2020 04:13:30 -0700 (PDT)
-Received: from [192.168.1.210] (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id e1sm4494802qtb.0.2020.09.02.04.13.29
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 02 Sep 2020 04:13:29 -0700 (PDT)
-Subject: Re: [PATCH v2] btrfs: don't call btrfs_sync_file from iomap context
-To:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-        David Sterba <dsterba@suse.com>
-Cc:     "linux-btrfs @ vger . kernel . org" <linux-btrfs@vger.kernel.org>,
+        with ESMTP id S1726183AbgIBLoY (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Sep 2020 07:44:24 -0400
+Received: from casper.infradead.org (casper.infradead.org [IPv6:2001:8b0:10b:1236::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A0A37C061244;
+        Wed,  2 Sep 2020 04:44:24 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Type:MIME-Version:
+        References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+        Content-Transfer-Encoding:Content-ID:Content-Description;
+        bh=qfUausPRVQ29BP7WmCGntZ/IR0ySDov7mnmZz+JD9z8=; b=csGgh/Ld7k3AsF1N4a3NFa5Cj1
+        cBRLQuwvEP195o/73w6+mibiYmUSXV5EjvYpQ6SJZf69cGZRrqKoOtAoCib1GHNAemzY8WD12elBe
+        0ql+n6jhRUU9hQsklQctWJCb+BFvDgoHGTyvFPxG7Q9da6axtT8eIsUnPiw2WiWjMlyAfCTknA7rh
+        LJEONt4QfkkoESYiJelNpm0WCm/aSI+l2MiFGzbTOa7+O/AfuOE9NZ6uJNus+RsKitdeGx396V6do
+        bowRAWA6lIQ8jDcZzLr2zozu5Xxu0wmrVG3W89PrWl2W1QW1ToDHc7AnoUtAJXFXBIzBqhXiZXozi
+        xC4oN8pQ==;
+Received: from willy by casper.infradead.org with local (Exim 4.92.3 #3 (Red Hat Linux))
+        id 1kDRBW-0005cP-LV; Wed, 02 Sep 2020 11:44:14 +0000
+Date:   Wed, 2 Sep 2020 12:44:14 +0100
+From:   Matthew Wilcox <willy@infradead.org>
+To:     Dave Chinner <david@fromorbit.com>
+Cc:     Josef Bacik <josef@toxicpanda.com>,
+        Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+        David Sterba <dsterba@suse.com>,
+        "linux-btrfs @ vger . kernel . org" <linux-btrfs@vger.kernel.org>,
         Filipe Manana <fdmanana@gmail.com>,
-        Goldwyn Rodrigues <rgoldwyn@suse.de>
-References: <20200902103347.32255-1-johannes.thumshirn@wdc.com>
-From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <d002ec6e-85dc-679b-db66-093f93282660@toxicpanda.com>
-Date:   Wed, 2 Sep 2020 07:13:28 -0400
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.10.0
+        Christoph Hellwig <hch@lst.de>,
+        Linux FS Devel <linux-fsdevel@vger.kernel.org>
+Subject: Re: [RFC PATCH] btrfs: don't call btrfs_sync_file from iomap context
+Message-ID: <20200902114414.GX14765@casper.infradead.org>
+References: <20200901130644.12655-1-johannes.thumshirn@wdc.com>
+ <42efa646-73cd-d884-1c9c-dd889294bde2@toxicpanda.com>
+ <20200901214613.GH12096@dread.disaster.area>
+ <551b2801-d626-9bd7-7cb2-9d20674c06bf@toxicpanda.com>
+ <20200901235830.GI12096@dread.disaster.area>
 MIME-Version: 1.0
-In-Reply-To: <20200902103347.32255-1-johannes.thumshirn@wdc.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20200901235830.GI12096@dread.disaster.area>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 9/2/20 6:33 AM, Johannes Thumshirn wrote:
-> Fstests generic/113 exposes a deadlock introduced by the switch to iomap
-> for direct I/O.
+On Wed, Sep 02, 2020 at 09:58:30AM +1000, Dave Chinner wrote:
+> Put simply: converting a filesystem to use iomap is not a "change
+> the filesystem interfacing code and it will work" modification.  We
+> ask that filesystems are modified to conform to the iomap IO
+> exclusion model; adding special cases for every potential
+> locking and mapping quirk every different filesystem has is part of
+> what turned the old direct IO code into an unmaintainable nightmare.
 > 
->   ============================================
->   WARNING: possible recursive locking detected
->   5.9.0-rc2+ #746 Not tainted
->   --------------------------------------------
->   aio-stress/922 is trying to acquire lock:
->   ffff888217412010 (&sb->s_type->i_mutex_key#11){++++}-{3:3}, at: btrfs_sync_file+0xf7/0x560 [btrfs]
+> > That's fine, but this is kind of a bad way to find
+> > out.  We really shouldn't have generic helper's that have different generic
+> > locking rules based on which file system uses them.
 > 
->   but task is already holding lock:
->   ffff888217412010 (&sb->s_type->i_mutex_key#11){++++}-{3:3}, at: btrfs_file_write_iter+0x6e/0x630 [btrfs]
+> We certainly can change the rules for new infrastructure. Indeed, we
+> had to change the rules to support DAX.  The whole point of the
+> iomap infrastructure was that it enabled us to use code that already
+> worked for DAX (the XFS code) in multiple filesystems. And as people
+> have realised that the DIO via iomap is much faster than the old DIO
+> code and is a much more efficient way of doing large buffered IO,
+> other filesystems have started to use it.
 > 
->   other info that might help us debug this:
->   Possible unsafe locking scenario:
+> However....
 > 
->   CPU0
->   ----
->   lock(&sb->s_type->i_mutex_key#11);
->   lock(&sb->s_type->i_mutex_key#11);
+> > Because then we end up
+> > with situations like this, where suddenly we're having to come up with some
+> > weird solution because the generic thing only works for a subset of file
+> > systems.  Thanks,
 > 
->   *** DEADLOCK ***
-> 
->   May be due to missing lock nesting notation
-> 
->   2 locks held by aio-stress/922:
->   #0: ffff888217412010 (&sb->s_type->i_mutex_key#11){++++}-{3:3}, at: btrfs_file_write_iter+0x6e/0x630 [btrfs]
->   #1: ffff888217411ea0 (&ei->dio_sem){++++}-{3:3}, at: btrfs_direct_IO+0x113/0x160 [btrfs]
-> 
->   stack backtrace:
->   CPU: 0 PID: 922 Comm: aio-stress Not tainted 5.9.0-rc2+ #746
->   Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.13.0-0-gf21b5a4-rebuilt.opensuse.org 04/01/2014
->   Call Trace:
->   dump_stack+0x78/0xa0
->   __lock_acquire.cold+0x121/0x29f
->   ? btrfs_dio_iomap_end+0x65/0x130 [btrfs]
->   lock_acquire+0x93/0x3b0
->   ? btrfs_sync_file+0xf7/0x560 [btrfs]
->   down_write+0x33/0x70
->   ? btrfs_sync_file+0xf7/0x560 [btrfs]
->   btrfs_sync_file+0xf7/0x560 [btrfs]
->   iomap_dio_complete+0x10d/0x120
->   iomap_dio_rw+0x3c8/0x520
->   btrfs_direct_IO+0xd3/0x160 [btrfs]
->   btrfs_file_write_iter+0x1fe/0x630 [btrfs]
->   ? find_held_lock+0x2b/0x80
->   aio_write+0xcd/0x180
->   ? __might_fault+0x31/0x80
->   ? find_held_lock+0x2b/0x80
->   ? __might_fault+0x31/0x80
->   io_submit_one+0x4e1/0xb30
->   ? find_held_lock+0x2b/0x80
->   __x64_sys_io_submit+0x71/0x220
->   do_syscall_64+0x33/0x40
->   entry_SYSCALL_64_after_hwframe+0x44/0xa9
->   RIP: 0033:0x7f5940881f79
->   Code: 00 c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 8b 0d e7 4e 0c 00 f7 d8 64 89 01 48
->   RSP: 002b:00007f5934f51d88 EFLAGS: 00000246 ORIG_RAX: 00000000000000d1
->   RAX: ffffffffffffffda RBX: 00007f5934f52680 RCX: 00007f5940881f79
->   RDX: 0000000000b56030 RSI: 0000000000000008 RDI: 00007f593171f000
->   RBP: 00007f593171f000 R08: 0000000000000000 R09: 0000000000b56030
->   R10: 00007fffd599e080 R11: 0000000000000246 R12: 0000000000000008
->   R13: 0000000000000000 R14: 0000000000b56030 R15: 0000000000b56070
-> 
-> This happens because iomap_dio_complete() calls into generic_write_sync()
-> if we have the data-sync flag set. But as we're still under the
-> inode_lock() from btrfs_file_write_iter() we will deadlock once
-> btrfs_sync_file() tries to acquire the inode_lock().
-> 
-> Calling into generic_write_sync() is not needed as __btrfs_direct_write()
-> already takes care of persisting the data on disk. We can temporarily drop
-> the IOCB_DSYNC flag before calling into __btrfs_direct_write() so the
-> iomap code won't try to call into the sync routines as well.
-> 
-> References: https://github.com/btrfs/fstests/issues/12
-> Fixes: da4d7c1b4c45 ("btrfs: switch to iomap for direct IO")
-> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-> 
-> ---
-> Changes to RFC:
-> - Re-apply IOCB_DSYNC before calling into generic_write_sync (Goldwyn)
+> .... we've always said "you need to change the filesystem code to
+> use iomap". This is simply a reflection on the fact that iomap has
+> different rules and constraints to the old code and so it's not a
+> direct plug in replacement. There are no short cuts here...
 
-This breaks DSYNC AIO, because we need it to run once we've done all the 
-IO.  You hit the deadlock because the io all completed before we exited 
-iomap_dio_rw(), but generally that won't happen, and so we need the 
-DSYNC set for the last reference on the dio to actually run the ->fsync. 
-  Thanks,
+Can you point me (and I suspect Josef!) towards the documentation of the
+locking model?  I was hoping to find Documentation/filesystems/iomap.rst
+but all the 'iomap' strings in Documentation/ refer to pci_iomap and
+similar, except for this in the DAX documentation:
 
-Josef
+: - implementing ->read_iter and ->write_iter operations which use dax_iomap_rw()
+:   when inode has S_DAX flag set
+: - implementing an mmap file operation for DAX files which sets the
+:   VM_MIXEDMAP and VM_HUGEPAGE flags on the VMA, and setting the vm_ops to
+:   include handlers for fault, pmd_fault, page_mkwrite, pfn_mkwrite. These
+:   handlers should probably call dax_iomap_fault() passing the appropriate
+:   fault size and iomap operations.
+: - calling iomap_zero_range() passing appropriate iomap operations instead of
+:   block_truncate_page() for DAX files
+: - ensuring that there is sufficient locking between reads, writes,
+:   truncates and page faults
+: 
+: The iomap handlers for allocating blocks must make sure that allocated blocks
+: are zeroed out and converted to written extents before being returned to avoid
+: exposure of uninitialized data through mmap.
+
+which doesn't bear on this situation.

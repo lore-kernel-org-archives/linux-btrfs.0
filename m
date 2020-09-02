@@ -2,95 +2,248 @@ Return-Path: <SRS0=S4e4=CL=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-11.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	NICE_REPLY_A,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 74ABFC433E2
-	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Sep 2020 15:11:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A9336C43461
+	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Sep 2020 15:30:05 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 3FC2E20773
-	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Sep 2020 15:11:47 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 827AE20767
+	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Sep 2020 15:30:05 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="F20nqvnL"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="IEpT4YXg"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728016AbgIBPLn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 2 Sep 2020 11:11:43 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47152 "EHLO
+        id S1728306AbgIBPaD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 2 Sep 2020 11:30:03 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49972 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727954AbgIBPLc (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Sep 2020 11:11:32 -0400
-Received: from mail-il1-x143.google.com (mail-il1-x143.google.com [IPv6:2607:f8b0:4864:20::143])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D857AC061244
-        for <linux-btrfs@vger.kernel.org>; Wed,  2 Sep 2020 08:11:31 -0700 (PDT)
-Received: by mail-il1-x143.google.com with SMTP id t4so5294672iln.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 02 Sep 2020 08:11:31 -0700 (PDT)
+        with ESMTP id S1728305AbgIBP3z (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Sep 2020 11:29:55 -0400
+Received: from mail-qv1-xf43.google.com (mail-qv1-xf43.google.com [IPv6:2607:f8b0:4864:20::f43])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AAE21C061244
+        for <linux-btrfs@vger.kernel.org>; Wed,  2 Sep 2020 08:29:54 -0700 (PDT)
+Received: by mail-qv1-xf43.google.com with SMTP id j10so2378682qvk.11
+        for <linux-btrfs@vger.kernel.org>; Wed, 02 Sep 2020 08:29:54 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:from:date:message-id:subject:to:cc
-         :content-transfer-encoding;
-        bh=VuIYzkSfka9z/yZ3wqALdRD6qNLVNtO+LM0N8MUBDjU=;
-        b=F20nqvnLysmlZwwAco3NIIq+GbtI98FHMtKZOPQsigIRLqehrO3TbFRezQhU/C7I9Y
-         sJCUpTGgMoAiOL3vout7/fJ93PTRhGNfbcqwNRUYsi8vX3TjK92m+ERD/AFVCNu7y/Zr
-         MHdLNFZ8cgrcNM+LH8oMZe65qyotVyr5vKDsq+RMGAwmfaYbSqvktvbQvk/gnFOkaYQC
-         mLWK1y47RAEU3OU80cr6mhcgTne4zyfPrjIWr1IwlMvLggJXhJNs8a3UPn7bRUD5UwlC
-         YvpLnNeZy3kLn9vW/QoSaZTlXfeBbGP64LJO9B8QpebNYmK17lpXQ/m95Sm4xYxaX7h8
-         rw7A==
+        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
+        h=subject:to:cc:references:from:message-id:date:user-agent
+         :mime-version:in-reply-to:content-language:content-transfer-encoding;
+        bh=NDGtHV3+xZ+QgHAPo/ikKnk1UyAjOinZA/yddNp58eo=;
+        b=IEpT4YXgeD3Ril/IndxdyXZOz8FjUL/o7Fvgf2p6tr2TlXS3m+4d4LiZ+ww/6Fg6KQ
+         yYqsISvKzEL8nZSb+/jrm6vsL0bMouLGcb3BeQVMp3yPyPwVXwqmHCuMU/0mq7sbToa+
+         iAfOHyP61gg3OiYxowgey5qFLKRIKNsliQebtLg800JXYcnt0Ezh/dj7WndLis2zXVP1
+         vqQgGAjaxWKem5AFk/ymMULj3aCCk9acdN4iLKfPcZAe60+N/pYV+aV39i7Xe49Y3p8O
+         KP5EXzmB9ZXlmFkXKj9I5dP9toHd5YFEW1o3GQv27+c8oOD8GzXiFJk0wsAInsGx+kgH
+         wCYg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:from:date:message-id:subject:to:cc
+        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
          :content-transfer-encoding;
-        bh=VuIYzkSfka9z/yZ3wqALdRD6qNLVNtO+LM0N8MUBDjU=;
-        b=K8e/W/7lowLibrkNo80jSdfN26WAtXIAvKYUMFkkDaGkB3mFAuevGdNRInFnC+TyLQ
-         GCssdlpUvMlMX+nN40hOj74smhawm42hBHHQ2RypUtZPxR38z7Dol94bVEMZvmY2NxEy
-         DB1miiXAyccj1lLO0Yxs9Uipye+bbJqa5DFD51m7sFhfWq3pAYzq8zADkLYKYpx5P0xv
-         ltsagfHRB4ho7JWj/gB9JV1+CttJe9+UHtaf6rpw4cOQiZ7F7IAGnpDBjAuCYblGCazI
-         vrRwoM/GrRX2s3zEWuftFvwus5rr85dnaBR4tv/52UbZ/OkQfWEErj4wz0H8OvSDxvt+
-         0hQw==
-X-Gm-Message-State: AOAM533u+5xHDxaw6vapfxmPIdDAH3pwJM3kYnOMtgNsQ3ZGH6zmUTzW
-        MgUd5AXkPCyxOGJDEDFTBScyQv0oylNtJnGsPvTFOJJTUYM1Hx/b
-X-Google-Smtp-Source: ABdhPJxyevLf3SMS6hg9JXlmEB4Ap1qIyGWRzCbiL0SBl1GYS1Y3/XgEln4gYpJvhHWHji392UME3kTFd10P7ZljL3g=
-X-Received: by 2002:a05:6e02:dc5:: with SMTP id l5mr4262001ilj.112.1599059490035;
- Wed, 02 Sep 2020 08:11:30 -0700 (PDT)
+        bh=NDGtHV3+xZ+QgHAPo/ikKnk1UyAjOinZA/yddNp58eo=;
+        b=VFZdHCGjv3PUTdmweqF0/XBrQpGq6CdqXT4g0JT9muH0qldbokKO1SHFnauV3JTlkD
+         +yPyZ5Uz4dltVMUXz6f2UzmVvYwa7BWC7c5+hxaLlzg2tKw3/5RGTQarPgTl8+gw+utl
+         LxK3GY9TI+sQAItcN7YNBD3VzfGchkFpLG6w4uIP450VCwNBzb7GG+KpX/2AkyucNOXX
+         V1vQptOGsWiHssCWxnkDUstZdW2DTBVlezSpgb4YmE8uh/diVC/UrAmbfvNyxzZtK6Hy
+         QLxuxGFx5Pj0OswMUtuURk15Ck+9G2UAe0Swd9xlnXuto32EHss5p2FsELV1h8oyQdqa
+         rgVQ==
+X-Gm-Message-State: AOAM530UeOXU/2JJSmiHnAz1iBdItAW+PWYCKlQHQYDoZRCO6wXrq7cV
+        eShl+6aXoCWG9UWVgXG+dcta2g==
+X-Google-Smtp-Source: ABdhPJwkIHT5mNGTbhNPgD4xPNTrA7+U4P37ua0k7LDtQjVL6ftn4oXayMpgzlgWHKjaDp5WpJfAJw==
+X-Received: by 2002:a0c:c3cb:: with SMTP id p11mr3067961qvi.101.1599060593704;
+        Wed, 02 Sep 2020 08:29:53 -0700 (PDT)
+Received: from [192.168.1.45] (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
+        by smtp.gmail.com with ESMTPSA id i65sm4756556qkf.126.2020.09.02.08.29.52
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 02 Sep 2020 08:29:52 -0700 (PDT)
+Subject: Re: [PATCH] fstests: add generic/609 to test O_DIRECT|O_DSYNC
+To:     fdmanana@gmail.com
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>,
+        fstests <fstests@vger.kernel.org>
+References: <f5ba8625d6277035b69e466f6ea87f19620f7fcb.1599058822.git.josef@toxicpanda.com>
+ <CAL3q7H5VEHK3rduT5gELdSd9EF3g8LLqJgkyHKdA-VUYSni37w@mail.gmail.com>
+From:   Josef Bacik <josef@toxicpanda.com>
+Message-ID: <3a696ffa-905f-fd28-1d25-790ac450ec0f@toxicpanda.com>
+Date:   Wed, 2 Sep 2020 11:29:51 -0400
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:68.0)
+ Gecko/20100101 Thunderbird/68.12.0
 MIME-Version: 1.0
-From:   Neal Gompa <ngompa13@gmail.com>
-Date:   Wed, 2 Sep 2020 11:10:54 -0400
-Message-ID: <CAEg-Je8OsZjWU_ZyLJHrbOJb=_C56MOmJ5w8UUbzz3JNuAi5Ow@mail.gmail.com>
-Subject: About the state of Btrfs RAID 5/6
-To:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Cc:     David Sterba <dsterba@suse.com>, Robbie Ko <robbieko@synology.com>,
-        Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+In-Reply-To: <CAL3q7H5VEHK3rduT5gELdSd9EF3g8LLqJgkyHKdA-VUYSni37w@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hey all,
+On 9/2/20 11:18 AM, Filipe Manana wrote:
+> On Wed, Sep 2, 2020 at 4:03 PM Josef Bacik <josef@toxicpanda.com> wrote:
+>>
+>> We had a problem recently where btrfs would deadlock with
+>> O_DIRECT|O_DSYNC because of an unexpected dependency on ->fsync in
+>> iomap.  This was only caught by chance with aiostress, because weirdly
+>> we don't actually test this particular configuration anywhere in
+>> xfstests.  Fix this by adding a basic test that just does
+>> O_DIRECT|O_DSYNC writes.  With this test the box deadlocks right away
+>> with Btrfs, which would have been helpful in finding this issue before
+>> the patches were merged.
+>>
+>> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+>> ---
+>>   .gitignore                      |  1 +
+>>   src/aio-dio-regress/dio-dsync.c | 61 +++++++++++++++++++++++++++++++++
+>>   tests/generic/609               | 44 ++++++++++++++++++++++++
+>>   tests/generic/group             |  1 +
+>>   4 files changed, 107 insertions(+)
+>>   create mode 100644 src/aio-dio-regress/dio-dsync.c
+>>   create mode 100755 tests/generic/609
+>>
+>> diff --git a/.gitignore b/.gitignore
+>> index 5f5c4a0f..07c8014b 100644
+>> --- a/.gitignore
+>> +++ b/.gitignore
+>> @@ -175,6 +175,7 @@
+>>   /src/aio-dio-regress/aio-last-ref-held-by-io
+>>   /src/aio-dio-regress/aiocp
+>>   /src/aio-dio-regress/aiodio_sparse2
+>> +/src/aio-dio-regress/dio-dsync
+>>   /src/log-writes/replay-log
+>>   /src/perf/*.pyc
+>>
+>> diff --git a/src/aio-dio-regress/dio-dsync.c b/src/aio-dio-regress/dio-dsync.c
+>> new file mode 100644
+>> index 00000000..53cda9ac
+>> --- /dev/null
+>> +++ b/src/aio-dio-regress/dio-dsync.c
+>> @@ -0,0 +1,61 @@
+>> +// SPDX-License-Identifier: GPL-2.0-or-newer
+>> +/*
+>> + * Copyright (c) 2020 Facebook.
+>> + * All Rights Reserved.
+>> + *
+>> + * Do some O_DIRECT writes with O_DSYNC to exercise this path.
+>> + */
+>> +#include <stdio.h>
+>> +#include <sys/types.h>
+>> +#include <sys/stat.h>
+>> +#include <fcntl.h>
+>> +#include <unistd.h>
+>> +#include <stdlib.h>
+>> +#include <errno.h>
+>> +#include <string.h>
+>> +
+>> +int main(int argc, char **argv)
+>> +{
+>> +       struct stat st;
+>> +       char *buf;
+>> +       ssize_t ret;
+>> +       int fd, i;
+>> +       int bufsize;
+>> +
+>> +       if (argc != 2) {
+>> +               printf("Usage: %s filename\n", argv[0]);
+>> +               return 1;
+>> +       }
+>> +
+>> +       fd = open(argv[1], O_DIRECT | O_RDWR | O_TRUNC | O_CREAT | O_DSYNC,
+>> +                 0644);
+>> +       if (fd < 0) {
+>> +               perror(argv[1]);
+>> +               return 1;
+>> +       }
+>> +
+>> +       if (fstat(fd, &st)) {
+>> +               perror(argv[1]);
+>> +               return 1;
+>> +       }
+>> +       bufsize = st.st_blksize * 10;
+>> +
+>> +       ret = posix_memalign((void **)&buf, st.st_blksize, bufsize);
+>> +       if (ret) {
+>> +               errno = ret;
+>> +               perror("allocating buffer");
+>> +               return 1;
+>> +       }
+>> +
+>> +       memset(buf, 'a', bufsize);
+>> +       for (i = 0; i < 10; i++) {
+>> +               ret = write(fd, buf, bufsize);
+>> +               if (ret < 0) {
+>> +                       perror("writing");
+>> +                       return 1;
+>> +               }
+>> +       }
+>> +       free(buf);
+>> +       close(fd);
+>> +       return 0;
+>> +}
+>> diff --git a/tests/generic/609 b/tests/generic/609
+>> new file mode 100755
+>> index 00000000..8a888eb9
+>> --- /dev/null
+>> +++ b/tests/generic/609
+>> @@ -0,0 +1,44 @@
+>> +#! /bin/bash
+>> +# SPDX-License-Identifier: GPL-2.0
+>> +# Copyright (c) 2020 Josef Bacik.  All Rights Reserved.
+>> +#
+>> +# FS QA Test 609
+>> +#
+>> +# iomap can call generic_write_sync() if we're O_DSYNC, so write a basic test to
+>> +# exercise O_DSYNC so any unsuspecting file systems will get lockdep warnings if
+>> +# they're locking isn't compatible.
+>> +#
+>> +seq=`basename $0`
+>> +seqres=$RESULT_DIR/$seq
+>> +echo "QA output created by $seq"
+>> +
+>> +here=`pwd`
+>> +tmp=/tmp/$$
+>> +status=1       # failure is the default!
+>> +trap "_cleanup; exit \$status" 0 1 2 3 15
+>> +
+>> +_cleanup()
+>> +{
+>> +       cd /
+>> +       rm -f $tmp.*
+>> +       rm -rf $TEST_DIR/file
+>> +}
+>> +
+>> +# get standard environment, filters and checks
+>> +. ./common/rc
+>> +. ./common/filter
+>> +
+>> +# remove previous $seqres.full before test
+>> +rm -f $seqres.full
+>> +
+>> +# Modify as appropriate.
+>> +_supported_fs generic
+>> +_supported_os Linux
+>> +_require_test
+>> +_require_aiodio dio-dsync
+>> +
+>> +$AIO_TEST $TEST_DIR/file
+> 
+> This can be triggered with xfs_io and without adding a new test program:
+> 
+> #!/bin/bash
+> 
+> mkfs.btrfs -f /dev/sdj
+> mount /dev/sdj /mnt/sdj
+> 
+> xfs_io -f -d -c "pwrite -D -V 1 0 4K" /mnt/sdj/foobar
+> 
+>
 
-It keeps coming up over and over: "Btrfs RAID 5/6 is bad, therefore
-Btrfs is bad". I know in practice that most people don't use the
-raid56 modes for various reasons that are unrelated to this, but it's
-frustrating and annoying that it keeps coming up.
+Ah that's how you do it, I didn't realize I could pass the open flags on the 
+command line, so I had done something wonkey like
 
-I know that Zygo recently posted about how to use RAID 5/6
-successfully(-ish)[1], and previously David Sterba tried to work on
-this[2]. The result of that was the new raid1cX modes, but we still
-have the raid56 modes.
+xfs_io -c "open -fds FILE" -c "pwrite"
 
-What's holding back Btrfs raid56 from having its status[3] updated
-from "Unstable" to "mostly OK" or even "OK"? I know that Synology NAS
-devices use Btrfs and support raid56 using mdraid, why not fix the
-native RAID features so that layer can be dropped?
+and it hadn't worked, I really didn't want to write a bunch of code.  Thanks, 
+I'll fix that,
 
-[1]: https://lore.kernel.org/linux-btrfs/20200627032414.GX10769@hungrycats.=
-org/
-[2]: https://hackweek.suse.com/17/projects/do-something-about-btrfs-and-rai=
-d56
-[3]: https://btrfs.wiki.kernel.org/index.php/Status
-
---=20
-=E7=9C=9F=E5=AE=9F=E3=81=AF=E3=81=84=E3=81=A4=E3=82=82=E4=B8=80=E3=81=A4=EF=
-=BC=81/ Always, there's only one truth!
+Josef

@@ -2,69 +2,76 @@ Return-Path: <SRS0=S4e4=CL=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.5 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,
+	SPF_PASS,UNPARSEABLE_RELAY,URIBL_BLOCKED autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 790E9C433E7
-	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Sep 2020 15:41:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DB49EC2BBD0
+	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Sep 2020 15:51:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 5B24E20639
-	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Sep 2020 15:41:46 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BAD1F2072A
+	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Sep 2020 15:51:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728372AbgIBPld (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 2 Sep 2020 11:41:33 -0400
-Received: from mx2.suse.de ([195.135.220.15]:37406 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727855AbgIBNoU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 2 Sep 2020 09:44:20 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 0F0E3B609;
-        Wed,  2 Sep 2020 13:44:13 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id C8005DA7CF; Wed,  2 Sep 2020 15:42:59 +0200 (CEST)
-Date:   Wed, 2 Sep 2020 15:42:59 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Goldwyn Rodrigues <rgoldwyn@suse.de>
-Cc:     linux-btrfs@vger.kernel.org, Goldwyn Rodrigues <rgoldwyn@suse.com>,
-        Nikolay Borisov <nborisov@suse.com>
-Subject: Re: [PATCH 1/2] btrfs: enumerate the type of exclusive operation in
- progress
-Message-ID: <20200902134259.GJ28318@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Goldwyn Rodrigues <rgoldwyn@suse.de>,
-        linux-btrfs@vger.kernel.org, Goldwyn Rodrigues <rgoldwyn@suse.com>,
-        Nikolay Borisov <nborisov@suse.com>
-References: <20200825150233.30294-1-rgoldwyn@suse.de>
- <20200825150233.30294-2-rgoldwyn@suse.de>
+        id S1726467AbgIBPvX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 2 Sep 2020 11:51:23 -0400
+Received: from out20-97.mail.aliyun.com ([115.124.20.97]:47387 "EHLO
+        out20-97.mail.aliyun.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726814AbgIBPvU (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Sep 2020 11:51:20 -0400
+X-Alimail-AntiSpam: AC=CONTINUE;BC=0.1132874|-1;CH=green;DM=|CONTINUE|false|;DS=CONTINUE|ham_regular_dialog|0.0700758-0.000428012-0.929496;FP=0|0|0|0|0|-1|-1|-1;HT=e01a16367;MF=guan@eryu.me;NM=1;PH=DS;RN=6;RT=6;SR=0;TI=SMTPD_---.IRrhU6._1599061862;
+Received: from localhost(mailfrom:guan@eryu.me fp:SMTPD_---.IRrhU6._1599061862)
+          by smtp.aliyun-inc.com(10.147.41.231);
+          Wed, 02 Sep 2020 23:51:02 +0800
+Date:   Wed, 2 Sep 2020 23:50:57 +0800
+From:   Eryu Guan <guan@eryu.me>
+To:     dsterba@suse.cz, Marcos Paulo de Souza <marcos@mpdesouza.com>,
+        dsterba@suse.com, linux-btrfs@vger.kernel.org,
+        fstests@vger.kernel.org, Marcos Paulo de Souza <mpdesouza@suse.com>
+Subject: Re: [PATCH] fstests: btrfs/218 check if mount opts are applied
+Message-ID: <20200902155057.GG3853@desktop>
+References: <20200804205648.11284-1-marcos@mpdesouza.com>
+ <20200830161519.GC3853@desktop>
+ <20200831114503.GU28318@twin.jikos.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20200825150233.30294-2-rgoldwyn@suse.de>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <20200831114503.GU28318@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Aug 25, 2020 at 10:02:32AM -0500, Goldwyn Rodrigues wrote:
-> From: Goldwyn Rodrigues <rgoldwyn@suse.com>
+On Mon, Aug 31, 2020 at 01:45:03PM +0200, David Sterba wrote:
+> On Mon, Aug 31, 2020 at 12:15:19AM +0800, Eryu Guan wrote:
+> > On Tue, Aug 04, 2020 at 05:56:48PM -0300, Marcos Paulo de Souza wrote:
+> > > From: Marcos Paulo de Souza <mpdesouza@suse.com>
+> > > 
+> > > This new test will apply different mount points and check if they were applied
+> > > by reading /proc/self/mounts. Almost all available btrfs options are tested
+> > > here, leaving only device=, which is tested in btrfs/125 and space_cache, tested
+> > > in btrfs/131.
+> > > 
+> > > This test does not apply any workload after the fs is mounted, just checks is
+> > > the option was set/unset correctly.
+> > > 
+> > > Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
+> > 
+> > I'm seeing this diff when testing with v5.9-rc2 kernel and v5.4
+> > btrfs-progs, is that expected?
+> > 
+> >     +Could not find 'relatime,compress=lzo,space_cache,subvolid' in 'rw,relatime,compress=lzo:3,space_cache,subvolid=5,subvol=/', using 'compress=lzo'
+> >     +Could not find 'relatime,compress=lzo,space_cache,subvolid' in 'rw,relatime,compress=lzo:3,space_cache,subvolid=5,subvol=/', using 'compress=lzo'
+> >     +Could not find 'relatime,compress-force=lzo,space_cache,subvolid' in 'rw,relatime,compress-force=lzo:4,space_cache,subvolid=5,subvol=/', using 'compress-force=lzo'
+> >     +Could not find 'relatime,compress-force=lzo,space_cache,subvolid' in 'rw,relatime,compress-force=lzo:4,space_cache,subvolid=5,subvol=/', using 'compress-force=lzo'
+> >      Silence is golden
 > 
-> Instead of using a flag bit for exclusive operation, use an atomic_t
-> variable to store if the exclusive operation is being performed.
-> Introduce an API to start and finish an exclusive operation.
+> This should be fixed by 282dd7d77184 ("btrfs: reset compression level
+> for lzo on remount") that is in v5.9-rc3.
 
-I think we don't need it to be atomic_t, the change must be atomic but
-for that cmpxchg should be sufficient.
+Great!
 
-> +enum btrfs_exclusive_operation_t {
-> +	BTRFS_EXCLOP_NONE = 0,
-> +	BTRFS_EXCLOP_BALANCE,
-> +	BTRFS_EXCLOP_DEV_ADD,
-> +	BTRFS_EXCLOP_DEV_REPLACE,
-> +	BTRFS_EXCLOP_DEV_REMOVE,
-> +	BTRFS_EXCLOP_SWAP_ACTIVATE,
-> +	BTRFS_EXCLOP_RESIZE,
+Marcos, would you please refresh the patch to include the kernel fix in
+commit log? Thanks!
 
-Yeah this is much better than the single bit.
+Eryu

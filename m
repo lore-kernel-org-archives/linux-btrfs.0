@@ -1,110 +1,152 @@
-Return-Path: <SRS0=0DI8=CJ=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=42cL=CM=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.7 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-18.9 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,NICE_REPLY_A,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7B29FC433E2
-	for <linux-btrfs@archiver.kernel.org>; Mon, 31 Aug 2020 12:56:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8AFE0C43461
+	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Sep 2020 21:40:44 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 56BF62068E
-	for <linux-btrfs@archiver.kernel.org>; Mon, 31 Aug 2020 12:56:38 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5BB9C206CA
+	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Sep 2020 21:40:44 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (1024-bit key) header.d=moffatt.email header.i=@moffatt.email header.b="mDz/vhPm"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="clpVgk5V"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726326AbgHaM4g (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 31 Aug 2020 08:56:36 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59492 "EHLO
+        id S1728037AbgICVkm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 3 Sep 2020 17:40:42 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46156 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726144AbgHaM4a (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 31 Aug 2020 08:56:30 -0400
-Received: from jemma.woof94.com (jemma.woof94.com [IPv6:2404:9400:3:0:216:3eff:fee0:fa86])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 00CEFC061573
-        for <linux-btrfs@vger.kernel.org>; Mon, 31 Aug 2020 05:56:29 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=moffatt.email; s=woof2014; h=Content-Transfer-Encoding:Content-Type:
-        In-Reply-To:MIME-Version:Date:Message-ID:From:References:To:Subject:Sender:
-        Reply-To:Cc:Content-ID:Content-Description:Resent-Date:Resent-From:
-        Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
-        List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-        bh=AsAQ0luJjbQGxFuOhqcjb+vJ97X5fwHw3chzyt0UzH8=; b=mDz/vhPmC7GhfCdaeabpDuUy19
-        J1OSUGXR0xX5TG/GSrlWR/eCeWjSqDF+RDdk3AcxzFJS7Cfu7mDqvJiHlu60378Z96cWBlKa845Dr
-        WqD1IC0vJa8gHO/hsJCU1e48LCjmYy5Nb2/ArE/CNT8Ja2noV57PS+sJcgg1Qs3yfTgM=;
-Received: from 2403-5800-3100-142-a53d-5245-55a7-71b4.ip6.aussiebb.net ([2403:5800:3100:142:a53d:5245:55a7:71b4])
-        by jemma.woof94.com with esmtpsa (TLS1.3:ECDHE_RSA_AES_128_GCM_SHA256:128)
-        (Exim 4.92)
-        (envelope-from <hamish-btrfs@moffatt.email>)
-        id 1kCjMF-0006nH-Nt; Mon, 31 Aug 2020 22:56:23 +1000
-Subject: Re: new database files not compressed
-To:     Nikolay Borisov <nborisov@suse.com>,
-        Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-References: <6992fae3-ce87-8ae1-8dfe-1cb65578a16a@moffatt.email>
- <20200831034731.GX5890@hungrycats.org>
- <baadab71-61a7-704e-86f7-3607895df663@moffatt.email>
- <1ba6d793-30c5-39fc-3b6f-46fee70e5dd8@suse.com>
- <4b5ff37f-2659-0757-cdc4-e3704ba9768b@moffatt.email>
- <68468502-c0e4-d126-3e09-4b5afa0a1f29@suse.com>
-From:   Hamish Moffatt <hamish-btrfs@moffatt.email>
-Message-ID: <2eb111da-204d-e723-2245-38c3d9256cfe@moffatt.email>
-Date:   Mon, 31 Aug 2020 22:56:23 +1000
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.11.0
+        with ESMTP id S1726528AbgICVkm (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Sep 2020 17:40:42 -0400
+Received: from mail-qk1-x743.google.com (mail-qk1-x743.google.com [IPv6:2607:f8b0:4864:20::743])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 25F27C061244
+        for <linux-btrfs@vger.kernel.org>; Thu,  3 Sep 2020 14:40:42 -0700 (PDT)
+Received: by mail-qk1-x743.google.com with SMTP id f142so4503654qke.13
+        for <linux-btrfs@vger.kernel.org>; Thu, 03 Sep 2020 14:40:42 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
+        h=subject:to:cc:references:from:message-id:date:user-agent
+         :mime-version:in-reply-to:content-language:content-transfer-encoding;
+        bh=LQxz2ToSwsyB9OjRXX/QRAVeXXxaCh7pVgKWnv73MRA=;
+        b=clpVgk5VXULmciF0Vppb11O/KZhDBp2eGSxgTWcN6hNtoh1FcqhWzDSb2uwowAlowW
+         HR8Kvo0kIW1Y2CaAdp18ffejPMLA4nOlczuuaaExdzUVau0LdDvi63xmywQoRKeRPWq4
+         YPYoWmce1WScD/BGYNh8OKFG8BIyoNo6vN2QTHh1cVQ8JcGQyJHWMdHqt/lKr45ITRCp
+         at0niT4wcXby6JORPtUky64NsWklgTUDdm8W1bcEDfpq1rKxtYXsbUoJ4EbZ7vhZe6nn
+         dLROoWuKJcRby41tdj+9binB/pxONbtd70YWM1NKILlQtHhKKP1woou9arwvDpofsyca
+         SbUw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=LQxz2ToSwsyB9OjRXX/QRAVeXXxaCh7pVgKWnv73MRA=;
+        b=jkeSWhPuyR/0t7QxN4mIaa8JigkoAJ9sUNV9dLuzGNp8FcZFvQiY1c6Sk+Z4xWoZPD
+         GYusyNaECZqV+HQ3AZ8xMnG4eYM23qxYcpfH765/i4RXYsMZ8QqE1fLj8JXmoAHL83cT
+         4Vpaln7vb2R+X1HpKn63X0TgL2SZbqAIeLn++Sff4MWQW8Yu35z8ZyjrxaNTDnpOHJTa
+         ut4euLp/TSmRz1LKaviIzNleQAsFSi6ckw2j3sa0awxW4Acc/DKjgHvC8/yqeLOCRddT
+         R3BMPSR55+Osfb84+qbzIyVemUwkTJqX9OUHoBl4DtkQytjR4tFXMD0be/cTsHxY84bu
+         fTrg==
+X-Gm-Message-State: AOAM530AUvdOqo5QrAK6nbnNGQ2EXOI+Q/3J4l5/lH9wRbQ0bZsR3JJJ
+        TI5f4F5lTqNZD75vaSvjSq85sA==
+X-Google-Smtp-Source: ABdhPJwCuYYXV+kIV3YMTuw21YtvEomPBSs+0a+VQ5+d9GqymGJGAKLpPM8qWXSO7dl66CUS95fhrg==
+X-Received: by 2002:a05:620a:1015:: with SMTP id z21mr5323978qkj.2.1599169241091;
+        Thu, 03 Sep 2020 14:40:41 -0700 (PDT)
+Received: from ?IPv6:2620:10d:c0a8:11c1::11a2? ([2620:10d:c091:480::1:9e05])
+        by smtp.gmail.com with ESMTPSA id f127sm2983640qke.133.2020.09.03.14.40.39
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Thu, 03 Sep 2020 14:40:40 -0700 (PDT)
+Subject: Re: [PATCH 1/2] btrfs: support remount of ro fs with free space tree
+To:     Boris Burkov <boris@bur.io>, Dave Sterba <dsterba@suse.com>,
+        Chris Mason <clm@fb.com>
+Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+References: <cover.1599164377.git.boris@bur.io>
+ <dea5fb2c9131b0b1c274f011596e5798fdc1971d.1599164377.git.boris@bur.io>
+From:   Josef Bacik <josef@toxicpanda.com>
+Message-ID: <d21b0694-2ff6-dba0-2c93-ceaef0c0bed8@toxicpanda.com>
+Date:   Thu, 3 Sep 2020 17:40:39 -0400
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:68.0)
+ Gecko/20100101 Thunderbird/68.12.0
 MIME-Version: 1.0
-In-Reply-To: <68468502-c0e4-d126-3e09-4b5afa0a1f29@suse.com>
+In-Reply-To: <dea5fb2c9131b0b1c274f011596e5798fdc1971d.1599164377.git.boris@bur.io>
 Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Transfer-Encoding: 8bit
 Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 31/8/20 8:47 pm, Nikolay Borisov wrote:
-> <SNIP>
->
->> I created a new file system, ran dd bs=32k count=1024, then the dump
->> shows me items all the way up to item 161. https://pastebin.com/0MPPdqqM
->>
->>      item 160 key (258 EXTENT_DATA 33292288) itemoff 7750 itemsize 53
->>          generation 7 type 1 (regular)
->>          extent data disk byte 14671872 nr 4096
->>          extent data offset 0 nr 131072 ram 131072
->>          extent compression 3 (zstd)
->>      item 161 key (258 EXTENT_DATA 33423360) itemoff 7697 itemsize 53
->>          generation 7 type 1 (regular)
->>          extent data disk byte 14675968 nr 4096
->>          extent data offset 0 nr 131072 ram 131072
->>          extent compression 3 (zstd)
->> total bytes 32196018176
->> bytes used 1245184
->> uuid 53eaed91-1060-445b-bf7c-5efe9917adbc
-> This output indicates that extents are compressed, what does compsize
-> report on this file?
+On 9/3/20 4:33 PM, Boris Burkov wrote:
+> When a user attempts to remount a btrfs filesystem with
+> 'mount -o remount,space_cache=v2', that operation succeeds.
+> Unfortunately, this is misleading, because the remount does not create
+> the free space tree. /proc/mounts will incorrectly show space_cache=v2,
+> but on the next mount, the file system will revert to the old
+> space_cache.
+> 
+> For now, we handle only the easier case, where the existing mount is
+> read only. In that case, we can create the free space tree without
+> contending with the block groups changing as we go. If it is not read
+> only, we fail more explicitly so the user knows that the remount was not
+> successful, and we don't end up in a state where /proc/mounts is giving
+> misleading information.
+> 
+> References: https://github.com/btrfs/btrfs-todo/issues/5
+> Signed-off-by: Boris Burkov <boris@bur.io>
+> ---
+>   fs/btrfs/super.c | 17 +++++++++++++++++
+>   1 file changed, 17 insertions(+)
+> 
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index 3ebe7240c63d..cbb2cdb0b488 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -47,6 +47,7 @@
+>   #include "tests/btrfs-tests.h"
+>   #include "block-group.h"
+>   #include "discard.h"
+> +#include "free-space-tree.h"
+>   
+>   #include "qgroup.h"
+>   #define CREATE_TRACE_POINTS
+> @@ -1862,6 +1863,22 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
+>   	btrfs_resize_thread_pool(fs_info,
+>   		fs_info->thread_pool_size, old_thread_pool_size);
+>   
+> +	if (btrfs_test_opt(fs_info, FREE_SPACE_TREE) &&
+> +	    !btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE)) {
+> +		if (!sb_rdonly(sb)) {
+> +			btrfs_warn(fs_info, "cannot create free space tree on writeable mount");
+> +			ret = -EINVAL;
+> +			goto restore;
+> +		}
+> +		btrfs_info(fs_info, "creating free space tree");
+> +		ret = btrfs_create_free_space_tree(fs_info);
+> +		if (ret) {
+> +			btrfs_warn(fs_info,
+> +				   "failed to create free space tree: %d", ret);
+> +			goto restore;
+> +		}
+> +	}
+> +
 
-Yes it is right actually, I had wrong mount options before as Roman 
-observed.
+This whole chunk actually needs to be moved down into the
 
+} else {
+	if (test_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state)) {
 
-$ sudo compsize zeroes
-Type       Perc     Disk Usage   Uncompressed Referenced
-TOTAL        3%      1.0M          32M          32M
-zstd         3%      1.0M          32M          32M
+bit, and after all the checks to make sure it's ok to flip RW, but _before_ we 
+do btrfs_cleanup_roots.
 
+Also put a comment there saying something like
 
-But it is not working for Firebird still.
+/*
+  * Don't do anything that writes above this, otherwise bad things will happen.
+  */
 
-$ isql-fb
-Use CONNECT or CREATE DATABASE to specify a database
-SQL> create database 'test3.fdb' page_size 16384;
-SQL> ^D
-$ sudo compsize test3.fdb
-Type       Perc     Disk Usage   Uncompressed Referenced
-TOTAL      100%      2.2M         2.2M         2.2M
-none       100%      2.2M         2.2M         2.2M
+So that nobody accidentally messes this up in the future.  Thanks,
 
-Hamish
-
+Josef

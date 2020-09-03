@@ -8,67 +8,67 @@ X-Spam-Status: No, score=-13.1 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
 	UNPARSEABLE_RELAY,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3C601C433E2
-	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Sep 2020 00:58:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8597AC43461
+	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Sep 2020 00:58:25 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 025DC204EC
-	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Sep 2020 00:58:24 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 64BA2204EC
+	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Sep 2020 00:58:25 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="BaWF/W/5"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="vIFvKxo3"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727895AbgICA6X (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 2 Sep 2020 20:58:23 -0400
-Received: from userp2120.oracle.com ([156.151.31.85]:57006 "EHLO
+        id S1727902AbgICA6Y (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 2 Sep 2020 20:58:24 -0400
+Received: from userp2120.oracle.com ([156.151.31.85]:57050 "EHLO
         userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726312AbgICA6S (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Sep 2020 20:58:18 -0400
+        with ESMTP id S1727818AbgICA6V (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Sep 2020 20:58:21 -0400
 Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 0830rdQ3176239
-        for <linux-btrfs@vger.kernel.org>; Thu, 3 Sep 2020 00:58:17 GMT
+        by userp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 0830swSh176869
+        for <linux-btrfs@vger.kernel.org>; Thu, 3 Sep 2020 00:58:20 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
  date : message-id : in-reply-to : references : mime-version :
  content-transfer-encoding; s=corp-2020-01-29;
- bh=7Fd1sqhiACZFey/pa/5URTigjJdrXzE+CZl0NbIc/EI=;
- b=BaWF/W/5KC25A+iC+b2NSON4tpts+cIjT3oRQuR4IZnJdM2qGKI4ggbAenMqcRVTLyoI
- uNmYkr62GxAdGGmXZgnSyvtpZIuUvEePHKul+77neK7rwDM076HdX7HNrjZc7awUDfms
- WhHofWxSKDK2uPwsocf2ENauKgwGfUV72gyTzxaODewtk/IFuKmcHD/a5tNgiALFKKPR
- O28B2JcmbZBz90r4wBm+6qTU3G7TQc/04FaqqNLHvijvmnuEfejdGhKNl2Xjt03UAE1v
- axvwE4lUaX3UVeBMMDXqN+wMwXL0x5UOrvLR1DfKNdUZqYhT1ACu3qzKm6EL+ZVNtZKf gw== 
-Received: from userp3020.oracle.com (userp3020.oracle.com [156.151.31.79])
-        by userp2120.oracle.com with ESMTP id 339dmn4b1e-1
+ bh=1DxNN5ByH8BK4fUsgKje1MSVlnbK7TsDgaBoY9hsDKE=;
+ b=vIFvKxo3dn22HviV79zt/qMOTDsgAWPeRkBH+xI5uy2mM0fTbOrsocAUz3LfImMzJy0d
+ sGtyHXhc1+kZDJbbxUXquRglJnMVp2aeLCBqSaoZkah4MDel0gvrR6TEZEjUg8Pmf36Y
+ FcXcbtZPffLXKzK0omnoqIIX0mzhJeewMi4z3siJClTay9rTzADHkntWPxeasA6BWzWG
+ N5r/oJKeAF37a0kV0tAGlILsz9aTikDVUPrH3FsLlYtOEHxHBCqR/r5NLzFX1hjoW2vs
+ 7cxi8Uq4afqe8opaSTjIJO7sQ8e4SYFr8Sr2x5TdDXBP+LxbcvbxyHnHwKWytIpWymmY ZA== 
+Received: from aserp3030.oracle.com (aserp3030.oracle.com [141.146.126.71])
+        by userp2120.oracle.com with ESMTP id 339dmn4b1j-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
-        for <linux-btrfs@vger.kernel.org>; Thu, 03 Sep 2020 00:58:16 +0000
-Received: from pps.filterd (userp3020.oracle.com [127.0.0.1])
-        by userp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 0830t5aA179389
-        for <linux-btrfs@vger.kernel.org>; Thu, 3 Sep 2020 00:58:16 GMT
+        for <linux-btrfs@vger.kernel.org>; Thu, 03 Sep 2020 00:58:20 +0000
+Received: from pps.filterd (aserp3030.oracle.com [127.0.0.1])
+        by aserp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 0830tEVN105147
+        for <linux-btrfs@vger.kernel.org>; Thu, 3 Sep 2020 00:58:19 GMT
 Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by userp3020.oracle.com with ESMTP id 3380sv16aq-1
+        by aserp3030.oracle.com with ESMTP id 3380kqwuuq-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 03 Sep 2020 00:58:16 +0000
+        for <linux-btrfs@vger.kernel.org>; Thu, 03 Sep 2020 00:58:19 +0000
 Received: from abhmp0003.oracle.com (abhmp0003.oracle.com [141.146.116.9])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id 0830wFxN020205
-        for <linux-btrfs@vger.kernel.org>; Thu, 3 Sep 2020 00:58:15 GMT
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id 0830wIuN020208
+        for <linux-btrfs@vger.kernel.org>; Thu, 3 Sep 2020 00:58:18 GMT
 Received: from localhost.localdomain (/39.109.231.106)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Wed, 02 Sep 2020 17:58:15 -0700
+        with ESMTP ; Wed, 02 Sep 2020 17:58:18 -0700
 From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 05/15] btrfs: refactor btrfs_sysfs_remove_devices_dir
-Date:   Thu,  3 Sep 2020 08:57:41 +0800
-Message-Id: <86f446238ee7f610090b79342ecf472453d9da4c.1599091832.git.anand.jain@oracle.com>
+Subject: [PATCH 07/15] btrfs: handle fail path for btrfs_sysfs_add_fs_devices
+Date:   Thu,  3 Sep 2020 08:57:43 +0800
+Message-Id: <32779bc42ae40eea707cc585624724ac91cd967e.1599091832.git.anand.jain@oracle.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1599091832.git.anand.jain@oracle.com>
 References: <cover.1599091832.git.anand.jain@oracle.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9732 signatures=668679
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 mlxlogscore=999 adultscore=0
- phishscore=0 malwarescore=0 mlxscore=0 spamscore=0 bulkscore=0
- suspectscore=3 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2006250000 definitions=main-2009030004
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 phishscore=0 spamscore=0 adultscore=0
+ mlxscore=0 suspectscore=1 malwarescore=0 mlxlogscore=999 bulkscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2006250000
+ definitions=main-2009030004
 X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9732 signatures=668679
 X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 bulkscore=0 phishscore=0
- mlxlogscore=999 adultscore=0 impostorscore=0 mlxscore=0 suspectscore=3
+ mlxlogscore=999 adultscore=0 impostorscore=0 mlxscore=0 suspectscore=1
  spamscore=0 clxscore=1015 malwarescore=0 lowpriorityscore=0
  priorityscore=1501 classifier=spam adjust=0 reason=mlx scancount=1
  engine=8.12.0-2006250000 definitions=main-2009030004
@@ -77,161 +77,63 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Similar to btrfs_sysfs_add_devices_dir()'s refactor, refactor
-btrfs_sysfs_remove_devices_dir() so that we don't have to use the 2nd
-argument to indicate whether to free all devices or just one device.
-
-Make btrfs_sysfs_remove_device() global as device operations outside of
-sysfs.c now calls this instead of btrfs_sysfs_remove_devices_dir().
-
-btrfs_sysfs_remove_devices_dir() is renamed to
-btrfs_sysfs_remove_fs_devices() to suite its new role.
-
-Now, no one outside of sysfs.c calls btrfs_sysfs_remove_fs_devices()
-so it is redeclared as static. And the same function had to be moved
-before its first caller.
+btrfs_sysfs_add_fs_devices() is called by btrfs_sysfs_add_mounted().
+btrfs_sysfs_add_mounted() assumes that btrfs_sysfs_add_fs_devices() will
+either add sysfs entries for all the devices or none. So this patch keeps up
+to its caller expecatation and cleans up the created sysfs entries if it
+has to fail at some device in the list.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/dev-replace.c |  2 +-
- fs/btrfs/sysfs.c       | 27 +++++++++++----------------
- fs/btrfs/sysfs.h       |  3 +--
- fs/btrfs/volumes.c     |  8 ++++----
- 4 files changed, 17 insertions(+), 23 deletions(-)
+ fs/btrfs/sysfs.c | 18 +++++++++++-------
+ 1 file changed, 11 insertions(+), 7 deletions(-)
 
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 979b40754cb4..a7b1ad4e5706 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -743,7 +743,7 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
- 	mutex_unlock(&fs_info->fs_devices->device_list_mutex);
- 
- 	/* replace the sysfs entry */
--	btrfs_sysfs_remove_devices_dir(fs_info->fs_devices, src_device);
-+	btrfs_sysfs_remove_device(src_device);
- 	btrfs_sysfs_update_devid(tgt_device);
- 	if (test_bit(BTRFS_DEV_STATE_WRITEABLE, &src_device->dev_state))
- 		btrfs_scratch_superblocks(fs_info, src_device->bdev,
 diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index 69a58666f351..9853b9acd4bd 100644
+index 98ce955a0879..a5a73b21d4af 100644
 --- a/fs/btrfs/sysfs.c
 +++ b/fs/btrfs/sysfs.c
-@@ -935,6 +935,14 @@ void btrfs_sysfs_remove_fsid(struct btrfs_fs_devices *fs_devs)
+@@ -1182,10 +1182,12 @@ void btrfs_sysfs_remove_device(struct btrfs_device *device)
+ 		sysfs_remove_link(devices_kobj, disk_kobj->name);
  	}
+ 
+-	kobject_del(&device->devid_kobj);
+-	kobject_put(&device->devid_kobj);
++	if (device->devid_kobj.state_initialized) {
++		kobject_del(&device->devid_kobj);
++		kobject_put(&device->devid_kobj);
++		wait_for_completion(&device->kobj_unregister);
++	}
+ 
+-	wait_for_completion(&device->kobj_unregister);
  }
  
-+void btrfs_sysfs_remove_fs_devices(struct btrfs_fs_devices *fs_devices)
-+{
-+	struct btrfs_device *device;
-+
-+	list_for_each_entry(device, &fs_devices->devices, dev_list)
-+		btrfs_sysfs_remove_device(device);
-+}
-+
- void btrfs_sysfs_remove_mounted(struct btrfs_fs_info *fs_info)
- {
- 	struct kobject *fsid_kobj = &fs_info->fs_devices->fsid_kobj;
-@@ -962,7 +970,7 @@ void btrfs_sysfs_remove_mounted(struct btrfs_fs_info *fs_info)
- 	addrm_unknown_feature_attrs(fs_info, false);
- 	sysfs_remove_group(fsid_kobj, &btrfs_feature_attr_group);
- 	sysfs_remove_files(fsid_kobj, btrfs_attrs);
--	btrfs_sysfs_remove_devices_dir(fs_info->fs_devices, NULL);
-+	btrfs_sysfs_remove_fs_devices(fs_info->fs_devices);
- }
- 
- static const char * const btrfs_feature_set_names[FEAT_MAX] = {
-@@ -1149,7 +1157,7 @@ int btrfs_sysfs_add_space_info_type(struct btrfs_fs_info *fs_info,
- 	return 0;
- }
- 
--static void btrfs_sysfs_remove_device(struct btrfs_device *device)
-+void btrfs_sysfs_remove_device(struct btrfs_device *device)
- {
- 	struct hd_struct *disk;
- 	struct kobject *disk_kobj;
-@@ -1174,19 +1182,6 @@ static void btrfs_sysfs_remove_device(struct btrfs_device *device)
- 	wait_for_completion(&device->kobj_unregister);
- }
- 
--/* when 2nd argument device is NULL, it removes all devices link */
--void btrfs_sysfs_remove_devices_dir(struct btrfs_fs_devices *fs_devices,
--				    struct btrfs_device *one_device)
--{
--	if (one_device) {
--		btrfs_sysfs_remove_device(one_device);
--		return;
--	}
--
--	list_for_each_entry(one_device, &fs_devices->devices, dev_list)
--		btrfs_sysfs_remove_device(one_device);
--}
--
  static ssize_t btrfs_devinfo_in_fs_metadata_show(struct kobject *kobj,
- 					         struct kobj_attribute *a,
- 					         char *buf)
-@@ -1422,7 +1417,7 @@ int btrfs_sysfs_add_mounted(struct btrfs_fs_info *fs_info)
+@@ -1324,19 +1326,21 @@ int btrfs_sysfs_add_fs_devices(struct btrfs_fs_devices *fs_devices)
  
- 	error = sysfs_create_files(fsid_kobj, btrfs_attrs);
- 	if (error) {
--		btrfs_sysfs_remove_devices_dir(fs_devs, NULL);
-+		btrfs_sysfs_remove_fs_devices(fs_devs);
- 		return error;
+ 	list_for_each_entry(device, &fs_devices->devices, dev_list) {
+ 		ret = btrfs_sysfs_add_device(device);
+-		if (ret)
+-			return ret;
++		goto fail;
  	}
  
-diff --git a/fs/btrfs/sysfs.h b/fs/btrfs/sysfs.h
-index 56c29257b5a7..bacef43f7267 100644
---- a/fs/btrfs/sysfs.h
-+++ b/fs/btrfs/sysfs.h
-@@ -15,8 +15,7 @@ enum btrfs_feature_set {
- char *btrfs_printable_features(enum btrfs_feature_set set, u64 flags);
- const char *btrfs_feature_set_name(enum btrfs_feature_set set);
- int btrfs_sysfs_add_device(struct btrfs_device *device);
--void btrfs_sysfs_remove_devices_dir(struct btrfs_fs_devices *fs_devices,
--				    struct btrfs_device *one_device);
-+void btrfs_sysfs_remove_device(struct btrfs_device *device);
- int btrfs_sysfs_add_fsid(struct btrfs_fs_devices *fs_devs);
- void btrfs_sysfs_remove_fsid(struct btrfs_fs_devices *fs_devs);
- void btrfs_sysfs_update_sprout_fsid(struct btrfs_fs_devices *fs_devices);
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 8952f7031f4b..9921b43ef839 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2040,7 +2040,7 @@ void btrfs_scratch_superblocks(struct btrfs_fs_info *fs_info,
+ 	list_for_each_entry(seed, &fs_devices->seed_list, seed_list) {
+ 		list_for_each_entry(device, &seed->devices, dev_list) {
+ 			ret = btrfs_sysfs_add_device(device);
+-			if (ret)
+-				return ret;
++			goto fail;
+ 		}
+ 	}
+ 
+ 	return 0;
++
++fail:
++	btrfs_sysfs_remove_fs_devices(fs_devices);
++	return ret;
  }
  
- int btrfs_rm_device(struct btrfs_fs_info *fs_info, const char *device_path,
--		u64 devid)
-+		    u64 devid)
- {
- 	struct btrfs_device *device;
- 	struct btrfs_fs_devices *cur_devices;
-@@ -2144,7 +2144,7 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info, const char *device_path,
- 	if (device->bdev) {
- 		cur_devices->open_devices--;
- 		/* remove sysfs entry */
--		btrfs_sysfs_remove_devices_dir(fs_devices, device);
-+		btrfs_sysfs_remove_device(device);
- 	}
- 
- 	num_devices = btrfs_super_num_devices(fs_info->super_copy) - 1;
-@@ -2245,7 +2245,7 @@ void btrfs_destroy_dev_replace_tgtdev(struct btrfs_device *tgtdev)
- 
- 	mutex_lock(&fs_devices->device_list_mutex);
- 
--	btrfs_sysfs_remove_devices_dir(fs_devices, tgtdev);
-+	btrfs_sysfs_remove_device(tgtdev);
- 
- 	if (tgtdev->bdev)
- 		fs_devices->open_devices--;
-@@ -2680,7 +2680,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
- 	return ret;
- 
- error_sysfs:
--	btrfs_sysfs_remove_devices_dir(fs_devices, device);
-+	btrfs_sysfs_remove_device(device);
- 	mutex_lock(&fs_info->fs_devices->device_list_mutex);
- 	mutex_lock(&fs_info->chunk_mutex);
- 	list_del_rcu(&device->dev_list);
+ void btrfs_kobject_uevent(struct block_device *bdev, enum kobject_action action)
 -- 
 2.25.1
 

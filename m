@@ -2,107 +2,273 @@ Return-Path: <SRS0=42cL=CM=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-8.0 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AC201C433E9
-	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Sep 2020 15:03:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3BF6CC43461
+	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Sep 2020 15:03:46 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 79F5420716
-	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Sep 2020 15:03:17 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1031A20716
+	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Sep 2020 15:03:46 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=lechevalier.se header.i=@lechevalier.se header.b="zFuNuzig"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729427AbgICPDQ convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 3 Sep 2020 11:03:16 -0400
-Received: from mga14.intel.com ([192.55.52.115]:38263 "EHLO mga14.intel.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1729035AbgICN6v (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 3 Sep 2020 09:58:51 -0400
-IronPort-SDR: YAhaW+RyLQepdox+9fTVQYjSZtPcCQjixBgP7Klj5NzQUqinJnqDcxle2o5XqL1mmg/049l9Kh
- aJY8kdcG+s5g==
-X-IronPort-AV: E=McAfee;i="6000,8403,9732"; a="156839375"
-X-IronPort-AV: E=Sophos;i="5.76,386,1592895600"; 
-   d="scan'208";a="156839375"
-X-Amp-Result: SKIPPED(no attachment in message)
-X-Amp-File-Uploaded: False
-Received: from fmsmga007.fm.intel.com ([10.253.24.52])
-  by fmsmga103.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 03 Sep 2020 06:30:00 -0700
-IronPort-SDR: Ii80nP53OMhKu3YPQanI2V3JEHYHtL7FOqbXWnBxegPkQJnHeLe8iGmOnrNuw5ZytWdFKHt8+v
- PmIgzgzmD4iA==
-X-ExtLoop1: 1
-X-IronPort-AV: E=Sophos;i="5.76,386,1592895600"; 
-   d="scan'208";a="282676539"
-Received: from fmsmsx603.amr.corp.intel.com ([10.18.126.83])
-  by fmsmga007.fm.intel.com with ESMTP; 03 Sep 2020 06:30:00 -0700
-Received: from shsmsx601.ccr.corp.intel.com (10.109.6.141) by
- fmsmsx603.amr.corp.intel.com (10.18.126.83) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
- 15.1.1713.5; Thu, 3 Sep 2020 06:29:59 -0700
-Received: from shsmsx601.ccr.corp.intel.com (10.109.6.141) by
- SHSMSX601.ccr.corp.intel.com (10.109.6.141) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
- 15.1.1713.5; Thu, 3 Sep 2020 21:29:57 +0800
-Received: from shsmsx601.ccr.corp.intel.com ([10.109.6.141]) by
- SHSMSX601.ccr.corp.intel.com ([10.109.6.141]) with mapi id 15.01.1713.004;
- Thu, 3 Sep 2020 21:29:57 +0800
-From:   "Sang, Oliver" <oliver.sang@intel.com>
-To:     "dsterba@suse.cz" <dsterba@suse.cz>
-CC:     Goldwyn Rodrigues <rgoldwyn@suse.com>,
-        David Sterba <dsterba@suse.com>,
-        LKML <linux-kernel@vger.kernel.org>,
-        "lkp@lists.01.org" <lkp@lists.01.org>, lkp <lkp@intel.com>,
-        "ltp@lists.linux.it" <ltp@lists.linux.it>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: RE: [btrfs] c0aaf9b7a1: ltp: stuck at diotest4
-Thread-Topic: [btrfs] c0aaf9b7a1: ltp: stuck at diotest4
-Thread-Index: AQHWgdJgTz1eQ6GVAE+fMaKAQV67JalW6OSQ
-Date:   Thu, 3 Sep 2020 13:29:57 +0000
-Message-ID: <06668b52b9ac4d4e81f945e06223d9b7@intel.com>
-References: <20200903062837.GA3654@xsang-OptiPlex-9020>
- <20200903091123.GO28318@suse.cz>
-In-Reply-To: <20200903091123.GO28318@suse.cz>
-Accept-Language: zh-CN, en-US
-Content-Language: en-US
-X-MS-Has-Attach: 
-X-MS-TNEF-Correlator: 
-dlp-product: dlpe-windows
-dlp-reaction: no-action
-dlp-version: 11.5.1.3
-x-originating-ip: [10.239.127.36]
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 8BIT
+        id S1728902AbgICPDl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 3 Sep 2020 11:03:41 -0400
+Received: from mailrelay1-3.pub.mailoutpod1-cph3.one.com ([46.30.212.10]:29427
+        "EHLO mailrelay1-3.pub.mailoutpod1-cph3.one.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1729430AbgICPDY (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 3 Sep 2020 11:03:24 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=lechevalier.se; s=20191106;
+        h=content-transfer-encoding:content-type:in-reply-to:mime-version:date:
+         message-id:from:references:cc:to:subject:from;
+        bh=CVTf9f0+28opbFOMn+1iOn39Cj7MCgTg6XFNeYTDKKI=;
+        b=zFuNuzigL+IuySpPbvlA8uCDU35geHraXjPwpfDmNoxC+r7zcMaOlXBzW4F3exP8AriJYpfFRIX5y
+         pDl/UtjVr4Z2LM+DnedmkuxEvXBIs/fodGyfRySLRlBhmvYNyedPhtb8eUf8uzlI0KS3ZcjLdhI/I5
+         w/0PkpVteQZZxJIIU+7IQeRPMdXO0IDklrHp5Rkj6f0sw8wiMzpIJ9jF7G4EjBSHuDsVcK9vv94Xea
+         XKm09mCHf+yODL6qYIGVXUlxbJ/dOWYqTlu9FZMu37mTxWoT8OL7J6SqSHmmcjnuF36pS2lEzwFWLW
+         hpSStnG0F0HnWTPIb9w8n+NFbaEkWxA==
+X-HalOne-Cookie: 5499724067dba09c025fa6917e33d44a8de67634
+X-HalOne-ID: 9856d0a1-edf6-11ea-963a-d0431ea8a283
+Received: from [10.0.88.22] (unknown [98.128.186.78])
+        by mailrelay1.pub.mailoutpod1-cph3.one.com (Halon) with ESMTPSA
+        id 9856d0a1-edf6-11ea-963a-d0431ea8a283;
+        Thu, 03 Sep 2020 15:03:16 +0000 (UTC)
+Subject: Re: new database files not compressed
+To:     Zygo Blaxell <zblaxell@furryterror.org>
+Cc:     Nikolay Borisov <nborisov@suse.com>,
+        Hamish Moffatt <hamish-btrfs@moffatt.email>,
+        linux-btrfs@vger.kernel.org
+References: <baadab71-61a7-704e-86f7-3607895df663@moffatt.email>
+ <20200831161505.369be693@natsu>
+ <c7415ce2-f025-6c31-60b7-f0b927ed4808@moffatt.email>
+ <41107373-cc61-ea3f-7ae9-c9eef0ee47f9@suse.com>
+ <2d060b13-7a1a-7cc5-927f-2c6a067f9c03@moffatt.email>
+ <0bf29a8c-23b2-26f4-2efd-2e82f38c437d@suse.com>
+ <4c3d4141-4452-bb79-b18e-f32c8e35cb13@moffatt.email>
+ <d0399ea6-f198-b58f-8b34-f8ba95ef400f@moffatt.email>
+ <03ec55ee-5cf3-54fa-1a81-abc93006ca7b@suse.com>
+ <dede53e.d98f7053.1744e402728@lechevalier.se>
+ <20200902161621.GA5890@hungrycats.org>
+From:   A L <mail@lechevalier.se>
+Message-ID: <9672d08e-852b-d43d-4fdc-3cd967c53d7d@lechevalier.se>
+Date:   Thu, 3 Sep 2020 17:03:15 +0200
+User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:68.0) Gecko/20100101
+ Thunderbird/68.11.0
 MIME-Version: 1.0
+In-Reply-To: <20200902161621.GA5890@hungrycats.org>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: 7bit
+Content-Language: en-US
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-> -----Original Message-----
-> From: David Sterba <dsterba@suse.cz>
-> Sent: Thursday, September 3, 2020 5:11 PM
-> To: Sang, Oliver <oliver.sang@intel.com>
-> Cc: Goldwyn Rodrigues <rgoldwyn@suse.com>; David Sterba
-> <dsterba@suse.com>; LKML <linux-kernel@vger.kernel.org>; lkp@lists.01.org;
-> lkp <lkp@intel.com>; ltp@lists.linux.it; linux-btrfs@vger.kernel.org
-> Subject: Re: [btrfs] c0aaf9b7a1: ltp: stuck at diotest4
-> 
-> On Thu, Sep 03, 2020 at 02:28:37PM +0800, kernel test robot wrote:
-> > Greeting,
-> >
-> > FYI, we noticed the following commit (built with gcc-9):
-> >
-> > commit: c0aaf9b7a114f6b75e0da97be7d99c102347a751 ("btrfs: switch to
-> > iomap_dio_rw() for dio")
-> > https://git.kernel.org/cgit/linux/kernel/git/next/linux-next.git
-> > master
-> 
-> That's probably the O_DIRECT + O_(D)SYNC deadlock that was found recently.
-> One of the cases in diotest4 does
-> 
-> 	open(filename, O_DIRECT | O_RDWR | O_SYNC)
-> 
-> Fix is work in progress, thanks for the report.
 
-Thanks a lot for information!
+On 2020-09-02 18:16, Zygo Blaxell wrote:
+> On Wed, Sep 02, 2020 at 11:57:41AM +0200, A L wrote:
+>>
+>> ---- From: Nikolay Borisov <nborisov@suse.com> -- Sent: 2020-09-02 - 07:57 ----
+>>>> I've been able to reproduce this with a trivial test program which
+>>>> mimics the I/O behaviour of Firebird.
+>>>>
+>>>> It is calling fallocate() to set up a bunch of blocks and then writing
+>>>> them with pwrite(). It seems to be the fallocate() step which is
+>>>> preventing compression.
+>>>>
+>>>> Here is my trivial test program which just writes zeroes to a file. The
+>>>> output file does not get compressed by btrfs.
+>>> Ag yes, this makes sense, because fallocate creates PREALLOC extents
+>>> which are NOCOW (since they are essentially empty so it makes no sense
+>>> to CoW them) hence they go through a different path which doesn't
+>>> perform compression.
+>>>
+>> Hi,
+>>
+>> This is interesting. I think that a lot of applications use fallocate
+>> in their normal operations. This is probably why we see weird compsize
+>> results every now and then.
+> fallocate doesn't make a lot of sense on btrfs, except in the special
+> case of nodatacow files without snapshots.  fallocate breaks compression,
+> and snapshots/reflinks break fallocate.
+
+Isn't this a strong use-case to improve fallocate behavior on Btrfs?
+
+> bees deallocates preallocated extents on sight (dedupes them with holes).
+> I didn't bother to implement an option not to, and so far nobody has
+> asked for one.
+>
+> Before bees (and even before btrfs), I had LD_PRELOAD hacks to replace
+> fallocate() with { return 0; }.  On certain other filesystems fallocate
+> is spectacularly slow, and one application-that-shall-not-be-named in
+> particular liked to reserve a lot more space than it ever ultimately used.
+>
+>> A file that is nocow will also not have checksums. Is this true for
+>> these fallocated files (that has data written to them) too?
+>>
+>> I would really like to see that Btrfs was corrected  so that writes
+>> to an fallocated area will be compressed (if one is using compression
+>> that is).
+> This is difficult to do with the semantics of fallocate, which dictate that
+> a write to a file within the preallocated region shall not return ENOSPC.
+Is this the case when you do `fallocate -l <larger-than-fs-size>`?
+> A fallocated extent is overwritten in-place on the first write, but later
+> writes will be normal copy-on-write.  To be clear, that means they will
+> occupy other locations on the disk, and may encounter ENOSPC during write.
+>
+> fallocate is really broken on btrfs datacow files.  The requirements of
+> each are mutually exclusive unless you allow solutions that can reserve
+> indefinite amounts of auxiliary space for journalling data blocks.
+> It's better not to use fallocate at all.
+>
+> If a fallocated extent is shared (cloned or snapshotted) then it
+> becomes temporarily copy-on-write until only one reference remains,
+> then reverts back to in-place writing--even on nodatacow files.
+> If you're using btrfs send for backups, fallocate doesn't work properly
+> at best, and wastes space and time at worst.
+>
+> The unsharing _should_ also mean that the second write to a preallocated
+> extent should be compressed, but I tried this on kernel 5.7.15 and it
+> turns out they're not...  :-O
+>
+> Here's a 1g fallocated file:
+>
+> 	# fallocate -l 1g test
+> 	# sync test
+> 	# filefrag -v test
+> 	Filesystem type is: 9123683e
+> 	File size of test is 1073741824 (262144 blocks of 4096 bytes)
+> 	 ext:     logical_offset:        physical_offset: length:   expected: flags:
+> 	   0:        0..   65535: 21281040720..21281106255:  65536:             unwritten
+> 	   1:    65536..   98303: 20476350122..20476382889:  32768: 21281106256: unwritten
+> 	   2:    98304..  131071: 20479845152..20479877919:  32768: 20476382890: unwritten
+> 	   3:   131072..  163839: 20483351132..20483383899:  32768: 20479877920: unwritten
+> 	   4:   163840..  196607: 20485055258..20485088025:  32768: 20483383900: unwritten
+> 	   5:   196608..  229375: 20485546782..20485579549:  32768: 20485088026: unwritten
+> 	   6:   229376..  262143: 20675234358..20675267125:  32768: 20485579550: last,unwritten,eof
+> 	test: 7 extents found
+>
+> Let's turn on compression and dump some compressed data on it:
+>
+> 	# chattr +c test
+> 	# dd if=/boot/System.map-5.7.15 bs=512K seek=1 of=test conv=notrunc
+> 	12+1 records in
+> 	12+1 records out
+> 	6607498 bytes (6.6 MB, 6.3 MiB) copied, 0.070041 s, 94.3 MB/s
+> 	# sync test
+> 	# filefrag -v test
+> 	Filesystem type is: 9123683e
+> 	File size of test is 1073741824 (262144 blocks of 4096 bytes)
+> 	 ext:     logical_offset:        physical_offset: length:   expected: flags:
+> 	   0:        0..     127: 21281040720..21281040847:    128:             unwritten
+> 	   1:      128..    1741: 21281040848..21281042461:   1614:
+>
+> 720 + (512 / 4 = 128) = 848, this is written in-place on the extent.
+>
+> 	   2:     1742..   65535: 21281042462..21281106255:  63794:             unwritten
+> 	   3:    65536..   98303: 20476350122..20476382889:  32768: 21281106256: unwritten
+> 	   4:    98304..  131071: 20479845152..20479877919:  32768: 20476382890: unwritten
+> 	   5:   131072..  163839: 20483351132..20483383899:  32768: 20479877920: unwritten
+> 	   6:   163840..  196607: 20485055258..20485088025:  32768: 20483383900: unwritten
+> 	   7:   196608..  229375: 20485546782..20485579549:  32768: 20485088026: unwritten
+> 	   8:   229376..  262143: 20675234358..20675267125:  32768: 20485579550: last,unwritten,eof
+> 	test: 7 extents found
+>
+> OK so we wrote to a fallocated extent and the write as in-place and not
+> compressed.  Good so far, now let's try writing over the same place again.
+> The extent is no longer PREALLOC, so it should move to a different place,
+> and compression can happen:
+>
+> 	# dd if=/boot/System.map-5.7.15 bs=512K seek=1 of=test conv=notrunc
+> 	12+1 records in
+> 	12+1 records out
+> 	6607498 bytes (6.6 MB, 6.3 MiB) copied, 0.0597547 s, 111 MB/s
+> 	# sync test
+> 	# filefrag -v test
+> 	Filesystem type is: 9123683e
+> 	File size of test is 1073741824 (262144 blocks of 4096 bytes)
+> 	 ext:     logical_offset:        physical_offset: length:   expected: flags:
+> 	   0:        0..     127: 21281040720..21281040847:    128:             unwritten
+> 	   1:      128..    1741: 21281106256..21281107869:   1614: 21281040848:
+>
+> OK, it moved from 21281040848 to 21281106256, but still isn't compressed.
+>
+> 	   2:     1742..   65535: 21281042462..21281106255:  63794: 21281107870: unwritten
+> 	   3:    65536..   98303: 20476350122..20476382889:  32768: 21281106256: unwritten
+> 	   4:    98304..  131071: 20479845152..20479877919:  32768: 20476382890: unwritten
+> 	   5:   131072..  163839: 20483351132..20483383899:  32768: 20479877920: unwritten
+> 	   6:   163840..  196607: 20485055258..20485088025:  32768: 20483383900: unwritten
+> 	   7:   196608..  229375: 20485546782..20485579549:  32768: 20485088026: unwritten
+> 	   8:   229376..  262143: 20675234358..20675267125:  32768: 20485579550: last,unwritten,eof
+> 	test: 9 extents found
+>
+> It looks like compressed writes have been disabled for the whole file:
+
+But this is odd. So we have a file with no special attributes that in 
+effect is like a nodatacow file? What happens if we snapshot and then 
+write to the file?
+
+>
+> 	# dd if=/boot/System.map-5.7.15 bs=512K seek=10000 of=test conv=notrunc
+> 	12+1 records in
+> 	12+1 records out
+> 	6607498 bytes (6.6 MB, 6.3 MiB) copied, 0.144441 s, 45.7 MB/s
+> 	# sync test
+> 	# filefrag -v test
+> 	Filesystem type is: 9123683e
+> 	File size of test is 5249487498 (1281614 blocks of 4096 bytes)
+> 	 ext:     logical_offset:        physical_offset: length:   expected: flags:
+> 	   0:        0..     127: 21281040720..21281040847:    128:             unwritten
+> 	   1:      128..    1741: 21281106256..21281107869:   1614: 21281040848:
+> 	   2:     1742..   65535: 21281042462..21281106255:  63794: 21281107870: unwritten
+> 	   3:    65536..   98303: 20476350122..20476382889:  32768: 21281106256: unwritten
+> 	   4:    98304..  131071: 20479845152..20479877919:  32768: 20476382890: unwritten
+> 	   5:   131072..  163839: 20483351132..20483383899:  32768: 20479877920: unwritten
+> 	   6:   163840..  196607: 20485055258..20485088025:  32768: 20483383900: unwritten
+> 	   7:   196608..  229375: 20485546782..20485579549:  32768: 20485088026: unwritten
+> 	   8:   229376..  262143: 20675234358..20675267125:  32768: 20485579550: unwritten
+> 	   9:  1280000.. 1281613: 21281107870..21281109483:   1614: 20676284982: last,eof
+> 	test: 10 extents found
+> 	# getfattr -n btrfs.compression test
+> 	# file: test
+> 	btrfs.compression="zstd"
+>
+> 	# lsattr test
+> 	--------c---------- test
+>
+> This works OK if fallocate is not used:
+>
+> 	# truncate -s 1g test2
+> 	# chattr +c test2
+> 	# sync test2
+> 	# filefrag -v test2
+> 	Filesystem type is: 9123683e
+> 	File size of test2 is 1073741824 (262144 blocks of 4096 bytes)
+> 	test2: 0 extents found
+> 	# dd if=/boot/System.map-5.7.15 bs=512K seek=1 of=test2 conv=notrunc
+> 	12+1 records in
+> 	12+1 records out
+> 	6607498 bytes (6.6 MB, 6.3 MiB) copied, 0.110609 s, 59.7 MB/s
+> 	# sync test2
+> 	# filefrag -v test2
+> 	Filesystem type is: 9123683e
+> 	File size of test2 is 1073741824 (262144 blocks of 4096 bytes)
+> 	 ext:     logical_offset:        physical_offset: length:   expected: flags:
+> 	   0:      128..     159: 8663165813..8663165844:     32:        128: encoded
+> 	   1:      160..     191: 8663166005..8663166036:     32: 8663165845: encoded
+> 	   2:      192..     223: 8663165607..8663165638:     32: 8663166037: encoded
+> 	   3:      224..     255: 8663166052..8663166083:     32: 8663165639: encoded
+> 	[...snip...]
+> 	  48:     1664..    1695: 8663178516..8663178547:     32: 8663176668: encoded
+> 	  49:     1696..    1727: 8663178709..8663178740:     32: 8663178548: encoded
+> 	  50:     1728..    1741: 8663176937..8663176950:     14: 8663178741: last,encoded
+> 	test2: 51 extents found
+>
+>> Thanks.
+>>
+

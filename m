@@ -2,85 +2,72 @@ Return-Path: <SRS0=42cL=CM=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.7 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6272BC433E9
-	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Sep 2020 12:53:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 78D08C433E2
+	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Sep 2020 14:31:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 1F8E520767
-	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Sep 2020 12:53:54 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 51DBA206EB
+	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Sep 2020 14:31:17 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (1024-bit key) header.d=moffatt.email header.i=@moffatt.email header.b="BHa2Q6tP"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="V3e5uAFr"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728874AbgICMxr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 3 Sep 2020 08:53:47 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49308 "EHLO
+        id S1729339AbgICOao (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 3 Sep 2020 10:30:44 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35714 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728716AbgICMxj (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Sep 2020 08:53:39 -0400
-Received: from jemma.woof94.com (jemma.woof94.com [IPv6:2404:9400:3:0:216:3eff:fee0:fa86])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D0842C061244
-        for <linux-btrfs@vger.kernel.org>; Thu,  3 Sep 2020 05:53:38 -0700 (PDT)
+        with ESMTP id S1729348AbgICO1t (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Sep 2020 10:27:49 -0400
+Received: from casper.infradead.org (casper.infradead.org [IPv6:2001:8b0:10b:1236::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 70147C061245;
+        Thu,  3 Sep 2020 07:27:28 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=moffatt.email; s=woof2014; h=Content-Transfer-Encoding:Content-Type:
-        In-Reply-To:MIME-Version:Date:Message-ID:From:References:Cc:To:Subject:Sender
-        :Reply-To:Content-ID:Content-Description:Resent-Date:Resent-From:
-        Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
-        List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-        bh=I2kAC0Z6m52l6EvbJCbUW49gLW7S0qtnQM+AA6ceWgI=; b=BHa2Q6tP28RKfbmBQo2RITOm6P
-        cIXn/+lNbevyR2BoR4XL31V+SHA2gwXlhegt8/z4r1huZMmlp9Zvy9T9wNmfu7IAFsYw2jer63o4m
-        l6aTsZJJCjet9jObWVP4PEmsyddWyDeP0wvdldPv+f07eWC8und+U83rWriYakzXdWmU=;
-Received: from 2403-5800-3100-142-8170-44fc-ed98-c4e4.ip6.aussiebb.net ([2403:5800:3100:142:8170:44fc:ed98:c4e4])
-        by jemma.woof94.com with esmtpsa (TLS1.3:ECDHE_RSA_AES_128_GCM_SHA256:128)
-        (Exim 4.92)
-        (envelope-from <hamish-btrfs@moffatt.email>)
-        id 1kDok0-0006pM-4W; Thu, 03 Sep 2020 22:53:24 +1000
-Subject: Re: new database files not compressed
-To:     Zygo Blaxell <zblaxell@furryterror.org>
-Cc:     linux-btrfs@vger.kernel.org
-References: <baadab71-61a7-704e-86f7-3607895df663@moffatt.email>
- <20200831161505.369be693@natsu>
- <c7415ce2-f025-6c31-60b7-f0b927ed4808@moffatt.email>
- <41107373-cc61-ea3f-7ae9-c9eef0ee47f9@suse.com>
- <2d060b13-7a1a-7cc5-927f-2c6a067f9c03@moffatt.email>
- <0bf29a8c-23b2-26f4-2efd-2e82f38c437d@suse.com>
- <4c3d4141-4452-bb79-b18e-f32c8e35cb13@moffatt.email>
- <d0399ea6-f198-b58f-8b34-f8ba95ef400f@moffatt.email>
- <03ec55ee-5cf3-54fa-1a81-abc93006ca7b@suse.com>
- <dede53e.d98f7053.1744e402728@lechevalier.se>
- <20200902161621.GA5890@hungrycats.org>
-From:   Hamish Moffatt <hamish-btrfs@moffatt.email>
-Message-ID: <f32f6fdf-bc20-b1d1-d0ea-08f779723066@moffatt.email>
-Date:   Thu, 3 Sep 2020 22:53:23 +1000
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.11.0
+        d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Type:MIME-Version:
+        References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+        Content-Transfer-Encoding:Content-ID:Content-Description;
+        bh=mNFw25jVlcdo2HOeyRWdNvqHRP3XxNhZ9gh8UR9BP6c=; b=V3e5uAFr2pYrWuAxT18Z6Ya4Mt
+        AbeWXjbfVj6/jUD82K1+56y+g7jOzYnahDWdf04czK+ngUIoEf1Dwymk6RuN634VptJHYaKxPbimj
+        Zc8rwOLhZD01rAPBVOcpOgr5+zad9skPXEfa3fpHiyyF/199sF0MxE+Q5RPs7BbEeDQChAH+elQV6
+        w51gPFqkVNEGqsGO/xrQ2Ywe7Qw+mzCvgnovuF3NrdkDsyDtxJye4oulORgfusPZw1FxQZ4Twubo5
+        Khxy6HJUi5Rkh6fGV3Hw3j/y9v7Z0N2EA/4SyaxDXS9vSXPOcY+hqIOkUk/cAcQ3oLwTEy5mqBrX9
+        lzNEc6Ww==;
+Received: from hch by casper.infradead.org with local (Exim 4.92.3 #3 (Red Hat Linux))
+        id 1kDqCz-0004uM-1q; Thu, 03 Sep 2020 14:27:25 +0000
+Date:   Thu, 3 Sep 2020 15:27:24 +0100
+From:   Christoph Hellwig <hch@infradead.org>
+To:     "Darrick J. Wong" <darrick.wong@oracle.com>
+Cc:     linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+        xfs <linux-xfs@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        linux-ext4 <linux-ext4@vger.kernel.org>,
+        ocfs2 list <ocfs2-devel@oss.oracle.com>,
+        Christoph Hellwig <hch@infradead.org>,
+        Dave Chinner <david@fromorbit.com>,
+        Eric Sandeen <sandeen@redhat.com>,
+        Theodore Ts'o <tytso@mit.edu>
+Subject: Re: Broken O_{D,}SYNC behavior with FICLONE*?
+Message-ID: <20200903142724.GA18478@infradead.org>
+References: <20200903035225.GJ6090@magnolia>
 MIME-Version: 1.0
-In-Reply-To: <20200902161621.GA5890@hungrycats.org>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Transfer-Encoding: 7bit
-Content-Language: en-US
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20200903035225.GJ6090@magnolia>
+X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by casper.infradead.org. See http://www.infradead.org/rpr.html
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 3/9/20 2:16 am, Zygo Blaxell wrote:
->
-> fallocate doesn't make a lot of sense on btrfs, except in the special
-> case of nodatacow files without snapshots.  fallocate breaks compression,
-> and snapshots/reflinks break fallocate.
+On Wed, Sep 02, 2020 at 08:52:25PM -0700, Darrick J. Wong wrote:
+> Hi,
+> 
+> I have a question for everyone-- do FICLONE and FICLONERANGE count as a
+> "write operation" for the purposes of reasoning about O_SYNC and
+> O_DSYNC?
 
-
-I recompiled Firebird with fallocate disabled (it has a fallback for 
-non-linux OSs), and now I have compressed database files.
-
-It may be that de-duplication suits my application better anyway. Will 
-compsize tell me how much space is being saved by de-duplication, or is 
-there another way to find out?
-
-
-Hamish
-
+They aren't really write operations in the traditional sense as they
+only change metadata.  Then again the metadata is all about the file
+content, so we'd probaby err on the safe side by including them in the
+write operations umbrella term.

@@ -5,70 +5,71 @@ X-Spam-Level:
 X-Spam-Status: No, score=-10.9 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
-	autolearn=unavailable autolearn_force=no version=3.4.0
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A2D6BC43461
-	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Sep 2020 15:25:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2ECFEC433E9
+	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Sep 2020 15:42:36 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 7BCE42072A
-	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Sep 2020 15:25:44 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0FBE820775
+	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Sep 2020 15:42:36 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="C3s14jKI"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="LVL2CZa3"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728618AbgICPZm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 3 Sep 2020 11:25:42 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44804 "EHLO
+        id S1728129AbgICPme (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 3 Sep 2020 11:42:34 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47416 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728623AbgICPZi (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Sep 2020 11:25:38 -0400
+        with ESMTP id S1726025AbgICPmd (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Sep 2020 11:42:33 -0400
 Received: from mail-qk1-x741.google.com (mail-qk1-x741.google.com [IPv6:2607:f8b0:4864:20::741])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1062AC061244
-        for <linux-btrfs@vger.kernel.org>; Thu,  3 Sep 2020 08:25:38 -0700 (PDT)
-Received: by mail-qk1-x741.google.com with SMTP id g72so3381137qke.8
-        for <linux-btrfs@vger.kernel.org>; Thu, 03 Sep 2020 08:25:38 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C367FC061244
+        for <linux-btrfs@vger.kernel.org>; Thu,  3 Sep 2020 08:42:32 -0700 (PDT)
+Received: by mail-qk1-x741.google.com with SMTP id n133so3419296qkn.11
+        for <linux-btrfs@vger.kernel.org>; Thu, 03 Sep 2020 08:42:32 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=subject:to:references:from:message-id:date:user-agent:mime-version
-         :in-reply-to:content-language:content-transfer-encoding;
-        bh=R/vwlE9cotrE5bF1HG/3J+pmzzBO2FvouGDghb20Twg=;
-        b=C3s14jKIewUb/T2LNA4mIaFff+1F0i51goIY66znsk9DHLF1XD+GDrI8bMnNlq87KA
-         0jpExC4qh955TFejIunNn1EtXwRsD7063bJFvFhUkDsppGvoGgnH7WUyHcnf9MJMoUyy
-         SGz0DO8LVkUAZvCqa92LCGzQPame2BgzZkuEz7FbKnrNw+CHPV3ULq9zL+7Vpi8F4s0F
-         LHGOzCIOecOANc8I3XspoSTYscgSm/IhTMgYpkkAy9sjW7qFDmIGT4xsOzuZXWXKU7+W
-         QnZOOh5FJg4jLQYM1d2t1JqiOA3VJzoX7OB5XRSvWLKzPQz1rSbef4uuOa4ZIpW9BgW/
-         FI+Q==
+        h=subject:to:cc:references:from:message-id:date:user-agent
+         :mime-version:in-reply-to:content-language:content-transfer-encoding;
+        bh=VnRq1/dOcFksQZzXHx2R7rL0Ab33hIbT4n7ZP4+8Evc=;
+        b=LVL2CZa33gDgSQHgchOADYPZMBPMyl1tRHs1ymEIcZYSSdSYFqTGCkGglNB58/wYmh
+         93Ol+CM4RFngs+uFINTGb3D0JUeW1Hc4QV2W5VI83e8So4FkEqPNbCbL6TjqFeVSzTOL
+         HOiOAOVOYtOrrkoZZmBrw2uEExLeLWIfpGAUpyxcvwcqmm639iZVCfV/bd8tEXvuFdy5
+         yv+rLxDP32oAhjEMM4jriyPa8iRPtvjea8UWH1pPtDL//VwbudPA0xy+e6JE+OvCQz+q
+         Cqq9Mg4FqjDmXuGUHvIDvc4hzhxZNEYQ3AOIuO5p4Vjf1WsZYe78u05ZYtOGPWzrE2Mk
+         KX6g==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:references:from:message-id:date
+        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
          :user-agent:mime-version:in-reply-to:content-language
          :content-transfer-encoding;
-        bh=R/vwlE9cotrE5bF1HG/3J+pmzzBO2FvouGDghb20Twg=;
-        b=VTH075ZtN0/koJNyBlXPDClgU+nZf1ONYvh+llCd4nDjr5e2JUzHMG2Atuv4o6HyTu
-         i+I0OtvIAhQUFpH6CPpnPbwNwYZFyBkWKwwfUwCznMsKefLZti4s2OzffeKNI91mSK5p
-         GAQZ21v3UUTyu7O4MPexIBNFZV+MTNZX4p9q99YSHUjsAQa7IFeHzZ/metBukgsGtjyd
-         lwBHUxm2f+mfQQ7yfsyMnB26IUC5xRnaxD0PM5Zo5ZhseRAXLlLtZE6oeZrHVNuX3X0H
-         EUl1SWZn46yAn6u4OR/RIwSsL4ZcX13bKNvNWenpsyAp23JH44fqwRybXPMS3GNJ+6gQ
-         8rvg==
-X-Gm-Message-State: AOAM533RoQOqvIyrDN/sgz7Eh7bo5OVKLAdUHWWo4WvBPXMC79RXYS46
-        OT/e7JvYOInGidT3YEFr+KoFGg==
-X-Google-Smtp-Source: ABdhPJy/yqeBqsjf92CcgO9/A6oGH/gPfzk2dcKO80W15DN8x1IeCj13jUAI92znENUGX7F99NPFSQ==
-X-Received: by 2002:a05:620a:211c:: with SMTP id l28mr3466200qkl.395.1599146737168;
-        Thu, 03 Sep 2020 08:25:37 -0700 (PDT)
+        bh=VnRq1/dOcFksQZzXHx2R7rL0Ab33hIbT4n7ZP4+8Evc=;
+        b=jJDxhO9fmO7q2MGW+3vbmAEwmO2Wk/zC7exH3mDLvGVjRpGU7JrZm9EUPMbVfJfWmQ
+         sDjbm0k77Bfbxy6GymTuuJs9ICfLDQRvCnA/KCRDi17E9IJCXCNQuJvhTZwSVJo3PCh1
+         kI6+jqPkbnrRmOf/nUj/iOng3AU9Q3YNpMtd+zZilK1bRiiDvYTyqHx6Zz8qW2EiaMWh
+         DIkEF7gGgSIzq2GlINHyDVw5VoqM0mh+7r7/YFKjwdNEIMwDRGSF0z5ABHKunwVCJwfG
+         G+Ba9BCvusjDSy8ViLqn6U8aIK2MBWtjGZnzAwKGbpOTz0gygZrIeLXWLgPMoithGCzR
+         uNsA==
+X-Gm-Message-State: AOAM531hQjvwGW6JHhlYU6bOJJ1gWHD2VA42PFlaQhQnWUi2l6YEreLD
+        +H73ucuDYlu3Ko9V5KJZo/vA8A==
+X-Google-Smtp-Source: ABdhPJwZoOVK8Fjcxh/pq59Xiq9cnUKYQ3Tu7s/vVRcJpQ85rCyrFODDpBKr7n0hLE3QCmfPQ2jKxw==
+X-Received: by 2002:a37:794:: with SMTP id 142mr3743812qkh.114.1599147751647;
+        Thu, 03 Sep 2020 08:42:31 -0700 (PDT)
 Received: from [192.168.1.45] (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id o6sm2292347qki.16.2020.09.03.08.25.36
+        by smtp.gmail.com with ESMTPSA id u18sm2329770qtk.61.2020.09.03.08.42.30
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 03 Sep 2020 08:25:36 -0700 (PDT)
-Subject: Re: [PATCH] btrfs/011: skip if on too small devices
-To:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-        linux-btrfs@vger.kernel.org, fstests@vger.kernel.org
-References: <20200903121815.7797-1-johannes.thumshirn@wdc.com>
+        Thu, 03 Sep 2020 08:42:31 -0700 (PDT)
+Subject: Re: [PATCH v3 1/15] btrfs: add btrfs_sysfs_add_device helper
+To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+Cc:     nborisov@suse.com
+References: <cover.1599091832.git.anand.jain@oracle.com>
+ <30dc9402060e4361c15082fa52e1470746a2a04b.1599129529.git.anand.jain@oracle.com>
 From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <a1c29b06-7ae4-717a-9429-bf4c08ea91f4@toxicpanda.com>
-Date:   Thu, 3 Sep 2020 11:25:35 -0400
+Message-ID: <3adb4bd1-fa0e-7e79-44c1-c69be9bf2566@toxicpanda.com>
+Date:   Thu, 3 Sep 2020 11:42:30 -0400
 User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:68.0)
  Gecko/20100101 Thunderbird/68.12.0
 MIME-Version: 1.0
-In-Reply-To: <20200903121815.7797-1-johannes.thumshirn@wdc.com>
+In-Reply-To: <30dc9402060e4361c15082fa52e1470746a2a04b.1599129529.git.anand.jain@oracle.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
 Content-Transfer-Encoding: 7bit
@@ -77,11 +78,13 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 9/3/20 8:18 AM, Johannes Thumshirn wrote:
-> btrfs/011 does require a spare device of at least 10GB, skip if we don't
-> have big enough devices, e.g. when testing on ramdisks.
+On 9/3/20 6:46 AM, Anand Jain wrote:
+> btrfs_sysfs_add_devices_dir() adds device link and devid kobject
+> (sysfs entries) for a device or all the devices in the btrfs_fs_devices.
+> In preparation to add these sysfs entries for the seed as well, add
+> a btrfs_sysfs_add_device() helper function and avoid code duplication.
 > 
-> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 
 Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 

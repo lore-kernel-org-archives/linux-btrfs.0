@@ -6,31 +6,31 @@ X-Spam-Status: No, score=-5.5 required=3.0 tests=BAYES_00,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
 	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 658F1C433E9
-	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Sep 2020 11:48:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A8A3AC433E2
+	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Sep 2020 11:55:56 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 32F5F206EB
-	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Sep 2020 11:48:03 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 744A8206EB
+	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Sep 2020 11:55:56 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728723AbgICLrn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 3 Sep 2020 07:47:43 -0400
-Received: from mx2.suse.de ([195.135.220.15]:45570 "EHLO mx2.suse.de"
+        id S1728783AbgICLzq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 3 Sep 2020 07:55:46 -0400
+Received: from mx2.suse.de ([195.135.220.15]:49428 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728623AbgICLqV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 3 Sep 2020 07:46:21 -0400
+        id S1728451AbgICLyz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 3 Sep 2020 07:54:55 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 1CD48AC55;
-        Thu,  3 Sep 2020 11:46:09 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 692DAAD04;
+        Thu,  3 Sep 2020 11:54:55 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 9C2F9DA6E0; Thu,  3 Sep 2020 13:44:55 +0200 (CEST)
-Date:   Thu, 3 Sep 2020 13:44:55 +0200
+        id EB02FDA6E0; Thu,  3 Sep 2020 13:53:41 +0200 (CEST)
+Date:   Thu, 3 Sep 2020 13:53:41 +0200
 From:   David Sterba <dsterba@suse.cz>
 To:     Qu Wenruo <wqu@suse.com>
 Cc:     linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH v2] btrfs: Only require sector size alignment for parent
  eb bytenr
-Message-ID: <20200903114455.GS28318@twin.jikos.cz>
+Message-ID: <20200903115341.GT28318@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
         linux-btrfs@vger.kernel.org
@@ -55,4 +55,5 @@ On Wed, Aug 26, 2020 at 05:26:43PM +0800, Qu Wenruo wrote:
 > +	btrfs_err(eb->fs_info,
 > +		  "eb %llu iref 0x%lu invalid extent inline ref type %d",
 
-0x needs %lx, fixed and added to misc-next, thanks.
+So I replied to the previous v2 post by accident but now I see that the
+0x%lu problem was reported back then and still present in this v2.

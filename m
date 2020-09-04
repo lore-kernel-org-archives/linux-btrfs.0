@@ -5,132 +5,111 @@ X-Spam-Level:
 X-Spam-Status: No, score=-13.1 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
 	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	UNPARSEABLE_RELAY,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+	UNPARSEABLE_RELAY,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DF2CBC2D0A8
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E96A7C2D0E1
 	for <linux-btrfs@archiver.kernel.org>; Fri,  4 Sep 2020 18:10:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 1ACC42537F
-	for <linux-btrfs@archiver.kernel.org>; Fri,  4 Sep 2020 18:04:16 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1E61B2538D
+	for <linux-btrfs@archiver.kernel.org>; Fri,  4 Sep 2020 18:04:18 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="pTB/+1AM"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="gaKX97mh"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727954AbgIDRfQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 4 Sep 2020 13:35:16 -0400
-Received: from userp2120.oracle.com ([156.151.31.85]:49898 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727889AbgIDRfN (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Sep 2020 13:35:13 -0400
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 084HXrpW037461;
-        Fri, 4 Sep 2020 17:35:08 GMT
+        id S1728012AbgIDRf2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 4 Sep 2020 13:35:28 -0400
+Received: from userp2130.oracle.com ([156.151.31.86]:60540 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727978AbgIDRf1 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Sep 2020 13:35:27 -0400
+Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
+        by userp2130.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 084HZ5gZ141064;
+        Fri, 4 Sep 2020 17:35:22 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
  subject : date : message-id : in-reply-to : references : mime-version :
  content-transfer-encoding; s=corp-2020-01-29;
- bh=pXtss5UAdhh6jxdkV1n+XQupBy9rqj4UhRvr3w6boy0=;
- b=pTB/+1AML/F60jScY/S/OvEMmI1x06tahx+a+Xe/Phtg+svgAEkj4pREPuTwmYBWZnwk
- XjKNauXG9XqnsXFVksgbeV1brmhjLkZWBrfS1AYwFBGVEDby6m6ardbJe8+fCp8gjaTu
- 01Zv1mwgtF7u8S9DjRKsYS3/rYz+4m9UlzgKv3DyqhqvjGXXNWomQEjmaT8KLDV9+EnX
- Bk0rHhckgxfj2ik8wKr5uGs03iS7Hacvw2T4IiS1Lj/z0358fq6jypVHqVOcnjLti3a/
- 2lfhZ6AmlCOFp/4mbEwORwgnxYL1A+eodyLyDU7vfUeNnast87FiUfihWsZtWQwaJml5 2Q== 
-Received: from aserp3020.oracle.com (aserp3020.oracle.com [141.146.126.70])
-        by userp2120.oracle.com with ESMTP id 339dmne39f-1
+ bh=DLDocbq67auddKzn8DRbAg3TQsOtfLopdxATMDN3j3w=;
+ b=gaKX97mhkhrFhQTV8vGqBEWqCztht6v8AWGhlJyw8E7CNTy3QtzKP2AGT6ExDOD6GHqS
+ rW/HuWffyMzsz4U32+B33sDfn+Xxh3ZQ7QTQRDvYvO8EcDd7l4rjy6kGCSPl2DGK0/J3
+ q+fCMLOlavTpnGMqSMnPgqzNwP2MMi7cddxOhbKcnkOfg3irY9XtJjs5WAJHBVYb2/PF
+ bm0M2zjTDy+a3hWBkctFYNOMl3ifu9PpVMcdxdf5/UbxmPh1xyPPSN2oMfPKekXyJ7zf
+ Ed6gpsFcQ3Jb5GaJcPRiBfwkkZruAewlx1+ioXYnSLe+M86XLwWNs3w9P4jIqOMOEXKM gQ== 
+Received: from userp3020.oracle.com (userp3020.oracle.com [156.151.31.79])
+        by userp2130.oracle.com with ESMTP id 337eerfra5-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
-        Fri, 04 Sep 2020 17:35:08 +0000
-Received: from pps.filterd (aserp3020.oracle.com [127.0.0.1])
-        by aserp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 084HUlAx090231;
-        Fri, 4 Sep 2020 17:35:07 GMT
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by aserp3020.oracle.com with ESMTP id 3380xds6tu-1
+        Fri, 04 Sep 2020 17:35:22 +0000
+Received: from pps.filterd (userp3020.oracle.com [127.0.0.1])
+        by userp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 084HVDxZ171601;
+        Fri, 4 Sep 2020 17:35:21 GMT
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by userp3020.oracle.com with ESMTP id 33bhs4tcd9-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Fri, 04 Sep 2020 17:35:07 +0000
+        Fri, 04 Sep 2020 17:35:21 +0000
 Received: from abhmp0020.oracle.com (abhmp0020.oracle.com [141.146.116.26])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 084HZ6SP008788;
-        Fri, 4 Sep 2020 17:35:06 GMT
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id 084HZKLN028375;
+        Fri, 4 Sep 2020 17:35:21 GMT
 Received: from localhost.localdomain (/39.109.231.106)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Fri, 04 Sep 2020 10:35:05 -0700
+        with ESMTP ; Fri, 04 Sep 2020 10:35:20 -0700
 From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     dsterba@suse.com, josef@toxicpanda.com, nborisov@suse.com
-Subject: [PATCH 08/16] btrfs: initialize sysfs devid and device link for seed device
-Date:   Sat,  5 Sep 2020 01:34:28 +0800
-Message-Id: <4168e0fed4945939eaba9848c9814970a2137d6f.1599234146.git.anand.jain@oracle.com>
+Subject: [PATCH 14/16] btrfs: cleanup btrfs_assign_next_active_device()
+Date:   Sat,  5 Sep 2020 01:34:34 +0800
+Message-Id: <7d006c2ef7155b463d7c9f511ee4d631c3ecee92.1599234146.git.anand.jain@oracle.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1599234146.git.anand.jain@oracle.com>
 References: <cover.1599234146.git.anand.jain@oracle.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9734 signatures=668679
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 mlxscore=0 spamscore=0 phishscore=0
- mlxlogscore=999 adultscore=0 suspectscore=1 bulkscore=0 malwarescore=0
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 phishscore=0 mlxscore=0 bulkscore=0
+ mlxlogscore=999 spamscore=0 adultscore=0 suspectscore=1 malwarescore=0
  classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2006250000
  definitions=main-2009040152
 X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9734 signatures=668679
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 bulkscore=0 phishscore=0
- mlxlogscore=999 adultscore=0 impostorscore=0 mlxscore=0 suspectscore=1
- spamscore=0 clxscore=1015 malwarescore=0 lowpriorityscore=0
- priorityscore=1501 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2006250000 definitions=main-2009040152
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 clxscore=1015 priorityscore=1501
+ lowpriorityscore=0 malwarescore=0 adultscore=0 spamscore=0 mlxscore=0
+ phishscore=0 impostorscore=0 mlxlogscore=999 bulkscore=0 suspectscore=1
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2006250000
+ definitions=main-2009040152
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We don't initialize the sysfs devid kobject and device-link yet for the
-seed devices in an sprouted filesystem.
-So this patch initializes the seed device devid kobject and the device
-link in the sysfs.
+Cleanup btrfs_assign_next_active_device(), drop %this_dev.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/sysfs.c | 15 +++++++++++++++
- 1 file changed, 15 insertions(+)
+ fs/btrfs/volumes.c | 9 +++------
+ 1 file changed, 3 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index c5b8870b12bf..5b81bb60c86e 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -938,9 +938,15 @@ void btrfs_sysfs_remove_fsid(struct btrfs_fs_devices *fs_devs)
- void btrfs_sysfs_remove_fs_devices(struct btrfs_fs_devices *fs_devices)
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index f16c4a854a6c..f2ade4af33fd 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1960,16 +1960,13 @@ static struct btrfs_device * btrfs_find_next_active_device(
+  * this_dev) which is active.
+  */
+ void __cold btrfs_assign_next_active_device(struct btrfs_device *device,
+-				     struct btrfs_device *this_dev)
++					    struct btrfs_device *next_device)
  {
- 	struct btrfs_device *device;
-+	struct btrfs_fs_devices *seed;
+ 	struct btrfs_fs_info *fs_info = device->fs_info;
+-	struct btrfs_device *next_device;
  
- 	list_for_each_entry(device, &fs_devices->devices, dev_list)
- 		btrfs_sysfs_remove_device(device);
-+
-+	list_for_each_entry(seed, &fs_devices->seed_list, seed_list) {
-+		list_for_each_entry(device, &seed->devices, dev_list)
-+			btrfs_sysfs_remove_device(device);
-+	}
- }
+-	if (this_dev)
+-		next_device = this_dev;
+-	else
++	if (!next_device)
+ 		next_device = btrfs_find_next_active_device(fs_info->fs_devices,
+-								device);
++							    device);
+ 	ASSERT(next_device);
  
- void btrfs_sysfs_remove_mounted(struct btrfs_fs_info *fs_info)
-@@ -1315,6 +1321,7 @@ int btrfs_sysfs_add_fs_devices(struct btrfs_fs_devices *fs_devices)
- {
- 	int ret;
- 	struct btrfs_device *device;
-+	struct btrfs_fs_devices *seed;
- 
- 	list_for_each_entry(device, &fs_devices->devices, dev_list) {
- 		ret = btrfs_sysfs_add_device(device);
-@@ -1322,6 +1329,14 @@ int btrfs_sysfs_add_fs_devices(struct btrfs_fs_devices *fs_devices)
- 			return ret;
- 	}
- 
-+	list_for_each_entry(seed, &fs_devices->seed_list, seed_list) {
-+		list_for_each_entry(device, &seed->devices, dev_list) {
-+			ret = btrfs_sysfs_add_device(device);
-+			if (ret)
-+				return ret;
-+		}
-+	}
-+
- 	return 0;
- }
- 
+ 	if (fs_info->sb->s_bdev &&
 -- 
 2.25.1
 

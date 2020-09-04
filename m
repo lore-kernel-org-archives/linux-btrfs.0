@@ -5,58 +5,58 @@ X-Spam-Level:
 X-Spam-Status: No, score=-13.1 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
 	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	UNPARSEABLE_RELAY,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+	UNPARSEABLE_RELAY,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 191F7C2D0F6
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2957DC31E49
 	for <linux-btrfs@archiver.kernel.org>; Fri,  4 Sep 2020 18:10:29 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 10D6C25391
-	for <linux-btrfs@archiver.kernel.org>; Fri,  4 Sep 2020 18:04:19 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C5B9625385
+	for <linux-btrfs@archiver.kernel.org>; Fri,  4 Sep 2020 18:04:16 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="U4WYfpag"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="t0UFl66C"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727051AbgIDRg6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 4 Sep 2020 13:36:58 -0400
-Received: from userp2120.oracle.com ([156.151.31.85]:51052 "EHLO
+        id S1727977AbgIDRfV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 4 Sep 2020 13:35:21 -0400
+Received: from userp2120.oracle.com ([156.151.31.85]:49950 "EHLO
         userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726317AbgIDRgz (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Sep 2020 13:36:55 -0400
+        with ESMTP id S1727963AbgIDRfS (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Sep 2020 13:35:18 -0400
 Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 084HXjuK037383;
-        Fri, 4 Sep 2020 17:36:50 GMT
+        by userp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 084HXi8P037358;
+        Fri, 4 Sep 2020 17:35:12 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
  subject : date : message-id : in-reply-to : references : mime-version :
  content-transfer-encoding; s=corp-2020-01-29;
- bh=A0wKJ2Vlgqg5rHp8ZIftxZbdcuvcmmG0pBIt2/4y9jM=;
- b=U4WYfpagtrtRUNT/JNHtCIETRxzkHhNkBP0+Duv1XDSJEY0UTAMiJgB9o+KBcTacOH6e
- uj+YMrOKZe1TBFF9NP/tTAFwbJudkQvjFL6IJH7sUCWtpsgaqyXgvqWZlfJxXrUDhFXt
- EdB0P7aX8+AC84F93++bHMQAgWv1L4TuMWMK+LVaMnqCvKaQb1BYWo0RTrC/qDwArVdS
- Za7iWVHAqI9s6NYBMl/d3zho+6lJg+EfV1Gj1rlBswEEAeG8DKhYeVco9PYuj339Kw6m
- sSGs/f+ZDqGkq7p3FpoEfydEugC4RvuvPb34WNPaXTlB5f9alZ6YNfWfETz30357wW8Z iQ== 
+ bh=8VIBReliT6fRFTOu0YrPSLqc/59E8HQdE5cDVDgUKHs=;
+ b=t0UFl66CamrfgpiiZMYpPQVxaARSukglTGt8HwIl8f4bz/74plT5Nm9NkVuX1i8eSEk3
+ hblEKQTBelKSHrQatirnkABeNluf4dTxkgTtKZB9X75Cv/K2XS1E1alYcrCnnX3mqqUN
+ VX68nZYJ8dFcLj9MItazYWaJ9lzEXFojfsqIhlJxET+ndb9zbfLxMjoAdKSaVKr2CtrK
+ CeZFLjbPJpT/EZYDkYtY29GV0ygdA4K1dTFUXgaQezMJRaBPlwMdJ2c8gTMF7w4c5yG5
+ HAY4zZlGtYvonY+VciW2NajSSAldZGAfcIAyw3cQBdR+LZvGjUip3i+Tyyi1oxLNRewm Aw== 
 Received: from aserp3020.oracle.com (aserp3020.oracle.com [141.146.126.70])
-        by userp2120.oracle.com with ESMTP id 339dmne3gp-1
+        by userp2120.oracle.com with ESMTP id 339dmne39v-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
-        Fri, 04 Sep 2020 17:36:50 +0000
+        Fri, 04 Sep 2020 17:35:12 +0000
 Received: from pps.filterd (aserp3020.oracle.com [127.0.0.1])
-        by aserp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 084HUlcw090386;
-        Fri, 4 Sep 2020 17:34:49 GMT
+        by aserp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 084HUm6c090507;
+        Fri, 4 Sep 2020 17:35:11 GMT
 Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by aserp3020.oracle.com with ESMTP id 3380xds5xm-1
+        by aserp3020.oracle.com with ESMTP id 3380xds70y-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Fri, 04 Sep 2020 17:34:49 +0000
+        Fri, 04 Sep 2020 17:35:11 +0000
 Received: from abhmp0020.oracle.com (abhmp0020.oracle.com [141.146.116.26])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 084HYnIR014138;
-        Fri, 4 Sep 2020 17:34:49 GMT
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 084HZBh0015587;
+        Fri, 4 Sep 2020 17:35:11 GMT
 Received: from localhost.localdomain (/39.109.231.106)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Fri, 04 Sep 2020 10:34:48 -0700
+        with ESMTP ; Fri, 04 Sep 2020 10:35:10 -0700
 From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     dsterba@suse.com, josef@toxicpanda.com, nborisov@suse.com
-Subject: [PATCH 01/16] btrfs: fix put of uninitialized kobject after seed device delete
-Date:   Sat,  5 Sep 2020 01:34:21 +0800
-Message-Id: <5432348a53c7ec3fb97d4a21121d435fd3a1be74.1599234146.git.anand.jain@oracle.com>
+Subject: [PATCH 10/16] btrfs: reada: use sprout device_list_mutex
+Date:   Sat,  5 Sep 2020 01:34:30 +0800
+Message-Id: <8479e1e6b10b1235d3c685df82426a76ac0b3297.1599234146.git.anand.jain@oracle.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1599234146.git.anand.jain@oracle.com>
 References: <cover.1599234146.git.anand.jain@oracle.com>
@@ -78,76 +78,56 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The following test case leads to null kobject-being-freed error.
+On an fs mounted using a sprout-device, the seed fs_devices are maintained
+in a linked list under fs_info->fs_devices. Each seed's fs_devices also
+have device_list_mutex initialized to protect against the potential race
+with delete threads. But the delete thread (at btrfs_rm_device()) is holding
+the fs_info::fs_devices::device_list_mutex mutex which is sprout's
+device_list_mutex instead of seed's device_list_mutex. Moreover, there
+aren't any significient benefits in using the seed::device_list_mutex
+instead of sprout::device_list_mutex.
 
- mount seed /mnt
- add sprout to /mnt
- umount /mnt
- mount sprout to /mnt
- delete seed
+So this patch converts them of using the seed::device_list_mutex to
+sprout::device_list_mutex.
 
- kobject: '(null)' (00000000dd2b87e4): is not initialized, yet kobject_put() is being called.
- WARNING: CPU: 1 PID: 15784 at lib/kobject.c:736 kobject_put+0x80/0x350
- RIP: 0010:kobject_put+0x80/0x350
- ::
- Call Trace:
- btrfs_sysfs_remove_devices_dir+0x6e/0x160 [btrfs]
- btrfs_rm_device.cold+0xa8/0x298 [btrfs]
- btrfs_ioctl+0x206c/0x22a0 [btrfs]
- ksys_ioctl+0xe2/0x140
- __x64_sys_ioctl+0x1e/0x29
- do_syscall_64+0x96/0x150
- entry_SYSCALL_64_after_hwframe+0x44/0xa9
- RIP: 0033:0x7f4047c6288b
- ::
-
-This is because, at the end of the seed device-delete, we try to remove
-the seed's devid sysfs entry. But for the seed devices under the sprout
-fs, we don't initialize the devid kobject yet. So add a kobject state
-check, which takes care of the Warning.
-
-Fixes: 668e48af btrfs: sysfs, add devid/dev_state kobject and device attributes
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/sysfs.c | 16 ++++++++++------
- 1 file changed, 10 insertions(+), 6 deletions(-)
+ fs/btrfs/reada.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index 190e59152be5..438a367371c4 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -1168,10 +1168,12 @@ int btrfs_sysfs_remove_devices_dir(struct btrfs_fs_devices *fs_devices,
- 					  disk_kobj->name);
+diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
+index e20972230823..9d4f5316a7e8 100644
+--- a/fs/btrfs/reada.c
++++ b/fs/btrfs/reada.c
+@@ -776,13 +776,11 @@ static int reada_start_for_fsdevs(struct btrfs_fs_devices *fs_devices)
+ 
+ 	do {
+ 		enqueued = 0;
+-		mutex_lock(&fs_devices->device_list_mutex);
+ 		list_for_each_entry(device, &fs_devices->devices, dev_list) {
+ 			if (atomic_read(&device->reada_in_flight) <
+ 			    MAX_IN_FLIGHT)
+ 				enqueued += reada_start_machine_dev(device);
  		}
+-		mutex_unlock(&fs_devices->device_list_mutex);
+ 		total += enqueued;
+ 	} while (enqueued && total < 10000);
  
--		kobject_del(&one_device->devid_kobj);
--		kobject_put(&one_device->devid_kobj);
-+		if (one_device->devid_kobj.state_initialized) {
-+			kobject_del(&one_device->devid_kobj);
-+			kobject_put(&one_device->devid_kobj);
+@@ -795,10 +793,13 @@ static void __reada_start_machine(struct btrfs_fs_info *fs_info)
+ 	int i;
+ 	u64 enqueued = 0;
  
--		wait_for_completion(&one_device->kobj_unregister);
-+			wait_for_completion(&one_device->kobj_unregister);
-+		}
++	mutex_lock(&fs_devices->device_list_mutex);
++
+ 	enqueued += reada_start_for_fsdevs(fs_devices);
+ 	list_for_each_entry(seed_devs, &fs_devices->seed_list, seed_list)
+ 		enqueued += reada_start_for_fsdevs(seed_devs);
  
- 		return 0;
- 	}
-@@ -1184,10 +1186,12 @@ int btrfs_sysfs_remove_devices_dir(struct btrfs_fs_devices *fs_devices,
- 			sysfs_remove_link(fs_devices->devices_kobj,
- 					  disk_kobj->name);
- 		}
--		kobject_del(&one_device->devid_kobj);
--		kobject_put(&one_device->devid_kobj);
-+		if (one_device->devid_kobj.state_initialized) {
-+			kobject_del(&one_device->devid_kobj);
-+			kobject_put(&one_device->devid_kobj);
++	mutex_unlock(&fs_devices->device_list_mutex);
+ 	if (enqueued == 0)
+ 		return;
  
--		wait_for_completion(&one_device->kobj_unregister);
-+			wait_for_completion(&one_device->kobj_unregister);
-+		}
- 	}
- 
- 	return 0;
 -- 
 2.25.1
 

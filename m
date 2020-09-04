@@ -3,128 +3,134 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-13.1 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	UNPARSEABLE_RELAY,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0F27AC433E2
-	for <linux-btrfs@archiver.kernel.org>; Fri,  4 Sep 2020 16:23:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DF2CBC2D0A8
+	for <linux-btrfs@archiver.kernel.org>; Fri,  4 Sep 2020 18:10:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id BD9462067C
-	for <linux-btrfs@archiver.kernel.org>; Fri,  4 Sep 2020 16:23:05 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1599236585;
-	bh=uoCyubcdvhjalOrkdWGPGi11s65u4xC+4Ex5FOBtEnE=;
-	h=From:To:Subject:Date:List-ID:From;
-	b=du46jYkL9j7NexcN+6kCDYUGA7bKRubELDRaAyI06EndNHpP36KB2g69x2fyv8IyQ
-	 iCXqymgPJb14x0WrywFzmM1C3q2u99s0Msr/nkmZU/QCNA8gOuy5AgHckDQMd6zeVc
-	 icDWCAs38pBagnI5PnVhFn1l7BFvpRjRWFUTenQY=
+	by mail.kernel.org (Postfix) with ESMTP id 1ACC42537F
+	for <linux-btrfs@archiver.kernel.org>; Fri,  4 Sep 2020 18:04:16 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="pTB/+1AM"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727088AbgIDQXD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 4 Sep 2020 12:23:03 -0400
-Received: from mail.kernel.org ([198.145.29.99]:60164 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726938AbgIDQXC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 4 Sep 2020 12:23:02 -0400
-Received: from debian8.Home (bl8-197-74.dsl.telepac.pt [85.241.197.74])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id A60092067C
-        for <linux-btrfs@vger.kernel.org>; Fri,  4 Sep 2020 16:23:00 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1599236581;
-        bh=uoCyubcdvhjalOrkdWGPGi11s65u4xC+4Ex5FOBtEnE=;
-        h=From:To:Subject:Date:From;
-        b=CL7E8krjzThzmXtXbyVSL6j2p4xuFpFpGGqA4/5E4kaA1yb8ot6UBVcNKDiew737I
-         N7hhVfiQlbqI1NYgNYKAfWS8P/IfpokrjyAuBVesXp7P6SpEqOmIYDOpcU7xu3HyqJ
-         RYOJZutjjmbb65wYsq50LST+uzdgvZ1yu6FGWvfw=
-From:   fdmanana@kernel.org
+        id S1727954AbgIDRfQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 4 Sep 2020 13:35:16 -0400
+Received: from userp2120.oracle.com ([156.151.31.85]:49898 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727889AbgIDRfN (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Sep 2020 13:35:13 -0400
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 084HXrpW037461;
+        Fri, 4 Sep 2020 17:35:08 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
+ subject : date : message-id : in-reply-to : references : mime-version :
+ content-transfer-encoding; s=corp-2020-01-29;
+ bh=pXtss5UAdhh6jxdkV1n+XQupBy9rqj4UhRvr3w6boy0=;
+ b=pTB/+1AML/F60jScY/S/OvEMmI1x06tahx+a+Xe/Phtg+svgAEkj4pREPuTwmYBWZnwk
+ XjKNauXG9XqnsXFVksgbeV1brmhjLkZWBrfS1AYwFBGVEDby6m6ardbJe8+fCp8gjaTu
+ 01Zv1mwgtF7u8S9DjRKsYS3/rYz+4m9UlzgKv3DyqhqvjGXXNWomQEjmaT8KLDV9+EnX
+ Bk0rHhckgxfj2ik8wKr5uGs03iS7Hacvw2T4IiS1Lj/z0358fq6jypVHqVOcnjLti3a/
+ 2lfhZ6AmlCOFp/4mbEwORwgnxYL1A+eodyLyDU7vfUeNnast87FiUfihWsZtWQwaJml5 2Q== 
+Received: from aserp3020.oracle.com (aserp3020.oracle.com [141.146.126.70])
+        by userp2120.oracle.com with ESMTP id 339dmne39f-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
+        Fri, 04 Sep 2020 17:35:08 +0000
+Received: from pps.filterd (aserp3020.oracle.com [127.0.0.1])
+        by aserp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 084HUlAx090231;
+        Fri, 4 Sep 2020 17:35:07 GMT
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by aserp3020.oracle.com with ESMTP id 3380xds6tu-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Fri, 04 Sep 2020 17:35:07 +0000
+Received: from abhmp0020.oracle.com (abhmp0020.oracle.com [141.146.116.26])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 084HZ6SP008788;
+        Fri, 4 Sep 2020 17:35:06 GMT
+Received: from localhost.localdomain (/39.109.231.106)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Fri, 04 Sep 2020 10:35:05 -0700
+From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: fix NULL pointer dereference after failure to create snapshot
-Date:   Fri,  4 Sep 2020 17:22:57 +0100
-Message-Id: <20200904162257.123893-1-fdmanana@kernel.org>
-X-Mailer: git-send-email 2.26.2
+Cc:     dsterba@suse.com, josef@toxicpanda.com, nborisov@suse.com
+Subject: [PATCH 08/16] btrfs: initialize sysfs devid and device link for seed device
+Date:   Sat,  5 Sep 2020 01:34:28 +0800
+Message-Id: <4168e0fed4945939eaba9848c9814970a2137d6f.1599234146.git.anand.jain@oracle.com>
+X-Mailer: git-send-email 2.25.1
+In-Reply-To: <cover.1599234146.git.anand.jain@oracle.com>
+References: <cover.1599234146.git.anand.jain@oracle.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9734 signatures=668679
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 mlxscore=0 spamscore=0 phishscore=0
+ mlxlogscore=999 adultscore=0 suspectscore=1 bulkscore=0 malwarescore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2006250000
+ definitions=main-2009040152
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9734 signatures=668679
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 bulkscore=0 phishscore=0
+ mlxlogscore=999 adultscore=0 impostorscore=0 mlxscore=0 suspectscore=1
+ spamscore=0 clxscore=1015 malwarescore=0 lowpriorityscore=0
+ priorityscore=1501 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2006250000 definitions=main-2009040152
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+We don't initialize the sysfs devid kobject and device-link yet for the
+seed devices in an sprouted filesystem.
+So this patch initializes the seed device devid kobject and the device
+link in the sysfs.
 
-When trying to get a new fs root for a snapshot during the transaction
-at transaction.c:create_pending_snapshot(), if btrfs_get_new_fs_root()
-fails we leave "pending->snap" pointing to an error pointer, and then
-later at ioctl.c:create_snapshot() we dereference that pointer, resulting
-in a crash:
-
-[12264.614689] BUG: kernel NULL pointer dereference, address: 00000000000007c4
-[12264.615650] #PF: supervisor write access in kernel mode
-[12264.616487] #PF: error_code(0x0002) - not-present page
-[12264.617436] PGD 0 P4D 0
-[12264.618328] Oops: 0002 [#1] PREEMPT SMP DEBUG_PAGEALLOC PTI
-[12264.619150] CPU: 0 PID: 2310635 Comm: fsstress Tainted: G        W         5.9.0-rc3-btrfs-next-67 #1
-[12264.619960] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.13.0-0-gf21b5a4aeb02-prebuilt.qemu.org 04/01/2014
-[12264.621769] RIP: 0010:btrfs_mksubvol+0x438/0x4a0 [btrfs]
-[12264.622528] Code: bc ef ff ff (...)
-[12264.624092] RSP: 0018:ffffaa6fc7277cd8 EFLAGS: 00010282
-[12264.624669] RAX: 00000000fffffff4 RBX: ffff9d3e8f151a60 RCX: 0000000000000000
-[12264.625249] RDX: 0000000000000001 RSI: ffffffff9d56c9be RDI: fffffffffffffff4
-[12264.625830] RBP: ffff9d3e8f151b48 R08: 0000000000000000 R09: 0000000000000000
-[12264.626413] R10: 0000000000000000 R11: 0000000000000000 R12: 00000000fffffff4
-[12264.626994] R13: ffff9d3ede380538 R14: ffff9d3ede380500 R15: ffff9d3f61b2eeb8
-[12264.627582] FS:  00007f140d5d8200(0000) GS:ffff9d3fb5e00000(0000) knlGS:0000000000000000
-[12264.628176] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-[12264.628773] CR2: 00000000000007c4 CR3: 000000020f8e8004 CR4: 00000000003706f0
-[12264.629379] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-[12264.629994] DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
-[12264.630594] Call Trace:
-[12264.631227]  btrfs_mksnapshot+0x7b/0xb0 [btrfs]
-[12264.631840]  __btrfs_ioctl_snap_create+0x16f/0x1a0 [btrfs]
-[12264.632458]  btrfs_ioctl_snap_create_v2+0xb0/0xf0 [btrfs]
-[12264.633078]  btrfs_ioctl+0x1864/0x3130 [btrfs]
-[12264.633689]  ? do_sys_openat2+0x1a7/0x2d0
-[12264.634295]  ? kmem_cache_free+0x147/0x3a0
-[12264.634899]  ? __x64_sys_ioctl+0x83/0xb0
-[12264.635488]  __x64_sys_ioctl+0x83/0xb0
-[12264.636058]  do_syscall_64+0x33/0x80
-[12264.636616]  entry_SYSCALL_64_after_hwframe+0x44/0xa9
-
-(gdb) list *(btrfs_mksubvol+0x438)
-0x7c7b8 is in btrfs_mksubvol (fs/btrfs/ioctl.c:858).
-853		ret = 0;
-854		pending_snapshot->anon_dev = 0;
-855	fail:
-856		/* Prevent double freeing of anon_dev */
-857		if (ret && pending_snapshot->snap)
-858			pending_snapshot->snap->anon_dev = 0;
-859		btrfs_put_root(pending_snapshot->snap);
-860		btrfs_subvolume_release_metadata(root, &pending_snapshot->block_rsv);
-861	free_pending:
-862		if (pending_snapshot->anon_dev)
-
-So fix this by setting "pending->snap" to NULL if we get an error from the
-call to btrfs_get_new_fs_root() at transaction.c:create_pending_snapshot().
-
-Fixes: 2dfb1e43f57dd3 ("btrfs: preallocate anon block device at first phase of snapshot creation")
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/transaction.c | 1 +
- 1 file changed, 1 insertion(+)
+ fs/btrfs/sysfs.c | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 8e4cd2d782c6..52ada47aff50 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -1639,6 +1639,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 	pending->snap = btrfs_get_new_fs_root(fs_info, objectid, pending->anon_dev);
- 	if (IS_ERR(pending->snap)) {
- 		ret = PTR_ERR(pending->snap);
-+		pending->snap = NULL;
- 		btrfs_abort_transaction(trans, ret);
- 		goto fail;
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index c5b8870b12bf..5b81bb60c86e 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -938,9 +938,15 @@ void btrfs_sysfs_remove_fsid(struct btrfs_fs_devices *fs_devs)
+ void btrfs_sysfs_remove_fs_devices(struct btrfs_fs_devices *fs_devices)
+ {
+ 	struct btrfs_device *device;
++	struct btrfs_fs_devices *seed;
+ 
+ 	list_for_each_entry(device, &fs_devices->devices, dev_list)
+ 		btrfs_sysfs_remove_device(device);
++
++	list_for_each_entry(seed, &fs_devices->seed_list, seed_list) {
++		list_for_each_entry(device, &seed->devices, dev_list)
++			btrfs_sysfs_remove_device(device);
++	}
+ }
+ 
+ void btrfs_sysfs_remove_mounted(struct btrfs_fs_info *fs_info)
+@@ -1315,6 +1321,7 @@ int btrfs_sysfs_add_fs_devices(struct btrfs_fs_devices *fs_devices)
+ {
+ 	int ret;
+ 	struct btrfs_device *device;
++	struct btrfs_fs_devices *seed;
+ 
+ 	list_for_each_entry(device, &fs_devices->devices, dev_list) {
+ 		ret = btrfs_sysfs_add_device(device);
+@@ -1322,6 +1329,14 @@ int btrfs_sysfs_add_fs_devices(struct btrfs_fs_devices *fs_devices)
+ 			return ret;
  	}
+ 
++	list_for_each_entry(seed, &fs_devices->seed_list, seed_list) {
++		list_for_each_entry(device, &seed->devices, dev_list) {
++			ret = btrfs_sysfs_add_device(device);
++			if (ret)
++				return ret;
++		}
++	}
++
+ 	return 0;
+ }
+ 
 -- 
-2.26.2
+2.25.1
 

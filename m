@@ -5,178 +5,216 @@ X-Spam-Level:
 X-Spam-Status: No, score=-13.1 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
 	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	UNPARSEABLE_RELAY,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	UNPARSEABLE_RELAY,USER_AGENT_GIT autolearn=unavailable autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DEDF1C52D76
-	for <linux-btrfs@archiver.kernel.org>; Fri,  4 Sep 2020 18:10:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3C0D4C433E2
+	for <linux-btrfs@archiver.kernel.org>; Fri,  4 Sep 2020 23:25:34 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 8CAFD25377
-	for <linux-btrfs@archiver.kernel.org>; Fri,  4 Sep 2020 18:04:14 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id F2B3D2087C
+	for <linux-btrfs@archiver.kernel.org>; Fri,  4 Sep 2020 23:25:33 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="HlIidEnf"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="Ukk8bdrV"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727877AbgIDRfA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 4 Sep 2020 13:35:00 -0400
-Received: from userp2120.oracle.com ([156.151.31.85]:49630 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725984AbgIDRe6 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Sep 2020 13:34:58 -0400
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 084HXrpU037461;
-        Fri, 4 Sep 2020 17:34:53 GMT
+        id S1728248AbgIDXZd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 4 Sep 2020 19:25:33 -0400
+Received: from aserp2120.oracle.com ([141.146.126.78]:42948 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728222AbgIDXZc (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Sep 2020 19:25:32 -0400
+Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
+        by aserp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 084NPSDM085989;
+        Fri, 4 Sep 2020 23:25:28 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
  subject : date : message-id : in-reply-to : references : mime-version :
  content-transfer-encoding; s=corp-2020-01-29;
- bh=ZOEeqNICBEG/hjDxxqITNh6GC06gLPMSF/ucQSM7B48=;
- b=HlIidEnf3xwqySaDPh537Qcijv9VLU/dm7bHgcat55oBsYLhulp0ahHHhraSdGtnOjv9
- o/eCLPHRpMUPMH1qjp6jncn8rLAiPf77PD/hnBV8iIiVuRRmAUanG/s2fJiwcWEvGYz4
- 6MAfVJEw08bKH07v/qv26KefXLJRF22ZlpS5/usnrA4MwQCxkfOUUZxHyTki+T+AzLwr
- an1XI9M0oALOKkXRYOzLdgXwvFu65LhwQNq4+T7PkMdChG7rdiQPiyoGeItnZivCOvKt
- ZAKjKo2a7/jh5dvqTF2lgHrZWAwK+BtJJdkKTuQaDJxXjzHlwRPvQ6AI1xs25fMRV0Sh iA== 
-Received: from aserp3020.oracle.com (aserp3020.oracle.com [141.146.126.70])
-        by userp2120.oracle.com with ESMTP id 339dmne37c-1
+ bh=9OTAy4sU/21plY2WHNOUqrYfzjwcm/BarrkAYF8QnbY=;
+ b=Ukk8bdrVYKdGNSW7MyRwEJxSEVDBmhAVtSJuRz7ArYZF4IrAUPKwYWcI5XfeoFnBeQAp
+ EruYiCwuUqi2iaLvEhZ8ZS8a3sD3vY3vzar/HjA5vGPOcB3QGCGHvI0EJPF1P+AMwKsi
+ 2SHA+PGKsqJwBaAUrKdN6Xr5fWxndSGAfNxOW4HxgLZhaqCfjLhqujQDesPjnWH5N7dL
+ /LZqETTI4goEMO0cXyRKOrG1gdfyoyceTrijaIEIcq3u370gcu5feHHUN0Nihozvc3qg
+ FyIHZSSWlkv0lEqWIVb4ck3ldWLqYp+npcEw3afAOkHSP5TzuVTCoFF3J9e5PkJZTxWz zQ== 
+Received: from aserp3030.oracle.com (aserp3030.oracle.com [141.146.126.71])
+        by aserp2120.oracle.com with ESMTP id 337eymrrhs-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
-        Fri, 04 Sep 2020 17:34:53 +0000
-Received: from pps.filterd (aserp3020.oracle.com [127.0.0.1])
-        by aserp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 084HUkYK090220;
-        Fri, 4 Sep 2020 17:34:52 GMT
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by aserp3020.oracle.com with ESMTP id 3380xds626-1
+        Fri, 04 Sep 2020 23:25:28 +0000
+Received: from pps.filterd (aserp3030.oracle.com [127.0.0.1])
+        by aserp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 084NPMos022078;
+        Fri, 4 Sep 2020 23:25:28 GMT
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by aserp3030.oracle.com with ESMTP id 3380ku6mdw-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Fri, 04 Sep 2020 17:34:52 +0000
-Received: from abhmp0020.oracle.com (abhmp0020.oracle.com [141.146.116.26])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id 084HYpwJ005702;
-        Fri, 4 Sep 2020 17:34:51 GMT
+        Fri, 04 Sep 2020 23:25:27 +0000
+Received: from abhmp0011.oracle.com (abhmp0011.oracle.com [141.146.116.17])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 084NPQs8026746;
+        Fri, 4 Sep 2020 23:25:26 GMT
 Received: from localhost.localdomain (/39.109.231.106)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Fri, 04 Sep 2020 10:34:51 -0700
+        with ESMTP ; Fri, 04 Sep 2020 16:25:26 -0700
 From:   Anand Jain <anand.jain@oracle.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     dsterba@suse.com, josef@toxicpanda.com, nborisov@suse.com
-Subject: [PATCH 02/16] btrfs: fix replace of seed device
-Date:   Sat,  5 Sep 2020 01:34:22 +0800
-Message-Id: <f7c10bdf70331c29f88cfa2e0dd7e46d2a512b47.1599234146.git.anand.jain@oracle.com>
+To:     fstests@vger.kernel.org
+Cc:     linux-btrfs@vger.kernel.org, dsterba@suse.com
+Subject: [PATCH v2 1/2] btrfs: add a test case for btrfs seed device delete
+Date:   Sat,  5 Sep 2020 07:25:15 +0800
+Message-Id: <53f76be87a0b414d6074f358b45b40cf1419950b.1599233551.git.anand.jain@oracle.com>
 X-Mailer: git-send-email 2.25.1
-In-Reply-To: <cover.1599234146.git.anand.jain@oracle.com>
-References: <cover.1599234146.git.anand.jain@oracle.com>
+In-Reply-To: <cover.1599233551.git.anand.jain@oracle.com>
+References: <cover.1599233551.git.anand.jain@oracle.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9734 signatures=668679
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 mlxscore=0 spamscore=0 phishscore=0
- mlxlogscore=999 adultscore=0 suspectscore=1 bulkscore=0 malwarescore=0
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 phishscore=0 spamscore=0 adultscore=0
+ mlxscore=0 suspectscore=1 malwarescore=0 mlxlogscore=999 bulkscore=0
  classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2006250000
- definitions=main-2009040152
+ definitions=main-2009040197
 X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9734 signatures=668679
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 bulkscore=0 phishscore=0
- mlxlogscore=999 adultscore=0 impostorscore=0 mlxscore=0 suspectscore=1
- spamscore=0 clxscore=1015 malwarescore=0 lowpriorityscore=0
- priorityscore=1501 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2006250000 definitions=main-2009040152
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=1 adultscore=0
+ priorityscore=1501 phishscore=0 mlxlogscore=999 mlxscore=0
+ lowpriorityscore=0 clxscore=1015 spamscore=0 bulkscore=0 impostorscore=0
+ malwarescore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2006250000 definitions=main-2009040197
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-If you replace a seed device in a sprouted fs, it appears to have
-successfully replaced the seed device, but if you look closely, it didn't.
+This is a regression test for the issue fixed by the kernel patch
+   btrfs: fix put of uninitialized kobject after seed device delete
 
-Here is an example.
-
-mkfs.btrfs -fq /dev/sda
-btrfstune -S1 /dev/sda
-mount /dev/sda /btrfs
-btrfs dev add /dev/sdb /btrfs
-umount /btrfs; btrfs dev scan --forget
-mount -o device=/dev/sda /dev/sdb /btrfs
-btrfs rep start -f /dev/sda /dev/sdc /btrfs; echo $?
-0
-
-  BTRFS info (device sdb): dev_replace from /dev/sda (devid 1) to /dev/sdc started
-  BTRFS info (device sdb): dev_replace from /dev/sda (devid 1) to /dev/sdc finished
-
-btrfs fi show
-Label: none  uuid: ab2c88b7-be81-4a7e-9849-c3666e7f9f4f
-	Total devices 2 FS bytes used 256.00KiB
-	devid    1 size 3.00GiB used 520.00MiB path /dev/sdc
-	devid    2 size 3.00GiB used 896.00MiB path /dev/sdb
-
-Label: none  uuid: 10bd3202-0415-43af-96a8-d5409f310a7e
-	Total devices 1 FS bytes used 128.00KiB
-	devid    1 size 3.00GiB used 536.00MiB path /dev/sda
-
-So as per the replace start command and kernel log replace was successful.
-
-Now let's try to clean mount.
-
-umount /btrfs;  btrfs dev scan --forget
-
-mount -o device=/dev/sdc /dev/sdb /btrfs
-mount: /btrfs: wrong fs type, bad option, bad superblock on /dev/sdb, missing codepage or helper program, or other error.
-
-[  636.157517] BTRFS error (device sdc): failed to read chunk tree: -2
-[  636.180177] BTRFS error (device sdc): open_ctree failed
-
-That's because per dev items it is still looking for the original seed
-device.
-
-btrfs in dump-tree -d /dev/sdb
-
-	item 0 key (DEV_ITEMS DEV_ITEM 1) itemoff 16185 itemsize 98
-		devid 1 total_bytes 3221225472 bytes_used 545259520
-		io_align 4096 io_width 4096 sector_size 4096 type 0
-		generation 6 start_offset 0 dev_group 0
-		seek_speed 0 bandwidth 0
-		uuid 59368f50-9af2-4b17-91da-8a783cc418d4  <--- seed uuid
-		fsid 10bd3202-0415-43af-96a8-d5409f310a7e  <--- seed fsid
-	item 1 key (DEV_ITEMS DEV_ITEM 2) itemoff 16087 itemsize 98
-		devid 2 total_bytes 3221225472 bytes_used 939524096
-		io_align 4096 io_width 4096 sector_size 4096 type 0
-		generation 0 start_offset 0 dev_group 0
-		seek_speed 0 bandwidth 0
-		uuid 56a0a6bc-4630-4998-8daf-3c3030c4256a  <- sprout uuid
-		fsid ab2c88b7-be81-4a7e-9849-c3666e7f9f4f <- sprout fsid
-
-But the replaced target has the following uuid+fsid in its superblock
-which doesn't match with the expected uuid+fsid in its devitem.
-
-btrfs in dump-super /dev/sdc | egrep '^generation|dev_item.uuid|dev_item.fsid|devid'
-generation	20
-dev_item.uuid	59368f50-9af2-4b17-91da-8a783cc418d4
-dev_item.fsid	ab2c88b7-be81-4a7e-9849-c3666e7f9f4f [match]
-dev_item.devid	1
-
-So if you provide the original seed device the mount shall be successful.
-Which so long happening in the test case btrfs/163.
-
-btrfs dev scan --forget
-mount -o device=/dev/sda /dev/sdb /btrfs
-
-Fix in this patch:
-If a seed is not sprouted then there is no replacement of it, because of
-its RO filesystem with an RO device. Similarly, in the case of a sprouted
-filesystem, the seed device is still RO. So, mark it as you can't replace
-a seed device, you can only add a new device and then delete the seed
-device. If replace is attempted then returns -EINVAL.
+In this test case, we verify the seed device delete on a sprouted
+filesystem.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/dev-replace.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+v2 drop the sysfs layout check as it breaks the test-case backward
+compatibility.
 
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 580e60fe07d0..7637b1f02c63 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -230,7 +230,7 @@ static int btrfs_init_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
- 	int ret = 0;
- 
- 	*device_out = NULL;
--	if (fs_info->fs_devices->seeding) {
-+	if (srcdev->fs_devices->seeding) {
- 		btrfs_err(fs_info, "the filesystem is a seed filesystem!");
- 		return -EINVAL;
- 	}
+ tests/btrfs/219     | 83 +++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/219.out | 15 ++++++++
+ tests/btrfs/group   |  1 +
+ 3 files changed, 99 insertions(+)
+ create mode 100755 tests/btrfs/219
+ create mode 100644 tests/btrfs/219.out
+
+diff --git a/tests/btrfs/219 b/tests/btrfs/219
+new file mode 100755
+index 000000000000..86f2a6991bd7
+--- /dev/null
++++ b/tests/btrfs/219
+@@ -0,0 +1,83 @@
++#! /bin/bash
++# SPDX-License-Identifier: GPL-2.0
++# Copyright (c) 2020 Oracle. All Rights Reserved.
++#
++# FS QA Test 219
++#
++# Test for seed device-delete on a sprouted FS.
++# Requires kernel patch
++#    btrfs: fix put of uninitialized kobject after seed device delete
++#
++# Steps:
++#  Create a seed FS. Add a RW device to make it sprout FS and then delete
++#  the seed device.
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++	cd /
++	rm -f $tmp.*
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# remove previous $seqres.full before test
++rm -f $seqres.full
++
++# real QA test starts here
++
++# Modify as appropriate.
++_supported_fs generic
++_supported_os Linux
++_require_test
++_require_scratch_dev_pool 2
++
++_scratch_dev_pool_get 2
++
++seed=$(echo $SCRATCH_DEV_POOL | awk '{print $1}')
++sprout=$(echo $SCRATCH_DEV_POOL | awk '{print $2}')
++
++_mkfs_dev $seed
++_mount $seed $SCRATCH_MNT
++
++$XFS_IO_PROG -f -d -c "pwrite -S 0xab 0 1M" $SCRATCH_MNT/foo > /dev/null
++_scratch_unmount
++$BTRFS_TUNE_PROG -S 1 $seed
++
++# Mount the seed device and add the rw device
++_mount -o ro $seed $SCRATCH_MNT
++$BTRFS_UTIL_PROG device add -f $sprout $SCRATCH_MNT
++_scratch_unmount
++
++# Now remount
++_mount $sprout $SCRATCH_MNT
++$XFS_IO_PROG -f -d -c "pwrite -S 0xcd 0 1M" $SCRATCH_MNT/bar > /dev/null
++
++echo --- before delete ----
++od -x $SCRATCH_MNT/foo
++od -x $SCRATCH_MNT/bar
++
++$BTRFS_UTIL_PROG device delete $seed $SCRATCH_MNT
++_scratch_unmount
++_btrfs_forget_or_module_reload
++_mount $sprout $SCRATCH_MNT
++
++echo --- after delete ----
++od -x $SCRATCH_MNT/foo
++od -x $SCRATCH_MNT/bar
++
++_scratch_dev_pool_put
++
++# success, all done
++status=0
++exit
+diff --git a/tests/btrfs/219.out b/tests/btrfs/219.out
+new file mode 100644
+index 000000000000..d39e0d8ffafd
+--- /dev/null
++++ b/tests/btrfs/219.out
+@@ -0,0 +1,15 @@
++QA output created by 219
++--- before delete ----
++0000000 abab abab abab abab abab abab abab abab
++*
++4000000
++0000000 cdcd cdcd cdcd cdcd cdcd cdcd cdcd cdcd
++*
++4000000
++--- after delete ----
++0000000 abab abab abab abab abab abab abab abab
++*
++4000000
++0000000 cdcd cdcd cdcd cdcd cdcd cdcd cdcd cdcd
++*
++4000000
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index 3295856d0c8c..3633fa66abe4 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -221,3 +221,4 @@
+ 216 auto quick seed
+ 217 auto quick trim dangerous
+ 218 auto quick volume
++219 auto quick volume seed
 -- 
 2.25.1
 

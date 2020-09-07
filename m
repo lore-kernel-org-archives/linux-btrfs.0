@@ -2,146 +2,80 @@ Return-Path: <SRS0=pkqV=CQ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.2 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_SANE_2 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 99452C433E2
-	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Sep 2020 22:35:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1E562C43461
+	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Sep 2020 23:58:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 42E6F21481
-	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Sep 2020 22:35:14 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=konsulko.com header.i=@konsulko.com header.b="PC93oVbr"
+	by mail.kernel.org (Postfix) with ESMTP id EB31820714
+	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Sep 2020 23:58:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727995AbgIGWfN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 7 Sep 2020 18:35:13 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35390 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727939AbgIGWfK (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Sep 2020 18:35:10 -0400
-Received: from mail-qt1-x841.google.com (mail-qt1-x841.google.com [IPv6:2607:f8b0:4864:20::841])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6039EC061573
-        for <linux-btrfs@vger.kernel.org>; Mon,  7 Sep 2020 15:35:10 -0700 (PDT)
-Received: by mail-qt1-x841.google.com with SMTP id 19so9154747qtp.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 07 Sep 2020 15:35:10 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=konsulko.com; s=google;
-        h=date:from:to:cc:subject:message-id:references:mime-version
-         :content-disposition:in-reply-to:user-agent;
-        bh=7v6x2fvhBe3ExTys2SJOmZJoLvpBVqbv2GHkjH+un/g=;
-        b=PC93oVbrM1UaMfSmPVVWxjnTB/lK7WgyLGF6ZmVEIavNU0lDVn+dNP83v5oiMaXuzY
-         veowtU7vN7NXtt7Eco9HnmPs5VAr/navFlAJa7k8Sy/TICRF8BgwXYDbipnubUq0lgR3
-         p2FL9nGTextdDler+rDnwWdWQV28jUekhrFTE=
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
-         :mime-version:content-disposition:in-reply-to:user-agent;
-        bh=7v6x2fvhBe3ExTys2SJOmZJoLvpBVqbv2GHkjH+un/g=;
-        b=eHpGhLIyhsvo1w/fcymeTKNDY+DP9kWgfo8wXli7yRaRN24U2rQjzwacQrC1abK0rb
-         VVlvNYoY0wQbPGDtXt0lTRrfV3hW0j0FcaBvgUtg6VEIMBpL8uCbVrm/eKOUCbMHf3zx
-         7AajK9EDDEN5EhNRVa1sT4d2ZNOg8MXSfIKV5fC2pVJWPJIFYikNf1ZthcLxmnBKp3cr
-         IcEdIWvvQBiy140BcLB3brwtVLT2+wg9nMOxOvUqeauDVx6wqXlBQFePV0jwDk4kxFe+
-         mXuXEYOmEF8Qu1VxV9Z8dYK96pTf8AG6HKksZAxaeSHQ03pJOQ6Ah5WZewxSvQOlMwXz
-         NJJA==
-X-Gm-Message-State: AOAM530eKCH8U8mmdS3buPrwkBbDS2CCSUIg8HW4qasvIYmfOV8gYW+f
-        BbDqx22NoR90GdSPBjRP1N3hUQ==
-X-Google-Smtp-Source: ABdhPJw/TL2R/p6LCeAlxDo8LZxHpM35/3wsCM25IVOOtBGMazPsNQhJ0j+eKogiVUa+8qXehKZdrQ==
-X-Received: by 2002:ac8:71cc:: with SMTP id i12mr22259006qtp.201.1599518109472;
-        Mon, 07 Sep 2020 15:35:09 -0700 (PDT)
-Received: from bill-the-cat (2606-a000-1401-8ebe-8cc9-065c-5dd5-0752.inf6.spectrum.com. [2606:a000:1401:8ebe:8cc9:65c:5dd5:752])
-        by smtp.gmail.com with ESMTPSA id v42sm13141650qth.35.2020.09.07.15.35.08
-        (version=TLS1_2 cipher=ECDHE-ECDSA-CHACHA20-POLY1305 bits=256/256);
-        Mon, 07 Sep 2020 15:35:08 -0700 (PDT)
-Date:   Mon, 7 Sep 2020 18:35:01 -0400
-From:   Tom Rini <trini@konsulko.com>
-To:     Marek =?iso-8859-1?Q?Beh=FAn?= <marek.behun@nic.cz>
+        id S1728115AbgIGX6L convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 7 Sep 2020 19:58:11 -0400
+Received: from lists.nic.cz ([217.31.204.67]:50470 "EHLO mail.nic.cz"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727771AbgIGX6G (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 7 Sep 2020 19:58:06 -0400
+Received: from localhost (unknown [IPv6:2a0e:b107:ae1:0:3e97:eff:fe61:c680])
+        by mail.nic.cz (Postfix) with ESMTPSA id 5A79614004F;
+        Tue,  8 Sep 2020 01:58:02 +0200 (CEST)
+Date:   Tue, 8 Sep 2020 01:58:01 +0200
+From:   Marek Behun <marek.behun@nic.cz>
+To:     Tom Rini <trini@konsulko.com>
 Cc:     u-boot@lists.denx.de,
-        Alberto =?iso-8859-1?Q?S=E1nchez?= Molero 
-        <alsamolero@gmail.com>, Marek Vasut <marex@denx.de>,
+        Alberto =?UTF-8?B?U8OhbmNoZXo=?= Molero <alsamolero@gmail.com>,
+        Marek Vasut <marex@denx.de>,
         Pierre Bourdon <delroth@gmail.com>,
         Simon Glass <sjg@chromium.org>,
         Yevgeny Popovych <yevgenyp@pointgrab.com>,
         linux-btrfs@vger.kernel.org, Qu Wenruo <wqu@suse.com>
-Subject: Re: [PATCH U-BOOT v3 25/30] fs: btrfs: Implement btrfs_file_read()
-Message-ID: <20200907223501.GA11147@bill-the-cat>
+Subject: Re: [PATCH U-BOOT v3 03/30] fs: btrfs: Crossport
+ btrfs_read_dev_super() from btrfs-progs
+Message-ID: <20200908015801.3b72869a@nic.cz>
+In-Reply-To: <20200907222604.GA706@bill-the-cat>
 References: <20200624160316.5001-1-marek.behun@nic.cz>
- <20200624160316.5001-26-marek.behun@nic.cz>
+        <20200624160316.5001-4-marek.behun@nic.cz>
+        <20200907222604.GA706@bill-the-cat>
+X-Mailer: Claws Mail 3.17.6 (GTK+ 2.24.32; x86_64-pc-linux-gnu)
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha512;
-        protocol="application/pgp-signature"; boundary="UugvWAfsgieZRqgk"
-Content-Disposition: inline
-In-Reply-To: <20200624160316.5001-26-marek.behun@nic.cz>
-X-Clacks-Overhead: GNU Terry Pratchett
-User-Agent: Mutt/1.9.4 (2018-02-28)
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8BIT
+X-Virus-Scanned: clamav-milter 0.102.2 at mail
+X-Virus-Status: Clean
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On Mon, 7 Sep 2020 18:26:04 -0400
+Tom Rini <trini@konsulko.com> wrote:
 
---UugvWAfsgieZRqgk
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+> On Wed, Jun 24, 2020 at 06:02:49PM +0200, Marek Behún wrote:
+> 
+> > From: Qu Wenruo <wqu@suse.com>
+> > 
+> > This patch uses generic code from btrfs-progs to read one super block
+> > from block device.  
+> [snip]
+> > +/* Provide a compatibility layer to make code syncing easier */
+> > +
+> > +/* A simple wraper to for error() used in btrfs-progs */
+> > +__attribute__((format (__printf__, 1, 2)))
+> > +static inline void error(const char *fmt, ...)
+> > +{
+> > +	printf("BTRFS: ");
+> > +	printf(fmt, __builtin_va_arg_pack());
+> > +	printf("\n");
+> > +}  
+> 
+> Note that this does not work with LLVM (no __builtin_va_arg_pack()).
+> I'm reworking this call pr_err(...) under the hood instead, with "BTRFS: " 
+> included in the message.
+> 
 
-On Wed, Jun 24, 2020 at 06:03:11PM +0200, Marek Beh=FAn wrote:
+:( clang does not support it? Even the newest version? That is a pity.
 
-> From: Qu Wenruo <wqu@suse.com>
->=20
-> This version of btrfs_file_read() has the following new features:
-> - Tries all mirrors
-> - More handling on unaligned size
-> - Better compressed extent handling
->   The old implementation doesn't handle compressed extent with offset
->   properly: we need to read out the whole compressed extent, then
->   decompress the whole extent, and only then copy the requested part.
->=20
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> Reviewed-by: Marek Beh=FAn <marek.behun@nic.cz>
-
-Note that this introduces a warning with LLVM-10:
-fs/btrfs/btrfs.c:246:6: warning: variable 'real_size' is used uninitialized=
- whenever 'if' condition is false [-Wsometimes-uninitialized]
-        if (!len) {
-            ^~~~
-fs/btrfs/btrfs.c:255:12: note: uninitialized use occurs here
-        if (len > real_size - offset)
-                  ^~~~~~~~~
-fs/btrfs/btrfs.c:246:2: note: remove the 'if' if its condition is always tr=
-ue
-        if (!len) {
-        ^~~~~~~~~~
-fs/btrfs/btrfs.c:228:18: note: initialize the variable 'real_size' to silen=
-ce this warning
-        loff_t real_size;
-                        ^
-                         =3D 0
-1 warning generated.
-
-and I have silenced as suggested.  I'm not 100% happy with that, but
-leave fixing it here and in upstream btrfs-progs to the btrfs-experts.
-
---=20
-Tom
-
---UugvWAfsgieZRqgk
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQGzBAABCgAdFiEEGjx/cOCPqxcHgJu/FHw5/5Y0tywFAl9WtZUACgkQFHw5/5Y0
-tyw54Av9HWaPp1NViTBgFf1NghCrKY+/ZBw4jUq7ndBeCX1wP3yqnhn3yToouc4d
-imOI117N70iI2yn21Dbi814IQc2wvcXvE6kIqXljmC0gR8iclLRICHe5G7MgUtHo
-5yT4dRDUn8iINoryP2/G+W538ALk4y41krZnunI5RHX2CM6iOKSFltfe4sPoq0Gl
-hGJsLC0q59XegNEHP/tQzCDbfWP0tqBW6epKy4hZdgq0mq0MM/HsOIL4KTp1rqnn
-SjP1qngai9hymD0NBnrIh+IvfCJY/oUdfZIctYblgMBDGsVFWR4fWyEApt6nfZJD
-iCYSOsDc6aK1j2vQjO7TE5RODFIN/1fBECwg/B0TorgdJf24fcibXrwCjLX3nTZY
-/X6DxsvqPu7QRbndKvkPnuLYe8OuyHfYKGqkRuu5IqcOi6lcA/mby3kOSW3ZuQAu
-nXRsDtdUldFWXoqckvWObi1Fi/Ia/Dpu0k6y9PTAjaI0Pw9UN4Rpfj+e7hWlrdQn
-ZCiu/1yD
-=RqWS
------END PGP SIGNATURE-----
-
---UugvWAfsgieZRqgk--
+Marek

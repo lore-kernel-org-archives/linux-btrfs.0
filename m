@@ -5,52 +5,48 @@ X-Spam-Level:
 X-Spam-Status: No, score=-13.1 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
 	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E489AC43461
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Sep 2020 10:28:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 35BB6C433E2
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Sep 2020 10:32:35 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id B6F4221532
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Sep 2020 10:28:38 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0C3E6215A4
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Sep 2020 10:32:35 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1599560918;
-	bh=RQIQD1d0w1eSmhBE6x2epMlcSGq0i+8al6wCnvZnImE=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References:In-Reply-To:
-	 References:List-ID:From;
-	b=qKbLx1+bcbADkkUcV5STNkFoPuJnJYwuMUS5rxLw0Rlm0Uynul72z5twJdK7WMhFM
-	 Nu0PJuFjgF8W1jZsh92PJmKnmx1cO/XPrCfaZS751N+fDyUv78e6SE/twFLG8W0DN2
-	 nz52XScLn8Sin/jEtsfVC6v648DM+3MbC/Gl+G/0=
+	s=default; t=1599561155;
+	bh=rAjNo2Ow6A7FccLur3eqVizb+qWyU/wl7RM1COPNrOA=;
+	h=From:To:Cc:Subject:Date:List-ID:From;
+	b=fiMHZyVAuBq9NkWmrfWgcfpIlrZAk2W8nT3ZaVpQYn/tMevJT1tY46jxQylIZmdtE
+	 A516Dq2MjcEzqRnZQnYWQt6uk8v+9f5zIs0yGlEtjw6NA37cNesr71QhbWi6Koc4yw
+	 r5Rdh8kvq5VlBitq+jtA6m+5CQXg73Lyo7KCNK9Q=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729873AbgIHK2g (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 8 Sep 2020 06:28:36 -0400
-Received: from mail.kernel.org ([198.145.29.99]:37380 "EHLO mail.kernel.org"
+        id S1729792AbgIHKc2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 8 Sep 2020 06:32:28 -0400
+Received: from mail.kernel.org ([198.145.29.99]:40022 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1729794AbgIHK1e (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 8 Sep 2020 06:27:34 -0400
-Received: from falcondesktop.Home (bl8-197-74.dsl.telepac.pt [85.241.197.74])
+        id S1729767AbgIHKcM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 8 Sep 2020 06:32:12 -0400
+Received: from debian8.Home (bl8-197-74.dsl.telepac.pt [85.241.197.74])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id B1A0B21D6C;
-        Tue,  8 Sep 2020 10:27:33 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id EADD9206DB;
+        Tue,  8 Sep 2020 10:32:08 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1599560854;
-        bh=RQIQD1d0w1eSmhBE6x2epMlcSGq0i+8al6wCnvZnImE=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:In-Reply-To:
-         References:From;
-        b=Yk1gJ+8tJuq1X5ZThCDjJjmSczUmztlAAqL73J9AZwlbNMTMM/HXxx1IrYw+czk2h
-         OQGxW1PaI90Pnb/nYbAyKra247Kz5XoP9c8QqMORlqz7L0Fes+Dnsm1RCv9r/88a0+
-         MKHyfRUfkTVnaUOB6PBcd9iCqUDsmlu02qZYVM70=
+        s=default; t=1599561129;
+        bh=rAjNo2Ow6A7FccLur3eqVizb+qWyU/wl7RM1COPNrOA=;
+        h=From:To:Cc:Subject:Date:From;
+        b=yBN2DEeDhX7j8nVVWr6P5BQYarg2Ms0KI3m9m5QUJ8dFVGayzNUJMqyF2R0ZrOW+o
+         yyhwSQKpTS1JrwuAJTDZWvkuAYE1O+T21o2JDZY8kKZPhO9tZ+IjNESeAr5VBc9i8f
+         knDiO7B41lNfaK1BlEJS4ADzKoHt5fPMffLFXBf4=
 From:   fdmanana@kernel.org
-To:     linux-btrfs@vger.kernel.org
-Cc:     Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH 2/5] btrfs: remove item_size member of struct btrfs_clone_extent_info
-Date:   Tue,  8 Sep 2020 11:27:21 +0100
-Message-Id: <6b02195ffe4787d75f5117b3d8d1c42c5462734d.1599560101.git.fdmanana@suse.com>
-X-Mailer: git-send-email 2.17.1
-In-Reply-To: <cover.1599560101.git.fdmanana@suse.com>
-References: <cover.1599560101.git.fdmanana@suse.com>
-In-Reply-To: <cover.1599560101.git.fdmanana@suse.com>
-References: <cover.1599560101.git.fdmanana@suse.com>
+To:     fstests@vger.kernel.org
+Cc:     linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] generic: add test for zero range over a file range with many small extents
+Date:   Tue,  8 Sep 2020 11:32:02 +0100
+Message-Id: <e038bd2419f60f0b4c5ac13da78bfba345f4dba7.1599560067.git.fdmanana@suse.com>
+X-Mailer: git-send-email 2.26.2
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -58,84 +54,111 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-The value of item_size of struct btrfs_clone_extent_info is always set to
-the size of a non-inline file extent item, and in fact the infratructure
-that uses this structure (btrfs_punch_hole_range()) does not work with
-inline file extents at all (and it is not supposed to).
+Test a fallocate() zero range operation against a large file range for which
+there are many small extents allocated. Verify the operation does not fail
+and the respective range return zeroes on subsequent reads.
 
-So just remove that field from the structure and use directly
-sizeof(struct btrfs_file_extent_item) instead. Also assert that the
-file extent type is not inline at btrfs_insert_clone_extent().
+This test is motivated by a bug found on btrfs. The patch that fixes the
+bug on btrfs has the following subject:
+
+ "btrfs: fix metadata reservation for fallocate that leads to transaction aborts"
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/ctree.h   | 2 +-
- fs/btrfs/file.c    | 5 +++--
- fs/btrfs/inode.c   | 1 -
- fs/btrfs/reflink.c | 1 -
- 4 files changed, 4 insertions(+), 5 deletions(-)
+ tests/generic/609     | 61 +++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/609.out |  5 ++++
+ tests/generic/group   |  1 +
+ 3 files changed, 67 insertions(+)
+ create mode 100755 tests/generic/609
+ create mode 100644 tests/generic/609.out
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 67ca25daf9c8..3e648b0d5d60 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1189,8 +1189,8 @@ struct btrfs_clone_extent_info {
- 	u64 data_offset;
- 	u64 data_len;
- 	u64 file_offset;
-+	/* Pointer to a file extent item of type regular or prealloc. */
- 	char *extent_buf;
--	u32 item_size;
- 	/*
- 	 * Set to true when attempting to replace a file range with a new extent
- 	 * described by this structure, set to false when attempting to clone an
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 73827c9c7a70..28794a98778a 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2596,15 +2596,16 @@ static int btrfs_insert_clone_extent(struct btrfs_trans_handle *trans,
- 	key.type = BTRFS_EXTENT_DATA_KEY;
- 	key.offset = clone_info->file_offset;
- 	ret = btrfs_insert_empty_item(trans, root, path, &key,
--				      clone_info->item_size);
-+				      sizeof(struct btrfs_file_extent_item));
- 	if (ret)
- 		return ret;
- 	leaf = path->nodes[0];
- 	slot = path->slots[0];
- 	write_extent_buffer(leaf, clone_info->extent_buf,
- 			    btrfs_item_ptr_offset(leaf, slot),
--			    clone_info->item_size);
-+			    sizeof(struct btrfs_file_extent_item));
- 	extent = btrfs_item_ptr(leaf, slot, struct btrfs_file_extent_item);
-+	ASSERT(btrfs_file_extent_type(leaf, extent) != BTRFS_FILE_EXTENT_INLINE);
- 	btrfs_set_file_extent_offset(leaf, extent, clone_info->data_offset);
- 	btrfs_set_file_extent_num_bytes(leaf, extent, clone_len);
- 	if (clone_info->is_new_extent)
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index a9a4c3d5984c..0281895268f7 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -9616,7 +9616,6 @@ static struct btrfs_trans_handle *insert_prealloc_file_extent(
- 	extent_info.data_len = len;
- 	extent_info.file_offset = file_offset;
- 	extent_info.extent_buf = (char *)&stack_fi;
--	extent_info.item_size = sizeof(stack_fi);
- 	extent_info.is_new_extent = true;
- 	extent_info.qgroup_reserved = ret;
- 	extent_info.insertions = 0;
-diff --git a/fs/btrfs/reflink.c b/fs/btrfs/reflink.c
-index 3c03126b52b1..020da4d65b64 100644
---- a/fs/btrfs/reflink.c
-+++ b/fs/btrfs/reflink.c
-@@ -462,7 +462,6 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
- 			clone_info.data_len = datal;
- 			clone_info.file_offset = new_key.offset;
- 			clone_info.extent_buf = buf;
--			clone_info.item_size = size;
- 			clone_info.is_new_extent = false;
- 			ret = btrfs_punch_hole_range(inode, path, drop_start,
- 					new_key.offset + datal - 1, &clone_info,
+diff --git a/tests/generic/609 b/tests/generic/609
+new file mode 100755
+index 00000000..cda2b3dc
+--- /dev/null
++++ b/tests/generic/609
+@@ -0,0 +1,61 @@
++#! /bin/bash
++# SPDX-License-Identifier: GPL-2.0
++# Copyright (C) 2020 SUSE Linux Products GmbH. All Rights Reserved.
++#
++# FS QA Test No. 609
++#
++# Test a fallocate() zero range operation against a large file range for which
++# there are many small extents allocated. Verify the operation does not fail
++# and the respective range return zeroes on subsequent reads.
++#
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++	cd /
++	rm -f $tmp.*
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# real QA test starts here
++_supported_fs generic
++_supported_os Linux
++_require_scratch
++_require_xfs_io_command "fzero"
++_require_xfs_io_command "fpunch"
++_require_test_program "punch-alternating"
++
++rm -f $seqres.full
++
++_scratch_mkfs >>$seqres.full 2>&1
++_scratch_mount
++
++# Create a file with many small extents. To speed up file creation, do
++# buffered writes and then punch a hole on every other block.
++$XFS_IO_PROG -f -c "pwrite -S 0xab -b 10M 0 100M" \
++	$SCRATCH_MNT/foobar >>$seqres.full
++$here/src/punch-alternating $SCRATCH_MNT/foobar >>$seqres.full
++
++# For btrfs, trigger a transaction commit to force metadata COW for the
++# following fallocate zero range operation.
++sync
++
++$XFS_IO_PROG -c "fzero 0 100M" $SCRATCH_MNT/foobar
++
++# Check the file content after umounting and mounting again the fs, to verify
++# everything was persisted.
++_scratch_cycle_mount
++
++echo "File content after zero range operation:"
++od -A d -t x1 $SCRATCH_MNT/foobar
++
++status=0
++exit
+diff --git a/tests/generic/609.out b/tests/generic/609.out
+new file mode 100644
+index 00000000..feb8c211
+--- /dev/null
++++ b/tests/generic/609.out
+@@ -0,0 +1,5 @@
++QA output created by 609
++File content after zero range operation:
++0000000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++*
++104857600
+diff --git a/tests/generic/group b/tests/generic/group
+index aa969bcb..f8eabc0a 100644
+--- a/tests/generic/group
++++ b/tests/generic/group
+@@ -611,3 +611,4 @@
+ 606 auto attr quick dax
+ 607 auto attr quick dax
+ 608 auto attr quick dax
++609 auto quick prealloc zero
 -- 
 2.26.2
 

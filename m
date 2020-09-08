@@ -7,27 +7,27 @@ X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 421E4C43461
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6FC4CC433E2
 	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Sep 2020 07:53:29 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 0B6B921D20
+	by mail.kernel.org (Postfix) with ESMTP id 4C61720C09
 	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Sep 2020 07:53:29 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729633AbgIHHxZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 8 Sep 2020 03:53:25 -0400
-Received: from mx2.suse.de ([195.135.220.15]:51350 "EHLO mx2.suse.de"
+        id S1729605AbgIHHxQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 8 Sep 2020 03:53:16 -0400
+Received: from mx2.suse.de ([195.135.220.15]:51186 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1729646AbgIHHxW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 8 Sep 2020 03:53:22 -0400
+        id S1729339AbgIHHxM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 8 Sep 2020 03:53:12 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 1B706AE25
-        for <linux-btrfs@vger.kernel.org>; Tue,  8 Sep 2020 07:53:21 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id B82C8AE96
+        for <linux-btrfs@vger.kernel.org>; Tue,  8 Sep 2020 07:53:11 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 17/17] btrfs: allow RO mount of 4K sector size fs on 64K page system
-Date:   Tue,  8 Sep 2020 15:52:30 +0800
-Message-Id: <20200908075230.86856-18-wqu@suse.com>
+Subject: [PATCH 12/17] btrfs: remove the unnecessary parameter @start and @len for check_data_csum()
+Date:   Tue,  8 Sep 2020 15:52:25 +0800
+Message-Id: <20200908075230.86856-13-wqu@suse.com>
 X-Mailer: git-send-email 2.28.0
 In-Reply-To: <20200908075230.86856-1-wqu@suse.com>
 References: <20200908075230.86856-1-wqu@suse.com>
@@ -38,81 +38,93 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This adds the basic RO mount ability for 4K sector size on 64K page
-system.
+For check_data_csum(), the page we're using is directly from inode
+mapping, thus it has valid page_offset().
 
-Currently we only plan to support 4K and 64K page system.
+We can use (page_offset() + pg_off) to replace @start parameter
+completely, while the @len should always be sectorsize.
+
+Since we're here, also add some comment, since there are quite some
+confusion in words like start/offset, without explaining whether it's
+file_offset or logical bytenr.
+
+This should not affect the existing behavior, as for current sectorsize
+== PAGE_SIZE case, @pgoff should always be 0, and len is always
+PAGE_SIZE (or sectorsize from the dio read path).
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/disk-io.c | 24 +++++++++++++++++++++---
- fs/btrfs/super.c   |  7 +++++++
- 2 files changed, 28 insertions(+), 3 deletions(-)
+ fs/btrfs/inode.c | 27 +++++++++++++++++++--------
+ 1 file changed, 19 insertions(+), 8 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 5153c0420e7e..9e3938e68355 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2446,13 +2446,21 @@ static int validate_super(struct btrfs_fs_info *fs_info,
- 		btrfs_err(fs_info, "invalid sectorsize %llu", sectorsize);
- 		ret = -EINVAL;
- 	}
--	/* Only PAGE SIZE is supported yet */
--	if (sectorsize != PAGE_SIZE) {
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 9570458aa847..078735aa0f68 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2793,17 +2793,30 @@ void btrfs_writepage_endio_finish_ordered(struct page *page, u64 start,
+ 	btrfs_queue_work(wq, &ordered_extent->work);
+ }
+ 
++/*
++ * Verify the checksum of one sector of uncompressed data.
++ *
++ * @inode:	The inode.
++ * @io_bio:	The btrfs_io_bio which contains the csum.
++ * @icsum:	The csum offset (by number of sectors).
++ * @page:	The page where the data will be written to.
++ * @pgoff:	The offset inside the page.
++ *
++ * The length of such check is always one sector size.
++ */
+ static int check_data_csum(struct inode *inode, struct btrfs_io_bio *io_bio,
+-			   int icsum, struct page *page, int pgoff, u64 start,
+-			   size_t len)
++			   int icsum, struct page *page, int pgoff)
+ {
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+ 	SHASH_DESC_ON_STACK(shash, fs_info->csum_shash);
+ 	char *kaddr;
++	u32 len = fs_info->sectorsize;
+ 	u16 csum_size = btrfs_super_csum_size(fs_info->super_copy);
+ 	u8 *csum_expected;
+ 	u8 csum[BTRFS_CSUM_SIZE];
+ 
++	ASSERT(pgoff + len <= PAGE_SIZE);
 +
-+	/*
-+	 * For 4K page size, we only support 4K sector size.
-+	 * For 64K page size, we support RW for 64K sector size, and RO for
-+	 * 4K sector size.
-+	 */
-+	if ((PAGE_SIZE == SZ_4K && sectorsize != PAGE_SIZE) ||
-+	    (PAGE_SIZE == SZ_64K && (sectorsize != SZ_4K &&
-+				     sectorsize != SZ_64K))) {
- 		btrfs_err(fs_info,
--			"sectorsize %llu not supported yet, only support %lu",
-+			"sectorsize %llu not supported yet for page size %lu",
- 			sectorsize, PAGE_SIZE);
- 		ret = -EINVAL;
- 	}
-+
- 	if (!is_power_of_2(nodesize) || nodesize < sectorsize ||
- 	    nodesize > BTRFS_MAX_METADATA_BLOCKSIZE) {
- 		btrfs_err(fs_info, "invalid nodesize %llu", nodesize);
-@@ -3100,6 +3108,16 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
- 		goto fail_alloc;
+ 	csum_expected = ((u8 *)io_bio->csum) + icsum * csum_size;
+ 
+ 	kaddr = kmap_atomic(page);
+@@ -2817,8 +2830,8 @@ static int check_data_csum(struct inode *inode, struct btrfs_io_bio *io_bio,
+ 	kunmap_atomic(kaddr);
+ 	return 0;
+ zeroit:
+-	btrfs_print_data_csum_error(BTRFS_I(inode), start, csum, csum_expected,
+-				    io_bio->mirror_num);
++	btrfs_print_data_csum_error(BTRFS_I(inode), page_offset(page) + pgoff,
++				    csum, csum_expected, io_bio->mirror_num);
+ 	if (io_bio->device)
+ 		btrfs_dev_stat_inc_and_print(io_bio->device,
+ 					     BTRFS_DEV_STAT_CORRUPTION_ERRS);
+@@ -2857,8 +2870,7 @@ static int btrfs_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
  	}
  
-+	/* For 4K sector size support, it's only read-only yet */
-+	if (PAGE_SIZE == SZ_64K && sectorsize == SZ_4K) {
-+		if (!sb_rdonly(sb) || btrfs_super_log_root(disk_super)) {
-+			btrfs_err(fs_info,
-+				"subpage sector size only support RO yet");
-+			err = -EINVAL;
-+			goto fail_alloc;
-+		}
-+	}
-+
- 	ret = btrfs_init_workqueues(fs_info, fs_devices);
- 	if (ret) {
- 		err = ret;
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 25967ecaaf0a..edc731780d64 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1922,6 +1922,13 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
- 			ret = -EINVAL;
- 			goto restore;
- 		}
-+		if (fs_info->sectorsize < PAGE_SIZE) {
-+			btrfs_warn(fs_info,
-+	"read-write mount is not yet allowed for sector size %u page size %lu",
-+				   fs_info->sectorsize, PAGE_SIZE);
-+			ret = -EINVAL;
-+			goto restore;
-+		}
+ 	phy_offset >>= inode->i_sb->s_blocksize_bits;
+-	return check_data_csum(inode, io_bio, phy_offset, page, offset, start,
+-			       (size_t)(end - start + 1));
++	return check_data_csum(inode, io_bio, phy_offset, page, offset);
+ }
  
- 		ret = btrfs_cleanup_fs_roots(fs_info);
- 		if (ret)
+ /*
+@@ -7545,8 +7557,7 @@ static blk_status_t btrfs_check_read_dio_bio(struct inode *inode,
+ 			ASSERT(pgoff < PAGE_SIZE);
+ 			if (uptodate &&
+ 			    (!csum || !check_data_csum(inode, io_bio, icsum,
+-						       bvec.bv_page, pgoff,
+-						       start, sectorsize))) {
++						       bvec.bv_page, pgoff))) {
+ 				clean_io_failure(fs_info, failure_tree, io_tree,
+ 						 start, bvec.bv_page,
+ 						 btrfs_ino(BTRFS_I(inode)),
 -- 
 2.28.0
 

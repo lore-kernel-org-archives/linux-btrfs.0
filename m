@@ -7,27 +7,28 @@ X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 38382C2BBD0
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Sep 2020 07:53:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 399DDC43461
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Sep 2020 07:53:03 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 0D7D221D46
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Sep 2020 07:53:00 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 051BA21D46
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Sep 2020 07:53:02 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729566AbgIHHw7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 8 Sep 2020 03:52:59 -0400
-Received: from mx2.suse.de ([195.135.220.15]:50974 "EHLO mx2.suse.de"
+        id S1729586AbgIHHxC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 8 Sep 2020 03:53:02 -0400
+Received: from mx2.suse.de ([195.135.220.15]:51070 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1729552AbgIHHwx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 8 Sep 2020 03:52:53 -0400
+        id S1729576AbgIHHxB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 8 Sep 2020 03:53:01 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 39834AE24
-        for <linux-btrfs@vger.kernel.org>; Tue,  8 Sep 2020 07:52:53 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 6183BAE24;
+        Tue,  8 Sep 2020 07:53:01 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 05/17] btrfs: don't allow tree block to cross page boundary for subpage support
-Date:   Tue,  8 Sep 2020 15:52:18 +0800
-Message-Id: <20200908075230.86856-6-wqu@suse.com>
+Cc:     Goldwyn Rodrigues <rgoldwyn@suse.com>
+Subject: [PATCH 07/17] btrfs: make csum_tree_block() handle sectorsize smaller than page size
+Date:   Tue,  8 Sep 2020 15:52:20 +0800
+Message-Id: <20200908075230.86856-8-wqu@suse.com>
 X-Mailer: git-send-email 2.28.0
 In-Reply-To: <20200908075230.86856-1-wqu@suse.com>
 References: <20200908075230.86856-1-wqu@suse.com>
@@ -38,43 +39,55 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-As a preparation for subpage sector size support (allow sector size
-smaller than page size to be mounted), if the sector size is smaller
-than page size, we don't allow tree block to be read if it cross page
-boundary (normally 64K).
+For subpage size support, we only need to handle the first page.
 
-This ensures that, tree blocks are always contained in one page for 64K
-system, which can greatly simplify the handling.
+To make the code work for both cases, we modify the following behaviors:
 
-Or we need to do complex multi-page handling for tree blocks.
+- num_pages calcuation
+  Instead of "nodesize >> PAGE_SHIFT", we go
+  "DIV_ROUND_UP(nodesize, PAGE_SIZE)", this ensures we get at least one
+  page for subpage size support, while still get the same result for
+  reguar page size.
 
-Currently the only way to create such tree blocks crossing 64K boundary
-is by btrfs-convert, which will get fixed soon and doesn't get
-wide-spread usage.
+- The length for the first run
+  Instead of PAGE_SIZE - BTRFS_CSUM_SIZE, we go min(PAGE_SIZE, nodesize)
+  - BTRFS_CSUM_SIZE.
+  This allows us to handle both cases well.
 
+- The start location of the first run
+  Instead of always use BTRFS_CSUM_SIZE as csum start position, add
+  offset_in_page(eb->start) to get proper offset for both cases.
+
+Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/extent_io.c | 7 +++++++
- 1 file changed, 7 insertions(+)
+ fs/btrfs/disk-io.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 5d969340275e..119193166cec 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -5232,6 +5232,13 @@ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
- 		btrfs_err(fs_info, "bad tree block start %llu", start);
- 		return ERR_PTR(-EINVAL);
- 	}
-+	if (fs_info->sectorsize < PAGE_SIZE && round_down(start, PAGE_SIZE) !=
-+	    round_down(start + len - 1, PAGE_SIZE)) {
-+		btrfs_err(fs_info,
-+		"tree block crosses page boundary, start %llu nodesize %lu",
-+			  start, len);
-+		return ERR_PTR(-EINVAL);
-+	}
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index f6bba7eb1fa1..62dbd9bbd381 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -257,16 +257,16 @@ struct extent_map *btree_get_extent(struct btrfs_inode *inode,
+ static void csum_tree_block(struct extent_buffer *buf, u8 *result)
+ {
+ 	struct btrfs_fs_info *fs_info = buf->fs_info;
+-	const int num_pages = fs_info->nodesize >> PAGE_SHIFT;
++	const int num_pages = DIV_ROUND_UP(fs_info->nodesize, PAGE_SIZE);
+ 	SHASH_DESC_ON_STACK(shash, fs_info->csum_shash);
+ 	char *kaddr;
+ 	int i;
  
- 	eb = find_extent_buffer(fs_info, start);
- 	if (eb)
+ 	shash->tfm = fs_info->csum_shash;
+ 	crypto_shash_init(shash);
+-	kaddr = page_address(buf->pages[0]);
++	kaddr = page_address(buf->pages[0]) + offset_in_page(buf->start);
+ 	crypto_shash_update(shash, kaddr + BTRFS_CSUM_SIZE,
+-			    PAGE_SIZE - BTRFS_CSUM_SIZE);
++		min_t(u32, PAGE_SIZE, fs_info->nodesize) - BTRFS_CSUM_SIZE);
+ 
+ 	for (i = 1; i < num_pages; i++) {
+ 		kaddr = page_address(buf->pages[i]);
 -- 
 2.28.0
 

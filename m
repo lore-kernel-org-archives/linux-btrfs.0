@@ -7,28 +7,27 @@ X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9F23CC43461
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Sep 2020 07:53:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 37ABEC43461
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Sep 2020 07:53:23 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 68C0C20C09
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Sep 2020 07:53:19 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0C81A21D20
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Sep 2020 07:53:23 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729645AbgIHHxS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 8 Sep 2020 03:53:18 -0400
-Received: from mx2.suse.de ([195.135.220.15]:51284 "EHLO mx2.suse.de"
+        id S1729632AbgIHHxQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 8 Sep 2020 03:53:16 -0400
+Received: from mx2.suse.de ([195.135.220.15]:51166 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1729626AbgIHHxR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 8 Sep 2020 03:53:17 -0400
+        id S1729615AbgIHHxL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 8 Sep 2020 03:53:11 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id DD8E9AE24;
-        Tue,  8 Sep 2020 07:53:15 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 0087EAE67
+        for <linux-btrfs@vger.kernel.org>; Tue,  8 Sep 2020 07:53:09 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Cc:     Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: [PATCH 14/17] btrfs: make btrfs_readpage_end_io_hook() follow sector size
-Date:   Tue,  8 Sep 2020 15:52:27 +0800
-Message-Id: <20200908075230.86856-15-wqu@suse.com>
+Subject: [PATCH 11/17] btrfs: extract the extent buffer verification from btree_readpage_end_io_hook()
+Date:   Tue,  8 Sep 2020 15:52:24 +0800
+Message-Id: <20200908075230.86856-12-wqu@suse.com>
 X-Mailer: git-send-email 2.28.0
 In-Reply-To: <20200908075230.86856-1-wqu@suse.com>
 References: <20200908075230.86856-1-wqu@suse.com>
@@ -39,64 +38,146 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Currently btrfs_readpage_end_io_hook() just pass the whole page to
-check_data_csum(), which is fine since we only support sectorsize ==
-PAGE_SIZE.
+Currently btree_readpage_end_io_hook() only needs to handle one extent
+buffer as currently one page only maps to one extent buffer.
 
-To support subpage RO support, we need to properly honor per-sector
-checksum verification, just like what we did in dio read path.
+But for incoming subpage support, one page can be mapped to multiple
+extent buffers, thus we can no longer use current code.
 
-This patch will do the csum verification in a for loop, starts with
-pg_off == start - page_offset(page), with sectorsize increasement for
-each loop.
+This refactor would allow us to call btrfs_check_extent_buffer() on
+all involved extent buffers at btree_readpage_end_io_hook() and other
+locations.
 
-For sectorsize == PAGE_SIZE case, the pg_off will always be 0, and we
-will only finish with just one loop.
-
-For subpage, we do the proper loop.
-
-Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/inode.c | 15 ++++++++++++++-
- 1 file changed, 14 insertions(+), 1 deletion(-)
+ fs/btrfs/disk-io.c | 78 ++++++++++++++++++++++++++--------------------
+ 1 file changed, 45 insertions(+), 33 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 078735aa0f68..8bd14dda2067 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2851,9 +2851,12 @@ static int btrfs_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
- 				      u64 start, u64 end, int mirror)
- {
- 	size_t offset = start - page_offset(page);
-+	size_t pg_off;
- 	struct inode *inode = page->mapping->host;
- 	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	u32 sectorsize = root->fs_info->sectorsize;
-+	bool found_err = false;
- 
- 	if (PageChecked(page)) {
- 		ClearPageChecked(page);
-@@ -2870,7 +2873,17 @@ static int btrfs_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
- 	}
- 
- 	phy_offset >>= inode->i_sb->s_blocksize_bits;
--	return check_data_csum(inode, io_bio, phy_offset, page, offset);
-+	for (pg_off = offset; pg_off < end - page_offset(page);
-+	     pg_off += sectorsize, phy_offset++) {
-+		int ret;
-+
-+		ret = check_data_csum(inode, io_bio, phy_offset, page, pg_off);
-+		if (ret < 0)
-+			found_err = true;
-+	}
-+	if (found_err)
-+		return -EIO;
-+	return 0;
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 62dbd9bbd381..f6e562979682 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -574,60 +574,37 @@ static int check_tree_block_fsid(struct extent_buffer *eb)
+ 	return ret;
  }
  
- /*
+-static int btree_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
+-				      u64 phy_offset, struct page *page,
+-				      u64 start, u64 end, int mirror)
++/* Do basic extent buffer check at read time */
++static int btrfs_check_extent_buffer(struct extent_buffer *eb)
+ {
+-	u64 found_start;
+-	int found_level;
+-	struct extent_buffer *eb;
+-	struct btrfs_fs_info *fs_info;
++	struct btrfs_fs_info *fs_info = eb->fs_info;
+ 	u16 csum_size;
+-	int ret = 0;
++	u64 found_start;
++	u8 found_level;
+ 	u8 result[BTRFS_CSUM_SIZE];
+-	int reads_done;
+-
+-	if (!page->private)
+-		goto out;
++	int ret = 0;
+ 
+-	eb = (struct extent_buffer *)page->private;
+-	fs_info = eb->fs_info;
+ 	csum_size = btrfs_super_csum_size(fs_info->super_copy);
+ 
+-	/* the pending IO might have been the only thing that kept this buffer
+-	 * in memory.  Make sure we have a ref for all this other checks
+-	 */
+-	atomic_inc(&eb->refs);
+-
+-	reads_done = atomic_dec_and_test(&eb->io_pages);
+-	if (!reads_done)
+-		goto err;
+-
+-	eb->read_mirror = mirror;
+-	if (test_bit(EXTENT_BUFFER_READ_ERR, &eb->bflags)) {
+-		ret = -EIO;
+-		goto err;
+-	}
+-
+ 	found_start = btrfs_header_bytenr(eb);
+ 	if (found_start != eb->start) {
+ 		btrfs_err_rl(fs_info, "bad tree block start, want %llu have %llu",
+ 			     eb->start, found_start);
+ 		ret = -EIO;
+-		goto err;
++		goto out;
+ 	}
+ 	if (check_tree_block_fsid(eb)) {
+ 		btrfs_err_rl(fs_info, "bad fsid on block %llu",
+ 			     eb->start);
+ 		ret = -EIO;
+-		goto err;
++		goto out;
+ 	}
+ 	found_level = btrfs_header_level(eb);
+ 	if (found_level >= BTRFS_MAX_LEVEL) {
+ 		btrfs_err(fs_info, "bad tree block level %d on %llu",
+ 			  (int)btrfs_header_level(eb), eb->start);
+ 		ret = -EIO;
+-		goto err;
++		goto out;
+ 	}
+ 
+ 	btrfs_set_buffer_lockdep_class(btrfs_header_owner(eb),
+@@ -647,7 +624,7 @@ static int btree_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
+ 			      fs_info->sb->s_id, eb->start,
+ 			      val, found, btrfs_header_level(eb));
+ 		ret = -EUCLEAN;
+-		goto err;
++		goto out;
+ 	}
+ 
+ 	/*
+@@ -669,6 +646,41 @@ static int btree_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
+ 		btrfs_err(fs_info,
+ 			  "block=%llu read time tree block corruption detected",
+ 			  eb->start);
++out:
++	return ret;
++}
++
++static int btree_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
++				      u64 phy_offset, struct page *page,
++				      u64 start, u64 end, int mirror)
++{
++	struct extent_buffer *eb;
++	int ret = 0;
++	int reads_done;
++
++	if (!page->private)
++		goto out;
++
++	eb = (struct extent_buffer *)page->private;
++
++	/*
++	 * The pending IO might have been the only thing that kept this buffer
++	 * in memory.  Make sure we have a ref for all this other checks
++	 */
++	atomic_inc(&eb->refs);
++
++	reads_done = atomic_dec_and_test(&eb->io_pages);
++	if (!reads_done)
++		goto err;
++
++	eb->read_mirror = mirror;
++	if (test_bit(EXTENT_BUFFER_READ_ERR, &eb->bflags)) {
++		ret = -EIO;
++		goto err;
++	}
++
++	ret = btrfs_check_extent_buffer(eb);
++
+ err:
+ 	if (reads_done &&
+ 	    test_and_clear_bit(EXTENT_BUFFER_READAHEAD, &eb->bflags))
 -- 
 2.28.0
 

@@ -2,32 +2,32 @@ Return-Path: <SRS0=ITJn=CR=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,
+X-Spam-Status: No, score=-10.0 required=3.0 tests=BAYES_00,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+	SPF_HELO_NONE,SPF_PASS,UNWANTED_LANGUAGE_BODY,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 058E2C43461
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Sep 2020 07:52:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F084BC433E2
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Sep 2020 07:52:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id CB62D20C09
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Sep 2020 07:52:52 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BA7ED21D20
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Sep 2020 07:52:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729543AbgIHHww (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 8 Sep 2020 03:52:52 -0400
-Received: from mx2.suse.de ([195.135.220.15]:50938 "EHLO mx2.suse.de"
+        id S1729554AbgIHHwx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 8 Sep 2020 03:52:53 -0400
+Received: from mx2.suse.de ([195.135.220.15]:50944 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1729437AbgIHHws (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 8 Sep 2020 03:52:48 -0400
+        id S1729533AbgIHHwu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 8 Sep 2020 03:52:50 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 60014AE25
-        for <linux-btrfs@vger.kernel.org>; Tue,  8 Sep 2020 07:52:48 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 25940AE24
+        for <linux-btrfs@vger.kernel.org>; Tue,  8 Sep 2020 07:52:50 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 03/17] btrfs: remove the open-code to read disk-key
-Date:   Tue,  8 Sep 2020 15:52:16 +0800
-Message-Id: <20200908075230.86856-4-wqu@suse.com>
+Subject: [PATCH 04/17] btrfs: make btrfs_fs_info::buffer_radix to take sector size devided values
+Date:   Tue,  8 Sep 2020 15:52:17 +0800
+Message-Id: <20200908075230.86856-5-wqu@suse.com>
 X-Mailer: git-send-email 2.28.0
 In-Reply-To: <20200908075230.86856-1-wqu@suse.com>
 References: <20200908075230.86856-1-wqu@suse.com>
@@ -38,49 +38,58 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-There is some ancient code from the old days where we handle the
-disk_key read manually when the disk key is in one page.
+For subpage size sector size support, one page can contain mutliple tree
+blocks, thus we can no longer use (eb->start >> PAGE_SHIFT) any more, or
+we can easily get extent buffer doesn't belongs to us.
 
-But that's totally unnecessary, as we have read_extent_buffer() to
-handle everything.
+This patch will use (extent_buffer::start / sectorsize) as index for radix
+tree so that we can get correct extent buffer for subpage size support.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/ctree.c | 13 ++-----------
- 1 file changed, 2 insertions(+), 11 deletions(-)
+ fs/btrfs/extent_io.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index cd1cd673bc0b..e204e1320745 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -1697,7 +1697,6 @@ static noinline int generic_bin_search(struct extent_buffer *eb,
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 6def411b2eba..5d969340275e 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -5142,7 +5142,7 @@ struct extent_buffer *find_extent_buffer(struct btrfs_fs_info *fs_info,
+ 
+ 	rcu_read_lock();
+ 	eb = radix_tree_lookup(&fs_info->buffer_radix,
+-			       start >> PAGE_SHIFT);
++			       start / fs_info->sectorsize);
+ 	if (eb && atomic_inc_not_zero(&eb->refs)) {
+ 		rcu_read_unlock();
+ 		/*
+@@ -5194,7 +5194,7 @@ struct extent_buffer *alloc_test_extent_buffer(struct btrfs_fs_info *fs_info,
  	}
+ 	spin_lock(&fs_info->buffer_lock);
+ 	ret = radix_tree_insert(&fs_info->buffer_radix,
+-				start >> PAGE_SHIFT, eb);
++				start / fs_info->sectorsize, eb);
+ 	spin_unlock(&fs_info->buffer_lock);
+ 	radix_tree_preload_end();
+ 	if (ret == -EEXIST) {
+@@ -5302,7 +5302,7 @@ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
  
- 	while (low < high) {
--		unsigned long oip;
- 		unsigned long offset;
- 		struct btrfs_disk_key *tmp;
- 		struct btrfs_disk_key unaligned;
-@@ -1705,17 +1704,9 @@ static noinline int generic_bin_search(struct extent_buffer *eb,
+ 	spin_lock(&fs_info->buffer_lock);
+ 	ret = radix_tree_insert(&fs_info->buffer_radix,
+-				start >> PAGE_SHIFT, eb);
++				start / fs_info->sectorsize, eb);
+ 	spin_unlock(&fs_info->buffer_lock);
+ 	radix_tree_preload_end();
+ 	if (ret == -EEXIST) {
+@@ -5358,7 +5358,7 @@ static int release_extent_buffer(struct extent_buffer *eb)
  
- 		mid = (low + high) / 2;
- 		offset = p + mid * item_size;
--		oip = offset_in_page(offset);
- 
--		if (oip + key_size <= PAGE_SIZE) {
--			const unsigned long idx = offset >> PAGE_SHIFT;
--			char *kaddr = page_address(eb->pages[idx]);
--
--			tmp = (struct btrfs_disk_key *)(kaddr + oip);
--		} else {
--			read_extent_buffer(eb, &unaligned, offset, key_size);
--			tmp = &unaligned;
--		}
-+		read_extent_buffer(eb, &unaligned, offset, key_size);
-+		tmp = &unaligned;
- 
- 		ret = comp_keys(tmp, key);
- 
+ 			spin_lock(&fs_info->buffer_lock);
+ 			radix_tree_delete(&fs_info->buffer_radix,
+-					  eb->start >> PAGE_SHIFT);
++					  eb->start / fs_info->sectorsize);
+ 			spin_unlock(&fs_info->buffer_lock);
+ 		} else {
+ 			spin_unlock(&eb->refs_lock);
 -- 
 2.28.0
 

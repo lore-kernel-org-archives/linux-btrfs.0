@@ -2,107 +2,125 @@ Return-Path: <SRS0=ITJn=CR=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-11.2 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3DA49C433E2
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Sep 2020 19:41:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 797A5C43461
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Sep 2020 19:57:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 0057620658
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Sep 2020 19:41:48 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="CFPjJ9Fa"
+	by mail.kernel.org (Postfix) with ESMTP id 515DE20658
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Sep 2020 19:57:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730918AbgIHPxP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 8 Sep 2020 11:53:15 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53408 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1730871AbgIHPwh (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Sep 2020 11:52:37 -0400
-Received: from mail-qk1-x744.google.com (mail-qk1-x744.google.com [IPv6:2607:f8b0:4864:20::744])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8E445C0612FB
-        for <linux-btrfs@vger.kernel.org>; Tue,  8 Sep 2020 08:42:30 -0700 (PDT)
-Received: by mail-qk1-x744.google.com with SMTP id p4so15733896qkf.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 08 Sep 2020 08:42:30 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=Ub+ai6wTBMm1hsBF5QjaKfqBZmTSAb3mMkHmjBwuXV0=;
-        b=CFPjJ9FamcFky9IgoxXh1bCC/p3QfhMNAxcPZFapy2d24SFFrPIdlfg2zL6Opip6Nh
-         L9kHGLUWSYOVnGClfvz9HQpFjo8oxHsHxft5yp2usklyG4c5b7hcfFDV2UYo/Qp2jBdC
-         U6YJnzpARPyPWATelTf/XW2rdOxkXc9EDMQEDHEfwXMBxfzj44SsY//dwAJLgZNNZK5n
-         sxkL7J/ut3O0jGbgxGG++OL3mGi+3u0IxdZsSObIwbgL6IU75mCPXj+h1zx51W9u1Xmk
-         y3qQ5ejfH1I0Ninga+0u6UwJw5MXMCdEVUglyQpC1AVQal0WsvpdmsWRhjfTVZayY24a
-         9UkA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=Ub+ai6wTBMm1hsBF5QjaKfqBZmTSAb3mMkHmjBwuXV0=;
-        b=MP6h9Y0EvZ/gi4QQs7jZ61rtpR1QfCDfXEDjzulfVQ0SUXLoW61hRmfDBv+n3lImdt
-         eHnKNQAtBD5U68l2W8p2VtFx6Rb47vMiv4zex2jepYE8J3+RwC4uk6ZgIeaxv10Ophl6
-         qARx51Cx7+z7Cl+23DQRwm6C5Q56bcjKUXCSqlTG2W/ub2Jw/dQuePqVQeO11iBJ0c6/
-         +EowLSBneD3p6qL1P2bOWWiGFfh2yAkVv9z+cAPTczYSDjDPczdCRzaQ+oxcHqNxJcHX
-         5YlVTMYTZ9ndSgcnr9/gVA4Fp4WCDc45j7i59Cb40W1/LRFGLhFHjaTF0kVZOdbx4OBq
-         a8RA==
-X-Gm-Message-State: AOAM533o0unfnWDwjFUXxYNOwK2aGTUdPaW0/wb3DCXt3aWvNlFcLT/v
-        wi4SHG69Q1XlvLJ8UM9rZ9NPntzRwnh0Ht4n
-X-Google-Smtp-Source: ABdhPJwoG3atD+Y8lF3ICXBzgXrnXoV2cZXcZOqqPtnWua1P5o93bXKPkLAZisETCBl0GFS3r1qmgw==
-X-Received: by 2002:a37:9a8e:: with SMTP id c136mr611976qke.211.1599579748076;
-        Tue, 08 Sep 2020 08:42:28 -0700 (PDT)
-Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id 134sm9269637qkj.53.2020.09.08.08.42.27
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 08 Sep 2020 08:42:27 -0700 (PDT)
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com,
-        fstests@vger.kernel.org
-Subject: [PATCH] fstests: add a _require_scratch_mountopt helper
-Date:   Tue,  8 Sep 2020 11:42:26 -0400
-Message-Id: <125326dc030857fcfa7361ca72c2e19adfdb9c2f.1599579734.git.josef@toxicpanda.com>
-X-Mailer: git-send-email 2.26.2
+        id S1731220AbgIHT5k (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 8 Sep 2020 15:57:40 -0400
+Received: from mx2.suse.de ([195.135.220.15]:36556 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1732122AbgIHT5V (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 8 Sep 2020 15:57:21 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.221.27])
+        by mx2.suse.de (Postfix) with ESMTP id 10B13AC8B;
+        Tue,  8 Sep 2020 19:57:17 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 8200BDA781; Tue,  8 Sep 2020 21:56:00 +0200 (CEST)
+Date:   Tue, 8 Sep 2020 21:55:59 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Boris Burkov <boris@bur.io>
+Cc:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        kernel-team@fb.com
+Subject: Re: [PATCH v2] btrfs-progs: support free space tree in mkfs
+Message-ID: <20200908195559.GC18399@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Boris Burkov <boris@bur.io>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        kernel-team@fb.com
+References: <20200902204453.GN28318@twin.jikos.cz>
+ <cf7462fe8c14448703d845d235dce7aca1faf795.1599157021.git.boris@bur.io>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <cf7462fe8c14448703d845d235dce7aca1faf795.1599157021.git.boris@bur.io>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-I want to add a test that requires a new mount option, so add a helper
-to safely _notrun if the kernel doesn't support the new mount option.
+On Thu, Sep 03, 2020 at 11:19:23AM -0700, Boris Burkov wrote:
+> Add a runtime feature (-R) flag for the free space tree. A filesystem
+> that is mkfs'd with -R free-space-tree then mounted with no options has
+> the same contents as one mkfs'd without the option, then mounted with
+> '-o space_cache=v2'.
+> 
+> The only tricky thing is in exactly how to call the tree creation code.
+> Using btrfs_create_free_space_tree as is did not quite work, because an
+> extra reference to the eb (root->commit_root) is leaked, which mkfs
+> complains about with a warning. I opted to follow how the uuid tree is
+> created by adding it to the dirty roots list for cleanup by
+> commit_tree_roots in commit_transaction. As a result,
+> btrfs_create_free_space_tree no longer exactly matches the version in
+> the kernel sources.
+> 
+> Signed-off-by: Boris Burkov <boris@bur.io>
+> ---
+> - add mkfs test
+> - add documentation
+> - add safe version and sysfs file to feature struct
+> 
+>  Documentation/mkfs.btrfs.asciidoc            |  6 ++++++
+>  common/fsfeatures.c                          | 10 ++++++++--
+>  common/fsfeatures.h                          |  3 ++-
+>  kernel-shared/disk-io.c                      |  5 +++++
+>  kernel-shared/free-space-tree.c              |  1 +
+>  mkfs/main.c                                  |  8 ++++++++
+>  tests/mkfs-tests/023-free-space-tree/test.sh | 21 ++++++++++++++++++++
+>  7 files changed, 51 insertions(+), 3 deletions(-)
+>  create mode 100755 tests/mkfs-tests/023-free-space-tree/test.sh
+> 
+> diff --git a/Documentation/mkfs.btrfs.asciidoc b/Documentation/mkfs.btrfs.asciidoc
+> index 630f575c..8f1e1429 100644
+> --- a/Documentation/mkfs.btrfs.asciidoc
+> +++ b/Documentation/mkfs.btrfs.asciidoc
+> @@ -257,6 +257,12 @@ permanent, this does not replace mount options.
+>  Enable quota support (qgroups). The qgroup accounting will be consistent,
+>  can be used together with '--rootdir'.  See also `btrfs-quota`(8).
+>  
+> +*free_space_tree*::
+> +(kernel support since 3.4)
+> ++
+> +Enable the free space tree (mount option space_cache=v2) for persisting the
+> +free space cache.
+> +
+>  BLOCK GROUPS, CHUNKS, RAID
+>  --------------------------
+>  
+> diff --git a/common/fsfeatures.c b/common/fsfeatures.c
+> index 48ab37ca..6c391806 100644
+> --- a/common/fsfeatures.c
+> +++ b/common/fsfeatures.c
+> @@ -104,9 +104,15 @@ static const struct btrfs_feature mkfs_features[] = {
+>  };
+>  
+>  static const struct btrfs_feature runtime_features[] = {
+> -	{ "quota", BTRFS_RUNTIME_FEATURE_QUOTA, NULL,
+> -		VERSION_TO_STRING2(3, 4), NULL, 0, NULL, 0,
+> +	{ "quota", BTRFS_RUNTIME_FEATURE_QUOTA,
+> +		"free_space_tree",
+> +		VERSION_TO_STRING2(3, 4),
+> +		VERSION_TO_STRING2(4, 9),
+> +		NULL, 0,
 
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
----
- common/rc | 13 +++++++++++++
- 1 file changed, 13 insertions(+)
+This looks mangled, the free_space_tree (sysfs file reference) is in the
+quota entry and the 4.9 version for ->safe use should be in the free-space-tree
+entry below. I'll fix it.
 
-diff --git a/common/rc b/common/rc
-index aa5a7409..431855a7 100644
---- a/common/rc
-+++ b/common/rc
-@@ -3281,6 +3281,19 @@ _require_norecovery()
- 	_scratch_unmount
- }
- 
-+# notrun if we can't mount scratch with the given mount option
-+_require_scratch_mountopt()
-+{
-+	local option=$1
-+
-+	_require_scratch
-+	_scratch_mkfs > /dev/null 2>&1
-+
-+	_try_scratch_mount "-o $option" > /dev/null 2>&1 || \
-+		_notrun "$SCRATCH_DEV $FSTYP does not support -o $option"
-+	_scratch_unmount
-+}
-+
- # Does this filesystem support metadata journaling?
- # We exclude ones here that don't; otherwise we assume that it does, so the
- # test will run, fail, and motivate someone to update this test for a new
--- 
-2.26.2
+>  		"quota support (qgroups)" },
+> +	{ "free-space-tree", BTRFS_RUNTIME_FEATURE_FREE_SPACE_TREE, NULL,
+> +		VERSION_TO_STRING2(4, 5), NULL, 0, NULL, 0,
+> +		"free space tree (space_cache=v2)" },
 
+>  	/* Keep this one last */
+>  	{ "list-all", BTRFS_FEATURE_LIST_ALL, NULL }
+>  };

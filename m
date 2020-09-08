@@ -2,70 +2,87 @@ Return-Path: <SRS0=ITJn=CR=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.3 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.3 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,
+	SPF_PASS,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 000DAC43461
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Sep 2020 19:16:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CC734C433E2
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Sep 2020 19:36:40 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id C649F2087D
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Sep 2020 19:16:57 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 96AF72098B
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Sep 2020 19:36:40 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731950AbgIHTQ4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 8 Sep 2020 15:16:56 -0400
-Received: from mx2.suse.de ([195.135.220.15]:52936 "EHLO mx2.suse.de"
+        id S1731118AbgIHTfi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 8 Sep 2020 15:35:38 -0400
+Received: from mx2.suse.de ([195.135.220.15]:50508 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1731164AbgIHQDl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 8 Sep 2020 12:03:41 -0400
+        id S1730984AbgIHP5a (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 8 Sep 2020 11:57:30 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 7314EB012;
-        Tue,  8 Sep 2020 12:41:19 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id E505BAC2F;
+        Tue,  8 Sep 2020 15:57:00 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id A620CDA781; Tue,  8 Sep 2020 14:40:03 +0200 (CEST)
-Date:   Tue, 8 Sep 2020 14:40:03 +0200
+        id 4986BDA781; Tue,  8 Sep 2020 17:55:45 +0200 (CEST)
+Date:   Tue, 8 Sep 2020 17:55:45 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH 4/4] btrfs: do not create raid sysfs entries under any
- locks
-Message-ID: <20200908124003.GE28318@twin.jikos.cz>
+To:     Anand Jain <anand.jain@oracle.com>
+Cc:     linux-btrfs@vger.kernel.org, dsterba@suse.com,
+        josef@toxicpanda.com, nborisov@suse.com
+Subject: Re: [PATCH 01/16] btrfs: fix put of uninitialized kobject after seed
+ device delete
+Message-ID: <20200908155545.GB18399@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
-        linux-btrfs@vger.kernel.org, kernel-team@fb.com
-References: <cover.1598996236.git.josef@toxicpanda.com>
- <2f140cd79a9738e72fc6da6ef4ba3635962dbf9c.1598996236.git.josef@toxicpanda.com>
+Mail-Followup-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
+        linux-btrfs@vger.kernel.org, dsterba@suse.com, josef@toxicpanda.com,
+        nborisov@suse.com
+References: <cover.1599234146.git.anand.jain@oracle.com>
+ <5432348a53c7ec3fb97d4a21121d435fd3a1be74.1599234146.git.anand.jain@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <2f140cd79a9738e72fc6da6ef4ba3635962dbf9c.1598996236.git.josef@toxicpanda.com>
+In-Reply-To: <5432348a53c7ec3fb97d4a21121d435fd3a1be74.1599234146.git.anand.jain@oracle.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Sep 01, 2020 at 05:40:38PM -0400, Josef Bacik wrote:
->  	}
->  
->  	list_for_each_entry(space_info, &info->space_info, list) {
-> +		int i;
-> +
-> +		for (i = 0; i < BTRFS_NR_RAID_TYPES; i++) {
-> +			if (list_empty(&space_info->block_groups[i]))
-> +				continue;
-> +			cache = list_first_entry(&space_info->block_groups[i],
-> +						 struct btrfs_block_group,
-> +						 list);
-> +			btrfs_sysfs_add_block_group_type(cache);
-> +		}
-> +
+On Sat, Sep 05, 2020 at 01:34:21AM +0800, Anand Jain wrote:
+> The following test case leads to null kobject-being-freed error.
+> 
+>  mount seed /mnt
+>  add sprout to /mnt
+>  umount /mnt
+>  mount sprout to /mnt
+>  delete seed
+> 
+>  kobject: '(null)' (00000000dd2b87e4): is not initialized, yet kobject_put() is being called.
+>  WARNING: CPU: 1 PID: 15784 at lib/kobject.c:736 kobject_put+0x80/0x350
+>  RIP: 0010:kobject_put+0x80/0x350
+>  ::
+>  Call Trace:
+>  btrfs_sysfs_remove_devices_dir+0x6e/0x160 [btrfs]
+>  btrfs_rm_device.cold+0xa8/0x298 [btrfs]
+>  btrfs_ioctl+0x206c/0x22a0 [btrfs]
+>  ksys_ioctl+0xe2/0x140
+>  __x64_sys_ioctl+0x1e/0x29
+>  do_syscall_64+0x96/0x150
+>  entry_SYSCALL_64_after_hwframe+0x44/0xa9
+>  RIP: 0033:0x7f4047c6288b
+>  ::
+> 
+> This is because, at the end of the seed device-delete, we try to remove
+> the seed's devid sysfs entry. But for the seed devices under the sprout
+> fs, we don't initialize the devid kobject yet. So add a kobject state
+> check, which takes care of the Warning.
+> 
+> Fixes: 668e48af btrfs: sysfs, add devid/dev_state kobject and device attributes
 
-I had the previous version of the patch pass fstests, with no lockdep
-warnings and then realized it's not the v2 that depends on the 3rd patch
-removing RCU from this list traversal.
+Please note that the correct format of the Fixes: tag is
 
-btrfs_sysfs_add_block_group_type does not seem to be conflicting RCU in
-this loop so now I'm undecided if v1 is ok or if we really need v2, sice
-the patch 3 removing RCU seems suspicious.
+Fixes: 668e48af7a94 ("btrfs: sysfs, add devid/dev_state kobject and device attributes")
+
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+
+Added to misc-next, thanks.

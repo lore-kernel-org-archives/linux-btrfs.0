@@ -2,85 +2,106 @@ Return-Path: <SRS0=xOGy=CS=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-14.8 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,NICE_REPLY_A,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-11.9 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	MSGID_FROM_MTA_HEADER,NICE_REPLY_A,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C25A6C10DAA
-	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Sep 2020 13:49:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6A09DC433E2
+	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Sep 2020 14:13:49 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 9096420639
-	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Sep 2020 13:49:20 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 222F4221F0
+	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Sep 2020 14:13:49 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="PHzXJmLK"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730358AbgIINtH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 9 Sep 2020 09:49:07 -0400
-Received: from mx2.suse.de ([195.135.220.15]:57820 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1730387AbgIINYC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 9 Sep 2020 09:24:02 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id C4C50B20F;
-        Wed,  9 Sep 2020 12:14:07 +0000 (UTC)
-Subject: Re: [PATCH 05/10] btrfs: Remove btrfs_get_extent indirection from
- __do_readpage
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
-References: <20200909094914.29721-1-nborisov@suse.com>
- <20200909094914.29721-6-nborisov@suse.com>
- <8d1907b2-9f1f-72ef-6949-f25e64d001d8@gmx.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <430126ef-ec2d-f542-0ea2-737dbe82780f@suse.com>
-Date:   Wed, 9 Sep 2020 14:56:52 +0300
+        id S1730275AbgIIOMm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 9 Sep 2020 10:12:42 -0400
+Received: from de-smtp-delivery-102.mimecast.com ([62.140.7.102]:29609 "EHLO
+        de-smtp-delivery-102.mimecast.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1728709AbgIINHO (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 9 Sep 2020 09:07:14 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=mimecast20200619;
+        t=1599656830;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=/xzSIPnL7YJhCD15j+wfZDXbEk9HczDdZCz21dw8WNY=;
+        b=PHzXJmLKieNWJeGN/uF2NYXp8QeG4bBHs+akKWYDOIftj2LYUiOKJhV2jTmAfXYgrNK9ha
+        M06TGHXeZ+vqOUVgaK5SjCQGhATDyEMtLHr26g5870Wyy/7TeYGM0VpMQrvavNpmMZ6+v/
+        1DRKIX2J5uUxCa/hCmH5bbKWbaMNRZA=
+Received: from EUR05-AM6-obe.outbound.protection.outlook.com
+ (mail-am6eur05lp2113.outbound.protection.outlook.com [104.47.18.113])
+ (Using TLS) by relay.mimecast.com with ESMTP id
+ de-mta-24-q-RSFZ5vMWOl6O9UqZvTQA-1; Wed, 09 Sep 2020 15:07:08 +0200
+X-MC-Unique: q-RSFZ5vMWOl6O9UqZvTQA-1
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=X9OIJ16rEb2RYOIhvud+BcHJHjYNxFjHJDxtChNFhlj6TNXjQqQr6qu2sS+ZwmkQb1Af1P4FZyXet7ixvKQo07tPBZV5N2ED5Pq4nTyp8JkuFxdQY0lL8Mku/3CRc6iMM09Bs6a8kVeM+prdbbxtN8senln2BmCtjN7gfNxOPa68EBdL+1peOlH682wHkPlQu6cKu7CeOwgh2O63lbfFFY7y2WPLtdf05A/U2QpBZBthZWsyqkpgr1aP35gMztzes8glE+EkRZGl4u5E2H4a7GtuaX4tK+uxEVLKQ+ocdeVFoPqNuQisv1LFirI7Cvj+SFCwUkHwjcTVu3XDBRqHQQ==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=HOkdKM0oauxmlKWVFMnsrtUvpjvTdCFUE9jwwu2XvDQ=;
+ b=kTgxTBLapSkfUfwJud/YBDJ1yDQNTTTkKHmbUoebn5gMGiHrfo/lfpMJtnO+Xs2U2VQ1EVhg/6DbPxx0OKvewMll5MuH+XT0XOTiOlBpyvbwpm/dK3qn5USuYaIHOKJs85uD1x7wdBcJ6peybNlw3YA/ZlUt26gy/CRc8z0pLvwXYDet2cn9XTqTQV6J5gHqp6+VwhHgidVIT4qkxhThdjqviqyF7nOYQm8imH3gy/sPNarmEpet8rxMSVIbCqsLDIXyJcn0FPzZTjxeBAr9AIcDQxqWiPCyZywtTuATXm6vOK5DI2f3o+cw1DQEAS/sJRaOHUZglWA37fTKmeAwEw==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=suse.com; dmarc=pass action=none header.from=suse.com;
+ dkim=pass header.d=suse.com; arc=none
+Authentication-Results: vger.kernel.org; dkim=none (message not signed)
+ header.d=none;vger.kernel.org; dmarc=none action=none header.from=suse.com;
+Received: from AM0PR04MB6195.eurprd04.prod.outlook.com (2603:10a6:208:13c::13)
+ by AM0PR0402MB3844.eurprd04.prod.outlook.com (2603:10a6:208:f::12) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.3348.15; Wed, 9 Sep
+ 2020 13:07:05 +0000
+Received: from AM0PR04MB6195.eurprd04.prod.outlook.com
+ ([fe80::e9b0:22ea:e2da:1315]) by AM0PR04MB6195.eurprd04.prod.outlook.com
+ ([fe80::e9b0:22ea:e2da:1315%5]) with mapi id 15.20.3370.016; Wed, 9 Sep 2020
+ 13:07:05 +0000
+Subject: Re: [PATCH 01/17] btrfs: extent-io-tests: remove invalid tests
+To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
+References: <20200908075230.86856-1-wqu@suse.com>
+ <20200908075230.86856-2-wqu@suse.com>
+ <13209d17-01eb-dd25-d435-c56746d06f96@suse.com>
+From:   Qu Wenruo <wqu@suse.com>
+Message-ID: <a485ace8-508d-c055-d121-c9c2ae72dbb5@suse.com>
+Date:   Wed, 9 Sep 2020 21:06:54 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.10.0
-MIME-Version: 1.0
-In-Reply-To: <8d1907b2-9f1f-72ef-6949-f25e64d001d8@gmx.com>
+ Thunderbird/68.12.0
+In-Reply-To: <13209d17-01eb-dd25-d435-c56746d06f96@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: quoted-printable
+X-ClientProxiedBy: BY3PR04CA0020.namprd04.prod.outlook.com
+ (2603:10b6:a03:217::25) To AM0PR04MB6195.eurprd04.prod.outlook.com
+ (2603:10a6:208:13c::13)
+MIME-Version: 1.0
+X-MS-Exchange-MessageSentRepresentingType: 1
+Received: from [0.0.0.0] (149.28.201.231) by BY3PR04CA0020.namprd04.prod.outlook.com (2603:10b6:a03:217::25) with Microsoft SMTP Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.3370.16 via Frontend Transport; Wed, 9 Sep 2020 13:07:02 +0000
+X-Originating-IP: [149.28.201.231]
+X-MS-PublicTrafficType: Email
+X-MS-Office365-Filtering-Correlation-Id: 2a249b6d-70c1-4706-7fa6-08d854c14012
+X-MS-TrafficTypeDiagnostic: AM0PR0402MB3844:
+X-LD-Processed: f7a17af6-1c5c-4a36-aa8b-f5be247aa4ba,ExtFwd
+X-MS-Exchange-Transport-Forked: True
+X-Microsoft-Antispam-PRVS: <AM0PR0402MB3844256FBBF064DCB8A4706ED6260@AM0PR0402MB3844.eurprd04.prod.outlook.com>
+X-MS-Oob-TLC-OOBClassifiers: OLM:9508;
+X-MS-Exchange-SenderADCheck: 1
+X-Microsoft-Antispam: BCL:0;
+X-Microsoft-Antispam-Message-Info: aiPMJfckr8dr780MFl/WGbkp2mh8Lx7NMz7HmYBApTYaqSs6NqSv4dfDe4eh8rP52I/atMoIOVHEOxA/8RQkpyMZieTYS1QsvrlPglnSIXMBX9W6tGLrB0RkNSYOfmDeqyDYYwmSHRG6jyh+xDo7Ynz//xQWWBOzb32KgvjIZl++jvJ3PLetJNigyM5naCtCWPecZT4qsqKJAV6JbBTLtvw7z78Xs2E+tvqrZg5EDZZUoIwNCVllhcFm1lqkmg7qACRZumTEOzFLWxW/Yelm0blaRrRsgTAYlrPCh/LwIu8iCgyf4dAG6RFFXPghh4Gb5VqmB5r02dABdrs2lE6pHke0AwnCrK6ugG/8aat78s9LklxH99NEmVpnX4jvjruoZQ1jn1ewTUulbAR4oeN3286a6yz2ZSbOFg/0bOWp2rA=
+X-Forefront-Antispam-Report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:AM0PR04MB6195.eurprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(39860400002)(366004)(376002)(346002)(396003)(136003)(16576012)(86362001)(5660300002)(66556008)(16526019)(66476007)(478600001)(6666004)(26005)(31686004)(36756003)(31696002)(83380400001)(2616005)(956004)(2906002)(186003)(8676002)(52116002)(6486002)(316002)(66946007)(6706004)(8936002)(78286006)(43740500002);DIR:OUT;SFP:1101;
+X-MS-Exchange-AntiSpam-MessageData: 2tAOl9JMXmWPgYsm97CVlhmblJyNIIRRwvaI/481szrfe8JveadrKoLE+weqtFYQOfTu6VJGMr8qDEABYFT/Rn14PSlCPSrsyr06GRxAGHwtOyrX5/UkuDKSngQaskU58bUzIf9T7jpBFlTL2IGFLJUrAG/9xXYUKo8U8cfTsadLacZ6F/bJw0L2qPDdPxvV2rm3oTAGccACwlukM2vruL2FfLNjBqdAQYNF2nWUcuZFeyW+dMkyx5Y+oZxIPLjNEddmcOXspMWHjnF3ArS7xpbI5MCyMq8b0CxWup5oVteWuyjhqSXBSg0UkkkESsD/njT5G+sD/aZxzcwT3NKYZ1sGpqRNwGU4oQs9yuUxvqnWuvP8hSSuIC2CnXV+Mb/I7ipdrV70rtvhB3hcNGvMQ7t5fO7knzaIy1xkyG94MIhXUqwirjqnsUIo2PGasNZSkzZLJewfqYNTxets1YOnxy9oUDrS8IzMdt7DPs3y/zICIaX8tva05e5uK+rfk0aDid7Mgg8ZDemdcPR/FxCc3V5tDhKk36AB5FTRwNWpH8wOgh6u9A6eq8/3g5C/fd0ahgchRkT4g6L7TCpjnqj5Pvpod/c7J8vDkCJDxoZNkOA6Kkj1LbrRMFvyQ49YWxtfT1IsmV6mowSSutwv7WbUQA==
+X-OriginatorOrg: suse.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 2a249b6d-70c1-4706-7fa6-08d854c14012
+X-MS-Exchange-CrossTenant-AuthSource: AM0PR04MB6195.eurprd04.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 09 Sep 2020 13:07:05.5439
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: f7a17af6-1c5c-4a36-aa8b-f5be247aa4ba
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: AwLCrrBz3uY/aVSqLjkXoj9hNf9FS2lTldLoV9b37LG/nb/iyT4YlVEOFwj97nHQ
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: AM0PR0402MB3844
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -88,157 +109,52 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 9.09.20 г. 14:24 ч., Qu Wenruo wrote:
-> 
-> 
-> On 2020/9/9 下午5:49, Nikolay Borisov wrote:
->> Now that this function is only responsible for reading data pages it's
->> no longer necessary to pass get_extent_t parameter across several
->> layers of functions. This patch removes this parameter from multiple
->> functions: __get_extent_map/__do_readpage/__extent_read_full_page/
->> extent_read_full_page and simply calls btrfs_get_extent directly in
->> __get_extent_map.
-> 
-> Then it would be much nicer to see a patch renaming all these functions
-> to specifically name as like
-> get_data_extent_map/do_data_readpage/data_extent_read_full_page.
-> 
-> The current extent/page naming is too generic, not really distinguish
-> the completely different path between data and metadata.
-> 
-> And maybe split extent_io into meta_io and data_io. <- That may be
-> overkilled I guess...
+On 2020/9/9 =E4=B8=8B=E5=8D=888:26, Nikolay Borisov wrote:
+>=20
+>=20
+> On 8.09.20 =D0=B3. 10:52 =D1=87., Qu Wenruo wrote:
+>> In extent-io-test, there are two invalid tests:
+>> - Invalid nodesize for test_eb_bitmaps()
+>>   Instead of the sectorsize and nodesize combination passed in, we're
+>>   always using hand-crafted nodesize.
+>>   Although it has some extra check for 64K page size, we can still hit
+>>   a case where PAGE_SIZE =3D=3D 32K, then we got 128K nodesize which is
+>>   larger than max valid node size.
+>>
+>>   Thankfully most machines are either 4K or 64K page size, thus we
+>>   haven't yet hit such case.
+>>
+>> - Invalid extent buffer bytenr
+>>   For 64K page size, the only combination we're going to test is
+>>   sectorsize =3D nodesize =3D 64K.
+>>   In that case, we'll try to create an extent buffer with 32K bytenr,
+>>   which is not aligned to sectorsize thus invalid.
+>>
+>> This patch will fix both problems by:
+>> - Honor the sectorsize/nodesize combination
+>>   Now we won't bother to hand-craft a strange length and use it as
+>>   nodesize.
+>>
+>> - Use sectorsize as the 2nd run extent buffer start
+>>   This would test the case where extent buffer is aligned to sectorsize
+>>   but not always aligned to nodesize.
+>>
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>=20
+> Shouldn't you also modify btrfs_run_sanity_tests to extend
+> test_sectorsize such that it contains a subpage blocksize? As it stands
+> now test_eb_bitmaps will be called with sectorsize always being
+> PAGE_SIZE and nodesize being a multiple of the PAGE_SIZE i.e for a 4k
+> page that would be 4/8/16/32/64 k nodes
 
-I will mull over this suggestion in any case it  is outside the scope of
-the current series.
+Not yet, currently since it's just RO support, I'm not confident enough
+for the set_extent_bits() path.
 
-> 
-> Thanks,
-> Qu
-> 
->>
->> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
->> ---
->>  fs/btrfs/extent_io.c | 31 ++++++++++++-------------------
->>  fs/btrfs/extent_io.h |  3 +--
->>  fs/btrfs/inode.c     |  2 +-
->>  3 files changed, 14 insertions(+), 22 deletions(-)
->>
->> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
->> index 1789a7931312..4c04d3655538 100644
->> --- a/fs/btrfs/extent_io.c
->> +++ b/fs/btrfs/extent_io.c
->> @@ -3110,8 +3110,7 @@ void set_page_extent_mapped(struct page *page)
->>
->>  static struct extent_map *
->>  __get_extent_map(struct inode *inode, struct page *page, size_t pg_offset,
->> -		 u64 start, u64 len, get_extent_t *get_extent,
->> -		 struct extent_map **em_cached)
->> +		 u64 start, u64 len, struct extent_map **em_cached)
->>  {
->>  	struct extent_map *em;
->>
->> @@ -3127,7 +3126,7 @@ __get_extent_map(struct inode *inode, struct page *page, size_t pg_offset,
->>  		*em_cached = NULL;
->>  	}
->>
->> -	em = get_extent(BTRFS_I(inode), page, start, len);
->> +	em = btrfs_get_extent(BTRFS_I(inode), page, start, len);
->>  	if (em_cached && !IS_ERR_OR_NULL(em)) {
->>  		BUG_ON(*em_cached);
->>  		refcount_inc(&em->refs);
->> @@ -3142,9 +3141,7 @@ __get_extent_map(struct inode *inode, struct page *page, size_t pg_offset,
->>   * XXX JDM: This needs looking at to ensure proper page locking
->>   * return 0 on success, otherwise return error
->>   */
->> -static int __do_readpage(struct page *page,
->> -			 get_extent_t *get_extent,
->> -			 struct extent_map **em_cached,
->> +static int __do_readpage(struct page *page, struct extent_map **em_cached,
->>  			 struct bio **bio, int mirror_num,
->>  			 unsigned long *bio_flags, unsigned int read_flags,
->>  			 u64 *prev_em_start)
->> @@ -3211,7 +3208,7 @@ static int __do_readpage(struct page *page,
->>  		if (pg_offset != 0)
->>  			trace_printk("PG offset: %lu iosize: %lu\n", pg_offset, iosize);
->>  		em = __get_extent_map(inode, page, pg_offset, cur,
->> -				      end - cur + 1, get_extent, em_cached);
->> +				      end - cur + 1, em_cached);
->>  		if (IS_ERR_OR_NULL(em)) {
->>  			SetPageError(page);
->>  			unlock_extent(tree, cur, end);
->> @@ -3364,16 +3361,14 @@ static inline void contiguous_readpages(struct page *pages[], int nr_pages,
->>  	btrfs_lock_and_flush_ordered_range(inode, start, end, NULL);
->>
->>  	for (index = 0; index < nr_pages; index++) {
->> -		__do_readpage(pages[index], btrfs_get_extent, em_cached,
->> -				bio, 0, bio_flags, REQ_RAHEAD, prev_em_start);
->> +		__do_readpage(pages[index], em_cached, bio, 0, bio_flags,
->> +			      REQ_RAHEAD, prev_em_start);
->>  		put_page(pages[index]);
->>  	}
->>  }
->>
->> -static int __extent_read_full_page(struct page *page,
->> -				   get_extent_t *get_extent,
->> -				   struct bio **bio, int mirror_num,
->> -				   unsigned long *bio_flags,
->> +static int __extent_read_full_page(struct page *page, struct bio **bio,
->> +				   int mirror_num, unsigned long *bio_flags,
->>  				   unsigned int read_flags)
->>  {
->>  	struct btrfs_inode *inode = BTRFS_I(page->mapping->host);
->> @@ -3383,20 +3378,18 @@ static int __extent_read_full_page(struct page *page,
->>
->>  	btrfs_lock_and_flush_ordered_range(inode, start, end, NULL);
->>
->> -	ret = __do_readpage(page, get_extent, NULL, bio, mirror_num,
->> -			    bio_flags, read_flags, NULL);
->> +	ret = __do_readpage(page, NULL, bio, mirror_num, bio_flags, read_flags,
->> +			    NULL);
->>  	return ret;
->>  }
->>
->> -int extent_read_full_page(struct page *page, get_extent_t *get_extent,
->> -			  int mirror_num)
->> +int extent_read_full_page(struct page *page, int mirror_num)
->>  {
->>  	struct bio *bio = NULL;
->>  	unsigned long bio_flags = 0;
->>  	int ret;
->>
->> -	ret = __extent_read_full_page(page, get_extent, &bio, mirror_num,
->> -				      &bio_flags, 0);
->> +	ret = __extent_read_full_page(page, &bio, mirror_num, &bio_flags, 0);
->>  	if (bio)
->>  		ret = submit_one_bio(bio, mirror_num, bio_flags);
->>  	return ret;
->> diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
->> index 41621731a4fe..57786feffdbf 100644
->> --- a/fs/btrfs/extent_io.h
->> +++ b/fs/btrfs/extent_io.h
->> @@ -193,8 +193,7 @@ typedef struct extent_map *(get_extent_t)(struct btrfs_inode *inode,
->>  int try_release_extent_mapping(struct page *page, gfp_t mask);
->>  int try_release_extent_buffer(struct page *page);
->>
->> -int extent_read_full_page(struct page *page, get_extent_t *get_extent,
->> -			  int mirror_num);
->> +int extent_read_full_page(struct page *page, int mirror_num);
->>  int extent_write_full_page(struct page *page, struct writeback_control *wbc);
->>  int extent_write_locked_range(struct inode *inode, u64 start, u64 end,
->>  			      int mode);
->> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
->> index a7b62b93246b..c8d1d935c8c7 100644
->> --- a/fs/btrfs/inode.c
->> +++ b/fs/btrfs/inode.c
->> @@ -8036,7 +8036,7 @@ static int btrfs_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
->>
->>  int btrfs_readpage(struct file *file, struct page *page)
->>  {
->> -	return extent_read_full_page(page, btrfs_get_extent, 0);
->> +	return extent_read_full_page(page, 0);
->>  }
->>
->>  static int btrfs_writepage(struct page *page, struct writeback_control *wbc)
->>
-> 
+Thanks,
+Qu
+
+>=20
+>=20
+> <snip>
+>=20
+

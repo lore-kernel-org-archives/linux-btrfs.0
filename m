@@ -2,201 +2,117 @@ Return-Path: <SRS0=xOGy=CS=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.8 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	UNPARSEABLE_RELAY,URIBL_BLOCKED autolearn=unavailable autolearn_force=no
+X-Spam-Status: No, score=-6.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=no autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 83873C10DAA
-	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Sep 2020 19:04:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B6C7FC43461
+	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Sep 2020 21:45:30 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 4C93120C09
-	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Sep 2020 19:04:27 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 319BF205CB
+	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Sep 2020 21:45:30 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="N4mhetbE"
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="m7QKwu3O";
+	dkim=temperror (0-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="tsi17ZSB"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729525AbgIITEZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 9 Sep 2020 15:04:25 -0400
-Received: from userp2130.oracle.com ([156.151.31.86]:44022 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726184AbgIITEY (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Sep 2020 15:04:24 -0400
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 089Ixgvc156790;
-        Wed, 9 Sep 2020 19:04:18 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=date : from : to : cc
- : subject : message-id : references : mime-version : content-type :
- in-reply-to; s=corp-2020-01-29;
- bh=eUQLJKkJwngh5GhFzMwdnVOIBBr3ctU8HUS8W/0hJL8=;
- b=N4mhetbEKBq5uJImIJZHevfD2/RCytT0ZRlD33fBYys2PNyFzs/eyGU3apnhsS34bvLB
- vfmkYT2e01q+H4mFy6I/gVk6EqKyoaVeaDIzRYsqCGl7VRggriAb93P/J+/OTQK4K4p5
- 7I90TanotUkjzcpsRceNeRLEyeMc1xGm+Baj4AP9nzzG0pYEl8ej5LL0sLweymCQzPWt
- qii8svgvCfLU/NCrpk4eZBOU2VB8U+NILEsGEiQa6SCNfbxuxRJ28LQmxKIMp8iRXf8B
- z0PTurN79m9lPxT0OWDSbxSf4cvpNIwNOf5bNIziDNPZYkBMgXCEQQV2Ji/YzMF1/Zuv oQ== 
-Received: from userp3020.oracle.com (userp3020.oracle.com [156.151.31.79])
-        by userp2130.oracle.com with ESMTP id 33c23r3ts4-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
-        Wed, 09 Sep 2020 19:04:18 +0000
-Received: from pps.filterd (userp3020.oracle.com [127.0.0.1])
-        by userp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 089J1V82154635;
-        Wed, 9 Sep 2020 19:02:18 GMT
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by userp3020.oracle.com with ESMTP id 33cmetdasd-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Wed, 09 Sep 2020 19:02:17 +0000
-Received: from abhmp0019.oracle.com (abhmp0019.oracle.com [141.146.116.25])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id 089J2FZH031863;
-        Wed, 9 Sep 2020 19:02:15 GMT
-Received: from localhost (/67.169.218.210)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Wed, 09 Sep 2020 12:02:14 -0700
-Date:   Wed, 9 Sep 2020 12:02:13 -0700
-From:   "Darrick J. Wong" <darrick.wong@oracle.com>
-To:     fdmanana@kernel.org
-Cc:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        Filipe Manana <fdmanana@suse.com>
-Subject: Re: [PATCH] generic: add test for zero range over a file range with
- many small extents
-Message-ID: <20200909190213.GA7943@magnolia>
-References: <e038bd2419f60f0b4c5ac13da78bfba345f4dba7.1599560067.git.fdmanana@suse.com>
+        id S1726714AbgIIVp3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 9 Sep 2020 17:45:29 -0400
+Received: from out4-smtp.messagingengine.com ([66.111.4.28]:39339 "EHLO
+        out4-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1726426AbgIIVp0 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 9 Sep 2020 17:45:26 -0400
+Received: from compute4.internal (compute4.nyi.internal [10.202.2.44])
+        by mailout.nyi.internal (Postfix) with ESMTP id 8476A5C0130;
+        Wed,  9 Sep 2020 17:45:25 -0400 (EDT)
+Received: from mailfrontend2 ([10.202.2.163])
+  by compute4.internal (MEProxy); Wed, 09 Sep 2020 17:45:25 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=from
+        :to:cc:subject:date:message-id:mime-version
+        :content-transfer-encoding; s=fm1; bh=B+Rp/pjVWS/4X58wyOPvLN6u3B
+        CdeTUOJeiuoCKjLpk=; b=m7QKwu3O6k7FQZVNZ0bJSrVjVaNmRIqKEWQ/dot2Gd
+        KkUnDhO0IcfasRyiONspEF2hxaxXLQBWwtiEFjqcyUvYMC6tr7zqxmuJ+PKj8enb
+        CAsyD1BKovkS453ZqkxWTCfHixqsy/CEX43QzueLterbnAEHfDOCL1ec6KZZguch
+        ChBYY5vmyFcSN1UBdfvnqDyEVEobMoC8/MpWCXNHiIVOzqC8L3rr8dOZHlpYNjYH
+        pjKsLmr9IN05eVbvsiEQSPKaeUfyBbmEK9koFc6q5Fqbe5uWbXKULmFjCs+41PCV
+        k82G/YEuPG+PRP9VvHLsEgqAMCdGuWaY1tXXQNxHMwAw==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+        messagingengine.com; h=cc:content-transfer-encoding:date:from
+        :message-id:mime-version:subject:to:x-me-proxy:x-me-proxy
+        :x-me-sender:x-me-sender:x-sasl-enc; s=fm3; bh=B+Rp/pjVWS/4X58wy
+        OPvLN6u3BCdeTUOJeiuoCKjLpk=; b=tsi17ZSBcGNrdEV93oAk+UBx9L+zJoXk7
+        0VT8ewmXXreF3e6563N8ZQquri/Q8R2DfOnXd45ImGoWg0mwNl13P3KKrVkTCv4I
+        InFMCcjCvAIXM1vT1U4YhbwbSLBipG+Jz/heZQDyKa6AtXiuuSga6qDfXAlKFMxt
+        M+2xH6lFxSbLfPazwuh+VVjpMTJGBVr8tk6+HPW+5ZS7pH9EEMYPPbssf9Q3z3ht
+        4ccRD0rz8ZRVKRHKot6o6rlrrXou3KDnk4Q5S5egt3mpREcLil44N33xZOey6asS
+        2P5k/UhdfvXLZ8tuTb/89CrgxBcL5G/U5KoL8a81jwX0L02kJCQWg==
+X-ME-Sender: <xms:9UxZX9cYbQGICtpL1LzPPzI1FQnA2iqP_ZqbGGJlG6JgmxxdVKRrRg>
+    <xme:9UxZX7PZ7j_Fd_2v3hWNyF6uCEOlzp5uuf6F7xjbbuNgDGjuLCY5_DBFSQHrljrqf
+    ibI0M_Y2unr7dyu9Tk>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeduiedrudehiecutefuodetggdotefrodftvfcurf
+    hrohhfihhlvgemucfhrghsthforghilhdpqfgfvfdpuffrtefokffrpgfnqfghnecuuegr
+    ihhlohhuthemuceftddtnecusecvtfgvtghiphhivghnthhsucdlqddutddtmdenucfjug
+    hrpefhvffufffkofgggfestdekredtredttdenucfhrhhomhepuehorhhishcuuehurhhk
+    ohhvuceosghorhhishessghurhdrihhoqeenucggtffrrghtthgvrhhnpeduiedtleeuie
+    ejfeelffevleeifefgjeejieegkeduudetfeekffeftefhvdejveenucfkphepudeifedr
+    uddugedrudefvddrfeenucevlhhushhtvghrufhiiigvpedtnecurfgrrhgrmhepmhgrih
+    hlfhhrohhmpegsohhrihhssegsuhhrrdhioh
+X-ME-Proxy: <xmx:9UxZX2jbrbLc1kQDI_3v5FYt68cE4CeONOqYAF92ga0co6A8sCuLKQ>
+    <xmx:9UxZX29H6f9DsazGprwtqr3Qar2GLrKkJacn-OAk9u1klZqOmcpprw>
+    <xmx:9UxZX5voGOXx2hpRzEhlQk3e5DXYM02xMq29nMlAB1NnlI2OJLiAGw>
+    <xmx:9UxZXxKnJQshkGR9D32qZSwyO2ae7_GN096mntPqngne3E8SQ3Jeyw>
+Received: from localhost (unknown [163.114.132.3])
+        by mail.messagingengine.com (Postfix) with ESMTPA id 047FA3068BF3;
+        Wed,  9 Sep 2020 17:45:25 -0400 (EDT)
+From:   Boris Burkov <boris@bur.io>
+To:     Dave Sterba <dsterba@suse.com>, Josef Bacik <josef@toxicpanda.com>,
+        Chris Mason <clm@fb.com>
+Cc:     Boris Burkov <boris@bur.io>, linux-btrfs@vger.kernel.org,
+        kernel-team@fb.com
+Subject: [PATCH v2 0/3] btrfs: free space tree mounting fixes
+Date:   Wed,  9 Sep 2020 14:45:15 -0700
+Message-Id: <cover.1599686801.git.boris@bur.io>
+X-Mailer: git-send-email 2.24.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <e038bd2419f60f0b4c5ac13da78bfba345f4dba7.1599560067.git.fdmanana@suse.com>
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9739 signatures=668679
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 spamscore=0 suspectscore=3 adultscore=0
- bulkscore=0 phishscore=0 malwarescore=0 mlxlogscore=999 mlxscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2006250000
- definitions=main-2009090168
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9739 signatures=668679
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 adultscore=0 priorityscore=1501
- mlxlogscore=999 mlxscore=0 bulkscore=0 suspectscore=3 spamscore=0
- malwarescore=0 phishscore=0 lowpriorityscore=0 clxscore=1011
- impostorscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2006250000 definitions=main-2009090168
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Sep 08, 2020 at 11:32:02AM +0100, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> Test a fallocate() zero range operation against a large file range for which
-> there are many small extents allocated. Verify the operation does not fail
-> and the respective range return zeroes on subsequent reads.
+A few fixes for issues with mounting the btrfs free space tree
+(aka space_cache v2). These are not dependent, and are only related
+loosely, in that they all apply to mounting the file system with
+the free space tree.
 
-LOL, we didn't already have a stress test for fzero? :/
+The first patch fixes -o remount,space_cache=v2.
 
-> This test is motivated by a bug found on btrfs. The patch that fixes the
-> bug on btrfs has the following subject:
-> 
->  "btrfs: fix metadata reservation for fallocate that leads to transaction aborts"
-> 
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+The second patch fixes the slight oversight of not cleaning up the
+space cache free space object or free space inodes when migrating to
+the free space tree.
 
-Looks good to me!
+The third patch stops re-creating the free space objects when we
+are not using space_cache=v1.
 
-Reviewed-by: Darrick J. Wong <darrick.wong@oracle.com>
+changes for v2:
+Patch 1/3: made remount _only_ work in ro->rw case, added comment.
+Patch 2/3: added btrfs_ prefix to non-static function, removed bad
+           whitespace.
+Patch 3/3: new in v2, was part of Patch 2/2 in v1.
 
---D
+Boris Burkov (3):
+  btrfs: support remount of ro fs with free space tree
+  btrfs: remove free space items when creating free space tree
+  btrfs: skip space_cache v1 setup when not using it
 
-> ---
->  tests/generic/609     | 61 +++++++++++++++++++++++++++++++++++++++++++
->  tests/generic/609.out |  5 ++++
->  tests/generic/group   |  1 +
->  3 files changed, 67 insertions(+)
->  create mode 100755 tests/generic/609
->  create mode 100644 tests/generic/609.out
-> 
-> diff --git a/tests/generic/609 b/tests/generic/609
-> new file mode 100755
-> index 00000000..cda2b3dc
-> --- /dev/null
-> +++ b/tests/generic/609
-> @@ -0,0 +1,61 @@
-> +#! /bin/bash
-> +# SPDX-License-Identifier: GPL-2.0
-> +# Copyright (C) 2020 SUSE Linux Products GmbH. All Rights Reserved.
-> +#
-> +# FS QA Test No. 609
-> +#
-> +# Test a fallocate() zero range operation against a large file range for which
-> +# there are many small extents allocated. Verify the operation does not fail
-> +# and the respective range return zeroes on subsequent reads.
-> +#
-> +seq=`basename $0`
-> +seqres=$RESULT_DIR/$seq
-> +echo "QA output created by $seq"
-> +tmp=/tmp/$$
-> +status=1	# failure is the default!
-> +trap "_cleanup; exit \$status" 0 1 2 3 15
-> +
-> +_cleanup()
-> +{
-> +	cd /
-> +	rm -f $tmp.*
-> +}
-> +
-> +# get standard environment, filters and checks
-> +. ./common/rc
-> +. ./common/filter
-> +
-> +# real QA test starts here
-> +_supported_fs generic
-> +_supported_os Linux
-> +_require_scratch
-> +_require_xfs_io_command "fzero"
-> +_require_xfs_io_command "fpunch"
-> +_require_test_program "punch-alternating"
-> +
-> +rm -f $seqres.full
-> +
-> +_scratch_mkfs >>$seqres.full 2>&1
-> +_scratch_mount
-> +
-> +# Create a file with many small extents. To speed up file creation, do
-> +# buffered writes and then punch a hole on every other block.
-> +$XFS_IO_PROG -f -c "pwrite -S 0xab -b 10M 0 100M" \
-> +	$SCRATCH_MNT/foobar >>$seqres.full
-> +$here/src/punch-alternating $SCRATCH_MNT/foobar >>$seqres.full
-> +
-> +# For btrfs, trigger a transaction commit to force metadata COW for the
-> +# following fallocate zero range operation.
-> +sync
-> +
-> +$XFS_IO_PROG -c "fzero 0 100M" $SCRATCH_MNT/foobar
-> +
-> +# Check the file content after umounting and mounting again the fs, to verify
-> +# everything was persisted.
-> +_scratch_cycle_mount
-> +
-> +echo "File content after zero range operation:"
-> +od -A d -t x1 $SCRATCH_MNT/foobar
-> +
-> +status=0
-> +exit
-> diff --git a/tests/generic/609.out b/tests/generic/609.out
-> new file mode 100644
-> index 00000000..feb8c211
-> --- /dev/null
-> +++ b/tests/generic/609.out
-> @@ -0,0 +1,5 @@
-> +QA output created by 609
-> +File content after zero range operation:
-> +0000000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-> +*
-> +104857600
-> diff --git a/tests/generic/group b/tests/generic/group
-> index aa969bcb..f8eabc0a 100644
-> --- a/tests/generic/group
-> +++ b/tests/generic/group
-> @@ -611,3 +611,4 @@
->  606 auto attr quick dax
->  607 auto attr quick dax
->  608 auto attr quick dax
-> +609 auto quick prealloc zero
-> -- 
-> 2.26.2
-> 
+ fs/btrfs/block-group.c      | 42 ++++----------------------------
+ fs/btrfs/free-space-cache.c | 48 +++++++++++++++++++++++++++++++++++++
+ fs/btrfs/free-space-cache.h |  2 ++
+ fs/btrfs/free-space-tree.c  |  3 +++
+ fs/btrfs/super.c            | 29 ++++++++++++++++++++++
+ 5 files changed, 87 insertions(+), 37 deletions(-)
+
+-- 
+2.24.1
+

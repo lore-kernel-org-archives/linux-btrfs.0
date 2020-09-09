@@ -2,504 +2,153 @@ Return-Path: <SRS0=xOGy=CS=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+X-Spam-Status: No, score=-9.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 50684C43461
-	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Sep 2020 09:50:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C157EC433E2
+	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Sep 2020 10:37:49 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id EEEEF21D79
-	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Sep 2020 09:50:05 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5C50021D7A
+	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Sep 2020 10:37:49 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="YdBXAV19";
+	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b="q0O7WzS8"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728360AbgIIJuE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 9 Sep 2020 05:50:04 -0400
-Received: from mx2.suse.de ([195.135.220.15]:53996 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728350AbgIIJtW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 9 Sep 2020 05:49:22 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id DD504B159;
-        Wed,  9 Sep 2020 09:49:19 +0000 (UTC)
-From:   Nikolay Borisov <nborisov@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 02/10] btrfs: Remove pg_offset from btrfs_get_extent
-Date:   Wed,  9 Sep 2020 12:49:06 +0300
-Message-Id: <20200909094914.29721-3-nborisov@suse.com>
-X-Mailer: git-send-email 2.17.1
-In-Reply-To: <20200909094914.29721-1-nborisov@suse.com>
+        id S1726642AbgIIKhn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 9 Sep 2020 06:37:43 -0400
+Received: from esa3.hgst.iphmx.com ([216.71.153.141]:10434 "EHLO
+        esa3.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726060AbgIIKhj (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Sep 2020 06:37:39 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1599647859; x=1631183859;
+  h=from:to:subject:date:message-id:references:
+   content-transfer-encoding:mime-version;
+  bh=p3cbeZGunABECWWQLOq/g5mKqhDT+TgHcAu0CY1obrE=;
+  b=YdBXAV190dqe4HQDVeXSXWiRVaEXWkLzsFV31/MInWmN3ym7ABKJLKCk
+   R4K2bxHsvmsKT5lkEI/w256WpwftICBUnmKBHsT+8EQADzwxWCOoCTCmP
+   0vzaT8/EoYY2ha9hHqmV6YD0drnQKunh+huOr59fVGlqBs7shl1itafIo
+   O34Lxgu2J9eiWHeCybBb/XfWxdYjKGZ8g2DsN2kLwp821jujFvj3qoGn/
+   hwJX4Q+07oLK6K509ZaUJ5TxmlGLoIt5njl/irmY5GvP3zEm4QQcHBZ+G
+   9oTTsiGRQLsNGfgKnGsypH4YfxZIVzNpDv8jQRyNQ5/yy0SW/nsO9urhc
+   g==;
+IronPort-SDR: Hp0KtavAllmDSDaQ6lGRpOPrzxHdEmO/eIoI9FuE8ZxeXVY2uMqLWwN2qpb1pjkOyKdUKqxwH0
+ 9qus8PoRCCj3OOItfpZ8EM4Yf/EDFh4rnICrZxn0DaTOa1cdZp5PJL6XxVi991CtkBGqIdAk5/
+ QKapcycLovWXuH8pzDqmlBcsFdIvg1Ol7JTcCGmd7BNCHMDSDTGPBl5PQjQw2OLIiKT9J6xZp0
+ c+07085JzMRP4nJSWont4aTXgSOVXnRkeQjGiwvUPb53UC6PyvkJ7wll/fLJh9+UJlkrINhioV
+ 6SA=
+X-IronPort-AV: E=Sophos;i="5.76,409,1592841600"; 
+   d="scan'208";a="151272376"
+Received: from mail-dm6nam12lp2168.outbound.protection.outlook.com (HELO NAM12-DM6-obe.outbound.protection.outlook.com) ([104.47.59.168])
+  by ob1.hgst.iphmx.com with ESMTP; 09 Sep 2020 18:37:39 +0800
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=KUw0Ik/vhVO5vBSm/pNjhL3lT65DAMEjln1EarY25zN8y3aSRppfjxKdTEaoKk7zBOh4wnmL2caw4g5U5jmDxTgT6Wi9cKgOM1zC3v62cMyZTGukjPUFv7m1rAyL79+k+25QQ1yhSpWaH9wE3edZsHMq/QrUGmpUZTMIevcCi9OIjVHSFNzXlWxN+ETloByzBFJ6440/cwZrJ5gAAYF2YcV2vNmjf7FsV9rnVSjQJFyz4QbcFx0HbJf21J19uakvLMqKheOiejfEkyMxPSlHQ4n6IyAWgni5IG2a8RbgAwHncivTMcI9UqKviXSdluRuxan7cC8HgskCPuOs2TAQYw==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=WO89E11CB7x1zfkgAPqWM2cYdCtleKFa4bCw/zoC6zE=;
+ b=afhEvkOAD15jUOj8BAAnrn0fyEqVhFETGU/yUpkeRus1gpGEHoUXPUPmGMBk1Xoh4+kMrYpOFWxHCinbjxo6ebnPxuyiqBSxGKrcME3dt+FEonZRw8t9ZSL7Zp+jHncvBsiHwculmt+9iK4s8KxucRzAQy6wKCfmL0fj4rwQ0nWCsvGkpPXKcq6fy/fV0Ylf0pZCgDNEXxHd6APGqfmNXk8NDF5HTnU5JbT/VcPEDDzMIKoKRhCC7P+DHn6TD+DGY4GcK9MmQwYJKlxmTapQKnZM+QYrxISiIn/8OnH6y48iZtV91RPogsA2O8e5jXwCzG3dWDFQkBSm/+XX+Gyj3w==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
+ header.d=wdc.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=WO89E11CB7x1zfkgAPqWM2cYdCtleKFa4bCw/zoC6zE=;
+ b=q0O7WzS8+cLWj7vXV4sAat6ugjF6WgTJk2qL54FBvB4/PBvzyhkPqZ4N8OX3C23+248GuDxV7sr52rOnQ6v24dkDk9F06rwmX9SzIO7vjuWr7mj4XZ3OoZM2ztu/sE3734VPARzH3My/tOJJderY+IYQbmKMv//CjyqFZr1x3mI=
+Received: from MWHPR0401MB3595.namprd04.prod.outlook.com
+ (2603:10b6:301:79::25) by CO2PR04MB2343.namprd04.prod.outlook.com
+ (2603:10b6:102:12::9) with Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.3348.17; Wed, 9 Sep
+ 2020 10:37:36 +0000
+Received: from MWHPR0401MB3595.namprd04.prod.outlook.com
+ ([fe80::158c:8261:8a08:30d0]) by MWHPR0401MB3595.namprd04.prod.outlook.com
+ ([fe80::158c:8261:8a08:30d0%6]) with mapi id 15.20.3348.019; Wed, 9 Sep 2020
+ 10:37:36 +0000
+From:   Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
+To:     Nikolay Borisov <nborisov@suse.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 01/10] btrfs: Remove btree_readpage
+Thread-Topic: [PATCH 01/10] btrfs: Remove btree_readpage
+Thread-Index: AQHWho6LOjjR0UFQx0WXvGoGooxEFA==
+Date:   Wed, 9 Sep 2020 10:37:36 +0000
+Message-ID: <MWHPR0401MB3595EF09FB771F648F534FD09B260@MWHPR0401MB3595.namprd04.prod.outlook.com>
 References: <20200909094914.29721-1-nborisov@suse.com>
+ <20200909094914.29721-2-nborisov@suse.com>
+Accept-Language: en-US
+Content-Language: en-US
+X-MS-Has-Attach: 
+X-MS-TNEF-Correlator: 
+authentication-results: suse.com; dkim=none (message not signed)
+ header.d=none;suse.com; dmarc=none action=none header.from=wdc.com;
+x-originating-ip: [62.216.205.181]
+x-ms-publictraffictype: Email
+x-ms-office365-filtering-ht: Tenant
+x-ms-office365-filtering-correlation-id: 2866a7aa-a101-4453-cb46-08d854ac5dfc
+x-ms-traffictypediagnostic: CO2PR04MB2343:
+x-microsoft-antispam-prvs: <CO2PR04MB2343CD9B72896FA55350EB6A9B260@CO2PR04MB2343.namprd04.prod.outlook.com>
+wdcipoutbound: EOP-TRUE
+x-ms-oob-tlc-oobclassifiers: OLM:31;
+x-ms-exchange-senderadcheck: 1
+x-microsoft-antispam: BCL:0;
+x-microsoft-antispam-message-info: pMJb493f1tx+3cgjIF7UYYQijnHWruOolyF9T0WJ1bfx/N7xp8Yb2b3whux9/XZGB5/Ew6AQB6K7unenLsuRbkOWsxQCsYIMBmYbKk4UAWktWnCpB7nZNd+PFA5FMOhgBGnzfndV9kwOLPyBN5/aDo5bhIJIgipBqGuIRMo+CM1IHSj3o+5iUsZ+ULiMDRwvS0tWgPEGp6uM5YDMdB0kvUUE0O82anbSLGFXBGTfdwfrNQfKfDQjipC5P/+4eJodZVnT/nOQ0YaZOWUu89xzo1WTLFwfZZkhFpKZA0lTYHgikdT7kePpYpW0PLGeiYM5
+x-forefront-antispam-report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:MWHPR0401MB3595.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(4636009)(376002)(366004)(39860400002)(136003)(396003)(346002)(5660300002)(64756008)(26005)(2906002)(186003)(66446008)(66556008)(66476007)(66946007)(71200400001)(55016002)(52536014)(33656002)(9686003)(8676002)(6506007)(316002)(83380400001)(91956017)(76116006)(478600001)(8936002)(7696005)(110136005)(53546011)(86362001);DIR:OUT;SFP:1102;
+x-ms-exchange-antispam-messagedata: Vz4VK68aHCxP6ea2VtcOLr19tKaujeZFhTa91DAgJ9ZJ/2jXB8H6D42/U5k/VuQOdTNTUAwaCky6weDXLgdv4A/Fzl0EL2torSHAhtXjsBpfyNnZBbVFylBcfKiIzcxBZCIQ9I/HnN9aYIPthE0DHQG253kld4peD6DIgwUKWYnGNuY0fXHgDt0OzcfGiVuF+g29S+YNWUem24pdcHwHf02paoRC8PrD7opvhxUiXacN8IVoxgsXYpB2j7S9p34GkcZ2z1Uhl8roh2qYitAeiekCIgCYQErILzmXiSS6n4cp2yiaZ17iHkXR3MiXRl/xhpPVAPVTHhGz2i6FMvIwHjS2qZ8iOjhUd0inK8PcWm/Da3qOjUDSQmqwTrml+Islf01AfDkNBVKqJ0J5weto2KH1bjEjJvxvCYyvhmVZxs/Sw/QYVqpl/KVHmGk2rwss/ODAmvC+XUFp43/z1jtGFViggApVSQ5GlZp0D6+CiWKqWjBfBV+3QvzimlYsMvajvsa1IyP5dk0+lVmGCKifk0/E7ue7hOJ1v1EEkF6EsjhPA2DSSVYI1hiwnIGXTQ8CBkQcfEUXPcSmM+vcN178T8zS8TACtj4FXUPqdRh24o+6l8rNJ6vzED8F6BuCmMBCLac7mBP4/7GBrP8gvYHZ6A==
+x-ms-exchange-transport-forked: True
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+X-OriginatorOrg: wdc.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-AuthSource: MWHPR0401MB3595.namprd04.prod.outlook.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 2866a7aa-a101-4453-cb46-08d854ac5dfc
+X-MS-Exchange-CrossTenant-originalarrivaltime: 09 Sep 2020 10:37:36.0521
+ (UTC)
+X-MS-Exchange-CrossTenant-fromentityheader: Hosted
+X-MS-Exchange-CrossTenant-id: b61c8803-16f3-4c35-9b17-6f65f441df86
+X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
+X-MS-Exchange-CrossTenant-userprincipalname: aa1Hg0t+5TFF1FiMH7M9rCg0Udfl3luzIUfSofDfi7DKcJe+BNbGU0eZh0ebUNS3iibQ53y3sU38UPkU42q6pmRw9795nGd84KPqE7/9Qdw=
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: CO2PR04MB2343
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Btrfs doesn't support subpage blocksize io as such pg_offset is always
-zero. Remove this argument to cleanup the parameter list.
-
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
- fs/btrfs/ctree.h             |  3 +--
- fs/btrfs/disk-io.c           |  3 +--
- fs/btrfs/disk-io.h           |  3 +--
- fs/btrfs/extent_io.c         |  8 ++++---
- fs/btrfs/extent_io.h         |  4 ++--
- fs/btrfs/file.c              | 12 +++++------
- fs/btrfs/inode.c             | 28 +++++++++++-------------
- fs/btrfs/ioctl.c             |  2 +-
- fs/btrfs/tests/inode-tests.c | 42 ++++++++++++++++++------------------
- 9 files changed, 50 insertions(+), 55 deletions(-)
-
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 98c5f6178efc..7c7afa823f71 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3000,8 +3000,7 @@ struct inode *btrfs_iget_path(struct super_block *s, u64 ino,
- 			      struct btrfs_root *root, struct btrfs_path *path);
- struct inode *btrfs_iget(struct super_block *s, u64 ino, struct btrfs_root *root);
- struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
--				    struct page *page, size_t pg_offset,
--				    u64 start, u64 end);
-+				    struct page *page, u64 start, u64 end);
- int btrfs_update_inode(struct btrfs_trans_handle *trans,
- 			      struct btrfs_root *root,
- 			      struct inode *inode);
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index d63498f3c75f..c6c9b6b13bf0 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -209,8 +209,7 @@ void btrfs_set_buffer_lockdep_class(u64 objectid, struct extent_buffer *eb,
-  * that covers the entire device
-  */
- struct extent_map *btree_get_extent(struct btrfs_inode *inode,
--				    struct page *page, size_t pg_offset,
--				    u64 start, u64 len)
-+				    struct page *page, u64 start, u64 len)
- {
- 	struct extent_map_tree *em_tree = &inode->extent_tree;
- 	struct extent_map *em;
-diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
-index 00dc39d47ed3..dbc8c353c86c 100644
---- a/fs/btrfs/disk-io.h
-+++ b/fs/btrfs/disk-io.h
-@@ -124,8 +124,7 @@ struct btrfs_root *btrfs_create_tree(struct btrfs_trans_handle *trans,
- int btree_lock_page_hook(struct page *page, void *data,
- 				void (*flush_fn)(void *));
- struct extent_map *btree_get_extent(struct btrfs_inode *inode,
--				    struct page *page, size_t pg_offset,
--				    u64 start, u64 len);
-+				    struct page *page, u64 start, u64 len);
- int btrfs_get_num_tolerated_disk_barrier_failures(u64 flags);
- int __init btrfs_end_io_wq_init(void);
- void __cold btrfs_end_io_wq_exit(void);
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index a1e070ec7ad8..ac92c0ab1402 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -3127,7 +3127,7 @@ __get_extent_map(struct inode *inode, struct page *page, size_t pg_offset,
- 		*em_cached = NULL;
- 	}
- 
--	em = get_extent(BTRFS_I(inode), page, pg_offset, start, len);
-+	em = get_extent(BTRFS_I(inode), page, start, len);
- 	if (em_cached && !IS_ERR_OR_NULL(em)) {
- 		BUG_ON(*em_cached);
- 		refcount_inc(&em->refs);
-@@ -3161,7 +3161,7 @@ static int __do_readpage(struct page *page,
- 	int ret = 0;
- 	int nr = 0;
- 	size_t pg_offset = 0;
--	size_t iosize;
-+	size_t iosize = 0;
- 	size_t disk_io_size;
- 	size_t blocksize = inode->i_sb->s_blocksize;
- 	unsigned long this_bio_flag = 0;
-@@ -3208,6 +3208,8 @@ static int __do_readpage(struct page *page,
- 					     cur + iosize - 1, &cached);
- 			break;
- 		}
-+		if (pg_offset != 0)
-+			trace_printk("PG offset: %lu iosize: %lu\n", pg_offset, iosize);
- 		em = __get_extent_map(inode, page, pg_offset, cur,
- 				      end - cur + 1, get_extent, em_cached);
- 		if (IS_ERR_OR_NULL(em)) {
-@@ -3540,7 +3542,7 @@ static noinline_for_stack int __extent_writepage_io(struct btrfs_inode *inode,
- 							     page_end, 1);
- 			break;
- 		}
--		em = btrfs_get_extent(inode, NULL, 0, cur, end - cur + 1);
-+		em = btrfs_get_extent(inode, NULL, cur, end - cur + 1);
- 		if (IS_ERR_OR_NULL(em)) {
- 			SetPageError(page);
- 			ret = PTR_ERR_OR_ZERO(em);
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 06611947a9f7..41621731a4fe 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -187,8 +187,8 @@ static inline int extent_compress_type(unsigned long bio_flags)
- struct extent_map_tree;
- 
- typedef struct extent_map *(get_extent_t)(struct btrfs_inode *inode,
--					  struct page *page, size_t pg_offset,
--					  u64 start, u64 len);
-+					  struct page *page, u64 start,
-+					  u64 len);
- 
- int try_release_extent_mapping(struct page *page, gfp_t mask);
- int try_release_extent_buffer(struct page *page);
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index af4eab9cbc51..0020c6780035 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -466,7 +466,7 @@ static int btrfs_find_new_delalloc_bytes(struct btrfs_inode *inode,
- 		u64 em_len;
- 		int ret = 0;
- 
--		em = btrfs_get_extent(inode, NULL, 0, search_start, search_len);
-+		em = btrfs_get_extent(inode, NULL, search_start, search_len);
- 		if (IS_ERR(em))
- 			return PTR_ERR(em);
- 
-@@ -2511,7 +2511,7 @@ static int find_first_non_hole(struct inode *inode, u64 *start, u64 *len)
- 	struct extent_map *em;
- 	int ret = 0;
- 
--	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0,
-+	em = btrfs_get_extent(BTRFS_I(inode), NULL,
- 			      round_down(*start, fs_info->sectorsize),
- 			      round_up(*len, fs_info->sectorsize));
- 	if (IS_ERR(em))
-@@ -3113,7 +3113,7 @@ static int btrfs_zero_range_check_range_boundary(struct btrfs_inode *inode,
- 	int ret;
- 
- 	offset = round_down(offset, sectorsize);
--	em = btrfs_get_extent(inode, NULL, 0, offset, sectorsize);
-+	em = btrfs_get_extent(inode, NULL, offset, sectorsize);
- 	if (IS_ERR(em))
- 		return PTR_ERR(em);
- 
-@@ -3146,7 +3146,7 @@ static int btrfs_zero_range(struct inode *inode,
- 
- 	inode_dio_wait(inode);
- 
--	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, alloc_start,
-+	em = btrfs_get_extent(BTRFS_I(inode), NULL, alloc_start,
- 			      alloc_end - alloc_start);
- 	if (IS_ERR(em)) {
- 		ret = PTR_ERR(em);
-@@ -3190,7 +3190,7 @@ static int btrfs_zero_range(struct inode *inode,
- 
- 	if (BTRFS_BYTES_TO_BLKS(fs_info, offset) ==
- 	    BTRFS_BYTES_TO_BLKS(fs_info, offset + len - 1)) {
--		em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, alloc_start,
-+		em = btrfs_get_extent(BTRFS_I(inode), NULL, alloc_start,
- 				      sectorsize);
- 		if (IS_ERR(em)) {
- 			ret = PTR_ERR(em);
-@@ -3430,7 +3430,7 @@ static long btrfs_fallocate(struct file *file, int mode,
- 	/* First, check if we exceed the qgroup limit */
- 	INIT_LIST_HEAD(&reserve_list);
- 	while (cur_offset < alloc_end) {
--		em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, cur_offset,
-+		em = btrfs_get_extent(BTRFS_I(inode), NULL, cur_offset,
- 				      alloc_end - cur_offset);
- 		if (IS_ERR(em)) {
- 			ret = PTR_ERR(em);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index cce6f8789a4e..a7b62b93246b 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4722,7 +4722,7 @@ int btrfs_cont_expand(struct inode *inode, loff_t oldsize, loff_t size)
- 					   block_end - 1, &cached_state);
- 	cur_offset = hole_start;
- 	while (1) {
--		em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, cur_offset,
-+		em = btrfs_get_extent(BTRFS_I(inode), NULL, cur_offset,
- 				      block_end - cur_offset);
- 		if (IS_ERR(em)) {
- 			err = PTR_ERR(em);
-@@ -6530,8 +6530,7 @@ static noinline int uncompress_inline(struct btrfs_path *path,
-  * Return: ERR_PTR on error, non-NULL extent_map on success.
-  */
- struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
--				    struct page *page, size_t pg_offset,
--				    u64 start, u64 len)
-+				    struct page *page, u64 start, u64 len)
- {
- 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
- 	int ret = 0;
-@@ -6678,9 +6677,8 @@ struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
- 			goto out;
- 
- 		size = btrfs_file_extent_ram_bytes(leaf, item);
--		extent_offset = page_offset(page) + pg_offset - extent_start;
--		copy_size = min_t(u64, PAGE_SIZE - pg_offset,
--				  size - extent_offset);
-+		extent_offset = page_offset(page) - extent_start;
-+		copy_size = min_t(u64, PAGE_SIZE, size - extent_offset);
- 		em->start = extent_start + extent_offset;
- 		em->len = ALIGN(copy_size, fs_info->sectorsize);
- 		em->orig_block_len = em->len;
-@@ -6691,18 +6689,16 @@ struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
- 		if (!PageUptodate(page)) {
- 			if (btrfs_file_extent_compression(leaf, item) !=
- 			    BTRFS_COMPRESS_NONE) {
--				ret = uncompress_inline(path, page, pg_offset,
-+				ret = uncompress_inline(path, page, 0,
- 							extent_offset, item);
- 				if (ret)
- 					goto out;
- 			} else {
- 				map = kmap(page);
--				read_extent_buffer(leaf, map + pg_offset, ptr,
--						   copy_size);
--				if (pg_offset + copy_size < PAGE_SIZE) {
--					memset(map + pg_offset + copy_size, 0,
--					       PAGE_SIZE - pg_offset -
--					       copy_size);
-+				read_extent_buffer(leaf, map, ptr, copy_size);
-+				if (copy_size < PAGE_SIZE) {
-+					memset(map + copy_size, 0,
-+					       PAGE_SIZE - copy_size);
- 				}
- 				kunmap(page);
- 			}
-@@ -6754,7 +6750,7 @@ struct extent_map *btrfs_get_extent_fiemap(struct btrfs_inode *inode,
- 	u64 delalloc_end;
- 	int err = 0;
- 
--	em = btrfs_get_extent(inode, NULL, 0, start, len);
-+	em = btrfs_get_extent(inode, NULL, start, len);
- 	if (IS_ERR(em))
- 		return em;
- 	/*
-@@ -7397,7 +7393,7 @@ static int btrfs_dio_iomap_begin(struct inode *inode, loff_t start,
- 		goto err;
- 	}
- 
--	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, start, len);
-+	em = btrfs_get_extent(BTRFS_I(inode), NULL, start, len);
- 	if (IS_ERR(em)) {
- 		ret = PTR_ERR(em);
- 		goto unlock_err;
-@@ -10044,7 +10040,7 @@ static int btrfs_swap_activate(struct swap_info_struct *sis, struct file *file,
- 		struct btrfs_block_group *bg;
- 		u64 len = isize - start;
- 
--		em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, start, len);
-+		em = btrfs_get_extent(BTRFS_I(inode), NULL, start, len);
- 		if (IS_ERR(em)) {
- 			ret = PTR_ERR(em);
- 			goto out;
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index b31949df7bfc..31ebbe918156 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1162,7 +1162,7 @@ static struct extent_map *defrag_lookup_extent(struct inode *inode, u64 start)
- 
- 		/* get the big lock and read metadata off disk */
- 		lock_extent_bits(io_tree, start, end, &cached);
--		em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, start, len);
-+		em = btrfs_get_extent(BTRFS_I(inode), NULL, start, len);
- 		unlock_extent_cached(io_tree, start, end, &cached);
- 
- 		if (IS_ERR(em))
-diff --git a/fs/btrfs/tests/inode-tests.c b/fs/btrfs/tests/inode-tests.c
-index 894a63a92236..6bcb392e7367 100644
---- a/fs/btrfs/tests/inode-tests.c
-+++ b/fs/btrfs/tests/inode-tests.c
-@@ -263,7 +263,7 @@ static noinline int test_btrfs_get_extent(u32 sectorsize, u32 nodesize)
- 
- 	/* First with no extents */
- 	BTRFS_I(inode)->root = root;
--	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, 0, sectorsize);
-+	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, sectorsize);
- 	if (IS_ERR(em)) {
- 		em = NULL;
- 		test_err("got an error when we shouldn't have");
-@@ -283,7 +283,7 @@ static noinline int test_btrfs_get_extent(u32 sectorsize, u32 nodesize)
- 	 */
- 	setup_file_extents(root, sectorsize);
- 
--	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, 0, (u64)-1);
-+	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, (u64)-1);
- 	if (IS_ERR(em)) {
- 		test_err("got an error when we shouldn't have");
- 		goto out;
-@@ -305,7 +305,7 @@ static noinline int test_btrfs_get_extent(u32 sectorsize, u32 nodesize)
- 	offset = em->start + em->len;
- 	free_extent_map(em);
- 
--	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, offset, sectorsize);
-+	em = btrfs_get_extent(BTRFS_I(inode), NULL, offset, sectorsize);
- 	if (IS_ERR(em)) {
- 		test_err("got an error when we shouldn't have");
- 		goto out;
-@@ -333,7 +333,7 @@ static noinline int test_btrfs_get_extent(u32 sectorsize, u32 nodesize)
- 	offset = em->start + em->len;
- 	free_extent_map(em);
- 
--	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, offset, sectorsize);
-+	em = btrfs_get_extent(BTRFS_I(inode), NULL, offset, sectorsize);
- 	if (IS_ERR(em)) {
- 		test_err("got an error when we shouldn't have");
- 		goto out;
-@@ -356,7 +356,7 @@ static noinline int test_btrfs_get_extent(u32 sectorsize, u32 nodesize)
- 	free_extent_map(em);
- 
- 	/* Regular extent */
--	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, offset, sectorsize);
-+	em = btrfs_get_extent(BTRFS_I(inode), NULL, offset, sectorsize);
- 	if (IS_ERR(em)) {
- 		test_err("got an error when we shouldn't have");
- 		goto out;
-@@ -384,7 +384,7 @@ static noinline int test_btrfs_get_extent(u32 sectorsize, u32 nodesize)
- 	free_extent_map(em);
- 
- 	/* The next 3 are split extents */
--	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, offset, sectorsize);
-+	em = btrfs_get_extent(BTRFS_I(inode), NULL, offset, sectorsize);
- 	if (IS_ERR(em)) {
- 		test_err("got an error when we shouldn't have");
- 		goto out;
-@@ -413,7 +413,7 @@ static noinline int test_btrfs_get_extent(u32 sectorsize, u32 nodesize)
- 	offset = em->start + em->len;
- 	free_extent_map(em);
- 
--	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, offset, sectorsize);
-+	em = btrfs_get_extent(BTRFS_I(inode), NULL, offset, sectorsize);
- 	if (IS_ERR(em)) {
- 		test_err("got an error when we shouldn't have");
- 		goto out;
-@@ -435,7 +435,7 @@ static noinline int test_btrfs_get_extent(u32 sectorsize, u32 nodesize)
- 	offset = em->start + em->len;
- 	free_extent_map(em);
- 
--	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, offset, sectorsize);
-+	em = btrfs_get_extent(BTRFS_I(inode), NULL, offset, sectorsize);
- 	if (IS_ERR(em)) {
- 		test_err("got an error when we shouldn't have");
- 		goto out;
-@@ -469,7 +469,7 @@ static noinline int test_btrfs_get_extent(u32 sectorsize, u32 nodesize)
- 	free_extent_map(em);
- 
- 	/* Prealloc extent */
--	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, offset, sectorsize);
-+	em = btrfs_get_extent(BTRFS_I(inode), NULL, offset, sectorsize);
- 	if (IS_ERR(em)) {
- 		test_err("got an error when we shouldn't have");
- 		goto out;
-@@ -498,7 +498,7 @@ static noinline int test_btrfs_get_extent(u32 sectorsize, u32 nodesize)
- 	free_extent_map(em);
- 
- 	/* The next 3 are a half written prealloc extent */
--	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, offset, sectorsize);
-+	em = btrfs_get_extent(BTRFS_I(inode), NULL, offset, sectorsize);
- 	if (IS_ERR(em)) {
- 		test_err("got an error when we shouldn't have");
- 		goto out;
-@@ -528,7 +528,7 @@ static noinline int test_btrfs_get_extent(u32 sectorsize, u32 nodesize)
- 	offset = em->start + em->len;
- 	free_extent_map(em);
- 
--	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, offset, sectorsize);
-+	em = btrfs_get_extent(BTRFS_I(inode), NULL, offset, sectorsize);
- 	if (IS_ERR(em)) {
- 		test_err("got an error when we shouldn't have");
- 		goto out;
-@@ -561,7 +561,7 @@ static noinline int test_btrfs_get_extent(u32 sectorsize, u32 nodesize)
- 	offset = em->start + em->len;
- 	free_extent_map(em);
- 
--	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, offset, sectorsize);
-+	em = btrfs_get_extent(BTRFS_I(inode), NULL, offset, sectorsize);
- 	if (IS_ERR(em)) {
- 		test_err("got an error when we shouldn't have");
- 		goto out;
-@@ -596,7 +596,7 @@ static noinline int test_btrfs_get_extent(u32 sectorsize, u32 nodesize)
- 	free_extent_map(em);
- 
- 	/* Now for the compressed extent */
--	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, offset, sectorsize);
-+	em = btrfs_get_extent(BTRFS_I(inode), NULL, offset, sectorsize);
- 	if (IS_ERR(em)) {
- 		test_err("got an error when we shouldn't have");
- 		goto out;
-@@ -630,7 +630,7 @@ static noinline int test_btrfs_get_extent(u32 sectorsize, u32 nodesize)
- 	free_extent_map(em);
- 
- 	/* Split compressed extent */
--	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, offset, sectorsize);
-+	em = btrfs_get_extent(BTRFS_I(inode), NULL, offset, sectorsize);
- 	if (IS_ERR(em)) {
- 		test_err("got an error when we shouldn't have");
- 		goto out;
-@@ -665,7 +665,7 @@ static noinline int test_btrfs_get_extent(u32 sectorsize, u32 nodesize)
- 	offset = em->start + em->len;
- 	free_extent_map(em);
- 
--	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, offset, sectorsize);
-+	em = btrfs_get_extent(BTRFS_I(inode), NULL, offset, sectorsize);
- 	if (IS_ERR(em)) {
- 		test_err("got an error when we shouldn't have");
- 		goto out;
-@@ -692,7 +692,7 @@ static noinline int test_btrfs_get_extent(u32 sectorsize, u32 nodesize)
- 	offset = em->start + em->len;
- 	free_extent_map(em);
- 
--	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, offset, sectorsize);
-+	em = btrfs_get_extent(BTRFS_I(inode), NULL, offset, sectorsize);
- 	if (IS_ERR(em)) {
- 		test_err("got an error when we shouldn't have");
- 		goto out;
-@@ -727,7 +727,7 @@ static noinline int test_btrfs_get_extent(u32 sectorsize, u32 nodesize)
- 	free_extent_map(em);
- 
- 	/* A hole between regular extents but no hole extent */
--	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, offset + 6, sectorsize);
-+	em = btrfs_get_extent(BTRFS_I(inode), NULL, offset + 6, sectorsize);
- 	if (IS_ERR(em)) {
- 		test_err("got an error when we shouldn't have");
- 		goto out;
-@@ -754,7 +754,7 @@ static noinline int test_btrfs_get_extent(u32 sectorsize, u32 nodesize)
- 	offset = em->start + em->len;
- 	free_extent_map(em);
- 
--	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, offset, SZ_4M);
-+	em = btrfs_get_extent(BTRFS_I(inode), NULL, offset, SZ_4M);
- 	if (IS_ERR(em)) {
- 		test_err("got an error when we shouldn't have");
- 		goto out;
-@@ -787,7 +787,7 @@ static noinline int test_btrfs_get_extent(u32 sectorsize, u32 nodesize)
- 	offset = em->start + em->len;
- 	free_extent_map(em);
- 
--	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, offset, sectorsize);
-+	em = btrfs_get_extent(BTRFS_I(inode), NULL, offset, sectorsize);
- 	if (IS_ERR(em)) {
- 		test_err("got an error when we shouldn't have");
- 		goto out;
-@@ -871,7 +871,7 @@ static int test_hole_first(u32 sectorsize, u32 nodesize)
- 	insert_inode_item_key(root);
- 	insert_extent(root, sectorsize, sectorsize, sectorsize, 0, sectorsize,
- 		      sectorsize, BTRFS_FILE_EXTENT_REG, 0, 1);
--	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, 0, 2 * sectorsize);
-+	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, 2 * sectorsize);
- 	if (IS_ERR(em)) {
- 		test_err("got an error when we shouldn't have");
- 		goto out;
-@@ -893,7 +893,7 @@ static int test_hole_first(u32 sectorsize, u32 nodesize)
- 	}
- 	free_extent_map(em);
- 
--	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, sectorsize, 2 * sectorsize);
-+	em = btrfs_get_extent(BTRFS_I(inode), NULL, sectorsize, 2 * sectorsize);
- 	if (IS_ERR(em)) {
- 		test_err("got an error when we shouldn't have");
- 		goto out;
--- 
-2.17.1
-
+On 09/09/2020 11:49, Nikolay Borisov wrote:=0A=
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>=0A=
+> ---=0A=
+>  fs/btrfs/disk-io.c | 6 ------=0A=
+>  1 file changed, 6 deletions(-)=0A=
+> =0A=
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c=0A=
+> index 7147237d9bf0..d63498f3c75f 100644=0A=
+> --- a/fs/btrfs/disk-io.c=0A=
+> +++ b/fs/btrfs/disk-io.c=0A=
+> @@ -949,11 +949,6 @@ static int btree_writepages(struct address_space *ma=
+pping,=0A=
+>  	return btree_write_cache_pages(mapping, wbc);=0A=
+>  }=0A=
+>  =0A=
+> -static int btree_readpage(struct file *file, struct page *page)=0A=
+> -{=0A=
+> -	return extent_read_full_page(page, btree_get_extent, 0);=0A=
+> -}=0A=
+> -=0A=
+>  static int btree_releasepage(struct page *page, gfp_t gfp_flags)=0A=
+>  {=0A=
+>  	if (PageWriteback(page) || PageDirty(page))=0A=
+> @@ -993,7 +988,6 @@ static int btree_set_page_dirty(struct page *page)=0A=
+>  }=0A=
+>  =0A=
+>  static const struct address_space_operations btree_aops =3D {=0A=
+> -	.readpage	=3D btree_readpage,=0A=
+>  	.writepages	=3D btree_writepages,=0A=
+>  	.releasepage	=3D btree_releasepage,=0A=
+>  	.invalidatepage =3D btree_invalidatepage,=0A=
+> =0A=
+=0A=
+Maybe you could add a little explanation why we can remove btree_readpage.=
+=0A=

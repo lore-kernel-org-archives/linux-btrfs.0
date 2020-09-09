@@ -2,169 +2,149 @@ Return-Path: <SRS0=xOGy=CS=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.6 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-14.6 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,NICE_REPLY_A,
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 38564C43461
-	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Sep 2020 14:59:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B4059C43461
+	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Sep 2020 15:16:43 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id ECB3021556
-	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Sep 2020 14:59:48 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5BA1D22269
+	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Sep 2020 15:16:43 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="GdPjTXlI"
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="CyDZuZf9"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729521AbgIIO7m (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 9 Sep 2020 10:59:42 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46450 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1730104AbgIIMWW (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Sep 2020 08:22:22 -0400
-Received: from mail-wr1-x431.google.com (mail-wr1-x431.google.com [IPv6:2a00:1450:4864:20::431])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4BDC4C061786
-        for <linux-btrfs@vger.kernel.org>; Wed,  9 Sep 2020 05:13:11 -0700 (PDT)
-Received: by mail-wr1-x431.google.com with SMTP id z1so2702914wrt.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 09 Sep 2020 05:13:11 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=from:to:subject:date:message-id:mime-version;
-        bh=FO2lrJmDW9bDUybmOp1mojDNpZUx5e9VpkJCJ/bQkMA=;
-        b=GdPjTXlIiW6Y/CmvMb9WQ3Qh4JeAUVnd2l83tzDO1LZiQgMPB+v08x/KVv37yu2Gkc
-         HHWQP0v7v8DM3K/d/B3UAGwBLW60e//UQ/RxDgOOg0sEYJoRXZE06U9iz+dWy4dZKa1z
-         9d/HNRnggm8sCy216AyS9yKLfMrC1Y3ev603GWqni3gECmeRAkAEzzZ7rrwq/YrnEwBG
-         wiBepF8n4cqCmocYtx5rDCpK9Eu16nSyRpkseoaYDg5vDMKOg77AB7U3xDdOiItjouHI
-         TeGPrEMpWvQND7M9cg74qg8PFpQdG/3kfrkaS7JXm7XTCdPL8DMTaPoDCEMp85fjH86t
-         Nyxw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id:mime-version;
-        bh=FO2lrJmDW9bDUybmOp1mojDNpZUx5e9VpkJCJ/bQkMA=;
-        b=rbVmWFUTj6iDnP80x/h0Fvz1GYCqzySelB/8I8THQcrovphCWeyMzt93VKasAKDnAJ
-         4AQYXHIrBjnFiDJuemPE0XUV6s2Z5IgMzlMxqncMmKqlPTAVBKJZRaFpuLYKFjkWvfAO
-         mpKQwn5ARa3GzMYznVu0MjfUrm1gKwIlQvw/4fwn/mp+cvchw6Od/yGTjQumQxCN83ZY
-         V6yfL1dRJl5HZLxdHiEVcV/nwjCU708SenW1NpYi9xgAqtF4iwrQ+UiboetlVtQXRKl9
-         FEE8Wzge5MntbuqfXex6EtgDFP5n3mFNpjCOYJRvxndXE94EZI5HXKmf4I1ntcSSOkkM
-         nBTg==
-X-Gm-Message-State: AOAM531G+w0rGYEZ9ABRlfyOjEKJeq1Ucl5UqnnHg53JltF9nJuShkoQ
-        T4TI7KIimiVBZtxW2dkr9gy2gJ8Hm5k=
-X-Google-Smtp-Source: ABdhPJztjE2L4HcUCgduZKM0Zvu2NZi6IPzuz3j0gwX+Ij1FZuMeSOzMGAzp19HuwFogz6MsvdJtQw==
-X-Received: by 2002:a5d:4811:: with SMTP id l17mr3863948wrq.252.1599653589576;
-        Wed, 09 Sep 2020 05:13:09 -0700 (PDT)
-Received: from orion.localnet (wl-pool2-ont-014.uni-muenster.de. [128.176.164.13])
-        by smtp.gmail.com with ESMTPSA id y1sm4076681wru.87.2020.09.09.05.13.08
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 09 Sep 2020 05:13:08 -0700 (PDT)
-From:   Benedikt Rips <benedikt.rips@gmail.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: Corrupted filesystem after power loss
-Date:   Wed, 09 Sep 2020 14:13:04 +0200
-Message-ID: <2080952.sO1OYyYaP7@orion>
+        id S1729691AbgIIPQb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 9 Sep 2020 11:16:31 -0400
+Received: from mout.gmx.net ([212.227.17.20]:59863 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1728463AbgIIL3v (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 9 Sep 2020 07:29:51 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1599650990;
+        bh=B7AGbDVXDhpkirq3jER6IzeBNdkXvtASnvepYaqBAlk=;
+        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
+        b=CyDZuZf9wKUAFeUlYOWJc3MqD83SLGP0qaQqm2rwR2dzokHMIj5XjjlStdI3GRihv
+         q1EcOaLRmALkSAdDk+m96SotJScWy5F62X89deUQmmPsy7Wp/Z//nn+1ddDCKgQ3cp
+         psSI29HUcfYUbVz42V4l5i7yiu0zYGtytxjqSuA0=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx105
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1N9Mtg-1kcwug0xKm-015Kdo; Wed, 09
+ Sep 2020 13:13:10 +0200
+Subject: Re: [PATCH 01/10] btrfs: Remove btree_readpage
+To:     Johannes Thumshirn <Johannes.Thumshirn@wdc.com>,
+        Nikolay Borisov <nborisov@suse.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <20200909094914.29721-1-nborisov@suse.com>
+ <20200909094914.29721-2-nborisov@suse.com>
+ <MWHPR0401MB3595EF09FB771F648F534FD09B260@MWHPR0401MB3595.namprd04.prod.outlook.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAU4EEwEIADgCGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1oQAKCRDC
+ PZHzoSX+qCY6CACd+mWu3okGwRKXju6bou+7VkqCaHTdyXwWFTsr+/0ly5nUdDtT3yEVggPJ
+ 3VP70wjlrxUjNjFb6iIvGYxiPOrop1NGwGYvQktgRhaIhALG6rPoSSAhGNjwGVRw0km0PlIN
+ D29BTj/lYEk+jVM1YL0QLgAE1AI3krihg/lp/fQT53wLhR8YZIF8ETXbClQG1vJ0cllPuEEv
+ efKxRyiTSjB+PsozSvYWhXsPeJ+KKjFen7ebE5reQTPFzSHctCdPnoR/4jSPlnTlnEvLeqcD
+ ZTuKfQe1gWrPeevQzgCtgBF/WjIOeJs41klnYzC3DymuQlmFubss0jShLOW8eSOOWhLRuQEN
+ BFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcgaCbPEwhLj
+ 1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj/IrRUUka
+ 68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fNGSsRb+pK
+ EKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0q1eW4Jrv
+ 0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEvABEBAAGJ
+ ATwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1rgUJCWpOfwAKCRDCPZHz
+ oSX+qFcEB/95cs8cM1OQdE/GgOfCGxwgckMeWyzOR7bkAWW0lDVp2hpgJuxBW/gyfmtBnUai
+ fnggx3EE3ev8HTysZU9q0h+TJwwJKGv6sUc8qcTGFDtavnnl+r6xDUY7A6GvXEsSoCEEynby
+ 72byGeSovfq/4AWGNPBG1L61Exl+gbqfvbECP3ziXnob009+z9I4qXodHSYINfAkZkA523JG
+ ap12LndJeLk3gfWNZfXEWyGnuciRGbqESkhIRav8ootsCIops/SqXm0/k+Kcl4gGUO/iD/T5
+ oagaDh0QtOd8RWSMwLxwn8uIhpH84Q4X1LadJ5NCgGa6xPP5qqRuiC+9gZqbq4Nj
+Message-ID: <11e52423-f84f-6ce3-6707-fbabe6d823dc@gmx.com>
+Date:   Wed, 9 Sep 2020 19:13:06 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.12.0
 MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="nextPart3915394.vKPj23oxN1"; micalg="pgp-sha256"; protocol="application/pgp-signature"
+In-Reply-To: <MWHPR0401MB3595EF09FB771F648F534FD09B260@MWHPR0401MB3595.namprd04.prod.outlook.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:fGxwD78pauUVnGs5YDeEVHlpkpGYfu9TwsiD01WpmIkhsF5l/fd
+ yKWSq4Zs+D3YaYmraWNcqyxCCdSFlphoVjQNaDjuavx1zz4oU4lR766jeLQ6n7OcTzLTJ2q
+ fnswqOHMcraa5hgf1lkq+ahIsGAXismQ2I2PCS56W7Fs/IJrF3bgSIqltgsxXq2Ag2Mgx65
+ NBTM6eGj7nVaOHBRZk9pA==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:x7xyLjhXtvo=:VzL24czfqfhJM7Td4aCgy/
+ Mc5DyUUDLetallSukOWBXJwEk7xYnUcmDfIgWP3iouRXRP3vCLqXoYV/eWmxACd9PnRg4ygN2
+ xBe4D9p3hXhpPKC6yACC4eVrA/HVb35bYmP257Pa1M2twZwiowUQaupMYUiD9+mjCpuwG+9xb
+ DYCfQ2vrnXXwYFAn8h/Qvml6VjKGBvtmmdYr58zViqJ1grEGEihAPrO7nq3xb+A1a9zyXvzRw
+ hiBCowApwXSGGBrB+jL1ImXpDvdUmTsiy6uX5/QTdZZy+DqmSOvzc92iAilkmThgnU0AipOqW
+ 0ATFQL/nxJXlfkR5mOYFL2g/0p5Yr0Nnf4Ie8i2gvu1j8WD/6UJKPuFPJozMVrMVuV3E1t7AY
+ hrCoIGIfhUhT1o4FXE9MrqLtGTLSt8PabtYJtxDMIzfitm4kAHSvwqV2TRmdXiua7rlx0sjio
+ oXkDO6d2WLABgOHuRzwtm4A8/WpxVdiSk4auiTsfQy9t6bd7fPQHTowHzZwuZZpGkwsoqfAzz
+ irGvI4s2kI2Ih5Om2hKI9XnIvertvFu3m8+gipPLd3X+++yW4pGp3idX9+oquEUj/DWr60LH4
+ moqjwEwBnYg6m9zx7zgc6svSCUp/GtrY0Qg5e2EaDJIWqQGJZio86Nj2iOcHy1tJiU4nuMAM/
+ rRXzhXm+eik94piUxBdWQ63kB8LGtx5QC13KdUdVdFvtjDvIjPX5vOvKEpKCTVXSiXky5Enbq
+ OPAlu/kc6wXgn7mHtpWox6vCF5bE62OxZIuL6L7HOPzP6dXTRQmb0b7uzOrMqgtBWn3K4PD8M
+ 7POPuD69yxut23NK5N6Ur2g9xpVsnBS1Kz92Q/dbgWKnQxbhsTwbJYhZwmWFKtEbQ2pEBhAEi
+ LxRqCY40MAVUvI4YUnimuRSAEvIMgT7C4ub4psDu3wnKFMIuBX89Iaf9mbc1EmvihhhUCFHsV
+ 64rPARmpz+IJUtYEz3XWiBno7L65Jx/kvOugyYVWeoShu49aAG2InPW5IjwpR7h3VNJL+dxT1
+ k7RoLW5EzvnNm++mlaO6AqxviP/d+gzC0+UG9nicTaes9yhvcg8coi8jOtnVbW7iGoav58GBa
+ 9EyCEW9F7NWQ52aPcmIyLjHJEch5cYcTfwL7eKueKn5+k8SOXVUVLyxkaYUzrHueIYUakhpYp
+ /LZ62PI2DjBxwzAsiE6UnhsOYXUUEaBC3ORy65rdJD3CWxPXR3ZaYvIvMjcUKE2S1vffl+qr7
+ kO6uviBTvZNagEK1+Z3w5HNneaA9I3/gU5RztWA==
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
---nextPart3915394.vKPj23oxN1
-Content-Transfer-Encoding: 7Bit
-Content-Type: text/plain; charset="utf-8"; protected-headers="v1"
-From: Benedikt Rips <benedikt.rips@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Subject: Corrupted filesystem after power loss
-Date: Wed, 09 Sep 2020 14:13:04 +0200
-Message-ID: <2080952.sO1OYyYaP7@orion>
-
-Hi there,
-
-two weeks ago, I forcibly shut down my system when it was frozen, by pressing
-the power button for several seconds. At the next boot, I was not able to 
-mount
-the filesystem. I booted from a usb stick and at mounting my root filesystem
-(which is btrfs), I got the following error messages:
 
 
-# journalctl -qxeb | tail ... | head ...
-Aug 28 16:43:21 archiso kernel: BTRFS info (device dm-2): trying to use backup 
-root at mount time
-Aug 28 16:43:21 archiso kernel: BTRFS info (device dm-2): use zstd 
-compression, level 3
-Aug 28 16:43:21 archiso kernel: BTRFS info (device dm-2): disk space caching 
-is enabled
-Aug 28 16:43:21 archiso kernel: BTRFS info (device dm-2): has skinny extents
-Aug 28 16:43:21 archiso kernel: BTRFS warning (device dm-2): dm-2 checksum 
-verify failed on 95634915328 wanted 59c7037e found 97021a59 level 0
-Aug 28 16:43:21 archiso kernel: BTRFS warning (device dm-2): failed to read 
-root (objectid=2): -5
-Aug 28 16:43:21 archiso kernel: BTRFS critical (device dm-2): corrupt leaf: 
-root=18446744073709551610 block=95602491392 slot=0 ino=10363009, invalid inode 
-generation: has 1518459 expect [0, 1518458]
-Aug 28 16:43:21 archiso kernel: BTRFS error (device dm-2): block=95602491392 
-read time tree block corruption detected
-Aug 28 16:43:21 archiso kernel: BTRFS warning (device dm-2): failed to read 
-tree root
-Aug 28 16:43:21 archiso kernel: BTRFS error (device dm-2): parent transid 
-verify failed on 95599607808 wanted 1518455 found 1518457
-Aug 28 16:43:21 archiso kernel: BTRFS info (device dm-2): bdev /dev/mapper/
-lvm-linux errs: wr 0, rd 2, flush 0, corrupt 0, gen 0
-Aug 28 16:43:21 archiso kernel: BTRFS critical (device dm-2): corrupt leaf: 
-root=261 block=95596232704 slot=112 ino=11473161, invalid inode generation: 
-has 1518457 expect (0, 1518456]
-Aug 28 16:43:21 archiso kernel: BTRFS error (device dm-2): block=95596232704 
-read time tree block corruption detected
-Aug 28 16:43:21 archiso kernel: BTRFS error (device dm-2): failed to read 
-block groups: -5
-Aug 28 16:43:21 archiso kernel: BTRFS error (device dm-2): open_ctree failed
+On 2020/9/9 =E4=B8=8B=E5=8D=886:37, Johannes Thumshirn wrote:
+> On 09/09/2020 11:49, Nikolay Borisov wrote:
+>> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+>> ---
+>>  fs/btrfs/disk-io.c | 6 ------
+>>  1 file changed, 6 deletions(-)
+>>
+>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+>> index 7147237d9bf0..d63498f3c75f 100644
+>> --- a/fs/btrfs/disk-io.c
+>> +++ b/fs/btrfs/disk-io.c
+>> @@ -949,11 +949,6 @@ static int btree_writepages(struct address_space *=
+mapping,
+>>  	return btree_write_cache_pages(mapping, wbc);
+>>  }
+>>
+>> -static int btree_readpage(struct file *file, struct page *page)
+>> -{
+>> -	return extent_read_full_page(page, btree_get_extent, 0);
+>> -}
+>> -
+>>  static int btree_releasepage(struct page *page, gfp_t gfp_flags)
+>>  {
+>>  	if (PageWriteback(page) || PageDirty(page))
+>> @@ -993,7 +988,6 @@ static int btree_set_page_dirty(struct page *page)
+>>  }
+>>
+>>  static const struct address_space_operations btree_aops =3D {
+>> -	.readpage	=3D btree_readpage,
+>>  	.writepages	=3D btree_writepages,
+>>  	.releasepage	=3D btree_releasepage,
+>>  	.invalidatepage =3D btree_invalidatepage,
+>>
+>
+> Maybe you could add a little explanation why we can remove btree_readpag=
+e.
+>
+Same idea here.
 
+The main concern is, wouldn't the exposed readpage callback being used
+by some cache or whatever from the VFS layer?
 
-The filesystem is on an SSD, my kernel version at the time of the failure was
-v5.8.5 and my btrfs-progs version is v5.7.  The information regarding the SSD
-are:
-
-
-# smartctl --info /dev/nvme0
-smartctl 7.1 2019-12-30 r5022 [x86_64-linux-5.8.7-arch1-1] (local build)
-Copyright (C) 2002-19, Bruce Allen, Christian Franke, www.smartmontools.org
-
-=== START OF INFORMATION SECTION ===
-Model Number:                       THNSN5256GPUK NVMe TOSHIBA 256GB
-Serial Number:                      Y6EB70N0KMBU
-Firmware Version:                   5KDA4103
-PCI Vendor/Subsystem ID:            0x1179
-IEEE OUI Identifier:                0x00080d
-Controller ID:                      0
-Number of Namespaces:               1
-Namespace 1 Size/Capacity:          256.060.514.304 [256 GB]
-Namespace 1 Formatted LBA Size:     512
-Namespace 1 IEEE EUI-64:            00080d 0300085baf
-Local Time is:                      Wed Sep  9 00:18:09 2020 CEST
-
-
-After reading through the btrfs wiki (btrfs-restore, btrfs-rescue, btrfs-
-check),
-I asked on the IRC channel for help.  With the advice of cmurf and darkling I
-ran the following commands, trying to find the cause of this error and a
-suitable backup root to restore data from: http://cwillu.com:
-8080/37.201.170.65/1
-
-Kind regards,
-Benedikt
---nextPart3915394.vKPj23oxN1
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
-
------BEGIN PGP SIGNATURE-----
-
-iHUEABYIAB0WIQRNa2IWj2/+M7hCC8vtf8uBTLbBVwUCX1jG0AAKCRDtf8uBTLbB
-V54pAP9i3gbP+F/z4uGgpoiFKtqKTLDpgq4Ku13HQ3CAVkmUawD+No+Yffu/R0j6
-NX7XWa5ubSEJvZdQqLxh29jBx5dOLAc=
-=Dxnq
------END PGP SIGNATURE-----
-
---nextPart3915394.vKPj23oxN1--
-
-
-
+Thanks,
+Qu

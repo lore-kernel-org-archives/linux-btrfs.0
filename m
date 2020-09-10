@@ -2,77 +2,74 @@ Return-Path: <SRS0=1Lxm=CT=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-19.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+X-Spam-Status: No, score=-14.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,NICE_REPLY_A,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+	NICE_REPLY_A,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 623AEC433E2
-	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Sep 2020 14:30:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 247BDC433E2
+	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Sep 2020 14:57:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 11EAC20672
-	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Sep 2020 14:30:37 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D330A2075A
+	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Sep 2020 14:57:54 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="1WFf4oo1"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="YUjEq/SF"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730690AbgIJOaH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 10 Sep 2020 10:30:07 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55594 "EHLO
+        id S1730068AbgIJO5b (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 10 Sep 2020 10:57:31 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60188 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1731019AbgIJO2b (ORCPT
+        with ESMTP id S1728289AbgIJO4s (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 10 Sep 2020 10:28:31 -0400
-Received: from mail-qt1-x841.google.com (mail-qt1-x841.google.com [IPv6:2607:f8b0:4864:20::841])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 41F7BC0617A0
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Sep 2020 07:18:18 -0700 (PDT)
-Received: by mail-qt1-x841.google.com with SMTP id k25so4954897qtu.4
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Sep 2020 07:18:18 -0700 (PDT)
+        Thu, 10 Sep 2020 10:56:48 -0400
+Received: from mail-qk1-x742.google.com (mail-qk1-x742.google.com [IPv6:2607:f8b0:4864:20::742])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 45F31C061573
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Sep 2020 07:56:47 -0700 (PDT)
+Received: by mail-qk1-x742.google.com with SMTP id d20so6344536qka.5
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Sep 2020 07:56:46 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=subject:to:cc:references:from:message-id:date:user-agent
-         :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=S8qCGAUew6KDYaUUtYMU93ZyX8GMVrbuURtayarq2rY=;
-        b=1WFf4oo1UZYaIWaBnxRDPXeqogWxYMoTgaihiIqZqSuSaANVdaZSSicHkhYcilXr0q
-         yxfoL81vrt8LSJHagKag7u9Yfo3Zor9JqVVdA2kT1teiAcps5r7Ll+SwV47J9f4a7hvz
-         XWvVro103SfNHervqybHxvXiGZAxht1Bh3M6TUmoT9nknHC2iLDZelsNJiJ7TfeEIKzB
-         KF1fN6PreE3fkoz7QPhjV9arjpvto7QqAr3LYHHTi194NJYKGuZHF4MeGwJbzT5ecZtv
-         Sv2+KH7IFmmTA+P79O+ShPnpqd4T8OZdrT5jgSfsOvHTE4PuYw0c/3HdQSYIV4btxRrj
-         m4aw==
+        h=subject:to:references:from:message-id:date:user-agent:mime-version
+         :in-reply-to:content-language:content-transfer-encoding;
+        bh=dB7qrt80f9KC0Ac5GMXDKRV0rBQx1A6ayy12J3DhbaU=;
+        b=YUjEq/SF2OCDq54al2m9fb7kYE3hqa/Eo8gunLJ9bT8/Z4wlJ4b+XdmeZOOycAnTRs
+         MABCWbHSD+Q9miycpV53MW15eqX5vZcW7uAG7lnOKKORRY6/TggSuhgrO5GXfmjDmlTJ
+         48SNQKb4h81rBB803q2ESN9fEGmDFzEexRFaaeb7ySPK7QrwUDIWDiJJzeeQoiXcGSi0
+         N13XLIIHOoNp4/hXLiUKdSSNZ8HRaaIBBmc72YYzRPLUrK8yAuZnYw2LbqF6x1bj05q8
+         jE0ckrcTcOGS4W15RV2hq6KxlJDBOE7r4w1ggat3OXeEB/u6Q1s3el+SF/eheB4RGdz8
+         el5w==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
+        h=x-gm-message-state:subject:to:references:from:message-id:date
          :user-agent:mime-version:in-reply-to:content-language
          :content-transfer-encoding;
-        bh=S8qCGAUew6KDYaUUtYMU93ZyX8GMVrbuURtayarq2rY=;
-        b=sQ+VLTS7Qc/W+DEI+eeGGdmPO1rxQ3UBgY+9C9ODKAlsc82XesWv0qyQaaQaF2Ydl1
-         65bayn6ToHh8XIN/mR0wyoit9/tOmp5j3Eutae08YI7z/MpXYkTP5R9iDTs0gm9kosql
-         DUbP83xRaAI85caebFGKkVX4+HTUNdeUt6KcsvPSl8y+prhyV5VoekGE+t/hC6mdzODC
-         GIYf+JfYnevaHEPq7xRUE9uSg3mtInnP1SlLyIXBg/oOUhDKrnIQEMPclhxj85/s72yJ
-         LMhiCPDA7x+sVJJKzcxxmpfQA3ZSCgRy5YhWJ/KqTttU8rOyb2BkCm2vdjTmbotiTP6n
-         9pZQ==
-X-Gm-Message-State: AOAM5306zJzBr+XsFAMaFp4uy3Emz6N3o6VPCUBAzqQpSy0BwI34yibq
-        FE4/iWAyJcsuqnBTVNM2JOZafA==
-X-Google-Smtp-Source: ABdhPJyDxc9IX/lkDPv3AQfeXfOmX0gZe/H5bfimvbp6cAzegCn/olD7StsdtBJt2TTThLYv5RDKyQ==
-X-Received: by 2002:ac8:22da:: with SMTP id g26mr7898394qta.218.1599747497233;
-        Thu, 10 Sep 2020 07:18:17 -0700 (PDT)
+        bh=dB7qrt80f9KC0Ac5GMXDKRV0rBQx1A6ayy12J3DhbaU=;
+        b=AWpnZh7rZ6hIprwQwMdd2KvRuxIjBbJcsN6H28fvWaAraRMzr8TkcUX9Menyn8nkOH
+         QDdodvYMRs2IX6jIrbeFZhiD02K7rZEsyRLRrGtjFCaMa5Ijqq2+x+WBgtsJZX7Ff+VE
+         Npou+yYDHwHZMUCDFfz0p3rsgl/1K1t41N/duF2HpWdqd8bULpSho2bzYstFC2DkZ+tM
+         8TSR/OdPlBO2Ud/jH6x1XPlvoGzeBU2it61uaMSYHbZWipglvxJ2+xuyj0cDfD6I7eWu
+         PcpRlrk5ZLIFhuJELVGDcuaGYODvUJIGNAB3sIYTNMdqqh1yUwMPO22gSLWEL5CxVGlP
+         lTrg==
+X-Gm-Message-State: AOAM532IFKtFUXe9gF+12f274Eo2/k5M9q7andWPize7aSh9dPwzBQda
+        DqNy0HlZPfIRYvEiMZNehqTdP8dGmR8Rkff+
+X-Google-Smtp-Source: ABdhPJysO96CT1bmRX0RhoMULbWyM1Ye77kFIMNvfybwdNzKUENCgnK6u2YCLjknRQ/DOLfiABs04Q==
+X-Received: by 2002:a37:6301:: with SMTP id x1mr6822914qkb.323.1599749805868;
+        Thu, 10 Sep 2020 07:56:45 -0700 (PDT)
 Received: from [192.168.1.45] (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id z74sm6757015qkb.11.2020.09.10.07.18.16
+        by smtp.gmail.com with ESMTPSA id e188sm6506676qkd.55.2020.09.10.07.56.44
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 10 Sep 2020 07:18:16 -0700 (PDT)
-Subject: Re: [PATCH v2 2/3] btrfs: remove free space items when creating free
- space tree
-To:     Boris Burkov <boris@bur.io>, Dave Sterba <dsterba@suse.com>,
-        Chris Mason <clm@fb.com>
-Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-References: <cover.1599686801.git.boris@bur.io>
- <ca7009f0e52c804f85e96f75b54a408a2de8b260.1599686801.git.boris@bur.io>
+        Thu, 10 Sep 2020 07:56:45 -0700 (PDT)
+Subject: Re: [PATCH 03/10] btrfs: Simplify metadata pages reading
+To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
+References: <20200909094914.29721-1-nborisov@suse.com>
+ <20200909094914.29721-4-nborisov@suse.com>
 From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <18b6dfff-94e7-d62e-6279-53a3973623ed@toxicpanda.com>
-Date:   Thu, 10 Sep 2020 10:18:15 -0400
+Message-ID: <09182e67-e5d4-cb10-a55c-537c4fbf9155@toxicpanda.com>
+Date:   Thu, 10 Sep 2020 10:56:44 -0400
 User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:68.0)
  Gecko/20100101 Thunderbird/68.12.0
 MIME-Version: 1.0
-In-Reply-To: <ca7009f0e52c804f85e96f75b54a408a2de8b260.1599686801.git.boris@bur.io>
+In-Reply-To: <20200909094914.29721-4-nborisov@suse.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
 Content-Transfer-Encoding: 7bit
@@ -81,93 +78,52 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 9/9/20 5:45 PM, Boris Burkov wrote:
-> When the file system transitions from space cache v1 to v2 it removes
-> the old cached data, but does not remove the FREE_SPACE items nor the
-> free space inodes they point to. This doesn't cause any issues besides
-> being a bit inefficient, since these items no longer do anything useful.
+On 9/9/20 5:49 AM, Nikolay Borisov wrote:
+> Metadata pages currently use __do_readpage to read metadata pages,
+> unfortunately this function is also used to deal with ordinary data
+> pages. This makes the metadata pages reading code to go through multiple
+> hoops in order to adhere to __do_readpage invariants. Most of these are
+> necessary for data pages which could be compressed. For metadata it's
+> enough to simply build a bio and submit it.
 > 
-> To fix it, as part of populating the free space tree, destroy each block
-> group's free space item and free space inode. This code is lifted from
-> the existing code for removing them when removing the block group.
+> To this effect simply call submit_extent_page directly from
+> read_extent_buffer_pages which is the only callpath used to populate
+> extent_buffers with data. This in turn enables further cleanups.
 > 
-> References: https://github.com/btrfs/btrfs-todo/issues/5
-> Signed-off-by: Boris Burkov <boris@bur.io>
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 > ---
-> v2:
-> - remove_free_space_inode -> btrfs_remove_free_space_inode
-> - undo sinful whitespace change
+>   fs/btrfs/extent_io.c | 18 ++++++------------
+>   1 file changed, 6 insertions(+), 12 deletions(-)
 > 
->   fs/btrfs/block-group.c      | 39 ++----------------------------
->   fs/btrfs/free-space-cache.c | 48 +++++++++++++++++++++++++++++++++++++
->   fs/btrfs/free-space-cache.h |  2 ++
->   fs/btrfs/free-space-tree.c  |  3 +++
->   4 files changed, 55 insertions(+), 37 deletions(-)
-> 
-> diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-> index 01e8ba1da1d3..e5e5baad88d8 100644
-> --- a/fs/btrfs/block-group.c
-> +++ b/fs/btrfs/block-group.c
-> @@ -892,8 +892,6 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
->   	struct btrfs_path *path;
->   	struct btrfs_block_group *block_group;
->   	struct btrfs_free_cluster *cluster;
-> -	struct btrfs_root *tree_root = fs_info->tree_root;
-> -	struct btrfs_key key;
->   	struct inode *inode;
->   	struct kobject *kobj = NULL;
->   	int ret;
-> @@ -971,42 +969,9 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
->   	spin_unlock(&trans->transaction->dirty_bgs_lock);
->   	mutex_unlock(&trans->transaction->cache_write_mutex);
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index ac92c0ab1402..1789a7931312 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -5575,20 +5575,14 @@ int read_extent_buffer_pages(struct extent_buffer *eb, int wait, int mirror_num)
+>   			}
 >   
-> -	if (!IS_ERR(inode)) {
-> -		ret = btrfs_orphan_add(trans, BTRFS_I(inode));
-> -		if (ret) {
-> -			btrfs_add_delayed_iput(inode);
-> -			goto out;
-> -		}
-> -		clear_nlink(inode);
-> -		/* One for the block groups ref */
-> -		spin_lock(&block_group->lock);
-> -		if (block_group->iref) {
-> -			block_group->iref = 0;
-> -			block_group->inode = NULL;
-> -			spin_unlock(&block_group->lock);
-> -			iput(inode);
-> -		} else {
-> -			spin_unlock(&block_group->lock);
-> -		}
-> -		/* One for our lookup ref */
-> -		btrfs_add_delayed_iput(inode);
-> -	}
-> -
-> -	key.objectid = BTRFS_FREE_SPACE_OBJECTID;
-> -	key.type = 0;
-> -	key.offset = block_group->start;
-> -
-> -	ret = btrfs_search_slot(trans, tree_root, &key, path, -1, 1);
-> -	if (ret < 0)
-> +	ret = btrfs_remove_free_space_inode(trans, block_group);
-> +	if (ret)
->   		goto out;
-> -	if (ret > 0)
-> -		btrfs_release_path(path);
-> -	if (ret == 0) {
-> -		ret = btrfs_del_item(trans, tree_root, path);
-> -		if (ret)
-> -			goto out;
-> -		btrfs_release_path(path);
-> -	}
->   
+>   			ClearPageError(page);
+> -			err = __extent_read_full_page(page,
+> -						      btree_get_extent, &bio,
+> -						      mirror_num, &bio_flags,
+> -						      REQ_META);
+> +			err = submit_extent_page(REQ_OP_READ | REQ_META, NULL,
+> +					 page, page_offset(page), PAGE_SIZE, 0,
+> +					 &bio, end_bio_extent_readpage,
+> +					 mirror_num, 0, 0, false);
+>   			if (err) {
+>   				ret = err;
+> -				/*
+> -				 * We use &bio in above __extent_read_full_page,
+> -				 * so we ensure that if it returns error, the
+> -				 * current page fails to add itself to bio and
+> -				 * it's been unlocked.
+> -				 *
+> -				 * We must dec io_pages by ourselves.
+> -				 */
 
-Dave also noticed we're leaking the inode with these patches, that's because 
-here you do the remove_free_space_inode thing instead, which is good, but we've 
-already done our own lookup, and we're no longer dropping our reference here.  I 
-would probalby make btrfs_remove_free_space_inode() take the inode itself so you 
-don't have to do two lookups, and then add the lookup to create_free_space_tree 
-in a helper that deal's with this.  Then btrfs_remove_free_space_inode() _only_ 
-drops the ref for ->iref, and then the caller has to drop their own ref from 
-their lookup.  Thanks,
+I'd rather change the comment to indicate that we failed to submit the bio, thus 
+the page is our responsibility to clean up, and thus we need to do the 
+error/unlock and io_pages dance.  Thanks,
 
 Josef

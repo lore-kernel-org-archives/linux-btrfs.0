@@ -7,70 +7,71 @@ X-Spam-Status: No, score=-11.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7BF98C433E2
-	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Sep 2020 19:58:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2A87BC43461
+	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Sep 2020 19:59:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 21FF420882
-	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Sep 2020 19:58:54 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C536720882
+	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Sep 2020 19:59:23 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="MQBGQF4K"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="qHHKtvQ8"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726951AbgIJT6p (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 10 Sep 2020 15:58:45 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:32858 "EHLO
+        id S1731212AbgIJPBU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 10 Sep 2020 11:01:20 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58990 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1731205AbgIJPCn (ORCPT
+        with ESMTP id S1731205AbgIJOv7 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 10 Sep 2020 11:02:43 -0400
-Received: from mail-qv1-xf44.google.com (mail-qv1-xf44.google.com [IPv6:2607:f8b0:4864:20::f44])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F3038C061573
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Sep 2020 08:02:26 -0700 (PDT)
-Received: by mail-qv1-xf44.google.com with SMTP id cv8so3465165qvb.12
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Sep 2020 08:02:26 -0700 (PDT)
+        Thu, 10 Sep 2020 10:51:59 -0400
+Received: from mail-qk1-x741.google.com (mail-qk1-x741.google.com [IPv6:2607:f8b0:4864:20::741])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0764BC061757
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Sep 2020 07:49:22 -0700 (PDT)
+Received: by mail-qk1-x741.google.com with SMTP id f142so6250286qke.13
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Sep 2020 07:49:21 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=subject:to:references:from:message-id:date:user-agent:mime-version
-         :in-reply-to:content-language:content-transfer-encoding;
-        bh=DYKRmulMzl72FW9/jc7DfBzP8iJUTOKxLvvI892bJtw=;
-        b=MQBGQF4KMaI5uWHjEsal2bnEyYLAjdULzLXiM5r0go3bvxpVEhZoSoRJ/EZnEmvEvx
-         EMO2QdGgxMeFGUgGxgdn+YRqWv6OZnYthaAg4+7qUc3aWoRM+gxL3xITcquY3niWbKCN
-         5rHrJHujqNox4gaf4b5+tcogu+5+zb8Iudukg+ff20mqjHvSjuFDmMIwzmZIYRiQSmq8
-         yUcHb0iM38h5WyxqTJoSTLZsBhcm3Da6ZrNH0/N6eC3YesAFHne1WmYtTLoLDcqEsJ93
-         N46mErZHG8d9/N6lsVIUpgsqU2r3hjlXTKyA6Dzva02dsVFHxKUqwyzt1lxmFT8QCtIc
-         v8WA==
+        h=subject:to:cc:references:from:message-id:date:user-agent
+         :mime-version:in-reply-to:content-language:content-transfer-encoding;
+        bh=gY/Jm7xP3SwUvAykmN9/KsiLchSsfrfQsShdsmp3hvQ=;
+        b=qHHKtvQ8QpkqyXX/7wF9cqP61ka53RzEkcbA+xM4weO09rU6plBcX0kFsjwUC8/q1L
+         EQbssvczFSe2ZYbq940r9MQf9pdCJfK6JmaJvg5NQuCAVAX/zk50v7m2ptVpyXDrQeOh
+         Vshh+tw+IhojxGYyeymSjN76Gcs5p45vU8dngowjZlmOAUM1oAg3CWm10+B2TDJ7Szvu
+         Dt5m6JFOQ9XUF8MWbm4JRyh9iodck3+aNrxMpDwbKN4m1hTI1DFl0PgF1VuSRhr6OAsw
+         RbDkfTLQPKguTrQWmZvHXyiWpRUgqMEyddShUHKqQR8iT6iY/gYqImXCoRpBcY4akFPY
+         aeCQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:references:from:message-id:date
+        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
          :user-agent:mime-version:in-reply-to:content-language
          :content-transfer-encoding;
-        bh=DYKRmulMzl72FW9/jc7DfBzP8iJUTOKxLvvI892bJtw=;
-        b=TlyAeARSQ+cW5cnjs6zVeft28EwY56FmkGv6KndVmbFbSshzdmP4VmUb8DcDouDePJ
-         TTDF2WYktkJm4aoxEQaMyq+xTBW/UnOfy0B9ioqyLLC8Dfi+2jyPvrwCJw1v2/GUNNSq
-         ift4XPCR0/dlCn7vNNIvcFltTA+on4I1IpXCfxfpyXPwzSGojuafTdkncODAuD8Gx7SZ
-         URQZcWmb348oHkqLPPCnAM9hIjQHBa6/VRrS3AZufAplZO0KFkjoYfdvHfFX7vXahRTx
-         PIVgXnBX0ygavNCZlXiPZY0UvvZeOS1ydHvPj5YBCgPq9gXkPpmKVeaDn9nsmEwsn3KG
-         9LDg==
-X-Gm-Message-State: AOAM533t3vEFsD4UUGo+sAI6jnLAaVmtWPCI/mM2BAYOFmt2XDLsWOKf
-        YYkGSthvx/5JdpKz1HPw5FHkky8bv7BK6t8X
-X-Google-Smtp-Source: ABdhPJyxHkDScAVD9FXuc2ARqVNlYwIGB4p421F6vn+aRrRdu3yWtNAKPdV1VsP78pmQEVTTpmxArA==
-X-Received: by 2002:a0c:e78c:: with SMTP id x12mr8716023qvn.3.1599750145865;
-        Thu, 10 Sep 2020 08:02:25 -0700 (PDT)
+        bh=gY/Jm7xP3SwUvAykmN9/KsiLchSsfrfQsShdsmp3hvQ=;
+        b=YLIwXKjYc5TWngTha0IhOAHfrhiskoyyvmPLyQhZz4INHlVIUeNydSIzgvoSv8yYXB
+         MM3LsZKDJKLMm4gxQzwuf32Ew0H6FReV70Lk8cJQffNgKKT2ka2myH5FD5Dp+Yg71xac
+         vkLQf4K5tjsFilm3v+f3RqT3jy0X4WYgJjA4PvkmIQAHA+78pAxrOSvKjGR2zBk7F2Gk
+         RVs+fKbmSLx/NVVGMfJkQlEUjHlwesCtToVWqSQslhX4icmXRbgg1Ge5jkxVfkd9LNJ5
+         B8NlhxtaVMtQ1uMiCm5580wqM9UPXtEAEdvTL33iHeQoC1QxhLwJRcdVui5nsWpj3d53
+         U2dg==
+X-Gm-Message-State: AOAM532Gd76YQBUiV/3XQ71t4Cl68S3zq6IDofznZoexkqF+bW0TMbrZ
+        I+g3Lc9/s5QkIDvrwhkHAAXRgYmvupUcygck
+X-Google-Smtp-Source: ABdhPJxbMHcZ159a+3wD86kSUx8Jr5cFpmKki8dZTVzpdHMa10J0B5AO2Px+XVZJuRTan3HFNfpxeQ==
+X-Received: by 2002:a37:6481:: with SMTP id y123mr8152160qkb.464.1599749361215;
+        Thu, 10 Sep 2020 07:49:21 -0700 (PDT)
 Received: from [192.168.1.45] (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id y69sm6780129qkb.52.2020.09.10.08.02.24
+        by smtp.gmail.com with ESMTPSA id f13sm6868632qko.122.2020.09.10.07.49.20
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 10 Sep 2020 08:02:25 -0700 (PDT)
-Subject: Re: [PATCH 08/10] btrfs: Sink mirror_num argument in
- extent_read_full_page
-To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
-References: <20200909094914.29721-1-nborisov@suse.com>
- <20200909094914.29721-9-nborisov@suse.com>
+        Thu, 10 Sep 2020 07:49:20 -0700 (PDT)
+Subject: Re: [PATCH 4/5] btrfs: rename btrfs_punch_hole_range() to a more
+ generic name
+To:     fdmanana@kernel.org, linux-btrfs@vger.kernel.org
+Cc:     Filipe Manana <fdmanana@suse.com>
+References: <cover.1599560101.git.fdmanana@suse.com>
+ <7e911d8b38d65c426738e53ac205eac94105c87f.1599560101.git.fdmanana@suse.com>
 From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <0e8e948a-7d47-2b9e-5699-39c3b6c571d3@toxicpanda.com>
-Date:   Thu, 10 Sep 2020 11:02:24 -0400
+Message-ID: <f8fcfc28-787e-6bc7-e03e-78548f8985f9@toxicpanda.com>
+Date:   Thu, 10 Sep 2020 10:49:19 -0400
 User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:68.0)
  Gecko/20100101 Thunderbird/68.12.0
 MIME-Version: 1.0
-In-Reply-To: <20200909094914.29721-9-nborisov@suse.com>
+In-Reply-To: <7e911d8b38d65c426738e53ac205eac94105c87f.1599560101.git.fdmanana@suse.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
 Content-Transfer-Encoding: 7bit
@@ -79,10 +80,19 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 9/9/20 5:49 AM, Nikolay Borisov wrote:
-> It's always set to 0 from the sole caller - btrfs_readpage.
+On 9/8/20 6:27 AM, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
 > 
-> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> The function btrfs_punch_hole_range() is now used to replace all the file
+> extents in a given file range with an extent described in the given struct
+> btrfs_replace_extent_info argument. This extent can either be an existing
+> extent that is being cloned or it can be a new extent (namely a prealloc
+> extent). When that argument is NULL it only punches a hole (drop alls the
+> existing extents) in the file range.
+> 
+> So rename the function to btrfs_replace_file_extents().
+> 
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
 Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 

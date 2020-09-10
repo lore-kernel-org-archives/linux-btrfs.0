@@ -7,70 +7,70 @@ X-Spam-Status: No, score=-11.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8EE3AC433E2
-	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Sep 2020 20:00:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D67CEC433E2
+	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Sep 2020 20:52:31 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 47E20221E2
-	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Sep 2020 20:00:54 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 731AB20829
+	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Sep 2020 20:52:31 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="E3eSJiTS"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="FLjWPSl4"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726802AbgIJT7Y (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 10 Sep 2020 15:59:24 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60992 "EHLO
+        id S1726969AbgIJUvT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 10 Sep 2020 16:51:19 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60492 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1730434AbgIJPC1 (ORCPT
+        with ESMTP id S1730833AbgIJO6i (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 10 Sep 2020 11:02:27 -0400
-Received: from mail-qv1-xf41.google.com (mail-qv1-xf41.google.com [IPv6:2607:f8b0:4864:20::f41])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 19B8AC061757
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Sep 2020 08:01:50 -0700 (PDT)
-Received: by mail-qv1-xf41.google.com with SMTP id z18so3485416qvp.6
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Sep 2020 08:01:50 -0700 (PDT)
+        Thu, 10 Sep 2020 10:58:38 -0400
+Received: from mail-qt1-x841.google.com (mail-qt1-x841.google.com [IPv6:2607:f8b0:4864:20::841])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B43E5C061757
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Sep 2020 07:58:37 -0700 (PDT)
+Received: by mail-qt1-x841.google.com with SMTP id r8so5009810qtp.13
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Sep 2020 07:58:37 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=subject:to:references:from:message-id:date:user-agent:mime-version
          :in-reply-to:content-language:content-transfer-encoding;
-        bh=UXwVIQMANUiXfwYmgVBOM+Gqp5W2riMQlwGg0y5YP4U=;
-        b=E3eSJiTSvkSUJsjlXOBJXf5h/DDazzVO8FI+c/3UVDftPaYhlh1SCHK6Spjj9fx+ra
-         KADQIf+ExUfvrmPxmBfZX3YDWBUeAGfjUf9Z2RpLOTUgBzGQwLbyDjOT1r6gda6igJds
-         5MNd7CJko6flDJdyhsqBblKJRazSCwPTCXzY79Ri+kI+EnTdcBNYtgYeXIbDMKwkHTB3
-         KPybdna8we+CUvxBiLtJJlwE6IfyQzg1iVNpPBjNS45TghC7Z8jclONjGSKBRDbL+kZm
-         O1hhWP8kHpMChibr6PjshLeHQflkcCW944qqxQXSMAe+fN5ynABxhy9/YMm2SJb+fCvn
-         vckA==
+        bh=0ET3pJal8Z4h9OhykINCUv4ecVN2BFZY6tmBg3v4yfo=;
+        b=FLjWPSl4+zFrtp288osIlXLEuOzYzob0AHItyOgwWBfHVXV5d7amFCuV78VOsuMRLV
+         aR1LNGQazTgkVFZp/X+6HrRXcLOtY7IPS/ASM/7EGH7jowcH8uHtlxc5J/vXmfV/jLBU
+         aHK7WJiSKXJC7J7f/sAHKm82AJ2Lju++IcKcV+JNfB1hYWpJzyaxZq7yV00Yf4UIfRE7
+         EViJJHxDtLK2rg/OftURX2CYINajFaxP+1xT6FNKgLvgg+yzVe5i7GgOvejDCrSKdM8g
+         pZpMKnhKKPxyLQoPR0Xa+b9Cat9oVSEe6WYznBvajW50r43H977XXRn9OTCtVpsLBJcv
+         Y4xg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:subject:to:references:from:message-id:date
          :user-agent:mime-version:in-reply-to:content-language
          :content-transfer-encoding;
-        bh=UXwVIQMANUiXfwYmgVBOM+Gqp5W2riMQlwGg0y5YP4U=;
-        b=aBN8SGSevNd3QUmKvw1tbDSqnvvxaRxromFz7SO07NE+lGk3j0V0a2YF2UOgLwsnd4
-         S8dpPwBTxe0zYWTJvTfsS80kAxp7NE5gqWt0Av0a53ll87SVptf/1XG/NqkMvky5lcKp
-         9hyl4HVO6T1Wbye713dLR+AH6DEO7eXrlARgligNRUlSiPRUIJkdCjmaf11Q9uAVjvbc
-         B9ofQw8i8Q2RPZ/llq9NtnEoTbhmRTcuSdOvm3e/YSCC2N4DaliavkjYEflLsToSbiQb
-         rpHIn0Ey/s8HInM9krHb6rZUvE6PS9oJiuquOaHfWug1Mt0UGIB/dK4LSB872X5sXKYp
-         EZmw==
-X-Gm-Message-State: AOAM530azuCXoLyuhConR5sf/4UIyW+HwNjALEKivTpIwmA0ukfndPTC
-        wNtuqNPiKGOP4tXdKfZno2KQFOu4HO2dE0KD
-X-Google-Smtp-Source: ABdhPJxMnm7DNTwrgkYCDja88lkgFLpcxzUABNiAoTwsAJ1MdHULdvdTM6SP1L659Om5IKAtdPEdmA==
-X-Received: by 2002:a0c:b21b:: with SMTP id x27mr8989811qvd.12.1599750108990;
-        Thu, 10 Sep 2020 08:01:48 -0700 (PDT)
+        bh=0ET3pJal8Z4h9OhykINCUv4ecVN2BFZY6tmBg3v4yfo=;
+        b=rAqYVRfwpUNGKlSe5fUWzmdJk4QrlleBKAsvdJkNOQeo8bMlbAUyTYuufcOMVpdmGj
+         D+WA6afv7t0Cj85lAuWrLS4iWMrDPi502vPnlfgeeJsS6+siHh77Wlkao/8uweVB0Lz4
+         F8150/wN0weP6yUu4G5cRIxlVfkLDZj6TXy/R66O12ufaRz+uefaYdcm5Z+ZxdbMu5ne
+         L1n2gG7L9aQqDyHgMoAQJdB37lU3LrylRKmCACzcEL8Par6mKmPJ/oKFdf7qet+GyzJO
+         Nb4prInzYZUxATLrbmaRJx9GOHJua32WzNoWAcfanLPmDwAeD07EJAYOeuMFU8OmvPkt
+         WVbA==
+X-Gm-Message-State: AOAM531inwUx6VU3ab8mQMKvel/bMwvuJmoaS+KQZYvvOxbZIXS9Uq4b
+        myGNG6eGXuFWDUnD9B+vocXrLL9ytFqjp768
+X-Google-Smtp-Source: ABdhPJxOJREMBnhbpcwHTVbOPtuOe9teobSRqBiXv7dxmNwlc2vRmOpDwuuM7ezE25ImceA5XKtnNQ==
+X-Received: by 2002:ac8:1c16:: with SMTP id a22mr7784182qtk.85.1599749916684;
+        Thu, 10 Sep 2020 07:58:36 -0700 (PDT)
 Received: from [192.168.1.45] (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id d9sm7472510qtg.51.2020.09.10.08.01.47
+        by smtp.gmail.com with ESMTPSA id p37sm7460242qtp.31.2020.09.10.07.58.35
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 10 Sep 2020 08:01:47 -0700 (PDT)
-Subject: Re: [PATCH 07/10] btrfs: Promote extent_read_full_page to
- btrfs_readpage
+        Thu, 10 Sep 2020 07:58:35 -0700 (PDT)
+Subject: Re: [PATCH 06/10] btrfs: Remove mirror_num argument from
+ extent_read_full_page
 To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
 References: <20200909094914.29721-1-nborisov@suse.com>
- <20200909094914.29721-8-nborisov@suse.com>
+ <20200909094914.29721-7-nborisov@suse.com>
 From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <549e94fe-22b6-6e2e-e759-24d067d96c62@toxicpanda.com>
-Date:   Thu, 10 Sep 2020 11:01:47 -0400
+Message-ID: <d65b2662-f19f-b362-73f8-d4716f45f234@toxicpanda.com>
+Date:   Thu, 10 Sep 2020 10:58:35 -0400
 User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:68.0)
  Gecko/20100101 Thunderbird/68.12.0
 MIME-Version: 1.0
-In-Reply-To: <20200909094914.29721-8-nborisov@suse.com>
+In-Reply-To: <20200909094914.29721-7-nborisov@suse.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
 Content-Transfer-Encoding: 7bit
@@ -80,10 +80,8 @@ List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 On 9/9/20 5:49 AM, Nikolay Borisov wrote:
-> Now that btrfs_readpage is the only caller of extent_read_full_page the
-> latter can be opencoded in the former. Use the occassion to rename
-> __extent_read_full_page to extent_read_full_page. To facillitate this
-> change submit_one_bio has to be exported as well.
+> It's called only from btrfs_readpage which always passes 0 so just sink
+> the argument into extent_read_full_page.
 > 
 > Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 

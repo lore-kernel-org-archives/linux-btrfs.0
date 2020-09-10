@@ -2,40 +2,41 @@ Return-Path: <SRS0=1Lxm=CT=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.6 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+X-Spam-Status: No, score=-8.6 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	DKIM_VALID,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
-	NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=ham
-	autolearn_force=no version=3.4.0
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
+	SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4CE3FC43461
-	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Sep 2020 02:20:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F2B09C433E2
+	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Sep 2020 02:32:03 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id F25BB20BED
-	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Sep 2020 02:20:19 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9A4442087C
+	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Sep 2020 02:32:03 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="TfXSLaYK"
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="DTQ/4jm0"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730750AbgIJCT6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 9 Sep 2020 22:19:58 -0400
-Received: from mout.gmx.net ([212.227.17.22]:41207 "EHLO mout.gmx.net"
+        id S1730178AbgIJCb6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 9 Sep 2020 22:31:58 -0400
+Received: from mout.gmx.net ([212.227.17.22]:40997 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1730177AbgIJCQ7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 9 Sep 2020 22:16:59 -0400
+        id S1730068AbgIJCZc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 9 Sep 2020 22:25:32 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1599704215;
-        bh=GghcEZ3m6J+DyDXfeTIFwDQi0HtklYVMT8qnNQYnx3s=;
+        s=badeba3b8450; t=1599704729;
+        bh=wqbB4/BwSd5hpVvBlK2Gk6Ax67T3R9WI+VycEU5hQz4=;
         h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
-        b=TfXSLaYKDg6njOBH3rrHG7fMtZ8Fho27mqDK/lnmVvzAuWzQdKIOt7kpdtUtpfDWM
-         /nzYvTn4s5YLFaInLgRdzIqAfFgVaxBJoIZHbD8jhbpOiMi/34u1U3Si53pCKZMWWo
-         EYR9kE85IR34w18t32sYD/v8LiVe4X+KBR3MOfms=
+        b=DTQ/4jm0HxQ7LLiHwaNc432m28LGLo8bNMMo8BP5MLcMoBYHofIFCSdYWkrBzi6g8
+         dcMhQhGSxH9tStG/tDVtb8aSDye75piVMGtuUjc6cqo2vvVExR+n9y18wDDLhhWCdH
+         bpJtbyveAHSSQObi1iSexFz3tTNxLrcN84G6QFrw=
 X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx104
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1N6KYb-1kZh4Z3SyP-016ez0; Thu, 10
- Sep 2020 04:16:55 +0200
-Subject: Re: backref mismatch / backpointer mismatch
-To:     Johannes Rohr <jorohr@gmail.com>, linux-btrfs@vger.kernel.org
-References: <0219bbee-9ca3-135a-8a2f-5d616000c1e0@gmail.com>
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx105
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1My32F-1kSVOQ0Oxr-00za9d; Thu, 10
+ Sep 2020 04:25:29 +0200
+Subject: Re: Corrupted filesystem after power loss
+To:     Benedikt Rips <benedikt.rips@gmail.com>,
+        linux-btrfs@vger.kernel.org
+References: <2080952.sO1OYyYaP7@orion>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
@@ -61,100 +62,200 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  72byGeSovfq/4AWGNPBG1L61Exl+gbqfvbECP3ziXnob009+z9I4qXodHSYINfAkZkA523JG
  ap12LndJeLk3gfWNZfXEWyGnuciRGbqESkhIRav8ootsCIops/SqXm0/k+Kcl4gGUO/iD/T5
  oagaDh0QtOd8RWSMwLxwn8uIhpH84Q4X1LadJ5NCgGa6xPP5qqRuiC+9gZqbq4Nj
-Message-ID: <f4317021-89e4-904b-6032-10bdfe455450@gmx.com>
-Date:   Thu, 10 Sep 2020 10:16:52 +0800
+Message-ID: <26cc2afa-a71b-c449-a4e9-80ff0c5ae68c@gmx.com>
+Date:   Thu, 10 Sep 2020 10:25:26 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
  Thunderbird/68.12.0
 MIME-Version: 1.0
-In-Reply-To: <0219bbee-9ca3-135a-8a2f-5d616000c1e0@gmail.com>
+In-Reply-To: <2080952.sO1OYyYaP7@orion>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="i8ciaUXsb9pgj4GIKEwwvYyTqkvuzI0og"
-X-Provags-ID: V03:K1:ZG9b9R0EmaLZkS+s3E029EE7uxsKm6VYlYgoQQpEU5dBjz1iLr/
- 3QPccq/ypNneMDrBHHnaVb1lg32xYvPvqETUR0HZEGBw6wApPA1+fpBEpyPjBj68Do8OvUu
- RzJKPlrkf3IafKtVp+YnIrUVObxK5SQhxM/jGp7JYekIyMeAivpk1deHJb4sF7n9WDe/LtH
- Kh0ey7P7T1UKLULbaQw9w==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:okw0sAW8VE8=:SdMm2VLuYfYSJizXTG2UYq
- EsH/JKKwR0oDKxk3S9ED2RNZI2AzXeuWeXT6qzmtiOJpY7o8M0fARS3uYg5xIkOXyx/zCelfV
- M1fKNzwgJYKN0gxByHYYPtRx8djl+El2r6xzmhjD3PsmLQbMyDgo+e8eDZgiLaSLRjG5s7GQi
- 8i+ZVl4tQzNgNgjLT7+k+B7T1TLNyL2upf1cM0dq0M0X3YMGm15/+0Q++MdUo1F71I9Ev1zHK
- Y1Wp00grD+BisQJe9THlNPJP8FRtKM9sSf89UwsbVrF0Vf3HQwjRkepuIk3otHb7FRHG1Tdsz
- pmHa7Jfi2BZi9cZ1g2JbNNnDG+ZmeZ0OnIm8tlGd/p7Vjip13vcloJ4xFLNixug7e0S3XEK5Z
- WIYlyrazgncd6prgwiVsc4XShLBHZyjbGET52bSZvWfKpT/laNAsM5LWEzRr1KmUV3pcoOcNY
- 1ndCkg1y5/pMQQ6/vJrDp+VyO2hu6fGAc4a9OhGz1ZLL11ohove0LOowmpyu79iQUQEra4aUu
- SOMylp321CYN3uNCGH8tvi1AU5nLf6gmkpxMJ3mUFECYVOrnzM1wLRX9I0h/cx+Ljyc/wWE/H
- NMlaD/FpCmnsEPYTgFo2S0P3XF9kLLBO3jK4LifIjvAZQQZZ2ogiufj2OGwY0o6/CnDwXORoV
- SD6339jancmb8DuOwIe7uErPA/0C4vA+6PlEsnN4HeeqWMhmDTCJSod8Dg8B9xCjCgKfJi8Kn
- 7FCSeDhU3COm05pV2LXh+AAvaBe4KDoziBb87w029PdpfiGdygBh8X8leHCn3brF5LpiPlyFx
- VZkydWK/1O6lCoADeOt4HnGjBUI1DzCbXXbIYIlcaR0qfcOdHGbUaUxmvf0QiR9+7CfhaBUiB
- cjp/Jj4rW9gRsbl6oP2ZV9jykDIm2KzUrUtXsF2tJhWMQ/n+JhavT45cMBK2+rlRf6wfWHJYu
- 2b6YkuC7jY/52RUokO386LJn24ih8RT+3jP2nOT73oEnPqZ/gYn31+Z/9iUg/0cRMxuysQ8tD
- ENJfthv/y4P4av8eonRt3H5QW/a4AuEjd5CuP92zJjQHb8z6ZLHldvLov6FBmsCcj5kDMAEE0
- zIQIatNisviFLjbKCEs+poWYVaLVf4BEEwt9JwbhNp9SY6ZoWRxGi6QzbjidjyE2w0syNf4xp
- ksiyQB9KuUSGHdkdWGDNiDEceXMratqzZFZR3s/Cdly30GJcaoQiGQJRVeVfs8o0u01j8j1Vt
- JdIJNAWBPqCpuwmR5vgPgdcWgpqpv3Bd97trNfw==
+ boundary="5oyCKOGIHLbYFXxlxRkwQUhhmLwj5X2KI"
+X-Provags-ID: V03:K1:SSBx4gDPr1Y8JXvezDn5PpGtrQVLRdF5z2t5uavCasqhQeITjcg
+ Sw4zYR3YNcGxD/LiXsJH1tDgP7EaTksFPdeJbyjiXwjh1q3BdUWj8gcUv1EnA/7KMGmFHBH
+ 5lVgLyYlWmRTMWLdrRyem7/wsqn15wL7bc3NCEFVF/nTgyg42QfindPdEy1PJjCBGtEFMJe
+ lTkla86aI1lcFwX5OA09w==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:s6qp9BWNUS4=:cjhiPw8JnbiMw6mS6sJqWN
+ ORsaadq41P9xZwutAyzWBFIzhSqR8jX3xvURNjucoHdNIRIuhQpCAUyCiPeDKFaF7NWJ4rUV/
+ ubHDowtVbc2oBAloU9MkDIWPqCMau5/lSiWphuytnrUNi90u1AKLtd2rbg56voyZuaeFQE2P4
+ BVXYUXYE3vQcZfBaUjgUr4I574eciRW7KFd04kWTVuoqRLo0lsn4kZ8apaSXITZnyt/CwjoA5
+ 76KSljgaMPVoyEG9brr5mhFP5SGsf1z3GjlJ5FYA6gaz0dGE2HS4iySFRx9Va8eJigGYXlT4F
+ EdjfJUndmAIpal02KCs9/gtu24pdiQRgmqW0vBPnu5FkaxBWwSU+dsQer+fMXv8bvB/PgRSfH
+ 9nZwKaQ1XW0Ydp39evV635HGpP1ZjT+QIM9lqHe7jP3n6meig30KVw6gAJS4txKOiskXJUj6C
+ j66b6arELrxcNmXmwjP10/vPhsoqJMbNrAw//3OSsW+nNJnNIcByc/R9dHIJ7qcg2ff2oPV0k
+ lDy7lE39LHv7KQkdE5qP5tCpIuEOCQSYue0Dq+CzP3lZ51N490zg2GRGRB9GX3qxZyaHejUhb
+ XZ6E5LuigmGvT2Jqt28Q4RK4blQ/ydHbeEePCUkR4U/zSf5Cnk9K0X4A0tqVpvaa/LIPYV8NX
+ kJ8+XU8lTmTibCKSVYPp+Hx+sbWHYZ3dcvdF/1+inlOIqo3/PqI72QflMp+hF/qnZkLiD2OuI
+ n6k1T4cgUSsmSYkQGnlp18RzHm/Pky4cuAJM0qcSX+LB7ke4aG4q/+tAQWgFLoPcJgtdPwYha
+ eY06Pik8omgDAn859pelRPCAkElN4lgeasu3hB+R+YPdOti5cUkQ6K3FhCFSIBt7ZO9GjRM5r
+ xMwIq1U4DTr7LZIdPBjjzcy3kCSlfvM6eSlv5E6D1rdIzD9rsEamouXBGV3yw7i+kBKsOz83F
+ fOgkON8DlTn70UHGQzmZ+rRYJ2T0sWUfZI/OlHcOEf7yTE1/o8bDcYhm5T5MWeUlkMl028j2x
+ NxjVdAt8AMq6baNz0UYJuNkBlhyF+cn//h+8gTgdxIlOzJW74v1+6aOcQpTlztpzIBXPZ6+yk
+ HsWhGHwW9rITmRbN8/QYG2C2s7N2PLd8ljbN7afElrrRfiKNoDwNFiWTtDBGgK6jXE9EUz56h
+ P4imUnit8BZQ94WlzaKXdDUTb0+gwbkbYzrNSiemRlbw4RWcUT3giSyjl09LOakGr+XKnyEv+
+ bpS+8tgcWezIQg7Mz5cj2tYVvQ8pIsAasuPgVVQ==
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---i8ciaUXsb9pgj4GIKEwwvYyTqkvuzI0og
-Content-Type: multipart/mixed; boundary="1XYXRET6N965yt8Ynwyi5rMzf8OeKsaTM"
+--5oyCKOGIHLbYFXxlxRkwQUhhmLwj5X2KI
+Content-Type: multipart/mixed; boundary="cmsuVdfAMdBCR3DRFhQYIeYdgoXa1U3H9"
 
---1XYXRET6N965yt8Ynwyi5rMzf8OeKsaTM
+--cmsuVdfAMdBCR3DRFhQYIeYdgoXa1U3H9
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 2020/9/9 =E4=B8=8B=E5=8D=8810:51, Johannes Rohr wrote:
-> Dear all,
+On 2020/9/9 =E4=B8=8B=E5=8D=888:13, Benedikt Rips wrote:
+> Hi there,
 >=20
-> Last night I did a readonly offline check of our server's file system
-> and I got a bunch of backref mismatch / backpointer mismatch errors.
+> two weeks ago, I forcibly shut down my system when it was frozen, by pr=
+essing
+> the power button for several seconds. At the next boot, I was not able =
+to=20
+> mount
+> the filesystem. I booted from a usb stick and at mounting my root files=
+ystem
+> (which is btrfs), I got the following error messages:
 >=20
-> Since everybody is warning NOT to use btrfsck --repair, I wonder what
-> options I have of fixing this issue, short of reformatting the whole di=
-sk
 >=20
-> All the info (uname -a, btrfs fi usage, btrfs check output) is here:
->=20
-> https://gist.github.com/vasyugan/45471206df5d9981f51b9bbf9362508f
+> # journalctl -qxeb | tail ... | head ...
+> Aug 28 16:43:21 archiso kernel: BTRFS info (device dm-2): trying to use=
+ backup=20
+> root at mount time
+> Aug 28 16:43:21 archiso kernel: BTRFS info (device dm-2): use zstd=20
+> compression, level 3
+> Aug 28 16:43:21 archiso kernel: BTRFS info (device dm-2): disk space ca=
+ching=20
+> is enabled
+> Aug 28 16:43:21 archiso kernel: BTRFS info (device dm-2): has skinny ex=
+tents
+> Aug 28 16:43:21 archiso kernel: BTRFS warning (device dm-2): dm-2 check=
+sum=20
+> verify failed on 95634915328 wanted 59c7037e found 97021a59 level 0
+> Aug 28 16:43:21 archiso kernel: BTRFS warning (device dm-2): failed to =
+read=20
+> root (objectid=3D2): -5
 
-What about `btrfs check --mode=3Dlowmem` result?
+This is the real problem, extent tree get csum corruption.
 
-If your btrfs-progs is not uptodate, it may be a false alert.
+But since you're using backup roots, it should just rollback to next back=
+up.
+
+
+> Aug 28 16:43:21 archiso kernel: BTRFS critical (device dm-2): corrupt l=
+eaf:=20
+> root=3D18446744073709551610 block=3D95602491392 slot=3D0 ino=3D10363009=
+, invalid inode=20
+> generation: has 1518459 expect [0, 1518458]
+
+This is in fact not a bug, but indicates your fs finds a good backup,
+but then log tree is triggering problems.
+
+As log tree is newer than your backup root, tree-checker is rejecting it.=
+
+
+This is easy to handle, just zero the log by 'btrfs rescue zero-log'
+should allow you mount the fs with "-o rescue=3Dusebackuproot".
+
+Furthermore, we should not allow log replay if we use "usebackuproot"
+option at all.
+
+I'll add extra check on that for the kernel.
 
 Thanks,
 Qu
+
+> Aug 28 16:43:21 archiso kernel: BTRFS error (device dm-2): block=3D9560=
+2491392=20
+> read time tree block corruption detected
+> Aug 28 16:43:21 archiso kernel: BTRFS warning (device dm-2): failed to =
+read=20
+> tree root
+> Aug 28 16:43:21 archiso kernel: BTRFS error (device dm-2): parent trans=
+id=20
+> verify failed on 95599607808 wanted 1518455 found 1518457
+> Aug 28 16:43:21 archiso kernel: BTRFS info (device dm-2): bdev /dev/map=
+per/
+> lvm-linux errs: wr 0, rd 2, flush 0, corrupt 0, gen 0
+> Aug 28 16:43:21 archiso kernel: BTRFS critical (device dm-2): corrupt l=
+eaf:=20
+> root=3D261 block=3D95596232704 slot=3D112 ino=3D11473161, invalid inode=
+ generation:=20
+> has 1518457 expect (0, 1518456]
+> Aug 28 16:43:21 archiso kernel: BTRFS error (device dm-2): block=3D9559=
+6232704=20
+> read time tree block corruption detected
+> Aug 28 16:43:21 archiso kernel: BTRFS error (device dm-2): failed to re=
+ad=20
+> block groups: -5
+> Aug 28 16:43:21 archiso kernel: BTRFS error (device dm-2): open_ctree f=
+ailed
 >=20
-> Thanks so much in advance for your advice,
 >=20
-> Johannes
+> The filesystem is on an SSD, my kernel version at the time of the failu=
+re was
+> v5.8.5 and my btrfs-progs version is v5.7.  The information regarding t=
+he SSD
+> are:
 >=20
 >=20
+> # smartctl --info /dev/nvme0
+> smartctl 7.1 2019-12-30 r5022 [x86_64-linux-5.8.7-arch1-1] (local build=
+)
+> Copyright (C) 2002-19, Bruce Allen, Christian Franke, www.smartmontools=
+=2Eorg
+>=20
+> =3D=3D=3D START OF INFORMATION SECTION =3D=3D=3D
+> Model Number:                       THNSN5256GPUK NVMe TOSHIBA 256GB
+> Serial Number:                      Y6EB70N0KMBU
+> Firmware Version:                   5KDA4103
+> PCI Vendor/Subsystem ID:            0x1179
+> IEEE OUI Identifier:                0x00080d
+> Controller ID:                      0
+> Number of Namespaces:               1
+> Namespace 1 Size/Capacity:          256.060.514.304 [256 GB]
+> Namespace 1 Formatted LBA Size:     512
+> Namespace 1 IEEE EUI-64:            00080d 0300085baf
+> Local Time is:                      Wed Sep  9 00:18:09 2020 CEST
+>=20
+>=20
+> After reading through the btrfs wiki (btrfs-restore, btrfs-rescue, btrf=
+s-
+> check),
+> I asked on the IRC channel for help.  With the advice of cmurf and dark=
+ling I
+> ran the following commands, trying to find the cause of this error and =
+a
+> suitable backup root to restore data from: http://cwillu.com:
+> 8080/37.201.170.65/1
+>=20
+> Kind regards,
+> Benedikt
 >=20
 
 
---1XYXRET6N965yt8Ynwyi5rMzf8OeKsaTM--
+--cmsuVdfAMdBCR3DRFhQYIeYdgoXa1U3H9--
 
---i8ciaUXsb9pgj4GIKEwwvYyTqkvuzI0og
+--5oyCKOGIHLbYFXxlxRkwQUhhmLwj5X2KI
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAl9ZjJQACgkQwj2R86El
-/qiY4gf9EAgs+rgb0orfYvRVR0wbVSzKfljzaFMaXuVy+MEfMMffuRDrhynB413t
-ZNm1N85/xQGy2QgiaER7PQZdnt0onbAbWDAbo+zox51ZyNS5ENJPtYx/tlkX5zsT
-693qi6+1a8M4xuhOPLkCtNXHbjZ3KcJssGgFiTtLeYgA8A1Wcd60Z7lDaHgYbMqy
-wkszd56Cf8/aDLATaxZrYPOz8suya8nSSpsQLkOOWPfCxLbTltD+k3zFC4KYhlTi
-BeLAapaCbXVyKgwx2AW7o/cWs/RSmrLg8ZmALVWQ8Jb+rJu2LhUGTAO4KwQHBg55
-zbM/V8RKVHPg5oZWxuoKFtQJTC9JEA==
-=sbK4
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAl9ZjpYACgkQwj2R86El
+/qjXTAgAgm66m5uI9+/kreacNaCmOFvdPJUsI0/u3ZNW6Q2u7Ot9aqICZRIBTDuq
+CbKoLujgtGhKbpa4JR5Ez6KOiCOSBa801ARXTdW2BQLq0I5WDA8/K6Xuw+wlSH67
+Fgs0bEMESg63lvZhAhOmsSi96hoMHXFrgudUT/b0WjydMcpT2YYZt9fCjg4FP0Oy
+PtqvLUwO9NfYcZgaAEg/DJmjMTiMXxVIIsf0j1g8Kzj9I43B+/7S2zDCdCIEIl3l
+rNRf6bGTgkizDPQdAxgYJbIyRHYiO5hbYS6suHUE869EzbRgahpk10mar/kDw8fP
+Wqt7P6vyJLiShEdtElCMiREE/mFDuQ==
+=epY3
 -----END PGP SIGNATURE-----
 
---i8ciaUXsb9pgj4GIKEwwvYyTqkvuzI0og--
+--5oyCKOGIHLbYFXxlxRkwQUhhmLwj5X2KI--

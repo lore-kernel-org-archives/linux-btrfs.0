@@ -1,113 +1,209 @@
-Return-Path: <SRS0=xOGy=CS=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=1Lxm=CT=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-14.6 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,NICE_REPLY_A,
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0D412C433E2
-	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Sep 2020 21:47:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7284DC43461
+	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Sep 2020 02:07:19 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id B407D206DB
-	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Sep 2020 21:47:05 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0F806207DE
+	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Sep 2020 02:07:17 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="nxBQHySg";
-	dkim=temperror (0-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="CqPitWuw"
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="SQQv5/dr"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728442AbgIIVrE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 9 Sep 2020 17:47:04 -0400
-Received: from out4-smtp.messagingengine.com ([66.111.4.28]:59237 "EHLO
-        out4-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1726426AbgIIVrC (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 9 Sep 2020 17:47:02 -0400
-Received: from compute4.internal (compute4.nyi.internal [10.202.2.44])
-        by mailout.nyi.internal (Postfix) with ESMTP id 3974E5C00EB;
-        Wed,  9 Sep 2020 17:47:01 -0400 (EDT)
-Received: from mailfrontend2 ([10.202.2.163])
-  by compute4.internal (MEProxy); Wed, 09 Sep 2020 17:47:01 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=from
-        :to:cc:subject:date:message-id:in-reply-to:references
-        :mime-version:content-transfer-encoding; s=fm1; bh=bYm5PRfdB6LUT
-        UDJ9XSXOiHVFdiOrqPvHtv2a5oVMeA=; b=nxBQHySg5oeupISc2GFlK4Aw86UkX
-        q4IMQQc5O+RzORx3ffr2g53RRzWvzLZnZ2pQ2HYtHLO8GCJsXd6mcN94bCL/26+w
-        0bxC56pt3QPwwtAVgv2M2Iss8UrAKwgllPMV3OIBWSb0wqOM8tatjD6NuhOZtMzL
-        4yx8Zsd9Pxk5QNjbxT1HKRto3Shko4fTnkW4Mxe+nFf87eoF5QzZ5cZ+rsfcZnAr
-        QvHKuEqxTYYmC9SFZ0Pywg4JZvDwc2ZiNas2cNFl98F+2sQhbjxHFF0a1W2xn15R
-        quAmEpwbqWt6skH0Zu+RL2SPrUJY73+iUi/mDJLxhghS7NVkweE6zDi0g==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-        messagingengine.com; h=cc:content-transfer-encoding:date:from
-        :in-reply-to:message-id:mime-version:references:subject:to
-        :x-me-proxy:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=
-        fm3; bh=bYm5PRfdB6LUTUDJ9XSXOiHVFdiOrqPvHtv2a5oVMeA=; b=CqPitWuw
-        wUk36xExY5Y2ZFB1UV3yTJAgz1xu4SmEhKz7oqntGFjuqiUmCzF7GVLNv8V7O7aB
-        A28m+xFDymKc0ZomusGsCYmjfe8TrE0Y3StC0IvnwdvpUB75H6cRsCEyFKDwvyi3
-        3YEeRiZCmdiomeLCf+gNXFzP0u2+Snzxp0R5n+EPbvB/4HXx0GU9HqB0/4QRMvCh
-        rC5mz9CycJi+dQE5iL6Ci2H+9LLZy+A4SWK+5/NSKomZyW6drO88qJsfbZTAEdkY
-        JKAfCHvhAtJnRubxJ4bCAY2VTszjfNEXWe9vbf7dRwUImsKPF+4H94OgjsD4nDrx
-        DBsdlUCqJVVjGw==
-X-ME-Sender: <xms:VU1ZXxZvAtKYakW1OWelDUJQdhMww4yvcml7YXgdM-icwvPCrHHEcg>
-    <xme:VU1ZX4YsFV8eYaOuGD05RFIRMjWEE7AR7CD2vopL4Kw6whU0-t2DmOsQoYe0b39Le
-    xK5GEahfMgKawRWFx0>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeduiedrudehiedgtdduucetufdoteggodetrfdotf
-    fvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfqfgfvpdfurfetoffkrfgpnffqhgen
-    uceurghilhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmne
-    cujfgurhephffvufffkffojghfggfgsedtkeertdertddtnecuhfhrohhmpeeuohhrihhs
-    uceuuhhrkhhovhcuoegsohhrihhssegsuhhrrdhioheqnecuggftrfgrthhtvghrnhepie
-    euffeuvdeiueejhfehiefgkeevudejjeejffevvdehtddufeeihfekgeeuheelnecukfhp
-    peduieefrdduudegrddufedvrdefnecuvehluhhsthgvrhfuihiivgeptdenucfrrghrrg
-    hmpehmrghilhhfrhhomhepsghorhhishessghurhdrihho
-X-ME-Proxy: <xmx:VU1ZXz-x7LhxJqiJY4SYs4aXgdsgyJ8YgNu5ovm_ijaFmi_5c90kHg>
-    <xmx:VU1ZX_p9_bC-yeSTqgg1TKIozzDjTSbUvzDO7RP5EoA7MCJ9VYw5Dg>
-    <xmx:VU1ZX8oD2UVr36eqaZGIxSM9wdG0jIFEzqQ-Vyk9V9yhnIZUS00sHQ>
-    <xmx:VU1ZX3Xx7mpAw0o0hVH5foQ1OVSoOfcIjI95LAIp3vwOtLuygkfebw>
-Received: from localhost (unknown [163.114.132.3])
-        by mail.messagingengine.com (Postfix) with ESMTPA id A72AE3068C64;
-        Wed,  9 Sep 2020 17:47:00 -0400 (EDT)
-From:   Boris Burkov <boris@bur.io>
-To:     Dave Sterba <dsterba@suse.com>, Josef Bacik <josef@toxicpanda.com>,
-        Chris Mason <clm@fb.com>
-Cc:     Boris Burkov <boris@bur.io>, linux-btrfs@vger.kernel.org,
-        kernel-team@fb.com
-Subject: [PATCH 3/3] btrfs: skip space_cache v1 setup when not using it
-Date:   Wed,  9 Sep 2020 14:45:18 -0700
-Message-Id: <2e20e4da6a0df68bc29e85e173f70fcd393df2fa.1599686801.git.boris@bur.io>
-X-Mailer: git-send-email 2.24.1
-In-Reply-To: <cover.1599686801.git.boris@bur.io>
-References: <cover.1599686801.git.boris@bur.io>
+        id S1730453AbgIJCA6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 9 Sep 2020 22:00:58 -0400
+Received: from mout.gmx.net ([212.227.15.15]:40805 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1730093AbgIJBve (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 9 Sep 2020 21:51:34 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1599702690;
+        bh=Pwk4iOyAXc5C7JN4ExztI0oVqxLGdHcmNcqYNdRrP44=;
+        h=X-UI-Sender-Class:Subject:To:Cc:References:From:Date:In-Reply-To;
+        b=SQQv5/drzxE4obGQwyKvDlPtq1hRgSF98UDxZ3POEjj0I4/DFiEZBlIoX8dLp+klB
+         VIS2RiLMsSt/LvAwDZ+gt1TvsA7krdsPFqlwKhpJdMijQbNJN2aI0/HpTM2bYbLG2Z
+         k0KpEnhtotyvBexB6Q+Htt4zvAdTj48I0/WJfdEY=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx005
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1MhU5R-1klOEr0c43-00egqk; Thu, 10
+ Sep 2020 02:05:38 +0200
+Subject: Re: [PATCH 14/17] btrfs: make btrfs_readpage_end_io_hook() follow
+ sector size
+To:     Goldwyn Rodrigues <rgoldwyn@suse.de>, Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+References: <20200908075230.86856-1-wqu@suse.com>
+ <20200908075230.86856-15-wqu@suse.com>
+ <20200909173457.e4gpsbwkcsxtdo4g@fiona>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAU4EEwEIADgCGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1oQAKCRDC
+ PZHzoSX+qCY6CACd+mWu3okGwRKXju6bou+7VkqCaHTdyXwWFTsr+/0ly5nUdDtT3yEVggPJ
+ 3VP70wjlrxUjNjFb6iIvGYxiPOrop1NGwGYvQktgRhaIhALG6rPoSSAhGNjwGVRw0km0PlIN
+ D29BTj/lYEk+jVM1YL0QLgAE1AI3krihg/lp/fQT53wLhR8YZIF8ETXbClQG1vJ0cllPuEEv
+ efKxRyiTSjB+PsozSvYWhXsPeJ+KKjFen7ebE5reQTPFzSHctCdPnoR/4jSPlnTlnEvLeqcD
+ ZTuKfQe1gWrPeevQzgCtgBF/WjIOeJs41klnYzC3DymuQlmFubss0jShLOW8eSOOWhLRuQEN
+ BFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcgaCbPEwhLj
+ 1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj/IrRUUka
+ 68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fNGSsRb+pK
+ EKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0q1eW4Jrv
+ 0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEvABEBAAGJ
+ ATwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1rgUJCWpOfwAKCRDCPZHz
+ oSX+qFcEB/95cs8cM1OQdE/GgOfCGxwgckMeWyzOR7bkAWW0lDVp2hpgJuxBW/gyfmtBnUai
+ fnggx3EE3ev8HTysZU9q0h+TJwwJKGv6sUc8qcTGFDtavnnl+r6xDUY7A6GvXEsSoCEEynby
+ 72byGeSovfq/4AWGNPBG1L61Exl+gbqfvbECP3ziXnob009+z9I4qXodHSYINfAkZkA523JG
+ ap12LndJeLk3gfWNZfXEWyGnuciRGbqESkhIRav8ootsCIops/SqXm0/k+Kcl4gGUO/iD/T5
+ oagaDh0QtOd8RWSMwLxwn8uIhpH84Q4X1LadJ5NCgGa6xPP5qqRuiC+9gZqbq4Nj
+Message-ID: <ba262153-9a5d-d940-59fc-a1e1f3337602@gmx.com>
+Date:   Thu, 10 Sep 2020 08:05:34 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.12.0
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <20200909173457.e4gpsbwkcsxtdo4g@fiona>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="M0d0uDf0ynD2wObUyyiFxJ0OeW25rK4g3"
+X-Provags-ID: V03:K1:D+Tt+1W1ioLlM8ByJ1fI9tFO806QX6IvLpQexR8/oOIp8Id9UXP
+ pTYgEgw3S3wIdrIeIY3AcUFkakkBd5sZr7Sh1uItp8yKB2V869MUH8NvQhetQbUF9KhGrPB
+ axNKspnVUWiN9NcC001XU+mC5C09eN6UZqCloF6SkwhlqzqpAzR03ZTP+w14IeFZ3XymOsU
+ 20K82Vnd9LA32BFPOGbqA==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:/EjoegYkFjU=:2qVf+PijP0iDzTFzPfxJWG
+ e4X48brGzDFT8UJGSNN7fatnmFvhMZGJpGLZfxF4vhmxCj6SecvTCQL83EA4tuZrgL4qIKP+a
+ lBFJxqy7GRaoJ0oPFkTedy8iXGr5I+wmjMbTAn1SfiJRGv1uTESoFt6wto7TwaT90Yos3Lp5n
+ mVRZFGFaQyPV1HBggsiY+yNyt+3Bqzh2o/vMHlOQhD9jazkxPpEamNtXvpTDbQb65REohCPAm
+ /Pa4iEq3L2oMbzZIW4nn2P8KN5GpjbeJdlK/26XN50ZYQvqvEC/JTuK/BB4heKbhqDkcVd84G
+ Xlx2b/XgbPmRptDaY5m3KTnMbURrbSeLMWZBfwlHfA+l7ym5NysTCxHQz326FPTao3aats8Gr
+ JyMv54rzEEf5cSr79XuINYWUGPVf6wcXn5PHOHEnWcKuaNY5BExo9oE0gaPZJZrkrTUmh53r8
+ /EH38OEDvC4hoStXnXPp2oRhY90ZEqctj+ShAJANQmY3zewxSP9dBAq0knTLriwiJxFXMs7CE
+ gDyR3aX/KgzJ0oEZ/JGSLD9rs3sAGdE2CM02Ac2ZpF7oG4U7fW0KNNs1FMKTpf319UrcrFfsv
+ hgdaKkmMWH9ebJTwa8k3zkoxIptG24WfNMz5c/wTUItTyZxM1Z02KNNhd7b7igpE8u9MLQkt+
+ /ZFkqqYQ6IQoMN6za9Obrn5jTPGtOAA4yGqvsOObpborRViwdt5UOioeOMHKNwu5wervXbZJb
+ wNE0qfEur+cvIk0sACKQ1c8VkRHTh7GlojvuIG8V8XOlv86drhVODEgblPX3yegS6mc/4QtSl
+ /Vp9lJBBeXy/YAT9FN0OjKcnUKJ/qeOLyh49LAoet4QNDJHBGnbTgwm4pc/baJDQazKaiD1pM
+ 2QF9AndFB9dgwYENqghrHOW+lfGiWxqVI3DElIHcnP1V0Up6RhSMOkqV3x4qYhOoFt6CI/8z6
+ bm1hZqir30rPumMjvVowZQ+G4iGgqDXNM1JozY0XLMbxNpz5IvjSF5E1+BM/Ypmk72T1h+DRU
+ 7UTOOyLRG3BtxtNjSnf7R1Kcv3CIed671HqNPL2JieCHxr9RNCcR/INiUPz26LCNSQUQzCDn4
+ yyRK9jhE4MGTWX6kfgNN3kTTXWTMf0zQFJD23gDlTRUF+cMsngHTjOZb1R75d9T+WLofq+ssq
+ kj+FWc/KxCt5tlDQ18Bavt/93M2iNGuub0gqtHMa7VtSk8GQx19x8EyBF4Lw49FTyOUkNDHG+
+ MY7JGeMxlRKlrFWy+lpoMKQjkXC1tET87OA9sLQ==
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-If we are not using space cache v1, we should not create the free space
-object or free space inodes. This comes up when we delete the existing
-free space objects/inodes when migrating to v2, only to see them get
-recreated for every dirtied block group.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--M0d0uDf0ynD2wObUyyiFxJ0OeW25rK4g3
+Content-Type: multipart/mixed; boundary="jGUHYH2rnCMnnG4CtLJLuYX84IsihURuQ"
 
-Signed-off-by: Boris Burkov <boris@bur.io>
----
- fs/btrfs/block-group.c | 3 +++
- 1 file changed, 3 insertions(+)
+--jGUHYH2rnCMnnG4CtLJLuYX84IsihURuQ
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index e5e5baad88d8..b3502a887978 100644
---- a/fs/btrfs/block-group.c
-+++ b/fs/btrfs/block-group.c
-@@ -2308,6 +2308,9 @@ static int cache_save_setup(struct btrfs_block_group *block_group,
- 	int retries = 0;
- 	int ret = 0;
- 
-+	if (!btrfs_test_opt(fs_info, SPACE_CACHE))
-+		return 0;
-+
- 	/*
- 	 * If this block group is smaller than 100 megs don't bother caching the
- 	 * block group.
--- 
-2.24.1
 
+
+On 2020/9/10 =E4=B8=8A=E5=8D=881:34, Goldwyn Rodrigues wrote:
+> On 15:52 08/09, Qu Wenruo wrote:
+>> Currently btrfs_readpage_end_io_hook() just pass the whole page to
+>> check_data_csum(), which is fine since we only support sectorsize =3D=3D=
+
+>> PAGE_SIZE.
+>>
+>> To support subpage RO support, we need to properly honor per-sector
+>> checksum verification, just like what we did in dio read path.
+>>
+>> This patch will do the csum verification in a for loop, starts with
+>> pg_off =3D=3D start - page_offset(page), with sectorsize increasement =
+for
+>> each loop.
+>>
+>> For sectorsize =3D=3D PAGE_SIZE case, the pg_off will always be 0, and=
+ we
+>> will only finish with just one loop.
+>>
+>> For subpage, we do the proper loop.
+>>
+>> Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>> ---
+>>  fs/btrfs/inode.c | 15 ++++++++++++++-
+>>  1 file changed, 14 insertions(+), 1 deletion(-)
+>>
+>> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+>> index 078735aa0f68..8bd14dda2067 100644
+>> --- a/fs/btrfs/inode.c
+>> +++ b/fs/btrfs/inode.c
+>> @@ -2851,9 +2851,12 @@ static int btrfs_readpage_end_io_hook(struct bt=
+rfs_io_bio *io_bio,
+>>  				      u64 start, u64 end, int mirror)
+>>  {
+>>  	size_t offset =3D start - page_offset(page);
+>> +	size_t pg_off;
+>>  	struct inode *inode =3D page->mapping->host;
+>>  	struct extent_io_tree *io_tree =3D &BTRFS_I(inode)->io_tree;
+>>  	struct btrfs_root *root =3D BTRFS_I(inode)->root;
+>> +	u32 sectorsize =3D root->fs_info->sectorsize;
+>> +	bool found_err =3D false;
+>> =20
+>>  	if (PageChecked(page)) {
+>>  		ClearPageChecked(page);
+>> @@ -2870,7 +2873,17 @@ static int btrfs_readpage_end_io_hook(struct bt=
+rfs_io_bio *io_bio,
+>>  	}
+>> =20
+>>  	phy_offset >>=3D inode->i_sb->s_blocksize_bits;
+>> -	return check_data_csum(inode, io_bio, phy_offset, page, offset);
+>> +	for (pg_off =3D offset; pg_off < end - page_offset(page);
+>> +	     pg_off +=3D sectorsize, phy_offset++) {
+>> +		int ret;
+>> +
+>> +		ret =3D check_data_csum(inode, io_bio, phy_offset, page, pg_off);
+>> +		if (ret < 0)
+>> +			found_err =3D true;
+>> +	}
+>> +	if (found_err)
+>> +		return -EIO;
+>> +	return 0;
+>>  }
+>=20
+> We don't need found_err here. Just return ret when you encounter the
+> first error.
+>=20
+But that means, the whole range will be marked error, while some sectors
+may still contain good data and pass the csum checking.
+
+Thanks,
+Qu
+
+
+--jGUHYH2rnCMnnG4CtLJLuYX84IsihURuQ--
+
+--M0d0uDf0ynD2wObUyyiFxJ0OeW25rK4g3
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAl9Zbc4ACgkQwj2R86El
+/qhlFQf/eu/JH0LSxsSQo5KyX+QSi5FKHS7zlkeApeApAxGXi8MK2hP5wz5pKacD
+PppkpZoxieeF1bU3t+/RhPMriBjFAYTcKTkgSusXPK4VsFUBSgmt0TkCws0D/C1X
+bqzRWyAEHRJpkIad/dQlM3VgHymgO8Sw94mG8U5X0Fx9kzakbCz1W0HC0sLxPT0v
+Xlmj25kbSqen0OyboESgsxocA/SvqdV+8OL4N4vSMPP2ES/kF36W/SW4iNfT6NmT
+WFWJNO5trjTxhMSlVKNX9PQCBzVyZonP81GfgfpW19S9QDcHPNfaWQw1v+xfMunr
+pyTViXkztLxxIugWKrbwJ9GvRa7sYQ==
+=4gVX
+-----END PGP SIGNATURE-----
+
+--M0d0uDf0ynD2wObUyyiFxJ0OeW25rK4g3--

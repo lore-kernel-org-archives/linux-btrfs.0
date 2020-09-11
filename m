@@ -2,159 +2,99 @@ Return-Path: <SRS0=ZNpj=CU=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.7 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,NICE_REPLY_A,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-12.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1FA25C433E2
-	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Sep 2020 17:21:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BFEB6C433E2
+	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Sep 2020 17:41:10 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id DB57C221E5
-	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Sep 2020 17:21:19 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7C408221EF
+	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Sep 2020 17:41:10 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="MadKBhmI"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726154AbgIKRUk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 11 Sep 2020 13:20:40 -0400
-Received: from mx2.suse.de ([195.135.220.15]:51648 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726041AbgIKNBV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 11 Sep 2020 09:01:21 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 2B680ACC8;
-        Fri, 11 Sep 2020 13:01:16 +0000 (UTC)
-Subject: Re: [PATCH 11/17] btrfs: extract the extent buffer verification from
- btree_readpage_end_io_hook()
-To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <20200908075230.86856-1-wqu@suse.com>
- <20200908075230.86856-12-wqu@suse.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <d5ab8376-03b2-3f85-e4a9-fc2d6602831a@suse.com>
-Date:   Fri, 11 Sep 2020 16:00:59 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.10.0
+        id S1726349AbgIKRlJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 11 Sep 2020 13:41:09 -0400
+Received: from esa5.hgst.iphmx.com ([216.71.153.144]:38428 "EHLO
+        esa5.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725991AbgIKMmE (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 11 Sep 2020 08:42:04 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1599828124; x=1631364124;
+  h=from:to:cc:subject:date:message-id:in-reply-to:
+   references:mime-version:content-transfer-encoding;
+  bh=4XBBV9Fp6sjoRwi/igxARQSGbC6vCYxHPBzketHaDMg=;
+  b=MadKBhmI5V7x7zSTg51w56ZD2ENHDWg7G5d/SvNU+ed/RDRKvMkJVhRd
+   KHHXC+lYBfl6ypWv11RaNr3hDNaqSJQOoGO4hfMd8vGJB7A4AZcU03ZzW
+   0GodF5ZMsDG5qKB40VLubC7XkGRQ6I/0c7sLP7uBDQoi0CvXobp+jZNL5
+   8FaL2DjSVNBob9CebRRWBvS3edC+aC/bNEl7tn9pTPjaZN13MdWdu22y3
+   gT1egDCfwnojJcqusyLcF7xZAH2VTUjXITHH0M3V9QETcvdF/toqk2Xha
+   wQmrTt4qXTwJ8LS7qUWBvthkdrloqTP33HGWYKAgk56+fupRsU20t+SBq
+   g==;
+IronPort-SDR: 9YLGQ8SftZ3l0mSPqWZsRHT41JnGu0ER83yjDDJuTmlQ8d0aO0xWbQ8amPCT4ZuP0VRykdmFQT
+ RXKI98zISp6XfNZ9gOn2LERxHT81EDG+rEPplz1bPhkUWpO32bUBBfktDs/D6GqjVZQ4opqyJe
+ aEI+UOj+QpVm7pGEfJSUSNZs7T5y+oLca98MGkvd2nLjRpW8Oeo17/AWqqIIfen7DIpQb09cC6
+ y/NFOcB5E4l+n0Zgnhrb/noOc4+T0KwTlcoq4kNLwq0sL31CjadSMEeX0WXf5w8asPmrIlbO61
+ rAU=
+X-IronPort-AV: E=Sophos;i="5.76,415,1592841600"; 
+   d="scan'208";a="147126054"
+Received: from h199-255-45-15.hgst.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
+  by ob1.hgst.iphmx.com with ESMTP; 11 Sep 2020 20:34:04 +0800
+IronPort-SDR: TdKD4AgQtykkG9gvQrxgnwoHqbIkpl65PCvPHxwfdVIoT5asf1Ymeno2X40lRyB3IRfUjXYHIk
+ /nZYp7Qe/plA==
+Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 11 Sep 2020 05:20:24 -0700
+IronPort-SDR: N0//q2KoYG7BBS+QU9ezO0q2sv2T3tkxv2q+/TzSU5jevXUpPY0eeZDRbgFz1bWUwSlUGjKD88
+ 0z+xrTiCLzOA==
+WDCIronportException: Internal
+Received: from naota.dhcp.fujisawa.hgst.com ([10.149.52.155])
+  by uls-op-cesaip02.wdc.com with ESMTP; 11 Sep 2020 05:34:01 -0700
+From:   Naohiro Aota <naohiro.aota@wdc.com>
+To:     linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
+Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        Hannes Reinecke <hare@suse.com>, linux-fsdevel@vger.kernel.org,
+        Naohiro Aota <naohiro.aota@wdc.com>
+Subject: [PATCH v7 39/39] btrfs: enable to mount ZONED incompat flag
+Date:   Fri, 11 Sep 2020 21:32:59 +0900
+Message-Id: <20200911123259.3782926-40-naohiro.aota@wdc.com>
+X-Mailer: git-send-email 2.27.0
+In-Reply-To: <20200911123259.3782926-1-naohiro.aota@wdc.com>
+References: <20200911123259.3782926-1-naohiro.aota@wdc.com>
 MIME-Version: 1.0
-In-Reply-To: <20200908075230.86856-12-wqu@suse.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+This final patch adds the ZONED incompat flag to
+BTRFS_FEATURE_INCOMPAT_SUPP and enables btrfs to mount ZONED flagged file
+system.
 
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+---
+ fs/btrfs/ctree.h | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-On 8.09.20 г. 10:52 ч., Qu Wenruo wrote:
-> Currently btree_readpage_end_io_hook() only needs to handle one extent
-> buffer as currently one page only maps to one extent buffer.
-> 
-> But for incoming subpage support, one page can be mapped to multiple
-> extent buffers, thus we can no longer use current code.
-> 
-> This refactor would allow us to call btrfs_check_extent_buffer() on
-> all involved extent buffers at btree_readpage_end_io_hook() and other
-> locations.
-> 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 6e05eb180a77..e8639f6f7dec 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -303,7 +303,8 @@ struct btrfs_super_block {
+ 	 BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA |	\
+ 	 BTRFS_FEATURE_INCOMPAT_NO_HOLES	|	\
+ 	 BTRFS_FEATURE_INCOMPAT_METADATA_UUID	|	\
+-	 BTRFS_FEATURE_INCOMPAT_RAID1C34)
++	 BTRFS_FEATURE_INCOMPAT_RAID1C34	|	\
++	 BTRFS_FEATURE_INCOMPAT_ZONED)
+ 
+ #define BTRFS_FEATURE_INCOMPAT_SAFE_SET			\
+ 	(BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF)
+-- 
+2.27.0
 
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-
-> ---
->  fs/btrfs/disk-io.c | 78 ++++++++++++++++++++++++++--------------------
->  1 file changed, 45 insertions(+), 33 deletions(-)
-> 
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 62dbd9bbd381..f6e562979682 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -574,60 +574,37 @@ static int check_tree_block_fsid(struct extent_buffer *eb)
->  	return ret;
->  }
->  
-
-<snip>
-> +static int btree_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
-> +				      u64 phy_offset, struct page *page,
-> +				      u64 start, u64 end, int mirror)
-> +{
-> +	struct extent_buffer *eb;
-> +	int ret = 0;
-> +	int reads_done;
-
-nit: while at it just turn it into a bool.
-
-> +
-> +	if (!page->private)
-> +		goto out;
-> +
-
-nit: metadata pages are guaranteed to have their ->private val set to
-the pointer of extent buffer so this check can go away.
-
-> +	eb = (struct extent_buffer *)page->private;
-> +
-> +	/*
-> +	 * The pending IO might have been the only thing that kept this buffer
-> +	 * in memory.  Make sure we have a ref for all this other checks
-> +	 */
-> +	atomic_inc(&eb->refs);
-> +
-> +	reads_done = atomic_dec_and_test(&eb->io_pages);
-> +	if (!reads_done)
-> +		goto err;
-> +
-> +	eb->read_mirror = mirror;
-> +	if (test_bit(EXTENT_BUFFER_READ_ERR, &eb->bflags)) {
-> +		ret = -EIO;
-> +		goto err;
-> +	}
-> +
-> +	ret = btrfs_check_extent_buffer(eb);
-> +
->  err:
->  	if (reads_done &&
->  	    test_and_clear_bit(EXTENT_BUFFER_READAHEAD, &eb->bflags))
-> 

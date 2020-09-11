@@ -4,57 +4,62 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-5.2 required=3.0 tests=BAYES_00,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BEDDEC433E2
-	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Sep 2020 16:37:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2A46AC43461
+	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Sep 2020 17:01:29 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 7C8B222205
-	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Sep 2020 16:37:02 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id F2AC8221EB
+	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Sep 2020 17:01:28 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726504AbgIKQgo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 11 Sep 2020 12:36:44 -0400
-Received: from mx2.suse.de ([195.135.220.15]:58192 "EHLO mx2.suse.de"
+        id S1725901AbgIKRBS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 11 Sep 2020 13:01:18 -0400
+Received: from mx2.suse.de ([195.135.220.15]:47810 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726119AbgIKPOu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 11 Sep 2020 11:14:50 -0400
+        id S1726172AbgIKPEY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 11 Sep 2020 11:04:24 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 3102FADC2;
-        Fri, 11 Sep 2020 14:15:12 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id CB7A5AE70;
+        Fri, 11 Sep 2020 14:03:48 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 33379DA87D; Fri, 11 Sep 2020 16:13:40 +0200 (CEST)
-Date:   Fri, 11 Sep 2020 16:13:39 +0200
+        id D585ADA87D; Fri, 11 Sep 2020 16:02:16 +0200 (CEST)
+Date:   Fri, 11 Sep 2020 16:02:16 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     Omar Sandoval <osandov@osandov.com>
-Cc:     linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org
-Subject: Re: [PATCH 2/9] btrfs: send: avoid copying file data
-Message-ID: <20200911141339.GR18399@twin.jikos.cz>
+To:     fdmanana@kernel.org
+Cc:     linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+Subject: Re: [PATCH 0/5] btrfs: fix enospc and transaction aborts during
+ fallocate
+Message-ID: <20200911140216.GQ18399@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Omar Sandoval <osandov@osandov.com>,
-        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org
-References: <cover.1597994106.git.osandov@osandov.com>
- <be54e8e7658f85dd5e62627a1ad02beb7a4aeed8.1597994106.git.osandov@osandov.com>
+Mail-Followup-To: dsterba@suse.cz, fdmanana@kernel.org,
+        linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+References: <cover.1599560101.git.fdmanana@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <be54e8e7658f85dd5e62627a1ad02beb7a4aeed8.1597994106.git.osandov@osandov.com>
+In-Reply-To: <cover.1599560101.git.fdmanana@suse.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Aug 21, 2020 at 12:39:52AM -0700, Omar Sandoval wrote:
-> +static int put_data_header(struct send_ctx *sctx, u32 len)
-> +{
-> +	struct btrfs_tlv_header *hdr;
-> +
-> +	if (sctx->send_max_size - sctx->send_size < sizeof(*hdr) + len)
-> +		return -EOVERFLOW;
-> +	hdr = (struct btrfs_tlv_header *)(sctx->send_buf + sctx->send_size);
-> +	hdr->tlv_type = cpu_to_le16(BTRFS_SEND_A_DATA);
-> +	hdr->tlv_len = cpu_to_le16(len);
+On Tue, Sep 08, 2020 at 11:27:19AM +0100, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+> 
+> When attempting to fallocate on a large file range with many file extent
+> items, the operation can fail with ENOSPC when it shouldn't and, more
+> critical, abort the transaction and turn the filesystem to RO mode.
+> 
+> First patch fixes the issue, the remaining just do some cleanups after it.
+> 
+> Filipe Manana (5):
+>   btrfs: fix metadata reservation for fallocate that leads to
+>     transaction aborts
+>   btrfs: remove item_size member of struct btrfs_clone_extent_info
+>   btrfs: rename struct btrfs_clone_extent_info to a more generic name
+>   btrfs: rename btrfs_punch_hole_range() to a more generic name
+>   btrfs: rename btrfs_insert_clone_extent() to a more generic name
 
-I think we need put_unaligned_le16 here, it's mapping a random buffer to
-a pointer, this is not alignment safe in general.
+Added to misc-next, thanks.

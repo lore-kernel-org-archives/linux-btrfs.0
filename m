@@ -2,139 +2,123 @@ Return-Path: <SRS0=ZNpj=CU=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.7 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
-	SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-12.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 19D55C43461
-	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Sep 2020 12:08:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 181F9C43461
+	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Sep 2020 12:36:15 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id DC63B21D40
-	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Sep 2020 12:08:44 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BEE0622204
+	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Sep 2020 12:36:14 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="RTIL2Ydk"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725858AbgIKMIk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 11 Sep 2020 08:08:40 -0400
-Received: from mx2.suse.de ([195.135.220.15]:59150 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725793AbgIKMIS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 11 Sep 2020 08:08:18 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 5BED1AC23;
-        Fri, 11 Sep 2020 12:08:25 +0000 (UTC)
-Subject: Re: [PATCH 05/17] btrfs: don't allow tree block to cross page
- boundary for subpage support
-To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <20200908075230.86856-1-wqu@suse.com>
- <20200908075230.86856-6-wqu@suse.com>
- <661f0e00-0d74-e6e4-f9cd-e1a8ae648406@suse.com>
- <bbd266f4-c329-c15c-37c6-5ef768ad8e25@suse.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <937dacc6-77d9-223d-87e3-d67adbcc9036@suse.com>
-Date:   Fri, 11 Sep 2020 15:08:08 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.10.0
+        id S1725784AbgIKMfU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 11 Sep 2020 08:35:20 -0400
+Received: from esa5.hgst.iphmx.com ([216.71.153.144]:38372 "EHLO
+        esa5.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725893AbgIKMds (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 11 Sep 2020 08:33:48 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1599827629; x=1631363629;
+  h=from:to:cc:subject:date:message-id:in-reply-to:
+   references:mime-version:content-transfer-encoding;
+  bh=+3nWbUVlFor4kVfiP3oNqaSLc+/2lCklw0996h4GMGc=;
+  b=RTIL2YdkYd6abNTlDVoM2sKdCTgsJz4E64h1XxYQwIjU5tFIxaGoKeAE
+   bFX8OMI2Tr4hIK/Gzdxvs24bTfl9FBsPn2p7+nOGPTZpfck4O7zP6PHvm
+   40yZDdqYLTzXFjYQbo1lyjJc5gMtDeOt1kQZDvIQobzWrlkD7cdgtlmSv
+   SCk/N7HQJZiwGkGKE51uIBoBa3NXiDZSiq+RtdgVA7p3KorQwTX8OsfmP
+   v8Y0ezkh/sKWJksY9TL7sLCydG+Z6p4Y17/3Y7HsZgjMi6sG1K3GfY8FE
+   5lBP28s5KO0IIgXOmCmrNdafhtBKCW6f0EwOIgVeepgyEio0iCxiOhYcw
+   g==;
+IronPort-SDR: +V1XvkrfvT5YgH2MDqz6htCoST9XvpxXZgLpuzJV+U6lCnZqGSwhTusA3sabrBIbXeVzJxATLJ
+ PGxY4y7fDQyC1xK6UIpCufxiygNWXLehIVFQ/2kLsLT4wCjJHY8rGc5A0LFtwLPxqQB2BKuJSS
+ h/1pQPLPULDrqZ44qIK+fGMAvhE5trRGJEfWmkFV1LXQERVK68Q2r2Ww/Lp4fEl2JDpzGX4T+G
+ WEIta9y6qNYmTloSH5w8xibbvTIOmGBBIZSj7gMPRnELNqEP2/OLtEzxeHI1RRBjBjlSj9igPm
+ SNw=
+X-IronPort-AV: E=Sophos;i="5.76,415,1592841600"; 
+   d="scan'208";a="147125946"
+Received: from h199-255-45-15.hgst.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
+  by ob1.hgst.iphmx.com with ESMTP; 11 Sep 2020 20:33:09 +0800
+IronPort-SDR: 011ghEOVGHYPojpSxF4EPOfwNszaQptZsWgeUH9kTZ0hIrEqRLFU2t0OYxCKqzpZ/vuiF1o6B9
+ fCnPoRMEhtXA==
+Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 11 Sep 2020 05:19:30 -0700
+IronPort-SDR: bNW0znLN4m7r2EHLLcUqFuMFuhRF0017toi2Z5FoO1Jj9BMWXCtGVxwvHtMexOCQGSvYgbK4It
+ 0Yb29VfSP7+Q==
+WDCIronportException: Internal
+Received: from naota.dhcp.fujisawa.hgst.com ([10.149.52.155])
+  by uls-op-cesaip02.wdc.com with ESMTP; 11 Sep 2020 05:33:07 -0700
+From:   Naohiro Aota <naohiro.aota@wdc.com>
+To:     linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
+Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        Hannes Reinecke <hare@suse.com>, linux-fsdevel@vger.kernel.org,
+        Naohiro Aota <naohiro.aota@wdc.com>,
+        Anand Jain <anand.jain@oracle.com>,
+        Johannes Thumshirn <jthumshirn@suse.de>,
+        Damien Le Moal <damien.lemoal@wdc.com>
+Subject: [PATCH v7 01/39] btrfs: introduce ZONED feature flag
+Date:   Fri, 11 Sep 2020 21:32:21 +0900
+Message-Id: <20200911123259.3782926-2-naohiro.aota@wdc.com>
+X-Mailer: git-send-email 2.27.0
+In-Reply-To: <20200911123259.3782926-1-naohiro.aota@wdc.com>
+References: <20200911123259.3782926-1-naohiro.aota@wdc.com>
 MIME-Version: 1.0
-In-Reply-To: <bbd266f4-c329-c15c-37c6-5ef768ad8e25@suse.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+This patch introduces the ZONED incompat flag. The flag indicates that the
+volume management will satisfy the constraints imposed by host-managed
+zoned block devices.
 
+Reviewed-by: Anand Jain <anand.jain@oracle.com>
+Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
+Signed-off-by: Damien Le Moal <damien.lemoal@wdc.com>
+Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+---
+ fs/btrfs/sysfs.c           | 2 ++
+ include/uapi/linux/btrfs.h | 1 +
+ 2 files changed, 3 insertions(+)
 
-On 11.09.20 г. 14:36 ч., Qu Wenruo wrote:
-> 
-> 
-> On 2020/9/11 下午6:26, Nikolay Borisov wrote:
->>
->>
->> On 8.09.20 г. 10:52 ч., Qu Wenruo wrote:
->>> As a preparation for subpage sector size support (allow sector size
->>> smaller than page size to be mounted), if the sector size is smaller
->>
->> nit: (allowing filesystem with sector size smaller than page size to be
->> mounted)
->>
->>> than page size, we don't allow tree block to be read if it cross page
->>> boundary (normally 64K).
->>
->> Why normally 64k ?
-> 
-> Because there are only two major arches supporting non-4k page size,
-> ppc64 which uses 64K page size, and arm which can support 4K, 16K and
-> 64K page size.
-> 
-> Currently our plan is only to support 64K page size and 4K page size.
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index c8df2edafd85..38c7a57789d8 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -262,6 +262,7 @@ BTRFS_FEAT_ATTR_INCOMPAT(no_holes, NO_HOLES);
+ BTRFS_FEAT_ATTR_INCOMPAT(metadata_uuid, METADATA_UUID);
+ BTRFS_FEAT_ATTR_COMPAT_RO(free_space_tree, FREE_SPACE_TREE);
+ BTRFS_FEAT_ATTR_INCOMPAT(raid1c34, RAID1C34);
++BTRFS_FEAT_ATTR_INCOMPAT(zoned, ZONED);
+ 
+ static struct attribute *btrfs_supported_feature_attrs[] = {
+ 	BTRFS_FEAT_ATTR_PTR(mixed_backref),
+@@ -277,6 +278,7 @@ static struct attribute *btrfs_supported_feature_attrs[] = {
+ 	BTRFS_FEAT_ATTR_PTR(metadata_uuid),
+ 	BTRFS_FEAT_ATTR_PTR(free_space_tree),
+ 	BTRFS_FEAT_ATTR_PTR(raid1c34),
++	BTRFS_FEAT_ATTR_PTR(zoned),
+ 	NULL
+ };
+ 
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index 2c39d15a2beb..5df73001aad4 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -307,6 +307,7 @@ struct btrfs_ioctl_fs_info_args {
+ #define BTRFS_FEATURE_INCOMPAT_NO_HOLES		(1ULL << 9)
+ #define BTRFS_FEATURE_INCOMPAT_METADATA_UUID	(1ULL << 10)
+ #define BTRFS_FEATURE_INCOMPAT_RAID1C34		(1ULL << 11)
++#define BTRFS_FEATURE_INCOMPAT_ZONED		(1ULL << 12)
+ 
+ struct btrfs_ioctl_feature_flags {
+ 	__u64 compat_flags;
+-- 
+2.27.0
 
-I really rather make the support generic rather than boxing ourselves in
-some "artificial" constraints.
-
-> 
-> Furthermore, that 64K magic number matches with 64K stripe length of
-> btrfs, thus we choose 64K as the boundary.
-> 
->> I suspect you assume readers are familiar with the
->> motivation for this work which they don't necessarily need to be. Please
->> make your sentences explicit. Correct me if I'm wrong but you are
->> ensuring that an eb doesn't cross the largest possible sectorsize?
-> 
-> That's correct, and by incident, it's also the stripe length of btrfs
-> RAID, and scrub stripe length too.
-> 
-> (And scrub can't handle such tree block either)
-
-And that by itself is a good reason why we may want to support just 64k.
-So state that explicitly.
-
-> 
-> Thanks,
-> Qu
-> 
-
-<snip>

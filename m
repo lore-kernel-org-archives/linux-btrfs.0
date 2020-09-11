@@ -5,62 +5,62 @@ X-Spam-Level:
 X-Spam-Status: No, score=-12.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BD839C43461
-	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Sep 2020 17:42:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 75905C433E2
+	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Sep 2020 17:42:46 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 8647F221ED
-	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Sep 2020 17:42:42 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 22D9020735
+	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Sep 2020 17:42:46 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="jWe9Oe1t"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="V23/Pfa+"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725793AbgIKRmi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 11 Sep 2020 13:42:38 -0400
-Received: from esa5.hgst.iphmx.com ([216.71.153.144]:38451 "EHLO
+        id S1726007AbgIKRmm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 11 Sep 2020 13:42:42 -0400
+Received: from esa5.hgst.iphmx.com ([216.71.153.144]:38428 "EHLO
         esa5.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725892AbgIKMhY (ORCPT
+        with ESMTP id S1725946AbgIKMhM (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 11 Sep 2020 08:37:24 -0400
+        Fri, 11 Sep 2020 08:37:12 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1599827843; x=1631363843;
+  t=1599827831; x=1631363831;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=u23e3WllPu/3rko2m2r9M+D8jYbtSHTDuV00w5bX5wk=;
-  b=jWe9Oe1txJdlZy/b3Bt7FNH9EGDAdsDjuBJfDnKWEcENOyYi302fs0Nw
-   cia8D24guDjUKNNJ/hojVmCWkC+ze5rITpwCJr7As9fBMihbk64m/B61e
-   zEcHSm/sUYOSzP8IYpACO+MYC56SbC0ZR0gurHQQ/QPxKRPW8BooX1pbP
-   uKNkFVs3CwWEkz0tCYx1rBvDvsodt8EDp4dpaL4jzBTYH4ObB0GlUm6eR
-   tf2bNJeZEttL3uYRbicmF9f4+GA/JVq1kK4lvdpTLZFfirYZWsfsDzBK5
-   bFE7Z3EQtG45JyAt+N/qTEq7nOzuET4cJ7aNgwO2uYRB6dTnMQmyOLC9x
-   Q==;
-IronPort-SDR: 72/KwMJJ7LSTfAqqTKrgc78IqpogTHS2W6Rdc7uGXn6fgqCw5QNOncm8+4fgaK0kBn6wHRsX3q
- ymIs03Ku28kQbJ9wfja5Xov4CCURHW/fGha70gsJxZ5xAT3Av2ttzFanpG+T7TFOb1v89iz7rW
- 16/bSbV7fbNPEF/61RLiFpAgjyGBLi/4uJ1/sJLMQfPFBkTJkxVicDMDkaD5P7ttWJqPiQn/iU
- 6jpfY4GPfkZbk6zofqzOl/gr/CCrpWLqYkcM1O7Ontp47SzqQxoyR3lOJcERHxFB9MsNkGxroN
- 3js=
+  bh=EhqTsQY3IK2cQ7n7/gAdtr1dRvNODqPQppBEQS8Qx6s=;
+  b=V23/Pfa+hcuRGQrDjIuxtAikW5/ueg73FvkZ4CsqJibYAFs1G5vNIuP5
+   KO3ao++vlZQzwY+Mb8Qc1isX6qP778E9pfj5cIrwOEpAAFCaulgbHs6lS
+   yaXw4Y2ZgRXJYtaognq8W8KsV9qjdcvp3oe45T3lPJTJTSFpdU3TgtOft
+   pD4fftcGTDX+Q3Gwf9qRw+63PoxdxEeBUhi9m26FChBulx6tPkrjPimNE
+   qzTTo/tov1vhuRWo92pHhyWWOEhKxY95qoTlly4AnIFyxhSX8hOTFedrx
+   jcauOHdemoK00MlWWWNYLSAIMpJIMJ8mAjHTY9XVCFR5pUzhr5g6+RR+f
+   w==;
+IronPort-SDR: P2X6Vu8lsSJCFzUZ3Ot/eoZI08ByMkmf6dN2AWONFv+u9dpnvNPVCHym1h5LPSrLUqk7y3jkJE
+ qagFmUnYNIDlxp6TO74zHNJ9xk4hyu1DgBC34uhqTYFKOF6KXXVxaYgZxRNab9dsX+J5Gd2XRg
+ QxibF8ad0UX1Dhy0eBEJR/9bmAUg/E0mT2c2XxxDQhogo+PcXpRXJyNqTmfpuR/pQBaOR5Lq1Z
+ e0Vi4efz84FJ9D7VVGgIJCnseS48FN/4lZ9ODZNqIZ+qrwn8OVsPFxiTTa4ssCe+G9Q6ZTwQMk
+ gpg=
 X-IronPort-AV: E=Sophos;i="5.76,415,1592841600"; 
-   d="scan'208";a="147126007"
+   d="scan'208";a="147126004"
 Received: from h199-255-45-15.hgst.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 11 Sep 2020 20:33:41 +0800
-IronPort-SDR: ycqnwhT8DIgQKX66ZYoS1CgVk59uDXbWqFPCd5DyOKqsMMhHR2v//sGjBtuLSFvg8CnmTlTIg7
- 6Y4bPAa3kf8w==
+  by ob1.hgst.iphmx.com with ESMTP; 11 Sep 2020 20:33:38 +0800
+IronPort-SDR: Gzij4V1Lvdd17il0rcWjCDCx0QbyrEwmrf9S7TThqWHvxKHZvzHr2VHEca1uUTquGgx/gxB7In
+ djy6jNROBYsQ==
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 11 Sep 2020 05:20:02 -0700
-IronPort-SDR: /EYgh2W1wBcOStpcNDs7LwzTWUD3E2SdpVRIUj5X0OLvx7uBLr57A2DT3lJGFQZ/klhF6wcqk3
- qnc660/riHRg==
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 11 Sep 2020 05:19:59 -0700
+IronPort-SDR: UWTDcaBuKINMEV3IWLuD384ylUM67TBagnMGU1rcpGxhQHfXwoGyxmz3AnjshlzR4RPLnBT50g
+ TT0G99ULTFiA==
 WDCIronportException: Internal
 Received: from naota.dhcp.fujisawa.hgst.com ([10.149.52.155])
-  by uls-op-cesaip02.wdc.com with ESMTP; 11 Sep 2020 05:33:39 -0700
+  by uls-op-cesaip02.wdc.com with ESMTP; 11 Sep 2020 05:33:36 -0700
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
 Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         Hannes Reinecke <hare@suse.com>, linux-fsdevel@vger.kernel.org,
         Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH v7 23/39] btrfs: handle REQ_OP_ZONE_APPEND as writing
-Date:   Fri, 11 Sep 2020 21:32:43 +0900
-Message-Id: <20200911123259.3782926-24-naohiro.aota@wdc.com>
+Subject: [PATCH v7 21/39] btrfs: extend btrfs_rmap_block for specifying a device
+Date:   Fri, 11 Sep 2020 21:32:41 +0900
+Message-Id: <20200911123259.3782926-22-naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.27.0
 In-Reply-To: <20200911123259.3782926-1-naohiro.aota@wdc.com>
 References: <20200911123259.3782926-1-naohiro.aota@wdc.com>
@@ -71,41 +71,102 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-ZONED btrfs uses REQ_OP_ZONE_APPEND for a bio going to actual devices. Let
-btrfs_end_bio() and btrfs_op, who faces the bios, aware of it.
+btrfs_rmap_block currently reverse-map the physical address on all devices
+to logical addresses. This commit extends the function to match to a
+specified device. You can still query all devices by specifying NULL as a
+device.
+
+This commit also exporet the function for later use.
 
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 ---
- fs/btrfs/volumes.c | 3 ++-
- fs/btrfs/volumes.h | 1 +
- 2 files changed, 3 insertions(+), 1 deletion(-)
+ fs/btrfs/block-group.c | 23 ++++++++++++++++++-----
+ fs/btrfs/block-group.h |  3 +++
+ 2 files changed, 21 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 6337ce95a088..ca139c63f63c 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -6453,7 +6453,8 @@ static void btrfs_end_bio(struct bio *bio)
- 			struct btrfs_device *dev = btrfs_io_bio(bio)->device;
+diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+index fbc22f0a6744..be5394c8ec3a 100644
+--- a/fs/btrfs/block-group.c
++++ b/fs/btrfs/block-group.c
+@@ -1655,9 +1655,9 @@ static void set_avail_alloc_bits(struct btrfs_fs_info *fs_info, u64 flags)
+  * Used primarily to exclude those portions of a block group that contain super
+  * block copies.
+  */
+-EXPORT_FOR_TESTS
+-int btrfs_rmap_block(struct btrfs_fs_info *fs_info, u64 chunk_start,
+-		     u64 physical, u64 **logical, int *naddrs, int *stripe_len)
++int __btrfs_rmap_block(struct btrfs_fs_info *fs_info, u64 chunk_start,
++		       struct block_device *bdev, u64 physical, u64 **logical,
++		       int *naddrs, int *stripe_len)
+ {
+ 	struct extent_map *em;
+ 	struct map_lookup *map;
+@@ -1675,6 +1675,7 @@ int btrfs_rmap_block(struct btrfs_fs_info *fs_info, u64 chunk_start,
+ 	map = em->map_lookup;
+ 	data_stripe_length = em->orig_block_len;
+ 	io_stripe_size = map->stripe_len;
++	chunk_start = em->start;
  
- 			ASSERT(dev->bdev);
--			if (bio_op(bio) == REQ_OP_WRITE)
-+			if (bio_op(bio) == REQ_OP_WRITE ||
-+			    bio_op(bio) == REQ_OP_ZONE_APPEND)
- 				btrfs_dev_stat_inc_and_print(dev,
- 						BTRFS_DEV_STAT_WRITE_ERRS);
- 			else if (!(bio->bi_opf & REQ_RAHEAD))
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 88b1d59fbc12..fc03b386bb8c 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -410,6 +410,7 @@ static inline enum btrfs_map_op btrfs_op(struct bio *bio)
- 	case REQ_OP_DISCARD:
- 		return BTRFS_MAP_DISCARD;
- 	case REQ_OP_WRITE:
-+	case REQ_OP_ZONE_APPEND:
- 		return BTRFS_MAP_WRITE;
- 	default:
- 		WARN_ON_ONCE(1);
+ 	/* For RAID5/6 adjust to a full IO stripe length */
+ 	if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK)
+@@ -1689,14 +1690,18 @@ int btrfs_rmap_block(struct btrfs_fs_info *fs_info, u64 chunk_start,
+ 	for (i = 0; i < map->num_stripes; i++) {
+ 		bool already_inserted = false;
+ 		u64 stripe_nr;
++		u64 offset;
+ 		int j;
+ 
+ 		if (!in_range(physical, map->stripes[i].physical,
+ 			      data_stripe_length))
+ 			continue;
+ 
++		if (bdev && map->stripes[i].dev->bdev != bdev)
++			continue;
++
+ 		stripe_nr = physical - map->stripes[i].physical;
+-		stripe_nr = div64_u64(stripe_nr, map->stripe_len);
++		stripe_nr = div64_u64_rem(stripe_nr, map->stripe_len, &offset);
+ 
+ 		if (map->type & BTRFS_BLOCK_GROUP_RAID10) {
+ 			stripe_nr = stripe_nr * map->num_stripes + i;
+@@ -1710,7 +1715,7 @@ int btrfs_rmap_block(struct btrfs_fs_info *fs_info, u64 chunk_start,
+ 		 * instead of map->stripe_len
+ 		 */
+ 
+-		bytenr = chunk_start + stripe_nr * io_stripe_size;
++		bytenr = chunk_start + stripe_nr * io_stripe_size + offset;
+ 
+ 		/* Ensure we don't add duplicate addresses */
+ 		for (j = 0; j < nr; j++) {
+@@ -1732,6 +1737,14 @@ int btrfs_rmap_block(struct btrfs_fs_info *fs_info, u64 chunk_start,
+ 	return ret;
+ }
+ 
++EXPORT_FOR_TESTS
++int btrfs_rmap_block(struct btrfs_fs_info *fs_info, u64 chunk_start,
++		     u64 physical, u64 **logical, int *naddrs, int *stripe_len)
++{
++	return __btrfs_rmap_block(fs_info, chunk_start, NULL, physical, logical,
++				  naddrs, stripe_len);
++}
++
+ static int exclude_super_stripes(struct btrfs_block_group *cache)
+ {
+ 	struct btrfs_fs_info *fs_info = cache->fs_info;
+diff --git a/fs/btrfs/block-group.h b/fs/btrfs/block-group.h
+index 5be47f4bfea7..401e9bcefaec 100644
+--- a/fs/btrfs/block-group.h
++++ b/fs/btrfs/block-group.h
+@@ -275,6 +275,9 @@ void check_system_chunk(struct btrfs_trans_handle *trans, const u64 type);
+ u64 btrfs_get_alloc_profile(struct btrfs_fs_info *fs_info, u64 orig_flags);
+ void btrfs_put_block_group_cache(struct btrfs_fs_info *info);
+ int btrfs_free_block_groups(struct btrfs_fs_info *info);
++int __btrfs_rmap_block(struct btrfs_fs_info *fs_info, u64 chunk_start,
++		       struct block_device *bdev, u64 physical, u64 **logical,
++		       int *naddrs, int *stripe_len);
+ 
+ static inline u64 btrfs_data_alloc_profile(struct btrfs_fs_info *fs_info)
+ {
 -- 
 2.27.0
 

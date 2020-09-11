@@ -2,32 +2,32 @@ Return-Path: <SRS0=ZNpj=CU=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.7 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,NICE_REPLY_A,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.7 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0051AC43461
-	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Sep 2020 15:46:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 85F42C43461
+	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Sep 2020 16:36:50 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id A18A620758
-	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Sep 2020 15:46:34 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 48D75221EB
+	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Sep 2020 16:36:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726608AbgIKPqd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 11 Sep 2020 11:46:33 -0400
-Received: from mx2.suse.de ([195.135.220.15]:49030 "EHLO mx2.suse.de"
+        id S1726449AbgIKQgr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 11 Sep 2020 12:36:47 -0400
+Received: from mx2.suse.de ([195.135.220.15]:58156 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725851AbgIKPnn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 11 Sep 2020 11:43:43 -0400
+        id S1726144AbgIKPNu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 11 Sep 2020 11:13:50 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 5859CAC3F;
-        Fri, 11 Sep 2020 13:55:37 +0000 (UTC)
-Subject: Re: [PATCH 13/17] btrfs: extent_io: only require sector size
- alignment for page read
+        by mx2.suse.de (Postfix) with ESMTP id AFFA2AD4A;
+        Fri, 11 Sep 2020 13:51:05 +0000 (UTC)
+Subject: Re: [PATCH 12/17] btrfs: remove the unnecessary parameter @start and
+ @len for check_data_csum()
 To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
 References: <20200908075230.86856-1-wqu@suse.com>
- <20200908075230.86856-14-wqu@suse.com>
+ <20200908075230.86856-13-wqu@suse.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  xsFNBFiKBz4BEADNHZmqwhuN6EAzXj9SpPpH/nSSP8YgfwoOqwrP+JR4pIqRK0AWWeWCSwmZ
@@ -71,12 +71,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <89fd9545-c539-3f58-e48a-218a9b111edd@suse.com>
-Date:   Fri, 11 Sep 2020 16:55:21 +0300
+Message-ID: <995fa17d-3dce-8117-0c46-d6c376d2080c@suse.com>
+Date:   Fri, 11 Sep 2020 16:50:49 +0300
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
  Thunderbird/68.10.0
 MIME-Version: 1.0
-In-Reply-To: <20200908075230.86856-14-wqu@suse.com>
+In-Reply-To: <20200908075230.86856-13-wqu@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -88,80 +88,45 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 8.09.20 г. 10:52 ч., Qu Wenruo wrote:
-> If we're reading partial page, btrfs will warn about this as our
-> read/write are always done in sector size, which equals page size.
+> For check_data_csum(), the page we're using is directly from inode
+> mapping, thus it has valid page_offset().
 > 
-> But for the incoming subpage RO support, our data read is only aligned
-> to sectorsize, which can be smaller than page size.
+> We can use (page_offset() + pg_off) to replace @start parameter
+> completely, while the @len should always be sectorsize.
 > 
-> Thus here we change the warning condition to check it against
-> sectorsize, thus the behavior is not changed for regular sectorsize ==
-> PAGE_SIZE case, while won't report error for subpage read.
+> Since we're here, also add some comment, since there are quite some
+> confusion in words like start/offset, without explaining whether it's
+> file_offset or logical bytenr.
 > 
-> Also, pass the proper start/end with bv_offset for check_data_csum() to
-> handle.
+> This should not affect the existing behavior, as for current sectorsize
+> == PAGE_SIZE case, @pgoff should always be 0, and len is always
+> PAGE_SIZE (or sectorsize from the dio read path).
 > 
 > Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
->  fs/btrfs/extent_io.c | 19 ++++++++++++-------
->  1 file changed, 12 insertions(+), 7 deletions(-)
-> 
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index 81e43d99feda..a83b63ecc5f8 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -2819,6 +2819,7 @@ static void end_bio_extent_readpage(struct bio *bio)
->  		struct page *page = bvec->bv_page;
->  		struct inode *inode = page->mapping->host;
->  		struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
-> +		u32 sectorsize = fs_info->sectorsize;
->  		bool data_inode = btrfs_ino(BTRFS_I(inode))
->  			!= BTRFS_BTREE_INODE_OBJECTID;
->  
-> @@ -2829,13 +2830,17 @@ static void end_bio_extent_readpage(struct bio *bio)
->  		tree = &BTRFS_I(inode)->io_tree;
->  		failure_tree = &BTRFS_I(inode)->io_failure_tree;
->  
-> -		/* We always issue full-page reads, but if some block
-> +		/*
-> +		 * We always issue full-sector reads, but if some block
->  		 * in a page fails to read, blk_update_request() will
->  		 * advance bv_offset and adjust bv_len to compensate.
-> -		 * Print a warning for nonzero offsets, and an error
-> -		 * if they don't add up to a full page.  */
-> -		if (bvec->bv_offset || bvec->bv_len != PAGE_SIZE) {
-> -			if (bvec->bv_offset + bvec->bv_len != PAGE_SIZE)
-> +		 * Print a warning for unaligned offsets, and an error
-> +		 * if they don't add up to a full sector.
-> +		 */
-> +		if (!IS_ALIGNED(bvec->bv_offset, sectorsize) ||
-> +		    !IS_ALIGNED(bvec->bv_offset + bvec->bv_len, sectorsize)) {
-> +			if (!IS_ALIGNED(bvec->bv_offset + bvec->bv_len,
-> +					sectorsize))
 
-Duplicated check ...
+<snip>
 
->  				btrfs_err(fs_info,
->  					"partial page read in btrfs with offset %u and length %u",
->  					bvec->bv_offset, bvec->bv_len);
-> @@ -2845,8 +2850,8 @@ static void end_bio_extent_readpage(struct bio *bio)
->  					bvec->bv_offset, bvec->bv_len);
->  		}
+> @@ -2857,8 +2870,7 @@ static int btrfs_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
+>  	}
 >  
-> -		start = page_offset(page);
-> -		end = start + bvec->bv_offset + bvec->bv_len - 1;
-> +		start = page_offset(page) + bvec->bv_offset;
-> +		end = start + bvec->bv_len - 1;
+>  	phy_offset >>= inode->i_sb->s_blocksize_bits;
+> -	return check_data_csum(inode, io_bio, phy_offset, page, offset, start,
+> -			       (size_t)(end - start + 1));
+> +	return check_data_csum(inode, io_bio, phy_offset, page, offset);
 
-nit: 'start' and 'end' must really be renamed - to file_offset and
-file_end because they represent values in the logical namespace of the
-file. And given the context they are used i.e endio handler where we
-also deal with extent starts and physical offsets such a rename is long
-over due. Perhaps you can create a separate patch when  you are
-resending the series alternatively I'll make a sweep across those
-low-level functions to clean that up.
+offset in this function is calculated as:
+size_t offset = start - page_offset(page);
 
->  		len = bvec->bv_len;
+Where stat is an input parameter that's derived in end_bio_extent_readpage:
+
+start = page_offset(page);
+
+So it seems to be always set to 0 and can simply be removed.
+
+
+>  }
 >  
->  		mirror = io_bio->mirror_num;
-> 
+>  /*
+
+<snip>
+

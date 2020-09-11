@@ -7,60 +7,60 @@ X-Spam-Status: No, score=-12.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EB5D9C43461
-	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Sep 2020 17:41:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BAFD3C433E2
+	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Sep 2020 17:41:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id B5FA320735
-	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Sep 2020 17:41:41 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 75A3020735
+	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Sep 2020 17:41:53 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="RUEnQpSb"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="B53AkpAt"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725986AbgIKRlj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 11 Sep 2020 13:41:39 -0400
-Received: from esa5.hgst.iphmx.com ([216.71.153.144]:38375 "EHLO
+        id S1725779AbgIKRlv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 11 Sep 2020 13:41:51 -0400
+Received: from esa5.hgst.iphmx.com ([216.71.153.144]:38451 "EHLO
         esa5.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725984AbgIKMlY (ORCPT
+        with ESMTP id S1725943AbgIKMkS (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 11 Sep 2020 08:41:24 -0400
+        Fri, 11 Sep 2020 08:40:18 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1599828084; x=1631364084;
+  t=1599828017; x=1631364017;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=EXkIwwEiUjE0+AnTZXZgPNx8/NGUQfPI924yvL9K3tk=;
-  b=RUEnQpSb/xvLI6/R2kW37wyP3Y4kbr+MOhFa2kpjZMuyJKORQiqQHJrR
-   AxTYERS8fhRFCHhTBuPsAJ4N7ktIZfpVHKNKBgKVfWCnslDdtjzcVbGsb
-   lJmQj/1G5BUTKLWq5MBer0vzMspbngX5xLu8JrIeLE1I5BPs/8cWqXjPz
-   ZYPAyRQbKoxc3BZ2d89ZreJJXMvWxXICePDIBSaB908Bz5K6FHwSHoNQc
-   UPD1vX0qflHpGIWRwsSZroeIiLXdHaWrcfbz98rkKtG8rT3hs/HbAeyvV
-   gZrIvHeVM+DApIC8ks1zn13h20EwJ/u5kL33ZNEw+ETEcqp4tEcS8aYnO
-   Q==;
-IronPort-SDR: xLXIi6mgOX9nZc1D3gx92M8EjstuDrfBCq1lVofau4EX2tM53+fy1MsfpUa4DBZgW8xD044jPC
- cON2R81IMAy2DRhhAI3linxgwoF4OtOUmwgPij1JrQeMtDD5dn2Sebss3pcgwg2dFDjf6xOqY0
- 2yCjbwYaiksxR1Ia2YR0nIOkd2+qGaLeF1LkE5RRk3+be1zsETPDUmBL5FWYImCrsJMKsRO6QY
- VNyRi3Ujcv3f5UcN1+jZEgK8wGmdfop2e8yUQYHORTDLzb5wNwVZMtyMrbMiU/9i8Kth+LLXR8
- Rww=
+  bh=i/glboJM0oIY7TlBNgBYwZVEHPN7RFM5R1D30dFDkK4=;
+  b=B53AkpAtERrdgr57vsqzFPy/dCZ97ySDScMkUSE4/Uoy/uVplHK1xrMo
+   TSsOEKsMKfxHBxJIge3WfY8C+dMYCk9rwP2XmRMZYIfGm4kw4+IMPPicK
+   XEwkw+4lZRgATjlpEkUjZ6m5yLLiN0aZSeWnh5AvLRUbIjb9ycUB0ybCw
+   mUMwKDxOoHGy36GNzPmQ5yad+LSpxfkR9w0FzWmzsd0ADz3qgzZu5OY4o
+   DQlrUvrKmOggQwSf8bCixSUJcK5YrnsK0f9M8W7yFTbT9+1DKnVvk58IH
+   M+xlJnJFDISoAVASesy5HTKM48P57cGDUxHV1mJexpCfkMh4dIMfAKdpa
+   g==;
+IronPort-SDR: ORcoFoxrjbxvd35SyvF7ysFASR1Q0iXs6wflLGJfHK1J5N800UPz7EH6AwZY0M7EBfNXBJPeMw
+ luTRLzrMoUFREOWDJ43QZjw1ELkWa7bpU5LfQhXTDdsjyHwrUXMw+U1MPhHOmO6gJgd4jqIgc7
+ q1BMKoYXVt+LWcehebR6iWXAbz1dim7n5GAKDpMzn4MhcTdDeYBWYcPcErsgWrZ7FYoNg+vsOc
+ jEfbl+swzh88I/VVuIJAG2Q/Oh7lgl+/E/GfL4icZuc1EXwMm5fcPzPJLRUjMtJm2CtAM9N4Dd
+ IwM=
 X-IronPort-AV: E=Sophos;i="5.76,415,1592841600"; 
-   d="scan'208";a="147126035"
+   d="scan'208";a="147126021"
 Received: from h199-255-45-15.hgst.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 11 Sep 2020 20:33:57 +0800
-IronPort-SDR: pjtTYOdLh2GjRU3eQBnMQhq1yE6KujIXOH/kVClKxsKAwFt26cpzsF2ypU/zr1qdVRUPAKdrhY
- duMqmexubktA==
+  by ob1.hgst.iphmx.com with ESMTP; 11 Sep 2020 20:33:50 +0800
+IronPort-SDR: XGL2X6o6Ea4QglFmc5BUwmX1YdcQloVgddodTdls5F5SmlDsWoG+GiDpr+W1lNL6V17gq2K/oq
+ 3y+RBLquY9ww==
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 11 Sep 2020 05:20:17 -0700
-IronPort-SDR: HmOKWrF7RdN5Xjay6+X5SJ+nwxD1vN9Sx6/mlZvYgu/KTYqh/Li9gcTYRWSo78xwOiX1N2iDCK
- NcGEIj2h/w+g==
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 11 Sep 2020 05:20:10 -0700
+IronPort-SDR: PXf5pE4u4F/waFAikZehTUG161YfXKkFGi5n2tw8Tl4iF+eqFRI5KZxsbUMx7y7pGeDRrHfv8x
+ PmG3b+zPYOCw==
 WDCIronportException: Internal
 Received: from naota.dhcp.fujisawa.hgst.com ([10.149.52.155])
-  by uls-op-cesaip02.wdc.com with ESMTP; 11 Sep 2020 05:33:54 -0700
+  by uls-op-cesaip02.wdc.com with ESMTP; 11 Sep 2020 05:33:47 -0700
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
 Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         Hannes Reinecke <hare@suse.com>, linux-fsdevel@vger.kernel.org,
         Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH v7 34/39] btrfs: relocate block group to repair IO failure in ZONED
-Date:   Fri, 11 Sep 2020 21:32:54 +0900
-Message-Id: <20200911123259.3782926-35-naohiro.aota@wdc.com>
+Subject: [PATCH v7 29/39] btrfs: mark block groups to copy for device-replace
+Date:   Fri, 11 Sep 2020 21:32:49 +0900
+Message-Id: <20200911123259.3782926-30-naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.27.0
 In-Reply-To: <20200911123259.3782926-1-naohiro.aota@wdc.com>
 References: <20200911123259.3782926-1-naohiro.aota@wdc.com>
@@ -71,183 +71,302 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-When btrfs find a checksum error and if the file system has a mirror of the
-damaged data, btrfs read the correct data from the mirror and write the
-data to damaged blocks. This repairing, however, is against the sequential
-write required rule.
+This is the 1/4 patch to support device-replace in ZONED mode.
 
-We can consider three methods to repair an IO failure in ZONED mode:
-(1) Reset and rewrite the damaged zone
-(2) Allocate new device extent and replace the damaged device extent to the
-    new extent
-(3) Relocate the corresponding block group
+We have two types of I/Os during the device-replace process. One is an I/O
+to "copy" (by the scrub functions) all the device extents on the source
+device to the destination device.  The other one is an I/O to "clone" (by
+handle_ops_on_dev_replace()) new incoming write I/Os from users to the
+source device into the target device.
 
-Method (1) is most similar to a behavior done with regular devices.
-However, it also wipes non-damaged data in the same device extent, and so
-it unnecessary degrades non-damaged data.
+Cloning incoming I/Os can break the sequential write rule in the target
+device. When writing is mapped in the middle of a block group, the I/O is
+directed in the middle of a target device zone, which breaks the sequential
+write rule.
 
-Method (2) is much like device replacing but done in the same device. It is
-safe because it keeps the device extent until the replacing finish.
-However, extending device replacing is non-trivial. It assumes
-"src_dev->physical == dst_dev->physical". Also, the extent mapping
-replacing function should be extended to support replacing device extent
-position in one device.
+However, the cloning function cannot be merely disabled since incoming I/Os
+targeting already copied device extents must be cloned so that the I/O is
+executed on the target device.
 
-Method (3) invokes relocation of the damaged block group, so it is
-straightforward to implement. It relocates all the mirrored device extents,
-so it is, potentially, a more costly operation than method (1) or (2). But
-it relocates only using extents which reduce the total IO size.
+We cannot use dev_replace->cursor_{left,right} to determine whether bio is
+going to not yet copied region.  Since we have a time gap between finishing
+btrfs_scrub_dev() and rewriting the mapping tree in
+btrfs_dev_replace_finishing(), we can have a newly allocated device extent
+which is never cloned nor copied.
 
-Let's apply method (3) for now. In the future, we can extend device-replace
-and apply method (2).
+So the point is to copy only already existing device extents. This patch
+introduces mark_block_group_to_copy() to mark existing block groups as a
+target of copying. Then, handle_ops_on_dev_replace() and dev-replace can
+check the flag to do their job.
 
-For protecting a block group gets relocated multiple time with multiple IO
-errors, this commit introduces "relocating_repair" bit to show it's now
-relocating to repair IO failures. Also it uses a new kthread
-"btrfs-relocating-repair", not to block IO path with relocating process.
-
-This commit also supports repairing in the scrub process.
-
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 ---
- fs/btrfs/block-group.h |  1 +
- fs/btrfs/extent_io.c   |  3 ++
- fs/btrfs/scrub.c       |  3 ++
- fs/btrfs/volumes.c     | 71 ++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/volumes.h     |  1 +
- 5 files changed, 79 insertions(+)
+ fs/btrfs/block-group.h |   1 +
+ fs/btrfs/dev-replace.c | 175 +++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/dev-replace.h |   3 +
+ fs/btrfs/scrub.c       |  17 ++++
+ 4 files changed, 196 insertions(+)
 
 diff --git a/fs/btrfs/block-group.h b/fs/btrfs/block-group.h
-index e91123495d68..50e5ddb0a19b 100644
+index b2a8a3beceac..e91123495d68 100644
 --- a/fs/btrfs/block-group.h
 +++ b/fs/btrfs/block-group.h
-@@ -96,6 +96,7 @@ struct btrfs_block_group {
+@@ -95,6 +95,7 @@ struct btrfs_block_group {
+ 	unsigned int iref:1;
  	unsigned int has_caching_ctl:1;
  	unsigned int removed:1;
- 	unsigned int to_copy:1;
-+	unsigned int relocating_repair:1;
++	unsigned int to_copy:1;
  
  	int disk_cache_state;
  
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index b660921af935..2fcb78147330 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2273,6 +2273,9 @@ int repair_io_failure(struct btrfs_fs_info *fs_info, u64 ino, u64 start,
- 	ASSERT(!(fs_info->sb->s_flags & SB_RDONLY));
- 	BUG_ON(!mirror_num);
+diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+index 18a36973f973..d2db963be985 100644
+--- a/fs/btrfs/dev-replace.c
++++ b/fs/btrfs/dev-replace.c
+@@ -22,6 +22,7 @@
+ #include "dev-replace.h"
+ #include "sysfs.h"
+ #include "zoned.h"
++#include "block-group.h"
  
-+	if (btrfs_fs_incompat(fs_info, ZONED))
-+		return btrfs_repair_one_zone(fs_info, logical);
-+
- 	bio = btrfs_io_bio_alloc(1);
- 	bio->bi_iter.bi_size = 0;
- 	map_length = length;
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 2356e6d90690..3c59e551b894 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -861,6 +861,9 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
- 	have_csum = sblock_to_check->pagev[0]->have_csum;
- 	dev = sblock_to_check->pagev[0]->dev;
- 
-+	if (btrfs_fs_incompat(fs_info, ZONED) && !sctx->is_dev_replace)
-+		return btrfs_repair_one_zone(fs_info, logical);
-+
- 	/*
- 	 * We must use GFP_NOFS because the scrub task might be waiting for a
- 	 * worker task executing this function and in turn a transaction commit
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 779ee0452c1b..9e82cf28662f 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -7961,3 +7961,74 @@ bool btrfs_pinned_by_swapfile(struct btrfs_fs_info *fs_info, void *ptr)
- 	spin_unlock(&fs_info->swapfile_pins_lock);
- 	return node != NULL;
+ /*
+  * Device replace overview
+@@ -443,6 +444,176 @@ static char* btrfs_dev_name(struct btrfs_device *device)
+ 		return rcu_str_deref(device->name);
  }
-+
-+static int relocating_repair_kthread(void *data)
+ 
++static int mark_block_group_to_copy(struct btrfs_fs_info *fs_info,
++				    struct btrfs_device *src_dev)
 +{
-+	struct btrfs_block_group *cache = (struct btrfs_block_group *) data;
-+	struct btrfs_fs_info *fs_info = cache->fs_info;
-+	u64 target;
++	struct btrfs_path *path;
++	struct btrfs_key key;
++	struct btrfs_key found_key;
++	struct btrfs_root *root = fs_info->dev_root;
++	struct btrfs_dev_extent *dev_extent = NULL;
++	struct btrfs_block_group *cache;
++	struct extent_buffer *l;
++	struct btrfs_trans_handle *trans;
++	int slot;
 +	int ret = 0;
++	u64 chunk_offset, length;
 +
-+	target = cache->start;
-+	btrfs_put_block_group(cache);
++	/* Do not use "to_copy" on non-ZONED for now */
++	if (!btrfs_fs_incompat(fs_info, ZONED))
++		return 0;
 +
-+	if (test_and_set_bit(BTRFS_FS_EXCL_OP, &fs_info->flags)) {
-+		btrfs_info(fs_info,
-+			   "skip relocating block group %llu to repair: EBUSY",
-+			   target);
-+		return -EBUSY;
++	mutex_lock(&fs_info->chunk_mutex);
++
++	/* ensulre we don't have pending new block group */
++	while (fs_info->running_transaction &&
++	       !list_empty(&fs_info->running_transaction->dev_update_list)) {
++		mutex_unlock(&fs_info->chunk_mutex);
++		trans = btrfs_attach_transaction(root);
++		if (IS_ERR(trans)) {
++			ret = PTR_ERR(trans);
++			mutex_lock(&fs_info->chunk_mutex);
++			if (ret == -ENOENT)
++				continue;
++			else
++				goto out;
++		}
++
++		ret = btrfs_commit_transaction(trans);
++		mutex_lock(&fs_info->chunk_mutex);
++		if (ret)
++			goto out;
 +	}
 +
-+	mutex_lock(&fs_info->delete_unused_bgs_mutex);
-+
-+	/* ensure Block Group still exists */
-+	cache = btrfs_lookup_block_group(fs_info, target);
-+	if (!cache)
++	path = btrfs_alloc_path();
++	if (!path) {
++		ret = -ENOMEM;
 +		goto out;
++	}
 +
-+	if (!cache->relocating_repair)
-+		goto out;
++	path->reada = READA_FORWARD;
++	path->search_commit_root = 1;
++	path->skip_locking = 1;
 +
-+	ret = btrfs_may_alloc_data_chunk(fs_info, target);
-+	if (ret < 0)
-+		goto out;
++	key.objectid = src_dev->devid;
++	key.offset = 0ull;
++	key.type = BTRFS_DEV_EXTENT_KEY;
 +
-+	btrfs_info(fs_info, "relocating block group %llu to repair IO failure",
-+		   target);
-+	ret = btrfs_relocate_chunk(fs_info, target);
++	while (1) {
++		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
++		if (ret < 0)
++			break;
++		if (ret > 0) {
++			if (path->slots[0] >=
++			    btrfs_header_nritems(path->nodes[0])) {
++				ret = btrfs_next_leaf(root, path);
++				if (ret < 0)
++					break;
++				if (ret > 0) {
++					ret = 0;
++					break;
++				}
++			} else {
++				ret = 0;
++			}
++		}
 +
-+out:
-+	if (cache)
++		l = path->nodes[0];
++		slot = path->slots[0];
++
++		btrfs_item_key_to_cpu(l, &found_key, slot);
++
++		if (found_key.objectid != src_dev->devid)
++			break;
++
++		if (found_key.type != BTRFS_DEV_EXTENT_KEY)
++			break;
++
++		if (found_key.offset < key.offset)
++			break;
++
++		dev_extent = btrfs_item_ptr(l, slot, struct btrfs_dev_extent);
++		length = btrfs_dev_extent_length(l, dev_extent);
++
++		chunk_offset = btrfs_dev_extent_chunk_offset(l, dev_extent);
++
++		cache = btrfs_lookup_block_group(fs_info, chunk_offset);
++		if (!cache)
++			goto skip;
++
++		spin_lock(&cache->lock);
++		cache->to_copy = 1;
++		spin_unlock(&cache->lock);
++
 +		btrfs_put_block_group(cache);
-+	mutex_unlock(&fs_info->delete_unused_bgs_mutex);
-+	clear_bit(BTRFS_FS_EXCL_OP, &fs_info->flags);
++
++skip:
++		key.offset = found_key.offset + length;
++		btrfs_release_path(path);
++	}
++
++	btrfs_free_path(path);
++out:
++	mutex_unlock(&fs_info->chunk_mutex);
 +
 +	return ret;
 +}
 +
-+int btrfs_repair_one_zone(struct btrfs_fs_info *fs_info, u64 logical)
++bool btrfs_finish_block_group_to_copy(struct btrfs_device *srcdev,
++				      struct btrfs_block_group *cache,
++				      u64 physical)
 +{
-+	struct btrfs_block_group *cache;
++	struct btrfs_fs_info *fs_info = cache->fs_info;
++	struct extent_map *em;
++	struct map_lookup *map;
++	u64 chunk_offset = cache->start;
++	int num_extents, cur_extent;
++	int i;
 +
-+	/* do not attempt to repair in degraded state */
-+	if (btrfs_test_opt(fs_info, DEGRADED))
-+		return 0;
-+
-+	cache = btrfs_lookup_block_group(fs_info, logical);
-+	if (!cache)
-+		return 0;
++	/* Do not use "to_copy" on non-ZONED for now */
++	if (!btrfs_fs_incompat(fs_info, ZONED))
++		return true;
 +
 +	spin_lock(&cache->lock);
-+	if (cache->relocating_repair) {
++	if (cache->removed) {
 +		spin_unlock(&cache->lock);
-+		btrfs_put_block_group(cache);
-+		return 0;
++		return true;
 +	}
-+	cache->relocating_repair = 1;
 +	spin_unlock(&cache->lock);
 +
-+	kthread_run(relocating_repair_kthread, cache,
-+		    "btrfs-relocating-repair");
++	em = btrfs_get_chunk_map(fs_info, chunk_offset, 1);
++	BUG_ON(IS_ERR(em));
++	map = em->map_lookup;
 +
-+	return 0;
++	num_extents = cur_extent = 0;
++	for (i = 0; i < map->num_stripes; i++) {
++		/* we have more device extent to copy */
++		if (srcdev != map->stripes[i].dev)
++			continue;
++
++		num_extents++;
++		if (physical == map->stripes[i].physical)
++			cur_extent = i;
++	}
++
++	free_extent_map(em);
++
++	if (num_extents > 1 && cur_extent < num_extents - 1) {
++		/*
++		 * Has more stripes on this device. Keep this BG
++		 * readonly until we finish all the stripes.
++		 */
++		return false;
++	}
++
++	/* last stripe on this device */
++	spin_lock(&cache->lock);
++	cache->to_copy = 0;
++	spin_unlock(&cache->lock);
++
++	return true;
 +}
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index fc03b386bb8c..25814628e2d5 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -583,5 +583,6 @@ bool btrfs_check_rw_degradable(struct btrfs_fs_info *fs_info,
- int btrfs_bg_type_to_factor(u64 flags);
- const char *btrfs_bg_type_to_raid_name(u64 flags);
- int btrfs_verify_dev_extents(struct btrfs_fs_info *fs_info);
-+int btrfs_repair_one_zone(struct btrfs_fs_info *fs_info, u64 logical);
++
+ static int btrfs_dev_replace_start(struct btrfs_fs_info *fs_info,
+ 		const char *tgtdev_name, u64 srcdevid, const char *srcdev_name,
+ 		int read_src)
+@@ -484,6 +655,10 @@ static int btrfs_dev_replace_start(struct btrfs_fs_info *fs_info,
+ 	if (ret)
+ 		return ret;
+ 
++	ret = mark_block_group_to_copy(fs_info, src_device);
++	if (ret)
++		return ret;
++
+ 	down_write(&dev_replace->rwsem);
+ 	switch (dev_replace->replace_state) {
+ 	case BTRFS_IOCTL_DEV_REPLACE_STATE_NEVER_STARTED:
+diff --git a/fs/btrfs/dev-replace.h b/fs/btrfs/dev-replace.h
+index 60b70dacc299..3911049a5f23 100644
+--- a/fs/btrfs/dev-replace.h
++++ b/fs/btrfs/dev-replace.h
+@@ -18,5 +18,8 @@ int btrfs_dev_replace_cancel(struct btrfs_fs_info *fs_info);
+ void btrfs_dev_replace_suspend_for_unmount(struct btrfs_fs_info *fs_info);
+ int btrfs_resume_dev_replace_async(struct btrfs_fs_info *fs_info);
+ int __pure btrfs_dev_replace_is_ongoing(struct btrfs_dev_replace *dev_replace);
++bool btrfs_finish_block_group_to_copy(struct btrfs_device *srcdev,
++				      struct btrfs_block_group *cache,
++				      u64 physical);
  
  #endif
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index e46c91188a75..f7d750b32cfb 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -3500,6 +3500,17 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
+ 		if (!cache)
+ 			goto skip;
+ 
++
++		if (sctx->is_dev_replace && btrfs_fs_incompat(fs_info, ZONED)) {
++			spin_lock(&cache->lock);
++			if (!cache->to_copy) {
++				spin_unlock(&cache->lock);
++				ro_set = 0;
++				goto done;
++			}
++			spin_unlock(&cache->lock);
++		}
++
+ 		/*
+ 		 * Make sure that while we are scrubbing the corresponding block
+ 		 * group doesn't get its logical address and its device extents
+@@ -3631,6 +3642,12 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
+ 
+ 		scrub_pause_off(fs_info);
+ 
++		if (sctx->is_dev_replace &&
++		    !btrfs_finish_block_group_to_copy(dev_replace->srcdev,
++						      cache, found_key.offset))
++			ro_set = 0;
++
++done:
+ 		down_write(&dev_replace->rwsem);
+ 		dev_replace->cursor_left = dev_replace->cursor_right;
+ 		dev_replace->item_needs_writeback = 1;
 -- 
 2.27.0
 

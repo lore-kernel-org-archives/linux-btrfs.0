@@ -2,87 +2,65 @@ Return-Path: <SRS0=5n3z=CV=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PULL_REQUEST,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 89DD7C43461
-	for <linux-btrfs@archiver.kernel.org>; Sat, 12 Sep 2020 17:02:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 73030C43461
+	for <linux-btrfs@archiver.kernel.org>; Sat, 12 Sep 2020 17:13:31 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 4736D2087C
-	for <linux-btrfs@archiver.kernel.org>; Sat, 12 Sep 2020 17:02:45 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C8BA52087C
+	for <linux-btrfs@archiver.kernel.org>; Sat, 12 Sep 2020 17:13:30 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=lechevalier.se header.i=@lechevalier.se header.b="d7+FXuqy"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725868AbgILRCn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 12 Sep 2020 13:02:43 -0400
-Received: from mx2.suse.de ([195.135.220.15]:35168 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725850AbgILRCl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 12 Sep 2020 13:02:41 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id C1B24B02A;
-        Sat, 12 Sep 2020 17:02:54 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 6619DDA7C5; Sat, 12 Sep 2020 19:01:19 +0200 (CEST)
-From:   David Sterba <dsterba@suse.com>
-To:     torvalds@linux-foundation.org
-Cc:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: [GIT PULL] Btrfs fixes for 5.9-rc5
-Date:   Sat, 12 Sep 2020 19:01:18 +0200
-Message-Id: <cover.1599836573.git.dsterba@suse.com>
-X-Mailer: git-send-email 2.25.0
+        id S1725860AbgILRN1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 12 Sep 2020 13:13:27 -0400
+Received: from mailrelay4-3.pub.mailoutpod1-cph3.one.com ([46.30.212.13]:14873
+        "EHLO mailrelay4-3.pub.mailoutpod1-cph3.one.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1725838AbgILRNY (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 12 Sep 2020 13:13:24 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=lechevalier.se; s=20191106;
+        h=content-transfer-encoding:content-type:mime-version:date:message-id:subject:
+         from:to:from;
+        bh=e7VPF07MEjc0QYoM/lBur52doXsYNVHK7eNG0Otw9V8=;
+        b=d7+FXuqyj7zFfm+UnMHg/+XSAmz+BVQITdBi0KrF3scq5AqM4/a/D+dLh/jCEYJhVCa4qX3ESBNDY
+         6UThoPnNYeD8ANtoUk8EoehasYl2dxXJahj2BNoNk/svWSRlkzFr1SO1QzoYNgccJyJM3uhoqnnFr8
+         EM7L+F7hGJp4H7l03u6QzpA5xhtZm3AaorLG1aaX+HhIg39LlzFiur7LjGhMzY1dUDgHJP439gt8SU
+         XKKAs3oU4bkTt88ZBVuSbTahwVAoFpbNH/mwJRp/gKQWZC/dfgRfgyUfQP7T4lgtG0A1YyidSFY7AY
+         3ZcUy4lRnrYGW7dIg0vlr+oYAOTu3hA==
+X-HalOne-Cookie: b41491b0c2a81ddbb30cd9cda7d8e5c095b3bf38
+X-HalOne-ID: 428a292f-f51b-11ea-a2a9-d0431ea8bb10
+Received: from [192.168.0.10] (h-131-138.a357.priv.bahnhof.se [81.170.131.138])
+        by mailrelay4.pub.mailoutpod1-cph3.one.com (Halon) with ESMTPSA
+        id 428a292f-f51b-11ea-a2a9-d0431ea8bb10;
+        Sat, 12 Sep 2020 17:13:22 +0000 (UTC)
+To:     linux-btrfs@vger.kernel.org
+From:   A L <mail@lechevalier.se>
+Subject: Changes in 5.8.x cause compsize/bees failure
+Message-ID: <632b888d-a3c3-b085-cdf5-f9bb61017d92@lechevalier.se>
+Date:   Sat, 12 Sep 2020 19:13:21 +0200
+User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:68.0) Gecko/20100101
+ Thunderbird/68.12.0
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: 7bit
+Content-Language: en-US
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi,
+I noticed that in (at least 5.8.6 and 5.8.8) there is some change in 
+Btrfs kernel code that cause them to fail.
 
-a few more fixes:
+For example compsize now often/usually fails with: "Regular extent's 
+header not 53 bytes (0) long?!?"
 
-- regression fix, crash after failed snapshot creation
+Bees is having plenty of errors too, and does not succeed to read any 
+files (hash db is always empty). Perhaps this is an unrelated problem?
 
-- one more lockep fix, use nofs allocation when allocating missing
-  device
 
-- fix reloc tree leak on degraded mount
-
-- make some extent buffer alignment checks less strict to mount
-  filesystems created by btrfs-convert
-
-Please pull, thanks.
-
-----------------------------------------------------------------
-The following changes since commit f96d6960abbc52e26ad124e69e6815283d3e1674:
-
-  btrfs: tree-checker: fix the error message for transid error (2020-08-27 14:16:05 +0200)
-
-are available in the Git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.9-rc4-tag
-
-for you to fetch changes up to 2d892ccdc163a3d2e08c5ed1cea8b61bf7e4f531:
-
-  btrfs: fix NULL pointer dereference after failure to create snapshot (2020-09-07 21:18:35 +0200)
-
-----------------------------------------------------------------
-Filipe Manana (1):
-      btrfs: fix NULL pointer dereference after failure to create snapshot
-
-Josef Bacik (2):
-      btrfs: fix lockdep splat in add_missing_dev
-      btrfs: free data reloc tree on failed mount
-
-Qu Wenruo (1):
-      btrfs: require only sector size alignment for parent eb bytenr
-
- fs/btrfs/disk-io.c     |  2 ++
- fs/btrfs/extent-tree.c | 19 +++++++++----------
- fs/btrfs/print-tree.c  | 12 +++++++-----
- fs/btrfs/transaction.c |  1 +
- fs/btrfs/volumes.c     | 10 ++++++++++
- 5 files changed, 29 insertions(+), 15 deletions(-)

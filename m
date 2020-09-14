@@ -2,107 +2,149 @@ Return-Path: <SRS0=Rt3R=CX=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.3 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
-	SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2A511C433E2
-	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Sep 2020 11:41:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 39625C43461
+	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Sep 2020 11:52:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id EF64C21973
-	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Sep 2020 11:41:52 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DFEFC21973
+	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Sep 2020 11:52:52 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="mJzokQml";
+	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b="eWz6XurR"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726070AbgINLln (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 14 Sep 2020 07:41:43 -0400
-Received: from mx2.suse.de ([195.135.220.15]:52118 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726134AbgINLkp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 Sep 2020 07:40:45 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 7CB6BAD0F;
-        Mon, 14 Sep 2020 11:40:12 +0000 (UTC)
-Subject: Re: [PATCH v2 0/9] Cleanup metadata page reading path
-To:     Johannes Thumshirn <Johannes.Thumshirn@wdc.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <20200914093711.13523-1-nborisov@suse.com>
- <SN4PR0401MB3598C03BCB90A41366EE4E4E9B230@SN4PR0401MB3598.namprd04.prod.outlook.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <15fdb3d7-b7e4-bb00-c410-11e871cd9820@suse.com>
-Date:   Mon, 14 Sep 2020 14:39:56 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.10.0
-MIME-Version: 1.0
-In-Reply-To: <SN4PR0401MB3598C03BCB90A41366EE4E4E9B230@SN4PR0401MB3598.namprd04.prod.outlook.com>
-Content-Type: text/plain; charset=utf-8
+        id S1726193AbgINLwF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 14 Sep 2020 07:52:05 -0400
+Received: from esa3.hgst.iphmx.com ([216.71.153.141]:23631 "EHLO
+        esa3.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726043AbgINLsS (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 14 Sep 2020 07:48:18 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1600084099; x=1631620099;
+  h=from:to:cc:subject:date:message-id:references:
+   content-transfer-encoding:mime-version;
+  bh=bPtM+QvprWiRbpcl/rEXx78S9rLUBuX9siqY/0pD7zY=;
+  b=mJzokQmlhh1mjrOhiHk4h6l4IluzX08qf3scSb1kElellvluFaoxm+k9
+   rUAeeMOyyaCFEW+Kuvm5c6DTRIGefgDp93Ikp3uvMhkL9KE26KV5tkVll
+   6rrirp0HJzR0en1MKDXy9wOKpulR+waOQXQDHTT6JtVlWyILd8QMbx/jN
+   QpStlqEnZRyXuj2aR83MJshtcMmvW6/PR9hYQ+wCkcIBAjkBMKJp3sOtn
+   NSHUArDOPthnueIsV4sKachrhprgldxuSxtIDG4EA9a9tmNh/vjJq6MaZ
+   PHGeYAfDqhd0CaDYCcdESgPW3COxpKpJve8gqZM9AfoYw3qyqP22G2/BB
+   w==;
+IronPort-SDR: Qs3i+xIo6sDqF8idpn3NSv1RgCqObCUzW8tbK8YC7VN+ZlFt635llBohXXhLLFO5uNkYmMy4m9
+ SZE5CBzxn9u7OyltnxosAuPM8vaSRjC38Ai5IprUa8LZbLNFF9Ek8Bc9zzBZP5VD4TxWDZnYfy
+ F+4I5G4l7YK7NZQFUJ/s2Q/Tua8gCL7yl+YPW/aqDzks9Rnr1kFDb9dw6CIMmYz6P5u5iLxiFJ
+ vVBatJw6LyLHHLyqkPagAaIZuIGk/aWc85piojJYBIkKzGgvE69D0dg44KKNaWxKFBLttFl4mW
+ aIA=
+X-IronPort-AV: E=Sophos;i="5.76,425,1592841600"; 
+   d="scan'208";a="151664906"
+Received: from mail-dm6nam08lp2043.outbound.protection.outlook.com (HELO NAM04-DM6-obe.outbound.protection.outlook.com) ([104.47.73.43])
+  by ob1.hgst.iphmx.com with ESMTP; 14 Sep 2020 19:48:18 +0800
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=LiK8Dd1+0b+IuYMTYRcY12pEqvHXzVAlA/b+rUJMwRR60BGbDlYs7WO0XAILLskdslHk5YoACnEYKPpa1p3yVKR1Nnk9hPMbAoQ/nmUhSK7ZITi6Vco49gZl2OHrlGk1jvASqI0o6SRdrOIMeu7cI9DtW8d1SeWrK6tveuv0BpQuhc+2KwA+d59jMRxC68XaN69ab7pRttrCo3ZGvn0KXQD3h3IPKXpbRT+t8rySixA8MAtiHlxjPvijHiRZeAUXiEij1OXP307tk9+Gf2vB1O//cehtthlfC+/6vpWcR2zhbZLcIkuonPPcJcHboPkCctNsFfxWByoyN0NMDVH8lg==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=bPtM+QvprWiRbpcl/rEXx78S9rLUBuX9siqY/0pD7zY=;
+ b=bEyuE7M3nYWc22SQc5lHZxEV+MN2db3+IbqCiaYQp+crf/NU/THTQVSbZuCL+OzTq4Zw4L4iecKOcDbkCPdsmop2VbxqOM/k857jO49nS6P3DaVHUFhs68HMuZWUI44Ciq6NlNZ55P9TU04eHbTFF8SwsO+4ycj/JsC0AWrJRpmEtghuSgaVKMwOqn6FFNeuZyzX66Y7MpOPX88U3L58W6p4FJ98AEtjPdn+AzGkiHfCaFkIe+tg3ayQnXc5gPxAZluQSeo3X+JeVo8998XF3mzmO6KRAPqtwE3v6/6jpefnaJbIOWG8bsnqrYJfRkSpuHs1CYqIxuFsPsbeLO/+qw==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
+ header.d=wdc.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=bPtM+QvprWiRbpcl/rEXx78S9rLUBuX9siqY/0pD7zY=;
+ b=eWz6XurRI0CYXiGKhfTPP0uv/k92Vxybbg5WfTU9cyYoRgyR5bsVe+HIsSqCtVAhIjhi++cRm09jSiLEG2Pb87iMC0QfbooZstHRpmtPETchHcimSchFa65ivMWcL9RYPDmDOTcGRSbTwbPQQn8Sfe5+bnn3nEmvd9Wnuf3jBQ8=
+Received: from SN4PR0401MB3598.namprd04.prod.outlook.com
+ (2603:10b6:803:47::21) by SN4PR0401MB3520.namprd04.prod.outlook.com
+ (2603:10b6:803:4e::32) with Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.3370.17; Mon, 14 Sep
+ 2020 11:48:16 +0000
+Received: from SN4PR0401MB3598.namprd04.prod.outlook.com
+ ([fe80::457e:5fe9:2ae3:e738]) by SN4PR0401MB3598.namprd04.prod.outlook.com
+ ([fe80::457e:5fe9:2ae3:e738%7]) with mapi id 15.20.3370.019; Mon, 14 Sep 2020
+ 11:48:16 +0000
+From:   Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
+To:     Naohiro Aota <Naohiro.Aota@wdc.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        David Sterba <dsterba@suse.com>
+CC:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        Hannes Reinecke <hare@suse.com>,
+        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>
+Subject: Re: [PATCH v7 18/39] btrfs: redirty released extent buffers in ZONED
+ mode
+Thread-Topic: [PATCH v7 18/39] btrfs: redirty released extent buffers in ZONED
+ mode
+Thread-Index: AQHWiGL6kOlC4qdw3EypagtA7iP6Gw==
+Date:   Mon, 14 Sep 2020 11:48:16 +0000
+Message-ID: <SN4PR0401MB3598D6CBEC94FD4F7EE568299B230@SN4PR0401MB3598.namprd04.prod.outlook.com>
+References: <20200911123259.3782926-1-naohiro.aota@wdc.com>
+ <20200911123259.3782926-19-naohiro.aota@wdc.com>
+Accept-Language: en-US
 Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+X-MS-Has-Attach: 
+X-MS-TNEF-Correlator: 
+authentication-results: wdc.com; dkim=none (message not signed)
+ header.d=none;wdc.com; dmarc=none action=none header.from=wdc.com;
+x-originating-ip: [2001:a62:142d:5701:89b7:64ae:7a10:bbdf]
+x-ms-publictraffictype: Email
+x-ms-office365-filtering-ht: Tenant
+x-ms-office365-filtering-correlation-id: c5f9a89c-7c35-4bb9-7b59-08d858a4119e
+x-ms-traffictypediagnostic: SN4PR0401MB3520:
+x-ms-exchange-transport-forked: True
+x-microsoft-antispam-prvs: <SN4PR0401MB3520E95ED25CC48762BDB5889B230@SN4PR0401MB3520.namprd04.prod.outlook.com>
+wdcipoutbound: EOP-TRUE
+x-ms-oob-tlc-oobclassifiers: OLM:6430;
+x-ms-exchange-senderadcheck: 1
+x-microsoft-antispam: BCL:0;
+x-microsoft-antispam-message-info: kGtkUr1gjxYBA5TK5BZCXs/ephtB5BShFJw4NMMPG2seYYsjOsN3gsVYeDA2cyIwbMZkQ1GAQon+nxm6jVqjFYQs5mqpNic/lSc6T1YlrA9Vasu7NDXsgitww9LoTkrnw68tIp3+RJ3ryuh98GVYxcHxv+vRVC+kzNHwyV5e1k5cBM/tfTa6uK3ArUV07qH4jWsvryueswgHn9VkZ2ek599h5iDprlEal2hUhW3p0/FR7PbIfu6L0Xy4uEtRBucjMkhWPzzQMBAkoD8bYZpDdGHjJ+9/Qj5pQVgK8foaK3l4QhM3ZhCYbgVO8ma9BHgX
+x-forefront-antispam-report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SN4PR0401MB3598.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(4636009)(346002)(396003)(136003)(376002)(39860400002)(366004)(4744005)(316002)(91956017)(76116006)(66946007)(8676002)(86362001)(66446008)(66476007)(33656002)(66556008)(64756008)(8936002)(2906002)(54906003)(110136005)(71200400001)(186003)(4326008)(53546011)(6506007)(7696005)(55016002)(52536014)(5660300002)(83380400001)(508600001)(9686003);DIR:OUT;SFP:1102;
+x-ms-exchange-antispam-messagedata: NqhtALk8Vdtt0kr8FabK1fx3kYwZX+tgFdxOrHgBBv/CRzgq0821qHnuopnyw52ctBUxFIWw1ihYO21MDOqv9xcqUDqmptRVkB3Z2qy0EFZhgfn7Ta7mz004nUPh35f2tksu4bhzWU8AP/NU1UIEQ512urTVDdZFBU+k6IGFcMVzPWwld2IhKSS4HJT+k4GdU6AebfQMTj5g/WvvVEaCWqlm4/6O66K/S/hiCos/eK23SUL1an29sNFPyDhGbPV7iNJusoIT7dtq7fjf8kLjRIA7qBx5+UPehEdsOqKs/Yt5C/DZMvL/xALagA0Osz+sUMB1x8jSSHvfyCJdU4wsnJBENZ4FHRQQwykRSH2mFa6xGCNTy4SGq2FWw2NlIhhGSXRGdqn6v9MDm46JA+Bmrm6QO83mMaqTNjjSfDXtHgXCjKQnAp5UIxv00tuFN57n7LLY8KdGGYpii2lNy5huNGiAkj3OMZlbe4HYmwGZHpwZw/jUyxboA9skmfYGcIKtqz3fpBk5T5IPhF39sltbBl4Xl9qIWDlvO6JYFjrn8XFSbD39T7/DU7qbhXedWjZqpVnmwthya2yyOCAAjhhfwaODYtIn4ElJag6wlmxLsDCJWdjgeC4MWtkcmZGQmNyxSwWAs++QnF9MjSWNFhJHt54DY69fC0ETJa84BCcmxgH5V0gws5yvMSNY2Z3wSTSKqd7Chqo1MIRUm2Y8WCQiIg==
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+X-OriginatorOrg: wdc.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-AuthSource: SN4PR0401MB3598.namprd04.prod.outlook.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: c5f9a89c-7c35-4bb9-7b59-08d858a4119e
+X-MS-Exchange-CrossTenant-originalarrivaltime: 14 Sep 2020 11:48:16.4536
+ (UTC)
+X-MS-Exchange-CrossTenant-fromentityheader: Hosted
+X-MS-Exchange-CrossTenant-id: b61c8803-16f3-4c35-9b17-6f65f441df86
+X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
+X-MS-Exchange-CrossTenant-userprincipalname: o/7bPseaawQuaWGBAlfOKsmEkpFVmR/RX53SosLqAQLExLBRU577tQ5I4UlwhRVSTQCXoxXMvnATp1bwX/ojd1w0iNAbCrSK8EQHUWbBgZo=
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: SN4PR0401MB3520
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-
-
-On 14.09.20 г. 13:39 ч., Johannes Thumshirn wrote:
-> On 14/09/2020 11:37, Nikolay Borisov wrote:
->> Here is v2 of the metadata readout cleanups [0]. This series incorporates the
->> feedback I received, namely:
->>
->> * Added justification why removing btree_readpage is safe in Patch 1
->> * Dropped Patch 2 (pg_offset remove from btrfs_get_extent) as Qu intends on using
->> it in his subpage blocksize work.
->> * Add a comment about caller's responsibility for cleanup in Patch 3
->> * Added RB for patches which haven't changed since v1 and got RB by Josef.
->>
->> [0] https://lore.kernel.org/linux-btrfs/20200909094914.29721-1-nborisov@suse.com/T/#t
-> 
-> Apart from the nit in 7/9
-> Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-> 
-
-
-I believe your feedback has been addressed by the follow on patch I just
-sent.
+On 11/09/2020 19:42, Naohiro Aota wrote:=0A=
+> Tree manipulating operations like merging nodes often release=0A=
+> once-allocated tree nodes. Btrfs cleans such nodes so that pages in the=
+=0A=
+> node are not uselessly written out. On ZONED volumes, however, such=0A=
+> optimization blocks the following IOs as the cancellation of the write ou=
+t=0A=
+> of the freed blocks breaks the sequential write sequence expected by the=
+=0A=
+> device.=0A=
+> =0A=
+> This patch introduces a list of clean and unwritten extent buffers that=
+=0A=
+> have been released in a transaction. Btrfs redirty the buffer so that=0A=
+> btree_write_cache_pages() can send proper bios to the devices.=0A=
+> =0A=
+> Besides it clears the entire content of the extent buffer not to confuse=
+=0A=
+> raw block scanners e.g. btrfsck. By clearing the content,=0A=
+> csum_dirty_buffer() complains about bytenr mismatch, so avoid the checkin=
+g=0A=
+> and checksum using newly introduced buffer flag EXTENT_BUFFER_NO_CHECK.=
+=0A=
+=0A=
+That one doesn't apply cleanly on current misc-next.=0A=

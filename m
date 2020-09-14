@@ -2,121 +2,153 @@ Return-Path: <SRS0=Rt3R=CX=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-19.9 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DAA7DC433E2
-	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Sep 2020 12:20:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D7892C43461
+	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Sep 2020 14:28:35 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 780BF223E8
-	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Sep 2020 12:20:14 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="gqJxtw26";
-	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b="L7JU2uM6"
+	by mail.kernel.org (Postfix) with ESMTP id 9A9B62193E
+	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Sep 2020 14:28:35 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1600093715;
+	bh=FZEnicL3Py28tpp8sQzMyxWJigcJ4bAeNu+h2kXjV68=;
+	h=From:To:Subject:Date:List-ID:From;
+	b=LZzqolDj3gWeoCAsGhsW1mTXHCPH8P9dG+jwwrKlTEaArof+PMVDEEbfZFv9bZRE1
+	 N+Qn/9YCNgatkjL0F67yyVpbpBPgIluATSAz17+f5d26UiNpKca6oWtecvhjtHMbYb
+	 SGesPTErXWlNak6VYGgZbFb7ENlls8GcO6Sou0iw=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726215AbgINMTk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 14 Sep 2020 08:19:40 -0400
-Received: from esa3.hgst.iphmx.com ([216.71.153.141]:25210 "EHLO
-        esa3.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726160AbgINMGr (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 Sep 2020 08:06:47 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1600085206; x=1631621206;
-  h=from:to:subject:date:message-id:references:
-   content-transfer-encoding:mime-version;
-  bh=G8FZ0D3PP/OudJ5uuxCAz/C/vBHo8wESZoPwxTWqVEI=;
-  b=gqJxtw26XMcCDTm3K+n7GIo8a2BWVyQXuX7aNbmEkv0/4ste6zaHnEWe
-   BinXCkrueo3EffMaIg7iYisemsIwm/gE7xZywWegCoRr9LW0n0+jbkOsm
-   pQk9JfkwjxJlCFJUeaxTqAQ/p3t9Mc52b0zWdC5MwEoCy/5EQHgep0hLY
-   AXYb4x+mukZGzhNYtq8DVbkCOWeb1/AeLdbFhY7EyLv2Rg9Ho5CqFqInF
-   pCkXcj+Mb6kUNjcKYCReOW7lKrahdOlCbCeNJAP67CowODt+0uhPDYnLD
-   ztKRg+0ftVlpYKiFpkdgSNYH4ZRa0vNSd6xjIZuPBXyIIWeOK0BwI0C69
-   w==;
-IronPort-SDR: Rt/vA5s7WGKEZFSZ2jylCgenUrSlWYla7E+JtXsZQxwDwIKNytqvyWCBwpRPXE3PPtH+QRmDed
- hNsjZriBBb1UQ2dDp/mQdo8+uBwc97Ck1N2RRUcgKWyS6nVrO3NyM9A8mpIza2TzBU03RyC/4y
- RU6WawTvlN0lVpc+EvnVIBbiKMCnpSG33McF5lFTP4zcp35LbZG2rUoKpHmfZ69E6hPbrCJ1kc
- B4eY8604PdtCzoUOQA0Td3F35CtEm+l+1IfnSrwbrTXs1tdqHMv9q9tyHQ+0mvXBmcsELtBWkT
- Rwo=
-X-IronPort-AV: E=Sophos;i="5.76,426,1592841600"; 
-   d="scan'208";a="151665831"
-Received: from mail-dm6nam12lp2174.outbound.protection.outlook.com (HELO NAM12-DM6-obe.outbound.protection.outlook.com) ([104.47.59.174])
-  by ob1.hgst.iphmx.com with ESMTP; 14 Sep 2020 20:06:45 +0800
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
- b=MXbEyhNfe6hPM+k3A3C4R6sUD91Fhhfws1U6MGSxiBtZqJsnayyeaQ1pLADirRFVHdZAQzjRlrr3kulPzkXppP/h9hc+aKcZZuUen10p88ZLanMHawyxlj2sSQD6QrJsqpgfWiiGdtAlIdCBSb2DWIBWavpTJoVba145vZCQcNEygAu+95DRcEeZbgMz7df0cm01SUiBgdgELB707KbTEvJZ/fCIcfq5cc7IvqzvR7RgqwEXuXhrTPAi/k4CIFVvefhGSDUKI3zpNzjT4WpjZwK3RV9p7DFpIpVx+F2XaDGAxNf7hxTXjtcdyhFrRmsiCUA1t36i5KDP/KTiOlnrxA==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector9901;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=G8FZ0D3PP/OudJ5uuxCAz/C/vBHo8wESZoPwxTWqVEI=;
- b=A4fpeZurOo/Iz8rQsltrCmBLZ94Ri5jRX238kiADAPF0S9XEgYQhSfbMttrs/kp3nYgmni9XQgvPvwEFmm+ee37zE5HOB2tvJdd8pBCiXnS22RpMJVQJt0Tn5fG+x+UT/bq7LICtHR+XRdcreafnGAmAM1FyOQZmuvoy+b4l9flfOk/A54tDYaQMZL/t0h1skR2igTyTWsemFZ35IYvQXFAji5jleHdmUZnTz5SN80DQt2KskbQs8N/oPfhg5sE2xLdTSTMIcfNG2fk8Re5dHVM6Aodnu8EHuMoOcBje6T0/+63AO3AGa1ekKPF+ZGAR7gICqgO+WYNzbGreWKdGeQ==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
- header.d=wdc.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=G8FZ0D3PP/OudJ5uuxCAz/C/vBHo8wESZoPwxTWqVEI=;
- b=L7JU2uM6uajjUAEiyohqEmFEhxSc8ZPgKBYpWlAFnctHYzncZ/BOZkwHH89u5J7e2FuLP3zITzKZUetwjt+J5zbTbMjhFJW+PDQfvurL0kAnC/rR4DmFSaqp48hniVjNjf22yLoOoSq4mjghMCrlVOXekrpXMDmUryETbGZ0VjE=
-Received: from SN4PR0401MB3598.namprd04.prod.outlook.com
- (2603:10b6:803:47::21) by SN6PR04MB4542.namprd04.prod.outlook.com
- (2603:10b6:805:ae::16) with Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.3370.16; Mon, 14 Sep
- 2020 12:06:44 +0000
-Received: from SN4PR0401MB3598.namprd04.prod.outlook.com
- ([fe80::457e:5fe9:2ae3:e738]) by SN4PR0401MB3598.namprd04.prod.outlook.com
- ([fe80::457e:5fe9:2ae3:e738%7]) with mapi id 15.20.3370.019; Mon, 14 Sep 2020
- 12:06:44 +0000
-From:   Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
-To:     "fdmanana@kernel.org" <fdmanana@kernel.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs: fix wrong address when faulting in pages in the
- search ioctl
-Thread-Topic: [PATCH] btrfs: fix wrong address when faulting in pages in the
- search ioctl
-Thread-Index: AQHWim055atHBozQlU+1AAdNBbx0bg==
-Date:   Mon, 14 Sep 2020 12:06:44 +0000
-Message-ID: <SN4PR0401MB35986202FAA8155A897CD5AD9B230@SN4PR0401MB3598.namprd04.prod.outlook.com>
-References: <78bf853ef63f2dbd62587bb02bb723fbaa77c198.1600070418.git.fdmanana@suse.com>
-Accept-Language: en-US
-Content-Language: en-US
-X-MS-Has-Attach: 
-X-MS-TNEF-Correlator: 
-authentication-results: kernel.org; dkim=none (message not signed)
- header.d=none;kernel.org; dmarc=none action=none header.from=wdc.com;
-x-originating-ip: [2001:a62:142d:5701:89b7:64ae:7a10:bbdf]
-x-ms-publictraffictype: Email
-x-ms-office365-filtering-ht: Tenant
-x-ms-office365-filtering-correlation-id: 4d67129e-f5ea-42a1-44bd-08d858a6a62d
-x-ms-traffictypediagnostic: SN6PR04MB4542:
-x-microsoft-antispam-prvs: <SN6PR04MB45429BA0D0560F35EB4F56979B230@SN6PR04MB4542.namprd04.prod.outlook.com>
-wdcipoutbound: EOP-TRUE
-x-ms-oob-tlc-oobclassifiers: OLM:1728;
-x-ms-exchange-senderadcheck: 1
-x-microsoft-antispam: BCL:0;
-x-microsoft-antispam-message-info: /m//eieCtTsuPFUmoBWiEFBZP0fVdrXEG/E3WmhniXrKkqF07D+/96kEfFruUTZ1u18ciyll2jS2D+50htLXbSGpWfcjQXROyGPOaLsu7VfMEubYwWoYH1Kol2O5ch0kAUJY7UtgYm0QmloBYkijLhFho8YNmszMDKVy72vyXLkrCARzCSsAAWiPBjx5K8NNzmg4nqGFH5oVXEvRBMMTaen57r7Oyk6zg/hTpi3rxooSawin3Yud0tpB8j2dvF/tUUmrGNqDNMXloA64Q7k2pPfBwkUStE5SRHlJAKkLpuoe3bwQ2nlg+ns8zzy3IT+vjODpCVsab4J3rTQtr/YXBA==
-x-forefront-antispam-report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SN4PR0401MB3598.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(4636009)(396003)(346002)(366004)(376002)(39860400002)(136003)(6506007)(316002)(33656002)(9686003)(55016002)(8936002)(66556008)(76116006)(66476007)(64756008)(5660300002)(2906002)(66946007)(66446008)(4270600006)(91956017)(86362001)(8676002)(186003)(508600001)(110136005)(71200400001)(558084003)(52536014)(7696005)(19618925003);DIR:OUT;SFP:1102;
-x-ms-exchange-antispam-messagedata: CcpqQARTnHB3BMXmmQJtLaNkVVkF2r37Lp/SXUZ/g3cDlAhosyGT5VhpAW0nt/91LgiyD/Ys14wMyB7D879HTpdSpObCyuVpkzT07JAEoEou2Ay9dQhviujRKkgQO+iU1fvlZWOFPOdwPOzm1K9FwS2d5FisgbJmmcHXsO7lA+cwE5zpw85Weh4zTd9it40G6HG928EBDQ1BL5ZJfRVyxOPEZ2dwJ96G2JV12lG4ib9D/BxZFpTpQv/eFNyAMqRIpwN9gAIQH5Q3qjug9YuyMUqSbo2RYS6/QmsNcavl0XkbCOtZo5ZDye1DERb2hkp9V7dxawSU4pAzWpOUcyCk6ZL5Syj8PANYXVmhQnacXgl7RbSN8+bV/3YKJZ4y9wgeFPH/he2Q6lfrfQw9w0Lk5ZtMQPQFTnKp2PJXsohNcR1+3F96M5jl70hwhs7JJbnw5RKiAuepbICAWD2nxwr40J6Af2ANKOhruyl68hmVzp7V+qgT7Ub+zwJsObmlv8EqJN2GV08YNmUvi8a+MtmSUARbvMryDBzqafkphbqBxMnrWl4VBXs+/x2A0XG4Nw0kwu9jdx6dWCDTSpgqZ/YKckNH2ryQEOAseyljXCoOcXGxniu7xO9du9aYilRnw9oAt8zWF6aCsUFk0wnce+74YeagtGziU+MHvSL+7aITGkfu9PM0BWB8ZSuLwDP1ZFQQlY5c1dCiNqNBDxtor2jrOA==
-x-ms-exchange-transport-forked: True
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: quoted-printable
-MIME-Version: 1.0
-X-OriginatorOrg: wdc.com
-X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-AuthSource: SN4PR0401MB3598.namprd04.prod.outlook.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: 4d67129e-f5ea-42a1-44bd-08d858a6a62d
-X-MS-Exchange-CrossTenant-originalarrivaltime: 14 Sep 2020 12:06:44.7415
- (UTC)
-X-MS-Exchange-CrossTenant-fromentityheader: Hosted
-X-MS-Exchange-CrossTenant-id: b61c8803-16f3-4c35-9b17-6f65f441df86
-X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
-X-MS-Exchange-CrossTenant-userprincipalname: VLq7dkHbYfy6wV+YqAy6V99HaYScYjo0skMTcn5gHkymIgOhpQS1RmE6EWh+vCuA6dDc8PV6KeHvuuUTSgrwOv0LmT4sWb/1myM+rrr9S54=
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: SN6PR04MB4542
+        id S1726696AbgINO2N (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 14 Sep 2020 10:28:13 -0400
+Received: from mail.kernel.org ([198.145.29.99]:44280 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726694AbgINO1y (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 14 Sep 2020 10:27:54 -0400
+Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 6FE9B20829
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 Sep 2020 14:27:53 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1600093673;
+        bh=FZEnicL3Py28tpp8sQzMyxWJigcJ4bAeNu+h2kXjV68=;
+        h=From:To:Subject:Date:From;
+        b=hPiT0B7BOZdP61Myt7tDM5LJbk7Ux8QqnF10tvNP0ngMtPFodXYjxJwoKW6w4JPh0
+         fV1DSRmGw2L8J8UjNdDaica6exlRgAvD/9qODSHu4cD5ob6gDB4G8rDzaVFEFryqge
+         uiBsnuTJiWjuqbnzzjexJ0m+6Tow568d9IdVtVYE=
+From:   fdmanana@kernel.org
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: reschedule if necessary when logging directory items
+Date:   Mon, 14 Sep 2020 15:27:50 +0100
+Message-Id: <606910fad0a0c62d162acf92953d8f38c8537643.1600093362.git.fdmanana@suse.com>
+X-Mailer: git-send-email 2.17.1
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Looks good,=0A=
-Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>=0A=
+From: Filipe Manana <fdmanana@suse.com>
+
+Logging directories with many entries can take a significant amount of
+time, and in some cases monopolize a cpu/core for a long time if the
+logging task doesn't happen to block often enough.
+
+Johannes and Lu Fengqi reported test case generic/041 triggering a soft
+lockup when the kernel has CONFIG_SOFTLOCKUP_DETECTOR=y. For this test
+case we log an inode with 3002 hard links, and because the test removed
+one hard link before fsyncing the file, the inode logging causes the
+parent directory do be logged as well, which has 6004 directory items to
+log (3002 BTRFS_DIR_ITEM_KEY items plus 3002 BTRFS_DIR_INDEX_KEY items),
+so it can take a significant amount of time and trigger the soft lockup.
+
+So just make tree-log.c:log_dir_items() reschedule when necessary,
+releasing the current search path before doing so and then resume from
+where it was before the reschedule.
+
+The stack trace produced when the soft lockup happens is the following:
+
+[10480.277653] watchdog: BUG: soft lockup - CPU#2 stuck for 22s! [xfs_io:28172]
+[10480.279418] Modules linked in: dm_thin_pool dm_persistent_data (...)
+[10480.284915] irq event stamp: 29646366
+[10480.285987] hardirqs last  enabled at (29646365): [<ffffffff85249b66>] __slab_alloc.constprop.0+0x56/0x60
+[10480.288482] hardirqs last disabled at (29646366): [<ffffffff8579b00d>] irqentry_enter+0x1d/0x50
+[10480.290856] softirqs last  enabled at (4612): [<ffffffff85a00323>] __do_softirq+0x323/0x56c
+[10480.293615] softirqs last disabled at (4483): [<ffffffff85800dbf>] asm_call_on_stack+0xf/0x20
+[10480.296428] CPU: 2 PID: 28172 Comm: xfs_io Not tainted 5.9.0-rc4-default+ #1248
+[10480.298948] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.12.0-59-gc9ba527-rebuilt.opensuse.org 04/01/2014
+[10480.302455] RIP: 0010:__slab_alloc.constprop.0+0x19/0x60
+[10480.304151] Code: 86 e8 31 75 21 00 66 66 2e 0f 1f 84 00 00 00 (...)
+[10480.309558] RSP: 0018:ffffadbe09397a58 EFLAGS: 00000282
+[10480.311179] RAX: ffff8a495ab92840 RBX: 0000000000000282 RCX: 0000000000000006
+[10480.313242] RDX: 0000000000000000 RSI: 0000000000000000 RDI: ffffffff85249b66
+[10480.315260] RBP: ffff8a497d04b740 R08: 0000000000000001 R09: 0000000000000001
+[10480.317229] R10: ffff8a497d044800 R11: ffff8a495ab93c40 R12: 0000000000000000
+[10480.319169] R13: 0000000000000000 R14: 0000000000000c40 R15: ffffffffc01daf70
+[10480.321104] FS:  00007fa1dc5c0e40(0000) GS:ffff8a497da00000(0000) knlGS:0000000000000000
+[10480.323559] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[10480.325235] CR2: 00007fa1dc5befb8 CR3: 0000000004f8a006 CR4: 0000000000170ea0
+[10480.327259] Call Trace:
+[10480.328286]  ? overwrite_item+0x1f0/0x5a0 [btrfs]
+[10480.329784]  __kmalloc+0x831/0xa20
+[10480.331009]  ? btrfs_get_32+0xb0/0x1d0 [btrfs]
+[10480.332464]  overwrite_item+0x1f0/0x5a0 [btrfs]
+[10480.333948]  log_dir_items+0x2ee/0x570 [btrfs]
+[10480.335413]  log_directory_changes+0x82/0xd0 [btrfs]
+[10480.336926]  btrfs_log_inode+0xc9b/0xda0 [btrfs]
+[10480.338374]  ? init_once+0x20/0x20 [btrfs]
+[10480.339711]  btrfs_log_inode_parent+0x8d3/0xd10 [btrfs]
+[10480.341257]  ? dget_parent+0x97/0x2e0
+[10480.342480]  btrfs_log_dentry_safe+0x3a/0x50 [btrfs]
+[10480.343977]  btrfs_sync_file+0x24b/0x5e0 [btrfs]
+[10480.345381]  do_fsync+0x38/0x70
+[10480.346483]  __x64_sys_fsync+0x10/0x20
+[10480.347703]  do_syscall_64+0x2d/0x70
+[10480.348891]  entry_SYSCALL_64_after_hwframe+0x44/0xa9
+[10480.350444] RIP: 0033:0x7fa1dc80970b
+[10480.351642] Code: 0f 05 48 3d 00 f0 ff ff 77 45 c3 0f 1f 40 00 48 (...)
+[10480.356952] RSP: 002b:00007fffb3d081d0 EFLAGS: 00000293 ORIG_RAX: 000000000000004a
+[10480.359458] RAX: ffffffffffffffda RBX: 0000562d93d45e40 RCX: 00007fa1dc80970b
+[10480.361426] RDX: 0000562d93d44ab0 RSI: 0000562d93d45e60 RDI: 0000000000000003
+[10480.363367] RBP: 0000000000000001 R08: 0000000000000000 R09: 00007fa1dc7b2a40
+[10480.365317] R10: 0000562d93d0e366 R11: 0000000000000293 R12: 0000000000000001
+[10480.367299] R13: 0000562d93d45290 R14: 0000562d93d45e40 R15: 0000562d93d45e60
+
+Link: https://github.com/btrfs/fstests/issues/22
+Link: https://lore.kernel.org/linux-btrfs/20180713090216.GC575@fnst.localdomain/
+Tested-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/tree-log.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index e35cfe8cf68b..56cbc1706b6f 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -3611,6 +3611,7 @@ static noinline int log_dir_items(struct btrfs_trans_handle *trans,
+ 	 * search and this search we'll not find the key again and can just
+ 	 * bail.
+ 	 */
++search:
+ 	ret = btrfs_search_slot(NULL, root, &min_key, path, 0, 0);
+ 	if (ret != 0)
+ 		goto done;
+@@ -3630,6 +3631,13 @@ static noinline int log_dir_items(struct btrfs_trans_handle *trans,
+ 
+ 			if (min_key.objectid != ino || min_key.type != key_type)
+ 				goto done;
++
++			if (need_resched()) {
++				btrfs_release_path(path);
++				cond_resched();
++				goto search;
++			}
++
+ 			ret = overwrite_item(trans, log, dst_path, src, i,
+ 					     &min_key);
+ 			if (ret) {
+-- 
+2.26.2
+

@@ -2,129 +2,68 @@ Return-Path: <SRS0=Rt3R=CX=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-16.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,NICE_REPLY_A,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PULL_REQUEST,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DB890C2BC11
-	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Sep 2020 15:25:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D2E95C43461
+	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Sep 2020 15:57:50 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 97E9120665
-	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Sep 2020 15:25:58 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="v2zsmXoa"
+	by mail.kernel.org (Postfix) with ESMTP id 95F952074B
+	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Sep 2020 15:57:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726440AbgINPYf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 14 Sep 2020 11:24:35 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46328 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726112AbgINPX0 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 Sep 2020 11:23:26 -0400
-Received: from mail-qk1-x743.google.com (mail-qk1-x743.google.com [IPv6:2607:f8b0:4864:20::743])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8CCA4C061788
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 Sep 2020 08:23:25 -0700 (PDT)
-Received: by mail-qk1-x743.google.com with SMTP id v123so432080qkd.9
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 Sep 2020 08:23:25 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=subject:to:references:from:message-id:date:user-agent:mime-version
-         :in-reply-to:content-language:content-transfer-encoding;
-        bh=P88sZPJFN6pjg1/rBpYAr1dfE1xKLYR1psgTh/kSK58=;
-        b=v2zsmXoaQHuKuTLSI56DmnLoufgGGU+J/f3LjvF4v34Q6KPI5HyPGTQ21jiSPhwAQ4
-         lk9t/YRRXcRGIsRYd5083WF78DCqO1tKVw68gA8p5BbhvGBZGiMTEHDJ3cHeyO2qoQuF
-         UOWzUWKkVpqbU0LjZYrd6/+nmJ/ecw3Hqz6SFnfWKqRClyuzq29c95lRUzEh9pkOtDk1
-         5COpR0vOdB4Xt/6byyDqdU3Xa0lks2yq83AqLbGoWL8Vt7X/VL8aUQev5EqXuPloVd60
-         sRD5pm3oXwf4sV8zGwzb+QoANX7JwaWE+fQaANGSx9dpQmUF/TDx81WZf+V6H2Ep+0MJ
-         0AiQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=P88sZPJFN6pjg1/rBpYAr1dfE1xKLYR1psgTh/kSK58=;
-        b=X57exRgSjfgWa8E4GGOLPjEVsNB8oCxjXrOCV+Kye4GSEfSi2STXoUFUSBlUig2a05
-         pLPAaXwBJHYaCDcVb8o/iIAOpOTez633q1JiO0rxI7ROYUB/X9ttN4J4hYJhzfnFYO9f
-         RlWgXFQ/9+qk1UMAmQiebzgokErjBLtZTYHr2BYKbESq/TmgAm8M8TYjAgogw+OFWpEg
-         rWDKAmXC+PeFx+an6o0isXMQZD2wjivyZI334mGLB8sdpA25iUcE2JjEXteYTSrrHG9s
-         wqkvoLcOww7ni9N3dvUIeZo3+VRweeCM/xL+y+5eMOuKw4pTCIET8XPlSmi2fReDKiT9
-         K4ZA==
-X-Gm-Message-State: AOAM531XIvnEM3RtX+cJuDzjMPM3KFASVJFhnwjhloteoOcZvrXQhDGI
-        /PZfjS7V1ZDCZvEW4CJvhLjjVkgFpbsWf2vG
-X-Google-Smtp-Source: ABdhPJxML7P5UFyuwupKlgmXyBQeG9Wy/uhuMqnzQOUkcnJmkuMVG/chGT9OuwkebrxHYqRoM3c6dA==
-X-Received: by 2002:a37:e211:: with SMTP id g17mr12791704qki.417.1600097004283;
-        Mon, 14 Sep 2020 08:23:24 -0700 (PDT)
-Received: from ?IPv6:2620:10d:c0a8:11c1::111c? ([2620:10d:c091:480::1:9b22])
-        by smtp.gmail.com with ESMTPSA id f64sm5006681qkj.124.2020.09.14.08.23.23
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 14 Sep 2020 08:23:23 -0700 (PDT)
-Subject: Re: [PATCH] btrfs: fix wrong address when faulting in pages in the
- search ioctl
-To:     fdmanana@kernel.org, linux-btrfs@vger.kernel.org
-References: <78bf853ef63f2dbd62587bb02bb723fbaa77c198.1600070418.git.fdmanana@suse.com>
-From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <8c2f5f20-3868-4291-5bed-b571c8ae61a0@toxicpanda.com>
-Date:   Mon, 14 Sep 2020 11:23:22 -0400
-User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:68.0)
- Gecko/20100101 Thunderbird/68.12.0
+        id S1726453AbgINP5r (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 14 Sep 2020 11:57:47 -0400
+Received: from mx2.suse.de ([195.135.220.15]:33804 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726446AbgINP5d (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 14 Sep 2020 11:57:33 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.221.27])
+        by mx2.suse.de (Postfix) with ESMTP id 0863FAD64;
+        Mon, 14 Sep 2020 15:57:48 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 79037DA86B; Mon, 14 Sep 2020 17:56:18 +0200 (CEST)
+From:   David Sterba <dsterba@suse.com>
+To:     torvalds@linux-foundation.org
+Cc:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: [GIT PULL] Btrfs fix for 5.9-rc6
+Date:   Mon, 14 Sep 2020 17:56:17 +0200
+Message-Id: <cover.1600098180.git.dsterba@suse.com>
+X-Mailer: git-send-email 2.25.0
 MIME-Version: 1.0
-In-Reply-To: <78bf853ef63f2dbd62587bb02bb723fbaa77c198.1600070418.git.fdmanana@suse.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 9/14/20 4:01 AM, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> When faulting in the pages for the user supplied buffer for the search
-> ioctl, we are passing only the base address of the buffer to the function
-> fault_in_pages_writeable(). This means that after the first iteration of
-> the while loop that searches for leaves, when we have a non-zero offset,
-> stored in 'sk_offset', we try to fault in a wrong page range.
-> 
-> So fix this by adding the offset in 'sk_offset' to the base address of the
-> user supplied buffer when calling fault_in_pages_writeable().
-> 
-> Several users have reported that the applications compsize and bees have
-> started to operate incorrectly since commit a48b73eca4ceb9 ("btrfs: fix
-> potential deadlock in the search ioctl") was added to stable trees, and
-> these applications make heavy use of the search ioctls. This fixes their
-> issues.
-> 
-> Link: https://lore.kernel.org/linux-btrfs/632b888d-a3c3-b085-cdf5-f9bb61017d92@lechevalier.se/
-> Link: https://github.com/kilobyte/compsize/issues/34
-> Tested-by: A L <mail@lechevalier.se>
-> Fixes: a48b73eca4ceb9 ("btrfs: fix potential deadlock in the search ioctl")
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> ---
->   fs/btrfs/ioctl.c | 3 ++-
->   1 file changed, 2 insertions(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 5f06aeb71823..b91444e810a5 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -2194,7 +2194,8 @@ static noinline int search_ioctl(struct inode *inode,
->   	key.offset = sk->min_offset;
->   
->   	while (1) {
-> -		ret = fault_in_pages_writeable(ubuf, *buf_size - sk_offset);
-> +		ret = fault_in_pages_writeable(ubuf + sk_offset,
-> +					       *buf_size - sk_offset);
->   		if (ret)
->   			break;
->   
-> 
+Hi,
 
-Eesh, can we get an xfstest for this?
+one of the recent lockdep fixes introduced a bug that breaks the search
+ioctl, which is used by some applications (bees, compsize). The patch
+made it to stable trees so we need this fixup to make it work again.
 
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+Please pull, thanks.
 
-Thanks,
+----------------------------------------------------------------
+The following changes since commit 2d892ccdc163a3d2e08c5ed1cea8b61bf7e4f531:
 
-Josef
+  btrfs: fix NULL pointer dereference after failure to create snapshot (2020-09-07 21:18:35 +0200)
+
+are available in the Git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.9-rc5-tag
+
+for you to fetch changes up to 1c78544eaa4660096aeb6a57ec82b42cdb3bfe5a:
+
+  btrfs: fix wrong address when faulting in pages in the search ioctl (2020-09-14 17:27:16 +0200)
+
+----------------------------------------------------------------
+Filipe Manana (1):
+      btrfs: fix wrong address when faulting in pages in the search ioctl
+
+ fs/btrfs/ioctl.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)

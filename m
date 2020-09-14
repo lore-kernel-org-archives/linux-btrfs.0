@@ -2,100 +2,92 @@ Return-Path: <SRS0=Rt3R=CX=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-14.6 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	UNPARSEABLE_RELAY,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 62AF2C43461
-	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Sep 2020 09:11:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B2559C433E2
+	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Sep 2020 09:37:21 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id F3EB120EDD
-	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Sep 2020 09:11:37 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="M2YtDaT4"
+	by mail.kernel.org (Postfix) with ESMTP id 69F9721BE5
+	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Sep 2020 09:37:21 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726194AbgINJLh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 14 Sep 2020 05:11:37 -0400
-Received: from aserp2120.oracle.com ([141.146.126.78]:35844 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726110AbgINJLg (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 Sep 2020 05:11:36 -0400
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 08E998ED145846
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 Sep 2020 09:11:35 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
- subject : date : message-id : mime-version : content-transfer-encoding;
- s=corp-2020-01-29; bh=0qfr+5BdZ576Zw7uQcLlLGNx8FIAJihimEvbUjvywH0=;
- b=M2YtDaT4FoJ0bj3nDN8fUk4Oux6PoKu8bKTKhT0mrKpMCfo8JgyPi+0NFWkszZ+ySV+y
- przFBsMhwcgnnFfIcuaXYTPw96R1dsF2tscVaHZrZuq7eOS6UH2RVUScl9cxrHZj6k7M
- pdeYC3lF+u8VgjVZmvQFbi/6ONaPa2VsqVhEL5Pthw9/A2Kl5kBoQBEiVD1Iyd0BpmVs
- y/8h7IA+0M7mPrCQlamHB8MyxWJVyxnYBODCHRchU41fdn87icLVqGpMOpy7XFOqCNPP
- 9KIjknMWqIfQLZhMXwHrdt09ke2m2MJ1dLZSOV6jexoWGvfCAevgiAmCgW7bRF2QIs87 Rw== 
-Received: from aserp3020.oracle.com (aserp3020.oracle.com [141.146.126.70])
-        by aserp2120.oracle.com with ESMTP id 33gp9kwb6s-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 Sep 2020 09:11:35 +0000
-Received: from pps.filterd (aserp3020.oracle.com [127.0.0.1])
-        by aserp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 08E9BLPV114101
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 Sep 2020 09:11:35 GMT
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by aserp3020.oracle.com with ESMTP id 33h880v18s-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 Sep 2020 09:11:35 +0000
-Received: from abhmp0012.oracle.com (abhmp0012.oracle.com [141.146.116.18])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id 08E9BYwp026382
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 Sep 2020 09:11:35 GMT
-Received: from localhost.localdomain (/39.109.231.106)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Mon, 14 Sep 2020 09:11:34 +0000
-From:   Anand Jain <anand.jain@oracle.com>
+        id S1726367AbgINJhU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 14 Sep 2020 05:37:20 -0400
+Received: from mx2.suse.de ([195.135.220.15]:41188 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726275AbgINJhR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 14 Sep 2020 05:37:17 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.221.27])
+        by mx2.suse.de (Postfix) with ESMTP id 670E9AE85;
+        Mon, 14 Sep 2020 09:37:31 +0000 (UTC)
+From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Cc:     Anand Jain <anand.jain@oracle.com>
-Subject: [PATCH] btrfs: add a warning to check on the leaking device close
-Date:   Mon, 14 Sep 2020 17:11:14 +0800
-Message-Id: <8ad72827dc32542915f87db73cbb6b609f24dce4.1600074377.git.anand.jain@oracle.com>
-X-Mailer: git-send-email 2.25.1
-MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9743 signatures=668679
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 mlxscore=0 spamscore=0 adultscore=0
- suspectscore=3 phishscore=0 malwarescore=0 bulkscore=0 mlxlogscore=999
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2006250000
- definitions=main-2009140078
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9743 signatures=668679
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 bulkscore=0 mlxlogscore=999
- adultscore=0 malwarescore=0 clxscore=1015 lowpriorityscore=0 phishscore=0
- spamscore=0 priorityscore=1501 suspectscore=3 impostorscore=0 mlxscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2006250000
- definitions=main-2009140078
+Cc:     Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH v2 2/9] btrfs: Simplify metadata pages reading
+Date:   Mon, 14 Sep 2020 12:37:04 +0300
+Message-Id: <20200914093711.13523-3-nborisov@suse.com>
+X-Mailer: git-send-email 2.17.1
+In-Reply-To: <20200914093711.13523-1-nborisov@suse.com>
+References: <20200914093711.13523-1-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-To help better understand the device-close leaks, add a warning if the
-device freed is still open.
+Metadata pages currently use __do_readpage to read metadata pages,
+unfortunately this function is also used to deal with ordinary data
+pages. This makes the metadata pages reading code to go through multiple
+hoops in order to adhere to __do_readpage invariants. Most of these are
+necessary for data pages which could be compressed. For metadata it's
+enough to simply build a bio and submit it.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+To this effect simply call submit_extent_page directly from
+read_extent_buffer_pages which is the only callpath used to populate
+extent_buffers with data. This in turn enables further cleanups.
+
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/volumes.c | 1 +
- 1 file changed, 1 insertion(+)
+ fs/btrfs/extent_io.c | 21 ++++++++++-----------
+ 1 file changed, 10 insertions(+), 11 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 2d5cc644741e..c0dfc0b569e9 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -371,6 +371,7 @@ static struct btrfs_fs_devices *alloc_fs_devices(const u8 *fsid,
- void btrfs_free_device(struct btrfs_device *device)
- {
- 	WARN_ON(!list_empty(&device->post_commit_list));
-+	WARN_ON(device->bdev);
- 	rcu_string_free(device->name);
- 	extent_io_tree_release(&device->alloc_state);
- 	bio_put(device->flush_bio);
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index a1e070ec7ad8..0a6cda4c30ed 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -5573,20 +5573,19 @@ int read_extent_buffer_pages(struct extent_buffer *eb, int wait, int mirror_num)
+ 			}
+ 
+ 			ClearPageError(page);
+-			err = __extent_read_full_page(page,
+-						      btree_get_extent, &bio,
+-						      mirror_num, &bio_flags,
+-						      REQ_META);
++			err = submit_extent_page(REQ_OP_READ | REQ_META, NULL,
++					 page, page_offset(page), PAGE_SIZE, 0,
++					 &bio, end_bio_extent_readpage,
++					 mirror_num, 0, 0, false);
+ 			if (err) {
+-				ret = err;
+ 				/*
+-				 * We use &bio in above __extent_read_full_page,
+-				 * so we ensure that if it returns error, the
+-				 * current page fails to add itself to bio and
+-				 * it's been unlocked.
+-				 *
+-				 * We must dec io_pages by ourselves.
++				 * We failed to submit the bio so it's the
++				 * caller's responsibility to perform cleanup
++				 * i.e unlock page/set error bit.
+ 				 */
++				ret = err;
++				SetPageError(page);
++				unlock_page(page);
+ 				atomic_dec(&eb->io_pages);
+ 			}
+ 		} else {
 -- 
-2.25.1
+2.17.1
 

@@ -7,28 +7,28 @@ X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9EC4EC43461
-	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Sep 2020 09:37:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 199C6C43461
+	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Sep 2020 09:37:29 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 598622192A
-	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Sep 2020 09:37:25 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BBA142192A
+	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Sep 2020 09:37:28 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726392AbgINJhY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 14 Sep 2020 05:37:24 -0400
-Received: from mx2.suse.de ([195.135.220.15]:41244 "EHLO mx2.suse.de"
+        id S1726382AbgINJhX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 14 Sep 2020 05:37:23 -0400
+Received: from mx2.suse.de ([195.135.220.15]:41196 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726343AbgINJhT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 Sep 2020 05:37:19 -0400
+        id S1726278AbgINJhR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 14 Sep 2020 05:37:17 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id DA791AF76;
-        Mon, 14 Sep 2020 09:37:32 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id A450AAF0E;
+        Mon, 14 Sep 2020 09:37:31 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v2 8/9] btrfs: Sink read_flags argument into extent_read_full_page
-Date:   Mon, 14 Sep 2020 12:37:10 +0300
-Message-Id: <20200914093711.13523-9-nborisov@suse.com>
+Subject: [PATCH v2 3/9] btrfs: Remove btree_get_extent
+Date:   Mon, 14 Sep 2020 12:37:05 +0300
+Message-Id: <20200914093711.13523-4-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20200914093711.13523-1-nborisov@suse.com>
 References: <20200914093711.13523-1-nborisov@suse.com>
@@ -37,65 +37,90 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-It's always set to 0 by its sole caller - btrfs_readpage. Simply remove
-it.
+The sole purpose of this function was to satisfy the requirements of
+__do_readpage. Since that function is no longer used to read metadata
+pages the need to keep btree_get_extent around has also disappeared.
+Simply remove it.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/extent_io.c | 4 ++--
- fs/btrfs/extent_io.h | 2 +-
- fs/btrfs/inode.c     | 2 +-
- 3 files changed, 4 insertions(+), 4 deletions(-)
+ fs/btrfs/disk-io.c | 47 ----------------------------------------------
+ fs/btrfs/disk-io.h |  3 ---
+ 2 files changed, 50 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index f43827bee7e6..1c959d66195c 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -3366,7 +3366,7 @@ static inline void contiguous_readpages(struct page *pages[], int nr_pages,
- }
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index d63498f3c75f..2a5aadcf6b54 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -204,53 +204,6 @@ void btrfs_set_buffer_lockdep_class(u64 objectid, struct extent_buffer *eb,
 
- int extent_read_full_page(struct page *page, struct bio **bio,
--			  unsigned long *bio_flags, unsigned int read_flags)
-+			  unsigned long *bio_flags)
- {
- 	struct btrfs_inode *inode = BTRFS_I(page->mapping->host);
- 	u64 start = page_offset(page);
-@@ -3375,7 +3375,7 @@ int extent_read_full_page(struct page *page, struct bio **bio,
+ #endif
 
- 	btrfs_lock_and_flush_ordered_range(inode, start, end, NULL);
-
--	ret = __do_readpage(page, NULL, bio, 0, bio_flags, read_flags, NULL);
-+	ret = __do_readpage(page, NULL, bio, 0, bio_flags, 0, NULL);
- 	return ret;
- }
-
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 3562c9203de3..5fa248570145 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -196,7 +196,7 @@ int try_release_extent_buffer(struct page *page);
- int __must_check submit_one_bio(struct bio *bio, int mirror_num,
- 				unsigned long bio_flags);
- int extent_read_full_page(struct page *page, struct bio **bio,
--			  unsigned long *bio_flags, unsigned int read_flags);
-+			  unsigned long *bio_flags);
- int extent_write_full_page(struct page *page, struct writeback_control *wbc);
- int extent_write_locked_range(struct inode *inode, u64 start, u64 end,
- 			      int mode);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 31a154c7fb00..c50a907742a1 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -8044,7 +8044,7 @@ int btrfs_readpage(struct file *file, struct page *page)
- 	unsigned long bio_flags = 0;
- 	int ret;
-
--	ret = extent_read_full_page(page, &bio, &bio_flags, 0);
-+	ret = extent_read_full_page(page, &bio, &bio_flags);
- 	if (bio)
- 		ret = submit_one_bio(bio, 0, bio_flags);
- 	return ret;
+-/*
+- * extents on the btree inode are pretty simple, there's one extent
+- * that covers the entire device
+- */
+-struct extent_map *btree_get_extent(struct btrfs_inode *inode,
+-				    struct page *page, size_t pg_offset,
+-				    u64 start, u64 len)
+-{
+-	struct extent_map_tree *em_tree = &inode->extent_tree;
+-	struct extent_map *em;
+-	int ret;
+-
+-	read_lock(&em_tree->lock);
+-	em = lookup_extent_mapping(em_tree, start, len);
+-	if (em) {
+-		read_unlock(&em_tree->lock);
+-		goto out;
+-	}
+-	read_unlock(&em_tree->lock);
+-
+-	em = alloc_extent_map();
+-	if (!em) {
+-		em = ERR_PTR(-ENOMEM);
+-		goto out;
+-	}
+-	em->start = 0;
+-	em->len = (u64)-1;
+-	em->block_len = (u64)-1;
+-	em->block_start = 0;
+-
+-	write_lock(&em_tree->lock);
+-	ret = add_extent_mapping(em_tree, em, 0);
+-	if (ret == -EEXIST) {
+-		free_extent_map(em);
+-		em = lookup_extent_mapping(em_tree, start, len);
+-		if (!em)
+-			em = ERR_PTR(-EIO);
+-	} else if (ret) {
+-		free_extent_map(em);
+-		em = ERR_PTR(ret);
+-	}
+-	write_unlock(&em_tree->lock);
+-
+-out:
+-	return em;
+-}
+-
+ /*
+  * Compute the csum of a btree block and store the result to provided buffer.
+  */
+diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
+index 00dc39d47ed3..89b6a709a184 100644
+--- a/fs/btrfs/disk-io.h
++++ b/fs/btrfs/disk-io.h
+@@ -123,9 +123,6 @@ struct btrfs_root *btrfs_create_tree(struct btrfs_trans_handle *trans,
+ 				     u64 objectid);
+ int btree_lock_page_hook(struct page *page, void *data,
+ 				void (*flush_fn)(void *));
+-struct extent_map *btree_get_extent(struct btrfs_inode *inode,
+-				    struct page *page, size_t pg_offset,
+-				    u64 start, u64 len);
+ int btrfs_get_num_tolerated_disk_barrier_failures(u64 flags);
+ int __init btrfs_end_io_wq_init(void);
+ void __cold btrfs_end_io_wq_exit(void);
 --
 2.17.1
 

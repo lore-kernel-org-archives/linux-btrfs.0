@@ -2,174 +2,147 @@ Return-Path: <SRS0=LHCx=CY=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.1 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
-	SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E5701C433E2
-	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Sep 2020 10:08:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 039E0C433E2
+	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Sep 2020 10:12:39 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 99CA420771
-	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Sep 2020 10:08:15 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 90B6D21D7D
+	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Sep 2020 10:12:38 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="AVFE6Cq0"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="PUGIo4T+";
+	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b="MbZCEFPQ"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726262AbgIOKIP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 15 Sep 2020 06:08:15 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50172 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726130AbgIOKIM (ORCPT
+        id S1726348AbgIOKMh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 15 Sep 2020 06:12:37 -0400
+Received: from esa1.hgst.iphmx.com ([68.232.141.245]:2516 "EHLO
+        esa1.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726140AbgIOKMd (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 15 Sep 2020 06:08:12 -0400
-Received: from mail-wr1-x42a.google.com (mail-wr1-x42a.google.com [IPv6:2a00:1450:4864:20::42a])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1F49DC06174A
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 Sep 2020 03:08:12 -0700 (PDT)
-Received: by mail-wr1-x42a.google.com with SMTP id m6so2701526wrn.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 Sep 2020 03:08:12 -0700 (PDT)
+        Tue, 15 Sep 2020 06:12:33 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1600164753; x=1631700753;
+  h=from:to:cc:subject:date:message-id:references:
+   content-transfer-encoding:mime-version;
+  bh=0nD+urLlYbpVlppRp7r43q/6+hPh8xXL4dj2rnyFFzs=;
+  b=PUGIo4T+W3YxcujJUxyMVujgsxfIvVSiqNMOYi8zpsFC8qiSaqW+PeGs
+   GWRABShbqD0Ko29F7NAXOn10CTNA9H2mdb+ZHAXs3Nd7v9pMzOuamI2sa
+   hvTnTbEb1JWxO/gP0Z1Ob2OfAidmOEi9aYyQzsrmfroc/9XKOchfDum1q
+   76NWMLPWxBDdc0woOgjz+cbJeNYsnhNpk5yNt2Sk8k/+7oW9LdyZmdeDG
+   oHfo1HRbn6PvaylImdu2Yu2/Hf+GbGghEI13c6OXxA+H6xLEfiJjL0QG3
+   BHXEvw5x1HgOdgxdwCEjkiV4Z5T/HxaXUAQNp7+hBy1ON/MZ/dwVwDZLN
+   w==;
+IronPort-SDR: Uov92f62bQWwKKiQnKZ6KoEjpA84YmzSULEkL2Lqa1Kjceh3TQ3QEd/g7aGAyRcg5AR+ClPxV+
+ O5pUV84g606kx/69maqq8nKxh0up07GoMScytbeTEEPPt4IMRAqSYHSSkg7giFunViPSPKvips
+ xorpCz0NP80FuJwTMYsCwfCwnwy9lEnLO6/7C8nGLIqygFt4hn8dWl/xnuK6s08z9a2j9NC5Hg
+ O3NXWE+eI43o/iG6whiVl2wu7cn0v3SIhzCw0EwEBkaWcr+/Wexo0Jzj61JlaGHaKdosm85nCN
+ rXs=
+X-IronPort-AV: E=Sophos;i="5.76,429,1592841600"; 
+   d="scan'208";a="257052346"
+Received: from mail-dm6nam10lp2109.outbound.protection.outlook.com (HELO NAM10-DM6-obe.outbound.protection.outlook.com) ([104.47.58.109])
+  by ob1.hgst.iphmx.com with ESMTP; 15 Sep 2020 18:12:33 +0800
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=QEHqH21ldLW21+aCM6la38Wf4HROSGgSWOxaXGWfZ4B3Si0F6r9mLLIP4lxW6p8GMH+TKf46MxbUhKWYku5D7yX57ZQLASHJO9LB3j1lZPLwjJl1DHxOtyZZRRncFPuUS4UV1m2hXrruz+YGRJg3V8UI/3TfxfNyuYWT8rkqzisMRYnvND6yY5/Lg7zXDbpHttWRAjsXRDdwtbHUZ9RXU/PE/I68aVxP817usHs5GUrwOqDJm0p1JxyLCM8Xbfos47i7kZQ5r3uAGE4BLZsRomeMUt3nP0DqxDYFF18HPytmGfEsy2v1RRxhYRxj3WRKoy5mg4qnKmFprn4VAEhcSw==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=OJKpgsJTvIQQSbpmIuIs2FHr0PWNDpTfPVrFPFENtek=;
+ b=SVrD+OyMtHL8yHmNL02XJKmScLwvKJljXlLo8eHmqx+UYI/sAxlckww/791LTGq32JfEbWu87e/O20GC1b/VtDVA3r83yjO0IP+D2CNo4zoBQ8KXJwpIZbUlwftscpAWN09lITPoanK5KUQOk7b/b5xTOiG095i/fTmjjJg6enFv5zWuo47LPNBdz1dmNY61leqVdtlXmyF0g5a6wNlEcgECxkuOZUJ0J+riihxXMq+A6Z5jtPcYzJi+vHTzvWM+3Euu9pz9hUSUUQJr07+0xTNPXQWiAn7gTZusx7FLpxTc43/nVGwFcZDlSeUyyxngkS7yagbjVficvG44zVsXYQ==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
+ header.d=wdc.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=subject:to:cc:references:from:message-id:date:user-agent
-         :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=fxBrDx4XfLsp3yuN08csFWjZoucQqZzox9AAtnmfKWo=;
-        b=AVFE6Cq0W4LfXSb0BWxYgxof/IULIQMdMArnFO3FwD4Hibdh8taX+fxj4hP6iS5Cqw
-         4liYSL5qocVihK1CXUjTrlOFEJ843FkrDnI91W7l+lDyCCIcwSu3OmMsSeCw4QQw3bgt
-         pixBnxKOSZtdH+6EXivkReVNYpUafTtBH/F7nenRObApGJaPqBoS49VUrGq+ULF8LpgV
-         3N67PH/gpWVGju75aNOs3LeCrC51VjDcZwd3k8/Brt5zzPIhdDRZbuPn3SqvAaTjpl3e
-         AhA6zh6MmlYUppC4UxqK7tumIllVOsTXdx0chEcGOthTVbCUS4hsfcO3QqY62jGm6YBb
-         oPvw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=fxBrDx4XfLsp3yuN08csFWjZoucQqZzox9AAtnmfKWo=;
-        b=YLFZCFRhjDprFUu9m4qMIiBTAfdH3GkQ2WDmWBgI8RQ5WJdRnvuzRT0de22kG9AQ+K
-         /K/Adhyye1WgovxBoyZAXq69nJQLE3m0ConMA5tQC9yc/cwPJ0db5SnKs4BNqpGc7t7e
-         wKFtKSp1GCj2yPUeTioNBP/fVd/iMYg5hR/0nStwgnSIdFdoyEnCMDjnIKv7z1kc7xz7
-         wHwwrtwP9ilSX1oKvVVUovjkNNY7AsDG9WxAZ02ZqHqMQGrNvJnNaBUMzzRREvN+lQ7c
-         PxRcWwClsRRn/zBiYlStinSiqa3sYf5yEFtLaBPGcU5SylvBP97rVTz2Y2fPvOmaxTtl
-         u8nA==
-X-Gm-Message-State: AOAM531wcwwgO15OfNDZ/F4DZVXoWCfkNx4nKrYZH0a22rq+g5f0Fg0H
-        FLSX1gufeIjg5aZCqS/R2ZVc/f2c6BWycQ==
-X-Google-Smtp-Source: ABdhPJwwhOsZeaTRfR6lfABywJZ2AscmZpsxqj7dhEfSkyA6ladPx1AQylE/M4yhOs8Gc+j6MFGSWw==
-X-Received: by 2002:adf:ec90:: with SMTP id z16mr19813246wrn.145.1600164490336;
-        Tue, 15 Sep 2020 03:08:10 -0700 (PDT)
-Received: from ?IPv6:2001:718:2:119a:147:32:132:32? ([2001:718:2:119a:147:32:132:32])
-        by smtp.gmail.com with ESMTPSA id d23sm6843989wmb.6.2020.09.15.03.08.08
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 15 Sep 2020 03:08:08 -0700 (PDT)
-Subject: Re: No space left after add device and balance
-To:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-Cc:     Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <9224b373-82ee-60c4-4bd1-be359db75ea1@gmail.com>
- <CAJCQCtQYSPO6Wd2u=WK-mia0WTjU0BybhhhhbT5VZUczUfx+JQ@mail.gmail.com>
- <d1339a91-0a04-538c-59ca-30bc05b636a5@gmail.com>
- <20200911153320.GE5890@hungrycats.org>
-From:   =?UTF-8?Q?Miloslav_H=c5=afla?= <miloslav.hula@gmail.com>
-Message-ID: <6689657b-e999-f025-d9b4-e324128bb5ae@gmail.com>
-Date:   Tue, 15 Sep 2020 12:08:08 +0200
-User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:68.0) Gecko/20100101
- Thunderbird/68.12.0
+ d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=OJKpgsJTvIQQSbpmIuIs2FHr0PWNDpTfPVrFPFENtek=;
+ b=MbZCEFPQ1RHEqnoQoAWZICST7aJe6Fc+pA8gP+y4+hajgdt69f3SARihXjk+AMz4iaDdhfdNXYpt0B4Mdx8Ruebuis34sDY6GU1JNB2SsRiIXrYuqJ3wuVlUVRWHck0qYNIAIVGa6zV+Ox5J7rNmutWwORzrtsWXzKbAnXnKJKc=
+Received: from SN4PR0401MB3598.namprd04.prod.outlook.com
+ (2603:10b6:803:47::21) by SN6PR04MB4045.namprd04.prod.outlook.com
+ (2603:10b6:805:47::13) with Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.3370.16; Tue, 15 Sep
+ 2020 10:12:32 +0000
+Received: from SN4PR0401MB3598.namprd04.prod.outlook.com
+ ([fe80::457e:5fe9:2ae3:e738]) by SN4PR0401MB3598.namprd04.prod.outlook.com
+ ([fe80::457e:5fe9:2ae3:e738%7]) with mapi id 15.20.3370.019; Tue, 15 Sep 2020
+ 10:12:32 +0000
+From:   Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>, Qu Wenruo <wqu@suse.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+CC:     Nikolay Borisov <nborisov@suse.com>
+Subject: Re: [PATCH v2 05/19] btrfs: make btrfs_fs_info::buffer_radix to take
+ sector size devided values
+Thread-Topic: [PATCH v2 05/19] btrfs: make btrfs_fs_info::buffer_radix to take
+ sector size devided values
+Thread-Index: AQHWiyIaFB5Tct8Sd0CX7t+FPfvMLw==
+Date:   Tue, 15 Sep 2020 10:12:32 +0000
+Message-ID: <SN4PR0401MB3598BD05FE3D2448EAEB3FFB9B200@SN4PR0401MB3598.namprd04.prod.outlook.com>
+References: <20200915053532.63279-1-wqu@suse.com>
+ <20200915053532.63279-6-wqu@suse.com>
+ <SN4PR0401MB35989CC0C4C17E2FA93A2AC09B200@SN4PR0401MB3598.namprd04.prod.outlook.com>
+ <03ad022a-6ad2-5eab-66ea-008a97104189@gmx.com>
+Accept-Language: en-US
+Content-Language: en-US
+X-MS-Has-Attach: 
+X-MS-TNEF-Correlator: 
+authentication-results: gmx.com; dkim=none (message not signed)
+ header.d=none;gmx.com; dmarc=none action=none header.from=wdc.com;
+x-originating-ip: [2001:a62:1460:3d01:38cf:f1ce:e1ec:d261]
+x-ms-publictraffictype: Email
+x-ms-office365-filtering-ht: Tenant
+x-ms-office365-filtering-correlation-id: 8b7fceba-52ae-435b-b7ce-08d8595fdc17
+x-ms-traffictypediagnostic: SN6PR04MB4045:
+x-microsoft-antispam-prvs: <SN6PR04MB40451442B49D270205764E989B200@SN6PR04MB4045.namprd04.prod.outlook.com>
+wdcipoutbound: EOP-TRUE
+x-ms-oob-tlc-oobclassifiers: OLM:7219;
+x-ms-exchange-senderadcheck: 1
+x-microsoft-antispam: BCL:0;
+x-microsoft-antispam-message-info: sDLVa3DLW1G7fSpdXggrVWDW1PipnGZehx4bSxEUFvApbyknILrhexaPGN9jgEuIk+TtqhD2LYmJ3lTO/UBqhMQXkLll8z86hy9OaubGg/xa47RsyYyGMX2dGjLp+em1Of01Bz6x+YrjcIb3iYB3HH2+hFlEwMo+wl0pQKPVT6wtecUZop5ePqw0HE3bR+CRK8pnHUlotr3TNhg4GMNLHayd0VgjZ/KXcv2kkSCVjoi7Is0Z9X+vacTGFw0BVwFVawmqmGF3U4hlda4PfMrZXToPQGoDvQ3EmyGY94WCGA2hQ8KUmQmy2S5DuK1nog0P
+x-forefront-antispam-report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SN4PR0401MB3598.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(4636009)(39860400002)(376002)(396003)(136003)(346002)(366004)(64756008)(8676002)(33656002)(55016002)(9686003)(316002)(2906002)(4326008)(8936002)(71200400001)(6506007)(5660300002)(76116006)(66946007)(86362001)(91956017)(7696005)(186003)(66446008)(66556008)(66476007)(52536014)(478600001)(4744005)(110136005)(53546011);DIR:OUT;SFP:1102;
+x-ms-exchange-antispam-messagedata: z8uijjaisYOT75hJoMNY6fHDteMUjBRkGwb7N8a5v0n2X7gn1o1AgucAVnn5chZSH4QyQWFUTSiW5Afon7MDXep/TR6WP96NTKOVJvKEniKuriamD+O5YvABR6Ezz627s/foKJ0OusyIj6X6vQvzEXfPjbIht89venRl4bda5VP/zSfQOKjM5KZ5hHxhWb11U02gxNio/z26as5XuZ1wor0OEgIzIwk5f2ckrktEEclrBuQlVvir+GiZ27sgXiXrcPSRGg9w+1hzIbHLQwY2IUjf7iaYnNI5NGlghVCZ9Qq4Oz8X9T3m5tRxeVStyMWQwT/2YlhwvoHOjLZNzwhU/qOnmjhnjLx41ajTFbuUPkTg5HOJ0GDAcdaFQseiAiM25OxguFOkupP3PbWw3maWN2kK2HXr1IevehiA6YgfbADNmtBpadHsFflgR2y7c11c7UNPCfIR9juGW1Xk67yM9SmnVSqmDqMdQyMHqoE2EMyjBZxhwXpSGff5UnRMnrgJmWbT4lolxn7q4No5C7LAoosxMh7wFkL1NpyBYCIAQg13BWJUfMNSjuCMdf1LDTJgs9siUjxvPBFxa1QI2B7uZZ1/av1PL/C+LFe2rnGA5PqqC9B2a394A9QGghUF2JsxhLxWHd2hbZ0qNCGVYcpwuS0nx2TSIeGymVLvScVY92Mu1oXB3Obz2XxHbGMFxqAGXOnabFSJugUrcZ7SKi00kw==
+x-ms-exchange-transport-forked: True
+Content-Type: text/plain; charset="iso-2022-jp"
+Content-Transfer-Encoding: quoted-printable
 MIME-Version: 1.0
-In-Reply-To: <20200911153320.GE5890@hungrycats.org>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: cs
-Content-Transfer-Encoding: 8bit
+X-OriginatorOrg: wdc.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-AuthSource: SN4PR0401MB3598.namprd04.prod.outlook.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 8b7fceba-52ae-435b-b7ce-08d8595fdc17
+X-MS-Exchange-CrossTenant-originalarrivaltime: 15 Sep 2020 10:12:32.0313
+ (UTC)
+X-MS-Exchange-CrossTenant-fromentityheader: Hosted
+X-MS-Exchange-CrossTenant-id: b61c8803-16f3-4c35-9b17-6f65f441df86
+X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
+X-MS-Exchange-CrossTenant-userprincipalname: hDXkIUfxYIqHL/0hENoRGWZJaDeexGucYpYnZuPB5I8TLs8wK8B9YDhikgmbieT3LPQxzn8uEQs25HCYJ4stz1p6Wu1/cRxiKEW2FKZKQ/E=
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: SN6PR04MB4045
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Dne 11.09.2020 v 17:33 Zygo Blaxell napsal(a):
-> On Fri, Sep 11, 2020 at 12:29:32PM +0200, Miloslav Hůla wrote:
->> Dne 10.09.2020 v 21:18 Chris Murphy napsal(a):
->>> On Wed, Sep 9, 2020 at 2:15 AM Miloslav Hůla <miloslav.hula@gmail.com> wrote:
->>>
->>>> After ~15.5 hours finished successfully. Unfortunetally, I have no exact
->>>> free space report before first balance, but it looked roughly like:
->>>>
->>>> Label: 'DATA'  uuid: 5b285a46-e55d-4191-924f-0884fa06edd8
->>>>            Total devices 16 FS bytes used 3.49TiB
->>>>            devid    1 size 558.41GiB used 448.66GiB path /dev/sda
->>>>            devid    2 size 558.41GiB used 448.66GiB path /dev/sdb
->>>>            devid    4 size 558.41GiB used 448.66GiB path /dev/sdd
->>>>            devid    5 size 558.41GiB used 448.66GiB path /dev/sde
->>>>            devid    7 size 558.41GiB used 448.66GiB path /dev/sdg
->>>>            devid    8 size 558.41GiB used 448.66GiB path /dev/sdh
->>>>            devid    9 size 558.41GiB used 448.66GiB path /dev/sdf
->>>>            devid   10 size 558.41GiB used 448.66GiB path /dev/sdi
->>>>            devid   11 size 558.41GiB used 448.66GiB path /dev/sdj
->>>>            devid   13 size 558.41GiB used 448.66GiB path /dev/sdk
->>>>            devid   14 size 558.41GiB used 448.66GiB path /dev/sdc
->>>>            devid   15 size 558.41GiB used 448.66GiB path /dev/sdl
->>>>            devid   16 size 558.41GiB used 448.66GiB path /dev/sdm
->>>>            devid   17 size 558.41GiB used 448.66GiB path /dev/sdn
->>>>            devid   18 size 837.84GiB used 448.66GiB path /dev/sdr
->>>>            devid   19 size 837.84GiB used 448.66GiB path /dev/sdq
->>>>            devid   20 size 837.84GiB used   0.00GiB path /dev/sds
->>>>            devid   21 size 837.84GiB used   0.00GiB path /dev/sdt
->>>>
->>>>
->>>> Are we doing something wrong? I found posts, where problems with balace
->>>> of full filesystem are described. And as a recommendation is "add empty
->>>> device, run balance, remove device".
->>>
->>> It's raid10, so in this case, you probably need to add 4 devices. It's
->>> not required they be equal sizes but it's ideal.
-> 
-> Something is wrong there.  Each new balanced chunk will free space
-> on the first 16 drives (each new chunk is 9GB, each old one is 8GB,
-> so the number of chunks on each of the old disks required to hold the
-> same data decreases by 1/8th each time a chunk is relocated in balance).
-> Every drive had at least 100GB of unallocated space at the start, so the
-> first 9GB chunk should have been allocated without issue.  Assuming nobody
-> was aggressively writing to the disk during the balance to consume all
-> available space, it should not have run out of space in a full balance.
-> 
-> You might have hit a metadata space reservation bug, especially on an
-> older kernel.  It's hard to know what happened without a log of the
-> 'btrfs fi usage' data over time and a stack trace of the ENOSPC event,
-> but whatever it was, it was probably fixed some time in the last 4
-> years.
-
-It happend with 4.9.210-1 (it's ~4 years old), now running 4.19.132-1 
-after Debian Buster upgrade.
-
-> There's a bug (up to at least 5.4) where scrub locks chunks and triggers
-> aggressive metadata overallocations, which can lead to this result.
-> It forms a feedback loop where scrub keeps locking the metadata chunk that
-> balance is using, so balance allocates another metadata chunk, then scrub
-> moves on and locks that new metadata chunk, repeat until out of space,
-> abort transaction, all the allocations get rolled back and disappear.
-> Only relevant if you were running a scrub at the same time as balance.
-
-We were not running scrub in time of crash. But we were running rsync of 
-whole btrfs to NetApp via NFS at the same sime.
-
->>>> Are there some requirements on free space for balance even if you add
->>>> new device?
->>>
->>> The free space is reported upon adding the two devices; but the raid10
->>> profile requires more than just free space, it needs free space on
->>> four devices.
->>
->> I didn't realize that. It makes me sense now. So we are probably "wrong"
->> with 18 devices. Multiple of 4 would be better I guess.
-> 
-> Not really.  btrfs profile "raid10" distribute stripes over pairs of
-> mirrored drives.  It will allocate raid10 chunks on 4 + N * 2 drives at a
-> time, but each chunk can use different drives so all the space is filled.
-> Any number of disks above 4 is OK (including odd numbers), but sequential
-> read performance will only increase when the number of drives increases
-> to the next even number so the next highest stripe width can be used.
-> 
-> i.e. 5 drives will provide more space than 4, but 5 drives will not be
-> significantly faster than 4.  6 is faster and larger than 4 or 5.
-> 7 will be larger, 8 will be larger and faster, 9 will be larger, etc.
-> (assuming all the drives are identical)
-
-Thanks for the clarification. I used to think that. It was one of pros 
-to make a decision for btrfs RAID-10 few years before. I'm glad that's 
-right.
+On 15/09/2020 12:04, Qu Wenruo wrote:=0A=
+> =0A=
+> =0A=
+> On 2020/9/15 =1B$B2<8a=1B(B4:27, Johannes Thumshirn wrote:=0A=
+>> On 15/09/2020 07:36, Qu Wenruo wrote:=0A=
+>>>  	eb =3D radix_tree_lookup(&fs_info->buffer_radix,=0A=
+>>> -			       start >> PAGE_SHIFT);=0A=
+>>> +			       start / fs_info->sectorsize);=0A=
+>>=0A=
+>>=0A=
+>> These should be div_u64(start, fs_info->sectorsize) I think.=0A=
+>> At least 'start' is a u64.=0A=
+>>=0A=
+> Do we need to call div_u64() if it's u64/u32?=0A=
+=0A=
+I'm not entirely sure either, that's the problem.=0A=
+=0A=
+> =0A=
+> Anyway, the final version would utilize something like sector_shift.=0A=
+> =0A=
+> Thanks,=0A=
+> Qu=0A=
+> =0A=
+=0A=

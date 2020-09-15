@@ -2,33 +2,35 @@ Return-Path: <SRS0=LHCx=CY=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-11.8 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id ADEC7C433E2
-	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Sep 2020 05:35:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 68216C433E2
+	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Sep 2020 05:35:47 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 6FBED20756
-	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Sep 2020 05:35:41 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2CA6520756
+	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Sep 2020 05:35:47 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726066AbgIOFfi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 15 Sep 2020 01:35:38 -0400
-Received: from mx2.suse.de ([195.135.220.15]:42936 "EHLO mx2.suse.de"
+        id S1726094AbgIOFfo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 15 Sep 2020 01:35:44 -0400
+Received: from mx2.suse.de ([195.135.220.15]:42958 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726046AbgIOFfh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 15 Sep 2020 01:35:37 -0400
+        id S1726046AbgIOFfm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 15 Sep 2020 01:35:42 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id C6889AC98
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 Sep 2020 05:35:51 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 4E93EAC98
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 Sep 2020 05:35:56 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 00/19] btrfs: add read-only support for subpage sector size
-Date:   Tue, 15 Sep 2020 13:35:13 +0800
-Message-Id: <20200915053532.63279-1-wqu@suse.com>
+Subject: [PATCH v2 02/19] btrfs: remove the unnecessary parameter @start and @len for check_data_csum()
+Date:   Tue, 15 Sep 2020 13:35:15 +0800
+Message-Id: <20200915053532.63279-3-wqu@suse.com>
 X-Mailer: git-send-email 2.28.0
+In-Reply-To: <20200915053532.63279-1-wqu@suse.com>
+References: <20200915053532.63279-1-wqu@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -36,135 +38,93 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Patches can be fetched from github:
-https://github.com/adam900710/linux/tree/subpage
+For check_data_csum(), the page we're using is directly from inode
+mapping, thus it has valid page_offset().
 
-Currently btrfs only allows to mount fs with sectorsize == PAGE_SIZE.
+We can use (page_offset() + pg_off) to replace @start parameter
+completely, while the @len should always be sectorsize.
 
-That means, for 64K page size system, they can only use 64K sector size
-fs.
-This brings a big compatible problem for btrfs.
+Since we're here, also add some comment, since there are quite some
+confusion in words like start/offset, without explaining whether it's
+file_offset or logical bytenr.
 
-This patch is going to slightly solve the problem by, allowing 64K
-system to mount 4K sectorsize fs in read-only mode.
+This should not affect the existing behavior, as for current sectorsize
+== PAGE_SIZE case, @pgoff should always be 0, and len is always
+PAGE_SIZE (or sectorsize from the dio read path).
 
-The main objective here, is to remove the blockage in the code base, and
-pave the road to full RW mount support.
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/inode.c | 27 +++++++++++++++++++--------
+ 1 file changed, 19 insertions(+), 8 deletions(-)
 
-== What works ==
-
-Existing regular page sized sector size support
-Subpage read-only Mount (with all self tests and ASSERT)
-Subpage metadata read (including all trees and inline extents, and csum checking)
-Subpage uncompressed data read (with csum checking)
-
-== What doesn't work ==
-
-Read-write mount (see the subject)
-Compressed data read
-
-== Challenge we meet ==
-
-The main problem is metadata, where we have several limitations:
-- We always read the full page of a metadata
-  In subpage case, one full page can contain several tree blocks.
-
-- We use page::private to point to extent buffer
-  This means we currently can only support one-page-to-one-extent-buffer
-  mapping.
-  For subpage size support, we need one-page-to-multiple-extent-buffer
-  mapping.
-
-
-== Solutions ==
-
-So here for the metadata part, we use the following methods to
-workaround the problem:
-
-- Completely rely on extent_io_tree for metadata status/locking
-  Now for subpage metadata, page::private is never utilized. It always
-  points to NULL.
-  And we only utilize private page status, other status
-  (locked/uptodate/dirty/...) are all ignored.
-
-  Instead, page lock is replayed by EXTENT_LOCK of extent_io_tree.
-  Page uptodate is replaced by EXTENT_UPTODATE of extent_io_tree.
-  And if a range has extent buffer is represented by EXTENT_NEW.
-
-  This provides the full potential for later RW support.
-
-- Do subpage read for metadata
-  Now we do proper subpage read for both data and metadata.
-  For metadata we never merge bio for adjacent tree blocks, but always
-  submit one bio for one tree block.
-  This allows us to do proper verification for each tree blocks.
-
-For data part, it's pretty simple, all existing infrastructure can be
-easily converted to support subpage read, without any subpage specific
-handing yet.
-
-== Patchset structure ==
-
-The structure of the patchset:
-Patch 01~15: Preparation patches for data and metadata subpage read support.
-             These patches can be merged without problem, and work for
-             both regular and subpage case.
-	     This part can conflict with Nikolay's latest cleanup, but
-	     the conflicts should be pretty controllable.
-
-Patch 16~19: Patches for metadata subpage read support.
-	     The main part of the patchset. It converts metadata to
-	     purely extent_io_tree based solution for subpage read.
-
-	     In theory, page sized routine can also be converted to
-	     extent_io_tree. But that would be another topic in the
-	     future.
-
-The number of patches is the main reason I'm submitting them to the mail
-list. As there are too many preparation patches already.
-
-Qu Wenruo (19):
-  btrfs: extent-io-tests: remove invalid tests
-  btrfs: remove the unnecessary parameter @start and @len for
-    check_data_csum()
-  btrfs: calculate inline extent buffer page size based on page size
-  btrfs: remove the open-code to read disk-key
-  btrfs: make btrfs_fs_info::buffer_radix to take sector size devided
-    values
-  btrfs: don't allow tree block to cross page boundary for subpage
-    support
-  btrfs: update num_extent_pages() to support subpage sized extent
-    buffer
-  btrfs: handle sectorsize < PAGE_SIZE case for extent buffer accessors
-  btrfs: make csum_tree_block() handle sectorsize smaller than page size
-  btrfs: add assert_spin_locked() for attach_extent_buffer_page()
-  btrfs: extract the extent buffer verification from
-    btree_readpage_end_io_hook()
-  btrfs: extent_io: only require sector size alignment for page read
-  btrfs: make btrfs_readpage_end_io_hook() follow sector size
-  btrfs: make btree inode io_tree has its special owner
-  btrfs: don't set extent_io_tree bits for btree inode at endio time
-  btrfs: use extent_io_tree to handle subpage extent buffer allocation
-  btrfs: implement subpage metadata read and its endio function
-  btrfs: implement btree_readpage() and try_release_extent_buffer() for
-    subpage
-  btrfs: allow RO mount of 4K sector size fs on 64K page system
-
- fs/btrfs/btrfs_inode.h           |  12 +
- fs/btrfs/ctree.c                 |  13 +-
- fs/btrfs/ctree.h                 |  38 +++-
- fs/btrfs/disk-io.c               | 217 ++++++++++++++----
- fs/btrfs/extent-io-tree.h        |   8 +
- fs/btrfs/extent_io.c             | 376 +++++++++++++++++++++++++++----
- fs/btrfs/extent_io.h             |  19 +-
- fs/btrfs/inode.c                 |  40 +++-
- fs/btrfs/ordered-data.c          |   8 +
- fs/btrfs/qgroup.c                |   4 +
- fs/btrfs/struct-funcs.c          |  18 +-
- fs/btrfs/super.c                 |   7 +
- fs/btrfs/tests/extent-io-tests.c |  26 +--
- 13 files changed, 642 insertions(+), 144 deletions(-)
-
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 9570458aa847..bb4442950d2b 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2793,17 +2793,30 @@ void btrfs_writepage_endio_finish_ordered(struct page *page, u64 start,
+ 	btrfs_queue_work(wq, &ordered_extent->work);
+ }
+ 
++/*
++ * Verify the checksum of one sector of uncompressed data.
++ *
++ * @inode:	The inode.
++ * @io_bio:	The btrfs_io_bio which contains the csum.
++ * @icsum:	The csum offset (by number of sectors).
++ * @page:	The page where the data to be verified is.
++ * @pgoff:	The offset inside the page.
++ *
++ * The length of such check is always one sector size.
++ */
+ static int check_data_csum(struct inode *inode, struct btrfs_io_bio *io_bio,
+-			   int icsum, struct page *page, int pgoff, u64 start,
+-			   size_t len)
++			   int icsum, struct page *page, int pgoff)
+ {
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+ 	SHASH_DESC_ON_STACK(shash, fs_info->csum_shash);
+ 	char *kaddr;
++	u32 len = fs_info->sectorsize;
+ 	u16 csum_size = btrfs_super_csum_size(fs_info->super_copy);
+ 	u8 *csum_expected;
+ 	u8 csum[BTRFS_CSUM_SIZE];
+ 
++	ASSERT(pgoff + len <= PAGE_SIZE);
++
+ 	csum_expected = ((u8 *)io_bio->csum) + icsum * csum_size;
+ 
+ 	kaddr = kmap_atomic(page);
+@@ -2817,8 +2830,8 @@ static int check_data_csum(struct inode *inode, struct btrfs_io_bio *io_bio,
+ 	kunmap_atomic(kaddr);
+ 	return 0;
+ zeroit:
+-	btrfs_print_data_csum_error(BTRFS_I(inode), start, csum, csum_expected,
+-				    io_bio->mirror_num);
++	btrfs_print_data_csum_error(BTRFS_I(inode), page_offset(page) + pgoff,
++				    csum, csum_expected, io_bio->mirror_num);
+ 	if (io_bio->device)
+ 		btrfs_dev_stat_inc_and_print(io_bio->device,
+ 					     BTRFS_DEV_STAT_CORRUPTION_ERRS);
+@@ -2857,8 +2870,7 @@ static int btrfs_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
+ 	}
+ 
+ 	phy_offset >>= inode->i_sb->s_blocksize_bits;
+-	return check_data_csum(inode, io_bio, phy_offset, page, offset, start,
+-			       (size_t)(end - start + 1));
++	return check_data_csum(inode, io_bio, phy_offset, page, offset);
+ }
+ 
+ /*
+@@ -7545,8 +7557,7 @@ static blk_status_t btrfs_check_read_dio_bio(struct inode *inode,
+ 			ASSERT(pgoff < PAGE_SIZE);
+ 			if (uptodate &&
+ 			    (!csum || !check_data_csum(inode, io_bio, icsum,
+-						       bvec.bv_page, pgoff,
+-						       start, sectorsize))) {
++						       bvec.bv_page, pgoff))) {
+ 				clean_io_failure(fs_info, failure_tree, io_tree,
+ 						 start, bvec.bv_page,
+ 						 btrfs_ino(BTRFS_I(inode)),
 -- 
 2.28.0
 

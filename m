@@ -7,27 +7,27 @@ X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A98F0C2D0E0
-	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Sep 2020 05:35:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 479B7C43461
+	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Sep 2020 05:35:54 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 8243420771
-	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Sep 2020 05:35:51 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1C9E120756
+	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Sep 2020 05:35:54 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726129AbgIOFfr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 15 Sep 2020 01:35:47 -0400
-Received: from mx2.suse.de ([195.135.220.15]:42970 "EHLO mx2.suse.de"
+        id S1726146AbgIOFfx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 15 Sep 2020 01:35:53 -0400
+Received: from mx2.suse.de ([195.135.220.15]:42984 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726046AbgIOFfr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 15 Sep 2020 01:35:47 -0400
+        id S1726131AbgIOFfv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 15 Sep 2020 01:35:51 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id B51BDAEA2
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 Sep 2020 05:36:01 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 57B19AC98
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 Sep 2020 05:36:05 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 04/19] btrfs: remove the open-code to read disk-key
-Date:   Tue, 15 Sep 2020 13:35:17 +0800
-Message-Id: <20200915053532.63279-5-wqu@suse.com>
+Subject: [PATCH v2 06/19] btrfs: don't allow tree block to cross page boundary for subpage support
+Date:   Tue, 15 Sep 2020 13:35:19 +0800
+Message-Id: <20200915053532.63279-7-wqu@suse.com>
 X-Mailer: git-send-email 2.28.0
 In-Reply-To: <20200915053532.63279-1-wqu@suse.com>
 References: <20200915053532.63279-1-wqu@suse.com>
@@ -38,49 +38,47 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-generic_bin_search() distinguishes between reading a key which doesn't
-cross a page and one which does. However this distinction is not
-necessary since read_extent_buffer handles both cases transparently.
+As a preparation for subpage sector size support (allowing filesystem
+with sector size smaller than page size to be mounted) if the sector
+size is smaller than page size, we don't allow tree block to be read if
+it cross 64K(*) boundary.
 
-Just use read_extent_buffer to streamline the code.
+The 64K is selected because:
+- We are only going to support 64K page size for subpage
+- 64K is also the max node size btrfs supports
+
+This ensures that, tree blocks are always contained in one page for a
+system with 64K page size, which can greatly simplify the handling.
+
+Or we need to do complex multi-page handling for tree blocks.
+
+Currently the only way to create such tree blocks crossing 64K boundary
+is by btrfs-convert, which will get fixed soon and doesn't get
+wide-spread usage.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/ctree.c | 13 ++-----------
- 1 file changed, 2 insertions(+), 11 deletions(-)
+ fs/btrfs/extent_io.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index cd1cd673bc0b..e204e1320745 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -1697,7 +1697,6 @@ static noinline int generic_bin_search(struct extent_buffer *eb,
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index e56aa68cd9fe..9af972999a09 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -5232,6 +5232,13 @@ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
+ 		btrfs_err(fs_info, "bad tree block start %llu", start);
+ 		return ERR_PTR(-EINVAL);
  	}
++	if (fs_info->sectorsize < PAGE_SIZE && round_down(start, PAGE_SIZE) !=
++	    round_down(start + len - 1, PAGE_SIZE)) {
++		btrfs_err(fs_info,
++		"tree block crosses page boundary, start %llu nodesize %lu",
++			  start, len);
++		return ERR_PTR(-EINVAL);
++	}
  
- 	while (low < high) {
--		unsigned long oip;
- 		unsigned long offset;
- 		struct btrfs_disk_key *tmp;
- 		struct btrfs_disk_key unaligned;
-@@ -1705,17 +1704,9 @@ static noinline int generic_bin_search(struct extent_buffer *eb,
- 
- 		mid = (low + high) / 2;
- 		offset = p + mid * item_size;
--		oip = offset_in_page(offset);
- 
--		if (oip + key_size <= PAGE_SIZE) {
--			const unsigned long idx = offset >> PAGE_SHIFT;
--			char *kaddr = page_address(eb->pages[idx]);
--
--			tmp = (struct btrfs_disk_key *)(kaddr + oip);
--		} else {
--			read_extent_buffer(eb, &unaligned, offset, key_size);
--			tmp = &unaligned;
--		}
-+		read_extent_buffer(eb, &unaligned, offset, key_size);
-+		tmp = &unaligned;
- 
- 		ret = comp_keys(tmp, key);
- 
+ 	eb = find_extent_buffer(fs_info, start);
+ 	if (eb)
 -- 
 2.28.0
 

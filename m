@@ -7,28 +7,28 @@ X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2053EC2D0E0
-	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Sep 2020 05:36:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B95B1C43461
+	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Sep 2020 05:36:15 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id E498D2078D
-	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Sep 2020 05:36:12 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8CEBA20771
+	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Sep 2020 05:36:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726145AbgIOFgH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 15 Sep 2020 01:36:07 -0400
-Received: from mx2.suse.de ([195.135.220.15]:43248 "EHLO mx2.suse.de"
+        id S1726174AbgIOFgN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 15 Sep 2020 01:36:13 -0400
+Received: from mx2.suse.de ([195.135.220.15]:43370 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726122AbgIOFgC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 15 Sep 2020 01:36:02 -0400
+        id S1726133AbgIOFgL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 15 Sep 2020 01:36:11 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 509CEAD52;
-        Tue, 15 Sep 2020 05:36:17 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 8BBE8AEA2;
+        Tue, 15 Sep 2020 05:36:25 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v2 10/19] btrfs: add assert_spin_locked() for attach_extent_buffer_page()
-Date:   Tue, 15 Sep 2020 13:35:23 +0800
-Message-Id: <20200915053532.63279-11-wqu@suse.com>
+Cc:     Goldwyn Rodrigues <rgoldwyn@suse.com>
+Subject: [PATCH v2 13/19] btrfs: make btrfs_readpage_end_io_hook() follow sector size
+Date:   Tue, 15 Sep 2020 13:35:26 +0800
+Message-Id: <20200915053532.63279-14-wqu@suse.com>
 X-Mailer: git-send-email 2.28.0
 In-Reply-To: <20200915053532.63279-1-wqu@suse.com>
 References: <20200915053532.63279-1-wqu@suse.com>
@@ -39,42 +39,64 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-When calling attach_extent_buffer_page(), either we're attaching
-anonymous pages, called from btrfs_clone_extent_buffer().
+Currently btrfs_readpage_end_io_hook() just pass the whole page to
+check_data_csum(), which is fine since we only support sectorsize ==
+PAGE_SIZE.
 
-Or we're attaching btree_inode pages, called from alloc_extent_buffer().
+To support subpage RO support, we need to properly honor per-sector
+checksum verification, just like what we did in dio read path.
 
-For the later case, we should have page->mapping->private_lock hold to
-avoid race modifying page->private.
+This patch will do the csum verification in a for loop, starts with
+pg_off == start - page_offset(page), with sectorsize increasement for
+each loop.
 
-Add assert_spin_locked() if we're calling from alloc_extent_buffer().
+For sectorsize == PAGE_SIZE case, the pg_off will always be 0, and we
+will only finish with just one loop.
 
+For subpage, we do the proper loop.
+
+Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
 Signed-off-by: Qu Wenruo <wqu@suse.com>
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/extent_io.c | 9 +++++++++
- 1 file changed, 9 insertions(+)
+ fs/btrfs/inode.c | 15 ++++++++++++++-
+ 1 file changed, 14 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index ba9cc864d9c0..9d4a81997738 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -3096,6 +3096,15 @@ static int submit_extent_page(unsigned int opf,
- static void attach_extent_buffer_page(struct extent_buffer *eb,
- 				      struct page *page)
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index bb4442950d2b..544253dfcd0b 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2851,9 +2851,12 @@ static int btrfs_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
+ 				      u64 start, u64 end, int mirror)
  {
-+	/*
-+	 * If the page is mapped to btree inode, we should hold the private
-+	 * lock to prevent race.
-+	 * For cloned or dummy extent buffers, their pages are not mapped and
-+	 * will not race with any other ebs.
-+	 */
-+	if (page->mapping)
-+		assert_spin_locked(&page->mapping->private_lock);
+ 	size_t offset = start - page_offset(page);
++	size_t pg_off;
+ 	struct inode *inode = page->mapping->host;
+ 	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
++	u32 sectorsize = root->fs_info->sectorsize;
++	bool found_err = false;
+ 
+ 	if (PageChecked(page)) {
+ 		ClearPageChecked(page);
+@@ -2870,7 +2873,17 @@ static int btrfs_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
+ 	}
+ 
+ 	phy_offset >>= inode->i_sb->s_blocksize_bits;
+-	return check_data_csum(inode, io_bio, phy_offset, page, offset);
++	for (pg_off = offset; pg_off < end - page_offset(page);
++	     pg_off += sectorsize, phy_offset++) {
++		int ret;
 +
- 	if (!PagePrivate(page))
- 		attach_page_private(page, eb);
- 	else
++		ret = check_data_csum(inode, io_bio, phy_offset, page, pg_off);
++		if (ret < 0)
++			found_err = true;
++	}
++	if (found_err)
++		return -EIO;
++	return 0;
+ }
+ 
+ /*
 -- 
 2.28.0
 

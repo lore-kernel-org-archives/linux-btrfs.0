@@ -2,81 +2,123 @@ Return-Path: <SRS0=lzwu=CZ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DD8BDC43461
-	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Sep 2020 20:11:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A019BC433E2
+	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Sep 2020 20:26:01 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 7C61E21D1B
-	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Sep 2020 20:11:32 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="vuzIdI2m"
+	by mail.kernel.org (Postfix) with ESMTP id 5599F21941
+	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Sep 2020 20:26:01 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728061AbgIPUKJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 16 Sep 2020 16:10:09 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33276 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727046AbgIPRdm (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 Sep 2020 13:33:42 -0400
-Received: from casper.infradead.org (casper.infradead.org [IPv6:2001:8b0:10b:1236::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D8BD4C00217F;
-        Wed, 16 Sep 2020 07:46:22 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Type:MIME-Version:
-        References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-        Content-Transfer-Encoding:Content-ID:Content-Description;
-        bh=I+Wrsf2OsM4H/FvG28XmzjWSyq2hOoPWFZhAVEE3RCk=; b=vuzIdI2myzrcSR8N8YUZIxJs7P
-        Sx91GDqxw7SKvTK3Q/nRp4WnHClkpkK/1OSKRygFhe90fZaV9fh+k7GQDAKnGLqU52NU1R7o24SfD
-        seMr7Y2+IlmkwzW5l1W2SFiJm7EC1UQvsJqgorQoJrd0mihZ0kd7Vp8ebhVZCF0Q0ELXjj/VrFWna
-        ctPysIiI3CtHiEShBsJMczKgdXTh3NyyyLxs+T7ZmyrJaIQAuUEi+E+Z480NRxWRE3n4HU0iyYgbT
-        oc26VCkL3wOc32lThfhoy8TDA7vL4lHIHRx7dN1lyrOOFn10v1O1A0ycsq6YvIr+h+Hpjh/++0yzE
-        tDUCoKHA==;
-Received: from hch by casper.infradead.org with local (Exim 4.92.3 #3 (Red Hat Linux))
-        id 1kIYhO-0004Yh-Kj; Wed, 16 Sep 2020 14:46:18 +0000
-Date:   Wed, 16 Sep 2020 15:46:18 +0100
-From:   Christoph Hellwig <hch@infradead.org>
-To:     Chris Mason <clm@fb.com>
-Cc:     Christoph Hellwig <hch@infradead.org>,
-        Nick Terrell <nickrterrell@gmail.com>,
-        Herbert Xu <herbert@gondor.apana.org.au>,
-        linux-crypto@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        squashfs-devel@lists.sourceforge.net,
-        linux-f2fs-devel@lists.sourceforge.net,
-        linux-kernel@vger.kernel.org, Kernel Team <Kernel-team@fb.com>,
-        Nick Terrell <terrelln@fb.com>, Petr Malat <oss@malat.biz>,
-        Johannes Weiner <jweiner@fb.com>,
-        Niket Agarwal <niketa@fb.com>, Yann Collet <cyan@fb.com>
-Subject: Re: [PATCH 5/9] btrfs: zstd: Switch to the zstd-1.4.6 API
-Message-ID: <20200916144618.GB16392@infradead.org>
-References: <20200916034307.2092020-1-nickrterrell@gmail.com>
- <20200916034307.2092020-7-nickrterrell@gmail.com>
- <20200916084958.GC31608@infradead.org>
- <CCDAB4AB-DE8D-4ADE-9221-02AE732CBAE2@fb.com>
- <20200916143046.GA13543@infradead.org>
- <1CAB33F1-95DB-4BC5-9023-35DD2E4E0C20@fb.com>
+        id S1726993AbgIPR1i (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 16 Sep 2020 13:27:38 -0400
+Received: from mx2.suse.de ([195.135.220.15]:32944 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727062AbgIPR0v (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 16 Sep 2020 13:26:51 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.221.27])
+        by mx2.suse.de (Postfix) with ESMTP id 82602B22B;
+        Wed, 16 Sep 2020 17:26:44 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 3211BDA7C7; Wed, 16 Sep 2020 19:25:17 +0200 (CEST)
+From:   David Sterba <dsterba@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     David Sterba <dsterba@suse.com>
+Subject: [PATCH 2/3] btrfs: free-space-cache: use unaligned helpers to access data
+Date:   Wed, 16 Sep 2020 19:25:17 +0200
+Message-Id: <5dc6828b2e7c5dad11181f1fa6b00f0fbc8c91bb.1600276853.git.dsterba@suse.com>
+X-Mailer: git-send-email 2.25.0
+In-Reply-To: <cover.1600276853.git.dsterba@suse.com>
+References: <cover.1600276853.git.dsterba@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <1CAB33F1-95DB-4BC5-9023-35DD2E4E0C20@fb.com>
-X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by casper.infradead.org. See http://www.infradead.org/rpr.html
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Sep 16, 2020 at 10:43:04AM -0400, Chris Mason wrote:
-> Otherwise we just end up with drift and kernel-specific bugs that are harder
-> to debug.  To the extent those APIs make us contort the kernel code, I???m
-> sure Nick is interested in improving things in both places.
+The free space inode stores the tracking data, checksums etc, using the
+io_ctl structure and moving the pointers. The data are generally aligned
+to at least 4 bytes (u32 for CRC) so it's not completely unaligned but
+for clarity we should use the proper helpers whenever a struct is
+initialized from io_ctl->cur pointer.
 
-Seriously, we do not care elsewhere.  Why would zlib be any different?
+Signed-off-by: David Sterba <dsterba@suse.com>
+---
+ fs/btrfs/free-space-cache.c | 21 +++++++++------------
+ 1 file changed, 9 insertions(+), 12 deletions(-)
 
-> There are probably 1000 constructive ways to have that conversation.  Please
-> choose one of those instead of being an asshole.
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 8759f5a1d6a0..af0013d3df63 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -413,8 +413,6 @@ static int io_ctl_prepare_pages(struct btrfs_io_ctl *io_ctl, bool uptodate)
+ 
+ static void io_ctl_set_generation(struct btrfs_io_ctl *io_ctl, u64 generation)
+ {
+-	__le64 *val;
+-
+ 	io_ctl_map_page(io_ctl, 1);
+ 
+ 	/*
+@@ -429,14 +427,13 @@ static void io_ctl_set_generation(struct btrfs_io_ctl *io_ctl, u64 generation)
+ 		io_ctl->size -= sizeof(u64) * 2;
+ 	}
+ 
+-	val = io_ctl->cur;
+-	*val = cpu_to_le64(generation);
++	put_unaligned_le64(generation, io_ctl->cur);
+ 	io_ctl->cur += sizeof(u64);
+ }
+ 
+ static int io_ctl_check_generation(struct btrfs_io_ctl *io_ctl, u64 generation)
+ {
+-	__le64 *gen;
++	u64 cache_gen;
+ 
+ 	/*
+ 	 * Skip the crc area.  If we don't check crcs then we just have a 64bit
+@@ -451,11 +448,11 @@ static int io_ctl_check_generation(struct btrfs_io_ctl *io_ctl, u64 generation)
+ 		io_ctl->size -= sizeof(u64) * 2;
+ 	}
+ 
+-	gen = io_ctl->cur;
+-	if (le64_to_cpu(*gen) != generation) {
++	cache_gen = get_unaligned_le64(io_ctl->cur);
++	if (cache_gen != generation) {
+ 		btrfs_err_rl(io_ctl->fs_info,
+ 			"space cache generation (%llu) does not match inode (%llu)",
+-				*gen, generation);
++				cache_gen, generation);
+ 		io_ctl_unmap_page(io_ctl);
+ 		return -EIO;
+ 	}
+@@ -525,8 +522,8 @@ static int io_ctl_add_entry(struct btrfs_io_ctl *io_ctl, u64 offset, u64 bytes,
+ 		return -ENOSPC;
+ 
+ 	entry = io_ctl->cur;
+-	entry->offset = cpu_to_le64(offset);
+-	entry->bytes = cpu_to_le64(bytes);
++	put_unaligned_le64(offset, &entry->offset);
++	put_unaligned_le64(bytes, &entry->bytes);
+ 	entry->type = (bitmap) ? BTRFS_FREE_SPACE_BITMAP :
+ 		BTRFS_FREE_SPACE_EXTENT;
+ 	io_ctl->cur += sizeof(struct btrfs_free_space_entry);
+@@ -599,8 +596,8 @@ static int io_ctl_read_entry(struct btrfs_io_ctl *io_ctl,
+ 	}
+ 
+ 	e = io_ctl->cur;
+-	entry->offset = le64_to_cpu(e->offset);
+-	entry->bytes = le64_to_cpu(e->bytes);
++	entry->offset = get_unaligned_le64(&e->offset);
++	entry->bytes = get_unaligned_le64(&e->bytes);
+ 	*type = e->type;
+ 	io_ctl->cur += sizeof(struct btrfs_free_space_entry);
+ 	io_ctl->size -= sizeof(struct btrfs_free_space_entry);
+-- 
+2.25.0
 
-I think you are the asshole here by ignoring the practices we are using
-elsewhere and think your employers pet project is somehow special.  It
-is not, and claiming so is everything but constructive.

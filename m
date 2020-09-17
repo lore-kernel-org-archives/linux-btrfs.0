@@ -2,122 +2,92 @@ Return-Path: <SRS0=YQmm=C2=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 946A6C433E2
-	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Sep 2020 01:46:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 33511C433E2
+	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Sep 2020 03:38:02 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 63C062072E
-	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Sep 2020 01:46:50 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 91812206F7
+	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Sep 2020 03:38:01 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="EX0cU1ou"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726170AbgIQBqo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 16 Sep 2020 21:46:44 -0400
-Received: from shelob.surriel.com ([96.67.55.147]:56590 "EHLO
-        shelob.surriel.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726072AbgIQBqm (ORCPT
+        id S1726002AbgIQDiA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 16 Sep 2020 23:38:00 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42566 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725267AbgIQDh7 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 Sep 2020 21:46:42 -0400
-X-Greylist: delayed 626 seconds by postgrey-1.27 at vger.kernel.org; Wed, 16 Sep 2020 21:46:41 EDT
-Received: from imladris.surriel.com ([96.67.55.152])
-        by shelob.surriel.com with esmtpsa  (TLS1.2) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-        (Exim 4.94)
-        (envelope-from <riel@shelob.surriel.com>)
-        id 1kIiqF-00061g-DK; Wed, 16 Sep 2020 21:36:07 -0400
-Message-ID: <b1eec667d42849f757bbd55f014739509498a59d.camel@surriel.com>
-Subject: Re: [PATCH 5/9] btrfs: zstd: Switch to the zstd-1.4.6 API
-From:   Rik van Riel <riel@surriel.com>
-To:     Nick Terrell <terrelln@fb.com>,
-        Christoph Hellwig <hch@infradead.org>
-Cc:     Chris Mason <clm@fb.com>, Nick Terrell <nickrterrell@gmail.com>,
-        Herbert Xu <herbert@gondor.apana.org.au>,
-        "linux-crypto@vger.kernel.org" <linux-crypto@vger.kernel.org>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        "squashfs-devel@lists.sourceforge.net" 
-        <squashfs-devel@lists.sourceforge.net>,
-        "linux-f2fs-devel@lists.sourceforge.net" 
-        <linux-f2fs-devel@lists.sourceforge.net>,
-        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
-        Kernel Team <Kernel-team@fb.com>, Petr Malat <oss@malat.biz>,
-        Johannes Weiner <jweiner@fb.com>,
-        Niket Agarwal <niketa@fb.com>, Yann Collet <cyan@fb.com>
-Date:   Wed, 16 Sep 2020 21:35:51 -0400
-In-Reply-To: <4D04D534-75BD-4B13-81B9-31B9687A6B64@fb.com>
-References: <20200916034307.2092020-1-nickrterrell@gmail.com>
-         <20200916034307.2092020-7-nickrterrell@gmail.com>
-         <20200916084958.GC31608@infradead.org>
-         <CCDAB4AB-DE8D-4ADE-9221-02AE732CBAE2@fb.com>
-         <20200916143046.GA13543@infradead.org>
-         <1CAB33F1-95DB-4BC5-9023-35DD2E4E0C20@fb.com>
-         <20200916144618.GB16392@infradead.org>
-         <4D04D534-75BD-4B13-81B9-31B9687A6B64@fb.com>
-Content-Type: multipart/signed; micalg="pgp-sha256";
-        protocol="application/pgp-signature"; boundary="=-00l4H219Xi95l7myD8I0"
-User-Agent: Evolution 3.34.4 (3.34.4-1.fc31) 
+        Wed, 16 Sep 2020 23:37:59 -0400
+X-Greylist: delayed 456 seconds by postgrey-1.27 at vger.kernel.org; Wed, 16 Sep 2020 23:37:59 EDT
+Received: from casper.infradead.org (casper.infradead.org [IPv6:2001:8b0:10b:1236::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 64ED7C06174A;
+        Wed, 16 Sep 2020 20:30:23 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=casper.20170209; h=Content-Type:MIME-Version:Message-ID:
+        Subject:Cc:To:From:Date:Sender:Reply-To:Content-Transfer-Encoding:Content-ID:
+        Content-Description:In-Reply-To:References;
+        bh=ZfJS/f94/KKMV+Mccd9pRniL7TH36xiMBW1d5y04Aj8=; b=EX0cU1ou1P3jaAsaDLeoOiLSqS
+        mpJxcZClyN7A/RxlPuDO+uLp/wWLe8+zS3tZhZ6gSYArpXlRnCCZqieAvt0KZy9UpEqn+NwzdV1+Z
+        7q71orzFU1qK9I2vlfUUB0OlhaJAej5di8m2n493sVqTnPyqSQKoW5HSFq3nH3/cUDZhJjUPF5rlU
+        J0h7/9LgDSD8rQI1Q6gBl6AfrL3YbkqezqoXnB5w9r+sj/MuHiIQfCeM0U9ldilA32SFxAValxk/H
+        9XKnI0m4GYu/NSW4qXaPK+UhPQxpEM8Dl/XD2xnLOSuR/4bbTTiRH3DI40oBgw9sjwwNaARQE3imp
+        NoOd9b/w==;
+Received: from willy by casper.infradead.org with local (Exim 4.92.3 #3 (Red Hat Linux))
+        id 1kIkcn-0007dR-B9; Thu, 17 Sep 2020 03:30:21 +0000
+Date:   Thu, 17 Sep 2020 04:30:21 +0100
+From:   Matthew Wilcox <willy@infradead.org>
+To:     linux-btrfs@vger.kernel.org
+Cc:     linux-fsdevel@vger.kernel.org, Qu Wenruo <wqu@suse.com>
+Subject: THP support for btrfs
+Message-ID: <20200917033021.GR5449@casper.infradead.org>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+I was pointed at the patches posted this week for sub-page support in
+btrfs, and I thought it might be a good idea to mention that THP support
+is going to hit many of the same issues as sub-PAGE_SIZE blocks, so if
+you're thinking about sub-page block sizes, it might be a good idea to
+add THP support at the same time, or at least be aware of it when you're
+working on those patches to make THP work in the future.
 
---=-00l4H219Xi95l7myD8I0
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+While the patches have not entirely landed yet, complete (in that it
+passes xfstests on my laptop) support is available here:
+http://git.infradead.org/users/willy/pagecache.git
 
-On Wed, 2020-09-16 at 15:18 -0400, Nick Terrell wrote:
+About 40 of the 100 patches are in Andrew Morton's tree or the iomap
+tree waiting for the next merge window, and I'd like to get the rest
+upstream in the merge window after that.  About 20-25 of the patches are
+to iomap/xfs and the rest are generic MM/FS support.
 
-> The zstd version in the kernel works fine. But, you can see that the
-> version
-> that got imported stagnated where upstream had 14 released versions.
-> I
-> don't think it makes sense to have kernel developers maintain their
-> own copy
-> of zstd. Their time would be better spent working on the rest of the
-> kernel.
-> Using upstream directly lets the kernel profit from the work that we,
-> the zstd
-> developers, are doing. And it still allows kernel developers to fix
-> bugs if any
-> show up, and we can back-port them to upstream.
+The first difference you'll see after setting the flag indicating
+that your filesystem supports THPs is transparent huge pages being
+passed to ->readahead().  You should submit I/Os to read every byte
+in those pages, not just the first PAGE_SIZE bytes ;-)  Likewise, when
+writepages/writepage is called, you'll want to write back every dirty
+byte in that page, not just the first PAGE_SIZE bytes.
 
-I can't argue with that.
+If there's a page error (I strongly recommend error injection), you'll
+also see these pages being passed to ->readpage and ->write_begin
+without being PageUptodate, and again, you'll have to handle reads
+for the parts of the page which are not Uptodate.
 
-> One possibility is to have a kernel wrapper on top of the zstd API to
-> make it
-> more ergonomic. I personally don=E2=80=99t really see the value in it, si=
-nce
-> it adds
-> another layer of indirection between zstd and the caller, but it
-> could be done.
+You'll have to handle invalidatepage being called from the truncate /
+page split path.
 
-Zstd would not be the first part of the kernel to
-come from somewhere else, and have wrappers when
-it gets integrated into the kernel. There certainly
-is precedence there.
+page_mkwrite can be called with a tail page.  You should be sure to mark
+the entire page as dirty (we only track dirty state on a per-THP basis,
+not per-subpage basis).
 
-It would be interesting to know what Christoph's
-preference is.
+---
 
---=20
-All Rights Reversed.
-
---=-00l4H219Xi95l7myD8I0
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part
-Content-Transfer-Encoding: 7bit
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAABCAAdFiEEKR73pCCtJ5Xj3yADznnekoTE3oMFAl9ivXcACgkQznnekoTE
-3oOPpggAtolHgM9baGGYRypnu9M14qxIuWCs0R5dsHUAIeaf3t58BwsYiat23RYs
-FzWV01KQfvBTe9eQUKM/m9u+p3kqegVy3tIrE+4VCx1PxWpjlnB42ep6+02SXLzz
-P82Z4KvkyvwRw8jF7ixqa4vQN2G3pTOUejb9hN/BULrYZxijOR9/MoYXo2xGXZP7
-7rX/7LiqVYGommGQxYE5dEsVlXLSKdBdkV5690AwVUVky/eaYM4oxhp0882DscYy
-3BB1f4yAkmBlDATmTucb5dLpQM/1l2RMrpg9bMUNO/tmVmeq7LIszs/ymSXhi21U
-iIiPectvPTSs+UZiD7oxuK0x3OBzoA==
-=wqCT
------END PGP SIGNATURE-----
-
---=-00l4H219Xi95l7myD8I0--
-
+I see btrfs is switching to iomap for the directIO path.  Has any
+consideration been given to switching to iomap for the buffered I/O path?
+Or is that just too much work?

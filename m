@@ -2,130 +2,213 @@ Return-Path: <SRS0=YQmm=C2=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E1AB4C43461
-	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Sep 2020 06:45:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E1DBFC433E2
+	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Sep 2020 07:21:31 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 8069C2064E
-	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Sep 2020 06:45:34 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7B7762072E
+	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Sep 2020 07:21:31 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="rvqsNJKT";
-	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b="lOPQGx4f"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="IijTt4k2";
+	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b="mI5UeWg9"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726153AbgIQGpd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 17 Sep 2020 02:45:33 -0400
-Received: from esa6.hgst.iphmx.com ([216.71.154.45]:3773 "EHLO
-        esa6.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726109AbgIQGpb (ORCPT
+        id S1726255AbgIQHV2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 17 Sep 2020 03:21:28 -0400
+Received: from esa5.hgst.iphmx.com ([216.71.153.144]:38068 "EHLO
+        esa5.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726142AbgIQHVY (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 17 Sep 2020 02:45:31 -0400
-X-Greylist: delayed 431 seconds by postgrey-1.27 at vger.kernel.org; Thu, 17 Sep 2020 02:45:30 EDT
+        Thu, 17 Sep 2020 03:21:24 -0400
+X-Greylist: delayed 428 seconds by postgrey-1.27 at vger.kernel.org; Thu, 17 Sep 2020 03:21:21 EDT
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1600325131; x=1631861131;
-  h=from:to:subject:date:message-id:references:
+  t=1600327284; x=1631863284;
+  h=from:to:cc:subject:date:message-id:references:
    content-transfer-encoding:mime-version;
-  bh=y58FxjKgoEvzsHALF2hbGln3kKr4dGDje+dOUBjYWVY=;
-  b=rvqsNJKTaKhPECcOgMw3z8IZRE56n6rcfyuXe6vd0I+lUhmiJQt42GFm
-   pTCTOYKnDmnu6pmvI59PkOP++OP6lZYD9WipBQtNE0Xpk7Zg0Pw2s14uc
-   VfPwaLgIbbujv2HpCNG53tAkkIKEsJojkLmNRfoW5UDtXvYwaKmjsXf3D
-   sv87g3oV/dyio7nYqODu0/3RDUprA2xFaDzSTezu52dAJ1lX6uWfSkhE8
-   82cB1J6+O49pRnJxHp0iVRIKnC/z47/BlaSreGMha6wa43GeOEHmUFUZi
-   KwK3DQt5wKJ1hY8COKnwbsrCOh68DsQaY/igTlOzUjlV2hGRkHhh7cEKL
-   Q==;
-IronPort-SDR: J82nm+BnP1oReg3YNjj7e+niwNiK1kDDQTDtwB51YXuz0/CgDCyRx7McGBjgdOpZcGWUc82+aE
- N57sas8zSNvpQ4CX9pW2e4EaD6ILMW+J8LTWq0pCJUejXxTbdCTQBNi7/bu/aMkh+JZ7XUPrMp
- sC7rN3Zshh1tSbuqJiHeu3LxMNKxkQNejM6M4uLUgFcpzj986qrABnWTaCszQ4CQyAQFf5z6yw
- QiKC+UxF3sJv/DTNOhEwM6U0nBxSpb+YZSkjYsT+X0EVFgFQRzU8P+JD4W6MfWtoKL4Wk80nAi
- 2zo=
-X-IronPort-AV: E=Sophos;i="5.76,435,1592841600"; 
-   d="scan'208";a="148833528"
-Received: from mail-bn8nam11lp2174.outbound.protection.outlook.com (HELO NAM11-BN8-obe.outbound.protection.outlook.com) ([104.47.58.174])
-  by ob1.hgst.iphmx.com with ESMTP; 17 Sep 2020 14:38:17 +0800
+  bh=1gST2pzSftrK7866Q2LBBzqt+dSIgIdd0hu5f0H4eoo=;
+  b=IijTt4k2ckwkvh9wgtkx13G821XeFUNnnqmqd1pyukSqbkSd6oR5EPnY
+   BtdSwB54hN01DJOuKFVTbwfONzHvZIsakrGDx//NkJ0qQJ1Y5f2LM/LIR
+   cekRD1HUVJ0JjEhPYwtF2PterBkzDuAEgNvmlp6nk+tj9Nl/Y+JYchQik
+   UUCgJ+XYT8D5X9CmMRZWBRxjdfsB8UybgCQs3rXTvUiRIK9Bw68X5I2AW
+   4wu/ReghEL30nBrg8lGIwZxjVY+NTbSIaBNkbBWy6OFZEfGAKr/JEfNpd
+   ni481ZTnpuz5sgFQ2BPdTUmOw4J7xqqHl4XOcH0GlNl9OH44FgO8xY/UB
+   g==;
+IronPort-SDR: FovTyvHwjqG920dJfKFoC1t1blNqA2BG6gi58BLaZvftVuzCmw4v0GQe9tVRpeU90fWKEId7mA
+ 0g9wRiKIswTh0hgpVp+R2G8DYametKiBQNdO/eEXfSIuDCBOxHG44iO8Sjaulh1Zykj/7JUbDm
+ /MxI4W1U09O1NdnNNEnymcTYIdVQKOmNYWmhjow880Amy+WF14BhXv5/YuwzJFNoBt9M69I5xn
+ Hk4uOCb60douXw5ZZSxBj++PBpFg6sM2dqJXT11GZUaiNM8XBS4q92AYsVDZGEroSm9OkgfZQe
+ g5U=
+X-IronPort-AV: E=Sophos;i="5.76,436,1592841600"; 
+   d="scan'208";a="147612149"
+Received: from mail-bn8nam11lp2177.outbound.protection.outlook.com (HELO NAM11-BN8-obe.outbound.protection.outlook.com) ([104.47.58.177])
+  by ob1.hgst.iphmx.com with ESMTP; 17 Sep 2020 15:14:07 +0800
 ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
- b=j+k+D30uRg7Io6bsgMcx9/EqNdpvVi/SwizN2njNxRzb0BeGRFLSDcudT/Jdto6S+/TKpYwQOLJs0D2y7xl3HbgEhmBVsHxGTZ8/OS8MbIcEvh5ow6HZi8wphimaQTHGPVMMEaSDxqa2n3svwZUFCj0iRMiqQBS/r5Q6MHR3wZ1MAx6OvHoXwoFE3P78q24AC0ba7aXd7UPHQNa0aeYufm/KLNi8EhjE9Y+z09R7b+sZDntp449wYuEdK6bcc+I9n2cM79wg39Q+qAp0tZig8bW35BiUiPRjrPo8b2bJpVr8pfCv7fmNwDMJG2BVEkzCYSpyXNRhUP8Vp5TKt8997w==
+ b=RhTQzyRnj1EaEhIus87TOU2lqDtAhaY0IMG/MMvzAAmNOqG4ehZ3cfXnWS9KAo+fxgH57C/9h0DLxfeSJeK4cZkNm11ZRz0a7beyOgCphTtKUOzEy9rQnUjYavw4ZKuBQ4WjYqHaJCTugma9EPnagAytYFQoVycgVA53Jdzr8sZG9upWFDsPwJpCrtj1jgswoco/sNrVj4H0H111D7S/U1KHPPG6/sr34sYX6dsuvLbiAnZhRFU7ZLFyFA+wElVLrQemnrMoo1/47VoushLUgMU/P8RYtPouyJgxMlL78KiHu8Vmz5wnPJWwgwcc4Lszud08yL3EWngrakvi/0mVtA==
 ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
  s=arcselector9901;
  h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=y58FxjKgoEvzsHALF2hbGln3kKr4dGDje+dOUBjYWVY=;
- b=UbsaqbETXQVIFyFcqlyhMT36A/ZDpid3pdk8sPyJWgwqV+pROTEBdLErvhyqsAgDxkAye2R1VGOvnefIRXaSrBNEOS4gHFJuTashVQZlD2TrWBmei6JXfsThCXXTHhEVud8+gt2Kq3xbLYlm8RZ6rqxEAOL+P7Ieg+X44MhCcGPe74s0tPKsy25uRXTiJ8k9AH9SyP+rXJwI3gsF6Ulu8NaUuz8dSgQ/IaMY0slWlFbGpzpX+XgReA939EiOo2PvGhMBjl/hqmFpssjkRLsRy8HjZ4yU5vBWBxsaviI4l+eCgjyMr76wHhEpMxfq3ZIbClDG7n5RUfM/2vsOkoOrsw==
+ bh=EHUK8ZTPyHBpvI9o0uEL3T3xPFuSMWkqYLdoVt3GxuY=;
+ b=WHGIUrLzwLLS7wEq6hqkVWhNsQTpgKfy3Mq9PrL3NTwYi0AJ0XWzDvoBlCKNIryFzZ2zwR1QcHCDTKH5KUBGzRcmTgnlWPfXG3ul8pyvPcwF0dX14LHA3VfSgR2U1+gU9sWIhi6PBJy2VYRNqJLGEPmk7AkotO7zwUr18fexHmS+/Dqb2SKn9IY7QWhR0Yl2afKduHcgtIG28LlSuZ1ReSo6wlG0ZhDyt9ehIeeuizkrJ15oP6pVPWnlS/QIo5pfZUShlv7iv4rMYMwPHkAdl7aqBZLljdCp9bfS8HDx68qPc+F5q7Pr7kim3II1RoM2PJ9VOgBSt0p8eh3MR8tLsg==
 ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
  smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
  header.d=wdc.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
  d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
  h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=y58FxjKgoEvzsHALF2hbGln3kKr4dGDje+dOUBjYWVY=;
- b=lOPQGx4f7QMpdVaVEc653WyQj2wlDj/Nmem+Y2IdxAR0RiWCJC688juAdJk9f/MbRi7kJUJT5bcVvrAtwgh5fwPotihbl2tRoNvDCXksIOO0ql5oWQUYlTP7up2vPT1Ug3HJL0NlIgJY5fESZLFGqA9wtoeq9F4JLUE+nw63Z6o=
+ bh=EHUK8ZTPyHBpvI9o0uEL3T3xPFuSMWkqYLdoVt3GxuY=;
+ b=mI5UeWg9BfrEAgdISOKMwyireodvpyRxcQP3Fut8N3DRJpNFZiEx8iGe/rT0VPAfQ99ZHiNgyLB9o22mPrsTJrdDNl0jDFoyJS1enr6XHSaOPuT/rgaaIRIaC7BObnwDO7jl7uK2EQTp4RHnS6GLWcuOMqoDzSF/2sZo8bWNuac=
 Received: from SN4PR0401MB3598.namprd04.prod.outlook.com
- (2603:10b6:803:47::21) by SN6PR04MB4318.namprd04.prod.outlook.com
- (2603:10b6:805:2e::17) with Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.3391.11; Thu, 17 Sep
- 2020 06:38:11 +0000
+ (2603:10b6:803:47::21) by SN6PR04MB5405.namprd04.prod.outlook.com
+ (2603:10b6:805:103::16) with Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.3391.14; Thu, 17 Sep
+ 2020 07:14:05 +0000
 Received: from SN4PR0401MB3598.namprd04.prod.outlook.com
  ([fe80::457e:5fe9:2ae3:e738]) by SN4PR0401MB3598.namprd04.prod.outlook.com
  ([fe80::457e:5fe9:2ae3:e738%7]) with mapi id 15.20.3370.019; Thu, 17 Sep 2020
- 06:38:11 +0000
+ 07:14:05 +0000
 From:   Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
-To:     Nikolay Borisov <nborisov@suse.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs: Move btrfs_lock_and_flush_ordered_range call in
- btrfs_do_readpage
-Thread-Topic: [PATCH] btrfs: Move btrfs_lock_and_flush_ordered_range call in
- btrfs_do_readpage
-Thread-Index: AQHWjAFawEFaaPs8dEaul5K1rEYa3g==
-Date:   Thu, 17 Sep 2020 06:38:11 +0000
-Message-ID: <SN4PR0401MB35982F874A92875B1D4DF65B9B3E0@SN4PR0401MB3598.namprd04.prod.outlook.com>
-References: <20200916081401.31668-1-nborisov@suse.com>
- <SN4PR0401MB3598DDDC1775BC43743D09FC9B210@SN4PR0401MB3598.namprd04.prod.outlook.com>
- <8304a98f-479e-45c7-1e4a-c2370aea55c1@suse.com>
+To:     Naohiro Aota <Naohiro.Aota@wdc.com>
+CC:     "dsterba@suse.cz" <dsterba@suse.cz>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        Hannes Reinecke <hare@suse.com>,
+        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>
+Subject: Re: [PATCH v7 00/39] btrfs: zoned block device support
+Thread-Topic: [PATCH v7 00/39] btrfs: zoned block device support
+Thread-Index: AQHWiGNae5boCJrRrkuIphWp+J5npw==
+Date:   Thu, 17 Sep 2020 07:14:05 +0000
+Message-ID: <SN4PR0401MB3598C5D858920149B4BA13249B3E0@SN4PR0401MB3598.namprd04.prod.outlook.com>
+References: <20200911123259.3782926-1-naohiro.aota@wdc.com>
+ <20200915080927.GF1791@twin.jikos.cz>
+ <SN4PR0401MB359839054A125BF64641B4E89B210@SN4PR0401MB3598.namprd04.prod.outlook.com>
+ <20200917054033.homtvyj3iffrjile@naota.dhcp.fujisawa.hgst.com>
 Accept-Language: en-US
 Content-Language: en-US
 X-MS-Has-Attach: 
 X-MS-TNEF-Correlator: 
-authentication-results: suse.com; dkim=none (message not signed)
- header.d=none;suse.com; dmarc=none action=none header.from=wdc.com;
+authentication-results: wdc.com; dkim=none (message not signed)
+ header.d=none;wdc.com; dmarc=none action=none header.from=wdc.com;
 x-originating-ip: [2001:a62:1460:3d01:fc97:afa7:f5ee:f696]
 x-ms-publictraffictype: Email
 x-ms-office365-filtering-ht: Tenant
-x-ms-office365-filtering-correlation-id: 22dea8c4-ef00-49ca-75e5-08d85ad43f4f
-x-ms-traffictypediagnostic: SN6PR04MB4318:
-x-microsoft-antispam-prvs: <SN6PR04MB4318355077DD6DF5560AC2F39B3E0@SN6PR04MB4318.namprd04.prod.outlook.com>
+x-ms-office365-filtering-correlation-id: 7c800c78-c1b1-4292-46fb-08d85ad94329
+x-ms-traffictypediagnostic: SN6PR04MB5405:
+x-ms-exchange-transport-forked: True
+x-microsoft-antispam-prvs: <SN6PR04MB54056D40B559FD27A3504BD99B3E0@SN6PR04MB5405.namprd04.prod.outlook.com>
 wdcipoutbound: EOP-TRUE
-x-ms-oob-tlc-oobclassifiers: OLM:5797;
+x-ms-oob-tlc-oobclassifiers: OLM:9508;
 x-ms-exchange-senderadcheck: 1
 x-microsoft-antispam: BCL:0;
-x-microsoft-antispam-message-info: Y0OWfViAiHfZH6h4uK0qcg2JTm4+UDPSOGDdqOk6e936ODVtFRZkg/APY4E6FeDVmvtQhD0+y8JFQxKkpgMq0kLZQDqkO8m7CYIMdsDyESxRYLu/yGunXLbC1/xC2lDJnBfI2VPZ84Yfr9X+Pnujv4InGbbu/6CmrrIwm2hmVVjJvcPeZvDCKap/SHviYtNdl1C6ZMmQYheiMib7Hgu380KSBWVBqIK4HeLl2qxk1RAqdV6WF3Tj3SucZ0QE6FMZmFPftL5nCpsP8Md5Z58pTXBOYhu+dJ7F+E95uN65YkCC/sgHHV3Muyi1ttJEbYxsh7VMYVWipM7ePeAiDn8cjQ==
-x-forefront-antispam-report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SN4PR0401MB3598.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(4636009)(396003)(376002)(39860400002)(366004)(136003)(346002)(83380400001)(66446008)(110136005)(52536014)(8676002)(66476007)(64756008)(71200400001)(66556008)(558084003)(7696005)(55016002)(5660300002)(8936002)(186003)(9686003)(2906002)(91956017)(316002)(86362001)(6506007)(33656002)(478600001)(66946007)(76116006)(53546011);DIR:OUT;SFP:1102;
-x-ms-exchange-antispam-messagedata: BLWxJlQ8r2KUv7j+iKca2Tvt44zYQlgPviGYste8lsVlAGQEznHdZbPwnTtgrAXST6Q8bRtW9KbkrYZ43SaFjktRTiZ0NoE/LL5YKV9zfot/cwOg9qG0AzBlPWOaMoebDVmzQGcFR10EEai5Wx2mop5y7TQqxLG6yDmNQ6qA3C02v76VUJoJ2WwUbGxqxXz6MvsYZoYMoWfbDjtz043cjxjOY7V/litr8McqmU7GI2iQKitvD4Lo2vxewevsqQa+oIibSjb/jEyOT/BhYD7PRIM6svXvszXSXs9tD5t2Is8dLNi6+2b34Od6VMisezetmpPZws+c1+MGqMIgJIKiHrZHaMSRVNDUYcsFYdoodyCPDgqPPzcq5uipwRclau4LkoL7CbXCEMbL+ZKqiqdjScgtOXQAadyQB74Dak9RaMhvzNh5ae6IZdmo4gJKojuwAU7Pgm2UNtyR3Kke2GrIr495u5gYprTqvMQcor+HWBuQYsBmduNiJXPkecR+LunxX5DO3XgCykjyRyr3XaUVj+wMDh4nf2igaf/7I/8ocOGLL67aruUpP4KBIyyKbDeGxzN5Nyspv2Yzld7UGQcRrIrTskyI7ho5E12xY/TVPHnt2XUokqzG3YEdx2yXtHD7hv4j9sJCAS74pa6uFCINjV4/S6AlG1yhG+cMnMVjOX7y/gZg3caEmM/sjrUCpaNA1Qfwz8p0BR7YrXwbWOSdZQ==
-x-ms-exchange-transport-forked: True
+x-microsoft-antispam-message-info: oaCLMiyZruArIxsCZSvMj2CAP7oFaMXiVzcpqTxClH8IG3+oAEDrkC/A/o8zVoI9T4dncy/wWDJi+3so44QsOpu5g83wpUhXIBVMXGkKol2Olq7DciYDTS6ky5TkI1zSI+1FjkDEJ2jeOIiWhvrnQr0goQxLBY+1jluJQ4uNifsjmRzsuB6hEo3CVc7O1NpUYjt8PngP1iP8diF4xIXt0iNN+0NYZOeFgzQdK+pyD5PIz19NwRZuiKAEbrzT4DokrzLv22jCh6ZgCXgZtzdruVSidOkYgZq0rG1sEGaSDSyJY0I9HwxdFz+kfqpbp4KKmCjlJ2q0un/+pYo+H5HIew==
+x-forefront-antispam-report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SN4PR0401MB3598.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(4636009)(376002)(39860400002)(346002)(136003)(366004)(396003)(54906003)(53546011)(6506007)(478600001)(186003)(316002)(71200400001)(5660300002)(52536014)(55016002)(9686003)(33656002)(6862004)(2906002)(6636002)(4326008)(8676002)(66556008)(66476007)(66446008)(64756008)(86362001)(76116006)(83380400001)(8936002)(7696005)(66946007)(91956017);DIR:OUT;SFP:1102;
+x-ms-exchange-antispam-messagedata: oTau2kww1h78Vvn+USleRiiVxHZbs5yWKsJzbm8H3LKAtm3fmhRWICVLIHG4KbQK6KzjLNXQgWKnU0hhZ9GhriEVQqxqR5I8lHKd1kKQAv+LmmYRiYZl9JKWBiDl3TUrzTiO8hDOrYwTMlLRxI640dwcX/UZCz63W35Ck0hHf6qDmae+j/jRJKEMy5TSgZWCx0NpFWlHKfqVxRDJwAZSWP6FyI894b+zZ4xV5wWGqqtg//8nXDL9nLl2btKgOeLUxUk2AGnfmHfwGbexibgP59jqesPyWGk9uIUSttE1t5sA+UF1XD/Qj+8O5SUDiyTlQ22YZafHNhxKuI8m07NMEG8mKUZCeleQ1sNh+5TwkLEPOMAK5l4IpK4B5+8UjuiXY7ZyIHFAjtCerfpAAxS/VhnheIPEsVUTXwCMqges1kGrfEx4JVEdldX0jzWQEz8YLlhmwkF8S4oBbfNB+4bfLRpaR+IyyJWDUpICftyt2Ry2OKy74cFV1uBaU2LZxErOX//6mdSaJ3B0MPhJP9JeysDTYlQ6+3I3eKDtgJTW0ED5wSCiuTZmYVVHazE5VGJDfgX+5iJrSM9zkPI2fR7s9qbzGYVZGNjHs1Khwxnlb4470HW2qQCmrE5239sughTET6nlaP6bS9jJ0i16GUvfy5Y+1XpDGXWokOeLNxM1hB2tDDlDsa3CTsNeJrW64VTiqJnK7tJjY+37jXvekUp21w==
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: quoted-printable
 MIME-Version: 1.0
 X-OriginatorOrg: wdc.com
 X-MS-Exchange-CrossTenant-AuthAs: Internal
 X-MS-Exchange-CrossTenant-AuthSource: SN4PR0401MB3598.namprd04.prod.outlook.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: 22dea8c4-ef00-49ca-75e5-08d85ad43f4f
-X-MS-Exchange-CrossTenant-originalarrivaltime: 17 Sep 2020 06:38:11.2764
+X-MS-Exchange-CrossTenant-Network-Message-Id: 7c800c78-c1b1-4292-46fb-08d85ad94329
+X-MS-Exchange-CrossTenant-originalarrivaltime: 17 Sep 2020 07:14:05.2317
  (UTC)
 X-MS-Exchange-CrossTenant-fromentityheader: Hosted
 X-MS-Exchange-CrossTenant-id: b61c8803-16f3-4c35-9b17-6f65f441df86
 X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
-X-MS-Exchange-CrossTenant-userprincipalname: UASvlTAgpdL1hxk7ZOGPLS2UhNvVF7E2jxFak/nzgeb7NYHKgyUClnvBoVHSP0foPQVuCGNndCRtz1gPyziX3E1/jiYf14xl/LMs/UBOD/Y=
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: SN6PR04MB4318
+X-MS-Exchange-CrossTenant-userprincipalname: /j8X8ya3WQP288z7kouZt1DajNFBqiZlIvnGgyLNLj6s2gnfcQeWoDWSPjQO8caojbAf/VKek139S06Oj7J/JWjzl0EfFyEOD7t8zRdc36g=
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: SN6PR04MB5405
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 17/09/2020 08:15, Nikolay Borisov wrote:=0A=
-> Actually no, this conflicts with btrfs_do_readpage call from=0A=
-> contiguous_readpages which results in double lock.=0A=
+On 17/09/2020 07:40, Naohiro Aota wrote:=0A=
+> Thank you for fixing this.=0A=
+=0A=
+Well it was you who had the idea, I just sent it.=0A=
+=0A=
+>> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c=0A=
+>> index bda4e02b5eab..311956697682 100644=0A=
+>> --- a/fs/btrfs/extent_io.c=0A=
+>> +++ b/fs/btrfs/extent_io.c=0A=
+>> @@ -2753,10 +2753,6 @@ static void end_bio_extent_writepage(struct bio *=
+bio)=0A=
+>>        u64 end;=0A=
+>>        struct bvec_iter_all iter_all;=0A=
+>>=0A=
+>> -       btrfs_record_physical_zoned(bio_iovec(bio).bv_page->mapping->hos=
+t,=0A=
+>> -                                   page_offset(bio_iovec(bio).bv_page) =
++ bio_iovec(bio).bv_offset,=0A=
+>> -                                   bio);=0A=
+>> -=0A=
+>>        ASSERT(!bio_flagged(bio, BIO_CLONED));=0A=
+>>        bio_for_each_segment_all(bvec, bio, iter_all) {=0A=
+>>                struct page *page =3D bvec->bv_page;=0A=
+>> @@ -2782,6 +2778,7 @@ static void end_bio_extent_writepage(struct bio *b=
+io)=0A=
+>>                start =3D page_offset(page);=0A=
+>>                end =3D start + bvec->bv_offset + bvec->bv_len - 1;=0A=
+>>=0A=
+>> +               btrfs_record_physical_zoned(inode, start, bio);=0A=
+> We need to record the physical address only once per an ordered extent.=
+=0A=
+> So, this should be like:=0A=
 > =0A=
 =0A=
-Right didn't see it :(=0A=
+Right, this would save us a lot of unneeded function calls for the non-zone=
+d=0A=
+version of btrfs as well.=0A=
 =0A=
-But why can't we remove the btrfs_lock_and_flush_ordered_range =0A=
-call in contigous_readpages?=0A=
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c=0A=
+> index c21d1dbe314e..0bbe6e52ea0d 100644=0A=
+> --- a/fs/btrfs/extent_io.c=0A=
+> +++ b/fs/btrfs/extent_io.c=0A=
+> @@ -2748,6 +2748,7 @@ static void end_bio_extent_writepage(struct bio *bi=
+o)=0A=
+>          u64 start;=0A=
+>          u64 end;=0A=
+>          struct bvec_iter_all iter_all;=0A=
+> +       bool first_bvec =3D true;=0A=
+> =0A=
+>          ASSERT(!bio_flagged(bio, BIO_CLONED));=0A=
+>          bio_for_each_segment_all(bvec, bio, iter_all) {=0A=
+> @@ -2774,6 +2775,11 @@ static void end_bio_extent_writepage(struct bio *b=
+io)=0A=
+>                  start =3D page_offset(page);=0A=
+>                  end =3D start + bvec->bv_offset + bvec->bv_len - 1;=0A=
+> =0A=
+> +               if (first_bvec) {=0A=
+> +                       btrfs_record_physical_zoned(inode, start, bio);=
+=0A=
+> +                       first_bvec =3D false;=0A=
+> +               }=0A=
+> +=0A=
+>                  end_extent_writepage(page, error, start, end);=0A=
+>                  end_page_writeback(page);=0A=
+>          }=0A=
+> =0A=
+> =0A=
+>>                end_extent_writepage(page, error, start, end);=0A=
+>>                end_page_writeback(page);=0A=
+>>        }=0A=
+>> diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c=0A=
+>> index 576f8e333f16..6fdb21029ea9 100644=0A=
+>> --- a/fs/btrfs/zoned.c=0A=
+>> +++ b/fs/btrfs/zoned.c=0A=
+>> @@ -1086,8 +1086,7 @@ void btrfs_record_physical_zoned(struct inode *ino=
+de, u64 file_offset,=0A=
+>> {=0A=
+>>        struct btrfs_ordered_extent *ordered;=0A=
+>>        struct bio_vec bvec =3D bio_iovec(bio);=0A=
+>> -       u64 physical =3D ((u64)bio->bi_iter.bi_sector << SECTOR_SHIFT) +=
+=0A=
+>> -               bvec.bv_offset;=0A=
+>> +       u64 physical =3D (u64)bio->bi_iter.bi_sector << SECTOR_SHIFT;=0A=
+>>=0A=
+>>        if (bio_op(bio) !=3D REQ_OP_ZONE_APPEND)=0A=
+>>                return;=0A=
+>>=0A=
+=0A=

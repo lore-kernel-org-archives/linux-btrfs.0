@@ -7,45 +7,45 @@ X-Spam-Status: No, score=-16.1 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D428BC43463
-	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Sep 2020 03:03:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 464CCC43466
+	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Sep 2020 03:03:35 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 9A0E4206B7
-	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Sep 2020 03:03:23 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1495A2083B
+	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Sep 2020 03:03:35 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1600398203;
-	bh=aHxsQgvwNnbGIwSSy69r9VE0YCKcjB1WtDe7bHMU8QY=;
+	s=default; t=1600398215;
+	bh=cy6Vb+w8dw3c/JpKeFygjW4q0sjZBzO0mk4wcmcKE64=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=vBSGeaY7y6LgoDR9FytIphUKKeXVY4+QmMYjLVFEHeiVH5ispyTxsYeqbSkI/2VRZ
-	 BsxcVZ1cK+m9f0yRHbGeT9uS2EyDPKOkdz83C4IQaw0KCiF9tl/qZuEfSh9JSTmt0/
-	 BIBqy49TjcRznfYE9J+2omb446AEk3Ai98DMlx5o=
+	b=13bdPiefOif3rVljnXHV0UMCGZCgmAjZKsaKrcW3Nk9/8gQvC/+bKY5jejSOdncAB
+	 2jjpHvSniAWARbauOlOXXQn+SbQ7SwWMEG2pusIwiGkiEOk6xLUv7LncWLaP2iXXLC
+	 os4CfMJLmPJoVZ/cOTUKfzfXSYDW/CFrjc0HR/Fw=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727440AbgIRCFE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 17 Sep 2020 22:05:04 -0400
-Received: from mail.kernel.org ([198.145.29.99]:52974 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727427AbgIRCFC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1727430AbgIRCFC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Thu, 17 Sep 2020 22:05:02 -0400
+Received: from mail.kernel.org ([198.145.29.99]:52958 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727423AbgIRCFB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 17 Sep 2020 22:05:01 -0400
 Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 5255B23888;
-        Fri, 18 Sep 2020 02:05:01 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 2923D2344C;
+        Fri, 18 Sep 2020 02:05:00 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1600394702;
-        bh=aHxsQgvwNnbGIwSSy69r9VE0YCKcjB1WtDe7bHMU8QY=;
+        s=default; t=1600394700;
+        bh=cy6Vb+w8dw3c/JpKeFygjW4q0sjZBzO0mk4wcmcKE64=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=MA/hRaJda772Wog2nl3fb95K8ntJWyzHoWgBP3bm1OwYJpAUZaJY0I2fp08bzzOmu
-         2B3hMMhjcG1D5bYp9hAK7A9kDgNScHHe6rqv8NQoo2Hxrtl2uhPEfiN6itQei42KZU
-         ye4h3VLSjA3Q2SepzQrM51qFPn+QodIAuZvm2D58=
+        b=xhwoS+HDOLJPbDKBAjEarxv5rMLa3kdoYCIUEvOwqRn1VE9fxPHfirFMNAZOuSh/J
+         Guv7cMSNTBDJ/DRKjYXs2qo+8HdhuHWZVyGAI6RiCYLjXmOinx2cUg4mEwbVbLtn8D
+         +/eXwO7W2BxKT7b8dhPRVi7HdlNMuAkkUmWwRdVs=
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Josef Bacik <josef@toxicpanda.com>,
+Cc:     Josef Bacik <josef@toxicpanda.com>, Qu Wenruo <wqu@suse.com>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.4 188/330] btrfs: free the reloc_control in a consistent way
-Date:   Thu, 17 Sep 2020 21:58:48 -0400
-Message-Id: <20200918020110.2063155-188-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 5.4 187/330] btrfs: do not init a reloc root if we aren't relocating
+Date:   Thu, 17 Sep 2020 21:58:47 -0400
+Message-Id: <20200918020110.2063155-187-sashal@kernel.org>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <20200918020110.2063155-1-sashal@kernel.org>
 References: <20200918020110.2063155-1-sashal@kernel.org>
@@ -59,63 +59,70 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Josef Bacik <josef@toxicpanda.com>
 
-[ Upstream commit 1a0afa0ecfc4dbc8d7583d03cafd3f68f781df0c ]
+[ Upstream commit 2abc726ab4b83db774e315c660ab8da21477092f ]
 
-If we have an error while processing the reloc roots we could leak roots
-that were added to rc->reloc_roots before we hit the error.  We could
-have also not removed the reloc tree mapping from our rb_tree, so clean
-up any remaining nodes in the reloc root rb_tree.
+We previously were checking if the root had a dead root before accessing
+root->reloc_root in order to avoid a use-after-free type bug.  However
+this scenario happens after we've unset the reloc control, so we would
+have been saved if we'd simply checked for fs_info->reloc_control.  At
+this point during relocation we no longer need to be creating new reloc
+roots, so simply move this check above the reloc_root checks to avoid
+any future races and confusion.
 
+Reviewed-by: Qu Wenruo <wqu@suse.com>
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 Reviewed-by: David Sterba <dsterba@suse.com>
-[ use rbtree_postorder_for_each_entry_safe ]
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
- fs/btrfs/relocation.c | 16 ++++++++++++++--
- 1 file changed, 14 insertions(+), 2 deletions(-)
+ fs/btrfs/relocation.c | 20 ++++++++++++++++----
+ 1 file changed, 16 insertions(+), 4 deletions(-)
 
 diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 1313506a7ecb5..ece53d2f55ae3 100644
+index af3605a0bf2e0..1313506a7ecb5 100644
 --- a/fs/btrfs/relocation.c
 +++ b/fs/btrfs/relocation.c
-@@ -4354,6 +4354,18 @@ static struct reloc_control *alloc_reloc_control(struct btrfs_fs_info *fs_info)
- 	return rc;
- }
+@@ -1468,6 +1468,10 @@ int btrfs_init_reloc_root(struct btrfs_trans_handle *trans,
+ 	int clear_rsv = 0;
+ 	int ret;
  
-+static void free_reloc_control(struct reloc_control *rc)
-+{
-+	struct mapping_node *node, *tmp;
++	if (!rc || !rc->create_reloc_tree ||
++	    root->root_key.objectid == BTRFS_TREE_RELOC_OBJECTID)
++		return 0;
 +
-+	free_reloc_roots(&rc->reloc_roots);
-+	rbtree_postorder_for_each_entry_safe(node, tmp,
-+			&rc->reloc_root_tree.rb_root, rb_node)
-+		kfree(node);
-+
-+	kfree(rc);
-+}
-+
- /*
-  * Print the block group being relocated
-  */
-@@ -4486,7 +4498,7 @@ out:
- 		btrfs_dec_block_group_ro(rc->block_group);
- 	iput(rc->data_inode);
- 	btrfs_put_block_group(rc->block_group);
--	kfree(rc);
-+	free_reloc_control(rc);
- 	return err;
- }
+ 	/*
+ 	 * The subvolume has reloc tree but the swap is finished, no need to
+ 	 * create/update the dead reloc tree
+@@ -1481,10 +1485,6 @@ int btrfs_init_reloc_root(struct btrfs_trans_handle *trans,
+ 		return 0;
+ 	}
  
-@@ -4659,7 +4671,7 @@ out_clean:
- 		err = ret;
- out_unset:
- 	unset_reloc_control(rc);
--	kfree(rc);
-+	free_reloc_control(rc);
- out:
- 	if (!list_empty(&reloc_roots))
- 		free_reloc_roots(&reloc_roots);
+-	if (!rc || !rc->create_reloc_tree ||
+-	    root->root_key.objectid == BTRFS_TREE_RELOC_OBJECTID)
+-		return 0;
+-
+ 	if (!trans->reloc_reserved) {
+ 		rsv = trans->block_rsv;
+ 		trans->block_rsv = rc->block_rsv;
+@@ -2336,6 +2336,18 @@ static noinline_for_stack int merge_reloc_root(struct reloc_control *rc,
+ 			trans = NULL;
+ 			goto out;
+ 		}
++
++		/*
++		 * At this point we no longer have a reloc_control, so we can't
++		 * depend on btrfs_init_reloc_root to update our last_trans.
++		 *
++		 * But that's ok, we started the trans handle on our
++		 * corresponding fs_root, which means it's been added to the
++		 * dirty list.  At commit time we'll still call
++		 * btrfs_update_reloc_root() and update our root item
++		 * appropriately.
++		 */
++		reloc_root->last_trans = trans->transid;
+ 		trans->block_rsv = rc->block_rsv;
+ 
+ 		replaced = 0;
 -- 
 2.25.1
 

@@ -5,49 +5,49 @@ X-Spam-Level:
 X-Spam-Status: No, score=-16.1 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
 	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D97FDC43466
-	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Sep 2020 02:11:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CB9E9C43464
+	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Sep 2020 02:24:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 8FD4F21582
-	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Sep 2020 02:11:49 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 883B222211
+	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Sep 2020 02:24:41 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1600395109;
-	bh=2CYtoLE6tkaOuCZ9bu0qmOv22maS6zu8dykYr2rF6Eg=;
+	s=default; t=1600395881;
+	bh=cUvrW7T36ipANE4OrMxt9kWnwTYvgZ785NdGSLcSUOU=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=Zk1DxpVkQSVqCHxb76NRb4GdoNHrvsWPTOT0JZYhEQk/VVU9lnLcPtLKE3LaQUK5Z
-	 ZKs5YXy8PLdx2YRk8F008SuYIDgltRq/EkSueS2CjLYTk44IfrxqayKQ9iOT9a6W7V
-	 ZyR/HEm4XfulGGLAb5Bsh1DgtNbpdBaMRXM0HREc=
+	b=lgndv/Qtz0ZOkyNeUJgbq6YTWekABdDgMNCzqQfI8Q6sUg9uT3+L/we2PML+idQno
+	 LFELSPGNOPy+lUZ1Q/0QH6WxxjzqRavrzMQXmKH7jBCQnpDCtnPOy2GDX7fvUDrKhX
+	 9/lQIGqGTX7XuYhfpGTNfRxJp59nLUJRRDoIJzas=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728677AbgIRCLs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 17 Sep 2020 22:11:48 -0400
-Received: from mail.kernel.org ([198.145.29.99]:37338 "EHLO mail.kernel.org"
+        id S1729448AbgIRCYl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 17 Sep 2020 22:24:41 -0400
+Received: from mail.kernel.org ([198.145.29.99]:46380 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728657AbgIRCLk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 17 Sep 2020 22:11:40 -0400
+        id S1729087AbgIRCQf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 17 Sep 2020 22:16:35 -0400
 Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id AA91F23787;
-        Fri, 18 Sep 2020 02:11:34 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 2505E235F7;
+        Fri, 18 Sep 2020 02:16:28 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1600395095;
-        bh=2CYtoLE6tkaOuCZ9bu0qmOv22maS6zu8dykYr2rF6Eg=;
+        s=default; t=1600395388;
+        bh=cUvrW7T36ipANE4OrMxt9kWnwTYvgZ785NdGSLcSUOU=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=UjsgG+LQtzX0p8VQYTAAV4RcvKApuojaIJmBm2/trxXXnhELhjB9u94YKg6E9BxNR
-         QxAxQEs02+o15d+vQmGYCSFJWZ9u9vbJTX2zYPjnrijkz4r5aQbcFNtUZvagVo4tCm
-         WYQNgzlUDBvk5H0Al9Viv8WVmrDV5SY6BlQ3WVU0=
+        b=IuIb7xi5njSCzdVKlDGhBFTmUEQFKA6A4S4aCPOFSeMw5binZh9GEu9jggIN+EvkC
+         5Y8ZbpPsozaZTmXsT4Fvi7T+8liIGs448Jrh9oP89GyKScmOZ4mqb3Oip1E5G2nOnS
+         lAFV1faGzKYE1xBxy8CwQj7q6wQ4Spwbz3DNmgKk=
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
 Cc:     David Sterba <dsterba@suse.com>, Sasha Levin <sashal@kernel.org>,
         linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 4.19 176/206] btrfs: don't force read-only after error in drop snapshot
-Date:   Thu, 17 Sep 2020 22:07:32 -0400
-Message-Id: <20200918020802.2065198-176-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 4.9 79/90] btrfs: don't force read-only after error in drop snapshot
+Date:   Thu, 17 Sep 2020 22:14:44 -0400
+Message-Id: <20200918021455.2067301-79-sashal@kernel.org>
 X-Mailer: git-send-email 2.25.1
-In-Reply-To: <20200918020802.2065198-1-sashal@kernel.org>
-References: <20200918020802.2065198-1-sashal@kernel.org>
+In-Reply-To: <20200918021455.2067301-1-sashal@kernel.org>
+References: <20200918021455.2067301-1-sashal@kernel.org>
 MIME-Version: 1.0
 X-stable: review
 X-Patchwork-Hint: Ignore
@@ -81,12 +81,12 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
  1 file changed, 2 deletions(-)
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index ec3aa76d19b7f..be0776eba7a08 100644
+index c0033a0d00787..b5bff1e760a34 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -9099,8 +9099,6 @@ out:
+@@ -9435,8 +9435,6 @@ out:
  	 */
- 	if (!for_reloc && !root_dropped)
+ 	if (!for_reloc && root_dropped == false)
  		btrfs_add_dead_root(root);
 -	if (err && err != -EAGAIN)
 -		btrfs_handle_fs_error(fs_info, err, NULL);

@@ -2,44 +2,43 @@ Return-Path: <SRS0=R6Ud=C3=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.0 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	UNWANTED_LANGUAGE_BODY,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 65116C43463
+	by smtp.lore.kernel.org (Postfix) with ESMTP id ABB05C43464
 	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Sep 2020 13:34:46 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 1C390235FA
+	by mail.kernel.org (Postfix) with ESMTP id 69EA323719
 	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Sep 2020 13:34:46 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="qCSCKf82"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="MAsSq6+9"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726802AbgIRNep (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 18 Sep 2020 09:34:45 -0400
-Received: from mx2.suse.de ([195.135.220.15]:40968 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726770AbgIRNeo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1726796AbgIRNeo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Fri, 18 Sep 2020 09:34:44 -0400
+Received: from mx2.suse.de ([195.135.220.15]:40932 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726548AbgIRNen (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 18 Sep 2020 09:34:43 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1600436082;
+        t=1600436081;
         h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
          to:to:cc:cc:in-reply-to:in-reply-to:references:references;
-        bh=eDw+U32G1q1vPq2zVGpW1JiIg3H8wWeDPX5NRFpx0JI=;
-        b=qCSCKf829iWKbc/KAQsye/Yge+yWrAqEF1tEzup83S04ReDSSaoPJDeXhCaAQB/Wgws6Yq
-        4zLGtumyRcljoT/8qTUZvwnmcoMIcXfr8UsFOOXru4KC8cLbvbV28UcXyQgriZmcGz1Bas
-        p6gO+0ixkHEJnRM8tOJQPmPFj7I+xZU=
+        bh=jbGnh8KERY1PqYaQkyR58qYXFslqhmCdFVNzsyQdxWg=;
+        b=MAsSq6+9PAzbaCIowyNp80xK1KYUh/J5yGwRIB2z2XTafdbGB3eIOHcNJpdY+99wHforDx
+        IScWaSk1q1uppXPV5rpmcpCvDaDNFeQ2m8hCgACXRmmIlR/79Y3erFucSC8eAFnGNXj/L+
+        BxS70DGc6t1aXq+cIcicdtxzDW2Gsjs=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id B2AEEB23E;
+        by mx2.suse.de (Postfix) with ESMTP id 05385B1E1;
         Fri, 18 Sep 2020 13:35:16 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 5/7] btrfs: Stop calling submit_bio_hook for data inodes
-Date:   Fri, 18 Sep 2020 16:34:37 +0300
-Message-Id: <20200918133439.23187-6-nborisov@suse.com>
+Subject: [PATCH 2/7] btrfs: Remove extent_io_ops::readpage_end_io_hook
+Date:   Fri, 18 Sep 2020 16:34:34 +0300
+Message-Id: <20200918133439.23187-3-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20200918133439.23187-1-nborisov@suse.com>
 References: <20200918133439.23187-1-nborisov@suse.com>
@@ -47,80 +46,59 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Instead export and rename the function to btrfs_submit_data_bio and
-call it directly in submit_one_bio. This avoids paying the cost for
-speculative attacks mitigations and improves code readability.
+It's no longer used so let's remove it.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/ctree.h     |  2 ++
- fs/btrfs/extent_io.c | 10 +++++++---
- fs/btrfs/inode.c     |  7 +++----
- 3 files changed, 12 insertions(+), 7 deletions(-)
+ fs/btrfs/disk-io.c   | 4 +---
+ fs/btrfs/extent_io.h | 5 +----
+ fs/btrfs/inode.c     | 4 +---
+ 3 files changed, 3 insertions(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 0c58d96b9fb3..5fc18b7ab771 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2962,6 +2962,8 @@ void btrfs_inode_safe_disk_i_size_write(struct btrfs_inode *inode,
- u64 btrfs_file_extent_end(const struct btrfs_path *path);
- 
- /* inode.c */
-+blk_status_t btrfs_submit_data_bio(struct inode *inode, struct bio *bio,
-+				   int mirror_num, unsigned long bio_flags);
- int btrfs_check_csum(struct btrfs_io_bio *io_bio, u64 phy_offset,
- 		     struct page *page, u64 start, u64 end, int mirror);
- struct extent_map *btrfs_get_extent_fiemap(struct btrfs_inode *inode,
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 26b002e2f3b3..8cabcb7642a9 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -168,8 +168,12 @@ int __must_check submit_one_bio(struct bio *bio, int mirror_num,
- 
- 	bio->bi_private = NULL;
- 
--	ret = tree->ops->submit_bio_hook(tree->private_data, bio, mirror_num,
--					 bio_flags);
-+	if (is_data_inode(tree->private_data))
-+		ret = btrfs_submit_data_bio(tree->private_data, bio, mirror_num,
-+					    bio_flags);
-+	else
-+		ret = tree->ops->submit_bio_hook(tree->private_data, bio,
-+						 mirror_num, bio_flags);
- 
- 	return blk_status_to_errno(ret);
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 5ad11c38230f..73937954f464 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -4637,7 +4637,5 @@ static int btrfs_cleanup_transaction(struct btrfs_fs_info *fs_info)
  }
-@@ -2880,7 +2884,7 @@ static void end_bio_extent_readpage(struct bio *bio)
- 			if (!btrfs_submit_read_repair(inode, bio, offset, page,
- 						start - page_offset(page),
- 						start, end, mirror,
--						tree->ops->submit_bio_hook)) {
-+						btrfs_submit_data_bio)) {
- 				uptodate = !bio->bi_status;
- 				offset += len;
- 				continue;
+ 
+ static const struct extent_io_ops btree_extent_io_ops = {
+-	/* mandatory callbacks */
+-	.submit_bio_hook = btree_submit_bio_hook,
+-	.readpage_end_io_hook = NULL
++	.submit_bio_hook = btree_submit_bio_hook
+ };
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index 133487a5e6b8..d9119bd555a9 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -77,13 +77,10 @@ typedef blk_status_t (extent_submit_bio_start_t)(void *private_data,
+ 
+ struct extent_io_ops {
+ 	/*
+-	 * The following callbacks must be always defined, the function
++	 * The following callback must be always defined, the function
+ 	 * pointer will be called unconditionally.
+ 	 */
+ 	submit_bio_hook_t *submit_bio_hook;
+-	int (*readpage_end_io_hook)(struct btrfs_io_bio *io_bio, u64 phy_offset,
+-				    struct page *page, u64 start, u64 end,
+-				    int mirror);
+ };
+ 
+ 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 41565c5a05ef..955a66207fec 100644
+index 23ac09aa813e..41565c5a05ef 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -2169,9 +2169,8 @@ static blk_status_t btrfs_submit_bio_start(void *private_data, struct bio *bio,
-  *
-  *    c-3) otherwise:			async submit
-  */
--static blk_status_t btrfs_submit_bio_hook(struct inode *inode, struct bio *bio,
--					  int mirror_num,
--					  unsigned long bio_flags)
-+blk_status_t btrfs_submit_data_bio(struct inode *inode, struct bio *bio,
-+				   int mirror_num, unsigned long bio_flags)
- 
- {
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
-@@ -10246,7 +10245,7 @@ static const struct file_operations btrfs_dir_file_operations = {
+@@ -10246,9 +10246,7 @@ static const struct file_operations btrfs_dir_file_operations = {
  };
  
  static const struct extent_io_ops btrfs_extent_io_ops = {
--	.submit_bio_hook = btrfs_submit_bio_hook
-+	.submit_bio_hook = NULL
+-	/* mandatory callbacks */
+-	.submit_bio_hook = btrfs_submit_bio_hook,
+-	.readpage_end_io_hook = NULL
++	.submit_bio_hook = btrfs_submit_bio_hook
  };
  
  /*

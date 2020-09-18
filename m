@@ -7,38 +7,38 @@ X-Spam-Status: No, score=-12.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 03EC9C43463
-	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Sep 2020 09:16:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C0017C43466
+	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Sep 2020 09:16:03 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id AD61421D42
+	by mail.kernel.org (Postfix) with ESMTP id 64D202083B
 	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Sep 2020 09:16:03 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="key not found in DNS" (0-bit key) header.d=suse.com header.i=@suse.com header.b="QnO4zliG"
+	dkim=fail reason="key not found in DNS" (0-bit key) header.d=suse.com header.i=@suse.com header.b="EN0bPb3U"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726477AbgIRJP7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S1726539AbgIRJP7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Fri, 18 Sep 2020 05:15:59 -0400
-Received: from mx2.suse.de ([195.135.220.15]:52140 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:52186 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726426AbgIRJP4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1726460AbgIRJP4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Fri, 18 Sep 2020 05:15:56 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1600420554;
+        t=1600420555;
         h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
          to:to:cc:cc:in-reply-to:in-reply-to:references:references;
-        bh=p26KxgAozUJ4aNI1BBG7rBkmuXxqTPOnvo64za1y54o=;
-        b=QnO4zliGXcZ6b1Z9iGE4MNLtVNXP8sUNFtl2zVgRfflKrS9PUZskrpe+8tgMTpjrDZY7iy
-        nQUb+uQufUziQfM0R5iMxU4WB/DTGDHnPWCr4aRpc3/YKVJpLtTvGMqS2BONvW3CHooZhu
-        9bq/MaqtjgSs8Jc4ak5kiypWoXAovVo=
+        bh=9h5XQL5+aCRI3lgHHDvdJDDca1XOMoD15NTF8F+CaBc=;
+        b=EN0bPb3U4v6Kq42UMkOK79kn8pSf8eFseli22N8frtyD4mntZvyNSEaW76tVu/B8PKJr9g
+        XD4Kr9NYxIPfaWCVeXYTfUKLxicYLpMpWhN0tQi9bcuu/ZrPiFLuYSfZKiPf073AiiJKyq
+        ZSI8APneNRJIeaQ8rGv2dGWXf0cfiPk=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id D669FACBF;
-        Fri, 18 Sep 2020 09:16:28 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 959CEAD6B;
+        Fri, 18 Sep 2020 09:16:29 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 1/5] btrfs: Clean BTRFS_I usage in btrfs_destroy_inode
-Date:   Fri, 18 Sep 2020 12:15:49 +0300
-Message-Id: <20200918091553.29584-2-nborisov@suse.com>
+Subject: [PATCH 4/5] btrfs: Remove inode argument from add_pending_csums
+Date:   Fri, 18 Sep 2020 12:15:52 +0300
+Message-Id: <20200918091553.29584-5-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20200918091553.29584-1-nborisov@suse.com>
 References: <20200918091553.29584-1-nborisov@suse.com>
@@ -46,82 +46,50 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+It's used to reference the csum root which can be done from the trans
+handle as well. Simplify the signature and while at it also remove the
+noinline attribute as the function uses only at most 16 bytes of stack
+space.
+
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/inode.c | 40 ++++++++++++++++++++--------------------
- 1 file changed, 20 insertions(+), 20 deletions(-)
+ fs/btrfs/inode.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 55f3b5dd06f3..6054a80a07bc 100644
+index 7554d7049195..3e203d84d86d 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -8642,21 +8642,22 @@ void btrfs_free_inode(struct inode *inode)
- 	kmem_cache_free(btrfs_inode_cachep, BTRFS_I(inode));
- }
- 
--void btrfs_destroy_inode(struct inode *inode)
-+void btrfs_destroy_inode(struct inode *vfs_inode)
+@@ -2231,16 +2231,16 @@ static blk_status_t btrfs_submit_bio_hook(struct inode *inode, struct bio *bio,
+  * given a list of ordered sums record them in the inode.  This happens
+  * at IO completion time based on sums calculated at bio submission time.
+  */
+-static noinline int add_pending_csums(struct btrfs_trans_handle *trans,
+-			     struct inode *inode, struct list_head *list)
++static int add_pending_csums(struct btrfs_trans_handle *trans,
++			     struct list_head *list)
  {
--	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
- 	struct btrfs_ordered_extent *ordered;
--	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	struct btrfs_inode *inode = BTRFS_I(vfs_inode);
-+	struct btrfs_root *root = inode->root;
-+	struct btrfs_fs_info *fs_info = root->fs_info;
+ 	struct btrfs_ordered_sum *sum;
+ 	int ret;
  
--	WARN_ON(!hlist_empty(&inode->i_dentry));
--	WARN_ON(inode->i_data.nrpages);
--	WARN_ON(BTRFS_I(inode)->block_rsv.reserved);
--	WARN_ON(BTRFS_I(inode)->block_rsv.size);
--	WARN_ON(BTRFS_I(inode)->outstanding_extents);
--	WARN_ON(BTRFS_I(inode)->delalloc_bytes);
--	WARN_ON(BTRFS_I(inode)->new_delalloc_bytes);
--	WARN_ON(BTRFS_I(inode)->csum_bytes);
--	WARN_ON(BTRFS_I(inode)->defrag_bytes);
-+	WARN_ON(!hlist_empty(&vfs_inode->i_dentry));
-+	WARN_ON(vfs_inode->i_data.nrpages);
-+	WARN_ON(inode->block_rsv.reserved);
-+	WARN_ON(inode->block_rsv.size);
-+	WARN_ON(inode->outstanding_extents);
-+	WARN_ON(inode->delalloc_bytes);
-+	WARN_ON(inode->new_delalloc_bytes);
-+	WARN_ON(inode->csum_bytes);
-+	WARN_ON(inode->defrag_bytes);
- 
- 	/*
- 	 * This can happen where we create an inode, but somebody else also
-@@ -8667,24 +8668,23 @@ void btrfs_destroy_inode(struct inode *inode)
- 		return;
- 
- 	while (1) {
--		ordered = btrfs_lookup_first_ordered_extent(BTRFS_I(inode),
--							    (u64)-1);
-+		ordered = btrfs_lookup_first_ordered_extent(inode, (u64)-1);
- 		if (!ordered)
- 			break;
- 		else {
- 			btrfs_err(fs_info,
- 				  "found ordered extent %llu %llu on inode cleanup",
- 				  ordered->file_offset, ordered->num_bytes);
--			btrfs_remove_ordered_extent(inode, ordered);
-+			btrfs_remove_ordered_extent(vfs_inode, ordered);
- 			btrfs_put_ordered_extent(ordered);
- 			btrfs_put_ordered_extent(ordered);
- 		}
+ 	list_for_each_entry(sum, list, list) {
+ 		trans->adding_csums = true;
+-		ret = btrfs_csum_file_blocks(trans,
+-		       BTRFS_I(inode)->root->fs_info->csum_root, sum);
++		ret = btrfs_csum_file_blocks(trans, trans->fs_info->csum_root,
++					     sum);
+ 		trans->adding_csums = false;
+ 		if (ret)
+ 			return ret;
+@@ -2668,7 +2668,7 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
+ 		goto out;
  	}
--	btrfs_qgroup_check_reserved_leak(BTRFS_I(inode));
--	inode_tree_del(BTRFS_I(inode));
--	btrfs_drop_extent_cache(BTRFS_I(inode), 0, (u64)-1, 0);
--	btrfs_inode_clear_file_extent_range(BTRFS_I(inode), 0, (u64)-1);
--	btrfs_put_root(BTRFS_I(inode)->root);
-+	btrfs_qgroup_check_reserved_leak(inode);
-+	inode_tree_del(inode);
-+	btrfs_drop_extent_cache(inode, 0, (u64)-1, 0);
-+	btrfs_inode_clear_file_extent_range(inode, 0, (u64)-1);
-+	btrfs_put_root(inode->root);
- }
  
- int btrfs_drop_inode(struct inode *inode)
+-	ret = add_pending_csums(trans, inode, &ordered_extent->list);
++	ret = add_pending_csums(trans, &ordered_extent->list);
+ 	if (ret) {
+ 		btrfs_abort_transaction(trans, ret);
+ 		goto out;
 -- 
 2.17.1
 

@@ -2,200 +2,171 @@ Return-Path: <SRS0=R6Ud=C3=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-14.3 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,NICE_REPLY_A,SIGNED_OFF_BY,SPF_HELO_NONE,
-	SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-16.1 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 267D7C43464
-	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Sep 2020 00:15:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 70A47C43466
+	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Sep 2020 02:07:51 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D6E792075B
-	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Sep 2020 00:15:30 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="O9YrmXG1"
+	by mail.kernel.org (Postfix) with ESMTP id 3D6B5238E3
+	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Sep 2020 02:07:51 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1600394871;
+	bh=Ys4BXVQKu1BJf2pHka02imQW3nBiwA2HiB/Nyx5Sucg=;
+	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
+	b=x41hDlM2pSqdMMPi3x2x6qw4co66Y+vxc7qqcKAoT1chbA5o8At2xmK3Jutd9/tN9
+	 y5VkwFLtyhtWAyZzHk1fmlreBQZuBZcCIWdejn2wFXzv0AiJYez9pRU0HYpOTgnOR0
+	 Irh8z9p3QzmMfsyMkBfO5lk8G0LTz9eCGWH5jtGA=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726064AbgIRAPa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 17 Sep 2020 20:15:30 -0400
-Received: from userp2130.oracle.com ([156.151.31.86]:58676 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725987AbgIRAPa (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 17 Sep 2020 20:15:30 -0400
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 08I0EFN4105658;
-        Fri, 18 Sep 2020 00:15:29 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
- references : from : message-id : date : mime-version : in-reply-to :
- content-type : content-transfer-encoding; s=corp-2020-01-29;
- bh=Z/FSSNcJ9ts3DS/BWgrDEeObN+AoWCUbFAYk/ATBzWM=;
- b=O9YrmXG1te6AZBY6AXouPAJbuA7uWeeaUX6pZbicJjKhGat9GzUhUbjTNNzzlIKf30H5
- A46KN6pYI78hGbGBgSo7bHvBWX1ps+hx8e4Lwk9Bmduxe2MC40sywhzcNzyX6jRE68Vo
- Pw+EERyqWUi2UTkdyA3/glFB0Q9S53vyB8kB+ZQW9nhnTfFDyv7fFFFeL6mVS7UbcLwC
- e96CMtzMChxiT4M9qRL1R9b1UcR5iOU8ilE2Uh5jTXWosz04tskc7FJgSzBDhN1KQ/LW
- pDygSDs3slVMjCjSshBDtzADbgKtHfPWwuzWmidNIDmm+BFAWoN76EU7GXvpvvdVCqY9 ZQ== 
-Received: from aserp3030.oracle.com (aserp3030.oracle.com [141.146.126.71])
-        by userp2130.oracle.com with ESMTP id 33gnrrcctm-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
-        Fri, 18 Sep 2020 00:15:29 +0000
-Received: from pps.filterd (aserp3030.oracle.com [127.0.0.1])
-        by aserp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 08I0A6nv104616;
-        Fri, 18 Sep 2020 00:15:28 GMT
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by aserp3030.oracle.com with ESMTP id 33khpnur3k-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Fri, 18 Sep 2020 00:15:28 +0000
-Received: from abhmp0013.oracle.com (abhmp0013.oracle.com [141.146.116.19])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 08I0FRvF028261;
-        Fri, 18 Sep 2020 00:15:27 GMT
-Received: from [10.191.36.170] (/10.191.36.170)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Fri, 18 Sep 2020 00:15:26 +0000
-Subject: Re: [PATCH] btrfs: remove stale test for alien devices
-To:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-        linux-btrfs@vger.kernel.org, fstests@vger.kernel.org
-References: <20200917141353.28566-1-johannes.thumshirn@wdc.com>
-From:   Anand Jain <anand.jain@oracle.com>
-Message-ID: <f4606506-78a1-4771-96cd-6bc28e6a7074@oracle.com>
-Date:   Fri, 18 Sep 2020 08:15:24 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.2.2
+        id S1728001AbgIRCHu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 17 Sep 2020 22:07:50 -0400
+Received: from mail.kernel.org ([198.145.29.99]:58444 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727994AbgIRCHs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 17 Sep 2020 22:07:48 -0400
+Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 35B3B23770;
+        Fri, 18 Sep 2020 02:07:47 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1600394868;
+        bh=Ys4BXVQKu1BJf2pHka02imQW3nBiwA2HiB/Nyx5Sucg=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+        b=WBdqbFc1Ru9cGu1dijvY+bbvSiavp8g4isAcft4O0qViO5BilFkrVwIaOadQSfcpq
+         fde6Ri6cFjBiFBtdg/xkw9TR9NXCh9AlNPPL36onpeb0qCDGDvMurzbf35DGkJ29To
+         KiX2E0WUbC9+rSkprP8ELGq3oiCyuKWVOA5HjBaE=
+From:   Sasha Levin <sashal@kernel.org>
+To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
+Cc:     Qu Wenruo <wqu@suse.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>,
+        Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
+Subject: [PATCH AUTOSEL 5.4 320/330] btrfs: qgroup: fix data leak caused by race between writeback and truncate
+Date:   Thu, 17 Sep 2020 22:01:00 -0400
+Message-Id: <20200918020110.2063155-320-sashal@kernel.org>
+X-Mailer: git-send-email 2.25.1
+In-Reply-To: <20200918020110.2063155-1-sashal@kernel.org>
+References: <20200918020110.2063155-1-sashal@kernel.org>
 MIME-Version: 1.0
-In-Reply-To: <20200917141353.28566-1-johannes.thumshirn@wdc.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9747 signatures=668679
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 malwarescore=0 suspectscore=2
- mlxlogscore=999 phishscore=0 mlxscore=0 adultscore=0 spamscore=0
- bulkscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2006250000 definitions=main-2009170182
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9747 signatures=668679
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 phishscore=0 spamscore=0
- lowpriorityscore=0 malwarescore=0 mlxscore=0 bulkscore=0 suspectscore=2
- clxscore=1015 mlxlogscore=999 adultscore=0 priorityscore=1501
- impostorscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2006250000 definitions=main-2009180000
+X-stable: review
+X-Patchwork-Hint: Ignore
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+From: Qu Wenruo <wqu@suse.com>
 
-The fix is not too far. It got stuck whether to use EUCLEAN or not.
-Its better to fix the fix rather than killing the messenger in this case.
+[ Upstream commit fa91e4aa1716004ea8096d5185ec0451e206aea0 ]
 
+[BUG]
+When running tests like generic/013 on test device with btrfs quota
+enabled, it can normally lead to data leak, detected at unmount time:
 
+  BTRFS warning (device dm-3): qgroup 0/5 has unreleased space, type 0 rsv 4096
+  ------------[ cut here ]------------
+  WARNING: CPU: 11 PID: 16386 at fs/btrfs/disk-io.c:4142 close_ctree+0x1dc/0x323 [btrfs]
+  RIP: 0010:close_ctree+0x1dc/0x323 [btrfs]
+  Call Trace:
+   btrfs_put_super+0x15/0x17 [btrfs]
+   generic_shutdown_super+0x72/0x110
+   kill_anon_super+0x18/0x30
+   btrfs_kill_super+0x17/0x30 [btrfs]
+   deactivate_locked_super+0x3b/0xa0
+   deactivate_super+0x40/0x50
+   cleanup_mnt+0x135/0x190
+   __cleanup_mnt+0x12/0x20
+   task_work_run+0x64/0xb0
+   __prepare_exit_to_usermode+0x1bc/0x1c0
+   __syscall_return_slowpath+0x47/0x230
+   do_syscall_64+0x64/0xb0
+   entry_SYSCALL_64_after_hwframe+0x44/0xa9
+  ---[ end trace caf08beafeca2392 ]---
+  BTRFS error (device dm-3): qgroup reserved space leaked
 
-Thanks, Anand
+[CAUSE]
+In the offending case, the offending operations are:
+2/6: writev f2X[269 1 0 0 0 0] [1006997,67,288] 0
+2/7: truncate f2X[269 1 0 0 48 1026293] 18388 0
 
-On 17/9/20 10:13 pm, Johannes Thumshirn wrote:
-> btrfs/198 is supposed to be a test for the patch
-> "btrfs: remove identified alien device in open_fs_devices" but this patch
-> was never merged in btrfs.
-> 
-> Remove the test from fstests as it is constantly failing.
-> 
-> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-> ---
->   tests/btrfs/198   | 77 -----------------------------------------------
->   tests/btrfs/group |  1 -
->   2 files changed, 78 deletions(-)
->   delete mode 100755 tests/btrfs/198
-> 
-> diff --git a/tests/btrfs/198 b/tests/btrfs/198
-> deleted file mode 100755
-> index 2df075e27134..000000000000
-> --- a/tests/btrfs/198
-> +++ /dev/null
-> @@ -1,77 +0,0 @@
-> -#! /bin/bash
-> -# SPDX-License-Identifier: GPL-2.0
-> -# Copyright (c) 2019 Oracle.  All Rights Reserved.
-> -#
-> -# FS QA Test 198
-> -#
-> -# Test stale and alien non-btrfs device in the fs devices list.
-> -#  Bug fixed in:
-> -#    btrfs: remove identified alien device in open_fs_devices
-> -#
-> -seq=`basename $0`
-> -seqres=$RESULT_DIR/$seq
-> -echo "QA output created by $seq"
-> -
-> -here=`pwd`
-> -tmp=/tmp/$$
-> -status=1	# failure is the default!
-> -trap "_cleanup; exit \$status" 0 1 2 3 15
-> -
-> -_cleanup()
-> -{
-> -	cd /
-> -	rm -f $tmp.*
-> -}
-> -
-> -# get standard environment, filters and checks
-> -. ./common/rc
-> -. ./common/filter
-> -. ./common/filter.btrfs
-> -
-> -# remove previous $seqres.full before test
-> -rm -f $seqres.full
-> -
-> -# real QA test starts here
-> -_supported_fs btrfs
-> -_supported_os Linux
-> -_require_command "$WIPEFS_PROG" wipefs
-> -_require_scratch
-> -_require_scratch_dev_pool 4
-> -
-> -workout()
-> -{
-> -	raid=$1
-> -	device_nr=$2
-> -
-> -	echo $raid
-> -	_scratch_dev_pool_get $device_nr
-> -
-> -	_scratch_pool_mkfs "-d$raid -m$raid" >> $seqres.full 2>&1 || \
-> -							_fail "mkfs failed"
-> -
-> -	# Make device_1 a free btrfs device for the raid created above by
-> -	# clearing its superblock
-> -
-> -	# don't test with the first device as auto fs check (_check_scratch_fs)
-> -	# picks the first device
-> -	device_1=$(echo $SCRATCH_DEV_POOL | awk '{print $2}')
-> -	$WIPEFS_PROG -a $device_1 >> $seqres.full 2>&1
-> -
-> -	device_2=$(echo $SCRATCH_DEV_POOL | awk '{print $1}')
-> -	_mount -o degraded $device_2 $SCRATCH_MNT
-> -	# Check if missing device is reported as in the 196.out
-> -	$BTRFS_UTIL_PROG filesystem show -m $SCRATCH_MNT | \
-> -						_filter_btrfs_filesystem_show
-> -
-> -	_scratch_unmount
-> -	_scratch_dev_pool_put
-> -}
-> -
-> -workout "raid1" "2"
-> -workout "raid5" "3"
-> -workout "raid6" "4"
-> -workout "raid10" "4"
-> -
-> -# success, all done
-> -status=0
-> -exit
-> diff --git a/tests/btrfs/group b/tests/btrfs/group
-> index 1b5fa695a9f7..d5330cd85cd5 100644
-> --- a/tests/btrfs/group
-> +++ b/tests/btrfs/group
-> @@ -199,7 +199,6 @@
->   195 auto volume balance
->   196 auto metadata log volume
->   197 auto quick volume
-> -198 auto quick volume
->   199 auto quick trim
->   200 auto quick send clone
->   201 auto quick punch log
-> 
+The following sequence of events could happen after the writev():
+	CPU1 (writeback)		|		CPU2 (truncate)
+-----------------------------------------------------------------
+btrfs_writepages()			|
+|- extent_write_cache_pages()		|
+   |- Got page for 1003520		|
+   |  1003520 is Dirty, no writeback	|
+   |  So (!clear_page_dirty_for_io())   |
+   |  gets called for it		|
+   |- Now page 1003520 is Clean.	|
+   |					| btrfs_setattr()
+   |					| |- btrfs_setsize()
+   |					|    |- truncate_setsize()
+   |					|       New i_size is 18388
+   |- __extent_writepage()		|
+   |  |- page_offset() > i_size		|
+      |- btrfs_invalidatepage()		|
+	 |- Page is clean, so no qgroup |
+	    callback executed
+
+This means, the qgroup reserved data space is not properly released in
+btrfs_invalidatepage() as the page is Clean.
+
+[FIX]
+Instead of checking the dirty bit of a page, call
+btrfs_qgroup_free_data() unconditionally in btrfs_invalidatepage().
+
+As qgroup rsv are completely bound to the QGROUP_RESERVED bit of
+io_tree, not bound to page status, thus we won't cause double freeing
+anyway.
+
+Fixes: 0b34c261e235 ("btrfs: qgroup: Prevent qgroup->reserved from going subzero")
+CC: stable@vger.kernel.org # 4.14+
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ fs/btrfs/inode.c | 23 ++++++++++-------------
+ 1 file changed, 10 insertions(+), 13 deletions(-)
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index e9787b7b943a2..182e93a5b11d5 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -9044,20 +9044,17 @@ again:
+ 	/*
+ 	 * Qgroup reserved space handler
+ 	 * Page here will be either
+-	 * 1) Already written to disk
+-	 *    In this case, its reserved space is released from data rsv map
+-	 *    and will be freed by delayed_ref handler finally.
+-	 *    So even we call qgroup_free_data(), it won't decrease reserved
+-	 *    space.
+-	 * 2) Not written to disk
+-	 *    This means the reserved space should be freed here. However,
+-	 *    if a truncate invalidates the page (by clearing PageDirty)
+-	 *    and the page is accounted for while allocating extent
+-	 *    in btrfs_check_data_free_space() we let delayed_ref to
+-	 *    free the entire extent.
++	 * 1) Already written to disk or ordered extent already submitted
++	 *    Then its QGROUP_RESERVED bit in io_tree is already cleaned.
++	 *    Qgroup will be handled by its qgroup_record then.
++	 *    btrfs_qgroup_free_data() call will do nothing here.
++	 *
++	 * 2) Not written to disk yet
++	 *    Then btrfs_qgroup_free_data() call will clear the QGROUP_RESERVED
++	 *    bit of its io_tree, and free the qgroup reserved data space.
++	 *    Since the IO will never happen for this page.
+ 	 */
+-	if (PageDirty(page))
+-		btrfs_qgroup_free_data(inode, NULL, page_start, PAGE_SIZE);
++	btrfs_qgroup_free_data(inode, NULL, page_start, PAGE_SIZE);
+ 	if (!inode_evicting) {
+ 		clear_extent_bit(tree, page_start, page_end, EXTENT_LOCKED |
+ 				 EXTENT_DELALLOC | EXTENT_DELALLOC_NEW |
+-- 
+2.25.1
+

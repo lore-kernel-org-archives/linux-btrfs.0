@@ -2,69 +2,70 @@ Return-Path: <SRS0=y50c=C6=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-11.2 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.7 required=3.0 tests=BAYES_00,FROM_LOCAL_HEX,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E163EC4363C
-	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Sep 2020 20:30:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 117D2C41604
+	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Sep 2020 20:33:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id ADE12218AC
-	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Sep 2020 20:30:26 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CD0CC21BE5
+	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Sep 2020 20:33:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726455AbgIUUaZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 21 Sep 2020 16:30:25 -0400
-Received: from mx2.suse.de ([195.135.220.15]:39292 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726427AbgIUUaZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 21 Sep 2020 16:30:25 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id EC11CACD8;
-        Mon, 21 Sep 2020 20:31:00 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id B863EDA6E0; Mon, 21 Sep 2020 22:29:09 +0200 (CEST)
-Date:   Mon, 21 Sep 2020 22:29:09 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Nikolay Borisov <nborisov@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 4/7] btrfs: Don't opencode is_data_inode in
- end_bio_extent_readpage
-Message-ID: <20200921202909.GU6756@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20200918133439.23187-1-nborisov@suse.com>
- <20200918133439.23187-5-nborisov@suse.com>
+        id S1726590AbgIUUdL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 21 Sep 2020 16:33:11 -0400
+Received: from mail-il1-f200.google.com ([209.85.166.200]:47754 "EHLO
+        mail-il1-f200.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726442AbgIUUdK (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 21 Sep 2020 16:33:10 -0400
+Received: by mail-il1-f200.google.com with SMTP id p10so9107019ilp.14
+        for <linux-btrfs@vger.kernel.org>; Mon, 21 Sep 2020 13:33:10 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:date:in-reply-to:message-id:subject
+         :from:to;
+        bh=aBPEBUwwc1w0Cg/04GJCTG9lEmPYRUQwQksAFvdmTL8=;
+        b=WMc3Fx+ICXhemGJ13TkP7i/9PP+hydTo+fsIS4zRjchBNUEFMNipqriOjuY1MtNO6L
+         YSbV5+I/rD86J+Up2YweulvHzSA7O3MKF8GciZxkKwPuNAVVAV9SA+isnzoSNe8r+lgN
+         JApHYMSAYViRPvFOGJGVF5QzyIictt/4sfy+9quc0U59HExo70XEhPzCisLEPNJaxq2v
+         a5Pzvc1PEuJLs0BO4j3I1DXG7i6YBRttIuEy4gZDsEiLtoHJ1fxCGxGIQY5oOFMg7ALC
+         SZOJ7aDunlsfxvnL7FtlVRBe1Gbfo5WoJkeSFt22/hJaIWHE5gIoUP2iMdSdJUDnJS9q
+         LofA==
+X-Gm-Message-State: AOAM532J57MTl2sAS+SpkVtt6/TWTVuEkttZIAJucjsEXKbWvbp2Qcn4
+        2sFbEMX5Ywh7b81CrxLrf0iUf4VWsOuQHj3tV0ElOW4GUo4c
+X-Google-Smtp-Source: ABdhPJxAHHhGt8MIcxnImqlS8iOvTg6NNJZCJaGoO7lTAyYbtLszF4Oh4nZpmJIQn9uLM4w7nqwOBzi5iC8i+dCSfoIcmEkSst2+
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20200918133439.23187-5-nborisov@suse.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-Received: by 2002:a92:4101:: with SMTP id o1mr1537117ila.296.1600720390009;
+ Mon, 21 Sep 2020 13:33:10 -0700 (PDT)
+Date:   Mon, 21 Sep 2020 13:33:10 -0700
+In-Reply-To: <SN4PR0401MB359806224B7D96A1CAB927A39B3A0@SN4PR0401MB3598.namprd04.prod.outlook.com>
+X-Google-Appengine-App-Id: s~syzkaller
+X-Google-Appengine-App-Id-Alias: syzkaller
+Message-ID: <0000000000003b39cd05afd8c21b@google.com>
+Subject: Re: KASAN: stack-out-of-bounds Write in read_extent_buffer
+From:   syzbot <syzbot+1d393803acac53c985a0@syzkaller.appspotmail.com>
+To:     Johannes.Thumshirn@wdc.com, clm@fb.com, dsterba@suse.com,
+        josef@toxicpanda.com, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Sep 18, 2020 at 04:34:36PM +0300, Nikolay Borisov wrote:
-> Use the is_data_inode helper.
-> 
-> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-> ---
->  fs/btrfs/extent_io.c | 3 +--
->  1 file changed, 1 insertion(+), 2 deletions(-)
-> 
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index 6e976bd86600..26b002e2f3b3 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -2816,8 +2816,7 @@ static void end_bio_extent_readpage(struct bio *bio)
->  		struct page *page = bvec->bv_page;
->  		struct inode *inode = page->mapping->host;
->  		struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
-> -		bool data_inode = btrfs_ino(BTRFS_I(inode))
-> -			!= BTRFS_BTREE_INODE_OBJECTID;
-> +		bool data_inode = is_data_inode(inode);
+Hello,
 
-I think you can remove the temporary variable and call is_data_inode
-directly in the later code, there's only one use.
+syzbot has tested the proposed patch and the reproducer did not trigger any issue:
+
+Reported-and-tested-by: syzbot+1d393803acac53c985a0@syzkaller.appspotmail.com
+
+Tested on:
+
+commit:         d1db82c9 btrfs: move btrfs_rm_dev_replace_free_srcdev outs..
+git tree:       git://github.com/kdave/btrfs-devel.git misc-5.9
+kernel config:  https://syzkaller.appspot.com/x/.config?x=7885f44dc5918569
+dashboard link: https://syzkaller.appspot.com/bug?extid=1d393803acac53c985a0
+compiler:       gcc (GCC) 10.1.0-syz 20200507
+
+Note: testing is done by a robot and is best-effort only.

@@ -2,74 +2,104 @@ Return-Path: <SRS0=y50c=C6=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-11.8 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
+X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A3937C43466
-	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Sep 2020 14:44:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5BEDDC43468
+	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Sep 2020 14:44:11 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 7AA4D2076E
-	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Sep 2020 14:44:10 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1FB0B23718
+	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Sep 2020 14:44:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728276AbgIUOoG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 21 Sep 2020 10:44:06 -0400
-Received: from mx2.suse.de ([195.135.220.15]:55192 "EHLO mx2.suse.de"
+        id S1728283AbgIUOoK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 21 Sep 2020 10:44:10 -0400
+Received: from mx2.suse.de ([195.135.220.15]:55288 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728009AbgIUOoG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 21 Sep 2020 10:44:06 -0400
+        id S1727978AbgIUOoJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 21 Sep 2020 10:44:09 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 6268FAD5F;
-        Mon, 21 Sep 2020 14:44:40 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id EC4B4AC4C;
+        Mon, 21 Sep 2020 14:44:43 +0000 (UTC)
 From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
 To:     linux-fsdevel@vger.kernel.org
 Cc:     linux-btrfs@vger.kernel.org, david@fromorbit.com, hch@lst.de,
         johannes.thumshirn@wdc.com, dsterba@suse.com,
-        darrick.wong@oracle.com, josef@toxicpanda.com
-Subject: [PATCH 0/15 v2] BTRFS DIO inode locking/D_SYNC fix
-Date:   Mon, 21 Sep 2020 09:43:38 -0500
-Message-Id: <20200921144353.31319-1-rgoldwyn@suse.de>
+        darrick.wong@oracle.com, josef@toxicpanda.com,
+        Goldwyn Rodrigues <rgoldwyn@suse.com>,
+        Nikolay Borisov <nborisov@suse.com>,
+        Johannes Thumshirn <jthumshirn@suse.de>
+Subject: [PATCH 01/15] fs: remove dio_end_io()
+Date:   Mon, 21 Sep 2020 09:43:39 -0500
+Message-Id: <20200921144353.31319-2-rgoldwyn@suse.de>
 X-Mailer: git-send-email 2.26.2
+In-Reply-To: <20200921144353.31319-1-rgoldwyn@suse.de>
+References: <20200921144353.31319-1-rgoldwyn@suse.de>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-I have merged two series here:
-(1) Using inode_lock_shared for <EOF DIO writes
-(2) Fix O_DSYNC | O_DIRECT
+From: Goldwyn Rodrigues <rgoldwyn@suse.com>
 
-Both require inode locking to be pushed closer to I/O calls and thought
-was relevant. (2) requires changes in iomap code. If there is a need to 
-separate the two please let me know. I don't have any ulterior motives
-here ;)
+Since we removed the last user of dio_end_io(), remove the helper
+function dio_end_io().
 
-Testing: xfstests on both btrfs and xfs
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
+Reviewed-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
+---
+ fs/direct-io.c     | 19 -------------------
+ include/linux/fs.h |  2 --
+ 2 files changed, 21 deletions(-)
 
-Git: https://github.com/goldwynr/linux/tree/btrfs-inode-lock
-
-Changes since v1:
-
- - Changed fix for deadlock due to O_DSYNC (iomap patches added)
- - btrfs_inode_lock() shifted to inode.c
- - Reinstated lockdep_assert_held() in iomap_dio_rw()
-
+diff --git a/fs/direct-io.c b/fs/direct-io.c
+index 183299892465..abf535b036ab 100644
+--- a/fs/direct-io.c
++++ b/fs/direct-io.c
+@@ -386,25 +386,6 @@ static void dio_bio_end_io(struct bio *bio)
+ 	spin_unlock_irqrestore(&dio->bio_lock, flags);
+ }
+ 
+-/**
+- * dio_end_io - handle the end io action for the given bio
+- * @bio: The direct io bio thats being completed
+- *
+- * This is meant to be called by any filesystem that uses their own dio_submit_t
+- * so that the DIO specific endio actions are dealt with after the filesystem
+- * has done it's completion work.
+- */
+-void dio_end_io(struct bio *bio)
+-{
+-	struct dio *dio = bio->bi_private;
+-
+-	if (dio->is_async)
+-		dio_bio_end_aio(bio);
+-	else
+-		dio_bio_end_io(bio);
+-}
+-EXPORT_SYMBOL_GPL(dio_end_io);
+-
+ static inline void
+ dio_bio_alloc(struct dio *dio, struct dio_submit *sdio,
+ 	      struct block_device *bdev,
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 7519ae003a08..8e2842a9c0b3 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -3079,8 +3079,6 @@ enum {
+ 	DIO_SKIP_HOLES	= 0x02,
+ };
+ 
+-void dio_end_io(struct bio *bio);
+-
+ ssize_t __blockdev_direct_IO(struct kiocb *iocb, struct inode *inode,
+ 			     struct block_device *bdev, struct iov_iter *iter,
+ 			     get_block_t get_block,
 -- 
-Goldwyn
-
- fs/btrfs/btrfs_inode.h |   28 --
- fs/btrfs/ctree.h       |   13 +
- fs/btrfs/file.c        |  497 +++++++++++++++++++++++++++----------------------
- fs/btrfs/inode.c       |  176 +++--------------
- fs/btrfs/transaction.h |    1
- fs/direct-io.c         |   19 -
- fs/iomap/direct-io.c   |   38 ++-
- include/linux/fs.h     |    2
- include/linux/iomap.h  |    5
- 9 files changed, 355 insertions(+), 424 deletions(-)
-
-
+2.26.2
 

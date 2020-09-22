@@ -2,72 +2,55 @@ Return-Path: <SRS0=RqtL=C7=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.2 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.2 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,
+	SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BDBD7C2D0E2
-	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Sep 2020 13:21:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 51E16C2D0E2
+	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Sep 2020 13:22:14 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 5C85920888
-	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Sep 2020 13:21:31 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0DD63239E5
+	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Sep 2020 13:22:13 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726629AbgIVNVa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 22 Sep 2020 09:21:30 -0400
-Received: from verein.lst.de ([213.95.11.211]:44578 "EHLO verein.lst.de"
+        id S1726603AbgIVNWN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 22 Sep 2020 09:22:13 -0400
+Received: from verein.lst.de ([213.95.11.211]:44587 "EHLO verein.lst.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726470AbgIVNVa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 Sep 2020 09:21:30 -0400
+        id S1726470AbgIVNWN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 22 Sep 2020 09:22:13 -0400
 Received: by verein.lst.de (Postfix, from userid 2407)
-        id CC5A667373; Tue, 22 Sep 2020 15:21:26 +0200 (CEST)
-Date:   Tue, 22 Sep 2020 15:21:26 +0200
+        id 1792867373; Tue, 22 Sep 2020 15:22:11 +0200 (CEST)
+Date:   Tue, 22 Sep 2020 15:22:10 +0200
 From:   Christoph Hellwig <hch@lst.de>
 To:     Goldwyn Rodrigues <rgoldwyn@suse.de>
 Cc:     linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
         david@fromorbit.com, hch@lst.de, johannes.thumshirn@wdc.com,
         dsterba@suse.com, darrick.wong@oracle.com, josef@toxicpanda.com,
         Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: Re: [PATCH 04/15] iomap: Call inode_dio_end() before
- generic_write_sync()
-Message-ID: <20200922132126.GC20432@lst.de>
-References: <20200921144353.31319-1-rgoldwyn@suse.de> <20200921144353.31319-5-rgoldwyn@suse.de>
+Subject: Re: [PATCH 05/15] btrfs: split btrfs_direct_IO to read and write
+Message-ID: <20200922132210.GD20432@lst.de>
+References: <20200921144353.31319-1-rgoldwyn@suse.de> <20200921144353.31319-6-rgoldwyn@suse.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20200921144353.31319-5-rgoldwyn@suse.de>
+In-Reply-To: <20200921144353.31319-6-rgoldwyn@suse.de>
 User-Agent: Mutt/1.5.17 (2007-11-01)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Sep 21, 2020 at 09:43:42AM -0500, Goldwyn Rodrigues wrote:
+On Mon, Sep 21, 2020 at 09:43:43AM -0500, Goldwyn Rodrigues wrote:
 > From: Goldwyn Rodrigues <rgoldwyn@suse.com>
 > 
-> iomap complete routine can deadlock with btrfs_fallocate because of the
-> call to generic_write_sync().
+> The read and write DIO don't have anything in common except for the
+> call to iomap_dio_rw. Extract the write call into a new function to get
+> rid of conditional statements for direct write.
 > 
-> P0                      P1
-> inode_lock()            fallocate(FALLOC_FL_ZERO_RANGE)
-> __iomap_dio_rw()        inode_lock()
->                         <block>
-> <submits IO>
-> <completes IO>
-> inode_unlock()
->                         <gets inode_lock()>
->                         inode_dio_wait()
-> iomap_dio_complete()
->   generic_write_sync()
->     btrfs_file_fsync()
->       inode_lock()
->       <deadlock>
+> Originally proposed by Christoph Hellwig <hch@lst.de>
 > 
-> inode_dio_end() is used to notify the end of DIO data in order
-> to synchronize with truncate. Call inode_dio_end() before calling
-> generic_write_sync(), so filesystems can lock i_rwsem during a sync.
+> Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
 
-Looks good:
+Looks good,
 
 Reviewed-by: Christoph Hellwig <hch@lst.de>
-
-You might want to mention in the commit log that this matches the
-sequence in the old fs/direct-io.c implementation.

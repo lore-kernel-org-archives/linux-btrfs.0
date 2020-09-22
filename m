@@ -2,66 +2,104 @@ Return-Path: <SRS0=RqtL=C7=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 036C7C4727E
-	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Sep 2020 12:38:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 74FC8C2D0E2
+	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Sep 2020 13:08:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id B51242396D
-	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Sep 2020 12:38:53 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 383792396D
+	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Sep 2020 13:08:06 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="GNuK1guf"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726629AbgIVMiu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 22 Sep 2020 08:38:50 -0400
-Received: from szxga04-in.huawei.com ([45.249.212.190]:13825 "EHLO huawei.com"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726505AbgIVMiu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 Sep 2020 08:38:50 -0400
-Received: from DGGEMS406-HUB.china.huawei.com (unknown [172.30.72.59])
-        by Forcepoint Email with ESMTP id E6F361EEE767D0F7BEFD;
-        Tue, 22 Sep 2020 20:38:46 +0800 (CST)
-Received: from localhost.localdomain (10.67.165.24) by
- DGGEMS406-HUB.china.huawei.com (10.3.19.206) with Microsoft SMTP Server id
- 14.3.487.0; Tue, 22 Sep 2020 20:38:40 +0800
-From:   Xiaofei Tan <tanxiaofei@huawei.com>
-To:     <clm@fb.com>, <josef@toxicpanda.com>, <dsterba@suse.com>,
-        <linux-btrfs@vger.kernel.org>, <linux-kernel@vger.kernel.org>
-CC:     <linuxarm@huawei.com>, Xiaofei Tan <tanxiaofei@huawei.com>
-Subject: [PATCH] btrfs: block-group: fix a doc warning in block-group.c
-Date:   Tue, 22 Sep 2020 20:37:21 +0800
-Message-ID: <1600778241-24895-1-git-send-email-tanxiaofei@huawei.com>
-X-Mailer: git-send-email 2.8.1
+        id S1726632AbgIVNIF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 22 Sep 2020 09:08:05 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53430 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726605AbgIVNIF (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 22 Sep 2020 09:08:05 -0400
+Received: from mail-qv1-xf44.google.com (mail-qv1-xf44.google.com [IPv6:2607:f8b0:4864:20::f44])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8065CC061755
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Sep 2020 06:08:04 -0700 (PDT)
+Received: by mail-qv1-xf44.google.com with SMTP id h1so9461231qvo.9
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Sep 2020 06:08:04 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
+        h=subject:to:cc:references:from:message-id:date:user-agent
+         :mime-version:in-reply-to:content-language:content-transfer-encoding;
+        bh=CgnjcaZpgLg8GKeXycL7i+hPMAo/atGgY0lTPtAZf2Y=;
+        b=GNuK1gufy3vOAhQYzTcQuOpEdePgw5UThdGLWRV517STXf7Ge3e9RYRaO26ZeDNprO
+         H7v7LczoBEHHXgcS3t8gbTEZQ5Zf8rKBcmy9voWgY++hRYgbiNy8lQOb30lsuG0na4CP
+         ozRr30TfW1+rqsgETcWLolFq3TTzmPSrc+CxR4QE7+6hGk6SC3lItdTTsdPr/6tZH/t0
+         0lwO8DkRjwy2CiixvEinlkG9awg65vuiFuE67b09rYfN2fpThAedMhh95yY10rzMRYBg
+         CFAKGoX/4hzMVpIyjS4jicTcNGUcNgSWHQ4/hrcZPrv2UffCirh1nFw3JFC0AF30F5wu
+         mcwQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=CgnjcaZpgLg8GKeXycL7i+hPMAo/atGgY0lTPtAZf2Y=;
+        b=T8LfIWK5hdw0lsbKEZYTiHkT2/05q5Nc0iM2135pLoSn7Ko3fnu2cq7tL2cVgePcqb
+         AyAbWCE9n0OlTCKJ2Aopo+NihYHVDZHUj1uSfv5aRfNnN9cdlVdxeUmQcWPXf66fztD2
+         YjawpOkBAX4s+v5HKC/0SM2S7JlnuWierqbBh7kTfEon/gL/5VJCQBvAOwNPGBTw0eU2
+         Ndmf5hvA7RcejloGk5R2jJzWICvTytpueBZtvJiZQGShBkVDGqptKddMN1egH7+34ewH
+         gqnDcbS/pa1jDGpn1Sthj3asZvUk5jAD4DeFqZat6KAp9na8rTl9x4SbhDmT39b1/4be
+         dklA==
+X-Gm-Message-State: AOAM532FDq1YZQjQ+FjaiVxyEtqH3bbJjGa0AbT9XbtForbGzoKq8fxQ
+        MfXCCyHSOkLNqfr1PVJXLQrry5BBQGNANCh5
+X-Google-Smtp-Source: ABdhPJzEJeZXXeATtouT35C3FN6zevn/1q1Yrx7jQE7jG6NDoblqasymkvBhFikJgAtzYMtRxgqPdw==
+X-Received: by 2002:a0c:f982:: with SMTP id t2mr5673780qvn.5.1600780083499;
+        Tue, 22 Sep 2020 06:08:03 -0700 (PDT)
+Received: from [192.168.1.45] (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
+        by smtp.gmail.com with ESMTPSA id z29sm12761785qtj.79.2020.09.22.06.08.02
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 22 Sep 2020 06:08:02 -0700 (PDT)
+Subject: Re: [PATCH add reported by] btrfs: fix rw_devices count in
+ __btrfs_free_extra_devids
+To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+Cc:     syzbot+4cfe71a4da060be47502@syzkaller.appspotmail.com
+References: <b3a0a629df98bd044a1fd5c4964f381ff6e7aa05.1600777827.git.anand.jain@oracle.com>
+From:   Josef Bacik <josef@toxicpanda.com>
+Message-ID: <4f924276-2db3-daba-32ec-1b2cf077d15d@toxicpanda.com>
+Date:   Tue, 22 Sep 2020 09:08:01 -0400
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0)
+ Gecko/20100101 Thunderbird/78.2.2
 MIME-Version: 1.0
-Content-Type: text/plain
-X-Originating-IP: [10.67.165.24]
-X-CFilter-Loop: Reflected
+In-Reply-To: <b3a0a629df98bd044a1fd5c4964f381ff6e7aa05.1600777827.git.anand.jain@oracle.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Fix following warning caused by mismatch bewteen function parameters
-and comments.
-fs/btrfs/block-group.c:1649: warning: Function parameter or member 'fs_info' not described in 'btrfs_rmap_block'
+On 9/22/20 8:33 AM, Anand Jain wrote:
+> syzbot reported a warning [1] in close_fs_devcies() which it reproduces
+> using a crafted image.
+> 
+>          WARN_ON(fs_devices->rw_devices);
+> 
+> The crafted image successfully creates a replace-device with the devid 0.
+> But as there isn't any replace-item. We clean the extra the devid 0, at
+> __btrfs_free_extra_devids().
+> 
+> rw_devices is incremented in btrfs_open_one_device() for all write-able
+> devices except for devid == BTRFS_DEV_REPLACE_DEVID.
+> But while we clean up the extra devices in __btrfs_free_extra_devids()
+> we used the BTRFS_DEV_STATE_REPLACE_TGT flag which isn't set because
+> there isn't the replace-item. So rw_devices went below zero.
+> 
+> So let __btrfs_free_extra_devids() also depend on the
+> devid != BTRFS_DEV_REPLACE_DEVID to manage the rw_devices.
+> 
 
-Signed-off-by: Xiaofei Tan <tanxiaofei@huawei.com>
----
- fs/btrfs/block-group.c | 1 +
- 1 file changed, 1 insertion(+)
+This is an invalid state for the fs to be in, I'd rather fix it by detecting we 
+have a devid == BTRFS_DEV_REPLACE_DEVID with no corresponding dev_replace item 
+and fail out before we get to this point.  Thanks,
 
-diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index ea8aaf36..fea6350 100644
---- a/fs/btrfs/block-group.c
-+++ b/fs/btrfs/block-group.c
-@@ -1633,6 +1633,7 @@ static void set_avail_alloc_bits(struct btrfs_fs_info *fs_info, u64 flags)
- 
- /**
-  * btrfs_rmap_block - Map a physical disk address to a list of logical addresses
-+ * @fs_info:	   the fs_info for our fs
-  * @chunk_start:   logical address of block group
-  * @physical:	   physical address to map to logical addresses
-  * @logical:	   return array of logical addresses which map to @physical
--- 
-2.8.1
-
+Josef

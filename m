@@ -5,60 +5,60 @@ X-Spam-Level:
 X-Spam-Status: No, score=-12.6 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 191C8C2D0E2
-	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Sep 2020 21:06:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 649B2C4727E
+	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Sep 2020 21:06:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id AC0A623600
-	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Sep 2020 21:06:44 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 225CD206FB
+	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Sep 2020 21:06:53 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="dlhwXa+d"
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="BWzf+T/n"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726891AbgIVVGn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 22 Sep 2020 17:06:43 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42410 "EHLO
+        id S1726918AbgIVVGw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 22 Sep 2020 17:06:52 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42430 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726583AbgIVVGm (ORCPT
+        with ESMTP id S1726902AbgIVVGt (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 Sep 2020 17:06:42 -0400
-Received: from mail-pj1-x1041.google.com (mail-pj1-x1041.google.com [IPv6:2607:f8b0:4864:20::1041])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D64F5C061755;
-        Tue, 22 Sep 2020 14:06:42 -0700 (PDT)
-Received: by mail-pj1-x1041.google.com with SMTP id md22so1714030pjb.0;
-        Tue, 22 Sep 2020 14:06:42 -0700 (PDT)
+        Tue, 22 Sep 2020 17:06:49 -0400
+Received: from mail-pj1-x1044.google.com (mail-pj1-x1044.google.com [IPv6:2607:f8b0:4864:20::1044])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 955E9C0613D0;
+        Tue, 22 Sep 2020 14:06:49 -0700 (PDT)
+Received: by mail-pj1-x1044.google.com with SMTP id a9so2085555pjg.1;
+        Tue, 22 Sep 2020 14:06:49 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=sx8gkWC2/W3tgh9YK60ypbpCcfln3QjdLnGplGzjxCM=;
-        b=dlhwXa+ddz/K5+/21KTSdyU+5hEny4CZwlrEnxIFToKUE80GLrj66BAPt+i/yxR9bv
-         YUjUV/Dpqkx6sDMC+UkGUqLvQVxS8cfqBBimU8O30a38OISQoCH/TAWTvXW+hk6s5JNm
-         7XN71O1Dd0MmKi8iOPdRUlphVZm6b/ULj5nIs8d2K64TGWNacqtt5xudR3I+cKtz+K7x
-         Hd/LAt7GPnuSyr8dSH9RWEuCndK+iqj3mqQ/6nQ9ZaEkoMzd8CaEtKxB9Z9GQ4r5ZEHw
-         4r30ZF16UUHyD00l9x9OpXQaHCT/Bacd6mOOlL3yoHS7zPdZmB2Ti2ZrZwrdMdDK7SQp
-         VYfg==
+        bh=krGpYOVpUat0gERMlMR1P1lhK//ROWK8HUHnVTxyKd4=;
+        b=BWzf+T/n2kbFP0tByp9/Jj9Wok9svu79fWXRTG9+przzI26Wwi9XywjndiuHBMJjd5
+         +LNbN8ae8kf9EFs0aL4J/l0Cuj+MS4Q+HYB3PvpbTpkc7t8X/646ZwKWiRE2aIQ5tKoE
+         XH4yjWacRXjeTTALpzhzI/6K9eept34kFVOYaG/c/DAum0CvTWisUUoWXXQ8UgwwKasb
+         ZrnfFWT4aa+WPtdMe2styka5E1D4AzDdPq8WMjzJcOkdTxlzbH+wPZx7KFevGNK+cxN+
+         9AkwOmHx7Yk5hTKAdWR3bcoW5UtqGLtpiqPIYligeiOKjLeGpoXXx+21Y5eKgVRL9TuP
+         XFSQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=sx8gkWC2/W3tgh9YK60ypbpCcfln3QjdLnGplGzjxCM=;
-        b=gzj0WKktk/BRsJ8o41XYGof9xnanUuMh1Sz1xalAwGbnLz7m+0fvcCIsaCFb/TLzUg
-         61pzJ3RqFhTGAHSyOnYkgFMcTWrZboRBwTYaHT0bTNJeFOIGAMqGWKfV1SP46DefA6jj
-         UAJm2/vUv8XeMLEqVXR7rmvLQ3qT5U/psDj3EUL1mtpsPTEK49CAx8TcJY0x0pbN4JNJ
-         lj1Di8awV4J/OcI5l+FzBvNqTBE/tF0J2/xTbNzaITrlXzrUfW7iCFAsQflq+6xC9G0C
-         LfDmNrVtmLQMG38iXznjYt4+3YtKSsplWbjr+2ZIujp1lox4dls72nAVg+YlnW0d7ZnM
-         gnhA==
-X-Gm-Message-State: AOAM5321g/5Fbf5PttoCbnPbUwsDMgF8injljYGkAImR5jfQfH1Aj0be
-        U+EAzGotgkRuDjBtYSiWGGg=
-X-Google-Smtp-Source: ABdhPJw4ZpvNaEkobsOFq4P3jAdu+iyAKrhE9tD8TX/t6I8kMuPrnP26y38++rRf+JhggvNzu/wzww==
-X-Received: by 2002:a17:90a:d3cd:: with SMTP id d13mr5696241pjw.70.1600808800902;
-        Tue, 22 Sep 2020 14:06:40 -0700 (PDT)
+        bh=krGpYOVpUat0gERMlMR1P1lhK//ROWK8HUHnVTxyKd4=;
+        b=T+rLDFcgvjOIJAnly8L0nfTaUA2wjC4JOQ7tsM0n7qIdHL2HPE9DKKWXNTqigATALw
+         kGU4nqv38VvugUor1QgAFeVRJuBhChaIF2FJnqTRLTkwvr+oav4R4ZGWc51k05fWcqj7
+         /gnqjbA4PQ6mKBaZ3NWS+pVP1rAZD8jWct5PiNR6QUXJph8F0hGACYnuDVCciLCnyK9Y
+         rHRZ3hLYJxXQPP0xriuPAZ/vRXQoqmVqBITnuR/hUfk959HwWNc1oAd4nEZ7oAZTshLX
+         n/EtM4gsBFEr8NWe+oKWVwHuhU8Ay5WKBQ78APcAEt02sTlSNISFlM3HHhnsibcGt/go
+         MXKg==
+X-Gm-Message-State: AOAM5316CCN0P7qDtCoiLS/6mWbLACB7uUf4z95ZfxDoLMBJte75+ZlF
+        7FYxlsOqbsZmkCZmW/U85cQ=
+X-Google-Smtp-Source: ABdhPJw8m2iBA2+aOJR+wkwV3XyuTSZLKB0OYrh4Sz3KjUcIV0mUpuLoIuh/IHHxxuh13lJQBUDCEA==
+X-Received: by 2002:a17:90a:7487:: with SMTP id p7mr5440688pjk.189.1600808809074;
+        Tue, 22 Sep 2020 14:06:49 -0700 (PDT)
 Received: from nickserv.localdomain (c-98-33-101-203.hsd1.ca.comcast.net. [98.33.101.203])
-        by smtp.gmail.com with ESMTPSA id i15sm16118945pfk.145.2020.09.22.14.06.39
+        by smtp.gmail.com with ESMTPSA id i15sm16118945pfk.145.2020.09.22.14.06.47
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 22 Sep 2020 14:06:40 -0700 (PDT)
+        Tue, 22 Sep 2020 14:06:48 -0700 (PDT)
 From:   Nick Terrell <nickrterrell@gmail.com>
 To:     Herbert Xu <herbert@gondor.apana.org.au>
 Cc:     linux-crypto@vger.kernel.org, linux-btrfs@vger.kernel.org,
@@ -69,9 +69,9 @@ Cc:     linux-crypto@vger.kernel.org, linux-btrfs@vger.kernel.org,
         Nick Terrell <terrelln@fb.com>, Chris Mason <clm@fb.com>,
         Petr Malat <oss@malat.biz>, Johannes Weiner <jweiner@fb.com>,
         Niket Agarwal <niketa@fb.com>, Yann Collet <cyan@fb.com>
-Subject: [PATCH v2 6/9] f2fs: zstd: Switch to the zstd-1.4.6 API
-Date:   Tue, 22 Sep 2020 14:09:21 -0700
-Message-Id: <20200922210924.1725-7-nickrterrell@gmail.com>
+Subject: [PATCH v2 8/9] lib: unzstd: Switch to the zstd-1.4.6 API
+Date:   Tue, 22 Sep 2020 14:09:23 -0700
+Message-Id: <20200922210924.1725-9-nickrterrell@gmail.com>
 X-Mailer: git-send-email 2.28.0
 In-Reply-To: <20200922210924.1725-1-nickrterrell@gmail.com>
 References: <20200922210924.1725-1-nickrterrell@gmail.com>
@@ -84,204 +84,94 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 From: Nick Terrell <terrelln@fb.com>
 
 Move away from the compatibility wrapper to the zstd-1.4.6 API. This
-code is more efficient because it uses the single-pass API instead of
-the streaming API. The streaming API is not necessary because the whole
-input and output buffers are available. This saves memory because we
-don't need to allocate a buffer for the window. It is also more
-efficient because it saves unnecessary memcpy calls.
-
-Compression memory increases from 168 KB to 204 KB because upstream
-uses slightly more memory. Decompression memory decreases from 1.4 MB
-to 158 KB.
+code is functionally equivalent.
 
 Signed-off-by: Nick Terrell <terrelln@fb.com>
 ---
- fs/f2fs/compress.c | 102 +++++++++++++++++----------------------------
- 1 file changed, 38 insertions(+), 64 deletions(-)
+ lib/decompress_unzstd.c | 40 ++++++++++++++--------------------------
+ 1 file changed, 14 insertions(+), 26 deletions(-)
 
-diff --git a/fs/f2fs/compress.c b/fs/f2fs/compress.c
-index e056f3a2b404..b79efce81651 100644
---- a/fs/f2fs/compress.c
-+++ b/fs/f2fs/compress.c
-@@ -11,7 +11,8 @@
- #include <linux/backing-dev.h>
- #include <linux/lzo.h>
- #include <linux/lz4.h>
+diff --git a/lib/decompress_unzstd.c b/lib/decompress_unzstd.c
+index a79f705f236d..d4685df0e120 100644
+--- a/lib/decompress_unzstd.c
++++ b/lib/decompress_unzstd.c
+@@ -73,7 +73,8 @@
+ 
+ #include <linux/decompress/mm.h>
+ #include <linux/kernel.h>
 -#include <linux/zstd_compat.h>
 +#include <linux/zstd.h>
 +#include <linux/zstd_errors.h>
  
- #include "f2fs.h"
- #include "node.h"
-@@ -298,21 +299,21 @@ static const struct f2fs_compress_ops f2fs_lz4_ops = {
- static int zstd_init_compress_ctx(struct compress_ctx *cc)
+ /* 128MB is the maximum window size supported by zstd. */
+ #define ZSTD_WINDOWSIZE_MAX	(1 << ZSTD_WINDOWLOG_MAX)
+@@ -120,9 +121,9 @@ static int INIT decompress_single(const u8 *in_buf, long in_len, u8 *out_buf,
+ 				  long out_len, long *in_pos,
+ 				  void (*error)(char *x))
  {
- 	ZSTD_parameters params;
--	ZSTD_CStream *stream;
-+	ZSTD_CCtx *ctx;
- 	void *workspace;
- 	unsigned int workspace_size;
+-	const size_t wksp_size = ZSTD_DCtxWorkspaceBound();
++	const size_t wksp_size = ZSTD_estimateDCtxSize();
+ 	void *wksp = large_malloc(wksp_size);
+-	ZSTD_DCtx *dctx = ZSTD_initDCtx(wksp, wksp_size);
++	ZSTD_DCtx *dctx = ZSTD_initStaticDCtx(wksp, wksp_size);
+ 	int err;
+ 	size_t ret;
  
- 	params = ZSTD_getParams(F2FS_ZSTD_DEFAULT_CLEVEL, cc->rlen, 0);
--	workspace_size = ZSTD_CStreamWorkspaceBound(params.cParams);
-+	workspace_size = ZSTD_estimateCCtxSize_usingCParams(params.cParams);
- 
- 	workspace = f2fs_kvmalloc(F2FS_I_SB(cc->inode),
- 					workspace_size, GFP_NOFS);
- 	if (!workspace)
- 		return -ENOMEM;
- 
--	stream = ZSTD_initCStream(params, 0, workspace, workspace_size);
--	if (!stream) {
--		printk_ratelimited("%sF2FS-fs (%s): %s ZSTD_initCStream failed\n",
-+	ctx = ZSTD_initStaticCCtx(workspace, workspace_size);
-+	if (!ctx) {
-+		printk_ratelimited("%sF2FS-fs (%s): %s ZSTD_inittaticCStream failed\n",
- 				KERN_ERR, F2FS_I_SB(cc->inode)->sb->s_id,
- 				__func__);
- 		kvfree(workspace);
-@@ -320,7 +321,7 @@ static int zstd_init_compress_ctx(struct compress_ctx *cc)
- 	}
- 
- 	cc->private = workspace;
--	cc->private2 = stream;
-+	cc->private2 = ctx;
- 
- 	cc->clen = cc->rlen - PAGE_SIZE - COMPRESS_HEADER_SIZE;
- 	return 0;
-@@ -335,65 +336,48 @@ static void zstd_destroy_compress_ctx(struct compress_ctx *cc)
- 
- static int zstd_compress_pages(struct compress_ctx *cc)
+@@ -165,7 +166,6 @@ static int INIT __unzstd(unsigned char *in_buf, long in_len,
  {
--	ZSTD_CStream *stream = cc->private2;
--	ZSTD_inBuffer inbuf;
--	ZSTD_outBuffer outbuf;
--	int src_size = cc->rlen;
--	int dst_size = src_size - PAGE_SIZE - COMPRESS_HEADER_SIZE;
--	int ret;
--
--	inbuf.pos = 0;
--	inbuf.src = cc->rbuf;
--	inbuf.size = src_size;
--
--	outbuf.pos = 0;
--	outbuf.dst = cc->cbuf->cdata;
--	outbuf.size = dst_size;
--
--	ret = ZSTD_compressStream(stream, &outbuf, &inbuf);
--	if (ZSTD_isError(ret)) {
--		printk_ratelimited("%sF2FS-fs (%s): %s ZSTD_compressStream failed, ret: %d\n",
--				KERN_ERR, F2FS_I_SB(cc->inode)->sb->s_id,
--				__func__, ZSTD_getErrorCode(ret));
--		return -EIO;
+ 	ZSTD_inBuffer in;
+ 	ZSTD_outBuffer out;
+-	ZSTD_frameParams params;
+ 	void *in_allocated = NULL;
+ 	void *out_allocated = NULL;
+ 	void *wksp = NULL;
+@@ -229,36 +229,24 @@ static int INIT __unzstd(unsigned char *in_buf, long in_len,
+ 	out.size = out_len;
+ 
+ 	/*
+-	 * We need to know the window size to allocate the ZSTD_DStream.
+-	 * Since we are streaming, we need to allocate a buffer for the sliding
+-	 * window. The window size varies from 1 KB to ZSTD_WINDOWSIZE_MAX
+-	 * (8 MB), so it is important to use the actual value so as not to
+-	 * waste memory when it is smaller.
++	 * Zstd determines the workspace size from the window size written
++	 * into the frame header. This ensures that we use the minimum value
++	 * possible, since the window size varies from 1 KB to ZSTD_WINDOWSIZE_MAX
++	 * (1 GB), so it is very important to use the actual value.
+ 	 */
+-	ret = ZSTD_getFrameParams(&params, in.src, in.size);
++	wksp_size = ZSTD_estimateDStreamSize_fromFrame(in.src, in.size);
+ 	err = handle_zstd_error(ret, error);
+ 	if (err)
+ 		goto out;
+-	if (ret != 0) {
+-		error("ZSTD-compressed data has an incomplete frame header");
+-		err = -1;
+-		goto out;
 -	}
--
--	ret = ZSTD_endStream(stream, &outbuf);
-+	ZSTD_CCtx *ctx = cc->private2;
-+	const size_t src_size = cc->rlen;
-+	const size_t dst_size = src_size - PAGE_SIZE - COMPRESS_HEADER_SIZE;
-+	ZSTD_parameters params = ZSTD_getParams(F2FS_ZSTD_DEFAULT_CLEVEL, src_size, 0);
-+	size_t ret;
-+
-+	ret = ZSTD_compress_advanced(
-+			ctx, cc->cbuf->cdata, dst_size, cc->rbuf, src_size, NULL, 0, params);
- 	if (ZSTD_isError(ret)) {
--		printk_ratelimited("%sF2FS-fs (%s): %s ZSTD_endStream returned %d\n",
-+		/*
-+		 * there is compressed data remained in intermediate buffer due to
-+		 * no more space in cbuf.cdata
-+		 */
-+		if (ZSTD_getErrorCode(ret) == ZSTD_error_dstSize_tooSmall)
-+			return -EAGAIN;
-+		/* other compression errors return -EIO */
-+		printk_ratelimited("%sF2FS-fs (%s): %s ZSTD_compress_advanced failed, err: %s\n",
- 				KERN_ERR, F2FS_I_SB(cc->inode)->sb->s_id,
--				__func__, ZSTD_getErrorCode(ret));
-+				__func__, ZSTD_getErrorName(ret));
- 		return -EIO;
+-	if (params.windowSize > ZSTD_WINDOWSIZE_MAX) {
+-		error("ZSTD-compressed data has too large a window size");
++	wksp = large_malloc(wksp_size);
++	if (wksp == NULL) {
++		error("Out of memory while allocating ZSTD_DStream");
+ 		err = -1;
+ 		goto out;
  	}
- 
+-
 -	/*
--	 * there is compressed data remained in intermediate buffer due to
--	 * no more space in cbuf.cdata
+-	 * Allocate the ZSTD_DStream now that we know how much memory is
+-	 * required.
 -	 */
--	if (ret)
--		return -EAGAIN;
--
--	cc->clen = outbuf.pos;
-+	cc->clen = ret;
- 	return 0;
- }
- 
- static int zstd_init_decompress_ctx(struct decompress_io_ctx *dic)
- {
--	ZSTD_DStream *stream;
-+	ZSTD_DCtx *ctx;
- 	void *workspace;
- 	unsigned int workspace_size;
- 
--	workspace_size = ZSTD_DStreamWorkspaceBound(MAX_COMPRESS_WINDOW_SIZE);
-+	workspace_size = ZSTD_estimateDCtxSize();
- 
- 	workspace = f2fs_kvmalloc(F2FS_I_SB(dic->inode),
- 					workspace_size, GFP_NOFS);
- 	if (!workspace)
- 		return -ENOMEM;
- 
--	stream = ZSTD_initDStream(MAX_COMPRESS_WINDOW_SIZE,
--					workspace, workspace_size);
--	if (!stream) {
--		printk_ratelimited("%sF2FS-fs (%s): %s ZSTD_initDStream failed\n",
-+	ctx = ZSTD_initStaticDCtx(workspace, workspace_size);
-+	if (!ctx) {
-+		printk_ratelimited("%sF2FS-fs (%s): %s ZSTD_initStaticDCtx failed\n",
- 				KERN_ERR, F2FS_I_SB(dic->inode)->sb->s_id,
- 				__func__);
- 		kvfree(workspace);
-@@ -401,7 +385,7 @@ static int zstd_init_decompress_ctx(struct decompress_io_ctx *dic)
+-	wksp_size = ZSTD_DStreamWorkspaceBound(params.windowSize);
+-	wksp = large_malloc(wksp_size);
+-	dstream = ZSTD_initDStream(params.windowSize, wksp, wksp_size);
++	dstream = ZSTD_initStaticDStream(wksp, wksp_size);
+ 	if (dstream == NULL) {
+-		error("Out of memory while allocating ZSTD_DStream");
++		error("ZSTD_initStaticDStream failed");
+ 		err = -1;
+ 		goto out;
  	}
- 
- 	dic->private = workspace;
--	dic->private2 = stream;
-+	dic->private2 = ctx;
- 
- 	return 0;
- }
-@@ -415,28 +399,18 @@ static void zstd_destroy_decompress_ctx(struct decompress_io_ctx *dic)
- 
- static int zstd_decompress_pages(struct decompress_io_ctx *dic)
- {
--	ZSTD_DStream *stream = dic->private2;
--	ZSTD_inBuffer inbuf;
--	ZSTD_outBuffer outbuf;
--	int ret;
--
--	inbuf.pos = 0;
--	inbuf.src = dic->cbuf->cdata;
--	inbuf.size = dic->clen;
--
--	outbuf.pos = 0;
--	outbuf.dst = dic->rbuf;
--	outbuf.size = dic->rlen;
-+	ZSTD_DCtx *ctx = dic->private2;
-+	size_t ret;
- 
--	ret = ZSTD_decompressStream(stream, &outbuf, &inbuf);
-+	ret = ZSTD_decompressDCtx(ctx, dic->rbuf, dic->rlen, dic->cbuf->cdata, dic->clen);
- 	if (ZSTD_isError(ret)) {
--		printk_ratelimited("%sF2FS-fs (%s): %s ZSTD_compressStream failed, ret: %d\n",
-+		printk_ratelimited("%sF2FS-fs (%s): %s ZSTD_decompressDCtx failed, err: %s\n",
- 				KERN_ERR, F2FS_I_SB(dic->inode)->sb->s_id,
--				__func__, ZSTD_getErrorCode(ret));
-+				__func__, ZSTD_getErrorName(ret));
- 		return -EIO;
- 	}
- 
--	if (dic->rlen != outbuf.pos) {
-+	if (dic->rlen != ret) {
- 		printk_ratelimited("%sF2FS-fs (%s): %s ZSTD invalid rlen:%zu, "
- 				"expected:%lu\n", KERN_ERR,
- 				F2FS_I_SB(dic->inode)->sb->s_id,
 -- 
 2.28.0
 

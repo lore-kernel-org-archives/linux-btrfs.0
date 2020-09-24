@@ -2,188 +2,106 @@ Return-Path: <SRS0=iRg2=DB=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-14.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-12.9 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BA36FC4363D
-	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Sep 2020 12:16:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 636E6C4363D
+	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Sep 2020 12:19:14 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 4F55923787
-	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Sep 2020 12:16:20 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1073F23787
+	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Sep 2020 12:19:14 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=mpdesouza.com header.i=@mpdesouza.com header.b="SjjYzkfK"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="MonfHWOP"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727543AbgIXMQT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 24 Sep 2020 08:16:19 -0400
-Received: from gateway21.websitewelcome.com ([192.185.45.91]:39833 "EHLO
-        gateway21.websitewelcome.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1727267AbgIXMQT (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 24 Sep 2020 08:16:19 -0400
-X-Greylist: delayed 1282 seconds by postgrey-1.27 at vger.kernel.org; Thu, 24 Sep 2020 08:16:18 EDT
-Received: from cm14.websitewelcome.com (cm14.websitewelcome.com [100.42.49.7])
-        by gateway21.websitewelcome.com (Postfix) with ESMTP id B5AB2400CC019
-        for <linux-btrfs@vger.kernel.org>; Thu, 24 Sep 2020 06:54:55 -0500 (CDT)
-Received: from br540.hostgator.com.br ([108.179.252.180])
-        by cmsmtp with SMTP
-        id LPpvkAxQ4BD8bLPpvkKz77; Thu, 24 Sep 2020 06:54:55 -0500
-X-Authority-Reason: nr=8
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=mpdesouza.com; s=default; h=Content-Transfer-Encoding:MIME-Version:
-        Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:Sender
-        :Reply-To:Content-ID:Content-Description:Resent-Date:Resent-From:
-        Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
-        List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-        bh=n4pzCiu3+y0WUo1q1TMs6Uj/K/FGbzEb/h9IBW5KjME=; b=SjjYzkfKqRd8el6/AoCqZ9ti2G
-        kzWJcNH/7haSLXPWyW06JbA7gkIgrbl8JUBSQGZDJpcuTI5e7S3dYjmxBKzKkjOE27iDIeB+bRjsA
-        QQ3IsORpNqKojvsnKDgg0wKplAR6gQdU11mwyW1SapLxOdTFaSd0w9SIcNxSG+yKy1kqlBZhqz32Z
-        hO/QNYseCZFKAIyOwsiyct4k1vszPplueFe05c9zsKShIUDy5rnYsJ65+kicBhqfnLKW49au8gkzu
-        yXHDPNHbyfLI5fVdu/rwoO2282BFTiVesImT2dEQMwQ5Va+hgsrIhnyoyKEema3bp5YVVsI1Dv5ay
-        VZvRlCRw==;
-Received: from [179.183.202.67] (port=35166 helo=[192.168.0.172])
-        by br540.hostgator.com.br with esmtpsa  (TLS1.2) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-        (Exim 4.93)
-        (envelope-from <marcos@mpdesouza.com>)
-        id 1kLPpv-001Wta-5o; Thu, 24 Sep 2020 08:54:55 -0300
-Message-ID: <cd7b29bb4546ca82b511d254edcf6219f28a37c6.camel@mpdesouza.com>
-Subject: Re: [PATCH] btrfs-progs: convert: Mention which reserve_space call
- failed
-From:   Marcos Paulo de Souza <marcos@mpdesouza.com>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>, dsterba@suse.com,
-        linux-btrfs@vger.kernel.org, wqu@suse.com
-Cc:     Marcos Paulo de Souza <mpdesouza@suse.com>
-Date:   Thu, 24 Sep 2020 08:54:51 -0300
-In-Reply-To: <528b370d-c594-6530-62aa-ef9067a2e275@gmx.com>
-References: <20200923171405.17456-1-marcos@mpdesouza.com>
-         <528b370d-c594-6530-62aa-ef9067a2e275@gmx.com>
-Content-Type: text/plain; charset="UTF-8"
-User-Agent: Evolution 3.36.5 
-MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-AntiAbuse: This header was added to track abuse, please include it with any abuse report
-X-AntiAbuse: Primary Hostname - br540.hostgator.com.br
-X-AntiAbuse: Original Domain - vger.kernel.org
-X-AntiAbuse: Originator/Caller UID/GID - [47 12] / [47 12]
-X-AntiAbuse: Sender Address Domain - mpdesouza.com
-X-BWhitelist: no
-X-Source-IP: 179.183.202.67
-X-Source-L: No
-X-Exim-ID: 1kLPpv-001Wta-5o
-X-Source: 
-X-Source-Args: 
-X-Source-Dir: 
-X-Source-Sender: ([192.168.0.172]) [179.183.202.67]:35166
-X-Source-Auth: marcos@mpdesouza.com
-X-Email-Count: 3
-X-Source-Cap: bXBkZXNvNTM7bXBkZXNvNTM7YnI1NDAuaG9zdGdhdG9yLmNvbS5icg==
-X-Local-Domain: yes
+        id S1727530AbgIXMTN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 24 Sep 2020 08:19:13 -0400
+Received: from mx2.suse.de ([195.135.220.15]:40568 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727267AbgIXMTN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 24 Sep 2020 08:19:13 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1600949952;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc; bh=9LE9r8pLqgG2N0ROqlMv3weqd2YWcEsxLWV3dT+q/ZI=;
+        b=MonfHWOP96dKgLtySYoEMIlGkDu7Nu4Xo2fTY7teC3dfe6DHi0+a8aDSL6C9neau8AfOMv
+        Qr9rrPkhjIZ9RZXwAfEGFlpfAdQIvbfHkX4ptBvaXEgMV45jpRHYyEjKCStiWlSAW7HTmw
+        QcfnbXuQq5U8io/klLUgKixI4sA1Fpk=
+Received: from relay2.suse.de (unknown [195.135.221.27])
+        by mx2.suse.de (Postfix) with ESMTP id 04F2AAEA2;
+        Thu, 24 Sep 2020 12:19:12 +0000 (UTC)
+From:   Nikolay Borisov <nborisov@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH] btrfs/163: Fix recently broken test
+Date:   Thu, 24 Sep 2020 15:19:10 +0300
+Message-Id: <20200924121910.22477-1-nborisov@suse.com>
+X-Mailer: git-send-email 2.17.1
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, 2020-09-24 at 08:08 +0800, Qu Wenruo wrote:
-> 
-> On 2020/9/24 上午1:14, Marcos Paulo de Souza wrote:
-> > From: Marcos Paulo de Souza <mpdesouza@suse.com>
-> > 
-> > btrfs-convert currently can't handle more fragmented block groups
-> when
-> > converting ext4 because the minimum size of a data chunk is 32Mb.
-> > 
-> > When converting an ext4 fs with more fragmented block group and the
-> disk
-> > almost full, we can end up hitting a ENOSPC problem [1] since
-> smaller
-> > block groups (10Mb for example) end up being extended to 32Mb,
-> leaving
-> > the free space tree smaller when converting it to btrfs.
-> > 
-> > This patch adds error messages telling which needed bytes couldn't
-> be
-> > allocated from the free space tree:
-> > 
-> > create btrfs filesystem:
-> >         blocksize: 4096
-> >         nodesize:  16384
-> >         features:  extref, skinny-metadata (default)
-> >         checksum:  crc32c
-> > free space report:
-> >         total:     1073741824
-> >         free:      39124992 (3.64%)
-> > ERROR: failed to reserve 33554432 bytes from free space for
-> metadata chunk
-> > ERROR: unable to create initial ctree: No space left on device
-> > 
-> > Link: https://github.com/kdave/btrfs-progs/issues/251
-> > 
-> > Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
-> 
-> Looks pretty good, but can be enhanced a little, inlined below.
-> 
-> Despite that, feel free to add my tag:
-> Reviewed-by: Qu Wenruo <wqu@suse.com>
-> 
-> > ---
-> >  convert/common.c | 12 +++++++++---
-> >  1 file changed, 9 insertions(+), 3 deletions(-)
-> > 
-> > diff --git a/convert/common.c b/convert/common.c
-> > index 048629df..6392e7f4 100644
-> > --- a/convert/common.c
-> > +++ b/convert/common.c
-> > @@ -812,8 +812,10 @@ int make_convert_btrfs(int fd, struct
-> btrfs_mkfs_config *cfg,
-> >  	 */
-> >  	ret = reserve_free_space(free_space, BTRFS_STRIPE_LEN,
-> >  				 &cfg->super_bytenr);
-> > -	if (ret < 0)
-> > +	if (ret < 0) {
-> > +		error("failed to reserve %d bytes from free space for
-> temporary superblock", BTRFS_STRIPE_LEN);
-> 
-> It would be awesome if we can output the free space.
-> 
-> Just the largest portion is enough to show that we're hitting a real
-> ENOSPC situation.
+Upstream commit "btrfs: fix replace of seed device" broke btrfs/163 as
+it disallowed replacing the seed device. Update the test to account for
+this change in behavior.
 
-Indeed, I'll send a v2 printing the free space tree when ENOSPC
-happens.
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
 
-> 
-> Thanks,
-> Qu
-> >  		goto out;
-> > +	}
-> >  
-> >  	/*
-> >  	 * Then reserve system chunk space
-> > @@ -823,12 +825,16 @@ int make_convert_btrfs(int fd, struct
-> btrfs_mkfs_config *cfg,
-> >  	 */
-> >  	ret = reserve_free_space(free_space,
-> BTRFS_MKFS_SYSTEM_GROUP_SIZE,
-> >  				 &sys_chunk_start);
-> > -	if (ret < 0)
-> > +	if (ret < 0) {
-> > +		error("failed to reserve %d bytes from free space for
-> system chunk", BTRFS_MKFS_SYSTEM_GROUP_SIZE);
-> >  		goto out;
-> > +	}
-> >  	ret = reserve_free_space(free_space,
-> BTRFS_CONVERT_META_GROUP_SIZE,
-> >  				 &meta_chunk_start);
-> > -	if (ret < 0)
-> > +	if (ret < 0) {
-> > +		error("failed to reserve %d bytes from free space for
-> metadata chunk", BTRFS_CONVERT_META_GROUP_SIZE);
-> >  		goto out;
-> > +	}
-> >  
-> >  	/*
-> >  	 * Allocated meta/sys chunks will be mapped 1:1 with device
-> offset.
-> > 
-> 
+That commit still hasn't landed into upstream master but it's in misc-next hence
+I discovered the failures. I guess this is really a heads up and will have to be
+resubmitted when the commit is sent for upstream inclusion.
+
+ tests/btrfs/163     | 13 +++++--------
+ tests/btrfs/163.out |  4 ----
+ 2 files changed, 5 insertions(+), 12 deletions(-)
+
+diff --git a/tests/btrfs/163 b/tests/btrfs/163
+index 24c725afb6b9..7140c1874165 100755
+--- a/tests/btrfs/163
++++ b/tests/btrfs/163
+@@ -4,7 +4,7 @@
+ #
+ # FS QA Test 163
+ #
+-# Test case to verify that a seed device can be replaced
++# Test case to verify that a seed device cannot be replaced
+ #  Create a seed device
+ #  Create a sprout device
+ #  Remount RW
+@@ -68,14 +68,11 @@ add_sprout()
+
+ replace_seed()
+ {
+-	_run_btrfs_util_prog replace start -fB $dev_seed $dev_replace_tgt $SCRATCH_MNT
+-	_run_btrfs_util_prog filesystem show -m $SCRATCH_MNT
+-	_scratch_unmount
+-	run_check _mount $dev_replace_tgt $SCRATCH_MNT
+-	echo -- sprout --
+-	od -x $SCRATCH_MNT/foobar
++	$BTRFS_UTIL_PROG replace start -fB $dev_seed $dev_replace_tgt $SCRATCH_MNT &> /dev/null
++	if [ $? -ne 1 ]; then
++		_fail "replace should have failed"
++	fi
+ 	_scratch_unmount
+-
+ }
+
+ seed_is_mountable()
+diff --git a/tests/btrfs/163.out b/tests/btrfs/163.out
+index 91f6f5b6f48a..7890612fc630 100644
+--- a/tests/btrfs/163.out
++++ b/tests/btrfs/163.out
+@@ -3,7 +3,3 @@ QA output created by 163
+ 0000000 abab abab abab abab abab abab abab abab
+ *
+ 20000000
+--- sprout --
+-0000000 abab abab abab abab abab abab abab abab
+-*
+-20000000
+--
+2.17.1
 

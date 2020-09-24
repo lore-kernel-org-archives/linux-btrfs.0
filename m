@@ -2,92 +2,118 @@ Return-Path: <SRS0=iRg2=DB=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.8 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.5 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C6A82C4363D
-	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Sep 2020 12:35:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5CB28C4363D
+	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Sep 2020 14:02:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 66A6E221EB
-	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Sep 2020 12:35:16 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 11A2820BED
+	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Sep 2020 14:02:24 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="RN1RGYFJ"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="nYOZMwTz"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727728AbgIXMfP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 24 Sep 2020 08:35:15 -0400
-Received: from userp2120.oracle.com ([156.151.31.85]:50714 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727683AbgIXMfP (ORCPT
+        id S1728055AbgIXOCX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 24 Sep 2020 10:02:23 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53786 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727859AbgIXOCX (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 24 Sep 2020 08:35:15 -0400
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 08OCOlSg164241;
-        Thu, 24 Sep 2020 12:35:09 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
- references : from : message-id : date : mime-version : in-reply-to :
- content-type : content-transfer-encoding; s=corp-2020-01-29;
- bh=uoClJBbywQlp6XhiqBQyYJs9pWotLcuaPL7kPEIP7YU=;
- b=RN1RGYFJq8wbrlMAHJ+RnDGcDYuT2xar+Ms5niVRbFKCYVlH7v6LBrJcfAvWVOomck8Q
- k7nLOUQxwMyHvd53aLsw0Df726NVaQbRSYB7QV3KQFN6S4YKHpTUkHbyrq6ap7wdeIgH
- 2/6wz4XezcflH8Fy3UkRf55N4MK7492Z0Ur9igukYwTo8h49KG79sfJv4hL/eM0uhACb
- SNgHKfbL6eW8RVAmBOja6U9hr5BLrzz3MTcIpeFCKtRWLh1teICbi3xsCFjsQv2lGTab
- 5h2X0y7UKSAEKVeIqMsEx6mRu4WQ6oEeBj0KzNEhWIPkn5/WmDOeMSYtM+Gb5XKJPCPU Fg== 
-Received: from userp3020.oracle.com (userp3020.oracle.com [156.151.31.79])
-        by userp2120.oracle.com with ESMTP id 33ndnuqydu-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
-        Thu, 24 Sep 2020 12:35:09 +0000
-Received: from pps.filterd (userp3020.oracle.com [127.0.0.1])
-        by userp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 08OCQTic001523;
-        Thu, 24 Sep 2020 12:35:09 GMT
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by userp3020.oracle.com with ESMTP id 33nurw4s36-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Thu, 24 Sep 2020 12:35:08 +0000
-Received: from abhmp0018.oracle.com (abhmp0018.oracle.com [141.146.116.24])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id 08OCZ71L013231;
-        Thu, 24 Sep 2020 12:35:07 GMT
-Received: from [192.168.1.102] (/39.109.231.106)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Thu, 24 Sep 2020 05:35:07 -0700
-Subject: Re: [PATCH] btrfs/163: Fix recently broken test
-To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org,
-        johannes.thumshirn@wdc.com
-References: <20200924121910.22477-1-nborisov@suse.com>
-From:   Anand Jain <anand.jain@oracle.com>
-Message-ID: <27b33a7f-74de-5ae7-fb71-586e36571b7d@oracle.com>
-Date:   Thu, 24 Sep 2020 20:35:03 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.2.2
+        Thu, 24 Sep 2020 10:02:23 -0400
+Received: from mail-qk1-x741.google.com (mail-qk1-x741.google.com [IPv6:2607:f8b0:4864:20::741])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DB309C0613CE
+        for <linux-btrfs@vger.kernel.org>; Thu, 24 Sep 2020 07:02:22 -0700 (PDT)
+Received: by mail-qk1-x741.google.com with SMTP id g72so3314583qke.8
+        for <linux-btrfs@vger.kernel.org>; Thu, 24 Sep 2020 07:02:22 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
+        h=subject:to:references:from:message-id:date:user-agent:mime-version
+         :in-reply-to:content-language:content-transfer-encoding;
+        bh=QoeDdC7R68hYwESv+u7/uxBkvoFtYKlhZgSd1kHJXPk=;
+        b=nYOZMwTztbhVXsZX1SGlzuNcDs9yoaLu227zPLgqPIC28TWE0pMHlWl8Z0LBSDv7EU
+         OX+7r4Woxuly+TNYQNACXjyoKaeg72us0x9HMn+EcjNKq7DLcGv89Y2jBYuMAhHV85Cn
+         wAjj1M1cV3J1KfPO0Iufqx0IHU5A3tqSfzwynABMKTtTpq0KyWSd0TfSp6+++kjTag92
+         FEW75z/+Z1of69X0wyTNqVTIooLuINaRD9MBwtmiR1f1VBlk6ooA6ilNNB/cT9RK+KFx
+         zhFQ3idzpL3zGNOI4uKyobfTQ8rKr/0MmBQxQatgJq/pbv4vAkcIre096FAtWqwVaOLE
+         64eA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:to:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=QoeDdC7R68hYwESv+u7/uxBkvoFtYKlhZgSd1kHJXPk=;
+        b=Uf5lJYQWpCCgJTQOt8KTiHlWcC6OakjNDIwz6SLBq9oI7TiJ8ncDcNWm2gy+6lFPLM
+         DKKC2PG958ZOA+X/f8xfSR1SmZPSwhPqW/z1NoBWtiA6GHeCxfHS9hLrTSQ0nPfOFLWC
+         j9b5xAP5HOa53loQs/l+KJc0ORe0toUYDfKfRnLs8MIRworlhMisgaE0BKEmoxLZEzde
+         s2P3r3HjYOr5GdxgHbWi5ILm4tRl7A5d3Uk1JWQfeyhZvax4VX1CN4+BqVaA8y8tQEKq
+         Do486Hk7Bpw4oFC4vVcR3RdrNpjroy1bzzEBfM9snLCOIKC87nul86ZVCOrsTNA/WJ0+
+         z3fA==
+X-Gm-Message-State: AOAM532IrX0xsIBTeKLnJx9SStQakyvOBAh267Ps1Xn1okjYpJggwWBq
+        Z+x0kH0nzPR9RKW+Acb3bocmpA==
+X-Google-Smtp-Source: ABdhPJwa3E4LADarlMbPcUbUEApo3HrkriSPDBnZdBrLR+4bd7owSiUYdvm2anVB8FDVAn/J8T6Haw==
+X-Received: by 2002:a37:78b:: with SMTP id 133mr4823247qkh.107.1600956141877;
+        Thu, 24 Sep 2020 07:02:21 -0700 (PDT)
+Received: from [192.168.1.45] (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
+        by smtp.gmail.com with ESMTPSA id 15sm2023078qka.96.2020.09.24.07.02.20
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Thu, 24 Sep 2020 07:02:20 -0700 (PDT)
+Subject: Re: [PATCH add reported by] btrfs: fix rw_devices count in
+ __btrfs_free_extra_devids
+To:     dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
+        linux-btrfs@vger.kernel.org,
+        syzbot+4cfe71a4da060be47502@syzkaller.appspotmail.com
+References: <b3a0a629df98bd044a1fd5c4964f381ff6e7aa05.1600777827.git.anand.jain@oracle.com>
+ <4f924276-2db3-daba-32ec-1b2cf077d15d@toxicpanda.com>
+ <3d5fdbd9-7a2c-d17f-62b7-f312042c7e0a@oracle.com>
+ <a9910086-ad40-2cc8-8dd5-923ba6ff3990@toxicpanda.com>
+ <20200924112513.GT6756@twin.jikos.cz>
+From:   Josef Bacik <josef@toxicpanda.com>
+Message-ID: <a6766b76-a1fd-4011-5290-11406bc2923e@toxicpanda.com>
+Date:   Thu, 24 Sep 2020 10:02:19 -0400
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0)
+ Gecko/20100101 Thunderbird/78.2.2
 MIME-Version: 1.0
-In-Reply-To: <20200924121910.22477-1-nborisov@suse.com>
+In-Reply-To: <20200924112513.GT6756@twin.jikos.cz>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
 Content-Transfer-Encoding: 7bit
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9753 signatures=668680
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 adultscore=0 malwarescore=0
- phishscore=0 mlxlogscore=999 bulkscore=0 mlxscore=0 suspectscore=0
- spamscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2006250000 definitions=main-2009240097
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9753 signatures=668680
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
- lowpriorityscore=0 phishscore=0 adultscore=0 suspectscore=0 bulkscore=0
- clxscore=1015 impostorscore=0 mlxlogscore=999 mlxscore=0 spamscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2006250000
- definitions=main-2009240097
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 24/9/20 8:19 pm, Nikolay Borisov wrote:
-> Upstream commit "btrfs: fix replace of seed device" broke btrfs/163 as
-> it disallowed replacing the seed device. Update the test to account for
-> this change in behavior.
+On 9/24/20 7:25 AM, David Sterba wrote:
+> On Wed, Sep 23, 2020 at 09:42:17AM -0400, Josef Bacik wrote:
+>> On 9/23/20 12:42 AM, Anand Jain wrote:
+>>> On 22/9/20 9:08 pm, Josef Bacik wrote:
+>>>> On 9/22/20 8:33 AM, Anand Jain wrote:
+> 
+>> Yeah I mean we do something in btrfs_init_dev_replace(), like when we search for
+>> the key, we double check to make sure we don't have a devid ==
+>> BTRFS_DEV_REPLACE_DEVID in our devices if we don't find a key.  If we do we
+>> return -EIO and bail out of the mount.  Thanks,
+> 
+>  From user perspective, then do what? Or do we treat this with minimal
+> efforts to provide a sane fallback and error handling just to pass
+> fuzzers (like in many other cases)?
 > 
 
-  Related fix has already been submitted here
-     https://patchwork.kernel.org/patch/11758651/
-  I think Johannes already picked this.
+That's a question for fsck.  I don't want to spend a lot of time chasing 
+imaginary cases that fuzzers come up with, I just want them to fail as quickly 
+as possible so we can move on with our lives.
 
+If this happened in the real world then it would be because we either
 
+1) Lost the replace item somehow?
+2) Got a random corruption that changed the devid to 0
+
+I think for #1 it's impossible to detect really, unless you can tell which 
+device was being replaced somehow?  I'm not sure  how you would do that, I'm not 
+familiar enough with the replace code to see if we could figure that out.
+
+For #2 it should be straightforward, as long as we can determine that we really 
+weren't doing a device replace, then we just change the devid to 1 or something 
+and carry on with life?  Thanks,
+
+Josef

@@ -2,107 +2,108 @@ Return-Path: <SRS0=iRg2=DB=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.3 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 72E4FC2D0E2
-	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Sep 2020 16:40:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8A6DFC4363D
+	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Sep 2020 17:04:01 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 2DC5B2395C
-	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Sep 2020 16:40:22 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4F2A62311A
+	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Sep 2020 17:04:01 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728647AbgIXQkU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 24 Sep 2020 12:40:20 -0400
-Received: from mx2.suse.de ([195.135.220.15]:36844 "EHLO mx2.suse.de"
+        id S1727292AbgIXREA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 24 Sep 2020 13:04:00 -0400
+Received: from mx2.suse.de ([195.135.220.15]:49154 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728644AbgIXQkP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 24 Sep 2020 12:40:15 -0400
+        id S1726458AbgIXREA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 24 Sep 2020 13:04:00 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 7C0C8B296;
-        Thu, 24 Sep 2020 16:40:13 +0000 (UTC)
-From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
-To:     linux-fsdevel@vger.kernel.org
-Cc:     linux-btrfs@vger.kernel.org, david@fromorbit.com, hch@lst.de,
-        johannes.thumshirn@wdc.com, dsterba@suse.com,
-        darrick.wong@oracle.com, josef@toxicpanda.com,
-        Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: [PATCH 13/14] btrfs: Call iomap_dio_complete() without inode_lock
-Date:   Thu, 24 Sep 2020 11:39:20 -0500
-Message-Id: <20200924163922.2547-14-rgoldwyn@suse.de>
-X-Mailer: git-send-email 2.26.2
-In-Reply-To: <20200924163922.2547-1-rgoldwyn@suse.de>
-References: <20200924163922.2547-1-rgoldwyn@suse.de>
+        by mx2.suse.de (Postfix) with ESMTP id 50773AB54;
+        Thu, 24 Sep 2020 17:03:58 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id E8358DA6E3; Thu, 24 Sep 2020 19:02:40 +0200 (CEST)
+Date:   Thu, 24 Sep 2020 19:02:40 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Boris Burkov <boris@bur.io>
+Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: Re: [PATCH v3 1/4] btrfs: support remount of ro fs with free space
+ tree
+Message-ID: <20200924170240.GZ6756@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Boris Burkov <boris@bur.io>,
+        linux-btrfs@vger.kernel.org, kernel-team@fb.com
+References: <cover.1600282812.git.boris@bur.io>
+ <1d0cca6ce1f67484c6b7ef591e264c04ca740c96.1600282812.git.boris@bur.io>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <1d0cca6ce1f67484c6b7ef591e264c04ca740c96.1600282812.git.boris@bur.io>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Goldwyn Rodrigues <rgoldwyn@suse.com>
+On Thu, Sep 17, 2020 at 11:13:38AM -0700, Boris Burkov wrote:
+>  #include "block-group.h"
+>  #include "discard.h"
+> +#include "free-space-tree.h"
+>  
+>  #include "qgroup.h"
+>  #define CREATE_TRACE_POINTS
+> @@ -1838,6 +1839,7 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
+>  	u64 old_max_inline = fs_info->max_inline;
+>  	u32 old_thread_pool_size = fs_info->thread_pool_size;
+>  	u32 old_metadata_ratio = fs_info->metadata_ratio;
+> +	bool create_fst = false;
+>  	int ret;
+>  
+>  	sync_filesystem(sb);
+> @@ -1862,6 +1864,16 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
+>  	btrfs_resize_thread_pool(fs_info,
+>  		fs_info->thread_pool_size, old_thread_pool_size);
+>  
+> +	if (btrfs_test_opt(fs_info, FREE_SPACE_TREE) &&
+> +	    !btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE)) {
+> +		create_fst = true;
+> +		if (!sb_rdonly(sb) || *flags & SB_RDONLY) {
+> +			btrfs_warn(fs_info,
+> +				   "Remounting with free space tree only supported from read-only to read-write");
 
-If direct writes are called with O_DIRECT | O_DSYNC, it will result in a
-deadlock because iomap_dio_rw() is called under i_rwsem which calls
-iomap_dio_complete()
-  generic_write_sync()
-    btrfs_sync_file().
+lowercase for start of the sting, unindent it so ends below 80 columns
 
-btrfs_sync_file() requires i_rwsem, so call __iomap_dio_rw() with the
-i_rwsem locked, and call iomap_dio_complete() after unlocking i_rwsem.
+> +			create_fst = false;
+> +		}
+> +	}
+> +
+>  	if ((bool)(*flags & SB_RDONLY) == sb_rdonly(sb))
+>  		goto out;
+>  
+> @@ -1924,6 +1936,21 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
+>  			goto restore;
+>  		}
+>  
+> +		/*
+> +		 * NOTE: when remounting with a change that does writes, don't
+> +		 * put it anywhere above this point, as we are not sure to be
+> +		 * safe to write until we pass the above checks.
+> +		 */
+> +		if (create_fst) {
+> +			ret = btrfs_create_free_space_tree(fs_info);
+> +			if (ret) {
+> +				btrfs_warn(fs_info,
+> +					   "failed to create free space tree: %d", ret);
 
-Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
----
- fs/btrfs/file.c | 24 +++++++++++-------------
- 1 file changed, 11 insertions(+), 13 deletions(-)
+same
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 6854bf78d677..e28bd3134efd 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1982,6 +1982,7 @@ static ssize_t btrfs_direct_write(struct kiocb *iocb, struct iov_iter *from)
- 	loff_t endbyte;
- 	int err;
- 	int ilock_flags = 0;
-+	struct iomap_dio *dio = NULL;
- 
- 	if (iocb->ki_flags & IOCB_NOWAIT)
- 		ilock_flags |= BTRFS_ILOCK_TRY;
-@@ -2021,22 +2022,19 @@ static ssize_t btrfs_direct_write(struct kiocb *iocb, struct iov_iter *from)
- 		goto buffered;
- 	}
- 
--	/*
--	 * We have are actually a sync iocb, so we need our fancy endio to know
--	 * if we need to sync.
--	 */
--	if (current->journal_info)
--		written = iomap_dio_rw(iocb, from, &btrfs_dio_iomap_ops,
--				&btrfs_sync_dops, is_sync_kiocb(iocb));
--	else
--		written = iomap_dio_rw(iocb, from, &btrfs_dio_iomap_ops,
--				&btrfs_dio_ops, is_sync_kiocb(iocb));
--
--	if (written == -ENOTBLK)
--		written = 0;
-+	dio = __iomap_dio_rw(iocb, from, &btrfs_dio_iomap_ops,
-+			&btrfs_dio_ops, is_sync_kiocb(iocb));
- 
- 	btrfs_inode_unlock(inode, ilock_flags);
- 
-+	if (IS_ERR_OR_NULL(dio)) {
-+		err = PTR_ERR_OR_ZERO(dio);
-+		if (err < 0 && err != -ENOTBLK)
-+			goto out;
-+	} else {
-+		written = iomap_dio_complete(dio);
-+	}
-+
- 	if (written < 0 || !iov_iter_count(from)) {
- 		err = written;
- 		goto out;
--- 
-2.26.2
-
+> +				goto restore;
+> +			}
+> +		}
+> +
+> +
+>  		ret = btrfs_cleanup_fs_roots(fs_info);
+>  		if (ret)
+>  			goto restore;
+> -- 
+> 2.24.1

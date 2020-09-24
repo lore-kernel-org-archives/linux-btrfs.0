@@ -7,31 +7,31 @@ X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 295FDC4727D
-	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Sep 2020 16:40:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 149A8C4363D
+	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Sep 2020 16:40:21 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id F01912395C
-	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Sep 2020 16:40:15 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D35952395C
+	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Sep 2020 16:40:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728641AbgIXQkN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 24 Sep 2020 12:40:13 -0400
-Received: from mx2.suse.de ([195.135.220.15]:36770 "EHLO mx2.suse.de"
+        id S1728651AbgIXQkU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 24 Sep 2020 12:40:20 -0400
+Received: from mx2.suse.de ([195.135.220.15]:36948 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726924AbgIXQkN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 24 Sep 2020 12:40:13 -0400
+        id S1727153AbgIXQkS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 24 Sep 2020 12:40:18 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id B3E45B28F;
-        Thu, 24 Sep 2020 16:40:10 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 8D810B299;
+        Thu, 24 Sep 2020 16:40:16 +0000 (UTC)
 From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
 To:     linux-fsdevel@vger.kernel.org
 Cc:     linux-btrfs@vger.kernel.org, david@fromorbit.com, hch@lst.de,
         johannes.thumshirn@wdc.com, dsterba@suse.com,
         darrick.wong@oracle.com, josef@toxicpanda.com,
         Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: [PATCH 12/14] btrfs: Remove dio_sem
-Date:   Thu, 24 Sep 2020 11:39:19 -0500
-Message-Id: <20200924163922.2547-13-rgoldwyn@suse.de>
+Subject: [PATCH 14/14] btrfs: Revert 09745ff88d93 ("btrfs: dio iomap DSYNC workaround")
+Date:   Thu, 24 Sep 2020 11:39:21 -0500
+Message-Id: <20200924163922.2547-15-rgoldwyn@suse.de>
 X-Mailer: git-send-email 2.26.2
 In-Reply-To: <20200924163922.2547-1-rgoldwyn@suse.de>
 References: <20200924163922.2547-1-rgoldwyn@suse.de>
@@ -43,109 +43,189 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Goldwyn Rodrigues <rgoldwyn@suse.com>
 
-dio_sem can be eliminated because all DIO synchronization is performed
-through inode->i_rwsem now.
+iomap_dio_complete() is not called under i_rwsem anymore, revert
+the workaround.
 
 Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
 Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/btrfs_inode.h | 10 ----------
- fs/btrfs/file.c        | 13 -------------
- fs/btrfs/inode.c       |  1 -
- 3 files changed, 24 deletions(-)
+ fs/btrfs/ctree.h       |  1 -
+ fs/btrfs/file.c        | 38 ++------------------------------
+ fs/btrfs/inode.c       | 50 ------------------------------------------
+ fs/btrfs/transaction.h |  1 -
+ 4 files changed, 2 insertions(+), 88 deletions(-)
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 738009a22320..176abce59467 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -203,16 +203,6 @@ struct btrfs_inode {
- 	/* Hook into fs_info->delayed_iputs */
- 	struct list_head delayed_iput;
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index ea15771bf3da..bc96c52021b2 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3051,7 +3051,6 @@ void btrfs_writepage_endio_finish_ordered(struct page *page, u64 start,
+ extern const struct dentry_operations btrfs_dentry_operations;
+ extern const struct iomap_ops btrfs_dio_iomap_ops;
+ extern const struct iomap_dio_ops btrfs_dio_ops;
+-extern const struct iomap_dio_ops btrfs_sync_dops;
  
--	/*
--	 * To avoid races between lockless (i_mutex not held) direct IO writes
--	 * and concurrent fsync requests. Direct IO writes must acquire read
--	 * access on this semaphore for creating an extent map and its
--	 * corresponding ordered extent. The fast fsync path must acquire write
--	 * access on this semaphore before it collects ordered extents and
--	 * extent maps.
--	 */
--	struct rw_semaphore dio_sem;
--
- 	struct inode vfs_inode;
- };
- 
+ /* ilock flags definition */
+ #define BTRFS_ILOCK_SHARED	(1 << 0)
 diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 83012d1e6f29..6854bf78d677 100644
+index e28bd3134efd..598a3df4d284 100644
 --- a/fs/btrfs/file.c
 +++ b/fs/btrfs/file.c
-@@ -2021,8 +2021,6 @@ static ssize_t btrfs_direct_write(struct kiocb *iocb, struct iov_iter *from)
- 		goto buffered;
- 	}
+@@ -2091,44 +2091,10 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
+ 	if (sync)
+ 		atomic_inc(&BTRFS_I(inode)->sync_writers);
  
--	down_read(&BTRFS_I(inode)->dio_sem);
+-	if (iocb->ki_flags & IOCB_DIRECT) {
+-		/*
+-		 * 1. We must always clear IOCB_DSYNC in order to not deadlock
+-		 *    in iomap, as it calls generic_write_sync() in this case.
+-		 * 2. If we are async, we can call iomap_dio_complete() either
+-		 *    in
+-		 *
+-		 *    2.1. A worker thread from the last bio completed.  In this
+-		 *	   case we need to mark the btrfs_dio_data that it is
+-		 *	   async in order to call generic_write_sync() properly.
+-		 *	   This is handled by setting BTRFS_DIO_SYNC_STUB in the
+-		 *	   current->journal_info.
+-		 *    2.2  The submitter context, because all IO completed
+-		 *         before we exited iomap_dio_rw().  In this case we can
+-		 *         just re-set the IOCB_DSYNC on the iocb and we'll do
+-		 *         the sync below.  If our ->end_io() gets called and
+-		 *         current->journal_info is set, then we know we're in
+-		 *         our current context and we will clear
+-		 *         current->journal_info to indicate that we need to
+-		 *         sync below.
+-		 */
+-		if (sync) {
+-			ASSERT(current->journal_info == NULL);
+-			iocb->ki_flags &= ~IOCB_DSYNC;
+-			current->journal_info = BTRFS_DIO_SYNC_STUB;
+-		}
++	if (iocb->ki_flags & IOCB_DIRECT)
+ 		num_written = btrfs_direct_write(iocb, from);
 -
- 	/*
- 	 * We have are actually a sync iocb, so we need our fancy endio to know
- 	 * if we need to sync.
-@@ -2037,7 +2035,6 @@ static ssize_t btrfs_direct_write(struct kiocb *iocb, struct iov_iter *from)
- 	if (written == -ENOTBLK)
- 		written = 0;
- 
--	up_read(&BTRFS_I(inode)->dio_sem);
- 	btrfs_inode_unlock(inode, ilock_flags);
- 
- 	if (written < 0 || !iov_iter_count(from)) {
-@@ -2245,13 +2242,6 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
- 
- 	inode_lock(inode);
- 
--	/*
--	 * We take the dio_sem here because the tree log stuff can race with
--	 * lockless dio writes and get an extent map logged for an extent we
--	 * never waited on.  We need it this high up for lockdep reasons.
--	 */
--	down_write(&BTRFS_I(inode)->dio_sem);
--
- 	atomic_inc(&root->log_batch);
+-		/*
+-		 * As stated above, we cleared journal_info, so we need to do
+-		 * the sync ourselves.
+-		 */
+-		if (sync && current->journal_info == NULL)
+-			iocb->ki_flags |= IOCB_DSYNC;
+-		current->journal_info = NULL;
+-	} else {
++	else
+ 		num_written = btrfs_buffered_write(iocb, from);
+-	}
  
  	/*
-@@ -2282,7 +2272,6 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
- 	 */
- 	ret = start_ordered_ops(inode, start, end);
- 	if (ret) {
--		up_write(&BTRFS_I(inode)->dio_sem);
- 		inode_unlock(inode);
- 		goto out;
- 	}
-@@ -2379,7 +2368,6 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
- 	 * file again, but that will end up using the synchronization
- 	 * inside btrfs_sync_log to keep things safe.
- 	 */
--	up_write(&BTRFS_I(inode)->dio_sem);
- 	inode_unlock(inode);
- 
- 	if (ret != BTRFS_NO_LOG_SYNC) {
-@@ -2410,7 +2398,6 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
- 
- out_release_extents:
- 	btrfs_release_log_ctx_extents(&ctx);
--	up_write(&BTRFS_I(inode)->dio_sem);
- 	inode_unlock(inode);
- 	goto out;
- }
+ 	 * We also have to set last_sub_trans to the current log transid,
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index cdde4422a6fa..17c97f30459c 100644
+index 17c97f30459c..e660d219e262 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -8594,7 +8594,6 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
- 	INIT_LIST_HEAD(&ei->delalloc_inodes);
- 	INIT_LIST_HEAD(&ei->delayed_iput);
- 	RB_CLEAR_NODE(&ei->rb_node);
--	init_rwsem(&ei->dio_sem);
+@@ -62,7 +62,6 @@ struct btrfs_dio_data {
+ 	loff_t length;
+ 	ssize_t submitted;
+ 	struct extent_changeset *data_reserved;
+-	bool sync;
+ };
  
- 	return inode;
+ static const struct inode_operations btrfs_dir_inode_operations;
+@@ -7376,17 +7375,6 @@ static int btrfs_dio_iomap_begin(struct inode *inode, loff_t start,
+ 	int ret = 0;
+ 	u64 len = length;
+ 	bool unlock_extents = false;
+-	bool sync = (current->journal_info == BTRFS_DIO_SYNC_STUB);
+-
+-	/*
+-	 * We used current->journal_info here to see if we were sync, but
+-	 * there's a lot of tests in the enospc machinery to not do flushing if
+-	 * we have a journal_info set, so we need to clear this out and re-set
+-	 * it in iomap_end.
+-	 */
+-	ASSERT(current->journal_info == NULL ||
+-	       current->journal_info == BTRFS_DIO_SYNC_STUB);
+-	current->journal_info = NULL;
+ 
+ 	if (!write)
+ 		len = min_t(u64, len, fs_info->sectorsize);
+@@ -7412,7 +7400,6 @@ static int btrfs_dio_iomap_begin(struct inode *inode, loff_t start,
+ 	if (!dio_data)
+ 		return -ENOMEM;
+ 
+-	dio_data->sync = sync;
+ 	dio_data->length = length;
+ 	if (write) {
+ 		dio_data->reserve = round_up(length, fs_info->sectorsize);
+@@ -7560,14 +7547,6 @@ static int btrfs_dio_iomap_end(struct inode *inode, loff_t pos, loff_t length,
+ 		extent_changeset_free(dio_data->data_reserved);
+ 	}
+ out:
+-	/*
+-	 * We're all done, we can re-set the current->journal_info now safely
+-	 * for our endio.
+-	 */
+-	if (dio_data->sync) {
+-		ASSERT(current->journal_info == NULL);
+-		current->journal_info = BTRFS_DIO_SYNC_STUB;
+-	}
+ 	kfree(dio_data);
+ 	iomap->private = NULL;
+ 
+@@ -7943,30 +7922,6 @@ static blk_qc_t btrfs_submit_direct(struct inode *inode, struct iomap *iomap,
+ 	return BLK_QC_T_NONE;
  }
+ 
+-static inline int btrfs_maybe_fsync_end_io(struct kiocb *iocb, ssize_t size,
+-					   int error, unsigned flags)
+-{
+-	/*
+-	 * Now if we're still in the context of our submitter we know we can't
+-	 * safely run generic_write_sync(), so clear our flag here so that the
+-	 * caller knows to follow up with a sync.
+-	 */
+-	if (current->journal_info == BTRFS_DIO_SYNC_STUB) {
+-		current->journal_info = NULL;
+-		return error;
+-	}
+-
+-	if (error)
+-		return error;
+-
+-	if (size) {
+-		iocb->ki_flags |= IOCB_DSYNC;
+-		return generic_write_sync(iocb, size);
+-	}
+-
+-	return 0;
+-}
+-
+ const struct iomap_ops btrfs_dio_iomap_ops = {
+ 	.iomap_begin            = btrfs_dio_iomap_begin,
+ 	.iomap_end              = btrfs_dio_iomap_end,
+@@ -7976,11 +7931,6 @@ const struct iomap_dio_ops btrfs_dio_ops = {
+ 	.submit_io		= btrfs_submit_direct,
+ };
+ 
+-const struct iomap_dio_ops btrfs_sync_dops = {
+-	.submit_io		= btrfs_submit_direct,
+-	.end_io			= btrfs_maybe_fsync_end_io,
+-};
+-
+ static int btrfs_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 			u64 start, u64 len)
+ {
+diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+index 858d9153a1cd..8241c050ba71 100644
+--- a/fs/btrfs/transaction.h
++++ b/fs/btrfs/transaction.h
+@@ -112,7 +112,6 @@ struct btrfs_transaction {
+ #define TRANS_EXTWRITERS	(__TRANS_START | __TRANS_ATTACH)
+ 
+ #define BTRFS_SEND_TRANS_STUB	((void *)1)
+-#define BTRFS_DIO_SYNC_STUB	((void *)2)
+ 
+ struct btrfs_trans_handle {
+ 	u64 transid;
 -- 
 2.26.2
 

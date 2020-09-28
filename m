@@ -2,138 +2,251 @@ Return-Path: <SRS0=cyQG=DF=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.6 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,
-	UNPARSEABLE_RELAY autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7D06FC4741F
-	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Sep 2020 16:13:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D07B9C2D0A8
+	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Sep 2020 17:09:18 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 412A22100A
-	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Sep 2020 16:13:36 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="H/7ciX/9"
+	by mail.kernel.org (Postfix) with ESMTP id 8C27620757
+	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Sep 2020 17:09:18 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726597AbgI1QNf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 28 Sep 2020 12:13:35 -0400
-Received: from aserp2130.oracle.com ([141.146.126.79]:55664 "EHLO
-        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726281AbgI1QNf (ORCPT
+        id S1726551AbgI1RJR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 28 Sep 2020 13:09:17 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36602 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726506AbgI1RJR (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 28 Sep 2020 12:13:35 -0400
-Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
-        by aserp2130.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 08SG9xnM138186;
-        Mon, 28 Sep 2020 16:13:26 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=date : from : to : cc
- : subject : message-id : mime-version : content-type; s=corp-2020-01-29;
- bh=XKbAmCgRVEE7BA91FReg9XoljXgcXvzoKZwGX8JZSVM=;
- b=H/7ciX/9DGNGijycA+6Ipvo6RUYAIUrg18tM+WVuRaJZ9eIrZnvwA45PRToW9C2hodnS
- XFezsxCGptoXtb4ZfcQi4UMewYHUL2gqriAjTHSVShz0hqEOsq7IAMauScr0aplBHE/L
- 0XzOpEu+YSBbSBaXbUJ3qRY2Wr5PD8E9S7Y2lEvVyxeLi8U9rquXSHW5ib/vqeGn3pBT
- HzqWdODI/9F3dAYVPtWhaGEt6KlR74noXUrbs9WEkVYqtpfTKkZibIkFAkt/xegHffQa
- 0e+mUtKvHM1FhDEIw+2i6ky+oUYB1+DTJsLEtSoVHh632GzFEvYguf92eKWwMpKR7qJu FQ== 
-Received: from aserp3030.oracle.com (aserp3030.oracle.com [141.146.126.71])
-        by aserp2130.oracle.com with ESMTP id 33su5ap3ac-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
-        Mon, 28 Sep 2020 16:13:26 +0000
-Received: from pps.filterd (aserp3030.oracle.com [127.0.0.1])
-        by aserp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 08SGAll2154327;
-        Mon, 28 Sep 2020 16:11:25 GMT
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by aserp3030.oracle.com with ESMTP id 33tf7khagh-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Mon, 28 Sep 2020 16:11:25 +0000
-Received: from abhmp0019.oracle.com (abhmp0019.oracle.com [141.146.116.25])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 08SGBJFt012954;
-        Mon, 28 Sep 2020 16:11:19 GMT
-Received: from localhost (/67.169.218.210)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Mon, 28 Sep 2020 09:11:18 -0700
-Date:   Mon, 28 Sep 2020 09:11:17 -0700
-From:   "Darrick J. Wong" <darrick.wong@oracle.com>
-To:     Christoph Hellwig <hch@infradead.org>
-Cc:     xfs <linux-xfs@vger.kernel.org>,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        Matthew Wilcox <willy@infradead.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>, rgoldwyn@suse.de
-Subject: [ANNOUNCE] xfs-linux: iomap-5.10-merge updated to 1a31182edd00
-Message-ID: <20200928161117.GA49524@magnolia>
+        Mon, 28 Sep 2020 13:09:17 -0400
+Received: from mout-p-103.mailbox.org (mout-p-103.mailbox.org [IPv6:2001:67c:2050::465:103])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 75609C061755
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Sep 2020 10:09:17 -0700 (PDT)
+Received: from smtp1.mailbox.org (smtp1.mailbox.org [IPv6:2001:67c:2050:105:465:1:1:0])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange ECDHE (P-384) server-signature RSA-PSS (4096 bits) server-digest SHA256)
+        (No client certificate requested)
+        by mout-p-103.mailbox.org (Postfix) with ESMTPS id 4C0TWv0N6FzKmLl;
+        Mon, 28 Sep 2020 19:09:15 +0200 (CEST)
+X-Virus-Scanned: amavisd-new at heinlein-support.de
+Received: from smtp1.mailbox.org ([80.241.60.240])
+        by spamfilter02.heinlein-hosting.de (spamfilter02.heinlein-hosting.de [80.241.56.116]) (amavisd-new, port 10030)
+        with ESMTP id NnzbyAhr_ohT; Mon, 28 Sep 2020 19:09:12 +0200 (CEST)
+Message-ID: <9d77e671add0d3985795da0873e1a08a3fff7179.camel@wittke-web.de>
+Subject: Re: Recover from Extent Tree Corruption (maybe due to hardware
+ failure)
+From:   Marc Wittke <marc@wittke-web.de>
+To:     Chris Murphy <lists@colorremedies.com>
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Date:   Mon, 28 Sep 2020 14:09:07 -0300
+In-Reply-To: <CAJCQCtSCRDh65+aAKs4C0t+c3n4aA8sBrE_QLsPy6JkZ0PwGmA@mail.gmail.com>
+References: <5df695c82cd7f44da5e57d3a8c8549a01130d759.camel@wittke-web.de>
+         <CAJCQCtSCRDh65+aAKs4C0t+c3n4aA8sBrE_QLsPy6JkZ0PwGmA@mail.gmail.com>
+Content-Type: text/plain; charset="UTF-8"
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9758 signatures=668680
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 spamscore=0 mlxlogscore=999
- suspectscore=2 adultscore=0 malwarescore=0 phishscore=0 bulkscore=0
- mlxscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2006250000 definitions=main-2009280124
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9758 signatures=668680
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 mlxlogscore=999 suspectscore=2
- lowpriorityscore=0 spamscore=0 clxscore=1015 mlxscore=0 impostorscore=0
- malwarescore=0 phishscore=0 adultscore=0 bulkscore=0 priorityscore=1501
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2006250000
- definitions=main-2009280124
+Content-Transfer-Encoding: 7bit
+X-MBO-SPAM-Probability: 
+X-Rspamd-Score: -4.47 / 15.00 / 15.00
+X-Rspamd-Queue-Id: EFFB117DA
+X-Rspamd-UID: 15dbed
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi folks,
+On Mon, 2020-09-28 at 09:32 -0600, Chris Murphy wrote:
+> What about 'mount -o ro,usebackuproot' ?
 
-The iomap-5.10-merge branch of the xfs-linux repository at:
+# mount -o ro,usebackuproot /dev/sdb1 /mnt
 
-	git://git.kernel.org/pub/scm/fs/xfs/xfs-linux.git
+[ 3198.709815] BTRFS info (device sdb1): trying to use backup root at mount time
+[ 3198.709819] BTRFS info (device sdb1): disk space caching is enabled
+[ 3198.709821] BTRFS info (device sdb1): has skinny extents
 
-has just been updated.
+# ls -l /mnt
 
-Patches often get missed, so please check if your outstanding patches
-were in this update. If they have not been in this update, please
-resubmit them to linux-xfs@vger.kernel.org so they can be picked up in
-the next update.  Hopefully this is it for 5.10...
+[ 3210.859894] BTRFS error (device sdb1): bad tree block start, want 385831682048 have 18271273693833811190
+[ 3210.876871] BTRFS error (device sdb1): bad tree block start, want 385831682048 have 18271273693833811190
+[ 3210.877452] BTRFS error (device sdb1): bad tree block start, want 385831682048 have 18271273693833811190
+[ 3210.877776] BTRFS error (device sdb1): bad tree block start, want 385831682048 have 18271273693833811190
+[ 3210.878125] BTRFS error (device sdb1): bad tree block start, want 385831682048 have 18271273693833811190
+[ 3210.878434] BTRFS error (device sdb1): bad tree block start, want 385831682048 have 18271273693833811190
+[ 3210.878733] BTRFS error (device sdb1): bad tree block start, want 385831682048 have 18271273693833811190
+[ 3210.879036] BTRFS error (device sdb1): bad tree block start, want 385831682048 have 18271273693833811190
+[ 3210.879289] BTRFS error (device sdb1): bad tree block start, want 385831682048 have 18271273693833811190
+[ 3210.879574] BTRFS error (device sdb1): bad tree block start, want 385831682048 have 18271273693833811190
 
-The new head of the iomap-5.10-merge branch is commit:
+ls: cannot access '/mnt/home': Input/output error
+ls: cannot access '/mnt/lost+found': Input/output error
+ls: cannot access '/mnt/media': Input/output error
+ls: cannot access '/mnt/mnt': Input/output error
+ls: cannot access '/mnt/opt': Input/output error
+ls: cannot access '/mnt/srv': Input/output error
+ls: cannot access '/mnt/tmp': Input/output error
+ls: cannot access '/mnt/usr': Input/output error
+ls: cannot access '/mnt/var': Input/output error
+total 16
+lrwxrwxrwx. 1 root root    7 Jan 28  2020 bin -> usr/bin
+drwxr-xr-x. 1 root root    0 Sep  9 22:19 boot
+drwxr-xr-x. 1 root root    0 Sep  9 22:19 dev
+drwxr-xr-x. 1 root root 5402 Sep 24 19:23 etc
+d?????????? ? ?    ?       ?            ? home
+lrwxrwxrwx. 1 root root    7 Jan 28  2020 lib -> usr/lib
+lrwxrwxrwx. 1 root root    9 Jan 28  2020 lib64 -> usr/lib64
+d?????????? ? ?    ?       ?            ? lost+found
+d?????????? ? ?    ?       ?            ? media
+d?????????? ? ?    ?       ?            ? mnt
+d?????????? ? ?    ?       ?            ? opt
+drwxr-xr-x. 1 root root    0 Sep  9 22:19 proc
+dr-xr-x---. 1 root root  330 Sep 20 19:16 root
+drwxr-xr-x. 1 root root    0 Sep  9 22:19 run
+lrwxrwxrwx. 1 root root    8 Jan 28  2020 sbin -> usr/sbin
+d?????????? ? ?    ?       ?            ? srv
+drwxr-xr-x. 1 root root    0 Sep  9 22:19 sys
+d?????????? ? ?    ?       ?            ? tmp
+d?????????? ? ?    ?       ?            ? usr
+d?????????? ? ?    ?       ?            ? var
 
-1a31182edd00 iomap: Call inode_dio_end() before generic_write_sync()
+> 'btrfs insp dump-s -f /dev/'
 
-New Commits:
+superblock: bytenr=65536, device=/dev/sdb1
+---------------------------------------------------------
+csum_type		0 (crc32c)
+csum_size		4
+csum			0xd7f04658 [match]
+bytenr			65536
+flags			0x1
+			( WRITTEN )
+magic			_BHRfS_M [match]
+fsid			131112e7-6e32-474c-813a-9c1ce4292c18
+metadata_uuid		131112e7-6e32-474c-813a-9c1ce4292c18
+label			
+generation		310285
+root			1104625664
+sys_array_size		97
+chunk_root_generation	307101
+root_level		1
+chunk_root		1097728
+chunk_root_level	1
+log_root		0
+log_root_transid	0
+log_root_level		0
+total_bytes		2012737437696
+bytes_used		575223103488
+sectorsize		4096
+nodesize		16384
+leafsize (deprecated)	16384
+stripesize		4096
+root_dir		6
+num_devices		1
+compat_flags		0x0
+compat_ro_flags		0x0
+incompat_flags		0x161
+			( MIXED_BACKREF |
+			  BIG_METADATA |
+			  EXTENDED_IREF |
+			  SKINNY_METADATA )
+cache_generation	310285
+uuid_tree_generation	310285
+dev_item.uuid		0ca7ed2a-46e9-4234-a65b-5c25a657b8e7
+dev_item.fsid		131112e7-6e32-474c-813a-9c1ce4292c18 [match]
+dev_item.type		0
+dev_item.total_bytes	2012737437696
+dev_item.bytes_used	577694072832
+dev_item.io_align	4096
+dev_item.io_width	4096
+dev_item.sector_size	4096
+dev_item.devid		1
+dev_item.dev_group	0
+dev_item.seek_speed	0
+dev_item.bandwidth	0
+dev_item.generation	0
+sys_chunk_array[2048]:
+	item 0 key (FIRST_CHUNK_TREE CHUNK_ITEM 1048576)
+		length 4194304 owner 2 stripe_len 65536 type SYSTEM
+		io_align 4096 io_width 4096 sector_size 4096
+		num_stripes 1 sub_stripes 0
+			stripe 0 devid 1 offset 1048576
+			dev_uuid 0ca7ed2a-46e9-4234-a65b-5c25a657b8e7
+backup_roots[4]:
+	backup 0:
+		backup_tree_root:	1104625664	gen: 310285	level: 1
+		backup_chunk_root:	1097728	gen: 307101	level: 1
+		backup_extent_root:	1104642048	gen: 310285	level: 2
+		backup_fs_root:		1103724544	gen: 310283	level: 3
+		backup_dev_root:	1105625088	gen: 310285	level: 1
+		backup_csum_root:	1106067456	gen: 310285	level: 2
+		backup_total_bytes:	2012737437696
+		backup_bytes_used:	575223103488
+		backup_num_devices:	1
 
-Andreas Gruenbacher (1):
-      [c114bbc6c423] iomap: Fix direct I/O write consistency check
+	backup 1:
+		backup_tree_root:	385875853312	gen: 310282	level: 1
+		backup_chunk_root:	1097728	gen: 307101	level: 1
+		backup_extent_root:	385857273856	gen: 310282	level: 2
+		backup_fs_root:		385788215296	gen: 310282	level: 3
+		backup_dev_root:	385520975872	gen: 307101	level: 1
+		backup_csum_root:	385797603328	gen: 310282	level: 2
+		backup_total_bytes:	2012737437696
+		backup_bytes_used:	575223103488
+		backup_num_devices:	1
 
-Christoph Hellwig (1):
-      [c3d4ed1abecf] iomap: Allow filesystem to call iomap_dio_complete without i_rwsem
+	backup 2:
+		backup_tree_root:	1105707008	gen: 310283	level: 1
+		backup_chunk_root:	1097728	gen: 307101	level: 1
+		backup_extent_root:	1104625664	gen: 310283	level: 2
+		backup_fs_root:		0	gen: 0	level: 0
+		backup_dev_root:	1107591168	gen: 310283	level: 1
+		backup_csum_root:	1106591744	gen: 310283	level: 2
+		backup_total_bytes:	2012737437696
+		backup_bytes_used:	575223103488
+		backup_num_devices:	1
 
-Goldwyn Rodrigues (1):
-      [1a31182edd00] iomap: Call inode_dio_end() before generic_write_sync()
+	backup 3:
+		backup_tree_root:	1107755008	gen: 310284	level: 1
+		backup_chunk_root:	1097728	gen: 307101	level: 1
+		backup_extent_root:	1107771392	gen: 310284	level: 2
+		backup_fs_root:		0	gen: 0	level: 0
+		backup_dev_root:	1107591168	gen: 310283	level: 1
+		backup_csum_root:	1108672512	gen: 310284	level: 2
+		backup_total_bytes:	2012737437696
+		backup_bytes_used:	575223103488
+		backup_num_devices:	1
 
-Matthew Wilcox (Oracle) (12):
-      [e6e7ca92623a] iomap: Clear page error before beginning a write
-      [14284fedf59f] iomap: Mark read blocks uptodate in write_begin
-      [7ed3cd1a69e3] iomap: Fix misplaced page flushing
-      [24addd848a45] fs: Introduce i_blocks_per_page
-      [a6901d4d148d] iomap: Use kzalloc to allocate iomap_page
-      [b21866f514cb] iomap: Use bitmap ops to set uptodate bits
-      [0a195b91e899] iomap: Support arbitrarily many blocks per page
-      [7d636676d284] iomap: Convert read_count to read_bytes_pending
-      [0fb2d7209d66] iomap: Convert write_count to write_bytes_pending
-      [e25ba8cbfd16] iomap: Convert iomap_write_end types
-      [81ee8e52a71c] iomap: Change calling convention for zeroing
-      [4595a298d556] iomap: Set all uptodate bits for an Uptodate page
+> 
+> > # sudo btrfs restore -oi /dev/sdc1 /home/marc/rescued/
+> 
+> From the backup roots in the super, and also using 'btrfs-find-root'
+> it might be possible to find another root tree to use.
 
-Nikolay Borisov (1):
-      [6cc19c5fad09] iomap: Use round_down/round_up macros in __iomap_write_begin
+# btrfs-find-root /dev/sdb1
+Superblock thinks the generation is 310285
+Superblock thinks the level is 1
+Found tree root at 1104625664 gen 310285 level 1
 
-Qian Cai (1):
-      [a805c111650c] iomap: fix WARN_ON_ONCE() from unprivileged users
+>  This was NVMe. What were the mount options being used?
+Good question, didn't fiddle around a lot with the basic setup of fedora. This is the fstab as it is recoverable from the partition
+UUID=131112e7-6e32-474c-813a-9c1ce4292c18 /                       btrfs   defaults,x-systemd.device-timeout=0 0 0
+UUID=106fdbec-741f-4eca-9fba-3043cb80ad87 /boot                   ext4    defaults        1 2
+UUID=F291-4D24                            /boot/efi               vfat    umask=0077,shortname=winnt 0 2
+/dev/mapper/lvmgroup--0-00                none                    swap    defaults,x-systemd.device-timeout=0 0 0
 
 
-Code Diffstat:
+> Another possibility is to recover by isolating a specific snapshot.Are there any snapshots on this file system?
 
- fs/dax.c                |  13 ++--
- fs/iomap/buffered-io.c  | 194 ++++++++++++++++++++----------------------------
- fs/iomap/direct-io.c    |  49 +++++++++---
- fs/jfs/jfs_metapage.c   |   2 +-
- fs/xfs/xfs_aops.c       |   2 +-
- include/linux/dax.h     |   3 +-
- include/linux/iomap.h   |   5 ++
- include/linux/pagemap.h |  16 ++++
- 8 files changed, 150 insertions(+), 134 deletions(-)
+# btrfs restore --list-roots /dev/sdb1
+ tree key (EXTENT_TREE ROOT_ITEM 0) 1104642048 level 2
+ tree key (DEV_TREE ROOT_ITEM 0) 1105625088 level 1
+ tree key (FS_TREE ROOT_ITEM 0) 1103724544 level 3
+ tree key (CSUM_TREE ROOT_ITEM 0) 1106067456 level 2
+ tree key (UUID_TREE ROOT_ITEM 0) 261371854848 level 0
+ tree key (624 ROOT_ITEM 0) 1131315200 level 0
+ tree key (DATA_RELOC_TREE ROOT_ITEM 0) 5390336 level 0
+
+> 
+> kinda iterative.
+> Might be easier to do this on #btrfs, irc.freenode.net because it's
+
+I joined, but "cannot send to nick/channel". Investigating... it's like 15 years that I didn't use IRC back in university days.
+
+
+

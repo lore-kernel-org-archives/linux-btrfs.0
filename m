@@ -2,94 +2,131 @@ Return-Path: <SRS0=cyQG=DF=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.6 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,
+	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C93D7C2D0A8
-	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Sep 2020 15:33:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 154A7C2D0A8
+	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Sep 2020 16:13:02 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 83B7C2073A
-	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Sep 2020 15:33:08 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A88D02083B
+	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Sep 2020 16:13:01 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="NVbVj+ld"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="LdFAV6UE"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726564AbgI1PdH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 28 Sep 2020 11:33:07 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49840 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726460AbgI1PdH (ORCPT
+        id S1726578AbgI1QNA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 28 Sep 2020 12:13:00 -0400
+Received: from aserp2130.oracle.com ([141.146.126.79]:55050 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726552AbgI1QNA (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 28 Sep 2020 11:33:07 -0400
-Received: from mail-wm1-x32e.google.com (mail-wm1-x32e.google.com [IPv6:2a00:1450:4864:20::32e])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E4834C061755
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 Sep 2020 08:33:05 -0700 (PDT)
-Received: by mail-wm1-x32e.google.com with SMTP id k18so1603320wmj.5
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 Sep 2020 08:33:05 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=oS8i+xN9xU0O7oZ5xF3Cirk3qaaYVKOTZ2NyPhcevDg=;
-        b=NVbVj+ldHMRyjU870LqMnF6u22irNxBWlx7NeCTsF4jAe+L4T1Q66XP3E2HXaItOnG
-         Bks/f9k1a5F/FmKXS+4mx2sM/bF5BnVC+XWCzsZOjJ5sxfcDcPliOX8SFefdsEbiMqfm
-         udZl+JkQGzxzSPP/0GoKDuyDJKV3jMeiCagXJZhcDAonzbpNN+l3jAeVc16Bt+t5RhqC
-         kgXvNV/vJPX6SyOPcHo33867YTGtLnnaS0k8lHhaceWyVIyjSRRCBtqR5dt3f113GXN2
-         D20zyCJ+wmuBDBbkK56yCFpS2FEWqlJMkbHLWkY+2iCV3NUSfs1X0jFeqGuLY3qv10iE
-         570g==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=oS8i+xN9xU0O7oZ5xF3Cirk3qaaYVKOTZ2NyPhcevDg=;
-        b=UfFOAEcpdn8bGqlMG4KIra9tC4T5YivvR7WlryHbyBNUsw54Yp4cZfbomFcYy93rQK
-         UeQLEKap7ftk61OVjc4Ezd0oSsYgfXI9rDZTm8vtAwYsfOsHXlhvyHBlxisWg6xBAnqq
-         gZTtAyzzjSv9ENkcBA2wxetPmADaONf0xmrYfZ7eVhhdiAITCoL3PvI8G6TeUFwoQq7S
-         YYgmfo9W5nj9xx17eLvs2WYUzsPHTppy4IJ+9t0G4cek/h+V1l67Z1ud4RXm0yBEHV0w
-         9LTmjctIQ/32saXVzJf5AGYw1/GyHaeu1LYopAnMscA2IBqBEtjxxueywg9J+z/C/r1n
-         WuPA==
-X-Gm-Message-State: AOAM533iufZNPsn2fKGjNEEmPoYJ7WrY+3V64niinORuHPKtK5bM3o0N
-        Eg7B/wgENNK9OCVxM9Y2qF+r36HSi6xvO/VPeZllqLcE30Rf5Rrk
-X-Google-Smtp-Source: ABdhPJzRZn3RVBaQXHOsN7WYv7o99NZaVOtGdCLa6CELb5wJK4r8vB1Ary0FNs5pXUI5wGkm/csIOleT/b3Y0WMsF4U=
-X-Received: by 2002:a1c:960a:: with SMTP id y10mr2180822wmd.128.1601307184577;
- Mon, 28 Sep 2020 08:33:04 -0700 (PDT)
+        Mon, 28 Sep 2020 12:13:00 -0400
+Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
+        by aserp2130.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 08SG9jTF138051;
+        Mon, 28 Sep 2020 16:12:50 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=date : from : to :
+ subject : message-id : references : mime-version : content-type :
+ in-reply-to; s=corp-2020-01-29;
+ bh=lte5bOGdEskw4lr0WR3UEmqrvhwsygZf+aPNo5MZL7M=;
+ b=LdFAV6UEvOaEI5xhhonJLvraOzNkqfyJy2i2vwgn5Yl1hvK+NiNlAafEqhGk0joOz0b2
+ 29OadgEY6KjYEaYpSNVVQVyPIRWUSsVuG4ye49X7mV4ijdRA3K+YUCcSDDzowpOKBNi3
+ Ybh3FZuYUoJ3POuqfhpdalRRl2zEwkGmCVrBgLcOhKzEu0WMjB8Ej7YYJv6JN2he7CUv
+ 8c/8axCoJHBbYEkCZckdcVTx/0ktZCX2LNsKVHC/y5pq6yJw9+MiVeEp1StXK02jtYBa
+ XnS4lPQdLv51vfZ84jzO8zO/VTjP8+N57LxCnGpZMHwhFtS/KqxSDiqt5yWSS2zp//gC 1g== 
+Received: from aserp3030.oracle.com (aserp3030.oracle.com [141.146.126.71])
+        by aserp2130.oracle.com with ESMTP id 33su5ap366-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
+        Mon, 28 Sep 2020 16:12:49 +0000
+Received: from pps.filterd (aserp3030.oracle.com [127.0.0.1])
+        by aserp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 08SGAl1U154383;
+        Mon, 28 Sep 2020 16:12:49 GMT
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by aserp3030.oracle.com with ESMTP id 33tf7khbrw-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Mon, 28 Sep 2020 16:12:49 +0000
+Received: from abhmp0002.oracle.com (abhmp0002.oracle.com [141.146.116.8])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 08SGCht6015028;
+        Mon, 28 Sep 2020 16:12:43 GMT
+Received: from localhost (/67.169.218.210)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Mon, 28 Sep 2020 09:12:42 -0700
+Date:   Mon, 28 Sep 2020 09:12:40 -0700
+From:   "Darrick J. Wong" <darrick.wong@oracle.com>
+To:     dsterba@suse.cz, Goldwyn Rodrigues <rgoldwyn@suse.de>,
+        linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        david@fromorbit.com, hch@lst.de, johannes.thumshirn@wdc.com,
+        dsterba@suse.com, josef@toxicpanda.com,
+        Goldwyn Rodrigues <rgoldwyn@suse.com>
+Subject: Re: [PATCH 04/14] iomap: Call inode_dio_end() before
+ generic_write_sync()
+Message-ID: <20200928161240.GA49559@magnolia>
+References: <20200924163922.2547-1-rgoldwyn@suse.de>
+ <20200924163922.2547-5-rgoldwyn@suse.de>
+ <20200926015108.GQ7964@magnolia>
+ <20200928150418.GC6756@twin.jikos.cz>
 MIME-Version: 1.0
-References: <5df695c82cd7f44da5e57d3a8c8549a01130d759.camel@wittke-web.de>
-In-Reply-To: <5df695c82cd7f44da5e57d3a8c8549a01130d759.camel@wittke-web.de>
-From:   Chris Murphy <lists@colorremedies.com>
-Date:   Mon, 28 Sep 2020 09:32:48 -0600
-Message-ID: <CAJCQCtSCRDh65+aAKs4C0t+c3n4aA8sBrE_QLsPy6JkZ0PwGmA@mail.gmail.com>
-Subject: Re: Recover from Extent Tree Corruption (maybe due to hardware failure)
-To:     Marc Wittke <marc@wittke-web.de>
-Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20200928150418.GC6756@twin.jikos.cz>
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9758 signatures=668680
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 spamscore=0 mlxlogscore=999
+ suspectscore=1 adultscore=0 malwarescore=0 phishscore=0 bulkscore=0
+ mlxscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2006250000 definitions=main-2009280124
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9758 signatures=668680
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 mlxlogscore=999 suspectscore=1
+ lowpriorityscore=0 spamscore=0 clxscore=1015 mlxscore=0 impostorscore=0
+ malwarescore=0 phishscore=0 adultscore=0 bulkscore=0 priorityscore=1501
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2006250000
+ definitions=main-2009280124
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Sep 28, 2020 at 7:18 AM Marc Wittke <marc@wittke-web.de> wrote:
+On Mon, Sep 28, 2020 at 05:04:19PM +0200, David Sterba wrote:
+> On Fri, Sep 25, 2020 at 06:51:08PM -0700, Darrick J. Wong wrote:
+> > On Thu, Sep 24, 2020 at 11:39:11AM -0500, Goldwyn Rodrigues wrote:
+> > > From: Goldwyn Rodrigues <rgoldwyn@suse.com>
+> > > 
+> > > iomap complete routine can deadlock with btrfs_fallocate because of the
+> > > call to generic_write_sync().
+> > > 
+> > > P0                      P1
+> > > inode_lock()            fallocate(FALLOC_FL_ZERO_RANGE)
+> > > __iomap_dio_rw()        inode_lock()
+> > >                         <block>
+> > > <submits IO>
+> > > <completes IO>
+> > > inode_unlock()
+> > >                         <gets inode_lock()>
+> > >                         inode_dio_wait()
+> > > iomap_dio_complete()
+> > >   generic_write_sync()
+> > >     btrfs_file_fsync()
+> > >       inode_lock()
+> > >       <deadlock>
+> > > 
+> > > inode_dio_end() is used to notify the end of DIO data in order
+> > > to synchronize with truncate. Call inode_dio_end() before calling
+> > > generic_write_sync(), so filesystems can lock i_rwsem during a sync.
+> > > 
+> > > This matches the way it is done in fs/direct-io.c:dio_complete().
+> > > 
+> > > Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
+> > > Reviewed-by: Christoph Hellwig <hch@lst.de>
+> > > Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+> > 
+> > Looks ok (at least with the fses that use either iomap or ye olde
+> > directio) to me...
+> > 
+> > Reviewed-by: Darrick J. Wong <darrick.wong@oracle.com>
+> > 
+> > So, uh, do you want me to pull these two iomap patches in for 5.10?
+> 
+> That would be great, thanks. Once they land in 5.10-rc we'll be able to
+> base the rest on some master snapshot and target 5.11 for release.
 
-> # mount /dev/sdc1 /mnt
-> mount: /mnt: can't read superblock on /dev/sdc1.
+Ok, done. :)
 
-What about 'mount -o ro,usebackuproot' ?
-Also include dmesg if it fails, and include:
-
-'btrfs insp dump-s -f /dev/'
-
-> # sudo btrfs restore -oi /dev/sdc1 /home/marc/rescued/
-
-From the backup roots in the super, and also using 'btrfs-find-root'
-it might be possible to find another root tree to use. This was NVMe.
-What were the mount options being used?
-
-Another possibility is to recover by isolating a specific snapshot.
-Are there any snapshots on this file system?
-
-'btrfs restore --list-roots'
-
-Might be easier to do this on #btrfs, irc.freenode.net because it's
-kinda iterative.
-
--- 
-Chris Murphy
+--D

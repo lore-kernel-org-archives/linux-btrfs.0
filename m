@@ -7,63 +7,63 @@ X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 63224C2D0A8
-	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Sep 2020 18:35:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D3788C4727E
+	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Sep 2020 18:35:09 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 02EF020774
-	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Sep 2020 18:35:07 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9296C20774
+	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Sep 2020 18:35:09 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="a1hV5SY2"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="m0H9fYSm"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726565AbgI1SfH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 28 Sep 2020 14:35:07 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49828 "EHLO
+        id S1726658AbgI1SfJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 28 Sep 2020 14:35:09 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49842 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726465AbgI1SfH (ORCPT
+        with ESMTP id S1726600AbgI1SfI (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 28 Sep 2020 14:35:07 -0400
-Received: from mail-qk1-x743.google.com (mail-qk1-x743.google.com [IPv6:2607:f8b0:4864:20::743])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 068B2C061755
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 Sep 2020 11:35:04 -0700 (PDT)
-Received: by mail-qk1-x743.google.com with SMTP id w12so1933182qki.6
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 Sep 2020 11:35:03 -0700 (PDT)
+        Mon, 28 Sep 2020 14:35:08 -0400
+Received: from mail-qk1-x741.google.com (mail-qk1-x741.google.com [IPv6:2607:f8b0:4864:20::741])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 00485C061755
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Sep 2020 11:35:07 -0700 (PDT)
+Received: by mail-qk1-x741.google.com with SMTP id s131so1962664qke.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Sep 2020 11:35:07 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=/ZITVtTPFaeRJaFnvJbuj6ZKcqKx8KMRgFsSXK5mNBM=;
-        b=a1hV5SY230SNCkQAO0s8VgYV2Z8+BK9Ice6Ek2OjBQBnCwBjMq0ZOuko+G7VjKw5Fq
-         Na1BPAgca688EjFGtZUowarpG2jJjepYBsq6B+Pl2A9lMsRpLcdiHPzGbSXoUYcVNF8D
-         LZOCLJO3aySU45uB0xAiMLDFASKIsSqr2TAvI64i2UQlvEuoVzSVPSQZuOxovdadeKbc
-         2iqSqUjZsfwjPtc7KEAwdlU4HyBe8Coh2UzMT4kJFWTT046foXlpDhkCK/Mi0DFaK1dP
-         uRi6AoWTwZrdrqBt6GCvmmtSmwT/TOBHVqVTQg8EHpYfnKSTxfHDoxxqZvcZmwgdERqb
-         OPLA==
+        bh=2DGa9hwQGeCLQnx5BGppKF4jGmZXhe4DPBbyx0Zs7SE=;
+        b=m0H9fYSm0JXnqgaHFjDCbca9MNzmu33kpKu7pt/ggGEklNUmmUi4wqCKuk1lnKDYuc
+         LASs+lAtJ2Hdb3FllzvpCP7Xf5LTnw6KY+Da2bE/QnsEJCCEe6uribFFcBYKIwjHHh0v
+         IOlRsuSqJMoN+nATSiXseZTxKjgoQb3GGauDid1GpetRYsi49g3MubzpvMX0rfg7HRBp
+         xcciaVSu621dv8Lsr08CxVma0DdL8YjnqVd+W/NfSnVBVNXvXe1Ym4tEaYTK2106YwrU
+         p/0t5bfdajNaBw5wNsApbJ5vkyr9LjB6IdG31xBAEzt53VHaiqRwEJIgaCAqaZtUDVgh
+         4wQw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=/ZITVtTPFaeRJaFnvJbuj6ZKcqKx8KMRgFsSXK5mNBM=;
-        b=s7NX4x70iT7VgQN5B2uP1NdAkHSpdBdJ/aSFWMY4BexyqxZUGk39Lk6muSbDe2R+t0
-         D3nKSpceRTuTXspIdaxrioobvWIXA8Rr5Nb5Vn9vF4flUKIVMCQ+vpLFYlYtgZf+N3x9
-         iLs75lqozY41WIQWcYG1q2PKLfC227O3q3q/e+Owe05gkUuLRBx2ObsfzxyEn2oFEq2z
-         Y4xTUvS12uQVrF6SuIegjqfD0z3T71M51jQT50fW5Co6ZvbULiEfh3yq4BqgwP3Ckt0z
-         LlH2rb1qyzp6RaImKsrql+hKfHNFZi91l40KuAl53hClnwkgP0jwlHPEtSvk7Wwqgg4T
-         L5Jw==
-X-Gm-Message-State: AOAM533uVcjOXCjymd6qQZl1GflRZNqzDlH4UFVYpaQGNWyQTVAxXJcw
-        qvgaYSWb3NmY6XIlm2ZWtmLZkaGolI5RbGlT
-X-Google-Smtp-Source: ABdhPJzacLhkKvn1+K2NxWaaqKPCcEOqZ7jqeHuhQ/HQXcagxY+vIAxKE0G6RPkeuEMhjn+zeBmqOQ==
-X-Received: by 2002:a05:620a:94e:: with SMTP id w14mr824012qkw.86.1601318102827;
-        Mon, 28 Sep 2020 11:35:02 -0700 (PDT)
+        bh=2DGa9hwQGeCLQnx5BGppKF4jGmZXhe4DPBbyx0Zs7SE=;
+        b=EmH2m89qihcoEZCrAHkT50PmUZvX6gobLGmylruybLHCVHLOJt+L8uUUR3cQtfh2cV
+         mheoZvAZoWMKQhfizw+9Y0Cbqgp2EpRDfjW/ucQUCXdw6yG/SVg6RDFMwSSZPU2gZVwJ
+         LOZgjdmVSNEDD6cJABf1HuvgruCCFpt4VAjzuukTsbWT/Diy5mttDr5We2vzT3w/qZuj
+         fGg/bQiMej+vV87YvcRoXSDS61mEKgjnqdVNtRYpD0aOnb64sJCXDVJQ0c87+c5zAlRZ
+         uKftY+KkKGKjpMy/XG2cZEDVK52X9qw/PV/ZxzH+RKPHYjp0fF/mpJjIw0oiluNkVvi2
+         qu8g==
+X-Gm-Message-State: AOAM532pWwxJJagNfM36r+cekKj7t5LJrttM/kRj9s4rCN0f6bAly0rs
+        stehTf7lVrJs7Bf0JGWeeMLGyDc2+PIFhnMH
+X-Google-Smtp-Source: ABdhPJz/bmrfhnjyGhCrD22BnkTSf11Cq3gSatUYvDqMDcj66gwgT1URj7hC8uvbUms2s4yjGtKC6A==
+X-Received: by 2002:a37:af02:: with SMTP id y2mr839728qke.346.1601318106741;
+        Mon, 28 Sep 2020 11:35:06 -0700 (PDT)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id v15sm1686877qkg.108.2020.09.28.11.35.02
+        by smtp.gmail.com with ESMTPSA id 7sm1815917qkc.73.2020.09.28.11.35.05
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 28 Sep 2020 11:35:02 -0700 (PDT)
+        Mon, 28 Sep 2020 11:35:06 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
 Cc:     Qu Wenruo <wqu@suse.com>
-Subject: [PATCH v2 2/5] btrfs: push the NODATASUM check into btrfs_lookup_bio_sums
-Date:   Mon, 28 Sep 2020 14:34:54 -0400
-Message-Id: <40dee8e2ed9aaceea4869da852f2d2b887e24f1c.1601318001.git.josef@toxicpanda.com>
+Subject: [PATCH v2 4/5] btrfs: introduce rescue=ignoredatacsums
+Date:   Mon, 28 Sep 2020 14:34:56 -0400
+Message-Id: <1c4b7fef28dde35f38246ad17c6fd4c0cf8c5837.1601318001.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.2
 In-Reply-To: <cover.1601318001.git.josef@toxicpanda.com>
 References: <cover.1601318001.git.josef@toxicpanda.com>
@@ -73,104 +73,108 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-When we move to being able to handle NULL csum_roots it'll be cleaner to
-just check in btrfs_lookup_bio_sums instead of at all of the caller
-locations, so push the NODATASUM check into it as well so it's unified.
+There are cases where you can end up with bad data csums because of
+misbehaving applications.  This happens when an application modifies a
+buffer in-flight when doing an O_DIRECT write.  In order to recover the
+file we need a way to turn off data checksums so you can copy the file
+off, and then you can delete the file and restore it properly later.
 
 Reviewed-by: Qu Wenruo <wqu@suse.com>
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/compression.c | 14 +++++---------
- fs/btrfs/file-item.c   |  3 +++
- fs/btrfs/inode.c       | 12 +++++++++---
- 3 files changed, 17 insertions(+), 12 deletions(-)
+ fs/btrfs/ctree.h   |  1 +
+ fs/btrfs/disk-io.c | 21 ++++++++++++---------
+ fs/btrfs/super.c   | 11 ++++++++++-
+ 3 files changed, 23 insertions(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index eeface30facd..7e1eb57b923c 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -722,11 +722,9 @@ blk_status_t btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
- 			 */
- 			refcount_inc(&cb->pending_bios);
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index fb3cfd0aaf1e..397f5f6b88a4 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1296,6 +1296,7 @@ static inline u32 BTRFS_MAX_XATTR_SIZE(const struct btrfs_fs_info *info)
+ #define BTRFS_MOUNT_REF_VERIFY		(1 << 28)
+ #define BTRFS_MOUNT_DISCARD_ASYNC	(1 << 29)
+ #define BTRFS_MOUNT_IGNOREBADROOTS	(1 << 30)
++#define BTRFS_MOUNT_IGNOREDATACSUMS	(1 << 31)
  
--			if (!(BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM)) {
--				ret = btrfs_lookup_bio_sums(inode, comp_bio,
--							    (u64)-1, sums);
--				BUG_ON(ret); /* -ENOMEM */
--			}
-+			ret = btrfs_lookup_bio_sums(inode, comp_bio, (u64)-1,
-+						    sums);
-+			BUG_ON(ret); /* -ENOMEM */
- 
- 			nr_sectors = DIV_ROUND_UP(comp_bio->bi_iter.bi_size,
- 						  fs_info->sectorsize);
-@@ -751,10 +749,8 @@ blk_status_t btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
- 	ret = btrfs_bio_wq_end_io(fs_info, comp_bio, BTRFS_WQ_ENDIO_DATA);
- 	BUG_ON(ret); /* -ENOMEM */
- 
--	if (!(BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM)) {
--		ret = btrfs_lookup_bio_sums(inode, comp_bio, (u64)-1, sums);
--		BUG_ON(ret); /* -ENOMEM */
--	}
-+	ret = btrfs_lookup_bio_sums(inode, comp_bio, (u64)-1, sums);
-+	BUG_ON(ret); /* -ENOMEM */
- 
- 	ret = btrfs_map_bio(fs_info, comp_bio, mirror_num);
- 	if (ret) {
-diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index 8f4f2bd6d9b9..8083d71d6af6 100644
---- a/fs/btrfs/file-item.c
-+++ b/fs/btrfs/file-item.c
-@@ -272,6 +272,9 @@ blk_status_t btrfs_lookup_bio_sums(struct inode *inode, struct bio *bio,
- 	int count = 0;
- 	u16 csum_size = btrfs_super_csum_size(fs_info->super_copy);
- 
-+	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM)
-+		return BLK_STS_OK;
-+
- 	path = btrfs_alloc_path();
- 	if (!path)
- 		return BLK_STS_RESOURCE;
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index d526833b5ec0..d262944c4297 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2202,7 +2202,12 @@ blk_status_t btrfs_submit_data_bio(struct inode *inode, struct bio *bio,
- 							   mirror_num,
- 							   bio_flags);
- 			goto out;
--		} else if (!skip_sum) {
-+		} else {
-+			/*
-+			 * Lookup bio sums does extra checks around whether we
-+			 * need to csum or not, which is why we ignore skip_sum
-+			 * here.
-+			 */
- 			ret = btrfs_lookup_bio_sums(inode, bio, (u64)-1, NULL);
- 			if (ret)
- 				goto out;
-@@ -7781,7 +7786,6 @@ static blk_qc_t btrfs_submit_direct(struct inode *inode, struct iomap *iomap,
- 		struct bio *dio_bio, loff_t file_offset)
- {
- 	const bool write = (bio_op(dio_bio) == REQ_OP_WRITE);
--	const bool csum = !(BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM);
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
- 	const bool raid56 = (btrfs_data_alloc_profile(fs_info) &
- 			     BTRFS_BLOCK_GROUP_RAID56_MASK);
-@@ -7808,10 +7812,12 @@ static blk_qc_t btrfs_submit_direct(struct inode *inode, struct iomap *iomap,
- 		return BLK_QC_T_NONE;
+ #define BTRFS_DEFAULT_COMMIT_INTERVAL	(30)
+ #define BTRFS_DEFAULT_MAX_INLINE	(2048)
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 5deedfb0e5c7..6f9d37567a10 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2269,16 +2269,19 @@ static int btrfs_read_roots(struct btrfs_fs_info *fs_info)
+ 		btrfs_init_devices_late(fs_info);
  	}
  
--	if (!write && csum) {
-+	if (!write) {
- 		/*
- 		 * Load the csums up front to reduce csum tree searches and
- 		 * contention when submitting bios.
-+		 *
-+		 * If we have csums disabled this will do nothing.
- 		 */
- 		status = btrfs_lookup_bio_sums(inode, dio_bio, file_offset,
- 					       dip->csums);
+-	location.objectid = BTRFS_CSUM_TREE_OBJECTID;
+-	root = btrfs_read_tree_root(tree_root, &location);
+-	if (IS_ERR(root)) {
+-		if (!btrfs_test_opt(fs_info, IGNOREBADROOTS)) {
+-			ret = PTR_ERR(root);
+-			goto out;
++	/* If IGNOREDATASCUMS is set don't bother reading the csum root. */
++	if (!btrfs_test_opt(fs_info, IGNOREDATACSUMS)) {
++		location.objectid = BTRFS_CSUM_TREE_OBJECTID;
++		root = btrfs_read_tree_root(tree_root, &location);
++		if (IS_ERR(root)) {
++			if (!btrfs_test_opt(fs_info, IGNOREBADROOTS)) {
++				ret = PTR_ERR(root);
++				goto out;
++			}
++		} else {
++			set_bit(BTRFS_ROOT_TRACK_DIRTY, &root->state);
++			fs_info->csum_root = root;
+ 		}
+-	} else {
+-		set_bit(BTRFS_ROOT_TRACK_DIRTY, &root->state);
+-		fs_info->csum_root = root;
+ 	}
+ 
+ 	/*
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 7cc7a9233f5e..2282f0240c1d 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -361,6 +361,7 @@ enum {
+ 	Opt_usebackuproot,
+ 	Opt_nologreplay,
+ 	Opt_ignorebadroots,
++	Opt_ignoredatacsums,
+ 
+ 	/* Deprecated options */
+ 	Opt_recovery,
+@@ -457,6 +458,7 @@ static const match_table_t rescue_tokens = {
+ 	{Opt_usebackuproot, "usebackuproot"},
+ 	{Opt_nologreplay, "nologreplay"},
+ 	{Opt_ignorebadroots, "ignorebadroots"},
++	{Opt_ignoredatacsums, "ignoredatacsums"},
+ 	{Opt_err, NULL},
+ };
+ 
+@@ -504,6 +506,10 @@ static int parse_rescue_options(struct btrfs_fs_info *info, const char *options)
+ 			btrfs_set_and_info(info, IGNOREBADROOTS,
+ 					   "ignoring bad roots");
+ 			break;
++		case Opt_ignoredatacsums:
++			btrfs_set_and_info(info, IGNOREDATACSUMS,
++					   "ignoring data csums");
++			break;
+ 		case Opt_err:
+ 			btrfs_info(info, "unrecognized rescue option '%s'", p);
+ 			ret = -EINVAL;
+@@ -990,7 +996,10 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
+ 		goto out;
+ 
+ 	if (check_ro_option(info, BTRFS_MOUNT_NOLOGREPLAY, "nologreplay") ||
+-	    check_ro_option(info, BTRFS_MOUNT_IGNOREBADROOTS, "ignorebadroots"))
++	    check_ro_option(info, BTRFS_MOUNT_IGNOREBADROOTS,
++			    "ignorebadroots") ||
++	    check_ro_option(info, BTRFS_MOUNT_IGNOREDATACSUMS,
++			    "ignoredatacsums"))
+ 		ret = -EINVAL;
+ out:
+ 	if (btrfs_fs_compat_ro(info, FREE_SPACE_TREE) &&
 -- 
 2.26.2
 

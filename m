@@ -2,70 +2,73 @@ Return-Path: <SRS0=ogea=DG=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.3 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,
-	SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=unavailable
+X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 86563C4727C
-	for <linux-btrfs@archiver.kernel.org>; Tue, 29 Sep 2020 12:18:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8DB46C4727F
+	for <linux-btrfs@archiver.kernel.org>; Tue, 29 Sep 2020 12:33:45 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 3A42820759
-	for <linux-btrfs@archiver.kernel.org>; Tue, 29 Sep 2020 12:18:01 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4E60020759
+	for <linux-btrfs@archiver.kernel.org>; Tue, 29 Sep 2020 12:33:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732364AbgI2MRw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 29 Sep 2020 08:17:52 -0400
-Received: from mx2.suse.de ([195.135.220.15]:46732 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1732356AbgI2MRv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 29 Sep 2020 08:17:51 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id A3971AC84;
-        Tue, 29 Sep 2020 12:17:49 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 45172DA701; Tue, 29 Sep 2020 14:16:30 +0200 (CEST)
-Date:   Tue, 29 Sep 2020 14:16:29 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Goldwyn Rodrigues <rgoldwyn@suse.de>
-Cc:     linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        david@fromorbit.com, hch@lst.de, johannes.thumshirn@wdc.com,
-        dsterba@suse.com, darrick.wong@oracle.com, josef@toxicpanda.com,
-        Goldwyn Rodrigues <rgoldwyn@suse.com>,
-        Nikolay Borisov <nborisov@suse.com>,
-        Johannes Thumshirn <jthumshirn@suse.de>
-Subject: Re: [PATCH 01/14] fs: remove dio_end_io()
-Message-ID: <20200929121629.GD6756@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Goldwyn Rodrigues <rgoldwyn@suse.de>,
-        linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        david@fromorbit.com, hch@lst.de, johannes.thumshirn@wdc.com,
-        dsterba@suse.com, darrick.wong@oracle.com, josef@toxicpanda.com,
-        Goldwyn Rodrigues <rgoldwyn@suse.com>,
-        Nikolay Borisov <nborisov@suse.com>,
-        Johannes Thumshirn <jthumshirn@suse.de>
-References: <20200924163922.2547-1-rgoldwyn@suse.de>
- <20200924163922.2547-2-rgoldwyn@suse.de>
+        id S1732253AbgI2Mdo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 29 Sep 2020 08:33:44 -0400
+Received: from szxga06-in.huawei.com ([45.249.212.32]:46060 "EHLO huawei.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1733073AbgI2MdZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 29 Sep 2020 08:33:25 -0400
+Received: from DGGEMS407-HUB.china.huawei.com (unknown [172.30.72.58])
+        by Forcepoint Email with ESMTP id 8537ADD7272408A6F99D;
+        Tue, 29 Sep 2020 20:33:18 +0800 (CST)
+Received: from huawei.com (10.175.127.227) by DGGEMS407-HUB.china.huawei.com
+ (10.3.19.207) with Microsoft SMTP Server id 14.3.487.0; Tue, 29 Sep 2020
+ 20:33:12 +0800
+From:   Ye Bin <yebin10@huawei.com>
+To:     <clm@fb.com>, <josef@toxicpanda.com>, <dsterba@suse.com>,
+        <linux-btrfs@vger.kernel.org>
+CC:     Ye Bin <yebin10@huawei.com>
+Subject: [PATCH -next]  btrfs: Fix wild pointer reference in btrfs_set_buffer_lockdep_class
+Date:   Tue, 29 Sep 2020 20:33:57 +0800
+Message-ID: <20200929123357.930605-1-yebin10@huawei.com>
+X-Mailer: git-send-email 2.25.4
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20200924163922.2547-2-rgoldwyn@suse.de>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+Content-Transfer-Encoding: 7BIT
+Content-Type:   text/plain; charset=US-ASCII
+X-Originating-IP: [10.175.127.227]
+X-CFilter-Loop: Reflected
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Sep 24, 2020 at 11:39:08AM -0500, Goldwyn Rodrigues wrote:
-> From: Goldwyn Rodrigues <rgoldwyn@suse.com>
-> 
-> Since we removed the last user of dio_end_io(), remove the helper
-> function dio_end_io().
-> 
-> Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-> Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
-> Reviewed-by: Christoph Hellwig <hch@lst.de>
-> Reviewed-by: Josef Bacik <josef@toxicpanda.com>
-> Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
+'ks' is pointer type, but not initialized, so ks->keys will reference
+wild pointer.
 
-I'll add this and patch 2 to misc-next as they're cleanups after the
-dio-iomap switch, so they're in the same batch.
+Signed-off-by: Ye Bin <yebin10@huawei.com>
+---
+ fs/btrfs/disk-io.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 177da507dc2a..7068d006d43f 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -189,12 +189,12 @@ void __init btrfs_init_lockdep(void)
+ void btrfs_set_buffer_lockdep_class(u64 objectid, struct extent_buffer *eb,
+ 				    int level)
+ {
+-	struct btrfs_lockdep_keyset *ks;
++	struct btrfs_lockdep_keyset *ks = btrfs_lockdep_keysets;
+ 
+ 	BUG_ON(level >= ARRAY_SIZE(ks->keys));
+ 
+ 	/* find the matching keyset, id 0 is the default entry */
+-	for (ks = btrfs_lockdep_keysets; ks->id; ks++)
++	for (; ks->id; ks++)
+ 		if (ks->id == objectid)
+ 			break;
+ 
+-- 
+2.25.4
+

@@ -2,75 +2,158 @@ Return-Path: <SRS0=DuSC=DH=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.5 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-13.0 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 20930C4727C
-	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Sep 2020 18:06:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 69EDCC4727C
+	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Sep 2020 20:01:29 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D69672076A
-	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Sep 2020 18:06:47 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 11C5C20709
+	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Sep 2020 20:01:29 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="gTAiiukR"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727468AbgI3SGo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 30 Sep 2020 14:06:44 -0400
-Received: from mx2.suse.de ([195.135.220.15]:34556 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725372AbgI3SGo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 30 Sep 2020 14:06:44 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id BD4BEB269;
-        Wed, 30 Sep 2020 18:06:42 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 0B3D3DA781; Wed, 30 Sep 2020 20:05:22 +0200 (CEST)
-Date:   Wed, 30 Sep 2020 20:05:22 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     dsterba@suse.cz,
-        syzbot <syzbot+582e66e5edf36a22c7b0@syzkaller.appspotmail.com>,
-        clm@fb.com, dsterba@suse.com, josef@toxicpanda.com,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        syzkaller-bugs@googlegroups.com
-Subject: Re: KASAN: use-after-free Read in btrfs_scan_one_device
-Message-ID: <20200930180522.GR6756@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz,
-        syzbot <syzbot+582e66e5edf36a22c7b0@syzkaller.appspotmail.com>,
-        clm@fb.com, dsterba@suse.com, josef@toxicpanda.com,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        syzkaller-bugs@googlegroups.com
-References: <0000000000001fe79005afbf52ea@google.com>
- <20200930165756.GQ6756@twin.jikos.cz>
+        id S1730196AbgI3UB1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 30 Sep 2020 16:01:27 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56230 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1729204AbgI3UB0 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 30 Sep 2020 16:01:26 -0400
+Received: from mail-qk1-x743.google.com (mail-qk1-x743.google.com [IPv6:2607:f8b0:4864:20::743])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 77585C0613D0
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 Sep 2020 13:01:25 -0700 (PDT)
+Received: by mail-qk1-x743.google.com with SMTP id s131so2830068qke.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 Sep 2020 13:01:25 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
+        h=from:to:subject:date:message-id:in-reply-to:references:mime-version
+         :content-transfer-encoding;
+        bh=a9UMpjwI4HuIx3RvUsop419NZCAPJSancsKhYDDGXQs=;
+        b=gTAiiukRS+Z23QeqKeR+Rb9HWolOyqe53F+XXcXy4dsyUxQQEnxsxhdnqb6DpN+pYQ
+         dCImM7/JbDXIZFm49ZWH2R87jhcIWoUMxUCajP0TqkK0keU0yZM90mv4QRexhOEN3l/t
+         w+NpYPg7ZA8ri+8mC4Ts5+jduXXfiITpr0Kbn890mPl8iPJMp7zWOvyRQc0rFQ1CUalA
+         e+gWhqC4zwAsPv8kQFAfQ8sEnXXiZ2GcfTWBKuFfVHnvsvm64S3lK5KtMIOyhEHqcmpc
+         iZ8X4o6iD+PGKbS1cCzCpVrUGD5XXYxBIZjSPgLIrxhPOYBNIm6ZteqWumeyAAuJSDvm
+         86fg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
+         :references:mime-version:content-transfer-encoding;
+        bh=a9UMpjwI4HuIx3RvUsop419NZCAPJSancsKhYDDGXQs=;
+        b=hKe3I6R3YXozSBqCLPnJDhUgQVNU0Ke0N/cAjoaRgvx9knymmTRGglzDjBKBEjUEnd
+         caO7jLZbYmV/guj6FckpU6qZtNwgOceRqdrtweze/eOiDyD3L1f8NWkPi4fIxkhju1og
+         jvZVUzDlXNceMlfPHxmnd7fgrxEIBLH3HFUh6doBldk0S+mPLbkS6qHIyyiRiMRhyiIJ
+         Rkns1VSNn3vVnliKf5rx13w2+wnZyPgq4NA1WuoMWpy9Xrkuiwyre7klWxjXyijhB1IM
+         k4QPSc3xD7E6iXije7esUp+d6dQbS4pYJfpnjurYWw0FvUO2L/6IsHVvcP+ZHKjEvChl
+         hq8g==
+X-Gm-Message-State: AOAM530x/OWfu13lLUxT7dk4lEE75fAYTc6vVL/4sObUPqeSL4CuxChO
+        aNwvuj3uinpeBIQmYsdj6GhfHhDTqHfoR5++
+X-Google-Smtp-Source: ABdhPJzOQUMgAh0iGwzDW7gHMnPkw8nsR+rhpx9dHdXqOH309EM5VaiNsCJTu8vAG50K4Jwfd2FEMQ==
+X-Received: by 2002:a37:b8c2:: with SMTP id i185mr4186114qkf.87.1601496084136;
+        Wed, 30 Sep 2020 13:01:24 -0700 (PDT)
+Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
+        by smtp.gmail.com with ESMTPSA id u23sm3619918qka.43.2020.09.30.13.01.23
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 30 Sep 2020 13:01:23 -0700 (PDT)
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: [PATCH 1/9] btrfs: add a trace point for reserve tickets
+Date:   Wed, 30 Sep 2020 16:01:01 -0400
+Message-Id: <35017faea237f88452785b208e4fe36002b46fc9.1601495426.git.josef@toxicpanda.com>
+X-Mailer: git-send-email 2.26.2
+In-Reply-To: <cover.1601495426.git.josef@toxicpanda.com>
+References: <cover.1601495426.git.josef@toxicpanda.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20200930165756.GQ6756@twin.jikos.cz>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Sep 30, 2020 at 06:57:56PM +0200, David Sterba wrote:
-> On Sun, Sep 20, 2020 at 07:12:14AM -0700, syzbot wrote:
-> > Hello,
-> > 
-> > syzbot found the following issue on:
-> > 
-> > HEAD commit:    eb5f95f1 Merge tag 's390-5.9-6' of git://git.kernel.org/pu..
-> > git tree:       upstream
-> > console output: https://syzkaller.appspot.com/x/log.txt?x=10a0a8bb900000
-> > kernel config:  https://syzkaller.appspot.com/x/.config?x=ffe85b197a57c180
-> > dashboard link: https://syzkaller.appspot.com/bug?extid=582e66e5edf36a22c7b0
-> > compiler:       gcc (GCC) 10.1.0-syz 20200507
-> > 
-> > Unfortunately, I don't have any reproducer for this issue yet.
-> > 
-> > IMPORTANT: if you fix the issue, please add the following tag to the commit:
-> > Reported-by: syzbot+582e66e5edf36a22c7b0@syzkaller.appspotmail.com
-> 
-> #syz fix: btrfs: fix overflow when copying corrupt csums for a message
+While debugging a ENOSPC related performance problem I needed to see the
+time difference between start and end of a reserve ticket, so add a
+tracepoint where we add the ticket, and where we end the ticket.
 
-Johannes spotted that this is not the right fix for this report, I don't
-know how to tell syzbot to revert the 'fix:' command, there isn't
-'unfix' (like there's 'undup').
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+---
+ fs/btrfs/space-info.c        |  3 +++
+ include/trace/events/btrfs.h | 40 ++++++++++++++++++++++++++++++++++++
+ 2 files changed, 43 insertions(+)
+
+diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
+index 64099565ab8f..40726c8888f7 100644
+--- a/fs/btrfs/space-info.c
++++ b/fs/btrfs/space-info.c
+@@ -1279,6 +1279,7 @@ static int handle_reserve_ticket(struct btrfs_fs_info *fs_info,
+ 	 * space wasn't reserved at all).
+ 	 */
+ 	ASSERT(!(ticket->bytes == 0 && ticket->error));
++	trace_btrfs_end_reserve_ticket(fs_info, ticket->error);
+ 	return ret;
+ }
+ 
+@@ -1380,6 +1381,8 @@ static int __reserve_bytes(struct btrfs_fs_info *fs_info,
+ 			list_add_tail(&ticket.list,
+ 				      &space_info->priority_tickets);
+ 		}
++		trace_btrfs_add_reserve_ticket(fs_info, space_info->flags,
++					       flush, orig_bytes);
+ 	} else if (!ret && space_info->flags & BTRFS_BLOCK_GROUP_METADATA) {
+ 		used += orig_bytes;
+ 		/*
+diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
+index ecd24c719de4..68d1622623c7 100644
+--- a/include/trace/events/btrfs.h
++++ b/include/trace/events/btrfs.h
+@@ -2025,6 +2025,46 @@ TRACE_EVENT(btrfs_convert_extent_bit,
+ 		  __print_flags(__entry->clear_bits, "|", EXTENT_FLAGS))
+ );
+ 
++TRACE_EVENT(btrfs_add_reserve_ticket,
++	TP_PROTO(const struct btrfs_fs_info *fs_info, u64 flags, int flush,
++		 u64 bytes),
++
++	TP_ARGS(fs_info, flags, flush, bytes),
++
++	TP_STRUCT__entry_btrfs(
++		__field(	u64,	flags	)
++		__field(	int,	flush	)
++		__field(	u64,	bytes	)
++	),
++
++	TP_fast_assign_btrfs(fs_info,
++		__entry->flags	= flags;
++		__entry->flush	= flush;
++		__entry->bytes	= bytes;
++	),
++
++	TP_printk_btrfs("flags=%s flush=%s bytes=%llu",
++			__print_symbolic(__entry->flush, FLUSH_ACTIONS),
++			__print_flags(__entry->flags, "|", BTRFS_GROUP_FLAGS),
++			__entry->bytes)
++);
++
++TRACE_EVENT(btrfs_end_reserve_ticket,
++	TP_PROTO(const struct btrfs_fs_info *fs_info, int error),
++
++	TP_ARGS(fs_info, error),
++
++	TP_STRUCT__entry_btrfs(
++		__field(	int,	error	)
++	),
++
++	TP_fast_assign_btrfs(fs_info,
++		__entry->error	= error;
++	),
++
++	TP_printk_btrfs("error=%d", __entry->error)
++);
++
+ DECLARE_EVENT_CLASS(btrfs_sleep_tree_lock,
+ 	TP_PROTO(const struct extent_buffer *eb, u64 start_ns),
+ 
+-- 
+2.26.2
+

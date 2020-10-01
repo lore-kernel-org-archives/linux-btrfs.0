@@ -7,39 +7,39 @@ X-Spam-Status: No, score=-11.6 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,NICE_REPLY_A,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DD2AAC4727C
-	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Oct 2020 13:23:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D35F4C4727C
+	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Oct 2020 13:24:58 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 9898720754
-	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Oct 2020 13:23:57 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8FEE020759
+	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Oct 2020 13:24:58 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="LFOOnqqt"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="kR3zXnvU"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732331AbgJANX5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 1 Oct 2020 09:23:57 -0400
-Received: from mx2.suse.de ([195.135.220.15]:42240 "EHLO mx2.suse.de"
+        id S1732279AbgJANY5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 1 Oct 2020 09:24:57 -0400
+Received: from mx2.suse.de ([195.135.220.15]:44790 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1731993AbgJANXw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 1 Oct 2020 09:23:52 -0400
+        id S1732018AbgJANY5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 1 Oct 2020 09:24:57 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1601558631;
+        t=1601558695;
         h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
          to:to:cc:mime-version:mime-version:content-type:content-type:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references:autocrypt:autocrypt;
-        bh=abH/w0iwll6KU2gOlHy3/m2zTXlTDNtR+9Osp3pdCeU=;
-        b=LFOOnqqt7++ntrgwniVDjqbSJm+OZLJ5ya3mkcuXnOgOL9wkKvqJ0lrqPFrjFpmXeMK3hU
-        L0dPysx+SCtx4Y3s5JHnLPeIpk19Ry0Tvxd6GWKmDpgWzAt5e3fb+ZVFODx96B3TrKhlXV
-        xTUAilvXZg/qsu6IVU3cbJJ39e62OoA=
+        bh=7kGFWZQBl3Q1XQv4hNQDzTP6Ps+q5eK4r0zpJQjIi2I=;
+        b=kR3zXnvUtraeTh+qpkGITVWrF7lEI3bW2rnxYbz8pU1+lF4PohTD5Dsy40DSq0OO7vL1sM
+        JfEbc+ZqHgbQ2FVxcPHEta7ZeoQXEPbJQWDHimPOLnGsNEv8UoiZoXRMVdBJUGH1R4DYga
+        fh74bS8+YMtGblxavKhXnXMb7fsdJiY=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 03101ACF6;
-        Thu,  1 Oct 2020 13:23:51 +0000 (UTC)
-Subject: Re: [PATCH 4/9] btrfs: check reclaim_size in need_preemptive_reclaim
+        by mx2.suse.de (Postfix) with ESMTP id 96D3DAC54;
+        Thu,  1 Oct 2020 13:24:55 +0000 (UTC)
+Subject: Re: [PATCH 3/9] btrfs: rename need_do_async_reclaim
 To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
         kernel-team@fb.com
 References: <cover.1601495426.git.josef@toxicpanda.com>
- <855a8376fa0d8e63e066ac323a985fe7bc1e562f.1601495426.git.josef@toxicpanda.com>
+ <0a1d66e4cc97d705ec58980f5883cf2a763a44f6.1601495426.git.josef@toxicpanda.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  xsFNBFiKBz4BEADNHZmqwhuN6EAzXj9SpPpH/nSSP8YgfwoOqwrP+JR4pIqRK0AWWeWCSwmZ
@@ -83,12 +83,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <3a3a2fc0-53fe-a080-e166-85b129db2ff1@suse.com>
-Date:   Thu, 1 Oct 2020 16:23:50 +0300
+Message-ID: <37a2cbe4-5b00-6c81-1896-7df409e25c28@suse.com>
+Date:   Thu, 1 Oct 2020 16:24:55 +0300
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
  Thunderbird/68.10.0
 MIME-Version: 1.0
-In-Reply-To: <855a8376fa0d8e63e066ac323a985fe7bc1e562f.1601495426.git.josef@toxicpanda.com>
+In-Reply-To: <0a1d66e4cc97d705ec58980f5883cf2a763a44f6.1601495426.git.josef@toxicpanda.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -99,42 +99,31 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 30.09.20 г. 23:01 ч., Josef Bacik wrote:
-> If we're flushing space for tickets then we have
-> space_info->reclaim_size set and we do not need to do background
-> reclaim.
+> All of our normal flushing is asynchronous reclaim, so this helper is
+> poorly named.  This is more checking if we need to preemptively flush
+> space, so rename it to need_preemptive_reclaim.
 > 
 > Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-
-I'm fine with this but check my remak below.
-
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 > ---
->  fs/btrfs/space-info.c | 7 +++++++
->  1 file changed, 7 insertions(+)
+>  fs/btrfs/space-info.c | 10 +++++-----
+>  1 file changed, 5 insertions(+), 5 deletions(-)
 > 
 > diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-> index 98207ea57a3d..518749093bc5 100644
+> index 024daa843c56..98207ea57a3d 100644
 > --- a/fs/btrfs/space-info.c
 > +++ b/fs/btrfs/space-info.c
-> @@ -805,6 +805,13 @@ static inline int need_preemptive_reclaim(struct btrfs_fs_info *fs_info,
->  	if ((space_info->bytes_used + space_info->bytes_reserved) >= thresh)
->  		return 0;
+> @@ -795,9 +795,9 @@ btrfs_calc_reclaim_metadata_size(struct btrfs_fs_info *fs_info,
+>  	return to_reclaim;
+>  }
 >  
-> +	/*
-> +	 * We have tickets queued, bail so we don't compete with the async
-> +	 * flushers.
-> +	 */
-> +	if (space_info->reclaim_size)
-> +		return 0;
-> +
+> -static inline int need_do_async_reclaim(struct btrfs_fs_info *fs_info,
+> -					struct btrfs_space_info *space_info,
+> -					u64 used)
+> +static inline int need_preemptive_reclaim(struct btrfs_fs_info *fs_info,
+> +					  struct btrfs_space_info *space_info,
+> +					  u64 used)
 
-nit: So where do we draw the line if this check should be in this
-function or in __reserve_bytes so that we eliminate the case where a
-preemptive reclaim is scheduled only to return instantly because of
-tickets. Though the 'if' in __reserve_bytes is getting slitghly out of
-hand :)
+nit: oops I forgot to mention but while at it, why don't you switch the
+function to bool return type.
 
->  	if (!btrfs_calc_reclaim_metadata_size(fs_info, space_info))
->  		return 0;
->  
-> 
+<snip>

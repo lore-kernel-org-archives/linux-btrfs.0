@@ -7,58 +7,58 @@ X-Spam-Status: No, score=-12.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8655BC4727E
-	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Oct 2020 18:39:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 657BDC47425
+	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Oct 2020 18:39:11 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 3E3BD20796
-	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Oct 2020 18:39:10 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2A9E720796
+	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Oct 2020 18:39:11 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="LbqkXs8w"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="mAf08R9T"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1733124AbgJASjJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 1 Oct 2020 14:39:09 -0400
-Received: from esa6.hgst.iphmx.com ([216.71.154.45]:24728 "EHLO
+        id S1733133AbgJASjK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 1 Oct 2020 14:39:10 -0400
+Received: from esa6.hgst.iphmx.com ([216.71.154.45]:24722 "EHLO
         esa6.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1733088AbgJASjD (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Oct 2020 14:39:03 -0400
+        with ESMTP id S1733103AbgJASjH (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Oct 2020 14:39:07 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1601577543; x=1633113543;
+  t=1601577547; x=1633113547;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=nL9Fc9WGfI7JmFd2yFwmGohr+9ZRNKakMbaYwBZP3M4=;
-  b=LbqkXs8wlgQ5R75ZweaFwVeeFq2TPDD7eAUHDIjXOggr0HZZkOyqMnkI
-   HF4HEf6OaeLZ9TMyUl4l2dxy94EJ30t2HSumpx2lXab+EKNSafg7hXMkc
-   yE+vxzm6HlizPT36q8nu3z6KhbURlQ5bj3RyCkXogklLtxwzgugDozuzn
-   nahoccZUvBuxHfqKHf1Bu18WnDj/gwZXmzTXDyxnWGFI9A1os0RRWrtZ9
-   zMURWo+ar5r3Oa3F34HWDC8zBW926TuuRBc4FiLYUyLpAceOXoeyqS2Wi
-   ao0LSKZNehHM6IwFq0l+GZzEGpbaAh5UJtMqYXzHTKdlwqDb0ddQTvxZp
+  bh=q5i/I3gLwRLnWg5cl41eN7YTBx4uHlSfrYgPFVxy6iM=;
+  b=mAf08R9TslT/9dkPgUbesT1T3v6CSs8E5x2gNXA5xuOkmHhY2FdezbQZ
+   4wsxwlTsPmMPoNfq8h6s1LM48kSPCVsrR2zw5N9G1xdbFUICb+HtRia1N
+   XapOo0HTWEFxETneNXQExbj+hiu2wbchoXH2ZJBoSuJNBRc/cZL5X9rdh
+   jMKOnBWmEAhIMOa8UQrUES80ouJhSivm0t0JlwmFr9xNmszNmDGAzpTgl
+   CmR0xJOEGvjJuGQ0YFPbfdIr4zZibXTa7zLNTwNuwwmllAKq8x6ZeiVV0
+   WafPaXf2XAbbTmu89tNMAjracZA3JXh+Y2pvseqd8w/s4veKFG7XEtSBf
    g==;
-IronPort-SDR: 88X4xiX2dejCLJE1xxBfN/5T9V9hclIjVCr73Fbt1YQhiFKRS7vpgDbEXXVB0ns+FcD9+guX+P
- yC6UQE8NLYwgC3uaDR3gHNGj2rL+mDo1eoFSMJkrRFz+d8k+XUAilxqCTnWbjZZU4lihIZUpyj
- DJe1hE2D58scCC/syzLd7om25UI1j6e246VFicMOe+IhIGUADJZD84uYCZo/BieujInNIyM7Jg
- wc+w56H5HnFydcZ0+XE19nzsVWLtoNoQ1Ef8yjsQ6Te8fh2cYIxFCBIsOovbG3Ocx/Lv82DjQz
- 4HA=
+IronPort-SDR: ehF3AQeTioDudjVLILMlU8Z/oJCPcf6oEU6p6FPFWCsv/Gt+wOh7RHaJH7RH4GO4K2cvMsSvMe
+ aC61N8n+st8gSRvRaby8o/rVm71MNpIvgxHJCnE5KiIHyQJky145UV6fG71lMVVQ1mFWs9AkT+
+ Ouon0qSzIR+k7VlqsYnybm2k+TLhsrZmltpsyz8D1fqLx+LW14aYFGRwSY68vQKSpkfr8OD9of
+ CD8USv5hYlca4PY/POetwAZFIv9JBRF0j9907W1UYzAw8ObHyd1c350OFNBLq0lZk6xVucboNY
+ 5/M=
 X-IronPort-AV: E=Sophos;i="5.77,324,1596470400"; 
-   d="scan'208";a="150036828"
+   d="scan'208";a="150036833"
 Received: from uls-op-cesaip02.wdc.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 02 Oct 2020 02:38:39 +0800
-IronPort-SDR: BAEdnzlrn5XZeoQJVRIvC+TpWOCGHY7Mcv2Mk7FFdz9JEG/50qlcqwQPQYfebQDcLBxYfZAB9N
- bBgHccY/QUsA==
+  by ob1.hgst.iphmx.com with ESMTP; 02 Oct 2020 02:38:42 +0800
+IronPort-SDR: zEI/sW8fGcyZfUs4Cg42wmxrhwrRfPdG7GSIwRpfgGvjW1tVbtd//F984ja0oOLa5FaxU1EfPG
+ 9ydqnGUyhgDg==
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 01 Oct 2020 11:24:36 -0700
-IronPort-SDR: MG6yF5uUWI8d6ZiNhRjQuWFu9MpbhKpCsBngh3Z42sCJ9zZ+MJ9Wn5PLBG/khPQDdU5pk8DTkz
- CMT9Mga2RE/A==
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 01 Oct 2020 11:24:39 -0700
+IronPort-SDR: mLJyzyrngVD96Zl4kdjiOE/N54Xjm4SOKuLetpDndMUnDP/FBZLiLJ31iBoQJjHuaLZVwyMSUF
+ 1gmw0CGV93sw==
 WDCIronportException: Internal
 Received: from naota.dhcp.fujisawa.hgst.com ([10.149.52.155])
-  by uls-op-cesaip02.wdc.com with ESMTP; 01 Oct 2020 11:38:38 -0700
+  by uls-op-cesaip02.wdc.com with ESMTP; 01 Oct 2020 11:38:42 -0700
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     linux-btrfs@vger.kernel.org, dsterba@suse.com
 Cc:     hare@suse.com, linux-fsdevel@vger.kernel.org,
         Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH v8 32/41] btrfs: implement cloning for ZONED device-replace
-Date:   Fri,  2 Oct 2020 03:36:39 +0900
-Message-Id: <c39a5cd7380c8b6e59417cc80294ce808c016e8e.1601574234.git.naohiro.aota@wdc.com>
+Subject: [PATCH v8 35/41] btrfs: enable relocation in ZONED mode
+Date:   Fri,  2 Oct 2020 03:36:42 +0900
+Message-Id: <0b38315d936c12a25e56118c429514541585aa23.1601574234.git.naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.27.0
 In-Reply-To: <dece91bca322ce44bed19f2b0f460fa5ded2e512.1601574234.git.naohiro.aota@wdc.com>
 References: <dece91bca322ce44bed19f2b0f460fa5ded2e512.1601574234.git.naohiro.aota@wdc.com>
@@ -68,173 +68,90 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is 2/4 patch to implement device-replace for ZONED mode.
+To serialize allocation and submit_bio, we introduced mutex around them. As
+a result, preallocation must be completely disabled to avoid a deadlock.
 
-On zoned mode, a block group must be either copied (from the source device
-to the destination device) or cloned (to the both device).
-
-This commit implements the cloning part. If a block group targeted by an IO
-is marked to copy, we should not clone the IO to the destination device,
-because the block group is eventually copied by the replace process.
-
-This commit also handles cloning of device reset.
+Since current relocation process relies on preallocation to move file data
+extents, it must be handled in another way. In ZONED mode, we just truncate
+the inode to the size that we wanted to pre-allocate. Then, we flush dirty
+pages on the file before finishing relocation process.
+run_delalloc_zoned() will handle all the allocation and submit IOs to the
+underlying layers.
 
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 ---
- fs/btrfs/extent-tree.c | 20 ++++++++++++++++++--
- fs/btrfs/volumes.c     | 33 +++++++++++++++++++++++++++++++--
- fs/btrfs/zoned.c       | 11 +++++++++++
- 3 files changed, 60 insertions(+), 4 deletions(-)
+ fs/btrfs/relocation.c | 35 +++++++++++++++++++++++++++++++++--
+ 1 file changed, 33 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index c0e4a577c61c..f44faaf7aca2 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -35,6 +35,7 @@
- #include "discard.h"
- #include "rcu-string.h"
- #include "zoned.h"
-+#include "dev-replace.h"
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 3602806d71bd..3fa60065b483 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -2603,6 +2603,32 @@ static noinline_for_stack int prealloc_file_extent_cluster(
+ 	if (ret)
+ 		return ret;
  
- #undef SCRAMBLE_DELAYED_REFS
- 
-@@ -1336,6 +1337,8 @@ int btrfs_discard_extent(struct btrfs_fs_info *fs_info, u64 bytenr,
- 			u64 length = stripe->length;
- 			u64 bytes;
- 			struct request_queue *req_q;
-+			struct btrfs_dev_replace *dev_replace =
-+				&fs_info->dev_replace;
- 
- 			if (!stripe->dev->bdev) {
- 				ASSERT(btrfs_test_opt(fs_info, DEGRADED));
-@@ -1344,15 +1347,28 @@ int btrfs_discard_extent(struct btrfs_fs_info *fs_info, u64 bytenr,
- 
- 			req_q = bdev_get_queue(stripe->dev->bdev);
- 			/* zone reset in ZONED mode */
--			if (btrfs_can_zone_reset(dev, physical, length))
-+			if (btrfs_can_zone_reset(dev, physical, length)) {
- 				ret = btrfs_reset_device_zone(dev, physical,
- 							      length, &bytes);
--			else if (blk_queue_discard(req_q))
-+				if (ret)
-+					goto next;
-+				if (!btrfs_dev_replace_is_ongoing(
-+					    dev_replace) ||
-+				    dev != dev_replace->srcdev)
-+					goto next;
++	/*
++	 * In ZONED mode, we cannot preallocate the file region. Instead, we
++	 * dirty and fiemap_write the region.
++	 */
 +
-+				discarded_bytes += bytes;
-+				/* send to replace target as well */
-+				ret = btrfs_reset_device_zone(
-+					dev_replace->tgtdev,
-+					physical, length, &bytes);
-+			} else if (blk_queue_discard(req_q))
- 				ret = btrfs_issue_discard(dev->bdev, physical,
- 							  length, &bytes);
- 			else
- 				continue;
- 
-+next:
- 			if (!ret) {
- 				discarded_bytes += bytes;
- 			} else if (ret != -EOPNOTSUPP) {
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 924ba96dc8fa..af2ed4d3389f 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -5965,9 +5965,29 @@ static int get_extra_mirror_from_replace(struct btrfs_fs_info *fs_info,
- 	return ret;
- }
- 
-+static bool is_block_group_to_copy(struct btrfs_fs_info *fs_info, u64 logical)
-+{
-+	struct btrfs_block_group *cache;
-+	bool ret;
++	if (btrfs_fs_incompat(inode->root->fs_info, ZONED)) {
++		struct btrfs_root *root = inode->root;
++		struct btrfs_trans_handle *trans;
 +
-+	/* non-ZONED mode does not use "to_copy" flag */
-+	if (!btrfs_fs_incompat(fs_info, ZONED))
-+		return false;
++		end = cluster->end - offset + 1;
++		trans = btrfs_start_transaction(root, 1);
++		if (IS_ERR(trans))
++			return PTR_ERR(trans);
 +
-+	cache = btrfs_lookup_block_group(fs_info, logical);
++		inode->vfs_inode.i_ctime = current_time(&inode->vfs_inode);
++		i_size_write(&inode->vfs_inode, end);
++		ret = btrfs_update_inode(trans, root, &inode->vfs_inode);
++		if (ret) {
++			btrfs_abort_transaction(trans, ret);
++			btrfs_end_transaction(trans);
++			return ret;
++		}
 +
-+	spin_lock(&cache->lock);
-+	ret = cache->to_copy;
-+	spin_unlock(&cache->lock);
++		return btrfs_end_transaction(trans);
++	}
 +
-+	btrfs_put_block_group(cache);
-+	return ret;
-+}
-+
- static void handle_ops_on_dev_replace(enum btrfs_map_op op,
- 				      struct btrfs_bio **bbio_ret,
- 				      struct btrfs_dev_replace *dev_replace,
-+				      u64 logical,
- 				      int *num_stripes_ret, int *max_errors_ret)
- {
- 	struct btrfs_bio *bbio = *bbio_ret;
-@@ -5980,6 +6000,15 @@ static void handle_ops_on_dev_replace(enum btrfs_map_op op,
- 	if (op == BTRFS_MAP_WRITE) {
- 		int index_where_to_add;
- 
-+		/*
-+		 * a block group which have "to_copy" set will
-+		 * eventually copied by dev-replace process. We can
-+		 * avoid cloning IO here.
-+		 */
-+		if (is_block_group_to_copy(dev_replace->srcdev->fs_info,
-+					   logical))
-+			return;
-+
- 		/*
- 		 * duplicate the write operations while the dev replace
- 		 * procedure is running. Since the copying of the old disk to
-@@ -6375,8 +6404,8 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
- 
- 	if (dev_replace_is_ongoing && dev_replace->tgtdev != NULL &&
- 	    need_full_stripe(op)) {
--		handle_ops_on_dev_replace(op, &bbio, dev_replace, &num_stripes,
--					  &max_errors);
-+		handle_ops_on_dev_replace(op, &bbio, dev_replace, logical,
-+					  &num_stripes, &max_errors);
+ 	inode_lock(&inode->vfs_inode);
+ 	for (nr = 0; nr < cluster->nr; nr++) {
+ 		start = cluster->boundary[nr] - offset;
+@@ -2799,6 +2825,8 @@ static int relocate_file_extent_cluster(struct inode *inode,
+ 		}
  	}
+ 	WARN_ON(nr != cluster->nr);
++	if (btrfs_fs_incompat(fs_info, ZONED) && !ret)
++		ret = btrfs_wait_ordered_range(inode, 0, (u64)-1);
+ out:
+ 	kfree(ra);
+ 	return ret;
+@@ -3434,8 +3462,12 @@ static int __insert_orphan_inode(struct btrfs_trans_handle *trans,
+ 	struct btrfs_path *path;
+ 	struct btrfs_inode_item *item;
+ 	struct extent_buffer *leaf;
++	u64 flags = BTRFS_INODE_NOCOMPRESS | BTRFS_INODE_PREALLOC;
+ 	int ret;
  
- 	*bbio_ret = bbio;
-diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-index 57bd6dbd8f45..f10cc5f49962 100644
---- a/fs/btrfs/zoned.c
-+++ b/fs/btrfs/zoned.c
-@@ -17,6 +17,7 @@
- #include "disk-io.h"
- #include "block-group.h"
- #include "transaction.h"
-+#include "dev-replace.h"
- 
- /* Maximum number of zones to report per blkdev_report_zones() call */
- #define BTRFS_REPORT_NR_ZONES   4096
-@@ -892,6 +893,8 @@ int btrfs_load_block_group_zone_info(struct btrfs_block_group *cache)
- 	for (i = 0; i < map->num_stripes; i++) {
- 		bool is_sequential;
- 		struct blk_zone zone;
-+		struct btrfs_dev_replace *dev_replace = &fs_info->dev_replace;
-+		int dev_replace_is_ongoing = 0;
- 
- 		device = map->stripes[i].dev;
- 		physical = map->stripes[i].physical;
-@@ -918,6 +921,14 @@ int btrfs_load_block_group_zone_info(struct btrfs_block_group *cache)
- 		 */
- 		btrfs_dev_clear_zone_empty(device, physical);
- 
-+		down_read(&dev_replace->rwsem);
-+		dev_replace_is_ongoing =
-+			btrfs_dev_replace_is_ongoing(dev_replace);
-+		if (dev_replace_is_ongoing && dev_replace->tgtdev != NULL)
-+			btrfs_dev_clear_zone_empty(dev_replace->tgtdev,
-+						   physical);
-+		up_read(&dev_replace->rwsem);
++	if (btrfs_fs_incompat(trans->fs_info, ZONED))
++		flags &= ~BTRFS_INODE_PREALLOC;
 +
- 		/*
- 		 * The group is mapped to a sequential zone. Get the zone write
- 		 * pointer to determine the allocation offset within the zone.
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+ 		return -ENOMEM;
+@@ -3450,8 +3482,7 @@ static int __insert_orphan_inode(struct btrfs_trans_handle *trans,
+ 	btrfs_set_inode_generation(leaf, item, 1);
+ 	btrfs_set_inode_size(leaf, item, 0);
+ 	btrfs_set_inode_mode(leaf, item, S_IFREG | 0600);
+-	btrfs_set_inode_flags(leaf, item, BTRFS_INODE_NOCOMPRESS |
+-					  BTRFS_INODE_PREALLOC);
++	btrfs_set_inode_flags(leaf, item, flags);
+ 	btrfs_mark_buffer_dirty(leaf);
+ out:
+ 	btrfs_free_path(path);
 -- 
 2.27.0
 

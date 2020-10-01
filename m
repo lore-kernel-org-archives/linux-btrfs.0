@@ -7,58 +7,61 @@ X-Spam-Status: No, score=-12.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CF470C47426
-	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Oct 2020 18:38:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BDB14C47425
+	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Oct 2020 18:38:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 7C2FE20796
-	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Oct 2020 18:38:21 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7EF9720796
+	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Oct 2020 18:38:24 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="JMV7tSvd"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="gcD1I6Jq"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732958AbgJASiU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 1 Oct 2020 14:38:20 -0400
-Received: from esa6.hgst.iphmx.com ([216.71.154.45]:24684 "EHLO
+        id S1729412AbgJASiJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 1 Oct 2020 14:38:09 -0400
+Received: from esa6.hgst.iphmx.com ([216.71.154.45]:24680 "EHLO
         esa6.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729990AbgJASiK (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Oct 2020 14:38:10 -0400
+        with ESMTP id S1729927AbgJASiD (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Oct 2020 14:38:03 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1601577490; x=1633113490;
+  t=1601577483; x=1633113483;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=nt5RvzrKncyCwRonsGkKjpSvnmNJRAz+NkVdMTQ33Do=;
-  b=JMV7tSvdj40lCEbmZPE/i6fIaCl7NKWzSpGJA5Q+OR/hJ/0YBRJLJ3Vk
-   sJCHaLGOZZExGH15VHxq4WbTWKfo64XDx1a5eSonYdqLZUKNnLPuW4Mzn
-   7zj0wbNBhxZ95wPnGOTujdGaOdyr7oeKUsWkmPmwrReMsbWxgYdKIkuF5
-   0XsPWx/arCGK5KXlJbUzUX9AO3C7zmLtba7X8nqLE7Fn6WvK6vSVdf2Xo
-   kRKF9OHluXta1l9Ghl7xxdWACwMggUoKBcnu4MSN4dRzzyCv2VAtyjzxB
-   Whw+mkJZcBDPBtz4MAWpBL3oid7KIQH+e8hC2UeUb45PbufU1aihIEV7A
+  bh=5ETJSKP96iJAWlgibSI+CXwv6npNrB2/5xTsR6UalTM=;
+  b=gcD1I6Jq1lBr4NXqro6Qbc7RmE8Gr/W4SuCtSbo0hwoK8pyo9vh4ABqJ
+   p7zXpSHhB8/WFQ827NMk2X8PByL5SYEfqbR7C2PK1gRmC03/RZtTezpjf
+   y/iuc1yJ+RT9MHthjaB58QMHxf4CmQvYKY4lMAFFHyXT8Q9FewJ1vaLkA
+   twVDo1Vb7wJ08wNywi6wz1ihHSAbgui9hfzYZr5BH8wMrHYcHxPfQ6SgN
+   fOOa9Qfa+GOVGmJFXFoXu8gDFTvWA3FBXuL+rvF173VHdP8aDRx+j5Ex+
+   /eWpoXkqNAzY895+bVYe7RslEiE7RKqAka3HMs3WkE+5uuoxWrctRNvmC
    w==;
-IronPort-SDR: tn3FRS82hCci8o2FaL97h/JQV42b35yE7ZhoKIAkoWHcv5K2iH35OIf61e54zOspqRYOzkWRPy
- JWK2j8XjiQBp07XXqsybfPcES+1epEdPx1nz+O15af1Cbj+SeIqTOeUBJynCblvqb4nCSPlThy
- ryDnNN3hR53OPVoFZGhrhmS3eNa68kpU2uuj6cCLzB4uTNgrNuA1X7Xf4Uw707Ep5yHIPgbc+m
- ieEk4t060Wf857u2Uk7zsm1qhawJamUAK0uBuOi253UZO0wIbEPBYQ6dPoEnxyTe/+gsSBTrPB
- 8Cc=
+IronPort-SDR: Ti7coKoozM74JVoq4/2+3dU7s9wzUJQ/9/T9tnFu2aJq+QxkJ0wt4wX5WyJBnePHs0A6hLjBV5
+ Ylbl1RNN8XcEhJjelzkD3iCZTd/9ZFI83+JxMA76WHWrSG5wrjDv5j50OkIMeuuIxyxVKvwx3D
+ ke5pizpWAShr2qcKrFtI97mGcOMPx/mhlgYLcCZo249enIiNImSSSH6rlJs4OGoJSx/SsraySH
+ WcvPuQfaMhovkmJHRo9TI4GwhSFbtBjJgr6lG0VL7MJE+N5ZoHgx9pbhwY/r2+mnIHtyY8FfGw
+ Nsw=
 X-IronPort-AV: E=Sophos;i="5.77,324,1596470400"; 
-   d="scan'208";a="150036778"
+   d="scan'208";a="150036762"
 Received: from uls-op-cesaip02.wdc.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 02 Oct 2020 02:38:08 +0800
-IronPort-SDR: bf794fw+aBZsDY88/2tPNY5ym5+OFj0HPGRo4DWuXzgcUfvhIdS9hKRB8YHyy2pSLEW+Rm69HK
- Uwn9EamdP2Tw==
+  by ob1.hgst.iphmx.com with ESMTP; 02 Oct 2020 02:38:02 +0800
+IronPort-SDR: r8O3PXw9zc4GhH46WBRGcHA8vd3I6KrXERnmOScctQgKBQSB/Qz/sWV7XxTG13Oq/D+qCiMsS7
+ BpwMjbP4atpQ==
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 01 Oct 2020 11:24:04 -0700
-IronPort-SDR: 7IRGwnfewwsAEDD05qfTyQF+VX+UONahpyegvFo6FZoP/NJYURunourDkaW86XybvSjMX2hc6Q
- YAuhS41A8eOQ==
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 01 Oct 2020 11:23:59 -0700
+IronPort-SDR: zfnoi9Wi2Zuarstdwa+QDGGK6Z3dCgtYMAOtCtEQB8dMGBkSWfYKLZgZc6Pdu57aenIL4f4gek
+ G59jHh21XYBA==
 WDCIronportException: Internal
 Received: from naota.dhcp.fujisawa.hgst.com ([10.149.52.155])
-  by uls-op-cesaip02.wdc.com with ESMTP; 01 Oct 2020 11:38:07 -0700
+  by uls-op-cesaip02.wdc.com with ESMTP; 01 Oct 2020 11:38:01 -0700
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     linux-btrfs@vger.kernel.org, dsterba@suse.com
 Cc:     hare@suse.com, linux-fsdevel@vger.kernel.org,
-        Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH v8 06/41] btrfs: disallow space_cache in ZONED mode
-Date:   Fri,  2 Oct 2020 03:36:13 +0900
-Message-Id: <74608b65bb5c80387169b21b7b4e7c58f06883d6.1601574234.git.naohiro.aota@wdc.com>
+        Naohiro Aota <naohiro.aota@wdc.com>,
+        Anand Jain <anand.jain@oracle.com>,
+        Johannes Thumshirn <jthumshirn@suse.de>,
+        Damien Le Moal <damien.lemoal@wdc.com>
+Subject: [PATCH v8 02/41] btrfs: introduce ZONED feature flag
+Date:   Fri,  2 Oct 2020 03:36:09 +0900
+Message-Id: <778806c32892a82a27a9252f8d33003fa95a20ee.1601574234.git.naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.27.0
 In-Reply-To: <dece91bca322ce44bed19f2b0f460fa5ded2e512.1601574234.git.naohiro.aota@wdc.com>
 References: <dece91bca322ce44bed19f2b0f460fa5ded2e512.1601574234.git.naohiro.aota@wdc.com>
@@ -68,126 +71,51 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-As updates to the space cache v1 are in-place, the space cache cannot be
-located over sequential zones and there is no guarantees that the device
-will have enough conventional zones to store this cache. Resolve this
-problem by disabling completely the space cache v1.  This does not
-introduces any problems with sequential block groups: all the free space is
-located after the allocation pointer and no free space before the pointer.
-There is no need to have such cache.
+This patch introduces the ZONED incompat flag. The flag indicates that the
+volume management will satisfy the constraints imposed by host-managed
+zoned block devices.
 
-Note: we can technically use free-space-tree (space cache v2) on ZONED
-mode. But, since ZONED mode now always allocate extents in a block group
-sequentially regardless of underlying device zone type, it's no use to
-enable and maintain the tree.
-
-For the same reason, NODATACOW is also disabled.
-
-Also INODE_MAP_CACHE is also disabled to avoid preallocation in the
-INODE_MAP_CACHE inode.
-
-In summary, ZONED will disable:
-
-| Disabled features | Reason                                              |
-|-------------------+-----------------------------------------------------|
-| RAID/Dup          | Cannot handle two zone append writes to different   |
-|                   | zones                                               |
-|-------------------+-----------------------------------------------------|
-| space_cache (v1)  | In-place updating                                   |
-| NODATACOW         | In-place updating                                   |
-|-------------------+-----------------------------------------------------|
-| fallocate         | Reserved extent will be a write hole                |
-| INODE_MAP_CACHE   | Need pre-allocation. (and will be deprecated?)      |
-|-------------------+-----------------------------------------------------|
-| MIXED_BG          | Allocated metadata region will be write holes for   |
-|                   | data writes                                         |
-
+Reviewed-by: Anand Jain <anand.jain@oracle.com>
+Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
+Signed-off-by: Damien Le Moal <damien.lemoal@wdc.com>
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 ---
- fs/btrfs/super.c | 12 ++++++++++--
- fs/btrfs/zoned.c | 18 ++++++++++++++++++
- fs/btrfs/zoned.h |  5 +++++
- 3 files changed, 33 insertions(+), 2 deletions(-)
+ fs/btrfs/sysfs.c           | 2 ++
+ include/uapi/linux/btrfs.h | 1 +
+ 2 files changed, 3 insertions(+)
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 1b2399c9c94e..dfdd4f161d16 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -525,8 +525,14 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
- 	cache_gen = btrfs_super_cache_generation(info->super_copy);
- 	if (btrfs_fs_compat_ro(info, FREE_SPACE_TREE))
- 		btrfs_set_opt(info->mount_opt, FREE_SPACE_TREE);
--	else if (cache_gen)
--		btrfs_set_opt(info->mount_opt, SPACE_CACHE);
-+	else if (cache_gen) {
-+		if (btrfs_fs_incompat(info, ZONED)) {
-+			btrfs_info(info,
-+			"clearring existing space cache in ZONED mode");
-+			btrfs_set_super_cache_generation(info->super_copy, 0);
-+		} else
-+			btrfs_set_opt(info->mount_opt, SPACE_CACHE);
-+	}
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index 279d9262b676..828006020bbd 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -263,6 +263,7 @@ BTRFS_FEAT_ATTR_INCOMPAT(no_holes, NO_HOLES);
+ BTRFS_FEAT_ATTR_INCOMPAT(metadata_uuid, METADATA_UUID);
+ BTRFS_FEAT_ATTR_COMPAT_RO(free_space_tree, FREE_SPACE_TREE);
+ BTRFS_FEAT_ATTR_INCOMPAT(raid1c34, RAID1C34);
++BTRFS_FEAT_ATTR_INCOMPAT(zoned, ZONED);
  
- 	/*
- 	 * Even the options are empty, we still need to do extra check
-@@ -985,6 +991,8 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
- 		ret = -EINVAL;
+ static struct attribute *btrfs_supported_feature_attrs[] = {
+ 	BTRFS_FEAT_ATTR_PTR(mixed_backref),
+@@ -278,6 +279,7 @@ static struct attribute *btrfs_supported_feature_attrs[] = {
+ 	BTRFS_FEAT_ATTR_PTR(metadata_uuid),
+ 	BTRFS_FEAT_ATTR_PTR(free_space_tree),
+ 	BTRFS_FEAT_ATTR_PTR(raid1c34),
++	BTRFS_FEAT_ATTR_PTR(zoned),
+ 	NULL
+ };
  
- 	}
-+	if (!ret)
-+		ret = btrfs_check_mountopts_zoned(info);
- 	if (!ret && btrfs_test_opt(info, SPACE_CACHE))
- 		btrfs_info(info, "disk space caching is enabled");
- 	if (!ret && btrfs_test_opt(info, FREE_SPACE_TREE))
-diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-index 2e12fce81abf..1629e585ba8c 100644
---- a/fs/btrfs/zoned.c
-+++ b/fs/btrfs/zoned.c
-@@ -268,3 +268,21 @@ int btrfs_check_zoned_mode(struct btrfs_fs_info *fs_info)
- out:
- 	return ret;
- }
-+
-+int btrfs_check_mountopts_zoned(struct btrfs_fs_info *info)
-+{
-+	if (!btrfs_fs_incompat(info, ZONED))
-+		return 0;
-+
-+	/*
-+	 * SPACE CACHE writing is not CoWed. Disable that to avoid write
-+	 * errors in sequential zones.
-+	 */
-+	if (btrfs_test_opt(info, SPACE_CACHE)) {
-+		btrfs_err(info,
-+			  "space cache v1 not supportted in ZONED mode");
-+		return -EOPNOTSUPP;
-+	}
-+
-+	return 0;
-+}
-diff --git a/fs/btrfs/zoned.h b/fs/btrfs/zoned.h
-index f200b46a71fb..2e1983188e6f 100644
---- a/fs/btrfs/zoned.h
-+++ b/fs/btrfs/zoned.h
-@@ -30,6 +30,7 @@ int btrfs_get_dev_zone(struct btrfs_device *device, u64 pos,
- int btrfs_get_dev_zone_info(struct btrfs_device *device);
- void btrfs_destroy_dev_zone_info(struct btrfs_device *device);
- int btrfs_check_zoned_mode(struct btrfs_fs_info *fs_info);
-+int btrfs_check_mountopts_zoned(struct btrfs_fs_info *info);
- #else /* CONFIG_BLK_DEV_ZONED */
- static inline int btrfs_get_dev_zone(struct btrfs_device *device, u64 pos,
- 				     struct blk_zone *zone)
-@@ -49,6 +50,10 @@ static inline int btrfs_check_zoned_mode(struct btrfs_fs_info *fs_info)
- 	btrfs_err(fs_info, "Zoned block devices support is not enabled");
- 	return -EOPNOTSUPP;
- }
-+static inline int btrfs_check_mountopts_zoned(struct btrfs_fs_info *info)
-+{
-+	return 0;
-+}
- #endif
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index 2c39d15a2beb..5df73001aad4 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -307,6 +307,7 @@ struct btrfs_ioctl_fs_info_args {
+ #define BTRFS_FEATURE_INCOMPAT_NO_HOLES		(1ULL << 9)
+ #define BTRFS_FEATURE_INCOMPAT_METADATA_UUID	(1ULL << 10)
+ #define BTRFS_FEATURE_INCOMPAT_RAID1C34		(1ULL << 11)
++#define BTRFS_FEATURE_INCOMPAT_ZONED		(1ULL << 12)
  
- static inline bool btrfs_dev_is_sequential(struct btrfs_device *device, u64 pos)
+ struct btrfs_ioctl_feature_flags {
+ 	__u64 compat_flags;
 -- 
 2.27.0
 

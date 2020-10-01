@@ -5,61 +5,62 @@ X-Spam-Level:
 X-Spam-Status: No, score=-12.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8AFB1C47423
-	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Oct 2020 18:38:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8D7E8C4741F
+	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Oct 2020 18:38:19 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 1B7A020796
-	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Oct 2020 18:38:17 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4D88D20796
+	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Oct 2020 18:38:19 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="gMOl0crI"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="lUge+ZRe"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732933AbgJASiQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 1 Oct 2020 14:38:16 -0400
-Received: from esa6.hgst.iphmx.com ([216.71.154.45]:24680 "EHLO
+        id S1732941AbgJASiS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 1 Oct 2020 14:38:18 -0400
+Received: from esa6.hgst.iphmx.com ([216.71.154.45]:24694 "EHLO
         esa6.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1732894AbgJASiN (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Oct 2020 14:38:13 -0400
+        with ESMTP id S1732672AbgJASiK (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Oct 2020 14:38:10 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1601577493; x=1633113493;
+  t=1601577490; x=1633113490;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=qgEBWgJSMacwtA3SUdTXH5qAHlX9ODJTm0ZOwmpKHYs=;
-  b=gMOl0crI3YZ6k+Q/Mq/L77AkPjATfsh6BsGK9Ln1i9NnrjBbfZ/JMC1W
-   dcQKbx2X0KM/TqCMldGNry81COnNCdHEDw+dzAWlDMwc7zSm9duuO990g
-   7Hanmx+fXJ7rJyWLrTRxqOkdTykW9oPw7GneMwBDJIE6iqYMSJoma5PtI
-   YP8L85Jf7O3e4Rjf6SAzm1ZPt/B2an9/lij05S0TgP9mT7T6aRWUlb7Wp
-   jJDrdeGsRR4UbY7295um1jzFflLobVSlHzd3/L1VTNrgNT3O5Pe600ryT
-   qUYNLydnPFOBUSY44ouQIx/zhIc0xBt1PACUNW7YPW00Wd6AzwOuEmK4D
-   Q==;
-IronPort-SDR: JjPwzCMLaqOw5+PL3ciYoXa9fYZ+TB4H3hgv75QaO64UtD4L4DIUw/5IRkmMHj8IIj6QJDeqq8
- dzv5Ct1nQ4IY4naww7pYHWajhbCT+EI7bsRRbfUO003oWmoM9Nis55iI4hmnclu51WAFE4Y3rJ
- gw0p5etog2QXDhzYJR9t0DjQmGPAbJlgGJoAK3agCd06ni0KClFUh0Mg8Gxscd49VhxCLIhNxj
- GKb48U1wsoYGRHyoxAQZ4R+yz9iTc4S4Ri2L7EX6bfNeAlXaMEfXs/8CxXLJbwrq2yJWdXeMDl
- sp0=
+  bh=7ukzEdMdawXTYzv0Ef7UrRfJK4C09v/gF5FDZbrkpSw=;
+  b=lUge+ZReYcnF3oVFCXgT2U/9rCFLDVK6/hvl9XIpY2DO2xGjMPDm546+
+   P/xUtOoqBBw8vwuBIBL0BNKa+4B30lZz9AyaufcRWWqsqdco4eV4pusLR
+   o1lQa8RYRVs9HODqXsiODK0DnnxJSEa00Gja9dMwJFmnqK+B1vAgxbAih
+   Dllg0eIsqkyg6R6snU1ClVczWBGUBeceMD8dP+FtgGaej5YFptpE1AWWo
+   3tWESQ9Kgp+cWG1hSZC1TD24yJKzto56HxsY0MbXbB3aSHMK77v4yuyzz
+   kut+7xGTrykUp1Vs/ZD/Q9+BNekR7KOm7qNK25hx2mHbiB8PHQj7hphxS
+   g==;
+IronPort-SDR: 3xHQHszBHuXdSm0exzpewBnBEcD4V0T+lIIkEjmRwQCPPIts2LXCgA7rcVo0zwmGDh6jIms/wO
+ tL6h45jRmDLzmDaMXHFV1Gc4+e6rOTFtUkVhTB/Big/ARaZBb8VSPUyRhqrgQtl3Pm4PwOhGx5
+ T1TvmCq0BBC6RSQDXUOvq8+f2WF65KO+ci+b0h2FSZS6GxkSZ4Oe1XRaqYczoGFL4Ep/LKnRBH
+ XzfwA+W1xvKqS87GD4D0YSjG34tkpmoPe12i8cs0MSoAgooRbeCnC8nZclp1ElT6eqyHcglp0d
+ NWE=
 X-IronPort-AV: E=Sophos;i="5.77,324,1596470400"; 
-   d="scan'208";a="150036790"
+   d="scan'208";a="150036780"
 Received: from uls-op-cesaip02.wdc.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 02 Oct 2020 02:38:13 +0800
-IronPort-SDR: xAqLW8qa52557hw5RspC239GR6UspCPKK0jCRN+2VE3ltwhrt1o92O9tWgyHR2D16ef8D0K//s
- 5vPi98cpVWbg==
+  by ob1.hgst.iphmx.com with ESMTP; 02 Oct 2020 02:38:09 +0800
+IronPort-SDR: ovHq9ETv8+6Mkjcz//kuuJ52wefC40UngaY2RCOJIPsPmuDrBrqiWgHPr1Q0s/cVBypsCPlR+l
+ VGE7dOMrXyNw==
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 01 Oct 2020 11:24:10 -0700
-IronPort-SDR: xc4RgaAzRd6qlo6VsUYb0UGcTD/0npLCT+R6bBXNqkLyve2DOU++SD37nvkF/ylxoJfArG03EV
- oztc75rvhsiA==
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 01 Oct 2020 11:24:06 -0700
+IronPort-SDR: 0VVbbzqeEtjaQjOK6fkyuI01aw/m9gbfwizMk0AhzN4o7jAyDypomaNESn+Egnic14ZMfJ6ziq
+ eoWce5LG1R2A==
 WDCIronportException: Internal
 Received: from naota.dhcp.fujisawa.hgst.com ([10.149.52.155])
-  by uls-op-cesaip02.wdc.com with ESMTP; 01 Oct 2020 11:38:12 -0700
+  by uls-op-cesaip02.wdc.com with ESMTP; 01 Oct 2020 11:38:08 -0700
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     linux-btrfs@vger.kernel.org, dsterba@suse.com
 Cc:     hare@suse.com, linux-fsdevel@vger.kernel.org,
         Naohiro Aota <naohiro.aota@wdc.com>,
+        Johannes Thumshirn <jthumshirn@suse.de>,
         Josef Bacik <josef@toxicpanda.com>
-Subject: [PATCH v8 10/41] btrfs: disallow inode_cache in ZONED mode
-Date:   Fri,  2 Oct 2020 03:36:17 +0900
-Message-Id: <4aad45e8c087490facbd24fc037b6ab374295cbe.1601574234.git.naohiro.aota@wdc.com>
+Subject: [PATCH v8 07/41] btrfs: disallow NODATACOW in ZONED mode
+Date:   Fri,  2 Oct 2020 03:36:14 +0900
+Message-Id: <c5f6be584aea6de94506d91093be11c6c22e6088.1601574234.git.naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.27.0
 In-Reply-To: <dece91bca322ce44bed19f2b0f460fa5ded2e512.1601574234.git.naohiro.aota@wdc.com>
 References: <dece91bca322ce44bed19f2b0f460fa5ded2e512.1601574234.git.naohiro.aota@wdc.com>
@@ -69,30 +70,43 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-inode_cache use pre-allocation to write its cache data. However,
-pre-allocation is completely disabled in ZONED mode.
+NODATACOW implies overwriting the file data on a device, which is
+impossible in sequential required zones. Disable NODATACOW globally with
+mount option and per-file NODATACOW attribute by masking FS_NOCOW_FL.
 
-We can technically enable inode_cache in the same way as relocation.
-However, inode_cache is rarely used and the man page discourage using it.
-So, let's just disable it for now.
-
+Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
 Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 ---
+ fs/btrfs/ioctl.c | 3 +++
  fs/btrfs/zoned.c | 6 ++++++
- 1 file changed, 6 insertions(+)
+ 2 files changed, 9 insertions(+)
 
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index ab408a23ba32..5d592da4e2ff 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -91,6 +91,9 @@ struct btrfs_ioctl_send_args_32 {
+ static unsigned int btrfs_mask_fsflags_for_type(struct inode *inode,
+ 		unsigned int flags)
+ {
++	if (btrfs_fs_incompat(btrfs_sb(inode->i_sb), ZONED))
++		flags &= ~FS_NOCOW_FL;
++
+ 	if (S_ISDIR(inode->i_mode))
+ 		return flags;
+ 	else if (S_ISREG(inode->i_mode))
 diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-index 8cd43d2d5611..e47698d313a5 100644
+index 1629e585ba8c..6bce654bb0e8 100644
 --- a/fs/btrfs/zoned.c
 +++ b/fs/btrfs/zoned.c
-@@ -297,5 +297,11 @@ int btrfs_check_mountopts_zoned(struct btrfs_fs_info *info)
+@@ -284,5 +284,11 @@ int btrfs_check_mountopts_zoned(struct btrfs_fs_info *info)
  		return -EOPNOTSUPP;
  	}
  
-+	if (btrfs_test_pending(info, SET_INODE_MAP_CACHE)) {
++	if (btrfs_test_opt(info, NODATACOW)) {
 +		btrfs_err(info,
-+		  "cannot enable inode map caching with ZONED mode");
++		  "cannot enable nodatacow with ZONED mode");
 +		return -EOPNOTSUPP;
 +	}
 +

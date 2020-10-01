@@ -5,60 +5,60 @@ X-Spam-Level:
 X-Spam-Status: No, score=-12.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 485FAC4741F
-	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Oct 2020 18:39:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D1DF9C47426
+	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Oct 2020 18:39:23 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 0581B207DE
-	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Oct 2020 18:39:22 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 95AE920796
+	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Oct 2020 18:39:23 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="jMOAjghy"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="jvtk/ToH"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1733148AbgJASjT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 1 Oct 2020 14:39:19 -0400
-Received: from esa6.hgst.iphmx.com ([216.71.154.45]:24722 "EHLO
+        id S1733092AbgJASjC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 1 Oct 2020 14:39:02 -0400
+Received: from esa6.hgst.iphmx.com ([216.71.154.45]:24728 "EHLO
         esa6.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1733106AbgJASjI (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Oct 2020 14:39:08 -0400
+        with ESMTP id S1733019AbgJASij (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Oct 2020 14:38:39 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1601577548; x=1633113548;
+  t=1601577519; x=1633113519;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=AoO3xZRWnSdnCylQAmdUKrRADOJvnmHa8U78NBbPy3Q=;
-  b=jMOAjghyf8VQhX5rv9+l2GiOsRKB55pCcJ0iycOYRUkr/pqPdYG6STpK
-   nJ0fkavvAWA3kfrheHtCErBwM5BtOs0TQXrTR2ug0uE4Bd0626xHlrdSk
-   lC65A2pr26hsT75/3m9GEFjHKTa2ecOfJOVmXKYd5tZefWY+yM4EozH0G
-   NL/VPml+TYu1WNE2ioW/MESo0ODicXyPgbPdLjpAni3mn3StnxuENyDi+
-   EtNgojOV905XfjztcyPk873cGDk/j2cStbeuDxYxWpMrO+FqkfKggHlIU
-   IvO8hO4/8Uih0bNLpnx2WOlkIcPlplIQHzB5jVHYWwwtElfbNLrM/dbXO
-   A==;
-IronPort-SDR: r2fhwohEKGv1uQzQpDQBjUBijgYOcgWvUqRAMZaGVsN0hWx4BdiTjSdSLMEgl8/dAq67dv2on6
- 0b1dCxdi4IQdseToKYsNHfiSKJhyni77Zhz0fh5pbO1HpoFAr7CTrdpo/K3aVL4W/C21ICVsap
- +x4rtSIDjU72ZPR0jjBDHsB1KiTf42af9o99ualk4JbiWS3QfS7WV0cZSzVwTGPAvORMk/7rcN
- FfWcWbjRDOyMZpy1j1mUSw+VwKpV47PO34H4U/1L28efm+FJ+u2BDhqWfZ052VLkdKXxRu2tWN
- itg=
+  bh=e3ZRvgpBpiKkHapBfHOfsgCp4wI4McFaHSm5NK2vFyc=;
+  b=jvtk/ToHzWQaZfTXXtDTRTUgnNGjkY7dEGFTsbUHE4xGP1OwNKLkFtDd
+   EJmAsE7UOsf8tAfcZa4amJImdA703bZjLC8emhhLRZtZvmZJdwYbSUQ6O
+   TmOpwIAg9sZktIrz2NzcFQAPr05axlnX8yPK1wvMchnSNXJ0B5ck2PxEk
+   p6sLebQopAe4t/6hzm9TWB4LEgO51gzwWpPOgKyATo+yoaYpnfM6SyxGu
+   EFu4Zm4KbyuM9YSsD/nn2ShjNhJuPU92apkKpV7n/afFvz8b8tQRRx19X
+   nPnWXmpnD9TrMBFj+vsyL2kbFVN5YsGrTumPRfohyl9qmU+68S8KC1+XY
+   g==;
+IronPort-SDR: UgzBMboBuYcFYZr9C+IYOtrucNQ3uOGojp17XqiCewazgJKbd9GmwjI0g4/PIFQXg/KxiItZLt
+ VdxI3fi689s1bdw0PcXj30qkKW/OxJgFq+KH3Nvs2S3swO/vnvqavVek1uhDyFqqeL2v7LEqHA
+ 3rtmQTpn02BYT/0LAE8uu31+H8jdUxyxGHVyO7lN76NLqB3kZAAzxQuFyOD08Di2vatndhlDJV
+ +WeW9sXc1HyV9jJj3563lfm/VqO08Lgtje6FLtUHPLSbMHVSnSarFvg3fAEE9P2/cxKI4BO/wE
+ t/Y=
 X-IronPort-AV: E=Sophos;i="5.77,324,1596470400"; 
-   d="scan'208";a="150036844"
+   d="scan'208";a="150036806"
 Received: from uls-op-cesaip02.wdc.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 02 Oct 2020 02:38:45 +0800
-IronPort-SDR: /KN4EDoHedYFZfsRoZl0A2N4LC45fWN0Xl9gs4KkMFUZq7t/ShfOoSgW/5q4sFUN563muRDqLe
- NmYkDvNG09ZQ==
+  by ob1.hgst.iphmx.com with ESMTP; 02 Oct 2020 02:38:23 +0800
+IronPort-SDR: EnoYaXcVrxGdNJ7miS/RvSZo81lFp15Q55NUlMrh4/FyKmng9l2IyOuvFinj5CVkGN6cHaTAGH
+ brGyalSolv6A==
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 01 Oct 2020 11:24:41 -0700
-IronPort-SDR: W9G3l2HZ23hI46uJSE9pqyCqNqiFbhvQOlPd+QyyYuRJc9dWaOw+OcjWYUqRLsRmL7uFyHSHI0
- 3NFOPLZK6EBg==
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 01 Oct 2020 11:24:19 -0700
+IronPort-SDR: ZFXTKx4UVT9rRXEAwRn86DnwwvDOkFzabmhtYlDiTifzaXXX5cMsJlS1oiaT7ZgjLWVuuZjIJX
+ WplZLfWSOVtQ==
 WDCIronportException: Internal
 Received: from naota.dhcp.fujisawa.hgst.com ([10.149.52.155])
-  by uls-op-cesaip02.wdc.com with ESMTP; 01 Oct 2020 11:38:44 -0700
+  by uls-op-cesaip02.wdc.com with ESMTP; 01 Oct 2020 11:38:22 -0700
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     linux-btrfs@vger.kernel.org, dsterba@suse.com
 Cc:     hare@suse.com, linux-fsdevel@vger.kernel.org,
         Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH v8 37/41] btrfs: split alloc_log_tree()
-Date:   Fri,  2 Oct 2020 03:36:44 +0900
-Message-Id: <82d118bccd4a795dc9c64a2fe74032d3ae43dba6.1601574234.git.naohiro.aota@wdc.com>
+Subject: [PATCH v8 18/41] btrfs: reset zones of unused block groups
+Date:   Fri,  2 Oct 2020 03:36:25 +0900
+Message-Id: <118ef50059dbbef6ea9febb30949716a26da6ef3.1601574234.git.naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.27.0
 In-Reply-To: <dece91bca322ce44bed19f2b0f460fa5ded2e512.1601574234.git.naohiro.aota@wdc.com>
 References: <dece91bca322ce44bed19f2b0f460fa5ded2e512.1601574234.git.naohiro.aota@wdc.com>
@@ -68,111 +68,99 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is a preparation for the next patch. This commit split
-alloc_log_tree() to allocating tree structure part (remains in
-alloc_log_tree()) and allocating tree node part (moved in
-btrfs_alloc_log_tree_node()). The latter part is also exported to be used
-in the next patch.
+For an ZONED volume, a block group maps to a zone of the device. For
+deleted unused block groups, the zone of the block group can be reset to
+rewind the zone write pointer at the start of the zone.
 
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 ---
- fs/btrfs/disk-io.c | 27 ++++++++++++++++++++++++---
- fs/btrfs/disk-io.h |  2 ++
- 2 files changed, 26 insertions(+), 3 deletions(-)
+ fs/btrfs/block-group.c |  8 ++++++--
+ fs/btrfs/extent-tree.c | 17 ++++++++++++-----
+ fs/btrfs/zoned.h       | 16 ++++++++++++++++
+ 3 files changed, 34 insertions(+), 7 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 5ce5b18f9dc4..02b1f9b20bed 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1211,7 +1211,6 @@ static struct btrfs_root *alloc_log_tree(struct btrfs_trans_handle *trans,
- 					 struct btrfs_fs_info *fs_info)
- {
- 	struct btrfs_root *root;
--	struct extent_buffer *leaf;
+diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+index f07c03445390..2241d04ad4aa 100644
+--- a/fs/btrfs/block-group.c
++++ b/fs/btrfs/block-group.c
+@@ -1468,8 +1468,12 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
+ 		if (!async_trim_enabled && btrfs_test_opt(fs_info, DISCARD_ASYNC))
+ 			goto flip_async;
  
- 	root = btrfs_alloc_root(fs_info, BTRFS_TREE_LOG_OBJECTID, GFP_NOFS);
- 	if (!root)
-@@ -1221,6 +1220,14 @@ static struct btrfs_root *alloc_log_tree(struct btrfs_trans_handle *trans,
- 	root->root_key.type = BTRFS_ROOT_ITEM_KEY;
- 	root->root_key.offset = BTRFS_TREE_LOG_OBJECTID;
+-		/* DISCARD can flip during remount */
+-		trimming = btrfs_test_opt(fs_info, DISCARD_SYNC);
++		/*
++		 * DISCARD can flip during remount. In ZONED mode, we need
++		 * to reset sequential required zones.
++		 */
++		trimming = btrfs_test_opt(fs_info, DISCARD_SYNC) ||
++				btrfs_fs_incompat(fs_info, ZONED);
  
-+	return root;
-+}
+ 		/* Implicit trim during transaction commit. */
+ 		if (trimming)
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 2be93d0f5978..dbf178fee7c7 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -1331,6 +1331,9 @@ int btrfs_discard_extent(struct btrfs_fs_info *fs_info, u64 bytenr,
+ 
+ 		stripe = bbio->stripes;
+ 		for (i = 0; i < bbio->num_stripes; i++, stripe++) {
++			struct btrfs_device *dev = stripe->dev;
++			u64 physical = stripe->physical;
++			u64 length = stripe->length;
+ 			u64 bytes;
+ 			struct request_queue *req_q;
+ 
+@@ -1338,14 +1341,18 @@ int btrfs_discard_extent(struct btrfs_fs_info *fs_info, u64 bytenr,
+ 				ASSERT(btrfs_test_opt(fs_info, DEGRADED));
+ 				continue;
+ 			}
 +
-+int btrfs_alloc_log_tree_node(struct btrfs_trans_handle *trans,
-+			      struct btrfs_root *root)
-+{
-+	struct extent_buffer *leaf;
-+
- 	/*
- 	 * DON'T set SHAREABLE bit for log trees.
- 	 *
-@@ -1235,24 +1242,31 @@ static struct btrfs_root *alloc_log_tree(struct btrfs_trans_handle *trans,
- 			NULL, 0, 0, 0, BTRFS_NESTING_NORMAL);
- 	if (IS_ERR(leaf)) {
- 		btrfs_put_root(root);
--		return ERR_CAST(leaf);
-+		return PTR_ERR(leaf);
- 	}
+ 			req_q = bdev_get_queue(stripe->dev->bdev);
+-			if (!blk_queue_discard(req_q))
++			/* zone reset in ZONED mode */
++			if (btrfs_can_zone_reset(dev, physical, length))
++				ret = btrfs_reset_device_zone(dev, physical,
++							      length, &bytes);
++			else if (blk_queue_discard(req_q))
++				ret = btrfs_issue_discard(dev->bdev, physical,
++							  length, &bytes);
++			else
+ 				continue;
  
- 	root->node = leaf;
- 
- 	btrfs_mark_buffer_dirty(root->node);
- 	btrfs_tree_unlock(root->node);
--	return root;
-+
-+	return 0;
+-			ret = btrfs_issue_discard(stripe->dev->bdev,
+-						  stripe->physical,
+-						  stripe->length,
+-						  &bytes);
+ 			if (!ret) {
+ 				discarded_bytes += bytes;
+ 			} else if (ret != -EOPNOTSUPP) {
+diff --git a/fs/btrfs/zoned.h b/fs/btrfs/zoned.h
+index ab048176a397..e388189b28f0 100644
+--- a/fs/btrfs/zoned.h
++++ b/fs/btrfs/zoned.h
+@@ -199,4 +199,20 @@ static inline u64 btrfs_zone_align(struct btrfs_device *device, u64 pos)
+ 	return ALIGN(pos, device->zone_info->zone_size);
  }
  
- int btrfs_init_log_root_tree(struct btrfs_trans_handle *trans,
- 			     struct btrfs_fs_info *fs_info)
- {
- 	struct btrfs_root *log_root;
-+	int ret;
- 
- 	log_root = alloc_log_tree(trans, fs_info);
- 	if (IS_ERR(log_root))
- 		return PTR_ERR(log_root);
-+	ret = btrfs_alloc_log_tree_node(trans, log_root);
-+	if (ret) {
-+		kfree(log_root);
-+		return ret;
-+	}
- 	WARN_ON(fs_info->log_root_tree);
- 	fs_info->log_root_tree = log_root;
- 	return 0;
-@@ -1264,11 +1278,18 @@ int btrfs_add_log_tree(struct btrfs_trans_handle *trans,
- 	struct btrfs_fs_info *fs_info = root->fs_info;
- 	struct btrfs_root *log_root;
- 	struct btrfs_inode_item *inode_item;
-+	int ret;
- 
- 	log_root = alloc_log_tree(trans, fs_info);
- 	if (IS_ERR(log_root))
- 		return PTR_ERR(log_root);
- 
-+	ret = btrfs_alloc_log_tree_node(trans, log_root);
-+	if (ret) {
-+		kfree(log_root);
-+		return ret;
-+	}
++static inline bool btrfs_can_zone_reset(struct btrfs_device *device,
++					u64 physical, u64 length)
++{
++	u64 zone_size;
 +
- 	log_root->last_trans = trans->transid;
- 	log_root->root_key.offset = root->root_key.objectid;
- 
-diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
-index fee69ced58b4..b82ae3711c42 100644
---- a/fs/btrfs/disk-io.h
-+++ b/fs/btrfs/disk-io.h
-@@ -115,6 +115,8 @@ blk_status_t btrfs_wq_submit_bio(struct btrfs_fs_info *fs_info, struct bio *bio,
- 			extent_submit_bio_start_t *submit_bio_start);
- blk_status_t btrfs_submit_bio_done(void *private_data, struct bio *bio,
- 			  int mirror_num);
-+int btrfs_alloc_log_tree_node(struct btrfs_trans_handle *trans,
-+			      struct btrfs_root *root);
- int btrfs_init_log_root_tree(struct btrfs_trans_handle *trans,
- 			     struct btrfs_fs_info *fs_info);
- int btrfs_add_log_tree(struct btrfs_trans_handle *trans,
++	if (!btrfs_dev_is_sequential(device, physical))
++		return false;
++
++	zone_size = device->zone_info->zone_size;
++	if (!IS_ALIGNED(physical, zone_size) ||
++	    !IS_ALIGNED(length, zone_size))
++		return false;
++
++	return true;
++}
++
+ #endif
 -- 
 2.27.0
 

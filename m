@@ -7,61 +7,58 @@ X-Spam-Status: No, score=-12.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BDB14C47425
-	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Oct 2020 18:38:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D3BDCC47423
+	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Oct 2020 18:38:25 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 7EF9720796
-	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Oct 2020 18:38:24 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 93F5420796
+	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Oct 2020 18:38:25 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="gcD1I6Jq"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="KHwuxTiJ"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729412AbgJASiJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 1 Oct 2020 14:38:09 -0400
+        id S1732970AbgJASiY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 1 Oct 2020 14:38:24 -0400
 Received: from esa6.hgst.iphmx.com ([216.71.154.45]:24680 "EHLO
         esa6.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729927AbgJASiD (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Oct 2020 14:38:03 -0400
+        with ESMTP id S1732681AbgJASiK (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Oct 2020 14:38:10 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1601577483; x=1633113483;
+  t=1601577490; x=1633113490;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=5ETJSKP96iJAWlgibSI+CXwv6npNrB2/5xTsR6UalTM=;
-  b=gcD1I6Jq1lBr4NXqro6Qbc7RmE8Gr/W4SuCtSbo0hwoK8pyo9vh4ABqJ
-   p7zXpSHhB8/WFQ827NMk2X8PByL5SYEfqbR7C2PK1gRmC03/RZtTezpjf
-   y/iuc1yJ+RT9MHthjaB58QMHxf4CmQvYKY4lMAFFHyXT8Q9FewJ1vaLkA
-   twVDo1Vb7wJ08wNywi6wz1ihHSAbgui9hfzYZr5BH8wMrHYcHxPfQ6SgN
-   fOOa9Qfa+GOVGmJFXFoXu8gDFTvWA3FBXuL+rvF173VHdP8aDRx+j5Ex+
-   /eWpoXkqNAzY895+bVYe7RslEiE7RKqAka3HMs3WkE+5uuoxWrctRNvmC
+  bh=o/QXdtpTvZbJXk7O9rYpJGqOU3WyM2Yv+BRRT6Mwh9s=;
+  b=KHwuxTiJP1lj3BwtCTPrZrQQzKB+Sk6JB0N3Ed+mj2rQ9NUsnmJsyxkJ
+   8ad7pp5cJh/T9VTjNDkvXGr0u3upSIW63Gl/UyTNhbNZdc1nzizjCDKqe
+   ZKsqbUa85kuFnD4OAzLCWOrAfq9UEngvElXp1Rc472K1ZY6eiJ2vCNodR
+   zTnyLLrIGi3Zs0PyPVS9EcC3HXHUq7tafPfjKwmDQk6J6/+m4ZlL6nUvW
+   1pPzL7cZiJRIswqBq35x0UGhURKkITppcVSsq1kFNO7+NVg/iesAk5RHu
+   8PirI4+wtnVO9Fl5C++8cUq6/9tG3d1QlXB+9ZtfdTZ6Ps4lIgCIA7ZPM
    w==;
-IronPort-SDR: Ti7coKoozM74JVoq4/2+3dU7s9wzUJQ/9/T9tnFu2aJq+QxkJ0wt4wX5WyJBnePHs0A6hLjBV5
- Ylbl1RNN8XcEhJjelzkD3iCZTd/9ZFI83+JxMA76WHWrSG5wrjDv5j50OkIMeuuIxyxVKvwx3D
- ke5pizpWAShr2qcKrFtI97mGcOMPx/mhlgYLcCZo249enIiNImSSSH6rlJs4OGoJSx/SsraySH
- WcvPuQfaMhovkmJHRo9TI4GwhSFbtBjJgr6lG0VL7MJE+N5ZoHgx9pbhwY/r2+mnIHtyY8FfGw
- Nsw=
+IronPort-SDR: 1lf0WrMj35tG7+yoAZ2ABNh9s+AC1ZpQIxb140RCRGIyc6H3imYYW+agETE9WScAtmuCXM1fJn
+ mDmhKjoq/8pvGf/zKKgO1IczOfzC49vqaKLooDt7KxTQ83xKmGBY0NLHf8wOKB3JNx5yW2WhGX
+ 1/S9wr2FEPvV5bRS5Qsmqc/qnPq5wGz8Kh5+zTKvUSPpt9Y3o1xODiEWaUKnZOA0Ak3qXA8C3o
+ +SaVjcwQ0yHtnc7pkpfupqU55D81vyWZuTGWPOBlGVOEzmTtXZdDDAatHEGcBqmuBdlS9FynoE
+ mtc=
 X-IronPort-AV: E=Sophos;i="5.77,324,1596470400"; 
-   d="scan'208";a="150036762"
+   d="scan'208";a="150036776"
 Received: from uls-op-cesaip02.wdc.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 02 Oct 2020 02:38:02 +0800
-IronPort-SDR: r8O3PXw9zc4GhH46WBRGcHA8vd3I6KrXERnmOScctQgKBQSB/Qz/sWV7XxTG13Oq/D+qCiMsS7
- BpwMjbP4atpQ==
+  by ob1.hgst.iphmx.com with ESMTP; 02 Oct 2020 02:38:06 +0800
+IronPort-SDR: hhuFp/KiYG7g2GXsxNVyNCzezntVtsi4CWebSP/PGrO3k7eMQ+9Y89xLKNC3a4cH2PMCN1crhR
+ 762EFTa4ZTnQ==
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 01 Oct 2020 11:23:59 -0700
-IronPort-SDR: zfnoi9Wi2Zuarstdwa+QDGGK6Z3dCgtYMAOtCtEQB8dMGBkSWfYKLZgZc6Pdu57aenIL4f4gek
- G59jHh21XYBA==
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 01 Oct 2020 11:24:03 -0700
+IronPort-SDR: ZkM+ZoC0XNPOnyAL70rXA+ye24OwYPhtB3tH5qshfmWKcVJrIHlUpw3/303sKShvH3Tc5YcjXC
+ rrgyT+hGGBeA==
 WDCIronportException: Internal
 Received: from naota.dhcp.fujisawa.hgst.com ([10.149.52.155])
-  by uls-op-cesaip02.wdc.com with ESMTP; 01 Oct 2020 11:38:01 -0700
+  by uls-op-cesaip02.wdc.com with ESMTP; 01 Oct 2020 11:38:06 -0700
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     linux-btrfs@vger.kernel.org, dsterba@suse.com
 Cc:     hare@suse.com, linux-fsdevel@vger.kernel.org,
-        Naohiro Aota <naohiro.aota@wdc.com>,
-        Anand Jain <anand.jain@oracle.com>,
-        Johannes Thumshirn <jthumshirn@suse.de>,
-        Damien Le Moal <damien.lemoal@wdc.com>
-Subject: [PATCH v8 02/41] btrfs: introduce ZONED feature flag
-Date:   Fri,  2 Oct 2020 03:36:09 +0900
-Message-Id: <778806c32892a82a27a9252f8d33003fa95a20ee.1601574234.git.naohiro.aota@wdc.com>
+        Naohiro Aota <naohiro.aota@wdc.com>
+Subject: [PATCH v8 05/41] btrfs: introduce max_zone_append_size
+Date:   Fri,  2 Oct 2020 03:36:12 +0900
+Message-Id: <16ed33b15dfb6dd2268cb1fa95a9595cdc23982a.1601574234.git.naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.27.0
 In-Reply-To: <dece91bca322ce44bed19f2b0f460fa5ded2e512.1601574234.git.naohiro.aota@wdc.com>
 References: <dece91bca322ce44bed19f2b0f460fa5ded2e512.1601574234.git.naohiro.aota@wdc.com>
@@ -71,51 +68,104 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This patch introduces the ZONED incompat flag. The flag indicates that the
-volume management will satisfy the constraints imposed by host-managed
-zoned block devices.
+Zone append write command has a maximum IO size restriction it accepts.
+Introduce max_zone_append_size to zone_info and fs_into to track the value.
 
-Reviewed-by: Anand Jain <anand.jain@oracle.com>
-Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
-Signed-off-by: Damien Le Moal <damien.lemoal@wdc.com>
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 ---
- fs/btrfs/sysfs.c           | 2 ++
- include/uapi/linux/btrfs.h | 1 +
- 2 files changed, 3 insertions(+)
+ fs/btrfs/ctree.h |  2 ++
+ fs/btrfs/zoned.c | 17 +++++++++++++++--
+ fs/btrfs/zoned.h |  1 +
+ 3 files changed, 18 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index 279d9262b676..828006020bbd 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -263,6 +263,7 @@ BTRFS_FEAT_ATTR_INCOMPAT(no_holes, NO_HOLES);
- BTRFS_FEAT_ATTR_INCOMPAT(metadata_uuid, METADATA_UUID);
- BTRFS_FEAT_ATTR_COMPAT_RO(free_space_tree, FREE_SPACE_TREE);
- BTRFS_FEAT_ATTR_INCOMPAT(raid1c34, RAID1C34);
-+BTRFS_FEAT_ATTR_INCOMPAT(zoned, ZONED);
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 1a51aeb15574..e6f0fe1920e9 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -590,6 +590,8 @@ struct btrfs_fs_info {
  
- static struct attribute *btrfs_supported_feature_attrs[] = {
- 	BTRFS_FEAT_ATTR_PTR(mixed_backref),
-@@ -278,6 +279,7 @@ static struct attribute *btrfs_supported_feature_attrs[] = {
- 	BTRFS_FEAT_ATTR_PTR(metadata_uuid),
- 	BTRFS_FEAT_ATTR_PTR(free_space_tree),
- 	BTRFS_FEAT_ATTR_PTR(raid1c34),
-+	BTRFS_FEAT_ATTR_PTR(zoned),
- 	NULL
- };
+ 	/* Zone size when in ZONED mode */
+ 	u64 zone_size;
++	/* max size to emit ZONE_APPEND write command */
++	u64 max_zone_append_size;
  
-diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index 2c39d15a2beb..5df73001aad4 100644
---- a/include/uapi/linux/btrfs.h
-+++ b/include/uapi/linux/btrfs.h
-@@ -307,6 +307,7 @@ struct btrfs_ioctl_fs_info_args {
- #define BTRFS_FEATURE_INCOMPAT_NO_HOLES		(1ULL << 9)
- #define BTRFS_FEATURE_INCOMPAT_METADATA_UUID	(1ULL << 10)
- #define BTRFS_FEATURE_INCOMPAT_RAID1C34		(1ULL << 11)
-+#define BTRFS_FEATURE_INCOMPAT_ZONED		(1ULL << 12)
+ 	/* the log root tree is a directory of all the other log roots */
+ 	struct btrfs_root *log_root_tree;
+diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
+index 7509888b457a..2e12fce81abf 100644
+--- a/fs/btrfs/zoned.c
++++ b/fs/btrfs/zoned.c
+@@ -53,6 +53,7 @@ int btrfs_get_dev_zone_info(struct btrfs_device *device)
+ {
+ 	struct btrfs_zoned_device_info *zone_info = NULL;
+ 	struct block_device *bdev = device->bdev;
++	struct request_queue *q = bdev_get_queue(bdev);
+ 	sector_t nr_sectors = bdev->bd_part->nr_sects;
+ 	sector_t sector = 0;
+ 	struct blk_zone *zones = NULL;
+@@ -73,6 +74,8 @@ int btrfs_get_dev_zone_info(struct btrfs_device *device)
+ 	ASSERT(is_power_of_2(zone_sectors));
+ 	zone_info->zone_size = (u64)zone_sectors << SECTOR_SHIFT;
+ 	zone_info->zone_size_shift = ilog2(zone_info->zone_size);
++	zone_info->max_zone_append_size =
++		(u64)queue_max_zone_append_sectors(q) << SECTOR_SHIFT;
+ 	zone_info->nr_zones = nr_sectors >> ilog2(bdev_zone_sectors(bdev));
+ 	if (!IS_ALIGNED(nr_sectors, zone_sectors))
+ 		zone_info->nr_zones++;
+@@ -185,6 +188,7 @@ int btrfs_check_zoned_mode(struct btrfs_fs_info *fs_info)
+ 	u64 hmzoned_devices = 0;
+ 	u64 nr_devices = 0;
+ 	u64 zone_size = 0;
++	u64 max_zone_append_size = 0;
+ 	int incompat_zoned = btrfs_fs_incompat(fs_info, ZONED);
+ 	int ret = 0;
  
- struct btrfs_ioctl_feature_flags {
- 	__u64 compat_flags;
+@@ -198,15 +202,23 @@ int btrfs_check_zoned_mode(struct btrfs_fs_info *fs_info)
+ 		model = bdev_zoned_model(device->bdev);
+ 		if (model == BLK_ZONED_HM ||
+ 		    (model == BLK_ZONED_HA && incompat_zoned)) {
++			struct btrfs_zoned_device_info *zone_info =
++				device->zone_info;
++
+ 			hmzoned_devices++;
+ 			if (!zone_size) {
+-				zone_size = device->zone_info->zone_size;
+-			} else if (device->zone_info->zone_size != zone_size) {
++				zone_size = zone_info->zone_size;
++			} else if (zone_info->zone_size != zone_size) {
+ 				btrfs_err(fs_info,
+ 					  "Zoned block devices must have equal zone sizes");
+ 				ret = -EINVAL;
+ 				goto out;
+ 			}
++			if (!max_zone_append_size ||
++			    (zone_info->max_zone_append_size &&
++			     zone_info->max_zone_append_size < max_zone_append_size))
++				max_zone_append_size =
++					zone_info->max_zone_append_size;
+ 		}
+ 		nr_devices++;
+ 	}
+@@ -249,6 +261,7 @@ int btrfs_check_zoned_mode(struct btrfs_fs_info *fs_info)
+ 	}
+ 
+ 	fs_info->zone_size = zone_size;
++	fs_info->max_zone_append_size = max_zone_append_size;
+ 
+ 	btrfs_info(fs_info, "ZONED mode enabled, zone size %llu B",
+ 		   fs_info->zone_size);
+diff --git a/fs/btrfs/zoned.h b/fs/btrfs/zoned.h
+index 4341630cb756..f200b46a71fb 100644
+--- a/fs/btrfs/zoned.h
++++ b/fs/btrfs/zoned.h
+@@ -18,6 +18,7 @@ struct btrfs_zoned_device_info {
+ 	 */
+ 	u64 zone_size;
+ 	u8  zone_size_shift;
++	u64 max_zone_append_size;
+ 	u32 nr_zones;
+ 	unsigned long *seq_zones;
+ 	unsigned long *empty_zones;
 -- 
 2.27.0
 

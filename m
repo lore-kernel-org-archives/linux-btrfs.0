@@ -2,40 +2,40 @@ Return-Path: <SRS0=xxBT=DL=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.9 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.9 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 933CAC4741F
-	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Oct 2020 18:05:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 35A69C4363C
+	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Oct 2020 18:05:18 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 5903D206B6
-	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Oct 2020 18:05:12 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0362D206B6
+	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Oct 2020 18:05:17 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="qmpfmOl3"
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="HTM6IuRE"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726729AbgJDSFJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 4 Oct 2020 14:05:09 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48834 "EHLO
+        id S1726698AbgJDSFI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 4 Oct 2020 14:05:08 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48826 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726683AbgJDSE6 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 4 Oct 2020 14:04:58 -0400
+        with ESMTP id S1726617AbgJDSEz (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 4 Oct 2020 14:04:55 -0400
 Received: from casper.infradead.org (casper.infradead.org [IPv6:2001:8b0:10b:1236::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CB153C0613CF;
-        Sun,  4 Oct 2020 11:04:57 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5190EC0613CE;
+        Sun,  4 Oct 2020 11:04:55 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=casper.20170209; h=Content-Transfer-Encoding:MIME-Version:
-        References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:
-        Content-Type:Content-ID:Content-Description;
-        bh=OeP+UYbpor66DMaW4dlQOBaRsqMPKoK+SZyjuLcZuzs=; b=qmpfmOl3qTJbpxI7uNRkLqzkX+
-        o71mA9C5U9VRYEWc5KEwJBkP9Y97+/NQU162gn9znTiYisHqdCdn4VuiXZwCAIGB587PaeLQy3FXp
-        XC8xOv3dJ3fROxKoPixtR8p35Z0mviJUJp+cs6gAHSUfmJcXl8S4+TkJ6KZjWs3se8xwZf6/yzktZ
-        T4LacZutqbncYoL1xQoZ2f0D9GvWC+LdYt3zXAtz/qee9YC+fQIX0+9EzCgcH/bz3ScYQPgLSc0OU
-        DShVL8PPkfWDLQb1ihe5zYa87QYdS91QEjq1/VJKAoQfE8Ji5VtkljNvyANJ7SyZJfQThLV1TxIic
-        SSXtL4bg==;
+        Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:Content-Type:Content-ID:
+        Content-Description:In-Reply-To:References;
+        bh=kq60hyf/JkVss6PLFja6RwjmdK1h2wopBDD0M0MxutQ=; b=HTM6IuREa2NKfNjD/1XHN4bmam
+        asXq+hMHbW3IIMoYqhQ2hB5WpfrcCG6+YI/KOZlt0XYJBdycvCd+N6fKqCdAhgb8NYHU7c1MqPvDb
+        bAcV3/0kJ8WQQ8sljWxsaHW06a8/FmGl8z7IHhKQqqhPcZTkMndg+S6OaVY1Na4jz0JoOrmnjndSZ
+        YCKHQk/F952Sl76JYLmtLX1wj2HGWcOqT9UHx+D8PCdcyAtgFP60Fw6IoL29kHQMWum0kb4mpEsA9
+        7q1lbKApiGGqiXkaM2motFy2ejSLJrzvyUOUhcUaw5dRknYlNOqITO8WwkOkiIvTthqzHXCHxW4+e
+        7GDCOIfw==;
 Received: from willy by casper.infradead.org with local (Exim 4.92.3 #3 (Red Hat Linux))
-        id 1kP8N5-0003mc-D3; Sun, 04 Oct 2020 18:04:31 +0000
+        id 1kP8N4-0003mV-Po; Sun, 04 Oct 2020 18:04:31 +0000
 From:   "Matthew Wilcox (Oracle)" <willy@infradead.org>
 To:     linux-fsdevel@vger.kernel.org
 Cc:     "Matthew Wilcox (Oracle)" <willy@infradead.org>, ericvh@gmail.com,
@@ -44,42 +44,53 @@ Cc:     "Matthew Wilcox (Oracle)" <willy@infradead.org>, ericvh@gmail.com,
         joseph.qi@linux.alibaba.com, v9fs-developer@lists.sourceforge.net,
         linux-kernel@vger.kernel.org, ceph-devel@vger.kernel.org,
         ocfs2-devel@oss.oracle.com, linux-btrfs@vger.kernel.org,
-        clm@fb.com, josef@toxicpanda.com, dsterba@suse.com,
-        stable@vger.kernel.org
-Subject: [PATCH 2/7] buffer: Promote to unsigned long long before shifting
-Date:   Sun,  4 Oct 2020 19:04:23 +0100
-Message-Id: <20201004180428.14494-3-willy@infradead.org>
+        clm@fb.com, josef@toxicpanda.com, dsterba@suse.com
+Subject: [PATCH 0/7] Fix a pile of 4GB file problems on 32-bit
+Date:   Sun,  4 Oct 2020 19:04:21 +0100
+Message-Id: <20201004180428.14494-1-willy@infradead.org>
 X-Mailer: git-send-email 2.21.3
-In-Reply-To: <20201004180428.14494-1-willy@infradead.org>
-References: <20201004180428.14494-1-willy@infradead.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 32-bit systems, this shift will overflow for files larger than 4GB.
+I caught a bug in my own code where I forgot to cast to loff_t before
+shifting.  So I thought I'd grep around and see if I could find any
+other occurrences.  I found a few that were clearly bugs, and they're
+fixed below.  There are other places where we don't cast, and I think
+they're OK.  For example, some places we have a 'nr_pages' being shifted
+by PAGE_SHIFT, and that's probably OK because it's probably a single I/O.
 
-Cc: stable@vger.kernel.org
-Fixes: 5417169026c3 ("[FS] Implement block_page_mkwrite.")
-Signed-off-by: Matthew Wilcox (Oracle) <willy@infradead.org>
----
- fs/buffer.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Also, I didn't touch AFFS or ROMFS or some other filesystems which
+probably have never seen a 4GB file in their lives.  Might be worth
+fixing to be sure nobody copies bad code from them, but not worth cc'ing
+stable for.
 
-diff --git a/fs/buffer.c b/fs/buffer.c
-index 50bbc99e3d96..66f4765e60ee 100644
---- a/fs/buffer.c
-+++ b/fs/buffer.c
-@@ -2515,7 +2515,7 @@ int block_page_mkwrite(struct vm_area_struct *vma, struct vm_fault *vmf,
- 	}
- 
- 	/* page is wholly or partially inside EOF */
--	if (((page->index + 1) << PAGE_SHIFT) > size)
-+	if (((page->index + 1ULL) << PAGE_SHIFT) > size)
- 		end = size & ~PAGE_MASK;
- 	else
- 		end = PAGE_SIZE;
+I didn't look for SECTOR_SHIFT or SECTOR_SIZE (or bare 9/512), just
+PAGE_SIZE and PAGE_SHIFT.
+
+I can't find a GCC warning to enable for this pattern, so I filed
+https://gcc.gnu.org/bugzilla/show_bug.cgi?id=97287
+
+Matthew Wilcox (Oracle) (7):
+  9P: Cast to loff_t before multiplying
+  buffer: Promote to unsigned long long before shifting
+  ceph: Promote to unsigned long long before shifting
+  ocfs2: Promote to unsigned long long before shifting
+  btrfs: Promote to unsigned long long before shifting
+  btrfs: Promote to unsigned long long before shifting
+  btrfs: Promote to unsigned long long before multiplying
+
+ fs/9p/vfs_file.c  |  4 ++--
+ fs/btrfs/ioctl.c  |  6 +++---
+ fs/btrfs/raid56.c |  2 +-
+ fs/btrfs/scrub.c  | 25 ++++++++++++++++---------
+ fs/buffer.c       |  2 +-
+ fs/ceph/addr.c    |  2 +-
+ fs/ocfs2/alloc.c  |  2 +-
+ 7 files changed, 25 insertions(+), 18 deletions(-)
+
 -- 
 2.28.0
 

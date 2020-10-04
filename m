@@ -7,35 +7,35 @@ X-Spam-Status: No, score=-12.9 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 028DEC4363C
-	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Oct 2020 18:04:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7F33BC4363C
+	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Oct 2020 18:04:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id BE7C1206DD
-	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Oct 2020 18:04:43 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3D8902078D
+	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Oct 2020 18:04:53 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="b/hQUZP8"
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="VhN9v/xF"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726521AbgJDSEk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 4 Oct 2020 14:04:40 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48776 "EHLO
+        id S1726594AbgJDSEr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 4 Oct 2020 14:04:47 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48784 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726125AbgJDSEj (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 4 Oct 2020 14:04:39 -0400
+        with ESMTP id S1726125AbgJDSEn (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 4 Oct 2020 14:04:43 -0400
 Received: from casper.infradead.org (casper.infradead.org [IPv6:2001:8b0:10b:1236::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9DF29C0613CE;
-        Sun,  4 Oct 2020 11:04:39 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A546EC0613CE;
+        Sun,  4 Oct 2020 11:04:42 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=casper.20170209; h=Content-Transfer-Encoding:MIME-Version:
         References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:
         Content-Type:Content-ID:Content-Description;
-        bh=lcDrPyve8ZGqJ4GdFbmYERQ0EctUPUpm2VwVCWrS8pU=; b=b/hQUZP816I2ZPcyTtYJrK0hPU
-        eTT6yKyUGxFh7cmzFamPce4SyXe30LGUt/w2KAnHF4rWLPsDPz8qLwoSZihNO4XGJ225/rAL9xCPp
-        eJT3Hw5qpYqLVINHcgEZEPjKCvuMYoTcdJp3VKRm2OVr4YjlY4vrGvPOuWRnw9PHt32Bp//fi7Dzb
-        PvCfP5kaSZXNQAoYhUAtkkrE3t1AzsweMP5UROoIeF71zOfo1kQoHfYts7prtHfRLVFCx2/hKVDuy
-        S70qOhDWnAi0pZzDyNBy4V2Ivu9/nA75VcvlC/styaN6bzFWKDrsAystUNHqLn6AHosJiPwxNLG5K
-        sMNpzx4g==;
+        bh=O+GazgI/0xP6Dkm5fRqJzqqdOxWJi4HKwI9NOqmx0qg=; b=VhN9v/xFPFu2bLILuvb2SViDvn
+        8txRRfkJZfL9lZ+ezUktQtM07eImKNitiKTlQuVwLt09CSdNjFllQTxWmTQXxeDZmT4oyuFRMwMIu
+        5v+8lIM3NgNVJ+CqW2DlRuyfdLCV0/tv7e0mks1P9uv8E2dYuwHPr6QubBlWrRmmmJaBanXkNSubO
+        GRvDIiITVSvcWycoFaQypYP0Gc3bGRq0zRFIMFR98JIRBZMcv0640XyFBuId5fUJWXk3qaMIXKdoj
+        idBOaEkkoL7tklgWLdKkMWyqcFTC1cZkPcuvtxfO6m6JdH3kW2HSFuFqDpF5hcsrImENV+lcD47za
+        U+/5T9lQ==;
 Received: from willy by casper.infradead.org with local (Exim 4.92.3 #3 (Red Hat Linux))
-        id 1kP8N5-0003mY-6K; Sun, 04 Oct 2020 18:04:31 +0000
+        id 1kP8N5-0003mg-Jf; Sun, 04 Oct 2020 18:04:31 +0000
 From:   "Matthew Wilcox (Oracle)" <willy@infradead.org>
 To:     linux-fsdevel@vger.kernel.org
 Cc:     "Matthew Wilcox (Oracle)" <willy@infradead.org>, ericvh@gmail.com,
@@ -46,9 +46,9 @@ Cc:     "Matthew Wilcox (Oracle)" <willy@infradead.org>, ericvh@gmail.com,
         ocfs2-devel@oss.oracle.com, linux-btrfs@vger.kernel.org,
         clm@fb.com, josef@toxicpanda.com, dsterba@suse.com,
         stable@vger.kernel.org
-Subject: [PATCH 1/7] 9P: Cast to loff_t before multiplying
-Date:   Sun,  4 Oct 2020 19:04:22 +0100
-Message-Id: <20201004180428.14494-2-willy@infradead.org>
+Subject: [PATCH 3/7] ceph: Promote to unsigned long long before shifting
+Date:   Sun,  4 Oct 2020 19:04:24 +0100
+Message-Id: <20201004180428.14494-4-willy@infradead.org>
 X-Mailer: git-send-email 2.21.3
 In-Reply-To: <20201004180428.14494-1-willy@infradead.org>
 References: <20201004180428.14494-1-willy@infradead.org>
@@ -58,32 +58,28 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 32-bit systems, this multiplication will overflow for files larger
-than 4GB.
+On 32-bit systems, this shift will overflow for files larger than 4GB.
 
 Cc: stable@vger.kernel.org
-Fixes: fb89b45cdfdc ("9P: introduction of a new cache=mmap model.")
+Fixes: 61f68816211e ("ceph: check caps in filemap_fault and page_mkwrite")
 Signed-off-by: Matthew Wilcox (Oracle) <willy@infradead.org>
 ---
- fs/9p/vfs_file.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ fs/ceph/addr.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/9p/vfs_file.c b/fs/9p/vfs_file.c
-index 3576123d8299..6d97b6b4d34b 100644
---- a/fs/9p/vfs_file.c
-+++ b/fs/9p/vfs_file.c
-@@ -612,9 +612,9 @@ static void v9fs_mmap_vm_close(struct vm_area_struct *vma)
- 	struct writeback_control wbc = {
- 		.nr_to_write = LONG_MAX,
- 		.sync_mode = WB_SYNC_ALL,
--		.range_start = vma->vm_pgoff * PAGE_SIZE,
-+		.range_start = (loff_t)vma->vm_pgoff * PAGE_SIZE,
- 		 /* absolute end, byte at end included */
--		.range_end = vma->vm_pgoff * PAGE_SIZE +
-+		.range_end = (loff_t)vma->vm_pgoff * PAGE_SIZE +
- 			(vma->vm_end - vma->vm_start - 1),
- 	};
- 
+diff --git a/fs/ceph/addr.c b/fs/ceph/addr.c
+index 6ea761c84494..970e5a094035 100644
+--- a/fs/ceph/addr.c
++++ b/fs/ceph/addr.c
+@@ -1522,7 +1522,7 @@ static vm_fault_t ceph_filemap_fault(struct vm_fault *vmf)
+ 	struct ceph_inode_info *ci = ceph_inode(inode);
+ 	struct ceph_file_info *fi = vma->vm_file->private_data;
+ 	struct page *pinned_page = NULL;
+-	loff_t off = vmf->pgoff << PAGE_SHIFT;
++	loff_t off = (loff_t)vmf->pgoff << PAGE_SHIFT;
+ 	int want, got, err;
+ 	sigset_t oldset;
+ 	vm_fault_t ret = VM_FAULT_SIGBUS;
 -- 
 2.28.0
 

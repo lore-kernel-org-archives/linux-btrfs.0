@@ -2,107 +2,75 @@ Return-Path: <SRS0=Lsqx=DM=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.9 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 439EBC4363A
-	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Oct 2020 13:23:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 688B4C4363D
+	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Oct 2020 13:43:30 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id E334F207BC
-	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Oct 2020 13:23:22 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 208DF20756
+	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Oct 2020 13:43:30 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="W4dajL4w"
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="bkv55xe1"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725963AbgJENXW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 5 Oct 2020 09:23:22 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57410 "EHLO
+        id S1726335AbgJENn3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 5 Oct 2020 09:43:29 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60506 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725932AbgJENXV (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Oct 2020 09:23:21 -0400
-Received: from mail-qt1-x841.google.com (mail-qt1-x841.google.com [IPv6:2607:f8b0:4864:20::841])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8FFAFC0613CE
-        for <linux-btrfs@vger.kernel.org>; Mon,  5 Oct 2020 06:23:21 -0700 (PDT)
-Received: by mail-qt1-x841.google.com with SMTP id c23so2343006qtp.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 05 Oct 2020 06:23:21 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=subject:to:cc:references:from:message-id:date:user-agent
-         :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=v9RvH7c14zfHueeXQNRBx290zmK9yEAMPK/fBrelE2s=;
-        b=W4dajL4wLbGwjY+/Fhb/duUJ5Jo2xMOYUmfMs6lO9LhTjwMYRIyhRqfUxybeh+2Rnp
-         i8mYvv+gpQMOc20gnC7g22f9k/YLjW0+I+IOC1HNOf2t+2JX8Hr5H7Of4mme3jGTxvkh
-         RoB1vrnPzLXX8WaU6XmdWrjwEKbGOmsCewhjwK4MHE3tTBMT0b8R1chFByyq9w43LZ89
-         8QfIGwnh8ZAvvnSLOYWT0h73maMHScvKQg0ULcIhqQYdRQdMBo48ERVx6rtiz4SPJUoF
-         SnlwkOizEQKYMO1KX7TMK75NnxZ+byPJSjMtANT4JgqceheXnVjDd8urUt7D+6QPjt2Z
-         AY/w==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=v9RvH7c14zfHueeXQNRBx290zmK9yEAMPK/fBrelE2s=;
-        b=MIbtmZAingmmtbaPYrd+hmoxyuI21KY5LO28VUzewc0+zQrRMZd5JRssa90vStnqLB
-         TCJzQvcvEvSelkQb2KV3eBimXXeYn0hiE7kLguyDnGfOfV54eRFtxB5mT/g6So0xJVTJ
-         w9D/kDiFoRrCVOW8WFahZJI4vhc+fcSl4S2Lz7lbilJDdqKNkgSf5/aU6jJ1p2IATVl/
-         4bxqKuNdLQEes92b+qZHXoR4AMgJthQmJHW2AYyAEa9jUc93X0hnw8gJUIKImwmUm59Y
-         DyK3n77SNXMImFogzf1g45vINaimVCyL3Pdr4rWTMQNJPAv6ieCszwtJKWeI2eBPKODm
-         OTnQ==
-X-Gm-Message-State: AOAM532OJckWqYbVik6C6wug/Fzmv3vuA1HEUKXM3328vbVSWFbCiApD
-        GGoQgrHdv0zK07QFeitNW3mGMg==
-X-Google-Smtp-Source: ABdhPJyIIohiDMf8P3yC56v4i/SnVrGjvV/b0Ej4TogmdKC0YroTDtdRbaZSGx+dUHcbbLUlTkHNXw==
-X-Received: by 2002:ac8:6901:: with SMTP id e1mr5178132qtr.122.1601904200745;
-        Mon, 05 Oct 2020 06:23:20 -0700 (PDT)
-Received: from [192.168.1.45] (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id q3sm7144180qkq.132.2020.10.05.06.23.19
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 05 Oct 2020 06:23:20 -0700 (PDT)
-Subject: Re: [PATCH 2/2] btrfs: fix btrfs_find_device unused arg seed
-To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
-Cc:     nborisov@suse.com, wqu@suse.com, dsterba@suse.com
-References: <cover.1600940809.git.anand.jain@oracle.com>
- <b9108a14773af7a899226f59a9dbd0953d20abe5.1600940809.git.anand.jain@oracle.com>
-From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <455f799d-d8fb-41a2-1c96-37d2b7644cea@toxicpanda.com>
-Date:   Mon, 5 Oct 2020 09:23:19 -0400
-User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0)
- Gecko/20100101 Thunderbird/78.3.1
+        with ESMTP id S1725932AbgJENn2 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Oct 2020 09:43:28 -0400
+Received: from casper.infradead.org (casper.infradead.org [IPv6:2001:8b0:10b:1236::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7A164C0613CE;
+        Mon,  5 Oct 2020 06:43:27 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Type:MIME-Version:
+        References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+        Content-Transfer-Encoding:Content-ID:Content-Description;
+        bh=jb5thMIWpCkZBAm0OYkNTxcNM8PY6DURu7qCjd3L9nk=; b=bkv55xe1/G1SaZg+Ki7iWQKwNR
+        q8pgQvSNPgTwrzZxa/2xHHL4iU/JMWqKDRv9YuDcofZCD/4sWqrHThuvXBIf7sQCuDueV/8S44IRX
+        cxYlin4+qU9S89E46tk/MJi8AbJ4UfpX4kmKp7wqxlCKTL3zZPVgZeMXsG6iYTcZg8elDF5PxhZ3R
+        1r5zkb7G90HwjOn8IgV1W0RjFGGyj9UJEDQL2ElR5OvwiYtdB/rJM1FYNZyQlx7FMhao5LjUlTEUt
+        3J4xUsRlz/Ve3ANIK35psd/rrvf5nkqNcjucSAmcJFOThsz0t7dZtOng+nHYjhQT2gP/XmZmmRz3q
+        8WvWI+Kw==;
+Received: from hch by casper.infradead.org with local (Exim 4.92.3 #3 (Red Hat Linux))
+        id 1kPQls-00031f-0l; Mon, 05 Oct 2020 13:43:20 +0000
+Date:   Mon, 5 Oct 2020 14:43:19 +0100
+From:   Christoph Hellwig <hch@infradead.org>
+To:     "Martin K. Petersen" <martin.petersen@oracle.com>
+Cc:     Naohiro Aota <naohiro.aota@wdc.com>, linux-btrfs@vger.kernel.org,
+        dsterba@suse.com, hare@suse.com, linux-fsdevel@vger.kernel.org,
+        Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Subject: Re: [PATCH v8 01/41] block: add bio_add_zone_append_page
+Message-ID: <20201005134319.GA11537@infradead.org>
+References: <cover.1601572459.git.naohiro.aota@wdc.com>
+ <dece91bca322ce44bed19f2b0f460fa5ded2e512.1601574234.git.naohiro.aota@wdc.com>
+ <yq1k0w8g3rw.fsf@ca-mkp.ca.oracle.com>
 MIME-Version: 1.0
-In-Reply-To: <b9108a14773af7a899226f59a9dbd0953d20abe5.1600940809.git.anand.jain@oracle.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <yq1k0w8g3rw.fsf@ca-mkp.ca.oracle.com>
+X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by casper.infradead.org. See http://www.infradead.org/rpr.html
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 9/24/20 6:11 AM, Anand Jain wrote:
-> commit 343694eee8d8 (btrfs: switch seed device to list api), missed to
-> check if the last arg (seed) is true in the function btrfs_find_device().
-> This arg tells whether to traverse through the seed device list or not.
+On Fri, Oct 02, 2020 at 09:39:04AM -0400, Martin K. Petersen wrote:
 > 
-> This means after the above commit the arg is always true, and the parent
-> function which set this arg to false aren't effective.
+> Naohiro/Johannes,
 > 
-> So we don't worry about the parent functions which set the last arg to
-> true, instead there is only one parent with calling btrfs_find_device
-> with the last arg false in device_list_add().
+> > Add bio_add_zone_append_page(), a wrapper around bio_add_hw_page() which
+> > is intended to be used by file systems that directly add pages to a bio
+> > instead of using bio_iov_iter_get_pages().
 > 
-> But in fact, even the device_list_add() has no purpose that it has to set
-> the last arg to false. Because the fs_devices always points to the
-> device's fs_devices. So with the devid+uuid matching, it shall find the
-> btrfs_device and returns. So naturally, it won't traverse through the
-> seed fs_devices (if) present.
+> Why use the hardware limit? For filesystem I/O we generally use the
+> queue soft limit to prevent I/Os getting too big which can lead to very
+> unpredictable latency in mixed workloads.
 > 
-> So this patch makes it official that we don't need the last arg in the
-> function btrfs_find_device() and it shall always traverse through the
-> seed device list.
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> max_zone_append_sectors also appears to be gated exclusively by hardware
+> constraints. Is there user-controllable limit in place for append
+> operations?
 
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
-
-Thanks,
-
-Josef
+Zone Append operations can't be split, as they return the first written
+LBA to the caller.  If you'd split it you'd now need to return multiple
+start LBA values.

@@ -2,44 +2,44 @@ Return-Path: <SRS0=Lsqx=DM=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.0 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+X-Spam-Status: No, score=-10.0 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	DKIM_VALID,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
-	SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
-	version=3.4.0
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
+	NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 15530C4363A
-	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Oct 2020 07:16:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 533D1C4363A
+	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Oct 2020 08:51:29 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id C13F020756
-	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Oct 2020 07:16:01 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D31A62078D
+	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Oct 2020 08:51:28 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="ZPUfoiZB"
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="BF8EPUxi"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725903AbgJEHQB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 5 Oct 2020 03:16:01 -0400
-Received: from mout.gmx.net ([212.227.15.18]:59395 "EHLO mout.gmx.net"
+        id S1725915AbgJEIv1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 5 Oct 2020 04:51:27 -0400
+Received: from mout.gmx.net ([212.227.15.15]:55133 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725870AbgJEHQA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 5 Oct 2020 03:16:00 -0400
+        id S1725895AbgJEIv1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 5 Oct 2020 04:51:27 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1601882157;
-        bh=+8mfqq5Bq/Weu5FbeMj18EcIUcVmAokWG6WQLi+HQSw=;
-        h=X-UI-Sender-Class:Subject:To:Cc:References:From:Date:In-Reply-To;
-        b=ZPUfoiZBYZNqHqKPOA/S/dzQr/rYM0wVPOsGMm7tmw/+fUKGho9nuvgkI8mVJKrjY
-         3t+NIp5E+AmEnGvlXMXqUr7RrK+cwNqF3lBTa8pCBz8iZStds5bjCXOdiIHIXVCz25
-         tWlWh9mGI5RZ0900wbyPHiae/3RFpLX33vzqG7b8=
+        s=badeba3b8450; t=1601887882;
+        bh=C0gaEFIdEGvvWZakGEOWhThF4gDgm2p6HSdvenJ3DZ4=;
+        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
+        b=BF8EPUxi9G9tsg1LWhRpTFQVDjcJ+cQnMkoU8d/b7V/4XgjTwNo5F/jyHYZlo6BS3
+         acoOxObbw9N+amxuBXkwMmUAebKtOL9p1leLdnFVJp+NjQlUzpWTGLb2p/D1RaUH/I
+         5L8V+IyDSI8vbYs1nmo5+f5JKsINNUSBbUFPrJzw=
 X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
 Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx004
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1N3se2-1kXxfw0sjY-00zl0o; Mon, 05
- Oct 2020 09:15:56 +0200
-Subject: Re: BTRFS device unmountable after system freeze
-To:     Chris Murphy <lists@colorremedies.com>
-Cc:     Pet Eren <peteren@gmx.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <trinity-8bafe7e4-3944-4586-8ccf-01fca6664979-1601808281835@3c-app-mailcom-bs04>
- <1c7b7bf3-5912-3d51-c1f2-5c2c889367f6@gmx.com>
- <CAJCQCtQSy5Dknp46G08YHU2XxBuhKO2uCGkyU-eptHx4QSKRvw@mail.gmail.com>
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1N8ob6-1kU6yC0bI6-015mkT; Mon, 05
+ Oct 2020 10:51:22 +0200
+Subject: Re: ERROR... please contact btrfs developers
+To:     Eric Levy <ericlevy@gmail.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <CA++hEgx2x=HjjUR=o2=PFHdQSFSqquNffePTVUqMNs19sj_wcQ@mail.gmail.com>
+ <c2d13609-564d-1e3b-482a-0af65532b42b@gmx.com>
+ <CA++hEgwsLH=9-PCpkR4X2MEqSwwK6ZMhpb+YEB=ze-kOJ8cwaQ@mail.gmail.com>
+ <CA++hEgzbFsf6LgPb+XJbf-kkEYEy0cYAbaF=+m3pbEdSd+f62g@mail.gmail.com>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
@@ -65,157 +65,209 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  72byGeSovfq/4AWGNPBG1L61Exl+gbqfvbECP3ziXnob009+z9I4qXodHSYINfAkZkA523JG
  ap12LndJeLk3gfWNZfXEWyGnuciRGbqESkhIRav8ootsCIops/SqXm0/k+Kcl4gGUO/iD/T5
  oagaDh0QtOd8RWSMwLxwn8uIhpH84Q4X1LadJ5NCgGa6xPP5qqRuiC+9gZqbq4Nj
-Message-ID: <a7f5c202-0a6d-9253-b7ac-49fe89c9d703@gmx.com>
-Date:   Mon, 5 Oct 2020 15:15:53 +0800
+Message-ID: <c2c0f8e7-b3ff-9e88-9d98-3b903c241644@gmx.com>
+Date:   Mon, 5 Oct 2020 16:51:19 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
  Thunderbird/68.12.0
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtQSy5Dknp46G08YHU2XxBuhKO2uCGkyU-eptHx4QSKRvw@mail.gmail.com>
+In-Reply-To: <CA++hEgzbFsf6LgPb+XJbf-kkEYEy0cYAbaF=+m3pbEdSd+f62g@mail.gmail.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="RbgKwJp3llNMi4ViInsIk6ZLI1bONxQPz"
-X-Provags-ID: V03:K1:i/BLAEntDpPfwifeps1AsdBDoWKAOzMOoZNSusXpOzS9d3iCARW
- pGKFBfIO3jChZYYYHySH0VAQq2tUgmRXE25E84nSJNbvUrA+32epwlzLKEPwH0ZOYuPCP9o
- RZTRZ3r10wpYKKSK505osVqvk8cfDraeyJ5uYCnzX9vuJAcRRL3TYHoHF5OSX9kQYu+0DEF
- wdKpVAYnO9hYBw3wac82A==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:3BzcTCHh3RU=:cDSLNR+6DLzplgyqlkNQ9z
- lgNuhCNc6tAU7MosHt6eChQKZp+i+9uYh4+nmq0BHbsgWi4BdFZesvn/b7f0gDNuhKmWQlsCa
- D0uYdPooQxA9JyJIKm7ODbfIAD53DZ4DLre2uCKq11pa3R0E+OLPT4D4x4OwqgDi3S+RME2Ew
- GM/8f2zl6gJMUIzchGww2i/tPIHUlaZNktWCjq9oNnnn9MhbpebvV4sxwTt2eRO/TcentkaXH
- TWPIEsSNo80w3gnX8erQ2oSWiZbkDbMdB1NAH6a0pNHJ3FVnpGQ4gTpYtoeC4/pNFPbWtpwYH
- cy0yl8mAEGZHL3mPnIwxuDmH4RzaKfUBey6H96c69iXvxOR9x2vKWHrZ3+lYxzx0YuyjpuZTl
- +VZmV45gakocFbQVp2p5WMW0IBPVk8Dd8S+8STr5Zilx5OyexHBl0ilrPy2ej70YBfId2YzH7
- HfmpfQe5Evngg2DuHRf0djkj4Oven8iPc6psGPuEr+qgjLvfZ1Jabhh8SNVTv/Z+VTIu79OUd
- qV2uFZzeJpWfns8PC/MVk4caz2viXlFY0qwK2P2TYUri76dCnsgNFBFeXET/zEixWn2PfNQD7
- OLSGiSdFro/H0QFKrhKT/aWURXyfvvni5fSvllWZGlS10TS3uOpor9IgDGo944x8NuMkz4yhT
- zeehafQuuOqb3Qaj23g1Ymvy+qjh9OREVYd12DEsr4qH4yYrDvFI7q4zzSR3bStYJQV7BR9xC
- ZcLOmXjwSDy6hWFKgHVHJnm1K/tQ89gpgdpix7ejTFMRYloOOJbXU8Cnx3s3p+mlwtjY01no0
- PZdOcOda/vrLFjm9ms+cDV7eRe4t/NGhQGK9bNcsNnYF+u1mECpTOnQsldDw1r0Qv6M00+ytH
- oyu3sxlO8r36JT2o8xXLOa7mX3FM5ES6WBo2cHhCyoC2YvGcI2dqeL6MK7/XKoB/AnIzhqUGk
- zU1Ftj+D+BJJZaCUl0nvokbrPszbOIGLyFPVSZDOFRF4SBWAsd3WEXvA/yhkO9wGA/9CH1RrC
- OKS4VRj9S2IfdJMvPw+nUKXRE6G8wBhKgyDa+J3ph0X7BS5mSVAeUsueq1FeixZn3Klu3sHbt
- ve53r21JLYWnHYtTfHhp58FDY7D4TWfl/AGbSY0Q7C4g/T+p9gN2Vio2MEmrRKtezoTNppMxD
- 0ELKaqKAflu2LI4N+VjQyUw7KFmbX7S0wRq+JoKrfMI9C1C32vxRBHvu7kUm1uo2N49ucK5ks
- 0kjW6eZhJcpQRINJdig9/lPQY8naB/LDHzxQJFA==
+ boundary="2MNf8cKJA6vgNDm9m3Cb5BJ488n5GSUx3"
+X-Provags-ID: V03:K1:9FFbj5CSGolwm87aNJo7kjUzfceeNcCfSeYYgcjt3N+s20IK3/v
+ i2xQtsl0WyU8ghFOcElvCS+qboaf1NAkO/P8vpZsaEuSvO7jXtZnbMMQp2Q1rsrv5vLgUiZ
+ 31fO/rl0hQvAGNbw2DlTsIon0DBLeJGimTgn7Id5gidscdi8OtuSnS44NGaIPwobezZ3DVv
+ Sh1X7qlaqlsEviX4Ng/kA==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:evL04EURLPU=:OKxo48/ODZCHyVcnhfieUt
+ nU1d1QdGOoaP3fUGkA/dJp39qF8ZBZ2DWJ5ORkRS7X1JTUpgj8ouAvfMo2EWmkA3W0TEDW70A
+ ejFnSPzQ/5teKCIKIt60CrdBht+ys5rUOdkgwFKD3iFfGh4cdwZFXh7TkBWxGIYmNU6Doed1A
+ YoSwZ2GKS4b7WS4FZv+oWpzg11HTOPZclvHLXbXQdRHi0FWiLAvg3HIpkzKiWrHo/E7lHCDqE
+ CEbLpABgcUYtFb/hnCixZKnLrFADBgfaJnn3HQzIDN/aiUzuG2qbSm2rQrr9LRR/EJWWDB4aR
+ 0ZRwnaoyZr0OffcKNFA5rb9oqE35BKx9VaG4WGe3CoZTkEG8yZy6khRBAB2NJP9qal4eU6m6n
+ U0S+wJEHqJl3jhjIdNRIy7ukweLA8sd5TUKwZbox2+YC4oykBBAB9c8wiBEx7xJ6NvNMMb6ar
+ IpYp6qBN72ZJZAS37ySvOFJYGX74GU1iv4b6EETQwA3DzaGzbmSJE8Veugu7TLdJU5OoIanLm
+ PeHb0gCmZxUe9lsnhjLEFcv5xzDjHfduTq58SOzpZ/NkTyS99sEsXp1okWiapx9OFyjH4n93t
+ 88cVicGikTfwqV998Ff1W8GbSet+hRr5hDxeTKt3hzwPCmgoSR1/Blau8U6qA269UdiExwMI9
+ cmoYKofbyehdqOOVbL6Xp/4/ku18/Om88zKbRGj9nxemXP3sDmMU/3AL8WltT3Noxc4sejHtL
+ PufsUFU76G/nk9xvIADuuq9WnivZ1FLbYGJD77zNptzoGbHODQQLuXxDGFQDL5oYDQueN9g+D
+ bGCItjSFGYU5GSU5lKivFFsJDn4iLN8itKu+Dg/1oQcp97zEsY1LlbXj2Wnyeycz9glsU3610
+ WE95NoGS9lkzCoXbEtyVsATfaQ8GEhDYvNzSjQxegMUUSEmSB1dF6l6mEvztXrEZYB23f23+j
+ 2ysdhk8BTvU1ZtpmT694jXjzNRFV51lpPefnD/YF8MvpNcK8Sdy7gp+GAJU0g89E0owGO4Kw5
+ T0ubHBLrb7wTzzwnuBFezopGROxOFns6uKauSevifAFteibVga0tapg9SmNdPLlD2APYTfoRJ
+ EUtdNlBuUR18MMdS7UcCtXW5Eil5UVdDfQbOMvO2woDdl0XkwFjgWwZ3jnIkXG37SqTthFTd0
+ a7VnOM12/9DUOmQsVjLgm/0s04oaGvTw2imJA12kitqMm7xh/TapbAqlbp3G9C1uUz2IAlJcZ
+ jLLnw7+9JYoC6BcfU1ICyBTW3xMcX/0ZHjZcDww==
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---RbgKwJp3llNMi4ViInsIk6ZLI1bONxQPz
-Content-Type: multipart/mixed; boundary="Z8c60uJCdAz7XI6ynREwqfUG5azjh2vMC"
+--2MNf8cKJA6vgNDm9m3Cb5BJ488n5GSUx3
+Content-Type: multipart/mixed; boundary="1TcPW26Nwtnnzk1mfNpsSQzS1BAQ2vQv0"
 
---Z8c60uJCdAz7XI6ynREwqfUG5azjh2vMC
+--1TcPW26Nwtnnzk1mfNpsSQzS1BAQ2vQv0
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 2020/10/5 =E4=B8=8B=E5=8D=882:01, Chris Murphy wrote:
-> On Sun, Oct 4, 2020 at 6:12 AM Qu Wenruo <quwenruo.btrfs@gmx.com> wrote=
-:
->>
->>
->>
->> On 2020/10/4 =E4=B8=8B=E5=8D=886:44, Pet Eren wrote:
->>> Hi there!
->>>
->>> I have been using BTRFS on an external hdd (WD Elements 8TB, Single m=
-ode, data, metadata and system in DUP). The device is LUKS encrypted.
->>> After my Ubuntu 18.04 freezed, I can unlock LUKS, but I am not able t=
-o mount the BTRFS filesystem.
->>>
->>> - uname -a =3D 5.8.6-1-MANJARO
->>> - btrfs --version =3D btrfs-progs v5.7
->>> - btrfs fi show =3D Label: 'Elements'  uuid: 62a62962-2ad6-45db-a3ad-=
-77d7f64983e8
->>>                           Total devices 1 FS bytes used 2.81TiB
->>>                           devid    1 size 7.28TiB used 5.77TiB path /=
-dev/mapper/elements
->>> - btrfs fi df /home =3D Unfortunatly I am not able to mount de btrfs =
-filesystem
->>> - dmesg:
->>> [560852.004810] BTRFS info (device dm-4): disk space caching is enabl=
-ed
->>> [560852.004812] BTRFS info (device dm-4): has skinny extents
->>> [560852.552878] BTRFS critical (device dm-4): corrupt leaf: block=3D2=
-90783232 slot=3D81 extent bytenr=3D2054053203968 len=3D262144 invalid gen=
-eration, have 878116864 expect (0, 1475717]
->>> [560852.552884] BTRFS error (device dm-4): block=3D290783232 read tim=
-e tree block corruption detected
->>> [560852.557557] BTRFS critical (device dm-4): corrupt leaf: block=3D2=
-90783232 slot=3D81 extent bytenr=3D2054053203968 len=3D262144 invalid gen=
-eration, have 878116864 expect (0, 1475717]
->>> [560852.557564] BTRFS error (device dm-4): block=3D290783232 read tim=
-e tree block corruption detected
->>> [560852.557605] BTRFS error (device dm-4): failed to read block group=
-s: -5
->>> [560852.616539] BTRFS error (device dm-4): open_ctree failed
->>>
->>> I also tried to mount the device on another system (where the volume =
-is created) with the same results:
->>> - uname -a =3D 4.15.0-118-generic
->>> - btrfs --version =3D btrfs-progs v4.15.1
->>>
->>>
->>> sudo btrfs check --readonly /dev/mapper/elements
->>> Ends like this (with many more "Error: invalid generation for extent"=
- lines)
->>> ..
->>> ERROR: invalid generation for extent 4552998985728, have 150461808037=
-10188199 expect (0, 1475717]
->>> ERROR: invalid generation for extent 4555984134144, have 692194499035=
-0260720 expect (0, 1475717]
->>> ERROR: invalid generation for extent 4556810252288, have 133837308938=
-51772781 expect (0, 1475717]
->>> ERROR: invalid generation for extent 4558174781440, have 864906746759=
-2986678 expect (0, 1475717]
->>> ERROR: invalid generation for extent 4558308999168, have 129530214745=
-35714951 expect (0, 1475717]
->>
->> Only extent tree corruptions, not a big problem.
->>
->> Nothing of your fs is lost, just kernel is too sensitive to any possib=
-le
->> corrupted metadata, thus rejecting it completely, to avoid further pro=
-blems.
->>
->> In fact, if you go several kernel version backward, you can mount the =
-fs
->> without problem.
+On 2020/10/5 =E4=B8=8B=E5=8D=883:58, Eric Levy wrote:
+> Well, I see the complaint about limited disk space. I suppose it is a
+> surprise to me that disk usage causes this problem, because the mount
+> was fully functional under kernel versions 5.3.x.
 >=20
-> Well he tried with 4.15 and got the same messages. Would '-o
-> usebackuproot' work here? Or is it corruption older than just this one
-> crash?
+> Is the best solution simply to free disk space? If so, then the act
+> would have to fall in the time window during which the mount retains
+> RW state.
 >=20
+>=20
+> [277402.736070] usb 2-1: new SuperSpeed Gen 1 USB device number 34
+> using xhci_hcd
+> [277402.756644] usb 2-1: New USB device found, idVendor=3D152d,
+> idProduct=3D0583, bcdDevice=3D 2.08
+> [277402.756648] usb 2-1: New USB device strings: Mfr=3D1, Product=3D2,
+> SerialNumber=3D3
+> [277402.756650] usb 2-1: Product: USB to PCIE Bridge
+> [277402.756652] usb 2-1: Manufacturer: JMicron
+> [277402.756653] usb 2-1: SerialNumber: 0123456789ABCDEF
+> [277402.761143] scsi host1: uas
+> [277402.761780] scsi 1:0:0:0: Direct-Access     JMicron  Generic
+>    0208 PQ: 0 ANSI: 6
+> [277402.762495] sd 1:0:0:0: Attached scsi generic sg0 type 0
+> [277404.731514] sd 1:0:0:0: [sda] 1000215216 512-byte logical blocks:
+> (512 GB/477 GiB)
+> [277404.731517] sd 1:0:0:0: [sda] 4096-byte physical blocks
+> [277404.731635] sd 1:0:0:0: [sda] Write Protect is off
+> [277404.731637] sd 1:0:0:0: [sda] Mode Sense: 5f 00 00 08
+> [277404.731877] sd 1:0:0:0: [sda] Write cache: enabled, read cache:
+> enabled, doesn't support DPO or FUA
+> [277404.732086] sd 1:0:0:0: [sda] Optimal transfer size 33553920 bytes
+> not a multiple of physical block size (4096 bytes)
+> [277405.557376]  sda: sda1 sda2 sda3 sda4 sda5
+> [277405.559054] sd 1:0:0:0: [sda] Attached SCSI disk
+> [277410.526995] BTRFS info (device sda5): disk space caching is enabled=
 
-v4.15 is heavily backported, even for the stable branch.
+> [277410.526999] BTRFS info (device sda5): has skinny extents
+> [277410.877674] BTRFS info (device sda5): enabling ssd optimizations
+> [277431.217341] BTRFS info (device sda5): checking UUID tree
+> [277435.854502] BTRFS info (device sda5): balance: resume
+> -mconvert=3Ddup,soft -sconvert=3Ddup,soft
+> [277435.854776] BTRFS info (device sda5): relocating block group
+> 518463160320 flags metadata
+> [277506.944843] BTRFS info (device sda5): relocating block group
+> 483205840896 flags metadata
+> [277597.158985] BTRFS: error (device sda5) in
+> btrfs_drop_snapshot:5428: errno=3D-28 No space left
 
-We need to go several releases back to the v4.15 kernel which doesn't
-has such check.
+Oh, that's a completely different bug.
+
+Somehow btrfs exhausted the metadata space.
+
+Normally caused by unbalanced data/metadata usage and multi-device.
+(Currently, RAID1/RAID0/RAID10/RAID5/RAID6 can all over-estimate the
+available space, and cause ENOSPC to happen in critical context, where
+we can only abort transaction to avoid further corruption)
+
+Currently I guess you need to don't do any balance, but try to remove as
+many unused files as possible, until you have enough unallocated space
+for metadata.
+
+To check your unalloated space, you can use btrfs fi usage:
+
+You need enough "Device unallocated" for your profile. (1MiB is not
+usable, as that is reserved space for superblock)
+
+E.g. if you're using RAID1, you need *2* devices with enough unallocated
+space.
+
+Normally this is pretty hard by just deleting enough files/snapshots to
+free a full data block.
+But if you did it, then you can try balance data space to free more
+space and get out of the ENOSPC spiral.
+
+I really need to push the fix harder before it affects more people.
 
 Thanks,
 Qu
 
+> [277597.158988] BTRFS info (device sda5): forced readonly
+> [277597.159022] BTRFS info (device sda5): 2 enospc errors during balanc=
+e
+> [277597.159022] BTRFS info (device sda5): balance: ended with status: -=
+30
+> [277607.030026] BTRFS info (device sda5): delayed_refs has NO entry
+>=20
+> On Sun, Oct 4, 2020 at 11:35 PM Eric Levy <ericlevy@gmail.com> wrote:
+>>
+>>> There is an off-tree branch to do the repair:
+>>> https://github.com/adam900710/btrfs-progs/tree/extent_gen_repair
+>>
+>> Ok. I was able to build and run. Part of the earlier confusion was
+>> from reading the documentation in the wrong branch of the repository.
+>>
+>> I ran the repair, and now the check passes in both the stock and
+>> forked version of the utility.
+>>
+>> However, the file system is still behaving badly. It reverts to RO
+>> mode after several minutes of use.
+>>
+>> Even a scrub operation fails ('aborted" result was not from a manual
+>> intervention).
+>>
+>> $ btrfs check /dev/sda5
+>> Opening filesystem to check...
+>> Checking filesystem on /dev/sda5
+>> UUID: 9a4da0b6-7e39-4a5f-85eb-74acd11f5b94
+>> [1/7] checking root items
+>> [2/7] checking extents
+>> [3/7] checking free space cache
+>> [4/7] checking fs roots
+>> [5/7] checking only csums items (without verifying data)
+>> [6/7] checking root refs
+>> [7/7] checking quota groups
+>> Rescan hasn't been initialized, a difference in qgroup accounting is e=
+xpected
+>> Qgroup are marked as inconsistent.
+>> found 399944884224 bytes used, no error found
+>> total csum bytes: 349626220
+>> total tree bytes: 6007685120
+>> total fs tree bytes: 4510924800
+>> total extent tree bytes: 881704960
+>> btree space waste bytes: 1148459015
+>> file data blocks allocated: 570546290688
+>>  referenced 530623602688
+>>
+>> $ sudo btrfs scrub start -B /mnt/custom
+>> ERROR: scrubbing /mnt/custom failed for device id 1: ret=3D-1, errno=3D=
+5
+>> (Input/output error)
+>> scrub canceled for 9a4da0b6-7e39-4a5f-85eb-74acd11f5b94
+>> Scrub started:    Sun Oct  4 23:25:22 2020
+>> Status:           aborted
+>> Duration:         0:01:41
+>> Total to scrub:   378.04GiB
+>> Rate:             0.00B/s
+>> Error summary:    no errors found
 
---Z8c60uJCdAz7XI6ynREwqfUG5azjh2vMC--
 
---RbgKwJp3llNMi4ViInsIk6ZLI1bONxQPz
+--1TcPW26Nwtnnzk1mfNpsSQzS1BAQ2vQv0--
+
+--2MNf8cKJA6vgNDm9m3Cb5BJ488n5GSUx3
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEyBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAl96yCkACgkQwj2R86El
-/qhNdAf2IUDzHfbFbzOaMwayc6VNdxXntIVUanm2FNAExmsKm38oftN/++atW0/c
-c8urRI7PvtvHR7a1j8lXLzcNux0ty7AoLvC+TZ5XpXwQSvMdEjt6VGoB0rrA/X0k
-J6VU9PLJ75mVy4QZCnunhslDm1oLVRRlitAHSKvhZizqO1BOc1i6nKkahpKBBRCn
-ZL7LBhm6MEJnJ79pQEb5j3N8OQ210Iox+AF0mOqO6Jk3F8oAJafvtLAlBW/r1ddI
-uKg875I3QRx7RLYcIELL6UeeAbypJYTLb3OJanjLQIxQhiE03EN6Fic4ttvsNEX4
-1SvQeF8V3Szs3ENGAwZEZzSK7PFO
-=D1Pk
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAl963ocACgkQwj2R86El
+/qjs4Af6A4BkE/Irfy3cvjHuiloW60oqV+ZHKU6UtWR8RryUyN+2gamSJvZ0YuUt
+G48jLcVS0I5QBXoJ8RHxPhnYbUYTSczEjpnYyOzSUmCZk8v5lUK2kX+8Fhch6MJG
+M9CRANGPhi0UOl+FfUgYFWXWnomW86+fB610t8vJlmi8b8xnmqtuopppQHo/p3GJ
+DRapnInER8/KVWdOb/WmKoVvpQV0t1Bn+icXyd6tLvXFqH8EsMlhzUpuojKT7RSD
+NVnVTFQIE4ybCbmiaeRcSN6QyNl1FcN1bAUCwbM90cZXLsI6ai1jyH91eEr4R0NN
+Rz4gsOY0wJvvG7OLWoYP2CHBKVuIHg==
+=hKdd
 -----END PGP SIGNATURE-----
 
---RbgKwJp3llNMi4ViInsIk6ZLI1bONxQPz--
+--2MNf8cKJA6vgNDm9m3Cb5BJ488n5GSUx3--

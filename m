@@ -2,141 +2,141 @@ Return-Path: <SRS0=Lsqx=DM=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.8 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.8 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 293A9C4363A
-	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Oct 2020 14:47:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6CFB0C46466
+	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Oct 2020 15:30:18 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id EA603206CB
-	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Oct 2020 14:47:09 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1601909230;
-	bh=8NIQKJHMWAIowBIsAYsg9ItWVmXVGCyQSOObiLVuX3I=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=Rjyzn8jTWYRxI/B31hQBXPOVHEdtg3tVQO1qbvxLO4/vJTN4XL8KIA8JhJGWhtQo1
-	 BWAZNI56X/iZg+D8twDcTzH3eMLl2Rbnm0JmnEq+OTpAnWCpYXY6HVasTNC4dFvePR
-	 aggILBzT1mSH6Lrz5GHKxPcjcHbalpyFuw0auW10=
+	by mail.kernel.org (Postfix) with ESMTP id 3578E208C7
+	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Oct 2020 15:30:18 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726674AbgJEOp1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 5 Oct 2020 10:45:27 -0400
-Received: from mail.kernel.org ([198.145.29.99]:51934 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726590AbgJEOpJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 5 Oct 2020 10:45:09 -0400
-Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        id S1727744AbgJEPaQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 5 Oct 2020 11:30:16 -0400
+Received: from luna.lichtvoll.de ([194.150.191.11]:49669 "EHLO
+        mail.lichtvoll.de" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1727692AbgJEP3y (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Oct 2020 11:29:54 -0400
+Received: from 127.0.0.1 (localhost [127.0.0.1])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 0F9FE208C7;
-        Mon,  5 Oct 2020 14:45:07 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1601909108;
-        bh=8NIQKJHMWAIowBIsAYsg9ItWVmXVGCyQSOObiLVuX3I=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=s3yqktsTKhlT6Qo9LbLzliQJhTDHlN8QZEACj9IABgHkGr61cPrNTAzo6CCBewZpU
-         D/V4TdLBtki8HGA3DrhnNSZxIpyqjiboX0rVuomy8NC49lrMSqlyGI5BEbMi4KQmZR
-         xxHsuyf1BI0cI6+7IDdJvoyGRR3vZIX8XeIxf8hQ=
-From:   Sasha Levin <sashal@kernel.org>
-To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Josef Bacik <josef@toxicpanda.com>,
-        Nikolay Borisov <nborisov@suse.com>,
-        David Sterba <dsterba@suse.com>,
-        Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.8 06/12] btrfs: move btrfs_scratch_superblocks into btrfs_dev_replace_finishing
-Date:   Mon,  5 Oct 2020 10:44:54 -0400
-Message-Id: <20201005144501.2527477-6-sashal@kernel.org>
-X-Mailer: git-send-email 2.25.1
-In-Reply-To: <20201005144501.2527477-1-sashal@kernel.org>
-References: <20201005144501.2527477-1-sashal@kernel.org>
+        by mail.lichtvoll.de (Postfix) with ESMTPSA id D5BF9161416;
+        Mon,  5 Oct 2020 17:29:51 +0200 (CEST)
+From:   Martin Steigerwald <martin@lichtvoll.de>
+To:     linux-btrfs@vger.kernel.org, Qu Wenruo <wqu@suse.com>
+Subject: Re: [PATCH] btrfs: fix false alert caused by legacy btrfs root item
+Date:   Mon, 05 Oct 2020 17:29:51 +0200
+Message-ID: <1786699.e55IGcOCre@merkaba>
+In-Reply-To: <20200922023701.32654-1-wqu@suse.com>
+References: <20200922023701.32654-1-wqu@suse.com>
 MIME-Version: 1.0
-X-stable: review
-X-Patchwork-Hint: Ignore
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: 7Bit
+Content-Type: text/plain; charset="us-ascii"
+Authentication-Results: mail.lichtvoll.de;
+        auth=pass smtp.auth=martin smtp.mailfrom=martin@lichtvoll.de
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Josef Bacik <josef@toxicpanda.com>
+Hi Qu!
 
-[ Upstream commit 313b085851c13ca08320372a05a7047ea25d3dd4 ]
+Qu Wenruo - 22.09.20, 04:37:01 CEST:
+> Commit 259ee7754b67 ("btrfs: tree-checker: Add ROOT_ITEM check")
+> introduced btrfs root item size check, however btrfs root item has two
+> format, the legacy one which just ends before generation_v2 member,
+> is smaller than current btrfs root item size.
+>
+> This caused btrfs kernel to reject valid but old tree root leaves.
+> 
+> Fix this problem by also allowing legacy root item, since kernel can
+> already handle them pretty well and upgrade to newer root item format
+> when needed.
 
-We need to move the closing of the src_device out of all the device
-replace locking, but we definitely want to zero out the superblock
-before we commit the last time to make sure the device is properly
-removed.  Handle this by pushing btrfs_scratch_superblocks into
-btrfs_dev_replace_finishing, and then later on we'll move the src_device
-closing and freeing stuff where we need it to be.
+Is this going into 5.9? Asking cause it is not in 5.9-rc8.
 
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
-Signed-off-by: Sasha Levin <sashal@kernel.org>
----
- fs/btrfs/dev-replace.c |  3 +++
- fs/btrfs/volumes.c     | 12 +++---------
- fs/btrfs/volumes.h     |  3 +++
- 3 files changed, 9 insertions(+), 9 deletions(-)
+Of course I can keep the patch and as the external disk has been fixed, I 
+would not even need it anymore.
 
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index db93909b25e08..7cf48aeb6f14e 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -745,6 +745,9 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
- 	/* replace the sysfs entry */
- 	btrfs_sysfs_remove_devices_dir(fs_info->fs_devices, src_device);
- 	btrfs_sysfs_update_devid(tgt_device);
-+	if (test_bit(BTRFS_DEV_STATE_WRITEABLE, &src_device->dev_state))
-+		btrfs_scratch_superblocks(fs_info, src_device->bdev,
-+					  src_device->name->str);
- 	btrfs_rm_dev_replace_free_srcdev(src_device);
- 
- 	/* write back the superblocks */
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 956eb0d6bc584..8b5f666a3ea66 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1999,9 +1999,9 @@ static u64 btrfs_num_devices(struct btrfs_fs_info *fs_info)
- 	return num_devices;
- }
- 
--static void btrfs_scratch_superblocks(struct btrfs_fs_info *fs_info,
--				      struct block_device *bdev,
--				      const char *device_path)
-+void btrfs_scratch_superblocks(struct btrfs_fs_info *fs_info,
-+			       struct block_device *bdev,
-+			       const char *device_path)
- {
- 	struct btrfs_super_block *disk_super;
- 	int copy_num;
-@@ -2224,12 +2224,6 @@ void btrfs_rm_dev_replace_free_srcdev(struct btrfs_device *srcdev)
- 	struct btrfs_fs_info *fs_info = srcdev->fs_info;
- 	struct btrfs_fs_devices *fs_devices = srcdev->fs_devices;
- 
--	if (test_bit(BTRFS_DEV_STATE_WRITEABLE, &srcdev->dev_state)) {
--		/* zero out the old super if it is writable */
--		btrfs_scratch_superblocks(fs_info, srcdev->bdev,
--					  srcdev->name->str);
--	}
--
- 	btrfs_close_bdev(srcdev);
- 	synchronize_rcu();
- 	btrfs_free_device(srcdev);
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 75af2334b2e37..83862e27f5663 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -573,6 +573,9 @@ void btrfs_set_fs_info_ptr(struct btrfs_fs_info *fs_info);
- void btrfs_reset_fs_info_ptr(struct btrfs_fs_info *fs_info);
- bool btrfs_check_rw_degradable(struct btrfs_fs_info *fs_info,
- 					struct btrfs_device *failing_dev);
-+void btrfs_scratch_superblocks(struct btrfs_fs_info *fs_info,
-+			       struct block_device *bdev,
-+			       const char *device_path);
- 
- int btrfs_bg_type_to_factor(u64 flags);
- const char *btrfs_bg_type_to_raid_name(u64 flags);
+Best,
+Martin
+
+> Reported-by: Martin Steigerwald <martin@lichtvoll.de>
+> Fixes: 259ee7754b67 ("btrfs: tree-checker: Add ROOT_ITEM check")
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  fs/btrfs/tree-checker.c         | 17 ++++++++++++-----
+>  include/uapi/linux/btrfs_tree.h |  9 +++++++++
+>  2 files changed, 21 insertions(+), 5 deletions(-)
+> 
+> diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
+> index 7b1fee630f97..6f794aca48d3 100644
+> --- a/fs/btrfs/tree-checker.c
+> +++ b/fs/btrfs/tree-checker.c
+> @@ -1035,7 +1035,7 @@ static int check_root_item(struct extent_buffer
+> *leaf, struct btrfs_key *key, int slot)
+>  {
+>  	struct btrfs_fs_info *fs_info = leaf->fs_info;
+> -	struct btrfs_root_item ri;
+> +	struct btrfs_root_item ri = { 0 };
+>  	const u64 valid_root_flags = BTRFS_ROOT_SUBVOL_RDONLY |
+>  				     BTRFS_ROOT_SUBVOL_DEAD;
+>  	int ret;
+> @@ -1044,14 +1044,21 @@ static int check_root_item(struct
+> extent_buffer *leaf, struct btrfs_key *key, if (ret < 0)
+>  		return ret;
+> 
+> -	if (btrfs_item_size_nr(leaf, slot) != sizeof(ri)) {
+> +	if (btrfs_item_size_nr(leaf, slot) != sizeof(ri) &&
+> +	    btrfs_item_size_nr(leaf, slot) != 
+btrfs_legacy_root_item_size())
+> { generic_err(leaf, slot,
+> -			    "invalid root item size, have %u expect %zu",
+> -			    btrfs_item_size_nr(leaf, slot), sizeof(ri));
+> +			    "invalid root item size, have %u expect %zu or 
+%zu",
+> +			    btrfs_item_size_nr(leaf, slot), sizeof(ri),
+> +			    btrfs_legacy_root_item_size());
+>  	}
+> 
+> +	/*
+> +	 * For legacy root item, the members starting at generation_v2 
+will
+> be +	 * all filled with 0.
+> +	 * And since we allow geneartion_v2 as 0, it will still pass the
+> check. +	 */
+>  	read_extent_buffer(leaf, &ri, btrfs_item_ptr_offset(leaf, slot),
+> -			   sizeof(ri));
+> +			   btrfs_item_size_nr(leaf, slot));
+> 
+>  	/* Generation related */
+>  	if (btrfs_root_generation(&ri) >
+> diff --git a/include/uapi/linux/btrfs_tree.h
+> b/include/uapi/linux/btrfs_tree.h index 9ba64ca6b4ac..464095a28b18
+> 100644
+> --- a/include/uapi/linux/btrfs_tree.h
+> +++ b/include/uapi/linux/btrfs_tree.h
+> @@ -644,6 +644,15 @@ struct btrfs_root_item {
+>  	__le64 reserved[8]; /* for future */
+>  } __attribute__ ((__packed__));
+> 
+> +/*
+> + * Btrfs root item used to be smaller than current size.
+> + * The old format ends at where member generation_v2 is.
+> + */
+> +static inline size_t btrfs_legacy_root_item_size(void)
+> +{
+> +	return offsetof(struct btrfs_root_item, generation_v2);
+> +}
+> +
+>  /*
+>   * this is used for both forward and backward root refs
+>   */
+
+
 -- 
-2.25.1
+Martin
+
 

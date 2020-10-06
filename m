@@ -2,177 +2,240 @@ Return-Path: <SRS0=qoLa=DN=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-13.6 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	UNPARSEABLE_RELAY,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 546DCC4363D
-	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Oct 2020 12:56:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E745FC4363D
+	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Oct 2020 13:08:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 083E9206F7
-	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Oct 2020 12:56:11 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7166520760
+	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Oct 2020 13:08:41 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="mVgbYFAA"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726317AbgJFM4L (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 6 Oct 2020 08:56:11 -0400
-Received: from static.214.254.202.116.clients.your-server.de ([116.202.254.214]:45150
-        "EHLO ciao.gmane.io" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726032AbgJFM4K (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Oct 2020 08:56:10 -0400
-Received: from list by ciao.gmane.io with local (Exim 4.92)
-        (envelope-from <gcfb-btrfs-devel-moved1-3@m.gmane-mx.org>)
-        id 1kPmQt-0008io-Sa
-        for linux-btrfs@vger.kernel.org; Tue, 06 Oct 2020 14:51:07 +0200
-X-Injected-Via-Gmane: http://gmane.org/
-Mail-Followup-To: linux-btrfs@vger.kernel.org
+        id S1726013AbgJFNIk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 6 Oct 2020 09:08:40 -0400
+Received: from aserp2120.oracle.com ([141.146.126.78]:56654 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725902AbgJFNIk (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Oct 2020 09:08:40 -0400
+Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
+        by aserp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 096D45J8075820;
+        Tue, 6 Oct 2020 13:08:37 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
+ subject : date : message-id : in-reply-to : references : mime-version :
+ content-transfer-encoding; s=corp-2020-01-29;
+ bh=KBCk/wf6QWTEdCZrtQLGiQqHMDCJ5UC1yrJ9qPc065Q=;
+ b=mVgbYFAAdy8E9JbQwUsYJpARLwZWeMTr/HVnnW7/Fsb2QUDW1jk+CV51PbcvH1HlgTJ4
+ DuFbTmAF0r0ws+0XLcGfrOndw7vtB1XKVg1uIAmtLLeao8T6+frqNnKFHyJbQSKu9WIB
+ mKBtYMIm6VrCqdh1O3EPTPsbgJJfukLGElckJtjDcSRuQbfLbAj+zQSWrqzoqVZ+5Rer
+ Yndb9/C+HcE2oDbG7ssZJJHJkFNwIScpcb9KOXbKJwgOp9ho4yAC8eDua1JZjWM1bxim
+ plFP9HhgAEwF7ETy0GnP3liJ2qLYeRwmcRwBhK+G5NLwhymV09NG4ain2sog1ndMIumj 3w== 
+Received: from userp3020.oracle.com (userp3020.oracle.com [156.151.31.79])
+        by aserp2120.oracle.com with ESMTP id 33ym34h081-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
+        Tue, 06 Oct 2020 13:08:37 +0000
+Received: from pps.filterd (userp3020.oracle.com [127.0.0.1])
+        by userp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 096D1DQt116930;
+        Tue, 6 Oct 2020 13:08:37 GMT
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by userp3020.oracle.com with ESMTP id 33yyjfhgym-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Tue, 06 Oct 2020 13:08:36 +0000
+Received: from abhmp0019.oracle.com (abhmp0019.oracle.com [141.146.116.25])
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id 096D8Z7x014881;
+        Tue, 6 Oct 2020 13:08:35 GMT
+Received: from localhost.localdomain (/39.109.231.106)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Tue, 06 Oct 2020 06:08:35 -0700
+From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
-From:   Torsten Bronger <bronger@physik.rwth-aachen.de>
-Subject: Re: Why so much "btrfs send" data for "cp -a --reflink"?
-Date:   Tue, 06 Oct 2020 14:48:21 +0200
-Organization: Phoenix Foundation
-Message-ID: <87a6wzplka.fsf@physik.rwth-aachen.de>
-References: <87362t3y67.fsf@physik.rwth-aachen.de>
-Mime-Version: 1.0
-Content-Type: multipart/signed; boundary="=-=-=";
-        micalg=sha256;   protocol="application/pkcs7-signature"
-User-Agent: Gnus/5.13 (Gnus v5.13) Emacs/28.0.50 (gnu/linux)
-Cancel-Lock: sha1:903oDX9ysbwvpW0zxebJlYxHINk=
-X-PGP-Fingerprint: C5C8 D6E2 79D2 EFE9 8C0F  6D77 D5E3 CEFC 9F51 6B77
-X-PGP-Affinity: will accept encrypted message for GPG
-X-Home-Page: http://www.wikipedia.org/wiki/User:Bronger
-X-Face: +wpw"|jN2Fde|7<r"A\7[g0RGE#"N'WgB|46ohZy$RfV+Y!oH=FKMC>_<EQ_IdY;pJcjJrx
- {m$r$vTG>lKBa0\7!_6<ouwhB1|a+k#?z597ims{Y+POGr7Z{,b]wj]6Z"PqUHzA2\|m(:>suIE_m!
- x)'S9ytBu8tkt'k779jbzQ4o|p+@H_DCrIdnKG]E*w
-X-Binford: 6100 (more power)
-X-Accept-Language: de, en
-Jabber-ID: torsten.bronger@jabber.rwth-aachen.de
-Mail-Copies-To: never
+Cc:     josef@toxicpanda.com
+Subject: [PATCH] btrfs: fix devid 0 without a replace item by failing the mount
+Date:   Tue,  6 Oct 2020 21:08:26 +0800
+Message-Id: <944e4246d4cfcb411b2bd09e941931ac7616e961.1601988987.git.anand.jain@oracle.com>
+X-Mailer: git-send-email 2.25.1
+In-Reply-To: <20200922123355.ylTJsThacZjBaG9vO1CVBztE6R5uFMoyrhD7aGkmcIU@z>
+References: <20200922123355.ylTJsThacZjBaG9vO1CVBztE6R5uFMoyrhD7aGkmcIU@z>
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9765 signatures=668680
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=3 adultscore=0 bulkscore=0
+ phishscore=0 mlxlogscore=999 mlxscore=0 spamscore=0 malwarescore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2006250000
+ definitions=main-2010060084
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9765 signatures=668680
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 impostorscore=0 priorityscore=1501
+ mlxscore=0 mlxlogscore=999 clxscore=1015 bulkscore=0 spamscore=0
+ malwarescore=0 phishscore=0 suspectscore=3 adultscore=0 lowpriorityscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2006250000
+ definitions=main-2010060084
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
---=-=-=
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
+If there is a BTRFS_DEV_REPLACE_DEVID without a replace item, then
+it means some device is trying to attack or may be corrupted. Fail the
+mount so that the user can remove the attacking or fix the corrupted
+device.
 
-Hall=C3=B6chen!
+As of now if BTRFS_DEV_REPLACE_DEVID is present without the replace
+item, then in __btrfs_free_extra_devids() we determine that there is an
+extra device, and free those extra devices but continue to mount the
+device.
+However, we were wrong in keeping tack of the rw_devices so the syzbot
+testcase failed as below [1].
 
-Torsten Bronger writes:
+[1]
+WARNING: CPU: 1 PID: 3612 at fs/btrfs/volumes.c:1166 close_fs_devices.part.0+0x607/0x800 fs/btrfs/volumes.c:1166
+Kernel panic - not syncing: panic_on_warn set ...
+CPU: 1 PID: 3612 Comm: syz-executor.2 Not tainted 5.9.0-rc4-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 01/01/2011
+Call Trace:
+ __dump_stack lib/dump_stack.c:77 [inline]
+ dump_stack+0x198/0x1fd lib/dump_stack.c:118
+ panic+0x347/0x7c0 kernel/panic.c:231
+ __warn.cold+0x20/0x46 kernel/panic.c:600
+ report_bug+0x1bd/0x210 lib/bug.c:198
+ handle_bug+0x38/0x90 arch/x86/kernel/traps.c:234
+ exc_invalid_op+0x14/0x40 arch/x86/kernel/traps.c:254
+ asm_exc_invalid_op+0x12/0x20 arch/x86/include/asm/idtentry.h:536
+RIP: 0010:close_fs_devices.part.0+0x607/0x800 fs/btrfs/volumes.c:1166
+Code: 0f b6 04 02 84 c0 74 02 7e 33 48 8b 44 24 18 c6 80 30 01 00 00 00 48 83 c4 30 5b 5d 41 5c 41 5d 41 5e 41 5f c3 e8 99 ce 6a fe <0f> 0b e9 71 ff ff ff e8 8d ce 6a fe 0f 0b e9 20 ff ff ff e8 d1 d5
+RSP: 0018:ffffc900091777e0 EFLAGS: 00010246
+RAX: 0000000000040000 RBX: ffffffffffffffff RCX: ffffc9000c8b7000
+RDX: 0000000000040000 RSI: ffffffff83097f47 RDI: 0000000000000007
+RBP: dffffc0000000000 R08: 0000000000000001 R09: ffff8880988a187f
+R10: 0000000000000000 R11: 0000000000000001 R12: ffff88809593a130
+R13: ffff88809593a1ec R14: ffff8880988a1908 R15: ffff88809593a050
+ close_fs_devices fs/btrfs/volumes.c:1193 [inline]
+ btrfs_close_devices+0x95/0x1f0 fs/btrfs/volumes.c:1179
+ open_ctree+0x4984/0x4a2d fs/btrfs/disk-io.c:3434
+ btrfs_fill_super fs/btrfs/super.c:1316 [inline]
+ btrfs_mount_root.cold+0x14/0x165 fs/btrfs/super.c:1672
 
-> I have two subvolumes A and B.  =E2=80=9EA=E2=80=9C contains 50GB data, B=
- is empty.
-> None is a snapshot of the other.  Now, I copy all data from A to B
-> with "cp -a --reflink A/* B".  This copying takes less than a
-> second.  So apparently, no bulk data was duplicated.  "diff -rq A B"
-> is empty.  So far, so good.
->
-> However, it surprises me that
->
->     btrfs send -p A B | wc -c
->
-> reports 12GB.
+The fix here is, when we determine that there isn't a replace item
+then fail the mount if there is a replace target device (devid 0).
 
-At <https://wilson.bronger.org/btrfs-receive.dump.xz>, I have
-uploaded the output of "btrfs receive --dump".  Apparently, there
-are many "write".  Why doesn=E2=80=99t btrfs detect that all those extents
-are present in the parent?
+The reproducer looks like this.
+ mkfs.btrfs -fq /dev/sda
+ dd if=/dev/sda of=/dev/sdb bs=1 seek=64K skip=64K count=4096
+ btrfs-sv-mod /dev/sdb devid=0
+ mount -o device=/dev/sdb /dev/sda /btrfs
 
-Regards,
-Torsten.
+Reported-by: syzbot+4cfe71a4da060be47502@syzkaller.appspotmail.com
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+Depends on the patches
+ btrfs: drop never met condition of disk_total_bytes == 0
+ btrfs: fix btrfs_find_device unused arg seed
+If these patches aren't integrated yet, then please add the last arg in
+the function btrfs_find_device(). Any value is fine as it doesn't care.
 
-=2D-=20
-Torsten Bronger
+fstest case will follow.
 
---=-=-=
-Content-Type: application/pkcs7-signature; name=smime.p7s
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename=smime.p7s
+v2: changed title
+    old: btrfs: fix rw_devices count in __btrfs_free_extra_devids
 
-MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgEFADCABgkqhkiG9w0BBwEAAKCCEI8w
-ggUSMIID+qADAgECAgkA4wvV+K8l2YEwDQYJKoZIhvcNAQELBQAwgYIxCzAJBgNVBAYTAkRFMSsw
-KQYDVQQKDCJULVN5c3RlbXMgRW50ZXJwcmlzZSBTZXJ2aWNlcyBHbWJIMR8wHQYDVQQLDBZULVN5
-c3RlbXMgVHJ1c3QgQ2VudGVyMSUwIwYDVQQDDBxULVRlbGVTZWMgR2xvYmFsUm9vdCBDbGFzcyAy
-MB4XDTE2MDIyMjEzMzgyMloXDTMxMDIyMjIzNTk1OVowgZUxCzAJBgNVBAYTAkRFMUUwQwYDVQQK
-EzxWZXJlaW4genVyIEZvZXJkZXJ1bmcgZWluZXMgRGV1dHNjaGVuIEZvcnNjaHVuZ3NuZXR6ZXMg
-ZS4gVi4xEDAOBgNVBAsTB0RGTi1QS0kxLTArBgNVBAMTJERGTi1WZXJlaW4gQ2VydGlmaWNhdGlv
-biBBdXRob3JpdHkgMjCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMtg1/9moUHN0vqH
-l4pzq5lN6mc5WqFggEcVToyVsuXPztNXS43O+FZsFVV2B+pG/cgDRWM+cNSrVICxI5y+NyipCf8F
-XRgPxJiZN7Mg9mZ4F4fCnQ7MSjLnFp2uDo0peQcAIFTcFV9Kltd4tjTTwXS1nem/wHdN6r1ZB+Ba
-L2w8pQDcNb1lDY9/Mm3yWmpLYgHurDg0WUU2SQXaeMpqbVvAgWsRzNI8qIv4cRrKO+KA3Ra0Z3qL
-NupOkSk9s1FcragMvp0049ENF4N1xDkesJQLEvHVaY4l9Lg9K7/AjsMeO6W/VRCrKq4Xl14zzsjz
-9AkH4wKGMUZrAcUQDBHHWekCAwEAAaOCAXQwggFwMA4GA1UdDwEB/wQEAwIBBjAdBgNVHQ4EFgQU
-k+PYMiba1fFKpZFK4OpL4qIMz+EwHwYDVR0jBBgwFoAUv1kgNgB5oKAia4zV8mHSuCzLgkowEgYD
-VR0TAQH/BAgwBgEB/wIBAjAzBgNVHSAELDAqMA8GDSsGAQQBga0hgiwBAQQwDQYLKwYBBAGBrSGC
-LB4wCAYGZ4EMAQICMEwGA1UdHwRFMEMwQaA/oD2GO2h0dHA6Ly9wa2kwMzM2LnRlbGVzZWMuZGUv
-cmwvVGVsZVNlY19HbG9iYWxSb290X0NsYXNzXzIuY3JsMIGGBggrBgEFBQcBAQR6MHgwLAYIKwYB
-BQUHMAGGIGh0dHA6Ly9vY3NwMDMzNi50ZWxlc2VjLmRlL29jc3ByMEgGCCsGAQUFBzAChjxodHRw
-Oi8vcGtpMDMzNi50ZWxlc2VjLmRlL2NydC9UZWxlU2VjX0dsb2JhbFJvb3RfQ2xhc3NfMi5jZXIw
-DQYJKoZIhvcNAQELBQADggEBAIcL/z4Cm2XIVi3WO5qYi3FP2ropqiH5Ri71sqQPrhE4eTizDnS6
-dl2e6BiClmLbTDPo3flq3zK9LExHYFV/53RrtCyD2HlrtrdNUAtmB7Xts5et6u5/MOaZ/SLick0+
-hFvu+c+Z6n/XUjkurJgARH5pO7917tALOxrN5fcPImxHhPalR6D90Bo0fa3SPXez7vTXTf/D6OWS
-T1k+kEcQSrCFWMBvf/iu7QhCnh7U3xQuTY+8npTD5+32GPg8SecmqKc22CzeIs2LgtjZeOJVEqM7
-h0S2EQvVDFKvaYwPBt/QolOLV5h7z/0HJPT8vcP9SpIClxvyt7bPZYoaorVyGTkwggWsMIIElKAD
-AgECAgcbY7rQHiw9MA0GCSqGSIb3DQEBCwUAMIGVMQswCQYDVQQGEwJERTFFMEMGA1UEChM8VmVy
-ZWluIHp1ciBGb2VyZGVydW5nIGVpbmVzIERldXRzY2hlbiBGb3JzY2h1bmdzbmV0emVzIGUuIFYu
-MRAwDgYDVQQLEwdERk4tUEtJMS0wKwYDVQQDEyRERk4tVmVyZWluIENlcnRpZmljYXRpb24gQXV0
-aG9yaXR5IDIwHhcNMTYwNTI0MTEzODQwWhcNMzEwMjIyMjM1OTU5WjCBjTELMAkGA1UEBhMCREUx
-RTBDBgNVBAoMPFZlcmVpbiB6dXIgRm9lcmRlcnVuZyBlaW5lcyBEZXV0c2NoZW4gRm9yc2NodW5n
-c25ldHplcyBlLiBWLjEQMA4GA1UECwwHREZOLVBLSTElMCMGA1UEAwwcREZOLVZlcmVpbiBHbG9i
-YWwgSXNzdWluZyBDQTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAJ07eRxH3h+Gy8Zp
-1xCeOdfZojDbchwFfylfS2jxrRnWTOFrG7ELf6Gr4HuLi9gtzm6IOhDuV+UefwRRNuu6cG1joL6W
-LkDh0YNMZj0cZGnlm6Stcq5oOVGHecwX064vXWNxSzl660Knl5BpBb+Q/6RAcL0D57+eGIgfn5mI
-TQ5HjUhfZZkQ0tkqSe3BuS0dnxLLFdM/fx5ULzquk1enfnjK1UriGuXtQX1TX8izKvWKMKztFwUk
-P7agCwf9TRqaA1KgNpzeJIdl5Of6x5ZzJBTN0OgbaJ4YWa52fvfRCng8h0uwN89Tyjo4EPPLR22M
-ZD08WkVKusqAfLjz56dMTM0CAwEAAaOCAgUwggIBMBIGA1UdEwEB/wQIMAYBAf8CAQEwDgYDVR0P
-AQH/BAQDAgEGMCkGA1UdIAQiMCAwDQYLKwYBBAGBrSGCLB4wDwYNKwYBBAGBrSGCLAEBBDAdBgNV
-HQ4EFgQUazqYi/nyU4na4K2yMh4JH+iqO3QwHwYDVR0jBBgwFoAUk+PYMiba1fFKpZFK4OpL4qIM
-z+EwgY8GA1UdHwSBhzCBhDBAoD6gPIY6aHR0cDovL2NkcDEucGNhLmRmbi5kZS9nbG9iYWwtcm9v
-dC1nMi1jYS9wdWIvY3JsL2NhY3JsLmNybDBAoD6gPIY6aHR0cDovL2NkcDIucGNhLmRmbi5kZS9n
-bG9iYWwtcm9vdC1nMi1jYS9wdWIvY3JsL2NhY3JsLmNybDCB3QYIKwYBBQUHAQEEgdAwgc0wMwYI
-KwYBBQUHMAGGJ2h0dHA6Ly9vY3NwLnBjYS5kZm4uZGUvT0NTUC1TZXJ2ZXIvT0NTUDBKBggrBgEF
-BQcwAoY+aHR0cDovL2NkcDEucGNhLmRmbi5kZS9nbG9iYWwtcm9vdC1nMi1jYS9wdWIvY2FjZXJ0
-L2NhY2VydC5jcnQwSgYIKwYBBQUHMAKGPmh0dHA6Ly9jZHAyLnBjYS5kZm4uZGUvZ2xvYmFsLXJv
-b3QtZzItY2EvcHViL2NhY2VydC9jYWNlcnQuY3J0MA0GCSqGSIb3DQEBCwUAA4IBAQCBeEWkTqR/
-DlXwCbFqPnjMaDWpHPOVnj/z+N9rOHeJLI21rT7H8pTNoAauusyosa0zCLYkhmI2THhuUPDVbmCN
-T1IxQ5dGdfBi5G5mUcFCMWdQ5UnnOR7Ln8qGSN4IFP8VSytmm6A4nwDO/afr0X9XLchMX9wQEZc+
-lgQCXISoKTlslPwQkgZ7nu7YRrQbtQMMONncsKk/cQYLsgMHM8KNSGMlJTx6e1du94oFOO+4oK4v
-9NsH1VuEGMGpuEvObJAaguS5Pfp38dIfMwK/U+d2+dwmJUFvL6Yb+qQTkPp8ftkLYF3sv8pBoGH7
-EUkp2KgtdRXYShjqFu9VNCIaE40GMIIFxTCCBK2gAwIBAgIMITwlCcbKdKftcTO4MA0GCSqGSIb3
-DQEBCwUAMIGNMQswCQYDVQQGEwJERTFFMEMGA1UECgw8VmVyZWluIHp1ciBGb2VyZGVydW5nIGVp
-bmVzIERldXRzY2hlbiBGb3JzY2h1bmdzbmV0emVzIGUuIFYuMRAwDgYDVQQLDAdERk4tUEtJMSUw
-IwYDVQQDDBxERk4tVmVyZWluIEdsb2JhbCBJc3N1aW5nIENBMB4XDTE5MDcwMzEzMDI1NVoXDTIy
-MDcwMjEzMDI1NVowWTELMAkGA1UEBhMCREUxFDASBgNVBAoMC1JXVEggQWFjaGVuMRowGAYDVQQL
-DBFGYWNoZ3J1cHBlIFBoeXNpazEYMBYGA1UEAwwPVG9yc3RlbiBCcm9uZ2VyMIIBIjANBgkqhkiG
-9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxIt1wvBlWL2/0G7NCH8mUFfYMKxDGvkhTDYpmB4k+6GtNT9l
-2mka4RjFpNyd/e5l3/ocZ3IhmGKwAaqB6tuIuIfgYP5J1jZ5msb11uHL7Bpx7phFXC6EG0ML3zk0
-qcdSibcSHVtxiaI7fl+O1y9XGc0DVXVTWn15uv2SsXNXhVHTGe6Z+wpdCssWV2pi+b4crAAp7K3t
-2mUikg/uacH4R8YGoCUPVDitg3U+KUQK8PSFjBU+4FmS9fkXDdu8HeEWQevJqfPdMl4KTkPaR4iz
-SoP4pagxRsGZ4CsweHt4NvrfDkFxmNuocXs1urmnCgYV9L7iZpkWdFyP6RVfiNae0wIDAQABo4IC
-VjCCAlIwPgYDVR0gBDcwNTAPBg0rBgEEAYGtIYIsAQEEMBAGDisGAQQBga0hgiwBAQQEMBAGDisG
-AQQBga0hgiwCAQQEMAkGA1UdEwQCMAAwDgYDVR0PAQH/BAQDAgXgMB0GA1UdJQQWMBQGCCsGAQUF
-BwMCBggrBgEFBQcDBDAdBgNVHQ4EFgQUNZQD5+pPH0gqw7F8YDbUDcYUuJowHwYDVR0jBBgwFoAU
-azqYi/nyU4na4K2yMh4JH+iqO3QwKAYDVR0RBCEwH4EdYnJvbmdlckBwaHlzaWsucnd0aC1hYWNo
-ZW4uZGUwgY0GA1UdHwSBhTCBgjA/oD2gO4Y5aHR0cDovL2NkcDEucGNhLmRmbi5kZS9kZm4tY2Et
-Z2xvYmFsLWcyL3B1Yi9jcmwvY2FjcmwuY3JsMD+gPaA7hjlodHRwOi8vY2RwMi5wY2EuZGZuLmRl
-L2Rmbi1jYS1nbG9iYWwtZzIvcHViL2NybC9jYWNybC5jcmwwgdsGCCsGAQUFBwEBBIHOMIHLMDMG
-CCsGAQUFBzABhidodHRwOi8vb2NzcC5wY2EuZGZuLmRlL09DU1AtU2VydmVyL09DU1AwSQYIKwYB
-BQUHMAKGPWh0dHA6Ly9jZHAxLnBjYS5kZm4uZGUvZGZuLWNhLWdsb2JhbC1nMi9wdWIvY2FjZXJ0
-L2NhY2VydC5jcnQwSQYIKwYBBQUHMAKGPWh0dHA6Ly9jZHAyLnBjYS5kZm4uZGUvZGZuLWNhLWds
-b2JhbC1nMi9wdWIvY2FjZXJ0L2NhY2VydC5jcnQwDQYJKoZIhvcNAQELBQADggEBAE95rsRSu+9O
-2hw2ZEmTXrVZLN52MNXJbOwdXguommCHvIuxkxaNwIUHEF3pVo5Z5UO55oZZaIcFyw2PS9XUhYkN
-rh4T5Lp6Nqca0b3AfZOBcR16FD3bbUIpPdSQQwkuQCPiXEMam2QjCUfyC3oYja+bmPU2JDiKpunY
-NJ6/KEp4Yi32U5YEKvkr7ixzl13IKdLoNjO79VCz0iXi9aZ82ixcEli3CXEDxWbo601OTm8abNUX
-6QUomu5IDPGAPK65GimsXJbNYN2lhayrgGYKMslQd2ygVm2x5amfrxo1j9I6XvfnnVO1BtJ+e8Cm
-BPZgGN3+6fE9G6c9IvEhfKUeWZoxggJgMIICXAIBATCBnjCBjTELMAkGA1UEBhMCREUxRTBDBgNV
-BAoMPFZlcmVpbiB6dXIgRm9lcmRlcnVuZyBlaW5lcyBEZXV0c2NoZW4gRm9yc2NodW5nc25ldHpl
-cyBlLiBWLjEQMA4GA1UECwwHREZOLVBLSTElMCMGA1UEAwwcREZOLVZlcmVpbiBHbG9iYWwgSXNz
-dWluZyBDQQIMITwlCcbKdKftcTO4MA0GCWCGSAFlAwQCAQUAoIGTMBgGCSqGSIb3DQEJAzELBgkq
-hkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTIwMTAwNjEyNDgyMVowKAYJKoZIhvcNAQkPMRswGTAL
-BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwLwYJKoZIhvcNAQkEMSIEIN6qNkiTDBgWoLIQqLZr2bEP
-9CudEvebZAG9Y2cUhlOyMA0GCSqGSIb3DQEBAQUABIIBAAa1g1v2Gkz3Y6+n2WDO4hHh02dzp4DP
-ZjGXC2TymblpRh/lHQsl0gX1RP5JIj2an6+49WuSHSDhEIm/LpeTY++huSAy9Ml4XB+OuN0sTo7L
-y7HnaVsDpDQewTl1sO2qucbI6dNchyR0sVhIuMNEHbrohVeCZVOAgjWhd66KN7ImVvJvir6aR60m
-+ekCePQLGYf5GDe+AS5K52Nv3ZX98eFAZLa84itpBkozXIvNp1lgwi2zPFtKnJ/1WS8qFFCYNdU4
-+Nl5VZjMZ51KxGM/mf9hgQ8pUyGwQlnMR6Hq4trSJWLW6m2Q30nGknEQ7UJ9fhQPArLgrC2JCR00
-CaeaqIsAAAAAAAA=
---=-=-=--
+    In btrfs_init_dev_replace() try to match the presence of replace_item
+    with the BTRFS_DEV_REPLACE_DEVID device. If fails then fail the
+    mount. So drop the similar check in __btrfs_free_extra_devids().
+
+ fs/btrfs/dev-replace.c | 26 ++++++++++++++++++++++++--
+ fs/btrfs/volumes.c     | 26 +++++++-------------------
+ 2 files changed, 31 insertions(+), 21 deletions(-)
+
+diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+index 02a54177c0df..7a96380a9f1e 100644
+--- a/fs/btrfs/dev-replace.c
++++ b/fs/btrfs/dev-replace.c
+@@ -91,6 +91,17 @@ int btrfs_init_dev_replace(struct btrfs_fs_info *fs_info)
+ 	ret = btrfs_search_slot(NULL, dev_root, &key, path, 0, 0);
+ 	if (ret) {
+ no_valid_dev_replace_entry_found:
++		/*
++		 * We don't have a replace item or it's corrupted.
++		 * If there is a replace target, fail the mount.
++		 */
++		if (btrfs_find_device(fs_info->fs_devices,
++				      BTRFS_DEV_REPLACE_DEVID, NULL, NULL)) {
++			btrfs_err(fs_info,
++			"found replace target device without a replace item");
++			ret = -EIO;
++			goto out;
++		}
+ 		ret = 0;
+ 		dev_replace->replace_state =
+ 			BTRFS_IOCTL_DEV_REPLACE_STATE_NEVER_STARTED;
+@@ -143,8 +154,19 @@ int btrfs_init_dev_replace(struct btrfs_fs_info *fs_info)
+ 	case BTRFS_IOCTL_DEV_REPLACE_STATE_NEVER_STARTED:
+ 	case BTRFS_IOCTL_DEV_REPLACE_STATE_FINISHED:
+ 	case BTRFS_IOCTL_DEV_REPLACE_STATE_CANCELED:
+-		dev_replace->srcdev = NULL;
+-		dev_replace->tgtdev = NULL;
++		/*
++		 * We don't have an active replace item but if there is a
++		 * replace target, fail the mount.
++		 */
++		if (btrfs_find_device(fs_info->fs_devices,
++				      BTRFS_DEV_REPLACE_DEVID, NULL, NULL)) {
++			btrfs_err(fs_info,
++			"replace devid present without an active replace item");
++			ret = -EIO;
++		} else {
++			dev_replace->srcdev = NULL;
++			dev_replace->tgtdev = NULL;
++		}
+ 		break;
+ 	case BTRFS_IOCTL_DEV_REPLACE_STATE_STARTED:
+ 	case BTRFS_IOCTL_DEV_REPLACE_STATE_SUSPENDED:
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index a88655d60a94..0c6049f9ace3 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1056,22 +1056,13 @@ static void __btrfs_free_extra_devids(struct btrfs_fs_devices *fs_devices,
+ 			continue;
+ 		}
+ 
+-		if (device->devid == BTRFS_DEV_REPLACE_DEVID) {
+-			/*
+-			 * In the first step, keep the device which has
+-			 * the correct fsid and the devid that is used
+-			 * for the dev_replace procedure.
+-			 * In the second step, the dev_replace state is
+-			 * read from the device tree and it is known
+-			 * whether the procedure is really active or
+-			 * not, which means whether this device is
+-			 * used or whether it should be removed.
+-			 */
+-			if (step == 0 || test_bit(BTRFS_DEV_STATE_REPLACE_TGT,
+-						  &device->dev_state)) {
+-				continue;
+-			}
+-		}
++		/*
++		 * We have already validated the presence of BTRFS_DEV_REPLACE_DEVID,
++		 * in btrfs_init_dev_replace() so just continue.
++		 */
++		if (device->devid == BTRFS_DEV_REPLACE_DEVID)
++			continue;
++
+ 		if (device->bdev) {
+ 			blkdev_put(device->bdev, device->mode);
+ 			device->bdev = NULL;
+@@ -1080,9 +1071,6 @@ static void __btrfs_free_extra_devids(struct btrfs_fs_devices *fs_devices,
+ 		if (test_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state)) {
+ 			list_del_init(&device->dev_alloc_list);
+ 			clear_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state);
+-			if (!test_bit(BTRFS_DEV_STATE_REPLACE_TGT,
+-				      &device->dev_state))
+-				fs_devices->rw_devices--;
+ 		}
+ 		list_del_init(&device->dev_list);
+ 		fs_devices->num_devices--;
+-- 
+2.25.1
 

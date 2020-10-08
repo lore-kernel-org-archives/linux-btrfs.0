@@ -2,75 +2,71 @@ Return-Path: <SRS0=iNTY=DP=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+X-Spam-Status: No, score=-6.8 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
 	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	UNPARSEABLE_RELAY,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 07708C47095
-	for <linux-btrfs@archiver.kernel.org>; Thu,  8 Oct 2020 11:00:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 84CC0C43467
+	for <linux-btrfs@archiver.kernel.org>; Thu,  8 Oct 2020 11:02:14 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id A0628217BA
-	for <linux-btrfs@archiver.kernel.org>; Thu,  8 Oct 2020 11:00:38 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2B622215A4
+	for <linux-btrfs@archiver.kernel.org>; Thu,  8 Oct 2020 11:02:14 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="K6TwWS9z"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="nwzpTy6r"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729715AbgJHLAa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 8 Oct 2020 07:00:30 -0400
-Received: from aserp2120.oracle.com ([141.146.126.78]:58974 "EHLO
+        id S1727798AbgJHLCL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 8 Oct 2020 07:02:11 -0400
+Received: from aserp2120.oracle.com ([141.146.126.78]:60436 "EHLO
         aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729704AbgJHLAY (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Oct 2020 07:00:24 -0400
+        with ESMTP id S1726348AbgJHLCL (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Oct 2020 07:02:11 -0400
 Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 098B0I3k010622;
-        Thu, 8 Oct 2020 11:00:18 GMT
+        by aserp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 098B01vT010200;
+        Thu, 8 Oct 2020 11:02:05 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
- subject : date : message-id : in-reply-to : references : mime-version :
- content-transfer-encoding; s=corp-2020-01-29;
- bh=uquMoBZZItGLXnFVj80x0u7kQnKwqnsLLDba9RQOm00=;
- b=K6TwWS9zjjnHlBPU5/jLZs/nlImFleSHtDtazHayfBwhbV+0aW3AAcYuHUbBZy7sUez9
- EbfXMOLlLO/7SC2yyV2ft5/xDfTw0vs2pZPDwhX7N6b0nIhI2qsMiwEUHbmDlEmZNyQv
- DMLW9EgsMUEYQYZk4QOHvfxDF3z0V0CdaAix4nwUBhinGX6+6F9vDptRBGShkAFBsWNe
- W9HhFCKJOfoFm2URrHDbuyfDWq+PWzWyl3C/fg+kfPpmTZklWWnIz2mxa6lgfu+eTbmL
- t5N7z+kx5Frt/RgpZ/8EDeBez/z8Captm7n/jxvyWQKoNkhOp4wme3PxpcxJhhG+juuW hg== 
-Received: from aserp3020.oracle.com (aserp3020.oracle.com [141.146.126.70])
-        by aserp2120.oracle.com with ESMTP id 33ym34v3rs-1
+ subject : date : message-id : mime-version : content-transfer-encoding;
+ s=corp-2020-01-29; bh=sPmJETHBunmpRScxm8sJMxiMJ51jiawemlZJrir9uKA=;
+ b=nwzpTy6rtOH23douZqDmlgGSKU2ABvNDwFaesqljZ6q+c0q/+5gFYywSjvQjLWkzvVZk
+ 2/57lANUF2/+d49WxGEO2ms8dp3NFo2gCo+FIlGFhV5m8NmRGgZHpbiDlUp/rgplXnD7
+ knfMyGsw3aAxaekplPhQUMaFxAIPuPPuB+dxevy8pYVijSVGrWlo4Mf/Ik0hcp3EQXiv
+ 3tci2lzJtCln/o8a0bCpAwaZ0sOicc3S2HRnGfA7iF0bDap4w8+OzUz0C2ACFdveSBIr
+ ViaudlJyKGJlSmOFtpmm8gL7E5F+oDV6BUTCwbU7X1VO/FVNZItJCeWMILt58e8Hxcmm iw== 
+Received: from userp3020.oracle.com (userp3020.oracle.com [156.151.31.79])
+        by aserp2120.oracle.com with ESMTP id 33ym34v41r-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
-        Thu, 08 Oct 2020 11:00:18 +0000
-Received: from pps.filterd (aserp3020.oracle.com [127.0.0.1])
-        by aserp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 098AstPH087573;
-        Thu, 8 Oct 2020 11:00:17 GMT
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by aserp3020.oracle.com with ESMTP id 3410k1009c-1
+        Thu, 08 Oct 2020 11:02:05 +0000
+Received: from pps.filterd (userp3020.oracle.com [127.0.0.1])
+        by userp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 098AtFK0033473;
+        Thu, 8 Oct 2020 11:00:04 GMT
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by userp3020.oracle.com with ESMTP id 341xnbgpen-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Thu, 08 Oct 2020 11:00:17 +0000
+        Thu, 08 Oct 2020 11:00:04 +0000
 Received: from abhmp0013.oracle.com (abhmp0013.oracle.com [141.146.116.19])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id 098B0G5p023487;
-        Thu, 8 Oct 2020 11:00:17 GMT
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id 098B03Kf020028;
+        Thu, 8 Oct 2020 11:00:03 GMT
 Received: from ltp.sg.oracle.com (/10.191.35.225)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Thu, 08 Oct 2020 04:00:16 -0700
+        with ESMTP ; Thu, 08 Oct 2020 04:00:03 -0700
 From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
 Cc:     wqu@suse.com, fdmanana@suse.com, dsterba@suse.com,
         linux-btrfs@vger.kernel.org
-Subject: [PATCH stable-5.4 5/6] btrfs: fix RWF_NOWAIT write not failling when we need to cow
-Date:   Thu,  8 Oct 2020 18:59:53 +0800
-Message-Id: <3d6c7a6445ab42dfacd86b8b3ab166decc8ee65a.1599750901.git.anand.jain@oracle.com>
+Subject: [PATCH stable-5.4 0/6] backport fixes for xfstests btrfs/199,200,203,204
+Date:   Thu,  8 Oct 2020 18:59:48 +0800
+Message-Id: <cover.1599750901.git.anand.jain@oracle.com>
 X-Mailer: git-send-email 2.25.1
-In-Reply-To: <cover.1599750901.git.anand.jain@oracle.com>
-References: <cover.1599750901.git.anand.jain@oracle.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9767 signatures=668680
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 mlxscore=0 mlxlogscore=999 spamscore=0
- adultscore=0 bulkscore=0 malwarescore=0 suspectscore=0 phishscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2006250000
- definitions=main-2010080081
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 mlxlogscore=783 spamscore=0
+ malwarescore=0 adultscore=0 mlxscore=0 phishscore=0 bulkscore=0
+ suspectscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2006250000 definitions=main-2010080081
 X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9767 signatures=668680
 X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 impostorscore=0 priorityscore=1501
- mlxscore=0 mlxlogscore=999 clxscore=1015 bulkscore=0 spamscore=0
+ mlxscore=0 mlxlogscore=805 clxscore=1015 bulkscore=0 spamscore=0
  malwarescore=0 phishscore=0 suspectscore=0 adultscore=0 lowpriorityscore=0
  classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2006250000
  definitions=main-2010080081
@@ -78,86 +74,43 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+This series backports fixes for the xfstests test cases btrfs/199
+btrfs/200 btrfs/203 and btrfs/204.
 
-commit 260a63395f90f67d6ab89e4266af9e3dc34a77e9 upstream.
+patch 1 is fix for btrfs/200
+patch 2 fixes regression in patch 1 and is fix for btrfs/203 
+patch 3 helps to fix conflicts in patch 4
+patch 4 is fix for btrfs/199
+patch 5 helps to avoid conflicts in patch6
+patch 6 is fix for btrfs/204
 
-If we attempt to do a RWF_NOWAIT write against a file range for which we
-can only do NOCOW for a part of it, due to the existence of holes or
-shared extents for example, we proceed with the write as if it were
-possible to NOCOW the whole range.
+patch1 Btrfs: send, allow clone operations within the same file
+patch2 Btrfs: send, fix emission of invalid clone operations within the same file
+patch3 btrfs: volumes: Use more straightforward way to calculate map length
+patch4 btrfs: Ensure we trim ranges across block group boundary
+patch5 btrfs: fix RWF_NOWAIT write not failling when we need to cow
+patch6 btrfs: allow btrfs_truncate_block() to fallback to nocow for data space reservation
 
-Example:
+Filipe Manana (3):
+  Btrfs: send, allow clone operations within the same file
+  Btrfs: send, fix emission of invalid clone operations within the same
+    file
+  btrfs: fix RWF_NOWAIT write not failling when we need to cow
 
-  $ mkfs.btrfs -f /dev/sdb
-  $ mount /dev/sdb /mnt
+Qu Wenruo (3):
+  btrfs: volumes: Use more straightforward way to calculate map length
+  btrfs: Ensure we trim ranges across block group boundary
+  btrfs: allow btrfs_truncate_block() to fallback to nocow for data
+    space reservation
 
-  $ touch /mnt/sdj/bar
-  $ chattr +C /mnt/sdj/bar
+ fs/btrfs/ctree.h       |  2 ++
+ fs/btrfs/extent-tree.c | 41 +++++++++++++++++++++++++++++----------
+ fs/btrfs/file.c        | 23 ++++++++++++++++++----
+ fs/btrfs/inode.c       | 44 +++++++++++++++++++++++++++++++++++-------
+ fs/btrfs/send.c        | 19 +++++++++++++-----
+ fs/btrfs/volumes.c     |  8 +++++---
+ 6 files changed, 108 insertions(+), 29 deletions(-)
 
-  $ xfs_io -d -c "pwrite -S 0xab -b 256K 0 256K" /mnt/bar
-  wrote 262144/262144 bytes at offset 0
-  256 KiB, 1 ops; 0.0003 sec (694.444 MiB/sec and 2777.7778 ops/sec)
-
-  $ xfs_io -c "fpunch 64K 64K" /mnt/bar
-  $ sync
-
-  $ xfs_io -d -c "pwrite -N -V 1 -b 128K -S 0xfe 0 128K" /mnt/bar
-  wrote 131072/131072 bytes at offset 0
-  128 KiB, 1 ops; 0.0007 sec (160.051 MiB/sec and 1280.4097 ops/sec)
-
-This last write should fail with -EAGAIN since the file range from 64K to
-128K is a hole. On xfs it fails, as expected, but on ext4 it currently
-succeeds because apparently it is expensive to check if there are extents
-allocated for the whole range, but I'll check with the ext4 people.
-
-Fix the issue by checking if check_can_nocow() returns a number of
-NOCOW'able bytes smaller then the requested number of bytes, and if it
-does return -EAGAIN.
-
-Fixes: edf064e7c6fec3 ("btrfs: nowait aio support")
-CC: stable@vger.kernel.org # 4.14+
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
-Reviewed-by: David Sterba <dsterba@suse.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- fs/btrfs/file.c | 16 +++++++++++++++-
- 1 file changed, 15 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 4e4ddd5629e5..4d0e1f9452a5 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1919,13 +1919,27 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
- 	pos = iocb->ki_pos;
- 	count = iov_iter_count(from);
- 	if (iocb->ki_flags & IOCB_NOWAIT) {
-+		size_t nocow_bytes = count;
-+
- 		/*
- 		 * We will allocate space in case nodatacow is not set,
- 		 * so bail
- 		 */
- 		if (!(BTRFS_I(inode)->flags & (BTRFS_INODE_NODATACOW |
- 					      BTRFS_INODE_PREALLOC)) ||
--		    check_can_nocow(BTRFS_I(inode), pos, &count) <= 0) {
-+		    check_can_nocow(BTRFS_I(inode), pos, &nocow_bytes) <= 0) {
-+			inode_unlock(inode);
-+			return -EAGAIN;
-+		}
-+
-+		/* check_can_nocow() locks the snapshot lock on success */
-+		btrfs_end_write_no_snapshotting(root);
-+		/*
-+		 * There are holes in the range or parts of the range that must
-+		 * be COWed (shared extents, RO block groups, etc), so just bail
-+		 * out.
-+		 */
-+		if (nocow_bytes < count) {
- 			inode_unlock(inode);
- 			return -EAGAIN;
- 		}
 -- 
 2.25.1
 

@@ -8,296 +8,161 @@ X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
 	UNPARSEABLE_RELAY,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 48637C4363A
-	for <linux-btrfs@archiver.kernel.org>; Thu,  8 Oct 2020 10:56:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 98433C4363A
+	for <linux-btrfs@archiver.kernel.org>; Thu,  8 Oct 2020 11:00:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D87B9215A4
-	for <linux-btrfs@archiver.kernel.org>; Thu,  8 Oct 2020 10:56:15 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 159D82177B
+	for <linux-btrfs@archiver.kernel.org>; Thu,  8 Oct 2020 11:00:17 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="DilKSKtA"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="t0P2dXdT"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729676AbgJHK4N (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 8 Oct 2020 06:56:13 -0400
-Received: from aserp2130.oracle.com ([141.146.126.79]:54884 "EHLO
-        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729668AbgJHK4M (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Oct 2020 06:56:12 -0400
-Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
-        by aserp2130.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 098AoG8t078993;
-        Thu, 8 Oct 2020 10:55:57 GMT
+        id S1726784AbgJHLAO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 8 Oct 2020 07:00:14 -0400
+Received: from userp2120.oracle.com ([156.151.31.85]:54840 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725941AbgJHLAO (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Oct 2020 07:00:14 -0400
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 098B05KE124111;
+        Thu, 8 Oct 2020 11:00:08 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
- subject : date : message-id : mime-version : content-transfer-encoding;
- s=corp-2020-01-29; bh=ZvZAHHTU/C6cQ1dNZHy1spHhYmvK+bswmzuSDDFZmmM=;
- b=DilKSKtAFHvOgSKuwjNoPES2nsMlZHb994oYj4iCgJRQHV6liN5ckq5rcOR2FxNJANUa
- EbFiQaDjTplJXiYiUKl39VsAzGqpz8ZdbwjDgJKLmt9HVfmcRtZnnjxpB27W3ZD2YrXU
- 3EoIOKnRhxZ0O0A/tQ8EoCAOfXLrl861/ws80IDSmR/V6vb6VJ9I39x66F0lwTALsAVN
- 3f5yzu7vRqBlGcKFs2JBKwN6mGbTMKUuWAtSTYIErDlP2FLlcU0C+Xnr8AlX6BznYvAG
- aLhjcPiOEGJhkAjNpw34sg1iSBSRrk7xuW0zzY+RvlV78wHabpuh+ArYFwslxlj1251X PQ== 
-Received: from aserp3020.oracle.com (aserp3020.oracle.com [141.146.126.70])
-        by aserp2130.oracle.com with ESMTP id 33xetb75j1-1
+ subject : date : message-id : in-reply-to : references : mime-version :
+ content-transfer-encoding; s=corp-2020-01-29;
+ bh=BIZ9fryrmRrVhcBHB0BNbiwOy/jnq8U+/1IagHmFeJo=;
+ b=t0P2dXdTLbS/Vmm/UULAvlkxZebTyPP6+OsSESJj3qP60/U39oBlXs11L5N6DSbZRQam
+ 8Ky7zSE4CZa9foIghuoeq9yuPPd59Jv2RhawFCj8dTTPdCY6dtdzYCMwmyZIYQE9Fcsz
+ u0P1obsp5N3G6RyIVz3P9kzEkS0IkPfpYPELCGIyKHnOpkAk/AfG80oEXKC0wa7UQPDa
+ vWEIAoDItiIZPtKcbKG1oYZeaxh+9YUjHiTAdtVz6MtA0KU5OIsLXfb++3wmTWmZk1h+
+ n3h8TpMBhh5W5Aagk9iXTkbreertURsROHOpysu4NKO/SixJ0zbWPnIeeX2th4ONrcXT yw== 
+Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
+        by userp2120.oracle.com with ESMTP id 33xhxn6x1d-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
-        Thu, 08 Oct 2020 10:55:57 +0000
-Received: from pps.filterd (aserp3020.oracle.com [127.0.0.1])
-        by aserp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 098Astrj087645;
-        Thu, 8 Oct 2020 10:55:56 GMT
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by aserp3020.oracle.com with ESMTP id 3410k0yv3c-1
+        Thu, 08 Oct 2020 11:00:07 +0000
+Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
+        by userp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 098AuEUi188369;
+        Thu, 8 Oct 2020 11:00:07 GMT
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by userp3030.oracle.com with ESMTP id 33y380yv3a-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Thu, 08 Oct 2020 10:55:56 +0000
-Received: from abhmp0010.oracle.com (abhmp0010.oracle.com [141.146.116.16])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id 098AttsP018183;
-        Thu, 8 Oct 2020 10:55:55 GMT
+        Thu, 08 Oct 2020 11:00:07 +0000
+Received: from abhmp0013.oracle.com (abhmp0013.oracle.com [141.146.116.19])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 098B068j011110;
+        Thu, 8 Oct 2020 11:00:06 GMT
 Received: from ltp.sg.oracle.com (/10.191.35.225)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Thu, 08 Oct 2020 03:55:54 -0700
+        with ESMTP ; Thu, 08 Oct 2020 04:00:05 -0700
 From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     robbieko@synology.com, fdmanana@suse.com, dsterba@suse.com,
+Cc:     wqu@suse.com, fdmanana@suse.com, dsterba@suse.com,
         linux-btrfs@vger.kernel.org
-Subject: [PATCH stable-4.14.y] Btrfs: fix unexpected failure of nocow buffered writes after snapshotting when low on space
-Date:   Thu,  8 Oct 2020 18:55:45 +0800
-Message-Id: <82a2f4d5d8a847ac005356cbdb065e28c867e91c.1602130595.git.anand.jain@oracle.com>
+Subject: [PATCH stable-5.4 1/6] Btrfs: send, allow clone operations within the same file
+Date:   Thu,  8 Oct 2020 18:59:49 +0800
+Message-Id: <cebd942fda19f9c39e0608aa6bd93af5e0b3639b.1599750901.git.anand.jain@oracle.com>
 X-Mailer: git-send-email 2.25.1
+In-Reply-To: <cover.1599750901.git.anand.jain@oracle.com>
+References: <cover.1599750901.git.anand.jain@oracle.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9767 signatures=668680
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 mlxscore=0 mlxlogscore=999 spamscore=0
- adultscore=0 bulkscore=0 malwarescore=0 suspectscore=2 phishscore=0
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 phishscore=0 bulkscore=0 spamscore=0
+ mlxscore=0 malwarescore=0 suspectscore=0 adultscore=0 mlxlogscore=999
  classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2006250000
  definitions=main-2010080081
 X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9767 signatures=668680
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 bulkscore=0 spamscore=0 mlxscore=0
- clxscore=1011 priorityscore=1501 adultscore=0 mlxlogscore=999 phishscore=0
- impostorscore=0 malwarescore=0 suspectscore=2 lowpriorityscore=0
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 mlxscore=0 malwarescore=0 bulkscore=0
+ impostorscore=0 lowpriorityscore=0 suspectscore=0 phishscore=0
+ mlxlogscore=999 adultscore=0 clxscore=1015 spamscore=0 priorityscore=1501
  classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2006250000
- definitions=main-2010080080
+ definitions=main-2010080081
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Robbie Ko <robbieko@synology.com>
+From: Filipe Manana <fdmanana@suse.com>
 
-[ Upstream commit 8ecebf4d767e2307a946c8905278d6358eda35c3 ]
+commit 11f2069c113e02971b8db6fda62f9b9cd31a030f upstream.
 
-Commit e9894fd3e3b3 ("Btrfs: fix snapshot vs nocow writting") forced
-nocow writes to fallback to COW, during writeback, when a snapshot is
-created. This resulted in writes made before creating the snapshot to
-unexpectedly fail with ENOSPC during writeback when success (0) was
-returned to user space through the write system call.
+For send we currently skip clone operations when the source and
+destination files are the same. This is so because clone didn't support
+this case in its early days, but support for it was added back in May
+2013 by commit a96fbc72884fcb ("Btrfs: allow file data clone within a
+file"). This change adds support for it.
 
-The steps leading to this problem are:
+Example:
 
-1. When it's not possible to allocate data space for a write, the
-   buffered write path checks if a NOCOW write is possible.  If it is,
-   it will not reserve space and success (0) is returned to user space.
+  $ mkfs.btrfs -f /dev/sdd
+  $ mount /dev/sdd /mnt/sdd
 
-2. Then when a snapshot is created, the root's will_be_snapshotted
-   atomic is incremented and writeback is triggered for all inode's that
-   belong to the root being snapshotted. Incrementing that atomic forces
-   all previous writes to fallback to COW during writeback (running
-   delalloc).
+  $ xfs_io -f -c "pwrite -S 0xab -b 64K 0 64K" /mnt/sdd/foobar
+  $ xfs_io -c "reflink /mnt/sdd/foobar 0 64K 64K" /mnt/sdd/foobar
 
-3. This results in the writeback for the inodes to fail and therefore
-   setting the ENOSPC error in their mappings, so that a subsequent
-   fsync on them will report the error to user space. So it's not a
-   completely silent data loss (since fsync will report ENOSPC) but it's
-   a very unexpected and undesirable behaviour, because if a clean
-   shutdown/unmount of the filesystem happens without previous calls to
-   fsync, it is expected to have the data present in the files after
-   mounting the filesystem again.
+  $ btrfs subvolume snapshot -r /mnt/sdd /mnt/sdd/snap
 
-So fix this by adding a new atomic named snapshot_force_cow to the
-root structure which prevents this behaviour and works the following way:
+  $ mkfs.btrfs -f /dev/sde
+  $ mount /dev/sde /mnt/sde
 
-1. It is incremented when we start to create a snapshot after triggering
-   writeback and before waiting for writeback to finish.
+  $ btrfs send /mnt/sdd/snap | btrfs receive /mnt/sde
 
-2. This new atomic is now what is used by writeback (running delalloc)
-   to decide whether we need to fallback to COW or not. Because we
-   incremented this new atomic after triggering writeback in the
-   snapshot creation ioctl, we ensure that all buffered writes that
-   happened before snapshot creation will succeed and not fallback to
-   COW (which would make them fail with ENOSPC).
+Without this change file foobar at the destination has a single 128Kb
+extent:
 
-3. The existing atomic, will_be_snapshotted, is kept because it is used
-   to force new buffered writes, that start after we started
-   snapshotting, to reserve data space even when NOCOW is possible.
-   This makes these writes fail early with ENOSPC when there's no
-   available space to allocate, preventing the unexpected behaviour of
-   writeback later failing with ENOSPC due to a fallback to COW mode.
+  $ filefrag -v /mnt/sde/snap/foobar
+  Filesystem type is: 9123683e
+  File size of /mnt/sde/snap/foobar is 131072 (32 blocks of 4096 bytes)
+   ext:     logical_offset:        physical_offset: length:   expected: flags:
+     0:        0..      31:          0..        31:     32:             last,unknown_loc,delalloc,eof
+  /mnt/sde/snap/foobar: 1 extent found
 
-Fixes: e9894fd3e3b3 ("Btrfs: fix snapshot vs nocow writting")
-Signed-off-by: Robbie Ko <robbieko@synology.com>
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
+With this we get a single 64Kb extent that is shared at file offsets 0
+and 64K, just like in the source filesystem:
+
+  $ filefrag -v /mnt/sde/snap/foobar
+  Filesystem type is: 9123683e
+  File size of /mnt/sde/snap/foobar is 131072 (32 blocks of 4096 bytes)
+   ext:     logical_offset:        physical_offset: length:   expected: flags:
+     0:        0..      15:       3328..      3343:     16:             shared
+     1:       16..      31:       3328..      3343:     16:       3344: last,shared,eof
+  /mnt/sde/snap/foobar: 2 extents found
+
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Reviewed-by: David Sterba <dsterba@suse.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
- Conflicts:
-	fs/btrfs/disk-io.c
 ---
- fs/btrfs/ctree.h   |  1 +
- fs/btrfs/disk-io.c |  1 +
- fs/btrfs/inode.c   | 25 ++++---------------------
- fs/btrfs/ioctl.c   | 16 ++++++++++++++++
- 4 files changed, 22 insertions(+), 21 deletions(-)
+ fs/btrfs/send.c | 18 +++++++++++++-----
+ 1 file changed, 13 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index de951987fd23..19a668e9164b 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1257,6 +1257,7 @@ struct btrfs_root {
- 	int send_in_progress;
- 	struct btrfs_subvolume_writers *subv_writers;
- 	atomic_t will_be_snapshotted;
-+	atomic_t snapshot_force_cow;
- 
- 	/* For qgroup metadata space reserve */
- 	atomic64_t qgroup_meta_rsv;
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 495430e4f84b..ace58d6a270b 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1200,6 +1200,7 @@ static void __setup_root(struct btrfs_root *root, struct btrfs_fs_info *fs_info,
- 	refcount_set(&root->refs, 1);
- 	atomic_set(&root->will_be_snapshotted, 0);
- 	atomic64_set(&root->qgroup_meta_rsv, 0);
-+	atomic_set(&root->snapshot_force_cow, 0);
- 	root->log_transid = 0;
- 	root->log_transid_committed = -1;
- 	root->last_log_commit = 0;
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index c9e7b92d0f21..e985e820724e 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1335,7 +1335,7 @@ static noinline int run_delalloc_nocow(struct inode *inode,
- 	u64 disk_num_bytes;
- 	u64 ram_bytes;
- 	int extent_type;
--	int ret, err;
-+	int ret;
- 	int type;
- 	int nocow;
- 	int check_prev = 1;
-@@ -1460,11 +1460,8 @@ static noinline int run_delalloc_nocow(struct inode *inode,
- 			 * if there are pending snapshots for this root,
- 			 * we fall into common COW way.
- 			 */
--			if (!nolock) {
--				err = btrfs_start_write_no_snapshotting(root);
--				if (!err)
--					goto out_check;
--			}
-+			if (!nolock && atomic_read(&root->snapshot_force_cow))
-+				goto out_check;
- 			/*
- 			 * force cow if csum exists in the range.
- 			 * this ensure that csum for a given extent are
-@@ -1473,9 +1470,6 @@ static noinline int run_delalloc_nocow(struct inode *inode,
- 			ret = csum_exist_in_range(fs_info, disk_bytenr,
- 						  num_bytes);
- 			if (ret) {
--				if (!nolock)
--					btrfs_end_write_no_snapshotting(root);
--
- 				/*
- 				 * ret could be -EIO if the above fails to read
- 				 * metadata.
-@@ -1488,11 +1482,8 @@ static noinline int run_delalloc_nocow(struct inode *inode,
- 				WARN_ON_ONCE(nolock);
- 				goto out_check;
- 			}
--			if (!btrfs_inc_nocow_writers(fs_info, disk_bytenr)) {
--				if (!nolock)
--					btrfs_end_write_no_snapshotting(root);
-+			if (!btrfs_inc_nocow_writers(fs_info, disk_bytenr))
- 				goto out_check;
--			}
- 			nocow = 1;
- 		} else if (extent_type == BTRFS_FILE_EXTENT_INLINE) {
- 			extent_end = found_key.offset +
-@@ -1505,8 +1496,6 @@ static noinline int run_delalloc_nocow(struct inode *inode,
- out_check:
- 		if (extent_end <= start) {
- 			path->slots[0]++;
--			if (!nolock && nocow)
--				btrfs_end_write_no_snapshotting(root);
- 			if (nocow)
- 				btrfs_dec_nocow_writers(fs_info, disk_bytenr);
- 			goto next_slot;
-@@ -1528,8 +1517,6 @@ static noinline int run_delalloc_nocow(struct inode *inode,
- 					     end, page_started, nr_written, 1,
- 					     NULL);
- 			if (ret) {
--				if (!nolock && nocow)
--					btrfs_end_write_no_snapshotting(root);
- 				if (nocow)
- 					btrfs_dec_nocow_writers(fs_info,
- 								disk_bytenr);
-@@ -1549,8 +1536,6 @@ static noinline int run_delalloc_nocow(struct inode *inode,
- 					  ram_bytes, BTRFS_COMPRESS_NONE,
- 					  BTRFS_ORDERED_PREALLOC);
- 			if (IS_ERR(em)) {
--				if (!nolock && nocow)
--					btrfs_end_write_no_snapshotting(root);
- 				if (nocow)
- 					btrfs_dec_nocow_writers(fs_info,
- 								disk_bytenr);
-@@ -1589,8 +1574,6 @@ static noinline int run_delalloc_nocow(struct inode *inode,
- 					     EXTENT_CLEAR_DATA_RESV,
- 					     PAGE_UNLOCK | PAGE_SET_PRIVATE2);
- 
--		if (!nolock && nocow)
--			btrfs_end_write_no_snapshotting(root);
- 		cur_offset = extent_end;
- 
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 6ad216e8178e..48d028b1cfaf 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -1257,12 +1257,20 @@ static int __iterate_backrefs(u64 ino, u64 offset, u64 root, void *ctx_)
+ 	 */
+ 	if (found->root == bctx->sctx->send_root) {
  		/*
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 73a0fc60e395..56123ce3b9f0 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -655,6 +655,7 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
- 	struct btrfs_pending_snapshot *pending_snapshot;
- 	struct btrfs_trans_handle *trans;
- 	int ret;
-+	bool snapshot_force_cow = false;
- 
- 	if (!test_bit(BTRFS_ROOT_REF_COWS, &root->state))
- 		return -EINVAL;
-@@ -671,6 +672,11 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
- 		goto free_pending;
+-		 * TODO for the moment we don't accept clones from the inode
+-		 * that is currently send. We may change this when
+-		 * BTRFS_IOC_CLONE_RANGE supports cloning from and to the same
+-		 * file.
++		 * If the source inode was not yet processed we can't issue a
++		 * clone operation, as the source extent does not exist yet at
++		 * the destination of the stream.
+ 		 */
+-		if (ino >= bctx->cur_objectid)
++		if (ino > bctx->cur_objectid)
++			return 0;
++		/*
++		 * We clone from the inode currently being sent as long as the
++		 * source extent is already processed, otherwise we could try
++		 * to clone from an extent that does not exist yet at the
++		 * destination of the stream.
++		 */
++		if (ino == bctx->cur_objectid &&
++		    offset >= bctx->sctx->cur_inode_next_write_offset)
+ 			return 0;
  	}
  
-+	/*
-+	 * Force new buffered writes to reserve space even when NOCOW is
-+	 * possible. This is to avoid later writeback (running dealloc) to
-+	 * fallback to COW mode and unexpectedly fail with ENOSPC.
-+	 */
- 	atomic_inc(&root->will_be_snapshotted);
- 	smp_mb__after_atomic();
- 	btrfs_wait_for_no_snapshotting_writes(root);
-@@ -679,6 +685,14 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
- 	if (ret)
- 		goto dec_and_free;
- 
-+	/*
-+	 * All previous writes have started writeback in NOCOW mode, so now
-+	 * we force future writes to fallback to COW mode during snapshot
-+	 * creation.
-+	 */
-+	atomic_inc(&root->snapshot_force_cow);
-+	snapshot_force_cow = true;
-+
- 	btrfs_wait_ordered_extents(root, U64_MAX, 0, (u64)-1);
- 
- 	btrfs_init_block_rsv(&pending_snapshot->block_rsv,
-@@ -744,6 +758,8 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
- fail:
- 	btrfs_subvolume_release_metadata(fs_info, &pending_snapshot->block_rsv);
- dec_and_free:
-+	if (snapshot_force_cow)
-+		atomic_dec(&root->snapshot_force_cow);
- 	if (atomic_dec_and_test(&root->will_be_snapshotted))
- 		wake_up_atomic_t(&root->will_be_snapshotted);
- free_pending:
 -- 
 2.25.1
 

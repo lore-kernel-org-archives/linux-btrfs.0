@@ -8,56 +8,56 @@ X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
 	UNPARSEABLE_RELAY,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 98433C4363A
-	for <linux-btrfs@archiver.kernel.org>; Thu,  8 Oct 2020 11:00:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C7ED0C4363A
+	for <linux-btrfs@archiver.kernel.org>; Thu,  8 Oct 2020 11:00:27 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 159D82177B
-	for <linux-btrfs@archiver.kernel.org>; Thu,  8 Oct 2020 11:00:17 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 66BC9217BA
+	for <linux-btrfs@archiver.kernel.org>; Thu,  8 Oct 2020 11:00:27 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="t0P2dXdT"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="p8EQJRfN"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726784AbgJHLAO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 8 Oct 2020 07:00:14 -0400
-Received: from userp2120.oracle.com ([156.151.31.85]:54840 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725941AbgJHLAO (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Oct 2020 07:00:14 -0400
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 098B05KE124111;
-        Thu, 8 Oct 2020 11:00:08 GMT
+        id S1729703AbgJHLAV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 8 Oct 2020 07:00:21 -0400
+Received: from aserp2130.oracle.com ([141.146.126.79]:57890 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728797AbgJHLAT (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Oct 2020 07:00:19 -0400
+Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
+        by aserp2130.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 098B0E4P101656;
+        Thu, 8 Oct 2020 11:00:14 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
  subject : date : message-id : in-reply-to : references : mime-version :
  content-transfer-encoding; s=corp-2020-01-29;
- bh=BIZ9fryrmRrVhcBHB0BNbiwOy/jnq8U+/1IagHmFeJo=;
- b=t0P2dXdTLbS/Vmm/UULAvlkxZebTyPP6+OsSESJj3qP60/U39oBlXs11L5N6DSbZRQam
- 8Ky7zSE4CZa9foIghuoeq9yuPPd59Jv2RhawFCj8dTTPdCY6dtdzYCMwmyZIYQE9Fcsz
- u0P1obsp5N3G6RyIVz3P9kzEkS0IkPfpYPELCGIyKHnOpkAk/AfG80oEXKC0wa7UQPDa
- vWEIAoDItiIZPtKcbKG1oYZeaxh+9YUjHiTAdtVz6MtA0KU5OIsLXfb++3wmTWmZk1h+
- n3h8TpMBhh5W5Aagk9iXTkbreertURsROHOpysu4NKO/SixJ0zbWPnIeeX2th4ONrcXT yw== 
+ bh=tWPPbUC2AHoVJyZzDwnMDvWIZeZR9GC/fsnwWvFpj1U=;
+ b=p8EQJRfN+TegsQxG+nr/2kVAznUcauLuHFPSkat2c3Nqd0+jZ4vCnHk1gJm0B+7A2yDk
+ qZrWo4g6j+9udRWgKq4drpw2ZlF1Pui2Xdm97Oby8+Qie1YPErUJ2K+orDY3iA4VCZY6
+ UUH7P6+KewLh+IOokdXQC6foXFZGhpXQ+o6SbA3oHSMYs4x88pMg7sCmGpEvNYjiZqTm
+ ksbOV7/Cwexc4gs/5Od9SC+3RVQTQJKgVrHDYFN25CTF7mxF2a13uTzJbpKZVJckAQkF
+ smEdddHvBUdSXwy8FF1y2GNWr+mVYLynU6ESxuO97pHwAYUkg5AABJ6QHd7epvladh5P 1w== 
 Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
-        by userp2120.oracle.com with ESMTP id 33xhxn6x1d-1
+        by aserp2130.oracle.com with ESMTP id 33xetb75yh-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
-        Thu, 08 Oct 2020 11:00:07 +0000
+        Thu, 08 Oct 2020 11:00:14 +0000
 Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
-        by userp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 098AuEUi188369;
-        Thu, 8 Oct 2020 11:00:07 GMT
+        by userp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 098AuESp188416;
+        Thu, 8 Oct 2020 11:00:13 GMT
 Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by userp3030.oracle.com with ESMTP id 33y380yv3a-1
+        by userp3030.oracle.com with ESMTP id 33y380yvb8-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Thu, 08 Oct 2020 11:00:07 +0000
+        Thu, 08 Oct 2020 11:00:12 +0000
 Received: from abhmp0013.oracle.com (abhmp0013.oracle.com [141.146.116.19])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 098B068j011110;
-        Thu, 8 Oct 2020 11:00:06 GMT
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 098B0BQj011154;
+        Thu, 8 Oct 2020 11:00:11 GMT
 Received: from ltp.sg.oracle.com (/10.191.35.225)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Thu, 08 Oct 2020 04:00:05 -0700
+        with ESMTP ; Thu, 08 Oct 2020 04:00:11 -0700
 From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
 Cc:     wqu@suse.com, fdmanana@suse.com, dsterba@suse.com,
         linux-btrfs@vger.kernel.org
-Subject: [PATCH stable-5.4 1/6] Btrfs: send, allow clone operations within the same file
-Date:   Thu,  8 Oct 2020 18:59:49 +0800
-Message-Id: <cebd942fda19f9c39e0608aa6bd93af5e0b3639b.1599750901.git.anand.jain@oracle.com>
+Subject: [PATCH stable-5.4 3/6] btrfs: volumes: Use more straightforward way to calculate map length
+Date:   Thu,  8 Oct 2020 18:59:51 +0800
+Message-Id: <b15e98a7c6129f8b5f0a7748061e93865bb944e1.1599750901.git.anand.jain@oracle.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1599750901.git.anand.jain@oracle.com>
 References: <cover.1599750901.git.anand.jain@oracle.com>
@@ -69,100 +69,56 @@ X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 phishscore=0 bulk
  classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2006250000
  definitions=main-2010080081
 X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9767 signatures=668680
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 mlxscore=0 malwarescore=0 bulkscore=0
- impostorscore=0 lowpriorityscore=0 suspectscore=0 phishscore=0
- mlxlogscore=999 adultscore=0 clxscore=1015 spamscore=0 priorityscore=1501
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 bulkscore=0 spamscore=0 mlxscore=0
+ clxscore=1015 priorityscore=1501 adultscore=0 mlxlogscore=999 phishscore=0
+ impostorscore=0 malwarescore=0 suspectscore=0 lowpriorityscore=0
  classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2006250000
  definitions=main-2010080081
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+From: Qu Wenruo <wqu@suse.com>
 
-commit 11f2069c113e02971b8db6fda62f9b9cd31a030f upstream.
+commit 2d974619a77f106f3d1341686dea95c0eaad601f upstream.
 
-For send we currently skip clone operations when the source and
-destination files are the same. This is so because clone didn't support
-this case in its early days, but support for it was added back in May
-2013 by commit a96fbc72884fcb ("Btrfs: allow file data clone within a
-file"). This change adds support for it.
+The old code goes:
 
-Example:
+ 	offset = logical - em->start;
+	length = min_t(u64, em->len - offset, length);
 
-  $ mkfs.btrfs -f /dev/sdd
-  $ mount /dev/sdd /mnt/sdd
+Where @length calculation is dependent on offset, it can take reader
+several more seconds to find it's just the same code as:
 
-  $ xfs_io -f -c "pwrite -S 0xab -b 64K 0 64K" /mnt/sdd/foobar
-  $ xfs_io -c "reflink /mnt/sdd/foobar 0 64K 64K" /mnt/sdd/foobar
+ 	offset = logical - em->start;
+	length = min_t(u64, em->start + em->len - logical, length);
 
-  $ btrfs subvolume snapshot -r /mnt/sdd /mnt/sdd/snap
+Use above code to make the length calculate independent from other
+variable, thus slightly increase the readability.
 
-  $ mkfs.btrfs -f /dev/sde
-  $ mount /dev/sde /mnt/sde
-
-  $ btrfs send /mnt/sdd/snap | btrfs receive /mnt/sde
-
-Without this change file foobar at the destination has a single 128Kb
-extent:
-
-  $ filefrag -v /mnt/sde/snap/foobar
-  Filesystem type is: 9123683e
-  File size of /mnt/sde/snap/foobar is 131072 (32 blocks of 4096 bytes)
-   ext:     logical_offset:        physical_offset: length:   expected: flags:
-     0:        0..      31:          0..        31:     32:             last,unknown_loc,delalloc,eof
-  /mnt/sde/snap/foobar: 1 extent found
-
-With this we get a single 64Kb extent that is shared at file offsets 0
-and 64K, just like in the source filesystem:
-
-  $ filefrag -v /mnt/sde/snap/foobar
-  Filesystem type is: 9123683e
-  File size of /mnt/sde/snap/foobar is 131072 (32 blocks of 4096 bytes)
-   ext:     logical_offset:        physical_offset: length:   expected: flags:
-     0:        0..      15:       3328..      3343:     16:             shared
-     1:       16..      31:       3328..      3343:     16:       3344: last,shared,eof
-  /mnt/sde/snap/foobar: 2 extents found
-
+Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
 Reviewed-by: Josef Bacik <josef@toxicpanda.com>
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
 Reviewed-by: David Sterba <dsterba@suse.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/send.c | 18 +++++++++++++-----
- 1 file changed, 13 insertions(+), 5 deletions(-)
+ fs/btrfs/volumes.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 6ad216e8178e..48d028b1cfaf 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -1257,12 +1257,20 @@ static int __iterate_backrefs(u64 ino, u64 offset, u64 root, void *ctx_)
- 	 */
- 	if (found->root == bctx->sctx->send_root) {
- 		/*
--		 * TODO for the moment we don't accept clones from the inode
--		 * that is currently send. We may change this when
--		 * BTRFS_IOC_CLONE_RANGE supports cloning from and to the same
--		 * file.
-+		 * If the source inode was not yet processed we can't issue a
-+		 * clone operation, as the source extent does not exist yet at
-+		 * the destination of the stream.
- 		 */
--		if (ino >= bctx->cur_objectid)
-+		if (ino > bctx->cur_objectid)
-+			return 0;
-+		/*
-+		 * We clone from the inode currently being sent as long as the
-+		 * source extent is already processed, otherwise we could try
-+		 * to clone from an extent that does not exist yet at the
-+		 * destination of the stream.
-+		 */
-+		if (ino == bctx->cur_objectid &&
-+		    offset >= bctx->sctx->cur_inode_next_write_offset)
- 			return 0;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 196ddbcd2936..1dba45d43485 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -5712,7 +5712,7 @@ static int __btrfs_map_block_for_discard(struct btrfs_fs_info *fs_info,
  	}
  
+ 	offset = logical - em->start;
+-	length = min_t(u64, em->len - offset, length);
++	length = min_t(u64, em->start + em->len - logical, length);
+ 
+ 	stripe_len = map->stripe_len;
+ 	/*
 -- 
 2.25.1
 

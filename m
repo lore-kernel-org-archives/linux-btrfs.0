@@ -2,116 +2,140 @@ Return-Path: <SRS0=4JW5=DQ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-11.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4F112C433E7
-	for <linux-btrfs@archiver.kernel.org>; Fri,  9 Oct 2020 20:10:00 +0000 (UTC)
-Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 066EE20659
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5437DC433DF
 	for <linux-btrfs@archiver.kernel.org>; Fri,  9 Oct 2020 20:09:59 +0000 (UTC)
+Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
+	by mail.kernel.org (Postfix) with ESMTP id 08B2F20659
+	for <linux-btrfs@archiver.kernel.org>; Fri,  9 Oct 2020 20:09:58 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="YI35wXCP"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="NEAyJAYc"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1733213AbgJIUJ7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 9 Oct 2020 16:09:59 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49758 "EHLO
+        id S1732556AbgJIUJ6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 9 Oct 2020 16:09:58 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49624 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2391110AbgJIUIY (ORCPT
+        with ESMTP id S2391223AbgJIUIY (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Oct 2020 16:08:24 -0400
-Received: from mail-qk1-x742.google.com (mail-qk1-x742.google.com [IPv6:2607:f8b0:4864:20::742])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1406AC0613AB
-        for <linux-btrfs@vger.kernel.org>; Fri,  9 Oct 2020 13:07:31 -0700 (PDT)
-Received: by mail-qk1-x742.google.com with SMTP id q63so11899419qkf.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 09 Oct 2020 13:07:31 -0700 (PDT)
+Received: from mail-qv1-xf2d.google.com (mail-qv1-xf2d.google.com [IPv6:2607:f8b0:4864:20::f2d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E1166C0613E5
+        for <linux-btrfs@vger.kernel.org>; Fri,  9 Oct 2020 13:07:23 -0700 (PDT)
+Received: by mail-qv1-xf2d.google.com with SMTP id b19so5355594qvm.6
+        for <linux-btrfs@vger.kernel.org>; Fri, 09 Oct 2020 13:07:23 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:subject:date:message-id:in-reply-to:references:mime-version
+        h=from:to:subject:date:message-id:mime-version
          :content-transfer-encoding;
-        bh=l2yK7ssGtYclsDwXxCx9nxPY11OspLOvX43o0ydPIMc=;
-        b=YI35wXCPqSeRyfrZJV7tOPDhIb3Fb3FQrRyfsbqKG0T8n4Ng/1Ap6CLihnZ52GTG0D
-         POh053s+UJx59BrK3O7i6qptuAJ7EaMoyeWqXLb6H+rHDuw14i65rdU66iDGCRLG9kXO
-         LCzk9NaWPtuDJr/DDRGr8mDTh0E2jzqnZsddAOKocvPr6C4J1K/TqsiRJ2JLBMnFOiUf
-         7yM0a3Va0bPdW/DQvmwDEDUmJMn7bovgglwLP58ug+0h55fr05OBSuY7/NRY4WQ9ECJw
-         7dg0g14nvxR8VUmKRgQo8ny6DdPta7jlG3MLoyCBE07rklVvapinw6tzHBkZcicmeLsx
-         kCiA==
+        bh=C+M3+ROHRz9CKEUDJ5h8a7fwXqKecN9ftIY2W3KiD8U=;
+        b=NEAyJAYcmFGJ9TmsUW99B4wyr5c3JevI/PzlJbF+x3b58EwZRWcRQv8AgKKX0uB+a0
+         xBUomj4B1FxbjUvi09ilGXEisdHOcpdeGHB9Kms1lNtsNEUlKGacmt7Fo9dBGzbfHGeL
+         Gxn95x4xJas+V8iI5IL5m8a0f2Q+Eiv6bL54M1zeFcil5Xr02+U4fKEeCuHFlFjJmRbF
+         CYUeaBk8Y2qTkg70AYIYRK1cpZVtcqQ8PqvD3Ckmr8vmL0cCWNwoqSUKubIcXAZ360sM
+         xYDWYt1BI7v5YjNiqp1bQ+gdJkMNogOH25JhN31kB5pmN08CN7LxhCdjD4QtsqivkaNx
+         onEQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=l2yK7ssGtYclsDwXxCx9nxPY11OspLOvX43o0ydPIMc=;
-        b=eOGr32Hv7FPzhCrxMTzrs5FVNfVFHAgIJh9axGZJ9KPXpnOpmtWi6C8B7k5jDeVKdM
-         1vhxG7NQtgj2DbP3Ts+1US73mVC4g507yRis2o7Vh5kPqd1c0LWgEa9zVpfPGFSi2VWn
-         Zirgnjm0plHTqI/VSD+3AUee6ynFwTwtFr82liBXC0cSC2F8owduZhIE4wImo5oU3PZI
-         kZKZKgICHC+PqDaRKNfkr1yXbZ5mT/2ZQbOMimf0nN5EYanK1p9BipkB909Eotzlr6J0
-         UsfpbczqFoF3jfPyfgKQZcXxZvFuckrkn36J1/XQVT94upyX9vCb35SDFg64eCf3WqpL
-         u+7Q==
-X-Gm-Message-State: AOAM532vm4VRQxjvNF53g956Y7yohnzF56UOk/rOspdgGGnNYH62TpwG
-        hCMbx7aW7w+UdH7n2cX4/qETXbL7uL3Jk9eo
-X-Google-Smtp-Source: ABdhPJyOaJZQJeO38Wi0txkaltPbIq5grFhhpMxrvS3Fd5HlC1rV9tCq/dFfn4BehWyLhmBzoFFnbQ==
-X-Received: by 2002:a37:bf87:: with SMTP id p129mr15169612qkf.203.1602274049910;
-        Fri, 09 Oct 2020 13:07:29 -0700 (PDT)
+        h=x-gm-message-state:from:to:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=C+M3+ROHRz9CKEUDJ5h8a7fwXqKecN9ftIY2W3KiD8U=;
+        b=PyYKlbsoKEmM1ELgjr4h5ZKumoMjIfHaI6ltEDCed77Dd6yIWgzQLm/JRyRCY3p1wW
+         AyLOu8YwQYjskfNTKUln+1whpW4XPo/+8k2d2TCbMTRmRbd6OqO+jU4L7bTiQWUM25vA
+         ltE7Sbs5EECM73nxZLDZEGNzGrJAGKpN5Su4vHyIdnHDth/Ci9mO4KJJp1YytjZUyMkS
+         +rDJHDGcxdfkpxZpJp+7mlplOjnztVZD3mMHlwBIghijC8rJPGJuUw2EgvfOr+edvt5i
+         JlZl6mQj6zk8p3sWawZIbFD9ub7mHIxjkVCfcYEaSr42KINFIrB+am8UO+pDDPKsIkHD
+         Q44w==
+X-Gm-Message-State: AOAM531OLLIKBCk3pltw6W+9qhH4jXah9/sCAvwmTwhEocUsaoEP3Vxl
+        YpoE7DmQUmK/Z2adoa+tX5OobVCQb6bqFbaK
+X-Google-Smtp-Source: ABdhPJzWGtSquA1/0CaVWmOMlJc/asKiS6G9JQ1fMPi93cF2N7kU5fVMhNxl+Un32Ms7UOCvMqtbuQ==
+X-Received: by 2002:a0c:9d03:: with SMTP id m3mr14317368qvf.54.1602274042486;
+        Fri, 09 Oct 2020 13:07:22 -0700 (PDT)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id g7sm7133847qtc.19.2020.10.09.13.07.29
+        by smtp.gmail.com with ESMTPSA id s22sm6974559qtq.78.2020.10.09.13.07.21
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 09 Oct 2020 13:07:29 -0700 (PDT)
+        Fri, 09 Oct 2020 13:07:21 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v3 4/8] btrfs: add a helper to print out rescue= options
-Date:   Fri,  9 Oct 2020 16:07:16 -0400
-Message-Id: <9519d52d87d0cd2d65ba651a8a1282106d988d76.1602273837.git.josef@toxicpanda.com>
+Subject: [PATCH v3 0/8] New rescue mount options
+Date:   Fri,  9 Oct 2020 16:07:12 -0400
+Message-Id: <cover.1602273837.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.2
-In-Reply-To: <cover.1602273837.git.josef@toxicpanda.com>
-References: <cover.1602273837.git.josef@toxicpanda.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We're going to have a lot of rescue options, add a helper to collapse
-the /proc/mounts output to rescue=option1:option2:option3 format.
+v2->v3:
+- Re-worked the showmount format for rescue= options, so it's in the format of
+  rescue=option1:option2:option3.
+- Added aliases for ignore* with just a i<opt>.
+- Added a sysfs file to spit out supported rescue options.
+- Fixed where we weren't spitting out rescue=usebackuproot in showmount.
+- The only thing I didn't do was the no/^ options, since that's trickier and
+  puts us in a murky place for some things (nonologreplay).
 
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
----
- fs/btrfs/super.c | 10 ++++++++--
- 1 file changed, 8 insertions(+), 2 deletions(-)
+v1->v2:
+- Add Qu's reviewed-bys.
+- Addressed the comment about dev extent verification for ignorebadroots.
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index f99e89ec46b2..be56fe15cd74 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1392,11 +1392,18 @@ int btrfs_sync_fs(struct super_block *sb, int wait)
- 	return btrfs_commit_transaction(trans);
- }
- 
-+#define print_rescue_option(opt, name)						\
-+	if (btrfs_test_opt(info, opt)) {					\
-+		seq_printf(seq, "%s%s", printed ? ":" : ",rescue=",  name);	\
-+		printed = true;							\
-+	}									\
-+
- static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
- {
- 	struct btrfs_fs_info *info = btrfs_sb(dentry->d_sb);
- 	const char *compress_type;
- 	const char *subvol_name;
-+	bool printed = false;
- 
- 	if (btrfs_test_opt(info, DEGRADED))
- 		seq_puts(seq, ",degraded");
-@@ -1428,8 +1435,7 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
- 		seq_puts(seq, ",ssd");
- 	if (btrfs_test_opt(info, NOTREELOG))
- 		seq_puts(seq, ",notreelog");
--	if (btrfs_test_opt(info, NOLOGREPLAY))
--		seq_puts(seq, ",rescue=nologreplay");
-+	print_rescue_option(NOLOGREPLAY, "nologreplay");
- 	if (btrfs_test_opt(info, FLUSHONCOMMIT))
- 		seq_puts(seq, ",flushoncommit");
- 	if (btrfs_test_opt(info, DISCARD_SYNC))
+--- Original email ---
+Hello,
+
+This is the next version of my rescue=all patches, this time broken up in to a
+few discrete patches, with some cleanups as well.  I have a PR for the xfstest
+that exercises these options, it can be found here
+
+  https://github.com/btrfs/fstests/pull/35
+
+This is the same idea as the previous versions, except I've made a mechanical
+change.  Instead we have rescue=ignorebadroots, which ignores any global roots
+that we may not be able to read.  We will still fail to mount if thinks like the
+chunk root or the tree root are corrupt, but this will allow us to mount read
+only if the extent root or csum root are completely hosed.
+
+I've added a new patch this go around, rescue=ignoredatacsums.  Somebody had
+indicated that they would prefer that the original rescue=all allowed us to
+continue to read csums if the root was still intact.  In order to handle that
+usecase that's what you get with rescue=ignorebadroots, however if your csum
+tree is corrupt in the middle of the tree you could still end up with problems.
+Thus we have rescue=ignoredatacsums which will completely disable the csum tree
+as well.
+
+And finally we have rescue=all, which simply enables ignoredatacsums,
+ignorebadroots, and notreelogreplay.  We need an easy catch-all option for
+distros to fallback on to get users the highest probability of being able to
+recover their data, so we will use rescue=all to turn on all the fanciest rescue
+options that we have, and then use the discrete options for more fine grained
+recovery.  Thanks,
+
+Josef
+
+Josef Bacik (8):
+  btrfs: unify the ro checking for mount options
+  btrfs: push the NODATASUM check into btrfs_lookup_bio_sums
+  btrfs: add a supported_rescue_options file to sysfs
+  btrfs: add a helper to print out rescue= options
+  btrfs: show rescue=usebackuproot in /proc/mounts
+  btrfs: introduce rescue=ignorebadroots
+  btrfs: introduce rescue=ignoredatacsums
+  btrfs: introduce rescue=all
+
+ fs/btrfs/block-group.c | 48 +++++++++++++++++++++++++++
+ fs/btrfs/block-rsv.c   |  8 +++++
+ fs/btrfs/compression.c | 17 ++++------
+ fs/btrfs/ctree.h       |  2 ++
+ fs/btrfs/disk-io.c     | 74 +++++++++++++++++++++++++++---------------
+ fs/btrfs/file-item.c   |  4 +++
+ fs/btrfs/inode.c       | 18 +++++++---
+ fs/btrfs/super.c       | 65 ++++++++++++++++++++++++++++++++-----
+ fs/btrfs/sysfs.c       | 25 ++++++++++++++
+ fs/btrfs/volumes.c     | 13 ++++++++
+ 10 files changed, 224 insertions(+), 50 deletions(-)
+
 -- 
 2.26.2
 

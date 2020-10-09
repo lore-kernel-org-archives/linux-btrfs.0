@@ -1,175 +1,144 @@
-Return-Path: <SRS0=iNTY=DP=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=4JW5=DQ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 639A7C433E7
-	for <linux-btrfs@archiver.kernel.org>; Thu,  8 Oct 2020 20:49:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6AF66C433E7
+	for <linux-btrfs@archiver.kernel.org>; Fri,  9 Oct 2020 01:09:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 14BE221D6C
-	for <linux-btrfs@archiver.kernel.org>; Thu,  8 Oct 2020 20:49:20 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id AE41C22242
+	for <linux-btrfs@archiver.kernel.org>; Fri,  9 Oct 2020 01:09:40 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="NlLF7uSn"
+	dkim=pass (2048-bit key) header.d=dxuuu.xyz header.i=@dxuuu.xyz header.b="cC4iWFSa";
+	dkim=temperror (0-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="DN1ev1Y8"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730774AbgJHUtT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 8 Oct 2020 16:49:19 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59182 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1730765AbgJHUtS (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Oct 2020 16:49:18 -0400
-Received: from mail-qk1-x742.google.com (mail-qk1-x742.google.com [IPv6:2607:f8b0:4864:20::742])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1AF30C0613D2
-        for <linux-btrfs@vger.kernel.org>; Thu,  8 Oct 2020 13:49:18 -0700 (PDT)
-Received: by mail-qk1-x742.google.com with SMTP id s4so8477858qkf.7
-        for <linux-btrfs@vger.kernel.org>; Thu, 08 Oct 2020 13:49:18 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:subject:date:message-id:in-reply-to:references:mime-version
-         :content-transfer-encoding;
-        bh=AcOwfXeJzCPo3rQkJuqCG0euPlIHFq1d+mOcr5uXw5o=;
-        b=NlLF7uSncO7nQ1QQKSMIOVu12OAs7mlsNWMRXITb80kIRgumYk26TqhSG+5rAt5eUp
-         qGmEFRKtjs10jBbVJIYRDrgCQDD028OmWOms/+ANW57iM/VWTGaX6s3JrsvvI9fbjOwB
-         rOrAGzRj1xqJ4LPL5ccL39dwwWMbH9cjGSEqaBn/I/77QH7KI82P31dDASabzN3jf31R
-         IIH2qfaxZWleBVIG7PEUdKpss/ay7YxU1049zQ23JzBEY2wbWeUiqkcVO3D3RoLkACnQ
-         V05qy7Bj6ZplSFoJCPPE4bc/ukNsax99Nt5EMig7fLiKdDHDx74IKi4mRcLF7WP5/sFV
-         yPMw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=AcOwfXeJzCPo3rQkJuqCG0euPlIHFq1d+mOcr5uXw5o=;
-        b=UBwFVE7hKKDfLChzMWss7r8pNuEVWWuCcLaWxVyHOnoNxlgqQ6lSzfHHvcsby/9A8i
-         s/BMbJEG6ulOEGblfG05c2vDMS8zcBhWKPwFYYBRuoBagoe/RSAyPXF4Z5kGYzgza6ti
-         x9bUhyxZXfKFJwRYsZ5KFMXMQsan9yZsYnMKcS/nuFR2REAiGrCXH+UaVGuuI7oMDus5
-         J/JA99CRysThk3m+60/kcYExAz/Up6neL0sHvmASc9PY91mUFR4XhAuYq3lOhCvEE/DA
-         d2DMMlJEn9Y0d9X73shYjS/Iv7pLzBkEP4Xd04doSiWzr8pd+8o8U/89OihdUZEwaKO+
-         /nDA==
-X-Gm-Message-State: AOAM5307PYDynLEwkl98GUPKR9mU6mYFaIr/wemcwpjJ1HqF+mCPCPEj
-        GBGU7aOQYzMwga5YOxlUMfWfzEeojCYXGJg7
-X-Google-Smtp-Source: ABdhPJx9/ERdP1RfF4Dt8v7TValekY3HgG5yUospl8ZCxmKqC1n05jyLdP1zmLvnnNW1o0gMnB+veA==
-X-Received: by 2002:a37:dc2:: with SMTP id 185mr8029707qkn.103.1602190156957;
-        Thu, 08 Oct 2020 13:49:16 -0700 (PDT)
-Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id a66sm4768309qkd.47.2020.10.08.13.49.16
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 08 Oct 2020 13:49:16 -0700 (PDT)
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v2 11/11] btrfs: add a trace class for dumping the current ENOSPC state
-Date:   Thu,  8 Oct 2020 16:48:55 -0400
-Message-Id: <1c3db31ef6d948a07236e63bc7b7b09f4671fbc5.1602189832.git.josef@toxicpanda.com>
-X-Mailer: git-send-email 2.26.2
-In-Reply-To: <cover.1602189832.git.josef@toxicpanda.com>
-References: <cover.1602189832.git.josef@toxicpanda.com>
+        id S1728837AbgJIBJj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 8 Oct 2020 21:09:39 -0400
+Received: from wout3-smtp.messagingengine.com ([64.147.123.19]:43177 "EHLO
+        wout3-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1726348AbgJIBJj (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 8 Oct 2020 21:09:39 -0400
+Received: from compute3.internal (compute3.nyi.internal [10.202.2.43])
+        by mailout.west.internal (Postfix) with ESMTP id 5249ACF3;
+        Thu,  8 Oct 2020 21:09:38 -0400 (EDT)
+Received: from mailfrontend1 ([10.202.2.162])
+  by compute3.internal (MEProxy); Thu, 08 Oct 2020 21:09:38 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=dxuuu.xyz; h=
+        from:to:cc:subject:date:message-id:mime-version
+        :content-transfer-encoding; s=fm1; bh=rc3LxcC+ql7LVIx0S3VZ+qlEl/
+        KVQV2bM8QDCmLcogE=; b=cC4iWFSazdnIYPZJvMRTzPdy+4pE+0nE5TYiDH7M6s
+        UURVU6pIDbEt3glKUcg1vE0KB51c/G3Xg/JlCOgjdmt4+3Z08UBE1yYzMt2ZX4oo
+        lUCyhXHZYyOpZY+FPaEASZvBx2ZbflfB28aYoruE4lSpbkARvWZ8ORV0TZYuQS7N
+        gR5Srp0BlK2EkuDe4WLpU6Kemklp1yqAMRwTlxW8fbHVeKZDMTYOGdZQUd3Gc1LE
+        g0LBlMklbhqnxw/Ud3Lr2GmzPb37dfhP67+g8W1V/kBcO02aqnfJ07RI3b7w7ikd
+        E6XlK9K2G5TfISwyeLL7XFrJ/qqEAHf1tq9VOWNjKiNg==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+        messagingengine.com; h=cc:content-transfer-encoding:date:from
+        :message-id:mime-version:subject:to:x-me-proxy:x-me-proxy
+        :x-me-sender:x-me-sender:x-sasl-enc; s=fm1; bh=rc3LxcC+ql7LVIx0S
+        3VZ+qlEl/KVQV2bM8QDCmLcogE=; b=DN1ev1Y8EAxRj3aDeKJKUVjv93smSgCuK
+        4pXMvAGO1WofvJ3ycZ0pO45bONrDoAzUp3kTUynYS7YLMT6KY+v3+VppziMrlG05
+        SjoKm/ROu1vGM2acCVEQx2JXYOf+ttNNw0yDps1eCpONPBz3HHqQgYeWtitL3aYr
+        FSpeYyLxg5RqimMHTNEdTvamnCo+XI1uHFs4femsW9q0U3sux/fod8P8DNan3E/I
+        TvXj9SzgCEaAqRxEtm8kj2Yds2SviQLIk9hP/BkddQ3/qPydjdUCnJiDz8rkuDxh
+        d0cz/lb2n/8Zyr7ePzSqfwhviKPCzXS5Jv/LdBODrnauxzlTWxTWw==
+X-ME-Sender: <xms:Ubh_X4MPfdJqbJp411YPYlss_ZBczdfKD4azhQ_-fe99W7RmV5oEwA>
+    <xme:Ubh_X-9o6Snri77oG7r1YiZPRVhuCquTm8sW9fGpTLegYrrcSMjPr5Yx-7xulcdxv
+    ovGjr27UAlyDj8OPg>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedujedrhedtgdegfecutefuodetggdotefrodftvf
+    curfhrohhfihhlvgemucfhrghsthforghilhdpqfgfvfdpuffrtefokffrpgfnqfghnecu
+    uegrihhlohhuthemuceftddtnecusecvtfgvtghiphhivghnthhsucdlqddutddtmdenfg
+    hrlhcuvffnffculddvfedmnecujfgurhephffvufffkffoggfgsedtkeertdertddtnecu
+    hfhrohhmpeffrghnihgvlhcuighuuceougiguhesugiguhhuuhdrgiihiieqnecuggftrf
+    grthhtvghrnhepteefheetvdeugedtiedtfeduhedufeejteefjeffjeeugfehtdehveel
+    vedufeejnecuffhomhgrihhnpehkvghrnhgvlhdrohhrghenucfkphepieelrddukedurd
+    dutdehrdeigeenucevlhhushhtvghrufhiiigvpedtnecurfgrrhgrmhepmhgrihhlfhhr
+    ohhmpegugihusegugihuuhhurdighiii
+X-ME-Proxy: <xmx:Ubh_X_S_XIJTjXh6qyUvLygibyqiappIEl8wNuvlCEBdxhYxtMbYcQ>
+    <xmx:Ubh_XwtfxqcCEDoRDO9B1FNFUlsvYGNl_qKeFayIb11AXVWnMJhIJw>
+    <xmx:Ubh_XwceQg0W2otJIxLr7wz9TT9O6uks4eylySALqZ-H20SYfW454A>
+    <xmx:Ubh_X47Rm91tfZOR9iaHHPTsiESwjL0_LHDpZdd2Bt8ez54ntIwUJw>
+Received: from localhost.localdomain (c-69-181-105-64.hsd1.ca.comcast.net [69.181.105.64])
+        by mail.messagingengine.com (Postfix) with ESMTPA id A28D5328005E;
+        Thu,  8 Oct 2020 21:09:35 -0400 (EDT)
+From:   Daniel Xu <dxu@dxuuu.xyz>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Daniel Xu <dxu@dxuuu.xyz>, kernel-team@fb.com,
+        josef@toxicpanda.com, quwenruo.btrfs@gmx.com,
+        Qu Wenruo <wqu@suse.com>
+Subject: [PATCH v2] btrfs: Fix divide by zero
+Date:   Thu,  8 Oct 2020 18:09:10 -0700
+Message-Id: <20201009010910.270794-1-dxu@dxuuu.xyz>
+X-Mailer: git-send-email 2.28.0
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Often when I'm debugging ENOSPC related issues I have to resort to
-printing the entire ENOSPC state with trace_printk() in different spots.
-This gets pretty annoying, so add a trace state that does this for us.
-Then add a trace point at the end of preemptive flushing so you can see
-the state of the space_info when we decide to exit preemptive flushing.
-This helped me figure out we weren't kicking in the preemptive flushing
-soon enough.
+If there's no parity and num_stripes < ncopies, an btrfs image can
+trigger a divide by zero in calc_stripe_length().
 
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+The image (see link) was generated through fuzzing.
+
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+Link: https://bugzilla.kernel.org/show_bug.cgi?id=209587
+Signed-off-by: Daniel Xu <dxu@dxuuu.xyz>
 ---
- fs/btrfs/space-info.c        |  1 +
- include/trace/events/btrfs.h | 62 ++++++++++++++++++++++++++++++++++++
- 2 files changed, 63 insertions(+)
 
-diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-index c5fc90dd8378..a4ffe8618126 100644
---- a/fs/btrfs/space-info.c
-+++ b/fs/btrfs/space-info.c
-@@ -1123,6 +1123,7 @@ static void btrfs_preempt_reclaim_metadata_space(struct work_struct *work)
- 	/* We only went through once, back off our clamping. */
- 	if (loops == 1 && !space_info->reclaim_size)
- 		space_info->clamp = max(1, space_info->clamp - 1);
-+	trace_btrfs_done_preemptive_reclaim(fs_info, space_info);
- 	spin_unlock(&space_info->lock);
- }
+v1->v2:
+* Upload test image to kernel bugzilla
+
+
+ fs/btrfs/tree-checker.c | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
+index 7b1fee630f97..e03c3807921f 100644
+--- a/fs/btrfs/tree-checker.c
++++ b/fs/btrfs/tree-checker.c
+@@ -760,18 +760,36 @@ int btrfs_check_chunk_valid(struct extent_buffer *leaf,
+ 	u64 type;
+ 	u64 features;
+ 	bool mixed = false;
++	int raid_index;
++	int nparity;
++	int ncopies;
  
-diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index 6d93637bae02..74b466dc20ac 100644
---- a/include/trace/events/btrfs.h
-+++ b/include/trace/events/btrfs.h
-@@ -2028,6 +2028,68 @@ TRACE_EVENT(btrfs_convert_extent_bit,
- 		  __print_flags(__entry->clear_bits, "|", EXTENT_FLAGS))
- );
+ 	length = btrfs_chunk_length(leaf, chunk);
+ 	stripe_len = btrfs_chunk_stripe_len(leaf, chunk);
+ 	num_stripes = btrfs_chunk_num_stripes(leaf, chunk);
+ 	sub_stripes = btrfs_chunk_sub_stripes(leaf, chunk);
+ 	type = btrfs_chunk_type(leaf, chunk);
++	raid_index = btrfs_bg_flags_to_raid_index(type);
++	ncopies = btrfs_raid_array[raid_index].ncopies;
++	nparity = btrfs_raid_array[raid_index].nparity;
  
-+DECLARE_EVENT_CLASS(btrfs_dump_space_info,
-+	TP_PROTO(const struct btrfs_fs_info *fs_info,
-+		 const struct btrfs_space_info *sinfo),
-+
-+	TP_ARGS(fs_info, sinfo),
-+
-+	TP_STRUCT__entry_btrfs(
-+		__field(	u64,	flags			)
-+		__field(	u64,	total_bytes		)
-+		__field(	u64,	bytes_used		)
-+		__field(	u64,	bytes_pinned		)
-+		__field(	u64,	bytes_reserved		)
-+		__field(	u64,	bytes_may_use		)
-+		__field(	u64,	bytes_readonly		)
-+		__field(	u64,	reclaim_size		)
-+		__field(	int,	clamp			)
-+		__field(	u64,	global_reserved		)
-+		__field(	u64,	trans_reserved		)
-+		__field(	u64,	delayed_refs_reserved	)
-+		__field(	u64,	delayed_reserved	)
-+		__field(	u64,	free_chunk_space	)
-+	),
-+
-+	TP_fast_assign_btrfs(fs_info,
-+		__entry->flags			=	sinfo->flags;
-+		__entry->total_bytes		=	sinfo->total_bytes;
-+		__entry->bytes_used		=	sinfo->bytes_used;
-+		__entry->bytes_pinned		=	sinfo->bytes_pinned;
-+		__entry->bytes_reserved		=	sinfo->bytes_reserved;
-+		__entry->bytes_may_use		=	sinfo->bytes_may_use;
-+		__entry->bytes_readonly		=	sinfo->bytes_readonly;
-+		__entry->reclaim_size		=	sinfo->reclaim_size;
-+		__entry->clamp			=	sinfo->clamp;
-+		__entry->global_reserved	=	fs_info->global_block_rsv.reserved;
-+		__entry->trans_reserved		=	fs_info->trans_block_rsv.reserved;
-+		__entry->delayed_refs_reserved	=	fs_info->delayed_refs_rsv.reserved;
-+		__entry->delayed_reserved	=	fs_info->delayed_block_rsv.reserved;
-+		__entry->free_chunk_space	=	atomic64_read(&fs_info->free_chunk_space);
-+	),
-+
-+	TP_printk_btrfs("flags=%s total_bytes=%llu bytes_used=%llu "
-+			"bytes_pinned=%llu bytes_reserved=%llu "
-+			"bytes_may_use=%llu bytes_readonly=%llu "
-+			"reclaim_size=%llu clamp=%d global_reserved=%llu "
-+			"trans_reserved=%llu delayed_refs_reserved=%llu "
-+			"delayed_reserved=%llu chunk_free_space=%llu",
-+			__print_flags(__entry->flags, "|", BTRFS_GROUP_FLAGS),
-+			__entry->total_bytes, __entry->bytes_used,
-+			__entry->bytes_pinned, __entry->bytes_reserved,
-+			__entry->bytes_may_use, __entry->bytes_readonly,
-+			__entry->reclaim_size, __entry->clamp,
-+			__entry->global_reserved, __entry->trans_reserved,
-+			__entry->delayed_refs_reserved,
-+			__entry->delayed_reserved, __entry->free_chunk_space)
-+);
-+
-+DEFINE_EVENT(btrfs_dump_space_info, btrfs_done_preemptive_reclaim,
-+	TP_PROTO(const struct btrfs_fs_info *fs_info,
-+		 const struct btrfs_space_info *sinfo),
-+	TP_ARGS(fs_info, sinfo)
-+);
-+
- TRACE_EVENT(btrfs_reserve_ticket,
- 	TP_PROTO(const struct btrfs_fs_info *fs_info, u64 flags, u64 bytes,
- 		 u64 start_ns, int flush, int error),
+ 	if (!num_stripes) {
+ 		chunk_err(leaf, chunk, logical,
+ 			  "invalid chunk num_stripes, have %u", num_stripes);
+ 		return -EUCLEAN;
+ 	}
++	if (num_stripes < ncopies) {
++		chunk_err(leaf, chunk, logical,
++			  "invalid chunk num_stripes < ncopies, have %u < %d",
++			  num_stripes, ncopies);
++		return -EUCLEAN;
++	}
++	if (nparity && num_stripes == nparity) {
++		chunk_err(leaf, chunk, logical,
++			  "invalid chunk num_stripes == nparity, have %u == %d",
++			  num_stripes, nparity);
++		return -EUCLEAN;
++	}
+ 	if (!IS_ALIGNED(logical, fs_info->sectorsize)) {
+ 		chunk_err(leaf, chunk, logical,
+ 		"invalid chunk logical, have %llu should aligned to %u",
 -- 
-2.26.2
+2.28.0
 

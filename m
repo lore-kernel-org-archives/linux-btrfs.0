@@ -2,208 +2,153 @@ Return-Path: <SRS0=4JW5=DQ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5842FC43467
-	for <linux-btrfs@archiver.kernel.org>; Fri,  9 Oct 2020 13:29:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0F872C433DF
+	for <linux-btrfs@archiver.kernel.org>; Fri,  9 Oct 2020 14:11:29 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 02B3B22277
-	for <linux-btrfs@archiver.kernel.org>; Fri,  9 Oct 2020 13:28:59 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A2D8022261
+	for <linux-btrfs@archiver.kernel.org>; Fri,  9 Oct 2020 14:11:28 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="b7OMNvge"
+	dkim=pass (2048-bit key) header.d=kroah.com header.i=@kroah.com header.b="iv8Vr0AC";
+	dkim=temperror (0-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="EELLIb/R"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388607AbgJIN24 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 9 Oct 2020 09:28:56 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43980 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2388602AbgJIN2w (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Oct 2020 09:28:52 -0400
-Received: from mail-qt1-x844.google.com (mail-qt1-x844.google.com [IPv6:2607:f8b0:4864:20::844])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7FDDCC0613D2
-        for <linux-btrfs@vger.kernel.org>; Fri,  9 Oct 2020 06:28:50 -0700 (PDT)
-Received: by mail-qt1-x844.google.com with SMTP id t9so7076938qtp.9
-        for <linux-btrfs@vger.kernel.org>; Fri, 09 Oct 2020 06:28:50 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:subject:date:message-id:in-reply-to:references:mime-version
-         :content-transfer-encoding;
-        bh=DvrRtm8z7A1+P+r6iBYaK/ETxF//2ZbyFMbquOwZMU4=;
-        b=b7OMNvgeVvhdWUIe/4kLPkY37CyzUHvuhdjcpn2twTXVj1cc/ldUC2+AUfsnwCRYyT
-         kj/PRLoJv+sHU1ktNwl8gXab32BBYWpZ1SJIDn4HHkYEFFVoyGAtCEcEQtdiouqnt3Ov
-         Ez+PfG56PLzFUT5kyTnWQePwRZYHSpyd5lBt7PmnAgHgwkoxe6QPo61ebGxYakn7Es4g
-         QaTqGi+ifnlTv3eigxz1x8nRkgVLbnhiDuGfOVCUPtFrg9rH5dfIIxIUdupb4GqousvX
-         UU3i5S3dNijuulVfmUucQomBTe1/GH/FpaJNaTK4J6jMVV4y2rLJ2VrmFe/oG/QYRphs
-         tgKQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=DvrRtm8z7A1+P+r6iBYaK/ETxF//2ZbyFMbquOwZMU4=;
-        b=qHxWo5X6vcAFd0YcxKkT8EANtDWLvIa6XSydyLyg7HgSyrumoGrAnEHL+BtX6r1to1
-         HPK4B/W5t/+xqwGprwoAwWe1/tY2d1e2ZcW2ssRSkgx4eaRIQ1LwwtFsy0lcMpKMQ8Fn
-         vU7yP0l0WNptQsAYtKbcsG2GWqVV8GsN7wBsWN+/YsHQSOzQ+htaOUk7blHX9othQWbW
-         8oqGgTgExB6gLA/8Evsd/cSFmfDtPV0bOZ8CfZNM1BQvrtG9OtC1FdrprbRc9Wj1r6CE
-         QHzaIu3msPDz4vIxijCEMQNcMihLMyd+XwkZxRK0Gfq06r8H/f6Nn6a4u2k3mcxy5uh1
-         l3Rw==
-X-Gm-Message-State: AOAM532eYKomewb2v6jTbkpSL6AE/roeTUE96F3BWjh0X0GxZV1OqMkn
-        sECzQpIYy7l4q9tHhDdDSiHS6F+DVUVyadLI
-X-Google-Smtp-Source: ABdhPJwi97B1ZX4k5yBzANj4G3b6VALDj0IFmVx9txCxhFVCixlbT6EYctcnqoddWtxMdLsJznmgGQ==
-X-Received: by 2002:ac8:1a62:: with SMTP id q31mr6045590qtk.389.1602250129311;
-        Fri, 09 Oct 2020 06:28:49 -0700 (PDT)
-Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id i70sm6027178qke.11.2020.10.09.06.28.48
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 09 Oct 2020 06:28:48 -0700 (PDT)
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v3 09/12] btrfs: simplify the logic in need_preemptive_flushing
-Date:   Fri,  9 Oct 2020 09:28:26 -0400
-Message-Id: <8b46bf643eb38d6381345b9985b2abbdc47711ad.1602249928.git.josef@toxicpanda.com>
-X-Mailer: git-send-email 2.26.2
-In-Reply-To: <cover.1602249928.git.josef@toxicpanda.com>
-References: <cover.1602249928.git.josef@toxicpanda.com>
+        id S1733299AbgJIOL1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 9 Oct 2020 10:11:27 -0400
+Received: from wout5-smtp.messagingengine.com ([64.147.123.21]:44901 "EHLO
+        wout5-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1727560AbgJIOL1 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 9 Oct 2020 10:11:27 -0400
+X-Greylist: delayed 323 seconds by postgrey-1.27 at vger.kernel.org; Fri, 09 Oct 2020 10:11:27 EDT
+Received: from compute4.internal (compute4.nyi.internal [10.202.2.44])
+        by mailout.west.internal (Postfix) with ESMTP id 763826A3;
+        Fri,  9 Oct 2020 10:06:03 -0400 (EDT)
+Received: from mailfrontend1 ([10.202.2.162])
+  by compute4.internal (MEProxy); Fri, 09 Oct 2020 10:06:03 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kroah.com; h=
+        date:from:to:cc:subject:message-id:references:mime-version
+        :content-type:in-reply-to; s=fm2; bh=QA1BxHl/gsKUUyFeFALiOB1m/Z+
+        blvmdd5I9GCrB3kU=; b=iv8Vr0ACoqWlXa1w9ikn0KDS1VhK/H/SR66vblm5/fB
+        Od8R49fMCkCKlUB4iF2N4W3zceHD4qmsFdbMzEWwkF/azFu9QNSdj5hLDB1sJejh
+        rrRNbUHHMK294gPtEqu2OsqBHU3NPRSq7CyHvl14tBNOZP9sm+nJueBRrciEyz+s
+        MXyB08LRVaxZjhmcivMVNCQTYOVbFuiia2/EvCwu7cuGPclF6NYn5SUBgGQoqOeg
+        PYCuSEAa9xmB05X6BVKB5YNTmonm9dx3WQiaywC1qi6e/3ke6cvqLSH+sxdAmYFB
+        08/YRbLea8hmQo228Olm8jJQv0fbL44ed9OTIpP1z/w==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+        messagingengine.com; h=cc:content-type:date:from:in-reply-to
+        :message-id:mime-version:references:subject:to:x-me-proxy
+        :x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm1; bh=QA1BxH
+        l/gsKUUyFeFALiOB1m/Z+blvmdd5I9GCrB3kU=; b=EELLIb/RhTEJU2Y+v3K3Qi
+        R+EoMK1meguKEDLOzi/aKIFyE2srjnNksnvLUhbRFOqiP/uaBN7acoySbIl6Dgt3
+        It/s+qGomgDmb/QbEN1muUPDvZl88IF+KsdcJSw6Tb9gr3tBbcO/tu2GZCIQchwU
+        6UKLh70FXpVQ2jbyKTwve5+qdr93k1VMVTsL23rCqzpsNjsJ84qPrdxYgqrgcw/A
+        Ypbag91B/8/dF/128nzBP+3sk9ueuqKAt0oGENMCqeEHwGNLC4fImpftkjZzg9sI
+        rcz3fa0spXLbviQnhwDpsqBLaW359zYwE3B35r/KUidXUu2Tr2SNyHJmGEAWrowQ
+        ==
+X-ME-Sender: <xms:Sm6AX9HuLQbJ_INlim0Gn9UZwtjRsRXLZ3unFpXMEtxrdc8-f0fdig>
+    <xme:Sm6AXyWRwJTGErgYU4l_r9Cw9vJZs-hm_9EwyV5FdzdjAiwH17vY7Aihrc-qSPwIZ
+    yHwdXKn6IpGGQ>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedujedrhedugdejfecutefuodetggdotefrodftvf
+    curfhrohhfihhlvgemucfhrghsthforghilhdpqfgfvfdpuffrtefokffrpgfnqfghnecu
+    uegrihhlohhuthemuceftddtnecusecvtfgvtghiphhivghnthhsucdlqddutddtmdenuc
+    fjughrpeffhffvuffkfhggtggujgesthdtredttddtvdenucfhrhhomhepifhrvghgucfm
+    jfcuoehgrhgvgheskhhrohgrhhdrtghomheqnecuggftrfgrthhtvghrnhepveeuheejgf
+    ffgfeivddukedvkedtleelleeghfeljeeiueeggeevueduudekvdetnecukfhppeekfedr
+    keeirdejgedrieegnecuvehluhhsthgvrhfuihiivgeptdenucfrrghrrghmpehmrghilh
+    hfrhhomhepghhrvghgsehkrhhorghhrdgtohhm
+X-ME-Proxy: <xmx:Sm6AX_Ji4TPz--QEiAxTuWIceueKeoXyXczObkxvbQfncER_8NYDvg>
+    <xmx:Sm6AXzH51-2ZoPTFDXznIH7W5hT5ATCJhSxLRInfxXngr0enhLpDRg>
+    <xmx:Sm6AXzXkRsKCcy1ic79xERgHyQ2ep7PgYi74sBiRIXCY33dKGF1mXg>
+    <xmx:S26AX5z_enu8sWs-J0MVT6R0lBhxYrRe1Xr1X48f1TWPqtXB2-sJpA>
+Received: from localhost (83-86-74-64.cable.dynamic.v4.ziggo.nl [83.86.74.64])
+        by mail.messagingengine.com (Postfix) with ESMTPA id 7B90D328005A;
+        Fri,  9 Oct 2020 10:06:02 -0400 (EDT)
+Date:   Fri, 9 Oct 2020 16:06:48 +0200
+From:   Greg KH <greg@kroah.com>
+To:     Anand Jain <anand.jain@oracle.com>
+Cc:     linux-kernel@vger.kernel.org, stable@vger.kernel.org, wqu@suse.com,
+        fdmanana@suse.com, dsterba@suse.com, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH stable-5.4 6/6] btrfs: allow btrfs_truncate_block() to
+ fallback to nocow for data space reservation
+Message-ID: <20201009140648.GB573779@kroah.com>
+References: <cover.1599750901.git.anand.jain@oracle.com>
+ <9df7b36688030028271fe5d4265512328534f9b6.1599750901.git.anand.jain@oracle.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <9df7b36688030028271fe5d4265512328534f9b6.1599750901.git.anand.jain@oracle.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-A lot of this was added all in one go with no explanation, and is a bit
-unwieldy and confusing.  Simplify the logic to start preemptive flushing
-if we've reserved more than half of our available free space.
+On Thu, Oct 08, 2020 at 06:59:54PM +0800, Anand Jain wrote:
+> From: Qu Wenruo <wqu@suse.com>
+> 
+> commit 6d4572a9d71d5fc2affee0258d8582d39859188c upstream.
+> 
+> [BUG]
+> When the data space is exhausted, even if the inode has NOCOW attribute,
+> we will still refuse to truncate unaligned range due to ENOSPC.
+> 
+> The following script can reproduce it pretty easily:
+>   #!/bin/bash
+> 
+>   dev=/dev/test/test
+>   mnt=/mnt/btrfs
+> 
+>   umount $dev &> /dev/null
+>   umount $mnt &> /dev/null
+> 
+>   mkfs.btrfs -f $dev -b 1G
+>   mount -o nospace_cache $dev $mnt
+>   touch $mnt/foobar
+>   chattr +C $mnt/foobar
+> 
+>   xfs_io -f -c "pwrite -b 4k 0 4k" $mnt/foobar > /dev/null
+>   xfs_io -f -c "pwrite -b 4k 0 1G" $mnt/padding &> /dev/null
+>   sync
+> 
+>   xfs_io -c "fpunch 0 2k" $mnt/foobar
+>   umount $mnt
+> 
+> Currently this will fail at the fpunch part.
+> 
+> [CAUSE]
+> Because btrfs_truncate_block() always reserves space without checking
+> the NOCOW attribute.
+> 
+> Since the writeback path follows NOCOW bit, we only need to bother the
+> space reservation code in btrfs_truncate_block().
+> 
+> [FIX]
+> Make btrfs_truncate_block() follow btrfs_buffered_write() to try to
+> reserve data space first, and fall back to NOCOW check only when we
+> don't have enough space.
+> 
+> Such always-try-reserve is an optimization introduced in
+> btrfs_buffered_write(), to avoid expensive btrfs_check_can_nocow() call.
+> 
+> This patch will export check_can_nocow() as btrfs_check_can_nocow(), and
+> use it in btrfs_truncate_block() to fix the problem.
+> 
+> Reported-by: Martin Doucha <martin.doucha@suse.com>
+> Reviewed-by: Filipe Manana <fdmanana@suse.com>
+> Reviewed-by: Anand Jain <anand.jain@oracle.com>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> Reviewed-by: David Sterba <dsterba@suse.com>
+> Signed-off-by: David Sterba <dsterba@suse.com>
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+>  Conflicts:
+> 	fs/btrfs/ctree.h
+> 	fs/btrfs/file.c
+> 	fs/btrfs/inode.c
 
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
----
- fs/btrfs/space-info.c | 73 ++++++++++++++++++++++++++++---------------
- 1 file changed, 48 insertions(+), 25 deletions(-)
+Why are these Conflicts: lines here?
 
-diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-index 03141251d44e..c56a4827956f 100644
---- a/fs/btrfs/space-info.c
-+++ b/fs/btrfs/space-info.c
-@@ -777,11 +777,11 @@ btrfs_calc_reclaim_metadata_size(struct btrfs_fs_info *fs_info,
- }
- 
- static inline bool need_preemptive_reclaim(struct btrfs_fs_info *fs_info,
--					   struct btrfs_space_info *space_info,
--					   u64 used)
-+					   struct btrfs_space_info *space_info)
- {
-+	u64 ordered, delalloc;
- 	u64 thresh = div_factor_fine(space_info->total_bytes, 98);
--	u64 to_reclaim, expected;
-+	u64 used;
- 
- 	/* If we're just plain full then async reclaim just slows us down. */
- 	if ((space_info->bytes_used + space_info->bytes_reserved) >= thresh)
-@@ -794,26 +794,52 @@ static inline bool need_preemptive_reclaim(struct btrfs_fs_info *fs_info,
- 	if (space_info->reclaim_size)
- 		return 0;
- 
--	to_reclaim = min_t(u64, num_online_cpus() * SZ_1M, SZ_16M);
--	if (btrfs_can_overcommit(fs_info, space_info, to_reclaim,
--				 BTRFS_RESERVE_FLUSH_ALL))
--		return 0;
-+	/*
-+	 * If we have over half of the free space occupied by reservations or
-+	 * pinned then we want to start flushing.
-+	 *
-+	 * We do not do the traditional thing here, which is to say
-+	 *
-+	 *   if (used >= ((total_bytes + avail) >> 1))
-+	 *     return 1;
-+	 *
-+	 * because this doesn't quite work how we want.  If we had more than 50%
-+	 * of the space_info used by bytes_used and we had 0 available we'd just
-+	 * constantly run the background flusher.  Instead we want it to kick in
-+	 * if our reclaimable space exceeds 50% of our available free space.
-+	 */
-+	thresh = calc_available_free_space(fs_info, space_info,
-+					   BTRFS_RESERVE_FLUSH_ALL);
-+	thresh += (space_info->total_bytes - space_info->bytes_used -
-+		   space_info->bytes_reserved - space_info->bytes_readonly);
-+	thresh >>= 1;
- 
--	used = btrfs_space_info_used(space_info, true);
--	if (btrfs_can_overcommit(fs_info, space_info, SZ_1M,
--				 BTRFS_RESERVE_FLUSH_ALL))
--		expected = div_factor_fine(space_info->total_bytes, 95);
--	else
--		expected = div_factor_fine(space_info->total_bytes, 90);
-+	used = space_info->bytes_pinned;
- 
--	if (used > expected)
--		to_reclaim = used - expected;
-+	/*
-+	 * If we have more ordered bytes than delalloc bytes then we're either
-+	 * doing a lot of DIO, or we simply don't have a lot of delalloc waiting
-+	 * around.  Preemptive flushing is only useful in that it can free up
-+	 * space before tickets need to wait for things to finish.  In the case
-+	 * of ordered extents, preemptively waiting on ordered extents gets us
-+	 * nothing, if our reservations are tied up in ordered extents we'll
-+	 * simply have to slow down writers by forcing them to wait on ordered
-+	 * extents.
-+	 *
-+	 * In the case that ordered is larger than delalloc, only include the
-+	 * block reserves that we would actually be able to directly reclaim
-+	 * from.  In this case if we're heavy on metadata operations this will
-+	 * clearly be heavy enough to warrant preemptive flushing.  In the case
-+	 * of heavy DIO or ordered reservations, preemptive flushing will just
-+	 * waste time and cause us to slow down.
-+	 */
-+	ordered = percpu_counter_sum_positive(&fs_info->ordered_bytes);
-+	delalloc = percpu_counter_sum_positive(&fs_info->delalloc_bytes);
-+	if (ordered >= delalloc)
-+		used += fs_info->delayed_refs_rsv.reserved +
-+			fs_info->delayed_block_rsv.reserved;
- 	else
--		to_reclaim = 0;
--	to_reclaim = min(to_reclaim, space_info->bytes_may_use +
--				     space_info->bytes_reserved);
--	if (!to_reclaim)
--		return 0;
-+		used += space_info->bytes_may_use;
- 
- 	return (used >= thresh && !btrfs_fs_closing(fs_info) &&
- 		!test_bit(BTRFS_FS_STATE_REMOUNTING, &fs_info->fs_state));
-@@ -1010,7 +1036,6 @@ static void btrfs_preempt_reclaim_metadata_space(struct work_struct *work)
- 	struct btrfs_block_rsv *delayed_refs_rsv;
- 	struct btrfs_block_rsv *global_rsv;
- 	struct btrfs_block_rsv *trans_rsv;
--	u64 used;
- 
- 	fs_info = container_of(work, struct btrfs_fs_info,
- 			       preempt_reclaim_work);
-@@ -1021,8 +1046,7 @@ static void btrfs_preempt_reclaim_metadata_space(struct work_struct *work)
- 	trans_rsv = &fs_info->trans_block_rsv;
- 
- 	spin_lock(&space_info->lock);
--	used = btrfs_space_info_used(space_info, true);
--	while (need_preemptive_reclaim(fs_info, space_info, used)) {
-+	while (need_preemptive_reclaim(fs_info, space_info)) {
- 		enum btrfs_flush_state flush;
- 		u64 delalloc_size = 0;
- 		u64 to_reclaim, block_rsv_size;
-@@ -1084,7 +1108,6 @@ static void btrfs_preempt_reclaim_metadata_space(struct work_struct *work)
- 		flush_space(fs_info, space_info, to_reclaim, flush);
- 		cond_resched();
- 		spin_lock(&space_info->lock);
--		used = btrfs_space_info_used(space_info, true);
- 	}
- 	spin_unlock(&space_info->lock);
- }
-@@ -1499,7 +1522,7 @@ static int __reserve_bytes(struct btrfs_fs_info *fs_info,
- 		 * the async reclaim as we will panic.
- 		 */
- 		if (!test_bit(BTRFS_FS_LOG_RECOVERING, &fs_info->flags) &&
--		    need_preemptive_reclaim(fs_info, space_info, used) &&
-+		    need_preemptive_reclaim(fs_info, space_info) &&
- 		    !work_busy(&fs_info->preempt_reclaim_work)) {
- 			trace_btrfs_trigger_flush(fs_info, space_info->flags,
- 						  orig_bytes, flush, "preempt");
--- 
-2.26.2
+Anyway, fixed up, and all queued up now, thansk!
 
+greg k-h

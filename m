@@ -2,66 +2,65 @@ Return-Path: <SRS0=7yWS=DU=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.2 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.1 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
+	SPF_HELO_NONE,SPF_PASS autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D5757C433E7
-	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Oct 2020 16:14:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B761DC433DF
+	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Oct 2020 16:24:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 94B8125250
-	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Oct 2020 16:14:46 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8261B252AF
+	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Oct 2020 16:24:28 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1602606268;
+	bh=KWAzpjmi9l7B0c4W5/JaRhuvdkK4DnAmvRgfkjSSJm8=;
+	h=Subject:From:In-Reply-To:References:Date:To:Cc:List-ID:From;
+	b=mQTinwwjdMym5zf7Y4MmTTEdcxb+yNZIdNIp6gPVA+apKQZhVJavrf2jHhi+KWqrh
+	 +3FxtgNozqh4A4A37Ozmc/pVj/lUDiAx//gs5LRoEDocQY96XLiGhBIy4pBASSZnTx
+	 4IEpmP66lycJMC6Kv/d/G5zhfOCKXEC/6h8HjQRA=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731668AbgJMQOp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 13 Oct 2020 12:14:45 -0400
-Received: from mx2.suse.de ([195.135.220.15]:42844 "EHLO mx2.suse.de"
+        id S2389725AbgJMQYE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 13 Oct 2020 12:24:04 -0400
+Received: from mail.kernel.org ([198.145.29.99]:49280 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726482AbgJMQOp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Oct 2020 12:14:45 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id CC4D9AC6D;
-        Tue, 13 Oct 2020 16:14:43 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 1EF52DA7C3; Tue, 13 Oct 2020 18:13:17 +0200 (CEST)
-Date:   Tue, 13 Oct 2020 18:13:16 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Naohiro Aota <naohiro.aota@wdc.com>
-Cc:     linux-btrfs@vger.kernel.org, dsterba@suse.com, hare@suse.com,
-        linux-fsdevel@vger.kernel.org, Josef Bacik <josef@toxicpanda.com>,
-        Damien Le Moal <damien.lemoal@wdc.com>
-Subject: Re: [PATCH v8 04/41] btrfs: Check and enable ZONED mode
-Message-ID: <20201013161316.GG6756@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Naohiro Aota <naohiro.aota@wdc.com>,
-        linux-btrfs@vger.kernel.org, dsterba@suse.com, hare@suse.com,
-        linux-fsdevel@vger.kernel.org, Josef Bacik <josef@toxicpanda.com>,
-        Damien Le Moal <damien.lemoal@wdc.com>
-References: <cover.1601572459.git.naohiro.aota@wdc.com>
- <c6d9f70f9b9264497aa630d6c95d8d387b012d57.1601574234.git.naohiro.aota@wdc.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <c6d9f70f9b9264497aa630d6c95d8d387b012d57.1601574234.git.naohiro.aota@wdc.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+        id S2389679AbgJMQYE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 13 Oct 2020 12:24:04 -0400
+Subject: Re: [GIT PULL] Btrfs updates for 5.10
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1602606244;
+        bh=KWAzpjmi9l7B0c4W5/JaRhuvdkK4DnAmvRgfkjSSJm8=;
+        h=From:In-Reply-To:References:Date:To:Cc:From;
+        b=hSOLxh093RVv+JyWQTgNOj31ryVZWyhutkTh2g/MgU/DU8PwrrlRFfi6OazXKU21R
+         2MFCDxzOyYc0jy85HsmPzKR5rSBeJzBdGcKTSF1gqu6SAZGEoCdWQ2cwt631ulngj9
+         YG0YwZbPOK0svrDwnB7DG/uYiP6dIB/WXBw0uBgs=
+From:   pr-tracker-bot@kernel.org
+In-Reply-To: <cover.1602519695.git.dsterba@suse.com>
+References: <cover.1602519695.git.dsterba@suse.com>
+X-PR-Tracked-List-Id: <linux-btrfs.vger.kernel.org>
+X-PR-Tracked-Message-Id: <cover.1602519695.git.dsterba@suse.com>
+X-PR-Tracked-Remote: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.10-tag
+X-PR-Tracked-Commit-Id: 1fd4033dd011a3525bacddf37ab9eac425d25c4f
+X-PR-Merge-Tree: torvalds/linux.git
+X-PR-Merge-Refname: refs/heads/master
+X-PR-Merge-Commit-Id: 11e3235b4399f7e626caa791a68a0ea8337f6683
+Message-Id: <160260624422.24492.10394506834366879321.pr-tracker-bot@kernel.org>
+Date:   Tue, 13 Oct 2020 16:24:04 +0000
+To:     David Sterba <dsterba@suse.com>
+Cc:     torvalds@linux-foundation.org, David Sterba <dsterba@suse.com>,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Oct 02, 2020 at 03:36:11AM +0900, Naohiro Aota wrote:
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -588,6 +588,9 @@ struct btrfs_fs_info {
->  	struct btrfs_root *free_space_root;
->  	struct btrfs_root *data_reloc_root;
->  
-> +	/* Zone size when in ZONED mode */
-> +	u64 zone_size;
-> +
->  	/* the log root tree is a directory of all the other log roots */
->  	struct btrfs_root *log_root_tree;
+The pull request you sent on Mon, 12 Oct 2020 22:25:02 +0200:
 
-This is misplaced, new members should be placed to an existing location
-if there is one or at the end of the structure. What's the logic behind
-putting zone_size and later max_zone_append_size into the tree root
-pointers?
+> git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.10-tag
+
+has been merged into torvalds/linux.git:
+https://git.kernel.org/torvalds/c/11e3235b4399f7e626caa791a68a0ea8337f6683
+
+Thank you!
+
+-- 
+Deet-doot-dot, I am a bot.
+https://korg.docs.kernel.org/prtracker.html

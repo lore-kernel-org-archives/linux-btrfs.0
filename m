@@ -2,99 +2,101 @@ Return-Path: <SRS0=7yWS=DU=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.9 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	UNWANTED_LANGUAGE_BODY autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A2544C433DF
-	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Oct 2020 14:41:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EFCC0C433DF
+	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Oct 2020 15:04:43 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 38A8924872
-	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Oct 2020 14:41:36 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="JwaXdugw"
+	by mail.kernel.org (Postfix) with ESMTP id ADFE6248CD
+	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Oct 2020 15:04:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729605AbgJMOlf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 13 Oct 2020 10:41:35 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37872 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2388886AbgJMOlb (ORCPT
+        id S1727137AbgJMPEn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 13 Oct 2020 11:04:43 -0400
+Received: from 6.mo179.mail-out.ovh.net ([46.105.56.76]:45590 "EHLO
+        6.mo179.mail-out.ovh.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726157AbgJMPEm (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Oct 2020 10:41:31 -0400
-Received: from mail-il1-x142.google.com (mail-il1-x142.google.com [IPv6:2607:f8b0:4864:20::142])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6646EC0613D0
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Oct 2020 07:41:31 -0700 (PDT)
-Received: by mail-il1-x142.google.com with SMTP id w17so1883976ilg.8
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Oct 2020 07:41:31 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=subject:to:references:from:message-id:date:user-agent:mime-version
-         :in-reply-to:content-language:content-transfer-encoding;
-        bh=eSzTRHUBXrPVv/93C6YGiRAuPPDCdr/yrPGUH8HuEU4=;
-        b=JwaXdugwSHYDwFW/k2cF8S42L4WaLQ1puYkOmGpyd/NWj1qzBJwNldCVhgqN1TTHUh
-         ZnUysYPOjbDzrHOiTOLKQ1to26Z6r8MaExoC7/ptoybEL4DAY74XGLyeB7iKH2mSeiiy
-         Q97OC80PghrpsOQNj3Jw1OP5gLan7GSS85wQgZEg7EboNfOS9JVrGfeCLLsTno7e6g6F
-         r8Y58RxmA2b+GMKkFXbbCwQ+I9cQlY7INxAikgBZd/MFxKh28ByeEf2Y0g5GKUr/kXeK
-         wjX1UZ7/bXnvUFxrT18SuiZ7W50Ac59jEity8Sp8YUkaUdR6BQkT2P3/T5l/IU7CMfnf
-         sWJA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=eSzTRHUBXrPVv/93C6YGiRAuPPDCdr/yrPGUH8HuEU4=;
-        b=aDm/iHKGLN+DfKOcwcb+UegG8K/iBnodM4toxl4rpQDV9e/+NpIL7d9JMu0qebpl2H
-         J/Ztq2npFJjQu9bNPgXzANLa7uEivzInVx7YsWgQZItqtdA2DMEHvDZIobrfFQv5Rk5e
-         WfYbWJMImOrkD0bw5qM8+6SDpcjD39lL1eDScoordrktazdJKJIYgs1AxdDWK1i8NMIm
-         kyRARlwrig4vr6gtRahPnxbE32j7h3S5BSwwtoSXpMPOAI8rg6mhYk6RY7yrvs4goxJO
-         Qhn/62d04szxpJ/1IPFKJznsDGRb4URhJluLMXKSTN2ILhQHVbQKabzZUXTnwz1zI89g
-         N3QQ==
-X-Gm-Message-State: AOAM531FlNe1WV9WHQ4aEeG8HTKcZzZukkHlvnTWOPpRiKUrLbbhs4qC
-        A9RNwVZID2xnGs7AXPR1vHCcPx0lsCI0xg==
-X-Google-Smtp-Source: ABdhPJzwOArLVVUI+m2xA5pLiFK+HLOELa3rukB+JbzM7c+TO/7UXwOms6CCVdZugSISkq0Se8abPw==
-X-Received: by 2002:a92:d808:: with SMTP id y8mr194939ilm.249.1602600090322;
-        Tue, 13 Oct 2020 07:41:30 -0700 (PDT)
-Received: from ?IPv6:2620:10d:c0a8:11d9::1096? ([2620:10d:c091:480::1:d057])
-        by smtp.gmail.com with ESMTPSA id i7sm2231610ilq.64.2020.10.13.07.41.28
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 13 Oct 2020 07:41:28 -0700 (PDT)
-Subject: Re: [PATCH 4/4] btrfs: do not start readahead for csum tree when
- scrubbing non-data block groups
-To:     fdmanana@kernel.org, linux-btrfs@vger.kernel.org
-References: <cover.1602499587.git.fdmanana@suse.com>
- <fdde80f42dc3e822ab990d28d584175eb0ca222f.1602499588.git.fdmanana@suse.com>
-From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <0b4b847e-2da7-94e8-7994-38ab33910319@toxicpanda.com>
-Date:   Tue, 13 Oct 2020 10:41:27 -0400
-User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0)
- Gecko/20100101 Thunderbird/78.3.1
+        Tue, 13 Oct 2020 11:04:42 -0400
+X-Greylist: delayed 3608 seconds by postgrey-1.27 at vger.kernel.org; Tue, 13 Oct 2020 11:04:42 EDT
+Received: from player795.ha.ovh.net (unknown [10.108.35.240])
+        by mo179.mail-out.ovh.net (Postfix) with ESMTP id D82C817B6FD
+        for <linux-btrfs@vger.kernel.org>; Tue, 13 Oct 2020 15:46:51 +0200 (CEST)
+Received: from grubelek.pl (89-77-39-184.dynamic.chello.pl [89.77.39.184])
+        (Authenticated sender: szarpaj@grubelek.pl)
+        by player795.ha.ovh.net (Postfix) with ESMTPSA id 2B95A16F93A6E;
+        Tue, 13 Oct 2020 13:46:49 +0000 (UTC)
+Authentication-Results: garm.ovh; auth=pass (GARM-101G004f01e56be-0a30-4757-8a4a-5aae3aab91e0,
+                    AA506B1D2CAA152689122792A0433A89576A5AF1) smtp.auth=szarpaj@grubelek.pl
+Received: by teh mailsystemz
+        id 11F2527C6179; Tue, 13 Oct 2020 15:46:48 +0200 (CEST)
+Date:   Tue, 13 Oct 2020 15:46:48 +0200
+From:   Piotr Szymaniak <szarpaj@grubelek.pl>
+To:     Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
+Cc:     Hendrik Friedel <hendrik@friedels.name>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: Raid5 Write Hole: Is it worse than in MD?
+Message-ID: <20201013134648.GG4220@pontus>
+References: <em46b9d48d-39d4-44bc-9fd7-a08d9a96fca2@ryzen>
+ <SN4PR0401MB3598F3C8CAC47F1BB28801279B040@SN4PR0401MB3598.namprd04.prod.outlook.com>
 MIME-Version: 1.0
-In-Reply-To: <fdde80f42dc3e822ab990d28d584175eb0ca222f.1602499588.git.fdmanana@suse.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/signed; micalg=pgp-sha256;
+        protocol="application/pgp-signature"; boundary="n8g4imXOkfNTN/H1"
+Content-Disposition: inline
+In-Reply-To: <SN4PR0401MB3598F3C8CAC47F1BB28801279B040@SN4PR0401MB3598.namprd04.prod.outlook.com>
+X-Ovh-Tracer-Id: 12667218377992836674
+X-VR-SPAMSTATE: OK
+X-VR-SPAMSCORE: -100
+X-VR-SPAMCAUSE: gggruggvucftvghtrhhoucdtuddrgedujedrheelgdeilecutefuodetggdotefrodftvfcurfhrohhfihhlvgemucfqggfjpdevjffgvefmvefgnecuuegrihhlohhuthemucehtddtnecusecvtfgvtghiphhivghnthhsucdlqddutddtmdenucfjughrpeffhffvuffkfhggtggujgesghdtreertddtjeenucfhrhhomheprfhiohhtrhcuufiihihmrghnihgrkhcuoehsiigrrhhprghjsehgrhhusggvlhgvkhdrphhlqeenucggtffrrghtthgvrhhnpeejheffvdelkeefhfeuieetfeeugfevgfelgfefiefhtdethfeuvdekleevvdejveenucffohhmrghinhepkhgvrhhnvghlrdhorhhgnecukfhppedtrddtrddtrddtpdekledrjeejrdefledrudekgeenucevlhhushhtvghrufhiiigvpedtnecurfgrrhgrmhepmhhouggvpehsmhhtphdqohhuthdphhgvlhhopehplhgrhigvrhejleehrdhhrgdrohhvhhdrnhgvthdpihhnvghtpedtrddtrddtrddtpdhmrghilhhfrhhomhepshiirghrphgrjhesghhruhgsvghlvghkrdhplhdprhgtphhtthhopehlihhnuhigqdgsthhrfhhssehvghgvrhdrkhgvrhhnvghlrdhorhhg
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 10/12/20 6:55 AM, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> When scrubbing a stripe of a block group we always start readahead for the
-> checksums btree and wait for it to complete, however when the blockgroup is
-> not a data block group (or a mixed block group) it is a waste of time to do
-> it, since there are no checksums for metadata extents in that btree.
-> 
-> So skip that when the block group does not have the data flag set, saving
-> some time doing memory allocations, queueing a job in the readahead work
-> queue, waiting for it to complete and potentially avoiding some IO as well
-> (when csum tree extents are not in memory already).
-> 
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+--n8g4imXOkfNTN/H1
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Thanks,
+On Tue, Oct 13, 2020 at 09:43:25AM +0000, Johannes Thumshirn wrote:
+> *snip*
+> For the other problems of raid56, Zygo once compiled a very comprehensive=
+ list,
+> but I don't have the link anymore.
 
-Josef
+This list (both user/dev):
+https://lore.kernel.org/linux-btrfs/20200627032414.GX10769@hungrycats.org/
+https://lore.kernel.org/linux-btrfs/20200627030614.GW10769@hungrycats.org/
+
+
+Best regards,
+Piotr Szymaniak.
+--=20
+Chyba  musze  juz wracac do sklepu.  Kelly jest w porzadku,  ale czasem
+potrafi  zupelnie sie wylaczyc.  I do tego nie wierzy w cos takiego jak
+odpowiedzialnosc.  Ma to jakis zwiazek z ta sekta,  do  ktorej  nalezy.
+Maharishi Woda-z-mozgu czy cos w tym stylu.
+  -- Graham Masterton, "Mirror"
+
+--n8g4imXOkfNTN/H1
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAABCAAdFiEEFSphDYLXjiCg60ZUQykCi/VzD2UFAl+Fr8IACgkQQykCi/Vz
+D2Us0w/+NnR30fqmsLF6sDXhK6rXaV+L1FMfV/XI3L8zx5YH1uZXLgpW4mHQyvTP
+X+2wOM2s7FI87s3eWGkUQ8Ns5uTBgn64RbkyWWO9rnzzdvxmTPI6RcNEyDELIV6I
+GqL9sg5UQojnuVxlpld/T+iCLr/GVNUrzsMZIJ1wsyc6tp7mTWf2opopt2cfIce5
+QdpUkb+MF27AZuGLtHS8kMYSm7JGy3zF9Zv8eczENOLq0BntmpmTHZbyax7Cyhnm
+qiv/xMM92FOLawOvHNeOJdHnA4tq+DvJCWWoyirafzaus9tma+1EatqE1Ae60Y5s
+eQgPeKvpKt7JY1vG/XlWysoYOQExs+Z/Iw60exWSRFwmPSKz5t+9kcohDwjFmyA1
+FyvcE1ajjApkQz0c8TEQbqxt6UReZa7zHmqLIiCNtBT/p80qP0/G0CtfwqD2k8jB
+jn3Tr4HXE5mE1ANhTjIHVG/DHQUi33bleHb1l+z0x73cXBtVG+UWUQGQsYz9f5A+
+SgAz+zz9aW8yt/VuO5htyk2hGcKhDQqPOYJj413ZMXME3ysBC0Hocf97kF5JRriE
+ZwxDQndXjJhMOmTxuxwvsuMw1vLQQ1UPAP348z6AEF9uCmT5jifzL+Aao1m/Mn8w
+ZmbD15+A3IHgp0mu7WttNpDR5Ksnj6EuVZPT3Q9zTvLZ4LEmzkA=
+=9VpT
+-----END PGP SIGNATURE-----
+
+--n8g4imXOkfNTN/H1--

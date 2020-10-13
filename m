@@ -2,101 +2,91 @@ Return-Path: <SRS0=7yWS=DU=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.9 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	UNWANTED_LANGUAGE_BODY autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-11.2 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EFCC0C433DF
-	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Oct 2020 15:04:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 830A9C433DF
+	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Oct 2020 15:40:47 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id ADFE6248CD
-	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Oct 2020 15:04:43 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3D070251E9
+	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Oct 2020 15:40:47 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727137AbgJMPEn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 13 Oct 2020 11:04:43 -0400
-Received: from 6.mo179.mail-out.ovh.net ([46.105.56.76]:45590 "EHLO
-        6.mo179.mail-out.ovh.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726157AbgJMPEm (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Oct 2020 11:04:42 -0400
-X-Greylist: delayed 3608 seconds by postgrey-1.27 at vger.kernel.org; Tue, 13 Oct 2020 11:04:42 EDT
-Received: from player795.ha.ovh.net (unknown [10.108.35.240])
-        by mo179.mail-out.ovh.net (Postfix) with ESMTP id D82C817B6FD
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Oct 2020 15:46:51 +0200 (CEST)
-Received: from grubelek.pl (89-77-39-184.dynamic.chello.pl [89.77.39.184])
-        (Authenticated sender: szarpaj@grubelek.pl)
-        by player795.ha.ovh.net (Postfix) with ESMTPSA id 2B95A16F93A6E;
-        Tue, 13 Oct 2020 13:46:49 +0000 (UTC)
-Authentication-Results: garm.ovh; auth=pass (GARM-101G004f01e56be-0a30-4757-8a4a-5aae3aab91e0,
-                    AA506B1D2CAA152689122792A0433A89576A5AF1) smtp.auth=szarpaj@grubelek.pl
-Received: by teh mailsystemz
-        id 11F2527C6179; Tue, 13 Oct 2020 15:46:48 +0200 (CEST)
-Date:   Tue, 13 Oct 2020 15:46:48 +0200
-From:   Piotr Szymaniak <szarpaj@grubelek.pl>
-To:     Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
-Cc:     Hendrik Friedel <hendrik@friedels.name>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Raid5 Write Hole: Is it worse than in MD?
-Message-ID: <20201013134648.GG4220@pontus>
-References: <em46b9d48d-39d4-44bc-9fd7-a08d9a96fca2@ryzen>
- <SN4PR0401MB3598F3C8CAC47F1BB28801279B040@SN4PR0401MB3598.namprd04.prod.outlook.com>
+        id S1728840AbgJMPkq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 13 Oct 2020 11:40:46 -0400
+Received: from mx2.suse.de ([195.135.220.15]:50856 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727830AbgJMPkq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 13 Oct 2020 11:40:46 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.221.27])
+        by mx2.suse.de (Postfix) with ESMTP id 8B717B2E6;
+        Tue, 13 Oct 2020 15:40:44 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id BCDEBDA7C3; Tue, 13 Oct 2020 17:39:17 +0200 (CEST)
+Date:   Tue, 13 Oct 2020 17:39:17 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Naohiro Aota <naohiro.aota@wdc.com>
+Cc:     linux-btrfs@vger.kernel.org, dsterba@suse.com, hare@suse.com,
+        linux-fsdevel@vger.kernel.org,
+        Johannes Thumshirn <jthumshirn@suse.de>,
+        Josef Bacik <josef@toxicpanda.com>
+Subject: Re: [PATCH v8 07/41] btrfs: disallow NODATACOW in ZONED mode
+Message-ID: <20201013153917.GC6756@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Naohiro Aota <naohiro.aota@wdc.com>,
+        linux-btrfs@vger.kernel.org, dsterba@suse.com, hare@suse.com,
+        linux-fsdevel@vger.kernel.org,
+        Johannes Thumshirn <jthumshirn@suse.de>,
+        Josef Bacik <josef@toxicpanda.com>
+References: <cover.1601572459.git.naohiro.aota@wdc.com>
+ <c5f6be584aea6de94506d91093be11c6c22e6088.1601574234.git.naohiro.aota@wdc.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha256;
-        protocol="application/pgp-signature"; boundary="n8g4imXOkfNTN/H1"
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <SN4PR0401MB3598F3C8CAC47F1BB28801279B040@SN4PR0401MB3598.namprd04.prod.outlook.com>
-X-Ovh-Tracer-Id: 12667218377992836674
-X-VR-SPAMSTATE: OK
-X-VR-SPAMSCORE: -100
-X-VR-SPAMCAUSE: gggruggvucftvghtrhhoucdtuddrgedujedrheelgdeilecutefuodetggdotefrodftvfcurfhrohhfihhlvgemucfqggfjpdevjffgvefmvefgnecuuegrihhlohhuthemucehtddtnecusecvtfgvtghiphhivghnthhsucdlqddutddtmdenucfjughrpeffhffvuffkfhggtggujgesghdtreertddtjeenucfhrhhomheprfhiohhtrhcuufiihihmrghnihgrkhcuoehsiigrrhhprghjsehgrhhusggvlhgvkhdrphhlqeenucggtffrrghtthgvrhhnpeejheffvdelkeefhfeuieetfeeugfevgfelgfefiefhtdethfeuvdekleevvdejveenucffohhmrghinhepkhgvrhhnvghlrdhorhhgnecukfhppedtrddtrddtrddtpdekledrjeejrdefledrudekgeenucevlhhushhtvghrufhiiigvpedtnecurfgrrhgrmhepmhhouggvpehsmhhtphdqohhuthdphhgvlhhopehplhgrhigvrhejleehrdhhrgdrohhvhhdrnhgvthdpihhnvghtpedtrddtrddtrddtpdhmrghilhhfrhhomhepshiirghrphgrjhesghhruhgsvghlvghkrdhplhdprhgtphhtthhopehlihhnuhigqdgsthhrfhhssehvghgvrhdrkhgvrhhnvghlrdhorhhg
+In-Reply-To: <c5f6be584aea6de94506d91093be11c6c22e6088.1601574234.git.naohiro.aota@wdc.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On Fri, Oct 02, 2020 at 03:36:14AM +0900, Naohiro Aota wrote:
+> NODATACOW implies overwriting the file data on a device, which is
+> impossible in sequential required zones. Disable NODATACOW globally with
+> mount option and per-file NODATACOW attribute by masking FS_NOCOW_FL.
+> 
+> Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
+> Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+> Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+> ---
+>  fs/btrfs/ioctl.c | 3 +++
+>  fs/btrfs/zoned.c | 6 ++++++
+>  2 files changed, 9 insertions(+)
+> 
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index ab408a23ba32..5d592da4e2ff 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -91,6 +91,9 @@ struct btrfs_ioctl_send_args_32 {
+>  static unsigned int btrfs_mask_fsflags_for_type(struct inode *inode,
+>  		unsigned int flags)
+>  {
+> +	if (btrfs_fs_incompat(btrfs_sb(inode->i_sb), ZONED))
+> +		flags &= ~FS_NOCOW_FL;
+> +
 
---n8g4imXOkfNTN/H1
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+This can't be inside the function, the 'type' here is for inode that
+does not know anything about zoned mode. The right place is after
+check_fsflags in btrfs_ioctl_setflags in a helper like:
 
-On Tue, Oct 13, 2020 at 09:43:25AM +0000, Johannes Thumshirn wrote:
-> *snip*
-> For the other problems of raid56, Zygo once compiled a very comprehensive=
- list,
-> but I don't have the link anymore.
+	ret = check_fsflags_compatible(fs_info, flags));
+	if (ret)
+		goto out_unlock;
 
-This list (both user/dev):
-https://lore.kernel.org/linux-btrfs/20200627032414.GX10769@hungrycats.org/
-https://lore.kernel.org/linux-btrfs/20200627030614.GW10769@hungrycats.org/
+and check_fsflags_compatible checks for zoned mode and NOCOW and returns
+-EPERM, not silently unmasking it.
 
-
-Best regards,
-Piotr Szymaniak.
---=20
-Chyba  musze  juz wracac do sklepu.  Kelly jest w porzadku,  ale czasem
-potrafi  zupelnie sie wylaczyc.  I do tego nie wierzy w cos takiego jak
-odpowiedzialnosc.  Ma to jakis zwiazek z ta sekta,  do  ktorej  nalezy.
-Maharishi Woda-z-mozgu czy cos w tym stylu.
-  -- Graham Masterton, "Mirror"
-
---n8g4imXOkfNTN/H1
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQIzBAABCAAdFiEEFSphDYLXjiCg60ZUQykCi/VzD2UFAl+Fr8IACgkQQykCi/Vz
-D2Us0w/+NnR30fqmsLF6sDXhK6rXaV+L1FMfV/XI3L8zx5YH1uZXLgpW4mHQyvTP
-X+2wOM2s7FI87s3eWGkUQ8Ns5uTBgn64RbkyWWO9rnzzdvxmTPI6RcNEyDELIV6I
-GqL9sg5UQojnuVxlpld/T+iCLr/GVNUrzsMZIJ1wsyc6tp7mTWf2opopt2cfIce5
-QdpUkb+MF27AZuGLtHS8kMYSm7JGy3zF9Zv8eczENOLq0BntmpmTHZbyax7Cyhnm
-qiv/xMM92FOLawOvHNeOJdHnA4tq+DvJCWWoyirafzaus9tma+1EatqE1Ae60Y5s
-eQgPeKvpKt7JY1vG/XlWysoYOQExs+Z/Iw60exWSRFwmPSKz5t+9kcohDwjFmyA1
-FyvcE1ajjApkQz0c8TEQbqxt6UReZa7zHmqLIiCNtBT/p80qP0/G0CtfwqD2k8jB
-jn3Tr4HXE5mE1ANhTjIHVG/DHQUi33bleHb1l+z0x73cXBtVG+UWUQGQsYz9f5A+
-SgAz+zz9aW8yt/VuO5htyk2hGcKhDQqPOYJj413ZMXME3ysBC0Hocf97kF5JRriE
-ZwxDQndXjJhMOmTxuxwvsuMw1vLQQ1UPAP348z6AEF9uCmT5jifzL+Aao1m/Mn8w
-ZmbD15+A3IHgp0mu7WttNpDR5Ksnj6EuVZPT3Q9zTvLZ4LEmzkA=
-=9VpT
------END PGP SIGNATURE-----
-
---n8g4imXOkfNTN/H1--
+>  	if (S_ISDIR(inode->i_mode))
+>  		return flags;
+>  	else if (S_ISREG(inode->i_mode))

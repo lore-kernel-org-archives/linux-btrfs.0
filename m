@@ -2,71 +2,133 @@ Return-Path: <SRS0=7yWS=DU=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.9 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+X-Spam-Status: No, score=-5.4 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no version=3.4.0
+	NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B31A6C433E7
-	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Oct 2020 08:15:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9C48AC433DF
+	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Oct 2020 09:02:31 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 47436207C3
-	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Oct 2020 08:15:04 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 375DE208D5
+	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Oct 2020 09:02:30 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=fastestway24.com header.i=@fastestway24.com header.b="G961tqhX"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="dpXtUfQA"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730575AbgJMIPD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 13 Oct 2020 04:15:03 -0400
-Received: from mail.fastestway24.com ([5.249.159.217]:55562 "EHLO
-        mail.fastestway24.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1730340AbgJMIPC (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Oct 2020 04:15:02 -0400
-Received: by mail.fastestway24.com (Postfix, from userid 1001)
-        id 05FBDA2E1A; Tue, 13 Oct 2020 09:06:34 +0100 (BST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=fastestway24.com;
-        s=mail; t=1602576422;
-        bh=YGOlxoddnI3PXnh41XMWUfU0z9xsorZLZcAPNbcZr/c=;
-        h=Date:From:To:Subject:From;
-        b=G961tqhXV641aspg2PpfEHnWFIKATdUnp4T5g56CD3NUCYvKuKcVIwC6+qq07HKTK
-         uH29zxCw7PucJqGsmkFsCKBIdoqbh0ZOTClmDoKxIs+HaySbiD2cIWOZvKBe3yHRw8
-         LSBEKmTQJzOCJGFI3CM+SS5sn1pmaSGeVJ3cH3PQexdFpUAUQ+m2zhiVVHdZRytFwm
-         Vo+Ouccbra+8LzRnmpXbarWbIggx4GDJZyokXVQJyEFQ9yrglE3tlNh4oaQxTFX8qp
-         MaU8Jb5vB+WAe0q2njv0XfoXYKaYoSZQuKOl9W/k8lp9NzDG7q6y8/wi64htu4IQSS
-         U7CumCYwZdFIg==
-Received: by mail.fastestway24.com for <linux-btrfs@vger.kernel.org>; Tue, 13 Oct 2020 08:06:17 GMT
-Message-ID: <20201013074502-0.1.4d.9kbd.0.dx4a6e2upn@fastestway24.com>
-Date:   Tue, 13 Oct 2020 08:06:17 GMT
-From:   "William Jones" <william.jones@fastestway24.com>
-To:     <linux-btrfs@vger.kernel.org>
-Subject: Disinfectant
-X-Mailer: mail.fastestway24.com
+        id S2391427AbgJMJCa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 13 Oct 2020 05:02:30 -0400
+Received: from mx2.suse.de ([195.135.220.15]:37556 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S2388779AbgJMJC3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 13 Oct 2020 05:02:29 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1602579747;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references:autocrypt:autocrypt;
+        bh=H7s0LQb6s1jXbJbvueueIGttOGTxsGI3Ad3SmJE5Qz8=;
+        b=dpXtUfQA6Sa90FlfXsNCRKHlsw+uctxr4IeWxq6b8k0bISMg8uBAZgt7SovZ94EQSxXttq
+        Z1jd4FfhrGk8cIowHOaS/6xbuiHyDl8uzydWGKEF3s4gGQcB9foFDrpxCRWJh9Ozz0/6Ev
+        YDItWvSpQT67ul4kzx1plgEbqQz/PSs=
+Received: from relay2.suse.de (unknown [195.135.221.27])
+        by mx2.suse.de (Postfix) with ESMTP id A799AAF87;
+        Tue, 13 Oct 2020 09:02:27 +0000 (UTC)
+Subject: Re: Tracking Previously (or to-be-) TRIM'd Blocks
+To:     "Ellis H. Wilson III" <ellisw@panasas.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <a75c093a-ce4f-d4cc-8659-22072d7468b2@panasas.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <f2597392-7818-69f5-a9f2-c748ce44eb45@suse.com>
+Date:   Tue, 13 Oct 2020 12:02:26 +0300
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.10.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+In-Reply-To: <a75c093a-ce4f-d4cc-8659-22072d7468b2@panasas.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Good morning,
-
-looking for companies interested in raising additional capital by diversi=
-fying their offer in soaps, liquids and gels for hand disinfection and co=
-smetics for body and hair care.
-
-The distribution of innovative products corresponding to the current pref=
-erences of customers in the field of hygiene and preventive healthcare al=
-lows our partners to gain new markets and achieve better economic results=
-=2E
-
-In addition to products with bactericidal action, our range includes show=
-er gels, shampoos and hair conditioners, as well as efficient, concentrat=
-ed detergents.
-
-The versatility (suitable for all skin types) combined with an affordable=
- price means that customers make an informed choice of a product among ot=
-hers available on the market.
-
-Are you interested in cooperation?
 
 
-William Jones
+On 12.10.20 г. 20:51 ч., Ellis H. Wilson III wrote:
+> Hi all,
+> 
+> Another performance-related question.  We use fstrim to TRIM our
+> SATA-SSD backed BTRFS filesystems at daily and weekly intervals,
+> typically with a 1MB minimum size specified.  Without such thresholds
+> the time to complete can be extremely onerous (approaching 10 hours).
+> 
+> I note that (via dstat) after a short blip where low reads/writes are
+> being done the throughput ramps to 86GB/s.  While fast, even in the case
+> of an empty SATA SSD that's been previously trimmed and nothing
+> additional written to it, it will take 47 seconds to trim and will be
+> largely unresponsive during that time even if the underlying SSD does
+> little to no actual erases.
+> 
+> Are there any plans to track previously trimmed (or to-be-trimmed)
+> blocks as ext4 does, or does such functionality exist in a more modern
+> release (we're running on roughly 5.5)?  Apologies if this is an
+> old/previously discussed topic.  My search-engine-foo is failing me.
+> 
+> Alternatively, is there any way to instruct BTRFS to take it's time
+> issuing the TRIM commands to the underlying SSD, or break large
+> contiguous ranges into smaller ones to improve QoS for other commands?
+> Right now it appears BTRFS goes as fast as possible and can leave
+> userspace processes stuck in D state for extreme amounts of time for
+> more aggressive TRIM runs.
+
+BTRFS supports async discards which include throttling logic, it landed
+in 5.6.
+
+> 
+> Thanks,
+> 
+> ellis
+> 

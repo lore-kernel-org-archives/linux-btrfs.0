@@ -2,98 +2,101 @@ Return-Path: <SRS0=myd1=DV=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.6 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.2 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7989BC433DF
-	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Oct 2020 09:22:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 00F82C433DF
+	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Oct 2020 10:30:05 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 14C2020B1F
-	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Oct 2020 09:22:14 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="nmAz3VNN"
+	by mail.kernel.org (Postfix) with ESMTP id A075120723
+	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Oct 2020 10:30:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730298AbgJNJWJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 14 Oct 2020 05:22:09 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39962 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1730272AbgJNJVz (ORCPT
+        id S1727856AbgJNKaE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 14 Oct 2020 06:30:04 -0400
+Received: from mslow2.mail.gandi.net ([217.70.178.242]:46670 "EHLO
+        mslow2.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726307AbgJNKaD (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 14 Oct 2020 05:21:55 -0400
-Received: from mail-pl1-x642.google.com (mail-pl1-x642.google.com [IPv6:2607:f8b0:4864:20::642])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 73287C041E51;
-        Tue, 13 Oct 2020 20:24:35 -0700 (PDT)
-Received: by mail-pl1-x642.google.com with SMTP id c6so1032803plr.9;
-        Tue, 13 Oct 2020 20:24:35 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=from:to:cc:subject:date:message-id;
-        bh=08YgLkicvYu2QMyEN9IpZIKEoaxmhCS9+fHx/OZdpbI=;
-        b=nmAz3VNNb+gIPg8PAbotb3Pu/rfYLtN+H2qZx6dYG5cyVw+irNPJLEqEKQ38VLp4fX
-         2GG2h9CIjevR/WGUEmQt+vjz68i8QtdTp1/NjKZ7Gxberz4Hpm7m6Fvz7RPR/eVvK4nx
-         z8SqAVvfxm/UugnH9mvkT7aFbGT0RfNMRnNyN7Ebj3iAPC40vfPySCR542d8+RuaDB7Y
-         06AqSZN9B+qalkazY17g/fjdSTZIw2oSSyISLr5JqB+7M52eCwohMs8XNbWCBbXpKKUq
-         ZN0DM+KZLRUx3A2SIStIH/pf20InhN10kgzOsejhNw2smfu0kAIDfTYkPsjz+i16fCI+
-         V46Q==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id;
-        bh=08YgLkicvYu2QMyEN9IpZIKEoaxmhCS9+fHx/OZdpbI=;
-        b=d5o2ljyB2Twyjsu86oO5ziecuJqew9cdhK3qAw01gbirpzxr5q+8sDZIdLB1SGYKlu
-         cqKaG9IuvRmqJFjMwYkq9LQngJe8yeap1iZB1uiATfa0avKQmKAzEFkfftQBajKL382I
-         yEN6KN++iExJhCiVgD3qbdYy95Ek2hvPijrjUTInujHDMdY8WQ7r6I1tDaT4c29XYtxv
-         TQcjTEVqoEbF2dU9+ywuiekM7rVfWIup4hXrz5VR76p7auNa5r4IgLAbxKuXyve1k8fY
-         uhPfCWLLd8L7JObFyXWtJb+Bp0PCiHyOJ4aIQ2CnQVQq64LU1OxJ8cW6KXJLek68TvfU
-         ZHfw==
-X-Gm-Message-State: AOAM531o4GUAMXBg3VHtZW7SmV/0Th2n5iZEIVJ2iH5erTEBZ3wLPGLg
-        tLEW9IUv39u6nwbxfOKmtA==
-X-Google-Smtp-Source: ABdhPJyZcI9qwONYOWp4syLDFF+2Hqqtny7mDfa1eHvD9d6Jn84ZEf5LZS+i/LNqIGZvyX+g6kZbeQ==
-X-Received: by 2002:a17:902:7e82:b029:d3:f3b5:d99a with SMTP id z2-20020a1709027e82b02900d3f3b5d99amr2628888pla.7.1602645874989;
-        Tue, 13 Oct 2020 20:24:34 -0700 (PDT)
-Received: from localhost.localdomain ([8.210.181.200])
-        by smtp.gmail.com with ESMTPSA id n15sm463185pgt.75.2020.10.13.20.24.32
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 13 Oct 2020 20:24:34 -0700 (PDT)
-From:   Pujin Shi <shipujin.t@gmail.com>
-To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>
-Cc:     Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        Pujin Shi <shipujin.t@gmail.com>
-Subject: [PATCH] fs: btrfs: Fix incorrect printf qualifier
-Date:   Wed, 14 Oct 2020 11:24:19 +0800
-Message-Id: <20201014032419.1268-1-shipujin.t@gmail.com>
-X-Mailer: git-send-email 2.18.4
+        Wed, 14 Oct 2020 06:30:03 -0400
+Received: from relay4-d.mail.gandi.net (unknown [217.70.183.196])
+        by mslow2.mail.gandi.net (Postfix) with ESMTP id EEB613A0F92
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Oct 2020 10:01:42 +0000 (UTC)
+X-Originating-IP: 82.67.131.7
+Received: from [192.168.1.168] (unknown [82.67.131.7])
+        (Authenticated sender: swami@petaramesh.org)
+        by relay4-d.mail.gandi.net (Postfix) with ESMTPSA id DEB8CE0013;
+        Wed, 14 Oct 2020 10:01:20 +0000 (UTC)
+To:     linux-btrfs@vger.kernel.org
+From:   =?UTF-8?Q?Sw=c3=a2mi_Petaramesh?= <swami@petaramesh.org>
+Subject: [BUG] in btrfs scrub status
+Autocrypt: addr=swami@petaramesh.org; prefer-encrypt=mutual; keydata=
+ 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
+ BtUAN08OPA==
+Message-ID: <a17a65d0-68d4-e220-0b2d-5c19cdc7be20@petaramesh.org>
+Date:   Wed, 14 Oct 2020 12:01:20 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.12.0
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Language: fr-FR
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This patch addresses a compile warning:
-fs/btrfs/extent-tree.c: In function '__btrfs_free_extent':
-fs/btrfs/extent-tree.c:3187:4: warning: format '%lu' expects argument of type 'long unsigned int', but argument 8 has type 'unsigned int' [-Wformat=]
+# btrfs version
+btrfs-progs v5.7
 
-Fixes: 3b7b6ffa4f8f ("btrfs: extent-tree: kill BUG_ON() in __btrfs_free_extent()")
-Signed-off-by: Pujin Shi <shipujin.t@gmail.com>
----
- fs/btrfs/extent-tree.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+When the filesystem has grown during scrub and “Total to scrub” becomes
+less than actually scrubbed, some counters overflows and the “time left”
+and ETA becomes fun.
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 3b21fee13e77..5fd60b13f4f8 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3185,7 +3185,7 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
- 		struct btrfs_tree_block_info *bi;
- 		if (item_size < sizeof(*ei) + sizeof(*bi)) {
- 			btrfs_crit(info,
--"invalid extent item size for key (%llu, %u, %llu) owner %llu, has %u expect >= %lu",
-+"invalid extent item size for key (%llu, %u, %llu) owner %llu, has %u expect >= %zu",
- 				   key.objectid, key.type, key.offset,
- 				   owner_objectid, item_size,
- 				   sizeof(*ei) + sizeof(*bi));
+# btrfs scrub stat /
+UUID:             [---edited---]
+Scrub started:    Wed Oct 14 07:36:06 2020
+Status:           running
+Duration:         4:21:02
+Time left:        27070599:41:03
+ETA:              Sun Dec 27 02:38:14 5108
+Total to scrub:   2.69TiB
+Bytes scrubbed:   2.70TiB
+Rate:             180.52MiB/s
+Error summary:    no errors found
+
+
+ॐ
+
 -- 
-2.18.1
-
+Swâmi Petaramesh <swami@petaramesh.org> PGP 9076E32E

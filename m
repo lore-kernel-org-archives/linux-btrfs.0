@@ -7,63 +7,62 @@ X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 77C7CC433DF
-	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Oct 2020 18:26:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 96F04C433E7
+	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Oct 2020 18:26:18 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 0D14F20760
-	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Oct 2020 18:26:13 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3512620848
+	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Oct 2020 18:26:18 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="0qLqNG4e"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="KXcBxZ81"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1733100AbgJOS0M (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 15 Oct 2020 14:26:12 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37574 "EHLO
+        id S1733134AbgJOS0R (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 15 Oct 2020 14:26:17 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37590 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1733092AbgJOS0L (ORCPT
+        with ESMTP id S2390708AbgJOS0Q (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 15 Oct 2020 14:26:11 -0400
-Received: from mail-qk1-x744.google.com (mail-qk1-x744.google.com [IPv6:2607:f8b0:4864:20::744])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2973BC061755
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2020 11:26:11 -0700 (PDT)
-Received: by mail-qk1-x744.google.com with SMTP id s14so3081897qkg.11
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2020 11:26:11 -0700 (PDT)
+        Thu, 15 Oct 2020 14:26:16 -0400
+Received: from mail-qt1-x844.google.com (mail-qt1-x844.google.com [IPv6:2607:f8b0:4864:20::844])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6C41DC061755
+        for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2020 11:26:16 -0700 (PDT)
+Received: by mail-qt1-x844.google.com with SMTP id c13so62717qtx.6
+        for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2020 11:26:16 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:cc:subject:date:message-id:in-reply-to:references
-         :mime-version:content-transfer-encoding;
-        bh=Y4EgaWystIlF90x35w9qnfr8J1eR6g4H9snf0FYgXNM=;
-        b=0qLqNG4eSfjCmFL/nHpba4eiTcGdwNtcAeAnb56P3lilk107CwUmc14ywLAD9ioSbg
-         GkexLAN60nHsoDIX+lDx3/hgpfTUWJjXOVShsCLk2k9gOk2xSPjYwmHqNkBa8dfi1vPh
-         Qs90YMh6bOAvrQDUs4hnGEnHq/pswchqa/K6sLU844IvVQ9h+aZWn27MRqeBy1O18QUh
-         r1sIsDSLLMZpfEwHPRK70FyxM9I4/2RmqnBmbW5sQik56c7VM8IxIKJXgZErSd4Hg3vA
-         QrUSJUORDum7LVyXVcAFDlD0TM2gIr8IUcQtk3D1HBffSeLY4UNoWqBbkfNhlHzwjM1s
-         2k1g==
+        h=from:to:subject:date:message-id:in-reply-to:references:mime-version
+         :content-transfer-encoding;
+        bh=qF1e+MFDITaUVCYooGG0+69uPpu8a0+nlLEch33f6Hw=;
+        b=KXcBxZ81kOC3W1iOjYDQ88+UblfHLDaKZdw3MyRCntWj6rJpwNdkaetqIFaPu7P10b
+         /flaxrNBhSUqCepQX5cEg3/J+MU7yUR+ozwlksGWg8R8BU7rJfhJcUM12iWCh0bbBd7s
+         AXE0eLhbUJMXZdwD8TK+JHTE/LeSzj77lRbLaqSNUe4Fc0j0YYMz/aoR+aj0aLUGTy1/
+         sq8eeQI7JURTpP/Qbk8DGpez+9nPSLMd66orLOJBAii9H83Vk9C13dUa7s+Qdpw3S6LF
+         O1zPxFU2FlUQuadfckPRuPu90YK9E/NM5tS7HQIT0w6Mnp5rpkZMHU2ej/5voBytKcFI
+         wwxQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
+        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=Y4EgaWystIlF90x35w9qnfr8J1eR6g4H9snf0FYgXNM=;
-        b=AhccSYAEOgAP00Eyiye3NiYYyI0tRSw8uJWhtUFWGplYen7HNSllk9f1TGecGhfhjy
-         acxMvCfSP1Ppjuxpw9J6FyWH8yw7qmysTsKGh/s52GA6/IG+uNM4MijpOFeRiDu9Ux36
-         y6hgMxLW/3RQqSud7PY8auyGCCVkY6Jl36xOblRt4y0MqNJB4rQHrYLZj3Ot+NhM2EOA
-         yhdAA9GA73Fxhp5QUNib97YzdW2zocHJMBds0HatlHtMVJjlPkyO3eTFZ6CC5Hs5IWz7
-         NaLdLsbQffPoXkkcBjg0QLJt/+Uxy0i9QC/mBmfH36yMq26JDKTfXkG6KP6qY2oBAYQT
-         HIPw==
-X-Gm-Message-State: AOAM532fk/c9t/Auxq54QSt8eVTlqGzIuzezVVY/2BRQG+LlbhdZnWn7
-        0kw2BiPJZpnipf5yz5DySzXgrz5Q9vv8WAcW
-X-Google-Smtp-Source: ABdhPJyRhu42bhUVTsMPv1vBllg3dLo8JF5ipBLBnEVMHMBL+lEo36viJct+s3goLpT7yhnAcy6WOw==
-X-Received: by 2002:a37:7286:: with SMTP id n128mr48332qkc.389.1602786370061;
-        Thu, 15 Oct 2020 11:26:10 -0700 (PDT)
+        bh=qF1e+MFDITaUVCYooGG0+69uPpu8a0+nlLEch33f6Hw=;
+        b=L0/5YCaYkyjlREVDBoc7QGJlQ6LnWH14h/peCHRSDciFpQnCQ9dsWXPa+FC21iRYrN
+         BxhJrEhgEu9XL69FRpW+qijolwxaSZghSS64msb8NAoA118sMIGd1q+q1AyvOD3Iv2ZS
+         5nQTdJuXWhznpo0VUHY9RTWYTvKNMgGE05LckjsdSLsiGpj+EkMoHqwwDZQnTiXNHqVN
+         7bKLYOdir2Qdn8tVZgqMNNmOfyTBmTxW0X2kvu5rO6UY/Uf8cIpmCDZ0Yig/zRm6+Kqr
+         9RXHTBRJqvv6uUImcLUVzpyh7EqcU1lzZlG14jmeJ8ZxbvaID4n/H0z7xGmevIN/GlaN
+         iS3Q==
+X-Gm-Message-State: AOAM533Iyt9/VUo5WfN0lbE5kUUm8JPiTAD7I6Vy1yCmLgOprovcLEY+
+        b67wDqsnT6gGnIMIR9Ju+m3Scv3HSa1BG3h+
+X-Google-Smtp-Source: ABdhPJx249qmZuBHIAD2sfo45LahHru8Y51rJxwJqgFSzgFOPAYqtDqYclhgQt7bFzH2V460Ez9R3Q==
+X-Received: by 2002:ac8:1c1b:: with SMTP id a27mr5563550qtk.157.1602786375243;
+        Thu, 15 Oct 2020 11:26:15 -0700 (PDT)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id s73sm1466338qke.71.2020.10.15.11.26.09
+        by smtp.gmail.com with ESMTPSA id r17sm43000qtc.22.2020.10.15.11.26.14
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 15 Oct 2020 11:26:09 -0700 (PDT)
+        Thu, 15 Oct 2020 11:26:14 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 3/6] btrfs: delayed refs pre-flushing should only run the heads we have
-Date:   Thu, 15 Oct 2020 14:25:59 -0400
-Message-Id: <3c46409986c30e2c0486963108948fa8b341fcc0.1602786206.git.josef@toxicpanda.com>
+Subject: [PATCH 6/6] btrfs: stop running all delayed refs during snapshot
+Date:   Thu, 15 Oct 2020 14:26:02 -0400
+Message-Id: <59571e7b8eb8b93bab529addf4a0d91daa00b2d7.1602786206.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.24.1
 In-Reply-To: <cover.1602786206.git.josef@toxicpanda.com>
 References: <cover.1602786206.git.josef@toxicpanda.com>
@@ -73,40 +72,70 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Previously our delayed ref running used the total number of items as the
-items to run.  However we changed that to number of heads to run with
-the delayed_refs_rsv, as generally we want to run all of the operations
-for one bytenr.
-
-But with btrfs_run_delayed_refs(trans, 0) we set our count to 2x the
-number of items that we have.  This is generally fine, but if we have
-some operation generation loads of delayed refs while we're doing this
-pre-flushing in the transaction commit, we'll just spin forever doing
-delayed refs.
-
-Fix this to simply pick the number of delayed refs we currently have,
-that way we do not end up doing a lot of extra work that's being
-generated in other threads.
+This was added a very long time ago to work around issues with delayed
+refs and with qgroups.  Both of these issues have since been properly
+fixed, so all this does is cause a lot of lock contention with anybody
+else who is running delayed refs.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/extent-tree.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fs/btrfs/transaction.c | 23 ++++++++++++-----------
+ 1 file changed, 12 insertions(+), 11 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 5fd60b13f4f8..a7f0a1480cd9 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2180,7 +2180,7 @@ int btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index f4d55ac7f8f2..fc8f12e609a2 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1189,10 +1189,6 @@ static noinline int commit_cowonly_roots(struct btrfs_trans_handle *trans)
+ 	btrfs_tree_unlock(eb);
+ 	free_extent_buffer(eb);
  
- 	delayed_refs = &trans->transaction->delayed_refs;
- 	if (count == 0)
--		count = atomic_read(&delayed_refs->num_entries) * 2;
-+		count = delayed_refs->num_heads_ready;
+-	if (ret)
+-		return ret;
+-
+-	ret = btrfs_run_delayed_refs(trans, (unsigned long)-1);
+ 	if (ret)
+ 		return ret;
  
+@@ -1210,10 +1206,6 @@ static noinline int commit_cowonly_roots(struct btrfs_trans_handle *trans)
+ 	if (ret)
+ 		return ret;
+ 
+-	/* run_qgroups might have added some more refs */
+-	ret = btrfs_run_delayed_refs(trans, (unsigned long)-1);
+-	if (ret)
+-		return ret;
  again:
- #ifdef SCRAMBLE_DELAYED_REFS
+ 	while (!list_empty(&fs_info->dirty_cowonly_roots)) {
+ 		struct btrfs_root *root;
+@@ -1228,15 +1220,24 @@ static noinline int commit_cowonly_roots(struct btrfs_trans_handle *trans)
+ 		ret = update_cowonly_root(trans, root);
+ 		if (ret)
+ 			return ret;
+-		ret = btrfs_run_delayed_refs(trans, (unsigned long)-1);
+-		if (ret)
+-			return ret;
+ 	}
+ 
++	/* Now flush any delayed refs generated by updating all of the roots. */
++	ret = btrfs_run_delayed_refs(trans, (unsigned long)-1);
++	if (ret)
++		return ret;
++
+ 	while (!list_empty(dirty_bgs) || !list_empty(io_bgs)) {
+ 		ret = btrfs_write_dirty_block_groups(trans);
+ 		if (ret)
+ 			return ret;
++
++		/*
++		 * We're writing the dirty block groups, which could generate
++		 * delayed refs, which could generate more dirty block groups,
++		 * so we want to keep this flushing in this loop to make sure
++		 * everything gets run.
++		 */
+ 		ret = btrfs_run_delayed_refs(trans, (unsigned long)-1);
+ 		if (ret)
+ 			return ret;
 -- 
 2.24.1
 

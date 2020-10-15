@@ -2,149 +2,295 @@ Return-Path: <SRS0=E+Vc=DW=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-12.4 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,NICE_REPLY_A,SIGNED_OFF_BY,SPF_HELO_NONE,
+	SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5DE36C433DF
-	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Oct 2020 07:45:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2DCDCC433DF
+	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Oct 2020 08:45:14 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id DF47E22243
-	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Oct 2020 07:45:35 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BB60B218AC
+	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Oct 2020 08:45:13 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=permerror (0-bit key) header.d=wdc.com header.i=@wdc.com header.b="QtqIXWKu";
-	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b="CHHV/uyQ"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="Jf0RcmUY"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728946AbgJOHpf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 15 Oct 2020 03:45:35 -0400
-Received: from esa2.hgst.iphmx.com ([68.232.143.124]:60993 "EHLO
-        esa2.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726103AbgJOHpe (ORCPT
+        id S2388196AbgJOIpM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 15 Oct 2020 04:45:12 -0400
+Received: from userp2120.oracle.com ([156.151.31.85]:57878 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2387422AbgJOIpM (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 15 Oct 2020 03:45:34 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1602748747; x=1634284747;
-  h=from:to:cc:subject:date:message-id:references:
-   content-transfer-encoding:mime-version;
-  bh=24r6PJUDJQYAZ9lVcHNjQriNGFZaW6ErUsDTFdiheC4=;
-  b=QtqIXWKuqGpMYkenZWwi/wys8LcdP13HNHoOOnNJMbpfb9omj8acgjVP
-   E5ETfMf+1a5I70Px+1364dyvinTsk3+ckvom5Ray7VgxFuHr7BOeyvBok
-   deJyFV6cePJE+hTapYN1UpNfqbB/JpyQ9JhEqpWoWAiY2MHCQPdNJu+4+
-   GCFWoWYoYt19Rkk2jtJg8K2WnRTKk1VNC9HY80f/WqXjE09Q/Cg4mNI6I
-   FX0t8BdkvgxV+F6gB7bTVdyXPd0fOIOl+JPIEeNmbzTWkMuwgo5CqDqi3
-   pJxDvY7k+FToqesPovptdXlE767Jb+H1iS5eleeZYCUZBBsB6lAD5Pej1
-   w==;
-IronPort-SDR: dZLTwlhBhhqYmlMYVOgCOfIOiKbB1ly+wnNJxgIk3ad3rWewA0lax9fbhVofWqMpVKXMM8nvya
- s4xAH1/FK+BmbN0CSZ7B775cFpeXC/mJct6WvAo7OksAT27hIGKu+A22zNIZhdXCUBt0ZK5LRN
- BnKd5fiV6CnmCRNZirYUjWxfHDovYJIwQUV+ITUltP+Rc2Q+RhQkWQ/g9pRz4Ps5didVEfUoUK
- LzDE5Ny5dC4ACClpBdMuskJZw2vuIU3bl/naTrLsCCRp0wrR2903fGigu/S4i/m30WAIchuxvt
- 1R8=
-X-IronPort-AV: E=Sophos;i="5.77,378,1596470400"; 
-   d="scan'208";a="253410435"
-Received: from mail-bn3nam04lp2056.outbound.protection.outlook.com (HELO NAM04-BN3-obe.outbound.protection.outlook.com) ([104.47.46.56])
-  by ob1.hgst.iphmx.com with ESMTP; 15 Oct 2020 15:59:05 +0800
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
- b=FnSS8qiDwxcRaLUrzG6xq7vCP4XFa+kK73Oiow50NwbIVRIHLVG9O2h8+qWurnHxmsP1PbzwoQZtme7cMrHVnbZgt0qlcUIznoMmMXPEd/X1nS1WVw57zbNtdYrUbg2vdCM7eBon2fRlWNnZ2FnXlLYZwukHaSJB3BHmUCde7QVdPLBqD7bPy4ZmD4irmaStqb+U69M4fs5SleTk/Wo6dWnBU//d6abr4yyNbGvPawBn2XGPc3PnMRZqR2hJe4GJdu9dMNRywfCzGd7Yfs8R3xtfAFnyskaG6qXLtugwJOUvcqNGRy+dcAszm/Ro4YQ/BU2y9iq99aBfFaKISRgS3w==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector9901;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=JtY2/LidgOGa+Gx2LJxRDSkZHfbBLHjd2yRk6uDjjvI=;
- b=oT96yl+t8xJmyaOJRx7V+IUrgzYdNWaMIzPl7evh/958dPeVlKOEXLasUSSdyCHcDmD3uHU5Hm2E6XaMJOnS7hcz7zAOUyFuaW15pRQ8Nv5y55BjLBy//7Kh9s0W9aLHKBjqbjKe2QTJCvXNB8F4IPL/4djok9WclXmCgW14EkdhfoqP+j6oUWzfqdvE0qEMEJ1aLzjf9oCbJLJkIkEwqlNkzEZHKeAudLEWciOMcbzuNJoJVXMb/yPxyxJTXZu5AMbxGGIszw5psNc2dibrjznMWeDsKxgvMMxIR6nHO1QzDsrzIkomeRBzRZxdLxxc+L1DXk1u4pmYb/zFvd5SDw==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
- header.d=wdc.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=JtY2/LidgOGa+Gx2LJxRDSkZHfbBLHjd2yRk6uDjjvI=;
- b=CHHV/uyQBBPjqqXn09Zx/gnlOO2Uz+Jq940J6XvbUFm47hLJol+wSxZn+5MhjEHClNIi9kXfhQ420LGcfdlRqmsG7q0zN4byuu4suEm0W7lr+cZebFTaXG+lKG0sH4jthD0vZfK2RNChtWQR2vaoHi2tdDVX5X8VREBqHwTMPqQ=
-Received: from DM5PR0401MB3591.namprd04.prod.outlook.com (2603:10b6:4:7e::15)
- by DM6PR04MB3948.namprd04.prod.outlook.com (2603:10b6:5:b8::12) with
- Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.3455.24; Thu, 15 Oct
- 2020 07:45:31 +0000
-Received: from DM5PR0401MB3591.namprd04.prod.outlook.com
- ([fe80::7036:fd5b:a165:9089]) by DM5PR0401MB3591.namprd04.prod.outlook.com
- ([fe80::7036:fd5b:a165:9089%7]) with mapi id 15.20.3455.030; Thu, 15 Oct 2020
- 07:45:30 +0000
-From:   Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
-To:     "dsterba@suse.cz" <dsterba@suse.cz>,
-        Naohiro Aota <Naohiro.Aota@wdc.com>
-CC:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "dsterba@suse.com" <dsterba@suse.com>,
-        "hare@suse.com" <hare@suse.com>,
-        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
-        Josef Bacik <josef@toxicpanda.com>,
-        Damien Le Moal <Damien.LeMoal@wdc.com>
-Subject: Re: [PATCH v8 03/41] btrfs: Get zone information of zoned block
- devices
-Thread-Topic: [PATCH v8 03/41] btrfs: Get zone information of zoned block
- devices
-Thread-Index: AQHWmuaeJDKMOB9LSUer+b2KN1Je6w==
-Date:   Thu, 15 Oct 2020 07:45:30 +0000
-Message-ID: <DM5PR0401MB3591567D922E2F5E4113D27A9B020@DM5PR0401MB3591.namprd04.prod.outlook.com>
-References: <cover.1601572459.git.naohiro.aota@wdc.com>
- <dd872ec3ab449a3a97c7a3843aafe15b10154a3f.1601574234.git.naohiro.aota@wdc.com>
- <20201013155301.GE6756@twin.jikos.cz>
-Accept-Language: en-US
-Content-Language: en-US
-X-MS-Has-Attach: 
-X-MS-TNEF-Correlator: 
-authentication-results: suse.cz; dkim=none (message not signed)
- header.d=none;suse.cz; dmarc=none action=none header.from=wdc.com;
-x-originating-ip: [129.253.240.72]
-x-ms-publictraffictype: Email
-x-ms-office365-filtering-ht: Tenant
-x-ms-office365-filtering-correlation-id: cef8ee51-76e1-440a-1f47-08d870de4a9f
-x-ms-traffictypediagnostic: DM6PR04MB3948:
-x-ms-exchange-transport-forked: True
-x-microsoft-antispam-prvs: <DM6PR04MB39487BB41161D15AB39C14809B020@DM6PR04MB3948.namprd04.prod.outlook.com>
-wdcipoutbound: EOP-TRUE
-x-ms-oob-tlc-oobclassifiers: OLM:4941;
-x-ms-exchange-senderadcheck: 1
-x-microsoft-antispam: BCL:0;
-x-microsoft-antispam-message-info: T5gDidoz/F1o5aJzZl5P846h1ollf6zMB+MmLLyg4HhBBl1dk5yl1FyvjsojmLHpN+cDymFdJczuPzA/oggzj5L/EAhe3WG5CEpojrsUK5PKN4WtHPAMnXLYOt/7WLnNI4WHM/+63KNvTV5rXGZJEDfnYhbP/EF0UzC6dTF2wiUZMC60We4uLIEhOePd+Uw+kjgyoxjLTJShoQ/xH95HK19VJocmDQJoNfxS/Gvbvz67OvrxolfQ1ATmp7QfRJmoyyqGFOJfQWCFuAeiCwE8c+mikwPE5O7D4L5KiPKiROYvao2NVTok2TtWu+ujDvxG
-x-forefront-antispam-report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:DM5PR0401MB3591.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(4636009)(396003)(39860400002)(346002)(136003)(376002)(366004)(4744005)(86362001)(33656002)(91956017)(4326008)(6506007)(66556008)(66446008)(8676002)(64756008)(5660300002)(186003)(76116006)(66476007)(52536014)(71200400001)(66946007)(8936002)(478600001)(6636002)(9686003)(7696005)(53546011)(110136005)(26005)(55016002)(316002)(2906002)(83380400001)(54906003);DIR:OUT;SFP:1102;
-x-ms-exchange-antispam-messagedata: 86MnPf23IrLZNW1omA7+uGal3/wvOGoMTpzMxRcx55EXrNlC/rhM1yYeJH+AuP2wtKB/1fJ92FH1Of+t0oh6GRRcVozjgvElS7YViSMJI6Ks+kBb0NKcqt6n/9mKZ8Wkkvkf8dQX8413CM99J9SJMkpqFc/DRsdcOfXMgt9HqgpR/K7OMOEBdy+1MPWLio9AYBs1nZbU5x42G7bsmtcie/XRM6x2D2HtHZLCgC4obuFl4Nw0Dx//A4qd3nTZ7VMo8C+R3uMUw29FQLaQfzCYF7YghD+7P/0zkbXXoUL34nqk61TVAUSB8Xf2HZxYchJIIxXPNWdYwhWDEZwlefGqX7SbuV0OeV9M/NRPE7HS89c5bcRUeLA63BqFLy8dILxXBTjOLg4AEtxsep9HRxTQQxOlSfw/euWtrHaeCTkAzUAHvu4uXBY+ss8LsUpLY5NrBYuQeO8VvUT2YpwYhR9yuPxiBqbzPRvnp7mcci8bG5JsuzhvWKwEXsa1DpdQtXnEvyXC7G8bFThOTw9uHbgQZV2o/lCtpJwSKMrYU17ioT3HoXSKO1WJ2ISbqvQkAJMZROyaYnQstTDRyCjh9kpFqTG+k7d4cEwujV20TBZ7S08NTnmepqvKwfEtrqYoI0joazKHRCk+oI6UAJoM5oSqzw==
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: quoted-printable
+        Thu, 15 Oct 2020 04:45:12 -0400
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09F8e01R119245;
+        Thu, 15 Oct 2020 08:45:07 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
+ references : from : message-id : date : mime-version : in-reply-to :
+ content-type : content-transfer-encoding; s=corp-2020-01-29;
+ bh=wnflbAqfg+UswGKKQ5Wqopn4+MFO2Zb2Ba1imLASra4=;
+ b=Jf0RcmUYtqo1acIC+5ck4nf9OryROB+Mc3nIziJDITNoi/EzcPjefZbbdHTJ/s4/F6pD
+ k5ijvVDZiqeYVO65RFcuvmE14btCMvpqsWr19gCoe5oQ5wRl+pZZm1/0xlsfdLI7X4EC
+ 8P6lox8IbpseRhclPrBWXd/83CbHVsndp/usCz+FtBlw3S+7Hu4dnaW6sV1WeAI258iR
+ o1nbcc18Wf9c++g0xDlr4arK14V9Ehr4wzoMTghkgV6gMpl0YSyGpr+JuxO8mYBX8+bF
+ zaY2PA1WliEopwk7VX9qZ0UhAQjqJAeClsQqL+6vzLJklsLMpSbbwjUZnUbSe10ewZ5V wg== 
+Received: from aserp3020.oracle.com (aserp3020.oracle.com [141.146.126.70])
+        by userp2120.oracle.com with ESMTP id 343vaehvy5-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
+        Thu, 15 Oct 2020 08:45:07 +0000
+Received: from pps.filterd (aserp3020.oracle.com [127.0.0.1])
+        by aserp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09F8fJcZ165532;
+        Thu, 15 Oct 2020 08:45:06 GMT
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by aserp3020.oracle.com with ESMTP id 343pv1heth-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Thu, 15 Oct 2020 08:45:06 +0000
+Received: from abhmp0001.oracle.com (abhmp0001.oracle.com [141.146.116.7])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 09F8j4lD024355;
+        Thu, 15 Oct 2020 08:45:04 GMT
+Received: from [192.168.1.102] (/39.109.231.106)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Thu, 15 Oct 2020 01:45:04 -0700
+Subject: Re: [PATCH] btrfs: drop the path before adding blockgroup sysfs files
+To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
+        kernel-team@fb.com
+References: <03a94ec83095d00b19dcb65fda1b58f1b41f1297.1602709223.git.josef@toxicpanda.com>
+From:   Anand Jain <anand.jain@oracle.com>
+Message-ID: <db8d6f3a-38f0-34e6-e118-47e14b301fe4@oracle.com>
+Date:   Thu, 15 Oct 2020 16:44:46 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.3.2
 MIME-Version: 1.0
-X-OriginatorOrg: wdc.com
-X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-AuthSource: DM5PR0401MB3591.namprd04.prod.outlook.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: cef8ee51-76e1-440a-1f47-08d870de4a9f
-X-MS-Exchange-CrossTenant-originalarrivaltime: 15 Oct 2020 07:45:30.8328
- (UTC)
-X-MS-Exchange-CrossTenant-fromentityheader: Hosted
-X-MS-Exchange-CrossTenant-id: b61c8803-16f3-4c35-9b17-6f65f441df86
-X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
-X-MS-Exchange-CrossTenant-userprincipalname: TzqtaEuTYKAFDxBy9iPyMuz02i9zfnAgvYwViigIcRgqQZreSZWPb+xAtJATAuyDaAbedUatHhMcyletIuN9z/tkDGE9dr4+NI0gAQ90fus=
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: DM6PR04MB3948
+In-Reply-To: <03a94ec83095d00b19dcb65fda1b58f1b41f1297.1602709223.git.josef@toxicpanda.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9774 signatures=668682
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 mlxlogscore=999 mlxscore=0 spamscore=0
+ adultscore=0 suspectscore=0 phishscore=0 bulkscore=0 malwarescore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2009150000
+ definitions=main-2010150062
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9774 signatures=668682
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 mlxlogscore=999 clxscore=1015
+ impostorscore=0 phishscore=0 malwarescore=0 bulkscore=0 priorityscore=1501
+ mlxscore=0 suspectscore=0 spamscore=0 adultscore=0 lowpriorityscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2009150000
+ definitions=main-2010150062
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 13/10/2020 17:54, David Sterba wrote:=0A=
-> On Fri, Oct 02, 2020 at 03:36:10AM +0900, Naohiro Aota wrote:=0A=
->> --- a/fs/btrfs/Makefile=0A=
->> +++ b/fs/btrfs/Makefile=0A=
->> @@ -16,6 +16,7 @@ btrfs-y +=3D super.o ctree.o extent-tree.o print-tree.=
-o root-tree.o dir-item.o \=0A=
->>  btrfs-$(CONFIG_BTRFS_FS_POSIX_ACL) +=3D acl.o=0A=
->>  btrfs-$(CONFIG_BTRFS_FS_CHECK_INTEGRITY) +=3D check-integrity.o=0A=
->>  btrfs-$(CONFIG_BTRFS_FS_REF_VERIFY) +=3D ref-verify.o=0A=
->> +btrfs-$(CONFIG_BLK_DEV_ZONED) +=3D zoned.o=0A=
-> =0A=
-> As this is conditionally built in, it should be also added to the string=
-=0A=
-> printed by btrfs_print_mod_info and we want the actual status so=0A=
-> =0A=
-> #ifdef CONFIG_BLK_DEV_ZONED=0A=
-> 	", zoned=3Dyes"=0A=
-> #else=0A=
-> 	", zoned=3Dno"=0A=
-> #endif=0A=
-> =0A=
-=0A=
-done=0A=
+On 15/10/20 5:00 am, Josef Bacik wrote:
+> Dave reported a problem with my rwsem conversion patch where we got the
+> following lockdep splat
+> 
+> ======================================================
+> WARNING: possible circular locking dependency detected
+> 5.9.0-default+ #1297 Not tainted
+> ------------------------------------------------------
+> kswapd0/76 is trying to acquire lock:
+> ffff9d5d25df2530 (&delayed_node->mutex){+.+.}-{3:3}, at: __btrfs_release_delayed_node.part.0+0x3f/0x320 [btrfs]
+> 
+> but task is already holding lock:
+> ffffffffa40cbba0 (fs_reclaim){+.+.}-{0:0}, at: __fs_reclaim_acquire+0x5/0x30
+> 
+> which lock already depends on the new lock.
+> 
+> the existing dependency chain (in reverse order) is:
+> 
+> -> #4 (fs_reclaim){+.+.}-{0:0}:
+>         __lock_acquire+0x582/0xac0
+>         lock_acquire+0xca/0x430
+>         fs_reclaim_acquire.part.0+0x25/0x30
+>         kmem_cache_alloc+0x30/0x9c0
+>         alloc_inode+0x81/0x90
+>         iget_locked+0xcd/0x1a0
+>         kernfs_get_inode+0x1b/0x130
+>         kernfs_get_tree+0x136/0x210
+>         sysfs_get_tree+0x1a/0x50
+>         vfs_get_tree+0x1d/0xb0
+>         path_mount+0x70f/0xa80
+>         do_mount+0x75/0x90
+>         __x64_sys_mount+0x8e/0xd0
+>         do_syscall_64+0x2d/0x70
+>         entry_SYSCALL_64_after_hwframe+0x44/0xa9
+> 
+> -> #3 (kernfs_mutex){+.+.}-{3:3}:
+>         __lock_acquire+0x582/0xac0
+>         lock_acquire+0xca/0x430
+>         __mutex_lock+0xa0/0xaf0
+>         kernfs_add_one+0x23/0x150
+>         kernfs_create_dir_ns+0x58/0x80
+>         sysfs_create_dir_ns+0x70/0xd0
+>         kobject_add_internal+0xbb/0x2d0
+>         kobject_add+0x7a/0xd0
+>         btrfs_sysfs_add_block_group_type+0x141/0x1d0 [btrfs]
+>         btrfs_read_block_groups+0x1f1/0x8c0 [btrfs]
+>         open_ctree+0x981/0x1108 [btrfs]
+>         btrfs_mount_root.cold+0xe/0xb0 [btrfs]
+>         legacy_get_tree+0x2d/0x60
+>         vfs_get_tree+0x1d/0xb0
+>         fc_mount+0xe/0x40
+>         vfs_kern_mount.part.0+0x71/0x90
+>         btrfs_mount+0x13b/0x3e0 [btrfs]
+>         legacy_get_tree+0x2d/0x60
+>         vfs_get_tree+0x1d/0xb0
+>         path_mount+0x70f/0xa80
+>         do_mount+0x75/0x90
+>         __x64_sys_mount+0x8e/0xd0
+>         do_syscall_64+0x2d/0x70
+>         entry_SYSCALL_64_after_hwframe+0x44/0xa9
+> 
+> -> #2 (btrfs-extent-00){++++}-{3:3}:
+>         __lock_acquire+0x582/0xac0
+>         lock_acquire+0xca/0x430
+>         down_read_nested+0x45/0x220
+>         __btrfs_tree_read_lock+0x35/0x1c0 [btrfs]
+>         __btrfs_read_lock_root_node+0x3a/0x50 [btrfs]
+>         btrfs_search_slot+0x6d4/0xfd0 [btrfs]
+>         check_committed_ref+0x69/0x200 [btrfs]
+>         btrfs_cross_ref_exist+0x65/0xb0 [btrfs]
+>         run_delalloc_nocow+0x446/0x9b0 [btrfs]
+>         btrfs_run_delalloc_range+0x61/0x6a0 [btrfs]
+>         writepage_delalloc+0xae/0x160 [btrfs]
+>         __extent_writepage+0x262/0x420 [btrfs]
+>         extent_write_cache_pages+0x2b6/0x510 [btrfs]
+>         extent_writepages+0x43/0x90 [btrfs]
+>         do_writepages+0x40/0xe0
+>         __writeback_single_inode+0x62/0x610
+>         writeback_sb_inodes+0x20f/0x500
+>         wb_writeback+0xef/0x4a0
+>         wb_do_writeback+0x49/0x2e0
+>         wb_workfn+0x81/0x340
+>         process_one_work+0x233/0x5d0
+>         worker_thread+0x50/0x3b0
+>         kthread+0x137/0x150
+>         ret_from_fork+0x1f/0x30
+> 
+> -> #1 (btrfs-fs-00){++++}-{3:3}:
+>         __lock_acquire+0x582/0xac0
+>         lock_acquire+0xca/0x430
+>         down_read_nested+0x45/0x220
+>         __btrfs_tree_read_lock+0x35/0x1c0 [btrfs]
+>         __btrfs_read_lock_root_node+0x3a/0x50 [btrfs]
+>         btrfs_search_slot+0x6d4/0xfd0 [btrfs]
+>         btrfs_lookup_inode+0x3a/0xc0 [btrfs]
+>         __btrfs_update_delayed_inode+0x93/0x2c0 [btrfs]
+>         __btrfs_commit_inode_delayed_items+0x7de/0x850 [btrfs]
+>         __btrfs_run_delayed_items+0x8e/0x140 [btrfs]
+>         btrfs_commit_transaction+0x367/0xbc0 [btrfs]
+>         btrfs_mksubvol+0x2db/0x470 [btrfs]
+>         btrfs_mksnapshot+0x7b/0xb0 [btrfs]
+>         __btrfs_ioctl_snap_create+0x16f/0x1a0 [btrfs]
+>         btrfs_ioctl_snap_create_v2+0xb0/0xf0 [btrfs]
+>         btrfs_ioctl+0xd0b/0x2690 [btrfs]
+>         __x64_sys_ioctl+0x6f/0xa0
+>         do_syscall_64+0x2d/0x70
+>         entry_SYSCALL_64_after_hwframe+0x44/0xa9
+> 
+> -> #0 (&delayed_node->mutex){+.+.}-{3:3}:
+>         check_prev_add+0x91/0xc60
+>         validate_chain+0xa6e/0x2a20
+>         __lock_acquire+0x582/0xac0
+>         lock_acquire+0xca/0x430
+>         __mutex_lock+0xa0/0xaf0
+>         __btrfs_release_delayed_node.part.0+0x3f/0x320 [btrfs]
+>         btrfs_evict_inode+0x3cc/0x560 [btrfs]
+>         evict+0xd6/0x1c0
+>         dispose_list+0x48/0x70
+>         prune_icache_sb+0x54/0x80
+>         super_cache_scan+0x121/0x1a0
+>         do_shrink_slab+0x16d/0x3b0
+>         shrink_slab+0xb1/0x2e0
+>         shrink_node+0x230/0x6a0
+>         balance_pgdat+0x325/0x750
+>         kswapd+0x206/0x4d0
+>         kthread+0x137/0x150
+>         ret_from_fork+0x1f/0x30
+> 
+> other info that might help us debug this:
+> 
+> Chain exists of:
+>    &delayed_node->mutex --> kernfs_mutex --> fs_reclaim
+> 
+>   Possible unsafe locking scenario:
+> 
+>         CPU0                    CPU1
+>         ----                    ----
+>    lock(fs_reclaim);
+>                                 lock(kernfs_mutex);
+>                                 lock(fs_reclaim);
+>    lock(&delayed_node->mutex);
+> 
+>   *** DEADLOCK ***
+> 
+> 3 locks held by kswapd0/76:
+>   #0: ffffffffa40cbba0 (fs_reclaim){+.+.}-{0:0}, at: __fs_reclaim_acquire+0x5/0x30
+>   #1: ffffffffa40b8b58 (shrinker_rwsem){++++}-{3:3}, at: shrink_slab+0x54/0x2e0
+>   #2: ffff9d5d322390e8 (&type->s_umount_key#26){++++}-{3:3}, at: trylock_super+0x16/0x50
+> 
+> stack backtrace:
+> CPU: 2 PID: 76 Comm: kswapd0 Not tainted 5.9.0-default+ #1297
+> Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.12.0-59-gc9ba527-rebuilt.opensuse.org 04/01/2014
+> Call Trace:
+>   dump_stack+0x77/0x97
+>   check_noncircular+0xff/0x110
+>   ? save_trace+0x50/0x470
+>   check_prev_add+0x91/0xc60
+>   validate_chain+0xa6e/0x2a20
+>   ? save_trace+0x50/0x470
+>   __lock_acquire+0x582/0xac0
+>   lock_acquire+0xca/0x430
+>   ? __btrfs_release_delayed_node.part.0+0x3f/0x320 [btrfs]
+>   __mutex_lock+0xa0/0xaf0
+>   ? __btrfs_release_delayed_node.part.0+0x3f/0x320 [btrfs]
+>   ? __lock_acquire+0x582/0xac0
+>   ? __btrfs_release_delayed_node.part.0+0x3f/0x320 [btrfs]
+>   ? btrfs_evict_inode+0x30b/0x560 [btrfs]
+>   ? __btrfs_release_delayed_node.part.0+0x3f/0x320 [btrfs]
+>   __btrfs_release_delayed_node.part.0+0x3f/0x320 [btrfs]
+>   btrfs_evict_inode+0x3cc/0x560 [btrfs]
+>   evict+0xd6/0x1c0
+>   dispose_list+0x48/0x70
+>   prune_icache_sb+0x54/0x80
+>   super_cache_scan+0x121/0x1a0
+>   do_shrink_slab+0x16d/0x3b0
+>   shrink_slab+0xb1/0x2e0
+>   shrink_node+0x230/0x6a0
+>   balance_pgdat+0x325/0x750
+>   kswapd+0x206/0x4d0
+>   ? finish_wait+0x90/0x90
+>   ? balance_pgdat+0x750/0x750
+>   kthread+0x137/0x150
+>   ? kthread_mod_delayed_work+0xc0/0xc0
+>   ret_from_fork+0x1f/0x30
+> 
+> This happens because we are still holding the path open when we start
+> adding the sysfs files for the block groups, which creates a dependency
+> on fs_reclaim via the tree lock.  Fix this by dropping the path before
+> we start doing anything with sysfs.
+> 
+> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+> ---
+>   fs/btrfs/block-group.c | 1 +
+>   1 file changed, 1 insertion(+)
+> 
+> diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+> index c0f1d6818df7..3ba6f3839d39 100644
+> --- a/fs/btrfs/block-group.c
+> +++ b/fs/btrfs/block-group.c
+> @@ -2024,6 +2024,7 @@ int btrfs_read_block_groups(struct btrfs_fs_info *info)
+>   		key.offset = 0;
+>   		btrfs_release_path(path);
+>   	}
+> +	btrfs_release_path(path);
+>   
+>   	list_for_each_entry(space_info, &info->space_info, list) {
+>   		int i;
+> 
+
+Reviewed-by: Anand Jain <anand.jain@oracle.com>
+
+Thanks, Anand
+

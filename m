@@ -7,62 +7,63 @@ X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D6DD0C433E7
-	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Oct 2020 18:26:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 228EAC43467
+	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Oct 2020 18:26:16 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 7104C21527
-	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Oct 2020 18:26:12 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id AFBF920878
+	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Oct 2020 18:26:15 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="ciySUZN9"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="Lxz9XRyu"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1733082AbgJOS0K (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 15 Oct 2020 14:26:10 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37566 "EHLO
+        id S1733113AbgJOS0O (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 15 Oct 2020 14:26:14 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37582 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1733081AbgJOS0J (ORCPT
+        with ESMTP id S1733081AbgJOS0N (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 15 Oct 2020 14:26:09 -0400
-Received: from mail-qv1-xf42.google.com (mail-qv1-xf42.google.com [IPv6:2607:f8b0:4864:20::f42])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5DA58C061755
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2020 11:26:09 -0700 (PDT)
-Received: by mail-qv1-xf42.google.com with SMTP id t6so6457qvz.4
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2020 11:26:09 -0700 (PDT)
+        Thu, 15 Oct 2020 14:26:13 -0400
+Received: from mail-qk1-x741.google.com (mail-qk1-x741.google.com [IPv6:2607:f8b0:4864:20::741])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EB69CC061755
+        for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2020 11:26:12 -0700 (PDT)
+Received: by mail-qk1-x741.google.com with SMTP id q63so3126859qkf.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2020 11:26:12 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:subject:date:message-id:in-reply-to:references:mime-version
-         :content-transfer-encoding;
-        bh=UK/iyurwWNC+uA4M3W6MmFdqBhdlEybcQk2Y2OWSCNk=;
-        b=ciySUZN9dVWGhdUnJv3cbZZQ451czuGevtVRVkZsbi/zYjfNXLMfSysijDaw/Hs/jK
-         4ZckZc+CIqMOFlfAYJyhu2FaVXMQvfXbuYVasAx7fTKxCO4pJo66fPkkmJK9Vqy8nA7b
-         CD0K8IvPD5y5cgkjbu0nZmP3Go+6hr1Ph92J1ZVlMHG1poEe+Yt6msFiq3jenoRiDu2f
-         wdT8pBlHopuB4p3K6TN+AbWJ9r3U+9rDkYpTfn4bgmH2JWV86WTxIbzLEO94F/asR//G
-         K+hLqxSizsrBTEYk2xUnsfVfpZtV6I+6g2IbW12X/jnJ/qswpBsmoygnoiQEY3AYyFEH
-         Ek9g==
+        h=from:to:cc:subject:date:message-id:in-reply-to:references
+         :mime-version:content-transfer-encoding;
+        bh=WH7ddIPVRzM6lb8DWZoKdPbqixctYkFmKQiidg5MXZw=;
+        b=Lxz9XRyuMtz0bbp0Y4Ib1UkstuSWrs35WRJpLhHPoeoCn0PgU0tDPNYmim4ZgDfO4c
+         Ifzy0HFeJdLPCqIZf0i637O4zR+zIN9+biL72inTIadkeMh6fX7JmplVb6SUEqh3qsqp
+         0aOaow3poF7fVPqiF4bnFea+9XyG+owxf+OoI23a2E8V0ffBC7mLpLAlb519M6naQMy9
+         vjx3TlHttFYG8/tSPaf9pimUyEJY1Zpn80dMH+lkVSiNzH/xtmq5gDpX+SXIB77vyhmz
+         r/J6DhSk+z1Ifu4vuDVuyQK4H5aVBmxtQb+sxQP6pRHUpfy/hxL/z6q1kInQRqyjAy+h
+         GEcw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=UK/iyurwWNC+uA4M3W6MmFdqBhdlEybcQk2Y2OWSCNk=;
-        b=klqoSIri4fXpzkACV1BZRcNqhAKqI5JfQKDRleCNxGq7Db43Kosx2KnN+PwLitZGl0
-         CRCqtmOTs+s2lVm8h8gymnpYxXO+aw6mftjOAaxvVRqHCYSFv3muAv2urCTm/BdPE/cC
-         IqHqXg70dBB/fNd0T3yZeOJl6EobB/NJrVQLoeRKmoXsv3o0WeFI94qhhdVjK+CyN06z
-         kkWw/eJAq+GuB5oYJkdrJ62Jjx5s/zRmrXb2efcpf17MwtcZ8RFB5msxRBW2J9bZBm7B
-         cr7eOlTiVGbQ5W7B19jpBHVC9WRRSyyDxRVViYiFVsSD64vP3+2QEDATmi5wKlkvtPTp
-         6JzQ==
-X-Gm-Message-State: AOAM533O+vuD5gtDuFABpzIH0I2rFb0gdQTbGcMXKa0DpqcTNwQ5dsDm
-        4kkrqHZADAtzRLihRyA6yIfvOSinGoXXrpOL
-X-Google-Smtp-Source: ABdhPJxbdyn1s+tMpJGv//89EbZHqnNOCD7BxUDBQ7cW7uwNyM+ANc3/xk5ZIWnQFx0DuBhovmzX4Q==
-X-Received: by 2002:ad4:42ae:: with SMTP id e14mr46656qvr.44.1602786368254;
-        Thu, 15 Oct 2020 11:26:08 -0700 (PDT)
+        bh=WH7ddIPVRzM6lb8DWZoKdPbqixctYkFmKQiidg5MXZw=;
+        b=n+RjFmKdaSHf2t/AaOT0HoYHT/qXrDgKtNfL4b6k7YE59K8xXAy8kztt5zGhnsbgvS
+         Jpi4WuivmP2qrqK47gkrcGvUAKAx/kZJ+vaoG2ZlHFUXcYEfUL/7KEjMFiySy4WkW0rv
+         z6pZFXuObRpr6m49UEovZMPs3evM5FQQPGfYtasAMrnxgofusrFGo+fS6Zt4AGs/OS2E
+         RD4wBHvTB3bFx2ZYd6uu2LtqjjT4O/6S1SSIWSqTmEvHJRTTWor9hrTkCqzn4kcBlV6I
+         7vNMQo74MWaR/6WfjochVdb8vE3jSwtTlQ/t4pGhm+LSLNhR2GCbQxqkPil2hEoBGFKQ
+         T8Xg==
+X-Gm-Message-State: AOAM530K1l7t0++znKZgwo5Jy5acV18HLV4VJjbjsQ3T0qve2XcY4qya
+        XQEcICr/+MElkY38MqrBrh3/NQkZC1Ga59Zb
+X-Google-Smtp-Source: ABdhPJz8AHtkoO0hWQhQrooG3ojnww0TgeLJPQNAWQZ6GG/Sy8ZJ+g2m0QtrkH92IWQQA5p/apSa9A==
+X-Received: by 2002:a05:620a:159b:: with SMTP id d27mr128170qkk.2.1602786371830;
+        Thu, 15 Oct 2020 11:26:11 -0700 (PDT)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id k5sm1474463qkc.45.2020.10.15.11.26.07
+        by smtp.gmail.com with ESMTPSA id x21sm1489051qkb.78.2020.10.15.11.26.10
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 15 Oct 2020 11:26:07 -0700 (PDT)
+        Thu, 15 Oct 2020 11:26:11 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 2/6] btrfs: only let one thread pre-flush delayed refs in commit
-Date:   Thu, 15 Oct 2020 14:25:58 -0400
-Message-Id: <10113ed0453832382bc350f15758f871db43b5d9.1602786206.git.josef@toxicpanda.com>
+Cc:     Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH 4/6] btrfs: only run delayed refs once before committing
+Date:   Thu, 15 Oct 2020 14:26:00 -0400
+Message-Id: <3579294ec5320be3b7932b8fd4b4a89ed79257db.1602786206.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.24.1
 In-Reply-To: <cover.1602786206.git.josef@toxicpanda.com>
 References: <cover.1602786206.git.josef@toxicpanda.com>
@@ -72,119 +73,40 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-I've been running a stress test that runs 20 workers in their own
-subvolume, which are running an fsstress instance with 4 threads per
-worker, which is 80 total fsstress threads.  In addition to this I'm
-running balance in the background as well as creating and deleting
-snapshots.  This test takes around 12 hours to run normally, going
-slower and slower as the test goes on.
+We try to pre-flush the delayed refs when committing, because we want to
+do as little work as possible in the critical section of the transaction
+commit.
 
-The reason for this is because fsstress is running fsync sometimes, and
-because we're messing with block groups we often fall through to
-btrfs_commit_transaction, so will often have 20-30 threads all calling
-btrfs_commit_transaction at the same time.
+However doing this twice can lead to very long transaction commit delays
+as other threads are allowed to continue to generate more delayed refs,
+which potentially delays the commit by multiple minutes in very extreme
+cases.
 
-These all get stuck contending on the extent tree while they try to run
-delayed refs during the initial part of the commit.
-
-This is suboptimal, really because the extent tree is a single point of
-failure we only want one thread acting on that tree at once to reduce
-lock contention.  Fix this by making the flushing mechanism a bit
-operation, to make it easy to use test_and_set_bit() in order to make
-sure only one task does this initial flush.
-
-Once we're into the transaction commit we only have one thread doing
-delayed ref running, it's just this initial pre-flush that is
-problematic.  With this patch my stress test takes around 90 minutes to
-run, instead of 12 hours.
+So simply stick to one pre-flush, and then continue the rest of the
+transaction commit.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/delayed-ref.h | 12 ++++++------
- fs/btrfs/transaction.c | 32 ++++++++++++++++----------------
- 2 files changed, 22 insertions(+), 22 deletions(-)
+ fs/btrfs/transaction.c | 6 ------
+ 1 file changed, 6 deletions(-)
 
-diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
-index 1c977e6d45dc..6e414785b56f 100644
---- a/fs/btrfs/delayed-ref.h
-+++ b/fs/btrfs/delayed-ref.h
-@@ -135,6 +135,11 @@ struct btrfs_delayed_data_ref {
- 	u64 offset;
- };
- 
-+enum btrfs_delayed_ref_flags {
-+	/* Used to indicate that we are flushing delayed refs for the commit. */
-+	BTRFS_DELAYED_REFS_FLUSHING,
-+};
-+
- struct btrfs_delayed_ref_root {
- 	/* head ref rbtree */
- 	struct rb_root_cached href_root;
-@@ -158,12 +163,7 @@ struct btrfs_delayed_ref_root {
- 
- 	u64 pending_csums;
- 
--	/*
--	 * set when the tree is flushing before a transaction commit,
--	 * used by the throttling code to decide if new updates need
--	 * to be run right away
--	 */
--	int flushing;
-+	unsigned long flags;
- 
- 	u64 run_delayed_start;
- 
 diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 52ada47aff50..e8e706def41c 100644
+index e8e706def41c..e4c7fa5076a7 100644
 --- a/fs/btrfs/transaction.c
 +++ b/fs/btrfs/transaction.c
-@@ -872,7 +872,8 @@ int btrfs_should_end_transaction(struct btrfs_trans_handle *trans)
+@@ -2062,12 +2062,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
  
- 	smp_mb();
- 	if (cur_trans->state >= TRANS_STATE_COMMIT_START ||
--	    cur_trans->delayed_refs.flushing)
-+	    test_bit(BTRFS_DELAYED_REFS_FLUSHING,
-+		     &cur_trans->delayed_refs.flags))
- 		return 1;
+ 	btrfs_create_pending_block_groups(trans);
  
- 	return should_end_transaction(trans);
-@@ -2042,23 +2043,22 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 	btrfs_trans_release_metadata(trans);
- 	trans->block_rsv = NULL;
- 
--	/* make a pass through all the delayed refs we have so far
--	 * any runnings procs may add more while we are here
--	 */
 -	ret = btrfs_run_delayed_refs(trans, 0);
 -	if (ret) {
 -		btrfs_end_transaction(trans);
 -		return ret;
 -	}
 -
--	cur_trans = trans->transaction;
--
- 	/*
--	 * set the flushing flag so procs in this transaction have to
--	 * start sending their work down.
-+	 * We only want one transaction commit doing the flushing so we do not
-+	 * waste a bunch of time on lock contention on the extent root node.
- 	 */
--	cur_trans->delayed_refs.flushing = 1;
--	smp_wmb();
-+	if (!test_and_set_bit(BTRFS_DELAYED_REFS_FLUSHING,
-+			      &cur_trans->delayed_refs.flags)) {
-+		/*
-+		 * make a pass through all the delayed refs we have so far
-+		 * any runnings procs may add more while we are here
-+		 */
-+		ret = btrfs_run_delayed_refs(trans, 0);
-+		if (ret) {
-+			btrfs_end_transaction(trans);
-+			return ret;
-+		}
-+	}
- 
- 	btrfs_create_pending_block_groups(trans);
+ 	if (!test_bit(BTRFS_TRANS_DIRTY_BG_RUN, &cur_trans->flags)) {
+ 		int run_it = 0;
  
 -- 
 2.24.1

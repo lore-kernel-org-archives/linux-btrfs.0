@@ -2,66 +2,103 @@ Return-Path: <SRS0=kkXa=DX=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.6 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	NICE_REPLY_A,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 225E8C433DF
-	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Oct 2020 06:05:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B9408C433DF
+	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Oct 2020 07:15:26 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 9B3D2207F7
-	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Oct 2020 06:05:30 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 552DF20720
+	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Oct 2020 07:15:26 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=waffle.tech header.i=@waffle.tech header.b="PlbrU3B6"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="LgBy7Uhj"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2391467AbgJPGF3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 16 Oct 2020 02:05:29 -0400
-Received: from waffle.tech ([104.225.250.114]:50648 "EHLO mx.waffle.tech"
+        id S2404517AbgJPHPZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 16 Oct 2020 03:15:25 -0400
+Received: from mx2.suse.de ([195.135.220.15]:60068 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2391456AbgJPGF3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Oct 2020 02:05:29 -0400
-X-Greylist: delayed 367 seconds by postgrey-1.27 at vger.kernel.org; Fri, 16 Oct 2020 02:05:28 EDT
-Received: from mx.waffle.tech (unknown [10.50.1.6])
-        by mx.waffle.tech (Postfix) with ESMTP id 0FE036D800;
-        Thu, 15 Oct 2020 23:59:20 -0600 (MDT)
-DKIM-Filter: OpenDKIM Filter v2.11.0 mx.waffle.tech 0FE036D800
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=waffle.tech; s=mx;
-        t=1602827960; bh=1SOOzZUEPtTZ1cEnxe0bGc3shN/MtTJj5BxDLkuKFFA=;
-        h=Date:From:Subject:To:From;
-        b=PlbrU3B6CT8RjpMdJ/M7nXuOu9O621r1CH8MWvVjO1gTc1tZBgPXmyR7gYSoPTUKK
-         O1lUqbz38Fon9qmm3ufgI38jN3REKGaqmR6EpzLY6o2H/DV6H4O9utUpMpsSJoKHR0
-         eAqD52P+9ZfSXvdTvEzTDQfyGTfCURvqo3I780gM=
-Received: from waffle.tech ([10.50.1.3])
-        by mx.waffle.tech with ESMTPSA
-        id DiCbArg2iV+EXQcAQqPLoA
-        (envelope-from <louis@waffle.tech>); Thu, 15 Oct 2020 23:59:20 -0600
+        id S2404493AbgJPHPY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 16 Oct 2020 03:15:24 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1602832523;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references:autocrypt:autocrypt;
+        bh=Mrr1MoKEn1cPas4fatTue/ChTc6x+ThU0LdBBvAPZyc=;
+        b=LgBy7UhjoQSqcTGTMKd414tmqHGhlYwLmgvQDn4MLrAV/tQq9Usz4EaBep2/Cs5KRUUSAB
+        tiU0KsF6OF1eBSLbivALWniADgKwnsTbLkHGqAOf071PJDvuaVUHgoeSYqikaR9xuE8WuT
+        TZumZLsmfENa9qn2q18pBKgGBPfmT/E=
+Received: from relay2.suse.de (unknown [195.135.221.27])
+        by mx2.suse.de (Postfix) with ESMTP id 1DD5EADAD;
+        Fri, 16 Oct 2020 07:15:23 +0000 (UTC)
+Subject: Re: [PATCH] btrfs: balance RAID1/RAID10 mirror selection
+To:     louis@waffle.tech, linux-btrfs@vger.kernel.org
+References: <8541d6d7a63e470b9f4c22ba95cd64fc@waffle.tech>
+From:   Nikolay Borisov <nborisov@suse.com>
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <4226ff1b-e313-2881-0670-965e7e98ce59@suse.com>
+Date:   Fri, 16 Oct 2020 10:15:20 +0300
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.10.0
 MIME-Version: 1.0
-Date:   Fri, 16 Oct 2020 05:59:19 +0000
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: quoted-printable
-X-Mailer: RainLoop/1.14.0
-From:   louis@waffle.tech
-Message-ID: <8541d6d7a63e470b9f4c22ba95cd64fc@waffle.tech>
-Subject: [PATCH] btrfs: balance RAID1/RAID10 mirror selection
-To:     linux-btrfs@vger.kernel.org
+In-Reply-To: <8541d6d7a63e470b9f4c22ba95cd64fc@waffle.tech>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Balance RAID1/RAID10 mirror selection via plain round-robin scheduling. T=
-his should roughly double throughput for large reads.=0A=0ASigned-off-by:=
- Louis Jencka <louis@waffle.tech>=0A---=0A fs/btrfs/volumes.c | 6 +++++-=
-=0A 1 file changed, 5 insertions(+), 1 deletion(-)=0A=0Adiff --git a/fs/b=
-trfs/volumes.c b/fs/btrfs/volumes.c=0Aindex 58b9c419a..45c581d46 100644=
-=0A--- a/fs/btrfs/volumes.c=0A+++ b/fs/btrfs/volumes.c=0A@@ -333,6 +333,9=
- @@ struct list_head * __attribute_const__ btrfs_get_fs_uuids(void)=0A 	r=
-eturn &fs_uuids;=0A }=0A =0A+/* Used for round-robin balancing RAID1/RAID=
-10 reads. */=0A+atomic_t rr_counter =3D ATOMIC_INIT(0);=0A+=0A /*=0A  * a=
-lloc_fs_devices - allocate struct btrfs_fs_devices=0A  * @fsid:		if not N=
-ULL, copy the UUID to fs_devices::fsid=0A@@ -5482,7 +5485,8 @@ static int=
- find_live_mirror(struct btrfs_fs_info *fs_info,=0A 	else=0A 		num_stripe=
-s =3D map->num_stripes;=0A =0A-	preferred_mirror =3D first + current->pid=
- % num_stripes;=0A+	preferred_mirror =3D first +=0A+	    (unsigned)atomic=
-_inc_return(&rr_counter) % num_stripes;=0A =0A 	if (dev_replace_is_ongoin=
-g &&=0A 	    fs_info->dev_replace.cont_reading_from_srcdev_mode =3D=3D
+
+
+On 16.10.20 г. 8:59 ч., louis@waffle.tech wrote:
+> Balance RAID1/RAID10 mirror selection via plain round-robin scheduling. This should roughly double throughput for large reads.
+> 
+> Signed-off-by: Louis Jencka <louis@waffle.tech>
+
+Can you show numbers substantiating your claims?

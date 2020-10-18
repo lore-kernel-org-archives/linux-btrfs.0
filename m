@@ -2,120 +2,254 @@ Return-Path: <SRS0=0F4Q=DZ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.4 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,NICE_REPLY_A,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-12.6 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DD0ECC433DF
-	for <linux-btrfs@archiver.kernel.org>; Sun, 18 Oct 2020 08:17:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 48F08C43457
+	for <linux-btrfs@archiver.kernel.org>; Sun, 18 Oct 2020 15:57:42 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 8699B208FE
-	for <linux-btrfs@archiver.kernel.org>; Sun, 18 Oct 2020 08:17:20 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0AD5F21D7F
+	for <linux-btrfs@archiver.kernel.org>; Sun, 18 Oct 2020 15:57:42 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="s8JIribE"
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="AuZfGEe6"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726258AbgJRIRS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 18 Oct 2020 04:17:18 -0400
-Received: from aserp2120.oracle.com ([141.146.126.78]:52792 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725287AbgJRIRR (ORCPT
+        id S1727091AbgJRP5l (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 18 Oct 2020 11:57:41 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58070 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726961AbgJRP5l (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 18 Oct 2020 04:17:17 -0400
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09I8Ej4O053843;
-        Sun, 18 Oct 2020 08:17:09 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
- references : from : message-id : date : mime-version : in-reply-to :
- content-type : content-transfer-encoding; s=corp-2020-01-29;
- bh=woGv61y4wS1dgTM+37Re56ouKOW1tzweZ0FrS4dabRU=;
- b=s8JIribEAKhtV94ojZB3oMVTQGskBxum/RbgZQkoUBUqSt4Bt8D7vfOyryVWsDSFVQkb
- 5sB3aXzgTICEMn8ZCSIh8Kpu+LeLqD9gy+42FWT5wHaQXk1zGP1wTemoIiY9hzFtjLnK
- b2VIvIXDOKDUndaSvUt62Je64bxPOBdTsJU6+IDHwrM9apTEdTIfqedTAXQPcxYs/Q46
- yD7JnjlZdgAfcgM2kgKDEG/C53pJ5S+vL+pFyhz16XSB5CNLKgb98naYmI8ZLXL7Aghw
- aSJ4eTbg0ALMiC6AM6EqmswmU3h7L/pfsMbFXpso8V8cAunWqHaLtlgCLKvXmstxEDm0 RQ== 
-Received: from userp3020.oracle.com (userp3020.oracle.com [156.151.31.79])
-        by aserp2120.oracle.com with ESMTP id 347rjkhydc-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
-        Sun, 18 Oct 2020 08:17:09 +0000
-Received: from pps.filterd (userp3020.oracle.com [127.0.0.1])
-        by userp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09I8FiGs081793;
-        Sun, 18 Oct 2020 08:17:08 GMT
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by userp3020.oracle.com with ESMTP id 348acney6s-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Sun, 18 Oct 2020 08:17:08 +0000
-Received: from abhmp0005.oracle.com (abhmp0005.oracle.com [141.146.116.11])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 09I8H359019140;
-        Sun, 18 Oct 2020 08:17:04 GMT
-Received: from [192.168.1.102] (/39.109.231.106)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Sun, 18 Oct 2020 01:16:58 -0700
-Subject: Re: [PATCH] btrfs: balance RAID1/RAID10 mirror selection
-To:     louis@waffle.tech, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Nikolay Borisov <nborisov@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <b4f37e58-496d-818a-35d9-ab0832a6fe61@gmx.com>
- <8541d6d7a63e470b9f4c22ba95cd64fc@waffle.tech>
- <4226ff1b-e313-2881-0670-965e7e98ce59@suse.com>
- <e954bedcb5647369753424177dc63928@waffle.tech>
-From:   Anand Jain <anand.jain@oracle.com>
-Message-ID: <3bddd73e-cb60-b716-4e98-61ff24beb570@oracle.com>
-Date:   Sun, 18 Oct 2020 16:16:34 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.3.2
+        Sun, 18 Oct 2020 11:57:41 -0400
+Received: from mail-pl1-x62b.google.com (mail-pl1-x62b.google.com [IPv6:2607:f8b0:4864:20::62b])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E9478C061755;
+        Sun, 18 Oct 2020 08:57:40 -0700 (PDT)
+Received: by mail-pl1-x62b.google.com with SMTP id 1so3751978ple.2;
+        Sun, 18 Oct 2020 08:57:40 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=d2rU8jbtrY+VzzmEViWPDkCt5alIWbye72QsLD0DyH0=;
+        b=AuZfGEe67y4BwBws9xkxfk3lkjxHibqSV01huBh5WSyIah8620BhqF2LjuQ9zrgEyB
+         rdmlAxE5sdSFQEtcQyp5e62x/UO9O7ZZK2ESViAGGy05eTRE5YUZY+3G9FAA8uNL9c7b
+         E9KDm/bzJDMwVsu456LxIvG67jTbCbrK7hW3P2+hqiLcC8AiDTZZ0qcwcIXJLNunYJhA
+         P7e53NoH40WND24sBYyQJ3RxfO3sKueRgdW0u1l1xpcC+2dGhu0COE+Ule/Cne5gFRg8
+         h2CBcptOel9i+KnImZDwEd4a1YWXP2ROZ9Ax3MK9OfmWCQlFqj3Q/9m16WsWyMkGuy0j
+         nKkg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=d2rU8jbtrY+VzzmEViWPDkCt5alIWbye72QsLD0DyH0=;
+        b=lfog9usKue4bsAprNkUODBEdl9MAs2gCvoVu/iqKnX3HV4xsDs0qf7qJoMZCD7KUVn
+         puCbSDI64I/c6KF08vA914yzQQ/oVGpkxFLER/c45afQAhAc2+Ix+xwQ36OK0DiiCC9j
+         d43lUpkts3JiN1CUHvwS2VdeNqali2Zu47P0NCHFKu4lbG0I2xYjTMboULpgATgtKPZx
+         6XEvRxRiXG7cHKIwwkAX2kCOsaeSHwTkLGNvG4GpAmV3T3C0MKCjO8ODRSKjZG5NFKhR
+         9MR9cXhQa+akjhnl7yPrPcUdXNWzWZFh2dlljIZAPCkml/8cfrrp8qzj5/3bOu2/t1rE
+         c2YQ==
+X-Gm-Message-State: AOAM530LteGQdt/EvLGkPK4TafpyQ/CkaaUv3ECuceXgg4ocfPDjg1yT
+        X8tpToTSdmcOkunJ3eCRNdUXbhDwcTqB1A==
+X-Google-Smtp-Source: ABdhPJx30o3cm+rtsvK5/Da+3cKQ1/q6wxbO5V3qAoyFsZ/mJdaX19mMyy2CG8m0+sod63+uxuQCOg==
+X-Received: by 2002:a17:902:222:b029:d3:b4d2:105e with SMTP id 31-20020a1709020222b02900d3b4d2105emr13496044plc.32.1603036659966;
+        Sun, 18 Oct 2020 08:57:39 -0700 (PDT)
+Received: from localhost.localdomain ([175.195.128.78])
+        by smtp.googlemail.com with ESMTPSA id y126sm8818127pgb.40.2020.10.18.08.57.36
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sun, 18 Oct 2020 08:57:39 -0700 (PDT)
+From:   Sidong Yang <realwakka@gmail.com>
+To:     linux-btrfs@vger.kernel.org, fstests@vger.kernel.org
+Cc:     Sidong Yang <realwakka@gmail.com>, Qu Wenruo <wqu@suse.com>,
+        Josef Bacik <josef@toxicpanda.com>, Eryu Guan <guan@eryu.me>
+Subject: [PATCH v7] btrfs: Add new test for qgroup assign functionality
+Date:   Sun, 18 Oct 2020 15:57:28 +0000
+Message-Id: <20201018155728.14722-1-realwakka@gmail.com>
+X-Mailer: git-send-email 2.25.1
 MIME-Version: 1.0
-In-Reply-To: <e954bedcb5647369753424177dc63928@waffle.tech>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
 Content-Transfer-Encoding: 8bit
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9777 signatures=668682
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 phishscore=0 bulkscore=0 adultscore=0
- mlxscore=0 malwarescore=0 suspectscore=0 spamscore=0 mlxlogscore=999
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2009150000
- definitions=main-2010180063
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9777 signatures=668682
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 mlxscore=0 mlxlogscore=999 bulkscore=0
- spamscore=0 priorityscore=1501 impostorscore=0 lowpriorityscore=0
- phishscore=0 suspectscore=0 clxscore=1011 adultscore=0 malwarescore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2009150000
- definitions=main-2010180063
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+This new test will test btrfs's qgroup assign functionality. The
+test has 3 cases.
 
+ - assign, no shared extents
+ - assign, shared extents
+ - snapshot -i, shared extents
 
-On 17/10/20 1:28 am, louis@waffle.tech wrote:
-> October 16, 2020 1:29 AM, "Qu Wenruo" <quwenruo.btrfs@gmx.com> wrote:
-> 
->> On 2020/10/16 下午3:15, Nikolay Borisov wrote:
->>
->>> On 16.10.20 г. 8:59 ч., louis@waffle.tech wrote:
->>>> Balance RAID1/RAID10 mirror selection via plain round-robin scheduling. This should roughly double
->>>> throughput for large reads.
->>>>
->>>> Signed-off-by: Louis Jencka <louis@waffle.tech>
->>>
->>> Can you show numbers substantiating your claims?
->>
->> And isn't this related to the read policy? IIRC some patches are
->> floating in the mail list to provide the framework of how the read
->> policy should work.
->>
->> Those patches aren't yet merged?
->>
->> Thanks,
->> Qu
-> 
-> Oh, I hadn't seen the read-policy framework thread. Within that, this could be
-> a new policy or a replacement for BTRFS_READ_POLICY_PID. Is work ongoing for
-> those patches?
-> 
+Each cases create subvolumes and assign qgroup in their own way
+and check with the command "btrfs check".
 
-  Yes. Those patches are just few days away please stayed tuned.
+Cc: Qu Wenruo <wqu@suse.com>
+Cc: Eryu Guan <guan@eryu.me>
 
-Thanks, Anand
+Signed-off-by: Sidong Yang <realwakka@gmail.com>
+---
+v2:
+ - Create new test and use the cases
+v3:
+ - Fix some minor mistakes
+ - Make that write some data before assign or snapshot in test
+ - Put mkfs & mount pair in test function
+v4:
+ - Add rescan command for assign no shared
+ - Use _check_scratch_fs for checking
+v5:
+ - Remove trailing whitespaces
+v6:
+ - Use _cp_reflink helper
+v7:
+ - Change test number to 224 for rebasing 
+---
+ tests/btrfs/224     | 116 ++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/224.out |   2 +
+ tests/btrfs/group   |   1 +
+ 3 files changed, 119 insertions(+)
+ create mode 100755 tests/btrfs/224
+ create mode 100644 tests/btrfs/224.out
 
-> Louis
-> 
+diff --git a/tests/btrfs/224 b/tests/btrfs/224
+new file mode 100755
+index 00000000..e17d5bac
+--- /dev/null
++++ b/tests/btrfs/224
+@@ -0,0 +1,116 @@
++#! /bin/bash
++# SPDX-License-Identifier: GPL-2.0
++# Copyright (c) 2020 Sidong Yang.  All Rights Reserved.
++#
++# FS QA Test 224
++#
++# Test the assign functionality of qgroups
++#
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++	cd /
++	rm -f $tmp.*
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/reflink
++
++# remove previous $seqres.full before test
++rm -f $seqres.full
++
++# real QA test starts here
++
++# Modify as appropriate.
++_supported_fs btrfs
++_supported_os Linux
++
++_require_scratch
++_require_btrfs_qgroup_report
++_require_cp_reflink
++
++# Test assign qgroup for submodule with shared extents by reflink
++assign_shared_test()
++{
++	_scratch_mkfs > /dev/null 2>&1
++	_scratch_mount
++
++	echo "=== qgroup assign shared test ===" >> $seqres.full
++	$BTRFS_UTIL_PROG quota enable $SCRATCH_MNT
++	$BTRFS_UTIL_PROG quota rescan -w $SCRATCH_MNT >> $seqres.full
++
++	$BTRFS_UTIL_PROG subvolume create $SCRATCH_MNT/a >> $seqres.full
++	$BTRFS_UTIL_PROG subvolume create $SCRATCH_MNT/b >> $seqres.full
++
++	_ddt of="$SCRATCH_MNT"/a/file1 bs=1M count=1 >> $seqres.full 2>&1
++	_cp_reflink "$SCRATCH_MNT"/a/file1 "$SCRATCH_MNT"/b/file1
++
++	$BTRFS_UTIL_PROG qgroup create 1/100 $SCRATCH_MNT
++	$BTRFS_UTIL_PROG qgroup assign $SCRATCH_MNT/a 1/100 $SCRATCH_MNT
++	$BTRFS_UTIL_PROG qgroup assign $SCRATCH_MNT/b 1/100 $SCRATCH_MNT
++
++	_scratch_unmount
++	_check_scratch_fs
++}
++
++# Test assign qgroup for submodule without shared extents
++assign_no_shared_test()
++{
++	_scratch_mkfs > /dev/null 2>&1
++	_scratch_mount
++
++	echo "=== qgroup assign no shared test ===" >> $seqres.full
++	$BTRFS_UTIL_PROG quota enable $SCRATCH_MNT
++	$BTRFS_UTIL_PROG quota rescan -w $SCRATCH_MNT >> $seqres.full
++
++	$BTRFS_UTIL_PROG subvolume create $SCRATCH_MNT/a >> $seqres.full
++	$BTRFS_UTIL_PROG subvolume create $SCRATCH_MNT/b >> $seqres.full
++
++	$BTRFS_UTIL_PROG qgroup create 1/100 $SCRATCH_MNT
++	$BTRFS_UTIL_PROG qgroup assign $SCRATCH_MNT/a 1/100 $SCRATCH_MNT
++	$BTRFS_UTIL_PROG qgroup assign $SCRATCH_MNT/b 1/100 $SCRATCH_MNT
++
++	_scratch_unmount
++	_check_scratch_fs
++}
++
++# Test snapshot with assigning qgroup for submodule
++snapshot_test()
++{
++	_scratch_mkfs > /dev/null 2>&1
++	_scratch_mount
++
++	echo "=== qgroup snapshot test ===" >> $seqres.full
++	$BTRFS_UTIL_PROG quota enable $SCRATCH_MNT
++	$BTRFS_UTIL_PROG quota rescan -w $SCRATCH_MNT >> $seqres.full
++
++	$BTRFS_UTIL_PROG subvolume create $SCRATCH_MNT/a >> $seqres.full
++	_ddt of="$SCRATCH_MNT"/a/file1 bs=1M count=1 >> $seqres.full 2>&1
++	subvolid=$(_btrfs_get_subvolid $SCRATCH_MNT a)
++	$BTRFS_UTIL_PROG subvolume snapshot -i 0/$subvolid $SCRATCH_MNT/a $SCRATCH_MNT/b >> $seqres.full
++
++	_scratch_unmount
++	_check_scratch_fs
++}
++
++
++assign_no_shared_test
++
++assign_shared_test
++
++snapshot_test
++
++# success, all done
++echo "Silence is golden"
++status=0
++exit
+diff --git a/tests/btrfs/224.out b/tests/btrfs/224.out
+new file mode 100644
+index 00000000..aa4351cd
+--- /dev/null
++++ b/tests/btrfs/224.out
+@@ -0,0 +1,2 @@
++QA output created by 221
++Silence is golden
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index 96e101ae..9ad33baa 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -225,3 +225,4 @@
+ 221 auto quick send
+ 222 auto quick send
+ 223 auto quick replace trim
++224 auto quick qgroup
+-- 
+2.25.1
+

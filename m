@@ -2,91 +2,237 @@ Return-Path: <SRS0=5Wrf=D3=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.8 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.6 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B127BC433DF
-	for <linux-btrfs@archiver.kernel.org>; Tue, 20 Oct 2020 12:36:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CC54CC433DF
+	for <linux-btrfs@archiver.kernel.org>; Tue, 20 Oct 2020 12:51:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 3A02C22265
-	for <linux-btrfs@archiver.kernel.org>; Tue, 20 Oct 2020 12:36:06 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6257222404
+	for <linux-btrfs@archiver.kernel.org>; Tue, 20 Oct 2020 12:51:57 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="psbbvrmg"
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="Vtbs8DlZ"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2406235AbgJTMgF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 20 Oct 2020 08:36:05 -0400
-Received: from aserp2120.oracle.com ([141.146.126.78]:35406 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2406096AbgJTMgE (ORCPT
+        id S2406677AbgJTMv5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 20 Oct 2020 08:51:57 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53030 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2406604AbgJTMv4 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Oct 2020 08:36:04 -0400
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09KCSqrw012340;
-        Tue, 20 Oct 2020 12:36:02 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
- subject : date : message-id : mime-version : content-transfer-encoding;
- s=corp-2020-01-29; bh=MZF75fa//BXPhu2Oid9pQxA+8Ol/Ev2uqC+Wd2AINFA=;
- b=psbbvrmgQYw18AmfHAJ6V6nSVGZL/4UiKW0JrRSmvNo8YgxwwpM5oZRWC7W9KAnA1hBJ
- 7JDLGVsYttP3tfVhwZQ68ba/j6fiUN48kyaEoZRMrCBIcZxqNrRvWOkZYa0bEJP3yE0Z
- m7RYTbI1p3aWBB9MEzG9M/FruM5fxtVpLKKrayAL/+HGQoltPvqk2anbpE5CrmYK0OUJ
- /ugXtc3k+1PnktLPUCPXSBWP4Q4c/ZWUS64vODi96tU9aa7kH/MwQbOCtlBlU6MSI+4W
- P5sckjVh52hhMScPSO7ZjsDSfAEJq5ohE9o+BFUKb0RFztRD0pomrljyjcXQYMjNKyBy VQ== 
-Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
-        by aserp2120.oracle.com with ESMTP id 349jrpjrfr-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
-        Tue, 20 Oct 2020 12:36:02 +0000
-Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
-        by userp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09KCVBA4183097;
-        Tue, 20 Oct 2020 12:34:01 GMT
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by userp3030.oracle.com with ESMTP id 348ahw6jc4-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Tue, 20 Oct 2020 12:34:01 +0000
-Received: from abhmp0007.oracle.com (abhmp0007.oracle.com [141.146.116.13])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 09KCY0YW000415;
-        Tue, 20 Oct 2020 12:34:00 GMT
-Received: from localhost.localdomain (/39.109.231.106)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Tue, 20 Oct 2020 05:34:00 -0700
-From:   Anand Jain <anand.jain@oracle.com>
-To:     fstests@vger.kernel.org
-Cc:     linux-btrfs@vger.kernel.org, fdmanana@gmail.com
-Subject: [PATCH v3 0/2] add seed delete test case and fix btrfs/163
-Date:   Tue, 20 Oct 2020 20:32:55 +0800
-Message-Id: <cover.1603196609.git.anand.jain@oracle.com>
-X-Mailer: git-send-email 2.25.1
+        Tue, 20 Oct 2020 08:51:56 -0400
+Received: from mail-qt1-x844.google.com (mail-qt1-x844.google.com [IPv6:2607:f8b0:4864:20::844])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 43D20C061755;
+        Tue, 20 Oct 2020 05:51:56 -0700 (PDT)
+Received: by mail-qt1-x844.google.com with SMTP id r8so1055858qtp.13;
+        Tue, 20 Oct 2020 05:51:56 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
+         :subject:to:cc:content-transfer-encoding;
+        bh=FA3cuFpXSnqWM8aXiRBabyjYhfs7bIWu9gsbJfABHi8=;
+        b=Vtbs8DlZ+jnL7KHhZnj70srN4isLlPr7pa2nneccVwAoYYGkf5lzj2UF/in9TROHl6
+         lnFCsb6SF/tM/CBi7H/1PmioeV+s9KzJIp8AWL4my/1JK3JBvTT8dO0+dgWKaoAjiXbk
+         bQKE8pw2VfRfAIU97dQaNTg8eugqUgB3xnKugYPgwYQq3ps27OKvE/gQNDlO7n1aodUK
+         jdpmyNXw0abeIH7BDuhMWYBFnjGko5zMeYTwEU4zIMYV42pnDRafBum64rKBjcM4IsC7
+         2qU4r9mzR59TLGcbdRNQobgdkPbzXcrHTiKyW7BeliksfXhPf74Tmsgp6RgBRCKDiN9h
+         Ux5A==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
+         :from:date:message-id:subject:to:cc:content-transfer-encoding;
+        bh=FA3cuFpXSnqWM8aXiRBabyjYhfs7bIWu9gsbJfABHi8=;
+        b=efH2Tv8OHjh6tXQQkFYSYCaRxrbW9NQloyAGGNJTBF8hTirJ08b/Ub9JVzC/6ZOpqa
+         P9pNjF8fY/z0Vbnz/C+4umoXOXf6X8ttpqZM4ohVDYQtEIx3X0xRUiVL/bLDXJkw5dP1
+         Vo0+F2sCiGuGmOv3Mbc7KMiQhGS0aoqcDn5aydgYVAt11zHUA0V5Q5bCdFgFMk4MV72z
+         lUjtxEbzOrm7esoZNBiah5i8dXayMQk/Euv+rUppaRBexOelHl6vWcYBfuqMyX2aGnva
+         GK1z4mn8s1nvqg9g59E2oMX9dSKP1IRvl6sklFYKEZkYsVBm142rBZgbQwjq5fRbv1uw
+         o2ow==
+X-Gm-Message-State: AOAM532KtIa4j0nJuwh35IbTruRQDEYthpXJ7Z3ZFQm3sikl7QnFNw56
+        fxRaTNlF/aAzhSERPmfLr2nCCYIwlMSWVzElvDJgOu4NM+k=
+X-Google-Smtp-Source: ABdhPJw/iDgyyazX5kdf133aO/B7DDmwNX5/87u3EE4SDmkl9YaUuPQDr1/BWcTwYvDngmzF2BJAnkhasYJEc7O/keE=
+X-Received: by 2002:ac8:832:: with SMTP id u47mr2248347qth.376.1603198315478;
+ Tue, 20 Oct 2020 05:51:55 -0700 (PDT)
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9779 signatures=668682
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 adultscore=0 phishscore=0 bulkscore=0
- malwarescore=0 spamscore=0 mlxlogscore=999 mlxscore=0 suspectscore=1
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2009150000
- definitions=main-2010200086
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9779 signatures=668682
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 phishscore=0 lowpriorityscore=0
- priorityscore=1501 impostorscore=0 adultscore=0 bulkscore=0 malwarescore=0
- mlxlogscore=999 mlxscore=0 spamscore=0 suspectscore=1 clxscore=1015
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2009150000
- definitions=main-2010200086
+References: <cover.1603196609.git.anand.jain@oracle.com> <07f630546b05c655fc68c38a695f67176673aa21.1603196609.git.anand.jain@oracle.com>
+In-Reply-To: <07f630546b05c655fc68c38a695f67176673aa21.1603196609.git.anand.jain@oracle.com>
+Reply-To: fdmanana@gmail.com
+From:   Filipe Manana <fdmanana@gmail.com>
+Date:   Tue, 20 Oct 2020 13:51:44 +0100
+Message-ID: <CAL3q7H7QnfLnBTqXg-pBguDpZ-Uv-USgxbK9c6ruLRbdhSZRKQ@mail.gmail.com>
+Subject: Re: [PATCH v3 1/2] btrfs: add a test case for btrfs seed device delete
+To:     Anand Jain <anand.jain@oracle.com>
+Cc:     fstests <fstests@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Anand Jain (2):
-  btrfs: add a test case for btrfs seed device delete
-  btrfs/163: replace sprout instead of seed
+On Tue, Oct 20, 2020 at 1:34 PM Anand Jain <anand.jain@oracle.com> wrote:
+>
+> This is a regression test for the issue fixed by the kernel commit
+> b5ddcffa3777 (btrfs: fix put of uninitialized kobject after seed device
+> delete).
+>
+> In this test case, we verify the seed device delete on a sprouted
+> filesystem.
+>
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 
- tests/btrfs/163     | 25 ++++++++++----
- tests/btrfs/163.out |  5 ++-
- tests/btrfs/225     | 82 +++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/225.out | 15 +++++++++
- tests/btrfs/group   |  1 +
- 5 files changed, 120 insertions(+), 8 deletions(-)
- create mode 100755 tests/btrfs/225
- create mode 100644 tests/btrfs/225.out
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
 
--- 
-2.25.1
+Looks good, thanks.
 
+> ---
+> v3: Add commit id for the kernel patch mentioned in the change log and
+> the header.
+>     Fix to _supported_fs btrfs
+>     Drop _supported_os Linux
+>     Use define AWK_PROG
+>     Drop the directIO in xfs_io it has no use
+>     Make it a new test case 225
+>
+> v2: drop the sysfs layout check as it breaks the test-case backward
+> compatibility.
+>
+>  tests/btrfs/225     | 82 +++++++++++++++++++++++++++++++++++++++++++++
+>  tests/btrfs/225.out | 15 +++++++++
+>  tests/btrfs/group   |  1 +
+>  3 files changed, 98 insertions(+)
+>  create mode 100755 tests/btrfs/225
+>  create mode 100644 tests/btrfs/225.out
+>
+> diff --git a/tests/btrfs/225 b/tests/btrfs/225
+> new file mode 100755
+> index 000000000000..730d9645f34c
+> --- /dev/null
+> +++ b/tests/btrfs/225
+> @@ -0,0 +1,82 @@
+> +#! /bin/bash
+> +# SPDX-License-Identifier: GPL-2.0
+> +# Copyright (c) 2020 Oracle. All Rights Reserved.
+> +#
+> +# FS QA Test 225
+> +#
+> +# Test for seed device-delete on a sprouted FS.
+> +# Requires kernel patch
+> +#    b5ddcffa3777  btrfs: fix put of uninitialized kobject after seed de=
+vice delete
+> +#
+> +# Steps:
+> +#  Create a seed FS. Add a RW device to make it sprout FS and then delet=
+e
+> +#  the seed device.
+> +
+> +seq=3D`basename $0`
+> +seqres=3D$RESULT_DIR/$seq
+> +echo "QA output created by $seq"
+> +
+> +here=3D`pwd`
+> +tmp=3D/tmp/$$
+> +status=3D1       # failure is the default!
+> +trap "_cleanup; exit \$status" 0 1 2 3 15
+> +
+> +_cleanup()
+> +{
+> +       cd /
+> +       rm -f $tmp.*
+> +}
+> +
+> +# get standard environment, filters and checks
+> +. ./common/rc
+> +. ./common/filter
+> +
+> +# remove previous $seqres.full before test
+> +rm -f $seqres.full
+> +
+> +# real QA test starts here
+> +
+> +# Modify as appropriate.
+> +_supported_fs btrfs
+> +_require_test
+> +_require_scratch_dev_pool 2
+> +
+> +_scratch_dev_pool_get 2
+> +
+> +seed=3D$(echo $SCRATCH_DEV_POOL | $AWK_PROG '{print $1}')
+> +sprout=3D$(echo $SCRATCH_DEV_POOL | $AWK_PROG '{print $2}')
+> +
+> +_mkfs_dev $seed
+> +_mount $seed $SCRATCH_MNT
+> +
+> +$XFS_IO_PROG -f -c "pwrite -S 0xab 0 1M" $SCRATCH_MNT/foo > /dev/null
+> +_scratch_unmount
+> +$BTRFS_TUNE_PROG -S 1 $seed
+> +
+> +# Mount the seed device and add the rw device
+> +_mount -o ro $seed $SCRATCH_MNT
+> +$BTRFS_UTIL_PROG device add -f $sprout $SCRATCH_MNT
+> +_scratch_unmount
+> +
+> +# Now remount
+> +_mount $sprout $SCRATCH_MNT
+> +$XFS_IO_PROG -f -c "pwrite -S 0xcd 0 1M" $SCRATCH_MNT/bar > /dev/null
+> +
+> +echo --- before delete ----
+> +od -x $SCRATCH_MNT/foo
+> +od -x $SCRATCH_MNT/bar
+> +
+> +$BTRFS_UTIL_PROG device delete $seed $SCRATCH_MNT
+> +_scratch_unmount
+> +_btrfs_forget_or_module_reload
+> +_mount $sprout $SCRATCH_MNT
+> +
+> +echo --- after delete ----
+> +od -x $SCRATCH_MNT/foo
+> +od -x $SCRATCH_MNT/bar
+> +
+> +_scratch_dev_pool_put
+> +
+> +# success, all done
+> +status=3D0
+> +exit
+> diff --git a/tests/btrfs/225.out b/tests/btrfs/225.out
+> new file mode 100644
+> index 000000000000..2e5d6ebee2c3
+> --- /dev/null
+> +++ b/tests/btrfs/225.out
+> @@ -0,0 +1,15 @@
+> +QA output created by 225
+> +--- before delete ----
+> +0000000 abab abab abab abab abab abab abab abab
+> +*
+> +4000000
+> +0000000 cdcd cdcd cdcd cdcd cdcd cdcd cdcd cdcd
+> +*
+> +4000000
+> +--- after delete ----
+> +0000000 abab abab abab abab abab abab abab abab
+> +*
+> +4000000
+> +0000000 cdcd cdcd cdcd cdcd cdcd cdcd cdcd cdcd
+> +*
+> +4000000
+> diff --git a/tests/btrfs/group b/tests/btrfs/group
+> index 9ad33baa8119..960981e57eb1 100644
+> --- a/tests/btrfs/group
+> +++ b/tests/btrfs/group
+> @@ -226,3 +226,4 @@
+>  222 auto quick send
+>  223 auto quick replace trim
+>  224 auto quick qgroup
+> +225 auto quick volume seed
+> --
+> 2.25.1
+>
+
+
+--=20
+Filipe David Manana,
+
+=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
+ right.=E2=80=9D

@@ -8,230 +8,145 @@ X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
 	UNPARSEABLE_RELAY,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A867FC4363D
-	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Oct 2020 04:02:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 21FD4C4363D
+	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Oct 2020 04:16:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 44B4B21D6C
-	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Oct 2020 04:02:52 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9B4AC221FC
+	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Oct 2020 04:16:23 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="fYt6XwmU"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="Sphfd8tB"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725781AbgJUECu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 21 Oct 2020 00:02:50 -0400
-Received: from userp2120.oracle.com ([156.151.31.85]:55486 "EHLO
+        id S2411782AbgJUEQW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 21 Oct 2020 00:16:22 -0400
+Received: from userp2120.oracle.com ([156.151.31.85]:36062 "EHLO
         userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725766AbgJUECu (ORCPT
+        with ESMTP id S2404218AbgJUEQW (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Oct 2020 00:02:50 -0400
+        Wed, 21 Oct 2020 00:16:22 -0400
 Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09L40DGT086929
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 Oct 2020 04:02:49 GMT
+        by userp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09L4EJtV111655
+        for <linux-btrfs@vger.kernel.org>; Wed, 21 Oct 2020 04:16:20 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
- date : message-id : mime-version : content-transfer-encoding;
- s=corp-2020-01-29; bh=N3JXaHd4ZNPF7pM7AW5jhSXgQZWaM2NIxfViX0SmQx8=;
- b=fYt6XwmUAf6SCt0gsWz7mDCifUXh0+l876rNK2392NCJxjcM/5vIas52hZ2cZQsMqoCW
- UshavsJd5gpNqKqxYc+/SswsR7UuPTgeg+0AQa/97OxGP3/Szx9DT0RGa60I535fJHk9
- ein/knc2LZG5KDgfdNVvtCZiSp2/n/ykUHIMpdfCId6XmWN+j0wgr9McwXaaDaXjLXpm
- FuHNz0d4wb0ywRr513JKvLUXD2Mr3uuhKibWjW/Cb39lv7ouxE1jx0gu7kEgKtaggz69
- Q3NhpBQfYDtonRYaBLcPqhtzEl1+oRh59YhVrHQKpEK4f+pvme4oCSvgBvfiwUl/bRo+ 1g== 
-Received: from userp3020.oracle.com (userp3020.oracle.com [156.151.31.79])
-        by userp2120.oracle.com with ESMTP id 347s8mx7td-1
+ date : message-id : in-reply-to : references : mime-version :
+ content-transfer-encoding; s=corp-2020-01-29;
+ bh=4HUCWX/67vo4gWXw9GA6EXmAIWgnfUpk5mCd4s8H4UU=;
+ b=Sphfd8tBh12DleZ5vYahZfruQ8KlgqAjKoHiQTOt8JigGZsGVNbl06Sf8seLPENov4Vh
+ ox1ycaD0Kk+shHU59+EGVMPLTTaF7VqPP5xNvHfwWJs9PM6MTTRECBXwkfXG7kwpXSQh
+ ZIAEPo4XA3owtuMbnOqOi7kBMDuoAu9b1HAha3C4RF1QfxEN6U5DN0x4LrgZtugaH4cX
+ AaTGPFWrf/1X54IVy4usYXRoeYX+UGCIjvBPIsRe464tk2u3E1ruEjMRipAbM102fwc6
+ M5/4mxLuQG3T+vil/nZJOwXYAWNFws0MqQyS95N6dLsgixxh1zwN5/owIhkXgbddAyn7 xw== 
+Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
+        by userp2120.oracle.com with ESMTP id 347s8mx8h7-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 Oct 2020 04:02:48 +0000
-Received: from pps.filterd (userp3020.oracle.com [127.0.0.1])
-        by userp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09L3xtbW116257
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 Oct 2020 04:02:48 GMT
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by userp3020.oracle.com with ESMTP id 348acrjv8t-1
+        for <linux-btrfs@vger.kernel.org>; Wed, 21 Oct 2020 04:16:20 +0000
+Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
+        by userp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09L4AuXY115239
+        for <linux-btrfs@vger.kernel.org>; Wed, 21 Oct 2020 04:16:20 GMT
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by userp3030.oracle.com with ESMTP id 348ahx2ux9-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 Oct 2020 04:02:48 +0000
+        for <linux-btrfs@vger.kernel.org>; Wed, 21 Oct 2020 04:16:20 +0000
 Received: from abhmp0010.oracle.com (abhmp0010.oracle.com [141.146.116.16])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 09L42l3g000517
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 Oct 2020 04:02:47 GMT
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id 09L4GJ6R014071
+        for <linux-btrfs@vger.kernel.org>; Wed, 21 Oct 2020 04:16:19 GMT
 Received: from localhost.localdomain (/39.109.231.106)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Tue, 20 Oct 2020 21:02:47 -0700
+        with ESMTP ; Tue, 20 Oct 2020 21:16:19 -0700
 From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH RESEND v2 add prerequisite-patch-id] btrfs: fix devid 0 without a replace item by failing the mount
-Date:   Wed, 21 Oct 2020 12:02:36 +0800
-Message-ID: <818ed3e0e42f309c5cda280ac38747c5544730ea.1602479935.git.anand.jain@oracle.com>
+Subject: [PATCH RESEND v2 1/2] btrfs: drop never met condition of disk_total_bytes == 0
+Date:   Wed, 21 Oct 2020 12:16:08 +0800
+Message-ID: <2b54dd9a6634a833cff4e4ac8ff030a6b802652e.1601988260.git.anand.jain@oracle.com>
 X-Mailer: git-send-email 2.25.1
+In-Reply-To: <cover.1600940809.git.anand.jain@oracle.com>
+References: <cover.1600940809.git.anand.jain@oracle.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9780 signatures=668682
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 phishscore=0 bulkscore=0 adultscore=0
- mlxscore=0 malwarescore=0 suspectscore=3 spamscore=0 mlxlogscore=999
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 adultscore=0 phishscore=0 bulkscore=0
+ malwarescore=0 spamscore=0 mlxlogscore=999 mlxscore=0 suspectscore=1
  classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2009150000
- definitions=main-2010210031
+ definitions=main-2010210033
 X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9780 signatures=668682
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 mlxscore=0 suspectscore=3
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 mlxscore=0 suspectscore=1
  lowpriorityscore=0 mlxlogscore=999 priorityscore=1501 spamscore=0
  phishscore=0 clxscore=1015 bulkscore=0 impostorscore=0 adultscore=0
  malwarescore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2009150000 definitions=main-2010210031
+ engine=8.12.0-2009150000 definitions=main-2010210033
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
-Message-ID: <20201021040236.P0x9Ruu1IuIjB9vBS3FSWnTdXAv9H2RmGjcoNYPFRiM@z>
+Message-ID: <20201021041608.ltIUB-ZnQZZmGLv4dQVmXAmgM8c-8nqJVFKD3RIiLXU@z>
 
-If there is a BTRFS_DEV_REPLACE_DEVID without a replace item, then
-it means some device is trying to attack or may be corrupted. Fail the
-mount so that the user can remove the attacking or fix the corrupted
-device.
+btrfs_device::disk_total_bytes is set even for a seed device (the
+comment is wrong).
 
-As of now if BTRFS_DEV_REPLACE_DEVID is present without the replace
-item, in __btrfs_free_extra_devids() we determine that there is an
-extra device, and free those extra devices but continue to mount the
-device.
-However, we were wrong in keeping tack of the rw_devices so the syzbot
-testcase failed as below [1].
+The function fill_device_from_item() does the job of reading it from the
+item and updating btrfs_device::disk_total_bytes. So both the missing
+device and the seed devices do have their disk_total_bytes updated.
 
-[1]
-WARNING: CPU: 1 PID: 3612 at fs/btrfs/volumes.c:1166 close_fs_devices.part.0+0x607/0x800 fs/btrfs/volumes.c:1166
-Kernel panic - not syncing: panic_on_warn set ...
-CPU: 1 PID: 3612 Comm: syz-executor.2 Not tainted 5.9.0-rc4-syzkaller #0
-Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 01/01/2011
-Call Trace:
- __dump_stack lib/dump_stack.c:77 [inline]
- dump_stack+0x198/0x1fd lib/dump_stack.c:118
- panic+0x347/0x7c0 kernel/panic.c:231
- __warn.cold+0x20/0x46 kernel/panic.c:600
- report_bug+0x1bd/0x210 lib/bug.c:198
- handle_bug+0x38/0x90 arch/x86/kernel/traps.c:234
- exc_invalid_op+0x14/0x40 arch/x86/kernel/traps.c:254
- asm_exc_invalid_op+0x12/0x20 arch/x86/include/asm/idtentry.h:536
-RIP: 0010:close_fs_devices.part.0+0x607/0x800 fs/btrfs/volumes.c:1166
-Code: 0f b6 04 02 84 c0 74 02 7e 33 48 8b 44 24 18 c6 80 30 01 00 00 00 48 83 c4 30 5b 5d 41 5c 41 5d 41 5e 41 5f c3 e8 99 ce 6a fe <0f> 0b e9 71 ff ff ff e8 8d ce 6a fe 0f 0b e9 20 ff ff ff e8 d1 d5
-RSP: 0018:ffffc900091777e0 EFLAGS: 00010246
-RAX: 0000000000040000 RBX: ffffffffffffffff RCX: ffffc9000c8b7000
-RDX: 0000000000040000 RSI: ffffffff83097f47 RDI: 0000000000000007
-RBP: dffffc0000000000 R08: 0000000000000001 R09: ffff8880988a187f
-R10: 0000000000000000 R11: 0000000000000001 R12: ffff88809593a130
-R13: ffff88809593a1ec R14: ffff8880988a1908 R15: ffff88809593a050
- close_fs_devices fs/btrfs/volumes.c:1193 [inline]
- btrfs_close_devices+0x95/0x1f0 fs/btrfs/volumes.c:1179
- open_ctree+0x4984/0x4a2d fs/btrfs/disk-io.c:3434
- btrfs_fill_super fs/btrfs/super.c:1316 [inline]
- btrfs_mount_root.cold+0x14/0x165 fs/btrfs/super.c:1672
+Furthermore, while removing the device if there is a power loss, we could
+have a device with its total_bytes = 0, that's still valid.
 
-The fix here is, when we determine that there isn't a replace item
-then fail the mount if there is a replace target device (devid 0).
+So this patch removes the check dev->disk_total_bytes == 0 in the
+function verify_one_dev_extent(), which it does nothing in it.
 
-Reported-by: syzbot+4cfe71a4da060be47502@syzkaller.appspotmail.com
+And take this opportunity to introduce a check if the device::total_bytes
+is more than the max device size in read_one_dev().
+
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 ---
-Depends on the patches
- btrfs: drop never met condition of disk_total_bytes == 0
- btrfs: fix btrfs_find_device unused arg seed
-If these patches aren't integrated yet, then please add the last arg in
-the function btrfs_find_device(). Any value is fine as it doesn't care.
+v2: add check if the total_bytes is more than the actual device size in
+    read_one_dev().
+    update change log.
 
-fstest case will follow.
+ fs/btrfs/volumes.c | 25 ++++++++++---------------
+ 1 file changed, 10 insertions(+), 15 deletions(-)
 
-v2: changed title
-    old: btrfs: fix rw_devices count in __btrfs_free_extra_devids
-
-    In btrfs_init_dev_replace() try to match the presence of replace_item
-    to the BTRFS_DEV_REPLACE_DEVID device. If fails then fail the
-    mount. So drop the similar check in __btrfs_free_extra_devids().
-
- fs/btrfs/dev-replace.c | 26 ++++++++++++++++++++++++--
- fs/btrfs/volumes.c     | 26 +++++++-------------------
- 2 files changed, 31 insertions(+), 21 deletions(-)
-
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 9340d03661cd..e2b7ae386224 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -91,6 +91,17 @@ int btrfs_init_dev_replace(struct btrfs_fs_info *fs_info)
- 	ret = btrfs_search_slot(NULL, dev_root, &key, path, 0, 0);
- 	if (ret) {
- no_valid_dev_replace_entry_found:
-+		/*
-+		 * We don't have a replace item or it's corrupted.
-+		 * If there is a replace target, fail the mount.
-+		 */
-+		if (btrfs_find_device(fs_info->fs_devices,
-+				      BTRFS_DEV_REPLACE_DEVID, NULL, NULL)) {
-+			btrfs_err(fs_info,
-+			"found replace target device without a replace item");
-+			ret = -EIO;
-+			goto out;
-+		}
- 		ret = 0;
- 		dev_replace->replace_state =
- 			BTRFS_IOCTL_DEV_REPLACE_STATE_NEVER_STARTED;
-@@ -143,8 +154,19 @@ int btrfs_init_dev_replace(struct btrfs_fs_info *fs_info)
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_NEVER_STARTED:
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_FINISHED:
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_CANCELED:
--		dev_replace->srcdev = NULL;
--		dev_replace->tgtdev = NULL;
-+		/*
-+		 * We don't have an active replace item but if there is a
-+		 * replace target, fail the mount.
-+		 */
-+		if (btrfs_find_device(fs_info->fs_devices,
-+				      BTRFS_DEV_REPLACE_DEVID, NULL, NULL)) {
-+			btrfs_err(fs_info,
-+			"replace devid present without an active replace item");
-+			ret = -EIO;
-+		} else {
-+			dev_replace->srcdev = NULL;
-+			dev_replace->tgtdev = NULL;
-+		}
- 		break;
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_STARTED:
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_SUSPENDED:
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index a88655d60a94..0c6049f9ace3 100644
+index 2a5397fb4175..0c6049f9ace3 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -1056,22 +1056,13 @@ static void __btrfs_free_extra_devids(struct btrfs_fs_devices *fs_devices,
- 			continue;
- 		}
+@@ -6847,6 +6847,16 @@ static int read_one_dev(struct extent_buffer *leaf,
+ 	}
  
--		if (device->devid == BTRFS_DEV_REPLACE_DEVID) {
--			/*
--			 * In the first step, keep the device which has
--			 * the correct fsid and the devid that is used
--			 * for the dev_replace procedure.
--			 * In the second step, the dev_replace state is
--			 * read from the device tree and it is known
--			 * whether the procedure is really active or
--			 * not, which means whether this device is
--			 * used or whether it should be removed.
--			 */
--			if (step == 0 || test_bit(BTRFS_DEV_STATE_REPLACE_TGT,
--						  &device->dev_state)) {
--				continue;
--			}
--		}
-+		/*
-+		 * We have already validated the presence of BTRFS_DEV_REPLACE_DEVID,
-+		 * in btrfs_init_dev_replace() so just continue.
-+		 */
-+		if (device->devid == BTRFS_DEV_REPLACE_DEVID)
-+			continue;
+ 	fill_device_from_item(leaf, dev_item, device);
++	if (device->bdev) {
++		u64 max_total_bytes = i_size_read(device->bdev->bd_inode);
 +
- 		if (device->bdev) {
- 			blkdev_put(device->bdev, device->mode);
- 			device->bdev = NULL;
-@@ -1080,9 +1071,6 @@ static void __btrfs_free_extra_devids(struct btrfs_fs_devices *fs_devices,
- 		if (test_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state)) {
- 			list_del_init(&device->dev_alloc_list);
- 			clear_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state);
--			if (!test_bit(BTRFS_DEV_STATE_REPLACE_TGT,
--				      &device->dev_state))
--				fs_devices->rw_devices--;
- 		}
- 		list_del_init(&device->dev_list);
- 		fs_devices->num_devices--;
-
-base-commit: 1fd4033dd011a3525bacddf37ab9eac425d25c4f
-prerequisite-patch-id: 0d3416ab45d924135a9095c3d9c68646f7c5e476
-prerequisite-patch-id: 51a2e9b4b78bf808279307d03436a33063d42130
++		if (device->total_bytes > max_total_bytes) {
++			btrfs_err(fs_info,
++			"device total_bytes should be below %llu but found %llu",
++				  max_total_bytes, device->total_bytes);
++			return -EINVAL;
++		}
++	}
+ 	set_bit(BTRFS_DEV_STATE_IN_FS_METADATA, &device->dev_state);
+ 	if (test_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state) &&
+ 	   !test_bit(BTRFS_DEV_STATE_REPLACE_TGT, &device->dev_state)) {
+@@ -7579,21 +7589,6 @@ static int verify_one_dev_extent(struct btrfs_fs_info *fs_info,
+ 		goto out;
+ 	}
+ 
+-	/* It's possible this device is a dummy for seed device */
+-	if (dev->disk_total_bytes == 0) {
+-		struct btrfs_fs_devices *devs;
+-
+-		devs = list_first_entry(&fs_info->fs_devices->seed_list,
+-					struct btrfs_fs_devices, seed_list);
+-		dev = btrfs_find_device(devs, devid, NULL, NULL, false);
+-		if (!dev) {
+-			btrfs_err(fs_info, "failed to find seed devid %llu",
+-				  devid);
+-			ret = -EUCLEAN;
+-			goto out;
+-		}
+-	}
+-
+ 	if (physical_offset + physical_len > dev->disk_total_bytes) {
+ 		btrfs_err(fs_info,
+ "dev extent devid %llu physical offset %llu len %llu is beyond device boundary %llu",
 -- 
 2.25.1
 

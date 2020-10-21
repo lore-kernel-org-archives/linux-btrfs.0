@@ -2,79 +2,324 @@ Return-Path: <SRS0=tFs+=D4=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
+X-Spam-Status: No, score=-11.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C5AB9C56201
-	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Oct 2020 05:55:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C4A12C4363A
+	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Oct 2020 06:26:02 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 6B10722249
-	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Oct 2020 05:55:29 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6C71822249
+	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Oct 2020 06:26:02 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="H5ydqD5C"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2440658AbgJUFz2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 21 Oct 2020 01:55:28 -0400
-Received: from aliyun-cloud.icoremail.net ([47.90.73.12]:32303 "HELO
-        aliyun-sdnproxy-4.icoremail.net" rhost-flags-OK-OK-OK-FAIL)
-        by vger.kernel.org with SMTP id S2440654AbgJUFz2 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Oct 2020 01:55:28 -0400
-X-Greylist: delayed 716 seconds by postgrey-1.27 at vger.kernel.org; Wed, 21 Oct 2020 01:55:27 EDT
-Received: from localhost.localdomain (unknown [210.32.148.79])
-        by mail-app3 (Coremail) with SMTP id cC_KCgAXT5z4yI9fbU9RAA--.37365S4;
-        Wed, 21 Oct 2020 13:37:00 +0800 (CST)
-From:   Dinghao Liu <dinghao.liu@zju.edu.cn>
-To:     dinghao.liu@zju.edu.cn, kjlu@umn.edu
-Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: [PATCH] btrfs: ref-verify: Fix memleak in btrfs_ref_tree_mod
-Date:   Wed, 21 Oct 2020 13:36:55 +0800
-Message-Id: <20201021053655.28624-1-dinghao.liu@zju.edu.cn>
-X-Mailer: git-send-email 2.17.1
-X-CM-TRANSID: cC_KCgAXT5z4yI9fbU9RAA--.37365S4
-X-Coremail-Antispam: 1UD129KBjvdXoWrAFyftrW5AF4UCF4kur1xZrb_yoWxWFbEka
-        97Ary8ur1UZr1fua18Ka1ktrZYywnYgr4xXwn2kF1jkw42yFyrX393Jrn8ta45JrW7WFnx
-        CFWSqrn8CwnrujkaLaAFLSUrUUUUUb8apTn2vfkv8UJUUUU8Yxn0WfASr-VFAUDa7-sFnT
-        9fnUUIcSsGvfJTRUUUbIkFc2x0x2IEx4CE42xK8VAvwI8IcIk0rVWrJVCq3wAFIxvE14AK
-        wVWUJVWUGwA2ocxC64kIII0Yj41l84x0c7CEw4AK67xGY2AK021l84ACjcxK6xIIjxv20x
-        vE14v26w1j6s0DM28EF7xvwVC0I7IYx2IY6xkF7I0E14v26r4UJVWxJr1l84ACjcxK6I8E
-        87Iv67AKxVW0oVCq3wA2z4x0Y4vEx4A2jsIEc7CjxVAFwI0_GcCE3s1le2I262IYc4CY6c
-        8Ij28IcVAaY2xG8wAqx4xG64xvF2IEw4CE5I8CrVC2j2WlYx0E2Ix0cI8IcVAFwI0_Jr0_
-        Jr4lYx0Ex4A2jsIE14v26r1j6r4UMcvjeVCFs4IE7xkEbVWUJVW8JwACjcxG0xvY0x0EwI
-        xGrwACjI8F5VA0II8E6IAqYI8I648v4I1lc2xSY4AK67AK6r4rMxAIw28IcxkI7VAKI48J
-        MxAIw28IcVCjz48v1sIEY20_GFWkJr1UJwCFx2IqxVCFs4IE7xkEbVWUJVW8JwC20s026c
-        02F40E14v26r1j6r18MI8I3I0E7480Y4vE14v26r106r1rMI8E67AF67kF1VAFwI0_JF0_
-        Jw1lIxkGc2Ij64vIr41lIxAIcVC0I7IYx2IY67AKxVWUJVWUCwCI42IY6xIIjxv20xvEc7
-        CjxVAFwI0_Jr0_Gr1lIxAIcVCF04k26cxKx2IYs7xG6rWUJVWrZr1UMIIF0xvEx4A2jsIE
-        14v26r1j6r4UMIIF0xvEx4A2jsIEc7CjxVAFwI0_Gr0_Gr1UYxBIdaVFxhVjvjDU0xZFpf
-        9x0JUP5rcUUUUU=
-X-CM-SenderInfo: qrrzjiaqtzq6lmxovvfxof0/1tbiAgATBlZdtQf4pwAFs0
+        id S2440524AbgJUG0B (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 21 Oct 2020 02:26:01 -0400
+Received: from mx2.suse.de ([195.135.220.15]:42414 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1731126AbgJUG0B (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 21 Oct 2020 02:26:01 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1603261559;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding;
+        bh=I+uOWQuzjUZurRDFzVjcKzf1NWVeKZ+oKYHYpHI+Q74=;
+        b=H5ydqD5Cug1LYwDTrZNyrIkwbD9DEq91LBhngUQLPRw2nJk4mUOua4vFhnNebnaqe4GPnT
+        ZckVnbtkcHTUVaC7LNa/xYWlhXHx8gQ1SCfew2Dp2mn8FQk8Rlu4a9ZVN4IO8SXR0eIk1B
+        Zb9d5bhsT8Uz3hM0WKHjS0azNEfzVp0=
+Received: from relay2.suse.de (unknown [195.135.221.27])
+        by mx2.suse.de (Postfix) with ESMTP id 1E9BEAC12
+        for <linux-btrfs@vger.kernel.org>; Wed, 21 Oct 2020 06:25:59 +0000 (UTC)
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH v4 00/68] btrfs: add basic rw support for subpage sector size
+Date:   Wed, 21 Oct 2020 14:24:46 +0800
+Message-Id: <20201021062554.68132-1-wqu@suse.com>
+X-Mailer: git-send-email 2.28.0
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-There is one error handling path does not free ref,
-which may cause a memory leak.
+Patches can be fetched from github:
+https://github.com/adam900710/linux/tree/subpage_data_fullpage_write
 
-Signed-off-by: Dinghao Liu <dinghao.liu@zju.edu.cn>
----
- fs/btrfs/ref-verify.c | 1 +
- 1 file changed, 1 insertion(+)
+=== Overview ===
+To make 64K page size systems to mount 4K sector size btrfs and to
+regular read-write.
 
-diff --git a/fs/btrfs/ref-verify.c b/fs/btrfs/ref-verify.c
-index 7f03dbe5b609..78693d3dd15b 100644
---- a/fs/btrfs/ref-verify.c
-+++ b/fs/btrfs/ref-verify.c
-@@ -860,6 +860,7 @@ int btrfs_ref_tree_mod(struct btrfs_fs_info *fs_info,
- "dropping a ref for a root that doesn't have a ref on the block");
- 			dump_block_entry(fs_info, be);
- 			dump_ref_action(fs_info, ra);
-+			kfree(ref);
- 			kfree(ra);
- 			goto out_unlock;
- 		}
+=== What works ===
+- Subpage data read
+  Both uncompressed and compressed data
+
+- Subpage metadata read/write
+  So far single thread "fsstress" loops hasn't crash the system with all
+  debug options enabled.
+  (Currently running with "-n 2048" in a 1024 run loop).
+
+  This also means, we can do subpage sized pure metadata operations like
+  reflink. (e.g. we can result 4K sector using reflink without problem)
+
+- Full page data write
+  Only tested uncompressed data yet.
+  This means all data write will happen in page size, including:
+  * buffered write
+  * dio write
+  * hole punch for unaligned range
+  This means even just one 4K sector is dirtied, we will writeback the
+  full 64K page as an data extent.
+
+=== What doesn't works ===
+- Balance
+- Scrub
+  All failed with csum check failure, may be quick to solve, but the
+  current development status and patchset size is enough for a milestone.
+
+- Dev replace
+  Unable to submit subpage data writes.
+
+
+=== Challenges and solutions ===
+- Metadata
+  * One 64K page can contain several tree blocks
+    Instead of full page read/write/lock, we use extent io tree to do
+    sector aligned read/write/lock, and avoid full page lock if
+    possible.
+
+  * Metadata can cross 64K page boundary
+    This only happens for certain converted fs. Consider how little used
+    just reject them for now and fix convert.
+
+  Overall, metadata is not that complex as metadata has very limited
+  interfaces.
+
+- Data
+  * Data has more page status and uses ordered extents
+  * Data subpage write can be handled by iomap
+    Instead of using extent io tree for each page status, goes full page
+    write back.
+    So that I won't waste time to implement something which is designed
+    to be replaced.
+
+- Testing
+  * No way to test under 86_64
+    Currently I'm using an RK3399 board with NVME driver, planning to
+    move to a Xavier AGX board.
+    But we plan to add 2K sector size support as a pure testing sector
+    size for x86_64 (but still 4K as minimal node size) to test subpage
+    routines and make my life a little easier.
+
+=== TODO ===
+- More testing 
+  Obviously
+
+- Balance and scrub support
+- Limited data subpage write
+  Mostly for balance and replace, as a workaround.
+
+- Iomap support for true subpage data writeback
+
+=== Patchset structure ===
+Patch 01~03:	Small bug fixes
+Patch 04~22:	Generic cleanup and refactors, which make sense without
+		subpage support
+Patch 23~27:	Subpage specific cleanup and refactors.
+Patch 28~42:	Enablement for subpage RO mount
+Patch 43~52:	Enablement for subpage metadata write
+Patch 53~68:	Enablement for subpage data write (although still in
+		page size)
+
+=== Changelog ===
+v2:
+- Migrating to extent_io_tree based status/locking mechanism
+  This gets rid of the ad-hoc subpage_eb_mapping structure and extra
+  timing to verify the extent buffers.
+
+  This also brings some extra cleanups for btree inode extent io tree
+  hooks which makes no sense for both subpage and regular sector size.
+
+  This also completely removes the requirement for page status like
+  Locked/Uptodate/Dirty. Now metadata pages only utilize Private status,
+  while private pointer is always NULL.
+
+- Submit proper subpage sized read for metadata
+  With the help of extent io tree, we no longer need to bother full page
+  read. Now submit subpage sized metadata read and do subpage locking.
+
+- Remove some unnecessary refactors
+  Some refactors like extracting detach_extent_buffer_pages() doesn't
+  really make the code cleaner. We can easily add subpage specific
+  branch.
+
+- Address the comments from v1
+
+v3:
+- Add compressed data read fix
+
+- Also update page status according to extent status for btree inode
+  This makes us to reuse more code from the existing code base.
+
+- Add metadata write support
+  Only manually tested (with a fs created under x86_64, and script to do
+  metadata only operations under aarch64 with 64K page size).
+
+- More cleanup/refactors during metadata write support development.
+
+v4:
+- Add more refactors
+  The mostly obvious one is the refactor of __set/__clear_extent_bit()
+  to make the less common options less visible, and allow me to add more
+  options more easily.
+
+- Add full data page write support
+
+- More bug fixes for existing patches
+  Mostly the bug found during fsstress tests.
+
+- Reduce page locking to minimal for metadata
+  I hit a possible ABBA lock, where extent io tree locking and page
+  locking leads to dead lock.
+  To resolve it without adding more requirement for page locking
+  sequence, subpage metadata only rely on extent io tree locking.
+  Page locking is only reserved for unavoidable cases, like calling
+  clear_page_dirty_for_io().
+
+Goldwyn Rodrigues (1):
+  btrfs: use iosize while reading compressed pages
+
+Qu Wenruo (67):
+  btrfs: extent-io-tests: remove invalid tests
+  btrfs: extent_io: fix the comment on lock_extent_buffer_for_io().
+  btrfs: extent_io: update the comment for find_first_extent_bit()
+  btrfs: extent_io: sink the @failed_start parameter for
+    set_extent_bit()
+  btrfs: make btree inode io_tree has its special owner
+  btrfs: disk-io: replace @fs_info and @private_data with @inode for
+    btrfs_wq_submit_bio()
+  btrfs: inode: sink parameter @start and @len for check_data_csum()
+  btrfs: extent_io: unexport extent_invalidatepage()
+  btrfs: extent_io: remove the forward declaration and rename
+    __process_pages_contig
+  btrfs: extent_io: rename pages_locked in process_pages_contig()
+  btrfs: extent_io: only require sector size alignment for page read
+  btrfs: extent_io: remove the extent_start/extent_len for
+    end_bio_extent_readpage()
+  btrfs: extent_io: integrate page status update into
+    endio_readpage_release_extent()
+  btrfs: extent_io: rename page_size to io_size in submit_extent_page()
+  btrfs: extent_io: add assert_spin_locked() for
+    attach_extent_buffer_page()
+  btrfs: extent_io: extract the btree page submission code into its own
+    helper function
+  btrfs: extent_io: calculate inline extent buffer page size based on
+    page size
+  btrfs: extent_io: make btrfs_fs_info::buffer_radix to take sector size
+    devided values
+  btrfs: extent_io: sink less common parameters for __set_extent_bit()
+  btrfs: extent_io: sink less common parameters for __clear_extent_bit()
+  btrfs: disk_io: grab fs_info from extent_buffer::fs_info directly for
+    btrfs_mark_buffer_dirty()
+  btrfs: disk-io: make csum_tree_block() handle sectorsize smaller than
+    page size
+  btrfs: disk-io: extract the extent buffer verification from
+    btree_readpage_end_io_hook()
+  btrfs: disk-io: accept bvec directly for csum_dirty_buffer()
+  btrfs: inode: make btrfs_readpage_end_io_hook() follow sector size
+  btrfs: introduce a helper to determine if the sectorsize is smaller
+    than PAGE_SIZE
+  btrfs: extent_io: allow find_first_extent_bit() to find a range with
+    exact bits match
+  btrfs: extent_io: don't allow tree block to cross page boundary for
+    subpage support
+  btrfs: extent_io: update num_extent_pages() to support subpage sized
+    extent buffer
+  btrfs: handle sectorsize < PAGE_SIZE case for extent buffer accessors
+  btrfs: disk-io: only clear EXTENT_LOCK bit for extent_invalidatepage()
+  btrfs: extent-io: make type of extent_state::state to be at least 32
+    bits
+  btrfs: extent_io: use extent_io_tree to handle subpage extent buffer
+    allocation
+  btrfs: extent_io: make set/clear_extent_buffer_uptodate() to support
+    subpage size
+  btrfs: extent_io: make the assert test on page uptodate able to handle
+    subpage
+  btrfs: extent_io: implement subpage metadata read and its endio
+    function
+  btrfs: extent_io: implement try_release_extent_buffer() for subpage
+    metadata support
+  btrfs: extent_io: extra the core of test_range_bit() into
+    test_range_bit_nolock()
+  btrfs: extent_io: introduce EXTENT_READ_SUBMITTED to handle subpage
+    data read
+  btrfs: set btree inode track_uptodate for subpage support
+  btrfs: allow RO mount of 4K sector size fs on 64K page system
+  btrfs: disk-io: allow btree_set_page_dirty() to do more sanity check
+    on subpage metadata
+  btrfs: disk-io: support subpage metadata csum calculation at write
+    time
+  btrfs: extent_io: prevent extent_state from being merged for btree io
+    tree
+  btrfs: extent_io: make set_extent_buffer_dirty() to support subpage
+    sized metadata
+  btrfs: extent_io: add subpage support for clear_extent_buffer_dirty()
+  btrfs: extent_io: make set_btree_ioerr() accept extent buffer
+  btrfs: extent_io: introduce write_one_subpage_eb() function
+  btrfs: extent_io: make lock_extent_buffer_for_io() subpage compatible
+  btrfs: extent_io: introduce submit_btree_subpage() to submit a page
+    for subpage metadata write
+  btrfs: extent_io: introduce end_bio_subpage_eb_writepage() function
+  btrfs: inode: make can_nocow_extent() check only return 1 if the range
+    is no smaller than PAGE_SIZE
+  btrfs: file: calculate reserve space based on PAGE_SIZE for buffered
+    write
+  btrfs: file: make hole punching page aligned for subpage
+  btrfs: file: make btrfs_dirty_pages() follow page size to mark extent
+    io tree
+  btrfs: file: make btrfs_file_write_iter() to be page aligned
+  btrfs: output extra info for space info update underflow
+  btrfs: delalloc-space: make data space reservation to be page aligned
+  btrfs: scrub: allow scrub to work with subpage sectorsize
+  btrfs: inode: make btrfs_truncate_block() to do page alignment
+  btrfs: file: make hole punch and zero range to be page aligned
+  btrfs: file: make btrfs_fallocate() to use PAGE_SIZE as blocksize
+  btrfs: inode: always mark the full page range delalloc for
+    btrfs_page_mkwrite()
+  btrfs: inode: require page alignement for direct io
+  btrfs: inode: only do NOCOW write for page aligned extent
+  btrfs: reflink: do full page writeback for reflink prepare
+  btrfs: support subpage read write for test
+
+ fs/btrfs/block-group.c           |    2 +-
+ fs/btrfs/btrfs_inode.h           |   12 +
+ fs/btrfs/ctree.c                 |    5 +-
+ fs/btrfs/ctree.h                 |   43 +-
+ fs/btrfs/delalloc-space.c        |   19 +-
+ fs/btrfs/disk-io.c               |  425 ++++++--
+ fs/btrfs/disk-io.h               |    8 +-
+ fs/btrfs/extent-io-tree.h        |  145 ++-
+ fs/btrfs/extent-tree.c           |    2 +-
+ fs/btrfs/extent_io.c             | 1576 ++++++++++++++++++++++--------
+ fs/btrfs/extent_io.h             |   27 +-
+ fs/btrfs/extent_map.c            |    2 +-
+ fs/btrfs/file.c                  |  140 ++-
+ fs/btrfs/free-space-cache.c      |    2 +-
+ fs/btrfs/inode.c                 |  117 ++-
+ fs/btrfs/reflink.c               |   36 +-
+ fs/btrfs/relocation.c            |    2 +-
+ fs/btrfs/scrub.c                 |    8 -
+ fs/btrfs/space-info.h            |    4 +-
+ fs/btrfs/struct-funcs.c          |   18 +-
+ fs/btrfs/tests/extent-io-tests.c |   26 +-
+ fs/btrfs/transaction.c           |    4 +-
+ fs/btrfs/volumes.c               |    2 +-
+ include/trace/events/btrfs.h     |    1 +
+ 24 files changed, 1927 insertions(+), 699 deletions(-)
+
 -- 
-2.17.1
+2.28.0
 

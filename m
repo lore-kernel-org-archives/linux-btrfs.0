@@ -8,56 +8,56 @@ X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
 	UNPARSEABLE_RELAY,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9531EC4363A
-	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Oct 2020 07:46:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 85CF9C388F7
+	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Oct 2020 07:46:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 3555121707
-	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Oct 2020 07:46:07 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1721721707
+	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Oct 2020 07:46:08 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="ztA1TGft"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="ehXDh8BQ"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2507176AbgJVHqG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 22 Oct 2020 03:46:06 -0400
-Received: from userp2120.oracle.com ([156.151.31.85]:58710 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2442023AbgJVHqF (ORCPT
+        id S2507207AbgJVHqH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 22 Oct 2020 03:46:07 -0400
+Received: from aserp2130.oracle.com ([141.146.126.79]:35422 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2442023AbgJVHqG (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Oct 2020 03:46:05 -0400
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09M7iHiH136421;
-        Thu, 22 Oct 2020 07:45:59 GMT
+        Thu, 22 Oct 2020 03:46:06 -0400
+Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
+        by aserp2130.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09M7jDRi045140;
+        Thu, 22 Oct 2020 07:46:02 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
  subject : date : message-id : in-reply-to : references : mime-version :
  content-transfer-encoding; s=corp-2020-01-29;
- bh=3lgTb5s9mcZDmJXNLrEMS44OxCOSHdKTVNG3EmCxgh4=;
- b=ztA1TGftukYifK6xgt6Wy4baT7nJLAY8WjTNvUkwQSJsK9QAI/z8kkxSimhOZYrwMdv8
- dZYXuhcxWvklKYeljHUe2PAAqyktjGrbJYVkA/Ejpsk6dGaPIAKr+2uK8or40DJvzpiP
- xTVQnjtBR7oMDeHvF+2za7yxNvUtAfqegBTx61thAnaXrm7gV/wZTSS/jpTiuct4970M
- Nf0OBo6uzHNaAJFDNI29Y6qiWrnkPK4ucUq5cKDWMdSxUx7wM6NPZbjyQ43O9XlSFjwt
- u5nrl3HEEoVu9V7k3xkDolvw20c/U37C7/I1CiaTwtv0WWlVsfivFRXsMcWQugm2ASqi Jg== 
+ bh=yL+W/1oeSrPtJoZ9ZhZJwhZ25qrcX1JCpaWZSqmDa+Y=;
+ b=ehXDh8BQ2knhTaYUDE84pwCNmbQ7AuEBqz8lcpsNOvX2mwfGqaDFxVYNw/1mWA5fW+es
+ EE5XGq8LvJWOQq9AWlmkvjpN54UCLpWdDRxTgT19ThEVLHWZMp4de+rkPd1bub0oKMz9
+ KM57B61Fibqhv45tAHOMPOqLVrFlaLUll1tezslMIJQLlOAptkR0Xk9UCyFBdfgmy2Xq
+ 6Yfgp5duHP6cESL8F03VpevM5dh+lrJId4QeixjhwHlWEF+DR8ak8vGYSWXQyrVc8DKm
+ yw9QEnN2KMuuVm9DrjOtPE1miBFn0FekTeCF++ztvI/sm7kMphxlPEpMM4WVhkNw2hxl 7A== 
 Received: from aserp3030.oracle.com (aserp3030.oracle.com [141.146.126.71])
-        by userp2120.oracle.com with ESMTP id 34ak16mp7f-1
+        by aserp2130.oracle.com with ESMTP id 347p4b4f7w-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
-        Thu, 22 Oct 2020 07:45:59 +0000
+        Thu, 22 Oct 2020 07:46:02 +0000
 Received: from pps.filterd (aserp3030.oracle.com [127.0.0.1])
-        by aserp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09M7a8EX176631;
-        Thu, 22 Oct 2020 07:43:59 GMT
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by aserp3030.oracle.com with ESMTP id 348a6qaa52-1
+        by aserp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09M7a81X176548;
+        Thu, 22 Oct 2020 07:44:02 GMT
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by aserp3030.oracle.com with ESMTP id 348a6qaa7j-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Thu, 22 Oct 2020 07:43:59 +0000
+        Thu, 22 Oct 2020 07:44:02 +0000
 Received: from abhmp0006.oracle.com (abhmp0006.oracle.com [141.146.116.12])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 09M7hveW012650;
-        Thu, 22 Oct 2020 07:43:57 GMT
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 09M7i1dj031272;
+        Thu, 22 Oct 2020 07:44:01 GMT
 Received: from localhost.localdomain (/39.109.231.106)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Thu, 22 Oct 2020 00:43:56 -0700
+        with ESMTP ; Thu, 22 Oct 2020 00:44:01 -0700
 From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     josef@toxicpanda.com, dsterba@suse.com
-Subject: [PATCH v9 1/3] btrfs: add btrfs_strmatch helper
-Date:   Thu, 22 Oct 2020 15:43:35 +0800
-Message-Id: <75264e50d49f3c68cc14dc87510c8f3767390dcf.1603347462.git.anand.jain@oracle.com>
+Subject: [PATCH v9 3/3] btrfs: create read policy sysfs attribute, pid
+Date:   Thu, 22 Oct 2020 15:43:37 +0800
+Message-Id: <abd366082eeb8b289cd420cb04528a687a250433.1603347462.git.anand.jain@oracle.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1603347462.git.anand.jain@oracle.com>
 References: <cover.1603347462.git.anand.jain@oracle.com>
@@ -69,58 +69,116 @@ X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 malwarescore=0 ml
  phishscore=0 classifier=spam adjust=0 reason=mlx scancount=1
  engine=8.12.0-2009150000 definitions=main-2010220049
 X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9781 signatures=668682
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 bulkscore=0 phishscore=0
- priorityscore=1501 clxscore=1015 malwarescore=0 mlxscore=0 adultscore=0
- lowpriorityscore=0 impostorscore=0 spamscore=0 mlxlogscore=999
- suspectscore=1 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2009150000 definitions=main-2010220050
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=1 priorityscore=1501
+ clxscore=1015 malwarescore=0 mlxscore=0 bulkscore=0 lowpriorityscore=0
+ phishscore=0 adultscore=0 mlxlogscore=999 impostorscore=0 spamscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2009150000
+ definitions=main-2010220050
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Add a generic helper to match the golden-string in the given-string,
-and ignore the leading and trailing whitespaces if any.
+Add
+
+ /sys/fs/btrfs/UUID/read_policy
+
+attribute so that the read policy for the raid1, raid1c34 and raid10 can
+be tuned.
+
+When this attribute is read, it shall show all available policies, with
+active policy being with in [ ]. The read_policy attribute can be written
+using one of the items listed in there.
+
+For example:
+  $cat /sys/fs/btrfs/UUID/read_policy
+  [pid]
+  $echo pid > /sys/fs/btrfs/UUID/read_policy
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
-Suggested-by: David Sterba <dsterba@suse.com>
 ---
-v9: use Josef suggested C coding style, using single if statement.
-v5: born
+v9: fix C coding style, static const char*
+v5: 
+  Title rename: old: btrfs: sysfs, add read_policy attribute
+  Uses the btrfs_strmatch() helper (BTRFS_READ_POLICY_NAME_MAX dropped).
+  Use the table for the policy names.
+  Rename len to ret.
+  Use a simple logic to prefix space in btrfs_read_policy_show()
+  Reviewed-by: Josef Bacik <josef@toxicpanda.com> dropped.
 
- fs/btrfs/sysfs.c | 20 ++++++++++++++++++++
- 1 file changed, 20 insertions(+)
+v4:-
+v3: rename [by_pid] to [pid]
+v2: v2: check input len before strip and kstrdup
+
+ fs/btrfs/sysfs.c | 49 ++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 49 insertions(+)
 
 diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index 8424f5d0e5ed..5ea262d289c6 100644
+index 5ea262d289c6..e23ae3643527 100644
 --- a/fs/btrfs/sysfs.c
 +++ b/fs/btrfs/sysfs.c
-@@ -863,6 +863,26 @@ static ssize_t btrfs_generation_show(struct kobject *kobj,
+@@ -883,6 +883,54 @@ static int btrfs_strmatch(const char *given, const char *golden)
+ 	return -EINVAL;
  }
- BTRFS_ATTR(, generation, btrfs_generation_show);
  
-+/*
-+ * Match the %golden in the %given. Ignore the leading and trailing whitespaces
-+ * if any.
-+ */
-+static int btrfs_strmatch(const char *given, const char *golden)
++static const char * const btrfs_read_policy_name[] = { "pid" };
++
++static ssize_t btrfs_read_policy_show(struct kobject *kobj,
++				      struct kobj_attribute *a, char *buf)
 +{
-+	size_t len = strlen(golden);
-+	char *stripped;
++	int i;
++	ssize_t ret = 0;
++	struct btrfs_fs_devices *fs_devices = to_fs_devs(kobj);
 +
-+	/* strip leading whitespace */
-+	stripped = skip_spaces(given);
++	for (i = 0; i < BTRFS_NR_READ_POLICY; i++) {
++		if (fs_devices->read_policy == i)
++			ret += snprintf(buf + ret, PAGE_SIZE - ret, "%s[%s]",
++					(ret == 0 ? "" : " "),
++					btrfs_read_policy_name[i]);
++		else
++			ret += snprintf(buf + ret, PAGE_SIZE - ret, "%s%s",
++					(ret == 0 ? "" : " "),
++					btrfs_read_policy_name[i]);
++	}
 +
-+	/* strip trailing whitespace */
-+	if ((strncmp(stripped, golden, len) == 0) &&
-+	    (strlen(skip_spaces(stripped + len)) == 0))
-+		return 0;
++	ret += snprintf(buf + ret, PAGE_SIZE - ret, "\n");
++
++	return ret;
++}
++
++static ssize_t btrfs_read_policy_store(struct kobject *kobj,
++				       struct kobj_attribute *a,
++				       const char *buf, size_t len)
++{
++	int i;
++	struct btrfs_fs_devices *fs_devices = to_fs_devs(kobj);
++
++	for (i = 0; i < BTRFS_NR_READ_POLICY; i++) {
++		if (btrfs_strmatch(buf, btrfs_read_policy_name[i]) == 0) {
++			if (i != fs_devices->read_policy) {
++				fs_devices->read_policy = i;
++				btrfs_info(fs_devices->fs_info,
++					   "read policy set to '%s'",
++					   btrfs_read_policy_name[i]);
++			}
++			return len;
++		}
++	}
 +
 +	return -EINVAL;
 +}
++BTRFS_ATTR_RW(, read_policy, btrfs_read_policy_show, btrfs_read_policy_store);
 +
  static const struct attribute *btrfs_attrs[] = {
  	BTRFS_ATTR_PTR(, label),
  	BTRFS_ATTR_PTR(, nodesize),
+@@ -893,6 +941,7 @@ static const struct attribute *btrfs_attrs[] = {
+ 	BTRFS_ATTR_PTR(, checksum),
+ 	BTRFS_ATTR_PTR(, exclusive_operation),
+ 	BTRFS_ATTR_PTR(, generation),
++	BTRFS_ATTR_PTR(, read_policy),
+ 	NULL,
+ };
+ 
 -- 
 2.25.1
 

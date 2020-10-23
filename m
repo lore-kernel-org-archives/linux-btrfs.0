@@ -7,62 +7,62 @@ X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7FACBC5DF9D
-	for <linux-btrfs@archiver.kernel.org>; Fri, 23 Oct 2020 13:58:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9291EC63697
+	for <linux-btrfs@archiver.kernel.org>; Fri, 23 Oct 2020 13:58:31 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 09455208C3
-	for <linux-btrfs@archiver.kernel.org>; Fri, 23 Oct 2020 13:58:24 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 37665208C3
+	for <linux-btrfs@archiver.kernel.org>; Fri, 23 Oct 2020 13:58:31 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="LlbRzB30"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="eH/55Tm9"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S373798AbgJWN6Y (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 23 Oct 2020 09:58:24 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52944 "EHLO
+        id S1750178AbgJWN6a (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 23 Oct 2020 09:58:30 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52964 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S373787AbgJWN6X (ORCPT
+        with ESMTP id S373787AbgJWN63 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 23 Oct 2020 09:58:23 -0400
+        Fri, 23 Oct 2020 09:58:29 -0400
 Received: from mail-qk1-x741.google.com (mail-qk1-x741.google.com [IPv6:2607:f8b0:4864:20::741])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 19122C0613D2
-        for <linux-btrfs@vger.kernel.org>; Fri, 23 Oct 2020 06:58:23 -0700 (PDT)
-Received: by mail-qk1-x741.google.com with SMTP id a23so1157497qkg.13
-        for <linux-btrfs@vger.kernel.org>; Fri, 23 Oct 2020 06:58:23 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 86C9FC0613CE
+        for <linux-btrfs@vger.kernel.org>; Fri, 23 Oct 2020 06:58:29 -0700 (PDT)
+Received: by mail-qk1-x741.google.com with SMTP id v200so1192035qka.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 23 Oct 2020 06:58:29 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references:mime-version
          :content-transfer-encoding;
-        bh=2PkB/qMj06MsTyF4+Cotlo+Y3zPH84MKH4FKFqFuDsA=;
-        b=LlbRzB3078v3rp7kaPpXO9kbQ+L5qayh6KZdwxY5/0ELKTBHOzxOyjsHJO8xcoZm0H
-         KiJjTaLrma4HQyAeeK4j/gpRbUaRPwZ9/pTIcrtF0XQ6GexGbB/PKCk/Yy3kzNG//rGJ
-         /gcJHL4UTo/+zWuCBEn9fd3QgpbT8EVpBDXRG0T2dUdyCJ3HV0b2/AGXWOsIRsgz6Qxe
-         F4xS35XgGqUTke1EoBVwOQFSZMgPByXrxBmenmzeZ/B5xBWWQWZhrThWsGIngtfc5Vjq
-         o94rbwiK9CK/2XiZnIOgJ26R0jUMr4B4ZwaqgZAzbb/3lchA2XWE7h/Sdmd8b7UCl7vS
-         4EXA==
+        bh=nI3bmwVfYpHgiqCrHL37Qqlp+5V0SUIv5ub/7rvv8nU=;
+        b=eH/55Tm9UFMnc04acKsjya063QtU/QCxLDjWRQcji0OeNVzMf8uDa8/GmnV+Xyo3Ei
+         1Lw0RA1cMl7jpuUaR7VbhptLa8m3qoUpjwbEgOUdpc115SJP3hNrxtyH0eNkSLMOO5iH
+         uvLxyBGpsH4otPbUg8k4dyNj6B5qxb10uKQ4KWcanvZqptaLCvZfSMvpkl9aBnNo2NyI
+         NFagwenha1XdXTDXt8VcMo6JqqCeAu4VggCAg56zdkdDqZPyUYVTkWwOCjmoxkiCADFI
+         3b83jO/n88c+NkLqcbG8n8zDsPDtqfwjLA6znKR8TgT5PhZBVWQvgf5miOsDt++TNlVp
+         Bd8g==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=2PkB/qMj06MsTyF4+Cotlo+Y3zPH84MKH4FKFqFuDsA=;
-        b=d/agbJURZnX5V4nrRInjn0PyTiF+6kYjmix9XKzibW6OT6Vwinl1UiI8rWB35jgPpy
-         u8rSkh/2jOqqH9f39F0/LDWTp6g8+OMQG4IwsHTsHkPZA0s5HfH2+AzwiJSapjy4rDp1
-         Bd49I6fq7wWUDHTOb+39JG0aUBWMpuMfwLV+ThhzsDPoAlz2N+vflqiqdWmj01aEYKmK
-         NX+7BQlb9wgbuQhzdbZjbLLCeclO1hRWjxqpyn37ZUiEIkiAc79J+TSOT1xvQt8ajppa
-         0T1I+NJEEZ47gOVDyFlP+BTEJtLZsT68pdg/GYyVEEoapFm+FMgiGxdIEP3dhZjibgWO
-         UAmQ==
-X-Gm-Message-State: AOAM530ETiYGCtkCePM0Q6WbOkZbhnF489gY7vv4vw5dyDmhiD5lvNJo
-        PsRKJCQCf9Ctc5hsM8jDBiPJUKBBcg/uUZdn
-X-Google-Smtp-Source: ABdhPJzTSCBeYvwMHpZONuEv0zaZNiqrnhbko6vgUnI9j/vt85rPgJS6RBPz8+S1BJhT1R5CFiUMkQ==
-X-Received: by 2002:a05:620a:1221:: with SMTP id v1mr2266038qkj.98.1603461501723;
-        Fri, 23 Oct 2020 06:58:21 -0700 (PDT)
+        bh=nI3bmwVfYpHgiqCrHL37Qqlp+5V0SUIv5ub/7rvv8nU=;
+        b=npuJ01MiouSiUW5r3FPGkyWt7CaOnVotiEgX/W9H1BNwx7QTW9fz/vc8wT8Kdl3efZ
+         4tAl7z5/9liiauIIF973/noaeBzfeIXFpiff4LlrR7zt5/D+gI7mUQijNgosGmZkcYzD
+         iHUeyYOHrqavf6U7HPBsUgEtxu2RS4qrRqNlRny2lIkuKO26SIGdLb6t6de+1+1/JG7z
+         Fyzie1OoRE9NwTVGBbiWERLObu0lp8l4EATYz3vciZz+tiemm8YyrhJbM+KhqWevx9Gx
+         Z6lReWGfs3rd6DWELRHYHzxDRqb5VYJaPIfzD4UgTEK+TiVP74JPPyROShYccTyzUm2p
+         vGFg==
+X-Gm-Message-State: AOAM5326hCiVyLiovITUGjvcyss4C3NQKrbFSeMhonaitc1biUcV6ya6
+        ANYFD4TiB+5XSMA5r9LIbk57jFZ5RuyjXD5i
+X-Google-Smtp-Source: ABdhPJwO+OPn4GP16HN7QPRRhfuYtPbHgjc6Xqpn8UN7hyZ4wgkFUCuzx2mEhlusaUNdL062IdEJ1g==
+X-Received: by 2002:a05:620a:19:: with SMTP id j25mr2286459qki.498.1603461507038;
+        Fri, 23 Oct 2020 06:58:27 -0700 (PDT)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id g27sm754928qkk.135.2020.10.23.06.58.20
+        by smtp.gmail.com with ESMTPSA id m25sm744976qki.105.2020.10.23.06.58.26
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 23 Oct 2020 06:58:21 -0700 (PDT)
+        Fri, 23 Oct 2020 06:58:26 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 5/8] btrfs: load free space cache into a temporary ctl
-Date:   Fri, 23 Oct 2020 09:58:08 -0400
-Message-Id: <a21f2834a44901bc2b685bc3d19db831eca7b8f1.1603460665.git.josef@toxicpanda.com>
+Subject: [PATCH 8/8] btrfs: protect the fs_info->caching_block_groups differently
+Date:   Fri, 23 Oct 2020 09:58:11 -0400
+Message-Id: <7f656118637ade71f45d1a3faca617ccbea9f61f.1603460665.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.2
 In-Reply-To: <cover.1603460665.git.josef@toxicpanda.com>
 References: <cover.1603460665.git.josef@toxicpanda.com>
@@ -72,348 +72,233 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The free space cache has been special in that we would load it right
-away instead of farming the work off to a worker thread.  This resulted
-in some weirdness that had to be taken into account for this fact,
-namely that if we every found a block group being cached the fast way we
-had to wait for it to finish, because we could get the cache before it
-had been validated and we may throw the cache away.
+I got the following lockdep splat
 
-To handle this particular case instead create a temporary
-btrfs_free_space_ctl to load the free space cache into.  Then once we've
-validated that it makes sense, copy it's contents into the actual
-block_group->free_space_ctl.  This allows us to avoid the problems of
-needing to wait for the caching to complete, we can clean up the discard
-extent handling stuff in __load_free_space_cache, and we no longer need
-to do the merge_space_tree() because the space is added one by one into
-the real free_space_ctl.  This will allow further reworks of how we
-handle loading the free space cache.
+======================================================
+WARNING: possible circular locking dependency detected
+5.9.0+ #101 Not tainted
+------------------------------------------------------
+btrfs-cleaner/3445 is trying to acquire lock:
+ffff89dbec39ab48 (btrfs-root-00){++++}-{3:3}, at: __btrfs_tree_read_lock+0x32/0x170
+
+but task is already holding lock:
+ffff89dbeaf28a88 (&fs_info->commit_root_sem){++++}-{3:3}, at: btrfs_find_all_roots+0x41/0x80
+
+which lock already depends on the new lock.
+
+the existing dependency chain (in reverse order) is:
+
+-> #2 (&fs_info->commit_root_sem){++++}-{3:3}:
+       down_write+0x3d/0x70
+       btrfs_cache_block_group+0x2d5/0x510
+       find_free_extent+0xb6e/0x12f0
+       btrfs_reserve_extent+0xb3/0x1b0
+       btrfs_alloc_tree_block+0xb1/0x330
+       alloc_tree_block_no_bg_flush+0x4f/0x60
+       __btrfs_cow_block+0x11d/0x580
+       btrfs_cow_block+0x10c/0x220
+       commit_cowonly_roots+0x47/0x2e0
+       btrfs_commit_transaction+0x595/0xbd0
+       sync_filesystem+0x74/0x90
+       generic_shutdown_super+0x22/0x100
+       kill_anon_super+0x14/0x30
+       btrfs_kill_super+0x12/0x20
+       deactivate_locked_super+0x36/0xa0
+       cleanup_mnt+0x12d/0x190
+       task_work_run+0x5c/0xa0
+       exit_to_user_mode_prepare+0x1df/0x200
+       syscall_exit_to_user_mode+0x54/0x280
+       entry_SYSCALL_64_after_hwframe+0x44/0xa9
+
+-> #1 (&space_info->groups_sem){++++}-{3:3}:
+       down_read+0x40/0x130
+       find_free_extent+0x2ed/0x12f0
+       btrfs_reserve_extent+0xb3/0x1b0
+       btrfs_alloc_tree_block+0xb1/0x330
+       alloc_tree_block_no_bg_flush+0x4f/0x60
+       __btrfs_cow_block+0x11d/0x580
+       btrfs_cow_block+0x10c/0x220
+       commit_cowonly_roots+0x47/0x2e0
+       btrfs_commit_transaction+0x595/0xbd0
+       sync_filesystem+0x74/0x90
+       generic_shutdown_super+0x22/0x100
+       kill_anon_super+0x14/0x30
+       btrfs_kill_super+0x12/0x20
+       deactivate_locked_super+0x36/0xa0
+       cleanup_mnt+0x12d/0x190
+       task_work_run+0x5c/0xa0
+       exit_to_user_mode_prepare+0x1df/0x200
+       syscall_exit_to_user_mode+0x54/0x280
+       entry_SYSCALL_64_after_hwframe+0x44/0xa9
+
+-> #0 (btrfs-root-00){++++}-{3:3}:
+       __lock_acquire+0x1167/0x2150
+       lock_acquire+0xb9/0x3d0
+       down_read_nested+0x43/0x130
+       __btrfs_tree_read_lock+0x32/0x170
+       __btrfs_read_lock_root_node+0x3a/0x50
+       btrfs_search_slot+0x614/0x9d0
+       btrfs_find_root+0x35/0x1b0
+       btrfs_read_tree_root+0x61/0x120
+       btrfs_get_root_ref+0x14b/0x600
+       find_parent_nodes+0x3e6/0x1b30
+       btrfs_find_all_roots_safe+0xb4/0x130
+       btrfs_find_all_roots+0x60/0x80
+       btrfs_qgroup_trace_extent_post+0x27/0x40
+       btrfs_add_delayed_data_ref+0x3fd/0x460
+       btrfs_free_extent+0x42/0x100
+       __btrfs_mod_ref+0x1d7/0x2f0
+       walk_up_proc+0x11c/0x400
+       walk_up_tree+0xf0/0x180
+       btrfs_drop_snapshot+0x1c7/0x780
+       btrfs_clean_one_deleted_snapshot+0xfb/0x110
+       cleaner_kthread+0xd4/0x140
+       kthread+0x13a/0x150
+       ret_from_fork+0x1f/0x30
+
+other info that might help us debug this:
+
+Chain exists of:
+  btrfs-root-00 --> &space_info->groups_sem --> &fs_info->commit_root_sem
+
+ Possible unsafe locking scenario:
+
+       CPU0                    CPU1
+       ----                    ----
+  lock(&fs_info->commit_root_sem);
+                               lock(&space_info->groups_sem);
+                               lock(&fs_info->commit_root_sem);
+  lock(btrfs-root-00);
+
+ *** DEADLOCK ***
+
+3 locks held by btrfs-cleaner/3445:
+ #0: ffff89dbeaf28838 (&fs_info->cleaner_mutex){+.+.}-{3:3}, at: cleaner_kthread+0x6e/0x140
+ #1: ffff89dbeb6c7640 (sb_internal){.+.+}-{0:0}, at: start_transaction+0x40b/0x5c0
+ #2: ffff89dbeaf28a88 (&fs_info->commit_root_sem){++++}-{3:3}, at: btrfs_find_all_roots+0x41/0x80
+
+stack backtrace:
+CPU: 0 PID: 3445 Comm: btrfs-cleaner Not tainted 5.9.0+ #101
+Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS 1.13.0-2.fc32 04/01/2014
+Call Trace:
+ dump_stack+0x8b/0xb0
+ check_noncircular+0xcf/0xf0
+ __lock_acquire+0x1167/0x2150
+ ? __bfs+0x42/0x210
+ lock_acquire+0xb9/0x3d0
+ ? __btrfs_tree_read_lock+0x32/0x170
+ down_read_nested+0x43/0x130
+ ? __btrfs_tree_read_lock+0x32/0x170
+ __btrfs_tree_read_lock+0x32/0x170
+ __btrfs_read_lock_root_node+0x3a/0x50
+ btrfs_search_slot+0x614/0x9d0
+ ? find_held_lock+0x2b/0x80
+ btrfs_find_root+0x35/0x1b0
+ ? do_raw_spin_unlock+0x4b/0xa0
+ btrfs_read_tree_root+0x61/0x120
+ btrfs_get_root_ref+0x14b/0x600
+ find_parent_nodes+0x3e6/0x1b30
+ btrfs_find_all_roots_safe+0xb4/0x130
+ btrfs_find_all_roots+0x60/0x80
+ btrfs_qgroup_trace_extent_post+0x27/0x40
+ btrfs_add_delayed_data_ref+0x3fd/0x460
+ btrfs_free_extent+0x42/0x100
+ __btrfs_mod_ref+0x1d7/0x2f0
+ walk_up_proc+0x11c/0x400
+ walk_up_tree+0xf0/0x180
+ btrfs_drop_snapshot+0x1c7/0x780
+ ? btrfs_clean_one_deleted_snapshot+0x73/0x110
+ btrfs_clean_one_deleted_snapshot+0xfb/0x110
+ cleaner_kthread+0xd4/0x140
+ ? btrfs_alloc_root+0x50/0x50
+ kthread+0x13a/0x150
+ ? kthread_create_worker_on_cpu+0x40/0x40
+ ret_from_fork+0x1f/0x30
+
+while testing another lockdep fix.  This happens because we're using the
+commit_root_sem to protect fs_info->caching_block_groups, which creates
+a dependency on the groups_sem -> commit_root_sem, which is problematic
+because we will allocate blocks while holding tree roots.  Fix this by
+making the list itself protected by the fs_info->block_group_cache_lock.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/block-group.c       |  29 +------
- fs/btrfs/free-space-cache.c  | 155 +++++++++++++++--------------------
- fs/btrfs/free-space-cache.h  |   3 +-
- fs/btrfs/tests/btrfs-tests.c |   2 +-
- 4 files changed, 70 insertions(+), 119 deletions(-)
+ fs/btrfs/block-group.c | 12 ++++++------
+ fs/btrfs/transaction.c |  2 ++
+ 2 files changed, 8 insertions(+), 6 deletions(-)
 
 diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index bb6685711824..adbd18dc08a1 100644
+index ba6564f67d9a..f19fabae4754 100644
 --- a/fs/btrfs/block-group.c
 +++ b/fs/btrfs/block-group.c
-@@ -695,33 +695,6 @@ int btrfs_cache_block_group(struct btrfs_block_group *cache, int load_cache_only
- 	btrfs_init_work(&caching_ctl->work, caching_thread, NULL, NULL);
+@@ -747,10 +747,10 @@ int btrfs_cache_block_group(struct btrfs_block_group *cache, int load_cache_only
+ 	cache->has_caching_ctl = 1;
+ 	spin_unlock(&cache->lock);
  
- 	spin_lock(&cache->lock);
--	/*
--	 * This should be a rare occasion, but this could happen I think in the
--	 * case where one thread starts to load the space cache info, and then
--	 * some other thread starts a transaction commit which tries to do an
--	 * allocation while the other thread is still loading the space cache
--	 * info.  The previous loop should have kept us from choosing this block
--	 * group, but if we've moved to the state where we will wait on caching
--	 * block groups we need to first check if we're doing a fast load here,
--	 * so we can wait for it to finish, otherwise we could end up allocating
--	 * from a block group who's cache gets evicted for one reason or
--	 * another.
--	 */
--	while (cache->cached == BTRFS_CACHE_FAST) {
--		struct btrfs_caching_control *ctl;
--
--		ctl = cache->caching_ctl;
--		refcount_inc(&ctl->count);
--		prepare_to_wait(&ctl->wait, &wait, TASK_UNINTERRUPTIBLE);
--		spin_unlock(&cache->lock);
--
--		schedule();
--
--		finish_wait(&ctl->wait, &wait);
--		btrfs_put_caching_control(ctl);
--		spin_lock(&cache->lock);
--	}
--
- 	if (cache->cached != BTRFS_CACHE_NO) {
- 		spin_unlock(&cache->lock);
- 		kfree(caching_ctl);
-@@ -1805,7 +1778,7 @@ static struct btrfs_block_group *btrfs_create_block_group_cache(
- 	INIT_LIST_HEAD(&cache->discard_list);
- 	INIT_LIST_HEAD(&cache->dirty_list);
- 	INIT_LIST_HEAD(&cache->io_list);
--	btrfs_init_free_space_ctl(cache);
-+	btrfs_init_free_space_ctl(cache, cache->free_space_ctl);
- 	atomic_set(&cache->frozen, 0);
- 	mutex_init(&cache->free_space_lock);
- 	btrfs_init_full_stripe_locks_tree(&cache->full_stripe_locks_root);
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 0787339c7b93..58bd2d3e54db 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -33,8 +33,6 @@ struct btrfs_trim_range {
- 	struct list_head list;
- };
+-	down_write(&fs_info->commit_root_sem);
++	spin_lock(&fs_info->block_group_cache_lock);
+ 	refcount_inc(&caching_ctl->count);
+ 	list_add_tail(&caching_ctl->list, &fs_info->caching_block_groups);
+-	up_write(&fs_info->commit_root_sem);
++	spin_unlock(&fs_info->block_group_cache_lock);
  
--static int count_bitmap_extents(struct btrfs_free_space_ctl *ctl,
--				struct btrfs_free_space *bitmap_info);
- static int link_free_space(struct btrfs_free_space_ctl *ctl,
- 			   struct btrfs_free_space *info);
- static void unlink_free_space(struct btrfs_free_space_ctl *ctl,
-@@ -43,6 +41,14 @@ static int btrfs_wait_cache_io_root(struct btrfs_root *root,
- 			     struct btrfs_trans_handle *trans,
- 			     struct btrfs_io_ctl *io_ctl,
- 			     struct btrfs_path *path);
-+static int search_bitmap(struct btrfs_free_space_ctl *ctl,
-+			 struct btrfs_free_space *bitmap_info, u64 *offset,
-+			 u64 *bytes, bool for_alloc);
-+static void free_bitmap(struct btrfs_free_space_ctl *ctl,
-+			struct btrfs_free_space *bitmap_info);
-+static void bitmap_clear_bits(struct btrfs_free_space_ctl *ctl,
-+			      struct btrfs_free_space *info, u64 offset,
-+			      u64 bytes);
+ 	btrfs_get_block_group(cache);
  
- static struct inode *__lookup_free_space_inode(struct btrfs_root *root,
- 					       struct btrfs_path *path,
-@@ -625,44 +631,6 @@ static int io_ctl_read_bitmap(struct btrfs_io_ctl *io_ctl,
- 	return 0;
- }
+@@ -999,7 +999,7 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
+ 	if (block_group->cached == BTRFS_CACHE_STARTED)
+ 		btrfs_wait_block_group_cache_done(block_group);
+ 	if (block_group->has_caching_ctl) {
+-		down_write(&fs_info->commit_root_sem);
++		spin_lock(&fs_info->block_group_cache_lock);
+ 		if (!caching_ctl) {
+ 			struct btrfs_caching_control *ctl;
  
--/*
-- * Since we attach pinned extents after the fact we can have contiguous sections
-- * of free space that are split up in entries.  This poses a problem with the
-- * tree logging stuff since it could have allocated across what appears to be 2
-- * entries since we would have merged the entries when adding the pinned extents
-- * back to the free space cache.  So run through the space cache that we just
-- * loaded and merge contiguous entries.  This will make the log replay stuff not
-- * blow up and it will make for nicer allocator behavior.
-- */
--static void merge_space_tree(struct btrfs_free_space_ctl *ctl)
--{
--	struct btrfs_free_space *e, *prev = NULL;
--	struct rb_node *n;
--
--again:
--	spin_lock(&ctl->tree_lock);
--	for (n = rb_first(&ctl->free_space_offset); n; n = rb_next(n)) {
--		e = rb_entry(n, struct btrfs_free_space, offset_index);
--		if (!prev)
--			goto next;
--		if (e->bitmap || prev->bitmap)
--			goto next;
--		if (prev->offset + prev->bytes == e->offset) {
--			unlink_free_space(ctl, prev);
--			unlink_free_space(ctl, e);
--			prev->bytes += e->bytes;
--			kmem_cache_free(btrfs_free_space_cachep, e);
--			link_free_space(ctl, prev);
--			prev = NULL;
--			spin_unlock(&ctl->tree_lock);
--			goto again;
--		}
--next:
--		prev = e;
--	}
--	spin_unlock(&ctl->tree_lock);
--}
--
- static int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
- 				   struct btrfs_free_space_ctl *ctl,
- 				   struct btrfs_path *path, u64 offset)
-@@ -753,16 +721,6 @@ static int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
- 			goto free_cache;
+@@ -1013,7 +1013,7 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
  		}
+ 		if (caching_ctl)
+ 			list_del_init(&caching_ctl->list);
+-		up_write(&fs_info->commit_root_sem);
++		spin_unlock(&fs_info->block_group_cache_lock);
+ 		if (caching_ctl) {
+ 			/* Once for the caching bgs list and once for us. */
+ 			btrfs_put_caching_control(caching_ctl);
+@@ -3311,14 +3311,14 @@ int btrfs_free_block_groups(struct btrfs_fs_info *info)
+ 	struct btrfs_caching_control *caching_ctl;
+ 	struct rb_node *n;
  
--		/*
--		 * Sync discard ensures that the free space cache is always
--		 * trimmed.  So when reading this in, the state should reflect
--		 * that.  We also do this for async as a stop gap for lack of
--		 * persistence.
--		 */
--		if (btrfs_test_opt(fs_info, DISCARD_SYNC) ||
--		    btrfs_test_opt(fs_info, DISCARD_ASYNC))
--			e->trim_state = BTRFS_TRIM_STATE_TRIMMED;
--
- 		if (!e->bytes) {
- 			kmem_cache_free(btrfs_free_space_cachep, e);
- 			goto free_cache;
-@@ -816,16 +774,9 @@ static int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
- 		ret = io_ctl_read_bitmap(&io_ctl, e);
- 		if (ret)
- 			goto free_cache;
--		e->bitmap_extents = count_bitmap_extents(ctl, e);
--		if (!btrfs_free_space_trimmed(e)) {
--			ctl->discardable_extents[BTRFS_STAT_CURR] +=
--				e->bitmap_extents;
--			ctl->discardable_bytes[BTRFS_STAT_CURR] += e->bytes;
--		}
+-	down_write(&info->commit_root_sem);
++	spin_lock(&info->block_group_cache_lock);
+ 	while (!list_empty(&info->caching_block_groups)) {
+ 		caching_ctl = list_entry(info->caching_block_groups.next,
+ 					 struct btrfs_caching_control, list);
+ 		list_del(&caching_ctl->list);
+ 		btrfs_put_caching_control(caching_ctl);
  	}
+-	up_write(&info->commit_root_sem);
++	spin_unlock(&info->block_group_cache_lock);
  
- 	io_ctl_drop_pages(&io_ctl);
--	merge_space_tree(ctl);
- 	ret = 1;
- out:
- 	io_ctl_free(&io_ctl);
-@@ -836,16 +787,59 @@ static int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
- 	goto out;
- }
- 
-+static int copy_free_space_cache(struct btrfs_block_group *block_group,
-+				 struct btrfs_free_space_ctl *ctl)
-+{
-+	struct btrfs_free_space *info;
-+	struct rb_node *n;
-+	int ret = 0;
-+
-+	while (!ret && (n = rb_first(&ctl->free_space_offset)) != NULL) {
-+		info = rb_entry(n, struct btrfs_free_space, offset_index);
-+		if (!info->bitmap) {
-+			unlink_free_space(ctl, info);
-+			ret = btrfs_add_free_space(block_group, info->offset,
-+						   info->bytes);
-+			kmem_cache_free(btrfs_free_space_cachep, info);
-+		} else {
-+			u64 offset = info->offset;
-+			u64 bytes = ctl->unit;
-+
-+			while (search_bitmap(ctl, info, &offset, &bytes,
-+					     false) == 0) {
-+				ret = btrfs_add_free_space(block_group, offset,
-+							   bytes);
-+				if (ret)
-+					break;
-+				bitmap_clear_bits(ctl, info, offset, bytes);
-+				offset = info->offset;
-+				bytes = ctl->unit;
-+			}
-+			free_bitmap(ctl, info);
-+		}
-+		cond_resched();
-+	}
-+	return ret;
-+}
-+
- int load_free_space_cache(struct btrfs_block_group *block_group)
- {
- 	struct btrfs_fs_info *fs_info = block_group->fs_info;
- 	struct btrfs_free_space_ctl *ctl = block_group->free_space_ctl;
-+	struct btrfs_free_space_ctl tmp_ctl = {};
- 	struct inode *inode;
- 	struct btrfs_path *path;
- 	int ret = 0;
- 	bool matched;
- 	u64 used = block_group->used;
- 
-+	/*
-+	 * Because we could potentially discard our loaded free space, we want
-+	 * to load everything into a temporary structure first, and then if it's
-+	 * valid copy it all into the actual free space ctl.
-+	 */
-+	btrfs_init_free_space_ctl(block_group, &tmp_ctl);
-+
- 	/*
- 	 * If this block group has been marked to be cleared for one reason or
- 	 * another then we can't trust the on disk cache, so just return.
-@@ -897,19 +891,25 @@ int load_free_space_cache(struct btrfs_block_group *block_group)
+ 	spin_lock(&info->unused_bgs_lock);
+ 	while (!list_empty(&info->unused_bgs)) {
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 9ef6cba1eb59..a0cf0e0c4085 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -208,6 +208,7 @@ static noinline void switch_commit_roots(struct btrfs_trans_handle *trans)
+ 	 * the caching thread will re-start it's search from 3, and thus find
+ 	 * the hole from [4,6) to add to the free space cache.
+ 	 */
++	spin_lock(&fs_info->block_group_cache_lock);
+ 	list_for_each_entry_safe(caching_ctl, next,
+ 				 &fs_info->caching_block_groups, list) {
+ 		struct btrfs_block_group *cache = caching_ctl->block_group;
+@@ -219,6 +220,7 @@ static noinline void switch_commit_roots(struct btrfs_trans_handle *trans)
+ 			cache->last_byte_to_unpin = caching_ctl->progress;
+ 		}
  	}
- 	spin_unlock(&block_group->lock);
- 
--	ret = __load_free_space_cache(fs_info->tree_root, inode, ctl,
-+	ret = __load_free_space_cache(fs_info->tree_root, inode, &tmp_ctl,
- 				      path, block_group->start);
- 	btrfs_free_path(path);
- 	if (ret <= 0)
- 		goto out;
- 
--	spin_lock(&ctl->tree_lock);
--	matched = (ctl->free_space == (block_group->length - used -
--				       block_group->bytes_super));
--	spin_unlock(&ctl->tree_lock);
-+	matched = (tmp_ctl.free_space == (block_group->length - used -
-+					  block_group->bytes_super));
- 
--	if (!matched) {
--		__btrfs_remove_free_space_cache(ctl);
-+	if (matched) {
-+		ret = copy_free_space_cache(block_group, &tmp_ctl);
-+		/*
-+		 * ret == 1 means we successfully loaded the free space cache,
-+		 * so we need to re-set it here.
-+		 */
-+		if (ret == 0)
-+			ret = 1;
-+	} else {
-+		__btrfs_remove_free_space_cache(&tmp_ctl);
- 		btrfs_warn(fs_info,
- 			   "block group %llu has wrong amount of free space",
- 			   block_group->start);
-@@ -1914,29 +1914,6 @@ find_free_space(struct btrfs_free_space_ctl *ctl, u64 *offset, u64 *bytes,
- 	return NULL;
++	spin_unlock(&fs_info->block_group_cache_lock);
+ 	up_write(&fs_info->commit_root_sem);
  }
  
--static int count_bitmap_extents(struct btrfs_free_space_ctl *ctl,
--				struct btrfs_free_space *bitmap_info)
--{
--	struct btrfs_block_group *block_group = ctl->private;
--	u64 bytes = bitmap_info->bytes;
--	unsigned int rs, re;
--	int count = 0;
--
--	if (!block_group || !bytes)
--		return count;
--
--	bitmap_for_each_set_region(bitmap_info->bitmap, rs, re, 0,
--				   BITS_PER_BITMAP) {
--		bytes -= (rs - re) * ctl->unit;
--		count++;
--
--		if (!bytes)
--			break;
--	}
--
--	return count;
--}
--
- static void add_new_bitmap(struct btrfs_free_space_ctl *ctl,
- 			   struct btrfs_free_space *info, u64 offset)
- {
-@@ -2676,10 +2653,10 @@ void btrfs_dump_free_space(struct btrfs_block_group *block_group,
- 		   "%d blocks of free space at or bigger than bytes is", count);
- }
- 
--void btrfs_init_free_space_ctl(struct btrfs_block_group *block_group)
-+void btrfs_init_free_space_ctl(struct btrfs_block_group *block_group,
-+			       struct btrfs_free_space_ctl *ctl)
- {
- 	struct btrfs_fs_info *fs_info = block_group->fs_info;
--	struct btrfs_free_space_ctl *ctl = block_group->free_space_ctl;
- 
- 	spin_lock_init(&ctl->tree_lock);
- 	ctl->unit = fs_info->sectorsize;
-diff --git a/fs/btrfs/free-space-cache.h b/fs/btrfs/free-space-cache.h
-index e3d5e0ad8f8e..bf8d127d2407 100644
---- a/fs/btrfs/free-space-cache.h
-+++ b/fs/btrfs/free-space-cache.h
-@@ -109,7 +109,8 @@ int btrfs_write_out_ino_cache(struct btrfs_root *root,
- 			      struct btrfs_path *path,
- 			      struct inode *inode);
- 
--void btrfs_init_free_space_ctl(struct btrfs_block_group *block_group);
-+void btrfs_init_free_space_ctl(struct btrfs_block_group *block_group,
-+			       struct btrfs_free_space_ctl *ctl);
- int __btrfs_add_free_space(struct btrfs_fs_info *fs_info,
- 			   struct btrfs_free_space_ctl *ctl,
- 			   u64 bytenr, u64 size,
-diff --git a/fs/btrfs/tests/btrfs-tests.c b/fs/btrfs/tests/btrfs-tests.c
-index 999c14e5d0bd..8519f7746b2e 100644
---- a/fs/btrfs/tests/btrfs-tests.c
-+++ b/fs/btrfs/tests/btrfs-tests.c
-@@ -224,7 +224,7 @@ btrfs_alloc_dummy_block_group(struct btrfs_fs_info *fs_info,
- 	INIT_LIST_HEAD(&cache->list);
- 	INIT_LIST_HEAD(&cache->cluster_list);
- 	INIT_LIST_HEAD(&cache->bg_list);
--	btrfs_init_free_space_ctl(cache);
-+	btrfs_init_free_space_ctl(cache, cache->free_space_ctl);
- 	mutex_init(&cache->free_space_lock);
- 
- 	return cache;
 -- 
 2.26.2
 

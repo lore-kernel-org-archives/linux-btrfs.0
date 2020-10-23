@@ -1,130 +1,87 @@
-Return-Path: <SRS0=yj4G=D5=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=6VRt=D6=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.5 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,NICE_REPLY_A,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EAF60C388F9
-	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Oct 2020 19:30:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CCCDFC4363A
+	for <linux-btrfs@archiver.kernel.org>; Fri, 23 Oct 2020 03:11:16 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 8F61924658
-	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Oct 2020 19:30:12 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4D8EB214DB
+	for <linux-btrfs@archiver.kernel.org>; Fri, 23 Oct 2020 03:11:16 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="bncVqnD0"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S370303AbgJVTaL convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 22 Oct 2020 15:30:11 -0400
-Received: from mout.kundenserver.de ([212.227.17.13]:50707 "EHLO
-        mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2509624AbgJVTaL (ORCPT
+        id S460279AbgJWDLP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 22 Oct 2020 23:11:15 -0400
+Received: from aserp2120.oracle.com ([141.146.126.78]:33238 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S460271AbgJWDLP (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Oct 2020 15:30:11 -0400
-Received: from [192.168.177.174] ([91.63.161.114]) by mrelayeu.kundenserver.de
- (mreue106 [213.165.67.113]) with ESMTPSA (Nemesis) id
- 1MadC8-1jz5YV3Q54-00c9ou; Thu, 22 Oct 2020 21:30:05 +0200
-From:   "Hendrik Friedel" <hendrik@friedels.name>
-To:     "Zygo Blaxell" <ce3g8jdj@umail.furryterror.org>
-Subject: Re[2]: parent transid verify failed: Fixed but re-appearing
-Cc:     "Btrfs BTRFS" <linux-btrfs@vger.kernel.org>
-Date:   Thu, 22 Oct 2020 19:30:14 +0000
-Message-Id: <em26d5dfe8-37cb-454c-9c03-a69cfb035949@desktop-g0r648m>
-In-Reply-To: <20201021213854.GG21815@hungrycats.org>
-References: <em2ffec6ef-fe64-4239-b238-ae962d1826f6@ryzen>
- <20201021134635.GT5890@hungrycats.org>
- <em85884e42-e959-40f1-9eae-cd818450c26d@ryzen>
- <20201021193246.GE21815@hungrycats.org>
- <em33511ef4-7da1-4e7c-8b0c-8b8d7043164c@desktop-g0r648m>
- <20201021212229.GF21815@hungrycats.org>
- <emeabab400-3f6d-4105-a4fd-67b0b832f97a@desktop-g0r648m>
- <20201021213854.GG21815@hungrycats.org>
-Reply-To: "Hendrik Friedel" <hendrik@friedels.name>
-User-Agent: eM_Client/7.2.38682.0
-Mime-Version: 1.0
-Content-Type: text/plain; format=flowed; charset=utf-8
-Content-Transfer-Encoding: 8BIT
-X-Provags-ID: V03:K1:B7PmruMYZpV/cQbuN+KMDYhdPtJLbYYsf+Hd96a5hDk+CUT/0Ax
- dCvA+vIfXzPr2CNnHGPBLjPmmU3fG5fa5soUmEbTA07qmD+7LoMgmLItt5r+kA2FBMRHOZa
- 0SVHcYrrAANd5GZ0cgD20NXFU9WFL8nQHdIooosR88hxoaDNB19ySqZCkQVpYlgmZhss7bW
- 7HNMnbV2OlC9VlTzWkxqQ==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:AeJMAsxh2m0=:8MTLZA18+PaowXu8hgW8Jt
- mVMWboCYyOB7rWF6obDJUk2JtW4E+ui4rbPMvvunSaKuvmo9bf+5WhaFiGr3Am6nMQLjjP5Uq
- du0OnnVAgTkuoh0rnJPNSNRNkTZbZ3NHQ6rlB47VamUnjVHA8b23DQQVdEmNX7wXSkXgFLfrJ
- EjR/0Yx0aBkQfwkssDHSpN7Bw7rSKqTs9dMLzjZPXvjpLk6iSC9Pp7+5kpseM6u/NXRMVHvE7
- BlhE1tbaURsvGqLX/coDN2Ov7HZTy+Ajg2kXVYYygPW6aLkQobW5mkjllIoeytRQuB8VXZrSG
- HTQZmyR3/uXweLGK9qnxZAT5L1u97JeoFz+fzHo9qZ5fREAoc/ITkSDWKOYJSQT3IqvVYkxY+
- 6htE0r04w+FU5cSzsooK7r1w6Ib0tgS+ydQJwnagpnrMiU9GKgkrL43bL0/HaflHiJrAurDBx
- YGM3X30ZDg==
+        Thu, 22 Oct 2020 23:11:15 -0400
+Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
+        by aserp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09N34lli151152;
+        Fri, 23 Oct 2020 03:11:11 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
+ references : from : message-id : date : mime-version : in-reply-to :
+ content-type : content-transfer-encoding; s=corp-2020-01-29;
+ bh=pZvc3j1vgmsa9yqBgLdz1INiLe02QvmRJ9hpwpacEU8=;
+ b=bncVqnD00DA/BhguxPduQFvW+XpxT4+uEcQfMQf+/zKz7c5t93IyfrreqX4wA3unplqy
+ QwzVH/c0gArJ7cCon389XT8HW+oYVGW093il04meFKGskTNVwBnWEHrcP6mAtr/rdLAv
+ k7IhdJC3gFPBwC4S2hMux5gp/hAidVJhbOM8GK4JKRZ+sDzLXV17qqR9GIN+iehREi5U
+ S5XY0wCyB6loP4zSb8emtoOrGOVA5WhvYt5sXCWm9ewaMeTPJxFLIRaIwn5pJOFUxlCl
+ APTX4/X04zx9aduBlfTD6i9VPhnxA3NsaOQjAb0WVNZkZFHGFZQmo52+VjAFCTdSb2Ac Mw== 
+Received: from aserp3020.oracle.com (aserp3020.oracle.com [141.146.126.70])
+        by aserp2120.oracle.com with ESMTP id 349jrq121w-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
+        Fri, 23 Oct 2020 03:11:11 +0000
+Received: from pps.filterd (aserp3020.oracle.com [127.0.0.1])
+        by aserp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09N35jHn067777;
+        Fri, 23 Oct 2020 03:11:10 GMT
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by aserp3020.oracle.com with ESMTP id 348ah1j4m6-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Fri, 23 Oct 2020 03:11:10 +0000
+Received: from abhmp0009.oracle.com (abhmp0009.oracle.com [141.146.116.15])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 09N3BA8L016938;
+        Fri, 23 Oct 2020 03:11:10 GMT
+Received: from [192.168.1.102] (/39.109.231.106)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Thu, 22 Oct 2020 20:11:10 -0700
+Subject: Re: [PATCH] btrfs: Open code insert_orphan_item
+To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
+References: <20201022154046.1654593-1-nborisov@suse.com>
+From:   Anand Jain <anand.jain@oracle.com>
+Message-ID: <6d93e744-7d54-b675-867a-848e1e5fe3cd@oracle.com>
+Date:   Fri, 23 Oct 2020 11:11:07 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.3.3
+MIME-Version: 1.0
+In-Reply-To: <20201022154046.1654593-1-nborisov@suse.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9782 signatures=668682
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 adultscore=0 mlxscore=0 phishscore=0
+ malwarescore=0 spamscore=0 suspectscore=0 bulkscore=0 mlxlogscore=999
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2009150000
+ definitions=main-2010230024
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9782 signatures=668682
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 phishscore=0 lowpriorityscore=0
+ priorityscore=1501 impostorscore=0 adultscore=0 bulkscore=0 malwarescore=0
+ mlxlogscore=999 mlxscore=0 spamscore=0 suspectscore=0 clxscore=1015
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2009150000
+ definitions=main-2010230024
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hello Zygo,
+On 22/10/20 11:40 pm, Nikolay Borisov wrote:
+> Just open code it in its sole caller and remove a level of indirection.
+> 
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 
-thanks for your reply.
-
->>  [/dev/sda1].generation_errs  1
->>  [/dev/sdj1].generation_errs  0
->>  >
->>  So, on one of the drives only.
->
->If one drive is silently dropping writes then it would explain the
->behavior so far; however, it's relatively rare to have a drive fail
->that specifically and quietly (and only when you use one particular
->application).
-Well, we do not know that it occurs when I use one particular 
-application. It could also occur a before and just become visible when 
-using dduper.
-
->>  > scrub already reports pretty much everything it finds.  'btrfs scrub
->>  > start -Bd' will present a per-disk error count at the end.
->>  >
->>
->>  So, should I do that now/next?
->
->Sure, more scrubs are better.  They are supposed to be run regularly
->to detect drives going bad.
-btrfs scrub start -Bd /dev/sda1
-
-
-scrub device /dev/sda1 (id 1) done
-         scrub started at Wed Oct 21 23:38:36 2020 and finished after 
-13:45:29
-         total bytes scrubbed: 6.56TiB with 0 errors
-
-But then again:
-dduper --device /dev/sda1 --dir 
-/srv/dev-disk-by-label-DataPool1/dduper_test/testfiles -r --dry-run
-parent transid verify failed on 16500741947392 wanted 358407 found 
-358409
-Ignoring transid failure
-
-
->>  Anything else, I can do?
->
->It looks like sda1 might be bad and it is working by replacing lost
->data from the mirror on sdj.  But this replacement should be happening
->automatically on read (and definitely on scrub), so you shouldn't ever
->see the same error twice, but it seems that you do.
-
-Well, it is not the same error twice.
-Both the first ("on") value as well as the following two values change 
-each time.
-What's consistent is, that the wanted vs found always differ by two.
-Here some samples:
-parent transid verify failed on 9332119748608 wanted 204976 found 204978
-parent transid verify failed on 9332147879936 wanted 204979 found 204981
-parent transid verify failed on 16465691033600 wanted 352083 found 
-352085
-parent transid verify failed on 16500741947392 wanted 358407 found 
-358409
-
->That makes it sound more like you've found a kernel bug.
-
-And what do we do in order to narrow it down?
-
-Regards,
-Hendrik
-
->
-
+Reviewed-by: Anand Jain <anand.jain@oracle.com>

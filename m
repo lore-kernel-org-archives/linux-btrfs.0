@@ -7,39 +7,39 @@ X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 58D83C5DF9E
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D2EEAC61DD8
 	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Oct 2020 07:11:44 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 0429B222EA
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Oct 2020 07:11:43 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7C037222EA
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Oct 2020 07:11:44 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="puwjBySA"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="UAG95atZ"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1770935AbgJZHLg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 26 Oct 2020 03:11:36 -0400
-Received: from mx2.suse.de ([195.135.220.15]:51328 "EHLO mx2.suse.de"
+        id S1770939AbgJZHLk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 26 Oct 2020 03:11:40 -0400
+Received: from mx2.suse.de ([195.135.220.15]:51374 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1770928AbgJZHLd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Oct 2020 03:11:33 -0400
+        id S1770928AbgJZHLj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 26 Oct 2020 03:11:39 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1603696292;
+        t=1603696298;
         h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
          to:to:cc:mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=OvCh8+A/QvQlV5NBLohGKLUnJc7UaoGRrNywcohDy34=;
-        b=puwjBySANm1cVDeS/yzvm5/bZUVeeqv4wLhDX39oB3VKihPDhn3t+BhpuDn8Rk0DYXb5GI
-        LocQhs1pX/HLOSMy4i5WsxWAt7ubgNaikh2i5+UzK/p+0aZYjDHeeWTS7uQe+SsEaz0vUM
-        5yPXvQrehPbyDx0Ie+3Cseg1BabCm5Q=
+        bh=JpYrpieoUMSTgeAERV2vEnfaYH5wBiO28P6Lqwc4t3M=;
+        b=UAG95atZ5N4EKaeIJu0FDSj3Vi3bGn29lTifz8caCE6okAkmAm2nYpEjB6qa0POWDNKkk7
+        xxsPYZSj6SpmTYf+WmoAhHwHVbXi8r2Ts6IimV4D5YvFB4tsV323V5oEQ2V5yeAoduGdOa
+        zm2VykSFjM7Larj9WDm6LBqrqyLDphI=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 2030CACA3
-        for <linux-btrfs@vger.kernel.org>; Mon, 26 Oct 2020 07:11:32 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 1E7D6ACA3
+        for <linux-btrfs@vger.kernel.org>; Mon, 26 Oct 2020 07:11:38 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 5/8] btrfs: scrub: introduce scrub_page::page_len for subpage support
-Date:   Mon, 26 Oct 2020 15:11:12 +0800
-Message-Id: <20201026071115.57225-6-wqu@suse.com>
+Subject: [PATCH 7/8] btrfs: scrub: support subpage tree block scrub
+Date:   Mon, 26 Oct 2020 15:11:14 +0800
+Message-Id: <20201026071115.57225-8-wqu@suse.com>
 X-Mailer: git-send-email 2.29.0
 In-Reply-To: <20201026071115.57225-1-wqu@suse.com>
 References: <20201026071115.57225-1-wqu@suse.com>
@@ -49,134 +49,63 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Currently scrub_page only has one csum for each page, this is fine if
-page size == sector size, then each page has one csum for it.
+To support subpage tree block scrub, scrub_checksum_tree_block() only
+needs to learn 2 new tricks:
+- Follow scrub_page::page_len
+  Now scrub_page only represents one sector, we need to follow it
+  properly.
 
-But for subpage support, we could have cases where only part of the page
-is utilized. E.g one 4K sector is read into a 64K page.
-In that case, we need a way to determine which range is really utilized.
-
-This patch will introduce scrub_page::page_len so that we can know
-where the utilized range ends.
-
-This is especially important for subpage. As write bio can overwrite
-existing data if we just submit full page bio.
+- Run checksum on all sectors
+  Since scrub_page only represents one sector, we need to run hash on
+  all sectors, no longer just (nodesize >> PAGE_SIZE).
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/scrub.c | 36 +++++++++++++++++++++++++-----------
- 1 file changed, 25 insertions(+), 11 deletions(-)
+ fs/btrfs/scrub.c | 14 ++++++++++----
+ 1 file changed, 10 insertions(+), 4 deletions(-)
 
 diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 0d078393f986..bad88c651dd4 100644
+index 10836aec389f..13355cc2b1ae 100644
 --- a/fs/btrfs/scrub.c
 +++ b/fs/btrfs/scrub.c
-@@ -72,9 +72,15 @@ struct scrub_page {
- 	u64			physical_for_dev_replace;
- 	atomic_t		refs;
- 	struct {
--		unsigned int	mirror_num:8;
--		unsigned int	have_csum:1;
--		unsigned int	io_error:1;
-+		/*
-+		 * For subpage case, where only part of the page is utilized
-+		 * Note that 16 bits can only go 65535, not 65536, thus we have
-+		 * to use 17 bits here.
-+		 */
-+		u32	page_len:17;
-+		u32	mirror_num:8;
-+		u32	have_csum:1;
-+		u32	io_error:1;
- 	};
- 	struct scrub_recover	*recover;
+@@ -1841,15 +1841,21 @@ static int scrub_checksum_tree_block(struct scrub_block *sblock)
+ 	struct scrub_ctx *sctx = sblock->sctx;
+ 	struct btrfs_header *h;
+ 	struct btrfs_fs_info *fs_info = sctx->fs_info;
++	u32 sectorsize = sctx->fs_info->sectorsize;
++	u32 nodesize = sctx->fs_info->nodesize;
+ 	SHASH_DESC_ON_STACK(shash, fs_info->csum_shash);
+ 	u8 calculated_csum[BTRFS_CSUM_SIZE];
+ 	u8 on_disk_csum[BTRFS_CSUM_SIZE];
+-	const int num_pages = sctx->fs_info->nodesize >> PAGE_SHIFT;
++	const int num_sectors = nodesize / sectorsize;
+ 	int i;
+ 	struct scrub_page *spage;
+ 	char *kaddr;
  
-@@ -217,6 +223,11 @@ static struct scrub_page *alloc_scrub_page(struct scrub_ctx *sctx, gfp_t mask)
- 	u32 sectorsize = sctx->fs_info->sectorsize;
- 	size_t size;
- 
-+	/*
-+	 * The bits in scrub_page::page_len only supports up to 64K page size.
-+	 */
-+	BUILD_BUG_ON(PAGE_SIZE > SZ_64K);
+ 	BUG_ON(sblock->page_count < 1);
 +
- 	/* No support for multi-page sector size yet */
- 	ASSERT(PAGE_SIZE >= sectorsize && IS_ALIGNED(PAGE_SIZE, sectorsize));
++	/* Each pagev[] is in fact just one sector, not a full page */
++	ASSERT(sblock->page_count == num_sectors);
++
+ 	spage = sblock->pagev[0];
+ 	kaddr = page_address(spage->page);
+ 	h = (struct btrfs_header *)kaddr;
+@@ -1878,11 +1884,11 @@ static int scrub_checksum_tree_block(struct scrub_block *sblock)
+ 	shash->tfm = fs_info->csum_shash;
+ 	crypto_shash_init(shash);
+ 	crypto_shash_update(shash, kaddr + BTRFS_CSUM_SIZE,
+-			    PAGE_SIZE - BTRFS_CSUM_SIZE);
++			    spage->page_len - BTRFS_CSUM_SIZE);
  
-@@ -1359,6 +1370,7 @@ static int scrub_setup_recheck_block(struct scrub_block *original_sblock,
- 			}
- 			scrub_page_get(spage);
- 			sblock->pagev[page_index] = spage;
-+			spage->page_len = sublen;
- 			spage->sblock = sblock;
- 			spage->flags = flags;
- 			spage->generation = generation;
-@@ -1452,7 +1464,7 @@ static void scrub_recheck_block_on_raid56(struct btrfs_fs_info *fs_info,
- 		struct scrub_page *spage = sblock->pagev[page_num];
- 
- 		WARN_ON(!spage->page);
--		bio_add_page(bio, spage->page, PAGE_SIZE, 0);
-+		bio_add_page(bio, spage->page, spage->page_len, 0);
+-	for (i = 1; i < num_pages; i++) {
++	for (i = 1; i < num_sectors; i++) {
+ 		kaddr = page_address(sblock->pagev[i]->page);
+-		crypto_shash_update(shash, kaddr, PAGE_SIZE);
++		crypto_shash_update(shash, kaddr, sblock->pagev[i]->page_len);
  	}
  
- 	if (scrub_submit_raid56_bio_wait(fs_info, bio, first_page)) {
-@@ -1505,7 +1517,7 @@ static void scrub_recheck_block(struct btrfs_fs_info *fs_info,
- 		bio = btrfs_io_bio_alloc(1);
- 		bio_set_dev(bio, spage->dev->bdev);
- 
--		bio_add_page(bio, spage->page, PAGE_SIZE, 0);
-+		bio_add_page(bio, spage->page, spage->page_len, 0);
- 		bio->bi_iter.bi_sector = spage->physical >> 9;
- 		bio->bi_opf = REQ_OP_READ;
- 
-@@ -1588,8 +1600,8 @@ static int scrub_repair_page_from_good_copy(struct scrub_block *sblock_bad,
- 		bio->bi_iter.bi_sector = spage_bad->physical >> 9;
- 		bio->bi_opf = REQ_OP_WRITE;
- 
--		ret = bio_add_page(bio, spage_good->page, PAGE_SIZE, 0);
--		if (PAGE_SIZE != ret) {
-+		ret = bio_add_page(bio, spage_good->page, spage_good->page_len, 0);
-+		if (ret != spage_good->page_len) {
- 			bio_put(bio);
- 			return -EIO;
- 		}
-@@ -1685,8 +1697,8 @@ static int scrub_add_page_to_wr_bio(struct scrub_ctx *sctx,
- 		goto again;
- 	}
- 
--	ret = bio_add_page(sbio->bio, spage->page, PAGE_SIZE, 0);
--	if (ret != PAGE_SIZE) {
-+	ret = bio_add_page(sbio->bio, spage->page, spage->page_len, 0);
-+	if (ret != spage->page_len) {
- 		if (sbio->page_count < 1) {
- 			bio_put(sbio->bio);
- 			sbio->bio = NULL;
-@@ -2033,8 +2045,8 @@ static int scrub_add_page_to_rd_bio(struct scrub_ctx *sctx,
- 	}
- 
- 	sbio->pagev[sbio->page_count] = spage;
--	ret = bio_add_page(sbio->bio, spage->page, PAGE_SIZE, 0);
--	if (ret != PAGE_SIZE) {
-+	ret = bio_add_page(sbio->bio, spage->page, spage->page_len, 0);
-+	if (ret != spage->page_len) {
- 		if (sbio->page_count < 1) {
- 			bio_put(sbio->bio);
- 			sbio->bio = NULL;
-@@ -2210,6 +2222,7 @@ static int scrub_pages(struct scrub_ctx *sctx, u64 logical, u64 len,
- 		BUG_ON(index >= SCRUB_MAX_PAGES_PER_BLOCK);
- 		scrub_page_get(spage);
- 		sblock->pagev[index] = spage;
-+		spage->page_len = l;
- 		spage->sblock = sblock;
- 		spage->dev = dev;
- 		spage->flags = flags;
-@@ -2554,6 +2567,7 @@ static int scrub_pages_for_parity(struct scrub_parity *sparity,
- 		/* For scrub parity */
- 		scrub_page_get(spage);
- 		list_add_tail(&spage->list, &sparity->spages);
-+		spage->page_len = l;
- 		spage->sblock = sblock;
- 		spage->dev = dev;
- 		spage->flags = flags;
+ 	crypto_shash_final(shash, calculated_csum);
 -- 
 2.29.0
 

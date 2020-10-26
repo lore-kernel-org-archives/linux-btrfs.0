@@ -2,96 +2,106 @@ Return-Path: <SRS0=jG/5=EB=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS,USER_AGENT_GIT autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B62E0C388F9
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Oct 2020 20:57:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id ACC9BC5517A
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Oct 2020 20:57:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 7A1152076B
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Oct 2020 20:57:36 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5DAF62076A
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Oct 2020 20:57:37 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="kBoVkee0"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="oo6Cc5LM"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728536AbgJZU5e (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 26 Oct 2020 16:57:34 -0400
-Received: from mail-qt1-f196.google.com ([209.85.160.196]:33323 "EHLO
-        mail-qt1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728522AbgJZU5b (ORCPT
+        id S1728551AbgJZU5g (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 26 Oct 2020 16:57:36 -0400
+Received: from mail-qt1-f195.google.com ([209.85.160.195]:40288 "EHLO
+        mail-qt1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728525AbgJZU5e (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Oct 2020 16:57:31 -0400
-Received: by mail-qt1-f196.google.com with SMTP id j62so7824145qtd.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 26 Oct 2020 13:57:30 -0700 (PDT)
+        Mon, 26 Oct 2020 16:57:34 -0400
+Received: by mail-qt1-f195.google.com with SMTP id m9so7805689qth.7
+        for <linux-btrfs@vger.kernel.org>; Mon, 26 Oct 2020 13:57:34 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:subject:date:message-id:mime-version
+        h=from:to:subject:date:message-id:in-reply-to:references:mime-version
          :content-transfer-encoding;
-        bh=s8goIMshVGTiL5yw77X5Z5Fho3dPThHTqRO6LjTgbzw=;
-        b=kBoVkee0YivZdzaO3ATBWOTVcAPq+ECQu7WdGb6VulbQrsGu6qRpWDL+Q3gT+VrCEB
-         pQxtQtrzCSUFw8ZXz5x7ELNM9+Gwt8zwDrcQJETmubaGDPNU1agI9dQNwOOYD2vMpGA+
-         pytQ3L43E/+X8kz+AY1swJ4N7AHct4py1g/J0mIlQC425mWgTCxTBqqO7BApHh/JvKJs
-         PeovmdFBC8J0OaaQUOakyd/xxQHz7e6VXlUafVjt3naA6G6hO0wUqdkJ572tBSjWyBJe
-         4HE4PH9DpetFO44DZ704fAwWepKA9Fs4xkwXlHI3UcrzQp+u90YenUD44BKaIPE1kjD7
-         FtZw==
+        bh=M84GAXEwUxWaRrqs+QZ2oVxAW6ZNZ9Sx6nHQ3GDL8GE=;
+        b=oo6Cc5LMGZHG7LALrZpoEGKC4UXN952AKNTgyJCa10S7BHfDHczeDz8RhNcdQEneGY
+         anER7yT8RDC38NjFkZfueUpAv9WKtfGNvtTp1deYt/Aez5WdlBXkvZ2HUbi3DjEnZ+d+
+         fPMjuWInqEfWrjGbZvVC7RKekTO6R236dshhOYNnip/f9IlM3yD7I1lGDAFlAHAJgMoU
+         Zm5auveUokKCv6e6jNEXiFjKIbMTAI29xNALxi2i9TuSH/4hKVfnxDxF9jrzAOuLykWg
+         VUCunDRic8UTg4odUTSCjO18dOEtpGBqql38HcYu7jhczd4G11j1K9QaCrhmy8eBEtqz
+         0SBg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=s8goIMshVGTiL5yw77X5Z5Fho3dPThHTqRO6LjTgbzw=;
-        b=Jnz7wcIzybVrzKzsVTFd0cReceHY7/x/OZcEEhJEdT4ORFCOz7Wdu5WvG0o/tX/MzM
-         yQMkPBdiZPApPyuUnaul8kKy5Abz5OzzFUoQywAxSncAyOXBvHMChbHRASm243/V/OI+
-         +Y+I3RbzjcFefR7R4ywFe97dFkodGyuFKw127M5/SucuMsoIH+jTYCI8zk4zzr0Ssf5h
-         2buvw13HO23jUj+wekqSraichoQsaaG2q5q4R6C02sgstZd+9SrLxliySxZXGXLcnxEa
-         zOrPpK/Q8ymdwfpV/E2W+ZYPQ4wYt+u/NaFygfVONyfnh4cUzBzPiLVdHH4826hIPIEK
-         m9Nw==
-X-Gm-Message-State: AOAM530yXxZ1N6b5n8B2/eEDe2ERTIUKqzKEezUmtO4KrpKtED7rZcWQ
-        nJSy5DLvYC9gFLnnrdvZprv3cCGN3cQXotGA
-X-Google-Smtp-Source: ABdhPJzSgI9oY8fi3xbw4MHgwHuLLmCQZ0QKo1sexY7XcAnNUTtR4QrWCIKiNQDVaivV01+Alt/j/w==
-X-Received: by 2002:ac8:760f:: with SMTP id t15mr20685349qtq.35.1603745849760;
-        Mon, 26 Oct 2020 13:57:29 -0700 (PDT)
+        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
+         :references:mime-version:content-transfer-encoding;
+        bh=M84GAXEwUxWaRrqs+QZ2oVxAW6ZNZ9Sx6nHQ3GDL8GE=;
+        b=YUMAOH3P/raHlqGOMJFD55VTcgpjYbvz6gSHZApvjB8WszRQKwZ0Ovd52UgQFCECMf
+         zDyzqWC2ITlN0EJmoYUn4mvfAkmzs4Qqt70oqfWxBYvEWU0f27OI9+ubmobhlQYKyQAR
+         L0Igz87YN7gNe7ucbxXSS0wpv6EQnzaYFjOGWnGNCcbtT/oGAGmNqP86L+pbiKuXMwoj
+         SfPxyiTB8VLo1QNmQ6e5eWT7uL8EGyAO/D+zOTTA50j7cG40Mg/YUGWOj0lZMcj8omFA
+         nvYahUmZLLPgixZkFVMYLvhChetdXh9Lxhi78USfYapqlFFRjXAnJkZNgGmHb1tuVy2y
+         AfpQ==
+X-Gm-Message-State: AOAM531wWHF4qbDNJ4v0IigPyEjlLO5grOaNJAe/9s9q7B+gZe4jywok
+        d5XMx5wL9ufac+6/ieEYKdPNx/Rjvobj62wn
+X-Google-Smtp-Source: ABdhPJz8EKnCJP3YOGl8hqYn4un403dmvpkfNshZeIvByEzkD39rXOMdat0UOQgGxahuDejw+JzhLg==
+X-Received: by 2002:ac8:4e01:: with SMTP id c1mr19279551qtw.343.1603745853399;
+        Mon, 26 Oct 2020 13:57:33 -0700 (PDT)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id w6sm7399683qkb.6.2020.10.26.13.57.28
+        by smtp.gmail.com with ESMTPSA id d129sm7225239qkg.127.2020.10.26.13.57.32
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 26 Oct 2020 13:57:29 -0700 (PDT)
+        Mon, 26 Oct 2020 13:57:32 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v2 0/2] Some block rsv fixes
-Date:   Mon, 26 Oct 2020 16:57:25 -0400
-Message-Id: <cover.1603745723.git.josef@toxicpanda.com>
+Subject: [PATCH v2 2/2] btrfs: fix min reserved size calculation in merge_reloc_root
+Date:   Mon, 26 Oct 2020 16:57:27 -0400
+Message-Id: <617eb7b3560d2319b8362209331fa4bc3ec03cc5.1603745723.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.2
+In-Reply-To: <cover.1603745723.git.josef@toxicpanda.com>
+References: <cover.1603745723.git.josef@toxicpanda.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-v1->v2:
-- change the logic to max(1, root level), as generally we do not walk down into
-  level 0 for the merge, with the exception for root level == 0.
+The minimum reserve size was adjusted to take into account the height of
+the tree we are merging, however we can have a root with a level == 0.
+What we want is root_level + 1 to get the number of nodes we may have to
+cow.  This fixes the enospc_debug warning pops with btrfs/101.
 
---- Original email ---
-
-Hello,
-
-Nikolay has noticed that -o enospc_debug was getting some warnings in
-btrfs_use_block_rsv() on some tests.  I dug into them and one class is easy to
-fix as it's a straight regression.  The other one is going to require some more
-debugging, so in the meantime here's the two patches I have so far that can be
-merged.  The first is just to make my life easier when debugging these problems,
-and the second is the actual regression fix.  It should probably be tagged for
-stable as well since the regression was backported to stable.  Thanks,
-
-Josef
-
-Josef Bacik (2):
-  btrfs: print the block rsv type when we fail our reservation
-  btrfs: fix min reserved size calculation in merge_reloc_root
-
- fs/btrfs/block-rsv.c  | 3 ++-
+44d354abf33e ("btrfs: relocation: review the call sites which can be interrupted by signal")
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+---
  fs/btrfs/relocation.c | 4 +++-
- 2 files changed, 5 insertions(+), 2 deletions(-)
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 3602806d71bd..9ba92d86da0b 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -1648,6 +1648,7 @@ static noinline_for_stack int merge_reloc_root(struct reloc_control *rc,
+ 	struct btrfs_root_item *root_item;
+ 	struct btrfs_path *path;
+ 	struct extent_buffer *leaf;
++	int reserve_level;
+ 	int level;
+ 	int max_level;
+ 	int replaced = 0;
+@@ -1696,7 +1697,8 @@ static noinline_for_stack int merge_reloc_root(struct reloc_control *rc,
+ 	 * Thus the needed metadata size is at most root_level * nodesize,
+ 	 * and * 2 since we have two trees to COW.
+ 	 */
+-	min_reserved = fs_info->nodesize * btrfs_root_level(root_item) * 2;
++	reserve_level = max_t(int, 1, btrfs_root_level(root_item));
++	min_reserved = fs_info->nodesize * reserve_level * 2;
+ 	memset(&next_key, 0, sizeof(next_key));
+ 
+ 	while (1) {
 -- 
 2.26.2
 

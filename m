@@ -7,39 +7,39 @@ X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A93EEC56201
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Oct 2020 07:11:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 86020C5DF9D
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Oct 2020 07:11:44 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 3C9562231B
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Oct 2020 07:11:43 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3C8A4222EC
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Oct 2020 07:11:44 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="hQW70OOi"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="sI3ZImxw"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1770923AbgJZHL3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 26 Oct 2020 03:11:29 -0400
+        id S1770933AbgJZHLg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 26 Oct 2020 03:11:36 -0400
 Received: from mx2.suse.de ([195.135.220.15]:51300 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1770918AbgJZHL2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Oct 2020 03:11:28 -0400
+        id S1770924AbgJZHLe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 26 Oct 2020 03:11:34 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1603696286;
+        t=1603696293;
         h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
          to:to:cc:mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=3T5TfVYtidsfpmcIJddeL16twj1rcwrGxZQJfI1vSSM=;
-        b=hQW70OOiR/is8sLovVddfYmGOjliNbpm3FSd821ZgLZOQ/3EC0yYyYnaFRrtKNEoIfYTJZ
-        R1U1Jdp8aU4hf71Ve4FmicAUk7+YJpujHKPX83CH0Y0atqmOhP/t7Wl3neEkDeDpYyHmhM
-        39UI3kuRC1p6ynBiYec0WCiFyssAVBo=
+        bh=Qju62XYluIeImaLXhdXG8gs6+EJdtHaRGtU12saybNQ=;
+        b=sI3ZImxwzOK3BNueV3ItBvkvfFS6/ZBWmumT9cz7DOKp0Zh+AAsKs7PXPV0ACtXPLi6dBq
+        z/OFI1GoFLxUplLQr2eCqb7FXPr2l1saxHWOpXZa8sk4lOW6AOfnGEl918uzZzmVWzcVy0
+        eacqOYdZTAkmCE9z+SYwd9UVBWaL7cU=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 9F779B1AA
-        for <linux-btrfs@vger.kernel.org>; Mon, 26 Oct 2020 07:11:26 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id AB9C1AD2F
+        for <linux-btrfs@vger.kernel.org>; Mon, 26 Oct 2020 07:11:33 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/8] btrfs: scrub: remove the @force parameter of scrub_pages()
-Date:   Mon, 26 Oct 2020 15:11:09 +0800
-Message-Id: <20201026071115.57225-3-wqu@suse.com>
+Subject: [PATCH 6/8] btrfs: scrub: always allocate one full page for one sector for RAID56
+Date:   Mon, 26 Oct 2020 15:11:13 +0800
+Message-Id: <20201026071115.57225-7-wqu@suse.com>
 X-Mailer: git-send-email 2.29.0
 In-Reply-To: <20201026071115.57225-1-wqu@suse.com>
 References: <20201026071115.57225-1-wqu@suse.com>
@@ -49,77 +49,90 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The @force parameter for scrub_pages() is to indicate whether we want to
-force bio submission.
+For scrub_pages() and scrub_pages_for_parity(), we currently allocate
+one scrub_page structure for one page.
 
-Currently it's only used for super block scrub, and it can be easily
-determined by the @flags.
+This is fine if we only read/write one sector one time.
+But for cases like scrubing RAID56, we need to read/write the full
+stripe, which is in 64K size.
 
-So remove the parameter to make the parameter a little shorter.
+For subpage size, we will submit the read in just one page, which is
+normally a good thing, but for RAID56 case, it only expects to see one
+sector, not the full stripe in its endio function.
+This could lead to wrong parity checksum for RAID56 on subpage.
+
+To make the existing code work well for subpage case, here we take a
+shortcut, by always allocating a full page for one sector.
+
+This should provide the basis to make RAID56 work for subpage case.
+
+The cost is pretty obvious now, for one RAID56 stripe now we always need 16
+pages. For support subpage situation (64K page size, 4K sector size),
+this means we need full one megabyte to scrub just one RAID56 stripe.
+
+And for data scrub, each 4K sector will also need one 64K page.
+
+This is mostly just a workaround, the proper fix for this is a much
+larger project, using scrub_block to replace scrub_page, and allow
+scrub_block to handle multi pages, csums, and csum_bitmap to avoid
+allocating one page for each sector.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/scrub.c | 14 +++++++++-----
- 1 file changed, 9 insertions(+), 5 deletions(-)
+ fs/btrfs/scrub.c | 17 +++++++++++++++--
+ 1 file changed, 15 insertions(+), 2 deletions(-)
 
 diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 0e25f9391b93..3cb51d1f061f 100644
+index bad88c651dd4..10836aec389f 100644
 --- a/fs/btrfs/scrub.c
 +++ b/fs/btrfs/scrub.c
-@@ -237,7 +237,7 @@ static int scrub_add_page_to_rd_bio(struct scrub_ctx *sctx,
- 				    struct scrub_page *spage);
- static int scrub_pages(struct scrub_ctx *sctx, u64 logical, u64 len,
- 		       u64 physical, struct btrfs_device *dev, u64 flags,
--		       u64 gen, int mirror_num, u8 *csum, int force,
-+		       u64 gen, int mirror_num, u8 *csum,
- 		       u64 physical_for_dev_replace);
- static void scrub_bio_end_io(struct bio *bio);
- static void scrub_bio_end_io_worker(struct btrfs_work *work);
-@@ -2152,12 +2152,16 @@ static void scrub_missing_raid56_pages(struct scrub_block *sblock)
- 
- static int scrub_pages(struct scrub_ctx *sctx, u64 logical, u64 len,
- 		       u64 physical, struct btrfs_device *dev, u64 flags,
--		       u64 gen, int mirror_num, u8 *csum, int force,
-+		       u64 gen, int mirror_num, u8 *csum,
+@@ -2186,6 +2186,7 @@ static int scrub_pages(struct scrub_ctx *sctx, u64 logical, u64 len,
  		       u64 physical_for_dev_replace)
  {
  	struct scrub_block *sblock;
-+	bool force_submit = false;
++	u32 sectorsize = sctx->fs_info->sectorsize;
+ 	bool force_submit = false;
  	int index;
  
-+	if (flags & BTRFS_EXTENT_FLAG_SUPER)
-+		force_submit = true;
+@@ -2208,7 +2209,15 @@ static int scrub_pages(struct scrub_ctx *sctx, u64 logical, u64 len,
+ 
+ 	for (index = 0; len > 0; index++) {
+ 		struct scrub_page *spage;
+-		u64 l = min_t(u64, len, PAGE_SIZE);
++		/*
++		 * Here we will allocate one page for one sector to scrub.
++		 * This is fine if PAGE_SIZE == sectorsize, but will cost
++		 * more memory for PAGE_SIZE > sectorsize case.
++		 *
++		 * TODO: Make scrub_block to handle multiple pages and csums,
++		 * so that we don't need scrub_page structure at all.
++		 */
++		u32 l = min_t(u32, sectorsize, len);
+ 
+ 		spage = alloc_scrub_page(sctx, GFP_KERNEL);
+ 		if (!spage) {
+@@ -2528,8 +2537,11 @@ static int scrub_pages_for_parity(struct scrub_parity *sparity,
+ {
+ 	struct scrub_ctx *sctx = sparity->sctx;
+ 	struct scrub_block *sblock;
++	u32 sectorsize = sctx->fs_info->sectorsize;
+ 	int index;
+ 
++	ASSERT(IS_ALIGNED(len, sectorsize));
 +
  	sblock = kzalloc(sizeof(*sblock), GFP_KERNEL);
  	if (!sblock) {
  		spin_lock(&sctx->stat_lock);
-@@ -2231,7 +2235,7 @@ static int scrub_pages(struct scrub_ctx *sctx, u64 logical, u64 len,
- 			}
- 		}
+@@ -2548,7 +2560,8 @@ static int scrub_pages_for_parity(struct scrub_parity *sparity,
  
--		if (force)
-+		if (force_submit)
- 			scrub_submit(sctx);
- 	}
+ 	for (index = 0; len > 0; index++) {
+ 		struct scrub_page *spage;
+-		u64 l = min_t(u64, len, PAGE_SIZE);
++		/* Check scrub_page() for the reason why we use sectorsize */
++		u32 l = sectorsize;
  
-@@ -2442,7 +2446,7 @@ static int scrub_extent(struct scrub_ctx *sctx, struct map_lookup *map,
- 				++sctx->stat.no_csum;
- 		}
- 		ret = scrub_pages(sctx, logical, l, physical, dev, flags, gen,
--				  mirror_num, have_csum ? csum : NULL, 0,
-+				  mirror_num, have_csum ? csum : NULL,
- 				  physical_for_dev_replace);
- 		if (ret)
- 			return ret;
-@@ -3707,7 +3711,7 @@ static noinline_for_stack int scrub_supers(struct scrub_ctx *sctx,
+ 		BUG_ON(index >= SCRUB_MAX_PAGES_PER_BLOCK);
  
- 		ret = scrub_pages(sctx, bytenr, BTRFS_SUPER_INFO_SIZE, bytenr,
- 				  scrub_dev, BTRFS_EXTENT_FLAG_SUPER, gen, i,
--				  NULL, 1, bytenr);
-+				  NULL, bytenr);
- 		if (ret)
- 			return ret;
- 	}
 -- 
 2.29.0
 

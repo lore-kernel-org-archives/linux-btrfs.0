@@ -5,128 +5,210 @@ X-Spam-Level:
 X-Spam-Status: No, score=-12.9 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
 	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	UNPARSEABLE_RELAY,USER_AGENT_GIT autolearn=unavailable autolearn_force=no
+	UNPARSEABLE_RELAY,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CFDE3C55178
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Oct 2020 00:21:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 24FB6C4363A
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Oct 2020 00:23:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 95A7620723
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Oct 2020 00:21:42 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CBAC720759
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Oct 2020 00:23:07 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="jIEIjvOu"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="zgpnUoqq"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2410989AbgJZXzw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 26 Oct 2020 19:55:52 -0400
-Received: from aserp2120.oracle.com ([141.146.126.78]:49194 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2410901AbgJZXzZ (ORCPT
+        id S2441375AbgJ0AXB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 26 Oct 2020 20:23:01 -0400
+Received: from aserp2130.oracle.com ([141.146.126.79]:57290 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2410919AbgJZXzg (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Oct 2020 19:55:25 -0400
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09QNpgBO008933;
-        Mon, 26 Oct 2020 23:55:25 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
- subject : date : message-id : in-reply-to : references : mime-version :
+        Mon, 26 Oct 2020 19:55:36 -0400
+Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
+        by aserp2130.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09QNo3bf029885
+        for <linux-btrfs@vger.kernel.org>; Mon, 26 Oct 2020 23:55:34 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
+ date : message-id : in-reply-to : references : mime-version :
  content-transfer-encoding; s=corp-2020-01-29;
- bh=p9wcWzNWRupsTKDyjWPNfJsqQtY82jEb9ldxxLrL474=;
- b=jIEIjvOuyv/iSRBRexHuRTELGCQ5dkX1KR0hETC1SzaHCpMIGVtDbsFJejT+4fZTuCnN
- ZmLVjFjakzT5vZmqWU0xoBFrRCkNJyna7Cta0uRaDojphUIGqPqrc4glotAYq37MT6oJ
- mI4L04ah8evUpLuyhGR+x34KHL/fXRhVpH422cCp3GXLNQb9htr3lF49acUQjQ1u/xJ0
- hKXgTo2lY4lW7G7W0bwpFFY6IXd4XGtfFlpuRBcnWIAtAiqpBcHizfDujG0JJr6q3qP2
- ULR/eMQIIUTI4X+d/JrfF5uP289QfMV69uaqThxEr/6IGO6PGRC35C2gXwqRhH9Uffwq NQ== 
-Received: from aserp3020.oracle.com (aserp3020.oracle.com [141.146.126.70])
-        by aserp2120.oracle.com with ESMTP id 34cc7kq9jv-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
-        Mon, 26 Oct 2020 23:55:24 +0000
-Received: from pps.filterd (aserp3020.oracle.com [127.0.0.1])
-        by aserp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09QNo4Vw158434;
-        Mon, 26 Oct 2020 23:55:24 GMT
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by aserp3020.oracle.com with ESMTP id 34cx5wg49d-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Mon, 26 Oct 2020 23:55:24 +0000
+ bh=f9Xfc9DZZs+03wwRc745fik3dsA846wz/Vp6q+dlFPg=;
+ b=zgpnUoqqCX/1zPsy021Id62BRfGy+2+GIsGyQt7iYZ3tlbZBRSTtjrhLxe2x/izB9vnW
+ TWEh6/GYk8v3pXhlrG/84Pfm3u7YOWju7JV2Pr6B48V8RTPp4tmUjKDaEnA0jpgVicqZ
+ fJBI3/dAobd+FhZhVoeS2wgpHDRhK+CvYr8p+IMj0uN8fJnqgxV0iLB9HZq6rO4zAe21
+ 2FgFHInyVpR7V/Tt8T9DlMgx27byuecYICcLcbwaRWJYe8ktBDIClZf+UF19EMu/JOA+
+ biaFPa+27QDHbuUoBba4r667lauFheAlbycFJtN2iNWimXKJxp8bhnjlb1Y2N1ftIeYR qA== 
+Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
+        by aserp2130.oracle.com with ESMTP id 34c9saqe8c-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
+        for <linux-btrfs@vger.kernel.org>; Mon, 26 Oct 2020 23:55:34 +0000
+Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
+        by userp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09QNpKM1172333
+        for <linux-btrfs@vger.kernel.org>; Mon, 26 Oct 2020 23:55:34 GMT
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by userp3030.oracle.com with ESMTP id 34cx6vagv4-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Mon, 26 Oct 2020 23:55:33 +0000
 Received: from abhmp0017.oracle.com (abhmp0017.oracle.com [141.146.116.23])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id 09QNtNBn013961;
-        Mon, 26 Oct 2020 23:55:23 GMT
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id 09QNtX0b016050
+        for <linux-btrfs@vger.kernel.org>; Mon, 26 Oct 2020 23:55:33 GMT
 Received: from localhost.localdomain (/39.109.231.106)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Mon, 26 Oct 2020 16:55:22 -0700
+        with ESMTP ; Mon, 26 Oct 2020 16:55:32 -0700
 From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
-Cc:     linux-block@vger.kernel.org
-Subject: [PATCH RFC 1/7] block: export part_stat_read_all
-Date:   Tue, 27 Oct 2020 07:55:04 +0800
-Message-Id: <047fe87c52b64caf1bd09eee4b1ca5130062a885.1603751876.git.anand.jain@oracle.com>
+Subject: [PATCH RFC 7/7] btrfs: introduce new read_policy round-robin
+Date:   Tue, 27 Oct 2020 07:55:10 +0800
+Message-Id: <4c4dd72374fdd51674cd1c909fe48fb6f3853d71.1603751876.git.anand.jain@oracle.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1603751876.git.anand.jain@oracle.com>
 References: <cover.1603751876.git.anand.jain@oracle.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9786 signatures=668682
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 adultscore=0 mlxscore=0 mlxlogscore=999
- suspectscore=1 bulkscore=0 malwarescore=0 spamscore=0 phishscore=0
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 adultscore=0 phishscore=0 spamscore=0
+ bulkscore=0 malwarescore=0 mlxlogscore=999 mlxscore=0 suspectscore=3
  classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2009150000
  definitions=main-2010260155
 X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9786 signatures=668682
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 lowpriorityscore=0 adultscore=0
- malwarescore=0 spamscore=0 clxscore=1011 mlxscore=0 suspectscore=1
- priorityscore=1501 impostorscore=0 bulkscore=0 phishscore=0
- mlxlogscore=999 classifier=spam adjust=0 reason=mlx scancount=1
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 mlxscore=0 impostorscore=0
+ mlxlogscore=999 malwarescore=0 lowpriorityscore=0 bulkscore=0
+ priorityscore=1501 spamscore=0 phishscore=0 clxscore=1015 suspectscore=3
+ adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
  engine=8.12.0-2009150000 definitions=main-2010260155
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-For mirrored raid profiles such as raid1, raid1c3, raid1c4, and raid10,
-currently, btrfs use the PID method to determine which one of the
-mirrored devices to use to read the block. However, the PID method is
-not the best choice if the devices are heterogeneous in terms of type,
-speed, and size, as we may end up reading from the slower device.
+Add round-robin read policy to route the read IO to the next device in the
+round-robin order. The chunk allocation and thus the stripe-index follows
+the order of free space available on devices. So to make the round-robin
+effective it shall follow the devid order instead of the stripe-index
+order.
 
-Export the function part_stat_read_all() so that the btrfs can determine
-the device with the least average wait time to use.
-
-Cc: linux-block@vger.kernel.org
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- block/genhd.c         | 3 ++-
- include/linux/genhd.h | 1 +
- 2 files changed, 3 insertions(+), 1 deletion(-)
+ fs/btrfs/sysfs.c   |  2 +-
+ fs/btrfs/volumes.c | 68 ++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/volumes.h |  2 ++
+ 3 files changed, 71 insertions(+), 1 deletion(-)
 
-diff --git a/block/genhd.c b/block/genhd.c
-index 0a273211fec2..81b10b90de71 100644
---- a/block/genhd.c
-+++ b/block/genhd.c
-@@ -89,7 +89,7 @@ const char *bdevname(struct block_device *bdev, char *buf)
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index 677070bab1e0..45efc9755336 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -876,7 +876,7 @@ static int btrfs_strmatch(const char *given, const char *golden)
+ 
+ /* Must follow the order as in enum btrfs_read_policy */
+ static const char * const btrfs_read_policy_name[] = { "pid", "latency",
+-						       "device" };
++						       "device", "roundrobin" };
+ 
+ static ssize_t btrfs_read_policy_show(struct kobject *kobj,
+ 				      struct kobj_attribute *a, char *buf)
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index e71af8ab4ad8..d3023879bdf6 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -5466,6 +5466,69 @@ int btrfs_is_parity_mirror(struct btrfs_fs_info *fs_info, u64 logical, u64 len)
+ 	return ret;
  }
- EXPORT_SYMBOL(bdevname);
  
--static void part_stat_read_all(struct hd_struct *part, struct disk_stats *stat)
-+void part_stat_read_all(struct hd_struct *part, struct disk_stats *stat)
++struct stripe_mirror {
++	u64 devid;
++	int map;
++};
++
++static int btrfs_cmp_devid(const void *a, const void *b)
++{
++	struct stripe_mirror *s1 = (struct stripe_mirror *)a;
++	struct stripe_mirror *s2 = (struct stripe_mirror *)b;
++
++	if (s1->devid < s2->devid)
++		return -1;
++	if (s1->devid > s2->devid)
++		return 1;
++	return 0;
++}
++
++static int btrfs_find_read_round_robin(struct map_lookup *map, int first,
++				       int num_stripe, char *log, int logsz)
++{
++	struct stripe_mirror stripes[4] = {0}; //4: for testing, works for now.
++	struct btrfs_fs_devices *fs_devices;
++	u64 devid;
++	int index, j, cnt;
++	int lognr = 0;
++	int next_stripe;
++
++	index = 0;
++	lognr += scnprintf(log + lognr, logsz - lognr, "index=map:devid [");
++	for (j = first; j < first + num_stripe; j++) {
++		devid = map->stripes[j].dev->devid;
++
++		stripes[index].devid = devid;
++		stripes[index].map = j;
++
++		lognr += scnprintf(log + lognr, logsz - lognr, "%d=%d:%llu, ",
++				  index, j, devid);
++
++		index++;
++	}
++
++	sort(stripes, num_stripe, sizeof(struct stripe_mirror),
++	     btrfs_cmp_devid, NULL);
++
++	lognr += scnprintf(log + lognr, logsz - lognr, "] sorted=[");
++	for (index = 0; index < num_stripe; index++) {
++		j = stripes[index].map;
++		devid = stripes[index].devid;
++
++		lognr += scnprintf(log + lognr, logsz - lognr, "%d=%d:%llu, ",
++				  index, j, devid);
++	}
++
++	fs_devices = map->stripes[first].dev->fs_devices;
++	cnt = atomic_inc_return(&fs_devices->total_reads);
++	next_stripe = stripes[cnt % num_stripe].map;
++
++	lognr += scnprintf(log + lognr, logsz - lognr, "] next_stripe %d",
++			  next_stripe);
++
++	return next_stripe;
++}
++
+ static u64 btrfs_estimate_read(struct btrfs_device *device,
+ 			       unsigned long *inflight)
  {
- 	int cpu;
- 
-@@ -108,6 +108,7 @@ static void part_stat_read_all(struct hd_struct *part, struct disk_stats *stat)
- 		stat->io_ticks += ptr->io_ticks;
+@@ -5608,6 +5671,11 @@ static int find_live_mirror(struct btrfs_fs_info *fs_info,
+ 			  first, num_stripes, current->comm, task_pid_nr(current),
+ 			  preferred_mirror);
+ 		break;
++	case BTRFS_READ_POLICY_ROUND_ROBIN:
++		preferred_mirror = btrfs_find_read_round_robin(map, first,
++							       num_stripes, log,
++							       logsz);
++		break;
  	}
- }
-+EXPORT_SYMBOL_GPL(part_stat_read_all);
  
- static unsigned int part_in_flight(struct hd_struct *part)
- {
-diff --git a/include/linux/genhd.h b/include/linux/genhd.h
-index 38f23d757013..eb77e0ac8a82 100644
---- a/include/linux/genhd.h
-+++ b/include/linux/genhd.h
-@@ -281,6 +281,7 @@ struct disk_part_iter {
- 	unsigned int		flags;
+ 	/*
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 40e56287204a..571b52afcaa1 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -220,6 +220,7 @@ enum btrfs_read_policy {
+ 	BTRFS_READ_POLICY_PID,
+ 	BTRFS_READ_POLICY_LATENCY,
+ 	BTRFS_READ_POLICY_DEVICE,
++	BTRFS_READ_POLICY_ROUND_ROBIN,
+ 	BTRFS_NR_READ_POLICY,
  };
  
-+extern void part_stat_read_all(struct hd_struct *part, struct disk_stats *stat);
- extern void disk_part_iter_init(struct disk_part_iter *piter,
- 				 struct gendisk *disk, unsigned int flags);
- extern struct hd_struct *disk_part_iter_next(struct disk_part_iter *piter);
+@@ -281,6 +282,7 @@ struct btrfs_fs_devices {
+ 	 * policy used to read the mirrored stripes
+ 	 */
+ 	enum btrfs_read_policy read_policy;
++	atomic_t total_reads;
+ };
+ 
+ #define BTRFS_BIO_INLINE_CSUM_SIZE	64
 -- 
 2.25.1
 

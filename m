@@ -4,70 +4,69 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-10.4 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=unavailable
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B10E4C56201
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Oct 2020 18:11:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 81079C55178
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Oct 2020 18:24:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 5DE6F20723
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Oct 2020 18:11:39 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3BE012068E
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Oct 2020 18:24:28 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="z4qApQkf"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="aIGasnJz"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1825420AbgJ0SLf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 27 Oct 2020 14:11:35 -0400
-Received: from mail-qt1-f195.google.com ([209.85.160.195]:33888 "EHLO
+        id S1827461AbgJ0SY0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 27 Oct 2020 14:24:26 -0400
+Received: from mail-qt1-f195.google.com ([209.85.160.195]:35553 "EHLO
         mail-qt1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1825415AbgJ0SLC (ORCPT
+        with ESMTP id S1827297AbgJ0SWu (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Oct 2020 14:11:02 -0400
-Received: by mail-qt1-f195.google.com with SMTP id h12so1711653qtu.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Oct 2020 11:11:01 -0700 (PDT)
+        Tue, 27 Oct 2020 14:22:50 -0400
+Received: by mail-qt1-f195.google.com with SMTP id s39so1259044qtb.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Oct 2020 11:22:49 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=subject:to:cc:references:from:message-id:date:user-agent
-         :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=/dpwqPuJKVc4PuSdGfhLa6ddfo/1kSUn/kVHSfMrWNQ=;
-        b=z4qApQkflA4Zvage2l4skqB/aYmQNJ+ILyDeWcbIffpgM38Z3/euK5CCLUZ+gJoqFW
-         zFIcjbVPUNqetEz59BouZ4JTfvu93GTVBkL8RIuJ2uoHprcwxJVNWqt3kDX+tY+KnHNw
-         1dvLz7PtTJIYBRx/RvfRJD5iQSRhMhN+jvSYRqXKYegYRxBpK3VBWXY1yLxThecpyYzk
-         qSlIFotCQJTFFEvCdY0IecCuX5oYwN3IPrkHTQB96JyvlPSGf3TMAq3ZVjD8XGS8KAQo
-         DBUh5jexsNwwu6etuNggJDt1BN8iVePsiGNfAi+KYPcWkX6BRjyZkf4ajfhjBNPSip0X
-         Vnrw==
+        h=subject:to:references:from:message-id:date:user-agent:mime-version
+         :in-reply-to:content-language:content-transfer-encoding;
+        bh=KtW27e/BnVxAtqkQ4lqzLFFqFcBu+VgIgFCmH5n1t/c=;
+        b=aIGasnJzSkp8tuAOEaqMEG9nSVW9BgZ83dKprFeKtfisPXzGLATiI0bkJDqa3s5NqL
+         HGqmX4zY6nIvcNI/smvX/HqVH717qauPF02pKMM+OQ2/S3EBNdNb0Jv4qFC699aKIZz5
+         7SflvRod8ZrchOQ6Z9THHKX8JE3LcTtboHUXwTqvQ4o4tSbjbYhtVAOM2guRCuP5FDCF
+         83CfDc8EvtaAVWgu087inOZjB6XcuvZh6Jxwo7Nkn2kx6+41Dbt5OcwuBK9XPwn1mzam
+         3bXY5exdK5y7gd1YdyxiBEouVQ3IdSNQZddNXo5xFOtQohArl+Pjcn5+hvU7k90ueGMb
+         5nkg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
+        h=x-gm-message-state:subject:to:references:from:message-id:date
          :user-agent:mime-version:in-reply-to:content-language
          :content-transfer-encoding;
-        bh=/dpwqPuJKVc4PuSdGfhLa6ddfo/1kSUn/kVHSfMrWNQ=;
-        b=lfnEtRNGWYFUhO9usSZXzg6EZ6kvx/9P/17BoIlj3h2tGCTUpZRFZJs6rT/Kutlw73
-         qT0DxQLXYGClyei47KCnV8hRjaYfGfTf5m8XlAkfZ1t7H17+dIef0mJyssuWikfbAFHF
-         VMZm7c4rQl7QT4W3i5/9LOfneeJUrnnz8nKDjAG9N7ywvrt1j3oxbF6UMmq5syYXZFgf
-         B24U0+vWDdXpbkO6SykHBFTqpzU2DN1Fg+NcZS+MpsbKuktWbiF9yzszVyqrnVlTIH3h
-         ynarWYgzQFHQF+Yhvs1iBNIc8+qTYrf04SY88/11oJZZLErn9itnI+h2Ij1uZa3RxE14
-         P87Q==
-X-Gm-Message-State: AOAM533xnxdaXvs9I2W0okJRHbNKeVG8txoNL/aV/0AjWzc+l3U9b0kt
-        T0P46Q7uV0g2ecrZJk/xr0XAdA==
-X-Google-Smtp-Source: ABdhPJyD6rYmpEwDZjRbmHthki4s/f3ww3q4WEkDV2z83ZzS4JkYq5EscyWBc8YBsGtjKpeAdGKpsA==
-X-Received: by 2002:ac8:3a64:: with SMTP id w91mr3443174qte.86.1603822261170;
-        Tue, 27 Oct 2020 11:11:01 -0700 (PDT)
+        bh=KtW27e/BnVxAtqkQ4lqzLFFqFcBu+VgIgFCmH5n1t/c=;
+        b=kggYzZ36EgkQ0hA8Jx4AXnhGdK4GO5WHfYvIE+scM3PX/f6PIjEm4kGYftO8Qc4EVt
+         yC5pPkWhCb4esqMY+aWyQ9N0GEnDmyQ+qHkwlcLrIXPOcjYgITE6JhchHtBg9rURz/Ck
+         wB+bN6ggJVLMAN9e/kCNY+DfaKrIOPqfBpaPrW6zm20egxk2uduRA2zL4NxyQBXKNYjd
+         590NudlbLdhF2UbZEbdD25oz0SMbV/sP43AE9r9RvA9k/2FcgUVU3zbGw6ryqZk7qw0A
+         H42zYF5j9FjOdYlNbW2gcXC3fBUBJGkGV18l4yKj7PDTx4Dn1nZ1iWjfOxxR0ldzZwfL
+         HAuw==
+X-Gm-Message-State: AOAM532yKei+ALOHX6ZGV7gZRdbcIekNS4dpoQXDaEiNyt0MPDvV2e6V
+        Y2qi1SfvnAzQBBS/AUYS+h9iW5tw9LN1yKqm
+X-Google-Smtp-Source: ABdhPJx/C/YY/Zdqaxow5cEUscCp0FM4S11YOExXWi75BOJb1uw6JpWgaAfWAbfHYn4cYsx0nL28cw==
+X-Received: by 2002:ac8:6f0b:: with SMTP id g11mr3367315qtv.175.1603822968976;
+        Tue, 27 Oct 2020 11:22:48 -0700 (PDT)
 Received: from [192.168.1.45] (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id c12sm1339419qtp.14.2020.10.27.11.11.00
+        by smtp.gmail.com with ESMTPSA id n205sm1268359qke.43.2020.10.27.11.22.47
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 27 Oct 2020 11:11:00 -0700 (PDT)
-Subject: Re: [PATCH RFC 2/7] block: export part_stat_read_inflight
+        Tue, 27 Oct 2020 11:22:47 -0700 (PDT)
+Subject: Re: [PATCH RFC 4/7] btrfs: trace, add event btrfs_read_policy
 To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
-Cc:     linux-block@vger.kernel.org
 References: <cover.1603751876.git.anand.jain@oracle.com>
- <187d1f02f82019d48f66c97c0d1b99c9a58cd553.1603751876.git.anand.jain@oracle.com>
+ <e6e5c40113cd3e939441ab3ece823282049a596f.1603751876.git.anand.jain@oracle.com>
 From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <7e98c923-d484-d05e-b5de-4eb85114ba4d@toxicpanda.com>
-Date:   Tue, 27 Oct 2020 14:10:59 -0400
+Message-ID: <eaf39974-65db-4a38-4342-f7dbea4d06bc@toxicpanda.com>
+Date:   Tue, 27 Oct 2020 14:22:46 -0400
 User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0)
  Gecko/20100101 Thunderbird/78.4.0
 MIME-Version: 1.0
-In-Reply-To: <187d1f02f82019d48f66c97c0d1b99c9a58cd553.1603751876.git.anand.jain@oracle.com>
+In-Reply-To: <e6e5c40113cd3e939441ab3ece823282049a596f.1603751876.git.anand.jain@oracle.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
 Content-Transfer-Encoding: 7bit
@@ -76,13 +75,17 @@ List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 On 10/26/20 7:55 PM, Anand Jain wrote:
-> The exported function part_in_flight() returns commands in-flight in the
-> given block device.
+> This patch adds trace event btrfs_read_policy, which is common to all the
+> read policies.
 > 
-> Cc: linux-block@vger.kernel.org
 > Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> ---
+>   fs/btrfs/volumes.c           | 28 ++++++++++++++++++++++++++--
+>   include/trace/events/btrfs.h | 20 ++++++++++++++++++++
+>   2 files changed, 46 insertions(+), 2 deletions(-)
 
-This is much more internal to block and I'd rather not rely on it, I feel like 
-getting the average latency is good enough.  Thanks,
+Noooooo this isn't the way we do this.  Simply make a trace class with all the 
+variations, and then add individual trace events that inherit from the class 
+that print out the appropriate values.  Thanks,
 
 Josef

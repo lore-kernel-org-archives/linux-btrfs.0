@@ -2,104 +2,71 @@ Return-Path: <SRS0=hLwB=EC=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.7 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,URIBL_BLOCKED autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.3 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 64D79C63697
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Oct 2020 17:46:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0CA1FC55178
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Oct 2020 18:01:45 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 1BAE122454
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Oct 2020 17:46:37 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C2AB22076D
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Oct 2020 18:01:44 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1822044AbgJ0Rqf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 27 Oct 2020 13:46:35 -0400
-Received: from out20-14.mail.aliyun.com ([115.124.20.14]:36922 "EHLO
-        out20-14.mail.aliyun.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754085AbgJ0O0f (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Oct 2020 10:26:35 -0400
-X-Alimail-AntiSpam: AC=CONTINUE;BC=0.1035691|-1;CH=green;DM=|CONTINUE|false|;DS=CONTINUE|ham_system_inform|0.0185681-0.00145015-0.979982;FP=0|0|0|0|0|-1|-1|-1;HT=ay29a033018047202;MF=wangyugui@e16-tech.com;NM=1;PH=DS;RN=3;RT=3;SR=0;TI=SMTPD_---.Ip8ZYtq_1603808787;
-Received: from 192.168.2.112(mailfrom:wangyugui@e16-tech.com fp:SMTPD_---.Ip8ZYtq_1603808787)
-          by smtp.aliyun-inc.com(10.147.42.16);
-          Tue, 27 Oct 2020 22:26:28 +0800
-Date:   Tue, 27 Oct 2020 22:26:30 +0800
-From:   Wang Yugui <wangyugui@e16-tech.com>
-To:     louis@waffle.tech, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: balance RAID1/RAID10 mirror selection
-Cc:     anand.jain@oracle.com
-In-Reply-To: <20201023153814.643F.409509F4@e16-tech.com>
-References: <8541d6d7a63e470b9f4c22ba95cd64fc@waffle.tech> <20201023153814.643F.409509F4@e16-tech.com>
-Message-Id: <20201027222629.16D6.409509F4@e16-tech.com>
+        id S1824027AbgJ0SBm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 27 Oct 2020 14:01:42 -0400
+Received: from mx2.suse.de ([195.135.220.15]:39658 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1824022AbgJ0SBj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 27 Oct 2020 14:01:39 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.221.27])
+        by mx2.suse.de (Postfix) with ESMTP id DF3A9AE3B;
+        Tue, 27 Oct 2020 18:01:38 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 929F8DA6E2; Tue, 27 Oct 2020 19:00:03 +0100 (CET)
+Date:   Tue, 27 Oct 2020 19:00:01 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Anand Jain <anand.jain@oracle.com>
+Cc:     dsterba@suse.cz, linux-btrfs@vger.kernel.org, josef@toxicpanda.com,
+        dsterba@suse.com
+Subject: Re: [PATCH v9 1/3] btrfs: add btrfs_strmatch helper
+Message-ID: <20201027180001.GE6756@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
+        linux-btrfs@vger.kernel.org, josef@toxicpanda.com, dsterba@suse.com
+References: <cover.1603347462.git.anand.jain@oracle.com>
+ <75264e50d49f3c68cc14dc87510c8f3767390dcf.1603347462.git.anand.jain@oracle.com>
+ <20201026175228.GS6756@twin.jikos.cz>
+ <d241d508-6c7e-1624-8f04-4c234bcd6c57@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="US-ASCII"
-Content-Transfer-Encoding: 7bit
-X-Mailer: Becky! ver. 2.75.01 [en]
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <d241d508-6c7e-1624-8f04-4c234bcd6c57@oracle.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi, Louis Jencka
-Cc: Anand Jain
-
-Maybe we still need BTRFS_READ_POLICY_PID because of readahead.
-
-There are readahead inside OS and readahead inside some disk.
-
-For most SSD/SAS and SSD/SATA, there seems readahead inside the disk.
-But for some SSD/NVMe,  there seems NO readahead inside the disk.
-
-BTRFS_READ_POLICY_PID cooperates readahead better in some case.
-
-Best Regards
-Wang Yugui (wangyugui@e16-tech.com)
-2020/10/27
-
-> Hi, Louis Jencka
-> 
-> Can we move 'atomic_t rr_counter' into 'struct btrfs_fs_info' to
-> support multiple mounted btrfs filesystem?
-> 
-> Although 'readmirror feature (read_policy sysfs)'  is talked about, 
-> round-robin is a replacement for BTRFS_READ_POLICY_PID in most case, 
-> we no longer need BTRFS_READ_POLICY_PID ?
-> 
-> Best Regards
-> Wang Yugui (wangyugui@e16-tech.com)
-> 2020/10/23
-> 
-> > Balance RAID1/RAID10 mirror selection via plain round-robin scheduling. This should roughly double throughput for large reads.
+On Tue, Oct 27, 2020 at 09:19:33PM +0800, Anand Jain wrote:
+> >> +	stripped = skip_spaces(given);
+> >> +
+> >> +	/* strip trailing whitespace */
+> >> +	if ((strncmp(stripped, golden, len) == 0) &&
+> >> +	    (strlen(skip_spaces(stripped + len)) == 0))
+> >> +		return 0;
 > > 
-> > Signed-off-by: Louis Jencka <louis@waffle.tech>
-> > ---
-> >  fs/btrfs/volumes.c | 6 +++++-
-> >  1 file changed, 5 insertions(+), 1 deletion(-)
-> > 
-> > diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> > index 58b9c419a..45c581d46 100644
-> > --- a/fs/btrfs/volumes.c
-> > +++ b/fs/btrfs/volumes.c
-> > @@ -333,6 +333,9 @@ struct list_head * __attribute_const__ btrfs_get_fs_uuids(void)
-> >  	return &fs_uuids;
-> >  }
-> >  
-> > +/* Used for round-robin balancing RAID1/RAID10 reads. */
-> > +atomic_t rr_counter = ATOMIC_INIT(0);
-> > +
-> >  /*
-> >   * alloc_fs_devices - allocate struct btrfs_fs_devices
-> >   * @fsid:		if not NULL, copy the UUID to fs_devices::fsid
-> > @@ -5482,7 +5485,8 @@ static int find_live_mirror(struct btrfs_fs_info *fs_info,
-> >  	else
-> >  		num_stripes = map->num_stripes;
-> >  
-> > -	preferred_mirror = first + current->pid % num_stripes;
-> > +	preferred_mirror = first +
-> > +	    (unsigned)atomic_inc_return(&rr_counter) % num_stripes;
-> >  
-> >  	if (dev_replace_is_ongoing &&
-> >  	    fs_info->dev_replace.cont_reading_from_srcdev_mode ==
+> > This a bit hard to read but ok, essentially we can do the string
+> > comparison in a loop or use the library functions.
+> >
 > 
+> >> +
+> >> +	return -EINVAL;
+> > 
+> > This does not make sense as it's an error code while the function is a
+> > predicate, without error states.
+> > 
+> 
+>   A non zero value return will be some arbitrary number, is that OK?
+>   Or the return arg can be bool instead of int.
 
-
+Bool is fine in this case.

@@ -2,168 +2,196 @@ Return-Path: <SRS0=hLwB=EC=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.1 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
+	SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5AFE2C8300C
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Oct 2020 00:46:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 30604C4363A
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Oct 2020 00:46:20 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 1A3062080A
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Oct 2020 00:46:11 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1603759571;
-	bh=ZQ4rUae0MFq+q+xuLJba7D1u85eRkZ30SW3jH8xmVcU=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=csroA1kqf+yttfMpxlAN24oqpyWScejAlYV1P3/lF1b074hVusCbaHe63aM+QxgxN
-	 6tOB9nbxxUyWiYmRADcybh2cnsN3f5WEFd3E0Dz59cgRMP4VX1zexAMNG2TIlSQS60
-	 DQpcrfBXuBW7eS8tW3gwT/2pGFWwYirBPx14s/VQ=
+	by mail.kernel.org (Postfix) with ESMTP id D4B3920747
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Oct 2020 00:46:19 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="B9Omoc3K"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2408716AbgJ0AmY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 26 Oct 2020 20:42:24 -0400
-Received: from mail.kernel.org ([198.145.29.99]:51610 "EHLO mail.kernel.org"
+        id S2410943AbgJ0AqL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 26 Oct 2020 20:46:11 -0400
+Received: from mout.gmx.net ([212.227.15.15]:46309 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2409336AbgJZXvM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Oct 2020 19:51:12 -0400
-Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id D53E62075B;
-        Mon, 26 Oct 2020 23:51:11 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1603756272;
-        bh=ZQ4rUae0MFq+q+xuLJba7D1u85eRkZ30SW3jH8xmVcU=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=W046cHoSC3Ov5I62XBdCKcxid8qUDspHjLObY70QsaiHQIz5fwFr5JNuPahqqXzx8
-         SwjQFyY4vFxYU/eoVxZvhBUAtG88pLNX0LpNsBG9XQY0QwW92Gqfwo4BqczYD23b0R
-         PVSXppiq24XeIan7lLqYMBL5XkUVX3GBZxiA0F7U=
-From:   Sasha Levin <sashal@kernel.org>
-To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Anand Jain <anand.jain@oracle.com>,
-        David Sterba <dsterba@suse.com>,
-        Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.9 104/147] btrfs: fix replace of seed device
-Date:   Mon, 26 Oct 2020 19:48:22 -0400
-Message-Id: <20201026234905.1022767-104-sashal@kernel.org>
-X-Mailer: git-send-email 2.25.1
-In-Reply-To: <20201026234905.1022767-1-sashal@kernel.org>
-References: <20201026234905.1022767-1-sashal@kernel.org>
+        id S2442760AbgJ0Aoj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 26 Oct 2020 20:44:39 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1603759474;
+        bh=R0XeE+GEoN/Jt3Yy8NpC/5/muzNijmEFVfECRKOlq0M=;
+        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
+        b=B9Omoc3K8jq8p90ZqiyAVs5ojfvNJOX0+JzUvzhP2gAia2+TtIfbfxsULSv+0/bxi
+         h9NKIFgbi92ejkdjbUD1mcTJu9IWHQ8Xv1lV8izeIUWJL+lK5ACZl8bVIxTKLTsRXR
+         cTItAb0TMeRT/jioeehbmEl5Ba9kYH5NXv9/FG3k=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx005
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1Mq2nA-1k1z8d3srS-00nBUY; Tue, 27
+ Oct 2020 01:44:34 +0100
+Subject: Re: [PATCH v4 01/68] btrfs: extent-io-tests: remove invalid tests
+To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20201021062554.68132-1-wqu@suse.com>
+ <20201021062554.68132-2-wqu@suse.com> <20201026232602.GV6756@twin.jikos.cz>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAU4EEwEIADgCGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1oQAKCRDC
+ PZHzoSX+qCY6CACd+mWu3okGwRKXju6bou+7VkqCaHTdyXwWFTsr+/0ly5nUdDtT3yEVggPJ
+ 3VP70wjlrxUjNjFb6iIvGYxiPOrop1NGwGYvQktgRhaIhALG6rPoSSAhGNjwGVRw0km0PlIN
+ D29BTj/lYEk+jVM1YL0QLgAE1AI3krihg/lp/fQT53wLhR8YZIF8ETXbClQG1vJ0cllPuEEv
+ efKxRyiTSjB+PsozSvYWhXsPeJ+KKjFen7ebE5reQTPFzSHctCdPnoR/4jSPlnTlnEvLeqcD
+ ZTuKfQe1gWrPeevQzgCtgBF/WjIOeJs41klnYzC3DymuQlmFubss0jShLOW8eSOOWhLRuQEN
+ BFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcgaCbPEwhLj
+ 1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj/IrRUUka
+ 68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fNGSsRb+pK
+ EKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0q1eW4Jrv
+ 0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEvABEBAAGJ
+ ATwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1rgUJCWpOfwAKCRDCPZHz
+ oSX+qFcEB/95cs8cM1OQdE/GgOfCGxwgckMeWyzOR7bkAWW0lDVp2hpgJuxBW/gyfmtBnUai
+ fnggx3EE3ev8HTysZU9q0h+TJwwJKGv6sUc8qcTGFDtavnnl+r6xDUY7A6GvXEsSoCEEynby
+ 72byGeSovfq/4AWGNPBG1L61Exl+gbqfvbECP3ziXnob009+z9I4qXodHSYINfAkZkA523JG
+ ap12LndJeLk3gfWNZfXEWyGnuciRGbqESkhIRav8ootsCIops/SqXm0/k+Kcl4gGUO/iD/T5
+ oagaDh0QtOd8RWSMwLxwn8uIhpH84Q4X1LadJ5NCgGa6xPP5qqRuiC+9gZqbq4Nj
+Message-ID: <96747194-25f9-d774-3a54-a5d49c108919@gmx.com>
+Date:   Tue, 27 Oct 2020 08:44:30 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.12.0
 MIME-Version: 1.0
-X-stable: review
-X-Patchwork-Hint: Ignore
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <20201026232602.GV6756@twin.jikos.cz>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="j0H4VUlAuvFyTJz1iHnctSTA6zwpJdVJY"
+X-Provags-ID: V03:K1:yOa4PkM9zlFE5KXwAXTl8GVFKh29cHonzpnvlMgv/jbxD+09K2Z
+ lCuUyW54SwPenXV3Y+QG8bn9/3a64/YhklAN1/Tuy+ZWBAxHak9FmZdLyh705fA8GVDHuCr
+ Xoum3wexc4KncPv//7ZGSwhO4lfwsPO95eA2tmgp7z00D690akR+482ZXRjPVSKkhuDSKoe
+ JeD87ZmIE+8oai6kU0h8A==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:Mpcc4a+muGk=:pF1sXX/iG6Y4doBpnUWMgg
+ XoJ6R9h1NXRnsfB6MoFGEjE6sr6SaH8F1EH/unWRm64OIQ1hMaUDRWKdPNuHqPNTx4G/ss6XB
+ u+52poiHQuqvGGE6NNIHjO+f9mhJK0VAoL49uFWlY4t8BJUg/RR84D3gQASxgSCPRAT/aSD7u
+ wcyIMsAXjYn60/7nQ+0RqIsalgbixXjD1ImWkEbKlXK1OwxQiMRhYCwDdJ5My6HU9yiWXRkJF
+ P5rCwOrvdSNNPXTf8t8HhzaX3yWa4GBW5wczqZL5CKwVHzKFstF6rV4IVoafWGN7FIl2vXRBL
+ I1YZrVgmsH39JF71r0HTOy8khNP4PCEyxGkNXPdMsDIEe/pcgX52OAZOHvmIUpLW+YhnKmMpp
+ nTH2+9getHFblt8bL9/+UjQoIyt7Viet9LkBOinKWW0EPwUC4LjvNmEIXmkk0X8JWW9rZ8zXb
+ ixHfVl0kInbEal0iS2szsLB+L22FK4MDH231i8pgZoyu+jL+qn4WCgfauSxCJdAHNAtcvYy8T
+ 0kU9Ws7KHrFmiL/pByUeo55KJr8exD+xqJoA/HzUg6DIW6gUvLPOoovbEUL9RhJ6gefpfjxSD
+ 5wpf9Yjlvu4WoiVyqwzvSNd+MHHA5b8QmK/KdIT4+lfXh6FFwcGSiDONenJZ150fnNwoIYaby
+ iaYhsoha3Vrs6lyHcQWoXX9Pq5H30yBS5SSuROI38ZufWsOpBVYqqVbSPrdKIYroRpvXfsybe
+ IPl31w3hrJXMLOnpEKJwm/HproEnNFH52+1XigIZQw28SxHElRQXMQW5pCxJTF9vFG3d9wnau
+ vL/UjIIktyWPEV0BWXeIy23YfUiAACn+u1jqgQxFSQdV18wQTz9w+aQ3ns1f2a2iotqx9E/9u
+ bqv3AIkT4poefiXzD1zQ==
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Anand Jain <anand.jain@oracle.com>
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--j0H4VUlAuvFyTJz1iHnctSTA6zwpJdVJY
+Content-Type: multipart/mixed; boundary="khyJy9pcUB6OxA1llpPX98hbizfcUr8w1"
 
-[ Upstream commit c6a5d954950c5031444173ad2195efc163afcac9 ]
+--khyJy9pcUB6OxA1llpPX98hbizfcUr8w1
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-If you replace a seed device in a sprouted fs, it appears to have
-successfully replaced the seed device, but if you look closely, it
-didn't.  Here is an example.
 
-  $ mkfs.btrfs /dev/sda
-  $ btrfstune -S1 /dev/sda
-  $ mount /dev/sda /btrfs
-  $ btrfs device add /dev/sdb /btrfs
-  $ umount /btrfs
-  $ btrfs device scan --forget
-  $ mount -o device=/dev/sda /dev/sdb /btrfs
-  $ btrfs replace start -f /dev/sda /dev/sdc /btrfs
-  $ echo $?
-  0
 
-  BTRFS info (device sdb): dev_replace from /dev/sda (devid 1) to /dev/sdc started
-  BTRFS info (device sdb): dev_replace from /dev/sda (devid 1) to /dev/sdc finished
+On 2020/10/27 =E4=B8=8A=E5=8D=887:26, David Sterba wrote:
+> On Wed, Oct 21, 2020 at 02:24:47PM +0800, Qu Wenruo wrote:
+>> In extent-io-test, there are two invalid tests:
+>> - Invalid nodesize for test_eb_bitmaps()
+>>   Instead of the sectorsize and nodesize combination passed in, we're
+>>   always using hand-crafted nodesize.
+>>   Although it has some extra check for 64K page size, we can still hit=
 
-  $ btrfs fi show
-  Label: none  uuid: ab2c88b7-be81-4a7e-9849-c3666e7f9f4f
-	  Total devices 2 FS bytes used 256.00KiB
-	  devid    1 size 3.00GiB used 520.00MiB path /dev/sdc
-	  devid    2 size 3.00GiB used 896.00MiB path /dev/sdb
+>>   a case where PAGE_SIZE =3D=3D 32K, then we got 128K nodesize which i=
+s
+>>   larger than max valid node size.
+>>
+>>   Thankfully most machines are either 4K or 64K page size, thus we
+>>   haven't yet hit such case.
+>>
+>> - Invalid extent buffer bytenr
+>>   For 64K page size, the only combination we're going to test is
+>>   sectorsize =3D nodesize =3D 64K.
+>>   In that case, we'll try to create an extent buffer with 32K bytenr,
+>>   which is not aligned to sectorsize thus invalid.
+>>
+>> This patch will fix both problems by:
+>> - Honor the sectorsize/nodesize combination
+>>   Now we won't bother to hand-craft a strange length and use it as
+>>   nodesize.
+>>
+>> - Use sectorsize as the 2nd run extent buffer start
+>>   This would test the case where extent buffer is aligned to sectorsiz=
+e
+>>   but not always aligned to nodesize.
+>=20
+> The code has evolved since it was added in 0f3312295d3ce1d823 ("Btrfs:
+> add extent buffer bitmap sanity tests") and "page * 4" is intentional t=
+o
+> provide buffer where the shifted bitmap is tested. The logic has not
+> changed, only the ppc64 case was added.
+>=20
+> And I remember that tweaking this code tended to break on a real machin=
+e
+> so there are a few things that bother me:
+>=20
+> - the test does something and I'm not sure it's invalid (I think it's
+>   not)
 
-  Label: none  uuid: 10bd3202-0415-43af-96a8-d5409f310a7e
-	  Total devices 1 FS bytes used 128.00KiB
-	  devid    1 size 3.00GiB used 536.00MiB path /dev/sda
+Sector is the minimal unit that every tree block/data should follow (the
+only exception is superblock).
+Thus a sector starts in half of the sector size is definitely invalid.
 
-So as per the replace start command and kernel log replace was successful.
-Now let's try to clean mount.
+> - test on a real 64k page machine is needed
 
-  $ umount /btrfs
-  $ btrfs device scan --forget
+Every time I inserted the btrfs kernel for my RK3399 board with 64K page
+size it's tested already.
 
-  $ mount -o device=/dev/sdc /dev/sdb /btrfs
-  mount: /btrfs: wrong fs type, bad option, bad superblock on /dev/sdb, missing codepage or helper program, or other error.
+> - you reduce the scope of the test to fewer combinations
 
-  [  636.157517] BTRFS error (device sdc): failed to read chunk tree: -2
-  [  636.180177] BTRFS error (device sdc): open_ctree failed
+Well, removing invalid cases would definitely lead to fewer combinations
+anyway.
 
-That's because per dev items it is still looking for the original seed
-device.
+>=20
+> If there are combinations that would make it hard for the subpage then
+> it would be better to add it as an exception but otherwise the main
+> usecase is for 4K page and this allows more combinations to test.
+>=20
+No, there isn't anything special related to subpage.
 
- $ btrfs inspect-internal dump-tree -d /dev/sdb
+Just the things related to "sector" are broken in this test cases.
 
-	item 0 key (DEV_ITEMS DEV_ITEM 1) itemoff 16185 itemsize 98
-		devid 1 total_bytes 3221225472 bytes_used 545259520
-		io_align 4096 io_width 4096 sector_size 4096 type 0
-		generation 6 start_offset 0 dev_group 0
-		seek_speed 0 bandwidth 0
-		uuid 59368f50-9af2-4b17-91da-8a783cc418d4  <--- seed uuid
-		fsid 10bd3202-0415-43af-96a8-d5409f310a7e  <--- seed fsid
-	item 1 key (DEV_ITEMS DEV_ITEM 2) itemoff 16087 itemsize 98
-		devid 2 total_bytes 3221225472 bytes_used 939524096
-		io_align 4096 io_width 4096 sector_size 4096 type 0
-		generation 0 start_offset 0 dev_group 0
-		seek_speed 0 bandwidth 0
-		uuid 56a0a6bc-4630-4998-8daf-3c3030c4256a  <- sprout uuid
-		fsid ab2c88b7-be81-4a7e-9849-c3666e7f9f4f <- sprout fsid
+Thanks,
+Qu
 
-But the replaced target has the following uuid+fsid in its superblock
-which doesn't match with the expected uuid+fsid in its devitem.
 
-  $ btrfs in dump-super /dev/sdc | egrep '^generation|dev_item.uuid|dev_item.fsid|devid'
-  generation	20
-  dev_item.uuid	59368f50-9af2-4b17-91da-8a783cc418d4
-  dev_item.fsid	ab2c88b7-be81-4a7e-9849-c3666e7f9f4f [match]
-  dev_item.devid	1
+--khyJy9pcUB6OxA1llpPX98hbizfcUr8w1--
 
-So if you provide the original seed device the mount shall be
-successful.  Which so long happening in the test case btrfs/163.
+--j0H4VUlAuvFyTJz1iHnctSTA6zwpJdVJY
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
-  $ btrfs device scan --forget
-  $ mount -o device=/dev/sda /dev/sdb /btrfs
+-----BEGIN PGP SIGNATURE-----
 
-Fix in this patch:
-If a seed is not sprouted then there is no replacement of it, because of
-its read-only filesystem with a read-only device. Similarly, in the case
-of a sprouted filesystem, the seed device is still read only. So, mark
-it as you can't replace a seed device, you can only add a new device and
-then delete the seed device. If replace is attempted then returns
--EINVAL.
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAl+XbW4ACgkQwj2R86El
+/qj2WAf/RLZjKTpHuKpyQG67bSnxxfHulcOcUE74vo653/FJAuhirD4Z7MuImZo4
+3D6iObJ08wf8wo7J51wpT1+D4vnuArGxmSQTQS3Km5USXVZ5Wc7Zntyp+OfGioVz
+iKhyEZK+pg628Q+jOSCqN6NL/LypVdwuyNDgoobfBAt8Gv564KMyF/Gmzzwu/TSD
+cJaCyuwq/hapTaTQruBoPjzedKl0BqjhGtYpLAweR7/UpFI/58bIsUpUKkjU5aVP
+g7+Jvu35/i7muhBWpaMFf0HzQqTj2+PL7Q/pvrY41EYsCkhhqHmi1t2B/PpAeNcN
+zUFpQFq2sen0dNB/AtXu2cbODMKZjA==
+=HIWV
+-----END PGP SIGNATURE-----
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
-Signed-off-by: Sasha Levin <sashal@kernel.org>
----
- fs/btrfs/dev-replace.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index e4a1c6afe35dc..0cb36746060da 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -230,7 +230,7 @@ static int btrfs_init_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
- 	int ret = 0;
- 
- 	*device_out = NULL;
--	if (fs_info->fs_devices->seeding) {
-+	if (srcdev->fs_devices->seeding) {
- 		btrfs_err(fs_info, "the filesystem is a seed filesystem!");
- 		return -EINVAL;
- 	}
--- 
-2.25.1
-
+--j0H4VUlAuvFyTJz1iHnctSTA6zwpJdVJY--

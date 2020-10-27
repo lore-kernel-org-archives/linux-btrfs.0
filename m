@@ -7,71 +7,71 @@ X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2742BC388F9
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Oct 2020 21:08:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1F4CAC388F9
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Oct 2020 21:09:03 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id CB5BB20738
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Oct 2020 21:08:57 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B6D5420738
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Oct 2020 21:09:02 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="ds5E/RMh";
-	dkim=temperror (0-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="Lwt2vw2Q"
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="EdtR6GuN";
+	dkim=temperror (0-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="JdPJ6lNS"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1832078AbgJ0VI5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 27 Oct 2020 17:08:57 -0400
-Received: from out5-smtp.messagingengine.com ([66.111.4.29]:60137 "EHLO
+        id S1832081AbgJ0VJC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 27 Oct 2020 17:09:02 -0400
+Received: from out5-smtp.messagingengine.com ([66.111.4.29]:55237 "EHLO
         out5-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S2411855AbgJ0VI4 (ORCPT
+        by vger.kernel.org with ESMTP id S2411855AbgJ0VJB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Oct 2020 17:08:56 -0400
+        Tue, 27 Oct 2020 17:09:01 -0400
 Received: from compute2.internal (compute2.nyi.internal [10.202.2.42])
-        by mailout.nyi.internal (Postfix) with ESMTP id ABCD55C019D;
-        Tue, 27 Oct 2020 17:08:55 -0400 (EDT)
+        by mailout.nyi.internal (Postfix) with ESMTP id 957705C0197;
+        Tue, 27 Oct 2020 17:09:00 -0400 (EDT)
 Received: from mailfrontend1 ([10.202.2.162])
-  by compute2.internal (MEProxy); Tue, 27 Oct 2020 17:08:55 -0400
+  by compute2.internal (MEProxy); Tue, 27 Oct 2020 17:09:00 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=from
         :to:cc:subject:date:message-id:in-reply-to:references
-        :mime-version:content-transfer-encoding; s=fm2; bh=EZD77wTPzNkgQ
-        L9U1ukgJiLTnRKxYsXRoOPTp0z4a/w=; b=ds5E/RMhfYSMFEv8lEPEYcrCsmoI7
-        h7hd+HfWrgwTkHi+tuEFm61PpMIovmyYU2ryhwJMc9dBEWjxhkkpGYP7OOL74fJj
-        A75I177myq7ZrckqWh8mCufoEolypZp4BCZJjGn1xUjVWEtQmTc5Z3G26gPjXfmu
-        53ENwMfwdLu3D7nmLhSSKN+KpaLHNh1FJbJDDrUmrecpZCY99V3KxgXZoUL1mL26
-        lgf0NbwiP8wrsD49u4Hqj2mDwvjcSiKWBEk0FZnZsukU7Fwit60KBKnURkecnmEr
-        fBlDVTZc6GFiLjH6r20mm6VJhuXgwKmvXJMjxwPJAOGJCvpev6H6DJLDQ==
+        :mime-version:content-transfer-encoding; s=fm2; bh=EpO9puftI78qh
+        /vOTxmaFw+cP+HSj1Kt/DD7SHV/stk=; b=EdtR6GuNJ4xVy6uJbx5vp4q+IHEia
+        D4sfF6zeIfqcQUODj0AamUSe9hlX50nH2NVCD5NmFMXSfyJ5Bcyrv0IfyLtFWqt7
+        /WKf757pijehl19B2wvQQLgIHFxZRgslH9sS2+lTYOcoVpbyPsXE3N2lllh0nfoH
+        zwd2kDiboio45A4BzHBZX4KZlSliGmvUdVwxR6DSJPEMvPerQ/hdkcIjOHLwh408
+        3s4p3Ym41WlBWAGphSDecHYheMGChXMx/8OUyhIawjar3GBiZPP2i1zRArRk9lry
+        Jg8dCQM3OyXBWVaQHQRTHj96NcUM6gxK8wZoZxs9xBLYdHIeVLZINP++Q==
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
         messagingengine.com; h=cc:content-transfer-encoding:date:from
         :in-reply-to:message-id:mime-version:references:subject:to
         :x-me-proxy:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=
-        fm1; bh=EZD77wTPzNkgQL9U1ukgJiLTnRKxYsXRoOPTp0z4a/w=; b=Lwt2vw2Q
-        fbORC0LIk+BEJl48G4Xj+JWI5IaXsCCzhgUgrAnz4+Ee6DMbQ5Uo2mTxoE94Mq18
-        9e4t3QKuRLbdwGUSunCCZKdVFeZtxjRUrXLJJeCpgvNgXjDeelbU3BxQ/FHAUoQa
-        s/ixRmgAWxejigw0hFmQgyXqtcPYwVPFhkKuyTb2Ebl0ABDyLgubcZexlapeIkO9
-        sqbDM8kJffFz0oZblcQYUnnrkmSnrRGihX2JBS1wOz3e6buMHNE991ZwceMWkPXR
-        7BDtAmXr+9yh2sJpPuzbYY/ykGMXIPjCEv1JXUxNcQWXhhiRswBqgOXb257jFQM9
-        LVreP2xynOkC6Q==
-X-ME-Sender: <xms:Z4yYX2f_KOyp3qWQOsO7QkfeuWqRT0BL7D19yN7Gi8cb2K9_B1cdDA>
-    <xme:Z4yYXwNl1W8VlyEA_tLcpEoIhuKKvgL1t0i3_yxvRCuIeWQCyZrEyXshx_5OjArcW
-    u3Wvzl7L9qgxHf-eb8>
+        fm1; bh=EpO9puftI78qh/vOTxmaFw+cP+HSj1Kt/DD7SHV/stk=; b=JdPJ6lNS
+        xXGqYcqSpfEhv3+bsBE+YKGDPtby9b6bNNhckNkiTNKwxBaoZIT1Lff+paZf9VLp
+        rpGOpNvpEailiGkXSvmhLF/Ib46m9VjHrOHRduIph6G/v2F17S1o0lotIpC3XOsi
+        6/Gpexgv2uOCJQCnKByhKqM47DvzPkx/dre8DFMxHbxpKH5GNg5kI49iQZg96rBg
+        wVNLTDSZXfV66c/aCNz9J95mJOWlVSMJgZcJ26kmGbNAjA876+iysNHlLFUOIaD+
+        cf4JYRnc7ml5szFDyLh1t3FBjc/+WxcR/IqCDTy1mXj2eYasdaYFj/LB8cQGqmGL
+        uHfVBTbXC5xJgg==
+X-ME-Sender: <xms:bIyYX0bdzoTEAqIocxePIboXFpbppX4jLRX-bgnuvkdy_dSVP6_R9w>
+    <xme:bIyYX_Y2X1_CvvMBb-7pNNtgUm030EcVKHrgWfABekZo64giJjsHPZLWsKeix5fX4
+    -t1dwmbUvP0qXpKJRs>
 X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedujedrkeelgddugeehucetufdoteggodetrfdotf
     fvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfqfgfvpdfurfetoffkrfgpnffqhgen
     uceurghilhhouhhtmecufedttdenucenucfjughrpefhvffufffkofgjfhgggfestdekre
     dtredttdenucfhrhhomhepuehorhhishcuuehurhhkohhvuceosghorhhishessghurhdr
     ihhoqeenucggtffrrghtthgvrhhnpeeiueffuedvieeujefhheeigfekvedujeejjeffve
     dvhedtudefiefhkeegueehleenucfkphepudeifedruddugedrudefvddrfeenucevlhhu
-    shhtvghrufhiiigvpeehnecurfgrrhgrmhepmhgrihhlfhhrohhmpegsohhrihhssegsuh
+    shhtvghrufhiiigvpeejnecurfgrrhgrmhepmhgrihhlfhhrohhmpegsohhrihhssegsuh
     hrrdhioh
-X-ME-Proxy: <xmx:Z4yYX3gMwQaFRTFe3ADapG4n08FQSE2xoTKeubvhq9MUFuPbJ8gd0g>
-    <xmx:Z4yYXz-L6SSsrn9TCRjezBde5o-FPGAMC9lrUajrAbl-PFWVyn31_A>
-    <xmx:Z4yYXyuo4sZ6vARkRT62wBqtcm4FMucX_AfO0onEyso3T-REuhzUEg>
-    <xmx:Z4yYX41ARkPAQpNcVqHUWwkwHED_j_Y-nYP3AMBE3qWCwSIi0Dv_YQ>
+X-ME-Proxy: <xmx:bIyYX-_CEx10q8zvEOKKZ4r9tUBL3KZ36IeTTdbO5J3B2UEP-hud3A>
+    <xmx:bIyYX-olxF1V7iZp0aJsroPkGJAtbFGHgZB7sl5lFSGkzyDk735lkw>
+    <xmx:bIyYX_okkEI4wsQ959RUif9soUE9MjxKGg0N0w-Xc6kjtbaFW88_1w>
+    <xmx:bIyYX-SudssIRr6QtIHucSIPor6P3K6hoy53CCeQXofzztoTMxHYAQ>
 Received: from localhost (unknown [163.114.132.3])
-        by mail.messagingengine.com (Postfix) with ESMTPA id 1ABE23280059;
-        Tue, 27 Oct 2020 17:08:55 -0400 (EDT)
+        by mail.messagingengine.com (Postfix) with ESMTPA id 268E73280065;
+        Tue, 27 Oct 2020 17:09:00 -0400 (EDT)
 From:   Boris Burkov <boris@bur.io>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
 Cc:     Boris Burkov <boris@bur.io>
-Subject: [PATCH v5 07/10] btrfs: use sb state to print space_cache mount option
-Date:   Tue, 27 Oct 2020 14:08:01 -0700
-Message-Id: <a2c0f0fbb5d70da4968f36f3e7a9847643b12334.1603828718.git.boris@bur.io>
+Subject: [PATCH v5 08/10] btrfs: warn when remount will not change the free space tree
+Date:   Tue, 27 Oct 2020 14:08:02 -0700
+Message-Id: <216bded423dc55c5d3b8744ec20b4a7030ab3317.1603828718.git.boris@bur.io>
 X-Mailer: git-send-email 2.24.1
 In-Reply-To: <cover.1603828718.git.boris@bur.io>
 References: <cover.1603828718.git.boris@bur.io>
@@ -81,41 +81,47 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-To make the contents of /proc/mounts better match the actual state of
-the file system, base the display of the space cache mount options off
-the contents of the super block rather than the last mount options
-passed in. Since there are many scenarios where the mount will ignore a
-space cache option, simply showing the passed in option is misleading.
-
-For example, if we mount with -o remount,space_cache=v2 on a read-write
-file system without an existing free space tree, we won't build a free
-space tree, but /proc/mounts will read space_cache=v2 (until we mount
-again and it goes away)
-
-cache_generation is set iff space_cache=v1, FREE_SPACE_TREE is set iff
-space_cache=v2, and if neither is the case, we print nospace_cache.
+If the remount is ro->ro, rw->ro, or rw->rw, we will not create or
+clear the free space tree. This can be surprising, so print a warning
+to dmesg to make the failure more visible. It is also important to
+ensure that the space cache options (SPACE_CACHE, FREE_SPACE_TREE) are
+consistent, so ensure those are set to properly match the current on
+disk state (which won't be changing).
 
 Signed-off-by: Boris Burkov <boris@bur.io>
 ---
- fs/btrfs/super.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ fs/btrfs/super.c | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
 
 diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 58e54cd3c2c6..6533758f882a 100644
+index 6533758f882a..ed28985a6762 100644
 --- a/fs/btrfs/super.c
 +++ b/fs/btrfs/super.c
-@@ -1427,9 +1427,9 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
- 		seq_puts(seq, ",discard=async");
- 	if (!(info->sb->s_flags & SB_POSIXACL))
- 		seq_puts(seq, ",noacl");
--	if (btrfs_test_opt(info, SPACE_CACHE))
-+	if (btrfs_free_space_cache_v1_active(info))
- 		seq_puts(seq, ",space_cache");
--	else if (btrfs_test_opt(info, FREE_SPACE_TREE))
-+	else if (btrfs_fs_compat_ro(info, FREE_SPACE_TREE))
- 		seq_puts(seq, ",space_cache=v2");
- 	else
- 		seq_puts(seq, ",nospace_cache");
+@@ -1865,6 +1865,24 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
+ 	btrfs_resize_thread_pool(fs_info,
+ 		fs_info->thread_pool_size, old_thread_pool_size);
+ 
++	if (btrfs_test_opt(fs_info, FREE_SPACE_TREE) !=
++	    btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE) &&
++	    ((!sb_rdonly(sb) || *flags & SB_RDONLY))) {
++		btrfs_warn(fs_info,
++	   "remount supports changing free space tree only from ro to rw");
++		/*
++		 * Make sure free space cache options match the state on disk
++		 */
++		if (btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE)) {
++			btrfs_set_opt(fs_info->mount_opt, FREE_SPACE_TREE);
++			btrfs_clear_opt(fs_info->mount_opt, SPACE_CACHE);
++		}
++		if (btrfs_free_space_cache_v1_active(fs_info)) {
++			btrfs_clear_opt(fs_info->mount_opt, FREE_SPACE_TREE);
++			btrfs_set_opt(fs_info->mount_opt, SPACE_CACHE);
++		}
++	}
++
+ 	if ((bool)(*flags & SB_RDONLY) == sb_rdonly(sb))
+ 		goto out;
+ 
 -- 
 2.24.1
 

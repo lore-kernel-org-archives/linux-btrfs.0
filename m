@@ -2,41 +2,42 @@ Return-Path: <SRS0=hLwB=EC=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+X-Spam-Status: No, score=-13.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	DKIM_VALID,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
-	SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,NICE_REPLY_A,
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 30604C4363A
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Oct 2020 00:46:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E3244C4363A
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Oct 2020 00:50:23 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D4B3920747
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Oct 2020 00:46:19 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7BFF82076A
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Oct 2020 00:50:23 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="B9Omoc3K"
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="NjFfhPvJ"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2410943AbgJ0AqL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 26 Oct 2020 20:46:11 -0400
-Received: from mout.gmx.net ([212.227.15.15]:46309 "EHLO mout.gmx.net"
+        id S2443547AbgJ0AuW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 26 Oct 2020 20:50:22 -0400
+Received: from mout.gmx.net ([212.227.17.20]:50081 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2442760AbgJ0Aoj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Oct 2020 20:44:39 -0400
+        id S2438851AbgJ0AuW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 26 Oct 2020 20:50:22 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1603759474;
-        bh=R0XeE+GEoN/Jt3Yy8NpC/5/muzNijmEFVfECRKOlq0M=;
+        s=badeba3b8450; t=1603759819;
+        bh=FoRIwKcEqlze1e+IUZ/EDwtql4MFiCCUniy02Y+GMMI=;
         h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
-        b=B9Omoc3K8jq8p90ZqiyAVs5ojfvNJOX0+JzUvzhP2gAia2+TtIfbfxsULSv+0/bxi
-         h9NKIFgbi92ejkdjbUD1mcTJu9IWHQ8Xv1lV8izeIUWJL+lK5ACZl8bVIxTKLTsRXR
-         cTItAb0TMeRT/jioeehbmEl5Ba9kYH5NXv9/FG3k=
+        b=NjFfhPvJGsrAOJoTBTo3/aCKSpLwOMSVdXnHy8z8JMhYWRJoCwJnK/iUyWA5duHVL
+         yQH7VeYSSuAjLfXhEua9bm1UdL8CJTCmzher+Jykvgh7nmFaFMWNHIALexqvwZ4Cg5
+         hQ66s9lT8rSWKbNBkrNydHI0CE24rDZTRHAfRWRY=
 X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx005
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1Mq2nA-1k1z8d3srS-00nBUY; Tue, 27
- Oct 2020 01:44:34 +0100
-Subject: Re: [PATCH v4 01/68] btrfs: extent-io-tests: remove invalid tests
-To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx105
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1Mkpap-1k7B2r32mV-00mKik; Tue, 27
+ Oct 2020 01:50:19 +0100
+Subject: Re: [PATCH v4 08/68] btrfs: inode: sink parameter @start and @len for
+ check_data_csum()
+To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
 References: <20201021062554.68132-1-wqu@suse.com>
- <20201021062554.68132-2-wqu@suse.com> <20201026232602.GV6756@twin.jikos.cz>
+ <20201021062554.68132-9-wqu@suse.com> <20201027001305.GW6756@twin.jikos.cz>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
@@ -62,136 +63,117 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  72byGeSovfq/4AWGNPBG1L61Exl+gbqfvbECP3ziXnob009+z9I4qXodHSYINfAkZkA523JG
  ap12LndJeLk3gfWNZfXEWyGnuciRGbqESkhIRav8ootsCIops/SqXm0/k+Kcl4gGUO/iD/T5
  oagaDh0QtOd8RWSMwLxwn8uIhpH84Q4X1LadJ5NCgGa6xPP5qqRuiC+9gZqbq4Nj
-Message-ID: <96747194-25f9-d774-3a54-a5d49c108919@gmx.com>
-Date:   Tue, 27 Oct 2020 08:44:30 +0800
+Message-ID: <bb49899c-c25a-a4e4-825c-4c8a2ea4b176@gmx.com>
+Date:   Tue, 27 Oct 2020 08:50:15 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
  Thunderbird/68.12.0
 MIME-Version: 1.0
-In-Reply-To: <20201026232602.GV6756@twin.jikos.cz>
+In-Reply-To: <20201027001305.GW6756@twin.jikos.cz>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="j0H4VUlAuvFyTJz1iHnctSTA6zwpJdVJY"
-X-Provags-ID: V03:K1:yOa4PkM9zlFE5KXwAXTl8GVFKh29cHonzpnvlMgv/jbxD+09K2Z
- lCuUyW54SwPenXV3Y+QG8bn9/3a64/YhklAN1/Tuy+ZWBAxHak9FmZdLyh705fA8GVDHuCr
- Xoum3wexc4KncPv//7ZGSwhO4lfwsPO95eA2tmgp7z00D690akR+482ZXRjPVSKkhuDSKoe
- JeD87ZmIE+8oai6kU0h8A==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:Mpcc4a+muGk=:pF1sXX/iG6Y4doBpnUWMgg
- XoJ6R9h1NXRnsfB6MoFGEjE6sr6SaH8F1EH/unWRm64OIQ1hMaUDRWKdPNuHqPNTx4G/ss6XB
- u+52poiHQuqvGGE6NNIHjO+f9mhJK0VAoL49uFWlY4t8BJUg/RR84D3gQASxgSCPRAT/aSD7u
- wcyIMsAXjYn60/7nQ+0RqIsalgbixXjD1ImWkEbKlXK1OwxQiMRhYCwDdJ5My6HU9yiWXRkJF
- P5rCwOrvdSNNPXTf8t8HhzaX3yWa4GBW5wczqZL5CKwVHzKFstF6rV4IVoafWGN7FIl2vXRBL
- I1YZrVgmsH39JF71r0HTOy8khNP4PCEyxGkNXPdMsDIEe/pcgX52OAZOHvmIUpLW+YhnKmMpp
- nTH2+9getHFblt8bL9/+UjQoIyt7Viet9LkBOinKWW0EPwUC4LjvNmEIXmkk0X8JWW9rZ8zXb
- ixHfVl0kInbEal0iS2szsLB+L22FK4MDH231i8pgZoyu+jL+qn4WCgfauSxCJdAHNAtcvYy8T
- 0kU9Ws7KHrFmiL/pByUeo55KJr8exD+xqJoA/HzUg6DIW6gUvLPOoovbEUL9RhJ6gefpfjxSD
- 5wpf9Yjlvu4WoiVyqwzvSNd+MHHA5b8QmK/KdIT4+lfXh6FFwcGSiDONenJZ150fnNwoIYaby
- iaYhsoha3Vrs6lyHcQWoXX9Pq5H30yBS5SSuROI38ZufWsOpBVYqqVbSPrdKIYroRpvXfsybe
- IPl31w3hrJXMLOnpEKJwm/HproEnNFH52+1XigIZQw28SxHElRQXMQW5pCxJTF9vFG3d9wnau
- vL/UjIIktyWPEV0BWXeIy23YfUiAACn+u1jqgQxFSQdV18wQTz9w+aQ3ns1f2a2iotqx9E/9u
- bqv3AIkT4poefiXzD1zQ==
+ boundary="V8c2p4avnhCRpUQT4I7wUVpxIG0KO1G9r"
+X-Provags-ID: V03:K1:jwKpQBbDWy5Z3jkY23KhPBUFDrejm2VBf8lZHTEa9tC/oruMIjR
+ AaAW4eZ1WkrkXEiCBGiOvkwKylofknhjvuqMtRKPcygP5VA2X+M/eiMy7p32u8LRLteTWR7
+ 4Rke6vL8Aa9IWrnX6ZUNlTN+Zqo4l5SCzs/di2MwvWR6SYdMsaRAV7NR6oM58GHZRcXi/R9
+ RQ2Ni70tJE8Cs+W4oQlVA==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:TAXFGpMgGZo=:o73ftfcl1QuER1aUBY0B+J
+ xLrFRx5nl3ZXEOiGPJfKTXzg0+UBjQn6anMIimR4egICRhH/RMnsrE1ayMEHC4utc/hyA67vd
+ BNR2hXHchnBeF02Ym2I4P+RcLtOybYM9y7024pCc050a5KYpzegqXVJv9bMd7iVotip5n7tts
+ IZTDdLUeOmQoNV7Zw/8JZ6iX1utsdacXWFPFJeSnTKSEELKPR87pY2qTXZC0t3faUeNS5wTf8
+ YzNPUDO6H1oiUkbvk0AEq6Zr10ENVAWyd5JvYFFM+ghgosZNXVJZVdh+Af3o0d+7db8cSz0iP
+ R+25o69482s+4R4m5yPNWC3JLt8YIoIF8ACTskj4hqYQXHJRDiZFYsGrahPfN0r8wyzpfyGJT
+ jKGuvE75E54d9aEpnp3piI2fgDrcUqvyYe8qD2CuMhzIfiQPSzNLwfkkYUQjmKdzR/HxTZ21C
+ 9z2E8UJDYsijYyb4+kp6tw7p4CSfDeZl61ttAJJsbpNUYKcnh7kSQGS1sAy+EjI1NRTodwFoq
+ yVgyCkyTIxnjVWr6XC/eZNWVDOFYyKvCDj2Ej5bisbFX89nTTvcZhy2RJd8oYGMxkJNW/YONh
+ wqDSroRWO8DZzJYDIiNDdPXv+E4oSMKdspilCb7Wlhgw7Wb18rx9qsdEeiMtCjocH+kLLfwSh
+ UzX9H7C62xOca0qjRxNmA9x185RMh5hORA01QxUULuff4MJ/jxWMeiwQt7ZgdPuglPq8LM8m8
+ xEfB8Dg1MCvdNxTn2vCdWdQJ04fJ0h9sGgNY15dVlfSVP/yoWrzwnPQuottesKGVncX2NbIOZ
+ O31Th1LG/KWbgsh0/KFIz7bmoPd5aHcCBtMar4O0QLe0MfLuVezweDYG7le5lsHsOs/li9NoQ
+ mr9lLsVW4yMvGNk4TVDw==
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---j0H4VUlAuvFyTJz1iHnctSTA6zwpJdVJY
-Content-Type: multipart/mixed; boundary="khyJy9pcUB6OxA1llpPX98hbizfcUr8w1"
+--V8c2p4avnhCRpUQT4I7wUVpxIG0KO1G9r
+Content-Type: multipart/mixed; boundary="zb575Pn5hPiKyVpAD6g9YePLCML9Tiian"
 
---khyJy9pcUB6OxA1llpPX98hbizfcUr8w1
+--zb575Pn5hPiKyVpAD6g9YePLCML9Tiian
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 2020/10/27 =E4=B8=8A=E5=8D=887:26, David Sterba wrote:
-> On Wed, Oct 21, 2020 at 02:24:47PM +0800, Qu Wenruo wrote:
->> In extent-io-test, there are two invalid tests:
->> - Invalid nodesize for test_eb_bitmaps()
->>   Instead of the sectorsize and nodesize combination passed in, we're
->>   always using hand-crafted nodesize.
->>   Although it has some extra check for 64K page size, we can still hit=
-
->>   a case where PAGE_SIZE =3D=3D 32K, then we got 128K nodesize which i=
+On 2020/10/27 =E4=B8=8A=E5=8D=888:13, David Sterba wrote:
+> On Wed, Oct 21, 2020 at 02:24:54PM +0800, Qu Wenruo wrote:
+>> For check_data_csum(), the page we're using is directly from inode
+>> mapping, thus it has valid page_offset().
+>>
+>> We can use (page_offset() + pg_off) to replace @start parameter
+>> completely, while the @len should always be sectorsize.
+>>
+>> Since we're here, also add some comment, as there are quite some
+>> confusion in words like start/offset, without explaining whether it's
+>> file_offset or logical bytenr.
+>>
+>> This should not affect the existing behavior, as for current sectorsiz=
+e
+>> =3D=3D PAGE_SIZE case, @pgoff should always be 0, and len is always
+>> PAGE_SIZE (or sectorsize from the dio read path).
+>>
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>> ---
+>>  fs/btrfs/inode.c | 27 +++++++++++++++++++--------
+>>  1 file changed, 19 insertions(+), 8 deletions(-)
+>>
+>> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+>> index 2a56d3b8eff4..24fbf2c46e56 100644
+>> --- a/fs/btrfs/inode.c
+>> +++ b/fs/btrfs/inode.c
+>> @@ -2791,17 +2791,30 @@ void btrfs_writepage_endio_finish_ordered(stru=
+ct page *page, u64 start,
+>>  	btrfs_queue_work(wq, &ordered_extent->work);
+>>  }
+>> =20
+>> +/*
+>> + * Verify the checksum of one sector of uncompressed data.
+>> + *
+>> + * @inode:	The inode.
+>> + * @io_bio:	The btrfs_io_bio which contains the csum.
+>> + * @icsum:	The csum offset (by number of sectors).
+>=20
+> This is not true, it's the index to the checksum array, where size of
+> the element is fs_info::csum_size. The offset can be calculated but it'=
 s
->>   larger than max valid node size.
->>
->>   Thankfully most machines are either 4K or 64K page size, thus we
->>   haven't yet hit such case.
->>
->> - Invalid extent buffer bytenr
->>   For 64K page size, the only combination we're going to test is
->>   sectorsize =3D nodesize =3D 64K.
->>   In that case, we'll try to create an extent buffer with 32K bytenr,
->>   which is not aligned to sectorsize thus invalid.
->>
->> This patch will fix both problems by:
->> - Honor the sectorsize/nodesize combination
->>   Now we won't bother to hand-craft a strange length and use it as
->>   nodesize.
->>
->> - Use sectorsize as the 2nd run extent buffer start
->>   This would test the case where extent buffer is aligned to sectorsiz=
-e
->>   but not always aligned to nodesize.
->=20
-> The code has evolved since it was added in 0f3312295d3ce1d823 ("Btrfs:
-> add extent buffer bitmap sanity tests") and "page * 4" is intentional t=
-o
-> provide buffer where the shifted bitmap is tested. The logic has not
-> changed, only the ppc64 case was added.
->=20
-> And I remember that tweaking this code tended to break on a real machin=
-e
-> so there are a few things that bother me:
->=20
-> - the test does something and I'm not sure it's invalid (I think it's
->   not)
+> not the thing that's passed as argument.
+> Isn't the offset by sectors the same?
 
-Sector is the minimal unit that every tree block/data should follow (the
-only exception is superblock).
-Thus a sector starts in half of the sector size is definitely invalid.
+If it's 1, it means we need to skip 1 csum which is in csum_size.
 
-> - test on a real 64k page machine is needed
-
-Every time I inserted the btrfs kernel for my RK3399 board with 64K page
-size it's tested already.
-
-> - you reduce the scope of the test to fewer combinations
-
-Well, removing invalid cases would definitely lead to fewer combinations
-anyway.
-
->=20
-> If there are combinations that would make it hard for the subpage then
-> it would be better to add it as an exception but otherwise the main
-> usecase is for 4K page and this allows more combinations to test.
->=20
-No, there isn't anything special related to subpage.
-
-Just the things related to "sector" are broken in this test cases.
+Or again my bad words?
 
 Thanks,
 Qu
 
 
---khyJy9pcUB6OxA1llpPX98hbizfcUr8w1--
+--zb575Pn5hPiKyVpAD6g9YePLCML9Tiian--
 
---j0H4VUlAuvFyTJz1iHnctSTA6zwpJdVJY
+--V8c2p4avnhCRpUQT4I7wUVpxIG0KO1G9r
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAl+XbW4ACgkQwj2R86El
-/qj2WAf/RLZjKTpHuKpyQG67bSnxxfHulcOcUE74vo653/FJAuhirD4Z7MuImZo4
-3D6iObJ08wf8wo7J51wpT1+D4vnuArGxmSQTQS3Km5USXVZ5Wc7Zntyp+OfGioVz
-iKhyEZK+pg628Q+jOSCqN6NL/LypVdwuyNDgoobfBAt8Gv564KMyF/Gmzzwu/TSD
-cJaCyuwq/hapTaTQruBoPjzedKl0BqjhGtYpLAweR7/UpFI/58bIsUpUKkjU5aVP
-g7+Jvu35/i7muhBWpaMFf0HzQqTj2+PL7Q/pvrY41EYsCkhhqHmi1t2B/PpAeNcN
-zUFpQFq2sen0dNB/AtXu2cbODMKZjA==
-=HIWV
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAl+XbsgACgkQwj2R86El
+/qgdUAgAmwKmNGYvIex4z/L2zq3obKjqp+T0eZVawgA351P4J5GgL05k7Czg4jSN
+UdawRuuXr0t127FZGHl47Tagj52+k0co6ST555gBSe5p0u+HA1yRQP8nS0uDAWw1
+Oe59bc/EcV68IjoLP9Mcm9K057T/EiDJoliV5cbPQx81DFuSAenudh6Rx8mURxev
+o9yDdoqWCq/3WqojANnxyZzomyNFu0uPCrTzOgiKKIu5hxKWSKkejj1HJ5uIvxDe
+C0+IZa0C8AdisdwKrABAUsMAm1sZJyHF24mehexbkN53cXFux6YVQbJ2l/o/ZzmZ
+KYG14mf6nY6D4xnlxJlNygENkpHA7A==
+=Ovq7
 -----END PGP SIGNATURE-----
 
---j0H4VUlAuvFyTJz1iHnctSTA6zwpJdVJY--
+--V8c2p4avnhCRpUQT4I7wUVpxIG0KO1G9r--

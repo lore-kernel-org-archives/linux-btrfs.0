@@ -2,99 +2,105 @@ Return-Path: <SRS0=/Od+=EE=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 745EAC55179
-	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 02:45:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4C68AC55179
+	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 02:45:20 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 0EEB02076A
-	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 02:45:16 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E11322076A
+	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 02:45:19 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Z1/KH/UW"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="VTf0bR10"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726265AbgJ1Vdp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 28 Oct 2020 17:33:45 -0400
-Received: from mx2.suse.de ([195.135.220.15]:58260 "EHLO mx2.suse.de"
+        id S1729499AbgJ2CpT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Oct 2020 22:45:19 -0400
+Received: from mx2.suse.de ([195.135.220.15]:58238 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726229AbgJ1Vdn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Oct 2020 17:33:43 -0400
+        id S1726225AbgJ1Vdo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 28 Oct 2020 17:33:44 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1603869879;
+        t=1603869877;
         h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
          to:to:cc:mime-version:mime-version:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=sSxAAiojQg4WtgUjngHPfBfxoieX0dE2a75p6+YQCzQ=;
-        b=Z1/KH/UW83xFFdpabGDkOODYgLN4NcB/iXGd+tfkfbB33zdN6X1+CGV7POrmEdS4+50wnA
-        DIenvKWu8RdRYn/Q6DlTsRvwrVgvEc72woonk884+MUVJdBkssy/81n/VBHIuGAHF0PFqV
-        PQy6oT8sEhibCfU7hdh8BCJ+FIuOrig=
+         content-transfer-encoding:content-transfer-encoding;
+        bh=org0HUIzwcciEbWapa/gka6RLbhZK+8eCKsQH1b8EpY=;
+        b=VTf0bR109kXAalPdn+lo3boOJy7yyqhWwsujOHVqzFRRXbiHl+3OYNIapC0UE3RsfDnEjH
+        zkIshsunHVyMJ9YHMlHcM2gpO9P0kzrwPEcufQQPVh9d5AgWl02hHgLMUuRCb6fZZR/96X
+        sH7vhy8iHMeJXo5qs21Kw+P6SB92buE=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 3A771ADE4
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2020 07:24:39 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id E7609AAF1
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2020 07:24:36 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/3] btrfs: file-item: use nodesize to determine whether we need readhead for btrfs_lookup_bio_sums()
-Date:   Wed, 28 Oct 2020 15:24:30 +0800
-Message-Id: <20201028072432.86907-2-wqu@suse.com>
+Subject: [PATCH 0/3] btrfs: btrfs_lookup_bio_sums() related fixes
+Date:   Wed, 28 Oct 2020 15:24:29 +0800
+Message-Id: <20201028072432.86907-1-wqu@suse.com>
 X-Mailer: git-send-email 2.29.1
-In-Reply-To: <20201028072432.86907-1-wqu@suse.com>
-References: <20201028072432.86907-1-wqu@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-In btrfs_lookup_bio_sums() if the bio is pretty large, we want to
-readahead the csum tree.
+This is the final piece to make subpage read/write patchset to pass all
+fsstress tests.
 
-However the threshold is an immediate number, (PAGE_SIZE * 8), from the
-initial btrfs merge.
+Before this 3 patches, there is a very low chance to hit the following
+errors:
+- False bad data csum error
+  The expected csum is alwasy 0x00000000, which should represents
+  something.
 
-The value itself is pretty hard to guess the meaning, especially when
-the immediate number is from the age where 4K sectorsize is the default
-and only CRC32 is supported.
+- WARN_ON_ONCE(count) hit
+  Something is definitely wrong in btrfs_lookup_bio_sums().
 
-For the most common btrfs setup, CRC32 csum algorithme 4K sectorsize,
-it means just 32K read would kick readahead, while the csum itself is
-only 32 bytes in size.
 
-Now let's be more reasonable by taking both csum size and node size into
-consideration.
+After more debugging, even on X86_64, there is definitely something to
+notice, the most important thing is, the bvec in btrfs_lookup_bio_sums()
+is not always in linear bytenr order:
 
-If the csum size for the bio is larger than one node, then we kick the
-readahead.
-This means for current default btrfs, the threshold will be 16M.
+  btrfs_lookup_bio_sums: file_offset=-1 expected_bvec_offset=532480 page_offset=716800 bv_offset=0
+  btrfs_lookup_bio_sums: orig_file_offset=520192 bvec_index=3 root=259 ino=260 page_owner_ino=260
 
-This change should not change performance observably, thus this is mostly
-a readability enhancement.
+This is from x86_64 run, with extra debug info from the
+bio_for_each_segment() loop.
+It shows that, also the bio->bi_size is correct and each page is
+properly mapped, they are not ensured to be in bytenr order.
+This could ruin subpage support, if we hit a bvec which belongs to the
+end of the bio, and we found a lot of csums for it, we may skip the
+csums for other bvecs.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/file-item.c | 6 +++++-
- 1 file changed, 5 insertions(+), 1 deletion(-)
+To address the problem, the 3rd patch is introduced to do bio unrelated
+csum search.
+This does not only simplify the main loop (just one small main loop),
+but also free us from the out-of-order bvec problems.
 
-diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index 7d5ec71615b8..fbc60948b2c4 100644
---- a/fs/btrfs/file-item.c
-+++ b/fs/btrfs/file-item.c
-@@ -295,7 +295,11 @@ blk_status_t btrfs_lookup_bio_sums(struct inode *inode, struct bio *bio,
- 		csum = dst;
- 	}
- 
--	if (bio->bi_iter.bi_size > PAGE_SIZE * 8)
-+	/*
-+	 * If needed csum size is larger than a node, kick the readahead for
-+	 * csum tree would be a good idea.
-+	 */
-+	if (nblocks * csum_size > fs_info->nodesize)
- 		path->reada = READA_FORWARD;
- 
- 	/*
+The other two patches are mostly small enhancement found during the
+development.
+
+With the patchset, the subpage can survice (mostly) infinite fsstress
+run and the regular page size case can still pass all existing fstests.
+
+Since it has nothing special to subpage at all, and by nature they are
+mostly renames and refactor, they can be submitted right now, with or
+without subpage patches.
+
+Qu Wenruo (3):
+  btrfs: file-item: use nodesize to determine whether we need readhead
+    for btrfs_lookup_bio_sums()
+  btrfs: ordered-data: rename parameter @len to @nr_sectors
+  btrfs: file-item: refactor btrfs_lookup_bio_sums() to handle
+    out-of-order bvecs
+
+ fs/btrfs/file-item.c    | 242 ++++++++++++++++++++++++----------------
+ fs/btrfs/ordered-data.c |   9 +-
+ fs/btrfs/ordered-data.h |   2 +-
+ 3 files changed, 154 insertions(+), 99 deletions(-)
+
 -- 
 2.29.1
 

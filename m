@@ -2,109 +2,197 @@ Return-Path: <SRS0=hfn9=ED=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-11.9 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,NICE_REPLY_A,
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5C117C388F7
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Oct 2020 22:26:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E7F2DC4363A
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Oct 2020 22:27:36 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id F3988206F4
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Oct 2020 22:26:24 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7E1F4206F4
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Oct 2020 22:27:36 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="vl0DAxTx"
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="V9ce6e9K"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732892AbgJ1WZX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 28 Oct 2020 18:25:23 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54876 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1732874AbgJ1WZV (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Oct 2020 18:25:21 -0400
-Received: from mail-qt1-x843.google.com (mail-qt1-x843.google.com [IPv6:2607:f8b0:4864:20::843])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 45C11C0613CF
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2020 15:25:21 -0700 (PDT)
-Received: by mail-qt1-x843.google.com with SMTP id r8so670974qtp.13
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2020 15:25:21 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=subject:to:cc:references:from:message-id:date:user-agent
-         :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=XDKshFT67w1TenH4xvDZOT2AucE4MpYkvogvdq8G1fc=;
-        b=vl0DAxTxmkgeJ+6HsOLP+O6KW4mdtJpR5rcPedZkMV9Ajv1+T7MEz88qWTw45FuKmr
-         SNHwfIkqXsuHP8u3MjrLnXICQ10Vb4+B4gLujOwdu2182O0OwMF0P2OXOGEQXSP0nued
-         ECyLuqxFDI/bJCm9rSZvbeW6m3jaEOxkQ5q+IMVX1KnL6KbEvCwKmV9MLZL2Ff5uFsCc
-         7/809fIAG6R/iqwCr/RQ3/jd1HzOfuVifpyP+2Wk8KNAh8MRGoeUmftBHuyAPx9N5k5v
-         83JMzJEw1uM6OmYkkyZnXXHKcixXSBxbP6yFd/+W/K0FNns7brC+LUPGxcOFf9DrW7hM
-         3cgg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=XDKshFT67w1TenH4xvDZOT2AucE4MpYkvogvdq8G1fc=;
-        b=lYZ0T4cp/Pmie6LFXI1UsHDDkmkzqYk3AgLPv7EkfJ/icAngiwgLwt44ULnpkAKBLi
-         M2WEo3ouNiubWPLHvb69biDNbP54K1iDbbVzMXtyc8+MCjuJEbE9+4t2VdLhMPPNAh6H
-         XA1t22oSyEkc9WJ7D5fUUs3V32ONMZCtpNb8NfeYjamYBWpCPUVb4+bMe7P7lXSKhUfU
-         pGpWU6QI1vvP8WVNexsXYKRNs8ShdM7YV6HhFx7m/ODqeBPXGY1DpqxzvxUbhXjSBOE9
-         cJ9mFG2WcFCINEwTH1EdcXsKpQdgsdETfBymexO1d5nIEASYTF5J0gE2BLjhajxdbidl
-         vqcQ==
-X-Gm-Message-State: AOAM5335Lt7R1mRXMWG/ihNm+jrv3RaQ5KoKo99CdJqUUtrclbZdhweQ
-        fcz/1P2sp5vCAkw3VkhZG1ZAUffk/M4Ztd1o
-X-Google-Smtp-Source: ABdhPJx6HXLC2P/UI4H0UJXR9RRicrgptDyVwekrMhUwGVz0qhtr+Pn7qpYqA7ugB+Gs5aSwVOUEXw==
-X-Received: by 2002:a05:620a:127a:: with SMTP id b26mr7690466qkl.166.1603895522277;
-        Wed, 28 Oct 2020 07:32:02 -0700 (PDT)
-Received: from [192.168.1.45] (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id 63sm3088772qkn.9.2020.10.28.07.32.01
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 28 Oct 2020 07:32:01 -0700 (PDT)
-Subject: Re: [PATCH v1 0/4] btrfs: read_policy types latency, device and
- round-robin
-To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
-Cc:     dsterba@suse.com
-References: <cover.1603884539.git.anand.jain@oracle.com>
-From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <ac428935-c20c-d02d-6678-d88cc5eb4b63@toxicpanda.com>
-Date:   Wed, 28 Oct 2020 10:32:00 -0400
-User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0)
- Gecko/20100101 Thunderbird/78.4.0
+        id S1733298AbgJ1W1d (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Oct 2020 18:27:33 -0400
+Received: from mout.gmx.net ([212.227.15.19]:46099 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1733286AbgJ1W1c (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 28 Oct 2020 18:27:32 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1603924049;
+        bh=RJbVGWREQfcUagoABzA1MmK1T4m0THk+Y3igpiIpC8c=;
+        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
+        b=V9ce6e9KC87k4COcYqj6LPjhqUuRaV1ZIu5kma9IeF4HnM0teU6Em0cLxxPsJzuVG
+         xZyyd+KLii5LSFvxXWj7cxhapyT6/HMVANbBX/4bReRa+34kGE2jHTDPanndyNAY9z
+         3vhrt4rBlDsfdn4gDL6EvzOz3nOH6NxVNts6unP0=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx004
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1M8ygO-1kUqki1SuU-00692A; Wed, 28
+ Oct 2020 01:57:11 +0100
+Subject: Re: [PATCH v4 08/68] btrfs: inode: sink parameter @start and @len for
+ check_data_csum()
+To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
+References: <20201021062554.68132-1-wqu@suse.com>
+ <20201021062554.68132-9-wqu@suse.com> <20201027001305.GW6756@twin.jikos.cz>
+ <bb49899c-c25a-a4e4-825c-4c8a2ea4b176@gmx.com>
+ <20201027231754.GG6756@twin.jikos.cz>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAU4EEwEIADgCGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1oQAKCRDC
+ PZHzoSX+qCY6CACd+mWu3okGwRKXju6bou+7VkqCaHTdyXwWFTsr+/0ly5nUdDtT3yEVggPJ
+ 3VP70wjlrxUjNjFb6iIvGYxiPOrop1NGwGYvQktgRhaIhALG6rPoSSAhGNjwGVRw0km0PlIN
+ D29BTj/lYEk+jVM1YL0QLgAE1AI3krihg/lp/fQT53wLhR8YZIF8ETXbClQG1vJ0cllPuEEv
+ efKxRyiTSjB+PsozSvYWhXsPeJ+KKjFen7ebE5reQTPFzSHctCdPnoR/4jSPlnTlnEvLeqcD
+ ZTuKfQe1gWrPeevQzgCtgBF/WjIOeJs41klnYzC3DymuQlmFubss0jShLOW8eSOOWhLRuQEN
+ BFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcgaCbPEwhLj
+ 1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj/IrRUUka
+ 68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fNGSsRb+pK
+ EKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0q1eW4Jrv
+ 0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEvABEBAAGJ
+ ATwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1rgUJCWpOfwAKCRDCPZHz
+ oSX+qFcEB/95cs8cM1OQdE/GgOfCGxwgckMeWyzOR7bkAWW0lDVp2hpgJuxBW/gyfmtBnUai
+ fnggx3EE3ev8HTysZU9q0h+TJwwJKGv6sUc8qcTGFDtavnnl+r6xDUY7A6GvXEsSoCEEynby
+ 72byGeSovfq/4AWGNPBG1L61Exl+gbqfvbECP3ziXnob009+z9I4qXodHSYINfAkZkA523JG
+ ap12LndJeLk3gfWNZfXEWyGnuciRGbqESkhIRav8ootsCIops/SqXm0/k+Kcl4gGUO/iD/T5
+ oagaDh0QtOd8RWSMwLxwn8uIhpH84Q4X1LadJ5NCgGa6xPP5qqRuiC+9gZqbq4Nj
+Message-ID: <d53118ab-8d9a-db24-26d3-1a4d66cbe2bf@gmx.com>
+Date:   Wed, 28 Oct 2020 08:57:07 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.12.0
 MIME-Version: 1.0
-In-Reply-To: <cover.1603884539.git.anand.jain@oracle.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+In-Reply-To: <20201027231754.GG6756@twin.jikos.cz>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="jmDY94zTA6QZsgNNZRD9dl4w35q8yhxPI"
+X-Provags-ID: V03:K1:vhfp+ujOHdQ/eCnjW6u4XUZ52K4YU5JviOsWfFPGKgYSU9m2a0/
+ 5Jd8Vho/AzlgXLJubQHlks7nt6Pi5LrrvjtC4lpIiPxq5MlghSWgssisfZ6bJX0zeGgriNH
+ Wau2PeiHDNQyio6kYy4kSYTOqSSVAf6cSqDZDH/O17/GYNTRdc1PEl7xWqqIgb85zOSkDRz
+ U0XMGhX07JOBkYtcgfNgw==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:Gsh2QBqtJ9g=:R4EAKJgagW1jtUiK3tSrW6
+ Qil7SUjHgOGEBD3n3A25jfFA0R+lSGG+eqGTRwHFzqEQV1AsXXSPwJv8+eZTBdb6kFPmembti
+ o5g9pjhvlAwOM+ljgb/XYDRgv23ewWOmNp/Ky06yHWGnAg3l6Kv50xnWy+10egEAf0JqaupA4
+ DFEYBp54MjfWHhQytvx+4d8ML3LfRhW1edNpnW9Aj2V/sPt4X7zP3J72aoYqp6oF9g1iuxdLK
+ nhfQ10tDDZimy/xWZffN7U1gH7anbnAJziBB29lLOUNTcARfkSuMeeBLQDqMw3od7qed3l07t
+ 0cLCXKU0xEmGkBPMw57NFXiIUY/+M9L3tTn/sbjAgouOQLE2akZ1RzLMT4h+DvQCa+lG0xN/z
+ a8WcwxLE8G3DFHFaVwJyVqus4V8ykQOwBGP+Gkc2GuZ3VooOL55+KtqH2aBBSUvwZwv+Y/4Es
+ Bzkly9WDDzp7AxNhMg2pQ6asluou3lZvUwclGGusqhWRnWeLO08KsyCNGEfO1rTV14Lxau6Lf
+ hDuaFNSM3Mn4p5mHQFOp2lRxBdsnDL7qioxno/IOtjf5JHAZ965WRmUKWkwEBa60FbafMk7H4
+ 3TC/INab/cXYDpUuk/XhSO2x474n7TCdeoSgbIqj2qVHioNo8bq76FQRxK+I2GisY2FNYyKK7
+ YQLYP3J4h8bt2JPIzkdQ9VS4Jv8t7VkzY0msnJbb04zip1Hj3/zkFSes7P0x4osPE6UQ91P/P
+ rdYYEcDcOZACzRsaipNJ9LcxoWwTt+jjzclh1mbGIBf8orHvHFbkxDtJMQqrFWkqbOfzD9o6Q
+ 1gMzDQ0pSFVYaWNUP8+XdahZNxO87BnHI+JSnKE84f/2vfglnFF+z2ss8T7aDqc9gLGm9zwM8
+ /KTkCe5qJPlJh2loyvrQ==
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 10/28/20 9:25 AM, Anand Jain wrote:
-> Based on misc-next
-> 
-> Depends on the following 3 patches in the mailing list.
->    btrfs: add btrfs_strmatch helper
->    btrfs: create read policy framework
->    btrfs: create read policy sysfs attribute, pid
-> 
-> v1:
-> Drop tracing patch
-> Drop factoring inflight command
->    Here below is the performance differences, when inflight is used, it pushed
->    few commands to the other device, so losing the potential merges.
-> 
->    with inflight:
->     READ: bw=195MiB/s (204MB/s), 195MiB/s-195MiB/s (204MB/s-204MB/s), io=15.6GiB (16.8GB), run=82203-82203msec
-> sda 256054
-> sdc 20
-> 
->    without inflight:
->     READ: bw=192MiB/s (202MB/s), 192MiB/s-192MiB/s (202MB/s-202MB/s), io=15.6GiB (16.8GB), run=83231-83231msec
-> sda 141006
-> sdc 0
-> 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--jmDY94zTA6QZsgNNZRD9dl4w35q8yhxPI
+Content-Type: multipart/mixed; boundary="rqmiQEmLypltsgU1a8g2lflo2UApgaLIE"
 
-What's the baseline?  I think 3mib/s is not that big of a tradeoff for 
-complexity, but if baseline is like 190mib/s then maybe its worth it.  If 
-baseline is 90mib/s then I say it's not worth the inflight.  Thanks,
+--rqmiQEmLypltsgU1a8g2lflo2UApgaLIE
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-Josef
+
+
+On 2020/10/28 =E4=B8=8A=E5=8D=887:17, David Sterba wrote:
+> On Tue, Oct 27, 2020 at 08:50:15AM +0800, Qu Wenruo wrote:
+>> On 2020/10/27 =E4=B8=8A=E5=8D=888:13, David Sterba wrote:
+>>> On Wed, Oct 21, 2020 at 02:24:54PM +0800, Qu Wenruo wrote:
+>>>> For check_data_csum(), the page we're using is directly from inode
+>>>> mapping, thus it has valid page_offset().
+>>>>
+>>>> We can use (page_offset() + pg_off) to replace @start parameter
+>>>> completely, while the @len should always be sectorsize.
+>>>>
+>>>> Since we're here, also add some comment, as there are quite some
+>>>> confusion in words like start/offset, without explaining whether it'=
+s
+>>>> file_offset or logical bytenr.
+>>>>
+>>>> This should not affect the existing behavior, as for current sectors=
+ize
+>>>> =3D=3D PAGE_SIZE case, @pgoff should always be 0, and len is always
+>>>> PAGE_SIZE (or sectorsize from the dio read path).
+>>>>
+>>>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>>>> ---
+>>>>  fs/btrfs/inode.c | 27 +++++++++++++++++++--------
+>>>>  1 file changed, 19 insertions(+), 8 deletions(-)
+>>>>
+>>>> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+>>>> index 2a56d3b8eff4..24fbf2c46e56 100644
+>>>> --- a/fs/btrfs/inode.c
+>>>> +++ b/fs/btrfs/inode.c
+>>>> @@ -2791,17 +2791,30 @@ void btrfs_writepage_endio_finish_ordered(st=
+ruct page *page, u64 start,
+>>>>  	btrfs_queue_work(wq, &ordered_extent->work);
+>>>>  }
+>>>> =20
+>>>> +/*
+>>>> + * Verify the checksum of one sector of uncompressed data.
+>>>> + *
+>>>> + * @inode:	The inode.
+>>>> + * @io_bio:	The btrfs_io_bio which contains the csum.
+>>>> + * @icsum:	The csum offset (by number of sectors).
+>>>
+>>> This is not true, it's the index to the checksum array, where size of=
+
+>>> the element is fs_info::csum_size. The offset can be calculated but i=
+t's
+>>> not the thing that's passed as argument.
+>=20
+>> Isn't the offset by sectors the same?
+>=20
+> Offset by sectors reads as something expressed in sector-sized units.
+>>
+>> If it's 1, it means we need to skip 1 csum which is in csum_size.
+>=20
+> Yes, so you see the difference sector vs csum_size. I understand what
+> you meant by that but reading the comment without going to the code can=
+
+> confuse somebody.
+>=20
+
+Any better naming alternative for that?
+
+Or maybe I can refactor the function by passing in the current
+file_offset into the function, and let check_data_csum() to calculate
+the csum offset by itself?
+
+Thanks,
+Qu
+
+
+--rqmiQEmLypltsgU1a8g2lflo2UApgaLIE--
+
+--jmDY94zTA6QZsgNNZRD9dl4w35q8yhxPI
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAl+YweMACgkQwj2R86El
+/qjDEQf+Loo6j19HYKv98AfHTcZKCziLi/oDZG5rzZJey8iSfFxPuzVEnwtk7fFF
+VFDLCCbiI/RGahAevPsD4LrHbn9TST/3zwJmFHHHUn7NfvXS3WBKt1XVAlHJangS
+MQHQcxiW+87Z0sRmcNhBZer9ni/DukpHkFmeC971dnQQ+0djU96HisTMA4DUxRtM
+qWIcw75XoGZqDfqcGdp8/OwFRF/CCC6Nl8pSnahlbnXnx714Wu3GLM+rNv9JkU1c
+F3dAvlowxWKNnqW6CzTvt6u3AGtqI5jwxEA/CSu3UO0S/hkqcGWny9aVq2ZIO2CC
+EfwKz2TNOonkZHWrszgKzlZActStpw==
+=pWeU
+-----END PGP SIGNATURE-----
+
+--jmDY94zTA6QZsgNNZRD9dl4w35q8yhxPI--

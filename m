@@ -2,168 +2,128 @@ Return-Path: <SRS0=hfn9=ED=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	NICE_REPLY_A,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.9 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 01CB9C388F7
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Oct 2020 23:23:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B4353C56201
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Oct 2020 23:42:47 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id A00C9207BC
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Oct 2020 23:23:52 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 38813207BC
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Oct 2020 23:42:47 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="qbhiQ9+O"
+	dkim=pass (2048-bit key) header.d=dxuuu.xyz header.i=@dxuuu.xyz header.b="Pw2kO0jf";
+	dkim=temperror (0-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="AGjiDKeK"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729565AbgJ1XM0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 28 Oct 2020 19:12:26 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34408 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727221AbgJ1XL1 (ORCPT
+        id S1725869AbgJ1Xmq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Oct 2020 19:42:46 -0400
+Received: from out3-smtp.messagingengine.com ([66.111.4.27]:55835 "EHLO
+        out3-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1725853AbgJ1XlF (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Oct 2020 19:11:27 -0400
-Received: from mail-qk1-x741.google.com (mail-qk1-x741.google.com [IPv6:2607:f8b0:4864:20::741])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7BFC7C0613CF
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2020 16:11:27 -0700 (PDT)
-Received: by mail-qk1-x741.google.com with SMTP id r7so630574qkf.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2020 16:11:27 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=subject:to:cc:references:from:message-id:date:user-agent
-         :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=0WZMxCnzKvBjHtZp6eQihEfzgwm3X3erjjPZAu9r97w=;
-        b=qbhiQ9+OCxOrOJkaRXqwVJGYuhjz89NwZrAHCAEqV5dkXXwyODqa4nBIIWKs3UXSSr
-         2KOqK/sA9WMgCeWjFtntleiz/GRsAllUIxOX/6zwlJ5ZwXO8p0E3097Ri/XuN8E3/t+X
-         xxhM4THRv12ndpsJVdEqSkGweBHP8mHFnPWjXeV2uO0IWOEja7s2iSktVNvXMtunsdqm
-         l/peSFvAW8/qfhqzkH3/fomwLsIU2g0i1ljPNgHE9Y6uq7ojDG9ZBFaI85lhcOMcCSc6
-         6NrWnPGuQV70RhqBDLsE05SGpXYfu/LnXRetgNMujrUwiGK6a9AbEe+tlFx8iWVeSmoI
-         COsw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=0WZMxCnzKvBjHtZp6eQihEfzgwm3X3erjjPZAu9r97w=;
-        b=Ma39udYYgOyfd5sTdgw3rBKaCUP5jAQ+yUtI64sknvstMDN/94IOccr+OfWtfeiDQM
-         AFOdbbbqSyZ0PTScxLzuJcDM4QBXn0f7p2enjy58FySar0AwihLYi+/xA5s70tmJ9Mcu
-         XukkKQ1w2BC/hK0dLyVWZ3djeU7SLHyK0RaaRNmFeysQH/+XQpi8EnbCOAKNFUFPYf8Y
-         zh8SO2EX01LbG13nAXo6YyttEFWMDrCxr5M5W2qf24fOccaRnGy253chWjOJa4JqXl3u
-         f1Nq7t4ZNsKBpvea2kS84vFXO6gtowy5LvFJ5l77m8y5WyO2UGuhhNJ1J9WtCMHKfAyM
-         Bd6w==
-X-Gm-Message-State: AOAM530rlKzNQFwnq/oF51Dq9gbYFllaZfa6QluJ3uYGB0xVmmnoqsjF
-        BROK8eHYJVd3Rn3HTl/10CCkzVTaycuFyBQC
-X-Google-Smtp-Source: ABdhPJxQrdetQQziIaD7AF8/NvxSL5ntUEPQfc5VI4VgSufxaSWcnfyryxR4ufJfFefIsVmXincMNQ==
-X-Received: by 2002:a05:622a:188:: with SMTP id s8mr1576336qtw.369.1603896278979;
-        Wed, 28 Oct 2020 07:44:38 -0700 (PDT)
-Received: from [192.168.1.45] (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id u2sm2800788qtw.40.2020.10.28.07.44.37
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 28 Oct 2020 07:44:38 -0700 (PDT)
-Subject: Re: [PATCH RFC 4/4] btrfs: introduce new read_policy round-robin
-To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
-Cc:     dsterba@suse.com
-References: <cover.1603884539.git.anand.jain@oracle.com>
- <3ef863dea2d61ab41e5767ee935d5411c3117fa0.1603884539.git.anand.jain@oracle.com>
-From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <1c3a5069-45ce-fd91-1abd-4104095d2b12@toxicpanda.com>
-Date:   Wed, 28 Oct 2020 10:44:37 -0400
-User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0)
- Gecko/20100101 Thunderbird/78.4.0
-MIME-Version: 1.0
-In-Reply-To: <3ef863dea2d61ab41e5767ee935d5411c3117fa0.1603884539.git.anand.jain@oracle.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+        Wed, 28 Oct 2020 19:41:05 -0400
+Received: from compute3.internal (compute3.nyi.internal [10.202.2.43])
+        by mailout.nyi.internal (Postfix) with ESMTP id C83785C00B5;
+        Wed, 28 Oct 2020 19:41:03 -0400 (EDT)
+Received: from mailfrontend2 ([10.202.2.163])
+  by compute3.internal (MEProxy); Wed, 28 Oct 2020 19:41:03 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=dxuuu.xyz; h=
+        mime-version:content-transfer-encoding:content-type:cc:subject
+        :from:to:date:message-id:in-reply-to; s=fm1; bh=jkOO0zzQx5z5ACd/
+        f32hxUtd46BMyxC0SJJR92tp714=; b=Pw2kO0jft/M2+0fUAsIArbdVk6RgFBn3
+        tm8kGF3PWt8p9IYoTN2DLoL9v/EmRyX4VKCuDE+buFoPpdQ1zbBd73w9pxQrdxsi
+        irpjYcj2lOmgOVXqOUMW9urxvlOS+lEMl9dLhJh++7qo6DI1d+ciGpp1Kd2F9kEV
+        Gn/S3gzmKdIt/vvKdh5/8xrzHSnJHy61oJQKhxKVbEC+UkpJ+wkcorTzZyewjY4l
+        uHqLp02MFV4jITiOmBf1IWCGtB24ou5LxeItJm9QKOOuErH6g3rhOdOBQMuIkG70
+        mAgl5ufPu6O9f+YisIhfVZ1EE0/0l52ldmoaARib+nWdIF1vn/SE3Q==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+        messagingengine.com; h=cc:content-transfer-encoding:content-type
+        :date:from:in-reply-to:message-id:mime-version:subject:to
+        :x-me-proxy:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=
+        fm1; bh=jkOO0zzQx5z5ACd/f32hxUtd46BMyxC0SJJR92tp714=; b=AGjiDKeK
+        c1kfM7JjN6nWI41h3EKxJvQejFehWo7MTvxazW04cDBJNSE4hWNsymQIfkBfF49y
+        NC+TIHhH3twuZIP7CQFcKd6/ZDAw8m28or7bPZN7ntM851gT2UpbtQVEfWP4nOrM
+        x5w+3iiio0uwOZJEOHBVxJbwBb6AtIoAO9enfkTZRB6WV/9zTYBgBrN4qHQ/YbdD
+        oiiFKmoEWR7HaxZY55kWlEkDhO4A5HVwUAhX+yrDxvc8CfVNwHV5O7h4UeB2vNB5
+        mQc4flbHEdeVBjDVV+ELfRICTuMWT6kqUzxDKxhI6jhuaTSurjC20Ojgxx8I4gB/
+        qEDH1AzYZaZ6kQ==
+X-ME-Sender: <xms:jwGaX-B19VWM0MNOb5hhWefmw5w3yCOLhmOcq46_8u4wxDYMYlVmuA>
+    <xme:jwGaX4iM4FPQdf8on-XP3I-ODNLIT8qKt6G3nJJm7B7PrD-mUQyFIsYknHb14meYC
+    wSWBUtQvjJGPYhynw>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedujedrledvgdegtdcutefuodetggdotefrodftvf
+    curfhrohhfihhlvgemucfhrghsthforghilhdpqfgfvfdpuffrtefokffrpgfnqfghnecu
+    uegrihhlohhuthemuceftddtnecusecvtfgvtghiphhivghnthhsucdlqddutddtmdenfg
+    hrlhcuvffnffculdejtddmnecujfgurhepggfgtgfuhffvfffkjgesthhqredttddtjeen
+    ucfhrhhomhepfdffrghnihgvlhcuighufdcuoegugihusegugihuuhhurdighiiiqeenuc
+    ggtffrrghtthgvrhhnpeejfefhudeffefhjedvvefhheduledtueejvedugedvjedvjeel
+    jefggedtjeejveenucfkphepudeifedruddugedrudefvddrheenucevlhhushhtvghruf
+    hiiigvpedtnecurfgrrhgrmhepmhgrihhlfhhrohhmpegugihusegugihuuhhurdighiii
+X-ME-Proxy: <xmx:jwGaXxlenumzoHOpnsXTVIlHJDeSE-c8k3gwdHA0VJ8qS7kLko-zNA>
+    <xmx:jwGaX8zy53IZjx8wsbUtpRg_9_BRRSSk7mJZew06c4-_VClkQi8Njw>
+    <xmx:jwGaXzRtOUnVdnWI4gKHdN94olk91asLqKjhM5CuEJyLfnsD3AWSgw>
+    <xmx:jwGaX-dsiezrHbPDJfA-DITP9BVd8zMvi9eoojfkZcexiAa15hIVLQ>
+Received: from localhost (unknown [163.114.132.5])
+        by mail.messagingengine.com (Postfix) with ESMTPA id 657523064683;
+        Wed, 28 Oct 2020 19:41:02 -0400 (EDT)
+Mime-Version: 1.0
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=UTF-8
+Cc:     <kernel-team@fb.com>, <osandov@fb.com>
+Subject: Re: [PATCH] btrfs-progs: restore: Have -l display subvolume name
+From:   "Daniel Xu" <dxu@dxuuu.xyz>
+To:     "Josef Bacik" <josef@toxicpanda.com>,
+        <linux-btrfs@vger.kernel.org>, <dsterba@suse.cz>
+Date:   Wed, 28 Oct 2020 16:34:51 -0700
+Message-Id: <C6OX21C3YSLT.X276V4IA7JPM@dlxu-fedora-R90QNFJV>
+In-Reply-To: <8988a20e-a3e3-6bf3-dc7a-21b2706e7cf6@toxicpanda.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 10/28/20 9:26 AM, Anand Jain wrote:
-> Add round-robin read policy to route the read IO to the next device in the
-> round-robin order. The chunk allocation and thus the stripe-index follows
-> the order of free space available on devices. So to make the round-robin
-> effective it shall follow the devid order instead of the stripe-index
-> order.
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
-> RFC: because I am not too sure if any workload or block layer
-> configurations shall suit round-robin read_policy.
-> 
->   fs/btrfs/sysfs.c   |  2 +-
->   fs/btrfs/volumes.c | 50 ++++++++++++++++++++++++++++++++++++++++++++++
->   fs/btrfs/volumes.h |  2 ++
->   3 files changed, 53 insertions(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-> index d2a974e1a1c4..293311c79321 100644
-> --- a/fs/btrfs/sysfs.c
-> +++ b/fs/btrfs/sysfs.c
-> @@ -908,7 +908,7 @@ static bool btrfs_strmatch(const char *given, const char *golden)
->   
->   /* Must follow the order as in enum btrfs_read_policy */
->   static const char * const btrfs_read_policy_name[] = { "pid", "latency",
-> -						       "device" };
-> +						       "device", "roundrobin" };
->   
->   static ssize_t btrfs_read_policy_show(struct kobject *kobj,
->   				      struct kobj_attribute *a, char *buf)
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 7ac675504051..fa1b1a3ebc87 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -5469,6 +5469,52 @@ int btrfs_is_parity_mirror(struct btrfs_fs_info *fs_info, u64 logical, u64 len)
->   	return ret;
->   }
->   
-> +struct stripe_mirror {
-> +	u64 devid;
-> +	int map;
-> +};
-> +
-> +static int btrfs_cmp_devid(const void *a, const void *b)
-> +{
-> +	struct stripe_mirror *s1 = (struct stripe_mirror *)a;
-> +	struct stripe_mirror *s2 = (struct stripe_mirror *)b;
-> +
-> +	if (s1->devid < s2->devid)
-> +		return -1;
-> +	if (s1->devid > s2->devid)
-> +		return 1;
-> +	return 0;
-> +}
-> +
-> +static int btrfs_find_read_round_robin(struct map_lookup *map, int first,
-> +				       int num_stripe)
-> +{
-> +	struct stripe_mirror stripes[4] = {0}; //4: for testing, works for now.
-> +	struct btrfs_fs_devices *fs_devices;
-> +	u64 devid;
-> +	int index, j, cnt;
-> +	int next_stripe;
-> +
-> +	index = 0;
-> +	for (j = first; j < first + num_stripe; j++) {
-> +		devid = map->stripes[j].dev->devid;
-> +
-> +		stripes[index].devid = devid;
-> +		stripes[index].map = j;
-> +
-> +		index++;
-> +	}
-> +
-> +	sort(stripes, num_stripe, sizeof(struct stripe_mirror),
-> +	     btrfs_cmp_devid, NULL);
-> +
-> +	fs_devices = map->stripes[first].dev->fs_devices;
-> +	cnt = atomic_inc_return(&fs_devices->total_reads);
-> +	next_stripe = stripes[cnt % num_stripe].map;
+Hi Josef,
 
-This is heavy handed for policy decisions, just do something like
+On Tue Oct 27, 2020 at 10:37 AM PDT, Josef Bacik wrote:
+> On 10/26/20 8:28 PM, Daniel Xu wrote:
+> > This commit has `btrfs restore -l ...` display subvolume names if
+> > applicable. Before, it only listed subvolume IDs which are not very
+> > helpful for the user. A subvolume name is much more descriptive.
+> >=20
+> > Before:
+> > 	$ btrfs restore ~/scratch/btrfs/fs -l
+> > 	 tree key (EXTENT_TREE ROOT_ITEM 0) 30425088 level 0
+> > 	 tree key (DEV_TREE ROOT_ITEM 0) 30441472 level 0
+> > 	 tree key (FS_TREE ROOT_ITEM 0) 30736384 level 0
+> > 	 tree key (CSUM_TREE ROOT_ITEM 0) 30474240 level 0
+> > 	 tree key (UUID_TREE ROOT_ITEM 0) 30785536 level 0
+> > 	 tree key (256 ROOT_ITEM 0) 30818304 level 0
+> > 	 tree key (257 ROOT_ITEM 0) 30883840 level 0
+> > 	 tree key (DATA_RELOC_TREE ROOT_ITEM 0) 30490624 level 0
+> >=20
+> > After:
+> > 	$ ./btrfs restore ~/scratch/btrfs/fs -l
+> > 	 tree key (EXTENT_TREE ROOT_ITEM 0) 30425088 level 0
+> > 	 tree key (DEV_TREE ROOT_ITEM 0) 30441472 level 0
+> > 	 tree key (FS_TREE ROOT_ITEM 0) 30736384 level 0
+> > 	 tree key (CSUM_TREE ROOT_ITEM 0) 30474240 level 0
+> > 	 tree key (UUID_TREE ROOT_ITEM 0) 30785536 level 0
+> > 	 tree key (256 ROOT_ITEM 0) 30818304 level 0 subvol1
+> > 	 tree key (257 ROOT_ITEM 0) 30883840 level 0 subvol2
+> > 	 tree key (DATA_RELOC_TREE ROOT_ITEM 0) 30490624 level 0
+> >=20
+>
+> Man I stared at this a few times before I realized the name came after
+> the
+> previous information. I think I'd rather move this helper into somewhere
+> that
+> it can be used by the libbtrfs stuff, I'm sure it'll be handy elsewhere.
 
-stripe_nr = atomic_inc_return(&fs_devices->total_reds) % num_stripes;
-return stripes[stripe_nr].map;
+libbtrfsutil seems structured to work on mounted filesystem images
+whereas `btrfs restore` is for unmounted images. So I'm not sure if
+libbtrfsutil would want to share that code.
 
-There's no reason to sort the stripes by devid every time we call this.  Thanks,
+Does it make sense to put the helper in common/util.c instead?
 
-Josef
+I CC'd Omar in case he has an opinion.
+
+Thanks,
+Daniel

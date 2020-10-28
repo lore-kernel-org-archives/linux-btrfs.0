@@ -2,142 +2,174 @@ Return-Path: <SRS0=hfn9=ED=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	NICE_REPLY_A,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.1 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	UNPARSEABLE_RELAY,UNWANTED_LANGUAGE_BODY,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1D5BBC388F7
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Oct 2020 21:41:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5FD2FC55179
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Oct 2020 21:41:48 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id B5AAD24724
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Oct 2020 21:41:13 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0C318246AB
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Oct 2020 21:41:48 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="RQCe0XAx"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="kfXWkcNf"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727321AbgJ1VlM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 28 Oct 2020 17:41:12 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47104 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727310AbgJ1VlF (ORCPT
+        id S1727328AbgJ1VlR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Oct 2020 17:41:17 -0400
+Received: from aserp2130.oracle.com ([141.146.126.79]:40088 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727293AbgJ1Vk7 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Oct 2020 17:41:05 -0400
-Received: from mail-qk1-x743.google.com (mail-qk1-x743.google.com [IPv6:2607:f8b0:4864:20::743])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 05E18C0613CF
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2020 14:41:05 -0700 (PDT)
-Received: by mail-qk1-x743.google.com with SMTP id 140so462072qko.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2020 14:41:04 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=subject:to:cc:references:from:message-id:date:user-agent
-         :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=nDzfLqgyKEhy7ysjd+aAcj55RchlhY2cVPa5IgXHF+k=;
-        b=RQCe0XAxXAjfyaDL3kfFCYE8j9X5Q9ksIbKueTnxSyF/6LqtvJADrkrtX42HjliI1U
-         9C+OfXtc3nmOj4g6CPr1DxzUKCWqvZiH4G0zq1tZ7oDvMuNwIFgejq2hYadcnChFXQsR
-         XvFmcaDp+U/oFn2ZETCqY4UTL0iWEvVeRCWa9TaC8wpy9k3vlG/ng7ddo9qpp1s0dWgD
-         nPzTzkgaDX5k5Ns8oHUKtfQgZttN5xOVj1rBc4Jb9LabNq09YWwY8c9+rz32/rqWMyLc
-         ZLN43gyLWAD9aRFLns5l7Ci0sqhj0dl4L/H7Px0eM0fYWbZ2OXusLJewZ83b1aGj1G2a
-         1//A==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=nDzfLqgyKEhy7ysjd+aAcj55RchlhY2cVPa5IgXHF+k=;
-        b=iWq04o3Anck2bLQS9Y5PZCia/ejpfSpXzf8QMospMAwtniCQSIHoQBzGa1WEV6boB6
-         HkelVYOg7wx84lL3TIBpAAERKmYI7t4e18yx8XFk8yjbFL7W2s8lOzFj4WvEMk2raDNP
-         Xhcw8zrQlvfn5ychQzxauS1MBceDDoWrdSBCNC6xATQq/SWxmvKHEj3Rh5CH65UZHYpi
-         tY6TVxGRuWqyoZ2QLT1OteFK8XB4Pzs2ffB4r1dJZ8k4Iex8f7pcB8P1IbK9U3iPPDXN
-         Cmi1xC3B4l3P3AMlIjeBcfS/VkCX0YiFZNeoS7Bba9/umC46pKlq40AH3oPaNyzXON5n
-         4aWw==
-X-Gm-Message-State: AOAM533QBAyuBUW7pqJOQoKI3tlc5GI0jYCU+5aP/Mfq+CN30oX1OdfX
-        VX0SM3I3+JcUifNo5MePpPp3ItQ9oEuzdkwr
-X-Google-Smtp-Source: ABdhPJzlnGTW4zVITG3P7yMAo1g/JeMiPp5YZJhjxeXmaHka3PcFyYkTHfhDnTZhA278lSHKFltdxA==
-X-Received: by 2002:a37:77c5:: with SMTP id s188mr7720044qkc.266.1603895862602;
-        Wed, 28 Oct 2020 07:37:42 -0700 (PDT)
-Received: from [192.168.1.45] (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id g15sm2987561qki.107.2020.10.28.07.37.39
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 28 Oct 2020 07:37:41 -0700 (PDT)
-Subject: Re: [PATCH 2/4] btrfs: introduce new device-state read_preferred
-To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
-Cc:     dsterba@suse.com
+        Wed, 28 Oct 2020 17:40:59 -0400
+Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
+        by aserp2130.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09SDJmOH066869;
+        Wed, 28 Oct 2020 13:26:30 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
+ subject : date : message-id : in-reply-to : references : mime-version :
+ content-transfer-encoding; s=corp-2020-01-29;
+ bh=uyMeduNat+U5qAyR99hn84N/rwkpYOZg/udhapyGTXw=;
+ b=kfXWkcNfTFnjM/TykJFjHAUqWkqdBLFAGpYP1vHYqX0/dYGLszhlZ6JE/emmSYCe+1H5
+ bngRdRy+Zy+aO1RPvHi+vgyEigUAWoryYKaBQt8Nb0Y3mFXShcoys65BNpUP6ZILLzhT
+ tjFv7p07ikxHCsxRTfBqBkp2Q+vyc3MpHp64C+6YM7O1JPATwnYgT2/ia36kuVgHNIOo
+ dei1qeXU2ihH1c7Hmf08OZvysaN08zBko8F8viQGP1fes7f1NrrqSI7UlgGHQD2Lv8Fp
+ DPOQBJZpfibCL2gJ4M6LEFK1YDOaApViqJzJXh+7hMZ3xz7gEDYw3166dShWA2gCiVgh iw== 
+Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
+        by aserp2130.oracle.com with ESMTP id 34c9sayh4p-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
+        Wed, 28 Oct 2020 13:26:30 +0000
+Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
+        by userp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09SDPMNf031175;
+        Wed, 28 Oct 2020 13:26:29 GMT
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by userp3030.oracle.com with ESMTP id 34cx6x7t2t-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Wed, 28 Oct 2020 13:26:29 +0000
+Received: from abhmp0016.oracle.com (abhmp0016.oracle.com [141.146.116.22])
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id 09SDQSh9015167;
+        Wed, 28 Oct 2020 13:26:28 GMT
+Received: from localhost.localdomain (/39.109.231.106)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Wed, 28 Oct 2020 06:26:28 -0700
+From:   Anand Jain <anand.jain@oracle.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     dsterba@suse.com, josef@toxicpanda.com
+Subject: [PATCH 2/4] btrfs: introduce new device-state read_preferred
+Date:   Wed, 28 Oct 2020 21:26:01 +0800
+Message-Id: <b2cfd7bfb0ff90063196cb38b4689fb8d2ac9986.1603884539.git.anand.jain@oracle.com>
+X-Mailer: git-send-email 2.25.1
+In-Reply-To: <cover.1603884539.git.anand.jain@oracle.com>
 References: <cover.1603884539.git.anand.jain@oracle.com>
- <b2cfd7bfb0ff90063196cb38b4689fb8d2ac9986.1603884539.git.anand.jain@oracle.com>
-From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <72a5f7b5-1412-f82d-a22a-5fddcaa47748@toxicpanda.com>
-Date:   Wed, 28 Oct 2020 10:37:39 -0400
-User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0)
- Gecko/20100101 Thunderbird/78.4.0
 MIME-Version: 1.0
-In-Reply-To: <b2cfd7bfb0ff90063196cb38b4689fb8d2ac9986.1603884539.git.anand.jain@oracle.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9787 signatures=668682
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 adultscore=0 phishscore=0 spamscore=0
+ bulkscore=0 malwarescore=0 mlxlogscore=999 mlxscore=0 suspectscore=1
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2009150000
+ definitions=main-2010280091
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9787 signatures=668682
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 mlxscore=0 impostorscore=0
+ mlxlogscore=999 malwarescore=0 lowpriorityscore=0 bulkscore=0
+ priorityscore=1501 spamscore=0 phishscore=0 clxscore=1015 suspectscore=1
+ adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2009150000 definitions=main-2010280090
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 10/28/20 9:26 AM, Anand Jain wrote:
-> This is a preparatory patch and introduces a new device flag
-> 'read_preferred', RW-able using sysfs interface.
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
->   fs/btrfs/sysfs.c   | 55 ++++++++++++++++++++++++++++++++++++++++++++++
->   fs/btrfs/volumes.h |  1 +
->   2 files changed, 56 insertions(+)
-> 
-> diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-> index 88cbf7b2edf0..52b4c9bef673 100644
-> --- a/fs/btrfs/sysfs.c
-> +++ b/fs/btrfs/sysfs.c
-> @@ -1413,11 +1413,66 @@ static ssize_t btrfs_devinfo_writeable_show(struct kobject *kobj,
->   }
->   BTRFS_ATTR(devid, writeable, btrfs_devinfo_writeable_show);
->   
-> +static ssize_t btrfs_devinfo_read_pref_show(struct kobject *kobj,
-> +					    struct kobj_attribute *a, char *buf)
-> +{
-> +	int val;
-> +	struct btrfs_device *device = container_of(kobj, struct btrfs_device,
-> +						   devid_kobj);
-> +
-> +	val = !!test_bit(BTRFS_DEV_STATE_READ_PREFERRED, &device->dev_state);
-> +
-> +	return snprintf(buf, PAGE_SIZE, "%d\n", val);
-> +}
-> +
-> +static ssize_t btrfs_devinfo_read_pref_store(struct kobject *kobj,
-> +					     struct kobj_attribute *a,
-> +					     const char *buf, size_t len)
-> +{
-> +	int ret;
-> +	unsigned long val;
-> +	struct btrfs_device *device;
-> +
-> +	ret = kstrtoul(skip_spaces(buf), 0, &val);
-> +	if (ret)
-> +		return ret;
-> +
-> +	if (val != 0 && val != 1)
-> +		return -EINVAL;
-> +
-> +	/*
-> +	 * lock is not required, the btrfs_device struct can't be freed while
-> +	 * its kobject btrfs_device::devid_kobj is still open.
-> +	 */
-> +	device = container_of(kobj, struct btrfs_device, devid_kobj);
-> +
-> +	if (val &&
-> +	    ! test_bit(BTRFS_DEV_STATE_READ_PREFERRED, &device->dev_state)) {
-> +
+This is a preparatory patch and introduces a new device flag
+'read_preferred', RW-able using sysfs interface.
 
-No extra space between the ! test_bit, and you don't need these extra newlines.
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ fs/btrfs/sysfs.c   | 55 ++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/volumes.h |  1 +
+ 2 files changed, 56 insertions(+)
 
-I sort of wonder what happens if we have multiple SSD's with multiple slow 
-disks, we may want to load balance between the SSD's and set the two SSD's to 
-preferred.  But typing it out made me think its not really related to this 
-change, so don't worry too much about it, just thoughts for the future.  Thanks,
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index 88cbf7b2edf0..52b4c9bef673 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -1413,11 +1413,66 @@ static ssize_t btrfs_devinfo_writeable_show(struct kobject *kobj,
+ }
+ BTRFS_ATTR(devid, writeable, btrfs_devinfo_writeable_show);
+ 
++static ssize_t btrfs_devinfo_read_pref_show(struct kobject *kobj,
++					    struct kobj_attribute *a, char *buf)
++{
++	int val;
++	struct btrfs_device *device = container_of(kobj, struct btrfs_device,
++						   devid_kobj);
++
++	val = !!test_bit(BTRFS_DEV_STATE_READ_PREFERRED, &device->dev_state);
++
++	return snprintf(buf, PAGE_SIZE, "%d\n", val);
++}
++
++static ssize_t btrfs_devinfo_read_pref_store(struct kobject *kobj,
++					     struct kobj_attribute *a,
++					     const char *buf, size_t len)
++{
++	int ret;
++	unsigned long val;
++	struct btrfs_device *device;
++
++	ret = kstrtoul(skip_spaces(buf), 0, &val);
++	if (ret)
++		return ret;
++
++	if (val != 0 && val != 1)
++		return -EINVAL;
++
++	/*
++	 * lock is not required, the btrfs_device struct can't be freed while
++	 * its kobject btrfs_device::devid_kobj is still open.
++	 */
++	device = container_of(kobj, struct btrfs_device, devid_kobj);
++
++	if (val &&
++	    ! test_bit(BTRFS_DEV_STATE_READ_PREFERRED, &device->dev_state)) {
++
++		set_bit(BTRFS_DEV_STATE_READ_PREFERRED, &device->dev_state);
++		btrfs_info(device->fs_devices->fs_info,
++			   "set read preferred on devid %llu (%d)",
++			   device->devid, task_pid_nr(current));
++	} else if (!val &&
++		   test_bit(BTRFS_DEV_STATE_READ_PREFERRED, &device->dev_state)) {
++
++		clear_bit(BTRFS_DEV_STATE_READ_PREFERRED, &device->dev_state);
++		btrfs_info(device->fs_devices->fs_info,
++			   "reset read preferred on devid %llu (%d)",
++			   device->devid, task_pid_nr(current));
++	}
++
++	return len;
++}
++BTRFS_ATTR_RW(devid, read_preferred, btrfs_devinfo_read_pref_show,
++	      btrfs_devinfo_read_pref_store);
++
+ static struct attribute *devid_attrs[] = {
+ 	BTRFS_ATTR_PTR(devid, in_fs_metadata),
+ 	BTRFS_ATTR_PTR(devid, missing),
+ 	BTRFS_ATTR_PTR(devid, replace_target),
+ 	BTRFS_ATTR_PTR(devid, writeable),
++	BTRFS_ATTR_PTR(devid, read_preferred),
+ 	NULL
+ };
+ ATTRIBUTE_GROUPS(devid);
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 24db586a9837..f1cbbb18f5ef 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -51,6 +51,7 @@ struct btrfs_io_geometry {
+ #define BTRFS_DEV_STATE_REPLACE_TGT	(3)
+ #define BTRFS_DEV_STATE_FLUSH_SENT	(4)
+ #define BTRFS_DEV_STATE_NO_READA	(5)
++#define BTRFS_DEV_STATE_READ_PREFERRED	(6)
+ 
+ struct btrfs_device {
+ 	struct list_head dev_list; /* device_list_mutex */
+-- 
+2.25.1
 
-Josef

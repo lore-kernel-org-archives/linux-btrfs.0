@@ -2,97 +2,106 @@ Return-Path: <SRS0=hfn9=ED=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.3 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,NICE_REPLY_A,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 299BAC388F7
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Oct 2020 22:28:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A693AC5DF9D
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Oct 2020 22:29:03 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id C23D52070E
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Oct 2020 22:28:58 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 61E322070E
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Oct 2020 22:29:03 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="inTgUhUY"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="s81GeZDO"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2387492AbgJ1W25 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 28 Oct 2020 18:28:57 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55512 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2387485AbgJ1W24 (ORCPT
+        id S2387497AbgJ1W3B (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Oct 2020 18:29:01 -0400
+Received: from aserp2120.oracle.com ([141.146.126.78]:54622 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2387470AbgJ1W2w (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Oct 2020 18:28:56 -0400
-Received: from mail-qk1-x741.google.com (mail-qk1-x741.google.com [IPv6:2607:f8b0:4864:20::741])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E4933C0613CF
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2020 15:28:55 -0700 (PDT)
-Received: by mail-qk1-x741.google.com with SMTP id l2so568669qkf.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2020 15:28:55 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=subject:to:references:from:message-id:date:user-agent:mime-version
-         :in-reply-to:content-language:content-transfer-encoding;
-        bh=8WdrC0bpF4tFlHyMtFYzlPHBLfVs2D04nj2RnmKTHQk=;
-        b=inTgUhUYTGHGXfqSSxO7oW/rvknosCU1f9zE03wYcYe6xBfFcwAC1EIzsU52eu5/uF
-         TBp/4z7E/QqTFg6QLGDPiiO0bYLbGenruxGxj8jcCqg3xqRTDpaKT1WeTTi8NwwE6Vtm
-         xB2mHLHZzh9GBdZFWv90YtT98qPk21zLysQdPysn2cQ8bwmdXx8lhMtD20JcqWAqWgSO
-         +dBQGNs7oXSpTioN+W31l14MUc23xVHvtK1sQLz6MQF+lNNMOgpqBvlFOSDxhjpY7eo4
-         mkPzl1i2leNcNfxkx6/IqBqsaC4H2JdJXMJCn72MH/7RZluZHezJ8+0xg/c4HR+I3OkW
-         1mdw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=8WdrC0bpF4tFlHyMtFYzlPHBLfVs2D04nj2RnmKTHQk=;
-        b=RLhmSVNY4WTRBGcfcJuuTAIGv8Q6bPzgwut98OOXz6cP393Vxgr8f1p6XFTsQew7qk
-         UCxjg3ddwzq7mIBZ0xcw++1r7P+Cb/8GuLUgB0aTSw4lrm54w52J74miXiTtt2OfEEeX
-         dLweP8ejd9IBcvLL6nbkB2QUkrlnBzm5k98lyzRbV2/z6WYjbVrSf5p8SgfM1Z/orHIl
-         TqpaP1q0gIK7P0VJgyXX8f3ilcJzjULyqx+nidFAZR/bBkauDvLsW6Rqe4rRsJJ5bhjL
-         StdTfD4ahc8B//mEqrYsT38xF6GCFYFXQ9Gz1YNegghNcNLwx0uxtBNPcwMtgloUqVtg
-         ODIg==
-X-Gm-Message-State: AOAM530jB04wDuk4ZEnhSJ0zmJTHBAEz7XLT4GuxLtKYxBXfgmkdkqZ/
-        PnyXy6sN4CqOid2wclMgVAwEHXlxnFTUGjaW
-X-Google-Smtp-Source: ABdhPJz/84D5AkdWCupjO7pfsTnekCCiBAD7DVgiLB73Ft77SewCasOKWizbds05tzDkoBy3DveJyQ==
-X-Received: by 2002:a37:a68b:: with SMTP id p133mr6936051qke.272.1603893524855;
-        Wed, 28 Oct 2020 06:58:44 -0700 (PDT)
-Received: from [192.168.1.210] (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id i18sm2880003qtv.38.2020.10.28.06.58.43
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 28 Oct 2020 06:58:44 -0700 (PDT)
-Subject: Re: [PATCH v5 04/10] btrfs: clear oneshot options on mount and
- remount
-To:     Boris Burkov <boris@bur.io>, linux-btrfs@vger.kernel.org,
-        kernel-team@fb.com
-References: <cover.1603828718.git.boris@bur.io>
- <7b316bb772e15d62df1553c50c8bb4c50cc63c51.1603828718.git.boris@bur.io>
-From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <317783de-5d56-01dc-c631-b6f37a350300@toxicpanda.com>
-Date:   Wed, 28 Oct 2020 09:58:43 -0400
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.10.0
+        Wed, 28 Oct 2020 18:28:52 -0400
+Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
+        by aserp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09S8PCoa106370;
+        Wed, 28 Oct 2020 08:32:12 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to : cc :
+ references : from : message-id : date : mime-version : in-reply-to :
+ content-type : content-transfer-encoding; s=corp-2020-01-29;
+ bh=ravJk633C2uE6JSphklEGkafQyLLeeKun8Ka8Tci5S0=;
+ b=s81GeZDOEQuedA+GnZL5mXGkxmKNDW+6/GY3m2c4BwFNNaUSv/y2tOEQaDFfdcUnAcDj
+ 6sK9AmelyQW3FG5vA59GH6E8KN5gOxTbwDq9TVSxWv9BY/w2240v31rRZzFRgOMJaH8T
+ uX1M2xJgpcxIA5K5FwbL5t1U9MqRY/lho5NkezM9S0kMIC21IntFjnjOQnm0b6QK5UIH
+ corqeTvrSNfVizic8WDh1TYINofhZFaAPKoAmxzW9WrzyUz7RVZefIAKTFxLFBmfRmZ8
+ ZZHUTtJq2Cyl+leIaMyISKlwnmQwdb67NYXavGuqfifTV127Vr8AoaeUG7pYgwYocFe4 Zg== 
+Received: from aserp3030.oracle.com (aserp3030.oracle.com [141.146.126.71])
+        by aserp2120.oracle.com with ESMTP id 34cc7kwyhk-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
+        Wed, 28 Oct 2020 08:32:12 +0000
+Received: from pps.filterd (aserp3030.oracle.com [127.0.0.1])
+        by aserp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09S8UTgc057226;
+        Wed, 28 Oct 2020 08:32:12 GMT
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by aserp3030.oracle.com with ESMTP id 34cwunb546-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Wed, 28 Oct 2020 08:32:12 +0000
+Received: from abhmp0017.oracle.com (abhmp0017.oracle.com [141.146.116.23])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id 09S8WAh6001574;
+        Wed, 28 Oct 2020 08:32:11 GMT
+Received: from [192.168.1.102] (/39.109.231.106)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Wed, 28 Oct 2020 01:32:10 -0700
+Subject: Re: [PATCH RFC 2/7] block: export part_stat_read_inflight
+To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org
+Cc:     linux-block@vger.kernel.org
+References: <cover.1603751876.git.anand.jain@oracle.com>
+ <187d1f02f82019d48f66c97c0d1b99c9a58cd553.1603751876.git.anand.jain@oracle.com>
+ <7e98c923-d484-d05e-b5de-4eb85114ba4d@toxicpanda.com>
+From:   Anand Jain <anand.jain@oracle.com>
+Message-ID: <d9e13a30-89e6-9e78-1d65-2cef5cc76f36@oracle.com>
+Date:   Wed, 28 Oct 2020 16:32:07 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.4.0
 MIME-Version: 1.0
-In-Reply-To: <7b316bb772e15d62df1553c50c8bb4c50cc63c51.1603828718.git.boris@bur.io>
+In-Reply-To: <7e98c923-d484-d05e-b5de-4eb85114ba4d@toxicpanda.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9787 signatures=668682
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 phishscore=0 mlxscore=0 bulkscore=0
+ spamscore=0 adultscore=0 malwarescore=0 mlxlogscore=999 suspectscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2009150000
+ definitions=main-2010280057
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9787 signatures=668682
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 lowpriorityscore=0 adultscore=0
+ malwarescore=0 spamscore=0 clxscore=1015 mlxscore=0 suspectscore=0
+ priorityscore=1501 impostorscore=0 bulkscore=0 phishscore=0
+ mlxlogscore=999 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2009150000 definitions=main-2010280056
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 10/27/20 5:07 PM, Boris Burkov wrote:
-> Some options only apply during mount time and are cleared at the end
-> of mount. For now, the example is USEBACKUPROOT, but CLEAR_CACHE also
-> fits the bill, and this is a preparation patch for also clearing that
-> option.
+On 28/10/20 2:10 am, Josef Bacik wrote:
+> On 10/26/20 7:55 PM, Anand Jain wrote:
+>> The exported function part_in_flight() returns commands in-flight in the
+>> given block device.
+>>
+>> Cc: linux-block@vger.kernel.org
+>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 > 
-> One subtlety is that the current code only resets USEBACKUPROOT on rw
-> mounts, but the option is meaningfully "consumed" by a ro mount, so it
-> feels appropriate to clear in that case as well. A subsequent read-write
-> remount would not go through open_ctree, which is the only place that
-> checks the option, so the change should be benign.
+> This is much more internal to block and I'd rather not rely on it, I 
+> feel like getting the average latency is good enough.  Thanks,
 > 
-> Signed-off-by: Boris Burkov <boris@bur.io>
 
-This one fails to apply cleanly on misc-next.  Thanks,
+And also, as mentioned in the cover letter, it is hard to know the 
+relation between the number of inflight commands and its effect on avg 
+latency.
 
-Josef
+So ok, we don't need this.
+
+Thanks, Anand
+
+
+> Josef
+

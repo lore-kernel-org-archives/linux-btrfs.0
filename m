@@ -2,194 +2,162 @@ Return-Path: <SRS0=hfn9=ED=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.8 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+X-Spam-Status: No, score=-12.3 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
 	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=no autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,NICE_REPLY_A,SIGNED_OFF_BY,SPF_HELO_NONE,
+	SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E13B4C388F7
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Oct 2020 21:59:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 20773C4363A
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Oct 2020 22:05:27 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 84D5224724
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Oct 2020 21:59:34 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BEE762470E
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Oct 2020 22:05:26 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="WvbiIpfs"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="G8P8fjtn"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729334AbgJ1V7d (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 28 Oct 2020 17:59:33 -0400
-Received: from userp2120.oracle.com ([156.151.31.85]:49714 "EHLO
+        id S1730006AbgJ1WFX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Oct 2020 18:05:23 -0400
+Received: from userp2120.oracle.com ([156.151.31.85]:53846 "EHLO
         userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729320AbgJ1V7b (ORCPT
+        with ESMTP id S1729969AbgJ1WFV (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Oct 2020 17:59:31 -0400
+        Wed, 28 Oct 2020 18:05:21 -0400
 Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09S4Oplj100531;
-        Wed, 28 Oct 2020 04:25:28 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
- subject : date : message-id : in-reply-to : references : mime-version :
- content-transfer-encoding; s=corp-2020-01-29;
- bh=yOhyyMMO0faySbVzxbOrk2d6aF4CCRTRJduNY0o+6WQ=;
- b=WvbiIpfsuoQhzRukK5mhxX4JEsmGCZYIsXScrb+CwZorQD2Bjtzxa9C4wXFQax9iM+T5
- c+MygQIK7EV8vhFyXg25wSgo6JG8onYamjlcGzpiiRTF1CSMKas9M17qzCoa97oca/tb
- 2Qe6VEijKlA0UPVmq9wettRGbwvVOxD2zEHyRH4M1qam77AMKR2PH9QEBrsJNFdRsm2M
- aXkQIjXKROWOoTlG7hH2pMRQUDhDlju9st2C3jFiCwArv9tW46xg6EPJj3NnhzLgPERD
- 8J0Zyr3Y9Frf0TyT2DytzBmQpKbRfiUC4mMHeuUU8cEHHevT67PFhHn/LqVyzyHT4cUf XA== 
-Received: from userp3020.oracle.com (userp3020.oracle.com [156.151.31.79])
-        by userp2120.oracle.com with ESMTP id 34dgm42w0j-1
+        by userp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09SCSkDO177766;
+        Wed, 28 Oct 2020 12:38:04 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
+ references : from : message-id : date : mime-version : in-reply-to :
+ content-type : content-transfer-encoding; s=corp-2020-01-29;
+ bh=PeP18W0QTy/tvKaVKz+LFRNkUSMOlhDcDDaufZeA+/A=;
+ b=G8P8fjtngGhC/1FLV65KQR+9YkemcXVrumvPygGyx++n/Pp9srBZXTAbVxfl0bh1njk4
+ +jfEQu0Ohg8VJsMnF+sNgHLm7AfELekInWWeIw/SCXaK9HOpCcOtcID8F0Ak+iq9S5iM
+ cM6hRs8ZR6Pf8F17zw7VtsoMdeUV65iS7C0YsPrv5WJTOluNyPiZV2VKSSLqvx7mDD1M
+ 62NUDlnsVYoKI2M3exfqVMRIuzsZcVHS8DubGEYVbF1XpHnBELESeODHkABWQmLXQcbD
+ go0spYu+CPeuBj/+tJ+ScmJot3hCAQg8gCFHFrkZO4zh6KRkQPw1q8TELU3RSZexme1O FQ== 
+Received: from aserp3030.oracle.com (aserp3030.oracle.com [141.146.126.71])
+        by userp2120.oracle.com with ESMTP id 34dgm44sdp-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
-        Wed, 28 Oct 2020 04:25:28 +0000
-Received: from pps.filterd (userp3020.oracle.com [127.0.0.1])
-        by userp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09S4KKbX123983;
-        Wed, 28 Oct 2020 04:25:28 GMT
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by userp3020.oracle.com with ESMTP id 34cx1rgxr9-1
+        Wed, 28 Oct 2020 12:38:04 +0000
+Received: from pps.filterd (aserp3030.oracle.com [127.0.0.1])
+        by aserp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09SCUnCa049537;
+        Wed, 28 Oct 2020 12:38:03 GMT
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by aserp3030.oracle.com with ESMTP id 34cwunhy92-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Wed, 28 Oct 2020 04:25:27 +0000
-Received: from abhmp0009.oracle.com (abhmp0009.oracle.com [141.146.116.15])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 09S4PQWv029364;
-        Wed, 28 Oct 2020 04:25:26 GMT
-Received: from localhost.localdomain (/39.109.231.106)
+        Wed, 28 Oct 2020 12:38:03 +0000
+Received: from abhmp0015.oracle.com (abhmp0015.oracle.com [141.146.116.21])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 09SCc1Up017241;
+        Wed, 28 Oct 2020 12:38:01 GMT
+Received: from [192.168.1.102] (/39.109.231.106)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Tue, 27 Oct 2020 21:25:26 -0700
-From:   Anand Jain <anand.jain@oracle.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     dsterba@suse.cz
-Subject: [PATCH v10 0/3] readmirror feature (read_policy sysfs and in-memory only approach)
-Date:   Wed, 28 Oct 2020 12:25:01 +0800
-Message-Id: <cover.1603858308.git.anand.jain@oracle.com>
-X-Mailer: git-send-email 2.25.1
-In-Reply-To: <cover.1603347462.git.anand.jain@oracle.com>
+        with ESMTP ; Wed, 28 Oct 2020 05:38:00 -0700
+Subject: Re: [PATCH v9 3/3] btrfs: create read policy sysfs attribute, pid
+To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org, josef@toxicpanda.com,
+        dsterba@suse.com
 References: <cover.1603347462.git.anand.jain@oracle.com>
+ <abd366082eeb8b289cd420cb04528a687a250433.1603347462.git.anand.jain@oracle.com>
+ <20201026175750.GT6756@twin.jikos.cz>
+From:   Anand Jain <anand.jain@oracle.com>
+Message-ID: <fd2cf101-f983-9780-00d8-9f6765af0ad3@oracle.com>
+Date:   Wed, 28 Oct 2020 20:37:57 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.4.0
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <20201026175750.GT6756@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9787 signatures=668682
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 spamscore=0 phishscore=0 bulkscore=0
- suspectscore=0 malwarescore=0 mlxlogscore=999 mlxscore=0 adultscore=0
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 phishscore=0 mlxscore=0 bulkscore=0
+ spamscore=0 adultscore=0 malwarescore=0 mlxlogscore=999 suspectscore=0
  classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2009150000
- definitions=main-2010280025
+ definitions=main-2010280085
 X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9787 signatures=668682
 X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 lowpriorityscore=0 impostorscore=0
  adultscore=0 bulkscore=0 spamscore=0 phishscore=0 mlxlogscore=999
  suspectscore=0 clxscore=1015 mlxscore=0 malwarescore=0 priorityscore=1501
  classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2009150000
- definitions=main-2010280025
+ definitions=main-2010280085
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Based on mainline v5.10-rc1
-On misc-next there will be a conflict due to addition of metadata_uuid
-to the sysfs, which is easy to resolve.
+On 27/10/20 1:57 am, David Sterba wrote:
+> On Thu, Oct 22, 2020 at 03:43:37PM +0800, Anand Jain wrote:
+>> Add
+>>
+>>   /sys/fs/btrfs/UUID/read_policy
+>>
+>> attribute so that the read policy for the raid1, raid1c34 and raid10 can
+>> be tuned.
+>>
+>> When this attribute is read, it shall show all available policies, with
+>> active policy being with in [ ]. The read_policy attribute can be written
+>> using one of the items listed in there.
+>>
+>> For example:
+>>    $cat /sys/fs/btrfs/UUID/read_policy
+>>    [pid]
+>>    $echo pid > /sys/fs/btrfs/UUID/read_policy
+>>
+>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+>> ---
+>> v9: fix C coding style, static const char*
+>> v5:
+>>    Title rename: old: btrfs: sysfs, add read_policy attribute
+>>    Uses the btrfs_strmatch() helper (BTRFS_READ_POLICY_NAME_MAX dropped).
+>>    Use the table for the policy names.
+>>    Rename len to ret.
+>>    Use a simple logic to prefix space in btrfs_read_policy_show()
+>>    Reviewed-by: Josef Bacik <josef@toxicpanda.com> dropped.
+>>
+>> v4:-
+>> v3: rename [by_pid] to [pid]
+>> v2: v2: check input len before strip and kstrdup
+>>
+>>   fs/btrfs/sysfs.c | 49 ++++++++++++++++++++++++++++++++++++++++++++++++
+>>   1 file changed, 49 insertions(+)
+>>
+>> diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+>> index 5ea262d289c6..e23ae3643527 100644
+>> --- a/fs/btrfs/sysfs.c
+>> +++ b/fs/btrfs/sysfs.c
+>> @@ -883,6 +883,54 @@ static int btrfs_strmatch(const char *given, const char *golden)
+>>   	return -EINVAL;
+>>   }
+>>   
+>> +static const char * const btrfs_read_policy_name[] = { "pid" };
+>> +
+>> +static ssize_t btrfs_read_policy_show(struct kobject *kobj,
+>> +				      struct kobj_attribute *a, char *buf)
+>> +{
+>> +	int i;
+>> +	ssize_t ret = 0;
+>> +	struct btrfs_fs_devices *fs_devices = to_fs_devs(kobj);
+>> +
+>> +	for (i = 0; i < BTRFS_NR_READ_POLICY; i++) {
+>> +		if (fs_devices->read_policy == i)
+>> +			ret += snprintf(buf + ret, PAGE_SIZE - ret, "%s[%s]",
+> 
+> All snprintf have been upgraded to scnprintf as it does have sane
+> behaviour when the buffer is not large enough.
 
-v10: patch1/3 (fix btrfs_strmatch) and patch 3/3 (use scnprintf instead of snprintf)
-     and add rb.
+This is taken care in v10.
 
-v9: C coding style fixes in 1/3 and 3/3
+Thanks, Anand
 
-v8:
-Separate the sysfs framework and the %pid read_policy into a separate
-patchset here, so that the new read policies can be in its own patch set.
-
-A latency based read_policy is being prepared to send it in a separate
-patchset as it depends on a few changes in the block layer as well.
-
-__ Original email: __
-
-v7:
-Fix switch's fall through warning. Changle logs updates where necessary.
-
-v6:
-Patch 4/5 - If there is no change in device's read prefer then don't log
-Patch 4/5 - Add pid to the logs
-Patch 5/5 - If there isn't read preferred device in the chunk don't reset
-read policy to default, instead just use stripe 0. As this is in
-the read path it avoids going through the device list to find
-read preferred device. So inline to this drop to check if there
-is read preferred device before setting read policy to device.
-
-v5:
-Worked on review comments as received in its previous version.
-Please refer to individual patches for the specific changes.
-Introduces the new read_policy 'device'.
-
-v4:
-Rename readmirror attribute to read_policy. Drop separate kobj for
-readmirror instead create read_policy attribute in fsid kobj.
-merge v2:2/3 and v2:3/3 into v4:2/2. Patch titles have changed.
- 
-v3:
-v2:
-Mainly fixes the fs_devices::readmirror declaration type from atomic_t
-to u8. (Thanks Josef).
-
-v1:
-As of now we use only %pid method to read stripped mirrored data. So
-application's process id determines the stripe id to be read. This type
-of routing typically helps in a system with many small independent
-applications tying to read random data. On the other hand the %pid
-based read IO distribution policy is inefficient if there is a single
-application trying to read large data as because the overall disk
-bandwidth would remains under utilized.
-
-One type of readmirror policy isn't good enough and other choices are
-routing the IO based on device's waitqueue or manual when we have a
-read-preferred device or a readmirror policy based on the target storage
-caching. So this patch-set introduces a framework where we could add more
-readmirror policies.
-
-This policy is a filesystem wide policy as of now, and though the
-readmirror policy at the subvolume level is a novel approach as it
-provides maximum flexibility in the data center, but as of now its not
-practical to implement such a granularity as you can't really ensure
-reflinked extents will be read from the stripe of its desire and so
-there will be more limitations and it can be assessed separately.
-
-The approach in this patch-set is sys interface with in-memory policy.
-And does not add any new readmirror type in this set, which can be add
-once we are ok with the framework. Also the default policy remains %pid.
-
-Previous works:
-----------------------------------------------------------------------
-There were few RFCs [1] before, mainly to figure out storage
-(or in memory only) for the readmirror policy and the interface needed.
-
-[1]
-https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg86368.html
-
-https://lore.kernel.org/linux-btrfs/20190826090438.7044-1-anand.jain@oracle.com/
-
-https://lore.kernel.org/linux-btrfs/5fcf9c23-89b5-b167-1f80-a0f4ac107d0b@oracle.com/
-
-https://patchwork.kernel.org/cover/10859213/
-
-Mount -o:
-In the first trial it was attempted to use the mount -o option to carry
-the readmirror policy, this is good for debugging which can make sure
-even the mount thread metadata tree blocks are read from the disk desired.
-It was very effective in testing radi1/raid10 write-holes.
-
-Extended attribute:
-As extended attribute is associated with the inode, to implement this
-there is bit of extended attribute abuse or else makes it mandatory to
-mount the rootid 5. Its messy unless readmirror policy is applied at the
-subvol level which is not possible as of now. 
-
-An item type:
-The proposed patch was to create an item to hold the readmirror policy,
-it makes sense when compared to the abusive extended attribute approach
-but introduces a new item and so no backward compatibility.
------------------------------------------------------------------------
-
-Anand Jain (3):
-  btrfs: add btrfs_strmatch helper
-  btrfs: create read policy framework
-  btrfs: create read policy sysfs attribute, pid
-
- fs/btrfs/sysfs.c   | 67 ++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/volumes.c | 15 ++++++++++-
- fs/btrfs/volumes.h | 14 ++++++++++
- 3 files changed, 95 insertions(+), 1 deletion(-)
-
--- 
-2.25.1
+> 
+>> +					(ret == 0 ? "" : " "),
+>> +					btrfs_read_policy_name[i]);
+>> +		else
+>> +			ret += snprintf(buf + ret, PAGE_SIZE - ret, "%s%s",
+>> +					(ret == 0 ? "" : " "),
+>> +					btrfs_read_policy_name[i]);
+>> +	}
+>> +
+>> +	ret += snprintf(buf + ret, PAGE_SIZE - ret, "\n");
+>> +
+>> +	return ret;
+>> +}
 

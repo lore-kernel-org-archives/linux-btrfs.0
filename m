@@ -2,111 +2,125 @@ Return-Path: <SRS0=/Od+=EE=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	UNPARSEABLE_RELAY,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 980B1C4363A
-	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 02:45:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5512EC55179
+	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 02:45:43 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 45E742076B
-	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 02:45:26 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 032032076A
+	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 02:45:42 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="XNZhPJfR"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="v6rX6p71"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726268AbgJ2CpY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 28 Oct 2020 22:45:24 -0400
-Received: from mx2.suse.de ([195.135.220.15]:58246 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726222AbgJ1Vdo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Oct 2020 17:33:44 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1603869881;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:mime-version:mime-version:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=73Q1XAdsFGmy0qR+eHlvhZ0IPSLSoj79+XTz1nqcVPY=;
-        b=XNZhPJfR+uylo0I5bIVrgfonlivpwzciy3Iq21+YpDGbSHCTVDOb+dWllWjcIQgJ3/ShUD
-        TpyecdyXpavCZswU9BMT6o2JnyLuBs6Za5SwXhu7kvM2STMkG4fuHIPpVgFdWVHdsxS6gX
-        eTLDpldjPr3LPjmAuj8eURf0G2bzYDc=
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 0C41DADDF
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2020 07:24:41 +0000 (UTC)
-From:   Qu Wenruo <wqu@suse.com>
+        id S1730023AbgJ2Cpi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Oct 2020 22:45:38 -0400
+Received: from aserp2120.oracle.com ([141.146.126.78]:43988 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726099AbgJ1Vdh (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 28 Oct 2020 17:33:37 -0400
+Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
+        by aserp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09SDF5xW075057;
+        Wed, 28 Oct 2020 13:15:05 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
+ subject : date : message-id : in-reply-to : references : mime-version :
+ content-transfer-encoding; s=corp-2020-01-29;
+ bh=kFGDvqJ0L/oJ71tFVifgbzyQH3OhKBr025RY9BjWQAk=;
+ b=v6rX6p71QHwi3f1MRZVywoZAmBrVHxpK3WXP0KtLCMs0OHtYdeqBw0sVEmNE23HxzvD9
+ xGvoRbJIQrzB3WiuD8l8cSoGuC5ahL7Dh7zIgW21kler8EHQF9MU9U3n/M4AXNMeWfwT
+ GfWrngr2jEFGxtW5Ve6nVrN17VV5KYv8A8GfJk6htl+i90tdWrMYVf6K4khCQL7bqXYV
+ o0i8+/RE51IiT9elSCpqkei7OGqyH0AMExiNf0F6+GLcrV/WsyQPEnugJUfEYEaU6LL4
+ axRRDMTNtjTGgK9yocNUPq2OgpvUX0Y2v4rNL74XqPrrq/kXKt/N6zjc43ek27iPNSQl 4Q== 
+Received: from userp3020.oracle.com (userp3020.oracle.com [156.151.31.79])
+        by aserp2120.oracle.com with ESMTP id 34cc7kyax0-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
+        Wed, 28 Oct 2020 13:15:05 +0000
+Received: from pps.filterd (userp3020.oracle.com [127.0.0.1])
+        by userp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09SDALqk179921;
+        Wed, 28 Oct 2020 13:15:05 GMT
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by userp3020.oracle.com with ESMTP id 34cx1rydp2-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Wed, 28 Oct 2020 13:15:04 +0000
+Received: from abhmp0018.oracle.com (abhmp0018.oracle.com [141.146.116.24])
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id 09SDF39D008175;
+        Wed, 28 Oct 2020 13:15:03 GMT
+Received: from localhost.localdomain (/39.109.231.106)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Wed, 28 Oct 2020 06:15:03 -0700
+From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/3] btrfs: ordered-data: rename parameter @len to @nr_sectors
-Date:   Wed, 28 Oct 2020 15:24:31 +0800
-Message-Id: <20201028072432.86907-3-wqu@suse.com>
-X-Mailer: git-send-email 2.29.1
-In-Reply-To: <20201028072432.86907-1-wqu@suse.com>
-References: <20201028072432.86907-1-wqu@suse.com>
+Cc:     David Sterba <dsterba@suse.com>, Josef Bacik <josef@toxicpanda.com>
+Subject: [PATCH v10 1/3] btrfs: add btrfs_strmatch helper
+Date:   Wed, 28 Oct 2020 21:14:45 +0800
+Message-Id: <d3cfa1d20e7e0a86bbef9e078d887e90d1755b29.1603884513.git.anand.jain@oracle.com>
+X-Mailer: git-send-email 2.25.1
+In-Reply-To: <cover.1603884513.git.anand.jain@oracle.com>
+References: <cover.1603884513.git.anand.jain@oracle.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9787 signatures=668682
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 spamscore=0 phishscore=0 bulkscore=0
+ suspectscore=1 malwarescore=0 mlxlogscore=999 mlxscore=0 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2009150000
+ definitions=main-2010280089
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9787 signatures=668682
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 lowpriorityscore=0 adultscore=0
+ malwarescore=0 spamscore=0 clxscore=1015 mlxscore=0 suspectscore=1
+ priorityscore=1501 impostorscore=0 bulkscore=0 phishscore=0
+ mlxlogscore=999 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2009150000 definitions=main-2010280089
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The parameter is the number of sectors of the range to search.
-While most "len" we used in other locations are in byte size, this can
-lead to confusion.
+Add a generic helper to match the golden-string in the given-string,
+and ignore the leading and trailing whitespaces if any.
 
-Rename @len to @nr_sectors to make it more clear and avoid confusion.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Suggested-by: David Sterba <dsterba@suse.com>
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/ordered-data.c | 9 ++++++---
- fs/btrfs/ordered-data.h | 2 +-
- 2 files changed, 7 insertions(+), 4 deletions(-)
+v10: return bool instead of int.
+     drop unnecessary local variable and ( ) with in if.
+v9: use Josef suggested C coding style, using single if statement.
+v5: born
+ fs/btrfs/sysfs.c | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
 
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index ebac13389e7e..10c13f8a1603 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -802,9 +802,11 @@ btrfs_lookup_first_ordered_extent(struct inode *inode, u64 file_offset)
-  * search the ordered extents for one corresponding to 'offset' and
-  * try to find a checksum.  This is used because we allow pages to
-  * be reclaimed before their checksum is actually put into the btree
-+ *
-+ * @nr_sectors:	The length of the search range, in sectors.
-  */
- int btrfs_find_ordered_sum(struct inode *inode, u64 offset, u64 disk_bytenr,
--			   u8 *sum, int len)
-+			   u8 *sum, int nr_sectors)
- {
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
- 	struct btrfs_ordered_sum *ordered_sum;
-@@ -828,12 +830,13 @@ int btrfs_find_ordered_sum(struct inode *inode, u64 offset, u64 disk_bytenr,
- 			    inode->i_sb->s_blocksize_bits;
- 			num_sectors = ordered_sum->len >>
- 				      inode->i_sb->s_blocksize_bits;
--			num_sectors = min_t(int, len - index, num_sectors - i);
-+			num_sectors = min_t(int, nr_sectors - index,
-+					    num_sectors - i);
- 			memcpy(sum + index, ordered_sum->sums + i * csum_size,
- 			       num_sectors * csum_size);
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index fcd6c7a9bbd1..5955379d3d9e 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -888,6 +888,24 @@ static ssize_t btrfs_generation_show(struct kobject *kobj,
+ }
+ BTRFS_ATTR(, generation, btrfs_generation_show);
  
- 			index += (int)num_sectors * csum_size;
--			if (index == len)
-+			if (index == nr_sectors)
- 				goto out;
- 			disk_bytenr += num_sectors * sectorsize;
- 		}
-diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
-index d61ea9c880a3..3ffc1c27ee30 100644
---- a/fs/btrfs/ordered-data.h
-+++ b/fs/btrfs/ordered-data.h
-@@ -175,7 +175,7 @@ struct btrfs_ordered_extent *btrfs_lookup_ordered_range(
- 		u64 file_offset,
- 		u64 len);
- int btrfs_find_ordered_sum(struct inode *inode, u64 offset, u64 disk_bytenr,
--			   u8 *sum, int len);
-+			   u8 *sum, int nr_sectors);
- u64 btrfs_wait_ordered_extents(struct btrfs_root *root, u64 nr,
- 			       const u64 range_start, const u64 range_len);
- void btrfs_wait_ordered_roots(struct btrfs_fs_info *fs_info, u64 nr,
++/*
++ * Match the %golden in the %given. Ignore the leading and trailing whitespaces
++ * if any.
++ */
++static bool btrfs_strmatch(const char *given, const char *golden)
++{
++	size_t len = strlen(golden);
++
++	/* skip leading whitespace */
++	given = skip_spaces(given);
++
++	if (strncmp(given, golden, len) == 0 &&
++	    !strlen(skip_spaces(given + len)))
++		return true;
++
++	return false;
++}
++
+ static const struct attribute *btrfs_attrs[] = {
+ 	BTRFS_ATTR_PTR(, label),
+ 	BTRFS_ATTR_PTR(, nodesize),
 -- 
-2.29.1
+2.25.1
 

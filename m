@@ -2,174 +2,145 @@ Return-Path: <SRS0=hfn9=ED=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.1 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	UNPARSEABLE_RELAY,UNWANTED_LANGUAGE_BODY,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5FD2FC55179
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Oct 2020 21:41:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9B61AC55179
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Oct 2020 21:43:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 0C318246AB
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Oct 2020 21:41:48 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 422BC20E65
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Oct 2020 21:43:06 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="kfXWkcNf"
+	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="q921MKTL"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727328AbgJ1VlR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 28 Oct 2020 17:41:17 -0400
-Received: from aserp2130.oracle.com ([141.146.126.79]:40088 "EHLO
-        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727293AbgJ1Vk7 (ORCPT
+        id S1726059AbgJ1VnE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Oct 2020 17:43:04 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47400 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727374AbgJ1Vmt (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Oct 2020 17:40:59 -0400
-Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
-        by aserp2130.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09SDJmOH066869;
-        Wed, 28 Oct 2020 13:26:30 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
- subject : date : message-id : in-reply-to : references : mime-version :
- content-transfer-encoding; s=corp-2020-01-29;
- bh=uyMeduNat+U5qAyR99hn84N/rwkpYOZg/udhapyGTXw=;
- b=kfXWkcNfTFnjM/TykJFjHAUqWkqdBLFAGpYP1vHYqX0/dYGLszhlZ6JE/emmSYCe+1H5
- bngRdRy+Zy+aO1RPvHi+vgyEigUAWoryYKaBQt8Nb0Y3mFXShcoys65BNpUP6ZILLzhT
- tjFv7p07ikxHCsxRTfBqBkp2Q+vyc3MpHp64C+6YM7O1JPATwnYgT2/ia36kuVgHNIOo
- dei1qeXU2ihH1c7Hmf08OZvysaN08zBko8F8viQGP1fes7f1NrrqSI7UlgGHQD2Lv8Fp
- DPOQBJZpfibCL2gJ4M6LEFK1YDOaApViqJzJXh+7hMZ3xz7gEDYw3166dShWA2gCiVgh iw== 
-Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
-        by aserp2130.oracle.com with ESMTP id 34c9sayh4p-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
-        Wed, 28 Oct 2020 13:26:30 +0000
-Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
-        by userp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09SDPMNf031175;
-        Wed, 28 Oct 2020 13:26:29 GMT
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by userp3030.oracle.com with ESMTP id 34cx6x7t2t-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Wed, 28 Oct 2020 13:26:29 +0000
-Received: from abhmp0016.oracle.com (abhmp0016.oracle.com [141.146.116.22])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id 09SDQSh9015167;
-        Wed, 28 Oct 2020 13:26:28 GMT
-Received: from localhost.localdomain (/39.109.231.106)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Wed, 28 Oct 2020 06:26:28 -0700
-From:   Anand Jain <anand.jain@oracle.com>
+        Wed, 28 Oct 2020 17:42:49 -0400
+Received: from mail-pg1-x542.google.com (mail-pg1-x542.google.com [IPv6:2607:f8b0:4864:20::542])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6646EC0613CF
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2020 14:42:49 -0700 (PDT)
+Received: by mail-pg1-x542.google.com with SMTP id r10so585141pgb.10
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2020 14:42:49 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=osandov-com.20150623.gappssmtp.com; s=20150623;
+        h=from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=pRWlQf1PcsLnwOjRHE/KkmHwfJ1wqCb0rdyDIMCZWlQ=;
+        b=q921MKTL4bYbnmlGljG2O8IXHNyYF+GfloSo1QBVRAKTWLmU0ce+/hkVXNUVytzuZ9
+         p1oaGuzuMkc1F3KoRAA4rT4ykk4hKM43sVxdsEoWdyMSvH6UZSelI+badf0WTuORAtPs
+         BKGfzpORthCJEmoNHBmBL65UrlLCzDlKjKHwDmBw0K2g5ttSSzH5lHZmKbzl4RKbTZWx
+         +KHFO3Twmefj4dsDBlxOUmjCd4E/+upUeGMzQfqBX5R/fMckiTEZDW3iT3/AGsQ+oEKM
+         2MP6PuCtJEqxSerzSyhbWOPHUZ9dClN5gcVlLOj6y1aNSZ+AScoJlAr0aIZz5x3WgDLM
+         QBkA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=pRWlQf1PcsLnwOjRHE/KkmHwfJ1wqCb0rdyDIMCZWlQ=;
+        b=ldr1uYdM7J9q5d1tZSVimWTtrQFjmU7E1TnkL/aRsakJXM0sTSnLwFWJPfI0P5jX76
+         O5jzcFa0phm0ZL7aEveS+9XO3EpSosTyrM7G1FA5SZQ/WG+EF3KGe9gpaIHciIfSE4jL
+         gZMDKox6JXDSc4W6N43mM3LjyolXWluB6ERQglFERqgsTGAN2CF6HmoGG/tRg+vpYmNS
+         DGKunkvQ5JhQ3VmafhfbI1WSQgEM2cjWHOmgrsv4WMYTk0vAU3HNkoBgonDmUgY0xhKV
+         vs/Dkx8dM/YTMt1PeDMJi2qzeJPztpMA4pUtDtB2fH6uO7FvySZqwYEKlI7ctb7bFrgP
+         s6JA==
+X-Gm-Message-State: AOAM531hBGvT/95ZPjUTIkj9dSxnzQFAfqZvdGtp058Mj/vSqasFKMAk
+        3LjAaSFdYl8QN808ItLo/nV0wLbEJ5Yv9Q==
+X-Google-Smtp-Source: ABdhPJyAbP6msLMc4C4UT4Ojp6vr5xDPNqQ4e50aAX6HqbTRnJNj8ZH2eJ9kKiZmV238w4Tol7IARA==
+X-Received: by 2002:a17:90a:b302:: with SMTP id d2mr879260pjr.57.1603921368185;
+        Wed, 28 Oct 2020 14:42:48 -0700 (PDT)
+Received: from relinquished.tfbnw.net ([2620:10d:c090:400::4:9e72])
+        by smtp.gmail.com with ESMTPSA id d7sm330901pjx.33.2020.10.28.14.42.45
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 28 Oct 2020 14:42:47 -0700 (PDT)
+From:   Omar Sandoval <osandov@osandov.com>
 To:     linux-btrfs@vger.kernel.org
-Cc:     dsterba@suse.com, josef@toxicpanda.com
-Subject: [PATCH 2/4] btrfs: introduce new device-state read_preferred
-Date:   Wed, 28 Oct 2020 21:26:01 +0800
-Message-Id: <b2cfd7bfb0ff90063196cb38b4689fb8d2ac9986.1603884539.git.anand.jain@oracle.com>
-X-Mailer: git-send-email 2.25.1
-In-Reply-To: <cover.1603884539.git.anand.jain@oracle.com>
-References: <cover.1603884539.git.anand.jain@oracle.com>
+Cc:     kernel-team@fb.com
+Subject: [RFC PATCH] Revert "btrfs: qgroup: return ENOTCONN instead of EINVAL when quotas are not enabled"
+Date:   Wed, 28 Oct 2020 14:42:38 -0700
+Message-Id: <33ce2f6df841772666ca1cf3a4876b0ff6612983.1603921124.git.osandov@fb.com>
+X-Mailer: git-send-email 2.29.1
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9787 signatures=668682
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 adultscore=0 phishscore=0 spamscore=0
- bulkscore=0 malwarescore=0 mlxlogscore=999 mlxscore=0 suspectscore=1
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2009150000
- definitions=main-2010280091
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9787 signatures=668682
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 mlxscore=0 impostorscore=0
- mlxlogscore=999 malwarescore=0 lowpriorityscore=0 bulkscore=0
- priorityscore=1501 spamscore=0 phishscore=0 clxscore=1015 suspectscore=1
- adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2009150000 definitions=main-2010280090
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is a preparatory patch and introduces a new device flag
-'read_preferred', RW-able using sysfs interface.
+From: Omar Sandoval <osandov@fb.com>
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+This reverts commit 8a36e408d40606e21cd4e2dd9601004a67b14868.
+
+At Facebook, we have some userspace code that calls
+BTRFS_IOC_QGROUP_CREATE when qgroups may be disabled and specifically
+handles EINVAL. When we updated to 5.6, this started failing with the
+new error code and broke the application. ENOTCONN is indeed better, but
+this is effectively an ABI breakage.
+
+Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- fs/btrfs/sysfs.c   | 55 ++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/volumes.h |  1 +
- 2 files changed, 56 insertions(+)
+The userspace code in question is actually unit testing code for our
+container system, so it's trivial for us to update that to handle the
+new error. However, this may be considered an ABI breakage, so I wanted
+to throw this out there and see if anyone thinks this is important
+enough to revert.
 
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index 88cbf7b2edf0..52b4c9bef673 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -1413,11 +1413,66 @@ static ssize_t btrfs_devinfo_writeable_show(struct kobject *kobj,
- }
- BTRFS_ATTR(devid, writeable, btrfs_devinfo_writeable_show);
+ fs/btrfs/qgroup.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 580899bdb991..50396e85dd92 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -1318,7 +1318,7 @@ int btrfs_add_qgroup_relation(struct btrfs_trans_handle *trans, u64 src,
  
-+static ssize_t btrfs_devinfo_read_pref_show(struct kobject *kobj,
-+					    struct kobj_attribute *a, char *buf)
-+{
-+	int val;
-+	struct btrfs_device *device = container_of(kobj, struct btrfs_device,
-+						   devid_kobj);
-+
-+	val = !!test_bit(BTRFS_DEV_STATE_READ_PREFERRED, &device->dev_state);
-+
-+	return snprintf(buf, PAGE_SIZE, "%d\n", val);
-+}
-+
-+static ssize_t btrfs_devinfo_read_pref_store(struct kobject *kobj,
-+					     struct kobj_attribute *a,
-+					     const char *buf, size_t len)
-+{
-+	int ret;
-+	unsigned long val;
-+	struct btrfs_device *device;
-+
-+	ret = kstrtoul(skip_spaces(buf), 0, &val);
-+	if (ret)
-+		return ret;
-+
-+	if (val != 0 && val != 1)
-+		return -EINVAL;
-+
-+	/*
-+	 * lock is not required, the btrfs_device struct can't be freed while
-+	 * its kobject btrfs_device::devid_kobj is still open.
-+	 */
-+	device = container_of(kobj, struct btrfs_device, devid_kobj);
-+
-+	if (val &&
-+	    ! test_bit(BTRFS_DEV_STATE_READ_PREFERRED, &device->dev_state)) {
-+
-+		set_bit(BTRFS_DEV_STATE_READ_PREFERRED, &device->dev_state);
-+		btrfs_info(device->fs_devices->fs_info,
-+			   "set read preferred on devid %llu (%d)",
-+			   device->devid, task_pid_nr(current));
-+	} else if (!val &&
-+		   test_bit(BTRFS_DEV_STATE_READ_PREFERRED, &device->dev_state)) {
-+
-+		clear_bit(BTRFS_DEV_STATE_READ_PREFERRED, &device->dev_state);
-+		btrfs_info(device->fs_devices->fs_info,
-+			   "reset read preferred on devid %llu (%d)",
-+			   device->devid, task_pid_nr(current));
-+	}
-+
-+	return len;
-+}
-+BTRFS_ATTR_RW(devid, read_preferred, btrfs_devinfo_read_pref_show,
-+	      btrfs_devinfo_read_pref_store);
-+
- static struct attribute *devid_attrs[] = {
- 	BTRFS_ATTR_PTR(devid, in_fs_metadata),
- 	BTRFS_ATTR_PTR(devid, missing),
- 	BTRFS_ATTR_PTR(devid, replace_target),
- 	BTRFS_ATTR_PTR(devid, writeable),
-+	BTRFS_ATTR_PTR(devid, read_preferred),
- 	NULL
- };
- ATTRIBUTE_GROUPS(devid);
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 24db586a9837..f1cbbb18f5ef 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -51,6 +51,7 @@ struct btrfs_io_geometry {
- #define BTRFS_DEV_STATE_REPLACE_TGT	(3)
- #define BTRFS_DEV_STATE_FLUSH_SENT	(4)
- #define BTRFS_DEV_STATE_NO_READA	(5)
-+#define BTRFS_DEV_STATE_READ_PREFERRED	(6)
+ 	mutex_lock(&fs_info->qgroup_ioctl_lock);
+ 	if (!fs_info->quota_root) {
+-		ret = -ENOTCONN;
++		ret = -EINVAL;
+ 		goto out;
+ 	}
+ 	member = find_qgroup_rb(fs_info, src);
+@@ -1377,7 +1377,7 @@ static int __del_qgroup_relation(struct btrfs_trans_handle *trans, u64 src,
+ 		return -ENOMEM;
  
- struct btrfs_device {
- 	struct list_head dev_list; /* device_list_mutex */
+ 	if (!fs_info->quota_root) {
+-		ret = -ENOTCONN;
++		ret = -EINVAL;
+ 		goto out;
+ 	}
+ 
+@@ -1443,7 +1443,7 @@ int btrfs_create_qgroup(struct btrfs_trans_handle *trans, u64 qgroupid)
+ 
+ 	mutex_lock(&fs_info->qgroup_ioctl_lock);
+ 	if (!fs_info->quota_root) {
+-		ret = -ENOTCONN;
++		ret = -EINVAL;
+ 		goto out;
+ 	}
+ 	quota_root = fs_info->quota_root;
+@@ -1480,7 +1480,7 @@ int btrfs_remove_qgroup(struct btrfs_trans_handle *trans, u64 qgroupid)
+ 
+ 	mutex_lock(&fs_info->qgroup_ioctl_lock);
+ 	if (!fs_info->quota_root) {
+-		ret = -ENOTCONN;
++		ret = -EINVAL;
+ 		goto out;
+ 	}
+ 
+@@ -1531,7 +1531,7 @@ int btrfs_limit_qgroup(struct btrfs_trans_handle *trans, u64 qgroupid,
+ 
+ 	mutex_lock(&fs_info->qgroup_ioctl_lock);
+ 	if (!fs_info->quota_root) {
+-		ret = -ENOTCONN;
++		ret = -EINVAL;
+ 		goto out;
+ 	}
+ 
 -- 
-2.25.1
+2.29.1
 

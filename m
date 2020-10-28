@@ -2,191 +2,118 @@ Return-Path: <SRS0=/Od+=EE=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.3 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+X-Spam-Status: No, score=-6.3 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
 	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,NICE_REPLY_A,SIGNED_OFF_BY,SPF_HELO_NONE,
-	SPF_PASS,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C8C02C4363A
-	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 02:11:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B5C46C388F7
+	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 02:12:26 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 4F2FB20738
-	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 02:11:15 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5AB15206F7
+	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 02:12:26 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="RR2a2c7r"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="j+2ftmNx"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727038AbgJ2CJe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 28 Oct 2020 22:09:34 -0400
-Received: from aserp2120.oracle.com ([141.146.126.78]:49660 "EHLO
+        id S2388053AbgJ2CMZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Oct 2020 22:12:25 -0400
+Received: from aserp2120.oracle.com ([141.146.126.78]:45946 "EHLO
         aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727100AbgJ2CI3 (ORCPT
+        with ESMTP id S1726810AbgJ1VgZ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Oct 2020 22:08:29 -0400
+        Wed, 28 Oct 2020 17:36:25 -0400
 Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09T26SS8143373;
-        Thu, 29 Oct 2020 02:08:24 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to : cc :
+        by aserp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09SC55Wc136687;
+        Wed, 28 Oct 2020 12:06:34 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
  references : from : message-id : date : mime-version : in-reply-to :
  content-type : content-transfer-encoding; s=corp-2020-01-29;
- bh=1CB5bHVYAp+K5FgfmxOkGiMgYqUK1KoIgsLFkDJEwlI=;
- b=RR2a2c7rLm18qWXjiwP07kVCMH7r3/zzgn6ToGeztO9j7lkIBDaLhp/uqy7Pf4mO46XC
- NLyCGUiaI56QpkeFqMt235xMspHnZLXUmmnb9lT32fcnkCPC/Xy3D4yDRQp/mOYonVJ2
- 6C13v5HfBfb5Z1UMoYWeTGh+EGR7+wT2txsV7y3FX49fl4FzoQsPm5atiOVRkjEXQpLO
- Ia31FfC8TKtBjpGRUNcBf52PIkTOou5eK8KX77NxWbJvitzYaYqbdLItII40nKmWzt7E
- nhAcilnogiOM9DvLOfa9+XjbHjP5pOihWhm8Deua+c4js3x31+J6vTeAikf/WnYqcnyj tA== 
+ bh=3f8NAaZq9070x2DphUfx3HH/5T67COUGd9APGfKJakg=;
+ b=j+2ftmNxgykWB94cTxmLulCIbcF9SmTqfT63NHitxkg8rKDUd1RLBl0s3jBP5Wjhljbj
+ WdNiJebW8iUODjzqoSgC2d1H/9XnC2CJhpDED6rKdRUPPsO53EXQbRWRkzg11/kvIPjy
+ ZLdLMz94jbKu0p608k8fplsurPzF+m5c5P0isbIB0snrABpe+nSlzF2+el9sKmb6Rehx
+ ocZsX1t8/lDWfLm4iNx7LjZyPuyuRwLG3kBNpgclWShZ12XJSqT6g9VCCwyjHnSMBdbt
+ knPbU1ZV/R8M7cr69T8BIusbMqOTwVPa6i+/Omn3AAgbJWVObLkfT0kozrNJWC3aXdiR ag== 
 Received: from userp3020.oracle.com (userp3020.oracle.com [156.151.31.79])
-        by aserp2120.oracle.com with ESMTP id 34cc7m2eva-1
+        by aserp2120.oracle.com with ESMTP id 34cc7ky1h4-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
-        Thu, 29 Oct 2020 02:08:24 +0000
+        Wed, 28 Oct 2020 12:06:34 +0000
 Received: from pps.filterd (userp3020.oracle.com [127.0.0.1])
-        by userp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09T26MSi005360;
-        Thu, 29 Oct 2020 02:06:23 GMT
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by userp3020.oracle.com with ESMTP id 34cx1sp8yf-1
+        by userp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09SC6KuT155792;
+        Wed, 28 Oct 2020 12:06:33 GMT
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by userp3020.oracle.com with ESMTP id 34cx1rwbcg-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Thu, 29 Oct 2020 02:06:23 +0000
-Received: from abhmp0005.oracle.com (abhmp0005.oracle.com [141.146.116.11])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id 09T26CD8028040;
-        Thu, 29 Oct 2020 02:06:12 GMT
+        Wed, 28 Oct 2020 12:06:33 +0000
+Received: from abhmp0002.oracle.com (abhmp0002.oracle.com [141.146.116.8])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 09SC6VBs027451;
+        Wed, 28 Oct 2020 12:06:32 GMT
 Received: from [192.168.1.102] (/39.109.231.106)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Wed, 28 Oct 2020 19:06:12 -0700
-Subject: Re: [PATCH RFC 4/4] btrfs: introduce new read_policy round-robin
-To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org
-Cc:     dsterba@suse.com
-References: <cover.1603884539.git.anand.jain@oracle.com>
- <3ef863dea2d61ab41e5767ee935d5411c3117fa0.1603884539.git.anand.jain@oracle.com>
- <1c3a5069-45ce-fd91-1abd-4104095d2b12@toxicpanda.com>
+        with ESMTP ; Wed, 28 Oct 2020 05:06:31 -0700
+Subject: Re: [PATCH v9 0/3] readmirror feature (read_policy sysfs and
+ in-memory only approach)
+To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org, josef@toxicpanda.com,
+        dsterba@suse.com
+References: <cover.1603347462.git.anand.jain@oracle.com>
+ <20201023170403.GM6756@twin.jikos.cz>
+ <31c3da05-2238-da84-509e-3b29835ec33a@oracle.com>
+ <20201027180233.GF6756@twin.jikos.cz>
 From:   Anand Jain <anand.jain@oracle.com>
-Message-ID: <fede66ab-5ca3-14e2-ec7e-5e14bcf011db@oracle.com>
-Date:   Thu, 29 Oct 2020 10:06:07 +0800
+Message-ID: <c669ab96-82aa-bd41-756d-a7302f6c0963@oracle.com>
+Date:   Wed, 28 Oct 2020 20:06:27 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
  Thunderbird/78.4.0
 MIME-Version: 1.0
-In-Reply-To: <1c3a5069-45ce-fd91-1abd-4104095d2b12@toxicpanda.com>
+In-Reply-To: <20201027180233.GF6756@twin.jikos.cz>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
-Content-Transfer-Encoding: 8bit
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9788 signatures=668682
+Content-Transfer-Encoding: 7bit
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9787 signatures=668682
 X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 spamscore=0 phishscore=0 bulkscore=0
- suspectscore=2 malwarescore=0 mlxlogscore=999 mlxscore=0 adultscore=0
+ suspectscore=0 malwarescore=0 mlxlogscore=999 mlxscore=0 adultscore=0
  classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2009150000
- definitions=main-2010290010
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9788 signatures=668682
+ definitions=main-2010280083
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9787 signatures=668682
 X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 lowpriorityscore=0 adultscore=0
- malwarescore=0 spamscore=0 clxscore=1015 mlxscore=0 suspectscore=2
+ malwarescore=0 spamscore=0 clxscore=1015 mlxscore=0 suspectscore=0
  priorityscore=1501 impostorscore=0 bulkscore=0 phishscore=0
  mlxlogscore=999 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2009150000 definitions=main-2010290010
+ engine=8.12.0-2009150000 definitions=main-2010280083
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-
-
-On 28/10/20 10:44 pm, Josef Bacik wrote:
-> On 10/28/20 9:26 AM, Anand Jain wrote:
->> Add round-robin read policy to route the read IO to the next device in 
->> the
->> round-robin order. The chunk allocation and thus the stripe-index follows
->> the order of free space available on devices. So to make the round-robin
->> effective it shall follow the devid order instead of the stripe-index
->> order.
+On 28/10/20 2:02 am, David Sterba wrote:
+> On Tue, Oct 27, 2020 at 09:52:11AM +0800, Anand Jain wrote:
 >>
->> Signed-off-by: Anand Jain <anand.jain@oracle.com>
->> ---
->> RFC: because I am not too sure if any workload or block layer
->> configurations shall suit round-robin read_policy.
 >>
->>   fs/btrfs/sysfs.c   |  2 +-
->>   fs/btrfs/volumes.c | 50 ++++++++++++++++++++++++++++++++++++++++++++++
->>   fs/btrfs/volumes.h |  2 ++
->>   3 files changed, 53 insertions(+), 1 deletion(-)
+>> On 24/10/20 1:04 am, David Sterba wrote:
+>>> On Thu, Oct 22, 2020 at 03:43:34PM +0800, Anand Jain wrote:
+>>>> v9: C coding style fixes in 1/3 and 3/3
+>>>
+>>> So the point of adding the sysfs knobs is to allow testing various
+>>> mirror selection strategies, what exactly was discussed in the past. Do
+>>> you have patches for that as well? It does not need to be final and
+>>> polished but at least give us something to test.
+>>>
 >>
->> diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
->> index d2a974e1a1c4..293311c79321 100644
->> --- a/fs/btrfs/sysfs.c
->> +++ b/fs/btrfs/sysfs.c
->> @@ -908,7 +908,7 @@ static bool btrfs_strmatch(const char *given, 
->> const char *golden)
->>   /* Must follow the order as in enum btrfs_read_policy */
->>   static const char * const btrfs_read_policy_name[] = { "pid", 
->> "latency",
->> -                               "device" };
->> +                               "device", "roundrobin" };
->>   static ssize_t btrfs_read_policy_show(struct kobject *kobj,
->>                         struct kobj_attribute *a, char *buf)
->> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
->> index 7ac675504051..fa1b1a3ebc87 100644
->> --- a/fs/btrfs/volumes.c
->> +++ b/fs/btrfs/volumes.c
->> @@ -5469,6 +5469,52 @@ int btrfs_is_parity_mirror(struct btrfs_fs_info 
->> *fs_info, u64 logical, u64 len)
->>       return ret;
->>   }
->> +struct stripe_mirror {
->> +    u64 devid;
->> +    int map;
->> +};
->> +
->> +static int btrfs_cmp_devid(const void *a, const void *b)
->> +{
->> +    struct stripe_mirror *s1 = (struct stripe_mirror *)a;
->> +    struct stripe_mirror *s2 = (struct stripe_mirror *)b;
->> +
->> +    if (s1->devid < s2->devid)
->> +        return -1;
->> +    if (s1->devid > s2->devid)
->> +        return 1;
->> +    return 0;
->> +}
->> +
->> +static int btrfs_find_read_round_robin(struct map_lookup *map, int 
->> first,
->> +                       int num_stripe)
->> +{
->> +    struct stripe_mirror stripes[4] = {0}; //4: for testing, works 
->> for now.
->> +    struct btrfs_fs_devices *fs_devices;
->> +    u64 devid;
->> +    int index, j, cnt;
->> +    int next_stripe;
->> +
->> +    index = 0;
->> +    for (j = first; j < first + num_stripe; j++) {
->> +        devid = map->stripes[j].dev->devid;
->> +
->> +        stripes[index].devid = devid;
->> +        stripes[index].map = j;
->> +
->> +        index++;
->> +    }
->> +
->> +    sort(stripes, num_stripe, sizeof(struct stripe_mirror),
->> +         btrfs_cmp_devid, NULL);
->> +
->> +    fs_devices = map->stripes[first].dev->fs_devices;
->> +    cnt = atomic_inc_return(&fs_devices->total_reads);
->> +    next_stripe = stripes[cnt % num_stripe].map;
+>> Sure. I just sent out the patchset [1]. It provides read_policy:
+>> latency, device, and round-robin.
+>>
+>> [1]
+>> https://patchwork.kernel.org/project/linux-btrfs/list/?series=371023
 > 
-> This is heavy handed for policy decisions, just do something like
+> Exporting more information from the devices would help us to decide but
+> is there anything we can do just with what we have? Or eventually add
+> our counters like for the in-flight requests or total bytes. The
+> intention is not to duplicate what block layer does as we need to
+> experiment with the stats and heuristics it's just for that purpose and
+> we don't have to rely on other subsystem patches.
 > 
-> stripe_nr = atomic_inc_return(&fs_devices->total_reds) % num_stripes;
-> return stripes[stripe_nr].map;
-> 
-> There's no reason to sort the stripes by devid every time we call this.  
-> Thanks,
 
-
-But that won't be round-robin at the device level, which I think we are
-trying to achieve. It shall be round-robin at the strip level. As
-stripe id isn't guaranteed to be on the same device across chunks.
-Because chunk allocation follows the device free space size order.
-
-But I agree the proposal in this patch is heavy. So I was thinking if we 
-could fix the chunk allocation to sort by devid instead of size.? Any idea?
+I could rewrote the latency patch without export of any new block layer 
+functions. Patchset v1 will soon be sent to the ML. I hope that
+shall address your concern.
 
 Thanks, Anand
-
-> 
-> Josef

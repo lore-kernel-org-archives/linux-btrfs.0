@@ -2,100 +2,107 @@ Return-Path: <SRS0=hfn9=ED=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-11.2 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham
+X-Spam-Status: No, score=-9.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 70FE1C55179
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Oct 2020 01:48:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8693DC55179
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Oct 2020 21:37:19 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 3F31622202
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Oct 2020 01:48:03 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 28A9224842
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Oct 2020 21:37:19 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="TS8Uueen"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726045AbgJ1Bi3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 27 Oct 2020 21:38:29 -0400
-Received: from mx2.suse.de ([195.135.220.15]:58100 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1832991AbgJ0XTc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Oct 2020 19:19:32 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 45F35ABE3;
-        Tue, 27 Oct 2020 23:19:30 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 10681DAF58; Wed, 28 Oct 2020 00:17:54 +0100 (CET)
-Date:   Wed, 28 Oct 2020 00:17:54 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v4 08/68] btrfs: inode: sink parameter @start and @len
- for check_data_csum()
-Message-ID: <20201027231754.GG6756@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        linux-btrfs@vger.kernel.org
-References: <20201021062554.68132-1-wqu@suse.com>
- <20201021062554.68132-9-wqu@suse.com>
- <20201027001305.GW6756@twin.jikos.cz>
- <bb49899c-c25a-a4e4-825c-4c8a2ea4b176@gmx.com>
+        id S1726898AbgJ1VhP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Oct 2020 17:37:15 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46414 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726551AbgJ1VhL (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 28 Oct 2020 17:37:11 -0400
+Received: from mail-pg1-x544.google.com (mail-pg1-x544.google.com [IPv6:2607:f8b0:4864:20::544])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4C805C0613CF
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2020 14:37:10 -0700 (PDT)
+Received: by mail-pg1-x544.google.com with SMTP id f38so600137pgm.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2020 14:37:10 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
+        h=subject:to:references:from:message-id:date:user-agent:mime-version
+         :in-reply-to:content-language:content-transfer-encoding;
+        bh=40vIDzbBJL2YG1BHjdtTlSOizvz0UYT83jysfRFhNbY=;
+        b=TS8UueenAjLD81BWZakHfIrlfzk+DA6sEB8mqKEKcIGAL7CvJp5QvS0ZDUYIUmlvuo
+         cbxoaRx0jhbc+CO3seT+9L48/iA6j7KoWU+4gzbMYZF+rQM+zC0Mrkfy+99V64EK1JAm
+         jXatGZ/J8M5HIGzQzO3cqoSBD9dW/w95BFgaJ2c9pln0JPaaBVIpopSuIMjV2MRlk27q
+         v4BTvriwbwiouwow1UO/5qj7oiUaxAOEXmDqAP/AlE7HJ1APOkZFkBskSmijOQDzfs8Y
+         OMt4QYLWAilndePGDUF95auPE2pzudaURn4ftlIVb2FVsEPvams7VMx5iac8CYUmclUI
+         eKbQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:to:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=40vIDzbBJL2YG1BHjdtTlSOizvz0UYT83jysfRFhNbY=;
+        b=OEA7yqMaf39IdoKI1tHiu3Lgws8i8L6JhsVv1nnCYBQtsfXAmIGCorsxcpUzlji8yX
+         Txl0cPYwT5pJ7tDk/rvTeBySAjmIZEebWbRI4A1qdwh5hzrKvMYS2fiDBnYja2jNe7hR
+         s5ObFADLEb0A1nHE12zjVFsF5Ksr9GTuYj5NSiFsptiXozGnNo7F6c1ABNN3FyFTNdHy
+         3wkm8WOEmWRZRMGe7+Yy4mkY+kf0mFTqPPfWprpWYz1wzmpfVHWk1dD6+ZvoLnH2rAom
+         Pi0OSRrFA0bkmGQbg5atwLrC8hYnf6HSHeKFLhzEDSZYnKhkxhIoSuA8WCgI10XjbWJS
+         e2jw==
+X-Gm-Message-State: AOAM5328rrQuerbSR031A5FHIk1332jRhWyJ3QFJYCQAAs+BEJJUx470
+        06CoWcADDgLNOL+wiZpRrnpNEHMd/WUskyBU
+X-Google-Smtp-Source: ABdhPJy1Vcphmfg7fNhbdgmk6F9Hm0b6qxw/PlQjOvJfckCcD5pFeT/qZjFGIH/bU2NSdv3w/Cwl/g==
+X-Received: by 2002:a0c:aa1e:: with SMTP id d30mr7257586qvb.24.1603888902478;
+        Wed, 28 Oct 2020 05:41:42 -0700 (PDT)
+Received: from [192.168.1.45] (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
+        by smtp.gmail.com with ESMTPSA id 129sm2800879qkf.62.2020.10.28.05.41.41
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 28 Oct 2020 05:41:41 -0700 (PDT)
+Subject: Re: [PATCH RFC 4/7] btrfs: trace, add event btrfs_read_policy
+To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+References: <cover.1603751876.git.anand.jain@oracle.com>
+ <e6e5c40113cd3e939441ab3ece823282049a596f.1603751876.git.anand.jain@oracle.com>
+ <eaf39974-65db-4a38-4342-f7dbea4d06bc@toxicpanda.com>
+ <9e2c88d0-b13a-d175-38e9-7cd0e802acf8@oracle.com>
+From:   Josef Bacik <josef@toxicpanda.com>
+Message-ID: <03a9ac44-7735-cc5e-fdd7-66ca2f849555@toxicpanda.com>
+Date:   Wed, 28 Oct 2020 08:41:40 -0400
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0)
+ Gecko/20100101 Thunderbird/78.4.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
+In-Reply-To: <9e2c88d0-b13a-d175-38e9-7cd0e802acf8@oracle.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <bb49899c-c25a-a4e4-825c-4c8a2ea4b176@gmx.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Oct 27, 2020 at 08:50:15AM +0800, Qu Wenruo wrote:
-> On 2020/10/27 上午8:13, David Sterba wrote:
-> > On Wed, Oct 21, 2020 at 02:24:54PM +0800, Qu Wenruo wrote:
-> >> For check_data_csum(), the page we're using is directly from inode
-> >> mapping, thus it has valid page_offset().
-> >>
-> >> We can use (page_offset() + pg_off) to replace @start parameter
-> >> completely, while the @len should always be sectorsize.
-> >>
-> >> Since we're here, also add some comment, as there are quite some
-> >> confusion in words like start/offset, without explaining whether it's
-> >> file_offset or logical bytenr.
-> >>
-> >> This should not affect the existing behavior, as for current sectorsize
-> >> == PAGE_SIZE case, @pgoff should always be 0, and len is always
-> >> PAGE_SIZE (or sectorsize from the dio read path).
-> >>
-> >> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> >> ---
-> >>  fs/btrfs/inode.c | 27 +++++++++++++++++++--------
-> >>  1 file changed, 19 insertions(+), 8 deletions(-)
-> >>
-> >> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> >> index 2a56d3b8eff4..24fbf2c46e56 100644
-> >> --- a/fs/btrfs/inode.c
-> >> +++ b/fs/btrfs/inode.c
-> >> @@ -2791,17 +2791,30 @@ void btrfs_writepage_endio_finish_ordered(struct page *page, u64 start,
-> >>  	btrfs_queue_work(wq, &ordered_extent->work);
-> >>  }
-> >>  
-> >> +/*
-> >> + * Verify the checksum of one sector of uncompressed data.
-> >> + *
-> >> + * @inode:	The inode.
-> >> + * @io_bio:	The btrfs_io_bio which contains the csum.
-> >> + * @icsum:	The csum offset (by number of sectors).
-> > 
-> > This is not true, it's the index to the checksum array, where size of
-> > the element is fs_info::csum_size. The offset can be calculated but it's
-> > not the thing that's passed as argument.
-
-> Isn't the offset by sectors the same?
-
-Offset by sectors reads as something expressed in sector-sized units.
+On 10/28/20 4:59 AM, Anand Jain wrote:
+> On 28/10/20 2:22 am, Josef Bacik wrote:
+>> On 10/26/20 7:55 PM, Anand Jain wrote:
+>>> This patch adds trace event btrfs_read_policy, which is common to all the
+>>> read policies.
+>>>
+>>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+>>> ---
+>>>   fs/btrfs/volumes.c           | 28 ++++++++++++++++++++++++++--
+>>>   include/trace/events/btrfs.h | 20 ++++++++++++++++++++
+>>>   2 files changed, 46 insertions(+), 2 deletions(-)
+>>
+>> Noooooo this isn't the way we do this.  Simply make a trace class with all the 
+>> variations, and then add individual trace events that inherit from the class 
+>> that print out the appropriate values.  Thanks,
+>>
 > 
-> If it's 1, it means we need to skip 1 csum which is in csum_size.
+> I added this mainly to debug the inflight thing. I was kind of not so
+> successful in finding a relation between latency, queue depth, and
+> inflight. As it is gone now, I doubt if we still need tracing. I am ok
+> to drop this. Or we could add when we start digging anything around
+> this?
 
-Yes, so you see the difference sector vs csum_size. I understand what
-you meant by that but reading the comment without going to the code can
-confuse somebody.
+If you were just using it for debugging then I say we just drop it and add 
+something later if we need it.  Thanks,
+
+Josef

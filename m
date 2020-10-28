@@ -2,84 +2,76 @@ Return-Path: <SRS0=hfn9=ED=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,
+X-Spam-Status: No, score=-2.1 required=3.0 tests=BAYES_00,DATE_IN_PAST_06_12,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
 	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F2752C4363A
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Oct 2020 22:15:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CB33EC4363A
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Oct 2020 22:17:12 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id B36D524171
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Oct 2020 22:15:54 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7157024171
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Oct 2020 22:17:12 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="lfr5yp/5"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731295AbgJ1WPR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 28 Oct 2020 18:15:17 -0400
-Received: from kvm5.telegraphics.com.au ([98.124.60.144]:51986 "EHLO
-        kvm5.telegraphics.com.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1731268AbgJ1WPG (ORCPT
+        id S1731475AbgJ1WRM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Oct 2020 18:17:12 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53444 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1731458AbgJ1WRE (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Oct 2020 18:15:06 -0400
-Received: from localhost (localhost.localdomain [127.0.0.1])
-        by kvm5.telegraphics.com.au (Postfix) with ESMTP id A654929A58;
-        Tue, 27 Oct 2020 23:26:19 -0400 (EDT)
-Date:   Wed, 28 Oct 2020 14:26:12 +1100 (AEDT)
-From:   Finn Thain <fthain@telegraphics.com.au>
-To:     Tom Rix <trix@redhat.com>
-cc:     linux-kernel@vger.kernel.org, clang-built-linux@googlegroups.com,
-        linux-pm@vger.kernel.org, linux-crypto@vger.kernel.org,
-        qat-linux@intel.com, amd-gfx@lists.freedesktop.org,
-        dri-devel@lists.freedesktop.org, linux-iio@vger.kernel.org,
-        linux-rdma@vger.kernel.org, linux-mmc@vger.kernel.org,
-        netdev@vger.kernel.org, linux-mediatek@lists.infradead.org,
-        linux-amlogic@lists.infradead.org,
-        linux-stm32@st-md-mailman.stormreply.com,
-        linux-rtc@vger.kernel.org, linux-scsi@vger.kernel.org,
-        linux-aspeed@lists.ozlabs.org, linux-samsung-soc@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-nfs@vger.kernel.org,
-        tipc-discussion@lists.sourceforge.net, alsa-devel@alsa-project.org,
-        linux-rpi-kernel@lists.infradead.org, linux-tegra@vger.kernel.org
-Subject: Re: [RFC] clang tooling cleanups
-In-Reply-To: <20201027164255.1573301-1-trix@redhat.com>
-Message-ID: <alpine.LNX.2.23.453.2010281344120.31@nippy.intranet>
-References: <20201027164255.1573301-1-trix@redhat.com>
+        Wed, 28 Oct 2020 18:17:04 -0400
+Received: from mail-qk1-x731.google.com (mail-qk1-x731.google.com [IPv6:2607:f8b0:4864:20::731])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 62BEFC0613D1
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2020 15:17:03 -0700 (PDT)
+Received: by mail-qk1-x731.google.com with SMTP id r7so532512qkf.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2020 15:17:03 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:from:date:message-id:subject:to;
+        bh=UPznccgkyrd/L+kMdOFK82Mz1idNa4sbOJxrYVh/hIw=;
+        b=lfr5yp/5zNP5FcNauZpNRDrM4Hv0Ajt9iNdGKUPwdNatOvZXs+I1xq1/YITbDdZ/c0
+         XZ9X8Xmy6xZdTML64B4ulFNSaCw22F6B+h7toECRtVHqSGtLFVYsOY+DIccYLA/7Ckxp
+         2LE1PpMB3p9WJmzjaOEvlDj2lb8x7+CrzvFw/s8PWZi24YLXEmh3JCyI4FC8Nij2a/wI
+         ufF41RX7zbPEn/r1pKmyW6qSRYIJpJ+QBLv3EE+r0qYAkY6L6mTWcie+uUoGYmurzQYj
+         bTSJEo9msFT4IABXEv91hecz81nirQq/hw9SjoN9g3upel94ePZDyx4j+GxjBO0MEJ+E
+         au9w==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:from:date:message-id:subject:to;
+        bh=UPznccgkyrd/L+kMdOFK82Mz1idNa4sbOJxrYVh/hIw=;
+        b=Rlk/eHjuWaygYhD+tAOcz26cXdG96e5vpc4CEd4RpQfahUq9YNzoiPKMkdxQznDNEF
+         IapQLjftPq3NRItU58V6gHQUaq50043X2NtTARaxjaMwWvy6PcSZ6hA6s132u4j/DYjL
+         PInubtgBEV3VOAZ8O9iOsfUgsOjP4cp+iKix8hLTO/GkbHMAWJ8MY1D7ajRIb/0yLcHU
+         5JNQSlujYRHRrfUuWScZ9P60V59yJhw8iME4mLxYz5Uub8ORl5IO4OsA1wmq1gv4MYP+
+         nMBexzOGfpbMyIELCBpR/von5Fi7K2tvEvnq0gFOnC09n7wBwVE+FTJY4kJcDx+Ds/eq
+         dawA==
+X-Gm-Message-State: AOAM530aCaY9QLypmn8wQ24ogPZvWfVpAWSYR88uZeA587uS9NvEujQa
+        tCatd53BkIPuN9w0WOH7oJMNtbo+86cSnyqMq5u7KT7R
+X-Google-Smtp-Source: ABdhPJyDaSa08aiGh8OukK0Et9LtpkHAVCbt6TlMJiXkpUj02on6vhfWId/TcnW1DvH6kkYixGgwt++t8AQgrS7q0JA=
+X-Received: by 2002:ac8:71cc:: with SMTP id i12mr6446142qtp.262.1603884355809;
+ Wed, 28 Oct 2020 04:25:55 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+From:   Ian Kumlien <ian.kumlien@gmail.com>
+Date:   Wed, 28 Oct 2020 12:25:45 +0100
+Message-ID: <CAA85sZtGM1Gia7FjunVN4+r4uikQeAPTYAU53QCcT=QQTyt1bg@mail.gmail.com>
+Subject: questions about qemu io_uring/dio
+To:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+Hi,
 
-On Tue, 27 Oct 2020, trix@redhat.com wrote:
+From what i understand, DIO is supposed to be supported...
 
-> This rfc will describe
-> An upcoming treewide cleanup.
-> How clang tooling was used to programatically do the clean up.
-> Solicit opinions on how to generally use clang tooling.
-> 
+But when i switched qemu to use io_uring it seems like the filesystems
+on the VM:s get silently corrupted... (they also run btrfs, and it's
+thus detected)
 
-This tooling is very impressive. It makes possible an idea that I had a 
-while ago, to help make code review more efficient. It works like this. 
+The system is mounted as nodatacow, I can't set +C with chattr so I
+assume that the images are actually noncow
 
-Suppose a patch, p, is the difference between the new tree, n, and the old 
-tree, o. That is, p = n - o.
-
-Now let clang-tidy be the transformation 't'. This gets you a much more 
-readable patch submission, P = t(n) - t(o).
-
-The only difficulty is that, if I submit P intead of p then 'git am' will 
-probably reject it. This is solved by a little tooling around git, such 
-that, should a patch P fail to apply, the relevant files are automatically 
-reformatted with the officially endorsed transformation t, to generate a 
-minimal cleanup patch, such that P can be automatically applied on top.
-
-If the patch submission process required* that every patch submission was 
-generated like P and not like p, it would immediately eliminate all 
-clean-up patches from the workload of all reviewers, and also make the 
-reviewers' job easier because all submissions are now formatted correctly, 
-and also avoid time lost to round-trips, such as, "you can have a 
-reviewed-by if you respin to fix some minor style issues".
-
-* Enforcing this, e.g. with checkpatch, is slightly more complicated, but 
-it works the same way: generate a minimal cleanup patch for the relevant 
-files, apply the patch-to-be-submitted, and finally confirm that the 
-modified files are unchanged under t.
+Any ideas?

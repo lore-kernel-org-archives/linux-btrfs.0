@@ -2,163 +2,119 @@ Return-Path: <SRS0=/Od+=EE=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.3 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,NICE_REPLY_A,SIGNED_OFF_BY,SPF_HELO_NONE,
-	SPF_PASS,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-12.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	NICE_REPLY_A,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 82999C4363A
-	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 01:14:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3767EC55179
+	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 01:22:03 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 2C5962072E
-	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 01:14:06 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E366720731
+	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 01:22:02 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="s6Gnhm9F"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="z20uBiUI"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2391027AbgJ2BOF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 28 Oct 2020 21:14:05 -0400
-Received: from aserp2120.oracle.com ([141.146.126.78]:44170 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1730069AbgJ2BMk (ORCPT
+        id S1729648AbgJ1WE4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Oct 2020 18:04:56 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50702 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1729482AbgJ1WBe (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Oct 2020 21:12:40 -0400
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09T19Ldh043272;
-        Thu, 29 Oct 2020 01:12:35 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to : cc :
- references : from : message-id : date : mime-version : in-reply-to :
- content-type : content-transfer-encoding; s=corp-2020-01-29;
- bh=VSUpzfNIPNF9rXToH4/MHLd8LfGZSGWrVsxfBxrSnRs=;
- b=s6Gnhm9F+UzGnbRBVYe6/ZpbMYN0hwWAKrDawO2Di99OXXmVEHTO0AvybHZ+j7icn97Y
- gBiBBxMyqX+TIXGK/FwDs192HOppfI7C6aB6ylolT6/I+fs5ZRPG4GNyC2IBjCReOIhX
- 1SfrnG98Yzw7OogrQnPSPK+IPx2jEaoPZzoFVFwTWHEPvGq19b+Vlv2Wkr2clKuPj2sT
- 0/OUH2ouZrU4fF4Mhum6z+C59VlcoNdo70SybL0LFcY4u43JmL3zGgy9If+31p637CQJ
- e+B0Q/S26xG77baAo9n+sZmqUV2pXJF3N67jqmb9yBeOyiPmleu2APtf5KvQYjaB9pm1 6Q== 
-Received: from userp3020.oracle.com (userp3020.oracle.com [156.151.31.79])
-        by aserp2120.oracle.com with ESMTP id 34cc7m2bqh-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
-        Thu, 29 Oct 2020 01:12:35 +0000
-Received: from pps.filterd (userp3020.oracle.com [127.0.0.1])
-        by userp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09T1ANhV069637;
-        Thu, 29 Oct 2020 01:12:34 GMT
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by userp3020.oracle.com with ESMTP id 34cx1sn7g9-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Thu, 29 Oct 2020 01:12:34 +0000
-Received: from abhmp0009.oracle.com (abhmp0009.oracle.com [141.146.116.15])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id 09T1CYv2003780;
-        Thu, 29 Oct 2020 01:12:34 GMT
-Received: from [192.168.1.102] (/39.109.231.106)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Wed, 28 Oct 2020 18:12:33 -0700
-Subject: Re: [PATCH 2/4] btrfs: introduce new device-state read_preferred
-To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org
-Cc:     dsterba@suse.com
-References: <cover.1603884539.git.anand.jain@oracle.com>
- <b2cfd7bfb0ff90063196cb38b4689fb8d2ac9986.1603884539.git.anand.jain@oracle.com>
- <72a5f7b5-1412-f82d-a22a-5fddcaa47748@toxicpanda.com>
-From:   Anand Jain <anand.jain@oracle.com>
-Message-ID: <b7305a68-322a-0f25-fc3e-081c7b6db501@oracle.com>
-Date:   Thu, 29 Oct 2020 09:12:29 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.4.0
+        Wed, 28 Oct 2020 18:01:34 -0400
+Received: from mail-pl1-x644.google.com (mail-pl1-x644.google.com [IPv6:2607:f8b0:4864:20::644])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 22BCAC0613CF
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2020 15:01:35 -0700 (PDT)
+Received: by mail-pl1-x644.google.com with SMTP id o9so289647plx.10
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2020 15:01:35 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
+        h=subject:to:references:from:message-id:date:user-agent:mime-version
+         :in-reply-to:content-language:content-transfer-encoding;
+        bh=VNBscBROqyGL0f4jid9YWJItxWCHSstm95+t7n1tat0=;
+        b=z20uBiUIlqUK+0INnVwk08250N/wIHsu5AbNOTA3NamCfaOo4klCtuKYenC7dTCBHP
+         CJfoM036xdjcqvvfLlSxH8EHSu03yYEoaP5TwtQgU8C27wzGlKvbha4RMf4EmVIrOUUQ
+         uZQJAWh+yQJM9X9bMxUK2k9iXCnbIrCNpYHbtgoo+GHwl7L4T1F/S5RcPceovX6L7kia
+         ygjtSZI4wItJSU0/H+/4MynrEjZZGlU8z+zo+ZZtinyYLdP5OlyRmG9tM8I23zn6bJLl
+         urBT9Ujv/THuVPhTR7uBH2B4nyy6Pfr1HRIJZEwGxV5kRBLp4RYA5t/UuqAL+lb0xxcI
+         GeqA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:to:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=VNBscBROqyGL0f4jid9YWJItxWCHSstm95+t7n1tat0=;
+        b=M7jimTI1xQUYr/FBSTqrhI+YdHKcdEtF3i6AMEtq2Sk6ewjIeqjdldLh9jrh2BccNj
+         QyWu9GDMxFEJef2DpGWwH/bRL9BPKRPttBGN3r9yOqiHg4pKzz+vdqBep9apqs3Gr6cP
+         YYcHpZ7JaNIcXxF/OblZah4Bc7KC4OWN9hPYnNV0Pt8xu+0ePrzlIrg4Ao8Fxypfvkyo
+         CkVWiEOzm0x3IhNXjgeG43pqkOgVXfXu4kKwTWtOqWU57/+oYkvhd5aAI+NwLZEVkpNE
+         BtbSHJLE4AMiQAX1CLbsezEzSj4HxP4iL0Y/OoxFNI6DLhMwuM4B2tqjbZY+foV405kH
+         C2OA==
+X-Gm-Message-State: AOAM531kUOBduu4laHNPuJH0sbgO3BG/QYclKP4fnH9gVCRidgBY6id5
+        z5NWRgqdCic826Mso7ip2tDdbEVbvkMEIVHa
+X-Google-Smtp-Source: ABdhPJz8oMW3thxsxsUJ2b2Um2TqGoFetLlMapjqSqj0yeAxI7xjtrIIvHk/RQQHIt9fnV98ANEqLg==
+X-Received: by 2002:a0c:b65b:: with SMTP id q27mr7654679qvf.8.1603893152640;
+        Wed, 28 Oct 2020 06:52:32 -0700 (PDT)
+Received: from [192.168.1.210] (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
+        by smtp.gmail.com with ESMTPSA id k15sm2888175qtq.11.2020.10.28.06.52.31
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 28 Oct 2020 06:52:31 -0700 (PDT)
+Subject: Re: [PATCH v5 02/10] btrfs: cleanup all orphan inodes on ro->rw
+ remount
+To:     Boris Burkov <boris@bur.io>, linux-btrfs@vger.kernel.org,
+        kernel-team@fb.com
+References: <cover.1603828718.git.boris@bur.io>
+ <56e0a8c18483c395d20fc6c69a42740d19742eb1.1603828718.git.boris@bur.io>
+From:   Josef Bacik <josef@toxicpanda.com>
+Message-ID: <c59bbda1-4767-05f7-b71a-b988b3feae1a@toxicpanda.com>
+Date:   Wed, 28 Oct 2020 09:52:30 -0400
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.10.0
 MIME-Version: 1.0
-In-Reply-To: <72a5f7b5-1412-f82d-a22a-5fddcaa47748@toxicpanda.com>
+In-Reply-To: <56e0a8c18483c395d20fc6c69a42740d19742eb1.1603828718.git.boris@bur.io>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
-Content-Transfer-Encoding: 8bit
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9788 signatures=668682
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 spamscore=0 phishscore=0 bulkscore=0
- suspectscore=0 malwarescore=0 mlxlogscore=999 mlxscore=0 adultscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2009150000
- definitions=main-2010290003
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9788 signatures=668682
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 lowpriorityscore=0 adultscore=0
- malwarescore=0 spamscore=0 clxscore=1015 mlxscore=0 suspectscore=0
- priorityscore=1501 impostorscore=0 bulkscore=0 phishscore=0
- mlxlogscore=999 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2009150000 definitions=main-2010290003
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-
-
-On 28/10/20 10:37 pm, Josef Bacik wrote:
-> On 10/28/20 9:26 AM, Anand Jain wrote:
->> This is a preparatory patch and introduces a new device flag
->> 'read_preferred', RW-able using sysfs interface.
->>
->> Signed-off-by: Anand Jain <anand.jain@oracle.com>
->> ---
->>   fs/btrfs/sysfs.c   | 55 ++++++++++++++++++++++++++++++++++++++++++++++
->>   fs/btrfs/volumes.h |  1 +
->>   2 files changed, 56 insertions(+)
->>
->> diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
->> index 88cbf7b2edf0..52b4c9bef673 100644
->> --- a/fs/btrfs/sysfs.c
->> +++ b/fs/btrfs/sysfs.c
->> @@ -1413,11 +1413,66 @@ static ssize_t 
->> btrfs_devinfo_writeable_show(struct kobject *kobj,
->>   }
->>   BTRFS_ATTR(devid, writeable, btrfs_devinfo_writeable_show);
->> +static ssize_t btrfs_devinfo_read_pref_show(struct kobject *kobj,
->> +                        struct kobj_attribute *a, char *buf)
->> +{
->> +    int val;
->> +    struct btrfs_device *device = container_of(kobj, struct 
->> btrfs_device,
->> +                           devid_kobj);
->> +
->> +    val = !!test_bit(BTRFS_DEV_STATE_READ_PREFERRED, 
->> &device->dev_state);
->> +
->> +    return snprintf(buf, PAGE_SIZE, "%d\n", val);
->> +}
->> +
->> +static ssize_t btrfs_devinfo_read_pref_store(struct kobject *kobj,
->> +                         struct kobj_attribute *a,
->> +                         const char *buf, size_t len)
->> +{
->> +    int ret;
->> +    unsigned long val;
->> +    struct btrfs_device *device;
->> +
->> +    ret = kstrtoul(skip_spaces(buf), 0, &val);
->> +    if (ret)
->> +        return ret;
->> +
->> +    if (val != 0 && val != 1)
->> +        return -EINVAL;
->> +
->> +    /*
->> +     * lock is not required, the btrfs_device struct can't be freed 
->> while
->> +     * its kobject btrfs_device::devid_kobj is still open.
->> +     */
->> +    device = container_of(kobj, struct btrfs_device, devid_kobj);
->> +
->> +    if (val &&
->> +        ! test_bit(BTRFS_DEV_STATE_READ_PREFERRED, 
->> &device->dev_state)) {
->> +
+On 10/27/20 5:07 PM, Boris Burkov wrote:
+> When we mount a rw file system, we clean the orphan inodes in the
+> filesystem trees, and also on the tree_root and fs_root. However, when
+> we remount a ro file system rw, we only clean the former. Move the calls
+> to btrfs_orphan_cleanup() on tree_root and fs_root to the shared rw
+> mount routine to effectively add them on ro->rw remount.
 > 
-> No extra space between the ! test_bit, and you don't need these extra 
-> newlines.
+> Signed-off-by: Boris Burkov <boris@bur.io>
+> ---
+>   fs/btrfs/disk-io.c | 17 ++++++++---------
+>   1 file changed, 8 insertions(+), 9 deletions(-)
 > 
-  Will fix.
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index bff7a3a7be18..95b9cc5db397 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -2826,6 +2826,14 @@ int btrfs_mount_rw(struct btrfs_fs_info *fs_info)
+>   	if (ret)
+>   		goto out;
+>   
+> +	down_read(&fs_info->cleanup_work_sem);
+> +	if ((ret = btrfs_orphan_cleanup(fs_info->fs_root)) ||
+> +	    (ret = btrfs_orphan_cleanup(fs_info->tree_root))) {
+> +		up_read(&fs_info->cleanup_work_sem);
+> +		goto out;
+> +	}
+> +	up_read(&fs_info->cleanup_work_sem);
 
-> I sort of wonder what happens if we have multiple SSD's with multiple 
-> slow disks, we may want to load balance between the SSD's and set the 
-> two SSD's to preferred.  But typing it out made me think its not really 
-> related to this change, so don't worry too much about it, just thoughts 
-> for the future.  Thanks,
-> 
+This triggers
 
-  That's true. I had the same challenges when I wrote this. Then later
-  it lead to have device groups, which is for next developments.
+ERROR:ASSIGN_IN_IF: do not use assignment in if condition
+#10: FILE: fs/btrfs/disk-io.c:2910:
++       if ((ret = btrfs_orphan_cleanup(fs_info->fs_root)) ||
 
-Thanks, Anand
+total: 1 errors, 0 warnings, 29 lines checked
 
-> Josef
+I'm not sure I agree with this check, Dave what's your opinion?  Thanks,
+
+Josef

@@ -2,154 +2,120 @@ Return-Path: <SRS0=/Od+=EE=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.6 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A0455C55179
-	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 07:45:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 65ACEC55178
+	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 07:46:15 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 413E021534
-	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 07:45:06 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="mKeJYuOT"
+	by mail.kernel.org (Postfix) with ESMTP id 20E09214DB
+	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 07:46:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732988AbgJ2HpC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 29 Oct 2020 03:45:02 -0400
-Received: from userp2120.oracle.com ([156.151.31.85]:60548 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1732929AbgJ2HpA (ORCPT
+        id S1733283AbgJ2HqN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 29 Oct 2020 03:46:13 -0400
+Received: from out20-61.mail.aliyun.com ([115.124.20.61]:44541 "EHLO
+        out20-61.mail.aliyun.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1733208AbgJ2HqI (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 29 Oct 2020 03:45:00 -0400
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09T7dOi2123915;
-        Thu, 29 Oct 2020 07:44:55 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : from : to :
- cc : references : message-id : date : mime-version : in-reply-to :
- content-type : content-transfer-encoding; s=corp-2020-01-29;
- bh=gbu5ZBKxWLoxcXeHNDhrUJqg29RsgLQqREY7Qb1Xkp8=;
- b=mKeJYuOTBkksZlAPik0gvIbJO6n8tqVrVz9n8B+VtuQTzFpcMV4EK1P6zYrc0ol8sOu/
- /X1hY03S6KV7H+fmp7JVrsZDyITnEJw/W9hi3gDVco372F60rAcxldmKUFeCjGrvXIF7
- Ct/s0LLNoa5bIK14uURRHej6SKrFc1yjXN4NtUPyMbH2kwxEVCrRx5+8N6FgguYyc1E0
- StS3QtS87KFuqjfCeb3fud6IqPlmPFBABjFyQBViCcnyHJXkJIcqLbOL5Bf/ZZ5KD/Eh
- jIWp1cyMH0jTUhRArej+vAKk5hEBqXX7mhs0JhrPLAL28TcFyJ+2az/2F+wQoZ1aH42f qQ== 
-Received: from userp3020.oracle.com (userp3020.oracle.com [156.151.31.79])
-        by userp2120.oracle.com with ESMTP id 34dgm48up1-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
-        Thu, 29 Oct 2020 07:44:55 +0000
-Received: from pps.filterd (userp3020.oracle.com [127.0.0.1])
-        by userp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09T7eNHI155897;
-        Thu, 29 Oct 2020 07:44:55 GMT
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by userp3020.oracle.com with ESMTP id 34cx1swsv0-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Thu, 29 Oct 2020 07:44:54 +0000
-Received: from abhmp0014.oracle.com (abhmp0014.oracle.com [141.146.116.20])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 09T7isU5028505;
-        Thu, 29 Oct 2020 07:44:54 GMT
-Received: from [192.168.1.102] (/39.109.231.106)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Thu, 29 Oct 2020 00:44:53 -0700
-Subject: Re: [PATCH v1 0/4] btrfs: read_policy types latency, device and
- round-robin
-From:   Anand Jain <anand.jain@oracle.com>
-To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org
-Cc:     dsterba@suse.com
-References: <cover.1603884539.git.anand.jain@oracle.com>
- <ac428935-c20c-d02d-6678-d88cc5eb4b63@toxicpanda.com>
- <da5c6fc8-95ef-6272-ea2a-4929fc32c69c@oracle.com>
-Message-ID: <b45deeac-dd13-3a38-4bdf-190cfd16fe83@oracle.com>
-Date:   Thu, 29 Oct 2020 15:44:50 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.4.0
+        Thu, 29 Oct 2020 03:46:08 -0400
+X-Alimail-AntiSpam: AC=CONTINUE;BC=0.05600743|-1;CH=green;DM=|CONTINUE|false|;DS=CONTINUE|ham_regular_dialog|0.0726242-0.000948886-0.926427;FP=0|0|0|0|0|-1|-1|-1;HT=ay29a033018047190;MF=wangyugui@e16-tech.com;NM=1;PH=DS;RN=3;RT=3;SR=0;TI=SMTPD_---.IptkHuJ_1603949757;
+Received: from T640.e16-tech.com(mailfrom:wangyugui@e16-tech.com fp:SMTPD_---.IptkHuJ_1603949757)
+          by smtp.aliyun-inc.com(10.147.42.241);
+          Thu, 29 Oct 2020 13:35:58 +0800
+From:   wangyugui <wangyugui@e16-tech.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     kreijack@libero.it, wangyugui <wangyugui@e16-tech.com>
+Subject: [PATCH 1/4] btrfs: add tier score to device
+Date:   Thu, 29 Oct 2020 13:35:53 +0800
+Message-Id: <20201029053556.10619-2-wangyugui@e16-tech.com>
+X-Mailer: git-send-email 2.29.1
+In-Reply-To: <20201029053556.10619-1-wangyugui@e16-tech.com>
+References: <20201029053556.10619-1-wangyugui@e16-tech.com>
 MIME-Version: 1.0
-In-Reply-To: <da5c6fc8-95ef-6272-ea2a-4929fc32c69c@oracle.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
 Content-Transfer-Encoding: 8bit
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9788 signatures=668682
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 spamscore=0 phishscore=0 bulkscore=0
- suspectscore=0 malwarescore=0 mlxlogscore=999 mlxscore=0 adultscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2009150000
- definitions=main-2010290054
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9788 signatures=668682
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 lowpriorityscore=0 impostorscore=0
- adultscore=0 bulkscore=0 spamscore=0 phishscore=0 mlxlogscore=999
- suspectscore=0 clxscore=1015 mlxscore=0 malwarescore=0 priorityscore=1501
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2009150000
- definitions=main-2010290054
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+We use a single score value to define the tier level of a device.
+Different score means different tier, and bigger is faster.
+    DAX device(dax=1)
+    SSD device(rotational=0)
+    HDD device(rotational=1)
+TODO/FIXME: FIXME: detect bus(DIMM, NVMe, SCSI, SATA, Virtio, ...)
+TODO/FIXME: user-assigned property(refactoring the coming 'read_preferred' property?) to
+            set to the max score for some not-well-supported case.
 
+In most case, only 1 or 2 tiers are used at the same time, so we group them into
+top tier and other tier(s).
 
-On 29/10/20 9:08 am, Anand Jain wrote:
-> 
-> 
-> On 28/10/20 10:32 pm, Josef Bacik wrote:
->> On 10/28/20 9:25 AM, Anand Jain wrote:
->>> Based on misc-next
->>>
->>> Depends on the following 3 patches in the mailing list.
->>>    btrfs: add btrfs_strmatch helper
->>>    btrfs: create read policy framework
->>>    btrfs: create read policy sysfs attribute, pid
->>>
->>> v1:
->>> Drop tracing patch
->>> Drop factoring inflight command
->>>    Here below is the performance differences, when inflight is used, 
->>> it pushed
->>>    few commands to the other device, so losing the potential merges.
->>>
->>>    with inflight:
->>>     READ: bw=195MiB/s (204MB/s), 195MiB/s-195MiB/s (204MB/s-204MB/s), 
->>> io=15.6GiB (16.8GB), run=82203-82203msec
->>> sda 256054
->>> sdc 20
->>>
->>>    without inflight:
->>>     READ: bw=192MiB/s (202MB/s), 192MiB/s-192MiB/s (202MB/s-202MB/s), 
->>> io=15.6GiB (16.8GB), run=83231-83231msec
->>> sda 141006
->>> sdc 0
->>>
->>
->> What's the baseline?  I think 3mib/s is not that big of a tradeoff for 
->> complexity, but if baseline is like 190mib/s then maybe its worth it. 
->> If baseline is 90mib/s then I say it's not worth the inflight.  Thanks,
-> 
->   Oh no I have to rerun the test cases here. As far as I remember
->   without inflight was better than with inflight. Because with
->   inflight there were fewer merges leading to more read IOs.
-> 
->   Will rerun and send the data.
-> 
+Signed-off-by: wangyugui <wangyugui@e16-tech.com>
+---
+ fs/btrfs/volumes.c | 18 ++++++++++++++++++
+ fs/btrfs/volumes.h |  5 +++++
+ 2 files changed, 23 insertions(+)
 
-<raid1>
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 58b9c41..efffcbc 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -608,6 +608,22 @@ static int btrfs_free_stale_devices(const char *path,
+ 	return ret;
+ }
+ 
++/*
++ * Get the tier score to the device, bigger score is faster.
++ * FIXME: detect bus(DIMM, NVMe, SCSI, SATA, Virtio, ...)
++ * FIXME: detect media inside(SLC/MLC of SSD, SMR/PMR of HDD, ...)
++ * FIXME: user-assigned property to set to max score for some complex case.
++ */
++static void dev_get_tier_score(struct btrfs_device *device, struct request_queue *q)
++{
++	if (blk_queue_dax(q))
++		device->tier_score = 50;
++	else if (blk_queue_nonrot(q))
++		device->tier_score = 10;
++	else
++		device->tier_score = 0;
++}
++
+ /*
+  * This is only used on mount, and we are protected from competing things
+  * messing with our fs_devices by the uuid_mutex, thus we do not need the
+@@ -660,6 +676,7 @@ static int btrfs_open_one_device(struct btrfs_fs_devices *fs_devices,
+ 	}
+ 
+ 	q = bdev_get_queue(bdev);
++	dev_get_tier_score(device,q);
+ 	if (!blk_queue_nonrot(q))
+ 		fs_devices->rotating = true;
+ 
+@@ -2590,6 +2607,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
+ 
+ 	atomic64_add(device->total_bytes, &fs_info->free_chunk_space);
+ 
++	dev_get_tier_score(device,q);
+ 	if (!blk_queue_nonrot(q))
+ 		fs_devices->rotating = true;
+ 
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index bf27ac0..cf426ec 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -138,6 +138,11 @@ struct btrfs_device {
+ 	struct completion kobj_unregister;
+ 	/* For sysfs/FSID/devinfo/devid/ */
+ 	struct kobject devid_kobj;
++
++	/* Storage tier score, bigger score is faster.
++	 * In most case, only 1 or 2 tiers are used at the same time, so we group them
++	 * into top tier and other tier(s). */
++	u8 tier_score;
+ };
+ 
+ /*
+-- 
+2.29.1
 
-With inflight: (the inflight patches were in the RFC patchset):
-pid [latency] device roundrobin ( 00)
-    READ: bw=40.3MiB/s (42.3MB/s), 40.3MiB/s-40.3MiB/s 
-(42.3MB/s-42.3MB/s), io=15.6GiB (16.8GB), run=396546-396546msec
-vdb 363575
-sda 200771
-
-
-Without inflight:
-pid [latency] device roundrobin ( 00)
-    READ: bw=41.7MiB/s (43.8MB/s), 41.7MiB/s-41.7MiB/s 
-(43.8MB/s-43.8MB/s), io=15.6GiB (16.8GB), run=383274-383274msec
-vdb 256238
-sda 0
-
-Without inflight is better due to lesser IO.
-
-Thanks, Anand
-
-> Thanks, Anand
-> 
->>
->> Josef

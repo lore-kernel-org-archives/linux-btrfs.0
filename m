@@ -2,91 +2,154 @@ Return-Path: <SRS0=/Od+=EE=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.6 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4189FC2D0A3
-	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 07:44:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A0455C55179
+	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 07:45:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id EAB89214DB
-	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 07:44:19 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 413E021534
+	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 07:45:06 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="GwBiD7G+"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="mKeJYuOT"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730148AbgJ2HkD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 29 Oct 2020 03:40:03 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55378 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727313AbgJ2HYs (ORCPT
+        id S1732988AbgJ2HpC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 29 Oct 2020 03:45:02 -0400
+Received: from userp2120.oracle.com ([156.151.31.85]:60548 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1732929AbgJ2HpA (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 29 Oct 2020 03:24:48 -0400
-Received: from mail-wr1-x436.google.com (mail-wr1-x436.google.com [IPv6:2a00:1450:4864:20::436])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 01C0EC0613A9
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2020 21:34:26 -0700 (PDT)
-Received: by mail-wr1-x436.google.com with SMTP id i1so1329350wro.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2020 21:34:26 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=iIafFTKTCpoQpjE3obAjnh3fVBd0XVCAififu+byI4M=;
-        b=GwBiD7G+FUYhP+AMKNM5iIBgQ1b6MjU8DR4jVZdnkqIxyXqjU87uXSLE36Bws6Z4OA
-         8g3A300ySzdbq6u+UyD4gaLQVEa5P5mXgoh+2ZLNrcxrq0r95r7LKoj2pngxawO37wdw
-         IZ3OGO0nNIFmKhzBqST4KXPhO6W24c+bqYMpKkkJ+t6SOHL3NlVqksEmfY6+WRGAzL3Q
-         NmUstuKFJF6E2YvdKZbM12W4vE7VNiV53/tPOM2Q1lQ5efI7Bi8xpQMDPDNvinoejwuu
-         EKQiWRF9y2g9ceTMSZ8x8AgkfM15bkPnUq2K2U5euf+6CW4z88f8ae0LDdtpKymyezK9
-         Ic0A==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=iIafFTKTCpoQpjE3obAjnh3fVBd0XVCAififu+byI4M=;
-        b=EtIxUMXJ6O8qI4GIA77G02lZHrDj1RJGvn1udgH4AsxA72A8fPlfTZaOrLWTIBnVbv
-         kOu3F1RfVc8paqkgknR9xS6j4cOSpe0aAk8nNDlkhVUfX2dpXEtiwshnflBVK4aZ2mF2
-         oB8cdd6Q+FAX5+VH0AzoWCCGF0q3YkDrQfFy94mXXldI5P8XDfpBe0FURmo4QTJrVWqL
-         b5am+tpK3vtLZu5qkgDM7ql3sWBBPE3vtw0rKTkCb83pxH3+yQRE2RY9J/AKV0DV0g1U
-         kAUSohBGh3bRCGxPXQvty15g8XrqLpwEZOuVcjdG1mqx51MJrvi/T777HfRqqPNhkasY
-         7goQ==
-X-Gm-Message-State: AOAM532WEupZtMrhizVzFCDYqa8Kww2kxNDIX8RYkuhM1ghuf1glZwp4
-        cPv2u9ar1lKGI2vNJBGBA6Tu6U8GVN0r5h/Z4CWolw==
-X-Google-Smtp-Source: ABdhPJx/gO08tec6Z9f5oRtghhVasw98weg7RxLfRxURX6wJAiNYQo8R+FqZiaL+TWcRSxSKfEnhs7pb8NXU9Aa0XOs=
-X-Received: by 2002:a5d:6ac6:: with SMTP id u6mr2979475wrw.65.1603946065554;
- Wed, 28 Oct 2020 21:34:25 -0700 (PDT)
+        Thu, 29 Oct 2020 03:45:00 -0400
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09T7dOi2123915;
+        Thu, 29 Oct 2020 07:44:55 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : from : to :
+ cc : references : message-id : date : mime-version : in-reply-to :
+ content-type : content-transfer-encoding; s=corp-2020-01-29;
+ bh=gbu5ZBKxWLoxcXeHNDhrUJqg29RsgLQqREY7Qb1Xkp8=;
+ b=mKeJYuOTBkksZlAPik0gvIbJO6n8tqVrVz9n8B+VtuQTzFpcMV4EK1P6zYrc0ol8sOu/
+ /X1hY03S6KV7H+fmp7JVrsZDyITnEJw/W9hi3gDVco372F60rAcxldmKUFeCjGrvXIF7
+ Ct/s0LLNoa5bIK14uURRHej6SKrFc1yjXN4NtUPyMbH2kwxEVCrRx5+8N6FgguYyc1E0
+ StS3QtS87KFuqjfCeb3fud6IqPlmPFBABjFyQBViCcnyHJXkJIcqLbOL5Bf/ZZ5KD/Eh
+ jIWp1cyMH0jTUhRArej+vAKk5hEBqXX7mhs0JhrPLAL28TcFyJ+2az/2F+wQoZ1aH42f qQ== 
+Received: from userp3020.oracle.com (userp3020.oracle.com [156.151.31.79])
+        by userp2120.oracle.com with ESMTP id 34dgm48up1-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
+        Thu, 29 Oct 2020 07:44:55 +0000
+Received: from pps.filterd (userp3020.oracle.com [127.0.0.1])
+        by userp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09T7eNHI155897;
+        Thu, 29 Oct 2020 07:44:55 GMT
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by userp3020.oracle.com with ESMTP id 34cx1swsv0-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Thu, 29 Oct 2020 07:44:54 +0000
+Received: from abhmp0014.oracle.com (abhmp0014.oracle.com [141.146.116.20])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 09T7isU5028505;
+        Thu, 29 Oct 2020 07:44:54 GMT
+Received: from [192.168.1.102] (/39.109.231.106)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Thu, 29 Oct 2020 00:44:53 -0700
+Subject: Re: [PATCH v1 0/4] btrfs: read_policy types latency, device and
+ round-robin
+From:   Anand Jain <anand.jain@oracle.com>
+To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org
+Cc:     dsterba@suse.com
+References: <cover.1603884539.git.anand.jain@oracle.com>
+ <ac428935-c20c-d02d-6678-d88cc5eb4b63@toxicpanda.com>
+ <da5c6fc8-95ef-6272-ea2a-4929fc32c69c@oracle.com>
+Message-ID: <b45deeac-dd13-3a38-4bdf-190cfd16fe83@oracle.com>
+Date:   Thu, 29 Oct 2020 15:44:50 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.4.0
 MIME-Version: 1.0
-References: <CAA85sZtGM1Gia7FjunVN4+r4uikQeAPTYAU53QCcT=QQTyt1bg@mail.gmail.com>
-In-Reply-To: <CAA85sZtGM1Gia7FjunVN4+r4uikQeAPTYAU53QCcT=QQTyt1bg@mail.gmail.com>
-From:   Chris Murphy <lists@colorremedies.com>
-Date:   Wed, 28 Oct 2020 22:34:09 -0600
-Message-ID: <CAJCQCtQtVvOZx9Q-YsrEN1VW_zn_1ipWCahjMAR8hx_pr6b00g@mail.gmail.com>
-Subject: Re: questions about qemu io_uring/dio
-To:     Ian Kumlien <ian.kumlien@gmail.com>
-Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <da5c6fc8-95ef-6272-ea2a-4929fc32c69c@oracle.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9788 signatures=668682
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 spamscore=0 phishscore=0 bulkscore=0
+ suspectscore=0 malwarescore=0 mlxlogscore=999 mlxscore=0 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2009150000
+ definitions=main-2010290054
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9788 signatures=668682
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 lowpriorityscore=0 impostorscore=0
+ adultscore=0 bulkscore=0 spamscore=0 phishscore=0 mlxlogscore=999
+ suspectscore=0 clxscore=1015 mlxscore=0 malwarescore=0 priorityscore=1501
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2009150000
+ definitions=main-2010290054
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Oct 28, 2020 at 4:17 PM Ian Kumlien <ian.kumlien@gmail.com> wrote:
->
-> Hi,
->
-> From what i understand, DIO is supposed to be supported...
->
-> But when i switched qemu to use io_uring it seems like the filesystems
-> on the VM:s get silently corrupted... (they also run btrfs, and it's
-> thus detected)
->
-> The system is mounted as nodatacow, I can't set +C with chattr so I
-> assume that the images are actually noncow
->
-> Any ideas?
 
-Could be related.
-https://bugzilla.kernel.org/show_bug.cgi?id=208875
 
-I'm not sure if the fix made it into 5.9 but pretty sure it's in 5.10
-but just haven't yet had a chance to test it.
+On 29/10/20 9:08 am, Anand Jain wrote:
+> 
+> 
+> On 28/10/20 10:32 pm, Josef Bacik wrote:
+>> On 10/28/20 9:25 AM, Anand Jain wrote:
+>>> Based on misc-next
+>>>
+>>> Depends on the following 3 patches in the mailing list.
+>>>    btrfs: add btrfs_strmatch helper
+>>>    btrfs: create read policy framework
+>>>    btrfs: create read policy sysfs attribute, pid
+>>>
+>>> v1:
+>>> Drop tracing patch
+>>> Drop factoring inflight command
+>>>    Here below is the performance differences, when inflight is used, 
+>>> it pushed
+>>>    few commands to the other device, so losing the potential merges.
+>>>
+>>>    with inflight:
+>>>     READ: bw=195MiB/s (204MB/s), 195MiB/s-195MiB/s (204MB/s-204MB/s), 
+>>> io=15.6GiB (16.8GB), run=82203-82203msec
+>>> sda 256054
+>>> sdc 20
+>>>
+>>>    without inflight:
+>>>     READ: bw=192MiB/s (202MB/s), 192MiB/s-192MiB/s (202MB/s-202MB/s), 
+>>> io=15.6GiB (16.8GB), run=83231-83231msec
+>>> sda 141006
+>>> sdc 0
+>>>
+>>
+>> What's the baseline?  I think 3mib/s is not that big of a tradeoff for 
+>> complexity, but if baseline is like 190mib/s then maybe its worth it. 
+>> If baseline is 90mib/s then I say it's not worth the inflight.  Thanks,
+> 
+>   Oh no I have to rerun the test cases here. As far as I remember
+>   without inflight was better than with inflight. Because with
+>   inflight there were fewer merges leading to more read IOs.
+> 
+>   Will rerun and send the data.
+> 
 
--- 
-Chris Murphy
+<raid1>
+
+With inflight: (the inflight patches were in the RFC patchset):
+pid [latency] device roundrobin ( 00)
+    READ: bw=40.3MiB/s (42.3MB/s), 40.3MiB/s-40.3MiB/s 
+(42.3MB/s-42.3MB/s), io=15.6GiB (16.8GB), run=396546-396546msec
+vdb 363575
+sda 200771
+
+
+Without inflight:
+pid [latency] device roundrobin ( 00)
+    READ: bw=41.7MiB/s (43.8MB/s), 41.7MiB/s-41.7MiB/s 
+(43.8MB/s-43.8MB/s), io=15.6GiB (16.8GB), run=383274-383274msec
+vdb 256238
+sda 0
+
+Without inflight is better due to lesser IO.
+
+Thanks, Anand
+
+> Thanks, Anand
+> 
+>>
+>> Josef

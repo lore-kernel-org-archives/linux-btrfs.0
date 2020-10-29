@@ -2,127 +2,120 @@ Return-Path: <SRS0=/Od+=EE=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.6 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E9E0CC4363A
-	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 14:50:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2DB83C4363A
+	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 14:55:43 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 7393920738
-	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 14:50:11 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C7BA0206E5
+	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 14:55:42 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="f5TtbWh6";
-	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b="dtwJflEt"
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="nPYPzDb6"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727886AbgJ2OuK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 29 Oct 2020 10:50:10 -0400
-Received: from esa2.hgst.iphmx.com ([68.232.143.124]:33491 "EHLO
-        esa2.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725782AbgJ2OuK (ORCPT
+        id S1727897AbgJ2Ozm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 29 Oct 2020 10:55:42 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40998 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726579AbgJ2Ozl (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 29 Oct 2020 10:50:10 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1603983161; x=1635519161;
-  h=from:to:subject:date:message-id:references:
-   content-transfer-encoding:mime-version;
-  bh=iLpjL14gNxnFUU5XDA3Mt/gRwhZKRzgkrLr9S+Chn9c=;
-  b=f5TtbWh6Q6DlTs1Jc7UoTCWSu7ixlzIJb/bns1oBJfYHaAjYufSub6jw
-   oZoPz98K2LRc6HUOoupZ0GnalbnVepmdP8XSZTvbFf84V39MIyMcFbEj1
-   JRmrkKWTJz9g3WLsxSrIqFHkUqlfTIPOjbUti1RiPufhvEU4CDCBN0s+l
-   eFsKE3Snwozzy9yLCJ/ILG4O/GW2oI897sEBbwUIfa25ICdFVFiYgGFkA
-   vxZRuyRqOGi3wEJTCHRrgypIqKXaisl+3Vxyk2UwfJuRMgIwhgTXrCWz7
-   AWPKu6QY/qXO05HqdMW7acopsFxp4iqylCVGm56frmicr3irG/mhHEQ2Y
-   g==;
-IronPort-SDR: FJkr+9VEh3Cq8nxt6axZrk+DSacpkAUcxLtJ0p8VOchbLgSdAJx4TiaV0rpUY7uVdwsKFxARB/
- H+Vmfund7xejrzVroKGpe2wLm539IjcanfW1ZDxrMDFGpptu7fto84HTnplSp2l5PRIZn4qA6L
- JuMPVyQrCrgoIodkgW1xSuszYRZB/KArRDT6Xf04b59GuoWOyRHme5NrzmptL5nquQDYNiQ0Cn
- JYfFEIdPvgVDQ7fALdmY4z1IaGm0gvmije0VU2YbFP2qaE/I09uUw6t+GBH7WnWufHlSp1UmVh
- qbc=
-X-IronPort-AV: E=Sophos;i="5.77,430,1596470400"; 
-   d="scan'208";a="254778618"
-Received: from mail-dm6nam11lp2173.outbound.protection.outlook.com (HELO NAM11-DM6-obe.outbound.protection.outlook.com) ([104.47.57.173])
-  by ob1.hgst.iphmx.com with ESMTP; 29 Oct 2020 22:52:40 +0800
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
- b=aVVX3PXHikldS7VLhL93pPgXOQ3BtEERuy3Luu9CTAWHaspS9qVxTmg3gFS8GFbrEpuBnDT3lNJ0+zxTyeVR6MetDTxar2jnT2f8t4jIAbgJ4PscHTpLDDEVxgqz0+44q4kvkRaqbdv0YRXMFdSQoYnIm+xbLIMOevBmDf92rFaGfENrnoCkyyjOQvFYmxZUhCyiXf3vEkZmKG2pAt6OG7xodj6zOZqlaaVD+br2d9lFQMS6ZPB8KO/e66XPDvSxvpCjxRE/86fRuez6uTDuEm9ZYPgL3MC49c/AS1LBMTcQ/3VJVqkkCcFbhJQONDArLBOwFWWsHG5GrWN7HVgkPA==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector9901;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=iLpjL14gNxnFUU5XDA3Mt/gRwhZKRzgkrLr9S+Chn9c=;
- b=WCr0PBH74mKXLRpVJYdIUNaiMqZTj7nAaJGb58JIceoeb1o+TXJPUm9HKfQYouFA2kK2wNfkQKSXaBERxcMN6e6hQBK5sjY5sErxFu696t0ZOY/FwzU9FT6SdlNfelW7/rDqfuVj2w/mF9lC329+aNz19Tq5CxJZPmLtiPes7I3DRGQip+qFOack0BKzGc9UJyi4fX1xx27S8Ll9hXTOGymGd89eDIsaJCKrCEiao12hWYCf9IRtBtWkNAhbQO35wTXidXRfgs7MxB+9MS47AlF2R54hvgMCiCQd8d01fOMbeoHf12GG1s2eHtpKseD3pqukuurQUkjM2zaivIAMHA==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
- header.d=wdc.com; arc=none
+        Thu, 29 Oct 2020 10:55:41 -0400
+Received: from mail-io1-xd2a.google.com (mail-io1-xd2a.google.com [IPv6:2607:f8b0:4864:20::d2a])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1ED6CC0613CF
+        for <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2020 07:55:40 -0700 (PDT)
+Received: by mail-io1-xd2a.google.com with SMTP id h21so3725712iob.10
+        for <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2020 07:55:40 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=iLpjL14gNxnFUU5XDA3Mt/gRwhZKRzgkrLr9S+Chn9c=;
- b=dtwJflEtnBV7pzipvcxt/GPGpYKQj9lG8FQ9UlfpOsg9a7XSj5HN4ezqWTC19GjRMZitl5iPAU54eJeBHnG+GgyVaqXjhXjggoQ/b+YkqPj0X8scclxBVHChjkWAIhpkST8fG0qyUFhBl4eRrXMSGpFPsXxXU/g8GFoxn1VIFYw=
-Received: from SN4PR0401MB3598.namprd04.prod.outlook.com
- (2603:10b6:803:47::21) by SA0PR04MB7212.namprd04.prod.outlook.com
- (2603:10b6:806:ef::16) with Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.3499.28; Thu, 29 Oct
- 2020 14:50:07 +0000
-Received: from SN4PR0401MB3598.namprd04.prod.outlook.com
- ([fe80::619a:567c:d053:ce25]) by SN4PR0401MB3598.namprd04.prod.outlook.com
- ([fe80::619a:567c:d053:ce25%6]) with mapi id 15.20.3477.028; Thu, 29 Oct 2020
- 14:50:07 +0000
-From:   Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
-To:     David Sterba <dsterba@suse.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 00/10] Sectorsize, csum_size lifted to fs_info
-Thread-Topic: [PATCH 00/10] Sectorsize, csum_size lifted to fs_info
-Thread-Index: AQHWrf/iZe3NfyFAQ06+YOf1gXF6hA==
-Date:   Thu, 29 Oct 2020 14:50:07 +0000
-Message-ID: <SN4PR0401MB359889F68E7BF45740CE02CC9B140@SN4PR0401MB3598.namprd04.prod.outlook.com>
-References: <cover.1603981452.git.dsterba@suse.com>
-Accept-Language: en-US
-Content-Language: en-US
-X-MS-Has-Attach: 
-X-MS-TNEF-Correlator: 
-authentication-results: suse.com; dkim=none (message not signed)
- header.d=none;suse.com; dmarc=none action=none header.from=wdc.com;
-x-originating-ip: [129.253.240.72]
-x-ms-publictraffictype: Email
-x-ms-office365-filtering-ht: Tenant
-x-ms-office365-filtering-correlation-id: adff1f12-e53f-49bd-a97e-08d87c19ed86
-x-ms-traffictypediagnostic: SA0PR04MB7212:
-x-microsoft-antispam-prvs: <SA0PR04MB7212BEA365CCDC2A7B4050D09B140@SA0PR04MB7212.namprd04.prod.outlook.com>
-wdcipoutbound: EOP-TRUE
-x-ms-oob-tlc-oobclassifiers: OLM:7219;
-x-ms-exchange-senderadcheck: 1
-x-microsoft-antispam: BCL:0;
-x-microsoft-antispam-message-info: rSpdTL+Cj/Di0+f6ZZJBk6ckRy8paA2scwg6UqilqlcITklpk1651RcWg3+C6oCMoHrLwg2zAdq9erUhtUahJni4ybX7pS2a82JEWsmGPcegvKzuEygsdscO88xcO2H+1tUva5FoxlhjEOuRhco5Mrfu2BnT5RGZCYgaJiWogdGdpoDSVH/ENp42wiQERzblYesvAdsJFsHCptHLifJvxeupX5XVyiQkLWxB9gy9iAJ7505IftNr1cZ4reNFQlgUxFFHp5o+o2U+rFexfH4NgerYuO1AW53SWPJpncJy9zYY/1I/eAKX1K1DhX4T0lIQypGqxmqZvuipRoPtSqMCGw==
-x-forefront-antispam-report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SN4PR0401MB3598.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(4636009)(376002)(396003)(136003)(39860400002)(366004)(346002)(478600001)(55016002)(9686003)(86362001)(8936002)(316002)(110136005)(8676002)(71200400001)(2906002)(83380400001)(26005)(6506007)(53546011)(186003)(66946007)(66476007)(64756008)(76116006)(66556008)(66446008)(91956017)(33656002)(52536014)(5660300002)(7696005)(4744005);DIR:OUT;SFP:1102;
-x-ms-exchange-antispam-messagedata: QiBbaz1OsVR6XZJscmA8wAGDQfcgxu5oV5SdlvbhKFpHAYM+iqUCXD+zv9Q5Q7M2lfUqcOow6uGs7p9Nq+HXAx3aUHni7ZvTrKqTEMrmH2fR6B6GZqpD8f6u9fw2mj4B+vLPFAZg6Igi3REI9lRHqtsuIN4Ixe9EwySj59vPmVnQcG0gI2NqpSVUoCmOx4wh3euoGhGWUm4YQK//bbKFwm+cdcs1cBJWODvs6aF8mMyfkhnAzEnZPxCzWDLIzZKNDp7lGxthVJ7wSmgBYIYGbBFzkUx0IIeaSqeiDEd8reeGxnX9F9tqyKIj0TafqrrvtjVb+U3EPtGdP5QjZ3/8Xe87W+93iQHGkebBTE9BfxMQIWBRPf6VMJBfispjyFNsQzOvR1ahKP1Nj0lrZMPojb9tJlSrd5dofIkvHv5NnPmuVCDLSrzijRk2GqJCA/cr6ExL8Kj9+Uki9NKq2WmEU6bRlsINnjBFrLG38NZQY31R4YOkLMSrTaOZwDI7b1Z3UTMQHnO0sz3Xgj+P7FbpcI8oYJuSz0whVQYvBpFNt5XhRr5pkSuJ/+cUMyGvGN7vuCfCHWtwyQVsR8fHcwK1SRd9ZhEmZknGwFBLWV2ZbpQ/VQgRPv4dlkajC4or8X3EgZ7IpwjSZWCGTC+YV8dGnw==
-x-ms-exchange-transport-forked: True
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: quoted-printable
+        d=gmail.com; s=20161025;
+        h=mime-version:from:date:message-id:subject:to;
+        bh=3GOtCQovA0FsGh9AMBtUrsmqYahqePuP9ZqIxYNkH6Y=;
+        b=nPYPzDb6A1vrMhHFH8tZuFNLnHydpu3FuaHTqP+JeeIhBSrWRU2hGoHe3PM1uLxgHh
+         Z13bfAW6ImCs9b5f9tsFIAeP4hEyIqGdqyo+WR7mgWzsCCltt1CULc0jqn6hTJZzUgmr
+         dbz2KzeNlxorQXME+h1QnNzYMAgzucVfsKe3yaPaeTxOhUAQZq9ATu38TciYe7Z/uNgo
+         0Sg1baOILmdk/+yagL16PVwKZpoGN3eQnZQHbW1jLCajsvMMGNXPtLOSkksuK24Lr9t9
+         aZxML07NKYRg9GamJTTVyr6YYfRJJk5M2+dFGPKiU4E2E8XIE7VQyQxOy84wMidIASuQ
+         ZsDw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:from:date:message-id:subject:to;
+        bh=3GOtCQovA0FsGh9AMBtUrsmqYahqePuP9ZqIxYNkH6Y=;
+        b=Zi9TiWEDEteLpYXTmyQllW6RGWNRZTA9BNkLZpAgml+hpWwXPQDDVzP3h0V1JE08Lr
+         vIE2RZIL4TKbdGMk1sPHEucOxclyDvMQbUb5el/WfWxmV4yxGdAzvJLQuUNtfcjF6tJf
+         vCOnf4EHxLNaze/2wxXYNZ+zZDj9WyOu1Ae9frDsG5DsCYmqcStrr6fxQjTxjEubMn7P
+         jao/LyfWPXu5Mm5RZLrWLa66xXHWB0ogb6mAQ7K0BVMebudogYmTBtmYc2Wqxa6wB86g
+         NdambXnXfeiNy18HbTvq9mBr1bKwdVUqlYV041P+/BMZs4IdxsCRoHq8uHSwa1ltczYN
+         eXmg==
+X-Gm-Message-State: AOAM530+b+ObxuuNPFr9y+VJmfmzqjeumf8NnvXGk4oaWonM06+znwbi
+        jdTTq8PERoKUMEKjYXIttj4hg0LllAV+0olqJFbG7h38vygVhaNm
+X-Google-Smtp-Source: ABdhPJyQ/ANjgo7sM4s2yhLmpAiNvj4VvlbF4FMekIhhNydSp73UWVIyDQ850udCrSoMCJ+wbBBqZLidBC44IVFoT/U=
+X-Received: by 2002:a6b:ce1a:: with SMTP id p26mr3583614iob.94.1603983338958;
+ Thu, 29 Oct 2020 07:55:38 -0700 (PDT)
 MIME-Version: 1.0
-X-OriginatorOrg: wdc.com
-X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-AuthSource: SN4PR0401MB3598.namprd04.prod.outlook.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: adff1f12-e53f-49bd-a97e-08d87c19ed86
-X-MS-Exchange-CrossTenant-originalarrivaltime: 29 Oct 2020 14:50:07.2847
- (UTC)
-X-MS-Exchange-CrossTenant-fromentityheader: Hosted
-X-MS-Exchange-CrossTenant-id: b61c8803-16f3-4c35-9b17-6f65f441df86
-X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
-X-MS-Exchange-CrossTenant-userprincipalname: 1fSqHDKokmco/CbbEYBwXIY6IAq2diMOezfwsrqWzxiSkUCgDobhUAqlpBcHNM23rrilr8G8YGD/BCi65M9YEspOns3RUs4Uub3Wd1j+pbY=
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: SA0PR04MB7212
+From:   Darren Hoo <darren.hoo@gmail.com>
+Date:   Thu, 29 Oct 2020 22:55:27 +0800
+Message-ID: <CAJ+QY_EBZVf2N++W_RoSKwnMVy4GqJCWHYWSVyUtmW9y0mPexg@mail.gmail.com>
+Subject: Fail to mount btrfs partition after several power losses
+To:     linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 29/10/2020 15:29, David Sterba wrote:=0A=
-> Clean up usage of multiplication or division by sectorsize by shifts,=0A=
-> checksums per leaf are calculated once and csum_size has a copy in=0A=
-> fs_info so we don't have to read it from raw superblocks.=0A=
-=0A=
-=0A=
-Currently all checksum sizes are power of 2 as well. Did you check if there=
-=0A=
-was any benefit if we'd cache csum_size_bits and shift instead of the =0A=
-multiplications and divisions?=0A=
-=0A=
+# uname -a
+Linux Debian 5.8.0-0.bpo.2-amd64 #1 SMP Debian 5.8.10-1~bpo10+1
+(2020-09-26) x86_64 GNU/Linux
+
+# btrfs --version
+btrfs-progs v4.20.1
+
+# dmesg
+[95485.650934] sd 2:0:0:0: [sdc] Very big device. Trying to use READ
+CAPACITY(16).
+[95485.651072] sd 2:0:0:0: [sdc] 9767475200 512-byte logical blocks:
+(5.00 TB/4.55 TiB)
+[95485.651075] sd 2:0:0:0: [sdc] 4096-byte physical blocks
+[95485.651284] sd 2:0:0:0: [sdc] Write Protect is off
+[95485.651287] sd 2:0:0:0: [sdc] Mode Sense: 47 00 10 08
+[95485.651495] sd 2:0:0:0: [sdc] No Caching mode page found
+[95485.651504] sd 2:0:0:0: [sdc] Assuming drive cache: write through
+[95485.768491]  sdc: sdc1
+[95485.770124] sd 2:0:0:0: [sdc] Attached SCSI disk
+[97140.405870] BTRFS info (device sdc1): disk space caching is enabled
+[97140.405875] BTRFS info (device sdc1): has skinny extents
+[97155.453292] BTRFS critical (device sdc1): corrupt leaf:
+root=18446744073709551610 block=3422917066752 slot=0 ino=2091, invalid
+inode transid: has 307639 expect [0, 307638]
+[97155.453306] BTRFS error (device sdc1): block=3422917066752 read
+time tree block corruption detected
+[97155.463333] BTRFS critical (device sdc1): corrupt leaf:
+root=18446744073709551610 block=3422917066752 slot=0 ino=2091, invalid
+inode transid: has 307639 expect [0, 307638]
+[97155.463346] BTRFS error (device sdc1): block=3422917066752 read
+time tree block corruption detected
+[97155.463383] BTRFS error (device sdc1): failed to read block groups: -5
+[97155.490614] BTRFS error (device sdc1): open_ctree failed
+
+# btrfs fi show
+Label: none  uuid: ecac1ca8-eb73-4f9e-ac39-a058aac148da
+        Total devices 1 FS bytes used 3.01TiB
+        devid    1 size 4.55TiB used 3.01TiB path /dev/sdc1
+
+# btrfs rescue super-recover -v /dev/sdc1
+All Devices:
+        Device: id = 1, name = /dev/sdc1
+Before Recovering:
+        [All good supers]:
+                device name = /dev/sdc1
+                superblock bytenr = 65536
+                device name = /dev/sdc1
+                superblock bytenr = 67108864
+                device name = /dev/sdc1
+                superblock bytenr = 274877906944
+        [All bad supers]:
+All supers are valid, no need to recover
+
+Tried btrfs rescue chunk-recover -v /dev/sdc1, but it seems that it
+takes forever to finish.
+Is there any chance that I can recover any of the data on this disk?

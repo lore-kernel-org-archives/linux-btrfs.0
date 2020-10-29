@@ -2,340 +2,106 @@ Return-Path: <SRS0=/Od+=EE=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.6 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A4B92C5517A
-	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 07:47:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 25FE2C55178
+	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 07:48:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 64BDF214DB
-	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 07:47:12 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B29B42076B
+	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 07:48:06 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="JSbPAyWn"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730276AbgJ2HrB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 29 Oct 2020 03:47:01 -0400
-Received: from out20-74.mail.aliyun.com ([115.124.20.74]:36802 "EHLO
-        out20-74.mail.aliyun.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1733195AbgJ2HqL (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 29 Oct 2020 03:46:11 -0400
-X-Alimail-AntiSpam: AC=CONTINUE;BC=0.04436282|-1;CH=green;DM=|CONTINUE|false|;DS=CONTINUE|ham_system_inform|0.0896989-0.00029668-0.910004;FP=0|0|0|0|0|-1|-1|-1;HT=ay29a033018047199;MF=wangyugui@e16-tech.com;NM=1;PH=DS;RN=3;RT=3;SR=0;TI=SMTPD_---.IptkHuJ_1603949757;
-Received: from T640.e16-tech.com(mailfrom:wangyugui@e16-tech.com fp:SMTPD_---.IptkHuJ_1603949757)
-          by smtp.aliyun-inc.com(10.147.42.241);
-          Thu, 29 Oct 2020 13:35:58 +0800
-From:   wangyugui <wangyugui@e16-tech.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     kreijack@libero.it, wangyugui <wangyugui@e16-tech.com>
-Subject: [PATCH 2/4] btrfs: tiering data and metadata
-Date:   Thu, 29 Oct 2020 13:35:54 +0800
-Message-Id: <20201029053556.10619-3-wangyugui@e16-tech.com>
-X-Mailer: git-send-email 2.29.1
-In-Reply-To: <20201029053556.10619-1-wangyugui@e16-tech.com>
-References: <20201029053556.10619-1-wangyugui@e16-tech.com>
+        id S2387856AbgJ2Hr6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 29 Oct 2020 03:47:58 -0400
+Received: from mx2.suse.de ([195.135.220.15]:58638 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1733219AbgJ2HrV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 29 Oct 2020 03:47:21 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1603957639;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references:autocrypt:autocrypt;
+        bh=QdTWz12eSHRuhezArezhlfCEwCBrcT0EGbVekKwQN28=;
+        b=JSbPAyWn951NQI831fyj2ErisYfb/TnuY6JoiOAp3JiyXi2yZfBYKflD8YC4yi6btPZdjk
+        JMeon5gA0seKRSI6kugaQ4duF7clyHhNflWyyOafJo9cUBoagLJ0vlExuFLcewmltWRVWc
+        tv9mGgnpybGta1ef3nXLKVFxT0Rx15M=
+Received: from relay2.suse.de (unknown [195.135.221.27])
+        by mx2.suse.de (Postfix) with ESMTP id 63519AD0B;
+        Thu, 29 Oct 2020 07:47:19 +0000 (UTC)
+Subject: Re: [PATCH v2 2/3] btrfs: file-item: remove the
+ btrfs_find_ordered_sum() call in btrfs_lookup_bio_sums()
+To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20201029071218.49860-1-wqu@suse.com>
+ <20201029071218.49860-3-wqu@suse.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ mQINBFiKBz4BEADNHZmqwhuN6EAzXj9SpPpH/nSSP8YgfwoOqwrP+JR4pIqRK0AWWeWCSwmZ
+ T7g+RbfPFlmQp+EwFWOtABXlKC54zgSf+uulGwx5JAUFVUIRBmnHOYi/lUiE0yhpnb1KCA7f
+ u/W+DkwGerXqhhe9TvQoGwgCKNfzFPZoM+gZrm+kWv03QLUCr210n4cwaCPJ0Nr9Z3c582xc
+ bCUVbsjt7BN0CFa2BByulrx5xD9sDAYIqfLCcZetAqsTRGxM7LD0kh5WlKzOeAXj5r8DOrU2
+ GdZS33uKZI/kZJZVytSmZpswDsKhnGzRN1BANGP8sC+WD4eRXajOmNh2HL4P+meO1TlM3GLl
+ EQd2shHFY0qjEo7wxKZI1RyZZ5AgJnSmehrPCyuIyVY210CbMaIKHUIsTqRgY5GaNME24w7h
+ TyyVCy2qAM8fLJ4Vw5bycM/u5xfWm7gyTb9V1TkZ3o1MTrEsrcqFiRrBY94Rs0oQkZvunqia
+ c+NprYSaOG1Cta14o94eMH271Kka/reEwSZkC7T+o9hZ4zi2CcLcY0DXj0qdId7vUKSJjEep
+ c++s8ncFekh1MPhkOgNj8pk17OAESanmDwksmzh1j12lgA5lTFPrJeRNu6/isC2zyZhTwMWs
+ k3LkcTa8ZXxh0RfWAqgx/ogKPk4ZxOXQEZetkEyTFghbRH2BIwARAQABtCNOaWtvbGF5IEJv
+ cmlzb3YgPG5ib3Jpc292QHN1c2UuY29tPokCOAQTAQIAIgUCWIo48QIbAwYLCQgHAwIGFQgC
+ CQoLBBYCAwECHgECF4AACgkQcb6CRuU/KFc0eg/9GLD3wTQz9iZHMFbjiqTCitD7B6dTLV1C
+ ddZVlC8Hm/TophPts1bWZORAmYIihHHI1EIF19+bfIr46pvfTu0yFrJDLOADMDH+Ufzsfy2v
+ HSqqWV/nOSWGXzh8bgg/ncLwrIdEwBQBN9SDS6aqsglagvwFD91UCg/TshLlRxD5BOnuzfzI
+ Leyx2c6YmH7Oa1R4MX9Jo79SaKwdHt2yRN3SochVtxCyafDlZsE/efp21pMiaK1HoCOZTBp5
+ VzrIP85GATh18pN7YR9CuPxxN0V6IzT7IlhS4Jgj0NXh6vi1DlmKspr+FOevu4RVXqqcNTSS
+ E2rycB2v6cttH21UUdu/0FtMBKh+rv8+yD49FxMYnTi1jwVzr208vDdRU2v7Ij/TxYt/v4O8
+ V+jNRKy5Fevca/1xroQBICXsNoFLr10X5IjmhAhqIH8Atpz/89ItS3+HWuE4BHB6RRLM0gy8
+ T7rN6ja+KegOGikp/VTwBlszhvfLhyoyjXI44Tf3oLSFM+8+qG3B7MNBHOt60CQlMkq0fGXd
+ mm4xENl/SSeHsiomdveeq7cNGpHi6i6ntZK33XJLwvyf00PD7tip/GUj0Dic/ZUsoPSTF/mG
+ EpuQiUZs8X2xjK/AS/l3wa4Kz2tlcOKSKpIpna7V1+CMNkNzaCOlbv7QwprAerKYywPCoOSC
+ 7P25Ag0EWIoHPgEQAMiUqvRBZNvPvki34O/dcTodvLSyOmK/MMBDrzN8Cnk302XfnGlW/YAQ
+ csMWISKKSpStc6tmD+2Y0z9WjyRqFr3EGfH1RXSv9Z1vmfPzU42jsdZn667UxrRcVQXUgoKg
+ QYx055Q2FdUeaZSaivoIBD9WtJq/66UPXRRr4H/+Y5FaUZx+gWNGmBT6a0S/GQnHb9g3nonD
+ jmDKGw+YO4P6aEMxyy3k9PstaoiyBXnzQASzdOi39BgWQuZfIQjN0aW+Dm8kOAfT5i/yk59h
+ VV6v3NLHBjHVw9kHli3jwvsizIX9X2W8tb1SefaVxqvqO1132AO8V9CbE1DcVT8fzICvGi42
+ FoV/k0QOGwq+LmLf0t04Q0csEl+h69ZcqeBSQcIMm/Ir+NorfCr6HjrB6lW7giBkQl6hhomn
+ l1mtDP6MTdbyYzEiBFcwQD4terc7S/8ELRRybWQHQp7sxQM/Lnuhs77MgY/e6c5AVWnMKd/z
+ MKm4ru7A8+8gdHeydrRQSWDaVbfy3Hup0Ia76J9FaolnjB8YLUOJPdhI2vbvNCQ2ipxw3Y3c
+ KhVIpGYqwdvFIiz0Fej7wnJICIrpJs/+XLQHyqcmERn3s/iWwBpeogrx2Lf8AGezqnv9woq7
+ OSoWlwXDJiUdaqPEB/HmGfqoRRN20jx+OOvuaBMPAPb+aKJyle8zABEBAAGJAh8EGAECAAkF
+ AliKBz4CGwwACgkQcb6CRuU/KFdacg/+M3V3Ti9JYZEiIyVhqs+yHb6NMI1R0kkAmzsGQ1jU
+ zSQUz9AVMR6T7v2fIETTT/f5Oout0+Hi9cY8uLpk8CWno9V9eR/B7Ifs2pAA8lh2nW43FFwp
+ IDiSuDbH6oTLmiGCB206IvSuaQCp1fed8U6yuqGFcnf0ZpJm/sILG2ECdFK9RYnMIaeqlNQm
+ iZicBY2lmlYFBEaMXHoy+K7nbOuizPWdUKoKHq+tmZ3iA+qL5s6Qlm4trH28/fPpFuOmgP8P
+ K+7LpYLNSl1oQUr+WlqilPAuLcCo5Vdl7M7VFLMq4xxY/dY99aZx0ZJQYFx0w/6UkbDdFLzN
+ upT7NIN68lZRucImffiWyN7CjH23X3Tni8bS9ubo7OON68NbPz1YIaYaHmnVQCjDyDXkQoKC
+ R82Vf9mf5slj0Vlpf+/Wpsv/TH8X32ajva37oEQTkWNMsDxyw3aPSps6MaMafcN7k60y2Wk/
+ TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
+ RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
+ 5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
+Message-ID: <12990e1a-6e59-b0e3-5d26-34c80e31b601@suse.com>
+Date:   Thu, 29 Oct 2020 09:47:18 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.10.0
 MIME-Version: 1.0
+In-Reply-To: <20201029071218.49860-3-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This based the patch 'btrfs: add ssd_metadata mode' from Goffredo Baroncelli <kreijack@libero.it>
 
-In most case, only 1 or 2 tiers are used at the same time, so we group them into
-top tier and other tier(s).
 
-We define a mount option to tiering data/metadata to slower/faster device(s)
-When there is only 1 tier, tiering is auto disabled.
+On 29.10.20 г. 9:12 ч., Qu Wenruo wrote:
+> The function btrfs_lookup_bio_sums() is only called for read bios.
+> While btrfs_find_ordered_sum() is to search ordered extent sums, which
 
-mount option: tier[={off|auto|data_tier_X/metadata_tier_Y}]
-default is 'tier[=auto]'. 'tier' is same as 'tier=auto', 'tier=OF/TF'
-the policies to use the device(s):
-    Top-tier-Only(TO)       : metadata only use top-tier device.
-    Top-tier-Firstly(TF)    : metadata use top-tier device firstly.
-    Other-tier-First(OF)    : data use other-tier device firstly.
-    Other-tier-Only(OO)     : data only use other-tier device.
-data_tier_X is the policy for data, support OF, OO.
-metadata_tier_Y is the policy for metadata and system, support TF.
 
-Signed-off-by: wangyugui <wangyugui@e16-tech.com>
----
- fs/btrfs/ctree.h   | 17 ++++++++++
- fs/btrfs/super.c   | 72 +++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/volumes.c | 80 ++++++++++++++++++++++++++++++++++++++++++++--
- 3 files changed, 167 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index aac3d6f..812d231 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -574,6 +574,20 @@ enum btrfs_exclusive_operation {
- 	BTRFS_EXCLOP_SWAP_ACTIVATE,
- };
- 
-+/*
-+ * tier policy for btrfs data/metadata
-+ * FIXME: per-subvol tier policy for full tier support.
-+ * FIXME: per-subvol profile(RAID) is needed for full tier support too.
-+ */
-+enum btrfs_tier_policy
-+{
-+	NOT_TIERING,
-+	TOP_TIER_ONLY,		/* TO */
-+	TOP_TIER_FIRSTLY,	/* TF */
-+	OTHER_TIER_FIRSTLY, /* OF */
-+	OTHER_TIER_ONLY,	/* OO */
-+};
-+
- struct btrfs_fs_info {
- 	u8 chunk_tree_uuid[BTRFS_UUID_SIZE];
- 	unsigned long flags;
-@@ -831,6 +845,9 @@ struct btrfs_fs_info {
- 	u64 avail_metadata_alloc_bits;
- 	u64 avail_system_alloc_bits;
- 
-+	enum btrfs_tier_policy data_tier_policy;
-+	enum btrfs_tier_policy metadata_tier_policy;
-+
- 	/* restriper state */
- 	spinlock_t balance_lock;
- 	struct mutex balance_mutex;
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 8840a4f..c8dfa89 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -375,6 +375,7 @@ enum {
- #ifdef CONFIG_BTRFS_FS_REF_VERIFY
- 	Opt_ref_verify,
- #endif
-+	Opt_tier, Opt_tier_policy,
- 	Opt_err,
- };
- 
-@@ -449,6 +450,8 @@ static const match_table_t tokens = {
- #ifdef CONFIG_BTRFS_FS_REF_VERIFY
- 	{Opt_ref_verify, "ref_verify"},
- #endif
-+	{Opt_tier, "tier"},
-+	{Opt_tier_policy, "tier=%s"},
- 	{Opt_err, NULL},
- };
- 
-@@ -501,6 +504,40 @@ out:
- 	return ret;
- }
- 
-+static const char *btrfs_tier_policy_names[] = {
-+	[NOT_TIERING] = "NO",
-+	[TOP_TIER_ONLY] = "TO",
-+	[TOP_TIER_FIRSTLY] = "OF",
-+	[OTHER_TIER_FIRSTLY] = "OF",
-+	[OTHER_TIER_ONLY] = "OO"};
-+
-+struct btrfs_tier_option {
-+	const char *name;
-+	enum btrfs_tier_policy data_tier_policy;
-+	enum btrfs_tier_policy metadata_tier_policy;
-+};
-+
-+static const struct btrfs_tier_option btrfs_tier_options[] = {
-+	{"off", NOT_TIERING, NOT_TIERING},
-+	{"auto", OTHER_TIER_FIRSTLY, TOP_TIER_FIRSTLY},
-+	{"OF/TF", OTHER_TIER_FIRSTLY, TOP_TIER_FIRSTLY},
-+	{"OO/TF", OTHER_TIER_ONLY, TOP_TIER_FIRSTLY}};
-+
-+static int parse_tier_options(struct btrfs_fs_info *info, const char *option)
-+{
-+	int i;
-+	for (i = 0; i < sizeof(btrfs_tier_options) / sizeof(btrfs_tier_options[0]); ++i)
-+	{
-+		if (strcmp(option, btrfs_tier_options[i].name) == 0)
-+		{
-+			info->data_tier_policy = btrfs_tier_options[i].data_tier_policy;
-+			info->metadata_tier_policy = btrfs_tier_options[i].metadata_tier_policy;
-+			return 0;
-+		}
-+	}
-+	return -EINVAL;
-+}
-+
- /*
-  * Regular mount options parser.  Everything that is needed only when
-  * reading in a new superblock is parsed here.
-@@ -527,6 +564,10 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
- 	else if (cache_gen)
- 		btrfs_set_opt(info->mount_opt, SPACE_CACHE);
- 
-+	/* default tier=auto */
-+	info->data_tier_policy = OTHER_TIER_FIRSTLY;
-+	info->metadata_tier_policy = TOP_TIER_FIRSTLY;
-+
- 	/*
- 	 * Even the options are empty, we still need to do extra check
- 	 * against new flags
-@@ -959,6 +1000,15 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
- 			btrfs_set_opt(info->mount_opt, REF_VERIFY);
- 			break;
- #endif
-+		case Opt_tier:
-+			info->data_tier_policy = OTHER_TIER_FIRSTLY;
-+			info->metadata_tier_policy = TOP_TIER_FIRSTLY;
-+			break;
-+		case Opt_tier_policy:
-+			ret = parse_tier_options(info, args[0].from);
-+			if (ret < 0)
-+				goto out;
-+			break;
- 		case Opt_err:
- 			btrfs_err(info, "unrecognized mount option '%s'", p);
- 			ret = -EINVAL;
-@@ -988,6 +1038,18 @@ out:
- 		btrfs_info(info, "disk space caching is enabled");
- 	if (!ret && btrfs_test_opt(info, FREE_SPACE_TREE))
- 		btrfs_info(info, "using free space tree");
-+	if (!ret){
-+		if(info->data_tier_policy == NOT_TIERING &&
-+			info->metadata_tier_policy == NOT_TIERING)
-+			btrfs_info(info, "disabled tiering(tier=off)");
-+		else if(info->data_tier_policy == OTHER_TIER_FIRSTLY &&
-+			info->metadata_tier_policy == TOP_TIER_FIRSTLY)
-+			btrfs_info(info, "enabling tiering(tier=auto)");
-+		else
-+			btrfs_info(info, "enabling tiering(tier=%s/%s)",
-+				btrfs_tier_policy_names[info->data_tier_policy],
-+				btrfs_tier_policy_names[info->metadata_tier_policy]);
-+	}
- 	return ret;
- }
- 
-@@ -1472,6 +1534,16 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
- #endif
- 	if (btrfs_test_opt(info, REF_VERIFY))
- 		seq_puts(seq, ",ref_verify");
-+	if(info->data_tier_policy == NOT_TIERING &&
-+		info->metadata_tier_policy == NOT_TIERING)
-+		seq_puts(seq, ",tier=off");
-+	else if(info->data_tier_policy == OTHER_TIER_FIRSTLY &&
-+		info->metadata_tier_policy == TOP_TIER_FIRSTLY)
-+		seq_puts(seq, ",tier"); /* or ",tier=auto"? */
-+	else
-+		seq_printf(seq, ",tier=%s/%s",
-+		btrfs_tier_policy_names[info->data_tier_policy],
-+		btrfs_tier_policy_names[info->metadata_tier_policy]);
- 	seq_printf(seq, ",subvolid=%llu",
- 		  BTRFS_I(d_inode(dentry))->root->root_key.objectid);
- 	subvol_name = btrfs_get_subvol_name_from_objectid(info,
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index efffcbc..2a422ac 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -4816,6 +4816,44 @@ static int btrfs_cmp_device_info(const void *a, const void *b)
- 	return 0;
- }
- 
-+/*
-+ * sort the devices in descending order by tier_score,
-+ * max_avail, total_avail
-+ */
-+static int btrfs_cmp_device_info_metadata(const void *a, const void *b)
-+{
-+	const struct btrfs_device_info *di_a = a;
-+	const struct btrfs_device_info *di_b = b;
-+
-+	/* higher tier_score firstly for metadata */
-+	if (di_a->dev->tier_score > di_b->dev->tier_score)
-+		return -1;
-+	if (di_a->dev->tier_score < di_b->dev->tier_score)
-+		return 1;
-+
-+	return btrfs_cmp_device_info(a,b);
-+}
-+
-+/*
-+ * sort the devices in ascending order by tier_score,
-+ * max_avail, total_avail
-+ */
-+static int btrfs_cmp_device_info_data(const void *a, const void *b)
-+{
-+	const struct btrfs_device_info *di_a = a;
-+	const struct btrfs_device_info *di_b = b;
-+
-+	/* lower tier_score firstly for data */
-+	if (di_a->dev->tier_score > di_b->dev->tier_score)
-+		return 1;
-+	if (di_a->dev->tier_score < di_b->dev->tier_score)
-+		return -1;
-+
-+	return btrfs_cmp_device_info(a,b);
-+}
-+
-+
-+
- static void check_raid56_incompat_flag(struct btrfs_fs_info *info, u64 type)
- {
- 	if (!(type & BTRFS_BLOCK_GROUP_RAID56_MASK))
-@@ -4931,6 +4969,8 @@ static int gather_device_info(struct btrfs_fs_devices *fs_devices,
- 	int ndevs = 0;
- 	u64 max_avail;
- 	u64 dev_offset;
-+	int top_tier_score = 0;
-+	int nr_top_tier = 0;
- 
- 	/*
- 	 * in the first pass through the devices list, we gather information
-@@ -4983,15 +5023,51 @@ static int gather_device_info(struct btrfs_fs_devices *fs_devices,
- 		devices_info[ndevs].max_avail = max_avail;
- 		devices_info[ndevs].total_avail = total_avail;
- 		devices_info[ndevs].dev = device;
-+		if (devices_info[ndevs].dev->tier_score > top_tier_score) {
-+			top_tier_score = devices_info[ndevs].dev->tier_score;
-+			nr_top_tier = 1;
-+		} else if (devices_info[ndevs].dev->tier_score == top_tier_score) {
-+			nr_top_tier++;
-+		}
- 		++ndevs;
- 	}
- 	ctl->ndevs = ndevs;
- 
-+	BUG_ON(nr_top_tier > ndevs);
- 	/*
- 	 * now sort the devices by hole size / available space
- 	 */
--	sort(devices_info, ndevs, sizeof(struct btrfs_device_info),
--	     btrfs_cmp_device_info, NULL);
-+	if (nr_top_tier == ndevs ||
-+		((ctl->type & BTRFS_BLOCK_GROUP_DATA) && info->data_tier_policy == NOT_TIERING) ||
-+		(!(ctl->type & BTRFS_BLOCK_GROUP_DATA) && info->metadata_tier_policy == NOT_TIERING) ||
-+		((ctl->type & BTRFS_BLOCK_GROUP_DATA) && (ctl->type & BTRFS_BLOCK_GROUP_METADATA))) {
-+			/* 1 tier only; NOT_TIERING; mixed bg */
-+			sort(devices_info, ndevs, sizeof(struct btrfs_device_info),
-+				 btrfs_cmp_device_info, NULL);
-+		}
-+	else
-+	{
-+		/*
-+		 * if tiering, sort the device considering also the tier_score.
-+		 * Limit the availables devices to the ones
-+		 * of the same kind, to avoid that a striped profile like raid5
-+		 * spans to all kind of devices.
-+		 * It is allowed to span different kind of devices if the ones of
-+		 * the same kind are not enough alone.
-+		 */
-+		if (ctl->type & BTRFS_BLOCK_GROUP_DATA) {
-+			int nr_other_tier = ndevs - nr_top_tier;
-+			sort(devices_info, ndevs, sizeof(struct btrfs_device_info),
-+				     btrfs_cmp_device_info_data, NULL);
-+			if (nr_other_tier >= ctl->devs_min || info->data_tier_policy == OTHER_TIER_ONLY)
-+				ndevs = nr_other_tier;
-+		} else { /* non data -> metadata and system */
-+			sort(devices_info, ndevs, sizeof(struct btrfs_device_info),
-+				     btrfs_cmp_device_info_metadata, NULL);
-+			if (nr_top_tier >= ctl->devs_min || info->metadata_tier_policy == TOP_TIER_ONLY)
-+				ndevs = nr_top_tier;
-+		}
-+	}
- 
- 	return 0;
- }
--- 
-2.29.1
-
+And what if we issue a read for a region which still has in-flight
+ordered sums?

@@ -2,44 +2,44 @@ Return-Path: <SRS0=/Od+=EE=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.6 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-11.6 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,NICE_REPLY_A,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 25FE2C55178
-	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 07:48:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 80E63C2D0A3
+	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 07:50:05 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id B29B42076B
-	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 07:48:06 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3391320EDD
+	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 07:50:05 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="JSbPAyWn"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="R/4n+SMq"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2387856AbgJ2Hr6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 29 Oct 2020 03:47:58 -0400
-Received: from mx2.suse.de ([195.135.220.15]:58638 "EHLO mx2.suse.de"
+        id S1732036AbgJ2Ht4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 29 Oct 2020 03:49:56 -0400
+Received: from mx2.suse.de ([195.135.220.15]:54146 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1733219AbgJ2HrV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 29 Oct 2020 03:47:21 -0400
+        id S1731751AbgJ2Hnn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 29 Oct 2020 03:43:43 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1603957639;
+        t=1603956746;
         h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
          to:to:cc:mime-version:mime-version:content-type:content-type:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references:autocrypt:autocrypt;
-        bh=QdTWz12eSHRuhezArezhlfCEwCBrcT0EGbVekKwQN28=;
-        b=JSbPAyWn951NQI831fyj2ErisYfb/TnuY6JoiOAp3JiyXi2yZfBYKflD8YC4yi6btPZdjk
-        JMeon5gA0seKRSI6kugaQ4duF7clyHhNflWyyOafJo9cUBoagLJ0vlExuFLcewmltWRVWc
-        tv9mGgnpybGta1ef3nXLKVFxT0Rx15M=
+        bh=t2TjfK4kLpX3xMSrPrm0k1Oubrb/KSxNFAXHHpL8oH4=;
+        b=R/4n+SMqD5vQWke3fHn/eRf++BdPzyqu1rOTSwC2UjWN1LrpjbK6AGmVEmVd0YMfu3DjR3
+        egUyKYQxxBq26SV1RD0d9vhe+dqa99RmcMwlff9N5jnWMZSgLcGXwE0FaR83F9wb8h/Ezv
+        k22C1+I3lLMGeYcS03ssFiOnsLMfZeU=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 63519AD0B;
-        Thu, 29 Oct 2020 07:47:19 +0000 (UTC)
-Subject: Re: [PATCH v2 2/3] btrfs: file-item: remove the
- btrfs_find_ordered_sum() call in btrfs_lookup_bio_sums()
+        by mx2.suse.de (Postfix) with ESMTP id C76F0BA92;
+        Thu, 29 Oct 2020 07:32:26 +0000 (UTC)
+Subject: Re: [PATCH 2/3] btrfs: ordered-data: rename parameter @len to
+ @nr_sectors
 To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <20201029071218.49860-1-wqu@suse.com>
- <20201029071218.49860-3-wqu@suse.com>
+References: <20201028072432.86907-1-wqu@suse.com>
+ <20201028072432.86907-3-wqu@suse.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  mQINBFiKBz4BEADNHZmqwhuN6EAzXj9SpPpH/nSSP8YgfwoOqwrP+JR4pIqRK0AWWeWCSwmZ
@@ -83,12 +83,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
  RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
  5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
-Message-ID: <12990e1a-6e59-b0e3-5d26-34c80e31b601@suse.com>
-Date:   Thu, 29 Oct 2020 09:47:18 +0200
+Message-ID: <4d701078-6fa1-7261-086d-e994b8dc7fc1@suse.com>
+Date:   Thu, 29 Oct 2020 09:32:26 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
  Thunderbird/68.10.0
 MIME-Version: 1.0
-In-Reply-To: <20201029071218.49860-3-wqu@suse.com>
+In-Reply-To: <20201028072432.86907-3-wqu@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -98,10 +98,74 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 29.10.20 г. 9:12 ч., Qu Wenruo wrote:
-> The function btrfs_lookup_bio_sums() is only called for read bios.
-> While btrfs_find_ordered_sum() is to search ordered extent sums, which
+On 28.10.20 г. 9:24 ч., Qu Wenruo wrote:
+> The parameter is the number of sectors of the range to search.
+> While most "len" we used in other locations are in byte size, this can
+> lead to confusion.
+> 
+> Rename @len to @nr_sectors to make it more clear and avoid confusion.
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+
+> ---
+>  fs/btrfs/ordered-data.c | 9 ++++++---
+>  fs/btrfs/ordered-data.h | 2 +-
+>  2 files changed, 7 insertions(+), 4 deletions(-)
+> 
+> diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+> index ebac13389e7e..10c13f8a1603 100644
+> --- a/fs/btrfs/ordered-data.c
+> +++ b/fs/btrfs/ordered-data.c
+> @@ -802,9 +802,11 @@ btrfs_lookup_first_ordered_extent(struct inode *inode, u64 file_offset)
+>   * search the ordered extents for one corresponding to 'offset' and
+>   * try to find a checksum.  This is used because we allow pages to
+>   * be reclaimed before their checksum is actually put into the btree
+> + *
+> + * @nr_sectors:	The length of the search range, in sectors.
+>   */
+>  int btrfs_find_ordered_sum(struct inode *inode, u64 offset, u64 disk_bytenr,
+> -			   u8 *sum, int len)
+> +			   u8 *sum, int nr_sectors)
+>  {
+>  	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+>  	struct btrfs_ordered_sum *ordered_sum;
+> @@ -828,12 +830,13 @@ int btrfs_find_ordered_sum(struct inode *inode, u64 offset, u64 disk_bytenr,
+
+FWIW: The loop can be made slightly more readable by applying the following hunk:
+
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index 9a277a475a1c..0b41499bb45a 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -878,8 +878,8 @@ int btrfs_find_ordered_sum(struct btrfs_inode *inode, u64 offset,
+ 
+        spin_lock_irq(&tree->lock);
+        list_for_each_entry_reverse(ordered_sum, &ordered->list, list) {
+-               if (disk_bytenr >= ordered_sum->bytenr &&
+-                   disk_bytenr < ordered_sum->bytenr + ordered_sum->len) {
++               if (in_range(disk_bytenr, ordered_sum->bytenr,
++                            ordered_sum->len)) {
+                        i = (disk_bytenr - ordered_sum->bytenr) >> blocksize_bits;
+                        num_sectors = ordered_sum->len >> blocksize_bits;
+                        num_sectors = min_t(int, len - index, num_sectors - i);
 
 
-And what if we issue a read for a region which still has in-flight
-ordered sums?
+>  			    inode->i_sb->s_blocksize_bits;
+>  			num_sectors = ordered_sum->len >>
+>  				      inode->i_sb->s_blocksize_bits;
+> -			num_sectors = min_t(int, len - index, num_sectors - i);
+> +			num_sectors = min_t(int, nr_sectors - index,
+> +					    num_sectors - i);
+>  			memcpy(sum + index, ordered_sum->sums + i * csum_size,
+>  			       num_sectors * csum_size);
+>  
+>  			index += (int)num_sectors * csum_size;
+> -			if (index == len)
+> +			if (index == nr_sectors)
+>  				goto out;
+>  			disk_bytenr += num_sectors * sectorsize;
+>  		}
+
+<snip>

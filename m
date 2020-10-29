@@ -2,158 +2,309 @@ Return-Path: <SRS0=/Od+=EE=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.1 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-14.7 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,
+	URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D3496C5517A
-	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 12:09:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 27F51C2D0A3
+	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 12:25:12 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 829D420825
-	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 12:09:24 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1603973364;
-	bh=xDv0fFIb+9ZB8QRwEh93Uhu9zJuKx+xX55+qBlezrso=;
-	h=From:To:Cc:Subject:Date:List-ID:From;
-	b=jnITIh5UeyERUehYC5Eh8A81Eh1DB0V0SQ4afiMyzhcraRWqBQRYXUKKqml9vneYc
-	 JVjI7c5dhD1NC5VbIQW5Yz5tiLluWFUggp7MkiaSyXKenaO0lpmEVzTIMHAPP+GQ9S
-	 awII2Scn4NOWwWi6NKy/WSUMiMZNHj8r1Fy7HwwU=
+	by mail.kernel.org (Postfix) with ESMTP id D3B512076A
+	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 12:25:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726150AbgJ2MJV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 29 Oct 2020 08:09:21 -0400
-Received: from mail.kernel.org ([198.145.29.99]:37554 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726044AbgJ2MJO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 29 Oct 2020 08:09:14 -0400
-Received: from debian8.Home (bl8-197-74.dsl.telepac.pt [85.241.197.74])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 7AF7D2076E;
-        Thu, 29 Oct 2020 12:09:12 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1603973353;
-        bh=xDv0fFIb+9ZB8QRwEh93Uhu9zJuKx+xX55+qBlezrso=;
-        h=From:To:Cc:Subject:Date:From;
-        b=fECxBQkbyyr75Wn1X3frKsOg1+LdUHVpd8W7A8iKC2dOUA3L0hC6BprR5h6aTuQmT
-         7dui6EP1vL4j1wuv53g2jAs78pXNF0aJ3qcfAKaLIPVKe82xgNW/5HRAV3Lkk/O0JG
-         mKEDw2U7V3G4QKPc3fZJYK59zpHMQpfd2uhcSoZ8=
-From:   fdmanana@kernel.org
-To:     fstests@vger.kernel.org
-Cc:     linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] fstests: add missing remove of the $seqres.full file for some tests
-Date:   Thu, 29 Oct 2020 12:09:06 +0000
-Message-Id: <8bc766361cbe31af4bc1b71f077e9561a1828ba7.1603973261.git.fdmanana@suse.com>
-X-Mailer: git-send-email 2.28.0
+        id S1725883AbgJ2MZK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 29 Oct 2020 08:25:10 -0400
+Received: from out20-61.mail.aliyun.com ([115.124.20.61]:42856 "EHLO
+        out20-61.mail.aliyun.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725987AbgJ2MZK (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 29 Oct 2020 08:25:10 -0400
+X-Alimail-AntiSpam: AC=CONTINUE;BC=0.04436282|-1;CH=green;DM=|CONTINUE|false|;DS=CONTINUE|ham_regular_dialog|0.106097-0.000593354-0.89331;FP=0|0|0|0|0|-1|-1|-1;HT=ay29a033018047208;MF=wangyugui@e16-tech.com;NM=1;PH=DS;RN=3;RT=3;SR=0;TI=SMTPD_---.Iq1vyBN_1603974304;
+Received: from 192.168.2.112(mailfrom:wangyugui@e16-tech.com fp:SMTPD_---.Iq1vyBN_1603974304)
+          by smtp.aliyun-inc.com(10.147.41.231);
+          Thu, 29 Oct 2020 20:25:04 +0800
+Date:   Thu, 29 Oct 2020 20:25:09 +0800
+From:   Wang Yugui <wangyugui@e16-tech.com>
+To:     Boris Burkov <boris@bur.io>
+Subject: Re: [PATCH v5 09/10] btrfs: remove free space items when disabling space cache v1
+Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+In-Reply-To: <20201029190748.563D.409509F4@e16-tech.com>
+References: <750174b66139e105150b988b35705a1a708b2eb5.1603828718.git.boris@bur.io> <20201029190748.563D.409509F4@e16-tech.com>
+Message-Id: <20201029202508.01AD.409509F4@e16-tech.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset="US-ASCII"
+Content-Transfer-Encoding: 7bit
+X-Mailer: Becky! ver. 2.75.01 [en]
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+Hi,
 
-Some test cases are missing the 'rm -f $seqres.full' line but are appending
-to that file, so everytime they run that file gets bigger and bigger (some
-of them are using about a dozen megabytes on one of my test boxes).
+After mkfs.btrfs with/without -R free-space-tree, 
+the result of 'btrfs inspect-internal dump-super' is
 
-So just add the 'rm -f $seqres.full' line to them, together with the comment
-that the 'new' script generates for new test cases.
+cache_generation        18446744073709551615	=> -1LL
+uuid_tree_generation    0
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- tests/btrfs/033  | 3 +++
- tests/btrfs/036  | 3 +++
- tests/btrfs/114  | 3 +++
- tests/btrfs/115  | 3 +++
- tests/btrfs/205  | 3 +++
- tests/shared/298 | 3 +++
- 6 files changed, 18 insertions(+)
+No needs of 'cleaning free space cache v1'  when 
+cache_generation is -1LL?
 
-diff --git a/tests/btrfs/033 b/tests/btrfs/033
-index 0b9fbe27..d1f8a4db 100755
---- a/tests/btrfs/033
-+++ b/tests/btrfs/033
-@@ -25,6 +25,9 @@ trap "_cleanup ; exit \$status" 0 1 2 3 15
- . ./common/rc
- . ./common/filter
- 
-+# remove previous $seqres.full before test
-+rm -f $seqres.full
-+
- # real QA test starts here
- _supported_fs btrfs
- _require_scratch
-diff --git a/tests/btrfs/036 b/tests/btrfs/036
-index cd7a81e5..36b652fd 100755
---- a/tests/btrfs/036
-+++ b/tests/btrfs/036
-@@ -49,6 +49,9 @@ trap "_cleanup ; exit \$status" 0 1 2 3 15
- . ./common/rc
- . ./common/filter
- 
-+# remove previous $seqres.full before test
-+rm -f $seqres.full
-+
- # real QA test starts here
- _supported_fs btrfs
- _require_scratch
-diff --git a/tests/btrfs/114 b/tests/btrfs/114
-index a4b8bafa..2d9546a1 100755
---- a/tests/btrfs/114
-+++ b/tests/btrfs/114
-@@ -26,6 +26,9 @@ _cleanup()
- . ./common/rc
- . ./common/filter
- 
-+# remove previous $seqres.full before test
-+rm -f $seqres.full
-+
- # real QA test starts here
- _supported_fs btrfs
- _require_scratch
-diff --git a/tests/btrfs/115 b/tests/btrfs/115
-index eac0e33d..02ae4e1d 100755
---- a/tests/btrfs/115
-+++ b/tests/btrfs/115
-@@ -26,6 +26,9 @@ _cleanup()
- . ./common/rc
- . ./common/filter
- 
-+# remove previous $seqres.full before test
-+rm -f $seqres.full
-+
- # real QA test starts here
- _supported_fs btrfs
- _require_scratch
-diff --git a/tests/btrfs/205 b/tests/btrfs/205
-index b335ac3d..b53e0e52 100755
---- a/tests/btrfs/205
-+++ b/tests/btrfs/205
-@@ -31,6 +31,9 @@ _cleanup()
- . ./common/filter
- . ./common/reflink
- 
-+# remove previous $seqres.full before test
-+rm -f $seqres.full
-+
- # real QA test starts here
- _supported_fs btrfs
- _require_scratch_reflink
-diff --git a/tests/shared/298 b/tests/shared/298
-index 416a89d3..5cb30fc9 100755
---- a/tests/shared/298
-+++ b/tests/shared/298
-@@ -15,6 +15,9 @@ trap "_cleanup; exit \$status" 0 1 2 3 15
- 
- . ./common/rc
- 
-+# remove previous $seqres.full before test
-+rm -f $seqres.full
-+
- _supported_fs ext4 xfs btrfs
- _require_test
- _require_loop
--- 
-2.28.0
+Best Regards
+Wang Yugui (wangyugui@e16-tech.com)
+2020/10/29
+
+> Hi,
+> 
+> 'mkfs.btrfs -R free-space-tree'  still create 'space cache v1'?
+> 
+> #mkfs.btrfs-5.9 -R free-space-tree /dev/sdb1 -f
+> 
+> 1st time mount
+> #mount /dev/sdb1 /btrfs/
+> #dmesg
+> BTRFS info (device sdb1): cleaning free space cache v1
+> #umount
+> 
+> 2nd time mount
+> #mount /dev/sdb1 /btrfs/
+> #dmesg
+> NO BTRFS info (device sdb1): cleaning free space cache v1
+> #umount
+> 
+> Best Regards
+> Wang Yugui (wangyugui@e16-tech.com)
+> 2020/10/29
+> 
+> > When the file system transitions from space cache v1 to v2 or to
+> > nospace_cache, it removes the old cached data, but does not remove
+> > the FREE_SPACE items nor the free space inodes they point to. This
+> > doesn't cause any issues besides being a bit inefficient, since these
+> > items no longer do anything useful.
+> > 
+> > To fix it, when we are mounting, and plan to disable the space cache,
+> > destroy each block group's free space item and free space inode.
+> > The code to remove the items is lifted from the existing use case of
+> > removing the block group, with a light adaptation to handle whether or
+> > not we have already looked up the free space inode.
+> > 
+> > References: https://github.com/btrfs/btrfs-todo/issues/5
+> > Signed-off-by: Boris Burkov <boris@bur.io>
+> > ---
+> >  fs/btrfs/block-group.c      |  39 +-------------
+> >  fs/btrfs/free-space-cache.c | 101 ++++++++++++++++++++++++++++++++++--
+> >  fs/btrfs/free-space-cache.h |   3 ++
+> >  3 files changed, 102 insertions(+), 41 deletions(-)
+> > 
+> > diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+> > index c0f1d6818df7..8938b11a3339 100644
+> > --- a/fs/btrfs/block-group.c
+> > +++ b/fs/btrfs/block-group.c
+> > @@ -892,8 +892,6 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
+> >  	struct btrfs_path *path;
+> >  	struct btrfs_block_group *block_group;
+> >  	struct btrfs_free_cluster *cluster;
+> > -	struct btrfs_root *tree_root = fs_info->tree_root;
+> > -	struct btrfs_key key;
+> >  	struct inode *inode;
+> >  	struct kobject *kobj = NULL;
+> >  	int ret;
+> > @@ -971,42 +969,9 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
+> >  	spin_unlock(&trans->transaction->dirty_bgs_lock);
+> >  	mutex_unlock(&trans->transaction->cache_write_mutex);
+> >  
+> > -	if (!IS_ERR(inode)) {
+> > -		ret = btrfs_orphan_add(trans, BTRFS_I(inode));
+> > -		if (ret) {
+> > -			btrfs_add_delayed_iput(inode);
+> > -			goto out;
+> > -		}
+> > -		clear_nlink(inode);
+> > -		/* One for the block groups ref */
+> > -		spin_lock(&block_group->lock);
+> > -		if (block_group->iref) {
+> > -			block_group->iref = 0;
+> > -			block_group->inode = NULL;
+> > -			spin_unlock(&block_group->lock);
+> > -			iput(inode);
+> > -		} else {
+> > -			spin_unlock(&block_group->lock);
+> > -		}
+> > -		/* One for our lookup ref */
+> > -		btrfs_add_delayed_iput(inode);
+> > -	}
+> > -
+> > -	key.objectid = BTRFS_FREE_SPACE_OBJECTID;
+> > -	key.type = 0;
+> > -	key.offset = block_group->start;
+> > -
+> > -	ret = btrfs_search_slot(trans, tree_root, &key, path, -1, 1);
+> > -	if (ret < 0)
+> > +	ret = btrfs_remove_free_space_inode(trans, inode, block_group);
+> > +	if (ret)
+> >  		goto out;
+> > -	if (ret > 0)
+> > -		btrfs_release_path(path);
+> > -	if (ret == 0) {
+> > -		ret = btrfs_del_item(trans, tree_root, path);
+> > -		if (ret)
+> > -			goto out;
+> > -		btrfs_release_path(path);
+> > -	}
+> >  
+> >  	spin_lock(&fs_info->block_group_cache_lock);
+> >  	rb_erase(&block_group->cache_node,
+> > diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+> > index 3acf935536ea..5d357786c9da 100644
+> > --- a/fs/btrfs/free-space-cache.c
+> > +++ b/fs/btrfs/free-space-cache.c
+> > @@ -207,6 +207,65 @@ int create_free_space_inode(struct btrfs_trans_handle *trans,
+> >  					 ino, block_group->start);
+> >  }
+> >  
+> > +/*
+> > + * inode is an optional sink: if it is NULL, btrfs_remove_free_space_inode
+> > + * handles lookup, otherwise it takes ownership and iputs the inode.
+> > + * Don't reuse an inode pointer after passing it into this function.
+> > + */
+> > +int btrfs_remove_free_space_inode(struct btrfs_trans_handle *trans,
+> > +				  struct inode *inode,
+> > +				  struct btrfs_block_group *block_group)
+> > +{
+> > +	struct btrfs_path *path;
+> > +	struct btrfs_key key;
+> > +	int ret = 0;
+> > +
+> > +	path = btrfs_alloc_path();
+> > +	if (!path)
+> > +		return -ENOMEM;
+> > +
+> > +	if (!inode)
+> > +		inode = lookup_free_space_inode(block_group, path);
+> > +	if (IS_ERR(inode)) {
+> > +		if (PTR_ERR(inode) != -ENOENT)
+> > +			ret = PTR_ERR(inode);
+> > +		goto out;
+> > +	}
+> > +	ret = btrfs_orphan_add(trans, BTRFS_I(inode));
+> > +	if (ret) {
+> > +		btrfs_add_delayed_iput(inode);
+> > +		goto out;
+> > +	}
+> > +	clear_nlink(inode);
+> > +	/* One for the block groups ref */
+> > +	spin_lock(&block_group->lock);
+> > +	if (block_group->iref) {
+> > +		block_group->iref = 0;
+> > +		block_group->inode = NULL;
+> > +		spin_unlock(&block_group->lock);
+> > +		iput(inode);
+> > +	} else {
+> > +		spin_unlock(&block_group->lock);
+> > +	}
+> > +	/* One for the lookup ref */
+> > +	btrfs_add_delayed_iput(inode);
+> > +
+> > +	key.objectid = BTRFS_FREE_SPACE_OBJECTID;
+> > +	key.type = 0;
+> > +	key.offset = block_group->start;
+> > +	ret = btrfs_search_slot(trans, trans->fs_info->tree_root, &key, path,
+> > +				-1, 1);
+> > +	if (ret) {
+> > +		if (ret > 0)
+> > +			ret = 0;
+> > +		goto out;
+> > +	}
+> > +	ret = btrfs_del_item(trans, trans->fs_info->tree_root, path);
+> > +out:
+> > +	btrfs_free_path(path);
+> > +	return ret;
+> > +}
+> > +
+> >  int btrfs_check_trunc_cache_free_space(struct btrfs_fs_info *fs_info,
+> >  				       struct btrfs_block_rsv *rsv)
+> >  {
+> > @@ -3997,6 +4056,28 @@ bool btrfs_free_space_cache_v1_active(struct btrfs_fs_info *fs_info)
+> >  	return btrfs_super_cache_generation(fs_info->super_copy);
+> >  }
+> >  
+> > +static int cleanup_free_space_cache_v1(struct btrfs_fs_info *fs_info,
+> > +				       struct btrfs_trans_handle *trans)
+> > +{
+> > +	struct btrfs_block_group *block_group;
+> > +	struct rb_node *node;
+> > +	int ret;
+> > +
+> > +	btrfs_info(fs_info, "cleaning free space cache v1");
+> > +
+> > +	node = rb_first(&fs_info->block_group_cache_tree);
+> > +	while (node) {
+> > +		block_group = rb_entry(node, struct btrfs_block_group,
+> > +				       cache_node);
+> > +		ret = btrfs_remove_free_space_inode(trans, NULL, block_group);
+> > +		if (ret)
+> > +			goto out;
+> > +		node = rb_next(node);
+> > +	}
+> > +out:
+> > +	return ret;
+> > +}
+> > +
+> >  int btrfs_set_free_space_cache_v1_active(struct btrfs_fs_info *fs_info,
+> >  					 bool active)
+> >  {
+> > @@ -4004,18 +4085,30 @@ int btrfs_set_free_space_cache_v1_active(struct btrfs_fs_info *fs_info,
+> >  	int ret;
+> >  
+> >  	/*
+> > -	 * update_super_roots will appropriately set
+> > -	 * fs_info->super_copy->cache_generation based on the SPACE_CACHE
+> > -	 * option, so all we have to do is trigger a transaction commit.
+> > +	 * update_super_roots will appropriately set or unset
+> > +	 * fs_info->super_copy->cache_generation based on SPACE_CACHE and
+> > +	 * BTRFS_FS_CLEANUP_SPACE_CACHE_V1. For this reason, we need a
+> > +	 * transaction commit whether we are enabling space cache v1 and don't
+> > +	 * have any other work to do, or are disabling it and removing free
+> > +	 * space inodes.
+> >  	 */
+> >  	trans = btrfs_start_transaction(fs_info->tree_root, 0);
+> >  	if (IS_ERR(trans))
+> >  		return PTR_ERR(trans);
+> >  
+> > -	if (!active)
+> > +	if (!active) {
+> >  		set_bit(BTRFS_FS_CLEANUP_SPACE_CACHE_V1, &fs_info->flags);
+> > +		ret = cleanup_free_space_cache_v1(fs_info, trans);
+> > +		if (ret)
+> > +			goto abort;
+> > +	}
+> >  
+> >  	ret = btrfs_commit_transaction(trans);
+> > +	goto out;
+> > +abort:
+> > +	btrfs_abort_transaction(trans, ret);
+> > +	btrfs_end_transaction(trans);
+> > +out:
+> >  	clear_bit(BTRFS_FS_CLEANUP_SPACE_CACHE_V1, &fs_info->flags);
+> >  	return ret;
+> >  }
+> > diff --git a/fs/btrfs/free-space-cache.h b/fs/btrfs/free-space-cache.h
+> > index 5c546898ded9..8df4b2925eca 100644
+> > --- a/fs/btrfs/free-space-cache.h
+> > +++ b/fs/btrfs/free-space-cache.h
+> > @@ -84,6 +84,9 @@ struct inode *lookup_free_space_inode(struct btrfs_block_group *block_group,
+> >  int create_free_space_inode(struct btrfs_trans_handle *trans,
+> >  			    struct btrfs_block_group *block_group,
+> >  			    struct btrfs_path *path);
+> > +int btrfs_remove_free_space_inode(struct btrfs_trans_handle *trans,
+> > +				  struct inode *inode,
+> > +				  struct btrfs_block_group *block_group);
+> >  
+> >  int btrfs_check_trunc_cache_free_space(struct btrfs_fs_info *fs_info,
+> >  				       struct btrfs_block_rsv *rsv);
+> > -- 
+> > 2.24.1
+> 
+
 

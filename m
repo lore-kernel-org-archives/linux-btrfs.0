@@ -2,170 +2,229 @@ Return-Path: <SRS0=/Od+=EE=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-11.6 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,NICE_REPLY_A,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-12.9 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	UNPARSEABLE_RELAY,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 80E63C2D0A3
-	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 07:50:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 98CE2C55179
+	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 07:55:48 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 3391320EDD
-	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 07:50:05 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 54F3D20EDD
+	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Oct 2020 07:55:48 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="R/4n+SMq"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="w7AJOexL"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732036AbgJ2Ht4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 29 Oct 2020 03:49:56 -0400
-Received: from mx2.suse.de ([195.135.220.15]:54146 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1731751AbgJ2Hnn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 29 Oct 2020 03:43:43 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1603956746;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references:autocrypt:autocrypt;
-        bh=t2TjfK4kLpX3xMSrPrm0k1Oubrb/KSxNFAXHHpL8oH4=;
-        b=R/4n+SMqD5vQWke3fHn/eRf++BdPzyqu1rOTSwC2UjWN1LrpjbK6AGmVEmVd0YMfu3DjR3
-        egUyKYQxxBq26SV1RD0d9vhe+dqa99RmcMwlff9N5jnWMZSgLcGXwE0FaR83F9wb8h/Ezv
-        k22C1+I3lLMGeYcS03ssFiOnsLMfZeU=
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id C76F0BA92;
-        Thu, 29 Oct 2020 07:32:26 +0000 (UTC)
-Subject: Re: [PATCH 2/3] btrfs: ordered-data: rename parameter @len to
- @nr_sectors
-To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <20201028072432.86907-1-wqu@suse.com>
- <20201028072432.86907-3-wqu@suse.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <4d701078-6fa1-7261-086d-e994b8dc7fc1@suse.com>
-Date:   Thu, 29 Oct 2020 09:32:26 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.10.0
+        id S1731680AbgJ2Hzp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 29 Oct 2020 03:55:45 -0400
+Received: from aserp2130.oracle.com ([141.146.126.79]:44760 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1731546AbgJ2Hyg (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 29 Oct 2020 03:54:36 -0400
+Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
+        by aserp2130.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09T7nH2r191223;
+        Thu, 29 Oct 2020 07:54:30 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
+ subject : date : message-id : in-reply-to : references : mime-version :
+ content-transfer-encoding; s=corp-2020-01-29;
+ bh=sBMYDI22kJmLJ8ON51/X5XzCELSygXrtgcHNzOJdRkM=;
+ b=w7AJOexLXlNt548CZbqkvawrn7ldrSasBz1o/SQiS0r9RpiwyliQCqYJa7+GoUhzXXtz
+ Kz03DR+v7L4UtvYQAO12hMpNz7IS7F298bSvIxyQGNG+bAtu9I8vZCK6b4Z/6iyezSf8
+ Vec8mFwceNPm2s2xQjcpyfez7sBa7C4inwcHhWbYNkbrlee0UV/JfbwhPY6QLi6+1t0T
+ lQNEWjRYV7C67ti4Xe4O+tMhmI/Jn2TX1hXsVEZl0bW2puQ5uQHCOA/pJ/UrxblbOhUY
+ +RMZ9MFkyBeAq/F4nBMaMiYcf+OaXSKtqr2ZogdaKH5S+Uva/a7KolSVjfbk2wgEM5qI Qg== 
+Received: from userp3020.oracle.com (userp3020.oracle.com [156.151.31.79])
+        by aserp2130.oracle.com with ESMTP id 34c9sb3dpb-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
+        Thu, 29 Oct 2020 07:54:30 +0000
+Received: from pps.filterd (userp3020.oracle.com [127.0.0.1])
+        by userp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09T7oONC175481;
+        Thu, 29 Oct 2020 07:54:29 GMT
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by userp3020.oracle.com with ESMTP id 34cx1sx01q-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Thu, 29 Oct 2020 07:54:29 +0000
+Received: from abhmp0006.oracle.com (abhmp0006.oracle.com [141.146.116.12])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id 09T7sSWh006325;
+        Thu, 29 Oct 2020 07:54:28 GMT
+Received: from localhost.localdomain (/39.109.231.106)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Thu, 29 Oct 2020 00:54:28 -0700
+From:   Anand Jain <anand.jain@oracle.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     dsterba@suse.com, josef@toxicpanda.com
+Subject: [PATCH 3/4] btrfs: introduce new read_policy device
+Date:   Thu, 29 Oct 2020 15:54:10 +0800
+Message-Id: <7c065ad4a3063ef2a44b26d112f776a42dd55b8a.1603938305.git.anand.jain@oracle.com>
+X-Mailer: git-send-email 2.25.1
+In-Reply-To: <cover.1603938304.git.anand.jain@oracle.com>
+References: <cover.1603938304.git.anand.jain@oracle.com>
 MIME-Version: 1.0
-In-Reply-To: <20201028072432.86907-3-wqu@suse.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
 Content-Transfer-Encoding: 8bit
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9788 signatures=668682
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 spamscore=0 phishscore=0 bulkscore=0
+ suspectscore=1 malwarescore=0 mlxlogscore=999 mlxscore=0 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2009150000
+ definitions=main-2010290056
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9788 signatures=668682
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 mlxscore=0 impostorscore=0
+ mlxlogscore=999 malwarescore=0 lowpriorityscore=0 bulkscore=0
+ priorityscore=1501 spamscore=0 phishscore=0 clxscore=1015 suspectscore=1
+ adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2009150000 definitions=main-2010290055
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+Read-policy type 'device' and device flag 'read-preferred':
 
+The read-policy type device picks the device(s) flagged as
+read-preferred for reading chunks of type raid1, raid10,
+raid1c3 and raid1c4.
 
-On 28.10.20 г. 9:24 ч., Qu Wenruo wrote:
-> The parameter is the number of sectors of the range to search.
-> While most "len" we used in other locations are in byte size, this can
-> lead to confusion.
-> 
-> Rename @len to @nr_sectors to make it more clear and avoid confusion.
-> 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+A system might contain SSD, nvme, iscsi or san lun, and which are all
+a non-rotational device, so it is not a good idea to set the read-preferred
+automatically. Instead device read-policy along with the read-preferred
+flag provides an ability to do it manually. This advance tuning is
+useful in more than one situation, for example,
+ - In heterogeneous-disk volume, it provides an ability to manually choose
+    the low latency disks for reading.
+ - Useful for more accurate testing.
+ - Avoid known problematic device from reading the chunk until it is
+   replaced (by marking the other good devices as read-preferred).
 
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+Note:
 
-> ---
->  fs/btrfs/ordered-data.c | 9 ++++++---
->  fs/btrfs/ordered-data.h | 2 +-
->  2 files changed, 7 insertions(+), 4 deletions(-)
-> 
-> diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-> index ebac13389e7e..10c13f8a1603 100644
-> --- a/fs/btrfs/ordered-data.c
-> +++ b/fs/btrfs/ordered-data.c
-> @@ -802,9 +802,11 @@ btrfs_lookup_first_ordered_extent(struct inode *inode, u64 file_offset)
->   * search the ordered extents for one corresponding to 'offset' and
->   * try to find a checksum.  This is used because we allow pages to
->   * be reclaimed before their checksum is actually put into the btree
-> + *
-> + * @nr_sectors:	The length of the search range, in sectors.
->   */
->  int btrfs_find_ordered_sum(struct inode *inode, u64 offset, u64 disk_bytenr,
-> -			   u8 *sum, int len)
-> +			   u8 *sum, int nr_sectors)
->  {
->  	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
->  	struct btrfs_ordered_sum *ordered_sum;
-> @@ -828,12 +830,13 @@ int btrfs_find_ordered_sum(struct inode *inode, u64 offset, u64 disk_bytenr,
+If the read-policy type is set to 'device', but there isn't any device
+which is flagged as read-preferred, then stripe 0 is used for reading.
 
-FWIW: The loop can be made slightly more readable by applying the following hunk:
+The device replace won't migrate the read-preferred flag to the new
+replace the target device.
 
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index 9a277a475a1c..0b41499bb45a 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -878,8 +878,8 @@ int btrfs_find_ordered_sum(struct btrfs_inode *inode, u64 offset,
+As of now, this is an in-memory only feature.
+
+It's pointless to set the read-preferred flag on the missing device,
+as IOs aren't submitted to the missing device.
+
+If there is more than one read-preferred device in a chunk, the read IO
+shall go to the stripe 0 as of now.
+
+Usage example:
+
+Consider a typical two disks raid1.
+
+Configure devid1 for reading.
+
+$ echo 1 > devinfo/1/read_preferred
+$ cat devinfo/1/read_preferred; cat devinfo/2/read_preferred
+1
+0
+
+$ pwd
+/sys/fs/btrfs/12345678-1234-1234-1234-123456789abc
+
+$ cat read_policy; echo device > ./read_policy; cat read_policy
+[pid] device
+pid [device]
+
+Now read IOs are sent to devid 1 (sdb).
+
+$ echo 3 > /proc/sys/vm/drop_caches
+$ md5sum /btrfs/YkZI
+
+$ iostat -zy 1 | egrep 'sdb|sdc' (from another terminal)
+sdb              50.00     40048.00         0.00      40048          0
+
+Change the read-preferred device from devid 1 to devid 2 (sdc).
+
+$ echo 0 > ./devinfo/1/read_preferred; echo 1 > ./devinfo/2/read_preferred;
+
+[ 3343.918658] BTRFS info (device sdb): reset read preferred on devid 1 (1334)
+[ 3343.919876] BTRFS info (device sdb): set read preferred on devid 2 (1334)
+
+$ echo 3 > /proc/sys/vm/drop_caches
+$ md5sum /btrfs/YkZI
+
+Further read ios are sent to devid 2 (sdc).
+
+$ iostat -zy 1 | egrep 'sdb|sdc' (from another terminal)
+sdc              49.00     40048.00         0.00      40048          0
+
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ fs/btrfs/sysfs.c   |  3 ++-
+ fs/btrfs/volumes.c | 22 ++++++++++++++++++++++
+ fs/btrfs/volumes.h |  1 +
+ 3 files changed, 25 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index 35f4642a0468..11de4948b512 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -907,7 +907,8 @@ static bool btrfs_strmatch(const char *given, const char *golden)
+ }
  
-        spin_lock_irq(&tree->lock);
-        list_for_each_entry_reverse(ordered_sum, &ordered->list, list) {
--               if (disk_bytenr >= ordered_sum->bytenr &&
--                   disk_bytenr < ordered_sum->bytenr + ordered_sum->len) {
-+               if (in_range(disk_bytenr, ordered_sum->bytenr,
-+                            ordered_sum->len)) {
-                        i = (disk_bytenr - ordered_sum->bytenr) >> blocksize_bits;
-                        num_sectors = ordered_sum->len >> blocksize_bits;
-                        num_sectors = min_t(int, len - index, num_sectors - i);
+ /* Must follow the order as in enum btrfs_read_policy */
+-static const char * const btrfs_read_policy_name[] = { "pid", "latency" };
++static const char * const btrfs_read_policy_name[] = { "pid", "latency",
++						       "device" };
+ 
+ static ssize_t btrfs_read_policy_show(struct kobject *kobj,
+ 				      struct kobj_attribute *a, char *buf)
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 70bcb9146e27..0cb7789a3199 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -5502,6 +5502,25 @@ static int btrfs_find_best_stripe(struct btrfs_fs_info *fs_info,
+ 	return best_stripe;
+ }
+ 
++static int btrfs_find_read_preferred(struct map_lookup *map, int first, int num_stripe)
++{
++	int stripe_index;
++	int last = first + num_stripe;
++
++	/*
++	 * If there are more than one read preferred devices, then just pick the
++	 * first found read preferred device as of now.
++	 */
++	for (stripe_index = first; stripe_index < last; stripe_index++) {
++		if (test_bit(BTRFS_DEV_STATE_READ_PREFERRED,
++			     &map->stripes[stripe_index].dev->dev_state))
++			return stripe_index;
++        }
++
++	/* If there is no read preferred device then just use the first stripe */
++	return first;
++}
++
+ static int find_live_mirror(struct btrfs_fs_info *fs_info,
+ 			    struct map_lookup *map, int first,
+ 			    int dev_replace_is_ongoing)
+@@ -5536,6 +5555,9 @@ static int find_live_mirror(struct btrfs_fs_info *fs_info,
+ 		preferred_mirror = btrfs_find_best_stripe(fs_info, map, first,
+ 							  num_stripes);
+ 		break;
++	case BTRFS_READ_POLICY_DEVICE:
++		preferred_mirror = btrfs_find_read_preferred(map, first, num_stripes);
++		break;
+ 	}
+ 
+ 	if (dev_replace_is_ongoing &&
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index f1cbbb18f5ef..1448adb8993d 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -219,6 +219,7 @@ enum btrfs_chunk_allocation_policy {
+ enum btrfs_read_policy {
+ 	BTRFS_READ_POLICY_PID,
+ 	BTRFS_READ_POLICY_LATENCY,
++	BTRFS_READ_POLICY_DEVICE,
+ 	BTRFS_NR_READ_POLICY,
+ };
+ 
+-- 
+2.25.1
 
-
->  			    inode->i_sb->s_blocksize_bits;
->  			num_sectors = ordered_sum->len >>
->  				      inode->i_sb->s_blocksize_bits;
-> -			num_sectors = min_t(int, len - index, num_sectors - i);
-> +			num_sectors = min_t(int, nr_sectors - index,
-> +					    num_sectors - i);
->  			memcpy(sum + index, ordered_sum->sums + i * csum_size,
->  			       num_sectors * csum_size);
->  
->  			index += (int)num_sectors * csum_size;
-> -			if (index == len)
-> +			if (index == nr_sectors)
->  				goto out;
->  			disk_bytenr += num_sectors * sectorsize;
->  		}
-
-<snip>

@@ -2,303 +2,181 @@ Return-Path: <SRS0=uAB+=EF=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.6 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=unavailable autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5D30EC4363A
-	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Oct 2020 13:54:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 08452C4363A
+	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Oct 2020 14:01:19 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 014A72071A
-	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Oct 2020 13:54:13 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9995C221FF
+	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Oct 2020 14:01:18 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="hLYyuOd0"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="BKwy9SBQ"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727008AbgJ3NyI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 30 Oct 2020 09:54:08 -0400
-Received: from esa3.hgst.iphmx.com ([216.71.153.141]:22003 "EHLO
-        esa3.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726799AbgJ3Nws (ORCPT
+        id S1726849AbgJ3OBP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 30 Oct 2020 10:01:15 -0400
+Received: from aserp2120.oracle.com ([141.146.126.78]:42334 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726832AbgJ3OBJ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 30 Oct 2020 09:52:48 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1604065967; x=1635601967;
-  h=from:to:cc:subject:date:message-id:in-reply-to:
-   references:mime-version:content-transfer-encoding;
-  bh=k8Wmys5L2g9sde1FdwDgNezlXg2dd9T7GZAnlZsOUrc=;
-  b=hLYyuOd076xgizIMWBcgVMPfyr51q236dcQRkfA2rhFttazZRq6wvXBi
-   kn+G2s6RykXgcmxsnWkb6RTwP4CLQVsUf1go/CoMcNxs62HAfAl417MZL
-   9/Pz/41EkmdAweagugB7mf2nUvT0FCdnBSOjcZ3XN54ZD4zbqQdm513PG
-   fqvYKOmutyYlgOqYYCRoBxetzqchajyymLbJfsNkFgONj7yNYrv1kCh3J
-   bunZC7HCk64t8UgGIbu9Zg9BkED/toP+Kx3kiWXY1WSj/cO8/UYwLKM0J
-   wxvpKVUmHUYqqmP44CmnYWVMk9xhE1KeCqRtod/uaP79eKvMpFmMhaoBM
-   Q==;
-IronPort-SDR: jCRF45lN65/FkDdeosLXn8qG1tvKyMVtDBVmB1JLo6j+qS4cTV2eDUHfs5jnNlYncrlCLPPo2U
- sWbyVN9wuBQT2YQskeN2c/hlZpnabxyU3hjIKmMVimy8DOKZCHHddKxep6VuHxMIKghubO2esv
- u3pXasfi9hhBgN9TrnxvtQcMP3EAOL//XHUyX9j+PKeQuWKYkbBE63B0xjvSQ9LHLp/e0JQ6Bl
- MVt5jTIIAaqUPOD3KBHk+V51/MoAB1z9lHLw/+v0jt4NhwbjxNYUr3znelo7+RYlxDr4AYZaFD
- Og0=
-X-IronPort-AV: E=Sophos;i="5.77,433,1596470400"; 
-   d="scan'208";a="155806610"
-Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 30 Oct 2020 21:52:42 +0800
-IronPort-SDR: uTpxl9LWrdTV0cI3dXTHkrsEedvmNZIKCMMPYjiY94iIycaC/OYYC03OAHfXtlloe9LNf7B15A
- Ua39j5J2CsJJjh+zSWiT7eACBTZff+wR7NCTb9foFvU2ac1OEp8olEvkFGAk7my/VBZHUasteO
- qOp8vIFJiZDaRbfPh+Dfej7RSO51qgI9klONcX4XAF+gwKcqplm6SQ4gGjI2HYsiN7qm6J8TbL
- Nzn7n2tIGX/bJQ1GNjHh/XwNbsb0o2MzliTBNW6PPhW3YUr2WDdPUceVIYYZ00GLnuvGTev4Rp
- 7R+RQqZBX+h4/f7vaQHHsw6i
-Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 30 Oct 2020 06:38:57 -0700
-IronPort-SDR: QzQd8PDiIvUgl0xfSNS84tgaWyqKMvYAliUAFqdMFiDkb3y7eRgQJDOCBeMa6IKusl6k632T6o
- wYtJmZKqGZ2KPv6fT9B1A6o7/cSVPyjqBhiaawvLdaCdGbX33NYh44tSxUL1+gfI0pLEoYtUao
- yni9MRe2KSLMIS85Rop7yF9MqoL7U+qQbf92obqQyUEoPhByN9FDCM6xAvGDi8VX9+8w4Nij4F
- M5yMdpR1PFINoUBT5H2w+S/R2LHEzI4griIIYyvgJI0LhOI/GyZ4MqN/Wuu7jMh1FmEMsF7sqa
- iOg=
-WDCIronportException: Internal
-Received: from naota.dhcp.fujisawa.hgst.com ([10.149.52.155])
-  by uls-op-cesaip01.wdc.com with ESMTP; 30 Oct 2020 06:52:42 -0700
-From:   Naohiro Aota <naohiro.aota@wdc.com>
-To:     linux-btrfs@vger.kernel.org, dsterba@suse.com
-Cc:     hare@suse.com, linux-fsdevel@vger.kernel.org,
-        Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH v9 17/41] btrfs: do sequential extent allocation in ZONED mode
-Date:   Fri, 30 Oct 2020 22:51:24 +0900
-Message-Id: <0b0775b15f3fd97b04b3b3f1650701330e9392b5.1604065695.git.naohiro.aota@wdc.com>
-X-Mailer: git-send-email 2.27.0
-In-Reply-To: <d9a0a445560db3a9eb240c6535f8dd1bbd0abd96.1604065694.git.naohiro.aota@wdc.com>
-References: <d9a0a445560db3a9eb240c6535f8dd1bbd0abd96.1604065694.git.naohiro.aota@wdc.com>
+        Fri, 30 Oct 2020 10:01:09 -0400
+Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
+        by aserp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09UDxeHx171678;
+        Fri, 30 Oct 2020 14:00:58 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to : cc :
+ references : from : message-id : date : mime-version : in-reply-to :
+ content-type : content-transfer-encoding; s=corp-2020-01-29;
+ bh=VRkTS19R3GdoTa/XaONW6kZN5WY7ZWiBiaIzIvBfuZ0=;
+ b=BKwy9SBQN3Cdj67lz8/qnAjbSY+Vew2BAwWxJmFyZp17cC9qCOi2jWxUwXt3xlia3vqU
+ dLeVkLxmmsNlGDlNp/0znop3/pP9A8CRkyxSduyL3PwLsxKBzptxZK0qaVd2DwUvSdcw
+ k1xxz0OI2mOX5QdFYpqczOUAmiRq+oONBQfEKIflt5KMZsHZKYYDIHXx9o/j7f5yIse6
+ qFoVYRoJDGfzlSNWPDWXAH+gF1bIyoY1GME6MSIymiNTaJxf8fF+ye+r/wYdacmYs6e2
+ GQYsujPgb4o5d8/ZPwTDCdC4NLXlCg/J+/HPwmGA3PwTiVCG4VTO1xhm2CYM9Ej/g3j7 DQ== 
+Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
+        by aserp2120.oracle.com with ESMTP id 34cc7m9u9j-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
+        Fri, 30 Oct 2020 14:00:58 +0000
+Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
+        by userp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09UDpU2B000814;
+        Fri, 30 Oct 2020 13:58:57 GMT
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by userp3030.oracle.com with ESMTP id 34cx70qvhk-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Fri, 30 Oct 2020 13:58:57 +0000
+Received: from abhmp0017.oracle.com (abhmp0017.oracle.com [141.146.116.23])
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id 09UDwtKq011780;
+        Fri, 30 Oct 2020 13:58:55 GMT
+Received: from [192.168.1.102] (/39.109.231.106)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Fri, 30 Oct 2020 06:58:55 -0700
+Subject: Re: WARNING in close_fs_devices (2)
+To:     Dmitry Vyukov <dvyukov@google.com>
+Cc:     syzbot <syzbot+4cfe71a4da060be47502@syzkaller.appspotmail.com>,
+        Chris Mason <clm@fb.com>, dsterba@suse.com,
+        Josef Bacik <josef@toxicpanda.com>,
+        linux-btrfs@vger.kernel.org, LKML <linux-kernel@vger.kernel.org>,
+        syzkaller-bugs <syzkaller-bugs@googlegroups.com>
+References: <0000000000008fbadb05af94b61e@google.com>
+ <01bcf380-c806-02fa-67ac-ff66fd0100c7@oracle.com>
+ <CACT4Y+ZakmsaKN+R94SWyErZc6FeKcmBP8d5yY8FO4+aL5WxOw@mail.gmail.com>
+From:   Anand Jain <anand.jain@oracle.com>
+Message-ID: <b0bc728a-0957-ca93-10a7-4851a9d3b043@oracle.com>
+Date:   Fri, 30 Oct 2020 21:58:50 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.4.0
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <CACT4Y+ZakmsaKN+R94SWyErZc6FeKcmBP8d5yY8FO4+aL5WxOw@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9789 signatures=668682
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 adultscore=0 phishscore=0 spamscore=0
+ bulkscore=0 malwarescore=0 mlxlogscore=999 mlxscore=0 suspectscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2009150000
+ definitions=main-2010300105
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9789 signatures=668682
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 lowpriorityscore=0 adultscore=0
+ malwarescore=0 spamscore=0 clxscore=1011 mlxscore=0 suspectscore=0
+ priorityscore=1501 impostorscore=0 bulkscore=0 phishscore=0
+ mlxlogscore=999 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2009150000 definitions=main-2010300106
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This commit implements a sequential extent allocator for the ZONED mode.
-This allocator just needs to check if there is enough space in the block
-group. Therefor the allocator never manages bitmaps or clusters. Also add
-ASSERTs to the corresponding functions.
 
-Actually, with zone append writing, it is unnecessary to track the
-allocation offset. It only needs to check space availability. But, by
-tracking the offset and returning the offset as an allocated region, we can
-skip modification of ordered extents and checksum information when there is
-no IO reordering.
 
-Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
----
- fs/btrfs/block-group.c      |  4 ++
- fs/btrfs/extent-tree.c      | 85 ++++++++++++++++++++++++++++++++++---
- fs/btrfs/free-space-cache.c |  6 +++
- 3 files changed, 89 insertions(+), 6 deletions(-)
+On 30/10/20 6:10 pm, Dmitry Vyukov wrote:
+> On Tue, Sep 22, 2020 at 2:37 PM Anand Jain <anand.jain@oracle.com> wrote:
+>>
+>> On 18/9/20 7:22 pm, syzbot wrote:
+>>> Hello,
+>>>
+>>> syzbot found the following issue on:
+>>>
+>>> HEAD commit:    e4c26faa Merge tag 'usb-5.9-rc5' of git://git.kernel.org/p..
+>>> git tree:       upstream
+>>> console output: https://syzkaller.appspot.com/x/log.txt?x=15bf1621900000
+>>> kernel config:  https://syzkaller.appspot.com/x/.config?x=c61610091f4ca8c4
+>>> dashboard link: https://syzkaller.appspot.com/bug?extid=4cfe71a4da060be47502
+>>> compiler:       gcc (GCC) 10.1.0-syz 20200507
+>>>
+>>> Unfortunately, I don't have any reproducer for this issue yet.
+>>>
+>>> IMPORTANT: if you fix the issue, please add the following tag to the commit:
+>>> Reported-by: syzbot+4cfe71a4da060be47502@syzkaller.appspotmail.com
+>>>
+>>> ------------[ cut here ]------------
+>>> WARNING: CPU: 1 PID: 3612 at fs/btrfs/volumes.c:1166 close_fs_devices.part.0+0x607/0x800 fs/btrfs/volumes.c:1166
+>>> Kernel panic - not syncing: panic_on_warn set ...
+>>> CPU: 1 PID: 3612 Comm: syz-executor.2 Not tainted 5.9.0-rc4-syzkaller #0
+>>> Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 01/01/2011
+>>> Call Trace:
+>>>    __dump_stack lib/dump_stack.c:77 [inline]
+>>>    dump_stack+0x198/0x1fd lib/dump_stack.c:118
+>>>    panic+0x347/0x7c0 kernel/panic.c:231
+>>>    __warn.cold+0x20/0x46 kernel/panic.c:600
+>>>    report_bug+0x1bd/0x210 lib/bug.c:198
+>>>    handle_bug+0x38/0x90 arch/x86/kernel/traps.c:234
+>>>    exc_invalid_op+0x14/0x40 arch/x86/kernel/traps.c:254
+>>>    asm_exc_invalid_op+0x12/0x20 arch/x86/include/asm/idtentry.h:536
+>>> RIP: 0010:close_fs_devices.part.0+0x607/0x800 fs/btrfs/volumes.c:1166
+>>> Code: 0f b6 04 02 84 c0 74 02 7e 33 48 8b 44 24 18 c6 80 30 01 00 00 00 48 83 c4 30 5b 5d 41 5c 41 5d 41 5e 41 5f c3 e8 99 ce 6a fe <0f> 0b e9 71 ff ff ff e8 8d ce 6a fe 0f 0b e9 20 ff ff ff e8 d1 d5
+>>> RSP: 0018:ffffc900091777e0 EFLAGS: 00010246
+>>> RAX: 0000000000040000 RBX: ffffffffffffffff RCX: ffffc9000c8b7000
+>>> RDX: 0000000000040000 RSI: ffffffff83097f47 RDI: 0000000000000007
+>>> RBP: dffffc0000000000 R08: 0000000000000001 R09: ffff8880988a187f
+>>> R10: 0000000000000000 R11: 0000000000000001 R12: ffff88809593a130
+>>> R13: ffff88809593a1ec R14: ffff8880988a1908 R15: ffff88809593a050
+>>>    close_fs_devices fs/btrfs/volumes.c:1193 [inline]
+>>>    btrfs_close_devices+0x95/0x1f0 fs/btrfs/volumes.c:1179
+>>>    open_ctree+0x4984/0x4a2d fs/btrfs/disk-io.c:3434
+>>>    btrfs_fill_super fs/btrfs/super.c:1316 [inline]
+>>>    btrfs_mount_root.cold+0x14/0x165 fs/btrfs/super.c:1672
+>>>    legacy_get_tree+0x105/0x220 fs/fs_context.c:592
+>>>    vfs_get_tree+0x89/0x2f0 fs/super.c:1547
+>>>    fc_mount fs/namespace.c:978 [inline]
+>>>    vfs_kern_mount.part.0+0xd3/0x170 fs/namespace.c:1008
+>>>    vfs_kern_mount+0x3c/0x60 fs/namespace.c:995
+>>>    btrfs_mount+0x234/0xaa0 fs/btrfs/super.c:1732
+>>>    legacy_get_tree+0x105/0x220 fs/fs_context.c:592
+>>>    vfs_get_tree+0x89/0x2f0 fs/super.c:1547
+>>>    do_new_mount fs/namespace.c:2875 [inline]
+>>>    path_mount+0x1387/0x2070 fs/namespace.c:3192
+>>>    do_mount fs/namespace.c:3205 [inline]
+>>>    __do_sys_mount fs/namespace.c:3413 [inline]
+>>>    __se_sys_mount fs/namespace.c:3390 [inline]
+>>>    __x64_sys_mount+0x27f/0x300 fs/namespace.c:3390
+>>>    do_syscall_64+0x2d/0x70 arch/x86/entry/common.c:46
+>>>    entry_SYSCALL_64_after_hwframe+0x44/0xa9
+>>> RIP: 0033:0x46004a
+>>> Code: b8 a6 00 00 00 0f 05 48 3d 01 f0 ff ff 0f 83 fd 89 fb ff c3 66 2e 0f 1f 84 00 00 00 00 00 66 90 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff ff 0f 83 da 89 fb ff c3 66 0f 1f 84 00 00 00 00 00
+>>> RSP: 002b:00007f414d78da88 EFLAGS: 00000202 ORIG_RAX: 00000000000000a5
+>>> RAX: ffffffffffffffda RBX: 00007f414d78db20 RCX: 000000000046004a
+>>> RDX: 0000000020000000 RSI: 0000000020000100 RDI: 00007f414d78dae0
+>>> RBP: 00007f414d78dae0 R08: 00007f414d78db20 R09: 0000000020000000
+>>> R10: 0000000000000000 R11: 0000000000000202 R12: 0000000020000000
+>>> R13: 0000000020000100 R14: 0000000020000200 R15: 000000002001a800
+>>> Kernel Offset: disabled
+>>> Rebooting in 86400 seconds..
+>>
+>>
+>> #syz fix: btrfs: fix rw_devices count in __btrfs_free_extra_devids
+> 
+> Is it the correct patch title? It still does not exist anywhere
+> including linux-next...
+> 
 
-diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index c34bd2dbdf82..d67f9cabe5c1 100644
---- a/fs/btrfs/block-group.c
-+++ b/fs/btrfs/block-group.c
-@@ -683,6 +683,10 @@ int btrfs_cache_block_group(struct btrfs_block_group *cache, int load_cache_only
- 	struct btrfs_caching_control *caching_ctl;
- 	int ret = 0;
- 
-+	/* Allocator for ZONED btrfs do not use the cache at all */
-+	if (btrfs_is_zoned(fs_info))
-+		return 0;
-+
- 	caching_ctl = kzalloc(sizeof(*caching_ctl), GFP_NOFS);
- 	if (!caching_ctl)
- 		return -ENOMEM;
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index fad53c702d8a..5e6b4d1712f2 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3562,6 +3562,7 @@ btrfs_release_block_group(struct btrfs_block_group *cache,
- 
- enum btrfs_extent_allocation_policy {
- 	BTRFS_EXTENT_ALLOC_CLUSTERED,
-+	BTRFS_EXTENT_ALLOC_ZONED,
- };
- 
- /*
-@@ -3814,6 +3815,58 @@ static int do_allocation_clustered(struct btrfs_block_group *block_group,
- 	return find_free_extent_unclustered(block_group, ffe_ctl);
- }
- 
-+/*
-+ * Simple allocator for sequential only block group. It only allows
-+ * sequential allocation. No need to play with trees. This function
-+ * also reserve the bytes as in btrfs_add_reserved_bytes.
-+ */
-+static int do_allocation_zoned(struct btrfs_block_group *block_group,
-+			       struct find_free_extent_ctl *ffe_ctl,
-+			       struct btrfs_block_group **bg_ret)
-+{
-+	struct btrfs_space_info *space_info = block_group->space_info;
-+	struct btrfs_free_space_ctl *ctl = block_group->free_space_ctl;
-+	u64 start = block_group->start;
-+	u64 num_bytes = ffe_ctl->num_bytes;
-+	u64 avail;
-+	int ret = 0;
-+
-+	ASSERT(btrfs_is_zoned(block_group->fs_info));
-+
-+	spin_lock(&space_info->lock);
-+	spin_lock(&block_group->lock);
-+
-+	if (block_group->ro) {
-+		ret = 1;
-+		goto out;
-+	}
-+
-+	avail = block_group->length - block_group->alloc_offset;
-+	if (avail < num_bytes) {
-+		ffe_ctl->max_extent_size = avail;
-+		ret = 1;
-+		goto out;
-+	}
-+
-+	ffe_ctl->found_offset = start + block_group->alloc_offset;
-+	block_group->alloc_offset += num_bytes;
-+	spin_lock(&ctl->tree_lock);
-+	ctl->free_space -= num_bytes;
-+	spin_unlock(&ctl->tree_lock);
-+
-+	/*
-+	 * We do not check if found_offset is aligned to stripesize. The
-+	 * address is anyway rewritten when using zone append writing.
-+	 */
-+
-+	ffe_ctl->search_start = ffe_ctl->found_offset;
-+
-+out:
-+	spin_unlock(&block_group->lock);
-+	spin_unlock(&space_info->lock);
-+	return ret;
-+}
-+
- static int do_allocation(struct btrfs_block_group *block_group,
- 			 struct find_free_extent_ctl *ffe_ctl,
- 			 struct btrfs_block_group **bg_ret)
-@@ -3821,6 +3874,8 @@ static int do_allocation(struct btrfs_block_group *block_group,
- 	switch (ffe_ctl->policy) {
- 	case BTRFS_EXTENT_ALLOC_CLUSTERED:
- 		return do_allocation_clustered(block_group, ffe_ctl, bg_ret);
-+	case BTRFS_EXTENT_ALLOC_ZONED:
-+		return do_allocation_zoned(block_group, ffe_ctl, bg_ret);
- 	default:
- 		BUG();
- 	}
-@@ -3835,6 +3890,9 @@ static void release_block_group(struct btrfs_block_group *block_group,
- 		ffe_ctl->retry_clustered = false;
- 		ffe_ctl->retry_unclustered = false;
- 		break;
-+	case BTRFS_EXTENT_ALLOC_ZONED:
-+		/* nothing to do */
-+		break;
- 	default:
- 		BUG();
- 	}
-@@ -3863,6 +3921,9 @@ static void found_extent(struct find_free_extent_ctl *ffe_ctl,
- 	case BTRFS_EXTENT_ALLOC_CLUSTERED:
- 		found_extent_clustered(ffe_ctl, ins);
- 		break;
-+	case BTRFS_EXTENT_ALLOC_ZONED:
-+		/* nothing to do */
-+		break;
- 	default:
- 		BUG();
- 	}
-@@ -3878,6 +3939,9 @@ static int chunk_allocation_failed(struct find_free_extent_ctl *ffe_ctl)
- 		 */
- 		ffe_ctl->loop = LOOP_NO_EMPTY_SIZE;
- 		return 0;
-+	case BTRFS_EXTENT_ALLOC_ZONED:
-+		/* give up here */
-+		return -ENOSPC;
- 	default:
- 		BUG();
- 	}
-@@ -4046,6 +4110,9 @@ static int prepare_allocation(struct btrfs_fs_info *fs_info,
- 	case BTRFS_EXTENT_ALLOC_CLUSTERED:
- 		return prepare_allocation_clustered(fs_info, ffe_ctl,
- 						    space_info, ins);
-+	case BTRFS_EXTENT_ALLOC_ZONED:
-+		/* nothing to do */
-+		return 0;
- 	default:
- 		BUG();
- 	}
-@@ -4109,6 +4176,9 @@ static noinline int find_free_extent(struct btrfs_root *root,
- 	ffe_ctl.last_ptr = NULL;
- 	ffe_ctl.use_cluster = true;
- 
-+	if (btrfs_is_zoned(fs_info))
-+		ffe_ctl.policy = BTRFS_EXTENT_ALLOC_ZONED;
-+
- 	ins->type = BTRFS_EXTENT_ITEM_KEY;
- 	ins->objectid = 0;
- 	ins->offset = 0;
-@@ -4251,20 +4321,23 @@ static noinline int find_free_extent(struct btrfs_root *root,
- 		/* move on to the next group */
- 		if (ffe_ctl.search_start + num_bytes >
- 		    block_group->start + block_group->length) {
--			btrfs_add_free_space(block_group, ffe_ctl.found_offset,
--					     num_bytes);
-+			btrfs_add_free_space_unused(block_group,
-+						    ffe_ctl.found_offset,
-+						    num_bytes);
- 			goto loop;
- 		}
- 
- 		if (ffe_ctl.found_offset < ffe_ctl.search_start)
--			btrfs_add_free_space(block_group, ffe_ctl.found_offset,
--				ffe_ctl.search_start - ffe_ctl.found_offset);
-+			btrfs_add_free_space_unused(block_group,
-+						    ffe_ctl.found_offset,
-+						    ffe_ctl.search_start - ffe_ctl.found_offset);
- 
- 		ret = btrfs_add_reserved_bytes(block_group, ram_bytes,
- 				num_bytes, delalloc);
- 		if (ret == -EAGAIN) {
--			btrfs_add_free_space(block_group, ffe_ctl.found_offset,
--					     num_bytes);
-+			btrfs_add_free_space_unused(block_group,
-+						    ffe_ctl.found_offset,
-+						    num_bytes);
- 			goto loop;
- 		}
- 		btrfs_inc_block_group_reservations(block_group);
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index cfa466319166..7ad046d33c7e 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -2903,6 +2903,8 @@ u64 btrfs_find_space_for_alloc(struct btrfs_block_group *block_group,
- 	u64 align_gap_len = 0;
- 	enum btrfs_trim_state align_gap_trim_state = BTRFS_TRIM_STATE_UNTRIMMED;
- 
-+	ASSERT(!btrfs_is_zoned(block_group->fs_info));
-+
- 	spin_lock(&ctl->tree_lock);
- 	entry = find_free_space(ctl, &offset, &bytes_search,
- 				block_group->full_stripe_len, max_extent_size);
-@@ -3034,6 +3036,8 @@ u64 btrfs_alloc_from_cluster(struct btrfs_block_group *block_group,
- 	struct rb_node *node;
- 	u64 ret = 0;
- 
-+	ASSERT(!btrfs_is_zoned(block_group->fs_info));
-+
- 	spin_lock(&cluster->lock);
- 	if (bytes > cluster->max_size)
- 		goto out;
-@@ -3810,6 +3814,8 @@ int btrfs_trim_block_group(struct btrfs_block_group *block_group,
- 	int ret;
- 	u64 rem = 0;
- 
-+	ASSERT(!btrfs_is_zoned(block_group->fs_info));
-+
- 	*trimmed = 0;
- 
- 	spin_lock(&block_group->lock);
--- 
-2.27.0
+V2 is here [1]. The patch title is changed. Also the cover letter talks 
+about the path dependency. It is not yet integrated.
+
+[1]
+https://patchwork.kernel.org/project/linux-btrfs/patch/d0b5790792b8b826504dd239ad9efc514f3d9109.1604009248.git.anand.jain@oracle.com/
+
+
+Thanks, Anand
+
 

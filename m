@@ -5,67 +5,67 @@ X-Spam-Level:
 X-Spam-Status: No, score=-12.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7EFEDC4363A
-	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Oct 2020 13:53:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 256BBC00A89
+	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Oct 2020 13:53:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id E8A442071A
-	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Oct 2020 13:53:54 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CD1032071A
+	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Oct 2020 13:53:56 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="ETRzRIDC"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="JKt0w9Jf"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726861AbgJ3NxG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 30 Oct 2020 09:53:06 -0400
-Received: from esa3.hgst.iphmx.com ([216.71.153.141]:22001 "EHLO
+        id S1726986AbgJ3Nxy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 30 Oct 2020 09:53:54 -0400
+Received: from esa3.hgst.iphmx.com ([216.71.153.141]:22003 "EHLO
         esa3.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726848AbgJ3NxF (ORCPT
+        with ESMTP id S1726853AbgJ3NxG (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 30 Oct 2020 09:53:05 -0400
+        Fri, 30 Oct 2020 09:53:06 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1604065985; x=1635601985;
+  t=1604065986; x=1635601986;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=IsgXCjwhP7h5iONIZeWOyieIlDJD/IVYMJp+/jHltfU=;
-  b=ETRzRIDC2FfoncsYcZFKBBDgCb8oJ/KkYebNkvW09sbXkaGCS7ml5RAN
-   bzzRYAJpLr1OdHxwph47BZmW+053mL8QF9AVswrKRt/lYsvkIDnPxNYkQ
-   GrSds33fknqU1aG9XnCDONOfmo9mkZBvWtKCppzXTAjlUCTOdEEuMXiJy
-   XDqTfmgZHp6aWKzy1P1CuTNODyNIVniY2inih0atXx4aWYicGR6QIvOEa
-   Tw8e5vLi+SozjpC5PO6nNhme7Dm5ExoT9Gc6XGYzLBttyxRYSK/uzRzoG
-   B/hsEpu2fOBXAmhPy6ts9WjeIoxcz4sXOG8BtB43rXRSa37m0c1CxTRC2
-   w==;
-IronPort-SDR: 6Yo/djRoQfwrV5OxpewnMGQ3Rke05fSK3X2GiJDg7uekDMWVxfDG+5IIvL8w0yk6UAllor+2xR
- xcmt06AVvPUJO4hGqVvgSHMO5ZJYU4klJrZvNxTvjKy+UZLFPLQ3lDWSoNwxkarfzV9PNBImf4
- We6ZafMsCNDoaGvwiwEO2D5Uhw28I3O5traMxO+vIRSy6Ks+xlCM3oNCUhfF10q8AJYc4gHw5D
- qYdlSKDya+zrdz2yGhebKPrnqBytIAuFlDtNJG3RFQZPSyem5FQk6xgxoJGWZIH7QYg6kGcRhf
- hHE=
+  bh=RAeB+WuV6ZtDINwa1qP3+ZHNXCsV2X3PR1lyuHebgjg=;
+  b=JKt0w9JfJ6IcZ64MJvFin+wuhyt2wDHOOQ0Ohp/0NysSXSiKR1Bd7Etd
+   gUa72kuG9bte80BNBDtNo87Ozc1nuJ3XokrCBKvHVcx3cswSXNBEwMGR3
+   yG0SnYDAYNM8v3r5rWWjNquCMRfEZQi8gaOdu13yJSNnXIBIOMl2j6i7D
+   T/ZLcJ8PTkYsW5oMxuzRALTvTzRVtg9aLxRI+nQ99Tsk9+cjDRsF3T/dr
+   eFqwl7LcdureNMCgbBh9BHl3OrldZ2ItNeKMPdskoYiEjJZbSKHKqfSrx
+   sTI2vxkfVStxdHr5KduVWBryA8iXe9VYLLvN8P8EHXfSzVXrVv10vg/4l
+   g==;
+IronPort-SDR: ntgXKQisF44/FN2R/Ukmbd1HUHF8ektMPspCr4fD1WjyjnpKtu+UFRgBTCnlIOmKXJjyPkxPpS
+ ivP5QXpu4Lr+JEOsSFSOmRAHdJ1S/ZJAghx3I7tuBc4ko2Ok/YjwiK9vnf8b2YiTEGUKQFBE6R
+ nCIMUNjz4Ra/ev1e0Sq5WWqiW23xlcAMRNiT9+8CE0lQUTJWcP+4VDtucQCvk4quGh8K/68aFJ
+ MedBiQE6i8BfzJ/wdLtLvdkzeNgiZDgUvd6EdqSSYmtkFSR3SEofvMAIkyuaxyZSrM1PbEi0A0
+ Vzo=
 X-IronPort-AV: E=Sophos;i="5.77,433,1596470400"; 
-   d="scan'208";a="155806624"
+   d="scan'208";a="155806628"
 Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 30 Oct 2020 21:52:50 +0800
-IronPort-SDR: WF+58+dKaKHc3KOwSIx3GFfssKxW/7piZ4U4TAPeqq87k8z+uVX6cGxyx23711uEkIB4gBy8AY
- FLcihna51G+MsKJtZl0rFVY1ELm7ZVA+TNlUMX0/RY4q539G2PMqwUvZRkfF4CqACd8eaKOmUL
- z6sK6Dk6vUu4CARGt2HWbb4dS52gulTcv+kaFMFCbdXHZT8ctCCKTqISSm2qEimYQz2KYLM90c
- jWKlB4qgFUuJBr2bGuWozuJciRutK6+Nh9KuzubglDVNn1VJh1vPenA6skLWgpa9/m0a/csRTD
- nT+A6EcE17dX1nhePkznVILs
+  by ob1.hgst.iphmx.com with ESMTP; 30 Oct 2020 21:52:54 +0800
+IronPort-SDR: OBUAU/EKuvP9P2suQhZfzGf8Blt715yCoRpbO2T79wSnVKdGYV63znoVzJ0Iy4mmulvPxRY5b8
+ W8qpIFCGCAiLOlRz1eJGxeRES9ChLvXesJvptCqA9kWfAJyqP2f7nwAUZA+AhfwzSItXl25Zot
+ 69COWtH51++kwCN2ryb+pOFf3g3BJDHpSbwaycDCvvnIpZyUutdvowMAoY4VaM4krcxsOpL7pz
+ JLb8mbE5yuOVEsVVO3BKFgae/5dkF9UTgGtFM9Q2alNyfsEl9AinhZxW0oBWYVte0Ac4sUAIWY
+ XlJzBdjz3MPgOQrHXEnRGCka
 Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 30 Oct 2020 06:39:05 -0700
-IronPort-SDR: 0dtVsGyAiiT2ac/Uo6vL2gtHrThZtsdZhFY8au/Tb20/dwIboaPwUOzDYFlBqIx3EkTnS3EHR6
- VTqd2T1TU0qPkAx5eEEiBhqh3FDRaqdTfw8f28DOftmoih9wmQ4eiAf6mlCUdjz4qE5MCaiWG7
- f498kxbM0TRmOF5KR5NomLQA0V8HO00ZwppfAaHeZqUylBKYgrUClCbLuECsayU/6nkjQCoNAA
- dhtjkbzSAvTcZijuzETfhD8xEU6amuDMvH9uLGXc7AxH7f62Ncqzq/efatJ0XXftd1ocZRGCSf
- m40=
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 30 Oct 2020 06:39:08 -0700
+IronPort-SDR: 2kPBYhjNPn8n3ROFda2xIMMZscNNS2pSFW4xXNMfG8NP+9D/oGw4ymRFj/Qtae+wd5Z95xKnBG
+ 1nz6vwhmyoVwKYx3kXFBw2mOLQAYHjRj/7qHhHqrRs4EiEdJj6recLFLiMuiwqQz0mk//93t1J
+ uSFE07mtZnrMX42cMfztMokk2ST3VAarv5+G5BQM53ZprPeCVRbPDWWx6x3pn+/E+vRrAu9FVm
+ xjTPeVquENsCsenYYdLxgXZ2uy92IvhiZBSTUKOyVkEQnblisXwiZGb6HX84KQO59qaioOyOPM
+ 93o=
 WDCIronportException: Internal
 Received: from naota.dhcp.fujisawa.hgst.com ([10.149.52.155])
-  by uls-op-cesaip01.wdc.com with ESMTP; 30 Oct 2020 06:52:50 -0700
+  by uls-op-cesaip01.wdc.com with ESMTP; 30 Oct 2020 06:52:53 -0700
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     linux-btrfs@vger.kernel.org, dsterba@suse.com
 Cc:     hare@suse.com, linux-fsdevel@vger.kernel.org,
         Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH v9 24/41] btrfs: extend btrfs_rmap_block for specifying a device
-Date:   Fri, 30 Oct 2020 22:51:31 +0900
-Message-Id: <3ee4958e7ebcc06973ed2d7c84a9cf9240d6e7d7.1604065695.git.naohiro.aota@wdc.com>
+Subject: [PATCH v9 27/41] btrfs: introduce dedicated data write path for ZONED mode
+Date:   Fri, 30 Oct 2020 22:51:34 +0900
+Message-Id: <72df5edeab150be3f081b0d96b174285f238eb0f.1604065695.git.naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.27.0
 In-Reply-To: <d9a0a445560db3a9eb240c6535f8dd1bbd0abd96.1604065694.git.naohiro.aota@wdc.com>
 References: <d9a0a445560db3a9eb240c6535f8dd1bbd0abd96.1604065694.git.naohiro.aota@wdc.com>
@@ -75,121 +75,85 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-btrfs_rmap_block currently reverse-maps the physical addresses on all
-devices to the corresponding logical addresses.
+If more than one IO is issued for one file extent, these IO can be written
+to separate regions on a device. Since we cannot map one file extent to
+such a separate area, we need to follow the "one IO == one ordered extent"
+rule.
 
-This commit extends the function to match to a specified device. The old
-functionality of querying all devices is left intact by specifying NULL as
-target device.
+The Normal buffered, uncompressed, not pre-allocated write path (used by
+cow_file_range()) sometimes does not follow this rule. It can write a part
+of an ordered extent when specified a region to write e.g., when its
+called from fdatasync().
 
-We pass block_device instead of btrfs_device to __btrfs_rmap_block. This
-function is intended to reverse-map the result of bio, which only have
-block_device.
-
-This commit also exports the function for later use.
+Introduces a dedicated (uncompressed buffered) data write path for ZONED
+mode. This write path will CoW the region and write it at once.
 
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 ---
- fs/btrfs/block-group.c | 28 ++++++++++++++++++++++------
- fs/btrfs/block-group.h |  3 +++
- 2 files changed, 25 insertions(+), 6 deletions(-)
+ fs/btrfs/inode.c | 34 ++++++++++++++++++++++++++++++++--
+ 1 file changed, 32 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index 82d556368c85..21e40046dce1 100644
---- a/fs/btrfs/block-group.c
-+++ b/fs/btrfs/block-group.c
-@@ -1644,8 +1644,11 @@ static void set_avail_alloc_bits(struct btrfs_fs_info *fs_info, u64 flags)
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index bc853a4f22cc..fdc367a39194 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1350,6 +1350,29 @@ static int cow_file_range_async(struct btrfs_inode *inode,
+ 	return 0;
  }
  
- /**
-- * btrfs_rmap_block - Map a physical disk address to a list of logical addresses
-+ * __btrfs_rmap_block - Map a physical disk address to a list of logical
-+ *                      addresses
-  * @chunk_start:   logical address of block group
-+ * @bdev:	   physical device to resolve. Can be NULL to indicate any
-+ *                 device.
-  * @physical:	   physical address to map to logical addresses
-  * @logical:	   return array of logical addresses which map to @physical
-  * @naddrs:	   length of @logical
-@@ -1655,9 +1658,9 @@ static void set_avail_alloc_bits(struct btrfs_fs_info *fs_info, u64 flags)
-  * Used primarily to exclude those portions of a block group that contain super
-  * block copies.
-  */
--EXPORT_FOR_TESTS
--int btrfs_rmap_block(struct btrfs_fs_info *fs_info, u64 chunk_start,
--		     u64 physical, u64 **logical, int *naddrs, int *stripe_len)
-+int __btrfs_rmap_block(struct btrfs_fs_info *fs_info, u64 chunk_start,
-+		       struct block_device *bdev, u64 physical, u64 **logical,
-+		       int *naddrs, int *stripe_len)
- {
- 	struct extent_map *em;
- 	struct map_lookup *map;
-@@ -1675,6 +1678,7 @@ int btrfs_rmap_block(struct btrfs_fs_info *fs_info, u64 chunk_start,
- 	map = em->map_lookup;
- 	data_stripe_length = em->orig_block_len;
- 	io_stripe_size = map->stripe_len;
-+	chunk_start = em->start;
- 
- 	/* For RAID5/6 adjust to a full IO stripe length */
- 	if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK)
-@@ -1689,14 +1693,18 @@ int btrfs_rmap_block(struct btrfs_fs_info *fs_info, u64 chunk_start,
- 	for (i = 0; i < map->num_stripes; i++) {
- 		bool already_inserted = false;
- 		u64 stripe_nr;
-+		u64 offset;
- 		int j;
- 
- 		if (!in_range(physical, map->stripes[i].physical,
- 			      data_stripe_length))
- 			continue;
- 
-+		if (bdev && map->stripes[i].dev->bdev != bdev)
-+			continue;
-+
- 		stripe_nr = physical - map->stripes[i].physical;
--		stripe_nr = div64_u64(stripe_nr, map->stripe_len);
-+		stripe_nr = div64_u64_rem(stripe_nr, map->stripe_len, &offset);
- 
- 		if (map->type & BTRFS_BLOCK_GROUP_RAID10) {
- 			stripe_nr = stripe_nr * map->num_stripes + i;
-@@ -1710,7 +1718,7 @@ int btrfs_rmap_block(struct btrfs_fs_info *fs_info, u64 chunk_start,
- 		 * instead of map->stripe_len
- 		 */
- 
--		bytenr = chunk_start + stripe_nr * io_stripe_size;
-+		bytenr = chunk_start + stripe_nr * io_stripe_size + offset;
- 
- 		/* Ensure we don't add duplicate addresses */
- 		for (j = 0; j < nr; j++) {
-@@ -1732,6 +1740,14 @@ int btrfs_rmap_block(struct btrfs_fs_info *fs_info, u64 chunk_start,
- 	return ret;
- }
- 
-+EXPORT_FOR_TESTS
-+int btrfs_rmap_block(struct btrfs_fs_info *fs_info, u64 chunk_start,
-+		     u64 physical, u64 **logical, int *naddrs, int *stripe_len)
++static noinline int run_delalloc_zoned(struct btrfs_inode *inode,
++				       struct page *locked_page, u64 start,
++				       u64 end, int *page_started,
++				       unsigned long *nr_written)
 +{
-+	return __btrfs_rmap_block(fs_info, chunk_start, NULL, physical, logical,
-+				  naddrs, stripe_len);
++	int ret;
++
++	ret = cow_file_range(inode, locked_page, start, end,
++			     page_started, nr_written, 0);
++	if (ret)
++		return ret;
++
++	if (*page_started)
++		return 0;
++
++	__set_page_dirty_nobuffers(locked_page);
++	account_page_redirty(locked_page);
++	extent_write_locked_range(&inode->vfs_inode, start, end, WB_SYNC_ALL);
++	*page_started = 1;
++
++	return 0;
 +}
 +
- static int exclude_super_stripes(struct btrfs_block_group *cache)
+ static noinline int csum_exist_in_range(struct btrfs_fs_info *fs_info,
+ 					u64 bytenr, u64 num_bytes)
  {
- 	struct btrfs_fs_info *fs_info = cache->fs_info;
-diff --git a/fs/btrfs/block-group.h b/fs/btrfs/block-group.h
-index 5be47f4bfea7..401e9bcefaec 100644
---- a/fs/btrfs/block-group.h
-+++ b/fs/btrfs/block-group.h
-@@ -275,6 +275,9 @@ void check_system_chunk(struct btrfs_trans_handle *trans, const u64 type);
- u64 btrfs_get_alloc_profile(struct btrfs_fs_info *fs_info, u64 orig_flags);
- void btrfs_put_block_group_cache(struct btrfs_fs_info *info);
- int btrfs_free_block_groups(struct btrfs_fs_info *info);
-+int __btrfs_rmap_block(struct btrfs_fs_info *fs_info, u64 chunk_start,
-+		       struct block_device *bdev, u64 physical, u64 **logical,
-+		       int *naddrs, int *stripe_len);
+@@ -1820,17 +1843,24 @@ int btrfs_run_delalloc_range(struct btrfs_inode *inode, struct page *locked_page
+ {
+ 	int ret;
+ 	int force_cow = need_force_cow(inode, start, end);
++	int do_compress = inode_can_compress(inode) &&
++		inode_need_compress(inode, start, end);
++	bool zoned = btrfs_is_zoned(inode->root->fs_info);
  
- static inline u64 btrfs_data_alloc_profile(struct btrfs_fs_info *fs_info)
- {
+ 	if (inode->flags & BTRFS_INODE_NODATACOW && !force_cow) {
++		ASSERT(!zoned);
+ 		ret = run_delalloc_nocow(inode, locked_page, start, end,
+ 					 page_started, 1, nr_written);
+ 	} else if (inode->flags & BTRFS_INODE_PREALLOC && !force_cow) {
++		ASSERT(!zoned);
+ 		ret = run_delalloc_nocow(inode, locked_page, start, end,
+ 					 page_started, 0, nr_written);
+-	} else if (!inode_can_compress(inode) ||
+-		   !inode_need_compress(inode, start, end)) {
++	} else if (!do_compress && !zoned) {
+ 		ret = cow_file_range(inode, locked_page, start, end,
+ 				     page_started, nr_written, 1);
++	} else if (!do_compress && zoned) {
++		ret = run_delalloc_zoned(inode, locked_page, start, end,
++					 page_started, nr_written);
+ 	} else {
+ 		set_bit(BTRFS_INODE_HAS_ASYNC_EXTENT, &inode->runtime_flags);
+ 		ret = cow_file_range_async(inode, wbc, locked_page, start, end,
 -- 
 2.27.0
 

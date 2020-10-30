@@ -2,281 +2,151 @@ Return-Path: <SRS0=uAB+=EF=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+X-Spam-Status: No, score=-16.4 required=3.0 tests=BAYES_00,DKIMWL_WL_MED,
 	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	UNPARSEABLE_RELAY,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_IN_DEF_DKIM_WL autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CFC5BC56201
-	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Oct 2020 05:53:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7C19BC388F9
+	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Oct 2020 10:11:16 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 5CFE320723
-	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Oct 2020 05:53:54 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1837322202
+	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Oct 2020 10:11:16 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="wAlgr2rp"
+	dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b="ZUIXyGrx"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725825AbgJ3Fxx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 30 Oct 2020 01:53:53 -0400
-Received: from aserp2130.oracle.com ([141.146.126.79]:35956 "EHLO
-        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725770AbgJ3Fxx (ORCPT
+        id S1726410AbgJ3KLL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 30 Oct 2020 06:11:11 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50862 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726014AbgJ3KLK (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 30 Oct 2020 01:53:53 -0400
-Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
-        by aserp2130.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09TLTQSX143816;
-        Thu, 29 Oct 2020 21:30:53 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
- subject : date : message-id : in-reply-to : references : mime-version :
- content-transfer-encoding; s=corp-2020-01-29;
- bh=LXL5gV7fCMgXDb148/H/oMCnj4O3RD6rgmmRDN8P6+k=;
- b=wAlgr2rpb/bZei2kueMYA/1xq2QkG69mNxhspSSlwpubOyc9iKXzAVzDbf85mUtdY6GW
- NGzna51K8lWJgo9NRyk15ZXwLAnZk5U27Dzfq55KkytIfaFE50PxnEvih6eANHTeENML
- wR8CktFnohsAxtq16FIh4qpO+F0O8qTtoZniCXmOIQn6A76sSy6wiUNLC4pLgsCAIYbS
- htjkZjpzbSpNLICfxsX82KGH5glZhEjQhWoELww7M12tPKMSMr7hrNPjts35a63rKpjm
- BTwPPhCOOM5nY/nphRqbTTLcIL7BlsFRJpTF69Y600E12SJ9mCB0q7XLjerHRNeyceE1 Wg== 
-Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
-        by aserp2130.oracle.com with ESMTP id 34c9sb7b1a-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
-        Thu, 29 Oct 2020 21:30:52 +0000
-Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
-        by userp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 09TLPRj7186635;
-        Thu, 29 Oct 2020 21:30:52 GMT
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by userp3030.oracle.com with ESMTP id 34cx6yxyf2-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Thu, 29 Oct 2020 21:30:51 +0000
-Received: from abhmp0016.oracle.com (abhmp0016.oracle.com [141.146.116.22])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id 09TLUpWC013019;
-        Thu, 29 Oct 2020 21:30:51 GMT
-Received: from localhost.localdomain (/39.109.231.106)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Thu, 29 Oct 2020 14:30:50 -0700
-From:   Anand Jain <anand.jain@oracle.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     dsterba@suse.com, Anand Jain <anand.jain@oracle.com>,
-        Josef Bacik <josef@toxicpanda.com>
-Subject: [PATCH RESEND v2 2/2] btrfs: fix btrfs_find_device unused arg seed
-Date:   Fri, 30 Oct 2020 05:30:26 +0800
-Message-ID: <b9108a14773af7a899226f59a9dbd0953d20abe5.1600940809.git.anand.jain@oracle.com>
-X-Mailer: git-send-email 2.25.1
-In-Reply-To: <cover.1600940809.git.anand.jain@oracle.com>
-References: <cover.1600940809.git.anand.jain@oracle.com>
+        Fri, 30 Oct 2020 06:11:10 -0400
+Received: from mail-qk1-x741.google.com (mail-qk1-x741.google.com [IPv6:2607:f8b0:4864:20::741])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 52215C0613D2
+        for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2020 03:11:10 -0700 (PDT)
+Received: by mail-qk1-x741.google.com with SMTP id a65so2083026qkg.13
+        for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2020 03:11:10 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=google.com; s=20161025;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=4C47VY8rj0f0TZkMvqSBACCRHl1uymcfamoikS1zYcw=;
+        b=ZUIXyGrxqh9DiUr8d9MeGkConoqvm6ObHQ05opE3WL+oxpY95+e0pXoTZpazAnJMUk
+         /Kpd3kVuSzz37kWQWWVS++MGsQxcNg/fi9BmtuCL8COxPsFgXUTKqD002hY9Rv2+q+a2
+         lCK8dou+h9z+Rge7Z4UnslRgBI38LiAp+15JB2f0UoDZMpW8NkjEqMcFMryvl/AAHxbO
+         9akHHvim1WSvYOSyEcxWj4+VTGhAG/7hrZ1T7kwMTeb9nrj/kKhP3pbyecT/QUF3/zeU
+         1sVkLEBUeKon2tnfC/PVvi0Z5bqtDJ7qIoUWX2DIT7iTF6/dPs3JmqEcUlx+gxR+2eU/
+         IWVw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=4C47VY8rj0f0TZkMvqSBACCRHl1uymcfamoikS1zYcw=;
+        b=bzs3r9KZmTCL/Zzci+gcR2e6p+dBTNs6c+eB+2WLlprJ1vnSptkCGd5yo1e1erEPmR
+         ditemHd3d+h7U0YZp13E6O7ZIbsIN7cDg+kscPvJNPnDtBB2xP0ggMZlxBb7PxnfC5am
+         BzPfpHHgbVxk8QY+cn5gRlrBJBepD0jA8DktSu0TUyUYJfqDSuYSxQDF6lZFQe7kQQ2g
+         WlKUMlfS2GRfWZM1txiekMzNw3U3q7n+LkvtKKKhltNtFdBb1S2ER02q7WLAmNdeOA+C
+         REv3AzZ5434kiPhEngNBrXlgvmbJhkYb3/QkCzhoXT6yt/iIrNItgj6U3JIwq7bEUIVG
+         oCsg==
+X-Gm-Message-State: AOAM532UbSQI9T4O7UcmqEYiEToWNXf4LP7rtFztsDpaCZSQDzCntknZ
+        1UU5kdpcJp0owAU7FajTvgS6T5byj4L16/TPqkxy4w==
+X-Google-Smtp-Source: ABdhPJxf/3+v4bL4dn7MpW2/9jzHYsQxYUtbGD8a7hjNUYn2i5+nq928uMVooytEb5gTEofbRIXzLVX5oZ5G0aEsDsQ=
+X-Received: by 2002:a37:9747:: with SMTP id z68mr1265803qkd.424.1604052669287;
+ Fri, 30 Oct 2020 03:11:09 -0700 (PDT)
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9789 signatures=668682
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 adultscore=0 phishscore=0 spamscore=0
- bulkscore=0 malwarescore=0 mlxlogscore=999 mlxscore=0 suspectscore=3
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2009150000
- definitions=main-2010290149
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9789 signatures=668682
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 mlxscore=0 impostorscore=0
- mlxlogscore=999 malwarescore=0 lowpriorityscore=0 bulkscore=0
- priorityscore=1501 spamscore=0 phishscore=0 clxscore=1015 suspectscore=3
- adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2009150000 definitions=main-2010290149
+References: <0000000000008fbadb05af94b61e@google.com> <01bcf380-c806-02fa-67ac-ff66fd0100c7@oracle.com>
+In-Reply-To: <01bcf380-c806-02fa-67ac-ff66fd0100c7@oracle.com>
+From:   Dmitry Vyukov <dvyukov@google.com>
+Date:   Fri, 30 Oct 2020 11:10:58 +0100
+Message-ID: <CACT4Y+ZakmsaKN+R94SWyErZc6FeKcmBP8d5yY8FO4+aL5WxOw@mail.gmail.com>
+Subject: Re: WARNING in close_fs_devices (2)
+To:     Anand Jain <anand.jain@oracle.com>
+Cc:     syzbot <syzbot+4cfe71a4da060be47502@syzkaller.appspotmail.com>,
+        Chris Mason <clm@fb.com>, dsterba@suse.com,
+        Josef Bacik <josef@toxicpanda.com>,
+        linux-btrfs@vger.kernel.org, LKML <linux-kernel@vger.kernel.org>,
+        syzkaller-bugs <syzkaller-bugs@googlegroups.com>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
-Message-ID: <20201029213026.C8JgeNT9nvIyPGCT7zwuyNyY1uUj5mNq8T0pTKA-Lsw@z>
 
-commit 343694eee8d8 (btrfs: switch seed device to list api), missed to
-check if the last arg (seed) is true in the function btrfs_find_device().
-This arg tells whether to traverse through the seed device list or not.
+On Tue, Sep 22, 2020 at 2:37 PM Anand Jain <anand.jain@oracle.com> wrote:
+>
+> On 18/9/20 7:22 pm, syzbot wrote:
+> > Hello,
+> >
+> > syzbot found the following issue on:
+> >
+> > HEAD commit:    e4c26faa Merge tag 'usb-5.9-rc5' of git://git.kernel.org/p..
+> > git tree:       upstream
+> > console output: https://syzkaller.appspot.com/x/log.txt?x=15bf1621900000
+> > kernel config:  https://syzkaller.appspot.com/x/.config?x=c61610091f4ca8c4
+> > dashboard link: https://syzkaller.appspot.com/bug?extid=4cfe71a4da060be47502
+> > compiler:       gcc (GCC) 10.1.0-syz 20200507
+> >
+> > Unfortunately, I don't have any reproducer for this issue yet.
+> >
+> > IMPORTANT: if you fix the issue, please add the following tag to the commit:
+> > Reported-by: syzbot+4cfe71a4da060be47502@syzkaller.appspotmail.com
+> >
+> > ------------[ cut here ]------------
+> > WARNING: CPU: 1 PID: 3612 at fs/btrfs/volumes.c:1166 close_fs_devices.part.0+0x607/0x800 fs/btrfs/volumes.c:1166
+> > Kernel panic - not syncing: panic_on_warn set ...
+> > CPU: 1 PID: 3612 Comm: syz-executor.2 Not tainted 5.9.0-rc4-syzkaller #0
+> > Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 01/01/2011
+> > Call Trace:
+> >   __dump_stack lib/dump_stack.c:77 [inline]
+> >   dump_stack+0x198/0x1fd lib/dump_stack.c:118
+> >   panic+0x347/0x7c0 kernel/panic.c:231
+> >   __warn.cold+0x20/0x46 kernel/panic.c:600
+> >   report_bug+0x1bd/0x210 lib/bug.c:198
+> >   handle_bug+0x38/0x90 arch/x86/kernel/traps.c:234
+> >   exc_invalid_op+0x14/0x40 arch/x86/kernel/traps.c:254
+> >   asm_exc_invalid_op+0x12/0x20 arch/x86/include/asm/idtentry.h:536
+> > RIP: 0010:close_fs_devices.part.0+0x607/0x800 fs/btrfs/volumes.c:1166
+> > Code: 0f b6 04 02 84 c0 74 02 7e 33 48 8b 44 24 18 c6 80 30 01 00 00 00 48 83 c4 30 5b 5d 41 5c 41 5d 41 5e 41 5f c3 e8 99 ce 6a fe <0f> 0b e9 71 ff ff ff e8 8d ce 6a fe 0f 0b e9 20 ff ff ff e8 d1 d5
+> > RSP: 0018:ffffc900091777e0 EFLAGS: 00010246
+> > RAX: 0000000000040000 RBX: ffffffffffffffff RCX: ffffc9000c8b7000
+> > RDX: 0000000000040000 RSI: ffffffff83097f47 RDI: 0000000000000007
+> > RBP: dffffc0000000000 R08: 0000000000000001 R09: ffff8880988a187f
+> > R10: 0000000000000000 R11: 0000000000000001 R12: ffff88809593a130
+> > R13: ffff88809593a1ec R14: ffff8880988a1908 R15: ffff88809593a050
+> >   close_fs_devices fs/btrfs/volumes.c:1193 [inline]
+> >   btrfs_close_devices+0x95/0x1f0 fs/btrfs/volumes.c:1179
+> >   open_ctree+0x4984/0x4a2d fs/btrfs/disk-io.c:3434
+> >   btrfs_fill_super fs/btrfs/super.c:1316 [inline]
+> >   btrfs_mount_root.cold+0x14/0x165 fs/btrfs/super.c:1672
+> >   legacy_get_tree+0x105/0x220 fs/fs_context.c:592
+> >   vfs_get_tree+0x89/0x2f0 fs/super.c:1547
+> >   fc_mount fs/namespace.c:978 [inline]
+> >   vfs_kern_mount.part.0+0xd3/0x170 fs/namespace.c:1008
+> >   vfs_kern_mount+0x3c/0x60 fs/namespace.c:995
+> >   btrfs_mount+0x234/0xaa0 fs/btrfs/super.c:1732
+> >   legacy_get_tree+0x105/0x220 fs/fs_context.c:592
+> >   vfs_get_tree+0x89/0x2f0 fs/super.c:1547
+> >   do_new_mount fs/namespace.c:2875 [inline]
+> >   path_mount+0x1387/0x2070 fs/namespace.c:3192
+> >   do_mount fs/namespace.c:3205 [inline]
+> >   __do_sys_mount fs/namespace.c:3413 [inline]
+> >   __se_sys_mount fs/namespace.c:3390 [inline]
+> >   __x64_sys_mount+0x27f/0x300 fs/namespace.c:3390
+> >   do_syscall_64+0x2d/0x70 arch/x86/entry/common.c:46
+> >   entry_SYSCALL_64_after_hwframe+0x44/0xa9
+> > RIP: 0033:0x46004a
+> > Code: b8 a6 00 00 00 0f 05 48 3d 01 f0 ff ff 0f 83 fd 89 fb ff c3 66 2e 0f 1f 84 00 00 00 00 00 66 90 49 89 ca b8 a5 00 00 00 0f 05 <48> 3d 01 f0 ff ff 0f 83 da 89 fb ff c3 66 0f 1f 84 00 00 00 00 00
+> > RSP: 002b:00007f414d78da88 EFLAGS: 00000202 ORIG_RAX: 00000000000000a5
+> > RAX: ffffffffffffffda RBX: 00007f414d78db20 RCX: 000000000046004a
+> > RDX: 0000000020000000 RSI: 0000000020000100 RDI: 00007f414d78dae0
+> > RBP: 00007f414d78dae0 R08: 00007f414d78db20 R09: 0000000020000000
+> > R10: 0000000000000000 R11: 0000000000000202 R12: 0000000020000000
+> > R13: 0000000020000100 R14: 0000000020000200 R15: 000000002001a800
+> > Kernel Offset: disabled
+> > Rebooting in 86400 seconds..
+>
+>
+> #syz fix: btrfs: fix rw_devices count in __btrfs_free_extra_devids
 
-This means after the above commit the arg is always true, and the parent
-function which set this arg to false aren't effective.
-
-So we don't worry about the parent functions which set the last arg to
-true, instead there is only one parent with calling btrfs_find_device
-with the last arg false in device_list_add().
-
-But in fact, even the device_list_add() has no purpose that it has to set
-the last arg to false. Because the fs_devices always points to the
-device's fs_devices. So with the devid+uuid matching, it shall find the
-btrfs_device and returns. So naturally, it won't traverse through the
-seed fs_devices (if) present.
-
-So this patch makes it official that we don't need the last arg in the
-function btrfs_find_device() and it shall always traverse through the
-seed device list.
-
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
----
-v2: -
- fs/btrfs/dev-replace.c |  4 ++--
- fs/btrfs/ioctl.c       |  4 ++--
- fs/btrfs/scrub.c       |  4 ++--
- fs/btrfs/volumes.c     | 22 ++++++++++------------
- fs/btrfs/volumes.h     |  2 +-
- 5 files changed, 17 insertions(+), 19 deletions(-)
-
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 119721eeecf6..c58a99677cf9 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -149,10 +149,10 @@ int btrfs_init_dev_replace(struct btrfs_fs_info *fs_info)
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_STARTED:
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_SUSPENDED:
- 		dev_replace->srcdev = btrfs_find_device(fs_info->fs_devices,
--						src_devid, NULL, NULL, true);
-+						src_devid, NULL, NULL);
- 		dev_replace->tgtdev = btrfs_find_device(fs_info->fs_devices,
- 							BTRFS_DEV_REPLACE_DEVID,
--							NULL, NULL, true);
-+							NULL, NULL);
- 		/*
- 		 * allow 'btrfs dev replace_cancel' if src/tgt device is
- 		 * missing
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index ab408a23ba32..a3550b0fa9b0 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1680,7 +1680,7 @@ static noinline int btrfs_ioctl_resize(struct file *file,
- 		btrfs_info(fs_info, "resizing devid %llu", devid);
- 	}
- 
--	device = btrfs_find_device(fs_info->fs_devices, devid, NULL, NULL, true);
-+	device = btrfs_find_device(fs_info->fs_devices, devid, NULL, NULL);
- 	if (!device) {
- 		btrfs_info(fs_info, "resizer unable to find device %llu",
- 			   devid);
-@@ -3323,7 +3323,7 @@ static long btrfs_ioctl_dev_info(struct btrfs_fs_info *fs_info,
- 
- 	rcu_read_lock();
- 	dev = btrfs_find_device(fs_info->fs_devices, di_args->devid, s_uuid,
--				NULL, true);
-+				NULL);
- 
- 	if (!dev) {
- 		ret = -ENODEV;
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index cf63f1e27a27..a0b5fb331791 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -3855,7 +3855,7 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
- 		goto out_free_ctx;
- 
- 	mutex_lock(&fs_info->fs_devices->device_list_mutex);
--	dev = btrfs_find_device(fs_info->fs_devices, devid, NULL, NULL, true);
-+	dev = btrfs_find_device(fs_info->fs_devices, devid, NULL, NULL);
- 	if (!dev || (test_bit(BTRFS_DEV_STATE_MISSING, &dev->dev_state) &&
- 		     !is_dev_replace)) {
- 		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
-@@ -4031,7 +4031,7 @@ int btrfs_scrub_progress(struct btrfs_fs_info *fs_info, u64 devid,
- 	struct scrub_ctx *sctx = NULL;
- 
- 	mutex_lock(&fs_info->fs_devices->device_list_mutex);
--	dev = btrfs_find_device(fs_info->fs_devices, devid, NULL, NULL, true);
-+	dev = btrfs_find_device(fs_info->fs_devices, devid, NULL, NULL);
- 	if (dev)
- 		sctx = dev->scrub_ctx;
- 	if (sctx)
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 9be40eece8ed..29995f23aa75 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -822,7 +822,7 @@ static noinline struct btrfs_device *device_list_add(const char *path,
- 	} else {
- 		mutex_lock(&fs_devices->device_list_mutex);
- 		device = btrfs_find_device(fs_devices, devid,
--				disk_super->dev_item.uuid, NULL, false);
-+				disk_super->dev_item.uuid, NULL);
- 
- 		/*
- 		 * If this disk has been pulled into an fs devices created by
-@@ -2296,10 +2296,10 @@ static struct btrfs_device *btrfs_find_device_by_path(
- 	dev_uuid = disk_super->dev_item.uuid;
- 	if (btrfs_fs_incompat(fs_info, METADATA_UUID))
- 		device = btrfs_find_device(fs_info->fs_devices, devid, dev_uuid,
--					   disk_super->metadata_uuid, true);
-+					   disk_super->metadata_uuid);
- 	else
- 		device = btrfs_find_device(fs_info->fs_devices, devid, dev_uuid,
--					   disk_super->fsid, true);
-+					   disk_super->fsid);
- 
- 	btrfs_release_disk_super(disk_super);
- 	if (!device)
-@@ -2319,7 +2319,7 @@ struct btrfs_device *btrfs_find_device_by_devspec(
- 
- 	if (devid) {
- 		device = btrfs_find_device(fs_info->fs_devices, devid, NULL,
--					   NULL, true);
-+					   NULL);
- 		if (!device)
- 			return ERR_PTR(-ENOENT);
- 		return device;
-@@ -2468,7 +2468,7 @@ static int btrfs_finish_sprout(struct btrfs_trans_handle *trans)
- 		read_extent_buffer(leaf, fs_uuid, btrfs_device_fsid(dev_item),
- 				   BTRFS_FSID_SIZE);
- 		device = btrfs_find_device(fs_info->fs_devices, devid, dev_uuid,
--					   fs_uuid, true);
-+					   fs_uuid);
- 		BUG_ON(!device); /* Logic error */
- 
- 		if (device->fs_devices->seeding) {
-@@ -6450,8 +6450,7 @@ blk_status_t btrfs_map_bio(struct btrfs_fs_info *fs_info, struct bio *bio,
-  * If @seed is true, traverse through the seed devices.
-  */
- struct btrfs_device *btrfs_find_device(struct btrfs_fs_devices *fs_devices,
--				       u64 devid, u8 *uuid, u8 *fsid,
--				       bool seed)
-+				       u64 devid, u8 *uuid, u8 *fsid)
- {
- 	struct btrfs_device *device;
- 	struct btrfs_fs_devices *seed_devs;
-@@ -6658,7 +6657,7 @@ static int read_one_chunk(struct btrfs_key *key, struct extent_buffer *leaf,
- 				   btrfs_stripe_dev_uuid_nr(chunk, i),
- 				   BTRFS_UUID_SIZE);
- 		map->stripes[i].dev = btrfs_find_device(fs_info->fs_devices,
--							devid, uuid, NULL, true);
-+							devid, uuid, NULL);
- 		if (!map->stripes[i].dev &&
- 		    !btrfs_test_opt(fs_info, DEGRADED)) {
- 			free_extent_map(em);
-@@ -6797,7 +6796,7 @@ static int read_one_dev(struct extent_buffer *leaf,
- 	}
- 
- 	device = btrfs_find_device(fs_info->fs_devices, devid, dev_uuid,
--				   fs_uuid, true);
-+				   fs_uuid);
- 	if (!device) {
- 		if (!btrfs_test_opt(fs_info, DEGRADED)) {
- 			btrfs_report_missing_device(fs_info, devid,
-@@ -7439,8 +7438,7 @@ int btrfs_get_dev_stats(struct btrfs_fs_info *fs_info,
- 	int i;
- 
- 	mutex_lock(&fs_devices->device_list_mutex);
--	dev = btrfs_find_device(fs_info->fs_devices, stats->devid, NULL, NULL,
--				true);
-+	dev = btrfs_find_device(fs_info->fs_devices, stats->devid, NULL, NULL);
- 	mutex_unlock(&fs_devices->device_list_mutex);
- 
- 	if (!dev) {
-@@ -7571,7 +7569,7 @@ static int verify_one_dev_extent(struct btrfs_fs_info *fs_info,
- 	}
- 
- 	/* Make sure no dev extent is beyond device bondary */
--	dev = btrfs_find_device(fs_info->fs_devices, devid, NULL, NULL, true);
-+	dev = btrfs_find_device(fs_info->fs_devices, devid, NULL, NULL);
- 	if (!dev) {
- 		btrfs_err(fs_info, "failed to find devid %llu", devid);
- 		ret = -EUCLEAN;
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 48bdca01e237..ebb7df93e63f 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -453,7 +453,7 @@ int btrfs_num_copies(struct btrfs_fs_info *fs_info, u64 logical, u64 len);
- int btrfs_grow_device(struct btrfs_trans_handle *trans,
- 		      struct btrfs_device *device, u64 new_size);
- struct btrfs_device *btrfs_find_device(struct btrfs_fs_devices *fs_devices,
--				       u64 devid, u8 *uuid, u8 *fsid, bool seed);
-+				       u64 devid, u8 *uuid, u8 *fsid);
- int btrfs_shrink_device(struct btrfs_device *device, u64 new_size);
- int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *path);
- int btrfs_balance(struct btrfs_fs_info *fs_info,
--- 
-2.25.1
-
+Is it the correct patch title? It still does not exist anywhere
+including linux-next...

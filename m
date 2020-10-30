@@ -7,66 +7,65 @@ X-Spam-Status: No, score=-12.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AEC52C388F9
-	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Oct 2020 13:53:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 06032C388F9
+	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Oct 2020 13:53:46 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 566322076E
-	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Oct 2020 13:53:38 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A0E622071A
+	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Oct 2020 13:53:45 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="IWsJFumC"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="qg3UPafW"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726952AbgJ3Nxh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 30 Oct 2020 09:53:37 -0400
+        id S1726969AbgJ3Nxn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 30 Oct 2020 09:53:43 -0400
 Received: from esa3.hgst.iphmx.com ([216.71.153.141]:21997 "EHLO
         esa3.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726906AbgJ3NxV (ORCPT
+        with ESMTP id S1726882AbgJ3NxI (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 30 Oct 2020 09:53:21 -0400
+        Fri, 30 Oct 2020 09:53:08 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1604066000; x=1635602000;
+  t=1604065988; x=1635601988;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=x5Y0WD3RTEFz7Z3HQrUml34e1hfnT65ellZSD2oJEGs=;
-  b=IWsJFumCxRHbw16D/h0eWh1MztcYCsQgLDskRuhRLGfPVabnJUsxVVNf
-   dkPF+s8+7DA1Z/YA0S+CA5JYiL97vzgPO17S4krppnBY2jtjvnPl9tI+Q
-   UCr4QTi5KbyBcLXuLeTjSR//O8AEE2G+DVoHctlS/2A0oGdOiyj++Es71
-   rSI4Dm8a95naMTVtkijUiregD1zXvV6pGnwEay26+fBj1pb2/57eiCYK7
-   S4d2tBM9yLB2DQ6ci9rtH8vbkq/KvL007ACbSa7ZsqnI6DV/9ytp9krAt
-   91wp3tcFzzh4sQfrj85JL1W/RB3/TKzxtBhWvclB0Fr698r6KccbNf89l
-   w==;
-IronPort-SDR: /7PVcxkFlHA+Iw/HgBa+4D3fQUaJkMtKDkqVkwo+j0rjpAM3cuA5YLBUryiph3XlW1+hLf2ss8
- t9tiWsaDB7VNFLbjV6x4hC0nh0GfYJurFg/5+Da/U/1Ab+UW+Ou6d4AsE6BvrN8W6jZAsIZgvM
- lXfvbZuIjSe4uqb0W9M0YB5q5TB52kL6YS718e2eo/UvCIPf2aNWZmWwJKm71981EO1u1xxs0X
- zWxctY+kHLuiDBg0vbUDeqwGWyh0uKdKCOr2jC4Gq4+aXVUIuTmSSbYixhFZFj0QtP/0/HB8hN
- iEw=
+  bh=xPo3kn4hqbPhdopEoZslI7bCsYHDqKdsh6NiaL+hT/k=;
+  b=qg3UPafWlOpyXbrubQWVvXGqDxXklTZR0dYlLKv9m3jLFIwlDFaOyT/O
+   pu82BK5X6OsFi2rXngE18YncaU/iAsx58ZrPE8NOEDRML1JH+cYmf51/L
+   41ClH9zJxHrT5CSlO1/y5JdMB2aoOlHfGuXqixfVBClaZUQfvuqi9bSIM
+   71qefGUr9RMTdT2TWTXy4+3M5AatRM/IT/FSc0YYPZDBSKpfPbM2rCh3j
+   CZxs68+vyC/JC5GoS55gMCzTe+HRm4Mce7Jm5/jv2U9QyUvKs9YPb1lz0
+   Ms30MbTqD/RMhLsJuuRid/Wf3J3TLAzew9W6bkeZVAET7C7i6Ax3WTQV5
+   Q==;
+IronPort-SDR: odw2HDIUwn3e2qIAuOicPotaNQ876PithUblVKQVQ1UDI3pCCnOhxNmtyo13dXa5RPokZZ63aj
+ yeT9YER/9HzRb58fYwDEIMAlk7kx65gYEtN2kv+P8XdAVZGgWxZQ7nD7ILNnxU7zJO/2DLFQue
+ +n2cCt27/pSGdkyKbqwayjN7jTNT3v0cSSDKhOsJWk/zAeHBlGJC1y5CZ5z84rpfeUmjZpbF3k
+ 1d5cFpAAqYq5dlSf6NOJ1Cp92jwZ6Va8r/qGp8ghWfEL5q6bKFu1JeDCvVEurvMkZxAwqESQoa
+ dGQ=
 X-IronPort-AV: E=Sophos;i="5.77,433,1596470400"; 
-   d="scan'208";a="155806645"
+   d="scan'208";a="155806640"
 Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 30 Oct 2020 21:53:07 +0800
-IronPort-SDR: nyvS+lq1r6+Y5IKtaf4mdMtILnIDPI/6NxTcpeAcYBaknvzfypnAFgdZm7glmwGdhpDQF0j58P
- RtWst/M54Bg77VeBfdXLor9hSuBcF0VJn+ep1xkLNuEEN1+xHACgjnkPhgKqHLA33RDp4Zhx8V
- WhW+o0vsAgSbTnDatHDDhxkrMzQO/hfFuttwCBcTiVpXbI05ygs+J4u1hEM3LPovWc2iIANNaw
- zc9FUQRd0FRGzaQ+vlgVkvYTKiz0NhVe2tMMRVra+jtKWHqUjNsnMqeSdhX0mH16QD7EXynHAq
- UO1MGZsdzOZoOosIK52bNdbC
+  by ob1.hgst.iphmx.com with ESMTP; 30 Oct 2020 21:53:04 +0800
+IronPort-SDR: x78Lb1LCRpY0KqumMjahb427At76E9O83X3wMf6eZiAgk2RGVk3tyL8kEq4vrdgf+HLwYLgQml
+ SMqoB8LUAq7vy960GQUrDmPZv5tAn8Qw8lBi0lHzcxUCHntezdaaJnH+5TTdZwAupSapNq85gA
+ N20JTRoSINOrUhGqivag7scCB9a9rF5s9TMAHv/V3bhwQ0DZTU6rbMZjZ3RkIt6rlx7SGKxHbr
+ vVIQxrX4on5ilg7IzXuKibR1A6Oz7W16cFlA+ZaXSOXgDNGPCgjmgRxl9mRQhBteqTCUXA0mhz
+ 12K1ulwsS6Fk45PgxFq28AVU
 Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 30 Oct 2020 06:39:22 -0700
-IronPort-SDR: 2Yhve9yEjRdiT4lA6lemjvBmddKKgqpOyeQatwe+6gxS1qfdu3z1Jpqtp0quMvfwHKYlBhIWQ7
- tPIKVq3TZI18afnlPK6OPtJQDPllnAutXrqGKrQySIimuJKLkj3e/mDNhamDR0n95cPH8Ai1jK
- XZSITFsd89gWibek9RQj3J84c8hv2XFb0DYXCivEIUkmG2a7DV+CUefB6/4BQnScIj5s53XpUp
- ZaTJOtaKmLYhFFQS11BXHCAMP7RazW2ke0h1xW3uVOGcErTcmPJUmoj/nXd0un24kID1mlzarp
- mLM=
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 30 Oct 2020 06:39:18 -0700
+IronPort-SDR: ppR0aDkHzeebcsAie91uo4tnMYCfzGcKfNyYyKB5eZBeL61GOwUsAaq6EydVOurGhPRbKYXiaY
+ A4KLbcTFk38kuDW1NEBfqYhMMC4XrmPrBjOHNEF+DkBG8f65mozplvyQlJFa+WCE2QClKlAKZp
+ jzJA4sJ/WdnA1FG2fEWicP2Z5GUDj+MDcNyVCyp2+dkDyurnZVmZY4WAlk6fEcevJTIKgdaX17
+ OLwmMjJyVLNftFLmkUSu9SOW/sSEQJ3xyrbWCSHyXkZELA4jLr8OrsiTLoKXylMw8j4AXHyGHk
+ NQg=
 WDCIronportException: Internal
 Received: from naota.dhcp.fujisawa.hgst.com ([10.149.52.155])
-  by uls-op-cesaip01.wdc.com with ESMTP; 30 Oct 2020 06:53:07 -0700
+  by uls-op-cesaip01.wdc.com with ESMTP; 30 Oct 2020 06:53:03 -0700
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     linux-btrfs@vger.kernel.org, dsterba@suse.com
 Cc:     hare@suse.com, linux-fsdevel@vger.kernel.org,
-        Naohiro Aota <naohiro.aota@wdc.com>,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH v9 38/41] btrfs: extend zoned allocator to use dedicated tree-log block group
-Date:   Fri, 30 Oct 2020 22:51:45 +0900
-Message-Id: <6640d3c034c9c347958860743501aff59da7a5a0.1604065695.git.naohiro.aota@wdc.com>
+        Naohiro Aota <naohiro.aota@wdc.com>
+Subject: [PATCH v9 35/41] btrfs: enable relocation in ZONED mode
+Date:   Fri, 30 Oct 2020 22:51:42 +0900
+Message-Id: <669d00d499b702413a51364b405280798df9c6c3.1604065695.git.naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.27.0
 In-Reply-To: <d9a0a445560db3a9eb240c6535f8dd1bbd0abd96.1604065694.git.naohiro.aota@wdc.com>
 References: <d9a0a445560db3a9eb240c6535f8dd1bbd0abd96.1604065694.git.naohiro.aota@wdc.com>
@@ -76,217 +75,90 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is the 1/3 patch to enable tree log on ZONED mode.
+To serialize allocation and submit_bio, we introduced mutex around them. As
+a result, preallocation must be completely disabled to avoid a deadlock.
 
-The tree-log feature does not work on ZONED mode as is. Blocks for a
-tree-log tree are allocated mixed with other metadata blocks, and btrfs
-writes and syncs the tree-log blocks to devices at the time of fsync(),
-which is different timing from a global transaction commit. As a result,
-both writing tree-log blocks and writing other metadata blocks become
-non-sequential writes that ZONED mode must avoid.
+Since current relocation process relies on preallocation to move file data
+extents, it must be handled in another way. In ZONED mode, we just truncate
+the inode to the size that we wanted to pre-allocate. Then, we flush dirty
+pages on the file before finishing relocation process.
+run_delalloc_zoned() will handle all the allocation and submit IOs to the
+underlying layers.
 
-We can introduce a dedicated block group for tree-log blocks so that
-tree-log blocks and other metadata blocks can be separated write streams.
-As a result, each write stream can now be written to devices separately.
-"fs_info->treelog_bg" tracks the dedicated block group and btrfs assign
-"treelog_bg" on-demand on tree-log block allocation time.
-
-This commit extends the zoned block allocator to use the block group.
-
-Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 ---
- fs/btrfs/block-group.c |  7 +++++
- fs/btrfs/ctree.h       |  2 ++
- fs/btrfs/extent-tree.c | 63 +++++++++++++++++++++++++++++++++++++++---
- 3 files changed, 68 insertions(+), 4 deletions(-)
+ fs/btrfs/relocation.c | 35 +++++++++++++++++++++++++++++++++--
+ 1 file changed, 33 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index 21e40046dce1..ac4fb954db28 100644
---- a/fs/btrfs/block-group.c
-+++ b/fs/btrfs/block-group.c
-@@ -939,6 +939,13 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
- 	btrfs_return_cluster_to_free_space(block_group, cluster);
- 	spin_unlock(&cluster->refill_lock);
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 3602806d71bd..44b697b881b6 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -2603,6 +2603,32 @@ static noinline_for_stack int prealloc_file_extent_cluster(
+ 	if (ret)
+ 		return ret;
  
-+	if (btrfs_is_zoned(fs_info)) {
-+		spin_lock(&fs_info->treelog_bg_lock);
-+		if (fs_info->treelog_bg == block_group->start)
-+			fs_info->treelog_bg = 0;
-+		spin_unlock(&fs_info->treelog_bg_lock);
++	/*
++	 * In ZONED mode, we cannot preallocate the file region. Instead, we
++	 * dirty and fiemap_write the region.
++	 */
++
++	if (btrfs_is_zoned(inode->root->fs_info)) {
++		struct btrfs_root *root = inode->root;
++		struct btrfs_trans_handle *trans;
++
++		end = cluster->end - offset + 1;
++		trans = btrfs_start_transaction(root, 1);
++		if (IS_ERR(trans))
++			return PTR_ERR(trans);
++
++		inode->vfs_inode.i_ctime = current_time(&inode->vfs_inode);
++		i_size_write(&inode->vfs_inode, end);
++		ret = btrfs_update_inode(trans, root, &inode->vfs_inode);
++		if (ret) {
++			btrfs_abort_transaction(trans, ret);
++			btrfs_end_transaction(trans);
++			return ret;
++		}
++
++		return btrfs_end_transaction(trans);
 +	}
++
+ 	inode_lock(&inode->vfs_inode);
+ 	for (nr = 0; nr < cluster->nr; nr++) {
+ 		start = cluster->boundary[nr] - offset;
+@@ -2799,6 +2825,8 @@ static int relocate_file_extent_cluster(struct inode *inode,
+ 		}
+ 	}
+ 	WARN_ON(nr != cluster->nr);
++	if (btrfs_is_zoned(fs_info) && !ret)
++		ret = btrfs_wait_ordered_range(inode, 0, (u64)-1);
+ out:
+ 	kfree(ra);
+ 	return ret;
+@@ -3434,8 +3462,12 @@ static int __insert_orphan_inode(struct btrfs_trans_handle *trans,
+ 	struct btrfs_path *path;
+ 	struct btrfs_inode_item *item;
+ 	struct extent_buffer *leaf;
++	u64 flags = BTRFS_INODE_NOCOMPRESS | BTRFS_INODE_PREALLOC;
+ 	int ret;
+ 
++	if (btrfs_is_zoned(trans->fs_info))
++		flags &= ~BTRFS_INODE_PREALLOC;
 +
  	path = btrfs_alloc_path();
- 	if (!path) {
- 		ret = -ENOMEM;
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 736f679f1310..026d34c8f2ee 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -956,6 +956,8 @@ struct btrfs_fs_info {
- 	/* max size to emit ZONE_APPEND write command */
- 	u64 max_zone_append_size;
- 	struct mutex zoned_meta_io_lock;
-+	spinlock_t treelog_bg_lock;
-+	u64 treelog_bg;
- 
- #ifdef CONFIG_BTRFS_FS_REF_VERIFY
- 	spinlock_t ref_verify_lock;
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 1bb95d5aaed2..c570fe576fb3 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3619,6 +3619,9 @@ struct find_free_extent_ctl {
- 	bool have_caching_bg;
- 	bool orig_have_caching_bg;
- 
-+	/* Allocation is called for tree-log */
-+	bool for_treelog;
-+
- 	/* RAID index, converted from flags */
- 	int index;
- 
-@@ -3856,23 +3859,54 @@ static int do_allocation_zoned(struct btrfs_block_group *block_group,
- 			       struct find_free_extent_ctl *ffe_ctl,
- 			       struct btrfs_block_group **bg_ret)
- {
-+	struct btrfs_fs_info *fs_info = block_group->fs_info;
- 	struct btrfs_space_info *space_info = block_group->space_info;
- 	struct btrfs_free_space_ctl *ctl = block_group->free_space_ctl;
- 	u64 start = block_group->start;
- 	u64 num_bytes = ffe_ctl->num_bytes;
- 	u64 avail;
-+	u64 bytenr = block_group->start;
-+	u64 log_bytenr;
- 	int ret = 0;
-+	bool skip;
- 
- 	ASSERT(btrfs_is_zoned(block_group->fs_info));
- 
-+	/*
-+	 * Do not allow non-tree-log blocks in the dedicated tree-log block
-+	 * group, and vice versa.
-+	 */
-+	spin_lock(&fs_info->treelog_bg_lock);
-+	log_bytenr = fs_info->treelog_bg;
-+	skip = log_bytenr && ((ffe_ctl->for_treelog && bytenr != log_bytenr) ||
-+			      (!ffe_ctl->for_treelog && bytenr == log_bytenr));
-+	spin_unlock(&fs_info->treelog_bg_lock);
-+	if (skip)
-+		return 1;
-+
- 	spin_lock(&space_info->lock);
- 	spin_lock(&block_group->lock);
-+	spin_lock(&fs_info->treelog_bg_lock);
-+
-+	ASSERT(!ffe_ctl->for_treelog ||
-+	       block_group->start == fs_info->treelog_bg ||
-+	       fs_info->treelog_bg == 0);
- 
- 	if (block_group->ro) {
- 		ret = 1;
- 		goto out;
- 	}
- 
-+	/*
-+	 * Do not allow currently using block group to be tree-log dedicated
-+	 * block group.
-+	 */
-+	if (ffe_ctl->for_treelog && !fs_info->treelog_bg &&
-+	    (block_group->used || block_group->reserved)) {
-+		ret = 1;
-+		goto out;
-+	}
-+
- 	avail = block_group->length - block_group->alloc_offset;
- 	if (avail < num_bytes) {
- 		ffe_ctl->max_extent_size = avail;
-@@ -3880,6 +3914,9 @@ static int do_allocation_zoned(struct btrfs_block_group *block_group,
- 		goto out;
- 	}
- 
-+	if (ffe_ctl->for_treelog && !fs_info->treelog_bg)
-+		fs_info->treelog_bg = block_group->start;
-+
- 	ffe_ctl->found_offset = start + block_group->alloc_offset;
- 	block_group->alloc_offset += num_bytes;
- 	spin_lock(&ctl->tree_lock);
-@@ -3894,6 +3931,9 @@ static int do_allocation_zoned(struct btrfs_block_group *block_group,
- 	ffe_ctl->search_start = ffe_ctl->found_offset;
- 
+ 	if (!path)
+ 		return -ENOMEM;
+@@ -3450,8 +3482,7 @@ static int __insert_orphan_inode(struct btrfs_trans_handle *trans,
+ 	btrfs_set_inode_generation(leaf, item, 1);
+ 	btrfs_set_inode_size(leaf, item, 0);
+ 	btrfs_set_inode_mode(leaf, item, S_IFREG | 0600);
+-	btrfs_set_inode_flags(leaf, item, BTRFS_INODE_NOCOMPRESS |
+-					  BTRFS_INODE_PREALLOC);
++	btrfs_set_inode_flags(leaf, item, flags);
+ 	btrfs_mark_buffer_dirty(leaf);
  out:
-+	if (ret && ffe_ctl->for_treelog)
-+		fs_info->treelog_bg = 0;
-+	spin_unlock(&fs_info->treelog_bg_lock);
- 	spin_unlock(&block_group->lock);
- 	spin_unlock(&space_info->lock);
- 	return ret;
-@@ -4143,7 +4183,12 @@ static int prepare_allocation(struct btrfs_fs_info *fs_info,
- 		return prepare_allocation_clustered(fs_info, ffe_ctl,
- 						    space_info, ins);
- 	case BTRFS_EXTENT_ALLOC_ZONED:
--		/* nothing to do */
-+		if (ffe_ctl->for_treelog) {
-+			spin_lock(&fs_info->treelog_bg_lock);
-+			if (fs_info->treelog_bg)
-+				ffe_ctl->hint_byte = fs_info->treelog_bg;
-+			spin_unlock(&fs_info->treelog_bg_lock);
-+		}
- 		return 0;
- 	default:
- 		BUG();
-@@ -4187,6 +4232,7 @@ static noinline int find_free_extent(struct btrfs_root *root,
- 	struct find_free_extent_ctl ffe_ctl = {0};
- 	struct btrfs_space_info *space_info;
- 	bool full_search = false;
-+	bool for_treelog = root->root_key.objectid == BTRFS_TREE_LOG_OBJECTID;
- 
- 	WARN_ON(num_bytes < fs_info->sectorsize);
- 
-@@ -4200,6 +4246,7 @@ static noinline int find_free_extent(struct btrfs_root *root,
- 	ffe_ctl.orig_have_caching_bg = false;
- 	ffe_ctl.found_offset = 0;
- 	ffe_ctl.hint_byte = hint_byte_orig;
-+	ffe_ctl.for_treelog = for_treelog;
- 	ffe_ctl.policy = BTRFS_EXTENT_ALLOC_CLUSTERED;
- 
- 	/* For clustered allocation */
-@@ -4274,8 +4321,15 @@ static noinline int find_free_extent(struct btrfs_root *root,
- 		struct btrfs_block_group *bg_ret;
- 
- 		/* If the block group is read-only, we can skip it entirely. */
--		if (unlikely(block_group->ro))
-+		if (unlikely(block_group->ro)) {
-+			if (btrfs_is_zoned(fs_info) && for_treelog) {
-+				spin_lock(&fs_info->treelog_bg_lock);
-+				if (block_group->start == fs_info->treelog_bg)
-+					fs_info->treelog_bg = 0;
-+				spin_unlock(&fs_info->treelog_bg_lock);
-+			}
- 			continue;
-+		}
- 
- 		btrfs_grab_block_group(block_group, delalloc);
- 		ffe_ctl.search_start = block_group->start;
-@@ -4463,6 +4517,7 @@ int btrfs_reserve_extent(struct btrfs_root *root, u64 ram_bytes,
- 	bool final_tried = num_bytes == min_alloc_size;
- 	u64 flags;
- 	int ret;
-+	bool for_treelog = root->root_key.objectid == BTRFS_TREE_LOG_OBJECTID;
- 
- 	flags = get_alloc_profile_by_root(root, is_data);
- again:
-@@ -4486,8 +4541,8 @@ int btrfs_reserve_extent(struct btrfs_root *root, u64 ram_bytes,
- 
- 			sinfo = btrfs_find_space_info(fs_info, flags);
- 			btrfs_err(fs_info,
--				  "allocation failed flags %llu, wanted %llu",
--				  flags, num_bytes);
-+			"allocation failed flags %llu, wanted %llu treelog %d",
-+				  flags, num_bytes, for_treelog);
- 			if (sinfo)
- 				btrfs_dump_space_info(fs_info, sinfo,
- 						      num_bytes, 1);
+ 	btrfs_free_path(path);
 -- 
 2.27.0
 

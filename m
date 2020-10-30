@@ -5,68 +5,68 @@ X-Spam-Level:
 X-Spam-Status: No, score=-12.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C7090C4742C
-	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Oct 2020 13:53:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C2875C388F9
+	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Oct 2020 13:53:51 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 7AB8C2071A
-	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Oct 2020 13:53:48 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6B4F02076E
+	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Oct 2020 13:53:51 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="IZ3nXBd/"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="EGLoqAst"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726956AbgJ3Nxl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 30 Oct 2020 09:53:41 -0400
-Received: from esa3.hgst.iphmx.com ([216.71.153.141]:22003 "EHLO
+        id S1726979AbgJ3Nxu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 30 Oct 2020 09:53:50 -0400
+Received: from esa3.hgst.iphmx.com ([216.71.153.141]:22001 "EHLO
         esa3.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726891AbgJ3NxM (ORCPT
+        with ESMTP id S1726860AbgJ3NxH (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 30 Oct 2020 09:53:12 -0400
+        Fri, 30 Oct 2020 09:53:07 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1604065992; x=1635601992;
+  t=1604065986; x=1635601986;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=5Q87+JRgb7O8K8EiTKwhnGcUdvotKiuemZXbkPqubuM=;
-  b=IZ3nXBd/iJ+ELySLw6q0A4RjnH/ahMOxCZdAgveVFJKaEpLLYl+W6XoT
-   oT5OkMpHkAsZBESDycnFT3Ts6+du1TFv/FfjCaEKXXuFN5H3aOSEGWio4
-   DcSZ1iAdKgMu52agiTC1nsyyTxAoTzg+xZff1rjVtE5jlRrDJ+rJWCgvF
-   CMak6asNApzKSPjKmvVrRNJB7x75Pl84bg4wKHAiaMijyAPraMqXsOAj4
-   jPhORODMdvXUvJ0FTwLmHehtjzndIecGIfSdxMV6JqZHjKWZDNn06nF/K
-   BsfRobblKsFBNV9TKkDnAFxHQMnm9AmGoUqM+BC1qOrCkktSxC3/zKhez
-   g==;
-IronPort-SDR: dnOgLBfVWVB+Vs0gPs6jQrVrlgME06AtMoNEHnSK3sSAX7cA8I+1/H0/vGQ74unDqpGLMl5SG9
- AXevCuidreHpbYVUBEx5i2jAzXyG8k9PsFjMVrLEg5ibRsInrmgGJQZRAD55MCu0E4RmydOiyT
- wN9PoQzDkilaVHrs6eqCXtWUYLqbwc6+f071yZRkO/keycI9+YEDciBBpQSFnz/3/NUrW9BXJo
- M+xhyxXo4G10LX/RsHTGWSe99lJIJ951tG4zuBAlIf7Tz+k6lx/N59A8rGKFjum20pldK4HqWO
- ZHQ=
+  bh=qwCyCSgZeSZMQFnd6hq7J9UTcWKFUZUiN9m/ZFj6hDs=;
+  b=EGLoqAstI/qiBxsFP4wAfhvEwIkJ3eLHrdBDvg1zaaoJekfzOimOEWMf
+   m4hg4dX0fray3Sl+YJMp7c1H0QgRqL2srdEbtM/HnW6qZeDfm+Ih+BtMl
+   UwL725IxkgbDna7+cVY5FoQ9mInMgSXPldRAzLgczZ10jfSHOJ09jFSDF
+   7AwgEcZoM8uIIoz+EIcRhgSadr5Y54qJRwndWW+3HSXgAZIScA1HAfDyr
+   Q3hQ19TKbePeBeqFylFy7UigtxkTF/e/HgKOkqwuCG01e4s0YbxAMT9BF
+   LUXFv14HGO5ve7+PVLr/ocJDXNrigm7ARUlsVh1HkCpKO8nqS1PNVNpi4
+   A==;
+IronPort-SDR: bZeyqme/q4PJsX3GzDBYF/kf7mX2tq5P7N7fouaN7V9gQ0+C5vM0CxqlfN5SlTYrlo+Ll5gGcB
+ SLAxg+viKWcwgyWJWzA0fEXUUFkf+bLVMBtVsoo5dOX0A3yF419wpXDFK/f3ePOE5nBFYQH47W
+ Jfe8UAMH1lmE2qSNZC4+mQ3BCc6MIpauQB4f0E4n18t5zWgno7E4DnLmTCUSKkxaooYh/8rb0Y
+ iJ2VCgCCexEnQvP2Raq/pOrYmAPwKrPw5M+pQ0HT5vf8lNr7DXVxJf4b90dIiEHbsVeamYWP0h
+ d18=
 X-IronPort-AV: E=Sophos;i="5.77,433,1596470400"; 
-   d="scan'208";a="155806643"
+   d="scan'208";a="155806632"
 Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 30 Oct 2020 21:53:06 +0800
-IronPort-SDR: UWnc/G0JCkzoeLaYDtQ6z9jfmoim/rM2Yi51YCpszOtuk+Fv+iTdCkwSPYjCmXNyRBnjKi7SMl
- W5IwGYYHv6+px2ShhRGaXr9jUvHn/Jndzka8iepdgFR6IH5J9J/z2SRvGDQI547FIWjxlsZNsI
- MtCcGEdXTMu0qRFpSdfGxmDVyRqSLgXYuGW94TFOt2JwTD3Tvk0y1zPijjbLKO7x1K6GdDbofh
- ZVjm9RMmf0C70qyuLXksd/yHVTfVmyh+TOET3MTJWFo4CsjsgkxjigSv/76rE9uD7lMtvyjCIY
- 0OH+6xvyojNkvX5FSB9iUnYv
+  by ob1.hgst.iphmx.com with ESMTP; 30 Oct 2020 21:52:57 +0800
+IronPort-SDR: xq6e/61wUPKynYAHfTHymFD/9UW31lVZzJgkdzMBc7yFwSUG4mBRC8flqpLdWx1/5cj7dxebyD
+ kyS0uNR1FJMOW2Uqce452mkKAh2dyrRrqWNtUVyt2XchG07fjzoCNcY6H8/zPkKMfLWRQ9moBJ
+ EUkXFwubeu+XGy+LaEELGGi/bIHKQdqmkd0Xf+VHEyrnQ0fmytDc0t4TKnMWzY5+R8PVVjEkfK
+ rAByv1n0MoJb5iJOEPXQ4C5YfnnD9cM4MVR1L9WwF0fdnc+AcZG8RT6j32blVorgmDn6Ojcwei
+ HVAjqRHcMLFUQldY92AuOsrC
 Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 30 Oct 2020 06:39:20 -0700
-IronPort-SDR: JLR7TQK/6qMD4c5ookN/Mibg70pCFS7wdJ/AEGf1hTv59p6JGm6L5DOHAz3C87Ti+iDPfWWx1e
- 753kOXUMf5s0G3Jd9taktFl+sETjW4/SkkCzWUhOm4yZ3tFaftkua3lB+Fo1Mv89EpN6jcZURG
- FnJ6e05+aG2Mo1423bQfhZQQZ0Do9Bd8ndBBlLWfSf1n5vtiYRqlRAn6ZqRutra/wlg0WzBgiE
- xS9NhLoirTB5fah9rLlV8ymv2OqEaE8RR1RtkqggwKeM+SX9/B3K1H1MrkC2AJdUH7f0Xa+soO
- t6M=
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 30 Oct 2020 06:39:11 -0700
+IronPort-SDR: vmNGjZF5/c0XMdnfClCYhLXdBXqLGu6VvPNLvBsLr89QqM3yefwoq18jKGa/mhVu56QnSOzZHt
+ OVIWrWSFvMACLSmFaUoZ1+xpgJPkRGH8hFG1OyinOcIXrsdtjswGTVphmn7ocMj5JM09OTh5Mf
+ CiPsplKF7N9l3dCyQfUf1wlMEkqxyr5MO7uCfMTGmDoyWap/h5lVyVtZyXUcGlsd+q9eSCrOCG
+ uetLedvts0b2viPHU2ToXZmBdFO2vsfx/fvd5FFP/70EQvpcSFmzK23EgZWcfu3GvwFqN4c0aB
+ OQ8=
 WDCIronportException: Internal
 Received: from naota.dhcp.fujisawa.hgst.com ([10.149.52.155])
-  by uls-op-cesaip01.wdc.com with ESMTP; 30 Oct 2020 06:53:05 -0700
+  by uls-op-cesaip01.wdc.com with ESMTP; 30 Oct 2020 06:52:56 -0700
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     linux-btrfs@vger.kernel.org, dsterba@suse.com
 Cc:     hare@suse.com, linux-fsdevel@vger.kernel.org,
         Naohiro Aota <naohiro.aota@wdc.com>,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH v9 37/41] btrfs: split alloc_log_tree()
-Date:   Fri, 30 Oct 2020 22:51:44 +0900
-Message-Id: <71b8f94034f04da6f69f1ea0720825aabc852a54.1604065695.git.naohiro.aota@wdc.com>
+        Josef Bacik <josef@toxicpanda.com>
+Subject: [PATCH v9 29/41] btrfs: wait existing extents before truncating
+Date:   Fri, 30 Oct 2020 22:51:36 +0900
+Message-Id: <764d5b98df15deecef0541f872ee6df756986d46.1604065695.git.naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.27.0
 In-Reply-To: <d9a0a445560db3a9eb240c6535f8dd1bbd0abd96.1604065694.git.naohiro.aota@wdc.com>
 References: <d9a0a445560db3a9eb240c6535f8dd1bbd0abd96.1604065694.git.naohiro.aota@wdc.com>
@@ -76,115 +76,40 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is a preparation for the next patch. This commit split
-alloc_log_tree() to allocating tree structure part (remains in
-alloc_log_tree()) and allocating tree node part (moved in
-btrfs_alloc_log_tree_node()). The latter part is also exported to be used
-in the next patch.
+When truncating a file, file buffers which have already been allocated but
+not yet written may be truncated.  Truncating these buffers could cause
+breakage of a sequential write pattern in a block group if the truncated
+blocks are for example followed by blocks allocated to another file. To
+avoid this problem, always wait for write out of all unwritten buffers
+before proceeding with the truncate execution.
 
-Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/disk-io.c | 31 +++++++++++++++++++++++++------
- fs/btrfs/disk-io.h |  2 ++
- 2 files changed, 27 insertions(+), 6 deletions(-)
+ fs/btrfs/inode.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 2b30ef8a7034..70885f3d3321 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1211,7 +1211,6 @@ static struct btrfs_root *alloc_log_tree(struct btrfs_trans_handle *trans,
- 					 struct btrfs_fs_info *fs_info)
- {
- 	struct btrfs_root *root;
--	struct extent_buffer *leaf;
- 
- 	root = btrfs_alloc_root(fs_info, BTRFS_TREE_LOG_OBJECTID, GFP_NOFS);
- 	if (!root)
-@@ -1221,6 +1220,14 @@ static struct btrfs_root *alloc_log_tree(struct btrfs_trans_handle *trans,
- 	root->root_key.type = BTRFS_ROOT_ITEM_KEY;
- 	root->root_key.offset = BTRFS_TREE_LOG_OBJECTID;
- 
-+	return root;
-+}
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index fdc367a39194..de8b58abed1d 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -4955,6 +4955,16 @@ static int btrfs_setsize(struct inode *inode, struct iattr *attr)
+ 		btrfs_drew_write_unlock(&root->snapshot_lock);
+ 		btrfs_end_transaction(trans);
+ 	} else {
++		struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
 +
-+int btrfs_alloc_log_tree_node(struct btrfs_trans_handle *trans,
-+			      struct btrfs_root *root)
-+{
-+	struct extent_buffer *leaf;
-+
- 	/*
- 	 * DON'T set SHAREABLE bit for log trees.
- 	 *
-@@ -1233,26 +1240,31 @@ static struct btrfs_root *alloc_log_tree(struct btrfs_trans_handle *trans,
++		if (btrfs_is_zoned(fs_info)) {
++			ret = btrfs_wait_ordered_range(
++				inode,
++				ALIGN(newsize, fs_info->sectorsize),
++				(u64)-1);
++			if (ret)
++				return ret;
++		}
  
- 	leaf = btrfs_alloc_tree_block(trans, root, 0, BTRFS_TREE_LOG_OBJECTID,
- 			NULL, 0, 0, 0, BTRFS_NESTING_NORMAL);
--	if (IS_ERR(leaf)) {
--		btrfs_put_root(root);
--		return ERR_CAST(leaf);
--	}
-+	if (IS_ERR(leaf))
-+		return PTR_ERR(leaf);
- 
- 	root->node = leaf;
- 
- 	btrfs_mark_buffer_dirty(root->node);
- 	btrfs_tree_unlock(root->node);
--	return root;
-+
-+	return 0;
- }
- 
- int btrfs_init_log_root_tree(struct btrfs_trans_handle *trans,
- 			     struct btrfs_fs_info *fs_info)
- {
- 	struct btrfs_root *log_root;
-+	int ret;
- 
- 	log_root = alloc_log_tree(trans, fs_info);
- 	if (IS_ERR(log_root))
- 		return PTR_ERR(log_root);
-+	ret = btrfs_alloc_log_tree_node(trans, log_root);
-+	if (ret) {
-+		kfree(log_root);
-+		return ret;
-+	}
- 	WARN_ON(fs_info->log_root_tree);
- 	fs_info->log_root_tree = log_root;
- 	return 0;
-@@ -1264,11 +1276,18 @@ int btrfs_add_log_tree(struct btrfs_trans_handle *trans,
- 	struct btrfs_fs_info *fs_info = root->fs_info;
- 	struct btrfs_root *log_root;
- 	struct btrfs_inode_item *inode_item;
-+	int ret;
- 
- 	log_root = alloc_log_tree(trans, fs_info);
- 	if (IS_ERR(log_root))
- 		return PTR_ERR(log_root);
- 
-+	ret = btrfs_alloc_log_tree_node(trans, log_root);
-+	if (ret) {
-+		btrfs_put_root(log_root);
-+		return ret;
-+	}
-+
- 	log_root->last_trans = trans->transid;
- 	log_root->root_key.offset = root->root_key.objectid;
- 
-diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
-index fee69ced58b4..b82ae3711c42 100644
---- a/fs/btrfs/disk-io.h
-+++ b/fs/btrfs/disk-io.h
-@@ -115,6 +115,8 @@ blk_status_t btrfs_wq_submit_bio(struct btrfs_fs_info *fs_info, struct bio *bio,
- 			extent_submit_bio_start_t *submit_bio_start);
- blk_status_t btrfs_submit_bio_done(void *private_data, struct bio *bio,
- 			  int mirror_num);
-+int btrfs_alloc_log_tree_node(struct btrfs_trans_handle *trans,
-+			      struct btrfs_root *root);
- int btrfs_init_log_root_tree(struct btrfs_trans_handle *trans,
- 			     struct btrfs_fs_info *fs_info);
- int btrfs_add_log_tree(struct btrfs_trans_handle *trans,
+ 		/*
+ 		 * We're truncating a file that used to have good data down to
 -- 
 2.27.0
 

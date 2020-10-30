@@ -7,66 +7,66 @@ X-Spam-Status: No, score=-12.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id ECBC7C388F9
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B4C23C4363A
 	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Oct 2020 13:52:42 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 965372076E
+	by mail.kernel.org (Postfix) with ESMTP id 59FAA2071A
 	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Oct 2020 13:52:42 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="pMTcef9s"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="hgwu2ZDW"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726770AbgJ3Nwg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 30 Oct 2020 09:52:36 -0400
+        id S1726777AbgJ3Nwh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 30 Oct 2020 09:52:37 -0400
 Received: from esa3.hgst.iphmx.com ([216.71.153.141]:21982 "EHLO
         esa3.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726724AbgJ3Nwc (ORCPT
+        with ESMTP id S1726741AbgJ3Nwf (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 30 Oct 2020 09:52:32 -0400
+        Fri, 30 Oct 2020 09:52:35 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1604065951; x=1635601951;
+  t=1604065954; x=1635601954;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=uaSV3YtpzAhOAnLQn61gpLWM4TCZLYKZQdx2GDB4tHg=;
-  b=pMTcef9sTst4aRdxIGtLgrV4pNc+bP9Yzw8i2t1qV2KDIAywQPSxAuC2
-   toWq72ms4hP5r5aCw2gu69HUbIvZ+0+cj5JoP6iagfQOoHpaZUbfbSlX5
-   J9gbeIXOHiHuvr7TPLahtFXeCFJjWbboTKjisCCvkm5IWoABeEoeGNNzF
-   SgS1/bBeoosLChRWWYb9+ik4rEiGzQCW4HeLPk4UvMIXUzdSVS7PPgwIt
-   k4aNtJEEeTZJO2bRVIGEZuUiHvyX17Kx4skfNpNzzDMAi1jTWZZgdybei
-   bUGH+XcuukMfLYi61Hn9uAleczUtbw42esW60SrsNiYF2WXed2uXkp8n4
-   w==;
-IronPort-SDR: Okrxw6vkZ4ggt+UgXHNY1xFcEregljOuM6yhW0JDDJdvwPbOCSkXGwYx8ac1yzrvAUqFeYYhZA
- tNxwkeEQctJiTLyNaQMxSoCTtYsDGTpJ7l/Jo2qJ2HECfbGvjIzVy42KYlRAUM3iXJgExZGI/r
- QmlPO/LecSBsuJ1g7bcWEJB6RGq9QtvAPWYit/Lz1Dn7PskMCgyZ4vhtxClca5qfo4OGNyLujS
- Js2qec7TVT4kOX30eHSFi/G3wcMosb5WJ48Itf+i0OCA7w3Rfk2P/NmmHFFFc3q/qjBWZfGRfj
- +VI=
+  bh=s2KKkfnoTWevfkYQvf5DwhYyLT6JaMkKfA2n4Tx7U8Y=;
+  b=hgwu2ZDW4U5TgLL7IVtbkw2VIrtpEgQr/9PO7qDOJQNWvCbu8y0JV3E9
+   xntNIhV8i2TzVr+/ka9k0eDak0W9OFpOV/UhDkT0la/9mJumiieGkFivQ
+   luUlwsmcGpMpNLY3vrLuEY2WEczAP5deeekxJsOjDjdis/E3h5zrvJNQ3
+   KMBGwGx0ZlGnbzRzhppMa2JLxKW9x6K6/JQBMZql2CZCcEvlaz4gYBV8g
+   tTkOikRoIEcvP8aWgNowHoTuZJ/0ChPkxsP4Vo/vXVVBK5JlR7beoCowG
+   vZDQ0sQ6xElLBtEMbubjdc/6AkcEM8OwTh+f7cY/NOGM0BcEREfBAkqii
+   A==;
+IronPort-SDR: RgMDPCtp7TkTmpDiV+/fcct5v+x6A1MI85JYo3uB1W0k+lCCjYvjVLItxF7u8kWZaBqZ0siVeq
+ nAQS27HYMkcUD8a3xFzjN7Mak3m8/Mvv9msnBoRKjLbwl/SLSEBgTZx/PXC8udiSN4flfiGuIo
+ Fx+ry4qhD2PEgwSBM6MhDuTRpVkPG0InP9HdTeKNim5N4XTHhkUpnQ7MQyPFa30GuY5rhqhYR1
+ dvwpCHKjrCIFHZZm3nfQGY4lubX/teErZQrzMT0vYJ43ZvBCzrOteK+e+MNcT9Mll/IhW5ZALp
+ EC4=
 X-IronPort-AV: E=Sophos;i="5.77,433,1596470400"; 
-   d="scan'208";a="155806588"
+   d="scan'208";a="155806592"
 Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 30 Oct 2020 21:52:31 +0800
-IronPort-SDR: dCMzNitI6SnFH7EIkwsR+yTVu3at03M2Pk3RP7r/95NCI2NSdiBqghILyIrxEqSHZLPNpxT+VX
- oapdHF+acMmGQ5CmetG8Nd/fEIPSo5KtdgtpzwvTi/tB+razghNcAZ5lHkKc7aCvRzNUZTVSR1
- +kSCB6K6LZl+1F1T4E+e3iGxDE8Ujcv5daA2KZ4YO4y1E22d8noZubOrCa01p7JOveq5Ac4zJ9
- JonBkB0MVwhCc5PoTVFfO6N3jwyu3PghBQg0UgLYA3F2uzft1XF5O80P4zHiomhesQMOp54s+d
- yDHK0tCQK+qmQNzDRC3RWSsz
+  by ob1.hgst.iphmx.com with ESMTP; 30 Oct 2020 21:52:34 +0800
+IronPort-SDR: 4pzZvVT/RW88te7AnlWzA5mLI3VCsEy7CAjbI6tH526qi37n9nOsMgZxalPl8RWpH3ycBFZzOR
+ nLbdCNpBXTjVcolQawSaFZRFVPA01UpMYUQCY1ErWf+QuypyuBHuhoqw+vSNqZemFT+05wjZJc
+ EzX7JO3Y3MIUAt/4QN/0FT97K1PF8obdGA4Q6vwZbUEDRIkKQZhDQjQApPgYtv2IfftTWYBdIc
+ poTr85UJ4V8S7kGbD25Hyy49R7cHy0gthc7Ubzlioo5vjhjf6Ht8Khh0vCZnePBCofzcLfoq6+
+ 4pjRxBAcsKXgnwaocyjPPeqq
 Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 30 Oct 2020 06:38:45 -0700
-IronPort-SDR: hL+PYsl9JeeuuGJad61KqQBo6YChaogmPBLO5L101UKeDljx0JhC3m3TwxWqZFR38TlWDSIS1r
- BPODA7/TOky4atYnb0mrzYWTCZX1eL8Piqn3PfHYPA53yxUy23mxgCo6qYYOKBhfKrEBfNcE9/
- AeXrBTNOCoaivrOkYjFuPTD2uGDjcW1LplLYs3k6B2gNlzH/yczgAL5Hn+rEwqV3pGgAlVycRV
- XgxEC7wTfTt9z5R06ir4mQS8Fmz1maHNLGRCmssqziqWd4Oa0ajCAX170NX6INAhoj9vtf+5ER
- t34=
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 30 Oct 2020 06:38:48 -0700
+IronPort-SDR: 4u3PZhFe0LtRevulN/Cm+mk2sK9MsHM08wLLo8TmtjDd1a4eldMLqi5Ln4ZophLRGlisD28TeC
+ 35lapuvGfsP4Vm7UsmNPX/5Rzufk3EFvA5VGmfT0EcUHhyRuX2Vk9Yj7ImZbvXzfgWJTeutdEa
+ mtWClCXVyS/kMjdammY6+VYV0MmSvGpR9947qJmPU2IOmLKtzfe93hGW+QU7YB/d7UFd+Xrgyq
+ 040IJB5Mb3TnkY+RwUwexWSqEmnz2dp1Xu4aghvGPy1ZPrhMBpRdTbM2XoALe4qbpp2BPW/Aqq
+ Jnw=
 WDCIronportException: Internal
 Received: from naota.dhcp.fujisawa.hgst.com ([10.149.52.155])
-  by uls-op-cesaip01.wdc.com with ESMTP; 30 Oct 2020 06:52:30 -0700
+  by uls-op-cesaip01.wdc.com with ESMTP; 30 Oct 2020 06:52:33 -0700
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     linux-btrfs@vger.kernel.org, dsterba@suse.com
 Cc:     hare@suse.com, linux-fsdevel@vger.kernel.org,
         Naohiro Aota <naohiro.aota@wdc.com>,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH v9 08/41] btrfs: disallow NODATACOW in ZONED mode
-Date:   Fri, 30 Oct 2020 22:51:15 +0900
-Message-Id: <4129ba21e887cff5dc707b34920fb825ca1c61a4.1604065695.git.naohiro.aota@wdc.com>
+        Josef Bacik <josef@toxicpanda.com>
+Subject: [PATCH v9 10/41] btrfs: disallow mixed-bg in ZONED mode
+Date:   Fri, 30 Oct 2020 22:51:17 +0900
+Message-Id: <1aec842d98f9b38674aebce12606b9267f475164.1604065695.git.naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.27.0
 In-Reply-To: <d9a0a445560db3a9eb240c6535f8dd1bbd0abd96.1604065694.git.naohiro.aota@wdc.com>
 References: <d9a0a445560db3a9eb240c6535f8dd1bbd0abd96.1604065694.git.naohiro.aota@wdc.com>
@@ -76,67 +76,40 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-NODATACOW implies overwriting the file data on a device, which is
-impossible in sequential required zones. Disable NODATACOW globally with
-mount option and per-file NODATACOW attribute by masking FS_NOCOW_FL.
+Placing both data and metadata in a block group is impossible in ZONED
+mode. For data, we can allocate a space for it and write it immediately
+after the allocation. For metadata, however, we cannot do so, because the
+logical addresses are recorded in other metadata buffers to build up the
+trees. As a result, a data buffer can be placed after a metadata buffer,
+which is not written yet. Writing out the data buffer will break the
+sequential write rule.
 
-Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+This commit check and disallow MIXED_BG with ZONED mode.
+
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/ioctl.c | 16 ++++++++++++++++
- fs/btrfs/zoned.c |  6 ++++++
- 2 files changed, 22 insertions(+)
+ fs/btrfs/zoned.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index ab408a23ba32..e1036a9ce881 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -193,6 +193,18 @@ static int check_fsflags(unsigned int old_flags, unsigned int flags)
- 	return 0;
- }
- 
-+static int check_fsflags_compatible(struct btrfs_fs_info *fs_info,
-+				    unsigned int flags)
-+{
-+	bool zoned = btrfs_is_zoned(fs_info);
-+
-+	if (zoned && (flags & FS_NOCOW_FL))
-+		return -EPERM;
-+
-+	return 0;
-+}
-+
-+
- static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
- {
- 	struct inode *inode = file_inode(file);
-@@ -230,6 +242,10 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
- 	if (ret)
- 		goto out_unlock;
- 
-+	ret = check_fsflags_compatible(fs_info, fsflags);
-+	if (ret)
-+		goto out_unlock;
-+
- 	binode_flags = binode->flags;
- 	if (fsflags & FS_SYNC_FL)
- 		binode_flags |= BTRFS_INODE_SYNC;
 diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-index 3885fa327049..1939b3ee6c10 100644
+index 1939b3ee6c10..ae509699da14 100644
 --- a/fs/btrfs/zoned.c
 +++ b/fs/btrfs/zoned.c
-@@ -281,5 +281,11 @@ int btrfs_check_mountopts_zoned(struct btrfs_fs_info *info)
- 		return -EOPNOTSUPP;
+@@ -257,6 +257,13 @@ int btrfs_check_zoned_mode(struct btrfs_fs_info *fs_info)
+ 		goto out;
  	}
  
-+	if (btrfs_test_opt(info, NODATACOW)) {
-+		btrfs_err(info,
-+		  "cannot enable nodatacow with ZONED mode");
-+		return -EOPNOTSUPP;
++	if (btrfs_fs_incompat(fs_info, MIXED_GROUPS)) {
++		btrfs_err(fs_info,
++			  "ZONED mode is not allowed for mixed block groups");
++		ret = -EINVAL;
++		goto out;
 +	}
 +
- 	return 0;
- }
+ 	fs_info->zone_size = zone_size;
+ 	fs_info->max_zone_append_size = max_zone_append_size;
+ 
 -- 
 2.27.0
 

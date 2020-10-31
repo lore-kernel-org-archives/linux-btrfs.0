@@ -2,81 +2,121 @@ Return-Path: <SRS0=S3sP=EG=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.5 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 71659C388F9
-	for <linux-btrfs@archiver.kernel.org>; Sat, 31 Oct 2020 00:28:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 83A19C00A89
+	for <linux-btrfs@archiver.kernel.org>; Sat, 31 Oct 2020 03:40:15 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id CB591206E5
-	for <linux-btrfs@archiver.kernel.org>; Sat, 31 Oct 2020 00:28:07 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1C6572076E
+	for <linux-btrfs@archiver.kernel.org>; Sat, 31 Oct 2020 03:40:14 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=dirtcellar.net header.i=@dirtcellar.net header.b="Iv2m7Td8"
+	dkim=pass (2048-bit key) header.d=kernel-dk.20150623.gappssmtp.com header.i=@kernel-dk.20150623.gappssmtp.com header.b="Vb9aJfax"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725998AbgJaA2D (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 30 Oct 2020 20:28:03 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43342 "EHLO
+        id S1725856AbgJaDkL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 30 Oct 2020 23:40:11 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44510 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726099AbgJaA2B (ORCPT
+        with ESMTP id S1725536AbgJaDkL (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 30 Oct 2020 20:28:01 -0400
-Received: from smtp.domeneshop.no (smtp.domeneshop.no [IPv6:2a01:5b40:0:3005::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 38C67C0613D5
-        for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2020 17:28:00 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=dirtcellar.net; s=ds201912; h=Content-Transfer-Encoding:Content-Type:
-        MIME-Version:Date:Message-ID:Subject:From:To:Reply-To:Sender:Cc:Content-ID:
-        Content-Description:Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc
-        :Resent-Message-ID:In-Reply-To:References:List-Id:List-Help:List-Unsubscribe:
-        List-Subscribe:List-Post:List-Owner:List-Archive;
-        bh=HpOVGxJDRbP2Rz1i1DFFog+YxfgS78XizC3e07j+EKk=; b=Iv2m7Td8LFN8IlWTqXiotIAchc
-        jhJNr+0DD9GhZqFwHlaMEEufH+4qu3g5WYNe9yBxUXYv2O4lRoeeAeT97CfWRv3zD/Ah9n96IL8sQ
-        6Fwt8qS8iyAdb4+UqIEextzmV6RSjEIq4oAtItf26EBEHPjXdhimzJW0l9AsbOjmphnkRmTIuCTnz
-        0GqAQgnBq6DQIAj7SMge4aEZKMOn6tlv47fx1uf56iMEAq/LLXB8L4DkIezaEfLi3WDDrYM4gOVUa
-        IL4kvxg6jybkg56UPpOU0tn+4Y/AnRrcCSwz8i95N10yrW50Im6jI0fvqbplpx1oGXwdqiahbttc3
-        bdfs2qwg==;
-Received: from 254.79-160-170.customer.lyse.net ([79.160.170.254]:47475 helo=[10.0.0.10])
-        by smtp.domeneshop.no with esmtpsa (TLS1.3:ECDHE_RSA_AES_128_GCM_SHA256:128)
-        (Exim 4.92)
-        (envelope-from <waxhead@dirtcellar.net>)
-        id 1kYekP-0000UO-Ia
-        for linux-btrfs@vger.kernel.org; Sat, 31 Oct 2020 01:27:57 +0100
-Reply-To: waxhead@dirtcellar.net
-To:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From:   waxhead <waxhead@dirtcellar.net>
-Subject: Switching from spacecache v1 to v2
-Message-ID: <fc45b21c-d24e-641c-efab-e1544aa98071@dirtcellar.net>
-Date:   Sat, 31 Oct 2020 01:27:57 +0100
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Firefox/60.0 SeaMonkey/2.53.4
+        Fri, 30 Oct 2020 23:40:11 -0400
+Received: from mail-pl1-x644.google.com (mail-pl1-x644.google.com [IPv6:2607:f8b0:4864:20::644])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5157BC0613D5
+        for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2020 20:40:11 -0700 (PDT)
+Received: by mail-pl1-x644.google.com with SMTP id j5so3950996plk.7
+        for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2020 20:40:11 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=kernel-dk.20150623.gappssmtp.com; s=20150623;
+        h=subject:to:cc:references:from:message-id:date:user-agent
+         :mime-version:in-reply-to:content-language:content-transfer-encoding;
+        bh=9sLYZttYSBtUq0cUE26BQUvUmDdnFfSX5F3EGLpVeHI=;
+        b=Vb9aJfaxCkWdqxgNMRM99nztY7QSpYLScuaXEBOzhT6Wj69pJya8MrwTeR4Ln1zQk2
+         KdaksKI336VoSrRG8nkucwS8tpz46PQ+MwlhssJi6CreaFT77MC182G6r2o663mSqglA
+         fAowCJgHgcf3BwusFbAN9icWZszwQUjMB8wKrNhrYLm7FT2wIlpmldtej54uGap+ObBg
+         Rv/mNPuvp62uqhh6CP3dJSUtt4YNK8803GgpEogODJMl3yRfAEQTw3TT76djKi1TRaEb
+         7EOTBQjTxe5/rrBkkPdGQXAZ4NWOtRKZ8v4jrpYO6Tk4BC9NrywCdqz+q7R0A1mbIOwn
+         MUwA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=9sLYZttYSBtUq0cUE26BQUvUmDdnFfSX5F3EGLpVeHI=;
+        b=sEczMRwFqr1gMis9ygmSGOgh2FKQNSNY+ULkxmiVPde67PbSc9MSZoGWvzK8FDe1Ma
+         J2W2wsuldUyNi0OBe6cLn5ZSBm0evOTihdTuVLQa/41jaj4+8AGhLPs1QG2Z9qUpDp4/
+         KKBYzjFPw1F4YfpOD+Q5AnDIcOlO4Kgcwcw89XLZfOhBVJ9Dv0vVHWGOQw+IkrdEtgAH
+         hvG0+tcoR5y5zVuTmYkFNq7vrCLn6+S02K8V7aFfAR7spxeBNA9iPZ/qwYot1nVoNMyP
+         2LI1v6DG2plTn5CWzS0LQS1kvHGxsoIYMltHIS9j3jzteFm6jJWjSAgnNDHk1WQkv2Ow
+         4FAA==
+X-Gm-Message-State: AOAM530E5O/4vxLi8HaM0rABhF8TsdaY2ngQfLsu2S883NSZJFp3QJj5
+        7CXT8jABfJbVV0j+b1F/Qs9ebQ==
+X-Google-Smtp-Source: ABdhPJzhXFWImduSrC3p9w9T2ccj1dZUS2GmpxNoLWNF2CY7hy3HGvVsm8jH+O8R3Pum+E9poL3fNA==
+X-Received: by 2002:a17:902:d34a:b029:d3:dcb5:a84c with SMTP id l10-20020a170902d34ab02900d3dcb5a84cmr11375124plk.81.1604115610545;
+        Fri, 30 Oct 2020 20:40:10 -0700 (PDT)
+Received: from [192.168.1.134] ([66.219.217.173])
+        by smtp.gmail.com with ESMTPSA id d18sm6450097pgg.41.2020.10.30.20.40.09
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Fri, 30 Oct 2020 20:40:09 -0700 (PDT)
+Subject: Re: [PATCH v9 01/41] block: add bio_add_zone_append_page
+To:     Naohiro Aota <naohiro.aota@wdc.com>, linux-btrfs@vger.kernel.org,
+        dsterba@suse.com
+Cc:     hare@suse.com, linux-fsdevel@vger.kernel.org,
+        Johannes Thumshirn <johannes.thumshirn@wdc.com>
+References: <cover.1604065156.git.naohiro.aota@wdc.com>
+ <d9a0a445560db3a9eb240c6535f8dd1bbd0abd96.1604065694.git.naohiro.aota@wdc.com>
+From:   Jens Axboe <axboe@kernel.dk>
+Message-ID: <a7ff7661-0a1d-a528-9b92-7b58b7c11e6b@kernel.dk>
+Date:   Fri, 30 Oct 2020 21:40:08 -0600
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.10.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
+In-Reply-To: <d9a0a445560db3a9eb240c6535f8dd1bbd0abd96.1604065694.git.naohiro.aota@wdc.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
 Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-A couple of months ago I asked on IRC how to properly switch from 
-version 1 to version 2 of the space cache. I also asked if the space 
-cache v2 was considered stable.
-I only remember what we talked about, and from what I understood it was 
-not as easy to switch as the wiki may seem to indicate.
+On 10/30/20 7:51 AM, Naohiro Aota wrote:
+> From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+> 
+> Add bio_add_zone_append_page(), a wrapper around bio_add_hw_page() which
+> is intended to be used by file systems that directly add pages to a bio
+> instead of using bio_iov_iter_get_pages().
 
-We run a box with a btrfs filesystem at 19TB, 9 disks, 11 subvolumes 
-that contains about 6.5 million files (and this number is growing).
+Not sure what this is for, since I'm only on one patch in the series...
 
-The filesystem has always been mounted with just the default options.
+> +/**
+> + * bio_add_zone_append_page - attempt to add page to zone-append bio
+> + * @bio: destination bio
+> + * @page: page to add
+> + * @len: vec entry length
+> + * @offset: vec entry offset
+> + *
+> + * Attempt to add a page to the bio_vec maplist of a bio that will be submitted
+> + * for a zone-append request. This can fail for a number of reasons, such as the
+> + * bio being full or the target block device is not a zoned block device or
+> + * other limitations of the target block device. The target block device must
+> + * allow bio's up to PAGE_SIZE, so it is always possible to add a single page
+> + * to an empty bio.
+> + */
 
-Performance is slow, and it improved when I moved the bulk of the files 
-to various subvolumes for some reason. The wiki states that performance 
-on very large filesystems (what is considered large?) may degrade 
-drastically.
+This should include a
 
-I would like to try v2 of the space cache to see if that improves speed 
-a bit.
+Return value:
 
-So is space cache v2 safe to use?!
-And
-How do I make the switch properly?
+section, explaining how it returns number of bytes added (and why 0 is thus
+a failure case).
+
+> +int bio_add_zone_append_page(struct bio *bio, struct page *page,
+> +			     unsigned int len, unsigned int offset)
+
+Should this return unsigned int? If not, how would it work if someone
+asked for INT_MAX + 4k.
+
+-- 
+Jens Axboe
 

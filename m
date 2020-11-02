@@ -7,40 +7,40 @@ X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C70FDC388F2
-	for <linux-btrfs@archiver.kernel.org>; Mon,  2 Nov 2020 14:49:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 26B71C00A89
+	for <linux-btrfs@archiver.kernel.org>; Mon,  2 Nov 2020 14:49:15 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 7F1D32084C
+	by mail.kernel.org (Postfix) with ESMTP id B44B121556
 	for <linux-btrfs@archiver.kernel.org>; Mon,  2 Nov 2020 14:49:14 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="YihTbadx"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="CmtStxDM"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726279AbgKBOtN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 2 Nov 2020 09:49:13 -0500
-Received: from mx2.suse.de ([195.135.220.15]:39756 "EHLO mx2.suse.de"
+        id S1726284AbgKBOtO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 2 Nov 2020 09:49:14 -0500
+Received: from mx2.suse.de ([195.135.220.15]:39848 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725914AbgKBOtK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 2 Nov 2020 09:49:10 -0500
+        id S1726156AbgKBOtL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 2 Nov 2020 09:49:11 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1604328548;
+        t=1604328549;
         h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
          to:to:cc:cc:mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=BX+UPhdE28sS5tZrI3WO761zv2IAQOXMSdGR3ml9h0o=;
-        b=YihTbadx2H14Kby54eBrmcEpdKxH5wxJ6P1ha0rqKHzuc4D02jnkG7NddTlmshnCxAFUau
-        Bb8ATs4r1A365jJrEQ+4a4z4t9J73vb3uyNH6vRYm7IMoDC3yZ5IVYy0z2Xp/CGsirN8Oc
-        ZdlN4mSSJcYbowYTCwMAradIVYhDAUw=
+        bh=5DgCWAlWtRZagQqemw0/QbbjY7yPmJ/aRMH+D1Hh2Q8=;
+        b=CmtStxDMZ9Uzx8OseSJ2fQVi7DkGZJwpfVqackHRxemulH4KXnh1Vyfg38UqFNAKPATWmK
+        3KU0O2NaJTuS8QqOs71Wv3mPLmm/Hg3E9cq2Nh7R7fRTajtyi2jVdRGAEcoreLhAmgj8/f
+        4VWP62H8iR1TGWVeec6eHUcwPcMxXoM=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id A6A2FB902;
-        Mon,  2 Nov 2020 14:49:08 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id CFB34B90F;
+        Mon,  2 Nov 2020 14:49:09 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 02/14] btrfs: Make insert_prealloc_file_extent take btrfs_inode
-Date:   Mon,  2 Nov 2020 16:48:54 +0200
-Message-Id: <20201102144906.3767963-3-nborisov@suse.com>
+Subject: [PATCH 06/14] btrfs: Make btrfs_update_inode_item take btrfs_inode
+Date:   Mon,  2 Nov 2020 16:48:58 +0200
+Message-Id: <20201102144906.3767963-7-nborisov@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <20201102144906.3767963-1-nborisov@suse.com>
 References: <20201102144906.3767963-1-nborisov@suse.com>
@@ -52,59 +52,63 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/inode.c | 14 ++++++++------
- 1 file changed, 8 insertions(+), 6 deletions(-)
+ fs/btrfs/inode.c | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index aa8c3a73bf1b..f31132106fad 100644
+index e4993706a7fa..4165eb322c11 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -9566,7 +9566,8 @@ static int btrfs_symlink(struct inode *dir, struct dentry *dentry,
-
- static struct btrfs_trans_handle *insert_prealloc_file_extent(
- 				       struct btrfs_trans_handle *trans_in,
--				       struct inode *inode, struct btrfs_key *ins,
-+				       struct btrfs_inode *inode,
-+				       struct btrfs_key *ins,
- 				       u64 file_offset)
+@@ -3450,7 +3450,8 @@ static void fill_inode_item(struct btrfs_trans_handle *trans,
+  * copy everything in the in-memory inode into the btree.
+  */
+ static noinline int btrfs_update_inode_item(struct btrfs_trans_handle *trans,
+-				struct btrfs_root *root, struct inode *inode)
++				struct btrfs_root *root,
++				struct btrfs_inode *inode)
  {
- 	struct btrfs_file_extent_item stack_fi;
-@@ -9587,13 +9588,13 @@ static struct btrfs_trans_handle *insert_prealloc_file_extent(
- 	btrfs_set_stack_file_extent_compression(&stack_fi, BTRFS_COMPRESS_NONE);
- 	/* Encryption and other encoding is reserved and all 0 */
-
--	ret = btrfs_qgroup_release_data(BTRFS_I(inode), file_offset, len);
-+	ret = btrfs_qgroup_release_data(inode, file_offset, len);
- 	if (ret < 0)
- 		return ERR_PTR(ret);
-
- 	if (trans) {
--		ret = insert_reserved_file_extent(trans, BTRFS_I(inode),
--						  file_offset, &stack_fi, ret);
-+		ret = insert_reserved_file_extent(trans, inode, file_offset,
-+						  &stack_fi, ret);
- 		if (ret)
- 			return ERR_PTR(ret);
- 		return trans;
-@@ -9613,7 +9614,7 @@ static struct btrfs_trans_handle *insert_prealloc_file_extent(
- 	if (!path)
- 		return ERR_PTR(-ENOMEM);
-
--	ret = btrfs_replace_file_extents(inode, path, file_offset,
-+	ret = btrfs_replace_file_extents(&inode->vfs_inode, path, file_offset,
- 				     file_offset + len - 1, &extent_info,
- 				     &trans);
+ 	struct btrfs_inode_item *inode_item;
+ 	struct btrfs_path *path;
+@@ -3462,8 +3463,7 @@ static noinline int btrfs_update_inode_item(struct btrfs_trans_handle *trans,
+ 		return -ENOMEM;
+ 
+ 	path->leave_spinning = 1;
+-	ret = btrfs_lookup_inode(trans, root, path, &BTRFS_I(inode)->location,
+-				 1);
++	ret = btrfs_lookup_inode(trans, root, path, &inode->location, 1);
+ 	if (ret) {
+ 		if (ret > 0)
+ 			ret = -ENOENT;
+@@ -3474,9 +3474,9 @@ static noinline int btrfs_update_inode_item(struct btrfs_trans_handle *trans,
+ 	inode_item = btrfs_item_ptr(leaf, path->slots[0],
+ 				    struct btrfs_inode_item);
+ 
+-	fill_inode_item(trans, leaf, inode_item, inode);
++	fill_inode_item(trans, leaf, inode_item, &inode->vfs_inode);
+ 	btrfs_mark_buffer_dirty(leaf);
+-	btrfs_set_inode_last_trans(trans, BTRFS_I(inode));
++	btrfs_set_inode_last_trans(trans, inode);
+ 	ret = 0;
+ failed:
  	btrfs_free_path(path);
-@@ -9669,7 +9670,8 @@ static int __btrfs_prealloc_file_range(struct inode *inode, int mode,
- 		clear_offset += ins.offset;
-
- 		last_alloc = ins.offset;
--		trans = insert_prealloc_file_extent(trans, inode, &ins, cur_offset);
-+		trans = insert_prealloc_file_extent(trans, BTRFS_I(inode),
-+						    &ins, cur_offset);
- 		/*
- 		 * Now that we inserted the prealloc extent we can finally
- 		 * decrement the number of reservations in the block group.
---
+@@ -3510,7 +3510,7 @@ noinline int btrfs_update_inode(struct btrfs_trans_handle *trans,
+ 		return ret;
+ 	}
+ 
+-	return btrfs_update_inode_item(trans, root, inode);
++	return btrfs_update_inode_item(trans, root, BTRFS_I(inode));
+ }
+ 
+ noinline int btrfs_update_inode_fallback(struct btrfs_trans_handle *trans,
+@@ -3521,7 +3521,7 @@ noinline int btrfs_update_inode_fallback(struct btrfs_trans_handle *trans,
+ 
+ 	ret = btrfs_update_inode(trans, root, inode);
+ 	if (ret == -ENOSPC)
+-		return btrfs_update_inode_item(trans, root, inode);
++		return btrfs_update_inode_item(trans, root, BTRFS_I(inode));
+ 	return ret;
+ }
+ 
+-- 
 2.25.1
 

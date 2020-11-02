@@ -2,128 +2,65 @@ Return-Path: <SRS0=KFuw=EI=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.2 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0C99EC56201
-	for <linux-btrfs@archiver.kernel.org>; Mon,  2 Nov 2020 14:49:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D6728C388F2
+	for <linux-btrfs@archiver.kernel.org>; Mon,  2 Nov 2020 14:58:04 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D06022084C
-	for <linux-btrfs@archiver.kernel.org>; Mon,  2 Nov 2020 14:49:27 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="HeRof5cG"
+	by mail.kernel.org (Postfix) with ESMTP id 930D92227F
+	for <linux-btrfs@archiver.kernel.org>; Mon,  2 Nov 2020 14:58:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726318AbgKBOt1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 2 Nov 2020 09:49:27 -0500
-Received: from mx2.suse.de ([195.135.220.15]:39792 "EHLO mx2.suse.de"
+        id S1726297AbgKBO6D (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 2 Nov 2020 09:58:03 -0500
+Received: from mx2.suse.de ([195.135.220.15]:52552 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726094AbgKBOtL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 2 Nov 2020 09:49:11 -0500
+        id S1725817AbgKBO6D (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 2 Nov 2020 09:58:03 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1604328549;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=vwaG7G/7GZ5GYDFS7+ziFDoYWG/a9MBvq72dmyGixtA=;
-        b=HeRof5cGP2GK+8YjAOPlb3ZC2M5NAF5AQUujQvWq1Z+XNSAhPEyeazVt/8j23vjDVwVFsc
-        JZV32jYbtrGtML+nKiWtcVQSyPUY5oQ7K7Us58FLHCco2rl53VctyOdMwLZylDIx8y9NtC
-        TivKUWnY4gkMsntGl6Jg2z5mvEHGNbg=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 79565B906;
-        Mon,  2 Nov 2020 14:49:09 +0000 (UTC)
-From:   Nikolay Borisov <nborisov@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 05/14] btrfs: Make btrfs_delayed_update_inode take btrfs_inode
-Date:   Mon,  2 Nov 2020 16:48:57 +0200
-Message-Id: <20201102144906.3767963-6-nborisov@suse.com>
-X-Mailer: git-send-email 2.25.1
-In-Reply-To: <20201102144906.3767963-1-nborisov@suse.com>
-References: <20201102144906.3767963-1-nborisov@suse.com>
+        by mx2.suse.de (Postfix) with ESMTP id 02E81AC53;
+        Mon,  2 Nov 2020 14:58:02 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id D4231DA7D2; Mon,  2 Nov 2020 15:56:24 +0100 (CET)
+Date:   Mon, 2 Nov 2020 15:56:24 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v4 00/68] btrfs: add basic rw support for subpage sector
+ size
+Message-ID: <20201102145624.GB6756@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20201021062554.68132-1-wqu@suse.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20201021062554.68132-1-wqu@suse.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
- fs/btrfs/delayed-inode.c | 13 ++++++++-----
- fs/btrfs/delayed-inode.h |  3 ++-
- fs/btrfs/inode.c         |  2 +-
- 3 files changed, 11 insertions(+), 7 deletions(-)
+On Wed, Oct 21, 2020 at 02:24:46PM +0800, Qu Wenruo wrote:
+> Patches can be fetched from github:
+> https://github.com/adam900710/linux/tree/subpage_data_fullpage_write
+> 
+> Qu Wenruo (67):
 
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index 5aba81e16113..6fcc5bd2839a 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -1826,27 +1826,30 @@ int btrfs_fill_inode(struct inode *inode, u32 *rdev)
- }
- 
- int btrfs_delayed_update_inode(struct btrfs_trans_handle *trans,
--			       struct btrfs_root *root, struct inode *inode)
-+			       struct btrfs_root *root,
-+			       struct btrfs_inode *inode)
- {
- 	struct btrfs_delayed_node *delayed_node;
- 	int ret = 0;
- 
--	delayed_node = btrfs_get_or_create_delayed_node(BTRFS_I(inode));
-+	delayed_node = btrfs_get_or_create_delayed_node(inode);
- 	if (IS_ERR(delayed_node))
- 		return PTR_ERR(delayed_node);
- 
- 	mutex_lock(&delayed_node->mutex);
- 	if (test_bit(BTRFS_DELAYED_NODE_INODE_DIRTY, &delayed_node->flags)) {
--		fill_stack_inode_item(trans, &delayed_node->inode_item, inode);
-+		fill_stack_inode_item(trans, &delayed_node->inode_item,
-+				      &inode->vfs_inode);
- 		goto release_node;
- 	}
- 
--	ret = btrfs_delayed_inode_reserve_metadata(trans, root, BTRFS_I(inode),
-+	ret = btrfs_delayed_inode_reserve_metadata(trans, root, inode,
- 						   delayed_node);
- 	if (ret)
- 		goto release_node;
- 
--	fill_stack_inode_item(trans, &delayed_node->inode_item, inode);
-+	fill_stack_inode_item(trans, &delayed_node->inode_item,
-+			      &inode->vfs_inode);
- 	set_bit(BTRFS_DELAYED_NODE_INODE_DIRTY, &delayed_node->flags);
- 	delayed_node->count++;
- 	atomic_inc(&root->fs_info->delayed_root->items);
-diff --git a/fs/btrfs/delayed-inode.h b/fs/btrfs/delayed-inode.h
-index ca96ef007d8f..b2412160c5bc 100644
---- a/fs/btrfs/delayed-inode.h
-+++ b/fs/btrfs/delayed-inode.h
-@@ -110,7 +110,8 @@ int btrfs_commit_inode_delayed_inode(struct btrfs_inode *inode);
- 
- 
- int btrfs_delayed_update_inode(struct btrfs_trans_handle *trans,
--			       struct btrfs_root *root, struct inode *inode);
-+			       struct btrfs_root *root,
-+			       struct btrfs_inode *inode);
- int btrfs_fill_inode(struct inode *inode, u32 *rdev);
- int btrfs_delayed_delete_inode_ref(struct btrfs_inode *inode);
- 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 5bcac6f27cf9..e4993706a7fa 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3504,7 +3504,7 @@ noinline int btrfs_update_inode(struct btrfs_trans_handle *trans,
- 	    && !test_bit(BTRFS_FS_LOG_RECOVERING, &fs_info->flags)) {
- 		btrfs_update_root_times(trans, root);
- 
--		ret = btrfs_delayed_update_inode(trans, root, inode);
-+		ret = btrfs_delayed_update_inode(trans, root, BTRFS_I(inode));
- 		if (!ret)
- 			btrfs_set_inode_last_trans(trans, BTRFS_I(inode));
- 		return ret;
--- 
-2.25.1
+So far I've merged
 
+      btrfs: extent_io: fix the comment on lock_extent_buffer_for_io()
+      btrfs: extent_io: update the comment for find_first_extent_bit()
+      btrfs: extent_io: sink the failed_start parameter to set_extent_bit()
+      btrfs: disk-io: replace fs_info and private_data with inode for btrfs_wq_submit_bio()
+      btrfs: inode: sink parameter start and len to check_data_csum()
+      btrfs: extent_io: rename pages_locked in process_pages_contig()
+      btrfs: extent_io: only require sector size alignment for page read
+      btrfs: extent_io: rename page_size to io_size in submit_extent_page()
+
+to misc-next.  This is from the first 20, the easy and safe changes.
+There are few more that need more explanation or another look.

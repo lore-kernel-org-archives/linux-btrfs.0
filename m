@@ -2,217 +2,311 @@ Return-Path: <SRS0=hn/e=EJ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.1 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 22C41C55178
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 01:27:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 28DC1C00A89
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 03:31:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id C228C2224E
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 01:27:38 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1604366858;
-	bh=Iz+JLNJgmDLZjp5vlBNCDt510Qp8YB7z/1lRTcyYMi0=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=Qbr/pBH7U9IQ+VwObg74zjt3YEPZIp0xa/TOhkUQdyOFd8GlRyLJWpZ0jruyXF7gv
-	 Ndxi/fj9LV4cps/G2rQ4Tde4oOgZ9cH9+NKw7hVXqaISZxVWRs2nmFsYhPVeekL8yJ
-	 LJm+dNBPmZg0q3N2yTl3FeUDNJIzB9n/HocOFUzE=
+	by mail.kernel.org (Postfix) with ESMTP id D7876206E3
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 03:31:23 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="WPe3j7j3"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727432AbgKCB1f (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 2 Nov 2020 20:27:35 -0500
-Received: from mail.kernel.org ([198.145.29.99]:60770 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726773AbgKCBTF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 2 Nov 2020 20:19:05 -0500
-Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 2A15122403;
-        Tue,  3 Nov 2020 01:19:04 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1604366344;
-        bh=Iz+JLNJgmDLZjp5vlBNCDt510Qp8YB7z/1lRTcyYMi0=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=KElz1JYungqd3t5IMoAESLbWu9yS3u1xz5Gy4VIFr+MNvc4MxMKjYRAnPgmk1ekvI
-         5qbkZN23TXwW7EPfLfrey9mHNTiFHcDnUyrFUc+pSgDOPKW2jcZXosBCFhl4uvJfMo
-         Uiq7kaKtnzV6DzWCdq7/rGbfq9oRQg3dRxH+E/qc=
-From:   Sasha Levin <sashal@kernel.org>
-To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>,
-        Filipe Manana <fdmanana@suse.com>,
-        Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.9 18/35] btrfs: drop the path before adding qgroup items when enabling qgroups
-Date:   Mon,  2 Nov 2020 20:18:23 -0500
-Message-Id: <20201103011840.182814-18-sashal@kernel.org>
-X-Mailer: git-send-email 2.27.0
-In-Reply-To: <20201103011840.182814-1-sashal@kernel.org>
-References: <20201103011840.182814-1-sashal@kernel.org>
+        id S1726059AbgKCDbX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 2 Nov 2020 22:31:23 -0500
+Received: from esa3.hgst.iphmx.com ([216.71.153.141]:39903 "EHLO
+        esa3.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725940AbgKCDbW (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Nov 2020 22:31:22 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1604374282; x=1635910282;
+  h=date:from:to:cc:subject:message-id:references:
+   mime-version:in-reply-to;
+  bh=6dg2MjaQ3fBrE+RwetY5JDOizc0MApdyd2jM72U8yfY=;
+  b=WPe3j7j37k6ZJkLH5hm+G8GKtRCSzxwMZrDm4aAI3vR0IvymwaRcPGnB
+   hH6KQIXa3UHy1Mv+vFpv0xOr/LW4zQ+nnApfgqo0Egw7qotYUQmwiKvYu
+   XcCcoMcdiGjlhZYYPk9H6IyxI2qxV0XaERSRIinNCaQSHL5qxFKbyUYuV
+   y0Mwz2fjI8EIc+8df1+JmwpbN9qim5oTK/P9VI8qmlLFxsldANjbdUQM3
+   2yQs3jlWb4sAbeiwnOAMOJvM5yKpQJGZuch5Bi5azrcZfTUNsM26y7z7S
+   3EvasQR08ES93n+DJBzs2DrEs8jZmAvccwjjod6TXERhw7dAXLFCYq8HN
+   Q==;
+IronPort-SDR: hzIHEfAW6bHAMDbJ9kwQqAnGDf9P7SNR0FjuIuowmqqxYXGeV4fYyhmuRvEZD59wa2Ps2KAvF4
+ cBm42VZcu8JfC0O9ySD5DgFop0k0a4wRNtzj0blDSQSr710MSYXJ9WBVpyS/b8P6ISszhcw+xO
+ 9BCNLMnWDgeXtbanWRoW22edtqJU86LNxiJdffczvs6Xruakn6hGxbxuUWBzyEY1WpgNIViSex
+ JwYgmmNo1rPgnzA3nW9YdEb86Gd/x7ArGqTr1ETybAvdHdRBMDGGplEJa1sY0523+7aywPXCEA
+ NyI=
+X-IronPort-AV: E=Sophos;i="5.77,446,1596470400"; 
+   d="scan'208";a="156052417"
+Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
+  by ob1.hgst.iphmx.com with ESMTP; 03 Nov 2020 11:31:21 +0800
+IronPort-SDR: iIstjG9NT0aETyDNwoRRu5yTDmDokKaRqnGZJ1TWpLUZvO3z/u+Hf/ex9pIiM9rRA3W9GCY7Ih
+ 996J7jBLIi+1fwwpEB5Ci5YDTntG1h9DePgpUWSD+bfb8WVENoQVgHF8XeYdrZPii3f5KuX4h8
+ aOEVYYqpVQAx9xE/rhIQYry9ejbvxlh3MibBdZH7Mj7afH562Q9sPzDa21S+dsdaE+jASfYZaa
+ utp8llBQtCri7S20hNNvebKv2JjdbcnaSltygTWbsTDTw+EwMcEsd5ZKRYZF80M0J/oB+Z4TRS
+ AhtBvzDGzFR8yZGksjkmthP8
+Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 02 Nov 2020 19:17:31 -0800
+IronPort-SDR: MMKlh3fEEzvaOofR0XQr2wst5E6qXL/RoxY3z6lpqawRUZoLnn7BNGSlsHZaNgxulF8/9BgvH1
+ ZpZC2zsSaTjW8h1iD+lkLO51Kc7mMG0+4jV4u2UbevGEEhKbWMXVQEN5pl9T8p0+yyRjxd8GhX
+ OqJOcgGaM6lfZF48QpRq6IdlqteDBZIjb8W+AxRObcDMw+HrOOkRqR4rjgXPMwuFgVkoQWrnbG
+ fOjBz+KdyOO/WpgK21w9cAnQB306/7vS6wb3woYpLs9SAWYISWje4+BC7wZCBonCeUdQu//fix
+ ZlY=
+WDCIronportException: Internal
+Received: from naota.dhcp.fujisawa.hgst.com ([10.149.52.155])
+  by uls-op-cesaip01.wdc.com with SMTP; 02 Nov 2020 19:31:21 -0800
+Received: (nullmailer pid 16124 invoked by uid 1000);
+        Tue, 03 Nov 2020 03:31:20 -0000
+Date:   Tue, 3 Nov 2020 12:31:20 +0900
+From:   Naohiro Aota <naohiro.aota@wdc.com>
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     linux-btrfs@vger.kernel.org, dsterba@suse.com, hare@suse.com,
+        linux-fsdevel@vger.kernel.org
+Subject: Re: [PATCH v9 11/41] btrfs: implement log-structured superblock for
+ ZONED mode
+Message-ID: <20201103033120.yi423j34yzesuyhk@naota.dhcp.fujisawa.hgst.com>
+References: <d9a0a445560db3a9eb240c6535f8dd1bbd0abd96.1604065694.git.naohiro.aota@wdc.com>
+ <eca26372a84d8b8ec2b59d3390f172810ed6f3e4.1604065695.git.naohiro.aota@wdc.com>
+ <b3447a50-0178-6779-060d-655d596d27a0@toxicpanda.com>
 MIME-Version: 1.0
-X-stable: review
-X-Patchwork-Hint: Ignore
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii; format=flowed
+Content-Disposition: inline
+In-Reply-To: <b3447a50-0178-6779-060d-655d596d27a0@toxicpanda.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Josef Bacik <josef@toxicpanda.com>
+On Mon, Nov 02, 2020 at 01:54:14PM -0500, Josef Bacik wrote:
+>On 10/30/20 9:51 AM, Naohiro Aota wrote:
+>>Superblock (and its copies) is the only data structure in btrfs which has a
+>>fixed location on a device. Since we cannot overwrite in a sequential write
+>>required zone, we cannot place superblock in the zone. One easy solution is
+>>limiting superblock and copies to be placed only in conventional zones.
+>>However, this method has two downsides: one is reduced number of superblock
+>>copies. The location of the second copy of superblock is 256GB, which is in
+>>a sequential write required zone on typical devices in the market today.
+>>So, the number of superblock and copies is limited to be two.  Second
+>>downside is that we cannot support devices which have no conventional zones
+>>at all.
+>>
+>>To solve these two problems, we employ superblock log writing. It uses two
+>>zones as a circular buffer to write updated superblocks. Once the first
+>>zone is filled up, start writing into the second buffer. Then, when the
+>>both zones are filled up and before start writing to the first zone again,
+>>it reset the first zone.
+>>
+>>We can determine the position of the latest superblock by reading write
+>>pointer information from a device. One corner case is when the both zones
+>>are full. For this situation, we read out the last superblock of each
+>>zone, and compare them to determine which zone is older.
+>>
+>>The following zones are reserved as the circular buffer on ZONED btrfs.
+>>
+>>- The primary superblock: zones 0 and 1
+>>- The first copy: zones 16 and 17
+>>- The second copy: zones 1024 or zone at 256GB which is minimum, and next
+>>   to it
+>>
+>>If these reserved zones are conventional, superblock is written fixed at
+>>the start of the zone without logging.
+>>
+>
+><snip>
+>
+>>  /*
+>>   * This is only the first step towards a full-features scrub. It reads all
+>>@@ -3704,6 +3705,8 @@ static noinline_for_stack int scrub_supers(struct scrub_ctx *sctx,
+>>  		if (bytenr + BTRFS_SUPER_INFO_SIZE >
+>>  		    scrub_dev->commit_total_bytes)
+>>  			break;
+>>+		if (!btrfs_check_super_location(scrub_dev, bytenr))
+>>+			continue;
+>
+>Any reason in particular we're skipping scrubbing supers here?  Can't 
+>we just lookup the bytenr and do the right thing here?
 
-[ Upstream commit 5223cc60b40ae525ae6c94e98824129f1a5b4ae5 ]
+Hmm, technically, we can do something here, but I'm not sure it's useful to
+scrub superblocks for zoned devices where superblocks are log-structured.
+We can read and check if the latest superblock in the log is valid. But,
+when we find it's not correct, we cannot overwrite it anyway. Instead, we
+can append a new superblock to the log. But this is no different than
+normal sync... Furthermore, the scrub-checked superblock might already be
+out-dated at the time of reading.
 
-When enabling qgroups we walk the tree_root and then add a qgroup item
-for every root that we have.  This creates a lock dependency on the
-tree_root and qgroup_root, which results in the following lockdep splat
-(with tree locks using rwsem), eg. in tests btrfs/017 or btrfs/022:
+We might want to read and check each entry of the log. And warn the user
+when a superblock is corrupted. It's totally different from current
+scrub_supers(), so we will need another helper function for it.
 
-  ======================================================
-  WARNING: possible circular locking dependency detected
-  5.9.0-default+ #1299 Not tainted
-  ------------------------------------------------------
-  btrfs/24552 is trying to acquire lock:
-  ffff9142dfc5f630 (btrfs-quota-00){++++}-{3:3}, at: __btrfs_tree_read_lock+0x35/0x1c0 [btrfs]
+>
+>>  		ret = scrub_pages(sctx, bytenr, BTRFS_SUPER_INFO_SIZE, bytenr,
+>>  				  scrub_dev, BTRFS_EXTENT_FLAG_SUPER, gen, i,
+>>diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+>>index 10827892c086..db884b96a5ea 100644
+>>--- a/fs/btrfs/volumes.c
+>>+++ b/fs/btrfs/volumes.c
+>>@@ -1282,7 +1282,8 @@ void btrfs_release_disk_super(struct btrfs_super_block *super)
+>>  }
+>>  static struct btrfs_super_block *btrfs_read_disk_super(struct block_device *bdev,
+>>-						       u64 bytenr)
+>>+						       u64 bytenr,
+>>+						       u64 bytenr_orig)
+>>  {
+>>  	struct btrfs_super_block *disk_super;
+>>  	struct page *page;
+>>@@ -1313,7 +1314,7 @@ static struct btrfs_super_block *btrfs_read_disk_super(struct block_device *bdev
+>>  	/* align our pointer to the offset of the super block */
+>>  	disk_super = p + offset_in_page(bytenr);
+>>-	if (btrfs_super_bytenr(disk_super) != bytenr ||
+>>+	if (btrfs_super_bytenr(disk_super) != bytenr_orig ||
+>>  	    btrfs_super_magic(disk_super) != BTRFS_MAGIC) {
+>>  		btrfs_release_disk_super(p);
+>>  		return ERR_PTR(-EINVAL);
+>>@@ -1348,7 +1349,8 @@ struct btrfs_device *btrfs_scan_one_device(const char *path, fmode_t flags,
+>>  	bool new_device_added = false;
+>>  	struct btrfs_device *device = NULL;
+>>  	struct block_device *bdev;
+>>-	u64 bytenr;
+>>+	u64 bytenr, bytenr_orig;
+>>+	int ret;
+>>  	lockdep_assert_held(&uuid_mutex);
+>>@@ -1358,14 +1360,18 @@ struct btrfs_device *btrfs_scan_one_device(const char *path, fmode_t flags,
+>>  	 * So, we need to add a special mount option to scan for
+>>  	 * later supers, using BTRFS_SUPER_MIRROR_MAX instead
+>>  	 */
+>>-	bytenr = btrfs_sb_offset(0);
+>>  	flags |= FMODE_EXCL;
+>>  	bdev = blkdev_get_by_path(path, flags, holder);
+>>  	if (IS_ERR(bdev))
+>>  		return ERR_CAST(bdev);
+>>-	disk_super = btrfs_read_disk_super(bdev, bytenr);
+>>+	bytenr_orig = btrfs_sb_offset(0);
+>>+	ret = btrfs_sb_log_location_bdev(bdev, 0, READ, &bytenr);
+>>+	if (ret)
+>>+		return ERR_PTR(ret);
+>>+
+>>+	disk_super = btrfs_read_disk_super(bdev, bytenr, bytenr_orig);
+>>  	if (IS_ERR(disk_super)) {
+>>  		device = ERR_CAST(disk_super);
+>>  		goto error_bdev_put;
+>>@@ -2029,6 +2035,11 @@ void btrfs_scratch_superblocks(struct btrfs_fs_info *fs_info,
+>>  		if (IS_ERR(disk_super))
+>>  			continue;
+>>+		if (bdev_is_zoned(bdev)) {
+>>+			btrfs_reset_sb_log_zones(bdev, copy_num);
+>>+			continue;
+>>+		}
+>>+
+>>  		memset(&disk_super->magic, 0, sizeof(disk_super->magic));
+>>  		page = virt_to_page(disk_super);
+>>diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
+>>index ae509699da14..d5487cba203b 100644
+>>--- a/fs/btrfs/zoned.c
+>>+++ b/fs/btrfs/zoned.c
+>>@@ -20,6 +20,25 @@ static int copy_zone_info_cb(struct blk_zone *zone, unsigned int idx,
+>>  	return 0;
+>>  }
+>>+static int sb_write_pointer(struct block_device *bdev, struct blk_zone *zone,
+>>+			    u64 *wp_ret);
+>>+
+>>+static inline u32 sb_zone_number(u8 shift, int mirror)
+>>+{
+>>+	ASSERT(mirror < BTRFS_SUPER_MIRROR_MAX);
+>>+
+>>+	switch (mirror) {
+>>+	case 0:
+>>+		return 0;
+>>+	case 1:
+>>+		return 16;
+>>+	case 2:
+>>+		return min(btrfs_sb_offset(mirror) >> shift, 1024ULL);
+>>+	}
+>>+
+>
+>Can we get a comment here explaining the zone numbers?
 
-  but task is already holding lock:
-  ffff9142dfc5d0b0 (btrfs-root-00){++++}-{3:3}, at: __btrfs_tree_read_lock+0x35/0x1c0 [btrfs]
+Sure. I'll add one.
 
-  which lock already depends on the new lock.
+>
+>>+	return 0;
+>>+}
+>>+
+>>  static int btrfs_get_dev_zones(struct btrfs_device *device, u64 pos,
+>>  			       struct blk_zone *zones, unsigned int *nr_zones)
+>>  {
+>>@@ -123,6 +142,49 @@ int btrfs_get_dev_zone_info(struct btrfs_device *device)
+>>  		goto out;
+>>  	}
+>>+	/* validate superblock log */
+>>+	nr_zones = 2;
+>>+	for (i = 0; i < BTRFS_SUPER_MIRROR_MAX; i++) {
+>>+		u32 sb_zone = sb_zone_number(zone_info->zone_size_shift, i);
+>>+		u64 sb_wp;
+>>+
+>
+>I'd rather see
+>
+>#define BTRFS_NR_ZONED_SB_ZONES 2
+>
+>or something equally poorly named and use that instead of our magic 2 everywhere.
+>
+>Then you can just do
+>
+>int index = i * BTRFS_NR_ZONED_SB_ZONES;
+>&zone_info->sb_zones[index];
 
-  the existing dependency chain (in reverse order) is:
+I'll do so. BTRFS_NR_ZONED_SB_ZONES is duplicating "ZONE", so how about
+BTRFS_NR_SB_LOG_ZONES ?
 
-  -> #1 (btrfs-root-00){++++}-{3:3}:
-	 __lock_acquire+0x3fb/0x730
-	 lock_acquire.part.0+0x6a/0x130
-	 down_read_nested+0x46/0x130
-	 __btrfs_tree_read_lock+0x35/0x1c0 [btrfs]
-	 __btrfs_read_lock_root_node+0x3a/0x50 [btrfs]
-	 btrfs_search_slot_get_root+0x11d/0x290 [btrfs]
-	 btrfs_search_slot+0xc3/0x9f0 [btrfs]
-	 btrfs_insert_item+0x6e/0x140 [btrfs]
-	 btrfs_create_tree+0x1cb/0x240 [btrfs]
-	 btrfs_quota_enable+0xcd/0x790 [btrfs]
-	 btrfs_ioctl_quota_ctl+0xc9/0xe0 [btrfs]
-	 __x64_sys_ioctl+0x83/0xa0
-	 do_syscall_64+0x2d/0x70
-	 entry_SYSCALL_64_after_hwframe+0x44/0xa9
 
-  -> #0 (btrfs-quota-00){++++}-{3:3}:
-	 check_prev_add+0x91/0xc30
-	 validate_chain+0x491/0x750
-	 __lock_acquire+0x3fb/0x730
-	 lock_acquire.part.0+0x6a/0x130
-	 down_read_nested+0x46/0x130
-	 __btrfs_tree_read_lock+0x35/0x1c0 [btrfs]
-	 __btrfs_read_lock_root_node+0x3a/0x50 [btrfs]
-	 btrfs_search_slot_get_root+0x11d/0x290 [btrfs]
-	 btrfs_search_slot+0xc3/0x9f0 [btrfs]
-	 btrfs_insert_empty_items+0x58/0xa0 [btrfs]
-	 add_qgroup_item.part.0+0x72/0x210 [btrfs]
-	 btrfs_quota_enable+0x3bb/0x790 [btrfs]
-	 btrfs_ioctl_quota_ctl+0xc9/0xe0 [btrfs]
-	 __x64_sys_ioctl+0x83/0xa0
-	 do_syscall_64+0x2d/0x70
-	 entry_SYSCALL_64_after_hwframe+0x44/0xa9
+>
+><snip>
+>
+>>+static int sb_log_location(struct block_device *bdev, struct blk_zone *zones,
+>>+			   int rw, u64 *bytenr_ret)
+>>+{
+>>+	u64 wp;
+>>+	int ret;
+>>+
+>>+	if (zones[0].type == BLK_ZONE_TYPE_CONVENTIONAL) {
+>>+		*bytenr_ret = zones[0].start << SECTOR_SHIFT;
+>>+		return 0;
+>>+	}
+>>+
+>>+	ret = sb_write_pointer(bdev, zones, &wp);
+>>+	if (ret != -ENOENT && ret < 0)
+>>+		return ret;
+>>+
+>>+	if (rw == WRITE) {
+>>+		struct blk_zone *reset = NULL;
+>>+
+>>+		if (wp == zones[0].start << SECTOR_SHIFT)
+>>+			reset = &zones[0];
+>>+		else if (wp == zones[1].start << SECTOR_SHIFT)
+>>+			reset = &zones[1];
+>>+
+>>+		if (reset && reset->cond != BLK_ZONE_COND_EMPTY) {
+>>+			ASSERT(reset->cond == BLK_ZONE_COND_FULL);
+>>+
+>>+			ret = blkdev_zone_mgmt(bdev, REQ_OP_ZONE_RESET,
+>>+					       reset->start, reset->len,
+>>+					       GFP_NOFS);
+>
+>What happens if we crash right after this?  Is the WP set to the start 
+>of the zone here?  Does this mean we'll simply miss the super block?  
+>I understand we're resetting one zone here, but we're doing this in 
+>order, so we'll reset one and write one, then reset the other and 
+>write the next.  We don't wait until we've issued the writes for 
+>everything, so it appears to me that there's a gap where we could have 
+>the WP pointed at the start of the zone, which we view as an invalid 
+>state and thus won't be able to mount the file system.  Or am I 
+>missing something?  Thanks,
 
-  other info that might help us debug this:
+Here, we reset a zone we're going to write which contains the older
+superblocks. And in this case, we should have the other zone fully written.
+So, even after a reset and a crash, we still have the latest superblock in
+the other zone.
 
-   Possible unsafe locking scenario:
-
-	 CPU0                    CPU1
-	 ----                    ----
-    lock(btrfs-root-00);
-				 lock(btrfs-quota-00);
-				 lock(btrfs-root-00);
-    lock(btrfs-quota-00);
-
-   *** DEADLOCK ***
-
-  5 locks held by btrfs/24552:
-   #0: ffff9142df431478 (sb_writers#10){.+.+}-{0:0}, at: mnt_want_write_file+0x22/0xa0
-   #1: ffff9142f9b10cc0 (&fs_info->subvol_sem){++++}-{3:3}, at: btrfs_ioctl_quota_ctl+0x7b/0xe0 [btrfs]
-   #2: ffff9142f9b11a08 (&fs_info->qgroup_ioctl_lock){+.+.}-{3:3}, at: btrfs_quota_enable+0x3b/0x790 [btrfs]
-   #3: ffff9142df431698 (sb_internal#2){.+.+}-{0:0}, at: start_transaction+0x406/0x510 [btrfs]
-   #4: ffff9142dfc5d0b0 (btrfs-root-00){++++}-{3:3}, at: __btrfs_tree_read_lock+0x35/0x1c0 [btrfs]
-
-  stack backtrace:
-  CPU: 1 PID: 24552 Comm: btrfs Not tainted 5.9.0-default+ #1299
-  Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.12.0-59-gc9ba527-rebuilt.opensuse.org 04/01/2014
-  Call Trace:
-   dump_stack+0x77/0x97
-   check_noncircular+0xf3/0x110
-   check_prev_add+0x91/0xc30
-   validate_chain+0x491/0x750
-   __lock_acquire+0x3fb/0x730
-   lock_acquire.part.0+0x6a/0x130
-   ? __btrfs_tree_read_lock+0x35/0x1c0 [btrfs]
-   ? lock_acquire+0xc4/0x140
-   ? __btrfs_tree_read_lock+0x35/0x1c0 [btrfs]
-   down_read_nested+0x46/0x130
-   ? __btrfs_tree_read_lock+0x35/0x1c0 [btrfs]
-   __btrfs_tree_read_lock+0x35/0x1c0 [btrfs]
-   ? btrfs_root_node+0xd9/0x200 [btrfs]
-   __btrfs_read_lock_root_node+0x3a/0x50 [btrfs]
-   btrfs_search_slot_get_root+0x11d/0x290 [btrfs]
-   btrfs_search_slot+0xc3/0x9f0 [btrfs]
-   btrfs_insert_empty_items+0x58/0xa0 [btrfs]
-   add_qgroup_item.part.0+0x72/0x210 [btrfs]
-   btrfs_quota_enable+0x3bb/0x790 [btrfs]
-   btrfs_ioctl_quota_ctl+0xc9/0xe0 [btrfs]
-   __x64_sys_ioctl+0x83/0xa0
-   do_syscall_64+0x2d/0x70
-   entry_SYSCALL_64_after_hwframe+0x44/0xa9
-
-Fix this by dropping the path whenever we find a root item, add the
-qgroup item, and then re-lookup the root item we found and continue
-processing roots.
-
-Reported-by: David Sterba <dsterba@suse.com>
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-Reviewed-by: David Sterba <dsterba@suse.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
-Signed-off-by: Sasha Levin <sashal@kernel.org>
----
- fs/btrfs/qgroup.c | 18 ++++++++++++++++++
- 1 file changed, 18 insertions(+)
-
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index c0f350c3a0cf4..db953cb947bc4 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -1026,6 +1026,10 @@ int btrfs_quota_enable(struct btrfs_fs_info *fs_info)
- 		btrfs_item_key_to_cpu(leaf, &found_key, slot);
- 
- 		if (found_key.type == BTRFS_ROOT_REF_KEY) {
-+
-+			/* Release locks on tree_root before we access quota_root */
-+			btrfs_release_path(path);
-+
- 			ret = add_qgroup_item(trans, quota_root,
- 					      found_key.offset);
- 			if (ret) {
-@@ -1044,6 +1048,20 @@ int btrfs_quota_enable(struct btrfs_fs_info *fs_info)
- 				btrfs_abort_transaction(trans, ret);
- 				goto out_free_path;
- 			}
-+			ret = btrfs_search_slot_for_read(tree_root, &found_key,
-+							 path, 1, 0);
-+			if (ret < 0) {
-+				btrfs_abort_transaction(trans, ret);
-+				goto out_free_path;
-+			}
-+			if (ret > 0) {
-+				/*
-+				 * Shouldn't happen, but in case it does we
-+				 * don't need to do the btrfs_next_item, just
-+				 * continue.
-+				 */
-+				continue;
-+			}
- 		}
- 		ret = btrfs_next_item(tree_root, path);
- 		if (ret < 0) {
--- 
-2.27.0
-
+>
+>Josef

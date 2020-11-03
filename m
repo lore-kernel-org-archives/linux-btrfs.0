@@ -2,165 +2,139 @@ Return-Path: <SRS0=hn/e=EJ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.0 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
-	NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=ham
+X-Spam-Status: No, score=-9.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8DCD9C4742C
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 00:06:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 903F7C388F2
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 01:25:42 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 3CFA720786
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 00:06:24 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3063A2063A
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 01:25:42 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="GVuAOTSC"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="fKE4IW/U"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726635AbgKCAGX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 2 Nov 2020 19:06:23 -0500
-Received: from mout.gmx.net ([212.227.17.21]:60987 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725910AbgKCAGX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 2 Nov 2020 19:06:23 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1604361979;
-        bh=nkxkJafDZBXHqtt338UjYsqWGmJW8lyLGVNxTSKxmXI=;
-        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
-        b=GVuAOTSCf9wpCYdrM+ZTxJ8P4hGFbu1AdfQXam/Qm952aaCR4t7gtBZP9djQEiIw0
-         nNwAD+iD6ijmCaBfbf44VTDVIk+yXMpIbE3PfvWj6SKlopO66vx1tMNiJzmaL6l76y
-         T2GoeLR6WHuKeXHDhqwWOUynQe3AAxts76K7Y8e0=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx105
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1MbAgq-1k2asU3suu-00bZVe; Tue, 03
- Nov 2020 01:06:19 +0100
-Subject: Re: [PATCH v4 00/68] btrfs: add basic rw support for subpage sector
- size
-To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20201021062554.68132-1-wqu@suse.com>
- <20201102145624.GB6756@twin.jikos.cz>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAU4EEwEIADgCGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1oQAKCRDC
- PZHzoSX+qCY6CACd+mWu3okGwRKXju6bou+7VkqCaHTdyXwWFTsr+/0ly5nUdDtT3yEVggPJ
- 3VP70wjlrxUjNjFb6iIvGYxiPOrop1NGwGYvQktgRhaIhALG6rPoSSAhGNjwGVRw0km0PlIN
- D29BTj/lYEk+jVM1YL0QLgAE1AI3krihg/lp/fQT53wLhR8YZIF8ETXbClQG1vJ0cllPuEEv
- efKxRyiTSjB+PsozSvYWhXsPeJ+KKjFen7ebE5reQTPFzSHctCdPnoR/4jSPlnTlnEvLeqcD
- ZTuKfQe1gWrPeevQzgCtgBF/WjIOeJs41klnYzC3DymuQlmFubss0jShLOW8eSOOWhLRuQEN
- BFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcgaCbPEwhLj
- 1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj/IrRUUka
- 68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fNGSsRb+pK
- EKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0q1eW4Jrv
- 0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEvABEBAAGJ
- ATwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1rgUJCWpOfwAKCRDCPZHz
- oSX+qFcEB/95cs8cM1OQdE/GgOfCGxwgckMeWyzOR7bkAWW0lDVp2hpgJuxBW/gyfmtBnUai
- fnggx3EE3ev8HTysZU9q0h+TJwwJKGv6sUc8qcTGFDtavnnl+r6xDUY7A6GvXEsSoCEEynby
- 72byGeSovfq/4AWGNPBG1L61Exl+gbqfvbECP3ziXnob009+z9I4qXodHSYINfAkZkA523JG
- ap12LndJeLk3gfWNZfXEWyGnuciRGbqESkhIRav8ootsCIops/SqXm0/k+Kcl4gGUO/iD/T5
- oagaDh0QtOd8RWSMwLxwn8uIhpH84Q4X1LadJ5NCgGa6xPP5qqRuiC+9gZqbq4Nj
-Message-ID: <1573fb7c-a54b-c1e1-1b60-8306db85a87d@gmx.com>
-Date:   Tue, 3 Nov 2020 08:06:15 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.12.0
+        id S1728367AbgKCBZl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 2 Nov 2020 20:25:41 -0500
+Received: from esa1.hgst.iphmx.com ([68.232.141.245]:39117 "EHLO
+        esa1.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727929AbgKCBZh (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Nov 2020 20:25:37 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1604366737; x=1635902737;
+  h=date:from:to:cc:subject:message-id:references:
+   mime-version:in-reply-to;
+  bh=gkBoV3icl+ZFoQ+k0gd6K22e3ThdGprzDDoSMAxG8Jw=;
+  b=fKE4IW/U+Jf+kOWPrRRDF04Z3aeAZRqqRnMc+h2m1Wsf1/JguX/a+FE5
+   +c8UydPYiVWmaBHT1IuZDn7fp/sy/hZ4mNddzSKUUFCA0Hzxy7iyfZtAh
+   lG4IHyVtH1CTemY7NGzRtnkvo1ad4l948/G8iPL1OH1M/REHLInbJR4vc
+   JeD0m20SemvUzB/zpwv5bLGUDZr55wADjXBAI/qS115kjxmg3TZfrbfj8
+   RRs8mlEI6VZJ7Nyq37LvtHq+KBjhmy09ndiyRLQIYyiZfs8HzdVg1WJtw
+   d7fm09KjnNd/Pq0D2Cn7eut8ppSWqiCn8BZN7blp9cybushesjReh950h
+   A==;
+IronPort-SDR: VNhhS+9R2LKc3+k2OXcpcXo1k5OYwj9/QmyAIGsFPlP8GFyJ+WoQWfGgWWy+g/8oh8mIBg3eoa
+ GABtCBxnwsaGEWRAG0pcLDWIrf/Q8QoNxtTnW+cd7y68+nzDhMZNW245p6286803NAmCOOefRa
+ gctEL4b1dhztXIxY2LeIP6DFyF6kzI4tVJCd5/JZuvHh8JUNZs0IkkDP7s0QebdlQtL2wsS+OW
+ NeRBiWQUB4ilmbvq4mXQO4qIu0cWLQxplL3c95tCr7NFAjbBuTc89SM574Ke90lUZJ0wz5W2Gn
+ zXA=
+X-IronPort-AV: E=Sophos;i="5.77,446,1596470400"; 
+   d="scan'208";a="261550077"
+Received: from uls-op-cesaip02.wdc.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
+  by ob1.hgst.iphmx.com with ESMTP; 03 Nov 2020 09:25:36 +0800
+IronPort-SDR: 9iKeeSO3BDNNwEXyOaPT32a6NTvMkWlN/sy6IleFplj5X53TqXzJCP5EpAv/PI70mMpwUZxluG
+ wb83r95JPbT4JGguapgCQ6diKfuI3IVfz2WNfo06mSQRPXNDKmkd1IRXFYADz0Fxa8Bw8VjERu
+ 4go97ExOLq8Q3BDWU3rGVf0xDNWcm+rZrNJ4vUtrr7kwNnPcNeyJG1pCut+k3JFU4IipT/eNJo
+ Ec87oV+m5L+knPAPaO/y87rC2OM0j5/h1JrPd+jqDyvIM5uITlDE5J7C/n0xFmd6+XSiAgJBUR
+ ShhC2R9M6bzin0kXu2NiGYBK
+Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 02 Nov 2020 17:10:36 -0800
+IronPort-SDR: TQvpCFQ8SdnwtiNvloDLqt67KJVC5ciOyv8a4F048HOV/Rig69shu1aGExKiFJ08n1eVzAHSsK
+ WVHssYZHA+AgDRJwmtQEWZXjLUWmk7hpq+VENaphfcaiS6i/KjXKzNmHlofQEi0UM5hOLoXrdK
+ b+EAf8YhHXgPf8fG7EOohL2KD+WGkPPFvDMb8xCw6dD/WBbo9YffG5o2S/Bmr3ik/JZuAy1JMX
+ ewvi1638lm0UqMiExZKACEZ3zzSJnqYTqsIo/LVc9nFWXzVh42c450nKr8UugcHykGqYhMlYJV
+ lxI=
+WDCIronportException: Internal
+Received: from naota.dhcp.fujisawa.hgst.com ([10.149.52.155])
+  by uls-op-cesaip01.wdc.com with SMTP; 02 Nov 2020 17:25:36 -0800
+Received: (nullmailer pid 4102434 invoked by uid 1000);
+        Tue, 03 Nov 2020 01:25:35 -0000
+Date:   Tue, 3 Nov 2020 10:25:35 +0900
+From:   Naohiro Aota <naohiro.aota@wdc.com>
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     linux-btrfs@vger.kernel.org, dsterba@suse.com, hare@suse.com,
+        linux-fsdevel@vger.kernel.org
+Subject: Re: [PATCH v9 15/41] btrfs: emulate write pointer for conventional
+ zones
+Message-ID: <20201103012535.6coor2tar2su6b7m@naota.dhcp.fujisawa.hgst.com>
+References: <d9a0a445560db3a9eb240c6535f8dd1bbd0abd96.1604065694.git.naohiro.aota@wdc.com>
+ <af1830174f9dd9e2651dab213c0b984d90811138.1604065695.git.naohiro.aota@wdc.com>
+ <a96ef4d1-b020-a467-bd26-863bc7117e64@toxicpanda.com>
 MIME-Version: 1.0
-In-Reply-To: <20201102145624.GB6756@twin.jikos.cz>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="eYk8jbVEjw9wfXU3uwHQXP1SmAvE36cwn"
-X-Provags-ID: V03:K1:KiUl1pJbQWGnZ6MrMssj3kQsxp600RmqqptuBwcXpXMu+wMizga
- wTIJpL0WZgEf3AvZwrz9XKzKIEa8TPNzBF2rb33bh/UHZOr7fD/RvA5zEyMmmejozJBdcUA
- u0Eh9Mq1DFYt+dYLBta1UwdlDVN8hf2cQ+qUiXS5383V/TFsNYn49wmRsf58TCDK2uSdYc6
- SyIo2PBeNa5u5NOU7lpSA==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:2ITEbXoYe1A=:RKZPMV1a92OxDVYcKfPJgS
- zCfJuDYbVnklwz0G9zhAPLjSjXMau4oTIZdrA5MQDBPpoaPV9srERPCqZaa9HEz+Bf1jdb8GB
- 0CWzYYPM346+CKIKtraNOZs1tMFyE/oYP/WSiGSuastizG5n50YFr6BsVk3c9g572jb92Eg9n
- pdJFyIk85dNRjh9mUxV6XurtcogIKGk1C08nvNGx27yyeoEd9xG8Bmgm/iA0U6n28RmnHbuBl
- 7d47P2Q21rJnV7gg8KBM9C4Nt6PiJMh634R2jpAnkNaI9KAFhqP2DOa1AKvDhjJOo7bO+L95H
- +Atlj/NHe4puBfXmwIPw/Vrs+Q008WYPda+v873ZeQhsxrjICW7EOhbhNvFgvBg8GQFlTBGLF
- 4Kkp5JbZqRwB1iQpEiHsuXYoHklF8Ry+4RA4sr9VvF/KvXmMRZknGQ8xr7GHFqzMOhFLV9hVd
- gSWmmgzl562TMVZ+FbH6Lsb72J8U/Q4ZIaDM8tYk1TDR/ZiaEuGJfx/REjtOKfpnmhtJ347Lt
- 4x7i0DqKsXiMWZqS/4dQ7s8jekT3nieQDt8t1xU6vs7/0GzS4RfPWxoqtzh+udXjd9ni3tObP
- 93wIrvmGCpZ37wVf8PRrHLicekdedZjJRScpa4yzgGbW92qBC0a0jSnxZQmvVJc9sskZnRoQa
- e5kcNQqTXp/6fDx92pp8LXRECfmNFChcZp7FVCoLzss7CKYB7tyU/w9Ehe+f0zTJf0KAvQVw7
- xpMKRNcqAiq3rrB2x+QCcpdkg/wJIpnTb2jSBvPZSGBQEBK0mHjKKbNPDWjpWN2RjA8I8v8f5
- VM4nhsXBOzzUOjlW2qMWoSILEktZ4rTgyEjrvU+Uc5qLgWMxCKg/RhHo2YMlge7kxQpIlR1vS
- CppYq6dQkb1UizURVM3Q==
+Content-Type: text/plain; charset=us-ascii; format=flowed
+Content-Disposition: inline
+In-Reply-To: <a96ef4d1-b020-a467-bd26-863bc7117e64@toxicpanda.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---eYk8jbVEjw9wfXU3uwHQXP1SmAvE36cwn
-Content-Type: multipart/mixed; boundary="USQT7OruuQA3V5YzsSa3rf3tFi6wYAWIe"
-
---USQT7OruuQA3V5YzsSa3rf3tFi6wYAWIe
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-
-
-
-On 2020/11/2 =E4=B8=8B=E5=8D=8810:56, David Sterba wrote:
-> On Wed, Oct 21, 2020 at 02:24:46PM +0800, Qu Wenruo wrote:
->> Patches can be fetched from github:
->> https://github.com/adam900710/linux/tree/subpage_data_fullpage_write
+On Mon, Nov 02, 2020 at 03:37:35PM -0500, Josef Bacik wrote:
+>On 10/30/20 9:51 AM, Naohiro Aota wrote:
+>>Conventional zones do not have a write pointer, so we cannot use it to
+>>determine the allocation offset if a block group contains a conventional
+>>zone.
 >>
->> Qu Wenruo (67):
->=20
-> So far I've merged
->=20
->       btrfs: extent_io: fix the comment on lock_extent_buffer_for_io()
->       btrfs: extent_io: update the comment for find_first_extent_bit()
->       btrfs: extent_io: sink the failed_start parameter to set_extent_b=
-it()
->       btrfs: disk-io: replace fs_info and private_data with inode for b=
-trfs_wq_submit_bio()
->       btrfs: inode: sink parameter start and len to check_data_csum()
->       btrfs: extent_io: rename pages_locked in process_pages_contig()
->       btrfs: extent_io: only require sector size alignment for page rea=
-d
->       btrfs: extent_io: rename page_size to io_size in submit_extent_pa=
-ge()
->=20
-> to misc-next.  This is from the first 20, the easy and safe changes.
-> There are few more that need more explanation or another look.
->=20
-That's great.
+>>But instead, we can consider the end of the last allocated extent in the
+>>block group as an allocation offset.
+>>
+>>Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+>>---
+>>  fs/btrfs/zoned.c | 119 ++++++++++++++++++++++++++++++++++++++++++++---
+>>  1 file changed, 113 insertions(+), 6 deletions(-)
+>>
+>>diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
+>>index 0aa821893a51..8f58d0853cc3 100644
+>>--- a/fs/btrfs/zoned.c
+>>+++ b/fs/btrfs/zoned.c
+>>@@ -740,6 +740,104 @@ int btrfs_ensure_empty_zones(struct btrfs_device *device, u64 start, u64 size)
+>>  	return 0;
+>>  }
+>>+static int emulate_write_pointer(struct btrfs_block_group *cache,
+>>+				 u64 *offset_ret)
+>>+{
+>>+	struct btrfs_fs_info *fs_info = cache->fs_info;
+>>+	struct btrfs_root *root = fs_info->extent_root;
+>>+	struct btrfs_path *path;
+>>+	struct extent_buffer *leaf;
+>>+	struct btrfs_key search_key;
+>>+	struct btrfs_key found_key;
+>>+	int slot;
+>>+	int ret;
+>>+	u64 length;
+>>+
+>>+	path = btrfs_alloc_path();
+>>+	if (!path)
+>>+		return -ENOMEM;
+>>+
+>>+	search_key.objectid = cache->start + cache->length;
+>>+	search_key.type = 0;
+>>+	search_key.offset = 0;
+>>+
+>
+>You can just use 'key', don't have to use 'search_key'.
 
-BTW, for next update, I should rebase all patches to current misc-next
-right?
-Especially to take advantage of things like sectorsize_bits.
+Fixed.
 
-BTW, for next round patches, should I send all the patches in a huge
-batch, or just send the safe refactors (with comments addresses)?
+>
+>Also you don't check for things like BTRFS_TREE_BLOCK_REF_KEY or 
+>whatever in the case that we don't have an inline extent ref, so this 
+>could error out with a fs with lots of snapshots and different 
+>references.  What you need is to search back until you hit an 
+>BTRFS_METADATA_ITEM_KEY or a BTRFS_EXTENT_ITEM_KEY, and then check the 
+>offset of that thing.  Otherwise this will screw up.  Thanks,
+>
+>Josef
 
-THanks,
-Qu
-
-
---USQT7OruuQA3V5YzsSa3rf3tFi6wYAWIe--
-
---eYk8jbVEjw9wfXU3uwHQXP1SmAvE36cwn
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAl+gnvcACgkQwj2R86El
-/qiRhwf/RaxeIruoywXx6mFEKeHREQ9yBVosX8ub8Ax6trUXl0nMfl5D8HqZIIPH
-0uwciXEGiz9LbHnFVzKVMzMOwFQs5s+o/K+whtnJaO+ChiuScIrT14ovubxDW5eG
-DNAvIuPLu9mP9p0pGt0+hVq77GFTVmYYIjiZHqMl9WU+OUTKfmxtiJ5pRnPRmzDz
-uWDKdPNOJLSO+Z7DLlmUXYtVR4nueN1mXN7tiOEZT3kFxRqfnbFqTj+MdXB7jX0x
-3o4JZtOD8PQQQKNkhhRPH4ENcDAB7oX3ORKMW1h/UdAvvRL37cUq1uuGCBDRmAXe
-BYrvN7Dh4U2KUtbIQkXSolUTp0x0Pw==
-=H46e
------END PGP SIGNATURE-----
-
---eYk8jbVEjw9wfXU3uwHQXP1SmAvE36cwn--
+I overlooked that case. And, I just noticed we can use
+btrfs_previous_extent_item() here. It looks much simpler now. Thanks.

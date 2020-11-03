@@ -2,139 +2,144 @@ Return-Path: <SRS0=hn/e=EJ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-11.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	NICE_REPLY_A,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_SANE_1 autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.7 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 29344C388F7
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 20:39:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AB640C388F9
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 20:41:11 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id ED21522226
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 20:39:14 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="TvL1jbEv"
+	by mail.kernel.org (Postfix) with ESMTP id 7C25B223AC
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 20:41:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730077AbgKCUjF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 3 Nov 2020 15:39:05 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48800 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1730038AbgKCUjD (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Nov 2020 15:39:03 -0500
-Received: from mail-qv1-xf41.google.com (mail-qv1-xf41.google.com [IPv6:2607:f8b0:4864:20::f41])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 02C72C0613D1
-        for <linux-btrfs@vger.kernel.org>; Tue,  3 Nov 2020 12:39:03 -0800 (PST)
-Received: by mail-qv1-xf41.google.com with SMTP id da2so6392867qvb.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 03 Nov 2020 12:39:02 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=subject:to:cc:references:from:message-id:date:user-agent
-         :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=A4phJpajKYqyaoE/DdNq0vi9xJMK32pI9PlcGh4+QMg=;
-        b=TvL1jbEvEVU2N+tFnV8KGEFEsKk2ZrXiSV7TdCRiSSGMUaBCqALeRixZnfYl89YQbI
-         QwruM5i4NEc9oanQwtuErmWXl8I8iD5+V8Hx+Z5Sd65pdIbCdFs3uvvtwl4EmMdOhsZU
-         nlNpXJjSmogi7XCIk1vh92n7W3HGLOy4AT1zARz/4MZ6RXI51rN0VDsF5cr3pjIe0L61
-         +r2BAHy8TVVjzgeLGzy4vJQFM1/gM7ePuuTipEDnFsfdXH2VNKX0d92+u36JlKkhAbMw
-         ytUcZjgIkf0Ujjf5qc0w/7IQN0P/bChG5W/nNdWtSeaXjwk1L5mKT0l5IgkusfnsAcBG
-         PwcA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=A4phJpajKYqyaoE/DdNq0vi9xJMK32pI9PlcGh4+QMg=;
-        b=tiwK940leEZCSk1jlWHZ53q9pC3cvaTrIc0TpECJpqQru+H8X5eLFL0ouBPwrmXXLB
-         yZQNbY6o2JpEv6/39YoiFfPSPNxzKbSAB1w5AOYvEky4FckoyF/dy+apt1fMhnK4+uJv
-         ARcUSDYSZQOOeNSfs8g4zYDaISJJOpIix5w4oqABZ767L1UMkMQOi6freqj6+6jLBYUu
-         7MJygFz7w+Ny4ns1nFtkbKqCJ91XiPGVhfRRwr1vnkICLcVgo/HPKuEGDpDoLRpk0ni+
-         C0uHcY0Xx2CohtN2z0q1RxueSghcgQMSkLIzlvrqdslURFbgri2wmVmOLTm41Dp+6Pn9
-         /XTg==
-X-Gm-Message-State: AOAM532gkG9mJw0wIIGYU7Z/lXhjUgIpUqmvL2/yQY0NtqGNimKCaZ+4
-        GudhVmvLso8b/UOmdFeHYa7CMQ==
-X-Google-Smtp-Source: ABdhPJyY2x69rq6WsXhzUCL2U2f+3cT69RbiGqN1bVdrmh+65fJSfSmzLl+/hEdBH+SC8jafT5BEVw==
-X-Received: by 2002:a0c:9e0e:: with SMTP id p14mr27923458qve.25.1604435942134;
-        Tue, 03 Nov 2020 12:39:02 -0800 (PST)
-Received: from [192.168.1.45] (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id v204sm11925442qka.4.2020.11.03.12.39.01
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 03 Nov 2020 12:39:01 -0800 (PST)
-Subject: Re: [PATCH v9 35/41] btrfs: enable relocation in ZONED mode
-To:     Naohiro Aota <naohiro.aota@wdc.com>, linux-btrfs@vger.kernel.org,
-        dsterba@suse.com
-Cc:     hare@suse.com, linux-fsdevel@vger.kernel.org
-References: <d9a0a445560db3a9eb240c6535f8dd1bbd0abd96.1604065694.git.naohiro.aota@wdc.com>
- <669d00d499b702413a51364b405280798df9c6c3.1604065695.git.naohiro.aota@wdc.com>
-From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <165834f6-6814-6f7b-19bf-6a42bb4a5745@toxicpanda.com>
-Date:   Tue, 3 Nov 2020 15:39:00 -0500
-User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0)
- Gecko/20100101 Thunderbird/78.4.0
-MIME-Version: 1.0
-In-Reply-To: <669d00d499b702413a51364b405280798df9c6c3.1604065695.git.naohiro.aota@wdc.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+        id S1730313AbgKCUlI convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 3 Nov 2020 15:41:08 -0500
+Received: from mout.kundenserver.de ([217.72.192.73]:51043 "EHLO
+        mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1730300AbgKCUlG (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Nov 2020 15:41:06 -0500
+Received: from [192.168.177.174] ([91.63.191.240]) by mrelayeu.kundenserver.de
+ (mreue106 [213.165.67.113]) with ESMTPSA (Nemesis) id
+ 1Ma1D8-1koKqo34tg-00VwZC; Tue, 03 Nov 2020 21:40:30 +0100
+From:   "Hendrik Friedel" <hendrik@friedels.name>
+To:     "Zygo Blaxell" <ce3g8jdj@umail.furryterror.org>,
+        lakshmipathi.ganapathi@collabora.com
+Subject: Re[2]: parent transid verify failed: Fixed but re-appearing
+Cc:     "Btrfs BTRFS" <linux-btrfs@vger.kernel.org>
+Date:   Tue, 03 Nov 2020 20:40:40 +0000
+Message-Id: <em37950c9c-2dbf-41b9-89cd-2390bc503bd1@desktop-g0r648m>
+In-Reply-To: <20201103194045.GB28049@hungrycats.org>
+References: <em2ffec6ef-fe64-4239-b238-ae962d1826f6@ryzen>
+ <20201021134635.GT5890@hungrycats.org>
+ <em85884e42-e959-40f1-9eae-cd818450c26d@ryzen>
+ <20201021193246.GE21815@hungrycats.org>
+ <em33511ef4-7da1-4e7c-8b0c-8b8d7043164c@desktop-g0r648m>
+ <20201021212229.GF21815@hungrycats.org>
+ <emeabab400-3f6d-4105-a4fd-67b0b832f97a@desktop-g0r648m>
+ <20201021213854.GG21815@hungrycats.org>
+ <em26d5dfe8-37cb-454c-9c03-a69cfb035949@desktop-g0r648m>
+ <emf9252c3e-00b0-4c4a-a607-b61df779742f@desktop-g0r648m>
+ <20201103194045.GB28049@hungrycats.org>
+Reply-To: "Hendrik Friedel" <hendrik@friedels.name>
+User-Agent: eM_Client/8.0.3385.0
+Mime-Version: 1.0
+Content-Type: text/plain; format=flowed; charset=utf-8
+Content-Transfer-Encoding: 8BIT
+X-Provags-ID: V03:K1:aUGDKZLIYT0M7ln2X35KffGtM5m2z3nhJ6eWJ4iETnsPXBTgpSW
+ 4d8tEu89RO+dwCEXngYrz0v/k2MFD2x2x+mm/0q5LYkf4GEtVVUR+AenZi4rOJdBC/JcImc
+ GTOrFwCEB70P3haQamikCfGL6xVtJRyx7rnIYmFOHDivMhDKdONbe0Y+cEA2aOPX3Jd18nZ
+ jR5R8u6YrKTBSWJmMmTRQ==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:7nrBFJZPP7E=:Mwi2yZfIcGV3di+PZiLO2k
+ ZOZzd46tec+QEe7iLRNrKgss+xvcEW+ve1zK3l4DhCNjd0ZfiDxss/EztxZcD6rHEL2KUJHvX
+ KNBw4VDKWyoTxbUaF76gjAuuGlrCGjzB1cFr1wBFzdMyY9Q+vweHEM6jvlSyNEKO8+iAKPC6A
+ RMAM5ir+9k47HTfHLA+KoYTPOvT+0hneD5vwZT43HjKACL6xygSbIF3ssMxcQslNIR7PV4DDm
+ KuTPFb/LaktPPNSFgNk8p+uozz/gfADcxq+cVIDPungBGOWb9mY9Sf80YE2X/QPSv0SaGGUMf
+ MHWvvtpt7MiRv1Opj97sdi7HK0ijnbcPC5fH9NJy1PWfrcvFJf8PLO3VgpSz6DD6lHjYwY7Aa
+ PoC0f2hvi11aOO3xejKvyxqDBzyvvII+zq/t7my2MURVFt4SYFOP2KB60f5JIzNf4BDzW/436
+ xAbTj1Havw==
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 10/30/20 9:51 AM, Naohiro Aota wrote:
-> To serialize allocation and submit_bio, we introduced mutex around them. As
-> a result, preallocation must be completely disabled to avoid a deadlock.
-> 
-> Since current relocation process relies on preallocation to move file data
-> extents, it must be handled in another way. In ZONED mode, we just truncate
-> the inode to the size that we wanted to pre-allocate. Then, we flush dirty
-> pages on the file before finishing relocation process.
-> run_delalloc_zoned() will handle all the allocation and submit IOs to the
-> underlying layers.
-> 
-> Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
-> ---
->   fs/btrfs/relocation.c | 35 +++++++++++++++++++++++++++++++++--
->   1 file changed, 33 insertions(+), 2 deletions(-)
-> 
-> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-> index 3602806d71bd..44b697b881b6 100644
-> --- a/fs/btrfs/relocation.c
-> +++ b/fs/btrfs/relocation.c
-> @@ -2603,6 +2603,32 @@ static noinline_for_stack int prealloc_file_extent_cluster(
->   	if (ret)
->   		return ret;
->   
-> +	/*
-> +	 * In ZONED mode, we cannot preallocate the file region. Instead, we
-> +	 * dirty and fiemap_write the region.
-> +	 */
-> +
-> +	if (btrfs_is_zoned(inode->root->fs_info)) {
-> +		struct btrfs_root *root = inode->root;
-> +		struct btrfs_trans_handle *trans;
-> +
-> +		end = cluster->end - offset + 1;
-> +		trans = btrfs_start_transaction(root, 1);
-> +		if (IS_ERR(trans))
-> +			return PTR_ERR(trans);
-> +
-> +		inode->vfs_inode.i_ctime = current_time(&inode->vfs_inode);
-> +		i_size_write(&inode->vfs_inode, end);
-> +		ret = btrfs_update_inode(trans, root, &inode->vfs_inode);
-> +		if (ret) {
-> +			btrfs_abort_transaction(trans, ret);
-> +			btrfs_end_transaction(trans);
-> +			return ret;
-> +		}
-> +
-> +		return btrfs_end_transaction(trans);
-> +	}
+Hello Zygo, hello Lakshmipathi,
 
-The reason we pre-allocate is because we need the extents to be exactly how long 
-they are on disk.  If we have a 123mib extent, we need the extent it goes into 
-to be exactly 123mib, otherwise we cannot simply relocate out its location. 
-This doesn't do anything for us.  I'm not even sure we can do relocation for 
-zoned since we have to maintain the original extent size, but if you can then 
-it's going to be more complicated than just this.  You'll have to either forgo 
-WRITE_APPEND for this case, or make sure you can actually write the whole 
-ordered extent in one go.  Thanks,
+@Lakshmipathi: as you suggested I consulted the BTRFS-Mailing list on 
+this issue:
+https://github.com/Lakshmipathi/dduper/issues/39
 
-Josef
+Zygo was so kind to help me and he suspects the error to lie within 
+dduper.
+>>  > > Sure, more scrubs are better.  They are supposed to be run regularly
+>>  > > to detect drives going bad.
+>>  > btrfs scrub start -Bd /dev/sda1
+>>  >
+>>  >
+>>  > scrub device /dev/sda1 (id 1) done
+>>  >         scrub started at Wed Oct 21 23:38:36 2020 and finished after 13:45:29
+>>  >         total bytes scrubbed: 6.56TiB with 0 errors
+>>  >
+>>  > But then again:
+>>  > dduper --device /dev/sda1 --dir /srv/dev-disk-by-label-DataPool1/dduper_test/testfiles -r --dry-run
+>>  > parent transid verify failed on 16500741947392 wanted 358407 found 358409
+>>  > Ignoring transid failure
+>
+>Wait...is that the kernel log, or the output of the dduper command?
+>
+It is on the commandline once I run the command; thus I suspect it is 
+the dduper output. But of course sometimes the Kernel-Messages appear 
+directly on the commandline. I do not know how to tell.
+
+>
+>commit 3e5f67f45b553045a34113cafb3c22180210a19f (tag: v0.04, origin/dockerbuild)
+>Author: Lakshmipathi <lakshmipathi.ganapathi@collabora.com>
+>Date:   Fri Sep 18 11:51:42 2020 +0530
+>
+>file deduper:
+>
+>     194 def btrfs_dump_csum(filename):
+>     195     global device_name
+>     196
+>     197     btrfs_bin = "/usr/sbin/btrfs.static"
+>     198     if os.path.exists(btrfs_bin) is False:
+>     199         btrfs_bin = "btrfs"
+>     200
+>     201     out = subprocess.Popen(
+>     202         [btrfs_bin, 'inspect-internal', 'dump-csum', filename, device_name],
+>     203         stdout=subprocess.PIPE,
+>     204         close_fds=True).stdout.readlines()
+>     205     return out
+>
+>OK there's the problem:  it's dumping csums from a mounted filesystem by
+>reading the block device instead of using the TREE_SEARCH_V2 ioctl.
+>Don't do that, because it won't work.  ;)
+I trust you on this ;-) But I am surprised I am the only one reporting 
+this issue. Will it *always* not work, or does it not work in some cases 
+and my situation is making it extremely unlikely to work?
+>
+>The "parent transid verify failed" errors are harmless.  They are due
+>to the fact that a process reading the raw block device can never build
+>an accurate model of a live filesystem that is changing underneathi it.
+>
+>If you manage to get some dedupe to happen, then that's a bonus.
+>
+>
+>>  >
+>>  > > >  Anything else, I can do?
+>>  > >
+>>  > > It looks like sda1 might be bad and it is working by replacing lost
+>>  > > data from the mirror on sdj.  But this replacement should be happening
+>>  > > automatically on read (and definitely on scrub), so you shouldn't ever
+>>  > > see the same error twice, but it seems that you do.
+>>  >
+>>  > Well, it is not the same error twice.
+>
+>Earlier you quoted some duplicate lines.  Normally those get fixed after the
+>first line, so you never see the second.
+>
+I see.
+
+Regards,
+Hendrik
+

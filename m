@@ -2,278 +2,353 @@ Return-Path: <SRS0=hn/e=EJ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	UNPARSEABLE_RELAY,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+X-Spam-Status: No, score=-11.6 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 18693C388F7
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 05:52:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E7DE8C388F9
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 06:01:58 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 9E41622277
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 05:52:09 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 70D3F22277
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 06:01:58 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="UAAKwvMU"
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="YdKFiYlr"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725980AbgKCFwI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 3 Nov 2020 00:52:08 -0500
-Received: from userp2120.oracle.com ([156.151.31.85]:46352 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725934AbgKCFwG (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Nov 2020 00:52:06 -0500
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 0A35n5xR063429;
-        Tue, 3 Nov 2020 05:51:59 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
- subject : date : message-id : in-reply-to : references : mime-version :
- content-transfer-encoding; s=corp-2020-01-29;
- bh=vsBweBdOr+GvTUDJK8EYTjb38mTHhg/K0KfPLF2ZOD0=;
- b=UAAKwvMUNtMG9Wzhd1QsmztQE5e+WI6RZP5M7ecxyi/VlvNxYprl0hhs3M98yfa0pqFy
- 1/IR/oh+fG9EIZuLKy0VsV73nXn3wZVIgqAB8dwG1Uz2FO1SZYVFRZHnrBT1Qa+MjcFc
- fBlR6BJFy2wD9Yfk31+hYyEXWcswRZCij6jal47aMM5IBoo4alxl3FHPEBnGYP+n9Wzq
- GJvvgMQWIg+BFPLIaBIClCVISy/8m38qRwvlufMb/PAsLKhRbqnb6AAr0W27B5K7cxhU
- kNuJ7F0mp9yQ5Xpz6k9s2AyHnqoZeMgMvr9Cnhiq/XvKvRT8zPZ9w1sbxh0wRzN/37vN Bw== 
-Received: from aserp3030.oracle.com (aserp3030.oracle.com [141.146.126.71])
-        by userp2120.oracle.com with ESMTP id 34hhw2fcnb-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
-        Tue, 03 Nov 2020 05:51:59 +0000
-Received: from pps.filterd (aserp3030.oracle.com [127.0.0.1])
-        by aserp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 0A35emDW017217;
-        Tue, 3 Nov 2020 05:49:59 GMT
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by aserp3030.oracle.com with ESMTP id 34jf47v443-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Tue, 03 Nov 2020 05:49:58 +0000
-Received: from abhmp0010.oracle.com (abhmp0010.oracle.com [141.146.116.16])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id 0A35nv7R008599;
-        Tue, 3 Nov 2020 05:49:57 GMT
-Received: from localhost.localdomain (/39.109.231.106)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Mon, 02 Nov 2020 21:49:57 -0800
-From:   Anand Jain <anand.jain@oracle.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     dsterba@suse.com, Josef Bacik <josef@toxicpanda.com>
-Subject: [PATCH RESEND v2 2/3] btrfs: fix btrfs_find_device unused arg seed
-Date:   Tue,  3 Nov 2020 13:49:43 +0800
-Message-Id: <0875530c9a86033600e6712ab11fec5c13af7855.1604372689.git.anand.jain@oracle.com>
-X-Mailer: git-send-email 2.25.1
-In-Reply-To: <cover.1604372688.git.anand.jain@oracle.com>
-References: <cover.1604372688.git.anand.jain@oracle.com>
+        id S1726115AbgKCGBz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 3 Nov 2020 01:01:55 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52740 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725958AbgKCGBz (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Nov 2020 01:01:55 -0500
+Received: from mail-pf1-x444.google.com (mail-pf1-x444.google.com [IPv6:2607:f8b0:4864:20::444])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D5B0CC0617A6;
+        Mon,  2 Nov 2020 22:01:54 -0800 (PST)
+Received: by mail-pf1-x444.google.com with SMTP id 13so13254865pfy.4;
+        Mon, 02 Nov 2020 22:01:54 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=ATBwi5kMk4dnFL0BTH/YCxihOEL41DZqtucRP8ITe7M=;
+        b=YdKFiYlrGwxVTZvauLFgQkDZmA9dKicywfwye9P/xJLneoKN+KQIkHsY7BjluLxCF9
+         vTpviXkK20cJGSQRwATi3z7mHbSfh9LNOXlGGK7J8xwIcqUJAqv/meo8qfDDjhU2UrK8
+         deNCKy0j5aQcxvwCc/eedROAxA57oS9rcF3yu1L6bVOUv4MfnllxVrspHUttQdZ8MRMw
+         XpUb+UG2iZDC2aK7+Bj1EtBQbbPs6+W+rILVz/XXGdlQcBmXLNmNzl/nghMQmgcfNZX6
+         hxVW1vSNgae5yoaH+hqYXobpIjkekRcGdQaRR0yQ1GqfPOBC8UAy0NwcCqO+O6v1J4zB
+         g/GA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=ATBwi5kMk4dnFL0BTH/YCxihOEL41DZqtucRP8ITe7M=;
+        b=Pat034GLkGzDJZDOgBw4qBfvgaphAtwsA3TDfLu/eEw+9AIa6oxOg1JnmRhHvhVVLN
+         YFYXQjE4ujifOKv2fMisNxtDbZVdIvtyCofvPAxKlGthVmCxLJcT/ny5p7GbC7v33D/H
+         wZSnU6qLbzl1804/KOA0ic251pAtgyhkH42yhHmZQmCSuRDleN4vdcjoOKC9QVjGZ8TD
+         PxSR6qaFF6a1UVDaaaczdhxAaq3QulQ1XT8jH96dU+nLea7PgGnJVkvB6d7gCjNtJ4OM
+         B0q8lz+a3B2BUXh/6gWctISxpoohtFGz3Ga878jJkldzXSgl/fUGJN0JWOwuFtR16LDw
+         ucKQ==
+X-Gm-Message-State: AOAM531VuJKrTtvt1Dpot86BrLkLKeBQIBIaPEGN4n55ehatcznvNEQf
+        oZAAcAfNjazRlwBldFN1Mu5fB/d2tTQ=
+X-Google-Smtp-Source: ABdhPJz7vjEAEdfbluj+D0qsOJnpLqDWhU/zLoKGG93Zqj5O5RYSlbRSfo0jQCyW3fbI6s+9KkAFLA==
+X-Received: by 2002:a63:4546:: with SMTP id u6mr16239443pgk.311.1604383314055;
+        Mon, 02 Nov 2020 22:01:54 -0800 (PST)
+Received: from nickserv.localdomain (c-98-33-101-203.hsd1.ca.comcast.net. [98.33.101.203])
+        by smtp.gmail.com with ESMTPSA id b16sm15647269pfp.195.2020.11.02.22.01.52
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 02 Nov 2020 22:01:53 -0800 (PST)
+From:   Nick Terrell <nickrterrell@gmail.com>
+To:     Herbert Xu <herbert@gondor.apana.org.au>
+Cc:     linux-crypto@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        squashfs-devel@lists.sourceforge.net,
+        linux-f2fs-devel@lists.sourceforge.net,
+        linux-kernel@vger.kernel.org, Kernel Team <Kernel-team@fb.com>,
+        Nick Terrell <nickrterrell@gmail.com>,
+        Nick Terrell <terrelln@fb.com>, Chris Mason <clm@fb.com>,
+        Petr Malat <oss@malat.biz>, Johannes Weiner <jweiner@fb.com>,
+        Niket Agarwal <niketa@fb.com>, Yann Collet <cyan@fb.com>
+Subject: [GIT PULL][PATCH v5 0/9] Update to zstd-1.4.6
+Date:   Mon,  2 Nov 2020 22:05:26 -0800
+Message-Id: <20201103060535.8460-1-nickrterrell@gmail.com>
+X-Mailer: git-send-email 2.28.0
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9793 signatures=668682
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 spamscore=0 suspectscore=3 mlxscore=0
- bulkscore=0 malwarescore=0 mlxlogscore=999 phishscore=0 adultscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2009150000
- definitions=main-2011030042
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9793 signatures=668682
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 adultscore=0 malwarescore=0 mlxscore=0
- suspectscore=3 clxscore=1015 priorityscore=1501 impostorscore=0
- spamscore=0 lowpriorityscore=0 mlxlogscore=999 phishscore=0 bulkscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2009150000
- definitions=main-2011030043
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-commit 343694eee8d8 (btrfs: switch seed device to list api), missed to
-check if the last arg (seed) is true in the function btrfs_find_device().
-This arg tells whether to traverse through the seed device list or not.
+From: Nick Terrell <terrelln@fb.com>
 
-This means after the above commit the arg is always true, and the parent
-function which set this arg to false aren't effective.
+Please pull from
 
-So we don't worry about the parent functions which set the last arg to
-true, instead there is only one parent with calling btrfs_find_device
-with the last arg false in device_list_add().
+  git@github.com:terrelln/linux.git tags/v5-zstd-1.4.6
 
-But in fact, even the device_list_add() has no purpose that it has to set
-the last arg to false. Because the fs_devices always points to the
-device's fs_devices. So with the devid+uuid matching, it shall find the
-btrfs_device and returns. So naturally, it won't traverse through the
-seed fs_devices (if) present.
+to get these changes. Alternatively the patchset is included.
 
-So this patch makes it official that we don't need the last arg in the
-function btrfs_find_device() and it shall always traverse through the
-seed device list.
+This patchset upgrades the zstd library to the latest upstream release. The
+current zstd version in the kernel is a modified version of upstream zstd-1.3.1.
+At the time it was integrated, zstd wasn't ready to be used in the kernel as-is.
+But, it is now possible to use upstream zstd directly in the kernel.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
----
-v2: -
- fs/btrfs/dev-replace.c |  4 ++--
- fs/btrfs/ioctl.c       |  4 ++--
- fs/btrfs/scrub.c       |  4 ++--
- fs/btrfs/volumes.c     | 22 ++++++++++------------
- fs/btrfs/volumes.h     |  2 +-
- 5 files changed, 17 insertions(+), 19 deletions(-)
+I have not yet release zstd-1.4.6 upstream. I want the zstd version in the kernel
+to match up with a known upstream release, so we know exactly what code is
+running. Whenever this patchset is ready for merge, I will cut a release at the
+upstream commit that gets merged. This should not be necessary for future
+releases.
 
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 5b9e3f3ace22..ffab2758f991 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -149,10 +149,10 @@ int btrfs_init_dev_replace(struct btrfs_fs_info *fs_info)
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_STARTED:
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_SUSPENDED:
- 		dev_replace->srcdev = btrfs_find_device(fs_info->fs_devices,
--						src_devid, NULL, NULL, true);
-+						src_devid, NULL, NULL);
- 		dev_replace->tgtdev = btrfs_find_device(fs_info->fs_devices,
- 							BTRFS_DEV_REPLACE_DEVID,
--							NULL, NULL, true);
-+							NULL, NULL);
- 		/*
- 		 * allow 'btrfs dev replace_cancel' if src/tgt device is
- 		 * missing
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 69a384145dc6..36e09a22068a 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1678,7 +1678,7 @@ static noinline int btrfs_ioctl_resize(struct file *file,
- 		btrfs_info(fs_info, "resizing devid %llu", devid);
- 	}
- 
--	device = btrfs_find_device(fs_info->fs_devices, devid, NULL, NULL, true);
-+	device = btrfs_find_device(fs_info->fs_devices, devid, NULL, NULL);
- 	if (!device) {
- 		btrfs_info(fs_info, "resizer unable to find device %llu",
- 			   devid);
-@@ -3321,7 +3321,7 @@ static long btrfs_ioctl_dev_info(struct btrfs_fs_info *fs_info,
- 
- 	rcu_read_lock();
- 	dev = btrfs_find_device(fs_info->fs_devices, di_args->devid, s_uuid,
--				NULL, true);
-+				NULL);
- 
- 	if (!dev) {
- 		ret = -ENODEV;
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 58cd3278fbfe..c85b493380da 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -3858,7 +3858,7 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
- 		goto out_free_ctx;
- 
- 	mutex_lock(&fs_info->fs_devices->device_list_mutex);
--	dev = btrfs_find_device(fs_info->fs_devices, devid, NULL, NULL, true);
-+	dev = btrfs_find_device(fs_info->fs_devices, devid, NULL, NULL);
- 	if (!dev || (test_bit(BTRFS_DEV_STATE_MISSING, &dev->dev_state) &&
- 		     !is_dev_replace)) {
- 		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
-@@ -4035,7 +4035,7 @@ int btrfs_scrub_progress(struct btrfs_fs_info *fs_info, u64 devid,
- 	struct scrub_ctx *sctx = NULL;
- 
- 	mutex_lock(&fs_info->fs_devices->device_list_mutex);
--	dev = btrfs_find_device(fs_info->fs_devices, devid, NULL, NULL, true);
-+	dev = btrfs_find_device(fs_info->fs_devices, devid, NULL, NULL);
- 	if (dev)
- 		sctx = dev->scrub_ctx;
- 	if (sctx)
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index e615ca393aab..04ef251d885e 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -822,7 +822,7 @@ static noinline struct btrfs_device *device_list_add(const char *path,
- 	} else {
- 		mutex_lock(&fs_devices->device_list_mutex);
- 		device = btrfs_find_device(fs_devices, devid,
--				disk_super->dev_item.uuid, NULL, false);
-+				disk_super->dev_item.uuid, NULL);
- 
- 		/*
- 		 * If this disk has been pulled into an fs devices created by
-@@ -2300,10 +2300,10 @@ static struct btrfs_device *btrfs_find_device_by_path(
- 	dev_uuid = disk_super->dev_item.uuid;
- 	if (btrfs_fs_incompat(fs_info, METADATA_UUID))
- 		device = btrfs_find_device(fs_info->fs_devices, devid, dev_uuid,
--					   disk_super->metadata_uuid, true);
-+					   disk_super->metadata_uuid);
- 	else
- 		device = btrfs_find_device(fs_info->fs_devices, devid, dev_uuid,
--					   disk_super->fsid, true);
-+					   disk_super->fsid);
- 
- 	btrfs_release_disk_super(disk_super);
- 	if (!device)
-@@ -2323,7 +2323,7 @@ struct btrfs_device *btrfs_find_device_by_devspec(
- 
- 	if (devid) {
- 		device = btrfs_find_device(fs_info->fs_devices, devid, NULL,
--					   NULL, true);
-+					   NULL);
- 		if (!device)
- 			return ERR_PTR(-ENOENT);
- 		return device;
-@@ -2472,7 +2472,7 @@ static int btrfs_finish_sprout(struct btrfs_trans_handle *trans)
- 		read_extent_buffer(leaf, fs_uuid, btrfs_device_fsid(dev_item),
- 				   BTRFS_FSID_SIZE);
- 		device = btrfs_find_device(fs_info->fs_devices, devid, dev_uuid,
--					   fs_uuid, true);
-+					   fs_uuid);
- 		BUG_ON(!device); /* Logic error */
- 
- 		if (device->fs_devices->seeding) {
-@@ -6465,8 +6465,7 @@ blk_status_t btrfs_map_bio(struct btrfs_fs_info *fs_info, struct bio *bio,
-  * If @seed is true, traverse through the seed devices.
-  */
- struct btrfs_device *btrfs_find_device(struct btrfs_fs_devices *fs_devices,
--				       u64 devid, u8 *uuid, u8 *fsid,
--				       bool seed)
-+				       u64 devid, u8 *uuid, u8 *fsid)
- {
- 	struct btrfs_device *device;
- 	struct btrfs_fs_devices *seed_devs;
-@@ -6673,7 +6672,7 @@ static int read_one_chunk(struct btrfs_key *key, struct extent_buffer *leaf,
- 				   btrfs_stripe_dev_uuid_nr(chunk, i),
- 				   BTRFS_UUID_SIZE);
- 		map->stripes[i].dev = btrfs_find_device(fs_info->fs_devices,
--							devid, uuid, NULL, true);
-+							devid, uuid, NULL);
- 		if (!map->stripes[i].dev &&
- 		    !btrfs_test_opt(fs_info, DEGRADED)) {
- 			free_extent_map(em);
-@@ -6812,7 +6811,7 @@ static int read_one_dev(struct extent_buffer *leaf,
- 	}
- 
- 	device = btrfs_find_device(fs_info->fs_devices, devid, dev_uuid,
--				   fs_uuid, true);
-+				   fs_uuid);
- 	if (!device) {
- 		if (!btrfs_test_opt(fs_info, DEGRADED)) {
- 			btrfs_report_missing_device(fs_info, devid,
-@@ -7479,8 +7478,7 @@ int btrfs_get_dev_stats(struct btrfs_fs_info *fs_info,
- 	int i;
- 
- 	mutex_lock(&fs_devices->device_list_mutex);
--	dev = btrfs_find_device(fs_info->fs_devices, stats->devid, NULL, NULL,
--				true);
-+	dev = btrfs_find_device(fs_info->fs_devices, stats->devid, NULL, NULL);
- 	mutex_unlock(&fs_devices->device_list_mutex);
- 
- 	if (!dev) {
-@@ -7611,7 +7609,7 @@ static int verify_one_dev_extent(struct btrfs_fs_info *fs_info,
- 	}
- 
- 	/* Make sure no dev extent is beyond device bondary */
--	dev = btrfs_find_device(fs_info->fs_devices, devid, NULL, NULL, true);
-+	dev = btrfs_find_device(fs_info->fs_devices, devid, NULL, NULL);
- 	if (!dev) {
- 		btrfs_err(fs_info, "failed to find devid %llu", devid);
- 		ret = -EUCLEAN;
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 34fd440fd30b..bd95cea85a65 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -466,7 +466,7 @@ int btrfs_num_copies(struct btrfs_fs_info *fs_info, u64 logical, u64 len);
- int btrfs_grow_device(struct btrfs_trans_handle *trans,
- 		      struct btrfs_device *device, u64 new_size);
- struct btrfs_device *btrfs_find_device(struct btrfs_fs_devices *fs_devices,
--				       u64 devid, u8 *uuid, u8 *fsid, bool seed);
-+				       u64 devid, u8 *uuid, u8 *fsid);
- int btrfs_shrink_device(struct btrfs_device *device, u64 new_size);
- int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *path);
- int btrfs_balance(struct btrfs_fs_info *fs_info,
+The kernel zstd library is automatically generated from upstream zstd. A script
+makes the necessary changes and imports it into the kernel. The changes are:
+
+1. Replace all libc dependencies with kernel replacements and rewrite includes.
+2. Remove unncessary portability macros like: #if defined(_MSC_VER).
+3. Use the kernel xxhash instead of bundling it.
+
+This automation gets tested every commit by upstream's continuous integration.
+When we cut a new zstd release, we will submit a patch to the kernel to update
+the zstd version in the kernel.
+
+I've updated zstd to upstream with one big patch because every commit must build,
+so that precludes partial updates. Since the commit is 100% generated, I hope the
+review burden is lightened. I considered replaying upstream commits, but that is
+not possible because there have been ~3500 upstream commits since the last zstd
+import, and the commits don't all build individually. The bulk update preserves
+bisectablity because bugs can be bisected to the zstd version update. At that
+point the update can be reverted, and we can work with upstream to find and fix
+the bug. After this big switch in how the kernel consumes zstd, future patches
+will be smaller, because they will only have one upstream release worth of
+changes each.
+
+This patchset changes the zstd API from a custom kernel API to the upstream API.
+I considered wrapping the upstream API with a wrapper that is closer to the
+kernel style guide. Following advise from https://lkml.org/lkml/2020/9/17/814
+I've chosen to use the upstream API directly, to minimize opportunities to
+introduce bugs, and because using the upstream API directly makes debugging and
+communication with upstream easier.
+
+This patchset comes in 3 parts:
+1. The first 2 patches prepare for the zstd upgrade. The first patch adds a
+   compatibility wrapper so zstd can be upgraded without modifying any callers.
+   The second patch adds an indirection for the lib/decompress_unzstd.c including
+   of all decompression source files.
+2. Import zstd-1.4.6. This patch is completely generated from upstream using
+   automated tooling.
+3. Update all callers to the zstd-1.4.6 API then delete the compatibility
+   wrapper.
+
+I tested every caller of zstd on x86_64. I tested both after the 1.4.6 upgrade
+using the compatibility wrapper, and after the final patch in this series. 
+
+I tested kernel and initramfs decompression in i386 and arm.
+
+I ran benchmarks to compare the current zstd in the kernel with zstd-1.4.6.
+I benchmarked on x86_64 using QEMU with KVM enabled on an Intel i9-9900k.
+I found:
+* BtrFS zstd compression at levels 1 and 3 is 5% faster
+* BtrFS zstd decompression+read is 15% faster
+* SquashFS zstd decompression+read is 15% faster
+* F2FS zstd compression+write at level 3 is 8% faster
+* F2FS zstd decompression+read is 20% faster
+* ZRAM decompression+read is 30% faster
+* Kernel zstd decompression is 35% faster
+* Initramfs zstd decompression+build is 5% faster
+
+The latest zstd also offers bug fixes and a 1 KB reduction in stack uage during
+compression. For example the recent problem with large kernel decompression has
+been fixed upstream for over 2 years https://lkml.org/lkml/2020/9/29/27.
+
+Please let me know if there is anything that I can do to ease the way for these
+patches. I think it is important because it gets large performance improvements,
+contains bug fixes, and is switching to a more maintainable model of consuming
+upstream zstd directly, making it easy to keep up to date.
+
+Best,
+Nick Terrell
+
+v1 -> v2:
+* Successfully tested F2FS with help from Chao Yu to fix my test.
+* (1/9) Fix ZSTD_initCStream() wrapper to handle pledged_src_size=0 means unknown.
+  This fixes F2FS with the zstd-1.4.6 compatibility wrapper, exposed by the test.
+
+v2 -> v3:
+* (3/9) Silence warnings by Kernel Test Robot:
+  https://github.com/facebook/zstd/pull/2324
+  Stack size warnings remain, but these aren't new, and the functions it warns on
+  are either unused or not in the maximum stack path. This patchset reduces zstd
+  compression stack usage by 1 KB overall. I've gotten the low hanging fruit, and
+  more stack reduction would require significant changes that have the potential
+  to introduce new bugs. However, I do hope to continue to reduce zstd stack
+  usage in future versions.
+
+v3 -> v4:
+* (3/9) Fix errors and warnings reported by Kernel Test Robot:
+  https://github.com/facebook/zstd/pull/2326
+  - Replace mem.h with a custom kernel implementation that matches the current
+    lib/zstd/mem.h in the kernel. This avoids calls to __builtin_bswap*() which
+    don't work on certain architectures, as exposed by the Kernel Test Robot.
+  - Remove ASAN/MSAN (un)poisoning code which doesn't work in the kernel, as
+    exposed by the Kernel Test Robot.
+  - I've fixed all of the valid cppcheck warnings reported, but there were many
+    false positives, where cppcheck was incorrectly analyzing the situation,
+    which I did not fix. I don't believe it is reasonable to expect that upstream
+    zstd silences all the static analyzer false positives. Upstream zstd uses
+    clang scan-build for its static analysis. We find that supporting multiple
+    static analysis tools multiplies the burden of silencing false positives,
+    without providing enough marginal value over running a single static analysis
+    tool.
+
+v4 -> v5:
+* Rebase onto v5.10-rc2
+* (6/9) Merge with other F2FS changes (no functional change in patch).
+
+Nick Terrell (9):
+  lib: zstd: Add zstd compatibility wrapper
+  lib: zstd: Add decompress_sources.h for decompress_unzstd
+  lib: zstd: Upgrade to latest upstream zstd version 1.4.6
+  crypto: zstd: Switch to zstd-1.4.6 API
+  btrfs: zstd: Switch to the zstd-1.4.6 API
+  f2fs: zstd: Switch to the zstd-1.4.6 API
+  squashfs: zstd: Switch to the zstd-1.4.6 API
+  lib: unzstd: Switch to the zstd-1.4.6 API
+  lib: zstd: Remove zstd compatibility wrapper
+
+ crypto/zstd.c                                 |   22 +-
+ fs/btrfs/zstd.c                               |   46 +-
+ fs/f2fs/compress.c                            |   99 +-
+ fs/squashfs/zstd_wrapper.c                    |    7 +-
+ include/linux/zstd.h                          | 3021 ++++++++----
+ include/linux/zstd_errors.h                   |   76 +
+ lib/decompress_unzstd.c                       |   44 +-
+ lib/zstd/Makefile                             |   35 +-
+ lib/zstd/bitstream.h                          |  379 --
+ lib/zstd/common/bitstream.h                   |  437 ++
+ lib/zstd/common/compiler.h                    |  150 +
+ lib/zstd/common/cpu.h                         |  194 +
+ lib/zstd/common/debug.c                       |   24 +
+ lib/zstd/common/debug.h                       |  101 +
+ lib/zstd/common/entropy_common.c              |  355 ++
+ lib/zstd/common/error_private.c               |   55 +
+ lib/zstd/common/error_private.h               |   66 +
+ lib/zstd/common/fse.h                         |  709 +++
+ lib/zstd/common/fse_decompress.c              |  380 ++
+ lib/zstd/common/huf.h                         |  352 ++
+ lib/zstd/common/mem.h                         |  258 +
+ lib/zstd/common/zstd_common.c                 |   83 +
+ lib/zstd/common/zstd_deps.h                   |  124 +
+ lib/zstd/common/zstd_internal.h               |  438 ++
+ lib/zstd/compress.c                           | 3485 --------------
+ lib/zstd/compress/fse_compress.c              |  625 +++
+ lib/zstd/compress/hist.c                      |  165 +
+ lib/zstd/compress/hist.h                      |   75 +
+ lib/zstd/compress/huf_compress.c              |  764 +++
+ lib/zstd/compress/zstd_compress.c             | 4157 +++++++++++++++++
+ lib/zstd/compress/zstd_compress_internal.h    | 1103 +++++
+ lib/zstd/compress/zstd_compress_literals.c    |  158 +
+ lib/zstd/compress/zstd_compress_literals.h    |   29 +
+ lib/zstd/compress/zstd_compress_sequences.c   |  433 ++
+ lib/zstd/compress/zstd_compress_sequences.h   |   54 +
+ lib/zstd/compress/zstd_compress_superblock.c  |  849 ++++
+ lib/zstd/compress/zstd_compress_superblock.h  |   32 +
+ lib/zstd/compress/zstd_cwksp.h                |  465 ++
+ lib/zstd/compress/zstd_double_fast.c          |  521 +++
+ lib/zstd/compress/zstd_double_fast.h          |   32 +
+ lib/zstd/compress/zstd_fast.c                 |  496 ++
+ lib/zstd/compress/zstd_fast.h                 |   31 +
+ lib/zstd/compress/zstd_lazy.c                 | 1138 +++++
+ lib/zstd/compress/zstd_lazy.h                 |   61 +
+ lib/zstd/compress/zstd_ldm.c                  |  619 +++
+ lib/zstd/compress/zstd_ldm.h                  |  104 +
+ lib/zstd/compress/zstd_opt.c                  | 1200 +++++
+ lib/zstd/compress/zstd_opt.h                  |   50 +
+ lib/zstd/decompress.c                         | 2531 ----------
+ lib/zstd/decompress/huf_decompress.c          | 1205 +++++
+ lib/zstd/decompress/zstd_ddict.c              |  241 +
+ lib/zstd/decompress/zstd_ddict.h              |   44 +
+ lib/zstd/decompress/zstd_decompress.c         | 1836 ++++++++
+ lib/zstd/decompress/zstd_decompress_block.c   | 1540 ++++++
+ lib/zstd/decompress/zstd_decompress_block.h   |   62 +
+ .../decompress/zstd_decompress_internal.h     |  195 +
+ lib/zstd/decompress_sources.h                 |   18 +
+ lib/zstd/entropy_common.c                     |  243 -
+ lib/zstd/error_private.h                      |   53 -
+ lib/zstd/fse.h                                |  575 ---
+ lib/zstd/fse_compress.c                       |  795 ----
+ lib/zstd/fse_decompress.c                     |  325 --
+ lib/zstd/huf.h                                |  212 -
+ lib/zstd/huf_compress.c                       |  772 ---
+ lib/zstd/huf_decompress.c                     |  960 ----
+ lib/zstd/mem.h                                |  151 -
+ lib/zstd/zstd_common.c                        |   75 -
+ lib/zstd/zstd_compress_module.c               |   79 +
+ lib/zstd/zstd_decompress_module.c             |   79 +
+ lib/zstd/zstd_internal.h                      |  273 --
+ lib/zstd/zstd_opt.h                           | 1014 ----
+ 71 files changed, 24367 insertions(+), 13012 deletions(-)
+ create mode 100644 include/linux/zstd_errors.h
+ delete mode 100644 lib/zstd/bitstream.h
+ create mode 100644 lib/zstd/common/bitstream.h
+ create mode 100644 lib/zstd/common/compiler.h
+ create mode 100644 lib/zstd/common/cpu.h
+ create mode 100644 lib/zstd/common/debug.c
+ create mode 100644 lib/zstd/common/debug.h
+ create mode 100644 lib/zstd/common/entropy_common.c
+ create mode 100644 lib/zstd/common/error_private.c
+ create mode 100644 lib/zstd/common/error_private.h
+ create mode 100644 lib/zstd/common/fse.h
+ create mode 100644 lib/zstd/common/fse_decompress.c
+ create mode 100644 lib/zstd/common/huf.h
+ create mode 100644 lib/zstd/common/mem.h
+ create mode 100644 lib/zstd/common/zstd_common.c
+ create mode 100644 lib/zstd/common/zstd_deps.h
+ create mode 100644 lib/zstd/common/zstd_internal.h
+ delete mode 100644 lib/zstd/compress.c
+ create mode 100644 lib/zstd/compress/fse_compress.c
+ create mode 100644 lib/zstd/compress/hist.c
+ create mode 100644 lib/zstd/compress/hist.h
+ create mode 100644 lib/zstd/compress/huf_compress.c
+ create mode 100644 lib/zstd/compress/zstd_compress.c
+ create mode 100644 lib/zstd/compress/zstd_compress_internal.h
+ create mode 100644 lib/zstd/compress/zstd_compress_literals.c
+ create mode 100644 lib/zstd/compress/zstd_compress_literals.h
+ create mode 100644 lib/zstd/compress/zstd_compress_sequences.c
+ create mode 100644 lib/zstd/compress/zstd_compress_sequences.h
+ create mode 100644 lib/zstd/compress/zstd_compress_superblock.c
+ create mode 100644 lib/zstd/compress/zstd_compress_superblock.h
+ create mode 100644 lib/zstd/compress/zstd_cwksp.h
+ create mode 100644 lib/zstd/compress/zstd_double_fast.c
+ create mode 100644 lib/zstd/compress/zstd_double_fast.h
+ create mode 100644 lib/zstd/compress/zstd_fast.c
+ create mode 100644 lib/zstd/compress/zstd_fast.h
+ create mode 100644 lib/zstd/compress/zstd_lazy.c
+ create mode 100644 lib/zstd/compress/zstd_lazy.h
+ create mode 100644 lib/zstd/compress/zstd_ldm.c
+ create mode 100644 lib/zstd/compress/zstd_ldm.h
+ create mode 100644 lib/zstd/compress/zstd_opt.c
+ create mode 100644 lib/zstd/compress/zstd_opt.h
+ delete mode 100644 lib/zstd/decompress.c
+ create mode 100644 lib/zstd/decompress/huf_decompress.c
+ create mode 100644 lib/zstd/decompress/zstd_ddict.c
+ create mode 100644 lib/zstd/decompress/zstd_ddict.h
+ create mode 100644 lib/zstd/decompress/zstd_decompress.c
+ create mode 100644 lib/zstd/decompress/zstd_decompress_block.c
+ create mode 100644 lib/zstd/decompress/zstd_decompress_block.h
+ create mode 100644 lib/zstd/decompress/zstd_decompress_internal.h
+ create mode 100644 lib/zstd/decompress_sources.h
+ delete mode 100644 lib/zstd/entropy_common.c
+ delete mode 100644 lib/zstd/error_private.h
+ delete mode 100644 lib/zstd/fse.h
+ delete mode 100644 lib/zstd/fse_compress.c
+ delete mode 100644 lib/zstd/fse_decompress.c
+ delete mode 100644 lib/zstd/huf.h
+ delete mode 100644 lib/zstd/huf_compress.c
+ delete mode 100644 lib/zstd/huf_decompress.c
+ delete mode 100644 lib/zstd/mem.h
+ delete mode 100644 lib/zstd/zstd_common.c
+ create mode 100644 lib/zstd/zstd_compress_module.c
+ create mode 100644 lib/zstd/zstd_decompress_module.c
+ delete mode 100644 lib/zstd/zstd_internal.h
+ delete mode 100644 lib/zstd/zstd_opt.h
+
 -- 
-2.25.1
+2.28.0
 

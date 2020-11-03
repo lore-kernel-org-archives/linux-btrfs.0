@@ -7,42 +7,42 @@ X-Spam-Status: No, score=-6.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=no
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D22B5C82628
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 10:34:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D1478C8262D
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 10:34:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 79DCE22409
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 10:34:49 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 834FD22409
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 10:34:55 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=linutronix.de header.i=@linutronix.de header.b="tqX0huA3";
-	dkim=permerror (0-bit key) header.d=linutronix.de header.i=@linutronix.de header.b="oAcSNmei"
+	dkim=pass (2048-bit key) header.d=linutronix.de header.i=@linutronix.de header.b="EFq00YaC";
+	dkim=permerror (0-bit key) header.d=linutronix.de header.i=@linutronix.de header.b="MNJFQ16T"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728572AbgKCKeP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 3 Nov 2020 05:34:15 -0500
-Received: from Galois.linutronix.de ([193.142.43.55]:40032 "EHLO
+        id S1728485AbgKCKeJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 3 Nov 2020 05:34:09 -0500
+Received: from Galois.linutronix.de ([193.142.43.55]:39508 "EHLO
         galois.linutronix.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728553AbgKCKeN (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Nov 2020 05:34:13 -0500
-Message-Id: <20201103095859.948321621@linutronix.de>
+        with ESMTP id S1728495AbgKCKeC (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Nov 2020 05:34:02 -0500
+Message-Id: <20201103095859.335366302@linutronix.de>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linutronix.de;
-        s=2020; t=1604399644;
+        s=2020; t=1604399636;
         h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
          to:to:cc:cc:mime-version:mime-version:content-type:content-type:
          content-transfer-encoding:content-transfer-encoding:  references:references;
-        bh=pWTP+ffmxbdbKgw8Fs16NN7GUZ4c2XuBXkTON+k89eo=;
-        b=tqX0huA3F2bRZGg5joppInMsd89JdtzQORLsBqdOU/cOQ9uNazXTFF+fXnrg9Lvo7UTQF+
-        tfAXAlY98Cp8E88kX5FSfcVehbIuu4gCGdKyQusY7s2vKR/fc+WwwKprFg+uuIuaKZ5Vs8
-        tKvRO99KWGPJB1qnu00RadM9QOpIAe9bUxTUpY6xhr58iPpUqU/8ypCk+UtFww7a2Z6+tD
-        K81IrB+KPrJf49nwV583/mEA7Vp083clJTvWvydIml0VZ1RUr3o1iEnFm1LMpQ5ZYUJH5y
-        l0wYvNWdqV1o7YOuE3FLp/1v36bpWI8ig5M02Fceplah92aoUhFNnt3+SDlY+Q==
+        bh=A9fIQi2MIxDLlGKHATeOlK6WSHzl9bMxA6Vy6WK4kFg=;
+        b=EFq00YaC2cfZ3tRBXG1AYeQj6Sgd3q/sRky5nMpbjN5ek1aWLKVPUv+JvoHWa6vjJFl3Ww
+        awzO+FzbND5FKjPGN7gNTnp5Mb1tq9qO15q652V8S0pc9Ce+oaGECW/jZPsmCvsiKGY+B3
+        KwlcTL/aSMXp1KJx2nFOb6gxG+DhM4n5p7kt5iTVZXpFOkBEw1cbStLJ+/3gWYcjPH26QY
+        Sbv7PLzlBaetuHp8ai5dMyYUIWrRveb5P6ybl5UfTZhOpH3MacNEiFaKtx28E2gAmPiYft
+        OZoB88IwwamuMjukOjyOm6rKIPayv2itPmrCw7QTvAcv81mGKSLdYHUqSDcl3Q==
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=linutronix.de;
-        s=2020e; t=1604399644;
+        s=2020e; t=1604399636;
         h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
          to:to:cc:cc:mime-version:mime-version:content-type:content-type:
          content-transfer-encoding:content-transfer-encoding:  references:references;
-        bh=pWTP+ffmxbdbKgw8Fs16NN7GUZ4c2XuBXkTON+k89eo=;
-        b=oAcSNmeianVANBdkJfMq3VEfmfk7zPkjo1SytIi26JtOQ/F/yxC+2+XTfAnYi8jPc8tJbo
-        D8mVfP2UZfQ3SJBw==
-Date:   Tue, 03 Nov 2020 10:27:45 +0100
+        bh=A9fIQi2MIxDLlGKHATeOlK6WSHzl9bMxA6Vy6WK4kFg=;
+        b=MNJFQ16TWMWokWTa10gHMVVbsQOpiB2QfbpOViNefBGxmMK6yL/K8NxBWEF2+7F4dQI9lX
+        SBoVS11NJaJ9FoCQ==
+Date:   Tue, 03 Nov 2020 10:27:39 +0100
 From:   Thomas Gleixner <tglx@linutronix.de>
 To:     LKML <linux-kernel@vger.kernel.org>
 Cc:     Linus Torvalds <torvalds@linuxfoundation.org>,
@@ -95,7 +95,7 @@ Cc:     Linus Torvalds <torvalds@linuxfoundation.org>,
         Joonas Lahtinen <joonas.lahtinen@linux.intel.com>,
         Rodrigo Vivi <rodrigo.vivi@intel.com>,
         intel-gfx@lists.freedesktop.org
-Subject: [patch V3 33/37] highmem: Remove kmap_atomic_prot()
+Subject: [patch V3 27/37] x86/crashdump/32: Simplify copy_oldmem_page()
 References: <20201103092712.714480842@linutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -104,46 +104,93 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-No more users.
+Replace kmap_atomic_pfn() with kmap_local_pfn() which is preemptible and
+can take page faults.
+
+Remove the indirection of the dump page and the related cruft which is not
+longer required.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 ---
 V3: New patch
 ---
- include/linux/highmem-internal.h |   14 ++------------
- 1 file changed, 2 insertions(+), 12 deletions(-)
+ arch/x86/kernel/crash_dump_32.c |   48 ++++++++--------------------------------
+ 1 file changed, 10 insertions(+), 38 deletions(-)
 
---- a/include/linux/highmem-internal.h
-+++ b/include/linux/highmem-internal.h
-@@ -87,16 +87,11 @@ static inline void __kunmap_local(void *
- 	kunmap_local_indexed(vaddr);
- }
+--- a/arch/x86/kernel/crash_dump_32.c
++++ b/arch/x86/kernel/crash_dump_32.c
+@@ -13,8 +13,6 @@
  
--static inline void *kmap_atomic_prot(struct page *page, pgprot_t prot)
-+static inline void *kmap_atomic(struct page *page)
- {
- 	preempt_disable();
- 	pagefault_disable();
--	return __kmap_local_page_prot(page, prot);
--}
+ #include <linux/uaccess.h>
+ 
+-static void *kdump_buf_page;
 -
--static inline void *kmap_atomic(struct page *page)
--{
--	return kmap_atomic_prot(page, kmap_prot);
-+	return __kmap_local_page_prot(page, kmap_prot);
- }
- 
- static inline void __kunmap_atomic(void *addr)
-@@ -181,11 +176,6 @@ static inline void *kmap_atomic(struct p
- 	return page_address(page);
- }
- 
--static inline void *kmap_atomic_prot(struct page *page, pgprot_t prot)
--{
--	return kmap_atomic(page);
--}
--
- static inline void __kunmap_atomic(void *addr)
+ static inline bool is_crashed_pfn_valid(unsigned long pfn)
  {
- #ifdef ARCH_HAS_FLUSH_ON_KUNMAP
+ #ifndef CONFIG_X86_PAE
+@@ -41,15 +39,11 @@ static inline bool is_crashed_pfn_valid(
+  * @userbuf: if set, @buf is in user address space, use copy_to_user(),
+  *	otherwise @buf is in kernel address space, use memcpy().
+  *
+- * Copy a page from "oldmem". For this page, there is no pte mapped
+- * in the current kernel. We stitch up a pte, similar to kmap_atomic.
+- *
+- * Calling copy_to_user() in atomic context is not desirable. Hence first
+- * copying the data to a pre-allocated kernel page and then copying to user
+- * space in non-atomic context.
++ * Copy a page from "oldmem". For this page, there might be no pte mapped
++ * in the current kernel.
+  */
+-ssize_t copy_oldmem_page(unsigned long pfn, char *buf,
+-                               size_t csize, unsigned long offset, int userbuf)
++ssize_t copy_oldmem_page(unsigned long pfn, char *buf, size_t csize,
++			 unsigned long offset, int userbuf)
+ {
+ 	void  *vaddr;
+ 
+@@ -59,38 +53,16 @@ ssize_t copy_oldmem_page(unsigned long p
+ 	if (!is_crashed_pfn_valid(pfn))
+ 		return -EFAULT;
+ 
+-	vaddr = kmap_atomic_pfn(pfn);
++	vaddr = kmap_local_pfn(pfn);
+ 
+ 	if (!userbuf) {
+-		memcpy(buf, (vaddr + offset), csize);
+-		kunmap_atomic(vaddr);
++		memcpy(buf, vaddr + offset, csize);
+ 	} else {
+-		if (!kdump_buf_page) {
+-			printk(KERN_WARNING "Kdump: Kdump buffer page not"
+-				" allocated\n");
+-			kunmap_atomic(vaddr);
+-			return -EFAULT;
+-		}
+-		copy_page(kdump_buf_page, vaddr);
+-		kunmap_atomic(vaddr);
+-		if (copy_to_user(buf, (kdump_buf_page + offset), csize))
+-			return -EFAULT;
++		if (copy_to_user(buf, vaddr + offset, csize))
++			csize = -EFAULT;
+ 	}
+ 
+-	return csize;
+-}
++	kunmap_local(vaddr);
+ 
+-static int __init kdump_buf_page_init(void)
+-{
+-	int ret = 0;
+-
+-	kdump_buf_page = kmalloc(PAGE_SIZE, GFP_KERNEL);
+-	if (!kdump_buf_page) {
+-		printk(KERN_WARNING "Kdump: Failed to allocate kdump buffer"
+-			 " page\n");
+-		ret = -ENOMEM;
+-	}
+-
+-	return ret;
++	return csize;
+ }
+-arch_initcall(kdump_buf_page_init);
 

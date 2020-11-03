@@ -7,42 +7,42 @@ X-Spam-Status: No, score=-6.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=no
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9F0DBC82623
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 10:37:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4332AC82621
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 10:37:36 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 59A8E22384
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 10:37:29 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DD19822409
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 10:37:35 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=linutronix.de header.i=@linutronix.de header.b="IBayNHLC";
-	dkim=permerror (0-bit key) header.d=linutronix.de header.i=@linutronix.de header.b="ZQ5pkdX4"
+	dkim=pass (2048-bit key) header.d=linutronix.de header.i=@linutronix.de header.b="DeNS3WE1";
+	dkim=permerror (0-bit key) header.d=linutronix.de header.i=@linutronix.de header.b="97wrklPJ"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728254AbgKCKdc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 3 Nov 2020 05:33:32 -0500
-Received: from Galois.linutronix.de ([193.142.43.55]:37552 "EHLO
+        id S1728603AbgKCKhc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 3 Nov 2020 05:37:32 -0500
+Received: from Galois.linutronix.de ([193.142.43.55]:37666 "EHLO
         galois.linutronix.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728057AbgKCKda (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Nov 2020 05:33:30 -0500
-Message-Id: <20201103095856.870272797@linutronix.de>
+        with ESMTP id S1728224AbgKCKdb (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Nov 2020 05:33:31 -0500
+Message-Id: <20201103095857.078043987@linutronix.de>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linutronix.de;
-        s=2020; t=1604399606;
+        s=2020; t=1604399608;
         h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
          to:to:cc:cc:mime-version:mime-version:content-type:content-type:
          content-transfer-encoding:content-transfer-encoding:  references:references;
-        bh=mHGaObavEXdpklPpAdB/Vc9tQphwJ4HtjtNI7fLm1v8=;
-        b=IBayNHLC8hDXJPq5spbDcH2wKyiWbuyexwHwfVt89VcAakRhxfizYqbQCAAKER9L/0L/m1
-        Kn6tmBkR3xWZrx6tJ/BA5rsYN4HGNPFD48Ua4frK3vrnlVg9aLM4m5aIJw9ym5mSbN61k5
-        EHHJS0+GcvKD5mXRHapBzJaiaTtrRGQL9/oIkA+EXvVydTfP9WAjd4wBDbJghjylU6Hl+v
-        cbUiIXxIilBIpfO0gAqBvTDU+ZaYnr+9b9dZHzEpb1hZtXN8oqnkWtU4heJMQKd9pbhu3F
-        Udw+2wxDQStY2AooCfpVR6WbhoIEGNiJw2A//IRPpAYo18WAjI/Kj422cg4K+A==
+        bh=ut1GkVw4OXMSCtChDMtmqVv6FlrafPsAPVPH5qh/+W4=;
+        b=DeNS3WE1qEb0dgla8K3N8yAAxK42YXCD7IXZTcjA5JidpsaOjufBQETLeVjVdMGu5N+Epm
+        TN2LbLx9UK5WAHAuFTdAVHgpIusNly6ze0TP49RK3GBjU6VwMiULa7UcabIY/uYmkhC/Q2
+        7E+DRfk3lJMdS7ur2nAIDXy3dY58VVhKxNO+bAOTSYjktAom2snLnmjN0H65s8xX6vxXVt
+        YQ4LzfUHrOasGRYEc8hqqfEQ7zS/2/eXUx4Jjj3gU8+4EJPX/jeKSlxdZhR8rS5rw5hOzP
+        O8oe69upLo4k/OB5xaqFs3Q3SWo87jVdet4A8lOOlvU3BX6pueHmK6FL3MJKuw==
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=linutronix.de;
-        s=2020e; t=1604399606;
+        s=2020e; t=1604399608;
         h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
          to:to:cc:cc:mime-version:mime-version:content-type:content-type:
          content-transfer-encoding:content-transfer-encoding:  references:references;
-        bh=mHGaObavEXdpklPpAdB/Vc9tQphwJ4HtjtNI7fLm1v8=;
-        b=ZQ5pkdX4DsEbSRpww8iUtueplpi1akZRVpDjtrypi3SvuIOi8H/SrYDmUdCkGKxD3wiqTh
-        yikxYY0p6mIHukBQ==
-Date:   Tue, 03 Nov 2020 10:27:15 +0100
+        bh=ut1GkVw4OXMSCtChDMtmqVv6FlrafPsAPVPH5qh/+W4=;
+        b=97wrklPJQnUcEJTW2FcH4zagpYwVXJJ9W1FwrGZ1R9owPebJ4P6ITrCybgRDr7QJGxe2Wp
+        Y3q7gG0ch2kbmeAA==
+Date:   Tue, 03 Nov 2020 10:27:17 +0100
 From:   Thomas Gleixner <tglx@linutronix.de>
 To:     LKML <linux-kernel@vger.kernel.org>
 Cc:     Linus Torvalds <torvalds@linuxfoundation.org>,
@@ -50,12 +50,12 @@ Cc:     Linus Torvalds <torvalds@linuxfoundation.org>,
         Paul McKenney <paulmck@kernel.org>,
         Christoph Hellwig <hch@lst.de>,
         Sebastian Andrzej Siewior <bigeasy@linutronix.de>,
+        Andrew Morton <akpm@linux-foundation.org>, linux-mm@kvack.org,
         Alexander Viro <viro@zeniv.linux.org.uk>,
         Benjamin LaHaise <bcrl@kvack.org>,
         linux-fsdevel@vger.kernel.org, linux-aio@kvack.org,
         Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        Andrew Morton <akpm@linux-foundation.org>, linux-mm@kvack.org,
         x86@kernel.org, Vineet Gupta <vgupta@synopsys.com>,
         linux-snps-arc@lists.infradead.org,
         Russell King <linux@armlinux.org.uk>,
@@ -95,7 +95,7 @@ Cc:     Linus Torvalds <torvalds@linuxfoundation.org>,
         Joonas Lahtinen <joonas.lahtinen@linux.intel.com>,
         Rodrigo Vivi <rodrigo.vivi@intel.com>,
         intel-gfx@lists.freedesktop.org
-Subject: [patch V3 03/37] fs: Remove asm/kmap_types.h includes
+Subject: [patch V3 05/37] asm-generic: Provide kmap_size.h
 References: <20201103092712.714480842@linutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -104,40 +104,60 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Historical leftovers from the time where kmap() had fixed slots.
+kmap_types.h is a misnomer because the old atomic MAP based array does not
+exist anymore and the whole indirection of architectures including
+kmap_types.h is inconinstent and does not allow to provide guard page
+debugging for this misfeature.
+
+Add a common header file which defines the mapping stack size for all
+architectures. Will be used when converting architectures over to a
+generic kmap_local/atomic implementation.
+
+The array size is chosen with the following constraints in mind:
+
+    - The deepest nest level in one context is 3 according to code
+      inspection.
+
+    - The worst case nesting for the upcoming reemptible version would be:
+
+      2 maps in task context and a fault inside
+      2 maps in the fault handler
+      3 maps in softirq
+      2 maps in interrupt
+
+So a total of 16 is sufficient and probably overestimated.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
-Cc: Alexander Viro <viro@zeniv.linux.org.uk>
-Cc: Benjamin LaHaise <bcrl@kvack.org>
-Cc: linux-fsdevel@vger.kernel.org
-Cc: linux-aio@kvack.org
-Cc: Chris Mason <clm@fb.com>
-Cc: Josef Bacik <josef@toxicpanda.com>
-Cc: David Sterba <dsterba@suse.com>
-Cc: linux-btrfs@vger.kernel.org
 ---
- fs/aio.c         |    1 -
- fs/btrfs/ctree.h |    1 -
- 2 files changed, 2 deletions(-)
+V3: New patch
+---
+ include/asm-generic/Kbuild      |    1 +
+ include/asm-generic/kmap_size.h |   12 ++++++++++++
+ 2 files changed, 13 insertions(+)
 
---- a/fs/aio.c
-+++ b/fs/aio.c
-@@ -43,7 +43,6 @@
- #include <linux/mount.h>
- #include <linux/pseudo_fs.h>
- 
--#include <asm/kmap_types.h>
- #include <linux/uaccess.h>
- #include <linux/nospec.h>
- 
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -17,7 +17,6 @@
- #include <linux/wait.h>
- #include <linux/slab.h>
- #include <trace/events/btrfs.h>
--#include <asm/kmap_types.h>
- #include <asm/unaligned.h>
- #include <linux/pagemap.h>
- #include <linux/btrfs.h>
+--- a/include/asm-generic/Kbuild
++++ b/include/asm-generic/Kbuild
+@@ -31,6 +31,7 @@ mandatory-y += irq_regs.h
+ mandatory-y += irq_work.h
+ mandatory-y += kdebug.h
+ mandatory-y += kmap_types.h
++mandatory-y += kmap_size.h
+ mandatory-y += kprobes.h
+ mandatory-y += linkage.h
+ mandatory-y += local.h
+--- /dev/null
++++ b/include/asm-generic/kmap_size.h
+@@ -0,0 +1,12 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++#ifndef _ASM_GENERIC_KMAP_SIZE_H
++#define _ASM_GENERIC_KMAP_SIZE_H
++
++/* For debug this provides guard pages between the maps */
++#ifdef CONFIG_DEBUG_HIGHMEM
++# define KM_MAX_IDX	33
++#else
++# define KM_MAX_IDX	16
++#endif
++
++#endif
 

@@ -2,77 +2,76 @@ Return-Path: <SRS0=hn/e=EJ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-11.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	NICE_REPLY_A,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BEC82C2D0A3
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 21:51:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id ED75DC2D0A3
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 22:05:20 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 6EE41207BB
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 21:51:56 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9F272207BB
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 22:05:20 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="nQF8eY3e"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="bvD31TNl"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731369AbgKCUrm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 3 Nov 2020 15:47:42 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50118 "EHLO
+        id S1730558AbgKCUmh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 3 Nov 2020 15:42:37 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49344 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1731366AbgKCUrg (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Nov 2020 15:47:36 -0500
-Received: from mail-qk1-x741.google.com (mail-qk1-x741.google.com [IPv6:2607:f8b0:4864:20::741])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AB98DC0613D1
-        for <linux-btrfs@vger.kernel.org>; Tue,  3 Nov 2020 12:47:36 -0800 (PST)
-Received: by mail-qk1-x741.google.com with SMTP id a64so13118367qkc.5
-        for <linux-btrfs@vger.kernel.org>; Tue, 03 Nov 2020 12:47:36 -0800 (PST)
+        with ESMTP id S1730550AbgKCUmg (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Nov 2020 15:42:36 -0500
+Received: from mail-qk1-x743.google.com (mail-qk1-x743.google.com [IPv6:2607:f8b0:4864:20::743])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 35220C0617A6
+        for <linux-btrfs@vger.kernel.org>; Tue,  3 Nov 2020 12:42:36 -0800 (PST)
+Received: by mail-qk1-x743.google.com with SMTP id 12so12574158qkl.8
+        for <linux-btrfs@vger.kernel.org>; Tue, 03 Nov 2020 12:42:36 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=subject:to:cc:references:from:message-id:date:user-agent
          :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=7QsKfQ5N4ZcMiNYAkjVMD30fYGq7/BZLzRY1r2X5Hcw=;
-        b=nQF8eY3elgrJuAG8MRt94bVptdrsLTckbLoJpbxNPPUlPdmIKEGwacSy5ak3isk6oJ
-         TCPhsXKPC1oOdZm47/r6NDRBYYPbqmRQrKiF0iCY66m1+d3gvqOdSYtRsFPDDcTg+GHy
-         RwqjDHsv2ZB5Guptu2kj6ClgegJ08b7/nygB5OdWwKX2Y3Ywr9EoLjCF2xM5uK9UhVDR
-         4RhgSJ8GWm9OZzbdlLrVQeMi2KiqhXPr6Wnw8ZGx6EKJwW67uF1G/PbbRZnmLMrQjzIT
-         Je0dxhPYVuxLdih3CpTa4BmndW01u+Dsjc828t3C620SwpVelVHLwhivHyKb2SHGHQft
-         2Y1A==
+        bh=GBxKGog+qQpjWU9k5zT7DztWd+7mJRuZvrbzWn1+YpE=;
+        b=bvD31TNl8jfM0wpwHCWI/u8CybLpHKDKV1OrnBfeLjBZYEkT/iaLgoMReKEIQXCBq7
+         J8Hl7oWbGjsdfsCwtpGTDksNZQHZ9igOwCq2GWMlB8hYOwVN4NZ3DnSCt3AsfuqlgdPh
+         m9C8FpoKTWuEoTaTWv89h9rLbyjj372GsPcdhqSUVv6ZZDPKFr/8761mSkJfobGCfR0s
+         H8NL0O4pnsr3zIKlyiXeGZgLhHUxAbxfMJx70i5Wg7vrUuto2ndVJ18N98rQC98QZn2k
+         hzKFgi26gncPDXT00ZlSJHELNpR6qHS8gcj12ChdHOYed37ybp4b02M4t8OO0qK3dXHR
+         urxw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:subject:to:cc:references:from:message-id:date
          :user-agent:mime-version:in-reply-to:content-language
          :content-transfer-encoding;
-        bh=7QsKfQ5N4ZcMiNYAkjVMD30fYGq7/BZLzRY1r2X5Hcw=;
-        b=QY2x4kERi3gwvxJDk3tFyVd2YMdWfAwordQlydaw2dCDT78C89ublhpkatzsFuTHVW
-         a5S+XQIW34TjL5XDkyS7RPnPFBEsbG8ZO5EOad7IUXgcClr4L9l4HB4atmtgQWlTFuLV
-         dojcgajAuYRix3Tks2dYYHxXlbu7SHjatz4wFh80cht0jN4GOKu45A+0HdVoeASpbrua
-         MsOUaxYDOJ9Bgrsbb7X1qHVdVreH5GcIlk9tCJqAwtXoaL/vqu6tZHH64H2Y9rTX6LnZ
-         eIOxnlV+eGYcW07weWngHJJ4K9QBIfa70KqpAhS2RfchnGjducJpIriOUWz2XpWPyywE
-         hf/A==
-X-Gm-Message-State: AOAM531FR0p3Y1BjotLvtJJY24uevI/+TcUZ1SjnJ5C3JzF8WDkh7+Tl
-        77N8kCPzir/K6Dc5f3Dqp+HdF1AhAqMCbW72
-X-Google-Smtp-Source: ABdhPJyRqhbGopF1G8UeFVbOfglEgfNHge082uHU3G4lkllJXMPNyw61GQ98Q6A258+namBYawfOEg==
-X-Received: by 2002:ae9:ef56:: with SMTP id d83mr22017290qkg.83.1604436455833;
-        Tue, 03 Nov 2020 12:47:35 -0800 (PST)
+        bh=GBxKGog+qQpjWU9k5zT7DztWd+7mJRuZvrbzWn1+YpE=;
+        b=eZTykuZafp2x5yTpD2/7rwHKSzkUg/8iyy4o6ZUpFkZFaGEinS0VONqy+iWXXfdzMK
+         Ksulj1o5w1eJYwF+v0YwmcpArWScLGvc0JGh/qzdtNJaHdoJPIobG3V7BvB4mm2y72Mj
+         0w8ehKZD6X4rANneSC6VM5Jg4kXFZFYazXM+LqwjcfE1KEq4eo3L6ltU661l2bbKjGDl
+         6l5s6XFReKCUsgqHnO/LYeH5NqPbiXQh/s/qrch3dNi7Oc5jY9w091B/zyMJISxECc6q
+         zmNMSSgzFELg4yPfdGVY3UVYtvvZcmShPJFaC2a5Nv9RuOqpx57KwZJD3E4p5z2M/ci8
+         YRRA==
+X-Gm-Message-State: AOAM530nzphpg/8H5oGkQsEWbV8+J8trhfHUMJxVJu7LjL03Z20+3Z3N
+        2MGrvA6W0k3wltiDmh+8uCpmHJ/2F1eF8jD3
+X-Google-Smtp-Source: ABdhPJzuAuR+JwbkxT48lDDAwx/QhvJqsgSA+R6S/C1bTiCIdKcgawgk5ZLUnavIVGbGB/Z6PlKj1A==
+X-Received: by 2002:a05:620a:40f:: with SMTP id 15mr21280972qkp.398.1604436155345;
+        Tue, 03 Nov 2020 12:42:35 -0800 (PST)
 Received: from [192.168.1.45] (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id j17sm9610007qke.49.2020.11.03.12.47.34
+        by smtp.gmail.com with ESMTPSA id n127sm10047169qke.92.2020.11.03.12.42.34
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 03 Nov 2020 12:47:34 -0800 (PST)
-Subject: Re: [PATCH v9 38/41] btrfs: extend zoned allocator to use dedicated
- tree-log block group
+        Tue, 03 Nov 2020 12:42:34 -0800 (PST)
+Subject: Re: [PATCH v9 37/41] btrfs: split alloc_log_tree()
 To:     Naohiro Aota <naohiro.aota@wdc.com>, linux-btrfs@vger.kernel.org,
         dsterba@suse.com
 Cc:     hare@suse.com, linux-fsdevel@vger.kernel.org,
         Johannes Thumshirn <johannes.thumshirn@wdc.com>
 References: <d9a0a445560db3a9eb240c6535f8dd1bbd0abd96.1604065694.git.naohiro.aota@wdc.com>
- <6640d3c034c9c347958860743501aff59da7a5a0.1604065695.git.naohiro.aota@wdc.com>
+ <71b8f94034f04da6f69f1ea0720825aabc852a54.1604065695.git.naohiro.aota@wdc.com>
 From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <eb8f83f2-fb59-2b65-66e2-18cd0ecd1e02@toxicpanda.com>
-Date:   Tue, 3 Nov 2020 15:47:33 -0500
+Message-ID: <502ce12d-1ba6-5e3c-9aab-3b1b42a16bcf@toxicpanda.com>
+Date:   Tue, 3 Nov 2020 15:42:33 -0500
 User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0)
  Gecko/20100101 Thunderbird/78.4.0
 MIME-Version: 1.0
-In-Reply-To: <6640d3c034c9c347958860743501aff59da7a5a0.1604065695.git.naohiro.aota@wdc.com>
+In-Reply-To: <71b8f94034f04da6f69f1ea0720825aabc852a54.1604065695.git.naohiro.aota@wdc.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
 Content-Transfer-Encoding: 7bit
@@ -81,35 +80,87 @@ List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 On 10/30/20 9:51 AM, Naohiro Aota wrote:
-> This is the 1/3 patch to enable tree log on ZONED mode.
-> 
-> The tree-log feature does not work on ZONED mode as is. Blocks for a
-> tree-log tree are allocated mixed with other metadata blocks, and btrfs
-> writes and syncs the tree-log blocks to devices at the time of fsync(),
-> which is different timing from a global transaction commit. As a result,
-> both writing tree-log blocks and writing other metadata blocks become
-> non-sequential writes that ZONED mode must avoid.
-> 
-> We can introduce a dedicated block group for tree-log blocks so that
-> tree-log blocks and other metadata blocks can be separated write streams.
-> As a result, each write stream can now be written to devices separately.
-> "fs_info->treelog_bg" tracks the dedicated block group and btrfs assign
-> "treelog_bg" on-demand on tree-log block allocation time.
-> 
-> This commit extends the zoned block allocator to use the block group.
+> This is a preparation for the next patch. This commit split
+> alloc_log_tree() to allocating tree structure part (remains in
+> alloc_log_tree()) and allocating tree node part (moved in
+> btrfs_alloc_log_tree_node()). The latter part is also exported to be used
+> in the next patch.
 > 
 > Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 > Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+> ---
+>   fs/btrfs/disk-io.c | 31 +++++++++++++++++++++++++------
+>   fs/btrfs/disk-io.h |  2 ++
+>   2 files changed, 27 insertions(+), 6 deletions(-)
+> 
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 2b30ef8a7034..70885f3d3321 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -1211,7 +1211,6 @@ static struct btrfs_root *alloc_log_tree(struct btrfs_trans_handle *trans,
+>   					 struct btrfs_fs_info *fs_info)
+>   {
+>   	struct btrfs_root *root;
+> -	struct extent_buffer *leaf;
+>   
+>   	root = btrfs_alloc_root(fs_info, BTRFS_TREE_LOG_OBJECTID, GFP_NOFS);
+>   	if (!root)
+> @@ -1221,6 +1220,14 @@ static struct btrfs_root *alloc_log_tree(struct btrfs_trans_handle *trans,
+>   	root->root_key.type = BTRFS_ROOT_ITEM_KEY;
+>   	root->root_key.offset = BTRFS_TREE_LOG_OBJECTID;
+>   
+> +	return root;
+> +}
+> +
+> +int btrfs_alloc_log_tree_node(struct btrfs_trans_handle *trans,
+> +			      struct btrfs_root *root)
+> +{
+> +	struct extent_buffer *leaf;
+> +
+>   	/*
+>   	 * DON'T set SHAREABLE bit for log trees.
+>   	 *
+> @@ -1233,26 +1240,31 @@ static struct btrfs_root *alloc_log_tree(struct btrfs_trans_handle *trans,
+>   
+>   	leaf = btrfs_alloc_tree_block(trans, root, 0, BTRFS_TREE_LOG_OBJECTID,
+>   			NULL, 0, 0, 0, BTRFS_NESTING_NORMAL);
+> -	if (IS_ERR(leaf)) {
+> -		btrfs_put_root(root);
+> -		return ERR_CAST(leaf);
+> -	}
+> +	if (IS_ERR(leaf))
+> +		return PTR_ERR(leaf);
+>   
+>   	root->node = leaf;
+>   
+>   	btrfs_mark_buffer_dirty(root->node);
+>   	btrfs_tree_unlock(root->node);
+> -	return root;
+> +
+> +	return 0;
+>   }
+>   
+>   int btrfs_init_log_root_tree(struct btrfs_trans_handle *trans,
+>   			     struct btrfs_fs_info *fs_info)
+>   {
+>   	struct btrfs_root *log_root;
+> +	int ret;
+>   
+>   	log_root = alloc_log_tree(trans, fs_info);
+>   	if (IS_ERR(log_root))
 
-If you're going to remove an entire block group from being allowed to be used 
-for metadata you are going to need to account for it in the space_info, 
-otherwise we're going to end up with nasty ENOSPC corners here.
+newline.
 
-But this begs the question, do we want the tree log for zoned?  We could just 
-commit the transaction and call it good enough.  We lose performance, but zoned 
-isn't necessarily about performance.
+>   		return PTR_ERR(log_root);
+> +	ret = btrfs_alloc_log_tree_node(trans, log_root);
+> +	if (ret) {
+> +		kfree(log_root);
 
-If we do then at a minimum we're going to need to remove this block group from 
-the space info counters for metadata.  Thanks,
+btrfs_put_root(log_root);
+
+> +		return ret;
+> +	}
+
+newline.  Thanks,
 
 Josef

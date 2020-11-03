@@ -7,42 +7,42 @@ X-Spam-Status: No, score=-6.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=no
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DDEB7C82617
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 10:35:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 46CC9C82610
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 10:36:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 879FD22409
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 10:35:59 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E2A2D21D40
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 10:36:06 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=linutronix.de header.i=@linutronix.de header.b="otNm1FLh";
-	dkim=permerror (0-bit key) header.d=linutronix.de header.i=@linutronix.de header.b="aDUoEgUs"
+	dkim=pass (2048-bit key) header.d=linutronix.de header.i=@linutronix.de header.b="4QvDGqKV";
+	dkim=permerror (0-bit key) header.d=linutronix.de header.i=@linutronix.de header.b="nHEOgyol"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728583AbgKCKfz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 3 Nov 2020 05:35:55 -0500
-Received: from Galois.linutronix.de ([193.142.43.55]:38330 "EHLO
+        id S1728802AbgKCKgC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 3 Nov 2020 05:36:02 -0500
+Received: from Galois.linutronix.de ([193.142.43.55]:39008 "EHLO
         galois.linutronix.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728175AbgKCKdy (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Nov 2020 05:33:54 -0500
-Message-Id: <20201103095858.734064977@linutronix.de>
+        with ESMTP id S1728429AbgKCKdv (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Nov 2020 05:33:51 -0500
+Message-Id: <20201103095858.516281567@linutronix.de>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linutronix.de;
-        s=2020; t=1604399629;
+        s=2020; t=1604399626;
         h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
          to:to:cc:cc:mime-version:mime-version:content-type:content-type:
          content-transfer-encoding:content-transfer-encoding:  references:references;
-        bh=GQtIeN+bNrXtdDJbIY1/lT5u2Qlmlecyg45ylimAqeo=;
-        b=otNm1FLhC7ruMh7oNXQtNETNU6+54RFk+t2LyeEF9d9+kDoZ9Kh8ZPgA+UB8A6JQ1ZXrGj
-        0TPeQl8iy37SQzf3hhxJ0YH8tjvvuOPaAqFoJKHafSPmEiutw0Ud/5TB6XtJVn4M9v5QlN
-        Kc0YPCEkVxgY8QSHdaCi6xZgLgOgc1LgMVaGrZjI4AUGq0ZlUKuDX4Xk4y+i0m9xE3dk86
-        7GNBZMVBc/q+vRf7Zxdqgcl3bL7dPvuY81X2pyGhr1m48UNO2c+I7V2+wunozMP8FhvNCm
-        gkFktETWxncmi0cgpUqLzaSL8knV0VimchG0Urhi5o5DvILy9hDHjs2CmUtXqQ==
+        bh=dYx1Yl6wgjFDzL4d7wpy+MQ/ca4VbI4dshzY4C94zCg=;
+        b=4QvDGqKVKPFjYTZiH7xhv8zBsxgNw5ucuOWpbKZ18rMtaNCpT4m1fIgg7d42Pf4ttY8gnQ
+        j6STlpHNZtb54KQolCEvAOtfIBn6Zvac5eoLzhR1q+EBZQKhuxC69WReFFoUfX3tPRPCts
+        2HTD6Fl5QJuJ5QyiXhkDQiJfASqZgrTfuQJiZK0MqskHi6zDD6EHlpfZpwHaxGhXXwPr9X
+        Vb4k2kb3SczzsSlpmpaZ3L8Dy/cZbHaEz0VgKRZkMQL3dGerZvWCuwHHNLPkfinWQIFB0j
+        gsmyZDxZFqomNDAg2jzR8z96x8DEnYsbXhV7JtsOk/xYyutDKygozbXhq2uhKw==
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=linutronix.de;
-        s=2020e; t=1604399629;
+        s=2020e; t=1604399626;
         h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
          to:to:cc:cc:mime-version:mime-version:content-type:content-type:
          content-transfer-encoding:content-transfer-encoding:  references:references;
-        bh=GQtIeN+bNrXtdDJbIY1/lT5u2Qlmlecyg45ylimAqeo=;
-        b=aDUoEgUsKRf0mAVHG33KZuw3tdfR+OUYkG1a4FnTBJVD3Vb06TvF7LUgRRezOsbA4xMida
-        qFHqtJWvRi1kHPBw==
-Date:   Tue, 03 Nov 2020 10:27:33 +0100
+        bh=dYx1Yl6wgjFDzL4d7wpy+MQ/ca4VbI4dshzY4C94zCg=;
+        b=nHEOgyol8j2FfkUQAHNBZiJ0Vnv+JbHd05D8vSpMEVgHoPEClg1kXmC2+PGwuxytijKdb7
+        OO86HAY7UU5tfdBw==
+Date:   Tue, 03 Nov 2020 10:27:31 +0100
 From:   Thomas Gleixner <tglx@linutronix.de>
 To:     LKML <linux-kernel@vger.kernel.org>
 Cc:     Linus Torvalds <torvalds@linuxfoundation.org>,
@@ -95,7 +95,7 @@ Cc:     Linus Torvalds <torvalds@linuxfoundation.org>,
         Joonas Lahtinen <joonas.lahtinen@linux.intel.com>,
         Rodrigo Vivi <rodrigo.vivi@intel.com>,
         intel-gfx@lists.freedesktop.org
-Subject: [patch V3 21/37] Documentation/io-mapping: Remove outdated blurb
+Subject: [patch V3 19/37] mm/highmem: Remove the old kmap_atomic cruft
 References: <20201103092712.714480842@linutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -104,42 +104,129 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The implementation details in the documentation are outdated and not really
-helpful. Remove them.
+All users gone.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 ---
-V3: New patch
----
- Documentation/driver-api/io-mapping.rst |   22 ----------------------
- 1 file changed, 22 deletions(-)
+ include/linux/highmem.h |   63 +++---------------------------------------------
+ mm/highmem.c            |    7 -----
+ 2 files changed, 5 insertions(+), 65 deletions(-)
 
---- a/Documentation/driver-api/io-mapping.rst
-+++ b/Documentation/driver-api/io-mapping.rst
-@@ -73,25 +73,3 @@ for pages mapped with io_mapping_map_wc.
- At driver close time, the io_mapping object must be freed::
+--- a/include/linux/highmem.h
++++ b/include/linux/highmem.h
+@@ -86,31 +86,16 @@ static inline void kunmap(struct page *p
+  * be used in IRQ contexts, so in some (very limited) cases we need
+  * it.
+  */
+-
+-#ifndef CONFIG_KMAP_LOCAL
+-void *kmap_atomic_high_prot(struct page *page, pgprot_t prot);
+-void kunmap_atomic_high(void *kvaddr);
+-
+ static inline void *kmap_atomic_prot(struct page *page, pgprot_t prot)
+ {
+ 	preempt_disable();
+ 	pagefault_disable();
+-	if (!PageHighMem(page))
+-		return page_address(page);
+-	return kmap_atomic_high_prot(page, prot);
+-}
+-
+-static inline void __kunmap_atomic(void *vaddr)
+-{
+-	kunmap_atomic_high(vaddr);
++	return __kmap_local_page_prot(page, prot);
+ }
+-#else /* !CONFIG_KMAP_LOCAL */
  
- 	void io_mapping_free(struct io_mapping *mapping)
+-static inline void *kmap_atomic_prot(struct page *page, pgprot_t prot)
++static inline void *kmap_atomic(struct page *page)
+ {
+-	preempt_disable();
+-	pagefault_disable();
+-	return __kmap_local_page_prot(page, prot);
++	return kmap_atomic_prot(page, kmap_prot);
+ }
+ 
+ static inline void *kmap_atomic_pfn(unsigned long pfn)
+@@ -125,13 +110,6 @@ static inline void __kunmap_atomic(void
+ 	kunmap_local_indexed(addr);
+ }
+ 
+-#endif /* CONFIG_KMAP_LOCAL */
 -
--Current Implementation
--======================
+-static inline void *kmap_atomic(struct page *page)
+-{
+-	return kmap_atomic_prot(page, kmap_prot);
+-}
 -
--The initial implementation of these functions uses existing mapping
--mechanisms and so provides only an abstraction layer and no new
--functionality.
+ /* declarations for linux/mm/highmem.c */
+ unsigned int nr_free_highpages(void);
+ extern atomic_long_t _totalhigh_pages;
+@@ -212,41 +190,8 @@ static inline void __kunmap_atomic(void
+ 
+ #define kmap_flush_unused()	do {} while(0)
+ 
+-#endif /* CONFIG_HIGHMEM */
 -
--On 64-bit processors, io_mapping_create_wc calls ioremap_wc for the whole
--range, creating a permanent kernel-visible mapping to the resource. The
--map_atomic and map functions add the requested offset to the base of the
--virtual address returned by ioremap_wc.
+-#if !defined(CONFIG_KMAP_LOCAL)
+-#if defined(CONFIG_HIGHMEM)
 -
--On 32-bit processors with HIGHMEM defined, io_mapping_map_atomic_wc uses
--kmap_atomic_pfn to map the specified page in an atomic fashion;
--kmap_atomic_pfn isn't really supposed to be used with device pages, but it
--provides an efficient mapping for this usage.
+-DECLARE_PER_CPU(int, __kmap_atomic_idx);
 -
--On 32-bit processors without HIGHMEM defined, io_mapping_map_atomic_wc and
--io_mapping_map_wc both use ioremap_wc, a terribly inefficient function which
--performs an IPI to inform all processors about the new mapping. This results
--in a significant performance penalty.
+-static inline int kmap_atomic_idx_push(void)
+-{
+-	int idx = __this_cpu_inc_return(__kmap_atomic_idx) - 1;
+-
+-#ifdef CONFIG_DEBUG_HIGHMEM
+-	WARN_ON_ONCE(in_irq() && !irqs_disabled());
+-	BUG_ON(idx >= KM_TYPE_NR);
+-#endif
+-	return idx;
+-}
+-
+-static inline int kmap_atomic_idx(void)
+-{
+-	return __this_cpu_read(__kmap_atomic_idx) - 1;
+-}
+ 
+-static inline void kmap_atomic_idx_pop(void)
+-{
+-#ifdef CONFIG_DEBUG_HIGHMEM
+-	int idx = __this_cpu_dec_return(__kmap_atomic_idx);
+-
+-	BUG_ON(idx < 0);
+-#else
+-	__this_cpu_dec(__kmap_atomic_idx);
+-#endif
+-}
+-#endif
+-#endif
++#endif /* CONFIG_HIGHMEM */
+ 
+ /*
+  * Prevent people trying to call kunmap_atomic() as if it were kunmap()
+--- a/mm/highmem.c
++++ b/mm/highmem.c
+@@ -31,12 +31,6 @@
+ #include <asm/tlbflush.h>
+ #include <linux/vmalloc.h>
+ 
+-#ifndef CONFIG_KMAP_LOCAL
+-#ifdef CONFIG_HIGHMEM
+-DEFINE_PER_CPU(int, __kmap_atomic_idx);
+-#endif
+-#endif
+-
+ /*
+  * Virtual_count is not a pure "count".
+  *  0 means that it is not mapped, and has not been mapped
+@@ -410,6 +404,7 @@ static inline void kmap_local_idx_pop(vo
+ #ifndef arch_kmap_local_post_map
+ # define arch_kmap_local_post_map(vaddr, pteval)	do { } while (0)
+ #endif
++
+ #ifndef arch_kmap_local_pre_unmap
+ # define arch_kmap_local_pre_unmap(vaddr)		do { } while (0)
+ #endif
 

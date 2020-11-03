@@ -7,42 +7,45 @@ X-Spam-Status: No, score=-6.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=no
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 25B27C64E7D
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 10:35:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 990DDC71155
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 10:35:34 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id C606021D40
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 10:35:29 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 56CEC21D40
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 10:35:34 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=linutronix.de header.i=@linutronix.de header.b="qh+T7IZJ";
-	dkim=permerror (0-bit key) header.d=linutronix.de header.i=@linutronix.de header.b="r11Fcy33"
+	dkim=pass (2048-bit key) header.d=linutronix.de header.i=@linutronix.de header.b="jlx8Ex5H";
+	dkim=permerror (0-bit key) header.d=linutronix.de header.i=@linutronix.de header.b="dVvfT1Tw"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728521AbgKCKeG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 3 Nov 2020 05:34:06 -0500
-Received: from Galois.linutronix.de ([193.142.43.55]:38330 "EHLO
-        galois.linutronix.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728485AbgKCKeB (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Nov 2020 05:34:01 -0500
-Message-Id: <20201103095859.228149242@linutronix.de>
+        id S1728748AbgKCKfb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 3 Nov 2020 05:35:31 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38578 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728513AbgKCKeE (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Nov 2020 05:34:04 -0500
+Received: from galois.linutronix.de (Galois.linutronix.de [IPv6:2a0a:51c0:0:12e:550::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7A24FC0613D1;
+        Tue,  3 Nov 2020 02:34:04 -0800 (PST)
+Message-Id: <20201103095859.429620021@linutronix.de>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linutronix.de;
-        s=2020; t=1604399635;
+        s=2020; t=1604399637;
         h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
          to:to:cc:cc:mime-version:mime-version:content-type:content-type:
          content-transfer-encoding:content-transfer-encoding:  references:references;
-        bh=tAqolpusecj6Rd5JZ2LrxoX+tAqXPkBXuxrNCgE7FCw=;
-        b=qh+T7IZJ6XcRj8DNIDr8HGAfo5YvTmXHwq7DmzffZLhC0V3WhpCRSbpdXm7hhOxtFFuwbX
-        wcbVZVYetZLaKe7fxMMqkbtdTm/GbTXib0BTsgIk5kSnOSw9pXw7dXdWDZHGLuLfD8o7J5
-        iC45ybMzMZHPHXGAY6pKU82Xsx4uzeXlXRI1QCfZtr2oUImFGtEYcJEW2pZcbSXkaBhDfz
-        vpMVSLl8t8kbeOeTl0nQMa9QXaNtYJbeM0FUqyI7W0BkGez+lZ161K3tVZxVFnDyF0wgMR
-        3UtPYUbq3j37JroTzUdlG8e/Z5n94SJYzJZktKJf9b+cElB2OmZliJy+9HhbJw==
+        bh=K8tv6h9J8+1UjPWtbytb7n5SLceTF9zssV9oZox9W+U=;
+        b=jlx8Ex5HCWlxXvrnli8/QwvyuSFPzsuFrOckZnFstrBk6aYnaxCTE/6eIpzUyy3HTFA9dN
+        j2MhhyK0rzrnVOQ277ubDpOdBu8/ePvDTWcYkFn67cFtyw9jv6pUAD7YSvQ2mlOaf0dtF/
+        pHfOJ4qnMNrsWT5Blx8qbKTjW4qwZRparaSaimAWnAEl7Ugw1vjOoGWZEEMX6/kMY4xvm4
+        Run48zgUaP3VverUvyAteqfjoP06jefJKul2RFnRd4pDzuc3AmboC5oIeMYQGIVL4MQT1u
+        v0/E2lNjgVb2i25uzJEr9A1NWYgTnWrFPcuC8jA8qwqSrF/+ReNLpCdWbCjAfg==
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=linutronix.de;
-        s=2020e; t=1604399635;
+        s=2020e; t=1604399637;
         h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
          to:to:cc:cc:mime-version:mime-version:content-type:content-type:
          content-transfer-encoding:content-transfer-encoding:  references:references;
-        bh=tAqolpusecj6Rd5JZ2LrxoX+tAqXPkBXuxrNCgE7FCw=;
-        b=r11Fcy33cu1nvwv6ClgNjFFAD2Uh7JIIgyfidherdoguvpBCo73VaZrmwbm0NX6rZ9Kudo
-        xO58/+jD1GK3/sBA==
-Date:   Tue, 03 Nov 2020 10:27:38 +0100
+        bh=K8tv6h9J8+1UjPWtbytb7n5SLceTF9zssV9oZox9W+U=;
+        b=dVvfT1TwOkonT78xNAJPVdoIKohkvh+HLW+i9zfm8hjJfQ/wzEekIVlHbnLgxURHEJHa93
+        KSDbl/WiRJPwtbCA==
+Date:   Tue, 03 Nov 2020 10:27:40 +0100
 From:   Thomas Gleixner <tglx@linutronix.de>
 To:     LKML <linux-kernel@vger.kernel.org>
 Cc:     Linus Torvalds <torvalds@linuxfoundation.org>,
@@ -50,6 +53,8 @@ Cc:     Linus Torvalds <torvalds@linuxfoundation.org>,
         Paul McKenney <paulmck@kernel.org>,
         Christoph Hellwig <hch@lst.de>,
         Sebastian Andrzej Siewior <bigeasy@linutronix.de>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        linux-mips@vger.kernel.org,
         Andrew Morton <akpm@linux-foundation.org>, linux-mm@kvack.org,
         Alexander Viro <viro@zeniv.linux.org.uk>,
         Benjamin LaHaise <bcrl@kvack.org>,
@@ -62,8 +67,7 @@ Cc:     Linus Torvalds <torvalds@linuxfoundation.org>,
         Arnd Bergmann <arnd@arndb.de>,
         linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
         Michal Simek <monstr@monstr.eu>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        linux-mips@vger.kernel.org, Nick Hu <nickhu@andestech.com>,
+        Nick Hu <nickhu@andestech.com>,
         Greentime Hu <green.hu@gmail.com>,
         Vincent Chen <deanbo422@gmail.com>,
         Michael Ellerman <mpe@ellerman.id.au>,
@@ -95,7 +99,7 @@ Cc:     Linus Torvalds <torvalds@linuxfoundation.org>,
         Joonas Lahtinen <joonas.lahtinen@linux.intel.com>,
         Rodrigo Vivi <rodrigo.vivi@intel.com>,
         intel-gfx@lists.freedesktop.org
-Subject: [patch V3 26/37] io-mapping: Provide iomap_local variant
+Subject: [patch V3 28/37] mips/crashdump: Simplify copy_oldmem_page()
 References: <20201103092712.714480842@linutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -104,174 +108,89 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Similar to kmap local provide a iomap local variant which only disables
-migration, but neither disables pagefaults nor preemption.
+Replace kmap_atomic_pfn() with kmap_local_pfn() which is preemptible and
+can take page faults.
+
+Remove the indirection of the dump page and the related cruft which is not
+longer required.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Cc: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
+Cc: linux-mips@vger.kernel.org
 ---
-V3: Restrict migrate disable to the 32bit mapping case and update documentation.
-
-V2: Split out from the large combo patch and add the !IOMAP_ATOMIC variants
+V3: New patch
 ---
- Documentation/driver-api/io-mapping.rst |   76 +++++++++++++++++++-------------
- include/linux/io-mapping.h              |   30 +++++++++++-
- 2 files changed, 74 insertions(+), 32 deletions(-)
+ arch/mips/kernel/crash_dump.c |   42 +++++++-----------------------------------
+ 1 file changed, 7 insertions(+), 35 deletions(-)
 
---- a/Documentation/driver-api/io-mapping.rst
-+++ b/Documentation/driver-api/io-mapping.rst
-@@ -20,55 +20,71 @@ as it would consume too much of the kern
- mappable, while 'size' indicates how large a mapping region to
- enable. Both are in bytes.
- 
--This _wc variant provides a mapping which may only be used
--with the io_mapping_map_atomic_wc or io_mapping_map_wc.
-+This _wc variant provides a mapping which may only be used with
-+io_mapping_map_atomic_wc(), io_mapping_map_local_wc() or
-+io_mapping_map_wc().
-+
-+With this mapping object, individual pages can be mapped either temporarily
-+or long term, depending on the requirements. Of course, temporary maps are
-+more efficient. They come in two flavours::
- 
--With this mapping object, individual pages can be mapped either atomically
--or not, depending on the necessary scheduling environment. Of course, atomic
--maps are more efficient::
-+	void *io_mapping_map_local_wc(struct io_mapping *mapping,
-+				      unsigned long offset)
- 
- 	void *io_mapping_map_atomic_wc(struct io_mapping *mapping,
- 				       unsigned long offset)
- 
--'offset' is the offset within the defined mapping region.
--Accessing addresses beyond the region specified in the
--creation function yields undefined results. Using an offset
--which is not page aligned yields an undefined result. The
--return value points to a single page in CPU address space.
--
--This _wc variant returns a write-combining map to the
--page and may only be used with mappings created by
--io_mapping_create_wc
-+'offset' is the offset within the defined mapping region.  Accessing
-+addresses beyond the region specified in the creation function yields
-+undefined results. Using an offset which is not page aligned yields an
-+undefined result. The return value points to a single page in CPU address
-+space.
- 
--Note that the task may not sleep while holding this page
--mapped.
-+This _wc variant returns a write-combining map to the page and may only be
-+used with mappings created by io_mapping_create_wc()
- 
--::
-+Temporary mappings are only valid in the context of the caller. The mapping
-+is not guaranteed to be globaly visible.
- 
--	void io_mapping_unmap_atomic(void *vaddr)
-+io_mapping_map_local_wc() has a side effect on X86 32bit as it disables
-+migration to make the mapping code work. No caller can rely on this side
-+effect.
-+
-+io_mapping_map_atomic_wc() has the side effect of disabling preemption and
-+pagefaults. Don't use in new code. Use io_mapping_map_local_wc() instead.
- 
--'vaddr' must be the value returned by the last
--io_mapping_map_atomic_wc call. This unmaps the specified
--page and allows the task to sleep once again.
-+Nested mappings need to be undone in reverse order because the mapping
-+code uses a stack for keeping track of them::
- 
--If you need to sleep while holding the lock, you can use the non-atomic
--variant, although they may be significantly slower.
-+ addr1 = io_mapping_map_local_wc(map1, offset1);
-+ addr2 = io_mapping_map_local_wc(map2, offset2);
-+ ...
-+ io_mapping_unmap_local(addr2);
-+ io_mapping_unmap_local(addr1);
- 
--::
-+The mappings are released with::
-+
-+	void io_mapping_unmap_local(void *vaddr)
-+	void io_mapping_unmap_atomic(void *vaddr)
-+
-+'vaddr' must be the value returned by the last io_mapping_map_local_wc() or
-+io_mapping_map_atomic_wc() call. This unmaps the specified mapping and
-+undoes the side effects of the mapping functions.
-+
-+If you need to sleep while holding a mapping, you can use the regular
-+variant, although this may be significantly slower::
- 
- 	void *io_mapping_map_wc(struct io_mapping *mapping,
- 				unsigned long offset)
- 
--This works like io_mapping_map_atomic_wc except it allows
--the task to sleep while holding the page mapped.
--
-+This works like io_mapping_map_atomic/local_wc() except it has no side
-+effects and the pointer is globaly visible.
- 
--::
-+The mappings are released with::
- 
- 	void io_mapping_unmap(void *vaddr)
- 
--This works like io_mapping_unmap_atomic, except it is used
--for pages mapped with io_mapping_map_wc.
-+Use for pages mapped with io_mapping_map_wc().
- 
- At driver close time, the io_mapping object must be freed::
- 
---- a/include/linux/io-mapping.h
-+++ b/include/linux/io-mapping.h
-@@ -83,6 +83,21 @@ io_mapping_unmap_atomic(void __iomem *va
- }
- 
- static inline void __iomem *
-+io_mapping_map_local_wc(struct io_mapping *mapping, unsigned long offset)
-+{
-+	resource_size_t phys_addr;
-+
-+	BUG_ON(offset >= mapping->size);
-+	phys_addr = mapping->base + offset;
-+	return __iomap_local_pfn_prot(PHYS_PFN(phys_addr), mapping->prot);
-+}
-+
-+static inline void io_mapping_unmap_local(void __iomem *vaddr)
-+{
-+	kunmap_local_indexed((void __force *)vaddr);
-+}
-+
-+static inline void __iomem *
- io_mapping_map_wc(struct io_mapping *mapping,
- 		  unsigned long offset,
- 		  unsigned long size)
-@@ -101,7 +116,7 @@ io_mapping_unmap(void __iomem *vaddr)
- 	iounmap(vaddr);
- }
- 
--#else
-+#else  /* HAVE_ATOMIC_IOMAP */
- 
+--- a/arch/mips/kernel/crash_dump.c
++++ b/arch/mips/kernel/crash_dump.c
+@@ -5,8 +5,6 @@
  #include <linux/uaccess.h>
+ #include <linux/slab.h>
  
-@@ -166,7 +181,18 @@ io_mapping_unmap_atomic(void __iomem *va
- 	preempt_enable();
+-static void *kdump_buf_page;
+-
+ /**
+  * copy_oldmem_page - copy one page from "oldmem"
+  * @pfn: page frame number to be copied
+@@ -17,51 +15,25 @@ static void *kdump_buf_page;
+  * @userbuf: if set, @buf is in user address space, use copy_to_user(),
+  *	otherwise @buf is in kernel address space, use memcpy().
+  *
+- * Copy a page from "oldmem". For this page, there is no pte mapped
++ * Copy a page from "oldmem". For this page, there might be no pte mapped
+  * in the current kernel.
+- *
+- * Calling copy_to_user() in atomic context is not desirable. Hence first
+- * copying the data to a pre-allocated kernel page and then copying to user
+- * space in non-atomic context.
+  */
+-ssize_t copy_oldmem_page(unsigned long pfn, char *buf,
+-			 size_t csize, unsigned long offset, int userbuf)
++ssize_t copy_oldmem_page(unsigned long pfn, char *buf, size_t csize,
++			 unsigned long offset, int userbuf)
+ {
+ 	void  *vaddr;
+ 
+ 	if (!csize)
+ 		return 0;
+ 
+-	vaddr = kmap_atomic_pfn(pfn);
++	vaddr = kmap_local_pfn(pfn);
+ 
+ 	if (!userbuf) {
+-		memcpy(buf, (vaddr + offset), csize);
+-		kunmap_atomic(vaddr);
++		memcpy(buf, vaddr + offset, csize);
+ 	} else {
+-		if (!kdump_buf_page) {
+-			pr_warn("Kdump: Kdump buffer page not allocated\n");
+-
+-			return -EFAULT;
+-		}
+-		copy_page(kdump_buf_page, vaddr);
+-		kunmap_atomic(vaddr);
+-		if (copy_to_user(buf, (kdump_buf_page + offset), csize))
+-			return -EFAULT;
++		if (copy_to_user(buf, vaddr + offset, csize))
++			csize = -EFAULT;
+ 	}
+ 
+ 	return csize;
  }
- 
--#endif /* HAVE_ATOMIC_IOMAP */
-+static inline void __iomem *
-+io_mapping_map_local_wc(struct io_mapping *mapping, unsigned long offset)
-+{
-+	return io_mapping_map_wc(mapping, offset, PAGE_SIZE);
-+}
-+
-+static inline void io_mapping_unmap_local(void __iomem *vaddr)
-+{
-+	io_mapping_unmap(vaddr);
-+}
-+
-+#endif /* !HAVE_ATOMIC_IOMAP */
- 
- static inline struct io_mapping *
- io_mapping_create_wc(resource_size_t base,
+-
+-static int __init kdump_buf_page_init(void)
+-{
+-	int ret = 0;
+-
+-	kdump_buf_page = kmalloc(PAGE_SIZE, GFP_KERNEL);
+-	if (!kdump_buf_page) {
+-		pr_warn("Kdump: Failed to allocate kdump buffer page\n");
+-		ret = -ENOMEM;
+-	}
+-
+-	return ret;
+-}
+-arch_initcall(kdump_buf_page_init);
 

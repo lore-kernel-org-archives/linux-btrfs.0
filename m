@@ -5,51 +5,51 @@ X-Spam-Level:
 X-Spam-Status: No, score=-13.1 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
 	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B6517C4742C
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 01:25:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 91CCAC388F2
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 01:27:23 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 57E2F2063A
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 01:25:49 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2D2222222B
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 01:27:23 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1604366749;
-	bh=Du8hYXSYQYZqAOSClFaan4WzcayonM9bZwd8VN9dMW0=;
+	s=default; t=1604366843;
+	bh=V2eZYNqQLBoQrfGx1v83h/3lViFN3KA9Mx/ASEPHtYg=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=xrXj7rVlwb8T1wqwlKdYHLf001RMrfPcaKfC2qWPd6fAQzDoC1iF1IaD1l28ZFfYB
-	 gTYCB6yVHoam5G77EOj9jTPGd0Np+PhMWWaLPXykuHcFRFgSnjIxL38A3cIYn+MkKj
-	 LqVkK0jEaWO2jLv6TK6MQmQN/sZQ3HugoITVQTI4=
+	b=S95UN9jtEaeGRYZ1+TNEvUPzwLKH0B4MFwCTkLcPpprExCnVtlfARaXadQYlrgPAu
+	 i5BNugiika3v61ULYy6EG7HRYbCTNKLQUK3m06IRGW/wgkNZ24Rp8UdryK+ZdkkOVm
+	 fHNjJTqm+FVLhveu+8V7M2j9PzWYDXCCBtzvcHII=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728347AbgKCBZk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 2 Nov 2020 20:25:40 -0500
-Received: from mail.kernel.org ([198.145.29.99]:34052 "EHLO mail.kernel.org"
+        id S1728204AbgKCB1W (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 2 Nov 2020 20:27:22 -0500
+Received: from mail.kernel.org ([198.145.29.99]:60834 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727912AbgKCBTw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 2 Nov 2020 20:19:52 -0500
+        id S1727487AbgKCBTI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 2 Nov 2020 20:19:08 -0500
 Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 7618B22264;
-        Tue,  3 Nov 2020 01:19:50 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 7A24D2242A;
+        Tue,  3 Nov 2020 01:19:05 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1604366391;
-        bh=Du8hYXSYQYZqAOSClFaan4WzcayonM9bZwd8VN9dMW0=;
+        s=default; t=1604366346;
+        bh=V2eZYNqQLBoQrfGx1v83h/3lViFN3KA9Mx/ASEPHtYg=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=o/HkLpFBrMuyTLlX1k6MOkDiBtGvWCsRF3wjMq3KY2F/AVvd29L2lPStQQ3LSi6w6
-         a7qbpSUT3tt7Ky/8toLldk2tC5txzhD2qmMgIQQe6kkxlqvcn6fVXTgNdPFP22nv11
-         XeHT6UkJoJRsqrOaVmxqHZTZbiq24JQOmf5lyhGg=
+        b=A092ox+NGMFuW5zS8rOp+6L3qUWe/dcCynfCKOm1+OLMJYB3AKinYKOB2A4fe0qzp
+         6oxh4Ysc6j7imdBtXlov+NaBT2Tv1ToqCG3Mwwkklk+3ybduJv1RjLcfigzFWD5aE3
+         R/if5j77vZVPK9ycKxRX5ruQr0ky1KSO501TNzZg=
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
 Cc:     Josef Bacik <josef@toxicpanda.com>,
         Filipe Manana <fdmanana@suse.com>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.8 17/29] btrfs: add a helper to read the tree_root commit root for backref lookup
-Date:   Mon,  2 Nov 2020 20:19:16 -0500
-Message-Id: <20201103011928.183145-17-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 5.9 19/35] btrfs: add a helper to read the tree_root commit root for backref lookup
+Date:   Mon,  2 Nov 2020 20:18:24 -0500
+Message-Id: <20201103011840.182814-19-sashal@kernel.org>
 X-Mailer: git-send-email 2.27.0
-In-Reply-To: <20201103011928.183145-1-sashal@kernel.org>
-References: <20201103011928.183145-1-sashal@kernel.org>
+In-Reply-To: <20201103011840.182814-1-sashal@kernel.org>
+References: <20201103011840.182814-1-sashal@kernel.org>
 MIME-Version: 1.0
 X-stable: review
 X-Patchwork-Hint: Ignore
@@ -262,10 +262,10 @@ index ea1c28ccb44ff..b948df7a929eb 100644
  		ret = PTR_ERR(root);
  		goto out_free;
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index e6dbfd09bf1cb..11e7ebd46f826 100644
+index 9f72b092bc228..86344ffc21e93 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -1341,32 +1341,26 @@ int btrfs_add_log_tree(struct btrfs_trans_handle *trans,
+@@ -1338,32 +1338,26 @@ int btrfs_add_log_tree(struct btrfs_trans_handle *trans,
  	return 0;
  }
  
@@ -304,7 +304,7 @@ index e6dbfd09bf1cb..11e7ebd46f826 100644
  	}
  
  	generation = btrfs_root_generation(&root->root_item);
-@@ -1377,21 +1371,31 @@ struct btrfs_root *btrfs_read_tree_root(struct btrfs_root *tree_root,
+@@ -1374,21 +1368,31 @@ struct btrfs_root *btrfs_read_tree_root(struct btrfs_root *tree_root,
  	if (IS_ERR(root->node)) {
  		ret = PTR_ERR(root->node);
  		root->node = NULL;
@@ -345,7 +345,7 @@ index e6dbfd09bf1cb..11e7ebd46f826 100644
  }
  
  /*
-@@ -1479,6 +1483,31 @@ static struct btrfs_root *btrfs_lookup_fs_root(struct btrfs_fs_info *fs_info,
+@@ -1476,6 +1480,31 @@ static struct btrfs_root *btrfs_lookup_fs_root(struct btrfs_fs_info *fs_info,
  	return root;
  }
  
@@ -377,7 +377,7 @@ index e6dbfd09bf1cb..11e7ebd46f826 100644
  int btrfs_insert_fs_root(struct btrfs_fs_info *fs_info,
  			 struct btrfs_root *root)
  {
-@@ -1576,25 +1605,9 @@ static struct btrfs_root *btrfs_get_root_ref(struct btrfs_fs_info *fs_info,
+@@ -1573,25 +1602,9 @@ static struct btrfs_root *btrfs_get_root_ref(struct btrfs_fs_info *fs_info,
  	struct btrfs_key key;
  	int ret;
  
@@ -406,8 +406,8 @@ index e6dbfd09bf1cb..11e7ebd46f826 100644
  again:
  	root = btrfs_lookup_fs_root(fs_info, objectid);
  	if (root) {
-@@ -1700,6 +1713,52 @@ static int btrfs_congested_fn(void *congested_data, int bdi_bits)
- 	return ret;
+@@ -1676,6 +1689,52 @@ struct btrfs_root *btrfs_get_new_fs_root(struct btrfs_fs_info *fs_info,
+ 	return btrfs_get_root_ref(fs_info, objectid, anon_dev, true);
  }
  
 +/*

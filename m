@@ -2,144 +2,141 @@ Return-Path: <SRS0=hn/e=EJ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.7 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AB640C388F9
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 20:41:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1E336C4742C
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 21:14:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 7C25B223AC
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 20:41:11 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C13BB205ED
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 21:14:40 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="T1G3wjVs"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730313AbgKCUlI convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 3 Nov 2020 15:41:08 -0500
-Received: from mout.kundenserver.de ([217.72.192.73]:51043 "EHLO
-        mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1730300AbgKCUlG (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Nov 2020 15:41:06 -0500
-Received: from [192.168.177.174] ([91.63.191.240]) by mrelayeu.kundenserver.de
- (mreue106 [213.165.67.113]) with ESMTPSA (Nemesis) id
- 1Ma1D8-1koKqo34tg-00VwZC; Tue, 03 Nov 2020 21:40:30 +0100
-From:   "Hendrik Friedel" <hendrik@friedels.name>
-To:     "Zygo Blaxell" <ce3g8jdj@umail.furryterror.org>,
-        lakshmipathi.ganapathi@collabora.com
-Subject: Re[2]: parent transid verify failed: Fixed but re-appearing
-Cc:     "Btrfs BTRFS" <linux-btrfs@vger.kernel.org>
-Date:   Tue, 03 Nov 2020 20:40:40 +0000
-Message-Id: <em37950c9c-2dbf-41b9-89cd-2390bc503bd1@desktop-g0r648m>
-In-Reply-To: <20201103194045.GB28049@hungrycats.org>
-References: <em2ffec6ef-fe64-4239-b238-ae962d1826f6@ryzen>
- <20201021134635.GT5890@hungrycats.org>
- <em85884e42-e959-40f1-9eae-cd818450c26d@ryzen>
- <20201021193246.GE21815@hungrycats.org>
- <em33511ef4-7da1-4e7c-8b0c-8b8d7043164c@desktop-g0r648m>
- <20201021212229.GF21815@hungrycats.org>
- <emeabab400-3f6d-4105-a4fd-67b0b832f97a@desktop-g0r648m>
- <20201021213854.GG21815@hungrycats.org>
- <em26d5dfe8-37cb-454c-9c03-a69cfb035949@desktop-g0r648m>
- <emf9252c3e-00b0-4c4a-a607-b61df779742f@desktop-g0r648m>
- <20201103194045.GB28049@hungrycats.org>
-Reply-To: "Hendrik Friedel" <hendrik@friedels.name>
-User-Agent: eM_Client/8.0.3385.0
-Mime-Version: 1.0
-Content-Type: text/plain; format=flowed; charset=utf-8
-Content-Transfer-Encoding: 8BIT
-X-Provags-ID: V03:K1:aUGDKZLIYT0M7ln2X35KffGtM5m2z3nhJ6eWJ4iETnsPXBTgpSW
- 4d8tEu89RO+dwCEXngYrz0v/k2MFD2x2x+mm/0q5LYkf4GEtVVUR+AenZi4rOJdBC/JcImc
- GTOrFwCEB70P3haQamikCfGL6xVtJRyx7rnIYmFOHDivMhDKdONbe0Y+cEA2aOPX3Jd18nZ
- jR5R8u6YrKTBSWJmMmTRQ==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:7nrBFJZPP7E=:Mwi2yZfIcGV3di+PZiLO2k
- ZOZzd46tec+QEe7iLRNrKgss+xvcEW+ve1zK3l4DhCNjd0ZfiDxss/EztxZcD6rHEL2KUJHvX
- KNBw4VDKWyoTxbUaF76gjAuuGlrCGjzB1cFr1wBFzdMyY9Q+vweHEM6jvlSyNEKO8+iAKPC6A
- RMAM5ir+9k47HTfHLA+KoYTPOvT+0hneD5vwZT43HjKACL6xygSbIF3ssMxcQslNIR7PV4DDm
- KuTPFb/LaktPPNSFgNk8p+uozz/gfADcxq+cVIDPungBGOWb9mY9Sf80YE2X/QPSv0SaGGUMf
- MHWvvtpt7MiRv1Opj97sdi7HK0ijnbcPC5fH9NJy1PWfrcvFJf8PLO3VgpSz6DD6lHjYwY7Aa
- PoC0f2hvi11aOO3xejKvyxqDBzyvvII+zq/t7my2MURVFt4SYFOP2KB60f5JIzNf4BDzW/436
- xAbTj1Havw==
+        id S2389063AbgKCVMo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 3 Nov 2020 16:12:44 -0500
+Received: from mx2.suse.de ([195.135.220.15]:48040 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S2389052AbgKCVMm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 3 Nov 2020 16:12:42 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1604437961;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc:mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding;
+        bh=2koavdohn7pN+9F4vh3pjqh2oXrNVb07GgCvPtxhNl8=;
+        b=T1G3wjVsY36Ulo2VhAOBl4sYd2rzOSKEkxIM5gZ+HBNuP8iBKVGEi0U3JAkN6MhZDSZPkd
+        Pf0YZ8A4XRKgpEFOAjUotYIEzM25t8h1z+1/P6QZnHQsvieo6NPrwEL4hvBJnJ+Lxa8VHJ
+        SCiXm+vHML7/zPJ8pJxX1LAu2MJ1qaA=
+Received: from relay2.suse.de (unknown [195.135.221.27])
+        by mx2.suse.de (Postfix) with ESMTP id EB487ACC0;
+        Tue,  3 Nov 2020 21:12:40 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id B5DE0DA7D2; Tue,  3 Nov 2020 22:11:02 +0100 (CET)
+From:   David Sterba <dsterba@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     David Sterba <dsterba@suse.com>
+Subject: [PATCH] btrfs: reorder extent buffer members for better packing
+Date:   Tue,  3 Nov 2020 22:11:01 +0100
+Message-Id: <20201103211101.4221-1-dsterba@suse.com>
+X-Mailer: git-send-email 2.25.0
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hello Zygo, hello Lakshmipathi,
+After the rwsem replaced the tree lock implementation, the extent buffer
+got smaller but leaving some holes behind. By changing log_index type
+and reordering, we can squeeze the size further to 240 bytes, measured on
+release config on x86_64. Log_index spans only 3 values and needs to be
+signed.
 
-@Lakshmipathi: as you suggested I consulted the BTRFS-Mailing list on 
-this issue:
-https://github.com/Lakshmipathi/dduper/issues/39
+Before:
 
-Zygo was so kind to help me and he suspects the error to lie within 
-dduper.
->>  > > Sure, more scrubs are better.  They are supposed to be run regularly
->>  > > to detect drives going bad.
->>  > btrfs scrub start -Bd /dev/sda1
->>  >
->>  >
->>  > scrub device /dev/sda1 (id 1) done
->>  >         scrub started at Wed Oct 21 23:38:36 2020 and finished after 13:45:29
->>  >         total bytes scrubbed: 6.56TiB with 0 errors
->>  >
->>  > But then again:
->>  > dduper --device /dev/sda1 --dir /srv/dev-disk-by-label-DataPool1/dduper_test/testfiles -r --dry-run
->>  > parent transid verify failed on 16500741947392 wanted 358407 found 358409
->>  > Ignoring transid failure
->
->Wait...is that the kernel log, or the output of the dduper command?
->
-It is on the commandline once I run the command; thus I suspect it is 
-the dduper output. But of course sometimes the Kernel-Messages appear 
-directly on the commandline. I do not know how to tell.
+struct extent_buffer {
+        u64                        start;                /*     0     8 */
+        long unsigned int          len;                  /*     8     8 */
+        long unsigned int          bflags;               /*    16     8 */
+        struct btrfs_fs_info *     fs_info;              /*    24     8 */
+        spinlock_t                 refs_lock;            /*    32     4 */
+        atomic_t                   refs;                 /*    36     4 */
+        atomic_t                   io_pages;             /*    40     4 */
+        int                        read_mirror;          /*    44     4 */
+        struct callback_head       callback_head __attribute__((__aligned__(8))); /*    48    16 */
+        /* --- cacheline 1 boundary (64 bytes) --- */
+        pid_t                      lock_owner;           /*    64     4 */
+        bool                       lock_recursed;        /*    68     1 */
 
->
->commit 3e5f67f45b553045a34113cafb3c22180210a19f (tag: v0.04, origin/dockerbuild)
->Author: Lakshmipathi <lakshmipathi.ganapathi@collabora.com>
->Date:   Fri Sep 18 11:51:42 2020 +0530
->
->file deduper:
->
->     194 def btrfs_dump_csum(filename):
->     195     global device_name
->     196
->     197     btrfs_bin = "/usr/sbin/btrfs.static"
->     198     if os.path.exists(btrfs_bin) is False:
->     199         btrfs_bin = "btrfs"
->     200
->     201     out = subprocess.Popen(
->     202         [btrfs_bin, 'inspect-internal', 'dump-csum', filename, device_name],
->     203         stdout=subprocess.PIPE,
->     204         close_fds=True).stdout.readlines()
->     205     return out
->
->OK there's the problem:  it's dumping csums from a mounted filesystem by
->reading the block device instead of using the TREE_SEARCH_V2 ioctl.
->Don't do that, because it won't work.  ;)
-I trust you on this ;-) But I am surprised I am the only one reporting 
-this issue. Will it *always* not work, or does it not work in some cases 
-and my situation is making it extremely unlikely to work?
->
->The "parent transid verify failed" errors are harmless.  They are due
->to the fact that a process reading the raw block device can never build
->an accurate model of a live filesystem that is changing underneathi it.
->
->If you manage to get some dedupe to happen, then that's a bonus.
->
->
->>  >
->>  > > >  Anything else, I can do?
->>  > >
->>  > > It looks like sda1 might be bad and it is working by replacing lost
->>  > > data from the mirror on sdj.  But this replacement should be happening
->>  > > automatically on read (and definitely on scrub), so you shouldn't ever
->>  > > see the same error twice, but it seems that you do.
->>  >
->>  > Well, it is not the same error twice.
->
->Earlier you quoted some duplicate lines.  Normally those get fixed after the
->first line, so you never see the second.
->
-I see.
+        /* XXX 3 bytes hole, try to pack */
 
-Regards,
-Hendrik
+        struct rw_semaphore        lock;                 /*    72    40 */
+        short int                  log_index;            /*   112     2 */
+
+        /* XXX 6 bytes hole, try to pack */
+
+        struct page *              pages[16];            /*   120   128 */
+
+        /* size: 248, cachelines: 4, members: 14 */
+        /* sum members: 239, holes: 2, sum holes: 9 */
+        /* forced alignments: 1 */
+        /* last cacheline: 56 bytes */
+} __attribute__((__aligned__(8)));
+
+After:
+
+struct extent_buffer {
+        u64                        start;                /*     0     8 */
+        long unsigned int          len;                  /*     8     8 */
+        long unsigned int          bflags;               /*    16     8 */
+        struct btrfs_fs_info *     fs_info;              /*    24     8 */
+        spinlock_t                 refs_lock;            /*    32     4 */
+        atomic_t                   refs;                 /*    36     4 */
+        atomic_t                   io_pages;             /*    40     4 */
+        int                        read_mirror;          /*    44     4 */
+        struct callback_head       callback_head __attribute__((__aligned__(8))); /*    48    16 */
+        /* --- cacheline 1 boundary (64 bytes) --- */
+        pid_t                      lock_owner;           /*    64     4 */
+        bool                       lock_recursed;        /*    68     1 */
+        s8                         log_index;            /*    69     1 */
+
+        /* XXX 2 bytes hole, try to pack */
+
+        struct rw_semaphore        lock;                 /*    72    40 */
+        struct page *              pages[16];            /*   112   128 */
+
+        /* size: 240, cachelines: 4, members: 14 */
+        /* sum members: 238, holes: 1, sum holes: 2 */
+        /* forced alignments: 1 */
+        /* last cacheline: 48 bytes */
+} __attribute__((__aligned__(8)));
+
+Signed-off-by: David Sterba <dsterba@suse.com>
+---
+ fs/btrfs/extent_io.h | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index 5403354de0e1..3c2bf21c54eb 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -88,10 +88,10 @@ struct extent_buffer {
+ 	struct rcu_head rcu_head;
+ 	pid_t lock_owner;
+ 	bool lock_recursed;
+-	struct rw_semaphore lock;
+-
+ 	/* >= 0 if eb belongs to a log tree, -1 otherwise */
+-	short log_index;
++	s8 log_index;
++
++	struct rw_semaphore lock;
+ 
+ 	struct page *pages[INLINE_EXTENT_BUFFER_PAGES];
+ #ifdef CONFIG_BTRFS_DEBUG
+-- 
+2.25.0
 

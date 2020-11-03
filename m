@@ -8,56 +8,56 @@ X-Spam-Status: No, score=-12.6 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1302EC388F9
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 06:02:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C3D02C388F7
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 06:02:38 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id A4E48222B9
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 06:02:33 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 628D122277
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 06:02:38 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="iEqbPFcm"
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="fqlEVbK3"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727457AbgKCGCd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 3 Nov 2020 01:02:33 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52812 "EHLO
+        id S1727673AbgKCGCh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 3 Nov 2020 01:02:37 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52842 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727474AbgKCGCV (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Nov 2020 01:02:21 -0500
-Received: from mail-pf1-x442.google.com (mail-pf1-x442.google.com [IPv6:2607:f8b0:4864:20::442])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BB323C0617A6;
-        Mon,  2 Nov 2020 22:02:17 -0800 (PST)
-Received: by mail-pf1-x442.google.com with SMTP id j18so13279423pfa.0;
-        Mon, 02 Nov 2020 22:02:17 -0800 (PST)
+        with ESMTP id S1727308AbgKCGC2 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Nov 2020 01:02:28 -0500
+Received: from mail-pg1-x542.google.com (mail-pg1-x542.google.com [IPv6:2607:f8b0:4864:20::542])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6388DC061A49;
+        Mon,  2 Nov 2020 22:02:27 -0800 (PST)
+Received: by mail-pg1-x542.google.com with SMTP id r10so12826703pgb.10;
+        Mon, 02 Nov 2020 22:02:27 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=2E/IwoJzArQOI0tLeIWcAV63W6gwJ92+ohjyeEw8pg8=;
-        b=iEqbPFcmoBVXXCzrGQK2134vW+8Xz0YWFUGJNPGE6qJxp0tCM0nsNFXXC4h+P1xzAD
-         RbBL+COQhh47jkqv5/sjqYoTs+bvTCVUYiVeJLSPeBykfty17A15g1dGz5KLHAwrnbnL
-         jfvTqAeL/w3PsoiBSs4kOok9tzIiJPLdAgMdtRc3w3MZXnhWixUYI51c+QjDl8YrX7cE
-         CUswOLRvdyxH4x/EqRZKpCMOjGikIZ3SgigzOwqhm3i9s0EVg6BbA8tpVlRSCnVYCyEt
-         XCfTdYqaZXUBPJE+5ku4PMi6En22dNHhdVv82IsiWGYbeSNF2ra1lj/e0zSsQN/sNBy8
-         N/Kg==
+        bh=z11dyIW9wYOT1WRGrY3n/HRYqfGSZJkJPYcfMlfSK1k=;
+        b=fqlEVbK35EPh+UkmbfTOML9wO/Yu6UWciXnYiqqdEFBWDytHVrYmbYSbG12dv3lj29
+         ijQLun9BJcZFWXiFfb7KP6SyOle0F7XUCtEdyucxYLOXj8HjJeyih7omsHvYll7LqUXo
+         Ezth8S3rW1LfHcLdV+yztMhArCw4MGetq8yF2xgV953ex+dYZdd95rMdMI/ZjReJM31v
+         OLpBsuFM19OuIh9mQqk1Ibz47smDqth/3X5EdOHwsL24siNZb4S+19Bxoqf/gbZeNE66
+         tS4lJIZ8sg6y5/BkJic3oQgWYhl+xHOgAJppgO4t86xw4TwHcW3qcydvarNH2ufdjq/e
+         DuxA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=2E/IwoJzArQOI0tLeIWcAV63W6gwJ92+ohjyeEw8pg8=;
-        b=K6ZFOjsOW/rR9Atxp04ih9lAosCe6LKjJaOkhtMbCIV09LelmCsJ/991TZuw5OzwaO
-         0QlY976DmbzPj1yaqSiRGCnBVMsOmK/dVScwUrM07NDXfRoCWxFw+sxxj1+pnxQMT0TR
-         l9KCmEILMjlySPf8siqqssS0r9aEAJNBicjvCcKNovLzpzUPEvm49d0gaQevkG7FYD+S
-         vOn7KSbRBKDL7TyzN4qTkeggNPUnv5L2Xlc2gSFWzGlhOssSu7mbvHg7hChKRxw9Orqk
-         6exL3q2xy51th2phdzU2+E5NIGuMj6qHvguqEQAVJSPY8UzgV694XD6aH/RzBluhwmkP
-         JdWA==
-X-Gm-Message-State: AOAM5339836i1oUHfFj+la899Js4mlDNdR6rYeaLNPIfjzdt1Xd+cb67
-        YcTgSOsR8UfGIUenxqEwMHw=
-X-Google-Smtp-Source: ABdhPJyGVtb0kQhKxDOQ3rgCyFM7CMKxKblu6sRqk+tIeYGAbfG3LCMa/grSJQZbBh9QW8E7X+cIbQ==
-X-Received: by 2002:a63:c64:: with SMTP id 36mr5263358pgm.255.1604383337287;
-        Mon, 02 Nov 2020 22:02:17 -0800 (PST)
+        bh=z11dyIW9wYOT1WRGrY3n/HRYqfGSZJkJPYcfMlfSK1k=;
+        b=fUrXlGrfrT0/chZXLdoDZkOTDjwEiZUf4mpPg9DjYVKHdoOWxxAcDnzTo8qZP3Lh62
+         LQ95O/8TKYdMdLD40bMj4YGkzb/vGbuAoEK6qoDj8rrV9oKXEwYJkIwTWS9Uk/z6XtmX
+         4fmH34LOLV9fzC/4KwhjdRjrNcC9S4F9TfmsCekKiqiyEajqQbgau3JqRkQwbV2V4eVx
+         vIarYu30mce7yjDyieThOcONWgPvSS+0ORKHmbw7J+MRymmsBkFuJdC3RootFW9yc6fj
+         vhamsluca5qBcdzYrPZ53nCN2exjQmHFer/j3ts4q0k2TPiuM1uS5IRvuNByQIg0S7TO
+         TdOA==
+X-Gm-Message-State: AOAM531FNOAupjK58Oge71fGD+Ax3TOPlGq79IVfDKc1xmFBZQiKpSn5
+        LqOwv6xmczQu9QTd7SiZA1s=
+X-Google-Smtp-Source: ABdhPJzczT8OSnH39dRzgGhVfqu8jd5/AMVdwt8aIEY9Xprsdx50dQXpPz4sAoL7yZ+FMm8SFeMYSw==
+X-Received: by 2002:a62:4e0f:0:b029:156:13e0:efa7 with SMTP id c15-20020a624e0f0000b029015613e0efa7mr24248296pfb.73.1604383346862;
+        Mon, 02 Nov 2020 22:02:26 -0800 (PST)
 Received: from nickserv.localdomain (c-98-33-101-203.hsd1.ca.comcast.net. [98.33.101.203])
-        by smtp.gmail.com with ESMTPSA id b16sm15647269pfp.195.2020.11.02.22.02.15
+        by smtp.gmail.com with ESMTPSA id b16sm15647269pfp.195.2020.11.02.22.02.25
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 02 Nov 2020 22:02:16 -0800 (PST)
+        Mon, 02 Nov 2020 22:02:26 -0800 (PST)
 From:   Nick Terrell <nickrterrell@gmail.com>
 To:     Herbert Xu <herbert@gondor.apana.org.au>
 Cc:     linux-crypto@vger.kernel.org, linux-btrfs@vger.kernel.org,
@@ -68,9 +68,9 @@ Cc:     linux-crypto@vger.kernel.org, linux-btrfs@vger.kernel.org,
         Nick Terrell <terrelln@fb.com>, Chris Mason <clm@fb.com>,
         Petr Malat <oss@malat.biz>, Johannes Weiner <jweiner@fb.com>,
         Niket Agarwal <niketa@fb.com>, Yann Collet <cyan@fb.com>
-Subject: [PATCH v5 5/9] btrfs: zstd: Switch to the zstd-1.4.6 API
-Date:   Mon,  2 Nov 2020 22:05:31 -0800
-Message-Id: <20201103060535.8460-6-nickrterrell@gmail.com>
+Subject: [PATCH v5 8/9] lib: unzstd: Switch to the zstd-1.4.6 API
+Date:   Mon,  2 Nov 2020 22:05:34 -0800
+Message-Id: <20201103060535.8460-9-nickrterrell@gmail.com>
 X-Mailer: git-send-email 2.28.0
 In-Reply-To: <20201103060535.8460-1-nickrterrell@gmail.com>
 References: <20201103060535.8460-1-nickrterrell@gmail.com>
@@ -87,130 +87,90 @@ code is functionally equivalent.
 
 Signed-off-by: Nick Terrell <terrelln@fb.com>
 ---
- fs/btrfs/zstd.c | 48 ++++++++++++++++++++++++++++--------------------
- 1 file changed, 28 insertions(+), 20 deletions(-)
+ lib/decompress_unzstd.c | 40 ++++++++++++++--------------------------
+ 1 file changed, 14 insertions(+), 26 deletions(-)
 
-diff --git a/fs/btrfs/zstd.c b/fs/btrfs/zstd.c
-index a7367ff573d4..6b466e090cd7 100644
---- a/fs/btrfs/zstd.c
-+++ b/fs/btrfs/zstd.c
-@@ -16,7 +16,7 @@
- #include <linux/refcount.h>
- #include <linux/sched.h>
- #include <linux/slab.h>
+diff --git a/lib/decompress_unzstd.c b/lib/decompress_unzstd.c
+index 3c6ad01ffcd5..efbe66501b34 100644
+--- a/lib/decompress_unzstd.c
++++ b/lib/decompress_unzstd.c
+@@ -73,7 +73,8 @@
+ 
+ #include <linux/decompress/mm.h>
+ #include <linux/kernel.h>
 -#include <linux/zstd_compat.h>
 +#include <linux/zstd.h>
- #include "misc.h"
- #include "compression.h"
- #include "ctree.h"
-@@ -159,8 +159,8 @@ static void zstd_calc_ws_mem_sizes(void)
- 			zstd_get_btrfs_parameters(level, ZSTD_BTRFS_MAX_INPUT);
- 		size_t level_size =
- 			max_t(size_t,
--			      ZSTD_CStreamWorkspaceBound(params.cParams),
--			      ZSTD_DStreamWorkspaceBound(ZSTD_BTRFS_MAX_INPUT));
-+			      ZSTD_estimateCStreamSize_usingCParams(params.cParams),
-+			      ZSTD_estimateDStreamSize(ZSTD_BTRFS_MAX_INPUT));
++#include <linux/zstd_errors.h>
  
- 		max_size = max_t(size_t, max_size, level_size);
- 		zstd_ws_mem_sizes[level - 1] = max_size;
-@@ -389,13 +389,23 @@ int zstd_compress_pages(struct list_head *ws, struct address_space *mapping,
- 	*total_in = 0;
+ /* 128MB is the maximum window size supported by zstd. */
+ #define ZSTD_WINDOWSIZE_MAX	(1 << ZSTD_WINDOWLOG_MAX)
+@@ -120,9 +121,9 @@ static int INIT decompress_single(const u8 *in_buf, long in_len, u8 *out_buf,
+ 				  long out_len, long *in_pos,
+ 				  void (*error)(char *x))
+ {
+-	const size_t wksp_size = ZSTD_DCtxWorkspaceBound();
++	const size_t wksp_size = ZSTD_estimateDCtxSize();
+ 	void *wksp = large_malloc(wksp_size);
+-	ZSTD_DCtx *dctx = ZSTD_initDCtx(wksp, wksp_size);
++	ZSTD_DCtx *dctx = ZSTD_initStaticDCtx(wksp, wksp_size);
+ 	int err;
+ 	size_t ret;
  
- 	/* Initialize the stream */
--	stream = ZSTD_initCStream(params, len, workspace->mem,
--			workspace->size);
-+	stream = ZSTD_initStaticCStream(workspace->mem, workspace->size);
- 	if (!stream) {
--		pr_warn("BTRFS: ZSTD_initCStream failed\n");
-+		pr_warn("BTRFS: ZSTD_initStaticCStream failed\n");
- 		ret = -EIO;
+@@ -165,7 +166,6 @@ static int INIT __unzstd(unsigned char *in_buf, long in_len,
+ {
+ 	ZSTD_inBuffer in;
+ 	ZSTD_outBuffer out;
+-	ZSTD_frameParams params;
+ 	void *in_allocated = NULL;
+ 	void *out_allocated = NULL;
+ 	void *wksp = NULL;
+@@ -234,36 +234,24 @@ static int INIT __unzstd(unsigned char *in_buf, long in_len,
+ 	out.size = out_len;
+ 
+ 	/*
+-	 * We need to know the window size to allocate the ZSTD_DStream.
+-	 * Since we are streaming, we need to allocate a buffer for the sliding
+-	 * window. The window size varies from 1 KB to ZSTD_WINDOWSIZE_MAX
+-	 * (8 MB), so it is important to use the actual value so as not to
+-	 * waste memory when it is smaller.
++	 * Zstd determines the workspace size from the window size written
++	 * into the frame header. This ensures that we use the minimum value
++	 * possible, since the window size varies from 1 KB to ZSTD_WINDOWSIZE_MAX
++	 * (1 GB), so it is very important to use the actual value.
+ 	 */
+-	ret = ZSTD_getFrameParams(&params, in.src, in.size);
++	wksp_size = ZSTD_estimateDStreamSize_fromFrame(in.src, in.size);
+ 	err = handle_zstd_error(ret, error);
+ 	if (err)
+ 		goto out;
+-	if (ret != 0) {
+-		error("ZSTD-compressed data has an incomplete frame header");
+-		err = -1;
+-		goto out;
+-	}
+-	if (params.windowSize > ZSTD_WINDOWSIZE_MAX) {
+-		error("ZSTD-compressed data has too large a window size");
++	wksp = large_malloc(wksp_size);
++	if (wksp == NULL) {
++		error("Out of memory while allocating ZSTD_DStream");
+ 		err = -1;
  		goto out;
  	}
-+	{
-+		size_t ret2;
-+
-+		ret2 = ZSTD_initCStream_advanced(stream, NULL, 0, params, len);
-+		if (ZSTD_isError(ret2)) {
-+			pr_warn("BTRFS: ZSTD_initCStream_advanced returned %s\n",
-+					ZSTD_getErrorName(ret2));
-+			ret = -EIO;
-+			goto out;
-+		}
-+	}
- 
- 	/* map in the first page of input data */
- 	in_page = find_get_page(mapping, start >> PAGE_SHIFT);
-@@ -421,8 +431,8 @@ int zstd_compress_pages(struct list_head *ws, struct address_space *mapping,
- 		ret2 = ZSTD_compressStream(stream, &workspace->out_buf,
- 				&workspace->in_buf);
- 		if (ZSTD_isError(ret2)) {
--			pr_debug("BTRFS: ZSTD_compressStream returned %d\n",
--					ZSTD_getErrorCode(ret2));
-+			pr_debug("BTRFS: ZSTD_compressStream returned %s\n",
-+					ZSTD_getErrorName(ret2));
- 			ret = -EIO;
- 			goto out;
- 		}
-@@ -489,8 +499,8 @@ int zstd_compress_pages(struct list_head *ws, struct address_space *mapping,
- 
- 		ret2 = ZSTD_endStream(stream, &workspace->out_buf);
- 		if (ZSTD_isError(ret2)) {
--			pr_debug("BTRFS: ZSTD_endStream returned %d\n",
--					ZSTD_getErrorCode(ret2));
-+			pr_debug("BTRFS: ZSTD_endStream returned %s\n",
-+					ZSTD_getErrorName(ret2));
- 			ret = -EIO;
- 			goto out;
- 		}
-@@ -557,10 +567,9 @@ int zstd_decompress_bio(struct list_head *ws, struct compressed_bio *cb)
- 	unsigned long buf_start;
- 	unsigned long total_out = 0;
- 
--	stream = ZSTD_initDStream(
--			ZSTD_BTRFS_MAX_INPUT, workspace->mem, workspace->size);
-+	stream = ZSTD_initStaticDStream(workspace->mem, workspace->size);
- 	if (!stream) {
--		pr_debug("BTRFS: ZSTD_initDStream failed\n");
-+		pr_debug("BTRFS: ZSTD_initStaticDStream failed\n");
- 		ret = -EIO;
- 		goto done;
+-
+-	/*
+-	 * Allocate the ZSTD_DStream now that we know how much memory is
+-	 * required.
+-	 */
+-	wksp_size = ZSTD_DStreamWorkspaceBound(params.windowSize);
+-	wksp = large_malloc(wksp_size);
+-	dstream = ZSTD_initDStream(params.windowSize, wksp, wksp_size);
++	dstream = ZSTD_initStaticDStream(wksp, wksp_size);
+ 	if (dstream == NULL) {
+-		error("Out of memory while allocating ZSTD_DStream");
++		error("ZSTD_initStaticDStream failed");
+ 		err = -1;
+ 		goto out;
  	}
-@@ -579,8 +588,8 @@ int zstd_decompress_bio(struct list_head *ws, struct compressed_bio *cb)
- 		ret2 = ZSTD_decompressStream(stream, &workspace->out_buf,
- 				&workspace->in_buf);
- 		if (ZSTD_isError(ret2)) {
--			pr_debug("BTRFS: ZSTD_decompressStream returned %d\n",
--					ZSTD_getErrorCode(ret2));
-+			pr_debug("BTRFS: ZSTD_decompressStream returned %s\n",
-+					ZSTD_getErrorName(ret2));
- 			ret = -EIO;
- 			goto done;
- 		}
-@@ -633,10 +642,9 @@ int zstd_decompress(struct list_head *ws, unsigned char *data_in,
- 	unsigned long pg_offset = 0;
- 	char *kaddr;
- 
--	stream = ZSTD_initDStream(
--			ZSTD_BTRFS_MAX_INPUT, workspace->mem, workspace->size);
-+	stream = ZSTD_initStaticDStream(workspace->mem, workspace->size);
- 	if (!stream) {
--		pr_warn("BTRFS: ZSTD_initDStream failed\n");
-+		pr_warn("BTRFS: ZSTD_initStaticDStream failed\n");
- 		ret = -EIO;
- 		goto finish;
- 	}
-@@ -667,8 +675,8 @@ int zstd_decompress(struct list_head *ws, unsigned char *data_in,
- 		ret2 = ZSTD_decompressStream(stream, &workspace->out_buf,
- 				&workspace->in_buf);
- 		if (ZSTD_isError(ret2)) {
--			pr_debug("BTRFS: ZSTD_decompressStream returned %d\n",
--					ZSTD_getErrorCode(ret2));
-+			pr_debug("BTRFS: ZSTD_decompressStream returned %s\n",
-+					ZSTD_getErrorName(ret2));
- 			ret = -EIO;
- 			goto finish;
- 		}
 -- 
 2.28.0
 

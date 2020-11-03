@@ -7,42 +7,42 @@ X-Spam-Status: No, score=-6.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=no
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4332AC82621
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 10:37:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 81AEEC8262C
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 10:37:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id DD19822409
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 10:37:35 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 24E6522409
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 10:37:41 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=linutronix.de header.i=@linutronix.de header.b="DeNS3WE1";
-	dkim=permerror (0-bit key) header.d=linutronix.de header.i=@linutronix.de header.b="97wrklPJ"
+	dkim=pass (2048-bit key) header.d=linutronix.de header.i=@linutronix.de header.b="rvT54BmE";
+	dkim=permerror (0-bit key) header.d=linutronix.de header.i=@linutronix.de header.b="lkKBWdK1"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728603AbgKCKhc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 3 Nov 2020 05:37:32 -0500
-Received: from Galois.linutronix.de ([193.142.43.55]:37666 "EHLO
+        id S1728223AbgKCKd3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 3 Nov 2020 05:33:29 -0500
+Received: from Galois.linutronix.de ([193.142.43.55]:37372 "EHLO
         galois.linutronix.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728224AbgKCKdb (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Nov 2020 05:33:31 -0500
-Message-Id: <20201103095857.078043987@linutronix.de>
+        with ESMTP id S1727706AbgKCKd2 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Nov 2020 05:33:28 -0500
+Message-Id: <20201103095856.732891880@linutronix.de>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linutronix.de;
-        s=2020; t=1604399608;
+        s=2020; t=1604399605;
         h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
          to:to:cc:cc:mime-version:mime-version:content-type:content-type:
          content-transfer-encoding:content-transfer-encoding:  references:references;
-        bh=ut1GkVw4OXMSCtChDMtmqVv6FlrafPsAPVPH5qh/+W4=;
-        b=DeNS3WE1qEb0dgla8K3N8yAAxK42YXCD7IXZTcjA5JidpsaOjufBQETLeVjVdMGu5N+Epm
-        TN2LbLx9UK5WAHAuFTdAVHgpIusNly6ze0TP49RK3GBjU6VwMiULa7UcabIY/uYmkhC/Q2
-        7E+DRfk3lJMdS7ur2nAIDXy3dY58VVhKxNO+bAOTSYjktAom2snLnmjN0H65s8xX6vxXVt
-        YQ4LzfUHrOasGRYEc8hqqfEQ7zS/2/eXUx4Jjj3gU8+4EJPX/jeKSlxdZhR8rS5rw5hOzP
-        O8oe69upLo4k/OB5xaqFs3Q3SWo87jVdet4A8lOOlvU3BX6pueHmK6FL3MJKuw==
+        bh=3HwBsgFv26sFcL/ZrR5QT7IdhKdyl722jNSTyAsMfhU=;
+        b=rvT54BmES001fwkPfhre2195ODFh8EFwDZYAlKQRhVHUBxAXrQ4jz+GuDaq+7kANpwhtIs
+        Odqznja1AON6wOyHEpYXOzN884r1utS39bCLsxNEulHhg56wkK85myPaXmlcyC0Iwy9aJH
+        7H/5d1lmCAyZsRrJM2yBsjEdO5LEmhyrq2wZg4iXyHs50gJQuJK3//uDTtWi4cGXwQajhE
+        6zcImoXr01WpyQwaIvad1lc/klKtM4lT0KI/sOHFnGRyhXmWoqmmzQFg3YIBBqGRZ2BmRY
+        OjwLotmGcs5kT4ELYX86H43ZMMJAy6wm+tJXkQgUfKkVJUPub5l/USgVgx610A==
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=linutronix.de;
-        s=2020e; t=1604399608;
+        s=2020e; t=1604399605;
         h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
          to:to:cc:cc:mime-version:mime-version:content-type:content-type:
          content-transfer-encoding:content-transfer-encoding:  references:references;
-        bh=ut1GkVw4OXMSCtChDMtmqVv6FlrafPsAPVPH5qh/+W4=;
-        b=97wrklPJQnUcEJTW2FcH4zagpYwVXJJ9W1FwrGZ1R9owPebJ4P6ITrCybgRDr7QJGxe2Wp
-        Y3q7gG0ch2kbmeAA==
-Date:   Tue, 03 Nov 2020 10:27:17 +0100
+        bh=3HwBsgFv26sFcL/ZrR5QT7IdhKdyl722jNSTyAsMfhU=;
+        b=lkKBWdK1CIWHPlUI77sykNxUAemFnakZTPVr751NgUw5N/WO+Qg52P9pTni6F4JYuE0eLl
+        4W0KlbICECLDLgCA==
+Date:   Tue, 03 Nov 2020 10:27:14 +0100
 From:   Thomas Gleixner <tglx@linutronix.de>
 To:     LKML <linux-kernel@vger.kernel.org>
 Cc:     Linus Torvalds <torvalds@linuxfoundation.org>,
@@ -95,7 +95,7 @@ Cc:     Linus Torvalds <torvalds@linuxfoundation.org>,
         Joonas Lahtinen <joonas.lahtinen@linux.intel.com>,
         Rodrigo Vivi <rodrigo.vivi@intel.com>,
         intel-gfx@lists.freedesktop.org
-Subject: [patch V3 05/37] asm-generic: Provide kmap_size.h
+Subject: [patch V3 02/37] highmem: Remove unused functions
 References: <20201103092712.714480842@linutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -104,60 +104,37 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-kmap_types.h is a misnomer because the old atomic MAP based array does not
-exist anymore and the whole indirection of architectures including
-kmap_types.h is inconinstent and does not allow to provide guard page
-debugging for this misfeature.
-
-Add a common header file which defines the mapping stack size for all
-architectures. Will be used when converting architectures over to a
-generic kmap_local/atomic implementation.
-
-The array size is chosen with the following constraints in mind:
-
-    - The deepest nest level in one context is 3 according to code
-      inspection.
-
-    - The worst case nesting for the upcoming reemptible version would be:
-
-      2 maps in task context and a fault inside
-      2 maps in the fault handler
-      3 maps in softirq
-      2 maps in interrupt
-
-So a total of 16 is sufficient and probably overestimated.
+Nothing uses totalhigh_pages_dec() and totalhigh_pages_set().
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 ---
 V3: New patch
 ---
- include/asm-generic/Kbuild      |    1 +
- include/asm-generic/kmap_size.h |   12 ++++++++++++
- 2 files changed, 13 insertions(+)
+ include/linux/highmem.h |   10 ----------
+ 1 file changed, 10 deletions(-)
 
---- a/include/asm-generic/Kbuild
-+++ b/include/asm-generic/Kbuild
-@@ -31,6 +31,7 @@ mandatory-y += irq_regs.h
- mandatory-y += irq_work.h
- mandatory-y += kdebug.h
- mandatory-y += kmap_types.h
-+mandatory-y += kmap_size.h
- mandatory-y += kprobes.h
- mandatory-y += linkage.h
- mandatory-y += local.h
---- /dev/null
-+++ b/include/asm-generic/kmap_size.h
-@@ -0,0 +1,12 @@
-+/* SPDX-License-Identifier: GPL-2.0 */
-+#ifndef _ASM_GENERIC_KMAP_SIZE_H
-+#define _ASM_GENERIC_KMAP_SIZE_H
-+
-+/* For debug this provides guard pages between the maps */
-+#ifdef CONFIG_DEBUG_HIGHMEM
-+# define KM_MAX_IDX	33
-+#else
-+# define KM_MAX_IDX	16
-+#endif
-+
-+#endif
+--- a/include/linux/highmem.h
++++ b/include/linux/highmem.h
+@@ -104,21 +104,11 @@ static inline void totalhigh_pages_inc(v
+ 	atomic_long_inc(&_totalhigh_pages);
+ }
+ 
+-static inline void totalhigh_pages_dec(void)
+-{
+-	atomic_long_dec(&_totalhigh_pages);
+-}
+-
+ static inline void totalhigh_pages_add(long count)
+ {
+ 	atomic_long_add(count, &_totalhigh_pages);
+ }
+ 
+-static inline void totalhigh_pages_set(long val)
+-{
+-	atomic_long_set(&_totalhigh_pages, val);
+-}
+-
+ void kmap_flush_unused(void);
+ 
+ struct page *kmap_to_page(void *addr);
 

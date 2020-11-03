@@ -7,39 +7,39 @@ X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AFC76C388F7
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 13:31:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C4E13C55178
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 13:31:56 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 493DD20870
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 13:31:51 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7ECE020786
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Nov 2020 13:31:56 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Fn2Lxv8b"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="VRJFYisM"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729357AbgKCNbu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 3 Nov 2020 08:31:50 -0500
-Received: from mx2.suse.de ([195.135.220.15]:44690 "EHLO mx2.suse.de"
+        id S1729265AbgKCNbz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 3 Nov 2020 08:31:55 -0500
+Received: from mx2.suse.de ([195.135.220.15]:44748 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1729352AbgKCNbu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 3 Nov 2020 08:31:50 -0500
+        id S1729352AbgKCNby (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 3 Nov 2020 08:31:54 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1604410309;
+        t=1604410312;
         h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
          to:to:cc:mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=htUvAJAoU9EbXW7IYGFWfOyqeUc8fblvRzLOJ2LrgNk=;
-        b=Fn2Lxv8b/LMTO455c8Gag9lCwxoCMT31EsC6FIgWWsp1CjwbptVMmbzAXxSj2J4HNAq79n
-        nBnuBtyxinE2uWy0uCAmzV/gnhnjRl5UsuHB0zEHGg+XZqHqZ+vN1S1agC4oPfFIMzW9v7
-        vrY4rdqZaJwneay6lG6ykzaqjXOytw8=
+        bh=E55vpWvLD/cUX0Q3r76Dq0AMCYLDovDQ2TcxfVHuIAY=;
+        b=VRJFYisM8jZS1qOtZFCjOyesk3B5l5+y7I5eVe5xxgWLu3CGIjj+ixZ1Irbn2IWTuCGiBo
+        sXdg9SWQZZEj2XwkprBOQx2GnZd8cDeeC/Uqg0jVLZjdRyaSwWU3IqGCWjxlEugKw+aJwu
+        G4ZB045dV9odYJCuqR5o4LL4yPfyNNM=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 03E71ABF4
-        for <linux-btrfs@vger.kernel.org>; Tue,  3 Nov 2020 13:31:48 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 90C72AFA7
+        for <linux-btrfs@vger.kernel.org>; Tue,  3 Nov 2020 13:31:52 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 10/32] btrfs: disk_io: grab fs_info from extent_buffer::fs_info directly for btrfs_mark_buffer_dirty()
-Date:   Tue,  3 Nov 2020 21:30:46 +0800
-Message-Id: <20201103133108.148112-11-wqu@suse.com>
+Subject: [PATCH 12/32] btrfs: disk-io: extract the extent buffer verification from btrfs_validate_metadata_buffer()
+Date:   Tue,  3 Nov 2020 21:30:48 +0800
+Message-Id: <20201103133108.148112-13-wqu@suse.com>
 X-Mailer: git-send-email 2.29.2
 In-Reply-To: <20201103133108.148112-1-wqu@suse.com>
 References: <20201103133108.148112-1-wqu@suse.com>
@@ -49,40 +49,144 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Since commit f28491e0a6c4 ("Btrfs: move the extent buffer radix tree into
-the fs_info"), fs_info can be grabbed from extent_buffer directly.
+Currently btrfs_validate_metadata_buffer() only needs to handle one extent
+buffer as currently one page only maps to one extent buffer.
 
-So use that extent_buffer::fs_info directly in btrfs_mark_buffer_dirty()
-to make things a little easier.
+But for incoming subpage support, one page can be mapped to multiple
+extent buffers, thus we can no longer use current code.
+
+This refactor would allow us to call validate_extent_buffer() on
+all involved extent buffers at btrfs_validate_metadata_buffer() and other
+locations.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/disk-io.c | 5 +----
- 1 file changed, 1 insertion(+), 4 deletions(-)
+ fs/btrfs/disk-io.c | 78 +++++++++++++++++++++++++---------------------
+ 1 file changed, 43 insertions(+), 35 deletions(-)
 
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index c70a52b44ceb..1b527b2d16d8 100644
+index 9a72cb5ef31e..de9132564f10 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -4191,8 +4191,7 @@ int btrfs_buffer_uptodate(struct extent_buffer *buf, u64 parent_transid,
+@@ -524,60 +524,35 @@ static int check_tree_block_fsid(struct extent_buffer *eb)
+ 	return 1;
+ }
  
- void btrfs_mark_buffer_dirty(struct extent_buffer *buf)
+-int btrfs_validate_metadata_buffer(struct btrfs_io_bio *io_bio, u64 phy_offset,
+-				   struct page *page, u64 start, u64 end,
+-				   int mirror)
++/* Do basic extent buffer check at read time */
++static int validate_extent_buffer(struct extent_buffer *eb)
  {
++	struct btrfs_fs_info *fs_info = eb->fs_info;
+ 	u64 found_start;
+-	int found_level;
+-	struct extent_buffer *eb;
 -	struct btrfs_fs_info *fs_info;
--	struct btrfs_root *root;
-+	struct btrfs_fs_info *fs_info = buf->fs_info;
- 	u64 transid = btrfs_header_generation(buf);
- 	int was_dirty;
+-	u16 csum_size;
+-	int ret = 0;
++	u32 csum_size = fs_info->csum_size;
++	u8 found_level;
+ 	u8 result[BTRFS_CSUM_SIZE];
+-	int reads_done;
+-
+-	if (!page->private)
+-		goto out;
+-
+-	eb = (struct extent_buffer *)page->private;
+-	fs_info = eb->fs_info;
+-	csum_size = fs_info->csum_size;
+-
+-	/* the pending IO might have been the only thing that kept this buffer
+-	 * in memory.  Make sure we have a ref for all this other checks
+-	 */
+-	atomic_inc(&eb->refs);
+-
+-	reads_done = atomic_dec_and_test(&eb->io_pages);
+-	if (!reads_done)
+-		goto err;
+-
+-	eb->read_mirror = mirror;
+-	if (test_bit(EXTENT_BUFFER_READ_ERR, &eb->bflags)) {
+-		ret = -EIO;
+-		goto err;
+-	}
++	int ret = 0;
  
-@@ -4205,8 +4204,6 @@ void btrfs_mark_buffer_dirty(struct extent_buffer *buf)
- 	if (unlikely(test_bit(EXTENT_BUFFER_UNMAPPED, &buf->bflags)))
- 		return;
- #endif
--	root = BTRFS_I(buf->pages[0]->mapping->host)->root;
--	fs_info = root->fs_info;
- 	btrfs_assert_tree_locked(buf);
- 	if (transid != fs_info->generation)
- 		WARN(1, KERN_CRIT "btrfs transid mismatch buffer %llu, found %llu running %llu\n",
+ 	found_start = btrfs_header_bytenr(eb);
+ 	if (found_start != eb->start) {
+ 		btrfs_err_rl(fs_info, "bad tree block start, want %llu have %llu",
+ 			     eb->start, found_start);
+ 		ret = -EIO;
+-		goto err;
++		goto out;
+ 	}
+ 	if (check_tree_block_fsid(eb)) {
+ 		btrfs_err_rl(fs_info, "bad fsid on block %llu",
+ 			     eb->start);
+ 		ret = -EIO;
+-		goto err;
++		goto out;
+ 	}
+ 	found_level = btrfs_header_level(eb);
+ 	if (found_level >= BTRFS_MAX_LEVEL) {
+ 		btrfs_err(fs_info, "bad tree block level %d on %llu",
+ 			  (int)btrfs_header_level(eb), eb->start);
+ 		ret = -EIO;
+-		goto err;
++		goto out;
+ 	}
+ 
+ 	btrfs_set_buffer_lockdep_class(btrfs_header_owner(eb),
+@@ -596,7 +571,7 @@ int btrfs_validate_metadata_buffer(struct btrfs_io_bio *io_bio, u64 phy_offset,
+ 			      CSUM_FMT_VALUE(csum_size, result),
+ 			      btrfs_header_level(eb));
+ 		ret = -EUCLEAN;
+-		goto err;
++		goto out;
+ 	}
+ 
+ 	/*
+@@ -618,6 +593,39 @@ int btrfs_validate_metadata_buffer(struct btrfs_io_bio *io_bio, u64 phy_offset,
+ 		btrfs_err(fs_info,
+ 			  "block=%llu read time tree block corruption detected",
+ 			  eb->start);
++out:
++	return ret;
++}
++
++int btrfs_validate_metadata_buffer(struct btrfs_io_bio *io_bio, u64 phy_offset,
++				   struct page *page, u64 start, u64 end,
++				   int mirror)
++{
++	struct extent_buffer *eb;
++	int ret = 0;
++	int reads_done;
++
++	if (!page->private)
++		goto out;
++
++	eb = (struct extent_buffer *)page->private;
++
++	/*
++	 * The pending IO might have been the only thing that kept this buffer
++	 * in memory.  Make sure we have a ref for all this other checks
++	 */
++	atomic_inc(&eb->refs);
++
++	reads_done = atomic_dec_and_test(&eb->io_pages);
++	if (!reads_done)
++		goto err;
++
++	eb->read_mirror = mirror;
++	if (test_bit(EXTENT_BUFFER_READ_ERR, &eb->bflags)) {
++		ret = -EIO;
++		goto err;
++	}
++	ret = validate_extent_buffer(eb);
+ err:
+ 	if (reads_done &&
+ 	    test_and_clear_bit(EXTENT_BUFFER_READAHEAD, &eb->bflags))
 -- 
 2.29.2
 

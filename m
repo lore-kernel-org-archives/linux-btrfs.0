@@ -2,66 +2,66 @@ Return-Path: <SRS0=jnhB=EL=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B63B4C55179
-	for <linux-btrfs@archiver.kernel.org>; Thu,  5 Nov 2020 15:45:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 461F7C4741F
+	for <linux-btrfs@archiver.kernel.org>; Thu,  5 Nov 2020 15:45:36 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 5F215206FA
-	for <linux-btrfs@archiver.kernel.org>; Thu,  5 Nov 2020 15:45:32 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D62B4206FA
+	for <linux-btrfs@archiver.kernel.org>; Thu,  5 Nov 2020 15:45:35 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="kRht/n45"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="CNjElhbe"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731389AbgKEPpa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 5 Nov 2020 10:45:30 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56392 "EHLO
+        id S1731434AbgKEPpc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 5 Nov 2020 10:45:32 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56412 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1731202AbgKEPp1 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Nov 2020 10:45:27 -0500
+        with ESMTP id S1731411AbgKEPpc (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Nov 2020 10:45:32 -0500
 Received: from mail-qk1-x743.google.com (mail-qk1-x743.google.com [IPv6:2607:f8b0:4864:20::743])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1D667C0613CF
-        for <linux-btrfs@vger.kernel.org>; Thu,  5 Nov 2020 07:45:27 -0800 (PST)
-Received: by mail-qk1-x743.google.com with SMTP id z6so1554867qkz.4
-        for <linux-btrfs@vger.kernel.org>; Thu, 05 Nov 2020 07:45:27 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D51E9C0613CF
+        for <linux-btrfs@vger.kernel.org>; Thu,  5 Nov 2020 07:45:31 -0800 (PST)
+Received: by mail-qk1-x743.google.com with SMTP id y197so1549417qkb.7
+        for <linux-btrfs@vger.kernel.org>; Thu, 05 Nov 2020 07:45:31 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references:mime-version
          :content-transfer-encoding;
-        bh=EAZpcOaOyDU9aa631GTc6Lw8qei6UHmVVSB7izx/mKU=;
-        b=kRht/n45RGF2mki+r3LpMsnm6VCkpX9ZfWF5UOzV+cQJoH3MsIrNxBwsDe6pN8jQf7
-         /j+Mx5QhdfPVQknDjA2a8zTrcJkiK7KKaNpVP/+zA4bWEI6wvutGt+Fye56TebBF6luY
-         FhN5YOrFzmyHiXRUEzpy2bIonCEQkj7oNDqgdb0qns8jlbTcxw/qyMH5Xon1Ex9NMGzA
-         mZDsF1h4HJMDKHFsRFZpqP71VlEmTStQolA2it0ATrTScjhszuAYqLkfzg0CvsrMAjBi
-         rbb5cdYizAua+eUOT/cJC/CIex6TY+UWT/UQ/YWeewbc5lOAtNka5M1Xcw3dbycdyWqR
-         1h+A==
+        bh=/pQ83jMqyExu1vuMaQ7BI+S8JsgILIuorI4aY8Tj194=;
+        b=CNjElhbeL67szvYqkv2RZI6cAUdFP4jORpsiBsnSI8iO0GBuKeAOIkr7DbiTuLudX4
+         7Mlt9+8vH7yh3OXVa64pTRRilwvqJMNR+JrHOCqtVUhee+N4qaUB8hlq7PH4sNUKHsmi
+         hcUX/TNLCgPoFZBhEa6G970GLhO36j8ArM0n+mVsuXmVMXlx2/QwHN879VcIavWEm5Qq
+         2RgueqJ6lMigju0BT8DaH4As2iFf9NmbYwSt0n1f2kIl5hFbQ6x4DD1ULhYmEre3Ng3F
+         DSM2BI1Vu12/W+KRjKARGF8OznmpPN5DPlPJr3FSy3eQsF5TJl6kZduxJkRlGyJ96hir
+         DGCg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=EAZpcOaOyDU9aa631GTc6Lw8qei6UHmVVSB7izx/mKU=;
-        b=gSH2Iw+jqAHY1tkYBygcSMgx69hkKwG9WqXXR5IRK/xh5Mls29huanthLfFdkGN8Nf
-         S/dHo8HR68NX8iH67qWDxTE7C06NcAMf50kkWDPhWRC9FKJy9IVKuaXY/HrH+7EBw/74
-         KAzkwdzk83Ls9xMDnNnkXhaIwJs1yR9X3pl+zwLaT5TpGkAH1rCNhhmGB/yeENIBtxjQ
-         mAKgMnlNxuhWYH5K6+EU2TGTw+iKHeYkYy7s9SwSn1hZS/IDYVgktcTmGHvpRxZzEaVA
-         H2vLvv/bP462JDkL+XiYgxEePYrJbmoyHrDUArQCzGehDvL2csRa1NQE1kI1CtfDSclt
-         9gMg==
-X-Gm-Message-State: AOAM532RG/7bDBoKssFPk4OR9DrOsmQADblyd4AOKv+s4O/MrSpa79pV
-        l/J+D3EH8ptPoFni2TQIEBYIsh3pauD3W4Z2
-X-Google-Smtp-Source: ABdhPJyA5BzOC3brO4PgXqnTMSyw543XBap0+hhopO8GgGZhvOjdtc6HKVrYpY+xY+zDr5nv0XvZ5Q==
-X-Received: by 2002:ae9:e90d:: with SMTP id x13mr2691838qkf.66.1604591125597;
-        Thu, 05 Nov 2020 07:45:25 -0800 (PST)
+        bh=/pQ83jMqyExu1vuMaQ7BI+S8JsgILIuorI4aY8Tj194=;
+        b=QKA8+eKiIEw+vhX39HtE/SN07HDwyzR/a94lXwxkRnZp91tGWZ8Oc+9kqomsuAsolC
+         Agaej1UINDTMACJMqQ4SA1aC/Um+K4HrTwfqjL04Q+Jq/PTVt+KYBrsK7XB5+BmhcDE6
+         yNBqb4EWi3ddfAqKp1ZzejKDEMyyzpwPOoK6zQqnE/R3tvaiK1QkGIQrddBkMFRIHy9T
+         41Ml4DtArm9YbDLtL1UuIL3OJCqcaBNJZuYv5IAdDZfiVVuXNA+ysR3scd2TF75RmHAN
+         Yr6Z1jFjfVjKiYFCqv+ol9an0lF547D4oJUQnUHB6DpZB/1NOjSvIZhCRtX9gcsM7eML
+         wfQw==
+X-Gm-Message-State: AOAM531H0OxZQ4Pa4FLV25LCqdWzZtYLGqOQNVusCU3OD19KtEEM9b0m
+        dkE1J56ytPXiew5ZYYGUWnvIBGJ4wSD8D5Qr
+X-Google-Smtp-Source: ABdhPJwUuk/r3to/tuPiJkBHsc5RRoxxaoqP6mk7gnxMIVFwPF8LINBAG1LbQGFvSXXLcDOoC+HFSA==
+X-Received: by 2002:a37:aa93:: with SMTP id t141mr2578070qke.400.1604591130703;
+        Thu, 05 Nov 2020 07:45:30 -0800 (PST)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id w5sm1232041qkf.31.2020.11.05.07.45.24
+        by smtp.gmail.com with ESMTPSA id a25sm1253639qko.17.2020.11.05.07.45.29
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 05 Nov 2020 07:45:24 -0800 (PST)
+        Thu, 05 Nov 2020 07:45:30 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 01/14] btrfs: remove lockdep classes for the fs tree
-Date:   Thu,  5 Nov 2020 10:45:08 -0500
-Message-Id: <e19ba3fe887ce6ace42c8d57cf0db54e38ab5eb3.1604591048.git.josef@toxicpanda.com>
+Subject: [PATCH 04/14] btrfs: use btrfs_read_node_slot in walk_down_reloc_tree
+Date:   Thu,  5 Nov 2020 10:45:11 -0500
+Message-Id: <bd9bfdf69f8a03c17b35e0142e693c4bb08a03bd.1604591048.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.2
 In-Reply-To: <cover.1604591048.git.josef@toxicpanda.com>
 References: <cover.1604591048.git.josef@toxicpanda.com>
@@ -71,35 +71,57 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We have this weird problem where our lockdep class is set after we
-read a tree block, which can race with concurrent readers and result in
-erroneous lockdep errors.  We want to set the lockdep class at
-allocation time if possible, but in certain cases we may not have the
-actual root owner, such as with relocation or any backref lookups.  This
-is only really a problem for reference counted tree's, because all other
-tree's have their root reference set in their extent reference.  Remove
-the fs tree specific lock class.  We need to still keep the reloc tree
-one, it's still reference counted, because replace_path will lock the
-reloc tree and the destination tree, and if they're both set to
-tree-<level> we'll have issues.
+We do not need to call read_tree_block() here, simply use the
+btrfs_read_node_slot helper.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/disk-io.c | 1 -
- 1 file changed, 1 deletion(-)
+ fs/btrfs/relocation.c | 15 ++-------------
+ 1 file changed, 2 insertions(+), 13 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 212806d59012..35b16fe3b05f 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -173,7 +173,6 @@ static struct btrfs_lockdep_keyset {
- 	{ .id = BTRFS_EXTENT_TREE_OBJECTID,	DEFINE_NAME("extent")	},
- 	{ .id = BTRFS_CHUNK_TREE_OBJECTID,	DEFINE_NAME("chunk")	},
- 	{ .id = BTRFS_DEV_TREE_OBJECTID,	DEFINE_NAME("dev")	},
--	{ .id = BTRFS_FS_TREE_OBJECTID,		DEFINE_NAME("fs")	},
- 	{ .id = BTRFS_CSUM_TREE_OBJECTID,	DEFINE_NAME("csum")	},
- 	{ .id = BTRFS_QUOTA_TREE_OBJECTID,	DEFINE_NAME("quota")	},
- 	{ .id = BTRFS_TREE_LOG_OBJECTID,	DEFINE_NAME("log")	},
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 0e2dd7cf87f6..d327b5b4f1cd 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -1415,10 +1415,8 @@ static noinline_for_stack
+ int walk_down_reloc_tree(struct btrfs_root *root, struct btrfs_path *path,
+ 			 int *level)
+ {
+-	struct btrfs_fs_info *fs_info = root->fs_info;
+ 	struct extent_buffer *eb = NULL;
+ 	int i;
+-	u64 bytenr;
+ 	u64 ptr_gen = 0;
+ 	u64 last_snapshot;
+ 	u32 nritems;
+@@ -1426,8 +1424,6 @@ int walk_down_reloc_tree(struct btrfs_root *root, struct btrfs_path *path,
+ 	last_snapshot = btrfs_root_last_snapshot(&root->root_item);
+ 
+ 	for (i = *level; i > 0; i--) {
+-		struct btrfs_key first_key;
+-
+ 		eb = path->nodes[i];
+ 		nritems = btrfs_header_nritems(eb);
+ 		while (path->slots[i] < nritems) {
+@@ -1447,16 +1443,9 @@ int walk_down_reloc_tree(struct btrfs_root *root, struct btrfs_path *path,
+ 			return 0;
+ 		}
+ 
+-		bytenr = btrfs_node_blockptr(eb, path->slots[i]);
+-		btrfs_node_key_to_cpu(eb, &first_key, path->slots[i]);
+-		eb = read_tree_block(fs_info, bytenr, ptr_gen, i - 1,
+-				     &first_key);
+-		if (IS_ERR(eb)) {
++		eb = btrfs_read_node_slot(eb, path->slots[i]);
++		if (IS_ERR(eb))
+ 			return PTR_ERR(eb);
+-		} else if (!extent_buffer_uptodate(eb)) {
+-			free_extent_buffer(eb);
+-			return -EIO;
+-		}
+ 		BUG_ON(btrfs_header_level(eb) != i - 1);
+ 		path->nodes[i - 1] = eb;
+ 		path->slots[i - 1] = 0;
 -- 
 2.26.2
 

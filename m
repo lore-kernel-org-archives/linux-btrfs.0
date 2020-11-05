@@ -2,44 +2,45 @@ Return-Path: <SRS0=jnhB=EL=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	NICE_REPLY_A,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-11.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,NICE_REPLY_A,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 62BB3C4742C
-	for <linux-btrfs@archiver.kernel.org>; Thu,  5 Nov 2020 14:14:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A3F09C4742C
+	for <linux-btrfs@archiver.kernel.org>; Thu,  5 Nov 2020 14:28:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id EF6EE206DB
-	for <linux-btrfs@archiver.kernel.org>; Thu,  5 Nov 2020 14:13:59 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 308B720786
+	for <linux-btrfs@archiver.kernel.org>; Thu,  5 Nov 2020 14:28:16 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Ig5+ReWF"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="M2jk9ZhB"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730759AbgKEON7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 5 Nov 2020 09:13:59 -0500
-Received: from mx2.suse.de ([195.135.220.15]:54640 "EHLO mx2.suse.de"
+        id S1731073AbgKEO2Q (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 5 Nov 2020 09:28:16 -0500
+Received: from mx2.suse.de ([195.135.220.15]:33298 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1729113AbgKEON6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 5 Nov 2020 09:13:58 -0500
+        id S1730466AbgKEO2P (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 5 Nov 2020 09:28:15 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1604585637;
+        t=1604586493;
         h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:mime-version:mime-version:content-type:content-type:
+         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references:autocrypt:autocrypt;
-        bh=qD6UZkUQJgTdpPLAExdSY5+JUiVYfnccsmF8SnAEJoE=;
-        b=Ig5+ReWFnmqKdtEKsjEqXTBShOF7dhNLM1r7mNA7GIyXtzp0wk58kO8l0lGSXzeS9Yfbk6
-        6seRpRry1BzHWUQPgm1YI0MF8oAp5Cfq7Vpy2GJEgzlO/CwF7rkYp9W7rui1lP1+Pmsh/A
-        zOgIFsmvkwcyQGtgjV4I49EjV0H42SE=
+        bh=QTeUmqlZvU8PEHDGfz8ZeeJvJuEhpnBGO/U6koh1XYQ=;
+        b=M2jk9ZhBRjR9QHIf4/WEs/OdhnI1l/GC/8hwIuBfp8qZk7Um3/MJ8+ropmI6t0DvLeuH1d
+        kzB8wjgXfGut5eoFTvYBZXG2HVzmm8DSTWicz+pv2Z9jzgBuebDRAYTgGWYd95uZax6dOq
+        ayiPsPkfLB4vLJ5qJ2R3T+iQPjVVESI=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 32751AAF1;
-        Thu,  5 Nov 2020 14:13:57 +0000 (UTC)
-Subject: Re: [PATCH 13/32] btrfs: disk-io: accept bvec directly for
- csum_dirty_buffer()
+        by mx2.suse.de (Postfix) with ESMTP id 91CFCAAF1;
+        Thu,  5 Nov 2020 14:28:13 +0000 (UTC)
+Subject: Re: [PATCH 14/32] btrfs: inode: make btrfs_readpage_end_io_hook()
+ follow sector size
 To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Cc:     Goldwyn Rodrigues <rgoldwyn@suse.com>
 References: <20201103133108.148112-1-wqu@suse.com>
- <20201103133108.148112-14-wqu@suse.com>
+ <20201103133108.148112-15-wqu@suse.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  mQINBFiKBz4BEADNHZmqwhuN6EAzXj9SpPpH/nSSP8YgfwoOqwrP+JR4pIqRK0AWWeWCSwmZ
@@ -83,12 +84,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
  RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
  5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
-Message-ID: <8aef23aa-32eb-2b2f-6268-e8908c43bd65@suse.com>
-Date:   Thu, 5 Nov 2020 16:13:56 +0200
+Message-ID: <ec23422d-e7d9-2886-6c12-8582fa05d968@suse.com>
+Date:   Thu, 5 Nov 2020 16:28:12 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
  Thunderbird/68.10.0
 MIME-Version: 1.0
-In-Reply-To: <20201103133108.148112-14-wqu@suse.com>
+In-Reply-To: <20201103133108.148112-15-wqu@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -99,14 +100,68 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 3.11.20 г. 15:30 ч., Qu Wenruo wrote:
-> Currently csum_dirty_buffer() uses page to grab extent buffer, but that
-> only works for regular sector size == PAGE_SIZE case.
+> Currently btrfs_readpage_end_io_hook() just pass the whole page to
+> check_data_csum(), which is fine since we only support sectorsize ==
+> PAGE_SIZE.
 > 
-> For subpage we need page + page_offset to grab extent buffer.
+> To support subpage, we need to properly honor per-sector
+> checksum verification, just like what we did in dio read path.
 > 
-> This patch will change csum_dirty_buffer() to accept bvec directly so
-> that we can extract both page and page_offset for later subpage support.
+> This patch will do the csum verification in a for loop, starts with
+> pg_off == start - page_offset(page), with sectorsize increasement for
+> each loop.
 > 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> For sectorsize == PAGE_SIZE case, the pg_off will always be 0, and we
+> will only finish with just one loop.
+> 
+> For subpage case, we do the loop to iterate each sector and if we found
+> any error, we return error.
 
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+You refer to btrfs_readpage_end_io_hook but you actually change
+btrfs_verity_data_csum. I guess the changelog needs adjusting.
+
+> 
+> Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  fs/btrfs/inode.c | 12 +++++++++++-
+>  1 file changed, 11 insertions(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index c54e0ed0b938..0432ca58eade 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -2888,9 +2888,11 @@ int btrfs_verify_data_csum(struct btrfs_io_bio *io_bio, u64 phy_offset,
+>  			   struct page *page, u64 start, u64 end, int mirror)
+>  {
+>  	size_t offset = start - page_offset(page);
+> +	size_t pg_off;
+
+nit: For offsets we should be using a more self-descriptive type such as
+loff_t
+
+>  	struct inode *inode = page->mapping->host;
+>  	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
+>  	struct btrfs_root *root = BTRFS_I(inode)->root;
+> +	u32 sectorsize = root->fs_info->sectorsize;
+>  
+>  	if (PageChecked(page)) {
+>  		ClearPageChecked(page);
+> @@ -2910,7 +2912,15 @@ int btrfs_verify_data_csum(struct btrfs_io_bio *io_bio, u64 phy_offset,
+>  	}
+>  
+>  	phy_offset >>= root->fs_info->sectorsize_bits;
+> -	return check_data_csum(inode, io_bio, phy_offset, page, offset);
+> +	for (pg_off = offset; pg_off < end - page_offset(page);
+> +	     pg_off += sectorsize, phy_offset++) {
+> +		int ret;
+> +
+> +		ret = check_data_csum(inode, io_bio, phy_offset, page, pg_off);
+> +		if (ret < 0)
+> +			return -EIO;
+> +	}
+> +	return 0;
+>  }
+>  
+>  /*
+> 

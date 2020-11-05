@@ -7,61 +7,61 @@ X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 87F1EC55179
-	for <linux-btrfs@archiver.kernel.org>; Thu,  5 Nov 2020 15:45:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 08F31C5517A
+	for <linux-btrfs@archiver.kernel.org>; Thu,  5 Nov 2020 15:45:38 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 20B9A20782
-	for <linux-btrfs@archiver.kernel.org>; Thu,  5 Nov 2020 15:45:36 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 90FE5206FA
+	for <linux-btrfs@archiver.kernel.org>; Thu,  5 Nov 2020 15:45:37 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="odvpIbZS"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="OQc09R00"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731424AbgKEPpc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 5 Nov 2020 10:45:32 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56404 "EHLO
+        id S1731440AbgKEPpg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 5 Nov 2020 10:45:36 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56418 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1731373AbgKEPpb (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Nov 2020 10:45:31 -0500
-Received: from mail-qk1-x741.google.com (mail-qk1-x741.google.com [IPv6:2607:f8b0:4864:20::741])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 18553C0613CF
-        for <linux-btrfs@vger.kernel.org>; Thu,  5 Nov 2020 07:45:30 -0800 (PST)
-Received: by mail-qk1-x741.google.com with SMTP id k9so1546952qki.6
-        for <linux-btrfs@vger.kernel.org>; Thu, 05 Nov 2020 07:45:30 -0800 (PST)
+        with ESMTP id S1731435AbgKEPpd (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Nov 2020 10:45:33 -0500
+Received: from mail-qk1-x742.google.com (mail-qk1-x742.google.com [IPv6:2607:f8b0:4864:20::742])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8DB0AC0613CF
+        for <linux-btrfs@vger.kernel.org>; Thu,  5 Nov 2020 07:45:33 -0800 (PST)
+Received: by mail-qk1-x742.google.com with SMTP id s14so1529976qkg.11
+        for <linux-btrfs@vger.kernel.org>; Thu, 05 Nov 2020 07:45:33 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references:mime-version
          :content-transfer-encoding;
-        bh=aNDjdxE7G+9BDv1OZ/753M75ofpHfMCEu17Uw/ofHDQ=;
-        b=odvpIbZSB4dtPhBlX8ZoxaxP2DW472S6D0T2s/bVKtbH9ZEdKKdrHTu+GEZbv6eu3Z
-         qMs3BcAj4uXSDOhcq8A6In+mBs7jfnoQoitMDnMqQqSWlMFMHSrM2r+tMgs3bhy56oIg
-         MbzvnUXtcOeCaHNKxjgQTAA99F60n05LdK4KsVUInCyMf9q/Z7o3bkGVQLE2RoGAkRoH
-         i52MRkxSSfY1I6/0YsuBq7yqVbtqnv6k1TBnTOL1z0l+L2wATWkdwzhge7zZzD1W2gh4
-         yBSNeNx1OpJ2r1AyqpQGqx5tuHeKdlVTOphyYDLnxJVVUmFPOGbiuWKoM2TthkIj8s0t
-         slZA==
+        bh=dxuwocR6MmBPUUghM0P+C6FMRSWgjk+JAj7Plkxd/8Q=;
+        b=OQc09R00uIHve6w+DhLQIO08h32MZELPQL5xTrR8QHLRF+KtIDbFoYtPrQ4Vdd1D5v
+         9UKk5LdqUnmQhCz3J/HkQkKMQgwyTCBvsQifYxlIYzJPChPDseDyB2JlGhbiRImfPwGL
+         sCd5xeTNjDLXuu8QhU1DZxOWZ3ysJ5KbfMlEJcZcLBsoSYvamOQu4syBpyrvXhMZuZJl
+         eZgtfXxNraKQx3chx/VSPjRMIjR4AtF+TKcB1NI0sqFkIiUVNSj19tRX7KGLbfQkw0Kw
+         2+CLBiE3vlGL0tcrJxJx39I98IUIetn+Suwg+6MwdEvvort0jvjrxSsbfAVuYGB4Gqav
+         CKXg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=aNDjdxE7G+9BDv1OZ/753M75ofpHfMCEu17Uw/ofHDQ=;
-        b=hxYYZA2nLHr3btqDwU0EAegzP75WcFAVjF/HN+sLjy4w7rnjUm+YiKa9asFkc1k5iP
-         nTVBoXY6xdYClZzZV7ydxcAJ0sKvQMlwHvCOg6bc86OzhnXvBeNIt2uok3q66B+vgT5S
-         VVYtSTZRCVWNa97dmmTyox7Di7eWYuvxhrUzm1nVKwA/CWQOZ3I5MsOpEDNPMCdfGzm/
-         ec7+hEL2w0wAXmdGr2VteRT/C2tO4AYRMtaVVXXrhfApyf2IBcGVbM782vnEYJjcvMqQ
-         7CI99BbAU1WAGjZIAzQPrFmsf+e6H+YrlaVNC2Vrde/0H20PW3ouzhXyGRAaDZwOz7Mb
-         EL2A==
-X-Gm-Message-State: AOAM530dYsT+YsiHQ8NEBRkQUe3kr/IIiMuSqKzE0Vc7Xb1I0JTSpeGw
-        lnxrA86zzGnPotKsn7hSEJVONS/4/WX1L1TC
-X-Google-Smtp-Source: ABdhPJz3EviKAQI6V84s6t1ScUGs5Z0CoCH5f3YlYgmGQSfxJB1hbUzLgAG2xgR8yGAioD7pbnHVCw==
-X-Received: by 2002:a37:a68b:: with SMTP id p133mr2468506qke.272.1604591128980;
-        Thu, 05 Nov 2020 07:45:28 -0800 (PST)
+        bh=dxuwocR6MmBPUUghM0P+C6FMRSWgjk+JAj7Plkxd/8Q=;
+        b=XaP/JkPXO9AbKwk20EAN6464WZn6NLL2L8ZkjsOXXzbZeU/jofC+M6dZ+g00R4PtDW
+         SXHpgeK8idDuHS2kxVWsQV8fkaAQDhs9ZbtRRhBsRWV5DfE4VJpfykddqSoQ8Kc8sQOs
+         ZFwY4FCXQKAdSoknFNTivTOW9Xtt2Dq5j68E9oUMP+FoylVqPvV7bXIFFYDZzl1jFomh
+         ixvoXdVMsSuVyuUu6UlDReCo/pcchwk8JrRsSORXVbCKsNq1Fw5r6BYrFGe/kpdgezsq
+         yHZtkQ1gocAtYJ/A3uO7co5I+pH385BL+2rWk2oDED0W1XaHkeSW4/LXJGGRm4w030Er
+         AIyw==
+X-Gm-Message-State: AOAM53188Mzh749mSyXBaJUn3yeiuC2EsCXybuG26chtkUDUkE5xvNPI
+        ZyxpauBcaWeveN7NWNKYcZELni71XpNFQ9LE
+X-Google-Smtp-Source: ABdhPJynQHag0AYXpD1MZM71nC8Bo4d+LfxqBD9trvOZw1A/Z2wyWdlPDPR60Gw9xvxdMGpYcItaew==
+X-Received: by 2002:a37:8846:: with SMTP id k67mr2516497qkd.132.1604591132446;
+        Thu, 05 Nov 2020 07:45:32 -0800 (PST)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id h82sm1214805qke.109.2020.11.05.07.45.28
+        by smtp.gmail.com with ESMTPSA id 69sm1267627qko.48.2020.11.05.07.45.31
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 05 Nov 2020 07:45:28 -0800 (PST)
+        Thu, 05 Nov 2020 07:45:31 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 03/14] btrfs: use btrfs_read_node_slot in btrfs_realloc_node
-Date:   Thu,  5 Nov 2020 10:45:10 -0500
-Message-Id: <3a6461bd56f7f175fe4050b0c78747bf065242c4.1604591048.git.josef@toxicpanda.com>
+Subject: [PATCH 05/14] btrfs: use btrfs_read_node_slot in do_relocation
+Date:   Thu,  5 Nov 2020 10:45:12 -0500
+Message-Id: <673095c14fc04a76cb5b189505d23bf33003b5ce.1604591048.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.2
 In-Reply-To: <cover.1604591048.git.josef@toxicpanda.com>
 References: <cover.1604591048.git.josef@toxicpanda.com>
@@ -71,87 +71,60 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We have this giant open-coded nightmare in btrfs_realloc_node that does
-the same thing that the normal read path does, which is to see if we
-have the eb in memory already, and if not read it, and verify the eb is
-uptodate.  Delete this open coding and simply use btrfs_read_node_slot.
+We're open coding btrfs_read_node_slot in do_relocation, replace this
+with the proper helper.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/ctree.c | 33 +++------------------------------
- 1 file changed, 3 insertions(+), 30 deletions(-)
+ fs/btrfs/relocation.c | 12 +-----------
+ 1 file changed, 1 insertion(+), 11 deletions(-)
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 0ff866328a4f..5ec778e01222 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -1570,7 +1570,6 @@ int btrfs_realloc_node(struct btrfs_trans_handle *trans,
- 	struct btrfs_fs_info *fs_info = root->fs_info;
- 	struct extent_buffer *cur;
- 	u64 blocknr;
--	u64 gen;
- 	u64 search_start = *last_ret;
- 	u64 last_block = 0;
- 	u64 other;
-@@ -1579,7 +1578,6 @@ int btrfs_realloc_node(struct btrfs_trans_handle *trans,
- 	int i;
- 	int err = 0;
- 	int parent_level;
--	int uptodate;
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index d327b5b4f1cd..4d5cb593b674 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -2191,7 +2191,6 @@ static int do_relocation(struct btrfs_trans_handle *trans,
+ 			 struct btrfs_key *key,
+ 			 struct btrfs_path *path, int lowest)
+ {
+-	struct btrfs_fs_info *fs_info = rc->extent_root->fs_info;
+ 	struct btrfs_backref_node *upper;
+ 	struct btrfs_backref_edge *edge;
+ 	struct btrfs_backref_edge *edges[BTRFS_MAX_LEVEL - 1];
+@@ -2199,7 +2198,6 @@ static int do_relocation(struct btrfs_trans_handle *trans,
+ 	struct extent_buffer *eb;
  	u32 blocksize;
- 	int progress_passed = 0;
- 	struct btrfs_disk_key disk_key;
-@@ -1597,7 +1595,6 @@ int btrfs_realloc_node(struct btrfs_trans_handle *trans,
- 		return 0;
- 
- 	for (i = start_slot; i <= end_slot; i++) {
+ 	u64 bytenr;
+-	u64 generation;
+ 	int slot;
+ 	int ret;
+ 	int err = 0;
+@@ -2209,7 +2207,6 @@ static int do_relocation(struct btrfs_trans_handle *trans,
+ 	path->lowest_level = node->level + 1;
+ 	rc->backref_cache.path[node->level] = node;
+ 	list_for_each_entry(edge, &node->upper, list[LOWER]) {
 -		struct btrfs_key first_key;
- 		int close = 1;
+ 		struct btrfs_ref ref = { 0 };
  
- 		btrfs_node_key(parent, &disk_key, i);
-@@ -1606,8 +1603,6 @@ int btrfs_realloc_node(struct btrfs_trans_handle *trans,
- 
- 		progress_passed = 1;
- 		blocknr = btrfs_node_blockptr(parent, i);
--		gen = btrfs_node_ptr_generation(parent, i);
--		btrfs_node_key_to_cpu(parent, &first_key, i);
- 		if (last_block == 0)
- 			last_block = blocknr;
- 
-@@ -1624,31 +1619,9 @@ int btrfs_realloc_node(struct btrfs_trans_handle *trans,
- 			continue;
+ 		cond_resched();
+@@ -2282,17 +2279,10 @@ static int do_relocation(struct btrfs_trans_handle *trans,
  		}
  
--		cur = find_extent_buffer(fs_info, blocknr);
--		if (cur)
--			uptodate = btrfs_buffer_uptodate(cur, gen, 0);
--		else
--			uptodate = 0;
--		if (!cur || !uptodate) {
--			if (!cur) {
--				cur = read_tree_block(fs_info, blocknr, gen,
--						      parent_level - 1,
--						      &first_key);
--				if (IS_ERR(cur)) {
--					return PTR_ERR(cur);
--				} else if (!extent_buffer_uptodate(cur)) {
--					free_extent_buffer(cur);
--					return -EIO;
--				}
--			} else if (!uptodate) {
--				err = btrfs_read_buffer(cur, gen,
--						parent_level - 1,&first_key);
--				if (err) {
--					free_extent_buffer(cur);
--					return err;
--				}
--			}
--		}
-+		cur = btrfs_read_node_slot(parent, i);
-+		if (IS_ERR(cur))
-+			return PTR_ERR(cur);
- 		if (search_start == 0)
- 			search_start = last_block;
+ 		blocksize = root->fs_info->nodesize;
+-		generation = btrfs_node_ptr_generation(upper->eb, slot);
+-		btrfs_node_key_to_cpu(upper->eb, &first_key, slot);
+-		eb = read_tree_block(fs_info, bytenr, generation,
+-				     upper->level - 1, &first_key);
++		eb = btrfs_read_node_slot(upper->eb, slot);
+ 		if (IS_ERR(eb)) {
+ 			err = PTR_ERR(eb);
+ 			goto next;
+-		} else if (!extent_buffer_uptodate(eb)) {
+-			free_extent_buffer(eb);
+-			err = -EIO;
+-			goto next;
+ 		}
+ 		btrfs_tree_lock(eb);
  
 -- 
 2.26.2

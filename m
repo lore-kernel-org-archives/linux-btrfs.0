@@ -5,60 +5,60 @@ X-Spam-Level:
 X-Spam-Status: No, score=-12.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AD5D1C388F7
-	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Nov 2020 11:29:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AE9FCC55ABD
+	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Nov 2020 11:29:14 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 5911620659
-	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Nov 2020 11:29:12 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 572B120659
+	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Nov 2020 11:29:14 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="lqQhP9Q2"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="NQsGEQYu"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731510AbgKJL3L (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 10 Nov 2020 06:29:11 -0500
-Received: from esa5.hgst.iphmx.com ([216.71.153.144]:12022 "EHLO
+        id S1731976AbgKJL3N (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 10 Nov 2020 06:29:13 -0500
+Received: from esa5.hgst.iphmx.com ([216.71.153.144]:12024 "EHLO
         esa5.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1730001AbgKJL3I (ORCPT
+        with ESMTP id S1728478AbgKJL3L (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Nov 2020 06:29:08 -0500
+        Tue, 10 Nov 2020 06:29:11 -0500
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1605007747; x=1636543747;
+  t=1605007750; x=1636543750;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=sMvVHJ6TFdYGhKN5I5Yr/kCzLx1a7+nltou3ISSvzeA=;
-  b=lqQhP9Q2wkK8NVs++Yzd6yLDLrQ0ZbNiXMUN5HX3p9fufREWoJTk3ayD
-   7IG37FiHS/8/zVGxR7CLj2UzGkzMwS53IuXGYqf7rdRTRUIvvCmnfsZDp
-   C406xR4CxtCMADCqv9oL+kgmxM95gNtMirbymdalzzDtQtG3R3OPKoO1A
-   egjsXi9do4XB9Ib9pojy0BVLcYm3D/jJZra/fOnEJfR7e59lpLZj0rqvS
-   SaRTu3iFFU9MnQWdpVkF0G62hU1k2F4XZwXeqc6rc+rStKyNf+kr4CLKC
-   3XeHOX6SiZrgDixAGjSHmXMMghw6vBQXKS6Rmv1Nz6Nc6A8kTPp3lRw7L
+  bh=ymT8kV10Uka3PsUpR2UxtJE4fiKgqhZ9KbB4eo2cScc=;
+  b=NQsGEQYu8m/VEzl8qIyV6G84xy9ISaWrqS86MQrPXk0rM/vWnCDgJUa0
+   dBHNrKgXp94mArZnCN1KddXj9lr9a5TEAYPU1ReiXCkyBOtLGeSapIaG+
+   bWYNxPw1LaN+e5sMxroF6RXajTR0GDqzsO5JrpuALDHNXsnox2tGdP+9c
+   ugj4BVT/zWtQQVitFkkBcyyVI+9QvkTDia7OmRm9h+6uUs3g2HAO0kfvV
+   3PHfhAleBLAd5deVNEOYkShIL/mIr87Xcsqo0mGGfYI7k6ONlXWWjNR8m
+   Y+jqkLYDRLvb1Gsu5x9CSHWDaVbYW3uUTV/kZ+DfPh3kEt5FG7xxwZCN7
    w==;
-IronPort-SDR: QGVbxKe9tQnHxv3Cb+Gwetn2hifreaqm4ehDf8fbHoyWvaxJ7s2EbTIclSUZV7pwobHOKNRwc9
- LIjZ73XIRWRvdQ8uJ8yEbIS3SM/+YDZV9qS4ghCRWjjoau4naK5Hd8ejCgxPL8EK2lmkrcAk3Q
- rHnSTtqNnEnDztzbCGVktagtuRO/IV309tRSPNyb9z0T+U2vm6uk7lucsOUbp2ArJ4itdDi+1A
- LRWLyubNHywtTMZrK3zuQ7n3Dpu8rc1zRgUCViRcQ4PPVEhjY8pSP/AxxBraVgHIx3WqTPxl6Z
- vZo=
+IronPort-SDR: 1TvHuiJKDEh8Y6mh1o87kQERyyMzwvPJHgJXG6zCVg/ZTDwXdslw2le0luY3MzLco1RwGTQW/h
+ pK0/CFxfl0D9/GzcGdz9LHovFFpY7r6svyavQBM06E5t+XRhYpzD68qizCap5FM1h/3WwtU243
+ CcU0r5buDp4PCEdhuUK2hLCTlc7MQH5wvxxKyamx24YrTUVTHtwbpirmMuNH96eTaq2+IseXDr
+ bYM7ks4Fu/WAezGAvAoFOgveoN4VBvctkyi3bNR36dgY58BY1nq06hzsK8eOm5eRG4ijfzEnf+
+ nm0=
 X-IronPort-AV: E=Sophos;i="5.77,466,1596470400"; 
-   d="scan'208";a="152376599"
+   d="scan'208";a="152376630"
 Received: from h199-255-45-14.hgst.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 10 Nov 2020 19:28:47 +0800
-IronPort-SDR: uzQiijWtlAP4tca3h6uq9tiptJ69wnGbyQUKSBa0WqE8yTA2OJhH9KkzYIZoVs76dTFWwIKZPe
- EKWdh794ydzA1Hxf/MYVQn+cMLB3fB4/XEi3N+Uj8yVlW0K6t0WVqRsJFF6GY8yUNWjAYlrE9B
- vb2TxbwSL/8ZG+UGRIk/l8feqLCUIqU4Hpjm1dKLyEz5K9rafhsV5LgDyYjGiBewHy32eVXD4H
- iAj+HlOgxReYTQ2YPwnOA3w/eSVLuZNaeQvJwkBKts/y33zD8xRl+jf90r6Sp4YPayk/nxWURC
- gHoV1G9pLQgN7JnivSWCvrrO
+  by ob1.hgst.iphmx.com with ESMTP; 10 Nov 2020 19:28:52 +0800
+IronPort-SDR: 4s3uOVPdiMfu/Tx5pakkngVkDEi3Jb40VgWBy9V2yFPvyelTDjnYJtAfja74buOPMMhTpJBhW9
+ XQ1SQ5zs5aUpqF1KofdA+lcQhKvVo/NSI3YEsPlrJe0QinKueP92aEquU88Hiv3wKNnAOV6FE2
+ QFGQKh7xvjoXM5VvbkGAXvNxw+TU/YAru9KOJzNqc3mo0NiSduWlWKEieCUficKvnWz109sFMs
+ 3+/rqm1uNiBfWcsZVN3a8+3yxuEaoOVCZDAwCAB7ct3VSo3zKQui0DX/FeLjlbT67TvEDV6/ad
+ zE1cMiuX1SL0tRDhEMEcBhZM
 Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 10 Nov 2020 03:14:48 -0800
-IronPort-SDR: iV+DyAGixlRd/ix9HUOEDmQtqtm8NEf0ZGKsGJlKpvtzHW2PUQJQRbwMRPaqHwyOlAAxMRvNBQ
- TLug05e+9wYNvjJQfMw3uY1U8ZVATYHH8RiaOSxgogE62aZEUkuHDx1fcZb1LWfVNj0oSosq6H
- MC68Sfk5FwGi5ahq8IL7xJP125HyGj0BpyyWaJIYzvNeaKoSt78iWe0u6vv6yqcQmYtON5TYpZ
- gsfC82Y+tKFP7n5rRNKA//WE35kO1ZkxWVGVmSwo1vsRVod+W6LZwFZwK1uoGNJyO4vrDs1WAk
- jcU=
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 10 Nov 2020 03:14:53 -0800
+IronPort-SDR: VLNZ2HUDN4pvAE2uhCYoFMLgcZ8YEKiMKK0ugtH9ln1WNG410aMsp7vFhMOZXue/oXA0w355P7
+ 04iWboKDl46dTH2Hkr18tth54hsgtVaONRq0M5silZM4zbkTMhh1bO9KzJggK+m/0ev/aqY2nC
+ gjscoV4sjZ4BSUvAgxD5Ueh9SW8ArJuOCvvQDLpg/zq65ASSy3mPjqeBHqDy/i8/g6iGaT6IjX
+ K6OpkrwArU+SZIdvVnYfXJ0w6dQEW1qXLT9UK6L07gtC60fBj5AfaZLGvsc5CeNAlq6DtxLv6c
+ wEI=
 WDCIronportException: Internal
 Received: from naota.dhcp.fujisawa.hgst.com ([10.149.52.155])
-  by uls-op-cesaip01.wdc.com with ESMTP; 10 Nov 2020 03:28:47 -0800
+  by uls-op-cesaip01.wdc.com with ESMTP; 10 Nov 2020 03:28:51 -0800
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     linux-btrfs@vger.kernel.org, dsterba@suse.com
 Cc:     hare@suse.com, linux-fsdevel@vger.kernel.org,
@@ -67,9 +67,9 @@ Cc:     hare@suse.com, linux-fsdevel@vger.kernel.org,
         "Darrick J. Wong" <darrick.wong@oracle.com>,
         Naohiro Aota <naohiro.aota@wdc.com>,
         Josef Bacik <josef@toxicpanda.com>
-Subject: [PATCH v10 26/41] btrfs: enable zone append writing for direct IO
-Date:   Tue, 10 Nov 2020 20:26:29 +0900
-Message-Id: <38ffdd3dad3415079c350e284006d51aced384d6.1605007037.git.naohiro.aota@wdc.com>
+Subject: [PATCH v10 29/41] btrfs: wait existing extents before truncating
+Date:   Tue, 10 Nov 2020 20:26:32 +0900
+Message-Id: <47aba0c9cc8686ad4807de22c555f4d13db5dc9a.1605007037.git.naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.27.0
 In-Reply-To: <cover.1605007036.git.naohiro.aota@wdc.com>
 References: <cover.1605007036.git.naohiro.aota@wdc.com>
@@ -79,57 +79,40 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Likewise to buffered IO, enable zone append writing for direct IO when its
-used on a zoned block device.
+When truncating a file, file buffers which have already been allocated but
+not yet written may be truncated.  Truncating these buffers could cause
+breakage of a sequential write pattern in a block group if the truncated
+blocks are for example followed by blocks allocated to another file. To
+avoid this problem, always wait for write out of all unwritten buffers
+before proceeding with the truncate execution.
 
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/inode.c | 17 +++++++++++++++++
- 1 file changed, 17 insertions(+)
+ fs/btrfs/inode.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index fe15441278de..445cb6ba4a59 100644
+index 991ef2bf018f..992aa963592d 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -7542,6 +7542,9 @@ static int btrfs_dio_iomap_begin(struct inode *inode, loff_t start,
- 	iomap->bdev = fs_info->fs_devices->latest_bdev;
- 	iomap->length = len;
- 
-+	if (write && btrfs_is_zoned(fs_info) && fs_info->max_zone_append_size)
-+		iomap->flags |= IOMAP_F_ZONE_APPEND;
+@@ -4955,6 +4955,16 @@ static int btrfs_setsize(struct inode *inode, struct iattr *attr)
+ 		btrfs_drew_write_unlock(&root->snapshot_lock);
+ 		btrfs_end_transaction(trans);
+ 	} else {
++		struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
 +
- 	free_extent_map(em);
- 
- 	return 0;
-@@ -7779,6 +7782,8 @@ static void btrfs_end_dio_bio(struct bio *bio)
- 	if (err)
- 		dip->dio_bio->bi_status = err;
- 
-+	btrfs_record_physical_zoned(dip->inode, dip->logical_offset, bio);
-+
- 	bio_put(bio);
- 	btrfs_dio_private_put(dip);
- }
-@@ -7933,6 +7938,18 @@ static blk_qc_t btrfs_submit_direct(struct inode *inode, struct iomap *iomap,
- 		bio->bi_end_io = btrfs_end_dio_bio;
- 		btrfs_io_bio(bio)->logical = file_offset;
- 
-+		WARN_ON_ONCE(write && btrfs_is_zoned(fs_info) &&
-+			     fs_info->max_zone_append_size &&
-+			     bio_op(bio) != REQ_OP_ZONE_APPEND);
-+
-+		if (bio_op(bio) == REQ_OP_ZONE_APPEND) {
-+			ret = extract_ordered_extent(inode, bio, file_offset);
-+			if (ret) {
-+				bio_put(bio);
-+				goto out_err;
-+			}
++		if (btrfs_is_zoned(fs_info)) {
++			ret = btrfs_wait_ordered_range(
++				inode,
++				ALIGN(newsize, fs_info->sectorsize),
++				(u64)-1);
++			if (ret)
++				return ret;
 +		}
-+
- 		ASSERT(submit_len >= clone_len);
- 		submit_len -= clone_len;
  
+ 		/*
+ 		 * We're truncating a file that used to have good data down to
 -- 
 2.27.0
 

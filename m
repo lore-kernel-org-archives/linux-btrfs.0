@@ -7,68 +7,71 @@ X-Spam-Status: No, score=-12.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E01E1C56201
-	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Nov 2020 11:28:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6A72AC388F7
+	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Nov 2020 11:28:21 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 7B0D620781
-	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Nov 2020 11:28:14 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 14D0420659
+	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Nov 2020 11:28:21 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="HHl1qV5D"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="RL/akRa3"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727654AbgKJL2H (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 10 Nov 2020 06:28:07 -0500
-Received: from esa5.hgst.iphmx.com ([216.71.153.144]:11933 "EHLO
+        id S1729922AbgKJL2T (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 10 Nov 2020 06:28:19 -0500
+Received: from esa5.hgst.iphmx.com ([216.71.153.144]:11943 "EHLO
         esa5.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729772AbgKJL2G (ORCPT
+        with ESMTP id S1726152AbgKJL2K (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Nov 2020 06:28:06 -0500
+        Tue, 10 Nov 2020 06:28:10 -0500
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1605007685; x=1636543685;
+  t=1605007689; x=1636543689;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=BuRFMbf+ahickXV6NT593M5CLgBwFnCrpXMYcWjKFAM=;
-  b=HHl1qV5DTGWW6CMwx+X+TqhjQRsKDyEnO1ecNUpGdWZs9C3MKa9dhQoo
-   sVFt2QDDV9SG04jklXl9W7orvWDWle3kp2U6up/06ZCgtsbWZohQAuGij
-   H0Lg+qEIYEg5cN3ewyAX4eil2hRLUECMmmQ5iVTCLWKgg8dQsZmtED4eO
-   2COuMNARmgS1DdxFLXVmka4WuA83ev21+uz4ozdguUv2xYJGEowIxMG22
-   G33aslcn49qDzk9kGgdbHyKWLNBEOCN2KqLYZAQPmnWztY+wPHN31rX+w
-   RXx/Jjd4THdGLgnoG5qz/riSoBGHQMjnhpiqKond28sfuqGVkukM4i4z4
-   g==;
-IronPort-SDR: f1wjh3C4aRlXuh2ieCU6DBi2L6dbDqq27ZoUbt9pa+BcrPsX1it0rS8z6KCyaNzQpxDGn/CEr9
- fXeoMq1oDo4TrHO8Zvl5NE0LNIyYVGcvECrfJyZMCOsv7ir7e05L5hyaQl2GlOb15AZVyDtMga
- aYtL0ZuJju2Qg+LKFdfWBem1SezcISzeBruDtXuYqnGo9lZvJNIDoYMay+WTYsNwOj/xdziPcD
- 1hSPAs3ulAFjWrO4SAhspuhYH3SvsOnb9Uvy3xPM7OqMiqgMuZj7WtoZ1QqaJJzGlggOq9s9zr
- LVc=
+  bh=JURNtChtu4jU2Kkb/XX8ESd3HK5ZuzHxwYwetvjZgvM=;
+  b=RL/akRa3O1zn/QBbaqt3qaRWosLq2YLrgtXN2dUk077VgHUkNgrU+PQf
+   Yg6rIk7i0T8hfx3lq7RGunJo/NmmRNiIJx3J6TyZeryMi3g93kbHc4+TI
+   XqV66rJUMaf4h9qbQGKH0WZ4lSwWWXg2opfVqvc40WNQFpYGizAGzxXrv
+   Txh9ui5VcTYvhSBlUNp939XOPhXj7Rqqf8DPu4qCfn5gFV8S50FkxWPMK
+   1gNVNgC1J3N2nCt8wvho/Fpm8lQCa4RYMrhZguFCnX0fwj+zSo9NNgunS
+   hhssB6rt02ilSsug/gXR7dR2IZCLWAU9hDJBaqwhYb7Q0bm3oSeXRksRS
+   w==;
+IronPort-SDR: 1KOfDF8W92K8jSnDPTD8dqyFv45tOp38lGNUB9Sb+gDPLdN4nEcvPr0XJ8rtBDiMY+/RN0ERvs
+ oZm3OI9fZ+cOJQ/kfXYL67v8lyI4XOlamaqSrDMqK5wy2oidrWOj+6f/WYe9goRcJlv61fe2ft
+ PPK/vNosEocG5eCXeO7SzUKRk2nfblJUniFIm3wusiqhzQ98aktqdKNb7SxQr1C7OvJz1YFYEv
+ atGS2qa9Lqlbv5me6+kxXTdUfTw29s9m2YFNFdSDgoNmfgdvA3l2yDB/n3BV2jEVtAPd4/5Y6S
+ qQQ=
 X-IronPort-AV: E=Sophos;i="5.77,466,1596470400"; 
-   d="scan'208";a="152376409"
+   d="scan'208";a="152376413"
 Received: from h199-255-45-14.hgst.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 10 Nov 2020 19:28:05 +0800
-IronPort-SDR: ae5CWyyuLvH0bNoQZn09RNCV5PfrhrdK7182PdqR5OGAS7Aa0BzQIARri/1vtYmoMAelmPh5GT
- wFvbbIioXV1OlqI0OKZSf8LCKIhxqLS6CJ94zDaiSZIKKDuviDH3UqYa3eDEf4GubCLT2G5yhZ
- n3SxsDJkMqG7Sry8nHPpyNl8chT3s6ldyaoTFx7nzFYYMQ7GPoVtcggK5jCeFF4Tjly6QE4cv4
- Jt1wrif+nccL57eZ2fSX5FZp1ciKBDERDjaIKRgUeL+6V0/UM2x5mPYy5PtN1XOIsQMA2VZGlW
- YhuPhIfjgmBn4fcCqfX7IXmc
+  by ob1.hgst.iphmx.com with ESMTP; 10 Nov 2020 19:28:09 +0800
+IronPort-SDR: JCEgWA8K6dgPaHHZViuZLkAXBDIvg45tald8hMZVJjrlY8t+QewflVNoXzHaFdjQ62ao9LOyyX
+ 1kkR2aTHPUIauozsaR6paTcqIEIR96GcjUtPI0yBZ5Lona3w8F4RLgTwkSwGMY6zPfD6+tY88K
+ JhMVl5lMk0QUSqqPb8sVxs1pxa8i5KD+YOl2/l0Tx/HyJNPQgPdns2z+04WilO6s5y9TE6iAUQ
+ ar0NfsSNjuNmpD3qYPMLup+uH2FMLX98CMQDWfjEvacpvl8mC9YXXvbQwEEfyVh+fkieEVkTZV
+ FEsPBhYB2PBqZM68bz91xli9
 Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 10 Nov 2020 03:14:06 -0800
-IronPort-SDR: tw16f9TXcwu7AadHvvBEUstkeljEO2GSMLkNdJjpJ0enwCGlG1rFFEHdz2fiKLCHHpuVc+pkk+
- qCkVMkHezCXMRQpuSVfiSejc1/W6rxAWHZLMMhyDfdN7qps11mM1So3WZzURbu9j9OdA6W5glw
- GWb8DzvIb0mIb60XjhwIY9CywY77TK8A4DvLj9ovg3oxAfMy3ojAoXDHVBH4b0bKHsSVZ3yuCt
- 3s8ZL722HMXdKVTmNsUtLByHrpSWXxxK/dOOouIFQdSpMjmbxVvYaXc88uGDbAaFss+37yYYtt
- +BI=
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 10 Nov 2020 03:14:10 -0800
+IronPort-SDR: G/5wE+L+D6oY4teJBwHVyS0eq0M9Gtqk4Q9cPJjposUxfyUXIF0XreHpRjIiycfK6YDV+XYH+K
+ tZtjAsxb/7Z2OnNHW20DYYm6N9AWSst2GC1vfEiQsuFTEDcaeqrrutQxM82BA1dWNIdDxE2kJB
+ 9LUz3L5kiw+LfuRTqjIpCEM6rs1lIxZPuowcj9QmwaY9b7UtCcm51WmxTTwyKsDUneb4g0cFO/
+ E2B/RsFfU3TL8wLWUNHUmCQj/Naq4roeYED7tFeR4M/7tEnjdiIXYpP4twTi8g+Izcu/6XWyIO
+ /sA=
 WDCIronportException: Internal
 Received: from naota.dhcp.fujisawa.hgst.com ([10.149.52.155])
-  by uls-op-cesaip01.wdc.com with ESMTP; 10 Nov 2020 03:28:04 -0800
+  by uls-op-cesaip01.wdc.com with ESMTP; 10 Nov 2020 03:28:07 -0800
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     linux-btrfs@vger.kernel.org, dsterba@suse.com
 Cc:     hare@suse.com, linux-fsdevel@vger.kernel.org,
         Jens Axboe <axboe@kernel.dk>,
         Christoph Hellwig <hch@infradead.org>,
         "Darrick J. Wong" <darrick.wong@oracle.com>,
+        Naohiro Aota <naohiro.aota@wdc.com>,
+        Damien Le Moal <damien.lemoal@wdc.com>,
+        Anand Jain <anand.jain@oracle.com>,
         Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH v10 01/41] block: add bio_add_zone_append_page
-Date:   Tue, 10 Nov 2020 20:26:04 +0900
-Message-Id: <01fbaba7b2f2404489b5779e1719ebf3d062aadc.1605007036.git.naohiro.aota@wdc.com>
+Subject: [PATCH v10 03/41] btrfs: introduce ZONED feature flag
+Date:   Tue, 10 Nov 2020 20:26:06 +0900
+Message-Id: <5abeb08ecb3fe5776b359d318641ef5078467070.1605007036.git.naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.27.0
 In-Reply-To: <cover.1605007036.git.naohiro.aota@wdc.com>
 References: <cover.1605007036.git.naohiro.aota@wdc.com>
@@ -78,81 +81,51 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+This patch introduces the ZONED incompat flag. The flag indicates that the
+volume management will satisfy the constraints imposed by host-managed
+zoned block devices.
 
-Add bio_add_zone_append_page(), a wrapper around bio_add_hw_page() which
-is intended to be used by file systems that directly add pages to a bio
-instead of using bio_iov_iter_get_pages().
-
-Cc: Jens Axboe <axboe@kernel.dk>
-Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Signed-off-by: Damien Le Moal <damien.lemoal@wdc.com>
+Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+Reviewed-by: Anand Jain <anand.jain@oracle.com>
+Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
- block/bio.c         | 38 ++++++++++++++++++++++++++++++++++++++
- include/linux/bio.h |  2 ++
- 2 files changed, 40 insertions(+)
+ fs/btrfs/sysfs.c           | 2 ++
+ include/uapi/linux/btrfs.h | 1 +
+ 2 files changed, 3 insertions(+)
 
-diff --git a/block/bio.c b/block/bio.c
-index 58d765400226..c8943201c26c 100644
---- a/block/bio.c
-+++ b/block/bio.c
-@@ -853,6 +853,44 @@ int bio_add_pc_page(struct request_queue *q, struct bio *bio,
- }
- EXPORT_SYMBOL(bio_add_pc_page);
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index 279d9262b676..828006020bbd 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -263,6 +263,7 @@ BTRFS_FEAT_ATTR_INCOMPAT(no_holes, NO_HOLES);
+ BTRFS_FEAT_ATTR_INCOMPAT(metadata_uuid, METADATA_UUID);
+ BTRFS_FEAT_ATTR_COMPAT_RO(free_space_tree, FREE_SPACE_TREE);
+ BTRFS_FEAT_ATTR_INCOMPAT(raid1c34, RAID1C34);
++BTRFS_FEAT_ATTR_INCOMPAT(zoned, ZONED);
  
-+/**
-+ * bio_add_zone_append_page - attempt to add page to zone-append bio
-+ * @bio: destination bio
-+ * @page: page to add
-+ * @len: vec entry length
-+ * @offset: vec entry offset
-+ *
-+ * Attempt to add a page to the bio_vec maplist of a bio that will be submitted
-+ * for a zone-append request. This can fail for a number of reasons, such as the
-+ * bio being full or the target block device is not a zoned block device or
-+ * other limitations of the target block device. The target block device must
-+ * allow bio's up to PAGE_SIZE, so it is always possible to add a single page
-+ * to an empty bio.
-+ *
-+ * Returns: number of bytes added to the bio, or 0 in case of a failure.
-+ */
-+int bio_add_zone_append_page(struct bio *bio, struct page *page,
-+			     unsigned int len, unsigned int offset)
-+{
-+	struct request_queue *q;
-+	bool same_page = false;
-+
-+	if (WARN_ON_ONCE(bio_op(bio) != REQ_OP_ZONE_APPEND))
-+		return 0;
-+
-+	if (WARN_ON_ONCE(!bio->bi_disk))
-+		return 0;
-+
-+	q = bio->bi_disk->queue;
-+
-+	if (WARN_ON_ONCE(!blk_queue_is_zoned(q)))
-+		return 0;
-+
-+	return bio_add_hw_page(q, bio, page, len, offset,
-+			       queue_max_zone_append_sectors(q), &same_page);
-+}
-+EXPORT_SYMBOL_GPL(bio_add_zone_append_page);
-+
- /**
-  * __bio_try_merge_page - try appending data to an existing bvec.
-  * @bio: destination bio
-diff --git a/include/linux/bio.h b/include/linux/bio.h
-index c6d765382926..7ef300cb4e9a 100644
---- a/include/linux/bio.h
-+++ b/include/linux/bio.h
-@@ -442,6 +442,8 @@ void bio_chain(struct bio *, struct bio *);
- extern int bio_add_page(struct bio *, struct page *, unsigned int,unsigned int);
- extern int bio_add_pc_page(struct request_queue *, struct bio *, struct page *,
- 			   unsigned int, unsigned int);
-+int bio_add_zone_append_page(struct bio *bio, struct page *page,
-+			     unsigned int len, unsigned int offset);
- bool __bio_try_merge_page(struct bio *bio, struct page *page,
- 		unsigned int len, unsigned int off, bool *same_page);
- void __bio_add_page(struct bio *bio, struct page *page,
+ static struct attribute *btrfs_supported_feature_attrs[] = {
+ 	BTRFS_FEAT_ATTR_PTR(mixed_backref),
+@@ -278,6 +279,7 @@ static struct attribute *btrfs_supported_feature_attrs[] = {
+ 	BTRFS_FEAT_ATTR_PTR(metadata_uuid),
+ 	BTRFS_FEAT_ATTR_PTR(free_space_tree),
+ 	BTRFS_FEAT_ATTR_PTR(raid1c34),
++	BTRFS_FEAT_ATTR_PTR(zoned),
+ 	NULL
+ };
+ 
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index 2c39d15a2beb..5df73001aad4 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -307,6 +307,7 @@ struct btrfs_ioctl_fs_info_args {
+ #define BTRFS_FEATURE_INCOMPAT_NO_HOLES		(1ULL << 9)
+ #define BTRFS_FEATURE_INCOMPAT_METADATA_UUID	(1ULL << 10)
+ #define BTRFS_FEATURE_INCOMPAT_RAID1C34		(1ULL << 11)
++#define BTRFS_FEATURE_INCOMPAT_ZONED		(1ULL << 12)
+ 
+ struct btrfs_ioctl_feature_flags {
+ 	__u64 compat_flags;
 -- 
 2.27.0
 

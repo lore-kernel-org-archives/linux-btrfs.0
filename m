@@ -2,71 +2,128 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.3 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-12.6 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7457AC388F9
-	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Nov 2020 15:52:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A4515C55ABD
+	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Nov 2020 16:14:21 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 1E89020709
-	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Nov 2020 15:52:58 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3FFB120659
+	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Nov 2020 16:14:21 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="KJvGOrms"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727416AbgKKPw5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 11 Nov 2020 10:52:57 -0500
-Received: from mx2.suse.de ([195.135.220.15]:54968 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727041AbgKKPw4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Nov 2020 10:52:56 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 64D41AD5C;
-        Wed, 11 Nov 2020 15:52:55 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 941BEDA6E1; Wed, 11 Nov 2020 16:51:13 +0100 (CET)
-Date:   Wed, 11 Nov 2020 16:51:13 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Anand Jain <anand.jain@oracle.com>
-Cc:     linux-btrfs@vger.kernel.org, dsterba@suse.com
-Subject: Re: [PATCH RESEND v2 0/3] cleanup btrfs_find_device and fix sysbot
- warning
-Message-ID: <20201111155113.GU6756@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
-        linux-btrfs@vger.kernel.org, dsterba@suse.com
-References: <cover.1604372688.git.anand.jain@oracle.com>
+        id S1726042AbgKKQOU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 11 Nov 2020 11:14:20 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50804 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725900AbgKKQOU (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 11 Nov 2020 11:14:20 -0500
+Received: from mail-pf1-x42e.google.com (mail-pf1-x42e.google.com [IPv6:2607:f8b0:4864:20::42e])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EDC03C0613D1
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Nov 2020 08:14:19 -0800 (PST)
+Received: by mail-pf1-x42e.google.com with SMTP id c66so1895985pfa.4
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Nov 2020 08:14:19 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=AiW7yyfB8tn48PKZrTFVJ6RG8FdQwIZDONvE2FQmT1E=;
+        b=KJvGOrms+4RlrmWBCW0IXQw0JYOl++1Yo+SFREArmw2rkfS/2vlDXJcDp8TxwFkftR
+         ZwEVRKXTzWL2wcQR28z0g1EXnGT+z1eZbJH9Q3PP1K8oE4Nk5XjKE6QzRlARW0ZVD6ZS
+         ZLukiiOprnUG4pMzBtukAFnDC85/si2bDi2mJB0honfxJPWri1U72DvOg8QK8dbdJs7Y
+         JpSQrC+DgnT9nPdrwiH51D8CWq7Lf6pzChPDABrRRcGx3e/zBBC0K/Li4yGVSByYI7rD
+         pvbl264etWd9rhDuiCj4YQTLqteQEWqyTmNQtCzwBrOLlcbqWeueeKGX5QukN9ei3fTK
+         Mebg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=AiW7yyfB8tn48PKZrTFVJ6RG8FdQwIZDONvE2FQmT1E=;
+        b=I05yiWmKUwKnaydN+QpFnZNNj5/zb9zXw07hNZOA2i6h3VIsiOzMmcuT/xEluf+u6S
+         fc933YKhqLt6NcN2l9E9IctJ/cLYfOu2vwVeRoORMKPFkmZl6aj1CHz004gVK+TnLTVO
+         IhJa7H4P9dXFhenGuyT6BeskBEYPX118m6PClAfO9nH3G1sU6FgA9wAHBez/eBf4JQwO
+         GZvUPRzIRLh30Lk7X9M1bUnmGAlY/Tw94csCL6mWbEmY6BFUk0mFLyDFVF7xKGpS8LEu
+         6EnCvJsHIbLujPM5xhJkBk0j8qkUU9dM3UP7ZnYjKshNhiWy5Ch46WUw9TqvJX+Kx2NC
+         vC0A==
+X-Gm-Message-State: AOAM533PZvVuQVkciW1+IH7SZu0DpdCn6VAXdGsPPLFVNv81xG9NN3Yy
+        a7BxRlTr+l+Eo3QLzlqzSY4=
+X-Google-Smtp-Source: ABdhPJzlL1JiEZD9/NVJd61BIBQ9O8ipbUTi0ga/q2ztq+rlcYB8IqFRTM1wMQJLC95R+8qmWCTUFw==
+X-Received: by 2002:a63:cb51:: with SMTP id m17mr22311179pgi.337.1605111259504;
+        Wed, 11 Nov 2020 08:14:19 -0800 (PST)
+Received: from localhost.localdomain ([175.195.128.78])
+        by smtp.googlemail.com with ESMTPSA id k5sm2926618pjs.14.2020.11.11.08.14.17
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 11 Nov 2020 08:14:18 -0800 (PST)
+From:   Sidong Yang <realwakka@gmail.com>
+To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Cc:     Sidong Yang <realwakka@gmail.com>
+Subject: [PATCH 1/2] btrfs-progs: common: introduce fmt_print_start_object
+Date:   Wed, 11 Nov 2020 16:14:05 +0000
+Message-Id: <20201111161406.3104-1-realwakka@gmail.com>
+X-Mailer: git-send-email 2.25.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <cover.1604372688.git.anand.jain@oracle.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Nov 03, 2020 at 01:49:41PM +0800, Anand Jain wrote:
-> Patch 1 and 2 are cleanups. They were sent before with the cover-letter
-> as below.
->  [PATCH RESEND 0/2] fix verify_one_dev_extent and btrfs_find_device
-> 
-> Patch 3 is a fix for the Warning reported by sysbot. This also was sent
-> before with the cover-letter titled as below.
->   [PATCH 0/1] handle attacking device with devid=0
-> 
-> To avoid conflict fixes, please apply these patches in the order it is
-> sent here. But the sets are not related.
-> 
-> Both of these patchsets are at v2 at the latest. So I am marking all of
-> them as v2. The individual changes are in the patches.
-> 
-> Also earlier resend patches were threaded under its previous cover-letter
-> (though --in-reply-to was not used to generate/send those patches). So I am
-> trying to resend these patches again, hopefully, they are not threaded to
-> the older series again.
-> 
-> Anand Jain (3):
->   btrfs: drop never met condition of disk_total_bytes == 0
->   btrfs: fix btrfs_find_device unused arg seed
->   btrfs: fix devid 0 without a replace item by failing the mount
+Introduce a new function that can be used when you need to print an json
+object in command like "device stats".
 
-Now added to misc-next, thanks.
+Signed-off-by: Sidong Yang <realwakka@gmail.com>
+---
+ common/format-output.c | 20 ++++++++++++++++++++
+ common/format-output.h |  3 +++
+ 2 files changed, 23 insertions(+)
+
+diff --git a/common/format-output.c b/common/format-output.c
+index 8df93ecb..f31e7259 100644
+--- a/common/format-output.c
++++ b/common/format-output.c
+@@ -213,6 +213,26 @@ void fmt_print_end_group(struct format_ctx *fctx, const char *name)
+ 	}
+ }
+ 
++void fmt_print_start_object(struct format_ctx *fctx)
++{
++	if (bconf.output_format == CMD_FORMAT_JSON) {
++		fmt_separator(fctx);
++		fmt_inc_depth(fctx);
++		fctx->memb[fctx->depth] = 0;
++		putchar('{');
++	}
++}
++
++void fmt_print_end_object(struct format_ctx *fctx)
++{
++	if (bconf.output_format == CMD_FORMAT_JSON) {
++		fmt_dec_depth(fctx);
++		putchar('\n');
++		fmt_indent2(fctx->depth);
++		putchar('}');
++	}
++}
++
+ /* Use rowspec to print according to currently set output format */
+ void fmt_print(struct format_ctx *fctx, const char* key, ...)
+ {
+diff --git a/common/format-output.h b/common/format-output.h
+index bcc2d74d..9d606482 100644
+--- a/common/format-output.h
++++ b/common/format-output.h
+@@ -87,4 +87,7 @@ void fmt_print_start_group(struct format_ctx *fctx, const char *name,
+ 		enum json_type jtype);
+ void fmt_print_end_group(struct format_ctx *fctx, const char *name);
+ 
++void fmt_print_start_object(struct format_ctx *fctx);
++void fmt_print_end_object(struct format_ctx *fctx);
++
+ #endif
+-- 
+2.25.1
+

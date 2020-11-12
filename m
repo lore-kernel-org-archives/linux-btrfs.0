@@ -2,190 +2,185 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.9 required=3.0 tests=BAYES_00,FORGED_MUA_MOZILLA,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-12.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AD210C56201
-	for <linux-btrfs@archiver.kernel.org>; Thu, 12 Nov 2020 05:46:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 01025C388F7
+	for <linux-btrfs@archiver.kernel.org>; Thu, 12 Nov 2020 05:46:05 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 6E746208FE
-	for <linux-btrfs@archiver.kernel.org>; Thu, 12 Nov 2020 05:46:02 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 648842076E
+	for <linux-btrfs@archiver.kernel.org>; Thu, 12 Nov 2020 05:46:04 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=mpdesouza.com header.i=@mpdesouza.com header.b="q50ttndu"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727717AbgKLFce (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 12 Nov 2020 00:32:34 -0500
-Received: from static.214.254.202.116.clients.your-server.de ([116.202.254.214]:59898
-        "EHLO ciao.gmane.io" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728438AbgKLDxZ (ORCPT
+        id S1727655AbgKLFca (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 12 Nov 2020 00:32:30 -0500
+Received: from gateway20.websitewelcome.com ([192.185.55.25]:43149 "EHLO
+        gateway20.websitewelcome.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1728200AbgKLBhF (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Nov 2020 22:53:25 -0500
-Received: from list by ciao.gmane.io with local (Exim 4.92)
-        (envelope-from <gcfb-btrfs-devel-moved1-3@m.gmane-mx.org>)
-        id 1kd3fm-0000MU-CB
-        for linux-btrfs@vger.kernel.org; Thu, 12 Nov 2020 04:53:22 +0100
-X-Injected-Via-Gmane: http://gmane.org/
+        Wed, 11 Nov 2020 20:37:05 -0500
+X-Greylist: delayed 1330 seconds by postgrey-1.27 at vger.kernel.org; Wed, 11 Nov 2020 20:37:04 EST
+Received: from cm13.websitewelcome.com (cm13.websitewelcome.com [100.42.49.6])
+        by gateway20.websitewelcome.com (Postfix) with ESMTP id 88C13400C638D
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Nov 2020 19:12:00 -0600 (CST)
+Received: from br540.hostgator.com.br ([108.179.252.180])
+        by cmsmtp with SMTP
+        id d1CNkREk2YLDnd1COkWb6t; Wed, 11 Nov 2020 19:14:52 -0600
+X-Authority-Reason: nr=8
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=mpdesouza.com; s=default; h=Content-Transfer-Encoding:MIME-Version:
+        Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:Content-Type:Content-ID:
+        Content-Description:Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc
+        :Resent-Message-ID:In-Reply-To:References:List-Id:List-Help:List-Unsubscribe:
+        List-Subscribe:List-Post:List-Owner:List-Archive;
+        bh=LQYfNp4tF4s4+oTN7dn1diEkbUugTCV38k9i9HVR1WM=; b=q50ttnduFuRtYFTjYcncCqOiGR
+        YfDJxGI1ChB19D7b0GoxxYCPGuZIXDo2doP8QExme3Tu/47kjuR31qjRV+vGegSXUoNQUVKYAakeF
+        c/4Zqvs2nYpFM4oRdU0i0ckLXLSU8XJgtOlqwSpozI7ZG5j4yGKEpiGjOiedKL90qRMJ4+edAH4k6
+        /XFFe8WSlYlVt/C0xzp2z5BS3DVCC2840UmCsw378Cc1MgRN1N0Gy1qcXoqZI4hjt9lcnVy3o5mRN
+        e4A/dkidXgI7tvHzvUvclJHCHcEcXs0Yf9Bxi2oeaOz+mvoO5TvmGkPFiR1KOap5Spf5r8+CQKm0B
+        Z3+ixf7Q==;
+Received: from 200.146.50.182.dynamic.dialup.gvt.net.br ([200.146.50.182]:45016 helo=localhost.de)
+        by br540.hostgator.com.br with esmtpsa  (TLS1.2) tls TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+        (Exim 4.93)
+        (envelope-from <marcos@mpdesouza.com>)
+        id 1kd1CM-000CUp-F4; Wed, 11 Nov 2020 22:14:51 -0300
+From:   Marcos Paulo de Souza <marcos@mpdesouza.com>
 To:     linux-btrfs@vger.kernel.org
-From:   Jean-Denis Girard <jd.girard@sysnux.pf>
-Subject: ERROR: could not setup extent tree
-Date:   Wed, 11 Nov 2020 17:53:14 -1000
-Message-ID: <roibjb$u1$1@ciao.gmane.io>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8; format=flowed
+Cc:     dsterba@suse.com, wqu@suse.com,
+        Marcos Paulo de Souza <mpdesouza@suse.com>
+Subject: [PATCH] btrfs-progs: inspect: Fix logical-resolve by starting the lookup from root_id
+Date:   Wed, 11 Nov 2020 22:14:00 -0300
+Message-Id: <20201112011400.6866-1-marcos@mpdesouza.com>
+X-Mailer: git-send-email 2.26.2
+MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.4.0
-X-Mozilla-News-Host: news://news.gmane.org:119
-Content-Language: en-US
+X-AntiAbuse: This header was added to track abuse, please include it with any abuse report
+X-AntiAbuse: Primary Hostname - br540.hostgator.com.br
+X-AntiAbuse: Original Domain - vger.kernel.org
+X-AntiAbuse: Originator/Caller UID/GID - [47 12] / [47 12]
+X-AntiAbuse: Sender Address Domain - mpdesouza.com
+X-BWhitelist: no
+X-Source-IP: 200.146.50.182
+X-Source-L: No
+X-Exim-ID: 1kd1CM-000CUp-F4
+X-Source: 
+X-Source-Args: 
+X-Source-Dir: 
+X-Source-Sender: 200.146.50.182.dynamic.dialup.gvt.net.br (localhost.de) [200.146.50.182]:45016
+X-Source-Auth: marcos@mpdesouza.com
+X-Email-Count: 4
+X-Source-Cap: bXBkZXNvNTM7bXBkZXNvNTM7YnI1NDAuaG9zdGdhdG9yLmNvbS5icg==
+X-Local-Domain: yes
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi list,
+From: Marcos Paulo de Souza <mpdesouza@suse.com>
 
-I have a RAID1 Btrfs (on sdb and sdc) behind bcache (on nvme0n1p4):
+logical-resolve is currently broken on systems that have a child
+subvolume being mounted without access to the parent subvolume.
+This is the default for SLE/openSUSE installations, since we have the
+subvolume '@' not being mounted, only it's child subovlumes (var, root, ...).
 
-[jdg@tiare ~]$  lsblk -o NAME,UUID,SIZE,MOUNTPOINT
-NAME           UUID                                   SIZE MOUNTPOINT
-sdb            8ae3c26b-6932-4dad-89bc-569ae2c74366   3,7T
-└─bcache1      c5b8386b-b81d-4473-9340-7b8a74fc3a3c   3,7T
-sdc            7ccac426-dc8c-4cb3-9e64-13b1cf48d4bf   3,7T
-└─bcache0      c5b8386b-b81d-4473-9340-7b8a74fc3a3c   3,7T
-nvme0n1                                             119,2G
-├─nvme0n1p1    1725-D2D0                              512M /boot/efi
-├─nvme0n1p2    d3cc080c-0c3f-4191-a25d-7c419e00316a    40G /
-├─nvme0n1p3    572b43a3-7690-4daa-beeb-d1c030f194e8    16G [SWAP]
-└─nvme0n1p4    a3ed0098-36b4-46a6-8e38-efe9b9a94e52  62,8G <- bcache
+If we try to look for a file on /var, this happens:
 
-The Btrfs filesystem is used for /home (one subvolume per user).
+btrfs inspect-internal logical-resolve -v 339570688 /
+ioctl ret=0, total_size=4096, bytes_left=4056, bytes_missing=0, cnt=3, missed=0
+ERROR: cannot access '//@/var': No such file or directory
 
-An error happened during the nightly backup on nvme0 (see below) and 
-Btrfs went readonly. After reboot, it refused to mount.
+Since subvolume '@' isn't mounted, the normal file lookup fails. The fix
+in this case is the start the file lookup in the subvolume that contains
+the file, and not from the top subvolume of the system.
 
-I'm on Fedora-32 with kernel-5.9.7, and I compiled latest btrfs-progs:
+To not break current subvol_uuid_search_init function calling
+btrfs_list_path_for_root, a new argument was added to switch between the
+old behavior and the new one. With the fix in place, logical-resolve
+works as expected:
 
-[root@tiare btrfs-progs-5.9]# ./btrfs -v check  /dev/bcache0
-Opening filesystem to check...
-parent transid verify failed on 3010317451264 wanted 29647859 found 29647852
-parent transid verify failed on 3010317451264 wanted 29647859 found 29647852
-parent transid verify failed on 3010317451264 wanted 29647859 found 29647852
-Ignoring transid failure
-ERROR: could not setup extent tree
-ERROR: cannot open file system
+btrfs inspect-internal logical-resolve -v 339570688 /
+ioctl ret=0, total_size=65536, bytes_left=65496, bytes_missing=0, cnt=3, missed=0
+ioctl ret=0, bytes_left=4055, bytes_missing=0 cnt=1, missed=0
+//var/log/zypp/history
 
-I have restored from backups on a different disk, but still, I would be 
-interested in trying to restore the broken filesystem: what should I try?
+Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
+---
+ btrfs-list.c        | 11 ++++++++---
+ btrfs-list.h        |  2 +-
+ cmds/inspect.c      |  2 +-
+ common/send-utils.c |  2 +-
+ 4 files changed, 11 insertions(+), 6 deletions(-)
 
-/var/log/messages :
-Nov 11 00:24:28 tiare kernel: nvme nvme0: I/O 0 QID 5 timeout, aborting
-Nov 11 00:24:28 tiare kernel: nvme nvme0: I/O 1 QID 5 timeout, aborting
-Nov 11 00:24:28 tiare kernel: nvme nvme0: I/O 2 QID 5 timeout, aborting
-Nov 11 00:24:28 tiare kernel: nvme nvme0: Abort status: 0x0
-Nov 11 00:24:28 tiare kernel: nvme nvme0: I/O 3 QID 5 timeout, aborting
-Nov 11 00:24:28 tiare kernel: nvme nvme0: I/O 4 QID 5 timeout, aborting
-  ...
-Nov 11 00:24:58 tiare kernel: nvme nvme0: I/O 0 QID 5 timeout, reset 
-controller
-Nov 11 00:24:58 tiare kernel: blk_update_request: I/O error, dev 
-nvme0n1, sector 153333328 op 0x0:(READ) flags 0x80700 phys_seg 1 prio 
-class 0
-Nov 11 00:24:58 tiare kernel: bcache: bch_count_io_errors() nvme0n1p4: 
-IO error on reading from
-  cache, recovering.
-Nov 11 00:24:58 tiare kernel: blk_update_request: I/O error, dev 
-nvme0n1, sector 153333344 op 0x0:(READ) flags 0x80700 phys_seg 1 prio 
-class 0
-Nov 11 00:24:58 tiare kernel: bcache: bch_count_io_errors() nvme0n1p4: 
-IO error on reading from cache, recovering.
-Nov 11 00:24:58 tiare kernel: blk_update_request: I/O error, dev 
-nvme0n1, sector 153333384 op 0x0:(READ) flags 0x80700 phys_seg 1 prio 
-class 0
-Nov 11 00:24:58 tiare kernel: bcache: bch_count_io_errors() nvme0n1p4: 
-IO error on reading from cache, recovering.
-Nov 11 00:24:58 tiare kernel: blk_update_request: I/O error, dev 
-nvme0n1, sector 153333424 op 0x0:(READ) flags 0x80700 phys_seg 1 prio 
-class 0
-Nov 11 00:24:58 tiare kernel: bcache: bch_count_io_errors() nvme0n1p4: 
-IO error on reading from cache, recovering.
-Nov 11 00:24:58 tiare kernel: blk_update_request: I/O error, dev 
-nvme0n1, sector 153333464 op 0x0:(READ) flags 0x80700 phys_seg 1 prio 
-class 0
-Nov 11 00:24:58 tiare kernel: bcache: bch_count_io_errors() nvme0n1p4: 
-IO error on reading from cache, recovering.
-Nov 11 00:24:58 tiare kernel: blk_update_request: I/O error, dev 
-nvme0n1, sector 153333520 op 0x0:(READ) flags 0x80700 phys_seg 1 prio 
-class 0
-Nov 11 00:24:58 tiare kernel: bcache: bch_count_io_errors() nvme0n1p4: 
-IO error on reading from cache, recovering.
-Nov 11 00:24:58 tiare kernel: blk_update_request: I/O error, dev 
-nvme0n1, sector 142766872 op 0x0:(READ) flags 0x80700 phys_seg 1 prio 
-class 0
-Nov 11 00:24:58 tiare kernel: bcache: bch_count_io_errors() nvme0n1p4: 
-IO error on reading from cache, recovering.
-Nov 11 00:24:58 tiare kernel: blk_update_request: I/O error, dev 
-nvme0n1, sector 142766888 op 0x0:(READ) flags 0x80700 phys_seg 1 prio 
-class 0
-Nov 11 00:24:58 tiare kernel: bcache: bch_cache_set_error() error on 
-db563a68-d350-4eaf-978b-eee7095543c5: nvme0n1p4: too many IO errors 
-reading from cache#012, disabling caching
-Nov 11 00:24:58 tiare kernel: blk_update_request: I/O error, dev 
-nvme0n1, sector 142766912 op 0x0:(READ) flags 0x80700 phys_seg 1 prio 
-class 0
-Nov 11 00:24:58 tiare kernel: BTRFS error (device bcache0): bdev 
-/dev/bcache0 errs: wr 1, rd 0, flush 0, corrupt 0, gen 0
-Nov 11 00:24:58 tiare kernel: blk_update_request: I/O error, dev 
-nvme0n1, sector 142766936 op 0x0:(READ) flags 0x80700 phys_seg 1 prio 
-class 0
-Nov 11 00:24:58 tiare kernel: BTRFS error (device bcache0): bdev 
-/dev/bcache1 errs: wr 1, rd 0, flush 0, corrupt 0, gen 0
-Nov 11 00:24:58 tiare kernel: BTRFS error (device bcache0): bdev 
-/dev/bcache0 errs: wr 2, rd 0, flush 0, corrupt 0, gen 0
-Nov 11 00:24:58 tiare kernel: BTRFS error (device bcache0): bdev 
-/dev/bcache1 errs: wr 2, rd 0, flush 0, corrupt 0, gen 0
-Nov 11 00:24:58 tiare kernel: BTRFS error (device bcache0): bdev 
-/dev/bcache0 errs: wr 3, rd 0, flush 0, corrupt 0, gen 0
-Nov 11 00:24:58 tiare kernel: bcache: conditional_stop_bcache_device() 
-stop_when_cache_set_failed of bcache1 is "auto" and cache is dirty, stop 
-it to avoid potential data corruption.
-Nov 11 00:24:58 tiare kernel: bcache: conditional_stop_bcache_device() 
-stop_when_cache_set_failed of bcache0 is "auto" and cache is dirty, stop 
-it to avoid potential data corruption.
-Nov 11 00:24:58 tiare kernel: bcache: bch_count_backing_io_errors() sdc: 
-Read-ahead I/O failed on backing device, ignore
-Nov 11 00:24:58 tiare kernel: bcache: bch_count_backing_io_errors() sdc: 
-Read-ahead I/O failed on backing device, ignore
-Nov 11 00:24:58 tiare kernel: bcache: bch_count_backing_io_errors() sdc: 
-Read-ahead I/O failed on backing device, ignore
-Nov 11 00:24:58 tiare kernel: bcache: bch_count_backing_io_errors() sdc: 
-Read-ahead I/O failed on backing device, ignore
-Nov 11 00:24:58 tiare kernel: BTRFS error (device bcache0): bdev 
-/dev/bcache0 errs: wr 3, rd 1, flush 0, corrupt 0, gen 0
-Nov 11 00:24:58 tiare kernel: bcache: bch_count_backing_io_errors() sdc: 
-Read-ahead I/O failed on backing device, ignore
-Nov 11 00:24:58 tiare kernel: BTRFS error (device bcache0): bdev 
-/dev/bcache0 errs: wr 3, rd 2, flush 0, corrupt 0, gen 0
-Nov 11 00:24:58 tiare kernel: bcache: bch_count_backing_io_errors() sdc: 
-Read-ahead I/O failed on backing device, ignore
-Nov 11 00:24:58 tiare kernel: BTRFS error (device bcache0): bdev 
-/dev/bcache0 errs: wr 3, rd 3, flush 0, corrupt 0, gen 0
-Nov 11 00:24:58 tiare kernel: bcache: bch_count_backing_io_errors() sdc: 
-Read-ahead I/O failed on backing device, ignore
-Nov 11 00:24:58 tiare kernel: BTRFS error (device bcache0): bdev 
-/dev/bcache0 errs: wr 3, rd 4, flush 0, corrupt 0, gen 0
-Nov 11 00:24:58 tiare kernel: bcache: bch_count_backing_io_errors() sdc: 
-Read-ahead I/O failed on backing device, ignore
-Nov 11 00:24:58 tiare kernel: BTRFS error (device bcache0): bdev 
-/dev/bcache0 errs: wr 3, rd 5, flush 0, corrupt 0, gen 0
-Nov 11 00:24:58 tiare kernel: bcache: bch_count_backing_io_errors() sdc: 
-Read-ahead I/O failed on backing device, ignore
-Nov 11 00:24:58 tiare kernel: bcache: bch_count_backing_io_errors() sdc: 
-Read-ahead I/O failed on backing device, ignore
-Nov 11 00:24:58 tiare kernel: nvme nvme0: 8/0/0 default/read/poll queues
-
-
-Thanks,
+diff --git a/btrfs-list.c b/btrfs-list.c
+index 4b95bcdf..abe36da8 100644
+--- a/btrfs-list.c
++++ b/btrfs-list.c
+@@ -1801,7 +1801,7 @@ int btrfs_list_find_updated_files(int fd, u64 root_id, u64 oldest_gen)
+ 	return ret;
+ }
+ 
+-char *btrfs_list_path_for_root(int fd, u64 root)
++char *btrfs_list_path_for_root(int fd, u64 root, bool full_path)
+ {
+ 	struct root_lookup root_lookup;
+ 	struct rb_node *n;
+@@ -1832,8 +1832,13 @@ char *btrfs_list_path_for_root(int fd, u64 root)
+ 			break;
+ 		}
+ 		if (entry->root_id == root) {
+-			ret_path = entry->full_path;
+-			entry->full_path = NULL;
++			if (full_path) {
++				ret_path = entry->full_path;
++				entry->full_path = NULL;
++			} else {
++				ret_path = entry->name;
++				entry->name = NULL;
++			}
+ 		}
+ 
+ 		n = rb_prev(n);
+diff --git a/btrfs-list.h b/btrfs-list.h
+index ea06e663..3043d2ac 100644
+--- a/btrfs-list.h
++++ b/btrfs-list.h
+@@ -172,7 +172,7 @@ int btrfs_list_subvols_print(int fd, struct btrfs_list_filter_set *filter_set,
+ 		       const char *raw_prefix);
+ int btrfs_list_find_updated_files(int fd, u64 root_id, u64 oldest_gen);
+ int btrfs_list_get_default_subvolume(int fd, u64 *default_id);
+-char *btrfs_list_path_for_root(int fd, u64 root);
++char *btrfs_list_path_for_root(int fd, u64 root, bool full_path);
+ int btrfs_list_get_path_rootid(int fd, u64 *treeid);
+ int btrfs_get_subvol(int fd, struct root_info *the_ri);
+ int btrfs_get_toplevel_subvol(int fd, struct root_info *the_ri);
+diff --git a/cmds/inspect.c b/cmds/inspect.c
+index 2530b904..828e38e2 100644
+--- a/cmds/inspect.c
++++ b/cmds/inspect.c
+@@ -236,7 +236,7 @@ static int cmd_inspect_logical_resolve(const struct cmd_struct *cmd,
+ 		DIR *dirs = NULL;
+ 
+ 		if (getpath) {
+-			name = btrfs_list_path_for_root(fd, root);
++			name = btrfs_list_path_for_root(fd, root, false);
+ 			if (IS_ERR(name)) {
+ 				ret = PTR_ERR(name);
+ 				goto out;
+diff --git a/common/send-utils.c b/common/send-utils.c
+index 58eca58f..ddb15261 100644
+--- a/common/send-utils.c
++++ b/common/send-utils.c
+@@ -657,7 +657,7 @@ int subvol_uuid_search_init(int mnt_fd, struct subvol_uuid_search *s)
+ 					goto skip;
+ 
+ 				path = btrfs_list_path_for_root(mnt_fd,
+-					btrfs_search_header_objectid(sh));
++					btrfs_search_header_objectid(sh), true);
+ 				if (!path)
+ 					path = strdup("");
+ 				if (IS_ERR(path)) {
 -- 
-Jean-Denis Girard
-
-SysNux                   Systèmes   Linux   en   Polynésie  française
-https://www.sysnux.pf/   Tél: +689 40.50.10.40 / GSM: +689 87.797.527
+2.26.2
 

@@ -7,62 +7,62 @@ X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 42788C2D0E4
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 770C9C388F7
 	for <linux-btrfs@archiver.kernel.org>; Thu, 12 Nov 2020 21:20:42 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D3CD5207DE
-	for <linux-btrfs@archiver.kernel.org>; Thu, 12 Nov 2020 21:20:41 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1F91D216FD
+	for <linux-btrfs@archiver.kernel.org>; Thu, 12 Nov 2020 21:20:42 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="gk2pJBAg"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="AIdJvToM"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727393AbgKLVUk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S1727391AbgKLVUk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Thu, 12 Nov 2020 16:20:40 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38454 "EHLO
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38468 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727387AbgKLVUj (ORCPT
+        with ESMTP id S1727378AbgKLVUj (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Thu, 12 Nov 2020 16:20:39 -0500
-Received: from mail-qk1-x742.google.com (mail-qk1-x742.google.com [IPv6:2607:f8b0:4864:20::742])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 64080C0613D6
-        for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2020 13:20:34 -0800 (PST)
-Received: by mail-qk1-x742.google.com with SMTP id y197so6883519qkb.7
-        for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2020 13:20:34 -0800 (PST)
+Received: from mail-qv1-xf43.google.com (mail-qv1-xf43.google.com [IPv6:2607:f8b0:4864:20::f43])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2A0ACC0613D4
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2020 13:20:39 -0800 (PST)
+Received: by mail-qv1-xf43.google.com with SMTP id r12so3550717qvq.13
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2020 13:20:39 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references:mime-version
          :content-transfer-encoding;
-        bh=NLE7VHDfPJX58ak2qw7sS3NxJL6JmvmiT4/6MJcSvvY=;
-        b=gk2pJBAgRz0eGhAgysj8mgsSHaUjyKSUvKbt+6nYSrUKrZNMDlSvHFv3n6BNIYO9Z8
-         DsNsBQ3S4+M9VvD3C9t/QhMiWVF3P4IUglqwT9GuWpL+6ocC+qGBbn56mO7hSJEFlK4W
-         AZji9UVgSmCordQG9P/XfhOFNQwglVnyTHWxLHSmFr4dzE9m1vPGxMSi8B546vDnTRTc
-         74LArWIYWZv/6u3Y2VITeAXCbJ7eaIJXhYryWjTuUzh0mHGDzvkFY+yj9YGnkS8bMKSp
-         LMaaLWJU5FRzJOVgvPQr1PUg3zG0cWeb8ge6EsUKCUYmRq0PTSrjztL3D2IVzjM40IPr
-         hjCg==
+        bh=LrggY1187JXd0E8oYLPjGhpLXAyWfupuGRWXOgn3Mbg=;
+        b=AIdJvToMBPtDtvasujXm7AtF9AYKrHM5JsqJCVZ7xEXv8Cyl8mdrrMZ/stLwICO57D
+         aJc0Mwq8Vz0OlzS0b10rYA+ZItODEde7p6Rgu6hlK+rJNBX+FKqAKKC5QXyEbxKzH+zQ
+         E7AoRG5h104dpyt6T8rHCC6qttJ/z5pgiqHMvWqyKxhu5SYadT9gQ7piixyrXzNwgvee
+         Jsnj4o8QaDWJ84aRY2GTAaPiIcd+GJOYwBMofFedW7Xyb3fITWbSrUydlPkeef/Vn/hv
+         WRtPyi6RYUPPLc7VkrSeF+EnvJchzg1GSqLx1oQa3ZpHSsINlf0zedw22TYVeQkHX/7s
+         JZ4A==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=NLE7VHDfPJX58ak2qw7sS3NxJL6JmvmiT4/6MJcSvvY=;
-        b=IOBDi5RRHVomHU7DqwCpROxBwsUZkQHVdm5L2vPf2uB0VFgb9zIGFS4LEaku1vY33d
-         yZPgjKKErVwzspYIvB2HhqqwEeoH1dcFuxNsnj32eEdGQplCfjj3ts6LhjtfugfVpZFq
-         XUWi1XlfxAPHi1NKJd48ZbW/N+IGOqhZHMQoz522s8N7/5goCDKWA9/nuxX6oAMPdkmq
-         l1yHyCzIz/BelOiRuXwQge2Q+aRLo4pK1OLk92+YrcuWJ6JkIt9ChRpI5FfaCJORKpHc
-         7q8IUg58DZV9KZup2QO1/erLw5ffQY7t0rYMnk/DUIRr4+k6hgcJTVIoU+mo7u413c4D
-         oKZw==
-X-Gm-Message-State: AOAM530wqXWF6xjxaNFJBiUqRWPUaUIFk1dM8JybsILUauKMs+On4lcN
-        wC/eVqGZ0DjA3O8iHHYPc4V7HTMmnTn50Q==
-X-Google-Smtp-Source: ABdhPJzyHTLBfQ6eYGIalj85hjgu/mwSZ3oC8SPP+lESzraogT8pLeoG/pcOxvQnKU6rvAr3CN+5UA==
-X-Received: by 2002:a37:b4e:: with SMTP id 75mr1761152qkl.78.1605216033355;
-        Thu, 12 Nov 2020 13:20:33 -0800 (PST)
+        bh=LrggY1187JXd0E8oYLPjGhpLXAyWfupuGRWXOgn3Mbg=;
+        b=naeC/KgxDaSF+vNnHhcJajjJlgHbAcQi8dCXnxIrAlFVl0K/RKbZFdKpzp71ptaJ4D
+         cUemgj/N4aYXCCz7tuni72mX1IX9rQYRcpGm/zD/Vn7LTd/SdEGlKe9TcZOEBOhr2QRe
+         qQCt3LfUx488PrlU5tkfars3SPDMzA71t9ia4Vazk9dLuHwZ4ffFAOLGHsmfh16aDzdw
+         N+dxs07vGQ4vnShptFgVxkAoBO6t0LifhCwpht76lCOUH7MSsusXO+Z0siiUcbSc8rP1
+         XRvKV1133lcFrPb5aOaYh9H4lDd/yk+xjtc6ue+P1UtwrdadQ46rDSolVLUleA6cFec9
+         Bvlw==
+X-Gm-Message-State: AOAM532iC1OCfrj3zi1rN/YlmugS1GE+hX9rTim7w+OV99ZFe2/8BjT0
+        iucTzVoYiFFiKwN/DV6aoQlbH78xW5prcQ==
+X-Google-Smtp-Source: ABdhPJxEB2sQLDFLb17n3Rj8tcjJYleCKfU0oLSg4Nw13vBRWikIj/VI5YijkSPztUyBWqTbumnHNQ==
+X-Received: by 2002:a0c:80e1:: with SMTP id 88mr1500888qvb.10.1605216037834;
+        Thu, 12 Nov 2020 13:20:37 -0800 (PST)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id v128sm5677583qkh.131.2020.11.12.13.20.32
+        by smtp.gmail.com with ESMTPSA id j16sm5652822qkg.26.2020.11.12.13.20.36
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 12 Nov 2020 13:20:32 -0800 (PST)
+        Thu, 12 Nov 2020 13:20:36 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 38/42] btrfs: handle __add_reloc_root failure in btrfs_reloc_post_snapshot
-Date:   Thu, 12 Nov 2020 16:19:05 -0500
-Message-Id: <f9b8d42c975a8c8b7588592df6270c27c99a60ba.1605215646.git.josef@toxicpanda.com>
+Subject: [PATCH 40/42] btrfs: handle extent corruption with select_one_root properly
+Date:   Thu, 12 Nov 2020 16:19:07 -0500
+Message-Id: <b97129230426ea611096b752872f8ea869590d5a.1605215646.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.2
 In-Reply-To: <cover.1605215645.git.josef@toxicpanda.com>
 References: <cover.1605215645.git.josef@toxicpanda.com>
@@ -72,30 +72,53 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-If we fail to add the reloc root, drop it and return the error.  All
-callers of this function already handle errors appropriately.
+In corruption cases we could have paths from a block up to no root at
+all, and thus we'll BUG_ON(!root) in select_one_root.  Handle this by
+adding an ASSERT() for developers, and returning an error for normal
+users.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/relocation.c | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
+ fs/btrfs/relocation.c | 19 ++++++++++++++++---
+ 1 file changed, 16 insertions(+), 3 deletions(-)
 
 diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 832bf7c19dac..651295864ec0 100644
+index 32e523361240..4648675980b9 100644
 --- a/fs/btrfs/relocation.c
 +++ b/fs/btrfs/relocation.c
-@@ -4198,7 +4198,10 @@ int btrfs_reloc_post_snapshot(struct btrfs_trans_handle *trans,
- 		return PTR_ERR(reloc_root);
+@@ -2224,7 +2224,16 @@ struct btrfs_root *select_one_root(struct btrfs_backref_node *node)
+ 		cond_resched();
+ 		next = walk_up_backref(next, edges, &index);
+ 		root = next->root;
+-		BUG_ON(!root);
++
++		/*
++		 * This can occur if we have incomplete extent refs leading all
++		 * the way up a particular path, in this case return -EUCLEAN.
++		 * However leave as an ASSERT() for developers, because it could
++		 * indicate a bug in the backref code.
++		 */
++		ASSERT(root);
++		if (!root)
++			return ERR_PTR(-EUCLEAN);
  
- 	ret = __add_reloc_root(reloc_root);
--	BUG_ON(ret < 0);
-+	if (ret) {
-+		btrfs_put_root(reloc_root);
-+		return ret;
-+	}
- 	new_root->reloc_root = btrfs_grab_root(reloc_root);
+ 		/* No other choice for non-shareable tree */
+ 		if (!test_bit(BTRFS_ROOT_SHAREABLE, &root->state))
+@@ -2642,8 +2651,12 @@ static int relocate_tree_block(struct btrfs_trans_handle *trans,
  
- 	if (rc->create_reloc_tree)
+ 	BUG_ON(node->processed);
+ 	root = select_one_root(node);
+-	if (root == ERR_PTR(-ENOENT)) {
+-		update_processed_blocks(rc, node);
++	if (IS_ERR(root)) {
++		ret = PTR_ERR(root);
++		if (ret == -ENOENT) {
++			ret = 0;
++			update_processed_blocks(rc, node);
++		}
+ 		goto out;
+ 	}
+ 
 -- 
 2.26.2
 

@@ -7,62 +7,62 @@ X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 14C89C56202
-	for <linux-btrfs@archiver.kernel.org>; Thu, 12 Nov 2020 21:19:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 81229C2D0E4
+	for <linux-btrfs@archiver.kernel.org>; Thu, 12 Nov 2020 21:19:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id AD203207DE
-	for <linux-btrfs@archiver.kernel.org>; Thu, 12 Nov 2020 21:19:55 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2BE88207DE
+	for <linux-btrfs@archiver.kernel.org>; Thu, 12 Nov 2020 21:19:57 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="ELVC0Ple"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="WC6S1LTY"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727281AbgKLVTz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 12 Nov 2020 16:19:55 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38296 "EHLO
+        id S1727286AbgKLVT4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 12 Nov 2020 16:19:56 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38314 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726995AbgKLVTy (ORCPT
+        with ESMTP id S1727278AbgKLVTy (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Thu, 12 Nov 2020 16:19:54 -0500
-Received: from mail-qv1-xf42.google.com (mail-qv1-xf42.google.com [IPv6:2607:f8b0:4864:20::f42])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 83E70C0613D6
-        for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2020 13:19:44 -0800 (PST)
-Received: by mail-qv1-xf42.google.com with SMTP id ec16so3590909qvb.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2020 13:19:44 -0800 (PST)
+Received: from mail-qt1-x844.google.com (mail-qt1-x844.google.com [IPv6:2607:f8b0:4864:20::844])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A4003C0617A7
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2020 13:19:50 -0800 (PST)
+Received: by mail-qt1-x844.google.com with SMTP id v11so5187002qtq.12
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2020 13:19:50 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references:mime-version
          :content-transfer-encoding;
-        bh=EfYInEV6t0ngbzm3iAAzJowfT63gDtURi6aBsy8KoOY=;
-        b=ELVC0PlekaaLYQnVkzNwqSwkUMO2KlNHpOFJQENI5Wy5ckGUnIy07GLbfIJJLXfruc
-         aH03sjUlsCBstdTEHzRi5e/rBKiYTW2znqLCozdVAJxO1FJpz5CIhC+VyS8wujY4YYJQ
-         aVFEDWXdNKot2lzP2aQxTIKNYVMUT8gy54K/bJUSc0dfxVwTi3YYnq2lLO/9wgDAPJs6
-         f19xbcX5zEDQ02q0WryE2HolooOTrnCrE0zLRCbzL1fdord4IPrJV1dreIQaX56jPM1G
-         Xve7S+zjJhtQOKQz74sRaJi2i40lgPJkwdbrsidCaUN3w/mU1iQ1eToSsGfm0Ozb12WY
-         WMBw==
+        bh=ajae6LanfBsqSBaxUZeifeaVlI2Js6AWGt5e/Vm77DE=;
+        b=WC6S1LTYkA1+6QXbYtgqym0pu/WN8PRImX5oLs8N+t9UTJjNJqU2AscXzm78fdYMnv
+         tXgmJuRGz8jGmK3Lmn6+qcDgPSs/yIUuZTg5k2x0Mrp1aIY2cCVsr+X16ayhFutxhWE6
+         mlIkR77AoQvsfnLG5x9bOqz52dyimU8CYlKqki5pMxNaUR6Ji4RH+d6GicoFK6xEcDMP
+         HCBbEVlQtn963n9nCuKsYdeByGCZhNLTqXi/LWBAVi4Qucec/Zy4BB+XQuk1DU0Dq+Z7
+         9X/w09XhYFKSvZj1Cn3v1lju/4dJGBbbN0G1xDWigJWx4U/Qdd+f/mdi6PXVYkbw3RAx
+         XibQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=EfYInEV6t0ngbzm3iAAzJowfT63gDtURi6aBsy8KoOY=;
-        b=EHOtHR+I0JdMxe3s1Tw+ti752M/7+H8q/WGNcpA+sxf4JHEEi7XQYeXIkNYwfrFq69
-         MHGlIgwUEVrK1WmuAxpT6st5nGKL4QUj/8Q3FekU8strSB04xWIYmVNNXMYaWhPEVyAX
-         8IEfq+RBMAK6t3uW3yLRdw8Y0C+ngsebnYBu4cnbUzfteMGxWULv9i2cvZ1TIafuHRDw
-         KWUIWrtalEUS5+dukh/68NA3rz1RfPVtCl69ECjBz9XBieWqHSOkIJn17qzpEnLb0kK0
-         03YBnWrM3VgmRms7BL8fbrA+zgLsxphDzzwUut9kakcO1BsePuDHGyM+ZPR4WqUHfHBX
-         MrVA==
-X-Gm-Message-State: AOAM533xLjZUXJMfq4jBC6ymqa1F/L6qgdmfupvJJjkYUTJW5wctud+g
-        KhqbstPSdT5RKZ4urFyv60r9jnXRmle+sg==
-X-Google-Smtp-Source: ABdhPJzIK87u7j0n790wNZ1MektmgwzLTvuKNqj5yDSaWkP01N5D0p8bih7RWdn3psNWAGJqqu6VXg==
-X-Received: by 2002:a0c:9e2f:: with SMTP id p47mr1827746qve.11.1605215983459;
-        Thu, 12 Nov 2020 13:19:43 -0800 (PST)
+        bh=ajae6LanfBsqSBaxUZeifeaVlI2Js6AWGt5e/Vm77DE=;
+        b=dTajWyGPk5v0fawvATISUl1STxhdaxZDCEdldzbubW5Vf83DUXJBuVqk2pCNKC1tbQ
+         wNqOCNpMlDKlJrb+rC930Q+iH59OmgdX1nkinguo2CkbbRh9/yvVcV2va7+jBAIE25Kj
+         pQD64jMLBx6uaqWYSXx/ul4pPRLlwY5QpQwQHE9GeCFXuTQD2oizURWWewFMHtdO4umM
+         3uLK8rXHZCDnHbLgAlrWgwv3lcAx4QHfxr/ahtOiy4k5QZ+qZcTUc2/vVfI5MQ1j0HtM
+         5muCmo4blopK3yvMAYm+xUvAOHti7Jrc2MsPtp0vdiyYTGUHVLHIUaX1USnk9nARiKg+
+         SQgQ==
+X-Gm-Message-State: AOAM531mHNH9wklDvna2UjLZF4ot1hN4CczR4nKoLTgL5v03dqOntiCQ
+        sewPM3hawkZyP8cZRDT7kzrZYmbDMkLVSA==
+X-Google-Smtp-Source: ABdhPJws6i6EPoBANDeIqdGyWqfDGVFNi0dTE2aTkI0CBd6HO5CaY1GFqOaIC9qfI8VQwTpdpjOhNA==
+X-Received: by 2002:ac8:57d2:: with SMTP id w18mr1173525qta.356.1605215989335;
+        Thu, 12 Nov 2020 13:19:49 -0800 (PST)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id z125sm5779170qke.54.2020.11.12.13.19.42
+        by smtp.gmail.com with ESMTPSA id u24sm5448570qtv.83.2020.11.12.13.19.48
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 12 Nov 2020 13:19:42 -0800 (PST)
+        Thu, 12 Nov 2020 13:19:48 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 16/42] btrfs: handle btrfs_record_root_in_trans failure in start_transaction
-Date:   Thu, 12 Nov 2020 16:18:43 -0500
-Message-Id: <35c8000a8401b51ed4544141174afe49782ab807.1605215645.git.josef@toxicpanda.com>
+Subject: [PATCH 19/42] btrfs: handle record_root_in_trans failure in create_pending_snapshot
+Date:   Thu, 12 Nov 2020 16:18:46 -0500
+Message-Id: <0d9f38722e30b67d5b52eb0ade1e70d3830671be.1605215645.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.2
 In-Reply-To: <cover.1605215645.git.josef@toxicpanda.com>
 References: <cover.1605215645.git.josef@toxicpanda.com>
@@ -72,31 +72,43 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-btrfs_record_root_in_trans will return errors in the future, so handle
-the error properly in start_transaction.
+record_root_in_trans can currently fail, so handle this failure
+properly.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/transaction.c | 6 +++++-
- 1 file changed, 5 insertions(+), 1 deletion(-)
+ fs/btrfs/transaction.c | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
 
 diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 9cb379facf7a..c666e6bef0ff 100644
+index f255274d4cb5..29084716b4d2 100644
 --- a/fs/btrfs/transaction.c
 +++ b/fs/btrfs/transaction.c
-@@ -737,7 +737,11 @@ start_transaction(struct btrfs_root *root, unsigned int num_items,
- 	 * Thus it need to be called after current->journal_info initialized,
- 	 * or we can deadlock.
- 	 */
--	btrfs_record_root_in_trans(h, root);
-+	ret = btrfs_record_root_in_trans(h, root);
+@@ -1572,8 +1572,9 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	dentry = pending->dentry;
+ 	parent_inode = pending->dir;
+ 	parent_root = BTRFS_I(parent_inode)->root;
+-	record_root_in_trans(trans, parent_root, 0);
+-
++	ret = record_root_in_trans(trans, parent_root, 0);
++	if (ret)
++		goto fail;
+ 	cur_time = current_time(parent_inode);
+ 
+ 	/*
+@@ -1609,7 +1610,11 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 		goto fail;
+ 	}
+ 
+-	record_root_in_trans(trans, root, 0);
++	ret = record_root_in_trans(trans, root, 0);
 +	if (ret) {
-+		btrfs_end_transaction(h);
-+		return ERR_PTR(ret);
++		btrfs_abort_transaction(trans, ret);
++		goto fail;
 +	}
- 
- 	return h;
- 
+ 	btrfs_set_root_last_snapshot(&root->root_item, trans->transid);
+ 	memcpy(new_root_item, &root->root_item, sizeof(*new_root_item));
+ 	btrfs_check_and_init_root_item(new_root_item);
 -- 
 2.26.2
 

@@ -7,62 +7,62 @@ X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3F1F8C5519F
-	for <linux-btrfs@archiver.kernel.org>; Thu, 12 Nov 2020 21:20:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B07F8C388F7
+	for <linux-btrfs@archiver.kernel.org>; Thu, 12 Nov 2020 21:20:20 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id DAA2921D91
-	for <linux-btrfs@archiver.kernel.org>; Thu, 12 Nov 2020 21:20:16 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5E1CD207DE
+	for <linux-btrfs@archiver.kernel.org>; Thu, 12 Nov 2020 21:20:20 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="vri2CgPt"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="v7lTRtJN"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727343AbgKLVUQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 12 Nov 2020 16:20:16 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38394 "EHLO
+        id S1727349AbgKLVUT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 12 Nov 2020 16:20:19 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38354 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727337AbgKLVUP (ORCPT
+        with ESMTP id S1727337AbgKLVUS (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 12 Nov 2020 16:20:15 -0500
-Received: from mail-qk1-x741.google.com (mail-qk1-x741.google.com [IPv6:2607:f8b0:4864:20::741])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6F3B3C0613D6
-        for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2020 13:20:15 -0800 (PST)
-Received: by mail-qk1-x741.google.com with SMTP id d9so6893692qke.8
-        for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2020 13:20:15 -0800 (PST)
+        Thu, 12 Nov 2020 16:20:18 -0500
+Received: from mail-qt1-x842.google.com (mail-qt1-x842.google.com [IPv6:2607:f8b0:4864:20::842])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 32BF8C0613D1
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2020 13:20:03 -0800 (PST)
+Received: by mail-qt1-x842.google.com with SMTP id m65so5190996qte.11
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2020 13:20:03 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references:mime-version
          :content-transfer-encoding;
-        bh=/EqR0hxW+wlLlxRr4NXGWkAxoEFryPq5N1nxfJ8S3gg=;
-        b=vri2CgPtmyZ+o7r13TkyDsM4F3sxM/qP/MwmjmKSP6Q+KibHIexaTTEMJ75asNZjH0
-         CZk8T8cDP+Hn3RDgi2kM/pT2oROs+rsgpprQGN5z9TW2d56gWQ7oF4rIs0Y222nOdkhO
-         yDMFpLlhAm2WEqh4tdrk6sJgxTqLybQGUFLzKRcBQXGbSCcDbvw5B2phHwOr9Rz58iJD
-         yMVSc07WOBZWSyyHGeTF1CHiuIJWxlXj4rmmQQjo4jKqXtZONTJwynEwTcbm4nCRmJWo
-         282VE7KN9VLn7unwLLTLgwgZPAuf4JTGj4YoJ0XWL2lSbzHj8IWp7p5fdxm9KOCd539M
-         ZCcA==
+        bh=xp66q+qZpt2NBdKbsHUgvts/wy+hLZxErKqgqR97Ma0=;
+        b=v7lTRtJNBrZQTsScszxS5bia1jQxdPqquvaJiUsMToV6V4NpHkxqu2hsRCqSM4Rh7d
+         vD61DUGOVr63RtdDU99c5kwkak+ImiQHn2G+oDSLqFL/BayqsIofIbQfO1lxEBkaxvY2
+         dVe8WkF7AucWFZ+OUqa4511ARXtNT9Sd8KKI8YsY6uoiHE66lIIQ6dQujqFCC4YD1q4b
+         ymy5Lm5dmr0PBEcGsisPOXcWldFQD6RX7CBdtEbrLEA9IE9B5x19B46dYh4g4HKioakM
+         FsC/OLXfD6ZYzH+mpNCOSyyuejVOgckBAShe17swlE9S8Rxgc7MHrTZVvT3dq85ZXe5v
+         dYvA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=/EqR0hxW+wlLlxRr4NXGWkAxoEFryPq5N1nxfJ8S3gg=;
-        b=Lw6+qfM3KcMpzavy/PWpVef2tAIdWe36JEq6LipER+9simGBrU8d5PZidHquud/v+1
-         hMTgC8NvU/DAQrUF0gv8qqEeg2aj6veWLyU3z+bw2wRloEjw8l13qju1ni6NbI6rhmEc
-         4kDLRyeILd8hG6Uenh3NVk8NKJmEGTIV910BIlirVIF8BV+pNtbwMRJyljiwvpPvXvyQ
-         5TTGAcTc8JfC+M/yb6r9WXZaNrN4QITS9uu++iB9+IB3IgVpRM5xDIZcwp+tUMDgKbd7
-         akvCHtDURQkTuscvd+e8Y8OH+kw6mKAHBSTwG+9+L49FcGZ5WVqX64/xRmsem3+NSzzi
-         BQCA==
-X-Gm-Message-State: AOAM532Qu3PGtLxndMVFmom0udlDG8dNkhJ4JAAuAtwgG4I42iNIRKtw
-        OaNvstrStICHddFRVIZBHstYKd61ZVug3Q==
-X-Google-Smtp-Source: ABdhPJwIEAQ1wCDIj2L69ss2aZYjUbtFyQnjd3gxF9wy+rQfJSuZlL++rAeHIKuUCjDDs7jfHa8kNQ==
-X-Received: by 2002:a37:a54f:: with SMTP id o76mr1685416qke.201.1605216014031;
-        Thu, 12 Nov 2020 13:20:14 -0800 (PST)
+        bh=xp66q+qZpt2NBdKbsHUgvts/wy+hLZxErKqgqR97Ma0=;
+        b=g78hiQDQcD22zuOtBPZe5UvUEOD1iLnzlbAA9ern3gGoHDGdPt5HxlLhSYD1Pj/yMq
+         VZV7dnLSP9MKy5UksmAoBW1nnMKx8FChywGRtPv8pvl2yIPkkd0gT2u6FfbxzbG34a6O
+         kFG8vNKJKTBfrYfznD3TmkcX9oerThSlFJHeXbqgDpSkbzpahabRDGJLa+IGFwQjobLd
+         A5IfXZW3lbUKJa+AsCrfdHee/1s/hqcWL9QxRRJZ35ZLM5N4fCdCOgJXYV4D1QKKB0CO
+         MMK1N1MmFehMc0VqUpegDoQSr+Q8593JKIlIQcmENCErQldFcmRR0yIToi4irouO3sYo
+         m4/A==
+X-Gm-Message-State: AOAM532gS5xaZuzAvSERUcK8OF4Q1ao4b2Se10MIOR3HAStTKcSYOa8N
+        jVvQhtFgoRaZ9DSQofcWFnUW9jWDaR2yZg==
+X-Google-Smtp-Source: ABdhPJxA4sP3BeEQFS0MYxqvfVTfaKxBa1hLAPH7pnzxpmAivhUPV2TTAx8OIOwSQ2Y6DGOkXAe3VQ==
+X-Received: by 2002:aed:38ca:: with SMTP id k68mr1206305qte.28.1605216001965;
+        Thu, 12 Nov 2020 13:20:01 -0800 (PST)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id z11sm5259794qkz.38.2020.11.12.13.20.12
+        by smtp.gmail.com with ESMTPSA id v126sm5573319qkc.104.2020.11.12.13.20.00
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 12 Nov 2020 13:20:13 -0800 (PST)
+        Thu, 12 Nov 2020 13:20:00 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 31/42] btrfs: handle btrfs_search_slot failure in replace_path
-Date:   Thu, 12 Nov 2020 16:18:58 -0500
-Message-Id: <7b6365e1322a8f91c153da7699dcc1d71ef75d9a.1605215646.git.josef@toxicpanda.com>
+Subject: [PATCH 25/42] btrfs: handle btrfs_update_reloc_root failure in insert_dirty_subvol
+Date:   Thu, 12 Nov 2020 16:18:52 -0500
+Message-Id: <922431997fdb89b8fef3b0272883b21c49e397d6.1605215646.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.2
 In-Reply-To: <cover.1605215645.git.josef@toxicpanda.com>
 References: <cover.1605215645.git.josef@toxicpanda.com>
@@ -72,28 +72,37 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This can fail for any number of reasons, why bring the whole box down
-with it?
+btrfs_update_reloc_root will will return errors in the future, so handle
+the error properly in insert_dirty_subvol.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/relocation.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ fs/btrfs/relocation.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 52ae6bba2261..2c7196e4ef8f 100644
+index 5174f5b2765e..d75c9be438bb 100644
 --- a/fs/btrfs/relocation.c
 +++ b/fs/btrfs/relocation.c
-@@ -1322,7 +1322,8 @@ int replace_path(struct btrfs_trans_handle *trans, struct reloc_control *rc,
- 		path->lowest_level = level;
- 		ret = btrfs_search_slot(trans, src, &key, path, 0, 1);
- 		path->lowest_level = 0;
--		BUG_ON(ret);
-+		if (ret)
-+			break;
+@@ -1581,6 +1581,7 @@ static int insert_dirty_subvol(struct btrfs_trans_handle *trans,
+ {
+ 	struct btrfs_root *reloc_root = root->reloc_root;
+ 	struct btrfs_root_item *reloc_root_item;
++	int ret;
  
- 		/*
- 		 * Info qgroup to trace both subtrees.
+ 	/* @root must be a subvolume tree root with a valid reloc tree */
+ 	ASSERT(root->root_key.objectid != BTRFS_TREE_RELOC_OBJECTID);
+@@ -1591,7 +1592,9 @@ static int insert_dirty_subvol(struct btrfs_trans_handle *trans,
+ 		sizeof(reloc_root_item->drop_progress));
+ 	btrfs_set_root_drop_level(reloc_root_item, 0);
+ 	btrfs_set_root_refs(reloc_root_item, 0);
+-	btrfs_update_reloc_root(trans, root);
++	ret = btrfs_update_reloc_root(trans, root);
++	if (ret)
++		return ret;
+ 
+ 	if (list_empty(&root->reloc_dirty_list)) {
+ 		btrfs_grab_root(root);
 -- 
 2.26.2
 

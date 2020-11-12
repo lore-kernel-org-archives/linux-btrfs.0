@@ -2,121 +2,224 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6DBCBC2D0A3
-	for <linux-btrfs@archiver.kernel.org>; Thu, 12 Nov 2020 09:30:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0C344C55ABD
+	for <linux-btrfs@archiver.kernel.org>; Thu, 12 Nov 2020 09:39:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 0368A221FE
-	for <linux-btrfs@archiver.kernel.org>; Thu, 12 Nov 2020 09:30:45 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 841C9221FC
+	for <linux-btrfs@archiver.kernel.org>; Thu, 12 Nov 2020 09:39:52 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=permerror (0-bit key) header.d=wdc.com header.i=@wdc.com header.b="RbAp6Srj";
-	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b="Y9uWW9Gd"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="cmEwILUP";
+	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b="pF2bxBmd"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726365AbgKLJao (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 12 Nov 2020 04:30:44 -0500
-Received: from esa2.hgst.iphmx.com ([68.232.143.124]:41676 "EHLO
-        esa2.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725966AbgKLJam (ORCPT
+        id S1727732AbgKLJjv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 12 Nov 2020 04:39:51 -0500
+Received: from esa4.hgst.iphmx.com ([216.71.154.42]:57557 "EHLO
+        esa4.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725928AbgKLJju (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 12 Nov 2020 04:30:42 -0500
+        Thu, 12 Nov 2020 04:39:50 -0500
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1605174471; x=1636710471;
-  h=from:to:subject:date:message-id:references:
+  t=1605173989; x=1636709989;
+  h=from:to:cc:subject:date:message-id:references:
    content-transfer-encoding:mime-version;
-  bh=G8FZ0D3PP/OudJ5uuxCAz/C/vBHo8wESZoPwxTWqVEI=;
-  b=RbAp6SrjkEZ1Q5GYGyVgH2AUhkJAcjTKEXIqJGRd7d/Ezq9mfi+per2a
-   KmVEsR/8P++LsdLOW8etBqP5qc75woZaV0euHO3lO9ZrfXhDOU6uRS/d4
-   Uws/WRyIeTApRED0eFEO/7UsDhvvERtSaHcDS6S0Oj6zqx/6pvCzJ6Eyh
-   6g26RhxGe3xdRqTlie9TB7nkJY5hQR4vBbm828RukwKqsB64Msrdln6If
-   24O+bluBzyEZvmT7SfhN3lGd/s+yQLwo3u7UUu0mXJ5i9dp5Fw66vlF5v
-   0h5tusChUVNIgP4gJ+p6rJjbJeQ7alwJ8/g8aiIya289cpoQ84nfeKvCf
-   Q==;
-IronPort-SDR: t45OI+SbxiRtqz8OcLWdvxqwYxgXGqnC2fFEb3gouhUtXo1CA7QMMmiQ0UnVv/iG/36INTplg2
- Ne2YvfCMM5oTG6ZPUNHDCHn/U9WMB2CXAn1R8cf9nrX8aYIqyoglbqT/XiFN1+ATijjvr5x4aA
- gEWQYF1OU9d07aqEgMRPcgze5zlxZHwJj0yGAnCosY054yecmYLaFEhTgAVpKEmRNQC5qysNfo
- yU4mz7NbtQ0vwcAVN914qLDmELHHK7whj6cFVCGIgm+a2EmDonyBXwi5QwoqLwRYxsIBi+zAi3
- A+w=
+  bh=czkyMT4of5cBA//uIHbrPrBkvuw8JvxCcfm/dzxoyuM=;
+  b=cmEwILUPe0LB/XEh3y7vo8o+7nqOVe/Z/SuiZmzVMdybcpQcWHWzXQA8
+   BAA6vHSEp2ha7WbJpTQXbHl4aB2m6E3P7H68JB/QxUS4TJGgAc2e9PDzQ
+   IMQYmncHRWZJf7y5X0dDkhT/uoctfeHXrU64TMl80HGmYk4m3qH/VQDIX
+   9mK0/x1r1VeU1AkrONcI2wfrULOg02mm/fwoTcktxxjRc+mJLFRit9LoO
+   p+60HHISmIjOOwNGRatwgS3SRh27vzltDdL5XrdXzDcWoJvdsDCseGjy/
+   nzYDOi1WgZ32Rl7wmaOjuXIMGdrijgpgBoeZ+KOzM20o6h04LPdpKZRtF
+   A==;
+IronPort-SDR: +mKD4OunL8ug3i/aefwV9hy906MnJyyR3+oVlQjfppynsYrSMEvWtPTIoQKX+bEfmjiVEIPuKJ
+ DftX56+YlYs0jFU7NkonxTSkBh9BY6ukWWvh/fqMayEqdi4bFrenIO2AsJOWQ+XIJnQZC/Jdsb
+ +mNXqAubRFgHYHbK2XbhHth3Y6iusv3Wt4n6UpLGMuRWh0GsctEt0hAb0yYlZPdolSEcaU6RDr
+ yvT5zz7KxsC1gG9KsRVtNB+uhwiZM4rwzh7LDq0GLhAboJciJVyWGf8eksVMtUmm5Xv80K2ZTn
+ l/0=
 X-IronPort-AV: E=Sophos;i="5.77,471,1596470400"; 
-   d="scan'208";a="256037078"
-Received: from mail-dm6nam10lp2107.outbound.protection.outlook.com (HELO NAM10-DM6-obe.outbound.protection.outlook.com) ([104.47.58.107])
-  by ob1.hgst.iphmx.com with ESMTP; 12 Nov 2020 17:47:49 +0800
+   d="scan'208";a="152367281"
+Received: from mail-bn8nam11lp2168.outbound.protection.outlook.com (HELO NAM11-BN8-obe.outbound.protection.outlook.com) ([104.47.58.168])
+  by ob1.hgst.iphmx.com with ESMTP; 12 Nov 2020 17:39:47 +0800
 ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
- b=SItQbXpI/dU0fEZfpRCCy9P1xOHhOVXC94saN/lDnaHht5tkDhl9cK+e8MGsF5mhWbSqAQ0IY1FEBRdZKACNwsXLlcN3P5EB3ySOMdgZW6s6j3QMLAUfs0mIm1GL476n/TYqAGsGDQ6iIIFGSMsvTy7vojt0hSYdx18HCB7tR2Xkmx55ELJ6Uhndwy11qnSV2a6wJzhPofgSsUOWLUJwGdlmZhxKoEyXgxNdbCMIhJ7aPYywU/HMkheVAz2RGUNKF890jtRhlzkWW00VbqdGU/XQusu1jvbyFR24Q6ITcFvuDzWUfZqxuO8WTAsYS+7PsjcVM0kqeb7t7NAUgiMVYw==
+ b=nvhByYAKKt6aVoKtMtFfO4slfvMSOrFZpp+SRz1aZ/ZCfak5hrBO3lp06cT3NFQbcZY/N2eiBPQeZbJu/l6C64Q519iCBPawFaF9xUlfWGICAVw1mhHmmCYzWUCFnlVqAhI+zUfaU/LbTMXQ2WWMjNz2LOqUzEx6jdFV+gxec/DYtmmYfLnX+tJVY+gwO9g26J47STBG4Dc6abaxkLCltvf3v2BrYxo3iUPAAJRfOQVKFSQ0FcSlwTxeV9T0T4+SgfCSh3Ig8+3g7xG1eg0KYWXEgLuAFfmCkWrE4THXoSaApTaxNEnb1nudpTV45WAXaocB3MwFcmbeYPMs+JXV3w==
 ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
  s=arcselector9901;
  h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=G8FZ0D3PP/OudJ5uuxCAz/C/vBHo8wESZoPwxTWqVEI=;
- b=IcdTXd/k4PSrevt/zQ7c953AoqPJUsf66FPj97jERwqgnBOQtH22FHzh/m4eAz7vgW9E5iR5Ps/8KxQ/kv8/q2KdxjGCH1wNBDBUMAOooWsEIHMgX6tPfr0IlIjQCmvcxqnOYm64/0e5dYZKxlRl9kOEF2MbNabF5zFQAmbeAHlPS4jyAaJ3J330ZWQi7Gr3b+IbuoCmTAKIcpLDJlYW88rGVhJyTsgVOKsDsxanfs46rFOpmxhGtGaxUfqYNvaPJLMR+j39wYHoUYoJFkcpG70Smu+n5eUVxVjQ1Xf+3UX75zNua5rpy/cE+J5s0/48deqQ0uFbsRiZZKFbstalHA==
+ bh=+JGyXBofJwHdvWPVaAAbXuSBn5MFsixvMpXp2P4oC70=;
+ b=ToQ3LDrbk5LL7IMCGRg/kaH0sxTIaDzTUZVTjbZbhhqKTXMaXtb4m/n5hLls34OIgr2wssWgY0zV2byWe9cGzSB0oCKY619V/x3cr6e4ZGc3wZko7mf5LmAhq0xf/bzet+yXlhHqrglWzfez5DwesB3PtHMuNdv9m8u5MQlsKJ4hzgjbkoaEwfXLEyRUTBAadZyDON9v6YZwB7MdusuzpdlDv34jOAvW+M0UDlpftN31G4ctU5+FS8qFNxlbUc5xe3vbDkSa66AcJtfXOu7LipWrWqmz5uJ/tMZLP3yBzBRaR0UYgtsM2ZRq+PjngBufAS7lLaeEih0TvNniMAtDXA==
 ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
  smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
  header.d=wdc.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
  d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
  h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=G8FZ0D3PP/OudJ5uuxCAz/C/vBHo8wESZoPwxTWqVEI=;
- b=Y9uWW9Gd9OWdNdwFNPf1rxmHhWLlpt7CgE4VBL1pWOgI7FM2GCSv24IdONIVgEgdwNbN2lQx9tjWYSAmWJnBFuelBaI8+nY3CGsz6bzCdFNfxPTY/RvEdn6LrOQ/ZkfmIS+qZ4rHlF9d3gy+VSxz9LQQcO+mSNstKLaiCa+dhis=
+ bh=+JGyXBofJwHdvWPVaAAbXuSBn5MFsixvMpXp2P4oC70=;
+ b=pF2bxBmdsG5/N8u26wM81vfI5Y8dCiYoQ6rf/Vnagjp2H0vNrfwa717q2dSiFi16mGB0VEzMW0+yHLL2E8s8taWCHYgJ4imEdAgmPZZLF+9iTr5uyE9uMX5UkDFElKEV1qE9GYZwLgAmnBPmpe78xQz1x3cSSxYIgDyLLgFX1Z8=
 Received: from SN4PR0401MB3598.namprd04.prod.outlook.com
- (2603:10b6:803:47::21) by SN6PR04MB3965.namprd04.prod.outlook.com
- (2603:10b6:805:44::30) with Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.3499.27; Thu, 12 Nov
- 2020 09:30:40 +0000
+ (2603:10b6:803:47::21) by SN4PR0401MB3519.namprd04.prod.outlook.com
+ (2603:10b6:803:46::10) with Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.3541.21; Thu, 12 Nov
+ 2020 09:39:45 +0000
 Received: from SN4PR0401MB3598.namprd04.prod.outlook.com
  ([fe80::619a:567c:d053:ce25]) by SN4PR0401MB3598.namprd04.prod.outlook.com
  ([fe80::619a:567c:d053:ce25%6]) with mapi id 15.20.3541.025; Thu, 12 Nov 2020
- 09:30:40 +0000
+ 09:39:45 +0000
 From:   Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
-To:     Qu Wenruo <wqu@suse.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v3 2/2] btrfs: pass bio_offset to check_data_csum()
- directly
-Thread-Topic: [PATCH v3 2/2] btrfs: pass bio_offset to check_data_csum()
- directly
-Thread-Index: AQHWuNCUd55dehDwEEy9K58sALPrIA==
-Date:   Thu, 12 Nov 2020 09:30:40 +0000
-Message-ID: <SN4PR0401MB3598AC32A779A0F19238F4809BE70@SN4PR0401MB3598.namprd04.prod.outlook.com>
-References: <20201112084758.73617-1-wqu@suse.com>
- <20201112084758.73617-3-wqu@suse.com>
+To:     Anand Jain <anand.jain@oracle.com>,
+        Naohiro Aota <Naohiro.Aota@wdc.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "dsterba@suse.com" <dsterba@suse.com>
+CC:     "hare@suse.com" <hare@suse.com>,
+        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
+        Jens Axboe <axboe@kernel.dk>,
+        "hch@infradead.org" <hch@infradead.org>,
+        "Darrick J. Wong" <darrick.wong@oracle.com>,
+        Damien Le Moal <Damien.LeMoal@wdc.com>,
+        Josef Bacik <josef@toxicpanda.com>
+Subject: Re: [PATCH v10 04/41] btrfs: get zone information of zoned block
+ devices
+Thread-Topic: [PATCH v10 04/41] btrfs: get zone information of zoned block
+ devices
+Thread-Index: AQHWt1SikzZ873WBFUWuepbyYg7vfw==
+Date:   Thu, 12 Nov 2020 09:39:45 +0000
+Message-ID: <SN4PR0401MB3598AC45D1040EF7874B06D29BE70@SN4PR0401MB3598.namprd04.prod.outlook.com>
+References: <cover.1605007036.git.naohiro.aota@wdc.com>
+ <cf46f0aef5a214cae8bacb2be231efed5febef5f.1605007036.git.naohiro.aota@wdc.com>
+ <6df7390f-6656-4795-ac54-a99fdaf67ac6@oracle.com>
 Accept-Language: en-US
 Content-Language: en-US
 X-MS-Has-Attach: 
 X-MS-TNEF-Correlator: 
-authentication-results: suse.com; dkim=none (message not signed)
- header.d=none;suse.com; dmarc=none action=none header.from=wdc.com;
+authentication-results: oracle.com; dkim=none (message not signed)
+ header.d=none;oracle.com; dmarc=none action=none header.from=wdc.com;
 x-originating-ip: [2001:a62:145b:5101:3d02:4ac1:70fb:2ebb]
 x-ms-publictraffictype: Email
 x-ms-office365-filtering-ht: Tenant
-x-ms-office365-filtering-correlation-id: b603f7f9-0260-4d31-f975-08d886ed9ee6
-x-ms-traffictypediagnostic: SN6PR04MB3965:
-x-microsoft-antispam-prvs: <SN6PR04MB396555AE4C99DFA953D183659BE70@SN6PR04MB3965.namprd04.prod.outlook.com>
+x-ms-office365-filtering-correlation-id: 3e6a23b2-8eed-4cab-f2bf-08d886eee3e1
+x-ms-traffictypediagnostic: SN4PR0401MB3519:
+x-ld-processed: b61c8803-16f3-4c35-9b17-6f65f441df86,ExtAddr
+x-ms-exchange-transport-forked: True
+x-microsoft-antispam-prvs: <SN4PR0401MB3519DCD04212821BF47F68339BE70@SN4PR0401MB3519.namprd04.prod.outlook.com>
 wdcipoutbound: EOP-TRUE
-x-ms-oob-tlc-oobclassifiers: OLM:1728;
+x-ms-oob-tlc-oobclassifiers: OLM:3513;
 x-ms-exchange-senderadcheck: 1
 x-microsoft-antispam: BCL:0;
-x-microsoft-antispam-message-info: JXJmYNdyy/K3VeBaWNqTzJgSl/xJ/iVYD4V1f3B7L7bknSq/S7Ki1h4KfOQhCOxo+YvW8HQyz+wYJaIEUug2tAVy61OpPydeQ279p4dOKaraFRV3PBOUsD5rpQTJM+1t4AmCFEjB/WMO7KWal16klM+Vk/dEJhn2o5e/vSGJtDctOXypx/ljcSXy81sfqbr5vOFMouzGXnQQjQ301geIovq4qs23MTnVYXWkJTPCl2rVTvgHRtKfqb6ozhRsJWsnsr7RapQp7K8GVR8jEiYSKUZktCiN5Q85H0qJi02NhMLtdc3Wg6KTktNV1C1+XWw3ftl+9W6dIb/z1wHNIE+fMA==
-x-forefront-antispam-report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SN4PR0401MB3598.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(4636009)(136003)(346002)(376002)(366004)(39860400002)(396003)(8676002)(9686003)(316002)(8936002)(33656002)(71200400001)(4270600006)(5660300002)(186003)(76116006)(19618925003)(66556008)(110136005)(2906002)(478600001)(6506007)(86362001)(55016002)(7696005)(66946007)(66476007)(66446008)(91956017)(558084003)(64756008)(52536014);DIR:OUT;SFP:1102;
-x-ms-exchange-antispam-messagedata: s6zsJmTQB0CmQ41z8D9e2OtznJDL1QY9dHoZUXkRXDMClRlmpfjUU85ZgaHI8feIXQuvvAJeTR6eYgbTNRk0edZFe5CyC6HnI6WDlqtXzmiuLt26HwnNS2S2EgDpr3VEiDDst0oN89bPLApRfhhPYDc/pgovJw6c6GnTRzTTwQF0QObqLq9a0SXs/UpGCeCtEsi6JP5QafVkEvivX+reOO5mEQ/OIarwtNnVTDhfZipYdCNblZR8MrkAliivYLFCqs9acSg6Rbcd326E87/rGjTJw6MYC1SSy4VWL2eOU0TY0C/zUd0mocmLE3TvPK7Oh9ScjbvtKeAEF50sREdPz6CmSY9NzkxhldAQCL883Ij1ondPlyIgIWn4OYYuznrg7q2p3AK6tJ72sE0Qpydr1czWZ007f5gmyCRRpyEeg9PjVniptP80qVSarywMSnQGtI19QkOxLjQ0aXk8ROv7cTiaPpQwNpW0j+FJLHBftley4b8Gfer2JfQFf5Q4db2qThxMf8jAxEHtn1jsuXiqUgq+e3NdjZpxwiSJq3jo5FBRK31IAQSEPv85m3m8/8hpiitT84WSW3SYaFxpALzSiCFXYav25IShZQRKO00XqLK9t4N0Ab8L4KHmbil0aBCztbYTrTINkBBkYtaQX+PQaDRP3Nx33hr3n/nGz+yTazQNbt0p7Pd2hFd7+jBGeTFzV6KHhWhXWAXAh0f58+k8xQ==
-x-ms-exchange-transport-forked: True
+x-microsoft-antispam-message-info: kmY+uHjLibIzlNzxwjIUAtjmO3PLv7dgYSMDvWrRa5grjhspCDFf9dOEO6wmoY/oK4jDCF+HPIgOimmG3ZF+TEtiBmFAgEpCDReazC7BLRjV0t83t/55Bd1+MO6PD8Ravn0NzDKup/Agw9xCUM8SZky9y5gJFkf4cPWbuxK39IEHlGFsvxvatc0/ePvSuFqMSsd0pQIRKsTROOkZyklHFMT8PyonE+VvRiiH1ya7T6uQZEGEHCzrdEFAQSBotgHPKysRn7jC1oAP6imKF6WHdKW9tcFZfUU9fzbAvO0zEkxH+v8e1wU+gOHBTXuBZuQE/JLyGQQuVOluFLPBcCXPuQ==
+x-forefront-antispam-report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SN4PR0401MB3598.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(4636009)(136003)(39860400002)(346002)(376002)(396003)(366004)(5660300002)(7696005)(76116006)(6506007)(478600001)(71200400001)(8936002)(2906002)(186003)(66556008)(66476007)(66946007)(66446008)(64756008)(83380400001)(91956017)(55016002)(52536014)(4326008)(8676002)(53546011)(33656002)(86362001)(9686003)(110136005)(54906003)(316002);DIR:OUT;SFP:1102;
+x-ms-exchange-antispam-messagedata: H0QzL4KqQflqCkP9LpNMg7LhDWs+FzCTrIykt1BfUbfBKi4h3aOBKoXFhINvQvB8mjjzpn7ymXUq9TAd3s27yKFKAUayx/WZMynnbdzqNfTmZClNQFqDsjIX/LrHrGXtEqLCJrQO+aEtZs45Fl+hcqW1YGFK98+k4o5y6N3AJNHe2Yr2gPlQaW7+l7RKb1MrN0GHZyOyZ0Rp1ld6qwYfnzFLp7pMHMbBlg9VatSvNkaLpQzrHvLpm2SpmdGXYbj8MLC0WwJQjnbW3h9yeYRPjLKG5hRvJEHFrAMR3YA2zNfmTBvy1oJybHUZ5eiRuevjcVzboVUpOagwUn3gafz7TB+b30zaFjqZZTaWSN3aPbIGFsyyeCsFMOnGlOgmtUbDi4adxcJymXarHY5WH2G26GKXfuuhuRPBZz8rJKSxU+mWTobARYvvTX/8ygSPFCLXydepJH5Xu6rzOCKIUXnBdWNlOpaEKNKCa/6+BB+tfb61xKTisgtvpRMUB/DqKfSLNH5ctWBFsPYI6Al1JiZZzt6dCA2T7eFbnSgEporbLJfxnxbXiWuNWGpVpGNNCea2JFO3ui1wg4sQTB8JYq3m5FECMSMlpqbvO6SpYyiqVL7jxAq5WVodKf5PcVYj1ziuWLAYm2fJOqivxUj/BVTUo9lCskZRNSiHHI+M3mKaVgU5RTAKJu7ysc9EKeNu6rEAzH4Gx2WwSQMltr4BPzbYsA==
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: quoted-printable
 MIME-Version: 1.0
 X-OriginatorOrg: wdc.com
 X-MS-Exchange-CrossTenant-AuthAs: Internal
 X-MS-Exchange-CrossTenant-AuthSource: SN4PR0401MB3598.namprd04.prod.outlook.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: b603f7f9-0260-4d31-f975-08d886ed9ee6
-X-MS-Exchange-CrossTenant-originalarrivaltime: 12 Nov 2020 09:30:40.3125
+X-MS-Exchange-CrossTenant-Network-Message-Id: 3e6a23b2-8eed-4cab-f2bf-08d886eee3e1
+X-MS-Exchange-CrossTenant-originalarrivaltime: 12 Nov 2020 09:39:45.5645
  (UTC)
 X-MS-Exchange-CrossTenant-fromentityheader: Hosted
 X-MS-Exchange-CrossTenant-id: b61c8803-16f3-4c35-9b17-6f65f441df86
 X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
-X-MS-Exchange-CrossTenant-userprincipalname: Ug+8FHPkDwhI5oDciHoQ+tJV/APQB/sLh8kNljbOgMRYq0nL0hJiqUIMpfuIVrCEt/3jukM2OLVrh7RLPAAtJV4f4rE9+E91PbJ8MQCIMoU=
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: SN6PR04MB3965
+X-MS-Exchange-CrossTenant-userprincipalname: Ykl/bPa012zRyOS9aRH4LiXulN8aSwuClui6BjcaiM68/Yz2iqJiOJoAP3R0rcJ5BDSDShrDHL4R3Kh2ibmFmxa0cfEuyqNY4RHczPtswio=
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: SN4PR0401MB3519
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Looks good,=0A=
-Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>=0A=
+On 12/11/2020 08:00, Anand Jain wrote:=0A=
+> =0A=
+> =0A=
+>> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c=0A=
+>> index 8840a4fa81eb..ed55014fd1bd 100644=0A=
+>> --- a/fs/btrfs/super.c=0A=
+>> +++ b/fs/btrfs/super.c=0A=
+>> @@ -2462,6 +2462,11 @@ static void __init btrfs_print_mod_info(void)=0A=
+>>   #endif=0A=
+>>   #ifdef CONFIG_BTRFS_FS_REF_VERIFY=0A=
+>>   			", ref-verify=3Don"=0A=
+>> +#endif=0A=
+>> +#ifdef CONFIG_BLK_DEV_ZONED=0A=
+>> +			", zoned=3Dyes"=0A=
+>> +#else=0A=
+>> +			", zoned=3Dno"=0A=
+>>   #endif=0A=
+> =0A=
+> IMO, we don't need this, as most of the generic kernel will be compiled=
+=0A=
+> with the CONFIG_BLK_DEV_ZONED defined.=0A=
+> For review purpose we may want to know if the mounted device=0A=
+> is a zoned device. So log of zone device and its type may be useful=0A=
+> when we have verified the zoned devices in the open_ctree().=0A=
+> =0A=
+>> @@ -374,6 +375,7 @@ void btrfs_free_device(struct btrfs_device *device)=
+=0A=
+>>   	rcu_string_free(device->name);=0A=
+>>   	extent_io_tree_release(&device->alloc_state);=0A=
+>>   	bio_put(device->flush_bio);=0A=
+> =0A=
+>> +	btrfs_destroy_dev_zone_info(device);=0A=
+> =0A=
+> Free of btrfs_device::zone_info is already happening in the path..=0A=
+> =0A=
+>   btrfs_close_one_device()=0A=
+>     btrfs_destroy_dev_zone_info()=0A=
+> =0A=
+>   We don't need this..=0A=
+> =0A=
+>   btrfs_free_device()=0A=
+>    btrfs_destroy_dev_zone_info()=0A=
+> =0A=
+> =0A=
+>> @@ -2543,6 +2551,14 @@ int btrfs_init_new_device(struct btrfs_fs_info *f=
+s_info, const char *device_path=0A=
+>>   	}=0A=
+>>   	rcu_assign_pointer(device->name, name);=0A=
+>>   =0A=
+>> +	device->fs_info =3D fs_info;=0A=
+>> +	device->bdev =3D bdev;=0A=
+>> +=0A=
+>> +	/* Get zone type information of zoned block devices */=0A=
+>> +	ret =3D btrfs_get_dev_zone_info(device);=0A=
+>> +	if (ret)=0A=
+>> +		goto error_free_device;=0A=
+>> +=0A=
+>>   	trans =3D btrfs_start_transaction(root, 0);=0A=
+>>   	if (IS_ERR(trans)) {=0A=
+>>   		ret =3D PTR_ERR(trans);=0A=
+> =0A=
+> It should be something like goto error_free_zone from here.=0A=
+> =0A=
+> =0A=
+>> @@ -2707,6 +2721,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs=
+_info, const char *device_path=0A=
+>>   		sb->s_flags |=3D SB_RDONLY;=0A=
+>>   	if (trans)=0A=
+>>   		btrfs_end_transaction(trans);=0A=
+> =0A=
+> =0A=
+> error_free_zone:=0A=
+>> +	btrfs_destroy_dev_zone_info(device);=0A=
+>>   error_free_device:=0A=
+>>   	btrfs_free_device(device);=0A=
+>>   error:=0A=
+> =0A=
+>   As mentioned we don't need btrfs_destroy_dev_zone_info()=0A=
+>   again in  btrfs_free_device(). Otherwise we end up calling=0A=
+>   btrfs_destroy_dev_zone_info twice here.=0A=
+=0A=
+Which doesn't do any harm as:=0A=
+void btrfs_destroy_dev_zone_info(struct btrfs_device *device)=0A=
+{=0A=
+        struct btrfs_zoned_device_info *zone_info =3D device->zone_info;=0A=
+=0A=
+        if (!zone_info)=0A=
+                return;=0A=
+=0A=
+	/* ... */=0A=
+        device->zone_info =3D NULL;=0A=
+}=0A=
+=0A=
+Not sure what would be the preferred style here=0A=

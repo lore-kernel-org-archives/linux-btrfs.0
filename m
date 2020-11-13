@@ -7,39 +7,38 @@ X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E7440C56202
-	for <linux-btrfs@archiver.kernel.org>; Fri, 13 Nov 2020 12:52:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EE0FCC63699
+	for <linux-btrfs@archiver.kernel.org>; Fri, 13 Nov 2020 12:52:20 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 8FE2F206D9
-	for <linux-btrfs@archiver.kernel.org>; Fri, 13 Nov 2020 12:52:19 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id AF90F2224D
+	for <linux-btrfs@archiver.kernel.org>; Fri, 13 Nov 2020 12:52:20 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Y9H3FsU3"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="sQ4PpS6d"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726509AbgKMMwS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 13 Nov 2020 07:52:18 -0500
-Received: from mx2.suse.de ([195.135.220.15]:46552 "EHLO mx2.suse.de"
+        id S1726532AbgKMMwU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 13 Nov 2020 07:52:20 -0500
+Received: from mx2.suse.de ([195.135.220.15]:46624 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726437AbgKMMwO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 13 Nov 2020 07:52:14 -0500
+        id S1726502AbgKMMwS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 13 Nov 2020 07:52:18 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1605271933; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+        t=1605271937; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=zK1DqvZoFjHhGMI2AhY5/glmJMQs2XevmVdYZ6z3VBE=;
-        b=Y9H3FsU3B5mrSMQXG24VAcSHAPphPmUdWtQZDGELC1OOo0ocK/9zCxKp7z0e3E0j4BlXa6
-        sc/kk3+JfrLTN5YOtpwXhx6dKg6WsvZvLlvD5BVR1DMYzFNxxBHlSZ7HmRMTYW+7IdEnFa
-        7b32mfGP6Qq9RO4IGKNgjjwcZOQ1pBk=
+        bh=c138pZ1RI4buSY8fEz95m+ae5fikRvlUK5xAdSq2Lvk=;
+        b=sQ4PpS6dr6mCxHrrIAod4PpgelKeP9jUhzk8eatKBdDI0pVCc8O+L92VbrBMH17NR/nH7v
+        dtA0VJGo+v/tVYz0CEqobnLO9fZ2jmq7k3LGgtNVHF6/wS7k1RU9ikDJsA+M8k3V71re6Z
+        3v0X6OKyyUklMPJ/adPzCyEbpaSwx5s=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 3B4D8AC2E;
-        Fri, 13 Nov 2020 12:52:13 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 0F74BABD9
+        for <linux-btrfs@vger.kernel.org>; Fri, 13 Nov 2020 12:52:17 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Cc:     David Sterba <dsterba@suse.com>
-Subject: [PATCH v2 05/24] btrfs: extent_io: extract the btree page submission code into its own helper function
-Date:   Fri, 13 Nov 2020 20:51:30 +0800
-Message-Id: <20201113125149.140836-6-wqu@suse.com>
+Subject: [PATCH v2 07/24] btrfs: pass bio_offset to check_data_csum() directly
+Date:   Fri, 13 Nov 2020 20:51:32 +0800
+Message-Id: <20201113125149.140836-8-wqu@suse.com>
 X-Mailer: git-send-email 2.29.2
 In-Reply-To: <20201113125149.140836-1-wqu@suse.com>
 References: <20201113125149.140836-1-wqu@suse.com>
@@ -49,169 +48,174 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-In btree_write_cache_pages() we have a btree page submission routine
-buried deeply into a nested loop.
+Parameter @icsum for check_data_csum() is a little hard to understand.
+So is the @phy_offset for btrfs_verify_data_csum().
 
-This patch will extract that part of code into a helper function,
-submit_eb_page(), to do the same work.
+Both parameters are calculated values for csum lookup.
 
-Also, since submit_eb_page() now can return >0 for successful extent
-buffer submission, remove the "ASSERT(ret <= 0);" line.
+Instead of some calculated value, just pass @bio_offset and let the
+final and only user, check_data_csum(), to calculate whatever it needs.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/extent_io.c | 116 +++++++++++++++++++++++++------------------
- 1 file changed, 69 insertions(+), 47 deletions(-)
+ fs/btrfs/ctree.h     |  2 +-
+ fs/btrfs/extent_io.c | 14 ++++++++------
+ fs/btrfs/inode.c     | 26 ++++++++++++++++----------
+ 3 files changed, 25 insertions(+), 17 deletions(-)
 
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 679da4920c92..99955b6bfc62 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3046,7 +3046,7 @@ u64 btrfs_file_extent_end(const struct btrfs_path *path);
+ /* inode.c */
+ blk_status_t btrfs_submit_data_bio(struct inode *inode, struct bio *bio,
+ 				   int mirror_num, unsigned long bio_flags);
+-int btrfs_verify_data_csum(struct btrfs_io_bio *io_bio, u64 phy_offset,
++int btrfs_verify_data_csum(struct btrfs_io_bio *io_bio, u64 bio_offset,
+ 			   struct page *page, u64 start, u64 end, int mirror);
+ struct extent_map *btrfs_get_extent_fiemap(struct btrfs_inode *inode,
+ 					   u64 start, u64 len);
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index caafe44542e8..fd4845b06989 100644
+index 9d394485a60c..37dd103213f9 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -3987,10 +3987,75 @@ static noinline_for_stack int write_one_eb(struct extent_buffer *eb,
- 	return ret;
+@@ -2878,7 +2878,7 @@ static void end_bio_extent_readpage(struct bio *bio)
+ 	struct btrfs_io_bio *io_bio = btrfs_io_bio(bio);
+ 	struct extent_io_tree *tree, *failure_tree;
+ 	struct processed_extent processed = { 0 };
+-	u64 offset = 0;
++	u64 bio_offset = 0;
+ 	u64 start;
+ 	u64 end;
+ 	u64 len;
+@@ -2924,8 +2924,9 @@ static void end_bio_extent_readpage(struct bio *bio)
+ 		mirror = io_bio->mirror_num;
+ 		if (likely(uptodate)) {
+ 			if (is_data_inode(inode))
+-				ret = btrfs_verify_data_csum(io_bio, offset, page,
+-							     start, end, mirror);
++				ret = btrfs_verify_data_csum(io_bio,
++						bio_offset, page, start, end,
++						mirror);
+ 			else
+ 				ret = btrfs_validate_metadata_buffer(io_bio,
+ 					page, start, end, mirror);
+@@ -2953,12 +2954,13 @@ static void end_bio_extent_readpage(struct bio *bio)
+ 			 * If it can't handle the error it will return -EIO and
+ 			 * we remain responsible for that page.
+ 			 */
+-			if (!btrfs_submit_read_repair(inode, bio, offset, page,
++			if (!btrfs_submit_read_repair(inode, bio, bio_offset,
++						page,
+ 						start - page_offset(page),
+ 						start, end, mirror,
+ 						btrfs_submit_data_bio)) {
+ 				uptodate = !bio->bi_status;
+-				offset += len;
++				bio_offset += len;
+ 				continue;
+ 			}
+ 		} else {
+@@ -2983,7 +2985,7 @@ static void end_bio_extent_readpage(struct bio *bio)
+ 			if (page->index == end_index && off)
+ 				zero_user_segment(page, off, PAGE_SIZE);
+ 		}
+-		offset += len;
++		bio_offset += len;
+ 
+ 		endio_readpage_update_page_status(page, uptodate);
+ 		endio_readpage_release_extent(&processed, BTRFS_I(inode),
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 435b270430e3..bcf3152d0efb 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2931,26 +2931,28 @@ void btrfs_writepage_endio_finish_ordered(struct page *page, u64 start,
+  * check_data_csum - verify checksum of one sector of uncompressed data
+  * @inode:	the inode
+  * @io_bio:	btrfs_io_bio which contains the csum
+- * @icsum:	checksum index in the io_bio->csum array, size of csum_size
++ * @bio_offset:	the offset to the beginning of the bio (in bytes)
+  * @page:	page where is the data to be verified
+  * @pgoff:	offset inside the page
+  *
+  * The length of such check is always one sector size.
+  */
+ static int check_data_csum(struct inode *inode, struct btrfs_io_bio *io_bio,
+-			   int icsum, struct page *page, int pgoff)
++			   u64 bio_offset, struct page *page, int pgoff)
+ {
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+ 	SHASH_DESC_ON_STACK(shash, fs_info->csum_shash);
+ 	char *kaddr;
+ 	u32 len = fs_info->sectorsize;
+ 	const u32 csum_size = fs_info->csum_size;
++	int offset_sectors;
+ 	u8 *csum_expected;
+ 	u8 csum[BTRFS_CSUM_SIZE];
+ 
+ 	ASSERT(pgoff + len <= PAGE_SIZE);
+ 
+-	csum_expected = ((u8 *)io_bio->csum) + icsum * csum_size;
++	offset_sectors = bio_offset >> fs_info->sectorsize_bits;
++	csum_expected = ((u8 *)io_bio->csum) + offset_sectors * csum_size;
+ 
+ 	kaddr = kmap_atomic(page);
+ 	shash->tfm = fs_info->csum_shash;
+@@ -2978,8 +2980,13 @@ static int check_data_csum(struct inode *inode, struct btrfs_io_bio *io_bio,
+  * when reads are done, we need to check csums to verify the data is correct
+  * if there's a match, we allow the bio to finish.  If not, the code in
+  * extent_io.c will try to find good copies for us.
++ *
++ * @bio_offset:	The offset to the begining of the bio (in bytes)
++ * @start:	The file offset of the range start
++ * @end:	The file offset of the range end (inclusive)
++ * @mirror:	The mirror number
+  */
+-int btrfs_verify_data_csum(struct btrfs_io_bio *io_bio, u64 phy_offset,
++int btrfs_verify_data_csum(struct btrfs_io_bio *io_bio, u64 bio_offset,
+ 			   struct page *page, u64 start, u64 end, int mirror)
+ {
+ 	size_t offset = start - page_offset(page);
+@@ -3004,8 +3011,7 @@ int btrfs_verify_data_csum(struct btrfs_io_bio *io_bio, u64 phy_offset,
+ 		return 0;
+ 	}
+ 
+-	phy_offset >>= root->fs_info->sectorsize_bits;
+-	return check_data_csum(inode, io_bio, phy_offset, page, offset);
++	return check_data_csum(inode, io_bio, bio_offset, page, offset);
  }
  
-+/*
-+ * Submit one page of one extent buffer.
-+ *
-+ * Will try to submit all pages of one extent buffer, thus will skip some pages
-+ * if it's already submitted.
-+ *
-+ * @page:	The page of one extent buffer
-+ * @eb_context:	To determine if we need to submit this page. If current page
-+ *		belongs to this eb, we don't need to submit.
-+ *
-+ * Return >0 if we have submitted the extent buffer successfully.
-+ * Return 0 if we don't need to do anything for the page.
-+ * Return <0 for fatal error.
-+ */
-+static int submit_eb_page(struct page *page, struct writeback_control *wbc,
-+			  struct extent_page_data *epd,
-+			  struct extent_buffer **eb_context)
-+{
-+	struct address_space *mapping = page->mapping;
-+	struct extent_buffer *eb;
-+	int ret;
-+
-+	if (!PagePrivate(page))
-+		return 0;
-+
-+	spin_lock(&mapping->private_lock);
-+	if (!PagePrivate(page)) {
-+		spin_unlock(&mapping->private_lock);
-+		return 0;
-+	}
-+
-+	eb = (struct extent_buffer *)page->private;
-+
-+	/*
-+	 * Shouldn't happen and normally this would be a BUG_ON but no sense
-+	 * in crashing the users box for something we can survive anyway.
-+	 */
-+	if (WARN_ON(!eb)) {
-+		spin_unlock(&mapping->private_lock);
-+		return 0;
-+	}
-+
-+	if (eb == *eb_context) {
-+		spin_unlock(&mapping->private_lock);
-+		return 0;
-+	}
-+	ret = atomic_inc_not_zero(&eb->refs);
-+	spin_unlock(&mapping->private_lock);
-+	if (!ret)
-+		return 0;
-+
-+	*eb_context = eb;
-+
-+	ret = lock_extent_buffer_for_io(eb, epd);
-+	if (ret <= 0) {
-+		free_extent_buffer(eb);
-+		return ret;
-+	}
-+	ret = write_one_eb(eb, wbc, epd);
-+	free_extent_buffer(eb);
-+	if (ret < 0)
-+		return ret;
-+	return 1;
-+}
-+
- int btree_write_cache_pages(struct address_space *mapping,
- 				   struct writeback_control *wbc)
- {
--	struct extent_buffer *eb, *prev_eb = NULL;
-+	struct extent_buffer *eb_context = NULL;
- 	struct extent_page_data epd = {
- 		.bio = NULL,
- 		.extent_locked = 0,
-@@ -4036,55 +4101,13 @@ int btree_write_cache_pages(struct address_space *mapping,
- 		for (i = 0; i < nr_pages; i++) {
- 			struct page *page = pvec.pages[i];
+ /*
+@@ -7716,7 +7722,7 @@ static blk_status_t btrfs_check_read_dio_bio(struct inode *inode,
+ 	struct bio_vec bvec;
+ 	struct bvec_iter iter;
+ 	u64 start = io_bio->logical;
+-	int icsum = 0;
++	u64 bio_offset = 0;
+ 	blk_status_t err = BLK_STS_OK;
  
--			if (!PagePrivate(page))
--				continue;
--
--			spin_lock(&mapping->private_lock);
--			if (!PagePrivate(page)) {
--				spin_unlock(&mapping->private_lock);
--				continue;
--			}
--
--			eb = (struct extent_buffer *)page->private;
--
--			/*
--			 * Shouldn't happen and normally this would be a BUG_ON
--			 * but no sense in crashing the users box for something
--			 * we can survive anyway.
--			 */
--			if (WARN_ON(!eb)) {
--				spin_unlock(&mapping->private_lock);
-+			ret = submit_eb_page(page, wbc, &epd, &eb_context);
-+			if (ret == 0)
- 				continue;
--			}
--
--			if (eb == prev_eb) {
--				spin_unlock(&mapping->private_lock);
--				continue;
--			}
--
--			ret = atomic_inc_not_zero(&eb->refs);
--			spin_unlock(&mapping->private_lock);
--			if (!ret)
--				continue;
--
--			prev_eb = eb;
--			ret = lock_extent_buffer_for_io(eb, &epd);
--			if (!ret) {
--				free_extent_buffer(eb);
--				continue;
--			} else if (ret < 0) {
--				done = 1;
--				free_extent_buffer(eb);
--				break;
--			}
--
--			ret = write_one_eb(eb, wbc, &epd);
--			if (ret) {
-+			if (ret < 0) {
- 				done = 1;
--				free_extent_buffer(eb);
- 				break;
+ 	__bio_for_each_segment(bvec, &io_bio->bio, iter, io_bio->iter) {
+@@ -7727,8 +7733,8 @@ static blk_status_t btrfs_check_read_dio_bio(struct inode *inode,
+ 		for (i = 0; i < nr_sectors; i++) {
+ 			ASSERT(pgoff < PAGE_SIZE);
+ 			if (uptodate &&
+-			    (!csum || !check_data_csum(inode, io_bio, icsum,
+-						       bvec.bv_page, pgoff))) {
++			    (!csum || !check_data_csum(inode, io_bio,
++					bio_offset, bvec.bv_page, pgoff))) {
+ 				clean_io_failure(fs_info, failure_tree, io_tree,
+ 						 start, bvec.bv_page,
+ 						 btrfs_ino(BTRFS_I(inode)),
+@@ -7748,7 +7754,7 @@ static blk_status_t btrfs_check_read_dio_bio(struct inode *inode,
+ 					err = status;
  			}
--			free_extent_buffer(eb);
- 
- 			/*
- 			 * the filesystem may choose to bump up nr_to_write.
-@@ -4105,7 +4128,6 @@ int btree_write_cache_pages(struct address_space *mapping,
- 		index = 0;
- 		goto retry;
+ 			start += sectorsize;
+-			icsum++;
++			bio_offset += sectorsize;
+ 			pgoff += sectorsize;
+ 		}
  	}
--	ASSERT(ret <= 0);
- 	if (ret < 0) {
- 		end_write_bio(&epd, ret);
- 		return ret;
 -- 
 2.29.2
 

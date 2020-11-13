@@ -7,62 +7,62 @@ X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A3C5EC388F7
-	for <linux-btrfs@archiver.kernel.org>; Fri, 13 Nov 2020 16:24:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5C3F9C61DD8
+	for <linux-btrfs@archiver.kernel.org>; Fri, 13 Nov 2020 16:24:48 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 69C35207DE
-	for <linux-btrfs@archiver.kernel.org>; Fri, 13 Nov 2020 16:24:46 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 03E8A207DE
+	for <linux-btrfs@archiver.kernel.org>; Fri, 13 Nov 2020 16:24:47 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="taQszHit"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="vq1h2c1J"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727137AbgKMQYp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 13 Nov 2020 11:24:45 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49000 "EHLO
+        id S1726886AbgKMQYr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 13 Nov 2020 11:24:47 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49012 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726270AbgKMQYn (ORCPT
+        with ESMTP id S1727138AbgKMQYq (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 13 Nov 2020 11:24:43 -0500
-Received: from mail-qk1-x744.google.com (mail-qk1-x744.google.com [IPv6:2607:f8b0:4864:20::744])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B2150C0613D1
-        for <linux-btrfs@vger.kernel.org>; Fri, 13 Nov 2020 08:24:43 -0800 (PST)
-Received: by mail-qk1-x744.google.com with SMTP id v143so9314051qkb.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 13 Nov 2020 08:24:43 -0800 (PST)
+        Fri, 13 Nov 2020 11:24:46 -0500
+Received: from mail-qt1-x844.google.com (mail-qt1-x844.google.com [IPv6:2607:f8b0:4864:20::844])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9660FC0613D1
+        for <linux-btrfs@vger.kernel.org>; Fri, 13 Nov 2020 08:24:46 -0800 (PST)
+Received: by mail-qt1-x844.google.com with SMTP id 3so7069027qtx.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 13 Nov 2020 08:24:46 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references:mime-version
          :content-transfer-encoding;
-        bh=W8bi0LsLZ9Op3BC6ygY4VwpzbB9YzP9G+uGYGGAxXJk=;
-        b=taQszHitPQLcL4nvgk9Nz84gpHx7UcAvUpf2JN0nTGMlBKmgwEsAuCyo3q4p9TVSIk
-         72rgCHdF7Ua5TvgthPbegMI1wQZpDrW2n+4NM4dm7/7jZyMqfAp0RFvCUY+rc5YlULR3
-         3xKwWrD91qQP3am4reB6Wz054VTmncFq2uXu8XsJwZ6CZAZ5a4b6IpFVGpjrwhWicXoc
-         n0l4AAG1lsAhRxb473kUnGpnDnVa9BvOozBv8s/Ykx11Sh47DwIE4diaL79lUjVZDgeu
-         4VDb/AtAtfMsu3oxyZPnETUwz46OVW2AEBx57LbswHZdQD1QMDJxvgLPpFczqP8Xq8wd
-         bDWg==
+        bh=iCLmv2LpHckWp0z53a63hZYpIQrEaYcXTSXF3YJpQg8=;
+        b=vq1h2c1J+tSllfAI3drCQzizascFmPjo9ieW6bQ6JY3vhHdniKK5/SijcdNBV88FAZ
+         tYGCxcgHuuCqoOjSHlkpkUi3Ju3WGjxrIshKbdBx1HocxlfeSiGWVpRI5W3kD7tozDv2
+         CjIOyJ/S5t5kNGPNCjtMCFxEuflJfYsBhW+ZWdrEOs2A8VIEo65ZuiiZfTrl19mfOiGH
+         /54bIitOut9vH3/alaHIGf/GJXYaBPYACYVqvsoRSRvRpz/UazrIzp9uIU1aMpH4wWOr
+         jdfzN1sDqDuwvSxA9gtMgkUlpggmcHu2ayoaNiSDYuDq7634TGjdk6j2PlDQMJbTKi0l
+         YBaw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=W8bi0LsLZ9Op3BC6ygY4VwpzbB9YzP9G+uGYGGAxXJk=;
-        b=LAT4inSflfn1kyZz9omvKV8jcOCFbQd8tlNPcAlxSWNDfMC6VxACP7F5b69iQkPEH/
-         v1prhyBBFWD+1nat4cpxhoUlKGtkfEVS/DJnmTWI1Lz9K6qPNRIwGyzattlRuFj2o+4D
-         Y7AXm1Tt7IXgI+1Z0F7GhzQlm4t+IurMUawK9zmZmG6loUi1+xUCXjO6sU+6O/CO0GVt
-         1TvJW44nMb9csr1PvYM1fRo+aYTtGVSdozf/49TaIr1aseRPQLhaXIe3mU9/8NAnkgdV
-         iLO9cLVqZhlgUwGTPlaUIxwv/KjcZpJ1jZbADRTnu9fD+drZK88pbZqbrZ6IgGH3uZyJ
-         wYRA==
-X-Gm-Message-State: AOAM533h/DWLNc3R6i4045UX8qJH1zqpoHMYr1ylxpEQmo2lYfON9X8D
-        d0DxzQfXLCrxHNATXKO3mX3k9SnaBXbUfQ==
-X-Google-Smtp-Source: ABdhPJwz9ASRT2W1wH3kVBFpq35kiI7Hq47YMhq/zoCsjmn2orDTyX3HBxhugBjzdPnRec35/2FuWA==
-X-Received: by 2002:a37:be83:: with SMTP id o125mr2841130qkf.2.1605284677614;
-        Fri, 13 Nov 2020 08:24:37 -0800 (PST)
+        bh=iCLmv2LpHckWp0z53a63hZYpIQrEaYcXTSXF3YJpQg8=;
+        b=aAB33OEunZvrjh01GkcafbjpT7y+c7EmE5SC5591QNDiBdtL+iAo7h9Rr8zNemXXM0
+         M0x3dA1kf6PRbd+uDGI2UsmDHNIbcA6mqDQ5Z/fgo6i8OvApoPDK7MKHYuJ3/j9zi7Yd
+         mdXNOm1kke99bQEWTb0VeXEQxWr6cE7ofH4Svk00mfqd9Ds5PHIozyhjhCsP/PovdMRp
+         uGv6jFjtpGZ1bBAlHYXpQPl4Thh0WJX+79YThwsDgEqPltUnE5cWEVDQNOyrWRhItvsK
+         kSFGaVkCqjv1HY/fig4nwWn3jnUg0PHJdkpgstPd4AqfhnGC+Cs79B1/UEYOShXFnyiM
+         PZww==
+X-Gm-Message-State: AOAM530kkkYXylftIC9L6QoRRm5Fo4olTaBNwZTbXchs4vqb9jIwf6+K
+        fC/xpcLGWqqquqXTfYtkv1NjjWy5pAduZg==
+X-Google-Smtp-Source: ABdhPJySZQD2nV+89oPrz/Zb4nLJqaZtLQmruWabDnzxXpOlsw+q8s5qKoAckZdij7x4o5V/IBiS8g==
+X-Received: by 2002:ac8:4897:: with SMTP id i23mr2572167qtq.211.1605284681209;
+        Fri, 13 Nov 2020 08:24:41 -0800 (PST)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id v204sm7296168qka.4.2020.11.13.08.24.36
+        by smtp.gmail.com with ESMTPSA id w81sm7118018qka.124.2020.11.13.08.24.40
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 13 Nov 2020 08:24:37 -0800 (PST)
+        Fri, 13 Nov 2020 08:24:40 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v2 34/42] btrfs: check for BTRFS_BLOCK_FLAG_FULL_BACKREF being set improperly
-Date:   Fri, 13 Nov 2020 11:23:24 -0500
-Message-Id: <8409722498fbf7f228f3c6bfab699f42b6e14efd.1605284383.git.josef@toxicpanda.com>
+Subject: [PATCH v2 36/42] btrfs: do proper error handling in create_reloc_inode
+Date:   Fri, 13 Nov 2020 11:23:26 -0500
+Message-Id: <f36978a5293b0fba99f989f9860cd6b018945db8.1605284383.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.2
 In-Reply-To: <cover.1605284383.git.josef@toxicpanda.com>
 References: <cover.1605284383.git.josef@toxicpanda.com>
@@ -72,30 +72,37 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We need to validate that a data extent item does not have the
-FULL_BACKREF flag set on it's flags.
+We already handle some errors in this function, and the callers do the
+correct error handling, so clean up the rest of the function to do the
+appropriate error handling.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/tree-checker.c | 5 +++++
- 1 file changed, 5 insertions(+)
+ fs/btrfs/relocation.c | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-index d8af62d9f98b..df39ad294aa2 100644
---- a/fs/btrfs/tree-checker.c
-+++ b/fs/btrfs/tree-checker.c
-@@ -1272,6 +1272,11 @@ static int check_extent_item(struct extent_buffer *leaf,
- 				   key->offset, fs_info->sectorsize);
- 			return -EUCLEAN;
- 		}
-+		if (flags & BTRFS_BLOCK_FLAG_FULL_BACKREF) {
-+			extent_err(leaf, slot,
-+			"invalid extent flag, data has full backref set");
-+			return -EUCLEAN;
-+		}
- 	}
- 	ptr = (unsigned long)(struct btrfs_extent_item *)(ei + 1);
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 8a9c946302cd..c4b6eef70072 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -3601,10 +3601,15 @@ struct inode *create_reloc_inode(struct btrfs_fs_info *fs_info,
+ 		goto out;
  
+ 	err = __insert_orphan_inode(trans, root, objectid);
+-	BUG_ON(err);
++	if (err)
++		goto out;
+ 
+ 	inode = btrfs_iget(fs_info->sb, objectid, root);
+-	BUG_ON(IS_ERR(inode));
++	if (IS_ERR(inode)) {
++		err = PTR_ERR(inode);
++		inode = NULL;
++		goto out;
++	}
+ 	BTRFS_I(inode)->index_cnt = group->start;
+ 
+ 	err = btrfs_orphan_add(trans, BTRFS_I(inode));
 -- 
 2.26.2
 

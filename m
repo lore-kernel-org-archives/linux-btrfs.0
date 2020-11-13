@@ -7,39 +7,39 @@ X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C3A54C388F7
-	for <linux-btrfs@archiver.kernel.org>; Fri, 13 Nov 2020 12:52:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BAE0DC56202
+	for <linux-btrfs@archiver.kernel.org>; Fri, 13 Nov 2020 12:52:23 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 799AC2224B
-	for <linux-btrfs@archiver.kernel.org>; Fri, 13 Nov 2020 12:52:20 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5F086206D9
+	for <linux-btrfs@archiver.kernel.org>; Fri, 13 Nov 2020 12:52:23 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="c+Xs92FC"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="AP7xnJbK"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726524AbgKMMwT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 13 Nov 2020 07:52:19 -0500
-Received: from mx2.suse.de ([195.135.220.15]:46598 "EHLO mx2.suse.de"
+        id S1726541AbgKMMwW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 13 Nov 2020 07:52:22 -0500
+Received: from mx2.suse.de ([195.135.220.15]:46706 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726501AbgKMMwR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 13 Nov 2020 07:52:17 -0500
+        id S1726503AbgKMMwW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 13 Nov 2020 07:52:22 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1605271935; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+        t=1605271940; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=j0CU8b5rfQ/LVUZ7ZO6C6CcnGSPTlRBkrM5aiGUUEAU=;
-        b=c+Xs92FCYZxGs6HrsWToDsaUuBrSkKQnLUTh7AxHmiBc8mX07yOnVn2kjGKIpj+VIgA/Xm
-        nzlqfz+OOYCcv3U1LujhTYQNOLM0w1JKy9vir19P+JuMfSKWWdrcVS1fyq4rzaN9M8vWj6
-        C5ybLBT6Lj83QrFrSsf4U8cr+HKHoFM=
+        bh=x75kLDj09kPaiJ4b4pXpVWAhmKvmAWPsBk/dhhNad50=;
+        b=AP7xnJbKkh5o2w/QDQJH0APQ2DfNrprtxynxWeLsvjsPnqZodN1HFr8kOUIK4WLlmRtwO2
+        28NgRwNP5m9lflgBqhyF2JZcsOCyVxRrR89ye7ywItxe2GjYYN7wc5y5oe9qyK4c43SNRK
+        W6eERVxn+WY4cXjc0NRqiCJxa8fU+5w=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 5621EAC55;
-        Fri, 13 Nov 2020 12:52:15 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 8F9CDABD9;
+        Fri, 13 Nov 2020 12:52:20 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v2 06/24] btrfs: remove the phy_offset parameter for btrfs_validate_metadata_buffer()
-Date:   Fri, 13 Nov 2020 20:51:31 +0800
-Message-Id: <20201113125149.140836-7-wqu@suse.com>
+Cc:     Goldwyn Rodrigues <rgoldwyn@suse.com>
+Subject: [PATCH v2 08/24] btrfs: inode: make btrfs_verify_data_csum() follow sector size
+Date:   Fri, 13 Nov 2020 20:51:33 +0800
+Message-Id: <20201113125149.140836-9-wqu@suse.com>
 X-Mailer: git-send-email 2.29.2
 In-Reply-To: <20201113125149.140836-1-wqu@suse.com>
 References: <20201113125149.140836-1-wqu@suse.com>
@@ -49,68 +49,64 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Parameter @phy_offset is the offset against the bio->bi_iter.bi_sector.
-@phy_offset is mostly for data io to lookup the csum in btrfs_io_bio.
+Currently btrfs_verify_data_csum() just pass the whole page to
+check_data_csum(), which is fine since we only support sectorsize ==
+PAGE_SIZE.
 
-But for metadata, it's completely useless as metadata stores their own
-csum in its btrfs_header.
+To support subpage, we need to properly honor per-sector
+checksum verification, just like what we did in dio read path.
 
-Remove this useless parameter from btrfs_validate_metadata_buffer().
+This patch will do the csum verification in a for loop, starts with
+pg_off == start - page_offset(page), with sectorsize increasement for
+each loop.
 
-Just an extra note for parameters @start and @end, they are not utilized
-at all for current sectorsize == PAGE_SIZE case, as we can grab eb directly
-from page.
+For sectorsize == PAGE_SIZE case, the pg_off will always be 0, and we
+will only finish with just one loop.
 
-But those two parameters are very important for later subpage support,
-thus @start/@len are not touched here.
+For subpage case, we do the loop to iterate each sector and if we found
+any error, we return error.
 
+Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
 Signed-off-by: Qu Wenruo <wqu@suse.com>
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/disk-io.c   | 2 +-
- fs/btrfs/disk-io.h   | 2 +-
- fs/btrfs/extent_io.c | 2 +-
- 3 files changed, 3 insertions(+), 3 deletions(-)
+ fs/btrfs/inode.c | 14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index f0161d2ae2a4..8a558a43818d 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -593,7 +593,7 @@ static int validate_extent_buffer(struct extent_buffer *eb)
- 	return ret;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index bcf3152d0efb..3f19e0e19c96 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2989,10 +2989,11 @@ static int check_data_csum(struct inode *inode, struct btrfs_io_bio *io_bio,
+ int btrfs_verify_data_csum(struct btrfs_io_bio *io_bio, u64 bio_offset,
+ 			   struct page *page, u64 start, u64 end, int mirror)
+ {
+-	size_t offset = start - page_offset(page);
++	u64 pg_off;
+ 	struct inode *inode = page->mapping->host;
+ 	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
++	u32 sectorsize = root->fs_info->sectorsize;
+ 
+ 	if (PageChecked(page)) {
+ 		ClearPageChecked(page);
+@@ -3011,7 +3012,16 @@ int btrfs_verify_data_csum(struct btrfs_io_bio *io_bio, u64 bio_offset,
+ 		return 0;
+ 	}
+ 
+-	return check_data_csum(inode, io_bio, bio_offset, page, offset);
++	for (pg_off = start - page_offset(page);
++	     pg_off < end - page_offset(page);
++	     pg_off += sectorsize, bio_offset += sectorsize) {
++		int ret;
++
++		ret = check_data_csum(inode, io_bio, bio_offset, page, pg_off);
++		if (ret < 0)
++			return -EIO;
++	}
++	return 0;
  }
  
--int btrfs_validate_metadata_buffer(struct btrfs_io_bio *io_bio, u64 phy_offset,
-+int btrfs_validate_metadata_buffer(struct btrfs_io_bio *io_bio,
- 				   struct page *page, u64 start, u64 end,
- 				   int mirror)
- {
-diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
-index e75ea6092942..40e81d6e481e 100644
---- a/fs/btrfs/disk-io.h
-+++ b/fs/btrfs/disk-io.h
-@@ -79,7 +79,7 @@ void btrfs_btree_balance_dirty(struct btrfs_fs_info *fs_info);
- void btrfs_btree_balance_dirty_nodelay(struct btrfs_fs_info *fs_info);
- void btrfs_drop_and_free_fs_root(struct btrfs_fs_info *fs_info,
- 				 struct btrfs_root *root);
--int btrfs_validate_metadata_buffer(struct btrfs_io_bio *io_bio, u64 phy_offset,
-+int btrfs_validate_metadata_buffer(struct btrfs_io_bio *io_bio,
- 				   struct page *page, u64 start, u64 end,
- 				   int mirror);
- blk_status_t btrfs_submit_metadata_bio(struct inode *inode, struct bio *bio,
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index fd4845b06989..9d394485a60c 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2928,7 +2928,7 @@ static void end_bio_extent_readpage(struct bio *bio)
- 							     start, end, mirror);
- 			else
- 				ret = btrfs_validate_metadata_buffer(io_bio,
--					offset, page, start, end, mirror);
-+					page, start, end, mirror);
- 			if (ret)
- 				uptodate = 0;
- 			else
+ /*
 -- 
 2.29.2
 

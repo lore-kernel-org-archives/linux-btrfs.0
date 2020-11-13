@@ -7,39 +7,39 @@ X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1DC4DC388F7
-	for <linux-btrfs@archiver.kernel.org>; Fri, 13 Nov 2020 12:52:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0273BC388F7
+	for <linux-btrfs@archiver.kernel.org>; Fri, 13 Nov 2020 12:52:45 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id CFA7E206D9
-	for <linux-btrfs@archiver.kernel.org>; Fri, 13 Nov 2020 12:52:37 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9BC54206D9
+	for <linux-btrfs@archiver.kernel.org>; Fri, 13 Nov 2020 12:52:44 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="A0SFUg5Y"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="BaWRY+Qg"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726635AbgKMMwh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 13 Nov 2020 07:52:37 -0500
-Received: from mx2.suse.de ([195.135.220.15]:47056 "EHLO mx2.suse.de"
+        id S1726380AbgKMMwo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 13 Nov 2020 07:52:44 -0500
+Received: from mx2.suse.de ([195.135.220.15]:47196 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726343AbgKMMwg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 13 Nov 2020 07:52:36 -0500
+        id S1726662AbgKMMwm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 13 Nov 2020 07:52:42 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1605271955; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+        t=1605271961; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=hKu+2dqc3bQnd2AMdmXv5wOZhHB/RIhlVaIQREHAQ1A=;
-        b=A0SFUg5Y4SKbWJPZ00gxOcLLa0M1zwFEafNdox5xIKTGbyu1vEehhKXqRwu/E5cHaxKj1j
-        9DXJyC6XqiVQr3s9jAOsqRnp537qh0WzKnHWib9ZSDWUUhmokd86U6dZHZdFogl9cJFuIB
-        b5e5Qhjm/SPKaYQEXc6cU2h8m8Zia8w=
+        bh=uYTPlTxqPIIdpTPAKUgBsE5cxsGANNSMfLACNli0wyU=;
+        b=BaWRY+QgkkkN41prPkuAsEqQbfFhV3Fh917dWYTO31xuu4mEYpo9DAa7n0HCk6iCb8uHzf
+        mW/UYzzp9h8/y9zYdyttU+eTqfTWJjLqeQyQdKNCFsERA9dtjcSGUDAXVeEwh9bl30oh/8
+        LJIlAD2TC89ASFvq5wzUCwls9gEFlpA=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 72ABEABD6;
-        Fri, 13 Nov 2020 12:52:35 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 8A6A1ABD6;
+        Fri, 13 Nov 2020 12:52:41 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v2 12/24] btrfs: extent_io: update num_extent_pages() to support subpage sized extent buffer
-Date:   Fri, 13 Nov 2020 20:51:37 +0800
-Message-Id: <20201113125149.140836-13-wqu@suse.com>
+Subject: [PATCH v2 14/24] btrfs: disk-io: only clear EXTENT_LOCK bit for extent_invalidatepage()
+Date:   Fri, 13 Nov 2020 20:51:39 +0800
+Message-Id: <20201113125149.140836-15-wqu@suse.com>
 X-Mailer: git-send-email 2.29.2
 In-Reply-To: <20201113125149.140836-1-wqu@suse.com>
 References: <20201113125149.140836-1-wqu@suse.com>
@@ -49,43 +49,57 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-For subpage sized extent buffer, we have ensured no extent buffer will
-cross page boundary, thus we would only need one page for any extent
-buffer.
+In extent_invalidatepage() it will try to clear all possible bits since
+it's calling clear_extent_bit() with delete == 1.
+That would try to clear all existing bits.
 
-This patch will update the function num_extent_pages() to handle such
-case.
-Now num_extent_pages() would return 1 instead of for subpage sized
-extent buffer.
+This is currently fine, since for btree io tree, it only utilizes
+EXTENT_LOCK bit.
+But this could be a problem for later subpage support, which will
+utilize extra io tree bit to represent extra info.
+
+This patch will just convert that clear_extent_bit() to
+unlock_extent_cached().
+
+For current code since only EXTENT_LOCKED bit is utilized, this doesn't
+change the behavior, but provides a much cleaner basis for incoming
+subpage support.
 
 Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/extent_io.h | 11 +++++++++--
- 1 file changed, 9 insertions(+), 2 deletions(-)
+ fs/btrfs/extent_io.c | 12 ++++++++++--
+ 1 file changed, 10 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index dfdef9c5c379..d39ebaee5ff7 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -206,8 +206,15 @@ void btrfs_readahead_node_child(struct extent_buffer *node, int slot);
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 2faab91f0e8e..1c240448be83 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -4463,14 +4463,22 @@ int extent_invalidatepage(struct extent_io_tree *tree,
+ 	u64 end = start + PAGE_SIZE - 1;
+ 	size_t blocksize = page->mapping->host->i_sb->s_blocksize;
  
- static inline int num_extent_pages(const struct extent_buffer *eb)
- {
--	return (round_up(eb->start + eb->len, PAGE_SIZE) >> PAGE_SHIFT) -
--	       (eb->start >> PAGE_SHIFT);
++	/* This function is only called for btree */
++	ASSERT(tree->owner == IO_TREE_BTREE_INODE_IO);
++
+ 	start += ALIGN(offset, blocksize);
+ 	if (start > end)
+ 		return 0;
+ 
+ 	lock_extent_bits(tree, start, end, &cached_state);
+ 	wait_on_page_writeback(page);
+-	clear_extent_bit(tree, start, end, EXTENT_LOCKED | EXTENT_DELALLOC |
+-			 EXTENT_DO_ACCOUNTING, 1, 1, &cached_state);
++
 +	/*
-+	 * For sectorsize == PAGE_SIZE case, since eb is always aligned to
-+	 * sectorsize, it's just (eb->len / PAGE_SIZE) >> PAGE_SHIFT.
-+	 *
-+	 * For sectorsize < PAGE_SIZE case, we only want to support 64K
-+	 * PAGE_SIZE, and ensured all tree blocks won't cross page boundary.
-+	 * So in that case we always got 1 page.
++	 * Currently for btree io tree, only EXTENT_LOCKED is utilized,
++	 * so here we only need to unlock the extent range to free any
++	 * existing extent state.
 +	 */
-+	return round_up(eb->len, PAGE_SIZE) >> PAGE_SHIFT;
++	unlock_extent_cached(tree, start, end, &cached_state);
+ 	return 0;
  }
  
- static inline int extent_buffer_uptodate(const struct extent_buffer *eb)
 -- 
 2.29.2
 

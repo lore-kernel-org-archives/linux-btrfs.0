@@ -2,65 +2,57 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,
+X-Spam-Status: No, score=0.6 required=3.0 tests=BAYES_50,DKIM_ADSP_CUSTOM_MED,
+	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,FREEMAIL_REPLYTO_END_DIGIT,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
 	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A3D50C2D0E4
-	for <linux-btrfs@archiver.kernel.org>; Sun, 15 Nov 2020 10:04:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1AE32C8301B
+	for <linux-btrfs@archiver.kernel.org>; Sun, 15 Nov 2020 16:43:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 72B152223C
-	for <linux-btrfs@archiver.kernel.org>; Sun, 15 Nov 2020 10:04:09 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id EC114222C4
+	for <linux-btrfs@archiver.kernel.org>; Sun, 15 Nov 2020 16:43:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726707AbgKOKBb convert rfc822-to-8bit (ORCPT
+        id S1727290AbgKOQnt convert rfc822-to-8bit (ORCPT
         <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 15 Nov 2020 05:01:31 -0500
-Received: from rin.romanrm.net ([51.158.148.128]:47444 "EHLO rin.romanrm.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726230AbgKOKBa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 15 Nov 2020 05:01:30 -0500
-X-Greylist: delayed 481 seconds by postgrey-1.27 at vger.kernel.org; Sun, 15 Nov 2020 05:01:30 EST
-Received: from natsu (unknown [IPv6:fd39::e99e:8f1b:cfc9:ccb8])
-        by rin.romanrm.net (Postfix) with SMTP id E5AEC28B;
-        Sun, 15 Nov 2020 09:53:23 +0000 (UTC)
-Date:   Sun, 15 Nov 2020 14:53:23 +0500
-From:   Roman Mamedov <rm@romanrm.net>
-To:     Lawrence D'Anna <larry@elder-gods.org>
-Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        Meghan Gwyer <mgwyer@gmail.com>
-Subject: Re: bizare bug in "btrfs subvolume show"
-Message-ID: <20201115145323.1628d710@natsu>
-In-Reply-To: <8EFE06A3-9CC4-4A6A-850F-C7C57DC27942@elder-gods.org>
-References: <61E331A6-9DA8-4A7C-905E-4B5A17526020@elder-gods.org>
-        <8EFE06A3-9CC4-4A6A-850F-C7C57DC27942@elder-gods.org>
+        Sun, 15 Nov 2020 11:43:49 -0500
+Received: from sw73-70-41.adsl.seed.net.tw ([203.73.70.41]:32952 "EHLO
+        oa.trendtek.com.tw" rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1727261AbgKOQnt (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 15 Nov 2020 11:43:49 -0500
+Received: from [156.96.44.214] ([156.96.44.214])
+        (authenticated bits=0)
+        by oa.trendtek.com.tw (8.13.8/8.13.1) with ESMTP id 0AFGhfOc030815
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 Nov 2020 00:43:46 +0800
+Message-Id: <202011151643.0AFGhfOc030815@oa.trendtek.com.tw>
+Content-Type: text/plain; charset="iso-8859-1"
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8BIT
+Content-Description: Mail message body
+Subject: Corporate and Personal Loan *
+To:     linux-btrfs@vger.kernel.org
+From:   "Investment  Corporate" <financialcapability6@gmail.com>
+Date:   Sun, 15 Nov 2020 08:43:42 -0800
+Reply-To: hmurrah39@gmail.com
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sat, 14 Nov 2020 13:35:43 -0800
-Lawrence D'Anna <larry@elder-gods.org> wrote:
+Hello linux-btrfs@vger.kernel.org
 
-> > On Nov 13, 2020, at 9:47 PM, Lawrence D'Anna <larry@elder-gods.org> wrote:
-> > 
-> > 
-> > But I haven’t been able to track down how redirecting the standard out is possibly influencing this.
-> 
-> I have narrowed it down a little bit further.
-> 
-> cmd_subvol_show uses btrfs_util_subvolume_iterator_next_info to find all the snapshots of the 
-> subvol it’s showing.
-> 
-> while it’s performing this iteration, subvolume_iterator_next_tree_search returns a subvolume id 
-> of 7168, which does not appear in my filesystem according to "btrfs subvol list”
 
-This still sounds very puzzling, as to how output redirection could affect
-things. Perhaps you could run "btrfs sub show" with "strace"? Both with and
-without the redirect to see exactly what was the call sequence, parameters and
-return values, to compare and find where the difference starts.
+We are Base Investment Company offering Corporate and Personal Loan at 3% Interest Rate for a duration of 10Years.
 
--- 
-With respect,
-Roman
+
+We also pay 1% commission to brokers, who introduce project owners for finance or other opportunities.
+
+
+Please get back to me if you are interested for more
+
+details.
+
+
+Yours faithfully,
+
+Hashim Murrah

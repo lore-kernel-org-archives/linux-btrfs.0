@@ -2,218 +2,109 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-12.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CC196C2D0E4
-	for <linux-btrfs@archiver.kernel.org>; Mon, 16 Nov 2020 02:11:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7D271C4742C
+	for <linux-btrfs@archiver.kernel.org>; Mon, 16 Nov 2020 07:56:32 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 52EAA206B7
-	for <linux-btrfs@archiver.kernel.org>; Mon, 16 Nov 2020 02:11:34 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2493B2137B
+	for <linux-btrfs@archiver.kernel.org>; Mon, 16 Nov 2020 07:56:32 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=permerror (0-bit key) header.d=wdc.com header.i=@wdc.com header.b="Jy+03qn8"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727108AbgKPCKC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 15 Nov 2020 21:10:02 -0500
-Received: from mx.kolabnow.com ([95.128.36.40]:36410 "EHLO mx.kolabnow.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726004AbgKPCKC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 15 Nov 2020 21:10:02 -0500
-Received: from localhost (unknown [127.0.0.1])
-        by ext-mx-out001.mykolab.com (Postfix) with ESMTP id 5B0FCCFC;
-        Mon, 16 Nov 2020 03:09:59 +0100 (CET)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kolabnow.com; h=
-        references:message-id:content-transfer-encoding:date:date
-        :in-reply-to:from:from:subject:subject:mime-version:content-type
-        :content-type:received:received:received; s=dkim20160331; t=
-        1605492598; x=1607306999; bh=clUkb72Rh6MbBBP4HE/HwbJQG8TQgs7k5BU
-        4aoUhJnM=; b=p8C1MPW9Eb9m2T6noNb+4Fc6ZoBZGFyHftNabf10BYTJI3++M71
-        qB7sVaDZVXP8S22Q720JlyAnOMFL5wq/K+jdHp9cpsGvedBHnFuecMOzBuFjpAps
-        x41CnTNLzVCHV1hsWpf9I5ApA9C+u/gUlbh1YBV5XQaSWSNVV/U+QA4yYsY59wmK
-        m3Z/8JDFUTZxTJLyF33w74aw+VUdFFYcKnO9/nVK4KBLYXZNOIoqADi9idQ3jwd1
-        +K+ekUAWjvuB5TK337mdYDR27Q5n17jHedFmNpnNwKirSzncptcVZnvEdouutTcn
-        +pcPM9VY0Fj+PnCLrG9eTyJtaqHzwp7Sy86aw+DCl7WMzgoF0kxP5U3iJpsVIkD/
-        XwSWnvPwcxY0lEO/Xyrq8UBUBoilhuLbt/IcsZ9UvqsMDWUEsQ9h+K1U4dY6vClE
-        EBAt/vb2ULJzNoVb3jFCnZ9NvcLov0yASNCJz+b13MHT465zkxU4DXW7dVeqF26U
-        aCNerG2FaZ6f0zLK9ah0EzI9DVNwNj7thNea93UjKAqHRV3PInIsL7OJGEjivX1q
-        nx51h1oYdLiy5fERz2sVQZd19I+T1UBlqIcHYBsWpq9AKsjtF7bCpoPK+orWNXxd
-        bsQ6Ft445AINVY4lq2+i7OBUh7THD8IXgVoJ92TlCD8lAS40h3qWAUQo=
-X-Virus-Scanned: amavisd-new at mykolab.com
-Received: from mx.kolabnow.com ([127.0.0.1])
-        by localhost (ext-mx-out001.mykolab.com [127.0.0.1]) (amavisd-new, port 10024)
-        with ESMTP id uCBJYLHhiE6v; Mon, 16 Nov 2020 03:09:58 +0100 (CET)
-Received: from int-mx003.mykolab.com (unknown [10.9.13.3])
-        by ext-mx-out001.mykolab.com (Postfix) with ESMTPS id 1EA53B4A;
-        Mon, 16 Nov 2020 03:09:57 +0100 (CET)
-Received: from ext-subm001.mykolab.com (unknown [10.9.6.1])
-        by int-mx003.mykolab.com (Postfix) with ESMTPS id A31192168;
-        Mon, 16 Nov 2020 03:09:57 +0100 (CET)
-Content-Type: text/plain;
-        charset=utf-8
-Mime-Version: 1.0 (Mac OS X Mail 13.4 \(3608.120.23.2.4\))
-Subject: Re: bizare bug in "btrfs subvolume show"
-From:   Lawrence D'Anna <larry@elder-gods.org>
-In-Reply-To: <20201115145323.1628d710@natsu>
-Date:   Sun, 15 Nov 2020 18:09:52 -0800
-Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        Meghan Gwyer <mgwyer@gmail.com>
-Content-Transfer-Encoding: quoted-printable
-Message-Id: <C20FAB48-98B0-49AE-B804-FC720E31C5B0@elder-gods.org>
-References: <61E331A6-9DA8-4A7C-905E-4B5A17526020@elder-gods.org>
- <8EFE06A3-9CC4-4A6A-850F-C7C57DC27942@elder-gods.org>
- <20201115145323.1628d710@natsu>
-To:     Roman Mamedov <rm@romanrm.net>
+        id S1727672AbgKPHxI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 16 Nov 2020 02:53:08 -0500
+Received: from esa2.hgst.iphmx.com ([68.232.143.124]:44907 "EHLO
+        esa2.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726524AbgKPHxH (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 16 Nov 2020 02:53:07 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1605513749; x=1637049749;
+  h=from:to:cc:subject:date:message-id:mime-version:
+   content-transfer-encoding;
+  bh=+DW+OTCUR2gUjKZhhweHDb6FP21HrZ4oPYgOJ9iE++0=;
+  b=Jy+03qn8vH6RL3/kKIBYQI0+/Bwxpucf646HLt6h9OdIdKWVxS/jP36e
+   rWulfbf/CNzln83R8xlYGSIvG8Ku1XWAnW9GGYTnkeaj2pSh9L2BPuG+y
+   4PLeSqg+qOZl5KTvIcUfRSdBfzKeyUYfF8RI/W6E1j367Tq5kx8CXMUrk
+   ma5rCFwuGHMd/3IeivumDoW3FcE7p6Wfgpxb6oPH0G2yRP4vu5RuDpzeq
+   L8EpGl2JBBpHE/fP8A7/zjpDqTYGqAcHFyf1bEkPsmm6Y9Q883sPYBPIC
+   KNqsOElhw02R9TCwTag+ioUiLFG0h73yeIeZ06kWvpLyo5pBV/hpOS+0L
+   w==;
+IronPort-SDR: bGG3nXfYk/A8k352m6jJozdFn45iayquaC09XCO17kiksiC50F7i9OPxUKKZ2olGuFA2g3aDjo
+ ckzWULKU7yFRn7yb6gtqkR+gDKsso/Y9XBJDhWpWXHG+DLKUVxmnABlN8IQOJiKDY8Xp3BtV3M
+ oEc3Hco41/TbatDlDNWJo9C1yA7C2aoOJlOYo8fzdsaK5ho9DMUArwmLpnw1wPd08RsnQoFRT0
+ tCWxz/PECN8DrWZ8Of2vIR91xOKVJXWKi0tVimZoc7UNh6VYbMHMFxs4+zLidtd97QRt+qu5mB
+ fIs=
+X-IronPort-AV: E=Sophos;i="5.77,481,1596470400"; 
+   d="scan'208";a="256267310"
+Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
+  by ob1.hgst.iphmx.com with ESMTP; 16 Nov 2020 16:02:29 +0800
+IronPort-SDR: bYouf8i4bEeF6gDWziKKMRDPO1B1WP+HpJep+e96C2nbLH5IgnV+7El28gq8r70IUXPnyYWO1l
+ dV7YPu+WYS6pj1s9bXK60J8BgpMRtRCdhCW6k5tcbujTTO2eYaATX1KoS9gDjOw+tikS6ElaZx
+ Hql8Cp+Ne8petnMDx8Ny+trb5C+rzvep5Qjrtu/+5Zv4togUjCjNkzNmHzbgy64fs6dbsQ1EVV
+ adWT5duB4uDtdmvdIw3qDk6vdRCTDAazZcFMevTHOUN1dtt8S54lJrjdGXm0SZrcZBHR5UhyWZ
+ 0eB8EtpGCnud1hM6OYm6ZAuU
+Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 15 Nov 2020 23:39:00 -0800
+IronPort-SDR: 70NEvbnEekYEdIge1GuHXloky2KdR/KltmXAApx8SZlcr9I5UvYm1/tw5Q71bhbvqCBGaGUGap
+ NzKPPngDmKlO5/dumLLg51lHEKU/wg/iUA/lfOr5ESOJuN+dmtI8wa172XXf+1jZjwmbfnfjTV
+ IlPtivN7+aMRTF0WUtrzGwzfz1F6AKrOc1iXoP87BCyCY+NRlk4EOnLmMlkVLgimf1KWFrTUb3
+ mjXMS1KAhNCgiYHAy4Uf9OswQw3cP8+vjbsM/3zG9bFlvmISDv/w7T2n8UIGHm2+Ms0dcjzoOw
+ qfs=
+WDCIronportException: Internal
+Received: from unknown (HELO redsun60.ssa.fujisawa.hgst.com) ([10.149.66.36])
+  by uls-op-cesaip01.wdc.com with ESMTP; 15 Nov 2020 23:53:05 -0800
+From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
+To:     David Sterba <dsterba@suse.com>
+Cc:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+        linux-btrfs@vger.kernel.org, Anand Jain <anand.jain@oracle.com>,
+        Nikolay Borisov <nborisov@suse.com>,
+        syzbot+582e66e5edf36a22c7b0@syzkaller.appspotmail.com
+Subject: [PATCH v2] btrfs: don't access possibly stale fs_info data for printing duplicate device
+Date:   Mon, 16 Nov 2020 16:52:54 +0900
+Message-Id: <0e9eb675e0a199bf034f13c58fbe5678f4e94a3c.1605513154.git.johannes.thumshirn@wdc.com>
+X-Mailer: git-send-email 2.26.2
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+Syzbot reported a possible use-after-free when printing a duplicate device
+warning device_list_add().
 
+At this point it can happen that a btrfs_device::fs_info is not correctly
+setup yet, so we're accessing stale data, when printing the warning
+message using the btrfs_printk() wrappers.
 
-> On Nov 15, 2020, at 1:53 AM, Roman Mamedov <rm@romanrm.net> wrote:
->=20
-> This still sounds very puzzling, as to how output redirection could =
-affect
-> things. Perhaps you could run "btrfs sub show" with "strace"? Both =
-with and
-> without the redirect to see exactly what was the call sequence, =
-parameters and
-> return values, to compare and find where the difference starts.
->=20
->=20
+Instead of printing possibly uninitialized or already freed memory in
+btrfs_printk(), explicitly pass in a NULL fs_info so the printing of the
+device name will be skipped altogether.
 
-The first meaningful difference occurs at this ioctl:
+Reported-by: syzbot+582e66e5edf36a22c7b0@syzkaller.appspotmail.com
+Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+---
+ fs/btrfs/volumes.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
---- /dev/fd/63	2020-11-15 18:06:23.000000000 -0800
-+++ /dev/fd/62	2020-11-15 18:06:23.000000000 -0800
-@@ -1,84 +1,84 @@
- ioctl(3, BTRFS_IOC_TREE_SEARCH, {key=3D{tree_id=3DBTRFS_ROOT_TREE_OBJECTI=
-D,=20
- min_objectid=3DBTRFS_FS_TREE_OBJECTID, =
-max_objectid=3DBTRFS_FS_TREE_OBJECTID,=20
- min_offset=3D7274, max_offset=3DUINT64_MAX, min_transid=3D0, =
-max_transid=3DUINT64_MAX,=20
- min_type=3DBTRFS_ROOT_REF_KEY, max_type=3DBTRFS_ROOT_REF_KEY, =
-nr_items=3D4096}} =3D>=20
- {key=3D{nr_items=3D53}, buf=3D[{transid=3D56320, =
-objectid=3DBTRFS_FS_TREE_OBJECTID,=20
- offset=3D7274, type=3DBTRFS_ROOT_REF_KEY, len=3D43}, {transid=3D56570,=20=
-
- objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7275, =
-type=3DBTRFS_ROOT_REF_KEY, len=3D43},=20
- {transid=3D56570, objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7276,=20
- type=3DBTRFS_ROOT_REF_KEY, len=3D43}, {transid=3D56570,=20
- objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7277, =
-type=3DBTRFS_ROOT_REF_KEY, len=3D43},=20
- {transid=3D56570, objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7278,=20
- type=3DBTRFS_ROOT_REF_KEY, len=3D43}, {transid=3D56570,=20
- objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7279, =
-type=3DBTRFS_ROOT_REF_KEY, len=3D43},=20
- {transid=3D56570, objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7280,=20
- type=3DBTRFS_ROOT_REF_KEY, len=3D43}, {transid=3D56570,=20
- objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7281, =
-type=3DBTRFS_ROOT_REF_KEY, len=3D43},=20
- {transid=3D56570, objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7282,=20
- type=3DBTRFS_ROOT_REF_KEY, len=3D43}, {transid=3D56570,=20
- objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7283, =
-type=3DBTRFS_ROOT_REF_KEY, len=3D43},=20
- {transid=3D56570, objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7284,=20
- type=3DBTRFS_ROOT_REF_KEY, len=3D43}, {transid=3D56570,=20
- objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7285, =
-type=3DBTRFS_ROOT_REF_KEY, len=3D43},=20
- {transid=3D56570, objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7286,=20
- type=3DBTRFS_ROOT_REF_KEY, len=3D43}, {transid=3D56570,=20
- objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7287, =
-type=3DBTRFS_ROOT_REF_KEY, len=3D43},=20
- {transid=3D56570, objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7288,=20
- type=3DBTRFS_ROOT_REF_KEY, len=3D43}, {transid=3D56570,=20
- objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7289, =
-type=3DBTRFS_ROOT_REF_KEY, len=3D43},=20
--{transid=3D56570, objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7290,=20
-+{transid=3D56570, objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7168,=20
- type=3DBTRFS_ROOT_REF_KEY, len=3D43}, {transid=3D56570,=20
- objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7291, =
-type=3DBTRFS_ROOT_REF_KEY, len=3D43},=20
- {transid=3D56570, objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7292,=20
- type=3DBTRFS_ROOT_REF_KEY, len=3D43}, {transid=3D56570,=20
- objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7293, =
-type=3DBTRFS_ROOT_REF_KEY, len=3D43},=20
- {transid=3D56570, objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7295,=20
- type=3DBTRFS_ROOT_REF_KEY, len=3D43}, {transid=3D56570,=20
- objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7296, =
-type=3DBTRFS_ROOT_REF_KEY, len=3D43},=20
- {transid=3D56570, objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7297,=20
- type=3DBTRFS_ROOT_REF_KEY, len=3D43}, {transid=3D56570,=20
- objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7298, =
-type=3DBTRFS_ROOT_REF_KEY, len=3D43},=20
- {transid=3D56570, objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7299,=20
- type=3DBTRFS_ROOT_REF_KEY, len=3D43}, {transid=3D56570,=20
- objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7300, =
-type=3DBTRFS_ROOT_REF_KEY, len=3D43},=20
- {transid=3D56570, objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7309,=20
- type=3DBTRFS_ROOT_REF_KEY, len=3D43}, {transid=3D56570,=20
- objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7310, =
-type=3DBTRFS_ROOT_REF_KEY, len=3D43},=20
- {transid=3D56570, objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7311,=20
- type=3DBTRFS_ROOT_REF_KEY, len=3D43}, {transid=3D56570,=20
- objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7312, =
-type=3DBTRFS_ROOT_REF_KEY, len=3D43},=20
- {transid=3D56570, objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7313,=20
- type=3DBTRFS_ROOT_REF_KEY, len=3D43}, {transid=3D56570,=20
- objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7314, =
-type=3DBTRFS_ROOT_REF_KEY, len=3D43},=20
- {transid=3D56570, objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7315,=20
- type=3DBTRFS_ROOT_REF_KEY, len=3D43}, {transid=3D56570,=20
- objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7316, =
-type=3DBTRFS_ROOT_REF_KEY, len=3D43},=20
- {transid=3D56570, objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7317,=20
- type=3DBTRFS_ROOT_REF_KEY, len=3D43}, {transid=3D56570,=20
- objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7318, =
-type=3DBTRFS_ROOT_REF_KEY, len=3D43},=20
- {transid=3D56570, objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7319,=20
- type=3DBTRFS_ROOT_REF_KEY, len=3D43}, {transid=3D56695,=20
- objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7320, =
-type=3DBTRFS_ROOT_REF_KEY, len=3D43},=20
- {transid=3D56695, objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7322,=20
- type=3DBTRFS_ROOT_REF_KEY, len=3D43}, {transid=3D56695,=20
- objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7323, =
-type=3DBTRFS_ROOT_REF_KEY, len=3D43},=20
- {transid=3D56695, objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7324,=20
- type=3DBTRFS_ROOT_REF_KEY, len=3D43}, {transid=3D56695,=20
- objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7325, =
-type=3DBTRFS_ROOT_REF_KEY, len=3D43},=20
- {transid=3D56695, objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7326,=20
- type=3DBTRFS_ROOT_REF_KEY, len=3D43}, {transid=3D56695,=20
- objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7327, =
-type=3DBTRFS_ROOT_REF_KEY, len=3D43},=20
- {transid=3D56695, objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7328,=20
- type=3DBTRFS_ROOT_REF_KEY, len=3D43}, {transid=3D56695,=20
- objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7329, =
-type=3DBTRFS_ROOT_REF_KEY, len=3D43},=20
- {transid=3D56695, objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7330,=20
- type=3DBTRFS_ROOT_REF_KEY, len=3D43}, {transid=3D56695,=20
- objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7331, =
-type=3DBTRFS_ROOT_REF_KEY, len=3D43},=20
- {transid=3D56695, objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7332,=20
- type=3DBTRFS_ROOT_REF_KEY, len=3D43}, {transid=3D56695,=20
- objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7333, =
-type=3DBTRFS_ROOT_REF_KEY, len=3D43},=20
- {transid=3D56695, objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7334,=20
- type=3DBTRFS_ROOT_REF_KEY, len=3D45}, {transid=3D56695,=20
- objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7335, =
-type=3DBTRFS_ROOT_REF_KEY, len=3D45},=20
- {transid=3D56695, objectid=3DBTRFS_FS_TREE_OBJECTID, offset=3D7336,=20
- type=3DBTRFS_ROOT_REF_KEY, len=3D45}]}) =3D 0
-
-A little while later they diverge again when the good side does a =
-BTRFS_IOC_TREE_SEARCH for
-7290, and the bad side does it for 7168, which fails.
-
-Full traces are at https://odin.elder-gods.org/btrfs-bug/a  and =
-https://odin.elder-gods.org/btrfs-bug/b
-If you=E2=80=99d like to see them
-
-
-
-
-
-
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index bb1aa96e1233..507f6f17b3a9 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -940,7 +940,7 @@ static noinline struct btrfs_device *device_list_add(const char *path,
+ 			if (device->bdev != path_bdev) {
+ 				bdput(path_bdev);
+ 				mutex_unlock(&fs_devices->device_list_mutex);
+-				btrfs_warn_in_rcu(device->fs_info,
++				btrfs_warn_in_rcu(NULL,
+ 	"duplicate device %s devid %llu generation %llu scanned by %s (%d)",
+ 						  path, devid, found_transid,
+ 						  current->comm,
+-- 
+2.26.2
 

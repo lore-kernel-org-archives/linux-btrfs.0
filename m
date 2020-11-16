@@ -2,55 +2,70 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.2 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,
-	SPF_PASS,USER_AGENT_SANE_1 autolearn=unavailable autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-5.2 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D488AC64E7B
-	for <linux-btrfs@archiver.kernel.org>; Mon, 16 Nov 2020 16:19:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2A6B2C63777
+	for <linux-btrfs@archiver.kernel.org>; Mon, 16 Nov 2020 16:28:51 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id B005422265
-	for <linux-btrfs@archiver.kernel.org>; Mon, 16 Nov 2020 16:19:27 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id F08AD20776
+	for <linux-btrfs@archiver.kernel.org>; Mon, 16 Nov 2020 16:28:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731892AbgKPQTK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 16 Nov 2020 11:19:10 -0500
-Received: from mx2.suse.de ([195.135.220.15]:37162 "EHLO mx2.suse.de"
+        id S1732114AbgKPQ2s (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 16 Nov 2020 11:28:48 -0500
+Received: from mx2.suse.de ([195.135.220.15]:43442 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728072AbgKPQTK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 16 Nov 2020 11:19:10 -0500
+        id S1730795AbgKPQ2s (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 16 Nov 2020 11:28:48 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id D37BEABF4;
-        Mon, 16 Nov 2020 16:19:08 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 28650AD11;
+        Mon, 16 Nov 2020 16:28:47 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 56571DA6E3; Mon, 16 Nov 2020 17:17:24 +0100 (CET)
-Date:   Mon, 16 Nov 2020 17:17:24 +0100
+        id A079ADA6E3; Mon, 16 Nov 2020 17:27:02 +0100 (CET)
+Date:   Mon, 16 Nov 2020 17:27:02 +0100
 From:   David Sterba <dsterba@suse.cz>
-To:     trix@redhat.com
-Cc:     clm@fb.com, josef@toxicpanda.com, dsterba@suse.com,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] btrfs: sysfs: remove unneeded semicolon
-Message-ID: <20201116161724.GR6756@twin.jikos.cz>
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 3/3] btrfs: file-item: refactor btrfs_lookup_bio_sums()
+ to handle out-of-order bvecs
+Message-ID: <20201116162702.GS6756@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, trix@redhat.com, clm@fb.com,
-        josef@toxicpanda.com, dsterba@suse.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-References: <20201101153008.2291089-1-trix@redhat.com>
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20201028072432.86907-1-wqu@suse.com>
+ <20201028072432.86907-4-wqu@suse.com>
+ <20201103194650.GD6756@twin.jikos.cz>
+ <2e0deb82-c2cf-088b-5abf-92003823613b@gmx.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20201101153008.2291089-1-trix@redhat.com>
+In-Reply-To: <2e0deb82-c2cf-088b-5abf-92003823613b@gmx.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sun, Nov 01, 2020 at 07:30:08AM -0800, trix@redhat.com wrote:
-> From: Tom Rix <trix@redhat.com>
+On Wed, Nov 04, 2020 at 07:42:21AM +0800, Qu Wenruo wrote:
+> >> +	if (path->nodes[0]) {
+> >> +		item = btrfs_item_ptr(path->nodes[0], path->slots[0],
+> >> +				      struct btrfs_csum_item);
+> >> +		btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
+> >> +		csum_start = key.offset;
+> >> +		csum_len = btrfs_item_size_nr(path->nodes[0], path->slots[0]) /
+> >> +			   csum_size * sectorsize;
+> > 
+> > 			path->slots[0]) / csum_size * sectorsize
+> > 
+> > This expresission would be better on one line
 > 
-> A semicolon is not needed after a switch statement.
+> But it's already over 80 charactors.
 > 
-> Signed-off-by: Tom Rix <trix@redhat.com>
+> Or maybe I could use a small helper to do the csum_len calcuation like
+> calc_csum_lenght(path)?
 
-Added to misc-next, thanks.
+If it's a slight 80 columns overflow I'm joining the lines, there are
+exceptions like ending ); or ) { or if the first part of the word is
+enough to understand.

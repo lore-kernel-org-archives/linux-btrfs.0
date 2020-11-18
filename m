@@ -2,102 +2,170 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-15.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DCE9AC5519F
-	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Nov 2020 04:03:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 93553C5519F
+	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Nov 2020 08:53:27 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 84AF62465E
-	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Nov 2020 04:03:06 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2382220719
+	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Nov 2020 08:53:27 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="CYl3DXQT"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="sO7bbK6i"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727431AbgKRECp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 17 Nov 2020 23:02:45 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55392 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726487AbgKRECp (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 17 Nov 2020 23:02:45 -0500
-Received: from mail-pl1-x643.google.com (mail-pl1-x643.google.com [IPv6:2607:f8b0:4864:20::643])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E2CD6C0613D4;
-        Tue, 17 Nov 2020 20:02:44 -0800 (PST)
-Received: by mail-pl1-x643.google.com with SMTP id u2so266556pls.10;
-        Tue, 17 Nov 2020 20:02:44 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=from:to:cc:subject:date:message-id;
-        bh=HykVKqQ+2ZoqHnFMju1jNMVz685wDVtbToSJmkHGopQ=;
-        b=CYl3DXQTh7asvKxKx9OfgqovdvoMiy/O9k+bH9CTPXtXxmvDIi9MCWtixAYeWEJTCd
-         4nRCH6a2+98EI9FjmG9q4WrheMzlBAAnAk0AhhI34Y7hx2Q/DUh795Sr4uWbMkWhTXfy
-         9iyG5i+IxpWorbDDXeaPe0K9vsEfea3yXGK535dX03/7g3Z0U8gtq035ejLRNm0eaQ2E
-         m8BHOkZjIbifcZ4+dh7M0CZXbhQls3NOTICsk2JMDBWPlCyLgA5KyCfqZADa2gepLHXI
-         2+galqZardyPe22tJB0QXG1AZDssJ7R/ZVClmopc0Whj3IdCX+UjoBo8zPizTjrj9QXj
-         JVOQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id;
-        bh=HykVKqQ+2ZoqHnFMju1jNMVz685wDVtbToSJmkHGopQ=;
-        b=BFpMzTPSUgiAppwz85bgcT/ZCR8ck3JJRxjqX27WNAKdj9/wPYGEIDyj0nDc6mZywN
-         d0/Y+cgXJMUfOZQWqzqhXOPMgpXHrEQgQzamclTSHnx2ThmmHyS+HscStkz7foE7Oi3K
-         GxW8kJ4sYnjNMxOKFBN8DLIbQHtZWwTEvbKZa0HM2JGEDXcI2KcC7nmURggmgEgJ/w3g
-         rBCNWkS0roJR20dHNKbwu+EBnB3eSvG6nXL85rkv/DpwZYkDHBYNNEULB6VGx3UvnfMB
-         LdumJIUHQxezQmIoUtE4VsLtloUHAAsNFnQh889m8GXMxDO3Vd1wwOljjiLgTxdHcy6I
-         WvvA==
-X-Gm-Message-State: AOAM532CgqR+93pMCUPKYukByZvOjJDj3m/bSfDjcJDT4IAsBJB+pKrV
-        pezK13L+3Txgux/XLSfPLiTL0GCKwwMB
-X-Google-Smtp-Source: ABdhPJzt6pNU+o6pHNGcR+Z4cys69+oSq7mOoNrkZ1bkY6Qczvkuxio/Gap1dmYbSIUzvWWTYUcjcA==
-X-Received: by 2002:a17:90a:8b8c:: with SMTP id z12mr2136937pjn.233.1605672164491;
-        Tue, 17 Nov 2020 20:02:44 -0800 (PST)
-Received: from he-cluster.localdomain (67.216.221.250.16clouds.com. [67.216.221.250])
-        by smtp.gmail.com with ESMTPSA id q11sm20718263pgm.79.2020.11.17.20.02.43
-        (version=TLS1_2 cipher=ECDHE-ECDSA-AES128-GCM-SHA256 bits=128/128);
-        Tue, 17 Nov 2020 20:02:43 -0800 (PST)
-From:   xiakaixu1987@gmail.com
-X-Google-Original-From: kaixuxia@tencent.com
-To:     clm@fb.com, josef@toxicpanda.com, dsterba@suse.com
-Cc:     linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        Kaixu Xia <kaixuxia@tencent.com>
-Subject: [PATCH v2] btrfs: return EAGAIN when receiving a pending signal in the defrag loops
-Date:   Wed, 18 Nov 2020 12:02:36 +0800
-Message-Id: <1605672156-29051-1-git-send-email-kaixuxia@tencent.com>
-X-Mailer: git-send-email 1.8.3.1
+        id S1726732AbgKRIx0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 18 Nov 2020 03:53:26 -0500
+Received: from mx2.suse.de ([195.135.220.15]:47480 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1725964AbgKRIx0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 18 Nov 2020 03:53:26 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1605689604; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=FgA5IIMlnVYmKpb3+RCVZllKUCaBEtaLPtFi2qJcxW0=;
+        b=sO7bbK6idF9e4i64tc9mLBgEs28P4FteeUyb8LY5wyGutjLdGZ1OsKA8t0MrzQTJGkBm6E
+        h8XxQiOPQgIhNBnFwZI6nI38hj6JkOkh5os+lE1BJdKmNXYpAn4qelAa2c8TTr7dCv+URt
+        y3krFtHqeAqk8Kn7sjl0Fh2isANXhYA=
+Received: from relay2.suse.de (unknown [195.135.221.27])
+        by mx2.suse.de (Postfix) with ESMTP id 9F095ABF4
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 Nov 2020 08:53:24 +0000 (UTC)
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH v1 00/14] btrfs: add read-only support for subpage sector size
+Date:   Wed, 18 Nov 2020 16:53:05 +0800
+Message-Id: <20201118085319.56668-1-wqu@suse.com>
+X-Mailer: git-send-email 2.29.2
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Kaixu Xia <kaixuxia@tencent.com>
+Patches can be fetched from github:
+https://github.com/adam900710/linux/tree/subpage
+Currently the branch also contains RW metadata support (partly tested).
+The schedule is when a milestone (for this case, metadata RW)is mostly
+finishes, send out previous milestone (metadata RO) for review.
 
-The variable ret is overwritten by the following variable defrag_count.
-Actually the code should return EAGAIN when receiving a pending signal
-in the defrag loops.
+Please note that, due to the following reasons, please don't expect patches
+can be applies without conflicts or checkpatch warning:
 
-Reported-by: Tosk Robot <tencent_os_robot@tencent.com>
-Signed-off-by: Kaixu Xia <kaixuxia@tencent.com>
----
-v2
- -return EAGAIN instead of remove the EAGAIN error.
+- Ongoing development
+  Since the development is still ongoing, the rebase is not that
+  frequent.
+  So until the development calms down, just don't complain about the
+  checkpatch/conflicts.
 
- fs/btrfs/ioctl.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+- Slow full kernel compile
+  Even with cross distcc, it will still take tens of minutes to compile
+  the full kernel.
+  Not to mention the new regressions from current cycle affecting my
+  aarch64 environment.
+  (regulator regression screwing up all RK3399 boards, lockdep bugs).
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 69a384145dc6..6f13db6d30bd 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1519,7 +1519,7 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
- 		if (btrfs_defrag_cancelled(fs_info)) {
- 			btrfs_debug(fs_info, "defrag_file cancelled");
- 			ret = -EAGAIN;
--			break;
-+			goto out_ra;
- 		}
- 
- 		if (!should_defrag_range(inode, (u64)i << PAGE_SHIFT,
+- Stupid checkpatch script
+  ` if (PAGE_SIZE == SZ_64K && ) {}. `
+  Above check will be handled at compile time as both macros are fixed
+  value, but checkpatch can't detect that and always want the user to
+  put the fixed value to the right of the "==".
+
+- Dependency on previous patches
+  This patchset is mainly focus on the read-only implementation.
+  The prep patches are sent in previous patchset.
+
+== What works ==
+
+Existing regular page sized sector size support
+Subpage read-only Mount (with all self tests and ASSERT)
+Subpage metadata read (including all trees and inline extents, and csum checking)
+Subpage compressed/uncompressed data read (with csum checking)
+
+== What doesn't work ==
+
+Read-write mount (see the subject)
+
+=== Need feedback ===
+The following points need feedback from the community:
+
+- The error handling for page::private memory allocation
+  This introduces new failure patterns. And the iomap code is not a good
+  example either (just uses __NOFAIL, and skip NULL check).
+
+- Whether to use helpers for various bitmap operations
+  Almost all patches have some bitmap based operation to update patch
+  status. All of them have some patterns but not completely the same.
+  Thus I'm not sure whether it's a good idea to introduce a helper.
+
+- u16 vs u32 bitmap
+  Currently subpage support only needs 16 bits for it operations.
+  But all the bitmap operations uses 32 bits.
+
+  This means:
+  * Extra memory just get wasted
+    Memory usage for each bitmap get doubled.
+  * Ugly way to check if a range has its bits all set
+    Currently we need to we need to define a temporary
+    bitmap, set the temporary bitmap, then call bitmap_subset().
+    If use u16 directly, we can use bit and and to do it more easily.
+
+- Should we handle subpage and regular sector size case separately?
+  Handling them separately makes the existing behavior untouched, thus
+  mostly regression free. But this bloats the code obviously.
+
+  Unifying to subpage would cause obvious memory overhead, and obviously
+  regression for 4K page systems.
+
+  Currently I prefer to trade code complexity for 4K regression free.
+
+=== Changelog ===
+v1:
+- Separate the main implementation from previous huge patchset
+  Huge patchset doesn't make much sense.
+
+- Use bitmap implementation
+  Now page::private will be a pointer to btrfs_subpage structure, which
+  contains bitmaps for various page status.
+
+
+Qu Wenruo (14):
+  btrfs: extent_io: Use detach_page_private() for alloc_extent_buffer()
+  btrfs: extent_io: introduce a helper to grab an existing extent buffer
+    from a page
+  btrfs: extent_io: introduce the skeleton of btrfs_subpage structure
+  btrfs: extent_io: make attach_extent_buffer_page() to handle subpage
+    case
+  btrfs: extent_io: make grab_extent_buffer_from_page() to handle
+    subpage case
+  btrfs: extent_io: support subpage for extent buffer page release
+  btrfs: extent_io: make set/clear_extent_buffer_uptodate() to support
+    subpage size
+  btrfs: extent_io: implement try_release_extent_buffer()  for subpage
+    metadata support
+  btrfs: extent_io: introduce read_extent_buffer_subpage()
+  btrfs: extent_io: make endio_readpage_update_page_status() to handle
+    subpage case
+  btrfs: disk-io: introduce subpage metadata validation check
+  btrfs: introduce btrfs_subpage for data inodes
+  btrfs: integrate page status update for read path into
+    begin/end_page_read()
+  btrfs: allow RO mount of 4K sector size fs on 64K page system
+
+ fs/btrfs/compression.c      |  10 +-
+ fs/btrfs/disk-io.c          | 107 ++++++-
+ fs/btrfs/extent_io.c        | 566 +++++++++++++++++++++++++++++++-----
+ fs/btrfs/extent_io.h        |  14 +-
+ fs/btrfs/file.c             |  10 +-
+ fs/btrfs/free-space-cache.c |  15 +-
+ fs/btrfs/inode.c            |  12 +-
+ fs/btrfs/ioctl.c            |   5 +-
+ fs/btrfs/reflink.c          |   5 +-
+ fs/btrfs/relocation.c       |  12 +-
+ fs/btrfs/super.c            |   7 +
+ 11 files changed, 666 insertions(+), 97 deletions(-)
+
 -- 
-2.20.0
+2.29.2
 

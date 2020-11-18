@@ -5,65 +5,65 @@ X-Spam-Level:
 X-Spam-Status: No, score=-16.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 285BDC8300A
-	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Nov 2020 19:19:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DCDBFC71156
+	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Nov 2020 19:19:38 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id C7B7822227
-	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Nov 2020 19:19:39 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 437022220B
+	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Nov 2020 19:19:38 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="roqYDntK"
+	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="ghXL55lm"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727343AbgKRTTf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 18 Nov 2020 14:19:35 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55878 "EHLO
+        id S1727317AbgKRTTb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 18 Nov 2020 14:19:31 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55856 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727327AbgKRTTd (ORCPT
+        with ESMTP id S1726416AbgKRTT1 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 18 Nov 2020 14:19:33 -0500
-Received: from mail-pl1-x643.google.com (mail-pl1-x643.google.com [IPv6:2607:f8b0:4864:20::643])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 667ECC0613D6
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 Nov 2020 11:19:32 -0800 (PST)
-Received: by mail-pl1-x643.google.com with SMTP id bj5so717809plb.4
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 Nov 2020 11:19:32 -0800 (PST)
+        Wed, 18 Nov 2020 14:19:27 -0500
+Received: from mail-pl1-x642.google.com (mail-pl1-x642.google.com [IPv6:2607:f8b0:4864:20::642])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9657BC061A48
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 Nov 2020 11:19:27 -0800 (PST)
+Received: by mail-pl1-x642.google.com with SMTP id l11so1547784plt.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 Nov 2020 11:19:27 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=osandov-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=BdTEku7J/1wmWyPZ7NOZDpBLdc5B/RHj8uVOrA+In/8=;
-        b=roqYDntKPONpvGO4yrNgAnMiIvzffHjw1ItJjihDO0zAXyTqw7LaWVag9fQpotYUKd
-         YfVB6eFRNdZ5s6MEsHcrcqaJFcYKJyMEfNku/pCinewZLtzbI4FIGXBqhiZkvNOg3A3B
-         AAsgrrl7tDKgSZpiOIhXcoZ7ZDrPSrVaiXe02Q6CEiyYITVaT7I+IgwHFFaIsDnePx1e
-         WhG4EGML51kiebsnX5Z3iIDjhfpdcS/8oh1i0RFjCOfvE90xXoiHIWBp+6lBvrBiS0fQ
-         16Y7ZDhSWkcCR2EJ/g4EwNQ7a/o4RLSksiEaCh4pS2UuBOyhD8vOYbv7lmLaJGGSgA1B
-         RgFQ==
+        bh=ng3S9jzsXHM6uNgh/DWKZS8UtOoWwHqg6ejAsiMq32A=;
+        b=ghXL55lmpcFLzMg1nP3mlUyrBZxvH+ykIs6DIk6t7TYvxlGVJWgrlxAZcwD3H0QORm
+         tPEtf2etlYrGH0QngZgiL6IcJTagyjpXq/i+i4xTm9u5fEiUHSo35CKhcSX+zwej+5tu
+         Iqm8UuETnJbAuyvlBmbDHkLlnKqFOEoqZWNaykZRbFvG4RmU8NZIqXw8MpI6KbL7ztn6
+         EHChq/+phTmop66ocDCq8gR9uEq6oW8OXF08gl25T8fy88ZqjjHToav8gUi1dy3KoyvC
+         UzPyjS6bHmSl4mC+rayGkLJulTr/tUNB/LITuvW506Gg/2NAUl6tRx+bztPwTM2XwUDa
+         NWXQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=BdTEku7J/1wmWyPZ7NOZDpBLdc5B/RHj8uVOrA+In/8=;
-        b=n4L+cbfCTLtNSkp0xzT415u7AZ9/h/m2TZLAlc+lIYeTOfA+fMwsCVhWBtOQnu2k/1
-         ZpczTN9TW0ZFw9QyGpv2Bk6FNOP6VQ2M9j3I8/gtdM4DTCKex8T0joMJVkenRBEaSEq7
-         641zsO+VQuKNfIv68WcJ5gPB0nqCx14mNbur2bKxx5f393GD37eGlZoRnwOGva29fggF
-         odR0sqME/i7Oi+niP/r1S3FWaRbW1xheehxfRM1ytBQVPCqLoqa9kui0WE3vyOBIql6d
-         9nQ5+b2UoQu+OENLKaltTKRWM6p6jX4W0dljTJf7PtliNITSBDFcCMdP4iaiEhwtCcBH
-         YDTA==
-X-Gm-Message-State: AOAM533IuJ0xrN/L0XcxCUbLO0VUI0jPM/ofgINbm/4IsgxnZZOJ1OMc
-        6Z2F2M2lFBvKMRnNbsLwMC6acIpCHNvtLw==
-X-Google-Smtp-Source: ABdhPJzLbh0+BDId9iRc2IZ73xfiwWhzpQU1qk3S1DKX/X95Jnkcr7rywmRMtBQwOSeUicRjgXvtWg==
-X-Received: by 2002:a17:902:6a83:b029:d5:e98f:2437 with SMTP id n3-20020a1709026a83b02900d5e98f2437mr5625373plk.38.1605727171319;
-        Wed, 18 Nov 2020 11:19:31 -0800 (PST)
+        bh=ng3S9jzsXHM6uNgh/DWKZS8UtOoWwHqg6ejAsiMq32A=;
+        b=desSIry54QvSbOhULdeif5nI9J+kcspaz0IAb6glTPGoyXYwTADGlotM+p9yd0iW0G
+         +cppwgPN0FKJC5q0L4/bIHajNMVYpHuCZ8xyeLREiKrl0ZlsBx1KVLgkPkZYkqdQXiLR
+         QeoCmQ4ceCjJ8fKvCgrFsTgAWxruDZn+PueODUc5MtLMd03p3mGKXbwbFbCE5WI6UOAZ
+         Xiaj8eaO5FEZa6yTGY9UAL2LSg10VoTh1oqrlnoEAMSY20SxIFsdcAZ2ILfPmhv2kjJl
+         +f0vFaf6f8GeXO47pA3BJejamskJw4dvyBKxR6xNkRi4XGz89u4AAmrRYU++Sn70pbeY
+         woyA==
+X-Gm-Message-State: AOAM53089PCpir80E70XbD/0a8Y6ybwPBivf2yiz3f5yhhcJfqR25jc8
+        apGd/GILa30rH+nR59GZ9Uqtimn0gXOuGA==
+X-Google-Smtp-Source: ABdhPJyJSSBXpWt2egYFPP8WmVBzm0RRl48D0NpL29atIM2xMxu2lspygQV3KZ7xzLqMfUV1Uuh4hA==
+X-Received: by 2002:a17:902:c393:b029:d9:6e7:6787 with SMTP id g19-20020a170902c393b02900d906e76787mr5682353plg.78.1605727166485;
+        Wed, 18 Nov 2020 11:19:26 -0800 (PST)
 Received: from relinquished.tfbnw.net ([2620:10d:c090:400::5:8b43])
-        by smtp.gmail.com with ESMTPSA id l9sm3197221pjy.10.2020.11.18.11.19.28
+        by smtp.gmail.com with ESMTPSA id l9sm3197221pjy.10.2020.11.18.11.19.24
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 18 Nov 2020 11:19:29 -0800 (PST)
+        Wed, 18 Nov 2020 11:19:25 -0800 (PST)
 From:   Omar Sandoval <osandov@osandov.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     linux-fsdevel@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v2 06/13] btrfs-progs: receive: add stub implementation for pwritev2
-Date:   Wed, 18 Nov 2020 11:18:53 -0800
-Message-Id: <fbfec817eede33f202464cb240547993e4a0170a.1605723745.git.osandov@osandov.com>
+Subject: [PATCH v2 05/13] btrfs-progs: receive: add send stream v2 cmds and attrs to send.h
+Date:   Wed, 18 Nov 2020 11:18:51 -0800
+Message-Id: <8495f1c759ae6fc3002cb5d9309d206a6e6f0906.1605723745.git.osandov@osandov.com>
 X-Mailer: git-send-email 2.29.2
 In-Reply-To: <cover.1605723600.git.osandov@fb.com>
 References: <cover.1605723600.git.osandov@fb.com>
@@ -73,103 +73,52 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Boris Burkov <borisb@fb.com>
+From: Boris Burkov <boris@bur.io>
 
-Encoded writes in receive will use pwritev2. It is possible that the
-system libc does not export this function, so we stub it out and detect
-whether to build the stub code with autoconf.
-
-This syscall has special semantics in x32 (no hi lo, just takes loff_t)
-so we have to detect that case and use the appropriate arguments.
+Send stream v2 adds three commands and several attributes associated to
+those commands. Before we implement processing them, add all the
+commands and attributes. This avoids leaving the enums in an
+intermediate state that doesn't correspond to any version of send
+stream.
 
 Signed-off-by: Boris Burkov <boris@bur.io>
 ---
- Makefile     |  4 ++--
- configure.ac |  1 +
- stubs.c      | 24 ++++++++++++++++++++++++
- stubs.h      | 11 +++++++++++
- 4 files changed, 38 insertions(+), 2 deletions(-)
- create mode 100644 stubs.c
- create mode 100644 stubs.h
+ send.h | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
 
-diff --git a/Makefile b/Makefile
-index 381b630d..505e39d7 100644
---- a/Makefile
-+++ b/Makefile
-@@ -173,12 +173,12 @@ libbtrfs_objects = common/send-stream.o common/send-utils.o kernel-lib/rbtree.o
- 		   kernel-lib/raid56.o kernel-lib/tables.o \
- 		   common/device-scan.o common/path-utils.o \
- 		   common/utils.o libbtrfsutil/subvolume.o libbtrfsutil/stubs.o \
--		   crypto/hash.o crypto/xxhash.o $(CRYPTO_OBJECTS)
-+		   crypto/hash.o crypto/xxhash.o $(CRYPTO_OBJECTS) stubs.o
- libbtrfs_headers = common/send-stream.h common/send-utils.h send.h kernel-lib/rbtree.h btrfs-list.h \
- 	       crypto/crc32c.h kernel-lib/list.h kerncompat.h \
- 	       kernel-lib/radix-tree.h kernel-lib/sizes.h kernel-lib/raid56.h \
- 	       common/extent-cache.h kernel-shared/extent_io.h ioctl.h \
--	       kernel-shared/ctree.h btrfsck.h version.h
-+	       kernel-shared/ctree.h btrfsck.h version.h stubs.h
- libbtrfsutil_major := $(shell sed -rn 's/^\#define BTRFS_UTIL_VERSION_MAJOR ([0-9])+$$/\1/p' libbtrfsutil/btrfsutil.h)
- libbtrfsutil_minor := $(shell sed -rn 's/^\#define BTRFS_UTIL_VERSION_MINOR ([0-9])+$$/\1/p' libbtrfsutil/btrfsutil.h)
- libbtrfsutil_patch := $(shell sed -rn 's/^\#define BTRFS_UTIL_VERSION_PATCH ([0-9])+$$/\1/p' libbtrfsutil/btrfsutil.h)
-diff --git a/configure.ac b/configure.ac
-index dd4adedf..eaf353cc 100644
---- a/configure.ac
-+++ b/configure.ac
-@@ -57,6 +57,7 @@ AC_CHECK_FUNCS([openat], [],
- 	[AC_MSG_ERROR([cannot find openat() function])])
+diff --git a/send.h b/send.h
+index 228928a0..3c47e0c7 100644
+--- a/send.h
++++ b/send.h
+@@ -98,6 +98,11 @@ enum btrfs_send_cmd {
  
- AC_CHECK_FUNCS([reallocarray])
-+AC_CHECK_FUNCS([pwritev2])
+ 	BTRFS_SEND_C_END,
+ 	BTRFS_SEND_C_UPDATE_EXTENT,
++
++	BTRFS_SEND_C_FALLOCATE,
++	BTRFS_SEND_C_SETFLAGS,
++	BTRFS_SEND_C_ENCODED_WRITE,
++
+ 	__BTRFS_SEND_C_MAX,
+ };
+ #define BTRFS_SEND_C_MAX (__BTRFS_SEND_C_MAX - 1)
+@@ -136,6 +141,16 @@ enum {
+ 	BTRFS_SEND_A_CLONE_OFFSET,
+ 	BTRFS_SEND_A_CLONE_LEN,
  
- m4_ifndef([PKG_PROG_PKG_CONFIG],
-   [m4_fatal([Could not locate the pkg-config autoconf
-diff --git a/stubs.c b/stubs.c
-new file mode 100644
-index 00000000..ab68a411
---- /dev/null
-+++ b/stubs.c
-@@ -0,0 +1,24 @@
-+#if HAVE_PWRITEV2 != 1
++	BTRFS_SEND_A_FALLOCATE_MODE,
 +
-+#include "stubs.h"
++	BTRFS_SEND_A_SETFLAGS_FLAGS,
 +
-+#include "kerncompat.h"
++	BTRFS_SEND_A_UNENCODED_FILE_LEN,
++	BTRFS_SEND_A_UNENCODED_LEN,
++	BTRFS_SEND_A_UNENCODED_OFFSET,
++	BTRFS_SEND_A_COMPRESSION,
++	BTRFS_SEND_A_ENCRYPTION,
 +
-+#include <unistd.h>
-+#include <sys/syscall.h>
-+#include <sys/uio.h>
-+
-+ssize_t pwritev2(int fd, const struct iovec *iov, int iovcnt, off_t offset,
-+		 int flags)
-+{
-+/* these conditions indicate an x32 system, which has a different pwritev2 */
-+#if defined(__x86_64__) && defined(__ILP32__)
-+	return syscall(SYS_pwritev2, fd, iov, iovcnt, offset, flags);
-+#else
-+	unsigned long hi = offset >> (BITS_PER_LONG / 2) >> (BITS_PER_LONG / 2);
-+	unsigned long lo = offset;
-+
-+	return syscall(SYS_pwritev2, fd, iov, iovcnt, lo, hi, flags);
-+#endif // X32
-+}
-+#endif /* HAVE_PWRIVEV2 */
-diff --git a/stubs.h b/stubs.h
-new file mode 100644
-index 00000000..b39f8a69
---- /dev/null
-+++ b/stubs.h
-@@ -0,0 +1,11 @@
-+#ifndef _BTRFS_STUBS_H
-+#define _BTRFS_STUBS_H
-+
-+#include <sys/types.h>
-+
-+struct iovec;
-+
-+ssize_t pwritev2(int fd, const struct iovec *iov, int iovcnt, off_t offset,
-+		 int flags);
-+
-+#endif
+ 	__BTRFS_SEND_A_MAX,
+ };
+ #define BTRFS_SEND_A_MAX (__BTRFS_SEND_A_MAX - 1)
 -- 
 2.29.2
 

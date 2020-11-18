@@ -2,35 +2,35 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.2 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.2 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E5B4BC5519F
-	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Nov 2020 19:40:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 80594C5519F
+	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Nov 2020 19:50:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 80E702467A
-	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Nov 2020 19:40:06 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 277EF20853
+	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Nov 2020 19:50:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726375AbgKRTkF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 18 Nov 2020 14:40:05 -0500
-Received: from mx2.suse.de ([195.135.220.15]:49696 "EHLO mx2.suse.de"
+        id S1725822AbgKRTuG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 18 Nov 2020 14:50:06 -0500
+Received: from mx2.suse.de ([195.135.220.15]:59402 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725710AbgKRTkF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 18 Nov 2020 14:40:05 -0500
+        id S1725710AbgKRTuF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 18 Nov 2020 14:50:05 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 7A372BE05;
-        Wed, 18 Nov 2020 19:40:04 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id B241FBE34;
+        Wed, 18 Nov 2020 19:50:04 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id C08E3DA701; Wed, 18 Nov 2020 20:38:18 +0100 (CET)
-Date:   Wed, 18 Nov 2020 20:38:18 +0100
+        id 0A33DDA701; Wed, 18 Nov 2020 20:48:18 +0100 (CET)
+Date:   Wed, 18 Nov 2020 20:48:18 +0100
 From:   David Sterba <dsterba@suse.cz>
 To:     Qu Wenruo <wqu@suse.com>
 Cc:     linux-btrfs@vger.kernel.org, Goldwyn Rodrigues <rgoldwyn@suse.com>
 Subject: Re: [PATCH v2 13/24] btrfs: handle sectorsize < PAGE_SIZE case for
  extent buffer accessors
-Message-ID: <20201118193818.GC20563@twin.jikos.cz>
+Message-ID: <20201118194818.GD20563@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
         linux-btrfs@vger.kernel.org, Goldwyn Rodrigues <rgoldwyn@suse.com>
@@ -46,17 +46,20 @@ List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 On Fri, Nov 13, 2020 at 08:51:38PM +0800, Qu Wenruo wrote:
-> This patch introduces two helpers to do these:
-> - get_eb_page_index()
->   This is to calculate the index to access extent_buffer::pages.
->   It's just a simple wrapper around "start >> PAGE_SHIFT".
-> 
->   For sectorsize == PAGE_SIZE case, nothing is changed.
->   For sectorsize < PAGE_SIZE case, we always get index as 0, and
->   the existing page shift works also fine.
-> 
-> - get_eb_page_offset()
+> --- a/fs/btrfs/ctree.c
+> +++ b/fs/btrfs/ctree.c
+> @@ -1686,10 +1686,11 @@ static noinline int generic_bin_search(struct extent_buffer *eb,
+>  		oip = offset_in_page(offset);
+>  
+>  		if (oip + key_size <= PAGE_SIZE) {
+> -			const unsigned long idx = offset >> PAGE_SHIFT;
+> +			const unsigned long idx = get_eb_page_index(offset);
+>  			char *kaddr = page_address(eb->pages[idx]);
+>  
+> -			tmp = (struct btrfs_disk_key *)(kaddr + oip);
+> +			tmp = (struct btrfs_disk_key *)(kaddr +
+> +					get_eb_page_offset(eb, offset));
 
-This is too confusing, it does not return offset of the page but offset
-in the page, as it is replacement of offset_in_page.  That
-get_eb_page_index is clear from the name but the other not.
+Here offset_in_page(offset) == get_eb_page_offset(eb, offset) and does
+not need to be calculated again for both sector/page combinations. As
+this is a hot path in search it sould be kept optimizied.

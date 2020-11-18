@@ -7,70 +7,70 @@ X-Spam-Status: No, score=-18.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5AE36C63697
-	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Nov 2020 23:07:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4BC12C56201
+	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Nov 2020 23:07:35 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id E884A246A6
-	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Nov 2020 23:07:33 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DDC6E22255
+	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Nov 2020 23:07:34 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="UzhqsQGx";
-	dkim=temperror (0-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="gLxCX4XE"
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="WmMzrg+s";
+	dkim=temperror (0-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="Grmx5KY9"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727005AbgKRXGo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 18 Nov 2020 18:06:44 -0500
-Received: from wout2-smtp.messagingengine.com ([64.147.123.25]:56973 "EHLO
+        id S1727037AbgKRXGx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 18 Nov 2020 18:06:53 -0500
+Received: from wout2-smtp.messagingengine.com ([64.147.123.25]:41881 "EHLO
         wout2-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1726588AbgKRXGn (ORCPT
+        by vger.kernel.org with ESMTP id S1726588AbgKRXGx (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 18 Nov 2020 18:06:43 -0500
+        Wed, 18 Nov 2020 18:06:53 -0500
 Received: from compute2.internal (compute2.nyi.internal [10.202.2.42])
-        by mailout.west.internal (Postfix) with ESMTP id 0DC60CB5;
-        Wed, 18 Nov 2020 18:06:59 -0500 (EST)
+        by mailout.west.internal (Postfix) with ESMTP id D04ECC14;
+        Wed, 18 Nov 2020 18:07:09 -0500 (EST)
 Received: from mailfrontend1 ([10.202.2.162])
-  by compute2.internal (MEProxy); Wed, 18 Nov 2020 18:07:00 -0500
+  by compute2.internal (MEProxy); Wed, 18 Nov 2020 18:07:10 -0500
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=from
         :to:subject:date:message-id:in-reply-to:references:mime-version
-        :content-transfer-encoding; s=fm2; bh=22bWksDngmEiwuMGGZH21wlh00
-        t8TNXXR/BVrt/ldJc=; b=UzhqsQGx7JioGgFag2/rsaLPwKCZ1V/yas1pUOWb6H
-        u4bF1x+n/Wt4vaHTF1Z4ExhfuxSQoiE+1skRuedwLRbwPMvygUwCA0EdTpZ3p28X
-        k3wFlbHXy2M40WZJdpYEgI2wim/xx9Olp4X9mdttALW7Aw04V+R6Uw3R9XIJHwIm
-        Vxf48Zzw5b0UeLCjHoVGphjL1OTokx1S01KFQw8rfiGSICAWLvGl8mIw5vHCPeQg
-        k9VIsJBjqAeLQ05ulTvfW6mF+G7E9zquO4e/O9x0hb9JfUqiJe6O4l2KpkII/8/O
-        9J6n4+gnGEpH1Qf2C2y8dJV9pSWi7ca5xdlGqju0/Zpw==
+        :content-transfer-encoding; s=fm2; bh=MzggpLdY8RnPEsI+gBYMirfU1Z
+        u3DTsymQjSMD4EBZ8=; b=WmMzrg+sDBP3P1j3pUj0P6SYKLhRFj7BUSr8ankf/q
+        uDmxX1+bez3wKvzOOoi2qqURfpN1eEVFUH5XWfjE1eLqndfMYiagPrVC8DQBp20t
+        Vrwppz3SwROW0yYSjb+RRejmwKU9QZyohDvSEM9srQCpUyubvY2KDgtcOi4qeu4o
+        fz2bSgRWuphk8bxRfNYxPdPee+fWHkt3Oj+H+b7DLmn3l1H/Pai7pUvHu2xhqvzd
+        Z4GojqXQ5M/+Lz+KjkO9RUjdUcDNXcOwhpmQ4baMFUMPh5AF6l1gIgCh7KWYPz8E
+        XI1/CMLzQ/aaXEVZfsmtOpQ2GZcN/PYz1DZfzTACQYqg==
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
         messagingengine.com; h=content-transfer-encoding:date:from
         :in-reply-to:message-id:mime-version:references:subject:to
         :x-me-proxy:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=
-        fm1; bh=22bWksDngmEiwuMGGZH21wlh00t8TNXXR/BVrt/ldJc=; b=gLxCX4XE
-        1k518+azOHmqJdhdhhd7UC2bOomLtqZ8VIPlz7CU20uC4tLk8u+w5lGlHznhsXDc
-        ktSS5qmmYSXtMZ+lybxcyzlBkrFHLClZAmZQIzEYltkAx+UzfqBtzbO0EvHdOE11
-        Fy0l0hLstPWnwtso3ScOZFh+t84+enuqJ3tKE92rnFFm8YCMYWsWCLfMPUQ5yiDC
-        pUtp6IhsjVRBbcKDFVUUSc2SppjhNWLT1o4cGQ6QF9cgbIUIwphe1/SrdE4NnoIE
-        eToa5I0BZkQoRKiENKwy5cfYbWs8I4M72y2VHd39F4q7geecqTZ+VD+1KPGKwoDs
-        Tfn6cqHHyNrb0A==
-X-ME-Sender: <xms:E6m1XwcSwiYyBur6utP0gDRfZcwVHYn4NeDwTGT_P7bdlEXsoY2T2A>
-    <xme:E6m1XyMTPtUDOk816ffdyR3GUShPsDDxFThgLO-dfOO8Y8DD_HQzcjw_i9_9Pfap_
-    mPRf_7lulTck26IZMQ>
+        fm1; bh=MzggpLdY8RnPEsI+gBYMirfU1Zu3DTsymQjSMD4EBZ8=; b=Grmx5KY9
+        svVuIlPohVbZd7jy5jTi6RX9j7uOUsyLrNZnCu/SlsCrnCQ/wBPCbNWddudiZQJg
+        5Ft9TTUK/MgDOzGhHOWrAc3iOyqR8NUyRmNqCtCM9ukQeUaRZsHjEkuEpExgntrg
+        vyY/UPiGhlLbSRv3rVbWqLOMpHasI+N8t5oaluahBc5SmXzHiSbhEphvVzHl+gNW
+        HsyXoiRXgjG6OCgtP0+d1o52mHx8ch6c3Na1d+bkubhLkWXCJZlfCU4TxG481/Xu
+        x27UIEXnMbSZtu/c7VzdryzOuEmO0/zs9xb816cHUd8Fj1R4AcoTHhfh3tKmTSmI
+        LPfNO03Po2xhmg==
+X-ME-Sender: <xms:Ham1Xy9x4gZRFUf4QZ88-Msk0YpOb2yOezkgiI3gi7KFBUg52bVOTA>
+    <xme:Ham1XyuHZMGKKRXDRAxqJPZ8xZWZLNgZlNEJbJ9J2sX4CewOljVJDWiROHqb424BG
+    8812jf6ghNJT-cOql0>
 X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedujedrudefiedgtdehucetufdoteggodetrfdotf
     fvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfqfgfvpdfurfetoffkrfgpnffqhgen
     uceurghilhhouhhtmecufedttdenucenucfjughrpefhvffufffkofgjfhgggfestdekre
     dtredttdenucfhrhhomhepuehorhhishcuuehurhhkohhvuceosghorhhishessghurhdr
     ihhoqeenucggtffrrghtthgvrhhnpeeiueffuedvieeujefhheeigfekvedujeejjeffve
     dvhedtudefiefhkeegueehleenucfkphepudeifedruddugedrudefvddrfeenucevlhhu
-    shhtvghrufhiiigvpeegnecurfgrrhgrmhepmhgrihhlfhhrohhmpegsohhrihhssegsuh
+    shhtvghrufhiiigvpeejnecurfgrrhgrmhepmhgrihhlfhhrohhmpegsohhrihhssegsuh
     hrrdhioh
-X-ME-Proxy: <xmx:E6m1XxjwQ4b7_rWJLSAM_njZKZeb_K9wQGZn4Gif-LYXzlzy89jWMw>
-    <xmx:E6m1X182pp831pSs0XItu43stKgv9PwWUq7yzRdY2L8o6j5u862mxg>
-    <xmx:E6m1X8tEdgxAlhBshfIrIyeJCUEIjjZBo2D1xRrv1pNccNkDmDNv2g>
-    <xmx:E6m1X15ntvsaFGbAjnsqtbihUXdVQ1N_kHnvzyfQ5IFxmbv0LG-Owg>
+X-ME-Proxy: <xmx:Ham1X4CHQoYKVCbuc749l7u12vXhuaZ3xFsT0jRIJ8U_dVso7ZnbcA>
+    <xmx:Ham1X6cd9B60fmLkKCXITJ3TuGGEfXs1zfqmx-eBMLHD10y2Gb1iMg>
+    <xmx:Ham1X3NuzOTCRV4iOWn8j31ncAaCLKsikjailiM8OES1OGSPks86PA>
+    <xmx:Ham1X2ZU5Avc-hVKOB18Mz-PpGO8LZy7SegLXpf6T00isUEptn9rPQ>
 Received: from localhost (unknown [163.114.132.3])
-        by mail.messagingengine.com (Postfix) with ESMTPA id 370D03280060;
-        Wed, 18 Nov 2020 18:06:59 -0500 (EST)
+        by mail.messagingengine.com (Postfix) with ESMTPA id 039463280064;
+        Wed, 18 Nov 2020 18:07:09 -0500 (EST)
 From:   Boris Burkov <boris@bur.io>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v7 06/12] btrfs: clear free space tree on ro->rw remount
-Date:   Wed, 18 Nov 2020 15:06:21 -0800
-Message-Id: <f91ff85f985eeaf8993022453ca21fa4772e28a8.1605736355.git.boris@bur.io>
+Subject: [PATCH v7 09/12] btrfs: warn when remount will not change the free space tree
+Date:   Wed, 18 Nov 2020 15:06:24 -0800
+Message-Id: <582a98333502e807faa9a899082e6e960e4cc0f3.1605736355.git.boris@bur.io>
 X-Mailer: git-send-email 2.24.1
 In-Reply-To: <cover.1605736355.git.boris@bur.io>
 References: <cover.1605736355.git.boris@bur.io>
@@ -80,97 +80,47 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-A user might want to revert to v1 or nospace_cache on a root filesystem,
-and much like turning on the free space tree, that can only be done
-remounting from ro->rw. Support clearing the free space tree on such
-mounts by moving it into the shared remount logic.
-
-Since the CLEAR_CACHE option sticks around across remounts, this change
-would result in clearing the tree for ever on every remount, which is
-not desirable. To fix that, add CLEAR_CACHE to the oneshot options we
-clear at mount end, which has the other bonus of not cluttering the
-/proc/mounts output with clear_cache.
+If the remount is ro->ro, rw->ro, or rw->rw, we will not create or
+clear the free space tree. This can be surprising, so print a warning
+to dmesg to make the failure more visible. It is also important to
+ensure that the space cache options (SPACE_CACHE, FREE_SPACE_TREE) are
+consistent, so ensure those are set to properly match the current on
+disk state (which won't be changing).
 
 Signed-off-by: Boris Burkov <boris@bur.io>
 ---
- fs/btrfs/disk-io.c | 43 ++++++++++++++++++++++---------------------
- 1 file changed, 22 insertions(+), 21 deletions(-)
+ fs/btrfs/super.c | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 0bc7d9766f8c..64e5707f008b 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2892,6 +2892,7 @@ static int btrfs_check_uuid_tree(struct btrfs_fs_info *fs_info)
- void btrfs_clear_oneshot_options(struct btrfs_fs_info *fs_info)
- {
- 	btrfs_clear_opt(fs_info->mount_opt, USEBACKUPROOT);
-+	btrfs_clear_opt(fs_info->mount_opt, CLEAR_CACHE);
- }
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index e2a186d254c5..5e88ae69e2e6 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1912,6 +1912,24 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
+ 	btrfs_resize_thread_pool(fs_info,
+ 		fs_info->thread_pool_size, old_thread_pool_size);
  
- /*
-@@ -2901,6 +2902,27 @@ void btrfs_clear_oneshot_options(struct btrfs_fs_info *fs_info)
- int btrfs_mount_rw(struct btrfs_fs_info *fs_info)
- {
- 	int ret;
-+	bool clear_free_space_tree = false;
-+
-+	if (btrfs_test_opt(fs_info, CLEAR_CACHE) &&
-+	    btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE)) {
-+		clear_free_space_tree = true;
-+	} else if (btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE) &&
-+		   !btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE_VALID)) {
-+		btrfs_warn(fs_info, "free space tree is invalid");
-+		clear_free_space_tree = true;
-+	}
-+
-+	if (clear_free_space_tree) {
-+		btrfs_info(fs_info, "clearing free space tree");
-+		ret = btrfs_clear_free_space_tree(fs_info);
-+		if (ret) {
-+			btrfs_warn(fs_info,
-+				   "failed to clear free space tree: %d", ret);
-+			close_ctree(fs_info);
-+			return ret;
++	if (btrfs_test_opt(fs_info, FREE_SPACE_TREE) !=
++	    btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE) &&
++	    ((!sb_rdonly(sb) || *flags & SB_RDONLY))) {
++		btrfs_warn(fs_info,
++	   "remount supports changing free space tree only from ro to rw");
++		/*
++		 * Make sure free space cache options match the state on disk
++		 */
++		if (btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE)) {
++			btrfs_set_opt(fs_info->mount_opt, FREE_SPACE_TREE);
++			btrfs_clear_opt(fs_info->mount_opt, SPACE_CACHE);
++		}
++		if (btrfs_free_space_cache_v1_active(fs_info)) {
++			btrfs_clear_opt(fs_info->mount_opt, FREE_SPACE_TREE);
++			btrfs_set_opt(fs_info->mount_opt, SPACE_CACHE);
 +		}
 +	}
++
+ 	if ((bool)(*flags & SB_RDONLY) == sb_rdonly(sb))
+ 		goto out;
  
- 	ret = btrfs_cleanup_fs_roots(fs_info);
- 	if (ret)
-@@ -2975,7 +2997,6 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
- 	struct btrfs_root *chunk_root;
- 	int ret;
- 	int err = -EINVAL;
--	int clear_free_space_tree = 0;
- 	int level;
- 
- 	ret = init_mount_fs_info(fs_info, sb);
-@@ -3377,26 +3398,6 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
- 	if (sb_rdonly(sb))
- 		goto clear_oneshot;
- 
--	if (btrfs_test_opt(fs_info, CLEAR_CACHE) &&
--	    btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE)) {
--		clear_free_space_tree = 1;
--	} else if (btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE) &&
--		   !btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE_VALID)) {
--		btrfs_warn(fs_info, "free space tree is invalid");
--		clear_free_space_tree = 1;
--	}
--
--	if (clear_free_space_tree) {
--		btrfs_info(fs_info, "clearing free space tree");
--		ret = btrfs_clear_free_space_tree(fs_info);
--		if (ret) {
--			btrfs_warn(fs_info,
--				   "failed to clear free space tree: %d", ret);
--			close_ctree(fs_info);
--			return ret;
--		}
--	}
--
- 	ret = btrfs_mount_rw(fs_info);
- 	if (ret) {
- 		close_ctree(fs_info);
 -- 
 2.24.1
 

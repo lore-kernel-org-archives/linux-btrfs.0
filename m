@@ -7,63 +7,63 @@ X-Spam-Status: No, score=-16.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 74C55C64E8A
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 462F3C64E90
 	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Nov 2020 19:19:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 314E52220B
-	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Nov 2020 19:19:37 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D009322227
+	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Nov 2020 19:19:34 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="HnwigP05"
+	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="MpU7al+X"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727304AbgKRTTZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 18 Nov 2020 14:19:25 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55840 "EHLO
+        id S1727271AbgKRTTO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 18 Nov 2020 14:19:14 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55802 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726416AbgKRTTY (ORCPT
+        with ESMTP id S1727257AbgKRTTO (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 18 Nov 2020 14:19:24 -0500
-Received: from mail-pl1-x644.google.com (mail-pl1-x644.google.com [IPv6:2607:f8b0:4864:20::644])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7177AC0613D6
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 Nov 2020 11:19:23 -0800 (PST)
-Received: by mail-pl1-x644.google.com with SMTP id bj5so717584plb.4
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 Nov 2020 11:19:23 -0800 (PST)
+        Wed, 18 Nov 2020 14:19:14 -0500
+Received: from mail-pg1-x541.google.com (mail-pg1-x541.google.com [IPv6:2607:f8b0:4864:20::541])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 87F20C0613D6
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 Nov 2020 11:19:14 -0800 (PST)
+Received: by mail-pg1-x541.google.com with SMTP id t37so1783669pga.7
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 Nov 2020 11:19:14 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=osandov-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=P9Kdu1iOQxHZHPzLsKpiyc2lmM69laJRMX8/k+zeI9U=;
-        b=HnwigP052OdRCU9TTvxKjsmCRiFnZCItgfljMLRQV+kUfZPqlxT76tlV5nK13Gn9ZV
-         8/Ab8Hh+MwMHIMPqCSjIYF+GsIRD5icuJTkNG9qX2f52JlPZo4VjO5oA7TrbT3EhX3Zr
-         ioGBhNQsCOSJ9XDIf2jbz7arirspi7eDFG+j3aZtk+ybdQQxSANNvmlCnz2LByRnpBNV
-         1Z0cJPip3ujM2/hONn7eZKPW8wS8wpWkGdhDhhl8k5O0u/nMHSkVL3fKPqM+/spTJS2N
-         Vek9l/Gd/s779eTHzJd01ifO7vS5nPgZOljuUb59vYd64tXsXBmsLENuFMzedrwkeIGp
-         wSXg==
+        bh=3q2Oqtj8dfFGH+5O8y2xFre8FdN2AUaLsaYdJ9TIuIY=;
+        b=MpU7al+XTm9RPKdhcCpVmCKrylEVe18Z+7BxLSjdqC/3OO74UKeKp71CWp6UH6GlFM
+         u28NPklC/CsFZXKQ2pjomKFWr3BL83HL29mt3vEWaCtFzTKdjpb35XqntiToyp31V6+k
+         F/+vkfdsmUEnSiDJNZC9Gja9c1yfBoKeQEPN3aTTpdKYSUpz3PhXyRWmcjqWaa8HQy3Z
+         fLfQpa/FNJscCFPagyt/HQl+EIM0+T1ZhJ2cRSRidDoMR0snYWriQXgvVYJHkULpKxDY
+         mf9srlHqKVsTJIvi7YvzvQMvnWEb+gPoSnIbjpLUtQaE/0FxCmv1tbPtj6smTY08iIQb
+         WzJg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=P9Kdu1iOQxHZHPzLsKpiyc2lmM69laJRMX8/k+zeI9U=;
-        b=UN+7uQyEOrqYRPa6RMCXFDql5amIjwl+iBQMmOU8PC8jUpC/rSk+zz+Gt+gGjOzJOG
-         g/6/14H3kC4g5DA33Z6aoJfwXGBsHoEz2/AFUuJbGrakndqf+rotXJr9tOfIl1NH3AvI
-         h5QMcKgFt9outK6u9eVSsmU2+yjDf9pMP9dwYTMvdJXzBuGvwHYD8cNi4Qxt8UAS/9yD
-         gLtWsHY2isLqCDuQHfbRvh36QrkIoifJnz5Bz+Fl2fODU/cL1LMBLP/FujJP1BZ0d3aJ
-         8i5XatmkC6hDULJOXmCFk7AdMarVQEQpjhoLzn/1NxQLj6a/VxYLdVaWw4ofShXX3smn
-         nXfQ==
-X-Gm-Message-State: AOAM530yF9x7hmamDwiuMGhvtcJ9Bry9sAV1UA8DsCFoMt8Iqgpc7OBG
-        z0jH96B+fe+cumQndkQqMzLgM/amRwi+ew==
-X-Google-Smtp-Source: ABdhPJynB/3z0rxiPUbMCU413edbSddUD8pbNkI6RYQQryN1QHsqK3UrdxKuCwPlg4Lqw15YCYw9GQ==
-X-Received: by 2002:a17:902:bb94:b029:d6:edb2:4f41 with SMTP id m20-20020a170902bb94b02900d6edb24f41mr5762832pls.3.1605727162314;
-        Wed, 18 Nov 2020 11:19:22 -0800 (PST)
+        bh=3q2Oqtj8dfFGH+5O8y2xFre8FdN2AUaLsaYdJ9TIuIY=;
+        b=Dolsq+eeZsdRrb3JDqxgM7JmVAJiumPdSZlFWsJDu4gpvxG6XTMF7N67JztgrhCndZ
+         wRvYM8CmQMVevus+F/AAiT9cui7TteW+K1arJpGNlUjaJWslYHFmvAtBIsZoBQ8Wgzpf
+         4w4itbfZLuZOQIMgGirLX3pg0hLEHt6On3ls8mVFWraOykYAxw/Hg0gmWgcsLJdygqt3
+         BsKIdwY4mKjW4N8eZ+/5MGIWc8gYDuR/nqQIozeK0Pkejtt7eudgLwvmA+uHhARLtCC/
+         WaSk7yJEyclN4KUfGRkxyJkOISgLCrbJqxmG9rV+Gl5R11DTRPlQLnn5LVNJ42imlwQc
+         ZuZw==
+X-Gm-Message-State: AOAM532OQEdCz+R8Z8z3P2oWbbq5o//cjF8uKyXcTwSm6aLP/4HBiGJH
+        fCjkh3NSRtLZFdWVfswsguNWAi9zIhpdhQ==
+X-Google-Smtp-Source: ABdhPJynVRRk1YtA/iA/xowELBPkoIP9SaPs1iY+y0yzmtOren+xHiIzXS2G2qG51Zr1sfkZL7evQQ==
+X-Received: by 2002:a63:8d4b:: with SMTP id z72mr9581696pgd.327.1605727153409;
+        Wed, 18 Nov 2020 11:19:13 -0800 (PST)
 Received: from relinquished.tfbnw.net ([2620:10d:c090:400::5:8b43])
-        by smtp.gmail.com with ESMTPSA id l9sm3197221pjy.10.2020.11.18.11.19.20
+        by smtp.gmail.com with ESMTPSA id l9sm3197221pjy.10.2020.11.18.11.19.11
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 18 Nov 2020 11:19:21 -0800 (PST)
+        Wed, 18 Nov 2020 11:19:12 -0800 (PST)
 From:   Omar Sandoval <osandov@osandov.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     linux-fsdevel@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v2 04/13] btrfs-progs: receive: support v2 send stream DATA tlv format
-Date:   Wed, 18 Nov 2020 11:18:49 -0800
-Message-Id: <514c65bbb59958b3e7504cadc3c708a48771d39b.1605723745.git.osandov@osandov.com>
+Subject: [PATCH v2 02/13] btrfs-progs: receive: support v2 send stream larger tlv_len
+Date:   Wed, 18 Nov 2020 11:18:45 -0800
+Message-Id: <adf79444c623c2867ec7419824bdae02ac862246.1605723745.git.osandov@osandov.com>
 X-Mailer: git-send-email 2.29.2
 In-Reply-To: <cover.1605723600.git.osandov@fb.com>
 References: <cover.1605723600.git.osandov@fb.com>
@@ -75,82 +75,109 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Boris Burkov <borisb@fb.com>
 
-The new format privileges the BTRFS_SEND_A_DATA attribute by
-guaranteeing it will always be the last attribute in any command that
-needs it, and by implicitly encoding the data length as the difference
-between the total command length in the command header and the sizes of
-the rest of the attributes (and of course the tlv_type identifying the
-DATA attribute). To parse the new stream, we must read the tlv_type and
-if it is not DATA, we proceed normally, but if it is DATA, we don't
-parse a tlv_len but simply compute the length.
+An encoded extent can be up to 128K in length, which exceeds the largest
+value expressible by the current send stream format's 16 bit tlv_len
+field. Since encoded writes cannot be split into multiple writes by
+btrfs send, the send stream format must change to accommodate encoded
+writes.
 
-In addition, we add some bounds checking when parsing each chunk of
-data, as well as for the tlv_len itself.
+Supporting this changed format requires retooling how we store the
+commands we have processed. Since we can no longer use btrfs_tlv_header
+to describe every attribute, we define a new struct btrfs_send_attribute
+which has a 32 bit length field, and use that to store the attribute
+information needed for receive processing. This is transparent to users
+of the various TLV_GET macros.
 
 Signed-off-by: Boris Burkov <boris@bur.io>
 ---
- common/send-stream.c | 36 ++++++++++++++++++++++++++----------
- 1 file changed, 26 insertions(+), 10 deletions(-)
+ common/send-stream.c | 34 +++++++++++++++++++++++++---------
+ 1 file changed, 25 insertions(+), 9 deletions(-)
 
 diff --git a/common/send-stream.c b/common/send-stream.c
-index 51a6a94a..77d5cd04 100644
+index 69d75168..3bd21d3f 100644
 --- a/common/send-stream.c
 +++ b/common/send-stream.c
-@@ -165,28 +165,44 @@ static int read_cmd(struct btrfs_send_stream *sctx)
+@@ -24,13 +24,23 @@
+ #include "crypto/crc32c.h"
+ #include "common/utils.h"
  
- 	pos = 0;
- 	while (pos < cmd_len) {
--		struct btrfs_tlv_header *tlv_hdr;
++struct btrfs_send_attribute {
++	u16 tlv_type;
++	/*
++	 * Note: in btrfs_tlv_header, this is __le16, but we need 32 bits for
++	 * attributes with file data as of version 2 of the send stream format
++	 */
++	u32 tlv_len;
++	char *data;
++};
++
+ struct btrfs_send_stream {
+ 	int fd;
+ 	char read_buf[BTRFS_SEND_BUF_SIZE];
+ 
+ 	int cmd;
+ 	struct btrfs_cmd_header *cmd_hdr;
+-	struct btrfs_tlv_header *cmd_attrs[BTRFS_SEND_A_MAX + 1];
++	struct btrfs_send_attribute cmd_attrs[BTRFS_SEND_A_MAX + 1];
+ 	u32 version;
+ 
+ 	/*
+@@ -152,6 +162,7 @@ static int read_cmd(struct btrfs_send_stream *sctx)
+ 		struct btrfs_tlv_header *tlv_hdr;
  		u16 tlv_type;
--		u16 tlv_len;
- 		struct btrfs_send_attribute *send_attr;
+ 		u16 tlv_len;
++		struct btrfs_send_attribute *send_attr;
  
--		tlv_hdr = (struct btrfs_tlv_header *)data;
--		tlv_type = le16_to_cpu(tlv_hdr->tlv_type);
--		tlv_len = le16_to_cpu(tlv_hdr->tlv_len);
-+		if (cmd_len - pos < sizeof(__le16)) {
-+			error("send stream is truncated");
-+			ret = -EINVAL;
-+			goto out;
-+		}
-+		tlv_type = le16_to_cpu(*(__le16 *)data);
- 
- 		if (tlv_type == 0 || tlv_type > BTRFS_SEND_A_MAX) {
--			error("invalid tlv in cmd tlv_type = %hu, tlv_len = %hu",
--					tlv_type, tlv_len);
-+			error("invalid tlv in cmd tlv_type = %hu", tlv_type);
- 			ret = -EINVAL;
+ 		tlv_hdr = (struct btrfs_tlv_header *)data;
+ 		tlv_type = le16_to_cpu(tlv_hdr->tlv_type);
+@@ -164,10 +175,15 @@ static int read_cmd(struct btrfs_send_stream *sctx)
  			goto out;
  		}
  
- 		send_attr = &sctx->cmd_attrs[tlv_type];
- 		send_attr->tlv_type = tlv_type;
--		send_attr->tlv_len = tlv_len;
--		pos += sizeof(*tlv_hdr);
--		data += sizeof(*tlv_hdr);
+-		sctx->cmd_attrs[tlv_type] = tlv_hdr;
++		send_attr = &sctx->cmd_attrs[tlv_type];
++		send_attr->tlv_type = tlv_type;
++		send_attr->tlv_len = tlv_len;
++		pos += sizeof(*tlv_hdr);
++		data += sizeof(*tlv_hdr);
  
-+		pos += sizeof(tlv_type);
-+		data += sizeof(tlv_type);
-+		if (sctx->version == 2 && tlv_type == BTRFS_SEND_A_DATA) {
-+			send_attr->tlv_len = cmd_len - pos;
-+		} else {
-+			if (cmd_len - pos < sizeof(__le16)) {
-+				error("send stream is truncated");
-+				ret = -EINVAL;
-+				goto out;
-+			}
-+			send_attr->tlv_len = le16_to_cpu(*(__le16 *)data);
-+			pos += sizeof(__le16);
-+			data += sizeof(__le16);
-+		}
-+		if (cmd_len - pos < send_attr->tlv_len) {
-+			error("send stream is truncated");
-+			ret = -EINVAL;
-+			goto out;
-+		}
- 		send_attr->data = data;
- 		pos += send_attr->tlv_len;
- 		data += send_attr->tlv_len;
+-		data += sizeof(*tlv_hdr) + tlv_len;
+-		pos += sizeof(*tlv_hdr) + tlv_len;
++		send_attr->data = data;
++		pos += send_attr->tlv_len;
++		data += send_attr->tlv_len;
+ 	}
+ 
+ 	sctx->cmd = cmd;
+@@ -180,7 +196,7 @@ out:
+ static int tlv_get(struct btrfs_send_stream *sctx, int attr, void **data, int *len)
+ {
+ 	int ret;
+-	struct btrfs_tlv_header *hdr;
++	struct btrfs_send_attribute *send_attr;
+ 
+ 	if (attr <= 0 || attr > BTRFS_SEND_A_MAX) {
+ 		error("invalid attribute requested, attr = %d", attr);
+@@ -188,15 +204,15 @@ static int tlv_get(struct btrfs_send_stream *sctx, int attr, void **data, int *l
+ 		goto out;
+ 	}
+ 
+-	hdr = sctx->cmd_attrs[attr];
+-	if (!hdr) {
++	send_attr = &sctx->cmd_attrs[attr];
++	if (!send_attr->data) {
+ 		error("attribute %d requested but not present", attr);
+ 		ret = -ENOENT;
+ 		goto out;
+ 	}
+ 
+-	*len = le16_to_cpu(hdr->tlv_len);
+-	*data = hdr + 1;
++	*len = send_attr->tlv_len;
++	*data = send_attr->data;
+ 
+ 	ret = 0;
+ 
 -- 
 2.29.2
 

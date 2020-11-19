@@ -7,61 +7,69 @@ X-Spam-Status: No, score=-10.2 required=3.0 tests=BAYES_00,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 407D1C6379D
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E5B00C64E69
 	for <linux-btrfs@archiver.kernel.org>; Thu, 19 Nov 2020 21:11:35 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id E612022259
-	for <linux-btrfs@archiver.kernel.org>; Thu, 19 Nov 2020 21:11:34 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9AF9F22259
+	for <linux-btrfs@archiver.kernel.org>; Thu, 19 Nov 2020 21:11:35 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727024AbgKSVLH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 19 Nov 2020 16:11:07 -0500
-Received: from mx2.suse.de ([195.135.220.15]:35586 "EHLO mx2.suse.de"
+        id S1727040AbgKSVL0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 19 Nov 2020 16:11:26 -0500
+Received: from mx2.suse.de ([195.135.220.15]:36060 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727003AbgKSVLG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Nov 2020 16:11:06 -0500
+        id S1726199AbgKSVLZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 19 Nov 2020 16:11:25 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id BB273ABF4;
-        Thu, 19 Nov 2020 21:11:05 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 08A7FAFA7;
+        Thu, 19 Nov 2020 21:11:24 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 8916BDA701; Thu, 19 Nov 2020 22:09:19 +0100 (CET)
-Date:   Thu, 19 Nov 2020 22:09:19 +0100
+        id C4001DA701; Thu, 19 Nov 2020 22:09:37 +0100 (CET)
+Date:   Thu, 19 Nov 2020 22:09:37 +0100
 From:   David Sterba <dsterba@suse.cz>
 To:     Qu Wenruo <wqu@suse.com>
 Cc:     linux-btrfs@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>
-Subject: Re: [PATCH v2 14/24] btrfs: disk-io: only clear EXTENT_LOCK bit for
- extent_invalidatepage()
-Message-ID: <20201119210919.GO20563@twin.jikos.cz>
+Subject: Re: [PATCH v2 16/24] btrfs: file-item: use nodesize to determine
+ whether we need readahead for btrfs_lookup_bio_sums()
+Message-ID: <20201119210937.GQ20563@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
         linux-btrfs@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>
 References: <20201113125149.140836-1-wqu@suse.com>
- <20201113125149.140836-15-wqu@suse.com>
+ <20201113125149.140836-17-wqu@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20201113125149.140836-15-wqu@suse.com>
+In-Reply-To: <20201113125149.140836-17-wqu@suse.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Nov 13, 2020 at 08:51:39PM +0800, Qu Wenruo wrote:
-> In extent_invalidatepage() it will try to clear all possible bits since
-> it's calling clear_extent_bit() with delete == 1.
-> That would try to clear all existing bits.
+On Fri, Nov 13, 2020 at 08:51:41PM +0800, Qu Wenruo wrote:
+> In btrfs_lookup_bio_sums() if the bio is pretty large, we want to
+> readahead the csum tree.
 > 
-> This is currently fine, since for btree io tree, it only utilizes
-> EXTENT_LOCK bit.
-> But this could be a problem for later subpage support, which will
-> utilize extra io tree bit to represent extra info.
+> However the threshold is an immediate number, (PAGE_SIZE * 8), from the
+> initial btrfs merge.
 > 
-> This patch will just convert that clear_extent_bit() to
-> unlock_extent_cached().
+> The value itself is pretty hard to guess the meaning, especially when
+> the immediate number is from the age where 4K sectorsize is the default
+> and only CRC32 is supported.
 > 
-> For current code since only EXTENT_LOCKED bit is utilized, this doesn't
-> change the behavior, but provides a much cleaner basis for incoming
-> subpage support.
+> For the most common btrfs setup, CRC32 csum and 4K sectorsize,
+> it means just 32K read would kick readahead, while the csum itself is
+> only 32 bytes in size.
+> 
+> Now let's be more reasonable by taking both csum size and node size into
+> consideration.
+> 
+> If the csum size for the bio is larger than one leaf, then we kick the
+> readahead.
+> This means for current default btrfs, the threshold will be 16M.
+> 
+> This change should not change performance observably, thus this is mostly
+> a readability enhancement.
 > 
 > Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 > Signed-off-by: Qu Wenruo <wqu@suse.com>

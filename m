@@ -7,62 +7,53 @@ X-Spam-Status: No, score=-10.2 required=3.0 tests=BAYES_00,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9448CC64E69
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6C3D8C63777
 	for <linux-btrfs@archiver.kernel.org>; Thu, 19 Nov 2020 21:11:00 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 6B79C22256
+	by mail.kernel.org (Postfix) with ESMTP id 2071522259
 	for <linux-btrfs@archiver.kernel.org>; Thu, 19 Nov 2020 21:11:00 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726979AbgKSVKz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 19 Nov 2020 16:10:55 -0500
-Received: from mx2.suse.de ([195.135.220.15]:35382 "EHLO mx2.suse.de"
+        id S1726515AbgKSVKq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 19 Nov 2020 16:10:46 -0500
+Received: from mx2.suse.de ([195.135.220.15]:35066 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726444AbgKSVKz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Nov 2020 16:10:55 -0500
+        id S1726599AbgKSVKp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 19 Nov 2020 16:10:45 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 18352ABF4;
-        Thu, 19 Nov 2020 21:10:54 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 628D3ABF4;
+        Thu, 19 Nov 2020 21:10:43 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id D9C9DDA701; Thu, 19 Nov 2020 22:09:07 +0100 (CET)
-Date:   Thu, 19 Nov 2020 22:09:07 +0100
+        id 30161DA701; Thu, 19 Nov 2020 22:08:57 +0100 (CET)
+Date:   Thu, 19 Nov 2020 22:08:57 +0100
 From:   David Sterba <dsterba@suse.cz>
 To:     Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>
-Subject: Re: [PATCH v2 06/24] btrfs: remove the phy_offset parameter for
- btrfs_validate_metadata_buffer()
-Message-ID: <20201119210907.GN20563@twin.jikos.cz>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 04/24] btrfs: extent_io: introduce helper to handle
+ page status update in end_bio_extent_readpage()
+Message-ID: <20201119210857.GM20563@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>
+        linux-btrfs@vger.kernel.org
 References: <20201113125149.140836-1-wqu@suse.com>
- <20201113125149.140836-7-wqu@suse.com>
+ <20201113125149.140836-5-wqu@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20201113125149.140836-7-wqu@suse.com>
+In-Reply-To: <20201113125149.140836-5-wqu@suse.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Nov 13, 2020 at 08:51:31PM +0800, Qu Wenruo wrote:
-> Parameter @phy_offset is the offset against the bio->bi_iter.bi_sector.
-> @phy_offset is mostly for data io to lookup the csum in btrfs_io_bio.
+On Fri, Nov 13, 2020 at 08:51:29PM +0800, Qu Wenruo wrote:
+> Introduce a new helper, endio_readpage_release_extent(), to handle
+> update status update in end_bio_extent_readpage().
 > 
-> But for metadata, it's completely useless as metadata stores their own
-> csum in its btrfs_header.
-> 
-> Remove this useless parameter from btrfs_validate_metadata_buffer().
-> 
-> Just an extra note for parameters @start and @end, they are not utilized
-> at all for current sectorsize == PAGE_SIZE case, as we can grab eb directly
-> from page.
-> 
-> But those two parameters are very important for later subpage support,
-> thus @start/@len are not touched here.
+> The refactor itself is not really nothing interesting, the point here is
+> to provide the basis for later subpage support, where the page status
+> update can be more complex than current code.
 > 
 > Signed-off-by: Qu Wenruo <wqu@suse.com>
-> Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
 Added to misc-next.

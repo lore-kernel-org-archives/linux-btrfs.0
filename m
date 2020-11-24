@@ -7,39 +7,39 @@ X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CDFEDC6379D
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9D1C9C63798
 	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Nov 2020 15:49:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 793DB206FA
+	by mail.kernel.org (Postfix) with ESMTP id 3E22B206F7
 	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Nov 2020 15:49:57 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="Xo/R4xjt"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="qXipuEEN"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2389874AbgKXPtg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 24 Nov 2020 10:49:36 -0500
-Received: from mx2.suse.de ([195.135.220.15]:57986 "EHLO mx2.suse.de"
+        id S2389878AbgKXPth (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 24 Nov 2020 10:49:37 -0500
+Received: from mx2.suse.de ([195.135.220.15]:58022 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2388538AbgKXPtg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S2389441AbgKXPtg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Tue, 24 Nov 2020 10:49:36 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1606232974; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+        t=1606232975; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=fObc9FZu3LS5h3uCWSPw4H76FQ6w9ItyEKtm4xa00Xo=;
-        b=Xo/R4xjti4FvlHj2EiIn2BAiuajd8GQNxtQgGOR1Lfi7ffPVfg06SXg2uA7gRuwJIhtcZR
-        YbqP3gwE8zxKCO2boSUSQhEXEjTMo3WH7SLPjeA3ZWeabYm1MP156BBE7LRvXulzV2Z7op
-        +MU1XuGgFGS4dkdL1OrcWcOXNl5kotc=
+        bh=tHhZKRb2Mat8A/SmR3oOgyCvYICMxzOcS9KCaiQsV00=;
+        b=qXipuEENUUu9zC4mdnv4uIGXRE93KlGS9nplb64EBTjGC2+AKs645tTrwM293DByDIIVoh
+        2cN3pWKq7cFXpeyZUDrFfYlbBAM+qjFcSlmEB1zCMJh8D3RfF5W1qRerC2KCY71yzzFpkV
+        8O2/Sdll6XMZPBANrDkpJcsttEEH1QE=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 8E048AC55;
-        Tue, 24 Nov 2020 15:49:34 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 1B2F5ACC2;
+        Tue, 24 Nov 2020 15:49:35 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     josef@toxicpanda.com, Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 1/3] btrfs: Remove err variable from btrfs_delete_subvolume
-Date:   Tue, 24 Nov 2020 17:49:30 +0200
-Message-Id: <20201124154932.3180539-2-nborisov@suse.com>
+Subject: [PATCH 3/3] btrfs: Remove err variable from do_relocation
+Date:   Tue, 24 Nov 2020 17:49:32 +0200
+Message-Id: <20201124154932.3180539-4-nborisov@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <20201124154932.3180539-1-nborisov@suse.com>
 References: <20201124154932.3180539-1-nborisov@suse.com>
@@ -49,113 +49,120 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Use only a single 'ret' to control whether we should abort the
-transaction or not. That's fine, because  if we abort a transaction then
-btrfs_end_transaction will return the same value as passed to
-btrfs_abort_transaction. No semantic changes.
+It simply gets assigned to 'ret' in case of errors. The flow of the
+while loop is not changed by this commit since the few call sites
+that 'goto next' will simply break from the loop.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/inode.c | 21 +++++++--------------
- 1 file changed, 7 insertions(+), 14 deletions(-)
+ fs/btrfs/relocation.c | 33 ++++++++++++---------------------
+ 1 file changed, 12 insertions(+), 21 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index ed120c09acf6..875ba51839cc 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4083,7 +4083,6 @@ int btrfs_delete_subvolume(struct inode *dir, struct dentry *dentry)
- 	struct btrfs_block_rsv block_rsv;
- 	u64 root_flags;
- 	int ret;
--	int err;
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 8fc75db901c8..6e7e5fe2e277 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -2181,8 +2181,7 @@ static int do_relocation(struct btrfs_trans_handle *trans,
+ 	u32 blocksize;
+ 	u64 bytenr;
+ 	int slot;
+-	int ret;
+-	int err = 0;
++	int ret = 0;
  
- 	/*
- 	 * Don't allow to delete a subvolume with send in progress. This is
-@@ -4105,8 +4104,8 @@ int btrfs_delete_subvolume(struct inode *dir, struct dentry *dentry)
+ 	BUG_ON(lowest && node->eb);
  
- 	down_write(&fs_info->subvol_sem);
+@@ -2200,10 +2199,8 @@ static int do_relocation(struct btrfs_trans_handle *trans,
+ 		if (upper->eb && !upper->locked) {
+ 			if (!lowest) {
+ 				ret = btrfs_bin_search(upper->eb, key, &slot);
+-				if (ret < 0) {
+-					err = ret;
++				if (ret < 0)
+ 					goto next;
+-				}
+ 				BUG_ON(ret);
+ 				bytenr = btrfs_node_blockptr(upper->eb, slot);
+ 				if (node->eb->start == bytenr)
+@@ -2215,10 +2212,8 @@ static int do_relocation(struct btrfs_trans_handle *trans,
+ 		if (!upper->eb) {
+ 			ret = btrfs_search_slot(trans, root, key, path, 0, 1);
+ 			if (ret) {
+-				if (ret < 0)
+-					err = ret;
+-				else
+-					err = -ENOENT;
++				if (ret > 0)
++					ret = -ENOENT;
  
--	err = may_destroy_subvol(dest);
--	if (err)
-+	ret = may_destroy_subvol(dest);
-+	if (ret)
- 		goto out_up_write;
- 
- 	btrfs_init_block_rsv(&block_rsv, BTRFS_BLOCK_RSV_TEMP);
-@@ -4115,13 +4114,13 @@ int btrfs_delete_subvolume(struct inode *dir, struct dentry *dentry)
- 	 * two for dir entries,
- 	 * two for root ref/backref.
- 	 */
--	err = btrfs_subvolume_reserve_metadata(root, &block_rsv, 5, true);
--	if (err)
-+	ret = btrfs_subvolume_reserve_metadata(root, &block_rsv, 5, true);
-+	if (ret)
- 		goto out_up_write;
- 
- 	trans = btrfs_start_transaction(root, 0);
- 	if (IS_ERR(trans)) {
--		err = PTR_ERR(trans);
-+		ret = PTR_ERR(trans);
- 		goto out_release;
- 	}
- 	trans->block_rsv = &block_rsv;
-@@ -4131,7 +4130,6 @@ int btrfs_delete_subvolume(struct inode *dir, struct dentry *dentry)
- 
- 	ret = btrfs_unlink_subvol(trans, dir, dentry);
- 	if (ret) {
--		err = ret;
- 		btrfs_abort_transaction(trans, ret);
- 		goto out_end_trans;
- 	}
-@@ -4149,7 +4147,6 @@ int btrfs_delete_subvolume(struct inode *dir, struct dentry *dentry)
- 					dest->root_key.objectid);
- 		if (ret) {
- 			btrfs_abort_transaction(trans, ret);
--			err = ret;
- 			goto out_end_trans;
+ 				btrfs_release_path(path);
+ 				break;
+@@ -2238,10 +2233,8 @@ static int do_relocation(struct btrfs_trans_handle *trans,
+ 			btrfs_release_path(path);
+ 		} else {
+ 			ret = btrfs_bin_search(upper->eb, key, &slot);
+-			if (ret < 0) {
+-				err = ret;
++			if (ret < 0)
+ 				goto next;
+-			}
+ 			BUG_ON(ret);
  		}
- 	}
-@@ -4159,7 +4156,6 @@ int btrfs_delete_subvolume(struct inode *dir, struct dentry *dentry)
- 				  dest->root_key.objectid);
- 	if (ret && ret != -ENOENT) {
- 		btrfs_abort_transaction(trans, ret);
--		err = ret;
- 		goto out_end_trans;
- 	}
- 	if (!btrfs_is_empty_uuid(dest->root_item.received_uuid)) {
-@@ -4169,7 +4165,6 @@ int btrfs_delete_subvolume(struct inode *dir, struct dentry *dentry)
- 					  dest->root_key.objectid);
- 		if (ret && ret != -ENOENT) {
- 			btrfs_abort_transaction(trans, ret);
--			err = ret;
- 			goto out_end_trans;
+ 
+@@ -2252,7 +2245,7 @@ static int do_relocation(struct btrfs_trans_handle *trans,
+ 		"lowest leaf/node mismatch: bytenr %llu node->bytenr %llu slot %d upper %llu",
+ 					  bytenr, node->bytenr, slot,
+ 					  upper->eb->start);
+-				err = -EIO;
++				ret = -EIO;
+ 				goto next;
+ 			}
+ 		} else {
+@@ -2263,7 +2256,7 @@ static int do_relocation(struct btrfs_trans_handle *trans,
+ 		blocksize = root->fs_info->nodesize;
+ 		eb = btrfs_read_node_slot(upper->eb, slot);
+ 		if (IS_ERR(eb)) {
+-			err = PTR_ERR(eb);
++			ret = PTR_ERR(eb);
+ 			goto next;
  		}
- 	}
-@@ -4180,14 +4175,12 @@ int btrfs_delete_subvolume(struct inode *dir, struct dentry *dentry)
- 	trans->block_rsv = NULL;
- 	trans->bytes_reserved = 0;
- 	ret = btrfs_end_transaction(trans);
--	if (ret && !err)
--		err = ret;
- 	inode->i_flags |= S_DEAD;
- out_release:
- 	btrfs_subvolume_release_metadata(root, &block_rsv);
- out_up_write:
- 	up_write(&fs_info->subvol_sem);
--	if (err) {
-+	if (ret) {
- 		spin_lock(&dest->root_item_lock);
- 		root_flags = btrfs_root_flags(&dest->root_item);
- 		btrfs_set_root_flags(&dest->root_item,
-@@ -4205,7 +4198,7 @@ int btrfs_delete_subvolume(struct inode *dir, struct dentry *dentry)
- 		}
+ 		btrfs_tree_lock(eb);
+@@ -2273,10 +2266,8 @@ static int do_relocation(struct btrfs_trans_handle *trans,
+ 					      slot, &eb, BTRFS_NESTING_COW);
+ 			btrfs_tree_unlock(eb);
+ 			free_extent_buffer(eb);
+-			if (ret < 0) {
+-				err = ret;
++			if (ret < 0)
+ 				goto next;
+-			}
+ 			BUG_ON(node->eb != eb);
+ 		} else {
+ 			btrfs_set_node_blockptr(upper->eb, slot,
+@@ -2302,19 +2293,19 @@ static int do_relocation(struct btrfs_trans_handle *trans,
+ 			btrfs_backref_drop_node_buffer(upper);
+ 		else
+ 			btrfs_backref_unlock_node_buffer(upper);
+-		if (err)
++		if (ret)
+ 			break;
  	}
  
+-	if (!err && node->pending) {
++	if (!ret && node->pending) {
+ 		btrfs_backref_drop_node_buffer(node);
+ 		list_move_tail(&node->list, &rc->backref_cache.changed);
+ 		node->pending = 0;
+ 	}
+ 
+ 	path->lowest_level = 0;
+-	BUG_ON(err == -ENOSPC);
 -	return err;
++	BUG_ON(ret == -ENOSPC);
 +	return ret;
  }
  
- static int btrfs_rmdir(struct inode *dir, struct dentry *dentry)
+ static int link_to_upper(struct btrfs_trans_handle *trans,
 -- 
 2.25.1
 

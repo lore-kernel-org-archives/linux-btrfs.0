@@ -2,65 +2,98 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-14.0 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-19.0 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2FF22C5519F
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9DAE2C6379D
 	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Nov 2020 12:19:50 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id BCB65206E5
-	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Nov 2020 12:19:49 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 62EEC206E5
+	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Nov 2020 12:19:50 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=kernel.org header.i=@kernel.org header.b="nT+ZOvQP"
+	dkim=pass (1024-bit key) header.d=kernel.org header.i=@kernel.org header.b="tPiew0Oa"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728885AbgKYMTe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 25 Nov 2020 07:19:34 -0500
-Received: from mail.kernel.org ([198.145.29.99]:44934 "EHLO mail.kernel.org"
+        id S1729088AbgKYMTf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 25 Nov 2020 07:19:35 -0500
+Received: from mail.kernel.org ([198.145.29.99]:44970 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727349AbgKYMTc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 25 Nov 2020 07:19:32 -0500
+        id S1727349AbgKYMTf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 25 Nov 2020 07:19:35 -0500
 Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 749B5206E5
-        for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2020 12:19:31 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 99A5E20715
+        for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2020 12:19:33 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1606306771;
-        bh=a/ZTMT8dMKrBiD25skfWYlwWyLF0CciBCKLGWyTNKy4=;
-        h=From:To:Subject:Date:From;
-        b=nT+ZOvQPBMEVxeG6iGHACZVO+htTsUISVWnvst7oaoVjLZR85c7N4z08vcAddQfZ+
-         0+JC5b+Wz9ZDOVyb1vfW1yb25YVk+DXN2tv+laAA1JMXtKr7ZuZLqoHus+04tMD/uw
-         xdtAJx4XPWAXpDz0qQx9deVWQjkvoVK+pflcM3aE=
+        s=default; t=1606306774;
+        bh=KUV3qsOKfbZTb3T39rI1D4IJznnHDl3/r05Afj7Vwqs=;
+        h=From:To:Subject:Date:In-Reply-To:References:In-Reply-To:
+         References:From;
+        b=tPiew0OaHaw1xwfR7/mvBGcOo61vae/rDih/3qUfYVVjklU7oN5gpoNiMagJhUyxj
+         4Y2iYPJnoQUEnqrGBCLmpzgAOPvYl93XZfGZarO39dgXb7jnOkpL5paf/yn67T+Bf4
+         pu/NYjhtGa2KFzAyS0YQblFrVojaqyCocyS7ii9g=
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/6] btrfs: some performance improvements for dbench alike workloads
-Date:   Wed, 25 Nov 2020 12:19:22 +0000
-Message-Id: <cover.1606305501.git.fdmanana@suse.com>
+Subject: [PATCH 2/6] btrfs: fix race that results in logging old extents during a fast fsync
+Date:   Wed, 25 Nov 2020 12:19:24 +0000
+Message-Id: <9f9b13e0edb79adea30d7e92dccfea8daf9cac88.1606305501.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.17.1
+In-Reply-To: <cover.1606305501.git.fdmanana@suse.com>
+References: <cover.1606305501.git.fdmanana@suse.com>
+In-Reply-To: <cover.1606305501.git.fdmanana@suse.com>
+References: <cover.1606305501.git.fdmanana@suse.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-This patchset mostly fixes some races that result in an fsync falling back
-to a transaction commit unncessarily or logging more metadata than it needs
-to. It also addresses link and rename operations logging inodes that were
-fsynced in the previous transaction but they don't need to be logged in
-the current transaction. All these cases can be triggered often by dbench.
+When logging the extents of an inode during a fast fsync, we have a time
+window where we can log extents that are from the previous transaction and
+already persisted. This only makes us waste time unnecessarily.
 
-Finally it avoids blocking an fsync for a significant time window when the
-previous transaction is still committing. All these together resulted in
-about +12% throughput with dbench and -8% maximum latency, as mentioned in
-the changelog of the last patch.
+The following sequence of steps shows how this can happen:
 
-There will be more changes to improve performance with dbench or similar
-workloads, but these have been cooking and testing for about one week and
-are independent from what's coming next.
+1) We are at transaction 1000;
 
-Filipe Manana (6):
+2) An ordered extent E from inode I completes, that is it has gone through
+   btrfs_finish_ordered_io(), and it set the extent maps' generation to
+   1000 when we unpin the extent, which is the generation of the current
+   transaction;
+
+3) The commit for transaction 1000 starts by task A;
+
+4) The task committing transaction 1000 sets the transaction state to
+   unblocked, writes the dirty extent buffers and the super blocks, then
+   unlocks tree_log_mutex;
+
+5) Some change is made to inode I, resulting in creation of a new
+   transaction with a generation of 1001;
+
+6) The transaction 1000 commit starts unpinning extents. At this point
+   fs_info->last_trans_committed still has a value of 999;
+
+7) Task B starts an fsync on inode I, and when it gets to
+   btrfs_log_changed_extents() sees the extent map for extent E in the
+   list of modified extents. It sees the extent map has a generation of
+   1000 and fs_info->last_trans_committed has a value of 999, so it
+   proceeds to logging the respective file extent item and all the
+   checksums covering its range.
+
+   So we end up wasting time since the extent was already persisted and
+   is reachable through the trees pointed to by the super block committed
+   by transaction 1000.
+
+So just fix this by comparing the extent maps generation against the
+generation of the transaction handle - if it is smaller then the id in the
+handle, we know the extent was already persisted and we do not need to log
+it.
+
+This patch belongs to a patch set that is comprised of the following
+patches:
+
   btrfs: fix race causing unnecessary inode logging during link and rename
   btrfs: fix race that results in logging old extents during a fast fsync
   btrfs: fix race that causes unnecessary logging of ancestor inodes
@@ -68,10 +101,41 @@ Filipe Manana (6):
   btrfs: fix race leading to unnecessary transaction commit when logging inode
   btrfs: do not block inode logging for so long during transaction commit
 
- fs/btrfs/ctree.h    |   2 +-
- fs/btrfs/tree-log.c | 101 +++++++++++++++++++++++---------------------
- 2 files changed, 53 insertions(+), 50 deletions(-)
+Performance results are mentioned in the change log of the last patch.
 
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/tree-log.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index b63f5c2b982a..596d72d239e9 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -4416,14 +4416,12 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
+ 	struct extent_map *em, *n;
+ 	struct list_head extents;
+ 	struct extent_map_tree *tree = &inode->extent_tree;
+-	u64 test_gen;
+ 	int ret = 0;
+ 	int num = 0;
+ 
+ 	INIT_LIST_HEAD(&extents);
+ 
+ 	write_lock(&tree->lock);
+-	test_gen = root->fs_info->last_trans_committed;
+ 
+ 	list_for_each_entry_safe(em, n, &tree->modified_extents, list) {
+ 		list_del_init(&em->list);
+@@ -4439,7 +4437,7 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
+ 			goto process;
+ 		}
+ 
+-		if (em->generation <= test_gen)
++		if (em->generation < trans->transid)
+ 			continue;
+ 
+ 		/* We log prealloc extents beyond eof later. */
 -- 
 2.28.0
 

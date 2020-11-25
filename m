@@ -6,28 +6,28 @@ X-Spam-Status: No, score=-5.3 required=3.0 tests=BAYES_00,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
 	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EDA44C8300C
-	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Nov 2020 22:09:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6BF25C56202
+	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Nov 2020 22:18:27 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id AC5F52075A
-	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Nov 2020 22:09:41 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1982C221F8
+	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Nov 2020 22:18:26 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1733120AbgKYWJZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 25 Nov 2020 17:09:25 -0500
-Received: from mx2.suse.de ([195.135.220.15]:38378 "EHLO mx2.suse.de"
+        id S1732984AbgKYWSL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 25 Nov 2020 17:18:11 -0500
+Received: from mx2.suse.de ([195.135.220.15]:40742 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1732292AbgKYWJV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 25 Nov 2020 17:09:21 -0500
+        id S1730293AbgKYWSK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 25 Nov 2020 17:18:10 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id A1627AC2D;
-        Wed, 25 Nov 2020 22:09:19 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 17353ABDE;
+        Wed, 25 Nov 2020 22:18:09 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 54545DA7B4; Wed, 25 Nov 2020 23:07:50 +0100 (CET)
-Date:   Wed, 25 Nov 2020 23:07:50 +0100
+        id BC311DA7B4; Wed, 25 Nov 2020 23:16:39 +0100 (CET)
+Date:   Wed, 25 Nov 2020 23:16:39 +0100
 From:   David Sterba <dsterba@suse.cz>
-To:     dsterba@suse.cz, Naohiro Aota <naohiro.aota@wdc.com>,
-        linux-btrfs@vger.kernel.org, dsterba@suse.com, hare@suse.com,
+To:     Naohiro Aota <naohiro.aota@wdc.com>
+Cc:     linux-btrfs@vger.kernel.org, dsterba@suse.com, hare@suse.com,
         linux-fsdevel@vger.kernel.org, Jens Axboe <axboe@kernel.dk>,
         Christoph Hellwig <hch@infradead.org>,
         "Darrick J. Wong" <darrick.wong@oracle.com>,
@@ -35,7 +35,7 @@ To:     dsterba@suse.cz, Naohiro Aota <naohiro.aota@wdc.com>,
         Josef Bacik <josef@toxicpanda.com>
 Subject: Re: [PATCH v10 04/41] btrfs: get zone information of zoned block
  devices
-Message-ID: <20201125220750.GQ6430@twin.jikos.cz>
+Message-ID: <20201125221639.GR6430@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 Mail-Followup-To: dsterba@suse.cz, Naohiro Aota <naohiro.aota@wdc.com>,
         linux-btrfs@vger.kernel.org, dsterba@suse.com, hare@suse.com,
@@ -46,35 +46,29 @@ Mail-Followup-To: dsterba@suse.cz, Naohiro Aota <naohiro.aota@wdc.com>,
         Josef Bacik <josef@toxicpanda.com>
 References: <cover.1605007036.git.naohiro.aota@wdc.com>
  <cf46f0aef5a214cae8bacb2be231efed5febef5f.1605007036.git.naohiro.aota@wdc.com>
- <20201125214753.GP6430@twin.jikos.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20201125214753.GP6430@twin.jikos.cz>
+In-Reply-To: <cf46f0aef5a214cae8bacb2be231efed5febef5f.1605007036.git.naohiro.aota@wdc.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Nov 25, 2020 at 10:47:53PM +0100, David Sterba wrote:
-> On Tue, Nov 10, 2020 at 08:26:07PM +0900, Naohiro Aota wrote:
-> > +int btrfs_get_dev_zone_info(struct btrfs_device *device)
-> > +{
-> > +	struct btrfs_zoned_device_info *zone_info = NULL;
-> > +	struct block_device *bdev = device->bdev;
-> > +	sector_t nr_sectors = bdev->bd_part->nr_sects;
-> > +	sector_t sector = 0;
-> 
-> I'd rather replace the sector_t types with u64. The type is unsigned
-> long and does not have the same width on 32/64 bit. The typecasts must
-> be used and if not, bugs happen (and happened).
+On Tue, Nov 10, 2020 at 08:26:07PM +0900, Naohiro Aota wrote:
+> +	/* Get zones type */
+> +	while (sector < nr_sectors) {
+> +		nr_zones = BTRFS_REPORT_NR_ZONES;
+> +		ret = btrfs_get_dev_zones(device, sector << SECTOR_SHIFT, zones,
+> +					  &nr_zones);
+> +		if (ret)
+> +			goto out;
+> +
+> +		for (i = 0; i < nr_zones; i++) {
+> +			if (zones[i].type == BLK_ZONE_TYPE_SEQWRITE_REQ)
+> +				set_bit(nreported, zone_info->seq_zones);
+> +			if (zones[i].cond == BLK_ZONE_COND_EMPTY)
+> +				set_bit(nreported, zone_info->empty_zones);
 
-Like in the same function a few lines below
-
-   95         /* Get zones type */
-   96         while (sector < nr_sectors) {
-   97                 nr_zones = BTRFS_REPORT_NR_ZONES;
-   98                 ret = btrfs_get_dev_zones(device, sector << SECTOR_SHIFT, zones,
-   99                                           &nr_zones);
-
-sector without a type cast to u64
+set_bit is atomic and it's not needed as nothing else could be touching
+the bitmap, so I'll switch it to plain __set_bit.

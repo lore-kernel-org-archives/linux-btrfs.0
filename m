@@ -2,237 +2,152 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-19.0 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	MSGID_FROM_MTA_HEADER,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 78B1BC64E7B
-	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Nov 2020 12:19:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0AF92C6379D
+	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Nov 2020 15:17:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 23BFB206F7
-	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Nov 2020 12:19:51 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 784622087C
+	for <linux-btrfs@archiver.kernel.org>; Wed, 25 Nov 2020 15:17:12 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=kernel.org header.i=@kernel.org header.b="VLipUE0o"
+	dkim=pass (1024-bit key) header.d=panasas.com header.i=@panasas.com header.b="kr9F3q/I"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729111AbgKYMTh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 25 Nov 2020 07:19:37 -0500
-Received: from mail.kernel.org ([198.145.29.99]:44974 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727349AbgKYMTh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 25 Nov 2020 07:19:37 -0500
-Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 6210C206E5
-        for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2020 12:19:35 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1606306775;
-        bh=7tX5kVbdtQWxW/gqvQpsaI7tBZlcMMawPcQJV9JQDj8=;
-        h=From:To:Subject:Date:In-Reply-To:References:In-Reply-To:
-         References:From;
-        b=VLipUE0o2XfDXmhRFT07CiZvpJITGWbvh9uwspgmRypuxMiInKZVIOrEX251wwW5f
-         RD4FIjOGcN3hsUmLxpHAPz0cPIM/+Q3cfInQbW0rVq5vgurW96hielNNCN6Yw9cFUm
-         qcIWIBA9lZMGUk5HJRXzp1ra90d1RosfbRKdkqMM=
-From:   fdmanana@kernel.org
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 4/6] btrfs: fix race that makes inode logging fallback to transaction commit
-Date:   Wed, 25 Nov 2020 12:19:26 +0000
-Message-Id: <cf5b353c08568cd134afd098f6dbf62b72f02ba7.1606305501.git.fdmanana@suse.com>
-X-Mailer: git-send-email 2.17.1
-In-Reply-To: <cover.1606305501.git.fdmanana@suse.com>
-References: <cover.1606305501.git.fdmanana@suse.com>
-In-Reply-To: <cover.1606305501.git.fdmanana@suse.com>
-References: <cover.1606305501.git.fdmanana@suse.com>
+        id S1729971AbgKYPRA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 25 Nov 2020 10:17:00 -0500
+Received: from mail-dm6nam10on2070.outbound.protection.outlook.com ([40.107.93.70]:53273
+        "EHLO NAM10-DM6-obe.outbound.protection.outlook.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726295AbgKYPQ7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 25 Nov 2020 10:16:59 -0500
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=n/UeYbWlsUujXVEtp+e+hvnWbhtjmxi9WO7mFxUjMJ2JJ+Gvxr21M1zGEoPb+LPHI0AfJFdEFedWwntRdXqSh24JRTuVGOtlz2O4w1ZyrXZB3QSyaVSzz6zBQC3Mod9rUZ3gcqaCxEEUvjcdK2lq8jdkoms6bvR0tSGJoC064HaM4CGy/KcVD+5TjBBfBBdpgF+gVIgJZRd3UKeesVFvpdJH9SaqciKPwOue4WWWD1TI5hZqNYzB4LsWjyqH+BULZdZHyrrE/PZJLNdL+69LYTV8EyX414BDkxGkz58uy8oZeZKsd+R/HCiB3+stbuqpmUDajlBMW+MTEjOYnZdXbA==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=QjjvTgjcFB4YDyPypmXulCl5HnzYc+zDN8MpLVjfLj0=;
+ b=RLnBT+HzQcftiK2hhfciWncGe4ttvFvlTeuUcNL+T1R3Yzd0OAhLPNs6QrjvbBrk+qUw0xqD1CpnKxGkRjWOoGn4WId+YzWKrMvk09YllYVdm3MNgEVE9PvdR5wyV2l/cJ0iXSBuQb95uqaVa1r66mNPhLF2Woh+QGRhdKdwEA5rOE1/ZKKEn3l5wNRZWRUPacuyxIuze5B0Tgi4S4THmXSl5SROEsu0rsmArsleKOXYt3Ed+S9jQBNfDKOW7W9EuFO4E4NwIIyssaVmkDBP+z1kD2od2QIMMgKpj3/hTyhV44LOdIkgZ6G+hUT1MUYAF6C0ZEExOV35uu/YkUe7mw==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=panasas.com; dmarc=pass action=none header.from=panasas.com;
+ dkim=pass header.d=panasas.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=panasas.com;
+ s=selector1;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=QjjvTgjcFB4YDyPypmXulCl5HnzYc+zDN8MpLVjfLj0=;
+ b=kr9F3q/ID7iL4gBEkADok0UHECjKzCi6Mljz3mDQIpGSFUICnuRQp6mmodvGECqQYYBOu3SYumUs6ynFFM08BXaPYjVvI+gqgd9Zwpjwqw+hxtasKOgJbZIkkqD9tT+1e3kLHlHS+GTdeilHoADOOoPvKq36when8LXMyyrztwc=
+Authentication-Results: vger.kernel.org; dkim=none (message not signed)
+ header.d=none;vger.kernel.org; dmarc=none action=none
+ header.from=panasas.com;
+Received: from BYAPR08MB5109.namprd08.prod.outlook.com (2603:10b6:a03:67::33)
+ by SJ0PR08MB6717.namprd08.prod.outlook.com (2603:10b6:a03:2ac::13) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.3611.21; Wed, 25 Nov
+ 2020 15:16:54 +0000
+Received: from BYAPR08MB5109.namprd08.prod.outlook.com
+ ([fe80::f8b4:660c:838c:7040]) by BYAPR08MB5109.namprd08.prod.outlook.com
+ ([fe80::f8b4:660c:838c:7040%7]) with mapi id 15.20.3611.022; Wed, 25 Nov 2020
+ 15:16:54 +0000
+Subject: Re: Snapshots, Dirty Data, and Power Failure
+To:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <b58c6024-1692-7e43-c0a5-182b1fae1cca@panasas.com>
+ <20201125042449.GE31381@hungrycats.org>
+From:   "Ellis H. Wilson III" <ellisw@panasas.com>
+Message-ID: <60820e39-5277-7d16-f3c2-bca7c3b44990@panasas.com>
+Date:   Wed, 25 Nov 2020 10:16:51 -0500
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.11.0
+In-Reply-To: <20201125042449.GE31381@hungrycats.org>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
+X-Originating-IP: [96.236.219.216]
+X-ClientProxiedBy: MN2PR15CA0016.namprd15.prod.outlook.com
+ (2603:10b6:208:1b4::29) To BYAPR08MB5109.namprd08.prod.outlook.com
+ (2603:10b6:a03:67::33)
+MIME-Version: 1.0
+X-MS-Exchange-MessageSentRepresentingType: 1
+Received: from [192.168.1.2] (96.236.219.216) by MN2PR15CA0016.namprd15.prod.outlook.com (2603:10b6:208:1b4::29) with Microsoft SMTP Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.3611.20 via Frontend Transport; Wed, 25 Nov 2020 15:16:54 +0000
+X-MS-PublicTrafficType: Email
+X-MS-Office365-Filtering-Correlation-Id: 885cfe89-da96-43ae-61eb-08d89155249e
+X-MS-TrafficTypeDiagnostic: SJ0PR08MB6717:
+X-Microsoft-Antispam-PRVS: <SJ0PR08MB67179069E2BF9B11D608808BC2FA0@SJ0PR08MB6717.namprd08.prod.outlook.com>
+X-MS-Oob-TLC-OOBClassifiers: OLM:8882;
+X-MS-Exchange-SenderADCheck: 1
+X-Microsoft-Antispam: BCL:0;
+X-Microsoft-Antispam-Message-Info: DYErXzy3xDgR36Kz0E7Mow0TL4L9+/wlln5y1q2iyR0GTcZaZZFI2CJ1J+IIedR0Zl6etBqaz4ovYeZ115XqP7iUpiz7qxAtgKrckKWTbE/s3AqvD1IcV/NYOvdTGS8PWoQE5FuyrurfIRheGiKAl2Tb/YyHOCFbiz7eHNbL462WfM9iXB6SKLQI1Ck5R89AmCLP/Jn1ljuuiChNLsQ3wYD9Lqlsty3RZ6XMiH6vuOvbvWekVFI8Y6977vY8AsGk8naFvy8uPRI7ckeJrMsUZk95MAQaR2/RAGwzP6ruPQQWOKmnP+BmmH3AtWXjq9nH9tn09G0dYeS4fF5Kv973pqBmc6E5FGCSZDXdeCRi5HDQLaCOvl40rItXIUwzQUUxxjbIcVm7gl1K87USmdCxkQ==
+X-Forefront-Antispam-Report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:BYAPR08MB5109.namprd08.prod.outlook.com;PTR:;CAT:NONE;SFS:(39840400004)(396003)(136003)(346002)(366004)(376002)(8676002)(2906002)(478600001)(16576012)(8936002)(5660300002)(66556008)(86362001)(66946007)(316002)(36756003)(66476007)(31696002)(2616005)(956004)(31686004)(6486002)(4326008)(26005)(186003)(53546011)(83380400001)(16526019)(6916009)(6666004)(52116002)(14143004)(43740500002);DIR:OUT;SFP:1101;
+X-MS-Exchange-AntiSpam-MessageData: /+UsBngtzUiaiCfvKqUEIzJuLF0oT1Mfyjrfq4tCv1mLsq1pR9xYp2TYcv8yYE+WIHwOtg1c/Q41lRV1vbDRk2ehxu1yuCfNtvajJo7gU8hPDDl0ukKV7wWJo9j42/4AUUWQQkY0FmbQGTkCJwlpYO76a7fAN0skkdONDAlBksobWG+k86WUcWYOe6QaRjb93rXJ8KToPVFyND81VkH0ODZYMp9FzehRAcX8u+57SDZlWr+5h6p3t8zMQi3DScuH4Nxhh6h3v33ugU01JFcgQc4Bnk6WD6YGUtRKhVFBDuhJEXU8Hk9sMONviJGrpjJPpAnR2WpvrcRFGX1vv3c16Va75b1x9L/pdxSS6hQHa1lYYmVjdovT1gynZsI4LrEAYgb+Z8ZaRZku7Mi7y+JmmfR4zHTMvge4KLVETuti8qNAal+yqu4mVUux1zMHnoYAzZs4ONWyUcPWimuDT+PxZq81Dtd+ZV+RkN8Tp1ll6bklPdc9vR0+Mipb8S5hHzgSTnm+po+pzb1dbIRE0PkiU+kR9OOxMV5/tGeg7OjMt41A2cZF0O/ZuRR+3Ho+nTB1rgS0W+EL4fPt6ISy8a2mLEw7rRwnuWaN7NJyNkcL/OhVn2n10nLf6Pf9ZaxBEay15AGM9I0uxPWrls9kKL8WDMZNfT5x7IhCiV986SIxdO+uYw9SDO7L40Sfovf1jYxzXYxxnnlEBSndd4LGI0Spd+TORm9yJG7tHRyHp2iCt6nVIQrimUv0WDseL+4X9cDNZuK/IwJVbLyaUOanAdwuzJm8EpGQ2lX8I18XC3o8WYke7sbxTmM5xkqC/rKsv2RClspC33wRsZrwygZMkV5DOasBH3YyImGGMtv1AvKRAHx/CEYfYtmYxAiHg6fK2vn9nK9kiKNVCsoN03XDLO6zWA==
+X-OriginatorOrg: panasas.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 885cfe89-da96-43ae-61eb-08d89155249e
+X-MS-Exchange-CrossTenant-AuthSource: BYAPR08MB5109.namprd08.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 25 Nov 2020 15:16:54.6761
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: acf01c9d-c699-42af-bdbb-44bf582e60b0
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: Pnp9NFCyQQ8dNyYqMTQMkFtJppqs2ERhX7i80YoTu+tabZGLvn1RGjE+AEu74XA+AL0T908JateLk6cFzKNyFg==
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: SJ0PR08MB6717
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+On 11/24/20 11:24 PM, Zygo Blaxell wrote:
+> On Tue, Nov 24, 2020 at 11:03:15AM -0500, Ellis H. Wilson III wrote:
+>> Hi all,
+>>
+>> Back with more esoteric questions.  We find that snapshots on an idle BTRFS
+>> subvolume are extremely fast, but if there is plenty of data in-flight
+>> (i.e., in the buffer cache and not yet sync'd down) it can take dozens of
+>> seconds to a minute or so for the snapshot to return successfully.
+>>
+>> I presume this delay is for the data that was accepted but not yet sync'd to
+>> disk to get flushed out prior to taking the snapshot. However, I don't have
+>> details to answer the following questions aside from spending a long time in
+>> the code:
+>>
+>> 1. Is my presumption just incorrect and there is some other time-consuming
+>> mechanics taking place during a snapshot that would cause these longer times
+>> for it to return successfully?
+> 
+> As far as I can tell, the upper limit of snapshot creation time is bounded
+> only the size of the filesystem divided by the average write speed, i.e.
+> it's possible to keep 'btrfs sub snapshot' running for as long as it takes
+> to fill the disk.
 
-When logging an inode and the previous transaction is still committing, we
-have a time window where we can end up incorrectly think an inode has its
-last_unlink_trans field with a value greater than the last transaction
-committed, which results in the logging to fallback to a full transaction
-commit, which is usually much more expensive than doing a log commit.
+Ahhh.  That is extremely enlightening, and exactly what we're seeing.  I 
+presumed there was some form of quiescence when a snapshot was taken 
+such that writes that were inbound would block until it was complete, 
+but I couldn't reason about why it was taking SO long to get everything 
+flushed out.  This exactly explains it as we only block out incoming 
+writes to the subvolume being snapshotted -- not other volumes.
 
-The race is described by the following steps:
+>> 4. Is there any way to efficiently take a snapshot of a bunch of subvolumes
+>> at once?  If the answer to #2 is that all dirty data is sync'd for all
+>> subvolumes for a snapshot of any subvolume, we're liable to have
+>> significantly less to do on the consecutive subvolumes that are getting
+>> snapshotted right afterwards, but I believe these still imply a BTRFS root
+>> commit, and as such can be expensive in terms of disk I/O (at least linear
+>> with the number of 'simultaneous' snapshots).
+> 
+> If the snapshots are being created in the same directory, then each one
+> will try to hold a VFS-level directory lock to create the new directory
+> entry, so they can only execute sequentially.
+> 
+> If the snapshots are being created in different directories, then it
+> should be possible to run the snapshot creates in parallel.  They will
+> likely all end at close to the same time, though, as they're all trying
+> to complete a filesystem-wide flush, and none of them can proceed until
+> that is done.  An aggressive writer process could still add arbitrary
+> delays.
 
-1) We are at transaction 1000;
+Very helpful and yes the snapshots in this case are being done to 
+different subvolumes.  I think if we can solve the writer problem (I 
+have some ideas) on our side then we should be good to go.
 
-2) We modify an inode X (a directory) using transaction 1000 and set its
-   last_unlink_trans field to 1000, because for example we removed one
-   of its subdirectories;
+Thank you very much for your time Zygo!
 
-3) We create a new inode Y with a dentry in inode X using transaction 1000,
-   so its generation field is set to 1000;
-
-4) The commit for transaction 1000 is started by task A;
-
-5) The task committing transaction 1000 sets the transaction state to
-   unblocked, writes the dirty extent buffers and the super blocks, then
-   unlocks tree_log_mutex;
-
-6) Some task starts a new transaction with a generation of 1001;
-
-7) We do some modification to inode Y (using transaction 1001);
-
-8) The transaction 1000 commit starts unpinning extents. At this point
-   fs_info->last_trans_committed still has a value of 999;
-
-9) Task B starts an fsync on inode Y, and gets a handle for transaction
-   1001. When it gets to check_parent_dirs_for_sync() it does the checking
-   of the ancestor dentries because the following check does not evaluate
-   to true:
-
-       if (S_ISREG(inode->vfs_inode.i_mode) &&
-           inode->generation <= last_committed &&
-           inode->last_unlink_trans <= last_committed)
-               goto out;
-
-   The generation value for inode Y is 1000 and last_committed, which has
-   the value read from fs_info->last_trans_committed, has a value of 999,
-   so that check evaluates to false and we proceed to check the ancestor
-   inodes.
-
-   Once we get to the first ancestor, inode X, we call
-   btrfs_must_commit_transaction() on it, which evaluates to true:
-
-   static bool btrfs_must_commit_transaction(...)
-   {
-       struct btrfs_fs_info *fs_info = inode->root->fs_info;
-       bool ret = false;
-
-       mutex_lock(&inode->log_mutex);
-       if (inode->last_unlink_trans > fs_info->last_trans_committed) {
-           /*
-            * Make sure any commits to the log are forced to be full
-            * commits.
-            */
-            btrfs_set_log_full_commit(trans);
-            ret = true;
-       }
-    (...)
-
-    because inode's X last_unlink_trans has a value of 1000 and
-    fs_info->last_trans_committed still has a value of 999, it returns
-    true to check_parent_dirs_for_sync(), making it return 1 which is
-    propagated up to btrfs_sync_file(), causing it to fallback to a full
-    transaction commit of transaction 1001.
-
-    We should have not falled back to commit transaction 1001, since inode
-    X had last_unlink_trans set to 1000 and the super blocks for
-    transaction 1000 were already written. So while not resulting in a
-    functional problem, it leads to a lot more work and higher latencies
-    for a fsync since committing a transaction is usually more expensive
-    than committing a log (if other filesystem changes happened under that
-    transaction).
-
-Similar problem happens when logging directories, for the same reason as
-btrfs_must_commit_transaction() returns true on an inode with its
-last_unlink_trans having the generation of the previous transaction and
-that transaction is still committing, unpinning its freed extents.
-
-So fix this by comparing last_unlink_trans with the id of the current
-transaction instead of fs_info->last_trans_committed.
-
-This case is often hit when running dbench for a long enough duration, as
-it does lots of rename and rmdir operations (both update the field
-last_unkink_trans of an inode) and fsyncs of files and directories.
-
-This patch belongs to a patch set that is comprised of the following
-patches:
-
-  btrfs: fix race causing unnecessary inode logging during link and rename
-  btrfs: fix race that results in logging old extents during a fast fsync
-  btrfs: fix race that causes unnecessary logging of ancestor inodes
-  btrfs: fix race that makes inode logging fallback to transaction commit
-  btrfs: fix race leading to unnecessary transaction commit when logging inode
-  btrfs: do not block inode logging for so long during transaction commit
-
-Performance results are mentioned in the change log of the last patch.
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/tree-log.c | 20 ++++++++------------
- 1 file changed, 8 insertions(+), 12 deletions(-)
-
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 6313c50f5e33..592a50d9697f 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -5449,11 +5449,10 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
- static bool btrfs_must_commit_transaction(struct btrfs_trans_handle *trans,
- 					  struct btrfs_inode *inode)
- {
--	struct btrfs_fs_info *fs_info = inode->root->fs_info;
- 	bool ret = false;
- 
- 	mutex_lock(&inode->log_mutex);
--	if (inode->last_unlink_trans > fs_info->last_trans_committed) {
-+	if (inode->last_unlink_trans >= trans->transid) {
- 		/*
- 		 * Make sure any commits to the log are forced to be full
- 		 * commits.
-@@ -5475,8 +5474,7 @@ static bool btrfs_must_commit_transaction(struct btrfs_trans_handle *trans,
- static noinline int check_parent_dirs_for_sync(struct btrfs_trans_handle *trans,
- 					       struct btrfs_inode *inode,
- 					       struct dentry *parent,
--					       struct super_block *sb,
--					       u64 last_committed)
-+					       struct super_block *sb)
- {
- 	int ret = 0;
- 	struct dentry *old_parent = NULL;
-@@ -5488,8 +5486,8 @@ static noinline int check_parent_dirs_for_sync(struct btrfs_trans_handle *trans,
- 	 * and other fun in this file.
- 	 */
- 	if (S_ISREG(inode->vfs_inode.i_mode) &&
--	    inode->generation <= last_committed &&
--	    inode->last_unlink_trans <= last_committed)
-+	    inode->generation < trans->transid &&
-+	    inode->last_unlink_trans < trans->transid)
- 		goto out;
- 
- 	if (!S_ISDIR(inode->vfs_inode.i_mode)) {
-@@ -6024,7 +6022,6 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
- 	struct btrfs_fs_info *fs_info = root->fs_info;
- 	struct super_block *sb;
- 	int ret = 0;
--	u64 last_committed = fs_info->last_trans_committed;
- 	bool log_dentries = false;
- 
- 	sb = inode->vfs_inode.i_sb;
-@@ -6049,8 +6046,7 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
- 		goto end_no_trans;
- 	}
- 
--	ret = check_parent_dirs_for_sync(trans, inode, parent, sb,
--			last_committed);
-+	ret = check_parent_dirs_for_sync(trans, inode, parent, sb);
- 	if (ret)
- 		goto end_no_trans;
- 
-@@ -6080,8 +6076,8 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
- 	 * and other fun in this file.
- 	 */
- 	if (S_ISREG(inode->vfs_inode.i_mode) &&
--	    inode->generation <= last_committed &&
--	    inode->last_unlink_trans <= last_committed) {
-+	    inode->generation < trans->transid &&
-+	    inode->last_unlink_trans < trans->transid) {
- 		ret = 0;
- 		goto end_trans;
- 	}
-@@ -6130,7 +6126,7 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
- 	 * but the file inode does not have a matching BTRFS_INODE_REF_KEY item
- 	 * and has a link count of 2.
- 	 */
--	if (inode->last_unlink_trans > last_committed) {
-+	if (inode->last_unlink_trans >= trans->transid) {
- 		ret = btrfs_log_all_parents(trans, inode, ctx);
- 		if (ret)
- 			goto end_trans;
--- 
-2.28.0
-
+ellis

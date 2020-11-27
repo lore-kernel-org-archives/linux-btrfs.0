@@ -6,68 +6,90 @@ X-Spam-Status: No, score=-5.2 required=3.0 tests=BAYES_00,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
 	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 85295C3E8C5
-	for <linux-btrfs@archiver.kernel.org>; Fri, 27 Nov 2020 20:05:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 744E9C5519F
+	for <linux-btrfs@archiver.kernel.org>; Fri, 27 Nov 2020 20:33:51 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 555EA20B80
-	for <linux-btrfs@archiver.kernel.org>; Fri, 27 Nov 2020 20:05:22 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2627E21D7F
+	for <linux-btrfs@archiver.kernel.org>; Fri, 27 Nov 2020 20:33:51 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731371AbgK0UEH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 27 Nov 2020 15:04:07 -0500
-Received: from mx2.suse.de ([195.135.220.15]:36408 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1731305AbgK0UDg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 27 Nov 2020 15:03:36 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id CE4C7AC55;
-        Fri, 27 Nov 2020 19:29:38 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 89B00DA7D9; Fri, 27 Nov 2020 20:28:08 +0100 (CET)
-Date:   Fri, 27 Nov 2020 20:28:08 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Naohiro Aota <naohiro.aota@wdc.com>
-Cc:     linux-btrfs@vger.kernel.org, dsterba@suse.com, hare@suse.com,
-        linux-fsdevel@vger.kernel.org, Jens Axboe <axboe@kernel.dk>,
-        Christoph Hellwig <hch@infradead.org>,
-        "Darrick J. Wong" <darrick.wong@oracle.com>
-Subject: Re: [PATCH v10 00/41] btrfs: zoned block device support
-Message-ID: <20201127192808.GD6430@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Naohiro Aota <naohiro.aota@wdc.com>,
-        linux-btrfs@vger.kernel.org, dsterba@suse.com, hare@suse.com,
-        linux-fsdevel@vger.kernel.org, Jens Axboe <axboe@kernel.dk>,
-        Christoph Hellwig <hch@infradead.org>,
-        "Darrick J. Wong" <darrick.wong@oracle.com>
-References: <cover.1605007036.git.naohiro.aota@wdc.com>
+        id S1731214AbgK0UdS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 27 Nov 2020 15:33:18 -0500
+Received: from ste-pvt-msa2.bahnhof.se ([213.80.101.71]:62317 "EHLO
+        ste-pvt-msa2.bahnhof.se" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1732382AbgK0Ubj (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 27 Nov 2020 15:31:39 -0500
+X-Greylist: delayed 578 seconds by postgrey-1.27 at vger.kernel.org; Fri, 27 Nov 2020 15:31:38 EST
+Received: from localhost (localhost [127.0.0.1])
+        by ste-pvt-msa2.bahnhof.se (Postfix) with ESMTP id 4CB743FC9E
+        for <linux-btrfs@vger.kernel.org>; Fri, 27 Nov 2020 21:20:43 +0100 (CET)
+X-Virus-Scanned: Debian amavisd-new at bahnhof.se
+Received: from ste-pvt-msa2.bahnhof.se ([127.0.0.1])
+        by localhost (ste-ftg-msa2.bahnhof.se [127.0.0.1]) (amavisd-new, port 10024)
+        with ESMTP id Gb7vaeflj_yx for <linux-btrfs@vger.kernel.org>;
+        Fri, 27 Nov 2020 21:20:42 +0100 (CET)
+Received: by ste-pvt-msa2.bahnhof.se (Postfix) with ESMTPA id 218773FA60
+        for <linux-btrfs@vger.kernel.org>; Fri, 27 Nov 2020 21:20:41 +0100 (CET)
+Received: from [192.168.0.10] (port=62705)
+        by tnonline.net with esmtpsa  (TLS1.3) tls TLS_AES_128_GCM_SHA256
+        (Exim 4.93.0.4)
+        (envelope-from <mail@lechevalier.se>)
+        id 1kikEw-00033p-Iz
+        for linux-btrfs@vger.kernel.org; Fri, 27 Nov 2020 21:21:10 +0100
+From:   A L <mail@lechevalier.se>
+Subject: Change Btrfs defaults on LUKS container on SSDs to dup metadata
+ profile
+To:     linux-btrfs@vger.kernel.org
+Message-ID: <bc280edd-873c-4197-940b-03c6f86b740d@lechevalier.se>
+Date:   Fri, 27 Nov 2020 21:21:11 +0100
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:78.0) Gecko/20100101
+ Thunderbird/78.5.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <cover.1605007036.git.naohiro.aota@wdc.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: 8bit
+Content-Language: en-GB
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Nov 10, 2020 at 08:26:03PM +0900, Naohiro Aota wrote:
-> Johannes Thumshirn (1):
->   block: add bio_add_zone_append_page
-> 
-> Naohiro Aota (40):
->   iomap: support REQ_OP_ZONE_APPEND
+Hi,
 
-From that one
+By default, Btrfs is using 'single' metadata profile at mkfs time for 
+non-rotational devices. I've seen many discussions on that topic before 
+on the pros and cons of that choice. However, during testing of LUKS I 
+noticed that Btrfs is still choosing to use 'single' metadata profile.
 
->   btrfs: introduce ZONED feature flag
->   btrfs: get zone information of zoned block devices
->   btrfs: check and enable ZONED mode
->   btrfs: introduce max_zone_append_size
->   btrfs: disallow space_cache in ZONED mode
->   btrfs: disallow NODATACOW in ZONED mode
->   btrfs: disable fallocate in ZONED mode
->   btrfs: disallow mixed-bg in ZONED mode
->   btrfs: implement log-structured superblock for ZONED mode
+Here is an example:
 
-up to this patch added to misc-next. There's still open question
-regarding the superblock copies, we had a chat about that with Johanness
-so he'll tell you more.
+    # mkfs.btrfs -L luks /dev/mapper/luks
+    btrfs-progs v5.9
+    See http://btrfs.wiki.kernel.org for more information.
+
+    Detected a SSD, turning off metadata duplication.  Mkfs with -m dup
+    if you want to force metadata duplication.
+    Label:              luks
+    UUID:               867d9303-ef43-4770-b24c-6819350a0084
+    Node size:          16384
+    Sector size:        4096
+    Filesystem size:    7.98GiB
+    Block group profiles:
+       Data:             single            8.00MiB
+       Metadata:         single            8.00MiB
+       System:           single            4.00MiB
+    SSD detected:       yes
+    Incompat features:  extref, skinny-metadata
+    Runtime features:
+    Checksum:           crc32c
+    Number of devices:  1
+    Devices:
+        ID        SIZE  PATH
+         1     7.98GiB  /dev/mapper/luks
+
+I think that Btrfs should choose 'dup' mode instead of 'single' on 
+encrypted devices since there is no chance that data can be 
+de-duplicated by any SSD firmware when running on LUKS. Is there any way 
+that Btrfs could detect this scenario? I have also noted a couple of 
+people on the #btrfs IRC channel having issues that could have been 
+helped with the dup profile.
+
+Thanks.

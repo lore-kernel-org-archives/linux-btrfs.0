@@ -2,214 +2,72 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-16.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.2 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8F6EDC63777
-	for <linux-btrfs@archiver.kernel.org>; Fri, 27 Nov 2020 19:58:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 85295C3E8C5
+	for <linux-btrfs@archiver.kernel.org>; Fri, 27 Nov 2020 20:05:22 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 4D466208D5
-	for <linux-btrfs@archiver.kernel.org>; Fri, 27 Nov 2020 19:58:46 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=mpdesouza.com header.i=@mpdesouza.com header.b="uAHYqKP6"
+	by mail.kernel.org (Postfix) with ESMTP id 555EA20B80
+	for <linux-btrfs@archiver.kernel.org>; Fri, 27 Nov 2020 20:05:22 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729872AbgK0T6L (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 27 Nov 2020 14:58:11 -0500
-Received: from gateway24.websitewelcome.com ([192.185.51.251]:16047 "EHLO
-        gateway24.websitewelcome.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1730832AbgK0Typ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 27 Nov 2020 14:54:45 -0500
-X-Greylist: delayed 723 seconds by postgrey-1.27 at vger.kernel.org; Fri, 27 Nov 2020 14:54:33 EST
-Received: from cm10.websitewelcome.com (cm10.websitewelcome.com [100.42.49.4])
-        by gateway24.websitewelcome.com (Postfix) with ESMTP id 472194BB98
-        for <linux-btrfs@vger.kernel.org>; Fri, 27 Nov 2020 13:31:28 -0600 (CST)
-Received: from br540.hostgator.com.br ([108.179.252.180])
-        by cmsmtp with SMTP
-        id ijSqkEXceuDoAijSqkpWgn; Fri, 27 Nov 2020 13:31:28 -0600
-X-Authority-Reason: nr=8
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=mpdesouza.com; s=default; h=Content-Transfer-Encoding:MIME-Version:
-        References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:
-        Content-Type:Content-ID:Content-Description:Resent-Date:Resent-From:
-        Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
-        List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-        bh=cxPF9r7TJ1ZNPalvmCjEm1iNV3uku0zoey/QWFeQ+Sg=; b=uAHYqKP671wjPXfOnFslbJgUhG
-        FS7cxBdpAF+s44bo2cQTD410ZVs64zDXF4nuYqW1AT7JPf8VdD5obt4EX9WUsmTutQNlcSCe1HxIX
-        7Dv0ld6HeGctyqqq96Qaevj5gQfrJHQxSRaOCNwYtwUeDqTgDxY19omWZeBRydIjDbZ4/9bqpYPcA
-        tAoWcAKSE3Ov8NyYdhxpiWjZNP9dh/sUh4nvqh1YeVSnFczyjjDvH8MLuOedMQRsfmDUE8pX9+SNS
-        VJZ2c5bdwLt/Sj0mF3VeyX+ndAeEjC3JibLrWjyGHcAC9/QatfjH3i68XWfCE6MC1ThY7TQOuiNu8
-        DzbNqHXQ==;
-Received: from 200.146.52.186.dynamic.dialup.gvt.net.br ([200.146.52.186]:60574 helo=localhost.suse.de)
-        by br540.hostgator.com.br with esmtpsa  (TLS1.2) tls TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
-        (Exim 4.93)
-        (envelope-from <marcos@mpdesouza.com>)
-        id 1kijSp-003Dm3-Lx; Fri, 27 Nov 2020 16:31:28 -0300
-From:   Marcos Paulo de Souza <marcos@mpdesouza.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     Marcos Paulo de Souza <mpdesouza@suse.com>, wqu@suse.com,
-        dsterba@suse.com
-Subject: [PATCH v4 1/3] btrfs-progs: Adapt find_mount_root to verify other fields of mntent struct
-Date:   Fri, 27 Nov 2020 16:30:33 -0300
-Message-Id: <20201127193035.19171-2-marcos@mpdesouza.com>
-X-Mailer: git-send-email 2.26.2
-In-Reply-To: <20201127193035.19171-1-marcos@mpdesouza.com>
-References: <20201127193035.19171-1-marcos@mpdesouza.com>
+        id S1731371AbgK0UEH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 27 Nov 2020 15:04:07 -0500
+Received: from mx2.suse.de ([195.135.220.15]:36408 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1731305AbgK0UDg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 27 Nov 2020 15:03:36 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.221.27])
+        by mx2.suse.de (Postfix) with ESMTP id CE4C7AC55;
+        Fri, 27 Nov 2020 19:29:38 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 89B00DA7D9; Fri, 27 Nov 2020 20:28:08 +0100 (CET)
+Date:   Fri, 27 Nov 2020 20:28:08 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Naohiro Aota <naohiro.aota@wdc.com>
+Cc:     linux-btrfs@vger.kernel.org, dsterba@suse.com, hare@suse.com,
+        linux-fsdevel@vger.kernel.org, Jens Axboe <axboe@kernel.dk>,
+        Christoph Hellwig <hch@infradead.org>,
+        "Darrick J. Wong" <darrick.wong@oracle.com>
+Subject: Re: [PATCH v10 00/41] btrfs: zoned block device support
+Message-ID: <20201127192808.GD6430@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Naohiro Aota <naohiro.aota@wdc.com>,
+        linux-btrfs@vger.kernel.org, dsterba@suse.com, hare@suse.com,
+        linux-fsdevel@vger.kernel.org, Jens Axboe <axboe@kernel.dk>,
+        Christoph Hellwig <hch@infradead.org>,
+        "Darrick J. Wong" <darrick.wong@oracle.com>
+References: <cover.1605007036.git.naohiro.aota@wdc.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-AntiAbuse: This header was added to track abuse, please include it with any abuse report
-X-AntiAbuse: Primary Hostname - br540.hostgator.com.br
-X-AntiAbuse: Original Domain - vger.kernel.org
-X-AntiAbuse: Originator/Caller UID/GID - [47 12] / [47 12]
-X-AntiAbuse: Sender Address Domain - mpdesouza.com
-X-BWhitelist: no
-X-Source-IP: 200.146.52.186
-X-Source-L: No
-X-Exim-ID: 1kijSp-003Dm3-Lx
-X-Source: 
-X-Source-Args: 
-X-Source-Dir: 
-X-Source-Sender: 200.146.52.186.dynamic.dialup.gvt.net.br (localhost.suse.de) [200.146.52.186]:60574
-X-Source-Auth: marcos@mpdesouza.com
-X-Email-Count: 8
-X-Source-Cap: bXBkZXNvNTM7bXBkZXNvNTM7YnI1NDAuaG9zdGdhdG9yLmNvbS5icg==
-X-Local-Domain: yes
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <cover.1605007036.git.naohiro.aota@wdc.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Marcos Paulo de Souza <mpdesouza@suse.com>
+On Tue, Nov 10, 2020 at 08:26:03PM +0900, Naohiro Aota wrote:
+> Johannes Thumshirn (1):
+>   block: add bio_add_zone_append_page
+> 
+> Naohiro Aota (40):
+>   iomap: support REQ_OP_ZONE_APPEND
 
-Currently find_mount_root searches for all btrfs filesystems
-mounted and comparing <path> with mnt_dir of each mountpoint.
+From that one
 
-But there are cases when we need to find the mountpoint for a determined
-subvolid or subvol path, and these informations are present in mnt_opts
-of mntent struct.
+>   btrfs: introduce ZONED feature flag
+>   btrfs: get zone information of zoned block devices
+>   btrfs: check and enable ZONED mode
+>   btrfs: introduce max_zone_append_size
+>   btrfs: disallow space_cache in ZONED mode
+>   btrfs: disallow NODATACOW in ZONED mode
+>   btrfs: disable fallocate in ZONED mode
+>   btrfs: disallow mixed-bg in ZONED mode
+>   btrfs: implement log-structured superblock for ZONED mode
 
-This patch adds two arguments to find_mount_root (data and flag). The
-data argument hold the information that we want to compare, and the flag
-argument specifies which field of mntent struct that we want to compare.
-Currently there is only one flag, BTRFS_FIND_ROOT_PATH, implementing the
-current behavior. The next patch will add a new flag to expand the functionality.
-
-Users of find_mount_root were changed, having the data argument the same
-as path, since they are only trying to find the mountpoint based on path alone.
-
-Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
----
- cmds/receive.c |  3 ++-
- cmds/send.c    |  6 ++++--
- common/utils.c | 15 ++++++++++++---
- common/utils.h |  8 +++++++-
- 4 files changed, 25 insertions(+), 7 deletions(-)
-
-diff --git a/cmds/receive.c b/cmds/receive.c
-index 2aaba3ff..dc64480e 100644
---- a/cmds/receive.c
-+++ b/cmds/receive.c
-@@ -1079,7 +1079,8 @@ static int do_receive(struct btrfs_receive *rctx, const char *tomnt,
- 	if (realmnt[0]) {
- 		rctx->root_path = realmnt;
- 	} else {
--		ret = find_mount_root(dest_dir_full_path, &rctx->root_path);
-+		ret = find_mount_root(dest_dir_full_path, dest_dir_full_path,
-+				BTRFS_FIND_ROOT_PATH, &rctx->root_path);
- 		if (ret < 0) {
- 			errno = -ret;
- 			error("failed to determine mount point for %s: %m",
-diff --git a/cmds/send.c b/cmds/send.c
-index b8e3ba12..7757f0da 100644
---- a/cmds/send.c
-+++ b/cmds/send.c
-@@ -329,7 +329,8 @@ static int init_root_path(struct btrfs_send *sctx, const char *subvol)
- 	if (sctx->root_path)
- 		goto out;
- 
--	ret = find_mount_root(subvol, &sctx->root_path);
-+	ret = find_mount_root(subvol, subvol, BTRFS_FIND_ROOT_PATH,
-+				&sctx->root_path);
- 	if (ret < 0) {
- 		errno = -ret;
- 		error("failed to determine mount point for %s: %m", subvol);
-@@ -659,7 +660,8 @@ static int cmd_send(const struct cmd_struct *cmd, int argc, char **argv)
- 			goto out;
- 		}
- 
--		ret = find_mount_root(subvol, &mount_root);
-+		ret = find_mount_root(subvol, subvol, BTRFS_FIND_ROOT_PATH,
-+					&mount_root);
- 		if (ret < 0) {
- 			errno = -ret;
- 			error("find_mount_root failed on %s: %m", subvol);
-diff --git a/common/utils.c b/common/utils.c
-index 1253e87d..1c264455 100644
---- a/common/utils.c
-+++ b/common/utils.c
-@@ -1248,7 +1248,7 @@ int ask_user(const char *question)
-  * return 1 if a mount point is found but not btrfs
-  * return <0 if something goes wrong
-  */
--int find_mount_root(const char *path, char **mount_root)
-+int find_mount_root(const char *path, const char *data, u8 flag, char **mount_root)
- {
- 	FILE *mnttab;
- 	int fd;
-@@ -1258,6 +1258,10 @@ int find_mount_root(const char *path, char **mount_root)
- 	int not_btrfs = 1;
- 	int longest_matchlen = 0;
- 	char *longest_match = NULL;
-+	char *cmp_field = NULL;
-+	bool found;
-+
-+	BUG_ON(flag != BTRFS_FIND_ROOT_PATH);
- 
- 	fd = open(path, O_RDONLY | O_NOATIME);
- 	if (fd < 0)
-@@ -1269,8 +1273,13 @@ int find_mount_root(const char *path, char **mount_root)
- 		return -errno;
- 
- 	while ((ent = getmntent(mnttab))) {
--		len = strlen(ent->mnt_dir);
--		if (strncmp(ent->mnt_dir, path, len) == 0) {
-+		cmp_field = ent->mnt_dir;
-+
-+		len = strlen(cmp_field);
-+
-+		found = strncmp(cmp_field, data, len) == 0;
-+
-+		if (found) {
- 			/* match found and use the latest match */
- 			if (longest_matchlen <= len) {
- 				free(longest_match);
-diff --git a/common/utils.h b/common/utils.h
-index 119c3881..449e1d3e 100644
---- a/common/utils.h
-+++ b/common/utils.h
-@@ -52,6 +52,11 @@
- #define UNITS_HUMAN			(UNITS_HUMAN_BINARY)
- #define UNITS_DEFAULT			(UNITS_HUMAN)
- 
-+enum btrfs_find_root_flags {
-+	/* check mnt_dir of mntent */
-+	BTRFS_FIND_ROOT_PATH = 0
-+};
-+
- void units_set_mode(unsigned *units, unsigned mode);
- void units_set_base(unsigned *units, unsigned base);
- 
-@@ -93,7 +98,8 @@ int csum_tree_block(struct btrfs_fs_info *root, struct extent_buffer *buf,
- int ask_user(const char *question);
- int lookup_path_rootid(int fd, u64 *rootid);
- int get_btrfs_mount(const char *dev, char *mp, size_t mp_size);
--int find_mount_root(const char *path, char **mount_root);
-+int find_mount_root(const char *path, const char *data, u8 flag,
-+		char **mount_root);
- int get_device_info(int fd, u64 devid,
- 		struct btrfs_ioctl_dev_info_args *di_args);
- int get_df(int fd, struct btrfs_ioctl_space_args **sargs_ret);
--- 
-2.26.2
-
+up to this patch added to misc-next. There's still open question
+regarding the superblock copies, we had a chat about that with Johanness
+so he'll tell you more.

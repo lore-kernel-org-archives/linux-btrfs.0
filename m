@@ -2,119 +2,118 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-11.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.7 required=3.0 tests=BAYES_00,FROM_LOCAL_HEX,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E91ECC64E7C
-	for <linux-btrfs@archiver.kernel.org>; Sat, 28 Nov 2020 18:03:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D6AB5C64E7B
+	for <linux-btrfs@archiver.kernel.org>; Sat, 28 Nov 2020 22:09:47 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id A3D4124688
-	for <linux-btrfs@archiver.kernel.org>; Sat, 28 Nov 2020 18:03:44 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=mpdesouza.com header.i=@mpdesouza.com header.b="f3cZQR2X"
+	by mail.kernel.org (Postfix) with ESMTP id A96FF21534
+	for <linux-btrfs@archiver.kernel.org>; Sat, 28 Nov 2020 22:09:47 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729019AbgK1DX3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 27 Nov 2020 22:23:29 -0500
-Received: from gateway24.websitewelcome.com ([192.185.51.251]:37661 "EHLO
-        gateway24.websitewelcome.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1730843AbgK0Tyo (ORCPT
+        id S2389785AbgK1VuG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 28 Nov 2020 16:50:06 -0500
+Received: from mail-io1-f69.google.com ([209.85.166.69]:45464 "EHLO
+        mail-io1-f69.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2387669AbgK1USB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 27 Nov 2020 14:54:44 -0500
-Received: from cm14.websitewelcome.com (cm14.websitewelcome.com [100.42.49.7])
-        by gateway24.websitewelcome.com (Postfix) with ESMTP id CCB644B1E3
-        for <linux-btrfs@vger.kernel.org>; Fri, 27 Nov 2020 13:31:26 -0600 (CST)
-Received: from br540.hostgator.com.br ([108.179.252.180])
-        by cmsmtp with SMTP
-        id ijSok6RAGsvw9ijSokjNGK; Fri, 27 Nov 2020 13:31:26 -0600
-X-Authority-Reason: nr=8
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=mpdesouza.com; s=default; h=Content-Transfer-Encoding:MIME-Version:
-        Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:Content-Type:Content-ID:
-        Content-Description:Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc
-        :Resent-Message-ID:In-Reply-To:References:List-Id:List-Help:List-Unsubscribe:
-        List-Subscribe:List-Post:List-Owner:List-Archive;
-        bh=Paorq0g9qVN94FUAwATH78SgFl16vqVFwm8dqp77TDg=; b=f3cZQR2XogJyxqMLyjHabG2qe+
-        lUMrRApjJ7b85Tfo1BR6ebzKPH+vx6XREC1CtGnR8/kDbVmF9jMsX6U6qbTWYJOVoO07ISM11YkBs
-        Ld2zr8K7AmaYQzSpU4s5YDQE/wXvWNT1RgCncClt4EbYALv/sr2mICzcYhiSH0+BcjO6APAmFiGzf
-        BwXroX9GWV7VQSytSHgZjOX1wV9UcZbbcH3+AwJtksG8Hfv0+XF3XLOdT4sUPq1D5k+9S1s+zyCq/
-        JDXI4JeyDsNiksTz6PRZQ5NAK35zfk0Rj4Hh+Vx9Who6TwfwSr2g6LChxo19s5ofqKocqJhRjyIso
-        OYBD0qeg==;
-Received: from 200.146.52.186.dynamic.dialup.gvt.net.br ([200.146.52.186]:60574 helo=localhost.suse.de)
-        by br540.hostgator.com.br with esmtpsa  (TLS1.2) tls TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
-        (Exim 4.93)
-        (envelope-from <marcos@mpdesouza.com>)
-        id 1kijSn-003Dm3-AK; Fri, 27 Nov 2020 16:31:26 -0300
-From:   Marcos Paulo de Souza <marcos@mpdesouza.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     Marcos Paulo de Souza <mpdesouza@suse.com>, wqu@suse.com,
-        dsterba@suse.com
-Subject: [PATCH v4 0/3] btrfs-progs: Fix logical-resolve
-Date:   Fri, 27 Nov 2020 16:30:32 -0300
-Message-Id: <20201127193035.19171-1-marcos@mpdesouza.com>
-X-Mailer: git-send-email 2.26.2
+        Sat, 28 Nov 2020 15:18:01 -0500
+Received: by mail-io1-f69.google.com with SMTP id x7so280812ion.12
+        for <linux-btrfs@vger.kernel.org>; Sat, 28 Nov 2020 12:17:39 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:date:message-id:subject:from:to;
+        bh=Ehas9/uWgezbAqUFc//OPdBHdsrnNi7OIOegc/dRGek=;
+        b=hwuwtysKb2UltjAkoHen3vN9rSVuKOqG/FtULXT5YZUtDJDTwq7o0v27wgiwZyP+39
+         kk55aJaIyzcHxomOIIz1xFYTu7A+L1Lna63WUJALe23xoiE2SNvlwBaoUFPHzhoEntW5
+         9RgxpqPvvjm1mJ1vMJwaABwOZN60nNcudGMOFReC2gLAJU2hurq5GpBX2gzKx9OLwmCk
+         GfwqpgxG+bEzlLzYErUfRuYw2xKrPtdjSHy+28sXDFT8RcGffBI/1iv+/hSu2suFq9sG
+         EM9HYRyiudny2dA+xIHbeJ0CbuTo+Hw/Nn2XTMR/z0fzUuGyt86pUSPGEKc9cTOQx7fr
+         FSRg==
+X-Gm-Message-State: AOAM530vtOs/aDqUODyJALzNBC88XQNTZtZi9mVwgLiT9AAo8yo5Ef3A
+        pz1+MyNbF4yW0nw8EWUUASaxwdhxxUAiHbfCbaSuxeeaMbBM
+X-Google-Smtp-Source: ABdhPJyD0/wX+ANrFMtDd3Yf5pSf6uf/lZR6CePpgor4Mu1tR5OUziyQ0h8k8j2aRLEF2VvAVAxg1Y2WLY/Q3/CIEW0lfSezo6x4
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-AntiAbuse: This header was added to track abuse, please include it with any abuse report
-X-AntiAbuse: Primary Hostname - br540.hostgator.com.br
-X-AntiAbuse: Original Domain - vger.kernel.org
-X-AntiAbuse: Originator/Caller UID/GID - [47 12] / [47 12]
-X-AntiAbuse: Sender Address Domain - mpdesouza.com
-X-BWhitelist: no
-X-Source-IP: 200.146.52.186
-X-Source-L: No
-X-Exim-ID: 1kijSn-003Dm3-AK
-X-Source: 
-X-Source-Args: 
-X-Source-Dir: 
-X-Source-Sender: 200.146.52.186.dynamic.dialup.gvt.net.br (localhost.suse.de) [200.146.52.186]:60574
-X-Source-Auth: marcos@mpdesouza.com
-X-Email-Count: 4
-X-Source-Cap: bXBkZXNvNTM7bXBkZXNvNTM7YnI1NDAuaG9zdGdhdG9yLmNvbS5icg==
-X-Local-Domain: yes
+X-Received: by 2002:a92:50b:: with SMTP id q11mr12684622ile.49.1606594634583;
+ Sat, 28 Nov 2020 12:17:14 -0800 (PST)
+Date:   Sat, 28 Nov 2020 12:17:14 -0800
+X-Google-Appengine-App-Id: s~syzkaller
+X-Google-Appengine-App-Id-Alias: syzkaller
+Message-ID: <0000000000007e15b505b530766d@google.com>
+Subject: WARNING in close_fs_devices (3)
+From:   syzbot <syzbot+a70e2ad0879f160b9217@syzkaller.appspotmail.com>
+To:     clm@fb.com, dsterba@suse.com, josef@toxicpanda.com,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        syzkaller-bugs@googlegroups.com
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Marcos Paulo de Souza <mpdesouza@suse.com>
+Hello,
 
-In this forth iteration, only patch 0002 was changed. Previously the variable
-full_path, which is passed by the user, was being overwritten in the inode loop.
-Now we create a temp var to store the mount_point when the lookup is needed.
+syzbot found the following issue on:
 
-Please review.
+HEAD commit:    d5beb314 Merge tag 'hyperv-fixes-signed' of git://git.kern..
+git tree:       upstream
+console output: https://syzkaller.appspot.com/x/log.txt?x=1232777d500000
+kernel config:  https://syzkaller.appspot.com/x/.config?x=7994ac0f2a9b95d9
+dashboard link: https://syzkaller.appspot.com/bug?extid=a70e2ad0879f160b9217
+compiler:       clang version 11.0.0 (https://github.com/llvm/llvm-project.git ca2dcbd030eadbf0aa9b660efe864ff08af6e18b)
 
-Changes from v3:
-* In patch 0002, do not overwrite full_path variable
+Unfortunately, I don't have any reproducer for this issue yet.
 
-Changes from v2:
-* Make mnt_opts check more strict to avoid bind mounts (Qu)
-* Print only inode/subvolume when the subvolume itself is not mounted
-* Enhance the test by adding a snapshot (unmounted) to exercise the check above
-* Enhance the test by adding a bind mount that would trick logical-resolve
+IMPORTANT: if you fix the issue, please add the following tag to the commit:
+Reported-by: syzbot+a70e2ad0879f160b9217@syzkaller.appspotmail.com
 
-Changes from v1:
-* Patches 2 and 3 added
-* Test created (David)
-* Discard changed on btrfs_list_path_for_root and changing find_mount_root
-  instead
+------------[ cut here ]------------
+WARNING: CPU: 1 PID: 8484 at fs/btrfs/volumes.c:1160 close_fs_devices+0x71d/0x7b0 fs/btrfs/volumes.c:1160
+Modules linked in:
+CPU: 0 PID: 8484 Comm: syz-executor.3 Not tainted 5.10.0-rc5-syzkaller #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 01/01/2011
+RIP: 0010:close_fs_devices+0x71d/0x7b0 fs/btrfs/volumes.c:1160
+Code: c4 38 5b 41 5c 41 5d 41 5e 41 5f 5d c3 e8 bb 5b 3f fe 0f 0b e9 6f f9 ff ff e8 af 5b 3f fe 0f 0b e9 3c ff ff ff e8 a3 5b 3f fe <0f> 0b e9 69 ff ff ff 48 c7 c1 24 64 0e 8d 80 e1 07 80 c1 03 38 c1
+RSP: 0018:ffffc900016dfc80 EFLAGS: 00010293
+RAX: ffffffff8335c3bd RBX: 0000000000000001 RCX: ffff888015323480
+RDX: 0000000000000000 RSI: 0000000000000001 RDI: 0000000000000000
+RBP: ffff888024b82108 R08: ffffffff8335c31f R09: ffffed10038cdd27
+R10: ffffed10038cdd27 R11: 0000000000000000 R12: dffffc0000000000
+R13: ffff88801c66e860 R14: 1ffff110038cdd0c R15: 1ffff110038cdd0a
+FS:  0000000003329940(0000) GS:ffff8880b9c00000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000055ad0a12280f CR3: 000000006814e000 CR4: 00000000001506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ btrfs_close_devices+0x8c/0x400 fs/btrfs/volumes.c:1172
+ close_ctree+0x5bf/0x6ae fs/btrfs/disk-io.c:4152
+ generic_shutdown_super+0x120/0x2a0 fs/super.c:464
+ kill_anon_super+0x36/0x60 fs/super.c:1108
+ btrfs_kill_super+0x3d/0x50 fs/btrfs/super.c:2263
+ deactivate_locked_super+0xa7/0xf0 fs/super.c:335
+ cleanup_mnt+0x462/0x510 fs/namespace.c:1118
+ task_work_run+0x137/0x1c0 kernel/task_work.c:151
+ tracehook_notify_resume include/linux/tracehook.h:188 [inline]
+ exit_to_user_mode_loop kernel/entry/common.c:164 [inline]
+ exit_to_user_mode_prepare+0xe4/0x170 kernel/entry/common.c:191
+ syscall_exit_to_user_mode+0x4a/0x170 kernel/entry/common.c:266
+ entry_SYSCALL_64_after_hwframe+0x44/0xa9
+RIP: 0033:0x4608e7
+Code: 64 89 04 25 d0 02 00 00 58 5f ff d0 48 89 c7 e8 2f be ff ff 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 b8 a6 00 00 00 0f 05 <48> 3d 01 f0 ff ff 0f 83 ad 89 fb ff c3 66 2e 0f 1f 84 00 00 00 00
+RSP: 002b:00007ffe70ea1cb8 EFLAGS: 00000246 ORIG_RAX: 00000000000000a6
+RAX: 0000000000000000 RBX: 0000000000000000 RCX: 00000000004608e7
+RDX: 00000000004031f8 RSI: 0000000000000002 RDI: 00007ffe70ea1d60
+RBP: 0000000000000538 R08: 0000000000000000 R09: 000000000000000b
+R10: 0000000000000005 R11: 0000000000000246 R12: 00007ffe70ea2df0
+R13: 000000000332aa60 R14: 0000000000000000 R15: 00007ffe70ea2df0
 
-Marcos Paulo de Souza (3):
-  btrfs-progs: Adapt find_mount_root to verify other fields of mntent
-    struct
-  btrfs-progs: inspect: Fix logical-resolve file path lookup
-  btrfs-progs: tests: Add new logical-resolve test
 
- cmds/inspect.c                                | 44 +++++++---
- cmds/receive.c                                |  3 +-
- cmds/send.c                                   |  6 +-
- common/utils.c                                | 32 +++++++-
- common/utils.h                                | 11 ++-
- .../test.sh                                   | 81 +++++++++++++++++++
- 6 files changed, 160 insertions(+), 17 deletions(-)
- create mode 100755 tests/misc-tests/042-inspect-internal-logical-resolve/test.sh
+---
+This report is generated by a bot. It may contain errors.
+See https://goo.gl/tpsmEJ for more information about syzbot.
+syzbot engineers can be reached at syzkaller@googlegroups.com.
 
--- 
-2.26.2
-
+syzbot will keep track of this issue. See:
+https://goo.gl/tpsmEJ#status for how to communicate with syzbot.

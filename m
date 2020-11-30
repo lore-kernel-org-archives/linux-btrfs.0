@@ -2,140 +2,104 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 828A5C63777
-	for <linux-btrfs@archiver.kernel.org>; Mon, 30 Nov 2020 18:25:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 127C6C63777
+	for <linux-btrfs@archiver.kernel.org>; Mon, 30 Nov 2020 19:19:45 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 025AB206F9
-	for <linux-btrfs@archiver.kernel.org>; Mon, 30 Nov 2020 18:25:49 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B99D120789
+	for <linux-btrfs@archiver.kernel.org>; Mon, 30 Nov 2020 19:19:44 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="PvVsE2C8";
-	dkim=temperror (0-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="p2Ito0/3"
+	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="TXpn7lbr"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388042AbgK3SZe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 30 Nov 2020 13:25:34 -0500
-Received: from out2-smtp.messagingengine.com ([66.111.4.26]:41109 "EHLO
-        out2-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1726860AbgK3SZd (ORCPT
+        id S1729387AbgK3TT2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 30 Nov 2020 14:19:28 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36468 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1729847AbgK3TTT (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 30 Nov 2020 13:25:33 -0500
-Received: from compute2.internal (compute2.nyi.internal [10.202.2.42])
-        by mailout.nyi.internal (Postfix) with ESMTP id 513E35C017D;
-        Mon, 30 Nov 2020 13:24:25 -0500 (EST)
-Received: from mailfrontend2 ([10.202.2.163])
-  by compute2.internal (MEProxy); Mon, 30 Nov 2020 13:24:25 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=date
-        :from:to:subject:message-id:references:mime-version:content-type
-        :in-reply-to; s=fm2; bh=owrCQkj6tert0ju5pjk8erqwhiATuyvFVReQWfyi
-        Mcs=; b=PvVsE2C8sN/o+/cVNtY+1qXO3IkYp1x+NrHHjTGBZhwfgwTvCOPuTt2A
-        cnMNOHy4+Q2nnCvQ74MgLrdiCfMLX+4XEMnCpQOKZq3tgG5lH8f8SGbKwICdd8D1
-        3DHD9byrAh9Mx880WA8NlETDCPe1vloxCtEVmqoxQ39gctGOpiqiUClvM3Abed8W
-        24ptoQBDp9sMDbP5j7IjC1GMZuyPmtGWM6kte/L9kpKFATqH+z/fPi4YKb3tZIVQ
-        Wv3RKcyhwuN2nAQ/FBGqq0zPzotk22zleYk2LBqI0+fe4NVBZEoEvA657R0LiKIs
-        Z3X+9Kx/bJT8Xo1W5HgRnb9/jovpMQ==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-        messagingengine.com; h=content-type:date:from:in-reply-to
-        :message-id:mime-version:references:subject:to:x-me-proxy
-        :x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm1; bh=owrCQk
-        j6tert0ju5pjk8erqwhiATuyvFVReQWfyiMcs=; b=p2Ito0/3/5d4XCODrzCMnQ
-        F8wGAaCcswsJ4ThUmKlDbnTTaDXtApBb5dX0E0OrSgLSpjaYEBR/RqySGdQKmgN9
-        O//27XAt8JBrJcKGx9Oli5i5C8id8e4j6PjtQiIlrdY3suQcJOXgBbftg9Zu3Os6
-        4YetCswLXKSZAxi3EcufsVsmZgNsPqaZraSEtnmgq4MOCXzzJRke3SrZ9RPyebOj
-        HUkh6mlYgYz+HaC0qHZxSzqyK503T86tErF0uYuq/GAiT3Vtpi50DsahDpydpe1k
-        3y8+AJizEsZY8IUooA5kt97BksHO4+avG7AjgOx4CrrhYfSEPmJOCDAcnY2ThQSw
-        ==
-X-ME-Sender: <xms:2DjFX5jbErWiiKhEjyO4bZX4Sj1CqTz_b0NuVvO9jAwTxrNUQNjFhw>
-    <xme:2DjFX-AraJIbKFbTWStldZchvvhFYoeOumdS2ri3Lx8C4_Z_uftjUyI190ebnz4jb
-    kyK5qObY86kYZkVSS8>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedujedrudeitddgudduudcutefuodetggdotefrod
-    ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpqfgfvfdpuffrtefokffrpgfnqfgh
-    necuuegrihhlohhuthemuceftddtnecunecujfgurhepfffhvffukfhfgggtuggjfgesth
-    dtredttdervdenucfhrhhomhepuehorhhishcuuehurhhkohhvuceosghorhhishessghu
-    rhdrihhoqeenucggtffrrghtthgvrhhnpedvhffghfetueeggfdtgeduvedugeekgeeuvd
-    dvhfdugeduhfetkeevtdeitdegueenucfkphepudeifedruddugedrudefvddrfeenucev
-    lhhushhtvghrufhiiigvpedtnecurfgrrhgrmhepmhgrihhlfhhrohhmpegsohhrihhsse
-    gsuhhrrdhioh
-X-ME-Proxy: <xmx:2DjFX5FGppcIomYOCUT22kd22xyYeeYYI_HVOjACp5x3FpiA0C9xjw>
-    <xmx:2DjFX-S9wQU8ox8MfouxjUz4xSN9DYKbQKXA35yd-A1j_ZcBWd-qww>
-    <xmx:2DjFX2x2jIYN7EGDQEGUU_dS2xEOYwYXO9tIVnpaX9Nfs0CNLxzm0w>
-    <xmx:2TjFX8ZEhTwJLnrblaIB9sSpoiPDPWaF2pW3jU-fwp0lR6Z00yYlrA>
-Received: from localhost (unknown [163.114.132.3])
-        by mail.messagingengine.com (Postfix) with ESMTPA id 789EB3064AA6;
-        Mon, 30 Nov 2020 13:24:24 -0500 (EST)
-Date:   Mon, 30 Nov 2020 10:24:16 -0800
-From:   Boris Burkov <boris@bur.io>
-To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH v7 00/10] btrfs: free space tree mounting fixes
-Message-ID: <20201130182416.GA2017125@devbig008.ftw2.facebook.com>
-References: <cover.1605736355.git.boris@bur.io>
- <20201120213222.GA8669@twin.jikos.cz>
+        Mon, 30 Nov 2020 14:19:19 -0500
+Received: from mail-pl1-x641.google.com (mail-pl1-x641.google.com [IPv6:2607:f8b0:4864:20::641])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B6DB9C0613D3
+        for <linux-btrfs@vger.kernel.org>; Mon, 30 Nov 2020 11:18:33 -0800 (PST)
+Received: by mail-pl1-x641.google.com with SMTP id r2so7042006pls.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 30 Nov 2020 11:18:33 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=osandov-com.20150623.gappssmtp.com; s=20150623;
+        h=date:from:to:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to;
+        bh=J0uaPww9Zo/kwiIz62BRZcQJ75KrUIs2Bl30icME+Dc=;
+        b=TXpn7lbrUrUILSPcmkpNm9ho9lyxtnMhvLUZTDTKTkfhqgufluqLhBWTfWZi9ML+Ul
+         6MLS5fKcBK/W/JorbbRmkIHIrz+5iM7uRTQ1D+FBUX8mSAnu9bXf98kkV7m/+upab/3s
+         NYrJKb9Pv2tRvzoYgskwZ4aDTv2GjtsRz8nBiA7nDZiPK03YMTiOr5QJM4gjdfSEtf/J
+         ZWkAJLvVcd2Afx8D9O9ZFdi4mX76DLvXW6ozrmLdQira//F3CF4O0H+FoyKVe4TbyRab
+         ES0SBeNjt3Gij6gblWH3wFKIPd21mg3ymfFHZ7c6WVSh7AG1vLCVNGvb58ljmDgBTK5J
+         fLTw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:date:from:to:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to;
+        bh=J0uaPww9Zo/kwiIz62BRZcQJ75KrUIs2Bl30icME+Dc=;
+        b=PiMv4q65Y2ZyhSO9gIfmvMYHHzKHiIofQErGOMoExbQf5Tw1uxFdH6/9CabPLef7dN
+         ZqsHN4K87ah1mYwY5lt5qlEjuSoCO6sTFaqJGdvBbgsiCPcVoa19ihvQ8fYAuf3zadMu
+         nOgI+r+rJjBmfGEsThCBM/KIUxFGHSE8ACshsqLIOU5WORr220t9Sh5ZjTFHeyqtAIRj
+         XjcOCCV+Mm9QJvJ/RTUoHwI3GeYZGBbPJsjdRcw6mPqsfe4R/GaV0UnFdv+TXH15hSKE
+         V1xJENYZerjmL9LMQLGc/wE0arIcEjfD+1Jq+fbIwefXit+6L71fxhep3D5EOzlS/yVL
+         Ownw==
+X-Gm-Message-State: AOAM532O4DTMPMBMWS2n6hgv26ljKZeva9xsGlhvXZxMB4iwQwJncJl1
+        72SBJnWWF7HMTx3PC8CfFzPmAw==
+X-Google-Smtp-Source: ABdhPJxV8so8Tk7xlVbSlSNLCUfIRq2duNU3cGTYClzBLepW/PJI1vbrV4KpO4SQjmioJT/24Su3cg==
+X-Received: by 2002:a17:902:b209:b029:d8:e821:efc6 with SMTP id t9-20020a170902b209b02900d8e821efc6mr19864273plr.5.1606763913184;
+        Mon, 30 Nov 2020 11:18:33 -0800 (PST)
+Received: from relinquished.localdomain ([2601:602:8b80:8e0::b2be])
+        by smtp.gmail.com with ESMTPSA id v23sm17759258pfn.141.2020.11.30.11.18.30
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 30 Nov 2020 11:18:31 -0800 (PST)
+Date:   Mon, 30 Nov 2020 11:18:30 -0800
+From:   Omar Sandoval <osandov@osandov.com>
+To:     dsterba@suse.cz, linux-fsdevel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, Al Viro <viro@zeniv.linux.org.uk>,
+        Christoph Hellwig <hch@infradead.org>,
+        Dave Chinner <david@fromorbit.com>,
+        Jann Horn <jannh@google.com>,
+        Amir Goldstein <amir73il@gmail.com>,
+        Aleksa Sarai <cyphar@cyphar.com>, linux-api@vger.kernel.org,
+        kernel-team@fb.com
+Subject: Re: [PATCH v6 04/11] btrfs: fix btrfs_write_check()
+Message-ID: <X8VFhiqOVZKh+i6e@relinquished.localdomain>
+References: <cover.1605723568.git.osandov@fb.com>
+ <b096cecce8277b30e1c7e26efd0450c0bc12ff31.1605723568.git.osandov@fb.com>
+ <20201123170831.GH8669@twin.jikos.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20201120213222.GA8669@twin.jikos.cz>
-User-Agent: Mutt/1.10.1 (2018-07-13)
+In-Reply-To: <20201123170831.GH8669@twin.jikos.cz>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Nov 20, 2020 at 10:32:22PM +0100, David Sterba wrote:
-> On Wed, Nov 18, 2020 at 03:06:15PM -0800, Boris Burkov wrote:
-> > This patch set cleans up issues surrounding enabling and disabling various
-> > free space cache features and their reporting in /proc/mounts.  Because the
-> > improvements became somewhat complex, the series starts by lifting rw mount
-> > logic into a single place.
+On Mon, Nov 23, 2020 at 06:08:31PM +0100, David Sterba wrote:
+> On Wed, Nov 18, 2020 at 11:18:11AM -0800, Omar Sandoval wrote:
+> > From: Omar Sandoval <osandov@fb.com>
 > > 
-> > The first patch is a setup patch that unifies very similar logic between a
-> > normal rw mount and a ro->rw remount. This is a useful setup step for adding
-> > more functionality to ro->rw remounts.
+> > btrfs_write_check() has two related bugs:
 > > 
-> > The second patch fixes the omission of orphan inode cleanup on a few trees
-> > during ro->rw remount.
+> > 1. It gets the iov_iter count before calling generic_write_checks(), but
+> >    generic_write_checks() may truncate the iov_iter.
+> > 2. It returns the count or negative errno as a size_t, which the callers
+> >    cast to an int. If the count is greater than INT_MAX, this overflows.
 > > 
-> > The third patch stops marking block groups with need_free_space when the
-> > free space tree is not yet enabled.
+> > To fix both of these, pull the call to generic_write_checks() out of
+> > btrfs_write_check(), use the new iov_iter count returned from
+> > generic_write_checks(), and have btrfs_write_check() return 0 or a
+> > negative errno as an int instead of the count. This rearrangement also
+> > paves the way for RWF_ENCODED write support.
 > > 
-> > The fourth patch adds enabling the free space tree to ro->rw remount.
-> > 
-> > The fifth patch adds a method for clearing oneshot mount options after mount.
-> > 
-> > The sixth patch adds support for clearing the free space tree on ro->rw remount.
-> > 
-> > The seventh patch sets up for more accurate /proc/mounts by ensuring that
-> > cache_generation > 0 iff space_cache is enabled.
-> > 
-> > The eigth patch is the more accurate /proc/mounts logic.
-> > 
-> > The ninth patch is a convenience kernel message that complains when we skip
-> > changing the free space tree on remount.
-> > 
-> > The tenth patch removes the space cache v1 free space item and free space
-> > inodes when space cache v1 is disabled (nospace_cache or space_cache=v2).
-> > 
-> > The eleventh patch stops re-creating the free space objects when we are not
-> > using space_cache=v1
-> > 
-> > The twelfth patch fixes a lockdep failure in creating the free space tree.
+> > Fixes: f945968ff64c ("btrfs: introduce btrfs_write_check()")
 > 
-> Is this fixing a problem caused by some patches in this series? Because
-> if yes, the fix should be folded there. A standalone patch makese sense
-> in case we can't fold it there (eg. after merging to Linus' tree),
-> otherwise the merged patchsets should be made of complete patches,
-> without fixes-to-fixes. Even if the patchset is in misc-next, fixups are
-> still doable.
+> This patch is still in misc-next and the commit id is unstable, so this
+> would rather be folded to the patch.
 
-The new 'needs_free_space' patch (#3) fixes the bug in this series that
-you caught, so if I understand correctly, I should appropriately fold
-that one into one of the existing patches.
-
-The lockdep issue exists in misc-next as far as I can tell, so I think a
-standalone patch makes sense.
-
-Let me know if I misunderstood you on either of those.
-
-Thanks,
-Boris
+Looks like you folded this in on misc-next, thanks!

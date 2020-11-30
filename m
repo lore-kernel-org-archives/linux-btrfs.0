@@ -2,111 +2,74 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,
+X-Spam-Status: No, score=-5.3 required=3.0 tests=BAYES_00,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 51683C64E7B
-	for <linux-btrfs@archiver.kernel.org>; Mon, 30 Nov 2020 17:30:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D9CCDC63777
+	for <linux-btrfs@archiver.kernel.org>; Mon, 30 Nov 2020 17:33:01 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 23548207F7
-	for <linux-btrfs@archiver.kernel.org>; Mon, 30 Nov 2020 17:30:23 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 908A22073C
+	for <linux-btrfs@archiver.kernel.org>; Mon, 30 Nov 2020 17:33:01 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728462AbgK3R3i convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 30 Nov 2020 12:29:38 -0500
-Received: from ste-pvt-msa2.bahnhof.se ([213.80.101.71]:37620 "EHLO
-        ste-pvt-msa2.bahnhof.se" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727522AbgK3R3i (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 30 Nov 2020 12:29:38 -0500
-Received: from localhost (localhost [127.0.0.1])
-        by ste-pvt-msa2.bahnhof.se (Postfix) with ESMTP id AFA023FBEE;
-        Mon, 30 Nov 2020 18:28:12 +0100 (CET)
-X-Virus-Scanned: Debian amavisd-new at bahnhof.se
-Received: from ste-pvt-msa2.bahnhof.se ([127.0.0.1])
-        by localhost (ste-ftg-msa2.bahnhof.se [127.0.0.1]) (amavisd-new, port 10024)
-        with ESMTP id VPoQca0qs3Oh; Mon, 30 Nov 2020 18:28:11 +0100 (CET)
-Received: by ste-pvt-msa2.bahnhof.se (Postfix) with ESMTPA id EA5AC3FC0E;
-        Mon, 30 Nov 2020 18:28:10 +0100 (CET)
-Received: from [2a00:801:235:3f71::7a2c:d33d] (port=47348 helo=m5-240-163-184.cust.tele2.se)
-        by tnonline.net with esmtpsa  (TLS1.3) tls TLS_AES_128_GCM_SHA256
-        (Exim 4.93.0.4)
-        (envelope-from <system@lechevalier.se>)
-        id 1kjmyb-000I9O-I9; Mon, 30 Nov 2020 18:28:37 +0100
-Date:   Mon, 30 Nov 2020 18:28:33 +0100 (GMT+01:00)
-From:   sys <system@lechevalier.se>
-To:     Hugo Mills <hugo@carfax.org.uk>, Josef Bacik <josef@toxicpanda.com>
-Cc:     Roman Mamedov <rm@romanrm.net>, linux-btrfs@vger.kernel.org,
-        kernel-team@fb.com
-Message-ID: <ca5d9e2.92cebc91.1761a32ec87@lechevalier.se>
-In-Reply-To: <20201130150409.GH1908@savella.carfax.org.uk>
-References: <a3cd057e747862eb7027ac6318bd26c6c36e0c49.1606743972.git.josef@toxicpanda.com> <20201130190805.48779810@natsu> <b92d0141-f68f-ce96-8099-e145ebc6f594@toxicpanda.com> <20201130150409.GH1908@savella.carfax.org.uk>
-Subject: Re: [PATCH] btrfs: do not allow -o compress-force to override
- per-inode settings
+        id S2387612AbgK3RdA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 30 Nov 2020 12:33:00 -0500
+Received: from mx2.suse.de ([195.135.220.15]:58096 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S2387404AbgK3RdA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 30 Nov 2020 12:33:00 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.221.27])
+        by mx2.suse.de (Postfix) with ESMTP id 3E450AC90;
+        Mon, 30 Nov 2020 17:32:19 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id B1249DA6E1; Mon, 30 Nov 2020 18:30:47 +0100 (CET)
+Date:   Mon, 30 Nov 2020 18:30:47 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     fdmanana@kernel.org
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 0/6] btrfs: some performance improvements for dbench
+ alike workloads
+Message-ID: <20201130173047.GH6430@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, fdmanana@kernel.org,
+        linux-btrfs@vger.kernel.org
+References: <cover.1606305501.git.fdmanana@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Content-Transfer-Encoding: 8BIT
-X-Mailer: R2Mail2
+Content-Disposition: inline
+In-Reply-To: <cover.1606305501.git.fdmanana@suse.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-
-
----- From: Hugo Mills <hugo@carfax.org.uk> -- Sent: 2020-11-30 - 16:04 ----
-
-> On Mon, Nov 30, 2020 at 09:50:13AM -0500, Josef Bacik wrote:
->> On 11/30/20 9:08 AM, Roman Mamedov wrote:
->> > On Mon, 30 Nov 2020 08:46:21 -0500
->> > Josef Bacik <josef@toxicpanda.com> wrote:
->> > 
->> > > However some time later we got chattr -c, which is a user way of
->> > > indicating that the file shouldn't be compressed.  This is at odds with
->> > > -o compress-force.  We should be honoring what the user wants, which is
->> > > to disable compression.
->> > 
->> > But chattr -c only removes the previously set chattr +c. There's no
->> > "negative-c" to be forced by user in attributes. And +c is already unset on all
->> > files by default. Unless I'm missing something? Thanks
->> > 
->> 
->> The thing you're missing is that when we do chattr -c we're setting
->> NOCOMPRESS on the file.  The thing that I'm missing is what exactly we're
->> trying to allow.  If chattr -c is supposed to just be the removal of +c,
->> then btrfs is doing the wrong thing by setting NOCOMPRESS.  We also do the
->> same thing when we clear a btrfs.compression property.
+On Wed, Nov 25, 2020 at 12:19:22PM +0000, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
 > 
->    If I'm understanding this right, there's more than two states
-> here. There's a "default", and there's two "force" options -- forcing
-> nocompress, and forcing/allowing compression. If there's no c flag
-> set, the file could be in one of two states: default behaviour
-> (presumably defined by the value of the mount options), and
-> NOCOMPRESS. How do I tell which it is?
-
- Fsattr (chattr/lsattr) seem to have been a simplified way of exposing the compression xattr to users, wasn't it? Could it not be better to promote the use of btrfs.compression xattrs instead? 
-
+> This patchset mostly fixes some races that result in an fsync falling back
+> to a transaction commit unncessarily or logging more metadata than it needs
+> to. It also addresses link and rename operations logging inodes that were
+> fsynced in the previous transaction but they don't need to be logged in
+> the current transaction. All these cases can be triggered often by dbench.
 > 
->> I guess the question is what do we want?  Do we want to only allow the user
->> to indicate we want compression, or do we want to allow them to also
->> indicate that they don't want compression? 
-
-I think it is a good thing to have the three options, but we may need to drop the use of chattr/lsattr and go with only xattrs. 
-
-Thanks, 
-Forza 
-
- If we don't want to enable them
->> to disable compression for a file, then this patch needs to be thrown away,
->> but then we also need to fix up all the places we set NOCOMPRESS when we
->> clear these flags.  Thanks,
+> Finally it avoids blocking an fsync for a significant time window when the
+> previous transaction is still committing. All these together resulted in
+> about +12% throughput with dbench and -8% maximum latency, as mentioned in
+> the changelog of the last patch.
 > 
->    Hugo.
-> 
-> -- 
-> Hugo Mills             | The last man on Earth sat in a room. Suddenly, there
-> hugo@... carfax.org.uk | was a knock at the door.
-> http://carfax.org.uk/  |
-> PGP: E2AB1DE4          |                                        Frederic Brown
+> There will be more changes to improve performance with dbench or similar
+> workloads, but these have been cooking and testing for about one week and
+> are independent from what's coming next.
 
+Looking forward to more perf improvements, much appreciated.
 
+> Filipe Manana (6):
+>   btrfs: fix race causing unnecessary inode logging during link and rename
+>   btrfs: fix race that results in logging old extents during a fast fsync
+>   btrfs: fix race that causes unnecessary logging of ancestor inodes
+>   btrfs: fix race that makes inode logging fallback to transaction commit
+>   btrfs: fix race leading to unnecessary transaction commit when logging inode
+>   btrfs: do not block inode logging for so long during transaction commit
+
+Added to misc-next, thanks.

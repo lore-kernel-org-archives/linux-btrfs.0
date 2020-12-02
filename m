@@ -7,36 +7,36 @@ X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id ED226C71156
-	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Dec 2020 06:50:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5A8DCC64E8A
+	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Dec 2020 06:50:14 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id A252520DD4
-	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Dec 2020 06:50:03 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 15E6E20DD4
+	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Dec 2020 06:50:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2387557AbgLBGuD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 2 Dec 2020 01:50:03 -0500
-Received: from mx2.suse.de ([195.135.220.15]:53518 "EHLO mx2.suse.de"
+        id S2387561AbgLBGuN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 2 Dec 2020 01:50:13 -0500
+Received: from mx2.suse.de ([195.135.220.15]:53474 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2387543AbgLBGuC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 2 Dec 2020 01:50:02 -0500
+        id S2387543AbgLBGuL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 2 Dec 2020 01:50:11 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1606891732; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1606891737; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=lug76vsqWj1n0hgdm8j3DLsRI4TJKGwQW1u/FGV0POw=;
-        b=h9N3p7gk0c9V50dYZntHla/5mjgkKEmyASS5bL6m4NqKh3su8MYXYGRjbFfu1UwfcqjpWb
-        XjnESZVdrT5ctFq1rpfhl+EKzKFCuDffvo2cqbwimpAzNx8DRgZA5VzD9IntwTtRSYJOhj
-        5FDM6F8i/BT/UhYMoiWaNw1jPCbq0Lw=
+        bh=s86QM7wHGXhcbOUHWVC15k2fWKUBsBgzuX9bmQWim5I=;
+        b=b04ebu6nUXp16Ap5nZYXNrmBEyKz/vw9iPAHc8TOXK5hhtjzhLguZ9v1pMEpcPoiQwFObE
+        0qwEL7k5TN0k06ccunHz9zb+3VB1t+SkRvx6/X0zhYsYJVi4fS64uvHjoOxehPppkPz1y3
+        3IADMelKIHihc+iN0/OniWXfGPDavp8=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id B8E81AEEF
-        for <linux-btrfs@vger.kernel.org>; Wed,  2 Dec 2020 06:48:52 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 1DDE4AEF8
+        for <linux-btrfs@vger.kernel.org>; Wed,  2 Dec 2020 06:48:57 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 13/15] btrfs: scrub: support subpage tree block scrub
-Date:   Wed,  2 Dec 2020 14:48:09 +0800
-Message-Id: <20201202064811.100688-14-wqu@suse.com>
+Subject: [PATCH v3 15/15] btrfs: scrub: allow scrub to work with subpage sectorsize
+Date:   Wed,  2 Dec 2020 14:48:11 +0800
+Message-Id: <20201202064811.100688-16-wqu@suse.com>
 X-Mailer: git-send-email 2.29.2
 In-Reply-To: <20201202064811.100688-1-wqu@suse.com>
 References: <20201202064811.100688-1-wqu@suse.com>
@@ -46,63 +46,46 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-To support subpage tree block scrub, scrub_checksum_tree_block() only
-needs to learn 2 new tricks:
+Since btrfs scrub is utilizing its own infrastructure to submit
+read/write, scrub is independent from all other routines.
 
-- Follow sector size
-  Now scrub_page only represents one sector, we need to follow it
-  properly.
+This brings one very neat feature, allow us to read 4K data into
+offset 0 of a 64K page.
+So is the writeback routine.
 
-- Run checksum on all sectors
-  Since scrub_page only represents one sector, we need to run hash on
-  all sectors, no longer just (nodesize >> PAGE_SIZE).
+This makes scrub on subpage sector size much easier to implement, and
+thanks to previous commits which just changed the implementation to
+always do scrub based on sector size, now scrub can handle subpage
+filesystem without any problem.
+
+This patch will just remove the restriction on
+(sectorsize != PAGE_SIZE), to make scrub finally work on subpage
+filesystems.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/scrub.c | 13 +++++++++----
- 1 file changed, 9 insertions(+), 4 deletions(-)
+ fs/btrfs/scrub.c | 8 --------
+ 1 file changed, 8 deletions(-)
 
 diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index efc6f5f2b8a4..a4d30106bacb 100644
+index 8a43e8cb10a6..e0ac0009303d 100644
 --- a/fs/btrfs/scrub.c
 +++ b/fs/btrfs/scrub.c
-@@ -1808,15 +1808,20 @@ static int scrub_checksum_tree_block(struct scrub_block *sblock)
- 	struct scrub_ctx *sctx = sblock->sctx;
- 	struct btrfs_header *h;
- 	struct btrfs_fs_info *fs_info = sctx->fs_info;
-+	const u32 sectorsize = sctx->fs_info->sectorsize;
- 	SHASH_DESC_ON_STACK(shash, fs_info->csum_shash);
- 	u8 calculated_csum[BTRFS_CSUM_SIZE];
- 	u8 on_disk_csum[BTRFS_CSUM_SIZE];
--	const int num_pages = sctx->fs_info->nodesize >> PAGE_SHIFT;
-+	const int num_sectors = fs_info->nodesize >> fs_info->sectorsize_bits;
- 	int i;
- 	struct scrub_page *spage;
- 	char *kaddr;
- 
- 	BUG_ON(sblock->page_count < 1);
-+
-+	/* Each pagev[] is in fact just one sector, not a full page */
-+	ASSERT(sblock->page_count == num_sectors);
-+
- 	spage = sblock->pagev[0];
- 	kaddr = page_address(spage->page);
- 	h = (struct btrfs_header *)kaddr;
-@@ -1845,11 +1850,11 @@ static int scrub_checksum_tree_block(struct scrub_block *sblock)
- 	shash->tfm = fs_info->csum_shash;
- 	crypto_shash_init(shash);
- 	crypto_shash_update(shash, kaddr + BTRFS_CSUM_SIZE,
--			    PAGE_SIZE - BTRFS_CSUM_SIZE);
-+			    sectorsize - BTRFS_CSUM_SIZE);
- 
--	for (i = 1; i < num_pages; i++) {
-+	for (i = 1; i < num_sectors; i++) {
- 		kaddr = page_address(sblock->pagev[i]->page);
--		crypto_shash_update(shash, kaddr, PAGE_SIZE);
-+		crypto_shash_update(shash, kaddr, sectorsize);
+@@ -3880,14 +3880,6 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
+ 		return -EINVAL;
  	}
  
- 	crypto_shash_final(shash, calculated_csum);
+-	if (fs_info->sectorsize != PAGE_SIZE) {
+-		/* not supported for data w/o checksums */
+-		btrfs_err_rl(fs_info,
+-			   "scrub: size assumption sectorsize != PAGE_SIZE (%d != %lu) fails",
+-		       fs_info->sectorsize, PAGE_SIZE);
+-		return -EINVAL;
+-	}
+-
+ 	if (fs_info->nodesize >
+ 	    PAGE_SIZE * SCRUB_MAX_PAGES_PER_BLOCK ||
+ 	    fs_info->sectorsize > PAGE_SIZE * SCRUB_MAX_PAGES_PER_BLOCK) {
 -- 
 2.29.2
 

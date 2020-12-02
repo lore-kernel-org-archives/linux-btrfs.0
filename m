@@ -7,59 +7,59 @@ X-Spam-Status: No, score=-16.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 05478C83018
-	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Dec 2020 19:53:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9E1BDC83017
+	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Dec 2020 19:53:47 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id A83E422201
-	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Dec 2020 19:53:43 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6852C22240
+	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Dec 2020 19:53:47 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2389739AbgLBTxD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 2 Dec 2020 14:53:03 -0500
+        id S2389783AbgLBTxS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 2 Dec 2020 14:53:18 -0500
 Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36644 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2389676AbgLBTxC (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Dec 2020 14:53:02 -0500
+        with ESMTP id S2389770AbgLBTxR (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Dec 2020 14:53:17 -0500
 Received: from mail-qt1-x842.google.com (mail-qt1-x842.google.com [IPv6:2607:f8b0:4864:20::842])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 178E5C08C5F2
-        for <linux-btrfs@vger.kernel.org>; Wed,  2 Dec 2020 11:51:54 -0800 (PST)
-Received: by mail-qt1-x842.google.com with SMTP id b9so1534862qtr.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 02 Dec 2020 11:51:54 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5CBC6C09424C
+        for <linux-btrfs@vger.kernel.org>; Wed,  2 Dec 2020 11:52:31 -0800 (PST)
+Received: by mail-qt1-x842.google.com with SMTP id f15so1958975qto.13
+        for <linux-btrfs@vger.kernel.org>; Wed, 02 Dec 2020 11:52:31 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references:mime-version
          :content-transfer-encoding;
-        bh=cpRFpbJwjc1VtrsNDL89Je3YD+oxRs/o4NDDyn/8Hzs=;
-        b=RlQ7oc8AkemX9ab8J/cbnpaSbU7kykMRdbWWcueC8CfTfMpbemuU3DVzV4fN/o0JLz
-         ry2q99UHibDJu3JkdWH4ijk5FAOkqfxvUHQJ4gdLeINUmieMyVvlrwbd68J6gF7Ar9jm
-         fgaJ6XYtH6FKbhhNccdLutDVDqkN7Oy776Irc6pEBNqwCVFQrcqOw5Pl4OIWafY2tuBc
-         nPPSQIBdDGicPrccfRlsFxrreWtZesA76xsBoh6Dl0/eu5fMtes6iqSkNRuumTOnHEC9
-         KMiNpZY9fd4C5H5Hc2DvjA+UZ9S80FuiPQKr3PwUO+3Hva0c3EpVkwehVzxsD+L17swW
-         zuow==
+        bh=Qhokq9in10lp163pHnGcT2VBA0zMfVv69pIfLJBBEPo=;
+        b=0yoWQoxQh7+/iPkNROyNew4bdvYqoWpWBeil8BpnYvSqBLq8adTkzteiBdV7tEBIPK
+         wjIYKcVcat5LlPYELlINYLovcIo5kuLSjE+7I4pWKqHFsB6S4EDhqlIRom5dFMGGa+lA
+         xr397pv1bkGbRRpU8TlnUGzKgNtUZ8F23bF9gO0qESBPjvhAW+aAhTjXY8Aet9e3twhg
+         06I7qc1OqkfhBZ7E8zzhh8q2PvQdCSYZtT49arh5vhRVshLd1Vz/VJDtvpEGQVPHRLVn
+         UCsWIaVZN6LOcnkFav4TF/cGdgwynWINCSDCasfb51FrP5ccjTG9XGhdcH6D/Ul0YA26
+         Aryw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=cpRFpbJwjc1VtrsNDL89Je3YD+oxRs/o4NDDyn/8Hzs=;
-        b=aAvd8EPhnqV9YQ9VPhA33LEMJMCfHLYn3dQh9RvQ8g2z/9ZB3yMVAiJ1aCjsrcPKYT
-         BwntxfeoYQEKH6CffnZoArxfBQSEHrMSrbh+kHJyoZa1o0vlZYGOUzyoKurbFEWB3esu
-         8QIS9mids7inebVO7KYySULNrxPoDraM3iOGO6kr3qmIVFQM8Lgdo1cvfrRtl46Fh0kW
-         EKnKYv71wDXY3gmtdlxJ3rlLgHRHsxDcuQBawb02LnzOZ05oEPEkYyVn5qXmszdocaxH
-         7cowrS7pnI0isAW95LvQFfdwHLVFkNZi/Fj1MR/yUL54ywpfXKCOIe/FtGg9y45dMr4d
-         T1jQ==
-X-Gm-Message-State: AOAM532O5SdLueUfPRdYA54xBe+iqkepDVp0jqrypUO81v7Waw5t/djG
-        tq90nlIwQybkwvDlc4Lk/YGJ2JnTkFd/BQ==
-X-Google-Smtp-Source: ABdhPJwJFVoeAOFTkkWBbZvpRrtpP6hvvI/9C+uiKrKgEMn9orjfO63DU2aY59M7KShINGR+PkLZ4w==
-X-Received: by 2002:ac8:548e:: with SMTP id h14mr4370466qtq.326.1606938712976;
-        Wed, 02 Dec 2020 11:51:52 -0800 (PST)
+        bh=Qhokq9in10lp163pHnGcT2VBA0zMfVv69pIfLJBBEPo=;
+        b=ZDSPlonBlZZRDtZ6sqYRrSFMALTFTkahH6r/N/9CQd1295Q/o4kVflxhcrW3Vg5gIY
+         ny7FDTBt+uJN5Lwgo8XBTDP8ZnjadS/FcMqImIC8Ogu/vGfvts7FPoePdFJ+UOO9pIA3
+         h4jDWmyhCl13T27WQvKGbwIUMKp3F6elcsMZ41dXWOsgy+/0M8V8DHjKbv0S13wrUEtj
+         CuUZZ+gTkjyIIsogbv4WA54zjsyQvRfSdpfZhqUvI0ph8SLYmSrgMYoUcfYnKDwn8OqQ
+         zSjkfMkT64JGtnqKu+gXSf1JgP1JHhMkq9TliUqIw9VEcmV6jM0EttiUwUjYiCCuNorh
+         dKUQ==
+X-Gm-Message-State: AOAM531FH6Dyop0L5Vntk8ZJb+2jTF9fWHtYiUNkQBDWj6I0xSl0SoMm
+        tqv3/ONNrtzEVaN28UDctfuH+/pVz1EgjQ==
+X-Google-Smtp-Source: ABdhPJyhUimQ9uTbfvNCRylI6cUv1EgK3F7tCB87FySOsDgjOYD+0X/2P2o4Xoez3sJoToJTVawdIw==
+X-Received: by 2002:ac8:5197:: with SMTP id c23mr4311603qtn.202.1606938750282;
+        Wed, 02 Dec 2020 11:52:30 -0800 (PST)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id s23sm2982555qke.11.2020.12.02.11.51.52
+        by smtp.gmail.com with ESMTPSA id h26sm2888919qkh.127.2020.12.02.11.52.29
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 02 Dec 2020 11:51:52 -0800 (PST)
+        Wed, 02 Dec 2020 11:52:29 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v3 21/54] btrfs: handle btrfs_record_root_in_trans failure in create_subvol
-Date:   Wed,  2 Dec 2020 14:50:39 -0500
-Message-Id: <8da8919da73bdaf0e652f03d59391e7710da6e5c.1606938211.git.josef@toxicpanda.com>
+Subject: [PATCH v3 42/54] btrfs: check for BTRFS_BLOCK_FLAG_FULL_BACKREF being set improperly
+Date:   Wed,  2 Dec 2020 14:51:00 -0500
+Message-Id: <cf522824a3a16e2186b43c5336b4d99cd0cd4d19.1606938211.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.2
 In-Reply-To: <cover.1606938211.git.josef@toxicpanda.com>
 References: <cover.1606938211.git.josef@toxicpanda.com>
@@ -69,31 +69,30 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-btrfs_record_root_in_trans will return errors in the future, so handle
-the error properly in create_subvol.
+We need to validate that a data extent item does not have the
+FULL_BACKREF flag set on it's flags.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/ioctl.c | 6 +++++-
- 1 file changed, 5 insertions(+), 1 deletion(-)
+ fs/btrfs/tree-checker.c | 5 +++++
+ 1 file changed, 5 insertions(+)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 703212ff50a5..ad50e654ee64 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -714,7 +714,11 @@ static noinline int create_subvol(struct inode *dir,
- 	/* Freeing will be done in btrfs_put_root() of new_root */
- 	anon_dev = 0;
+diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
+index 028e733e42f3..39714aeb9b36 100644
+--- a/fs/btrfs/tree-checker.c
++++ b/fs/btrfs/tree-checker.c
+@@ -1283,6 +1283,11 @@ static int check_extent_item(struct extent_buffer *leaf,
+ 				   key->offset, fs_info->sectorsize);
+ 			return -EUCLEAN;
+ 		}
++		if (flags & BTRFS_BLOCK_FLAG_FULL_BACKREF) {
++			extent_err(leaf, slot,
++			"invalid extent flag, data has full backref set");
++			return -EUCLEAN;
++		}
+ 	}
+ 	ptr = (unsigned long)(struct btrfs_extent_item *)(ei + 1);
  
--	btrfs_record_root_in_trans(trans, new_root);
-+	ret = btrfs_record_root_in_trans(trans, new_root);
-+	if (ret) {
-+		btrfs_abort_transaction(trans, ret);
-+		goto fail;
-+	}
- 
- 	ret = btrfs_create_subvol_root(trans, new_root, root, new_dirid);
- 	btrfs_put_root(new_root);
 -- 
 2.26.2
 

@@ -7,59 +7,59 @@ X-Spam-Status: No, score=-16.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A63FCC71155
-	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Dec 2020 19:52:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4A2F7C64E7C
+	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Dec 2020 19:52:04 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 4FF6E221FA
-	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Dec 2020 19:52:02 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DEB14221FA
+	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Dec 2020 19:52:03 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729276AbgLBTwB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 2 Dec 2020 14:52:01 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36530 "EHLO
+        id S1731077AbgLBTwD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 2 Dec 2020 14:52:03 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36514 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726112AbgLBTwB (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Dec 2020 14:52:01 -0500
-Received: from mail-qt1-x841.google.com (mail-qt1-x841.google.com [IPv6:2607:f8b0:4864:20::841])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D0BADC0617A6
-        for <linux-btrfs@vger.kernel.org>; Wed,  2 Dec 2020 11:51:20 -0800 (PST)
-Received: by mail-qt1-x841.google.com with SMTP id p12so1977822qtp.7
-        for <linux-btrfs@vger.kernel.org>; Wed, 02 Dec 2020 11:51:20 -0800 (PST)
+        with ESMTP id S1729279AbgLBTwD (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Dec 2020 14:52:03 -0500
+Received: from mail-qk1-x743.google.com (mail-qk1-x743.google.com [IPv6:2607:f8b0:4864:20::743])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2580FC0613D4
+        for <linux-btrfs@vger.kernel.org>; Wed,  2 Dec 2020 11:51:17 -0800 (PST)
+Received: by mail-qk1-x743.google.com with SMTP id q5so2446669qkc.12
+        for <linux-btrfs@vger.kernel.org>; Wed, 02 Dec 2020 11:51:17 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references:mime-version
          :content-transfer-encoding;
-        bh=BlGmClWcsezkUZR/TXWeMfcZpyoRFkTIK+BYC9zDMA0=;
-        b=gkEbyHZF7JdMrJ3ACKF7eknyqARBVte23I1zv/0dWDdGmUaNFIIkCXQ9wJz+gcfcQF
-         dnyUHq1HhbsMMvH8lRMp+vYqougJNi5m21iUDnzCBtoUZuL3i/LsYh/F5iTneQT/zYcZ
-         q73C2lCqzkzbxtXhUPrfibXJEnGsNxySVxX4oTElWF2atqB7i+OxqAHrLjZUlM5xCvqw
-         WT5unEQxiy8n4BoPVcIOW7En1ZLrJ5ovcb9u3OC350syRTo+tOoGL8A763mYROaeo1cU
-         Ytg1sTaAQEnE+Kqq4X1HwquQGUKcuWk0XBWiIIoFCcO++RFpGu7G7vzjrB4pQs9pyLuI
-         CT6w==
+        bh=nGgc80leMdV+08LRmyAhyBLDvsv2J2a7K6KC1wBGOqo=;
+        b=OJMtoT5+k/Azl16n49rxvwahwAU3i79fgeQoJz9e+xxFLYb3M2o293yaiTJxxEBVNU
+         SjO5AMT4cef7MDOSSLjjDNnDOtRApu+fzgzBho5GouPC4mU2qfTr/txwxyi3zB2B/y08
+         022Y+jplG6WBu2Kh4SN2972vCM/fUGz/RJY3h13CQ0SF0thrC9+JE909oWi1F5CE7OHw
+         +3/JOazvm6yTySaM75cYAvbY3+7FSWz4ZOABFAryh8A9GU0KUebTrK5as0kTHqsm4SOo
+         TlR7m6R7atMU5UJpALf51tbky9gHAf64P8G9sAN2VWwT2cy/K35E+9n9zBx4mKERX9sK
+         sr/Q==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=BlGmClWcsezkUZR/TXWeMfcZpyoRFkTIK+BYC9zDMA0=;
-        b=rqZPZUFNJxKKKY1IJXRv3oLfTiOkBpRfgqA+zMv5FO0GaBU2FN7Pvuk0eawoBnkgUv
-         Z/kpVaKyulA/gaQyjdb0m3EbenqYKuRadFJFbt9uG+2TM7q+91+bK6GNp/iGLialMeLL
-         wwjqedPVqQLhFRZluVOaWGSvb5m5/CfjcP9kykL9FJSbOdUzQ/Ra5Nvc0QMZsJErB/U0
-         eJbXe3Q4pG2Zx/aLuu6Pi+nL8I+MBX9i441vYYnll+4b3VTch//ZbG1QFdumwMnSwbqT
-         NFzl1QEU4FlBJ+iNQWglhcVZFOwUQMBYUj1eo8RqGpsqhUeglx5OAoj6aKxdAx2Ty+e7
-         L5CQ==
-X-Gm-Message-State: AOAM533kOdx3nI7CRxd3UJNJkK4sVWaUreXavgGtv3pFhF6p2V10Icb3
-        qYDKsmeQJE9GP360ojVn022GTS6xPwfg+w==
-X-Google-Smtp-Source: ABdhPJySizkRuYoaYYC75pPjavlcao61rBCnK2/h7osfisvZjFyfxqUhnPw4uldXdgZdIxM8njaewQ==
-X-Received: by 2002:ac8:4d8c:: with SMTP id a12mr4346621qtw.142.1606938679622;
-        Wed, 02 Dec 2020 11:51:19 -0800 (PST)
+        bh=nGgc80leMdV+08LRmyAhyBLDvsv2J2a7K6KC1wBGOqo=;
+        b=gcl8L0HjIHGr9lP4jUR7QsfYV52z/eW31esxntP95VHusRZZ+mru9sbUKMLK+a4WDI
+         PpYMxDwxuYlhx0vh0Bd8/yFddhaaWMjpn0H6wCiX89U3TiTi7AePIq6A/MViEWEU53LM
+         vapbJbwXgOmiIrDoLr7bE20sB2iXy+tQfXPk4k1lI5JzSOUL/7+vR/Owftb+SoaC9ZG+
+         qvVow4kquMO3fXwMBMw8aI+bWeT9CBLHGmv8/AKO30QyVj3g8WsKzdIDtXjJPdBojyq6
+         9qJQiuKkz7F5t13qcA+IpQ+0vY29C+VIZB+txepL+POkTQhYgswmD39X1kaDZfZlYBkq
+         kd3g==
+X-Gm-Message-State: AOAM533sKjdix1lDwb9rR1ot8h4e7lyBeO29eqT11mnaXRrU+hHI65mB
+        yOCtYEzJa1A3UBzCOQ//nFpLlSAA/iixwA==
+X-Google-Smtp-Source: ABdhPJyKZlWAo/vlKtWJ47CzTPtB8Gq+x8IwjIhhQHD5g8KWhm3gVehT/pGuK7sw6lsznGuOksvDAQ==
+X-Received: by 2002:a05:620a:21ce:: with SMTP id h14mr4353544qka.363.1606938675953;
+        Wed, 02 Dec 2020 11:51:15 -0800 (PST)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id l22sm2855315qke.118.2020.12.02.11.51.18
+        by smtp.gmail.com with ESMTPSA id s130sm2034017qka.91.2020.12.02.11.51.14
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 02 Dec 2020 11:51:18 -0800 (PST)
+        Wed, 02 Dec 2020 11:51:15 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v3 03/54] btrfs: fix lockdep splat in btrfs_recover_relocation
-Date:   Wed,  2 Dec 2020 14:50:21 -0500
-Message-Id: <6d8add2cb8a480cb2d7ea3763ea56c83e2aa3358.1606938211.git.josef@toxicpanda.com>
+Subject: [PATCH v3 01/54] btrfs: fix error handling in commit_fs_roots
+Date:   Wed,  2 Dec 2020 14:50:19 -0500
+Message-Id: <502d2273052e95e19366d785ee85e542e86fe61e.1606938211.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.2
 In-Reply-To: <cover.1606938211.git.josef@toxicpanda.com>
 References: <cover.1606938211.git.josef@toxicpanda.com>
@@ -69,147 +69,66 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-While testing the error paths of relocation I hit the following lockdep
-splat
+While doing error injection I would sometimes get a corrupt file system.
+This is because I was injecting errors at btrfs_search_slot, but would
+only do it one time per stack.  This uncovered a problem in
+commit_fs_roots, where if we get an error we would just break.  However
+we're in a nested loop, the main loop being a loop to find all the dirty
+fs roots, and then subsequent root updates would succeed clearing the
+error value.
 
-======================================================
-WARNING: possible circular locking dependency detected
-5.10.0-rc6+ #217 Not tainted
-------------------------------------------------------
-mount/779 is trying to acquire lock:
-ffffa0e676945418 (&fs_info->balance_mutex){+.+.}-{3:3}, at: btrfs_recover_balance+0x2f0/0x340
+This isn't likely to happen in real scenarios, however we could
+potentially get a random ENOMEM once and then not again, and we'd end up
+with a corrupted file system.  Fix this by moving the error checking
+around a bit to the nested loop, as this is the only place where
+something will fail, and return the error as soon as it occurs.
 
-but task is already holding lock:
-ffffa0e60ee31da8 (btrfs-root-00){++++}-{3:3}, at: __btrfs_tree_read_lock+0x27/0x100
-
-which lock already depends on the new lock.
-
-the existing dependency chain (in reverse order) is:
-
--> #2 (btrfs-root-00){++++}-{3:3}:
-       down_read_nested+0x43/0x130
-       __btrfs_tree_read_lock+0x27/0x100
-       btrfs_read_lock_root_node+0x31/0x40
-       btrfs_search_slot+0x462/0x8f0
-       btrfs_update_root+0x55/0x2b0
-       btrfs_drop_snapshot+0x398/0x750
-       clean_dirty_subvols+0xdf/0x120
-       btrfs_recover_relocation+0x534/0x5a0
-       btrfs_start_pre_rw_mount+0xcb/0x170
-       open_ctree+0x151f/0x1726
-       btrfs_mount_root.cold+0x12/0xea
-       legacy_get_tree+0x30/0x50
-       vfs_get_tree+0x28/0xc0
-       vfs_kern_mount.part.0+0x71/0xb0
-       btrfs_mount+0x10d/0x380
-       legacy_get_tree+0x30/0x50
-       vfs_get_tree+0x28/0xc0
-       path_mount+0x433/0xc10
-       __x64_sys_mount+0xe3/0x120
-       do_syscall_64+0x33/0x40
-       entry_SYSCALL_64_after_hwframe+0x44/0xa9
-
--> #1 (sb_internal#2){.+.+}-{0:0}:
-       start_transaction+0x444/0x700
-       insert_balance_item.isra.0+0x37/0x320
-       btrfs_balance+0x354/0xf40
-       btrfs_ioctl_balance+0x2cf/0x380
-       __x64_sys_ioctl+0x83/0xb0
-       do_syscall_64+0x33/0x40
-       entry_SYSCALL_64_after_hwframe+0x44/0xa9
-
--> #0 (&fs_info->balance_mutex){+.+.}-{3:3}:
-       __lock_acquire+0x1120/0x1e10
-       lock_acquire+0x116/0x370
-       __mutex_lock+0x7e/0x7b0
-       btrfs_recover_balance+0x2f0/0x340
-       open_ctree+0x1095/0x1726
-       btrfs_mount_root.cold+0x12/0xea
-       legacy_get_tree+0x30/0x50
-       vfs_get_tree+0x28/0xc0
-       vfs_kern_mount.part.0+0x71/0xb0
-       btrfs_mount+0x10d/0x380
-       legacy_get_tree+0x30/0x50
-       vfs_get_tree+0x28/0xc0
-       path_mount+0x433/0xc10
-       __x64_sys_mount+0xe3/0x120
-       do_syscall_64+0x33/0x40
-       entry_SYSCALL_64_after_hwframe+0x44/0xa9
-
-other info that might help us debug this:
-
-Chain exists of:
-  &fs_info->balance_mutex --> sb_internal#2 --> btrfs-root-00
-
- Possible unsafe locking scenario:
-
-       CPU0                    CPU1
-       ----                    ----
-  lock(btrfs-root-00);
-                               lock(sb_internal#2);
-                               lock(btrfs-root-00);
-  lock(&fs_info->balance_mutex);
-
- *** DEADLOCK ***
-
-2 locks held by mount/779:
- #0: ffffa0e60dc040e0 (&type->s_umount_key#47/1){+.+.}-{3:3}, at: alloc_super+0xb5/0x380
- #1: ffffa0e60ee31da8 (btrfs-root-00){++++}-{3:3}, at: __btrfs_tree_read_lock+0x27/0x100
-
-stack backtrace:
-CPU: 0 PID: 779 Comm: mount Not tainted 5.10.0-rc6+ #217
-Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.13.0-2.fc32 04/01/2014
-Call Trace:
- dump_stack+0x8b/0xb0
- check_noncircular+0xcf/0xf0
- ? trace_call_bpf+0x139/0x260
- __lock_acquire+0x1120/0x1e10
- lock_acquire+0x116/0x370
- ? btrfs_recover_balance+0x2f0/0x340
- __mutex_lock+0x7e/0x7b0
- ? btrfs_recover_balance+0x2f0/0x340
- ? btrfs_recover_balance+0x2f0/0x340
- ? rcu_read_lock_sched_held+0x3f/0x80
- ? kmem_cache_alloc_trace+0x2c4/0x2f0
- ? btrfs_get_64+0x5e/0x100
- btrfs_recover_balance+0x2f0/0x340
- open_ctree+0x1095/0x1726
- btrfs_mount_root.cold+0x12/0xea
- ? rcu_read_lock_sched_held+0x3f/0x80
- legacy_get_tree+0x30/0x50
- vfs_get_tree+0x28/0xc0
- vfs_kern_mount.part.0+0x71/0xb0
- btrfs_mount+0x10d/0x380
- ? __kmalloc_track_caller+0x2f2/0x320
- legacy_get_tree+0x30/0x50
- vfs_get_tree+0x28/0xc0
- ? capable+0x3a/0x60
- path_mount+0x433/0xc10
- __x64_sys_mount+0xe3/0x120
- do_syscall_64+0x33/0x40
- entry_SYSCALL_64_after_hwframe+0x44/0xa9
-
-This is thankfully straightforward to fix, simply release the path
-before we setup the reloc_ctl.
+With this patch my reproducer no longer corrupts the file system.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/volumes.c | 2 ++
- 1 file changed, 2 insertions(+)
+ fs/btrfs/transaction.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 7930e1c78c45..49ba941f0314 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -4318,6 +4318,8 @@ int btrfs_recover_balance(struct btrfs_fs_info *fs_info)
- 		btrfs_warn(fs_info,
- 	"balance: cannot set exclusive op status, resume manually");
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 8e0f7a1029c6..a614f7699ce4 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1319,7 +1319,6 @@ static noinline int commit_fs_roots(struct btrfs_trans_handle *trans)
+ 	struct btrfs_root *gang[8];
+ 	int i;
+ 	int ret;
+-	int err = 0;
  
-+	btrfs_release_path(path);
+ 	spin_lock(&fs_info->fs_roots_radix_lock);
+ 	while (1) {
+@@ -1331,6 +1330,8 @@ static noinline int commit_fs_roots(struct btrfs_trans_handle *trans)
+ 			break;
+ 		for (i = 0; i < ret; i++) {
+ 			struct btrfs_root *root = gang[i];
++			int err;
 +
- 	mutex_lock(&fs_info->balance_mutex);
- 	BUG_ON(fs_info->balance_ctl);
- 	spin_lock(&fs_info->balance_lock);
+ 			radix_tree_tag_clear(&fs_info->fs_roots_radix,
+ 					(unsigned long)root->root_key.objectid,
+ 					BTRFS_ROOT_TRANS_TAG);
+@@ -1353,14 +1354,14 @@ static noinline int commit_fs_roots(struct btrfs_trans_handle *trans)
+ 			err = btrfs_update_root(trans, fs_info->tree_root,
+ 						&root->root_key,
+ 						&root->root_item);
+-			spin_lock(&fs_info->fs_roots_radix_lock);
+ 			if (err)
+-				break;
++				return err;
++			spin_lock(&fs_info->fs_roots_radix_lock);
+ 			btrfs_qgroup_free_meta_all_pertrans(root);
+ 		}
+ 	}
+ 	spin_unlock(&fs_info->fs_roots_radix_lock);
+-	return err;
++	return 0;
+ }
+ 
+ /*
 -- 
 2.26.2
 

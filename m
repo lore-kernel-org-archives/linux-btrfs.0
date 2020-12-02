@@ -7,59 +7,59 @@ X-Spam-Status: No, score=-16.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0AD96C71155
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8DFD4C8301E
 	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Dec 2020 19:53:49 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id C225722201
-	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Dec 2020 19:53:48 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5A28222203
+	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Dec 2020 19:53:49 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2389812AbgLBTxZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 2 Dec 2020 14:53:25 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36652 "EHLO
+        id S2389806AbgLBTxW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 2 Dec 2020 14:53:22 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36636 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2388104AbgLBTxZ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Dec 2020 14:53:25 -0500
-Received: from mail-qt1-x842.google.com (mail-qt1-x842.google.com [IPv6:2607:f8b0:4864:20::842])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2EB4DC09424D
-        for <linux-btrfs@vger.kernel.org>; Wed,  2 Dec 2020 11:52:34 -0800 (PST)
-Received: by mail-qt1-x842.google.com with SMTP id l7so1974722qtp.8
-        for <linux-btrfs@vger.kernel.org>; Wed, 02 Dec 2020 11:52:34 -0800 (PST)
+        with ESMTP id S2389799AbgLBTxV (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Dec 2020 14:53:21 -0500
+Received: from mail-qk1-x743.google.com (mail-qk1-x743.google.com [IPv6:2607:f8b0:4864:20::743])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CDC62C094242
+        for <linux-btrfs@vger.kernel.org>; Wed,  2 Dec 2020 11:52:23 -0800 (PST)
+Received: by mail-qk1-x743.google.com with SMTP id u4so2466122qkk.10
+        for <linux-btrfs@vger.kernel.org>; Wed, 02 Dec 2020 11:52:23 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references:mime-version
          :content-transfer-encoding;
-        bh=VJjId8hZEVzyIER86VZ8xDHAVM9xeJsKzfY/gc8fAqo=;
-        b=Blzy/UQPQ7RjU17BmwjFc3GqvspbG1drX2MqvVwe0iERjPJ+I8MoxLSFWQktEgl23r
-         gyRLnrm7Qomm1p5O4M54cPJGO0wejU/T5jMK2eVU4Oj2qJgJWCioP/mKiG2Ssjt0Jx38
-         4MVKyeeoW59aC1Jvs+wRBhz5dA0dh3HsmGcnTJ1ThEydq/zvsu8Si1wK7ug6/eHwKzVs
-         rWq8R8rophqwFPP2u07zuC+9MKbFLoY4e2ID5BpIpteFtcQtt4dZB8Lkubm1Bp+IQoeX
-         bK1NkmURmq/9h3vmZWQagdfL9SThht1PzI/bbYRPp579+kjzlW8OFt82mR9VncknqHH1
-         WKAQ==
+        bh=zulpyi5SLM44cKCfoKl/mIq7LY9yIfa92iZ4+KP+dxE=;
+        b=kDbVce4eMU33vD6nh7UvUFjcOSyxZLaTytpyX4UpDzv4/V4/RzgOoHK5mm5C9boZxm
+         A7j2Wt1vV+g0ChREosk+ZIBIn0NFXI7RtGj/wdTcz/tTRksDw3MrMlw6URmiFs22/mbB
+         okcdSLzWtMftr9OBAOea6W8yQ3sjjA5hBC/sf39I374AFNZOxfdQ7o3dVd81W1fCO5CQ
+         71P5TKuYMi7tSaGFdulC6zrBoXEkZEkZA8AHd7Rpg/b71FiMULIZN3/oBzl6a0QPoGw3
+         X7cVFc88+hEDU0QtckriPLvRv3We1N1lfdL4RrJBMqo/R5NClQ84v7inJH8+WFs95QIj
+         /p/w==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=VJjId8hZEVzyIER86VZ8xDHAVM9xeJsKzfY/gc8fAqo=;
-        b=OCGD8O+4uq25FoPvdi7h4KVijjflclX9f44aK6Ck1wlbwrza/0ma51NKEZv7aEw86W
-         h0ksP90Azq1+VxplwzWfLzBwnV5GzBspPDNaI/kPBPeHNeg1sBlfXsmiQOqd84fN00Lp
-         1zr1gh09pyZA0F6yuWIQwUg/WhHRashcf38jxOpHi9Ztaw73mZ5BKxSmkXmYDYayQjnn
-         b6mWOZGLMTuXsV03BAcqJBha+ZeSupDvTPhF9/8s5K3oQh0fwD/x840gP/gadrs0vUoH
-         U2CGwzqvZqIeQRrygAY1/AEIIwPZBJ24DBF3xHol+9V+R4VPwHablXQtBqWUh1QcrsbT
-         bKuQ==
-X-Gm-Message-State: AOAM532YBaq/XQ6bxgSbcyyO4cCoRcGEgBDIvQIBz2MBpB/6U+V1V0wF
-        Ul9hlrT2KFInKxRY+6jC5jEmq1z+itwfUQ==
-X-Google-Smtp-Source: ABdhPJxqXyqzJ0RjyMXu/Mw4/LEg9tKHxk2KqAxWSL26EM1EQmD1TYuY/xcmyrQL+UFMiMb7BUejog==
-X-Received: by 2002:a05:622a:30e:: with SMTP id q14mr4519352qtw.77.1606938753074;
-        Wed, 02 Dec 2020 11:52:33 -0800 (PST)
+        bh=zulpyi5SLM44cKCfoKl/mIq7LY9yIfa92iZ4+KP+dxE=;
+        b=aJNk0+aoKXRC5hmybTA7/aItjMJJfiZ0FX/aBbLQb9AsSFFYeLAbxn26cG1PwfnEzI
+         3NW8aqDmSEPRjbG5jATYgOCIPEy5vjESahcsAtUO2iJR2b4EeJTDTZFkAplIl5DtzY/u
+         dDte/uqLPskRTKzW6tu8ozTE1PL9/XRTFdckAtkEjXDTKKNCBEFyM47MekMalHm+z9yz
+         ZMx+f791BWV8+f2xJ0AMoY7Kl4UwZaCn7t1c+ntiqAAz4ciSRb7kB2P9stb0MTfbPbMS
+         xpeYshfL4WLvYzBbA9WsxY60WT320uVQ7HKpA2g1MKhQgUlgeLIhHq+nOX6FMLWlTOmj
+         PZig==
+X-Gm-Message-State: AOAM5335SS4VJXF2mM1zHdWgrnaOEi+0/HPhVP+MpUS/JqFyRMGfqiXG
+        XpRD1BF0d6JWKc625XQjLwJwB/fWhreNPQ==
+X-Google-Smtp-Source: ABdhPJwB7EIroXffxLQVt/6QwLQwN77dYE7Har8zPEb/bHnBRaTc8saC21RuTsLXmehUL1DmneTawQ==
+X-Received: by 2002:a37:4f4e:: with SMTP id d75mr3870912qkb.284.1606938742692;
+        Wed, 02 Dec 2020 11:52:22 -0800 (PST)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id d140sm2836702qke.59.2020.12.02.11.52.32
+        by smtp.gmail.com with ESMTPSA id v6sm2768201qkh.83.2020.12.02.11.52.21
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 02 Dec 2020 11:52:32 -0800 (PST)
+        Wed, 02 Dec 2020 11:52:22 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v3 43/54] btrfs: remove the extent item sanity checks in relocate_block_group
-Date:   Wed,  2 Dec 2020 14:51:01 -0500
-Message-Id: <09013ee34800bd1bd6354254a1b6a29ddf68f09f.1606938211.git.josef@toxicpanda.com>
+Subject: [PATCH v3 38/54] btrfs: handle the loop btrfs_cow_block error in replace_path
+Date:   Wed,  2 Dec 2020 14:50:56 -0500
+Message-Id: <ccb1551a8d087aa2d6ac7cf9100a0034172a645a.1606938211.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.2
 In-Reply-To: <cover.1606938211.git.josef@toxicpanda.com>
 References: <cover.1606938211.git.josef@toxicpanda.com>
@@ -69,67 +69,32 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-These checks are all taken care of for us by the tree checker code.
+As we loop through the path to replace it, we will have to cow each node
+we hit on the path down to the lowest_level.  If this fails we simply
+unlock and free the block and break from the loop.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/relocation.c | 29 +----------------------------
- 1 file changed, 1 insertion(+), 28 deletions(-)
+ fs/btrfs/relocation.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 3159f6517588..8f4f1e21c770 100644
+index 52d6e7ab4265..781908f3a3af 100644
 --- a/fs/btrfs/relocation.c
 +++ b/fs/btrfs/relocation.c
-@@ -3370,20 +3370,6 @@ static void unset_reloc_control(struct reloc_control *rc)
- 	mutex_unlock(&fs_info->reloc_mutex);
- }
+@@ -1286,7 +1286,11 @@ int replace_path(struct btrfs_trans_handle *trans, struct reloc_control *rc,
+ 				ret = btrfs_cow_block(trans, dest, eb, parent,
+ 						      slot, &eb,
+ 						      BTRFS_NESTING_COW);
+-				BUG_ON(ret);
++				if (ret) {
++					btrfs_tree_unlock(eb);
++					free_extent_buffer(eb);
++					break;
++				}
+ 			}
  
--static int check_extent_flags(u64 flags)
--{
--	if ((flags & BTRFS_EXTENT_FLAG_DATA) &&
--	    (flags & BTRFS_EXTENT_FLAG_TREE_BLOCK))
--		return 1;
--	if (!(flags & BTRFS_EXTENT_FLAG_DATA) &&
--	    !(flags & BTRFS_EXTENT_FLAG_TREE_BLOCK))
--		return 1;
--	if ((flags & BTRFS_EXTENT_FLAG_DATA) &&
--	    (flags & BTRFS_BLOCK_FLAG_FULL_BACKREF))
--		return 1;
--	return 0;
--}
--
- static noinline_for_stack
- int prepare_to_relocate(struct reloc_control *rc)
- {
-@@ -3435,7 +3421,6 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
- 	struct btrfs_path *path;
- 	struct btrfs_extent_item *ei;
- 	u64 flags;
--	u32 item_size;
- 	int ret;
- 	int err = 0;
- 	int progress = 0;
-@@ -3484,19 +3469,7 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
- 
- 		ei = btrfs_item_ptr(path->nodes[0], path->slots[0],
- 				    struct btrfs_extent_item);
--		item_size = btrfs_item_size_nr(path->nodes[0], path->slots[0]);
--		if (item_size >= sizeof(*ei)) {
--			flags = btrfs_extent_flags(path->nodes[0], ei);
--			ret = check_extent_flags(flags);
--			BUG_ON(ret);
--		} else if (unlikely(item_size == sizeof(struct btrfs_extent_item_v0))) {
--			err = -EINVAL;
--			btrfs_print_v0_err(trans->fs_info);
--			btrfs_abort_transaction(trans, err);
--			break;
--		} else {
--			BUG();
--		}
-+		flags = btrfs_extent_flags(path->nodes[0], ei);
- 
- 		if (flags & BTRFS_EXTENT_FLAG_TREE_BLOCK) {
- 			ret = add_tree_block(rc, &key, path, &blocks);
+ 			btrfs_tree_unlock(parent);
 -- 
 2.26.2
 

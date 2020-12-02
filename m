@@ -2,110 +2,136 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-15.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-15.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 322CDC71155
-	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Dec 2020 18:30:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 56CDAC64E7C
+	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Dec 2020 19:44:11 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id CA05B22248
-	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Dec 2020 18:30:08 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id EA52622201
+	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Dec 2020 19:44:10 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729074AbgLBS3w (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 2 Dec 2020 13:29:52 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51908 "EHLO
+        id S1729184AbgLBTnt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 2 Dec 2020 14:43:49 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35250 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728989AbgLBS3v (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Dec 2020 13:29:51 -0500
-Received: from mail-qk1-x741.google.com (mail-qk1-x741.google.com [IPv6:2607:f8b0:4864:20::741])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 95E34C0613CF
-        for <linux-btrfs@vger.kernel.org>; Wed,  2 Dec 2020 10:29:11 -0800 (PST)
-Received: by mail-qk1-x741.google.com with SMTP id 1so2208553qka.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 02 Dec 2020 10:29:11 -0800 (PST)
+        with ESMTP id S1728940AbgLBTnt (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Dec 2020 14:43:49 -0500
+Received: from mail-wm1-x342.google.com (mail-wm1-x342.google.com [IPv6:2a00:1450:4864:20::342])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AC764C0613D4
+        for <linux-btrfs@vger.kernel.org>; Wed,  2 Dec 2020 11:43:08 -0800 (PST)
+Received: by mail-wm1-x342.google.com with SMTP id k10so10625899wmi.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 02 Dec 2020 11:43:08 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=subject:to:references:from:message-id:date:user-agent:mime-version
-         :in-reply-to:content-language:content-transfer-encoding;
-        bh=vIemTzbZoT86zpPT+F5Fue/iG2vajm+y7xywGlIcQTU=;
-        b=T73uAyQj7MStxmitu2VIWYsBpk3suP0K0kL80maXVkmuLc9304s51VlvRxahO5YFaR
-         pCCt/MBiiQgNHf12vUC8Hs71kPhs6v9Tq4U6sEUuty8kaF87wceFn9LsFzx8rDGjl37B
-         RGklOXug+lwDVMjYSkQjLCM/1scnTZfufmPJShsCXVUA3L+NOLlnDFqjpUdVayuLkNOp
-         rc4VtJ4l1lwmy0CrW7nfBwrUiHAXKPIqtGm9uFvssdZ77TZNeAPWwWPTLXbFysYAySbs
-         o405y0/wYR2uTmfraCREhM9jbCpd3WU80e5xD2ZhFxJhxHkMOtdNglMbqH9yk9evcTu7
-         MAJg==
+        d=gmail.com; s=20161025;
+        h=from:to:subject:date:message-id:in-reply-to:references:mime-version
+         :content-transfer-encoding;
+        bh=fJhESfHKiNX8SD67hnYRudkmIYhXIzdckGtb1EU5s5Q=;
+        b=OykHbB1NCRYPbBa2DJCcIQT6BQTGBTcGoOBzVDxCYVfT0erZEMHOQhOS2kyujx4QVL
+         8OIxZQL7O6BPuPq6wCIP5ja5A1ddnYATJdh6ZdCtabReyfndM7+G4+2Nf3IG3FF5yD3U
+         A3IIYTkGMmZyhg6I/B5zJVbOH2E2wo3p7t1DKNKM/N0fkpdH8UsA4OHKNLPLUypKUeIV
+         rNk6tcdc+s6f6sM3IN/v9lbkzIbvJuYItIcRrZuF2wVowrbqJjM0TrsJxbVu0dMvPDh/
+         B+rgVHWkHJBvDAKFAPDNj2dnKj4L1TiIP1M4YF9g9gxKp3azLAR1pEL872+znC2ee80M
+         hyjA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=vIemTzbZoT86zpPT+F5Fue/iG2vajm+y7xywGlIcQTU=;
-        b=jyoeaFKF+OqE4w0EKTWxOQUVh5RLoufRQoQnBN8tf58HC9diU0sr+YvTvAodQvrdwo
-         CnbX/Y+ndXKEIMUzqDFUVsw2nEy7e79TCtsLSqYEZnXrNGOH1O8NNvMnKtVCC6HKcA9T
-         oTEnlDHlfFG6LhAcPJG85FWl1rR3tbilDapxAE4o0YzuvC6UHlWWGwgRQCbMYQJrK0cS
-         9k8AYjuOBqCKnduJvGbaVJK9ELOMhjpw5NLwuSFg739447BMw5g7U7fNMU3gqAcjwqxN
-         LeXVZiU3rGA/mzjkBxUXf21RHz4cJNtSFaOAJYE6enQBOPpaAQhOUbXBxdsvieiGId9z
-         t22g==
-X-Gm-Message-State: AOAM531HowoFXOYKQp+ZhDFBu6FZFqC0D4YAho5utBl3Ij4zVRUwrgdZ
-        SVsm78RbttjRl4fPPmRxp27bd22giLFX0Q==
-X-Google-Smtp-Source: ABdhPJwMioMTCqBljZ4R3EssQQF8iMgnq1COhKNhX8i/uzz+L8TByOQYxVWHwRyQoGbFOH4pe4hwtQ==
-X-Received: by 2002:a37:9ec4:: with SMTP id h187mr3842219qke.154.1606933750722;
-        Wed, 02 Dec 2020 10:29:10 -0800 (PST)
-Received: from ?IPv6:2620:10d:c0a8:11d1::1348? ([2620:10d:c091:480::1:f2b1])
-        by smtp.gmail.com with ESMTPSA id i21sm2483726qtm.1.2020.12.02.10.29.09
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 02 Dec 2020 10:29:10 -0800 (PST)
-Subject: Re: [PATCH v2 37/42] btrfs: handle __add_reloc_root failure in
- btrfs_recover_relocation
-To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org,
-        kernel-team@fb.com
-References: <cover.1605284383.git.josef@toxicpanda.com>
- <330382a46504f48eda1aace141dbf5c53d81c28a.1605284383.git.josef@toxicpanda.com>
- <718465a6-8149-092f-71c3-334cbb805877@suse.com>
-From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <ddd23440-46f0-dbca-b9be-f09db60c9afe@toxicpanda.com>
-Date:   Wed, 2 Dec 2020 13:29:08 -0500
-User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0)
- Gecko/20100101 Thunderbird/78.5.0
+        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
+         :references:mime-version:content-transfer-encoding;
+        bh=fJhESfHKiNX8SD67hnYRudkmIYhXIzdckGtb1EU5s5Q=;
+        b=IUkQGxHu61PtDzG33FH8v98rXPj2MDkyvM5V4lXlsFQ8oMmn6w3ljQLOvYDfhOPojS
+         /4v0+lCHWvfU7oifA8hHv58tbEm+o8Uf9xj+h2siQ0pu2QGoXtMlMg5S9sRNkL34z1Iz
+         xOJ4OMgbUnTT/S5OU9iqPzaVnnnh+z9E43kESNKAf9J1Z3rJvYgzE3vuaiRzTcmLRDjb
+         5hTpXqsrlC7+3JvhoarplNQKdsnBHHIHclpiNqYt+o2NVoD1v/GTTb+XLhLgrL1T+g1S
+         ONQOmhM9GISMtkkqPwOVNdvK01snTnY7KzRzEAcsFJHDg2ERdpIjakmRH1jhbzEnyAlG
+         KUNw==
+X-Gm-Message-State: AOAM5301ZxNcHkAKQOauMOsFNyJXHUAwym/79PudIfUDFNYmnTBKM9/C
+        K2BLxkZ10+WqNkofBBiZJng=
+X-Google-Smtp-Source: ABdhPJxBf5XVQGhwpPw2uBIhNiw/IeTcvDqqJ1Z14Ik6wATuH1y4fdEsYKa3zXnzbHEnlYJ3kel51Q==
+X-Received: by 2002:a1c:3d55:: with SMTP id k82mr4664752wma.57.1606938187470;
+        Wed, 02 Dec 2020 11:43:07 -0800 (PST)
+Received: from localhost.localdomain (host109-152-100-189.range109-152.btcentralplus.com. [109.152.100.189])
+        by smtp.gmail.com with ESMTPSA id q16sm3251540wrn.13.2020.12.02.11.43.06
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 02 Dec 2020 11:43:07 -0800 (PST)
+From:   Pavel Begunkov <asml.silence@gmail.com>
+To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+Subject: [PATCH v2 1/3] btrfs: fix async discard stall
+Date:   Wed,  2 Dec 2020 19:39:41 +0000
+Message-Id: <f281023a1df3246d227a3af226eb6d612b4c3a4a.1606937659.git.asml.silence@gmail.com>
+X-Mailer: git-send-email 2.24.0
+In-Reply-To: <cover.1606937659.git.asml.silence@gmail.com>
+References: <cover.1606937659.git.asml.silence@gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <718465a6-8149-092f-71c3-334cbb805877@suse.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 11/24/20 8:26 AM, Nikolay Borisov wrote:
-> 
-> 
-> On 13.11.20 г. 18:23 ч., Josef Bacik wrote:
->> We can already handle errors appropriately from this function, deal with
->> an error coming from __add_reloc_root appropriately.
->>
->> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
->> ---
->>   fs/btrfs/relocation.c | 7 ++++++-
->>   1 file changed, 6 insertions(+), 1 deletion(-)
->>
->> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
->> index c4b6eef70072..e2994fb15f2d 100644
->> --- a/fs/btrfs/relocation.c
->> +++ b/fs/btrfs/relocation.c
->> @@ -3951,7 +3951,12 @@ int btrfs_recover_relocation(struct btrfs_root *root)
->>   		}
->>   
->>   		err = __add_reloc_root(reloc_root);
->> -		BUG_ON(err < 0); /* -ENOMEM or logic error */
->> +		if (err) {
->> +			list_add_tail(&reloc_root->root_list, &reloc_roots);
->> +			btrfs_put_root(fs_root);
-> 
-> Do you need to do the the put_root, since
-> free_reloc_roots->__del_reloc_root->if (!list_empty(&root->root_list))
-> will set put_ref to true and put another reference?
+It might happen that bg->discard_eligible_time was changed without
+rescheduling, so btrfs_discard_workfn() would be awaken before that
+eligible time, peek_discard_list() returns null, and all discarding
+going to sleep until somewhat else calls for rescheduling again.
 
-Yes this is for the corresponding fs_root, not the reloc root.  Thanks,
+Fix the stall by keeping btrfs_discard_workfn() going by always calling
+btrfs_discard_schedule_work() when there is any block group in the
+discard lists.
 
-Josef
+Signed-off-by: Pavel Begunkov <asml.silence@gmail.com>
+---
+ fs/btrfs/discard.c | 13 +++++++------
+ 1 file changed, 7 insertions(+), 6 deletions(-)
+
+diff --git a/fs/btrfs/discard.c b/fs/btrfs/discard.c
+index 1db966bf85b2..4ca852445873 100644
+--- a/fs/btrfs/discard.c
++++ b/fs/btrfs/discard.c
+@@ -199,10 +199,9 @@ static struct btrfs_block_group *find_next_block_group(
+ static struct btrfs_block_group *peek_discard_list(
+ 					struct btrfs_discard_ctl *discard_ctl,
+ 					enum btrfs_discard_state *discard_state,
+-					int *discard_index)
++					int *discard_index, u64 now)
+ {
+ 	struct btrfs_block_group *block_group;
+-	const u64 now = ktime_get_ns();
+ 
+ 	spin_lock(&discard_ctl->lock);
+ again:
+@@ -224,10 +223,7 @@ static struct btrfs_block_group *peek_discard_list(
+ 		discard_ctl->block_group = block_group;
+ 		*discard_state = block_group->discard_state;
+ 		*discard_index = block_group->discard_index;
+-	} else {
+-		block_group = NULL;
+ 	}
+-
+ 	spin_unlock(&discard_ctl->lock);
+ 
+ 	return block_group;
+@@ -438,13 +434,18 @@ static void btrfs_discard_workfn(struct work_struct *work)
+ 	int discard_index = 0;
+ 	u64 trimmed = 0;
+ 	u64 minlen = 0;
++	u64 now = ktime_get_ns();
+ 
+ 	discard_ctl = container_of(work, struct btrfs_discard_ctl, work.work);
+ 
+ 	block_group = peek_discard_list(discard_ctl, &discard_state,
+-					&discard_index);
++					&discard_index, now);
+ 	if (!block_group || !btrfs_run_discard_work(discard_ctl))
+ 		return;
++	if (now < block_group->discard_eligible_time) {
++		btrfs_discard_schedule_work(discard_ctl, false);
++		return;
++	}
+ 
+ 	/* Perform discarding */
+ 	minlen = discard_minlen[discard_index];
+-- 
+2.24.0
+

@@ -2,120 +2,91 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-16.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8B044C71156
-	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Dec 2020 19:53:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7138BC8300F
+	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Dec 2020 20:13:48 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 385D122201
-	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Dec 2020 19:53:51 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 124DC2224A
+	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Dec 2020 20:13:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2389850AbgLBTxh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 2 Dec 2020 14:53:37 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36802 "EHLO
+        id S1730989AbgLBUNg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 2 Dec 2020 15:13:36 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39898 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2389839AbgLBTxe (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Dec 2020 14:53:34 -0500
-Received: from mail-qt1-x843.google.com (mail-qt1-x843.google.com [IPv6:2607:f8b0:4864:20::843])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 533D5C08E863
-        for <linux-btrfs@vger.kernel.org>; Wed,  2 Dec 2020 11:52:13 -0800 (PST)
-Received: by mail-qt1-x843.google.com with SMTP id 7so1996307qtp.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 02 Dec 2020 11:52:13 -0800 (PST)
+        with ESMTP id S1729032AbgLBUNf (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Dec 2020 15:13:35 -0500
+Received: from mail-qv1-xf41.google.com (mail-qv1-xf41.google.com [IPv6:2607:f8b0:4864:20::f41])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4CEFFC0613CF
+        for <linux-btrfs@vger.kernel.org>; Wed,  2 Dec 2020 12:12:55 -0800 (PST)
+Received: by mail-qv1-xf41.google.com with SMTP id 4so1347281qvh.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 02 Dec 2020 12:12:55 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:subject:date:message-id:in-reply-to:references:mime-version
-         :content-transfer-encoding;
-        bh=OX6WrPTbzeZRdN+o3wHO9+qTtQHxTk57fWbzaJs7QH0=;
-        b=Ym15HeGz8osURV7FfiqxpSaEpEbate4HMMyHMhB4HDNeOfL61uig0HQJuKCtx9fQb1
-         OQMMj1G6Jj/Z8XFU8CghYF7XkOhcreN96Wc0xr+hu4McBQt3JkTSjXGpN+4EJjqqrR37
-         ucNqzeUnAik3qrPIkBiL2zJZ4zkAiGx9k49Aq8ACM7uvNtzxMz1JRAG/NQ4cUcVPm0KC
-         7I/MoaJHzLmikXa1EJNz0YPMPGCsMCcHlFQmELj1JQGv5Qy//ep4777ZIn4bYct0qJFA
-         lfrXv2RlJKRrCT7UjoMHR/zuVeZu0zDpo633bjocLzstPGPpUqIX3KihA9fKrArb8igl
-         pihg==
+        h=subject:to:cc:references:from:message-id:date:user-agent
+         :mime-version:in-reply-to:content-language:content-transfer-encoding;
+        bh=Tx/wZtYAkK3705oCKGNtRXoQqp3vTr5da/ZIN/jpYbY=;
+        b=xIZru6eyjnFuXuFFsOlbwVtu1OueSJJcCMgrtUrmkQ2LadcYhLGICnhH+cpF2juBlh
+         G74RTR46Ngfv1a39m4nFrfCdlYa5hMCDMX6oQxwbQlUPLQPk7oCMY7GTIK9dokGF5crZ
+         9j8k+Hpt5mw/w3UrmaBViGo4ErObW8OD8z3outUZslmmbUhbK66GDTEiMnWDwsihI7HK
+         4C5wTlDknyIiKSnJ4ZjTzlKjfFMvJObdhlbaormLz04J1UQAHFexCpMfN7Uyhx4/IDo0
+         /L2iLBQ+w8Tx7U94B1wOIzeaP8l9m3/O65KJOfX7kposvh3rdqsbiGNPWObgXJzQWKnz
+         quWQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=OX6WrPTbzeZRdN+o3wHO9+qTtQHxTk57fWbzaJs7QH0=;
-        b=axYuwTiCPLm+Z6N9dxnRk3z1UvLkCSVzR6Jq1mGt80LtwlgPFV8q7xcstP/0pl8W2C
-         3e9QHa9LdqF3OSRUcJvXS3pbSTnYUrClxhlaP6ORsXqCDI+MpAjF0k6x/cEQlZl020Jw
-         GbEj8EWSlOoDQOzBGavvbweBG5AH0TqHDKi+4a/sXcjsJpdg/6EN4m7NzUZYACn6bTwT
-         MkYuUkc2s6EaUaZkBMskPawJtFokjvOOstNOzPjYmNFBjJKaiH55XnY5Yy9vDpf9wmdR
-         hSrG4E0iyxslT5WAa9TklZkzzDPGYfrs6YoovTgGG8MaWa/RQj2LYP4VnwzPFq1q+5aB
-         dcuQ==
-X-Gm-Message-State: AOAM5339xBgnEFcRv0Fht9YiK/XEixdMr5oUBvpGvQLSqLFiSdVToAI4
-        d9xkJtfnUioj75J3V5J1pOI74H92WuHm/A==
-X-Google-Smtp-Source: ABdhPJyvKxfSxIdP1BRYAAR2Mu90rk9g9wmfuETIEt94eXalWY0g0Sx0W5/PQ9yTHMxUiswSa/ri7Q==
-X-Received: by 2002:aed:2bc3:: with SMTP id e61mr4370910qtd.276.1606938732158;
-        Wed, 02 Dec 2020 11:52:12 -0800 (PST)
-Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id u72sm2995129qka.15.2020.12.02.11.52.11
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 02 Dec 2020 11:52:11 -0800 (PST)
+        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=Tx/wZtYAkK3705oCKGNtRXoQqp3vTr5da/ZIN/jpYbY=;
+        b=Vhup9CLd/HowtOKQI9EWxhCHbQRbXP8xWfajlIq6itQjNfcw28vFdMD7ib+svnkda7
+         TkQCBFy5MCXEClXh0cj1vTj1DbTYHjbTRbePgV5oUXQskssnJND4NFRgikoTfPmNYoSR
+         0/9BJS/0b0jULeuNBPaWg1ASpCfO/th3ImqutDuhuaDEre9CtwU90qiMAUI/DZUepolz
+         9f2f8DbIqqdtlIW+iYfFl79ZemYj3R18Rrs6DSF+bgoUvAmrt/U+1AMvvLhxaXH9cWMa
+         0hB1iD24iV0vxIaM8+mF8xei5vopILSFVTqrcyOv7GtG53JDsJSdcmjGwHNP0sdpTvX/
+         ZAzg==
+X-Gm-Message-State: AOAM5307WMfYXKxOWnlYxbROZ81MLusba3RFsoKCo2MXoHIPuaoREDEl
+        zWTlQrX0YPiHYcEIuMWsuNxL1V2TWZrqug==
+X-Google-Smtp-Source: ABdhPJy1UUdFxo7+Yl6R/selhy+krN17nzI59sIqvbzZeCVBdovE94kMuWxah/JU6kS420osd452Cw==
+X-Received: by 2002:ad4:42d2:: with SMTP id f18mr4412295qvr.23.1606939974525;
+        Wed, 02 Dec 2020 12:12:54 -0800 (PST)
+Received: from [192.168.1.45] (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
+        by smtp.gmail.com with ESMTPSA id n21sm2948070qke.32.2020.12.02.12.12.53
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 02 Dec 2020 12:12:53 -0800 (PST)
+Subject: Re: [PATCH v4 0/3] btrfs-progs: Fix logical-resolve
+To:     Marcos Paulo de Souza <marcos@mpdesouza.com>,
+        linux-btrfs@vger.kernel.org
+Cc:     Marcos Paulo de Souza <mpdesouza@suse.com>, wqu@suse.com,
+        dsterba@suse.com
+References: <20201127193035.19171-1-marcos@mpdesouza.com>
 From:   Josef Bacik <josef@toxicpanda.com>
-To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v3 32/54] btrfs: change insert_dirty_subvol to return errors
-Date:   Wed,  2 Dec 2020 14:50:50 -0500
-Message-Id: <da3a65166a31486f406abe32336b2fa55d19eac7.1606938211.git.josef@toxicpanda.com>
-X-Mailer: git-send-email 2.26.2
-In-Reply-To: <cover.1606938211.git.josef@toxicpanda.com>
-References: <cover.1606938211.git.josef@toxicpanda.com>
+Message-ID: <70b01d44-efa5-5de4-cbaa-5b31f84c289a@toxicpanda.com>
+Date:   Wed, 2 Dec 2020 15:12:53 -0500
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0)
+ Gecko/20100101 Thunderbird/78.5.0
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <20201127193035.19171-1-marcos@mpdesouza.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This will be able to return errors in the future, so change it to return
-an error and handle the error appropriately.
+On 11/27/20 2:30 PM, Marcos Paulo de Souza wrote:
+> From: Marcos Paulo de Souza <mpdesouza@suse.com>
+> 
+> In this forth iteration, only patch 0002 was changed. Previously the variable
+> full_path, which is passed by the user, was being overwritten in the inode loop.
+> Now we create a temp var to store the mount_point when the lookup is needed.
+> 
+> Please review.
 
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
----
- fs/btrfs/relocation.c | 14 +++++++++-----
- 1 file changed, 9 insertions(+), 5 deletions(-)
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index c9df05f02649..6b2d7168f98e 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -1556,9 +1556,9 @@ static int find_next_key(struct btrfs_path *path, int level,
- /*
-  * Insert current subvolume into reloc_control::dirty_subvol_roots
-  */
--static void insert_dirty_subvol(struct btrfs_trans_handle *trans,
--				struct reloc_control *rc,
--				struct btrfs_root *root)
-+static int insert_dirty_subvol(struct btrfs_trans_handle *trans,
-+			       struct reloc_control *rc,
-+			       struct btrfs_root *root)
- {
- 	struct btrfs_root *reloc_root = root->reloc_root;
- 	struct btrfs_root_item *reloc_root_item;
-@@ -1578,6 +1578,7 @@ static void insert_dirty_subvol(struct btrfs_trans_handle *trans,
- 		btrfs_grab_root(root);
- 		list_add_tail(&root->reloc_dirty_list, &rc->dirty_subvol_roots);
- 	}
-+	return 0;
- }
- 
- static int clean_dirty_subvols(struct reloc_control *rc)
-@@ -1779,8 +1780,11 @@ static noinline_for_stack int merge_reloc_root(struct reloc_control *rc,
- out:
- 	btrfs_free_path(path);
- 
--	if (ret == 0)
--		insert_dirty_subvol(trans, rc, root);
-+	if (ret == 0) {
-+		ret = insert_dirty_subvol(trans, rc, root);
-+		if (ret)
-+			btrfs_abort_transaction(trans, ret);
-+	}
- 
- 	if (trans)
- 		btrfs_end_transaction_throttle(trans);
--- 
-2.26.2
+Thanks,
 
+Josef

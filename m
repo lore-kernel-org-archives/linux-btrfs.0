@@ -2,158 +2,87 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-15.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+X-Spam-Status: No, score=-10.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AD308C71156
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F0035C83013
 	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Dec 2020 19:44:11 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 5472322240
+	by mail.kernel.org (Postfix) with ESMTP id B27C022247
 	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Dec 2020 19:44:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2387700AbgLBTnz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 2 Dec 2020 14:43:55 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35258 "EHLO
+        id S1729035AbgLBTnt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 2 Dec 2020 14:43:49 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35246 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728940AbgLBTnu (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Dec 2020 14:43:50 -0500
-Received: from mail-wm1-x341.google.com (mail-wm1-x341.google.com [IPv6:2a00:1450:4864:20::341])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 725F2C0617A6
-        for <linux-btrfs@vger.kernel.org>; Wed,  2 Dec 2020 11:43:10 -0800 (PST)
-Received: by mail-wm1-x341.google.com with SMTP id a3so11635808wmb.5
-        for <linux-btrfs@vger.kernel.org>; Wed, 02 Dec 2020 11:43:10 -0800 (PST)
+        with ESMTP id S1726390AbgLBTns (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Dec 2020 14:43:48 -0500
+Received: from mail-wm1-x342.google.com (mail-wm1-x342.google.com [IPv6:2a00:1450:4864:20::342])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 056BEC0613CF
+        for <linux-btrfs@vger.kernel.org>; Wed,  2 Dec 2020 11:43:08 -0800 (PST)
+Received: by mail-wm1-x342.google.com with SMTP id h21so11711855wmb.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 02 Dec 2020 11:43:07 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
-        h=from:to:subject:date:message-id:in-reply-to:references:mime-version
+        h=from:to:subject:date:message-id:mime-version
          :content-transfer-encoding;
-        bh=gNZgsOWM9NDBdswoYPntOxq+y+gsmXrFaIyzBe2LZb8=;
-        b=R/2Zu9FmNMqMduZaHXQzicYBT/XC/p9LnmGZQlZF+DPMfigtZHLa75Z7mUXOhveTEV
-         ElhbUtSZnZvElFPjoRwuB717D7VmaO0pUViVS2Szz0XTkbo/E09dQkfWXTy9oxHYZNdC
-         MwycOAbuqKZZDs0kwWsH0HbqiBFhGSMxMHOVxMy7BGYD35+PfeT/TAFFp2gzNiVLSMjb
-         SEJ56cA3+jrNvP8/z2dw/6seZ2dMCYor83nX0gHET1b42GVwz/YQEiXCaprHFg3+31Je
-         OLtmB10UETBzBeIXNt/ncufIAdFLkDf7yBpD7GA+iANzkEmMRXwivJEtPgFmDlOFn9Qn
-         bXJg==
+        bh=9wgBfabbjppL1ty/8xY8ZaEZm4HnPJAonwn8OJgihTs=;
+        b=KYysYyQGe88hneu+/IvfJppD462OB97PBIz9PRwhrpwznpbEBiloYhHRXk/p2yseje
+         Tmzim1eCgtvMWRoD76m7+jQJaz8SSkSoyy2khFiOhy1LK9erUGahy+ki3FryIFkWYQBT
+         h29xKzC5+Loo8slc84xl/PDC/+bJs3+dLISA9E6hYX8LaED3h594J09zKcPBjocXaxoe
+         9sIRSJjth9d1XImtvuO9OdahsHqtMZptb8YCS0BS60WXqUSiI1R9Sf8NqHw/J0LwpdXZ
+         ZioKbxgsJnRqkwlBh61Et/Wr2kJSZxlffdK8FSV/87CyWo11DZ8RvgF2Poxcg1UG0KR6
+         UYXA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=gNZgsOWM9NDBdswoYPntOxq+y+gsmXrFaIyzBe2LZb8=;
-        b=MFoXatmMqACM7wAi1jh9X2sOim3Do9dsP9ccdlEAwePVGDKvqRpFLsFOwjPtk87kM/
-         xrTlqfU55bfxRc2ljHv4ZE+1JSBsTBaNXD0TYVOGFJOXQBf1gnexUoLT94JDLSCdj+0b
-         1vdZUnQoLSiOEbQBTNK0tsGsYrxCeLfDAcDss7nQzt5CeLeK1HCSdo8dhhoBoS+cpPgk
-         bfVjHLw3Kk5PwYGZhDfxVg6JL31ZdzmjUV0d3JQpX65fkYxwye4IxmhLNv81FBY3fAN3
-         qsqmM385kaAgtaL+7UlTRd1YclxrFKURePrwJLsNQhyKMh/hh5TAiz4NImxSej2zk8VX
-         XbxQ==
-X-Gm-Message-State: AOAM532h7dNiwxD6PRaLqxQS8Q8vct+0xfyD9U1c4aFQzVwvMW7h1Sox
-        BrGQywbbwh0fekdG6j58NPB+81ZqPdxbiw==
-X-Google-Smtp-Source: ABdhPJzkNj/hUfQ2I1OBQt+1z9rUv0RumFfT1ddM2cRBfdYhDAQm0dsCYKdJTLXbmeYCEcXVU4Rb8w==
-X-Received: by 2002:a1c:e907:: with SMTP id q7mr4672186wmc.161.1606938189211;
-        Wed, 02 Dec 2020 11:43:09 -0800 (PST)
+        h=x-gm-message-state:from:to:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=9wgBfabbjppL1ty/8xY8ZaEZm4HnPJAonwn8OJgihTs=;
+        b=i9gwHD/u3IrWlH16fXkL3/P8hBgQxv+DGhYGS04VzHZGHRvCvMnUrOBonXqjMrZTVv
+         RCEalrdgfxnz1NYDk1Xth+n67MAdluL5WKI1qIoy1xvJT6mOuSsBTaTNrZGa7s7U7SvF
+         sz5h6N0B9KPbEUjwhCXCq+EocVq0zG7o0IX3svmfki0k4yWZ0EgyjVNktImch3bqyrfg
+         1ASDYTRbVygRSUD4m5pPZbTfMgT8SOhslFeXUtxQR6o/LDnvv+TXikJ4oDQexPRF8C/u
+         DlN46P3j9YfM0t7YZI3KcKwFWIc4fIsasRFRO5o0w2eMcgW0y0jbLFu6ROf8gsLYLlou
+         2ZTw==
+X-Gm-Message-State: AOAM532szWJg3nh8dZIiBfLSMHeX5wdUCaBB+yxp3BtZas7XI4WU3p4f
+        SMG6fTfhTuIV388kSYcQaew=
+X-Google-Smtp-Source: ABdhPJyR6YBoExGeQ2K6FHJaYXaqhQWxbuTgJRMVdB/JyJbcmc1jiOjJYVA0xOgljWtB4mmaDxOE8Q==
+X-Received: by 2002:a1c:2c88:: with SMTP id s130mr4787589wms.79.1606938186696;
+        Wed, 02 Dec 2020 11:43:06 -0800 (PST)
 Received: from localhost.localdomain (host109-152-100-189.range109-152.btcentralplus.com. [109.152.100.189])
-        by smtp.gmail.com with ESMTPSA id q16sm3251540wrn.13.2020.12.02.11.43.08
+        by smtp.gmail.com with ESMTPSA id q16sm3251540wrn.13.2020.12.02.11.43.06
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 02 Dec 2020 11:43:08 -0800 (PST)
+        Wed, 02 Dec 2020 11:43:06 -0800 (PST)
 From:   Pavel Begunkov <asml.silence@gmail.com>
 To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 3/3] btrfs: don't overabuse discard lock
-Date:   Wed,  2 Dec 2020 19:39:43 +0000
-Message-Id: <6c0f1ab37e18683331468ca2f9aab519680e54fc.1606937659.git.asml.silence@gmail.com>
+Subject: [PATCH v2 0/3] btrfs async discard fixes & improvements
+Date:   Wed,  2 Dec 2020 19:39:40 +0000
+Message-Id: <cover.1606937659.git.asml.silence@gmail.com>
 X-Mailer: git-send-email 2.24.0
-In-Reply-To: <cover.1606937659.git.asml.silence@gmail.com>
-References: <cover.1606937659.git.asml.silence@gmail.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-btrfs_discard_workfn() drops discard_ctl->lock just to take it again in
-a moment in btrfs_discard_schedule_work(). Avoid that and also reuse
-ktime.
+v2: fix async discard stalls [1/3]
 
-Signed-off-by: Pavel Begunkov <asml.silence@gmail.com>
----
- fs/btrfs/discard.c | 43 +++++++++++++++++++++++--------------------
- 1 file changed, 23 insertions(+), 20 deletions(-)
+Two others are same but rebased on top. [2/3] fixes not important
+stats torn reads, [3/3] saves a bit of locking.
 
-diff --git a/fs/btrfs/discard.c b/fs/btrfs/discard.c
-index a338f44fec3b..cd3b23f7ceb2 100644
---- a/fs/btrfs/discard.c
-+++ b/fs/btrfs/discard.c
-@@ -326,28 +326,15 @@ void btrfs_discard_queue_work(struct btrfs_discard_ctl *discard_ctl,
- 		btrfs_discard_schedule_work(discard_ctl, false);
- }
- 
--/**
-- * btrfs_discard_schedule_work - responsible for scheduling the discard work
-- * @discard_ctl: discard control
-- * @override: override the current timer
-- *
-- * Discards are issued by a delayed workqueue item.  @override is used to
-- * update the current delay as the baseline delay interval is reevaluated on
-- * transaction commit.  This is also maxed with any other rate limit.
-- */
--void btrfs_discard_schedule_work(struct btrfs_discard_ctl *discard_ctl,
--				 bool override)
-+static void __btrfs_discard_schedule_work(struct btrfs_discard_ctl *discard_ctl,
-+					  u64 now, bool override)
- {
- 	struct btrfs_block_group *block_group;
--	const u64 now = ktime_get_ns();
--
--	spin_lock(&discard_ctl->lock);
- 
- 	if (!btrfs_run_discard_work(discard_ctl))
--		goto out;
--
-+		return;
- 	if (!override && delayed_work_pending(&discard_ctl->work))
--		goto out;
-+		return;
- 
- 	block_group = find_next_block_group(discard_ctl, now);
- 	if (block_group) {
-@@ -389,7 +376,24 @@ void btrfs_discard_schedule_work(struct btrfs_discard_ctl *discard_ctl,
- 		mod_delayed_work(discard_ctl->discard_workers,
- 				 &discard_ctl->work, nsecs_to_jiffies(delay));
- 	}
--out:
-+}
-+
-+/**
-+ * btrfs_discard_schedule_work - responsible for scheduling the discard work
-+ * @discard_ctl: discard control
-+ * @override: override the current timer
-+ *
-+ * Discards are issued by a delayed workqueue item.  @override is used to
-+ * update the current delay as the baseline delay interval is reevaluated on
-+ * transaction commit.  This is also maxed with any other rate limit.
-+ */
-+void btrfs_discard_schedule_work(struct btrfs_discard_ctl *discard_ctl,
-+				 bool override)
-+{
-+	u64 now = ktime_get_ns();
-+
-+	spin_lock(&discard_ctl->lock);
-+	__btrfs_discard_schedule_work(discard_ctl, now, override);
- 	spin_unlock(&discard_ctl->lock);
- }
- 
-@@ -495,9 +499,8 @@ static void btrfs_discard_workfn(struct work_struct *work)
- 	discard_ctl->prev_discard = trimmed;
- 	discard_ctl->prev_discard_time = now;
- 	discard_ctl->block_group = NULL;
-+	__btrfs_discard_schedule_work(discard_ctl, now, false);
- 	spin_unlock(&discard_ctl->lock);
--
--	btrfs_discard_schedule_work(discard_ctl, false);
- }
- 
- /**
+note: based on for-next
+
+Pavel Begunkov (3):
+  btrfs: fix async discard stall
+  btrfs: fix racy access to discard_ctl data
+  btrfs: don't overabuse discard lock
+
+ fs/btrfs/discard.c | 66 +++++++++++++++++++++++-----------------------
+ 1 file changed, 33 insertions(+), 33 deletions(-)
+
 -- 
 2.24.0
 

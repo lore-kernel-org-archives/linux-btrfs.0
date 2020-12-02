@@ -7,59 +7,59 @@ X-Spam-Status: No, score=-16.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B547EC83014
-	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Dec 2020 19:53:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8D706C8301C
+	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Dec 2020 19:53:48 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 63D9322203
-	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Dec 2020 19:53:53 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3A18522201
+	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Dec 2020 19:53:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2389853AbgLBTxi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 2 Dec 2020 14:53:38 -0500
+        id S2389797AbgLBTxV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 2 Dec 2020 14:53:21 -0500
 Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36768 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2389842AbgLBTxe (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Dec 2020 14:53:34 -0500
-Received: from mail-qk1-x743.google.com (mail-qk1-x743.google.com [IPv6:2607:f8b0:4864:20::743])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A1B96C061A4C
-        for <linux-btrfs@vger.kernel.org>; Wed,  2 Dec 2020 11:52:49 -0800 (PST)
-Received: by mail-qk1-x743.google.com with SMTP id q5so2451695qkc.12
-        for <linux-btrfs@vger.kernel.org>; Wed, 02 Dec 2020 11:52:49 -0800 (PST)
+        with ESMTP id S2389787AbgLBTxT (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Dec 2020 14:53:19 -0500
+Received: from mail-qt1-x841.google.com (mail-qt1-x841.google.com [IPv6:2607:f8b0:4864:20::841])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 43D85C061A56
+        for <linux-btrfs@vger.kernel.org>; Wed,  2 Dec 2020 11:51:52 -0800 (PST)
+Received: by mail-qt1-x841.google.com with SMTP id d5so1999659qtn.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 02 Dec 2020 11:51:52 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references:mime-version
          :content-transfer-encoding;
-        bh=LPT7aEYnMVET6RU2QhdABJEzg5OVvT3nShfG4ZVnk/g=;
-        b=ycXwQm9TMvGKme5FhtoGwX7eyaxVL30DFN68RO9esM3eE28uYYt0cLOwacfw6IfmBk
-         SbNomiu0droGPbQvyt650kUUc/cVEy/OhaV1D0e4DXLE/kdCgHLetLTIbdniAj4ihNqK
-         52Y2cNlEqJAN2u4hs9ki+RyUyrPmm6ZGIlz/edTgN+WAPDI8YhuFqu00GWpVzjaQ5xuk
-         sIcJBUe+ExoKF2gSuTdRaBakaQlV++BB6TNT02iZUHYSohOaBSBbpWgBoH1kgitORQdu
-         Wsv9Mq0ET7UvZutNsvM+vQ75SnJHxnoyYqpAxC58Ak+pytxR8M09ewULnr17t9/sYq5t
-         ck/w==
+        bh=Sg1NuD6dVVFgruSS4BU+5FD+ZRND5rY4rUtoxxk3cyQ=;
+        b=ipiclPxbPor8oQbRhlDTCx66KmZ0cckJR4hYKYix35Ld8yWuQiINJgPeOX7E4Pd5dw
+         ufZ1mwGccBpG47EwCjCFn9IOWJVtk/XzhKpYfSSCVXtj+OOXFZ3fjXzvErrwH1E03vL0
+         7yRkDMyS/m3D0F+85wlOFEKGX+GqC/ydRmt/E873vzg9aTZGBsVnHWTak06ocT10lC3k
+         Tdhuyrexw+eAaEzeHiHyRYiDRf6o62DLRSVUYWXoM8aiV1t34CymWCV3QdWfsq+aexT3
+         MBMX/gAsFDplZSHjvl1l6+MQe1TOx413rBtVE+MoYWtf+LmO2ZgzcvXVWlI8ymjFHQuh
+         vvng==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=LPT7aEYnMVET6RU2QhdABJEzg5OVvT3nShfG4ZVnk/g=;
-        b=peimameqSXzWtD3CWDvwhjakk13jge9Ubun3Mo6F6xXte0naBwAJHD+qcT1LP9jfmF
-         WpSevzzwiT8RRxpfNg19/IpDP8V7M/ryE30IpNFfY9Do23ercG9cQ47cmE3qr5jMQ/So
-         6R/w9IGV+Q/Ga9VUpMlYtSBxA3uDDTlML3o69SeLmEuWTpzKGLTJH/c5OomlAH/vDpLa
-         hrzANwxj3qb6EkHuXIR8zyi4hC7jp663sxsNBBV2VloAH6skyBJhUply5YxHamaLuDXQ
-         zGOeMlWs+s4HlfAUA5boPcQhiSsH5owIQFQLSUftQsu2QBKSAquVZQv0ENjw1f2ueGQZ
-         eIlw==
-X-Gm-Message-State: AOAM533NphPS9K+lKYTh1wnHN+2QMZR7RdbWs+galsuV8o30TVpD5RDS
-        qbvePbfH4xcEZng52M0XBIA0QEVU/HFIMQ==
-X-Google-Smtp-Source: ABdhPJweSXAOCHyCxPq4H4IOCQ7Nr4Ic4gpZaO7xotn8C4WSziiPEo7N8B7i+Gs++3fYGUlefZrA5g==
-X-Received: by 2002:a37:afc6:: with SMTP id y189mr4317134qke.361.1606938768501;
-        Wed, 02 Dec 2020 11:52:48 -0800 (PST)
+        bh=Sg1NuD6dVVFgruSS4BU+5FD+ZRND5rY4rUtoxxk3cyQ=;
+        b=QQy0XdDL0PrAVSrqPoGbKEywGxzBgzcyUOYK6E/sm2ri/Xoqjo9f58R17ITBesECNT
+         Q6WZN5Cfcdwc8+PPWvzRvnSOFS6ecQs6GPLoioU3cGMO0p5Y58C0OSaVNVUY5NuWJeJC
+         3tpzcgXZuvUGw47/vxZhpqEJoqQkRZ0D5esfyoY43zjb8ds6zzs9wrl6rPFKu4vSJ1Xj
+         1oqpcVHht5lBOi8+9xBow+tbLfKT4q1NbZpnMHMjZTumXGZrn3SQTgHASrEHans8bdG2
+         +uAwbjIINJVpIucHnbch+GOpMY6TFWRHWvtDdPw6ERv4DOeSqc7pJlSfhlai7tUz9OoR
+         Yl6A==
+X-Gm-Message-State: AOAM533bJzG37Ne+qv1w8E6P3mwLeepkmHXq4wDYnzvEkxZCGjHG1Kmd
+        gTnMG6CtlsXdejstImIYjbyDJEZHtX/MWg==
+X-Google-Smtp-Source: ABdhPJzNlP/IUIwhY9jT755T8pnj5Uzey6L1BoGNPcRxCBAm5+8XzY/5qcY3nK/4kNdfwScmfnQ89w==
+X-Received: by 2002:ac8:6d0:: with SMTP id j16mr4329523qth.106.1606938711213;
+        Wed, 02 Dec 2020 11:51:51 -0800 (PST)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id b73sm2934309qkc.87.2020.12.02.11.52.47
+        by smtp.gmail.com with ESMTPSA id v28sm2675430qkj.103.2020.12.02.11.51.50
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 02 Dec 2020 11:52:47 -0800 (PST)
+        Wed, 02 Dec 2020 11:51:50 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v3 52/54] btrfs: print the actual offset in btrfs_root_name
-Date:   Wed,  2 Dec 2020 14:51:10 -0500
-Message-Id: <3575cc74f0d9f63647e92082979fa8cfd3901e90.1606938211.git.josef@toxicpanda.com>
+Subject: [PATCH v3 20/54] btrfs: handle btrfs_record_root_in_trans failure in btrfs_recover_log_trees
+Date:   Wed,  2 Dec 2020 14:50:38 -0500
+Message-Id: <23564d0cd777eb33583aab981374438a47110c72.1606938211.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.2
 In-Reply-To: <cover.1606938211.git.josef@toxicpanda.com>
 References: <cover.1606938211.git.josef@toxicpanda.com>
@@ -69,74 +69,37 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We're supposed to print the root_key.offset in btrfs_root_name in the
-case of a reloc root, not the objectid.  Fix this helper to take the key
-so we have access to the offset when we need it.
+btrfs_record_root_in_trans will return errors in the future, so handle
+the error properly in btrfs_recover_log_trees.
+
+This appears tricky, however we have a reference count on the
+destination root, so if this fails we need to continue on in the loop to
+make sure the properly cleanup is done.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/disk-io.c    |  2 +-
- fs/btrfs/print-tree.c | 10 +++++-----
- fs/btrfs/print-tree.h |  2 +-
- 3 files changed, 7 insertions(+), 7 deletions(-)
+ fs/btrfs/tree-log.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 46dd9e0b077e..c73d172aa1f7 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1458,7 +1458,7 @@ void btrfs_check_leaked_roots(struct btrfs_fs_info *fs_info)
- 		root = list_first_entry(&fs_info->allocated_roots,
- 					struct btrfs_root, leak_list);
- 		btrfs_err(fs_info, "leaked root %s refcount %d",
--			  btrfs_root_name(root->root_key.objectid, buf),
-+			  btrfs_root_name(&root->root_key, buf),
- 			  refcount_read(&root->refs));
- 		while (refcount_read(&root->refs) > 1)
- 			btrfs_put_root(root);
-diff --git a/fs/btrfs/print-tree.c b/fs/btrfs/print-tree.c
-index fe5e0026129d..b8137dbf6a3a 100644
---- a/fs/btrfs/print-tree.c
-+++ b/fs/btrfs/print-tree.c
-@@ -26,22 +26,22 @@ static const struct root_name_map root_map[] = {
- 	{ BTRFS_DATA_RELOC_TREE_OBJECTID,	"DATA_RELOC_TREE"	},
- };
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 254c2ee43aae..77adeb3c988d 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -6286,8 +6286,12 @@ int btrfs_recover_log_trees(struct btrfs_root *log_root_tree)
+ 		}
  
--const char *btrfs_root_name(u64 objectid, char *buf)
-+const char *btrfs_root_name(struct btrfs_key *key, char *buf)
- {
- 	int i;
+ 		wc.replay_dest->log_root = log;
+-		btrfs_record_root_in_trans(trans, wc.replay_dest);
+-		ret = walk_log_tree(trans, log, &wc);
++		ret = btrfs_record_root_in_trans(trans, wc.replay_dest);
++		if (ret)
++			btrfs_handle_fs_error(fs_info, ret,
++				"Couldn't record the root in the transaction.");
++		else
++			ret = walk_log_tree(trans, log, &wc);
  
--	if (objectid == BTRFS_TREE_RELOC_OBJECTID) {
-+	if (key->objectid == BTRFS_TREE_RELOC_OBJECTID) {
- 		snprintf(buf, BTRFS_ROOT_NAME_BUF_LEN,
--			 "TREE_RELOC offset=%llu", objectid);
-+			 "TREE_RELOC offset=%llu", key->offset);
- 		return buf;
- 	}
- 
- 	for (i = 0; i < ARRAY_SIZE(root_map); i++) {
--		if (root_map[i].id == objectid)
-+		if (root_map[i].id == key->objectid)
- 			return root_map[i].name;
- 	}
- 
--	snprintf(buf, BTRFS_ROOT_NAME_BUF_LEN, "%llu", objectid);
-+	snprintf(buf, BTRFS_ROOT_NAME_BUF_LEN, "%llu", key->objectid);
- 	return buf;
- }
- 
-diff --git a/fs/btrfs/print-tree.h b/fs/btrfs/print-tree.h
-index 78b99385a503..802628dd1a6e 100644
---- a/fs/btrfs/print-tree.h
-+++ b/fs/btrfs/print-tree.h
-@@ -11,6 +11,6 @@
- 
- void btrfs_print_leaf(struct extent_buffer *l);
- void btrfs_print_tree(struct extent_buffer *c, bool follow);
--const char *btrfs_root_name(u64 objectid, char *buf);
-+const char *btrfs_root_name(struct btrfs_key *key, char *buf);
- 
- #endif
+ 		if (!ret && wc.stage == LOG_WALK_REPLAY_ALL) {
+ 			ret = fixup_inode_link_counts(trans, wc.replay_dest,
 -- 
 2.26.2
 

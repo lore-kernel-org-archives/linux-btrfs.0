@@ -2,119 +2,205 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-15.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-11.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C45D7C8300F
-	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Dec 2020 19:44:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EEB2BC64E7C
+	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Dec 2020 19:51:56 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 26A0B22203
-	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Dec 2020 19:44:11 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 97128221FA
+	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Dec 2020 19:51:56 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2387556AbgLBTnu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 2 Dec 2020 14:43:50 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35256 "EHLO
+        id S2387728AbgLBTvz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 2 Dec 2020 14:51:55 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36506 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728940AbgLBTnu (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Dec 2020 14:43:50 -0500
-Received: from mail-wm1-x341.google.com (mail-wm1-x341.google.com [IPv6:2a00:1450:4864:20::341])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BD370C0613D6
-        for <linux-btrfs@vger.kernel.org>; Wed,  2 Dec 2020 11:43:09 -0800 (PST)
-Received: by mail-wm1-x341.google.com with SMTP id w206so1373799wma.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 02 Dec 2020 11:43:09 -0800 (PST)
+        with ESMTP id S1726112AbgLBTvz (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Dec 2020 14:51:55 -0500
+Received: from mail-qk1-x736.google.com (mail-qk1-x736.google.com [IPv6:2607:f8b0:4864:20::736])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 65A53C0613CF
+        for <linux-btrfs@vger.kernel.org>; Wed,  2 Dec 2020 11:51:15 -0800 (PST)
+Received: by mail-qk1-x736.google.com with SMTP id h20so2470574qkk.4
+        for <linux-btrfs@vger.kernel.org>; Wed, 02 Dec 2020 11:51:15 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=from:to:subject:date:message-id:in-reply-to:references:mime-version
+        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
+        h=from:to:subject:date:message-id:mime-version
          :content-transfer-encoding;
-        bh=s86X+eDA8hhIRjHaeal4jt/BLgtlzaWk2iIqWYJYm2c=;
-        b=Yct0I5GVqizswyKwHh8qjjsxAvQDF1UCyie1Igu72dLZBRpODT03kRtvusoVdLkJmB
-         dvf9ig0ALNYvLncg6aMYcAue92id3FnoH+w2yVFEpDdoQCMVR8dlxnKSGKg7r8YBEaLt
-         p3mzU0hD+vgcNQZi/+1yaNd+5xXbyWmvGx/znSXbiIVHhd/RvQoHE36OdBLUkCpP/P2d
-         nB9+wIOLboumOfgNsyCRSPlC6XLM7oOFWhFsaxT1JN7VFEWFBq5RRgT7mwOUm3q/Aubo
-         Zi2DcPDjVwaRp0mQyVO4oAFyp59YXB0EjCObFGI/LrzYe/f9KtpvZ9x5pv59JzqGQwiy
-         T89A==
+        bh=bEkguTp6CKaBDdguGP0RS2KA34ynpGWnXHC10p+9GUQ=;
+        b=vFPtfLKiANzsDqHAFUnEQsckb1pN6nqxycoEFG7yjh57NxCsj5tnciq6kzDuuAKi4z
+         Q6vGOywBgJ3gKrWoV9nzMW/wOTJ09GeclVYkLqYVz29CdeUwdzi7xaS5+CADjNg2Ds9z
+         tAVVC9QK+by8lc+lqlwSF1bDyCM3U9yT1ttPzajMNt+EnaFMNildVrwgxE6ho1YRv2O2
+         Ihp+Oo9sXQCO+7LICefUVToMbrYi8bWv2UVv8rykTqBfyL8QLixOR4bImKifoMY2afUc
+         ze3kSYbsilSMtTEUQS9bXVuegx7rxOUgiJTBIz00BQXK4u4jZgKdNuedKBuIXz1gFpkH
+         WOPA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=s86X+eDA8hhIRjHaeal4jt/BLgtlzaWk2iIqWYJYm2c=;
-        b=Aos+4esOuQMfE9v1I21NQd5dj0WDh5a/S140a2rO/s3xt/JuRWtDLPsB7Z1lOVxsXu
-         Cj6m+pHk4xGI50AGl70A5Zny9pFRV9XeQqUsW2efpFzeoKE2ooLzJwkb6AmzZ66P19fg
-         rzW4ed0Ik5yqKlo+MV8u8AczyNQw2w26f9tLlKQKaWbUO6kkgrV0dAdxtPJciv9NaedT
-         Dk1uLMMIvCNIsrp7IuQl+q+cEWfHN0bxPZDEfMNZorXO0HFBvhVtD1iC0xMr0oxuF/0m
-         bOpa3ircJD3JRLOxFJGNkhhO+DxAHaHl8MHfCcPCKGiSxa+nfupqBQ4JFuHKyYbvGCuD
-         yUbQ==
-X-Gm-Message-State: AOAM533lUgoGKMgY3oo1PjIXbUteeg8sWT46rihQ8+uMxdu89O4m1w7A
-        BRV70/m7e4FhcdcWBrgLtvA=
-X-Google-Smtp-Source: ABdhPJzx6b6n4tRhd8ZH4g9XdmAmoMfdgmBIYOYSTUWSXLbVLQgj8TPxmPm0zmYSC/2oW0PcKa8u2w==
-X-Received: by 2002:a1c:43c5:: with SMTP id q188mr4704810wma.163.1606938188496;
-        Wed, 02 Dec 2020 11:43:08 -0800 (PST)
-Received: from localhost.localdomain (host109-152-100-189.range109-152.btcentralplus.com. [109.152.100.189])
-        by smtp.gmail.com with ESMTPSA id q16sm3251540wrn.13.2020.12.02.11.43.07
+        h=x-gm-message-state:from:to:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=bEkguTp6CKaBDdguGP0RS2KA34ynpGWnXHC10p+9GUQ=;
+        b=LK00nD9PkKYGO7ocnhlJWyC/6Hui6qK4u4WJ4BIZ1b+kn3rYkU2kELCd9kGaC1Gfst
+         Zhy3WtU2WI31lXAygjdvCcKx3Xbjrp/27j4cC5bDx4tfYaj8EUJs1AGxGBD8sRkWingX
+         KuAIYci4qRojcSeXong32CFwuXx24sPjqUXUSmOOZE5alTnxqn/UE6hU2ZBI4FZmIexA
+         070n/NSNapAl96iTlJrdgff5VWJGhKUiSTU48as+o8O7ddDGQJ++qwxem++BJKuJXbum
+         6JulPYG1N6RMfl+kf8dixm8IgASFv5It3mkTlz0Dl7XQ0nyu1/f6JzCmtToXD60e2Ifx
+         OLLg==
+X-Gm-Message-State: AOAM53128meOGKSZZNZ6NeD9dlqBkhdX72K4owYX5Q1XsotE2VMVcY20
+        qx+yJjO6JCkvMqlN/9F15qXAJu8BKqJuYw==
+X-Google-Smtp-Source: ABdhPJzvx+UXT6/HvBWyJyRrjIbzXMQUIr16U1qT6aj12L2byUGckvM28yrnn58FXCvRNPb9aBCKXQ==
+X-Received: by 2002:a37:b0c:: with SMTP id 12mr4141511qkl.247.1606938674109;
+        Wed, 02 Dec 2020 11:51:14 -0800 (PST)
+Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
+        by smtp.gmail.com with ESMTPSA id 7sm2805490qkv.55.2020.12.02.11.51.13
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 02 Dec 2020 11:43:07 -0800 (PST)
-From:   Pavel Begunkov <asml.silence@gmail.com>
-To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 2/3] btrfs: fix racy access to discard_ctl data
-Date:   Wed,  2 Dec 2020 19:39:42 +0000
-Message-Id: <0f03c766b7e04ba87d81c7764fe2d1d820818b4a.1606937659.git.asml.silence@gmail.com>
-X-Mailer: git-send-email 2.24.0
-In-Reply-To: <cover.1606937659.git.asml.silence@gmail.com>
-References: <cover.1606937659.git.asml.silence@gmail.com>
+        Wed, 02 Dec 2020 11:51:13 -0800 (PST)
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: [PATCH v3 00/54] Cleanup error handling in relocation
+Date:   Wed,  2 Dec 2020 14:50:18 -0500
+Message-Id: <cover.1606938211.git.josef@toxicpanda.com>
+X-Mailer: git-send-email 2.26.2
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Because only one discard worker may be running at any given point, it
-could have been safe to modify ->prev_discard, etc. without
-synchronisation, if not for @override flag in
-btrfs_discard_schedule_work() and delayed_work_pending() returning false
-while workfn is running.
+v2->v3:
+- A lot of extra patches fixing various things that I encountered while
+  debugging the corruption problem that was uncovered by these patches.
+- Fixed the panic that Zygo was seeing and other issues.
+- Fixed up the comments from Nikolay and Filipe.
 
-That may lead lead to torn reads of u64 for some architectures, but
-that's not a big problem as only slightly affects the discard rate.
+A slight note, the first set of patches could probably be taken now, and in fact
 
-Suggested-by: Josef Bacik <josef@toxicpanda.com>
-Signed-off-by: Pavel Begunkov <asml.silence@gmail.com>
----
- fs/btrfs/discard.c | 10 +++-------
- 1 file changed, 3 insertions(+), 7 deletions(-)
+  btrfs: fix error handling in commit_fs_roots
 
-diff --git a/fs/btrfs/discard.c b/fs/btrfs/discard.c
-index 4ca852445873..a338f44fec3b 100644
---- a/fs/btrfs/discard.c
-+++ b/fs/btrfs/discard.c
-@@ -475,13 +475,6 @@ static void btrfs_discard_workfn(struct work_struct *work)
- 		discard_ctl->discard_extent_bytes += trimmed;
- 	}
- 
--	/*
--	 * Updated without locks as this is inside the workfn and nothing else
--	 * is reading the values
--	 */
--	discard_ctl->prev_discard = trimmed;
--	discard_ctl->prev_discard_time = ktime_get_ns();
--
- 	/* Determine next steps for a block_group */
- 	if (block_group->discard_cursor >= btrfs_block_group_end(block_group)) {
- 		if (discard_state == BTRFS_DISCARD_BITMAPS) {
-@@ -497,7 +490,10 @@ static void btrfs_discard_workfn(struct work_struct *work)
- 		}
- 	}
- 
-+	now = ktime_get_ns();
- 	spin_lock(&discard_ctl->lock);
-+	discard_ctl->prev_discard = trimmed;
-+	discard_ctl->prev_discard_time = now;
- 	discard_ctl->block_group = NULL;
- 	spin_unlock(&discard_ctl->lock);
- 
+Was sent earlier this week and is very important and needs to be reviewed and
+merged ASAP.  The following are safe and could be merged outside of the rest of
+this series
+
+  btrfs: allow error injection for btrfs_search_slot and btrfs_cow_block
+  btrfs: fix lockdep splat in btrfs_recover_relocation
+  btrfs: keep track of the root owner for relocation reads
+  btrfs: noinline btrfs_should_cancel_balance
+  btrfs: do not cleanup upper nodes in btrfs_backref_cleanup_node
+  btrfs: pass down the tree block level through ref-verify
+  btrfs: make sure owner is set in ref-verify
+  btrfs: don't clear ret in btrfs_start_dirty_block_groups
+
+The rest obviously are all around the actual error handling.
+
+v1->v2:
+- fixed a bug where I accidentally dropped reading flags in relocate_block_group
+  when I dropped the extra checks that we handle in the tree checker.
+
+--- Original message ---
+Hello,
+
+Relocation is the last place that is not able to handle errors at all, which
+results in all sorts of lovely panics if you encounter corruptions or IO errors.
+I'm going to start cleaning up relocation, but before I move code around I want
+the error handling to be somewhat sane, so I'm not changing behavior and error
+handling at the same time.
+
+These patches are purely about error handling, there is no behavior changing
+other than returning errors up the chain properly.  There is a lot of room for
+follow up cleanups, which will happen next.  However I wanted to get this series
+done today and out so we could get it merged ASAP, and then the follow up
+cleanups can happen later as they are less important and less critical.
+
+The only exception to the above is the patch to add the error injection sites
+for btrfs_cow_block and btrfs_search_slot, and a lockdep fix that I discovered
+while running my tests, those are the first two patches in the series.
+
+I tested this with my error injection stress test, where I keep track of all
+stack traces that have been tested and only inject errors when we have a new
+stack trace, which means I should have covered all of the various error
+conditions.  With this patchset I'm no longer panicing while stressing the error
+conditions.  Thanks,
+
+Josef
+
+Josef Bacik (54):
+  btrfs: fix error handling in commit_fs_roots
+  btrfs: allow error injection for btrfs_search_slot and btrfs_cow_block
+  btrfs: fix lockdep splat in btrfs_recover_relocation
+  btrfs: keep track of the root owner for relocation reads
+  btrfs: noinline btrfs_should_cancel_balance
+  btrfs: do not cleanup upper nodes in btrfs_backref_cleanup_node
+  btrfs: pass down the tree block level through ref-verify
+  btrfs: make sure owner is set in ref-verify
+  btrfs: don't clear ret in btrfs_start_dirty_block_groups
+  btrfs: convert some BUG_ON()'s to ASSERT()'s in do_relocation
+  btrfs: convert BUG_ON()'s in relocate_tree_block
+  btrfs: return an error from btrfs_record_root_in_trans
+  btrfs: handle errors from select_reloc_root()
+  btrfs: convert BUG_ON()'s in select_reloc_root() to proper errors
+  btrfs: check record_root_in_trans related failures in
+    select_reloc_root
+  btrfs: do proper error handling in record_reloc_root_in_trans
+  btrfs: handle btrfs_record_root_in_trans failure in
+    btrfs_rename_exchange
+  btrfs: handle btrfs_record_root_in_trans failure in btrfs_rename
+  btrfs: handle btrfs_record_root_in_trans failure in
+    btrfs_delete_subvolume
+  btrfs: handle btrfs_record_root_in_trans failure in
+    btrfs_recover_log_trees
+  btrfs: handle btrfs_record_root_in_trans failure in create_subvol
+  btrfs: btrfs: handle btrfs_record_root_in_trans failure in
+    relocate_tree_block
+  btrfs: handle btrfs_record_root_in_trans failure in start_transaction
+  btrfs: handle record_root_in_trans failure in qgroup_account_snapshot
+  btrfs: handle record_root_in_trans failure in
+    btrfs_record_root_in_trans
+  btrfs: handle record_root_in_trans failure in create_pending_snapshot
+  btrfs: do not panic in __add_reloc_root
+  btrfs: have proper error handling in btrfs_init_reloc_root
+  btrfs: do proper error handling in create_reloc_root
+  btrfs: validate ->reloc_root after recording root in trans
+  btrfs: handle btrfs_update_reloc_root failure in commit_fs_roots
+  btrfs: change insert_dirty_subvol to return errors
+  btrfs: handle btrfs_update_reloc_root failure in insert_dirty_subvol
+  btrfs: handle btrfs_update_reloc_root failure in prepare_to_merge
+  btrfs: do proper error handling in btrfs_update_reloc_root
+  btrfs: convert logic BUG_ON()'s in replace_path to ASSERT()'s
+  btrfs: handle initial btrfs_cow_block error in replace_path
+  btrfs: handle the loop btrfs_cow_block error in replace_path
+  btrfs: handle btrfs_search_slot failure in replace_path
+  btrfs: handle errors in reference count manipulation in replace_path
+  btrfs: handle extent reference errors in do_relocation
+  btrfs: check for BTRFS_BLOCK_FLAG_FULL_BACKREF being set improperly
+  btrfs: remove the extent item sanity checks in relocate_block_group
+  btrfs: do proper error handling in create_reloc_inode
+  btrfs: handle __add_reloc_root failure in btrfs_recover_relocation
+  btrfs: handle __add_reloc_root failure in btrfs_reloc_post_snapshot
+  btrfs: cleanup error handling in prepare_to_merge
+  btrfs: handle extent corruption with select_one_root properly
+  btrfs: do proper error handling in merge_reloc_roots
+  btrfs: check return value of btrfs_commit_transaction in relocation
+  btrfs: do not WARN_ON() if we can't find the reloc root
+  btrfs: print the actual offset in btrfs_root_name
+  btrfs: fix reloc root leak with 0 ref reloc roots on recovery
+  btrfs: splice remaining dirty_bg's onto the transaction dirty bg list
+
+ fs/btrfs/backref.c      |   9 +-
+ fs/btrfs/block-group.c  |   6 +-
+ fs/btrfs/ctree.c        |   2 +
+ fs/btrfs/disk-io.c      |   2 +-
+ fs/btrfs/inode.c        |  20 +-
+ fs/btrfs/ioctl.c        |   6 +-
+ fs/btrfs/print-tree.c   |  10 +-
+ fs/btrfs/print-tree.h   |   2 +-
+ fs/btrfs/ref-verify.c   |  43 ++--
+ fs/btrfs/relocation.c   | 438 +++++++++++++++++++++++++++++++---------
+ fs/btrfs/transaction.c  |  46 +++--
+ fs/btrfs/tree-checker.c |   5 +
+ fs/btrfs/tree-log.c     |   8 +-
+ fs/btrfs/volumes.c      |   2 +
+ 14 files changed, 440 insertions(+), 159 deletions(-)
+
 -- 
-2.24.0
+2.26.2
 

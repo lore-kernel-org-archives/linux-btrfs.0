@@ -8,35 +8,35 @@ X-Spam-Status: No, score=-12.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 35243C63777
-	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Dec 2020 05:17:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A0865C63777
+	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Dec 2020 05:21:01 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id C08F1206D5
-	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Dec 2020 05:17:37 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2AC11206E3
+	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Dec 2020 05:21:01 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727402AbgLCFRh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 3 Dec 2020 00:17:37 -0500
-Received: from mout.gmx.net ([212.227.17.22]:43437 "EHLO mout.gmx.net"
+        id S1726075AbgLCFVA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 3 Dec 2020 00:21:00 -0500
+Received: from mout.gmx.net ([212.227.15.18]:40437 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726438AbgLCFRg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 3 Dec 2020 00:17:36 -0500
+        id S1725872AbgLCFVA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 3 Dec 2020 00:21:00 -0500
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1606972531;
-        bh=Rmx8QJdUyc5Tn9zdMvmF+h7ZHssQ4Khp9t2T6mBH1I4=;
+        s=badeba3b8450; t=1606972765;
+        bh=S7z4fAudXeOEmdYz5HdeB99Aw9hfB8hHuy+eXnnFuLg=;
         h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
-        b=VlgY5MNr7C2Rv+nBQvRqJ3jdY4c6R+gM+f/lWHQDYHGg1A/Fg30EUTjQ++zEUgZ2d
-         8JLr/4YzzXn8AgAjgam8dy074YZFIZQ5AHFNfH40DsoJq87gv/Wky3l4GrR+45ZHUD
-         r3jO/jr5Wv0bPjVn5PYRdSWuIJAS0vhf530nTkK4=
+        b=RG0R4ePBYdee//tExREcEowlGlBIN+4+FGLMQl3rkYtvOhw98RCe90x6R404rym3A
+         NtNhpA1KcgLU6xJCZ5M3o/qDuDRKZJBcix/d4AMkYhQ5Z5B6ohwW4vX37tTBrtBMl7
+         mCGUPh8SmV6crSlDDcjY7eOhSQXHndVDefJsitJo=
 X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx105
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1Mel3t-1kD0J52V8f-00aoNW; Thu, 03
- Dec 2020 06:15:31 +0100
-Subject: Re: [PATCH v3 41/54] btrfs: handle extent reference errors in
- do_relocation
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx004
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1MtfNl-1jthC71ARb-00vAol; Thu, 03
+ Dec 2020 06:19:24 +0100
+Subject: Re: [PATCH v3 42/54] btrfs: check for BTRFS_BLOCK_FLAG_FULL_BACKREF
+ being set improperly
 To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
         kernel-team@fb.com
 References: <cover.1606938211.git.josef@toxicpanda.com>
- <fe755664856dd75359962c132d7398b0e69a3f22.1606938211.git.josef@toxicpanda.com>
+ <cf522824a3a16e2186b43c5336b4d99cd0cd4d19.1606938211.git.josef@toxicpanda.com>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
@@ -62,107 +62,104 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  72byGeSovfq/4AWGNPBG1L61Exl+gbqfvbECP3ziXnob009+z9I4qXodHSYINfAkZkA523JG
  ap12LndJeLk3gfWNZfXEWyGnuciRGbqESkhIRav8ootsCIops/SqXm0/k+Kcl4gGUO/iD/T5
  oagaDh0QtOd8RWSMwLxwn8uIhpH84Q4X1LadJ5NCgGa6xPP5qqRuiC+9gZqbq4Nj
-Message-ID: <a5a5d6d0-0cb2-18c6-3eac-976176811d9e@gmx.com>
-Date:   Thu, 3 Dec 2020 13:15:27 +0800
+Message-ID: <cc10a7dc-ee6a-0e6f-0ff8-bde0c6d10a73@gmx.com>
+Date:   Thu, 3 Dec 2020 13:19:21 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
  Thunderbird/68.12.0
 MIME-Version: 1.0
-In-Reply-To: <fe755664856dd75359962c132d7398b0e69a3f22.1606938211.git.josef@toxicpanda.com>
+In-Reply-To: <cf522824a3a16e2186b43c5336b4d99cd0cd4d19.1606938211.git.josef@toxicpanda.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="a7LprRWcEyyu7lHPyqOvQSwLyDcwOxdje"
-X-Provags-ID: V03:K1:A1FVgzbKh3ywlUbAx53drsAs0yS8yljqvdBpA4lhKLd8n9vz4/M
- D8F7+W/UsxEoFjurkqfIXSsMAeTLI73iH7eGNoeCbwz1INF+sWHAV1kck78i8SRF9Vdsnol
- 00pictYBAvK9uWazPQzX2D5r7ec1vEfpFmKTmHzyw5xX82SiBE8btAn1QVfhdU+ku+Z5v6U
- 1gaTwtmvllo1I6TqFsi/A==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:kqSZaIOiuxk=:78ACFZg/hAnXJGFST/oRO8
- HfF9Rw39zPFhB7nLkEX+NVow8SNDY16eoK9hmgIj3K6gQeWgZAxHfxU53OeqZRpGUISXAPatN
- fm0Uu0CJV7ArI7uQwfW59UuNoAIbtIrM96cbERpTf5B1LxTME1jhe//JM2Hx56ptHVKANtu+0
- 8u037eAOuTJT9YowADR0xjXY+yOaERrwlj6tOd0XEq5xOCG54RI93lsKgR1IjCxiD59G+xO8l
- QBso+allPneHpFx/8yUOvaFjEBuK4I4IGu+/LRJ4OPENh/9HGV11jEIc7YJTaBzwOk+YjgXRH
- aZZHwzXOLhYm6Cj7cxgYKyr8Cgy5GFZfXli7k1abHf+ZFk8RyLhHTSyHfm4WhYIdcpA+Uhleu
- Wp2T69xioI/jdNthq/X9VC016Hsg/8k9oMF2GuR6VcIV6xOCOzqYuWHxJNrVnGtt4X1b18mB+
- Awdynroc4NowRzA9PKez6moPAJFeE1G4Lc36etgIaxI3W3G5U/fDlgMGvpGzium+gFcSCzbHx
- ByhLGR5R07/gcsNPSTiWpSsmK1iEWsMApD6zTx/rJb0jqTUBQ5LYLygt9K8HWpNHT1nS7xpA3
- g81muuGoK/juc3gLAE0Y7/1oYpPwOUBenhDebz3J0H2e4gba2DRApN8M8s57zpmXWD+82rJJ0
- cwmPnMJAiN7kBNc4i1MF2mp4A2/+GwtCO7GwLbUcDZPvNxXKXpecLCrZDetwVuIX16tyqEUiE
- axaXz2XuPwBKhGzZuMDAIvuIBq2+Qltkj7NEwH/IgaN4OyPKyMUoVsr9Sb/7mAzdirnuOvWza
- 6xMpoDi8Ns82othRhTs3eFrJLsmdAbI6Ujynm3kLCQpkRkHwTqlscoPa8FcZ8nRZBIzopmUSB
- KIQoG2XDxuFSt76m0z+A==
+ boundary="47VbkUOu8VYnt1N1AADNXLOgLCROX8ZCf"
+X-Provags-ID: V03:K1:5GQDOfT5xR443gggIE7rXPicoifDFxQ6Nl/StUhGlaQOyufmFwL
+ 1Pgv175vuInQ3p7X5yaDgFZMVRCDlnVp1In6OCYcwhD0HU4u5DC0x1aj6JRnmgRhLrUMnVb
+ 8BoGB2mfT+kC3QXSvRjmFlwX4Cqsuu8Zy25nINO6QIixeeygDkH5jMc0ImrGmLsvMHoo+RC
+ +FIN9EJqNbo9SqlsIUhAQ==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:Ccw3gJmbs1Q=:P91RTBo2wUqdE5M7zMGBWw
+ RfzxDqeTK8mIcxTlSY+Ech78yfBRsKvpULEOvcwNE1uJWpNXS7eL3KacVMn4ImU48mxksPKWp
+ fw5ajRXxGIUlIdfSE90eL6pI0owx54Qp3MHfob75XbhPRmpJHd+o8cAlXgE30DbTCVuuOgLKn
+ 0YjyhEUfWIhrDYHQxxcP75AoL5p9ds5oFL6ya6kAaFHTrrZmf3OheWqXer7gHxIJ7fLB3hsa9
+ vEUvqSoHMPmG/O3/QfjlHxmQ820/ffJMQ/BYOeXaCGfaHHxaL8FCFy/TAwBFThGKQKHVf12Xn
+ QXGsNWFPZFrUgeMt/Xlu7VLDlgfrR1dFi9uGUAxH1bGxBD03uSCQlSrScW03xPimuCfUVpApr
+ WU4axksvPeTjoNlzG1rC8w3kSC5F91GZeO1Zw8kHUnUUmgVwNqDPYNr7UZvGqlB6HWmxt/Iiq
+ zVHsbZ6B9LAYarGIvlWATpfgWAYM0MfFRNT3LqHVQrRh8NUYxVYnJGW5n5AnYKaEe4tv6BcDo
+ fCXliWZhODZNCWbXVX7gbLl/OpNCi/JmwbqDVgvPvCw5SUTr1EEQjMkPwRAg4KDb8JDZMQnQM
+ iJyQGhaNDXk27GYX8ManFV5zrylmW3HXoGU1U8MIsiES3SJddiHVt0HQMI8nQa41ojRtON+GF
+ O97G5PENg041astLqDhBa4gz/Mq6/rkYoUIXjDg01QNUPuCruATdE+HYafynoNivjpjljCfIs
+ vnOWZv5/OW+xldoXRo5ovCEJ/KzSck+2xuZ+PI7jfxnf3ZHeDGy2lPa8zJGWG1d4zQ+WY8inj
+ kymrNJFlEo1kpwrQIZkBnhxlShgoye1ItJdtvXgBPCKGa9DzYsTkaGz5rqrqxXZ2/AwztzgC8
+ fXXegT8oeAnjcrdTuudlDhuZoI1kYMlL3x6DsbxEs=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---a7LprRWcEyyu7lHPyqOvQSwLyDcwOxdje
-Content-Type: multipart/mixed; boundary="DQ2hMTLSIUfLG8jCxeVBXLQzvnOLJeWXW"
+--47VbkUOu8VYnt1N1AADNXLOgLCROX8ZCf
+Content-Type: multipart/mixed; boundary="lmtceuvnviyO4Pn16Q8sTLkxsINQfKlrr"
 
---DQ2hMTLSIUfLG8jCxeVBXLQzvnOLJeWXW
+--lmtceuvnviyO4Pn16Q8sTLkxsINQfKlrr
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 2020/12/3 =E4=B8=8A=E5=8D=883:50, Josef Bacik wrote:
-> We can already deal with errors appropriately from do_relocation, simpl=
-y
-> handle any errors that come from changing the refs at this point
-> cleanly.  We have to abort the transaction if we fail here as we've
-> modified metadata at this point.
+On 2020/12/3 =E4=B8=8A=E5=8D=883:51, Josef Bacik wrote:
+> We need to validate that a data extent item does not have the
+> FULL_BACKREF flag set on it's flags.
 >=20
 > Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-> ---
->  fs/btrfs/relocation.c | 9 +++++----
->  1 file changed, 5 insertions(+), 4 deletions(-)
->=20
-> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-> index ef33b89e352e..3159f6517588 100644
-> --- a/fs/btrfs/relocation.c
-> +++ b/fs/btrfs/relocation.c
-> @@ -2433,10 +2433,11 @@ static int do_relocation(struct btrfs_trans_han=
-dle *trans,
->  			btrfs_init_tree_ref(&ref, node->level,
->  					    btrfs_header_owner(upper->eb));
->  			ret =3D btrfs_inc_extent_ref(trans, &ref);
-> -			BUG_ON(ret);
-> -
-> -			ret =3D btrfs_drop_subtree(trans, root, eb, upper->eb);
-> -			BUG_ON(ret);
-> +			if (ret) {
-> +				btrfs_abort_transaction(trans, ret);
-> +				goto next;
-> +			}
-> +			btrfs_drop_subtree(trans, root, eb, upper->eb);
 
-Wait for second. Now we don't handle the error for btrfs_drop_subtree()
-completely?
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+
+But an idea for new patch inlined below.
+> ---
+>  fs/btrfs/tree-checker.c | 5 +++++
+>  1 file changed, 5 insertions(+)
+>=20
+> diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
+> index 028e733e42f3..39714aeb9b36 100644
+> --- a/fs/btrfs/tree-checker.c
+> +++ b/fs/btrfs/tree-checker.c
+> @@ -1283,6 +1283,11 @@ static int check_extent_item(struct extent_buffe=
+r *leaf,
+>  				   key->offset, fs_info->sectorsize);
+>  			return -EUCLEAN;
+>  		}
+> +		if (flags & BTRFS_BLOCK_FLAG_FULL_BACKREF) {
+> +			extent_err(leaf, slot,
+> +			"invalid extent flag, data has full backref set");
+> +			return -EUCLEAN;
+> +		}
+
+Since we're already in tree-checker, another possible check is, to
+ensure COW tree only have one inline ref, and no keyed ref.
 
 Thanks,
 Qu
->  		}
->  next:
->  		if (!upper->pending)
+>  	}
+>  	ptr =3D (unsigned long)(struct btrfs_extent_item *)(ei + 1);
+> =20
 >=20
 
 
---DQ2hMTLSIUfLG8jCxeVBXLQzvnOLJeWXW--
+--lmtceuvnviyO4Pn16Q8sTLkxsINQfKlrr--
 
---a7LprRWcEyyu7lHPyqOvQSwLyDcwOxdje
+--47VbkUOu8VYnt1N1AADNXLOgLCROX8ZCf
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAl/IdG8ACgkQwj2R86El
-/qhObAf+PL4KVQKEub1wV5hBmbFtCW2ZIm4DPBoyHMWjHlZEk58o7+x5WBi0aviW
-A5gwBha74K/8BysvRX4CLfGzsfdbTLxEyDwSwZ4pHcZGOje4P6mGQg1V4gwmfqet
-c2k87Mm8m/GQdiKcm7ve68XMViZQ0WaHe7aIgMtjM0AKGTV6WnaucvUHIL1B68oQ
-aI9t+8jKjk7wKa6f1/sNpXBs5dOEiCdb5CLRQ7sbKkq1da2g7tqcC/pyRcIrufL2
-jNlALtb7+Ao25ctKmGBOnQVGmaPdaZdh1bMAR1t9eyotZEDPQ7j0hp8jor6VhaUZ
-fF0l8hL6crK72FSCodX4B4e9vF/QHQ==
-=KiQO
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAl/IdVkACgkQwj2R86El
+/qhknAf/fvDXQHJm4MVav8jcRITem4jM0bWgGHhrjIF+hH/99XJ/6ZBNT72WhFGy
+yBwpsUVfUSgqwnuqlaoCmSKrrflnHKyYJw4m0tDLfP2GpeiPJEQb+Q8taTDkfoNX
+mW561v6kroVqytjCZqJEZQerjlGqNL2d6oH/BwT7id9pin2Te8w/vWJNKRgJ+Myw
+UWNtrB2o/0tgQ9mSXw7g/BPls1HzocnuIE9xLnXP5tDyYEeM/FWNn7I4VyXEwRoz
+LoKjhm3asnE7YjSYjp1nZoUFA21Lz5P5U/ieR5hKH/6lJJ9GKf71BO4w5wtQkgCt
+N76+0xrBqd+mJCQ7mkZQbas7lG6y4Q==
+=n9Cb
 -----END PGP SIGNATURE-----
 
---a7LprRWcEyyu7lHPyqOvQSwLyDcwOxdje--
+--47VbkUOu8VYnt1N1AADNXLOgLCROX8ZCf--

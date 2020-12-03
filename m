@@ -2,163 +2,156 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-18.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0C0EFC64E7B
-	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Dec 2020 08:10:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5A860C63777
+	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Dec 2020 08:11:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id AE99321D1A
-	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Dec 2020 08:10:41 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 04CD220C56
+	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Dec 2020 08:11:06 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388230AbgLCIKi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 3 Dec 2020 03:10:38 -0500
-Received: from mx2.suse.de ([195.135.220.15]:58204 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2387620AbgLCIKh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 3 Dec 2020 03:10:37 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1606982991; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=X2+vA2PFsoXFpyTH/dVCuwEszp4fJW9TmeyIdARDkXk=;
-        b=ma8VUIWB5fat65aYDpQoA1urEzMnHppOG6XEvDtu5H8CrpPY5uQGLD4BIDTbKdxCz2mOr8
-        AbS1LCjquZ1zFu/yssPGvPWSsS3PGDQt2hv9PBRb3kG2Ql05/LXDGMoEDHiiNugrDbtzhV
-        mEOLecz0iVOJBen6VBahcUEE9Gcu2sU=
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 02D2AACC2;
-        Thu,  3 Dec 2020 08:09:51 +0000 (UTC)
-From:   Nikolay Borisov <nborisov@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 1/2] btrfs: Remove logic for !crc_check case
-Date:   Thu,  3 Dec 2020 10:09:48 +0200
-Message-Id: <20201203080949.3759006-1-nborisov@suse.com>
-X-Mailer: git-send-email 2.25.1
+        id S2388232AbgLCILG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 3 Dec 2020 03:11:06 -0500
+Received: from esa6.hgst.iphmx.com ([216.71.154.45]:58306 "EHLO
+        esa6.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728082AbgLCILF (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Dec 2020 03:11:05 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1606983065; x=1638519065;
+  h=from:to:subject:date:message-id:references:
+   content-transfer-encoding:mime-version;
+  bh=IuUefpezfOFeSYX1HuX7d1iziw+lfo/c5qg81nTmb/s=;
+  b=rH9rKI8rM5q3Lo4yoazwdQs1dtbHzm9Z0LmoNAjuZYG/u4lmL64lWoW/
+   YcVTnLBA68JSDkUDdH+DA5kR5UbsPlvZVhhJGeO4wlVQs1lkjWISZU4MY
+   b7q4MPUSmPnCaAVZt3tOcVBLQlhmsOFmFB+mkExkfalYdbBku0W5MNvOw
+   hB7fONxnbsXFu/xk3zz0S4ZpApZdxlFjg8jJTXMmtOKxvWfNLRhU09v0C
+   h0yz+W4QzTXSmduMFOasWs+H5D/JYjz44gh8SGNHHuxWRyip9m6916dKZ
+   2Eh78TMLL4FUtzrAmNNtndRH5DJfaH+uR3pOPE9VlAcM+oPvcUtBCqoIY
+   g==;
+IronPort-SDR: 3eeW3C+0Z5K9IbDixzNqqOo5avouF5ecKtg21jUcvfF4C46yD439OwLydRxy5LB3RhfRcfFWbt
+ eoBgMxudItIWI3oCX5fKGacSiUPxOcv4csfxlOMGYsL6adaDfOkgxqldrInc3mZukN7V5uc4qK
+ /cBi7ckY7STmJykR/LCP/+5Akgrv/pbb4lqTMsaHC+q9tM9/WwtaS1tu+l0MSjfJLM2Gf3akRL
+ AOCmT+IuD4xFwgaOS/bj1CYMTYKMwuPliFzby49AlVmW5/HvATBFbZvIYfvnX70u76RypKfTnf
+ QiM=
+X-IronPort-AV: E=Sophos;i="5.78,389,1599494400"; 
+   d="scan'208";a="155440844"
+Received: from mail-dm6nam11lp2175.outbound.protection.outlook.com (HELO NAM11-DM6-obe.outbound.protection.outlook.com) ([104.47.57.175])
+  by ob1.hgst.iphmx.com with ESMTP; 03 Dec 2020 16:09:58 +0800
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=Ro63i0gPa5o46aAqlfnzimshlxl85Gx/WAEBlKnL6W7fAnh/7AggwLtbjmBeplmKuM7SCnd0/nSK8kv+d3aFWidHPbnPV1bkeHAFuuqtfDafffPxYwO68ALkbHpY0mGrdwIMKpYGWYRviem0YnnjtTRv3IO4/AHs3/YRJs+7A3mOfHnmbqdL3M9SSiRnYPZV+RSfcgUMkVpbYBxMf1dER6OW+vrSSzuBUXC/Khx7Py9g26NyGB1Hw0YyoZo0SziuQial/Kt7/+AGaOLccjAcjluXjAhH2Q+eOeCtaCu3wJob0bEDSe7Sg/QzFrJLrZA5B8E0IEWjWODBuBl3XlD4Rw==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=EFq+lHfrGSNoc8evvEDDGo/o2TUT/9/Bao7WYsI3clM=;
+ b=XLvONhViBA8fRvtUPjHYB96RnJH6yKrfcOMkghzf/+IhV0iapiH/EsUZNVuAjHIvUIJpxdJ+b34K2tRwjatjUJqVMQtSro8I23S+z/jwqReH9tzyLWkaYRZ87xHY54pNxexbcukFdPoUY0Glau2/Lurbeb5A9yXlBhoTeKdffiOCYaeUZhNRQPE4M+m+QbYzbjLm/9gWLR4pXka+um0F7zIKRgHo+G6aGz++eYxVAcPB8NcoTUn8A+tuxeD99VbDt3yqRB3Vcc6tKX0MfxqFKbK4V4ACNRduSpk6/LV5NOBhqTTWbWAVW9484jexGqffToDlNuHl3lDD28ZsirBC7g==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
+ header.d=wdc.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=EFq+lHfrGSNoc8evvEDDGo/o2TUT/9/Bao7WYsI3clM=;
+ b=s+QD1VZrvyqdT3MEudkhShUgoDtfGEoxMcYOwPRkInjHsh6oPs2DVbjsmeKxqFeGzvi7j8Ib8fvZDn19jhq9/KLaemQsF85pPF1i0DUAqq8i+HNwu3gKymdWZcfQzIYFlwlPCOnAIkL5bPZFMYdIcg8DlKDfoActh7lgRh/k7u8=
+Received: from SN4PR0401MB3598.namprd04.prod.outlook.com
+ (2603:10b6:803:47::21) by SN6PR04MB3806.namprd04.prod.outlook.com
+ (2603:10b6:805:45::11) with Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.3632.17; Thu, 3 Dec
+ 2020 08:09:57 +0000
+Received: from SN4PR0401MB3598.namprd04.prod.outlook.com
+ ([fe80::65d7:592a:32d4:9f98]) by SN4PR0401MB3598.namprd04.prod.outlook.com
+ ([fe80::65d7:592a:32d4:9f98%7]) with mapi id 15.20.3589.030; Thu, 3 Dec 2020
+ 08:09:57 +0000
+From:   Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
+To:     Josef Bacik <josef@toxicpanda.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "kernel-team@fb.com" <kernel-team@fb.com>
+Subject: Re: [PATCH v3 01/54] btrfs: fix error handling in commit_fs_roots
+Thread-Topic: [PATCH v3 01/54] btrfs: fix error handling in commit_fs_roots
+Thread-Index: AQHWyOTzhSXy0TJY1EKB0lxzv3aPAA==
+Date:   Thu, 3 Dec 2020 08:09:57 +0000
+Message-ID: <SN4PR0401MB359848C78A336C2C34A3BDF99BF20@SN4PR0401MB3598.namprd04.prod.outlook.com>
+References: <cover.1606938211.git.josef@toxicpanda.com>
+ <502d2273052e95e19366d785ee85e542e86fe61e.1606938211.git.josef@toxicpanda.com>
+Accept-Language: en-US
+Content-Language: en-US
+X-MS-Has-Attach: 
+X-MS-TNEF-Correlator: 
+authentication-results: toxicpanda.com; dkim=none (message not signed)
+ header.d=none;toxicpanda.com; dmarc=none action=none header.from=wdc.com;
+x-originating-ip: [2001:a62:155d:1001:10b1:51e8:1aa8:b188]
+x-ms-publictraffictype: Email
+x-ms-office365-filtering-ht: Tenant
+x-ms-office365-filtering-correlation-id: c498f331-45fd-404b-0927-08d89762d307
+x-ms-traffictypediagnostic: SN6PR04MB3806:
+x-microsoft-antispam-prvs: <SN6PR04MB38068BE4EA3FCB6D3D74C4799BF20@SN6PR04MB3806.namprd04.prod.outlook.com>
+wdcipoutbound: EOP-TRUE
+x-ms-oob-tlc-oobclassifiers: OLM:10000;
+x-ms-exchange-senderadcheck: 1
+x-microsoft-antispam: BCL:0;
+x-microsoft-antispam-message-info: LRrmsSR4MFe7FHUMqIed9CGzbmUDbB2C/Zs4EDGRAWiOtomu970kflYaInAtunmXRz/iV5DSVXVH7amoRX0IiGNDrNewoJDA8sIokRULi7xAGpKZ/7EgqVtB+9vrs//ZTCAVvFe8Le0zTAei9APyU4+VFx2zSxB8nb9FM6gkEPN7/8INV3XR5FrQt7fwCPVtOF93KEBWLrfV7gcq4YGeNLUGcECrY4uWWvexb/urXlECbMQCY+KQyFVQeJyEpBX2LNlc22CBpIRq6pgFvortdt5PK7hzA63FYkPeLR4m5Yz/4/8/kDT4NIOYOBDWsNqD95LapDEp4IwE+Aff3GrHGA==
+x-forefront-antispam-report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SN4PR0401MB3598.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(4636009)(396003)(136003)(346002)(376002)(366004)(39860400002)(478600001)(66556008)(66446008)(186003)(64756008)(7696005)(66476007)(4744005)(316002)(66946007)(110136005)(2906002)(71200400001)(91956017)(33656002)(6506007)(53546011)(76116006)(83380400001)(86362001)(8676002)(52536014)(5660300002)(8936002)(9686003)(55016002);DIR:OUT;SFP:1102;
+x-ms-exchange-antispam-messagedata: =?us-ascii?Q?r4pfXqUmxUsmm5vUVEwTvdSJEp+ICZdxGC2vXZEBMEeGSe+j7KgeQGPLwA03?=
+ =?us-ascii?Q?aF0ZVxURdPJwCjyGdrHo5YBq1ebjSwed6AWi1M5zX6hpC+nj+K+P6zWKTHTX?=
+ =?us-ascii?Q?u0bLcoyqoOC8X6OBAzltcjFA09YwQ50CVwh3tqq48dFhZkKxcX65LSIwsoTk?=
+ =?us-ascii?Q?2aaSwc6WczHCYyakUdruhsR161PxWXVKrgLa4HVhwb9OGrJXNSb8BWT+kY9X?=
+ =?us-ascii?Q?66/rGrDT9foBwgx2WUOWOW/kLr96xhNr9ZcTxETJrO9Z4MIapeAtkp/8x49q?=
+ =?us-ascii?Q?GZ4pgUX33+L5k/ItbbnNMbZfvnzM872/k1VT1zY/wk9LgkkzGXOU58cNEAeZ?=
+ =?us-ascii?Q?rr7S30ZdK2ahwnbmueBeiFxgM4MP0qgZU4cAPccYH4Yeq79DWyULY/ka4NWl?=
+ =?us-ascii?Q?xexkcBLY4e4mj+mqq+vQhY5XefxaNb+FsV1SspiGLgvPhLIMVMmguAplARUV?=
+ =?us-ascii?Q?YRFuLu65t3+AFBuwIbowBFyHJb5I1cCiKOvVoID5nCM2tGYGBM/oChWDHY5r?=
+ =?us-ascii?Q?4toCPTC0G9N4Xm49v1/AbWi/bAJ0Xxq69DdPJEHoZ/o0DlT67nhIzZO9TjyW?=
+ =?us-ascii?Q?ZqBVaNSYvo5809CQ2x+IXpKUhErFUq+tyPQd/EB5iejllRovEIZLiP7EKsbL?=
+ =?us-ascii?Q?uPCPwGhqHv/ET/uCCZwYM87/gCib2rWbHYaNk9W/qm1IT+0GFXdLgxez3qY5?=
+ =?us-ascii?Q?aOmwe10n14BVMl4gTsuoOC0THYsoigfsU+OwqSPlnYw+vTfnMC0T2kpAIt52?=
+ =?us-ascii?Q?URRSiEQ7oayIEt+UOrvlOmoxAxHQdKehCEydnQ88aDhfKRrBr2Y3J8ZNDVMp?=
+ =?us-ascii?Q?DGZT08g38/IdH38YOEkc/Yb41MfE/YTb921q0Pekb4RSPnZlvyS+Zm0X3qfb?=
+ =?us-ascii?Q?VDVY0VJG9NZXifwrclK6s6Qzy+SqkzwCY4AAmos/ZE7uriDD/zC3DRUuhCUQ?=
+ =?us-ascii?Q?3ngZu3HA9T4W3MBkTJLPnbHkQeoqkilBEPGpDnnUp63nAhaq01mKpNgFcVwg?=
+ =?us-ascii?Q?AYx9ydboFybHp3ViJ/sb7zN6h5xcMGgdSP1+dLsK51vcDD+ps4IgMW10HCNS?=
+ =?us-ascii?Q?zDgOz1BH?=
+x-ms-exchange-transport-forked: True
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+X-OriginatorOrg: wdc.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-AuthSource: SN4PR0401MB3598.namprd04.prod.outlook.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: c498f331-45fd-404b-0927-08d89762d307
+X-MS-Exchange-CrossTenant-originalarrivaltime: 03 Dec 2020 08:09:57.5238
+ (UTC)
+X-MS-Exchange-CrossTenant-fromentityheader: Hosted
+X-MS-Exchange-CrossTenant-id: b61c8803-16f3-4c35-9b17-6f65f441df86
+X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
+X-MS-Exchange-CrossTenant-userprincipalname: y7OxDZHVvb+IRK2lHNBlvcyLXY18ynNoRrlxj85kRodJmv3sSubA37d8JFjdHwjgFY+0hV8noRlOQOt+LNVbITLycOR9xWUuCVhdHasW+6w=
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: SN6PR04MB3806
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Following removal of the ino cache io_ctl_init will be called only on
-behalf of the freespace inode. In this case we always want to check
-crcs so conditional code that dependen on io_ctl::check_crc can be
-removed.
-
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
-David,
-
-Here are 2 patches that followup based on your feedback of the ino removal
-feature, I have run a full xfstest run to validate them.
-
- fs/btrfs/free-space-cache.c | 38 ++++++-------------------------------
- fs/btrfs/free-space-cache.h |  1 -
- 2 files changed, 6 insertions(+), 33 deletions(-)
-
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index cd5996350cf0..e83b3bdc4e46 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -364,16 +364,11 @@ static int io_ctl_init(struct btrfs_io_ctl *io_ctl, struct inode *inode,
- 		       int write)
- {
- 	int num_pages;
--	int check_crcs = 0;
-
- 	num_pages = DIV_ROUND_UP(i_size_read(inode), PAGE_SIZE);
-
--	if (btrfs_ino(BTRFS_I(inode)) != BTRFS_FREE_INO_OBJECTID)
--		check_crcs = 1;
--
- 	/* Make sure we can fit our crcs and generation into the first page */
--	if (write && check_crcs &&
--	    (num_pages * sizeof(u32) + sizeof(u64)) > PAGE_SIZE)
-+	if (write && (num_pages * sizeof(u32) + sizeof(u64)) > PAGE_SIZE)
- 		return -ENOSPC;
-
- 	memset(io_ctl, 0, sizeof(struct btrfs_io_ctl));
-@@ -384,7 +379,6 @@ static int io_ctl_init(struct btrfs_io_ctl *io_ctl, struct inode *inode,
-
- 	io_ctl->num_pages = num_pages;
- 	io_ctl->fs_info = btrfs_sb(inode->i_sb);
--	io_ctl->check_crcs = check_crcs;
- 	io_ctl->inode = inode;
-
- 	return 0;
-@@ -479,13 +473,8 @@ static void io_ctl_set_generation(struct btrfs_io_ctl *io_ctl, u64 generation)
- 	 * Skip the csum areas.  If we don't check crcs then we just have a
- 	 * 64bit chunk at the front of the first page.
- 	 */
--	if (io_ctl->check_crcs) {
--		io_ctl->cur += (sizeof(u32) * io_ctl->num_pages);
--		io_ctl->size -= sizeof(u64) + (sizeof(u32) * io_ctl->num_pages);
--	} else {
--		io_ctl->cur += sizeof(u64);
--		io_ctl->size -= sizeof(u64) * 2;
--	}
-+	io_ctl->cur += (sizeof(u32) * io_ctl->num_pages);
-+	io_ctl->size -= sizeof(u64) + (sizeof(u32) * io_ctl->num_pages);
-
- 	put_unaligned_le64(generation, io_ctl->cur);
- 	io_ctl->cur += sizeof(u64);
-@@ -499,14 +488,9 @@ static int io_ctl_check_generation(struct btrfs_io_ctl *io_ctl, u64 generation)
- 	 * Skip the crc area.  If we don't check crcs then we just have a 64bit
- 	 * chunk at the front of the first page.
- 	 */
--	if (io_ctl->check_crcs) {
--		io_ctl->cur += sizeof(u32) * io_ctl->num_pages;
--		io_ctl->size -= sizeof(u64) +
--			(sizeof(u32) * io_ctl->num_pages);
--	} else {
--		io_ctl->cur += sizeof(u64);
--		io_ctl->size -= sizeof(u64) * 2;
--	}
-+	io_ctl->cur += sizeof(u32) * io_ctl->num_pages;
-+	io_ctl->size -= sizeof(u64) +
-+		(sizeof(u32) * io_ctl->num_pages);
-
- 	cache_gen = get_unaligned_le64(io_ctl->cur);
- 	if (cache_gen != generation) {
-@@ -526,11 +510,6 @@ static void io_ctl_set_crc(struct btrfs_io_ctl *io_ctl, int index)
- 	u32 crc = ~(u32)0;
- 	unsigned offset = 0;
-
--	if (!io_ctl->check_crcs) {
--		io_ctl_unmap_page(io_ctl);
--		return;
--	}
--
- 	if (index == 0)
- 		offset = sizeof(u32) * io_ctl->num_pages;
-
-@@ -548,11 +527,6 @@ static int io_ctl_check_crc(struct btrfs_io_ctl *io_ctl, int index)
- 	u32 crc = ~(u32)0;
- 	unsigned offset = 0;
-
--	if (!io_ctl->check_crcs) {
--		io_ctl_map_page(io_ctl, 0);
--		return 0;
--	}
--
- 	if (index == 0)
- 		offset = sizeof(u32) * io_ctl->num_pages;
-
-diff --git a/fs/btrfs/free-space-cache.h b/fs/btrfs/free-space-cache.h
-index a65ed1967d5d..33687b0b8e7a 100644
---- a/fs/btrfs/free-space-cache.h
-+++ b/fs/btrfs/free-space-cache.h
-@@ -76,7 +76,6 @@ struct btrfs_io_ctl {
- 	int num_pages;
- 	int entries;
- 	int bitmaps;
--	unsigned check_crcs:1;
- };
-
- struct inode *lookup_free_space_inode(struct btrfs_block_group *block_group,
---
-2.25.1
-
+On 02/12/2020 20:54, Josef Bacik wrote:=0A=
+> While doing error injection I would sometimes get a corrupt file system.=
+=0A=
+> This is because I was injecting errors at btrfs_search_slot, but would=0A=
+> only do it one time per stack.  This uncovered a problem in=0A=
+> commit_fs_roots, where if we get an error we would just break.  However=
+=0A=
+> we're in a nested loop, the main loop being a loop to find all the dirty=
+=0A=
+> fs roots, and then subsequent root updates would succeed clearing the=0A=
+> error value.=0A=
+> =0A=
+> This isn't likely to happen in real scenarios, however we could=0A=
+> potentially get a random ENOMEM once and then not again, and we'd end up=
+=0A=
+> with a corrupted file system.  Fix this by moving the error checking=0A=
+> around a bit to the nested loop, as this is the only place where=0A=
+> something will fail, and return the error as soon as it occurs.=0A=
+> =0A=
+> With this patch my reproducer no longer corrupts the file system.=0A=
+=0A=
+Better to abort the transaction than to corrupt the FS,=0A=
+Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>=0A=

@@ -7,79 +7,158 @@ X-Spam-Status: No, score=-18.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DA30BC71155
-	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Dec 2020 08:10:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0C0EFC64E7B
+	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Dec 2020 08:10:42 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 83A7620C56
+	by mail.kernel.org (Postfix) with ESMTP id AE99321D1A
 	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Dec 2020 08:10:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388194AbgLCIKh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 3 Dec 2020 03:10:37 -0500
-Received: from mx2.suse.de ([195.135.220.15]:58218 "EHLO mx2.suse.de"
+        id S2388230AbgLCIKi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 3 Dec 2020 03:10:38 -0500
+Received: from mx2.suse.de ([195.135.220.15]:58204 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2387625AbgLCIKh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S2387620AbgLCIKh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Thu, 3 Dec 2020 03:10:37 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
         t=1606982991; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=t7hFX2s8rHxKDvSMGRmhJzQH6G0chTaIP3Hpb21pRfo=;
-        b=qlpRHiK36I1DpBAHzHYxN06OWgYV37cMRxKz6e0WSlH9OTpipeqAlVuDujLTPI5OKwBDCe
-        SmSZpDoAUW9wcI1oNCaAExcsmMhfyRSCKernGH1P/lOfKhJ6mSD64fM+swLodEuZAJ92Xj
-        dBTEvGFdIeHWRzuFbFB1mdOGXNsIc7o=
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=X2+vA2PFsoXFpyTH/dVCuwEszp4fJW9TmeyIdARDkXk=;
+        b=ma8VUIWB5fat65aYDpQoA1urEzMnHppOG6XEvDtu5H8CrpPY5uQGLD4BIDTbKdxCz2mOr8
+        AbS1LCjquZ1zFu/yssPGvPWSsS3PGDQt2hv9PBRb3kG2Ql05/LXDGMoEDHiiNugrDbtzhV
+        mEOLecz0iVOJBen6VBahcUEE9Gcu2sU=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 45A8DAE38;
+        by mx2.suse.de (Postfix) with ESMTP id 02D2AACC2;
         Thu,  3 Dec 2020 08:09:51 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 2/2] btrfs: Always set NODATASUM/NODATACOW in __create_free_space_inode
-Date:   Thu,  3 Dec 2020 10:09:49 +0200
-Message-Id: <20201203080949.3759006-2-nborisov@suse.com>
+Subject: [PATCH 1/2] btrfs: Remove logic for !crc_check case
+Date:   Thu,  3 Dec 2020 10:09:48 +0200
+Message-Id: <20201203080949.3759006-1-nborisov@suse.com>
 X-Mailer: git-send-email 2.25.1
-In-Reply-To: <20201203080949.3759006-1-nborisov@suse.com>
-References: <20201203080949.3759006-1-nborisov@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Since it's being used solely for the freespace cache unconditionally
-set the flags required for it.
+Following removal of the ino cache io_ctl_init will be called only on
+behalf of the freespace inode. In this case we always want to check
+crcs so conditional code that dependen on io_ctl::check_crc can be
+removed.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/free-space-cache.c | 8 +++-----
- 1 file changed, 3 insertions(+), 5 deletions(-)
+David,
+
+Here are 2 patches that followup based on your feedback of the ino removal
+feature, I have run a full xfstest run to validate them.
+
+ fs/btrfs/free-space-cache.c | 38 ++++++-------------------------------
+ fs/btrfs/free-space-cache.h |  1 -
+ 2 files changed, 6 insertions(+), 33 deletions(-)
 
 diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index e83b3bdc4e46..18112a63ea57 100644
+index cd5996350cf0..e83b3bdc4e46 100644
 --- a/fs/btrfs/free-space-cache.c
 +++ b/fs/btrfs/free-space-cache.c
-@@ -142,17 +142,15 @@ static int __create_free_space_inode(struct btrfs_root *root,
- 	struct btrfs_free_space_header *header;
- 	struct btrfs_inode_item *inode_item;
- 	struct extent_buffer *leaf;
--	u64 flags = BTRFS_INODE_NOCOMPRESS | BTRFS_INODE_PREALLOC;
-+	/* We inline crc's for the free disk space cache */
-+	u64 flags = BTRFS_INODE_NOCOMPRESS | BTRFS_INODE_PREALLOC |
-+		BTRFS_INODE_NODATASUM | BTRFS_INODE_NODATACOW;
- 	int ret;
- 
- 	ret = btrfs_insert_empty_inode(trans, root, path, ino);
- 	if (ret)
- 		return ret;
- 
--	/* We inline crc's for the free disk space cache */
--	if (ino != BTRFS_FREE_INO_OBJECTID)
--		flags |= BTRFS_INODE_NODATASUM | BTRFS_INODE_NODATACOW;
+@@ -364,16 +364,11 @@ static int io_ctl_init(struct btrfs_io_ctl *io_ctl, struct inode *inode,
+ 		       int write)
+ {
+ 	int num_pages;
+-	int check_crcs = 0;
+
+ 	num_pages = DIV_ROUND_UP(i_size_read(inode), PAGE_SIZE);
+
+-	if (btrfs_ino(BTRFS_I(inode)) != BTRFS_FREE_INO_OBJECTID)
+-		check_crcs = 1;
 -
- 	leaf = path->nodes[0];
- 	inode_item = btrfs_item_ptr(leaf, path->slots[0],
- 				    struct btrfs_inode_item);
--- 
+ 	/* Make sure we can fit our crcs and generation into the first page */
+-	if (write && check_crcs &&
+-	    (num_pages * sizeof(u32) + sizeof(u64)) > PAGE_SIZE)
++	if (write && (num_pages * sizeof(u32) + sizeof(u64)) > PAGE_SIZE)
+ 		return -ENOSPC;
+
+ 	memset(io_ctl, 0, sizeof(struct btrfs_io_ctl));
+@@ -384,7 +379,6 @@ static int io_ctl_init(struct btrfs_io_ctl *io_ctl, struct inode *inode,
+
+ 	io_ctl->num_pages = num_pages;
+ 	io_ctl->fs_info = btrfs_sb(inode->i_sb);
+-	io_ctl->check_crcs = check_crcs;
+ 	io_ctl->inode = inode;
+
+ 	return 0;
+@@ -479,13 +473,8 @@ static void io_ctl_set_generation(struct btrfs_io_ctl *io_ctl, u64 generation)
+ 	 * Skip the csum areas.  If we don't check crcs then we just have a
+ 	 * 64bit chunk at the front of the first page.
+ 	 */
+-	if (io_ctl->check_crcs) {
+-		io_ctl->cur += (sizeof(u32) * io_ctl->num_pages);
+-		io_ctl->size -= sizeof(u64) + (sizeof(u32) * io_ctl->num_pages);
+-	} else {
+-		io_ctl->cur += sizeof(u64);
+-		io_ctl->size -= sizeof(u64) * 2;
+-	}
++	io_ctl->cur += (sizeof(u32) * io_ctl->num_pages);
++	io_ctl->size -= sizeof(u64) + (sizeof(u32) * io_ctl->num_pages);
+
+ 	put_unaligned_le64(generation, io_ctl->cur);
+ 	io_ctl->cur += sizeof(u64);
+@@ -499,14 +488,9 @@ static int io_ctl_check_generation(struct btrfs_io_ctl *io_ctl, u64 generation)
+ 	 * Skip the crc area.  If we don't check crcs then we just have a 64bit
+ 	 * chunk at the front of the first page.
+ 	 */
+-	if (io_ctl->check_crcs) {
+-		io_ctl->cur += sizeof(u32) * io_ctl->num_pages;
+-		io_ctl->size -= sizeof(u64) +
+-			(sizeof(u32) * io_ctl->num_pages);
+-	} else {
+-		io_ctl->cur += sizeof(u64);
+-		io_ctl->size -= sizeof(u64) * 2;
+-	}
++	io_ctl->cur += sizeof(u32) * io_ctl->num_pages;
++	io_ctl->size -= sizeof(u64) +
++		(sizeof(u32) * io_ctl->num_pages);
+
+ 	cache_gen = get_unaligned_le64(io_ctl->cur);
+ 	if (cache_gen != generation) {
+@@ -526,11 +510,6 @@ static void io_ctl_set_crc(struct btrfs_io_ctl *io_ctl, int index)
+ 	u32 crc = ~(u32)0;
+ 	unsigned offset = 0;
+
+-	if (!io_ctl->check_crcs) {
+-		io_ctl_unmap_page(io_ctl);
+-		return;
+-	}
+-
+ 	if (index == 0)
+ 		offset = sizeof(u32) * io_ctl->num_pages;
+
+@@ -548,11 +527,6 @@ static int io_ctl_check_crc(struct btrfs_io_ctl *io_ctl, int index)
+ 	u32 crc = ~(u32)0;
+ 	unsigned offset = 0;
+
+-	if (!io_ctl->check_crcs) {
+-		io_ctl_map_page(io_ctl, 0);
+-		return 0;
+-	}
+-
+ 	if (index == 0)
+ 		offset = sizeof(u32) * io_ctl->num_pages;
+
+diff --git a/fs/btrfs/free-space-cache.h b/fs/btrfs/free-space-cache.h
+index a65ed1967d5d..33687b0b8e7a 100644
+--- a/fs/btrfs/free-space-cache.h
++++ b/fs/btrfs/free-space-cache.h
+@@ -76,7 +76,6 @@ struct btrfs_io_ctl {
+ 	int num_pages;
+ 	int entries;
+ 	int bitmaps;
+-	unsigned check_crcs:1;
+ };
+
+ struct inode *lookup_free_space_inode(struct btrfs_block_group *block_group,
+--
 2.25.1
 

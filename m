@@ -5,550 +5,233 @@ X-Spam-Level:
 X-Spam-Status: No, score=-15.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
 	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_SANE_1 autolearn=unavailable autolearn_force=no version=3.4.0
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 99DE8C1B0E3
-	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Dec 2020 14:51:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 631A1C4361A
+	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Dec 2020 15:56:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 5D6A222279
-	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Dec 2020 14:33:38 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0575B207AD
+	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Dec 2020 15:56:16 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727381AbgLCOdW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 3 Dec 2020 09:33:22 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40646 "EHLO
+        id S1731093AbgLCPz6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 3 Dec 2020 10:55:58 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53452 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729355AbgLCOdV (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Dec 2020 09:33:21 -0500
-Received: from mail-qk1-x741.google.com (mail-qk1-x741.google.com [IPv6:2607:f8b0:4864:20::741])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 503EBC061A4F
-        for <linux-btrfs@vger.kernel.org>; Thu,  3 Dec 2020 06:32:41 -0800 (PST)
-Received: by mail-qk1-x741.google.com with SMTP id y18so2159760qki.11
-        for <linux-btrfs@vger.kernel.org>; Thu, 03 Dec 2020 06:32:41 -0800 (PST)
+        with ESMTP id S1726162AbgLCPz5 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Dec 2020 10:55:57 -0500
+Received: from mail-qk1-x744.google.com (mail-qk1-x744.google.com [IPv6:2607:f8b0:4864:20::744])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 757A6C061A4E
+        for <linux-btrfs@vger.kernel.org>; Thu,  3 Dec 2020 07:55:17 -0800 (PST)
+Received: by mail-qk1-x744.google.com with SMTP id v143so2515758qkb.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 03 Dec 2020 07:55:17 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=subject:to:cc:references:from:message-id:date:user-agent
-         :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=WgPbuA5y7PEpqLeqvFz2I1obFjLvPEEqyrFVv3wr3mU=;
-        b=V3EavTJfRFGNvXmeHoxQNMg5Uwar/EKfDUUw/KcXrcU45QrVrPsY58ucjVN9GhWJIz
-         /L/PR3vIcXZbVBT89kSmPq3but/BnraGH5F3cgrMc5NxfZ2BQqhHnHQZ69DutHizeSK+
-         on3BrvL3RleCUwPL2o+LoEwfS2pMj/9l79kaQVEc9r+hHLBsiLlcq6Qp6H4VyET/5chd
-         uyOH3p18S4EKKGcDATHpgphy+5opV5QwWULevtnUNM/B22ORAlrW87KhRzfhXta31pIt
-         bnrCXMntqHzHWaVJNTIJcrTGuxjNLKxd0Hw5+4EWnpdM+mLkxmjh4RQoKY7woISF12BD
-         BIzQ==
+        h=subject:to:references:from:message-id:date:user-agent:mime-version
+         :in-reply-to:content-language:content-transfer-encoding;
+        bh=TbmgfTIVh9ny1ICJfK3l8nTNdhUXR8+VRUqtU+l3OG8=;
+        b=oNxf2UQl0odTQ/YjkY3ynLypxuy77xb9+ZmJ+a8m57Ta3NzPg6QkiNTwuwDU3OXJPJ
+         Sx8X11Is39YtlzzjDzVpgKrBdzBQ4xOuB9HqrlYeKngZiZ08qGG1Hoxbw/LbHkkATNEM
+         roUSMKAFUw6YakP2VEFo+PfAXBeoDA74xNQwHhiglcCePgWdNGP45VeWPZbux0WZG9X9
+         JKNr0SuEccQZ2ayzXU/OzgyoKy3lOu3QsQmcMyi/qK5V0Jprbwq0ZZUNm8sNtXNNtTFB
+         1Gdq4B4wo1G/HeIxgeTSIaq0I5TePIuwcEHifMCXf4SPKaTKw3OepKSM5eIydw4V2PRE
+         lSkA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
+        h=x-gm-message-state:subject:to:references:from:message-id:date
          :user-agent:mime-version:in-reply-to:content-language
          :content-transfer-encoding;
-        bh=WgPbuA5y7PEpqLeqvFz2I1obFjLvPEEqyrFVv3wr3mU=;
-        b=PjU40SZWET2sz+0emnZLhjQIdrwHYqSykNqYcCMbALGf4829Hg30740s1wB39a442z
-         ELqRpkK+497guHtzoY1RD/kQrCKtVVCkFFZgmN9HrZb4W0UgSXvpf7Co2takDlVp/iOL
-         TfX3kmsZSHmQc2Oe20E7tCvl312Bd/JKLV4z1zglvA4971nZKub2OVv1mykXSTs38iwm
-         7f7f7UDgLtUDdcxc5YWih0NGp7SozwAfcw8J/e4IUFePB0Cxs7NhKmwnN3KQBoIV1erk
-         whM4APVrNY2yus3cr5Ns7utLs6wN2TRH46Iz+JCcCpV4dnsYuK0gK26wT26JPmhqxrM6
-         yZKg==
-X-Gm-Message-State: AOAM531wIv8HH2Pa+Bf69OHSzEd99DalPZk+LFXGLru0i3Vfrkbx3ZtV
-        bJmV6Kbb80VH5+9asgBSDauXwA==
-X-Google-Smtp-Source: ABdhPJwdat9fcpWcT+ktA+YDq+sP+7Bno4GbRNmE2PDQ0fNdoaOIb/JUm6setKraGKFq/nwmLdZCbg==
-X-Received: by 2002:a37:2c82:: with SMTP id s124mr3121881qkh.130.1607005960130;
-        Thu, 03 Dec 2020 06:32:40 -0800 (PST)
+        bh=TbmgfTIVh9ny1ICJfK3l8nTNdhUXR8+VRUqtU+l3OG8=;
+        b=PXMS66uzY4uULf/qg/vN+J+Dm310SGZj4K2pSKsS0d36rl4evxE/Ux6GYjh/MsPMZk
+         lRVYmFnC1cuiISyUR7umb2thxW2R/MO+EJPhXn3J8uPNnxhPt8NaI5QugxZPIFGp0BPR
+         50bjDnhWUIymi3+Hmw0lKCQVcwRCg6e1YEHy+QAp7Di3XHJDCP1ulUnEUvJIXMQs0uj/
+         lBiv/bxK+XV2CxW/Mfxy0W23A+JNyWQBY8l2cslFWzf9Vyf4kBm5MkMCn28ZwOeVp+wA
+         Ck17spDHwx+TGKZOCOLVeLU4F0fS3QXMpzJ7SzG/d5c1piWVX3O9BG5uEcxE99sGKqFO
+         9p9Q==
+X-Gm-Message-State: AOAM5328eULghg6j9JhD4+2qNo5taxtFCO/786y5MaO2AMPrC+ZC0HN1
+        S99D4tjH+weJjSdYAu7LNOU4Chb4KNcj4toQ
+X-Google-Smtp-Source: ABdhPJxNOWId/S14Ix4nEBAFsr/TT1J2vnFhNfRshLE90wXzH0ngooVVHIYFvuoL+3P86yW2egAdFw==
+X-Received: by 2002:a05:620a:2202:: with SMTP id m2mr3446587qkh.251.1607010916412;
+        Thu, 03 Dec 2020 07:55:16 -0800 (PST)
 Received: from [192.168.1.45] (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id m54sm1336727qtc.29.2020.12.03.06.32.38
+        by smtp.gmail.com with ESMTPSA id g143sm1597157qke.102.2020.12.03.07.55.15
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 03 Dec 2020 06:32:39 -0800 (PST)
-Subject: Re: [PATCH v6 10/11] btrfs: implement RWF_ENCODED reads
-To:     Omar Sandoval <osandov@osandov.com>, linux-fsdevel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, Al Viro <viro@zeniv.linux.org.uk>,
-        Christoph Hellwig <hch@infradead.org>
-Cc:     Dave Chinner <david@fromorbit.com>, Jann Horn <jannh@google.com>,
-        Amir Goldstein <amir73il@gmail.com>,
-        Aleksa Sarai <cyphar@cyphar.com>, linux-api@vger.kernel.org,
+        Thu, 03 Dec 2020 07:55:15 -0800 (PST)
+Subject: Re: [PATCH v3 04/54] btrfs: keep track of the root owner for
+ relocation reads
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org,
         kernel-team@fb.com
-References: <cover.1605723568.git.osandov@fb.com>
- <da0b3c6b349ed47e02251e671ba6c33dd8628e1d.1605723568.git.osandov@fb.com>
+References: <cover.1606938211.git.josef@toxicpanda.com>
+ <6d95a4747f99af7b1ce4cdd249998c821de2515a.1606938211.git.josef@toxicpanda.com>
+ <487bcc51-3d99-2592-4168-8b8bbf7d5017@gmx.com>
 From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <d911c093-476e-0b24-1c46-b59b6c4a2d59@toxicpanda.com>
-Date:   Thu, 3 Dec 2020 09:32:37 -0500
+Message-ID: <4fec4b49-2fa8-f208-75e6-93c13a29c226@toxicpanda.com>
+Date:   Thu, 3 Dec 2020 10:55:14 -0500
 User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0)
- Gecko/20100101 Thunderbird/78.5.0
+ Gecko/20100101 Thunderbird/78.5.1
 MIME-Version: 1.0
-In-Reply-To: <da0b3c6b349ed47e02251e671ba6c33dd8628e1d.1605723568.git.osandov@fb.com>
+In-Reply-To: <487bcc51-3d99-2592-4168-8b8bbf7d5017@gmx.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 11/18/20 2:18 PM, Omar Sandoval wrote:
-> From: Omar Sandoval <osandov@fb.com>
+On 12/2/20 9:04 PM, Qu Wenruo wrote:
 > 
-> There are 4 main cases:
 > 
-> 1. Inline extents: we copy the data straight out of the extent buffer.
-> 2. Hole/preallocated extents: we fill in zeroes.
-> 3. Regular, uncompressed extents: we read the sectors we need directly
->     from disk.
-> 4. Regular, compressed extents: we read the entire compressed extent
->     from disk and indicate what subset of the decompressed extent is in
->     the file.
+> On 2020/12/3 上午3:50, Josef Bacik wrote:
+>> While testing the error paths in relocation, I hit the following lockdep
+>> splat
+>>
+>> ======================================================
+>> WARNING: possible circular locking dependency detected
+>> 5.10.0-rc3+ #206 Not tainted
+>> ------------------------------------------------------
+>> btrfs-balance/1571 is trying to acquire lock:
+>> ffff8cdbcc8f77d0 (&head_ref->mutex){+.+.}-{3:3}, at: btrfs_lookup_extent_info+0x156/0x3b0
+>>
+>> but task is already holding lock:
+>> ffff8cdbc54adbf8 (btrfs-tree-00){++++}-{3:3}, at: __btrfs_tree_lock+0x27/0x100
+>>
+>> which lock already depends on the new lock.
+>>
+>> the existing dependency chain (in reverse order) is:
+>>
+>> -> #2 (btrfs-tree-00){++++}-{3:3}:
+>>         down_write_nested+0x43/0x80
+>>         __btrfs_tree_lock+0x27/0x100
+>>         btrfs_search_slot+0x248/0x890
+>>         relocate_tree_blocks+0x490/0x650
+>>         relocate_block_group+0x1ba/0x5d0
+>>         kretprobe_trampoline+0x0/0x50
+>>
+>> -> #1 (btrfs-csum-01){++++}-{3:3}:
+>>         down_read_nested+0x43/0x130
+>>         __btrfs_tree_read_lock+0x27/0x100
+>>         btrfs_read_lock_root_node+0x31/0x40
+>>         btrfs_search_slot+0x5ab/0x890
+>>         btrfs_del_csums+0x10b/0x3c0
+>>         __btrfs_free_extent+0x49d/0x8e0
+>>         __btrfs_run_delayed_refs+0x283/0x11f0
+>>         btrfs_run_delayed_refs+0x86/0x220
+>>         btrfs_start_dirty_block_groups+0x2ba/0x520
+>>         kretprobe_trampoline+0x0/0x50
+>>
+>> -> #0 (&head_ref->mutex){+.+.}-{3:3}:
+>>         __lock_acquire+0x1167/0x2150
+>>         lock_acquire+0x116/0x3e0
+>>         __mutex_lock+0x7e/0x7b0
+>>         btrfs_lookup_extent_info+0x156/0x3b0
+>>         walk_down_proc+0x1c3/0x280
+>>         walk_down_tree+0x64/0xe0
+>>         btrfs_drop_subtree+0x182/0x260
+>>         do_relocation+0x52e/0x660
+>>         relocate_tree_blocks+0x2ae/0x650
+>>         relocate_block_group+0x1ba/0x5d0
+>>         kretprobe_trampoline+0x0/0x50
+>>
+>> other info that might help us debug this:
+>>
+>> Chain exists of:
+>>    &head_ref->mutex --> btrfs-csum-01 --> btrfs-tree-00
+>>
+>>   Possible unsafe locking scenario:
+>>
+>>         CPU0                    CPU1
+>>         ----                    ----
+>>    lock(btrfs-tree-00);
+>>                                 lock(btrfs-csum-01);
+>>                                 lock(btrfs-tree-00);
 > 
-> This initial implementation simplifies a few things that can be improved
-> in the future:
+> I found it a little confusing that, subv trees got the name "tree".
 > 
-> - We hold the inode lock during the operation.
-> - Cases 1, 3, and 4 allocate temporary memory to read into before
->    copying out to userspace.
-> - We don't do read repair, because it turns out that read repair is
->    currently broken for compressed data.
+> Maybe another patch to rename it to something like "fs" or "subv" would
+> be better?
 > 
-> Signed-off-by: Omar Sandoval <osandov@fb.com>
-> ---
->   fs/btrfs/ctree.h |   2 +
->   fs/btrfs/file.c  |   5 +
->   fs/btrfs/inode.c | 496 +++++++++++++++++++++++++++++++++++++++++++++++
->   3 files changed, 503 insertions(+)
+> [...]
+>>
+>> As you can see this is bogus, we never take another tree's lock under
+>> the csum lock.  This happens because sometimes we have to read tree
+>> blocks from disk without knowing which root they belong to during
+>> relocation.  We defaulted to an owner of 0, which translates to an fs
+>> tree.  This is fine as all fs trees have the same class, but obviously
+>> isn't fine if the block belongs to a cow only tree.
+>>
+>> Thankfully cow only trees only have their owners root as a reference to
+>> them, and since we already look up the extent information during
+>> relocation, go ahead and check and see if this block might belong to a
+>> cow only tree, and if so save the owner in the struct tree_block.  This
+>> allows us to read_tree_block with the proper owner, which gets rid of
+>> this lockdep splat.
+>>
+>> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 > 
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index 6ab2ab002bf6..ce78424f1d98 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -3133,6 +3133,8 @@ int btrfs_run_delalloc_range(struct btrfs_inode *inode, struct page *locked_page
->   int btrfs_writepage_cow_fixup(struct page *page, u64 start, u64 end);
->   void btrfs_writepage_endio_finish_ordered(struct page *page, u64 start,
->   					  u64 end, int uptodate);
-> +ssize_t btrfs_encoded_read(struct kiocb *iocb, struct iov_iter *iter);
-> +
->   extern const struct dentry_operations btrfs_dentry_operations;
->   extern const struct iomap_ops btrfs_dio_iomap_ops;
->   extern const struct iomap_dio_ops btrfs_dio_ops;
-> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-> index 224295f8f1e1..193477565200 100644
-> --- a/fs/btrfs/file.c
-> +++ b/fs/btrfs/file.c
-> @@ -3629,6 +3629,11 @@ static ssize_t btrfs_file_read_iter(struct kiocb *iocb, struct iov_iter *to)
->   {
->   	ssize_t ret = 0;
->   
-> +	if (iocb->ki_flags & IOCB_ENCODED) {
-> +		if (iocb->ki_flags & IOCB_NOWAIT)
-> +			return -EOPNOTSUPP;
-> +		return btrfs_encoded_read(iocb, to);
-> +	}
->   	if (iocb->ki_flags & IOCB_DIRECT) {
->   		ret = btrfs_direct_read(iocb, to);
->   		if (ret < 0 || !iov_iter_count(to) ||
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 1ff903f5c5a4..b0e800897b3b 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -9936,6 +9936,502 @@ void btrfs_set_range_writeback(struct extent_io_tree *tree, u64 start, u64 end)
->   	}
->   }
->   
-> +static int encoded_iov_compression_from_btrfs(unsigned int compress_type)
-> +{
-> +	switch (compress_type) {
-> +	case BTRFS_COMPRESS_NONE:
-> +		return ENCODED_IOV_COMPRESSION_NONE;
-> +	case BTRFS_COMPRESS_ZLIB:
-> +		return ENCODED_IOV_COMPRESSION_BTRFS_ZLIB;
-> +	case BTRFS_COMPRESS_LZO:
-> +		/*
-> +		 * The LZO format depends on the page size. 64k is the maximum
-> +		 * sectorsize (and thus page size) that we support.
-> +		 */
-> +		if (PAGE_SIZE < SZ_4K || PAGE_SIZE > SZ_64K)
-> +			return -EINVAL;
-> +		return ENCODED_IOV_COMPRESSION_BTRFS_LZO_4K + (PAGE_SHIFT - 12);
-> +	case BTRFS_COMPRESS_ZSTD:
-> +		return ENCODED_IOV_COMPRESSION_BTRFS_ZSTD;
-> +	default:
-> +		return -EUCLEAN;
-> +	}
-> +}
-> +
-> +static ssize_t btrfs_encoded_read_inline(struct kiocb *iocb,
-> +					 struct iov_iter *iter, u64 start,
-> +					 u64 lockend,
-> +					 struct extent_state **cached_state,
-> +					 u64 extent_start, size_t count,
-> +					 struct encoded_iov *encoded,
-> +					 bool *unlocked)
-> +{
-> +	struct inode *inode = file_inode(iocb->ki_filp);
-> +	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
-> +	struct btrfs_path *path;
-> +	struct extent_buffer *leaf;
-> +	struct btrfs_file_extent_item *item;
-> +	u64 ram_bytes;
-> +	unsigned long ptr;
-> +	void *tmp;
-> +	ssize_t ret;
-> +
-> +	path = btrfs_alloc_path();
-> +	if (!path) {
-> +		ret = -ENOMEM;
-> +		goto out;
-> +	}
-> +	ret = btrfs_lookup_file_extent(NULL, BTRFS_I(inode)->root, path,
-> +				       btrfs_ino(BTRFS_I(inode)), extent_start,
-> +				       0);
-> +	if (ret) {
-> +		if (ret > 0) {
-> +			/* The extent item disappeared? */
-> +			ret = -EIO;
-> +		}
-> +		goto out;
-> +	}
-> +	leaf = path->nodes[0];
-> +	item = btrfs_item_ptr(leaf, path->slots[0],
-> +			      struct btrfs_file_extent_item);
-> +
-> +	ram_bytes = btrfs_file_extent_ram_bytes(leaf, item);
-> +	ptr = btrfs_file_extent_inline_start(item);
-> +
-> +	encoded->len = (min_t(u64, extent_start + ram_bytes, inode->i_size) -
-> +			iocb->ki_pos);
-> +	ret = encoded_iov_compression_from_btrfs(
-> +				 btrfs_file_extent_compression(leaf, item));
-> +	if (ret < 0)
-> +		goto out;
-> +	encoded->compression = ret;
-> +	if (encoded->compression) {
-> +		size_t inline_size;
-> +
-> +		inline_size = btrfs_file_extent_inline_item_len(leaf,
-> +						btrfs_item_nr(path->slots[0]));
-> +		if (inline_size > count) {
-> +			ret = -ENOBUFS;
-> +			goto out;
-> +		}
-> +		count = inline_size;
-> +		encoded->unencoded_len = ram_bytes;
-> +		encoded->unencoded_offset = iocb->ki_pos - extent_start;
-> +	} else {
-> +		encoded->len = encoded->unencoded_len = count =
-> +			min_t(u64, count, encoded->len);
-> +		ptr += iocb->ki_pos - extent_start;
-> +	}
-> +
-> +	tmp = kmalloc(count, GFP_NOFS);
-> +	if (!tmp) {
-> +		ret = -ENOMEM;
-> +		goto out;
-> +	}
-> +	read_extent_buffer(leaf, tmp, ptr, count);
-> +	btrfs_release_path(path);
-> +	unlock_extent_cached(io_tree, start, lockend, cached_state);
-> +	inode_unlock_shared(inode);
-> +	*unlocked = true;
-> +
-> +	ret = copy_encoded_iov_to_iter(encoded, iter);
-> +	if (ret)
-> +		goto out_free;
-> +	ret = copy_to_iter(tmp, count, iter);
-> +	if (ret != count)
-> +		ret = -EFAULT;
-> +out_free:
-> +	kfree(tmp);
-> +out:
-> +	btrfs_free_path(path);
-> +	return ret;
-> +}
-> +
-> +struct btrfs_encoded_read_private {
-> +	struct inode *inode;
-> +	wait_queue_head_t wait;
-> +	atomic_t pending;
-> +	blk_status_t status;
-> +	bool skip_csum;
-> +};
-> +
-> +static blk_status_t submit_encoded_read_bio(struct inode *inode,
-> +					    struct bio *bio, int mirror_num,
-> +					    unsigned long bio_flags)
-> +{
-> +	struct btrfs_encoded_read_private *priv = bio->bi_private;
-> +	struct btrfs_io_bio *io_bio = btrfs_io_bio(bio);
-> +	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
-> +	blk_status_t ret;
-> +
-> +	if (!priv->skip_csum) {
-> +		ret = btrfs_lookup_bio_sums(inode, bio, io_bio->logical, NULL);
-> +		if (ret)
-> +			return ret;
-> +	}
-> +
-> +	ret = btrfs_bio_wq_end_io(fs_info, bio, BTRFS_WQ_ENDIO_DATA);
-> +	if (ret) {
-> +		btrfs_io_bio_free_csum(io_bio);
-> +		return ret;
-> +	}
-> +
-> +	atomic_inc(&priv->pending);
-> +	ret = btrfs_map_bio(fs_info, bio, mirror_num);
-> +	if (ret) {
-> +		atomic_dec(&priv->pending);
-> +		btrfs_io_bio_free_csum(io_bio);
-> +	}
-> +	return ret;
-> +}
-> +
-> +static blk_status_t btrfs_encoded_read_check_bio(struct btrfs_io_bio *io_bio)
-> +{
-> +	const bool uptodate = io_bio->bio.bi_status == BLK_STS_OK;
-> +	struct btrfs_encoded_read_private *priv = io_bio->bio.bi_private;
-> +	struct inode *inode = priv->inode;
-> +	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
-> +	u32 sectorsize = fs_info->sectorsize;
-> +	struct bio_vec *bvec;
-> +	struct bvec_iter_all iter_all;
-> +	u64 start = io_bio->logical;
-> +	int icsum = 0;
-> +
-> +	if (priv->skip_csum || !uptodate)
-> +		return io_bio->bio.bi_status;
-> +
-> +	bio_for_each_segment_all(bvec, &io_bio->bio, iter_all) {
-> +		unsigned int i, nr_sectors, pgoff;
-> +
-> +		nr_sectors = BTRFS_BYTES_TO_BLKS(fs_info, bvec->bv_len);
-> +		pgoff = bvec->bv_offset;
-> +		for (i = 0; i < nr_sectors; i++) {
-> +			ASSERT(pgoff < PAGE_SIZE);
-> +			if (check_data_csum(inode, io_bio, icsum, bvec->bv_page,
-> +					    pgoff, start))
-> +				return BLK_STS_IOERR;
-> +			start += sectorsize;
-> +			icsum++;
-> +			pgoff += sectorsize;
-> +		}
-> +	}
-> +	return BLK_STS_OK;
-> +}
-> +
-> +static void btrfs_encoded_read_endio(struct bio *bio)
-> +{
-> +	struct btrfs_encoded_read_private *priv = bio->bi_private;
-> +	struct btrfs_io_bio *io_bio = btrfs_io_bio(bio);
-> +	blk_status_t status;
-> +
-> +	status = btrfs_encoded_read_check_bio(io_bio);
-> +	if (status) {
-> +		/*
-> +		 * The memory barrier implied by the atomic_dec_return() here
-> +		 * pairs with the memory barrier implied by the
-> +		 * atomic_dec_return() or io_wait_event() in
-> +		 * btrfs_encoded_read_regular_fill_pages() to ensure that this
-> +		 * write is observed before the load of status in
-> +		 * btrfs_encoded_read_regular_fill_pages().
-> +		 */
-> +		WRITE_ONCE(priv->status, status);
-> +	}
-> +	if (!atomic_dec_return(&priv->pending))
-> +		wake_up(&priv->wait);
-> +	btrfs_io_bio_free_csum(io_bio);
-> +	bio_put(bio);
-> +}
-> +
-> +static int btrfs_encoded_read_regular_fill_pages(struct inode *inode, u64 offset,
-> +						 u64 disk_io_size, struct page **pages)
-> +{
-> +	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
-> +	struct btrfs_encoded_read_private priv = {
-> +		.inode = inode,
-> +		.pending = ATOMIC_INIT(1),
-> +		.skip_csum = BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM,
-> +	};
-> +	unsigned long i = 0;
-> +	u64 cur = 0;
-> +	int ret;
-> +
-> +	init_waitqueue_head(&priv.wait);
-> +	/*
-> +	 * Submit bios for the extent, splitting due to bio or stripe limits as
-> +	 * necessary.
-> +	 */
-> +	while (cur < disk_io_size) {
-> +		struct btrfs_io_geometry geom;
-> +		struct bio *bio = NULL;
-> +		u64 remaining;
-> +
-> +		ret = btrfs_get_io_geometry(fs_info, BTRFS_MAP_READ,
-> +					    offset + cur, disk_io_size - cur,
-> +					    &geom);
-> +		if (ret) {
-> +			WRITE_ONCE(priv.status, errno_to_blk_status(ret));
-> +			break;
-> +		}
-> +		remaining = min(geom.len, disk_io_size - cur);
-> +		while (bio || remaining) {
-> +			size_t bytes = min_t(u64, remaining, PAGE_SIZE);
-> +
-> +			if (!bio) {
-> +				bio = btrfs_bio_alloc(offset + cur);
-> +				bio->bi_end_io = btrfs_encoded_read_endio;
-> +				bio->bi_private = &priv;
-> +				bio->bi_opf = REQ_OP_READ;
-> +			}
-> +
-> +			if (!bytes ||
-> +			    bio_add_page(bio, pages[i], bytes, 0) < bytes) {
-> +				blk_status_t status;
-> +
-> +				status = submit_encoded_read_bio(inode, bio, 0,
-> +								 0);
-> +				if (status) {
-> +					WRITE_ONCE(priv.status, status);
-> +					bio_put(bio);
-> +					goto out;
-> +				}
-> +				bio = NULL;
-> +				continue;
-> +			}
-> +
-> +			i++;
-> +			cur += bytes;
-> +			remaining -= bytes;
-> +		}
-> +	}
-> +
-> +out:
-> +	if (atomic_dec_return(&priv.pending))
-> +		io_wait_event(priv.wait, !atomic_read(&priv.pending));
-> +	/* See btrfs_encoded_read_endio() for ordering. */
-> +	return blk_status_to_errno(READ_ONCE(priv.status));
-> +}
-> +
-> +static ssize_t btrfs_encoded_read_regular(struct kiocb *iocb,
-> +					  struct iov_iter *iter,
-> +					  u64 start, u64 lockend,
-> +					  struct extent_state **cached_state,
-> +					  u64 offset, u64 disk_io_size,
-> +					  size_t count,
-> +					  const struct encoded_iov *encoded,
-> +					  bool *unlocked)
-> +{
-> +	struct inode *inode = file_inode(iocb->ki_filp);
-> +	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
-> +	struct page **pages;
-> +	unsigned long nr_pages, i;
-> +	u64 cur;
-> +	size_t page_offset;
-> +	ssize_t ret;
-> +
-> +	nr_pages = DIV_ROUND_UP(disk_io_size, PAGE_SIZE);
-> +	pages = kcalloc(nr_pages, sizeof(struct page *), GFP_NOFS);
-> +	if (!pages)
-> +		return -ENOMEM;
-> +	for (i = 0; i < nr_pages; i++) {
-> +		pages[i] = alloc_page(GFP_NOFS | __GFP_HIGHMEM);
-> +		if (!pages[i]) {
-> +			ret = -ENOMEM;
-> +			goto out;
-> +		}
-> +	}
-> +
-> +	ret = btrfs_encoded_read_regular_fill_pages(inode, offset, disk_io_size,
-> +						    pages);
-> +	if (ret)
-> +		goto out;
-> +
-> +	unlock_extent_cached(io_tree, start, lockend, cached_state);
-> +	inode_unlock_shared(inode);
-> +	*unlocked = true;
-> +
-> +	ret = copy_encoded_iov_to_iter(encoded, iter);
-> +	if (ret)
-> +		goto out;
-> +	if (encoded->compression) {
-> +		i = 0;
-> +		page_offset = 0;
-> +	} else {
-> +		i = (iocb->ki_pos - start) >> PAGE_SHIFT;
-> +		page_offset = (iocb->ki_pos - start) & (PAGE_SIZE - 1);
-> +	}
-> +	cur = 0;
-> +	while (cur < count) {
-> +		size_t bytes = min_t(size_t, count - cur,
-> +				     PAGE_SIZE - page_offset);
-> +
-> +		if (copy_page_to_iter(pages[i], page_offset, bytes,
-> +				      iter) != bytes) {
-> +			ret = -EFAULT;
-> +			goto out;
-> +		}
-> +		i++;
-> +		cur += bytes;
-> +		page_offset = 0;
-> +	}
-> +	ret = count;
-> +out:
-> +	for (i = 0; i < nr_pages; i++) {
-> +		if (pages[i])
-> +			__free_page(pages[i]);
-> +	}
-> +	kfree(pages);
-> +	return ret;
-> +}
-> +
-> +ssize_t btrfs_encoded_read(struct kiocb *iocb, struct iov_iter *iter)
-> +{
-> +	struct inode *inode = file_inode(iocb->ki_filp);
-> +	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
-> +	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
-> +	ssize_t ret;
-> +	size_t count;
-> +	u64 start, lockend, offset, disk_io_size;
-> +	struct extent_state *cached_state = NULL;
-> +	struct extent_map *em;
-> +	struct encoded_iov encoded = {};
-> +	bool unlocked = false;
-> +
-> +	ret = generic_encoded_read_checks(iocb, iter);
-> +	if (ret < 0)
-> +		return ret;
-> +	if (ret == 0)
-> +		return copy_encoded_iov_to_iter(&encoded, iter);
-> +	count = ret;
-> +
-> +	file_accessed(iocb->ki_filp);
-> +
-> +	inode_lock_shared(inode);
-> +
-> +	if (iocb->ki_pos >= inode->i_size) {
-> +		inode_unlock_shared(inode);
-> +		return copy_encoded_iov_to_iter(&encoded, iter);
-> +	}
-> +	start = ALIGN_DOWN(iocb->ki_pos, fs_info->sectorsize);
-> +	/*
-> +	 * We don't know how long the extent containing iocb->ki_pos is, but if
-> +	 * it's compressed we know that it won't be longer than this.
-> +	 */
-> +	lockend = start + BTRFS_MAX_UNCOMPRESSED - 1;
-> +
-> +	for (;;) {
-> +		struct btrfs_ordered_extent *ordered;
-> +
-> +		ret = btrfs_wait_ordered_range(inode, start,
-> +					       lockend - start + 1);
-> +		if (ret)
-> +			goto out_unlock_inode;
-> +		lock_extent_bits(io_tree, start, lockend, &cached_state);
-> +		ordered = btrfs_lookup_ordered_range(BTRFS_I(inode), start,
-> +						     lockend - start + 1);
-> +		if (!ordered)
-> +			break;
-> +		btrfs_put_ordered_extent(ordered);
-> +		unlock_extent_cached(io_tree, start, lockend, &cached_state);
-> +		cond_resched();
-> +	}
+> The fix is OK, although some extra comment inlined below.
+>> ---
+>>   fs/btrfs/relocation.c | 47 ++++++++++++++++++++++++++++++++++++++++---
+>>   1 file changed, 44 insertions(+), 3 deletions(-)
+>>
+>> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+>> index 19b7db8b2117..2b30e39e922a 100644
+>> --- a/fs/btrfs/relocation.c
+>> +++ b/fs/btrfs/relocation.c
+>> @@ -98,6 +98,7 @@ struct tree_block {
+>>   		u64 bytenr;
+>>   	}; /* Use rb_simple_node for search/insert */
+>>   	struct btrfs_key key;
+>> +	u64 owner;
+>>   	unsigned int level:8;
+>>   	unsigned int key_ready:1;
+>>   };
+>> @@ -2393,8 +2394,8 @@ static int get_tree_block_key(struct btrfs_fs_info *fs_info,
+>>   {
+>>   	struct extent_buffer *eb;
+>>   
+>> -	eb = read_tree_block(fs_info, block->bytenr, 0, block->key.offset,
+>> -			     block->level, NULL);
+>> +	eb = read_tree_block(fs_info, block->bytenr, block->owner,
+>> +			     block->key.offset, block->level, NULL);
+>>   	if (IS_ERR(eb)) {
+>>   		return PTR_ERR(eb);
+>>   	} else if (!extent_buffer_uptodate(eb)) {
+>> @@ -2493,7 +2494,8 @@ int relocate_tree_blocks(struct btrfs_trans_handle *trans,
+>>   	/* Kick in readahead for tree blocks with missing keys */
+>>   	rbtree_postorder_for_each_entry_safe(block, next, blocks, rb_node) {
+>>   		if (!block->key_ready)
+>> -			btrfs_readahead_tree_block(fs_info, block->bytenr, 0, 0,
+>> +			btrfs_readahead_tree_block(fs_info, block->bytenr,
+>> +						   block->owner, 0,
+>>   						   block->level);
+>>   	}
+>>   
+>> @@ -2801,21 +2803,59 @@ static int add_tree_block(struct reloc_control *rc,
+>>   	u32 item_size;
+>>   	int level = -1;
+>>   	u64 generation;
+>> +	u64 owner = 0;
+>>   
+>>   	eb =  path->nodes[0];
+>>   	item_size = btrfs_item_size_nr(eb, path->slots[0]);
+>>   
+>>   	if (extent_key->type == BTRFS_METADATA_ITEM_KEY ||
+>>   	    item_size >= sizeof(*ei) + sizeof(*bi)) {
+>> +		unsigned long ptr = 0, end;
+> 
+> Do we really need that end to iterate through the extent item?
+> 
+> For cow-only trees, we only cow them to do the balance, which means
+> metadata/extent item for them should only contain one inline item and no
+> way to have keyed item.
+> 
+> If the metadata/extent item has more than one inline ref, it must not be
+> for COW trees.
+> 
+> Can't we use extent item size as a quick check?
 
-This can be replaced with btrfs_lock_and_flush_ordered_range().  Then you can add
-
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
-
-Thanks,
+If you look further down you'll see that I only check the first inline ref, I 
+don't loop through all of them.  I also don't bother to check if num_refs > 1, 
+or if FULL_BACKREF is set.  The only time we actually check is if there is only 
+one inline ref.  Thanks,
 
 Josef

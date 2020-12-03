@@ -7,59 +7,59 @@ X-Spam-Status: No, score=-16.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 57E5BC4361A
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BBA3EC4361B
 	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Dec 2020 18:26:14 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 01449207D0
-	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Dec 2020 18:26:13 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5C5A0208A9
+	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Dec 2020 18:26:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2502040AbgLCSZQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 3 Dec 2020 13:25:16 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48460 "EHLO
+        id S2502090AbgLCSZ3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 3 Dec 2020 13:25:29 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48458 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729222AbgLCSZK (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Dec 2020 13:25:10 -0500
-Received: from mail-qv1-xf44.google.com (mail-qv1-xf44.google.com [IPv6:2607:f8b0:4864:20::f44])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E4FD7C094259
-        for <linux-btrfs@vger.kernel.org>; Thu,  3 Dec 2020 10:24:13 -0800 (PST)
-Received: by mail-qv1-xf44.google.com with SMTP id es6so1429804qvb.7
-        for <linux-btrfs@vger.kernel.org>; Thu, 03 Dec 2020 10:24:13 -0800 (PST)
+        with ESMTP id S2502052AbgLCSZ0 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Dec 2020 13:25:26 -0500
+Received: from mail-qt1-x844.google.com (mail-qt1-x844.google.com [IPv6:2607:f8b0:4864:20::844])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C79E6C061A55
+        for <linux-btrfs@vger.kernel.org>; Thu,  3 Dec 2020 10:24:32 -0800 (PST)
+Received: by mail-qt1-x844.google.com with SMTP id r6so2069050qtm.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 03 Dec 2020 10:24:32 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references:mime-version
          :content-transfer-encoding;
-        bh=BQnifcFL/WPLj7otSCT+NzpZ09jzZaVeOVpCVlLc5Lw=;
-        b=U1a30Vu6H5XWzOKuYyqBSTvqSVvKuifMsn6qjQd7fP3LaXzTWNL3sjLgjGsd8YXf3C
-         wGE5C5m5EjULIN0ObFrFRE1N53Kcl8c94i+hXCUFBSw6Y20JImC+K7eV4uxuKoRNfVEA
-         k9ohTcOiz1W6V7qRrmunob6BgIo3VAlfVaCc+nIsV2+lEwUBE6BmuOav7Hhao5TMCEBI
-         Z9QKnBnsjD+4TKqZ4lfwfeOGZuH99PRtqpqQdWXa73U0PP7SU9EdTWaFVS9NGk/j+go8
-         WcTQZV5WSalEUT0pUCk4IIb3Co6GdzpURYMda/08bhnPPSLae0tSLdldEsmhLMm9lD6w
-         LlZw==
+        bh=9W27EU5c/W9JoMK7FbTrJDDA2siIbBOwfExuF0aKAto=;
+        b=TRtMv6A2xVHUTkdCnonnCKTpKpai9d8GdPM1yQqhgDUGTc1gPJ1HumyujXOK8erUND
+         SQ76gBhfXTiRVkF/J5jO10BtFACKCrb2lCaYBaldohuZaDAuW5zG7K+ovg5ZGbJtwOt3
+         xJ6aG+vB8VkpxYepeOT+477iwNTnhBN/jUL3lOBlneGNmiX5gj302+CzyAkS+9yIxlE5
+         0biPEhNgybu+t5Vl1AgrHxDp8J/vkOm+skopGcgopZf3GqMAXUeCTbOeygfOPl19ONLY
+         TSVIk5iVeBLo+Nn+5LicOGrdMWn9C8i0jIxGPqgl8CKqD7i948v3QPuyU1Wlk27imP8q
+         D61w==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=BQnifcFL/WPLj7otSCT+NzpZ09jzZaVeOVpCVlLc5Lw=;
-        b=eXraMwpweyeiFkpEJitVa5WQ6si/duE0ucxvbDTN/57ZjB501dKRtYdSurM0S8lMGC
-         mE7Y7e+7moCmTkTAzH2hFG5egOzZKQfPoActIPJJUu6Gm5RS7SGyOftILazZL430b4fK
-         pszQxhjuZSdwnUEgg1/LS54tSiPGtaOOFInu4VAVdiJG5CmGCzBn+0s/dQUk93hexcMl
-         rYBhEXlyG51kmZKZW7c6ycA4Ozpd90zhwfEVmG30zpJYW48x30PmjBOaLEjGW46YuknZ
-         I32TmfN8eFfsE4LFeOPfs4PwaGBUWixMVS0cl20pCYNAaVmh3aWJwU3hwEbuYy42X/Do
-         b7eA==
-X-Gm-Message-State: AOAM533ibuQb6DwKI6g2Xv+eqr6dg5NmWv12fRw9aUg4O3vGWoTLXgle
-        b2TOauLkfPmlWahPFOJF62WD7pDTue0K8ohw
-X-Google-Smtp-Source: ABdhPJzwre8AMWgVjzksZXht7OYsDiquia8teMhN8wVrjA+wPmyBL/9+ZGbjHXwTu7HJRLRGwHX7dA==
-X-Received: by 2002:ad4:42c8:: with SMTP id f8mr154450qvr.29.1607019852883;
-        Thu, 03 Dec 2020 10:24:12 -0800 (PST)
+        bh=9W27EU5c/W9JoMK7FbTrJDDA2siIbBOwfExuF0aKAto=;
+        b=qNzZC75iEF2VilRwxGH2tFufZNGNoqQXws3v6D2huMvmd4VzRQB0AJPf0T/m/kv7K3
+         howKtubC5WQQyysEIz/aYDVZTEf0XPl+otfTxxNUoIfdy0XdCgG9IOtfZ0AseRNfsDMI
+         1Z3u+ebo49NyOBwW3M5hPWimwu5wyLDJP6zPCpjs0J1qa85ReGMNxpAui/6k/8WKayyt
+         w2HidJO8kJ2fWhGJySR/cD7QYC9RUjKAvkQZbXUrrHujLkYdZRz43K0s6zCiRVcA7EQn
+         vfbZE0TMDJTzqYZvVG0shJfDsnllvNVAUbUt+lwqdERlvNutgxuVTasEJFj6DZZalkWN
+         /Bvg==
+X-Gm-Message-State: AOAM533E9Yyku/5UgY/4+lzCECCNgQDu+R1AxmNHqUDiDT9Yir5J2mq0
+        gE0NfFHTjQI87oOmnLCZdnj1McXHr27YIU7H
+X-Google-Smtp-Source: ABdhPJwETq2b37d5CozQwlxoux4RQQfbu/yMx2xJkuQaQ6yrs+DU2k6oWxuwZI0RL8iSmXzBT3sDUg==
+X-Received: by 2002:ac8:787:: with SMTP id l7mr4540911qth.137.1607019871732;
+        Thu, 03 Dec 2020 10:24:31 -0800 (PST)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id g11sm2207667qkk.72.2020.12.03.10.24.12
+        by smtp.gmail.com with ESMTPSA id a85sm2238928qkg.3.2020.12.03.10.24.30
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 03 Dec 2020 10:24:12 -0800 (PST)
+        Thu, 03 Dec 2020 10:24:31 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v4 41/53] btrfs: handle extent reference errors in do_relocation
-Date:   Thu,  3 Dec 2020 13:22:47 -0500
-Message-Id: <8fb9245c24a498f97b161ad1113cd1f830f205a6.1607019557.git.josef@toxicpanda.com>
+Subject: [PATCH v4 52/53] btrfs: fix reloc root leak with 0 ref reloc roots on recovery
+Date:   Thu,  3 Dec 2020 13:22:58 -0500
+Message-Id: <ff8b458f78b382790ac48a668d141d07d3a61a08.1607019557.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.2
 In-Reply-To: <cover.1607019557.git.josef@toxicpanda.com>
 References: <cover.1607019557.git.josef@toxicpanda.com>
@@ -69,36 +69,43 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We can already deal with errors appropriately from do_relocation, simply
-handle any errors that come from changing the refs at this point
-cleanly.  We have to abort the transaction if we fail here as we've
-modified metadata at this point.
+When recovering a relocation, if we run into a reloc root that has 0
+refs we simply add it to the reloc_control->reloc_roots list, and then
+clean it up later.  The problem with this is __del_reloc_root() doesn't
+do anything if the root isn't in the radix tree, which in this case it
+won't be because we never call __add_reloc_root() on the reloc_root.
+
+This exit condition simply isn't correct really.  During normal
+operation we can remove ourselves from the rb tree and then we're meant
+to clean up later at merge_reloc_roots() time, and this happens
+correctly.  During recovery we're depending on free_reloc_roots() to
+drop our references, but we're short-circuiting.
+
+Fix this by continuing to check if we're on the list and dropping
+ourselves from the reloc_control root list and dropping our reference
+appropriately.  Change the corresponding BUG_ON() to an ASSERT() that
+does the correct thing if we aren't in the rb tree.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/relocation.c | 9 +++++----
- 1 file changed, 5 insertions(+), 4 deletions(-)
+ fs/btrfs/relocation.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
 
 diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index e025cb052d77..bff7e99f3654 100644
+index 38002f47e962..01b7b35be3f3 100644
 --- a/fs/btrfs/relocation.c
 +++ b/fs/btrfs/relocation.c
-@@ -2426,10 +2426,11 @@ static int do_relocation(struct btrfs_trans_handle *trans,
- 			btrfs_init_tree_ref(&ref, node->level,
- 					    btrfs_header_owner(upper->eb));
- 			ret = btrfs_inc_extent_ref(trans, &ref);
--			BUG_ON(ret);
--
--			ret = btrfs_drop_subtree(trans, root, eb, upper->eb);
--			BUG_ON(ret);
-+			if (!ret)
-+				ret = btrfs_drop_subtree(trans, root, eb,
-+							 upper->eb);
-+			if (ret)
-+				btrfs_abort_transaction(trans, ret);
+@@ -671,9 +671,7 @@ static void __del_reloc_root(struct btrfs_root *root)
+ 			RB_CLEAR_NODE(&node->rb_node);
  		}
- next:
- 		if (!upper->pending)
+ 		spin_unlock(&rc->reloc_root_tree.lock);
+-		if (!node)
+-			return;
+-		BUG_ON((struct btrfs_root *)node->data != root);
++		ASSERT(!node || (struct btrfs_root *)node->data == root);
+ 	}
+ 
+ 	/*
 -- 
 2.26.2
 

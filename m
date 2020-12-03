@@ -2,121 +2,62 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-16.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.2 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 51F48C18E57
-	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Dec 2020 18:26:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 16839C4361B
+	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Dec 2020 18:47:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 19788207D0
-	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Dec 2020 18:26:15 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id AC5B4207B6
+	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Dec 2020 18:47:40 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2502108AbgLCSZh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 3 Dec 2020 13:25:37 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48418 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2502068AbgLCSZX (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Dec 2020 13:25:23 -0500
-Received: from mail-qv1-xf43.google.com (mail-qv1-xf43.google.com [IPv6:2607:f8b0:4864:20::f43])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 000F3C09425E
-        for <linux-btrfs@vger.kernel.org>; Thu,  3 Dec 2020 10:24:23 -0800 (PST)
-Received: by mail-qv1-xf43.google.com with SMTP id ek7so1435642qvb.6
-        for <linux-btrfs@vger.kernel.org>; Thu, 03 Dec 2020 10:24:23 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:subject:date:message-id:in-reply-to:references:mime-version
-         :content-transfer-encoding;
-        bh=LC9b9O/sOio0l1Yw+TXFj2SCmB30kfCgWdt89mNluaw=;
-        b=S6zum/F8Ygh9Nsyejy69FQGcg9yBOWJeXMiSPp8/aUQaUzRq6izvbLiE4Ecd7iQwbe
-         UEcvfCi6rDPd6KfXHa68HWGoJji9kh2zgCTjb51IbhMIomCWg3Bwoc4j49cWtF5/Kdv6
-         r2K1OY1uRy2zJnRlnRvy8ptH2v8gBwql2G8YGIJoS9rPDLwjkteM/bvRIEC7k/vagset
-         kEgYIeWUaA1FBd5Y//jvASkMEF48AjMZUZC0I56mH7nHrNDji6n+XgrSfYcLeG/tCJF9
-         MYr+A+OGXbzcvMQvdbIYFlNuqLVUO2Aob1GBOdl9AJ8MvHN1/uSCVXPurBq6GRtgEoj/
-         nU4w==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=LC9b9O/sOio0l1Yw+TXFj2SCmB30kfCgWdt89mNluaw=;
-        b=Jshyz+7W9zab2A1PDqJYT1KjUH5BKfUDb19La0HhSVLpuqrIsh+1nerrldF3z6Z9k8
-         B8zUTPy8+chFbI4jcncu4EzoW7yczB9JxoRbXHlk8hpDUxdvjz6+9BaP6ntdy1CN058J
-         9QOBA+Hr+ZACpD+vfnA2gO7VKCJm50DGQZfb0c8QqJq9HMuwLJSzVCRPxLWhrF79QnSf
-         wrxvpfQs7dHhyDd6uEw/u3C4B9VivjmPxCgFrjkUUrqGOPt2BaM6TvapESfv3O1ZjpHL
-         /nn+TYmNaw9wNTq1JH5pJSR3acEy76w75bnYHRSuJO5iUIhX3k04kFnXrV2MF2rO99xM
-         Qw8Q==
-X-Gm-Message-State: AOAM532Epz2uY6nBqNwrqPdqS3zGH4u/Ce/E9uq5PD753rGR5kQ1ijsh
-        MuDxQowxySEKsnbfAYFehkxotL8lPRF117vE
-X-Google-Smtp-Source: ABdhPJyWztT/VL31SBXUACRhoVt0G5jGfHUzJ3msafCiZlQEUxtKvvGlfrK6RvAgkbWsAwGDKGHEtA==
-X-Received: by 2002:ad4:4ea2:: with SMTP id ed2mr266727qvb.59.1607019862888;
-        Thu, 03 Dec 2020 10:24:22 -0800 (PST)
-Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id j13sm2214617qtc.81.2020.12.03.10.24.22
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 03 Dec 2020 10:24:22 -0800 (PST)
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v4 47/53] btrfs: handle extent corruption with select_one_root properly
-Date:   Thu,  3 Dec 2020 13:22:53 -0500
-Message-Id: <ef9bc6020a7807fc54111070b9417fe5d8925aff.1607019557.git.josef@toxicpanda.com>
-X-Mailer: git-send-email 2.26.2
-In-Reply-To: <cover.1607019557.git.josef@toxicpanda.com>
-References: <cover.1607019557.git.josef@toxicpanda.com>
+        id S1726462AbgLCSrh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 3 Dec 2020 13:47:37 -0500
+Received: from mx2.suse.de ([195.135.220.15]:35158 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1731663AbgLCSrh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 3 Dec 2020 13:47:37 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.221.27])
+        by mx2.suse.de (Postfix) with ESMTP id 7FA51AC2E;
+        Thu,  3 Dec 2020 18:46:55 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 74740DA6E9; Thu,  3 Dec 2020 19:45:22 +0100 (CET)
+Date:   Thu, 3 Dec 2020 19:45:22 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Christoph Hellwig <hch@infradead.org>
+Cc:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v3 01/15] btrfs: rename bio_offset of
+ extent_submit_bio_start_t to opt_file_offset
+Message-ID: <20201203184522.GR6430@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Christoph Hellwig <hch@infradead.org>,
+        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20201202064811.100688-1-wqu@suse.com>
+ <20201202064811.100688-2-wqu@suse.com>
+ <20201202081236.GA18301@infradead.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20201202081236.GA18301@infradead.org>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-In corruption cases we could have paths from a block up to no root at
-all, and thus we'll BUG_ON(!root) in select_one_root.  Handle this by
-adding an ASSERT() for developers, and returning an error for normal
-users.
+On Wed, Dec 02, 2020 at 08:12:36AM +0000, Christoph Hellwig wrote:
+> On Wed, Dec 02, 2020 at 02:47:57PM +0800, Qu Wenruo wrote:
+> > The parameter bio_offset of extent_submit_bio_start_t is very confusing.
+> > 
+> > If it's really bio_offset (offset to bio), then it should be u32.
+> > 
+> > But in fact, it's only utilized by dio read, and that member is used as
+> > file offset, which must be u64.
+> > 
+> > Rename it to opt_file_offset since the only user uses it as file offset,
+> > and add comment for who is using it.
+> 
+> I think dio_file_offset might be a better name.
 
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
----
- fs/btrfs/relocation.c | 20 +++++++++++++++++---
- 1 file changed, 17 insertions(+), 3 deletions(-)
-
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 02760544cba1..511cb7c31328 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -2193,7 +2193,17 @@ struct btrfs_root *select_one_root(struct btrfs_backref_node *node)
- 		cond_resched();
- 		next = walk_up_backref(next, edges, &index);
- 		root = next->root;
--		BUG_ON(!root);
-+
-+		/*
-+		 * This can occur if we have incomplete extent refs leading all
-+		 * the way up a particular path, in this case return -EUCLEAN.
-+		 * However leave as an ASSERT() for developers, because it could
-+		 * indicate a bug in the backref code.
-+		 */
-+		if (!root) {
-+			ASSERT(0);
-+			return ERR_PTR(-EUCLEAN);
-+		}
- 
- 		/* No other choice for non-shareable tree */
- 		if (!test_bit(BTRFS_ROOT_SHAREABLE, &root->state))
-@@ -2591,8 +2601,12 @@ static int relocate_tree_block(struct btrfs_trans_handle *trans,
- 
- 	BUG_ON(node->processed);
- 	root = select_one_root(node);
--	if (root == ERR_PTR(-ENOENT)) {
--		update_processed_blocks(rc, node);
-+	if (IS_ERR(root)) {
-+		ret = PTR_ERR(root);
-+		if (ret == -ENOENT) {
-+			ret = 0;
-+			update_processed_blocks(rc, node);
-+		}
- 		goto out;
- 	}
- 
--- 
-2.26.2
-
+Sounds good, I'll change it. Thanks.

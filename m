@@ -2,82 +2,84 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-18.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 39105C63777
-	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Dec 2020 08:08:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DA30BC71155
+	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Dec 2020 08:10:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id DDA4A20758
-	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Dec 2020 08:08:48 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 83A7620C56
+	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Dec 2020 08:10:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2387981AbgLCII3 convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 3 Dec 2020 03:08:29 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37234 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729925AbgLCII2 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Dec 2020 03:08:28 -0500
-Received: from mail.lichtvoll.de (lichtvoll.de [IPv6:2001:67c:14c:12f::11:100])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A16E1C061A4D
-        for <linux-btrfs@vger.kernel.org>; Thu,  3 Dec 2020 00:07:48 -0800 (PST)
-Received: from 127.0.0.1 (localhost [127.0.0.1])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-        (No client certificate requested)
-        by mail.lichtvoll.de (Postfix) with ESMTPSA id 4340E1937D0
-        for <linux-btrfs@vger.kernel.org>; Thu,  3 Dec 2020 09:07:47 +0100 (CET)
-From:   Martin Steigerwald <martin@lichtvoll.de>
+        id S2388194AbgLCIKh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 3 Dec 2020 03:10:37 -0500
+Received: from mx2.suse.de ([195.135.220.15]:58218 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S2387625AbgLCIKh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 3 Dec 2020 03:10:37 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1606982991; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=t7hFX2s8rHxKDvSMGRmhJzQH6G0chTaIP3Hpb21pRfo=;
+        b=qlpRHiK36I1DpBAHzHYxN06OWgYV37cMRxKz6e0WSlH9OTpipeqAlVuDujLTPI5OKwBDCe
+        SmSZpDoAUW9wcI1oNCaAExcsmMhfyRSCKernGH1P/lOfKhJ6mSD64fM+swLodEuZAJ92Xj
+        dBTEvGFdIeHWRzuFbFB1mdOGXNsIc7o=
+Received: from relay2.suse.de (unknown [195.135.221.27])
+        by mx2.suse.de (Postfix) with ESMTP id 45A8DAE38;
+        Thu,  3 Dec 2020 08:09:51 +0000 (UTC)
+From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: Best practice for encrypted BTRFS: LUKS or something else?
-Date:   Thu, 03 Dec 2020 09:07:46 +0100
-Message-ID: <3575501.kQq0lBPeGt@merkaba>
+Cc:     Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH 2/2] btrfs: Always set NODATASUM/NODATACOW in __create_free_space_inode
+Date:   Thu,  3 Dec 2020 10:09:49 +0200
+Message-Id: <20201203080949.3759006-2-nborisov@suse.com>
+X-Mailer: git-send-email 2.25.1
+In-Reply-To: <20201203080949.3759006-1-nborisov@suse.com>
+References: <20201203080949.3759006-1-nborisov@suse.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8BIT
-Content-Type: text/plain; charset="UTF-8"
-Authentication-Results: mail.lichtvoll.de;
-        auth=pass smtp.auth=martin smtp.mailfrom=martin@lichtvoll.de
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi!
+Since it's being used solely for the freespace cache unconditionally
+set the flags required for it.
 
-I am plannung to deploy a new (used) laptop.
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
+ fs/btrfs/free-space-cache.c | 8 +++-----
+ 1 file changed, 3 insertions(+), 5 deletions(-)
 
-This time I like to encrypt it all, not just part of it.
-
-Before I already used ecryptfs to encrypt part of the data residing on 
-BTRFS, however I have the impression that ecryptfs is in kind of a 
-maintenance mode. And to what I read Ubuntu stepped away from it. Before 
-that I used encfs but that is out of the question as well.
-
-So what is left? BTRFS on LUKS/dm-crypt? 
-
-I plan about 2 TB of SSD storage without RAID initially and I think I 
-would, again, like to use BTRFS on top of LVM – it needed a slight 
-change to Debian initramfs-tools built RAM disk in order to boot a BTRFS 
-RAID 1 from LVM, but I know what to do there. However I intend to put a 
-second SSD in there and use BTRFS RAID 1 for most critical data. I am 
-going to boot from Coreboot.
-
-What is the best practice for such a kind of setup these days? I am not 
-completely up to date with BTRFS on LUKS, but as far as I understand 
-meanwhile it is a setup that can work nicely. Is it?
-
-Are crc32c checksums sufficient or should I select one of the new ones? 
-How about free space cache? I am using v2 already and unless I learn 
-something else would use v2 again.
-
-Anything else to consider?
-
-
-I'd love to see native encryption for BTRFS, but AFAIK patches related 
-to that are still kind of stalled. Any updates on that?
-
-Best,
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index e83b3bdc4e46..18112a63ea57 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -142,17 +142,15 @@ static int __create_free_space_inode(struct btrfs_root *root,
+ 	struct btrfs_free_space_header *header;
+ 	struct btrfs_inode_item *inode_item;
+ 	struct extent_buffer *leaf;
+-	u64 flags = BTRFS_INODE_NOCOMPRESS | BTRFS_INODE_PREALLOC;
++	/* We inline crc's for the free disk space cache */
++	u64 flags = BTRFS_INODE_NOCOMPRESS | BTRFS_INODE_PREALLOC |
++		BTRFS_INODE_NODATASUM | BTRFS_INODE_NODATACOW;
+ 	int ret;
+ 
+ 	ret = btrfs_insert_empty_inode(trans, root, path, ino);
+ 	if (ret)
+ 		return ret;
+ 
+-	/* We inline crc's for the free disk space cache */
+-	if (ino != BTRFS_FREE_INO_OBJECTID)
+-		flags |= BTRFS_INODE_NODATASUM | BTRFS_INODE_NODATACOW;
+-
+ 	leaf = path->nodes[0];
+ 	inode_item = btrfs_item_ptr(leaf, path->slots[0],
+ 				    struct btrfs_inode_item);
 -- 
-Martin
-
+2.25.1
 

@@ -2,242 +2,337 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-12.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 13746C193FE
-	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Dec 2020 20:52:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 94F97C4361A
+	for <linux-btrfs@archiver.kernel.org>; Fri,  4 Dec 2020 00:10:30 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id CD1DF2226A
-	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Dec 2020 20:52:41 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5297822224
+	for <linux-btrfs@archiver.kernel.org>; Fri,  4 Dec 2020 00:10:30 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731757AbgLCUwa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 3 Dec 2020 15:52:30 -0500
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:59400 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1727850AbgLCUw3 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 3 Dec 2020 15:52:29 -0500
-Received: from pps.filterd (m0148461.ppops.net [127.0.0.1])
-        by mx0a-00082601.pphosted.com (8.16.0.42/8.16.0.42) with SMTP id 0B3KmvPG031869;
-        Thu, 3 Dec 2020 12:51:14 -0800
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.com; h=from : to : cc : subject
- : date : message-id : references : in-reply-to : content-type : content-id
- : content-transfer-encoding : mime-version; s=facebook;
- bh=GDWoGAsDbuUwvyORb0ckkxOic+HsDq+6sUpYV2+k4rY=;
- b=qfHz4MvlHX8d2LyXSCUgB160DDblQ6MmTmCqzee1wCoN23fTF3hxNrv4PRWg4J2rRsgA
- pqhaby1NubZhE95yE1OO6yqPOCcn8aANjFXgfxd4SrGFIgwmsCZTGIjvcI6ixoUPX3W9
- d0p0q/5kNHh3O6HsTncxjQw4d2mnnnR/fCk= 
-Received: from mail.thefacebook.com ([163.114.132.120])
-        by mx0a-00082601.pphosted.com with ESMTP id 35615fpskb-8
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128 verify=NOT);
-        Thu, 03 Dec 2020 12:51:14 -0800
-Received: from NAM04-CO1-obe.outbound.protection.outlook.com (100.104.98.9) by
- o365-in.thefacebook.com (100.104.94.229) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
- 15.1.1979.3; Thu, 3 Dec 2020 12:51:11 -0800
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
- b=YO66lEG3UasDSjGMo7GP2+S1zMuxtG/xgRt2POI99NPbwsDP7ufMj5N0PXyNTLQVhN/+1BJJ9VinhdYMcFOnvX/KJat8ETwX6qTXEk4jOc09llmRCpQZfeAPfERiFkzlOsTsO2ZY9oYKgnsri6rvvOh3O3YWT86fmRq7w7GNHOl8cf9LeQbOMwn0cjDAJaatPRuckrIdgSl5/e9nDpN9hCfYVihGxVFvYyTyfbZrij8PFtzF4Y3vkAPGJzC01jdEqW0HmUmZ5pOzfB5urGb0nXXTyGNDg1udF7A2+30L46Nod8vm38ES5+iIoYZfUmr/Gw/uBJ0pdwODe3duOSnyaQ==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector9901;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=GDWoGAsDbuUwvyORb0ckkxOic+HsDq+6sUpYV2+k4rY=;
- b=l8uvJ8rWfo7eH5LpeQfwx6p6fBVidzk203oBOHmv8MAX1l4aMQuovO2gvoSlzTYXMosivnBWxtpcZpWDGOKEPuXFgLASZow2gnF2TjyiPGCzzrhJ+MxssJi/cwXeBrEwiR2e3t5sCOpjJRrBkZCeYX8xKUrfbJFoVCxhUEUiok3yzHEjAug1fbdv/U96553a1wKp/nNIG3u1MacS+WJ3pR6UQDKY9LLOTvAnBYPyBGXgvMwAzJCoFS4SC6Qy2P8NZsc05YtaE2Bx1mngNOPO/gTwkx4+54XpfzF6ttUHapNR8B5qpKxjyLPvCfwAFj2i2tfznNzdOWzAg6LvOO1PHQ==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=fb.com; dmarc=pass action=none header.from=fb.com; dkim=pass
- header.d=fb.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.onmicrosoft.com;
- s=selector2-fb-onmicrosoft-com;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=GDWoGAsDbuUwvyORb0ckkxOic+HsDq+6sUpYV2+k4rY=;
- b=BI93XNc9J4KoZ2sLz56VVEi8lMf5UBv+PudjP6utiquqHNqB0DmYF81eDyHu/LzAXJgLd3m2L5EaxGqZ+vuMDtnncihr4JoyIL3Va0xe7VxxAHI6g7PmwrEEXGrGwuwlGe0FbzSxU8N96NEDSojnbeQJ9YTHzW2nCWnuzqUC4iM=
-Received: from BY5PR15MB3667.namprd15.prod.outlook.com (2603:10b6:a03:1f9::18)
- by BYAPR15MB2567.namprd15.prod.outlook.com (2603:10b6:a03:151::13) with
- Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.3611.23; Thu, 3 Dec
- 2020 20:51:04 +0000
-Received: from BY5PR15MB3667.namprd15.prod.outlook.com
- ([fe80::17e:aa61:eb50:290c]) by BY5PR15MB3667.namprd15.prod.outlook.com
- ([fe80::17e:aa61:eb50:290c%7]) with mapi id 15.20.3611.025; Thu, 3 Dec 2020
- 20:50:58 +0000
-From:   Nick Terrell <terrelln@fb.com>
-To:     =?utf-8?B?TWljaGHFgiBNaXJvc8WCYXc=?= <mirq-linux@rere.qmqm.pl>
-CC:     Nick Terrell <nickrterrell@gmail.com>,
-        Herbert Xu <herbert@gondor.apana.org.au>,
-        "linux-crypto@vger.kernel.org" <linux-crypto@vger.kernel.org>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        "squashfs-devel@lists.sourceforge.net" 
-        <squashfs-devel@lists.sourceforge.net>,
-        "linux-f2fs-devel@lists.sourceforge.net" 
-        <linux-f2fs-devel@lists.sourceforge.net>,
-        LKML <linux-kernel@vger.kernel.org>,
-        Kernel Team <Kernel-team@fb.com>, Chris Mason <clm@fb.com>,
-        Petr Malat <oss@malat.biz>, Johannes Weiner <jweiner@fb.com>,
-        Niket Agarwal <niketa@fb.com>, Yann Collet <cyan@fb.com>,
-        Christoph Hellwig <hch@infradead.org>
-Subject: Re: [PATCH v6 1/3] lib: zstd: Add kernel-specific API
-Thread-Topic: [PATCH v6 1/3] lib: zstd: Add kernel-specific API
-Thread-Index: AQHWyOnYHjSKEx1KvUy8OD/sVz0sN6nkkesAgAAHQICAABnUgIAADIgAgAAR84CAAQixgA==
-Date:   Thu, 3 Dec 2020 20:50:58 +0000
-Message-ID: <E1299B55-CEE5-4D16-BD01-BB1D082ADDFA@fb.com>
-References: <20201202203242.1187898-1-nickrterrell@gmail.com>
- <20201202203242.1187898-2-nickrterrell@gmail.com>
- <20201203011606.GA20621@qmqm.qmqm.pl>
- <297D9C8B-5F4D-4E3B-A5FD-DA292D8BA12A@fb.com>
- <20201203031429.GA13095@qmqm.qmqm.pl>
- <85E09AFA-F1ED-41CB-B712-7FA75374478F@fb.com>
- <20201203050335.GA1532@qmqm.qmqm.pl>
-In-Reply-To: <20201203050335.GA1532@qmqm.qmqm.pl>
-Accept-Language: en-US
-Content-Language: en-US
-X-MS-Has-Attach: 
-X-MS-TNEF-Correlator: 
-authentication-results: rere.qmqm.pl; dkim=none (message not signed)
- header.d=none;rere.qmqm.pl; dmarc=none action=none header.from=fb.com;
-x-originating-ip: [98.33.101.203]
-x-ms-publictraffictype: Email
-x-ms-office365-filtering-correlation-id: ecf0e969-3334-4e6f-8261-08d897cd230d
-x-ms-traffictypediagnostic: BYAPR15MB2567:
-x-ms-exchange-transport-forked: True
-x-microsoft-antispam-prvs: <BYAPR15MB2567D30515CBF10B24424820ABF20@BYAPR15MB2567.namprd15.prod.outlook.com>
-x-fb-source: Internal
-x-ms-oob-tlc-oobclassifiers: OLM:8882;
-x-ms-exchange-senderadcheck: 1
-x-microsoft-antispam: BCL:0;
-x-microsoft-antispam-message-info: O4CALEw9/vB0PgyzrSWUKwUx9Vcp/BDS1b5AEg1naBrxVimgRglCda+TEuyqzZrwREmM+8pWoYolQWsWNCbIsjOK+DSgoeEVOZg4gdJv/icz0VF9rs9hGFBzBTf6h40TQNNTh88KjVPl2H/jOIS3GZ9OABj2eV2A2W2a4wdh7snaMw9p+b0i8jUBqximjAE/pWbqxt04q57wVaDNiKdT6EqN3T36rr8MNGcQAk/0j3iw4j9VUPyreTgUrZYQYx4myIWtHfgHzF0Hp0LEm99hpezP2xrxOE2SujiQ9jrqGA6/XbFKoq9t0h9umF34O86ksrKEB3eqEye70u/08BRywjmyEC+rueuRXCFo3n2lySd0Dbxn9TiNqAgMu0YQZarA
-x-forefront-antispam-report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:BY5PR15MB3667.namprd15.prod.outlook.com;PTR:;CAT:NONE;SFS:(366004)(39860400002)(136003)(346002)(376002)(396003)(2906002)(186003)(4326008)(6916009)(71200400001)(7416002)(316002)(6512007)(26005)(66574015)(8936002)(83380400001)(2616005)(36756003)(478600001)(53546011)(33656002)(8676002)(6506007)(64756008)(66556008)(66946007)(66476007)(54906003)(76116006)(66446008)(5660300002)(86362001)(6486002)(45980500001);DIR:OUT;SFP:1102;
-x-ms-exchange-antispam-messagedata: =?utf-8?B?Vk1mVzcxN1Q2SXRPOFFQZERaY3N6MlJQWFNOWnB2UzVieUZOUWJXMmxZQUdm?=
- =?utf-8?B?SUxlNzlZTVYzOWFBTUxwTkNzaVVLZFBaK1BpcTFoS05MWGI2R0VtWnFqWDhY?=
- =?utf-8?B?Y3psY0xCK3dwZENrNWhob0xWOU5TTzNYZlkwbHhQNFBkSU5LRm0vb2ExZURV?=
- =?utf-8?B?alYySlhaR1pubUFnVUZsZjhJZmtha0drVWFxZ2JMM1czUzNQd05iYm5xeXR6?=
- =?utf-8?B?QTlBdnVwVk54RkN6eUxzMHhBVDUrQjJtdHo0bmxlMU90QlEzMm5MWklaWjJD?=
- =?utf-8?B?VXJmNVlveXhYNjMrampYU21FcGpkYmdRWWd2VDN2MlBEakNxQjE3NG9PUkVr?=
- =?utf-8?B?QzdES0RYQkZGNE1uSk51RmovbDc1ZS9Xb0ZSdlI2QkpGM0pFMmRSaGNSQ2RK?=
- =?utf-8?B?QVR0bkJEN1o2UlVYRFN1RHJURXloRWhrK3VHaU4yWjliOHRFemZGZE9vakh5?=
- =?utf-8?B?T3Z2RlFxSDQ2RWN2YzN6QW44bzVMT3dLOXBidGhlTURTekFQdXkxbWlzUUdD?=
- =?utf-8?B?YmhPVWZKR1l0eEtiOHd1Yy9Sd0NMbjRmNzlxZTFaeGVpVnI2cDNvRjRPQU9P?=
- =?utf-8?B?bHo0TExKSmJISlBaM3BkSDludmJLYjRVemNaU05XTXhZRU1kOXpVWVpVRitJ?=
- =?utf-8?B?OWN4Ni9uOXBjMUJmcjN6bCtZTHZzTlVtV0RRR1dLcGNIN0RXb0N4WlcvMUxN?=
- =?utf-8?B?dFNiektoUkQwOFAybisxYVNEMU56NWhmdmdhTFc4OU9qY2Q5alhKQWJRUVhW?=
- =?utf-8?B?N2h0bjA4eFJ2TkVNR1dSdHdrRFhzbUFJNWcyeTFPQXJGT3NVSlVLVGZDZUpD?=
- =?utf-8?B?eVRTVWx4S2lBUUxIZ3BYbWFpQmZBM0pLbHRxQTNybHZXd1BQc3ptU0t4WWty?=
- =?utf-8?B?ZHZyQzZHeFY2V1liai9YZHNrbVg2NzltRGl1YXhvbEM5b09UVTFvR0Q2ZGJP?=
- =?utf-8?B?dVZmWm04RVNlQXAzcUQrUGZJYVlvTVpuaXZYdlBobGhmZ2FaMFI5VU9JaDJO?=
- =?utf-8?B?ZGx5N1FEMzhnWmdodkVFcHdPYkJScDJqVkZzaTZEUEJnaC9DdzQySGs5WldN?=
- =?utf-8?B?RHBWZHk5SjZtcFJheW52R1RXc24xdXVReUR5aDdOOG0zTU1pQ2ZhampiWVJo?=
- =?utf-8?B?YWpPZkxYZzR6UEZyYkpVcjYxTDZHSzZZeFAvMnVFWmdpM0N0dlV4Z3RIUThh?=
- =?utf-8?B?WkNSQXlxSUZIVXlIRnIwTUxCT0FCb0xGNGlwT1pCYXV1WXJta2N5RDJUNnZt?=
- =?utf-8?B?OUZxNDArVmNwVE56dnNoMEMxVVcvc0pwRnpuMmZJS09MTXdLWlVxd3Q4WVRV?=
- =?utf-8?Q?ISwLlHkiS+rP10W9lV2bT8Co8yT+v7kPqV?=
-Content-Type: text/plain; charset="utf-8"
-Content-ID: <64CC0E1EDE9EB0438DE4E4FC860FAD45@namprd15.prod.outlook.com>
-Content-Transfer-Encoding: base64
+        id S1731917AbgLDAKY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 3 Dec 2020 19:10:24 -0500
+Received: from mout.gmx.net ([212.227.15.19]:57855 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726619AbgLDAKX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 3 Dec 2020 19:10:23 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1607040515;
+        bh=sV0NHUl3Rf542x3KiRITdOa+BgjZkLOYyLkaowwbTrs=;
+        h=X-UI-Sender-Class:Subject:To:Cc:References:From:Date:In-Reply-To;
+        b=fym0oy7Y414vQV0KuPacXOCobB+7qaVroppdi/4YIzfoXXEfzFLLudDVWnbqTR8eV
+         4Uw4Uds/rOvSWZysOJHlB7Y2NqDBxhdpzVBcIAI1AC8tSDsX9/4ZE9d51KVCHg+Rkb
+         oBxErmbaZMsYGtyjCRupGUPJugnoNWFrWCceoE6Y=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx004
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1MuDc7-1jsrb52Jll-00ucfv; Fri, 04
+ Dec 2020 01:08:35 +0100
+Subject: Re: [PATCH v4 2/3] btrfs-progs: inspect: Fix logical-resolve file
+ path lookup
+To:     Marcos Paulo de Souza <marcos@mpdesouza.com>,
+        linux-btrfs@vger.kernel.org
+Cc:     Marcos Paulo de Souza <mpdesouza@suse.com>, wqu@suse.com,
+        dsterba@suse.com
+References: <20201127193035.19171-1-marcos@mpdesouza.com>
+ <20201127193035.19171-3-marcos@mpdesouza.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAU4EEwEIADgCGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1oQAKCRDC
+ PZHzoSX+qCY6CACd+mWu3okGwRKXju6bou+7VkqCaHTdyXwWFTsr+/0ly5nUdDtT3yEVggPJ
+ 3VP70wjlrxUjNjFb6iIvGYxiPOrop1NGwGYvQktgRhaIhALG6rPoSSAhGNjwGVRw0km0PlIN
+ D29BTj/lYEk+jVM1YL0QLgAE1AI3krihg/lp/fQT53wLhR8YZIF8ETXbClQG1vJ0cllPuEEv
+ efKxRyiTSjB+PsozSvYWhXsPeJ+KKjFen7ebE5reQTPFzSHctCdPnoR/4jSPlnTlnEvLeqcD
+ ZTuKfQe1gWrPeevQzgCtgBF/WjIOeJs41klnYzC3DymuQlmFubss0jShLOW8eSOOWhLRuQEN
+ BFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcgaCbPEwhLj
+ 1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj/IrRUUka
+ 68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fNGSsRb+pK
+ EKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0q1eW4Jrv
+ 0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEvABEBAAGJ
+ ATwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCXZw1rgUJCWpOfwAKCRDCPZHz
+ oSX+qFcEB/95cs8cM1OQdE/GgOfCGxwgckMeWyzOR7bkAWW0lDVp2hpgJuxBW/gyfmtBnUai
+ fnggx3EE3ev8HTysZU9q0h+TJwwJKGv6sUc8qcTGFDtavnnl+r6xDUY7A6GvXEsSoCEEynby
+ 72byGeSovfq/4AWGNPBG1L61Exl+gbqfvbECP3ziXnob009+z9I4qXodHSYINfAkZkA523JG
+ ap12LndJeLk3gfWNZfXEWyGnuciRGbqESkhIRav8ootsCIops/SqXm0/k+Kcl4gGUO/iD/T5
+ oagaDh0QtOd8RWSMwLxwn8uIhpH84Q4X1LadJ5NCgGa6xPP5qqRuiC+9gZqbq4Nj
+Message-ID: <617afee6-2e3b-99b3-3c94-ca2ab4063373@gmx.com>
+Date:   Fri, 4 Dec 2020 08:08:30 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.12.0
 MIME-Version: 1.0
-X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-AuthSource: BY5PR15MB3667.namprd15.prod.outlook.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: ecf0e969-3334-4e6f-8261-08d897cd230d
-X-MS-Exchange-CrossTenant-originalarrivaltime: 03 Dec 2020 20:50:58.3383
- (UTC)
-X-MS-Exchange-CrossTenant-fromentityheader: Hosted
-X-MS-Exchange-CrossTenant-id: 8ae927fe-1255-47a7-a2af-5f3a069daaa2
-X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
-X-MS-Exchange-CrossTenant-userprincipalname: MBVvKejOODaPJgnmZwZgmqgGcGJ+bFDWTvbwyuFMNM4PxooWjLUVSyZ6k0MddWJJ
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: BYAPR15MB2567
-X-OriginatorOrg: fb.com
-X-Proofpoint-Virus-Version: vendor=fsecure engine=2.50.10434:6.0.312,18.0.737
- definitions=2020-12-03_12:2020-12-03,2020-12-03 signatures=0
-X-Proofpoint-Spam-Details: rule=fb_default_notspam policy=fb_default score=0 malwarescore=0
- bulkscore=0 lowpriorityscore=0 spamscore=0 impostorscore=0 mlxscore=0
- adultscore=0 mlxlogscore=999 suspectscore=0 clxscore=1015
- priorityscore=1501 phishscore=0 classifier=spam adjust=0 reason=mlx
- scancount=1 engine=8.12.0-2009150000 definitions=main-2012030122
-X-FB-Internal: deliver
+In-Reply-To: <20201127193035.19171-3-marcos@mpdesouza.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="tLJhmI7E10VruJ2KvZzAZpMqVE1CcYyUN"
+X-Provags-ID: V03:K1:1DDduyOoRJivGT9jR+yuJXe6DNLZHPk0D0D2wL6se6p1IHbmttD
+ KLx1XbGK+fMpmZ3TSKDJHV+18l3fPZfhvK+YfpKfgUq6sZOye5BiUUORMb77B8P1xQAEfvZ
+ ALcI+uszzYfs51ld2fteShujwr5Vfm4jgPn3enoLzcToTuJX32KgbkR7h2epip6OgKjGlMc
+ wMxotX2PQd7i47tTHjn3A==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:DZvoKjzHjNE=:VetEKrWZV2w4FmDKF0zNtY
+ Cwr63FNG2ywJyNtOgsQOtImmGClBvojLdEdOa/CHY9bjssnRDOXwrJhVg/JM95YG5VBxMiyKi
+ WXAtZKPgymL/Pd6BtG3lxGrl/INW8jj6lJf5ul3OV7CvxUo6hRlsvCCrE2LMykpwGuCDECIxs
+ hvRmVEwXYVHeV94NFS3eZNLrvd5Fr5RbSWEVS3uiQbgpEHf6pujGQJmkMAV61hwfw0iY0adXv
+ KfWyxYjvawDzM+cDqFmsJTACXwR8TrvGo3k93MCoDyXImCmHbM12avD42M0R+wzjR3+ZXvj99
+ 8augVs/W5IpSDSz3mCl/mtKiZ+EIZqUuw1IQG0OZyZXW593Qdni2vHp4mHLHjtLi6lKVQXi/D
+ dtcrSf+W+CDr4oDfbxDgcDSz8iIEOOvuzKtgZpPTn58dEbSpjF1la4P79Nm77U/itu4fjc02j
+ 7pPe21ikhozrgJQwzIZMfMa2bgjEq3XJlBOZWJaVa8ix2vZes0G2qMgB9FWBpSBoizck1Kddh
+ rFn27LaLnbm4x9gZ0Q1M+6IAfdJjiRuOY1BlaRD6+HJ3kvJWUWSFR93k7lfzaoU/GTosBvJqJ
+ 7XyJ0QM7xAOjlNpI65+r4NKdXPrRoZK5MbWVR0R50kL/tggmSQagfOTZVQGVhWvX6S2FL9NQh
+ TU2eJva6IQ2IepEvfMqRzZhM8gLXc003v+e23uvub56ts5vhNI4lRfUfkfny8QSnsLJn//jUv
+ AeLwlg/mXT/uHra8oW5n6yj1iAyx7HfvJ6nbh5+ck9h9Lj8yWel6QzWffytQ5xrPaSZA5k/BW
+ ojfrgeqPqUx7vao29G7R5EVheyYbXTHRLRWlAk6qFch4sXvrImIaedUDZwKMmxjImXYRZWvb8
+ P4z/KKXMT0pmwdCYTDbA==
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-DQoNCj4gT24gRGVjIDIsIDIwMjAsIGF0IDk6MDMgUE0sIE1pY2hhxYIgTWlyb3PFgmF3IDxtaXJx
-LWxpbnV4QHJlcmUucW1xbS5wbD4gd3JvdGU6DQo+IA0KPiBPbiBUaHUsIERlYyAwMywgMjAyMCBh
-dCAwMzo1OToyMUFNICswMDAwLCBOaWNrIFRlcnJlbGwgd3JvdGU6DQo+PiBPbiBEZWMgMiwgMjAy
-MCwgYXQgNzoxNCBQTSwgTWljaGHFgiBNaXJvc8WCYXcgPG1pcnEtbGludXhAcmVyZS5xbXFtLnBs
-PiB3cm90ZToNCj4+PiBPbiBUaHUsIERlYyAwMywgMjAyMCBhdCAwMTo0MjowM0FNICswMDAwLCBO
-aWNrIFRlcnJlbGwgd3JvdGU6DQo+Pj4+IE9uIERlYyAyLCAyMDIwLCBhdCA1OjE2IFBNLCBNaWNo
-YcWCIE1pcm9zxYJhdyA8bWlycS1saW51eEByZXJlLnFtcW0ucGw+IHdyb3RlOg0KPj4+Pj4gT24g
-V2VkLCBEZWMgMDIsIDIwMjAgYXQgMTI6MzI6NDBQTSAtMDgwMCwgTmljayBUZXJyZWxsIHdyb3Rl
-Og0KPj4+Pj4+IEZyb206IE5pY2sgVGVycmVsbCA8dGVycmVsbG5AZmIuY29tPg0KPj4+Pj4+IA0K
-Pj4+Pj4+IFRoaXMgcGF0Y2g6DQo+Pj4+Pj4gLSBNb3ZlcyBgaW5jbHVkZS9saW51eC96c3RkLmhg
-IC0+IGBsaWIvenN0ZC96c3RkLmhgDQo+Pj4+Pj4gLSBBZGRzIGEgbmV3IEFQSSBpbiBgaW5jbHVk
-ZS9saW51eC96c3RkLmhgIHRoYXQgaXMgZnVuY3Rpb25hbGx5DQo+Pj4+Pj4gZXF1aXZhbGVudCB0
-byB0aGUgaW4tdXNlIHN1YnNldCBvZiB0aGUgY3VycmVudCBBUEkuIEZ1bmN0aW9ucyBhcmUNCj4+
-Pj4+PiByZW5hbWVkIHRvIGF2b2lkIHN5bWJvbCBjb2xsaXNpb25zIHdpdGggenN0ZCwgdG8gbWFr
-ZSBpdCBjbGVhciBpdCBpcw0KPj4+Pj4+IG5vdCB0aGUgdXBzdHJlYW0genN0ZCBBUEksIGFuZCB0
-byBmb2xsb3cgdGhlIGtlcm5lbCBzdHlsZSBndWlkZS4NCj4+Pj4+PiAtIFVwZGF0ZXMgYWxsIGNh
-bGxlcnMgdG8gdXNlIHRoZSBuZXcgQVBJLg0KPj4+Pj4+IA0KPj4+Pj4+IFRoZXJlIGFyZSBubyBm
-dW5jdGlvbmFsIGNoYW5nZXMgaW4gdGhpcyBwYXRjaC4gU2luY2UgdGhlcmUgYXJlIG5vDQo+Pj4+
-Pj4gZnVuY3Rpb25hbCBjaGFuZ2UsIEkgZmVsdCBpdCB3YXMgb2theSB0byB1cGRhdGUgYWxsIHRo
-ZSBjYWxsZXJzIGluIGENCj4+Pj4+PiBzaW5nbGUgcGF0Y2gsIHNpbmNlIG9uY2UgdGhlIEFQSSBp
-cyBhcHByb3ZlZCwgdGhlIGNhbGxlcnMgYXJlDQo+Pj4+Pj4gbWVjaGFuaWNhbGx5IGNoYW5nZWQu
-DQo+Pj4+PiBbLi4uXQ0KPj4+Pj4+IC0tLSBhL2xpYi9kZWNvbXByZXNzX3VuenN0ZC5jDQo+Pj4+
-Pj4gKysrIGIvbGliL2RlY29tcHJlc3NfdW56c3RkLmMNCj4+Pj4+IFsuLi5dDQo+Pj4+Pj4gc3Rh
-dGljIGludCBJTklUIGhhbmRsZV96c3RkX2Vycm9yKHNpemVfdCByZXQsIHZvaWQgKCplcnJvciko
-Y2hhciAqeCkpDQo+Pj4+Pj4gew0KPj4+Pj4+IC0JY29uc3QgaW50IGVyciA9IFpTVERfZ2V0RXJy
-b3JDb2RlKHJldCk7DQo+Pj4+Pj4gLQ0KPj4+Pj4+IC0JaWYgKCFaU1REX2lzRXJyb3IocmV0KSkN
-Cj4+Pj4+PiArCWlmICghenN0ZF9pc19lcnJvcihyZXQpKQ0KPj4+Pj4+IAkJcmV0dXJuIDA7DQo+
-Pj4+Pj4gDQo+Pj4+Pj4gLQlzd2l0Y2ggKGVycikgew0KPj4+Pj4+IC0JY2FzZSBaU1REX2Vycm9y
-X21lbW9yeV9hbGxvY2F0aW9uOg0KPj4+Pj4+IC0JCWVycm9yKCJaU1REIGRlY29tcHJlc3NvciBy
-YW4gb3V0IG9mIG1lbW9yeSIpOw0KPj4+Pj4+IC0JCWJyZWFrOw0KPj4+Pj4+IC0JY2FzZSBaU1RE
-X2Vycm9yX3ByZWZpeF91bmtub3duOg0KPj4+Pj4+IC0JCWVycm9yKCJJbnB1dCBpcyBub3QgaW4g
-dGhlIFpTVEQgZm9ybWF0ICh3cm9uZyBtYWdpYyBieXRlcykiKTsNCj4+Pj4+PiAtCQlicmVhazsN
-Cj4+Pj4+PiAtCWNhc2UgWlNURF9lcnJvcl9kc3RTaXplX3Rvb1NtYWxsOg0KPj4+Pj4+IC0JY2Fz
-ZSBaU1REX2Vycm9yX2NvcnJ1cHRpb25fZGV0ZWN0ZWQ6DQo+Pj4+Pj4gLQljYXNlIFpTVERfZXJy
-b3JfY2hlY2tzdW1fd3Jvbmc6DQo+Pj4+Pj4gLQkJZXJyb3IoIlpTVEQtY29tcHJlc3NlZCBkYXRh
-IGlzIGNvcnJ1cHQiKTsNCj4+Pj4+PiAtCQlicmVhazsNCj4+Pj4+PiAtCWRlZmF1bHQ6DQo+Pj4+
-Pj4gLQkJZXJyb3IoIlpTVEQtY29tcHJlc3NlZCBkYXRhIGlzIHByb2JhYmx5IGNvcnJ1cHQiKTsN
-Cj4+Pj4+PiAtCQlicmVhazsNCj4+Pj4+PiAtCX0NCj4+Pj4+PiArCWVycm9yKCJaU1REIGRlY29t
-cHJlc3Npb24gZmFpbGVkIik7DQo+Pj4+Pj4gCXJldHVybiAtMTsNCj4+Pj4+PiB9DQo+Pj4+PiAN
-Cj4+Pj4+IFRoaXMgbG9vc2VzIGRpYWdub3N0aWNzIHNwZWNpZmljaXR5IC0gaXMgdGhpcyBpbnRl
-bmRlZD8gQXQgbGVhc3QgdGhlDQo+Pj4+PiBvdXQtb2YtbWVtb3J5IGNvbmRpdGlvbiBzZWVtcyB1
-c2VmdWwgdG8gZGlzdGluZ3Vpc2guDQo+Pj4+IA0KPj4+PiBHb29kIHBvaW50LiBUaGUgenN0ZCBB
-UEkgbm8gbG9uZ2VyIGV4cG9zZXMgdGhlIGVycm9yIGNvZGUgZW51bSwNCj4+Pj4gYnV0IGl0IGRv
-ZXMgZXhwb3NlIHpzdGRfZ2V0X2Vycm9yX25hbWUoKSB3aGljaCBjYW4gYmUgdXNlZCBoZXJlLg0K
-Pj4+PiBJIHdhcyB0aGlua2luZyB0aGF0IHRoZSBzdHJpbmcgbmVlZGVkIHRvIGJlIHN0YXRpYyBm
-b3Igc29tZSByZWFzb24sIGJ1dA0KPj4+PiB0aGF0IGlzIG5vdCB0aGUgY2FzZS4gSSB3aWxsIG1h
-a2UgdGhhdCBjaGFuZ2UuDQo+Pj4+IA0KPj4+Pj4+ICtzaXplX3QgenN0ZF9jb21wcmVzc19zdHJl
-YW0oenN0ZF9jc3RyZWFtICpjc3RyZWFtLA0KPj4+Pj4+ICsJc3RydWN0IHpzdGRfb3V0X2J1ZmZl
-ciAqb3V0cHV0LCBzdHJ1Y3QgenN0ZF9pbl9idWZmZXIgKmlucHV0KQ0KPj4+Pj4+ICt7DQo+Pj4+
-Pj4gKwlaU1REX291dEJ1ZmZlciBvOw0KPj4+Pj4+ICsJWlNURF9pbkJ1ZmZlciBpOw0KPj4+Pj4+
-ICsJc2l6ZV90IHJldDsNCj4+Pj4+PiArDQo+Pj4+Pj4gKwltZW1jcHkoJm8sIG91dHB1dCwgc2l6
-ZW9mKG8pKTsNCj4+Pj4+PiArCW1lbWNweSgmaSwgaW5wdXQsIHNpemVvZihpKSk7DQo+Pj4+Pj4g
-KwlyZXQgPSBaU1REX2NvbXByZXNzU3RyZWFtKGNzdHJlYW0sICZvLCAmaSk7DQo+Pj4+Pj4gKwlt
-ZW1jcHkob3V0cHV0LCAmbywgc2l6ZW9mKG8pKTsNCj4+Pj4+PiArCW1lbWNweShpbnB1dCwgJmks
-IHNpemVvZihpKSk7DQo+Pj4+Pj4gKwlyZXR1cm4gcmV0Ow0KPj4+Pj4+ICt9DQo+Pj4+PiANCj4+
-Pj4+IElzIGFsbCB0aGlzIGNvcHlpbmcgbmVjZXNzYXJ5PyBIb3cgaXMgaXQgZGlmZmVyZW50IGZy
-b20gdHlwZS1wdW5uaW5nIGJ5DQo+Pj4+PiBkaXJlY3QgcG9pbnRlciBjYXN0Pw0KPj4+PiANCj4+
-Pj4gSWYgYnJlYWtpbmcgc3RyaWN0IGFsaWFzaW5nIGFuZCB0eXBlLXB1bm5pbmcgYnkgcG9pbnRl
-ciBjYXNpbmcgaXMgb2theSwgdGhlbg0KPj4+PiB3ZSBjYW4gZG8gdGhhdCBoZXJlLiBUaGVzZSBt
-ZW1jcHlzIHdpbGwgYmUgbmVnbGlnaWJsZSBmb3IgcGVyZm9ybWFuY2UsIGJ1dA0KPj4+PiB0eXBl
-LXB1bm5pbmcgd291bGQgYmUgbW9yZSBzdWNjaW5jdCBpZiBhbGxvd2VkLg0KPj4+IA0KPj4+IEFo
-LCB0aGlzIG1pZ2h0IGJyZWFrIExUTyBidWlsZHMgZHVlIHRvIHN0cmljdCBhbGlhc2luZyB2aW9s
-YXRpb24uDQo+Pj4gU28gSSB3b3VsZCBzdWdnZXN0IHRvIGp1c3QgI2RlZmluZSB0aGUgWlNURCBu
-YW1lcyB0byBrZXJuZWwgb25lcw0KPj4+IGZvciB0aGUgbGlicmFyeSBjb2RlLiAgVW5sZXNzIHRo
-ZXJlIGlzIGEgY2xlYW5lciBzb2x1dGlvbi4uLg0KPj4gDQo+PiBJIGRvbuKAmXQgd2FudCB0byBk
-byB0aGF0IGJlY2F1c2UgSSB3YW50IGluIHRoZSAzcmQgc2VyaWVzIG9mIHRoZSBwYXRjaHNldCBJ
-IHVwZGF0ZQ0KPj4gdG8genN0ZC0xLjQuNi4gQW5kIEnigJltIHVzaW5nIHpzdGQtMS40LjYgYXMt
-aXMgaW4gdXBzdHJlYW0uIFRoaXMgYWxsb3dzIHVzIHRvIGtlZXANCj4+IHRoZSBrZXJuZWwgdmVy
-c2lvbiB1cCB0byBkYXRlLCBzaW5jZSB0aGUgcGF0Y2ggdG8gdXBkYXRlIHRvIGEgbmV3IHZlcnNp
-b24gY2FuIGJlDQo+PiBnZW5lcmF0ZWQgYXV0b21hdGljYWxseSAoYW5kIG1hbnVhbGx5IHRlc3Rl
-ZCksIHNvIGl0IGRvZXNu4oCZdCBmYWxsIHllYXJzIGJlaGluZA0KPj4gdXBzdHJlYW0gYWdhaW4u
-DQo+PiANCj4+IFRoZSBhbHRlcm5hdGl2ZSB3b3VsZCBiZSB0byBtYWtlIHVwc3RyZWFtIHpzdGTi
-gJlzIGhlYWRlciBwdWJsaWMgYW5kDQo+PiAjZGVmaW5lIHpzdGRfaW5fYnVmZmVyIFpTVERfaW5C
-dWZmZXIuIEJ1dCB0aGF0IHdvdWxkIG1ha2UgenN0ZOKAmXMgaGVhZGVyDQo+PiBwdWJsaWMsIHdo
-aWNoIHdvdWxkIHNvbWV3aGF0IGRlZmVhdCB0aGUgcHVycG9zZSBvZiBoYXZpbmcgYSBrZXJuZWwg
-d3JhcHBlci4NCj4gDQo+IEkgdGhvdWdodCB0aGUgcHJvYmxlbSB3YXMgQVBJIHN0eWxlIHNwaWxs
-LW92ZXIgZnJvbSB0aGUgbGlicmFyeSB0byBvdGhlciBwYXJ0cw0KPiBvZiB0aGUga2VybmVsLiAg
-QSBoZWFkZXItb25seSB3cmFwcGVyIGNhbiBzdG9wIHRoaXMuICBJJ20gbm90IHN1cmUgc3ltYm9s
-DQo+IHZpc2liaWxpdHkgKG5hbWVzcGFjZSBwb2xsdXRpb24pIHdhcyBhIGNvbmNlcm4uDQoNClRo
-YW5rcyBmb3IgdGhlIHJldmlldyBNaWNoYcWCISBJIGhhdmUganVzdCBzdWJtaXR0ZWQgYSBuZXcg
-dmVyc2lvbiBvZiB0aGUgcGF0Y2hlcw0Kd2l0aCB0aGUgc3VnZ2VzdGVkIGNoYW5nZXMhDQoNCkJl
-c3QsDQpOaWNrIFRlcnJlbGwNCg0KPiBCZXN0IFJlZ2FyZHMNCj4gTWljaGHFgiBNaXJvc8WCYXcN
-Cg0K
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--tLJhmI7E10VruJ2KvZzAZpMqVE1CcYyUN
+Content-Type: multipart/mixed; boundary="G84p76nXLukGz9blWFkrBNpZjZmkQw1yY"
+
+--G84p76nXLukGz9blWFkrBNpZjZmkQw1yY
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+
+
+
+On 2020/11/28 =E4=B8=8A=E5=8D=883:30, Marcos Paulo de Souza wrote:
+> From: Marcos Paulo de Souza <mpdesouza@suse.com>
+>=20
+> [BUG]
+> logical-resolve is currently broken on systems that have a child
+> subvolume being mounted without access to the parent subvolume.
+> This is the default for SLE/openSUSE installations. openSUSE has the
+> subvolume '@' as the parent of all other subvolumes like /boot, /home.
+> The subvolume '@' is never mounted and accessed, but only it's childs:
+>=20
+> mount | grep btrfs
+> /dev/sda2 on / type btrfs (rw,relatime,ssd,space_cache,subvolid=3D267,s=
+ubvol=3D/@/.snapshots/1/snapshot)
+> /dev/sda2 on /opt type btrfs (rw,relatime,ssd,space_cache,subvolid=3D26=
+2,subvol=3D/@/opt)
+> /dev/sda2 on /boot/grub2/i386-pc type btrfs (rw,relatime,ssd,space_cach=
+e,subvolid=3D265,subvol=3D/@/boot/grub2/i386-pc)
+>=20
+> logical-resolve command calls btrfs_list_path_for_root, that returns th=
+e
+> subvolume full-path that corresponds to the tree id of the logical
+> address. As the name implies, the 'full-path' returns the subvolume ful=
+l
+> path, starting from '@'. Later on, btrfs_open_dir is called using the p=
+ath
+> returned, but it fails to resolve it since it contains the '@' and this=
+
+> subvolume cannot be accessed.
+>=20
+> The same problem can be triggered to any user that calls for
+> logical-resolve on a child subvolume that has the parent subvolume
+> not accessible.
+>=20
+> Another problem in the current approach is that it believes that a
+> subvolume will be mounted in a directory with the same name e.g /@/boot=
+
+> being mounted in /boot. When this is not true, the code also fails,
+> since it uses the subvolume name as the path.
+>=20
+> [FIX]
+> Extent the find_mount_root function by allowing it to check for mnt_opt=
+s
+> member of mntent struct. Using this new approach we can change
+> logical-resolve command to search for subvolid=3DXXX,subvol=3DYYY retur=
+ning
+> the correct path accessible to the user. Using this approach we can sol=
+ve
+> the problems stated above by not trusting the subvolume name being the
+> mountpoint, and not executing the lookup based only in the subvolume
+> tree.
+>=20
+> Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
+
+
+With the extra prompt for subvolume can't be accessed, it looks good to
+me now.
+
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+
+Thanks,
+Qu
+> ---
+>  cmds/inspect.c | 44 ++++++++++++++++++++++++++++++++++----------
+>  common/utils.c | 29 +++++++++++++++++++++++------
+>  common/utils.h |  5 ++++-
+>  3 files changed, 61 insertions(+), 17 deletions(-)
+>=20
+> diff --git a/cmds/inspect.c b/cmds/inspect.c
+> index 2530b904..cfa2f708 100644
+> --- a/cmds/inspect.c
+> +++ b/cmds/inspect.c
+> @@ -236,6 +236,7 @@ static int cmd_inspect_logical_resolve(const struct=
+ cmd_struct *cmd,
+>  		DIR *dirs =3D NULL;
+> =20
+>  		if (getpath) {
+> +			char mount_path[PATH_MAX];
+>  			name =3D btrfs_list_path_for_root(fd, root);
+>  			if (IS_ERR(name)) {
+>  				ret =3D PTR_ERR(name);
+> @@ -244,23 +245,46 @@ static int cmd_inspect_logical_resolve(const stru=
+ct cmd_struct *cmd,
+>  			if (!name) {
+>  				path_ptr[-1] =3D '\0';
+>  				path_fd =3D fd;
+> +
+> +				strncpy(mount_path, full_path, PATH_MAX);
+>  			} else {
+> -				path_ptr[-1] =3D '/';
+> -				ret =3D snprintf(path_ptr, bytes_left, "%s",
+> -						name);
+> -				free(name);
+> -				if (ret >=3D bytes_left) {
+> -					error("path buffer too small: %d bytes",
+> -							bytes_left - ret);
+> -					goto out;
+> +				char *mounted =3D NULL;
+> +				char volid_str[PATH_MAX];
+> +
+> +				/*
+> +				 * btrfs_list_path_for_root returns the full
+> +				 * path to the subvolume pointed by root, but the
+> +				 * subvolume can be mounted in a directory name
+> +				 * different from the subvolume name. In this
+> +				 * case we need to find the correct mountpoint
+> +				 * using same subvol path and subvol id found
+> +				 * before.
+> +				 */
+> +				snprintf(volid_str, PATH_MAX, "subvolid=3D%llu,subvol=3D/%s",
+> +						root, name);
+> +
+> +				ret =3D find_mount_root(full_path, volid_str,
+> +						BTRFS_FIND_ROOT_OPTS, &mounted);
+> +
+> +				if (ret =3D=3D -ENOENT) {
+> +					printf("inode %llu subvol %s could not be accessed: not mounted\n=
+",
+> +							inum, name);
+> +					continue;
+>  				}
+> -				path_fd =3D btrfs_open_dir(full_path, &dirs, 1);
+> +
+> +				if (ret < 0)
+> +					goto out;
+> +
+> +				strncpy(mount_path, mounted, PATH_MAX);
+> +				free(mounted);
+> +
+> +				path_fd =3D btrfs_open_dir(mount_path, &dirs, 1);
+>  				if (path_fd < 0) {
+>  					ret =3D -ENOENT;
+>  					goto out;
+>  				}
+>  			}
+> -			ret =3D __ino_to_path_fd(inum, path_fd, full_path);
+> +			ret =3D __ino_to_path_fd(inum, path_fd, mount_path);
+>  			if (path_fd !=3D fd)
+>  				close_file_or_dir(path_fd, dirs);
+>  		} else {
+> diff --git a/common/utils.c b/common/utils.c
+> index 1c264455..1562ac52 100644
+> --- a/common/utils.c
+> +++ b/common/utils.c
+> @@ -1259,9 +1259,6 @@ int find_mount_root(const char *path, const char =
+*data, u8 flag, char **mount_ro
+>  	int longest_matchlen =3D 0;
+>  	char *longest_match =3D NULL;
+>  	char *cmp_field =3D NULL;
+> -	bool found;
+> -
+> -	BUG_ON(flag !=3D BTRFS_FIND_ROOT_PATH);
+> =20
+>  	fd =3D open(path, O_RDONLY | O_NOATIME);
+>  	if (fd < 0)
+> @@ -1273,12 +1270,32 @@ int find_mount_root(const char *path, const cha=
+r *data, u8 flag, char **mount_ro
+>  		return -errno;
+> =20
+>  	while ((ent =3D getmntent(mnttab))) {
+> -		cmp_field =3D ent->mnt_dir;
+> +		bool found =3D false;
+> =20
+> -		len =3D strlen(cmp_field);
+> +		/* BTRFS_FIND_ROOT_PATH is the default behavior */
+> +		if (flag =3D=3D BTRFS_FIND_ROOT_OPTS)
+> +			cmp_field =3D ent->mnt_opts;
+> +		else
+> +			cmp_field =3D ent->mnt_dir;
+> =20
+> -		found =3D strncmp(cmp_field, data, len) =3D=3D 0;
+> +		len =3D strlen(cmp_field);
+> =20
+> +		if (flag =3D=3D BTRFS_FIND_ROOT_OPTS) {
+> +			size_t dlen =3D strlen(data);
+> +			char *tmp_str =3D strstr(cmp_field, data);
+> +			/*
+> +			 * Make sure that we are dealing with the wanted string,
+> +			 * since strstr returns the start of the string found.
+> +			 * Compare the end string position from data with the
+> +			 * mount point found, and make sure that we have an
+> +			 * option separator or string end.
+> +			 */
+> +			if (tmp_str)
+> +				found =3D tmp_str[dlen] =3D=3D ',' ||
+> +					tmp_str[dlen] =3D=3D 0;
+> +		} else {
+> +			found =3D strncmp(cmp_field, data, len) =3D=3D 0;
+> +		}
+>  		if (found) {
+>  			/* match found and use the latest match */
+>  			if (longest_matchlen <=3D len) {
+> diff --git a/common/utils.h b/common/utils.h
+> index 449e1d3e..b5d256c6 100644
+> --- a/common/utils.h
+> +++ b/common/utils.h
+> @@ -54,7 +54,10 @@
+> =20
+>  enum btrfs_find_root_flags {
+>  	/* check mnt_dir of mntent */
+> -	BTRFS_FIND_ROOT_PATH =3D 0
+> +	BTRFS_FIND_ROOT_PATH =3D 0,
+> +
+> +	/* check mnt_opts of mntent */
+> +	BTRFS_FIND_ROOT_OPTS
+>  };
+> =20
+>  void units_set_mode(unsigned *units, unsigned mode);
+>=20
+
+
+--G84p76nXLukGz9blWFkrBNpZjZmkQw1yY--
+
+--tLJhmI7E10VruJ2KvZzAZpMqVE1CcYyUN
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAl/Jff4ACgkQwj2R86El
+/qhViAf+JZD4UD0s5EuV4Gjhoif+7voezUbAngOb3Hq6piUf5mOHhUP8y4vZUAXE
+rrDQowyuDRoH/5V69X9BYvm6Yi3vl/aZEcFXWK88K3N5ozNaA6PI92K7pemKa67J
+4FsVjIyfsZ31+jk0V4BLKyBRhAvD2vON/XOtssOUJMGfbK576N+7rqrFT72tIGSy
+UfRxgW2d0GNH+ARiL/lsh7iG8RYG1Ab7woqMd0rP7D4m5aL5yCXVm5ZyoXy1xaEx
+eXNUlo+4qx6QGBAWWwwxMbbWLhhUkIlCMUVVhei8WToopqy24xk7JDk+CPf/m+ZU
+TPbo0kt1Zjib1/DKx4zbgt/k3pMU3Q==
+=tC1q
+-----END PGP SIGNATURE-----
+
+--tLJhmI7E10VruJ2KvZzAZpMqVE1CcYyUN--

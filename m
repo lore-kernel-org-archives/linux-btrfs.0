@@ -2,97 +2,119 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.7 required=3.0 tests=BAYES_00,
+X-Spam-Status: No, score=-15.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY
-	autolearn=unavailable autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C6552C4361B
-	for <linux-btrfs@archiver.kernel.org>; Sun,  6 Dec 2020 13:31:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C6494C4361B
+	for <linux-btrfs@archiver.kernel.org>; Sun,  6 Dec 2020 16:00:54 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 750D0230FB
-	for <linux-btrfs@archiver.kernel.org>; Sun,  6 Dec 2020 13:31:28 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8FD0622D06
+	for <linux-btrfs@archiver.kernel.org>; Sun,  6 Dec 2020 16:00:54 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728404AbgLFNbS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 6 Dec 2020 08:31:18 -0500
-Received: from out20-25.mail.aliyun.com ([115.124.20.25]:36864 "EHLO
-        out20-25.mail.aliyun.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728398AbgLFNbR (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 6 Dec 2020 08:31:17 -0500
-X-Alimail-AntiSpam: AC=CONTINUE;BC=0.09829937|-1;CH=green;DM=|CONTINUE|false|;DS=CONTINUE|ham_system_inform|0.0668307-0.0145915-0.918578;FP=0|0|0|0|0|-1|-1|-1;HT=ay29a033018047188;MF=guan@eryu.me;NM=1;PH=DS;RN=3;RT=3;SR=0;TI=SMTPD_---.J3e4GpS_1607261431;
-Received: from localhost(mailfrom:guan@eryu.me fp:SMTPD_---.J3e4GpS_1607261431)
-          by smtp.aliyun-inc.com(10.147.41.137);
-          Sun, 06 Dec 2020 21:30:32 +0800
-Date:   Sun, 6 Dec 2020 21:30:31 +0800
-From:   Eryu Guan <guan@eryu.me>
-To:     Nikolay Borisov <nborisov@suse.com>
-Cc:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: Update btrfs/215
-Message-ID: <20201206133031.GU3853@desktop>
-References: <20201203121139.754305-1-nborisov@suse.com>
+        id S1727132AbgLFQAj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 6 Dec 2020 11:00:39 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58870 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726602AbgLFQAc (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 6 Dec 2020 11:00:32 -0500
+Received: from mail-wm1-x342.google.com (mail-wm1-x342.google.com [IPv6:2a00:1450:4864:20::342])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9A01FC0613D3
+        for <linux-btrfs@vger.kernel.org>; Sun,  6 Dec 2020 07:59:51 -0800 (PST)
+Received: by mail-wm1-x342.google.com with SMTP id f190so11437044wme.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 06 Dec 2020 07:59:51 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=from:to:subject:date:message-id:in-reply-to:references:mime-version
+         :content-transfer-encoding;
+        bh=MTZNTj9112GUR4EWB5wrXSfr5LJhNHZqAO0IoO3ucUo=;
+        b=o4GoEIXKzg7vekzOMwGVL357Bq/bcuGoN14zfqaYgUN/m1GBqstfjKqC0tAT31xPqG
+         i4aAhxYVrfvtR1F6vpELJWpDM7ab+ZtEwACi+gco2FS9ZoZ8ps6q9QFNwQzA1aOfFMY2
+         ELhkphTRqiOiFLpaCB2oZ2N9oHjHR50cJVJ4ejV3yjGpY6Kt2F1Uowkn8q9ijXaW9Xok
+         VyNhdfQ5aXBrRSBG74Q1JEMf3xRPMpOfDJXU58fPDikU/6/othq9de73jJPaVVbHGRvn
+         khgpXp+Hr9/cg8hIoBHJQ7/zU9CzIwnSvtaAhrfehgB1ICibrNP/gUU3Img+VPfQtBKZ
+         XVuA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
+         :references:mime-version:content-transfer-encoding;
+        bh=MTZNTj9112GUR4EWB5wrXSfr5LJhNHZqAO0IoO3ucUo=;
+        b=SG1+EJlv+CwTGcCCmMrE4Ugzx/bHDI4EfvCZe3TQ5LEWZ6Qbc7yPrnrNBAd/bukI+9
+         Y9r0NA1DFKuz3rnqUVatvjql50zvk0wiyiFUL19yE29DOSjTNc9yrpRZoBf4sFRJ+plz
+         MgSV9N797eNeVinDndBkVCx/3KXiiXA4CYhKiwOqCz4UMdt0ttDQUU0kyE6fIs9fuaeR
+         LbLcN9HA6jU4dA79N/woXQt82DNKjf+KbRIh6QAgMaDK+KbZgqHEJY2eehj7jb37Ve3s
+         gp8vnKsEuHESHIqJrg/3SLvroX8BYp6PBUPbZYc2jCDTdvWcXisNW9h4HTS0B4V/Jmj3
+         O2FQ==
+X-Gm-Message-State: AOAM531l21pifcsNZBaNkZcvEbjOrhigV6fJxYKu0xyXLtn/7w+NaJqv
+        /zVcrAS3Z+9TEl9BZnWgynY=
+X-Google-Smtp-Source: ABdhPJxqZCrR30Ujd19DOYKuCfAnIYGe73fUEY/5nhMtWKU/UckDhLY7VoEnuYnqEaHAVX7/lFOueg==
+X-Received: by 2002:a1c:a9c8:: with SMTP id s191mr14215072wme.89.1607270390434;
+        Sun, 06 Dec 2020 07:59:50 -0800 (PST)
+Received: from localhost.localdomain ([185.69.145.92])
+        by smtp.gmail.com with ESMTPSA id h14sm9933355wrx.37.2020.12.06.07.59.49
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sun, 06 Dec 2020 07:59:50 -0800 (PST)
+From:   Pavel Begunkov <asml.silence@gmail.com>
+To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+Subject: [PATCH v3 2/3] btrfs: fix racy access to discard_ctl data
+Date:   Sun,  6 Dec 2020 15:56:21 +0000
+Message-Id: <a6d9f2e4912cd174bf796b822cc8ed56fca89d86.1607269878.git.asml.silence@gmail.com>
+X-Mailer: git-send-email 2.24.0
+In-Reply-To: <cover.1607269878.git.asml.silence@gmail.com>
+References: <cover.1607269878.git.asml.silence@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20201203121139.754305-1-nborisov@suse.com>
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Dec 03, 2020 at 02:11:39PM +0200, Nikolay Borisov wrote:
-> This patch updates btrfs/215 to work with latest upstream kernel. That's
-> required since commit 324bcf54c449 ("mm: use limited read-ahead to satisfy read")
-> changed readahead logic to always issue a read even if the RA pages are
-> set to 0. This results in 1 extra io being issued so the counts in the
-> test should be incremented by 1. Also use the opportunity to update the
-> commit reference since it's been merged in the upstream kernel.
-> 
-> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-> ---
->  tests/btrfs/215 | 10 +++++-----
->  1 file changed, 5 insertions(+), 5 deletions(-)
-> 
-> diff --git a/tests/btrfs/215 b/tests/btrfs/215
-> index 4acc288a9f60..2647fa41ef86 100755
-> --- a/tests/btrfs/215
-> +++ b/tests/btrfs/215
-> @@ -6,7 +6,7 @@
->  #
->  # Test that reading corrupted files would correctly increment device status
->  # counters. This is fixed by the following linux kernel commit:
-> -# btrfs: Increment device corruption error in case of checksum error
-> +# 814723e0a55a ("btrfs: increment device corruption error in case of checksum error")
->  #
->  seq=`basename $0`
->  seqres=$RESULT_DIR/$seq
-> @@ -74,15 +74,15 @@ echo 0 > /sys/fs/btrfs/$uuid/bdi/read_ahead_kb
->  # page by page
+Because only one discard worker may be running at any given point, it
+could have been safe to modify ->prev_discard, etc. without
+synchronisation, if not for @override flag in
+btrfs_discard_schedule_work() and delayed_work_pending() returning false
+while workfn is running.
 
-The comments above this line should be updated as well.
+That may lead lead to torn reads of u64 for some architectures, but
+that's not a big problem as only slightly affects the discard rate.
 
-# buffered reads whould result in a single error since the read is done
+Suggested-by: Josef Bacik <josef@toxicpanda.com>
+Signed-off-by: Pavel Begunkov <asml.silence@gmail.com>
+---
+ fs/btrfs/discard.c | 10 +++-------
+ 1 file changed, 3 insertions(+), 7 deletions(-)
 
-And I think it's better to describe the 1 extra io in comments as well.
+diff --git a/fs/btrfs/discard.c b/fs/btrfs/discard.c
+index 36431d7e1334..d641f451f840 100644
+--- a/fs/btrfs/discard.c
++++ b/fs/btrfs/discard.c
+@@ -477,13 +477,6 @@ static void btrfs_discard_workfn(struct work_struct *work)
+ 		discard_ctl->discard_extent_bytes += trimmed;
+ 	}
+ 
+-	/*
+-	 * Updated without locks as this is inside the workfn and nothing else
+-	 * is reading the values
+-	 */
+-	discard_ctl->prev_discard = trimmed;
+-	discard_ctl->prev_discard_time = ktime_get_ns();
+-
+ 	/* Determine next steps for a block_group */
+ 	if (block_group->discard_cursor >= btrfs_block_group_end(block_group)) {
+ 		if (discard_state == BTRFS_DISCARD_BITMAPS) {
+@@ -499,7 +492,10 @@ static void btrfs_discard_workfn(struct work_struct *work)
+ 		}
+ 	}
+ 
++	now = ktime_get_ns();
+ 	spin_lock(&discard_ctl->lock);
++	discard_ctl->prev_discard = trimmed;
++	discard_ctl->prev_discard_time = now;
+ 	discard_ctl->block_group = NULL;
+ 	spin_unlock(&discard_ctl->lock);
+ 
+-- 
+2.24.0
 
-Thanks,
-Eryu
-
->  $XFS_IO_PROG -c "pread -b $filesize 0 $filesize" "$SCRATCH_MNT/foobar" > /dev/null 2>&1
->  errs=$($BTRFS_UTIL_PROG device stats $SCRATCH_DEV | awk '/corruption_errs/ { print $2 }')
-> -if [ $errs -ne 1 ]; then
-> -	_fail "Errors: $errs expected: 1"
-> +if [ $errs -ne 2 ]; then
-> +	_fail "Errors: $errs expected: 2"
->  fi
->  
->  # DIO does check every sector
->  $XFS_IO_PROG -d -c "pread -b $filesize 0 $filesize" "$SCRATCH_MNT/foobar" > /dev/null 2>&1
->  errs=$($BTRFS_UTIL_PROG device stats $SCRATCH_DEV | awk '/corruption_errs/ { print $2 }')
-> -if [ $errs -ne 5 ]; then
-> -	_fail "Errors: $errs expected: 1"
-> +if [ $errs -ne 6 ]; then
-> +	_fail "Errors: $errs expected: 6"
->  fi
->  
->  # success, all done
-> -- 
-> 2.17.1

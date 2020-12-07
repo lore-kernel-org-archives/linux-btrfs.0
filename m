@@ -7,59 +7,59 @@ X-Spam-Status: No, score=-16.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 86492C4361B
-	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Dec 2020 13:59:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 926AFC2BB3F
+	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Dec 2020 13:59:31 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 58D4223444
-	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Dec 2020 13:59:35 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5F38223444
+	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Dec 2020 13:59:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726276AbgLGN7e (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 7 Dec 2020 08:59:34 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35336 "EHLO
+        id S1726921AbgLGN7Z (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 7 Dec 2020 08:59:25 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35338 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725803AbgLGN7e (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Dec 2020 08:59:34 -0500
-Received: from mail-qv1-xf43.google.com (mail-qv1-xf43.google.com [IPv6:2607:f8b0:4864:20::f43])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7645DC08ED7E
-        for <linux-btrfs@vger.kernel.org>; Mon,  7 Dec 2020 05:58:28 -0800 (PST)
-Received: by mail-qv1-xf43.google.com with SMTP id 62so6479128qva.11
-        for <linux-btrfs@vger.kernel.org>; Mon, 07 Dec 2020 05:58:28 -0800 (PST)
+        with ESMTP id S1726472AbgLGN7Y (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Dec 2020 08:59:24 -0500
+Received: from mail-qv1-xf44.google.com (mail-qv1-xf44.google.com [IPv6:2607:f8b0:4864:20::f44])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 50059C08E85F
+        for <linux-btrfs@vger.kernel.org>; Mon,  7 Dec 2020 05:58:16 -0800 (PST)
+Received: by mail-qv1-xf44.google.com with SMTP id a13so1411957qvv.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 07 Dec 2020 05:58:16 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references:mime-version
          :content-transfer-encoding;
-        bh=rXkllivM/LlDIU6qMHpbw+hMYUQ5EKZq1LEuGXDx7tg=;
-        b=a54b3iK1LuNygCwWnH9aeahviE0esmvxooyQ/es2zAib+g9MEda/Or+3LUrDGllgFq
-         +KEgoYy2D6Bn9D4qXkngHuVNxnAGh9O3kdnymquX0N6Jp1TD2ZPcjcZfE9plkEyK++ha
-         R0OPfqqhaItGYUA+Ob6Mh7lx1zbLiTtRcfZh91toBBeQmkTm3ElyAk9FZRq1mOLde+ON
-         zgQa1ITyyPgia1/LsLzKnbAutJsM6wYaYbN/ZZNl3xWV9pvQ0+xCfApqi+b1MgPywA86
-         nyWKR99vtNTcGLfDJiyx5i3GgrZ6PlUzMMp9ky1UiKsiOzVPHwLnCg+Xy8F5jWMp/xRa
-         67Eg==
+        bh=DQmnmJJRzCO1HJNP9kj80ZUMjn3DX6w29lkFoMNs1+c=;
+        b=yvY5GWrNSHpxaHlUQ5R1isWbLFoZvTpTiggiYKNrCE6q2Ulz6eHzCKqq2Co5RZVkwB
+         yrMiFeGrE4J7ak7PY/Y00OBQeSEgNkrAT227t3bN7HVsnkng+O34jyG89N67iPik0gEV
+         9Vo9Fh4mWuFQOjSze8Tu60Z0UZpM43Db9OEdDR156K7lIrEckIdmUkfbLJIi2Zp974cq
+         WXqColKUOjuYqNZdMXGbBHmb5a3snV7nju2OoqpaP6wuEl6Jlw/T05vzFmGM1VzmTzrx
+         gRcIPKX5Vq+FfHEHTM4N+wpT/gX39Ajrb4r1vI4oN7wZXDs6/88WG+Ts9dTt04fFoEcd
+         alEg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=rXkllivM/LlDIU6qMHpbw+hMYUQ5EKZq1LEuGXDx7tg=;
-        b=F4+taLriyTsukBncec+tjre6BhGhjNVHmecl/3wCCxF+aY5HJTzZw1YI2ffKbHh+gN
-         qdb7iYqYxfHxHIORBnk3347c6cO89eNAb0frn2uSfMJk5PXjTjV+BwrLocRRnIor6z3g
-         7AUhlA0ZPCxdh9g+3xxZGt8LB/EBUOnmVTXe3Wgs6vDTHMjlP9YA1ftpFeL/QvhR1BhI
-         pZ1USIyS4Co9uaaKIjruJg2ptBAZgeqs87if2GDSgbNJef/PwWbHMYGLCEQwtB1m23qa
-         D0+vByj9dWvXjCbBLGIk0X2WwnNOwLb4vzSPWY8XfQ3Ui5n96sDyaLNWQY8r70LPcveM
-         txfw==
-X-Gm-Message-State: AOAM532um/0fpeIlvLJ/U38vKQN+klzY8Nd6oEB8rbB3QQP+r4wXm75o
-        Z8MYbRc1sp2Rv5bKVKfE6D7gIR9M+N5XqDak
-X-Google-Smtp-Source: ABdhPJyWAqqz/D+34Cj923b5V86Nfu+7tCxiIiLmv4+YvxFOvcM7vuO4ctAq11mp+2EVztzCz6ginA==
-X-Received: by 2002:ad4:4594:: with SMTP id x20mr21640066qvu.49.1607349507362;
-        Mon, 07 Dec 2020 05:58:27 -0800 (PST)
+        bh=DQmnmJJRzCO1HJNP9kj80ZUMjn3DX6w29lkFoMNs1+c=;
+        b=jQ+Fh5hXhevJaJCURz3F3pN6aKtxXBr662FHUdFJ6GEJfNcnYy0YjmInz7ryGhrWgP
+         elE7maxd2HcUChdyhmzXQFOE4ZRqeXYDLaWSf181/VEsyBb+4vSJtKG+8OqK9QOm6qgr
+         tINyTArnvPGG0GqJOI8A4D4KF6ceLPhrLK01hSMSo4WF7FGHKHl5R2LBljwbWuULo1KT
+         7cIvUPgLtzeewmMSwhCtl+SlBJczFq+M0ocKs5GNDGZ2YQ9vWk58LPe05B+v1oVrV50W
+         TJx7FnMkdod/J7SEo5GJ3xQDvgkXyzfbOTcbUAa1+VNNY9VGPQGDTT0RAsFhImEb2vjD
+         sfrA==
+X-Gm-Message-State: AOAM531Yj2PJl8eNCqQdDY8oKIkkmuVrmgR9DElKvn/YOyolnd5/hCah
+        ZfNR4KO6TOBdWEvNM5hIeV3k8mKpiCfaGPEB
+X-Google-Smtp-Source: ABdhPJxGJzuOBsWWitFWbX9SvhWOU/pjIf/rF76k4hBgN1q02+RV7JYtu4SsF7HLnl7ajimTSVfkJQ==
+X-Received: by 2002:a05:6214:768:: with SMTP id f8mr21614601qvz.1.1607349494844;
+        Mon, 07 Dec 2020 05:58:14 -0800 (PST)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id j124sm12475573qkf.113.2020.12.07.05.58.26
+        by smtp.gmail.com with ESMTPSA id v137sm4200331qka.110.2020.12.07.05.58.13
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 07 Dec 2020 05:58:26 -0800 (PST)
+        Mon, 07 Dec 2020 05:58:13 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v5 21/52] btrfs: handle btrfs_record_root_in_trans failure in create_subvol
-Date:   Mon,  7 Dec 2020 08:57:13 -0500
-Message-Id: <2864d12e55310c1699e5c566626b6447de75e88d.1607349282.git.josef@toxicpanda.com>
+Subject: [PATCH v5 14/52] btrfs: convert BUG_ON()'s in select_reloc_root() to proper errors
+Date:   Mon,  7 Dec 2020 08:57:06 -0500
+Message-Id: <b0b6cd2ab51ba5823d647d7ec9d654d94ae34287.1607349282.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.2
 In-Reply-To: <cover.1607349281.git.josef@toxicpanda.com>
 References: <cover.1607349281.git.josef@toxicpanda.com>
@@ -69,32 +69,86 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-btrfs_record_root_in_trans will return errors in the future, so handle
-the error properly in create_subvol.
+We have several BUG_ON()'s in select_reloc_root() that can be tripped if
+you have extent tree corruption.  Convert these to ASSERT()'s, because
+if we hit it during testing it really is bad, or could indicate a
+problem with the backref walking code.
+
+However if users hit these problems it generally indicates corruption,
+I've hit a few machines in the fleet that trip over these with clearly
+corrupted extent trees, so be nice and spit out an error message and
+return an error instead of bringing the whole box down.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/ioctl.c | 7 ++++++-
- 1 file changed, 6 insertions(+), 1 deletion(-)
+ fs/btrfs/relocation.c | 47 +++++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 43 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index af8d01659562..2d0782f7e0e0 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -714,7 +714,12 @@ static noinline int create_subvol(struct inode *dir,
- 	/* Freeing will be done in btrfs_put_root() of new_root */
- 	anon_dev = 0;
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 66515ccc04fe..05b80b9ab1e1 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -1996,8 +1996,33 @@ struct btrfs_root *select_reloc_root(struct btrfs_trans_handle *trans,
+ 		cond_resched();
+ 		next = walk_up_backref(next, edges, &index);
+ 		root = next->root;
+-		BUG_ON(!root);
+-		BUG_ON(!test_bit(BTRFS_ROOT_SHAREABLE, &root->state));
++
++		/*
++		 * If there is no root, then our references for this block are
++		 * incomplete, as we should be able to walk all the way up to a
++		 * block that is owned by a root.
++		 *
++		 * This path is only for SHAREABLE roots, so if we come upon a
++		 * non-SHAREABLE root then we have backrefs that resolve
++		 * improperly.
++		 *
++		 * Both of these cases indicate file system corruption, or a bug
++		 * in the backref walking code.
++		 */
++		if (!root) {
++			ASSERT(0);
++			btrfs_err(trans->fs_info,
++		"bytenr %llu doesn't have a backref path ending in a root",
++				  node->bytenr);
++			return ERR_PTR(-EUCLEAN);
++		}
++		if (!test_bit(BTRFS_ROOT_SHAREABLE, &root->state)) {
++			ASSERT(0);
++			btrfs_err(trans->fs_info,
++"bytenr %llu has multiple refs with one ending in a non shareable root",
++				  node->bytenr);
++			return ERR_PTR(-EUCLEAN);
++		}
  
--	btrfs_record_root_in_trans(trans, new_root);
-+	ret = btrfs_record_root_in_trans(trans, new_root);
-+	if (ret) {
-+		btrfs_put_root(new_root);
-+		btrfs_abort_transaction(trans, ret);
-+		goto fail;
-+	}
+ 		if (root->root_key.objectid == BTRFS_TREE_RELOC_OBJECTID) {
+ 			record_reloc_root_in_trans(trans, root);
+@@ -2008,8 +2033,22 @@ struct btrfs_root *select_reloc_root(struct btrfs_trans_handle *trans,
+ 		root = root->reloc_root;
  
- 	ret = btrfs_create_subvol_root(trans, new_root, root, new_dirid);
- 	if (!ret) {
+ 		if (next->new_bytenr != root->node->start) {
+-			BUG_ON(next->new_bytenr);
+-			BUG_ON(!list_empty(&next->list));
++			/*
++			 * We just created the reloc root, so we shouldn't have
++			 * ->new_bytenr set and this shouldn't be in the changed
++			 *  list.  If it is then we have multiple roots pointing
++			 *  at the same bytenr which indicates corruption, or
++			 *  we've made a mistake in the backref walking code.
++			 */
++			ASSERT(next->new_bytenr == 0);
++			ASSERT(list_empty(&next->list));
++			if (next->new_bytenr || !list_empty(&next->list)) {
++				btrfs_err(trans->fs_info,
++"bytenr %llu possibly has multiple roots pointing at the same bytenr %llu",
++					  node->bytenr, next->bytenr);
++				return ERR_PTR(-EUCLEAN);
++			}
++
+ 			next->new_bytenr = root->node->start;
+ 			btrfs_put_root(next->root);
+ 			next->root = btrfs_grab_root(root);
 -- 
 2.26.2
 

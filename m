@@ -2,92 +2,77 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 91C39C433FE
-	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Dec 2020 15:33:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 469D3C0018C
+	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Dec 2020 15:34:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 51B5422B40
-	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Dec 2020 15:33:46 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0D6DE2376F
+	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Dec 2020 15:34:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726370AbgLGPd1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 7 Dec 2020 10:33:27 -0500
-Received: from mx2.suse.de ([195.135.220.15]:45580 "EHLO mx2.suse.de"
+        id S1727020AbgLGPeI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 7 Dec 2020 10:34:08 -0500
+Received: from mga02.intel.com ([134.134.136.20]:53900 "EHLO mga02.intel.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725832AbgLGPd1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 7 Dec 2020 10:33:27 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1607355161; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=ktVWi8JVsTw4dCHJj921EkOhV3qyr1TCmSYGwj+nBEY=;
-        b=vV89ms5QIKH6s8mNkt6DeOvOE1OzjGj6ui1KilSK/GSePbcmIrEL+8QBWTCe6NOxY33kw+
-        Xz/52bK2vAhIbhBBtxBPvdkgfyPTtFdUn7slUmSCf6CN0pUUIcZ51sgmmPv/FH6jSpQa+N
-        yP6CAEU2zw57scLStEmzavps3aDYK4s=
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id DB1DBAB63;
-        Mon,  7 Dec 2020 15:32:40 +0000 (UTC)
-From:   Nikolay Borisov <nborisov@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 0/6] Overhaul free objectid code
-Date:   Mon,  7 Dec 2020 17:32:31 +0200
-Message-Id: <20201207153237.1073887-1-nborisov@suse.com>
-X-Mailer: git-send-email 2.25.1
+        id S1725774AbgLGPeH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 7 Dec 2020 10:34:07 -0500
+IronPort-SDR: pKYh/NlXU5QY//+3oB2NOslP0BXYNWziZf/fZyCnxA/cAQuhTRkEQLcfnSMfhqooVcrxlLYO7i
+ EU9UXZgu0ypA==
+X-IronPort-AV: E=McAfee;i="6000,8403,9827"; a="160762626"
+X-IronPort-AV: E=Sophos;i="5.78,400,1599548400"; 
+   d="scan'208";a="160762626"
+Received: from orsmga001.jf.intel.com ([10.7.209.18])
+  by orsmga101.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 07 Dec 2020 07:32:21 -0800
+IronPort-SDR: kbW/UfEi4Dtiv+Pinbnr+yvYUc4SZeynvhGwHV+gpCbyuvAJWsAofY0KRLiI3OA6kH7npDlUQs
+ j89qKjJ69ADg==
+X-IronPort-AV: E=Sophos;i="5.78,400,1599548400"; 
+   d="scan'208";a="407184186"
+Received: from smile.fi.intel.com (HELO smile) ([10.237.68.40])
+  by orsmga001-auth.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 07 Dec 2020 07:32:14 -0800
+Received: from andy by smile with local (Exim 4.94)
+        (envelope-from <andriy.shevchenko@linux.intel.com>)
+        id 1kmIVm-00CcUw-Tz; Mon, 07 Dec 2020 17:33:14 +0200
+Date:   Mon, 7 Dec 2020 17:33:14 +0200
+From:   Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+To:     Levi Yun <ppbuk5246@gmail.com>
+Cc:     akpm@linux-foundation.org, yury.norov@gmail.com,
+        richard.weiyang@linux.alibaba.com, christian.brauner@ubuntu.com,
+        arnd@arndb.de, jpoimboe@redhat.com, changbin.du@intel.com,
+        rdunlap@infradead.org, masahiroy@kernel.org,
+        gregkh@linuxfoundation.org, peterz@infradead.org,
+        peter.enderborg@sony.com, krzk@kernel.org,
+        brendanhiggins@google.com, keescook@chromium.org,
+        broonie@kernel.org, matti.vaittinen@fi.rohmeurope.com,
+        mhiramat@kernel.org, jpa@git.mail.kapsi.fi, nivedita@alum.mit.edu,
+        glider@google.com, orson.zhai@unisoc.com,
+        takahiro.akashi@linaro.org, clm@fb.com, josef@toxicpanda.com,
+        dsterba@suse.com, dushistov@mail.ru, linux-kernel@vger.kernel.org,
+        linux-arch@vger.kernel.org, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 1/8] lib/find_bit.c: Add find_last_zero_bit
+Message-ID: <20201207153314.GB4077@smile.fi.intel.com>
+References: <20201206064624.GA5871@ubuntu>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20201206064624.GA5871@ubuntu>
+Organization: Intel Finland Oy - BIC 0357606-4 - Westendinkatu 7, 02160 Espoo
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This series aims to make the free objectid code more straighforward. Currently
-the highest used objectid is used which implies that when btrfs_get_free_objectid
-is called the pre-increment operator is used. At the same time when looking
-at how highest_objectid is initialised in find_free_objectid it's using the,
-at first looko unusual, 'BTRFS_FREE_OBJECTID - 1'. Furthermore btrfs_find_free_objectid
-is badly named as it's used only in initializaion context.
+On Sun, Dec 06, 2020 at 03:46:24PM +0900, Levi Yun wrote:
+> Inspired find_next_*_bit and find_last_bit, add find_last_zero_bit
+> And add le support about find_last_bit and find_last_zero_bit.
 
-With the series applied the following is achieved:
- * The 2 functions related to free objectid have better naming which describes
- their semantic meaning.
+Use `git format-patch ...` tool. When create a series, be sure you run it:
+- with -v<n>, where <n> is a version number (makes sense from v2)
+- with --thread (it will be properly formed in a thread)
+- with --cover-letter (don't forget to file the patch 0/n message)
 
- * highest_objectid is renamed to free_objectid which clearly states what it's
- supposed to hold, also btrfs_get_free_objectid now returns the value and
- does a post-increment which seems more logical than the previous cod.
+-- 
+With Best Regards,
+Andy Shevchenko
 
- * Now it's not necessary to re-initialize free_objectid in create_subvol
- since that member is now consistently initialized when a given root is read
- for the first time in btrfs_init_fs_root->btrfs_init_root_free_objectid.
- Additionally in btrfs_init_root_free_objectid free_objectid is now initialized
- to BTRFS_FIRST_FREE_OBJECTID so it's self-explanatory.
-
-This series survived xfstest as well as a new xfstest which verifies precisely
-this functionality.
-
-
-Nikolay Borisov (6):
-  btrfs: Rename btrfs_find_highest_objectid to
-    btrfs_init_root_free_objectid
-  btrfs: Rename btrfs_find_free_objectid to btrfs_get_free_objectid
-  btrfs: Remove useless ASSERTS
-  btrfs: Rename highest_objectid to free_objectid
-  btrfs: Make free_objectid hold the next available objectid in the root
-  btrfs: Remove new_dirid argument from btrfs_create_subvol_root
-
- fs/btrfs/ctree.h            |  5 ++---
- fs/btrfs/disk-io.c          | 25 ++++++++++---------------
- fs/btrfs/disk-io.h          |  4 ++--
- fs/btrfs/free-space-cache.c |  2 +-
- fs/btrfs/inode.c            | 23 +++++++++++++----------
- fs/btrfs/ioctl.c            | 11 +++--------
- fs/btrfs/relocation.c       |  2 +-
- fs/btrfs/transaction.c      |  2 +-
- fs/btrfs/tree-log.c         |  3 +--
- 9 files changed, 34 insertions(+), 43 deletions(-)
-
---
-2.25.1
 

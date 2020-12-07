@@ -2,223 +2,146 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	MSGID_FROM_MTA_HEADER,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1EC69C433FE
-	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Dec 2020 17:56:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4745DC0018C
+	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Dec 2020 22:59:00 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id CD482235F8
-	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Dec 2020 17:56:34 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0A58E239EE
+	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Dec 2020 22:59:00 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726157AbgLGRz6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 7 Dec 2020 12:55:58 -0500
-Received: from mail-co1nam11on2066.outbound.protection.outlook.com ([40.107.220.66]:35041
-        "EHLO NAM11-CO1-obe.outbound.protection.outlook.com"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725901AbgLGRz6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 7 Dec 2020 12:55:58 -0500
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
- b=MAqMBELTkoVbVC56WtzEgL24t0xKeQkAGi82IUGe3t6IKwNQ0vTqKTtW6XpAuiz9qtm4ARp5CsZgD2mr65N0uI/ckQflevdhXho0WXvqQgoueOJ5KQ37klgT8xyJ9uV29/Ejdq+PlqYGpcqMIRZoAI2SapaVd9HWnGnKlsllFGo1fxP/o9GqQRZIUyZ3A7LkbFs0Z/Xv6AcN4PUxydQQuaoZRXm9Ll1jC7NoNq50csPdplaKXpyHZ+tCuxIUy3IjeQHyCZV/Q76skFGnBukJwBUDPdIH14tprmZHmVO9n2NO56SzT2RcfXnhensk47JQuTCllwopWYDok67w1s+BVw==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector9901;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=E3L5SAoiFePf01j7uMJH8tMoqCe6UjQDRVb2tIT8YW8=;
- b=C/a3tY8ondVO5IEkPEnECGTNkpxgoTxOFTWZatV6/TY0mbrGxOWJ7oIbEHC0ljVruinK7cuw9+dyBXm/GQJ78myuEt1/OiIdJ0n+r3Fk6k8nEp/VpDWJ7rQxB1Og5mYiuMYwOay+35tX6/Qe6nZfleS7GjUD3/XONN7scn2jG91qqmJRPZWxlnSL8ahuERnQwu76lyqBUHln/TCmAdxJam2FwrhoGf6/F64uHVLpKcxIpgESAy7HLlq+f3+Nd3nyCluzIdZwuvVc5d1/TAxx/4Atog6iFCgvHfYYVO87ZUslUjbPonLOlVLu151yD5SFT8vQiauGWnLdovzjqfTTMw==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=panasas.com; dmarc=pass action=none header.from=panasas.com;
- dkim=pass header.d=panasas.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=panasas.com;
- s=selector1;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=E3L5SAoiFePf01j7uMJH8tMoqCe6UjQDRVb2tIT8YW8=;
- b=goHImJO7zaocVTrt6yDNBtz7UCVjPencyTGP1QoWVkzuTosq8kOBuDHCnC36yyPkKaFTI9v4yzz2UThEmhIJpK4rtLVc8Yi+64zCla9j/sWfi3wZbrgc6Eib5VmloW23wEQ3vT9sggIeANxqsoPhu03WfUV/tf9T08zZTTagE7I=
-Authentication-Results: vger.kernel.org; dkim=none (message not signed)
- header.d=none;vger.kernel.org; dmarc=none action=none
- header.from=panasas.com;
-Received: from BYAPR08MB5109.namprd08.prod.outlook.com (2603:10b6:a03:67::33)
- by BYAPR08MB5207.namprd08.prod.outlook.com (2603:10b6:a03:72::33) with
- Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.3632.22; Mon, 7 Dec
- 2020 17:55:03 +0000
-Received: from BYAPR08MB5109.namprd08.prod.outlook.com
- ([fe80::f8b4:660c:838c:7040]) by BYAPR08MB5109.namprd08.prod.outlook.com
- ([fe80::f8b4:660c:838c:7040%7]) with mapi id 15.20.3632.023; Mon, 7 Dec 2020
- 17:55:03 +0000
-To:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From:   "Ellis H. Wilson III" <ellisw@panasas.com>
-Subject: Assertion in tree-log.c
-Message-ID: <7ffdf22e-352c-70e3-eb7c-86c591febe7c@panasas.com>
-Date:   Mon, 7 Dec 2020 12:55:00 -0500
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.11.0
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
-X-Originating-IP: [96.236.219.216]
-X-ClientProxiedBy: BL1PR13CA0426.namprd13.prod.outlook.com
- (2603:10b6:208:2c3::11) To BYAPR08MB5109.namprd08.prod.outlook.com
- (2603:10b6:a03:67::33)
+        id S1727550AbgLGW6t (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 7 Dec 2020 17:58:49 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35104 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726269AbgLGW6t (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Dec 2020 17:58:49 -0500
+Received: from mail-wm1-x330.google.com (mail-wm1-x330.google.com [IPv6:2a00:1450:4864:20::330])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F35FBC061793
+        for <linux-btrfs@vger.kernel.org>; Mon,  7 Dec 2020 14:58:08 -0800 (PST)
+Received: by mail-wm1-x330.google.com with SMTP id x22so654434wmc.5
+        for <linux-btrfs@vger.kernel.org>; Mon, 07 Dec 2020 14:58:08 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=4YvZDFeHVuNW2Fi5ulaDGg7YvUsrFN8E+IH0zHk7qsM=;
+        b=mZ6vHOLI7EiyDjyRyth62BsqenR4QJW2aBQkAKvzgUaJJcm1WbScYKVNa9jQa6Nu7T
+         czunfZe2/r1QLV2jPZ3Tp/FPNmJE/Ec4y7QV7jaNN+Y3QpYhZ8mknFZ4cz4k50aFaKc+
+         ai8VMI5Hyl8ESh8zi6+m+U1E1gonyGKuznUZjX2b4Z6f4B9Iv/GhnQ+haCUAGWy+cZHy
+         nxtFrVYFQR/RRH6/mrw1+h4YVYvoWL1ELhhFHYRb3UpriO8LqzjQBBc4PGrCLthaWByd
+         JjI3IiO5WAGfsWGCgrL9f5INMexFCq/cT9JhMjSDqzgQomMm/Nbjb2YFFjL9XCM8FrQG
+         k/ww==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=4YvZDFeHVuNW2Fi5ulaDGg7YvUsrFN8E+IH0zHk7qsM=;
+        b=Yv0ViRrwL1p4xq+x9MpM2sHc36QQz5ZMb327P22SIvJUK2j0xywWDZIio17kfKFyp/
+         k1MNA6g/471CkFS4s02E7bueIfSckUorAaAvgzuGBLyBrGcZXYcsJMOhvyAiaRQm3eaB
+         sLX7Kak6tSQMnQU4OMo6nyTSNm61KZTWK+hWl3ODp+Q2YtwwN5caFVLLkrSithMpU5De
+         A1u3MMoh9/OXaSa4X26aXTvIFkipDM8UPFt+yDrhv0eUKwBKEovAu0aohrbFa3GucsP6
+         mZhsbAQy+RmwnKvCQ06FlhtmEGWu2qXm9sd9X6X6Mla4kpN83O8NsI1+J6/kWHxIlnv3
+         7uvw==
+X-Gm-Message-State: AOAM532lTI0vq728odhOpDNcSYUffXyTG+q+a1CFn92zRs2j0rsCJYNJ
+        unDqMdetY+ITlhJVylgD1cCGgBQKbMGb4W1tdDHgG6ZES5FrcA==
+X-Google-Smtp-Source: ABdhPJzplB5qsEbV/l9OK4hWXF0sszCyeESWijTXGGXOwR5Qa7hSyHNV0wn9467uQIIQcq6PVhJEqe/ce12AzgCJpM8=
+X-Received: by 2002:a1c:7710:: with SMTP id t16mr1030706wmi.11.1607381887707;
+ Mon, 07 Dec 2020 14:58:07 -0800 (PST)
 MIME-Version: 1.0
-X-MS-Exchange-MessageSentRepresentingType: 1
-Received: from [192.168.1.2] (96.236.219.216) by BL1PR13CA0426.namprd13.prod.outlook.com (2603:10b6:208:2c3::11) with Microsoft SMTP Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.3654.10 via Frontend Transport; Mon, 7 Dec 2020 17:55:02 +0000
-X-MS-PublicTrafficType: Email
-X-MS-Office365-Filtering-Correlation-Id: e5a0dfb6-9a3b-42cf-491d-08d89ad93942
-X-MS-TrafficTypeDiagnostic: BYAPR08MB5207:
-X-Microsoft-Antispam-PRVS: <BYAPR08MB52073CC781FC45B2C2FFA9C7C2CE0@BYAPR08MB5207.namprd08.prod.outlook.com>
-X-MS-Oob-TLC-OOBClassifiers: OLM:758;
-X-MS-Exchange-SenderADCheck: 1
-X-Microsoft-Antispam: BCL:0;
-X-Microsoft-Antispam-Message-Info: 55n1ZkD3k8V8kK5yVf4IS5PS6h4L7IhjefUjoY93IlIWsGedKHLpu508OVpJF7JU9R4F3sx+QMWCuFTnO9oElb+gbyjXVq/L3JKzMXrc7HzUPujeQM8EGi9bGqUfxED2kn5TI1dtKh1HegicICaA1ccCHYFNERpT72BZ2zYs6JIWdUhZdSd+LTPNlpSX1L50ujgiBSyJ0d21+HeEgv9J0ZrtZulrtczqlvM67hLHt6jVs+LQeR+z7yZS1pcMvO7yKGDgUO/0oo1MPwWYjYWNigyJOWZH9jp8J9L+wCpd7lBS1tmM/FSJEm7vkCHhip1Zm5IgRYltYRay3xbdydSGxMlX85isd9PYlMxIend03G2xNjpjb9CPmjjkBztmnLWxihatiEN/UFTmSncytsUIjbAyUAPO/gWEvhIVCd1TGoGpS+LAtQfSpiw9L5zrhSsHSUKRSEnzdQ+BGSRqxofyWeGe6KUtp15xM1CuU6/gsGBH2Rb2dXkXQ0apdSSSklz8
-X-Forefront-Antispam-Report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:BYAPR08MB5109.namprd08.prod.outlook.com;PTR:;CAT:NONE;SFS:(396003)(366004)(346002)(376002)(136003)(39840400004)(316002)(31696002)(86362001)(66946007)(66556008)(186003)(45080400002)(16576012)(26005)(966005)(16526019)(8936002)(6916009)(956004)(83380400001)(5660300002)(6486002)(2616005)(52116002)(478600001)(66476007)(31686004)(36756003)(2906002)(8676002)(43740500002)(45980500001);DIR:OUT;SFP:1101;
-X-MS-Exchange-AntiSpam-MessageData: =?utf-8?B?UkhMRHk2NGtJUVpoUGJlc0Y4b2pwVS9BcGh0ZXhmVVI4bDJSd20vTGt2Vk8y?=
- =?utf-8?B?MFYvNlJKNW4zMTcvQ3ZQbXZZNmZEOTZzejFjaS9NcVpodU1aencveG1oMmZk?=
- =?utf-8?B?ZnB2OWpXdU9zbGZQUHQyOVB3NjA5ajhvQmFRRkxWdTJoajVnbU55eW0ySkF0?=
- =?utf-8?B?ZzNGOVd4RlVFVytQQWJrQnFZWGNkNnB1aUltb3ZVaEhpWXNMNTNJN09GLy90?=
- =?utf-8?B?dExzenJiSGdqU0tQRHJPZlZOMVdtNUcwRnBDYisrZUpnTVo0NU5VazdRaGht?=
- =?utf-8?B?TUNNVGxzVnMwZExwM05pcGpuUURGdkVFOVRmVVpMV2YrS0crR2dhdHNjWkho?=
- =?utf-8?B?RUUvVmNVdENDV1l4aHVQeWFXQ3l1aEJGVWtLMHJYM3VBNzdMb3FjbXZsYUsr?=
- =?utf-8?B?NmVodWMzenZVbytJanh3Nmd3WWljVzc5dDhtSnAzQ0dqR0QzWFhua001MUpp?=
- =?utf-8?B?OTZCbnp4NGVsc28rZlhGd1hFZGtwYnNwbS9tSmlUem8xOEdkelF5ek1nZDVD?=
- =?utf-8?B?SUQySzJSVytWTWhCNmJvU094UnJ5bkQxdUJXSGwxMk9YZ1NpTTlXVjVHOUQw?=
- =?utf-8?B?TjdQdjZndnA2WEhOaCtJSmVJM3FrV2syTFp5V1pzbmFlZnFFQjd6aVo0N1cz?=
- =?utf-8?B?cmtWUHJzbHQ3dGtGbGdtUUlFMkF3QzBWSDNRVCswbHgvWGFDSk1nZDNYSm92?=
- =?utf-8?B?VnpYRWViODRKb3ZuSExXUjhzY2g1ZUkxeGF3WEJoWXF3c21qeTBDd29SdkF1?=
- =?utf-8?B?QzZPUC9ncVRFN2o1cjFCa2tpRVlmM09xeTZaclIzUU1ObllNcmZIdWZPVDRK?=
- =?utf-8?B?bmtqa2xPQmM5SUlDci9NVThBWjJqWldRN2tON3RNSHUva2pZc014ejlnaGhH?=
- =?utf-8?B?ZDlXYlYzUlE4VjBwM1E3ZlN0cURGbWJyNFNvOGtQNkgyRWVUUEZiK1NLT2JJ?=
- =?utf-8?B?Y0I5NmxmcGoyTmhMVCttK3J0ajVuOUFES3dwWWR1ZFAvaStBSlRpNHNlNmEz?=
- =?utf-8?B?S2FobTJhOHhSYXZ4VFpuWmFRN3dqbzFzSkJiVDdSUExvaFh2TWJmU1ZWNTh6?=
- =?utf-8?B?aDlvYXVhU3ZTbE03MEhPOVk2QkNXb25xb1hscVFZb1VMWEpxZUpzWU1QenE4?=
- =?utf-8?B?V0ZZeU11WmdsY0tmUytCbnZHM2dBdlFsdUdNQW1mUytpQ0d3R0R4L3BkVzN2?=
- =?utf-8?B?eHg1NXBEZlRXMFVzUnVBbnBVOUVObjN0WnZLMHE5cEw1VjZYdnFEZzF4K0JQ?=
- =?utf-8?B?bm1HcEpXM1dEZE5CTkVtTmIwTEZnWXk3K2t3K1ovdjRDSVpjVlRGTWFIYS9k?=
- =?utf-8?Q?j9aQSec6TCx0HewJxoTlm2Vj7QguBUhD4j?=
-X-OriginatorOrg: panasas.com
-X-MS-Exchange-CrossTenant-AuthSource: BYAPR08MB5109.namprd08.prod.outlook.com
-X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-OriginalArrivalTime: 07 Dec 2020 17:55:03.1311
- (UTC)
-X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
-X-MS-Exchange-CrossTenant-Id: acf01c9d-c699-42af-bdbb-44bf582e60b0
-X-MS-Exchange-CrossTenant-Network-Message-Id: e5a0dfb6-9a3b-42cf-491d-08d89ad93942
-X-MS-Exchange-CrossTenant-MailboxType: HOSTED
-X-MS-Exchange-CrossTenant-UserPrincipalName: Z+nblyoq52ptRwPKePYVdkrtPUw+HRzYhlR95hC0HWSij3fhDYsZ9XecO0r1WyKDeJUXuwBrbVC5NNlB0HBLCg==
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: BYAPR08MB5207
+References: <CAAdkh9xzT=wYY3jui3d4xF4kp20tB5EiL-KBJdMK69h1oWO3ig@mail.gmail.com>
+In-Reply-To: <CAAdkh9xzT=wYY3jui3d4xF4kp20tB5EiL-KBJdMK69h1oWO3ig@mail.gmail.com>
+From:   Chris Murphy <lists@colorremedies.com>
+Date:   Mon, 7 Dec 2020 15:57:51 -0700
+Message-ID: <CAJCQCtTXDufgm=ZYR4K7+-O_g=ztR9DDTUxCM67mKQRPGtWrWQ@mail.gmail.com>
+Subject: Re: data Raid6 with metadata Raid1c3 appears unrecoverable
+To:     Marcus Bannerman <m.bannerman@gmail.com>
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi all,
+On Mon, Dec 7, 2020 at 6:35 AM Marcus Bannerman <m.bannerman@gmail.com> wrote:
+>
+> Help!
+> I have an array of 4x6Tb and 4x3Tb disks on BTRFS. I noticed I was
+> getting csum errors in dmesg, and found that one of the 3Tb drives was
+> failing. Smartctl reported a lot of read errors on one device. Short
+> tests were failing at 90%, but SMART status was still OK(!). I tried
+> removing the drive with a plan to then rebalance as I don't currently
+> have a spare drive.
+>
+> $ btrfs devices remove /dev/sdX /raid
+> ERROR: error removing device 'missing': Input/output error
 
-We've hit this assertion a few times, and I wanted to know if it was a 
-known issue:
+There should be kernel messages at this same time.
 
-Dec 05 08:53:51 6afa1e4331fa46 kernel: assertion failed: ret == 0, file: 
-fs/btrfs/tree-log.c, line: 4286
-Dec 05 08:53:51 6afa1e4331fa46 kernel: ------------[ cut here ]------------
-Dec 05 08:53:51 6afa1e4331fa46 kernel: kernel BUG at fs/btrfs/ctree.h:3295!
-Dec 05 08:53:51 6afa1e4331fa46 kernel: invalid opcode: 0000 [#1] SMP PTI
-Dec 05 08:53:51 6afa1e4331fa46 kernel: Modules linked in: af_packet_diag 
-netlink_diag sctp_diag sctp libcrc32c tcp_diag udp_diag raw_diag 
-inet_diag unix_diag af_packet binfmt_misc bonding iscsi_ibft 
-iscsi_boot_sysfs msr nls_iso8859_1 nls_cp437 vfat fat dax_pmem btrfs(O)
-ipmi_ssif xor iTCO_wdt nd_pmem device_dax nd_btt raid6_pq 
-iTCO_vendor_support intel_rapl ib_core skx_edac x86_pkg_temp_thermal 
-intel_powerclamp coretemp raid0 kvm_intel kvm irqbypass crct10dif_pclmul 
-crc32_pclmul crc32c_intel ghash_clmulni_intel pcbc aesni_intel 
-aes_x86_64 crypto_simd glue_helper cryptd ioatdma md_mod ipmi_si nfit 
-i2c_i801 lpc_ich mei_me shpchp ipmi_devintf mei dca pcspkr wmi joydev 
-ipmi_msghandler libnvdimm acpi_pad button hid_generic usbhid ast 
-i2c_algo_bit drm_kms_helper syscopyarea sysfillrect sysimgblt xhci_pci 
-i40e(O) fb_sys_fops xhci_hcd
-Dec 05 08:53:52 6afa1e4331fa46 kernel:  ttm ptp pps_core nvme drm ahci 
-drm_panel_orientation_quirks nvme_core usbcore libahci sg dm_multipath 
-dm_mod scsi_dh_rdac scsi_dh_emc scsi_dh_alua efivarfs
-Dec 05 08:53:52 6afa1e4331fa46 kernel: CPU: 2 PID: 6897 Comm: iopathv4 
-Tainted: G           O     4.12.14-lp150.11-default #1 openSUSE Leap 
-15.0 (unreleased)
-Dec 05 08:53:52 6afa1e4331fa46 kernel: task: ffff8808351146c0 
-task.stack: ffffc90008704000
-Dec 05 08:53:52 6afa1e4331fa46 kernel: RIP: 
-0010:assfail.constprop.28+0x18/0x1a [btrfs]
-Dec 05 08:53:52 6afa1e4331fa46 kernel: RSP: 0018:ffffc90008707b08 
-EFLAGS: 00010296
-Dec 05 08:53:52 6afa1e4331fa46 kernel: RAX: 0000000000000041 RBX: 
-ffff880117eb0990 RCX: 0000000000000000
-Dec 05 08:53:52 6afa1e4331fa46 kernel: RDX: ffff88085c09fd40 RSI: 
-ffff88085c097a68 RDI: ffff88085c097a68
-Dec 05 08:53:52 6afa1e4331fa46 kernel: RBP: 0000000000000ef2 R08: 
-0000000000002dde R09: 0000000000000003
-Dec 05 08:53:52 6afa1e4331fa46 kernel: R10: 0000000000000189 R11: 
-0000000000000001 R12: 0000160000000000
-Dec 05 08:53:52 6afa1e4331fa46 kernel: R13: 0000000000000096 R14: 
-ffff880000000000 R15: ffff880141d39690
-Dec 05 08:53:52 6afa1e4331fa46 kernel: FS:  00007f7ca3d96700(0000) 
-GS:ffff88085c080000(0000) knlGS:0000000000000000
-Dec 05 08:53:52 6afa1e4331fa46 kernel: CS:  0010 DS: 0000 ES: 0000 CR0: 
-0000000080050033
-Dec 05 08:53:52 6afa1e4331fa46 kernel: CR2: 00007f296c031c20 CR3: 
-000000083120a003 CR4: 00000000007606e0
-Dec 05 08:53:52 6afa1e4331fa46 kernel: DR0: 0000000000000000 DR1: 
-0000000000000000 DR2: 0000000000000000
-Dec 05 08:53:52 6afa1e4331fa46 kernel: DR3: 0000000000000000 DR6: 
-00000000fffe0ff0 DR7: 0000000000000400
-Dec 05 08:53:52 6afa1e4331fa46 kernel: PKRU: 55555554
-Dec 05 08:53:52 6afa1e4331fa46 kernel: Call Trace:
-Dec 05 08:53:52 6afa1e4331fa46 kernel:  copy_items+0x9b4/0xbe0 [btrfs]
-Dec 05 08:53:52 6afa1e4331fa46 kernel:  btrfs_log_inode+0x775/0xe00 [btrfs]
-Dec 05 08:53:52 6afa1e4331fa46 kernel: 
-btrfs_log_inode_parent+0x249/0xd30 [btrfs]
-Dec 05 08:53:52 6afa1e4331fa46 kernel:  ? kmem_cache_alloc+0x1a8/0x510
-Dec 05 08:53:52 6afa1e4331fa46 kernel:  ? 
-__filemap_fdatawrite_range+0xa3/0xe0
-Dec 05 08:53:52 6afa1e4331fa46 kernel:  ? 
-__filemap_fdatawrite_range+0xb1/0xe0
-Dec 05 08:53:52 6afa1e4331fa46 kernel:  ? wait_current_trans+0x1f/0xd0 
-[btrfs]
-Dec 05 08:53:52 6afa1e4331fa46 kernel:  ? join_transaction+0x22/0x3f0 
-[btrfs]
-Dec 05 08:53:52 6afa1e4331fa46 kernel:  btrfs_log_dentry_safe+0x58/0x80 
-[btrfs]
-Dec 05 08:53:52 6afa1e4331fa46 kernel:  btrfs_sync_file+0x2dc/0x420 [btrfs]
-Dec 05 08:53:52 6afa1e4331fa46 kernel:  do_fsync+0x38/0x60
-Dec 05 08:53:52 6afa1e4331fa46 kernel:  SyS_fsync+0xc/0x10
-Dec 05 08:53:52 6afa1e4331fa46 kernel:  do_syscall_64+0x7b/0x140
-Dec 05 08:53:52 6afa1e4331fa46 kernel: 
-entry_SYSCALL_64_after_hwframe+0x3d/0xa2
-Dec 05 08:53:52 6afa1e4331fa46 kernel: RIP: 0033:0x7f7caaf8f5fc
-Dec 05 08:53:52 6afa1e4331fa46 kernel: RSP: 002b:00007f7ca3d93990 
-EFLAGS: 00000293 ORIG_RAX: 000000000000004a
-Dec 05 08:53:52 6afa1e4331fa46 kernel: RAX: ffffffffffffffda RBX: 
-0000000000000000 RCX: 00007f7caaf8f5fc
-Dec 05 08:53:52 6afa1e4331fa46 kernel: RDX: 0000000000000000 RSI: 
-0000000000080002 RDI: 0000000000000111
-Dec 05 08:53:52 6afa1e4331fa46 kernel: RBP: 0000000000000000 R08: 
-0000000000001777 R09: 00000000eddb1d58
-Dec 05 08:53:52 6afa1e4331fa46 kernel: R10: fffffffffffffa88 R11: 
-0000000000000293 R12: 00007f7ca3d93a50
-Dec 05 08:53:52 6afa1e4331fa46 kernel: R13: 0000000001bea4e0 R14: 
-00000000eddb1d58 R15: f5402026a5ae13a5
-Dec 05 08:53:52 6afa1e4331fa46 kernel: Code: 80 a0 48 89 fe 48 c7 c7 30 
-27 81 a0 e8 61 70 9a e0 0f 0b 89 f1 48 c7 c2 3e bf 80 a0 48 89 fe 48 c7 
-c7 00 29 81 a0 e8 47 70 9a e0 <0f> 0b 0f 1f 44 00 00 41 57 41 56 41 be 
-f4 ff ff ff 41 55 41 54
-Dec 05 08:53:52 6afa1e4331fa46 kernel: RIP: 
-assfail.constprop.28+0x18/0x1a [btrfs] RSP: ffffc90008707b08
-Dec 05 08:53:52 6afa1e4331fa46 kernel: ---[ end trace 13cc0fa206f6ac86 ]---
+Also, this is quite an expensive operation because it involves a file
+system shrink, and restripe to the remaining devices. You're better
+off leaving it degraded,rw  while waiting for the replacement drive
+and using 'btrfs replace' to replace the bad drive.
 
 
-The closest thing I can find to it is this patch, which appears to be 
-archived and open:
+>
+> A lot of searching doesn't seem to give any advice on how to address
+> this. Most are comments that you should wipe, but I'm hoping the raid
+> will allow a partial recovery to save me time.
+>
+> So I tried running a scrub, to see if it can fix the system to allow
+> me to remove the drive, maybe the errors are localised as Smartctl
+> reports the drive is still "OK" despite increasing read errors, then I
+> can remove the drive. The scrub starts reporting a lot of
+> uncorrectable errors, dmesg is full of errors from the device that is
+> failing. The scrub slows considerably and is telling me the scrub will
+> take at least a week to complete (5.7Tb of data on the array) and the
+> ETA is moving further away.
+>
+> So cancel the scrub, I shut the computer down, pull the drive, and try
+> removing the device using the following command:
+>
+> $ btrfs devices remove missing /raid
+> ERROR: error removing device 'missing': Input/output error
+>
+> Still no luck. Why can't I remove a failing drive from the array?
 
-https://lore.kernel.org/linux-btrfs/20190916151307.GB1645163@kroah.com/T/
+Need dmesg. Ideally all kernel messages from the start of the problem,
+e.g. journalctl --since=-5d -o short-monotonic --no-hostname -k >
+journal.txt
 
-Sorry if my search-engine-skills are failing me and there is a better 
-matching bug that's been fixed already for this.
 
-Best,
 
-ellis
+
+>
+> Performing a scrub at this point gives 100% uncorrectable errors.
+>
+> I can still mount the drive, and access the data. I get errors like
+> this on mount:
+>
+> [13044.573841] BTRFS warning (device sdd): devid 7 uuid
+> 27b4ab26-ac60-4bc7-a8a7-ab1d87394512 is missing
+> [13044.604734] BTRFS info (device sdd): bdev (efault) errs: wr
+> 15816919, rd 1298069, flush 1, corrupt 4912020, gen 0
+> [13044.604736] BTRFS info (device sdd): bdev /dev/sde errs: wr 0, rd
+> 14, flush 0, corrupt 0, gen 0
+> [13053.524470] BTRFS error (device sdd): csum mismatch on free space cache
+
+That's space cache v1, which is stored in data block groups, which
+means it's raid6, and subject to reconstruction by parity. And that
+this is failing suggests at least one instance of bad parity, which
+suggests something like a crash or power fail has happened and a scrub
+hasn't been done since. So now it's in a difficult situation. Ideally
+this setup should use space_cache=v2 which stores it as a b-tree in
+metadata block groups, and is overall more resilient as well as being
+subject to raid1c3 in this case.
+
+But yeah don't change it now. The array needs to be healthy first. It
+is possible to mount with 'clear_cache,nospace_cache' to avoid using
+space cache entirely for now. That'll stop using the problem cache and
+won't create a new one.
+
+
+-- 
+Chris Murphy

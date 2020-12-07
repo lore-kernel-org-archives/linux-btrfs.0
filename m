@@ -2,119 +2,106 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-18.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 57516C197BF
-	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Dec 2020 15:34:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id ACFC1C1B087
+	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Dec 2020 16:05:15 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 2CE0B23730
-	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Dec 2020 15:34:24 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7B35223770
+	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Dec 2020 16:05:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727059AbgLGPeO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 7 Dec 2020 10:34:14 -0500
-Received: from mx2.suse.de ([195.135.220.15]:46452 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726182AbgLGPeO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 7 Dec 2020 10:34:14 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1607355162; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=SIjzYj4Pzn4wR0UkP0MMfeaQ93ixO46s+Upet0GlLDA=;
-        b=h6qSpTGiL8vRAPRvG8oNLtv9YaC6EaoprVZBK6cYwjmuhSJHfIe7DQ8sMBAJfwGg5XbHKE
-        zPooY4UqbKmUPXfvhwN3Nc6mxjJphjmciZ4IPGiUeI1AF++3dxFgDU53VFhZwH3BrVvfYV
-        OJk95/csF9Cwvw8ZR0dwFxnxLWdeljo=
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 73398ADB3;
-        Mon,  7 Dec 2020 15:32:42 +0000 (UTC)
-From:   Nikolay Borisov <nborisov@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 6/6] btrfs: Remove new_dirid argument from btrfs_create_subvol_root
-Date:   Mon,  7 Dec 2020 17:32:37 +0200
-Message-Id: <20201207153237.1073887-7-nborisov@suse.com>
-X-Mailer: git-send-email 2.25.1
-In-Reply-To: <20201207153237.1073887-1-nborisov@suse.com>
-References: <20201207153237.1073887-1-nborisov@suse.com>
+        id S1726439AbgLGQFE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 7 Dec 2020 11:05:04 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55054 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725822AbgLGQFD (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Dec 2020 11:05:03 -0500
+Received: from mail-wr1-x441.google.com (mail-wr1-x441.google.com [IPv6:2a00:1450:4864:20::441])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8B24BC061793;
+        Mon,  7 Dec 2020 08:04:23 -0800 (PST)
+Received: by mail-wr1-x441.google.com with SMTP id 91so9338021wrj.7;
+        Mon, 07 Dec 2020 08:04:23 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=Z92GK4OXVwUQT79aqDBhQQ9NCRqwmmAZyVeWIp75xvo=;
+        b=S11lgTV+a/yAV00TyeS8xdTeEIQZ4c2K41YLqYAZ5i4fcH2+TmCVDraLhCurj2ktna
+         sL/86ZzKVsA6XV3oidwtoZaRpVKrT7Y5gzed8ABaiH1zT5drEKWykdz7GacQCVeOn1nC
+         1bdlfSOBf6qTimpeKb7xxxUaLfltgdcId5rAkPYVFPHjeXTJxXpn982VHjpLoJICjp1Z
+         TmSkkHesaXDiA5RkgTl/G1ZI5+cC9Pmfk9JH22G1NfcPqpU6C02j3pxzAZf7jywt1JmK
+         NLmyVcw9x/3Za3CSVO8XGYsc8yRXdjjgC0N2cNdtwWcmMasd8voLwlkVZ6/C6Y4gNaW7
+         QpEQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=Z92GK4OXVwUQT79aqDBhQQ9NCRqwmmAZyVeWIp75xvo=;
+        b=BsCPtJ5LKj4Acqa/xUv5Rnb31bJ6gsSEcHkrMBR3L9RbtpTJTQVaV6BEJctxN1thTj
+         dcW8/Q6kZ9y81EaPhNrjNJHZEiSKIoLHetLu0K+kIjD2qsU9R4MSuZsTqdYKics8UyKI
+         H9tiRZOCV+ywqRqzysu7SUvJhU5ZjzgjeQ83wQpLTl9JjA9GQ+BpK9wBqZt3zggV88r0
+         nhRy0EKvpYG6BauIPdyzHxtbwBpO5ZfuiEqr6fJnRTtJCArFIrTg6YnN4eY3MBpFSiZK
+         AwhYKJqy75Nk7zHLRZwKqP7Frq6RyoNhSMcsTi3b2rSETwvc5+RL7fDRDvzPNoL14tvk
+         FSjQ==
+X-Gm-Message-State: AOAM531XURm2TB0acIlpBE/b+PVtSmRshcQJVHWgce1Z9ZkHpL6uFJQX
+        9wxQzXY8qmdnM4csTTR69dwZxgxRziiyyCtFjh0=
+X-Google-Smtp-Source: ABdhPJz9o+JDfjHpZuXCYw1mCEThGEyiejzyd/9TE/vXzxb6ycsAu7N/7g+/pbtMnaXRgY4RtaxwHUGX2cTCkWlKZLU=
+X-Received: by 2002:adf:90f1:: with SMTP id i104mr17108405wri.348.1607357062109;
+ Mon, 07 Dec 2020 08:04:22 -0800 (PST)
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+References: <20201206064624.GA5871@ubuntu> <20201207153314.GB4077@smile.fi.intel.com>
+In-Reply-To: <20201207153314.GB4077@smile.fi.intel.com>
+From:   Yun Levi <ppbuk5246@gmail.com>
+Date:   Tue, 8 Dec 2020 01:04:10 +0900
+Message-ID: <CAM7-yPR5mEY3SZGoxPKM9CZOhyDOAFRha4=GwoxkA4SGk+z6qQ@mail.gmail.com>
+Subject: Re: [PATCH v2 1/8] lib/find_bit.c: Add find_last_zero_bit
+To:     Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+Cc:     Andrew Morton <akpm@linux-foundation.org>,
+        Yury Norov <yury.norov@gmail.com>,
+        richard.weiyang@linux.alibaba.com, christian.brauner@ubuntu.com,
+        Arnd Bergmann <arnd@arndb.de>,
+        Josh Poimboeuf <jpoimboe@redhat.com>, rdunlap@infradead.org,
+        masahiroy@kernel.org, Greg KH <gregkh@linuxfoundation.org>,
+        peterz@infradead.org, peter.enderborg@sony.com, krzk@kernel.org,
+        Brendan Higgins <brendanhiggins@google.com>,
+        Kees Cook <keescook@chromium.org>, broonie@kernel.org,
+        matti.vaittinen@fi.rohmeurope.com, mhiramat@kernel.org,
+        jpa@git.mail.kapsi.fi, nivedita@alum.mit.edu,
+        Alexander Potapenko <glider@google.com>, orson.zhai@unisoc.com,
+        Takahiro Akashi <takahiro.akashi@linaro.org>, clm@fb.com,
+        Josef Bacik <josef@toxicpanda.com>, dsterba@suse.com,
+        dushistov@mail.ru,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        linux-arch@vger.kernel.org, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-It's no longer used. While at it also remove new_dirid in create_subvol
-as it's used in a single place and open code it. No functional changes.
+> Use `git format-patch ...` tool. When create a series, be sure you run it:
+> - with -v<n>, where <n> is a version number (makes sense from v2)
+> - with --thread (it will be properly formed in a thread)
+> - with --cover-letter (don't forget to file the patch 0/n message)
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
- fs/btrfs/ctree.h | 3 +--
- fs/btrfs/inode.c | 3 +--
- fs/btrfs/ioctl.c | 5 ++---
- 3 files changed, 4 insertions(+), 7 deletions(-)
+Thanks for your advice. Then Should I submit this patch again>
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index e8652c73c189..616a4c6fefc3 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3089,8 +3089,7 @@ int btrfs_set_extent_delalloc(struct btrfs_inode *inode, u64 start, u64 end,
- 			      struct extent_state **cached_state);
- int btrfs_create_subvol_root(struct btrfs_trans_handle *trans,
- 			     struct btrfs_root *new_root,
--			     struct btrfs_root *parent_root,
--			     u64 new_dirid);
-+			     struct btrfs_root *parent_root);
-  void btrfs_set_delalloc_extent(struct inode *inode, struct extent_state *state,
- 			       unsigned *bits);
- void btrfs_clear_delalloc_extent(struct inode *inode,
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index aea76abd83ba..b82c5bde6a3e 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -8577,8 +8577,7 @@ static int btrfs_truncate(struct inode *inode, bool skip_writeback)
-  */
- int btrfs_create_subvol_root(struct btrfs_trans_handle *trans,
- 			     struct btrfs_root *new_root,
--			     struct btrfs_root *parent_root,
--			     u64 new_dirid)
-+			     struct btrfs_root *parent_root)
- {
- 	struct inode *inode;
- 	int err;
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 58b9a27559c0..db29c1b54daa 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -606,7 +606,6 @@ static noinline int create_subvol(struct inode *dir,
- 	int err;
- 	dev_t anon_dev = 0;
- 	u64 objectid;
--	u64 new_dirid = BTRFS_FIRST_FREE_OBJECTID;
- 	u64 index = 0;
- 
- 	root_item = kzalloc(sizeof(*root_item), GFP_KERNEL);
-@@ -693,7 +692,7 @@ static noinline int create_subvol(struct inode *dir,
- 	free_extent_buffer(leaf);
- 	leaf = NULL;
- 
--	btrfs_set_root_dirid(root_item, new_dirid);
-+	btrfs_set_root_dirid(root_item, BTRFS_FIRST_FREE_OBJECTID);
- 
- 	key.objectid = objectid;
- 	key.offset = 0;
-@@ -716,7 +715,7 @@ static noinline int create_subvol(struct inode *dir,
- 
- 	btrfs_record_root_in_trans(trans, new_root);
- 
--	ret = btrfs_create_subvol_root(trans, new_root, root, new_dirid);
-+	ret = btrfs_create_subvol_root(trans, new_root, root);
- 	btrfs_put_root(new_root);
- 	if (ret) {
- 		/* We potentially lose an unused inode item here */
--- 
-2.25.1
-
+On Tue, Dec 8, 2020 at 12:32 AM Andy Shevchenko
+<andriy.shevchenko@linux.intel.com> wrote:
+>
+> On Sun, Dec 06, 2020 at 03:46:24PM +0900, Levi Yun wrote:
+> > Inspired find_next_*_bit and find_last_bit, add find_last_zero_bit
+> > And add le support about find_last_bit and find_last_zero_bit.
+>
+> Use `git format-patch ...` tool. When create a series, be sure you run it:
+> - with -v<n>, where <n> is a version number (makes sense from v2)
+> - with --thread (it will be properly formed in a thread)
+> - with --cover-letter (don't forget to file the patch 0/n message)
+>
+> --
+> With Best Regards,
+> Andy Shevchenko
+>
+>

@@ -2,64 +2,64 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+X-Spam-Status: No, score=-16.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C79FEC2BB48
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Dec 2020 16:25:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EEAEDC433FE
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Dec 2020 16:25:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 98D2623AFA
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Dec 2020 16:25:00 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BD4F623A75
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Dec 2020 16:25:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730285AbgLHQYx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 8 Dec 2020 11:24:53 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55410 "EHLO
+        id S1730297AbgLHQZ1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 8 Dec 2020 11:25:27 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55504 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729035AbgLHQYw (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Dec 2020 11:24:52 -0500
+        with ESMTP id S1730210AbgLHQZ1 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Dec 2020 11:25:27 -0500
 Received: from mail-qk1-x741.google.com (mail-qk1-x741.google.com [IPv6:2607:f8b0:4864:20::741])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B09C5C06179C
-        for <linux-btrfs@vger.kernel.org>; Tue,  8 Dec 2020 08:24:11 -0800 (PST)
-Received: by mail-qk1-x741.google.com with SMTP id n142so6264768qkn.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 08 Dec 2020 08:24:11 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A8890C06138C
+        for <linux-btrfs@vger.kernel.org>; Tue,  8 Dec 2020 08:24:20 -0800 (PST)
+Received: by mail-qk1-x741.google.com with SMTP id 1so16481530qka.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 08 Dec 2020 08:24:20 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references:mime-version
          :content-transfer-encoding;
-        bh=f34mcb9XXh/cL7nrpP5fwhxQKsWJY1NBHrErhfZO+94=;
-        b=bhI8v3Q2VFj5O+TB0acVdqHadkZdGNspoasf5I9IGTeny6n1MmdXmyLXys6WVBjaZS
-         0OuaOh3tYA7RCigcDsRDyKRoCt+H1VvbnCDKV6XK/4+V9WbqITTytxcleIwQRJlRENEP
-         2E0CZvXjP9Znh5F6qdQntCkoVYLhiq8Sht7HUz420mUEPjH49kK0paKiODzUy6uWpCqd
-         HCfJrgiqyughw/uRQslv91HcrAQDMw84sZ0rFYNVELiu0vUddvDYFMpAtxR9RImZbyi8
-         XFcf4vYPPqslre4Lk9ZTZudE+GrE3mbLD3cRO76Cvz9AzTLDMHilqbC7YchPktIvov1P
-         Mu8Q==
+        bh=DMvNnOrRtu4yLJxhDVPBS7UDJWnYlz36sTOfG9aJkV8=;
+        b=hA433fFe3SsJc4KO3meV0Y8DmXxvrbP/9oHcgevrIcUFPipsTCpLlOnqs/0SpmoLEQ
+         Tto4zOF7xBlPBLl9aN3X0jbEGjkMFzbI6GzTWfvLVu2qCKR1Fi47aUSR1qUzVqZJ7O6x
+         gbd6pznqqvjMyQJyhnMHFQO2Jj4ejkXIcWwLHi1VkB1PD+Wjaz0XroJApp2CDanl9H2g
+         xVvETkGx2bAnPb5H/geL9ekrDlURqomGQOFbzqGGlmYy10ZwefLHMnoI+FeIsKNu3aHk
+         Lv+sHz+2/lwg/xbdZu6eMm/tNMANW5TLH96F5hQBX2oSTkK2HItbfP4opWPqRDPF150o
+         j0GQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=f34mcb9XXh/cL7nrpP5fwhxQKsWJY1NBHrErhfZO+94=;
-        b=Ul7pZok3gUNohFYwtCOvS8yd//If+yEtWisYgENmGg5S/ufJRnXGVWkKf6XELU6xyH
-         j6N8bz6z+4bxJLg13c5q6gAbAq2+1pVfRxd12unGszSkCXDo2POnryhdiWeCNsTHWTjB
-         7qH/VKvQ/8T7ct6Ug6g0V1mcTpOXgptmGKchHlxXM/PAztYt8fBpSCAMJckq9kXi0Ezj
-         JrZuEsuvIjFH1YyhB98OKqIX1vnQ2ltRwjOqtovfRCtJxYNMqxChWR8+v8n1f1/whmsL
-         0E0O6YELOSh3wHJJnMTytyM/YufhD3iYd+IZPFciqtRvsxXwFz2vfNyPWkFvXNm5jhBe
-         KwSw==
-X-Gm-Message-State: AOAM532a9hV65GDf2iY0EjdCSSFwJKrym0X6D5s7a4ipLRsIOHkectOP
-        fDqSGH56g43APlyAqSqPF7s9leaSt6M7JUww
-X-Google-Smtp-Source: ABdhPJwfBrWzU/2UuHOVL2y/7JIs4753GzWCQPLB0rpF6jTPcJuBCPKGuVasCXyzHYcqfKZZkI1DvA==
-X-Received: by 2002:a37:584:: with SMTP id 126mr16759507qkf.332.1607444649979;
-        Tue, 08 Dec 2020 08:24:09 -0800 (PST)
+        bh=DMvNnOrRtu4yLJxhDVPBS7UDJWnYlz36sTOfG9aJkV8=;
+        b=ODdOYLHgN0wBGtFujySq1fBMAO0akLGFzYGemd08MTmxiqGD8I70dShaTNM8H8F8Mw
+         rT1Y1CChHnQF4iuCjiv7+iEVzflmuFev2Dj54BOIL03Dcf0ZpjAHj8AdV357dwuIzCbg
+         vC6KAbinPT/ShICYDBeAPFBJQ60Vw/p22aqq8j1W27bKKx3/76FZ0yhS07LnKDmxDCJC
+         1043RJxa0Bdf9UdCsOEE8rnEXddhyRh14c7k5IexK/FpIsUbpE7KSshBrX5ej9uGnInA
+         iqaKWG1UT8CTIbVQGI6TFtY87YrQRZx+C4oIofaLjowufIPME1YPCJVhCF7IPjJF1bKZ
+         Vnaw==
+X-Gm-Message-State: AOAM531PryOmHiw/aHdCeyD2xVGsDErNW+zLgyqpHpG4VqJq0qqhLsct
+        SX+q21SBCgAH6tTxdhvA5iN0SYaJHsl1/zid
+X-Google-Smtp-Source: ABdhPJwOrse3m91UkeOSdg6sgN9TkzSvLHEOABSgWjVI3ZHBpU/0TrjcPQJA3BAkvI8E9mSKD+hIDQ==
+X-Received: by 2002:a37:a297:: with SMTP id l145mr12664666qke.344.1607444659602;
+        Tue, 08 Dec 2020 08:24:19 -0800 (PST)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id m8sm13946655qkn.41.2020.12.08.08.24.09
+        by smtp.gmail.com with ESMTPSA id n66sm8055925qkn.136.2020.12.08.08.24.17
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 08 Dec 2020 08:24:09 -0800 (PST)
+        Tue, 08 Dec 2020 08:24:18 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v6 04/52] btrfs: keep track of the root owner for relocation reads
-Date:   Tue,  8 Dec 2020 11:23:11 -0500
-Message-Id: <221913dc929a47264a360b62abddece08ac3254a.1607444471.git.josef@toxicpanda.com>
+Subject: [PATCH v6 08/52] btrfs: make sure owner is set in ref-verify
+Date:   Tue,  8 Dec 2020 11:23:15 -0500
+Message-Id: <2c33a26a51ab7c14f2b9d97a5dabbc2061ef0586.1607444471.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.2
 In-Reply-To: <cover.1607444471.git.josef@toxicpanda.com>
 References: <cover.1607444471.git.josef@toxicpanda.com>
@@ -69,233 +69,66 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-While testing the error paths in relocation, I hit the following lockdep
-splat
-
-======================================================
-WARNING: possible circular locking dependency detected
-5.10.0-rc3+ #206 Not tainted
-------------------------------------------------------
-btrfs-balance/1571 is trying to acquire lock:
-ffff8cdbcc8f77d0 (&head_ref->mutex){+.+.}-{3:3}, at: btrfs_lookup_extent_info+0x156/0x3b0
-
-but task is already holding lock:
-ffff8cdbc54adbf8 (btrfs-tree-00){++++}-{3:3}, at: __btrfs_tree_lock+0x27/0x100
-
-which lock already depends on the new lock.
-
-the existing dependency chain (in reverse order) is:
-
--> #2 (btrfs-tree-00){++++}-{3:3}:
-       down_write_nested+0x43/0x80
-       __btrfs_tree_lock+0x27/0x100
-       btrfs_search_slot+0x248/0x890
-       relocate_tree_blocks+0x490/0x650
-       relocate_block_group+0x1ba/0x5d0
-       kretprobe_trampoline+0x0/0x50
-
--> #1 (btrfs-csum-01){++++}-{3:3}:
-       down_read_nested+0x43/0x130
-       __btrfs_tree_read_lock+0x27/0x100
-       btrfs_read_lock_root_node+0x31/0x40
-       btrfs_search_slot+0x5ab/0x890
-       btrfs_del_csums+0x10b/0x3c0
-       __btrfs_free_extent+0x49d/0x8e0
-       __btrfs_run_delayed_refs+0x283/0x11f0
-       btrfs_run_delayed_refs+0x86/0x220
-       btrfs_start_dirty_block_groups+0x2ba/0x520
-       kretprobe_trampoline+0x0/0x50
-
--> #0 (&head_ref->mutex){+.+.}-{3:3}:
-       __lock_acquire+0x1167/0x2150
-       lock_acquire+0x116/0x3e0
-       __mutex_lock+0x7e/0x7b0
-       btrfs_lookup_extent_info+0x156/0x3b0
-       walk_down_proc+0x1c3/0x280
-       walk_down_tree+0x64/0xe0
-       btrfs_drop_subtree+0x182/0x260
-       do_relocation+0x52e/0x660
-       relocate_tree_blocks+0x2ae/0x650
-       relocate_block_group+0x1ba/0x5d0
-       kretprobe_trampoline+0x0/0x50
-
-other info that might help us debug this:
-
-Chain exists of:
-  &head_ref->mutex --> btrfs-csum-01 --> btrfs-tree-00
-
- Possible unsafe locking scenario:
-
-       CPU0                    CPU1
-       ----                    ----
-  lock(btrfs-tree-00);
-                               lock(btrfs-csum-01);
-                               lock(btrfs-tree-00);
-  lock(&head_ref->mutex);
-
- *** DEADLOCK ***
-
-5 locks held by btrfs-balance/1571:
- #0: ffff8cdb89749ff8 (&fs_info->delete_unused_bgs_mutex){+.+.}-{3:3}, at: btrfs_balance+0x563/0xf40
- #1: ffff8cdb89748838 (&fs_info->cleaner_mutex){+.+.}-{3:3}, at: btrfs_relocate_block_group+0x156/0x300
- #2: ffff8cdbc2c16650 (sb_internal#2){.+.+}-{0:0}, at: start_transaction+0x413/0x5c0
- #3: ffff8cdbc135f538 (btrfs-treloc-01){+.+.}-{3:3}, at: __btrfs_tree_lock+0x27/0x100
- #4: ffff8cdbc54adbf8 (btrfs-tree-00){++++}-{3:3}, at: __btrfs_tree_lock+0x27/0x100
-
-stack backtrace:
-CPU: 1 PID: 1571 Comm: btrfs-balance Not tainted 5.10.0-rc3+ #206
-Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.13.0-2.fc32 04/01/2014
-Call Trace:
- dump_stack+0x8b/0xb0
- check_noncircular+0xcf/0xf0
- ? trace_call_bpf+0x139/0x260
- __lock_acquire+0x1167/0x2150
- lock_acquire+0x116/0x3e0
- ? btrfs_lookup_extent_info+0x156/0x3b0
- __mutex_lock+0x7e/0x7b0
- ? btrfs_lookup_extent_info+0x156/0x3b0
- ? btrfs_lookup_extent_info+0x156/0x3b0
- ? release_extent_buffer+0x124/0x170
- ? _raw_spin_unlock+0x1f/0x30
- ? release_extent_buffer+0x124/0x170
- btrfs_lookup_extent_info+0x156/0x3b0
- walk_down_proc+0x1c3/0x280
- walk_down_tree+0x64/0xe0
- btrfs_drop_subtree+0x182/0x260
- do_relocation+0x52e/0x660
- relocate_tree_blocks+0x2ae/0x650
- ? add_tree_block+0x149/0x1b0
- relocate_block_group+0x1ba/0x5d0
- elfcorehdr_read+0x40/0x40
- ? elfcorehdr_read+0x40/0x40
- ? btrfs_balance+0x796/0xf40
- ? __kthread_parkme+0x66/0x90
- ? btrfs_balance+0xf40/0xf40
- ? balance_kthread+0x37/0x50
- ? kthread+0x137/0x150
- ? __kthread_bind_mask+0x60/0x60
- ? ret_from_fork+0x1f/0x30
-
-As you can see this is bogus, we never take another tree's lock under
-the csum lock.  This happens because sometimes we have to read tree
-blocks from disk without knowing which root they belong to during
-relocation.  We defaulted to an owner of 0, which translates to an fs
-tree.  This is fine as all fs trees have the same class, but obviously
-isn't fine if the block belongs to a cow only tree.
-
-Thankfully cow only trees only have their owners root as a reference to
-them, and since we already look up the extent information during
-relocation, go ahead and check and see if this block might belong to a
-cow only tree, and if so save the owner in the struct tree_block.  This
-allows us to read_tree_block with the proper owner, which gets rid of
-this lockdep splat.
+I noticed that shared ref entries in ref-verify didn't have the proper
+owner set, which caused me to think there was something seriously wrong.
+However the problem is if we have a parent we simply weren't filling out
+the owner part of the reference, even though we have it.  Fix this by
+making sure we set all the proper fields when we modify a reference,
+this way we'll have the proper owner if a problem happens and we don't
+waste time thinking we're updating the wrong level.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/relocation.c | 47 ++++++++++++++++++++++++++++++++++++++++---
- 1 file changed, 44 insertions(+), 3 deletions(-)
+ fs/btrfs/ref-verify.c | 23 ++++++++++-------------
+ 1 file changed, 10 insertions(+), 13 deletions(-)
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 19b7db8b2117..2b30e39e922a 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -98,6 +98,7 @@ struct tree_block {
- 		u64 bytenr;
- 	}; /* Use rb_simple_node for search/insert */
- 	struct btrfs_key key;
-+	u64 owner;
- 	unsigned int level:8;
- 	unsigned int key_ready:1;
- };
-@@ -2393,8 +2394,8 @@ static int get_tree_block_key(struct btrfs_fs_info *fs_info,
- {
- 	struct extent_buffer *eb;
+diff --git a/fs/btrfs/ref-verify.c b/fs/btrfs/ref-verify.c
+index 409b02566b25..2b490becbe67 100644
+--- a/fs/btrfs/ref-verify.c
++++ b/fs/btrfs/ref-verify.c
+@@ -669,18 +669,18 @@ int btrfs_ref_tree_mod(struct btrfs_fs_info *fs_info,
+ 	u64 bytenr = generic_ref->bytenr;
+ 	u64 num_bytes = generic_ref->len;
+ 	u64 parent = generic_ref->parent;
+-	u64 ref_root;
+-	u64 owner;
+-	u64 offset;
++	u64 ref_root = 0;
++	u64 owner = 0;
++	u64 offset = 0;
  
--	eb = read_tree_block(fs_info, block->bytenr, 0, block->key.offset,
--			     block->level, NULL);
-+	eb = read_tree_block(fs_info, block->bytenr, block->owner,
-+			     block->key.offset, block->level, NULL);
- 	if (IS_ERR(eb)) {
- 		return PTR_ERR(eb);
- 	} else if (!extent_buffer_uptodate(eb)) {
-@@ -2493,7 +2494,8 @@ int relocate_tree_blocks(struct btrfs_trans_handle *trans,
- 	/* Kick in readahead for tree blocks with missing keys */
- 	rbtree_postorder_for_each_entry_safe(block, next, blocks, rb_node) {
- 		if (!block->key_ready)
--			btrfs_readahead_tree_block(fs_info, block->bytenr, 0, 0,
-+			btrfs_readahead_tree_block(fs_info, block->bytenr,
-+						   block->owner, 0,
- 						   block->level);
+ 	if (!btrfs_test_opt(fs_info, REF_VERIFY))
+ 		return 0;
+ 
+ 	if (generic_ref->type == BTRFS_REF_METADATA) {
+-		ref_root = generic_ref->tree_ref.root;
++		if (!parent)
++			ref_root = generic_ref->tree_ref.root;
+ 		owner = generic_ref->tree_ref.level;
+-		offset = 0;
+-	} else {
++	} else if (!parent) {
+ 		ref_root = generic_ref->data_ref.ref_root;
+ 		owner = generic_ref->data_ref.ino;
+ 		offset = generic_ref->data_ref.offset;
+@@ -696,13 +696,10 @@ int btrfs_ref_tree_mod(struct btrfs_fs_info *fs_info,
+ 		goto out;
  	}
  
-@@ -2801,21 +2803,59 @@ static int add_tree_block(struct reloc_control *rc,
- 	u32 item_size;
- 	int level = -1;
- 	u64 generation;
-+	u64 owner = 0;
+-	if (parent) {
+-		ref->parent = parent;
+-	} else {
+-		ref->root_objectid = ref_root;
+-		ref->owner = owner;
+-		ref->offset = offset;
+-	}
++	ref->parent = parent;
++	ref->owner = owner;
++	ref->root_objectid = ref_root;
++	ref->offset = offset;
+ 	ref->num_refs = (action == BTRFS_DROP_DELAYED_REF) ? -1 : 1;
  
- 	eb =  path->nodes[0];
- 	item_size = btrfs_item_size_nr(eb, path->slots[0]);
- 
- 	if (extent_key->type == BTRFS_METADATA_ITEM_KEY ||
- 	    item_size >= sizeof(*ei) + sizeof(*bi)) {
-+		unsigned long ptr = 0, end;
-+
- 		ei = btrfs_item_ptr(eb, path->slots[0],
- 				struct btrfs_extent_item);
-+		end = (unsigned long)ei + item_size;
- 		if (extent_key->type == BTRFS_EXTENT_ITEM_KEY) {
- 			bi = (struct btrfs_tree_block_info *)(ei + 1);
- 			level = btrfs_tree_block_level(eb, bi);
-+			ptr = (unsigned long)(bi + 1);
- 		} else {
- 			level = (int)extent_key->offset;
-+			ptr = (unsigned long)(ei + 1);
- 		}
- 		generation = btrfs_extent_generation(eb, ei);
-+
-+		/*
-+		 * We're reading random blocks without knowing their owner ahead
-+		 * of time.  This is ok most of the time, as all reloc roots and
-+		 * fs roots have the same lock type.  However normal trees do
-+		 * not, and the only way to know ahead of time is to read the
-+		 * inline ref offset.  We know it's an fs root if
-+		 *
-+		 * 1. There's more than one ref.
-+		 * 2. There's a SHARED_DATA_REF_KEY set.
-+		 * 3. FULL_BACKREF is set on the flags.
-+		 *
-+		 * Otherwise it's safe to assume that the ref offset == the
-+		 * owner of this block, so we can use that when calling
-+		 * read_tree_block.
-+		 */
-+		if (btrfs_extent_refs(eb, ei) == 1 &&
-+		    !(btrfs_extent_flags(eb, ei) &
-+		      BTRFS_BLOCK_FLAG_FULL_BACKREF) &&
-+		    ptr < end) {
-+			struct btrfs_extent_inline_ref *iref;
-+			int type;
-+
-+			iref = (struct btrfs_extent_inline_ref *)ptr;
-+			type = btrfs_get_extent_inline_ref_type(eb, iref,
-+							BTRFS_REF_TYPE_BLOCK);
-+			if (type == BTRFS_REF_TYPE_INVALID)
-+				return -EINVAL;
-+			if (type == BTRFS_TREE_BLOCK_REF_KEY)
-+				owner = btrfs_extent_inline_ref_offset(eb,
-+								       iref);
-+		}
- 	} else if (unlikely(item_size == sizeof(struct btrfs_extent_item_v0))) {
- 		btrfs_print_v0_err(eb->fs_info);
- 		btrfs_handle_fs_error(eb->fs_info, -EINVAL, NULL);
-@@ -2837,6 +2877,7 @@ static int add_tree_block(struct reloc_control *rc,
- 	block->key.offset = generation;
- 	block->level = level;
- 	block->key_ready = 0;
-+	block->owner = owner;
- 
- 	rb_node = rb_simple_insert(blocks, block->bytenr, &block->rb_node);
- 	if (rb_node)
+ 	memcpy(&ra->ref, ref, sizeof(struct ref_entry));
 -- 
 2.26.2
 

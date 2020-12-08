@@ -7,60 +7,60 @@ X-Spam-Status: No, score=-16.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F1F9EC35273
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Dec 2020 16:26:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 54932C3527A
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Dec 2020 16:26:14 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D9DDF23A6C
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Dec 2020 16:26:13 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3ADF023A75
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Dec 2020 16:26:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730461AbgLHQ0L (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 8 Dec 2020 11:26:11 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55502 "EHLO
+        id S1730469AbgLHQ0N (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 8 Dec 2020 11:26:13 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55646 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1730453AbgLHQ0K (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Dec 2020 11:26:10 -0500
-Received: from mail-qt1-x842.google.com (mail-qt1-x842.google.com [IPv6:2607:f8b0:4864:20::842])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A13DDC0617B0
-        for <linux-btrfs@vger.kernel.org>; Tue,  8 Dec 2020 08:25:34 -0800 (PST)
-Received: by mail-qt1-x842.google.com with SMTP id l7so12285274qtp.8
-        for <linux-btrfs@vger.kernel.org>; Tue, 08 Dec 2020 08:25:34 -0800 (PST)
+        with ESMTP id S1730231AbgLHQ0M (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Dec 2020 11:26:12 -0500
+Received: from mail-qt1-x843.google.com (mail-qt1-x843.google.com [IPv6:2607:f8b0:4864:20::843])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EA2FCC0619D8
+        for <linux-btrfs@vger.kernel.org>; Tue,  8 Dec 2020 08:25:08 -0800 (PST)
+Received: by mail-qt1-x843.google.com with SMTP id b9so12314412qtr.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 08 Dec 2020 08:25:08 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=AiRItZbDfX3OPAKhq48UaEMQcc2QWJynBHjm1/PoRdg=;
-        b=d14pXTXqFBS6yM6rW/x3ql+nLp0F9uzo9IK4bFtplUVSj9eTT5DyXQPchdq8GnMHF3
-         JcwAwiVVDgjJizVxRe6zm03Z5BeK7d+bJRvhEAHwp9w2UShSPnbYUSnhT9q3z/8IBNEX
-         U6hLFETITmkOXXeXzs7eHP380TCKlX8idqtTaN7vA4ROz19r87Wgxr9V2POvrFs/gXF4
-         gF+WcdzUq35Am5aWp9jRJ00a6WIAKenUU5Gn0FkVu7JN9TdZAoZqU+GXOWULMhAyp+WV
-         cDmCfPnnu0pghbt9IjTpaBwy/5JgcNI/67NznFGO2WdTatGU4I77Ay8Ijb79jPd82EI0
-         mxOw==
+        bh=KAQN+81eOnjviSSky8UvHmPeO2GHWKjMNJPnZAMOWAA=;
+        b=rMvB4g6f7xYo968A32MVLe59h4S/yD6jDkf9v/RRIs+fFX+Xm7rnciZSWly6u8QMYy
+         lB+ylG4cNIC0npVURDE/BfqXelraKd9dCAoLXdqDWY2kp2Iw5HG0BOrWgjEKz8kTBs2n
+         KE3CS5ITISFTbfLmQIXPig5jw4koWbwIBsLEFR5NPNe3VrTqtBk3c8l1RkKDDifYn4VT
+         UQ3ywOjtolTUdR7cZxbwOsH8/6ZZ2qCUvKH3YKgLoaRBRSAaBiYeEEsQQ0dgNc4wmyCt
+         sA1/6+O7SBazQE2uhqOW/lbr1Iy0Qqoy5y5VkUc0ql9rf1Jtm8ey57a7dcuq8/J2BmZ9
+         Sspw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=AiRItZbDfX3OPAKhq48UaEMQcc2QWJynBHjm1/PoRdg=;
-        b=H7xWB8jzNJgA5SLDoPV4p+3ORCQRD+ZugrLFBGLpgjD6QcnPMPcmsvjxY8kP3cbnNu
-         8vgYyId+kZY9xiuI7JgKiUoljhP9yW6wteHT89RJW37Q55hkptwNUGMGxVq3TOeXKpmZ
-         bJHnBDjxi+TktjYhzp1xBVUw+n5I1Jj52GUiJXkEYurfb4dPiSW9Mbsn8SpI6txl7Zqi
-         BcJdNseh9r1p1MfMaTpNM1iqEyiIfLOBX+TFJ/J/seJ0jhlpQmDrIWhpMyZjpuQRQlJH
-         hNStS3PDD0gEnRcT4FJSFqNvjljBd/EBZxsePQHzTN0KFGe6y27izkXKiAjN93/kvt+h
-         U+RA==
-X-Gm-Message-State: AOAM5338RmR2fr0tFRl9lukXxT7E1z2yKm1oEVvuUTvjWQpU3/rdaaDt
-        T8N4+b9OJEmE6q2x+SOa5J5psFqo9U9cYsII
-X-Google-Smtp-Source: ABdhPJwS4PVvha9eBZUU/OOYqHcPf3ungOkHOE6UDBAKYG5EZlBqMs86sfx00RKJuax4K7fUt7blKA==
-X-Received: by 2002:aed:3668:: with SMTP id e95mr30877352qtb.69.1607444733503;
-        Tue, 08 Dec 2020 08:25:33 -0800 (PST)
+        bh=KAQN+81eOnjviSSky8UvHmPeO2GHWKjMNJPnZAMOWAA=;
+        b=VRcU5t4SgTc8gYNr6Y7hZuoR9y9zI2jEnOhbnOzoHDX28YD7pOTz8xSf967P5nB72S
+         0tmF4VQIYhppieJio+sr9ZGwJLiKgkuV0CmYXWILWHEaCnZ9FKsSKpNKZ/J+7rwRLWjT
+         nR2+/9t987U3+tjwBSL2x0oJhnaYqx16mzrK7CGClLA3i/zLNhEnyP6MP38Its0qgbve
+         Ezvzn6k02LPd2QPuZYyp5+FuYsK8gYKV/21PH5xi5R7TJlfkmmaz3AKvLDy/mydI9p5f
+         Xf6qwCI4d4AhWY61xyD8WR3Ut6uPp+YpLUgJL/9SIM2LCPbocglXFU5NaCp8dVyn7ec3
+         3uWg==
+X-Gm-Message-State: AOAM5306QlPfJ5ml8Su+I9PlOeFovH/PecE+rlYRgUx2GwixB4kxjaYj
+        yUO+zGGPzGuyAug7ozwqRug1i7V54NVWN0tb
+X-Google-Smtp-Source: ABdhPJxVyq057Vjl/9aOCxPSDgp1qw9WO+/6Ghkw0yORb6iSWJIWnk4yk3VsK4sfxtYBaoyd/lrDVQ==
+X-Received: by 2002:ac8:7083:: with SMTP id y3mr30338184qto.267.1607444707629;
+        Tue, 08 Dec 2020 08:25:07 -0800 (PST)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id 17sm14218310qtb.17.2020.12.08.08.25.32
+        by smtp.gmail.com with ESMTPSA id k128sm14811252qkd.48.2020.12.08.08.25.06
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 08 Dec 2020 08:25:32 -0800 (PST)
+        Tue, 08 Dec 2020 08:25:06 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Cc:     Qu Wenruo <wqu@suse.com>
-Subject: [PATCH v6 42/52] btrfs: remove the extent item sanity checks in relocate_block_group
-Date:   Tue,  8 Dec 2020 11:23:49 -0500
-Message-Id: <8d747afa22269b0ca24b4c635c3ed900f422f23f.1607444471.git.josef@toxicpanda.com>
+Cc:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+Subject: [PATCH v6 30/52] btrfs: validate ->reloc_root after recording root in trans
+Date:   Tue,  8 Dec 2020 11:23:37 -0500
+Message-Id: <35218dbcddd916f169601b25ba62ce2879956d90.1607444471.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.2
 In-Reply-To: <cover.1607444471.git.josef@toxicpanda.com>
 References: <cover.1607444471.git.josef@toxicpanda.com>
@@ -70,68 +70,54 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-These checks are all taken care of for us by the tree checker code.
+If we fail to setup a ->reloc_root in a different thread that path will
+error out, however it still leaves root->reloc_root NULL but would still
+appear set up in the transaction.  Subsequent calls to
+btrfs_record_root_in_transaction would succeed without attempting to
+create the reloc root, as the transid has already been update.  Handle
+this case by making sure we have a root->reloc_root set after a
+btrfs_record_root_in_transaction call so we don't end up deref'ing a
+NULL pointer.
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
+Reported-by: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/relocation.c | 29 +----------------------------
- 1 file changed, 1 insertion(+), 28 deletions(-)
+ fs/btrfs/relocation.c | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
 
 diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 1097d1b3c492..328a78399ddb 100644
+index b7a8a5b44a16..ac5350dfb33a 100644
 --- a/fs/btrfs/relocation.c
 +++ b/fs/btrfs/relocation.c
-@@ -3361,20 +3361,6 @@ static void unset_reloc_control(struct reloc_control *rc)
- 	mutex_unlock(&fs_info->reloc_mutex);
- }
+@@ -2073,6 +2073,13 @@ struct btrfs_root *select_reloc_root(struct btrfs_trans_handle *trans,
+ 			return ERR_PTR(ret);
+ 		root = root->reloc_root;
  
--static int check_extent_flags(u64 flags)
--{
--	if ((flags & BTRFS_EXTENT_FLAG_DATA) &&
--	    (flags & BTRFS_EXTENT_FLAG_TREE_BLOCK))
--		return 1;
--	if (!(flags & BTRFS_EXTENT_FLAG_DATA) &&
--	    !(flags & BTRFS_EXTENT_FLAG_TREE_BLOCK))
--		return 1;
--	if ((flags & BTRFS_EXTENT_FLAG_DATA) &&
--	    (flags & BTRFS_BLOCK_FLAG_FULL_BACKREF))
--		return 1;
--	return 0;
--}
--
- static noinline_for_stack
- int prepare_to_relocate(struct reloc_control *rc)
- {
-@@ -3426,7 +3412,6 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
- 	struct btrfs_path *path;
- 	struct btrfs_extent_item *ei;
- 	u64 flags;
--	u32 item_size;
- 	int ret;
- 	int err = 0;
- 	int progress = 0;
-@@ -3475,19 +3460,7 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
- 
- 		ei = btrfs_item_ptr(path->nodes[0], path->slots[0],
- 				    struct btrfs_extent_item);
--		item_size = btrfs_item_size_nr(path->nodes[0], path->slots[0]);
--		if (item_size >= sizeof(*ei)) {
--			flags = btrfs_extent_flags(path->nodes[0], ei);
--			ret = check_extent_flags(flags);
--			BUG_ON(ret);
--		} else if (unlikely(item_size == sizeof(struct btrfs_extent_item_v0))) {
--			err = -EINVAL;
--			btrfs_print_v0_err(trans->fs_info);
--			btrfs_abort_transaction(trans, err);
--			break;
--		} else {
--			BUG();
--		}
-+		flags = btrfs_extent_flags(path->nodes[0], ei);
- 
- 		if (flags & BTRFS_EXTENT_FLAG_TREE_BLOCK) {
- 			ret = add_tree_block(rc, &key, path, &blocks);
++		/*
++		 * We could have raced with another thread which failed, so
++		 * ->reloc_root may not be set, return -ENOENT in this case.
++		 */
++		if (!root)
++			return ERR_PTR(-ENOENT);
++
+ 		if (next->new_bytenr != root->node->start) {
+ 			/*
+ 			 * We just created the reloc root, so we shouldn't have
+@@ -2570,6 +2577,14 @@ static int relocate_tree_block(struct btrfs_trans_handle *trans,
+ 			ret = btrfs_record_root_in_trans(trans, root);
+ 			if (ret)
+ 				goto out;
++			/*
++			 * Another thread could have failed, need to check if we
++			 * have ->reloc_root actually set.
++			 */
++			if (!root->reloc_root) {
++				ret = -ENOENT;
++				goto out;
++			}
+ 			root = root->reloc_root;
+ 			node->new_bytenr = root->node->start;
+ 			btrfs_put_root(node->root);
 -- 
 2.26.2
 

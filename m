@@ -2,85 +2,107 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B5189C4361B
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Dec 2020 16:22:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6E468C4167B
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Dec 2020 16:25:00 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 7BACB23A02
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Dec 2020 16:22:34 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2FB2A23A75
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Dec 2020 16:25:00 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729003AbgLHQWN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 8 Dec 2020 11:22:13 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54976 "EHLO
+        id S1730125AbgLHQYp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 8 Dec 2020 11:24:45 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55384 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726069AbgLHQWN (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Dec 2020 11:22:13 -0500
-Received: from mail-wr1-x42e.google.com (mail-wr1-x42e.google.com [IPv6:2a00:1450:4864:20::42e])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C2D96C061749
-        for <linux-btrfs@vger.kernel.org>; Tue,  8 Dec 2020 08:21:32 -0800 (PST)
-Received: by mail-wr1-x42e.google.com with SMTP id 91so12893843wrj.7
-        for <linux-btrfs@vger.kernel.org>; Tue, 08 Dec 2020 08:21:32 -0800 (PST)
+        with ESMTP id S1729035AbgLHQYp (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Dec 2020 11:24:45 -0500
+Received: from mail-qk1-x742.google.com (mail-qk1-x742.google.com [IPv6:2607:f8b0:4864:20::742])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B893DC0613D6
+        for <linux-btrfs@vger.kernel.org>; Tue,  8 Dec 2020 08:24:04 -0800 (PST)
+Received: by mail-qk1-x742.google.com with SMTP id z188so16421510qke.9
+        for <linux-btrfs@vger.kernel.org>; Tue, 08 Dec 2020 08:24:04 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=uUswIW/XHF11HUoNNSWMLmxFMhh004MVjVa87d4wQKM=;
-        b=KfkCl5vc4RPYxMG4GQgaKV1rVGIUH/S4/pmu46/SPhEiRlJsj6Z+eguqzVqZ0YxuxZ
-         xa5aVgESfkylxRv4CBgJDxcYA9uW4ObJKUojfWx89IqfQGC7PDX48yFrleFQGwCgNm5r
-         w5dPykHct3wacxZnBNMOhWtSpzQFYV19OUNclHJXt0RBjONUHk83bGsVjQSJm6ea9ip6
-         spg+/e100CXkX6VAMoFMmTYmCmvLkZpc/b2bVasdgQX4IYx+lr+kbXdbo83oo+Eqs5X7
-         Cf2Hr7XIJGmYwsCnrfMScri3Vv4W7CsTZBtIY/ef/zbBtmi0QD9ZGdWGRA+3XYaDRR3q
-         4UCQ==
+        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
+        h=from:to:cc:subject:date:message-id:in-reply-to:references
+         :mime-version:content-transfer-encoding;
+        bh=QMa7bV9M06CL/jmsCalzp9jQP6wxpAhOdiQ2gxt0798=;
+        b=Ncg/4UArxyhEnZD9J3wptTXF0pAT68y2RWknOnHJYOYznCLe0Xwhri5KwKsB/AfOJS
+         KeYSj1BHLbF1QqqkK+xP/GYicEq5qk6qhucgfJg6PTm5HOy8cNC0xzfYGt7YKBYquIAQ
+         Vh/pvrc3rVywGWski76AEZb24N3cVHO8yt2W7BkEG8ESrYKy1X/rVNWeYV9pEi20tovM
+         nGLeuCKv1LWb90hw9ohorubDdhGgR+vL7RPOuflZ86H8IU981gkIXfu5bbPfp+iI1XBz
+         OT4qUAmeaoXmruNNVbTQ0B6m38C1mGc7Ou35czwdNQANbmcSeD+FyI4LXxYFt9SiXqxB
+         cFoQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=uUswIW/XHF11HUoNNSWMLmxFMhh004MVjVa87d4wQKM=;
-        b=FGe2mxJAxSqg9Gd2R4b+tQbQY+gujcSw/s1kzuNHuxSY+djXN/25zg/UgX/ss5DvlX
-         ZUr5r4sA7WpYXGCet/8BCIB8zn3k1p+OQLni9dm4w3fbvpUWmCpgpOg+cr4cxpp60cO3
-         iBIg+V5MNn8l3+T15oCeKhfT3hSfxuJixjS7vXPzi4D802xJAIl4v6a4uTmigGi9TDGc
-         aRXUyZViCX6rCuSzfKlxqprOOHn+FcWV4rR4HCu1whCI6uzRVgmHLkxfSLs/4wvq7NYs
-         A6QvBHmkf6CwWp9bYtdQTyCEajYa124ZFZLJMI5R9eGfhjNqPOKqQCgEdxgpf3wnWy48
-         vcIg==
-X-Gm-Message-State: AOAM530i23+RV80ei2x7YJg+otLQz/+3s/4xJEbn85hTVirZCaHpIt5t
-        jGU2/ByLfiQ7fVl90QkJnpvcGi3scEwoE4bExtj1YPKlNY4WJjow
-X-Google-Smtp-Source: ABdhPJw8wFviAvBmp6/XLw08AXhhcH98ziGOtwpk6U2bx/+W4DEjWgogjAq9pyyV1680mKDhf8ioxG9qOubUK9lK8sI=
-X-Received: by 2002:adf:b1ca:: with SMTP id r10mr2216112wra.252.1607444491585;
- Tue, 08 Dec 2020 08:21:31 -0800 (PST)
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
+         :references:mime-version:content-transfer-encoding;
+        bh=QMa7bV9M06CL/jmsCalzp9jQP6wxpAhOdiQ2gxt0798=;
+        b=kEFV6rKajNq0JgDPUoStSnTvnzw+Y0jSyiptx0YQ+ke4H8UVSUjxdnMbdz9f289215
+         aNEz7V4uUfmLHng8R9I3cF4qfCYG0CGxWxkSl3S+b56KyujKVaWgPSHF+hYKGant8oZq
+         ADC7TGYGukZi4hJ1UwWVoM181OT0tphkofAb252lRZobRgbVyTk29Nr6ZEoNMtV2Uauq
+         6K39OkBMkzZ9qztX/frsnU83GA6u3HdT+U0hbS40A9FRPmS14AY3WjJSRYCkiGbouoty
+         hIcXcP+9n7axMD7h4NiONv8+/KxZNvsIKf/Md6WirAZEuJpOXi4kwqnAooUzVDP4cRHV
+         TkIA==
+X-Gm-Message-State: AOAM532CWRJVAJL92Ux7MhxJkQLRdSP/IQoY/UqYHA8oTqcOAt3YWeEN
+        1BS2TSAWft+8jzNX/OzJ5n0QrYe033k0exqm
+X-Google-Smtp-Source: ABdhPJwU8dTzKKUBuPGgVmG/8B2/Scum4XP6RZJkkh7DlbaR0QWKE8K+CGRMNL5T/1r/2mMqc3uSeg==
+X-Received: by 2002:a37:66d4:: with SMTP id a203mr30718606qkc.362.1607444643673;
+        Tue, 08 Dec 2020 08:24:03 -0800 (PST)
+Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
+        by smtp.gmail.com with ESMTPSA id p27sm14231877qkp.70.2020.12.08.08.24.02
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 08 Dec 2020 08:24:02 -0800 (PST)
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Cc:     Qu Wenruo <wqu@suse.com>,
+        Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Subject: [PATCH v6 01/52] btrfs: allow error injection for btrfs_search_slot and btrfs_cow_block
+Date:   Tue,  8 Dec 2020 11:23:08 -0500
+Message-Id: <19dc35ed62b15274a23dcfe78639d18b1cf120af.1607444471.git.josef@toxicpanda.com>
+X-Mailer: git-send-email 2.26.2
+In-Reply-To: <cover.1607444471.git.josef@toxicpanda.com>
+References: <cover.1607444471.git.josef@toxicpanda.com>
 MIME-Version: 1.0
-References: <7ffdf22e-352c-70e3-eb7c-86c591febe7c@panasas.com>
-In-Reply-To: <7ffdf22e-352c-70e3-eb7c-86c591febe7c@panasas.com>
-From:   Chris Murphy <lists@colorremedies.com>
-Date:   Tue, 8 Dec 2020 09:21:15 -0700
-Message-ID: <CAJCQCtTjFwtJassQoN9UY9o=+dz70jJb30uW7JMDKmJpgfgAOg@mail.gmail.com>
-Subject: Re: Assertion in tree-log.c
-To:     "Ellis H. Wilson III" <ellisw@panasas.com>
-Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Dec 7, 2020 at 10:57 AM Ellis H. Wilson III <ellisw@panasas.com> wrote:
->
-> Hi all,
->
-> We've hit this assertion a few times, and I wanted to know if it was a
-> known issue:
->
-> Dec 05 08:53:52 6afa1e4331fa46 kernel: CPU: 2 PID: 6897 Comm: iopathv4
-> Tainted: G           O     4.12.14-lp150.11-default #1 openSUSE Leap
-> 15.0 (unreleased)
+The following patches are going to address error handling in relocation,
+in order to test those patches I need to be able to inject errors in
+btrfs_search_slot and btrfs_cow_block, as we call both of these pretty
+often in different cases during relocation.
 
-This is quite an old kernel and no longer maintained by the stable
-team, so it's entirely up to the distro to maintain it. My guess is
-that 15.0 isn't maintained at all, and you should be on 15.1 or 15.2
-kernels.
-https://en.opensuse.org/Lifetime
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+---
+ fs/btrfs/ctree.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index cc89b63d65a4..56e132d825a2 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -1494,6 +1494,7 @@ noinline int btrfs_cow_block(struct btrfs_trans_handle *trans,
+ 
+ 	return ret;
+ }
++ALLOW_ERROR_INJECTION(btrfs_cow_block, ERRNO);
+ 
+ /*
+  * helper function for defrag to decide if two blocks pointed to by a
+@@ -2821,6 +2822,7 @@ int btrfs_search_slot(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 		btrfs_release_path(p);
+ 	return ret;
+ }
++ALLOW_ERROR_INJECTION(btrfs_search_slot, ERRNO);
+ 
+ /*
+  * Like btrfs_search_slot, this looks for a key in the given tree. It uses the
 -- 
-Chris Murphy
+2.26.2
+

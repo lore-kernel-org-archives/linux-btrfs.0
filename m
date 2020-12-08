@@ -7,60 +7,61 @@ X-Spam-Status: No, score=-16.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 97D43C2BBCA
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C8B7EC2BBCD
 	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Dec 2020 16:25:42 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 7426D23A6C
+	by mail.kernel.org (Postfix) with ESMTP id AA1DC23A6C
 	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Dec 2020 16:25:42 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730320AbgLHQZa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 8 Dec 2020 11:25:30 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55518 "EHLO
+        id S1730305AbgLHQZ3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 8 Dec 2020 11:25:29 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55510 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1730301AbgLHQZ3 (ORCPT
+        with ESMTP id S1730210AbgLHQZ3 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Dec 2020 11:25:29 -0500
 Received: from mail-qk1-x744.google.com (mail-qk1-x744.google.com [IPv6:2607:f8b0:4864:20::744])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 62684C0611C5
-        for <linux-btrfs@vger.kernel.org>; Tue,  8 Dec 2020 08:24:27 -0800 (PST)
-Received: by mail-qk1-x744.google.com with SMTP id q22so16437684qkq.6
-        for <linux-btrfs@vger.kernel.org>; Tue, 08 Dec 2020 08:24:27 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0A848C061285
+        for <linux-btrfs@vger.kernel.org>; Tue,  8 Dec 2020 08:24:23 -0800 (PST)
+Received: by mail-qk1-x744.google.com with SMTP id z11so7250524qkj.7
+        for <linux-btrfs@vger.kernel.org>; Tue, 08 Dec 2020 08:24:23 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=vx6FQGPAtVmSplymEMoDA9sA2iSVI0CL70LRafsPBms=;
-        b=J/WlXtf3QCM8Eq3RyKuvVelx8MAHO66kGJB6x2Hi8wdmwuax1jmT89cIPYMzeFn1ga
-         PjZunewi9D3tVUYj66+cirNBN9UE2rDeXaLCqfSqstCZaED4cDwSigbNNRSSctWLjTGQ
-         hRxEY6NzL/gSQxW9yJQb7HOcvfFp/kBFCpXZNJUJiY85YMqojKEsOBBFtFLyPMPhZ56m
-         HnhG36ofebufuflVCRpfrrDsKpsp7JLJiSCRFkEncaIvgcn92zo1L8JxKyRg4jc1R3u6
-         UTP7rx73txV1PRAAJViPd0kYdZmhA2WTGLALwLejDSbftvFDBnc5939t/5NURKNE3BK2
-         acxA==
+        bh=Pg4Rs440j7qytVG8dQXueQyKh7OJmkNUbqs81SrLs48=;
+        b=hkcpAIm2qE6pwXMGDDKXeRM+T3NKXGuHdAnLGVtQ6/Alp2F3WW3QM31RVxG26eJnGk
+         zfutMpFtMAvPMG5oqTbvxRHs5SQ8j3vjZTuS2qVBNReHn/tcDU9qmIBtbBDOTK9IzpYP
+         HOOkxTbXW3iCMI8ncH46PXoXMpdNJgwBahWtTc5lgFka9Lsnf3NKNbnFJjtOyaNC4CD3
+         4YP3uC87kE+OXESvWuhfNjMETdrtjsnSPdf2zNxlraMSE+JFncbLzjKQvbIxzm39pGuT
+         LST+8pEKphl+vNeHk+gwCDsoGvSD0NBYhaRrTGGlaEd7AJbVuF6JTJz3aTig5znaCe+o
+         84pA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=vx6FQGPAtVmSplymEMoDA9sA2iSVI0CL70LRafsPBms=;
-        b=rYue+517dp+W6QAcUna7iqjDYo+ID1OrH7XnRgXTPRfUULjlhoTwABX/2Y2PMupgwj
-         4cNO+1bmGN8J1SCUlqUoY7oOYOTgrdlUSaZDMHc+SQSR5MYqbKxK2Ejhn+okx57WzIN6
-         HYypTSLuR26HF1es8eAADEmEQDCHO1zmsW0cS7zCpSjl8ia4X2F5UsPqfH1egOdp7Rr7
-         u2zXWESdkgcUTRyLnIYs7MKOtIxUnu3hMZ1CYib43ItmqGyjwCPF2PmJ37SWWweULebg
-         rS/Q3LNZJjePfjwHzVceBuKBCnDZE/WB0y7XEm3kwQc7/HsKVR2NTgUR5C7OBuDI0xXN
-         CKgw==
-X-Gm-Message-State: AOAM531ttlCv/BeZAhLMBiyO+VR8SFTVf0oo6rW5FwMiYj9JOxu6BCgv
-        cDPXzeS+9ADA0p4s+QJAW4pYYgr/N+fshsAX
-X-Google-Smtp-Source: ABdhPJxKPTP76CvNrGc2iSyGVS8CWhPBHXd+nzO79Kgx3XpsEVYbLkSjSVPybQ6w4IsHN5phsV4V9w==
-X-Received: by 2002:a05:620a:630:: with SMTP id 16mr7510909qkv.230.1607444666175;
-        Tue, 08 Dec 2020 08:24:26 -0800 (PST)
+        bh=Pg4Rs440j7qytVG8dQXueQyKh7OJmkNUbqs81SrLs48=;
+        b=IAdRR3bdcxTACtW+enPHZpSuGOywiW04WAIqOHU2ZeZoYP5wx8hvnB/xBEF0pukFVP
+         8JGf0mOePlaifQ0sKQGYH+G67VQhIulh5xzJp234LrBUWZ3X1S31x4l7yJfinxHit4ar
+         BntqOcDKGZiUDbSCqpak0Qm8FB3bTaRD2PzBmNFkQyiaLiRzbBz2DO4DEsN2D76qpkW6
+         czSvpd1/QImpkN/Oby2Ae6RQNTkxTVYtB/F1lmtcEIFo9ZoTO54I39Aytz1rVtayouE2
+         Kz+ccVKOYXkErW1LwfZg8FmK84OrH5cGa6BDE6qOTMBhBJnlGvIlARctS7bDv9UYaF+c
+         MnUQ==
+X-Gm-Message-State: AOAM531Wr/T6sxymXEmNBm5qT+EvoxPlypl8V1CNc1+6ubo5qLBjlm7a
+        cTHeQDU89GeGy+RTwi7Fg98g8kf4FCPiOVkc
+X-Google-Smtp-Source: ABdhPJwHsE4gcclr+Et3k41OQ55bua5KTNbwTnbcmkpV3nu27cW7JHa0opSPLK+BJ1mdHszL5G/zig==
+X-Received: by 2002:a37:6403:: with SMTP id y3mr31092036qkb.204.1607444662000;
+        Tue, 08 Dec 2020 08:24:22 -0800 (PST)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id x65sm748119qkc.130.2020.12.08.08.24.25
+        by smtp.gmail.com with ESMTPSA id o68sm9054547qkf.84.2020.12.08.08.24.21
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 08 Dec 2020 08:24:25 -0800 (PST)
+        Tue, 08 Dec 2020 08:24:21 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Cc:     Qu Wenruo <wqu@suse.com>
-Subject: [PATCH v6 11/52] btrfs: convert BUG_ON()'s in relocate_tree_block
-Date:   Tue,  8 Dec 2020 11:23:18 -0500
-Message-Id: <1d90d8f0b061d0b009a753a6f51b648e0b41ebcb.1607444471.git.josef@toxicpanda.com>
+Cc:     Qu Wenruo <wqu@suse.com>,
+        Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Subject: [PATCH v6 09/52] btrfs: don't clear ret in btrfs_start_dirty_block_groups
+Date:   Tue,  8 Dec 2020 11:23:16 -0500
+Message-Id: <3531541c898a12776c7770d70bb4887b738b2e57.1607444471.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.2
 In-Reply-To: <cover.1607444471.git.josef@toxicpanda.com>
 References: <cover.1607444471.git.josef@toxicpanda.com>
@@ -70,52 +71,32 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We have a couple of BUG_ON()'s in relocate_tree_block() that can be
-tripped if we have file system corruption.  Convert these to ASSERT()'s
-so developers still get yelled at when they break the backref code, but
-error out nicely for users so the whole box doesn't go down.
+If we fail to update a block group item in the loop we'll break, however
+we'll do btrfs_run_delayed_refs and lose our error value in ret, and
+thus not clean up properly.  Fix this by only running the delayed refs
+if there was no failure.
 
 Reviewed-by: Qu Wenruo <wqu@suse.com>
+Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/relocation.c | 24 ++++++++++++++++++++++--
- 1 file changed, 22 insertions(+), 2 deletions(-)
+ fs/btrfs/block-group.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index d0ce771a2a8d..4333ee329290 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -2456,8 +2456,28 @@ static int relocate_tree_block(struct btrfs_trans_handle *trans,
- 
- 	if (root) {
- 		if (test_bit(BTRFS_ROOT_SHAREABLE, &root->state)) {
--			BUG_ON(node->new_bytenr);
--			BUG_ON(!list_empty(&node->list));
-+			/*
-+			 * This block was the root block of a root, and this is
-+			 * the first time we're processing the block and thus it
-+			 * should not have had the ->new_bytenr modified and
-+			 * should have not been included on the changed list.
-+			 *
-+			 * However in the case of corruption we could have
-+			 * multiple refs pointing to the same block improperly,
-+			 * and thus we would trip over these checks.  ASSERT()
-+			 * for the developer case, because it could indicate a
-+			 * bug in the backref code, however error out for a
-+			 * normal user in the case of corruption.
-+			 */
-+			ASSERT(node->new_bytenr == 0);
-+			ASSERT(list_empty(&node->list));
-+			if (node->new_bytenr || !list_empty(&node->list)) {
-+				btrfs_err(root->fs_info,
-+				  "bytenr %llu has improper references to it",
-+					  node->bytenr);
-+				ret = -EUCLEAN;
-+				goto out;
-+			}
- 			btrfs_record_root_in_trans(trans, root);
- 			root = root->reloc_root;
- 			node->new_bytenr = root->node->start;
+diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+index 52f2198d44c9..0886e81e5540 100644
+--- a/fs/btrfs/block-group.c
++++ b/fs/btrfs/block-group.c
+@@ -2669,7 +2669,8 @@ int btrfs_start_dirty_block_groups(struct btrfs_trans_handle *trans)
+ 	 * Go through delayed refs for all the stuff we've just kicked off
+ 	 * and then loop back (just once)
+ 	 */
+-	ret = btrfs_run_delayed_refs(trans, 0);
++	if (!ret)
++		ret = btrfs_run_delayed_refs(trans, 0);
+ 	if (!ret && loops == 0) {
+ 		loops++;
+ 		spin_lock(&cur_trans->dirty_bgs_lock);
 -- 
 2.26.2
 

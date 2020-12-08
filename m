@@ -7,59 +7,60 @@ X-Spam-Status: No, score=-16.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EEAEDC433FE
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D5A91C4361B
 	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Dec 2020 16:25:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id BD4F623A75
+	by mail.kernel.org (Postfix) with ESMTP id 9E1D523A6C
 	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Dec 2020 16:25:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730297AbgLHQZ1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 8 Dec 2020 11:25:27 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55504 "EHLO
+        id S1730293AbgLHQZZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 8 Dec 2020 11:25:25 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55494 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1730210AbgLHQZ1 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Dec 2020 11:25:27 -0500
-Received: from mail-qk1-x741.google.com (mail-qk1-x741.google.com [IPv6:2607:f8b0:4864:20::741])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A8890C06138C
-        for <linux-btrfs@vger.kernel.org>; Tue,  8 Dec 2020 08:24:20 -0800 (PST)
-Received: by mail-qk1-x741.google.com with SMTP id 1so16481530qka.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 08 Dec 2020 08:24:20 -0800 (PST)
+        with ESMTP id S1730210AbgLHQZZ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Dec 2020 11:25:25 -0500
+Received: from mail-qv1-xf42.google.com (mail-qv1-xf42.google.com [IPv6:2607:f8b0:4864:20::f42])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 27370C0617A7
+        for <linux-btrfs@vger.kernel.org>; Tue,  8 Dec 2020 08:24:15 -0800 (PST)
+Received: by mail-qv1-xf42.google.com with SMTP id s6so738536qvn.6
+        for <linux-btrfs@vger.kernel.org>; Tue, 08 Dec 2020 08:24:15 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:subject:date:message-id:in-reply-to:references:mime-version
-         :content-transfer-encoding;
-        bh=DMvNnOrRtu4yLJxhDVPBS7UDJWnYlz36sTOfG9aJkV8=;
-        b=hA433fFe3SsJc4KO3meV0Y8DmXxvrbP/9oHcgevrIcUFPipsTCpLlOnqs/0SpmoLEQ
-         Tto4zOF7xBlPBLl9aN3X0jbEGjkMFzbI6GzTWfvLVu2qCKR1Fi47aUSR1qUzVqZJ7O6x
-         gbd6pznqqvjMyQJyhnMHFQO2Jj4ejkXIcWwLHi1VkB1PD+Wjaz0XroJApp2CDanl9H2g
-         xVvETkGx2bAnPb5H/geL9ekrDlURqomGQOFbzqGGlmYy10ZwefLHMnoI+FeIsKNu3aHk
-         Lv+sHz+2/lwg/xbdZu6eMm/tNMANW5TLH96F5hQBX2oSTkK2HItbfP4opWPqRDPF150o
-         j0GQ==
+        h=from:to:cc:subject:date:message-id:in-reply-to:references
+         :mime-version:content-transfer-encoding;
+        bh=U/ZltL4YxiXvMtQIs4ID4XcnLkWVuTx7SSXbu0ywjvI=;
+        b=eoqqp9PK3r9icGwCZpi7mJ/WmnPAkorKJX0TPSc9zzwwV4/ehtMQKOVm8yjySB4PgD
+         phpQe74g+1w0aufyhDHXGJSA1DtKFuj9q9spFHRAgfKXU326afsf5botJ6Q/OgQZtESM
+         6HqxO/mUd0QN6uyECeFdeAMg6zM8XrmtJqCjaN/U0Fqph40Wjv2YR5DLU4Xma6DBCoWE
+         CHrGBhpe2x3pNU26QaRCZCz48eTxKOJ/HNJEwZDfV94EQDYkXqxFyuKGo1cTkdH2ErZ7
+         KSeNcocswwhUQlV/Y/XJJ8KEyX6EP+0GY43/IeaMh5yj629Txgp0dpa3OriXzoTLJnoT
+         273A==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=DMvNnOrRtu4yLJxhDVPBS7UDJWnYlz36sTOfG9aJkV8=;
-        b=ODdOYLHgN0wBGtFujySq1fBMAO0akLGFzYGemd08MTmxiqGD8I70dShaTNM8H8F8Mw
-         rT1Y1CChHnQF4iuCjiv7+iEVzflmuFev2Dj54BOIL03Dcf0ZpjAHj8AdV357dwuIzCbg
-         vC6KAbinPT/ShICYDBeAPFBJQ60Vw/p22aqq8j1W27bKKx3/76FZ0yhS07LnKDmxDCJC
-         1043RJxa0Bdf9UdCsOEE8rnEXddhyRh14c7k5IexK/FpIsUbpE7KSshBrX5ej9uGnInA
-         iqaKWG1UT8CTIbVQGI6TFtY87YrQRZx+C4oIofaLjowufIPME1YPCJVhCF7IPjJF1bKZ
-         Vnaw==
-X-Gm-Message-State: AOAM531PryOmHiw/aHdCeyD2xVGsDErNW+zLgyqpHpG4VqJq0qqhLsct
-        SX+q21SBCgAH6tTxdhvA5iN0SYaJHsl1/zid
-X-Google-Smtp-Source: ABdhPJwOrse3m91UkeOSdg6sgN9TkzSvLHEOABSgWjVI3ZHBpU/0TrjcPQJA3BAkvI8E9mSKD+hIDQ==
-X-Received: by 2002:a37:a297:: with SMTP id l145mr12664666qke.344.1607444659602;
-        Tue, 08 Dec 2020 08:24:19 -0800 (PST)
+        bh=U/ZltL4YxiXvMtQIs4ID4XcnLkWVuTx7SSXbu0ywjvI=;
+        b=jVnzR40nzcmQIHwd/NlU97rW5NtHh2hkhRVsXbOhA61rv1lTriAos/AqRg/w2ksHIb
+         UrWi6XX0uVEl37U9UdyJAIlSmHmYeNsfS7tXQbS2X7xqhVCEOfiyPte/nXVUM9i3cZBf
+         /pnHxhmBblwmYwKSNUiGRyrquj9XTm0PUXkw6lrG3FOisWdU3mmuV+bFtLrFwzOUzhI0
+         giCfhNB7COGB7rlKxEUpV7640/moHwQ4Pyyr+crIxYcDnysd6eYdZBlXAjwn7D79OkZg
+         /mRFFa/5eSz8RGu+aITAGtMZcIiF7ptx5S14EURk2LhTTlUA7mCvKFC6uRA8Eqeigxsa
+         /uow==
+X-Gm-Message-State: AOAM530trwiJeRgCm6zlP7tzBZBMCQvNAKdTjG2FYq/kwVcEU7It9DNX
+        q29JBUGYsjhLdfj0eT98xU/RROe1Ame+DtRU
+X-Google-Smtp-Source: ABdhPJyPKREGfC9Ek07V3hKuVh6Sg1WhEebOLVrbK77ghhTPuyTuNc7JLYCL7mRqi0dHDUml350JVQ==
+X-Received: by 2002:ad4:5ba7:: with SMTP id 7mr5706971qvq.31.1607444653792;
+        Tue, 08 Dec 2020 08:24:13 -0800 (PST)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id n66sm8055925qkn.136.2020.12.08.08.24.17
+        by smtp.gmail.com with ESMTPSA id f1sm13769034qtj.73.2020.12.08.08.24.12
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 08 Dec 2020 08:24:18 -0800 (PST)
+        Tue, 08 Dec 2020 08:24:13 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v6 08/52] btrfs: make sure owner is set in ref-verify
-Date:   Tue,  8 Dec 2020 11:23:15 -0500
-Message-Id: <2c33a26a51ab7c14f2b9d97a5dabbc2061ef0586.1607444471.git.josef@toxicpanda.com>
+Cc:     Qu Wenruo <wqu@suse.com>
+Subject: [PATCH v6 06/52] btrfs: do not cleanup upper nodes in btrfs_backref_cleanup_node
+Date:   Tue,  8 Dec 2020 11:23:13 -0500
+Message-Id: <adbd0b4b18b4d6119708a93a8a44df03f0fd47cb.1607444471.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.2
 In-Reply-To: <cover.1607444471.git.josef@toxicpanda.com>
 References: <cover.1607444471.git.josef@toxicpanda.com>
@@ -69,66 +70,120 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-I noticed that shared ref entries in ref-verify didn't have the proper
-owner set, which caused me to think there was something seriously wrong.
-However the problem is if we have a parent we simply weren't filling out
-the owner part of the reference, even though we have it.  Fix this by
-making sure we set all the proper fields when we modify a reference,
-this way we'll have the proper owner if a problem happens and we don't
-waste time thinking we're updating the wrong level.
+Zygo reported the following panic when testing my error handling patches
+for relocation
 
+------------[ cut here ]------------
+kernel BUG at fs/btrfs/backref.c:2545!
+invalid opcode: 0000 [#1] SMP KASAN PTI CPU: 3 PID: 8472 Comm: btrfs Tainted: G        W 14
+Hardware name: QEMU Standard PC (i440FX + PIIX,
+
+Call Trace:
+ btrfs_backref_error_cleanup+0x4df/0x530
+ build_backref_tree+0x1a5/0x700
+ ? _raw_spin_unlock+0x22/0x30
+ ? release_extent_buffer+0x225/0x280
+ ? free_extent_buffer.part.52+0xd7/0x140
+ relocate_tree_blocks+0x2a6/0xb60
+ ? kasan_unpoison_shadow+0x35/0x50
+ ? do_relocation+0xc10/0xc10
+ ? kasan_kmalloc+0x9/0x10
+ ? kmem_cache_alloc_trace+0x6a3/0xcb0
+ ? free_extent_buffer.part.52+0xd7/0x140
+ ? rb_insert_color+0x342/0x360
+ ? add_tree_block.isra.36+0x236/0x2b0
+ relocate_block_group+0x2eb/0x780
+ ? merge_reloc_roots+0x470/0x470
+ btrfs_relocate_block_group+0x26e/0x4c0
+ btrfs_relocate_chunk+0x52/0x120
+ btrfs_balance+0xe2e/0x18f0
+ ? pvclock_clocksource_read+0xeb/0x190
+ ? btrfs_relocate_chunk+0x120/0x120
+ ? lock_contended+0x620/0x6e0
+ ? do_raw_spin_lock+0x1e0/0x1e0
+ ? do_raw_spin_unlock+0xa8/0x140
+ btrfs_ioctl_balance+0x1f9/0x460
+ btrfs_ioctl+0x24c8/0x4380
+ ? __kasan_check_read+0x11/0x20
+ ? check_chain_key+0x1f4/0x2f0
+ ? __asan_loadN+0xf/0x20
+ ? btrfs_ioctl_get_supported_features+0x30/0x30
+ ? kvm_sched_clock_read+0x18/0x30
+ ? check_chain_key+0x1f4/0x2f0
+ ? lock_downgrade+0x3f0/0x3f0
+ ? handle_mm_fault+0xad6/0x2150
+ ? do_vfs_ioctl+0xfc/0x9d0
+ ? ioctl_file_clone+0xe0/0xe0
+ ? check_flags.part.50+0x6c/0x1e0
+ ? check_flags.part.50+0x6c/0x1e0
+ ? check_flags+0x26/0x30
+ ? lock_is_held_type+0xc3/0xf0
+ ? syscall_enter_from_user_mode+0x1b/0x60
+ ? do_syscall_64+0x13/0x80
+ ? rcu_read_lock_sched_held+0xa1/0xd0
+ ? __kasan_check_read+0x11/0x20
+ ? __fget_light+0xae/0x110
+ __x64_sys_ioctl+0xc3/0x100
+ do_syscall_64+0x37/0x80
+ entry_SYSCALL_64_after_hwframe+0x44/0xa9
+
+This occurs because of this check
+
+if (RB_EMPTY_NODE(&upper->rb_node))
+	BUG_ON(!list_empty(&node->upper));
+
+As we are dropping the backref node, if we discover that our upper node
+in the edge we just cleaned up isn't linked into the cache that we are
+now done with this node, thus the BUG_ON().
+
+However this is an erroneous assumption, as we will look up all the
+references for a node first, and then process the pending edges.  All of
+the 'upper' nodes in our pending edges won't be in the cache's rb_tree
+yet, because they haven't been processed.  We could very well have many
+edges still left to cleanup on this node.
+
+The fact is we simply do not need this check, we can just process all of
+the edges only for this node, because below this check we do the
+following
+
+if (list_empty(&upper->lower)) {
+	list_add_tail(&upper->lower, &cache->leaves);
+	upper->lowest = 1;
+}
+
+If the upper node truly isn't used yet, then we add it to the
+cache->leaves list to be cleaned up later.  If it is still used then the
+last child node that has it linked into its node will add it to the
+leaves list and then it will be cleaned up.
+
+Fix this problem by dropping this logic altogether.  With this fix I no
+longer see the panic when testing with error injection in the backref
+code.
+
+Reviewed-by: Qu Wenruo <wqu@suse.com>
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/ref-verify.c | 23 ++++++++++-------------
- 1 file changed, 10 insertions(+), 13 deletions(-)
+ fs/btrfs/backref.c | 7 -------
+ 1 file changed, 7 deletions(-)
 
-diff --git a/fs/btrfs/ref-verify.c b/fs/btrfs/ref-verify.c
-index 409b02566b25..2b490becbe67 100644
---- a/fs/btrfs/ref-verify.c
-+++ b/fs/btrfs/ref-verify.c
-@@ -669,18 +669,18 @@ int btrfs_ref_tree_mod(struct btrfs_fs_info *fs_info,
- 	u64 bytenr = generic_ref->bytenr;
- 	u64 num_bytes = generic_ref->len;
- 	u64 parent = generic_ref->parent;
--	u64 ref_root;
--	u64 owner;
--	u64 offset;
-+	u64 ref_root = 0;
-+	u64 owner = 0;
-+	u64 offset = 0;
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index 02d7d7b2563b..56f7c840031e 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -2541,13 +2541,6 @@ void btrfs_backref_cleanup_node(struct btrfs_backref_cache *cache,
+ 		list_del(&edge->list[UPPER]);
+ 		btrfs_backref_free_edge(cache, edge);
  
- 	if (!btrfs_test_opt(fs_info, REF_VERIFY))
- 		return 0;
- 
- 	if (generic_ref->type == BTRFS_REF_METADATA) {
--		ref_root = generic_ref->tree_ref.root;
-+		if (!parent)
-+			ref_root = generic_ref->tree_ref.root;
- 		owner = generic_ref->tree_ref.level;
--		offset = 0;
--	} else {
-+	} else if (!parent) {
- 		ref_root = generic_ref->data_ref.ref_root;
- 		owner = generic_ref->data_ref.ino;
- 		offset = generic_ref->data_ref.offset;
-@@ -696,13 +696,10 @@ int btrfs_ref_tree_mod(struct btrfs_fs_info *fs_info,
- 		goto out;
- 	}
- 
--	if (parent) {
--		ref->parent = parent;
--	} else {
--		ref->root_objectid = ref_root;
--		ref->owner = owner;
--		ref->offset = offset;
--	}
-+	ref->parent = parent;
-+	ref->owner = owner;
-+	ref->root_objectid = ref_root;
-+	ref->offset = offset;
- 	ref->num_refs = (action == BTRFS_DROP_DELAYED_REF) ? -1 : 1;
- 
- 	memcpy(&ra->ref, ref, sizeof(struct ref_entry));
+-		if (RB_EMPTY_NODE(&upper->rb_node)) {
+-			BUG_ON(!list_empty(&node->upper));
+-			btrfs_backref_drop_node(cache, node);
+-			node = upper;
+-			node->lowest = 1;
+-			continue;
+-		}
+ 		/*
+ 		 * Add the node to leaf node list if no other child block
+ 		 * cached.
 -- 
 2.26.2
 

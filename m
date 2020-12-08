@@ -7,59 +7,60 @@ X-Spam-Status: No, score=-16.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4C024C4361B
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3EFDFC433FE
 	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Dec 2020 16:26:12 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 172C423A75
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Dec 2020 16:26:12 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0262F23A6C
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Dec 2020 16:26:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730375AbgLHQZp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 8 Dec 2020 11:25:45 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55512 "EHLO
+        id S1730368AbgLHQZo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 8 Dec 2020 11:25:44 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55510 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1730364AbgLHQZo (ORCPT
+        with ESMTP id S1730193AbgLHQZo (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Dec 2020 11:25:44 -0500
-Received: from mail-qk1-x744.google.com (mail-qk1-x744.google.com [IPv6:2607:f8b0:4864:20::744])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 79519C061749
-        for <linux-btrfs@vger.kernel.org>; Tue,  8 Dec 2020 08:24:49 -0800 (PST)
-Received: by mail-qk1-x744.google.com with SMTP id w79so5385458qkb.5
-        for <linux-btrfs@vger.kernel.org>; Tue, 08 Dec 2020 08:24:49 -0800 (PST)
+Received: from mail-qv1-xf43.google.com (mail-qv1-xf43.google.com [IPv6:2607:f8b0:4864:20::f43])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 99547C0613D6
+        for <linux-btrfs@vger.kernel.org>; Tue,  8 Dec 2020 08:24:45 -0800 (PST)
+Received: by mail-qv1-xf43.google.com with SMTP id u16so1996673qvl.7
+        for <linux-btrfs@vger.kernel.org>; Tue, 08 Dec 2020 08:24:45 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:subject:date:message-id:in-reply-to:references:mime-version
-         :content-transfer-encoding;
-        bh=rXkllivM/LlDIU6qMHpbw+hMYUQ5EKZq1LEuGXDx7tg=;
-        b=k2mwtnk0YmfpvaLaaeSVY1GCyXk0xVSdHjbeKlnnWO2hy7ntfy9SnsFcYb1+ugigzI
-         tQdOqf3xafjoEFtjC+ZksFtKGhTMxDiwqlWX77WwqFuPcTLFyAKm/VNGUTAEXvt0f+6r
-         ZvoKC8tj+rptfPdSvapHG90N0+Y19QiqU/vH4uB5NHOnXxK7ZfZwfYVjn/LH6wcaTF8t
-         xtof3IstJcAXxDnZCjXGFzWpF8iGQgeWLyBVN8p6Q/979jH7CR71h05crLMxDaD0VixB
-         h1uxOuD++03FHUWPa00YGseCgIj0L0TTEcS3+rOrdfZce29WQw2AxBmPH/oCV+/3Gz6n
-         njEQ==
+        h=from:to:cc:subject:date:message-id:in-reply-to:references
+         :mime-version:content-transfer-encoding;
+        bh=xGNUuifwBsvHD2zCYX/FZac+Jy1QnxNpjtDrlcuIIEE=;
+        b=NDMofWSJ2Jdj9L5cslVnoc52HZRp2U+GtIO7wA45UEmqRi6c7T8IEOqEo7krhkn5kg
+         infngxQCV8UKCecCCuWZ8ra/ZcgfhXCKxgq+2ie4AXSxQXSp4tL6nCqxD+icI9iYbxk+
+         m3xSWjfErdGF7htVsWtIO/yd57D4mPHL2Uf3sXR6NThz5tgqTJnOLHOaMon69g0+u4Zt
+         65GwkpmJ591GQAuDYCXjlz54serIjCMTrMKXZdqXFQ9aEYNNPd7izUTV01hJk4MSv3QY
+         kvjXDq7T7/XwfXGYbjr17AMeRoBPjcflfsma/fqB2dwcOc8/j8vyczwb+7UsgY44j/8h
+         ubKA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=rXkllivM/LlDIU6qMHpbw+hMYUQ5EKZq1LEuGXDx7tg=;
-        b=fSDc96X5kozb5N0jtv1W9gsL/CvrPowm5mfmeAjDV79jG8EhIBhk7N3TSUHIl/Gewz
-         iOc256xKw23fIQvl6CRbHhXjN5tfCTQ75VZHg+vouzE+MBCAC36+KVKidqCBZwBga/pO
-         DSuAQYlWMTw1USATDXMsswuBbnzl+w9/YlyJeCUTfnXLTrnjIRYGR8n4CpF8ZDuEhga8
-         f0MNsJ5K/EMX0Zej58y+tJ4IlMvnERzMrUgqu7Vbl+B1oPPXRCZJRWdzd2jVyf3TbmFx
-         uLSTTzxeAXbXiEgEz5H1a5YgE52Z/oGsnfVKf1zORukERHEp0hJFgY1c/aiI7JeD+gin
-         Mb3w==
-X-Gm-Message-State: AOAM533yDCtaapydeO9noNGaVNLkhlFhU5jbdGJMt+ZPQ6yelCYyMukd
-        PglAqg4AgNCriR2mBa60nSkB6Qn299G/rrMB
-X-Google-Smtp-Source: ABdhPJzNpIezimQz4bYkMJp/6TWD0cl61thThW13NX/I98EkvESZXoovAqwqKMuvRtKpnHdEVoSvwA==
-X-Received: by 2002:a37:458:: with SMTP id 85mr22326373qke.61.1607444688439;
-        Tue, 08 Dec 2020 08:24:48 -0800 (PST)
+        bh=xGNUuifwBsvHD2zCYX/FZac+Jy1QnxNpjtDrlcuIIEE=;
+        b=MNZL4p1Y8Vdx34G/T4R0KQqe/6Pz8wCgbmnJkDcl8ZDuwmga9uG4j36RXo//j08zAG
+         ixWDShKEp7bjMao6LciZziEH6KTTLv1GNzGkNPb+S0Sfa2fHEh95fV2aSyNhcd4cC1z5
+         swwYh4BPJcro+TfhFqRMmoc6+BgA3E8FrwJAaGC1b3fhyXX/67g6UVpMDkybPNhzrpJ8
+         NKjACtHdi67IWfeA0PivbuhN73dfVPCAlvgNdIZWeUfAFTS5/sFjCEKaT+uIzdEgKFBw
+         cqRJMYtWW0Zdg/GrYpUe0PZbPTJBSS46s4k5v96ryy3diYuElai4Liu50t3Fz3F/1/2A
+         aXrw==
+X-Gm-Message-State: AOAM530jgmhdGt1fptsjskCb5zgvMuEwB+8yrQPcfJ45TnrLnWv5qVrh
+        FV+nCEtKCZEmmGQgFB+6rcCDIAZzrbiiapd8
+X-Google-Smtp-Source: ABdhPJy2STwqNGo/i38Kc75GNH7J6cNdM8lWP1290wzy74dQq8gGaJ8qRqcZCGmOdrL7hnLHC/D5lg==
+X-Received: by 2002:a0c:8e42:: with SMTP id w2mr28433745qvb.4.1607444684560;
+        Tue, 08 Dec 2020 08:24:44 -0800 (PST)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id n2sm2018054qkf.37.2020.12.08.08.24.47
+        by smtp.gmail.com with ESMTPSA id l20sm4558631qkj.19.2020.12.08.08.24.43
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 08 Dec 2020 08:24:47 -0800 (PST)
+        Tue, 08 Dec 2020 08:24:43 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v6 21/52] btrfs: handle btrfs_record_root_in_trans failure in create_subvol
-Date:   Tue,  8 Dec 2020 11:23:28 -0500
-Message-Id: <84a86e27e5966f58688f05a277c412358e0b9d08.1607444471.git.josef@toxicpanda.com>
+Cc:     Qu Wenruo <wqu@suse.com>
+Subject: [PATCH v6 19/52] btrfs: handle btrfs_record_root_in_trans failure in btrfs_delete_subvolume
+Date:   Tue,  8 Dec 2020 11:23:26 -0500
+Message-Id: <b28f89f23862bf21c0e2d7252f7b89a2ff30851f.1607444471.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.2
 In-Reply-To: <cover.1607444471.git.josef@toxicpanda.com>
 References: <cover.1607444471.git.josef@toxicpanda.com>
@@ -70,31 +71,31 @@ List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 btrfs_record_root_in_trans will return errors in the future, so handle
-the error properly in create_subvol.
+the error properly in btrfs_delete_subvolume.
 
+Reviewed-by: Qu Wenruo <wqu@suse.com>
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/ioctl.c | 7 ++++++-
- 1 file changed, 6 insertions(+), 1 deletion(-)
+ fs/btrfs/inode.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index af8d01659562..2d0782f7e0e0 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -714,7 +714,12 @@ static noinline int create_subvol(struct inode *dir,
- 	/* Freeing will be done in btrfs_put_root() of new_root */
- 	anon_dev = 0;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index bcbae8b460c0..7a8d89e1b73f 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -4175,7 +4175,11 @@ int btrfs_delete_subvolume(struct inode *dir, struct dentry *dentry)
+ 		goto out_end_trans;
+ 	}
  
--	btrfs_record_root_in_trans(trans, new_root);
-+	ret = btrfs_record_root_in_trans(trans, new_root);
+-	btrfs_record_root_in_trans(trans, dest);
++	ret = btrfs_record_root_in_trans(trans, dest);
 +	if (ret) {
-+		btrfs_put_root(new_root);
 +		btrfs_abort_transaction(trans, ret);
-+		goto fail;
++		goto out_end_trans;
 +	}
  
- 	ret = btrfs_create_subvol_root(trans, new_root, root, new_dirid);
- 	if (!ret) {
+ 	memset(&dest->root_item.drop_progress, 0,
+ 		sizeof(dest->root_item.drop_progress));
 -- 
 2.26.2
 

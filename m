@@ -2,79 +2,119 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 62E3DC4361B
-	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Dec 2020 10:11:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D540EC4361B
+	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Dec 2020 10:12:09 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D747123A22
-	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Dec 2020 10:11:13 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A37E623A22
+	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Dec 2020 10:12:09 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729704AbgLIKLN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 9 Dec 2020 05:11:13 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53028 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729442AbgLIKLN (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Dec 2020 05:11:13 -0500
-Received: from casper.infradead.org (casper.infradead.org [IPv6:2001:8b0:10b:1236::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id ABC39C0613CF;
-        Wed,  9 Dec 2020 02:10:32 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Type:MIME-Version:
-        References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-        Content-Transfer-Encoding:Content-ID:Content-Description;
-        bh=iNVF9+1CEmnQuYVa3mTrTTlxl79IEcI5MQ5t1D/MbMI=; b=eMDgKToNzoSUAXmmfYxnYyXws/
-        Yad91sysOoU9rE4b/HDnTKW/aFGVG3/ZfZJL/rtj7MQHFy/uW3WFtvUcJ3feD8TZxEFHLQRWbjqsK
-        gp+2f1dtobc+BsteZJ7qh12N6hNWb2Lc/I/fWMjqJKHm0el91kz+eoAo6OKHkjK88ml9dJ2oaXWuw
-        tUHg61PGLqYhvra2Tr7oskQg+L7uSI9GEyWBbsTgMF+f2MTeDjYPZLLBB2I7XhGc54e9c9IG2xIO4
-        i55/PzTz3Ssb5BsX7sAN8Sr+cQtjR12jk0UIMD1r6wvfp82k1WNPBa2FYEZCAvVDVsPmHcagrfbgo
-        PcUwH/yg==;
-Received: from hch by casper.infradead.org with local (Exim 4.92.3 #3 (Red Hat Linux))
-        id 1kmwQY-0003un-EW; Wed, 09 Dec 2020 10:10:30 +0000
-Date:   Wed, 9 Dec 2020 10:10:30 +0000
-From:   "hch@infradead.org" <hch@infradead.org>
-To:     Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
-Cc:     "hch@infradead.org" <hch@infradead.org>,
-        Naohiro Aota <Naohiro.Aota@wdc.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "dsterba@suse.com" <dsterba@suse.com>,
-        "hare@suse.com" <hare@suse.com>,
-        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
-        Jens Axboe <axboe@kernel.dk>,
-        "Darrick J. Wong" <darrick.wong@oracle.com>
-Subject: Re: [PATCH v10 02/41] iomap: support REQ_OP_ZONE_APPEND
-Message-ID: <20201209101030.GA14302@infradead.org>
-References: <cover.1605007036.git.naohiro.aota@wdc.com>
- <72734501cc1d9e08117c215ed60f7b38e3665f14.1605007036.git.naohiro.aota@wdc.com>
- <20201209093138.GA3970@infradead.org>
- <SN4PR0401MB3598A4DA5A6E8F67DFB070859BCC0@SN4PR0401MB3598.namprd04.prod.outlook.com>
+        id S1729689AbgLIKLu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 9 Dec 2020 05:11:50 -0500
+Received: from mout.gmx.net ([212.227.15.18]:41939 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1729628AbgLIKLt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 9 Dec 2020 05:11:49 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1607508616;
+        bh=ZW3LRjnsR/uh3hj6MP8AK4X3Js6kEReKKbZ7feovr2w=;
+        h=X-UI-Sender-Class:Subject:From:To:Cc:In-Reply-To:References:Date;
+        b=GftNVg1MpXV+08AjEf0W4znpdTDrh90bT0YeDdBfl2LDt/6oK+4V0fz9K3QO719HY
+         AbTQUlGvpc26wJHUjRaruA8xAtfyhUdG/VoSalSrG8tUzad4yvhtOGp3lyAdUXXSvu
+         TbHaohH7e1+XCBkbIiU8cPTXDHIhKa0dvprbmId4=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from mobalindesk.lan.lan ([77.10.210.26]) by mail.gmx.com (mrgmx005
+ [212.227.17.190]) with ESMTPSA (Nemesis) id 1MbAh0-1kFoWm0Sfg-00bYNe; Wed, 09
+ Dec 2020 11:10:16 +0100
+Message-ID: <1f78cd5d635b360e03468740608f3b02aea76b5d.camel@gmx.net>
+Subject: Re: btrfs send -p failing: chown o257-1571-0 failed: No such file
+ or directory
+From:   "Massimo B." <massimo.b@gmx.net>
+To:     fdmanana@gmail.com
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
+In-Reply-To: <CAL3q7H7oLWGWJcg0Gfa+RKRGNf+d4mv0R9FQi2j=xLL1RNPTGA@mail.gmail.com>
+References: <6ae34776e85912960a253a8327068a892998e685.camel@gmx.net>
+         <CAL3q7H72N5q6ROhfvuaNNfUvQTe-mtHJVvZaS25oTycJ=3Um3w@mail.gmail.com>
+         <d4891e0c7aa79895d8f85601954c7eb379b733fc.camel@gmx.net>
+         <CAL3q7H5AOeFit_kz4X9Q2hXqeHXxamQ+pm04yA5BqkYr3-5e+g@mail.gmail.com>
+         <40b352dfa84e0f22d76e9b4f47111117549fa3bb.camel@gmx.net>
+         <CAL3q7H7oLWGWJcg0Gfa+RKRGNf+d4mv0R9FQi2j=xLL1RNPTGA@mail.gmail.com>
+Face:   iVBORw0KGgoAAAANSUhEUgAAADAAAAAwAQMAAABtzGvEAAAAA3NCSVQICAjb4U/gAAAABlBMVEX///8AAABVwtN+AAAACXBIWXMAAA7EAAAOxAGVKw4bAAABGUlEQVQYlUWQsUoDQRCGv71LjB7KSSBwwZCTgFhY2EYIHmJnZRMLo5AXUMRCBMHcE6iPoGBlINpoZXGVeQTFKqSxMgYtTBFcZw7EKfZn2Z2Z7//hr2ysZ+5tqFLmWKVaKKs0vWd9TJx2AibmoQcupj6CCZirqTgzA5hmsdtQWe5/xAREX7uJ3MLP9x4lyieNO5mcOxyM8HH79y/4Cdn9R3JDsts/uGO82yOMJf/ah1Y8tfQEIQt7Z7rCawtNiUpHFgYUdgTxgI1NAW6SvxoqWabbw0Bd5jpQibTNBC1F4nIMk2TWhTqIs+fSVpzfCsVR9eaiJf5W6mtWXK7O+vKR4nWkSYSuFbP4No3Ht6dpSN9pSMYmaXI1/usXT0FM3SoTKAAAAAAASUVORK5CYII=
+Content-Type: text/plain; charset="UTF-8"
+Date:   Wed, 09 Dec 2020 11:05:14 +0100
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <SN4PR0401MB3598A4DA5A6E8F67DFB070859BCC0@SN4PR0401MB3598.namprd04.prod.outlook.com>
-X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by casper.infradead.org. See http://www.infradead.org/rpr.html
+User-Agent: Evolution 3.36.5 
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:SYOfmiOLhlVgRLicGI8iPoqD7WwPohCH98WgBntT8HZJh42+bgQ
+ 0nOnV2+kqVVzEAgsr2vYeM+TBBt9fKNYK8S/0VDrSuuHfied1IsnHnKjFsOdSafnM383UOJ
+ AtdXWQIB1utHxhFpLJ3XCnCXgrdtErLmLW9KIoOleLwQKW9DQ59Hzu81y7YSmpTsHTlTAdy
+ n1kM8JNF2Z6lSqNnrBZAg==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:Di9zTW6hzD4=:YiTDUgP7BwwXFo9zoR0uSs
+ ZocWkCbL3xbc0++ytbzLZgN9oR57De6/1+OXc+Q4jltgDQ8doLPALVUzemdqlH5J1os5qzwB/
+ 2yECXRSGmbcSKea6kOPbQzDpVKMCEVIY2cksAlYLuK0NFWR7sKNGNtxgZse81/dJvOvtx5Wtc
+ AT3Sn01qXrgEN/J0AecbsYHgbxlyGZD+GRkj3U6MretlqhIKAD8t8dj9OkJx5jCmsGuFTJ7s9
+ qq/IwRfgZJiiddVil9A3Opp0UDiFGJ00cn/ceOtnE/xeXC+1YmkP3JvXxY5PQuayp4l/zOJTm
+ sQEhfrWnHHTaPAe8PJUrEMiorNLdrWZfqWJsrFMUDy6cda1aFm9Ol2tfoEMAKNdSVYtx+s4rS
+ xjpyy4sUyhaQkr2reATv0pNW+yZgNwePqFxYlEoXwM23yYoCwYq9WryyvM7MKlfSxuzSDJXh6
+ UmXuU/MsBK0sztrJ1w2zfQ7QRsL/b6CX0l8BuRtX144ZFM3AHRiHKniuTJ0r+GbrUoVtW4crw
+ BBkr0p6G/4s6P+lniD9hYRY5tn/mxxVoVwD3aHYpFr1p6BtsqXfvMctL5w3I3Y9TGf509VfR7
+ 04KT5zZ54Dd6BPHGDMD5UNpkxg/UbwqQGbv3s5cqrql0gBXLcKCVcsBN9V3ljiHEIi3dSoawm
+ FO+bbwDtn8qt31k4lT/HgSnsa4bw9DwpAcNybWT9jchWRvdDRV9LTwS5grzoq98wN59OjeVK7
+ spWxcU8ACemHvLbN9fAGvY5yTh1ncaiJtjqUBaUl91POGNIcPyqBb4nrbkXYwN85oIdQQ2qZT
+ 5KD8nGtmFkBz9BXt5Yu0welQJyZrz4TGqi4oQWQ/YeelR9L2OwR2k5RUboRyIv4hfjAaQx32r
+ AhJgQAxFbKsOScphhvTA==
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Dec 09, 2020 at 10:08:53AM +0000, Johannes Thumshirn wrote:
-> On 09/12/2020 10:34, Christoph Hellwig wrote:
-> > Btw, another thing I noticed:
-> > 
-> > when using io_uring to submit a write to btrfs that ends up using Zone
-> > Append we'll hit the
-> > 
-> > 	if (WARN_ON_ONCE(is_bvec))
-> > 		return -EINVAL;
-> > 
-> > case in bio_iov_iter_get_pages with the changes in this series.
-> 
-> Yes this warning is totally bogus. It was in there from the beginning of the
-> zone-append series and I have no idea why I didn't kill it.
-> 
-> IIRC Chaitanya had a patch in his nvmet zoned series removing it.
+On Fri, 2020-12-04 at 15:00 +0000, Filipe Manana wrote:
+> Great, try this patch then:  https://pastebin.com/raw/8NcPVUb0
+>
+>
+>
+> I haven't had the time yet to craft a reproducer and confirm that is
+>
+> the case you are running into, but from the receive -vvv output you
+>
+> provided before, it seems clear what the problem is.
 
-Yes, but it is wrong.  What we need is a version of
-__bio_iov_bvec_add_pages that takes the hardware limits into account.
+No, that is not working.
+It does not fail anymore and looks like transferring as expected. But the
+receiving subvolume is exploding and creating lots of sub directories. I k=
+illed
+the send|receive processes.
+
+du is far bigger than the origin subvolume and reveals some of those subdi=
+rs:
+
+~ du -sh /mnt/local/data/snapshots/root/root.20180114T131123+0100/
+du: cannot access '/mnt/local/data/snapshots/root/root.20180114T131123+010=
+0/o1568-359797-0': No such file or directory
+du: cannot access '/mnt/local/data/snapshots/root/root.20180114T131123+010=
+0/o6060-359797-0': No such file or directory
+du: cannot access '/mnt/local/data/snapshots/root/root.20180114T131123+010=
+0/o9279-359797-0': No such file or directory
+du: cannot access '/mnt/local/data/snapshots/root/root.20180114T131123+010=
+0/o19075-359797-0': No such file or directory
+du: cannot access '/mnt/local/data/snapshots/root/root.20180114T131123+010=
+0/o19076-359797-0': No such file or directory
+...
+du: cannot access '/mnt/local/data/snapshots/root/root.20180114T131123+010=
+0/o65078-359798-0': No such file or directory
+du: cannot access '/mnt/local/data/snapshots/root/root.20180114T131123+010=
+0/o65084-359798-0': No such file or directory
+du: cannot access '/mnt/local/data/snapshots/root/root.20180114T131123+010=
+0/o65095-359798-0': No such file or directory
+22G	/mnt/local/data/snapshots/root/root.20180114T131123+0100/
+
+compsize also reports about 20G referenced data.
+
+The origin subvol has only 12G referenced.
+
+Best regards,
+Massimo
+

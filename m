@@ -2,89 +2,192 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D3CE5C4361B
-	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Dec 2020 06:25:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5431FC4361B
+	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Dec 2020 06:40:12 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 74DC123C43
-	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Dec 2020 06:25:05 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id EF90B23C44
+	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Dec 2020 06:40:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1733162AbgLJGYt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 10 Dec 2020 01:24:49 -0500
-Received: from mout.gmx.net ([212.227.17.21]:48881 "EHLO mout.gmx.net"
+        id S2387480AbgLJGj5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 10 Dec 2020 01:39:57 -0500
+Received: from mx2.suse.de ([195.135.220.15]:44098 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725789AbgLJGYt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 10 Dec 2020 01:24:49 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1607581397;
-        bh=SatdtFJ/UrIydCTSQ5KHZ+NDzZzmgOUFT+34vm6rbB0=;
-        h=X-UI-Sender-Class:Subject:From:To:Cc:In-Reply-To:References:Date;
-        b=jIlvn8+fsrHECBq0nd8oq1qfXqVQKV1laqBzMsH+RfguORrhVPTPiuQrwjugUxhRe
-         D7XvRJJ0oZGQ88yoejEe+ZOGG7wuE7natpEcT/bCE+0MjA5GSAc14i8pgX7OOHzu/y
-         pRN3/ZJ2fME4rdV2HTCF9cIFmRDYX4yQgp06PUqA=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from mobalindesk.lan.lan ([77.8.221.62]) by mail.gmx.com (mrgmx105
- [212.227.17.168]) with ESMTPSA (Nemesis) id 1M3UZG-1knnK309n0-000bXU; Thu, 10
- Dec 2020 07:23:17 +0100
-Message-ID: <1d40f2a14487b6f052c2be84a38b5fff18d088a3.camel@gmx.net>
-Subject: Re: btrfs send -p failing: chown o257-1571-0 failed: No such file
- or directory
-From:   "Massimo B." <massimo.b@gmx.net>
-To:     fdmanana@gmail.com
-Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
-In-Reply-To: <CAL3q7H4r-EtnMc=VD2EP01HsLCqg-z8LfMnFseHrNEv=rjPT_g@mail.gmail.com>
-References: <6ae34776e85912960a253a8327068a892998e685.camel@gmx.net>
-         <CAL3q7H72N5q6ROhfvuaNNfUvQTe-mtHJVvZaS25oTycJ=3Um3w@mail.gmail.com>
-         <d4891e0c7aa79895d8f85601954c7eb379b733fc.camel@gmx.net>
-         <CAL3q7H5AOeFit_kz4X9Q2hXqeHXxamQ+pm04yA5BqkYr3-5e+g@mail.gmail.com>
-         <40b352dfa84e0f22d76e9b4f47111117549fa3bb.camel@gmx.net>
-         <CAL3q7H7oLWGWJcg0Gfa+RKRGNf+d4mv0R9FQi2j=xLL1RNPTGA@mail.gmail.com>
-         <1f78cd5d635b360e03468740608f3b02aea76b5d.camel@gmx.net>
-         <CAL3q7H4r-EtnMc=VD2EP01HsLCqg-z8LfMnFseHrNEv=rjPT_g@mail.gmail.com>
-Face:   iVBORw0KGgoAAAANSUhEUgAAADAAAAAwAQMAAABtzGvEAAAAA3NCSVQICAjb4U/gAAAABlBMVEX///8AAABVwtN+AAAACXBIWXMAAA7EAAAOxAGVKw4bAAABGUlEQVQYlUWQsUoDQRCGv71LjB7KSSBwwZCTgFhY2EYIHmJnZRMLo5AXUMRCBMHcE6iPoGBlINpoZXGVeQTFKqSxMgYtTBFcZw7EKfZn2Z2Z7//hr2ysZ+5tqFLmWKVaKKs0vWd9TJx2AibmoQcupj6CCZirqTgzA5hmsdtQWe5/xAREX7uJ3MLP9x4lyieNO5mcOxyM8HH79y/4Cdn9R3JDsts/uGO82yOMJf/ah1Y8tfQEIQt7Z7rCawtNiUpHFgYUdgTxgI1NAW6SvxoqWabbw0Bd5jpQibTNBC1F4nIMk2TWhTqIs+fSVpzfCsVR9eaiJf5W6mtWXK7O+vKR4nWkSYSuFbP4No3Ht6dpSN9pSMYmaXI1/usXT0FM3SoTKAAAAAAASUVORK5CYII=
-Content-Type: text/plain; charset="UTF-8"
-Date:   Thu, 10 Dec 2020 07:18:16 +0100
+        id S1725789AbgLJGj5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 10 Dec 2020 01:39:57 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1607582350; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=YfOnHta0fEzKr+6XAB1v7VtZGz0rRZVR9Wst5PhJ9eU=;
+        b=hlZGbyCn2if2epSEpvE7TA1OZKE1WsKiMWhmO0BBNMibK70Bi4g3j4Iaq7No/7YUxVY929
+        XdB+Y/jOr9E/rrb9+tjwWABaM6XJSSRakB2R8vJ/EHul3tx8CMt6umiXjeMJ8nimKNcsXH
+        FNEU+slVvE3xDk4Toz3v0swcahQRIiY=
+Received: from relay2.suse.de (unknown [195.135.221.27])
+        by mx2.suse.de (Postfix) with ESMTP id AC2A8AC6A
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Dec 2020 06:39:10 +0000 (UTC)
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH v2 01/18] btrfs: extent_io: rename @offset parameter to @disk_bytenr for submit_extent_page()
+Date:   Thu, 10 Dec 2020 14:38:48 +0800
+Message-Id: <20201210063905.75727-2-wqu@suse.com>
+X-Mailer: git-send-email 2.29.2
+In-Reply-To: <20201210063905.75727-1-wqu@suse.com>
+References: <20201210063905.75727-1-wqu@suse.com>
 MIME-Version: 1.0
-User-Agent: Evolution 3.36.5 
-Content-Transfer-Encoding: 7bit
-X-Provags-ID: V03:K1:SEm+32vqIb3QFPIrBtHg2PLnPuGZDEJqkYmPbyHzfe/LtZgsz2C
- 3uXN3NK4EYStF7Kn5c5SMrV25dFQwtpfEQgh0iZweJ3qcdoAzw6ORksjJ2vGPB6NHsO83Oo
- osi7cAq/n6Vu9AphGUOHyxU4QodUWMsFM2TZb4tVFi7sLv2wdanRFzPMwpTwwJxmYE0OKym
- jP41xjem5Zq9hlOTl8L0g==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:tYU4UMxfBC0=:si6nJqkHlFo1BADsF+DMk5
- OHVOWwHjAd/SjDILTAgKFXcSQLvkcq198ZEmnIXZKLmwOwuVY3ixT9J2ekyRjS7eplhkkMSBP
- V4URf2WLHtl2A9XXMoRaBhdHwPKY77CW8ZN278ypu26UBrcE1eUid9PWRI1Fn5kTZLJ6yQnsP
- Z/HTF5NAJFvvAyEfIa7dAXqcGP+5tsIfNRbTvUgq7La+uiFcOLRemwcnqtWZtZlhpltm9LfyR
- U+F9ywgDodH9c8kUjcl+iSWOilJ71j21lNOQbVB+hCe4KMV2+ZBaRhp83+Ba+Mzbr+h3//5Dn
- /FSRKvKqHe39FwFv58+qVtcMyiZ2Jus/S4aNkp9ai/THj4twjS/l3W0Rj3paiIpYlbzO0XPiS
- MPtTUfid9oid5dmJIrx0eY1UxZCagqHclg/LukAJf97L1mqcpcgabNHdxAtT3QSS9rs6DiL9+
- bVBUy30NHODakSg9/NuewScO61Sz8drNAdYDTlkSbV2iu7GtheTSyd7Pvm2eYQIqIwy3OPuet
- ob21qLNL9v1bdN73WBABqQT6CF+ZNUl4DhSB7s4FD8tgnk2OJxuss3wrU8RXO5KdacGg0CTov
- NbChEBIUED0zcfgIcy1YU1lEOf93ji/d8gDqCJjghLyELTGNa5JGHZKOu+Y3V7GilhWV36jfa
- QCsrOEDTb+tuzrRpnMbkIuaNQHEWdGvXLKWdDH0lqxB9Oodm24TvtYbwmbWzsm7HF6C8hMqBS
- C96FaYf4Kc0Lc/Y3FhC8rVehc1wOE/X02TrSgwce4T7Jyf15kbOEiOCpvF5pMVmBtZhdUUB+g
- ep8dG7ZiO3K6Bfwc+u/3IfYUVZIdboiTI4o2IMo8FhiMvI+tezcjNYlUvevqyyi0oRIJgGN0o
- TBQ1WNq4jrGod1KW171A==
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, 2020-12-09 at 10:29 +0000, Filipe Manana wrote:
-> So to confirm if there are other problems, you really need to let send and
-> receive processes finish (don't kill them). If they finish without failure,
-> then check if temporary directories (or files with the same name pattern)
-> still exist or not.
+The parameter @offset can't be more confusing.
+In fact that parameter is the disk bytenr for metadata/data.
 
-Ok, it seems to be working.
-Thank you very much.
+Rename it to @disk_bytenr and update the comment to reduce confusion.
 
-Can you put a note on the list here, when this is going to be released and to
-which version?
+Since we're here, also rename all @offset passed into
+submit_extent_page() to @disk_bytenr.
 
-Best regards,
-Massimo
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/extent_io.c | 30 +++++++++++++++---------------
+ 1 file changed, 15 insertions(+), 15 deletions(-)
+
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 6e3b72e63e42..2650e8720394 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3064,10 +3064,10 @@ struct bio *btrfs_bio_clone_partial(struct bio *orig, int offset, int size)
+  * @opf:	bio REQ_OP_* and REQ_* flags as one value
+  * @wbc:	optional writeback control for io accounting
+  * @page:	page to add to the bio
++ * @disk_bytenr:the logical bytenr where the write will be
++ * @size:	portion of page that we want to write
+  * @pg_offset:	offset of the new bio or to check whether we are adding
+  *              a contiguous page to the previous one
+- * @size:	portion of page that we want to write
+- * @offset:	starting offset in the page
+  * @bio_ret:	must be valid pointer, newly allocated bio will be stored there
+  * @end_io_func:     end_io callback for new bio
+  * @mirror_num:	     desired mirror to read/write
+@@ -3076,7 +3076,7 @@ struct bio *btrfs_bio_clone_partial(struct bio *orig, int offset, int size)
+  */
+ static int submit_extent_page(unsigned int opf,
+ 			      struct writeback_control *wbc,
+-			      struct page *page, u64 offset,
++			      struct page *page, u64 disk_bytenr,
+ 			      size_t size, unsigned long pg_offset,
+ 			      struct bio **bio_ret,
+ 			      bio_end_io_t end_io_func,
+@@ -3088,7 +3088,7 @@ static int submit_extent_page(unsigned int opf,
+ 	int ret = 0;
+ 	struct bio *bio;
+ 	size_t io_size = min_t(size_t, size, PAGE_SIZE);
+-	sector_t sector = offset >> 9;
++	sector_t sector = disk_bytenr >> 9;
+ 	struct extent_io_tree *tree = &BTRFS_I(page->mapping->host)->io_tree;
+ 
+ 	ASSERT(bio_ret);
+@@ -3122,7 +3122,7 @@ static int submit_extent_page(unsigned int opf,
+ 		}
+ 	}
+ 
+-	bio = btrfs_bio_alloc(offset);
++	bio = btrfs_bio_alloc(disk_bytenr);
+ 	bio_add_page(bio, page, io_size, pg_offset);
+ 	bio->bi_end_io = end_io_func;
+ 	bio->bi_private = tree;
+@@ -3244,7 +3244,7 @@ int btrfs_do_readpage(struct page *page, struct extent_map **em_cached,
+ 	}
+ 	while (cur <= end) {
+ 		bool force_bio_submit = false;
+-		u64 offset;
++		u64 disk_bytenr;
+ 
+ 		if (cur >= last_byte) {
+ 			char *userpage;
+@@ -3282,9 +3282,9 @@ int btrfs_do_readpage(struct page *page, struct extent_map **em_cached,
+ 		cur_end = min(extent_map_end(em) - 1, end);
+ 		iosize = ALIGN(iosize, blocksize);
+ 		if (this_bio_flag & EXTENT_BIO_COMPRESSED)
+-			offset = em->block_start;
++			disk_bytenr = em->block_start;
+ 		else
+-			offset = em->block_start + extent_offset;
++			disk_bytenr = em->block_start + extent_offset;
+ 		block_start = em->block_start;
+ 		if (test_bit(EXTENT_FLAG_PREALLOC, &em->flags))
+ 			block_start = EXTENT_MAP_HOLE;
+@@ -3373,7 +3373,7 @@ int btrfs_do_readpage(struct page *page, struct extent_map **em_cached,
+ 		}
+ 
+ 		ret = submit_extent_page(REQ_OP_READ | read_flags, NULL,
+-					 page, offset, iosize,
++					 page, disk_bytenr, iosize,
+ 					 pg_offset, bio,
+ 					 end_bio_extent_readpage, 0,
+ 					 *bio_flags,
+@@ -3550,8 +3550,8 @@ static noinline_for_stack int __extent_writepage_io(struct btrfs_inode *inode,
+ 	blocksize = inode->vfs_inode.i_sb->s_blocksize;
+ 
+ 	while (cur <= end) {
++		u64 disk_bytenr;
+ 		u64 em_end;
+-		u64 offset;
+ 
+ 		if (cur >= i_size) {
+ 			btrfs_writepage_endio_finish_ordered(page, cur,
+@@ -3571,7 +3571,7 @@ static noinline_for_stack int __extent_writepage_io(struct btrfs_inode *inode,
+ 		BUG_ON(end < cur);
+ 		iosize = min(em_end - cur, end - cur + 1);
+ 		iosize = ALIGN(iosize, blocksize);
+-		offset = em->block_start + extent_offset;
++		disk_bytenr = em->block_start + extent_offset;
+ 		block_start = em->block_start;
+ 		compressed = test_bit(EXTENT_FLAG_COMPRESSED, &em->flags);
+ 		free_extent_map(em);
+@@ -3601,7 +3601,7 @@ static noinline_for_stack int __extent_writepage_io(struct btrfs_inode *inode,
+ 		}
+ 
+ 		ret = submit_extent_page(REQ_OP_WRITE | write_flags, wbc,
+-					 page, offset, iosize, pg_offset,
++					 page, disk_bytenr, iosize, pg_offset,
+ 					 &epd->bio,
+ 					 end_bio_extent_writepage,
+ 					 0, 0, 0, false);
+@@ -3925,7 +3925,7 @@ static noinline_for_stack int write_one_eb(struct extent_buffer *eb,
+ 			struct writeback_control *wbc,
+ 			struct extent_page_data *epd)
+ {
+-	u64 offset = eb->start;
++	u64 disk_bytenr = eb->start;
+ 	u32 nritems;
+ 	int i, num_pages;
+ 	unsigned long start, end;
+@@ -3958,7 +3958,7 @@ static noinline_for_stack int write_one_eb(struct extent_buffer *eb,
+ 		clear_page_dirty_for_io(p);
+ 		set_page_writeback(p);
+ 		ret = submit_extent_page(REQ_OP_WRITE | write_flags, wbc,
+-					 p, offset, PAGE_SIZE, 0,
++					 p, disk_bytenr, PAGE_SIZE, 0,
+ 					 &epd->bio,
+ 					 end_bio_extent_buffer_writepage,
+ 					 0, 0, 0, false);
+@@ -3971,7 +3971,7 @@ static noinline_for_stack int write_one_eb(struct extent_buffer *eb,
+ 			ret = -EIO;
+ 			break;
+ 		}
+-		offset += PAGE_SIZE;
++		disk_bytenr += PAGE_SIZE;
+ 		update_nr_written(wbc, 1);
+ 		unlock_page(p);
+ 	}
+-- 
+2.29.2
 

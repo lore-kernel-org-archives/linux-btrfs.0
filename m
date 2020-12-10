@@ -2,106 +2,158 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+X-Spam-Status: No, score=-7.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 253DEC433FE
-	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Dec 2020 10:14:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F0755C4361B
+	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Dec 2020 11:30:19 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id C8CA423609
-	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Dec 2020 10:14:41 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9CEF723D5A
+	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Dec 2020 11:30:19 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728740AbgLJKKp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 10 Dec 2020 05:10:45 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48868 "EHLO
+        id S2388526AbgLJL3s (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 10 Dec 2020 06:29:48 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:32888 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726209AbgLJKKh (ORCPT
+        with ESMTP id S1731999AbgLJL3s (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 10 Dec 2020 05:10:37 -0500
-Received: from mail-qk1-x731.google.com (mail-qk1-x731.google.com [IPv6:2607:f8b0:4864:20::731])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 54FC4C0613CF
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Dec 2020 02:09:48 -0800 (PST)
-Received: by mail-qk1-x731.google.com with SMTP id y18so4182944qki.11
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Dec 2020 02:09:48 -0800 (PST)
+        Thu, 10 Dec 2020 06:29:48 -0500
+Received: from mail-il1-x12f.google.com (mail-il1-x12f.google.com [IPv6:2607:f8b0:4864:20::12f])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1F2E4C0613CF
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Dec 2020 03:29:08 -0800 (PST)
+Received: by mail-il1-x12f.google.com with SMTP id x15so4940711ilq.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Dec 2020 03:29:08 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
-         :subject:to:cc:content-transfer-encoding;
-        bh=9zc1+U5xEyjYPIKXVMQtzZ+5Wd/UuFwG02rd+rgq8cs=;
-        b=HVeU0wN16phLW+3KhpxIKwDgApVofTrQzEz8VXHi0Dxs+LS6zlc8uoOxGiYXc5uDZv
-         wNLbIJLHiLCMmgbwWcsdkiClLHEa9+26s0FLMBKLBrp4j/K9Py6YKjjSCDldzPPnynlq
-         CC1YGHZWb1lsc7nOkBKmRXYNfZCijl7c3a6XiDIRAoseBF8Ry98AnbKbsXXkzukeem6K
-         fu0NqrCKLp52auPaS5HY1PmyS4M9nQ5yXOuZzhGSmPZ1h3ZFlgfnsvDg7vQWrfS3fFMU
-         lBKjGNkupGza1pV8+3arLml1quJAhMFeIadMLpCgEEohj6FterUZIcB9i25xSFYaT0pn
-         LCTg==
+        h=mime-version:from:date:message-id:subject:to;
+        bh=UiaEE4TwkR4Y8f96z4GLLxYgReQsDNtYNoIoIVTFwKo=;
+        b=oB1oRtqnRKXYAMoArMwmGobKIVidkJ7Ms15bECc1PEeHUkAdr/nr767aIYV8LMJ/Ru
+         NSkmMTwNDCTw8rGTqK0MYmhyqsBBK2yOGubtvbCmbu+pRqJV4f1Hd8G2PjngdCv4+Tj8
+         PNtoEYoeRCUNf3KHVznN4JE2Ni4SbWRBEdtUVgltK9wgY3ZGGavs6cBfJb8BppqCMOVs
+         /kXzghqODZXdXvd9A0jfUf6mQE65ODzK0PVJlbFZAGgtBpbuUQobBGMdEP0buDaPHHcB
+         /6w4GaX4acoyvYtyStBIizdDJ71GGT6dnCCcTR2A+zQPdrXjiEa/U+jqqOIi+uhCr+xf
+         +yCw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
-         :from:date:message-id:subject:to:cc:content-transfer-encoding;
-        bh=9zc1+U5xEyjYPIKXVMQtzZ+5Wd/UuFwG02rd+rgq8cs=;
-        b=AJNfX935VR527kLcIlJhYuGLv8cxIKkIiLyohwLx3TkbfPjBbgS9Gqa9710GNbJjGu
-         V1SAZcd2qp/NIk9StPxB0aFp1jsAWNpV4U2h+kBh+0jjUlVkIJd5beKS1yFPQWilmy9x
-         IZrileU/kkvE/l1Mo3Z9AVj214oKWjvN0tk9bkkzAgpwlGDmKgvBqjaDrdc1+Y14rkG0
-         ONDX6Sa6JLmwaJN4aOFEOplrw/bktjY6hWGjLNVkkRuVr66M+mwzcbQyz7QJ8Sl2wGLb
-         g/3SVUcFX+cdE2LAi6Y89Lqi0u7VsDedV+PbrjKSTaFXeGbxQhzsh3wOhzfjq4k5g1ff
-         qUsw==
-X-Gm-Message-State: AOAM5333G53S3aliN04sjBXm0Li3L6bvCf5wssL54roPJerj/qujiRIi
-        whsVUxkKtcj3QuasKvRmji1ZO8btVbWLOWNOekc=
-X-Google-Smtp-Source: ABdhPJynQEzyJVYbOnQJ0cldSk6lvssd0MarKmHvmUgHumIBq6o/DYZMDvyQctPF7WGtguBwxovYvqMx8g6HNKPLP84=
-X-Received: by 2002:ae9:df47:: with SMTP id t68mr7937486qkf.438.1607594987497;
- Thu, 10 Dec 2020 02:09:47 -0800 (PST)
+        h=x-gm-message-state:mime-version:from:date:message-id:subject:to;
+        bh=UiaEE4TwkR4Y8f96z4GLLxYgReQsDNtYNoIoIVTFwKo=;
+        b=SXvtQ481zocXyC6yN6ZLERXXiyA5HdPP5yjSBs8SJdmpyd5MrPzixSjvu7ZtVVydDv
+         E2K7m/THCkLFyk3FjKfIT87j7L28KarkDFIJIjwLqtnUwFFhEhecW2lThyxB7mLWHIDd
+         l2Fo4l1EecH8LMLyqrYhzxjQOGr1LJ5mpIl8jRjuTfdV2eL8gV0Uy8L+n8mj+C4eBcNy
+         UIFAhXahpk5r97wJoolMPjskaG99p0PDEZZBlEs9Bzmp/tlvxyZZgxtqaqIjdT47IhzJ
+         DV6WNkGss2mz3Zzn6uV7Xvni8g67CZwlTamIBXZm69KLGNqOG/ZpX7kFFFVY4Qv1rUBO
+         rcrg==
+X-Gm-Message-State: AOAM531qda4VdOXuxkfZM0xvLSmZche+xV3IDuU6XW9uqXUEHEUEWkBP
+        RRLK7fF33X8CVYUx2y8t6QCdRtuq2qVVo8xSQuCVrbUzQ5jM1g==
+X-Google-Smtp-Source: ABdhPJz/DDuu21fr9x+EBDH1aryHlUIILtO7iD3zi/AYdhbRBH8u57+r5PqdALeg00iuozRarpG56DAe9A/xawN/yuM=
+X-Received: by 2002:a92:c0cc:: with SMTP id t12mr8404012ilf.299.1607599747188;
+ Thu, 10 Dec 2020 03:29:07 -0800 (PST)
 MIME-Version: 1.0
-References: <6ae34776e85912960a253a8327068a892998e685.camel@gmx.net>
- <CAL3q7H72N5q6ROhfvuaNNfUvQTe-mtHJVvZaS25oTycJ=3Um3w@mail.gmail.com>
- <d4891e0c7aa79895d8f85601954c7eb379b733fc.camel@gmx.net> <CAL3q7H5AOeFit_kz4X9Q2hXqeHXxamQ+pm04yA5BqkYr3-5e+g@mail.gmail.com>
- <40b352dfa84e0f22d76e9b4f47111117549fa3bb.camel@gmx.net> <CAL3q7H7oLWGWJcg0Gfa+RKRGNf+d4mv0R9FQi2j=xLL1RNPTGA@mail.gmail.com>
- <1f78cd5d635b360e03468740608f3b02aea76b5d.camel@gmx.net> <CAL3q7H4r-EtnMc=VD2EP01HsLCqg-z8LfMnFseHrNEv=rjPT_g@mail.gmail.com>
- <1d40f2a14487b6f052c2be84a38b5fff18d088a3.camel@gmx.net>
-In-Reply-To: <1d40f2a14487b6f052c2be84a38b5fff18d088a3.camel@gmx.net>
-Reply-To: fdmanana@gmail.com
-From:   Filipe Manana <fdmanana@gmail.com>
-Date:   Thu, 10 Dec 2020 10:09:36 +0000
-Message-ID: <CAL3q7H5b5d1X6WhQeX0=-Pieo66K=2n7c=KCuFpU74du3fkmVw@mail.gmail.com>
-Subject: Re: btrfs send -p failing: chown o257-1571-0 failed: No such file or directory
-To:     "Massimo B." <massimo.b@gmx.net>
-Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
+From:   Sreyan Chakravarty <sreyan32@gmail.com>
+Date:   Thu, 10 Dec 2020 16:58:52 +0530
+Message-ID: <CAMaziXsqG-z029cCTd1BBn6HTm2EDLxsSocSOVs1s5RoK_Q0aQ@mail.gmail.com>
+Subject: btrfs swapfile - Not enough swap space for hibernation.
+To:     linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Dec 10, 2020 at 6:23 AM Massimo B. <massimo.b@gmx.net> wrote:
->
-> On Wed, 2020-12-09 at 10:29 +0000, Filipe Manana wrote:
-> > So to confirm if there are other problems, you really need to let send =
-and
-> > receive processes finish (don't kill them). If they finish without fail=
-ure,
-> > then check if temporary directories (or files with the same name patter=
-n)
-> > still exist or not.
->
-> Ok, it seems to be working.
-> Thank you very much.
->
-> Can you put a note on the list here, when this is going to be released an=
-d to
-> which version?
+Hi,
 
-Sure.
-Thanks for testing it!
+I have a swapfile in a swap subvolume, I have used the
+btrfs_map_physical script to get the resume_offset, and the swap file
+was created with the +C attribute.
 
->
-> Best regards,
-> Massimo
->
+But when I try to do a `systemctl hibernate`
+                 Not enough swap space for hibernation.
+
+This usually happens if the resume_offset parameter is not right. But
+I don't know what I am doing wrong. I have followed all the correct
+steps.
+
+My swap file is 10GB and my RAM is 8GB.
+
+'swapon' on gives the following output:
+
+                       NAME                  TYPE      SIZE USED PRIO
+                       /dev/zram0            partition 3.8G   0B  100
+                      /var/swap/fedora.swap file       10G   0B   -2
+
+$ lsattr /var/swap/fedora.swap
+---------------C---- /var/swap/fedora.swap
+
+My layout is as follows:
+
+toplevel (level 5)
+|
+|--->root
+|--->swap
+
+$ btrfs subvolume list -p /
+ID 425 gen 17482 parent 5 top level 5 path root
+ID 426 gen 16880 parent 5 top level 5 path swap
+
+My kernel command line is as follows:
+
+root=UUID=7d9dbe1b-dea6-4141-807b-026325123ad8 ro
+rootflags=subvol=root
+rd.luks.uuid=luks-1136a62b-955b-4391-b9a4-b48ab11a862d
+resume=/dev/disk/by-uuid/7d9dbe1b-dea6-4141-807b-026325123ad8
+resume_offset=3599978
 
 
---=20
-Filipe David Manana,
+I got the resume_offset via the btrfs_map_physical.c which I got from
+here : https://github.com/osandov/osandov-linux/blob/master/scripts/btrfs_map_physical.c
 
-=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
- right.=E2=80=9D
+and then dividing the physical offset via my disk block size which is
+4096, which equals the resume offset.
+
+My fstab is as follows:
+
+UUID=7d9dbe1b-dea6-4141-807b-026325123ad8 /
+btrfs   subvol=root,x-systemd.device-timeout=0 0 0
+UUID=7d9dbe1b-dea6-4141-807b-026325123ad8 /var/swap
+   btrfs   subvol=swap,rw,nodatacow,noattime,nosuid,x-systemd.device-timeout=0
+0 0
+UUID=0e9cf655-eaef-44d6-8b5d-3f84e7449c0e /boot                   ext4
+   defaults        1 2
+UUID=CACC-9508          /boot/efi               vfat
+umask=0077,shortname=winnt 0 2
+/var/swap/fedora.swap none swap
+defaults,x-systemd.requires-mounts-for=/var/swap 0 2
+
+Other diagnostic information:
+
+$ uname -a
+Linux localhost.HPNotebook 5.8.15-301.fc33.x86_64 #1 SMP Thu Oct 15
+16:58:06 UTC 2020 x86_64 x86_64 x86_64 GNU/Linux
+
+$ btrfs --version
+btrfs-progs v5.7
+
+$ btrfs fi show
+Label: 'fedora'  uuid: 7d9dbe1b-dea6-4141-807b-026325123ad8
+Total devices 1 FS bytes used 100.81GiB
+devid    1 size 930.00GiB used 120.02GiB path
+/dev/mapper/luks-1136a62b-955b-4391-b9a4-b48ab11a862d
+
+$ btrfs fi df /
+Data, single: total=116.01GiB, used=100.38GiB
+System, DUP: total=8.00MiB, used=16.00KiB
+Metadata, DUP: total=2.00GiB, used=443.69MiB
+GlobalReserve, single: total=112.12MiB, used=0.00B
+
+$dmesg > dmesg.log
+https://pastebin.com/raw/3Dw1JkDP
+
+
+Please let me know if any further information is required.
+
+Where am I going wrong ?
+--
+Regards,
+Sreyan Chakravarty

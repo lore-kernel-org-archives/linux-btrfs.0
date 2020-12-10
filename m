@@ -6,64 +6,66 @@ X-Spam-Status: No, score=-5.2 required=3.0 tests=BAYES_00,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
 	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 110BAC4167B
-	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Dec 2020 20:19:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F1630C4361B
+	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Dec 2020 20:22:39 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id C392823D6B
-	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Dec 2020 20:19:37 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B819523D57
+	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Dec 2020 20:22:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2393768AbgLJUTX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 10 Dec 2020 15:19:23 -0500
-Received: from mx2.suse.de ([195.135.220.15]:36558 "EHLO mx2.suse.de"
+        id S2390095AbgLJUWj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 10 Dec 2020 15:22:39 -0500
+Received: from mx2.suse.de ([195.135.220.15]:37692 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2390014AbgLJUTR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 10 Dec 2020 15:19:17 -0500
+        id S1728036AbgLJUWi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 10 Dec 2020 15:22:38 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 03C95AC6A;
-        Thu, 10 Dec 2020 20:18:32 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id ACAE9AC6A;
+        Thu, 10 Dec 2020 20:21:57 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 4336CDA842; Thu, 10 Dec 2020 21:16:55 +0100 (CET)
-Date:   Thu, 10 Dec 2020 21:16:55 +0100
+        id DE15EDA842; Thu, 10 Dec 2020 21:20:20 +0100 (CET)
+Date:   Thu, 10 Dec 2020 21:20:20 +0100
 From:   David Sterba <dsterba@suse.cz>
-To:     Nikolay Borisov <nborisov@suse.com>
-Cc:     Sidong Yang <realwakka@gmail.com>, linux-btrfs@vger.kernel.org
+To:     Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
+Cc:     Sidong Yang <realwakka@gmail.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Subject: Re: [PATCH] btrfs-progs: scrub: warn if scrub started on a device
  has mq-deadline
-Message-ID: <20201210201655.GG6430@twin.jikos.cz>
+Message-ID: <20201210202020.GH6430@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
-        Sidong Yang <realwakka@gmail.com>, linux-btrfs@vger.kernel.org
+Mail-Followup-To: dsterba@suse.cz,
+        Johannes Thumshirn <Johannes.Thumshirn@wdc.com>,
+        Sidong Yang <realwakka@gmail.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 References: <20201205184929.22412-1-realwakka@gmail.com>
- <e9fbdfc9-f522-0fde-ac82-91101454365d@suse.com>
+ <SN4PR0401MB35981F791C9508429506EDA09BCE0@SN4PR0401MB3598.namprd04.prod.outlook.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <e9fbdfc9-f522-0fde-ac82-91101454365d@suse.com>
+In-Reply-To: <SN4PR0401MB35981F791C9508429506EDA09BCE0@SN4PR0401MB3598.namprd04.prod.outlook.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Dec 07, 2020 at 10:00:50AM +0200, Nikolay Borisov wrote:
-> On 5.12.20 г. 20:49 ч., Sidong Yang wrote:
+On Mon, Dec 07, 2020 at 07:23:03AM +0000, Johannes Thumshirn wrote:
+> On 05/12/2020 19:51, Sidong Yang wrote:
 > > Warn if scurb stared on a device that has mq-deadline as io-scheduler
 > > and point documentation. mq-deadline doesn't work with ionice value and
 > > it results performance loss. This warning helps users figure out the
 > > situation. This patch implements the function that gets io-scheduler
 > > from sysfs and check when scrub stars with the function.
 > 
-> NAK, use applications should be oblivious to what scheduler the admin
-> has set up. It's the responsibility of the admin to configure their
-> system properly, at most there could be a note that scrub is an
-> io-intensive process and leave the rest to the admin.
+> From a quick grep it seems to me that only bfq is supporting ioprio settings.
 
-If the admin is user of the machine, eg. on a desktop and starts a
-weekly scrub job that renders the machine unusable, then the warning
-makes sense. And actually this is the situation that happened and
-prompted updates to documentation and also the warning to make it more
-visible.
+Yeah it's only BFQ.
 
-That mq-deadline scheduler lacks ionice support is not nice, we're
-trying to minimize the impact at least.
+> Also there's some features like write ordering guarantees that currently 
+> only mq-deadline provides.
+> 
+> This warning will trigger a lot once the zoned patchset for btrfs is merged,
+> as for example SMR drives need this ordering guarantees and therefore select
+> mq-deadline (via the ELEVATOR_F_ZBD_SEQ_WRITE elevator feature).
+
+This won't affect the default case and for zoned fs we can't simply use
+BFQ and thus the ionice interface. Which should be IMHO acceptable.

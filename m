@@ -7,36 +7,36 @@ X-Spam-Status: No, score=-18.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0138DC4361B
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B9DC9C1B0D8
 	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Dec 2020 06:41:05 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id B154623C44
-	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Dec 2020 06:41:04 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6A37323D58
+	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Dec 2020 06:41:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2387561AbgLJGlE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S2387564AbgLJGlE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Thu, 10 Dec 2020 01:41:04 -0500
-Received: from mx2.suse.de ([195.135.220.15]:44472 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:44470 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2387523AbgLJGlD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 10 Dec 2020 01:41:03 -0500
+        id S2387556AbgLJGlE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 10 Dec 2020 01:41:04 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1607582378; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1607582384; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=HJGTzVPLfPoMAxVRuz+nVyvcG/38/B+4XaBbLMHGhKg=;
-        b=MJeSzMGUelNqPIFx6HTeAxPxF+1IXNmPnoz4kFOmn2PHHkLDTZyRjud8QktWwtemUj47Lr
-        kf65Mfc2jg62dko16X41/TPI2hKEHpNIUyLX/pH1WrtWcj+ZsfnFC+R0dC//DGb9+ebOWi
-        nXS7y58n2oxXsFvWtUoeyjbHZgclJ+s=
+        bh=+sI0HPZ7NFYln9IBhJ+D7AbWHaYi8HKvTPdGX9iL2w0=;
+        b=ZFoPe9LUpCwi0Ntz1RwJBlET7uFiMJlCYbOAq1jd0cxmJorkizP9wEIGm0a28hXv06HjSb
+        2Li9U07wfEVoYxKpEDfUaGpazlLtJ+A1DvK7JeQPsaEJDOnJIfcz6IrQxD0kua5v1SvoAo
+        EN5ZnHP3eElsQ3DHSUrbtRxAn2e3758=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 3AB8EAD79
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Dec 2020 06:39:38 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id B34D5AD8A
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Dec 2020 06:39:44 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 15/18] btrfs: disk-io: introduce subpage metadata validation check
-Date:   Thu, 10 Dec 2020 14:39:02 +0800
-Message-Id: <20201210063905.75727-16-wqu@suse.com>
+Subject: [PATCH v2 18/18] btrfs: allow RO mount of 4K sector size fs on 64K page system
+Date:   Thu, 10 Dec 2020 14:39:05 +0800
+Message-Id: <20201210063905.75727-19-wqu@suse.com>
 X-Mailer: git-send-email 2.29.2
 In-Reply-To: <20201210063905.75727-1-wqu@suse.com>
 References: <20201210063905.75727-1-wqu@suse.com>
@@ -46,120 +46,81 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-For subpage metadata validation check, there are some difference:
-- Read must finish in one bvec
-  Since we're just reading one subpage range in one page, it should
-  never be split into two bios nor two bvecs.
+This adds the basic RO mount ability for 4K sector size on 64K page
+system.
 
-- How to grab the existing eb
-  Instead of grabbing eb using page->private, we have to go search radix
-  tree as we don't have any direct pointer at hand.
+Currently we only plan to support 4K and 64K page system.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/disk-io.c | 82 ++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 82 insertions(+)
+ fs/btrfs/disk-io.c | 24 +++++++++++++++++++++---
+ fs/btrfs/super.c   |  7 +++++++
+ 2 files changed, 28 insertions(+), 3 deletions(-)
 
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index b6c03a8b0c72..adda76895058 100644
+index adda76895058..8ab6308ff852 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -591,6 +591,84 @@ static int validate_extent_buffer(struct extent_buffer *eb)
- 	return ret;
- }
- 
-+static int validate_subpage_buffer(struct page *page, u64 start, u64 end,
-+				   int mirror)
-+{
-+	struct btrfs_fs_info *fs_info = btrfs_sb(page->mapping->host->i_sb);
-+	struct extent_buffer *eb;
-+	int reads_done;
-+	int ret = 0;
+@@ -2510,13 +2510,21 @@ static int validate_super(struct btrfs_fs_info *fs_info,
+ 		btrfs_err(fs_info, "invalid sectorsize %llu", sectorsize);
+ 		ret = -EINVAL;
+ 	}
+-	/* Only PAGE SIZE is supported yet */
+-	if (sectorsize != PAGE_SIZE) {
 +
-+	if (!IS_ALIGNED(start, fs_info->sectorsize) ||
-+	    !IS_ALIGNED(end - start + 1, fs_info->sectorsize) ||
-+	    !IS_ALIGNED(end - start + 1, fs_info->nodesize)) {
-+		WARN_ON(IS_ENABLED(CONFIG_BTRFS_DEBUG));
-+		btrfs_err(fs_info, "invalid tree read bytenr");
-+		return -EUCLEAN;
++	/*
++	 * For 4K page size, we only support 4K sector size.
++	 * For 64K page size, we support RW for 64K sector size, and RO for
++	 * 4K sector size.
++	 */
++	if ((SZ_4K == PAGE_SIZE && sectorsize != PAGE_SIZE) ||
++	    (SZ_64K == PAGE_SIZE && (sectorsize != SZ_4K &&
++				     sectorsize != SZ_64K))) {
+ 		btrfs_err(fs_info,
+-			"sectorsize %llu not supported yet, only support %lu",
++			"sectorsize %llu not supported yet for page size %lu",
+ 			sectorsize, PAGE_SIZE);
+ 		ret = -EINVAL;
+ 	}
++
+ 	if (!is_power_of_2(nodesize) || nodesize < sectorsize ||
+ 	    nodesize > BTRFS_MAX_METADATA_BLOCKSIZE) {
+ 		btrfs_err(fs_info, "invalid nodesize %llu", nodesize);
+@@ -3272,6 +3280,16 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
+ 		goto fail_alloc;
+ 	}
+ 
++	/* For 4K sector size support, it's only read-only yet */
++	if (PAGE_SIZE == SZ_64K && sectorsize == SZ_4K) {
++		if (!sb_rdonly(sb) || btrfs_super_log_root(disk_super)) {
++			btrfs_err(fs_info,
++				"subpage sector size only support RO yet");
++			err = -EINVAL;
++			goto fail_alloc;
++		}
 +	}
 +
-+	/*
-+	 * We don't allow bio merge for subpage metadata read, so we should
-+	 * only get one eb for each endio hook.
-+	 */
-+	ASSERT(end == start + fs_info->nodesize - 1);
-+	ASSERT(PagePrivate(page));
-+
-+	rcu_read_lock();
-+	eb = radix_tree_lookup(&fs_info->buffer_radix,
-+			       start / fs_info->sectorsize);
-+	rcu_read_unlock();
-+
-+	/*
-+	 * When we are reading one tree block, eb must have been
-+	 * inserted into the radix tree. If not something is wrong.
-+	 */
-+	if (!eb) {
-+		WARN_ON(IS_ENABLED(CONFIG_BTRFS_DEBUG));
-+		btrfs_err(fs_info,
-+			"can't find extent buffer for bytenr %llu",
-+			start);
-+		return -EUCLEAN;
-+	}
-+	/*
-+	 * The pending IO might have been the only thing that kept
-+	 * this buffer in memory.  Make sure we have a ref for all
-+	 * this other checks
-+	 */
-+	atomic_inc(&eb->refs);
-+
-+	reads_done = atomic_dec_and_test(&eb->io_pages);
-+	/* Subpage read must finish in page read */
-+	ASSERT(reads_done);
-+
-+	eb->read_mirror = mirror;
-+	if (test_bit(EXTENT_BUFFER_READ_ERR, &eb->bflags)) {
-+		ret = -EIO;
-+		goto err;
-+	}
-+	ret = validate_extent_buffer(eb);
-+	if (ret < 0)
-+		goto err;
-+
-+	if (test_and_clear_bit(EXTENT_BUFFER_READAHEAD, &eb->bflags))
-+		btree_readahead_hook(eb, ret);
-+
-+	set_extent_buffer_uptodate(eb);
-+
-+	free_extent_buffer(eb);
-+	return ret;
-+err:
-+	/*
-+	 * our io error hook is going to dec the io pages
-+	 * again, we have to make sure it has something to
-+	 * decrement
-+	 */
-+	atomic_inc(&eb->io_pages);
-+	clear_extent_buffer_uptodate(eb);
-+	free_extent_buffer(eb);
-+	return ret;
-+}
-+
- int btrfs_validate_metadata_buffer(struct btrfs_io_bio *io_bio,
- 				   struct page *page, u64 start, u64 end,
- 				   int mirror)
-@@ -600,6 +678,10 @@ int btrfs_validate_metadata_buffer(struct btrfs_io_bio *io_bio,
- 	int reads_done;
+ 	ret = btrfs_init_workqueues(fs_info, fs_devices);
+ 	if (ret) {
+ 		err = ret;
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 022f20810089..a8068c389d60 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1996,6 +1996,13 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
+ 			ret = -EINVAL;
+ 			goto restore;
+ 		}
++		if (fs_info->sectorsize < PAGE_SIZE) {
++			btrfs_warn(fs_info,
++	"read-write mount is not yet allowed for sector size %u page size %lu",
++				   fs_info->sectorsize, PAGE_SIZE);
++			ret = -EINVAL;
++			goto restore;
++		}
  
- 	ASSERT(page->private);
-+
-+	if (btrfs_sb(page->mapping->host->i_sb)->sectorsize < PAGE_SIZE)
-+		return validate_subpage_buffer(page, start, end, mirror);
-+
- 	eb = (struct extent_buffer *)page->private;
- 
- 
+ 		/*
+ 		 * NOTE: when remounting with a change that does writes, don't
 -- 
 2.29.2
 

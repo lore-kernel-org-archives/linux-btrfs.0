@@ -2,109 +2,68 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-17.2 required=3.0 tests=BAYES_00,DATE_IN_PAST_03_06,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_CR_TRAILER,INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.2 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1EF80C4361B
-	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Dec 2020 11:46:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AB99BC1B0D9
+	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Dec 2020 11:51:44 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id CE82A23D5A
-	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Dec 2020 11:46:50 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6578323D67
+	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Dec 2020 11:51:44 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728990AbgLJLqk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 10 Dec 2020 06:46:40 -0500
-Received: from mx2.suse.de ([195.135.220.15]:44760 "EHLO mx2.suse.de"
+        id S1728477AbgLJLug (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 10 Dec 2020 06:50:36 -0500
+Received: from mx2.suse.de ([195.135.220.15]:53356 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728117AbgLJLoB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 10 Dec 2020 06:44:01 -0500
+        id S1727323AbgLJLuP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 10 Dec 2020 06:50:15 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1607600594; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=bWVMTXYxeip1vOov0gHf7ci7k79Zm/fGwfIiJOu2PoQ=;
-        b=ZdVclMJ44dmBY9SaSm1fe9g/iveWbqM/jjg0k5/hB30W/GkjD768c3ZON62lCsclBY9vmJ
-        KxAnWHs/MlfQ31uolrZ96SyM1+UPtiQz6V2QDSiGhgtMdGm9vINa3ZX+4CmHfCJtke6Phm
-        kIHXF/iXe8T88Zk1KDi89jhqNiL0Lqc=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 70E72AD87;
-        Thu, 10 Dec 2020 11:43:13 +0000 (UTC)
-From:   Nikolay Borisov <nborisov@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH] btrfs: Cleanup btrfs_file_write_iter
-Date:   Thu, 10 Dec 2020 10:38:32 +0200
-Message-Id: <20201210083832.1283574-1-nborisov@suse.com>
-X-Mailer: git-send-email 2.25.1
+        by mx2.suse.de (Postfix) with ESMTP id A377EAD87;
+        Thu, 10 Dec 2020 11:49:33 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 1FA2FDA7D9; Thu, 10 Dec 2020 12:47:57 +0100 (CET)
+Date:   Thu, 10 Dec 2020 12:47:57 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Goldwyn Rodrigues <rgoldwyn@suse.de>
+Cc:     linux-btrfs@vger.kernel.org, Goldwyn Rodrigues <rgoldwyn@suse.com>,
+        osandov@osandov.com
+Subject: Re: [PATCH 1/2] btrfs: Fold generic_write_checks() in
+ btrfs_write_check()
+Message-ID: <20201210114756.GD6430@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Goldwyn Rodrigues <rgoldwyn@suse.de>,
+        linux-btrfs@vger.kernel.org, Goldwyn Rodrigues <rgoldwyn@suse.com>,
+        osandov@osandov.com
+References: <cover.1607449636.git.rgoldwyn@suse.com>
+ <8dabce11b6bc9dc4ba534a2d5cf169ca3d0a812d.1607449636.git.rgoldwyn@suse.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <8dabce11b6bc9dc4ba534a2d5cf169ca3d0a812d.1607449636.git.rgoldwyn@suse.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-First replace all inode instances with a pointer to btrfs_inode. This
-removes multiple invocations of the BTRFS_I macro, subsequently remove
-2 local variables as they are called only once and simply refer to
-them directly.
+On Tue, Dec 08, 2020 at 12:42:40PM -0600, Goldwyn Rodrigues wrote:
+> From: Goldwyn Rodrigues <rgoldwyn@suse.com>
+> 
+> Code Cleanup.
+> 
+> Fold generic_write_checks() in btrfs_write_check(), because
+> generic_write_checks() is called before btrfs_write_check() in both
+> cases. The prototype of btrfs_write_check() has been changed to return
+> ssize_t and it can return zero as a valid error code. btrfs_write_check
+> now returns the count of I/O to be performed.
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
- fs/btrfs/file.c | 16 +++++++---------
- 1 file changed, 7 insertions(+), 9 deletions(-)
+That's effectively reverting what Omar sent as a fix to your initial
+patch:
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 0e41459b8de6..e65223e3510d 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1997,9 +1997,7 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
- 				    struct iov_iter *from)
- {
- 	struct file *file = iocb->ki_filp;
--	struct inode *inode = file_inode(file);
--	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
--	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	struct btrfs_inode *inode = BTRFS_I(file_inode(file));
- 	ssize_t num_written = 0;
- 	const bool sync = iocb->ki_flags & IOCB_DSYNC;
- 
-@@ -2008,7 +2006,7 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
- 	 * have opened a file as writable, we have to stop this write operation
- 	 * to ensure consistency.
- 	 */
--	if (test_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state))
-+	if (test_bit(BTRFS_FS_STATE_ERROR, &inode->root->fs_info->fs_state))
- 		return -EROFS;
- 
- 	if (!(iocb->ki_flags & IOCB_DIRECT) &&
-@@ -2016,7 +2014,7 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
- 		return -EOPNOTSUPP;
- 
- 	if (sync)
--		atomic_inc(&BTRFS_I(inode)->sync_writers);
-+		atomic_inc(&inode->sync_writers);
- 
- 	if (iocb->ki_flags & IOCB_DIRECT)
- 		num_written = btrfs_direct_write(iocb, from);
-@@ -2028,14 +2026,14 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
- 	 * otherwise subsequent syncs to a file that's been synced in this
- 	 * transaction will appear to have already occurred.
- 	 */
--	spin_lock(&BTRFS_I(inode)->lock);
--	BTRFS_I(inode)->last_sub_trans = root->log_transid;
--	spin_unlock(&BTRFS_I(inode)->lock);
-+	spin_lock(&inode->lock);
-+	inode->last_sub_trans = inode->root->log_transid;
-+	spin_unlock(&inode->lock);
- 	if (num_written > 0)
- 		num_written = generic_write_sync(iocb, num_written);
- 
- 	if (sync)
--		atomic_dec(&BTRFS_I(inode)->sync_writers);
-+		atomic_dec(&inode->sync_writers);
- 
- 	current->backing_dev_info = NULL;
- 	return num_written;
--- 
-2.25.1
+https://lore.kernel.org/linux-btrfs/b096cecce8277b30e1c7e26efd0450c0bc12ff31.1605723568.git.osandov@fb.com/
 
+fixing a problem. Now you revert that to fix another problem, now with
+the lock added. I'd rather have one patch without this cleanup and given
+that this is technically fixing a regression in the new 5.11 code it'll
+go to post rc1 pull request.

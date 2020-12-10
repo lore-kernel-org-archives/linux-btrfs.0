@@ -2,77 +2,140 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.2 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-17.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D7BE9C0018C
-	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Dec 2020 11:40:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7664AC4361B
+	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Dec 2020 11:40:58 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 93EF323D5A
-	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Dec 2020 11:40:27 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 32DD923D5A
+	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Dec 2020 11:40:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732363AbgLJLkG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 10 Dec 2020 06:40:06 -0500
-Received: from mx2.suse.de ([195.135.220.15]:54962 "EHLO mx2.suse.de"
+        id S1729321AbgLJLkt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 10 Dec 2020 06:40:49 -0500
+Received: from mx2.suse.de ([195.135.220.15]:60272 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725947AbgLJLkB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 10 Dec 2020 06:40:01 -0500
+        id S1733285AbgLJLki (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 10 Dec 2020 06:40:38 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1607600391; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references:autocrypt:autocrypt;
+        bh=NQ+nqkFXH8BP/3aXaBb6Z7ks2ATNEidcfVkkLxd93N8=;
+        b=p1q1+qpkv3p5NVWi7a3TaysF5XSOAc0pEf5qoCfb0Oa/AwSj9sZhYtYdKu/3kny6ETW5y6
+        PAhD2PibLOHrIanDtOiHXIHbYG0pdhvUluIqrDgJr34tWtIyzQYde03y7EESWbbuYNsSk8
+        v0gkdIA97ncl+/AtU1XvP8OGhCVcBoM=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id B5F06AEA6;
-        Thu, 10 Dec 2020 11:39:18 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id C8682DA7D9; Thu, 10 Dec 2020 12:27:42 +0100 (CET)
-Date:   Thu, 10 Dec 2020 12:27:42 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Omar Sandoval <osandov@osandov.com>
-Cc:     Stefano Babic <sbabic@denx.de>, linux-btrfs@vger.kernel.org,
-        David Sterba <dsterba@suse.com>
-Subject: Re: btrfs-progs license
-Message-ID: <20201210112742.GC6430@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Omar Sandoval <osandov@osandov.com>,
-        Stefano Babic <sbabic@denx.de>, linux-btrfs@vger.kernel.org,
-        David Sterba <dsterba@suse.com>
-References: <b927ca28-e280-4d79-184f-b72867dbdaa8@denx.de>
- <X8/pUT3B1+uluATv@relinquished.localdomain>
+        by mx2.suse.de (Postfix) with ESMTP id 58C76AE52;
+        Thu, 10 Dec 2020 11:39:50 +0000 (UTC)
+Subject: Re: [PATCH 1/2] btrfs: Fold generic_write_checks() in
+ btrfs_write_check()
+To:     Goldwyn Rodrigues <rgoldwyn@suse.de>, linux-btrfs@vger.kernel.org
+Cc:     Goldwyn Rodrigues <rgoldwyn@suse.com>
+References: <cover.1607449636.git.rgoldwyn@suse.com>
+ <8dabce11b6bc9dc4ba534a2d5cf169ca3d0a812d.1607449636.git.rgoldwyn@suse.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <a93f2997-3fb8-6f9b-a24d-d9f1ba6e2f07@suse.com>
+Date:   Thu, 10 Dec 2020 10:43:49 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.10.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <X8/pUT3B1+uluATv@relinquished.localdomain>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <8dabce11b6bc9dc4ba534a2d5cf169ca3d0a812d.1607449636.git.rgoldwyn@suse.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Dec 08, 2020 at 01:00:01PM -0800, Omar Sandoval wrote:
-> On Tue, Dec 08, 2020 at 10:49:10AM +0100, Stefano Babic wrote:
-> > Hi,
-> > 
-> > I hope I am not OT. I ask about license for btrfs-progs and related
-> > libraries. I would like to use libbtrfsutils in a FOSS project, but this
-> > is licensed under GPLv3 (even not LGPL) and it forbids to use it in
-> > projects where secure boot is used.
-> 
-> libbtrfsutil is LGPLv3, where did you get the idea that it is GPLv3?
-> 
-> > Checking code in btrfs-progs, btrfs is licensed under GPv2 (fine !) and
-> > also libbtrfs. But I read also that libbtrfs is thought to be dropped
-> > from the project. And checking btrfs, this is linked against
-> > libbtrfsutils, making the whole project GPLv3 (and again, not suitable
-> > for many industrial applications in embedded systems).
-> > 
-> > Does anybody explain me the conflict in license and if there is a path
-> > for a GPLv2 compliant library ?
-> 
-> No objections from me to make it LGPLv2 instead, I suppose. Dave,
-> thoughts?
 
-I've replied in https://github.com/kdave/btrfs-progs/issues/323, the
-initial question regarding GPL v3 does not seem to be relevatnt as
-there's no such code.
 
-I'd like to understand what's the problem with LGPLv3 before we'd
-consider switching to LGPLv2, which I'd rather not do.
+On 8.12.20 г. 20:42 ч., Goldwyn Rodrigues wrote:
+> From: Goldwyn Rodrigues <rgoldwyn@suse.com>
+> 
+> Code Cleanup.
+> 
+> Fold generic_write_checks() in btrfs_write_check(), because
+> generic_write_checks() is called before btrfs_write_check() in both
+> cases. The prototype of btrfs_write_check() has been changed to return
+> ssize_t and it can return zero as a valid error code. btrfs_write_check
+> now returns the count of I/O to be performed.
+> 
+> Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
+
+Codewise LGTM, just one minor nit below, I guess David can fix it up
+during merge.
+
+with it addressed you can add my:
+
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+
+> ---
+>  fs/btrfs/file.c | 33 +++++++++++++++++----------------
+>  1 file changed, 17 insertions(+), 16 deletions(-)
+> 
+> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+> index 0e41459b8de6..272660a8279f 100644
+> --- a/fs/btrfs/file.c
+> +++ b/fs/btrfs/file.c
+> @@ -1583,17 +1583,28 @@ static void update_time_for_write(struct inode *inode)
+>  		inode_inc_iversion(inode);
+>  }
+>  
+> -static int btrfs_write_check(struct kiocb *iocb, struct iov_iter *from,
+> -			     size_t count)
+> +/* btrfs_write_check - checks if a write can be performed
+> + *
+> + * Returns:
+> + * count - in case the write can be successfully performed
+
+nit:  count - in case the write can be successfully performed number of
+bytes to write
+
+<snip>

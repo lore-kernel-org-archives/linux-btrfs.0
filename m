@@ -2,41 +2,42 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+X-Spam-Status: No, score=-15.9 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	UNWANTED_LANGUAGE_BODY,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9DC63C1B0D8
-	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Dec 2020 06:40:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E3BDFC433FE
+	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Dec 2020 06:40:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 6538023D50
-	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Dec 2020 06:40:56 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A2DA823B98
+	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Dec 2020 06:40:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2387546AbgLJGk4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S2387555AbgLJGk4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Thu, 10 Dec 2020 01:40:56 -0500
-Received: from mx2.suse.de ([195.135.220.15]:44510 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:44500 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2387526AbgLJGkr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 10 Dec 2020 01:40:47 -0500
+        id S2387523AbgLJGkp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 10 Dec 2020 01:40:45 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1607582373; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1607582367; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=16hOVy9/figJJmrvKBZ6vZO8aylb6nCxXkTXMPHWcOA=;
-        b=jxRiOaWMz3Ge9RdtcskizlBrsrQDu2HzTo9OXWClPfTrJK6f3gBcNEacC8ZcON75mlsp2u
-        uOncmU7de1Tv1ddkTNoOlvd17M9VfLWzeCTHCPCMMeoNopI08BBKoICr9qabAZEwDBHHFC
-        zNsNXiCvtLFGHQ34lz1itS8Y0S+68s4=
+        bh=3c7+npsXwevbKox7FM5Ar8W1LpWNlxK+1vJA8k2qtK8=;
+        b=GdZNOsmF+PgCW8GzdDrMxYyilfmAToIcnKGM9o0WqV+5VqC4GdCJEVavDlHb0gs1CrJ8vU
+        gRbNlAnyXqUZQLzK3Hcp5hVSvlJ3fFC8ZBecGFxi3bPloYxkHmAQgfg3blqgfAaiioIqMy
+        7Xdi5Ybmwal58EDHFJIIQ2Le9WV2ECc=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 143B1AD60
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Dec 2020 06:39:33 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 6B18FAD35
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Dec 2020 06:39:27 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 12/18] btrfs: extent_io: implement try_release_extent_buffer() for subpage metadata support
-Date:   Thu, 10 Dec 2020 14:38:59 +0800
-Message-Id: <20201210063905.75727-13-wqu@suse.com>
+Subject: [PATCH v2 09/18] btrfs: subpage: introduce helper for subpage uptodate status
+Date:   Thu, 10 Dec 2020 14:38:56 +0800
+Message-Id: <20201210063905.75727-10-wqu@suse.com>
 X-Mailer: git-send-email 2.29.2
 In-Reply-To: <20201210063905.75727-1-wqu@suse.com>
 References: <20201210063905.75727-1-wqu@suse.com>
@@ -46,103 +47,146 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Unlike the original try_release_extent_buffer,
-try_release_subpage_extent_buffer() will iterate through
-btrfs_subpage::tree_block_bitmap, and try to release each extent buffer.
+This patch introduce the following functions to handle btrfs subpage
+uptodate status:
+- btrfs_subpage_set_uptodate()
+- btrfs_subpage_clear_uptodate()
+- btrfs_subpage_test_uptodate()
+  Those helpers can only be called when the range is ensured to be
+  inside the page.
+
+- btrfs_page_set_uptodate()
+- btrfs_page_clear_uptodate()
+- btrfs_page_test_uptodate()
+  Those helpers can handle both regular sector size and subpage without
+  problem.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/extent_io.c | 73 ++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 73 insertions(+)
+ fs/btrfs/subpage.h | 98 ++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 98 insertions(+)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 141e414b1ab9..4d55803302e9 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -6258,10 +6258,83 @@ void memmove_extent_buffer(const struct extent_buffer *dst,
- 	}
- }
+diff --git a/fs/btrfs/subpage.h b/fs/btrfs/subpage.h
+index 87b4e028ae18..b3cf9171ec98 100644
+--- a/fs/btrfs/subpage.h
++++ b/fs/btrfs/subpage.h
+@@ -23,6 +23,7 @@
+ struct btrfs_subpage {
+ 	/* Common members for both data and metadata pages */
+ 	spinlock_t lock;
++	u16 uptodate_bitmap;
+ 	union {
+ 		/* Structures only used by metadata */
+ 		struct {
+@@ -35,6 +36,17 @@ struct btrfs_subpage {
+ int btrfs_attach_subpage(struct btrfs_fs_info *fs_info, struct page *page);
+ void btrfs_detach_subpage(struct btrfs_fs_info *fs_info, struct page *page);
  
-+static int try_release_subpage_extent_buffer(struct page *page)
++static inline void btrfs_subpage_clamp_range(struct page *page,
++					     u64 *start, u32 *len)
 +{
-+	struct btrfs_fs_info *fs_info = btrfs_sb(page->mapping->host->i_sb);
-+	u64 page_start = page_offset(page);
-+	int bitmap_size = BTRFS_SUBPAGE_BITMAP_SIZE;
-+	int bit_start = 0;
-+	int ret;
++	u64 orig_start = *start;
++	u32 orig_len = *len;
 +
-+	while (bit_start < bitmap_size) {
-+		struct btrfs_subpage *subpage;
-+		struct extent_buffer *eb;
-+		unsigned long flags;
-+		u16 tmp = 1 << bit_start;
-+		u64 start;
-+
-+		/*
-+		 * Make sure the page still has private, as previous run can
-+		 * detach the private
-+		 */
-+		spin_lock(&page->mapping->private_lock);
-+		if (!PagePrivate(page)) {
-+			spin_unlock(&page->mapping->private_lock);
-+			break;
-+		}
-+		subpage = (struct btrfs_subpage *)page->private;
-+		spin_unlock(&page->mapping->private_lock);
-+
-+		spin_lock_irqsave(&subpage->lock, flags);
-+		if (!(tmp & subpage->tree_block_bitmap))  {
-+			spin_unlock_irqrestore(&subpage->lock, flags);
-+			bit_start++;
-+			continue;
-+		}
-+		spin_unlock_irqrestore(&subpage->lock, flags);
-+
-+		start = bit_start * fs_info->sectorsize + page_start;
-+		bit_start += fs_info->nodesize >> fs_info->sectorsize_bits;
-+		/*
-+		 * Here we can't call find_extent_buffer() which will increase
-+		 * eb->refs.
-+		 */
-+		rcu_read_lock();
-+		eb = radix_tree_lookup(&fs_info->buffer_radix,
-+				start >> fs_info->sectorsize_bits);
-+		rcu_read_unlock();
-+		ASSERT(eb);
-+		spin_lock(&eb->refs_lock);
-+		if (atomic_read(&eb->refs) != 1 || extent_buffer_under_io(eb) ||
-+		    !test_and_clear_bit(EXTENT_BUFFER_TREE_REF, &eb->bflags)) {
-+			spin_unlock(&eb->refs_lock);
-+			continue;
-+		}
-+		/*
-+		 * Here we don't care the return value, we will always check
-+		 * the page private at the end.
-+		 * And release_extent_buffer() will release the refs_lock.
-+		 */
-+		release_extent_buffer(eb);
-+	}
-+	/* Finally to check if we have cleared page private */
-+	spin_lock(&page->mapping->private_lock);
-+	if (!PagePrivate(page))
-+		ret = 1;
-+	else
-+		ret = 0;
-+	spin_unlock(&page->mapping->private_lock);
-+	return ret;
-+
++	*start = max_t(u64, page_offset(page), orig_start);
++	*len = min_t(u64, page_offset(page) + PAGE_SIZE,
++		     orig_start + orig_len) - *start;
 +}
 +
- int try_release_extent_buffer(struct page *page)
- {
- 	struct extent_buffer *eb;
+ /*
+  * Convert the [start, start + len) range into a u16 bitmap
+  *
+@@ -96,4 +108,90 @@ static inline bool btrfs_subpage_clear_and_test_tree_block(
+ 	return last;
+ }
  
-+	if (btrfs_sb(page->mapping->host->i_sb)->sectorsize < PAGE_SIZE)
-+		return try_release_subpage_extent_buffer(page);
++static inline void btrfs_subpage_set_uptodate(struct btrfs_fs_info *fs_info,
++			struct page *page, u64 start, u32 len)
++{
++	struct btrfs_subpage *subpage = (struct btrfs_subpage *)page->private;
++	u16 tmp = btrfs_subpage_calc_bitmap(fs_info, page, start, len);
++	unsigned long flags;
 +
- 	/*
- 	 * We need to make sure nobody is attaching this page to an eb right
- 	 * now.
++	spin_lock_irqsave(&subpage->lock, flags);
++	subpage->uptodate_bitmap |= tmp;
++	if (subpage->uptodate_bitmap == (u16)-1)
++		SetPageUptodate(page);
++	spin_unlock_irqrestore(&subpage->lock, flags);
++}
++
++static inline void btrfs_subpage_clear_uptodate(struct btrfs_fs_info *fs_info,
++			struct page *page, u64 start, u32 len)
++{
++	struct btrfs_subpage *subpage = (struct btrfs_subpage *)page->private;
++	u16 tmp = btrfs_subpage_calc_bitmap(fs_info, page, start, len);
++	unsigned long flags;
++
++	spin_lock_irqsave(&subpage->lock, flags);
++	subpage->tree_block_bitmap &= ~tmp;
++	ClearPageUptodate(page);
++	spin_unlock_irqrestore(&subpage->lock, flags);
++}
++
++/*
++ * Unlike set/clear which is dependent on each page status, for test all bits
++ * are tested in the same way.
++ */
++#define DECLARE_BTRFS_SUBPAGE_TEST_OP(name)				\
++static inline bool btrfs_subpage_test_##name(struct btrfs_fs_info *fs_info, \
++			struct page *page, u64 start, u32 len)		\
++{									\
++	struct btrfs_subpage *subpage = (struct btrfs_subpage *)page->private; \
++	u16 tmp = btrfs_subpage_calc_bitmap(fs_info, page, start, len); \
++	unsigned long flags;						\
++	bool ret;							\
++									\
++	spin_lock_irqsave(&subpage->lock, flags);			\
++	ret = ((subpage->name##_bitmap & tmp) == tmp);			\
++	spin_unlock_irqrestore(&subpage->lock, flags);			\
++	return ret;							\
++}
++DECLARE_BTRFS_SUBPAGE_TEST_OP(uptodate);
++
++/*
++ * Note that, in selftest, especially extent-io-tests, we can have empty
++ * fs_info passed in.
++ * Thanfully in selftest, we only test sectorsize == PAGE_SIZE cases so far
++ * thus we can fall back to regular sectorsize branch.
++ */
++#define DECLARE_BTRFS_PAGE_OPS(name, set_page_func, clear_page_func,	\
++			       test_page_func)				\
++static inline void btrfs_page_set_##name(struct btrfs_fs_info *fs_info,	\
++			struct page *page, u64 start, u32 len)		\
++{									\
++	if (unlikely(!fs_info) || fs_info->sectorsize == PAGE_SIZE) {	\
++		set_page_func(page);					\
++		return;							\
++	}								\
++	btrfs_subpage_clamp_range(page, &start, &len);			\
++	btrfs_subpage_set_##name(fs_info, page, start, len);		\
++}									\
++static inline void btrfs_page_clear_##name(struct btrfs_fs_info *fs_info, \
++			struct page *page, u64 start, u32 len)		\
++{									\
++	if (unlikely(!fs_info) || fs_info->sectorsize == PAGE_SIZE) {	\
++		clear_page_func(page);					\
++		return;							\
++	}								\
++	btrfs_subpage_clamp_range(page, &start, &len);			\
++	btrfs_subpage_clear_##name(fs_info, page, start, len);		\
++}									\
++static inline bool btrfs_page_test_##name(struct btrfs_fs_info *fs_info, \
++			struct page *page, u64 start, u32 len)		\
++{									\
++	if (unlikely(!fs_info) || fs_info->sectorsize == PAGE_SIZE)	\
++		return test_page_func(page);				\
++	btrfs_subpage_clamp_range(page, &start, &len);			\
++	return btrfs_subpage_test_##name(fs_info, page, start, len);	\
++}
++DECLARE_BTRFS_PAGE_OPS(uptodate, SetPageUptodate, ClearPageUptodate,
++			PageUptodate);
++
+ #endif /* BTRFS_SUBPAGE_H */
 -- 
 2.29.2
 

@@ -2,184 +2,113 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.2 required=3.0 tests=BAYES_00,
+X-Spam-Status: No, score=-2.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 73C51C4361B
-	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Dec 2020 18:36:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 93725C4361B
+	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Dec 2020 19:59:12 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 48A692256F
-	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Dec 2020 18:36:57 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 527A320679
+	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Dec 2020 19:59:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2440933AbgLNSfr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 14 Dec 2020 13:35:47 -0500
-Received: from vps-vb.mhejs.net ([37.28.154.113]:59502 "EHLO vps-vb.mhejs.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2440905AbgLNSe0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 Dec 2020 13:34:26 -0500
-X-Greylist: delayed 1306 seconds by postgrey-1.27 at vger.kernel.org; Mon, 14 Dec 2020 13:34:25 EST
-Received: from MUA
-        by vps-vb.mhejs.net with esmtps (TLS1.2:ECDHE-RSA-AES128-GCM-SHA256:128)
-        (Exim 4.93.0.4)
-        (envelope-from <mail@maciej.szmigiero.name>)
-        id 1kosK4-0000TN-Ti; Mon, 14 Dec 2020 19:11:48 +0100
-To:     Ignat Korchagin <ignat@cloudflare.com>
-Cc:     agk@redhat.com, snitzer@redhat.com, dm-devel@redhat.com,
-        dm-crypt@saout.de, linux-kernel@vger.kernel.org,
-        ebiggers@kernel.org, Damien.LeMoal@wdc.com, mpatocka@redhat.com,
-        herbert@gondor.apana.org.au, kernel-team@cloudflare.com,
-        nobuto.murata@canonical.com, Chris Mason <clm@fb.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-From:   "Maciej S. Szmigiero" <mail@maciej.szmigiero.name>
-Subject: dm-crypt with no_read_workqueue and no_write_workqueue + btrfs scrub
- = BUG()
-Message-ID: <16ffadab-42ba-f9c7-8203-87fda3dc9b44@maciej.szmigiero.name>
-Date:   Mon, 14 Dec 2020 19:11:43 +0100
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.5.1
+        id S2502799AbgLNT6z (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 14 Dec 2020 14:58:55 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40240 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2502875AbgLNT6k (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 14 Dec 2020 14:58:40 -0500
+Received: from mail-qt1-x832.google.com (mail-qt1-x832.google.com [IPv6:2607:f8b0:4864:20::832])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4300AC0613D3
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 Dec 2020 11:58:00 -0800 (PST)
+Received: by mail-qt1-x832.google.com with SMTP id b9so12807568qtr.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 Dec 2020 11:58:00 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc:content-transfer-encoding;
+        bh=ptFxjqL/WXovjqSFX8GQQF5yqpG/xvXmNl1jQUgol2E=;
+        b=EytdfhiqNt3nrZYBwoEce4ZZsXczewh59ANCXLNb/UCm/l4ZmwNd/p0Jw3XNxe+Gdq
+         W3DVxtbDx/L7PJ8pnwCIw6PZPhGLf4KwwhUgLyByW11+gsHmoggZNBnZctQ4MUgSv6J9
+         JD6X4/X1XTmh0DKZMwL82QHsp7H+H4atoIVWzH2Vge0GfPZXJ+4Ha3qrcFeST/NYgdo0
+         9Pgbr+xGIf5LpcABW3ohawR/rc/DoVTXt0HlNyswd3aWLzjZnzcmtLe//Gi7eG6ar02N
+         xTh6Er4sllDAoiCnAIf851FO25bvvtCyrCYgAaLcM+nwTkwOeCvnSmeCnJzdRrDsNWXv
+         Tlig==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc:content-transfer-encoding;
+        bh=ptFxjqL/WXovjqSFX8GQQF5yqpG/xvXmNl1jQUgol2E=;
+        b=P1/bWG3dmfsJBkW1aCuzZbe8OAGB6C12t2UObS8LdjrkjDYjgU3fgIRdSOwLT7T8HI
+         KYRKhswNCBiLKK7R9gse1BLV6IzcbqoaGGKuBaVW1pkYvjy5ev4Ei4rWTimEYSCdqjv1
+         FMjbPQhTsI0T92ifcQSRb3RUwor0C36fxyhgidn7BUdCXq7MI1Cqy0GBmWCfWYEJaL4Q
+         IysirD/C3XcwTr/xv2pgxODPcD5x6DwOAxGEKVpMskbE8Dn8+tupyinRkZX6G5qhXrrU
+         7O7hr1fHvpiPe3hTuVhJlQObb+ebHIb1We/ykK83fZHmuUgVVSVnAUlzvVYEDONqs6Xb
+         3ETw==
+X-Gm-Message-State: AOAM531LD9VJRIgdYgPolbdTbVFxxEGAgY2zRXMWnCSjNm2HndVQS6Xe
+        fnAH9GwaXL9Pf6UIT0pOMRneLy8tysL2Cu3Hi1Vga27tjLk8jQ==
+X-Google-Smtp-Source: ABdhPJxQ5t+GiSvSOsUkXMP8WxIO4QHwjHSd3WIUeZz99IBoh4wlhdu8//IlRnEDMEa9mt6wC+WmTMPeW07NPId7AyA=
+X-Received: by 2002:ac8:4615:: with SMTP id p21mr31076771qtn.45.1607975879326;
+ Mon, 14 Dec 2020 11:57:59 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+References: <CAA85sZtU1dAYMSUR4fXbcuS4i=gU=ukC-9Y7io3pUMUt3S+Bjw@mail.gmail.com>
+ <ccb8c05e-fa56-c88b-c211-f250fe85d815@applied-asynchrony.com>
+In-Reply-To: <ccb8c05e-fa56-c88b-c211-f250fe85d815@applied-asynchrony.com>
+From:   Ian Kumlien <ian.kumlien@gmail.com>
+Date:   Mon, 14 Dec 2020 20:57:48 +0100
+Message-ID: <CAA85sZvFBMad6N8hHR5YM56X9DxKE_3CyOT3xEnp9KsWX=fuHQ@mail.gmail.com>
+Subject: Re: Odd filesystem issue, reading beyond device
+To:     =?UTF-8?Q?Holger_Hoffst=C3=A4tte?= <holger@applied-asynchrony.com>
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi,
+On Mon, Dec 14, 2020 at 5:50 PM Holger Hoffst=C3=A4tte
+<holger@applied-asynchrony.com> wrote:
+>
+> On 2020-12-14 17:28, Ian Kumlien wrote:
+> > Hi,
+> >
+> > Upgraded from 5.9.6 to 5.10 and now I get this:
+> > [  581.665506] BTRFS: device fsid 3c16de2d-33b6-436a-ba17-38b917ae3e33
+> > devid 1 transid 258057 /dev/dm-0 scanned by systemd-udevd (1043)
+> > [  589.602444] BTRFS info (device dm-0): use lzo compression, level 0
+> > [  589.602459] BTRFS info (device dm-0): enabling auto defrag
+> > [  589.602465] BTRFS info (device dm-0): using free space tree
+> > [  589.602470] BTRFS info (device dm-0): has skinny extents
+> > [  589.603082] attempt to access beyond end of device
+> >                 dm-0: rw=3D4096, want=3D36461289632, limit=3D1097154329=
+6
+> > [  589.603108] attempt to access beyond end of device
+> >                 dm-0: rw=3D4096, want=3D36461355168, limit=3D1097154329=
+6
+> > [  589.603125] BTRFS error (device dm-0): failed to read chunk root
+> > [  589.603412] BTRFS error (device dm-0): open_ctree failed
+> > [  834.619193] BTRFS info (device dm-0): use lzo compression, level 0
+> > [  834.619209] BTRFS info (device dm-0): enabling auto defrag
+> > [  834.619214] BTRFS info (device dm-0): using free space tree
+> > [  834.619219] BTRFS info (device dm-0): has skinny extents
+> > [  834.619825] attempt to access beyond end of device
+> >                 dm-0: rw=3D4096, want=3D36461289632, limit=3D1097154329=
+6
+> > [  834.619844] attempt to access beyond end of device
+> >                 dm-0: rw=3D4096, want=3D36461355168, limit=3D1097154329=
+6
+> > [  834.619858] BTRFS error (device dm-0): failed to read chunk root
+> > [  834.620205] BTRFS error (device dm-0): open_ctree failed
+> >
+> > Any ideas?
+> >
+>
+> See https://lore.kernel.org/lkml/20201214053147.GA24093@codemonkey.org.uk=
+/
+> + followups. Nothing to do with btrfs.
 
-I hit a reproducible BUG() when scrubbing a btrfs fs on top of
-a dm-crypt device with no_read_workqueue and no_write_workqueue
-flags enabled.
+Thank you! and 5.0.1 has been released with the patches reverted, FYI =3D)
 
-Steps to reproduce:
-1) cryptsetup create -c aes -d /dev/urandom test /dev/vdb1
-2) dmsetup table test --showkeys | sed 's/$/ 2 no_read_workqueue no_write_workqueue/' | dmsetup reload test
-3) dmsetup suspend test && dmsetup resume test
-4) mkfs.btrfs /dev/mapper/test
-5) mkdir /tmp/test; mount -t btrfs /dev/mapper/test /tmp/test/
-6) dd if=/dev/zero of=/tmp/test/test bs=1M count=900; sync
-7) btrfs scrub start /tmp/test
-
-The result is:
-[ 2965.025717][    C0] BUG: sleeping function called from invalid context at mm/mempool.c:381
-[ 2965.025721][    C0] in_atomic(): 1, irqs_disabled(): 0, non_block: 0, pid: 2848, name: kworker/u4:0
-[ 2965.025726][    C0] CPU: 0 PID: 2848 Comm: kworker/u4:0 Tainted: G                T 5.10.0-rc3+ #278
-[ 2965.025727][    C0] Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 0.0.0 02/06/2015
-[ 2965.025735][    C0] Workqueue: btrfs-scrub btrfs_work_helper
-[ 2965.025738][    C0] Call Trace:
-[ 2965.025759][    C0]  <IRQ>
-[ 2965.025766][    C0]  dump_stack+0x57/0x6a
-[ 2965.025771][    C0]  ___might_sleep.cold+0x8a/0x97
-[ 2965.025776][    C0]  mempool_alloc+0xcb/0x1b0
-[ 2965.025781][    C0]  ? crypto_skcipher_decrypt+0x5c/0x80
-[ 2965.025786][    C0]  crypt_convert+0xdf0/0xfa0
-[ 2965.025793][    C0]  ? update_load_avg+0x92/0x650
-[ 2965.025798][    C0]  kcryptd_crypt_read_convert+0xc5/0x100
-[ 2965.025802][    C0]  tasklet_action_common.constprop.0+0xfa/0x120
-[ 2965.025807][    C0]  __do_softirq+0xc4/0x2a8
-[ 2965.025811][    C0]  asm_call_irq_on_stack+0x12/0x20
-[ 2965.025814][    C0]  </IRQ>
-[ 2965.025818][    C0]  do_softirq_own_stack+0x36/0x40
-[ 2965.025821][    C0]  irq_exit_rcu+0x8d/0xc0
-[ 2965.025825][    C0]  sysvec_call_function_single+0x36/0x80
-[ 2965.025829][    C0]  asm_sysvec_call_function_single+0x12/0x20
-[ 2965.025833][    C0] RIP: 0010:crc_18+0xa/0x1e
-[ 2965.025837][    C0] Code: ff ff f2 4c 0f 38 f1 81 68 ff ff ff f2 4c 0f 38 f1 8a 68 ff ff ff f2 4d 0f 38 f1 93 68 ff ff ff f2 4c 0f 38 f1 81 70 ff ff ff <f2> 4c 0f 38 f1 8a 70 ff ff ff f2 4d 0f 38 f1 93 70 ff ff ff f2 4c
-[ 2965.025839][    C0] RSP: 0018:ffffa2d04023bbf0 EFLAGS: 00000246
-[ 2965.025842][    C0] RAX: 0000000000000080 RBX: 0000000000001000 RCX: ffff96e1851ef400
-[ 2965.025844][    C0] RDX: ffff96e1851ef800 RSI: 0000000000001000 RDI: 0000000000000000
-[ 2965.025845][    C0] RBP: ffff96e1851ef000 R08: 000000000ae37425 R09: 0000000000000000
-[ 2965.025847][    C0] R10: 0000000000000000 R11: ffff96e1851efc00 R12: 0000000000001000
-[ 2965.025848][    C0] R13: ffff96e18e9a6a80 R14: fffff68440000000 R15: ffff96e184d73c00
-[ 2965.025854][    C0]  ? crc32c_pcl_intel_digest+0xa0/0xc0
-[ 2965.025857][    C0]  ? scrub_checksum_data+0x126/0x180
-[ 2965.025861][    C0]  ? update_load_avg+0x92/0x650
-[ 2965.025863][    C0]  ? cpuacct_charge+0x35/0x80
-[ 2965.025867][    C0]  ? check_preempt_wakeup+0xef/0x260
-[ 2965.025872][    C0]  ? radix_tree_gang_lookup+0xa1/0xd0
-[ 2965.025875][    C0]  ? __wake_up_common_lock+0x8a/0xc0
-[ 2965.025878][    C0]  ? scrub_block_put+0x5c/0xa0
-[ 2965.025880][    C0]  ? scrub_bio_end_io_worker+0x52/0x220
-[ 2965.025884][    C0]  ? kfree+0x3ec/0x450
-[ 2965.025887][    C0]  ? scrub_bio_end_io_worker+0xd7/0x220
-[ 2965.025890][    C0]  ? btrfs_work_helper+0xdb/0x350
-[ 2965.025893][    C0]  ? __schedule+0x275/0x8c0
-[ 2965.025897][    C0]  ? process_one_work+0x1d6/0x3b0
-[ 2965.025901][    C0]  ? worker_thread+0x53/0x400
-[ 2965.025904][    C0]  ? rescuer_thread+0x440/0x440
-[ 2965.025907][    C0]  ? kthread+0x13f/0x160
-[ 2965.025910][    C0]  ? __kthread_bind_mask+0xa0/0xa0
-[ 2965.025913][    C0]  ? ret_from_fork+0x22/0x30
-
-Additionally, here is a similar BUG() backtrace I've hit on
-another system, while scrubbing a btrfs fs on dm-crypt devs
-with these flags enabled, the BUG() hit here was actually
-scheduling while atomic:
-  <IRQ>
-  dump_stack+0x57/0x6a
-  __schedule_bug.cold+0x47/0x53
-  __schedule+0x643/0x7d0
-  schedule+0x62/0xd0
-  schedule_timeout+0x135/0x180
-  ? cryptd_enqueue_request+0x5e/0xd0
-  wait_for_completion+0x84/0xe0
-  crypt_convert.constprop.0+0x7a7/0xf60
-  ? crypt_endio+0x2d/0x90
-  ? kmem_cache_free+0x416/0x470
-  ? ktime_get+0x4a/0xc0
-  kcryptd_crypt_read_convert+0xbe/0x100
-  blk_update_request+0x229/0x3d0
-  scsi_end_request+0x40/0x200
-  scsi_io_completion+0x8e/0x5b0
-  blk_done_softirq+0x87/0xb0
-  __do_softirq+0xd3/0x2ed
-  asm_call_irq_on_stack+0x12/0x20
-  </IRQ>
-  do_softirq_own_stack+0x36/0x40
-  irq_exit_rcu+0x8d/0xc0
-  common_interrupt+0x87/0x160
-  asm_common_interrupt+0x1e/0x40
-RIP: 0010:_aesni_dec4+0x2f/0x190
-Code: fa 66 0f ef c2 66 0f ef e2 66 0f ef ea 66 0f ef f2 49 83 c2 30 41 83 f9 18 72 70 4d 8d 52 20 74 36 49 83 c2 20 41 0f 28 52 a0 <66> 0f 38 de c2 66 0f 38 de e2 66 0f 3
-  ? _aesni_dec1+0xb0/0xb0
-  ? _aesni_dec1+0xb0/0xb0
-  ? aesni_xts_crypt8+0xe0/0x240
-  ? __glue_xts_req_128bit+0x8f/0xc0
-  ? glue_xts_req_128bit+0xc1/0x400
-  ? aesni_set_key+0x1e0/0x1e0
-  ? ttwu_queue_wakelist+0xb9/0xe0
-  ? kcryptd_async_done+0xa6/0x210
-  ? kcryptd_async_done+0xa6/0x210
-  ? kfree+0x401/0x460
-  ? kcryptd_async_done+0xa6/0x210
-  ? crypto_skcipher_decrypt+0x4b/0x80
-  ? cryptd_skcipher_decrypt+0xa6/0x130
-  ? update_load_avg+0x7e/0x660
-  ? set_next_entity+0xcd/0x240
-  ? __switch_to_asm+0x3f/0x60
-  ? finish_task_switch+0x87/0x280
-  ? __schedule+0x263/0x7d0
-  ? preempt_schedule+0x32/0x50
-  ? preempt_schedule_thunk+0x16/0x18
-  ? cryptd_queue_worker+0x8b/0xe0
-  ? process_one_work+0x1d4/0x3d0
-  ? worker_thread+0x50/0x3f0
-  ? rescuer_thread+0x420/0x420
-  ? kthread+0x134/0x160
-  ? __kthread_bind_mask+0xa0/0xa0
-  ? ret_from_fork+0x22/0x30
-
-It looks like to me that the dm-crypt code in kcryptd_queue_crypt()
-checks for a hard IRQ context via in_irq() before deciding whether to
-offload processing to a tasklet or proceed directly, but it probably
-should check for any interrupt context via in_interrupt() or similar
-and then proceed with using a workqueue, as the ordinary code flow
-does.
-
-CC'ing btrfs folks in case it is actually a btrfs-specific issue.
-
-Thanks,
-Maciej
-
+> -h

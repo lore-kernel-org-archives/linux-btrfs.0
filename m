@@ -2,192 +2,184 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-16.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.2 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 960D3C4361B
-	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Dec 2020 18:22:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 73C51C4361B
+	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Dec 2020 18:36:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 3B01A20578
-	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Dec 2020 18:22:42 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 48A692256F
+	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Dec 2020 18:36:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2440728AbgLNSUa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 14 Dec 2020 13:20:30 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52534 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2440718AbgLNSU0 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 Dec 2020 13:20:26 -0500
-Received: from mail-qt1-x841.google.com (mail-qt1-x841.google.com [IPv6:2607:f8b0:4864:20::841])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 84964C0613D6
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 Dec 2020 10:19:46 -0800 (PST)
-Received: by mail-qt1-x841.google.com with SMTP id c14so12566902qtn.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 Dec 2020 10:19:46 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:subject:date:message-id:in-reply-to:references:mime-version
-         :content-transfer-encoding;
-        bh=wdcl2xtzih8VI306oUh2SKwkge0xZ3P7J5fl8vyUtg0=;
-        b=v8UskHRW9OMgP6TmR2CiH+wYWaK0JyNt2PdGo7cJlaVXzOGT4q55wMXmIbuUsk9gsg
-         SSV9oMLBNr5S7ZMnTqENCD9TH3qL0xy4qZDL+uoy622sEWocVV8B1WGpd1EyFRslGZhS
-         sSvNEBEbRLvOAx6X2HpJblFPYsQx3zkw7KtHFdQFLSmS85xYHOFO0sGG7VRa1MzKf3xC
-         NNpZlbq24SfvKIhS1NyRfcJQ/UT4YR4ASq/Uugj4gvx1jbNKyr6gXttkI19bcMcJg39y
-         n/kEyInvBCMrgKYEPLztUlNzNwakMSGkQiioVAcNCeKlAJLkLklmNOS24R6yNQWUG968
-         lE4g==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=wdcl2xtzih8VI306oUh2SKwkge0xZ3P7J5fl8vyUtg0=;
-        b=YsA8gHZyGHx7c/dmMTel47WhGn0z04v6KiIIWIoRHbqPHZteL1k7+agPF5iGkuUrK2
-         wCQrSn8ghdLB0c+A2ToZGP80q/lYbHsWm378ebC8J1rENhlDuYaehNpokZOnZSrwrZPr
-         KlI3h1AGRjxbse7wa5v2rZr3k4NcM5qDLcN1Xdyn73tGiRg65z141RjlvTgrSovdR5gS
-         SMB0Z9oNpmQZlrsnTQDh1fU29q9KgbC4Lc2IN+Jbsxt30mUTJNRooCloDLGhGV6V9BxX
-         ewdyPlPWXDoyg1NqpIAV1ipB1xcA4xUUpMrLaajTJAQbOAdaFEIUH2+w3rmVyBIo7ZJU
-         lzKA==
-X-Gm-Message-State: AOAM5315oX8xaUW/hsHupNHiU4h0eo9EJU9KUPQjpVXk1QmdfIBgDRrR
-        SS3+gl6BtV2G2vEj9ygxyIaFHOIWUQRSoZgS
-X-Google-Smtp-Source: ABdhPJyzz9VyeBpXimytqfzuBFyNm7TcYt+hIpTd7ZEyxmajfKpHOdOJqb9GqHBcOXA2CiEZSM2pjQ==
-X-Received: by 2002:a05:622a:182:: with SMTP id s2mr31650704qtw.147.1607969985349;
-        Mon, 14 Dec 2020 10:19:45 -0800 (PST)
-Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id w7sm15271756qkd.92.2020.12.14.10.19.44
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 14 Dec 2020 10:19:44 -0800 (PST)
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 1/4] btrfs: add a i_mmap_lock to our inode
-Date:   Mon, 14 Dec 2020 13:19:38 -0500
-Message-Id: <7322b31fb9e7a2c27b9fbca528904c163997ffa9.1607969636.git.josef@toxicpanda.com>
-X-Mailer: git-send-email 2.26.2
-In-Reply-To: <cover.1607969636.git.josef@toxicpanda.com>
-References: <cover.1607969636.git.josef@toxicpanda.com>
+        id S2440933AbgLNSfr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 14 Dec 2020 13:35:47 -0500
+Received: from vps-vb.mhejs.net ([37.28.154.113]:59502 "EHLO vps-vb.mhejs.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S2440905AbgLNSe0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 14 Dec 2020 13:34:26 -0500
+X-Greylist: delayed 1306 seconds by postgrey-1.27 at vger.kernel.org; Mon, 14 Dec 2020 13:34:25 EST
+Received: from MUA
+        by vps-vb.mhejs.net with esmtps (TLS1.2:ECDHE-RSA-AES128-GCM-SHA256:128)
+        (Exim 4.93.0.4)
+        (envelope-from <mail@maciej.szmigiero.name>)
+        id 1kosK4-0000TN-Ti; Mon, 14 Dec 2020 19:11:48 +0100
+To:     Ignat Korchagin <ignat@cloudflare.com>
+Cc:     agk@redhat.com, snitzer@redhat.com, dm-devel@redhat.com,
+        dm-crypt@saout.de, linux-kernel@vger.kernel.org,
+        ebiggers@kernel.org, Damien.LeMoal@wdc.com, mpatocka@redhat.com,
+        herbert@gondor.apana.org.au, kernel-team@cloudflare.com,
+        nobuto.murata@canonical.com, Chris Mason <clm@fb.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+From:   "Maciej S. Szmigiero" <mail@maciej.szmigiero.name>
+Subject: dm-crypt with no_read_workqueue and no_write_workqueue + btrfs scrub
+ = BUG()
+Message-ID: <16ffadab-42ba-f9c7-8203-87fda3dc9b44@maciej.szmigiero.name>
+Date:   Mon, 14 Dec 2020 19:11:43 +0100
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.5.1
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We need to be able to exclude page_mkwrite from happening concurrently
-with certain operations.  To facilitate this, add a i_mmap_lock to our
-inode, down_read() it in our mkwrite, and add a new ILOCK flag to
-indicate that we want to take the i_mmap_lock as well.  I used pahole to
-check the size of the btrfs_inode, the sizes are as follows
+Hi,
 
-no lockdep:
-before: 1120 (3 per 4k page)
-after: 1160 (3 per 4k page)
+I hit a reproducible BUG() when scrubbing a btrfs fs on top of
+a dm-crypt device with no_read_workqueue and no_write_workqueue
+flags enabled.
 
-lockdep:
-before: 2072 (1 per 4k page)
-after: 2224 (1 per 4k page)
+Steps to reproduce:
+1) cryptsetup create -c aes -d /dev/urandom test /dev/vdb1
+2) dmsetup table test --showkeys | sed 's/$/ 2 no_read_workqueue no_write_workqueue/' | dmsetup reload test
+3) dmsetup suspend test && dmsetup resume test
+4) mkfs.btrfs /dev/mapper/test
+5) mkdir /tmp/test; mount -t btrfs /dev/mapper/test /tmp/test/
+6) dd if=/dev/zero of=/tmp/test/test bs=1M count=900; sync
+7) btrfs scrub start /tmp/test
 
-We're slightly larger but it doesn't change how many objects we can fit
-per page.
+The result is:
+[ 2965.025717][    C0] BUG: sleeping function called from invalid context at mm/mempool.c:381
+[ 2965.025721][    C0] in_atomic(): 1, irqs_disabled(): 0, non_block: 0, pid: 2848, name: kworker/u4:0
+[ 2965.025726][    C0] CPU: 0 PID: 2848 Comm: kworker/u4:0 Tainted: G                T 5.10.0-rc3+ #278
+[ 2965.025727][    C0] Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 0.0.0 02/06/2015
+[ 2965.025735][    C0] Workqueue: btrfs-scrub btrfs_work_helper
+[ 2965.025738][    C0] Call Trace:
+[ 2965.025759][    C0]  <IRQ>
+[ 2965.025766][    C0]  dump_stack+0x57/0x6a
+[ 2965.025771][    C0]  ___might_sleep.cold+0x8a/0x97
+[ 2965.025776][    C0]  mempool_alloc+0xcb/0x1b0
+[ 2965.025781][    C0]  ? crypto_skcipher_decrypt+0x5c/0x80
+[ 2965.025786][    C0]  crypt_convert+0xdf0/0xfa0
+[ 2965.025793][    C0]  ? update_load_avg+0x92/0x650
+[ 2965.025798][    C0]  kcryptd_crypt_read_convert+0xc5/0x100
+[ 2965.025802][    C0]  tasklet_action_common.constprop.0+0xfa/0x120
+[ 2965.025807][    C0]  __do_softirq+0xc4/0x2a8
+[ 2965.025811][    C0]  asm_call_irq_on_stack+0x12/0x20
+[ 2965.025814][    C0]  </IRQ>
+[ 2965.025818][    C0]  do_softirq_own_stack+0x36/0x40
+[ 2965.025821][    C0]  irq_exit_rcu+0x8d/0xc0
+[ 2965.025825][    C0]  sysvec_call_function_single+0x36/0x80
+[ 2965.025829][    C0]  asm_sysvec_call_function_single+0x12/0x20
+[ 2965.025833][    C0] RIP: 0010:crc_18+0xa/0x1e
+[ 2965.025837][    C0] Code: ff ff f2 4c 0f 38 f1 81 68 ff ff ff f2 4c 0f 38 f1 8a 68 ff ff ff f2 4d 0f 38 f1 93 68 ff ff ff f2 4c 0f 38 f1 81 70 ff ff ff <f2> 4c 0f 38 f1 8a 70 ff ff ff f2 4d 0f 38 f1 93 70 ff ff ff f2 4c
+[ 2965.025839][    C0] RSP: 0018:ffffa2d04023bbf0 EFLAGS: 00000246
+[ 2965.025842][    C0] RAX: 0000000000000080 RBX: 0000000000001000 RCX: ffff96e1851ef400
+[ 2965.025844][    C0] RDX: ffff96e1851ef800 RSI: 0000000000001000 RDI: 0000000000000000
+[ 2965.025845][    C0] RBP: ffff96e1851ef000 R08: 000000000ae37425 R09: 0000000000000000
+[ 2965.025847][    C0] R10: 0000000000000000 R11: ffff96e1851efc00 R12: 0000000000001000
+[ 2965.025848][    C0] R13: ffff96e18e9a6a80 R14: fffff68440000000 R15: ffff96e184d73c00
+[ 2965.025854][    C0]  ? crc32c_pcl_intel_digest+0xa0/0xc0
+[ 2965.025857][    C0]  ? scrub_checksum_data+0x126/0x180
+[ 2965.025861][    C0]  ? update_load_avg+0x92/0x650
+[ 2965.025863][    C0]  ? cpuacct_charge+0x35/0x80
+[ 2965.025867][    C0]  ? check_preempt_wakeup+0xef/0x260
+[ 2965.025872][    C0]  ? radix_tree_gang_lookup+0xa1/0xd0
+[ 2965.025875][    C0]  ? __wake_up_common_lock+0x8a/0xc0
+[ 2965.025878][    C0]  ? scrub_block_put+0x5c/0xa0
+[ 2965.025880][    C0]  ? scrub_bio_end_io_worker+0x52/0x220
+[ 2965.025884][    C0]  ? kfree+0x3ec/0x450
+[ 2965.025887][    C0]  ? scrub_bio_end_io_worker+0xd7/0x220
+[ 2965.025890][    C0]  ? btrfs_work_helper+0xdb/0x350
+[ 2965.025893][    C0]  ? __schedule+0x275/0x8c0
+[ 2965.025897][    C0]  ? process_one_work+0x1d6/0x3b0
+[ 2965.025901][    C0]  ? worker_thread+0x53/0x400
+[ 2965.025904][    C0]  ? rescuer_thread+0x440/0x440
+[ 2965.025907][    C0]  ? kthread+0x13f/0x160
+[ 2965.025910][    C0]  ? __kthread_bind_mask+0xa0/0xa0
+[ 2965.025913][    C0]  ? ret_from_fork+0x22/0x30
 
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
----
- fs/btrfs/btrfs_inode.h |  1 +
- fs/btrfs/ctree.h       |  1 +
- fs/btrfs/inode.c       | 10 ++++++++++
- 3 files changed, 12 insertions(+)
+Additionally, here is a similar BUG() backtrace I've hit on
+another system, while scrubbing a btrfs fs on dm-crypt devs
+with these flags enabled, the BUG() hit here was actually
+scheduling while atomic:
+  <IRQ>
+  dump_stack+0x57/0x6a
+  __schedule_bug.cold+0x47/0x53
+  __schedule+0x643/0x7d0
+  schedule+0x62/0xd0
+  schedule_timeout+0x135/0x180
+  ? cryptd_enqueue_request+0x5e/0xd0
+  wait_for_completion+0x84/0xe0
+  crypt_convert.constprop.0+0x7a7/0xf60
+  ? crypt_endio+0x2d/0x90
+  ? kmem_cache_free+0x416/0x470
+  ? ktime_get+0x4a/0xc0
+  kcryptd_crypt_read_convert+0xbe/0x100
+  blk_update_request+0x229/0x3d0
+  scsi_end_request+0x40/0x200
+  scsi_io_completion+0x8e/0x5b0
+  blk_done_softirq+0x87/0xb0
+  __do_softirq+0xd3/0x2ed
+  asm_call_irq_on_stack+0x12/0x20
+  </IRQ>
+  do_softirq_own_stack+0x36/0x40
+  irq_exit_rcu+0x8d/0xc0
+  common_interrupt+0x87/0x160
+  asm_common_interrupt+0x1e/0x40
+RIP: 0010:_aesni_dec4+0x2f/0x190
+Code: fa 66 0f ef c2 66 0f ef e2 66 0f ef ea 66 0f ef f2 49 83 c2 30 41 83 f9 18 72 70 4d 8d 52 20 74 36 49 83 c2 20 41 0f 28 52 a0 <66> 0f 38 de c2 66 0f 38 de e2 66 0f 3
+  ? _aesni_dec1+0xb0/0xb0
+  ? _aesni_dec1+0xb0/0xb0
+  ? aesni_xts_crypt8+0xe0/0x240
+  ? __glue_xts_req_128bit+0x8f/0xc0
+  ? glue_xts_req_128bit+0xc1/0x400
+  ? aesni_set_key+0x1e0/0x1e0
+  ? ttwu_queue_wakelist+0xb9/0xe0
+  ? kcryptd_async_done+0xa6/0x210
+  ? kcryptd_async_done+0xa6/0x210
+  ? kfree+0x401/0x460
+  ? kcryptd_async_done+0xa6/0x210
+  ? crypto_skcipher_decrypt+0x4b/0x80
+  ? cryptd_skcipher_decrypt+0xa6/0x130
+  ? update_load_avg+0x7e/0x660
+  ? set_next_entity+0xcd/0x240
+  ? __switch_to_asm+0x3f/0x60
+  ? finish_task_switch+0x87/0x280
+  ? __schedule+0x263/0x7d0
+  ? preempt_schedule+0x32/0x50
+  ? preempt_schedule_thunk+0x16/0x18
+  ? cryptd_queue_worker+0x8b/0xe0
+  ? process_one_work+0x1d4/0x3d0
+  ? worker_thread+0x50/0x3f0
+  ? rescuer_thread+0x420/0x420
+  ? kthread+0x134/0x160
+  ? __kthread_bind_mask+0xa0/0xa0
+  ? ret_from_fork+0x22/0x30
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index d9bf53d9ff90..66cec5c13396 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -220,6 +220,7 @@ struct btrfs_inode {
- 	/* Hook into fs_info->delayed_iputs */
- 	struct list_head delayed_iput;
- 
-+	struct rw_semaphore i_mmap_lock;
- 	struct inode vfs_inode;
- };
- 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 3935d297d198..e2bebb3318cc 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3147,6 +3147,7 @@ extern const struct iomap_dio_ops btrfs_dio_ops;
- /* Inode locking type flags, by default the exclusive lock is taken */
- #define BTRFS_ILOCK_SHARED	(1U << 0)
- #define BTRFS_ILOCK_TRY 	(1U << 1)
-+#define BTRFS_ILOCK_MMAP	(1U << 2)
- 
- int btrfs_inode_lock(struct inode *inode, unsigned int ilock_flags);
- void btrfs_inode_unlock(struct inode *inode, unsigned int ilock_flags);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 070716650df8..a5ee4d45ee02 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -101,6 +101,7 @@ static void __endio_write_update_ordered(struct btrfs_inode *inode,
-  * BTRFS_ILOCK_SHARED - acquire a shared lock on the inode
-  * BTRFS_ILOCK_TRY - try to acquire the lock, if fails on first attempt
-  *		     return -EAGAIN
-+ * BTRFS_ILOCK_MMAP - acquire a write lock on the i_mmap_lock
-  */
- int btrfs_inode_lock(struct inode *inode, unsigned int ilock_flags)
- {
-@@ -121,6 +122,8 @@ int btrfs_inode_lock(struct inode *inode, unsigned int ilock_flags)
- 		}
- 		inode_lock(inode);
- 	}
-+	if (ilock_flags & BTRFS_ILOCK_MMAP)
-+		down_write(&BTRFS_I(inode)->i_mmap_lock);
- 	return 0;
- }
- 
-@@ -132,6 +135,8 @@ int btrfs_inode_lock(struct inode *inode, unsigned int ilock_flags)
-  */
- void btrfs_inode_unlock(struct inode *inode, unsigned int ilock_flags)
- {
-+	if (ilock_flags & BTRFS_ILOCK_MMAP)
-+		up_write(&BTRFS_I(inode)->i_mmap_lock);
- 	if (ilock_flags & BTRFS_ILOCK_SHARED)
- 		inode_unlock_shared(inode);
- 	else
-@@ -8344,6 +8349,7 @@ vm_fault_t btrfs_page_mkwrite(struct vm_fault *vmf)
- 
- 	ret = VM_FAULT_NOPAGE; /* make the VM retry the fault */
- again:
-+	down_read(&BTRFS_I(inode)->i_mmap_lock);
- 	lock_page(page);
- 	size = i_size_read(inode);
- 
-@@ -8367,6 +8373,7 @@ vm_fault_t btrfs_page_mkwrite(struct vm_fault *vmf)
- 		unlock_extent_cached(io_tree, page_start, page_end,
- 				     &cached_state);
- 		unlock_page(page);
-+		up_read(&BTRFS_I(inode)->i_mmap_lock);
- 		btrfs_start_ordered_extent(ordered, 1);
- 		btrfs_put_ordered_extent(ordered);
- 		goto again;
-@@ -8424,6 +8431,7 @@ vm_fault_t btrfs_page_mkwrite(struct vm_fault *vmf)
- 	BTRFS_I(inode)->last_log_commit = BTRFS_I(inode)->root->last_log_commit;
- 
- 	unlock_extent_cached(io_tree, page_start, page_end, &cached_state);
-+	up_read(&BTRFS_I(inode)->i_mmap_lock);
- 
- 	btrfs_delalloc_release_extents(BTRFS_I(inode), PAGE_SIZE);
- 	sb_end_pagefault(inode->i_sb);
-@@ -8432,6 +8440,7 @@ vm_fault_t btrfs_page_mkwrite(struct vm_fault *vmf)
- 
- out_unlock:
- 	unlock_page(page);
-+	up_read(&BTRFS_I(inode)->i_mmap_lock);
- out:
- 	btrfs_delalloc_release_extents(BTRFS_I(inode), PAGE_SIZE);
- 	btrfs_delalloc_release_space(BTRFS_I(inode), data_reserved, page_start,
-@@ -8680,6 +8689,7 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
- 	INIT_LIST_HEAD(&ei->delalloc_inodes);
- 	INIT_LIST_HEAD(&ei->delayed_iput);
- 	RB_CLEAR_NODE(&ei->rb_node);
-+	init_rwsem(&ei->i_mmap_lock);
- 
- 	return inode;
- }
--- 
-2.26.2
+It looks like to me that the dm-crypt code in kcryptd_queue_crypt()
+checks for a hard IRQ context via in_irq() before deciding whether to
+offload processing to a tasklet or proceed directly, but it probably
+should check for any interrupt context via in_interrupt() or similar
+and then proceed with using a workqueue, as the ordinary code flow
+does.
+
+CC'ing btrfs folks in case it is actually a btrfs-specific issue.
+
+Thanks,
+Maciej
 

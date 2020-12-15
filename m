@@ -2,90 +2,135 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.3 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 20F6BC2BB9A
-	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Dec 2020 16:52:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5C7B2C4361B
+	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Dec 2020 17:01:36 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id CAE1F22A99
-	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Dec 2020 16:52:37 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2591422515
+	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Dec 2020 17:01:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726864AbgLOQwR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 15 Dec 2020 11:52:17 -0500
-Received: from mx2.suse.de ([195.135.220.15]:58476 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725947AbgLOQwB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 15 Dec 2020 11:52:01 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 947FAAC7F;
-        Tue, 15 Dec 2020 16:51:19 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 6FB70DA7C3; Tue, 15 Dec 2020 17:49:40 +0100 (CET)
-Date:   Tue, 15 Dec 2020 17:49:40 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com,
-        stable@vger.kernel.org
-Subject: Re: [PATCH v2] btrfs: fix possible free space tree corruption with
- online conversion
-Message-ID: <20201215164940.GW6430@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
-        linux-btrfs@vger.kernel.org, kernel-team@fb.com,
-        stable@vger.kernel.org
-References: <e5f7fe3ad3a612efeda53f016904aff332db6f8a.1607610739.git.josef@toxicpanda.com>
+        id S1729624AbgLORBZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 15 Dec 2020 12:01:25 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37604 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728949AbgLORBK (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 15 Dec 2020 12:01:10 -0500
+Received: from mail-qt1-x843.google.com (mail-qt1-x843.google.com [IPv6:2607:f8b0:4864:20::843])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 41475C0617A6
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 Dec 2020 09:00:30 -0800 (PST)
+Received: by mail-qt1-x843.google.com with SMTP id 7so15141985qtp.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 Dec 2020 09:00:30 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
+        h=from:to:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=CN7hDsMRgbM0MWHoaiwEwjqwKPVUXjjBW3O499vqrDg=;
+        b=hsZc4Ui2O5fRFX4teE9x23uNzan4RfnnOM41Xz6ij+++E78TC9q6hejdtZgPuJFCU3
+         q3Rcv50MtmEgGiHKn53y5c7TvaAjqth2xL2AIFjmiChWLotfX+ZXyjgB/4yjW2aP7cz1
+         B9sP3WX+6G1O7mVLU1tDUrxgPbp7n+4SNksysKUsjVUoXrdwtZcNXHxhNh2DZQbr2f/U
+         dxOzszh3wCsFrqZ4i6kxqkkAyPQ5lmiql7rzB+ISv+HVz/5gtIwfBH9BUrzze+NnDLFK
+         Rx9tm+RJDG1JemafXlWZkEH1wqE3C0d8bB7ecNEmSgXzP5jzwH8CCSfVhrofOx1rg0TH
+         QIKw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:from:to:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=CN7hDsMRgbM0MWHoaiwEwjqwKPVUXjjBW3O499vqrDg=;
+        b=CtCp7uKO2FanMa1SRpbzhHVed2DuMKak2Dxhx3a44V4K5pizdqUJgHBXEKV369v610
+         ZxRQukplNW7lIBi0p6tQIs3/1dIZz4iUCsk8ky3DjTOkamiVpGM7efSSVqpQ5zJUyDSU
+         OUHgnd0jk5TkiR43NmmZJTlUGH0aup0AYi6QM4EZMl1vjShGCGYSY7BCmJm0ESYFfst5
+         gsASHGqhafStHGz3PVbFpXgGXdX0MqGE308z5+dTCkPg7ny3nOx4tJ111kUV2nvzT2pb
+         u0ZMQxjZsjZAkkD16zTdxrAb2fkRnzmphxOZmq7MJTnUtd9O1DtKCr2zGWQWqHgQLz0D
+         8PbQ==
+X-Gm-Message-State: AOAM533AW4OHlx9DFGjQ1qsx2M5QkhWdzcWbwYaviiRbOHGr+jsNnih+
+        z8vJ6WAY2gjL+VFTvqTS0W2hv+BF2SAyjA9F
+X-Google-Smtp-Source: ABdhPJzS3ctJ6FfLHGkWnrk4ez6pCVPY8denoLCAqwCfqLT9X/rg2gaONTd6fGegJlP/3+1pJ+lkaA==
+X-Received: by 2002:ac8:58d1:: with SMTP id u17mr38328275qta.158.1608051628883;
+        Tue, 15 Dec 2020 09:00:28 -0800 (PST)
+Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
+        by smtp.gmail.com with ESMTPSA id h16sm17460351qko.135.2020.12.15.09.00.27
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 15 Dec 2020 09:00:27 -0800 (PST)
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: [PATCH] btrfs: initialize test inodes location
+Date:   Tue, 15 Dec 2020 12:00:26 -0500
+Message-Id: <7d1759263b14140254494b1ae49fe69aff099dc1.1608051618.git.josef@toxicpanda.com>
+X-Mailer: git-send-email 2.26.2
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <e5f7fe3ad3a612efeda53f016904aff332db6f8a.1607610739.git.josef@toxicpanda.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Dec 10, 2020 at 09:32:31AM -0500, Josef Bacik wrote:
-> While running btrfs/011 in a loop I would often ASSERT() while trying to
-> add a new free space entry that already existed, or get an -EEXIST while
-> adding a new block to the extent tree, which is another indication of
-> double allocation.
+While testing other things I was noticing that sometimes my VM would
+fail to load the btrfs module because the self test failed like this
 
-Do you have the stack traces? I'll update the changelog if you send it.
+BTRFS: selftest: fs/btrfs/tests/inode-tests.c:963 miscount, wanted 1, got 0
 
-> This occurs because when we do the free space tree population, we create
-> the new root and then populate the tree and commit the transaction.
-> The problem is when you create a new root, the root node and commit root
-> node are the same.  This means that caching a block group before the
-> transaction is committed can race with other operations modifying the
-> free space tree, and thus you can get double adds and other sort of
-> shenanigans.  This is only a problem for the first transaction, once
-> we've committed the transaction we created the free space tree in we're
-> OK to use the free space tree to cache block groups.
-> 
-> Fix this by marking the fs_info as unsafe to load the free space tree,
-> and fall back on the old slow method.  We could be smarter than this,
-> for example caching the block group while we're populating the free
-> space tree, but since this is a serious problem I've opted for the
-> simplest solution.
+This turned out to be because sometimes the btrfs ino would be the btree
+inode number, and thus we'd skip calling the set extent delalloc bit
+helper, and thus not adjust ->outstanding_extents.  Fix this by making
+sure we init test inodes with a valid inode number so that we don't get
+random failures during self tests.
 
-Makes sense, this is a one-time thing during setup.
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+---
+ fs/btrfs/tests/btrfs-tests.c | 7 ++++++-
+ fs/btrfs/tests/inode-tests.c | 9 ---------
+ 2 files changed, 6 insertions(+), 10 deletions(-)
 
-> cc: stable@vger.kernel.org
+diff --git a/fs/btrfs/tests/btrfs-tests.c b/fs/btrfs/tests/btrfs-tests.c
+index 8ca334d554af..0fede1514a3e 100644
+--- a/fs/btrfs/tests/btrfs-tests.c
++++ b/fs/btrfs/tests/btrfs-tests.c
+@@ -55,8 +55,13 @@ struct inode *btrfs_new_test_inode(void)
+ 	struct inode *inode;
+ 
+ 	inode = new_inode(test_mnt->mnt_sb);
+-	if (inode)
++	if (inode) {
++		inode->i_mode = S_IFREG;
++		BTRFS_I(inode)->location.type = BTRFS_INODE_ITEM_KEY;
++		BTRFS_I(inode)->location.objectid = BTRFS_FIRST_FREE_OBJECTID;
++		BTRFS_I(inode)->location.offset = 0;
+ 		inode_init_owner(inode, NULL, S_IFREG);
++	}
+ 
+ 	return inode;
+ }
+diff --git a/fs/btrfs/tests/inode-tests.c b/fs/btrfs/tests/inode-tests.c
+index 04022069761d..c9874b12d337 100644
+--- a/fs/btrfs/tests/inode-tests.c
++++ b/fs/btrfs/tests/inode-tests.c
+@@ -232,11 +232,6 @@ static noinline int test_btrfs_get_extent(u32 sectorsize, u32 nodesize)
+ 		return ret;
+ 	}
+ 
+-	inode->i_mode = S_IFREG;
+-	BTRFS_I(inode)->location.type = BTRFS_INODE_ITEM_KEY;
+-	BTRFS_I(inode)->location.objectid = BTRFS_FIRST_FREE_OBJECTID;
+-	BTRFS_I(inode)->location.offset = 0;
+-
+ 	fs_info = btrfs_alloc_dummy_fs_info(nodesize, sectorsize);
+ 	if (!fs_info) {
+ 		test_std_err(TEST_ALLOC_FS_INFO);
+@@ -835,10 +830,6 @@ static int test_hole_first(u32 sectorsize, u32 nodesize)
+ 		return ret;
+ 	}
+ 
+-	BTRFS_I(inode)->location.type = BTRFS_INODE_ITEM_KEY;
+-	BTRFS_I(inode)->location.objectid = BTRFS_FIRST_FREE_OBJECTID;
+-	BTRFS_I(inode)->location.offset = 0;
+-
+ 	fs_info = btrfs_alloc_dummy_fs_info(nodesize, sectorsize);
+ 	if (!fs_info) {
+ 		test_std_err(TEST_ALLOC_FS_INFO);
+-- 
+2.26.2
 
-CC: stable@vger.kernel.org
-
-If you send patch with the tag it's good to also note the minimal
-version where it's relevant as you can easily reuse the knowledge from
-developing the fix. The patch may not apply due to other changes, but
-trivial context fixups are done by people interested in the backports.
-
-> Fixes: a5ed91828518 ("Btrfs: implement the free space B-tree")
-
-So if you know the offending commit, run
-
-  $ git describe --contains a5ed91828518
-  v4.5-rc1~21^2~22^2^2~3
-
-which is 4.9.

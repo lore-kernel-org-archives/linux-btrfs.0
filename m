@@ -2,34 +2,37 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-11.8 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E9767C4361B
-	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Dec 2020 18:07:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C4FE6C2BB9A
+	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Dec 2020 18:07:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id AC69122ADC
-	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Dec 2020 18:07:19 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8F8CA22B2D
+	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Dec 2020 18:07:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730109AbgLOSHT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 15 Dec 2020 13:07:19 -0500
-Received: from mx2.suse.de ([195.135.220.15]:58344 "EHLO mx2.suse.de"
+        id S1730333AbgLOSHp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 15 Dec 2020 13:07:45 -0500
+Received: from mx2.suse.de ([195.135.220.15]:58524 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1729683AbgLOSHS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 15 Dec 2020 13:07:18 -0500
+        id S1729759AbgLOSHZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 15 Dec 2020 13:07:25 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 0BAB9AC7F;
-        Tue, 15 Dec 2020 18:06:37 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 45BA5AE52;
+        Tue, 15 Dec 2020 18:06:43 +0000 (UTC)
 From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
 To:     linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org
 Cc:     darrick.wong@oracle.com, hch@infradead.org, nborisov@suse.com,
         Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: [PATCH v2 0/2] Fix locking for btrfs direct writes
-Date:   Tue, 15 Dec 2020 12:06:34 -0600
-Message-Id: <cover.1608053602.git.rgoldwyn@suse.com>
+Subject: [PATCH 2/2] btrfs: Make btrfs_direct_write atomic with respect to inode_lock
+Date:   Tue, 15 Dec 2020 12:06:36 -0600
+Message-Id: <49ff9bfb8ef20e7a9c6e26fd54bc9f4508c9ccb4.1608053602.git.rgoldwyn@suse.com>
 X-Mailer: git-send-email 2.29.2
+In-Reply-To: <cover.1608053602.git.rgoldwyn@suse.com>
+References: <cover.1608053602.git.rgoldwyn@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
@@ -38,25 +41,162 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Goldwyn Rodrigues <rgoldwyn@suse.com>
 
-BTRFS direct write takes the inode lock for performing the direct write.
-In case of a failure or an incomplete write, it falls back to buffered
-writes. Before initiating the buffered write, it releases the inode lock
-and reacquires it for buffered write. This may lead to corruption if
-another process attempts to write around the same offset between the
-unlock and the relock. The patches change the flow so that the lock is
-taken only once before the write and released only after the I/O is
-complete.
+btrfs_direct_write() fallsback to buffered write in case btrfs is not
+able to perform or complete a direct I/O. During the fallback
+inode lock is unlocked and relocked. This does not guarantee the
+atomicity of the entire write since the lock can be acquired by another
+write between unlock and relock.
 
+__btrfs_buffered_write() is used to perform the direct fallback write,
+which performs the write without acquiring the lock or checks.
 
-Goldwyn Rodrigues (2):
-  iomap: Separate out generic_write_sync() from iomap_dio_complete()
-  btrfs: Make btrfs_direct_write atomic with respect to inode_lock
+fa54fc76db94 ("btrfs: push inode locking and unlocking into buffered/direct write")
+Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
+---
+ fs/btrfs/file.c | 69 ++++++++++++++++++++++++++++---------------------
+ 1 file changed, 40 insertions(+), 29 deletions(-)
 
- fs/btrfs/file.c       | 69 +++++++++++++++++++++++++------------------
- fs/iomap/direct-io.c  | 16 ++++++++--
- include/linux/iomap.h |  2 +-
- 3 files changed, 54 insertions(+), 33 deletions(-)
-
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 0e41459b8de6..9fc768b951f1 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1638,11 +1638,11 @@ static int btrfs_write_check(struct kiocb *iocb, struct iov_iter *from,
+ 	return 0;
+ }
+ 
+-static noinline ssize_t btrfs_buffered_write(struct kiocb *iocb,
++static noinline ssize_t __btrfs_buffered_write(struct kiocb *iocb,
+ 					       struct iov_iter *i)
+ {
+ 	struct file *file = iocb->ki_filp;
+-	loff_t pos;
++	loff_t pos = iocb->ki_pos;
+ 	struct inode *inode = file_inode(file);
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+ 	struct page **pages = NULL;
+@@ -1656,24 +1656,9 @@ static noinline ssize_t btrfs_buffered_write(struct kiocb *iocb,
+ 	bool only_release_metadata = false;
+ 	bool force_page_uptodate = false;
+ 	loff_t old_isize = i_size_read(inode);
+-	unsigned int ilock_flags = 0;
+-
+-	if (iocb->ki_flags & IOCB_NOWAIT)
+-		ilock_flags |= BTRFS_ILOCK_TRY;
+-
+-	ret = btrfs_inode_lock(inode, ilock_flags);
+-	if (ret < 0)
+-		return ret;
+-
+-	ret = generic_write_checks(iocb, i);
+-	if (ret <= 0)
+-		goto out;
+ 
+-	ret = btrfs_write_check(iocb, i, ret);
+-	if (ret < 0)
+-		goto out;
++	lockdep_assert_held(&inode->i_rwsem);
+ 
+-	pos = iocb->ki_pos;
+ 	nrptrs = min(DIV_ROUND_UP(iov_iter_count(i), PAGE_SIZE),
+ 			PAGE_SIZE / (sizeof(struct page *)));
+ 	nrptrs = min(nrptrs, current->nr_dirtied_pause - current->nr_dirtied);
+@@ -1877,10 +1862,37 @@ static noinline ssize_t btrfs_buffered_write(struct kiocb *iocb,
+ 		iocb->ki_pos += num_written;
+ 	}
+ out:
+-	btrfs_inode_unlock(inode, ilock_flags);
+ 	return num_written ? num_written : ret;
+ }
+ 
++static noinline ssize_t btrfs_buffered_write(struct kiocb *iocb,
++					       struct iov_iter *i)
++{
++	struct inode *inode = file_inode(iocb->ki_filp);
++	unsigned int ilock_flags = 0;
++	ssize_t ret;
++
++	if (iocb->ki_flags & IOCB_NOWAIT)
++		ilock_flags |= BTRFS_ILOCK_TRY;
++
++	ret = btrfs_inode_lock(inode, ilock_flags);
++	if (ret < 0)
++		return ret;
++
++	ret = generic_write_checks(iocb, i);
++	if (ret <= 0)
++		goto out;
++
++	ret = btrfs_write_check(iocb, i, ret);
++	if (ret < 0)
++		goto out;
++
++	ret = __btrfs_buffered_write(iocb, i);
++out:
++	btrfs_inode_unlock(inode, ilock_flags);
++	return ret;
++}
++
+ static ssize_t check_direct_IO(struct btrfs_fs_info *fs_info,
+ 			       const struct iov_iter *iter, loff_t offset)
+ {
+@@ -1927,10 +1939,8 @@ static ssize_t btrfs_direct_write(struct kiocb *iocb, struct iov_iter *from)
+ 	}
+ 
+ 	err = btrfs_write_check(iocb, from, err);
+-	if (err < 0) {
+-		btrfs_inode_unlock(inode, ilock_flags);
++	if (err < 0)
+ 		goto out;
+-	}
+ 
+ 	pos = iocb->ki_pos;
+ 	/*
+@@ -1944,22 +1954,19 @@ static ssize_t btrfs_direct_write(struct kiocb *iocb, struct iov_iter *from)
+ 		goto relock;
+ 	}
+ 
+-	if (check_direct_IO(fs_info, from, pos)) {
+-		btrfs_inode_unlock(inode, ilock_flags);
++	if (check_direct_IO(fs_info, from, pos))
+ 		goto buffered;
+-	}
+ 
+ 	dio = __iomap_dio_rw(iocb, from, &btrfs_dio_iomap_ops,
+ 			     &btrfs_dio_ops, is_sync_kiocb(iocb));
+ 
+-	btrfs_inode_unlock(inode, ilock_flags);
+-
+ 	if (IS_ERR_OR_NULL(dio)) {
+ 		err = PTR_ERR_OR_ZERO(dio);
+ 		if (err < 0 && err != -ENOTBLK)
+ 			goto out;
+ 	} else {
+-		written = iomap_dio_complete(dio);
++		written = __iomap_dio_complete(dio);
++		kfree(dio);
+ 	}
+ 
+ 	if (written < 0 || !iov_iter_count(from)) {
+@@ -1969,7 +1976,7 @@ static ssize_t btrfs_direct_write(struct kiocb *iocb, struct iov_iter *from)
+ 
+ buffered:
+ 	pos = iocb->ki_pos;
+-	written_buffered = btrfs_buffered_write(iocb, from);
++	written_buffered = __btrfs_buffered_write(iocb, from);
+ 	if (written_buffered < 0) {
+ 		err = written_buffered;
+ 		goto out;
+@@ -1990,6 +1997,10 @@ static ssize_t btrfs_direct_write(struct kiocb *iocb, struct iov_iter *from)
+ 	invalidate_mapping_pages(file->f_mapping, pos >> PAGE_SHIFT,
+ 				 endbyte >> PAGE_SHIFT);
+ out:
++	btrfs_inode_unlock(inode, ilock_flags);
++	if (written > 0)
++		generic_write_sync(iocb, written);
++
+ 	return written ? written : err;
+ }
+ 
 -- 
 2.29.2
 

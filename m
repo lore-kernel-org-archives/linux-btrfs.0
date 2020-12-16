@@ -7,61 +7,61 @@ X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 06D57C0018C
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 44CFBC2BBD4
 	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Dec 2020 16:28:43 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id B11D3233E2
-	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Dec 2020 16:28:42 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 11F42233E2
+	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Dec 2020 16:28:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726746AbgLPQ2d (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 16 Dec 2020 11:28:33 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58568 "EHLO
+        id S1726751AbgLPQ2e (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 16 Dec 2020 11:28:34 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58574 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726734AbgLPQ2d (ORCPT
+        with ESMTP id S1726535AbgLPQ2e (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 Dec 2020 11:28:33 -0500
-Received: from mail-qk1-x734.google.com (mail-qk1-x734.google.com [IPv6:2607:f8b0:4864:20::734])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C5B3CC0611BB
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 Dec 2020 08:27:26 -0800 (PST)
-Received: by mail-qk1-x734.google.com with SMTP id 186so23039602qkj.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 Dec 2020 08:27:26 -0800 (PST)
+        Wed, 16 Dec 2020 11:28:34 -0500
+Received: from mail-qt1-x829.google.com (mail-qt1-x829.google.com [IPv6:2607:f8b0:4864:20::829])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0935EC0619D5
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 Dec 2020 08:27:32 -0800 (PST)
+Received: by mail-qt1-x829.google.com with SMTP id 7so17648976qtp.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 Dec 2020 08:27:31 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=9X57lIxzhlDydEpNT+8ap17OnJ/IJCL7guXADYlfNQw=;
-        b=zO9fERGbDJUobwzC0D86WqLKU2xmltJdBbNElEPp07OT41AQzOHDteIAIL/nYhWEqS
-         1GCL0DpD9wP6BgGwag+amwicbQINZTbUzs2thbTz3kkjSXCOsroxHzzgKNWdK4f8ExRC
-         igQN3Na4Pkhn4cBDsLciZfY5Y2j3Xkv5cTA8jd6Do6pNKOgC5I6hzmNH+pO3Gjeoabpe
-         AWVsHxW/m7zWhY09N+Vv3SJ6gcTeWQyBFVZpwq12JuEv/c2kIzD35GDBdTlI4CkmGUC+
-         4C/Q2MRywndczZgmKSKkNDN9758YnQeLZ7Rz1iNs+MRptWBX8BgzNDglJm7unMvM/kJT
-         C4ew==
+        bh=nqCBwEZJcP9oKXydIwojoncE9VQDvOpfyVCaDqYEQyQ=;
+        b=rBUYEswJoRc1WggdgD3LFLj61pGqarC9InIQdYCUI4P3fn09Rx06xnSpuUinw+8fLR
+         V4DLOg4AxBObGyff8Ma333zMYO3MuV8r1euW+UemaNj+c+1Xb4tJptzXEedsOe0xlL1d
+         z0Ji0wws1dvzqzvmDlNxRV9LWBKzBGzIKi1zirh4p1WKAykQnk5SuuT7Hy+XuYzqi7b0
+         dFL6Bu1xsJ4R+Fe0PaqgxgQsdhZPNHsVSpk9PM9T0hitCnaeFaWq7cMYKULIn09sJao3
+         PCe02Z86QGkJ9Vr/qrN2+kUkQ89D4wuaw2UoAvmHmj9+YNZLOJryOT1d/LAgva1IwqZ1
+         PjqA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=9X57lIxzhlDydEpNT+8ap17OnJ/IJCL7guXADYlfNQw=;
-        b=KYQWCKGy68GfXk9K+jmEYuyyj93cLK+42ViREym3AOCm3K7zqMhEVYGwLUJztTy51b
-         IMG1fwiw7WYMjblNoGIwVZ6NvoL96Ao8zIkINA4lQdn61lrPiCXV4O6DDj5gCZ99S3+c
-         LHVMNfl/UyuDivwosK5YUlox3Pji3xm7RsIfzGgG51WmIgKUFz3Tsi1jkdBbZIYHYD2R
-         +nwhPkE2K0xoMs0Ovm8pjYNJStBHc2VjdnIH3QUXWj9txPJwOujPMSW8734cy3RTI1gb
-         4J2TCj7HJ6fB9dMu2BZKYi2yZ3MiTZRK9YpCjZ6nrT+s+cgJr9RjD0TZ0jLLvDVwBpxA
-         SqWw==
-X-Gm-Message-State: AOAM530MTsKYNd9r0u/cWYgSczJcQdPShtwQTya6e1xVKxhI/TOtBGys
-        jaC7yIk1Po3d4yggYIpqZPvupJr/++9x4vLL
-X-Google-Smtp-Source: ABdhPJxR36BerU97zWgccfXSOVCUF5EJeCf0nY9yAeChQG5lSkHLZ7rdVM3DbAs9VqsyWDLFM7ztdg==
-X-Received: by 2002:a05:620a:673:: with SMTP id a19mr28434937qkh.353.1608136045780;
-        Wed, 16 Dec 2020 08:27:25 -0800 (PST)
+        bh=nqCBwEZJcP9oKXydIwojoncE9VQDvOpfyVCaDqYEQyQ=;
+        b=XOx/2+UN7GPt1UCb1InjEsV3l5XaakDX55F7Sc7XAqTqrZv1ifBJsgymg1JZ0RyDfg
+         apvrsR4OX9bo7lrAmJ4Kj2sGy6YrqOQ0aKmB/NxqjIEpiSP9IUjb4yBud8fvyI+sYR7f
+         lvPK4kmHeIqFPNF7ITY3gbY4sJ3YChHmfSh30s8kSxied34K0idHnhxS3q4MGxBd+jvu
+         4NexInYg+BHBQsu4XnTTQf+8+0MY1OuaK27aZuOw6k+fMM1YkSyvJvpBqRLWeJLhX6M/
+         R77xos2bEqsCSJAL3Q4Ba4N9IHnHDFZMRpzg27nEhNU1Z0uMwtBwHr30/uzrPDtY6p5d
+         2qlg==
+X-Gm-Message-State: AOAM533Wn9UrTSG8ExzZBxTI36kqVIeB3YXZFgAshhXWjx7MFkkkFBYi
+        gg/5ZaS+ihB0JmM1/VCcwylSORtYC3F7fYit
+X-Google-Smtp-Source: ABdhPJxCbLH0+7yP6oE7uR1kEok7h36zR4B6zBQsLhtuT2lf7e3ipuU5/lhAuPjJEnlj89FzxXO1EQ==
+X-Received: by 2002:ac8:2bd2:: with SMTP id n18mr44486778qtn.260.1608136050962;
+        Wed, 16 Dec 2020 08:27:30 -0800 (PST)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id b4sm1192989qtb.33.2020.12.16.08.27.24
+        by smtp.gmail.com with ESMTPSA id k7sm1278796qtg.65.2020.12.16.08.27.30
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 16 Dec 2020 08:27:25 -0800 (PST)
+        Wed, 16 Dec 2020 08:27:30 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Cc:     Qu Wenruo <wqu@suse.com>
-Subject: [PATCH v7 17/38] btrfs: do not panic in __add_reloc_root
-Date:   Wed, 16 Dec 2020 11:26:33 -0500
-Message-Id: <576c883b5f869a3d3915691b4d1c00299119739a.1608135849.git.josef@toxicpanda.com>
+Cc:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+Subject: [PATCH v7 20/38] btrfs: validate ->reloc_root after recording root in trans
+Date:   Wed, 16 Dec 2020 11:26:36 -0500
+Message-Id: <68fee71b3bc3bd34cf433cc1ea6cf5d9f8dd4b82.1608135849.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.2
 In-Reply-To: <cover.1608135849.git.josef@toxicpanda.com>
 References: <cover.1608135849.git.josef@toxicpanda.com>
@@ -71,34 +71,54 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-If we have a duplicate entry for a reloc root then we could have fs
-corruption that resulted in a double allocation.  This shouldn't happen
-generally so leave an ASSERT() for this case, but return an error
-instead of panicing in the normal user case.
+If we fail to setup a ->reloc_root in a different thread that path will
+error out, however it still leaves root->reloc_root NULL but would still
+appear set up in the transaction.  Subsequent calls to
+btrfs_record_root_in_transaction would succeed without attempting to
+create the reloc root, as the transid has already been update.  Handle
+this case by making sure we have a root->reloc_root set after a
+btrfs_record_root_in_transaction call so we don't end up deref'ing a
+NULL pointer.
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
+Reported-by: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/relocation.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ fs/btrfs/relocation.c | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
 
 diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 7e3305aca6ac..410e779af1ed 100644
+index d5740acaaddf..918fee55bc30 100644
 --- a/fs/btrfs/relocation.c
 +++ b/fs/btrfs/relocation.c
-@@ -638,9 +638,11 @@ static int __must_check __add_reloc_root(struct btrfs_root *root)
- 				   node->bytenr, &node->rb_node);
- 	spin_unlock(&rc->reloc_root_tree.lock);
- 	if (rb_node) {
--		btrfs_panic(fs_info, -EEXIST,
-+		ASSERT(0);
-+		btrfs_err(fs_info,
- 			    "Duplicate root found for start=%llu while inserting into relocation tree",
- 			    node->bytenr);
-+		return -EEXIST;
- 	}
+@@ -2083,6 +2083,13 @@ struct btrfs_root *select_reloc_root(struct btrfs_trans_handle *trans,
+ 			return ERR_PTR(ret);
+ 		root = root->reloc_root;
  
- 	list_add_tail(&root->root_list, &rc->reloc_roots);
++		/*
++		 * We could have raced with another thread which failed, so
++		 * ->reloc_root may not be set, return -ENOENT in this case.
++		 */
++		if (!root)
++			return ERR_PTR(-ENOENT);
++
+ 		if (next->new_bytenr != root->node->start) {
+ 			/*
+ 			 * We just created the reloc root, so we shouldn't have
+@@ -2580,6 +2587,14 @@ static int relocate_tree_block(struct btrfs_trans_handle *trans,
+ 			ret = btrfs_record_root_in_trans(trans, root);
+ 			if (ret)
+ 				goto out;
++			/*
++			 * Another thread could have failed, need to check if we
++			 * have ->reloc_root actually set.
++			 */
++			if (!root->reloc_root) {
++				ret = -ENOENT;
++				goto out;
++			}
+ 			root = root->reloc_root;
+ 			node->new_bytenr = root->node->start;
+ 			btrfs_put_root(node->root);
 -- 
 2.26.2
 

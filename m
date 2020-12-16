@@ -7,62 +7,60 @@ X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6F053C2BBCF
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4F644C0018C
 	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Dec 2020 16:20:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 3A2282335A
+	by mail.kernel.org (Postfix) with ESMTP id 1BB93233FA
 	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Dec 2020 16:20:13 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726312AbgLPQTd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 16 Dec 2020 11:19:33 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57188 "EHLO
+        id S1726528AbgLPQT5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 16 Dec 2020 11:19:57 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57256 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725970AbgLPQTc (ORCPT
+        with ESMTP id S1726419AbgLPQT5 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 Dec 2020 11:19:32 -0500
-Received: from mail-qk1-x730.google.com (mail-qk1-x730.google.com [IPv6:2607:f8b0:4864:20::730])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 55DB0C0617A6
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 Dec 2020 08:18:52 -0800 (PST)
-Received: by mail-qk1-x730.google.com with SMTP id b64so18991260qkc.12
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 Dec 2020 08:18:52 -0800 (PST)
+        Wed, 16 Dec 2020 11:19:57 -0500
+Received: from mail-qv1-xf2b.google.com (mail-qv1-xf2b.google.com [IPv6:2607:f8b0:4864:20::f2b])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 664B9C061282
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 Dec 2020 08:18:59 -0800 (PST)
+Received: by mail-qv1-xf2b.google.com with SMTP id h16so7161904qvu.8
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 Dec 2020 08:18:59 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:cc:subject:date:message-id:in-reply-to:references
-         :mime-version:content-transfer-encoding;
-        bh=QMa7bV9M06CL/jmsCalzp9jQP6wxpAhOdiQ2gxt0798=;
-        b=yMIdoKibw18CQoRjkAQQj2eRRX0Yp89Vlnq7ZKnhcZiP6sSKfCSFX4GYRh2F6ES7ug
-         OmREIH/CkQtfzi+RAR46S3JHHlDh3uEDPVVYsz+YW2lK3TyMCH52F/7rCmClErhtkJqZ
-         NMwqodC2j2a+RO8gwBFYGCK811U950Ftg3yQjH8L2ZquTqsIodeYOR8u9/xr8i8hCGwB
-         5Q1i2rlhsuYg8so+61fR5ROo5KJZYB4bhygbGN7vns+UlbJ+ULA3AJC1oO2de+WBiALb
-         TAuA1P6UBtfwACcgdDU1N9siUvY2T8L9c6ymyKajSTQR5iJJecM6EDTkqJwXJ9DmGUjd
-         a4Xg==
+        h=from:to:subject:date:message-id:in-reply-to:references:mime-version
+         :content-transfer-encoding;
+        bh=DMvNnOrRtu4yLJxhDVPBS7UDJWnYlz36sTOfG9aJkV8=;
+        b=eWPTGQ5R56bj7Uq3/EaQQK/96g1kHmrVzJx15LP1z2Fvc8oZAZin9dU8+xySF85WVz
+         +BITqS5VeWPvWMfchoAj9bZ4AOw3Fm31eVfyYM5Omjkedk3eqz9MXC8zuzOMBf0uRRIl
+         PZfUW3OHpaHr5zCJpB0aeFvM/xsL5Gyq+sybj2GzOFW3vfN1Xyb2s+YTqmxpQ9QcafPZ
+         Spl0hDA7C8BiXpgCdrVukv8ukCtFdKEeAKfCQQY2+JaRdfSlocnHh1Rwe0xAmuy11eVy
+         NFqNOHRd+hrC+5V3m5K/fcAWOX6FqAtvvlRYhONxxJ8xmOJUT7EEKBnPave3bQXC88ks
+         8tlw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
+        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=QMa7bV9M06CL/jmsCalzp9jQP6wxpAhOdiQ2gxt0798=;
-        b=qpTo1KXetNPMQIePiZAIqcYU/j2Dhk4NSaD6r6KAqVKfiBa1EOoEO1xtSIpV5RAs48
-         A7TUinG4c9k4mX5tCgCbhfEbrUb5t2PkS6RMMgye1TUGfefhogunkH5/bPVAnuwi5eI3
-         9ToG3sWQ797LW8HlfByZgufmZMNU/Q/1miLM8ieHyDBJG9ONhKutLP90BZ1QL4F2+XNn
-         THCnB3GQv2MUF9IXn0bysPXZWP4VNJ+w37jOKYtse3O1KJbZXKCqL8pc1teDTwedD/K+
-         J5p4UU8lJOJNsXwvakWFdSMR50+JqizLP+Gmtoda6dKauS/Xb2nJZRRkYe7Gyaef+06R
-         EEpg==
-X-Gm-Message-State: AOAM533x/1ysB3H/+HKJinyixslkpjelORctA7sJWAZ/DCU5HZATxn0+
-        OrIh8emmZL3GF+xg5pFijvLOotSoim+9xpks
-X-Google-Smtp-Source: ABdhPJzhGPoT7ZBw8HtbgEy5KnYsGgkrpCA1JlMjoDzCUuiomLfPFoXNQfI8G09WErZDEYSiBgJ/QA==
-X-Received: by 2002:a37:6790:: with SMTP id b138mr43571819qkc.465.1608135531293;
-        Wed, 16 Dec 2020 08:18:51 -0800 (PST)
+        bh=DMvNnOrRtu4yLJxhDVPBS7UDJWnYlz36sTOfG9aJkV8=;
+        b=Y3dU2szVEz3Bb+dqcx1LxeyiHkdDulhrAauRDzoDeRuNktsZvlZ1xZyaG96gR8lMHn
+         ihYodMaS/0sysABV+HpLkFg//TcIcYhMsPyQIGWxztxiAxiqegWYuvqBmrTDoJ7ofj8H
+         4YRwGwvELXjRYS070Eg82c9fB13ZdrXxmYl51kRaXWxqtTSr2dkkmf0hqCPtqGI4IG1H
+         hcTmNm4tk9LU+aXhYXOYetgKbpFhoyOWPhduNhim9E/9VUK/d9BsiCnkrLCiQJqRxx7v
+         +E9eg3VA7BdqTG9p1PZTTv8nb2wjxoGFH3bbKiglQeROYgyDBJUq8X1S3mZKjzWjXKGG
+         xIow==
+X-Gm-Message-State: AOAM531gBzqnBoct21xlzwtMo9QEmmrUrc7DNHpBttIaZgCpj4DHdDS/
+        sUwE0zR62/RuL1iaXqZaIx+4+U4LyNp+kmjE
+X-Google-Smtp-Source: ABdhPJw46M51fFSB3WdIHiMjo42j4wCyAclsjFEe8wxmqiy11RkebNqdv91z5xiaajyzIZJK6a8Smg==
+X-Received: by 2002:a05:6214:10c6:: with SMTP id r6mr43216140qvs.44.1608135538316;
+        Wed, 16 Dec 2020 08:18:58 -0800 (PST)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id o30sm1179432qtd.24.2020.12.16.08.18.50
+        by smtp.gmail.com with ESMTPSA id a77sm1342469qkg.77.2020.12.16.08.18.57
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 16 Dec 2020 08:18:50 -0800 (PST)
+        Wed, 16 Dec 2020 08:18:57 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Cc:     Qu Wenruo <wqu@suse.com>,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH 1/5] btrfs: allow error injection for btrfs_search_slot and btrfs_cow_block
-Date:   Wed, 16 Dec 2020 11:18:43 -0500
-Message-Id: <adca1f156b411abb1f094fe5bca34513fcd1f376.1608135381.git.josef@toxicpanda.com>
+Subject: [PATCH 5/5] btrfs: make sure owner is set in ref-verify
+Date:   Wed, 16 Dec 2020 11:18:47 -0500
+Message-Id: <75bfbd77fa0cf99dcd84edd1f213c7fb3df1d5e6.1608135381.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.2
 In-Reply-To: <cover.1608135381.git.josef@toxicpanda.com>
 References: <cover.1608135381.git.josef@toxicpanda.com>
@@ -72,38 +70,66 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The following patches are going to address error handling in relocation,
-in order to test those patches I need to be able to inject errors in
-btrfs_search_slot and btrfs_cow_block, as we call both of these pretty
-often in different cases during relocation.
+I noticed that shared ref entries in ref-verify didn't have the proper
+owner set, which caused me to think there was something seriously wrong.
+However the problem is if we have a parent we simply weren't filling out
+the owner part of the reference, even though we have it.  Fix this by
+making sure we set all the proper fields when we modify a reference,
+this way we'll have the proper owner if a problem happens and we don't
+waste time thinking we're updating the wrong level.
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
-Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/ctree.c | 2 ++
- 1 file changed, 2 insertions(+)
+ fs/btrfs/ref-verify.c | 23 ++++++++++-------------
+ 1 file changed, 10 insertions(+), 13 deletions(-)
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index cc89b63d65a4..56e132d825a2 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -1494,6 +1494,7 @@ noinline int btrfs_cow_block(struct btrfs_trans_handle *trans,
+diff --git a/fs/btrfs/ref-verify.c b/fs/btrfs/ref-verify.c
+index 409b02566b25..2b490becbe67 100644
+--- a/fs/btrfs/ref-verify.c
++++ b/fs/btrfs/ref-verify.c
+@@ -669,18 +669,18 @@ int btrfs_ref_tree_mod(struct btrfs_fs_info *fs_info,
+ 	u64 bytenr = generic_ref->bytenr;
+ 	u64 num_bytes = generic_ref->len;
+ 	u64 parent = generic_ref->parent;
+-	u64 ref_root;
+-	u64 owner;
+-	u64 offset;
++	u64 ref_root = 0;
++	u64 owner = 0;
++	u64 offset = 0;
  
- 	return ret;
- }
-+ALLOW_ERROR_INJECTION(btrfs_cow_block, ERRNO);
+ 	if (!btrfs_test_opt(fs_info, REF_VERIFY))
+ 		return 0;
  
- /*
-  * helper function for defrag to decide if two blocks pointed to by a
-@@ -2821,6 +2822,7 @@ int btrfs_search_slot(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 		btrfs_release_path(p);
- 	return ret;
- }
-+ALLOW_ERROR_INJECTION(btrfs_search_slot, ERRNO);
+ 	if (generic_ref->type == BTRFS_REF_METADATA) {
+-		ref_root = generic_ref->tree_ref.root;
++		if (!parent)
++			ref_root = generic_ref->tree_ref.root;
+ 		owner = generic_ref->tree_ref.level;
+-		offset = 0;
+-	} else {
++	} else if (!parent) {
+ 		ref_root = generic_ref->data_ref.ref_root;
+ 		owner = generic_ref->data_ref.ino;
+ 		offset = generic_ref->data_ref.offset;
+@@ -696,13 +696,10 @@ int btrfs_ref_tree_mod(struct btrfs_fs_info *fs_info,
+ 		goto out;
+ 	}
  
- /*
-  * Like btrfs_search_slot, this looks for a key in the given tree. It uses the
+-	if (parent) {
+-		ref->parent = parent;
+-	} else {
+-		ref->root_objectid = ref_root;
+-		ref->owner = owner;
+-		ref->offset = offset;
+-	}
++	ref->parent = parent;
++	ref->owner = owner;
++	ref->root_objectid = ref_root;
++	ref->offset = offset;
+ 	ref->num_refs = (action == BTRFS_DROP_DELAYED_REF) ? -1 : 1;
+ 
+ 	memcpy(&ra->ref, ref, sizeof(struct ref_entry));
 -- 
 2.26.2
 

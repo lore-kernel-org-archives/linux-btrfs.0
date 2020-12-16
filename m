@@ -2,150 +2,143 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.2 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 42346C4361B
-	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Dec 2020 16:29:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 309B8C2BBCA
+	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Dec 2020 16:40:03 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 08ABA233E2
-	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Dec 2020 16:29:05 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 058C5233EB
+	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Dec 2020 16:40:03 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726803AbgLPQ3F (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 16 Dec 2020 11:29:05 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58724 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726793AbgLPQ3F (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 Dec 2020 11:29:05 -0500
-Received: from mail-qk1-x736.google.com (mail-qk1-x736.google.com [IPv6:2607:f8b0:4864:20::736])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0A70CC0619DD
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 Dec 2020 08:27:55 -0800 (PST)
-Received: by mail-qk1-x736.google.com with SMTP id h4so18167948qkk.4
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 Dec 2020 08:27:55 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:subject:date:message-id:in-reply-to:references:mime-version
-         :content-transfer-encoding;
-        bh=q3ZFkc4fZopbKKht4JgMg7mSZw6aGECg8+ejGJXrEGM=;
-        b=vzLf3OO/MJA+uooK0qmLotMVo+n9OgvbbCWsvQosTYja+SZkq4NUCbbuoQhBXLWerv
-         j7fDDQHpDwm/3NH4hmESnwEPVEXqs0fKy1/PX7k5dLaX78SJXen41Xu3fc4XjxBRvCCT
-         PPYqPLWSe4XktEJeOns6fA/MC65hTYKJsTdJz8CdrQMEH338TMYclpuk//wlj/QMfpu1
-         a7o5vgnHxYNYw6dNb9VXYfS8Yjvi9qs2674R2p3QZXlUfjd9yl9yXUjjkqqD4rPmvlzo
-         QTiEnU7dC19nIglBTVDySg8cpYcie6ImUEEOfShFyZopKO4u5XRvaV7Io7vlmpOwiGYz
-         PgVA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=q3ZFkc4fZopbKKht4JgMg7mSZw6aGECg8+ejGJXrEGM=;
-        b=s+aQ3qso+br7f6xvw8/Po8OyzjVjvUlCvkgjDiFJ1tUDIDewo6RsGzOLgMx5eeav27
-         G0exFO8843bVYIqLX+2+4M5ju0KHGia+hj4UfQSXM+e9YyrrTGrietz/fWx2hftBzp0O
-         RXG3cVtk/0RRP2r9NabD8nYi12lbQJcbpkPNZEZnXff3kpw+iL0o0Qzm6KzF0oTwxSk8
-         Lo5LeEmjqqxUP0AkCcfDj1LIF1ZgbrOpmB5q9a4AM4vBm/tiAp2gN3TSqs1G1/daFIzr
-         /WWbvAyuF1QULKSvWOqwMc3Cy/W2VIbIDSeAZd9fvnHL/zJLFp8DVn6s5+eAoPy5ILMK
-         +xhw==
-X-Gm-Message-State: AOAM530jpNLoaFic6f4FxC5eFfwFXpSmnVIXu+LHrk5gAKEfhWop467W
-        6PIspEZ/n0I1sqD62T3l6+vtfP5TeDMifoey
-X-Google-Smtp-Source: ABdhPJzYoCGLGUsW5Z/ewTG/wOk2fPamvB5VVHUoGpLBaX4QF2Nm2ZfVLgqOg06MDXpKt/+Cf+JTZg==
-X-Received: by 2002:a05:620a:38b:: with SMTP id q11mr18232108qkm.239.1608136073967;
-        Wed, 16 Dec 2020 08:27:53 -0800 (PST)
-Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id c7sm1195499qtw.70.2020.12.16.08.27.53
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 16 Dec 2020 08:27:53 -0800 (PST)
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v7 33/38] btrfs: do proper error handling in create_reloc_inode
-Date:   Wed, 16 Dec 2020 11:26:49 -0500
-Message-Id: <0635eb64208e5b6ddcebf6fea00d4928376c14c2.1608135849.git.josef@toxicpanda.com>
-X-Mailer: git-send-email 2.26.2
-In-Reply-To: <cover.1608135849.git.josef@toxicpanda.com>
-References: <cover.1608135849.git.josef@toxicpanda.com>
+        id S1726745AbgLPQjr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 16 Dec 2020 11:39:47 -0500
+Received: from mx2.suse.de ([195.135.220.15]:47338 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726725AbgLPQjr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 16 Dec 2020 11:39:47 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.221.27])
+        by mx2.suse.de (Postfix) with ESMTP id 6A76CAC7F;
+        Wed, 16 Dec 2020 16:39:05 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 8FA5FDA6E1; Wed, 16 Dec 2020 17:37:25 +0100 (CET)
+Date:   Wed, 16 Dec 2020 17:37:25 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Ondrej Mosnacek <omosnace@redhat.com>
+Cc:     linux-fsdevel@vger.kernel.org, David Howells <dhowells@redhat.com>,
+        Al Viro <viro@zeniv.linux.org.uk>, linux-btrfs@vger.kernel.org,
+        linux-security-module@vger.kernel.org, selinux@vger.kernel.org,
+        Paul Moore <paul@paul-moore.com>,
+        Stephen Smalley <stephen.smalley.work@gmail.com>,
+        Richard Haines <richard_c_haines@btinternet.com>
+Subject: Re: [PATCH] vfs: fix fsconfig(2) LSM mount option handling for btrfs
+Message-ID: <20201216163725.GG6430@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Ondrej Mosnacek <omosnace@redhat.com>,
+        linux-fsdevel@vger.kernel.org, David Howells <dhowells@redhat.com>,
+        Al Viro <viro@zeniv.linux.org.uk>, linux-btrfs@vger.kernel.org,
+        linux-security-module@vger.kernel.org, selinux@vger.kernel.org,
+        Paul Moore <paul@paul-moore.com>,
+        Stephen Smalley <stephen.smalley.work@gmail.com>,
+        Richard Haines <richard_c_haines@btinternet.com>
+References: <20201118102342.154277-1-omosnace@redhat.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20201118102342.154277-1-omosnace@redhat.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We already handle some errors in this function, and the callers do the
-correct error handling, so clean up the rest of the function to do the
-appropriate error handling.
+On Wed, Nov 18, 2020 at 11:23:42AM +0100, Ondrej Mosnacek wrote:
+> When SELinux security options are passed to btrfs via fsconfig(2) rather
+> than via mount(2), the operation aborts with an error. What happens is
+> roughly this sequence:
+> 
+> 1. vfs_parse_fs_param() eats away the LSM options and parses them into
+>    fc->security.
+> 2. legacy_get_tree() finds nothing in ctx->legacy_data, passes this
+>    nothing to btrfs.
+> [here btrfs calls another layer of vfs_kern_mount(), but let's ignore
+>  that for simplicity]
+> 3. btrfs calls security_sb_set_mnt_opts() with empty options.
+> 4. vfs_get_tree() then calls its own security_sb_set_mnt_opts() with the
+>    options stashed in fc->security.
+> 5. SELinux doesn't like that different options were used for the same
+>    superblock and returns -EINVAL.
+> 
+> In the case of mount(2), the options are parsed by
+> legacy_parse_monolithic(), which skips the eating away of security
+> opts because of the FS_BINARY_MOUNTDATA flag, so they are passed to the
+> FS via ctx->legacy_data. The second call to security_sb_set_mnt_opts()
+> (from vfs_get_tree()) now passes empty opts, but the non-empty -> empty
+> sequence is allowed by SELinux for the FS_BINARY_MOUNTDATA case.
+> 
+> It is a total mess, but the only sane fix for now seems to be to skip
+> processing the security opts in vfs_parse_fs_param() if the fc has
+> legacy opts set AND the fs specfies the FS_BINARY_MOUNTDATA flag. This
+> combination currently matches only btrfs and coda. For btrfs this fixes
+> the fsconfig(2) behavior, and for coda it makes setting security opts
+> via fsconfig(2) fail the same way as it would with mount(2) (because
+> FS_BINARY_MOUNTDATA filesystems are expected to call the mount opts LSM
+> hooks themselves, but coda never cared enough to do that). I believe
+> that is an acceptable state until both filesystems (or at least btrfs)
+> are converted to the new mount API (at which point btrfs won't need to
+> pretend it takes binary mount data any more and also won't need to call
+> the LSM hooks itself, assuming it will pass the fc->security information
+> properly).
+> 
+> Note that we can't skip LSM opts handling in vfs_parse_fs_param() solely
+> based on FS_BINARY_MOUNTDATA because that would break NFS.
+> 
+> See here for the original report and reproducer:
+> https://lore.kernel.org/selinux/c02674c970fa292610402aa866c4068772d9ad4e.camel@btinternet.com/
+> 
+> Reported-by: Richard Haines <richard_c_haines@btinternet.com>
+> Fixes: 3e1aeb00e6d1 ("vfs: Implement a filesystem superblock creation/configuration context")
+> Signed-off-by: Ondrej Mosnacek <omosnace@redhat.com>
 
-There's a little extra work that needs to be done here, as we create the
-inode item before we create the orphan item.  We could potentially add
-the orphan item, but if we failed to create the inode item we would have
-to abort the transaction.  Instead add a helper to delete the inode item
-we created in the case that we're unable to look up the inode (this
-would likely be caused by an ENOMEM), which if it succeeds means we can
-avoid a transaction abort in this particular error case.
+Can we get this merged via the vfs tree, please? Possibly with
 
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
----
- fs/btrfs/relocation.c | 39 +++++++++++++++++++++++++++++++++++++--
- 1 file changed, 37 insertions(+), 2 deletions(-)
+CC: stable@vger.kernel.org # 5.4+
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 93446ec5bcd9..26b85ab4b295 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -3609,6 +3609,35 @@ static int __insert_orphan_inode(struct btrfs_trans_handle *trans,
- 	return ret;
- }
- 
-+static void delete_orphan_inode(struct btrfs_trans_handle *trans,
-+				struct btrfs_root *root, u64 objectid)
-+{
-+	struct btrfs_path *path;
-+	struct btrfs_key key;
-+	int ret = 0;
-+
-+	path = btrfs_alloc_path();
-+	if (!path) {
-+		ret = -ENOMEM;
-+		goto out;
-+	}
-+
-+	key.objectid = objectid;
-+	key.type = BTRFS_INODE_ITEM_KEY;
-+	key.offset = 0;
-+	ret = btrfs_search_slot(trans, root, &key, path, -1, 1);
-+	if (ret) {
-+		if (ret > 0)
-+			ret = -ENOENT;
-+		goto out;
-+	}
-+	ret = btrfs_del_item(trans, root, path);
-+out:
-+	if (ret)
-+		btrfs_abort_transaction(trans, ret);
-+	btrfs_free_path(path);
-+}
-+
- /*
-  * helper to create inode for data relocation.
-  * the inode is in data relocation tree and its link count is 0
-@@ -3635,10 +3664,16 @@ struct inode *create_reloc_inode(struct btrfs_fs_info *fs_info,
- 		goto out;
- 
- 	err = __insert_orphan_inode(trans, root, objectid);
--	BUG_ON(err);
-+	if (err)
-+		goto out;
- 
- 	inode = btrfs_iget(fs_info->sb, objectid, root);
--	BUG_ON(IS_ERR(inode));
-+	if (IS_ERR(inode)) {
-+		delete_orphan_inode(trans, root, objectid);
-+		err = PTR_ERR(inode);
-+		inode = NULL;
-+		goto out;
-+	}
- 	BTRFS_I(inode)->index_cnt = group->start;
- 
- 	err = btrfs_orphan_add(trans, BTRFS_I(inode));
--- 
-2.26.2
+> +	/*
+> +	 * In the legacy+binary mode, skip the security_fs_context_parse_param()
+> +	 * call and let the legacy handler process also the security options.
+> +	 * It will format them into the monolithic string, where the FS can
+> +	 * process them (with FS_BINARY_MOUNTDATA it is expected to do it).
+> +	 *
+> +	 * Currently, this matches only btrfs and coda. Coda is broken with
+> +	 * fsconfig(2) anyway, because it does actually take binary data. Btrfs
+> +	 * only *pretends* to take binary data to work around the SELinux's
+> +	 * no-remount-with-different-options check, so this allows it to work
+> +	 * with fsconfig(2) properly.
+> +	 *
+> +	 * Once btrfs is ported to the new mount API, this hack can be reverted.
+> +	 */
+> +	if (fc->ops != &legacy_fs_context_ops || !(fc->fs_type->fs_flags & FS_BINARY_MOUNTDATA)) {
 
+Line is way over 80, it could be split like
+
+	if (fc->ops != &legacy_fs_context_ops ||
+	    !(fc->fs_type->fs_flags & FS_BINARY_MOUNTDATA)) {
+
+> +		ret = security_fs_context_parse_param(fc, param);
+> +		if (ret != -ENOPARAM)
+> +			/* Param belongs to the LSM or is disallowed by the LSM;
+> +			 * so don't pass to the FS.
+> +			 */
+
+The multi line comment should have the /* on a separate line (yes it's
+in the original code too but such things could be fixed when the code is
+moved).
+
+> +			return ret;
+> +	}
+>  
+>  	if (fc->ops->parse_param) {
+>  		ret = fc->ops->parse_param(fc, param);

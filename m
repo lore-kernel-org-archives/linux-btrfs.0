@@ -2,97 +2,166 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-11.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3AA96C4361B
-	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Dec 2020 16:19:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 33CCCC2BBCA
+	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Dec 2020 16:20:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id CBDAA2335A
-	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Dec 2020 16:19:56 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E5BBC233CF
+	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Dec 2020 16:20:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726299AbgLPQTb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 16 Dec 2020 11:19:31 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57178 "EHLO
+        id S1726523AbgLPQT5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 16 Dec 2020 11:19:57 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57254 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725970AbgLPQTa (ORCPT
+        with ESMTP id S1726090AbgLPQT5 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 Dec 2020 11:19:30 -0500
-Received: from mail-qt1-x82e.google.com (mail-qt1-x82e.google.com [IPv6:2607:f8b0:4864:20::82e])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9D34AC061794
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 Dec 2020 08:18:50 -0800 (PST)
-Received: by mail-qt1-x82e.google.com with SMTP id g24so5167688qtq.12
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 Dec 2020 08:18:50 -0800 (PST)
+        Wed, 16 Dec 2020 11:19:57 -0500
+Received: from mail-qk1-x72d.google.com (mail-qk1-x72d.google.com [IPv6:2607:f8b0:4864:20::72d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 937DBC06138C
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 Dec 2020 08:18:57 -0800 (PST)
+Received: by mail-qk1-x72d.google.com with SMTP id w79so22996097qkb.5
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 Dec 2020 08:18:57 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:subject:date:message-id:mime-version
+        h=from:to:subject:date:message-id:in-reply-to:references:mime-version
          :content-transfer-encoding;
-        bh=b1YCv29jaX0KFbUE5V4IevCXr7qO6nyHvD1R0kPKnF8=;
-        b=YpubfP9iN3eHRSTPSLYfspU+O8ghXhawbda9DluQ+HbmZnX9/Gm8CHQwgTJPE+XXyU
-         E/GYLC8zo3pReqXADsPs8FqCftiCBO5TTFhic99HP8LB5fMWvSBr0L5Am9P6jqAaQQmq
-         16BFME321YjuiLKWtbuYsfvAhQ4N/Ws5kbA2pfmhmnF+PC/Tednv8DNX2rbIs7xOaHKt
-         v2+TOCsk2+nlIFH24BffpVX3jVSUoDcxe5G0S9AY0zoe4OzniQMaajoADCmVzyNRmatY
-         LKuQHxflunhAxn83QN4N+j6369X4WSqwLkSjm8D9aW5jcm6s4aPqLGL5N5g8B5B9gVH4
-         EUeA==
+        bh=mPX5Za2NooXPbg+T4vFkZbU7CR5nDWX/OvCiwKAeGGo=;
+        b=w0OqLn4kyCxhg6CDbLAhxLdQack0XRC6nvapQXrdqygRARXxBjT2WW9+PVsrU+IlSM
+         XS0N35j0nnyowxFZeKtMABYQpOHJ+5ELp0o2I8QnbDzx9v7rNb35qVrd4J6bGozs/QR3
+         KniROl/hS+OsIIvFrjL6ziT2N6N5eqQggMbp9kSSJBmeaZtBU1MRw6CCY7+8V89xgoBZ
+         kx0FTQIAxdOtEv1cv89eAZr7ldAigYIcXGxVaap4ImYJXzYhBLQxO04MA/PV35IPxJB/
+         YACb/MzrzuD1PUEHD1o69oQf2JMT7CSGqRCZACXtKg4O8inKr/Q66+HDY3HhZeHdz1Qq
+         40tg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=b1YCv29jaX0KFbUE5V4IevCXr7qO6nyHvD1R0kPKnF8=;
-        b=Nvahgn+YT8NmAr3psMt5qLjQvNMEEoZefv4AGHVlNeXvwKlbdRdoAqL1Cs/5gmvmq/
-         C2M9U6p3fKSUuZyWPAH5FrEh9/UvfL90KwnV4UMpz+mhSS0sRI6Nm6B1QwPoVf6hl5Lf
-         x4p8vuf5NioSDVoTAEpPKAsUHO0aP3UMcEqLKWH1eiwnwDldXz6eF+/j1QFJdL6NLyzW
-         fjduo1Cj5mCZ6RJKsehnL4v9uzdIEyjnqc/8kJXSbd94kaYgZpNs6+DHiKfXZ8MNZlAg
-         QvUA6gw2lo42xvACz8dHw0Pqy2joYx5vtcV6uKRwMl8KAeHeiS+y/lkGVUYaS+qadsmK
-         Unag==
-X-Gm-Message-State: AOAM530AwWYzzWz73Ecdj7ke4vEw3NzF22NuA5oHySLUC6VPGfxKHfHs
-        Fma7a8nqlPcMzYoEMDFD7dG+uXkOrhfRGFZw
-X-Google-Smtp-Source: ABdhPJy13bC+gJxwC9Qt+RiScfb/jM8k+PzwIk0Q5OlxLa7QthgmFkIFiJOQxV1yWAbaOZD+EBwlxg==
-X-Received: by 2002:ac8:46c8:: with SMTP id h8mr19766111qto.17.1608135529455;
-        Wed, 16 Dec 2020 08:18:49 -0800 (PST)
+        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
+         :references:mime-version:content-transfer-encoding;
+        bh=mPX5Za2NooXPbg+T4vFkZbU7CR5nDWX/OvCiwKAeGGo=;
+        b=QNJiwT+cWZyIbkDlZO/ueXWUtyIIyv/LqVVwliP0Wacohm7eOAfrtBkC09iPN1UVEJ
+         5vrbWchTLQGB4xI8ZNqw3IpiUyUs72zZnxLOl54byToauPxS7ESN2y1ttJXdXsYoZ/jh
+         3BFnjptzjsnK4wo07Jww88dUoRya1x3oixbxsc3J/8rAbmmdlrnzmkDoUJlNFOdoxMBG
+         XVb9CRXQ1UTo4SlqhW8/UA/JpAAaaJRGhwuAs0iIuMk0dNohdst6uL6a05wLPG55YMSG
+         Lxhnt9THqbmoYpqL5yBvXJHzmeY4hz6xNIRu9KgzkRikk02d2Ik2teIuaxjqKxt1puGp
+         rf3Q==
+X-Gm-Message-State: AOAM533+zAxknCUifizDLJU2qxXGDsSXbXTFaTl7XPolm6kw2qum+BK5
+        6DaFQIhtafVj6U5mwuyRSo069sLwL9wJ519D
+X-Google-Smtp-Source: ABdhPJzg2Td4vqvfietBeodTHf+9OOAwzMFwJdYFkZhilhArsZSGoWlSmwCm9BGqxOXOU9HIQODDzw==
+X-Received: by 2002:a37:5847:: with SMTP id m68mr46523904qkb.497.1608135536466;
+        Wed, 16 Dec 2020 08:18:56 -0800 (PST)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id d25sm1343753qkl.97.2020.12.16.08.18.48
+        by smtp.gmail.com with ESMTPSA id r1sm1165006qta.32.2020.12.16.08.18.55
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 16 Dec 2020 08:18:48 -0800 (PST)
+        Wed, 16 Dec 2020 08:18:55 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 0/5] Fixes and tweaks around error handling
-Date:   Wed, 16 Dec 2020 11:18:42 -0500
-Message-Id: <cover.1608135381.git.josef@toxicpanda.com>
+Subject: [PATCH 4/5] btrfs: pass down the tree block level through ref-verify
+Date:   Wed, 16 Dec 2020 11:18:46 -0500
+Message-Id: <107b6ae87974e8a6acdbe737f80ad995f8228a52.1608135381.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.2
+In-Reply-To: <cover.1608135381.git.josef@toxicpanda.com>
+References: <cover.1608135381.git.josef@toxicpanda.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hello,
+I noticed that sometimes I would have the wrong level printed out with
+ref-verify while testing some error injection related problems.  This is
+because we only get the level from the main extent item, but our
+references could go off the current leaf into another, and at that point
+we lose our level.  Fix this by keeping track of the last tree block
+level that we found, the same way we keep track of our bytenr and
+num_bytes, in case we happen to wander into another leaf while still
+processing the references for a bytenr.
 
-These patches were originally in my reloc error handling patches that have been
-broken out on their own.  They stand on their own and are simple and don't
-affect the code in a real way.  Simply fixing some cosmetic stuff, or allowing
-error injection in certain places.  They were patches I needed while running
-error injection.  Thanks,
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+---
+ fs/btrfs/ref-verify.c | 20 ++++++++++++--------
+ 1 file changed, 12 insertions(+), 8 deletions(-)
 
-Josef
-
-Josef Bacik (5):
-  btrfs: allow error injection for btrfs_search_slot and btrfs_cow_block
-  btrfs: print the actual offset in btrfs_root_name
-  btrfs: noinline btrfs_should_cancel_balance
-  btrfs: pass down the tree block level through ref-verify
-  btrfs: make sure owner is set in ref-verify
-
- fs/btrfs/ctree.c      |  2 ++
- fs/btrfs/disk-io.c    |  2 +-
- fs/btrfs/print-tree.c | 10 +++++-----
- fs/btrfs/print-tree.h |  2 +-
- fs/btrfs/ref-verify.c | 43 ++++++++++++++++++++++---------------------
- fs/btrfs/relocation.c |  2 +-
- 6 files changed, 32 insertions(+), 29 deletions(-)
-
+diff --git a/fs/btrfs/ref-verify.c b/fs/btrfs/ref-verify.c
+index 4b9b6c52a83b..409b02566b25 100644
+--- a/fs/btrfs/ref-verify.c
++++ b/fs/btrfs/ref-verify.c
+@@ -495,14 +495,15 @@ static int process_extent_item(struct btrfs_fs_info *fs_info,
+ }
+ 
+ static int process_leaf(struct btrfs_root *root,
+-			struct btrfs_path *path, u64 *bytenr, u64 *num_bytes)
++			struct btrfs_path *path, u64 *bytenr, u64 *num_bytes,
++			int *tree_block_level)
+ {
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
+ 	struct extent_buffer *leaf = path->nodes[0];
+ 	struct btrfs_extent_data_ref *dref;
+ 	struct btrfs_shared_data_ref *sref;
+ 	u32 count;
+-	int i = 0, tree_block_level = 0, ret = 0;
++	int i = 0, ret = 0;
+ 	struct btrfs_key key;
+ 	int nritems = btrfs_header_nritems(leaf);
+ 
+@@ -515,15 +516,15 @@ static int process_leaf(struct btrfs_root *root,
+ 		case BTRFS_METADATA_ITEM_KEY:
+ 			*bytenr = key.objectid;
+ 			ret = process_extent_item(fs_info, path, &key, i,
+-						  &tree_block_level);
++						  tree_block_level);
+ 			break;
+ 		case BTRFS_TREE_BLOCK_REF_KEY:
+ 			ret = add_tree_block(fs_info, key.offset, 0,
+-					     key.objectid, tree_block_level);
++					     key.objectid, *tree_block_level);
+ 			break;
+ 		case BTRFS_SHARED_BLOCK_REF_KEY:
+ 			ret = add_tree_block(fs_info, 0, key.offset,
+-					     key.objectid, tree_block_level);
++					     key.objectid, *tree_block_level);
+ 			break;
+ 		case BTRFS_EXTENT_DATA_REF_KEY:
+ 			dref = btrfs_item_ptr(leaf, i,
+@@ -549,7 +550,8 @@ static int process_leaf(struct btrfs_root *root,
+ 
+ /* Walk down to the leaf from the given level */
+ static int walk_down_tree(struct btrfs_root *root, struct btrfs_path *path,
+-			  int level, u64 *bytenr, u64 *num_bytes)
++			  int level, u64 *bytenr, u64 *num_bytes,
++			  int *tree_block_level)
+ {
+ 	struct extent_buffer *eb;
+ 	int ret = 0;
+@@ -565,7 +567,8 @@ static int walk_down_tree(struct btrfs_root *root, struct btrfs_path *path,
+ 			path->slots[level-1] = 0;
+ 			path->locks[level-1] = BTRFS_READ_LOCK;
+ 		} else {
+-			ret = process_leaf(root, path, bytenr, num_bytes);
++			ret = process_leaf(root, path, bytenr, num_bytes,
++					   tree_block_level);
+ 			if (ret)
+ 				break;
+ 		}
+@@ -974,6 +977,7 @@ int btrfs_build_ref_tree(struct btrfs_fs_info *fs_info)
+ {
+ 	struct btrfs_path *path;
+ 	struct extent_buffer *eb;
++	int tree_block_level = 0;
+ 	u64 bytenr = 0, num_bytes = 0;
+ 	int ret, level;
+ 
+@@ -998,7 +1002,7 @@ int btrfs_build_ref_tree(struct btrfs_fs_info *fs_info)
+ 		 * different leaf from the original extent item.
+ 		 */
+ 		ret = walk_down_tree(fs_info->extent_root, path, level,
+-				     &bytenr, &num_bytes);
++				     &bytenr, &num_bytes, &tree_block_level);
+ 		if (ret)
+ 			break;
+ 		ret = walk_up_tree(path, &level);
 -- 
 2.26.2
 

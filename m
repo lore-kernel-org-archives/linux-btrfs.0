@@ -2,219 +2,218 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-11.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2B7D9C2BBD5
-	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Dec 2020 16:23:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B886AC4361B
+	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Dec 2020 16:27:38 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 087DA2335A
-	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Dec 2020 16:23:58 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 87A11233F6
+	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Dec 2020 16:27:38 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726684AbgLPQXq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 16 Dec 2020 11:23:46 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57862 "EHLO
+        id S1726711AbgLPQ1i (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 16 Dec 2020 11:27:38 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58456 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726678AbgLPQXq (ORCPT
+        with ESMTP id S1726708AbgLPQ1h (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 Dec 2020 11:23:46 -0500
-Received: from mail-qt1-x82c.google.com (mail-qt1-x82c.google.com [IPv6:2607:f8b0:4864:20::82c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A8656C0611CA
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 Dec 2020 08:22:39 -0800 (PST)
-Received: by mail-qt1-x82c.google.com with SMTP id g24so5179317qtq.12
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 Dec 2020 08:22:39 -0800 (PST)
+        Wed, 16 Dec 2020 11:27:37 -0500
+Received: from mail-qt1-x832.google.com (mail-qt1-x832.google.com [IPv6:2607:f8b0:4864:20::832])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4F665C061794
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 Dec 2020 08:26:57 -0800 (PST)
+Received: by mail-qt1-x832.google.com with SMTP id 2so7750036qtt.10
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 Dec 2020 08:26:57 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:cc:subject:date:message-id:in-reply-to:references
-         :mime-version:content-transfer-encoding;
-        bh=3MBAVyNUqf/0LMFLeiGY+TpoYSaKveLLXpRtIg0JpiI=;
-        b=mLekSxXErOTuZvgJGeDGRNAPLSYoqaPByol3/ToJ0C0lnBCCd0AaKFzW/N6NnCN/mF
-         M8vpLMwo05wukHQw9y5mUDC8cCz/Usq6OMbNyBBX9g1MPFxX9uonRtRMnPjzBxCAWyWs
-         DRbmfRFNdDjyRSGW6OflEJtrLwbCLrLScJbroWJ4bUgyO3ysSRU5Cpx2aW+F/Kk/OXr/
-         LRrGb1Xi/qzXPnp1W/0QYUH/yZCsvLUZc0ha0a1M6hUFWSGKPQ+VEY6wRLVhPDDFJ4TK
-         BXdj4rsk+oU6NCOK1Igjq/wQ/SInPpX1LBH9+yb98DBGnbOxDxS/hz7MTO9e5KPX1ky8
-         2SsQ==
+        h=from:to:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=yT8ex54Z55/AF9HI6mk0dVm6rxPK6K8i5jDNoFsr5H4=;
+        b=CfR/Fux/pdj7jAwCdg9GHVu4jqpH2/gpisrnQELXCG3CiZGiVC/v0DHal9PKVymAqp
+         17odoOiZH4GrboyjWwsMrM15CCPAV2lHusZEIs7ps02R9Q6Bge49yaeY7682ZRNtAJWO
+         uAnMIByBj37P0aJ/WMd10o05WIQPVoB1TNSwVmVABG7BlPyMr5/VCiUiBW7+oasTlXQU
+         uw4ldlA+9Glh9Hz+k04L2U5RI7iVCAF8/VSkbulTfnFXR+MJa/NIE0UPfrDJSrcjG98r
+         GEjbdMFsSkZqD8KNY7TyYgse6XUNLK9gRCMWivcre4N0gTjkjaQftaU59Qyi/NSbchdY
+         75MA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=3MBAVyNUqf/0LMFLeiGY+TpoYSaKveLLXpRtIg0JpiI=;
-        b=s9kFhXn5ixITi6NsuYgfvzFdW3c5i8GGjce1nFWrz+3IygjPGP49jeeZduDyf1drwH
-         bmwPWemSsX1G+Ntvh/ZsAY9jNuD5teaVjiPfmcV7rtV1xYX+YDAvmfDfkGL1l+BhPNqj
-         D9Od0st3YezDr8tLK4wcYIAkoW0SP1vo51UhGEveSh1dma7Y6LlHnhRIvsoz9nqmtu0W
-         E/8mXKhvcKy3i4Ff9f9EPRrCetZ6/k29G12eE4LYhyaMwShYrAcMJ79sAr+ITGmSBVw1
-         gn+g8pxjdUCwlul+ysAm2GKyGA88hyCakdPKGlazyrlMgBPXwibS6LfIkDWlPYRge1n+
-         lrig==
-X-Gm-Message-State: AOAM531rsdrsb/Sz8UcVna5My0oXAWC6RiIGCdLLyJe7VfgCtsCTzXjk
-        A8OXeYizicconm/ziuuDlZ5wmxfDBo02Z6+s
-X-Google-Smtp-Source: ABdhPJzpmI+rO8KWB4KcTnsoz8qXcZDcCvIHUfBVSYcMWdFKFn+/2bc0qIs4dYU5V7v2g5q3NYTxoA==
-X-Received: by 2002:ac8:5447:: with SMTP id d7mr44685883qtq.142.1608135758490;
-        Wed, 16 Dec 2020 08:22:38 -0800 (PST)
+        h=x-gm-message-state:from:to:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=yT8ex54Z55/AF9HI6mk0dVm6rxPK6K8i5jDNoFsr5H4=;
+        b=RAii//ocOjHfRZbcvtrz3dBBRcAN5R+eTCXLhr1aOo5/ZFC6+6qFzwKIRvb7t4ztH0
+         xQxrnmwAtcha89xdvpgHENucbHGatL5xCkpqR9Y/+Lsf8Hfh57KsDIIWNBKDxiJtWsKt
+         X82VrZSAiL6bHkzBSoVqqtaW8lP9ko+WeIneMpJ3wY88PJPdNA+N82e7n6dEXjkYqG+L
+         OTIEc1X1NEmIB+QFxaDkipCYQ+u1r73DeRA5PPaRHZFumg3tHqFTPBW10HEiMJrsXjTE
+         1Vu31Y3prsEA7jDtS+G0yyw7JsUBZ+gdb4w1SVElzPRVr/v4Vw2PAEnlbPs4tv9Hk5Jt
+         0VCA==
+X-Gm-Message-State: AOAM533UyyMrJClR/+3WqOzP9cC41P5iix4hYn+s+uNN8YVWnsb54wud
+        lcE9WNjv58Qits12kGGGVSk0ViAvIRNai85E
+X-Google-Smtp-Source: ABdhPJyiGNKy8UPkdo8CjB7FLdsOAwUwq1HhkXDg4OxY2wpqlGT5qzI5kv+jHQYVf0uUvs2TKIryDg==
+X-Received: by 2002:a05:622a:30e:: with SMTP id q14mr45352551qtw.77.1608136016136;
+        Wed, 16 Dec 2020 08:26:56 -0800 (PST)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id p6sm1283314qtl.21.2020.12.16.08.22.37
+        by smtp.gmail.com with ESMTPSA id c2sm1385137qke.109.2020.12.16.08.26.55
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 16 Dec 2020 08:22:37 -0800 (PST)
+        Wed, 16 Dec 2020 08:26:55 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Cc:     Qu Wenruo <wqu@suse.com>,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH 10/13] btrfs: fix lockdep splat in btrfs_recover_relocation
-Date:   Wed, 16 Dec 2020 11:22:14 -0500
-Message-Id: <36dda6eedc11d35d32c966cf320033ec20a66f22.1608135557.git.josef@toxicpanda.com>
+Subject: [PATCH v7 00/38] Cleanup error handling in relocation
+Date:   Wed, 16 Dec 2020 11:26:16 -0500
+Message-Id: <cover.1608135849.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.2
-In-Reply-To: <cover.1608135557.git.josef@toxicpanda.com>
-References: <cover.1608135557.git.josef@toxicpanda.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-While testing the error paths of relocation I hit the following lockdep
-splat
+v6->v7:
+- Broke up the series into 3 series, 1 for cosmetic things, 1 for all the major
+  issues (including those reported on v6 of this set), and this new set which is
+  solely the error handling related patches for relocation.  It's still a lot of
+  patches, sorry about that.
 
-======================================================
-WARNING: possible circular locking dependency detected
-5.10.0-rc6+ #217 Not tainted
-------------------------------------------------------
-mount/779 is trying to acquire lock:
-ffffa0e676945418 (&fs_info->balance_mutex){+.+.}-{3:3}, at: btrfs_recover_balance+0x2f0/0x340
+v5->v6:
+- Reworked "btrfs: handle errors from select_reloc_root()" because Zygo reported
+  hitting an ASSERT(ret != -ENOENT) during his testing.  This was because I
+  changed select_reloc_root() to return -ENOENT if we happened to race with
+  somebody else who failed to init the reloc root, however we had an ASSERT() to
+  check for this because it indicated corruption.  I modified that patch to move
+  the ASSERT() to where the problem actually is, so select_reloc_root() can
+  return whatever error and it'll pass it along.  I also removed Qu's
+  reviewed-by for the patch because of the change.
 
-but task is already holding lock:
-ffffa0e60ee31da8 (btrfs-root-00){++++}-{3:3}, at: __btrfs_tree_read_lock+0x27/0x100
+v4->v5:
+- Dropped "btrfs: fix error handling in commit_fs_roots" as it was merged.
+- Fixed an ASSERT() that happened during relocation recovery that Zygo reported,
+  I moved the error condition out of another condition which broke recovery if
+  we had deleted subvols pending with relocation.
 
-which lock already depends on the new lock.
+v3->v4:
+- Squashed the __add_reloc_root error handling patches in
+  btrfs_recover_relocation as they were small and in the same function.
+- Squashed the record_root_in_trans failure handling patches for
+  select_reloc_root as they were small and in the same function.
+- Added a new patch to address an existing error handling problem with subvol
+  creation.
+- Fixed up the various cases that Qu noticed where I got things wrong, cleaning
+  up a leaked root extent ref, a leaked inode item, and where I accidentally
+  stopped dealing with errors from btrfs_drop_subtree.
+- Reworked a bunch of the ASSERT()'s to do ASSERT(0) in their respective if
+  statements.
+- Added reviewed-bys.
 
-the existing dependency chain (in reverse order) is:
+v2->v3:
+- A lot of extra patches fixing various things that I encountered while
+  debugging the corruption problem that was uncovered by these patches.
+- Fixed the panic that Zygo was seeing and other issues.
+- Fixed up the comments from Nikolay and Filipe.
 
--> #2 (btrfs-root-00){++++}-{3:3}:
-       down_read_nested+0x43/0x130
-       __btrfs_tree_read_lock+0x27/0x100
-       btrfs_read_lock_root_node+0x31/0x40
-       btrfs_search_slot+0x462/0x8f0
-       btrfs_update_root+0x55/0x2b0
-       btrfs_drop_snapshot+0x398/0x750
-       clean_dirty_subvols+0xdf/0x120
-       btrfs_recover_relocation+0x534/0x5a0
-       btrfs_start_pre_rw_mount+0xcb/0x170
-       open_ctree+0x151f/0x1726
-       btrfs_mount_root.cold+0x12/0xea
-       legacy_get_tree+0x30/0x50
-       vfs_get_tree+0x28/0xc0
-       vfs_kern_mount.part.0+0x71/0xb0
-       btrfs_mount+0x10d/0x380
-       legacy_get_tree+0x30/0x50
-       vfs_get_tree+0x28/0xc0
-       path_mount+0x433/0xc10
-       __x64_sys_mount+0xe3/0x120
-       do_syscall_64+0x33/0x40
-       entry_SYSCALL_64_after_hwframe+0x44/0xa9
+A slight note, the first set of patches could probably be taken now, and in fact
 
--> #1 (sb_internal#2){.+.+}-{0:0}:
-       start_transaction+0x444/0x700
-       insert_balance_item.isra.0+0x37/0x320
-       btrfs_balance+0x354/0xf40
-       btrfs_ioctl_balance+0x2cf/0x380
-       __x64_sys_ioctl+0x83/0xb0
-       do_syscall_64+0x33/0x40
-       entry_SYSCALL_64_after_hwframe+0x44/0xa9
+  btrfs: fix error handling in commit_fs_roots
 
--> #0 (&fs_info->balance_mutex){+.+.}-{3:3}:
-       __lock_acquire+0x1120/0x1e10
-       lock_acquire+0x116/0x370
-       __mutex_lock+0x7e/0x7b0
-       btrfs_recover_balance+0x2f0/0x340
-       open_ctree+0x1095/0x1726
-       btrfs_mount_root.cold+0x12/0xea
-       legacy_get_tree+0x30/0x50
-       vfs_get_tree+0x28/0xc0
-       vfs_kern_mount.part.0+0x71/0xb0
-       btrfs_mount+0x10d/0x380
-       legacy_get_tree+0x30/0x50
-       vfs_get_tree+0x28/0xc0
-       path_mount+0x433/0xc10
-       __x64_sys_mount+0xe3/0x120
-       do_syscall_64+0x33/0x40
-       entry_SYSCALL_64_after_hwframe+0x44/0xa9
+Was sent earlier this week and is very important and needs to be reviewed and
+merged ASAP.  The following are safe and could be merged outside of the rest of
+this series
 
-other info that might help us debug this:
+  btrfs: allow error injection for btrfs_search_slot and btrfs_cow_block
+  btrfs: fix lockdep splat in btrfs_recover_relocation
+  btrfs: keep track of the root owner for relocation reads
+  btrfs: noinline btrfs_should_cancel_balance
+  btrfs: do not cleanup upper nodes in btrfs_backref_cleanup_node
+  btrfs: pass down the tree block level through ref-verify
+  btrfs: make sure owner is set in ref-verify
+  btrfs: don't clear ret in btrfs_start_dirty_block_groups
 
-Chain exists of:
-  &fs_info->balance_mutex --> sb_internal#2 --> btrfs-root-00
+The rest obviously are all around the actual error handling.
 
- Possible unsafe locking scenario:
+v1->v2:
+- fixed a bug where I accidentally dropped reading flags in relocate_block_group
+  when I dropped the extra checks that we handle in the tree checker.
 
-       CPU0                    CPU1
-       ----                    ----
-  lock(btrfs-root-00);
-                               lock(sb_internal#2);
-                               lock(btrfs-root-00);
-  lock(&fs_info->balance_mutex);
+--- Original message ---
+Hello,
 
- *** DEADLOCK ***
+Relocation is the last place that is not able to handle errors at all, which
+results in all sorts of lovely panics if you encounter corruptions or IO errors.
+I'm going to start cleaning up relocation, but before I move code around I want
+the error handling to be somewhat sane, so I'm not changing behavior and error
+handling at the same time.
 
-2 locks held by mount/779:
- #0: ffffa0e60dc040e0 (&type->s_umount_key#47/1){+.+.}-{3:3}, at: alloc_super+0xb5/0x380
- #1: ffffa0e60ee31da8 (btrfs-root-00){++++}-{3:3}, at: __btrfs_tree_read_lock+0x27/0x100
+These patches are purely about error handling, there is no behavior changing
+other than returning errors up the chain properly.  There is a lot of room for
+follow up cleanups, which will happen next.  However I wanted to get this series
+done today and out so we could get it merged ASAP, and then the follow up
+cleanups can happen later as they are less important and less critical.
 
-stack backtrace:
-CPU: 0 PID: 779 Comm: mount Not tainted 5.10.0-rc6+ #217
-Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.13.0-2.fc32 04/01/2014
-Call Trace:
- dump_stack+0x8b/0xb0
- check_noncircular+0xcf/0xf0
- ? trace_call_bpf+0x139/0x260
- __lock_acquire+0x1120/0x1e10
- lock_acquire+0x116/0x370
- ? btrfs_recover_balance+0x2f0/0x340
- __mutex_lock+0x7e/0x7b0
- ? btrfs_recover_balance+0x2f0/0x340
- ? btrfs_recover_balance+0x2f0/0x340
- ? rcu_read_lock_sched_held+0x3f/0x80
- ? kmem_cache_alloc_trace+0x2c4/0x2f0
- ? btrfs_get_64+0x5e/0x100
- btrfs_recover_balance+0x2f0/0x340
- open_ctree+0x1095/0x1726
- btrfs_mount_root.cold+0x12/0xea
- ? rcu_read_lock_sched_held+0x3f/0x80
- legacy_get_tree+0x30/0x50
- vfs_get_tree+0x28/0xc0
- vfs_kern_mount.part.0+0x71/0xb0
- btrfs_mount+0x10d/0x380
- ? __kmalloc_track_caller+0x2f2/0x320
- legacy_get_tree+0x30/0x50
- vfs_get_tree+0x28/0xc0
- ? capable+0x3a/0x60
- path_mount+0x433/0xc10
- __x64_sys_mount+0xe3/0x120
- do_syscall_64+0x33/0x40
- entry_SYSCALL_64_after_hwframe+0x44/0xa9
+The only exception to the above is the patch to add the error injection sites
+for btrfs_cow_block and btrfs_search_slot, and a lockdep fix that I discovered
+while running my tests, those are the first two patches in the series.
 
-This is thankfully straightforward to fix, simply release the path
-before we setup the reloc_ctl.
+I tested this with my error injection stress test, where I keep track of all
+stack traces that have been tested and only inject errors when we have a new
+stack trace, which means I should have covered all of the various error
+conditions.  With this patchset I'm no longer panicing while stressing the error
+conditions.  Thanks,
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
-Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
----
- fs/btrfs/volumes.c | 2 ++
- 1 file changed, 2 insertions(+)
+Josef
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 7930e1c78c45..49ba941f0314 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -4318,6 +4318,8 @@ int btrfs_recover_balance(struct btrfs_fs_info *fs_info)
- 		btrfs_warn(fs_info,
- 	"balance: cannot set exclusive op status, resume manually");
- 
-+	btrfs_release_path(path);
-+
- 	mutex_lock(&fs_info->balance_mutex);
- 	BUG_ON(fs_info->balance_ctl);
- 	spin_lock(&fs_info->balance_lock);
+Josef Bacik (38):
+  btrfs: convert BUG_ON()'s in relocate_tree_block
+  btrfs: return an error from btrfs_record_root_in_trans
+  btrfs: handle errors from select_reloc_root()
+  btrfs: convert BUG_ON()'s in select_reloc_root() to proper errors
+  btrfs: check record_root_in_trans related failures in
+    select_reloc_root
+  btrfs: do proper error handling in record_reloc_root_in_trans
+  btrfs: handle btrfs_record_root_in_trans failure in
+    btrfs_rename_exchange
+  btrfs: handle btrfs_record_root_in_trans failure in btrfs_rename
+  btrfs: handle btrfs_record_root_in_trans failure in
+    btrfs_delete_subvolume
+  btrfs: handle btrfs_record_root_in_trans failure in
+    btrfs_recover_log_trees
+  btrfs: handle btrfs_record_root_in_trans failure in create_subvol
+  btrfs: btrfs: handle btrfs_record_root_in_trans failure in
+    relocate_tree_block
+  btrfs: handle btrfs_record_root_in_trans failure in start_transaction
+  btrfs: handle record_root_in_trans failure in qgroup_account_snapshot
+  btrfs: handle record_root_in_trans failure in
+    btrfs_record_root_in_trans
+  btrfs: handle record_root_in_trans failure in create_pending_snapshot
+  btrfs: do not panic in __add_reloc_root
+  btrfs: have proper error handling in btrfs_init_reloc_root
+  btrfs: do proper error handling in create_reloc_root
+  btrfs: validate ->reloc_root after recording root in trans
+  btrfs: handle btrfs_update_reloc_root failure in commit_fs_roots
+  btrfs: change insert_dirty_subvol to return errors
+  btrfs: handle btrfs_update_reloc_root failure in insert_dirty_subvol
+  btrfs: handle btrfs_update_reloc_root failure in prepare_to_merge
+  btrfs: do proper error handling in btrfs_update_reloc_root
+  btrfs: convert logic BUG_ON()'s in replace_path to ASSERT()'s
+  btrfs: handle btrfs_cow_block errors in replace_path
+  btrfs: handle btrfs_search_slot failure in replace_path
+  btrfs: handle errors in reference count manipulation in replace_path
+  btrfs: handle extent reference errors in do_relocation
+  btrfs: check for BTRFS_BLOCK_FLAG_FULL_BACKREF being set improperly
+  btrfs: remove the extent item sanity checks in relocate_block_group
+  btrfs: do proper error handling in create_reloc_inode
+  btrfs: handle __add_reloc_root failures in btrfs_recover_relocation
+  btrfs: cleanup error handling in prepare_to_merge
+  btrfs: handle extent corruption with select_one_root properly
+  btrfs: do proper error handling in merge_reloc_roots
+  btrfs: check return value of btrfs_commit_transaction in relocation
+
+ fs/btrfs/inode.c        |  20 +-
+ fs/btrfs/ioctl.c        |   7 +-
+ fs/btrfs/relocation.c   | 414 +++++++++++++++++++++++++++++++---------
+ fs/btrfs/transaction.c  |  37 ++--
+ fs/btrfs/tree-checker.c |   5 +
+ fs/btrfs/tree-log.c     |   8 +-
+ 6 files changed, 382 insertions(+), 109 deletions(-)
+
 -- 
 2.26.2
 

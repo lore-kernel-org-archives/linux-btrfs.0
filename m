@@ -7,60 +7,61 @@ X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4F644C0018C
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B6AECC2BBD4
 	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Dec 2020 16:20:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 1BB93233FA
+	by mail.kernel.org (Postfix) with ESMTP id 6EB6A23433
 	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Dec 2020 16:20:13 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726528AbgLPQT5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 16 Dec 2020 11:19:57 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57256 "EHLO
+        id S1726531AbgLPQUA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 16 Dec 2020 11:20:00 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57194 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726419AbgLPQT5 (ORCPT
+        with ESMTP id S1725970AbgLPQTe (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 Dec 2020 11:19:57 -0500
-Received: from mail-qv1-xf2b.google.com (mail-qv1-xf2b.google.com [IPv6:2607:f8b0:4864:20::f2b])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 664B9C061282
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 Dec 2020 08:18:59 -0800 (PST)
-Received: by mail-qv1-xf2b.google.com with SMTP id h16so7161904qvu.8
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 Dec 2020 08:18:59 -0800 (PST)
+        Wed, 16 Dec 2020 11:19:34 -0500
+Received: from mail-qv1-xf2c.google.com (mail-qv1-xf2c.google.com [IPv6:2607:f8b0:4864:20::f2c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2229EC0617A7
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 Dec 2020 08:18:54 -0800 (PST)
+Received: by mail-qv1-xf2c.google.com with SMTP id p12so11566582qvj.13
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 Dec 2020 08:18:54 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:subject:date:message-id:in-reply-to:references:mime-version
-         :content-transfer-encoding;
-        bh=DMvNnOrRtu4yLJxhDVPBS7UDJWnYlz36sTOfG9aJkV8=;
-        b=eWPTGQ5R56bj7Uq3/EaQQK/96g1kHmrVzJx15LP1z2Fvc8oZAZin9dU8+xySF85WVz
-         +BITqS5VeWPvWMfchoAj9bZ4AOw3Fm31eVfyYM5Omjkedk3eqz9MXC8zuzOMBf0uRRIl
-         PZfUW3OHpaHr5zCJpB0aeFvM/xsL5Gyq+sybj2GzOFW3vfN1Xyb2s+YTqmxpQ9QcafPZ
-         Spl0hDA7C8BiXpgCdrVukv8ukCtFdKEeAKfCQQY2+JaRdfSlocnHh1Rwe0xAmuy11eVy
-         NFqNOHRd+hrC+5V3m5K/fcAWOX6FqAtvvlRYhONxxJ8xmOJUT7EEKBnPave3bQXC88ks
-         8tlw==
+        h=from:to:cc:subject:date:message-id:in-reply-to:references
+         :mime-version:content-transfer-encoding;
+        bh=HfzjWbCJlAt1M6Gp5Xa+5CFjYIiFZggMzPSt43v5UTI=;
+        b=sNBdyy+qzrsaQtJkXIEx3GzMRIvvb67EeiLbgC17Suu3ZEJx1CUngASEI4b8C0UHJa
+         rdaz1iTsWVo5y7sA0eFH0m1lZyM9wSsS0yfm3jTLtlOEG8YONS2HhCHOJwklTcnfiztv
+         O5fayV8fK4JXHUhGrXgbCUIs0rkgxr48hXpfuK9YboEzJiNZ0Gcc++mMEj1Bsn2jSFUG
+         z7GipRcfWgp6FcAFDfgs1CtxMELfCTyrDLvx9uum4V5g3pdlPmQUdfqwbtyaeA1royTL
+         LSjAjKEvEAA7lOOhdc1Wk3RyosuMzhTOhapbnMJWLKKBwohJcXtEZsHnI/dfXz63tWqD
+         ma0A==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=DMvNnOrRtu4yLJxhDVPBS7UDJWnYlz36sTOfG9aJkV8=;
-        b=Y3dU2szVEz3Bb+dqcx1LxeyiHkdDulhrAauRDzoDeRuNktsZvlZ1xZyaG96gR8lMHn
-         ihYodMaS/0sysABV+HpLkFg//TcIcYhMsPyQIGWxztxiAxiqegWYuvqBmrTDoJ7ofj8H
-         4YRwGwvELXjRYS070Eg82c9fB13ZdrXxmYl51kRaXWxqtTSr2dkkmf0hqCPtqGI4IG1H
-         hcTmNm4tk9LU+aXhYXOYetgKbpFhoyOWPhduNhim9E/9VUK/d9BsiCnkrLCiQJqRxx7v
-         +E9eg3VA7BdqTG9p1PZTTv8nb2wjxoGFH3bbKiglQeROYgyDBJUq8X1S3mZKjzWjXKGG
-         xIow==
-X-Gm-Message-State: AOAM531gBzqnBoct21xlzwtMo9QEmmrUrc7DNHpBttIaZgCpj4DHdDS/
-        sUwE0zR62/RuL1iaXqZaIx+4+U4LyNp+kmjE
-X-Google-Smtp-Source: ABdhPJw46M51fFSB3WdIHiMjo42j4wCyAclsjFEe8wxmqiy11RkebNqdv91z5xiaajyzIZJK6a8Smg==
-X-Received: by 2002:a05:6214:10c6:: with SMTP id r6mr43216140qvs.44.1608135538316;
-        Wed, 16 Dec 2020 08:18:58 -0800 (PST)
+        bh=HfzjWbCJlAt1M6Gp5Xa+5CFjYIiFZggMzPSt43v5UTI=;
+        b=UuJvxPk9JCHyivkv4vDs/8Nck5EiZDwRc9GcZuHFjBK9AFK4y8RI0QSb2xSL3VL019
+         j+aTPT4tACN08xpzWXZtVAMXtVA8om3opDCLdxL+xh28ah7NdLwx2gLiFrmQ4VdCqW4I
+         PI8kNkIfdWdlGE2UaVn5pOv0NkV5+BdXjXl3/pqoFK6PQ5Zfa4soBvPksHB5z5jK5zit
+         c9D1pu5u69CeyhQI86qqJoPW9LDOtre+bCMlb3dLIXXH+ova5K+eJaw60IUnkrVDJWwC
+         YSHK4aMK5QeIzFfdVG1S1PPjLineKV/ji1WqS1dC1DncsA9490wzQr8b6d3fkbGnmy29
+         YB0w==
+X-Gm-Message-State: AOAM532UzhgmJ25udkF6bf4kD2DMH/kFQ+C3UNDoQaA065iWpqE6yUSa
+        kZXjUHZRBR3xyOq+RDqacVB21/aaeQZIGgnl
+X-Google-Smtp-Source: ABdhPJzw0hsgMoDxbxkhzaceEQD4sC+KnZG28aXZ742mYU36RAQozJoLhw/4LlID7K8ZAyaIloC5bQ==
+X-Received: by 2002:ad4:4643:: with SMTP id y3mr43891581qvv.3.1608135533074;
+        Wed, 16 Dec 2020 08:18:53 -0800 (PST)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id a77sm1342469qkg.77.2020.12.16.08.18.57
+        by smtp.gmail.com with ESMTPSA id x6sm1277413qtm.4.2020.12.16.08.18.52
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 16 Dec 2020 08:18:57 -0800 (PST)
+        Wed, 16 Dec 2020 08:18:52 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 5/5] btrfs: make sure owner is set in ref-verify
-Date:   Wed, 16 Dec 2020 11:18:47 -0500
-Message-Id: <75bfbd77fa0cf99dcd84edd1f213c7fb3df1d5e6.1608135381.git.josef@toxicpanda.com>
+Cc:     Qu Wenruo <wqu@suse.com>
+Subject: [PATCH 2/5] btrfs: print the actual offset in btrfs_root_name
+Date:   Wed, 16 Dec 2020 11:18:44 -0500
+Message-Id: <563f04c9be75df4f70a2b060802454f13af13cf5.1608135381.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.2
 In-Reply-To: <cover.1608135381.git.josef@toxicpanda.com>
 References: <cover.1608135381.git.josef@toxicpanda.com>
@@ -70,66 +71,75 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-I noticed that shared ref entries in ref-verify didn't have the proper
-owner set, which caused me to think there was something seriously wrong.
-However the problem is if we have a parent we simply weren't filling out
-the owner part of the reference, even though we have it.  Fix this by
-making sure we set all the proper fields when we modify a reference,
-this way we'll have the proper owner if a problem happens and we don't
-waste time thinking we're updating the wrong level.
+We're supposed to print the root_key.offset in btrfs_root_name in the
+case of a reloc root, not the objectid.  Fix this helper to take the key
+so we have access to the offset when we need it.
 
+Reviewed-by: Qu Wenruo <wqu@suse.com>
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/ref-verify.c | 23 ++++++++++-------------
- 1 file changed, 10 insertions(+), 13 deletions(-)
+ fs/btrfs/disk-io.c    |  2 +-
+ fs/btrfs/print-tree.c | 10 +++++-----
+ fs/btrfs/print-tree.h |  2 +-
+ 3 files changed, 7 insertions(+), 7 deletions(-)
 
-diff --git a/fs/btrfs/ref-verify.c b/fs/btrfs/ref-verify.c
-index 409b02566b25..2b490becbe67 100644
---- a/fs/btrfs/ref-verify.c
-+++ b/fs/btrfs/ref-verify.c
-@@ -669,18 +669,18 @@ int btrfs_ref_tree_mod(struct btrfs_fs_info *fs_info,
- 	u64 bytenr = generic_ref->bytenr;
- 	u64 num_bytes = generic_ref->len;
- 	u64 parent = generic_ref->parent;
--	u64 ref_root;
--	u64 owner;
--	u64 offset;
-+	u64 ref_root = 0;
-+	u64 owner = 0;
-+	u64 offset = 0;
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 765deefda92b..0eeadf624dfb 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1457,7 +1457,7 @@ void btrfs_check_leaked_roots(struct btrfs_fs_info *fs_info)
+ 		root = list_first_entry(&fs_info->allocated_roots,
+ 					struct btrfs_root, leak_list);
+ 		btrfs_err(fs_info, "leaked root %s refcount %d",
+-			  btrfs_root_name(root->root_key.objectid, buf),
++			  btrfs_root_name(&root->root_key, buf),
+ 			  refcount_read(&root->refs));
+ 		while (refcount_read(&root->refs) > 1)
+ 			btrfs_put_root(root);
+diff --git a/fs/btrfs/print-tree.c b/fs/btrfs/print-tree.c
+index fe5e0026129d..b8137dbf6a3a 100644
+--- a/fs/btrfs/print-tree.c
++++ b/fs/btrfs/print-tree.c
+@@ -26,22 +26,22 @@ static const struct root_name_map root_map[] = {
+ 	{ BTRFS_DATA_RELOC_TREE_OBJECTID,	"DATA_RELOC_TREE"	},
+ };
  
- 	if (!btrfs_test_opt(fs_info, REF_VERIFY))
- 		return 0;
+-const char *btrfs_root_name(u64 objectid, char *buf)
++const char *btrfs_root_name(struct btrfs_key *key, char *buf)
+ {
+ 	int i;
  
- 	if (generic_ref->type == BTRFS_REF_METADATA) {
--		ref_root = generic_ref->tree_ref.root;
-+		if (!parent)
-+			ref_root = generic_ref->tree_ref.root;
- 		owner = generic_ref->tree_ref.level;
--		offset = 0;
--	} else {
-+	} else if (!parent) {
- 		ref_root = generic_ref->data_ref.ref_root;
- 		owner = generic_ref->data_ref.ino;
- 		offset = generic_ref->data_ref.offset;
-@@ -696,13 +696,10 @@ int btrfs_ref_tree_mod(struct btrfs_fs_info *fs_info,
- 		goto out;
+-	if (objectid == BTRFS_TREE_RELOC_OBJECTID) {
++	if (key->objectid == BTRFS_TREE_RELOC_OBJECTID) {
+ 		snprintf(buf, BTRFS_ROOT_NAME_BUF_LEN,
+-			 "TREE_RELOC offset=%llu", objectid);
++			 "TREE_RELOC offset=%llu", key->offset);
+ 		return buf;
  	}
  
--	if (parent) {
--		ref->parent = parent;
--	} else {
--		ref->root_objectid = ref_root;
--		ref->owner = owner;
--		ref->offset = offset;
--	}
-+	ref->parent = parent;
-+	ref->owner = owner;
-+	ref->root_objectid = ref_root;
-+	ref->offset = offset;
- 	ref->num_refs = (action == BTRFS_DROP_DELAYED_REF) ? -1 : 1;
+ 	for (i = 0; i < ARRAY_SIZE(root_map); i++) {
+-		if (root_map[i].id == objectid)
++		if (root_map[i].id == key->objectid)
+ 			return root_map[i].name;
+ 	}
  
- 	memcpy(&ra->ref, ref, sizeof(struct ref_entry));
+-	snprintf(buf, BTRFS_ROOT_NAME_BUF_LEN, "%llu", objectid);
++	snprintf(buf, BTRFS_ROOT_NAME_BUF_LEN, "%llu", key->objectid);
+ 	return buf;
+ }
+ 
+diff --git a/fs/btrfs/print-tree.h b/fs/btrfs/print-tree.h
+index 78b99385a503..802628dd1a6e 100644
+--- a/fs/btrfs/print-tree.h
++++ b/fs/btrfs/print-tree.h
+@@ -11,6 +11,6 @@
+ 
+ void btrfs_print_leaf(struct extent_buffer *l);
+ void btrfs_print_tree(struct extent_buffer *c, bool follow);
+-const char *btrfs_root_name(u64 objectid, char *buf);
++const char *btrfs_root_name(struct btrfs_key *key, char *buf);
+ 
+ #endif
 -- 
 2.26.2
 

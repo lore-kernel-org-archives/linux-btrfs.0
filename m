@@ -2,61 +2,61 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-16.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
+X-Spam-Status: No, score=-16.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 63801C433E6
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E050AC4332D
 	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Dec 2020 03:54:11 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 2F5D522ADC
+	by mail.kernel.org (Postfix) with ESMTP id AC0BD22ADC
 	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Dec 2020 03:54:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726485AbgLVDxv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 21 Dec 2020 22:53:51 -0500
-Received: from esa3.hgst.iphmx.com ([216.71.153.141]:46487 "EHLO
+        id S1726243AbgLVDyB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 21 Dec 2020 22:54:01 -0500
+Received: from esa3.hgst.iphmx.com ([216.71.153.141]:46437 "EHLO
         esa3.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725927AbgLVDxv (ORCPT
+        with ESMTP id S1725913AbgLVDyA (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 21 Dec 2020 22:53:51 -0500
+        Mon, 21 Dec 2020 22:54:00 -0500
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1608609230; x=1640145230;
+  t=1608609239; x=1640145239;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=sAi8e4ryOWkS17e0NBHujW2cp671zJWKZiSe9bRSrZg=;
-  b=Xi7IsKPv3NWcshfsraJNq1C6ifkSm6pzFPNR9Kw2VBGO4Spwd5RIdKBP
-   PiJwtPvaxPsyRT1sb7QSjt8NqmEdLuj6LKRwNhZt6Gk1TQfR801iSksr6
-   sX47U9FgvhKSHggVeWcIZ6H8BdNHmtZ+sTirKomQ4SbFd0j9LnkTwdHpG
-   WjfY2vjCyYFsT7E3Mf92/wjxY8ciE81+hpTuqk5pK77lMLw5mvAUFSuhw
-   VgjOXzbkliFJIbOAmiO7+xuYnqlk0GQ/a2Pycarmx5S8L242kEvUvC+Cl
-   q///b49/luEaz8zjrsb5iMJmlgA1e6PqyvcGYQOTNPLzkTRfU6wSI41Vr
-   g==;
-IronPort-SDR: h+NKtwcND57fWzvkugz6dTWSdEBgq0FJmwgxtZguSYJD61ytQYmphQqwJVv9gjkntUjTo1BKB3
- dpQGMwmR5OYKJtG3mTO0QfwqvPoo1PwoCn6lWor2p3PVP4GMEVc5uFeSiN/OgZ79f9/RlGXKmY
- WZLRgw5X5AzPsAGUbM2YuNiJNaOHBl6BRAo3NQXUNty7WsCzbvFkt6OX1qnTaDJTD8XG7Jiwym
- /oD59p5qeuvyfXYs86gA6GLxIRDUHxPWTrf5L3MTaAAAQjr6QxtpreGNd0zgy4iAlEMyB79Wsm
- Mhk=
+  bh=VyxGN/7XXpdp+zOrzDjHCRgwKrztQYGRgwIFUc9Qbtw=;
+  b=l9m9tdIiHm4NmC6k2G/b/NDQ11XbxrJ0o0J52zTlMyPyAINg6lqJaRGM
+   dMg7Auh4aEJu344dngMI4Bmk7tE47R2T5UkGVELSWS7uwH4w/IdZrlTc0
+   YR01LGnjguxPyRTqr2grwxkGJij2scPrM8cfpHAVcYbfVbRuMSvKjviRE
+   5HIfY5vnXMqTX2Ij4bVQHhrOWuvWoW/yTZtCtgvKlhJOw0E8SuH3jEKK7
+   wrXm0ZNiFCiSQQHmnYqF7FybXOmOFKhtdFRS/G+lrexG3ywqpAE5lPTWo
+   CzBD7U5H1xtESpw1NqC7zxCbG238atSRcjrT98UtWZ4cZxHP8H31w7xla
+   w==;
+IronPort-SDR: RmNXAZ3quUrri4597y5xZaCBneEp9C04sU2WYH4iUlvFghqBmPHRB+ZmqQWOvMLM/EQH7W5JqN
+ iukiCI9tBV9ZOfonEEnyc6n575KQk5Yt2BeT9Dm/2CMuIHdO5FIP9xqFkS7BCPvQuXDhFocwVQ
+ Md5d7UmIP/jEYfLQQz2wQh+Eo63YBRw6OPo7ntqCrvsfprnEbbg+v9kPoFHcxpn/yNyfi79SKT
+ TTsWVerSlikwREy1kH7sXaIa6e0u2r06VTvQth8grSp5EHzaJOVs1AubDIKsbEmk20wiMfg5Nv
+ u5w=
 X-IronPort-AV: E=Sophos;i="5.78,438,1599494400"; 
-   d="scan'208";a="160193785"
+   d="scan'208";a="160193794"
 Received: from h199-255-45-14.hgst.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 22 Dec 2020 11:50:53 +0800
-IronPort-SDR: tca8aiMn29sqJPItghVM7uUy4XsJX3K+B/f23NRUFbjNc+ltkDc3JqvC8z/kNFPoLK6hRf56LY
- MxQoQ4TjINA/2p6AYKZ7ohrxvkW79xi53CIAdezlOCJlIehFRAyf64UJpZSGBsUDXwuN5Z169m
- I2QNoLV7REU4v/pxegyTKvfLk/aX3lWS6zTZOyBWlXaRCtIUyIeyIJcsO9b1N5fWUheZR4Xdxb
- 3QzW1PoGvo3VUz70JBzHCN/fQlrSk+aGSlzLfqZjuYuMpNsYb1mlBX6kDEg7cWDklYxJfZ75b/
- U0z/MPtk+aG00MMteNXiDdeU
+  by ob1.hgst.iphmx.com with ESMTP; 22 Dec 2020 11:50:56 +0800
+IronPort-SDR: xAT/PD6aabFGF+i/JjeUIuEIMsZu8vwIIUeth6EWn9vIvsefW5przy4OnDtWH4v4zOwfUl4C8I
+ 0BG2cEbazDeZ8sMfLxferirRuyjo1Kbd4WP34nlGBr9EY5hrV8zc/neY9penZ2YcKTQEDav8ds
+ 2CtNVOpqMN817fZKvk2LOPJzcYigfshtjYEOsjEIs7YXpRmH8yWgWbGzp4XIrw43wCTPeifIQo
+ H8TuhanbS5FWnm5EijQX5lwSG0+jO1YNALd/ev7XcboXLA5ZIiXa3NXGAgS13+rSLpBsy5fJIK
+ 4fjBGh1u1iYlBkyyS74qTDpG
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 21 Dec 2020 19:36:04 -0800
-IronPort-SDR: 3eM7reyrx3lfYErw5EfIdm1C6kYmSABVo+wCTq8PT563rcjkAneUKdj571W9GUDfZ/c+Z4ZJMH
- WNw1B6NYOqI4mAVKnYzpID8s9S4rkLlBoO/gyvaM5eCHk21bEfzAwHahEsXuPzNHJYUFBbgCLr
- MR8Yy7mNobvhUvLF2yvkf3J9J0JiR/MpLsJsVzrR0JnzSQxrUaz7I4L2ObsnXMOw4ylVJoHsXg
- fFCC+gYCSJ5xRT3e5bs4G88E7JvHjqVbdr4FOJY/dZqbQrIEOWJ7gSyPYBGP0a8VGjwJ54c/Ag
- L9E=
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 21 Dec 2020 19:36:07 -0800
+IronPort-SDR: z0JH8bnb4b0MijYt4if0aF0PaodPKuFv+rFHxCEpLEzU6BmJoyyi9lFFMLNjFzdaR+/G6W/4y0
+ D10u21pFFHeSofdafAzdyFS/kLNGVGm9QgiKCTc/CH2tjuUhP2unHP3iCnNGAxkQ5PxOIVTYW3
+ 7eUOMCS294dSsQ4z9MrsBcX+SHoe+6QpeZC7XePfg3Cd5ZMnGcXp5jlk5mXNV+Lp0RqkqTw3q0
+ +3vMc14ucbuzReESLTQopoiFYFrdj8uugSg+FvzPSuRc9ob1md06YV9etuq+w6uplFC8pbbDjH
+ CGY=
 WDCIronportException: Internal
 Received: from naota.dhcp.fujisawa.hgst.com ([10.149.52.155])
-  by uls-op-cesaip02.wdc.com with ESMTP; 21 Dec 2020 19:50:52 -0800
+  by uls-op-cesaip02.wdc.com with ESMTP; 21 Dec 2020 19:50:55 -0800
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     linux-btrfs@vger.kernel.org, dsterba@suse.com
 Cc:     hare@suse.com, linux-fsdevel@vger.kernel.org,
@@ -64,9 +64,9 @@ Cc:     hare@suse.com, linux-fsdevel@vger.kernel.org,
         Christoph Hellwig <hch@infradead.org>,
         "Darrick J. Wong" <darrick.wong@oracle.com>,
         Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH v11 18/40] btrfs: reset zones of unused block groups
-Date:   Tue, 22 Dec 2020 12:49:11 +0900
-Message-Id: <bd2bdfe3a51d928eb2e948d4df66683e5cb1c6c3.1608608848.git.naohiro.aota@wdc.com>
+Subject: [PATCH v11 20/40] btrfs: use bio_add_zone_append_page for zoned btrfs
+Date:   Tue, 22 Dec 2020 12:49:13 +0900
+Message-Id: <bf6e2912dfc3062a914fb4c1ea5e550ac514725e.1608608848.git.naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.27.0
 In-Reply-To: <06add214bc16ef08214de1594ecdfcc4cdcdbd78.1608608848.git.naohiro.aota@wdc.com>
 References: <06add214bc16ef08214de1594ecdfcc4cdcdbd78.1608608848.git.naohiro.aota@wdc.com>
@@ -76,99 +76,87 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-For an ZONED volume, a block group maps to a zone of the device. For
-deleted unused block groups, the zone of the block group can be reset to
-rewind the zone write pointer at the start of the zone.
+Zoned device has its own hardware restrictions e.g. max_zone_append_size
+when using REQ_OP_ZONE_APPEND. To follow the restrictions, use
+bio_add_zone_append_page() instead of bio_add_page(). We need target device
+to use bio_add_zone_append_page(), so this commit reads the chunk
+information to memoize the target device to btrfs_io_bio(bio)->device.
+
+Currently, zoned btrfs only supports SINGLE profile. In the feature,
+btrfs_io_bio can hold extent_map and check the restrictions for all the
+devices the bio will be mapped.
 
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 ---
- fs/btrfs/block-group.c |  8 ++++++--
- fs/btrfs/extent-tree.c | 17 ++++++++++++-----
- fs/btrfs/zoned.h       | 16 ++++++++++++++++
- 3 files changed, 34 insertions(+), 7 deletions(-)
+ fs/btrfs/extent_io.c | 30 +++++++++++++++++++++++++++---
+ 1 file changed, 27 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index eea776180c37..9bc6a05c8e38 100644
---- a/fs/btrfs/block-group.c
-+++ b/fs/btrfs/block-group.c
-@@ -1400,8 +1400,12 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
- 		if (!async_trim_enabled && btrfs_test_opt(fs_info, DISCARD_ASYNC))
- 			goto flip_async;
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 2f070a9e5b22..d59b13f7ddcf 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3082,6 +3082,7 @@ static bool btrfs_bio_add_page(struct bio *bio, struct page *page, u64 logical,
+ {
+ 	sector_t sector = logical >> SECTOR_SHIFT;
+ 	bool contig;
++	int ret;
  
--		/* DISCARD can flip during remount */
--		trimming = btrfs_test_opt(fs_info, DISCARD_SYNC);
-+		/*
-+		 * DISCARD can flip during remount. In ZONED mode, we need
-+		 * to reset sequential required zones.
-+		 */
-+		trimming = btrfs_test_opt(fs_info, DISCARD_SYNC) ||
-+				btrfs_is_zoned(fs_info);
+ 	if (prev_bio_flags != bio_flags)
+ 		return false;
+@@ -3096,7 +3097,12 @@ static bool btrfs_bio_add_page(struct bio *bio, struct page *page, u64 logical,
+ 	if (btrfs_bio_fits_in_stripe(page, size, bio, bio_flags))
+ 		return false;
  
- 		/* Implicit trim during transaction commit. */
- 		if (trimming)
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index c3e955bbd2ab..ac24a79ce32a 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -1333,6 +1333,9 @@ int btrfs_discard_extent(struct btrfs_fs_info *fs_info, u64 bytenr,
- 
- 		stripe = bbio->stripes;
- 		for (i = 0; i < bbio->num_stripes; i++, stripe++) {
-+			struct btrfs_device *dev = stripe->dev;
-+			u64 physical = stripe->physical;
-+			u64 length = stripe->length;
- 			u64 bytes;
- 			struct request_queue *req_q;
- 
-@@ -1340,14 +1343,18 @@ int btrfs_discard_extent(struct btrfs_fs_info *fs_info, u64 bytenr,
- 				ASSERT(btrfs_test_opt(fs_info, DEGRADED));
- 				continue;
- 			}
+-	return bio_add_page(bio, page, size, pg_offset) == size;
++	if (bio_op(bio) == REQ_OP_ZONE_APPEND)
++		ret = bio_add_zone_append_page(bio, page, size, pg_offset);
++	else
++		ret = bio_add_page(bio, page, size, pg_offset);
 +
- 			req_q = bdev_get_queue(stripe->dev->bdev);
--			if (!blk_queue_discard(req_q))
-+			/* Zone reset in ZONED mode */
-+			if (btrfs_can_zone_reset(dev, physical, length))
-+				ret = btrfs_reset_device_zone(dev, physical,
-+							      length, &bytes);
-+			else if (blk_queue_discard(req_q))
-+				ret = btrfs_issue_discard(dev->bdev, physical,
-+							  length, &bytes);
-+			else
- 				continue;
- 
--			ret = btrfs_issue_discard(stripe->dev->bdev,
--						  stripe->physical,
--						  stripe->length,
--						  &bytes);
- 			if (!ret) {
- 				discarded_bytes += bytes;
- 			} else if (ret != -EOPNOTSUPP) {
-diff --git a/fs/btrfs/zoned.h b/fs/btrfs/zoned.h
-index b2ce16de0c22..331951978487 100644
---- a/fs/btrfs/zoned.h
-+++ b/fs/btrfs/zoned.h
-@@ -210,4 +210,20 @@ static inline bool btrfs_check_super_location(struct btrfs_device *device, u64 p
- 	return device->zone_info == NULL || !btrfs_dev_is_sequential(device, pos);
++	return ret == size;
  }
  
-+static inline bool btrfs_can_zone_reset(struct btrfs_device *device,
-+					u64 physical, u64 length)
-+{
-+	u64 zone_size;
+ /*
+@@ -3127,7 +3133,9 @@ static int submit_extent_page(unsigned int opf,
+ 	int ret = 0;
+ 	struct bio *bio;
+ 	size_t io_size = min_t(size_t, size, PAGE_SIZE);
+-	struct extent_io_tree *tree = &BTRFS_I(page->mapping->host)->io_tree;
++	struct btrfs_inode *inode = BTRFS_I(page->mapping->host);
++	struct extent_io_tree *tree = &inode->io_tree;
++	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+ 
+ 	ASSERT(bio_ret);
+ 
+@@ -3158,11 +3166,27 @@ static int submit_extent_page(unsigned int opf,
+ 	if (wbc) {
+ 		struct block_device *bdev;
+ 
+-		bdev = BTRFS_I(page->mapping->host)->root->fs_info->fs_devices->latest_bdev;
++		bdev = fs_info->fs_devices->latest_bdev;
+ 		bio_set_dev(bio, bdev);
+ 		wbc_init_bio(wbc, bio);
+ 		wbc_account_cgroup_owner(wbc, page, io_size);
+ 	}
++	if (btrfs_is_zoned(fs_info) &&
++	    bio_op(bio) == REQ_OP_ZONE_APPEND) {
++		struct extent_map *em;
++		struct map_lookup *map;
 +
-+	if (!btrfs_dev_is_sequential(device, physical))
-+		return false;
++		em = btrfs_get_chunk_map(fs_info, offset, io_size);
++		if (IS_ERR(em))
++			return PTR_ERR(em);
 +
-+	zone_size = device->zone_info->zone_size;
-+	if (!IS_ALIGNED(physical, zone_size) ||
-+	    !IS_ALIGNED(length, zone_size))
-+		return false;
++		map = em->map_lookup;
++		/* We only support SINGLE profile for now */
++		ASSERT(map->num_stripes == 1);
++		btrfs_io_bio(bio)->device = map->stripes[0].dev;
 +
-+	return true;
-+}
-+
- #endif
++		free_extent_map(em);
++	}
+ 
+ 	*bio_ret = bio;
+ 
 -- 
 2.27.0
 

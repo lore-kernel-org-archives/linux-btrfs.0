@@ -2,240 +2,173 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-4.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
-	SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-19.0 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DAB07C433E0
-	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Dec 2020 23:03:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 00C34C4332B
+	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Dec 2020 02:45:39 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id A2FDD22D57
-	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Dec 2020 23:03:55 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C8ED222573
+	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Dec 2020 02:45:38 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727901AbgLVXDt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 22 Dec 2020 18:03:49 -0500
-Received: from mout.gmx.net ([212.227.15.19]:37003 "EHLO mout.gmx.net"
+        id S1729921AbgLWCo7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 22 Dec 2020 21:44:59 -0500
+Received: from mail.kernel.org ([198.145.29.99]:50890 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726617AbgLVXDt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 Dec 2020 18:03:49 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1608678135;
-        bh=u7vqqoP80uIANq0UxpJ6Xbkaz+LSEPnHQ17BxzglKGQ=;
-        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
-        b=jKyvGo/oyLakLne/9WidJIjEaEwRLXU9jCEoRaXSpDXCnisp0tAHKaqHvj7fKHFX/
-         Aa8JIR2Eqi7PsQrRK7IL5X1mJdSj/+jiODfi10kxSaxisC+DW2U1LrtOUH4CaQjZA8
-         VRf57ZSTueptTpn8vyJwMueYzxC2piMBrBu/3Y1s=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx004
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1MQ5rO-1keYyM1aJk-00M6Eb; Wed, 23
- Dec 2020 00:02:14 +0100
-Subject: Re: Fwd: "BTRFS critical: ... corrupt leaf" due to defective RAM
-To:     "Nik." <btrfs@avgustinov.eu>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <6f36a628-21f9-ca21-bae3-2a4150245ec2@avgustinov.eu>
- <0e4cb41f-c1bf-539a-dc19-8df234e0d0e7@avgustinov.eu>
- <296aa513-1ac8-2242-b7fa-1aa082a6e554@gmx.com>
- <67ee3588-b18b-c9aa-5f33-ae7bbde10e7c@avgustinov.eu>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <eb2b2f6b-2747-6635-b437-7e089505b59e@gmx.com>
-Date:   Wed, 23 Dec 2020 07:02:11 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.4.3
+        id S1728267AbgLWCWo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 22 Dec 2020 21:22:44 -0500
+Received: by mail.kernel.org (Postfix) with ESMTPSA id 38E1E22AAF;
+        Wed, 23 Dec 2020 02:22:28 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1608690148;
+        bh=rcEd9V3PmUOto2lFO7lVARuSSzqF2uoUe7iAxMdSA/U=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+        b=mfqOsb7hvvMtjSzHfGDQVWXchtlXJRsYJk31lUKdltazhQmh7Ss+lx66/uoN/6QO5
+         bTnq4pAv0t8GM28jNng/fyMvgU0j4wBSArxufKnxvhlLLYNSkwrONESVTS/FaOU2SY
+         yKwZ7uO14WWBmdwO3F+vWTk0flszCVQ3y3LjwjG2CXpJs3DIVuewCrq1Jqnj677Np7
+         6HItfhwJemazSD7O3s8wq9+OPYx519RZm9vfeKuWgBA0rYCkD/6qxkzpIi5JM5M99b
+         zhbhPNEayHe95JiyC3k9aOMfxJRAEoL1RLLH0o1hkYUnbA24zjMSbEcuPw1x8z9E5v
+         I+rkTY6/ibGpg==
+From:   Sasha Levin <sashal@kernel.org>
+To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
+Cc:     Filipe Manana <fdmanana@suse.com>, David Sterba <dsterba@suse.com>,
+        Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
+Subject: [PATCH AUTOSEL 4.19 69/87] btrfs: fix race leading to unnecessary transaction commit when logging inode
+Date:   Tue, 22 Dec 2020 21:20:45 -0500
+Message-Id: <20201223022103.2792705-69-sashal@kernel.org>
+X-Mailer: git-send-email 2.27.0
+In-Reply-To: <20201223022103.2792705-1-sashal@kernel.org>
+References: <20201223022103.2792705-1-sashal@kernel.org>
 MIME-Version: 1.0
-In-Reply-To: <67ee3588-b18b-c9aa-5f33-ae7bbde10e7c@avgustinov.eu>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:FZYbfWaNOGUMshsfKcjhdy35ACberrkTGtCjcCMA155wNZSKOmV
- EqTvvvC7wc2l4ekd8qcQgPveRs6owqTjK8EoPxkCWBUoT3pS2+9lUii0wQm1RWu8M8qmQip
- G3adj+1F7P/QbbO0rsREdh924tf6vdHBGK8qoe0MYb6z72S72hHrxFbuqO7Yr52oEMh2/BL
- /CEV4PUxq8FhqkIMDP+Jg==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:xyqAeRrd/iQ=:B0qzTme0t/adhGCAvrpcUJ
- qv+lbOzScS3HDZQkDo4huA4VT304wjtTQf5V8srWWVJ6nNh9mPgKKgAENbpYZ5atTuEQTxgjU
- iFVJOWtwl7g54pT6lLa8Rwbz3kWUDnrJshB1e1XWOPFx9ft6l2pZbAXp3hL1ec65PnEWsUjE1
- vgUpG3MZzgeR704tVrpouu81QF7vnUtZDFLLdXJgrHLsP+am7erodApJjGZnVdgQ+k+ZBQMF7
- x2taJfUQwJOYbPsODPb8hCf6AbJFYfKDiJgbqjO5Cn0coo7mRPdEGOt7/WOVRBXrecaLzmwWH
- A/B5R4+W8BAKhUXpDRXrcUyEsW3O5+DimXTqkI32Jinve7wNZ1jCS58YumUAJv1urahyEgGDX
- pWepmthnYf4Hw5t9akM4rG3rjiiACYlINwIN8amZklkEP2VcpwzBiUR3Se75oyT2XBkNUM2/0
- Kj9/X2HyIE3QDaU/+Q7E1/z8+hbSexUqo6nfIitp3UYJsYnPjbff//VsTw0n8xGXZZb0MzYEW
- tJ4e76FrADGkoPe8kZwzhFNkRLpFUXTFrfkEPjpoK1HiQOuEDRxgZpZNk+DmuFuf3+ybRdBGK
- +WQV7SXweDFkqIcN9gVlng3ajTpNz9LX11SFwp2eyCD4bPWFEQvd0S4Bs806JPIMNQEwrd4KB
- kb/ce13OhxHD4Gb0ZXTPDLbz1GJyg1kVWCUC9QTkSnwzsG2hJ4UhIXSLG0WnQgK/WDpV2cw69
- ophaG2eNN2wTs1CWJXrFJOiSHSfvv8Xp2IAzJnWUvGzQ7VzbJ4L47u527nbBMNXO6KW25dQpY
- 2kwugndBvGFmLUg1autE58ew5jpVDdaPEZ16XaIbT7RbjjER+kYqH1Om+BsRwjQJJvc0SDEZJ
- OK/zYE1YcZ5qvGqTAUBQ==
+X-stable: review
+X-Patchwork-Hint: Ignore
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+From: Filipe Manana <fdmanana@suse.com>
 
+[ Upstream commit 639bd575b7c7fa326abadd2ef3e374a5a24eb40b ]
 
-On 2020/12/22 =E4=B8=8B=E5=8D=8811:59, Nik. wrote:
-> Hi,
->
-> Thank you very much for the quick reply.
-> Ok, I am going to use the backups (as you suggested).
->
-> Just a quick question for understanding the background better:
->  =C2=A0 -given a btrfs with many intact subvolumes and
->  =C2=A0 -say, one defective sector within the subvolume "@" (Ubuntu spec=
-ific),
->  =C2=A0=C2=A0 which couses this subvolume to be (automatically) remounte=
-d as RO
->  =C2=A0 -am I getting it right that none of the other subvolumes can be
-> mounted properly (i.e., RW)?
+When logging an inode we may often have to fallback to a full transaction
+commit, either because a new block group was allocated, there is some case
+we can not deal with without a transaction commit or some error like an
+ENOMEM happened. However after we fallback to a transaction commit, we
+have a time window where we can make the next attempt to log any inode
+commit the next transaction unnecessarily, adding additional overhead and
+increasing latency.
 
-Unfortunately, it's not subvolume tree itself get corrupted, but the
-extent tree.
+A sequence of steps that leads to this issue is the following:
 
-Extent tree is shared through the whole fs, thus you may still be unable
-to mount other subvolumes as long as it involves reading the extent tree.
+1) The current open transaction has a generation of 1000;
 
-> Woildn't it be interesting to have an
-> option, allowing this to work?
+2) A new block group is allocated, and as a consequence we must make sure
+   any attempts to commit a log fallback to a transaction commit, so
+   btrfs_set_log_full_commit() is called from btrfs_make_block_group().
+   This sets fs_info->last_trans_log_full_commit to 1000;
 
-We have new rescue=3D mount options, IIRC we have rescue=3Dall, which will
-try to ignore any non-critical trees.
+3) Task A is holding a handle on transaction 1000 and tries to log inode X.
+   Once it gets to start_log_trans(), it calls btrfs_need_log_full_commit()
+   which returns true, since fs_info->last_trans_log_full_commit has a
+   value of 1000. So we end up returning EAGAIN and propagating it up to
+   btrfs_sync_file(), where we commit transaction 1000;
 
-In that case, you may be able to mount the subvolume RO, as long as
-there are no bitflips in that subvolume.
+4) The transaction commit task (task A) sets the transaction state to
+   unblocked (TRANS_STATE_UNBLOCKED);
 
-Thanks,
-Qu
+5) Some other task, task B, starts a new transaction with a generation of
+   1001;
 
-> There will be, of course, a processing
-> overhead, but probably not so expensive as by RAID 1?
->
-> Thank you in advance and I wish you all to be happy and healthy!
->
-> Nik.
-> --
-> 21.12.2020 12:44, Qu Wenruo:
->>
->>
->> On 2020/12/21 =E4=B8=8B=E5=8D=886:08, Nik. wrote:
->>> Dear all,
->>>
->>> the forwarded mail below came back yesterday with the error
->>> "Diagnostic-Code: X-Postfix; TLS is required, but was not offered by
->>> host vger.kernel.org[23.128.96.18]".
->>>
->>> Is it really intended that your mail server does not offer TLS?
->>
->> Can't help on that, not a vger manager nor know anything. (Most if not
->> all kernel mail lists are hosted by vger, each mail list can't do much)
->>
->> But I can definitely answer some of your btrfs problem.
->>>
->>> Kind regards,
->>>
->>> Nik.
->>>
->>> --
->>>
->>> 15.12.2020 18:40, Nik.:
->>>> Dear all,
->>>>
->>>> after almost a year without problems I need again your advice about
->>>> the same computer, but this time it is (hopefully only) the root FS
->>>> that failed. I have backups of everything except a couple of files in
->>>> /etc, so nothing critical, but probably it would be interesting for
->>>> somebody to see how behaved btrfs in such a situation.
->>>>
->>>> The story in short:
->>>>
->>>> - the FS switched to ro mode. Initially I thought that it is due to
->>>> insufficient free space (have already had similar situations) and
->>>> deleted some old snapshots. Within half a day it happened 3 more
->>>> times, though.
->>
->> Any detailed report on that RO?
->> We should have it addressed upstream, if you still hit that, I guess we
->> need more investigation (if it's not caused by memory corruption)
->>
->>>>
->>>> - so I booted in memtest86 and it gave me a lot of errors! This NAS i=
-s
->>>> 9 years old and I was already looking for replacement, but it is not
->>>> easy to find 8-bay NAS for 2,5" drives...
->>>>
->>>> - took the drive out from the failed system and tried to mount it on
->>>> another (healthy?) PC. I am getting:
->>>>
->>>> root@ubrun:~# mount -t btrfs -o subvol=3D@ /dev/sdb1 /mnt/sd
->>>> mount: /mnt/sd: wrong fs type, bad option, bad superblock on
->>>> /dev/sdb1, missing codepage or helper program, or other error.
->>>> root@ubrun:~# dmesg |tail
->>>> [=C2=A0=C2=A0 50.672561] Policy zone: Normal
->>>> [=C2=A0 185.190764] BTRFS info (device sdb1): disk space caching is e=
-nabled
->>>> [=C2=A0 185.190767] BTRFS info (device sdb1): has skinny extents
->>>> [=C2=A0 185.199331] BTRFS info (device sdb1): bdev /dev/sdb1 errs: wr=
- 0, rd
->>>> 0, flush 0, corrupt 65, gen 0
->>>> [=C2=A0 185.246051] BTRFS critical (device sdb1): corrupt leaf:
->>>> block=3D50850988032 slot=3D79 extent bytenr=3D50496929792 len=3D16384=
- unknown
->>>> inline ref type: 54
->>
->> This is indeed some memory bitflip, and your initial kernel is not newe=
-r
->> enough to detect it at write time.
->>
->> If using newer enough kernel, such corrupted metadata shouldn't even
->> reach disk. (Although it still means you will get the fs RO)
->>
->> There are only 4 valid types for extent refs:
->>
->> TREE_BLOCK_REF=C2=A0=C2=A0=C2=A0=C2=A0 176(0xb0)
->> EXTENT_DATA_REF=C2=A0 178(0xb2)
->> SHARED_BLOCK_REF 182(0xb6)
->> SHARED_DATA_REF=C2=A0 184(0xb8)
->>
->> The invalid type is:
->>
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
-=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 54(0x36)
->>
->> The diff is 0x80 to SHARED_BLOCK_REF, indeed one bit flipped.
->>
->>>> [=C2=A0 185.246055] BTRFS error (device sdb1): block=3D50850988032 re=
-ad time
->>>> tree block corruption detected
->>>> [=C2=A0 185.247070] BTRFS critical (device sdb1): corrupt leaf:
->>>> block=3D50850988032 slot=3D79 extent bytenr=3D50496929792 len=3D16384=
- unknown
->>>> inline ref type: 54
->>>> [=C2=A0 185.247073] BTRFS error (device sdb1): block=3D50850988032 re=
-ad time
->>>> tree block corruption detected
->>>> [=C2=A0 185.247093] BTRFS error (device sdb1): failed to read block
->>>> groups: -5
->>>> [=C2=A0 185.281382] BTRFS error (device sdb1): open_ctree failed
->>>> root@ubrun:~#
->>>>
->>>> How should one proceed?
->>
->> Since it's caused by bitflip and you mentioned the system has tons of
->> memory error, I believe there will be tons of similar problems
->> scattering around your fs.
->>
->> For repair, I don't really believe btrfs-check can or will be able to
->> fix any bitflip, not to mention so many possible more bitflips.
->>
->> It's better just to use your backup.
->>
->> BTW, for detection for extent tree bitflip is introduced in v5.4.
->> Next time at least you can catch the faulty hardware before it screws u=
-p
->> your data.
->>
->> Thanks,
->> Qu
->>
->>>>
->>>> Kind regards
->>>>
->>>> Nik.
->>>>
+6) Some stuff is done with transaction 1001, some btree blocks COWed, etc;
+
+7) Transaction 1000 has not fully committed yet, we are still writing all
+   the extent buffers it created;
+
+8) Some new task, task C, starts an fsync of inode Y, gets a handle for
+   transaction 1001, and it gets to btrfs_log_inode_parent() which does
+   the following check:
+
+     if (fs_info->last_trans_log_full_commit > last_committed) {
+         ret = 1;
+         goto end_no_trans;
+     }
+
+   At that point last_trans_log_full_commit has a value of 1000 and
+   last_committed (value of fs_info->last_trans_committed) has a value of
+   999, since transaction 1000 has not yet committed - it is either still
+   writing out dirty extent buffers, its super blocks or unpinning
+   extents.
+
+   As a consequence we return 1, which gets propagated up to
+   btrfs_sync_file(), which will then call btrfs_commit_transaction()
+   for transaction 1001.
+
+   As a consequence we have an unnecessary second transaction commit, we
+   previously committed transaction 1000 and now commit transaction 1001
+   as well, resulting in more overhead and increased latency.
+
+So fix this double transaction commit issue simply by removing that check,
+because all we need to do is wait for the previous transaction to finish
+its commit, which we already do later when starting the log transaction at
+start_log_trans(), because there we acquire the tree_log_mutex lock, which
+is held by a transaction commit and only released after the transaction
+commits its super blocks.
+
+Another issue that check has is that it reads last_trans_log_full_commit
+without using READ_ONCE(), which is incorrect since that member of
+struct btrfs_fs_info is always updated with WRITE_ONCE() through the
+helper btrfs_set_log_full_commit().
+
+This double transaction commit issue can actually be triggered quite often
+in long runs of dbench, since besides the creation of new block groups
+that force inode logging to fallback to a transaction commit, there are
+cases where dbench asks to fsync a directory which had files in it that
+were previously renamed or subdirectories that were removed, resulting in
+the inode logging to fallback to a full transaction commit.
+
+This patch belongs to a patch set that is comprised of the following
+patches:
+
+  btrfs: fix race causing unnecessary inode logging during link and rename
+  btrfs: fix race that results in logging old extents during a fast fsync
+  btrfs: fix race that causes unnecessary logging of ancestor inodes
+  btrfs: fix race that makes inode logging fallback to transaction commit
+  btrfs: fix race leading to unnecessary transaction commit when logging inode
+  btrfs: do not block inode logging for so long during transaction commit
+
+Performance results are mentioned in the change log of the last patch.
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ fs/btrfs/tree-log.c | 10 ----------
+ 1 file changed, 10 deletions(-)
+
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 7b940264c7b9d..865e1e6bf3d9a 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -5616,16 +5616,6 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
+ 		goto end_no_trans;
+ 	}
+ 
+-	/*
+-	 * The prev transaction commit doesn't complete, we need do
+-	 * full commit by ourselves.
+-	 */
+-	if (fs_info->last_trans_log_full_commit >
+-	    fs_info->last_trans_committed) {
+-		ret = 1;
+-		goto end_no_trans;
+-	}
+-
+ 	if (btrfs_root_refs(&root->root_item) == 0) {
+ 		ret = 1;
+ 		goto end_no_trans;
+-- 
+2.27.0
+

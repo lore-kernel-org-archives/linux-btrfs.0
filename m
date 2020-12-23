@@ -2,145 +2,103 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-19.0 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 227EAC4360C
-	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Dec 2020 02:57:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9957CC433E0
+	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Dec 2020 03:15:36 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D360A206F6
-	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Dec 2020 02:57:58 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5E605207AF
+	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Dec 2020 03:15:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731312AbgLWC5u (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 22 Dec 2020 21:57:50 -0500
-Received: from mail.kernel.org ([198.145.29.99]:45448 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1729040AbgLWCUi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 Dec 2020 21:20:38 -0500
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 87D7022273;
-        Wed, 23 Dec 2020 02:20:22 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1608690023;
-        bh=SGdl1bYJJOC8B55sbmgtI5mC/kAXIsBDiYgc2YSAk50=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=qOgs8sDk7MurtV3olF21SrDQrXGWkQNTcLivFB1zdufC2Flc+T7eFnh3mZuk//Ow2
-         Q23TmjyJLSNOQpWhBkajScppO4DavHXX385zQp2VzVuzWIlprnHDbWUlnnynTXjy/J
-         2D4YeM583PpzH4+VH05oQfiBB7RzrUIfnN6LJigGQeZiGP5S9iY4TREjHeeMwWrlRK
-         5ioLX9B+y4cZ7PhEWIzEyqoKwOUFy1OOD7Y+v6s3WRrObtR1ezyJ36t/IHQl5l7BfZ
-         RJo5OMAj6/YPJksU6kmhJkYt5bD6H+EFAz+gEz6+fINH+rjXjtptjuCw3rj0IhPw6l
-         f80LQaAm2YmMw==
-From:   Sasha Levin <sashal@kernel.org>
-To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Filipe Manana <fdmanana@suse.com>, David Sterba <dsterba@suse.com>,
-        Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.4 100/130] btrfs: fix race that results in logging old extents during a fast fsync
-Date:   Tue, 22 Dec 2020 21:17:43 -0500
-Message-Id: <20201223021813.2791612-100-sashal@kernel.org>
-X-Mailer: git-send-email 2.27.0
-In-Reply-To: <20201223021813.2791612-1-sashal@kernel.org>
-References: <20201223021813.2791612-1-sashal@kernel.org>
+        id S1727287AbgLWDPU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 22 Dec 2020 22:15:20 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44420 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725938AbgLWDPT (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 22 Dec 2020 22:15:19 -0500
+Received: from mail-qv1-xf33.google.com (mail-qv1-xf33.google.com [IPv6:2607:f8b0:4864:20::f33])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 088D6C0613D3
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Dec 2020 19:14:39 -0800 (PST)
+Received: by mail-qv1-xf33.google.com with SMTP id a13so7036830qvv.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Dec 2020 19:14:38 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
+        h=subject:to:references:from:message-id:date:user-agent:mime-version
+         :in-reply-to:content-language:content-transfer-encoding;
+        bh=2T3/fBWcVoDG+egeRWd0x9kLfSeONfPKghxreFcgGW4=;
+        b=EYXIlmydthsWaZgSj8lTaoG44bL16ldRleyHvZEBe5TShq6bBok0lJu7DbTFvEvm0k
+         QBzhbaQz8UbeenuKRni/xiI7tiyqJmdO9Yc7jttX+evkYWPevL21/yQqmKpOypNBvobV
+         zleEYGoZQ0l0mlI2qF3EzUFJD/i3JR0MKKhyeN3gAxDN2EDjWMXrDqiAKRiHczGp+Jb4
+         O5o0N/Pbid6iUpPZZrDlGubA1HN1SJOwnlteFaD+PwltrzIbjDFrTSKHiFY0kSWEhrCk
+         PGx3/otmYI1ntbrXFGqJq5ZiSRatyGBwpJ+5etl3qkyieEQlNyR66G3dgkNgCvrWQRJZ
+         /jew==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:to:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=2T3/fBWcVoDG+egeRWd0x9kLfSeONfPKghxreFcgGW4=;
+        b=Gviq3c2OLqT6OJyWP5ECmTUgSgZZcQmbGKFjA2E7WVkQw7woE9XEPCzG4BGTQaVB1o
+         cRprXfEmrcYt/MbJihkQJDJNQkSMSFsaJ4MgIhh6aR3XJ1q/+OvlpPN4UEQk6C1MYchG
+         CYml3eOIIZCDj66JglFZktAsh+XEzo145kBOhbkmP4CAQDnvttD07J8UXnvSHyfZB12V
+         ClsfMEPTqOPwKAPU1bV2YJQQo1XOJygCzJLHf5OgLMBWZ2G/3XKTjy/2fPjBRmCYDTsd
+         a1hmfO6DXq+volMYreAiw9GQmosM/kwnN34J5ZZ6vnZmjflntTUv66bkp+AUXZiyDiWO
+         Wylw==
+X-Gm-Message-State: AOAM533ZhiNSJ15QnFnkQk+H7AT5CpRnpqY1nz3Vm9qoxrbmDrOGMl4m
+        dWrqx0Olpeat9jUVGf2E6+W4Dmb8t87BJOfc
+X-Google-Smtp-Source: ABdhPJw16UZTBdd9fr3Czy949AtiDOt8oG7lVGjJfnqC7H6ipHLXhe0k3urBNGYEYRTjuhsQyIx90Q==
+X-Received: by 2002:a05:6214:d05:: with SMTP id 5mr24872939qvh.54.1608693277999;
+        Tue, 22 Dec 2020 19:14:37 -0800 (PST)
+Received: from localhost.localdomain (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
+        by smtp.gmail.com with ESMTPSA id 74sm13997257qko.59.2020.12.22.19.14.37
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 22 Dec 2020 19:14:37 -0800 (PST)
+Subject: Re: [BUG] 500-2000% performance regression w/ 5.10
+To:     =?UTF-8?Q?Ren=c3=a9_Rebe?= <rene@exactcode.de>,
+        linux-btrfs@vger.kernel.org
+References: <B4BB2DCB-C438-4871-9DDD-D6FB0E6E4F1B@exactcode.de>
+From:   Josef Bacik <josef@toxicpanda.com>
+Message-ID: <862a1a08-2567-e923-4df2-b2e4fe82f99b@toxicpanda.com>
+Date:   Tue, 22 Dec 2020 22:14:36 -0500
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.6.0
 MIME-Version: 1.0
-X-stable: review
-X-Patchwork-Hint: Ignore
+In-Reply-To: <B4BB2DCB-C438-4871-9DDD-D6FB0E6E4F1B@exactcode.de>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+On 12/21/20 2:45 PM, René Rebe wrote:
+> Hey there,
+> 
+> as a long time btrfs user I noticed some some things became very slow
+> w/ Linux kernel 5.10. I found a very simple test case, namely extracting
+> a huge tarball like:
+> 
+>    tar xf /usr/src/t2-clean/download/mirror/f/firefox-84.0.source.tar.zst
+> 
+> Why my external, USB3 road-warrior SSD on a Ryzen 5950x this
+> went from ~15 seconds w/ 5.9 to nearly 5 minutes in 5.10, or 2000%
+> 
+> To rule out USB, I also tested a brand new PCIe 4.0 SSD, with
+> a similar, albeit not as shocking regression from 5.2 seconds
+> to ~34 seconds or∫~650%.
+> 
+> Somehow testing that in a VM did over virtio did not produce
+> as different results, although it was already 35 seconds slow
+> with 5.9.
+> 
+> # first bad commit: [38d715f494f2f1dddbf3d0c6e50aefff49519232]
+>    btrfs: use btrfs_start_delalloc_roots in shrink_delalloc
+> 
 
-[ Upstream commit 5f96bfb7633c55b578c6b32f32624061f25010db ]
+Eesh that's not great, I'll work it out in the morning, thanks,
 
-When logging the extents of an inode during a fast fsync, we have a time
-window where we can log extents that are from the previous transaction and
-already persisted. This only makes us waste time unnecessarily.
-
-The following sequence of steps shows how this can happen:
-
-1) We are at transaction 1000;
-
-2) An ordered extent E from inode I completes, that is it has gone through
-   btrfs_finish_ordered_io(), and it set the extent maps' generation to
-   1000 when we unpin the extent, which is the generation of the current
-   transaction;
-
-3) The commit for transaction 1000 starts by task A;
-
-4) The task committing transaction 1000 sets the transaction state to
-   unblocked, writes the dirty extent buffers and the super blocks, then
-   unlocks tree_log_mutex;
-
-5) Some change is made to inode I, resulting in creation of a new
-   transaction with a generation of 1001;
-
-6) The transaction 1000 commit starts unpinning extents. At this point
-   fs_info->last_trans_committed still has a value of 999;
-
-7) Task B starts an fsync on inode I, and when it gets to
-   btrfs_log_changed_extents() sees the extent map for extent E in the
-   list of modified extents. It sees the extent map has a generation of
-   1000 and fs_info->last_trans_committed has a value of 999, so it
-   proceeds to logging the respective file extent item and all the
-   checksums covering its range.
-
-   So we end up wasting time since the extent was already persisted and
-   is reachable through the trees pointed to by the super block committed
-   by transaction 1000.
-
-So just fix this by comparing the extent maps generation against the
-generation of the transaction handle - if it is smaller then the id in the
-handle, we know the extent was already persisted and we do not need to log
-it.
-
-This patch belongs to a patch set that is comprised of the following
-patches:
-
-  btrfs: fix race causing unnecessary inode logging during link and rename
-  btrfs: fix race that results in logging old extents during a fast fsync
-  btrfs: fix race that causes unnecessary logging of ancestor inodes
-  btrfs: fix race that makes inode logging fallback to transaction commit
-  btrfs: fix race leading to unnecessary transaction commit when logging inode
-  btrfs: do not block inode logging for so long during transaction commit
-
-Performance results are mentioned in the change log of the last patch.
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
-Signed-off-by: Sasha Levin <sashal@kernel.org>
----
- fs/btrfs/tree-log.c | 4 +---
- 1 file changed, 1 insertion(+), 3 deletions(-)
-
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index de53e51669976..12182db88222b 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -4372,14 +4372,12 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
- 	struct extent_map *em, *n;
- 	struct list_head extents;
- 	struct extent_map_tree *tree = &inode->extent_tree;
--	u64 test_gen;
- 	int ret = 0;
- 	int num = 0;
- 
- 	INIT_LIST_HEAD(&extents);
- 
- 	write_lock(&tree->lock);
--	test_gen = root->fs_info->last_trans_committed;
- 
- 	list_for_each_entry_safe(em, n, &tree->modified_extents, list) {
- 		/*
-@@ -4412,7 +4410,7 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
- 			goto process;
- 		}
- 
--		if (em->generation <= test_gen)
-+		if (em->generation < trans->transid)
- 			continue;
- 
- 		/* We log prealloc extents beyond eof later. */
--- 
-2.27.0
-
+Josef

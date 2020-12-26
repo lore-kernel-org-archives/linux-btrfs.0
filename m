@@ -2,208 +2,148 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.9 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id ABA45C433E6
-	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Dec 2020 19:44:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C498EC433E6
+	for <linux-btrfs@archiver.kernel.org>; Sat, 26 Dec 2020 12:44:44 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 66E722222D
-	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Dec 2020 19:44:28 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 83E79221E3
+	for <linux-btrfs@archiver.kernel.org>; Sat, 26 Dec 2020 12:44:44 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726322AbgLYToF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 25 Dec 2020 14:44:05 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43214 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726184AbgLYToF (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 25 Dec 2020 14:44:05 -0500
-X-Greylist: delayed 1681 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Fri, 25 Dec 2020 11:43:24 PST
-Received: from tartarus.angband.pl (tartarus.angband.pl [IPv6:2001:41d0:602:dbe::8])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9909CC061757
-        for <linux-btrfs@vger.kernel.org>; Fri, 25 Dec 2020 11:43:24 -0800 (PST)
-Received: from 89-73-149-240.dynamic.chello.pl ([89.73.149.240] helo=umbar.angband.pl)
-        by tartarus.angband.pl with esmtps (TLS1.3:ECDHE_RSA_AES_256_GCM_SHA384:256)
-        (Exim 4.92)
-        (envelope-from <kilobyte@angband.pl>)
-        id 1kssYW-0001Og-Gu; Fri, 25 Dec 2020 20:15:19 +0100
-Received: from kilobyte by umbar.angband.pl with local (Exim 4.94)
-        (envelope-from <kilobyte@umbar.angband.pl>)
-        id 1kssYV-0006Uv-Ie; Fri, 25 Dec 2020 20:15:15 +0100
-From:   Adam Borowski <kilobyte@angband.pl>
-To:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Cc:     Adam Borowski <kilobyte@angband.pl>
-Date:   Fri, 25 Dec 2020 20:15:11 +0100
-Message-Id: <20201225191511.24931-1-kilobyte@angband.pl>
-X-Mailer: git-send-email 2.30.0.rc2
+        id S1726101AbgLZMoX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 26 Dec 2020 07:44:23 -0500
+Received: from mx2.suse.de ([195.135.220.15]:55206 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726017AbgLZMoW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 26 Dec 2020 07:44:22 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1608985440; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references:autocrypt:autocrypt;
+        bh=W/Ip2762mL8mpClKB7ak1j4iQ2e+F37wzD/2My63wTw=;
+        b=QSAf9vVZKepg7FbYcvOUWWx1XnpKxlIyj7OZJAmuXBwW3Aq4OPjObTkZK+80baB9VFAs0J
+        d8cTsld0CGq+0wWAHIqxX7Bs2zrarpQ5rY1Hi3g3ohmJiMtsOUN9N0lZSeorGS79PSKBrm
+        /3lCE+Zm/zM1oCUu53hjz2TnKDO6qWI=
+Received: from relay2.suse.de (unknown [195.135.221.27])
+        by mx2.suse.de (Postfix) with ESMTP id 56373AD11;
+        Sat, 26 Dec 2020 12:24:00 +0000 (UTC)
+Subject: Re: [BUG] 500-2000% performance regression w/ 5.10
+To:     Josef Bacik <josef@toxicpanda.com>,
+        =?UTF-8?Q?Ren=c3=a9_Rebe?= <rene@exactcode.de>,
+        linux-btrfs@vger.kernel.org
+References: <B4BB2DCB-C438-4871-9DDD-D6FB0E6E4F1B@exactcode.de>
+ <6df7ff08-b9bf-a06e-13a9-bf1c431920e4@toxicpanda.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <79455913-ce1e-23d4-326c-9f229e1df8b7@suse.com>
+Date:   Sat, 26 Dec 2020 14:23:59 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.10.0
 MIME-Version: 1.0
+In-Reply-To: <6df7ff08-b9bf-a06e-13a9-bf1c431920e4@toxicpanda.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
 Content-Transfer-Encoding: 8bit
-X-SA-Exim-Connect-IP: 89.73.149.240
-X-SA-Exim-Mail-From: kilobyte@angband.pl
-Subject: [PATCH] btrfs-progs: a bunch of typo fixes
-X-SA-Exim-Version: 4.2.1 (built Wed, 08 May 2019 21:11:16 +0000)
-X-SA-Exim-Scanned: Yes (on tartarus.angband.pl)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Signed-off-by: Adam Borowski <kilobyte@angband.pl>
----
- CHANGES                              | 2 +-
- Documentation/btrfs-balance.asciidoc | 2 +-
- Documentation/btrfs-man5.asciidoc    | 4 ++--
- INSTALL                              | 2 +-
- README.md                            | 2 +-
- cmds/filesystem-usage.c              | 2 +-
- crypto/hash-speedtest.c              | 6 +++---
- kernel-lib/radix-tree.c              | 2 +-
- m4/ax_gcc_version.m4                 | 2 +-
- tests/README.md                      | 2 +-
- 10 files changed, 13 insertions(+), 13 deletions(-)
 
-diff --git a/CHANGES b/CHANGES
-index e974dc58..16da2863 100644
---- a/CHANGES
-+++ b/CHANGES
-@@ -85,7 +85,7 @@ btrfs-progs-5.6 (2020-04-05)
-   * fixes:
-     * restore: proper mirror iteration on decompression error
-     * restore: make symlink messages less noisy
--    * check: handle holes at the begining or end of file
-+    * check: handle holes at the beginning or end of file
-     * fix xxhash output on big endian machines
-     * receive: fix lookup of subvolume by uuid in case it was already
-       received before
-diff --git a/Documentation/btrfs-balance.asciidoc b/Documentation/btrfs-balance.asciidoc
-index d94719a0..7ba88671 100644
---- a/Documentation/btrfs-balance.asciidoc
-+++ b/Documentation/btrfs-balance.asciidoc
-@@ -37,7 +37,7 @@ The filters can be used to perform following actions:
- 
- The filters can be applied to a combination of block group types (data,
- metadata, system). Note that changing only the 'system' type needs the force
--option. Otherwise 'system' gets automatically converted whenver 'metadata'
-+option. Otherwise 'system' gets automatically converted whenever 'metadata'
- profile is converted.
- 
- When metadata redundancy is reduced (eg. from RAID1 to single) the force option
-diff --git a/Documentation/btrfs-man5.asciidoc b/Documentation/btrfs-man5.asciidoc
-index 65352009..9016f400 100644
---- a/Documentation/btrfs-man5.asciidoc
-+++ b/Documentation/btrfs-man5.asciidoc
-@@ -34,7 +34,7 @@ per-subvolume 'nodatacow', 'nodatasum', or 'compress' using mount options. This
- should eventually be fixed, but it has proved to be difficult to implement
- correctly within the Linux VFS framework.
- 
--Mount options are processed in order, only the last occurence of an option
-+Mount options are processed in order, only the last occurrence of an option
- takes effect and may disable other options due to constraints (see eg.
- 'nodatacow' and 'compress'). The output of 'mount' command shows which options
- have been applied.
-@@ -868,7 +868,7 @@ refers to what `xfs_io`(8) provides:
- 'append only', same as the attribute
- 
- *s*::
--'synchronous updates', same as the atribute 'S'
-+'synchronous updates', same as the attribute 'S'
- 
- *A*::
- 'no atime updates', same as the attribute
-diff --git a/INSTALL b/INSTALL
-index 470ceebd..e2b6c7c3 100644
---- a/INSTALL
-+++ b/INSTALL
-@@ -14,7 +14,7 @@ For the btrfs-convert utility:
- - e2fsprogs - ext2/ext3/ext4 file system libraries, or called e2fslibs
- - libreiserfscore - reiserfs file system library version >= 3.6.27
- 
--Optionally, the checksums based on cryptographic hashes can be implemeted by
-+Optionally, the checksums based on cryptographic hashes can be implemented by
- external libraries. Builtin implementations are provided in case the library
- dependencies are not desired.
- 
-diff --git a/README.md b/README.md
-index 5d8e9b55..79421fd4 100644
---- a/README.md
-+++ b/README.md
-@@ -84,7 +84,7 @@ the patches meet some criteria (often lacking in github contributions):
- 
- Source code coding style and preferences follow the
- [kernel coding style](https://www.kernel.org/doc/html/latest/process/coding-style.html).
--You can find the editor settins in `.editorconfig` and use the
-+You can find the editor settings in `.editorconfig` and use the
- [EditorConfig](https://editorconfig.org/) plugin to let your editor use that,
- or update your editor settings manually.
- 
-diff --git a/cmds/filesystem-usage.c b/cmds/filesystem-usage.c
-index ab60d769..717d436b 100644
---- a/cmds/filesystem-usage.c
-+++ b/cmds/filesystem-usage.c
-@@ -370,7 +370,7 @@ static void get_raid56_space_info(struct btrfs_ioctl_space_args *sargs,
- 			*max_data_ratio = rt;
- 
- 		/*
--		 * size is the total disk(s) space occuped by a chunk
-+		 * size is the total disk(s) space occupied by a chunk
- 		 * the product of 'size' and  '*_ratio' is "in average"
- 		 * the disk(s) space used by the data
- 		 */
-diff --git a/crypto/hash-speedtest.c b/crypto/hash-speedtest.c
-index 09d309d2..132ca3aa 100644
---- a/crypto/hash-speedtest.c
-+++ b/crypto/hash-speedtest.c
-@@ -75,9 +75,9 @@ int main(int argc, char **argv) {
- 	crc32c_optimization_init();
- 	memset(buf, 0, 4096);
- 
--	printf("Block size:    %d\n", blocksize);
--	printf("Iterations:    %d\n", iterations);
--	printf("Implementaion: %s\n", CRYPTOPROVIDER);
-+	printf("Block size:     %d\n", blocksize);
-+	printf("Iterations:     %d\n", iterations);
-+	printf("Implementation: %s\n", CRYPTOPROVIDER);
- 	printf("\n");
- 
- 	for (idx = 0; idx < ARRAY_SIZE(contestants); idx++) {
-diff --git a/kernel-lib/radix-tree.c b/kernel-lib/radix-tree.c
-index 4649f871..f2ade1b0 100644
---- a/kernel-lib/radix-tree.c
-+++ b/kernel-lib/radix-tree.c
-@@ -506,7 +506,7 @@ int radix_tree_tag_get(struct radix_tree_root *root,
- 		offset = (index >> shift) & RADIX_TREE_MAP_MASK;
- 
- 		/*
--		 * This is just a debug check.  Later, we can bale as soon as
-+		 * This is just a debug check.  Later, we can bail as soon as
- 		 * we see an unset tag.
- 		 */
- 		if (!tag_get(slot, tag, offset))
-diff --git a/m4/ax_gcc_version.m4 b/m4/ax_gcc_version.m4
-index 63914d55..ab100265 100644
---- a/m4/ax_gcc_version.m4
-+++ b/m4/ax_gcc_version.m4
-@@ -1,5 +1,5 @@
- dnl @synopsis AX_GCC_VERSION(MAJOR, MINOR, PATCHLEVEL, [ACTION-SUCCESS], [ACTION-FAILURE])
--dnl @summary check wither gcc is at least version MAJOR.MINOR.PATCHLEVEL
-+dnl @summary check whether gcc is at least version MAJOR.MINOR.PATCHLEVEL
- dnl @category InstalledPackages
- dnl
- dnl Check whether we are using gcc and, if so, whether its version
-diff --git a/tests/README.md b/tests/README.md
-index 616bf3e4..7b86716c 100644
---- a/tests/README.md
-+++ b/tests/README.md
-@@ -404,7 +404,7 @@ that file or other tests to get the idea how easy writing a test really is.
-     `tests/mkfs-tests-results.txt`), and not printed to the terminal
-   * `_log_stdout` - dtto but it is printed to the terminal
- * execution helpers
--  * `run_check` - should be used for basically all commadns, the command and arguments
-+  * `run_check` - should be used for basically all commands, the command and arguments
-   are stored to the results log for debugging and the return value is checked so there
-   are no silent failures even for the "unimportant" commands
-   * `run_check_stdout` - like the above but the output can be processed further, eg. filtering
--- 
-2.30.0.rc2
 
+On 24.12.20 г. 20:09 ч., Josef Bacik wrote:
+> On 12/21/20 2:45 PM, René Rebe wrote:
+>> Hey there,
+>>
+>> as a long time btrfs user I noticed some some things became very slow
+>> w/ Linux kernel 5.10. I found a very simple test case, namely extracting
+>> a huge tarball like:
+>>
+>>    tar xf /usr/src/t2-clean/download/mirror/f/firefox-84.0.source.tar.zst
+>>
+>> Why my external, USB3 road-warrior SSD on a Ryzen 5950x this
+>> went from ~15 seconds w/ 5.9 to nearly 5 minutes in 5.10, or 2000%
+>>
+>> To rule out USB, I also tested a brand new PCIe 4.0 SSD, with
+>> a similar, albeit not as shocking regression from 5.2 seconds
+>> to ~34 seconds or∫~650%.
+>>
+>> Somehow testing that in a VM did over virtio did not produce
+>> as different results, although it was already 35 seconds slow
+>> with 5.9.
+>>
+>> # first bad commit: [38d715f494f2f1dddbf3d0c6e50aefff49519232]
+>>    btrfs: use btrfs_start_delalloc_roots in shrink_delalloc
+>>
+>> Now just this single commit does obviously not revert cleanly,
+>> and I did not have the time today to look into the rather more
+>> complex code today.
+>>
+>> I hope this helps improve this for the next release, maybe you
+>> want to test on bare metal, too.
+>>
+> 
+> Alright to close the loop with this, this slipped through the cracks
+> because I was doing a lot of performance related work, and specifically
+> had been testing with these patches on top of everything
+> 
+> https://lore.kernel.org/linux-btrfs/cover.1602249928.git.josef@toxicpanda.com/
+> 
+> 
+> These patches bring the performance up to around 40% higher than
+> baseline.  In the meantime we'll probably push this partial revert into
+> 5.10 stable so performance isn't sucking in the meantime.  Thanks,
+
+For the sake of clarity it's important to note that baseline in this
+case is kernel 4.19 (since the original regressions was spotted in 5.0).
+There has already been a couple of open interpretations of what this
+means e.g 40% better than 5.10, suggesting performance is worse.
+
+> 
+> Josef
+> 

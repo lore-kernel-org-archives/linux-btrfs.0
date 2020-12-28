@@ -2,241 +2,333 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-12.9 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
+	NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 30ECCC433E9
-	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Dec 2020 00:33:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 14DC6C433E0
+	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Dec 2020 07:39:33 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 058A2229C6
-	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Dec 2020 00:33:07 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BBC0D221F0
+	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Dec 2020 07:39:32 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726352AbgL1Acy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 27 Dec 2020 19:32:54 -0500
-Received: from mx2.suse.de ([195.135.220.15]:53888 "EHLO mx2.suse.de"
+        id S1726333AbgL1HjW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 28 Dec 2020 02:39:22 -0500
+Received: from ns2.prnet.org ([188.165.43.41]:27319 "EHLO ns2.prnet.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726226AbgL1Acy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 27 Dec 2020 19:32:54 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1609115527; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=LlQHvJQJzdD6X0lthnmw9FWWKhF04SUDcjSOXV331Wc=;
-        b=p4JQ2LO/YoXeXitjvBp0KkM8ymqQRS6m1qxy6jfCFu4HzdtLV4R7lR5IZrKjMGcP5yH76r
-        PaIn/+n7q6nouW3hGCfNjfvQbvvjSgNVFtQXGKa0vMhdIxnqoRB8cBJH5lrps7xIvh66R9
-        ukx0mvp8372Lex6JHV52xAH++N0O3hY=
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 52E51B738
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 Dec 2020 00:32:07 +0000 (UTC)
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v5 2/4] btrfs-progs: image: introduce -d option to dump data
-Date:   Mon, 28 Dec 2020 08:31:57 +0800
-Message-Id: <20201228003159.115343-3-wqu@suse.com>
-X-Mailer: git-send-email 2.29.2
-In-Reply-To: <20201228003159.115343-1-wqu@suse.com>
-References: <20201228003159.115343-1-wqu@suse.com>
+        id S1726323AbgL1HjV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 28 Dec 2020 02:39:21 -0500
+Received: from extserver (extserver.prnet.org [192.168.1.101])
+        by ns2.prnet.org (8.16.1/8.16.1) with ESMTP id 0BS7d6iL001605;
+        Mon, 28 Dec 2020 08:39:06 +0100
 MIME-Version: 1.0
+X-UserIsAuth: true
+Received: from 2001:7e8:cf00:bc00:da50:e6ff:febb:ea28 (EHLO [IPv6:2001:7e8:cf00:bc00:da50:e6ff:febb:ea28]) ([2001:7e8:cf00:bc00:da50:e6ff:febb:ea28])
+          by secure.prnet.org (JAMES SMTP Server ) with ESMTPA ID -1245793063;
+          Mon, 28 Dec 2020 08:38:36 +0100 (CET)
+Subject: Re: 5.6-5.10 balance regression?
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        =?UTF-8?Q?St=c3=a9phane_Lesimple?= <stephane_btrfs2@lesimple.fr>,
+        linux-btrfs@vger.kernel.org
+References: <505cabfa88575ed6dbe7cb922d8914fb@lesimple.fr>
+ <292de7b8-42eb-0c39-d8c7-9a366f688731@prnet.org>
+ <2846fc85-6bd3-ae7e-6770-c75096e5d547@gmx.com>
+From:   David Arendt <admin@prnet.org>
+Message-ID: <344c4bfd-3189-2bf5-9282-2f7b3cb23972@prnet.org>
+Date:   Mon, 28 Dec 2020 08:38:36 +0100
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.6.0
+In-Reply-To: <2846fc85-6bd3-ae7e-6770-c75096e5d547@gmx.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: 8bit
+Content-Language: en-US
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This new data dump feature will dump the whole image, not only the
-existing tree blocks but also all its data extents(*).
+Hi,
 
-This feature will rely on the new dump format (_DUmP_v1), as it needs
-extra large extent size limit, and older btrfs-image dump can't handle
-such large item/cluster size.
+unfortunately the problem is no longer reproducible, probably due to 
+writes happening in meantime. If you still want a btrfs-image, I can 
+create one (unfortunately only without data as there is confidential 
+data in it), but as the problem is currently no longer reproducible, I 
+think it probably won't help.
 
-Since we're dumping all extents including data extents, for the restored
-image there is no need to use any extra super block flags to inform
-kernel.
-Kernel should just treat the restored image as any ordinary btrfs.
+Thanks in advance,
+David Arendt
 
-*: The data extents will be dumped as is, that's to say, even for
-preallocated extent, its (meaningless) data will be read out and
-dumpped.
-This behavior will cause extra space usage for the image, but we can
-skip all the complex partially shared preallocated extent check.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- image/main.c     | 53 +++++++++++++++++++++++++++++++++++++-----------
- image/metadump.h |  2 +-
- 2 files changed, 42 insertions(+), 13 deletions(-)
-
-diff --git a/image/main.c b/image/main.c
-index 8f4cf5ff7e0d..d5822d61b05e 100644
---- a/image/main.c
-+++ b/image/main.c
-@@ -52,7 +52,15 @@ const struct dump_version dump_versions[NR_DUMP_VERSIONS] = {
- 	{ .version = 0,
- 	  .max_pending_size = SZ_256K,
- 	  .magic_cpu = 0xbd5c25e27295668bULL,
--	  .extra_sb_flags = 1 }
-+	  .extra_sb_flags = 1 },
-+	/*
-+	 * The newer format, with much larger item size to contain
-+	 * any data extent.
-+	 */
-+	{ .version = 1,
-+	  .max_pending_size = SZ_256M,
-+	  .magic_cpu = 0x31765f506d55445fULL, /* ascii _DUmP_v1, no null */
-+	  .extra_sb_flags = 0 },
- };
- 
- const struct dump_version *current_version = &dump_versions[0];
-@@ -454,10 +462,14 @@ static void metadump_destroy(struct metadump_struct *md, int num_threads)
- 
- static int metadump_init(struct metadump_struct *md, struct btrfs_root *root,
- 			 FILE *out, int num_threads, int compress_level,
--			 enum sanitize_mode sanitize_names)
-+			 bool dump_data, enum sanitize_mode sanitize_names)
- {
- 	int i, ret = 0;
- 
-+	/* We need larger item/cluster limit for data extents */
-+	if (dump_data)
-+		current_version = &dump_versions[1];
-+
- 	memset(md, 0, sizeof(*md));
- 	INIT_LIST_HEAD(&md->list);
- 	INIT_LIST_HEAD(&md->ordered);
-@@ -885,7 +897,7 @@ static int copy_space_cache(struct btrfs_root *root,
- }
- 
- static int copy_from_extent_tree(struct metadump_struct *metadump,
--				 struct btrfs_path *path)
-+				 struct btrfs_path *path, bool dump_data)
- {
- 	struct btrfs_root *extent_root;
- 	struct extent_buffer *leaf;
-@@ -950,9 +962,15 @@ static int copy_from_extent_tree(struct metadump_struct *metadump,
- 			ei = btrfs_item_ptr(leaf, path->slots[0],
- 					    struct btrfs_extent_item);
- 			if (btrfs_extent_flags(leaf, ei) &
--			    BTRFS_EXTENT_FLAG_TREE_BLOCK) {
-+			    BTRFS_EXTENT_FLAG_TREE_BLOCK ||
-+			    (dump_data && (btrfs_extent_flags(leaf, ei) &
-+					   BTRFS_EXTENT_FLAG_DATA))) {
-+				bool is_data;
-+
-+				is_data = btrfs_extent_flags(leaf, ei) &
-+					  BTRFS_EXTENT_FLAG_DATA;
- 				ret = add_extent(bytenr, num_bytes, metadump,
--						 0);
-+						 is_data);
- 				if (ret) {
- 					error("unable to add block %llu: %d",
- 						(unsigned long long)bytenr, ret);
-@@ -975,7 +993,7 @@ static int copy_from_extent_tree(struct metadump_struct *metadump,
- 
- static int create_metadump(const char *input, FILE *out, int num_threads,
- 			   int compress_level, enum sanitize_mode sanitize,
--			   int walk_trees)
-+			   int walk_trees, bool dump_data)
- {
- 	struct btrfs_root *root;
- 	struct btrfs_path path;
-@@ -990,7 +1008,7 @@ static int create_metadump(const char *input, FILE *out, int num_threads,
- 	}
- 
- 	ret = metadump_init(&metadump, root, out, num_threads,
--			    compress_level, sanitize);
-+			    compress_level, dump_data, sanitize);
- 	if (ret) {
- 		error("failed to initialize metadump: %d", ret);
- 		close_ctree(root);
-@@ -1022,7 +1040,7 @@ static int create_metadump(const char *input, FILE *out, int num_threads,
- 			goto out;
- 		}
- 	} else {
--		ret = copy_from_extent_tree(&metadump, &path);
-+		ret = copy_from_extent_tree(&metadump, &path, dump_data);
- 		if (ret) {
- 			err = ret;
- 			goto out;
-@@ -2890,6 +2908,7 @@ static void print_usage(int ret)
- 	printf("\t-s      \tsanitize file names, use once to just use garbage, use twice if you want crc collisions\n");
- 	printf("\t-w      \twalk all trees instead of using extent tree, do this if your extent tree is broken\n");
- 	printf("\t-m	   \trestore for multiple devices\n");
-+	printf("\t-d	   \talso dump data, conflicts with -w\n");
- 	printf("\n");
- 	printf("\tIn the dump mode, source is the btrfs device and target is the output file (use '-' for stdout).\n");
- 	printf("\tIn the restore mode, source is the dumped image and target is the btrfs device/file.\n");
-@@ -2909,6 +2928,7 @@ int BOX_MAIN(image)(int argc, char *argv[])
- 	int ret;
- 	enum sanitize_mode sanitize = SANITIZE_NONE;
- 	int dev_cnt = 0;
-+	bool dump_data = false;
- 	int usage_error = 0;
- 	FILE *out;
- 
-@@ -2917,7 +2937,7 @@ int BOX_MAIN(image)(int argc, char *argv[])
- 			{ "help", no_argument, NULL, GETOPT_VAL_HELP},
- 			{ NULL, 0, NULL, 0 }
- 		};
--		int c = getopt_long(argc, argv, "rc:t:oswm", long_options, NULL);
-+		int c = getopt_long(argc, argv, "rc:t:oswmd", long_options, NULL);
- 		if (c < 0)
- 			break;
- 		switch (c) {
-@@ -2957,6 +2977,9 @@ int BOX_MAIN(image)(int argc, char *argv[])
- 			create = 0;
- 			multi_devices = 1;
- 			break;
-+		case 'd':
-+			dump_data = true;
-+			break;
- 		case GETOPT_VAL_HELP:
- 		default:
- 			print_usage(c != GETOPT_VAL_HELP);
-@@ -2975,10 +2998,15 @@ int BOX_MAIN(image)(int argc, char *argv[])
- 			"create and restore cannot be used at the same time");
- 			usage_error++;
- 		}
-+		if (dump_data && walk_trees) {
-+			error("-d conflicts with -w option");
-+			usage_error++;
-+		}
- 	} else {
--		if (walk_trees || sanitize != SANITIZE_NONE || compress_level) {
-+		if (walk_trees || sanitize != SANITIZE_NONE || compress_level ||
-+		    dump_data) {
- 			error(
--			"using -w, -s, -c options for restore makes no sense");
-+		"using -w, -s, -c, -d options for restore makes no sense");
- 			usage_error++;
- 		}
- 		if (multi_devices && dev_cnt < 2) {
-@@ -3031,7 +3059,8 @@ int BOX_MAIN(image)(int argc, char *argv[])
- 		}
- 
- 		ret = create_metadump(source, out, num_threads,
--				      compress_level, sanitize, walk_trees);
-+				      compress_level, sanitize, walk_trees,
-+				      dump_data);
- 	} else {
- 		ret = restore_metadump(source, out, old_restore, num_threads,
- 				       0, target, multi_devices);
-diff --git a/image/metadump.h b/image/metadump.h
-index 7bdddc7b853c..db56add42f1c 100644
---- a/image/metadump.h
-+++ b/image/metadump.h
-@@ -38,7 +38,7 @@ struct dump_version {
- 	unsigned int extra_sb_flags:1;
- };
- 
--#define NR_DUMP_VERSIONS	1
-+#define NR_DUMP_VERSIONS	2
- extern const struct dump_version dump_versions[NR_DUMP_VERSIONS];
- const extern struct dump_version *current_version;
- 
--- 
-2.29.2
+On 12/28/20 1:06 AM, Qu Wenruo wrote:
+>
+>
+> On 2020/12/27 下午9:11, David Arendt wrote:
+>> Hi,
+>>
+>> last week I had the same problem on a btrfs filesystem after updating to
+>> kernel 5.10.1. I have never had this problem before kernel 5.10.x.
+>> 5.9.x did now show any problem.
+>>
+>> Dec 14 22:30:59 xxx kernel: BTRFS info (device sda2): scrub: started on
+>> devid 1
+>> Dec 14 22:31:09 xxx kernel: BTRFS info (device sda2): scrub: finished on
+>> devid 1 with status: 0
+>> Dec 14 22:33:16 xxx kernel: BTRFS info (device sda2): balance: start
+>> -dusage=10
+>> Dec 14 22:33:16 xxx kernel: BTRFS info (device sda2): relocating block
+>> group 71694286848 flags data
+>> Dec 14 22:33:16 xxx kernel: BTRFS info (device sda2): found 1058
+>> extents, stage: move data extents
+>> Dec 14 22:33:16 xxx kernel: BTRFS info (device sda2): balance: ended
+>> with status: -2
+>>
+>> This is not a multidevice volume but a volume consisting of a single
+>> partition.
+>>
+>> xxx ~ # btrfs fi df /u00
+>> Data, single: total=10.01GiB, used=9.24GiB
+>> System, single: total=4.00MiB, used=16.00KiB
+>> Metadata, single: total=2.76GiB, used=1.10GiB
+>> GlobalReserve, single: total=47.17MiB, used=0.00B
+>>
+>> xxx ~ # btrfs device usage /u00
+>> /dev/sda2, ID: 1
+>>     Device size:            19.81GiB
+>>     Device slack:              0.00B
+>>     Data,single:            10.01GiB
+>>     Metadata,single:         2.76GiB
+>>     System,single:           4.00MiB
+>>     Unallocated:             7.04GiB
+>
+> This seems small enough, thus a btrfs-image dump would help.
+>
+> Although there is a limit for btrfs-image dump, since it only contains
+> metadata, when we try to balance data to reproduce the bug, it would
+> easily cause data csum error and exit convert.
+>
+> If possible, would you please try to take a dump with this branch?
+> https://github.com/adam900710/btrfs-progs/tree/image_data_dump
+>
+> It provides a new option for btrfs-image, -d, which will also take the 
+> data.
+>
+> Also, please keep in mind that, -d dump will contain data of your fs,
+> thus if it contains confidential info, please use regular btrfs-image.
+>
+> Thanks,
+> Qu
+>>
+>>
+>> On 12/27/20 1:11 PM, Stéphane Lesimple wrote:
+>>> Hello,
+>>>
+>>> As part of the maintenance routine of one of my raid1 FS, a few days
+>>> ago I was in the process
+>>> of replacing a 10T drive with a 16T one.
+>>> So I first added the new 16T drive to the FS (btrfs dev add), then
+>>> started a btrfs dev del.
+>>>
+>>> After a few days of balancing the block groups out of the old 10T 
+>>> drive,
+>>> the balance aborted when around 500 GiB of data was still to be moved
+>>> out of the drive:
+>>>
+>>> Dec 21 14:18:40 nas kernel: BTRFS info (device dm-10): relocating
+>>> block group 11115169841152 flags data|raid1
+>>> Dec 21 14:18:54 nas kernel: BTRFS info (device dm-10): found 6264
+>>> extents, stage: move data extents
+>>> Dec 21 14:19:16 nas kernel: BTRFS info (device dm-10): balance: ended
+>>> with status: -2
+>>>
+>>> Of course this also cancelled the device deletion, so after that the
+>>> device was still part of the FS. I then tried to do a balance manually,
+>>> in an attempt to reproduce the issue:
+>>>
+>>> Dec 21 14:28:16 nas kernel: BTRFS info (device dm-10): balance: start
+>>> -ddevid=5,limit=1
+>>> Dec 21 14:28:16 nas kernel: BTRFS info (device dm-10): relocating
+>>> block group 11115169841152 flags data|raid1
+>>> Dec 21 14:28:29 nas kernel: BTRFS info (device dm-10): found 6264
+>>> extents, stage: move data extents
+>>> Dec 21 14:28:46 nas kernel: BTRFS info (device dm-10): balance: ended
+>>> with status: -2
+>>>
+>>> There were of course still plenty of room on the FS, as I added a new
+>>> 16T drive
+>>> (a btrfs fi usage is further down this email), so it struck me as odd.
+>>> So, I tried to lower the reduncancy temporarily, expecting the balance
+>>> of this block group to
+>>> complete immediately given that there were already a copy of this data
+>>> present on another drive:
+>>>
+>>> Dec 21 14:38:50 nas kernel: BTRFS info (device dm-10): balance: start
+>>> -dconvert=single,soft,devid=5,limit=1
+>>> Dec 21 14:38:50 nas kernel: BTRFS info (device dm-10): relocating
+>>> block group 11115169841152 flags data|raid1
+>>> Dec 21 14:39:00 nas kernel: BTRFS info (device dm-10): found 6264
+>>> extents, stage: move data extents
+>>> Dec 21 14:39:17 nas kernel: BTRFS info (device dm-10): balance: ended
+>>> with status: -2
+>>>
+>>> That didn't work.
+>>> I also tried to mount the FS in degraded mode, with the drive I wanted
+>>> to remove missing,
+>>> using btrfs dev del missing, but the balance still failed with the
+>>> same error on the same block group.
+>>>
+>>> So, as I was running 5.10.1 just for a few days, I tried an older
+>>> kernel: 5.6.17,
+>>> and retried the balance once again (with still the drive voluntarily
+>>> missing):
+>>>
+>>> [ 413.188812] BTRFS info (device dm-10): allowing degraded mounts
+>>> [ 413.188814] BTRFS info (device dm-10): using free space tree
+>>> [ 413.188815] BTRFS info (device dm-10): has skinny extents
+>>> [ 413.189674] BTRFS warning (device dm-10): devid 5 uuid
+>>> 068c6db3-3c30-4c97-b96b-5fe2d6c5d677 is missing
+>>> [ 424.159486] BTRFS info (device dm-10): balance: start
+>>> -dconvert=single,soft,devid=5,limit=1
+>>> [ 424.772640] BTRFS info (device dm-10): relocating block group
+>>> 11115169841152 flags data|raid1
+>>> [ 434.749100] BTRFS info (device dm-10): found 6264 extents, stage:
+>>> move data extents
+>>> [ 477.703111] BTRFS info (device dm-10): found 6264 extents, stage:
+>>> update data pointers
+>>> [ 497.941482] BTRFS info (device dm-10): balance: ended with status: 0
+>>>
+>>> The problematic block group was balanced successfully this time.
+>>>
+>>> I balanced a few more successfully (without the -dconvert=single 
+>>> option),
+>>> then decided to reboot under 5.10 just to see if I would hit this
+>>> issue again.
+>>> I didn't: the btrfs dev del worked correctly after the last 500G or so
+>>> data
+>>> was moved out of the drive.
+>>>
+>>> This is the output of btrfs fi usage after I successfully balanced the
+>>> problematic block group under the 5.6.17 kernel. Notice the multiple
+>>> data profile, which is expected as I used the -dconvert balance option,
+>>> and also the fact that apparently 3 chunks were allocated on new16T for
+>>> this, even if only 1 seem to be used. We can tell because this is the
+>>> first and only time the balance succeeded with the -dconvert option,
+>>> hence these chunks are all under "data,single":
+>>>
+>>> Overall:
+>>> Device size:        41.89TiB
+>>> Device allocated:   21.74TiB
+>>> Device unallocated: 20.14TiB
+>>> Device missing:      9.09TiB
+>>> Used:               21.71TiB
+>>> Free (estimated):   10.08TiB (min: 10.07TiB)
+>>> Data ratio:             2.00
+>>> Metadata ratio:         2.00
+>>> Global reserve:    512.00MiB (used: 0.00B)
+>>> Multiple profiles:       yes (data)
+>>>
+>>> Data,single: Size:3.00GiB, Used:1.00GiB (33.34%)
+>>> /dev/mapper/luks-new16T     3.00GiB
+>>>
+>>> Data,RAID1: Size:10.83TiB, Used:10.83TiB (99.99%)
+>>> /dev/mapper/luks-10Ta       7.14TiB
+>>> /dev/mapper/luks-10Tb       7.10TiB
+>>> missing                   482.00GiB
+>>> /dev/mapper/luks-new16T     6.95TiB
+>>>
+>>> Metadata,RAID1: Size:36.00GiB, Used:23.87GiB (66.31%)
+>>> /dev/mapper/luks-10Tb      36.00GiB
+>>> /dev/mapper/luks-ssd-mdata 36.00GiB
+>>>
+>>> System,RAID1: Size:32.00MiB, Used:1.77MiB (5.52%)
+>>> /dev/mapper/luks-10Ta      32.00MiB
+>>> /dev/mapper/luks-10Tb      32.00MiB
+>>>
+>>> Unallocated:
+>>> /dev/mapper/luks-10Ta       1.95TiB
+>>> /dev/mapper/luks-10Tb       1.96TiB
+>>> missing                     8.62TiB
+>>> /dev/mapper/luks-ssd-mdata 11.29GiB
+>>> /dev/mapper/luks-new16T     7.60TiB
+>>>
+>>> I wasn't going to send an email to this ML because I knew I had nothing
+>>> to reproduce the issue noww that it was "fixed", but now I think I'm
+>>> bumping
+>>> into the same issue on another FS, while rebalancing data after adding
+>>> a drive,
+>>> which happens to be the old 10T drive of the FS above.
+>>>
+>>> The btrfs fi usage of this second FS is as follows:
+>>>
+>>> Overall:
+>>> Device size:        25.50TiB
+>>> Device allocated:   22.95TiB
+>>> Device unallocated:  2.55TiB
+>>> Device missing:        0.00B
+>>> Used:               22.36TiB
+>>> Free (estimated):    3.14TiB (min: 1.87TiB)
+>>> Data ratio:             1.00
+>>> Metadata ratio:         2.00
+>>> Global reserve:    512.00MiB (used: 0.00B)
+>>> Multiple profiles:        no
+>>>
+>>> Data,single: Size:22.89TiB, Used:22.29TiB (97.40%)
+>>> /dev/mapper/luks-12T        10.91TiB
+>>> /dev/mapper/luks-3Ta         2.73TiB
+>>> /dev/mapper/luks-3Tb         2.73TiB
+>>> /dev/mapper/luks-10T         6.52TiB
+>>>
+>>> Metadata,RAID1: Size:32.00GiB, Used:30.83GiB (96.34%)
+>>> /dev/mapper/luks-ssd-mdata2 32.00GiB
+>>> /dev/mapper/luks-10T        32.00GiB
+>>>
+>>> System,RAID1: Size:32.00MiB, Used:2.44MiB (7.62%)
+>>> /dev/mapper/luks-3Tb        32.00MiB
+>>> /dev/mapper/luks-10T        32.00MiB
+>>>
+>>> Unallocated:
+>>> /dev/mapper/luks-12T        45.00MiB
+>>> /dev/mapper/luks-ssd-mdata2  4.00GiB
+>>> /dev/mapper/luks-3Ta         1.02MiB
+>>> /dev/mapper/luks-3Tb         2.97GiB
+>>> /dev/mapper/luks-10T         2.54TiB
+>>>
+>>> I can reproduce the problem reliably:
+>>>
+>>> # btrfs bal start -dvrange=34625344765952..34625344765953 /tank
+>>> ERROR: error during balancing '/tank': No such file or directory
+>>> There may be more info in syslog - try dmesg | tail
+>>>
+>>> [145979.563045] BTRFS info (device dm-10): balance: start
+>>> -dvrange=34625344765952..34625344765953
+>>> [145979.585572] BTRFS info (device dm-10): relocating block group
+>>> 34625344765952 flags data|raid1
+>>> [145990.396585] BTRFS info (device dm-10): found 167 extents, stage:
+>>> move data extents
+>>> [146002.236115] BTRFS info (device dm-10): balance: ended with 
+>>> status: -2
+>>>
+>>> If anybody is interested in looking into this, this time I can leave
+>>> the FS in this state.
+>>> The issue is reproducible, and I can live without completing the
+>>> balance for the next weeks
+>>> or even months, as I don't think I'll need the currently unallocatable
+>>> space soon.
+>>>
+>>> I also made a btrfs-image of the FS, using btrfs-image -c 9 -t 4 -s -w.
+>>> If it's of any use, I can drop it somewhere (51G).
+>>>
+>>> I could try to bisect manually to find which version between 5.6.x and
+>>> 5.10.1 started to behave
+>>> like this, but on the first success, I won't know how to reproduce the
+>>> issue a second time, as
+>>> I'm not 100% sure it can be done solely with the btrfs-image.
+>>>
+>>> Note that another user seem to have encoutered a similar issue in July
+>>> with 5.8:
+>>> https://www.spinics.net/lists/linux-btrfs/msg103188.html
+>>>
+>>> Regards,
+>>>
+>>> Stéphane Lesimple.
+>>
+>>
 

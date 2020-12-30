@@ -2,57 +2,57 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.8 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
 	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+	INCLUDES_CR_TRAILER,INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_GIT autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D8E5EC433DB
-	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Dec 2020 21:47:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7C32EC43381
+	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Dec 2020 21:47:14 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 933012074D
-	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Dec 2020 21:47:13 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4E5BC20771
+	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Dec 2020 21:47:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726514AbgL3Vql (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 30 Dec 2020 16:46:41 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35686 "EHLO
+        id S1726434AbgL3Vq6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 30 Dec 2020 16:46:58 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35644 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726356AbgL3Vql (ORCPT
+        with ESMTP id S1726247AbgL3Vqt (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 30 Dec 2020 16:46:41 -0500
-Received: from mail-wm1-x334.google.com (mail-wm1-x334.google.com [IPv6:2a00:1450:4864:20::334])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 33908C061575
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 Dec 2020 13:45:56 -0800 (PST)
-Received: by mail-wm1-x334.google.com with SMTP id c124so6009045wma.5
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 Dec 2020 13:45:56 -0800 (PST)
+        Wed, 30 Dec 2020 16:46:49 -0500
+Received: from mail-wm1-x336.google.com (mail-wm1-x336.google.com [IPv6:2a00:1450:4864:20::336])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6CF4BC06179F
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 Dec 2020 13:46:00 -0800 (PST)
+Received: by mail-wm1-x336.google.com with SMTP id v14so6012731wml.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 Dec 2020 13:46:00 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=cloudflare.com; s=google;
-        h=from:to:cc:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=/kbVtG9+aGsr44Zrtbqkbn+LIP6L6fp4kSH2R8701XE=;
-        b=Cr1Y17z/exiurhuFY6Pbw763XwbO2cQtAmhdoKUuvXpfxnQ2AJlJxQnN8tZcPVfvwI
-         BBlsVX/TWEBzgPFF5+Uf2aMsMP//MxFjBRv3fYLtv4sdYc83z0bRB0rTzMnXBv6oeCVI
-         ss+pYhxZ2KcPMItt+ZnzcDzRo78F4xr/xO1J4=
+        h=from:to:cc:subject:date:message-id:in-reply-to:references
+         :mime-version:content-transfer-encoding;
+        bh=FvrJMrsfSrCMqP0SJkTZGmHVlIQbTBHqqh7rDq5gDYo=;
+        b=o2r657aSsVty5//8iyCvGkm714n4FY6hNZFDetetBU0YLg4/n9Eas54Lff8YZkAM/t
+         JLfYsuiql5dkCOUNzj2AJncP51fTw9bYk4tvQktfD0ke5LVE0pLsAIJdTq7Wl/o8/G7W
+         NjF8c2BgSONYfvnQyvgrtikzh4JpH18uA7yX8=
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=/kbVtG9+aGsr44Zrtbqkbn+LIP6L6fp4kSH2R8701XE=;
-        b=h3hxZndpgDM6QAsQLVVwVXudW0AMQztSUDdX939XZsc2nPjr0L6ZUHYBqB0Rmda0OD
-         vB3ufyAIJiMXAG5OffQgeqK2PT4oyG5W6C6Vy7mjoyt1whwQIO0X2W3CUI8cTCUuvE2a
-         qosiB4aPiqgqiCAAu/e0/EJHcUx7vKZs0apTyn7boPEuVqEn6mgZ7coGu2h3A6ZBUjPA
-         YmGbJhZotJCuHNS88rDVN9POjtv6TamtpQNIJDz4m8S0UnU3S4VcxAzyJOMoY0X313LH
-         urLAbgCqdbTpJqn7AmDVwOiwFgGF22DrL9yEs6atAKKUIBy1Tzm+HFOYhr++fyxMZ9bw
-         g5tw==
-X-Gm-Message-State: AOAM530AqrefcIfqxMYaMbqUCQeigO/PxTNTf4DpZiw9on5PboHEM7Qn
-        1UeYIQ+JtShcnMA0gKawaUZU2g==
-X-Google-Smtp-Source: ABdhPJwmWH9sv8kVx66i/Zig3WzfuPqiSDd5ysSSfSorYVgQ2t4wrzU0rEZtrhkOUVb/l94N+FDjPw==
-X-Received: by 2002:a7b:cb09:: with SMTP id u9mr9373821wmj.61.1609364754774;
-        Wed, 30 Dec 2020 13:45:54 -0800 (PST)
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
+         :references:mime-version:content-transfer-encoding;
+        bh=FvrJMrsfSrCMqP0SJkTZGmHVlIQbTBHqqh7rDq5gDYo=;
+        b=MPQzE/qH1Z61m0MxUOUnuFBYfvaYpXkZ9v1DPMPyYwDOrVHza3iX+IEqIUqaMWZDJ4
+         Af9iuZy9rGaf3M3LGquZApCpbrOoMGPWXl0gfK/dIHMGr1hrDFOYH4DU457M8L6EuwsV
+         HPEwUo4cQM6cm7ANyjATGR1OthfXokGM5bOw76XttgKjoDIzovqhTHsV9Rc19R3bL4VJ
+         Il+YTHJhZ2aB6b1p4sWGJhuCIgBqv3+ev1y1Cv27PKq9g1jjUtUEgM0ySR1KIaVzAtPB
+         iO9YUnVQ3VRC1llsq/2G/5CJrA/QzPRsT/U1zkGpvsCpxbu06PVhWeh6Y6MBEKLTZ8aw
+         bx3w==
+X-Gm-Message-State: AOAM533p+vI5nUYzIZYFFXiTOTMVFJY99W5WksnlLeGWLuxWasub2TJS
+        lyj3I3KfgBfJoLEnc8LYJqCkrg==
+X-Google-Smtp-Source: ABdhPJxU8cJvu00sLK1wr0jBS7pIIOAH36x5vYJwhHdW7BlpXFl8w1XXdVQXTjVw08rKEijjoe6EOA==
+X-Received: by 2002:a7b:cbda:: with SMTP id n26mr9267136wmi.144.1609364759036;
+        Wed, 30 Dec 2020 13:45:59 -0800 (PST)
 Received: from dev.cfops.net (165.176.200.146.dyn.plus.net. [146.200.176.165])
-        by smtp.gmail.com with ESMTPSA id r7sm8749894wmh.2.2020.12.30.13.45.51
+        by smtp.gmail.com with ESMTPSA id r7sm8749894wmh.2.2020.12.30.13.45.57
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 30 Dec 2020 13:45:53 -0800 (PST)
+        Wed, 30 Dec 2020 13:45:58 -0800 (PST)
 From:   Ignat Korchagin <ignat@cloudflare.com>
 To:     agk@redhat.com, snitzer@redhat.com, dm-devel@redhat.com,
         dm-crypt@saout.de, linux-kernel@vger.kernel.org
@@ -61,28 +61,241 @@ Cc:     Ignat Korchagin <ignat@cloudflare.com>, ebiggers@kernel.org,
         herbert@gondor.apana.org.au, kernel-team@cloudflare.com,
         nobuto.murata@canonical.com, clm@fb.com, josef@toxicpanda.com,
         dsterba@suse.com, linux-btrfs@vger.kernel.org,
-        mail@maciej.szmigiero.name
-Subject: [PATCH v2 0/2] dm crypt: some fixes to support dm-crypt running in softirq context
-Date:   Wed, 30 Dec 2020 21:45:18 +0000
-Message-Id: <20201230214520.154793-1-ignat@cloudflare.com>
+        mail@maciej.szmigiero.name, stable@vger.kernel.org
+Subject: [PATCH v2 2/2] dm crypt: do not wait for backlogged crypto request completion in softirq
+Date:   Wed, 30 Dec 2020 21:45:20 +0000
+Message-Id: <20201230214520.154793-3-ignat@cloudflare.com>
 X-Mailer: git-send-email 2.20.1
+In-Reply-To: <20201230214520.154793-1-ignat@cloudflare.com>
+References: <20201230214520.154793-1-ignat@cloudflare.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Changes from v1:
-0001: Handle memory allocation failure for GFP_ATOMIC
+Commit 39d42fa96ba1b7d2544db3f8ed5da8fb0d5cb877 made it possible for some code
+paths in dm-crypt to be executed in softirq context, when the underlying driver
+processes IO requests in interrupt/softirq context.
 
-Ignat Korchagin (2):
-  dm crypt: use GFP_ATOMIC when allocating crypto requests from softirq
-  dm crypt: do not wait for backlogged crypto request completion in
-    softirq
+When Crypto API backlogs a crypto request, dm-crypt uses wait_for_completion to
+avoid sending further requests to an already overloaded crypto driver. However,
+if the code is executing in softirq context, we might get the following
+stacktrace:
 
- drivers/md/dm-crypt.c | 135 +++++++++++++++++++++++++++++++++++++-----
- 1 file changed, 120 insertions(+), 15 deletions(-)
+[  210.235213][    C0] BUG: scheduling while atomic: fio/2602/0x00000102
+[  210.236701][    C0] Modules linked in:
+[  210.237566][    C0] CPU: 0 PID: 2602 Comm: fio Tainted: G        W         5.10.0+ #50
+[  210.239292][    C0] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS 0.0.0 02/06/2015
+[  210.241233][    C0] Call Trace:
+[  210.241946][    C0]  <IRQ>
+[  210.242561][    C0]  dump_stack+0x7d/0xa3
+[  210.243466][    C0]  __schedule_bug.cold+0xb3/0xc2
+[  210.244539][    C0]  __schedule+0x156f/0x20d0
+[  210.245518][    C0]  ? io_schedule_timeout+0x140/0x140
+[  210.246660][    C0]  schedule+0xd0/0x270
+[  210.247541][    C0]  schedule_timeout+0x1fb/0x280
+[  210.248586][    C0]  ? usleep_range+0x150/0x150
+[  210.249624][    C0]  ? unpoison_range+0x3a/0x60
+[  210.250632][    C0]  ? ____kasan_kmalloc.constprop.0+0x82/0xa0
+[  210.251949][    C0]  ? unpoison_range+0x3a/0x60
+[  210.252958][    C0]  ? __prepare_to_swait+0xa7/0x190
+[  210.254067][    C0]  do_wait_for_common+0x2ab/0x370
+[  210.255158][    C0]  ? usleep_range+0x150/0x150
+[  210.256192][    C0]  ? bit_wait_io_timeout+0x160/0x160
+[  210.257358][    C0]  ? blk_update_request+0x757/0x1150
+[  210.258582][    C0]  ? _raw_spin_lock_irq+0x82/0xd0
+[  210.259674][    C0]  ? _raw_read_unlock_irqrestore+0x30/0x30
+[  210.260917][    C0]  wait_for_completion+0x4c/0x90
+[  210.261971][    C0]  crypt_convert+0x19a6/0x4c00
+[  210.263033][    C0]  ? _raw_spin_lock_irqsave+0x87/0xe0
+[  210.264193][    C0]  ? kasan_set_track+0x1c/0x30
+[  210.265191][    C0]  ? crypt_iv_tcw_ctr+0x4a0/0x4a0
+[  210.266283][    C0]  ? kmem_cache_free+0x104/0x470
+[  210.267363][    C0]  ? crypt_endio+0x91/0x180
+[  210.268327][    C0]  kcryptd_crypt_read_convert+0x30e/0x420
+[  210.269565][    C0]  blk_update_request+0x757/0x1150
+[  210.270563][    C0]  blk_mq_end_request+0x4b/0x480
+[  210.271680][    C0]  blk_done_softirq+0x21d/0x340
+[  210.272775][    C0]  ? _raw_spin_lock+0x81/0xd0
+[  210.273847][    C0]  ? blk_mq_stop_hw_queue+0x30/0x30
+[  210.275031][    C0]  ? _raw_read_lock_irq+0x40/0x40
+[  210.276182][    C0]  __do_softirq+0x190/0x611
+[  210.277203][    C0]  ? handle_edge_irq+0x221/0xb60
+[  210.278340][    C0]  asm_call_irq_on_stack+0x12/0x20
+[  210.279514][    C0]  </IRQ>
+[  210.280164][    C0]  do_softirq_own_stack+0x37/0x40
+[  210.281281][    C0]  irq_exit_rcu+0x110/0x1b0
+[  210.282286][    C0]  common_interrupt+0x74/0x120
+[  210.283376][    C0]  asm_common_interrupt+0x1e/0x40
+[  210.284496][    C0] RIP: 0010:_aesni_enc1+0x65/0xb0
 
+Fix this by making crypt_convert function reentrant from the point of a single
+bio and make dm-crypt defer further bio processing to a workqueue, if Crypto API
+backlogs a request in interrupt context.
+
+Fixes: 39d42fa96ba1 ("dm crypt: add flags to optionally bypass kcryptd workq
+ueues")
+Cc: <stable@vger.kernel.org> # v5.9+
+
+Signed-off-by: Ignat Korchagin <ignat@cloudflare.com>
+---
+ drivers/md/dm-crypt.c | 102 +++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 97 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/md/dm-crypt.c b/drivers/md/dm-crypt.c
+index e4fd690c70e1..0d939fbe51af 100644
+--- a/drivers/md/dm-crypt.c
++++ b/drivers/md/dm-crypt.c
+@@ -1539,13 +1539,19 @@ static void crypt_free_req(struct crypt_config *cc, void *req, struct bio *base_
+  * Encrypt / decrypt data from one bio to another one (can be the same one)
+  */
+ static blk_status_t crypt_convert(struct crypt_config *cc,
+-			 struct convert_context *ctx, bool atomic)
++			 struct convert_context *ctx, bool atomic, bool reset_pending)
+ {
+ 	unsigned int tag_offset = 0;
+ 	unsigned int sector_step = cc->sector_size >> SECTOR_SHIFT;
+ 	int r;
+ 
+-	atomic_set(&ctx->cc_pending, 1);
++	/*
++	 * if reset_pending is set we are dealing with the bio for the first time,
++	 * else we're continuing to work on the previous bio, so don't mess with
++	 * the cc_pending counter
++	 */
++	if (reset_pending)
++		atomic_set(&ctx->cc_pending, 1);
+ 
+ 	while (ctx->iter_in.bi_size && ctx->iter_out.bi_size) {
+ 
+@@ -1566,7 +1572,24 @@ static blk_status_t crypt_convert(struct crypt_config *cc,
+ 		 * but the driver request queue is full, let's wait.
+ 		 */
+ 		case -EBUSY:
+-			wait_for_completion(&ctx->restart);
++			if (in_interrupt()) {
++				if (try_wait_for_completion(&ctx->restart)) {
++					/*
++					 * we don't have to block to wait for completion,
++					 * so proceed
++					 */
++				} else {
++					/*
++					 * we can't wait for completion without blocking
++					 * exit and continue processing in a workqueue
++					 */
++					ctx->r.req = NULL;
++					ctx->cc_sector += sector_step;
++					tag_offset++;
++					return BLK_STS_DEV_RESOURCE;
++				}
++			} else
++				wait_for_completion(&ctx->restart);
+ 			reinit_completion(&ctx->restart);
+ 			fallthrough;
+ 		/*
+@@ -1958,6 +1981,37 @@ static bool kcryptd_crypt_write_inline(struct crypt_config *cc,
+ 	}
+ }
+ 
++static void kcryptd_crypt_write_continue(struct work_struct *work)
++{
++	struct dm_crypt_io *io = container_of(work, struct dm_crypt_io, work);
++	struct crypt_config *cc = io->cc;
++	struct convert_context *ctx = &io->ctx;
++	int crypt_finished;
++	sector_t sector = io->sector;
++	blk_status_t r;
++
++	wait_for_completion(&ctx->restart);
++	reinit_completion(&ctx->restart);
++
++	r = crypt_convert(cc, &io->ctx, true, false);
++	if (r)
++		io->error = r;
++	crypt_finished = atomic_dec_and_test(&ctx->cc_pending);
++	if (!crypt_finished && kcryptd_crypt_write_inline(cc, ctx)) {
++		/* Wait for completion signaled by kcryptd_async_done() */
++		wait_for_completion(&ctx->restart);
++		crypt_finished = 1;
++	}
++
++	/* Encryption was already finished, submit io now */
++	if (crypt_finished) {
++		kcryptd_crypt_write_io_submit(io, 0);
++		io->sector = sector;
++	}
++
++	crypt_dec_pending(io);
++}
++
+ static void kcryptd_crypt_write_convert(struct dm_crypt_io *io)
+ {
+ 	struct crypt_config *cc = io->cc;
+@@ -1986,7 +2040,17 @@ static void kcryptd_crypt_write_convert(struct dm_crypt_io *io)
+ 
+ 	crypt_inc_pending(io);
+ 	r = crypt_convert(cc, ctx,
+-			  test_bit(DM_CRYPT_NO_WRITE_WORKQUEUE, &cc->flags));
++			  test_bit(DM_CRYPT_NO_WRITE_WORKQUEUE, &cc->flags), true);
++	/*
++	 * Crypto API backlogged the request, because its queue was full
++	 * and we're in softirq context, so continue from a workqueue
++	 * (TODO: is it actually possible to be in softirq in the write path?)
++	 */
++	if (r == BLK_STS_DEV_RESOURCE) {
++		INIT_WORK(&io->work, kcryptd_crypt_write_continue);
++		queue_work(cc->crypt_queue, &io->work);
++		return;
++	}
+ 	if (r)
+ 		io->error = r;
+ 	crypt_finished = atomic_dec_and_test(&ctx->cc_pending);
+@@ -2011,6 +2075,25 @@ static void kcryptd_crypt_read_done(struct dm_crypt_io *io)
+ 	crypt_dec_pending(io);
+ }
+ 
++static void kcryptd_crypt_read_continue(struct work_struct *work)
++{
++	struct dm_crypt_io *io = container_of(work, struct dm_crypt_io, work);
++	struct crypt_config *cc = io->cc;
++	blk_status_t r;
++
++	wait_for_completion(&io->ctx.restart);
++	reinit_completion(&io->ctx.restart);
++
++	r = crypt_convert(cc, &io->ctx, true, false);
++	if (r)
++		io->error = r;
++
++	if (atomic_dec_and_test(&io->ctx.cc_pending))
++		kcryptd_crypt_read_done(io);
++
++	crypt_dec_pending(io);
++}
++
+ static void kcryptd_crypt_read_convert(struct dm_crypt_io *io)
+ {
+ 	struct crypt_config *cc = io->cc;
+@@ -2022,7 +2105,16 @@ static void kcryptd_crypt_read_convert(struct dm_crypt_io *io)
+ 			   io->sector);
+ 
+ 	r = crypt_convert(cc, &io->ctx,
+-			  test_bit(DM_CRYPT_NO_READ_WORKQUEUE, &cc->flags));
++			  test_bit(DM_CRYPT_NO_READ_WORKQUEUE, &cc->flags), true);
++	/*
++	 * Crypto API backlogged the request, because its queue was full
++	 * and we're in softirq context, so continue from a workqueue
++	 */
++	if (r == BLK_STS_DEV_RESOURCE) {
++		INIT_WORK(&io->work, kcryptd_crypt_read_continue);
++		queue_work(cc->crypt_queue, &io->work);
++		return;
++	}
+ 	if (r)
+ 		io->error = r;
+ 
 -- 
 2.20.1
 

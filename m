@@ -2,230 +2,194 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_CR_TRAILER,INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable autolearn_force=no
+X-Spam-Status: No, score=-18.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,MSGID_FROM_MTA_HEADER,NICE_REPLY_A,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A1FD9C433DB
-	for <linux-btrfs@archiver.kernel.org>; Tue, 29 Dec 2020 22:59:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CCB70C433E0
+	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Dec 2020 00:58:36 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 796A421D1B
-	for <linux-btrfs@archiver.kernel.org>; Tue, 29 Dec 2020 22:59:25 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 86451207CF
+	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Dec 2020 00:58:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726242AbgL2W6r (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 29 Dec 2020 17:58:47 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51702 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726138AbgL2W6q (ORCPT
+        id S1726337AbgL3A6F (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 29 Dec 2020 19:58:05 -0500
+Received: from de-smtp-delivery-102.mimecast.com ([62.140.7.102]:42613 "EHLO
+        de-smtp-delivery-102.mimecast.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1726335AbgL3A6E (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 29 Dec 2020 17:58:46 -0500
-Received: from mail-wr1-x434.google.com (mail-wr1-x434.google.com [IPv6:2a00:1450:4864:20::434])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3D874C061574
-        for <linux-btrfs@vger.kernel.org>; Tue, 29 Dec 2020 14:57:51 -0800 (PST)
-Received: by mail-wr1-x434.google.com with SMTP id d26so15964842wrb.12
-        for <linux-btrfs@vger.kernel.org>; Tue, 29 Dec 2020 14:57:51 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=cloudflare.com; s=google;
-        h=from:to:cc:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=e8TFEw00rWtQXffgF36zcsGhL/9hO4AHxOAS1ZYEkfY=;
-        b=dcJ54y+inUlfQrBi/uvvz5MtoJRs/CKCTmM4JnJ0LWjtOurULDxqtQ2nkgSFho7Gt4
-         J032zLHK1x9lRkYbO82cshC2gFjc5oq94IJ5WXyEJGWwEAh3WnCoPFBMDLOFqWdpucZ/
-         5mye8FDji04BdjLhUYH5KIGpijfYdNFuZliUs=
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=e8TFEw00rWtQXffgF36zcsGhL/9hO4AHxOAS1ZYEkfY=;
-        b=q3nPJMORHef+ue2Qzto1wapvxezK5vsNw4fqaaEFN4oGQY3Ib2095Mhzi7NARUzAAc
-         4YOg7zOZhS0A94DNo+GygLS8FxW890+4UvunYVmBfIQjDw/Hquaj6/A0P7dAn23/bmuF
-         6yUPJuzjtNzKRrG2Qmc2qmUdXWeysBJUPTRroSyCyCmIqshhuhSSEBKzO0WteD4+Uiq4
-         zDl38P48lMZk4ZRFzzMOv3dNqQb8if0LY1iYnhi2VDp9f2WGh7RRHF6eqzvSm3Z9M0Uf
-         oip+yAI2WAOcBsJ2H6LO6IZuNmonuwQ6GRaotwsLIMyK1uWD7h+Id6J2BVPZD/xbriTb
-         FeUA==
-X-Gm-Message-State: AOAM533ZeGSQJMmcz9/ZvDjw4gbf4NonXc2uz6d6zYG7/a08yL5x2eZz
-        z5eqVic1HCzJqtJnWObPIDoP1A==
-X-Google-Smtp-Source: ABdhPJyYDCuz3OY8+7fCHcACD+/27x1dAGxPrTfvvZZ1SyOe6zNceO9rigoVNoqSwjLxzmduf1T35g==
-X-Received: by 2002:adf:f681:: with SMTP id v1mr57198140wrp.133.1609282669802;
-        Tue, 29 Dec 2020 14:57:49 -0800 (PST)
-Received: from dev.cfops.net (165.176.200.146.dyn.plus.net. [146.200.176.165])
-        by smtp.gmail.com with ESMTPSA id u205sm5182840wme.42.2020.12.29.14.57.48
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 29 Dec 2020 14:57:48 -0800 (PST)
-From:   Ignat Korchagin <ignat@cloudflare.com>
-To:     agk@redhat.com, snitzer@redhat.com, dm-devel@redhat.com,
-        dm-crypt@saout.de, linux-kernel@vger.kernel.org
-Cc:     Ignat Korchagin <ignat@cloudflare.com>, ebiggers@kernel.org,
-        Damien.LeMoal@wdc.com, mpatocka@redhat.com,
-        herbert@gondor.apana.org.au, kernel-team@cloudflare.com,
-        nobuto.murata@canonical.com, clm@fb.com, josef@toxicpanda.com,
-        dsterba@suse.com, linux-btrfs@vger.kernel.org,
-        mail@maciej.szmigiero.name, stable@vger.kernel.org
-Subject: [PATCH 1/2] dm crypt: use GFP_ATOMIC when allocating crypto requests from softirq
-Date:   Tue, 29 Dec 2020 22:57:13 +0000
-Message-Id: <20201229225714.1580-1-ignat@cloudflare.com>
-X-Mailer: git-send-email 2.20.1
+        Tue, 29 Dec 2020 19:58:04 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=mimecast20200619;
+        t=1609289815;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=AxWwMpo1chUF3QolNJ2wMKQg++dUPu5x7ZuxKie9ee0=;
+        b=hb3pODXGfFctmfbUbhxp/c8E4PGBpIfw9Psl2k6bnjNe8WqLxVeBCRQfkwAHEM+oyDcQ/H
+        AIP0ktGZf9tpZkkd5M/xaP/xE/89Z9Gi9GRi/+4kiVTjKUDAr/iFgXIKwq1LfEN9a9bc9w
+        KgDkW6a7gGIAhq8CUzteUOv9HSkXUDo=
+Received: from EUR03-AM5-obe.outbound.protection.outlook.com
+ (mail-am5eur03lp2058.outbound.protection.outlook.com [104.47.8.58]) (Using
+ TLS) by relay.mimecast.com with ESMTP id
+ de-mta-40-iMmy_RXpOUSHzNux1cNouQ-1; Wed, 30 Dec 2020 01:56:53 +0100
+X-MC-Unique: iMmy_RXpOUSHzNux1cNouQ-1
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=Ku11Rfz5Yh2MNUdIf3GYB5u2b8R//ZfGUd+GRMHDbzuhrKi0+SUGU23PdV2Rajno6u/At9c6TGfmCR5eW8Wr+eccxpGZRlnPY4fwo9WFPA/qUfO5jO4bBC9AVkCgwgO0tbGaxM404SxBiUDPueHO7V3go6L9C9Ruwgnlg3IGwxNPQGsPunbj680LAHCZEaccKiR9WTc0KkBV02CxpvARehsdGVPTvbKKcd9DLT4ZQeHNoKjK5qSmqaZYWLs5W8tQGvKJXe6pBDm7/rM5o/tPeFecyroq7vPSLccCXpF2W4FUWb9/VWIZwtCN1EA2GE7b5JaiFaVuqBXUlOvr64zfoA==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=HRLRwG3YUzYftWj6J1LjlEApogvEPV4grBWDlZ6/CSI=;
+ b=L3LqY4MMSH5/Aw5Bl2fkZ/SY7sFXwZtfvx6p/i2fhVRCEFdk32RuYltaClfLvPQnqd4RaE3ORoIvaUTA/44n9lK++rmmI6xiTmK0qtzFtQlXVgHo5okof8VFkq16Uz4MHPzLInG3+tPVopSXpH5tOaaoGB65u22rluaIQz6F7U2WbQ1DZ58/9PnM9pCxqU/gwOlx9VnmPr5LNbvyjaWbB/SreXNz0G2QJu5ARaACh0U+/XB+J3QoztV/c4uqOSfWrZ1srm2JhsDtdZZUhS65OYDrTyBwv9JnQFAPEbXZ8HjKKlSKBD/elcp0muQQYLEbmWY0hMm1GaD3GbVNFgdGwg==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=suse.com; dmarc=pass action=none header.from=suse.com;
+ dkim=pass header.d=suse.com; arc=none
+Authentication-Results: lesimple.fr; dkim=none (message not signed)
+ header.d=none;lesimple.fr; dmarc=none action=none header.from=suse.com;
+Received: from PA4PR04MB7533.eurprd04.prod.outlook.com (2603:10a6:102:f1::19)
+ by PA4PR04MB7758.eurprd04.prod.outlook.com (2603:10a6:102:c4::17) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.3700.27; Wed, 30 Dec
+ 2020 00:56:52 +0000
+Received: from PA4PR04MB7533.eurprd04.prod.outlook.com
+ ([fe80::397a:950:d8c8:d709]) by PA4PR04MB7533.eurprd04.prod.outlook.com
+ ([fe80::397a:950:d8c8:d709%6]) with mapi id 15.20.3700.031; Wed, 30 Dec 2020
+ 00:56:52 +0000
+Subject: Re: [PATCH] btrfs: relocation: output warning message for leftover v1
+ space cache before aborting current data balance
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+CC:     =?UTF-8?Q?St=c3=a9phane_Lesimple?= <stephane_btrfs2@lesimple.fr>
+References: <20201229003837.16074-1-wqu@suse.com>
+Message-ID: <8ccfddee-3de4-f3ae-bb18-eadecf9621b4@suse.com>
+Date:   Wed, 30 Dec 2020 08:56:42 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.6.0
+In-Reply-To: <20201229003837.16074-1-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+X-Originating-IP: [149.28.201.231]
+X-ClientProxiedBy: SJ0PR03CA0014.namprd03.prod.outlook.com
+ (2603:10b6:a03:33a::19) To PA4PR04MB7533.eurprd04.prod.outlook.com
+ (2603:10a6:102:f1::19)
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+X-MS-Exchange-MessageSentRepresentingType: 1
+Received: from [0.0.0.0] (149.28.201.231) by SJ0PR03CA0014.namprd03.prod.outlook.com (2603:10b6:a03:33a::19) with Microsoft SMTP Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.3700.27 via Frontend Transport; Wed, 30 Dec 2020 00:56:50 +0000
+X-MS-PublicTrafficType: Email
+X-MS-Office365-Filtering-Correlation-Id: 564a25c8-d207-41a2-346f-08d8ac5dcbba
+X-MS-TrafficTypeDiagnostic: PA4PR04MB7758:
+X-Microsoft-Antispam-PRVS: <PA4PR04MB7758FA85A4B4724CC85D8715D6D70@PA4PR04MB7758.eurprd04.prod.outlook.com>
+X-MS-Oob-TLC-OOBClassifiers: OLM:10000;
+X-MS-Exchange-SenderADCheck: 1
+X-Microsoft-Antispam: BCL:0;
+X-Microsoft-Antispam-Message-Info: xzUKf650hGNtIRR3s9UtMF+hC5O1MbGkNT9g8iaGUxy1FnuoptQPHfhHOq/MeTpus4wPaTEPWTtmJqAtjbcsMFkCL9FLMCzVkaEDq4VljhyADfQxabF0yj7EA9v6verAgHBuALsD9dXkkgesS3Q/JFVe7osJH+15wBPg4TqWtFNDHq3WTedc/ZIXjtr1bqDZFjp55WZiwO+uEOSOuOD8Kr6Ya1xNkAAk1Pp81qemZwplmROsuSS5YpEX52CR4GN1DebYkjc1pDuM7iivnzsnZtZwqvq+NOQ4Gs7JEz6wd14gVX7y7pSZIhKbFQ2W2/Dea/dxTdhc5RjhU20bKosg+hDl6RsKyn+Pe257zP6b1q1HAu1zWONJZEoxhx44o8A/6AGyksxWvnBPupo8Fs6KzjKDlvDSNKJfW87P6yJyjqppHGH6dfRkDn6lRyPIJSH29klXxMjp806ola5bTy9noIhphK5NZegl1F+bt/D14ZDDQHuxo/KiAveG0sYR9cZ/
+X-Forefront-Antispam-Report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:PA4PR04MB7533.eurprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(376002)(366004)(136003)(396003)(346002)(39850400004)(31696002)(6666004)(5660300002)(2616005)(6486002)(4326008)(478600001)(66946007)(6706004)(86362001)(16526019)(83380400001)(15650500001)(66476007)(66556008)(316002)(26005)(2906002)(186003)(36756003)(16576012)(66574015)(8676002)(956004)(31686004)(8936002)(52116002)(6916009)(78286007)(43740500002)(45980500001);DIR:OUT;SFP:1101;
+X-MS-Exchange-AntiSpam-MessageData: =?us-ascii?Q?zwVkDrI++xsr17MWjeY40QpynwqkuHbF72q0vrJGddlzf5Tq1o/HaliE9Eqy?=
+ =?us-ascii?Q?qTYGb+RaOJqkhV2NzCh5icosdKAkUeeWTwqdYbhemogYNeUN38ZdPnaBRxZs?=
+ =?us-ascii?Q?l4HJWN4ron/6xyBNn+6UjXhgCxru1nkbMp0S2Cvbz9KNh+dp+NPXZIdzpygS?=
+ =?us-ascii?Q?NFtu59BNMzCFmsF5asT5XzLdFVsb38fqfdDSoo5MtlvLe5P9yHO325oopoqi?=
+ =?us-ascii?Q?Gpi64TxuY1YiPrOQ9leiOEvbN4VqwHXL6VRslC7qgTVcZiMHZrM6ZzLt6gIs?=
+ =?us-ascii?Q?Z3HfxiA5M2imuRpZ/id/uc1ORLhwa/I4clPfFwQvemPHviIz0RllGpDVeBTB?=
+ =?us-ascii?Q?7q5gJbkSAplQjcNSMOJAvYG+KQFs2VmDHK7LnDzi2gXSKX8SX2nvg5+6vKdZ?=
+ =?us-ascii?Q?+k/a5ASEbMweGTQqaIgAQHF1byF+oXSHhJStZkrWkJZiDHSsS2mZrgvX5qij?=
+ =?us-ascii?Q?waaZgvL/iWfMXNdH3B7oqwP6gUZkP6gFZS+2Ns6cvUBaYMVP10pDJ/WI/a11?=
+ =?us-ascii?Q?qVsXup110ejr0AL/GgZQvqZENZSIpQxXoB0K718mr4FrBtMBzdYl2sWZ3jDT?=
+ =?us-ascii?Q?asm1F5H1oJ3K3Qc8niScQ0bJ5r3MKG2ziwt8HggeTjL6P16nRfBg8pRv4ofw?=
+ =?us-ascii?Q?rmvdKLaB7cGtfQa/fzqaQTX8BSQAMjtGIR+mjFop4iZn4K5mi60yay4saR2G?=
+ =?us-ascii?Q?XDRbU9umt7NWQ5jvl/a9dD3FQRTrTlwvQ5LSxLTewiYkBW+R0+zEuD5HIKT9?=
+ =?us-ascii?Q?eM/SVj50ewFZ6pD57KunC1FQnEuY0CrVPShmXsaVKyg+iovgFlZiJAD2rmdB?=
+ =?us-ascii?Q?4Ru6sJz5NnbJYTC1i8mAhsvxd0Zx7DVUJQmxakt3T1Mp16xHfmifkfUiNIm3?=
+ =?us-ascii?Q?3iCZcfFMuxvUYPsCa15YyERvOdCrPMS6j5CH0YvqFXnLTFBSm0QVZI+m384v?=
+ =?us-ascii?Q?yq7rXCMvB/E4BMPdmVX+ZpL1QK58NRC5mkKDRywmLN848+EqMOLj2DNQwlo5?=
+ =?us-ascii?Q?WtE2?=
+X-OriginatorOrg: suse.com
+X-MS-Exchange-CrossTenant-AuthSource: PA4PR04MB7533.eurprd04.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 30 Dec 2020 00:56:52.1505
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: f7a17af6-1c5c-4a36-aa8b-f5be247aa4ba
+X-MS-Exchange-CrossTenant-Network-Message-Id: 564a25c8-d207-41a2-346f-08d8ac5dcbba
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: LFW+cd008lC+n5ebz8rW0Tv74nts59YvboQM0UYxpO99YOvzo6fwQoSc+zb+sY4/
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: PA4PR04MB7758
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Commit 39d42fa96ba1b7d2544db3f8ed5da8fb0d5cb877 made it possible for some code
-paths in dm-crypt to be executed in softirq context, when the underlying driver
-processes IO requests in interrupt/softirq context.
 
-In this case sometimes when allocating a new crypto request we may get a
-stacktrace like below:
 
-[  210.103008][    C0] BUG: sleeping function called from invalid context at mm/mempool.c:381
-[  210.104746][    C0] in_atomic(): 1, irqs_disabled(): 0, non_block: 0, pid: 2602, name: fio
-[  210.106599][    C0] CPU: 0 PID: 2602 Comm: fio Tainted: G        W         5.10.0+ #50
-[  210.108331][    C0] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS 0.0.0 02/06/2015
-[  210.110212][    C0] Call Trace:
-[  210.110921][    C0]  <IRQ>
-[  210.111527][    C0]  dump_stack+0x7d/0xa3
-[  210.112411][    C0]  ___might_sleep.cold+0x122/0x151
-[  210.113527][    C0]  mempool_alloc+0x16b/0x2f0
-[  210.114524][    C0]  ? __queue_work+0x515/0xde0
-[  210.115553][    C0]  ? mempool_resize+0x700/0x700
-[  210.116586][    C0]  ? crypt_endio+0x91/0x180
-[  210.117479][    C0]  ? blk_update_request+0x757/0x1150
-[  210.118513][    C0]  ? blk_mq_end_request+0x4b/0x480
-[  210.119572][    C0]  ? blk_done_softirq+0x21d/0x340
-[  210.120628][    C0]  ? __do_softirq+0x190/0x611
-[  210.121626][    C0]  crypt_convert+0x29f9/0x4c00
-[  210.122668][    C0]  ? _raw_spin_lock_irqsave+0x87/0xe0
-[  210.123824][    C0]  ? kasan_set_track+0x1c/0x30
-[  210.124858][    C0]  ? crypt_iv_tcw_ctr+0x4a0/0x4a0
-[  210.125930][    C0]  ? kmem_cache_free+0x104/0x470
-[  210.126973][    C0]  ? crypt_endio+0x91/0x180
-[  210.127947][    C0]  kcryptd_crypt_read_convert+0x30e/0x420
-[  210.129165][    C0]  blk_update_request+0x757/0x1150
-[  210.130231][    C0]  blk_mq_end_request+0x4b/0x480
-[  210.131294][    C0]  blk_done_softirq+0x21d/0x340
-[  210.132332][    C0]  ? _raw_spin_lock+0x81/0xd0
-[  210.133289][    C0]  ? blk_mq_stop_hw_queue+0x30/0x30
-[  210.134399][    C0]  ? _raw_read_lock_irq+0x40/0x40
-[  210.135458][    C0]  __do_softirq+0x190/0x611
-[  210.136409][    C0]  ? handle_edge_irq+0x221/0xb60
-[  210.137447][    C0]  asm_call_irq_on_stack+0x12/0x20
-[  210.138507][    C0]  </IRQ>
-[  210.139118][    C0]  do_softirq_own_stack+0x37/0x40
-[  210.140191][    C0]  irq_exit_rcu+0x110/0x1b0
-[  210.141151][    C0]  common_interrupt+0x74/0x120
-[  210.142171][    C0]  asm_common_interrupt+0x1e/0x40
-[  210.143206][    C0] RIP: 0010:_aesni_enc1+0x65/0xb0
-[  210.144313][    C0] Code: 38 dc c2 41 0f 28 52 d0 66 0f 38 dc c2 41 0f 28 52 e0 66 0f 38 dc c2 41 0f 28 52 f0 66 0f 38 dc c2 41 0f 28 12 66 0f 38 dc c2 <41> 0f 28 52 10 66 0f 38 dc c2 41 0f 28 52 20 66 0f 38 dc c2 41 0f
-[  210.148542][    C0] RSP: 0018:ffff88810dbe6db0 EFLAGS: 00000286
-[  210.149842][    C0] RAX: ffffffff9a90cdc0 RBX: 0000000000000000 RCX: 0000000000000200
-[  210.151576][    C0] RDX: ffff888101e5f240 RSI: ffff888101e5f240 RDI: ffff8881111b5020
-[  210.153339][    C0] RBP: ffff88810dbe6e20 R08: 0000000000000000 R09: 0000000000000020
-[  210.155063][    C0] R10: ffff8881111b5090 R11: 1ffff11021b7cdcc R12: ffffffff9e87cd40
-[  210.156791][    C0] R13: ffff8881111b5210 R14: ffff888101e5f0d8 R15: 0000000000000000
-[  210.158497][    C0]  ? aesni_set_key+0x1e0/0x1e0
-[  210.159523][    C0]  ? aesni_enc+0xf/0x20
-[  210.160408][    C0]  ? glue_xts_req_128bit+0x181/0x6f0
-[  210.161571][    C0]  ? aesni_set_key+0x1e0/0x1e0
-[  210.162560][    C0]  ? glue_ctr_req_128bit+0x630/0x630
-[  210.163706][    C0]  ? kasan_save_stack+0x37/0x50
-[  210.164761][    C0]  ? kasan_save_stack+0x20/0x50
-[  210.165786][    C0]  ? get_page_from_freelist+0x2052/0x36a0
-[  210.167024][    C0]  ? __blkdev_direct_IO_simple+0x43b/0x7e0
-[  210.168288][    C0]  ? blkdev_direct_IO+0xd16/0x1020
-[  210.169396][    C0]  ? generic_file_direct_write+0x1a3/0x480
-[  210.170648][    C0]  ? __generic_file_write_iter+0x1d9/0x530
-[  210.171882][    C0]  ? blkdev_write_iter+0x20d/0x3e0
-[  210.172954][    C0]  ? vfs_write+0x524/0x770
-[  210.173889][    C0]  ? do_syscall_64+0x33/0x40
-[  210.174859][    C0]  ? __zone_watermark_ok+0x340/0x340
-[  210.175977][    C0]  ? crypt_convert+0x28b6/0x4c00
-[  210.177079][    C0]  ? mempool_alloc+0x107/0x2f0
-[  210.178096][    C0]  ? crypt_iv_tcw_ctr+0x4a0/0x4a0
-[  210.179193][    C0]  ? bio_add_page+0x111/0x170
-[  210.180251][    C0]  ? __bio_try_merge_page+0x480/0x480
-[  210.181446][    C0]  ? bio_associate_blkg+0x6d/0x100
-[  210.182558][    C0]  ? kcryptd_crypt_write_convert+0x5ea/0x980
-[  210.183852][    C0]  ? crypt_map+0x5bf/0xc80
-[  210.184838][    C0]  ? bio_clone_blkg_association+0x10e/0x2c0
-[  210.186125][    C0]  ? __map_bio.isra.0+0x109/0x3f0
-[  210.187204][    C0]  ? __split_and_process_non_flush+0x7f9/0xc50
-[  210.188560][    C0]  ? __send_empty_flush+0x2d0/0x2d0
-[  210.189697][    C0]  ? __part_start_io_acct+0x70/0x2d0
-[  210.190842][    C0]  ? dm_submit_bio+0x4d8/0xe40
-[  210.191845][    C0]  ? __split_and_process_non_flush+0xc50/0xc50
-[  210.193201][    C0]  ? submit_bio_noacct+0x2b9/0xe50
-[  210.194313][    C0]  ? blk_queue_enter+0x6d0/0x6d0
-[  210.195372][    C0]  ? __bio_add_page+0x246/0x3d0
-[  210.196418][    C0]  ? bio_iov_iter_get_pages+0x7dd/0xbe0
-[  210.197611][    C0]  ? submit_bio+0xe2/0x460
-[  210.198481][    C0]  ? submit_bio_noacct+0xe50/0xe50
-[  210.199496][    C0]  ? free_unref_page_commit.constprop.0+0x130/0x330
-[  210.200825][    C0]  ? __blkdev_direct_IO_simple+0x43b/0x7e0
-[  210.202050][    C0]  ? bd_link_disk_holder+0x690/0x690
-[  210.203239][    C0]  ? put_pages_list+0x210/0x210
-[  210.204341][    C0]  ? scan_shadow_nodes+0xb0/0xb0
-[  210.205472][    C0]  ? _raw_write_lock_irqsave+0xe0/0xe0
-[  210.206698][    C0]  ? bd_may_claim+0xc0/0xc0
-[  210.207715][    C0]  ? zero_user_segments.constprop.0+0x2e0/0x2e0
-[  210.209092][    C0]  ? blkdev_direct_IO+0xd16/0x1020
-[  210.210200][    C0]  ? pagevec_lookup_range_tag+0x28/0x60
-[  210.211416][    C0]  ? __filemap_fdatawait_range+0xc4/0x1f0
-[  210.212669][    C0]  ? page_cache_next_miss+0x1e0/0x1e0
-[  210.213842][    C0]  ? generic_file_buffered_read+0x520/0x9e0
-[  210.215128][    C0]  ? delete_from_page_cache_batch+0x850/0x850
-[  210.216470][    C0]  ? bd_abort_claiming+0xd0/0xd0
-[  210.217531][    C0]  ? file_remove_privs+0x74/0x430
-[  210.218589][    C0]  ? filemap_check_errors+0x50/0xe0
-[  210.219705][    C0]  ? generic_file_direct_write+0x1a3/0x480
-[  210.220979][    C0]  ? __generic_file_write_iter+0x1d9/0x530
-[  210.222238][    C0]  ? blkdev_write_iter+0x20d/0x3e0
-[  210.223328][    C0]  ? bd_unlink_disk_holder+0x360/0x360
-[  210.224464][    C0]  ? new_sync_write+0x37b/0x620
-[  210.225511][    C0]  ? new_sync_read+0x610/0x610
-[  210.226539][    C0]  ? _cond_resched+0x17/0x80
-[  210.227539][    C0]  ? inode_security+0x58/0x100
-[  210.228582][    C0]  ? security_file_permission+0x54/0x450
-[  210.229796][    C0]  ? vfs_write+0x524/0x770
-[  210.230758][    C0]  ? __x64_sys_pwrite64+0x197/0x1f0
-[  210.231890][    C0]  ? vfs_write+0x770/0x770
-[  210.232869][    C0]  ? do_syscall_64+0x33/0x40
-[  210.233839][    C0]  ? entry_SYSCALL_64_after_hwframe+0x44/0xa9
+On 2020/12/29 =E4=B8=8A=E5=8D=888:38, Qu Wenruo wrote:
+> In delete_v1_space_cache(), if we find a leaf whose owner is tree root,
+> and we can't grab the free space cache inode, then we return -ENOENT.
+>=20
+> However this would make the caller, add_data_references(), to consider
+> this as a critical error, and abort current data balance.
+>=20
+> This happens for fs using free space cache v2, while still has v1 data
+> left.
+>=20
+> For v2 free space cache, we no longer load v1 data, making btrfs_igrab()
+> no longer work for root tree to grab v1 free space cache inodes.
+>=20
+> The proper fix for the problem is to delete v1 space cache completely
+> during v2 convert.
+>=20
+> We can't just ignore the -ENOENT error, as for root tree we don't use
+> reloc tree to replace its data references, but rely on COW.
+> This means, we have no way to relocate the leftover v1 data, and block
+> the relocation.
+>=20
+> This patch will just workaround it by outputting a warning message,
+> showing the user how to manually solve it.
+>=20
+> Reported-by: St=C3=A9phane Lesimple <stephane_btrfs2@lesimple.fr>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
-Fix this by allocating crypto requests with GFP_ATOMIC mask in interrupt context
+Please discard this patch.
 
-Fixes: 39d42fa96ba1 ("dm crypt: add flags to optionally bypass kcryptd workqueues")
-Reported-by: Maciej S. Szmigiero <mail@maciej.szmigiero.name>
-Cc: <stable@vger.kernel.org> # v5.9+
-Signed-off-by: Ignat Korchagin <ignat@cloudflare.com>
----
- drivers/md/dm-crypt.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+This didn't really solve the problem and may give the end user some=20
+false impression.
 
-diff --git a/drivers/md/dm-crypt.c b/drivers/md/dm-crypt.c
-index 5f9f9b3a226d..777b5c71a2f7 100644
---- a/drivers/md/dm-crypt.c
-+++ b/drivers/md/dm-crypt.c
-@@ -1460,7 +1460,7 @@ static void crypt_alloc_req_skcipher(struct crypt_config *cc,
- 	unsigned key_index = ctx->cc_sector & (cc->tfms_count - 1);
- 
- 	if (!ctx->r.req)
--		ctx->r.req = mempool_alloc(&cc->req_pool, GFP_NOIO);
-+		ctx->r.req = mempool_alloc(&cc->req_pool, in_interrupt() ? GFP_ATOMIC : GFP_NOIO);
- 
- 	skcipher_request_set_tfm(ctx->r.req, cc->cipher_tfm.tfms[key_index]);
- 
-@@ -1477,7 +1477,7 @@ static void crypt_alloc_req_aead(struct crypt_config *cc,
- 				 struct convert_context *ctx)
- {
- 	if (!ctx->r.req_aead)
--		ctx->r.req_aead = mempool_alloc(&cc->req_pool, GFP_NOIO);
-+		ctx->r.req_aead = mempool_alloc(&cc->req_pool, in_interrupt() ? GFP_ATOMIC : GFP_NOIO);
- 
- 	aead_request_set_tfm(ctx->r.req_aead, cc->cipher_tfm.tfms_aead[0]);
- 
--- 
-2.20.1
+Thanks,
+Qu
+> ---
+>   fs/btrfs/relocation.c | 19 +++++++++++++++++++
+>   1 file changed, 19 insertions(+)
+>=20
+> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+> index 19b7db8b2117..42746b59268d 100644
+> --- a/fs/btrfs/relocation.c
+> +++ b/fs/btrfs/relocation.c
+> @@ -3027,6 +3027,25 @@ int add_data_references(struct reloc_control *rc,
+>   		ret =3D delete_v1_space_cache(eb, rc->block_group,
+>   					    extent_key->objectid);
+>   		free_extent_buffer(eb);
+> +		/*
+> +		 * This happens when the fs is converted to use v2 space cache,
+> +		 * but some v1 data is still left.
+> +		 * In that case, we can't delete the v1 space cache data as we
+> +		 * can't grab the free space cache inode anymore.
+> +		 *
+> +		 * And we can't ignore the error, as for root tree (where v1
+> +		 * space cache is) we don't do reloc tree to replace the data
+> +		 * to the new location, thus the old data will still be there,
+> +		 * blocking the data chunk to be relocated.
+> +		 *
+> +		 * Here we just warn user about the problem, and provide a
+> +		 * workaround.
+> +		 * The proper fix is in the v2 convert mount, which should
+> +		 * completely remove v1 data.
+> +		 */
+> +		if (ret =3D=3D -ENOENT)
+> +			btrfs_warn(fs_info,
+> +"leftover v1 space cache found, please use btrfs-check --clear-space-cac=
+he v1 to clean it up");
+>   		if (ret < 0)
+>   			break;
+>   		ret =3D __add_tree_block(rc, ref_node->val, blocksize, blocks);
+>=20
 

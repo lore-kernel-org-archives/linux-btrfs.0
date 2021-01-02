@@ -2,186 +2,580 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.3 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-15.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CC4E8C433E0
-	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Jan 2021 23:12:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CC32EC433E0
+	for <linux-btrfs@archiver.kernel.org>; Sat,  2 Jan 2021 03:52:09 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id A05BD21E92
-	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Jan 2021 23:12:23 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 96D6A22283
+	for <linux-btrfs@archiver.kernel.org>; Sat,  2 Jan 2021 03:52:09 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727032AbhAAXLw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 1 Jan 2021 18:11:52 -0500
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:42892 "EHLO
-        james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726829AbhAAXLv (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Jan 2021 18:11:51 -0500
-Received: by james.kirk.hungrycats.org (Postfix, from userid 1002)
-        id 37DEF91FE58; Fri,  1 Jan 2021 18:11:10 -0500 (EST)
-Date:   Fri, 1 Jan 2021 18:11:09 -0500
-From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To:     Andrei Borzenkov <arvidjaar@gmail.com>
-Cc:     john terragon <jterragon@gmail.com>, sys <system@lechevalier.se>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: hierarchical, tree-like structure of snapshots
-Message-ID: <20210101231109.GU31381@hungrycats.org>
-References: <CANg_oxwKbzmMcz3590KhRz5eSgK+_s8thGio8q90KyDHm44Dow@mail.gmail.com>
- <f472181d-d6a4-f5f4-df7f-03bc7788b45a@gmail.com>
- <CANg_oxzP_Dzn89=4W_EZjGQWgB0CYsqyWMHN_3WzwebPVQChfg@mail.gmail.com>
- <20201231172812.GS31381@hungrycats.org>
- <CANg_oxw1Arpmkm+si_fUVzgEmVfF_UYy0Fc-d+AuMyK543W_Dw@mail.gmail.com>
- <d151361d-5865-f537-ba59-41e1cd3eb8ab@gmail.com>
- <CANg_oxztFRbw+NqHbnvvK6HS3g67hDkSgk6TpMbd-zgYSv9URw@mail.gmail.com>
- <20201231213650.GT31381@hungrycats.org>
- <49e405a1-ca48-7654-6b1e-408bcf6553b8@gmail.com>
- <c61863f5-64f5-2fe7-0607-11debddc1d7f@gmail.com>
+        id S1727277AbhABDvy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 1 Jan 2021 22:51:54 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51288 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727171AbhABDvg (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Jan 2021 22:51:36 -0500
+Received: from mail-pj1-x102c.google.com (mail-pj1-x102c.google.com [IPv6:2607:f8b0:4864:20::102c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D711FC0613CF
+        for <linux-btrfs@vger.kernel.org>; Fri,  1 Jan 2021 19:50:36 -0800 (PST)
+Received: by mail-pj1-x102c.google.com with SMTP id f14so6772347pju.4
+        for <linux-btrfs@vger.kernel.org>; Fri, 01 Jan 2021 19:50:36 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=sender:from:to:cc:subject:date:message-id:in-reply-to:references
+         :mime-version:content-transfer-encoding;
+        bh=CtMr8j5ds2cEbyaSkaeiVS7KHyC/i6vLtI3fIrYpBlw=;
+        b=dunKMbvCnrbF3I8qBRCGAuNEdprTPUXcrkxTd7gF9T7tXOo96B8Yq5hEx3VSrsDucB
+         qi2EOIiwRz5FQLizVjkbT7o4qnPyT8Vj9leejxbfUuyd334FPELqcbfmKW6rAfuNF936
+         g4AlxY4knAuR5HL9ERok/D5ymFgl4yZg8nWYCkD7HdE0v1t7rtDcEyIMvGuXXwqduBm4
+         mTbO+MsLZsCkQA7W9950aJTLUJCMfeW3AIthr/mXc5zAEmuXhyJkGMDgByJpk6vUvwDl
+         A79QaIlINrL9fftRHuqcD+GC4zeRFgFmLrOEtKuXxf14u3/bl4ma8gNApEPvBxlJ3EZO
+         MlRw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:sender:from:to:cc:subject:date:message-id
+         :in-reply-to:references:mime-version:content-transfer-encoding;
+        bh=CtMr8j5ds2cEbyaSkaeiVS7KHyC/i6vLtI3fIrYpBlw=;
+        b=FcCQ8Q3+ornAXyfcUOvCCIi0tnRzP9mrFy4HZ+i4apwzzKolmm6/uvkBqP/LjmYDa3
+         u1NXssKP2bhWxOHQPOFBRBC8PFlz+/vyHGtVRUaTFTCL0qrDet5iWFoVTaylXNl5o3vJ
+         V145DRVDCmaU89OEod76RFtTEikuUeM14j6jj2J3ZGmydBseKy58O1DmGWa1uTjshD4Y
+         N21t74jtcqbkB/MyK4q2l3lp2WQH+ln1qr1W5vNNhVc4jzR2j8BOcEfCD21x+EFb6jvu
+         05Ih/vHWg7oTWDrqEB9E7eN2jXZmQwHsxvTRDa+UtgbbmYxxIQ425aFqBaRDrCuFm9uy
+         V9iA==
+X-Gm-Message-State: AOAM533x8u00ohrfAm1eEg5ufD4C3E+9qnG6yP+Fx7cHQ4xOn6xzGeSx
+        cjdv5ojkevZ3ZaVoOUey8/8=
+X-Google-Smtp-Source: ABdhPJxdlLAtj1lYkEcSACuV+0/sB/PFGJAGWImbtiO9UbrtYqNKuj0Uo8ujVLUvyhSgcY7VGa/96Q==
+X-Received: by 2002:a17:902:bb95:b029:dc:e7b:fd6e with SMTP id m21-20020a170902bb95b02900dc0e7bfd6emr63197474pls.12.1609559436333;
+        Fri, 01 Jan 2021 19:50:36 -0800 (PST)
+Received: from localhost.localdomain (S010664777d4a88b3.cg.shawcable.net. [70.77.224.58])
+        by smtp.gmail.com with ESMTPSA id x15sm49823522pfa.80.2021.01.01.19.50.35
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Fri, 01 Jan 2021 19:50:35 -0800 (PST)
+Sender: Sheng Mao <ks8xntk9mds5i@gmail.com>
+From:   shngmao@gmail.com
+To:     wangyugui@e16-tech.com
+Cc:     linux-btrfs@vger.kernel.org, Sheng Mao <shngmao@gmail.com>
+Subject: [PATCH v2 3/3] btrfs-progs: add TLS arguments to send/receive
+Date:   Fri,  1 Jan 2021 20:49:57 -0700
+Message-Id: <20210102034957.2825531-3-shngmao@gmail.com>
+X-Mailer: git-send-email 2.29.2
+In-Reply-To: <20210102034957.2825531-1-shngmao@gmail.com>
+References: <20210101135350.AD49.409509F4@e16-tech.com>
+ <20210102034957.2825531-1-shngmao@gmail.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="LTeJQqWS0MN7I/qa"
-Content-Disposition: inline
-In-Reply-To: <c61863f5-64f5-2fe7-0607-11debddc1d7f@gmail.com>
-User-Agent: Mutt/1.10.1 (2018-07-13)
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+From: Sheng Mao <shngmao@gmail.com>
 
---LTeJQqWS0MN7I/qa
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+If TLS is enabled, btrfs send/receive can accept four more
+arguments:
 
-On Fri, Jan 01, 2021 at 11:40:28PM +0300, Andrei Borzenkov wrote:
-> 01.01.2021 14:42, Andrei Borzenkov =D0=BF=D0=B8=D1=88=D0=B5=D1=82:
-> > 01.01.2021 00:36, Zygo Blaxell =D0=BF=D0=B8=D1=88=D0=B5=D1=82:
-> > ...
-> >>
-> >> Yeah, I only checked that send completed without error and produced a
-> >> smaller stream.
-> >>
-> >> I just dumped the send metadata stream from the incremental snapshot n=
-ow,
-> >> and it's more or less garbage at the start:
-> >>
-> >> 	# btrfs sub create A
-> >> 	# btrfs sub create B
-> >> 	# date > A/date
-> >> 	# date > B/date
-> >> 	# mkdir A/t B/u
-> >> 	# btrfs sub snap -r A A_RO
-> >> 	# btrfs sub snap -r B B_RO
-> > ...
-> >> 	# btrfs send A_RO | btrfs receive -v /tmp/test
-> >> 	At subvol A_RO
-> >> 	At subvol A_RO
-> >> 	receiving subvol A_RO uuid=3D995adde4-00ac-5e49-8c6f-f01743def072, st=
-ransid=3D7329268
-> >> 	write date - offset=3D0 length=3D29
-> >> 	BTRFS_IOC_SET_RECEIVED_SUBVOL uuid=3D995adde4-00ac-5e49-8c6f-f01743de=
-f072, stransid=3D7329268
-> >> 	# btrfs send B_RO -p A_RO | btrfs receive -v /tmp/test
-> >> 	At subvol B_RO
-> >> 	At snapshot B_RO
-> >> 	receiving snapshot B_RO uuid=3D4aa7db26-b219-694e-9b3c-f8f737a46bdb, =
-ctransid=3D7329268 parent_uuid=3D995adde4-00ac-5e49-8c6f-f01743def072, pare=
-nt_ctransid=3D7329268
-> >> 	ERROR: link date -> date failed: File exists
-> >>
-> >> The btrfs_compare_trees function can handle arbitrary tree differences,
-> >=20
-> > I am not sure. It apparently relies on the fact that inodes are ever
-> > monotonically increasing. This is probably true for clones of the same
-> > subvolume (I assume clone inherits highest_objectid) but two subvolumes
-> > created independently have the same range of inode numbers.
-> >=20
->=20
-> In particular in your example both A/date and B/date have identical
-> inode numbers and in general INODE_ITEMs are identical (including
-> generation numbers) up to times so two inodes are compared as changed.
-> At the same time INODE_REFs for them are considered different because
-> INODE_ITEMs for root have different generations. This leads to code path
-> that attempts to create additional alias to existing inode, as it is
-> regular file it tries to link it. It does not really compares ref names
-> at this point at all.
->=20
-> This would not really be possible if A and B were clones of the same
-> subvolume (not necessary consecutive) as A/date and B/date would always
-> have different inode numbers.
+- address to connect to/listen on
+- port to connect to/listen on
+- keyfile name (optional), PEM format is preferred
+- TLS mode: none, TLS 1.2/1.3 and 128/256 GCM
 
-After v5.11-rc1 inode_cache can no longer be used, but any filesystem that
-has inode_cache in its history might have cases like this hiding in
-metadata even with a linear series of snapshots.
+In TLS mode, btrfs receive assumes -e and btrfs receive
+stops after receiving an end cmd marker in the stream.
 
-The send code is mostly used to transmit linear sequences of snapshots
-(a series of snapshots which capture the state of a single subvol at
-different times, ordered from oldest to newest) between machines that
-are not using the inode_cache mount option.  Any other case isn't getting
-very well tested in the field, even if it happens to work sometimes.
+Issue: #326
+Signed-off-by: Sheng Mao <shngmao@gmail.com>
+---
+ Documentation/btrfs-receive.asciidoc |  13 +++
+ Documentation/btrfs-send.asciidoc    |   9 ++
+ cmds/receive.c                       | 153 ++++++++++++++++++++++----
+ cmds/send.c                          | 155 +++++++++++++++++++++++----
+ 4 files changed, 292 insertions(+), 38 deletions(-)
 
-> If I force different generation numbers for A/date and B/date (by
-> syncing in between) send stream contains correct sequence of removing
-> old B/date (from A clone) and re-creating it again.
->
-> Which shows that unfortunately generation numbers are not reliable to
-> differentiate between different object generations (pun unintended). As
-> I understand generation is tied to transaction and multiple changes can
-> be packed into one transaction.
+diff --git a/Documentation/btrfs-receive.asciidoc b/Documentation/btrfs-receive.asciidoc
+index e4c4d2c0..7d98e41a 100644
+--- a/Documentation/btrfs-receive.asciidoc
++++ b/Documentation/btrfs-receive.asciidoc
+@@ -38,6 +38,19 @@ A subvolume is made read-only after the receiving process finishes successfully
+ -f <FILE>::
+ read the stream from <FILE> instead of stdin,
+ 
++--listen-addr <url>::
++Address to listen on. It can be an IP address or a domain name.
++
++--tcp-port <port>::
++The local port of the TLS connection.
++
++--tls-key <file>::
++Use the key from file; otherwise read key from stdin. Key file is first parsed
++as PEM format; if parsing fails, file content is treated as binary key.
++
++--tls-mode <mode>::
++Use none, tls_12_128_gcm, tls_13_128_gcm, tls_12_256_gcm.
++
+ -C|--chroot::
+ confine the process to 'path' using `chroot`(1)
+ 
+diff --git a/Documentation/btrfs-send.asciidoc b/Documentation/btrfs-send.asciidoc
+index c4a05672..3a270c78 100644
+--- a/Documentation/btrfs-send.asciidoc
++++ b/Documentation/btrfs-send.asciidoc
+@@ -49,6 +49,15 @@ use this snapshot as a clone source for an incremental send (multiple allowed)
+ -f <outfile>::
+ output is normally written to standard output so it can be, for example, piped
+ to btrfs receive. Use this option to write it to a file instead.
++--conn-addr <url>::
++Address of remote receiver. It can be an IP address or a domain name.
++--tcp-port <port>::
++The remote port of the TLS connection.
++--tls-key <file>::
++Use the key from file; otherwise read key from stdin. Key file is first parsed
++as PEM format; if parsing fails, file content is treated as binary key.
++--tls-mode <mode>::
++Use none, tls_12_128_gcm, tls_13_128_gcm, tls_12_256_gcm.
+ --no-data::
+ send in 'NO_FILE_DATA' mode
+ +
+diff --git a/cmds/receive.c b/cmds/receive.c
+index 2aaba3ff..eb140b55 100644
+--- a/cmds/receive.c
++++ b/cmds/receive.c
+@@ -53,8 +53,11 @@
+ #include "common/help.h"
+ #include "common/path-utils.h"
+ 
+-struct btrfs_receive
+-{
++#if KTLS_SEND_RECV == 1
++#include "common/ktls.h"
++#endif
++
++struct btrfs_receive {
+ 	int mnt_fd;
+ 	int dest_dir_fd;
+ 
+@@ -1216,7 +1219,7 @@ out:
+ 	return ret;
+ }
+ 
+-static const char * const cmd_receive_usage[] = {
++static const char *const cmd_receive_usage[] = {
+ 	"btrfs receive [options] <mount>\n"
+ 	"btrfs receive --dump [options]",
+ 	"Receive subvolumes from a stream",
+@@ -1229,22 +1232,28 @@ static const char * const cmd_receive_usage[] = {
+ 	"After receiving a subvolume, it is immediately set to",
+ 	"read-only.",
+ 	"",
+-	"-q|--quiet       suppress all messages, except errors",
+-	"-f FILE          read the stream from FILE instead of stdin",
+-	"-e               terminate after receiving an <end cmd> marker in the stream.",
+-	"                 Without this option the receiver side terminates only in case",
+-	"                 of an error on end of file.",
+-	"-C|--chroot      confine the process to <mount> using chroot",
++	"-q|--quiet        suppress all messages, except errors",
++	"-f FILE           read the stream from FILE instead of stdin",
++#if KTLS_SEND_RECV == 1
++	"--listen-addr <url>   Address to listen on for incoming TLS connection.",
++	"--tcp-port <port>     The remote port of the TLS connection",
++	"--tls-key <file>      Use the key from file; otherwise read key from stdin.",
++	"--tls-mode <mode>     Use none, tls_12_128_gcm, tls_13_128_gcm, tls_12_256_gcm."
++#endif
++	"-e                terminate after receiving an <end cmd> marker in the stream.",
++	"                  Without this option the receiver side terminates only in case",
++	"                  of an error on end of file.",
++	"-C|--chroot       confine the process to <mount> using chroot",
+ 	"-E|--max-errors NERR",
+-	"                 terminate as soon as NERR errors occur while",
+-	"                 stream processing commands from the stream.",
+-	"                 Default value is 1. A value of 0 means no limit.",
+-	"-m ROOTMOUNT     the root mount point of the destination filesystem.",
+-	"                 If /proc is not accessible, use this to tell us where",
+-	"                 this file system is mounted.",
+-	"--dump           dump stream metadata, one line per operation,",
+-	"                 does not require the MOUNT parameter",
+-	"-v               deprecated, alias for global -v option",
++	"                  terminate as soon as NERR errors occur while",
++	"                  stream processing commands from the stream.",
++	"                  Default value is 1. A value of 0 means no limit.",
++	"-m ROOTMOUNT      the root mount point of the destination filesystem.",
++	"                  If /proc is not accessible, use this to tell us where",
++	"                  this file system is mounted.",
++	"--dump            dump stream metadata, one line per operation,",
++	"                  does not require the MOUNT parameter",
++	"-v                deprecated, alias for global -v option",
+ 	HELPINFO_INSERT_GLOBALS,
+ 	HELPINFO_INSERT_VERBOSE,
+ 	HELPINFO_INSERT_QUIET,
+@@ -1261,6 +1270,23 @@ static int cmd_receive(const struct cmd_struct *cmd, int argc, char **argv)
+ 	u64 max_errors = 1;
+ 	int dump = 0;
+ 	int ret = 0;
++#if KTLS_SEND_RECV == 1
++	enum {
++		KTLS_IDX_ADDR = 0,
++		KTLS_IDX_PORT = 1,
++		KTLS_IDX_KEY = 2,
++		KTLS_IDX_TLS_MODE = 3,
++		KTLS_IDX_SIZE
++	};
++	char *ktls_args[KTLS_IDX_SIZE];
++	struct ktls_session *ktls_session = NULL;
++	char ktls_username[LOGIN_NAME_MAX] = "btrfs";
++	u32 i = 0;
++	size_t arg_len = 0;
++	int arg_idx = 0;
++
++	explicit_bzero(ktls_args, sizeof(ktls_args));
++#endif
+ 
+ 	memset(&rctx, 0, sizeof(rctx));
+ 	rctx.mnt_fd = -1;
+@@ -1285,10 +1311,25 @@ static int cmd_receive(const struct cmd_struct *cmd, int argc, char **argv)
+ 	optind = 0;
+ 	while (1) {
+ 		int c;
+-		enum { GETOPT_VAL_DUMP = 257 };
++		enum {
++			GETOPT_VAL_DUMP = 257,
++			GETOPT_VAL_ADDR = 300,
++			GETOPT_VAL_PORT = 301,
++			GETOPT_VAL_KEY = 302,
++			GETOPT_VAL_TLS_MODE = 303,
++		};
+ 		static const struct option long_opts[] = {
+ 			{ "max-errors", required_argument, NULL, 'E' },
+ 			{ "chroot", no_argument, NULL, 'C' },
++#if KTLS_SEND_RECV == 1
++			{ "listen-addr", required_argument, NULL,
++			  GETOPT_VAL_ADDR },
++			{ "tcp-port", required_argument, NULL,
++			  GETOPT_VAL_PORT },
++			{ "tls-key", required_argument, NULL, GETOPT_VAL_KEY },
++			{ "tls-mode", required_argument, NULL,
++			  GETOPT_VAL_TLS_MODE },
++#endif
+ 			{ "dump", no_argument, NULL, GETOPT_VAL_DUMP },
+ 			{ "quiet", no_argument, NULL, 'q' },
+ 			{ NULL, 0, NULL, 0 }
+@@ -1330,6 +1371,27 @@ static int cmd_receive(const struct cmd_struct *cmd, int argc, char **argv)
+ 				goto out;
+ 			}
+ 			break;
++#if KTLS_SEND_RECV == 1
++		case GETOPT_VAL_ADDR:
++		case GETOPT_VAL_PORT:
++		case GETOPT_VAL_KEY:
++		case GETOPT_VAL_TLS_MODE:
++			arg_len = strlen(optarg);
++			arg_idx = c - GETOPT_VAL_ADDR;
++			ktls_args[arg_idx] = (char *)malloc(arg_len + 1);
++			if (!ktls_args[arg_idx]) {
++				error("fail to allocate buffer (%zu)", arg_len);
++				ret = 1;
++				goto out;
++			}
++			if (arg_copy_path(ktls_args[arg_idx], optarg,
++					  arg_len + 1)) {
++				error("argument too long (%zu)", arg_len);
++				ret = 1;
++				goto out;
++			}
++			break;
++#endif
+ 		case GETOPT_VAL_DUMP:
+ 			dump = 1;
+ 			break;
+@@ -1353,6 +1415,50 @@ static int cmd_receive(const struct cmd_struct *cmd, int argc, char **argv)
+ 		}
+ 	}
+ 
++#if KTLS_SEND_RECV == 1
++	if (ktls_args[KTLS_IDX_ADDR]) {
++		if (fromfile[0]) {
++			error("cannot send to both ktls and file");
++			ret = 1;
++			goto out;
++		}
++
++		if (!ktls_args[KTLS_IDX_PORT]) {
++			error("no remote ktls port");
++			ret = 1;
++			goto out;
++		}
++
++		ktls_session = ktls_create_session(false);
++
++		if (ktls_args[KTLS_IDX_TLS_MODE]) {
++			if (ktls_set_tls_mode(ktls_session,
++					      ktls_args[KTLS_IDX_TLS_MODE]))
++				goto out;
++		}
++
++		if (ktls_args[KTLS_IDX_KEY]) {
++			if (ktls_set_psk_session_from_keyfile(
++				    ktls_session, ktls_username,
++				    ktls_args[KTLS_IDX_KEY])) {
++				goto out;
++			};
++		} else {
++			if (ktls_set_psk_session_from_password_prompt(
++				    ktls_session, ktls_username)) {
++				goto out;
++			}
++		}
++
++		receive_fd = ktls_create_sock_oneshot(ktls_session,
++						      ktls_args[KTLS_IDX_ADDR],
++						      ktls_args[KTLS_IDX_PORT]);
++
++		/* socket implies honor end cmd*/
++		rctx.honor_end_cmd = 1;
++	}
++#endif
++
+ 	if (dump) {
+ 		struct btrfs_dump_send_args dump_args;
+ 
+@@ -1370,9 +1476,16 @@ static int cmd_receive(const struct cmd_struct *cmd, int argc, char **argv)
+ 		ret = do_receive(&rctx, tomnt, realmnt, receive_fd, max_errors);
+ 	}
+ 
++out:
++#if KTLS_SEND_RECV == 1
++	for (i = KTLS_IDX_ADDR; i < KTLS_IDX_SIZE; i++) {
++		if (ktls_args[i])
++			free(ktls_args[i]);
++	}
++	ktls_destroy_session(ktls_session);
++#endif
+ 	if (receive_fd != fileno(stdin))
+ 		close(receive_fd);
+-out:
+ 
+ 	return !!ret;
+ }
+diff --git a/cmds/send.c b/cmds/send.c
+index b8e3ba12..006eb3cc 100644
+--- a/cmds/send.c
++++ b/cmds/send.c
+@@ -46,6 +46,10 @@
+ #include "common/help.h"
+ #include "common/path-utils.h"
+ 
++#if KTLS_SEND_RECV == 1
++#include "common/ktls.h"
++#endif
++
+ #define SEND_BUFFER_SIZE	SZ_64K
+ 
+ 
+@@ -424,7 +428,7 @@ static void free_send_info(struct btrfs_send *sctx)
+ 	subvol_uuid_search_finit(&sctx->sus);
+ }
+ 
+-static const char * const cmd_send_usage[] = {
++static const char *const cmd_send_usage[] = {
+ 	"btrfs send [-ve] [-p <parent>] [-c <clone-src>] [-f <outfile>] <subvol> [<subvol>...]",
+ 	"Send the subvolume(s) to stdout.",
+ 	"Sends the subvolume(s) specified by <subvol> to stdout.",
+@@ -439,21 +443,27 @@ static const char * const cmd_send_usage[] = {
+ 	"which case 'btrfs send' will determine a suitable parent among the",
+ 	"clone sources itself.",
+ 	"",
+-	"-e               If sending multiple subvols at once, use the new",
+-	"                 format and omit the end-cmd between the subvols.",
+-	"-p <parent>      Send an incremental stream from <parent> to",
+-	"                 <subvol>.",
+-	"-c <clone-src>   Use this snapshot as a clone source for an ",
+-	"                 incremental send (multiple allowed)",
+-	"-f <outfile>     Output is normally written to stdout. To write to",
+-	"                 a file, use this option. An alternative would be to",
+-	"                 use pipes.",
+-	"--no-data        send in NO_FILE_DATA mode, Note: the output stream",
+-	"                 does not contain any file data and thus cannot be used",
+-	"                 to transfer changes. This mode is faster and useful to",
+-	"                 show the differences in metadata.",
+-	"-v|--verbose     deprecated, alias for global -v option",
+-	"-q|--quiet       deprecated, alias for global -q option",
++	"-e                If sending multiple subvols at once, use the new",
++	"                  format and omit the end-cmd between the subvols.",
++	"-p <parent>       Send an incremental stream from <parent> to",
++	"                  <subvol>.",
++	"-c <clone-src>    Use this snapshot as a clone source for an ",
++	"                  incremental send (multiple allowed)",
++	"-f <outfile>      Output is normally written to stdout. To write to",
++	"                  a file, use this option. An alternative would be to",
++	"                  use pipes.",
++#if KTLS_SEND_RECV == 1
++	"--conn-addr <url>     Address of remote receiver.",
++	"--tcp-port <port>     The remote port of the TLS connection",
++	"--tls-key <file>      Use the key from file; otherwise read key from stdin.",
++	"--tls-mode <mode>     Use none, tls_12_128_gcm, tls_13_128_gcm, tls_12_256_gcm."
++#endif
++	"--no-data         send in NO_FILE_DATA mode, Note: the output stream",
++	"                  does not contain any file data and thus cannot be used",
++	"                  to transfer changes. This mode is faster and useful to",
++	"                  show the differences in metadata.",
++	"-v|--verbose      deprecated, alias for global -v option",
++	"-q|--quiet        deprecated, alias for global -q option",
+ 	HELPINFO_INSERT_GLOBALS,
+ 	HELPINFO_INSERT_VERBOSE,
+ 	HELPINFO_INSERT_QUIET,
+@@ -474,6 +484,22 @@ static int cmd_send(const struct cmd_struct *cmd, int argc, char **argv)
+ 	int full_send = 1;
+ 	int new_end_cmd_semantic = 0;
+ 	u64 send_flags = 0;
++#if KTLS_SEND_RECV == 1
++	enum {
++		KTLS_IDX_ADDR = 0,
++		KTLS_IDX_PORT = 1,
++		KTLS_IDX_KEY = 2,
++		KTLS_IDX_TLS_MODE = 3,
++		KTLS_IDX_SIZE
++	};
++	char *ktls_args[KTLS_IDX_SIZE];
++	struct ktls_session *ktls_session = NULL;
++	char ktls_username[LOGIN_NAME_MAX] = "btrfs";
++	size_t arg_len = 0;
++	int arg_idx = 0;
++
++	explicit_bzero(ktls_args, sizeof(ktls_args));
++#endif
+ 
+ 	memset(&send, 0, sizeof(send));
+ 	send.dump_fd = fileno(stdout);
+@@ -492,11 +518,26 @@ static int cmd_send(const struct cmd_struct *cmd, int argc, char **argv)
+ 
+ 	optind = 0;
+ 	while (1) {
+-		enum { GETOPT_VAL_SEND_NO_DATA = 256 };
++		enum {
++			GETOPT_VAL_SEND_NO_DATA = 256,
++			GETOPT_VAL_ADDR = 300,
++			GETOPT_VAL_PORT = 301,
++			GETOPT_VAL_KEY = 302,
++			GETOPT_VAL_TLS_MODE = 303,
++		};
+ 		static const struct option long_options[] = {
+ 			{ "verbose", no_argument, NULL, 'v' },
+ 			{ "quiet", no_argument, NULL, 'q' },
+-			{ "no-data", no_argument, NULL, GETOPT_VAL_SEND_NO_DATA }
++			{ "no-data", no_argument, NULL,
++			  GETOPT_VAL_SEND_NO_DATA },
++			{ "conn-addr", required_argument, NULL,
++			  GETOPT_VAL_ADDR },
++			{ "tcp-port", required_argument, NULL,
++			  GETOPT_VAL_PORT },
++			{ "tls-key", required_argument, NULL, GETOPT_VAL_KEY },
++			{ "tls-mode", required_argument, NULL,
++			  GETOPT_VAL_TLS_MODE },
++			{ NULL, 0, NULL, 0 }
+ 		};
+ 		int c = getopt_long(argc, argv, "vqec:f:i:p:", long_options, NULL);
+ 
+@@ -581,6 +622,27 @@ static int cmd_send(const struct cmd_struct *cmd, int argc, char **argv)
+ 			error("option -i was removed, use -c instead");
+ 			ret = 1;
+ 			goto out;
++#if KTLS_SEND_RECV == 1
++		case GETOPT_VAL_ADDR:
++		case GETOPT_VAL_PORT:
++		case GETOPT_VAL_KEY:
++		case GETOPT_VAL_TLS_MODE:
++			arg_len = strlen(optarg);
++			arg_idx = c - GETOPT_VAL_ADDR;
++			ktls_args[arg_idx] = (char *)malloc(arg_len + 1);
++			if (!ktls_args[arg_idx]) {
++				error("fail to allocate buffer (%zu)", arg_len);
++				ret = 1;
++				goto out;
++			}
++			if (arg_copy_path(ktls_args[arg_idx], optarg,
++					  arg_len + 1)) {
++				error("argument too long (%zu)", arg_len);
++				ret = 1;
++				goto out;
++			}
++			break;
++#endif
+ 		case GETOPT_VAL_SEND_NO_DATA:
+ 			send_flags |= BTRFS_SEND_FLAG_NO_FILE_DATA;
+ 			break;
+@@ -613,6 +675,53 @@ static int cmd_send(const struct cmd_struct *cmd, int argc, char **argv)
+ 			goto out;
+ 		}
+ 	}
++#if KTLS_SEND_RECV == 1
++	if (ktls_args[KTLS_IDX_ADDR]) {
++		if (outname[0]) {
++			error("cannot send to both ktls and file");
++			ret = 1;
++			goto out;
++		}
++
++		if (!ktls_args[KTLS_IDX_PORT]) {
++			error("no remote ktls port");
++			ret = 1;
++			goto out;
++		}
++
++		if (!ktls_args[KTLS_IDX_PORT]) {
++			error("fail to create ktls session");
++			ret = 1;
++			goto out;
++		}
++
++		ktls_session = ktls_create_session(true);
++
++		if (ktls_args[KTLS_IDX_TLS_MODE]) {
++			if (ktls_set_tls_mode(ktls_session,
++					      ktls_args[KTLS_IDX_TLS_MODE]))
++				goto out;
++		}
++
++		if (ktls_args[KTLS_IDX_KEY]) {
++			if (ktls_set_psk_session_from_keyfile(
++				    ktls_session, ktls_username,
++				    ktls_args[KTLS_IDX_KEY])) {
++				goto out;
++			};
++		} else {
++			if (ktls_set_psk_session_from_password_prompt(
++				    ktls_session, ktls_username)) {
++				goto out;
++			}
++		}
++
++		send.dump_fd =
++			ktls_create_sock_oneshot(ktls_session,
++						 ktls_args[KTLS_IDX_ADDR],
++						 ktls_args[KTLS_IDX_PORT]);
++	}
++#endif
+ 
+ 	if (isatty(send.dump_fd)) {
+ 		error(
+@@ -755,6 +864,16 @@ out:
+ 	free(snapshot_parent);
+ 	free(send.clone_sources);
+ 	free_send_info(&send);
++#if KTLS_SEND_RECV == 1
++	for (i = KTLS_IDX_ADDR; i < KTLS_IDX_SIZE; i++) {
++		if (ktls_args[i])
++			free(ktls_args[i]);
++	}
++	ktls_destroy_session(ktls_session);
++#endif
++	if (send.dump_fd != fileno(stdin))
++		close(send.dump_fd);
++
+ 	return !!ret;
+ }
+ DEFINE_SIMPLE_COMMAND(send, "send");
+-- 
+2.29.2
 
-I'm pretty sure that the 6000+ lines of special-case code in send.c still
-don't cover every possible case, or even all of the likely ones, even
-with linear snapshot sequences.  We still get people on IRC reporting
-strange receive issues, and usually the best solution we can find is
-to start over with a new full send.  That's OK for small filesystems,
-but when you have to unexpectedly do a full send of dozens of terabytes
-over a medium-speed link, it's probably time to switch to rsync.
-
-Subversion used to have problems like this (maybe it still does, I
-switched to git years ago) where a complicated commit that combined
-multiple operations on objects of the same name would break the tool.
-I'm surprised btrfs is trying to do similar things in the kernel
-(though with the current send implementation there's nowhere else we
-could do them).  At least for fsync we get to say "nope, too hard,
-do a full commit instead" when complications arise.
-
-> > Also I am not sure if using later clone as base for difference to
-> > earlier clone will work for the same reason.
-
-That use case can come up e.g. if you have snapshots of / and you roll
-back to an earlier snapshot after a bad upgrade, but your backups are
-using incremental snapshots made from '/'.  Then the last-sent-snapshot
-(from the bad upgrade) is newer than the origin subvol (from an earlier
-good upgrade, with new modifications on top).
-
-Cases like these really need to work, or at least reliably throw
-errors when they have failed, as the application that rolls back to
-earlier snapshots might have no knowledge of the application that does
-incremental send backups on a user's system if they integrated tools
-=66rom different vendors.
-
-> >> but something happens in one of the support functions and we get a
-> >> bogus link command.  The rest of the stream is OK though:  we fill
-> >> in the contents of B_RO/date, rename A_RO/t to B_RO/u, and update all
-> >> the timestamps.
-> >>
-> >> Oh well, I didn't say send didn't have any bugs.  ;)
-> >>
-> >=20
->=20
->=20
-
-
-
-
---LTeJQqWS0MN7I/qa
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iF0EABECAB0WIQSnOVjcfGcC/+em7H2B+YsaVrMbnAUCX++sCgAKCRCB+YsaVrMb
-nFONAKDbMQr9/DaMAJHKYcVzlkXys3qvEwCg51Y5C+ua9Yo+kxY0MkN44aqGjck=
-=eWb+
------END PGP SIGNATURE-----
-
---LTeJQqWS0MN7I/qa--

@@ -8,65 +8,64 @@ X-Spam-Status: No, score=-15.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CC32EC433E0
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C23E8C433DB
 	for <linux-btrfs@archiver.kernel.org>; Sat,  2 Jan 2021 03:52:09 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 96D6A22283
+	by mail.kernel.org (Postfix) with ESMTP id 6EFD222255
 	for <linux-btrfs@archiver.kernel.org>; Sat,  2 Jan 2021 03:52:09 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727277AbhABDvy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 1 Jan 2021 22:51:54 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51288 "EHLO
+        id S1727195AbhABDvh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 1 Jan 2021 22:51:37 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51284 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727171AbhABDvg (ORCPT
+        with ESMTP id S1727165AbhABDvg (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Jan 2021 22:51:36 -0500
-Received: from mail-pj1-x102c.google.com (mail-pj1-x102c.google.com [IPv6:2607:f8b0:4864:20::102c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D711FC0613CF
-        for <linux-btrfs@vger.kernel.org>; Fri,  1 Jan 2021 19:50:36 -0800 (PST)
-Received: by mail-pj1-x102c.google.com with SMTP id f14so6772347pju.4
-        for <linux-btrfs@vger.kernel.org>; Fri, 01 Jan 2021 19:50:36 -0800 (PST)
+Received: from mail-pl1-x62f.google.com (mail-pl1-x62f.google.com [IPv6:2607:f8b0:4864:20::62f])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6C0C9C061573
+        for <linux-btrfs@vger.kernel.org>; Fri,  1 Jan 2021 19:50:35 -0800 (PST)
+Received: by mail-pl1-x62f.google.com with SMTP id s15so11691835plr.9
+        for <linux-btrfs@vger.kernel.org>; Fri, 01 Jan 2021 19:50:35 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
         h=sender:from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=CtMr8j5ds2cEbyaSkaeiVS7KHyC/i6vLtI3fIrYpBlw=;
-        b=dunKMbvCnrbF3I8qBRCGAuNEdprTPUXcrkxTd7gF9T7tXOo96B8Yq5hEx3VSrsDucB
-         qi2EOIiwRz5FQLizVjkbT7o4qnPyT8Vj9leejxbfUuyd334FPELqcbfmKW6rAfuNF936
-         g4AlxY4knAuR5HL9ERok/D5ymFgl4yZg8nWYCkD7HdE0v1t7rtDcEyIMvGuXXwqduBm4
-         mTbO+MsLZsCkQA7W9950aJTLUJCMfeW3AIthr/mXc5zAEmuXhyJkGMDgByJpk6vUvwDl
-         A79QaIlINrL9fftRHuqcD+GC4zeRFgFmLrOEtKuXxf14u3/bl4ma8gNApEPvBxlJ3EZO
-         MlRw==
+        bh=RMsKQ8TulduIUj2eSUYH6XGWE3TranOKH64HFfAlZ0c=;
+        b=NA8WWMpa3bgtoVk3rtSGnpPtdl1wrluXNFQLKHiqVIXB7qBLPB+1JcqcmQBFVP5oQm
+         0ffZbgy+EoX6znf6e4FP8gehAh3dNldjuKs1cYHS+DdqWcPZHso6guiOaNGyIWgeFJds
+         al4pPD6nTDershfW+Dr8idTdP08APC1EcS6cBID0W9ptgDicJPkoZLWi4TW0tGqE7PU+
+         m7aRvHlOSXtz00zzKEXrTO2qbU26+5FjuCsUm5r8RWqADx9+Pn9KISLaJEFTs9VMduWq
+         Eogk3+n6TTVEPnlrV6Wm7yoT98mzWjUAj9ZPgqQ9cOTziYlllry6jhwuCoR9fWDXI6eJ
+         vrZg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:sender:from:to:cc:subject:date:message-id
          :in-reply-to:references:mime-version:content-transfer-encoding;
-        bh=CtMr8j5ds2cEbyaSkaeiVS7KHyC/i6vLtI3fIrYpBlw=;
-        b=FcCQ8Q3+ornAXyfcUOvCCIi0tnRzP9mrFy4HZ+i4apwzzKolmm6/uvkBqP/LjmYDa3
-         u1NXssKP2bhWxOHQPOFBRBC8PFlz+/vyHGtVRUaTFTCL0qrDet5iWFoVTaylXNl5o3vJ
-         V145DRVDCmaU89OEod76RFtTEikuUeM14j6jj2J3ZGmydBseKy58O1DmGWa1uTjshD4Y
-         N21t74jtcqbkB/MyK4q2l3lp2WQH+ln1qr1W5vNNhVc4jzR2j8BOcEfCD21x+EFb6jvu
-         05Ih/vHWg7oTWDrqEB9E7eN2jXZmQwHsxvTRDa+UtgbbmYxxIQ425aFqBaRDrCuFm9uy
-         V9iA==
-X-Gm-Message-State: AOAM533x8u00ohrfAm1eEg5ufD4C3E+9qnG6yP+Fx7cHQ4xOn6xzGeSx
-        cjdv5ojkevZ3ZaVoOUey8/8=
-X-Google-Smtp-Source: ABdhPJxdlLAtj1lYkEcSACuV+0/sB/PFGJAGWImbtiO9UbrtYqNKuj0Uo8ujVLUvyhSgcY7VGa/96Q==
-X-Received: by 2002:a17:902:bb95:b029:dc:e7b:fd6e with SMTP id m21-20020a170902bb95b02900dc0e7bfd6emr63197474pls.12.1609559436333;
-        Fri, 01 Jan 2021 19:50:36 -0800 (PST)
+        bh=RMsKQ8TulduIUj2eSUYH6XGWE3TranOKH64HFfAlZ0c=;
+        b=kbXU9+nMa+bGx9E8pHbNXdhenVf7yoSU8SsndWgjNkgb6/E+PxgKk0YwmYfsfSwKkP
+         yVjyGEJyqvmd8H+luZxR1NFcT4JKIUWH0bJk0CMzRI1I1SKs69yncRnylPf2M2T5CJcJ
+         4RjaLSu1Ov+50zAxYh3J3iReRL85nlNh31ilEuPvuoWJXN1IKefW1JNBzR4jK6qA58Zo
+         EMhXOoBV+rQSHpjPaHfxpxWDYS7JPMH2wl7ZcbKe0Sc6t+b1LSWA2sd0R730ucdHM2Qw
+         ufhGODP5EhvJnJmuXW7T86SE/U3MtaK1VVbOM3FobYNnuVWBoQB0jfMWH1KBGczUKf8Y
+         EUZQ==
+X-Gm-Message-State: AOAM531vUYAsS+qXh3MHQ4f8FCBHfG38ipL9/Xqlu5Ev+hYkBmQZVE+0
+        Oz+5eH5MBT7MzHGfIQNz5y8vw2I6LK0=
+X-Google-Smtp-Source: ABdhPJyAoCQSjBy75hjo7MHK14ztJhNTTqrorxzql/LimFh/xf4J0EgZB7YBdSqYdhwMg203Fjihqg==
+X-Received: by 2002:a17:90a:6587:: with SMTP id k7mr20526649pjj.154.1609559434341;
+        Fri, 01 Jan 2021 19:50:34 -0800 (PST)
 Received: from localhost.localdomain (S010664777d4a88b3.cg.shawcable.net. [70.77.224.58])
-        by smtp.gmail.com with ESMTPSA id x15sm49823522pfa.80.2021.01.01.19.50.35
+        by smtp.gmail.com with ESMTPSA id x15sm49823522pfa.80.2021.01.01.19.50.33
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 01 Jan 2021 19:50:35 -0800 (PST)
+        Fri, 01 Jan 2021 19:50:33 -0800 (PST)
 Sender: Sheng Mao <ks8xntk9mds5i@gmail.com>
 From:   shngmao@gmail.com
 To:     wangyugui@e16-tech.com
 Cc:     linux-btrfs@vger.kernel.org, Sheng Mao <shngmao@gmail.com>
-Subject: [PATCH v2 3/3] btrfs-progs: add TLS arguments to send/receive
-Date:   Fri,  1 Jan 2021 20:49:57 -0700
-Message-Id: <20210102034957.2825531-3-shngmao@gmail.com>
+Subject: [PATCH v2 1/3] btrfs-progs: add Kernel TLS to btrfs send/receive
+Date:   Fri,  1 Jan 2021 20:49:55 -0700
+Message-Id: <20210102034957.2825531-1-shngmao@gmail.com>
 X-Mailer: git-send-email 2.29.2
-In-Reply-To: <20210102034957.2825531-1-shngmao@gmail.com>
+In-Reply-To: <20210101135350.AD49.409509F4@e16-tech.com>
 References: <20210101135350.AD49.409509F4@e16-tech.com>
- <20210102034957.2825531-1-shngmao@gmail.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
@@ -75,507 +74,818 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Sheng Mao <shngmao@gmail.com>
 
-If TLS is enabled, btrfs send/receive can accept four more
-arguments:
+Currently, btrfs send outputs to a pipe or a file;
+btrfs receive inputs from a pipe or a file.
+The pipe can be a SSH or a stunnel connection.
+btrfs send/receive itself doesn't handle any connection.
 
-- address to connect to/listen on
-- port to connect to/listen on
-- keyfile name (optional), PEM format is preferred
-- TLS mode: none, TLS 1.2/1.3 and 128/256 GCM
+Kernel introduces TLS in version 4.13 (referred as ktls).
+Ktls provides a transparent TLS 1.2/1.3 connection:
+from user space aspect, applications use a normal socket
+fd to read/write from/to. This model fits into btrfs send's
+design well: btrfs first writes to a pipe and then splices
+data from pipe to the final fd (which is a file or pipe).
+Ktls simply replaces the final fd with the ktls socket fd.
+According to ktls' author, ktls can boost performance for
+2~7%. Ktls helps less on receiving side: btrfs receive
+processes data in user space. But btrfs receive still can
+use transparent TLS layer.
 
-In TLS mode, btrfs receive assumes -e and btrfs receive
-stops after receiving an end cmd marker in the stream.
+I have implemented ktls for btrfs send/receive. Here are
+the key features:
+
+- Use GnuTLS for handshake. OpenSSL is not suitable for this
+task, we need to pass IV and key from handshake session to
+kernel setting.
+- Use PSK (pre-shared key) for handshake. User can use --key
+to use a key file or input password on prompt.
+- Key file is checked as PEM format first; if it fails, key
+file is treated as raw binary file.
+- Three TLS modes are supported: none (raw TCP), TLS 1.2 + GCM
+128/256, TLS 1.3 + GCM 128.
+- DTLS, certificate, Secure Remote Password (SRP) are not
+supported yet.
 
 Issue: #326
 Signed-off-by: Sheng Mao <shngmao@gmail.com>
 ---
- Documentation/btrfs-receive.asciidoc |  13 +++
- Documentation/btrfs-send.asciidoc    |   9 ++
- cmds/receive.c                       | 153 ++++++++++++++++++++++----
- cmds/send.c                          | 155 +++++++++++++++++++++++----
- 4 files changed, 292 insertions(+), 38 deletions(-)
+ common/ktls.c | 702 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ common/ktls.h |  57 ++++
+ 2 files changed, 759 insertions(+)
+ create mode 100644 common/ktls.c
+ create mode 100644 common/ktls.h
 
-diff --git a/Documentation/btrfs-receive.asciidoc b/Documentation/btrfs-receive.asciidoc
-index e4c4d2c0..7d98e41a 100644
---- a/Documentation/btrfs-receive.asciidoc
-+++ b/Documentation/btrfs-receive.asciidoc
-@@ -38,6 +38,19 @@ A subvolume is made read-only after the receiving process finishes successfully
- -f <FILE>::
- read the stream from <FILE> instead of stdin,
- 
-+--listen-addr <url>::
-+Address to listen on. It can be an IP address or a domain name.
+diff --git a/common/ktls.c b/common/ktls.c
+new file mode 100644
+index 00000000..a4d670e3
+--- /dev/null
++++ b/common/ktls.c
+@@ -0,0 +1,702 @@
++/*
++ * Copyright (C) 2020 Sheng Mao.  All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ */
 +
-+--tcp-port <port>::
-+The local port of the TLS connection.
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
 +
-+--tls-key <file>::
-+Use the key from file; otherwise read key from stdin. Key file is first parsed
-+as PEM format; if parsing fails, file content is treated as binary key.
++#include <arpa/inet.h>
++#include <fcntl.h>
++#include <netdb.h>
++#include <netinet/in.h>
++#include <netinet/ip.h>
++#include <netinet/tcp.h>
++#include <sys/mman.h>
++#include <sys/socket.h>
++#include <sys/stat.h>
++#include <sys/types.h>
++#include <unistd.h>
++#include <termios.h>
++#include <sys/stat.h>
 +
-+--tls-mode <mode>::
-+Use none, tls_12_128_gcm, tls_13_128_gcm, tls_12_256_gcm.
++#include <linux/tls.h>
 +
- -C|--chroot::
- confine the process to 'path' using `chroot`(1)
- 
-diff --git a/Documentation/btrfs-send.asciidoc b/Documentation/btrfs-send.asciidoc
-index c4a05672..3a270c78 100644
---- a/Documentation/btrfs-send.asciidoc
-+++ b/Documentation/btrfs-send.asciidoc
-@@ -49,6 +49,15 @@ use this snapshot as a clone source for an incremental send (multiple allowed)
- -f <outfile>::
- output is normally written to standard output so it can be, for example, piped
- to btrfs receive. Use this option to write it to a file instead.
-+--conn-addr <url>::
-+Address of remote receiver. It can be an IP address or a domain name.
-+--tcp-port <port>::
-+The remote port of the TLS connection.
-+--tls-key <file>::
-+Use the key from file; otherwise read key from stdin. Key file is first parsed
-+as PEM format; if parsing fails, file content is treated as binary key.
-+--tls-mode <mode>::
-+Use none, tls_12_128_gcm, tls_13_128_gcm, tls_12_256_gcm.
- --no-data::
- send in 'NO_FILE_DATA' mode
- +
-diff --git a/cmds/receive.c b/cmds/receive.c
-index 2aaba3ff..eb140b55 100644
---- a/cmds/receive.c
-+++ b/cmds/receive.c
-@@ -53,8 +53,11 @@
- #include "common/help.h"
- #include "common/path-utils.h"
- 
--struct btrfs_receive
--{
-+#if KTLS_SEND_RECV == 1
-+#include "common/ktls.h"
-+#endif
++#include <gnutls/gnutls.h>
 +
-+struct btrfs_receive {
- 	int mnt_fd;
- 	int dest_dir_fd;
- 
-@@ -1216,7 +1219,7 @@ out:
- 	return ret;
- }
- 
--static const char * const cmd_receive_usage[] = {
-+static const char *const cmd_receive_usage[] = {
- 	"btrfs receive [options] <mount>\n"
- 	"btrfs receive --dump [options]",
- 	"Receive subvolumes from a stream",
-@@ -1229,22 +1232,28 @@ static const char * const cmd_receive_usage[] = {
- 	"After receiving a subvolume, it is immediately set to",
- 	"read-only.",
- 	"",
--	"-q|--quiet       suppress all messages, except errors",
--	"-f FILE          read the stream from FILE instead of stdin",
--	"-e               terminate after receiving an <end cmd> marker in the stream.",
--	"                 Without this option the receiver side terminates only in case",
--	"                 of an error on end of file.",
--	"-C|--chroot      confine the process to <mount> using chroot",
-+	"-q|--quiet        suppress all messages, except errors",
-+	"-f FILE           read the stream from FILE instead of stdin",
-+#if KTLS_SEND_RECV == 1
-+	"--listen-addr <url>   Address to listen on for incoming TLS connection.",
-+	"--tcp-port <port>     The remote port of the TLS connection",
-+	"--tls-key <file>      Use the key from file; otherwise read key from stdin.",
-+	"--tls-mode <mode>     Use none, tls_12_128_gcm, tls_13_128_gcm, tls_12_256_gcm."
-+#endif
-+	"-e                terminate after receiving an <end cmd> marker in the stream.",
-+	"                  Without this option the receiver side terminates only in case",
-+	"                  of an error on end of file.",
-+	"-C|--chroot       confine the process to <mount> using chroot",
- 	"-E|--max-errors NERR",
--	"                 terminate as soon as NERR errors occur while",
--	"                 stream processing commands from the stream.",
--	"                 Default value is 1. A value of 0 means no limit.",
--	"-m ROOTMOUNT     the root mount point of the destination filesystem.",
--	"                 If /proc is not accessible, use this to tell us where",
--	"                 this file system is mounted.",
--	"--dump           dump stream metadata, one line per operation,",
--	"                 does not require the MOUNT parameter",
--	"-v               deprecated, alias for global -v option",
-+	"                  terminate as soon as NERR errors occur while",
-+	"                  stream processing commands from the stream.",
-+	"                  Default value is 1. A value of 0 means no limit.",
-+	"-m ROOTMOUNT      the root mount point of the destination filesystem.",
-+	"                  If /proc is not accessible, use this to tell us where",
-+	"                  this file system is mounted.",
-+	"--dump            dump stream metadata, one line per operation,",
-+	"                  does not require the MOUNT parameter",
-+	"-v                deprecated, alias for global -v option",
- 	HELPINFO_INSERT_GLOBALS,
- 	HELPINFO_INSERT_VERBOSE,
- 	HELPINFO_INSERT_QUIET,
-@@ -1261,6 +1270,23 @@ static int cmd_receive(const struct cmd_struct *cmd, int argc, char **argv)
- 	u64 max_errors = 1;
- 	int dump = 0;
- 	int ret = 0;
-+#if KTLS_SEND_RECV == 1
-+	enum {
-+		KTLS_IDX_ADDR = 0,
-+		KTLS_IDX_PORT = 1,
-+		KTLS_IDX_KEY = 2,
-+		KTLS_IDX_TLS_MODE = 3,
-+		KTLS_IDX_SIZE
-+	};
-+	char *ktls_args[KTLS_IDX_SIZE];
-+	struct ktls_session *ktls_session = NULL;
-+	char ktls_username[LOGIN_NAME_MAX] = "btrfs";
-+	u32 i = 0;
-+	size_t arg_len = 0;
-+	int arg_idx = 0;
++#include <common/utils.h>
 +
-+	explicit_bzero(ktls_args, sizeof(ktls_args));
-+#endif
- 
- 	memset(&rctx, 0, sizeof(rctx));
- 	rctx.mnt_fd = -1;
-@@ -1285,10 +1311,25 @@ static int cmd_receive(const struct cmd_struct *cmd, int argc, char **argv)
- 	optind = 0;
- 	while (1) {
- 		int c;
--		enum { GETOPT_VAL_DUMP = 257 };
-+		enum {
-+			GETOPT_VAL_DUMP = 257,
-+			GETOPT_VAL_ADDR = 300,
-+			GETOPT_VAL_PORT = 301,
-+			GETOPT_VAL_KEY = 302,
-+			GETOPT_VAL_TLS_MODE = 303,
-+		};
- 		static const struct option long_opts[] = {
- 			{ "max-errors", required_argument, NULL, 'E' },
- 			{ "chroot", no_argument, NULL, 'C' },
-+#if KTLS_SEND_RECV == 1
-+			{ "listen-addr", required_argument, NULL,
-+			  GETOPT_VAL_ADDR },
-+			{ "tcp-port", required_argument, NULL,
-+			  GETOPT_VAL_PORT },
-+			{ "tls-key", required_argument, NULL, GETOPT_VAL_KEY },
-+			{ "tls-mode", required_argument, NULL,
-+			  GETOPT_VAL_TLS_MODE },
-+#endif
- 			{ "dump", no_argument, NULL, GETOPT_VAL_DUMP },
- 			{ "quiet", no_argument, NULL, 'q' },
- 			{ NULL, 0, NULL, 0 }
-@@ -1330,6 +1371,27 @@ static int cmd_receive(const struct cmd_struct *cmd, int argc, char **argv)
- 				goto out;
- 			}
- 			break;
-+#if KTLS_SEND_RECV == 1
-+		case GETOPT_VAL_ADDR:
-+		case GETOPT_VAL_PORT:
-+		case GETOPT_VAL_KEY:
-+		case GETOPT_VAL_TLS_MODE:
-+			arg_len = strlen(optarg);
-+			arg_idx = c - GETOPT_VAL_ADDR;
-+			ktls_args[arg_idx] = (char *)malloc(arg_len + 1);
-+			if (!ktls_args[arg_idx]) {
-+				error("fail to allocate buffer (%zu)", arg_len);
-+				ret = 1;
-+				goto out;
-+			}
-+			if (arg_copy_path(ktls_args[arg_idx], optarg,
-+					  arg_len + 1)) {
-+				error("argument too long (%zu)", arg_len);
-+				ret = 1;
-+				goto out;
++#include "ktls.h"
++
++enum { KTLS_MAX_PASSWORD_LENGTH = 256, KTLS_MAX_PRIORITY_STRING_LENTH = 256 };
++
++enum {
++	KTLS_STAGE_NOT_HANDSHAKED,
++	KTLS_STAGE_HAS_HANDSHAKED,
++};
++
++enum ktls_tls_mode_t {
++	KTLS_TLS_MODE_NONE = 0,
++	KTLS_TLS_12_128_GCM,
++	KTLS_TLS_13_128_GCM,
++	KTLS_TLS_12_256_GCM
++};
++
++struct ktls_session {
++	gnutls_session_t session;
++	gnutls_certificate_credentials_t crt_cred;
++
++	gnutls_psk_server_credentials_t psk_cred_server;
++	gnutls_psk_client_credentials_t psk_cred_client;
++
++	uint8_t role;
++	uint8_t stage;
++	enum ktls_tls_mode_t tls_mode;
++};
++
++static gnutls_datum_t ktls_psk_username = { 0 };
++static gnutls_datum_t ktls_psk_key = { 0 };
++
++static void ktls_print_logs(int level, const char *msg)
++{
++	if (bconf.verbose >= level)
++		printf("GnuTLS [%d]: %s", level, msg);
++}
++
++int ktls_set_psk_session_from_password_prompt(struct ktls_session *session,
++					      const char *username)
++{
++	struct termios orig_term_flags, passwd_term_flags;
++	char passwd[KTLS_MAX_PASSWORD_LENGTH];
++	int passwd_sz = 0;
++	int stdin_fd = 0;
++
++	if (!session)
++		return EXIT_FAILURE;
++
++	if (session->tls_mode == KTLS_TLS_MODE_NONE)
++		return EXIT_SUCCESS;
++
++	passwd[0] = '\0';
++
++	stdin_fd = fileno(stdin);
++
++	if (!isatty(stdin_fd)) {
++		error("tty needed for password input");
++		return EXIT_FAILURE;
++	}
++
++	tcgetattr(stdin_fd, &orig_term_flags);
++	passwd_term_flags = orig_term_flags;
++	passwd_term_flags.c_lflag &= ~ECHO;
++	passwd_term_flags.c_lflag |= ECHONL;
++
++	if (tcsetattr(stdin_fd, TCSANOW, &passwd_term_flags)) {
++		error("fail to hide password: %s", strerror(errno));
++		return EXIT_FAILURE;
++	}
++
++	printf("password: ");
++	if (!fgets(passwd, sizeof(passwd), stdin)) {
++		error("no password read");
++		return EXIT_FAILURE;
++	}
++
++	if (tcsetattr(fileno(stdin), TCSANOW, &orig_term_flags)) {
++		error("fail to reset tty: %s", strerror(errno));
++		return EXIT_FAILURE;
++	}
++
++	passwd_sz = strlen(passwd);
++	if (passwd_sz <= 0) {
++		error("no password read");
++		return EXIT_FAILURE;
++	}
++	if (passwd[passwd_sz - 1] == '\n') {
++		passwd[passwd_sz - 1] = '\0';
++		passwd_sz--;
++	}
++
++	return ktls_set_psk_session(session, username,
++				    (const unsigned char *)passwd, passwd_sz);
++}
++
++int ktls_set_psk_session_from_keyfile(struct ktls_session *session,
++				      const char *username,
++				      const char *key_file)
++{
++	int rc = GNUTLS_E_SUCCESS;
++	struct stat file_stat;
++	size_t sz = 0;
++	FILE *fp = NULL;
++	gnutls_datum_t input = { NULL, 0UL };
++	gnutls_datum_t output = { NULL, 0UL };
++
++	if (!session)
++		goto cleanup;
++
++	if (session->tls_mode == KTLS_TLS_MODE_NONE)
++		return EXIT_SUCCESS;
++
++	if (stat(key_file, &file_stat)) {
++		error("fail to open keyfile: %s", strerror(errno));
++		goto cleanup;
++	}
++
++	fp = fopen(key_file, "r");
++	if (!fp) {
++		error("fail to open keyfile: %s", strerror(errno));
++		goto cleanup;
++	}
++
++	input.size = file_stat.st_size;
++
++	input.data = gnutls_malloc(input.size);
++
++	sz = fread(input.data, 1, input.size, fp);
++
++	if (sz != input.size) {
++		error("fail to read PEM");
++		goto cleanup;
++	}
++
++	rc = gnutls_pem_base64_decode2(NULL, &input, &output);
++	if (rc != GNUTLS_E_SUCCESS) {
++		error("Error! fail to decode PEM: %s", gnutls_strerror(rc));
++		goto cleanup;
++	}
++
++	return ktls_set_psk_session(session, username, output.data,
++				    output.size);
++
++cleanup:
++	return EXIT_FAILURE;
++}
++
++struct ktls_session *ktls_create_session(bool is_sender)
++{
++	struct ktls_session *session = NULL;
++
++	session = (struct ktls_session *)malloc(sizeof(struct ktls_session));
++	explicit_bzero(session, sizeof(*session));
++
++	gnutls_global_init();
++
++	session->role = is_sender ? GNUTLS_CLIENT : GNUTLS_SERVER;
++	session->stage = KTLS_STAGE_NOT_HANDSHAKED;
++
++	gnutls_init(&session->session, session->role);
++
++	gnutls_global_set_log_level(bconf.verbose);
++	gnutls_global_set_log_function(ktls_print_logs);
++
++	return session;
++}
++
++void ktls_destroy_session(struct ktls_session *session)
++{
++	if (!session)
++		return;
++
++	if (session->crt_cred)
++		gnutls_certificate_free_credentials(session->crt_cred);
++
++	if (session->psk_cred_server)
++		gnutls_psk_free_server_credentials(session->psk_cred_server);
++
++	if (session->psk_cred_client)
++		gnutls_psk_free_client_credentials(session->psk_cred_client);
++
++	if (session->session) {
++		if (session->stage == KTLS_STAGE_HAS_HANDSHAKED)
++			gnutls_bye(session->session, GNUTLS_SHUT_RDWR);
++		gnutls_deinit(session->session);
++	}
++
++	gnutls_global_deinit();
++
++	explicit_bzero(session, sizeof(*session));
++}
++
++static int ktls_connect_or_bind(int *sock, bool is_sender, int protocol,
++				struct sockaddr *serv_addr, size_t serv_addr_sz)
++{
++	*sock = 0;
++
++	*sock = socket(protocol, SOCK_STREAM, 0);
++	if (*sock == KTLS_INVALID_FD) {
++		error("could not create socket: %s", strerror(errno));
++		goto cleanup;
++	}
++
++	if (is_sender) {
++		if (connect(*sock, serv_addr, serv_addr_sz)) {
++			error("fail to connect to server: %s", strerror(errno));
++			goto cleanup;
++		}
++		return EXIT_SUCCESS;
++	}
++
++	if (setsockopt(*sock, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 },
++		       sizeof(int))) {
++		error("fail to connect to server: %s", strerror(errno));
++		goto cleanup;
++	}
++
++	if (bind(*sock, serv_addr, serv_addr_sz) || listen(*sock, 1)) {
++		error("fail to serve as server: %s", strerror(errno));
++		goto cleanup;
++	}
++
++	return EXIT_SUCCESS;
++
++cleanup:
++	if (*sock >= 0)
++		close(*sock);
++	return EXIT_FAILURE;
++}
++
++static int ktls_connect_domain(int *sock, bool is_sender, const char *host,
++			       const uint16_t port)
++{
++	struct addrinfo hints = { 0 }, *res = NULL;
++	int rc = 0;
++	struct sockaddr_in addr4;
++	struct sockaddr_in6 addr6;
++
++	memset(&hints, 0, sizeof(hints));
++
++	hints.ai_family = PF_UNSPEC;
++	hints.ai_socktype = SOCK_STREAM;
++	hints.ai_flags |= AI_CANONNAME;
++
++	if (getaddrinfo(host, NULL, &hints, &res)) {
++		error("fail to get address info: %s", strerror(errno));
++		return EXIT_FAILURE;
++	}
++
++	while (res) {
++		switch (res->ai_family) {
++		case AF_INET:
++			explicit_bzero(&addr4, sizeof(addr4));
++			addr4.sin_addr =
++				((struct sockaddr_in *)res->ai_addr)->sin_addr;
++			addr4.sin_port = port;
++			addr4.sin_family = res->ai_family;
++			if (!ktls_connect_or_bind(
++				    sock, is_sender, res->ai_family,
++				    (struct sockaddr *)&addr4, sizeof(addr4))) {
++				goto cleanup;
 +			}
 +			break;
-+#endif
- 		case GETOPT_VAL_DUMP:
- 			dump = 1;
- 			break;
-@@ -1353,6 +1415,50 @@ static int cmd_receive(const struct cmd_struct *cmd, int argc, char **argv)
- 		}
- 	}
- 
-+#if KTLS_SEND_RECV == 1
-+	if (ktls_args[KTLS_IDX_ADDR]) {
-+		if (fromfile[0]) {
-+			error("cannot send to both ktls and file");
-+			ret = 1;
-+			goto out;
-+		}
-+
-+		if (!ktls_args[KTLS_IDX_PORT]) {
-+			error("no remote ktls port");
-+			ret = 1;
-+			goto out;
-+		}
-+
-+		ktls_session = ktls_create_session(false);
-+
-+		if (ktls_args[KTLS_IDX_TLS_MODE]) {
-+			if (ktls_set_tls_mode(ktls_session,
-+					      ktls_args[KTLS_IDX_TLS_MODE]))
-+				goto out;
-+		}
-+
-+		if (ktls_args[KTLS_IDX_KEY]) {
-+			if (ktls_set_psk_session_from_keyfile(
-+				    ktls_session, ktls_username,
-+				    ktls_args[KTLS_IDX_KEY])) {
-+				goto out;
-+			};
-+		} else {
-+			if (ktls_set_psk_session_from_password_prompt(
-+				    ktls_session, ktls_username)) {
-+				goto out;
-+			}
-+		}
-+
-+		receive_fd = ktls_create_sock_oneshot(ktls_session,
-+						      ktls_args[KTLS_IDX_ADDR],
-+						      ktls_args[KTLS_IDX_PORT]);
-+
-+		/* socket implies honor end cmd*/
-+		rctx.honor_end_cmd = 1;
-+	}
-+#endif
-+
- 	if (dump) {
- 		struct btrfs_dump_send_args dump_args;
- 
-@@ -1370,9 +1476,16 @@ static int cmd_receive(const struct cmd_struct *cmd, int argc, char **argv)
- 		ret = do_receive(&rctx, tomnt, realmnt, receive_fd, max_errors);
- 	}
- 
-+out:
-+#if KTLS_SEND_RECV == 1
-+	for (i = KTLS_IDX_ADDR; i < KTLS_IDX_SIZE; i++) {
-+		if (ktls_args[i])
-+			free(ktls_args[i]);
-+	}
-+	ktls_destroy_session(ktls_session);
-+#endif
- 	if (receive_fd != fileno(stdin))
- 		close(receive_fd);
--out:
- 
- 	return !!ret;
- }
-diff --git a/cmds/send.c b/cmds/send.c
-index b8e3ba12..006eb3cc 100644
---- a/cmds/send.c
-+++ b/cmds/send.c
-@@ -46,6 +46,10 @@
- #include "common/help.h"
- #include "common/path-utils.h"
- 
-+#if KTLS_SEND_RECV == 1
-+#include "common/ktls.h"
-+#endif
-+
- #define SEND_BUFFER_SIZE	SZ_64K
- 
- 
-@@ -424,7 +428,7 @@ static void free_send_info(struct btrfs_send *sctx)
- 	subvol_uuid_search_finit(&sctx->sus);
- }
- 
--static const char * const cmd_send_usage[] = {
-+static const char *const cmd_send_usage[] = {
- 	"btrfs send [-ve] [-p <parent>] [-c <clone-src>] [-f <outfile>] <subvol> [<subvol>...]",
- 	"Send the subvolume(s) to stdout.",
- 	"Sends the subvolume(s) specified by <subvol> to stdout.",
-@@ -439,21 +443,27 @@ static const char * const cmd_send_usage[] = {
- 	"which case 'btrfs send' will determine a suitable parent among the",
- 	"clone sources itself.",
- 	"",
--	"-e               If sending multiple subvols at once, use the new",
--	"                 format and omit the end-cmd between the subvols.",
--	"-p <parent>      Send an incremental stream from <parent> to",
--	"                 <subvol>.",
--	"-c <clone-src>   Use this snapshot as a clone source for an ",
--	"                 incremental send (multiple allowed)",
--	"-f <outfile>     Output is normally written to stdout. To write to",
--	"                 a file, use this option. An alternative would be to",
--	"                 use pipes.",
--	"--no-data        send in NO_FILE_DATA mode, Note: the output stream",
--	"                 does not contain any file data and thus cannot be used",
--	"                 to transfer changes. This mode is faster and useful to",
--	"                 show the differences in metadata.",
--	"-v|--verbose     deprecated, alias for global -v option",
--	"-q|--quiet       deprecated, alias for global -q option",
-+	"-e                If sending multiple subvols at once, use the new",
-+	"                  format and omit the end-cmd between the subvols.",
-+	"-p <parent>       Send an incremental stream from <parent> to",
-+	"                  <subvol>.",
-+	"-c <clone-src>    Use this snapshot as a clone source for an ",
-+	"                  incremental send (multiple allowed)",
-+	"-f <outfile>      Output is normally written to stdout. To write to",
-+	"                  a file, use this option. An alternative would be to",
-+	"                  use pipes.",
-+#if KTLS_SEND_RECV == 1
-+	"--conn-addr <url>     Address of remote receiver.",
-+	"--tcp-port <port>     The remote port of the TLS connection",
-+	"--tls-key <file>      Use the key from file; otherwise read key from stdin.",
-+	"--tls-mode <mode>     Use none, tls_12_128_gcm, tls_13_128_gcm, tls_12_256_gcm."
-+#endif
-+	"--no-data         send in NO_FILE_DATA mode, Note: the output stream",
-+	"                  does not contain any file data and thus cannot be used",
-+	"                  to transfer changes. This mode is faster and useful to",
-+	"                  show the differences in metadata.",
-+	"-v|--verbose      deprecated, alias for global -v option",
-+	"-q|--quiet        deprecated, alias for global -q option",
- 	HELPINFO_INSERT_GLOBALS,
- 	HELPINFO_INSERT_VERBOSE,
- 	HELPINFO_INSERT_QUIET,
-@@ -474,6 +484,22 @@ static int cmd_send(const struct cmd_struct *cmd, int argc, char **argv)
- 	int full_send = 1;
- 	int new_end_cmd_semantic = 0;
- 	u64 send_flags = 0;
-+#if KTLS_SEND_RECV == 1
-+	enum {
-+		KTLS_IDX_ADDR = 0,
-+		KTLS_IDX_PORT = 1,
-+		KTLS_IDX_KEY = 2,
-+		KTLS_IDX_TLS_MODE = 3,
-+		KTLS_IDX_SIZE
-+	};
-+	char *ktls_args[KTLS_IDX_SIZE];
-+	struct ktls_session *ktls_session = NULL;
-+	char ktls_username[LOGIN_NAME_MAX] = "btrfs";
-+	size_t arg_len = 0;
-+	int arg_idx = 0;
-+
-+	explicit_bzero(ktls_args, sizeof(ktls_args));
-+#endif
- 
- 	memset(&send, 0, sizeof(send));
- 	send.dump_fd = fileno(stdout);
-@@ -492,11 +518,26 @@ static int cmd_send(const struct cmd_struct *cmd, int argc, char **argv)
- 
- 	optind = 0;
- 	while (1) {
--		enum { GETOPT_VAL_SEND_NO_DATA = 256 };
-+		enum {
-+			GETOPT_VAL_SEND_NO_DATA = 256,
-+			GETOPT_VAL_ADDR = 300,
-+			GETOPT_VAL_PORT = 301,
-+			GETOPT_VAL_KEY = 302,
-+			GETOPT_VAL_TLS_MODE = 303,
-+		};
- 		static const struct option long_options[] = {
- 			{ "verbose", no_argument, NULL, 'v' },
- 			{ "quiet", no_argument, NULL, 'q' },
--			{ "no-data", no_argument, NULL, GETOPT_VAL_SEND_NO_DATA }
-+			{ "no-data", no_argument, NULL,
-+			  GETOPT_VAL_SEND_NO_DATA },
-+			{ "conn-addr", required_argument, NULL,
-+			  GETOPT_VAL_ADDR },
-+			{ "tcp-port", required_argument, NULL,
-+			  GETOPT_VAL_PORT },
-+			{ "tls-key", required_argument, NULL, GETOPT_VAL_KEY },
-+			{ "tls-mode", required_argument, NULL,
-+			  GETOPT_VAL_TLS_MODE },
-+			{ NULL, 0, NULL, 0 }
- 		};
- 		int c = getopt_long(argc, argv, "vqec:f:i:p:", long_options, NULL);
- 
-@@ -581,6 +622,27 @@ static int cmd_send(const struct cmd_struct *cmd, int argc, char **argv)
- 			error("option -i was removed, use -c instead");
- 			ret = 1;
- 			goto out;
-+#if KTLS_SEND_RECV == 1
-+		case GETOPT_VAL_ADDR:
-+		case GETOPT_VAL_PORT:
-+		case GETOPT_VAL_KEY:
-+		case GETOPT_VAL_TLS_MODE:
-+			arg_len = strlen(optarg);
-+			arg_idx = c - GETOPT_VAL_ADDR;
-+			ktls_args[arg_idx] = (char *)malloc(arg_len + 1);
-+			if (!ktls_args[arg_idx]) {
-+				error("fail to allocate buffer (%zu)", arg_len);
-+				ret = 1;
-+				goto out;
-+			}
-+			if (arg_copy_path(ktls_args[arg_idx], optarg,
-+					  arg_len + 1)) {
-+				error("argument too long (%zu)", arg_len);
-+				ret = 1;
-+				goto out;
++		case AF_INET6:
++			explicit_bzero(&addr6, sizeof(addr6));
++			addr6.sin6_addr =
++				((struct sockaddr_in6 *)res->ai_addr)->sin6_addr;
++			addr6.sin6_port = port;
++			addr6.sin6_family = res->ai_family;
++			if (!ktls_connect_or_bind(
++				    sock, is_sender, res->ai_family,
++				    (struct sockaddr *)&addr6, sizeof(addr6))) {
++				goto cleanup;
 +			}
 +			break;
-+#endif
- 		case GETOPT_VAL_SEND_NO_DATA:
- 			send_flags |= BTRFS_SEND_FLAG_NO_FILE_DATA;
- 			break;
-@@ -613,6 +675,53 @@ static int cmd_send(const struct cmd_struct *cmd, int argc, char **argv)
- 			goto out;
- 		}
- 	}
-+#if KTLS_SEND_RECV == 1
-+	if (ktls_args[KTLS_IDX_ADDR]) {
-+		if (outname[0]) {
-+			error("cannot send to both ktls and file");
-+			ret = 1;
-+			goto out;
 +		}
-+
-+		if (!ktls_args[KTLS_IDX_PORT]) {
-+			error("no remote ktls port");
-+			ret = 1;
-+			goto out;
-+		}
-+
-+		if (!ktls_args[KTLS_IDX_PORT]) {
-+			error("fail to create ktls session");
-+			ret = 1;
-+			goto out;
-+		}
-+
-+		ktls_session = ktls_create_session(true);
-+
-+		if (ktls_args[KTLS_IDX_TLS_MODE]) {
-+			if (ktls_set_tls_mode(ktls_session,
-+					      ktls_args[KTLS_IDX_TLS_MODE]))
-+				goto out;
-+		}
-+
-+		if (ktls_args[KTLS_IDX_KEY]) {
-+			if (ktls_set_psk_session_from_keyfile(
-+				    ktls_session, ktls_username,
-+				    ktls_args[KTLS_IDX_KEY])) {
-+				goto out;
-+			};
-+		} else {
-+			if (ktls_set_psk_session_from_password_prompt(
-+				    ktls_session, ktls_username)) {
-+				goto out;
-+			}
-+		}
-+
-+		send.dump_fd =
-+			ktls_create_sock_oneshot(ktls_session,
-+						 ktls_args[KTLS_IDX_ADDR],
-+						 ktls_args[KTLS_IDX_PORT]);
++		res = res->ai_next;
 +	}
-+#endif
- 
- 	if (isatty(send.dump_fd)) {
- 		error(
-@@ -755,6 +864,16 @@ out:
- 	free(snapshot_parent);
- 	free(send.clone_sources);
- 	free_send_info(&send);
-+#if KTLS_SEND_RECV == 1
-+	for (i = KTLS_IDX_ADDR; i < KTLS_IDX_SIZE; i++) {
-+		if (ktls_args[i])
-+			free(ktls_args[i]);
-+	}
-+	ktls_destroy_session(ktls_session);
-+#endif
-+	if (send.dump_fd != fileno(stdin))
-+		close(send.dump_fd);
 +
- 	return !!ret;
- }
- DEFINE_SIMPLE_COMMAND(send, "send");
++	freeaddrinfo(res);
++	return EXIT_FAILURE;
++
++cleanup:
++	freeaddrinfo(res);
++	return rc;
++}
++
++static int ktls_connect_ip(int *sock, bool is_sender, const char *host,
++			   const uint16_t port)
++{
++	struct sockaddr_in addr4;
++	struct sockaddr_in6 addr6;
++	struct sockaddr *serv_addr = NULL;
++	size_t serv_addr_sz = 0;
++	sa_family_t protol = AF_INET;
++
++	explicit_bzero(&addr4, sizeof(addr4));
++	explicit_bzero(&addr6, sizeof(addr6));
++
++	if (inet_pton(AF_INET, host, &addr4.sin_addr) == 1) {
++		serv_addr = (struct sockaddr *)&addr4;
++		serv_addr_sz = sizeof(addr4);
++		protol = addr4.sin_family = AF_INET;
++		addr4.sin_port = port;
++	}
++
++	if (!serv_addr && inet_pton(AF_INET6, host, &addr6.sin6_addr) == 1) {
++		serv_addr = (struct sockaddr *)&addr6;
++		serv_addr_sz = sizeof(addr6);
++		protol = addr6.sin6_family = AF_INET6;
++		addr6.sin6_port = port;
++	}
++
++	if (!serv_addr)
++		return KTLS_INVALID_FD;
++
++	return ktls_connect_or_bind(sock, is_sender, protol, serv_addr,
++				    serv_addr_sz);
++}
++
++int ktls_set_tls_mode(struct ktls_session *session, const char *mode)
++{
++	if (!session)
++		return EXIT_FAILURE;
++
++	if (!strcmp("none", mode))
++		session->tls_mode = KTLS_TLS_MODE_NONE;
++	else if (!strcmp("tls_12_128_gcm", mode))
++		session->tls_mode = KTLS_TLS_12_128_GCM;
++	else if (!strcmp("tls_13_128_gcm", mode))
++		session->tls_mode = KTLS_TLS_13_128_GCM;
++	else if (!strcmp("tls_12_256_gcm", mode))
++		session->tls_mode = KTLS_TLS_12_256_GCM;
++	else {
++		error("unknown tls mode: %s", mode);
++		return EXIT_FAILURE;
++	}
++	return EXIT_SUCCESS;
++}
++
++#define INIT_GCM_WITH_MODE(V, X)                                               \
++	{                                                                      \
++		struct tls12_crypto_info_aes_gcm_##X crypto_info;              \
++\
++		crypto_info.info.version = TLS_##V##_VERSION;                  \
++		crypto_info.info.cipher_type = TLS_CIPHER_AES_GCM_##X;         \
++		memcpy(crypto_info.iv, seq_number,                             \
++		       TLS_CIPHER_AES_GCM_##X##_IV_SIZE);                      \
++		memcpy(crypto_info.rec_seq, seq_number,                        \
++		       TLS_CIPHER_AES_GCM_##X##_REC_SEQ_SIZE);                 \
++		if (cipher_key.size != TLS_CIPHER_AES_GCM_##X##_KEY_SIZE) {    \
++			error("mismatch in send key size: %d != %d\n",         \
++			      cipher_key.size,                                 \
++			      TLS_CIPHER_AES_GCM_##X##_KEY_SIZE);              \
++			goto cleanup;                                          \
++		}                                                              \
++		memcpy(crypto_info.key, cipher_key.data,                       \
++		       TLS_CIPHER_AES_GCM_##X##_KEY_SIZE);                     \
++		memcpy(crypto_info.salt, iv.data,                              \
++		       TLS_CIPHER_AES_GCM_##X##_SALT_SIZE);                    \
++		if (setsockopt(sock, SOL_TLS, is_sender ? TLS_TX : TLS_RX,     \
++			       &crypto_info, sizeof(crypto_info))) {           \
++			error("fail to set kernel tls: %s", strerror(errno));  \
++			goto cleanup;                                          \
++		}                                                              \
++	}
++
++int ktls_handshake_tls(struct ktls_session *session, int sock)
++{
++	int rc = 0;
++	bool is_sender = false;
++	int handshake_retry = 3;
++	char tls_priority_list[KTLS_MAX_PRIORITY_STRING_LENTH];
++	const char *tls_priority_templ =
++		"NONE:+MAC-ALL:+COMP-NULL:+SIGN-ALL:+GROUP-ALL:+ECDHE-PSK:+DHE-PSK:%s:%s";
++	const char *tls_priority_ver_mode = NULL;
++
++	gnutls_datum_t mac_key;
++	gnutls_datum_t iv;
++	gnutls_datum_t cipher_key;
++	unsigned char seq_number[8];
++
++	if (!session || !session->session)
++		return EXIT_FAILURE;
++
++	switch (session->tls_mode) {
++	case KTLS_TLS_MODE_NONE:
++		return EXIT_SUCCESS;
++	case KTLS_TLS_12_128_GCM:
++		tls_priority_ver_mode = "+VERS-TLS1.2:+AES-128-GCM";
++		break;
++	case KTLS_TLS_13_128_GCM:
++		tls_priority_ver_mode = "+VERS-TLS1.3:+AES-128-GCM";
++		break;
++	case KTLS_TLS_12_256_GCM:
++		tls_priority_ver_mode = "+VERS-TLS1.2:+AES-256-GCM";
++		break;
++	default:
++		error("unknown tls mode");
++		goto cleanup;
++	}
++
++	is_sender = session->role == GNUTLS_CLIENT;
++
++	if (is_sender && session->psk_cred_client) {
++		rc = gnutls_credentials_set(session->session, GNUTLS_CRD_PSK,
++					    session->psk_cred_client);
++		if (rc != GNUTLS_E_SUCCESS) {
++			error("fail to set PSK for client: %s",
++			      gnutls_strerror(rc));
++			goto cleanup;
++		}
++	}
++
++	if (!is_sender && session->psk_cred_server) {
++		rc = gnutls_credentials_set(session->session, GNUTLS_CRD_PSK,
++					    session->psk_cred_server);
++		if (rc != GNUTLS_E_SUCCESS) {
++			error("fail to set PSK for server: %s",
++			      gnutls_strerror(rc));
++			goto cleanup;
++		}
++	}
++
++	if (session->crt_cred) {
++		rc = gnutls_credentials_set(session->session,
++					    GNUTLS_CRD_CERTIFICATE,
++					    session->crt_cred);
++
++		if (rc == GNUTLS_E_SUCCESS) {
++			error("fail to set certificate: %s",
++			      gnutls_strerror(rc));
++			goto cleanup;
++		}
++	}
++
++	snprintf(tls_priority_list, KTLS_MAX_PRIORITY_STRING_LENTH,
++		 tls_priority_templ,
++		 is_sender ? "+CTYPE-CLI-ALL" : "+CTYPE-SRV-ALL",
++		 tls_priority_ver_mode);
++
++	rc = gnutls_priority_set_direct(session->session, tls_priority_list,
++					NULL);
++	if (rc != GNUTLS_E_SUCCESS) {
++		error("fail to set priority: %s", gnutls_strerror(rc));
++		goto cleanup;
++	}
++
++	gnutls_transport_set_int(session->session, sock);
++
++	gnutls_handshake_set_timeout(session->session,
++				     GNUTLS_DEFAULT_HANDSHAKE_TIMEOUT);
++
++	do {
++		if (handshake_retry < 0) {
++			error("exhaust retries on handshake");
++			break;
++		}
++		rc = gnutls_handshake(session->session);
++		handshake_retry--;
++	} while (rc < 0 && !gnutls_error_is_fatal(rc));
++
++	if (gnutls_error_is_fatal(rc)) {
++		error("fail on handshake: %s", gnutls_strerror(rc));
++		goto cleanup;
++	}
++	if (bconf.verbose > 0) {
++		char *desc = gnutls_session_get_desc(session->session);
++
++		printf("TLS session info: %s\n", desc);
++		gnutls_free(desc);
++	}
++
++	session->stage = KTLS_STAGE_HAS_HANDSHAKED;
++
++	rc = gnutls_record_get_state(session->session, is_sender ? 0 : 1,
++				     &mac_key, &iv, &cipher_key, seq_number);
++	if (rc != GNUTLS_E_SUCCESS) {
++		error("fail on retrieve TLS record: %s", gnutls_strerror(rc));
++		goto cleanup;
++	}
++
++	if (setsockopt(sock, SOL_TCP, TCP_ULP, "tls", sizeof("tls"))) {
++		error("fail to set kernel TLS on socket: %s", strerror(errno));
++		goto cleanup;
++	}
++
++	switch (session->tls_mode) {
++	case KTLS_TLS_12_128_GCM:
++		INIT_GCM_WITH_MODE(1_2, 128);
++		break;
++	case KTLS_TLS_13_128_GCM:
++		INIT_GCM_WITH_MODE(1_3, 128);
++		break;
++	case KTLS_TLS_12_256_GCM:
++		INIT_GCM_WITH_MODE(1_2, 256);
++		break;
++	default:
++		error("unknown tls mode");
++		goto cleanup;
++	}
++
++	if (bconf.verbose > 0)
++		fprintf(stderr, "ktls init done\n");
++
++	return EXIT_SUCCESS;
++
++cleanup:
++	return EXIT_FAILURE;
++}
++
++static int ktls_cp_datum(gnutls_datum_t *to, const gnutls_datum_t *from)
++{
++	if (!to || !from)
++		return EXIT_FAILURE;
++
++	to->size = from->size;
++	to->data = (unsigned char *)gnutls_malloc(to->size);
++	memmove(to->data, from->data, to->size);
++
++	return EXIT_SUCCESS;
++}
++
++static int ktls_cmp_datum(const gnutls_datum_t *lhs, const gnutls_datum_t *rhs)
++{
++	if (!lhs && !rhs)
++		return EXIT_SUCCESS;
++
++	if (!lhs || !rhs)
++		return EXIT_FAILURE;
++
++	if (lhs->size != rhs->size)
++		return EXIT_FAILURE;
++
++	return memcmp(lhs->data, rhs->data, lhs->size);
++}
++
++static int ktls_set_datum(gnutls_datum_t *to, const unsigned char *from,
++			  int from_size)
++{
++	if (!to || !from || !from_size)
++		return EXIT_FAILURE;
++
++	if (from_size < 0)
++		from_size = strlen((const char *)from);
++
++	to->size = from_size;
++	to->data = (unsigned char *)gnutls_malloc(to->size);
++	memmove(to->data, from, from_size);
++
++	return EXIT_SUCCESS;
++}
++
++static int tls_psk_client_callback(gnutls_session_t session,
++				   gnutls_datum_t *username,
++				   gnutls_datum_t *key)
++{
++	if (ktls_cp_datum(username, &ktls_psk_username) ||
++	    ktls_cp_datum(key, &ktls_psk_key))
++		return EXIT_FAILURE;
++
++	return EXIT_SUCCESS;
++}
++
++static int tls_psk_server_callback(gnutls_session_t session,
++				   const gnutls_datum_t *username,
++				   gnutls_datum_t *key)
++{
++	if (ktls_cmp_datum(username, &ktls_psk_username) ||
++	    ktls_cp_datum(key, &ktls_psk_key))
++		return EXIT_FAILURE;
++
++	return EXIT_SUCCESS;
++}
++
++int ktls_set_psk_session(struct ktls_session *session, const char *username,
++			 const unsigned char *passwd, const size_t sz_passwd)
++{
++	bool is_sender = false;
++	int rc = 0;
++
++	if (!session || !session->session)
++		goto cleanup;
++
++	is_sender = session->role == GNUTLS_CLIENT;
++
++	if (!is_sender && !session->psk_cred_server) {
++		rc = gnutls_psk_allocate_server_credentials(
++			&session->psk_cred_server);
++		if (rc != GNUTLS_E_SUCCESS) {
++			error("fail on set psk for server: %s",
++			      gnutls_strerror(rc));
++			goto cleanup;
++		}
++		gnutls_psk_set_server_credentials_function2(
++			session->psk_cred_server, tls_psk_server_callback);
++	}
++
++	if (is_sender && !session->psk_cred_client) {
++		rc = gnutls_psk_allocate_client_credentials(
++			&session->psk_cred_client);
++		if (rc != GNUTLS_E_SUCCESS) {
++			error("fail on set psk for client: %s",
++			      gnutls_strerror(rc));
++			goto cleanup;
++		}
++		gnutls_psk_set_client_credentials_function2(
++			session->psk_cred_client, tls_psk_client_callback);
++	}
++
++	if (!ktls_psk_key.size)
++		gnutls_free(ktls_psk_key.data);
++
++	if (!ktls_psk_username.size)
++		gnutls_free(ktls_psk_username.data);
++
++	if (ktls_set_datum(&ktls_psk_username, (const unsigned char *)username,
++			   -1) ||
++	    ktls_set_datum(&ktls_psk_key, passwd, sz_passwd))
++		goto cleanup;
++
++	return EXIT_SUCCESS;
++
++cleanup:
++	return EXIT_FAILURE;
++}
++
++int ktls_create_sock_oneshot(struct ktls_session *session, const char *host,
++			     const char *port)
++{
++	int sock = 0;
++	int nport = 0;
++	bool is_sender;
++
++	if (!session || !session->session)
++		return EXIT_FAILURE;
++
++	is_sender = session->role == GNUTLS_CLIENT;
++
++	nport = atoi(port);
++
++	if (nport >= 0 && nport <= 65535)
++		nport = htons((uint16_t)nport);
++
++	if (ktls_connect_ip(&sock, is_sender, host, (uint16_t)nport))
++		if (ktls_connect_domain(&sock, is_sender, host, nport))
++			goto cleanup;
++
++	if (!is_sender) {
++		int accepted_sock = KTLS_INVALID_FD;
++
++		accepted_sock = accept(sock, (struct sockaddr *)NULL, NULL);
++		close(sock);
++		sock = accepted_sock;
++	}
++
++	if (ktls_handshake_tls(session, sock))
++		goto cleanup;
++
++	return sock;
++
++cleanup:
++	close(sock);
++	return KTLS_INVALID_FD;
++}
+diff --git a/common/ktls.h b/common/ktls.h
+new file mode 100644
+index 00000000..d744e18e
+--- /dev/null
++++ b/common/ktls.h
+@@ -0,0 +1,57 @@
++/*
++ * Copyright (C) 2020 Sheng Mao.  All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ */
++
++#ifndef __BTRFS_KTLS_H__
++#define __BTRFS_KTLS_H__
++
++#include <stdbool.h>
++#include <stddef.h>
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++struct ktls_session;
++
++enum { KTLS_INVALID_FD = -1 };
++
++struct ktls_session *ktls_create_session(bool is_sender);
++void ktls_destroy_session(struct ktls_session *session);
++
++// ktls_set_psk_session sets PSK (pre-shared key). username is NULL-terminated
++// string; passwd is sized string. Memory of both strings are managed by
++// caller. currently, this API only allows to set PSK before calling
++// ktls_handshake_*()
++int ktls_set_psk_session(struct ktls_session *session, const char *username,
++			 const unsigned char *passwd, const size_t sz_passwd);
++
++int ktls_set_psk_session_from_password_prompt(struct ktls_session *session,
++					      const char *username);
++
++int ktls_set_psk_session_from_keyfile(struct ktls_session *session,
++				      const char *username,
++				      const char *key_file);
++
++int ktls_set_tls_mode(struct ktls_session *session, const char *mode);
++
++int ktls_handshake_tls(struct ktls_session *session, int sock);
++
++// ktls_create_sock_oneshot returns a sock fd on success.
++int ktls_create_sock_oneshot(struct ktls_session *session, const char *host,
++			     const char *port);
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif // __BTRFS_KTLS_H__
 -- 
 2.29.2
 

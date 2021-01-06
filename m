@@ -7,36 +7,36 @@ X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7B73BC433E9
-	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Jan 2021 01:04:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 58691C4332B
+	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Jan 2021 01:04:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 4515E221E2
-	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Jan 2021 01:04:27 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 18F0D221E2
+	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Jan 2021 01:04:28 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727156AbhAFBED (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 5 Jan 2021 20:04:03 -0500
-Received: from mx2.suse.de ([195.135.220.15]:45874 "EHLO mx2.suse.de"
+        id S1727175AbhAFBE1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 5 Jan 2021 20:04:27 -0500
+Received: from mx2.suse.de ([195.135.220.15]:46052 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727132AbhAFBEC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 5 Jan 2021 20:04:02 -0500
+        id S1727132AbhAFBE0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 5 Jan 2021 20:04:26 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1609894961; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1609894957; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=1ZQtjkg4wPmu68RWjYXG8zy+z/fkgfacUaFXfH+ZJ/s=;
-        b=ICzkFkkK0DtipB3blvBcGx2l9kfwPeyBN/c/F+FzhCVHbQVmhR7SoGIpr4dfEpLkU7Ub8R
-        tjbftjvifUAcb7xTlmxfX0BxMlmoa/BJwJTek1bMuUuKHqdRF+ud2GXewo+6UM+z/5Fajj
-        xHorUa6y/Qa7qv2DEVQ4Rbg5r1zh/Gs=
+        bh=G2V1dkXP68zqlWUUJv2gCoMndfOciJHtWeb2y7TocLw=;
+        b=TBqLuahrFInvXp7OES/krZ4foPipvJINgBSbdSeTzIvxWey/rPZ8OQboS16crzfMR6qW5q
+        9uia7pESa3pxNxpNCojO1Z/2ZfDYzLtMc5clmKBw55zZ2LW9+qO3dYZ9unHXUSyDo4cdjt
+        P3uWjnkxgWV73EOcX2SEdAPsi9m2g/U=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 8A719ABC4
-        for <linux-btrfs@vger.kernel.org>; Wed,  6 Jan 2021 01:02:41 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 25765AF72
+        for <linux-btrfs@vger.kernel.org>; Wed,  6 Jan 2021 01:02:37 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 19/22] btrfs: disk-io: introduce subpage metadata validation check
-Date:   Wed,  6 Jan 2021 09:01:58 +0800
-Message-Id: <20210106010201.37864-20-wqu@suse.com>
+Subject: [PATCH v3 17/22] btrfs: extent_io: introduce read_extent_buffer_subpage()
+Date:   Wed,  6 Jan 2021 09:01:56 +0800
+Message-Id: <20210106010201.37864-18-wqu@suse.com>
 X-Mailer: git-send-email 2.29.2
 In-Reply-To: <20210106010201.37864-1-wqu@suse.com>
 References: <20210106010201.37864-1-wqu@suse.com>
@@ -46,96 +46,132 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-For subpage metadata validation check, there are some difference:
+Introduce a new helper, read_extent_buffer_subpage(), to do the subpage
+extent buffer read.
 
-- Read must finish in one bvec
-  Since we're just reading one subpage range in one page, it should
-  never be split into two bios nor two bvecs.
+The difference between regular and subpage routines are:
+- No page locking
+  Here we completely rely on extent locking.
+  Page locking can reduce the concurrency greatly, as if we lock one
+  page to read one extent buffer, all the other extent buffers in the
+  same page will have to wait.
 
-- How to grab the existing eb
-  Instead of grabbing eb using page->private, we have to go search radix
-  tree as we don't have any direct pointer at hand.
+- Extent uptodate condition
+  Despite the existing PageUptodate() and EXTENT_BUFFER_UPTODATE check,
+  We also need to check btrfs_subpage::uptodate_bitmap.
+
+- No page loop
+  Just one page, no need to loop, this greately simplified the subpage
+  routine.
+
+This patch only implemented the bio submit part, no endio support yet.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/disk-io.c | 57 ++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 57 insertions(+)
+ fs/btrfs/disk-io.c   |  1 +
+ fs/btrfs/extent_io.c | 70 ++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 71 insertions(+)
 
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 7440663e8d13..73733250d12c 100644
+index 5473bed6a7e8..7440663e8d13 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -591,6 +591,59 @@ static int validate_extent_buffer(struct extent_buffer *eb)
- 	return ret;
+@@ -602,6 +602,7 @@ int btrfs_validate_metadata_buffer(struct btrfs_io_bio *io_bio,
+ 	ASSERT(page->private);
+ 	eb = (struct extent_buffer *)page->private;
+ 
++
+ 	/*
+ 	 * The pending IO might have been the only thing that kept this buffer
+ 	 * in memory.  Make sure we have a ref for all this other checks
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 792264f5c3c2..b828314bf43a 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -5641,6 +5641,73 @@ void set_extent_buffer_uptodate(struct extent_buffer *eb)
+ 	}
  }
  
-+static int validate_subpage_buffer(struct page *page, u64 start, u64 end,
-+				   int mirror)
++static int read_extent_buffer_subpage(struct extent_buffer *eb, int wait,
++				      int mirror_num)
 +{
-+	struct btrfs_fs_info *fs_info = btrfs_sb(page->mapping->host->i_sb);
-+	struct extent_buffer *eb;
-+	int reads_done;
++	struct btrfs_fs_info *fs_info = eb->fs_info;
++	struct extent_io_tree *io_tree;
++	struct page *page = eb->pages[0];
++	struct bio *bio = NULL;
 +	int ret = 0;
 +
-+	/*
-+	 * We don't allow bio merge for subpage metadata read, so we should
-+	 * only get one eb for each endio hook.
-+	 */
-+	ASSERT(end == start + fs_info->nodesize - 1);
++	ASSERT(!test_bit(EXTENT_BUFFER_UNMAPPED, &eb->bflags));
 +	ASSERT(PagePrivate(page));
++	io_tree = &BTRFS_I(fs_info->btree_inode)->io_tree;
 +
-+	eb = find_extent_buffer(fs_info, start);
-+	/*
-+	 * When we are reading one tree block, eb must have been
-+	 * inserted into the radix tree. If not something is wrong.
-+	 */
-+	ASSERT(eb);
-+
-+	reads_done = atomic_dec_and_test(&eb->io_pages);
-+	/* Subpage read must finish in page read */
-+	ASSERT(reads_done);
-+
-+	eb->read_mirror = mirror;
-+	if (test_bit(EXTENT_BUFFER_READ_ERR, &eb->bflags)) {
-+		ret = -EIO;
-+		goto err;
++	if (wait == WAIT_NONE) {
++		ret = try_lock_extent(io_tree, eb->start,
++				      eb->start + eb->len - 1);
++		if (ret <= 0)
++			return ret;
++	} else {
++		ret = lock_extent(io_tree, eb->start, eb->start + eb->len - 1);
++		if (ret < 0)
++			return ret;
 +	}
-+	ret = validate_extent_buffer(eb);
-+	if (ret < 0)
-+		goto err;
 +
-+	if (test_and_clear_bit(EXTENT_BUFFER_READAHEAD, &eb->bflags))
-+		btree_readahead_hook(eb, ret);
++	ret = 0;
++	if (test_bit(EXTENT_BUFFER_UPTODATE, &eb->bflags) ||
++	    PageUptodate(page) ||
++	    btrfs_subpage_test_uptodate(fs_info, page, eb->start, eb->len)) {
++		set_bit(EXTENT_BUFFER_UPTODATE, &eb->bflags);
++		unlock_extent(io_tree, eb->start, eb->start + eb->len - 1);
++		return ret;
++	}
 +
-+	set_extent_buffer_uptodate(eb);
++	clear_bit(EXTENT_BUFFER_READ_ERR, &eb->bflags);
++	eb->read_mirror = 0;
++	atomic_set(&eb->io_pages, 1);
++	check_buffer_tree_ref(eb);
 +
-+	free_extent_buffer(eb);
-+	return ret;
-+err:
-+	/*
-+	 * end_bio_extent_readpage decrements io_pages in case of error,
-+	 * make sure it has something to decrement.
-+	 */
-+	atomic_inc(&eb->io_pages);
-+	clear_extent_buffer_uptodate(eb);
-+	free_extent_buffer(eb);
++	ret = submit_extent_page(REQ_OP_READ | REQ_META, NULL, page, eb->start,
++				 eb->len, eb->start - page_offset(page), &bio,
++				 end_bio_extent_readpage, mirror_num, 0, 0,
++				 true);
++	if (ret) {
++		/*
++		 * In the endio function, if we hit something wrong we will
++		 * increase the io_pages, so here we need to decrease it for error
++		 * path.
++		 */
++		atomic_dec(&eb->io_pages);
++	}
++	if (bio) {
++		int tmp;
++
++		tmp = submit_one_bio(bio, mirror_num, 0);
++		if (tmp < 0)
++			return tmp;
++	}
++	if (ret || wait != WAIT_COMPLETE)
++		return ret;
++
++	wait_extent_bit(io_tree, eb->start, eb->start + eb->len - 1,
++			EXTENT_LOCKED);
++	if (!test_bit(EXTENT_BUFFER_UPTODATE, &eb->bflags))
++		ret = -EIO;
 +	return ret;
 +}
 +
- int btrfs_validate_metadata_buffer(struct btrfs_io_bio *io_bio,
- 				   struct page *page, u64 start, u64 end,
- 				   int mirror)
-@@ -600,6 +653,10 @@ int btrfs_validate_metadata_buffer(struct btrfs_io_bio *io_bio,
- 	int reads_done;
+ int read_extent_buffer_pages(struct extent_buffer *eb, int wait, int mirror_num)
+ {
+ 	int i;
+@@ -5657,6 +5724,9 @@ int read_extent_buffer_pages(struct extent_buffer *eb, int wait, int mirror_num)
+ 	if (test_bit(EXTENT_BUFFER_UPTODATE, &eb->bflags))
+ 		return 0;
  
- 	ASSERT(page->private);
++	if (eb->fs_info->sectorsize < PAGE_SIZE)
++		return read_extent_buffer_subpage(eb, wait, mirror_num);
 +
-+	if (btrfs_sb(page->mapping->host->i_sb)->sectorsize < PAGE_SIZE)
-+		return validate_subpage_buffer(page, start, end, mirror);
-+
- 	eb = (struct extent_buffer *)page->private;
- 
- 
+ 	num_pages = num_extent_pages(eb);
+ 	for (i = 0; i < num_pages; i++) {
+ 		page = eb->pages[i];
 -- 
 2.29.2
 

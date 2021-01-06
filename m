@@ -2,120 +2,194 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1964CC433E0
-	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Jan 2021 22:41:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7C135C433E0
+	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Jan 2021 01:03:09 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D08F8230F9
-	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Jan 2021 22:41:26 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 36C3B22CAF
+	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Jan 2021 01:03:09 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728410AbhAEWlV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 5 Jan 2021 17:41:21 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49264 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728224AbhAEWlU (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Jan 2021 17:41:20 -0500
-Received: from mail-pg1-x536.google.com (mail-pg1-x536.google.com [IPv6:2607:f8b0:4864:20::536])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 65C38C061574
-        for <linux-btrfs@vger.kernel.org>; Tue,  5 Jan 2021 14:40:40 -0800 (PST)
-Received: by mail-pg1-x536.google.com with SMTP id v19so827521pgj.12
-        for <linux-btrfs@vger.kernel.org>; Tue, 05 Jan 2021 14:40:40 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to;
-        bh=GokFglWoZ0pAbBaOhyeJxr7mEUEFukscETHDwZMjSto=;
-        b=okJgoZqhfX6HdB2HYL4WLI9JsNdDq2+WA/ECL/gksATFJb43jvQIIZ26RtNr4IDPdw
-         T5syc0EkPNnSupNyiH0JVnDNut2+pW9ifIXUxlp1A6V/FMdYnuaBXbJ3Dlph++VPdNpn
-         wm8GkxmVouY8GrqFHiyqtRt3kjoS/1okz+ISDDmTFrK0K0NoIxoUUhBevXgMSjgq8fZc
-         qfGJ3jCyh+C9dLu/ihAQHiFKB69NpFcQC+c6xedEOrPScmpq1QJDDF+AMIS6s/g/+yiA
-         anZe9VAMvtoOYPCMxQm3Qveb1vTOY+omnHRzQ4VUYP+7wKpxByFDdL/2+JN3fWOBpPrK
-         fvwA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to;
-        bh=GokFglWoZ0pAbBaOhyeJxr7mEUEFukscETHDwZMjSto=;
-        b=HzgB1x/pWOmFGa5qzomk2ufVkBEALc0amlqIU0bOTYOUz7hEDhaXRw4X5ipWxAlp7Z
-         oUpxuUZE4gov0V5mMn2fm7LyCgIJjs3ZZeudWlFruFfpunrCSaIyCKHJfbhcvmvkaSTR
-         FjmNuMCcEuEtyfXytw5IlzYY4aI2ng4zmkki1b7zlyDvM8wuGRz35cqghapT7VN0Ba1R
-         dFciqkX0LsdOUNO16tWfN4TNYEZXIxU+rWJUigJHgex6BErwj9NJUJsdWojf/5urmVKD
-         RULKgOiafvchZiA56DOBcQWRezeIOO8tezJpuhzqkCKFdgw69zBgDq1WJb8fU8syPWHS
-         rczA==
-X-Gm-Message-State: AOAM532OWtOnxftSsr6ir9a4NdAbnJuj1uJge+dIHV8ArjF7Tp1iZW4J
-        TnQPfC6ufgJcCrc0YRuHhXga+869J3lAyxo9T3g=
-X-Google-Smtp-Source: ABdhPJzsksIvqNJIA1APNjQKcqiUrtYrMmj4v0Fv+j07G+STBDT9PULaUHfshwkJGfkSPKCNCrCV0VXk41MgxcuCozo=
-X-Received: by 2002:a63:2009:: with SMTP id g9mr1313425pgg.219.1609886439947;
- Tue, 05 Jan 2021 14:40:39 -0800 (PST)
+        id S1726264AbhAFBCy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 5 Jan 2021 20:02:54 -0500
+Received: from mx2.suse.de ([195.135.220.15]:45464 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1725906AbhAFBCy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 5 Jan 2021 20:02:54 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1609894927; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=ZkdYVrbddUKvgZdIaZrEJASUScWF0VQ65OnApoSQbz8=;
+        b=DINNnypuJskZRsNatoGAOE5Kevu1iVj3dPc8zaoKkaCxJ4yuC+4ksEse8GdaZuz75KR9nz
+        Z4WSbN/PHjgUk+HyNqHc8uYVdFvxvLTU1ii7HJ6jcQmsNxvq8m2THRfSs+yzxTjQE6Bqs8
+        hOSATkMap4QBTgbwB2j+Dh9oV9ANg0o=
+Received: from relay2.suse.de (unknown [195.135.221.27])
+        by mx2.suse.de (Postfix) with ESMTP id A3E2EAD6A;
+        Wed,  6 Jan 2021 01:02:07 +0000 (UTC)
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Josef Bacik <josef@toxicpanda.com>
+Subject: [PATCH v3 01/22] btrfs: extent_io: rename @offset parameter to @disk_bytenr for submit_extent_page()
+Date:   Wed,  6 Jan 2021 09:01:40 +0800
+Message-Id: <20210106010201.37864-2-wqu@suse.com>
+X-Mailer: git-send-email 2.29.2
+In-Reply-To: <20210106010201.37864-1-wqu@suse.com>
+References: <20210106010201.37864-1-wqu@suse.com>
 MIME-Version: 1.0
-References: <CAKxU2N_=1uKoVMh20h=_8SyOnHM=WvfZjfQP3t81yN2QTZS4Xg@mail.gmail.com>
- <20210104144437.GE6430@twin.jikos.cz> <CAKxU2N-Q5mjTS6arE5+-UgTgAZMGhTMDaGUAT-bQwe4BdjKOsg@mail.gmail.com>
- <20210105153312.GM6430@twin.jikos.cz>
-In-Reply-To: <20210105153312.GM6430@twin.jikos.cz>
-From:   Rosen Penev <rosenp@gmail.com>
-Date:   Tue, 5 Jan 2021 14:40:28 -0800
-Message-ID: <CAKxU2N9XkG72T0pUb2iSeATXB-Sh9j+rBpSogfAVH0Zccui_mg@mail.gmail.com>
-Subject: Re: Question about btrfs and XOR offloading
-To:     dsterba@suse.cz, Rosen Penev <rosenp@gmail.com>,
-        linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Jan 5, 2021 at 7:35 AM David Sterba <dsterba@suse.cz> wrote:
->
-> On Mon, Jan 04, 2021 at 02:56:59PM -0800, Rosen Penev wrote:
-> > On Mon, Jan 4, 2021 at 6:46 AM David Sterba <dsterba@suse.cz> wrote:
-> > >
-> > > On Sat, Jan 02, 2021 at 07:50:38PM -0800, Rosen Penev wrote:
-> > > > I've noticed that internally, btrfs' XOR code is CPU only. Does anyone
-> > > > know if there is a performance advantage to using a hardware
-> > > > accelerated path? I ask as I use BTRFS on a Marvelll ARM platform with
-> > > > XOR offload capability.
-> > >
-> > > Even if it's CPU, it's accelerated and best algorithm is selected at
-> > > boot time:
-> > >
-> > > [   16.357703] raid6: avx2x4   gen() 30635 MB/s
-> > > [   16.425701] raid6: avx2x4   xor() 10727 MB/s
-> > > [   16.493701] raid6: avx2x2   gen() 32995 MB/s
-> > > [   16.561701] raid6: avx2x2   xor() 19596 MB/s
-> > > [   16.629701] raid6: avx2x1   gen() 26349 MB/s
-> > > [   16.697710] raid6: avx2x1   xor() 17794 MB/s
-> > > [   16.765701] raid6: sse2x4   gen() 17354 MB/s
-> > > [   16.833701] raid6: sse2x4   xor()  9653 MB/s
-> > > [   16.901706] raid6: sse2x2   gen() 18495 MB/s
-> > > [   16.969702] raid6: sse2x2   xor() 11562 MB/s
-> > > [   17.037701] raid6: sse2x1   gen() 14440 MB/s
-> > > [   17.105818] raid6: sse2x1   xor() 10387 MB/s
-> > > [   17.108300] raid6: using algorithm avx2x2 gen() 32995 MB/s
-> > > [   17.110703] raid6: .... xor() 19596 MB/s, rmw enabled
-> > > [   17.113587] raid6: using avx2x2 recovery algorithm
-> > > [   17.327666] xor: automatically using best checksumming function   avx
-> > Yeah...
-> >
-> > [    0.316064] raid6: neonx8   xor()  1087 MB/s
-> > [    0.452063] raid6: neonx4   xor()  1372 MB/s
-> > [    0.588064] raid6: neonx2   xor()  1610 MB/s
-> > [    0.724061] raid6: neonx1   xor()  1345 MB/s
-> > [    0.860072] raid6: int32x8  xor()   337 MB/s
-> > [    0.996092] raid6: int32x4  xor()   373 MB/s
-> > [    1.132087] raid6: int32x2  xor()   348 MB/s
-> > [    1.268090] raid6: int32x1  xor()   281 MB/s
-> > [    1.268093] raid6: .... xor() 1610 MB/s, rmw enabled
-> >
-> > Not as fast here.
->
-> What's the raw speed of the hw offload? Measured on large data so that
-> the overhead is negligible.
-I have no idea how to benchmark such a thing. I assume it could be
-done indirectly.
->
-> It might make sense to add the async support in case the speed is
-> comparable or better to the CPU, but also to reduce the CPU load.
-I think the latter is the reason Marvell added hardware support for
-doing parity calculations.
+The parameter @offset can't be more confusing.
+In fact that parameter is the disk bytenr for metadata/data.
+
+Rename it to @disk_bytenr and update the comment to reduce confusion.
+
+Since we're here, also rename all @offset passed into
+submit_extent_page() to @disk_bytenr.
+
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/extent_io.c | 30 +++++++++++++++---------------
+ 1 file changed, 15 insertions(+), 15 deletions(-)
+
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index c9cee458e001..99e04fc731a3 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3062,10 +3062,10 @@ struct bio *btrfs_bio_clone_partial(struct bio *orig, int offset, int size)
+  * @opf:	bio REQ_OP_* and REQ_* flags as one value
+  * @wbc:	optional writeback control for io accounting
+  * @page:	page to add to the bio
++ * @disk_bytenr:the logical bytenr where the write will be
++ * @size:	portion of page that we want to write
+  * @pg_offset:	offset of the new bio or to check whether we are adding
+  *              a contiguous page to the previous one
+- * @size:	portion of page that we want to write
+- * @offset:	starting offset in the page
+  * @bio_ret:	must be valid pointer, newly allocated bio will be stored there
+  * @end_io_func:     end_io callback for new bio
+  * @mirror_num:	     desired mirror to read/write
+@@ -3074,7 +3074,7 @@ struct bio *btrfs_bio_clone_partial(struct bio *orig, int offset, int size)
+  */
+ static int submit_extent_page(unsigned int opf,
+ 			      struct writeback_control *wbc,
+-			      struct page *page, u64 offset,
++			      struct page *page, u64 disk_bytenr,
+ 			      size_t size, unsigned long pg_offset,
+ 			      struct bio **bio_ret,
+ 			      bio_end_io_t end_io_func,
+@@ -3086,7 +3086,7 @@ static int submit_extent_page(unsigned int opf,
+ 	int ret = 0;
+ 	struct bio *bio;
+ 	size_t io_size = min_t(size_t, size, PAGE_SIZE);
+-	sector_t sector = offset >> 9;
++	sector_t sector = disk_bytenr >> 9;
+ 	struct extent_io_tree *tree = &BTRFS_I(page->mapping->host)->io_tree;
+ 
+ 	ASSERT(bio_ret);
+@@ -3120,7 +3120,7 @@ static int submit_extent_page(unsigned int opf,
+ 		}
+ 	}
+ 
+-	bio = btrfs_bio_alloc(offset);
++	bio = btrfs_bio_alloc(disk_bytenr);
+ 	bio_add_page(bio, page, io_size, pg_offset);
+ 	bio->bi_end_io = end_io_func;
+ 	bio->bi_private = tree;
+@@ -3242,7 +3242,7 @@ int btrfs_do_readpage(struct page *page, struct extent_map **em_cached,
+ 	}
+ 	while (cur <= end) {
+ 		bool force_bio_submit = false;
+-		u64 offset;
++		u64 disk_bytenr;
+ 
+ 		if (cur >= last_byte) {
+ 			char *userpage;
+@@ -3280,9 +3280,9 @@ int btrfs_do_readpage(struct page *page, struct extent_map **em_cached,
+ 		cur_end = min(extent_map_end(em) - 1, end);
+ 		iosize = ALIGN(iosize, blocksize);
+ 		if (this_bio_flag & EXTENT_BIO_COMPRESSED)
+-			offset = em->block_start;
++			disk_bytenr = em->block_start;
+ 		else
+-			offset = em->block_start + extent_offset;
++			disk_bytenr = em->block_start + extent_offset;
+ 		block_start = em->block_start;
+ 		if (test_bit(EXTENT_FLAG_PREALLOC, &em->flags))
+ 			block_start = EXTENT_MAP_HOLE;
+@@ -3371,7 +3371,7 @@ int btrfs_do_readpage(struct page *page, struct extent_map **em_cached,
+ 		}
+ 
+ 		ret = submit_extent_page(REQ_OP_READ | read_flags, NULL,
+-					 page, offset, iosize,
++					 page, disk_bytenr, iosize,
+ 					 pg_offset, bio,
+ 					 end_bio_extent_readpage, 0,
+ 					 *bio_flags,
+@@ -3548,8 +3548,8 @@ static noinline_for_stack int __extent_writepage_io(struct btrfs_inode *inode,
+ 	blocksize = inode->vfs_inode.i_sb->s_blocksize;
+ 
+ 	while (cur <= end) {
++		u64 disk_bytenr;
+ 		u64 em_end;
+-		u64 offset;
+ 
+ 		if (cur >= i_size) {
+ 			btrfs_writepage_endio_finish_ordered(page, cur,
+@@ -3569,7 +3569,7 @@ static noinline_for_stack int __extent_writepage_io(struct btrfs_inode *inode,
+ 		BUG_ON(end < cur);
+ 		iosize = min(em_end - cur, end - cur + 1);
+ 		iosize = ALIGN(iosize, blocksize);
+-		offset = em->block_start + extent_offset;
++		disk_bytenr = em->block_start + extent_offset;
+ 		block_start = em->block_start;
+ 		compressed = test_bit(EXTENT_FLAG_COMPRESSED, &em->flags);
+ 		free_extent_map(em);
+@@ -3599,7 +3599,7 @@ static noinline_for_stack int __extent_writepage_io(struct btrfs_inode *inode,
+ 		}
+ 
+ 		ret = submit_extent_page(REQ_OP_WRITE | write_flags, wbc,
+-					 page, offset, iosize, pg_offset,
++					 page, disk_bytenr, iosize, pg_offset,
+ 					 &epd->bio,
+ 					 end_bio_extent_writepage,
+ 					 0, 0, 0, false);
+@@ -3923,7 +3923,7 @@ static noinline_for_stack int write_one_eb(struct extent_buffer *eb,
+ 			struct writeback_control *wbc,
+ 			struct extent_page_data *epd)
+ {
+-	u64 offset = eb->start;
++	u64 disk_bytenr = eb->start;
+ 	u32 nritems;
+ 	int i, num_pages;
+ 	unsigned long start, end;
+@@ -3956,7 +3956,7 @@ static noinline_for_stack int write_one_eb(struct extent_buffer *eb,
+ 		clear_page_dirty_for_io(p);
+ 		set_page_writeback(p);
+ 		ret = submit_extent_page(REQ_OP_WRITE | write_flags, wbc,
+-					 p, offset, PAGE_SIZE, 0,
++					 p, disk_bytenr, PAGE_SIZE, 0,
+ 					 &epd->bio,
+ 					 end_bio_extent_buffer_writepage,
+ 					 0, 0, 0, false);
+@@ -3969,7 +3969,7 @@ static noinline_for_stack int write_one_eb(struct extent_buffer *eb,
+ 			ret = -EIO;
+ 			break;
+ 		}
+-		offset += PAGE_SIZE;
++		disk_bytenr += PAGE_SIZE;
+ 		update_nr_written(wbc, 1);
+ 		unlock_page(p);
+ 	}
+-- 
+2.29.2
+

@@ -7,37 +7,36 @@ X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5C911C433E6
-	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Jan 2021 01:03:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CB61FC433E0
+	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Jan 2021 01:03:44 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 18AE7221E2
-	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Jan 2021 01:03:43 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 99C95221E2
+	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Jan 2021 01:03:44 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726935AbhAFBDl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 5 Jan 2021 20:03:41 -0500
-Received: from mx2.suse.de ([195.135.220.15]:45872 "EHLO mx2.suse.de"
+        id S1727016AbhAFBDn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 5 Jan 2021 20:03:43 -0500
+Received: from mx2.suse.de ([195.135.220.15]:45892 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726901AbhAFBDl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 5 Jan 2021 20:03:41 -0500
+        id S1726951AbhAFBDn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 5 Jan 2021 20:03:43 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1609894939; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+        t=1609894943; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=E1jqO/59mKnrHluzKOJVj04w6ym0m0b5fuwF6iQUZ3g=;
-        b=E8DSqT3Gm6WqR2lD2jNCmVwF+SE0HjkfjeTQo5iOyPXjZOQ5tlMquGEqUaWg+CApOskGgE
-        kikamJxnjO1li60yn2SX8XyzbuIC7+4WZD02yfDmIACw0SYzEp5Y0TbA5fdnkXcjbTKCZR
-        3kDlHTKryAdCUz9tF//ZnHAyEJxeDYM=
+        bh=PFKNzfabLPmdK/YqdAb3XRZBPUrTNNO5hgeYDTcS8Mo=;
+        b=tRs6rJPyH+klmcQx7L41s8mbbK98/vfxyo98hb2sb/IK7mLvdHPP4Y9iRX+EPJicKA1xZh
+        fb1oGk4Uo96z0qvvbnKYi8S66P/t1GXQcZr+/oVGEtiaiamlG0urs8nvEIh1bgWOMKgh20
+        khxSWkB/aeYHzn9lvwOYmY4F/B20yig=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 995F2AF39;
-        Wed,  6 Jan 2021 01:02:19 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 167F9AF44
+        for <linux-btrfs@vger.kernel.org>; Wed,  6 Jan 2021 01:02:23 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Cc:     Josef Bacik <josef@toxicpanda.com>
-Subject: [PATCH v3 07/22] btrfs: extent_io: introduce the skeleton of btrfs_subpage structure
-Date:   Wed,  6 Jan 2021 09:01:46 +0800
-Message-Id: <20210106010201.37864-8-wqu@suse.com>
+Subject: [PATCH v3 09/22] btrfs: extent_io: make grab_extent_buffer_from_page() to handle subpage case
+Date:   Wed,  6 Jan 2021 09:01:48 +0800
+Message-Id: <20210106010201.37864-10-wqu@suse.com>
 X-Mailer: git-send-email 2.29.2
 In-Reply-To: <20210106010201.37864-1-wqu@suse.com>
 References: <20210106010201.37864-1-wqu@suse.com>
@@ -47,120 +46,58 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-For btrfs subpage support, we need a structure to record extra info for
-the status of each sectors of a page.
+For subpage case, grab_extent_buffer() can't really get an extent buffer
+just from btrfs_subpage.
 
-This patch will introduce the skeleton structure for future btrfs
-subpage support.
-All subpage related code would go to subpage.[ch] to avoid populating
-the existing code base.
+Although we have btrfs_subpage::tree_block_bitmap, which can be used to
+grab the bytenr of an existing extent buffer, and can then go radix tree
+search to grab that existing eb.
 
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+However we are still doing radix tree insert check in
+alloc_extent_buffer(), thus we don't really need to do the extra hassle,
+just let alloc_extent_buffer() to handle existing eb in radix tree.
+
+So for grab_extent_buffer(), just always return NULL for subpage case.
+
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/Makefile  |  3 ++-
- fs/btrfs/subpage.c | 39 +++++++++++++++++++++++++++++++++++++++
- fs/btrfs/subpage.h | 31 +++++++++++++++++++++++++++++++
- 3 files changed, 72 insertions(+), 1 deletion(-)
- create mode 100644 fs/btrfs/subpage.c
- create mode 100644 fs/btrfs/subpage.h
+ fs/btrfs/extent_io.c | 13 +++++++++++--
+ 1 file changed, 11 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/Makefile b/fs/btrfs/Makefile
-index 9f1b1a88e317..942562e11456 100644
---- a/fs/btrfs/Makefile
-+++ b/fs/btrfs/Makefile
-@@ -11,7 +11,8 @@ btrfs-y += super.o ctree.o extent-tree.o print-tree.o root-tree.o dir-item.o \
- 	   compression.o delayed-ref.o relocation.o delayed-inode.o scrub.o \
- 	   reada.o backref.o ulist.o qgroup.o send.o dev-replace.o raid56.o \
- 	   uuid-tree.o props.o free-space-tree.o tree-checker.o space-info.o \
--	   block-rsv.o delalloc-space.o block-group.o discard.o reflink.o
-+	   block-rsv.o delalloc-space.o block-group.o discard.o reflink.o \
-+	   subpage.o
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 2eeff925450f..9b6b8f6b6da3 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -5276,10 +5276,19 @@ struct extent_buffer *alloc_test_extent_buffer(struct btrfs_fs_info *fs_info,
+ }
+ #endif
  
- btrfs-$(CONFIG_BTRFS_FS_POSIX_ACL) += acl.o
- btrfs-$(CONFIG_BTRFS_FS_CHECK_INTEGRITY) += check-integrity.o
-diff --git a/fs/btrfs/subpage.c b/fs/btrfs/subpage.c
-new file mode 100644
-index 000000000000..c6ab32db3995
---- /dev/null
-+++ b/fs/btrfs/subpage.c
-@@ -0,0 +1,39 @@
-+// SPDX-License-Identifier: GPL-2.0
-+
-+#include "subpage.h"
-+
-+int btrfs_attach_subpage(struct btrfs_fs_info *fs_info, struct page *page)
-+{
-+	struct btrfs_subpage *subpage;
-+
+-static struct extent_buffer *grab_extent_buffer(struct page *page)
++static struct extent_buffer *grab_extent_buffer(
++		struct btrfs_fs_info *fs_info, struct page *page)
+ {
+ 	struct extent_buffer *exists;
+ 
 +	/*
-+	 * We have cases like a dummy extent buffer page, which is not
-+	 * mappped and doesn't need to be locked.
++	 * For subpage case, we completely rely on radix tree to ensure we
++	 * don't try to insert two eb for the same bytenr.
++	 * So here we alwasy return NULL and just continue.
 +	 */
-+	if (page->mapping)
-+		ASSERT(PageLocked(page));
-+	/* Either not subpage, or the page already has private attached */
-+	if (fs_info->sectorsize == PAGE_SIZE || PagePrivate(page))
-+		return 0;
++	if (fs_info->sectorsize < PAGE_SIZE)
++		return NULL;
 +
-+	subpage = kzalloc(sizeof(*subpage), GFP_NOFS);
-+	if (!subpage)
-+		return -ENOMEM;
-+
-+	spin_lock_init(&subpage->lock);
-+	attach_page_private(page, subpage);
-+	return 0;
-+}
-+
-+void btrfs_detach_subpage(struct btrfs_fs_info *fs_info, struct page *page)
-+{
-+	struct btrfs_subpage *subpage;
-+
-+	/* Either not subpage, or already detached */
-+	if (fs_info->sectorsize == PAGE_SIZE || !PagePrivate(page))
-+		return;
-+
-+	subpage = (struct btrfs_subpage *)detach_page_private(page);
-+	ASSERT(subpage);
-+	kfree(subpage);
-+}
-diff --git a/fs/btrfs/subpage.h b/fs/btrfs/subpage.h
-new file mode 100644
-index 000000000000..96f3b226913e
---- /dev/null
-+++ b/fs/btrfs/subpage.h
-@@ -0,0 +1,31 @@
-+/* SPDX-License-Identifier: GPL-2.0 */
-+
-+#ifndef BTRFS_SUBPAGE_H
-+#define BTRFS_SUBPAGE_H
-+
-+#include <linux/spinlock.h>
-+#include "ctree.h"
-+
-+/*
-+ * Since the maximum page size btrfs is going to support is 64K while the
-+ * minimum sectorsize is 4K, this means a u16 bitmap is enough.
-+ *
-+ * The regular bitmap requires 32 bits as minimal bitmap size, so we can't use
-+ * existing bitmap_* helpers here.
-+ */
-+#define BTRFS_SUBPAGE_BITMAP_SIZE	16
-+
-+/*
-+ * Structure to trace status of each sector inside a page.
-+ *
-+ * Will be attached to page::private for both data and metadata inodes.
-+ */
-+struct btrfs_subpage {
-+	/* Common members for both data and metadata pages */
-+	spinlock_t lock;
-+};
-+
-+int btrfs_attach_subpage(struct btrfs_fs_info *fs_info, struct page *page);
-+void btrfs_detach_subpage(struct btrfs_fs_info *fs_info, struct page *page);
-+
-+#endif /* BTRFS_SUBPAGE_H */
+ 	/* Page not yet attached to an extent buffer */
+ 	if (!PagePrivate(page))
+ 		return NULL;
+@@ -5357,7 +5366,7 @@ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
+ 		}
+ 
+ 		spin_lock(&mapping->private_lock);
+-		exists = grab_extent_buffer(p);
++		exists = grab_extent_buffer(fs_info, p);
+ 		if (exists) {
+ 			spin_unlock(&mapping->private_lock);
+ 			unlock_page(p);
 -- 
 2.29.2
 

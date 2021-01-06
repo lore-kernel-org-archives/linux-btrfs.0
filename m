@@ -3,217 +3,184 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4D573C433DB
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B3DE2C43381
 	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Jan 2021 01:03:09 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 0B8CF221E2
+	by mail.kernel.org (Postfix) with ESMTP id 80CA522CB1
 	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Jan 2021 01:03:09 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726244AbhAFBCx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 5 Jan 2021 20:02:53 -0500
-Received: from mx2.suse.de ([195.135.220.15]:45450 "EHLO mx2.suse.de"
+        id S1726655AbhAFBC4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 5 Jan 2021 20:02:56 -0500
+Received: from mx2.suse.de ([195.135.220.15]:45476 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725906AbhAFBCw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 5 Jan 2021 20:02:52 -0500
+        id S1725952AbhAFBC4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 5 Jan 2021 20:02:56 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1609894925; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=5mSMTAOG2mBSdnGAtv+o0WUmYZNJGi4L/f8pZdfK2Os=;
-        b=NaO4tcp6T96HNB/g+VbGlu6Z7dFVZ/F94E113Dsu6qlUtivm7cHthWp0V4xQqSeR1pR+pN
-        bkNo9LFNgSub8t0J0V7xfkYYkcaRh35Mm8sA/2SAboC19oNBSp37v+DWAjCVSSYFv2JcND
-        XMLcmXXJCLezU6W6N1q9C3tf8UQbKBQ=
+        t=1609894929; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=jGQetX9qPJI3T8fcvW++nwKGfCJBEitZEFtv1DPlYrQ=;
+        b=X4yG5LrFE11K6na/hilTc5CoHiUmSXlKhd7oo/12raB8+1ZD1PRbcz6eHtrlR+wX6/3uo3
+        RBrkf4CBy38madA0Gt5Lrkqf8B1RHUmZmnj8gZS9p/yCbYpJe6B08B1yXlJiQz0C1R1Rm6
+        IwyYwUGJqO7/rER0ZQT6zA6cO3W0pIY=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 924A8ACAF
-        for <linux-btrfs@vger.kernel.org>; Wed,  6 Jan 2021 01:02:05 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id B16E4ADC4;
+        Wed,  6 Jan 2021 01:02:09 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 00/22] btrfs: add read-only support for subpage sector size
-Date:   Wed,  6 Jan 2021 09:01:39 +0800
-Message-Id: <20210106010201.37864-1-wqu@suse.com>
+Cc:     Josef Bacik <josef@toxicpanda.com>
+Subject: [PATCH v3 02/22] btrfs: extent_io: refactor __extent_writepage_io() to improve readability
+Date:   Wed,  6 Jan 2021 09:01:41 +0800
+Message-Id: <20210106010201.37864-3-wqu@suse.com>
 X-Mailer: git-send-email 2.29.2
+In-Reply-To: <20210106010201.37864-1-wqu@suse.com>
+References: <20210106010201.37864-1-wqu@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Patches can be fetched from github:
-https://github.com/adam900710/linux/tree/subpage
-Currently the branch also contains partial RW data support (still some
-out-of-sync subpage data page status).
+The refactor involves the following modifications:
+- iosize alignment
+  In fact we don't really need to manually do alignment at all.
+  All extent maps should already be aligned, thus basic ASSERT() check
+  would be enough.
 
-Great thanks to David for his effort reviewing and merging the
-preparation patches into misc-next.
-Now all previously submitted preparation patches are already in
-misc-next.
+- redundant variables
+  We have extra variable like blocksize/pg_offset/end.
+  They are all unnecessary.
 
-=== What works ===
+  @blocksize can be replaced by sectorsize size directly, and it's only
+  used to verify the em start/size is aligned.
 
-Just from the patchset:
-- Data read
-  Both regular and compressed data, with csum check.
+  @pg_offset can be easily calculated using @cur and page_offset(page).
 
-- Metadata read
+  @end is just assigned from @page_end and never modified, use "start +
+   PAGE_SIZE - 1" directly and remove @page_end.
 
-This means, with these patchset, 64K page systems can at least mount
-btrfs with 4K sector size.
+- remove some BUG_ON()s
+  The BUG_ON()s are for extent map, which we have tree-checker to check
+  on-disk extent data item and runtime check.
+  ASSERT() should be enough.
 
-In the subpage branch
-- Metadata read write and balance
-  Not yet full tested due to data write still has bugs need to be
-  solved.
-  But considering that metadata operations from previous iteration
-  is mostly untouched, metadata read write should be pretty stable.
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/extent_io.c | 38 +++++++++++++++++---------------------
+ 1 file changed, 17 insertions(+), 21 deletions(-)
 
-- Baisc data balance
-  This is new.
-
-- Data read write
-  Only uncompressed data writes. Fsstress can survive.
-  But still very rare data csum error, which only happens in bookend data
-  extents (part of the data extent which is not referred by any file).
-  This looks like something related to reflink/invalidate page and cow
-  fixup.
-  Still invetigating.
-
-=== Needs feedback ===
-The following design needs extra comments:
-
-- u16 bitmap
-  As David mentioned, using u16 as bit map is not the fastest way.
-  That's also why current bitmap code requires unsigned long (u32) as
-  minimal unit.
-  But using bitmap directly would double the memory usage.
-  Thus the best way is to pack two u16 bitmap into one u32 bitmap, but
-  that still needs extra investigation to find better practice.
-
-  Anyway the skeleton should be pretty simple to expand.
-
-- Separate handling for subpage metadata
-  Currently the metadata read and (later write path) handles subpage
-  metadata differently. Mostly due to the page locking must be skipped
-  for subpage metadata.
-  I tried several times to use as many common code as possible, but
-  every time I ended up reverting back to current code.
-
-  Thankfully, for data handling we will use the same common code.
-
-- Incompatible subpage strcuture against iomap_page
-  In btrfs we need extra bits than iomap_page.
-  This is due to we need sector perfect write for data balance.
-  E.g. if only one 4K sector is dirty in a 64K page, we should only
-  write that dirty 4K back to disk, not the full 64K page.
-
-  As data balance requires the new data extents to have exactly the
-  same size as the original ones.
-  This means, unless iomap_page get extra bits like what we're doing in
-  btrfs for dirty, we can't merge the btrfs_subpage with iomap_page.
-
-=== Patchset structure ===
-Patch 01~03:	Existing preparation patches.
-		Mostly readability related patches found during RW
-		development
-Patch 04~05:	New preparation patches.
-		Mostly related to __process_pages_contig().
-Patch 06~10:	Subpage handling for extent buffer allocation and
-		freeing
-Patch 11~22:	Subpage handling for extent buffer read path
-
-=== Changelog ===
-v1:
-- Separate the main implementation from previous huge patchset
-  Huge patchset doesn't make much sense.
-
-- Use bitmap implementation
-  Now page::private will be a pointer to btrfs_subpage structure, which
-  contains bitmaps for various page status.
-
-v2:
-- Use page::private as btrfs_subpage for extra info
-  This replace old extent io tree based solution, which reduces latency
-  and don't require memory allocation for its operations.
-
-- Cherry-pick new preparation patches from RW development
-  Those new preparation patches improves the readability by their own.
-
-v3:
-- Make dummy extent buffer to follow the same subpage accessors
-  Fsstress exposed several ASSERT() for dummy extent buffers.
-  It turns out we need to make dummy extent buffer to own the same
-  btrfs_subpage structure to make eb accessors to work properly
-
-- Two new small __process_pages_contig() related preparation patches
-  One to make __process_pages_contig() to enhance the error handling
-  path for locked_page, one to merge one macro.
-
-- Extent buffers refs count update
-  Except try_release_extent_buffer(), all other eb uses will try to
-  increase the ref count of the eb.
-  For try_release_extent_buffer(), the eb refs check will happen inside
-  the rcu critical section to avoid eb being freed.
-
-- Comment updates
-  Addressing the comments from the mail list.
-
-Qu Wenruo (22):
-  btrfs: extent_io: rename @offset parameter to @disk_bytenr for
-    submit_extent_page()
-  btrfs: extent_io: refactor __extent_writepage_io() to improve
-    readability
-  btrfs: file: update comment for btrfs_dirty_pages()
-  btrfs: extent_io: update locked page dirty/writeback/error bits in
-    __process_pages_contig()
-  btrfs: extent_io: merge PAGE_CLEAR_DIRTY and PAGE_SET_WRITEBACK into
-    PAGE_START_WRITEBACK
-  btrfs: extent_io: introduce a helper to grab an existing extent buffer
-    from a page
-  btrfs: extent_io: introduce the skeleton of btrfs_subpage structure
-  btrfs: extent_io: make attach_extent_buffer_page() to handle subpage
-    case
-  btrfs: extent_io: make grab_extent_buffer_from_page() to handle
-    subpage case
-  btrfs: extent_io: support subpage for extent buffer page release
-  btrfs: extent_io: attach private to dummy extent buffer pages
-  btrfs: subpage: introduce helper for subpage uptodate status
-  btrfs: subpage: introduce helper for subpage error status
-  btrfs: extent_io: make set/clear_extent_buffer_uptodate() to support
-    subpage size
-  btrfs: extent_io: make btrfs_clone_extent_buffer() to be subpage
-    compatible
-  btrfs: extent_io: implement try_release_extent_buffer() for subpage
-    metadata support
-  btrfs: extent_io: introduce read_extent_buffer_subpage()
-  btrfs: extent_io: make endio_readpage_update_page_status() to handle
-    subpage case
-  btrfs: disk-io: introduce subpage metadata validation check
-  btrfs: introduce btrfs_subpage for data inodes
-  btrfs: integrate page status update for read path into
-    begin/end_page_read()
-  btrfs: allow RO mount of 4K sector size fs on 64K page system
-
- fs/btrfs/Makefile           |   3 +-
- fs/btrfs/compression.c      |  10 +-
- fs/btrfs/disk-io.c          |  82 +++++-
- fs/btrfs/extent_io.c        | 534 ++++++++++++++++++++++++++++--------
- fs/btrfs/extent_io.h        |  15 +-
- fs/btrfs/file.c             |  35 +--
- fs/btrfs/free-space-cache.c |  15 +-
- fs/btrfs/inode.c            |  40 ++-
- fs/btrfs/ioctl.c            |   5 +-
- fs/btrfs/reflink.c          |   5 +-
- fs/btrfs/relocation.c       |  12 +-
- fs/btrfs/subpage.c          |  39 +++
- fs/btrfs/subpage.h          | 256 +++++++++++++++++
- fs/btrfs/super.c            |   7 +
- 14 files changed, 876 insertions(+), 182 deletions(-)
- create mode 100644 fs/btrfs/subpage.c
- create mode 100644 fs/btrfs/subpage.h
-
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 99e04fc731a3..6f156ce501a1 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3513,23 +3513,20 @@ static noinline_for_stack int __extent_writepage_io(struct btrfs_inode *inode,
+ 				 unsigned long nr_written,
+ 				 int *nr_ret)
+ {
++	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+ 	struct extent_io_tree *tree = &inode->io_tree;
+ 	u64 start = page_offset(page);
+-	u64 page_end = start + PAGE_SIZE - 1;
+-	u64 end;
++	u64 end = start + PAGE_SIZE - 1;
+ 	u64 cur = start;
+ 	u64 extent_offset;
+ 	u64 block_start;
+-	u64 iosize;
+ 	struct extent_map *em;
+-	size_t pg_offset = 0;
+-	size_t blocksize;
+ 	int ret = 0;
+ 	int nr = 0;
+ 	const unsigned int write_flags = wbc_to_write_flags(wbc);
+ 	bool compressed;
+ 
+-	ret = btrfs_writepage_cow_fixup(page, start, page_end);
++	ret = btrfs_writepage_cow_fixup(page, start, end);
+ 	if (ret) {
+ 		/* Fixup worker will requeue */
+ 		redirty_page_for_writepage(wbc, page);
+@@ -3544,16 +3541,13 @@ static noinline_for_stack int __extent_writepage_io(struct btrfs_inode *inode,
+ 	 */
+ 	update_nr_written(wbc, nr_written + 1);
+ 
+-	end = page_end;
+-	blocksize = inode->vfs_inode.i_sb->s_blocksize;
+-
+ 	while (cur <= end) {
+ 		u64 disk_bytenr;
+ 		u64 em_end;
++		u32 iosize;
+ 
+ 		if (cur >= i_size) {
+-			btrfs_writepage_endio_finish_ordered(page, cur,
+-							     page_end, 1);
++			btrfs_writepage_endio_finish_ordered(page, cur, end, 1);
+ 			break;
+ 		}
+ 		em = btrfs_get_extent(inode, NULL, 0, cur, end - cur + 1);
+@@ -3565,16 +3559,20 @@ static noinline_for_stack int __extent_writepage_io(struct btrfs_inode *inode,
+ 
+ 		extent_offset = cur - em->start;
+ 		em_end = extent_map_end(em);
+-		BUG_ON(em_end <= cur);
+-		BUG_ON(end < cur);
+-		iosize = min(em_end - cur, end - cur + 1);
+-		iosize = ALIGN(iosize, blocksize);
+-		disk_bytenr = em->block_start + extent_offset;
++		ASSERT(cur <= em_end);
++		ASSERT(cur < end);
++		ASSERT(IS_ALIGNED(em->start, fs_info->sectorsize));
++		ASSERT(IS_ALIGNED(em->len, fs_info->sectorsize));
+ 		block_start = em->block_start;
+ 		compressed = test_bit(EXTENT_FLAG_COMPRESSED, &em->flags);
++		disk_bytenr = em->block_start + extent_offset;
++
++		/* Note that em_end from extent_map_end() is exclusive */
++		iosize = min(em_end, end + 1) - cur;
+ 		free_extent_map(em);
+ 		em = NULL;
+ 
++
+ 		/*
+ 		 * compressed and inline extents are written through other
+ 		 * paths in the FS
+@@ -3587,7 +3585,6 @@ static noinline_for_stack int __extent_writepage_io(struct btrfs_inode *inode,
+ 				btrfs_writepage_endio_finish_ordered(page, cur,
+ 							cur + iosize - 1, 1);
+ 			cur += iosize;
+-			pg_offset += iosize;
+ 			continue;
+ 		}
+ 
+@@ -3599,8 +3596,8 @@ static noinline_for_stack int __extent_writepage_io(struct btrfs_inode *inode,
+ 		}
+ 
+ 		ret = submit_extent_page(REQ_OP_WRITE | write_flags, wbc,
+-					 page, disk_bytenr, iosize, pg_offset,
+-					 &epd->bio,
++					 page, disk_bytenr, iosize,
++					 cur - page_offset(page), &epd->bio,
+ 					 end_bio_extent_writepage,
+ 					 0, 0, 0, false);
+ 		if (ret) {
+@@ -3609,8 +3606,7 @@ static noinline_for_stack int __extent_writepage_io(struct btrfs_inode *inode,
+ 				end_page_writeback(page);
+ 		}
+ 
+-		cur = cur + iosize;
+-		pg_offset += iosize;
++		cur += iosize;
+ 		nr++;
+ 	}
+ 	*nr_ret = nr;
 -- 
 2.29.2
 

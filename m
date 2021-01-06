@@ -7,36 +7,36 @@ X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 175D6C433E0
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 35EFCC433E6
 	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Jan 2021 01:04:27 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id C3A1C221E2
+	by mail.kernel.org (Postfix) with ESMTP id E70DC22CAF
 	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Jan 2021 01:04:26 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727126AbhAFBEB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S1727119AbhAFBEB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Tue, 5 Jan 2021 20:04:01 -0500
-Received: from mx2.suse.de ([195.135.220.15]:45862 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:45864 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725835AbhAFBEA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1725828AbhAFBEA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Tue, 5 Jan 2021 20:04:00 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1609894959; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1609894955; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=jQlBqz5v3NWCBmxD/Uhou6ZrSwHpTRBkJ3uEhbbONbc=;
-        b=fkj53oEnaj62J1L6KK4qOIIYYCBLGN8H12QvM0+BIXWd0s1CSrH28Leiu2NPQWWlFJVuTG
-        VltOxnNDGm0L8bXA4Owkb7SvGArnvxAhkACbACM6xG4PaEqrDVn+zsIsZjukLlxvcqOskD
-        gLywmOukqWrZtWfIhBttUgs+dwbRsVA=
+        bh=zex/HDW7nARyUBeGrMHsapz35zKeWeoBlZmwCzlsbEA=;
+        b=O5z1yVpHo+Re5krcFvCLw4Fmf4Pfn8Rgqfwqe7SZlH97+tX0nUEgXGfMlzrawbLi4ZhVnh
+        oH1zY9/2pgFPx5jNJnWYcYKKQAXyEYZVc5VYyZv//D4lOMJbIDWQOpDRFM4hnky6qwAoHn
+        6ybZ4MEyFcoJbyezHUAlR3TqltRkZMU=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id DEFAEAF94
-        for <linux-btrfs@vger.kernel.org>; Wed,  6 Jan 2021 01:02:38 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 81DC8AF61
+        for <linux-btrfs@vger.kernel.org>; Wed,  6 Jan 2021 01:02:35 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 18/22] btrfs: extent_io: make endio_readpage_update_page_status() to handle subpage case
-Date:   Wed,  6 Jan 2021 09:01:57 +0800
-Message-Id: <20210106010201.37864-19-wqu@suse.com>
+Subject: [PATCH v3 16/22] btrfs: extent_io: implement try_release_extent_buffer() for subpage metadata support
+Date:   Wed,  6 Jan 2021 09:01:55 +0800
+Message-Id: <20210106010201.37864-17-wqu@suse.com>
 X-Mailer: git-send-email 2.29.2
 In-Reply-To: <20210106010201.37864-1-wqu@suse.com>
 References: <20210106010201.37864-1-wqu@suse.com>
@@ -46,62 +46,106 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-To handle subpage status update, add the following new tricks:
-- Use btrfs_page_*() helpers to update page status
-  Now we can handle both cases well.
-
-- No page unlock for subpage metadata
-  Since subpage metadata doesn't utilize page locking at all, skip it.
-  For subpage data locking, it's handled in later commits.
+Unlike the original try_release_extent_buffer,
+try_release_subpage_extent_buffer() will iterate through
+btrfs_subpage::tree_block_bitmap, and try to release each extent buffer.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/extent_io.c | 21 +++++++++++++++------
- 1 file changed, 15 insertions(+), 6 deletions(-)
+ fs/btrfs/extent_io.c | 76 ++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 76 insertions(+)
 
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index b828314bf43a..2902484ab9f9 100644
+index 194cb8b63216..792264f5c3c2 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -2839,15 +2839,24 @@ static void endio_readpage_release_extent(struct processed_extent *processed,
- 	processed->uptodate = uptodate;
+@@ -6258,10 +6258,86 @@ void memmove_extent_buffer(const struct extent_buffer *dst,
+ 	}
  }
  
--static void endio_readpage_update_page_status(struct page *page, bool uptodate)
-+static void endio_readpage_update_page_status(struct page *page, bool uptodate,
-+					      u64 start, u32 len)
- {
++static int try_release_subpage_extent_buffer(struct page *page)
++{
 +	struct btrfs_fs_info *fs_info = btrfs_sb(page->mapping->host->i_sb);
++	u64 page_start = page_offset(page);
++	int bitmap_size = BTRFS_SUBPAGE_BITMAP_SIZE;
++	int bit_start = 0;
++	int ret;
 +
-+	ASSERT(page_offset(page) <= start &&
-+		start + len <= page_offset(page) + PAGE_SIZE);
++	while (bit_start < bitmap_size) {
++		struct btrfs_subpage *subpage;
++		struct extent_buffer *eb;
++		unsigned long flags;
++		u16 tmp = 1 << bit_start;
++		u64 start;
 +
- 	if (uptodate) {
--		SetPageUptodate(page);
-+		btrfs_page_set_uptodate(fs_info, page, start, len);
- 	} else {
--		ClearPageUptodate(page);
--		SetPageError(page);
-+		btrfs_page_clear_uptodate(fs_info, page, start, len);
-+		btrfs_page_set_error(fs_info, page, start, len);
- 	}
--	unlock_page(page);
++		/*
++		 * Make sure the page still has private, as previous iteration
++		 * can detach page private.
++		 */
++		spin_lock(&page->mapping->private_lock);
++		if (!PagePrivate(page)) {
++			spin_unlock(&page->mapping->private_lock);
++			break;
++		}
 +
-+	if (fs_info->sectorsize == PAGE_SIZE)
-+		unlock_page(page);
-+	/* Subpage locking will be handled in later patches */
- }
++		subpage = (struct btrfs_subpage *)page->private;
++
++		spin_lock_irqsave(&subpage->lock, flags);
++		spin_unlock(&page->mapping->private_lock);
++
++		if (!(tmp & subpage->tree_block_bitmap))  {
++			spin_unlock_irqrestore(&subpage->lock, flags);
++			bit_start++;
++			continue;
++		}
++
++		start = bit_start * fs_info->sectorsize + page_start;
++		bit_start += fs_info->nodesize >> fs_info->sectorsize_bits;
++		/*
++		 * Here we can't call find_extent_buffer() which will increase
++		 * eb->refs.
++		 */
++		rcu_read_lock();
++		eb = radix_tree_lookup(&fs_info->buffer_radix,
++				start >> fs_info->sectorsize_bits);
++		ASSERT(eb);
++		spin_lock(&eb->refs_lock);
++		if (atomic_read(&eb->refs) != 1 || extent_buffer_under_io(eb) ||
++		    !test_and_clear_bit(EXTENT_BUFFER_TREE_REF, &eb->bflags)) {
++			spin_unlock(&eb->refs_lock);
++			rcu_read_unlock();
++			continue;
++		}
++		rcu_read_unlock();
++		spin_unlock_irqrestore(&subpage->lock, flags);
++		/*
++		 * Here we don't care the return value, we will always check
++		 * the page private at the end.
++		 * And release_extent_buffer() will release the refs_lock.
++		 */
++		release_extent_buffer(eb);
++	}
++	/* Finally to check if we have cleared page private */
++	spin_lock(&page->mapping->private_lock);
++	if (!PagePrivate(page))
++		ret = 1;
++	else
++		ret = 0;
++	spin_unlock(&page->mapping->private_lock);
++	return ret;
++
++}
++
+ int try_release_extent_buffer(struct page *page)
+ {
+ 	struct extent_buffer *eb;
  
- /*
-@@ -2984,7 +2993,7 @@ static void end_bio_extent_readpage(struct bio *bio)
- 		bio_offset += len;
- 
- 		/* Update page status and unlock */
--		endio_readpage_update_page_status(page, uptodate);
-+		endio_readpage_update_page_status(page, uptodate, start, len);
- 		endio_readpage_release_extent(&processed, BTRFS_I(inode),
- 					      start, end, uptodate);
- 	}
++	if (btrfs_sb(page->mapping->host->i_sb)->sectorsize < PAGE_SIZE)
++		return try_release_subpage_extent_buffer(page);
++
+ 	/*
+ 	 * We need to make sure nobody is attaching this page to an eb right
+ 	 * now.
 -- 
 2.29.2
 

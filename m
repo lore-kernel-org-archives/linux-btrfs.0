@@ -2,85 +2,202 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-19.0 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_CR_TRAILER,INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	UNPARSEABLE_RELAY,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3AFD5C433DB
-	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Jan 2021 09:33:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 43FD6C433E0
+	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Jan 2021 09:42:40 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id E1B5C224F9
-	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Jan 2021 09:33:22 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DFA9622AAA
+	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Jan 2021 09:42:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728421AbhAKJdC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 11 Jan 2021 04:33:02 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58558 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727716AbhAKJdC (ORCPT
+        id S1728123AbhAKJmj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 11 Jan 2021 04:42:39 -0500
+Received: from userp2130.oracle.com ([156.151.31.86]:33708 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727915AbhAKJmi (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Jan 2021 04:33:02 -0500
-Received: from mail-il1-x129.google.com (mail-il1-x129.google.com [IPv6:2607:f8b0:4864:20::129])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B6A91C061786
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Jan 2021 01:32:21 -0800 (PST)
-Received: by mail-il1-x129.google.com with SMTP id x15so17734674ilq.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Jan 2021 01:32:21 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=ceremcem-net.20150623.gappssmtp.com; s=20150623;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=/c/5dDfFiOTVWqcRCQJ+HPISkYvwb8dwNJBYWbtKUeQ=;
-        b=lCHB8nawDcl0NCoI9rD4uCAagGPx9xKHh5exUVnHRbhJ3ilG5tunOnqJzMTM8f4H6R
-         KV238lcKBCqso7N3jEWY3o2R6twuHx2oMhLuNIPOpAPEcvyMQXuwV8aYmNXRTz4GQS+l
-         uo9Vlc5P6/7OEF7SPhvw7YDHfVEubKjte+0MUibO6PF8XrcyFpkseCYY7pQoKKkJ0xuE
-         k/pZVyAaSchRDBYFJhiC74++Hg4I1OD+jPnzBwYYFSWjoL/vtX3coxOOAJsDVnItxSWK
-         y0TTkvfBuK6K7KzeC1YCfkmn18RrADl4z1qc0wKzVmnBvlqfLgnoG+SdThfSpELH3j5p
-         iksg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=/c/5dDfFiOTVWqcRCQJ+HPISkYvwb8dwNJBYWbtKUeQ=;
-        b=hW2pglc+DQdNMsBxqCkHN2zt0jYyOKNYNTz2gb585D6+PIf2yk5oAs4cd90LqFHP9V
-         z+HAsrGjalva3PhyfnGq9e8/eTvgenFkr4Y9wCo/eofL1xHnFs7yqGvqc3TYUTrMszEy
-         4tCG+YbT5ewRQDDfN05GjJCYF4HKb3HpuiLW9Y/ehDOMB40EHVk+btdLJ39YSTrnmgDZ
-         jyMlAVfVrpkUkt/rGGJYTTVsOvwHFcMa58EHyhFRKNFaQijd/r05uy9d14H+cnxdgsWu
-         F+0aLzNAS36LC8bHoGjL0vVcq/surZqI/lc+mMQ6GJUW3U6WcVDjdzMsI810HAhjfwAE
-         52RQ==
-X-Gm-Message-State: AOAM530gGLNFzyzYo4dBg2dnS32Fz3r95q7f6n/T1XzzAfAoOWupVykU
-        7lT68CkqUPPbnj6uZBimVvx9mi2dtDI9oqwiCdzfVNs0V9sYzn5/vS4=
-X-Google-Smtp-Source: ABdhPJyQtUYiY2+kN62aB62sHTvgDsEAT18+yZnQET2vh+n+xrghnOwJ4mUHZ3z79wWpfzkYPgguedAdvYOeXwMTJwE=
-X-Received: by 2002:a92:9e57:: with SMTP id q84mr4983726ili.112.1610357541177;
- Mon, 11 Jan 2021 01:32:21 -0800 (PST)
+        Mon, 11 Jan 2021 04:42:38 -0500
+Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
+        by userp2130.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 10B9Z5co046617;
+        Mon, 11 Jan 2021 09:41:52 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
+ subject : date : message-id : in-reply-to : references : mime-version :
+ content-transfer-encoding; s=corp-2020-01-29;
+ bh=hMaF5jeU7Eoqnqnzvp13s1szsRwqIRAf041qRv92RuU=;
+ b=ZTq47s5szruulIr8u8TPIwWuXHOQkd3fejjo/Ow2fUpOO+OiSWqnWEQgOfYwmIQgKqDW
+ aLdMmKYtTGQPHxgniM7E/n5eu0M8WjYsicp7dRLhcdrsmcbDkEFk/mInqi+ZmhkB6fgB
+ s/1ZLB5N4suAQkj3870JncuqE+zkpj8cUMUGE6lg47GlsDB0wm8qbeW8MW+iqFLppGs3
+ Y7paKAVPsYo3MkY5evsyr0sRgHNFccpascWOWrPNm/ZYkYTzLLIul8XrlYozsrlQRRcQ
+ Xu1ESy6aSLhr1SYJD3xI2fH8+8QU9xPiD7OBLtYOYggqnFgnJV+Yl0H0l08PScU7EhpH oQ== 
+Received: from userp3020.oracle.com (userp3020.oracle.com [156.151.31.79])
+        by userp2130.oracle.com with ESMTP id 360kvjr4y0-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
+        Mon, 11 Jan 2021 09:41:52 +0000
+Received: from pps.filterd (userp3020.oracle.com [127.0.0.1])
+        by userp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 10B9UQkc014746;
+        Mon, 11 Jan 2021 09:41:52 GMT
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by userp3020.oracle.com with ESMTP id 360kf39hrb-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Mon, 11 Jan 2021 09:41:52 +0000
+Received: from abhmp0013.oracle.com (abhmp0013.oracle.com [141.146.116.19])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id 10B9fpsj031385;
+        Mon, 11 Jan 2021 09:41:51 GMT
+Received: from localhost.localdomain (/39.109.186.25)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Mon, 11 Jan 2021 01:41:50 -0800
+From:   Anand Jain <anand.jain@oracle.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     dsterba@suse.com, josef@toxicpanda.com,
+        Anand Jain <anand.jain@oracle.com>
+Subject: [PATCH v3 1/4] btrfs: add read_policy latency
+Date:   Mon, 11 Jan 2021 17:41:34 +0800
+Message-Id: <64bb4905dc4b77e9fa22d8ba2635a36d15a33469.1610324448.git.anand.jain@oracle.com>
+X-Mailer: git-send-email 2.30.0
+In-Reply-To: <cover.1610324448.git.anand.jain@oracle.com>
+References: <cover.1610324448.git.anand.jain@oracle.com>
 MIME-Version: 1.0
-References: <dc1e528567c9a57d089d77824f071af8@mail.eclipso.de>
- <cd3a4a0a-e0b4-3224-f00c-5ec52c6362e3@tnonline.net> <cc104d7c-b993-941c-2851-9366a1d87902@cobb.uk.net>
- <CAN4oSBcL7ae_qwKDDoP=sbjkR4gcweTO8otEQv1Zh0YhStWZsw@mail.gmail.com> <b9662cf1-e45f-5113-5b23-bf1aaa73cb97@tnonline.net>
-In-Reply-To: <b9662cf1-e45f-5113-5b23-bf1aaa73cb97@tnonline.net>
-From:   Cerem Cem ASLAN <ceremcem@ceremcem.net>
-Date:   Mon, 11 Jan 2021 12:32:10 +0300
-Message-ID: <CAN4oSBe4UR1BA_QpPoAWor0p7ijBNAZqWEgSy13oaRKc-t5MPg@mail.gmail.com>
-Subject: Re: synchronize btrfs snapshots over a unreliable, slow connection
-To:     Forza <forza@tnonline.net>
-Cc:     Graham Cobb <g.btrfs@cobb.uk.net>, Cedric.dewijs@eclipso.eu,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9860 signatures=668683
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
+ mlxlogscore=999 phishscore=0 bulkscore=0 spamscore=0 mlxscore=0
+ adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2009150000 definitions=main-2101110057
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9860 signatures=668683
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 mlxlogscore=999 phishscore=0
+ lowpriorityscore=0 bulkscore=0 priorityscore=1501 malwarescore=0
+ clxscore=1015 impostorscore=0 spamscore=0 mlxscore=0 suspectscore=0
+ adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2009150000 definitions=main-2101110057
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-> You can use `btrbk diff old-snap new-snap` to list changes between
-> snapshots.
->
+The read policy type latency routes the read IO based on the historical
+average wait-time experienced by the read IOs through the individual
+device. This patch obtains the historical read IO stats from the kernel
+block layer and calculates its average.
 
-The problem with 'btrbk diff' approach (as stated here [1]) is that it
-can not show changes for empty files, empty folders and deletions,
-because it also uses 'btrfs find_new' under the hood (see [2]).
+Example usage:
+ echo "latency" > /sys/fs/btrfs/$uuid/read_policy 
 
-However, I found this[3] tool at the time of writing this reply, which
-works great and idea behind it (parsing 'btrfs send --no-data' output)
-is rock solid.
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+v3: The block layer commit 0d02129e76ed (block: merge struct block_device and
+    struct hd_struct) has changed the first argument in the function
+    part_stat_read_all() in 5.11-rc1. So the compilation will fail. This patch
+    fixes it.
+    Commit log updated.
 
-[1]: https://serverfault.com/a/580264/261445
-[2]: https://github.com/digint/btrbk/blob/7dc827bdc3c23fb839540ff1e41f1186fe5ffa19/btrbk#L5692
-[3]: https://github.com/sysnux/btrfs-snapshots-diff
+v2: Use btrfs_debug_rl() instead of btrfs_info_rl()
+    It is better we have this debug until we test this on at least few
+    hardwares.
+    Drop the unrelated changes.
+    Update change log.
+
+v1: Drop part_stat_read_all instead use part_stat_read
+    Drop inflight
+
+
+ fs/btrfs/sysfs.c   |  3 ++-
+ fs/btrfs/volumes.c | 38 ++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/volumes.h |  2 ++
+ 3 files changed, 42 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index 19b9fffa2c9c..96ca7bef6357 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -915,7 +915,8 @@ static bool strmatch(const char *buffer, const char *string)
+ 	return false;
+ }
+ 
+-static const char * const btrfs_read_policy_name[] = { "pid" };
++/* Must follow the order as in enum btrfs_read_policy */
++static const char * const btrfs_read_policy_name[] = { "pid", "latency" };
+ 
+ static ssize_t btrfs_read_policy_show(struct kobject *kobj,
+ 				      struct kobj_attribute *a, char *buf)
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index f4037a6bd926..f7a0a83d2cd4 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -14,6 +14,7 @@
+ #include <linux/semaphore.h>
+ #include <linux/uuid.h>
+ #include <linux/list_sort.h>
++#include <linux/part_stat.h>
+ #include "misc.h"
+ #include "ctree.h"
+ #include "extent_map.h"
+@@ -5490,6 +5491,39 @@ int btrfs_is_parity_mirror(struct btrfs_fs_info *fs_info, u64 logical, u64 len)
+ 	return ret;
+ }
+ 
++static int btrfs_find_best_stripe(struct btrfs_fs_info *fs_info,
++				  struct map_lookup *map, int first,
++				  int num_stripe)
++{
++	u64 est_wait = 0;
++	int best_stripe = 0;
++	int index;
++
++	for (index = first; index < first + num_stripe; index++) {
++		u64 read_wait;
++		u64 avg_wait = 0;
++		unsigned long read_ios;
++		struct btrfs_device *device = map->stripes[index].dev;
++
++		read_wait = part_stat_read(device->bdev, nsecs[READ]);
++		read_ios = part_stat_read(device->bdev, ios[READ]);
++
++		if (read_wait && read_ios && read_wait >= read_ios)
++			avg_wait = div_u64(read_wait, read_ios);
++		else
++			btrfs_debug_rl(device->fs_devices->fs_info,
++			"devid: %llu avg_wait ZERO read_wait %llu read_ios %lu",
++				       device->devid, read_wait, read_ios);
++
++		if (est_wait == 0 || est_wait > avg_wait) {
++			est_wait = avg_wait;
++			best_stripe = index;
++		}
++	}
++
++	return best_stripe;
++}
++
+ static int find_live_mirror(struct btrfs_fs_info *fs_info,
+ 			    struct map_lookup *map, int first,
+ 			    int dev_replace_is_ongoing)
+@@ -5519,6 +5553,10 @@ static int find_live_mirror(struct btrfs_fs_info *fs_info,
+ 	case BTRFS_READ_POLICY_PID:
+ 		preferred_mirror = first + (current->pid % num_stripes);
+ 		break;
++	case BTRFS_READ_POLICY_LATENCY:
++		preferred_mirror = btrfs_find_best_stripe(fs_info, map, first,
++							  num_stripes);
++		break;
+ 	}
+ 
+ 	if (dev_replace_is_ongoing &&
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 1997a4649a66..71ba1f0e93f4 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -222,6 +222,8 @@ enum btrfs_chunk_allocation_policy {
+ enum btrfs_read_policy {
+ 	/* Use process PID to choose the stripe */
+ 	BTRFS_READ_POLICY_PID,
++	/* Find and use device with the lowest latency */
++	BTRFS_READ_POLICY_LATENCY,
+ 	BTRFS_NR_READ_POLICY,
+ };
+ 
+-- 
+2.30.0
+

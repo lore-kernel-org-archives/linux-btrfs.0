@@ -2,125 +2,121 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-20.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=unavailable autolearn_force=no
+X-Spam-Status: No, score=-4.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
+	SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F2FBDC433E6
-	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Jan 2021 16:23:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 731D4C433E0
+	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Jan 2021 18:57:34 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id B182122ADF
-	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Jan 2021 16:23:34 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 22E76225AC
+	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Jan 2021 18:57:34 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388698AbhAKQXS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 11 Jan 2021 11:23:18 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33760 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2388688AbhAKQXS (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Jan 2021 11:23:18 -0500
-Received: from mail-qk1-x729.google.com (mail-qk1-x729.google.com [IPv6:2607:f8b0:4864:20::729])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D1ABCC061794
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Jan 2021 08:22:37 -0800 (PST)
-Received: by mail-qk1-x729.google.com with SMTP id d14so14979172qkc.13
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Jan 2021 08:22:37 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=subject:to:cc:references:from:message-id:date:user-agent
-         :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=jNgCe5aPwhe7LslnB1c2MSpXSm3IftHJ0k/qhj0STvc=;
-        b=WwMXJAxnfCEWFq5XUPxbNzp4mSx5H39RzvNU3JHpTWghR/AcD/cR1JgAqwbWAqVqtM
-         GMkLKeGaeZfIQAjHZCoNR558UCL9nfT/Yn0SoGKecgyxYWKBFVgvO3zQxmRKQDg35lVV
-         +MuRlT/M7xgK5T1VG7MnT4Ks2raHoRiZHSW/8CPu/bjngC+G4XGaZf9ic+ib53Ko989h
-         fgx4WQK9nGmVoxWMDP3EHlITH2F1TLr2hdVFQVhIahWX7sAgMuGKO9J/4imR6Gh25v/W
-         sMA8ksLpHIHmnBqAQTx3/YNQlAEtadcGaRxiM5mRWrQKeGHpeE0lPiwZqCXpJ0LAzwSr
-         +bCg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=jNgCe5aPwhe7LslnB1c2MSpXSm3IftHJ0k/qhj0STvc=;
-        b=kSPlZ0obUOHDvamgB39k1DipTuZumc3NFPKzF0GA21dAXGGnISt+9YQHquowPmPlqJ
-         lshtxg2p6R8+D3XPbw/hyyMhgx+TZqqualBwvikEQl3+/jnQIrOiVDyWoXaA2qC4fq5W
-         +U0lnF1FiVCXmb1AwwX11jH6dJ09s/97TmrZxqNFzKfYIA/YSUB7XEEm4rwILI7j7uIF
-         Ih6OzJPpVrqFmlOglHf+DPioN4sCRdQFyXKIJGw19CseeFxgxddmqmJnSbN2qDhNfKmg
-         YQeIQ8SsJjJseHkiGU3INjTS3XY9FnXJsi4ZytakihC9oG2OBDHNGF6zxz/tFvQVQqO9
-         PO2A==
-X-Gm-Message-State: AOAM532KjQf0S7uOzPC40mGrtf0vlarcbItHWGZN0oEt943kFCFKTVRr
-        POU6I9JhY8hRZaUcYCz7Z0yJIA==
-X-Google-Smtp-Source: ABdhPJyF+K/aY6Lg+FBfOiz4wnydbdIs7udCrtCglgOh5M3yehDQMMKM/cGCxtvtsgSnuT7m+kdLWg==
-X-Received: by 2002:a05:620a:b02:: with SMTP id t2mr21405qkg.427.1610382156861;
-        Mon, 11 Jan 2021 08:22:36 -0800 (PST)
-Received: from [192.168.1.45] (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id 8sm133662qkr.28.2021.01.11.08.22.35
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 11 Jan 2021 08:22:36 -0800 (PST)
-Subject: Re: [PATCH v11 19/40] btrfs: extract page adding function
-To:     Naohiro Aota <naohiro.aota@wdc.com>, linux-btrfs@vger.kernel.org,
-        dsterba@suse.com
-Cc:     hare@suse.com, linux-fsdevel@vger.kernel.org,
-        Jens Axboe <axboe@kernel.dk>,
-        Christoph Hellwig <hch@infradead.org>,
-        "Darrick J. Wong" <darrick.wong@oracle.com>
-References: <06add214bc16ef08214de1594ecdfcc4cdcdbd78.1608608848.git.naohiro.aota@wdc.com>
- <a442f64e5fd84a823993e81f81f29287cd4ec274.1608608848.git.naohiro.aota@wdc.com>
-From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <429b0dc8-d02e-40e1-6d86-ad3788c3beba@toxicpanda.com>
-Date:   Mon, 11 Jan 2021 11:22:34 -0500
-User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0)
- Gecko/20100101 Thunderbird/78.6.0
+        id S2390605AbhAKS5S (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 11 Jan 2021 13:57:18 -0500
+Received: from smtp-33.italiaonline.it ([213.209.10.33]:39102 "EHLO libero.it"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726063AbhAKS5R (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 11 Jan 2021 13:57:17 -0500
+Received: from venice.bhome ([94.37.172.193])
+        by smtp-33.iol.local with ESMTPA
+        id z2MlkhpdE11DDz2MlksDDd; Mon, 11 Jan 2021 19:56:35 +0100
+x-libjamoibt: 1601
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=libero.it; s=s2014;
+        t=1610391395; bh=UP1G2iwVU7LUmmDBm9KZipFz6Xpfcx7zRDZ2Qs38FZk=;
+        h=From;
+        b=gkN+ba2Az1HAD/0eldEMBncfpiXgPEmQN63owxSRcvDz9FGih/fdo7x8zDiZlCHmm
+         XbQ8ym4CjFwLwtLt9QFQ7Lf/kHgqKiZapkdybzAorW7oBebz6a9XtDz/D/xizSKI2P
+         PiKlfmPwh8RMdM1RBxvn+0PqYrgWtjvyo/s0Zkr4WfUjSm4+KHEGaKOI7z1s5lizWb
+         xbLVm4Hhu9GGq6BzWRqvy66oDhNJPJrMI9AZYh7z6ZIA1lAnEUfzr3XtXyXOtqXX6/
+         kcVr7pHA40UtPRcvlwYNf29bvvxOqqFNbLenzfzyY8JUwWQSzLqA4CmYsCNPQxUWVp
+         Gf4Gnfc9Y1wjg==
+X-CNFS-Analysis: v=2.4 cv=ba6u7MDB c=1 sm=1 tr=0 ts=5ffc9f63 cx=a_exe
+ a=z1y4hvBwYU35dpVEhKc0WA==:117 a=z1y4hvBwYU35dpVEhKc0WA==:17
+ a=IkcTkHD0fZMA:10 a=VwQbUJbxAAAA:8 a=tT62RjUPrgIUnLq2FDMA:9 a=QEXdDO2ut3YA:10
+ a=AjGcO6oz07-iQ99wixmX:22
+Reply-To: kreijack@inwind.it
+Subject: Re: Reading files with bad data checksum
+To:     David Woodhouse <dwmw2@infradead.org>, Forza <forza@tnonline.net>,
+        linux-btrfs@vger.kernel.org
+References: <1ad3962943592e9a60f88aecdb493f368c70bbe1.camel@infradead.org>
+ <de013d75-7fa1-4cb6-ac1e-a67864c68bf3@tnonline.net>
+ <0544b98786dbd980e8bdde58bd5713247178a74e.camel@infradead.org>
+From:   Goffredo Baroncelli <kreijack@libero.it>
+Message-ID: <3e309cce-d322-1df8-052a-f370ccbd2784@libero.it>
+Date:   Mon, 11 Jan 2021 19:56:34 +0100
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.6.0
 MIME-Version: 1.0
-In-Reply-To: <a442f64e5fd84a823993e81f81f29287cd4ec274.1608608848.git.naohiro.aota@wdc.com>
+In-Reply-To: <0544b98786dbd980e8bdde58bd5713247178a74e.camel@infradead.org>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
 Content-Transfer-Encoding: 7bit
+X-CMAE-Envelope: MS4xfBbxjUessjgf1oL62INSFgi78w4p5dRm8hDPBeJtmkkFM8HFaCRL2H1kOCT3zQqJH7engJoWcd48Bw1kMJJrMAHRGozIouXV0NtUwlEjwn2MEoH9FusO
+ jlee2jrwiC9G/e/VZ5bRJTz4hXuqlT+Aw7k5pEI689f65FCgJWIC9AF3p6aD8miidshexor/kXWEWij1+MrmDrW16wbxt13SThcV3O3eCLb1E+thHelZQMQj
+ zXO2NfY95a0Hf7NIbk8bEA==
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 12/21/20 10:49 PM, Naohiro Aota wrote:
-> This commit extract page adding to bio part from submit_extent_page(). The
-> page is added only when bio_flags are the same, contiguous and the added
-> page fits in the same stripe as pages in the bio.
+On 1/10/21 1:36 PM, David Woodhouse wrote:
+> On Sun, 2021-01-10 at 13:08 +0100, Forza wrote:
+[...]
 > 
-> Condition checkings are reordered to allow early return to avoid possibly
-> heavy btrfs_bio_fits_in_stripe() calling.
+> It showed up as errors. There appears to be a btrfs bug there but since
+
+Yes, it is an old btrfs bug. And qemu is not the guilty.
+
+https://lore.kernel.org/linux-btrfs/cf8a733f-2c9d-7ffe-e865-4c13d99dfb60@libero.it/
+
+In my email there is a code to reproduce it.
+
+Basically it is difficult to have the checksum sync with the data when O_DIRECT
+is used. Even OpenZFS has problem with it. The OpenZFS solution is to lie about O_DIRECT:
+it allows the flag however it doesn't honor.
+
+I think that BTRFS should behave like ZFS: when csum are enable, O_DIRECT shouldn't be
+honored (or returning an error or behaving like ZFS).
+
+
+> I suspect it'll be easy to reproduce I'm more focused on recovery right
+> now.
 > 
-> Reviewed-by: Josef Bacik <josef@toxicpanda.com>
-> Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
-> ---
->   fs/btrfs/extent_io.c | 56 ++++++++++++++++++++++++++++++++------------
->   1 file changed, 41 insertions(+), 15 deletions(-)
+>>> In the short term, all I want to do is make a copy of the file, using
+>>> the data which are in the disk regardless of the fact that btrfs thinks
+>>> the checksum doesn't match. Is there a way I can turn off *checking* of
+>>> the checksum for that specific file (or file descriptor?).
+>>>
+>>> Or is the only way to do it with something like FIBMAP, reading the
+>>> offending blocks directly from the underlying disk and then writing
+>>> them into the appropriate offset in (a copy of) the file? A plan which
+>>> is slightly complicated by the fact that of course btrfs doesn't
+>>> support FIBMAP.
+>>>
+>>> What's the best way to recover the data?
+>>>
+>>
+>> You can use GNU ddrescue to copy files. It can skip the offending blocks
+>> and replace the bad data with zeroes. Not sure how well qemu will handle
+>> that though.
 > 
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index 129d571a5c1a..2f070a9e5b22 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -3061,6 +3061,44 @@ struct bio *btrfs_bio_clone_partial(struct bio *orig, int offset, int size)
->   	return bio;
->   }
->   
-> +/**
-> + * btrfs_bio_add_page	-	attempt to add a page to bio
-> + * @bio:	destination bio
-> + * @page:	page to add to the bio
-> + * @logical:	offset of the new bio or to check whether we are adding
-> + *              a contiguous page to the previous one
-> + * @pg_offset:	starting offset in the page
-> + * @size:	portion of page that we want to write
-> + * @prev_bio_flags:  flags of previous bio to see if we can merge the current one
-> + * @bio_flags:	flags of the current bio to see if we can merge them
+> Right. I've already copied the image with dd conv=sync,noerror to a new
+> one with the +C flag. It passes 'qemu-img check', and in fact the guest
+> is running just fine with it. I was expecting it to stop with
+> catastrophic file system errors but I can't see anything wrong at all.
+> I'm just paranoid that eventually I'll find out that the blocks belong
+> to some file(s) I actually want, and I'd like to recover them.
+> 
+> Right now I have a horribly fragmented image file with these 'errors'
+> cluttering up my file system and making backups of the host go
+> extremely slow. I'd like to get those blocks back so I can make a clean
+> copy of the image, and keep it around for reference in case I later
+> *do* discover that I need the contents of those blocks.
+> 
 
-Just a nit, you're missing @return here, the commit flags caught this, I'd 
-recommend adding our commit flags to your local repo so you can preemptively 
-catch these sort of things
 
-https://github.com/btrfs/btrfs-workflow/blob/master/patch-submission.md
-
-under the "Git config options" section.  If you have to respin you can add it 
-then.  Thanks,
-
-Josef
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

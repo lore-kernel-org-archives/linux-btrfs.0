@@ -2,56 +2,59 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,MSGID_FROM_MTA_HEADER,SPF_HELO_NONE,
-	SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-18.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,MSGID_FROM_MTA_HEADER,SPF_HELO_NONE,
+	SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1F9D5C433E0
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4B9BCC433DB
 	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Jan 2021 19:04:02 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id CD8E022795
+	by mail.kernel.org (Postfix) with ESMTP id 005ED22AAF
 	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Jan 2021 19:04:01 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2390706AbhAKTDe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 11 Jan 2021 14:03:34 -0500
+        id S1731752AbhAKTD6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 11 Jan 2021 14:03:58 -0500
 Received: from mail-eopbgr80049.outbound.protection.outlook.com ([40.107.8.49]:14190
         "EHLO EUR04-VI1-obe.outbound.protection.outlook.com"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2390703AbhAKTDe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Jan 2021 14:03:34 -0500
+        id S1726063AbhAKTD5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 11 Jan 2021 14:03:57 -0500
 ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
- b=EpfioXd78TrFGWrQ9Vg3ZMKz0DjwT6+WjMXopvNUJUCVHLQmA9AqR7U/eYWN1nALIwDVgEPjf/mxzUPiSZ48lv3LHPFtWjpZby6DFkmDCPdbDioLlV8y6YxdsORRxATp49DGxu79RtzVznGQNrlS7ipvBFPv6Y8EyrXBpgOzSSy9fgbY7KcMRhFoQTfOXYtsBrtW7jpWCHP45+AlHXYTtkIu5LeejIkeor1NbqdTDGi1y7LKh3xUVkuB6l1uF2UR0TVIGDv7g5FgpYO+9T0vEAa0bdtqLrU4fut4hjvQUr2gbJH/bFQvr/EMzis4vyFRwad/uhpkmKcN0y7P1MxP0A==
+ b=EjJuk2ir7OeIuGJnjosU2avXUtNeseDPgveCJI+nPMyICbEF9zZdKgUVl4jk2CkE+ZkmccwNK1CoI3IT+1dnZi+zFiXx+Pis5Lq5zsHWfAxj7T6e+6BOWB5grP5VN4toUvdwm3lpYx+QLMP8M+/+eqJWNd7v7at++WdToehXG1/NcG3l305+Vv7xmsGsjRxBqqMPjOerwnvL4qVOXt5DZ0h3QjNDRDeL8GSkzizF44R9fX/q0523gyFrRFGlZt5KYTPdasTAzfamsQWwkVAzoLUee7K2CKiUpYvKT1FTx2/CcTEAnFkIJVH6sC9UzRV0KYewLh6yteSnvnezog8N5g==
 ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
  s=arcselector9901;
  h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=j8YcKYH6HpPtthGXPtsOE/n2gx/TK/J0nnUvuu3/oL8=;
- b=nACm2NX0ELSeHDOqcK6zzuFSHMgYr2z6WGfJicm46R5B6MMxQG075sDPWvTWBBTUPcqTdUrsAi7dvVQuSVRkUvx5KaBYsN67kEPOLZTIw9MZK53KM095yXWFLDD32kbIKvbSrcSqmkfM/BooeUvifCNGtJ5uQeyO17m4JNbC7naiYR2A4hm9KDhKWqCsIfvJoYt0RrGpgUQVGCRFM+6GG2NVfjVcAQSeaqSCuXmo34ex/geiECxYLvi1D3uNX4iHCSQQGjbDXDk+JI2cs3PC6gCLRrmmdWYYzA4JjA2XQQyCj121iu52AKrQYdrKWyk5SJrnb6qjcTGt+1J8q/5jBw==
+ bh=/Br8ncdZgVjChhont8Dq421789cNaDNtXIo1UXu87YM=;
+ b=k/QSJjL4eRQVn06R46nd68/ipb95N+zEJ0t5oZUt0YUc4zeVV1y9pWi4OdX7y91iugh301fF5svF4UZbsV242TyUCjKDID9zrdzp+BDYbGymudQ/LKhb/kDv3IgKTJYrh0NHGvwEf9maF7DqelGybWPVWG6oaD0aeBs4QO7nl2M4rDnLSibPprf4Gzr87MDbBeX0ez5KxD6pIBlaldG4vxesaUQzzg3anGaqzWP517g22to8+NBVtUJzygWNsSx64cNJsYUSn1BdhX17Ux3sYDfytiXYoSeNZ6OXKswZ4iX2weJRYk8HbcNhiYs4Ay3ADKk77FrhnoHYaE9ZWubaWw==
 ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
  smtp.mailfrom=bdsu.de; dmarc=pass action=none header.from=bdsu.de; dkim=pass
  header.d=bdsu.de; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bdsu.de; s=selector2;
  h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=j8YcKYH6HpPtthGXPtsOE/n2gx/TK/J0nnUvuu3/oL8=;
- b=QWqM4lBR9f5OKMypvRXT2kcPUzUG9KtiBoeuzZBgF2iPUkaXEtbG7TZYk21Vah9ejIbLlzN3jV4hFQNLtHf9Tj2Rn6TEOKA+neEpJJIg+DE/xKwD8KLempHc8Jf/CHLQZRzDbcXAYqnK74BaRVyHcuczCI3ZwwJtTc55losnVq9JRfScFET5IHCxEhholdtr53TtdAUQzzLdZYhnlxr4OgEpJho0P+ybGaUTCgFqBh+pUeQ8hJpDZHZ2WThxtHX16CE9Ccwzpak+Sz5WkkTcb1ev2gEyCpdjHybzve+dTN7rSJQpjQYNukFqW7/MFLFHycBHsLBK1ggnMcXpXXPXqA==
+ bh=/Br8ncdZgVjChhont8Dq421789cNaDNtXIo1UXu87YM=;
+ b=DMI1deDeIVFeoLL7QBSVgrR6NdS1lxq2syQInVSgUCPsCeh8GfkkvaQrfAyuPQk3W2d49JYk7zV1grx38HfyOGoUjUaOULz4QIU3mH+LPJnyW0pmVVrSS+WDSd/aMHt26zNf8wA0SMawFsEHHE0PzhuIXjKLeJlCxKFlb2TQeNNtjlCB0iKPnakq6v16Ga9byKk/fhjfjye7rXX36PORzK4PkQYY7+kWBARj8HGCyVgLEvM+pQfgiIphsSl1EbYlbLSi+zg1EXmgUhqEbgKzUrY5Ys354lf7uTet0uofUYKPKMhRUjzP3XJy6fIk3tiv8/aeOpTbGbU82/nFGU015g==
 Authentication-Results: vger.kernel.org; dkim=none (message not signed)
  header.d=none;vger.kernel.org; dmarc=none action=none header.from=bdsu.de;
 Received: from DB7PR03MB4297.eurprd03.prod.outlook.com (2603:10a6:10:17::30)
  by DB6PR0301MB2520.eurprd03.prod.outlook.com (2603:10a6:4:5b::7) with
  Microsoft SMTP Server (version=TLS1_2,
  cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.3742.11; Mon, 11 Jan
- 2021 19:02:44 +0000
+ 2021 19:02:58 +0000
 Received: from DB7PR03MB4297.eurprd03.prod.outlook.com
  ([fe80::b53d:bd77:c4ae:93d]) by DB7PR03MB4297.eurprd03.prod.outlook.com
  ([fe80::b53d:bd77:c4ae:93d%5]) with mapi id 15.20.3742.012; Mon, 11 Jan 2021
- 19:02:44 +0000
+ 19:02:58 +0000
 From:   Roman Anasal <roman.anasal@bdsu.de>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Roman Anasal <roman.anasal@bdsu.de>
-Subject: [PATCH 0/2] btrfs: send: correctly recreate changed inodes
-Date:   Mon, 11 Jan 2021 20:02:41 +0100
-Message-Id: <20210111190243.4152-1-roman.anasal@bdsu.de>
+Subject: [PATCH 2/2] btrfs: send: fix invalid commands for inodes with changed type but same gen
+Date:   Mon, 11 Jan 2021 20:02:43 +0100
+Message-Id: <20210111190243.4152-3-roman.anasal@bdsu.de>
 X-Mailer: git-send-email 2.26.2
+In-Reply-To: <20210111190243.4152-1-roman.anasal@bdsu.de>
+References: <20210111190243.4152-1-roman.anasal@bdsu.de>
 Content-Transfer-Encoding: 8bit
 Content-Type: text/plain
 X-Originating-IP: [2001:a61:3aef:4c01:503:a276:cbe0:8dc0]
@@ -60,108 +63,172 @@ X-ClientProxiedBy: AM9P192CA0009.EURP192.PROD.OUTLOOK.COM
  (2603:10a6:10:17::30)
 MIME-Version: 1.0
 X-MS-Exchange-MessageSentRepresentingType: 1
-Received: from nebukadnezar.fritz.box (2001:a61:3aef:4c01:503:a276:cbe0:8dc0) by AM9P192CA0009.EURP192.PROD.OUTLOOK.COM (2603:10a6:20b:21d::14) with Microsoft SMTP Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.3742.6 via Frontend Transport; Mon, 11 Jan 2021 19:02:43 +0000
+Received: from nebukadnezar.fritz.box (2001:a61:3aef:4c01:503:a276:cbe0:8dc0) by AM9P192CA0009.EURP192.PROD.OUTLOOK.COM (2603:10a6:20b:21d::14) with Microsoft SMTP Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.3742.6 via Frontend Transport; Mon, 11 Jan 2021 19:02:56 +0000
 X-MS-PublicTrafficType: Email
-X-MS-Office365-Filtering-Correlation-Id: 37039316-9647-4d2d-6c41-08d8b6637a2f
+X-MS-Office365-Filtering-Correlation-Id: a6bc1f26-762d-4838-bb1a-08d8b663828f
 X-MS-TrafficTypeDiagnostic: DB6PR0301MB2520:
 X-MS-Exchange-Transport-Forked: True
-X-Microsoft-Antispam-PRVS: <DB6PR0301MB25201F1709EA407E8F28CAAD94AB0@DB6PR0301MB2520.eurprd03.prod.outlook.com>
+X-Microsoft-Antispam-PRVS: <DB6PR0301MB25202AA86B87C4B1B612432F94AB0@DB6PR0301MB2520.eurprd03.prod.outlook.com>
 X-MS-Oob-TLC-OOBClassifiers: OLM:10000;
 X-MS-Exchange-SenderADCheck: 1
 X-Microsoft-Antispam: BCL:0;
-X-Microsoft-Antispam-Message-Info: Bta+9aq/gnJ7FnNe1S09k4bd7duafOTWAbCvob5oB9EBsN3vl5vzOqJh3IPbXiB/FTz/O5QXcjk7721PP7xP0gG+NADvJRZ3dF2rlRLTfDZAVbnEkUeTB+zPywDedFdAAjxHkWREebuxj2p7eqJWMoF6KhQgWPstHBISfc2ZlMSuQu+txYbptuViwI1UDX1FV+JfivMleaCw3OSPZSfKNiCEEFYLS7PTjHAun+yepJVJu33Yy/82v+sJi8vYAjs76OBfsyvV9ygILZSuQDzBqF00YBHqdk1W6ppv+Ms39CmqaXwIMJUYyToJ2r9QbOuJa40kxmtudCfZe+OP9DV5cr2eq5DpY0TzrzKENcQzQeC4d0mwATXOryPVoTY/CMfR218paiSEh2VERPnXsEvrtzKYfg+XqUc4gcYai0x28KJ6JNxUTBDLg87U7hGGu0X7Hz5q6MDvs3cHcDbhaaWn+Q==
-X-Forefront-Antispam-Report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:DB7PR03MB4297.eurprd03.prod.outlook.com;PTR:;CAT:NONE;SFS:(346002)(39830400003)(396003)(136003)(366004)(376002)(316002)(786003)(44832011)(66476007)(66946007)(52116002)(36756003)(1076003)(66556008)(83380400001)(966005)(2616005)(107886003)(4326008)(86362001)(5660300002)(16526019)(186003)(6512007)(6506007)(6916009)(8936002)(2906002)(8676002)(6486002)(478600001);DIR:OUT;SFP:1101;
-X-MS-Exchange-AntiSpam-MessageData: =?us-ascii?Q?9XG7PTELdH81e2ga75BZN9s5t/HxDJ9EUFZI/0aJVuvJwU7iFYqGxyQzE+KX?=
- =?us-ascii?Q?88OByRjfLWkeLmXyY+zO9i799ozfN4KXKUybfvv/M+PGCz9x+mgHvddoimHR?=
- =?us-ascii?Q?CC0WIhBUbPyHJHF8t0v3jzByuzqpL02AJu2OiFIWveXGyAcAbzBeJd0mylu8?=
- =?us-ascii?Q?690jkQTSCCMK/eSaFn+JNtx4gZI4dpBEai4cakKcnXXfFwa18xkJe3dkAlH+?=
- =?us-ascii?Q?SsrKZOKKexZ2YNmdUIS6mDsHodCcf3GkGgLKYyo73vVkRMcOZ+eH4I0hTYBQ?=
- =?us-ascii?Q?ruhCPaBGIkVAH0dTuDzWx1f/q+b6MxdkEGzt9+S8Hd+pdI2o7mCbOwhgw/on?=
- =?us-ascii?Q?asBNeNMrZus020qAKi9b26qi/2UgBbEApDmXA+KqIjHDA8l9egkaGIbRaNsN?=
- =?us-ascii?Q?wOJTbQpBU6CFrR7NhQhK9WEuYt44pbS91amkvWf4b+syWG2hqTIZF8b8Sqf8?=
- =?us-ascii?Q?tuI36N6QSczE9+3TCydDXtgR3D1VRbqbMunz7O+99UuGckpXH2VnwG0fa+a/?=
- =?us-ascii?Q?qmlZIwK/93uD1O5N/zsZ5R+LFclsGQuNIIOfnYTh+FenwcSUsypNy2j6i1oz?=
- =?us-ascii?Q?fQ3t+6cD31hBXQxkzKC1g3U2XXa7jnAeee0pjXZ8ULAaX4snqEYwSPaNW1km?=
- =?us-ascii?Q?2dAfYMxsrJyzMZ8BSpLHWMgKREIFc0EZCK3KzBgK5KNTMBDb3q1W/+3vUGv6?=
- =?us-ascii?Q?fTBEJG4Kt35pUiIoFRSWvcBiMMSSzAge4Fd5k2zCU5Y2Gxn4tgXostamHYkQ?=
- =?us-ascii?Q?AZW37eUKuQ8reGn6lkIOeBxadjM48tJKA7rX34XWe92Jxc08Oa447oMnBt83?=
- =?us-ascii?Q?4rnuibH5NyEvK8FZbyCZzjaXKPq0lF7d7HPxEUeJBwQG59ZL4+RWEM8BJ0SM?=
- =?us-ascii?Q?fMZK+o92QyaltLTeAJdSoC2EE5YG2/ByNp1dio9/g+Mq/PMqje4tzAa2jdho?=
- =?us-ascii?Q?0L6hQsj5ysRdFKI7mnernLaZF7t3WaBP5xk3Ek6me4RGGcKePY/8FsKoql57?=
- =?us-ascii?Q?D4p31/hE/w2GrxmUky41TrR5OvvaEQcjRjOq4Xy8yWAYcXI=3D?=
+X-Microsoft-Antispam-Message-Info: DW9CNZ/OdeHFfMbVVs09i8Vx2tOsEiU/bSBg6juHVJz5dOFpI2z8ScVIp5iXBb91sgy3uS0LksUJBpuyCJXUa3BfSvX1w80jY84pSffCTqBzRuuf7PgH/mve5KMSNFww1M281QzY0tAjqGnvl/xCO0/THhSTOkN2UvQnAmHjkVT++Umz0ahyvF6KyrZUwmsEDWOvjEkteCi8d21iJljEVT4uv6ODLXr+8jxRP1sAYFWRyfPauamKUFpOqW218Za5ege3bsn/oEczhVer20M/AGGyIDgkJs+NuNFyHnEZiv0b+E0qLZQlKCy+rgDTfYEYizvOezNWWEa19jLFU4LjTwoZoRstbOwkecpL394h9JCtGxioCOpQeNz04ouKUAnwgtA1zNXZ97eZoCfr+68obQ==
+X-Forefront-Antispam-Report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:DB7PR03MB4297.eurprd03.prod.outlook.com;PTR:;CAT:NONE;SFS:(346002)(39830400003)(396003)(136003)(366004)(376002)(316002)(786003)(44832011)(66476007)(66946007)(52116002)(36756003)(1076003)(66556008)(83380400001)(2616005)(107886003)(4326008)(86362001)(5660300002)(16526019)(186003)(6512007)(6666004)(6506007)(6916009)(8936002)(2906002)(8676002)(6486002)(478600001);DIR:OUT;SFP:1101;
+X-MS-Exchange-AntiSpam-MessageData: =?us-ascii?Q?vb3flGfC6wQUvrN8FOAqbOofvQq04bP5MAdUWg/qgvVqtSUwebQosVt9bCRb?=
+ =?us-ascii?Q?XL0prx8EZZJv111VioPxSlb4I73H4s4QUr8JKxQm6Vd9DsesOfu3gYnfUQXk?=
+ =?us-ascii?Q?lxf1f3WL8uSLM+TJ7809gNFtqn9cPbxFz8bYGja77G7MzupRGXc2RQ9Rw84x?=
+ =?us-ascii?Q?AOtLTBcS/uEcEfDZAh2vd09s3h5mWu8PjLmZyg/UfuPhcjdCZeVAcI9eLSpS?=
+ =?us-ascii?Q?jk6TURIyJRcEv1/iTGRdLc6SOhroIyKMhjjbeIP7MEGJvjIokT84OBzunm7E?=
+ =?us-ascii?Q?PuWqqL+gjJSxDhUSdPpBb5YXkDjNcMllAm0vddk1wQmv558xFme2SiaioCjq?=
+ =?us-ascii?Q?n7gUX6ZZEy6QiTlmHCuwTUN/+9WOHntDLnXHxanHS0lVW5Zm0LJBDW2RqljO?=
+ =?us-ascii?Q?vBmF5S3N8s6cKYyuUex7O32rRfYJ9Jv0mRQdzzQyssLD13NPNfxMXLu6gSzO?=
+ =?us-ascii?Q?RDI7HZK4LFhn08PqdAFw6qWJ7EkbgNW10MvPtC38N3ie1lbDjtiIGLUewMVp?=
+ =?us-ascii?Q?n9mXd8jPlWrbIFqVhLmCMGHIisx7DcDvCzgIf1WYtqGIQGpEMlPRqvF7le8w?=
+ =?us-ascii?Q?J5pmvgAk5nmiMQNvLBmgU0AtbUgZuBuO61wlAzLi+83+BpDeS1hqTIYjnlPn?=
+ =?us-ascii?Q?t79WGrUQvDVqcPoyO0A6yC/28NpR25ICI/o0cUm1feZhOx+WBRag/lyMSVwv?=
+ =?us-ascii?Q?HWbcDInW1sbltW2DlkpYawGGlRidc7fm31Kcvpf8BOYtyJd50W7i0727rfxH?=
+ =?us-ascii?Q?XdOmQyXbWQTMdXkRQY6x6vsCmUsWKGvX15TnZQU9U1tLV4wZUEtgQ/+FCPvX?=
+ =?us-ascii?Q?xs+LFUvMF7ZELM/F21pVjhvY8w/UPTDbWo2DJkB4/0mS7rXDIMlWt5vQuZpJ?=
+ =?us-ascii?Q?rJ2EUZcR6OZ598bWHzDoxjCrTgDd4u2I5QQ6+u3ikLBsnOE1K3X4VLM3kgHZ?=
+ =?us-ascii?Q?tYJXNNVlPSAdEvjILuJ8ghgzjEJV3ZmJg44EIfZczFsAvyDbRItMC9oSCbzD?=
+ =?us-ascii?Q?Xx+lLMpmqIi5w5ibVRUOJVLT/LLqJvPwtssuoMLWqwMrh0tKIZIpecjdIK9+?=
+ =?us-ascii?Q?xedEJUG+?=
 X-OriginatorOrg: bdsu.de
 X-MS-Exchange-CrossTenant-AuthSource: DB7PR03MB4297.eurprd03.prod.outlook.com
 X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-OriginalArrivalTime: 11 Jan 2021 19:02:43.9631
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 11 Jan 2021 19:02:57.9841
  (UTC)
 X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
 X-MS-Exchange-CrossTenant-Id: 8c0670a1-eeed-4da2-a08a-128fe03f692a
-X-MS-Exchange-CrossTenant-Network-Message-Id: 37039316-9647-4d2d-6c41-08d8b6637a2f
+X-MS-Exchange-CrossTenant-Network-Message-Id: a6bc1f26-762d-4838-bb1a-08d8b663828f
 X-MS-Exchange-CrossTenant-MailboxType: HOSTED
-X-MS-Exchange-CrossTenant-UserPrincipalName: 9zLUi3sTJM+j8T+yWXOCUFO9A7CCe4KETtF0x2sVn8FVAvBuY0oAI4B0aCD8h7UGXTZ0t9psxKWj3x1kiQ2LUA==
+X-MS-Exchange-CrossTenant-UserPrincipalName: z1Ii3VxXJsFwAeZ5vT/W6eeqS7Hx3gy2ixekXGBSwaU+M5vnj+bVKRG4UoHiw70aBoJluVbHZuqZS7qdZ4iqjA==
 X-MS-Exchange-Transport-CrossTenantHeadersStamped: DB6PR0301MB2520
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Trying to incremental send and receive some subvolumes I repeatedly ran into
-errors with btrfs-receive failing. Taking a deeper look into the issue showed
-that btrfs-send was producing (semantically) invalid command streams. I could
-pin down the conditions of this happening to having inodes with the same number
-and the same generation but different inode type in the parent and the sent
-subvolume.
+When doing a send, if a new inode has the same number as an inode in the
+parent subvolume it will only be detected as to be recreated when the
+genrations differ. But with inodes in the same generation the emitted
+commands will cause the receiver to fail.
 
-The cause of this was that the kernel code for btrfs-send did not check if the
-type of the inode changed but only recreated the inode when the generation
-changed, too. Having the two inodes originate in the same generation though
-would produce a command stream that causes the receiver to fail.
+This case does not happen when doing incremental sends with snapshots
+that are kept read-only by the user all the time, but it may happen if
+- a snapshot was modified after it was created
+- the subvol used as parent was created independently from the sent subvol
 
-This small patch set adds the check for the same type and causes a deleted and
-create of the inode if necessary.
-For this the first patch renames send_ctx.cur_inode_new_gen to
-cur_inode_recreated because that is what this currently _actually_ is used for:
-detecting whether an inode was/should be recreated.
-I deemed this refactoring/renaming to be appropriate because the second patch
-then adds another condition that will set cur_inode_recreated - i.e. if the
-inode types differ.
+Example reproducers:
 
+  # case 1: same ino at same path
+  btrfs subvolume create subvol1
+  btrfs subvolume create subvol2
+  mkdir subvol1/a
+  touch subvol2/a
+  btrfs property set subvol1 ro true
+  btrfs property set subvol2 ro true
+  btrfs send -p subvol1 subvol2 | btrfs receive --dump
 
-Looking through the code and developing this patch I also identified an
-assumption that seems to be hard coded into many places and that probably caused
-other bugs, too, e.g. [1]:
+The produced tree state here is:
+  |-- subvol1
+  |   `-- a/        (ino 257)
+  |
+  `-- subvol2
+      `-- a         (ino 257)
 
-That people would only ever incremental send read-only snapshots of the provided
-parent snapshot that they're based off.
+  Where subvol1/a/ is a directory and subvol2/a is a file with the same
+  inode number and same generation.
 
-But this assumption fails/causes bugs when send/receive is used with:
-1. snapshots that were modified after their creation
-2. subvolumes that were created independently and are not descendants of each
-   other
+Example output of the receive command:
+  At subvol subvol2
+  snapshot        ./subvol2                       uuid=19d2be0a-5af1-fa44-9b3f-f21815178d00 transid=9 parent_uuid=1bac8b12-ddb2-6441-8551-700456991785 parent_transid=9
+  utimes          ./subvol2/                      atime=2021-01-11T13:41:36+0000 mtime=2021-01-11T13:41:36+0000 ctime=2021-01-11T13:41:36+0000
+  link            ./subvol2/a                     dest=a
+  unlink          ./subvol2/a
+  utimes          ./subvol2/                      atime=2021-01-11T13:41:36+0000 mtime=2021-01-11T13:41:36+0000 ctime=2021-01-11T13:41:36+0000
+  chmod           ./subvol2/a                     mode=644
+  utimes          ./subvol2/a                     atime=2021-01-11T13:41:36+0000 mtime=2021-01-11T13:41:36+0000 ctime=2021-01-11T13:41:36+0000
 
-(Although 2. may look like total nonsense it actually makes sense for
-independent subvolumes that share some extents e.g. by cp --reflink or some
-other means of deduplication.)
+=> the `link` command causes the receiver to fail with:
+   ERROR: link a -> a failed: File exists
 
-Thus I suspect there to be further hidden bugs for very rare edge cases
-especially where the generation number is used to check for differences -
-because taking 1./2. into account the generations between the subvolume and
-parent may arbitrarily be smaller, equal or greater and as such does not qualify
-as a good indicator for change detection.
-The same is true for the inode numbers.
+Second example:
+  # case 2: same ino at different path
+  btrfs subvolume create subvol1
+  btrfs subvolume create subvol2
+  mkdir subvol1/a
+  touch subvol2/b
+  btrfs property set subvol1 ro true
+  btrfs property set subvol2 ro true
+  btrfs send -p subvol1 subvol2 | btrfs receive --dump
 
-This makes it also connected to [1]:
-"btrfs: send: fix wrong file path when there is an inode with a pending rmdir"
+The produced tree state here is:
+  |-- subvol1
+  |   `-- a/        (ino 257)
+  |
+  `-- subvol2
+      `-- b         (ino 257)
 
-[1] https://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git/commit/?id=0b3f407e6728d990ae1630a02c7b952c21c288d3
+  Where subvol1/a/ is a directory and subvol2/b is a file with the same
+  inode number and same generation.
 
+Example output of the receive command:
+  At subvol subvol2
+  snapshot        ./subvol2                       uuid=ea93c47a-5f47-724f-8a43-e15ce745aef0 transid=20 parent_uuid=f03578ef-5bca-1445-a480-3df63677fddf parent_transid=20
+  utimes          ./subvol2/                      atime=2021-01-11T13:58:00+0000 mtime=2021-01-11T13:58:00+0000 ctime=2021-01-11T13:58:00+0000
+  link            ./subvol2/b                     dest=a
+  unlink          ./subvol2/a
+  utimes          ./subvol2/                      atime=2021-01-11T13:58:00+0000 mtime=2021-01-11T13:58:00+0000 ctime=2021-01-11T13:58:00+0000
+  chmod           ./subvol2/b                     mode=644
+  utimes          ./subvol2/b                     atime=2021-01-11T13:58:00+0000 mtime=2021-01-11T13:58:00+0000 ctime=2021-01-11T13:58:00+0000
 
-Roman Anasal (2):
-  btrfs: send: rename send_ctx.cur_inode_new_gen to cur_inode_recreated
-  btrfs: send: fix invalid commands for inodes with changed type but
-    same gen
+=> the `link` command causes the receiver to fail with:
+   ERROR: link b -> a failed: Operation not permitted
 
- fs/btrfs/send.c | 47 +++++++++++++++++++++++++++--------------------
- 1 file changed, 27 insertions(+), 20 deletions(-)
+Signed-off-by: Roman Anasal <roman.anasal@bdsu.de>
+---
+ fs/btrfs/send.c | 16 +++++++++++-----
+ 1 file changed, 11 insertions(+), 5 deletions(-)
 
---
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 420371c1d..33ae48442 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -6299,12 +6299,18 @@ static int changed_inode(struct send_ctx *sctx,
+ 		right_gen = btrfs_inode_generation(sctx->right_path->nodes[0],
+ 				right_ii);
+ 
++		u64 left_type = S_IFMT & btrfs_inode_mode(
++				sctx->left_path->nodes[0], left_ii);
++		u64 right_type = S_IFMT & btrfs_inode_mode(
++				sctx->right_path->nodes[0], right_ii);
++
++
+ 		/*
+ 		 * The cur_ino = root dir case is special here. We can't treat
+ 		 * the inode as deleted+reused because it would generate a
+ 		 * stream that tries to delete/mkdir the root dir.
+ 		 */
+-		if (left_gen != right_gen &&
++		if ((left_gen != right_gen || left_type != right_type) &&
+ 		    sctx->cur_ino != BTRFS_FIRST_FREE_OBJECTID)
+ 			sctx->cur_inode_recreated = 1;
+ 	}
+@@ -6359,10 +6365,10 @@ static int changed_inode(struct send_ctx *sctx,
+ 	} else if (result == BTRFS_COMPARE_TREE_CHANGED) {
+ 		/*
+ 		 * We need to do some special handling in case the inode was
+-		 * reported as changed with a changed generation number. This
+-		 * means that the original inode was deleted and new inode
+-		 * reused the same inum. So we have to treat the old inode as
+-		 * deleted and the new one as new.
++		 * reported as changed with a changed generation number or
++		 * changed inode type. This means that the original inode was
++		 * deleted and new inode reused the same inum. So we have to
++		 * treat the old inode as deleted and the new one as new.
+ 		 */
+ 		if (sctx->cur_inode_recreated) {
+ 			/*
+-- 
 2.26.2
+

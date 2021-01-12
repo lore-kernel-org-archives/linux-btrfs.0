@@ -2,88 +2,106 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.3 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B36CBC433E6
-	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Jan 2021 15:49:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1B1F0C4332E
+	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Jan 2021 15:52:15 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 8BF632312F
-	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Jan 2021 15:49:06 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DCB5320656
+	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Jan 2021 15:52:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2405659AbhALPsE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 12 Jan 2021 10:48:04 -0500
-Received: from mx2.suse.de ([195.135.220.15]:36772 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2405550AbhALPsD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 12 Jan 2021 10:48:03 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id E6FCEAC24;
-        Tue, 12 Jan 2021 15:47:21 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 93EADDA87C; Tue, 12 Jan 2021 16:45:29 +0100 (CET)
-Date:   Tue, 12 Jan 2021 16:45:29 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     kernel test robot <oliver.sang@intel.com>
-Cc:     Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>,
-        =?iso-8859-1?Q?Ren=E9?= Rebe <rene@exactcode.de>,
-        LKML <linux-kernel@vger.kernel.org>, lkp@lists.01.org,
-        lkp@intel.com, ying.huang@intel.com, feng.tang@intel.com,
-        zhengjun.xing@intel.com, linux-btrfs@vger.kernel.org
-Subject: Re: [btrfs]  e076ab2a2c:  fio.write_iops -18.3% regression
-Message-ID: <20210112154529.GT6430@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz,
-        kernel test robot <oliver.sang@intel.com>,
-        Josef Bacik <josef@toxicpanda.com>, David Sterba <dsterba@suse.com>,
-        =?iso-8859-1?Q?Ren=E9?= Rebe <rene@exactcode.de>,
-        LKML <linux-kernel@vger.kernel.org>, lkp@lists.01.org,
-        lkp@intel.com, ying.huang@intel.com, feng.tang@intel.com,
-        zhengjun.xing@intel.com, linux-btrfs@vger.kernel.org
-References: <20210112153614.GA2015@xsang-OptiPlex-9020>
+        id S2392112AbhALPwM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 12 Jan 2021 10:52:12 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54718 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2392107AbhALPwL (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 12 Jan 2021 10:52:11 -0500
+Received: from mail-qt1-x829.google.com (mail-qt1-x829.google.com [IPv6:2607:f8b0:4864:20::829])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D89B6C0617A2
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Jan 2021 07:51:25 -0800 (PST)
+Received: by mail-qt1-x829.google.com with SMTP id c14so1834115qtn.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Jan 2021 07:51:25 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
+        h=subject:to:cc:references:from:message-id:date:user-agent
+         :mime-version:in-reply-to:content-language:content-transfer-encoding;
+        bh=czDseoOnOGRSzCZMGapC9qH4FJPI8pYW205lRRKqplo=;
+        b=BjymW39KXrPg2F5A9D5yXqibmoS7kh0mIiVWqbp41P7iiqkS6TxFW+s3pZIY1jivu/
+         Ao0gmQFcW3K8+njEvHVM5O6PWhLOB9G6DaAshCNpBblqq2dIYIkuUrucyr/qC/Ykl3bl
+         c58HCyCTg/qxf9Vh1CeBfVaePBXOIA2brec87O2fdaCqEpjvUxwgYp0HcL551qcVik94
+         ynZ+utGJUyZ02hbOkSbrQtwrIRQw3nV6Bx0EHDbBUV3L3aGh+BVP6uO1gAnflM1RvPIq
+         JiuZDjJxkp8oJQfs7AKhHeKfAqKuLWFUaMK8JF8OsZQaQy1tN5Bb1y+Um1g7PD1ItP1G
+         Uemw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=czDseoOnOGRSzCZMGapC9qH4FJPI8pYW205lRRKqplo=;
+        b=fdbrIsOYT0XsEgzye229Sg2rG0llKmerzrYTij2fxlXl4fTIvxiph85VWci0NfCQZm
+         lWFZqi32uIGYqa/2HUeN8OnRJ/dit+WFKq+l9nYJlGj7zkKYFclYGaKR3BP/5OO1tE0y
+         tRyGhdNt4ceQkUEw09ZCtQxM7aapK/rXVeKqumJaHr82e1I1CfmX1btM1XIDKpUZczwh
+         QDY3QaqwA6gOc59SmBZDCb/Cvbb3XrTsLJFgARowkjpCB+C70k1vgO8nUQyTO8HtQeIG
+         62XwlP4iPOLRDqV4P2QDjsBt0gz3FSPzHFfj0LJ0ldfsf8a2BBe+RAC8Da0MmYzheGxU
+         VXxQ==
+X-Gm-Message-State: AOAM532c/kFOgsP+W6oejgfeZgjhd8eldScY1/3hU/douQHm0HCaTaAO
+        iWVu3/Ni36QtbVu4XyJmjmhmDg==
+X-Google-Smtp-Source: ABdhPJwtibQJQig0QFWJDWN40ncrChyt6y1cnTC94rRpeGkBg5SboaHya8cIIrahcIekU9yJHHujpQ==
+X-Received: by 2002:ac8:110e:: with SMTP id c14mr5048776qtj.293.1610466685026;
+        Tue, 12 Jan 2021 07:51:25 -0800 (PST)
+Received: from [192.168.1.45] (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
+        by smtp.gmail.com with ESMTPSA id c7sm1457585qkm.99.2021.01.12.07.51.23
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 12 Jan 2021 07:51:24 -0800 (PST)
+Subject: Re: [PATCH v11 15/40] btrfs: redirty released extent buffers in ZONED
+ mode
+To:     Naohiro Aota <naohiro.aota@wdc.com>, linux-btrfs@vger.kernel.org,
+        dsterba@suse.com
+Cc:     hare@suse.com, linux-fsdevel@vger.kernel.org,
+        Jens Axboe <axboe@kernel.dk>,
+        Christoph Hellwig <hch@infradead.org>,
+        "Darrick J. Wong" <darrick.wong@oracle.com>
+References: <06add214bc16ef08214de1594ecdfcc4cdcdbd78.1608608848.git.naohiro.aota@wdc.com>
+ <530bf9339d499c4f2209baeca7769a1c32a245bc.1608608848.git.naohiro.aota@wdc.com>
+From:   Josef Bacik <josef@toxicpanda.com>
+Message-ID: <8fc5abec-521e-4022-31c4-a63428dc7642@toxicpanda.com>
+Date:   Tue, 12 Jan 2021 10:51:23 -0500
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0)
+ Gecko/20100101 Thunderbird/78.6.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20210112153614.GA2015@xsang-OptiPlex-9020>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <530bf9339d499c4f2209baeca7769a1c32a245bc.1608608848.git.naohiro.aota@wdc.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Jan 12, 2021 at 11:36:14PM +0800, kernel test robot wrote:
+On 12/21/20 10:49 PM, Naohiro Aota wrote:
+> Tree manipulating operations like merging nodes often release
+> once-allocated tree nodes. Btrfs cleans such nodes so that pages in the
+> node are not uselessly written out. On ZONED volumes, however, such
+> optimization blocks the following IOs as the cancellation of the write out
+> of the freed blocks breaks the sequential write sequence expected by the
+> device.
 > 
-> Greeting,
+> This patch introduces a list of clean and unwritten extent buffers that
+> have been released in a transaction. Btrfs redirty the buffer so that
+> btree_write_cache_pages() can send proper bios to the devices.
 > 
-> FYI, we noticed a -18.3% regression of fio.write_iops due to commit:
+> Besides it clears the entire content of the extent buffer not to confuse
+> raw block scanners e.g. btrfsck. By clearing the content,
+> csum_dirty_buffer() complains about bytenr mismatch, so avoid the checking
+> and checksum using newly introduced buffer flag EXTENT_BUFFER_NO_CHECK.
 > 
-> 
-> commit: e076ab2a2ca70a0270232067cd49f76cd92efe64 ("btrfs: shrink delalloc pages instead of full inodes")
-> https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git master
-> 
-> 
-> in testcase: fio-basic
-> on test machine: 192 threads Intel(R) Xeon(R) CPU @ 2.20GHz with 192G memory
-> with following parameters:
-> 
-> 	disk: 1SSD
-> 	fs: btrfs
-> 	runtime: 300s
-> 	nr_task: 8
-> 	rw: randwrite
-> 	bs: 4k
-> 	ioengine: sync
-> 	test_size: 256g
+> Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 
-Though I do a similar test (emulating bit torrent workload), it's a bit
-extreme as it's 4k synchronous on a huge file. It always takes a lot of
-time but could point out some concurrency issues namely on faster
-devices. There are 8 threads possibly competing for the same inode lock
-or other locks related to it.
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 
-The mentioned commit fixed another perf regression on a much more common
-workload (untgrring files), so at this point drop in this fio workload
-is inevitable.
+Thanks,
+
+Josef

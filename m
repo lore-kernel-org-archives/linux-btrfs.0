@@ -2,165 +2,149 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.5 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D5298C433E6
-	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Jan 2021 10:28:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D0328C433DB
+	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Jan 2021 10:36:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 973E4206F1
-	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Jan 2021 10:28:17 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 83E7E222B3
+	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Jan 2021 10:36:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2404027AbhALK15 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 12 Jan 2021 05:27:57 -0500
-Received: from esa3.hgst.iphmx.com ([216.71.153.141]:25366 "EHLO
-        esa3.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726533AbhALK14 (ORCPT
+        id S1730165AbhALKfv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 12 Jan 2021 05:35:51 -0500
+Received: from aserp2120.oracle.com ([141.146.126.78]:54694 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727552AbhALKfv (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 12 Jan 2021 05:27:56 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1610447275; x=1641983275;
-  h=from:to:cc:subject:date:message-id:references:
-   content-transfer-encoding:mime-version;
-  bh=IVGpTN3i0JHGAu4thfA0DtvBO/6byIfWzSZ0MIS9NZ0=;
-  b=qLy9zHiQSXvlP9sJxe+RuLViWxhnsWTf+3gaJ3Ze6BYH0lOoStNzUZBw
-   6mJQBfcCQ3kNhMFk5xzKay/bkT46dduOiNGcv9xsdL3fmo+fDV+g88G2d
-   Krv6RU4I6cKMteFlJ49XDNHpUc3le8aAN5jpJMcJTGIQQ755CP3PRkE2O
-   91hNWYbw3Jr2SADZ/RsacCsMbO1OjTgRi7x+tHfFU8paAN1BDzDz+3oaC
-   3ChhUdef87G++uT9tIsWviG8Ldgy51Q2JtCxrx6vKDeaoI8jU1HtyHvkS
-   8RdeFsbuYXyB3YjiVt9ztj0BUd1zT1QgPXGdhEXof32eCjwAw3j4Fim9a
-   Q==;
-IronPort-SDR: tZByq8XTWfKWM6mXt16cgxJvoM0sFYprdLyfh7C3wHubVoZNiVXtYBgQR7573mFjM+Dv4mcLXL
- TuP6EANLazNuCgIdDu5P9ExiqF6bQz/2pvH20bAIuJ7sw7DlYT3KUFpHu4VUi5fVT2RSu9EKd/
- 8q9hiOJ4khowLoo3TFc2Kosr5oy96tQpYXAKNRfW1djSnLCRx3UMWe9nhDJId0Dc5WZT8U1/cv
- a/PJvBsX/fYgJVdahyH3A5upFUKT1klDNUvQyY4J4pz5URNBShAjpgpATGmn7v4VM+svo0ME69
- ENg=
-X-IronPort-AV: E=Sophos;i="5.79,341,1602518400"; 
-   d="scan'208";a="161673534"
-Received: from mail-dm6nam10lp2102.outbound.protection.outlook.com (HELO NAM10-DM6-obe.outbound.protection.outlook.com) ([104.47.58.102])
-  by ob1.hgst.iphmx.com with ESMTP; 12 Jan 2021 18:26:49 +0800
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
- b=D1ENyO41YHp/a8L4bTn3r1VUhGl/Nqa8pPr/8aMV0IwrHkHn09JmK9w9jr63Ap1TFqrk7u+BWBPVoqsiOE4xPizjd3k5ObXTa5jSwkJDuQDJuNg0V8GznNSiOUBvS7ijb+b4WPdX4gB6EMWL1frtRxGJR58w1DVzKXSLATfFF1RAU/CpcDPsgiSKCxD9VgLh4z306PZZdKvk9k2OV03mGLu2dBa84EdxQeIhl8/2MKSkc1cMKMGUF4kVRKOByPBqzfC5+i+OqGeHCTHnmgLOERnRSjIdSJPO6Kv8g/N49c1ZVB4UzQ+dyvq2mou/r8YJVZAgBnCao3ejem/g9eCcPw==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector9901;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=exmcFf7+WSlYc4M+Pgo6KhGuv2YkGiaLVfA/lotOHQQ=;
- b=PBthPAYflycTmK4pGhvFAuvj8myX+8nN09pN4B1etkPF9pYAjn57ZWj7OCDNZ52aGOlzrzlNRBfAWhvroeGU0AqwBEmGpqam/3D28YPaThJQUGJ8spzsQpPjOhyUxm7O9K7nnTAdy64nUVadcZr9ciTySteKNjUUYda+r/QgY3PQNVFS8qBChLVsh8dzxUdABxj3R+ZX6LFPbbMbVoV47msj16aIvqzBlUPmHYEhu5ZQQco42nPd79Yr+R11Rdia6pzw6wfD2judAivP3YqWP+/8Tkc8xHVK5KZo7nlAp+OZc3mwV1hs4tQD0wfOvV/YTTRE0xIq1wjD1r941Dohow==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
- header.d=wdc.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=exmcFf7+WSlYc4M+Pgo6KhGuv2YkGiaLVfA/lotOHQQ=;
- b=dvgKTktali7kQM+FpmKsdGie3mgy0Ulo6iQlcC8KauimrMK8+E8ZgdpLzj0YlbWhSIXvF5nga7AOa4cQw6rezdR9TUO+JCyK6J/V3+JYyM/Xk8ZvZdOL0FCV3EKnvTQHCqxDftbTupKL+tWOwmUgU8s8LLhAzeeslYMk/4EiwY8=
-Received: from SN4PR0401MB3598.namprd04.prod.outlook.com
- (2603:10b6:803:47::21) by SN2PR04MB2317.namprd04.prod.outlook.com
- (2603:10b6:804:6::20) with Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.3742.10; Tue, 12 Jan
- 2021 10:26:48 +0000
-Received: from SN4PR0401MB3598.namprd04.prod.outlook.com
- ([fe80::146f:bed3:ce59:c87e]) by SN4PR0401MB3598.namprd04.prod.outlook.com
- ([fe80::146f:bed3:ce59:c87e%3]) with mapi id 15.20.3742.012; Tue, 12 Jan 2021
- 10:26:48 +0000
-From:   Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
-To:     "hch@infradead.org" <hch@infradead.org>
-CC:     Naohiro Aota <Naohiro.Aota@wdc.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "dsterba@suse.com" <dsterba@suse.com>,
-        "hare@suse.com" <hare@suse.com>,
-        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
-        Jens Axboe <axboe@kernel.dk>,
-        "Darrick J. Wong" <darrick.wong@oracle.com>
-Subject: Re: [PATCH v11 00/40] btrfs: zoned block device support
-Thread-Topic: [PATCH v11 00/40] btrfs: zoned block device support
-Thread-Index: AQHW2BYevkWiUhuir027m8n6NCWCFQ==
-Date:   Tue, 12 Jan 2021 10:26:48 +0000
-Message-ID: <SN4PR0401MB35989E15509A0D36CBC35B109BAA0@SN4PR0401MB3598.namprd04.prod.outlook.com>
-References: <cover.1608515994.git.naohiro.aota@wdc.com>
- <20201222133805.GA6778@infradead.org>
- <SN4PR0401MB35987859AE05E238BE2221669BAB0@SN4PR0401MB3598.namprd04.prod.outlook.com>
- <20210112102303.GA1104499@infradead.org>
-Accept-Language: en-US
-Content-Language: en-US
-X-MS-Has-Attach: 
-X-MS-TNEF-Correlator: 
-authentication-results: infradead.org; dkim=none (message not signed)
- header.d=none;infradead.org; dmarc=none action=none header.from=wdc.com;
-x-originating-ip: [2001:a62:15c4:1c01:480d:3d08:9ab6:e110]
-x-ms-publictraffictype: Email
-x-ms-office365-filtering-ht: Tenant
-x-ms-office365-filtering-correlation-id: f0671962-7dc7-4b19-4738-08d8b6e491dd
-x-ms-traffictypediagnostic: SN2PR04MB2317:
-x-ld-processed: b61c8803-16f3-4c35-9b17-6f65f441df86,ExtAddr
-x-ms-exchange-transport-forked: True
-x-microsoft-antispam-prvs: <SN2PR04MB2317E101E79A396DC400B7159BAA0@SN2PR04MB2317.namprd04.prod.outlook.com>
-wdcipoutbound: EOP-TRUE
-x-ms-oob-tlc-oobclassifiers: OLM:5236;
-x-ms-exchange-senderadcheck: 1
-x-microsoft-antispam: BCL:0;
-x-microsoft-antispam-message-info: 981R+L2RirkqoDUzsE9XBDFUePPFofN5EXsCgtXssYfJANnarZgTDoLg9O1Q5A2lQKclHY699idfzYEfrrdsDyyiB5XRRSpnGMzf3NCjxcDr/KYiMLbi1d8eJcct+nxiZqke9/5OWRZ2xe+Nb1gklEHxtIqNnMFE2TRiAWbl7kyGyIEB0WQPJN4FiKsudGqW5W6qsnPSa+BBQh5fMsrr8IqMWv87c0RojxaURtAEFQy1Zt7gFWAF23rx2jHW0fpVxQGkhMCES1bj4DlA3OLiHAMhRnYHqQrN4lBmWCEREjilsW5qJOwhmP2PZtDhlUpBHOZZwvV//tQuhawraqiUJelmDzAOC48ppCuiKmLQ3uGBBY0Pa1XBCN/5JMYEnoHgy8Av1vYrkmbkHkv4JgLe+g==
-x-forefront-antispam-report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SN4PR0401MB3598.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(4636009)(366004)(498600001)(64756008)(6916009)(8676002)(66946007)(55016002)(7696005)(66476007)(186003)(66556008)(91956017)(71200400001)(66446008)(83380400001)(86362001)(52536014)(54906003)(2906002)(9686003)(6506007)(76116006)(5660300002)(53546011)(33656002)(4744005)(8936002)(4326008);DIR:OUT;SFP:1102;
-x-ms-exchange-antispam-messagedata: =?us-ascii?Q?Hv3V1OQ4wZDwO49G5+3itxrKqSMsb5McR6XypLYC3pOt1dIsc3OwPo76iMQJ?=
- =?us-ascii?Q?0xwvaKqHfiWyyJq/r4N2MLg0XXvPVocEWb44ALO2LPOT4G2uty+k07hOjMDr?=
- =?us-ascii?Q?MoatgbaRiUaOZotvE4ehew3k/im4qPSIEtTWQvR8NRR/epC2PyJGi4HmShH4?=
- =?us-ascii?Q?UiRSqr/O5HimLLYFrHFpdkRC8nsVl3uc7Nnk9zRZQvk6aXE2mjxozbAJiXbj?=
- =?us-ascii?Q?aueaMAY0ff5j37dvWeI0L6T1vWlw9i4nD3Pks7oQfyTiFJ/hPzRiBvkS8V3z?=
- =?us-ascii?Q?kgd8/J2TRlIx9pVm9O3OLp74GQSr7bunPjmPM8kdVUMGq9INQuCnmltwK8iS?=
- =?us-ascii?Q?r1nmnDSxiLY6Pu9gbp9sSA5HDLert5aRmOrwYX2Wm49RkSCjitWSJJ4fOFC/?=
- =?us-ascii?Q?LM3doOJ5JURrSEaCCjkgYFVe2uDF7D3N7s6MwgFwwMVxTy3cx309zpUDwkpZ?=
- =?us-ascii?Q?R1CJ39DoqdvhogNik12BC8RA32cZzLaY4LKI/YWzOrviJhkX6XA74YP2EGhg?=
- =?us-ascii?Q?nlRe2N0Cs5V9XiVv+woPD0XWfkRUcN2jmt2z933rw1IHsxK8jgprOwKqFXRe?=
- =?us-ascii?Q?imy90el6qnlqCukWLE24/yBX50q3h73Og0nvKh+clyrYa+pGFvceC7nPmhtI?=
- =?us-ascii?Q?wM4uTiaSDbuFRXXAHhddA6eQGxF50dycZLAxzopUZjPAcqxkwxWnQPmiih/E?=
- =?us-ascii?Q?1D4fJfyZz9+WRddllUzK2eKy2SVBxtfSAiHbR7bO1uODLZ91fX9ZgxHfAYsO?=
- =?us-ascii?Q?pUjjZFbJ1qlrhBrNCvzacC+1VHe/x3GH7mSzzvc9jLWV8t9IkCLhyE8A+VQi?=
- =?us-ascii?Q?RBV9w5djd4bvmp26stvPnH1HyGoTdT4XzqdMofD9Jaqb8LV78+cKt1NPYv62?=
- =?us-ascii?Q?3ZpdlQeSWSUcPaOjX1yADR27kfsZMLvg5i8Ci8bs+ECqElU1UznyAHmqH+vx?=
- =?us-ascii?Q?Tu27Eda3CS9sO3WtmrAWIuSG9wMeD3I1An60J1IA+uhF6VD6IZIUpLxx825W?=
- =?us-ascii?Q?78wvn0f+FicBHS07FCosXRP/nZdw2zhSzG2+Dr1t9sRIQ9/P6dkLykT9do5R?=
- =?us-ascii?Q?0j10nLEf?=
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: quoted-printable
+        Tue, 12 Jan 2021 05:35:51 -0500
+Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
+        by aserp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 10CATkkL095331
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Jan 2021 10:35:09 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : subject : to :
+ message-id : date : mime-version : content-type :
+ content-transfer-encoding; s=corp-2020-01-29;
+ bh=Cq/sut22k3GR43sANnrHpGt9CoFTxGQIbLwkzblc3iY=;
+ b=YUWmPW5x2Ew1ddRg4XunFvGf2p6VSbaQ75P9c9oddFNQHvZ5/bt3LFaHy6I7865y9Ker
+ TjlS3zZn+yl0YxO1zt+SgCwLBFJmXy8kOoYULHwjtKO834/b4OvY2pX/hIKmi4p7ySIQ
+ vBjd5GCPo5qrJ5r5MY8kGGtVsv6Y+8P1w1fnd13U4sLMHIOEeXWoKEJd58MyCyzYSLbd
+ jT+9z5S0efeMwR3I8lyqsKccwCXB580bCCCxLpDgbvj7e/LM0+FYW21BcpGWHZmrFi+P
+ ZB3pdUP19iSu4PcPY/I0sCr2qjaFp52qA7G4sfaJLvmQEF1BWIMtLFcfxrMg/1I/LIY9 8w== 
+Received: from aserp3020.oracle.com (aserp3020.oracle.com [141.146.126.70])
+        by aserp2120.oracle.com with ESMTP id 360kcynpwx-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Jan 2021 10:35:09 +0000
+Received: from pps.filterd (aserp3020.oracle.com [127.0.0.1])
+        by aserp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 10CAVU6a089166
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Jan 2021 10:35:09 GMT
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by aserp3020.oracle.com with ESMTP id 360ke6ajmd-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Jan 2021 10:35:09 +0000
+Received: from abhmp0019.oracle.com (abhmp0019.oracle.com [141.146.116.25])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 10CAZ8WC030175
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Jan 2021 10:35:08 GMT
+Received: from [192.168.10.102] (/39.109.186.25)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Tue, 12 Jan 2021 02:35:08 -0800
+From:   Anand Jain <anand.jain@oracle.com>
+Subject: [bug] Balance fails due to ENOSPC
+To:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Message-ID: <1540e370-a019-5d3b-312d-dc5e70169597@oracle.com>
+Date:   Tue, 12 Jan 2021 18:35:04 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.6.0
 MIME-Version: 1.0
-X-OriginatorOrg: wdc.com
-X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-AuthSource: SN4PR0401MB3598.namprd04.prod.outlook.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: f0671962-7dc7-4b19-4738-08d8b6e491dd
-X-MS-Exchange-CrossTenant-originalarrivaltime: 12 Jan 2021 10:26:48.7902
- (UTC)
-X-MS-Exchange-CrossTenant-fromentityheader: Hosted
-X-MS-Exchange-CrossTenant-id: b61c8803-16f3-4c35-9b17-6f65f441df86
-X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
-X-MS-Exchange-CrossTenant-userprincipalname: zSb3vpwRhU34L14AtrVP+fYYD8jF7BkQ2MIIrMWpKhZPM5xPYCQxkDWAIJFmhSl01++mFWk1Dt/ewmQwsKSZPD8mKXbMkeZj+j0V23KI4vg=
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: SN2PR04MB2317
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9861 signatures=668683
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 adultscore=0 suspectscore=0 spamscore=0
+ mlxlogscore=999 malwarescore=0 bulkscore=0 mlxscore=0 phishscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2009150000
+ definitions=main-2101120057
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9861 signatures=668683
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 spamscore=0 phishscore=0
+ impostorscore=0 bulkscore=0 adultscore=0 suspectscore=0 malwarescore=0
+ lowpriorityscore=0 clxscore=1015 mlxlogscore=999 mlxscore=0
+ priorityscore=1501 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2009150000 definitions=main-2101120057
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 12/01/2021 11:23, hch@infradead.org wrote:=0A=
-> On Mon, Jan 11, 2021 at 10:17:53AM +0000, Johannes Thumshirn wrote:=0A=
->> On 22/12/2020 14:40, Christoph Hellwig wrote:=0A=
->>> I just did a very quick look, but didn't see anything (based on the=0A=
->>> subjects) that deals with ITER_BVEC direct I/O.  Is the support for tha=
-t=0A=
->>> hidden somewhere?=0A=
->>=0A=
->> I couldn't reproduce the problem you reported and asked for a reproducer=
-. Probably=0A=
->> the mail got lost somewhere.=0A=
->>=0A=
->> Do you have a reproducer for me that triggers the problem? fio with --io=
-engine=3Dio_uring=0A=
->> didn't do the job on my end.=0A=
-> =0A=
-> I've only found this by auditing the code.  But the reproducer should=0A=
-> be io_uring with fixed buffers, alternatively using the nvme target=0A=
-> driver with a btrfs file as the backend.=0A=
-> =0A=
-=0A=
-OK, as fio with io_uring didn't trigger, lemme check if I can trigger it wi=
-th=0A=
-the nvme target code.=0A=
+
+
+Balance fails due to ENOSPC on 5.11.0-rc2+.
+
+
+[ 2460.219094] BTRFS info (device sdb6): balance: start -f 
+-dconvert=single -mconvert=single -sconvert=single
+[ 2460.219224] BTRFS info (device sdb6): relocating block group 
+194572713984 flags data
+[ 2460.241299] ------------[ cut here ]------------
+[ 2460.241302] BTRFS: Transaction aborted (error -28)
+[ 2460.241328] WARNING: CPU: 3 PID: 4135 at fs/btrfs/volumes.c:3003 
+btrfs_remove_chunk+0x60e/0x6c0 [btrfs]
+::
+[ 2460.241447] RIP: 0010:btrfs_remove_chunk+0x60e/0x6c0 [btrfs]
+::
+[ 2460.241497] Call Trace:
+[ 2460.241500]  btrfs_relocate_chunk+0x9d/0xd0 [btrfs]
+[ 2460.241533]  __btrfs_balance+0x413/0xa30 [btrfs]
+[ 2460.241566]  btrfs_balance+0x436/0x4d0 [btrfs]
+[ 2460.241597]  btrfs_ioctl_balance+0x2d5/0x380 [btrfs]
+[ 2460.241647]  btrfs_ioctl+0x565/0x22b0 [btrfs]
+[ 2460.241693]  ? selinux_file_ioctl+0x174/0x220
+[ 2460.241698]  ? handle_mm_fault+0xd7/0x2b0
+[ 2460.241702]  __x64_sys_ioctl+0x91/0xc0
+[ 2460.241705]  ? __x64_sys_ioctl+0x91/0xc0
+[ 2460.241707]  do_syscall_64+0x38/0x50
+[ 2460.241711]  entry_SYSCALL_64_after_hwframe+0x44/0xa9
+::
+[ 2460.241735] ---[ end trace 95b8b7b84503a477 ]---
+[ 2460.241738] BTRFS: error (device sdb6) in btrfs_remove_chunk:3003: 
+errno=-28 No space left
+[ 2460.241743] BTRFS info (device sdb6): forced readonly
+[ 2460.242646] BTRFS info (device sdb6): 1 enospc errors during balance
+[ 2460.242649] BTRFS info (device sdb6): balance: ended with status: -30
+
+
+btrfs fi us /Volumes/
+Overall:
+     Device size:		 154.97GiB
+     Device allocated:		 154.97GiB
+     Device unallocated:		   2.00MiB
+     Device missing:		     0.00B
+     Used:			 147.91GiB
+     Free (estimated):		   2.75GiB	(min: 2.75GiB)
+     Data ratio:			      1.99
+     Metadata ratio:		      1.52
+     Global reserve:		 183.72MiB	(used: 0.00B)
+
+Data,single: Size:894.00MiB, Used:0.00B (0.00%)
+    /dev/sdb6	 894.00MiB
+
+Data,RAID1: Size:75.53GiB, Used:73.23GiB (96.96%)
+    /dev/sdb6	  75.53GiB
+    /dev/sdc2	  75.53GiB
+
+Metadata,single: Size:964.00MiB, Used:0.00B (0.00%)
+    /dev/sdb6	 964.00MiB
+
+Metadata,RAID1: Size:1.00GiB, Used:737.25MiB (72.00%)
+    /dev/sdb6	   1.00GiB
+    /dev/sdc2	   1.00GiB
+
+System,single: Size:32.00MiB, Used:0.00B (0.00%)
+    /dev/sdb6	  32.00MiB
+
+System,RAID1: Size:32.00MiB, Used:16.00KiB (0.05%)
+    /dev/sdb6	  32.00MiB
+    /dev/sdc2	  32.00MiB
+
+Unallocated:
+    /dev/sdb6	   1.00MiB
+    /dev/sdc2	   1.00MiB

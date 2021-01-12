@@ -2,135 +2,105 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-15.2 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_SANE_1 autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 98013C433DB
-	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Jan 2021 15:38:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 65C2DC433E6
+	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Jan 2021 15:46:40 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 472FF2311B
-	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Jan 2021 15:38:47 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2D56023134
+	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Jan 2021 15:46:40 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2391798AbhALPil (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 12 Jan 2021 10:38:41 -0500
-Received: from mx2.suse.de ([195.135.220.15]:59718 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2391683AbhALPil (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 12 Jan 2021 10:38:41 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 3F008AC24;
-        Tue, 12 Jan 2021 15:37:59 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id DBDE0DA87C; Tue, 12 Jan 2021 16:36:06 +0100 (CET)
-Date:   Tue, 12 Jan 2021 16:36:06 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Martin Raiber <martin@urbackup.org>
-Cc:     linux-btrfs@vger.kernel.org, io-uring@vger.kernel.org
-Subject: Re: [PATCH] btrfs: Prevent nowait or async read from doing sync IO
-Message-ID: <20210112153606.GS6430@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Martin Raiber <martin@urbackup.org>,
-        linux-btrfs@vger.kernel.org, io-uring@vger.kernel.org
-References: <01020176df4d86ba-658b4ef1-1b4a-464f-afe4-fb69ca60e04e-000000@eu-west-1.amazonses.com>
+        id S2405460AbhALPqX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 12 Jan 2021 10:46:23 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53446 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2405459AbhALPqW (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 12 Jan 2021 10:46:22 -0500
+Received: from mail-qv1-xf2f.google.com (mail-qv1-xf2f.google.com [IPv6:2607:f8b0:4864:20::f2f])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 14CF1C061575
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Jan 2021 07:45:42 -0800 (PST)
+Received: by mail-qv1-xf2f.google.com with SMTP id s6so1066440qvn.6
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Jan 2021 07:45:42 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
+        h=subject:to:cc:references:from:message-id:date:user-agent
+         :mime-version:in-reply-to:content-language:content-transfer-encoding;
+        bh=v9l50jqPNoBOOTLDEtZWZwTrEvZOlOYAJ9ghVHd0rtA=;
+        b=NYuTYxayVqXR2Jibpi6u25k0LlmKLobt6Xe/hc7/dvwWzLQWOiz+NpPNVP8XRJ2xO9
+         8ukghIv7J4SStY3QE9h2pLce7WlLIwKoSN4TnZ/kw/uLmLKrnyL0z8vJ10LqYPDCzqtd
+         wEPgltwCf34oaaY1ozeR8/1jQ6rkv0HS3AAfcuQ5TLY9MFlaBw2L/KAMQRVcQHsMRvcU
+         U6hPLI/vz8zahWefpld4WdiJNEGhTHMX/OOVAyG79YuvaIpMlKZC2jv1e/RIYrBNAllY
+         OIOYBZFbQ5Mowy3M9IXPlST0H9l+aK9LtrJmdXjcNByKdJNWWFLcUOO2L3SWMcJSbPRW
+         QfZA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=v9l50jqPNoBOOTLDEtZWZwTrEvZOlOYAJ9ghVHd0rtA=;
+        b=luS4vxuWL4JFXOQhcGUJIlVh0V87mlQ9kbb+AUfXQQPuuhluXxPQlQtRIWUyIIL3Ac
+         OaXYRbFM22z68TE001vFATt+koBUN8o35394SVLReIs2NQ/6GdOG7QcXy2bwUbXaRccC
+         QuU5zRPtjom4pOkTb38l76eoxaP6naIIod5hy0CILHVM+m9s5KcrhW9ofwto456Af2NN
+         +x+qq0sUWnxED5M7akqmxE+hwoyUzeJcRQz+bDRX8ShTl63g1/VJOEqcIlbExtPwtLsQ
+         bwMARWASAQNgqgiuRcGfDVgweZMtP3/o/h5uy9bRj/pxR1sX0Oru4U9K0VnaFa/p/kmX
+         S9jw==
+X-Gm-Message-State: AOAM531r08Lrj+xMh/VPeVcXfLHdONh1Mjt4ENIpdVyDxZfWrD501fUH
+        bqtRiGe4G8qenWP1eucgOVogJISRaC32HLmF
+X-Google-Smtp-Source: ABdhPJwzKrdj+cTDTebTSm7DMvdCXKI/ezX47wSqc55xpADwHqgifQ0BBlSMoJ3q2G90L91+7SxSFw==
+X-Received: by 2002:ad4:5a50:: with SMTP id ej16mr5406933qvb.25.1610466341165;
+        Tue, 12 Jan 2021 07:45:41 -0800 (PST)
+Received: from [192.168.1.45] (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
+        by smtp.gmail.com with ESMTPSA id b65sm1404390qkg.75.2021.01.12.07.45.39
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 12 Jan 2021 07:45:40 -0800 (PST)
+Subject: Re: [PATCH v11 13/40] btrfs: track unusable bytes for zones
+To:     Naohiro Aota <naohiro.aota@wdc.com>, linux-btrfs@vger.kernel.org,
+        dsterba@suse.com
+Cc:     hare@suse.com, linux-fsdevel@vger.kernel.org,
+        Jens Axboe <axboe@kernel.dk>,
+        Christoph Hellwig <hch@infradead.org>,
+        "Darrick J. Wong" <darrick.wong@oracle.com>
+References: <06add214bc16ef08214de1594ecdfcc4cdcdbd78.1608608848.git.naohiro.aota@wdc.com>
+ <43075f585c6866abcf2b4e000f4481159b39d78a.1608608848.git.naohiro.aota@wdc.com>
+From:   Josef Bacik <josef@toxicpanda.com>
+Message-ID: <b7a41c8d-3c4c-e6c1-c8d1-0d6fc7f7cdf5@toxicpanda.com>
+Date:   Tue, 12 Jan 2021 10:45:39 -0500
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0)
+ Gecko/20100101 Thunderbird/78.6.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <01020176df4d86ba-658b4ef1-1b4a-464f-afe4-fb69ca60e04e-000000@eu-west-1.amazonses.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <43075f585c6866abcf2b4e000f4481159b39d78a.1608608848.git.naohiro.aota@wdc.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Jan 08, 2021 at 12:02:48AM +0000, Martin Raiber wrote:
-> When reading from btrfs file via io_uring I get following
-> call traces:
-
-Is there a way to reproduce by common tools (fio) or is a specialized
-one needed?
-
-> [<0>] wait_on_page_bit+0x12b/0x270
-> [<0>] read_extent_buffer_pages+0x2ad/0x360
-> [<0>] btree_read_extent_buffer_pages+0x97/0x110
-> [<0>] read_tree_block+0x36/0x60
-> [<0>] read_block_for_search.isra.0+0x1a9/0x360
-> [<0>] btrfs_search_slot+0x23d/0x9f0
-> [<0>] btrfs_lookup_csum+0x75/0x170
-> [<0>] btrfs_lookup_bio_sums+0x23d/0x630
-> [<0>] btrfs_submit_data_bio+0x109/0x180
-> [<0>] submit_one_bio+0x44/0x70
-> [<0>] extent_readahead+0x37a/0x3a0
-> [<0>] read_pages+0x8e/0x1f0
-> [<0>] page_cache_ra_unbounded+0x1aa/0x1f0
-> [<0>] generic_file_buffered_read+0x3eb/0x830
-> [<0>] io_iter_do_read+0x1a/0x40
-> [<0>] io_read+0xde/0x350
-> [<0>] io_issue_sqe+0x5cd/0xed0
-> [<0>] __io_queue_sqe+0xf9/0x370
-> [<0>] io_submit_sqes+0x637/0x910
-> [<0>] __x64_sys_io_uring_enter+0x22e/0x390
-> [<0>] do_syscall_64+0x33/0x80
-> [<0>] entry_SYSCALL_64_after_hwframe+0x44/0xa9
+On 12/21/20 10:49 PM, Naohiro Aota wrote:
+> In zoned btrfs a region that was once written then freed is not usable
+> until we reset the underlying zone. So we need to distinguish such
+> unusable space from usable free space.
 > 
-> Prevent those by setting IOCB_NOIO before calling
-> generic_file_buffered_read.
+> Therefore we need to introduce the "zone_unusable" field  to the block
+> group structure, and "bytes_zone_unusable" to the space_info structure to
+> track the unusable space.
 > 
-> Async read has the same problem. So disable that by removing
-> FMODE_BUF_RASYNC. This was added with commit
-> 8730f12b7962b21ea9ad2756abce1e205d22db84 ("btrfs: flag files as
-
-Oh yeah that's the commit that went to btrfs code out-of-band. I am not
-familiar with the io_uring support and have no good idea what the new
-flag was supposed to do.
-
-> supporting buffered async reads") with 5.9. Io_uring will read
-> the data via worker threads if it can't be read without sync IO
-> this way.
-
-What are the implications of that? Like more context switching (due to
-the worker threads) or other potential performance related problems?
-
+> Pinned bytes are always reclaimed to the unusable space. But, when an
+> allocated region is returned before using e.g., the block group becomes
+> read-only between allocation time and reservation time, we can safely
+> return the region to the block group. For the situation, this commit
+> introduces "btrfs_add_free_space_unused". This behaves the same as
+> btrfs_add_free_space() on regular btrfs. On zoned btrfs, it rewinds the
+> allocation offset.
 > 
-> Signed-off-by: Martin Raiber <martin@urbackup.org>
-> ---
->  fs/btrfs/file.c | 15 +++++++++++++--
->  1 file changed, 13 insertions(+), 2 deletions(-)
-> 
-> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-> index 0e41459b8..8bb561f6d 100644
-> --- a/fs/btrfs/file.c
-> +++ b/fs/btrfs/file.c
-> @@ -3589,7 +3589,7 @@ static loff_t btrfs_file_llseek(struct file *file, loff_t offset, int whence)
->  
->  static int btrfs_file_open(struct inode *inode, struct file *filp)
->  {
-> -	filp->f_mode |= FMODE_NOWAIT | FMODE_BUF_RASYNC;
-> +	filp->f_mode |= FMODE_NOWAIT;
->  	return generic_file_open(inode, filp);
->  }
->  
-> @@ -3639,7 +3639,18 @@ static ssize_t btrfs_file_read_iter(struct kiocb *iocb, struct iov_iter *to)
->  			return ret;
->  	}
->  
+> Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 
-> -	return generic_file_buffered_read(iocb, to, ret);
-> +	if (iocb->ki_flags & IOCB_NOWAIT)
-> +		iocb->ki_flags |= IOCB_NOIO;
-> +
-> +	ret = generic_file_buffered_read(iocb, to, ret);
-> +
-> +	if (iocb->ki_flags & IOCB_NOWAIT) {
-> +		iocb->ki_flags &= ~IOCB_NOIO;
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 
-This should probably use the original value of iocb->ki_flags, as the
-NOIO flag is set unconditionally and if it were set initially, now it
-would be lost. I haven't checked if this is actually possible as the
-iocb code is inside kernel, but just from the safety POV it would be
-better to use original value.
+Thanks,
 
-> +		if (ret == 0)
-> +			ret = -EAGAIN;
-> +	}
+Josef

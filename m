@@ -2,138 +2,110 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-19.2 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-12.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DB447C4332B
-	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Jan 2021 13:19:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4A9D0C433DB
+	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Jan 2021 13:41:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id A903A206A4
-	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Jan 2021 13:19:13 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 038EB22B30
+	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Jan 2021 13:41:56 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730348AbhALNSr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 12 Jan 2021 08:18:47 -0500
-Received: from mail.kernel.org ([198.145.29.99]:53840 "EHLO mail.kernel.org"
+        id S1726934AbhALNlj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 12 Jan 2021 08:41:39 -0500
+Received: from mout.gmx.net ([212.227.17.21]:37169 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2389252AbhALM5A (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 12 Jan 2021 07:57:00 -0500
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 7927123122;
-        Tue, 12 Jan 2021 12:55:47 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1610456148;
-        bh=VYWZicGH8KHt/BiWVit0kZO3W1ceCcEV61jX9iqJXCE=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=u2fCJU4bCu420l3Ww+oBjr4to0BlEaIT7Yyzl1J5hJEnf6tc5Wf1EUXn6AHksea3K
-         JOieB3xxELAe/klP17R0024RQa5XP/JQj3iyTh4OXXZknMZYCyNYuizv4EJr1DlhhF
-         NaTCn5dHRhPRJOZgu15P5fCQCujBSIeH1tuKvJyC1fs8P1njx0CeR+6SNCqsxX0hPw
-         rgrFpuZ57/wtvyBJrZCBbwk8oa2XZucg3AAoqbsn96aQxVtFF4b/bXRBHJQdJzeTO5
-         k/Cg8yPvGd+woBZW2EbY8htyt4TS6iD68YYPaOCsfsXkGgMvcyx+MJLawCzHTTEeyV
-         wjMw4gTNdtfSg==
-From:   Sasha Levin <sashal@kernel.org>
-To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Pavel Begunkov <asml.silence@gmail.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>,
-        Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.10 10/51] btrfs: fix async discard stall
-Date:   Tue, 12 Jan 2021 07:54:52 -0500
-Message-Id: <20210112125534.70280-10-sashal@kernel.org>
-X-Mailer: git-send-email 2.27.0
-In-Reply-To: <20210112125534.70280-1-sashal@kernel.org>
-References: <20210112125534.70280-1-sashal@kernel.org>
+        id S1726521AbhALNlj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 12 Jan 2021 08:41:39 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1610458804;
+        bh=/uDq4QRKO8SyrrBKUZBPpD6NX0k921ENyOuc3y+vhQo=;
+        h=X-UI-Sender-Class:Subject:To:Cc:References:From:Date:In-Reply-To;
+        b=dpOwZfeuUunKjCE7zcltCAWd/kazoZ7kgDsyG8DasimL/iFZM8QD6L0EARvH/rUkK
+         XfXNf7vTN38KjhFI6u2RNNxPpt1pRxSecFnuydVXpJ98I02+ZC6vT6Ma6xsiMZQv5s
+         Ocpwsrz6Cq3rtX1UR2I9CzfMzIKR4fdKAQO6l9VE=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx105
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1MHoRK-1klXym0PWI-00Esxj; Tue, 12
+ Jan 2021 14:40:03 +0100
+Subject: Re: [PATCH RFC] btrfs: no need to transition to rdonly for ENOSPC
+ error
+To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+Cc:     josef@toxicpanda.com
+References: <169ba15cd316c181042bbe25e7d10c7963e3b7e8.1610444879.git.anand.jain@oracle.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <56e1248e-0956-0446-1c45-d280c396d378@gmx.com>
+Date:   Tue, 12 Jan 2021 21:39:58 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.6.0
 MIME-Version: 1.0
-X-stable: review
-X-Patchwork-Hint: Ignore
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <169ba15cd316c181042bbe25e7d10c7963e3b7e8.1610444879.git.anand.jain@oracle.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:BxKBqq0x8ukJ39UJ+yDmS4EukO8rHeWFF1MmlbvywgmyTnbdK5Y
+ obviBiJk5dKJGfp6jWb84TSOXoPGh+BhiSgS7nSjXPpRzczyNsyu1KuYuh90Xz+ZazF2c8k
+ 23mxPTij2Oe8aO6dV9poy8KQnCBfLIIznaijxbcgXecrQhwraIFvcj/cLMvF6Nz4sftfvRH
+ wGlVFeRAvkLZ7oGNNNqjQ==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:z6T4mMTXtZc=:V8RmsDs9tnbAjbIQnBFOY9
+ 9bHa+4hgKWwUaqFHY9icUP4unVKxM+7YPvVDzEU9m2xU9J6mddiFfYDYxRMz1rmvw8asNZ4FR
+ 8MC+YOmtO/gveNo6dTCk6Iq8x4icewdAKyGUU5zGjKT2ppCn36He+5wH1JYgJ3RFQv14Vz9zB
+ dm1KkAUCIVWsLgu43fxVqtHSVVWzEtPM8RBe3UtR3xR3afykn+GAHiL3qzOp4aVPfLdX1e0gg
+ FCOYdhuBcUNu/0S1cIGBOxJqhNsKkFFXVreBSRTAJwXIY65PjK0t7kg+vXl/ug+bLR3WgJfmd
+ zbyn1BvcOSD/jRfYX5XshJiGFcX0QE0baeANi8LtuDTRYudJWytY1ywJr7/613ZagtPqOCPkS
+ xEG/XtsLCAMBPQU8PnF7QgwpKMkLnuchiKRMroUrwk+CIC5ljEIjkPUm9hjlj5NOlNaYDZubN
+ FMcz3DJDj1I9P3LQ+60cO7+mvhtqyTTcnFZoCjGG4A9afTMmE+adCWiTTR2wnLWeWAJoNwSoa
+ L6BMqQ+EjXI14Fbdz6vxCbqnwanphXbKj0uyEgKpCREWs9+rXJ5kQbpkfcbGIuT0phpPpFv8c
+ g9pZPICNMbE4eJmEzfOzK5UiMsTOugJD0u+DEgWIbeKHVVjX2NK+3TLBxSEelC8AZoODTR7A+
+ 1J+2Wk2I/S3sLUP59fODtHjGmXQSDTX5ZIQ0XWOrGNg9s5dH2DFzpydhzEmWwl24QNuBjUOdR
+ jP+4QE1ZTj+33/ijHzFcO1uV+Xt4BuAippFTBaEaoE/c2n2lnlMmOU4RXXHDbhk9DoOla58X6
+ J9p3z6uwy9j64iG8j+IqVIV0HY1eO9AxFhTum8onE/ynuD3LOzFNsnYS+7LhuGWa+6ibsPsKi
+ ZQCe/vlA4mbYzfcyUZCg==
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Pavel Begunkov <asml.silence@gmail.com>
 
-[ Upstream commit ea9ed87c73e87e044b2c58d658eb4ba5216bc488 ]
 
-Might happen that bg->discard_eligible_time was changed without
-rescheduling, so btrfs_discard_workfn() wakes up earlier than that new
-time, peek_discard_list() returns NULL, and all work halts and goes to
-sleep without further rescheduling even there are block groups to
-discard.
+On 2021/1/12 =E4=B8=8B=E5=8D=886:34, Anand Jain wrote:
+> In the current kernel both scrub and balance fails due to ENOSPC,
+> however there is no reason that it should be transitioned to the
+> RDONLY and making free spaces difficult.
 
-It happens pretty often, but not so visible from the userspace because
-after some time it usually will be kicked off anyway by someone else
-calling btrfs_discard_reschedule_work().
+This just masks the real problem.
 
-Fix it by continue rescheduling if block group discard lists are not
-empty.
+ From all your reports, the problem is the same, we exhausted the
+metadata space, but the GlobalRSV is only 100+MiB.
 
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
-Signed-off-by: Pavel Begunkov <asml.silence@gmail.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
-Signed-off-by: Sasha Levin <sashal@kernel.org>
----
- fs/btrfs/discard.c | 17 ++++++++++-------
- 1 file changed, 10 insertions(+), 7 deletions(-)
+It looks like the problem Josef is working on to make GlobalRSV work as
+usual.
 
-diff --git a/fs/btrfs/discard.c b/fs/btrfs/discard.c
-index 741c7e19c32f2..d1a5380e8827d 100644
---- a/fs/btrfs/discard.c
-+++ b/fs/btrfs/discard.c
-@@ -199,16 +199,15 @@ static struct btrfs_block_group *find_next_block_group(
- static struct btrfs_block_group *peek_discard_list(
- 					struct btrfs_discard_ctl *discard_ctl,
- 					enum btrfs_discard_state *discard_state,
--					int *discard_index)
-+					int *discard_index, u64 now)
- {
- 	struct btrfs_block_group *block_group;
--	const u64 now = ktime_get_ns();
- 
- 	spin_lock(&discard_ctl->lock);
- again:
- 	block_group = find_next_block_group(discard_ctl, now);
- 
--	if (block_group && now > block_group->discard_eligible_time) {
-+	if (block_group && now >= block_group->discard_eligible_time) {
- 		if (block_group->discard_index == BTRFS_DISCARD_INDEX_UNUSED &&
- 		    block_group->used != 0) {
- 			if (btrfs_is_block_group_data_only(block_group))
-@@ -222,12 +221,11 @@ static struct btrfs_block_group *peek_discard_list(
- 			block_group->discard_state = BTRFS_DISCARD_EXTENTS;
- 		}
- 		discard_ctl->block_group = block_group;
-+	}
-+	if (block_group) {
- 		*discard_state = block_group->discard_state;
- 		*discard_index = block_group->discard_index;
--	} else {
--		block_group = NULL;
- 	}
--
- 	spin_unlock(&discard_ctl->lock);
- 
- 	return block_group;
-@@ -429,13 +427,18 @@ static void btrfs_discard_workfn(struct work_struct *work)
- 	int discard_index = 0;
- 	u64 trimmed = 0;
- 	u64 minlen = 0;
-+	u64 now = ktime_get_ns();
- 
- 	discard_ctl = container_of(work, struct btrfs_discard_ctl, work.work);
- 
- 	block_group = peek_discard_list(discard_ctl, &discard_state,
--					&discard_index);
-+					&discard_index, now);
- 	if (!block_group || !btrfs_run_discard_work(discard_ctl))
- 		return;
-+	if (now < block_group->discard_eligible_time) {
-+		btrfs_discard_schedule_work(discard_ctl, false);
-+		return;
-+	}
- 
- 	/* Perform discarding */
- 	minlen = discard_minlen[discard_index];
--- 
-2.27.0
+Definitely not the proper way to fix it.
 
+Thanks,
+Qu
+>
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> ---
+>   fs/btrfs/super.c | 3 +++
+>   1 file changed, 3 insertions(+)
+>
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index 12d7d3be7cd4..8c1b858f55c4 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -172,6 +172,9 @@ void __btrfs_handle_fs_error(struct btrfs_fs_info *f=
+s_info, const char *function
+>   	if (sb_rdonly(sb))
+>   		return;
+>
+> +	if (errno =3D=3D -ENOSPC)
+> +		return;
+> +
+>   	btrfs_discard_stop(fs_info);
+>
+>   	/* btrfs handle error by forcing the filesystem readonly */
+>

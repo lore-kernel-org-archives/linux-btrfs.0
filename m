@@ -5,44 +5,44 @@ X-Spam-Level:
 X-Spam-Status: No, score=-19.2 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
 	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 445D4C433DB
-	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Jan 2021 12:57:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BF6DDC433DB
+	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Jan 2021 12:59:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D4E1F2313F
-	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Jan 2021 12:57:49 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5E23723117
+	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Jan 2021 12:59:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2389739AbhALM5L (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 12 Jan 2021 07:57:11 -0500
-Received: from mail.kernel.org ([198.145.29.99]:53862 "EHLO mail.kernel.org"
+        id S2405123AbhALM6V (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 12 Jan 2021 07:58:21 -0500
+Received: from mail.kernel.org ([198.145.29.99]:54634 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2389432AbhALM5E (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 12 Jan 2021 07:57:04 -0500
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 3B89023125;
-        Tue, 12 Jan 2021 12:55:50 +0000 (UTC)
+        id S2405024AbhALM6T (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 12 Jan 2021 07:58:19 -0500
+Received: by mail.kernel.org (Postfix) with ESMTPSA id 893572313C;
+        Tue, 12 Jan 2021 12:57:30 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1610456151;
-        bh=DWaACIN6kNG1+kVcr5D4ITBa0f4gc1H7U0twN7xQaRE=;
+        s=k20201202; t=1610456251;
+        bh=vcKznMa2u/a9OV9xkSfB/VBRRxQ8U3Q9qzKuvbAJU1U=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=pTvV6BQRf0Le+dHlw/+hpnnsOJnFV02vIVC6+Q2dwDUkI8CWObXRYt3bPowNw0Hxu
-         l5gVf4ZjU6qfnhvynQuhlkAS5RNTvljvFXPYiileKUt21ajpCF8oypdi9PvQxOGp+a
-         hgQMaA6LXx/sZsVGBslsFtnveuqB243v+gIxEwDt6rzH1pL3mgoT2AWZWrJvOwnwyc
-         e8g+GfbMfmE+0KHLp7VA+ZmAB7NTmAW2JRk8Sv6MlHzz5oCgBltOWGlFEVwowQRy9I
-         7j/kqWMHxmYoOyePqRmj8UCA4d9GgXlk+DqWaZdaPtNS8zQOBelFGLmrG/jwsGa9MA
-         XIQxbwhhWQzxA==
+        b=TZFi6ny3G93ceZBdTRf8PMglRiUW8wSkbl1M34KwE6wgqpvwWD/mlFiTo5kk9KmST
+         9tkhNkMy86b/dhxDLUH/YsGQtkGALVNsx4V6bDXcJnQPOP4DhRtG/q78ygXUGeA+oH
+         at6uZ+oY5FHWuv4LQ4HI9qgSmFBnbDcR6CVVgCotdiZAR5hVh/GM9Qg/jCaKL/Q2qj
+         9C0ogqrosfVoCfOjn6bx3LKH6zlVvOvOCGDNOz96G9QSdxGvLcOfuK7c48etemAx73
+         wzNVv9x2MbrzdibWTYznoE23G/SqgzVV/35M9lEY/QNqdcPtBDfW/2x8lK75g4OGf8
+         aNVvuAacYKVPg==
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
 Cc:     Filipe Manana <fdmanana@suse.com>, Fabian Vogt <fvogt@suse.com>,
         Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.10 12/51] btrfs: fix transaction leak and crash after RO remount caused by qgroup rescan
-Date:   Tue, 12 Jan 2021 07:54:54 -0500
-Message-Id: <20210112125534.70280-12-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 4.19 04/16] btrfs: fix transaction leak and crash after RO remount caused by qgroup rescan
+Date:   Tue, 12 Jan 2021 07:57:13 -0500
+Message-Id: <20210112125725.71014-4-sashal@kernel.org>
 X-Mailer: git-send-email 2.27.0
-In-Reply-To: <20210112125534.70280-1-sashal@kernel.org>
-References: <20210112125534.70280-1-sashal@kernel.org>
+In-Reply-To: <20210112125725.71014-1-sashal@kernel.org>
+References: <20210112125725.71014-1-sashal@kernel.org>
 MIME-Version: 1.0
 X-stable: review
 X-Patchwork-Hint: Ignore
@@ -658,10 +658,10 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
  2 files changed, 18 insertions(+), 3 deletions(-)
 
 diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 87bd37b70738e..702a2f294ee47 100644
+index 9936e4b991aa3..7bda5586e4332 100644
 --- a/fs/btrfs/qgroup.c
 +++ b/fs/btrfs/qgroup.c
-@@ -3224,6 +3224,12 @@ static int qgroup_rescan_leaf(struct btrfs_trans_handle *trans,
+@@ -2774,6 +2774,12 @@ static int qgroup_rescan_leaf(struct btrfs_trans_handle *trans,
  	return ret;
  }
  
@@ -674,7 +674,7 @@ index 87bd37b70738e..702a2f294ee47 100644
  static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
  {
  	struct btrfs_fs_info *fs_info = container_of(work, struct btrfs_fs_info,
-@@ -3232,6 +3238,7 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
+@@ -2782,6 +2788,7 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
  	struct btrfs_trans_handle *trans = NULL;
  	int err = -ENOMEM;
  	int ret = 0;
@@ -682,7 +682,7 @@ index 87bd37b70738e..702a2f294ee47 100644
  
  	path = btrfs_alloc_path();
  	if (!path)
-@@ -3244,7 +3251,7 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
+@@ -2794,7 +2801,7 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
  	path->skip_locking = 1;
  
  	err = 0;
@@ -691,7 +691,7 @@ index 87bd37b70738e..702a2f294ee47 100644
  		trans = btrfs_start_transaction(fs_info->fs_root, 0);
  		if (IS_ERR(trans)) {
  			err = PTR_ERR(trans);
-@@ -3287,7 +3294,7 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
+@@ -2837,7 +2844,7 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
  	}
  
  	mutex_lock(&fs_info->qgroup_rescan_lock);
@@ -700,7 +700,7 @@ index 87bd37b70738e..702a2f294ee47 100644
  		fs_info->qgroup_flags &= ~BTRFS_QGROUP_STATUS_FLAG_RESCAN;
  	if (trans) {
  		ret = update_qgroup_status_item(trans);
-@@ -3306,7 +3313,7 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
+@@ -2856,7 +2863,7 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
  
  	btrfs_end_transaction(trans);
  
@@ -710,10 +710,10 @@ index 87bd37b70738e..702a2f294ee47 100644
  	} else if (err >= 0) {
  		btrfs_info(fs_info, "qgroup scan completed%s",
 diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 8840a4fa81eb7..2663485c17cb8 100644
+index 40f5b4dcb9276..521f6c2091ad1 100644
 --- a/fs/btrfs/super.c
 +++ b/fs/btrfs/super.c
-@@ -1895,6 +1895,14 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
+@@ -1845,6 +1845,14 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
  		btrfs_scrub_cancel(fs_info);
  		btrfs_pause_balance(fs_info);
  

@@ -2,204 +2,732 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-19.2 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 10C27C433DB
-	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Jan 2021 13:11:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1FF8CC43217
+	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Jan 2021 13:12:46 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id CA34E2311E
-	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Jan 2021 13:11:55 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CA4F223121
+	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Jan 2021 13:12:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730938AbhALNLu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 12 Jan 2021 08:11:50 -0500
-Received: from mail-vi1eur05on2069.outbound.protection.outlook.com ([40.107.21.69]:25162
-        "EHLO EUR05-VI1-obe.outbound.protection.outlook.com"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1730918AbhALNLs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 12 Jan 2021 08:11:48 -0500
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
- b=BZvvdJ5Pn8HZMAGqyKLHtuaO0plX6RKW3KKoYf+cTmHrfa9i0OGH46W1yWCrePicNnbyH25hnnlwIlJwEQPIIt9+tEH/C5K5nY+fc26//J+QWgAGjHA9FneJzbQFeyQBDSpQTz/QR+qPR1qR2I5KUET5xC/apFTsTknXJf7zheAfdRGAlBXGTctWrSF24zqpYVRGLetIyTADFeFxZcVKy5JCjDVIFn6MGChF1f7onyRpT3/uOUX6Q6bzVYujGfsXmepQGVXphWmZvqP9u9yY849+9MLaxtdJZ7tWeMdkLz9nRd2dhRso6o1CKA2gzmMklUwe0JHCaYUbr1d6UCGPjg==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector9901;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=87+5r9LKrqH6RAigP7RN3YVfInvjKH4T/qVRhf/hvQ8=;
- b=mfHGEjBM+K/OuJOasFD5XBrjudDQH1OJ3/s2qzn09tlbPT0j5zKkPA3KjCFQETI9Xf3/xmO9dTyrzkxYlkk3PKnxLOHB340zKRTY+C0APUyUSKuWN4qKAnqgKnMMMDbNET0aPo8EL9wvkMqeF95d52ZFFMojy8LSpVipJgaNZ9HjsjtPU9sPeTKSUnJxhbCUVhfdnJ35KrQJLNKBadUkesOedVZfoxeMB6/lpUx9S+3x6oulRYOeTPxpsBXEk14aGNWvWtdMdm6r6mELZtkUjb9PObaJ5P+vpiWd/ZKgAXBsetlG50Vl3IrniDR5wU1pOP/Cid1sDC1pqri8Qe1e6g==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=bdsu.de; dmarc=pass action=none header.from=bdsu.de; dkim=pass
- header.d=bdsu.de; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bdsu.de; s=selector2;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=87+5r9LKrqH6RAigP7RN3YVfInvjKH4T/qVRhf/hvQ8=;
- b=rZXBvQGoZFguEixfZ6BQboJovghtALKhqoenVIPWBnCvhkXBbfJp25a9kLlrm6JVIrSk0U2EA8cR/3a9SC/M7i+tyyE95zLWjrVfJrMGtB3AkqQH2f0p09x39cHWuaCjyMhlnu0MMcs5KNkfeNkb8b/wWSaMGJG2lo4NFEJxX3cnBFX1pI+0JbQ7hnBLN8tm/cmdJnMqaKpQCTJBruQdafQrV3XTGa63cNzq7xsJ3vFvV7i1/ReybdcVnd8RVHpKuR2TMy3tIMD7V+y0X+YjNd8aBBZK6YYqjvfri/S3ZzkEfSXHFPqf/jkuzCb2o6dMIjEIknpCD1BYAHErJ24kLg==
-Received: from DB7PR03MB4297.eurprd03.prod.outlook.com (2603:10a6:10:17::30)
- by DBBPR03MB6922.eurprd03.prod.outlook.com (2603:10a6:10:20e::23) with
- Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.3742.9; Tue, 12 Jan
- 2021 13:10:57 +0000
-Received: from DB7PR03MB4297.eurprd03.prod.outlook.com
- ([fe80::b53d:bd77:c4ae:93d]) by DB7PR03MB4297.eurprd03.prod.outlook.com
- ([fe80::b53d:bd77:c4ae:93d%5]) with mapi id 15.20.3742.012; Tue, 12 Jan 2021
- 13:10:57 +0000
-From:   Roman Anasal | BDSU <roman.anasal@bdsu.de>
-To:     "fdmanana@gmail.com" <fdmanana@gmail.com>
-CC:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 2/2] btrfs: send: fix invalid commands for inodes with
- changed type but same gen
-Thread-Topic: [PATCH 2/2] btrfs: send: fix invalid commands for inodes with
- changed type but same gen
-Thread-Index: AQHW6ExfcsLlXW2ATUu8CwlNGk82oqoiz9CAgAAXWgCAAPQkgIAAHQiA
-Date:   Tue, 12 Jan 2021 13:10:57 +0000
-Message-ID: <0ce2d415308ab40874aff535031e9871a442cd9a.camel@bdsu.de>
-References: <20210111190243.4152-1-roman.anasal@bdsu.de>
-         <20210111190243.4152-3-roman.anasal@bdsu.de>
-         <9e177865-0408-c321-951e-ce0f3ff33389@gmail.com>
-         <424d62853024d8b0bc5ca03206eeca35be6014a2.camel@bdsu.de>
-         <CAL3q7H6YOPgcdgJKX8OETqrKqmfz8GRkQykPOQBMmnNSsc4sxw@mail.gmail.com>
-In-Reply-To: <CAL3q7H6YOPgcdgJKX8OETqrKqmfz8GRkQykPOQBMmnNSsc4sxw@mail.gmail.com>
-Accept-Language: en-US, de-DE
-Content-Language: en-US
-X-MS-Has-Attach: 
-X-MS-TNEF-Correlator: 
-authentication-results: gmail.com; dkim=none (message not signed)
- header.d=none;gmail.com; dmarc=none action=none header.from=bdsu.de;
-x-originating-ip: [2001:a61:3aef:4c01:503:a276:cbe0:8dc0]
-x-ms-publictraffictype: Email
-x-ms-office365-filtering-correlation-id: 37378cfe-b81d-4164-9d8b-08d8b6fb7ff1
-x-ms-traffictypediagnostic: DBBPR03MB6922:
-x-microsoft-antispam-prvs: <DBBPR03MB6922844354BDAA28B92C8C2194AA0@DBBPR03MB6922.eurprd03.prod.outlook.com>
-x-ms-oob-tlc-oobclassifiers: OLM:10000;
-x-ms-exchange-senderadcheck: 1
-x-microsoft-antispam: BCL:0;
-x-microsoft-antispam-message-info: 0ZKjFazbfdTu1Iu7IiBoIJawBBdoODQQi48MZKdqIVabwGK6GT7MEOeLDcIJ7ZbfL8osqAVMMoFeEr41CdPwzn0vdmxF4/0WEyF2X+u0itZwGuNlBuaoeGsaiUZkE1HMzCsMCNDlfqf49gMui5vMKKndu3MKR6DEqj5mh9D9vi+ubV0L+HxeUFMrwKtpFtf6ONndyWVHg9DBzyBScv6ZFhqWSrNVxHFkzd3PFHn8SgUvgg412o1TWYaM55Kp+unhyFsxxFcEamv984dAHqS67AFvvkQba4+MO8nmpM0xwFk10TQoV1hYA477h12apCTK37pU2MPbyM+SxJAXiyTGxswPXNYfA1lXyuRDtIyJ2nT/DJUFMjc814qfWfeSswWNfONCIQjn+LRVE2SDeUJHlEhy90j7k+6Zi7lEFXq1FE/BS0l2Lm3fB0Z8m0IOlRV4OwuJHO5xgAvFn0TSIaoySg==
-x-forefront-antispam-report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:DB7PR03MB4297.eurprd03.prod.outlook.com;PTR:;CAT:NONE;SFS:(396003)(346002)(39830400003)(376002)(136003)(366004)(64756008)(66446008)(76116006)(8676002)(66476007)(6506007)(66556008)(86362001)(6486002)(186003)(91956017)(2906002)(66946007)(8936002)(83380400001)(5660300002)(316002)(786003)(6512007)(966005)(2616005)(71200400001)(478600001)(6916009)(4326008)(36756003);DIR:OUT;SFP:1101;
-x-ms-exchange-antispam-messagedata: =?utf-8?B?VHNkTFA2dlFqYXdWUVhBU3B4S1NtTFI0RzJGZDNQOTJRVURXOHk2STBFWldz?=
- =?utf-8?B?TGo3QjlxVnlOd25TbEl1RWNTeE1QWjFvaUd0TDhHSGdwdmRTVzh0RDVseC9q?=
- =?utf-8?B?RjVzc3hreHAxZE1TRGFwSm8yNjYrenlmNjJUSnMxVkI3MjJpM0JheGdaTUg4?=
- =?utf-8?B?REFZdUhzNzMwM1JuaUhvTERpcXl5akhSWWNiMk5tMDM1MHlsVW9jTHlUY3Vr?=
- =?utf-8?B?WlBnbDZ2Unh1UFpSSXdpQnQ2azcrMk1lMEJjd05GOXNKQW85VXRXOFNHakFE?=
- =?utf-8?B?UjlpTmR2U3lMY0ZNejdHYWlyclBPbHhzMWF6Z0hDV2VvSm5IZHd3L1V5Sm1z?=
- =?utf-8?B?VmN6b1NzRlZ1Rzkwa09BU214YzN5VXBxUjNjQnZab1M1UHFYMzlFdVVRUU81?=
- =?utf-8?B?OEh6OGtVUERFYkdnaWVOcWlTZklJd2V3TEtGSGR2TFptdzZ2TGZmWlZFaDhV?=
- =?utf-8?B?dURUaTRyTnVib0MwOWpzbkJKL1NnVHVmaDZxNGk2SkVIRWE4b1VzbFpJU2d6?=
- =?utf-8?B?bFVzdUVIRjZ5aEVEbytFNmh6Y1l3M2dXZStobHNMTU9paS9CajYzcFJHVW5D?=
- =?utf-8?B?cXJZZUJMOC9yeERrRzI1Tmx3NStDd2sxdnJEWWxvZWEwYXNXQjRxZFNFS3VV?=
- =?utf-8?B?M0pBR3FkWHlqMXdFUWVYbFkybDd3dHdUelU0RkxrbzBubytlUUhZWUhFbkI3?=
- =?utf-8?B?RUcweDBSZEhQMzRFOHkwUGFYNGJSWGM3N255eGg5dXRaU3c3WWtRTmI0Nm9D?=
- =?utf-8?B?eWFIYVJod1FvM3B6WHBOb1FmRkVlbVZnN2lvSHBpbUNYOVgzeHNMTUZ5Wlc4?=
- =?utf-8?B?djNrclg1cEM3cm15ZVdQZC9OR0orVFJ1NVRzbWpoaVQydkNteEMrMVlvYjVR?=
- =?utf-8?B?dGN4a1NUdGdFdEZNN2dzWElsU1lOKzVLS0pCTFNmUVhBbkxKamJHN2tDRzVo?=
- =?utf-8?B?YUxwemdSQXRkbmRXVTgzcmZVUFYvck9SWlhlV3Y4a0wzdVplSDBtV3hzL3VJ?=
- =?utf-8?B?d1RtdVlmS3gxUkpDK05OVXpXb2ZlRHAyODFpbjF5Qjd0OVVzekhGaXZRWnha?=
- =?utf-8?B?Vzl5bUNaaWNOWHE0aFgyQ2pGNDUvci9xY3ZVK0Uyb2lZNnJ0WllNL1FleXor?=
- =?utf-8?B?enc2VU9DVWFyUjJBdTNtdnNQY0RLanRFenREZTVhZGptS0xocDRMT3R5RDZP?=
- =?utf-8?B?ZnhZcW1DM3o0SndzNS9IYWlHOHJmYnJxTGNVK2NBdkd4cGd6TDN0T2NkTXJZ?=
- =?utf-8?B?V3FHSSs4N1hjZlpPSGdsSGZVS2VVdlJtWWMxTU53RFBwZys5aXJSS2F5OWh3?=
- =?utf-8?B?VXh0TzlhYjRBMGg2dGNJVlBSdU91NHZZVW5SUlJRZVpjODJpWHV2Z0hwTDNy?=
- =?utf-8?B?VjJDbmlZbzNrSnFEcC9FVHlXYnZaMHVYa29ZbVRPUEI2UjMwM0I2Y00xMTN6?=
- =?utf-8?Q?zngtOwXH?=
-x-ms-exchange-transport-forked: True
-Content-Type: text/plain; charset="utf-8"
-Content-ID: <0ECCF4C8677FAA40A96469A2622C25FF@eurprd03.prod.outlook.com>
-Content-Transfer-Encoding: base64
+        id S2404327AbhALM57 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 12 Jan 2021 07:57:59 -0500
+Received: from mail.kernel.org ([198.145.29.99]:53862 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S2390376AbhALM55 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 12 Jan 2021 07:57:57 -0500
+Received: by mail.kernel.org (Postfix) with ESMTPSA id 02EC8235FF;
+        Tue, 12 Jan 2021 12:56:52 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1610456214;
+        bh=kVXX7MW3Ssg/mSzghnyFM7vdbQL9sMcS2xobvEyFXl0=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+        b=g23rqC4Xo1M10RF3kyYHIgoEMDhxoezomPJAeUWZTKaXc0bGtuKVSMpHid0V9rCOd
+         TRUXE5cS9BJG7AMsPSKT5tH1mRVkln9m+Tv7YRpRtZXLEdvnk1xnEOp7iYXMlBzfKg
+         ncmRgW8LgdBKHprsXCkv3i5iA6BacOqORisdIJLb1YJfTXqQYjJXhU7eTOpsalDYCh
+         4yqoNXiUMFA1FAvKDeXv6FwAaJivuLISLp71apbWYGKYckf4qkDGbyeRgCmmPxIlEl
+         zi6siDhpH56T82ITjHXYlpwPfBJs+Fd6l3Gmt/OFJgW2T5MVwnnDlo+rvYKuunk/vk
+         1jHbGALwlxdGw==
+From:   Sasha Levin <sashal@kernel.org>
+To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
+Cc:     Filipe Manana <fdmanana@suse.com>, Fabian Vogt <fvogt@suse.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>,
+        Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
+Subject: [PATCH AUTOSEL 5.4 06/28] btrfs: fix transaction leak and crash after RO remount caused by qgroup rescan
+Date:   Tue, 12 Jan 2021 07:56:22 -0500
+Message-Id: <20210112125645.70739-6-sashal@kernel.org>
+X-Mailer: git-send-email 2.27.0
+In-Reply-To: <20210112125645.70739-1-sashal@kernel.org>
+References: <20210112125645.70739-1-sashal@kernel.org>
 MIME-Version: 1.0
-X-OriginatorOrg: bdsu.de
-X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-AuthSource: DB7PR03MB4297.eurprd03.prod.outlook.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: 37378cfe-b81d-4164-9d8b-08d8b6fb7ff1
-X-MS-Exchange-CrossTenant-originalarrivaltime: 12 Jan 2021 13:10:57.1623
- (UTC)
-X-MS-Exchange-CrossTenant-fromentityheader: Hosted
-X-MS-Exchange-CrossTenant-id: 8c0670a1-eeed-4da2-a08a-128fe03f692a
-X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
-X-MS-Exchange-CrossTenant-userprincipalname: yyToRbTwGvpIJclMIKtHGIlif9CyuJ9ff+wM/ZYpeo9av/E3fIOoTLS3aZrZjvF0io8a57aA1tIB//x6Khysdw==
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: DBBPR03MB6922
+X-stable: review
+X-Patchwork-Hint: Ignore
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-T24gVHVlLCAyMDIxLTAxLTEyIGF0IDExOjI3ICswMDAwLCBGaWxpcGUgTWFuYW5hIHdyb3RlOg0K
-PiBZb3UgZ2V0IGFsbCB0aGVzZSBpc3N1ZXMgYmVjYXVzZSB5b3UgYXJlIHVzaW5nIGFuIGluY3Jl
-bWVudGFsIHNlbmQgaW4NCj4gYSB3YXkgaXQncyBub3Qgc3VwcG9zZWQgdG8uDQo+IFlvdSBhcmUg
-dXNpbmcgdHdvIHN1YnZvbHVtZXMgdGhhdCBhcmUgY29tcGxldGVseSB1bnJlbGF0ZWQuDQpZZXMs
-IEkgYW0gYXdhcmUgb2YgdGhhdCBhbmQga25vdyB0aGF0IHRoaXMgaXMgbm90IGEgZGVzaWduZWQg
-Zm9yIHVzZQ0KY2FzZS4NCg0KPiBNeSBzdXJwcmlzZSBoZXJlIGlzIHRoYXQgd2UgYWN0dWFsbHkg
-YWxsb3cgYSB1c2VyIHRvIHRyeSB0aGF0LA0KPiBpbnN0ZWFkDQo+IG9mIGdpdmluZyBhbiBlcnJv
-ciBjb21wbGFpbmluZyB0aGF0IHN1YnZvbDEgYW5kIHN1YnZvbDIgYXJlbid0DQo+IHNuYXBzaG90
-cyBvZiB0aGUgc2FtZSBzdWJ2b2x1bWUuDQpUaGlzIGNvdWxkIGJlIG9uZSB3YXkgb2Ygc29sdmlu
-ZyBpdC4gQnV0IHRoaXMgaXMgYWxyZWFkeSBoYXJkZXIgdGhhbiBpdA0Kc291bmRzLCBzaW5jZSB0
-aGUgc2FtZSBpc3N1ZSBtYXkgYWxzbyBoYXBwZW4gKmV2ZW4gd2hlbiogdGhlIHN1YnZvbHVtZXMN
-CnNoYXJlIGEgcGFyZW50L2FyZSByZWxhdGVkLCBoZXJlIGFuIGV4YW1wbGUgcmVwcm9kdWNlcjoN
-Cg0KICBidHJmcyBzdWJ2b2x1bWUgY3JlYXRlIHN1YnZvbDENCiAgYnRyZnMgc3Vidm9sdW1lIHNu
-YXBzaG90IHN1YnZvbDEgc3Vidm9sMg0KICBta2RpciBzdWJ2b2wxL2ENCiAgZWNobyBmb28gPiBz
-dWJ2b2wyL2ENCiAgYnRyZnMgcHJvcGVydHkgc2V0IHN1YnZvbDEgcm8gdHJ1ZQ0KICBidHJmcyBw
-cm9wZXJ0eSBzZXQgc3Vidm9sMiBybyB0cnVlDQogIGJ0cmZzIHNlbmQgLXAgc3Vidm9sMSBzdWJ2
-b2wyIHwgYnRyZnMgcmVjZWl2ZSAtLWR1bXANCg0KVGhpcyB3aWxsIHByb2R1Y2UgYSBzdHJlYW0g
-dGhhdCB0cmllcyB0byB3cml0ZSBkYXRhIGludG8gdGhlIGNsb25lZA0KZGlyZWN0b3J5IGlub2Rl
-Lg0KDQpTbyB3ZSBub3Qgb25seSBoYWQgdG8gY2hlY2sgdGhlIHBhcmVudCByZWxhdGlvbnNoaXBz
-IGJ1dCBhbHNvIGVuc3VyZQ0KdGhhdCB0aGUgZGVzY2VuZGFudCBzbmFwc2hvdCB3YXMgbm90IG1v
-ZGlmaWVkLCBpLmUuIHdhcyBuZXZlciBzZXQgdG8NCnJvPWZhbHNlLg0KQXMgZmFyIGFzIEkga25v
-dyB0aGVyZSBpcyBubyBmbGFnIHRyYWNraW5nIHRoaXMgb24tZGlzaz8gU28gdGhpcyB3b3VsZA0K
-bmVlZCBhZGRpdGlvbmFsIHdvcmssIHRvby4NCg0KDQo+IEFuIGluY3JlbWVudGFsIGlzIHN1cHBv
-c2VkIHRvIHdvcmsgb24gc25hcHNob3RzIG9mIHRoZSBzYW1lIHN1YnZvbHVtZQ0KPiAoaGVuY2Us
-IGhhdmUgdGhlIHNhbWUgcGFyZW50IHV1aWQpLg0KPiBUaGF0J3Mgd2hhdCB0aGUgZW50aXJlIGNv
-ZGUgcmVsaWVzIG9uIHRvIHdvcmsgY29ycmVjdGx5LCBhbmQgdGhhdCdzDQo+IHdoYXQgbWFrZXMg
-c2Vuc2UgLSB0byBjb21wdXRlIGFuZCBzZW5kIHRoZSBkaWZmZXJlbmNlcyBiZXR3ZWVuIHR3bw0K
-PiBwb2ludHMgaW4gdGltZSBvZiBhIHN1YnZvbHVtZS4NCj4gVGhhdCdzIHdoeSB0aGUgY29kZSBi
-YXNlIGFzc3VtZXMgdGhhdCBpbm9kZXMgd2l0aCB0aGUgc2FtZSBudW1iZXIgYW5kDQo+IHNhbWUg
-Z2VuZXJhdGlvbiBtdXN0IHJlZmVyIHRvIHRoZSBzYW1lIGlub2RlIGluIGJvdGggdGhlIHBhcmVu
-dCBhbmQNCj4gdGhlIHNlbmQgcm9vdC4NCj4gDQo+IFdoYXQgSSB0aGluayB0aGF0IG5lZWRzIHRv
-IGJlIGFuc3dlcmVkIGlzOg0KPiANCj4gMSkgQXJlIHRoZXJlIGFjdHVhbGx5IHBlb3BsZSB1c2lu
-ZyBpbmNyZW1lbnRhbCBzZW5kcyBpbiB0aGF0IHdheT8NCj4gKEl0J3MgdGhlIGZpcnN0IHRpbWUg
-SSBzZWUgc3VjaCB1c2UgY2FzZSkNCldlbGwsIEkgZGlkICg6DQpCdXQgYWRtaXR0ZWRseSBpbiBh
-IGtpbmQgb2YgZXhwZXJpbWVudGFsIHNldHVwIHRlc3Rpbmcgb3V0IHRoZSBsaW1pdHMNCm9mIGJ0
-cmZzLg0KDQo+IDIpIElmIHNvLCB3aHk/IFRoYXQgaXMgY29tcGxldGVseSB1bnJlbGlhYmxlLCBu
-b3Qgb25seSBpdCBjYW4gbGVhZCB0bw0KPiBmYWlsdXJlIHRvIGFwcGx5IHRoZSBzdHJlYW1zLCBi
-dXQgY2FuIHJlc3VsdCBpbiBhbGwgc29ydHMgb2YNCj4gd2VpcmRuZXNzDQo+IChsb2dpY2FsIGlu
-Y29uc2lzdGVuY2llcywgZXRjKSBpZiBhcHBseWluZyBzdWNoIHN0cmVhbXMgZG9lc24ndCBjYXVz
-ZQ0KPiBhbiBlcnJvci4NCkluIG15IGNhc2UgSSB3YXMgbW92aW5nIGFyb3VuZCBzdWJ2b2x1bWVz
-IGJldHdlZW4gbXVsdGlwbGUgZGlza3MgYW5kDQpkZWR1cGxpY2F0aW5nIGFzIG11Y2ggYXMgcG9z
-c2libGUuIFRyeWluZyB0byBwcmVzZXJ2ZSBhbHJlYWR5IGRvbmUNCmRlZHVwbGljYXRpb24gYW5k
-IHB1cmdpbmcgc29tZSBpbnRlcm1lZGlhdGUgc3Vidm9sdW1lcyBJIGVuZGVkIHVwIHVzaW5nDQoi
-dW5yZWxhdGVkIiBzdWJ2b2x1bWVzIGFzIHBhcmVudHMuDQoNClRoaW5raW5nIG9mIGl0LCBtYXli
-ZSBqdXN0IHVzaW5nIHRoZW0gYXMgY2xvbmUgc291cmNlcyB3b3VsZCBoYXZlIGp1c3QNCndvcmtl
-ZD8gVGhhdCB3b3VsZCB0aGVuIG9mIGNvdXJzZSBwcm9kdWNlIG11Y2ggbGFyZ2VyIHN0cmVhbXMg
-c2luY2UNCiphbGwqIG1ldGEgZGF0YSBoYWQgdG8gYmUgdHJhbnNmZXJlZC4NCg0KDQo+IDMpIE1h
-a2luZyBzdXJlIHN1Y2ggdXNlIGNhc2VzIHdvcmsgcmVsaWFibHkgd291bGQgcmVxdWlyZSBtYW55
-LCBtYW55DQo+IGNoYW5nZXMgdG8gdGhlIHNlbmQgaW1wbGVtZW50YXRpb24sIGFzIGl0IGdvZXMg
-YWdhaW5zdCB3aGF0IGl0DQo+IGN1cnJlbnRseSBleHBlY3RzLg0KPiAgICAgU25hcHNob3QgYSBz
-dWJ2b2x1bWUsIGNoYW5nZSB0aGUgc3Vidm9sdW1lLCBzbmFwc2hvdCBpdCBhZ2FpbiwNCj4gdGhl
-biB1c2UgYm90aCBzbmFwc2hvdHMgZm9yIHRoZSBpbmNyZW1lbnRhbCBzZW5kLCB0aGF0J3MgdGhl
-IGV4cGVjdGVkDQo+IHNjZW5hcmlvLg0KSSBhY3R1YWxseSBkb24ndCB0aGluayB0aGF0IGl0IGlz
-IHJlYWxseSB0aGF0IG11Y2ggd29yayBzaW5jZSBiZXNpZGVzDQpmcm9tIHNvbWUgZWRnZSBjYXNl
-cyBpdCBhbHJlYWR5ICpkb2VzKiB3b3JrIC0gSSB0cmllZCA7KQ0KDQoNCj4gSW4gb3RoZXIgd29y
-ZHMsIHdoYXQgSSB0aGluayB3ZSBzaG91bGQgaGF2ZSBpcyBhIGNoZWNrIHRoYXQgZm9yYmlkcw0K
-PiB1c2luZyB0d28gcm9vdHMgZm9yIGFuIGluY3JlbWVudGFsIHNlbmQgdGhhdCBhcmUgbm90IHNu
-YXBzaG90cyBvZiB0aGUNCj4gc2FtZSBzdWJ2b2x1bWUgKGhhdmUgZGlmZmVyZW50IHBhcmVudCB1
-dWlkcykuDQpJJ2QgbGlrZSB0byBhcmd1ZSBhZ2FpbnN0IHRoYXQ6DQogICAxLiBJIGRvbid0IHRo
-aW5rIGFsbG93aW5nIHRoaXMgcmVxdWlyZXMgdGhhdCBtdWNoIHdvcmsNCiAgIDIuIGV4cGxpY2l0
-bHkgZm9yYmlkaW5nIGl0IHJlcXVpcmVzIHdvcmssIHRvbyAoYW5kIG1heWJlIGV2ZW4gY2hhbmdl
-cw0KICAgICAgdG8gdGhlIG9uLWRpc2sgZm9ybWF0PykNCiAgIDMuIGZpeGluZyBidWdzIGZvciB0
-aGlzIHVuZXhwZWN0ZWQgdXNlIGNhc2Ugd2lsbCBwcm9iYWJseSBhbHNvIGZpeCBidWdzDQogICAg
-ICBmb3IgdGhlIGV4cGVjdGVkIHNjZW5hcmlvIHdoaWNoIG1heSBvbmx5IGhhcHBlbiBpbiB2ZXJ5
-IHJhcmUgYW5kDQogICAgICBleHRyZW1seSB1bmxpa2VseSAtIHRob3VnaCBzdGlsbCBwb3NzaWJs
-ZSAtIGNhc2VzIGFuZCB0aHVzIG1ha2UgdGhlDQogICAgICBjb2RlIG92ZXJhbGwgbW9yZSByZXNp
-bGllbnQ6DQoNCkZvciBleGFtcGxlIHRoZSBhc3N1bXB0aW9uIHRoYXQgaW5vZGVzIHdpdGggdGhl
-IHNhbWUgbnVtYmVyIG11c3QgcmVmZXINCnRvIHRoZSBzYW1lIGlub2RlIGRvZXNuJ3QgZXZlbiBo
-b2xkIGZvciBkaXJlY3Qgc25hcHNob3RzIC0gYWxtb3N0DQphbHdheXMgaXQgZG9lcyBidXQgaW4g
-c29tZSByYXJlIGNvbmRpdGlvbnMgaXQgZG9lc24ndCwgd2hpY2ggaXMgd2h5DQp0aGVyZSBhbHJl
-YWR5IGlzIGFuIGFkZGl0aW9uYWwgY2hlY2sgZm9yIHRoYXQuDQoNClRoaXMgYWxyZWFkeSBjYXVz
-ZWQgYnVncyBiZWZvcmUuIEFuZCB0aGUgYnVnIEkgaGl0IHdpdGggbXkgdW5leHBlY3RlZA0KdXNl
-IG9mIGJ0cmZzLXNlbmQgYW5kIG9yaWdpbmFsbHkgc2V0IG91dCB0byBmaW5kIHlvdSBoYWQganVz
-dCBmaXhlZCBhDQpmZXcgd2Vla3MgYmVmb3JlIFsxXSwgaS5lLiBpZiB5b3UgaGFkbid0IGZpeGVk
-IGl0IEkgd291bGQgLSBiZWNhdXNlIG9mDQp0aGUgdW5leHBlY3RlZCB1c2UuDQpUaGUgYnVnIG15
-IHBhdGNoIGZpeGVzIEkgb25seSBkaXNjb3ZlcmVkIGJ5IHJlYWRpbmcgdGhlIGNvZGUgYW5kIGhh
-dmluZw0KbXkgc2NlbmFyaW8gaW4gbWluZC4NCg0KWzFdIGh0dHBzOi8vZ2l0Lmtlcm5lbC5vcmcv
-cHViL3NjbS9saW51eC9rZXJuZWwvZ2l0L2tkYXZlL2xpbnV4LmdpdC9jb21taXQvP2lkPTBiM2Y0
-MDdlNjcyOGQ5OTBhZTE2MzBhMDJjN2I5NTJjMjFjMjg4ZDMNCg0KVGhhdCdzIHdoeSBJIHRoaW5r
-IHRoZSB3b3JrIGZpeGluZyBhcmlzaW5nIGJ1Z3MgZm9yIHRoYXQgY2FzZSBpcyBiZXR0ZXINCmlu
-dmVzdGVkIHRoYW4gaW4gdHJ5aW5nIHRvIGp1c3QgYmxvY2sgaXQgY29tcGxldGVseS4NCkJ1dCBn
-aXZlbiBpdHMgdmVyeSByYXJlIG9jY3VyZW5jZSBJIHdvdWxkIGFncmVlIHRvIG5vdCBwdXQgYW55
-IHByaW9yaXR5DQpvbiBpdC4NCg0KPiBUaGFua3MuDQo+IA0K
+From: Filipe Manana <fdmanana@suse.com>
+
+[ Upstream commit cb13eea3b49055bd78e6ddf39defd6340f7379fc ]
+
+If we remount a filesystem in RO mode while the qgroup rescan worker is
+running, we can end up having it still running after the remount is done,
+and at unmount time we may end up with an open transaction that ends up
+never getting committed. If that happens we end up with several memory
+leaks and can crash when hardware acceleration is unavailable for crc32c.
+Possibly it can lead to other nasty surprises too, due to use-after-free
+issues.
+
+The following steps explain how the problem happens.
+
+1) We have a filesystem mounted in RW mode and the qgroup rescan worker is
+   running;
+
+2) We remount the filesystem in RO mode, and never stop/pause the rescan
+   worker, so after the remount the rescan worker is still running. The
+   important detail here is that the rescan task is still running after
+   the remount operation committed any ongoing transaction through its
+   call to btrfs_commit_super();
+
+3) The rescan is still running, and after the remount completed, the
+   rescan worker started a transaction, after it finished iterating all
+   leaves of the extent tree, to update the qgroup status item in the
+   quotas tree. It does not commit the transaction, it only releases its
+   handle on the transaction;
+
+4) A filesystem unmount operation starts shortly after;
+
+5) The unmount task, at close_ctree(), stops the transaction kthread,
+   which had not had a chance to commit the open transaction since it was
+   sleeping and the commit interval (default of 30 seconds) has not yet
+   elapsed since the last time it committed a transaction;
+
+6) So after stopping the transaction kthread we still have the transaction
+   used to update the qgroup status item open. At close_ctree(), when the
+   filesystem is in RO mode and no transaction abort happened (or the
+   filesystem is in error mode), we do not expect to have any transaction
+   open, so we do not call btrfs_commit_super();
+
+7) We then proceed to destroy the work queues, free the roots and block
+   groups, etc. After that we drop the last reference on the btree inode
+   by calling iput() on it. Since there are dirty pages for the btree
+   inode, corresponding to the COWed extent buffer for the quotas btree,
+   btree_write_cache_pages() is invoked to flush those dirty pages. This
+   results in creating a bio and submitting it, which makes us end up at
+   btrfs_submit_metadata_bio();
+
+8) At btrfs_submit_metadata_bio() we end up at the if-then-else branch
+   that calls btrfs_wq_submit_bio(), because check_async_write() returned
+   a value of 1. This value of 1 is because we did not have hardware
+   acceleration available for crc32c, so BTRFS_FS_CSUM_IMPL_FAST was not
+   set in fs_info->flags;
+
+9) Then at btrfs_wq_submit_bio() we call btrfs_queue_work() against the
+   workqueue at fs_info->workers, which was already freed before by the
+   call to btrfs_stop_all_workers() at close_ctree(). This results in an
+   invalid memory access due to a use-after-free, leading to a crash.
+
+When this happens, before the crash there are several warnings triggered,
+since we have reserved metadata space in a block group, the delayed refs
+reservation, etc:
+
+  ------------[ cut here ]------------
+  WARNING: CPU: 4 PID: 1729896 at fs/btrfs/block-group.c:125 btrfs_put_block_group+0x63/0xa0 [btrfs]
+  Modules linked in: btrfs dm_snapshot dm_thin_pool (...)
+  CPU: 4 PID: 1729896 Comm: umount Tainted: G    B   W         5.10.0-rc4-btrfs-next-73 #1
+  Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.13.0-0-gf21b5a4aeb02-prebuilt.qemu.org 04/01/2014
+  RIP: 0010:btrfs_put_block_group+0x63/0xa0 [btrfs]
+  Code: f0 01 00 00 48 39 c2 75 (...)
+  RSP: 0018:ffffb270826bbdd8 EFLAGS: 00010206
+  RAX: 0000000000000001 RBX: ffff947ed73e4000 RCX: ffff947ebc8b29c8
+  RDX: 0000000000000001 RSI: ffffffffc0b150a0 RDI: ffff947ebc8b2800
+  RBP: ffff947ebc8b2800 R08: 0000000000000000 R09: 0000000000000000
+  R10: 0000000000000000 R11: 0000000000000001 R12: ffff947ed73e4110
+  R13: ffff947ed73e4160 R14: ffff947ebc8b2988 R15: dead000000000100
+  FS:  00007f15edfea840(0000) GS:ffff9481ad600000(0000) knlGS:0000000000000000
+  CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+  CR2: 00007f37e2893320 CR3: 0000000138f68001 CR4: 00000000003706e0
+  DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+  DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+  Call Trace:
+   btrfs_free_block_groups+0x17f/0x2f0 [btrfs]
+   close_ctree+0x2ba/0x2fa [btrfs]
+   generic_shutdown_super+0x6c/0x100
+   kill_anon_super+0x14/0x30
+   btrfs_kill_super+0x12/0x20 [btrfs]
+   deactivate_locked_super+0x31/0x70
+   cleanup_mnt+0x100/0x160
+   task_work_run+0x68/0xb0
+   exit_to_user_mode_prepare+0x1bb/0x1c0
+   syscall_exit_to_user_mode+0x4b/0x260
+   entry_SYSCALL_64_after_hwframe+0x44/0xa9
+  RIP: 0033:0x7f15ee221ee7
+  Code: ff 0b 00 f7 d8 64 89 01 48 (...)
+  RSP: 002b:00007ffe9470f0f8 EFLAGS: 00000246 ORIG_RAX: 00000000000000a6
+  RAX: 0000000000000000 RBX: 00007f15ee347264 RCX: 00007f15ee221ee7
+  RDX: ffffffffffffff78 RSI: 0000000000000000 RDI: 000056169701d000
+  RBP: 0000561697018a30 R08: 0000000000000000 R09: 00007f15ee2e2be0
+  R10: 000056169701efe0 R11: 0000000000000246 R12: 0000000000000000
+  R13: 000056169701d000 R14: 0000561697018b40 R15: 0000561697018c60
+  irq event stamp: 0
+  hardirqs last  enabled at (0): [<0000000000000000>] 0x0
+  hardirqs last disabled at (0): [<ffffffff8bcae560>] copy_process+0x8a0/0x1d70
+  softirqs last  enabled at (0): [<ffffffff8bcae560>] copy_process+0x8a0/0x1d70
+  softirqs last disabled at (0): [<0000000000000000>] 0x0
+  ---[ end trace dd74718fef1ed5c6 ]---
+  ------------[ cut here ]------------
+  WARNING: CPU: 2 PID: 1729896 at fs/btrfs/block-rsv.c:459 btrfs_release_global_block_rsv+0x70/0xc0 [btrfs]
+  Modules linked in: btrfs dm_snapshot dm_thin_pool (...)
+  CPU: 2 PID: 1729896 Comm: umount Tainted: G    B   W         5.10.0-rc4-btrfs-next-73 #1
+  Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.13.0-0-gf21b5a4aeb02-prebuilt.qemu.org 04/01/2014
+  RIP: 0010:btrfs_release_global_block_rsv+0x70/0xc0 [btrfs]
+  Code: 48 83 bb b0 03 00 00 00 (...)
+  RSP: 0018:ffffb270826bbdd8 EFLAGS: 00010206
+  RAX: 000000000033c000 RBX: ffff947ed73e4000 RCX: 0000000000000000
+  RDX: 0000000000000001 RSI: ffffffffc0b0d8c1 RDI: 00000000ffffffff
+  RBP: ffff947ebc8b7000 R08: 0000000000000001 R09: 0000000000000000
+  R10: 0000000000000000 R11: 0000000000000001 R12: ffff947ed73e4110
+  R13: ffff947ed73e5278 R14: dead000000000122 R15: dead000000000100
+  FS:  00007f15edfea840(0000) GS:ffff9481aca00000(0000) knlGS:0000000000000000
+  CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+  CR2: 0000561a79f76e20 CR3: 0000000138f68006 CR4: 00000000003706e0
+  DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+  DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+  Call Trace:
+   btrfs_free_block_groups+0x24c/0x2f0 [btrfs]
+   close_ctree+0x2ba/0x2fa [btrfs]
+   generic_shutdown_super+0x6c/0x100
+   kill_anon_super+0x14/0x30
+   btrfs_kill_super+0x12/0x20 [btrfs]
+   deactivate_locked_super+0x31/0x70
+   cleanup_mnt+0x100/0x160
+   task_work_run+0x68/0xb0
+   exit_to_user_mode_prepare+0x1bb/0x1c0
+   syscall_exit_to_user_mode+0x4b/0x260
+   entry_SYSCALL_64_after_hwframe+0x44/0xa9
+  RIP: 0033:0x7f15ee221ee7
+  Code: ff 0b 00 f7 d8 64 89 01 (...)
+  RSP: 002b:00007ffe9470f0f8 EFLAGS: 00000246 ORIG_RAX: 00000000000000a6
+  RAX: 0000000000000000 RBX: 00007f15ee347264 RCX: 00007f15ee221ee7
+  RDX: ffffffffffffff78 RSI: 0000000000000000 RDI: 000056169701d000
+  RBP: 0000561697018a30 R08: 0000000000000000 R09: 00007f15ee2e2be0
+  R10: 000056169701efe0 R11: 0000000000000246 R12: 0000000000000000
+  R13: 000056169701d000 R14: 0000561697018b40 R15: 0000561697018c60
+  irq event stamp: 0
+  hardirqs last  enabled at (0): [<0000000000000000>] 0x0
+  hardirqs last disabled at (0): [<ffffffff8bcae560>] copy_process+0x8a0/0x1d70
+  softirqs last  enabled at (0): [<ffffffff8bcae560>] copy_process+0x8a0/0x1d70
+  softirqs last disabled at (0): [<0000000000000000>] 0x0
+  ---[ end trace dd74718fef1ed5c7 ]---
+  ------------[ cut here ]------------
+  WARNING: CPU: 2 PID: 1729896 at fs/btrfs/block-group.c:3377 btrfs_free_block_groups+0x25d/0x2f0 [btrfs]
+  Modules linked in: btrfs dm_snapshot dm_thin_pool (...)
+  CPU: 5 PID: 1729896 Comm: umount Tainted: G    B   W         5.10.0-rc4-btrfs-next-73 #1
+  Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.13.0-0-gf21b5a4aeb02-prebuilt.qemu.org 04/01/2014
+  RIP: 0010:btrfs_free_block_groups+0x25d/0x2f0 [btrfs]
+  Code: ad de 49 be 22 01 00 (...)
+  RSP: 0018:ffffb270826bbde8 EFLAGS: 00010206
+  RAX: ffff947ebeae1d08 RBX: ffff947ed73e4000 RCX: 0000000000000000
+  RDX: 0000000000000001 RSI: ffff947e9d823ae8 RDI: 0000000000000246
+  RBP: ffff947ebeae1d08 R08: 0000000000000000 R09: 0000000000000000
+  R10: 0000000000000000 R11: 0000000000000001 R12: ffff947ebeae1c00
+  R13: ffff947ed73e5278 R14: dead000000000122 R15: dead000000000100
+  FS:  00007f15edfea840(0000) GS:ffff9481ad200000(0000) knlGS:0000000000000000
+  CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+  CR2: 00007f1475d98ea8 CR3: 0000000138f68005 CR4: 00000000003706e0
+  DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+  DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+  Call Trace:
+   close_ctree+0x2ba/0x2fa [btrfs]
+   generic_shutdown_super+0x6c/0x100
+   kill_anon_super+0x14/0x30
+   btrfs_kill_super+0x12/0x20 [btrfs]
+   deactivate_locked_super+0x31/0x70
+   cleanup_mnt+0x100/0x160
+   task_work_run+0x68/0xb0
+   exit_to_user_mode_prepare+0x1bb/0x1c0
+   syscall_exit_to_user_mode+0x4b/0x260
+   entry_SYSCALL_64_after_hwframe+0x44/0xa9
+  RIP: 0033:0x7f15ee221ee7
+  Code: ff 0b 00 f7 d8 64 89 (...)
+  RSP: 002b:00007ffe9470f0f8 EFLAGS: 00000246 ORIG_RAX: 00000000000000a6
+  RAX: 0000000000000000 RBX: 00007f15ee347264 RCX: 00007f15ee221ee7
+  RDX: ffffffffffffff78 RSI: 0000000000000000 RDI: 000056169701d000
+  RBP: 0000561697018a30 R08: 0000000000000000 R09: 00007f15ee2e2be0
+  R10: 000056169701efe0 R11: 0000000000000246 R12: 0000000000000000
+  R13: 000056169701d000 R14: 0000561697018b40 R15: 0000561697018c60
+  irq event stamp: 0
+  hardirqs last  enabled at (0): [<0000000000000000>] 0x0
+  hardirqs last disabled at (0): [<ffffffff8bcae560>] copy_process+0x8a0/0x1d70
+  softirqs last  enabled at (0): [<ffffffff8bcae560>] copy_process+0x8a0/0x1d70
+  softirqs last disabled at (0): [<0000000000000000>] 0x0
+  ---[ end trace dd74718fef1ed5c8 ]---
+  BTRFS info (device sdc): space_info 4 has 268238848 free, is not full
+  BTRFS info (device sdc): space_info total=268435456, used=114688, pinned=0, reserved=16384, may_use=0, readonly=65536
+  BTRFS info (device sdc): global_block_rsv: size 0 reserved 0
+  BTRFS info (device sdc): trans_block_rsv: size 0 reserved 0
+  BTRFS info (device sdc): chunk_block_rsv: size 0 reserved 0
+  BTRFS info (device sdc): delayed_block_rsv: size 0 reserved 0
+  BTRFS info (device sdc): delayed_refs_rsv: size 524288 reserved 0
+
+And the crash, which only happens when we do not have crc32c hardware
+acceleration, produces the following trace immediately after those
+warnings:
+
+  stack segment: 0000 [#1] PREEMPT SMP DEBUG_PAGEALLOC PTI
+  CPU: 2 PID: 1749129 Comm: umount Tainted: G    B   W         5.10.0-rc4-btrfs-next-73 #1
+  Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.13.0-0-gf21b5a4aeb02-prebuilt.qemu.org 04/01/2014
+  RIP: 0010:btrfs_queue_work+0x36/0x190 [btrfs]
+  Code: 54 55 53 48 89 f3 (...)
+  RSP: 0018:ffffb27082443ae8 EFLAGS: 00010282
+  RAX: 0000000000000004 RBX: ffff94810ee9ad90 RCX: 0000000000000000
+  RDX: 0000000000000001 RSI: ffff94810ee9ad90 RDI: ffff947ed8ee75a0
+  RBP: a56b6b6b6b6b6b6b R08: 0000000000000000 R09: 0000000000000000
+  R10: 0000000000000007 R11: 0000000000000001 R12: ffff947fa9b435a8
+  R13: ffff94810ee9ad90 R14: 0000000000000000 R15: ffff947e93dc0000
+  FS:  00007f3cfe974840(0000) GS:ffff9481ac600000(0000) knlGS:0000000000000000
+  CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+  CR2: 00007f1b42995a70 CR3: 0000000127638003 CR4: 00000000003706e0
+  DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+  DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+  Call Trace:
+   btrfs_wq_submit_bio+0xb3/0xd0 [btrfs]
+   btrfs_submit_metadata_bio+0x44/0xc0 [btrfs]
+   submit_one_bio+0x61/0x70 [btrfs]
+   btree_write_cache_pages+0x414/0x450 [btrfs]
+   ? kobject_put+0x9a/0x1d0
+   ? trace_hardirqs_on+0x1b/0xf0
+   ? _raw_spin_unlock_irqrestore+0x3c/0x60
+   ? free_debug_processing+0x1e1/0x2b0
+   do_writepages+0x43/0xe0
+   ? lock_acquired+0x199/0x490
+   __writeback_single_inode+0x59/0x650
+   writeback_single_inode+0xaf/0x120
+   write_inode_now+0x94/0xd0
+   iput+0x187/0x2b0
+   close_ctree+0x2c6/0x2fa [btrfs]
+   generic_shutdown_super+0x6c/0x100
+   kill_anon_super+0x14/0x30
+   btrfs_kill_super+0x12/0x20 [btrfs]
+   deactivate_locked_super+0x31/0x70
+   cleanup_mnt+0x100/0x160
+   task_work_run+0x68/0xb0
+   exit_to_user_mode_prepare+0x1bb/0x1c0
+   syscall_exit_to_user_mode+0x4b/0x260
+   entry_SYSCALL_64_after_hwframe+0x44/0xa9
+  RIP: 0033:0x7f3cfebabee7
+  Code: ff 0b 00 f7 d8 64 89 01 (...)
+  RSP: 002b:00007ffc9c9a05f8 EFLAGS: 00000246 ORIG_RAX: 00000000000000a6
+  RAX: 0000000000000000 RBX: 00007f3cfecd1264 RCX: 00007f3cfebabee7
+  RDX: ffffffffffffff78 RSI: 0000000000000000 RDI: 0000562b6b478000
+  RBP: 0000562b6b473a30 R08: 0000000000000000 R09: 00007f3cfec6cbe0
+  R10: 0000562b6b479fe0 R11: 0000000000000246 R12: 0000000000000000
+  R13: 0000562b6b478000 R14: 0000562b6b473b40 R15: 0000562b6b473c60
+  Modules linked in: btrfs dm_snapshot dm_thin_pool (...)
+  ---[ end trace dd74718fef1ed5cc ]---
+
+Finally when we remove the btrfs module (rmmod btrfs), there are several
+warnings about objects that were allocated from our slabs but were never
+freed, consequence of the transaction that was never committed and got
+leaked:
+
+  =============================================================================
+  BUG btrfs_delayed_ref_head (Tainted: G    B   W        ): Objects remaining in btrfs_delayed_ref_head on __kmem_cache_shutdown()
+  -----------------------------------------------------------------------------
+
+  INFO: Slab 0x0000000094c2ae56 objects=24 used=2 fp=0x000000002bfa2521 flags=0x17fffc000010200
+  CPU: 5 PID: 1729921 Comm: rmmod Tainted: G    B   W         5.10.0-rc4-btrfs-next-73 #1
+  Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.13.0-0-gf21b5a4aeb02-prebuilt.qemu.org 04/01/2014
+  Call Trace:
+   dump_stack+0x8d/0xb5
+   slab_err+0xb7/0xdc
+   ? lock_acquired+0x199/0x490
+   __kmem_cache_shutdown+0x1ac/0x3c0
+   ? lock_release+0x20e/0x4c0
+   kmem_cache_destroy+0x55/0x120
+   btrfs_delayed_ref_exit+0x11/0x35 [btrfs]
+   exit_btrfs_fs+0xa/0x59 [btrfs]
+   __x64_sys_delete_module+0x194/0x260
+   ? fpregs_assert_state_consistent+0x1e/0x40
+   ? exit_to_user_mode_prepare+0x55/0x1c0
+   ? trace_hardirqs_on+0x1b/0xf0
+   do_syscall_64+0x33/0x80
+   entry_SYSCALL_64_after_hwframe+0x44/0xa9
+  RIP: 0033:0x7f693e305897
+  Code: 73 01 c3 48 8b 0d f9 f5 (...)
+  RSP: 002b:00007ffcf73eb508 EFLAGS: 00000206 ORIG_RAX: 00000000000000b0
+  RAX: ffffffffffffffda RBX: 0000559df504f760 RCX: 00007f693e305897
+  RDX: 000000000000000a RSI: 0000000000000800 RDI: 0000559df504f7c8
+  RBP: 00007ffcf73eb568 R08: 0000000000000000 R09: 0000000000000000
+  R10: 00007f693e378ac0 R11: 0000000000000206 R12: 00007ffcf73eb740
+  R13: 00007ffcf73ec5a6 R14: 0000559df504f2a0 R15: 0000559df504f760
+  INFO: Object 0x0000000050cbdd61 @offset=12104
+  INFO: Allocated in btrfs_add_delayed_tree_ref+0xbb/0x480 [btrfs] age=1894 cpu=6 pid=1729873
+	__slab_alloc.isra.0+0x109/0x1c0
+	kmem_cache_alloc+0x7bb/0x830
+	btrfs_add_delayed_tree_ref+0xbb/0x480 [btrfs]
+	btrfs_free_tree_block+0x128/0x360 [btrfs]
+	__btrfs_cow_block+0x489/0x5f0 [btrfs]
+	btrfs_cow_block+0xf7/0x220 [btrfs]
+	btrfs_search_slot+0x62a/0xc40 [btrfs]
+	btrfs_del_orphan_item+0x65/0xd0 [btrfs]
+	btrfs_find_orphan_roots+0x1bf/0x200 [btrfs]
+	open_ctree+0x125a/0x18a0 [btrfs]
+	btrfs_mount_root.cold+0x13/0xed [btrfs]
+	legacy_get_tree+0x30/0x60
+	vfs_get_tree+0x28/0xe0
+	fc_mount+0xe/0x40
+	vfs_kern_mount.part.0+0x71/0x90
+	btrfs_mount+0x13b/0x3e0 [btrfs]
+  INFO: Freed in __btrfs_run_delayed_refs+0x1117/0x1290 [btrfs] age=4292 cpu=2 pid=1729526
+	kmem_cache_free+0x34c/0x3c0
+	__btrfs_run_delayed_refs+0x1117/0x1290 [btrfs]
+	btrfs_run_delayed_refs+0x81/0x210 [btrfs]
+	commit_cowonly_roots+0xfb/0x300 [btrfs]
+	btrfs_commit_transaction+0x367/0xc40 [btrfs]
+	sync_filesystem+0x74/0x90
+	generic_shutdown_super+0x22/0x100
+	kill_anon_super+0x14/0x30
+	btrfs_kill_super+0x12/0x20 [btrfs]
+	deactivate_locked_super+0x31/0x70
+	cleanup_mnt+0x100/0x160
+	task_work_run+0x68/0xb0
+	exit_to_user_mode_prepare+0x1bb/0x1c0
+	syscall_exit_to_user_mode+0x4b/0x260
+	entry_SYSCALL_64_after_hwframe+0x44/0xa9
+  INFO: Object 0x0000000086e9b0ff @offset=12776
+  INFO: Allocated in btrfs_add_delayed_tree_ref+0xbb/0x480 [btrfs] age=1900 cpu=6 pid=1729873
+	__slab_alloc.isra.0+0x109/0x1c0
+	kmem_cache_alloc+0x7bb/0x830
+	btrfs_add_delayed_tree_ref+0xbb/0x480 [btrfs]
+	btrfs_alloc_tree_block+0x2bf/0x360 [btrfs]
+	alloc_tree_block_no_bg_flush+0x4f/0x60 [btrfs]
+	__btrfs_cow_block+0x12d/0x5f0 [btrfs]
+	btrfs_cow_block+0xf7/0x220 [btrfs]
+	btrfs_search_slot+0x62a/0xc40 [btrfs]
+	btrfs_del_orphan_item+0x65/0xd0 [btrfs]
+	btrfs_find_orphan_roots+0x1bf/0x200 [btrfs]
+	open_ctree+0x125a/0x18a0 [btrfs]
+	btrfs_mount_root.cold+0x13/0xed [btrfs]
+	legacy_get_tree+0x30/0x60
+	vfs_get_tree+0x28/0xe0
+	fc_mount+0xe/0x40
+	vfs_kern_mount.part.0+0x71/0x90
+  INFO: Freed in __btrfs_run_delayed_refs+0x1117/0x1290 [btrfs] age=3141 cpu=6 pid=1729803
+	kmem_cache_free+0x34c/0x3c0
+	__btrfs_run_delayed_refs+0x1117/0x1290 [btrfs]
+	btrfs_run_delayed_refs+0x81/0x210 [btrfs]
+	btrfs_write_dirty_block_groups+0x17d/0x3d0 [btrfs]
+	commit_cowonly_roots+0x248/0x300 [btrfs]
+	btrfs_commit_transaction+0x367/0xc40 [btrfs]
+	close_ctree+0x113/0x2fa [btrfs]
+	generic_shutdown_super+0x6c/0x100
+	kill_anon_super+0x14/0x30
+	btrfs_kill_super+0x12/0x20 [btrfs]
+	deactivate_locked_super+0x31/0x70
+	cleanup_mnt+0x100/0x160
+	task_work_run+0x68/0xb0
+	exit_to_user_mode_prepare+0x1bb/0x1c0
+	syscall_exit_to_user_mode+0x4b/0x260
+	entry_SYSCALL_64_after_hwframe+0x44/0xa9
+  kmem_cache_destroy btrfs_delayed_ref_head: Slab cache still has objects
+  CPU: 5 PID: 1729921 Comm: rmmod Tainted: G    B   W         5.10.0-rc4-btrfs-next-73 #1
+  Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.13.0-0-gf21b5a4aeb02-prebuilt.qemu.org 04/01/2014
+  Call Trace:
+   dump_stack+0x8d/0xb5
+   kmem_cache_destroy+0x119/0x120
+   btrfs_delayed_ref_exit+0x11/0x35 [btrfs]
+   exit_btrfs_fs+0xa/0x59 [btrfs]
+   __x64_sys_delete_module+0x194/0x260
+   ? fpregs_assert_state_consistent+0x1e/0x40
+   ? exit_to_user_mode_prepare+0x55/0x1c0
+   ? trace_hardirqs_on+0x1b/0xf0
+   do_syscall_64+0x33/0x80
+   entry_SYSCALL_64_after_hwframe+0x44/0xa9
+  RIP: 0033:0x7f693e305897
+  Code: 73 01 c3 48 8b 0d f9 f5 0b (...)
+  RSP: 002b:00007ffcf73eb508 EFLAGS: 00000206 ORIG_RAX: 00000000000000b0
+  RAX: ffffffffffffffda RBX: 0000559df504f760 RCX: 00007f693e305897
+  RDX: 000000000000000a RSI: 0000000000000800 RDI: 0000559df504f7c8
+  RBP: 00007ffcf73eb568 R08: 0000000000000000 R09: 0000000000000000
+  R10: 00007f693e378ac0 R11: 0000000000000206 R12: 00007ffcf73eb740
+  R13: 00007ffcf73ec5a6 R14: 0000559df504f2a0 R15: 0000559df504f760
+  =============================================================================
+  BUG btrfs_delayed_tree_ref (Tainted: G    B   W        ): Objects remaining in btrfs_delayed_tree_ref on __kmem_cache_shutdown()
+  -----------------------------------------------------------------------------
+
+  INFO: Slab 0x0000000011f78dc0 objects=37 used=2 fp=0x0000000032d55d91 flags=0x17fffc000010200
+  CPU: 3 PID: 1729921 Comm: rmmod Tainted: G    B   W         5.10.0-rc4-btrfs-next-73 #1
+  Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.13.0-0-gf21b5a4aeb02-prebuilt.qemu.org 04/01/2014
+  Call Trace:
+   dump_stack+0x8d/0xb5
+   slab_err+0xb7/0xdc
+   ? lock_acquired+0x199/0x490
+   __kmem_cache_shutdown+0x1ac/0x3c0
+   ? lock_release+0x20e/0x4c0
+   kmem_cache_destroy+0x55/0x120
+   btrfs_delayed_ref_exit+0x1d/0x35 [btrfs]
+   exit_btrfs_fs+0xa/0x59 [btrfs]
+   __x64_sys_delete_module+0x194/0x260
+   ? fpregs_assert_state_consistent+0x1e/0x40
+   ? exit_to_user_mode_prepare+0x55/0x1c0
+   ? trace_hardirqs_on+0x1b/0xf0
+   do_syscall_64+0x33/0x80
+   entry_SYSCALL_64_after_hwframe+0x44/0xa9
+  RIP: 0033:0x7f693e305897
+  Code: 73 01 c3 48 8b 0d f9 f5 (...)
+  RSP: 002b:00007ffcf73eb508 EFLAGS: 00000206 ORIG_RAX: 00000000000000b0
+  RAX: ffffffffffffffda RBX: 0000559df504f760 RCX: 00007f693e305897
+  RDX: 000000000000000a RSI: 0000000000000800 RDI: 0000559df504f7c8
+  RBP: 00007ffcf73eb568 R08: 0000000000000000 R09: 0000000000000000
+  R10: 00007f693e378ac0 R11: 0000000000000206 R12: 00007ffcf73eb740
+  R13: 00007ffcf73ec5a6 R14: 0000559df504f2a0 R15: 0000559df504f760
+  INFO: Object 0x000000001a340018 @offset=4408
+  INFO: Allocated in btrfs_add_delayed_tree_ref+0x9e/0x480 [btrfs] age=1917 cpu=6 pid=1729873
+	__slab_alloc.isra.0+0x109/0x1c0
+	kmem_cache_alloc+0x7bb/0x830
+	btrfs_add_delayed_tree_ref+0x9e/0x480 [btrfs]
+	btrfs_free_tree_block+0x128/0x360 [btrfs]
+	__btrfs_cow_block+0x489/0x5f0 [btrfs]
+	btrfs_cow_block+0xf7/0x220 [btrfs]
+	btrfs_search_slot+0x62a/0xc40 [btrfs]
+	btrfs_del_orphan_item+0x65/0xd0 [btrfs]
+	btrfs_find_orphan_roots+0x1bf/0x200 [btrfs]
+	open_ctree+0x125a/0x18a0 [btrfs]
+	btrfs_mount_root.cold+0x13/0xed [btrfs]
+	legacy_get_tree+0x30/0x60
+	vfs_get_tree+0x28/0xe0
+	fc_mount+0xe/0x40
+	vfs_kern_mount.part.0+0x71/0x90
+	btrfs_mount+0x13b/0x3e0 [btrfs]
+  INFO: Freed in __btrfs_run_delayed_refs+0x63d/0x1290 [btrfs] age=4167 cpu=4 pid=1729795
+	kmem_cache_free+0x34c/0x3c0
+	__btrfs_run_delayed_refs+0x63d/0x1290 [btrfs]
+	btrfs_run_delayed_refs+0x81/0x210 [btrfs]
+	btrfs_commit_transaction+0x60/0xc40 [btrfs]
+	create_subvol+0x56a/0x990 [btrfs]
+	btrfs_mksubvol+0x3fb/0x4a0 [btrfs]
+	__btrfs_ioctl_snap_create+0x119/0x1a0 [btrfs]
+	btrfs_ioctl_snap_create+0x58/0x80 [btrfs]
+	btrfs_ioctl+0x1a92/0x36f0 [btrfs]
+	__x64_sys_ioctl+0x83/0xb0
+	do_syscall_64+0x33/0x80
+	entry_SYSCALL_64_after_hwframe+0x44/0xa9
+  INFO: Object 0x000000002b46292a @offset=13648
+  INFO: Allocated in btrfs_add_delayed_tree_ref+0x9e/0x480 [btrfs] age=1923 cpu=6 pid=1729873
+	__slab_alloc.isra.0+0x109/0x1c0
+	kmem_cache_alloc+0x7bb/0x830
+	btrfs_add_delayed_tree_ref+0x9e/0x480 [btrfs]
+	btrfs_alloc_tree_block+0x2bf/0x360 [btrfs]
+	alloc_tree_block_no_bg_flush+0x4f/0x60 [btrfs]
+	__btrfs_cow_block+0x12d/0x5f0 [btrfs]
+	btrfs_cow_block+0xf7/0x220 [btrfs]
+	btrfs_search_slot+0x62a/0xc40 [btrfs]
+	btrfs_del_orphan_item+0x65/0xd0 [btrfs]
+	btrfs_find_orphan_roots+0x1bf/0x200 [btrfs]
+	open_ctree+0x125a/0x18a0 [btrfs]
+	btrfs_mount_root.cold+0x13/0xed [btrfs]
+	legacy_get_tree+0x30/0x60
+	vfs_get_tree+0x28/0xe0
+	fc_mount+0xe/0x40
+	vfs_kern_mount.part.0+0x71/0x90
+  INFO: Freed in __btrfs_run_delayed_refs+0x63d/0x1290 [btrfs] age=3164 cpu=6 pid=1729803
+	kmem_cache_free+0x34c/0x3c0
+	__btrfs_run_delayed_refs+0x63d/0x1290 [btrfs]
+	btrfs_run_delayed_refs+0x81/0x210 [btrfs]
+	commit_cowonly_roots+0xfb/0x300 [btrfs]
+	btrfs_commit_transaction+0x367/0xc40 [btrfs]
+	close_ctree+0x113/0x2fa [btrfs]
+	generic_shutdown_super+0x6c/0x100
+	kill_anon_super+0x14/0x30
+	btrfs_kill_super+0x12/0x20 [btrfs]
+	deactivate_locked_super+0x31/0x70
+	cleanup_mnt+0x100/0x160
+	task_work_run+0x68/0xb0
+	exit_to_user_mode_prepare+0x1bb/0x1c0
+	syscall_exit_to_user_mode+0x4b/0x260
+	entry_SYSCALL_64_after_hwframe+0x44/0xa9
+  kmem_cache_destroy btrfs_delayed_tree_ref: Slab cache still has objects
+  CPU: 5 PID: 1729921 Comm: rmmod Tainted: G    B   W         5.10.0-rc4-btrfs-next-73 #1
+  Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.13.0-0-gf21b5a4aeb02-prebuilt.qemu.org 04/01/2014
+  Call Trace:
+   dump_stack+0x8d/0xb5
+   kmem_cache_destroy+0x119/0x120
+   btrfs_delayed_ref_exit+0x1d/0x35 [btrfs]
+   exit_btrfs_fs+0xa/0x59 [btrfs]
+   __x64_sys_delete_module+0x194/0x260
+   ? fpregs_assert_state_consistent+0x1e/0x40
+   ? exit_to_user_mode_prepare+0x55/0x1c0
+   ? trace_hardirqs_on+0x1b/0xf0
+   do_syscall_64+0x33/0x80
+   entry_SYSCALL_64_after_hwframe+0x44/0xa9
+  RIP: 0033:0x7f693e305897
+  Code: 73 01 c3 48 8b 0d f9 f5 (...)
+  RSP: 002b:00007ffcf73eb508 EFLAGS: 00000206 ORIG_RAX: 00000000000000b0
+  RAX: ffffffffffffffda RBX: 0000559df504f760 RCX: 00007f693e305897
+  RDX: 000000000000000a RSI: 0000000000000800 RDI: 0000559df504f7c8
+  RBP: 00007ffcf73eb568 R08: 0000000000000000 R09: 0000000000000000
+  R10: 00007f693e378ac0 R11: 0000000000000206 R12: 00007ffcf73eb740
+  R13: 00007ffcf73ec5a6 R14: 0000559df504f2a0 R15: 0000559df504f760
+  =============================================================================
+  BUG btrfs_delayed_extent_op (Tainted: G    B   W        ): Objects remaining in btrfs_delayed_extent_op on __kmem_cache_shutdown()
+  -----------------------------------------------------------------------------
+
+  INFO: Slab 0x00000000f145ce2f objects=22 used=1 fp=0x00000000af0f92cf flags=0x17fffc000010200
+  CPU: 5 PID: 1729921 Comm: rmmod Tainted: G    B   W         5.10.0-rc4-btrfs-next-73 #1
+  Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.13.0-0-gf21b5a4aeb02-prebuilt.qemu.org 04/01/2014
+  Call Trace:
+   dump_stack+0x8d/0xb5
+   slab_err+0xb7/0xdc
+   ? lock_acquired+0x199/0x490
+   __kmem_cache_shutdown+0x1ac/0x3c0
+   ? __mutex_unlock_slowpath+0x45/0x2a0
+   kmem_cache_destroy+0x55/0x120
+   exit_btrfs_fs+0xa/0x59 [btrfs]
+   __x64_sys_delete_module+0x194/0x260
+   ? fpregs_assert_state_consistent+0x1e/0x40
+   ? exit_to_user_mode_prepare+0x55/0x1c0
+   ? trace_hardirqs_on+0x1b/0xf0
+   do_syscall_64+0x33/0x80
+   entry_SYSCALL_64_after_hwframe+0x44/0xa9
+  RIP: 0033:0x7f693e305897
+  Code: 73 01 c3 48 8b 0d f9 f5 (...)
+  RSP: 002b:00007ffcf73eb508 EFLAGS: 00000206 ORIG_RAX: 00000000000000b0
+  RAX: ffffffffffffffda RBX: 0000559df504f760 RCX: 00007f693e305897
+  RDX: 000000000000000a RSI: 0000000000000800 RDI: 0000559df504f7c8
+  RBP: 00007ffcf73eb568 R08: 0000000000000000 R09: 0000000000000000
+  R10: 00007f693e378ac0 R11: 0000000000000206 R12: 00007ffcf73eb740
+  R13: 00007ffcf73ec5a6 R14: 0000559df504f2a0 R15: 0000559df504f760
+  INFO: Object 0x000000004cf95ea8 @offset=6264
+  INFO: Allocated in btrfs_alloc_tree_block+0x1e0/0x360 [btrfs] age=1931 cpu=6 pid=1729873
+	__slab_alloc.isra.0+0x109/0x1c0
+	kmem_cache_alloc+0x7bb/0x830
+	btrfs_alloc_tree_block+0x1e0/0x360 [btrfs]
+	alloc_tree_block_no_bg_flush+0x4f/0x60 [btrfs]
+	__btrfs_cow_block+0x12d/0x5f0 [btrfs]
+	btrfs_cow_block+0xf7/0x220 [btrfs]
+	btrfs_search_slot+0x62a/0xc40 [btrfs]
+	btrfs_del_orphan_item+0x65/0xd0 [btrfs]
+	btrfs_find_orphan_roots+0x1bf/0x200 [btrfs]
+	open_ctree+0x125a/0x18a0 [btrfs]
+	btrfs_mount_root.cold+0x13/0xed [btrfs]
+	legacy_get_tree+0x30/0x60
+	vfs_get_tree+0x28/0xe0
+	fc_mount+0xe/0x40
+	vfs_kern_mount.part.0+0x71/0x90
+	btrfs_mount+0x13b/0x3e0 [btrfs]
+  INFO: Freed in __btrfs_run_delayed_refs+0xabd/0x1290 [btrfs] age=3173 cpu=6 pid=1729803
+	kmem_cache_free+0x34c/0x3c0
+	__btrfs_run_delayed_refs+0xabd/0x1290 [btrfs]
+	btrfs_run_delayed_refs+0x81/0x210 [btrfs]
+	commit_cowonly_roots+0xfb/0x300 [btrfs]
+	btrfs_commit_transaction+0x367/0xc40 [btrfs]
+	close_ctree+0x113/0x2fa [btrfs]
+	generic_shutdown_super+0x6c/0x100
+	kill_anon_super+0x14/0x30
+	btrfs_kill_super+0x12/0x20 [btrfs]
+	deactivate_locked_super+0x31/0x70
+	cleanup_mnt+0x100/0x160
+	task_work_run+0x68/0xb0
+	exit_to_user_mode_prepare+0x1bb/0x1c0
+	syscall_exit_to_user_mode+0x4b/0x260
+	entry_SYSCALL_64_after_hwframe+0x44/0xa9
+  kmem_cache_destroy btrfs_delayed_extent_op: Slab cache still has objects
+  CPU: 3 PID: 1729921 Comm: rmmod Tainted: G    B   W         5.10.0-rc4-btrfs-next-73 #1
+  Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.13.0-0-gf21b5a4aeb02-prebuilt.qemu.org 04/01/2014
+  Call Trace:
+   dump_stack+0x8d/0xb5
+   kmem_cache_destroy+0x119/0x120
+   exit_btrfs_fs+0xa/0x59 [btrfs]
+   __x64_sys_delete_module+0x194/0x260
+   ? fpregs_assert_state_consistent+0x1e/0x40
+   ? exit_to_user_mode_prepare+0x55/0x1c0
+   ? trace_hardirqs_on+0x1b/0xf0
+   do_syscall_64+0x33/0x80
+   entry_SYSCALL_64_after_hwframe+0x44/0xa9
+  RIP: 0033:0x7f693e305897
+  Code: 73 01 c3 48 8b 0d f9 (...)
+  RSP: 002b:00007ffcf73eb508 EFLAGS: 00000206 ORIG_RAX: 00000000000000b0
+  RAX: ffffffffffffffda RBX: 0000559df504f760 RCX: 00007f693e305897
+  RDX: 000000000000000a RSI: 0000000000000800 RDI: 0000559df504f7c8
+  RBP: 00007ffcf73eb568 R08: 0000000000000000 R09: 0000000000000000
+  R10: 00007f693e378ac0 R11: 0000000000000206 R12: 00007ffcf73eb740
+  R13: 00007ffcf73ec5a6 R14: 0000559df504f2a0 R15: 0000559df504f760
+  BTRFS: state leak: start 30408704 end 30425087 state 1 in tree 1 refs 1
+
+Fix this issue by having the remount path stop the qgroup rescan worker
+when we are remounting RO and teach the rescan worker to stop when a
+remount is in progress. If later a remount in RW mode happens, we are
+already resuming the qgroup rescan worker through the call to
+btrfs_qgroup_rescan_resume(), so we do not need to worry about that.
+
+Tested-by: Fabian Vogt <fvogt@suse.com>
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Reviewed-by: David Sterba <dsterba@suse.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ fs/btrfs/qgroup.c | 13 ++++++++++---
+ fs/btrfs/super.c  |  8 ++++++++
+ 2 files changed, 18 insertions(+), 3 deletions(-)
+
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index d9246fb8cea65..cd8e81c02f63f 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -3144,6 +3144,12 @@ static int qgroup_rescan_leaf(struct btrfs_trans_handle *trans,
+ 	return ret;
+ }
+ 
++static bool rescan_should_stop(struct btrfs_fs_info *fs_info)
++{
++	return btrfs_fs_closing(fs_info) ||
++		test_bit(BTRFS_FS_STATE_REMOUNTING, &fs_info->fs_state);
++}
++
+ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
+ {
+ 	struct btrfs_fs_info *fs_info = container_of(work, struct btrfs_fs_info,
+@@ -3152,6 +3158,7 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
+ 	struct btrfs_trans_handle *trans = NULL;
+ 	int err = -ENOMEM;
+ 	int ret = 0;
++	bool stopped = false;
+ 
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+@@ -3164,7 +3171,7 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
+ 	path->skip_locking = 1;
+ 
+ 	err = 0;
+-	while (!err && !btrfs_fs_closing(fs_info)) {
++	while (!err && !(stopped = rescan_should_stop(fs_info))) {
+ 		trans = btrfs_start_transaction(fs_info->fs_root, 0);
+ 		if (IS_ERR(trans)) {
+ 			err = PTR_ERR(trans);
+@@ -3207,7 +3214,7 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
+ 	}
+ 
+ 	mutex_lock(&fs_info->qgroup_rescan_lock);
+-	if (!btrfs_fs_closing(fs_info))
++	if (!stopped)
+ 		fs_info->qgroup_flags &= ~BTRFS_QGROUP_STATUS_FLAG_RESCAN;
+ 	if (trans) {
+ 		ret = update_qgroup_status_item(trans);
+@@ -3226,7 +3233,7 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
+ 
+ 	btrfs_end_transaction(trans);
+ 
+-	if (btrfs_fs_closing(fs_info)) {
++	if (stopped) {
+ 		btrfs_info(fs_info, "qgroup scan paused");
+ 	} else if (err >= 0) {
+ 		btrfs_info(fs_info, "qgroup scan completed%s",
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 6a2ae208ff80a..1a69bdb96fb2a 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1792,6 +1792,14 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
+ 		btrfs_scrub_cancel(fs_info);
+ 		btrfs_pause_balance(fs_info);
+ 
++		/*
++		 * Pause the qgroup rescan worker if it is running. We don't want
++		 * it to be still running after we are in RO mode, as after that,
++		 * by the time we unmount, it might have left a transaction open,
++		 * so we would leak the transaction and/or crash.
++		 */
++		btrfs_qgroup_wait_for_completion(fs_info, false);
++
+ 		ret = btrfs_commit_super(fs_info);
+ 		if (ret)
+ 			goto restore;
+-- 
+2.27.0
+

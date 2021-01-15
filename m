@@ -2,128 +2,193 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-11.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-21.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C1475C433E0
-	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Jan 2021 21:49:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0F056C43381
+	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Jan 2021 21:49:51 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 9A9E3239FC
+	by mail.kernel.org (Postfix) with ESMTP id CDD78239EF
 	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Jan 2021 21:49:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726417AbhAOVtk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 15 Jan 2021 16:49:40 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46456 "EHLO
+        id S1725933AbhAOVto (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 15 Jan 2021 16:49:44 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46470 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725933AbhAOVtj (ORCPT
+        with ESMTP id S1726438AbhAOVtn (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 15 Jan 2021 16:49:39 -0500
-Received: from mail-qk1-x72b.google.com (mail-qk1-x72b.google.com [IPv6:2607:f8b0:4864:20::72b])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 695B6C061757
-        for <linux-btrfs@vger.kernel.org>; Fri, 15 Jan 2021 13:48:59 -0800 (PST)
-Received: by mail-qk1-x72b.google.com with SMTP id n142so13228090qkn.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 15 Jan 2021 13:48:59 -0800 (PST)
+        Fri, 15 Jan 2021 16:49:43 -0500
+Received: from mail-qk1-x732.google.com (mail-qk1-x732.google.com [IPv6:2607:f8b0:4864:20::732])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 09888C061793
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Jan 2021 13:49:03 -0800 (PST)
+Received: by mail-qk1-x732.google.com with SMTP id p14so13198902qke.6
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Jan 2021 13:49:03 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=UO+E42G065uPmcbDSA2LGRWeff5X0UJUo0nNweBTWyM=;
-        b=AxKKVIcCN561RN8X8M70pAU8vZFtYb7fsGTF5v5avbAofPGCfJPE3CJxZsab0OasMI
-         3pOUwgW8TmEO677URrXrOpWXG4mep/+IOCxo/WKmXbGp9/EOA3dqSFDJwFgrav2ndzr7
-         5FWw5bZ7UT1oItwEbGoU2J72onNgL8R6kA8GEpheUVPHtJZb2byobpxyFWg3ywofEaZt
-         S3V6iHviQyMMzry+65kvGVPQjynD+IxQo3o9HvRDKp0NpUUi6SlfEmDxwg0qpBKXrDjD
-         GSx3R9BREvOzmNBcgbup2BQvne/niMUwlzv3AhtQ7rBKKQjfkOyhN0kC8r0R05Yoxh6/
-         pD0A==
+        h=from:to:cc:subject:date:message-id:in-reply-to:references
+         :mime-version:content-transfer-encoding;
+        bh=nIo9gsV4o/pU2yL2SFr4I3B545GgyGEE/EEGibTzCk0=;
+        b=UZCMek7wPncSoC2wK9S43BCgQWvSEAm24E/+9aBVrlM6IAj8FWuEWVO6eleeP5oF5K
+         Wl8CqeEklAf1xfZGZnDv7+dS88iRWmHQ+qVzl/5U5EqFI36PXMrBbi872qumSP31kWvv
+         7594F09Ojj4INqncYER8PlDqK7FZcZcvUFK3ILPuCAfqV4Ng6MYrD6uBzE3RzH65XYV4
+         nopc1aYJsJNwmVbvRZCZOP4XSuGq/ZLHS76u+8OcTZ3k0oHI/G/xG/HlI8CwiexH5wCx
+         Ia21ol5cvUFVa3/D8yL1j5b8qv6gPvr3PNYBT+9tfRAHMQugiHkQFipOLP+Un/tkZugh
+         qudw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=UO+E42G065uPmcbDSA2LGRWeff5X0UJUo0nNweBTWyM=;
-        b=oFmn7g/+2iehro3CYhrgYXZKxudvi0aRb15nvO26pZpe2A5n5a+KnqOcYz4ejbeQdN
-         WkO3CpvLu6OtiUDvx+m3hZezUdxJQc7ycaHEaYr+BwtbvN/zQpmbXkjlAM6j5coTyRn8
-         pSvvmGw0G6GCnwEj1r+T/T1agn8WXwV1+3gj6XV+imjZplVQ4D56ZNcT/0g6u5leelLU
-         3BN3k3cLG+VE8cwreZL6X8l+Y20z0GqYDb4lifPwruUaZVbo5mJ4Y0DDcKkJPeS4bszI
-         ZEVmjXw1QKJP322x0erSMPlTAtwFCGwPctPE8suf2MaX70ItAuDbqjeikoe+vB88xHST
-         KMiA==
-X-Gm-Message-State: AOAM530EQLGfhyLasEYo4S+7D0/O6T+7pDS4XVDlLstoQVBaM6xE+d/G
-        Q7YmV+ADTY2DboBwoV5KBo6utdP9IudetRnQ
-X-Google-Smtp-Source: ABdhPJwA8sgPhCCyPnmvWttCQBxfFUYafeYZBtORSxNY61yc6HCom2W+GWJLpXcIgGz6aHKev9DN1Q==
-X-Received: by 2002:a05:620a:11ba:: with SMTP id c26mr15063114qkk.140.1610747338319;
-        Fri, 15 Jan 2021 13:48:58 -0800 (PST)
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
+         :references:mime-version:content-transfer-encoding;
+        bh=nIo9gsV4o/pU2yL2SFr4I3B545GgyGEE/EEGibTzCk0=;
+        b=kvzGDE+bQBoofaPHUYdKqjCn212MXemFkrbG3h+moSU7NGWBhY91CWlF34ibyMCqZQ
+         l6S0cGWAi+0Z9qTBYCdyJVXpLY8kfOLmjqwc+kJ4X63r0HwotM417aVepyBXrds8ybNC
+         O5C/CWB8002+rGV74AAWC1f4WlMwkK7yXnzhhKnvEyCv1q2RLOL0Tzezzk/qnL+zI5lx
+         oXr+7UfGmnk65iqL6v0SeYdBrhIflGu8o/HKGf5+mxYGcbknw2/lE6kyOYvyk4QdSohA
+         ARyQKACL49wlEGzfmURNrpYl8Y5EGhYpIX7OZO/g9l71yps77CNmp8z/VtuX0TielUxx
+         G1Hw==
+X-Gm-Message-State: AOAM531rpNBbJdI+CVf5VMIJIo16GslGNdcuAct4bAxpWtf+is78hufw
+        QCy60T0UvElMT+NsYOW6JShpuXMw27LCnVOz
+X-Google-Smtp-Source: ABdhPJzI7GmMha62Y3P8Jf3/DryG3Yig9xAItBnSISkhx/jwXx7jBGSaJHkrYv/Hm4FrDaXY1JK8ZA==
+X-Received: by 2002:a37:ae44:: with SMTP id x65mr14763862qke.347.1610747341891;
+        Fri, 15 Jan 2021 13:49:01 -0800 (PST)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id z20sm5729784qkz.37.2021.01.15.13.48.57
+        by smtp.gmail.com with ESMTPSA id o29sm5576467qtl.7.2021.01.15.13.49.01
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 15 Jan 2021 13:48:57 -0800 (PST)
+        Fri, 15 Jan 2021 13:49:01 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v3 0/2] ->total_bytes_pinned fixes for early ENOSPC issues
-Date:   Fri, 15 Jan 2021 16:48:54 -0500
-Message-Id: <cover.1610747242.git.josef@toxicpanda.com>
+Cc:     Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH v3 2/2] btrfs: account for new extents being deleted in total_bytes_pinned
+Date:   Fri, 15 Jan 2021 16:48:56 -0500
+Message-Id: <9a73d5fe6572858e859f739183c8a94f05d22bf0.1610747242.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.2
+In-Reply-To: <cover.1610747242.git.josef@toxicpanda.com>
+References: <cover.1610747242.git.josef@toxicpanda.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-v2->v3:
-- Updated the changelog in patch 2 to refer to the patchset that inspired the
-  change.
-- Added Nik's reviewed-by for patch 2.
-v1->v2:
-- Rebase onto latest misc-next.
-- Added Nikolay's reviewed-by for the first patch.
+My recent patch set "A variety of lock contention fixes", found here
 
---- Original email ---
-Hello,
+https://github.com/btrfs/linux/issues/86
 
-Nikolay discovered a regression with generic/371 with my delayed refs patches
-applied.  This isn't actually a regression caused by those patches, but rather
-those patches uncovered a problem that has existed forever, we just have papered
-over it with our aggressive delayed ref flushing.  Enter these two patches.
+that reduce lock contention on the extent root by running delayed refs
+less often resulted in a regression in generic/371.  This test
+fallocate()'s the fs until it's full, deletes all the files, and then
+tries to fallocate() until full again.
 
-The first patch is more of a refactoring and a simplification.  We've been
-passing in a &old_refs and a &new_refs into the delayed ref code, and
-duplicating the
+Before these patches we would run all of the delayed refs during
+flushing, and then would commit the transaction because we had plenty of
+pinned space to recover in order to allocate.  However my patches made
+it so we weren't running the delayed refs as aggressively, which meant
+that we appeared to have less pinned space when we were deciding to
+commit the transaction.
 
-if (old_refs >= 0 && new_refs < 0)
-	->total_bytes_pinned += bytes;
-else if (old_refs < 0 && new_refs >= 0)
-	->total_bytes_pinned -= bytes;
+We use the space_info->total_bytes_pinned to approximate how much space
+we have pinned.  It's approximate because if we remove a reference to an
+extent we may free it, but there may be more references to it than we
+know of at that point, but we account it as pinned at the creation time,
+and then it's properly accounted when the delayed ref runs.
 
-logic for data and metadata.  This was made even more confusing by the fact that
-we clean up this accounting when we drop the delayed ref, but also include it
-when we actually pin the extents down properly.  It took me quite a while to
-realize that we weren't mis-counting ->total_bytes_pinned because of how weirdly
-complicated the accounting was.
+The way we account for pinned space is if the
+delayed_ref_head->total_ref_mod is < 0, because that is clearly a
+free'ing option.  However there is another case, and that is where
+->total_ref_mod == 0 && ->must_insert_reserved == 1.
 
-I've refactored this code to make the handling distinct.  We modify it in the
-delayed refs code itself, which allows us to clean up a bunch of function
-arguments and duplicated code.  It also unifies how we handle the delayed ref
-side of the ->total_bytes_pinned modification.  Now it's a little easier to see
-who is responsible for the modification and where.
+When we allocate a new extent, we have ->total_ref_mod == 1 and we have
+->must_insert_reserved == 1.  This is used to indicate that it is a
+brand new extent and will need to have its extent entry added before we
+modify any references on the delayed ref head.  But if we subsequently
+remove that extent reference, our ->total_ref_mod will be 0, and that
+space will be pinned and freed.  Accounting for this case properly
+allows for generic/371 to pass with my delayed refs patches applied.
 
-The second patch is the actual fix for the problem.  Previously we had simply
-been assuming that ->total_ref_mod < 0 meant that we were freeing stuff.
-However if we allocate and free in the same transaction, ->total_ref_mod == 0
-also means we're freeing.  Adding that case is what fixes the problem Nikolay
-was seeing.  Thanks,
+It's important to note that this problem exists without the referenced
+patches, it just was uncovered by them.
 
-Josef
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+---
+ fs/btrfs/delayed-ref.c |  7 +++++++
+ fs/btrfs/extent-tree.c | 34 ++++++++++++++++++++--------------
+ 2 files changed, 27 insertions(+), 14 deletions(-)
 
-Josef Bacik (2):
-  btrfs: handle ->total_bytes_pinned inside the delayed ref itself
-  btrfs: account for new extents being deleted in total_bytes_pinned
-
- fs/btrfs/block-group.c |  11 ++--
- fs/btrfs/delayed-ref.c |  60 ++++++++++++-------
- fs/btrfs/delayed-ref.h |  16 +++--
- fs/btrfs/extent-tree.c | 129 ++++++++++-------------------------------
- fs/btrfs/space-info.h  |  17 ++++++
- 5 files changed, 103 insertions(+), 130 deletions(-)
-
+diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+index 1edb0095f08d..33247f2d0c27 100644
+--- a/fs/btrfs/delayed-ref.c
++++ b/fs/btrfs/delayed-ref.c
+@@ -732,6 +732,9 @@ static noinline void update_existing_head_ref(struct btrfs_trans_handle *trans,
+ 	 * 2. We were negative and went to 0 or positive, so no longer can say
+ 	 *    that the space would be pinned, decrement our counter from the
+ 	 *    total_bytes_pinned counter.
++	 * 3. We are now at 0 and have ->must_insert_reserved set, which means
++	 *    this was a new allocation and then we dropped it, and thus must
++	 *    add our space to the total_bytes_pinned counter.
+ 	 */
+ 	if (existing->total_ref_mod < 0 && old_ref_mod >= 0)
+ 		btrfs_mod_total_bytes_pinned(fs_info, flags,
+@@ -739,6 +742,10 @@ static noinline void update_existing_head_ref(struct btrfs_trans_handle *trans,
+ 	else if (existing->total_ref_mod >= 0 && old_ref_mod < 0)
+ 		btrfs_mod_total_bytes_pinned(fs_info, flags,
+ 					     -existing->num_bytes);
++	else if (existing->total_ref_mod == 0 &&
++		 existing->must_insert_reserved)
++		btrfs_mod_total_bytes_pinned(fs_info, flags,
++					     existing->num_bytes);
+ 
+ 	spin_unlock(&existing->lock);
+ }
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 290d957f4603..65a88f9333e6 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -1754,23 +1754,29 @@ void btrfs_cleanup_ref_head_accounting(struct btrfs_fs_info *fs_info,
+ {
+ 	int nr_items = 1;	/* Dropping this ref head update. */
+ 
+-	if (head->total_ref_mod < 0) {
++	/*
++	 * We had csum deletions accounted for in our delayed refs rsv, we need
++	 * to drop the csum leaves for this update from our delayed_refs_rsv.
++	 */
++	if (head->total_ref_mod < 0 && head->is_data) {
++		spin_lock(&delayed_refs->lock);
++		delayed_refs->pending_csums -= head->num_bytes;
++		spin_unlock(&delayed_refs->lock);
++		nr_items += btrfs_csum_bytes_to_leaves(fs_info,
++						       head->num_bytes);
++	}
++
++	/*
++	 * We were dropping refs, or had a new ref and dropped it, and thus must
++	 * adjust down our total_bytes_pinned, the space may or may not have
++	 * been pinned and so is accounted for properly in the pinned space by
++	 * now.
++	 */
++	if (head->total_ref_mod < 0 ||
++	    (head->total_ref_mod == 0 && head->must_insert_reserved)) {
+ 		u64 flags = btrfs_ref_head_to_space_flags(head);
+ 		btrfs_mod_total_bytes_pinned(fs_info, flags,
+ 					     -head->num_bytes);
+-
+-		/*
+-		 * We had csum deletions accounted for in our delayed refs rsv,
+-		 * we need to drop the csum leaves for this update from our
+-		 * delayed_refs_rsv.
+-		 */
+-		if (head->is_data) {
+-			spin_lock(&delayed_refs->lock);
+-			delayed_refs->pending_csums -= head->num_bytes;
+-			spin_unlock(&delayed_refs->lock);
+-			nr_items += btrfs_csum_bytes_to_leaves(fs_info,
+-				head->num_bytes);
+-		}
+ 	}
+ 
+ 	btrfs_delayed_refs_rsv_release(fs_info, nr_items);
 -- 
 2.26.2
 

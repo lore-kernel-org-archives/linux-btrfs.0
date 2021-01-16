@@ -4,39 +4,39 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B872AC433E6
-	for <linux-btrfs@archiver.kernel.org>; Sat, 16 Jan 2021 07:17:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5DE85C4332D
+	for <linux-btrfs@archiver.kernel.org>; Sat, 16 Jan 2021 07:17:31 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 5E30F23AF8
-	for <linux-btrfs@archiver.kernel.org>; Sat, 16 Jan 2021 07:17:30 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2826D23AFE
+	for <linux-btrfs@archiver.kernel.org>; Sat, 16 Jan 2021 07:17:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726714AbhAPHRO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 16 Jan 2021 02:17:14 -0500
-Received: from mx2.suse.de ([195.135.220.15]:56156 "EHLO mx2.suse.de"
+        id S1726780AbhAPHRV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 16 Jan 2021 02:17:21 -0500
+Received: from mx2.suse.de ([195.135.220.15]:56170 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726701AbhAPHRO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 16 Jan 2021 02:17:14 -0500
+        id S1726727AbhAPHRU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 16 Jan 2021 02:17:20 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1610781358; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1610781372; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=YUfWAyhbQG+1m6zDQGC63vBbQkN2NuPvOKVSpKvbno8=;
-        b=H/xBxIQBADFqmgzkK1W6z33Ro1B5fA+L+n633IvZT5OJERLtkKFumS5MXY5p5sqOgKTr/f
-        k/kv1wEPnIxTtnvcW8YbQUYHwQ4F3r5g47aNLsdqsp2IPgTm3/KODoBfOTbKufDOi3YPvL
-        pU+x0vapHJcYE82Tu5x3Tg9iEaKU314=
+        bh=67oxTlFBGfM+7X1D+mSit2Atd1veT8boa2zvEYJRE4w=;
+        b=dnBscI17ABPbN+LbHNieVMxT1NEzqXsXTyk00jXOEowCkjtCNLYySS67g7TohASNF+DWhK
+        Kizct4OUCAj3GpK0L1cbdb5rtLIOVdQJRQvfgXfSXuhWt7v44z8RnELWOJOkm2xuZjGH74
+        Fpy1VzOWAqd91bRPQMUklcY71xxkU9Q=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id D786DB8F2
-        for <linux-btrfs@vger.kernel.org>; Sat, 16 Jan 2021 07:15:58 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 9B164B903
+        for <linux-btrfs@vger.kernel.org>; Sat, 16 Jan 2021 07:16:12 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v4 07/18] btrfs: attach private to dummy extent buffer pages
-Date:   Sat, 16 Jan 2021 15:15:22 +0800
-Message-Id: <20210116071533.105780-8-wqu@suse.com>
+Subject: [PATCH v4 11/18] btrfs: make btrfs_clone_extent_buffer() to be subpage compatible
+Date:   Sat, 16 Jan 2021 15:15:26 +0800
+Message-Id: <20210116071533.105780-12-wqu@suse.com>
 X-Mailer: git-send-email 2.30.0
 In-Reply-To: <20210116071533.105780-1-wqu@suse.com>
 References: <20210116071533.105780-1-wqu@suse.com>
@@ -46,52 +46,47 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Even for regular btrfs, there are locations where we allocate dummy
-extent buffers for temporary usage.
+For btrfs_clone_extent_buffer(), it's mostly the same code of
+__alloc_dummy_extent_buffer(), except it has extra page copy.
 
-Like tree_mod_log_rewind() and get_old_root().
+So to make it subpage compatible, we only need to:
+- Call set_extent_buffer_uptodate() instead of SetPageUptodate()
+  This will set correct uptodate bit for subpage and regular sector size
+  cases.
 
-Those dummy extent buffers will be handled by the same eb accessors, and
-if they don't have page::private subpage eb accessors can fail.
-
-To address such problems, make __alloc_dummy_extent_buffer() to attach
-page private for dummy extent buffers too.
+Since we're calling set_extent_buffer_uptodate() which will also set
+EXTENT_BUFFER_UPTODATE bit, we don't need to manually set that bit
+either.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/extent_io.c | 9 ++++++++-
- 1 file changed, 8 insertions(+), 1 deletion(-)
+ fs/btrfs/extent_io.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
 
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index fb800f237099..7f94f00936d7 100644
+index c2459cf56950..74a37eec921f 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -5204,9 +5204,14 @@ struct extent_buffer *__alloc_dummy_extent_buffer(struct btrfs_fs_info *fs_info,
+@@ -5164,7 +5164,6 @@ struct extent_buffer *btrfs_clone_extent_buffer(const struct extent_buffer *src)
+ 	if (new == NULL)
+ 		return NULL;
  
- 	num_pages = num_extent_pages(eb);
+-	set_bit(EXTENT_BUFFER_UPTODATE, &new->bflags);
+ 	set_bit(EXTENT_BUFFER_UNMAPPED, &new->bflags);
+ 
  	for (i = 0; i < num_pages; i++) {
-+		int ret;
-+
- 		eb->pages[i] = alloc_page(GFP_NOFS);
- 		if (!eb->pages[i])
- 			goto err;
-+		ret = attach_extent_buffer_page(eb, eb->pages[i], NULL);
-+		if (ret < 0)
-+			goto err;
+@@ -5182,11 +5181,10 @@ struct extent_buffer *btrfs_clone_extent_buffer(const struct extent_buffer *src)
+ 			return NULL;
+ 		}
+ 		WARN_ON(PageDirty(p));
+-		SetPageUptodate(p);
+ 		new->pages[i] = p;
+ 		copy_page(page_address(p), page_address(src->pages[i]));
  	}
- 	set_extent_buffer_uptodate(eb);
- 	btrfs_set_header_nritems(eb, 0);
-@@ -5214,8 +5219,10 @@ struct extent_buffer *__alloc_dummy_extent_buffer(struct btrfs_fs_info *fs_info,
+-
++	set_extent_buffer_uptodate(new);
  
- 	return eb;
- err:
--	for (; i > 0; i--)
-+	for (; i > 0; i--) {
-+		detach_extent_buffer_page(eb, eb->pages[i - 1]);
- 		__free_page(eb->pages[i - 1]);
-+	}
- 	__free_extent_buffer(eb);
- 	return NULL;
+ 	return new;
  }
 -- 
 2.30.0

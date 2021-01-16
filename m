@@ -7,36 +7,36 @@ X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 14DB3C4332B
-	for <linux-btrfs@archiver.kernel.org>; Sat, 16 Jan 2021 07:16:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5D152C433E0
+	for <linux-btrfs@archiver.kernel.org>; Sat, 16 Jan 2021 07:17:30 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id BE94D23AC4
-	for <linux-btrfs@archiver.kernel.org>; Sat, 16 Jan 2021 07:16:58 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 02B9B23AC4
+	for <linux-btrfs@archiver.kernel.org>; Sat, 16 Jan 2021 07:17:29 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726518AbhAPHQ2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 16 Jan 2021 02:16:28 -0500
-Received: from mx2.suse.de ([195.135.220.15]:55940 "EHLO mx2.suse.de"
+        id S1726680AbhAPHRN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 16 Jan 2021 02:17:13 -0500
+Received: from mx2.suse.de ([195.135.220.15]:56144 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726391AbhAPHQ2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 16 Jan 2021 02:16:28 -0500
+        id S1726653AbhAPHRN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 16 Jan 2021 02:17:13 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1610781341; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1610781354; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=jT2FlbFb5n2kN9losXqoiv1O32/bpQbWYnwrcDXeOlk=;
-        b=HZb3cm5Qajqijp1i85+Frto5Ssurzsl4uYQRDphTWoTdNO0FRay6Jn4RIVUubLD057+GIA
-        ehQxj/GWQu0T8xTvjE206zflw+zbP+fGKqjXyp+dzrKyCdwBxqxV2NHLhw5AUtjXFUEN4J
-        bpR6r//qOtfllp/G37c21167xtUmanw=
+        bh=dIUiWj736mPErI3yMq7kL8uX6l7OOGl8OPpmeFasdaI=;
+        b=qaMchPwruLPMR/mGdESbxSkuxHJ0Od1toL5DdOc7aWcuEPAaaGEi4vWRleZ/aYCxVydDrH
+        rIEf5yySnv89FeOr5YkpbLBuJE3rcscaMMAfQRd+akp2XOvdUvotkLKmBYYBXKG12vBREF
+        CUBtcPhq8mmU1wYDd7aasYWXYWYuq2M=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 825D6AC63
-        for <linux-btrfs@vger.kernel.org>; Sat, 16 Jan 2021 07:15:41 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 498B9B7F6
+        for <linux-btrfs@vger.kernel.org>; Sat, 16 Jan 2021 07:15:54 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v4 01/18] btrfs: update locked page dirty/writeback/error bits in __process_pages_contig()
-Date:   Sat, 16 Jan 2021 15:15:16 +0800
-Message-Id: <20210116071533.105780-2-wqu@suse.com>
+Subject: [PATCH v4 05/18] btrfs: make grab_extent_buffer_from_page() to handle subpage case
+Date:   Sat, 16 Jan 2021 15:15:20 +0800
+Message-Id: <20210116071533.105780-6-wqu@suse.com>
 X-Mailer: git-send-email 2.30.0
 In-Reply-To: <20210116071533.105780-1-wqu@suse.com>
 References: <20210116071533.105780-1-wqu@suse.com>
@@ -46,64 +46,59 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-When __process_pages_contig() get called for
-extent_clear_unlock_delalloc(), if we hit the locked page, only Private2
-bit is updated, but dirty/writeback/error bits are all skipped.
+For subpage case, grab_extent_buffer() can't really get an extent buffer
+just from btrfs_subpage.
 
-There are several call sites call extent_clear_unlock_delalloc() with
-@locked_page and PAGE_CLEAR_DIRTY/PAGE_SET_WRITEBACK/PAGE_END_WRITEBACK
+Thankfully we have radix tree lock protecting us from inserting the same
+eb into the tree.
 
-- cow_file_range()
-- run_delalloc_nocow()
-- cow_file_range_async()
-  All for their error handling branches.
+Thus we don't really need to do the extra hassle, just let
+alloc_extent_buffer() to handle existing eb in radix tree.
 
-For those call sites, since we skip the locked page for
-dirty/error/writeback bit update, the locked page will still have its
-dirty bit remaining.
+Now if two ebs are being allocated as the same time, one will fail with
+-EEIXST when inserting its eb into the radix tree.
 
-Thankfully, since all those call sites can only be hit with various
-serious errors, it's pretty hard to hit and shouldn't affect regular
-btrfs operations.
-
-But still, we shouldn't leave the locked_page with its
-dirty/error/writeback bits untouched.
-
-Fix this by only skipping lock/unlock page operations for locked_page.
+So for grab_extent_buffer(), just always return NULL for subpage case.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/extent_io.c | 10 +++++-----
- 1 file changed, 5 insertions(+), 5 deletions(-)
+ fs/btrfs/extent_io.c | 13 +++++++++++--
+ 1 file changed, 11 insertions(+), 2 deletions(-)
 
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 7f689ad7709c..3442f1746683 100644
+index 320731487ac0..b2f8ac5e9a9e 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -1970,11 +1970,6 @@ static int __process_pages_contig(struct address_space *mapping,
- 			if (page_ops & PAGE_SET_PRIVATE2)
- 				SetPagePrivate2(pages[i]);
+@@ -5282,10 +5282,19 @@ struct extent_buffer *alloc_test_extent_buffer(struct btrfs_fs_info *fs_info,
+ }
+ #endif
  
--			if (locked_page && pages[i] == locked_page) {
--				put_page(pages[i]);
--				pages_processed++;
--				continue;
--			}
- 			if (page_ops & PAGE_CLEAR_DIRTY)
- 				clear_page_dirty_for_io(pages[i]);
- 			if (page_ops & PAGE_SET_WRITEBACK)
-@@ -1983,6 +1978,11 @@ static int __process_pages_contig(struct address_space *mapping,
- 				SetPageError(pages[i]);
- 			if (page_ops & PAGE_END_WRITEBACK)
- 				end_page_writeback(pages[i]);
-+			if (locked_page && pages[i] == locked_page) {
-+				put_page(pages[i]);
-+				pages_processed++;
-+				continue;
-+			}
- 			if (page_ops & PAGE_UNLOCK)
- 				unlock_page(pages[i]);
- 			if (page_ops & PAGE_LOCK) {
+-static struct extent_buffer *grab_extent_buffer(struct page *page)
++static struct extent_buffer *grab_extent_buffer(
++		struct btrfs_fs_info *fs_info, struct page *page)
+ {
+ 	struct extent_buffer *exists;
+ 
++	/*
++	 * For subpage case, we completely rely on radix tree to ensure we
++	 * don't try to insert two eb for the same bytenr.
++	 * So here we alwasy return NULL and just continue.
++	 */
++	if (fs_info->sectorsize < PAGE_SIZE)
++		return NULL;
++
+ 	/* Page not yet attached to an extent buffer */
+ 	if (!PagePrivate(page))
+ 		return NULL;
+@@ -5366,7 +5375,7 @@ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
+ 		}
+ 
+ 		spin_lock(&mapping->private_lock);
+-		exists = grab_extent_buffer(p);
++		exists = grab_extent_buffer(fs_info, p);
+ 		if (exists) {
+ 			spin_unlock(&mapping->private_lock);
+ 			unlock_page(p);
 -- 
 2.30.0
 

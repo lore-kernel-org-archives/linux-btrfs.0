@@ -2,409 +2,115 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-4.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
+	SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 61E91C433DB
-	for <linux-btrfs@archiver.kernel.org>; Sat, 16 Jan 2021 07:18:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9BD89C433E0
+	for <linux-btrfs@archiver.kernel.org>; Sat, 16 Jan 2021 07:43:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 1AFF323AFB
-	for <linux-btrfs@archiver.kernel.org>; Sat, 16 Jan 2021 07:18:17 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 56AF823370
+	for <linux-btrfs@archiver.kernel.org>; Sat, 16 Jan 2021 07:43:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726864AbhAPHSB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 16 Jan 2021 02:18:01 -0500
-Received: from mx2.suse.de ([195.135.220.15]:56242 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725781AbhAPHSA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 16 Jan 2021 02:18:00 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1610781385; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=tw+OsxQmg8nbTd7z1xiPfaoSu7x97nH9o9A0jG3lQgg=;
-        b=I+5RXPXcp/LYUq4qbRCuSewE71odjRM7RyPcWfxmveiOyLG3uIR6LhTkl6l3gQz73jLmV8
-        U5zb2Xz7aLuoHkLrvjATCt0S56WNWw5p7eTjx0LPcUWXS7nWGYlXfMSJAr8HqnxFE6D8Xk
-        RCmcuUmmuhOAaMactYHnbXEiZbB699Q=
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 3F1C1B908
-        for <linux-btrfs@vger.kernel.org>; Sat, 16 Jan 2021 07:16:25 +0000 (UTC)
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v4 16/18] btrfs: introduce btrfs_subpage for data inodes
-Date:   Sat, 16 Jan 2021 15:15:31 +0800
-Message-Id: <20210116071533.105780-17-wqu@suse.com>
-X-Mailer: git-send-email 2.30.0
-In-Reply-To: <20210116071533.105780-1-wqu@suse.com>
-References: <20210116071533.105780-1-wqu@suse.com>
+        id S1726680AbhAPHkg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 16 Jan 2021 02:40:36 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59690 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726451AbhAPHkf (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 16 Jan 2021 02:40:35 -0500
+Received: from mail-lf1-x12a.google.com (mail-lf1-x12a.google.com [IPv6:2a00:1450:4864:20::12a])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1E5DBC061757
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Jan 2021 23:39:55 -0800 (PST)
+Received: by mail-lf1-x12a.google.com with SMTP id a12so16632410lfl.6
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Jan 2021 23:39:54 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=subject:to:references:from:autocrypt:message-id:date:user-agent
+         :mime-version:in-reply-to:content-language:content-transfer-encoding;
+        bh=XoiM4ecB1QgvcdLUV/9jgk42vnfgyH+qg88CbsAfZIE=;
+        b=imwsieIIQAQ+PJ/ilxOEQa03RmFPGVX5W5/JnnNRxM5Pcv70YGhTLGhKyua56zT8Pn
+         +WmLgk1yjy2NRNfT3jwJ6y/mzRYc379OkNhq+HarGCfd9LreL8H3ocpErH0b/HJOz+eQ
+         UfKQ2YszvXbjbSWqnW97bHWgnHhUOloULPi9nyyopAa/jajUV+6Y67VLWvv1haCxWvRm
+         xI6+1ur5NsVH3igyk3u+0pGYkNcu3vgmcPVVaviWI6U7WhhhaYwN4uIO4sg3tn/7B0hw
+         X/SCjDvZ7TrSdjFxulRfHZPXwmXPDY4YgKFx9U7Po5r9+X4qXnzYlCP64Y1loIJyDOR9
+         KsFg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:to:references:from:autocrypt:message-id
+         :date:user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=XoiM4ecB1QgvcdLUV/9jgk42vnfgyH+qg88CbsAfZIE=;
+        b=iMTYYd4VltIfbO1MD+bm+0CE8UshJy6sS8Gxd6reE+dYVBgDNEIeG3KXLvgA6oyUMl
+         DHXoLUEkts7SAvM2ECJEIT292jxDbEAnr9gWoAoNVTyia3LMgHJL0k8bU7zHbkQpo7Ts
+         DRtPCFWYEZ+9bI/qaRlrwyjXkxsH4xPxSasV4Inym4p83xOE8okWlil0hGYZzsyul+7O
+         jcNb7vJO+fJMb56PeoQqhm4oEWN5vqS2hXXzCQOBGnoyMnZWHYebPREjvUyuKU6Py+vG
+         nhagz5Vjf9KJCRVl6YnRE00P3S5jpVs2gCjNz0Vyb37q12Xbzcg2UB6i2WGZCP32YuKk
+         1eTg==
+X-Gm-Message-State: AOAM5302bgNKvkUANZTieS0dFL4YT/uysP8HCoRvx7NdTkdSiR8q2QOm
+        ax39T/L2Ec3RRV0XQ98+y4w+iVPN0ZRFgg==
+X-Google-Smtp-Source: ABdhPJz8zwYdIW5XYhcFXlDYAhPDjycZiifLRJC/7GGZB6fexn4ApTpGojsE0GwlOdKlFgcW0GCqoA==
+X-Received: by 2002:a05:6512:2103:: with SMTP id q3mr6997185lfr.404.1610782793355;
+        Fri, 15 Jan 2021 23:39:53 -0800 (PST)
+Received: from ?IPv6:2a00:1370:812d:ecb3:590f:aaab:50ba:573b? ([2a00:1370:812d:ecb3:590f:aaab:50ba:573b])
+        by smtp.gmail.com with ESMTPSA id 187sm1181568lfo.16.2021.01.15.23.39.52
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Fri, 15 Jan 2021 23:39:52 -0800 (PST)
+Subject: Re: Why do we need these mount options?
+To:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>, dsterba@suse.cz,
+        waxhead <waxhead@dirtcellar.net>, linux-btrfs@vger.kernel.org
+References: <208dba68-b47e-101d-c893-8173df8fbbbf@dirtcellar.net>
+ <20210114163729.GY6430@twin.jikos.cz> <20210115035448.GD31381@hungrycats.org>
+From:   Andrei Borzenkov <arvidjaar@gmail.com>
+Autocrypt: addr=arvidjaar@gmail.com; prefer-encrypt=mutual; keydata=
+ mQGiBDxiRwwRBAC3CN9wdwpVEqUGmSoqF8tWVIT4P/bLCSZLkinSZ2drsblKpdG7x+guxwts
+ +LgI8qjf/q5Lah1TwOqzDvjHYJ1wbBauxZ03nDzSLUhD4Ms1IsqlIwyTLumQs4vcQdvLxjFs
+ G70aDglgUSBogtaIEsiYZXl4X0j3L9fVstuz4/wXtwCg1cN/yv/eBC0tkcM1nsJXQrC5Ay8D
+ /1aA5qPticLBpmEBxqkf0EMHuzyrFlqVw1tUjZ+Ep2LMlem8malPvfdZKEZ71W1a/XbRn8FE
+ SOp0tUa5GwdoDXgEp1CJUn+WLurR0KPDf01E4j/PHHAoABgrqcOTcIVoNpv2gNiBySVsNGzF
+ XTeY/Yd6vQclkqjBYONGN3r9R8bWA/0Y1j4XK61qjowRk3Iy8sBggM3PmmNRUJYgroerpcAr
+ 2byz6wTsb3U7OzUZ1Llgisk5Qum0RN77m3I37FXlIhCmSEY7KZVzGNW3blugLHcfw/HuCB7R
+ 1w5qiLWKK6eCQHL+BZwiU8hX3dtTq9d7WhRW5nsVPEaPqudQfMSi/Ux1kbQmQW5kcmV5IEJv
+ cnplbmtvdiA8YXJ2aWRqYWFyQGdtYWlsLmNvbT6IYAQTEQIAIAUCSXs6NQIbAwYLCQgHAwIE
+ FQIIAwQWAgMBAh4BAheAAAoJEEeizLraXfeMLOYAnj4ovpka+mXNzImeYCd5LqW5to8FAJ4v
+ P4IW+Ic7eYXxCLM7/zm9YMUVbrQmQW5kcmVpIEJvcnplbmtvdiA8YXJ2aWRqYWFyQGdtYWls
+ LmNvbT6IZQQTEQIAJQIbAwYLCQgHAwIGFQgCCQoLBBYCAwECHgECF4AFAliWAiQCGQEACgkQ
+ R6LMutpd94wFGwCeNuQnMDxve/Fo3EvYIkAOn+zE21cAnRCQTXd1hTgcRHfpArEd/Rcb5+Sc
+ uQENBDxiRyQQBACQtME33UHfFOCApLki4kLFrIw15A5asua10jm5It+hxzI9jDR9/bNEKDTK
+ SciHnM7aRUggLwTt+6CXkMy8an+tVqGL/MvDc4/RKKlZxj39xP7wVXdt8y1ciY4ZqqZf3tmm
+ SN9DlLcZJIOT82DaJZuvr7UJ7rLzBFbAUh4yRKaNnwADBwQAjNvMr/KBcGsV/UvxZSm/mdpv
+ UPtcw9qmbxCrqFQoB6TmoZ7F6wp/rL3TkQ5UElPRgsG12+Dk9GgRhnnxTHCFgN1qTiZNX4YI
+ FpNrd0au3W/Xko79L0c4/49ten5OrFI/psx53fhYvLYfkJnc62h8hiNeM6kqYa/x0BEddu92
+ ZG6IRgQYEQIABgUCPGJHJAAKCRBHosy62l33jMhdAJ48P7WDvKLQQ5MKnn2D/TI337uA/gCg
+ n5mnvm4SBctbhaSBgckRmgSxfwQ=
+Message-ID: <94a65b16-3a23-6862-9de6-169620302308@gmail.com>
+Date:   Sat, 16 Jan 2021 10:39:51 +0300
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.10.0
 MIME-Version: 1.0
+In-Reply-To: <20210115035448.GD31381@hungrycats.org>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-To support subpage sector size, data also need extra info to make sure
-which sectors in a page are uptodate/dirty/...
+15.01.2021 06:54, Zygo Blaxell пишет:
+> 
+> On the other hand, I'm in favor of deprecating the whole discard option
+> and going with fstrim instead.  discard in its current form tends to
+> increase write wear rather than decrease it, especially on metadata-heavy
+> workloads.  discard is roughly equivalent to running fstrim thousands
+> of times a day, which is clearly bad for many (most?  all?) SSDs.
+> 
 
-This patch will make pages for data inodes to get btrfs_subpage
-structure attached, and detached when the page is freed.
+My (probably naive) understanding so far was that trim on SSD marks
+areas as "unused" which means SSD need to copy less residual data from
+erase block when reusing it. Assuming TRIM unit is (significantly)
+smaller than erase block.
 
-This patch also slightly changes the timing when
-set_page_extent_mapped() to make sure:
+I would appreciate if you elaborate how trim results in more write on SSD?
 
-- We have page->mapping set
-  page->mapping->host is used to grab btrfs_fs_info, thus we can only
-  call this function after page is mapped to an inode.
-
-  One call site attaches pages to inode manually, thus we have to modify
-  the timing of set_page_extent_mapped() a little.
-
-- As soon as possible, before other operations
-  Since memory allocation can fail, we have to do extra error handling.
-  Calling set_page_extent_mapped() as soon as possible can simply the
-  error handling for several call sites.
-
-The idea is pretty much the same as iomap_page, but with more bitmaps
-for btrfs specific cases.
-
-Currently the plan is to switch iomap if iomap can provide sector
-aligned write back (only write back dirty sectors, but not the full
-page, data balance require this feature).
-
-So we will stick to btrfs specific bitmap for now.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/compression.c      | 10 ++++++--
- fs/btrfs/extent_io.c        | 46 +++++++++++++++++++++++++++++++++----
- fs/btrfs/extent_io.h        |  3 ++-
- fs/btrfs/file.c             | 24 ++++++++-----------
- fs/btrfs/free-space-cache.c | 15 +++++++++---
- fs/btrfs/inode.c            | 12 ++++++----
- fs/btrfs/ioctl.c            |  5 +++-
- fs/btrfs/reflink.c          |  5 +++-
- fs/btrfs/relocation.c       | 12 ++++++++--
- 9 files changed, 99 insertions(+), 33 deletions(-)
-
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index 5ae3fa0386b7..6d203acfdeb3 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -542,13 +542,19 @@ static noinline int add_ra_bio_pages(struct inode *inode,
- 			goto next;
- 		}
- 
--		end = last_offset + PAGE_SIZE - 1;
- 		/*
- 		 * at this point, we have a locked page in the page cache
- 		 * for these bytes in the file.  But, we have to make
- 		 * sure they map to this compressed extent on disk.
- 		 */
--		set_page_extent_mapped(page);
-+		ret = set_page_extent_mapped(page);
-+		if (ret < 0) {
-+			unlock_page(page);
-+			put_page(page);
-+			break;
-+		}
-+
-+		end = last_offset + PAGE_SIZE - 1;
- 		lock_extent(tree, last_offset, end);
- 		read_lock(&em_tree->lock);
- 		em = lookup_extent_mapping(em_tree, last_offset,
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 35fbef15d84e..4bce03fed205 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -3194,10 +3194,39 @@ static int attach_extent_buffer_page(struct extent_buffer *eb,
- 	return 0;
- }
- 
--void set_page_extent_mapped(struct page *page)
-+int __must_check set_page_extent_mapped(struct page *page)
- {
-+	struct btrfs_fs_info *fs_info;
-+
-+	ASSERT(page->mapping);
-+
-+	if (PagePrivate(page))
-+		return 0;
-+
-+	fs_info = btrfs_sb(page->mapping->host->i_sb);
-+
-+	if (fs_info->sectorsize < PAGE_SIZE)
-+		return btrfs_attach_subpage(fs_info, page);
-+
-+	attach_page_private(page, (void *)EXTENT_PAGE_PRIVATE);
-+	return 0;
-+
-+}
-+
-+void clear_page_extent_mapped(struct page *page)
-+{
-+	struct btrfs_fs_info *fs_info;
-+
-+	ASSERT(page->mapping);
-+
- 	if (!PagePrivate(page))
--		attach_page_private(page, (void *)EXTENT_PAGE_PRIVATE);
-+		return;
-+
-+	fs_info = btrfs_sb(page->mapping->host->i_sb);
-+	if (fs_info->sectorsize < PAGE_SIZE)
-+		return btrfs_detach_subpage(fs_info, page);
-+
-+	detach_page_private(page);
- }
- 
- static struct extent_map *
-@@ -3254,7 +3283,12 @@ int btrfs_do_readpage(struct page *page, struct extent_map **em_cached,
- 	unsigned long this_bio_flag = 0;
- 	struct extent_io_tree *tree = &BTRFS_I(inode)->io_tree;
- 
--	set_page_extent_mapped(page);
-+	ret = set_page_extent_mapped(page);
-+	if (ret < 0) {
-+		unlock_extent(tree, start, end);
-+		SetPageError(page);
-+		goto out;
-+	}
- 
- 	if (!PageUptodate(page)) {
- 		if (cleancache_get_page(page) == 0) {
-@@ -3694,7 +3728,11 @@ static int __extent_writepage(struct page *page, struct writeback_control *wbc,
- 		flush_dcache_page(page);
- 	}
- 
--	set_page_extent_mapped(page);
-+	ret = set_page_extent_mapped(page);
-+	if (ret < 0) {
-+		SetPageError(page);
-+		goto done;
-+	}
- 
- 	if (!epd->extent_locked) {
- 		ret = writepage_delalloc(BTRFS_I(inode), page, wbc, start,
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index bedf761a0300..357a3380cd42 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -178,7 +178,8 @@ int btree_write_cache_pages(struct address_space *mapping,
- void extent_readahead(struct readahead_control *rac);
- int extent_fiemap(struct btrfs_inode *inode, struct fiemap_extent_info *fieinfo,
- 		  u64 start, u64 len);
--void set_page_extent_mapped(struct page *page);
-+int __must_check set_page_extent_mapped(struct page *page);
-+void clear_page_extent_mapped(struct page *page);
- 
- struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
- 					  u64 start, u64 owner_root, int level);
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index d81ae1f518f2..63b290210eaa 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1369,6 +1369,12 @@ static noinline int prepare_pages(struct inode *inode, struct page **pages,
- 			goto fail;
- 		}
- 
-+		err = set_page_extent_mapped(pages[i]);
-+		if (err < 0) {
-+			faili = i;
-+			goto fail;
-+		}
-+
- 		if (i == 0)
- 			err = prepare_uptodate_page(inode, pages[i], pos,
- 						    force_uptodate);
-@@ -1453,23 +1459,11 @@ lock_and_cleanup_extent_if_need(struct btrfs_inode *inode, struct page **pages,
- 	}
- 
- 	/*
--	 * It's possible the pages are dirty right now, but we don't want
--	 * to clean them yet because copy_from_user may catch a page fault
--	 * and we might have to fall back to one page at a time.  If that
--	 * happens, we'll unlock these pages and we'd have a window where
--	 * reclaim could sneak in and drop the once-dirty page on the floor
--	 * without writing it.
--	 *
--	 * We have the pages locked and the extent range locked, so there's
--	 * no way someone can start IO on any dirty pages in this range.
--	 *
--	 * We'll call btrfs_dirty_pages() later on, and that will flip around
--	 * delalloc bits and dirty the pages as required.
-+	 * We should be called after prepare_pages() which should have
-+	 * locked all pages in the range.
- 	 */
--	for (i = 0; i < num_pages; i++) {
--		set_page_extent_mapped(pages[i]);
-+	for (i = 0; i < num_pages; i++)
- 		WARN_ON(!PageLocked(pages[i]));
--	}
- 
- 	return ret;
- }
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index fd6ddd6b8165..379bef967e1d 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -431,11 +431,22 @@ static int io_ctl_prepare_pages(struct btrfs_io_ctl *io_ctl, bool uptodate)
- 	int i;
- 
- 	for (i = 0; i < io_ctl->num_pages; i++) {
-+		int ret;
-+
- 		page = find_or_create_page(inode->i_mapping, i, mask);
- 		if (!page) {
- 			io_ctl_drop_pages(io_ctl);
- 			return -ENOMEM;
- 		}
-+
-+		ret = set_page_extent_mapped(page);
-+		if (ret < 0) {
-+			unlock_page(page);
-+			put_page(page);
-+			io_ctl_drop_pages(io_ctl);
-+			return -ENOMEM;
-+		}
-+
- 		io_ctl->pages[i] = page;
- 		if (uptodate && !PageUptodate(page)) {
- 			btrfs_readpage(NULL, page);
-@@ -455,10 +466,8 @@ static int io_ctl_prepare_pages(struct btrfs_io_ctl *io_ctl, bool uptodate)
- 		}
- 	}
- 
--	for (i = 0; i < io_ctl->num_pages; i++) {
-+	for (i = 0; i < io_ctl->num_pages; i++)
- 		clear_page_dirty_for_io(io_ctl->pages[i]);
--		set_page_extent_mapped(io_ctl->pages[i]);
--	}
- 
- 	return 0;
- }
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 1ab5cb89c530..a4c40a4b794f 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4712,6 +4712,9 @@ int btrfs_truncate_block(struct btrfs_inode *inode, loff_t from, loff_t len,
- 		ret = -ENOMEM;
- 		goto out;
- 	}
-+	ret = set_page_extent_mapped(page);
-+	if (ret < 0)
-+		goto out_unlock;
- 
- 	if (!PageUptodate(page)) {
- 		ret = btrfs_readpage(NULL, page);
-@@ -4729,7 +4732,6 @@ int btrfs_truncate_block(struct btrfs_inode *inode, loff_t from, loff_t len,
- 	wait_on_page_writeback(page);
- 
- 	lock_extent_bits(io_tree, block_start, block_end, &cached_state);
--	set_page_extent_mapped(page);
- 
- 	ordered = btrfs_lookup_ordered_extent(inode, block_start);
- 	if (ordered) {
-@@ -8107,7 +8109,7 @@ static int __btrfs_releasepage(struct page *page, gfp_t gfp_flags)
- {
- 	int ret = try_release_extent_mapping(page, gfp_flags);
- 	if (ret == 1)
--		detach_page_private(page);
-+		clear_page_extent_mapped(page);
- 	return ret;
- }
- 
-@@ -8266,7 +8268,7 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
- 	}
- 
- 	ClearPageChecked(page);
--	detach_page_private(page);
-+	clear_page_extent_mapped(page);
- }
- 
- /*
-@@ -8345,7 +8347,9 @@ vm_fault_t btrfs_page_mkwrite(struct vm_fault *vmf)
- 	wait_on_page_writeback(page);
- 
- 	lock_extent_bits(io_tree, page_start, page_end, &cached_state);
--	set_page_extent_mapped(page);
-+	ret2 = set_page_extent_mapped(page);
-+	if (ret2 < 0)
-+		goto out_unlock;
- 
- 	/*
- 	 * we can't set the delalloc bits if there are pending ordered
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 7f2935ea8d3a..50a9d784bdc2 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1314,6 +1314,10 @@ static int cluster_pages_for_defrag(struct inode *inode,
- 		if (!page)
- 			break;
- 
-+		ret = set_page_extent_mapped(page);
-+		if (ret < 0)
-+			break;
-+
- 		page_start = page_offset(page);
- 		page_end = page_start + PAGE_SIZE - 1;
- 		while (1) {
-@@ -1435,7 +1439,6 @@ static int cluster_pages_for_defrag(struct inode *inode,
- 	for (i = 0; i < i_done; i++) {
- 		clear_page_dirty_for_io(pages[i]);
- 		ClearPageChecked(pages[i]);
--		set_page_extent_mapped(pages[i]);
- 		set_page_dirty(pages[i]);
- 		unlock_page(pages[i]);
- 		put_page(pages[i]);
-diff --git a/fs/btrfs/reflink.c b/fs/btrfs/reflink.c
-index b03e7891394e..b24396cf2f99 100644
---- a/fs/btrfs/reflink.c
-+++ b/fs/btrfs/reflink.c
-@@ -81,7 +81,10 @@ static int copy_inline_to_page(struct btrfs_inode *inode,
- 		goto out_unlock;
- 	}
- 
--	set_page_extent_mapped(page);
-+	ret = set_page_extent_mapped(page);
-+	if (ret < 0)
-+		goto out_unlock;
-+
- 	clear_extent_bit(&inode->io_tree, file_offset, range_end,
- 			 EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING | EXTENT_DEFRAG,
- 			 0, 0, NULL);
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 9f2289bcdde6..eb2f9da1e06d 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -2681,6 +2681,16 @@ static int relocate_file_extent_cluster(struct inode *inode,
- 				goto out;
- 			}
- 		}
-+		ret = set_page_extent_mapped(page);
-+		if (ret < 0) {
-+			btrfs_delalloc_release_metadata(BTRFS_I(inode),
-+						PAGE_SIZE, true);
-+			btrfs_delalloc_release_extents(BTRFS_I(inode),
-+						PAGE_SIZE);
-+			unlock_page(page);
-+			put_page(page);
-+			goto out;
-+		}
- 
- 		if (PageReadahead(page)) {
- 			page_cache_async_readahead(inode->i_mapping,
-@@ -2708,8 +2718,6 @@ static int relocate_file_extent_cluster(struct inode *inode,
- 
- 		lock_extent(&BTRFS_I(inode)->io_tree, page_start, page_end);
- 
--		set_page_extent_mapped(page);
--
- 		if (nr < cluster->nr &&
- 		    page_start + offset == cluster->boundary[nr]) {
- 			set_extent_bits(&BTRFS_I(inode)->io_tree,
--- 
-2.30.0
-
+Or do you mean more writes from btrfs while performing discard?

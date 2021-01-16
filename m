@@ -7,36 +7,36 @@ X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 26952C433DB
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3F566C433E0
 	for <linux-btrfs@archiver.kernel.org>; Sat, 16 Jan 2021 07:17:51 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D9C3B23AC6
+	by mail.kernel.org (Postfix) with ESMTP id 0A52523AFB
 	for <linux-btrfs@archiver.kernel.org>; Sat, 16 Jan 2021 07:17:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726831AbhAPHRe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 16 Jan 2021 02:17:34 -0500
-Received: from mx2.suse.de ([195.135.220.15]:56144 "EHLO mx2.suse.de"
+        id S1726848AbhAPHRf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 16 Jan 2021 02:17:35 -0500
+Received: from mx2.suse.de ([195.135.220.15]:56142 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726774AbhAPHRe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 16 Jan 2021 02:17:34 -0500
+        id S1726825AbhAPHRf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 16 Jan 2021 02:17:35 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1610781383; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1610781387; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=9vs/i6yNyAbx7v+kPD+/+rY6/TnnwFabTg4YyoXv5RU=;
-        b=tvtCKtYitoT/ijn1OAA3cXf6cPZhWKhT/gMwHYwrMo5iOx8GPe4FEcoWjgfqaxdHyUrnVC
-        o+U3+Lyi6owLVVCtRLRdHSPQNabYIG7J/SsrBDNAU3J7giTK6PZnQ9QAaikJKTw36t/NeG
-        O9PywXEFl2DhgvcMFSaS+vp0Tvg7nbE=
+        bh=ftEmcAZbK5lU8qY2RSHJljJaUYFTlSu/YeoGKDBN9J4=;
+        b=GWnZczLTk5JYrg4MWWbChcYP9chGRd+NVLsXtGh0O3Lj1DvJIaTyvKWebvVdFniAKYCZSl
+        fIMOe+qFuBmFraJ3GA9JJQcA1Mj3pYaiKh4w17goWyVJK02AWhOsjk3cB95nPqNsg+Stw0
+        frPPEyYXHvgFzwVPMQ7HUsbt9iPmGxg=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id ED5EEB907
-        for <linux-btrfs@vger.kernel.org>; Sat, 16 Jan 2021 07:16:22 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id B54D2AB7A
+        for <linux-btrfs@vger.kernel.org>; Sat, 16 Jan 2021 07:16:27 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v4 15/18] btrfs: disk-io: introduce subpage metadata validation check
-Date:   Sat, 16 Jan 2021 15:15:30 +0800
-Message-Id: <20210116071533.105780-16-wqu@suse.com>
+Subject: [PATCH v4 17/18] btrfs: integrate page status update for data read path into begin/end_page_read()
+Date:   Sat, 16 Jan 2021 15:15:32 +0800
+Message-Id: <20210116071533.105780-18-wqu@suse.com>
 X-Mailer: git-send-email 2.30.0
 In-Reply-To: <20210116071533.105780-1-wqu@suse.com>
 References: <20210116071533.105780-1-wqu@suse.com>
@@ -46,96 +46,286 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-For subpage metadata validation check, there are some difference:
+In btrfs data page read path, the page status update are handled in two
+different locations:
 
-- Read must finish in one bvec
-  Since we're just reading one subpage range in one page, it should
-  never be split into two bios nor two bvecs.
+  btrfs_do_read_page()
+  {
+	while (cur <= end) {
+		/* No need to read from disk */
+		if (HOLE/PREALLOC/INLINE){
+			memset();
+			set_extent_uptodate();
+			continue;
+		}
+		/* Read from disk */
+		ret = submit_extent_page(end_bio_extent_readpage);
+  }
 
-- How to grab the existing eb
-  Instead of grabbing eb using page->private, we have to go search radix
-  tree as we don't have any direct pointer at hand.
+  end_bio_extent_readpage()
+  {
+	endio_readpage_uptodate_page_status();
+  }
+
+This is fine for sectorsize == PAGE_SIZE case, as for above loop we
+should only hit one branch and then exit.
+
+But for subpage, there are more works to be done in page status update:
+- Page Unlock condition
+  Unlike regular page size == sectorsize case, we can no longer just
+  unlock a page without a brain.
+  Only the last reader of the page can unlock the page.
+  This means, we can unlock the page either in the while() loop, or in
+  the endio function.
+
+- Page uptodate condition
+  Since we have multiple sectors to read for a page, we can only mark
+  the full page uptodate if all sectors are uptodate.
+
+To handle both subpage and regular cases, introduce a pair of functions
+to help handling page status update:
+
+- being_page_read()
+  For regular case, it does nothing.
+  For subpage case, it update the reader counters so that later
+  end_page_read() can know who is the last one to unlock the page.
+
+- end_page_read()
+  This is just endio_readpage_uptodate_page_status() renamed.
+  The original name is a little too long and too specific for endio.
+
+  The only new trick added is the condition for page unlock.
+  Now for subage data, we unlock the page if we're the last reader.
+
+This does not only provide the basis for subpage data read, but also
+hide the special handling of page read from the main read loop.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/disk-io.c | 57 ++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 57 insertions(+)
+ fs/btrfs/extent_io.c | 38 +++++++++++++++++++----------
+ fs/btrfs/subpage.h   | 57 +++++++++++++++++++++++++++++++++++---------
+ 2 files changed, 72 insertions(+), 23 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 5473bed6a7e8..7d2875c18958 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -591,6 +591,59 @@ static int validate_extent_buffer(struct extent_buffer *eb)
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 4bce03fed205..6ae820144ec7 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2839,8 +2839,17 @@ static void endio_readpage_release_extent(struct processed_extent *processed,
+ 	processed->uptodate = uptodate;
+ }
+ 
+-static void endio_readpage_update_page_status(struct page *page, bool uptodate,
+-					      u64 start, u32 len)
++static void begin_data_page_read(struct btrfs_fs_info *fs_info, struct page *page)
++{
++	ASSERT(PageLocked(page));
++	if (fs_info->sectorsize == PAGE_SIZE)
++		return;
++
++	ASSERT(PagePrivate(page));
++	btrfs_subpage_start_reader(fs_info, page, page_offset(page), PAGE_SIZE);
++}
++
++static void end_page_read(struct page *page, bool uptodate, u64 start, u32 len)
+ {
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(page->mapping->host->i_sb);
+ 
+@@ -2856,7 +2865,12 @@ static void endio_readpage_update_page_status(struct page *page, bool uptodate,
+ 
+ 	if (fs_info->sectorsize == PAGE_SIZE)
+ 		unlock_page(page);
+-	/* Subpage locking will be handled in later patches */
++	else if (is_data_inode(page->mapping->host))
++		/*
++		 * For subpage data, unlock the page if we're the last reader.
++		 * For subpage metadata, page lock is not utilized for read.
++		 */
++		btrfs_subpage_end_reader(fs_info, page, start, len);
+ }
+ 
+ /*
+@@ -2993,7 +3007,7 @@ static void end_bio_extent_readpage(struct bio *bio)
+ 		bio_offset += len;
+ 
+ 		/* Update page status and unlock */
+-		endio_readpage_update_page_status(page, uptodate, start, len);
++		end_page_read(page, uptodate, start, len);
+ 		endio_readpage_release_extent(&processed, BTRFS_I(inode),
+ 					      start, end, uptodate);
+ 	}
+@@ -3267,6 +3281,7 @@ int btrfs_do_readpage(struct page *page, struct extent_map **em_cached,
+ 		      unsigned int read_flags, u64 *prev_em_start)
+ {
+ 	struct inode *inode = page->mapping->host;
++	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+ 	u64 start = page_offset(page);
+ 	const u64 end = start + PAGE_SIZE - 1;
+ 	u64 cur = start;
+@@ -3310,6 +3325,7 @@ int btrfs_do_readpage(struct page *page, struct extent_map **em_cached,
+ 			kunmap_atomic(userpage);
+ 		}
+ 	}
++	begin_data_page_read(fs_info, page);
+ 	while (cur <= end) {
+ 		bool force_bio_submit = false;
+ 		u64 disk_bytenr;
+@@ -3327,13 +3343,14 @@ int btrfs_do_readpage(struct page *page, struct extent_map **em_cached,
+ 					    &cached, GFP_NOFS);
+ 			unlock_extent_cached(tree, cur,
+ 					     cur + iosize - 1, &cached);
++			end_page_read(page, true, cur, iosize);
+ 			break;
+ 		}
+ 		em = __get_extent_map(inode, page, pg_offset, cur,
+ 				      end - cur + 1, em_cached);
+ 		if (IS_ERR_OR_NULL(em)) {
+-			SetPageError(page);
+ 			unlock_extent(tree, cur, end);
++			end_page_read(page, false, cur, end + 1 - cur);
+ 			break;
+ 		}
+ 		extent_offset = cur - em->start;
+@@ -3416,6 +3433,7 @@ int btrfs_do_readpage(struct page *page, struct extent_map **em_cached,
+ 					    &cached, GFP_NOFS);
+ 			unlock_extent_cached(tree, cur,
+ 					     cur + iosize - 1, &cached);
++			end_page_read(page, true, cur, iosize);
+ 			cur = cur + iosize;
+ 			pg_offset += iosize;
+ 			continue;
+@@ -3425,6 +3443,7 @@ int btrfs_do_readpage(struct page *page, struct extent_map **em_cached,
+ 				   EXTENT_UPTODATE, 1, NULL)) {
+ 			check_page_uptodate(tree, page);
+ 			unlock_extent(tree, cur, cur + iosize - 1);
++			end_page_read(page, true, cur, iosize);
+ 			cur = cur + iosize;
+ 			pg_offset += iosize;
+ 			continue;
+@@ -3433,8 +3452,8 @@ int btrfs_do_readpage(struct page *page, struct extent_map **em_cached,
+ 		 * to date.  Error out
+ 		 */
+ 		if (block_start == EXTENT_MAP_INLINE) {
+-			SetPageError(page);
+ 			unlock_extent(tree, cur, cur + iosize - 1);
++			end_page_read(page, false, cur, iosize);
+ 			cur = cur + iosize;
+ 			pg_offset += iosize;
+ 			continue;
+@@ -3451,19 +3470,14 @@ int btrfs_do_readpage(struct page *page, struct extent_map **em_cached,
+ 			nr++;
+ 			*bio_flags = this_bio_flag;
+ 		} else {
+-			SetPageError(page);
+ 			unlock_extent(tree, cur, cur + iosize - 1);
++			end_page_read(page, false, cur, iosize);
+ 			goto out;
+ 		}
+ 		cur = cur + iosize;
+ 		pg_offset += iosize;
+ 	}
+ out:
+-	if (!nr) {
+-		if (!PageError(page))
+-			SetPageUptodate(page);
+-		unlock_page(page);
+-	}
  	return ret;
  }
  
-+static int validate_subpage_buffer(struct page *page, u64 start, u64 end,
-+				   int mirror)
-+{
-+	struct btrfs_fs_info *fs_info = btrfs_sb(page->mapping->host->i_sb);
-+	struct extent_buffer *eb;
-+	int reads_done;
-+	int ret = 0;
-+
-+	/*
-+	 * We don't allow bio merge for subpage metadata read, so we should
-+	 * only get one eb for each endio hook.
-+	 */
-+	ASSERT(end == start + fs_info->nodesize - 1);
-+	ASSERT(PagePrivate(page));
-+
-+	eb = find_extent_buffer(fs_info, start);
-+	/*
-+	 * When we are reading one tree block, eb must have been
-+	 * inserted into the radix tree. If not something is wrong.
-+	 */
-+	ASSERT(eb);
-+
-+	reads_done = atomic_dec_and_test(&eb->io_pages);
-+	/* Subpage read must finish in page read */
-+	ASSERT(reads_done);
-+
-+	eb->read_mirror = mirror;
-+	if (test_bit(EXTENT_BUFFER_READ_ERR, &eb->bflags)) {
-+		ret = -EIO;
-+		goto err;
-+	}
-+	ret = validate_extent_buffer(eb);
-+	if (ret < 0)
-+		goto err;
-+
-+	if (test_and_clear_bit(EXTENT_BUFFER_READAHEAD, &eb->bflags))
-+		btree_readahead_hook(eb, ret);
-+
-+	set_extent_buffer_uptodate(eb);
-+
-+	free_extent_buffer(eb);
-+	return ret;
-+err:
-+	/*
-+	 * end_bio_extent_readpage decrements io_pages in case of error,
-+	 * make sure it has something to decrement.
-+	 */
-+	atomic_inc(&eb->io_pages);
-+	clear_extent_buffer_uptodate(eb);
-+	free_extent_buffer(eb);
-+	return ret;
+diff --git a/fs/btrfs/subpage.h b/fs/btrfs/subpage.h
+index 5da5441c08cb..b85d4ccd79da 100644
+--- a/fs/btrfs/subpage.h
++++ b/fs/btrfs/subpage.h
+@@ -29,6 +29,9 @@ struct btrfs_subpage {
+ 		/* Structures only used by metadata */
+ 		bool under_alloc;
+ 		/* Structures only used by data */
++		struct {
++			atomic_t readers;
++		};
+ 	};
+ };
+ 
+@@ -80,22 +83,13 @@ static inline void btrfs_page_end_meta_alloc(struct btrfs_fs_info *fs_info,
+ int btrfs_attach_subpage(struct btrfs_fs_info *fs_info, struct page *page);
+ void btrfs_detach_subpage(struct btrfs_fs_info *fs_info, struct page *page);
+ 
+-/*
+- * Convert the [start, start + len) range into a u16 bitmap
+- *
+- * E.g. if start == page_offset() + 16K, len = 16K, we get 0x00f0.
+- */
+-static inline u16 btrfs_subpage_calc_bitmap(struct btrfs_fs_info *fs_info,
+-			struct page *page, u64 start, u32 len)
++static inline void btrfs_subpage_assert(struct btrfs_fs_info *fs_info,
++					struct page *page, u64 start, u32 len)
+ {
+-	int bit_start = offset_in_page(start) >> fs_info->sectorsize_bits;
+-	int nbits = len >> fs_info->sectorsize_bits;
+-
+ 	/* Basic checks */
+ 	ASSERT(PagePrivate(page) && page->private);
+ 	ASSERT(IS_ALIGNED(start, fs_info->sectorsize) &&
+ 	       IS_ALIGNED(len, fs_info->sectorsize));
+-
+ 	/*
+ 	 * The range check only works for mapped page, we can
+ 	 * still have unampped page like dummy extent buffer pages.
+@@ -103,6 +97,21 @@ static inline u16 btrfs_subpage_calc_bitmap(struct btrfs_fs_info *fs_info,
+ 	if (page->mapping)
+ 		ASSERT(page_offset(page) <= start &&
+ 			start + len <= page_offset(page) + PAGE_SIZE);
 +}
 +
- int btrfs_validate_metadata_buffer(struct btrfs_io_bio *io_bio,
- 				   struct page *page, u64 start, u64 end,
- 				   int mirror)
-@@ -600,6 +653,10 @@ int btrfs_validate_metadata_buffer(struct btrfs_io_bio *io_bio,
- 	int reads_done;
- 
- 	ASSERT(page->private);
++/*
++ * Convert the [start, start + len) range into a u16 bitmap
++ *
++ * E.g. if start == page_offset() + 16K, len = 16K, we get 0x00f0.
++ */
++static inline u16 btrfs_subpage_calc_bitmap(struct btrfs_fs_info *fs_info,
++			struct page *page, u64 start, u32 len)
++{
++	int bit_start = offset_in_page(start) >> fs_info->sectorsize_bits;
++	int nbits = len >> fs_info->sectorsize_bits;
 +
-+	if (btrfs_sb(page->mapping->host->i_sb)->sectorsize < PAGE_SIZE)
-+		return validate_subpage_buffer(page, start, end, mirror);
++	btrfs_subpage_assert(fs_info, page, start, len);
 +
- 	eb = (struct extent_buffer *)page->private;
- 
  	/*
+ 	 * Here nbits can be 16, thus can go beyond u16 range. Here we make the
+ 	 * first left shift to be calculated in unsigned long (u32), then
+@@ -111,6 +120,32 @@ static inline u16 btrfs_subpage_calc_bitmap(struct btrfs_fs_info *fs_info,
+ 	return (u16)(((1UL << nbits) - 1) << bit_start);
+ }
+ 
++static inline void btrfs_subpage_start_reader(struct btrfs_fs_info *fs_info,
++					      struct page *page, u64 start,
++					      u32 len)
++{
++	struct btrfs_subpage *subpage = (struct btrfs_subpage *)page->private;
++	int nbits = len >> fs_info->sectorsize_bits;
++	int ret;
++
++	btrfs_subpage_assert(fs_info, page, start, len);
++
++	ret = atomic_add_return(nbits, &subpage->readers);
++	ASSERT(ret == nbits);
++}
++
++static inline void btrfs_subpage_end_reader(struct btrfs_fs_info *fs_info,
++			struct page *page, u64 start, u32 len)
++{
++	struct btrfs_subpage *subpage = (struct btrfs_subpage *)page->private;
++	int nbits = len >> fs_info->sectorsize_bits;
++
++	btrfs_subpage_assert(fs_info, page, start, len);
++	ASSERT(atomic_read(&subpage->readers) >= nbits);
++	if (atomic_sub_and_test(nbits, &subpage->readers))
++		unlock_page(page);
++}
++
+ static inline void btrfs_subpage_set_uptodate(struct btrfs_fs_info *fs_info,
+ 			struct page *page, u64 start, u32 len)
+ {
 -- 
 2.30.0
 

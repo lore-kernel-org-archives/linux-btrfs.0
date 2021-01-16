@@ -3,216 +3,164 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 843B7C433DB
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B84AAC433E9
 	for <linux-btrfs@archiver.kernel.org>; Sat, 16 Jan 2021 07:16:58 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 46CB523AC1
+	by mail.kernel.org (Postfix) with ESMTP id 883F423AC0
 	for <linux-btrfs@archiver.kernel.org>; Sat, 16 Jan 2021 07:16:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726458AbhAPHQ0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 16 Jan 2021 02:16:26 -0500
-Received: from mx2.suse.de ([195.135.220.15]:55930 "EHLO mx2.suse.de"
+        id S1726640AbhAPHQn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 16 Jan 2021 02:16:43 -0500
+Received: from mx2.suse.de ([195.135.220.15]:55960 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726391AbhAPHQ0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 16 Jan 2021 02:16:26 -0500
+        id S1726545AbhAPHQe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 16 Jan 2021 02:16:34 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1610781339; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=v1uX31JylcyH10KgcdpaM9TgSElpzyXobVIKxBYcwi4=;
-        b=JRQMTyTXULEGeOOSndDredjylH1njJbA1uXaq3hdf9pkQca1k/Vz799HUhUmIX1b+NjMXl
-        GACIZP8HfD2pBGoJk+ST/WhAXpZ1S8coyLcPdpCNVt7p0b53RHXyvH2rboLFC4lsqBrQiz
-        Pcs6T99SZhfYd4Drb/Uak8zz+GKxPuU=
+        t=1610781347; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=pwqT+kxeNLaN7MWepezkQc+BA1lzrQHStydNIfTLKMU=;
+        b=Amytb6ExS4g7MuhFDQGftu1rsuf2Ps29dX7Nh7kcqjYPBwbDJLNxwnV/LP10msCdLdI8+a
+        ddv4OjeVXM1KCeVB1AwnozwXMYFhMjNYMyzUQU2jP98XhZ5A/RrphuqbrNBl+SPShTEldZ
+        uWjoKeOBj6dB6mZ2jrqAHnABuQjkegI=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 5E04DAB7A
-        for <linux-btrfs@vger.kernel.org>; Sat, 16 Jan 2021 07:15:39 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id A404FB7F4;
+        Sat, 16 Jan 2021 07:15:47 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v4 00/18] btrfs: add read-only support for subpage sector size
-Date:   Sat, 16 Jan 2021 15:15:15 +0800
-Message-Id: <20210116071533.105780-1-wqu@suse.com>
+Cc:     Josef Bacik <josef@toxicpanda.com>
+Subject: [PATCH v4 03/18] btrfs: introduce the skeleton of btrfs_subpage structure
+Date:   Sat, 16 Jan 2021 15:15:18 +0800
+Message-Id: <20210116071533.105780-4-wqu@suse.com>
 X-Mailer: git-send-email 2.30.0
+In-Reply-To: <20210116071533.105780-1-wqu@suse.com>
+References: <20210116071533.105780-1-wqu@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Patches can be fetched from github:
-https://github.com/adam900710/linux/tree/subpage
-Currently the branch also contains partial RW data support (still some
-ordered extent and data csum mismatch problems)
+For btrfs subpage support, we need a structure to record extra info for
+the status of each sectors of a page.
 
-Great thanks to David/Nikolay/Josef for their effort reviewing and
-merging the preparation patches into misc-next.
+This patch will introduce the skeleton structure for future btrfs
+subpage support.
+All subpage related code would go to subpage.[ch] to avoid populating
+the existing code base.
 
-=== What works ===
-
-Just from the patchset:
-- Data read
-  Both regular and compressed data, with csum check.
-
-- Metadata read
-
-This means, with these patchset, 64K page systems can at least mount
-btrfs with 4K sector size.
-
-In the subpage branch
-- Metadata read write and balance
-  Not yet full tested due to data write still has bugs need to be
-  solved.
-  But considering that metadata operations from previous iteration
-  is mostly untouched, metadata read write should be pretty stable.
-
-- Data read write and balance
-  Only uncompressed data writes. Fsstress can survive for around 5000
-  ops and more.
-  But still some random data csum error, and even more rare ordered
-  extent related BUG_ON().
-  Still invetigating.
-
-=== Needs feedback ===
-The following design needs extra comments:
-
-- u16 bitmap
-  As David mentioned, using u16 as bit map is not the fastest way.
-  That's also why current bitmap code requires unsigned long (u32) as
-  minimal unit.
-  But using bitmap directly would double the memory usage.
-  Thus the best way is to pack two u16 bitmap into one u32 bitmap, but
-  that still needs extra investigation to find better practice.
-
-  Anyway the skeleton should be pretty simple to expand.
-
-- Separate handling for subpage metadata
-  Currently the metadata read and (later write path) handles subpage
-  metadata differently. Mostly due to the page locking must be skipped
-  for subpage metadata.
-  I tried several times to use as many common code as possible, but
-  every time I ended up reverting back to current code.
-
-  Thankfully, for data handling we will use the same common code.
-
-- Incompatible subpage strcuture against iomap_page
-  In btrfs we need extra bits than iomap_page.
-  This is due to we need sector perfect write for data balance.
-  E.g. if only one 4K sector is dirty in a 64K page, we should only
-  write that dirty 4K back to disk, not the full 64K page.
-
-  As data balance requires the new data extents to have exactly the
-  same size as the original ones.
-  This means, unless iomap_page get extra bits like what we're doing in
-  btrfs for dirty, we can't merge the btrfs_subpage with iomap_page.
-
-=== Patchset structure ===
-Patch 01~02:	More RW preparation patches.
-		This is to separate page lock/unlock from plain
-		lock/unlock_page() call with __process_pages_contig().
-		This makes more sense for subpage data write, but it
-		also works for regular sector size.
-Patch 03~12:	Subpage metadata allocation and freeing
-Patch 13~15:	Subpage metadata read path
-Patch 16~17:	Subpage data read path
-Patch 18:	Enable subpage RO support
-
-=== Changelog ===
-v1:
-- Separate the main implementation from previous huge patchset
-  Huge patchset doesn't make much sense.
-
-- Use bitmap implementation
-  Now page::private will be a pointer to btrfs_subpage structure, which
-  contains bitmaps for various page status.
-
-v2:
-- Use page::private as btrfs_subpage for extra info
-  This replace old extent io tree based solution, which reduces latency
-  and don't require memory allocation for its operations.
-
-- Cherry-pick new preparation patches from RW development
-  Those new preparation patches improves the readability by their own.
-
-v3:
-- Make dummy extent buffer to follow the same subpage accessors
-  Fsstress exposed several ASSERT() for dummy extent buffers.
-  It turns out we need to make dummy extent buffer to own the same
-  btrfs_subpage structure to make eb accessors to work properly
-
-- Two new small __process_pages_contig() related preparation patches
-  One to make __process_pages_contig() to enhance the error handling
-  path for locked_page, one to merge one macro.
-
-- Extent buffers refs count update
-  Except try_release_extent_buffer(), all other eb uses will try to
-  increase the ref count of the eb.
-  For try_release_extent_buffer(), the eb refs check will happen inside
-  the rcu critical section to avoid eb being freed.
-
-- Comment updates
-  Addressing the comments from the mail list.
-
-v4:
-- Get rid of btrfs_subpage::tree_block_bitmap
-  This is to reduce lock complexity (no need to bother extra subpage
-  lock for metadata, all locks are existing locks)
-  Now eb looking up mostly depends on radix tree, with small help from
-  btrfs_subpage::under_alloc.
-  Now I haven't experieneced metadata related problems any more during
-  my local fsstress tests.
-
-- Fix a race where metadata page dirty bit can race
-  Fixed in the metadata RW patchset though.
-
-- Rebased to latest misc-next branch
-  With 4 patches removed, as they are already in misc-next.
-
-Qu Wenruo (18):
-  btrfs: update locked page dirty/writeback/error bits in
-    __process_pages_contig()
-  btrfs: merge PAGE_CLEAR_DIRTY and PAGE_SET_WRITEBACK into
-    PAGE_START_WRITEBACK
-  btrfs: introduce the skeleton of btrfs_subpage structure
-  btrfs: make attach_extent_buffer_page() to handle subpage case
-  btrfs: make grab_extent_buffer_from_page() to handle subpage case
-  btrfs: support subpage for extent buffer page release
-  btrfs: attach private to dummy extent buffer pages
-  btrfs: introduce helper for subpage uptodate status
-  btrfs: introduce helper for subpage error status
-  btrfs: make set/clear_extent_buffer_uptodate() to support subpage size
-  btrfs: make btrfs_clone_extent_buffer() to be subpage compatible
-  btrfs: implement try_release_extent_buffer() for subpage metadata
-    support
-  btrfs: introduce read_extent_buffer_subpage()
-  btrfs: extent_io: make endio_readpage_update_page_status() to handle
-    subpage case
-  btrfs: disk-io: introduce subpage metadata validation check
-  btrfs: introduce btrfs_subpage for data inodes
-  btrfs: integrate page status update for data read path into
-    begin/end_page_read()
-  btrfs: allow RO mount of 4K sector size fs on 64K page system
-
- fs/btrfs/Makefile           |   3 +-
- fs/btrfs/compression.c      |  10 +-
- fs/btrfs/disk-io.c          |  82 +++++-
- fs/btrfs/extent_io.c        | 520 +++++++++++++++++++++++++++++++-----
- fs/btrfs/extent_io.h        |  15 +-
- fs/btrfs/file.c             |  24 +-
- fs/btrfs/free-space-cache.c |  15 +-
- fs/btrfs/inode.c            |  40 ++-
- fs/btrfs/ioctl.c            |   5 +-
- fs/btrfs/reflink.c          |   5 +-
- fs/btrfs/relocation.c       |  12 +-
- fs/btrfs/subpage.c          |  39 +++
- fs/btrfs/subpage.h          | 263 ++++++++++++++++++
- fs/btrfs/super.c            |   7 +
- 14 files changed, 920 insertions(+), 120 deletions(-)
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/Makefile  |  3 ++-
+ fs/btrfs/subpage.c | 39 +++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/subpage.h | 31 +++++++++++++++++++++++++++++++
+ 3 files changed, 72 insertions(+), 1 deletion(-)
  create mode 100644 fs/btrfs/subpage.c
  create mode 100644 fs/btrfs/subpage.h
 
+diff --git a/fs/btrfs/Makefile b/fs/btrfs/Makefile
+index 9f1b1a88e317..942562e11456 100644
+--- a/fs/btrfs/Makefile
++++ b/fs/btrfs/Makefile
+@@ -11,7 +11,8 @@ btrfs-y += super.o ctree.o extent-tree.o print-tree.o root-tree.o dir-item.o \
+ 	   compression.o delayed-ref.o relocation.o delayed-inode.o scrub.o \
+ 	   reada.o backref.o ulist.o qgroup.o send.o dev-replace.o raid56.o \
+ 	   uuid-tree.o props.o free-space-tree.o tree-checker.o space-info.o \
+-	   block-rsv.o delalloc-space.o block-group.o discard.o reflink.o
++	   block-rsv.o delalloc-space.o block-group.o discard.o reflink.o \
++	   subpage.o
+ 
+ btrfs-$(CONFIG_BTRFS_FS_POSIX_ACL) += acl.o
+ btrfs-$(CONFIG_BTRFS_FS_CHECK_INTEGRITY) += check-integrity.o
+diff --git a/fs/btrfs/subpage.c b/fs/btrfs/subpage.c
+new file mode 100644
+index 000000000000..c6ab32db3995
+--- /dev/null
++++ b/fs/btrfs/subpage.c
+@@ -0,0 +1,39 @@
++// SPDX-License-Identifier: GPL-2.0
++
++#include "subpage.h"
++
++int btrfs_attach_subpage(struct btrfs_fs_info *fs_info, struct page *page)
++{
++	struct btrfs_subpage *subpage;
++
++	/*
++	 * We have cases like a dummy extent buffer page, which is not
++	 * mappped and doesn't need to be locked.
++	 */
++	if (page->mapping)
++		ASSERT(PageLocked(page));
++	/* Either not subpage, or the page already has private attached */
++	if (fs_info->sectorsize == PAGE_SIZE || PagePrivate(page))
++		return 0;
++
++	subpage = kzalloc(sizeof(*subpage), GFP_NOFS);
++	if (!subpage)
++		return -ENOMEM;
++
++	spin_lock_init(&subpage->lock);
++	attach_page_private(page, subpage);
++	return 0;
++}
++
++void btrfs_detach_subpage(struct btrfs_fs_info *fs_info, struct page *page)
++{
++	struct btrfs_subpage *subpage;
++
++	/* Either not subpage, or already detached */
++	if (fs_info->sectorsize == PAGE_SIZE || !PagePrivate(page))
++		return;
++
++	subpage = (struct btrfs_subpage *)detach_page_private(page);
++	ASSERT(subpage);
++	kfree(subpage);
++}
+diff --git a/fs/btrfs/subpage.h b/fs/btrfs/subpage.h
+new file mode 100644
+index 000000000000..96f3b226913e
+--- /dev/null
++++ b/fs/btrfs/subpage.h
+@@ -0,0 +1,31 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++
++#ifndef BTRFS_SUBPAGE_H
++#define BTRFS_SUBPAGE_H
++
++#include <linux/spinlock.h>
++#include "ctree.h"
++
++/*
++ * Since the maximum page size btrfs is going to support is 64K while the
++ * minimum sectorsize is 4K, this means a u16 bitmap is enough.
++ *
++ * The regular bitmap requires 32 bits as minimal bitmap size, so we can't use
++ * existing bitmap_* helpers here.
++ */
++#define BTRFS_SUBPAGE_BITMAP_SIZE	16
++
++/*
++ * Structure to trace status of each sector inside a page.
++ *
++ * Will be attached to page::private for both data and metadata inodes.
++ */
++struct btrfs_subpage {
++	/* Common members for both data and metadata pages */
++	spinlock_t lock;
++};
++
++int btrfs_attach_subpage(struct btrfs_fs_info *fs_info, struct page *page);
++void btrfs_detach_subpage(struct btrfs_fs_info *fs_info, struct page *page);
++
++#endif /* BTRFS_SUBPAGE_H */
 -- 
 2.30.0
 

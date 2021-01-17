@@ -2,328 +2,599 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.2 required=3.0 tests=BAYES_00,DATE_IN_PAST_06_12,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-19.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6ED01C433DB
-	for <linux-btrfs@archiver.kernel.org>; Sun, 17 Jan 2021 01:51:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7D34CC433E0
+	for <linux-btrfs@archiver.kernel.org>; Sun, 17 Jan 2021 07:16:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id EDBC621D40
-	for <linux-btrfs@archiver.kernel.org>; Sun, 17 Jan 2021 01:51:35 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3924423107
+	for <linux-btrfs@archiver.kernel.org>; Sun, 17 Jan 2021 07:16:17 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727691AbhAQBvT convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 16 Jan 2021 20:51:19 -0500
-Received: from mail.eclipso.de ([217.69.254.104]:48676 "EHLO mail.eclipso.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726385AbhAQBvR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 16 Jan 2021 20:51:17 -0500
-Received: from mail.eclipso.de (www1.eclipso.de [217.69.254.102])
-        by mail.eclipso.de with ESMTP id 4B7116E7
-        for <linux-btrfs@vger.kernel.org>; Sat, 16 Jan 2021 16:27:29 +0100 (CET)
-Date:   Sat, 16 Jan 2021 16:27:29 +0100
+        id S1726537AbhAQHPm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 17 Jan 2021 02:15:42 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49208 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726203AbhAQHPi (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 17 Jan 2021 02:15:38 -0500
+Received: from mail-pf1-x431.google.com (mail-pf1-x431.google.com [IPv6:2607:f8b0:4864:20::431])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 38C70C061573
+        for <linux-btrfs@vger.kernel.org>; Sat, 16 Jan 2021 23:14:57 -0800 (PST)
+Received: by mail-pf1-x431.google.com with SMTP id m6so8279479pfm.6
+        for <linux-btrfs@vger.kernel.org>; Sat, 16 Jan 2021 23:14:57 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=sender:date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to:user-agent;
+        bh=8biZNhwPTrlIDXcp3WNbXoJuqUHOLuFkVFWK9tNSLKY=;
+        b=eLMuYPdomlUkO/lox1BNy7k/meHiBs9mhAPzJ0p7gzSYKW9J5bzdwr4oe5p2IwXDV4
+         /JeYAm0HSix9jsBwVDhQYpE4lN4f9B8Q+mjkYNw+oF4dapSWoZvWcRRO2grYsAejcwTT
+         zsW9CPsnZjrMA0LZD4fGg4fVxu6GJHx8la1XVrvQTTwrd1TeBeW9iG2NUf+rx0Ie2iTD
+         ykoqTY4TujNEz56Cavo5fjIS2sZBtVaLtFULNvkgi7Mz4BEjpjAnYr+SuhG9cEiIIOPE
+         l5oOBH+1cXTdAT5QWDbMnNKDT9GhYR7Nq3ha2me6m0oGVgdiEUwfLkMxY07EeZmc7bcR
+         5bow==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:sender:date:from:to:cc:subject:message-id
+         :references:mime-version:content-disposition:in-reply-to:user-agent;
+        bh=8biZNhwPTrlIDXcp3WNbXoJuqUHOLuFkVFWK9tNSLKY=;
+        b=MgMbFqXoMgka4LzwbaHzg//9AsfuWN6GINaJLMcFzyow4QQX/rxsOOy1UYNq4bgAA7
+         CJKnS+LFgb4mZhQQdN7Dqv83LsrI65+WXKg+hxOGWBKVWD8TrZXjweXsRq1kka0Vlqak
+         d9MODGzvomSjGIo/PuzD9vrScYWSc2wkxz2IbBx1thp9HRzdSbRiLMGrrhnYfEGHEga7
+         INcO441+TuzDMdpWm9k+a3EUGYWPF8G7KEgu+WNX7r7rAkVGC1g3oNSJDs/wfZAf+dtv
+         Ak4ZF7v8276c1y8kWPKvKhaeLOhPoaDSuET8l3IVl3uZzWivNxFnzYl9BPQyus9mhis+
+         B56A==
+X-Gm-Message-State: AOAM530QwMi/EhDJmGekVSRHqnrqw1fPlnumiy26Lp8gnizj4KxObEFf
+        HLfJwbUTekSY2Rka7fHdPHX17MBpiAPdXQ==
+X-Google-Smtp-Source: ABdhPJx3rpkCY604Z9NBhoI3AJvt//1BpBcXaxQDcbn3L70HYCyvhz1NKhObgbF/vRoXOfFG4EdVxA==
+X-Received: by 2002:a63:2cd:: with SMTP id 196mr20723262pgc.398.1610867696433;
+        Sat, 16 Jan 2021 23:14:56 -0800 (PST)
+Received: from hosting.home (S010664777d4a88b3.cg.shawcable.net. [70.77.224.58])
+        by smtp.gmail.com with ESMTPSA id h15sm12526196pfo.71.2021.01.16.23.14.55
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sat, 16 Jan 2021 23:14:55 -0800 (PST)
+Sender: Sheng Mao <ks8xntk9mds5i@gmail.com>
+Date:   Sun, 17 Jan 2021 00:14:53 -0700
+From:   Sheng Mao <shngmao@gmail.com>
+To:     Steven Davies <btrfs-list@steev.me.uk>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH RFC] btrfs-progs: receive-dump, add JSON output format
+Message-ID: <20210117071453.GA3979@hosting.home>
+References: <ddaea074-c805-0d52-8336-8c91a20f659d@steev.me.uk>
 MIME-Version: 1.0
-Message-ID: <9ba7de732a8b69c39922dad268a1e226@mail.eclipso.de>
-X-Mailer: eclipso / 7.4.0
-From:   " " <Cedric.dewijs@eclipso.eu>
-Subject: Re: Re: Re: Raid1 of a slow hdd and a fast(er) SSD, howto to prioritize
-        the SSD?
-Reply-To: " " <Cedric.dewijs@eclipso.eu>
-To:     "Zygo Blaxell" <ce3g8jdj@umail.furryterror.org>
-Cc:     <andrea.gelmini@gmail.com>, <linux-btrfs@vger.kernel.org>
-In-Reply-To: <20210116010438.GG31381@hungrycats.org>
-References: <28232f6c03d8ae635d2ddffe29c82fac@mail.eclipso.de>
-        <CAK-xaQZS+ANoD+QbPTHwL-ErapA-7PDZe_z=OOWq_axAyR1KfA@mail.gmail.com>
-        <eb0f5e05a563009af95439f446659cf3@mail.eclipso.de>
-        <CAK-xaQbQPSS7=cH1qmb9S51CL34VRfyE_=eNwb-GhSL1b8Yz2g@mail.gmail.com>
-        <20210109214032.GC31381@hungrycats.org>
-        <CAK-xaQZ=ZNqkruDSjNdprDfj5nAh5TdCpT+sv0nB6LqCRu7dmQ@mail.gmail.com>
-        <20210116010438.GG31381@hungrycats.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
+In-Reply-To: <ddaea074-c805-0d52-8336-8c91a20f659d@steev.me.uk>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
---- Ursprüngliche Nachricht ---
-Von: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-Datum: 16.01.2021 02:04:38
-An: Andrea Gelmini <andrea.gelmini@gmail.com>
-Betreff: Re: Re: Raid1 of a slow hdd and a fast(er) SSD, howto to prioritize  the SSD?
+Hi Steven,
 
-On Sun, Jan 10, 2021 at 10:00:01AM +0100, Andrea Gelmini wrote:
-> Il giorno sab 9 gen 2021 alle ore 22:40 Zygo Blaxell
-> <ce3g8jdj@umail.furryterror.org> ha scritto:
-> >
-> > On Fri, Jan 08, 2021 at 08:29:45PM +0100, Andrea Gelmini wrote:
+JSON output is a feature I have waited for a long time. Thank you! Just
+my two cents: why not create your own struct btrfs_send_ops object and
+your own set of print_* functions? I think that may be more OOP design.
 
-> > > Il giorno ven 8 gen 2021 alle ore 09:36 <Cedric.dewijs@eclipso.eu>
-ha scritto:
-> > > > What happens when I poison one of the drives in the mdadm
-array using this command? Will all data come out OK?
-> > > > dd if=/dev/urandom of=/dev/dev/sdb1 bs=1M count = 100?
+Regards,
+Sheng
 
-> > You have used --assume-clean and didn't tell mdadm otherwise since,
-
-> > so this test didn't provide any information.
+On Sat, Jan 16, 2021 at 03:56:06PM +0000, Steven Davies wrote:
+> I have seen a few requests from users on other forums for a way to find a
+> diff between two snapshots and some scripts have been created[1] which parse
+> a btrfs-send stream to get this information.
 > 
-> I know mdadm, no need of your explanation.
+> This patch adds native JSON format output support to the btrfs-receive dump
+> command which would make writing such scripts much easier as they can use
+> JSON parsing libraries rather than string or binary decoding.
 > 
-> "--assume-clean" is used on purpose because:
-> a) the two devices are already identical;
-> b) no need two sync something (even if they were random filled), that
-
-> are going to be formatted and data filled, so - more or less - each
-
-> block is rewritten.
+> Usage: btrfs send --no-data <subvolume> | btrfs receive --dump-json
 > 
-> > On real disks a mdadm integrity check at this point fail very hard
-since
-> > the devices have never been synced (unless they are both blank
-devices
-> > filled with the same formatting test pattern or zeros).
+> Sample output:
+> [
+>  {"operation": "subvol", "path": "./2021-01-16T03:01:36+00:00", "uuid":
+> "4f6756a2-c8e8-614b-beaa-483de9a7ed13", "transid": 47864957},
+>  {"operation": "chown", "path": "./2021-01-16T03:01:36+00:00/", "gid": 0, "uid": 0},
+>  {"operation": "chmod", "path": "./2021-01-16T03:01:36+00:00/", "mode": "755"},
+>  {"operation": "utimes", "path": "./2021-01-16T03:01:36+00:00/", "atime":
+> "2021-01-16T03:00:30+0000", "mtime": "1970-01-01T01:00:00+0100", "ctime":
+> "2021-01-13T03:00:38+0000"},
+>  {"operation": "mkdir", "path": "./2021-01-16T03:01:36+00:00/o257-2524-0"},
+>  {"operation": "rename", "path": "./2021-01-16T03:01:36+00:00/o257-2524-0",
+> "dest": "./2021-01-16T03:01:36+00:00/grub"},
+>  {}
+> ]
 > 
-> I disagree. My point is: who cares about blocks never touched by the
-filesystem?
-
-If you don't do the sync, you don't get even mdadm's weak corruption
-detection--it will present an overwhelming number of false positives.
-
-Of course mdadm can only tell you the two devices are different--it
-can't tell you which one (if any) is correct.
-
-This tells me everything I need to know about mdadm. It can only save my data in case both drive originally had correct data, and one of the drives completely disappears. A mdadm raid-1 (mirror) array ironically increases the likelihood of data corruption. If one drive has a 1% change of corrupting the data, 2 of those drives in mdadm raid 1 have a 2% chance of corrupting the data, and 100 of these drives in raid 1 will 100% corrupt the data. (This is a bit of an oversimplification, and statistically not entirely sound, but it gets my point across). For me this defeats the purpose of a raid system, as raid should increase the redundancy and resilience. 
-
-Would it be possible to add a checksum to the data in mdadm in much the same way btrfs is doing that, so it can also detect and even repair corruption on the block level? 
-
-
-> > > root@glet:/mnt/sg10# dd if=/dev/urandom of=/dev/loop32 bs=1M
-count=100
-> >
-> > With --write-mostly, the above deterministically works, and
-> >
-> >         dd if=/dev/urandom of=/dev/loop31 bs=1M count=100
-> >
-> > deterministically damages or destroys the filesystem.
+> Patch is against current btrfs-progs master.
 > 
-> My friend, read the question, he asked about what happens if you
-> poison the second device.
-
-Strictly correct, but somewhere between unhelpful and misleading.
-
-The motivation behind the question is clearly to compare mdadm and btrfs
-
-capabilities wrt recovery from data poisoning.  He presented an example
-of an experiment performed on btrfs demonstrating that capability.
-
-He neglected to ask separate questions about poisoning both individual
-drives, but you also neglected to point this omission out.
-
-I was trying to figure out if my data could survive if one of the drives (partially)failed. I only know of two ways to simulate this: physically disconnecting the drive, or dd-ing random data to it. I didn't state it in my original question, but I wanted to first poison one drive, then scrub the data, and then poison the next drive, and scrub again, until all drives has been poisoned and scrubbed. I have tested this with 2 set's of a backing drive and a writeback  SSD cache. No matter which drive was poisoned, all the data survived although reconstructing the data was about 30x slower than reading correct data.
-
-> Of course if you poison /dev/md0 or the main device what else can
-> happen, in such situation?
-
-What else can happen is that btrfs raid1 reconstructs the data on a
-damaged device from the other non-damaged device, regardless of which
-device is damaged.  btrfs can verify the contents of each device and
-identify which copy (if any) is correct.  mdadm cannot.
-
-Yes, but only if btrfs has direct access to each drive separately. mdadm is hiding the individual drives from btrfs.
-
-> Thanks god you told us, because we are all so much stupid!
-I am stupid, or at least not so deeply informed. I have only worked with multi-drive configurations for a few weeks now.
-
-Well, the rule of thumb is "never use mdadm for any use case where
-you can
-use btrfs instead,"
-
-My rule of thumb is "never run adadm". I don't see a use case where it increases the longevity of my data. 
-
- and answering yet another mdadm-vs-btrfs FAQ normally
-
-wouldn't be interesting; however, this setup used mdadm --write-mostly
-which is relatively unusual around here (and makes the posting appear
-under a different set of search terms), so I wrote a short reply to
-Cedric's question as it was not a question I had seen answered before.
-
-Hours later, you presented an alternative analysis that contained the
-results of an experiment that demonstrated mdadm success under specific
-conditions arising from a very literal interpretation of the question.
-I had to reread the mdadm kernel sources to remind myself how it could
-work, because it's a corner case outcome that I've never observed or
-even heard third-party reports of for mdadm in the wild.  That was a
-fun puzzle to solve, so I wanted to write about it.
-
-Your setup has significant data loss risks that you did not mention.
-A user who was not very familiar with both btrfs and mdadm, but who
-stumbled across this thread during a search of the archives, might not
-understand the limited scope of your experimental setup and why it did
-not detect or cause any of the expected data loss failures.  This user
-might, upon reading your posting, incorrectly conclude that this setup
-is a viable way to store data with btrfs self-repair capabilities intact.
-
-I was looking for a way to give a the drives of a btrfs filesystem a write cache, in such a way that a failure of a single drive could not result in data loss. As bcache does not and will not support multiple redundant ssd's as write cache [1], my plan was to put 2 identical ssd's in mdadm raid 1, as host for a bcache writecack cache for all the drives of the btrfs filesytem. See the figure below:
-+-----------------------------------------------------------+
-|          btrfs raid 1 (2 copies) /mnt                     |
-+--------------+--------------+--------------+--------------+
-| /dev/bcache0 | /dev/bcache1 | /dev/bcache2 | /dev/bcache3 |
-+--------------+--------------+--------------+--------------+
-| Mdadm Raid 1 mirrored Writeback Cache (SSD)               |
-| /dev/md/name (cointaining /dev/sda3 and /dev/sda4)        |
-+--------------+--------------+--------------+--------------+
-| Data         | Data         | Data         | Data         |
-| /dev/sda8    | /dev/sda9    | /dev/sda10   | /dev/sda11   |
-+--------------+--------------+--------------+--------------+
-This will not protect my data if one of the SSD's starts to return random data, as mdadm can't see who of the two SSD's is correct. This will also defeat the redundancy of btrfs, as all copies of the data that btrfs sees are coming from the ssd pair.
-[1] https://lore.kernel.org/linux-bcache/e03dd593-14cb-b4a0-d68a-bd9b4fb8bd20@suse.de/T/#t
-
-The only way I've come up with is to give each hard drive in the btrfs array it's own writeback bcache, but that requires double the amount of drives.
-
-
-Those were significant omissions, a second reason to write about them.
-
-Initially I thought you accidentally omitted these details due to
-inexperience or inattention, but as you say, you know mdadm.  If that's
-true, your omissions were intentional.  That information is also
-potentially not obvious for someone reading this thread in the archives,
-
-so I am writing about it too.
-
-> My point of view is: you can use mdadm to defend from real case
-> scenario  (first hard drive die,
-> the second slow one goes on, and you have all your data up to date,
-
-> and if you are afraid of
-> bit rotten data, you have btrfs checksum).
-> Also, even if the second/slow hard drive is out-of-sync of seconds,
-it
-> would like if unplugged while working.
-> All cool feature of BTRFS (transaction, checksums, dup btree and so
-
-> on) will recover filesystem and do the rest, isn't it?
-
-No.  That was the point.  btrfs cannot fix mdadm if mdadm trashes both
-copies of the data underneath.  The btrfs self-repair features only work
-
-when btrfs has access to both mirror copies.  On top of mdadm, btrfs
-can only help you identify the data you have already lost.  btrfs is
-especially picky about its metadata--if even one bit of metadata is
-unrecoverably lost, the filesystem can only be repaired by brute force
-means (btrfs check --repair --init-extent-tree, or mkfs and start over).
-
-
-This branch of the thread is a little over-focused on the bitrot case.
-The somewhat more significant problem with this setup is that write
-ordering rules are violated on sdb during resync with sda.  During resync
-
-there may be no complete and intact copy of btrfs metadata on sdb, so
-if sda fails at that time, the filesystem may be severely damaged or
-unrecoverable, even if there is no bitrot at all.  Depending on write
-workloads and disk speeds, the window of vulnerability may last for
-minutes to hours.
-
-That's a pretty common failure mode--a lot of drives don't die all
-at once, especially at the low end of the market.  Instead, they have
-reliability problems--the kind that will force a reboot and mdadm resync,
-
-but not kick the device out of the array--just before they completely die.
-
-
-If you are using mobile or desktop drives, the second most common 5-year
-
-outcome from this setup will be filesystem loss.  The most common outcome
-
-is that you don't have a disk failure on sda, so you don't need the second
-
-disk at all.  Failures that mdadm can recover from are 3rd most likely,
-followed by failures neither mdadm nor btrfs can recover from.
-
-If you are using NAS or enterprise drives (and they're not relabled
-desktop drives inside), then they are unlikely to throw anything at mdadm
-
-that mdadm cannot handle; however, even the best drives break sometimes,
-
-I am misusing consumer drives in my NAS. Most of the hard drives and SSD's have been given to me, and are medium old to very old. That's why I am trying to build a system that can survive a single drive failure. That's also the reason why I build 2 NAS boxes, my primary NAS syncs to my slave nas once per day).
-
-and this puts you in one of the other probability scenarios.
-
-If you are using cheap SSDs then the probabilities flip because they
-do not report errors that mdadm can detect, and they tend to trigger
-more mdadm resyncs on average due to firmware issues and general
-low reliability.  Partial data loss (that would have been recoverable
-with btrfs raid1) is the most likely outcome, unrecoverable filesystem
-failure is 2nd.  Keeping your data for 5 years moves down to the 3rd
-most likely outcome.
-
-Silent data corruption seems to be far more common on SSDs than HDDs, so
-
-the risk of unrecoverable corruption is highest when mdadm --write-mostly
-
-is used with the HDD as component disk #1 and the SSD as disk #0.
-
-btrfs raid1 recovers from all of these cases except 2-drive same-sector
-failures and host RAM failure.
-
-Also, your stated use case is slightly different from Cedic's:
-
-> You can use mdadm to do this (I'm using this feature since years in
-
-> setup where I have to fallback on USB disks for any reason).
-
-Here, you are mirroring up a relatively reliable disk onto one or more
-removable USB devices.  Depending on the details, this setup can have
-a different failure profile than the SSD/HDD use case.  If you rotate
-multiple USB devices so that you always have one offline intact mirror of
-
-the filesystem, then if there is a failure during resync and the online
-USB disk has a destroyed filesystem, the offline disk will still be
-intact and you can still use it to recover, but it will have older data.
-
-In the SSD/HDD use case, there is only one mirror pair, so there is no
-isolated copy that could survive a failure during resync.
-
-The corruption propagation between drives is different too--if you can
-run a btrfs scrub, and detect corruption on the primary drive in time,
-you can retrieve the missing data from the offline mirror.  With only
-two online drives, it's a challenge to access the intact mirror (you
-have to ensure mdadm never resyncs, and use btrfs restore directly on
-the mirror device).
-
-> Thinking about "what if I trick my system here and there"
-is
-> absolutely fun, but no real use case, for me.
-
-It is a real use case for other people.  Disks do silently corrupt data
-(especially low end SSDs), so it's reasonable to expect a modern raid1
-implementation to be able to recover from damage to either drive, and
-reasonable to test that capability by intentionally wiping one of them.
-
-Thanks for confirming sometimes drives do silently corrupt data. I have not yet seen this happen "in the wild".
-
-Just remember to test wiping the other one too.
-
-Of course, always test all failure modes for all drives, and document the recovery procedures. After testing, fill the system with real data, and do everything in your power to prevent drives failing.
-
-> What if I expose BTRFS devices to cosmic rays and everything is wiped
-out?
-
-Then it's time to restore the backups. This may also be the moment to replace the drives, as the cosmic rays could have degraded the electronics.
-
+> [1] https://github.com/sysnux/btrfs-snapshots-diff
 > 
-> (I know, my only hero Qu is already preparing a patch - as usual -
-> while others starts to write poems...)
+> Signed-off-by: Steven Davies <btrfs@steev.me.uk>
+> ---
+>  cmds/receive-dump.c | 268 +++++++++++++++++++++++++++++++++++++++++-----------
+>  cmds/receive-dump.h |   1 +
+>  cmds/receive.c      |  20 +++-
+>  3 files changed, 234 insertions(+), 55 deletions(-)
 > 
-> Don't take it personally and smile,
-> Gelma
-
-Thanks everybody in this thread for taking the time to tell me about the inner workings of btrfs and mdadm. This has saved me a lot of time.
-
----
-
-Take your mailboxes with you. Free, fast and secure Mail &amp; Cloud: https://www.eclipso.eu - Time to change!
-
-
+> diff --git a/cmds/receive-dump.c b/cmds/receive-dump.c
+> index 648d9314..2c1af22e 100644
+> --- a/cmds/receive-dump.c
+> +++ b/cmds/receive-dump.c
+> @@ -51,7 +51,7 @@
+>   * Returns the length of the escaped characters. Unprintable characters are
+>   * escaped as octals.
+>   */
+> -static int print_path_escaped(const char *path)
+> +static int print_path_escaped(const char *path, int json)
+>  {
+>  	size_t i;
+>  	size_t path_len = strlen(path);
+> @@ -61,27 +61,44 @@ static int print_path_escaped(const char *path)
+>  		char c = path[i];
+> 
+>  		len++;
+> -		switch (c) {
+> -		case '\a': putchar('\\'); putchar('a'); len++; break;
+> -		case '\b': putchar('\\'); putchar('b'); len++; break;
+> -		case '\e': putchar('\\'); putchar('e'); len++; break;
+> -		case '\f': putchar('\\'); putchar('f'); len++; break;
+> -		case '\n': putchar('\\'); putchar('n'); len++; break;
+> -		case '\r': putchar('\\'); putchar('r'); len++; break;
+> -		case '\t': putchar('\\'); putchar('t'); len++; break;
+> -		case '\v': putchar('\\'); putchar('v'); len++; break;
+> -		case ' ':  putchar('\\'); putchar(' '); len++; break;
+> -		case '\\': putchar('\\'); putchar('\\'); len++; break;
+> -		default:
+> -			  if (!isprint(c)) {
+> -				  printf("\\%c%c%c",
+> -						  '0' + ((c & 0300) >> 6),
+> -						  '0' + ((c & 070) >> 3),
+> -						  '0' + (c & 07));
+> -				  len += 3;
+> -			  } else {
+> -				  putchar(c);
+> -			  }
+> +		if (!json) {
+> +			switch (c) {
+> +			case '\a': putchar('\\'); putchar('a'); len++; break;
+> +			case '\b': putchar('\\'); putchar('b'); len++; break;
+> +			case '\e': putchar('\\'); putchar('e'); len++; break;
+> +			case '\f': putchar('\\'); putchar('f'); len++; break;
+> +			case '\n': putchar('\\'); putchar('n'); len++; break;
+> +			case '\r': putchar('\\'); putchar('r'); len++; break;
+> +			case '\t': putchar('\\'); putchar('t'); len++; break;
+> +			case '\v': putchar('\\'); putchar('v'); len++; break;
+> +			case ' ':  putchar('\\'); putchar(' '); len++; break;
+> +			case '\\': putchar('\\'); putchar('\\'); len++; break;
+> +			default:
+> +				  if (!isprint(c)) {
+> +					  printf("\\%c%c%c",
+> +							  '0' + ((c & 0300) >> 6),
+> +							  '0' + ((c & 070) >> 3),
+> +							  '0' + (c & 07));
+> +					  len += 3;
+> +				  } else {
+> +					  putchar(c);
+> +				  }
+> +			}
+> +		} else {
+> +			if (c < 0x20) {
+> +				printf("\\u%04x", c);
+> +				len += 5;
+> +			} else if (c == '\\') {
+> +				putchar('\\');
+> +				putchar('\\');
+> +				len++;
+> +			} else if (c == '"') {
+> +				putchar('\\');
+> +				putchar('"');
+> +				len++;
+> +			} else {
+> +				putchar(c);
+> +			}
+>  		}
+>  	}
+>  	return len;
+> @@ -109,22 +126,41 @@ static int __print_dump(int subvol, void *user, const char *path,
+>  		out_path = full_path;
+>  	}
+> 
+> -	/* Unified header */
+> -	printf("%-16s", title);
+> -	ret = print_path_escaped(out_path);
+> -	if (!fmt) {
+> +
+> +	if (!r->json) {
+> +		/* Unified header */
+> +		printf("%-16s", title);
+> +		ret = print_path_escaped(out_path, r->json);
+> +		if (!fmt) {
+> +			putchar('\n');
+> +			return 0;
+> +		}
+> +		/* Short paths are aligned to 32 chars; longer paths get a single space */
+> +		do {
+> +			putchar(' ');
+> +		} while (++ret < 32);
+> +		va_start(args, fmt);
+> +		/* Operation specified ones */
+> +		vprintf(fmt, args);
+> +		va_end(args);
+>  		putchar('\n');
+> -		return 0;
+> -	}
+> -	/* Short paths are aligned to 32 chars; longer paths get a single space */
+> -	do {
+> +	} else {
+> +		/* Unified header */
+> +		printf(" {\"operation\": \"%s\", \"path\": \"", title);
+> +		ret = print_path_escaped(out_path, r->json);
+> +		putchar('"');
+> +		if (!fmt) {
+> +			printf("},\n");
+> +			return 0;
+> +		}
+> +		putchar(',');
+>  		putchar(' ');
+> -	} while (++ret < 32);
+> -	va_start(args, fmt);
+> -	/* Operation specified ones */
+> -	vprintf(fmt, args);
+> -	va_end(args);
+> -	putchar('\n');
+> +		va_start(args, fmt);
+> +		/* Operation specified ones */
+> +		vprintf(fmt, args);
+> +		va_end(args);
+> +		printf("},\n");
+> +	}
+>  	return 0;
+>  }
+> 
+> @@ -140,11 +176,18 @@ static int print_subvol(const char *path, const u8 *uuid, u64 ctransid,
+>  			void *user)
+>  {
+>  	char uuid_str[BTRFS_UUID_UNPARSED_SIZE];
+> +	struct btrfs_dump_send_args *r = user;
+> 
+>  	uuid_unparse(uuid, uuid_str);
+> 
+> -	return PRINT_DUMP_SUBVOL(user, path, "subvol", "uuid=%s transid=%llu",
+> -				 uuid_str, ctransid);
+> +	if (!r->json) {
+> +		return PRINT_DUMP_SUBVOL(user, path, "subvol",
+> +			"uuid=%s transid=%llu", uuid_str, ctransid);
+> +	} else {
+> +		return PRINT_DUMP_SUBVOL(user, path, "subvol",
+> +			"\"uuid\": \"%s\", \"transid\": %llu",
+> +			uuid_str, ctransid);
+> +	}
+>  }
+> 
+>  static int print_snapshot(const char *path, const u8 *uuid, u64 ctransid,
+> @@ -154,14 +197,23 @@ static int print_snapshot(const char *path, const u8 *uuid, u64 ctransid,
+>  	char uuid_str[BTRFS_UUID_UNPARSED_SIZE];
+>  	char parent_uuid_str[BTRFS_UUID_UNPARSED_SIZE];
+>  	int ret;
+> +	struct btrfs_dump_send_args *r = user;
+> 
+>  	uuid_unparse(uuid, uuid_str);
+>  	uuid_unparse(parent_uuid, parent_uuid_str);
+> 
+> -	ret = PRINT_DUMP_SUBVOL(user, path, "snapshot",
+> -		"uuid=%s transid=%llu parent_uuid=%s parent_transid=%llu",
+> +	if (r->json) {
+> +		ret = PRINT_DUMP_SUBVOL(user, path, "snapshot",
+> +			"uuid=%s transid=%llu parent_uuid=%s parent_transid=%llu",
+>  				uuid_str, ctransid, parent_uuid_str,
+>  				parent_ctransid);
+> +	} else {
+> +		ret = PRINT_DUMP_SUBVOL(user, path, "snapshot",
+> +			"\"uuid\": \"%s\", \"transid\": %llu, \"parent_uuid\": \"%s\", \
+> +			\"parent_transid\": %llu",
+> +				uuid_str, ctransid, parent_uuid_str,
+> +				parent_ctransid);
+> +	}
+>  	return ret;
+>  }
+> 
+> @@ -177,8 +229,16 @@ static int print_mkdir(const char *path, void *user)
+> 
+>  static int print_mknod(const char *path, u64 mode, u64 dev, void *user)
+>  {
+> -	return PRINT_DUMP(user, path, "mknod", "mode=%llo dev=0x%llx", mode,
+> -			  dev);
+> +	struct btrfs_dump_send_args *r = user;
+> +
+> +	if (!r->json) {
+> +		return PRINT_DUMP(user, path, "mknod", "mode=%llo dev=0x%llx",
+> +			  mode, dev);
+> +	} else {
+> +		return PRINT_DUMP(user, path,
+> +			  "mknod", "\"mode\": \"%llo\", \"dev\": \"0x%llx\"",
+> +			  mode, dev);
+> +	}
+>  }
+> 
+>  static int print_mkfifo(const char *path, void *user)
+> @@ -203,12 +263,26 @@ static int print_rename(const char *from, const char *to, void *user)
+>  	int ret;
+> 
+>  	PATH_CAT_OR_RET("rename", full_to, r->full_subvol_path, to, ret);
+> -	return PRINT_DUMP(user, from, "rename", "dest=%s", full_to);
+> +	if (!r->json) {
+> +		ret = PRINT_DUMP(user, from, "rename", "dest=%s", full_to);
+> +	} else {
+> +		ret = PRINT_DUMP(user, from, "rename", "\"dest\": \"%s\"",
+> +			  full_to);
+> +	}
+> +	return ret;
+>  }
+> 
+>  static int print_link(const char *path, const char *lnk, void *user)
+>  {
+> -	return PRINT_DUMP(user, path, "link", "dest=%s", lnk);
+> +	struct btrfs_dump_send_args *r = user;
+> +	int ret;
+> +
+> +	if (!r->json) {
+> +		ret = PRINT_DUMP(user, path, "link", "dest=%s", lnk);
+> +	} else {
+> +		ret = PRINT_DUMP(user, path, "link", "\"dest\": \"%s\"", lnk);
+> +	}
+> +	return ret;
+>  }
+> 
+>  static int print_unlink(const char *path, void *user)
+> @@ -224,8 +298,18 @@ static int print_rmdir(const char *path, void *user)
+>  static int print_write(const char *path, const void *data, u64 offset,
+>  		       u64 len, void *user)
+>  {
+> -	return PRINT_DUMP(user, path, "write", "offset=%llu len=%llu",
+> +	struct btrfs_dump_send_args *r = user;
+> +	int ret;
+> +
+> +	if (!r->json) {
+> +		ret = PRINT_DUMP(user, path, "write", "offset=%llu len=%llu",
+> +			  offset, len);
+> +	} else {
+> +		ret = PRINT_DUMP(user, path,
+> +			  "write", "\"offset\": %llu, \"len\": %llu",
+>  			  offset, len);
+> +	}
+> +	return ret;
+>  }
+> 
+>  static int print_clone(const char *path, u64 offset, u64 len,
+> @@ -239,37 +323,93 @@ static int print_clone(const char *path, u64 offset, u64 len,
+> 
+>  	PATH_CAT_OR_RET("clone", full_path, r->full_subvol_path, clone_path,
+>  			ret);
+> -	return PRINT_DUMP(user, path, "clone",
+> +
+> +	if (!r->json) {
+> +		ret = PRINT_DUMP(user, path, "clone",
+>  			  "offset=%llu len=%llu from=%s clone_offset=%llu",
+>  			  offset, len, full_path, clone_offset);
+> +	} else {
+> +		ret = PRINT_DUMP(user, path, "clone",
+> +			  "\"offset\": %llu, \"len\": %llu, \"from\": \"%s\""
+> +			  ", \"clone_offset\": %llu",
+> +			  offset, len, full_path, clone_offset);
+> +	}
+> +	return ret;
+>  }
+> 
+>  static int print_set_xattr(const char *path, const char *name,
+>  			   const void *data, int len, void *user)
+>  {
+> -	return PRINT_DUMP(user, path, "set_xattr", "name=%s data=%.*s len=%d",
+> +	struct btrfs_dump_send_args *r = user;
+> +	int ret;
+> +
+> +	if (!r->json) {
+> +		ret = PRINT_DUMP(user, path,
+> +			  "set_xattr", "name=%s data=%.*s len=%d",
+> +			  name, len, (char *)data, len);
+> +	} else {
+> +		ret = PRINT_DUMP(user, path,
+> +			  "set_xattr", "\"name\": \"%s\""
+> +			  ", \"data\": \"%.*s\", \"len\": %d",
+>  			  name, len, (char *)data, len);
+> +	}
+> +	return ret;
+>  }
+> 
+>  static int print_remove_xattr(const char *path, const char *name, void *user)
+>  {
+> +	struct btrfs_dump_send_args *r = user;
+> +	int ret;
+> 
+> -	return PRINT_DUMP(user, path, "remove_xattr", "name=%s", name);
+> +	if (!r->json) {
+> +		ret = PRINT_DUMP(user, path, "remove_xattr", "name=%s", name);
+> +	} else {
+> +		ret = PRINT_DUMP(user, path, "remove_xattr",
+> +			  "\"name\": \"%s\"", name);
+> +	}
+> +	return ret;
+>  }
+> 
+>  static int print_truncate(const char *path, u64 size, void *user)
+>  {
+> -	return PRINT_DUMP(user, path, "truncate", "size=%llu", size);
+> +	struct btrfs_dump_send_args *r = user;
+> +	int ret;
+> +
+> +	if (!r->json) {
+> +		ret = PRINT_DUMP(user, path, "truncate", "size=%llu", size);
+> +	} else {
+> +		ret = PRINT_DUMP(user, path, "truncate", "\"size\": %llu", size);
+> +	}
+> +	return ret;
+>  }
+> 
+>  static int print_chmod(const char *path, u64 mode, void *user)
+>  {
+> -	return PRINT_DUMP(user, path, "chmod", "mode=%llo", mode);
+> +	struct btrfs_dump_send_args *r = user;
+> +	int ret;
+> +
+> +	if (!r->json) {
+> +		ret = PRINT_DUMP(user, path, "chmod", "mode=%llo", mode);
+> +	} else {
+> +		ret = PRINT_DUMP(user, path, "chmod", "\"mode\": \"%llo\"", mode);
+> +	}
+> +	return ret;
+>  }
+> 
+>  static int print_chown(const char *path, u64 uid, u64 gid, void *user)
+>  {
+> -	return PRINT_DUMP(user, path, "chown", "gid=%llu uid=%llu", gid, uid);
+> +	struct btrfs_dump_send_args *r = user;
+> +	int ret;
+> +
+> +	if (!r->json) {
+> +		ret = PRINT_DUMP(user, path, "chown", "gid=%llu uid=%llu",
+> +			  gid, uid);
+> +	} else {
+> +		ret = PRINT_DUMP(user, path, "chown",
+> +			  "\"gid\": %llu, \"uid\": %llu",
+> +			  gid, uid);
+> +	}
+> +	return ret;
+>  }
+> 
+>  static int sprintf_timespec(struct timespec *ts, char *dest, int max_size)
+> @@ -297,6 +437,8 @@ static int print_utimes(const char *path, struct timespec *at,
+>  			struct timespec *mt, struct timespec *ct,
+>  			void *user)
+>  {
+> +	struct btrfs_dump_send_args *r = user;
+> +	int ret;
+>  	char at_str[TIME_STRING_MAX];
+>  	char mt_str[TIME_STRING_MAX];
+>  	char ct_str[TIME_STRING_MAX];
+> @@ -305,15 +447,33 @@ static int print_utimes(const char *path, struct timespec *at,
+>  	    sprintf_timespec(mt, mt_str, TIME_STRING_MAX - 1) < 0 ||
+>  	    sprintf_timespec(ct, ct_str, TIME_STRING_MAX - 1) < 0)
+>  		return -EINVAL;
+> -	return PRINT_DUMP(user, path, "utimes", "atime=%s mtime=%s ctime=%s",
+> +	if (!r->json) {
+> +		ret = PRINT_DUMP(user, path,
+> +			  "utimes", "atime=%s mtime=%s ctime=%s",
+> +			  at_str, mt_str, ct_str);
+> +	} else {
+> +		ret = PRINT_DUMP(user, path, "utimes",
+> +			  "\"atime\": \"%s\", \"mtime\": \"%s\", " \
+> +			    "\"ctime\": \"%s\"",
+>  			  at_str, mt_str, ct_str);
+> +	}
+> +	return ret;
+>  }
+> 
+>  static int print_update_extent(const char *path, u64 offset, u64 len,
+>  			       void *user)
+>  {
+> -	return PRINT_DUMP(user, path, "update_extent", "offset=%llu len=%llu",
+> -			  offset, len);
+> +	struct btrfs_dump_send_args *r = user;
+> +	int ret;
+> +
+> +	if (!r->json) {
+> +		ret = PRINT_DUMP(user, path, "update_extent",
+> +			   "offset=%llu len=%llu", offset, len);
+> +	} else {
+> +		ret = PRINT_DUMP(user, path, "update_extent",
+> +			   "\"offset\": %llu, \"len\": %llu", offset, len);
+> +	}
+> +	return ret;
+>  }
+> 
+>  struct btrfs_send_ops btrfs_print_send_ops = {
+> diff --git a/cmds/receive-dump.h b/cmds/receive-dump.h
+> index 06a61085..d62462d0 100644
+> --- a/cmds/receive-dump.h
+> +++ b/cmds/receive-dump.h
+> @@ -22,6 +22,7 @@
+>  struct btrfs_dump_send_args {
+>  	char full_subvol_path[PATH_MAX];
+>  	char root_path[PATH_MAX];
+> +	int json;
+>  };
+> 
+>  extern struct btrfs_send_ops btrfs_print_send_ops;
+> diff --git a/cmds/receive.c b/cmds/receive.c
+> index 2aaba3ff..e977e9db 100644
+> --- a/cmds/receive.c
+> +++ b/cmds/receive.c
+> @@ -1244,6 +1244,8 @@ static const char * const cmd_receive_usage[] = {
+>  	"                 this file system is mounted.",
+>  	"--dump           dump stream metadata, one line per operation,",
+>  	"                 does not require the MOUNT parameter",
+> +	"--dump-json      dump stream metadata in JSON format,",
+> +	"                 does not require the MOUNT parameter",
+>  	"-v               deprecated, alias for global -v option",
+>  	HELPINFO_INSERT_GLOBALS,
+>  	HELPINFO_INSERT_VERBOSE,
+> @@ -1260,6 +1262,7 @@ static int cmd_receive(const struct cmd_struct *cmd, int argc, char **argv)
+>  	int receive_fd = fileno(stdin);
+>  	u64 max_errors = 1;
+>  	int dump = 0;
+> +	int dump_json = 0;
+>  	int ret = 0;
+> 
+>  	memset(&rctx, 0, sizeof(rctx));
+> @@ -1285,11 +1288,13 @@ static int cmd_receive(const struct cmd_struct *cmd, int argc, char **argv)
+>  	optind = 0;
+>  	while (1) {
+>  		int c;
+> -		enum { GETOPT_VAL_DUMP = 257 };
+> +		enum { GETOPT_VAL_DUMP = 257,
+> +			GETOPT_VAL_DUMP_JSON = 258 };
+>  		static const struct option long_opts[] = {
+>  			{ "max-errors", required_argument, NULL, 'E' },
+>  			{ "chroot", no_argument, NULL, 'C' },
+>  			{ "dump", no_argument, NULL, GETOPT_VAL_DUMP },
+> +			{ "dump-json", no_argument, NULL, GETOPT_VAL_DUMP_JSON },
+>  			{ "quiet", no_argument, NULL, 'q' },
+>  			{ NULL, 0, NULL, 0 }
+>  		};
+> @@ -1333,6 +1338,10 @@ static int cmd_receive(const struct cmd_struct *cmd, int argc, char **argv)
+>  		case GETOPT_VAL_DUMP:
+>  			dump = 1;
+>  			break;
+> +		case GETOPT_VAL_DUMP_JSON:
+> +			dump = 1;
+> +			dump_json = 1;
+> +			break;
+>  		default:
+>  			usage_unknown_option(cmd, argv);
+>  		}
+> @@ -1360,12 +1369,21 @@ static int cmd_receive(const struct cmd_struct *cmd, int argc, char **argv)
+>  		dump_args.root_path[1] = '\0';
+>  		dump_args.full_subvol_path[0] = '.';
+>  		dump_args.full_subvol_path[1] = '\0';
+> +		dump_args.json = dump_json;
+> +		if (dump_json) {
+> +			putchar('[');
+> +			putchar('\n');
+> +		}
+>  		ret = btrfs_read_and_process_send_stream(receive_fd,
+>  			&btrfs_print_send_ops, &dump_args, 0, max_errors);
+>  		if (ret < 0) {
+>  			errno = -ret;
+>  			error("failed to dump the send stream: %m");
+>  		}
+> +		if (dump_json) {
+> +			//Add an empty record so there isn't a trailing ,
+> +			printf(" {}\n]");
+> +		}
+>  	} else {
+>  		ret = do_receive(&rctx, tomnt, realmnt, receive_fd, max_errors);
+>  	}

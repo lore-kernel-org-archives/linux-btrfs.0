@@ -2,184 +2,234 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-15.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+X-Spam-Status: No, score=-10.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 16CCCC433E0
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3F78CC43381
 	for <linux-btrfs@archiver.kernel.org>; Sun, 17 Jan 2021 18:55:39 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id DA3F0224D2
-	for <linux-btrfs@archiver.kernel.org>; Sun, 17 Jan 2021 18:55:38 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 15BD5224BD
+	for <linux-btrfs@archiver.kernel.org>; Sun, 17 Jan 2021 18:55:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729115AbhAQSzY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 17 Jan 2021 13:55:24 -0500
-Received: from smtp-36.italiaonline.it ([213.209.10.36]:33045 "EHLO libero.it"
+        id S1729865AbhAQSza (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 17 Jan 2021 13:55:30 -0500
+Received: from smtp-36.italiaonline.it ([213.209.10.36]:40939 "EHLO libero.it"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728676AbhAQSzV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 17 Jan 2021 13:55:21 -0500
+        id S1728154AbhAQSzW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 17 Jan 2021 13:55:22 -0500
 Received: from venice.bhome ([94.37.172.193])
         by smtp-36.iol.local with ESMTPA
-        id 1DCAlJgx8i3tS1DCBlXz6E; Sun, 17 Jan 2021 19:54:39 +0100
+        id 1DCAlJgx8i3tS1DCAlXz62; Sun, 17 Jan 2021 19:54:38 +0100
 x-libjamoibt: 1601
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=libero.it; s=s2014;
-        t=1610909679; bh=YdIwnvi/fIZaH2L+UmJGV+Ps2artHONICkzr2BmiFAs=;
+        t=1610909678; bh=Y7nXYGw4qHjnL9nQK+ew63FxvwvFvrVma7sXPXyBeBA=;
         h=From;
-        b=EgcPNzajMjIVw/8hcLtsDey3H3rhHOrXrlnZluPZaLOM7Gd9qStLPyVei19lVTO4N
-         jcdHauFfaVKRDfVddzAdCt7lvii6l9xArxfCuAKFHS/BxmWCIL+Qjd29X0fvjuP4s7
-         8NIozUd5pN1yzVjBSs+JTV2siZ4t3QtmAafvApsx00VYlgRTYKc7r5w1jRXvpYk5Y3
-         /sT4Velfg414bTFYWRyoEcXmKJHY0t475aMI2/f1MFb70d1PYnL0E4nCiU8BbWXl4q
-         mr9KXPTBRzq9pp/lb98dcCJhk0Ea5AmvJhRGQN6ClCDwcZE6ts5Oia77MAxnhCICc4
-         i205nz4KwzIYw==
-X-CNFS-Analysis: v=2.4 cv=FqfAQ0nq c=1 sm=1 tr=0 ts=600487ef cx=a_exe
+        b=MIMOK2nOZesLff779eQT0I/s+pZDSyptTjNQN6wXoiWxlvvKHXpo2OGPPPZLCb3lJ
+         AYKfTTqg3owumb3v3SnySCN8Id/M41xEEnu1pCCTpw+VmTAqjkKHooWbnD22isbVnb
+         +cAH+pZ5AjqcFgy1KScpNLh1uOpYu49vPgUoepW1KszEsFFeLnsnJF6ZCNlDC5+r8Y
+         w2W6mbwzW1TtYv+0k2MbMtpgI6zIt0ECsOggoAN3yZg9MV6N6aROf6QxY+KtD8b/GW
+         ijov/RaW/KZDzsLAPGCpxHD36JMkuGYCpA2ZlKiCYPh4HNZnbFIUk79jjci61SRElu
+         lL3rnGpWT2KSw==
+X-CNFS-Analysis: v=2.4 cv=FqfAQ0nq c=1 sm=1 tr=0 ts=600487ee cx=a_exe
  a=z1y4hvBwYU35dpVEhKc0WA==:117 a=z1y4hvBwYU35dpVEhKc0WA==:17
- a=gA3aMnFg010l5TYKVLEA:9
+ a=tAp6EsRIHxeSHigjOvkA:9
 From:   Goffredo Baroncelli <kreijack@libero.it>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
         Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH 4/5] btrfs: add preferred_metadata option.
-Date:   Sun, 17 Jan 2021 19:54:34 +0100
-Message-Id: <20210117185435.36263-5-kreijack@libero.it>
+Subject: [PATCH 1/5] Add an ioctl to set the device properties
+Date:   Sun, 17 Jan 2021 19:54:31 +0100
+Message-Id: <20210117185435.36263-2-kreijack@libero.it>
 X-Mailer: git-send-email 2.30.0
 In-Reply-To: <20210117185435.36263-1-kreijack@libero.it>
 References: <20210117185435.36263-1-kreijack@libero.it>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-CMAE-Envelope: MS4xfOxzuVv6vOXgl1ERwkvz25hNFma0tmqiJOJr+/xS5vrd73p/7znYVfwyKiU+45TTBalP2nklPUvb7qERVXTNoZ4RIFkXVsAxDraVVFsUIfmIsIg80kHv
- 6Tw1FTjXmWsxRLfDRnBf4cE+ZtOcJHDL2c0AalQVZE6+UgoVlzcBSwcptHRso/uQOpIB/txy7VJ/YjBo7j5nlZZt19mBTR4O/zdc2GrvScFM+YEp9AohtyxV
- odulQW5GVb9RhdC1W6vzFXQ/rrYEO/lMKDzeg2Af7f0=
+X-CMAE-Envelope: MS4xfJGoC5bvLifK87rEfX5CGlzKQGcu0m+lebtnk5EwmvPM2gglJRL6HGITCJm+fccSKMCrNyYJL3HsCrtjv0q/Ntzo1/lYPoDbOvueB8AEKitUXXWygP1Z
+ L0k9skfgi5JkWpCGrvYGZy87SIpogaIhJMIUE+HdPxoIjHuuBAj9GKWYUkBTDjpQULPzPtsYr3f4jEjJ9BdZsuExzGuu6BcOFA4OhuHvUIwN/QqJ7sj1racN
+ CQHTG6IBH5dAYlheEXKROC40ExhEiuK9LgvfFo2rQ9Q=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Goffredo Baroncelli <kreijack@inwind.it>
 
-Add preferred_metadata mount option. This option accept the following values:
-
-- disabled (default):  the disk preferred metadata flag is ignored
-- soft:		       the disk preferred metadata flag is a suggestion
-                       on which disk the system may use
-- metadata:	       the disk preferred metadata flag is a suggestion
-                       on which disk the system use for metadata. It is a
-		       mandatory requirement for data
-- hard:                the disk preferred metadata flag is a mandatory
-                       requirement for metadata and
-
-
-Signed-off-by: Goffredo Baroncelli <kreijack@winwind.it>
 ---
- fs/btrfs/ctree.h   | 14 ++++++++++++++
- fs/btrfs/disk-io.c |  2 ++
- fs/btrfs/super.c   | 27 +++++++++++++++++++++++++++
- 3 files changed, 43 insertions(+)
+ fs/btrfs/ioctl.c           | 67 ++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/volumes.c         |  2 +-
+ fs/btrfs/volumes.h         |  2 ++
+ include/uapi/linux/btrfs.h | 40 +++++++++++++++++++++++
+ 4 files changed, 110 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 1d3c1e479f3d..af2e549ef1ab 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -570,6 +570,17 @@ enum btrfs_exclusive_operation {
- 	BTRFS_EXCLOP_SWAP_ACTIVATE,
- };
- 
-+/*
-+ * 'preferred_metadata' mode
-+ */
-+
-+enum btrfs_preferred_metadata_mode {
-+	BTRFS_PM_DISABLED,
-+	BTRFS_PM_HARD,
-+	BTRFS_PM_METADATA,
-+	BTRFS_PM_SOFT
-+};
-+
- struct btrfs_fs_info {
- 	u8 chunk_tree_uuid[BTRFS_UUID_SIZE];
- 	unsigned long flags;
-@@ -961,6 +972,9 @@ struct btrfs_fs_info {
- 		u64 zoned;
- 	};
- 
-+	/* preferred_metadata mode */
-+	int preferred_metadata_mode;
-+
- 	/* Max size to emit ZONE_APPEND write command */
- 	u64 max_zone_append_size;
- 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 765deefda92b..c0d9e6572e63 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2794,6 +2794,8 @@ void btrfs_init_fs_info(struct btrfs_fs_info *fs_info)
- 	fs_info->swapfile_pins = RB_ROOT;
- 
- 	fs_info->send_in_progress = 0;
-+
-+	fs_info->preferred_metadata_mode = BTRFS_PM_DISABLED;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 703212ff50a5..9e67741fa966 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -4842,6 +4842,71 @@ static int btrfs_ioctl_set_features(struct file *file, void __user *arg)
+ 	return ret;
  }
  
- static int init_mount_fs_info(struct btrfs_fs_info *fs_info, struct super_block *sb)
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 022f20810089..b7abc25c9637 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -359,6 +359,7 @@ enum {
- 	Opt_thread_pool,
- 	Opt_treelog, Opt_notreelog,
- 	Opt_user_subvol_rm_allowed,
-+	Opt_preferred_metadata,
++static long btrfs_ioctl_dev_properties(struct file *file,
++						void __user *argp)
++{
++	struct inode *inode = file_inode(file);
++	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
++	struct btrfs_ioctl_dev_properties dev_props;
++	struct btrfs_device	*device;
++        struct btrfs_root *root = fs_info->chunk_root;
++        struct btrfs_trans_handle *trans;
++	int ret;
++	u64 prev_type;
++
++	if (!capable(CAP_SYS_ADMIN))
++		return -EPERM;
++
++	if (copy_from_user(&dev_props, argp, sizeof(dev_props)))
++		return -EFAULT;
++
++	device = btrfs_find_device(fs_info->fs_devices, dev_props.devid,
++				NULL, NULL);
++	if (!device) {
++		btrfs_info(fs_info, "change_dev_properties: unable to find device %llu",
++			   dev_props.devid);
++		return -ENODEV;
++	}
++
++	if (dev_props.properties & BTRFS_DEV_PROPERTY_READ) {
++		u64 props = dev_props.properties;
++		memset(&dev_props, 0, sizeof(dev_props));
++		if (props & BTRFS_DEV_PROPERTY_TYPE) {
++			dev_props.properties = BTRFS_DEV_PROPERTY_TYPE;
++			dev_props.type = device->type;
++		}
++		if(copy_to_user(argp, &dev_props, sizeof(dev_props)))
++			return -EFAULT;
++		return 0;
++	}
++
++	/* it is possible to set only BTRFS_DEV_PROPERTY_TYPE for now */
++	if (dev_props.properties & ~(BTRFS_DEV_PROPERTY_TYPE))
++		return -EPERM;
++
++	trans = btrfs_start_transaction(root, 0);
++        if (IS_ERR(trans))
++                return PTR_ERR(trans);
++
++	prev_type = device->type;
++	device->type = dev_props.type;
++	ret = btrfs_update_device(trans, device);
++
++        if (ret < 0) {
++                btrfs_abort_transaction(trans, ret);
++                btrfs_end_transaction(trans);
++		device->type = prev_type;
++		return  ret;
++        }
++
++        ret = btrfs_commit_transaction(trans);
++	if (ret < 0)
++		device->type = prev_type;
++
++	return ret;
++
++}
++
+ static int _btrfs_ioctl_send(struct file *file, void __user *argp, bool compat)
+ {
+ 	struct btrfs_ioctl_send_args *arg;
+@@ -5025,6 +5090,8 @@ long btrfs_ioctl(struct file *file, unsigned int
+ 		return btrfs_ioctl_get_subvol_rootref(file, argp);
+ 	case BTRFS_IOC_INO_LOOKUP_USER:
+ 		return btrfs_ioctl_ino_lookup_user(file, argp);
++	case BTRFS_IOC_DEV_PROPERTIES:
++		return btrfs_ioctl_dev_properties(file, argp);
+ 	}
  
- 	/* Rescue options */
- 	Opt_rescue,
-@@ -432,6 +433,7 @@ static const match_table_t tokens = {
- 	{Opt_treelog, "treelog"},
- 	{Opt_notreelog, "notreelog"},
- 	{Opt_user_subvol_rm_allowed, "user_subvol_rm_allowed"},
-+	{Opt_preferred_metadata, "preferred_metadata=%s"},
+ 	return -ENOTTY;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index ee086fc56c30..68b346c5465d 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -2744,7 +2744,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
+ 	return ret;
+ }
  
- 	/* Rescue options */
- 	{Opt_rescue, "rescue=%s"},
-@@ -889,6 +891,23 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
- 		case Opt_user_subvol_rm_allowed:
- 			btrfs_set_opt(info->mount_opt, USER_SUBVOL_RM_ALLOWED);
- 			break;
-+		case Opt_preferred_metadata:
-+			if (!strcmp(args[0].from, "hard")) {
-+				info->preferred_metadata_mode = BTRFS_PM_HARD;
-+			} else if (!strcmp(args[0].from, "metadata")) {
-+				info->preferred_metadata_mode = BTRFS_PM_METADATA;
-+			} else if (!strcmp(args[0].from, "soft")) {
-+				info->preferred_metadata_mode = BTRFS_PM_SOFT;
-+			} else if (!strcmp(args[0].from, "disabled")) {
-+				info->preferred_metadata_mode = BTRFS_PM_DISABLED;
-+			} else  {
-+				btrfs_err(info,
-+					"unknown option '%s' in preferred_metadata",
-+					args[0].from);
-+				ret = -EINVAL;
-+				goto out;
-+			}
-+			break;
- 		case Opt_enospc_debug:
- 			btrfs_set_opt(info->mount_opt, ENOSPC_DEBUG);
- 			break;
-@@ -1495,6 +1514,14 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
- 		seq_puts(seq, ",clear_cache");
- 	if (btrfs_test_opt(info, USER_SUBVOL_RM_ALLOWED))
- 		seq_puts(seq, ",user_subvol_rm_allowed");
-+	if (info->preferred_metadata_mode == BTRFS_PM_HARD)
-+		seq_puts(seq, ",preferred_metadata=hard");
-+	else if (info->preferred_metadata_mode == BTRFS_PM_METADATA)
-+		seq_puts(seq, ",preferred_metadata=metadata");
-+	else if (info->preferred_metadata_mode == BTRFS_PM_SOFT)
-+		seq_puts(seq, ",preferred_metadata=soft");
-+	else if (info->preferred_metadata_mode == BTRFS_PM_DISABLED)
-+                seq_puts(seq, ",preferred_metadata=disabled");
- 	if (btrfs_test_opt(info, ENOSPC_DEBUG))
- 		seq_puts(seq, ",enospc_debug");
- 	if (btrfs_test_opt(info, AUTO_DEFRAG))
+-static noinline int btrfs_update_device(struct btrfs_trans_handle *trans,
++int btrfs_update_device(struct btrfs_trans_handle *trans,
+ 					struct btrfs_device *device)
+ {
+ 	int ret;
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 1997a4649a66..d776b7f55d56 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -595,5 +595,7 @@ void btrfs_scratch_superblocks(struct btrfs_fs_info *fs_info,
+ int btrfs_bg_type_to_factor(u64 flags);
+ const char *btrfs_bg_type_to_raid_name(u64 flags);
+ int btrfs_verify_dev_extents(struct btrfs_fs_info *fs_info);
++int btrfs_update_device(struct btrfs_trans_handle *trans,
++                                        struct btrfs_device *device);
+ 
+ #endif
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index 5df73001aad4..e6caef42837a 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -860,6 +860,44 @@ struct btrfs_ioctl_get_subvol_rootref_args {
+ 		__u8 align[7];
+ };
+ 
++#define BTRFS_DEV_PROPERTY_TYPE		(1ULL << 0)
++#define BTRFS_DEV_PROPERTY_DEV_GROUP	(1ULL << 1)
++#define BTRFS_DEV_PROPERTY_SEEK_SPEED	(1ULL << 2)
++#define BTRFS_DEV_PROPERTY_BANDWIDTH	(1ULL << 3)
++#define BTRFS_DEV_PROPERTY_READ		(1ULL << 60)
++
++/*
++ * The ioctl BTRFS_IOC_DEV_PROPERTIES can read and write the device properties.
++ *
++ * The properties that the user want to write have to be set
++ * in the 'properties' field using the BTRFS_DEV_PROPERTY_xxxx constants.
++ *
++ * If the ioctl is used to read the device properties, the bit
++ * BTRFS_DEV_PROPERTY_READ has to be set in the 'properties' field.
++ * In this case the properties that the user want have to be set in the
++ * 'properties' field. The kernel doesn't return a property that was not
++ * required, however it may return a subset of the requested properties.
++ * The returned properties have the corrispondent BTRFS_DEV_PROPERTY_xxxx
++ * flag set in the 'properties' field.
++ *
++ * Up to 2020/05/11 the only properties that can be read/write is the 'type'
++ * one.
++ */
++struct btrfs_ioctl_dev_properties {
++	__u64	devid;
++	__u64	properties;
++	__u64	type;
++	__u32	dev_group;
++	__u8	seek_speed;
++	__u8	bandwidth;
++
++	/*
++	 * for future expansion
++	 */
++	__u8	unused1[2];
++	__u64	unused2[4];
++};
++
+ /* Error codes as returned by the kernel */
+ enum btrfs_err_code {
+ 	BTRFS_ERROR_DEV_RAID1_MIN_NOT_MET = 1,
+@@ -988,5 +1026,7 @@ enum btrfs_err_code {
+ 				struct btrfs_ioctl_ino_lookup_user_args)
+ #define BTRFS_IOC_SNAP_DESTROY_V2 _IOW(BTRFS_IOCTL_MAGIC, 63, \
+ 				struct btrfs_ioctl_vol_args_v2)
++#define BTRFS_IOC_DEV_PROPERTIES _IOW(BTRFS_IOCTL_MAGIC, 64, \
++				struct btrfs_ioctl_dev_properties)
+ 
+ #endif /* _UAPI_LINUX_BTRFS_H */
 -- 
 2.30.0
 

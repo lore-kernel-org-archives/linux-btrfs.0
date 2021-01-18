@@ -2,106 +2,121 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 54317C433E0
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Jan 2021 00:49:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1BF0BC433E6
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Jan 2021 02:14:05 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 1C69B20758
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Jan 2021 00:49:31 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D9C0E224DF
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Jan 2021 02:14:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728741AbhARAtM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 17 Jan 2021 19:49:12 -0500
-Received: from fbo-4.mxes.net ([198.205.123.79]:13278 "EHLO fbo-4.mxes.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726785AbhARAtJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 17 Jan 2021 19:49:09 -0500
-X-Greylist: delayed 583 seconds by postgrey-1.27 at vger.kernel.org; Sun, 17 Jan 2021 19:49:08 EST
-Received: from smtp-out-3.mxes.net (smtp-out-3.mxes.net [IPv6:2605:d100:2f:10::314])
-        by fbi-4.mxes.net (Postfix) with ESMTP id 04FC275990
-        for <linux-btrfs@vger.kernel.org>; Sun, 17 Jan 2021 19:39:31 -0500 (EST)
-Received: from Customer-MUA (mua.mxes.net [10.0.0.1])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
-        (No client certificate requested)
-        by smtp.mxes.net (Postfix) with ESMTPSA id E212675A14;
-        Sun, 17 Jan 2021 19:38:30 -0500 (EST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=mxes.net; s=mta;
-        t=1610930316; bh=UjwC2zsfcDqa0mib3MV1H0nhlwTVKH7k7DUctXw3XRE=;
-        h=Subject:To:Cc:References:From:Date:In-Reply-To:From;
-        b=AvkyyypYS27WOAwzl0Mv++7Cyw9M18elxIIVhh3QshGg/aHUZQCJnmnPGzjV0TXom
-         1xHMt7ciy4pdLWe5zB9YwgXiQzUtuu5OvDonGuH09wYLyftoNhGK3Os4Gpa8FebhFX
-         Z7cIDJ57t+5MGynYyH9+4nyFnPk2vdiMxdV3Mv3Q=
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=siru.org; s=default;
-        t=1610930316; bh=UjwC2zsfcDqa0mib3MV1H0nhlwTVKH7k7DUctXw3XRE=;
-        l=1620; h=Subject:To:Cc:References:From:Date:In-Reply-To:From;
-        b=olwKGE/4sSoANcJEv7n39CQZNwr17V5JrSriK9RRrCPhcg/VS49Fflukhm5/cmWnS
-         PkvKHzoJTPkVi5ATB1ZEVavbNuXqBASFWrRk1GYqRo24kj26cm3n+OVwKUEvRDdeBE
-         Vwl56F+z9yosbM8UC0n1oTRUozqWMkkh8a8lr1O8=
-Subject: Fast, SLC SAS SSD's as dm-cache or bcache [Re: NVME experience?]
-To:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
-        Graham Cobb <g.btrfs@cobb.uk.net>
-Cc:     linux-btrfs@vger.kernel.org
-References: <b5ea0996-578e-8584-2cc7-4b8422f75566@cobb.uk.net>
- <20210117195516.GK31381@hungrycats.org>
-From:   Andrew Luke Nesbit <andrew@siru.org>
-Message-ID: <7cae8893-aa56-7399-f0f0-742547c9780d@siru.org>
-Date:   Mon, 18 Jan 2021 00:38:28 +0000
-User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:78.0)
- Gecko/20100101 Thunderbird/78.6.1
+        id S1731274AbhARCNn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 17 Jan 2021 21:13:43 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37168 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1730966AbhARCN1 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 17 Jan 2021 21:13:27 -0500
+Received: from mail-wm1-x329.google.com (mail-wm1-x329.google.com [IPv6:2a00:1450:4864:20::329])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E3880C061573
+        for <linux-btrfs@vger.kernel.org>; Sun, 17 Jan 2021 18:12:46 -0800 (PST)
+Received: by mail-wm1-x329.google.com with SMTP id h17so12040740wmq.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 17 Jan 2021 18:12:46 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc:content-transfer-encoding;
+        bh=T0pqoYrrCW9ZSdmFWWZoxiGv/E7B7KemCMg/ZOrMUT4=;
+        b=dB8EiVqt0xwZlBeAC7K5q594f2BH+sT1838fA8XxzjjbOO2aJhVhQ+atj+b30Mhl6G
+         w7r8+Tpn7y1R5rJX/BG79jIEmTzFRI1VawahzlTxy0+LI+ob3ndeflyL/0K/rLln1z8y
+         g8ET0dBvUwR4q1DrvGbMdxRzi5cEr2/sEY+26xSwf29D0n+6Tq0WRs70Oen31ovXoo2R
+         JR22pxx5NPLpq7c/sPc+Pq2m7a+KsdoU6QHBTttz5SDM7o8tTQCjVFEDCy4GbsdfSz0T
+         moCpiYXD0VWarwJD3hVKPaYsvg6i8bvlft2tQJBZGXmoJwlSVWAt+MO5BZyYeKODasMK
+         E8BA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc:content-transfer-encoding;
+        bh=T0pqoYrrCW9ZSdmFWWZoxiGv/E7B7KemCMg/ZOrMUT4=;
+        b=IhtDu0ANJHwmU0qwGlwxlpNBM8GHWDO67U6eWvZLBYzCu+Quehb4+zXbIO9GtgtRui
+         KcZRCBxPyK5no8szl2t0jzEijhHc8zoW1aqQbPb17UnvioqsE55igV/ROSjr/5p1ZERu
+         las8/0XgkaMJp2KamveefVGqCmo2Up7a/NUlpHeMSgD8GoL43NhYLEDrEO+F8THb1rVd
+         ETokHuMiAhyEQoM0IDfY3AkpvgSxmDBordakZ8lYZptqwUxZM9SqYfXyp3UvlAqL24QA
+         wwh/dnJlx0OznlYt/XD1xnhap0j4n1Oeaq2o4dfrYE4NPjzL7yJI32Yc1UM0ImU1GVLH
+         Jb6A==
+X-Gm-Message-State: AOAM531wtcRBccxHHz57Ip7324shqAlvKeqE+mu2teGBIg9q0QwYhuKg
+        us2zznDnXFkyBU6uU98ZnnJE2LpErsXlItW1lBczx2in4h1bQg==
+X-Google-Smtp-Source: ABdhPJwGI51FLDKd5YqT9mmlKzYs5pJQM0rIi9Ivb46Qg+x65YTX9jGDg3hJTiq34LhWTixMCdrC0Jb8qM9JPaAO3lE=
+X-Received: by 2002:a1c:b7d6:: with SMTP id h205mr11478183wmf.182.1610935965673;
+ Sun, 17 Jan 2021 18:12:45 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <20210117195516.GK31381@hungrycats.org>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-GB
-Content-Transfer-Encoding: 7bit
-X-Sent-To: <bGludXgtYnRyZnNAdmdlci5rZXJuZWwub3Jn>
+References: <180be9af-8a4b-886c-aefb-f7c904058bea@posteo.de>
+In-Reply-To: <180be9af-8a4b-886c-aefb-f7c904058bea@posteo.de>
+From:   Chris Murphy <lists@colorremedies.com>
+Date:   Sun, 17 Jan 2021 19:12:29 -0700
+Message-ID: <CAJCQCtS=_tupdLvpvMHARk11j9DzDLGgTfQZgTbrWOCHFZCoHw@mail.gmail.com>
+Subject: Re: nodatacow mount option is disregarded when mounting subvolume
+ into same filesystem
+To:     =?UTF-8?Q?Damian_H=C3=B6ster?= <damian.hoester@posteo.de>
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Dear Zygo,
+On Sun, Jan 17, 2021 at 2:07 PM Damian H=C3=B6ster <damian.hoester@posteo.d=
+e> wrote:
+>
+> The nodatacow mount option seems to have no effect when mounting a
+> subvolume into the same filesystem.
+>
+> I did some testing:
+>
+> sudo mount -o compress=3Dzstd /dev/sda /mnt -> compression enabled
+> sudo mount -o compress=3Dzstd,nodatacow /dev/sda /mnt -> compression disa=
+bled
+> sudo mount -o nodatacow,compress=3Dzstd /dev/sda /mnt -> compression enab=
+led
+> All as I would expect, setting compress or nodatacow disables the other.
+>
+> Compression gets enabled without problems when mounting a subvolume into
+> the same filesystem:
+> sudo mount /dev/sda /mnt; sudo mount -o subvol=3D@test,compress=3Dzstd
+> /dev/sda /mnt/test -> compression enabled
+> sudo mount /dev/sda /mnt; sudo mount -o subvol=3D@/testsub,compress=3Dzst=
+d
+> /dev/sda /mnt/testsub -> compression enabled
+>
+> But nodatacow apparently doesn't:
+> sudo mount -o compress=3Dzstd /dev/sda /mnt; sudo mount -o
+> subvol=3D@test,nodatacow /dev/sda /mnt/test -> compression enabled
+> sudo mount -o compress=3Dzstd /dev/sda /mnt; sudo mount -o
+> subvol=3D@/testsub,nodatacow /dev/sda /mnt/testsub -> compression enabled
+>
+> And I don't think it's because of the compress mount option, some
+> benchmarks I did indicate that nodatacow never gets set when mounting a
+> subvolume into the same filesystem.
+>
 
-Thank you for this fantastic message.  I hope you -- and the rest of the 
-list -- doesn't mind my jumping in mid-message...
+Most btrfs mount options are file system wide, they're not per
+subvolume options. In case of conflict, the most recent option is
+what's used. i.e. the mount options have an order and are followed in
+order, with the latest one having precedence in a conflict:
 
-On 17/01/2021 19:55, Zygo Blaxell wrote:
-> You can use a NVME device as a dm-cache or bcache device--the low-latency
-> interface is ideal for caching use cases, if you have a suitably fast
-> and robust SSD.
+compress,nodatacow   means nodatacow
+nodatacow,compress   means compress
 
-I have about 4 enterprise grade HGST SLC 100 GB and SLC 200 GB SAS 
-SSD's.  I want to use these as some kind of cache or fast tier for a NAS 
-I am building.
+nodatacow implies nodatasum and no compress.
 
-**It has been suggested to me that I should use these SLC SAS drives 
-with dm-cache, by pairing one of each of four SSD's with a corresponding 
-high capacity NAS drive.**
+If you want per subvolume options then you need to use 'chattr +C' per
+subvolume or directory for nodatacow. And for compression you can use
++c (small c) which implies zlib, or use 'btrfs property set
+/path/to/sub-dir-file compression zstd'
 
-This is for a home NAS so quietness is the major concern.  Putting the 
-NAS in our living room is the only practical option _at this point in 
-time_ for various reasons.
 
-This is going to be a "pure NAS" and the chassis will be roomy.  For 
-example, I already have both the following chassis and I have yet to 
-choose one or the other:
 
--   Supermicro SC 732D4F-903B ( 
-https://www.supermicro.com/en/products/chassis/tower/732/SC732D4F-903B )
-
--   Fractal Define XL R2 ( 
-https://www.fractal-design.com/products/cases/define/define-xl-r2/black-pearl/ 
-)
-
-I think WD Red or Seagate Ironwolf drives would be best option as they 
-run at 5400 RPM and keep vibration lower.  4x 8-14 TB HDD's in mirrored 
-pairs (obvioulsy taken the dm-cache pair also into account).
-
-Note to self: Investigate HDD mounting kits to absorb mechanical 
-vibration.  Recommendations are welcome!
-
-Any other suggestions would be greatly welcome!!
-
-Andrew
+--=20
+Chris Murphy

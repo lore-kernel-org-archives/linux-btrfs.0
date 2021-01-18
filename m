@@ -2,228 +2,203 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.5 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,NICE_REPLY_A,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-5.2 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 00221C433DB
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Jan 2021 00:13:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 05E55C433DB
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Jan 2021 00:46:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id BAA51222BB
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Jan 2021 00:13:38 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C1F6B2250F
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Jan 2021 00:46:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728089AbhARANV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 17 Jan 2021 19:13:21 -0500
-Received: from mout.gmx.net ([212.227.15.18]:58185 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726785AbhARANO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 17 Jan 2021 19:13:14 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1610928699;
-        bh=UJUQs8EM2IucW3jkTw9F2hYp/vI+uSWA8W1AxtqMYTU=;
-        h=X-UI-Sender-Class:To:References:From:Subject:Date:In-Reply-To;
-        b=MVxJ4FyxzSN/LMzOtICCm4riaXIEQ6GTFh0FwXiirMLWaqv+hc+6YZ1IHOYHjVfo9
-         hpadn9JqvCo3/emehi8+3kXB57t3TGdMcgYWMhTug/DmnQaCNoA+cyqJVijCp8Ooos
-         QJC9RinJ+HUVfSR6H1ezgTRVKoBW5vTyA7ESGjAs=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx005
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1MYNNo-1lWaOP0gS2-00VOVL; Mon, 18
- Jan 2021 01:11:39 +0100
-To:     chainofflowers <chainofflowers@neuromante.net>,
-        linux-btrfs@vger.kernel.org
-References: <5975832.dRgAyDc8OP@luna>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Subject: Re: Access Beyond End of Device & Input/Output Errors
-Message-ID: <09596ccd-56b4-d55e-ad06-26d5c84b9ab6@gmx.com>
-Date:   Mon, 18 Jan 2021 08:11:36 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.6.1
+        id S1729419AbhARAqG convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 17 Jan 2021 19:46:06 -0500
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:40496 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726785AbhARAqE (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 17 Jan 2021 19:46:04 -0500
+Received: by james.kirk.hungrycats.org (Postfix, from userid 1002)
+        id 0323D943DE3; Sun, 17 Jan 2021 19:45:19 -0500 (EST)
+Date:   Sun, 17 Jan 2021 19:45:19 -0500
+From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To:     Cedric.dewijs@eclipso.eu
+Cc:     andrea.gelmini@gmail.com, linux-btrfs@vger.kernel.org
+Subject: Re: Re: Re: Raid1 of a slow hdd and a fast(er) SSD, howto to
+ prioritize the SSD?
+Message-ID: <20210118004519.GL31381@hungrycats.org>
+References: <28232f6c03d8ae635d2ddffe29c82fac@mail.eclipso.de>
+ <CAK-xaQZS+ANoD+QbPTHwL-ErapA-7PDZe_z=OOWq_axAyR1KfA@mail.gmail.com>
+ <eb0f5e05a563009af95439f446659cf3@mail.eclipso.de>
+ <CAK-xaQbQPSS7=cH1qmb9S51CL34VRfyE_=eNwb-GhSL1b8Yz2g@mail.gmail.com>
+ <20210109214032.GC31381@hungrycats.org>
+ <CAK-xaQZ=ZNqkruDSjNdprDfj5nAh5TdCpT+sv0nB6LqCRu7dmQ@mail.gmail.com>
+ <20210116010438.GG31381@hungrycats.org>
+ <9ba7de732a8b69c39922dad268a1e226@mail.eclipso.de>
 MIME-Version: 1.0
-In-Reply-To: <5975832.dRgAyDc8OP@luna>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:tq3bQ80agCk8IW61uxVC+zASTD/z9DYiaKKJgi1kole9vBz67Az
- hhpGuhb05DxX/2cOYoeGsQGt6WfxXqDfWDDXAz15ipNu932QYVfOajcq84KSet2hR0Vg7Je
- oHjRrVpRf90HvPb9fJFcH8KQYfWROY5prXQ8oXB+th59LjJHxbAfu7BlBcQtKknVHthw1JM
- bOwGJEfKgKehDQbt7mH4A==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:UGlJX/H5qa4=:PbqNbgPCyE0MSuHaGXg7qk
- idFfRM6VCkerwypvz1Z3ivZaUEvJ5E6mTrjoDB6grEPBDcKUSWwkt10c5CaEq034qUTrjTlOf
- 4Ze4lD8XSNQlpJXmFbXCit7ofza4H0wSNgrju1CNeTs6ad5PBELyljwgVTUQJftdZ0QXWaggD
- kN8nJRARKNxlyjMpOqI3/noAri26MfMchGm636chmSHa4GYi5Qzb6IyODWt9y92KwLKapZKqi
- ZlfzB4OzP9CB38Ty/i6d2jldJaoqMX3fGhCGQlr8YgiMvMO/3zuaYrL29bIgNkE+l5s2cf3ss
- puckdoKItq1cDNVm72aFVxXG1taPQXabPDVcDavXaHhzzZ8WJtLq63ynok/d/OjASx8jMe8CY
- L+IMZXALiadN9cCdbdUGurpWWSCn3IhcmC+Qo7FERqxMqBqDMfwLr/crX0V7kgouR/+1BDC0u
- MJar3+1LAqf+ZXbuEGib2BqONZhfAFZ3PAU4/6Uz1doceNYQa/2eUGLgYulX4miXutK1GQoHa
- nyxgaS+apLtUMSfoBRGjhyeKU/oK03/9CRYhEDF97E0eOslzRXmmYybv0kUFY3vvcsDBqhKkY
- lYN8ILOibuQw47cLX215yPNLkfGsbzljUYoZ0gxMnshy6f1FyuBg00QbvyYkEC//yEjH4N5yJ
- 5Ug4DgLDlPadx2sIDcikayWK9tKOaq/Hn355VLBsyU8gvAp9DmwiqykTLsV65FcIiYQL5zjRn
- 50v3/Cnn6gE9xXTR2EvaSBDJXOA/QScuTXNQ3nxK3uOX4leEmBLKtE4ae6pX5m2O+JPg6K34A
- TM+JINBNzjrFERuFxZtYW8Lhrm922nCitnad+KmJoSTRdINKMItKJ+79dC3SuIMfDt70dvS0G
- LBKlndZHFR1mpOfXo6oA==
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
+Content-Transfer-Encoding: 8BIT
+In-Reply-To: <9ba7de732a8b69c39922dad268a1e226@mail.eclipso.de>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On Sat, Jan 16, 2021 at 04:27:29PM +0100,   wrote:
+> 
+> --- Ursprüngliche Nachricht ---
+> Von: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+> Datum: 16.01.2021 02:04:38
+> An: Andrea Gelmini <andrea.gelmini@gmail.com>
+> Betreff: Re: Re: Raid1 of a slow hdd and a fast(er) SSD, howto to prioritize  the SSD?
+> 
+> This tells me everything I need to know about mdadm. It can only save
+> my data in case both drive originally had correct data, and one of the
+> drives completely disappears. A mdadm raid-1 (mirror) array ironically
+> increases the likelihood of data corruption. If one drive has a 1%
+> change of corrupting the data, 2 of those drives in mdadm raid 1 have
+> a 2% chance of corrupting the data, and 100 of these drives in raid 1
+> will 100% corrupt the data. (This is a bit of an oversimplification,
+> and statistically not entirely sound, but it gets my point across). For
+> me this defeats the purpose of a raid system, as raid should increase
+> the redundancy and resilience.
 
+It influences architecture and purchasing too.  Say you want to build
+two filesystems, and you have 2 instances of 2 device models A and B
+with different firmware, and you are worried about firmware bugs.
 
-On 2021/1/18 =E4=B8=8A=E5=8D=887:38, chainofflowers wrote:
-> Hi all,
-> Hi Qu,
->
-> I am also getting this very same error on my system.
-> Actually, I am experiencing this since the following old bug was introdu=
-ced AND also even after it has been fixed:
-> https://lore.kernel.org/linux-btrfs/20190521190023.GA68070@glet/T/
->
-> That (dm-related) bug was claimed to have been fixed and users confirmed=
- that their btrfs partitions were working correctly again, but I am still =
-experiencing some issues from time to time - and obviously only on SSD dev=
-ices.
->
-> Just to clarify: I am using btrfs volumes on encrypted LUKS partitions, =
-where every partition is encrypted individually.
-> I am *NOT* using LVM at all: just btrfs directly on top of LUKS (which i=
-s different from the users' setup in the above-mentioned bug reports).
-> And I am trimming the partitions only via fstrim, have configured the mo=
-unt points with the "nodiscard" option and the LUKS volumes in /etc/cryptt=
-ab with "discard", so to have the pass-through when I use fstrim.
->
-> Opposite to Justin, my partitions are all aligned.
->
-> When this happens on my root partition, I cannot launch any command anym=
-ore because the file system is not responding (e.g.: I get "ls: command no=
-t found"). I cannot actually do anything in reality, because the system co=
-nsole is flooded with messages like:
->
->   "sd <....> [sdX] tag#29 access beyond end of device"
+The mdadm way is:  host1 is modelA, modelA.  host2 is modelB, modelB.
+This way, if modelA has a firmware bug, host1's filesystem gets corrupted,
+but host2 is not affected, so you can restore backups from host2 back
+to host1 after a failure.  Short of detailed forensic investigation,
+it's not easy to tell which model is failing, so you just keep buying
+both models and never combining them into an array in the same host.
 
-The best way to debug such problem is to recompile the kernel adding
-some debug outputs.
-(Maybe it can be done with bpftrace, but not yet familiar with that)
+The btrfs way is:  host1 is modelA, modelB.  host2 is modelA, modelB.
+This way, if modelA has a firmware bug, btrfs corrects modelA using
+modelB's data, so you don't need the backups.  You also know whether
+modelA or modelB has the bad firmware, because btrfs identifies the bad
+drive, and you can confirm the bug if both host1 and host2 are affected,
+so you can stop buying that model until the vendor fixes it.
 
-If you're able to recompile the kenerl (using abs + makepkg for Arch
-based kernel), please try the following diff.
+> Would it be possible to add a checksum to the data in mdadm in much
+> the same way btrfs is doing that, so it can also detect and even repair
+> corruption on the block level?
 
-This will add extra debugging to show where the offending length
-happens, either extent discard or unallocated space discard.
-And from that output we can continue our investigation.
+dm-integrity would provide the csum error detection that mdadm needs to
+be able to recover from bitrot (i.e. use dm-integrity devices as
+mdadm component devices).  I wouldn't expect it to perform too well
+on spinning disks.
 
-Thanks,
-Qu
+> I was trying to figure out if my data could survive if one of the drives
+> (partially)failed. I only know of two ways to simulate this: physically
+> disconnecting the drive, or dd-ing random data to it. I didn't state
+> it in my original question, but I wanted to first poison one drive,
+> then scrub the data, and then poison the next drive, and scrub again,
+> until all drives has been poisoned and scrubbed. I have tested this
+> with 2 set's of a backing drive and a writeback  SSD cache. No matter
+> which drive was poisoned, all the data survived although reconstructing
+> the data was about 30x slower than reading correct data.
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 30b1a630dc2f..7451fa0b14b9 100644
-=2D-- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -5776,6 +5776,7 @@ static int btrfs_trim_free_extents(struct
-btrfs_device *device, u64 *trimmed)
+> My rule of thumb is "never run adadm". I don't see a use case where
+> it increases the longevity of my data.
 
-         ret =3D 0;
+There are still plenty of use cases for mdadm.  btrfs can't do everything,
+e.g. mirrors on more than 4 disks, or split-failure-domain raid10, or
+just a really convenient way to copy one disk to another from time to
+time without taking it offline.
 
-+       pr_info("%s: enter devid=3D%llu\n", __func__, device->devid);
-         while (1) {
-                 struct btrfs_fs_info *fs_info =3D device->fs_info;
-                 u64 bytes;
-@@ -5820,6 +5821,8 @@ static int btrfs_trim_free_extents(struct
-btrfs_device *device, u64 *trimmed)
-                         break;
-                 }
+For nodatasum files, mdadm and btrfs have equivalent data integrity,
+maybe a little worse on btrfs since btrfs lacks any way for the admin to
+manually indicate which device has correct data (at least on mdadm there
+are various ways to force a resync from one chosen drive to the other).
+On the other hand, using nodatasum implies you don't care about data
+integrity issues for that specific file, and btrfs still maintains
+better integrity than mdadm for the rest of the filesystem.
 
-+               pr_info("%s: devid=3D%llu start=3D%llu len=3D%llu\n",
-+                       __func__, device->devid, start, len);
-                 ret =3D btrfs_issue_discard(device->bdev, start, len,
-                                           &bytes);
-                 if (!ret)
-@@ -5842,6 +5845,7 @@ static int btrfs_trim_free_extents(struct
-btrfs_device *device, u64 *trimmed)
-                 cond_resched();
-         }
+> I was looking for a way to give a the drives of a btrfs filesystem a
+> write cache, in such a way that a failure of a single drive could not
+> result in data loss. As bcache does not and will not support multiple
+> redundant ssd's as write cache [1], my plan was to put 2 identical
+> ssd's in mdadm raid 1, as host for a bcache writecack cache for all
+> the drives of the btrfs filesytem. See the figure below:
+> +-----------------------------------------------------------+
+> |          btrfs raid 1 (2 copies) /mnt                     |
+> +--------------+--------------+--------------+--------------+
+> | /dev/bcache0 | /dev/bcache1 | /dev/bcache2 | /dev/bcache3 |
+> +--------------+--------------+--------------+--------------+
+> | Mdadm Raid 1 mirrored Writeback Cache (SSD)               |
+> | /dev/md/name (cointaining /dev/sda3 and /dev/sda4)        |
+> +--------------+--------------+--------------+--------------+
+> | Data         | Data         | Data         | Data         |
+> | /dev/sda8    | /dev/sda9    | /dev/sda10   | /dev/sda11   |
+> +--------------+--------------+--------------+--------------+
+> This will not protect my data if one of the SSD's starts to return
+> random data, as mdadm can't see who of the two SSD's is correct. This
+> will also defeat the redundancy of btrfs, as all copies of the data
+> that btrfs sees are coming from the ssd pair.
+> [1] https://lore.kernel.org/linux-bcache/e03dd593-14cb-b4a0-d68a-bd9b4fb8bd20@suse.de/T/#t
+> 
+> The only way I've come up with is to give each hard drive in the btrfs
+> array it's own writeback bcache, but that requires double the amount
+> of drives.
 
-+       pr_info("%s: done devid=3D%llu ret=3D%d\n", __func__, device->devi=
-d,
-ret);
-         return ret;
-  }
+If it's a small enough number of disks, you could bind pairs of spinning
+disks together into mdadm linear or single (see?  mdadm is still useful):
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 379bef967e1d..03046fca53a2 100644
-=2D-- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -3772,6 +3772,8 @@ int btrfs_trim_block_group(struct
-btrfs_block_group *block_group,
-                 spin_unlock(&block_group->lock);
-                 return 0;
-         }
-+       pr_info("%s: enter bg start=3D%llu start=3D%llu end=3D%llu minlen=
-=3D%llu\n",
-+               __func__, block_group->start, start, end, minlen);
-         btrfs_freeze_block_group(block_group);
-         spin_unlock(&block_group->lock);
+  btrfs dev 1 -> cache1 -> md1 linear -> spinner1, spinner2
 
-@@ -3786,6 +3788,8 @@ int btrfs_trim_block_group(struct
-btrfs_block_group *block_group,
-                 reset_trimming_bitmap(ctl, offset_to_bitmap(ctl, end));
-  out:
-         btrfs_unfreeze_block_group(block_group);
-+       pr_info("%s: enter bg start=3D%llu ret=3D%d\n",
-+               __func__, block_group->start, ret);
-         return ret;
-  }
+  btrfs dev 2 -> cache2 -> md2 linear -> spinner3, spinner4
 
+If one of the spinners fails, you swap it out and rebuild a new mdadm
+array on the remaining old disk and the new disk, then build a new
+cache device on top.  If the cache dies you build a new cache device.
+Then you mount btrfs degraded without the failed device, and use replace
+to repopulate it with the replacement device(s), same as a normal disk
+failure.
 
->
-> and that "clogs" the system. Since the root fs is unusable, the system l=
-og cannot store those messages, so I can't find them at the next reboot.
-> I can only soft-reset (CTRL-ALT-DEL), it's the "cleanest" (and only) way=
- I can get back to a working system.
->
-> When the system restarts, it takes 2 seconds longer than usual to mount =
-the file systems, and then I can use the PC again.
-> Immediately after login, if I run btrfs scrub, I get no errors (I scrub =
-ALL of my partitions: they're all fine). So, it seems that at least the au=
-to-recovery capability of btrfs works fine, thanks to you devs :-)
->
-> Then, if I boot from an external device and run btrfs check on the unmou=
-nted file systems, it also reports NO errors - opposite to what was happen=
-ing when the dm bug was still open: to me, this really means that btrfs to=
-day is able to heal itself from this issue (it was not always the case in =
-2019, when the dm bug was opened).
-> I have not tried to boot from external device directly after this issue =
-occurs - I mean, performing btrfs check without going first through the bt=
-rfs scrub step. I will do that next time and see what output I get.
->
-> All my partitions are snapshotted, and surely this could help with auto-=
-recovery.
->
-> What I have noticed is that when this bug happens, it ALWAYS happens aft=
-er I have purged the old snapshots: that is, when the root partition only =
-has one "fresh" (read-only) snapshot. This is never happening when I have =
-more than one snapshot - maybe it means nothing, but it seems to me to be =
-systematic.
->
-> I have attached a file with my setup.
-> Could you maybe spot anything weird there? It looks fine to me. The USER=
- and SCRATCH volumes are in RAID-0.
->
-> I am unable to provide any dmesg output or system log because, as said, =
-when it happens it does not write anything to the SYS partition (where /va=
-r/log is). I will move at least /var/log/journal to another device, so hop=
-efully next time I will be able to provide some useful info.
->
-> Another info: of course, I have tried (twice!) to reconstruct the system=
- SSD from scratch, because I wanted to be sure that it was not depending o=
-n some exotic issue. And each time I used a brand new device.
-> So, this issue has been happening with a SanDisk Ultra II and with two d=
-ifferent Samsung EVO 860.
->
-> Is it possible that what we are experiencing is still an effect of that =
-dm bug, that it was not completely fixed?
->
->
-> Thanks for your help, and for reading till here :)
->
-> (c)
->
+If just the cache fails, you can maybe get away with dropping the
+cache and running a btrfs scrub directly on the backing mdadm device,
+as opposed to a full btrfs replace.  The missing blocks from the dead
+cache will just look like data corruption and btrfs will replace them.
+
+This changes the recovery time and failure probabilities compared to a
+4xSSD 4xHDD layout, but not very much.  I wouldn't try this with 20 disks,
+but with only 4 disks it's probably still OK as long as you don't have
+a model that likes to fail all at the same time.  You'd want to scrub
+that array regularly to detect failures as early as possible.
+
+Both dm-cache and bcache will try to bypass the cache for big sequential
+reads, so the scrub will mostly touch the backing disks.  There are some
+gaps in the scrub coverage (any scrub reads that are serviced by the
+cache will not reflect the backing disk state, so bitrot in the backing
+disk might not be observed until the cache blocks are evicted) but btrfs
+raid1 handles those like any other intermittently unreliable disk.
+
+> I am misusing consumer drives in my NAS. Most of the hard drives and
+> SSD's have been given to me, and are medium old to very old. 
+
+OK, "very old" might be too risky to batch them up 2 disks at a time.
+After a certain age, just moving a drive to a different slot in the
+chassis can break it.
+
+> That's
+> why I am trying to build a system that can survive a single drive
+> failure. That's also the reason why I build 2 NAS boxes, my primary
+> NAS syncs to my slave nas once per day).
+
+A sound plan.  Host RAM sometimes flips bits, and there can be kernel
+bugs.  Having your data on two separate physical hosts provides isolation
+for that kind of failure.
+
+> Thanks for confirming sometimes drives do silently corrupt data. I
+> have not yet seen this happen "in the wild".
+
+Cheap SSDs are notorious for this (it's pretty much how they indicate
+they are failing, you get btrfs csum errors while drive self-tests pass),
+but we've seen one or two name-brand devices do it too.
+
+Any drive will do it if it gets too hot and doesn't throttle itself.

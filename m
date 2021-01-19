@@ -7,37 +7,37 @@ X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 54AB3C433E0
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Jan 2021 14:46:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C5AACC4332B
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Jan 2021 14:46:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 0EBF62312E
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Jan 2021 14:46:12 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8A21C20DD4
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Jan 2021 14:46:13 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2390066AbhASOlG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 19 Jan 2021 09:41:06 -0500
-Received: from mx2.suse.de ([195.135.220.15]:37982 "EHLO mx2.suse.de"
+        id S2389299AbhASOkz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 19 Jan 2021 09:40:55 -0500
+Received: from mx2.suse.de ([195.135.220.15]:37992 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2390761AbhASM3F (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S2390820AbhASM3F (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Tue, 19 Jan 2021 07:29:05 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1611059213; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+        t=1611059214; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=uNDo5mvcBaVi2hdPpUvUu1N2yWtRLptIEjdsZUZPo6Q=;
-        b=jYlqi1Kyn5kMxoQL+srQiT25MlvNMOsx0+LVNFRqR1iRFutxbZf/qa6f7vv8yDZtQRF2aR
-        qiKhyYHW2nHL0SpX4sVkMHZgw4nRotbNSmk8K895BR8Keti90QvNyATwNRjmtE4IDP/Fe2
-        UBmCtP8AC8ygCjU1GnsCJR6pltlCk6A=
+        bh=frb+PZ9kVXij3jQDJdz1Vsnh2JU/aBbmJtXqrAEgPbQ=;
+        b=Vm/FRcx1xCLZ7n23JZKnInTixmIM1JJUzcx9OjFCReNpMuCFTXzI4stykdxZ/DW5I1fIFp
+        rfqGa7Dn8J1hLqafyE9MmptmJq4qeyVS9AJQpHX68LZdeSdiUoqyyRDxM2/Ihp5xP5HrPY
+        abiCg8z5wT4SHEHSXrtq/bPNH6s9rx4=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 910A4AF47;
-        Tue, 19 Jan 2021 12:26:53 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 8ACCFAF55;
+        Tue, 19 Jan 2021 12:26:54 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 06/13] btrfs: Document now parameter of peek_discard_list
-Date:   Tue, 19 Jan 2021 14:26:42 +0200
-Message-Id: <20210119122649.187778-7-nborisov@suse.com>
+Subject: [PATCH 10/13] btrfs: Fix parameter description of btrfs_inode_rsv_release/btrfs_delalloc_release_space
+Date:   Tue, 19 Jan 2021 14:26:46 +0200
+Message-Id: <20210119122649.187778-11-nborisov@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <20210119122649.187778-1-nborisov@suse.com>
 References: <20210119122649.187778-1-nborisov@suse.com>
@@ -47,25 +47,46 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Fixes fs/btrfs/discard.c:203: warning: Function parameter or member 'now' not described in 'peek_discard_list'
+Fixes following warnings:
+
+fs/btrfs/delalloc-space.c:205: warning: Function parameter or member 'inode' not described in 'btrfs_inode_rsv_release'
+fs/btrfs/delalloc-space.c:205: warning: Function parameter or member 'qgroup_free' not described in 'btrfs_inode_rsv_release'
+fs/btrfs/delalloc-space.c:472: warning: Function parameter or member 'reserved' not described in 'btrfs_delalloc_release_space'
+fs/btrfs/delalloc-space.c:472: warning: Function parameter or member 'qgroup_free' not described in 'btrfs_delalloc_release_space'
+fs/btrfs/delalloc-space.c:472: warning: Excess function parameter 'release_bytes' description in 'btrfs_delalloc_release_space'
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/discard.c | 1 +
- 1 file changed, 1 insertion(+)
+ fs/btrfs/delalloc-space.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/discard.c b/fs/btrfs/discard.c
-index 2b8383d41144..bfe53eb4c1f3 100644
---- a/fs/btrfs/discard.c
-+++ b/fs/btrfs/discard.c
-@@ -189,6 +189,7 @@ static struct btrfs_block_group *find_next_block_group(
-  * @discard_ctl: discard control
-  * @discard_state: the discard_state of the block_group after state management
-  * @discard_index: the discard_index of the block_group after state management
-+ * @now: Time when discard was invoked, in ns
+diff --git a/fs/btrfs/delalloc-space.c b/fs/btrfs/delalloc-space.c
+index bacee09b7bfd..c73e5131a2de 100644
+--- a/fs/btrfs/delalloc-space.c
++++ b/fs/btrfs/delalloc-space.c
+@@ -192,8 +192,8 @@ void btrfs_free_reserved_data_space(struct btrfs_inode *inode,
+ 
+ /**
+  * btrfs_inode_rsv_release - release any excessive reservation.
+- * @inode - the inode we need to release from.
+- * @qgroup_free - free or convert qgroup meta.
++ * @inode: the inode we need to release from.
++ * @qgroup_free: free or convert qgroup meta.
+  *   Unlike normal operation, qgroup meta reservation needs to know if we are
+  *   freeing qgroup reservation or just converting it into per-trans.  Normally
+  *   @qgroup_free is true for error handling, and false for normal release.
+@@ -457,9 +457,10 @@ int btrfs_delalloc_reserve_space(struct btrfs_inode *inode,
+ /**
+  * btrfs_delalloc_release_space - release data and metadata space for delalloc
+  * @inode: inode we're releasing space for
++ * @reserved: list of changed/reserved ranges
+  * @start: start position of the space already reserved
+  * @len: the len of the space already reserved
+- * @release_bytes: the len of the space we consumed or didn't use
++ * @qgroup_free: should qgroup reserved-space also be freed
   *
-  * This wraps find_next_block_group() and sets the block_group to be in use.
-  * discard_state's control flow is managed here.  Variables related to
+  * This function will release the metadata space that was not used and will
+  * decrement ->delalloc_bytes and remove it from the fs_info delalloc_inodes
 -- 
 2.25.1
 

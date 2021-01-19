@@ -2,73 +2,73 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+X-Spam-Status: No, score=-15.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
 	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7607EC433E0
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Jan 2021 21:51:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 41AD3C433E6
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Jan 2021 21:57:10 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 32EA723104
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Jan 2021 21:51:36 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D60222245C
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Jan 2021 21:57:09 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728427AbhASVvX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 19 Jan 2021 16:51:23 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33360 "EHLO
+        id S1727735AbhASV5H (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 19 Jan 2021 16:57:07 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36144 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728420AbhASVmW (ORCPT
+        with ESMTP id S1728099AbhASVzO (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Jan 2021 16:42:22 -0500
-Received: from mail-qt1-x82c.google.com (mail-qt1-x82c.google.com [IPv6:2607:f8b0:4864:20::82c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9CC08C061575
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Jan 2021 13:41:37 -0800 (PST)
-Received: by mail-qt1-x82c.google.com with SMTP id z9so4965196qtv.6
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Jan 2021 13:41:37 -0800 (PST)
+        Tue, 19 Jan 2021 16:55:14 -0500
+Received: from mail-qk1-x736.google.com (mail-qk1-x736.google.com [IPv6:2607:f8b0:4864:20::736])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1A409C061575
+        for <linux-btrfs@vger.kernel.org>; Tue, 19 Jan 2021 13:54:31 -0800 (PST)
+Received: by mail-qk1-x736.google.com with SMTP id h4so23514233qkk.4
+        for <linux-btrfs@vger.kernel.org>; Tue, 19 Jan 2021 13:54:31 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=subject:to:references:from:message-id:date:user-agent:mime-version
          :in-reply-to:content-language:content-transfer-encoding;
-        bh=DrGFFmb2mDRGz2PVkFmfwLRuSGgYqURvsVQb4D8HOys=;
-        b=L8XhAu4mWxCuJc0/6L2iTavUhkWdL0Ived+XuGwdKh0PjSZ8QGvS8GEunW59DTZKg7
-         jrRmh1mxvtH80dpjwSs6pTq5tuIZX5CmgOYQF8B+h8HcUnTY0RmPJ6GXARTwJRdkC5/E
-         x4U64nJstq7ml7Xs6RRTXpEzPSUWUHJ839Fh2TwcJ1h/wrQjbI4zBQ4vku1ddthhc3uV
-         knLdg7yg8jlIV47vp0LwlQyP+Nw+x2sj3qWzHd4cFWbfkZOWuEW6bqJE1J8EzLqoXMSq
-         041Wfe8VhX87j4Eodr7xm1Tex78S5y5SIrUGKafeLYKZBwhbScVCi1JWJeORbbLN6Fj8
-         MWbA==
+        bh=AWZTLNAaZTCe8aFCrnqkVhQDIRdda1awI1T10BZpJew=;
+        b=Ie+QvSakFeD/+s+gQckgzaeMFNU0t139XwBJgp376pxVEo6xi9yHyCyxoDv5lWB9mQ
+         7lcXk2zoKCB1uBoVywsym3seJ/QcUQ3//UqS1sMXw0S7+fogZxScEH/SxM25921vDlq9
+         fVI9moAYl2MBXE/YozPCoQakCcsu8Kp1wDS50uO9RdGrLIKX00ATI5/CVipYWpoH7lvV
+         p9+3GFUCiajfGkFgkjcHjI1aWc/qnEflS8hPEPrY7DNqXImC23UyXG0CjJnAIoeX1/Qb
+         Y0/qCJw/irdKIlGuFhUeCnxOkdf6wS01rwoqNxGxHz6oT8FbTcQCD/ummRq0ZyK0N0my
+         QFKQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:subject:to:references:from:message-id:date
          :user-agent:mime-version:in-reply-to:content-language
          :content-transfer-encoding;
-        bh=DrGFFmb2mDRGz2PVkFmfwLRuSGgYqURvsVQb4D8HOys=;
-        b=hJU/8BPZTxbyEpLxGSefofwYdX+C9pLCaEqYop0akEMk+sGrqXysW6yT7zEOXBezt/
-         mL/5V8IGrT8da7AW0gg3C44A4vBR+c0bUoLSo7CBUhFmsjUeSc1ouchxAtGTxamtH229
-         B/1Cb8RfHNZNmXN4NthWZ8LfRjfPM7bEd8t5nmta0EfY+QoQLsiPmalg+lXx32Bofaks
-         Kt89AtQIduvB0SOyK+KxLOSjxIHsmQhFOp4I0qFHIm0Ib+JawCz45n8jFahvQ2nQT2Gf
-         ZvdGSLSRcwohGA/wXWF5j/ab54jEPozrGswO60h/HfYfV4Lubb1/xRBNObbPlNFXIdwe
-         FKGA==
-X-Gm-Message-State: AOAM532y7iPem/UjE/ETD+4VgHjyjCLdk8Y4etXdAMMy2JtTTz7MuVCy
-        +wlupCcRRuS/gBzoPye/2drG3wEO3Jtq4DnyE2w=
-X-Google-Smtp-Source: ABdhPJxZQjq8WkMKMX+XBnt/TDvSDDQHhvBuBK2ouhb2mMrnAJz+ZcGvIetGTzaIZXbmbOV4fV6z+A==
-X-Received: by 2002:ac8:4e8b:: with SMTP id 11mr6312446qtp.292.1611092496516;
-        Tue, 19 Jan 2021 13:41:36 -0800 (PST)
+        bh=AWZTLNAaZTCe8aFCrnqkVhQDIRdda1awI1T10BZpJew=;
+        b=ruIDZcmcyzxKoP+3N2Kx/YcRVSuqNLtLiTcTQAKhazvNKaIWNTgrqOLkWvDuNV1p3c
+         wZ3xjSI1he4j7N8fo6LFXKfSLRLRRrotXfDg9IxPjrZqwODqystQCFDiSZL92OKUq30l
+         47o53Ffp5NLRA5qlRgpsilofuyf1MQ26zMD7+6ps6Mnj/Mc1uD6jk44UTx86NEMrASMt
+         y5OFOQPqZhJ3UTFZf7Bm9Wh2CJLZL9fyV7gHNOihj3DeVzO7BHH9A0tCKv0tqh/mVjBJ
+         y3gsFTROtgswm+hZFg8ZTYmmF5s72jYB0oqg4qlkTFY0t133BZxDnH41hUrmp/rJxKZf
+         boGA==
+X-Gm-Message-State: AOAM530f1mkroC/sF/l0pSWxQetXwRkLSzZkqrCGljwxSzCJUzBcnpCl
+        iCl8gIEAQAbMSg4lfEXGFdyv5OlksdwWhCT6Dt0=
+X-Google-Smtp-Source: ABdhPJzAoCRJkvtuXH1rtcrcgQsvnbBosrIyceH5geeA6jswZTews7EfNE0sILTDgKrqS5JuWML3rQ==
+X-Received: by 2002:a37:9687:: with SMTP id y129mr833572qkd.371.1611093269732;
+        Tue, 19 Jan 2021 13:54:29 -0800 (PST)
 Received: from ?IPv6:2620:10d:c0a8:11d1::1325? ([2620:10d:c091:480::1:2a44])
-        by smtp.gmail.com with ESMTPSA id j66sm3069qkf.78.2021.01.19.13.41.35
+        by smtp.gmail.com with ESMTPSA id z30sm13059428qtc.15.2021.01.19.13.54.28
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 19 Jan 2021 13:41:35 -0800 (PST)
-Subject: Re: [PATCH v4 01/18] btrfs: update locked page dirty/writeback/error
- bits in __process_pages_contig()
+        Tue, 19 Jan 2021 13:54:29 -0800 (PST)
+Subject: Re: [PATCH v4 04/18] btrfs: make attach_extent_buffer_page() to
+ handle subpage case
 To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
 References: <20210116071533.105780-1-wqu@suse.com>
- <20210116071533.105780-2-wqu@suse.com>
+ <20210116071533.105780-5-wqu@suse.com>
 From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <b0360753-072a-f5c5-3ea6-08e9db2445dd@toxicpanda.com>
-Date:   Tue, 19 Jan 2021 16:41:34 -0500
+Message-ID: <5a6223fc-9937-3bd6-ecd0-d6c5939f59a7@toxicpanda.com>
+Date:   Tue, 19 Jan 2021 16:54:28 -0500
 User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0)
  Gecko/20100101 Thunderbird/78.6.1
 MIME-Version: 1.0
-In-Reply-To: <20210116071533.105780-2-wqu@suse.com>
+In-Reply-To: <20210116071533.105780-5-wqu@suse.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
 Content-Transfer-Encoding: 7bit
@@ -77,41 +77,219 @@ List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 On 1/16/21 2:15 AM, Qu Wenruo wrote:
-> When __process_pages_contig() get called for
-> extent_clear_unlock_delalloc(), if we hit the locked page, only Private2
-> bit is updated, but dirty/writeback/error bits are all skipped.
+> For subpage case, we need to allocate new memory for each metadata page.
 > 
-> There are several call sites call extent_clear_unlock_delalloc() with
-> @locked_page and PAGE_CLEAR_DIRTY/PAGE_SET_WRITEBACK/PAGE_END_WRITEBACK
+> So we need to:
+> - Allow attach_extent_buffer_page() to return int
+>    To indicate allocation failure
 > 
-> - cow_file_range()
-> - run_delalloc_nocow()
-> - cow_file_range_async()
->    All for their error handling branches.
+> - Prealloc btrfs_subpage structure for alloc_extent_buffer()
+>    We don't want to call memory allocation with spinlock hold, so
+>    do preallocation before we acquire mapping->private_lock.
 > 
-> For those call sites, since we skip the locked page for
-> dirty/error/writeback bit update, the locked page will still have its
-> dirty bit remaining.
+> - Handle subpage and regular case differently in
+>    attach_extent_buffer_page()
+>    For regular case, just do the usual thing.
+>    For subpage case, allocate new memory or use the preallocated memory.
 > 
-> Thankfully, since all those call sites can only be hit with various
-> serious errors, it's pretty hard to hit and shouldn't affect regular
-> btrfs operations.
-> 
-> But still, we shouldn't leave the locked_page with its
-> dirty/error/writeback bits untouched.
-> 
-> Fix this by only skipping lock/unlock page operations for locked_page.
+> For future subpage metadata, we will make more usage of radix tree to
+> grab extnet buffer.
 > 
 > Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>   fs/btrfs/extent_io.c | 75 ++++++++++++++++++++++++++++++++++++++------
+>   fs/btrfs/subpage.h   | 17 ++++++++++
+>   2 files changed, 82 insertions(+), 10 deletions(-)
+> 
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index a816ba4a8537..320731487ac0 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -24,6 +24,7 @@
+>   #include "rcu-string.h"
+>   #include "backref.h"
+>   #include "disk-io.h"
+> +#include "subpage.h"
+>   
+>   static struct kmem_cache *extent_state_cache;
+>   static struct kmem_cache *extent_buffer_cache;
+> @@ -3140,9 +3141,13 @@ static int submit_extent_page(unsigned int opf,
+>   	return ret;
+>   }
+>   
+> -static void attach_extent_buffer_page(struct extent_buffer *eb,
+> -				      struct page *page)
+> +static int attach_extent_buffer_page(struct extent_buffer *eb,
+> +				      struct page *page,
+> +				      struct btrfs_subpage *prealloc)
+>   {
+> +	struct btrfs_fs_info *fs_info = eb->fs_info;
+> +	int ret;
 
-Except this is handled by the callers.  We clear_page_dirty_for_io() the page 
-before calling btrfs_run_delalloc_range(), so we don't need the 
-PAGE_CLEAR_DIRTY, it's already cleared.  The SetPageError() is handled in the 
-error path for locked_page, as is the set_writeback/end_writeback.  Now I don't 
-think this patch causes problems specifically, but the changelog is at least 
-wrong, and I'd rather we'd skip the handling of the locked_page here and leave 
-it in the proper error handling.  If you need to do this for some other reason 
-that I haven't gotten to yet then you need to make that clear in the changelog, 
-because as of right now I don't see why this is needed.  Thanks,
+int ret = 0;
+
+> +
+>   	/*
+>   	 * If the page is mapped to btree inode, we should hold the private
+>   	 * lock to prevent race.
+> @@ -3152,10 +3157,32 @@ static void attach_extent_buffer_page(struct extent_buffer *eb,
+>   	if (page->mapping)
+>   		lockdep_assert_held(&page->mapping->private_lock);
+>   
+> -	if (!PagePrivate(page))
+> -		attach_page_private(page, eb);
+> -	else
+> -		WARN_ON(page->private != (unsigned long)eb);
+> +	if (fs_info->sectorsize == PAGE_SIZE) {
+> +		if (!PagePrivate(page))
+> +			attach_page_private(page, eb);
+> +		else
+> +			WARN_ON(page->private != (unsigned long)eb);
+> +		return 0;
+> +	}
+> +
+> +	/* Already mapped, just free prealloc */
+> +	if (PagePrivate(page)) {
+> +		kfree(prealloc);
+> +		return 0;
+> +	}
+> +
+> +	if (prealloc) {
+> +		/* Has preallocated memory for subpage */
+> +		spin_lock_init(&prealloc->lock);
+> +		attach_page_private(page, prealloc);
+> +	} else {
+> +		/* Do new allocation to attach subpage */
+> +		ret = btrfs_attach_subpage(fs_info, page);
+> +		if (ret < 0)
+> +			return ret;
+
+Delete the above 2 lines.
+
+> +	}
+> +
+> +	return 0;
+
+return ret;
+
+>   }
+>   
+>   void set_page_extent_mapped(struct page *page)
+> @@ -5062,21 +5089,29 @@ struct extent_buffer *btrfs_clone_extent_buffer(const struct extent_buffer *src)
+>   	if (new == NULL)
+>   		return NULL;
+>   
+> +	set_bit(EXTENT_BUFFER_UPTODATE, &new->bflags);
+> +	set_bit(EXTENT_BUFFER_UNMAPPED, &new->bflags);
+> +
+
+Why are you doing this here?  It seems unrelated?  Looking at the code it 
+appears there's a reason for this later, but I had to go look to make sure I 
+wasn't crazy, so at the very least it needs to be done in a more relevant patch.
+
+>   	for (i = 0; i < num_pages; i++) {
+> +		int ret;
+> +
+>   		p = alloc_page(GFP_NOFS);
+>   		if (!p) {
+>   			btrfs_release_extent_buffer(new);
+>   			return NULL;
+>   		}
+> -		attach_extent_buffer_page(new, p);
+> +		ret = attach_extent_buffer_page(new, p, NULL);
+> +		if (ret < 0) {
+> +			put_page(p);
+> +			btrfs_release_extent_buffer(new);
+> +			return NULL;
+> +		}
+>   		WARN_ON(PageDirty(p));
+>   		SetPageUptodate(p);
+>   		new->pages[i] = p;
+>   		copy_page(page_address(p), page_address(src->pages[i]));
+>   	}
+>   
+> -	set_bit(EXTENT_BUFFER_UPTODATE, &new->bflags);
+> -	set_bit(EXTENT_BUFFER_UNMAPPED, &new->bflags);
+>   
+>   	return new;
+>   }
+> @@ -5308,12 +5343,28 @@ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
+>   
+>   	num_pages = num_extent_pages(eb);
+>   	for (i = 0; i < num_pages; i++, index++) {
+> +		struct btrfs_subpage *prealloc = NULL;
+> +
+>   		p = find_or_create_page(mapping, index, GFP_NOFS|__GFP_NOFAIL);
+>   		if (!p) {
+>   			exists = ERR_PTR(-ENOMEM);
+>   			goto free_eb;
+>   		}
+>   
+> +		/*
+> +		 * Preallocate page->private for subpage case, so that
+> +		 * we won't allocate memory with private_lock hold.
+> +		 * The memory will be freed by attach_extent_buffer_page() or
+> +		 * freed manually if exit earlier.
+> +		 */
+> +		ret = btrfs_alloc_subpage(fs_info, &prealloc);
+> +		if (ret < 0) {
+> +			unlock_page(p);
+> +			put_page(p);
+> +			exists = ERR_PTR(ret);
+> +			goto free_eb;
+> +		}
+> +
+
+I realize that for subpage sectorsize we'll only have 1 page, but I'd still 
+rather see this outside of the for loop, just for clarity sake.
+
+>   		spin_lock(&mapping->private_lock);
+>   		exists = grab_extent_buffer(p);
+>   		if (exists) {
+> @@ -5321,10 +5372,14 @@ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
+>   			unlock_page(p);
+>   			put_page(p);
+>   			mark_extent_buffer_accessed(exists, p);
+> +			kfree(prealloc);
+>   			goto free_eb;
+>   		}
+> -		attach_extent_buffer_page(eb, p);
+> +		/* Should not fail, as we have preallocated the memory */
+> +		ret = attach_extent_buffer_page(eb, p, prealloc);
+> +		ASSERT(!ret);
+>   		spin_unlock(&mapping->private_lock);
+> +
+>   		WARN_ON(PageDirty(p));
+>   		eb->pages[i] = p;
+>   		if (!PageUptodate(p))
+> diff --git a/fs/btrfs/subpage.h b/fs/btrfs/subpage.h
+> index 96f3b226913e..f701256dd1e2 100644
+> --- a/fs/btrfs/subpage.h
+> +++ b/fs/btrfs/subpage.h
+> @@ -23,8 +23,25 @@
+>   struct btrfs_subpage {
+>   	/* Common members for both data and metadata pages */
+>   	spinlock_t lock;
+> +	union {
+> +		/* Structures only used by metadata */
+> +		/* Structures only used by data */
+> +	};
+>   };
+>   
+> +/* For rare cases where we need to pre-allocate a btrfs_subpage structure */
+> +static inline int btrfs_alloc_subpage(struct btrfs_fs_info *fs_info,
+> +				      struct btrfs_subpage **ret)
+> +{
+> +	if (fs_info->sectorsize == PAGE_SIZE)
+> +		return 0;
+> +
+> +	*ret = kzalloc(sizeof(struct btrfs_subpage), GFP_NOFS);
+> +	if (!*ret)
+> +		return -ENOMEM;
+> +	return 0;
+> +}
+
+We're allocating these for every metadata page, that deserves a dedicated 
+kmem_cache.  Thanks,
 
 Josef

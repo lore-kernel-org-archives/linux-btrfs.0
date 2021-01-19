@@ -2,165 +2,205 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
-	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-15.3 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 22759C433E0
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Jan 2021 19:47:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 15A0CC433DB
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Jan 2021 20:03:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D162E23138
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Jan 2021 19:47:25 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A39F623107
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Jan 2021 20:03:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2391312AbhASTrG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 19 Jan 2021 14:47:06 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36266 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726212AbhASTpi (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Jan 2021 14:45:38 -0500
-Received: from mail-qk1-x735.google.com (mail-qk1-x735.google.com [IPv6:2607:f8b0:4864:20::735])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1F4D5C0613CF
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Jan 2021 11:44:57 -0800 (PST)
-Received: by mail-qk1-x735.google.com with SMTP id w79so23072536qkb.5
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Jan 2021 11:44:57 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=subject:to:cc:references:from:message-id:date:user-agent
-         :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=MF61aXFKRKC9xRDUv1G+4nwf79Spnu6UrlSYjHWeS5Y=;
-        b=h0amHnJOtCsVzkt8UzRI1KKpK5/ErEkuu71tdiIb4+Op96aAQCUtLlYD6rZFMONFNS
-         s6mHvqkIrMcsyjMMCtHkz7vPgaact5GdmTLxv8ym6Yy/YhwaxC06NBXe3mn247atlRD5
-         qSyk0FAQYx4XFNdn2Hcn7sZfVn1DZuWU1pYJl5vV9zxZKRfW1SQx78c/ZEBZkj2eXum4
-         P75vO3SGWNCyfeyqgSu8MUyLT8qKpN5kk5ANoFB8TO8m07P7mHgiqfd5fEIkoM8cyqgk
-         YTLoUJJGD3aqTvtRDHN9zDPKRxZOuUQpWTFMXjUfzyUl5dfHBbHluvb5UP9EmD8IXniT
-         UD2g==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=MF61aXFKRKC9xRDUv1G+4nwf79Spnu6UrlSYjHWeS5Y=;
-        b=X9Ao3Y/SlZC2l4Xp7fcFMMIl5FFOdcqE1s9kjVzAoho7DdFF4aXS8nYmK3WUhF9czQ
-         UVHyDfeucsZkKLLMEgRvzfRpHI3upbigjsX9nGoTvu4k5xa7vhmtz/zp9uIpBxigG5A2
-         O6ZdwOLDGovYdsYohsOOSHThmb3mnTHpk6A2UMNcJxTS9J9F4xKUagxbEomZoMUsdZcG
-         snZ8Yb49sb3rSbb/+v8dlwasPW6K0DIOS3+gP8d4Bj2JtFZ0SGtovStKeP32Zog8AGHT
-         mnsES+ED0B/6w/rqZYbS63jbdXUCyU7Ggv6LCfrN2dBOju4fP8uGRlX8Ys6fiik2QynX
-         pntQ==
-X-Gm-Message-State: AOAM530r5g61ZEq//0b7TYT8zBHN1sYgaZgQ8wNLr53fLP9VYX0XgUpa
-        EAW7W+yh2fmj3I7+/l/90GwCXg==
-X-Google-Smtp-Source: ABdhPJy1E2n1wySk9qOrdh3bOstGX6IFnS4gtEswiZWoLLb1i3LgQH21DQ/IG1in4qkgxOGgQ0zCxQ==
-X-Received: by 2002:a05:620a:22a5:: with SMTP id p5mr5934451qkh.69.1611085496201;
-        Tue, 19 Jan 2021 11:44:56 -0800 (PST)
-Received: from ?IPv6:2620:10d:c0a8:11d1::1325? ([2620:10d:c091:480::1:a066])
-        by smtp.gmail.com with ESMTPSA id 184sm13689008qkg.92.2021.01.19.11.44.55
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 19 Jan 2021 11:44:55 -0800 (PST)
-Subject: Re: [PATCH v3 3/4] btrfs: introduce new read_policy device
-To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
-Cc:     dsterba@suse.com
-References: <cover.1610324448.git.anand.jain@oracle.com>
- <3c90d2b8e03dcd9ba9db00c4283a5e73f543a13f.1610324448.git.anand.jain@oracle.com>
-From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <4d6003c1-527f-b29b-49fb-d6aa9dccac0e@toxicpanda.com>
-Date:   Tue, 19 Jan 2021 14:44:54 -0500
-User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0)
- Gecko/20100101 Thunderbird/78.6.1
+        id S1729668AbhASUBj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 19 Jan 2021 15:01:39 -0500
+Received: from mx2.suse.de ([195.135.220.15]:42942 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1728033AbhASTsg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 19 Jan 2021 14:48:36 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.221.27])
+        by mx2.suse.de (Postfix) with ESMTP id DF89CAF28;
+        Tue, 19 Jan 2021 19:47:46 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 37FA6DA6E3; Tue, 19 Jan 2021 20:45:51 +0100 (CET)
+Date:   Tue, 19 Jan 2021 20:45:51 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v4 08/18] btrfs: introduce helper for subpage uptodate
+ status
+Message-ID: <20210119194551.GQ6430@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20210116071533.105780-1-wqu@suse.com>
+ <20210116071533.105780-9-wqu@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <3c90d2b8e03dcd9ba9db00c4283a5e73f543a13f.1610324448.git.anand.jain@oracle.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20210116071533.105780-9-wqu@suse.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 1/11/21 4:41 AM, Anand Jain wrote:
-> Read-policy type 'device' and device flag 'read-preferred':
+On Sat, Jan 16, 2021 at 03:15:23PM +0800, Qu Wenruo wrote:
+> This patch introduce the following functions to handle btrfs subpage
+> uptodate status:
+> - btrfs_subpage_set_uptodate()
+> - btrfs_subpage_clear_uptodate()
+> - btrfs_subpage_test_uptodate()
+>   Those helpers can only be called when the range is ensured to be
+>   inside the page.
 > 
-> The read-policy type device picks the device(s) flagged as
-> read-preferred for reading stripes of type raid1, raid10,
-> raid1c3 and raid1c4.
+> - btrfs_page_set_uptodate()
+> - btrfs_page_clear_uptodate()
+> - btrfs_page_test_uptodate()
+>   Those helpers can handle both regular sector size and subpage without
+>   problem.
+>   Although caller should still ensure that the range is inside the page.
 > 
-> A system might contain SSD, nvme, iscsi, or san lun, and which are all
-> a non-rotational device, so it is not a good idea to set the read-preferred
-> automatically. Instead, device read-policy along with the read-preferred
-> flag provides an ability to do it manually. This advanced tuning is useful
-> in more than one situation, for example,
->   - In heterogeneous-disk volume, it provides an ability to manually choose
->      the low latency disks for reading.
->   - Useful for more accurate testing.
->   - Avoid known problematic device from reading the chunk until it is
->     replaced (by marking the other good devices as read-preferred).
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  fs/btrfs/subpage.h | 115 +++++++++++++++++++++++++++++++++++++++++++++
+>  1 file changed, 115 insertions(+)
 > 
-> Note:
-> 
-> If the read-policy type is set to 'device', but there isn't any device
-> which is flagged as read-preferred, then stripe 0 is used for reading.
-> 
-> The device replacement won't migrate the read-preferred flag to the new
-> replace the target device.
-> 
-> As of now, this is an in-memory only feature.
-> 
-> It's pointless to set the read-preferred flag on the missing device, as
-> IOs aren't submitted to the missing device.
-> 
-> If there is more than one read-preferred device in a chunk, the read IO
-> shall go to the stripe 0 as of now.
-> 
-> Usage example:
-> 
-> Consider a typical two disks raid1.
-> 
-> Configure devid1 for reading.
-> 
-> $ echo 1 > devinfo/1/read_preferred
-> $ cat devinfo/1/read_preferred
-> 1
-> $ cat devinfo/2/read_preferred
-> 0
-> 
-> $ pwd
-> /sys/fs/btrfs/12345678-1234-1234-1234-123456789abc
-> 
-> $ cat read_policy
-> [pid] device
-> $ echo device > ./read_policy
-> $ cat read_policy
-> pid [device]
-> 
-> Now read IOs are sent to devid 1 (sdb).
-> 
-> $ echo 3 > /proc/sys/vm/drop_caches
-> $ md5sum /btrfs/YkZI
-> 
-> $ iostat -zy 1 | egrep 'sdb|sdc' (from another terminal)
-> sdb              50.00     40048.00         0.00      40048          0
-> 
-> Change the read-preferred device from devid 1 to devid 2 (sdc).
-> 
-> $ echo 0 > ./devinfo/1/read_preferred
-> 
-> [ 3343.918658] BTRFS info (device sdb): reset read preferred on devid 1 (1334)
-> 
-> $ echo 1 > ./devinfo/2/read_preferred
-> 
-> [ 3343.919876] BTRFS info (device sdb): set read preferred on devid 2 (1334)
-> 
-> $ echo 3 > /proc/sys/vm/drop_caches
-> $ md5sum /btrfs/YkZI
-> 
-> Further read ios are sent to devid 2 (sdc).
-> 
-> $ iostat -zy 1 | egrep 'sdb|sdc' (from another terminal)
-> sdc              49.00     40048.00         0.00      40048          0
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> diff --git a/fs/btrfs/subpage.h b/fs/btrfs/subpage.h
+> index d8b34879368d..3373ef4ffec1 100644
+> --- a/fs/btrfs/subpage.h
+> +++ b/fs/btrfs/subpage.h
+> @@ -23,6 +23,7 @@
+>  struct btrfs_subpage {
+>  	/* Common members for both data and metadata pages */
+>  	spinlock_t lock;
+> +	u16 uptodate_bitmap;
+>  	union {
+>  		/* Structures only used by metadata */
+>  		bool under_alloc;
+> @@ -78,4 +79,118 @@ static inline void btrfs_page_end_meta_alloc(struct btrfs_fs_info *fs_info,
+>  int btrfs_attach_subpage(struct btrfs_fs_info *fs_info, struct page *page);
+>  void btrfs_detach_subpage(struct btrfs_fs_info *fs_info, struct page *page);
+>  
+> +/*
+> + * Convert the [start, start + len) range into a u16 bitmap
+> + *
+> + * E.g. if start == page_offset() + 16K, len = 16K, we get 0x00f0.
+> + */
+> +static inline u16 btrfs_subpage_calc_bitmap(struct btrfs_fs_info *fs_info,
 
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+All the API functions should use const for data that are only read,
+fs_info in this case at least.
 
-Thanks,
-
-Josef
+> +			struct page *page, u64 start, u32 len)
+> +{
+> +	int bit_start = offset_in_page(start) >> fs_info->sectorsize_bits;
+> +	int nbits = len >> fs_info->sectorsize_bits;
+> +
+> +	/* Basic checks */
+> +	ASSERT(PagePrivate(page) && page->private);
+> +	ASSERT(IS_ALIGNED(start, fs_info->sectorsize) &&
+> +	       IS_ALIGNED(len, fs_info->sectorsize));
+> +
+> +	/*
+> +	 * The range check only works for mapped page, we can
+> +	 * still have unampped page like dummy extent buffer pages.
+> +	 */
+> +	if (page->mapping)
+> +		ASSERT(page_offset(page) <= start &&
+> +			start + len <= page_offset(page) + PAGE_SIZE);
+> +	/*
+> +	 * Here nbits can be 16, thus can go beyond u16 range. Here we make the
+> +	 * first left shift to be calculated in unsigned long (u32), then
+> +	 * truncate the result to u16.
+> +	 */
+> +	return (u16)(((1UL << nbits) - 1) << bit_start);
+> +}
+> +
+> +static inline void btrfs_subpage_set_uptodate(struct btrfs_fs_info *fs_info,
+> +			struct page *page, u64 start, u32 len)
+> +{
+> +	struct btrfs_subpage *subpage = (struct btrfs_subpage *)page->private;
+> +	u16 tmp = btrfs_subpage_calc_bitmap(fs_info, page, start, len);
+> +	unsigned long flags;
+> +
+> +	spin_lock_irqsave(&subpage->lock, flags);
+> +	subpage->uptodate_bitmap |= tmp;
+> +	if (subpage->uptodate_bitmap == U16_MAX)
+> +		SetPageUptodate(page);
+> +	spin_unlock_irqrestore(&subpage->lock, flags);
+> +}
+> +
+> +static inline void btrfs_subpage_clear_uptodate(struct btrfs_fs_info *fs_info,
+> +			struct page *page, u64 start, u32 len)
+> +{
+> +	struct btrfs_subpage *subpage = (struct btrfs_subpage *)page->private;
+> +	u16 tmp = btrfs_subpage_calc_bitmap(fs_info, page, start, len);
+> +	unsigned long flags;
+> +
+> +	spin_lock_irqsave(&subpage->lock, flags);
+> +	subpage->uptodate_bitmap &= ~tmp;
+> +	ClearPageUptodate(page);
+> +	spin_unlock_irqrestore(&subpage->lock, flags);
+> +}
+> +
+> +/*
+> + * Unlike set/clear which is dependent on each page status, for test all bits
+> + * are tested in the same way.
+> + */
+> +#define DECLARE_BTRFS_SUBPAGE_TEST_OP(name)				\
+> +static inline bool btrfs_subpage_test_##name(struct btrfs_fs_info *fs_info, \
+> +			struct page *page, u64 start, u32 len)		\
+> +{									\
+> +	struct btrfs_subpage *subpage = (struct btrfs_subpage *)page->private; \
+> +	u16 tmp = btrfs_subpage_calc_bitmap(fs_info, page, start, len); \
+> +	unsigned long flags;						\
+> +	bool ret;							\
+> +									\
+> +	spin_lock_irqsave(&subpage->lock, flags);			\
+> +	ret = ((subpage->name##_bitmap & tmp) == tmp);			\
+> +	spin_unlock_irqrestore(&subpage->lock, flags);			\
+> +	return ret;							\
+> +}
+> +DECLARE_BTRFS_SUBPAGE_TEST_OP(uptodate);
+> +
+> +/*
+> + * Note that, in selftest, especially extent-io-tests, we can have empty
+> + * fs_info passed in.
+> + * Thankfully in selftest, we only test sectorsize == PAGE_SIZE cases so far,
+> + * thus we can fall back to regular sectorsize branch.
+> + */
+> +#define DECLARE_BTRFS_PAGE_OPS(name, set_page_func, clear_page_func,	\
+> +			       test_page_func)				\
+> +static inline void btrfs_page_set_##name(struct btrfs_fs_info *fs_info,	\
+> +			struct page *page, u64 start, u32 len)		\
+> +{									\
+> +	if (unlikely(!fs_info) || fs_info->sectorsize == PAGE_SIZE) {	\
+> +		set_page_func(page);					\
+> +		return;							\
+> +	}								\
+> +	btrfs_subpage_set_##name(fs_info, page, start, len);		\
+> +}									\
+> +static inline void btrfs_page_clear_##name(struct btrfs_fs_info *fs_info, \
+> +			struct page *page, u64 start, u32 len)		\
+> +{									\
+> +	if (unlikely(!fs_info) || fs_info->sectorsize == PAGE_SIZE) {	\
+> +		clear_page_func(page);					\
+> +		return;							\
+> +	}								\
+> +	btrfs_subpage_clear_##name(fs_info, page, start, len);		\
+> +}									\
+> +static inline bool btrfs_page_test_##name(struct btrfs_fs_info *fs_info, \
+> +			struct page *page, u64 start, u32 len)		\
+> +{									\
+> +	if (unlikely(!fs_info) || fs_info->sectorsize == PAGE_SIZE)	\
+> +		return test_page_func(page);				\
+> +	return btrfs_subpage_test_##name(fs_info, page, start, len);	\
+> +}
+> +DECLARE_BTRFS_PAGE_OPS(uptodate, SetPageUptodate, ClearPageUptodate,
+> +			PageUptodate);
+> +
+>  #endif /* BTRFS_SUBPAGE_H */
+> -- 
+> 2.30.0

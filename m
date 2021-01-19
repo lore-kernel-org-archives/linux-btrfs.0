@@ -7,37 +7,37 @@ X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C5AACC4332B
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Jan 2021 14:46:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 26064C433E9
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Jan 2021 14:46:16 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 8A21C20DD4
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Jan 2021 14:46:13 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E85F220DD4
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Jan 2021 14:46:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2389299AbhASOkz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 19 Jan 2021 09:40:55 -0500
-Received: from mx2.suse.de ([195.135.220.15]:37992 "EHLO mx2.suse.de"
+        id S1732410AbhASOkT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 19 Jan 2021 09:40:19 -0500
+Received: from mx2.suse.de ([195.135.220.15]:37984 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2390820AbhASM3F (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S2390836AbhASM3F (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Tue, 19 Jan 2021 07:29:05 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1611059214; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+        t=1611059213; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=frb+PZ9kVXij3jQDJdz1Vsnh2JU/aBbmJtXqrAEgPbQ=;
-        b=Vm/FRcx1xCLZ7n23JZKnInTixmIM1JJUzcx9OjFCReNpMuCFTXzI4stykdxZ/DW5I1fIFp
-        rfqGa7Dn8J1hLqafyE9MmptmJq4qeyVS9AJQpHX68LZdeSdiUoqyyRDxM2/Ihp5xP5HrPY
-        abiCg8z5wT4SHEHSXrtq/bPNH6s9rx4=
+        bh=irLtReI5ibF5FB3wYeZ7kPRp1qTAq9+6dVDx7bLbgRY=;
+        b=mjrTR+DqrkHclI4slhDGHWcHG8jx7ZVrYkTn1mSR8sGtPXwjn11aLz43wUdujSPozRHzqk
+        ND/kL+ghEXNLRPUKDLyDwy8797HVx2AIrz1nculD2xldF7Oa1boEMiWjTTNUd3TeWBX3V2
+        twi4wHiH9fuZkisciE4LxAwzP1WlPLI=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 8ACCFAF55;
-        Tue, 19 Jan 2021 12:26:54 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 58D1DAF44;
+        Tue, 19 Jan 2021 12:26:53 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 10/13] btrfs: Fix parameter description of btrfs_inode_rsv_release/btrfs_delalloc_release_space
-Date:   Tue, 19 Jan 2021 14:26:46 +0200
-Message-Id: <20210119122649.187778-11-nborisov@suse.com>
+Subject: [PATCH 05/13] btrfs: Improve parameter description for __btrfs_write_out_cache
+Date:   Tue, 19 Jan 2021 14:26:41 +0200
+Message-Id: <20210119122649.187778-6-nborisov@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <20210119122649.187778-1-nborisov@suse.com>
 References: <20210119122649.187778-1-nborisov@suse.com>
@@ -47,46 +47,40 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Fixes following warnings:
-
-fs/btrfs/delalloc-space.c:205: warning: Function parameter or member 'inode' not described in 'btrfs_inode_rsv_release'
-fs/btrfs/delalloc-space.c:205: warning: Function parameter or member 'qgroup_free' not described in 'btrfs_inode_rsv_release'
-fs/btrfs/delalloc-space.c:472: warning: Function parameter or member 'reserved' not described in 'btrfs_delalloc_release_space'
-fs/btrfs/delalloc-space.c:472: warning: Function parameter or member 'qgroup_free' not described in 'btrfs_delalloc_release_space'
-fs/btrfs/delalloc-space.c:472: warning: Excess function parameter 'release_bytes' description in 'btrfs_delalloc_release_space'
+Fixes following W=1 warnings:
+fs/btrfs/free-space-cache.c:1317: warning: Function parameter or member 'root' not described in '__btrfs_write_out_cache'
+fs/btrfs/free-space-cache.c:1317: warning: Function parameter or member 'inode' not described in '__btrfs_write_out_cache'
+fs/btrfs/free-space-cache.c:1317: warning: Function parameter or member 'ctl' not described in '__btrfs_write_out_cache'
+fs/btrfs/free-space-cache.c:1317: warning: Function parameter or member 'block_group' not described in '__btrfs_write_out_cache'
+fs/btrfs/free-space-cache.c:1317: warning: Function parameter or member 'io_ctl' not described in '__btrfs_write_out_cache'
+fs/btrfs/free-space-cache.c:1317: warning: Function parameter or member 'trans' not described in '__btrfs_write_out_cache'
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/delalloc-space.c | 7 ++++---
- 1 file changed, 4 insertions(+), 3 deletions(-)
+ fs/btrfs/free-space-cache.c | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/delalloc-space.c b/fs/btrfs/delalloc-space.c
-index bacee09b7bfd..c73e5131a2de 100644
---- a/fs/btrfs/delalloc-space.c
-+++ b/fs/btrfs/delalloc-space.c
-@@ -192,8 +192,8 @@ void btrfs_free_reserved_data_space(struct btrfs_inode *inode,
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index fd6ddd6b8165..3ad109114e0c 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -1300,10 +1300,12 @@ int btrfs_wait_cache_io(struct btrfs_trans_handle *trans,
  
  /**
-  * btrfs_inode_rsv_release - release any excessive reservation.
-- * @inode - the inode we need to release from.
-- * @qgroup_free - free or convert qgroup meta.
-+ * @inode: the inode we need to release from.
-+ * @qgroup_free: free or convert qgroup meta.
-  *   Unlike normal operation, qgroup meta reservation needs to know if we are
-  *   freeing qgroup reservation or just converting it into per-trans.  Normally
-  *   @qgroup_free is true for error handling, and false for normal release.
-@@ -457,9 +457,10 @@ int btrfs_delalloc_reserve_space(struct btrfs_inode *inode,
- /**
-  * btrfs_delalloc_release_space - release data and metadata space for delalloc
-  * @inode: inode we're releasing space for
-+ * @reserved: list of changed/reserved ranges
-  * @start: start position of the space already reserved
-  * @len: the len of the space already reserved
-- * @release_bytes: the len of the space we consumed or didn't use
-+ * @qgroup_free: should qgroup reserved-space also be freed
+  * __btrfs_write_out_cache - write out cached info to an inode
+- * @root - the root the inode belongs to
+- * @ctl - the free space cache we are going to write out
+- * @block_group - the block_group for this cache if it belongs to a block_group
+- * @trans - the trans handle
++ * @root:  the root the inode belongs to
++ * @inode: freespace inode we are writing out
++ * @ctl:  the free space cache we are going to write out
++ * @block_group:  the block_group for this cache if it belongs to a block_group
++ * @io_ctl: holds context for the io
++ * @trans:  the trans handle
   *
-  * This function will release the metadata space that was not used and will
-  * decrement ->delalloc_bytes and remove it from the fs_info delalloc_inodes
+  * This function writes out a free space cache struct to disk for quick recovery
+  * on mount.  This will return 0 if it was successful in writing the cache out,
 -- 
 2.25.1
 

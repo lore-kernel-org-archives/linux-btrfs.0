@@ -2,88 +2,51 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
-	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.3 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4668DC433E6
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Jan 2021 20:03:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3F902C433E0
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Jan 2021 20:51:59 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id E3A642310C
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Jan 2021 20:03:37 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 07E3D23132
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Jan 2021 20:51:59 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729701AbhASTqr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 19 Jan 2021 14:46:47 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36186 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728908AbhASTpQ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Jan 2021 14:45:16 -0500
-Received: from mail-qk1-x730.google.com (mail-qk1-x730.google.com [IPv6:2607:f8b0:4864:20::730])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C6DA6C0613C1
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Jan 2021 11:44:34 -0800 (PST)
-Received: by mail-qk1-x730.google.com with SMTP id c7so23097594qke.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Jan 2021 11:44:34 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=subject:to:cc:references:from:message-id:date:user-agent
-         :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=vOfKAt2EOhHolKwG7ZmDLU43lxbEY1uJX5ZWABu31QQ=;
-        b=pMUr9siaWJXwo0U62hL9ugQ26BCB/zUrFluKWBiZsuaj2ojlLHOqRTDia+HcC4IYxr
-         MN6Z3zwqCzrCrCtzKzBZD+EEEZ6s+GQrEzK1SkXiARqK1lNfa1JSs2vJA82HUiIhZLDF
-         +3+th2XTQTlHS+Gr9K/NjwH87VyQT353pwgLibVx04yjRMfd5W+b+G/emkZ1QH1QMCdp
-         +VdUR0bh6PjKBYDAcrzubd7MQWNm6nDsH13UPGoZxwYcHNQDr//t9M88eoMItQaZsmRL
-         EZvKlkNyMewVrjWqNakBNoRdDRhTOaemmNEiFctMlJI7UAlL79+JBnnmYpaICVplE1+V
-         q8KQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=vOfKAt2EOhHolKwG7ZmDLU43lxbEY1uJX5ZWABu31QQ=;
-        b=sZC9f6RkFLDK+4VAyfRatDxn8J4/XQsx26+pAgGqGM27K2aHttWXxtk7jHLsO/yaJv
-         YPoYDl1TopS0FOScgP2s1u84q6O2Dd/p/JfyaiqhmFRy9SLdw9H/boSrvDG8wd+PLif7
-         fHpsKp3bFMHqNP0B/ALZF02Bf0E73uPivRpiLWiNxZ0kiX6h54/clrb7Qj99UPtKrYxh
-         q6KlVodP1yXD+s5FJNtbedMOsaEddBDAR+lT5VUpZ8CMyzWhsAv4SOSjBB3YqUkVoppY
-         Wit6b70UUN+eCED5ky1QkEXLZBGdmYz8EiSreg/lLtkOWQ7NzW1s9lnf6I8337wpgJZd
-         RL3g==
-X-Gm-Message-State: AOAM530gmCDXvNnY2vjXOGgKsqvkKzLCbav2CvRSreUjWjBHg1yKFeX7
-        IYhVEeiTgfmm2WarRWW/mt0Jzg==
-X-Google-Smtp-Source: ABdhPJx91C9FQHNnNZvhcNOxh+KGKkfzF/EdY71onEWTAAXmVKrkJ79E8jSYaVV8L1jl5IAC7jZS5w==
-X-Received: by 2002:a37:52c1:: with SMTP id g184mr6073859qkb.364.1611085473749;
-        Tue, 19 Jan 2021 11:44:33 -0800 (PST)
-Received: from ?IPv6:2620:10d:c0a8:11d1::1325? ([2620:10d:c091:480::1:a066])
-        by smtp.gmail.com with ESMTPSA id f125sm13574381qkd.22.2021.01.19.11.44.32
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 19 Jan 2021 11:44:33 -0800 (PST)
-Subject: Re: [PATCH v3 2/4] btrfs: introduce new device-state read_preferred
-To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
-Cc:     dsterba@suse.com
-References: <cover.1610324448.git.anand.jain@oracle.com>
- <3f27d3da96accec05273a8ffc2a2d24554c78a1b.1610324448.git.anand.jain@oracle.com>
-From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <faf2803a-aa3d-5bf3-03ed-e09554aedaaf@toxicpanda.com>
-Date:   Tue, 19 Jan 2021 14:44:31 -0500
-User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0)
- Gecko/20100101 Thunderbird/78.6.1
+        id S1729963AbhASUvX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 19 Jan 2021 15:51:23 -0500
+Received: from mx2.suse.de ([195.135.220.15]:44828 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1728682AbhASUul (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 19 Jan 2021 15:50:41 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.221.27])
+        by mx2.suse.de (Postfix) with ESMTP id 7CC16AF28;
+        Tue, 19 Jan 2021 20:49:58 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id B2C1EDA6E3; Tue, 19 Jan 2021 21:48:02 +0100 (CET)
+Date:   Tue, 19 Jan 2021 21:48:02 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v4 16/18] btrfs: introduce btrfs_subpage for data inodes
+Message-ID: <20210119204802.GR6430@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20210116071533.105780-1-wqu@suse.com>
+ <20210116071533.105780-17-wqu@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <3f27d3da96accec05273a8ffc2a2d24554c78a1b.1610324448.git.anand.jain@oracle.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20210116071533.105780-17-wqu@suse.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 1/11/21 4:41 AM, Anand Jain wrote:
-> This is a preparatory patch and introduces a new device flag
-> 'read_preferred', RW-able using sysfs interface.
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+On Sat, Jan 16, 2021 at 03:15:31PM +0800, Qu Wenruo wrote:
+> -void set_page_extent_mapped(struct page *page)
+> +int __must_check set_page_extent_mapped(struct page *page)
 
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
-
-Thanks,
-
-Josef
+We're not using the __must_check, errors from such functions need to be
+handled by default so I've dropped the attribute.

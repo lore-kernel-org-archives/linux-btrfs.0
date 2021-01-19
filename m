@@ -7,146 +7,90 @@ X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9A841C43381
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Jan 2021 14:45:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D8C20C433E0
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Jan 2021 14:45:49 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 6A7262313C
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Jan 2021 14:45:17 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A13ED23134
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Jan 2021 14:45:49 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2404134AbhASOlr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 19 Jan 2021 09:41:47 -0500
-Received: from mx2.suse.de ([195.135.220.15]:38048 "EHLO mx2.suse.de"
+        id S2404231AbhASOly (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 19 Jan 2021 09:41:54 -0500
+Received: from mx2.suse.de ([195.135.220.15]:38046 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2390978AbhASM3M (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S2390977AbhASM3M (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Tue, 19 Jan 2021 07:29:12 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1611059214; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:
+        t=1611059215; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:content-type:content-type:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=qt19Bqx/BOaubuN1rJmaOmPmXgHGdf8NFei28dIduZY=;
-        b=pZU3bAHJLl+lLXzctu7/grJ2WjaVsa+Fz8WERXB5jVVv5EnmS5Is+BJi1Df2CdiTSDm9WW
-        MUy5JtIkUx8Gv9O9/gDehYcs7tOIKPv+l+uhzoCBg7L6hnEmE2MIitnmeuuAvPF0U2+jNw
-        3acUQ3PaYMQygOZdvvh+x7a3COhbIYU=
+        bh=BkWZYUAG7HI4cAcD4oEPJaJd37Jy2TIv0AltZTE5yoQ=;
+        b=W6aWPEXWUWyKXgS3EibwOZF3gbrB0W0o5N/u2014TG4y02MQX65Wo41oYX7K91vHMAhtI8
+        SFX1o5z1is+FKhDbTyWju0UDJjKTvjoW3ItRw0vFuqJKs2RlZeU9fDfX/VLRm4EbxWJG5d
+        /2JiVdGr8CHiwOjY5/8UQ8wTDFt50Eg=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id C7A59AF92;
-        Tue, 19 Jan 2021 12:26:54 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 4739BAFAC;
+        Tue, 19 Jan 2021 12:26:55 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 11/13] btrfs: Fix parameter description in space-info.c
-Date:   Tue, 19 Jan 2021 14:26:47 +0200
-Message-Id: <20210119122649.187778-12-nborisov@suse.com>
+Subject: [PATCH 13/13] lib/zstd: Convert constants to defines
+Date:   Tue, 19 Jan 2021 14:26:49 +0200
+Message-Id: <20210119122649.187778-14-nborisov@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <20210119122649.187778-1-nborisov@suse.com>
 References: <20210119122649.187778-1-nborisov@suse.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-With these fixes space-info.c is clearn for W=1 warnings, namely the
-following ones are fixed:
+Those constants are really used internally by zstd and including
+linux/zstd.h into users results in the following warnings:
 
-fs/btrfs/space-info.c:575: warning: Function parameter or member 'fs_info' not described in 'may_commit_transaction'
-fs/btrfs/space-info.c:575: warning: Function parameter or member 'space_info' not described in 'may_commit_transaction'
-fs/btrfs/space-info.c:1231: warning: Function parameter or member 'fs_info' not described in 'handle_reserve_ticket'
-fs/btrfs/space-info.c:1231: warning: Function parameter or member 'space_info' not described in 'handle_reserve_ticket'
-fs/btrfs/space-info.c:1231: warning: Function parameter or member 'ticket' not described in 'handle_reserve_ticket'
-fs/btrfs/space-info.c:1231: warning: Function parameter or member 'flush' not described in 'handle_reserve_ticket'
-fs/btrfs/space-info.c:1315: warning: Function parameter or member 'fs_info' not described in '__reserve_bytes'
-fs/btrfs/space-info.c:1315: warning: Function parameter or member 'space_info' not described in '__reserve_bytes'
-fs/btrfs/space-info.c:1315: warning: Function parameter or member 'orig_bytes' not described in '__reserve_bytes'
-fs/btrfs/space-info.c:1315: warning: Function parameter or member 'flush' not described in '__reserve_bytes'
-fs/btrfs/space-info.c:1427: warning: Function parameter or member 'root' not described in 'btrfs_reserve_metadata_bytes'
-fs/btrfs/space-info.c:1427: warning: Function parameter or member 'block_rsv' not described in 'btrfs_reserve_metadata_bytes'
-fs/btrfs/space-info.c:1427: warning: Function parameter or member 'orig_bytes' not described in 'btrfs_reserve_metadata_bytes'
-fs/btrfs/space-info.c:1427: warning: Function parameter or member 'flush' not described in 'btrfs_reserve_metadata_bytes'
-fs/btrfs/space-info.c:1462: warning: Function parameter or member 'fs_info' not described in 'btrfs_reserve_data_bytes'
-fs/btrfs/space-info.c:1462: warning: Function parameter or member 'bytes' not described in 'btrfs_reserve_data_bytes'
-fs/btrfs/space-info.c:1462: warning: Function parameter or member 'flush' not described in 'btrfs_reserve_data_bytes'
+In file included from fs/btrfs/zstd.c:19:
+./include/linux/zstd.h:798:21: warning: ‘ZSTD_skippableHeaderSize’ defined but not used [-Wunused-const-variable=]
+  798 | static const size_t ZSTD_skippableHeaderSize = 8;
+      |                     ^~~~~~~~~~~~~~~~~~~~~~~~
+./include/linux/zstd.h:796:21: warning: ‘ZSTD_frameHeaderSize_max’ defined but not used [-Wunused-const-variable=]
+  796 | static const size_t ZSTD_frameHeaderSize_max = ZSTD_FRAMEHEADERSIZE_MAX;
+      |                     ^~~~~~~~~~~~~~~~~~~~~~~~
+./include/linux/zstd.h:795:21: warning: ‘ZSTD_frameHeaderSize_min’ defined but not used [-Wunused-const-variable=]
+  795 | static const size_t ZSTD_frameHeaderSize_min = ZSTD_FRAMEHEADERSIZE_MIN;
+      |                     ^~~~~~~~~~~~~~~~~~~~~~~~
+./include/linux/zstd.h:794:21: warning: ‘ZSTD_frameHeaderSize_prefix’ defined but not used [-Wunused-const-variable=]
+  794 | static const size_t ZSTD_frameHeaderSize_prefix = 5;
+
+So fix those warnings by turning the constants into defines.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/space-info.c | 35 +++++++++++++++++------------------
- 1 file changed, 17 insertions(+), 18 deletions(-)
+ include/linux/zstd.h | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-index 84fb94e78a8f..55588da66dff 100644
---- a/fs/btrfs/space-info.c
-+++ b/fs/btrfs/space-info.c
-@@ -562,9 +562,8 @@ static void shrink_delalloc(struct btrfs_fs_info *fs_info,
+diff --git a/include/linux/zstd.h b/include/linux/zstd.h
+index 249575e2485f..e87f78c9b19c 100644
+--- a/include/linux/zstd.h
++++ b/include/linux/zstd.h
+@@ -791,11 +791,11 @@ size_t ZSTD_DStreamOutSize(void);
+ /* for static allocation */
+ #define ZSTD_FRAMEHEADERSIZE_MAX 18
+ #define ZSTD_FRAMEHEADERSIZE_MIN  6
+-static const size_t ZSTD_frameHeaderSize_prefix = 5;
+-static const size_t ZSTD_frameHeaderSize_min = ZSTD_FRAMEHEADERSIZE_MIN;
+-static const size_t ZSTD_frameHeaderSize_max = ZSTD_FRAMEHEADERSIZE_MAX;
++#define ZSTD_frameHeaderSize_prefix 5
++#define ZSTD_frameHeaderSize_min ZSTD_FRAMEHEADERSIZE_MIN
++#define ZSTD_frameHeaderSize_max ZSTD_FRAMEHEADERSIZE_MAX
+ /* magic number + skippable frame length */
+-static const size_t ZSTD_skippableHeaderSize = 8;
++#define ZSTD_skippableHeaderSize 8
  
- /**
-  * maybe_commit_transaction - possibly commit the transaction if its ok to
-- * @root - the root we're allocating for
-- * @bytes - the number of bytes we want to reserve
-- * @force - force the commit
-+ * @fs_info: fs context
-+ * @space_info: space_info we are checking for commit, either data or metadata
-  *
-  * This will check to make sure that committing the transaction will actually
-  * get us somewhere and then commit the transaction if it does.  Otherwise it
-@@ -1216,10 +1215,10 @@ static void wait_reserve_ticket(struct btrfs_fs_info *fs_info,
  
- /**
-  * handle_reserve_ticket - do the appropriate flushing and waiting for a ticket
-- * @fs_info - the fs
-- * @space_info - the space_info for the reservation
-- * @ticket - the ticket for the reservation
-- * @flush - how much we can flush
-+ * @fs_info: the fs
-+ * @space_info: the space_info for the reservation
-+ * @ticket: the ticket for the reservation
-+ * @flush: how much we can flush
-  *
-  * This does the work of figuring out how to flush for the ticket, waiting for
-  * the reservation, and returning the appropriate error if there is one.
-@@ -1297,10 +1296,10 @@ static inline bool is_normal_flushing(enum btrfs_reserve_flush_enum flush)
- 
- /**
-  * reserve_metadata_bytes - try to reserve bytes from the block_rsv's space
-- * @root - the root we're allocating for
-- * @space_info - the space info we want to allocate from
-- * @orig_bytes - the number of bytes we want
-- * @flush - whether or not we can flush to make our reservation
-+ * @fs_info: fs context
-+ * @space_info: the space info we want to allocate from
-+ * @orig_bytes: the number of bytes we want
-+ * @flush: whether or not we can flush to make our reservation
-  *
-  * This will reserve orig_bytes number of bytes from the space info associated
-  * with the block_rsv.  If there is not enough space it will make an attempt to
-@@ -1408,10 +1407,10 @@ static int __reserve_bytes(struct btrfs_fs_info *fs_info,
- 
- /**
-  * reserve_metadata_bytes - try to reserve bytes from the block_rsv's space
-- * @root - the root we're allocating for
-- * @block_rsv - the block_rsv we're allocating for
-- * @orig_bytes - the number of bytes we want
-- * @flush - whether or not we can flush to make our reservation
-+ * @root: the root we're allocating for
-+ * @block_rsv: the block_rsv we're allocating for
-+ * @orig_bytes: the number of bytes we want
-+ * @flush: whether or not we can flush to make our reservation
-  *
-  * This will reserve orig_bytes number of bytes from the space info associated
-  * with the block_rsv.  If there is not enough space it will make an attempt to
-@@ -1450,9 +1449,9 @@ int btrfs_reserve_metadata_bytes(struct btrfs_root *root,
- 
- /**
-  * btrfs_reserve_data_bytes - try to reserve data bytes for an allocation
-- * @fs_info - the filesystem
-- * @bytes - the number of bytes we need
-- * @flush - how we are allowed to flush
-+ * @fs_info: the filesystem
-+ * @bytes: the number of bytes we need
-+ * @flush: how we are allowed to flush
-  *
-  * This will reserve bytes from the data space info.  If there is not enough
-  * space then we will attempt to flush space as specified by flush.
+ /*-*************************************
 -- 
 2.25.1
 

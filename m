@@ -2,312 +2,144 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.3 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-17.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=unavailable autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BE3D4C433E6
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Jan 2021 23:15:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DFB5CC433DB
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Jan 2021 00:08:52 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 82AE122D08
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Jan 2021 23:15:00 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B20F522CE3
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Jan 2021 00:08:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729369AbhASXOW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 19 Jan 2021 18:14:22 -0500
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:40580 "EHLO
-        james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728977AbhASXNj (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Jan 2021 18:13:39 -0500
-Received: by james.kirk.hungrycats.org (Postfix, from userid 1002)
-        id 0F7E59488C6; Tue, 19 Jan 2021 18:12:44 -0500 (EST)
-Date:   Tue, 19 Jan 2021 18:12:44 -0500
-From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To:     Goffredo Baroncelli <kreijack@libero.it>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [RFC][PATCH V5] btrfs: preferred_metadata: preferred device for
- metadata
-Message-ID: <20210119231244.GM31381@hungrycats.org>
-References: <20210117185435.36263-1-kreijack@libero.it>
+        id S1727734AbhATAAv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 19 Jan 2021 19:00:51 -0500
+Received: from mx2.suse.de ([195.135.220.15]:41684 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S2394964AbhASNx3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 19 Jan 2021 08:53:29 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1611064351; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references:autocrypt:autocrypt;
+        bh=iHKhjDkg2elRSLCRxcs3JrLM+Cwcg+VKeqaH+Rb+H6c=;
+        b=rDTgZ7xM0AN8Ucse2v7mBg8l0Jc0DJBU5I16P+0kPu6Ll3d1MYjww4/OSPhb827NAQfP3a
+        AICZcyHBf6nEypATvwx9kRZbFb+EuDroiPciU7vbGZXpZWf5BQXuaB+OroVtJXg0PBeUIO
+        NBdb1UgiuuGaVIXgCdiitPnNeC32Gk4=
+Received: from relay2.suse.de (unknown [195.135.221.27])
+        by mx2.suse.de (Postfix) with ESMTP id 5E644B247;
+        Tue, 19 Jan 2021 13:52:31 +0000 (UTC)
+Subject: Re: [RFC PATCH 04/37] btrfs: use bio_init_fields in volumes
+To:     Chaitanya Kulkarni <chaitanya.kulkarni@wdc.com>,
+        linux-block@vger.kernel.org, linux-xfs@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
+        drbd-dev@lists.linbit.com, linux-bcache@vger.kernel.org,
+        linux-raid@vger.kernel.org, linux-nvme@lists.infradead.org,
+        linux-scsi@vger.kernel.org, target-devel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+        cluster-devel@redhat.com
+Cc:     jfs-discussion@lists.sourceforge.net, dm-devel@redhat.com,
+        axboe@kernel.dk, philipp.reisner@linbit.com,
+        lars.ellenberg@linbit.com, efremov@linux.com, colyli@suse.de,
+        kent.overstreet@gmail.com, agk@redhat.com, snitzer@redhat.com,
+        song@kernel.org, hch@lst.de, sagi@grimberg.me,
+        martin.petersen@oracle.com, viro@zeniv.linux.org.uk, clm@fb.com,
+        josef@toxicpanda.com, dsterba@suse.com, tytso@mit.edu,
+        adilger.kernel@dilger.ca, rpeterso@redhat.com, agruenba@redhat.com,
+        darrick.wong@oracle.com, shaggy@kernel.org, damien.lemoal@wdc.com,
+        naohiro.aota@wdc.com, jth@kernel.org, tj@kernel.org,
+        osandov@fb.com, bvanassche@acm.org, gustavo@embeddedor.com,
+        asml.silence@gmail.com, jefflexu@linux.alibaba.com
+References: <20210119050631.57073-1-chaitanya.kulkarni@wdc.com>
+ <20210119050631.57073-5-chaitanya.kulkarni@wdc.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <89feb998-8c60-dbae-92a6-15a9ad4fd594@suse.com>
+Date:   Tue, 19 Jan 2021 15:52:28 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.10.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20210117185435.36263-1-kreijack@libero.it>
-User-Agent: Mutt/1.10.1 (2018-07-13)
+In-Reply-To: <20210119050631.57073-5-chaitanya.kulkarni@wdc.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sun, Jan 17, 2021 at 07:54:30PM +0100, Goffredo Baroncelli wrote:
-> 
-> Hi all,
-> 
-> This is an RFC; I wrote this patch because I find the idea interesting
-> even though it adds more complication to the chunk allocator.
-> 
-> The basic idea is to store the metadata chunk in the fasters disks.
-> The fasters disk are marked by the "preferred_metadata" flag.
-> 
-> BTRFS when allocate a new metadata/system chunk, selects the
-> "preferred_metadata" disks, otherwise it selectes the non
-> "preferred_metadata" disks. The intial patch allowed to use the other
-> kind of disk in case a set is full.
-> 
-> This patches set is based on v5.11-rc2.
-> 
-> For now, the only user of this patch that I am aware is Zygo. 
-> However he asked to further constraint the allocation: i.e. avoid to
-> allocated metadata on a not "preferred_metadata"
-> disk. So I extended the patch adding 4 modes to operate.
-> 
-> This is enabled passing the option "preferred_metadata=<mode>" at
-> mount time. 
-> 
-> There are 4 modes:
-> - preferred_metadata=disabled
->   The allocator is the standard one.
-> 
-> - preferred_metadata=soft
->   The metadata chunk are allocated on the disks marked with the
->   "preferred_metadata" flag.
->   The data chunk are allocated on the disks not marked with the
->   "preferred_metadata" flag.
->   If the space isn't enough, then it is possible to use the other kind
->   of disks.
-> 
-> - preferred_metadata=hard
->   The metadata chunk are allocated on the disks marked with the
->   "preferred_metadata" flag.
->   The data chunk are allocated on the disks not marked with the
->   "preferred_metadata" flag.
->   If the space isn't enough, then "no space left" error is raised. It
->   is not possible to use the other kind of disks.
->         
-> - preferred_metadata=metadata
->   The metadata chunk are allocated on the disks marked with the
->   "preferred_metadata" flag.
->   For metadata, if the space isn't enough, then it is possible to use the
->   other kind of disks.
->   The data chunk are allocated on the disks not marked with the
->   "preferred_metadata" flag.
->   For data, if the space isn't enough, then "no space left" error is raised.
->   It is not possible to use the other kind of disks.
 
-I like this form of the preferred_metadata mount option even less than
-the last one.  Now we have 4 different mount option cases, and we still
-can't specify some things that are possible with 4 device properties.
-Ideally there's no mount option at all, and we handle everything with
-properties.
 
-e.g. if I had one fast but small NVME, one slow but large SATA SSD, and
-one big spinning HDD, I can't set up the following with the mount option:
+On 19.01.21 г. 7:05 ч., Chaitanya Kulkarni wrote:
+> Signed-off-by: Chaitanya Kulkarni <chaitanya.kulkarni@wdc.com>
+> ---
+>  fs/btrfs/volumes.c | 4 +---
+>  1 file changed, 1 insertion(+), 3 deletions(-)
+> 
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index ee086fc56c30..836167212252 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -6371,14 +6371,12 @@ static void submit_stripe_bio(struct btrfs_bio *bbio, struct bio *bio,
+>  
+>  	bio->bi_private = bbio;
+This line can be removed as ->private is initialized by bio_init_fields.
 
-	- metadata only on NVME (type 3)
-	- metadata preferred, data allowed on SSD (type 1)
-	- data only on HDD (type 2)
-
-The relationship between NVME and SSD is "metadata" but between NVME and
-HDD it is "hard", which are conflicting mount options.  I can't specify
-the relationship between SSD and HDD (metadata must not overflow, but
-data is allowed to overflow) with any of the mount options, because you
-have not provided a mount option where data may overflow onto preferred
-(fast) disks while metadata must not use slow disks.
-
-With the 4 device types we can trivially specify this arrangement.
-
-The sorted device lists would be:
-
-        Metadata sort order             Data sort order
-        metadata only (3)               data only (2)
-        metadata preferred (1)          data preferred (0)
-	data preferred (0)		metadata preferred (1)
-        other devices (2 or other)      other devices (3 or other)
-
-We keep 3 device counts for the first 3 sort orders.  If the number of all
-preferred devices (type != 0) is zero, we just return ndevs; otherwise,
-we pick the first device count that is >= mindevs.  If all the device
-counts are < mindevs then we return the 3rd count (metadata only +
-metadata preferred + data preferred) and the caller will find ENOSPC.
-
-More sophisticated future implementations can alter the sort order, or
-operate in entirely separate parts of btrfs, without conflicting with
-this scheme.  If there is no mount option, then future implementations
-can't conflict with it.
-
-> A separate patches set is sent to extend the "btrfs property" command
-> for supporting the preferred_metadata device flag. The basic usage is:
-> 
->     $ # set a new value
->     $ sudo btrfs property set /dev/vde preferred_metadata 1
-> 
->     $ # get the current value
->     $ sudo btrfs property get /dev/vde preferred_metadata
->     devid=4, path=/dev/vde: dedicated_metadata=1
-> 
-> Some examples: (/dev/sd[abc] are marked as preferred_metadata,
-> and /dev/sd[ef] are not)
-> 
-> Non striped profile: metadata->raid1, data->raid1
-> The data is stored on /dev/sd[ef], metadata is stored on /dev/sd[abc].
-> 
-> If mode is one of "soft" or "disabled", when /dev/sd[ef] are full
-> the data chunk is allocated also on /dev/sd[abc]. Otherwise -ENOSPACE
-> is raised.
-> 
-> Striped profile: metadata->raid6, data->raid6
-> raid6 requires 3 disks at minimum, so /dev/sd[ef] are not enough for a
-> data profile raid6. If mode is one of "hard" or "metadata", an error 
-> is returned. Otherwise to allow a data chunk allocation, the data profile
-> raid6 will be stored on all the disks /dev/sd[abcdef].
-> 
-> Instead the metadata profile raid6 will be allocated on /dev/sd[abc],
-> because these are enough to host this chunk.
-> 
-> When the disks /dev/sd[abc] are full, if the mode is "hard" an
-> error is raised, otherwise the other disks may be used.
-> 
-> The patches set is composed by four patches:
-> 
-> - The first patch adds the ioctl to update the btrfs_dev_item.type field.
-> The ioctl is generic to handle more fields, however now only the "type"
-> field is supported.
-> 
-> - The second patch adds the flag BTRFS_DEV_PREFERRED_METADATA which is
-> used to mark a device as "preferred_metadata"
-> 
-> - The third patch exports the btrfs_dev_item.type field via sysfs files
-> /sys/fs/btrfs/<UUID>/devinfo/<devid>/type
-> 
-> It is possible only to read the value. It is not implemented the updated
-> of the value because in btrfs/stsfs.c there is a comment that states:
-> "We don't want to do full transaction commit from inside sysfs".
-> 
-> - The fourth patch implements the mount options handling
-> 
-> - The 5th implements the different allocation strategies
-> 
-> Changelog:
-> v5: - add several modes to preferred_metadata mount option
-> v4: - renamed ssd_metadata to preferred_metadata
->     - add the device property "preferred_metadata"
->     - add the ioctl BTRFS_IOC_DEV_PROPERTIES
->     - export the btrfs_dev_item.type values via sysfs
-> v3: - correct the collision between BTRFS_MOUNT_DISCARD_ASYNC and
->       BTRFS_MOUNT_SSD_METADATA.
-> v2: - rebased to v5.6.2
->     - correct the comparison about the rotational disks (>= instead of >)
->     - add the flag rotational to the struct btrfs_device_info to
->       simplify the comparison function (btrfs_cmp_device_info*() )
-> v1: - first issue
-> 
-> Below I collected some data to highlight the performance increment.
-> 
-> Test setup:
-> I performed as test a "dist-upgrade" of a Debian from stretch to buster.
-> The test consisted in an image of a Debian stretch[1]  with the packages
-> needed under /var/cache/apt/archives/ (so no networking was involved).
-> For each test I formatted the filesystem from scratch, un-tar-red the
-> image and the ran "apt-get dist-upgrade" [2]. For each disk(s)/filesystem
-> combination I measured the time of apt dist-upgrade with and
-> without the flag "force-unsafe-io" which reduce the using of sync(2) and
-> flush(2). The ssd was 20GB big, the hdd was 230GB big,
-> 
-> I considered the following scenarios:
-> - btrfs over ssd
-> - btrfs over ssd + hdd with my patch enabled
-> - btrfs over bcache over hdd+ssd
-> - btrfs over hdd (very, very slow....)
-> - ext4 over ssd
-> - ext4 over hdd
-> 
-> The test machine was an "AMD A6-6400K" with 4GB of ram, where 3GB was used
-> as cache/buff.
-> 
-> Data analysis:
-> 
-> Of course btrfs is slower than ext4 when a lot of sync/flush are involved. Using
-> apt on a rotational was a dramatic experience. And IMHO  this should be replaced
-> by using the btrfs snapshot capabilities. But this is another (not easy) story.
-> 
-> Unsurprising bcache performs better than my patch. But this is an expected
-> result because it can cache also the data chunk (the read can goes directly to
-> the ssd). bcache perform about +60% slower when there are a lot of sync/flush
-> and only +20% in the other case.
-> 
-> Regarding the test with force-unsafe-io (fewer sync/flush), my patch reduce the
-> time from +256% to +113%  than the hdd-only . Which I consider a good
-> results considering how small is the patch.
-> 
-> 
-> Raw data:
-> The data below is the "real" time (as return by the time command) consumed by
-> apt
-> 
-> 
-> Test description         real (mmm:ss)	Delta %
-> --------------------     -------------  -------
-> btrfs hdd w/sync	   142:38	+533%
-> btrfs ssd+hdd w/sync        81:04	+260%
-> ext4 hdd w/sync	            52:39	+134%
-> btrfs bcache w/sync	    35:59	 +60%
-> btrfs ssd w/sync	    22:31	reference
-> ext4 ssd w/sync	            12:19	 -45%
-> 
-> 
-> 
-> Test description         real (mmm:ss)	Delta %
-> --------------------     -------------  -------
-> btrfs hdd	             56:2	+256%
-> ext4 hdd	            51:32	+228%
-> btrfs ssd+hdd	            33:30	+113%
-> btrfs bcache	            18:57	 +20%
-> btrfs ssd	            15:44	reference
-> ext4 ssd	            11:49	 -25%
-> 
-> 
-> [1] I created the image, using "debootrap stretch", then I installed a set
-> of packages using the commands:
-> 
->   # debootstrap stretch test/
->   # chroot test/
->   # mount -t proc proc proc
->   # mount -t sysfs sys sys
->   # apt --option=Dpkg::Options::=--force-confold \
->         --option=Dpkg::options::=--force-unsafe-io \
-> 	install mate-desktop-environment* xserver-xorg vim \
->         task-kde-desktop task-gnome-desktop
-> 
-> Then updated the release from stretch to buster changing the file /etc/apt/source.list
-> Then I download the packages for the dist upgrade:
-> 
->   # apt-get update
->   # apt-get --download-only dist-upgrade
-> 
-> Then I create a tar of this image.
-> Before the dist upgrading the space used was about 7GB of space with 2281
-> packages. After the dist-upgrade, the space used was 9GB with 2870 packages.
-> The upgrade installed/updated about 2251 packages.
-> 
-> 
-> [2] The command was a bit more complex, to avoid an interactive session
-> 
->   # mkfs.btrfs -m single -d single /dev/sdX
->   # mount /dev/sdX test/
->   # cd test
->   # time tar xzf ../image.tgz
->   # chroot .
->   # mount -t proc proc proc
->   # mount -t sysfs sys sys
->   # export DEBIAN_FRONTEND=noninteractive
->   # time apt-get -y --option=Dpkg::Options::=--force-confold \
-> 	--option=Dpkg::options::=--force-unsafe-io dist-upgrade
-> 
-> 
-> BR
-> G.Baroncelli
-> 
-> --
-> gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-> Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
-> 
+>  	btrfs_io_bio(bio)->device = dev;
+> -	bio->bi_end_io = btrfs_end_bio;
+> -	bio->bi_iter.bi_sector = physical >> 9;
+> +	bio_init_fields(bio, dev->bdev, physical >> 9, bbio, btrfs_end_bio, 0, 0);
+>  	btrfs_debug_in_rcu(fs_info,
+>  	"btrfs_map_bio: rw %d 0x%x, sector=%llu, dev=%lu (%s id %llu), size=%u",
+>  		bio_op(bio), bio->bi_opf, bio->bi_iter.bi_sector,
+>  		(unsigned long)dev->bdev->bd_dev, rcu_str_deref(dev->name),
+>  		dev->devid, bio->bi_iter.bi_size);
+> -	bio_set_dev(bio, dev->bdev);
+>  
+>  	btrfs_bio_counter_inc_noblocked(fs_info);
+>  
 > 

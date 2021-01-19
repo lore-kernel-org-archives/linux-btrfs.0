@@ -2,188 +2,289 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-11.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 04635C433E6
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Jan 2021 08:27:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0BF9FC433DB
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Jan 2021 08:39:30 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id BA5442312D
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Jan 2021 08:27:58 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BBB3223131
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Jan 2021 08:39:29 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388429AbhASFYZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 19 Jan 2021 00:24:25 -0500
-Received: from esa1.hgst.iphmx.com ([68.232.141.245]:34502 "EHLO
-        esa1.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2389640AbhASFHk (ORCPT
+        id S1727884AbhASIjM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 19 Jan 2021 03:39:12 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48016 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2388687AbhASFXL (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Jan 2021 00:07:40 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1611032860; x=1642568860;
-  h=from:to:cc:subject:date:message-id:mime-version:
-   content-transfer-encoding;
-  bh=2EwAg85Rl2+jMe62nRnS8RL98bOCXmnfO5riJrV6i0c=;
-  b=GjcXuKIfE7oPUJJM/Wi2vVnUpYud2gKvIpltIXHVNrAg3RsXPu43SSpM
-   wIW3+AVU6/Swl0XW8ZahSdWTuFz45x0PRFdfyO6jSRBESB3FGqMrqsV51
-   LqkiqQ6Mgcp5WA0fCSeOO9AkjTdUCbrZXnNCSfz2UwQChlBG1Ttqr5VHX
-   GXRzXfm92QORv96J/4QuRWF+9tkr+pcO4FELeyKPoafSsntR2wTSd/PaH
-   Iw7sQzoXv+E9E2JN2DSUUWOHaWKDpdqLHfZz17GiunoEXJigP+2IH4ZKA
-   x4hjKdDD2Xj6pDfIKfk4mM4S2sDepgL7SmTMUx4dUWt2yBgJNl9B9ln3F
-   w==;
-IronPort-SDR: 7F9V8E2gCFx1ENrckraC/aOPabyshxzdGR1mhufNzVCSB1ZQqnbgSiAulHQ+fQrQf0VUfZp2RQ
- lD9qauiuxEBB9PMtkyVUCtlbRRvbja4mqWOP92mvguWXYPFPRt0ywXlzt4nwaxSEuykNRTLHwY
- 46Oyg2LmyN3IKgagwVvK4ScZzXbnceF3nrKIl0BsSg9m7EerKdRxhTPeeLR437E7+7EOo/WM3N
- rxvlmtGFm6UcYsU0Qk1//34mDVQN7IyG+xRcn7TqkyNt+L1lv3J+Us9C6/ANlf4U03PgJBiMf4
- 7rY=
-X-IronPort-AV: E=Sophos;i="5.79,357,1602518400"; 
-   d="scan'208";a="268080837"
-Received: from h199-255-45-15.hgst.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 19 Jan 2021 13:06:34 +0800
-IronPort-SDR: nICJNTCp5DZTCdEW+BDS8Z2snIrYrlMGiOG+8k41nZ+toTeWOlVhexX9dHTlwiqlcEC7mJSKUG
- Iy/fc+BGI7Gq8Tc8eNWRNodotuWudKLMuHWvPgvyglmYCy3CVY5v6y+KCctMt1KQr1t/A5vu6G
- EU8YQ12jfB7JSDNqLnc6qhTKltQXkH+QIkeCJgH1ExuBNJ/LLJLVkSZoi6pcXoZsChyTgxhzzc
- M/7G2USRTjBZjdX6m3rZ7UDS60bVW6YpGRy6Hay6Zi1n8mTtRVmKMccQ45eAk1w07M3Ya+tZ9I
- WeterqNf9O4H/xA4G74z3xOk
-Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 18 Jan 2021 20:49:09 -0800
-IronPort-SDR: w8TQaHPmOf4afpFLhHFiHm4s9YBVvwz1nCheCJ4OBOH8yQ2UY0NC3Tt/JdFHF9KkeR+DlxZGUH
- e7bQB+02ddXqKaR8b/7v1Y7wXKviC9dKqJTPF9aSTC9cHooTn06sxWBBnh6ybRkpJPiq1eaXml
- Li9XSEIsEl1dTBAvxWyxQKBso9dBp+WZiRKxmJUsbAqs+G/qtiWTWXlVZWjYoZKV0OKSYwZfdM
- WxDGvor0MhqHOPvWCUI9b0h4sFeSeNraJk/cdT+mEYZtqS1ubVV2lyl7ZqDz6u2Z/jCzzw/RkG
- Jdo=
-WDCIronportException: Internal
-Received: from vm.labspan.wdc.com (HELO vm.sc.wdc.com) ([10.6.137.102])
-  by uls-op-cesaip02.wdc.com with ESMTP; 18 Jan 2021 21:06:34 -0800
-From:   Chaitanya Kulkarni <chaitanya.kulkarni@wdc.com>
-To:     linux-block@vger.kernel.org, linux-xfs@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
-        drbd-dev@lists.linbit.com, linux-bcache@vger.kernel.org,
-        linux-raid@vger.kernel.org, linux-nvme@lists.infradead.org,
-        linux-scsi@vger.kernel.org, target-devel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-        cluster-devel@redhat.com
-Cc:     jfs-discussion@lists.sourceforge.net, dm-devel@redhat.com,
-        axboe@kernel.dk, philipp.reisner@linbit.com,
-        lars.ellenberg@linbit.com, efremov@linux.com, colyli@suse.de,
-        kent.overstreet@gmail.com, agk@redhat.com, snitzer@redhat.com,
-        song@kernel.org, hch@lst.de, sagi@grimberg.me,
-        martin.petersen@oracle.com, viro@zeniv.linux.org.uk, clm@fb.com,
-        josef@toxicpanda.com, dsterba@suse.com, tytso@mit.edu,
-        adilger.kernel@dilger.ca, rpeterso@redhat.com, agruenba@redhat.com,
-        darrick.wong@oracle.com, shaggy@kernel.org, damien.lemoal@wdc.com,
-        naohiro.aota@wdc.com, jth@kernel.org, tj@kernel.org,
-        osandov@fb.com, bvanassche@acm.org, gustavo@embeddedor.com,
-        asml.silence@gmail.com, jefflexu@linux.alibaba.com,
-        Chaitanya Kulkarni <chaitanya.kulkarni@wdc.com>
-Subject: [RFC PATCH 00/37] block: introduce bio_init_fields()
-Date:   Mon, 18 Jan 2021 21:05:54 -0800
-Message-Id: <20210119050631.57073-1-chaitanya.kulkarni@wdc.com>
-X-Mailer: git-send-email 2.22.1
+        Tue, 19 Jan 2021 00:23:11 -0500
+Received: from mail-wr1-x42d.google.com (mail-wr1-x42d.google.com [IPv6:2a00:1450:4864:20::42d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BE16EC061575
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Jan 2021 21:22:30 -0800 (PST)
+Received: by mail-wr1-x42d.google.com with SMTP id 91so18454295wrj.7
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Jan 2021 21:22:30 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=rkjnsn-net.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc:content-transfer-encoding;
+        bh=wmwNwORf6fXeRndflX0Q9FGmx+VcXATdLrXmuDImzUM=;
+        b=IbQrKTVWktElQhLzFigXnFHIQsYx+gerjcRReaK+zmQ4BCrMDl5YPaiwyabEbCog7A
+         g97keUDTqfwFdA4e8CozNa1eek1Tsk5Hx0sznbXT48Hb+VaVVG/P/elnlu2zxHEIUcmn
+         7LU86OUFuOfK6e1LPFzHkkYBl0mAW/N8/Y5fe09WEr0FCL59sTjXQQVQ33JstIIVAv4C
+         DkLlcWm053/zkP4Kk0e8PtlpYbt9oejWusbJrbLCzhO5UcA/PEE0/f7gwHdxAO0Gmg9Y
+         OWmP6nRrR0eh04jsFAs6Rj4K+okq5L1U8zYAefO7q+F16TKY0c4AykQPsrjP7eoPj1hP
+         SFXA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc:content-transfer-encoding;
+        bh=wmwNwORf6fXeRndflX0Q9FGmx+VcXATdLrXmuDImzUM=;
+        b=g1bzoRZsowYzFBxpE/nFPO1zhtNUjzEJCaanMoxEqovcsledbAnigi4W+n0z/HCw31
+         50x6buJoEy6hci2vM96+hyjEEH87p8lDF2Em5g3k/N41H/Dkr5cHgU0rCG91Aafj3hn6
+         anJ9AiU6MRnvdDpIFULkCluCMQCMUbKDIcYJcJmJLReZfBNrUxNJUMGZKtLjcGI1+UMR
+         astZG9YHeCW5DFhfJQzIilpOMa3Ls59FAB6JnD03KSwVF5h0oJ6zDdKUKCBeqqESdBcs
+         /9Be33WHwAE3YmP0Rp19x2c+FbSbXmATT6ZLCpxq7qy33Df0GlqRH6e17F0UQkBrqAZY
+         r8Tw==
+X-Gm-Message-State: AOAM530BHKsKRFTP+SUYE4paCIMGh08Mjwb+Kp9ry/p14IuXaIHmeFdB
+        ltc7zCFS4qaIN2I7ImE2pdQ4JIF8ET2xi9tDX55qWA==
+X-Google-Smtp-Source: ABdhPJyjMWNHoWCcNpkbRBYu1yPRxxYM4uWx6BvAx5yVQ4oPrytSzgNrVm/J1OFTytlJbOjvgn46wYKzVuD1+WDATag=
+X-Received: by 2002:a5d:6ccc:: with SMTP id c12mr2543443wrc.4.1611033749247;
+ Mon, 18 Jan 2021 21:22:29 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=y
-Content-Transfer-Encoding: 8bit
+References: <CAMj6ewO7PGBoN565WYz_bqL6nGszweNouP-Fphok9+GGpGn8gg@mail.gmail.com>
+ <20190521091842.GS1667@carfax.org.uk> <CAMj6ewPKbRA_eT7JYA9ob9Qk9ZROoshOqaJE=4N_X9bPaskLUw@mail.gmail.com>
+ <CAMj6ewOHrJVdwfKrgXZxwfwE=eoTaB9MS57zha33yb1_iOLWiw@mail.gmail.com>
+ <8aa09a61-aa1c-5dcd-093f-ec096a38a7b5@gmx.com> <CAMj6ewO229vq6=s+T7GhUegwDADv4dzhqPiM0jo10QiKujvytA@mail.gmail.com>
+ <684e89f3-666f-6ae6-5aa2-a4db350c1cd4@gmx.com> <CAMj6ewMqXLtrBQgTJuz04v3MBZ0W95fU4pT0jP6kFhuP830TuA@mail.gmail.com>
+ <218f6448-c558-2551-e058-8a69caadcb23@gmx.com> <CAMj6ewPR8hVYmUSoNWVk6gZvy-HyKnmtMXexAr2f4VQU_7bbUw@mail.gmail.com>
+ <3b2fe3d7-1919-d236-e6bb-483593287cc5@gmx.com> <CAMj6ewNDQFzXsvF5c1=raJc11iMvMKcHH=AbkUkrNeV2e3XGVg@mail.gmail.com>
+In-Reply-To: <CAMj6ewNDQFzXsvF5c1=raJc11iMvMKcHH=AbkUkrNeV2e3XGVg@mail.gmail.com>
+From:   Erik Jensen <erikjensen@rkjnsn.net>
+Date:   Mon, 18 Jan 2021 21:22:18 -0800
+Message-ID: <CAMj6ewPiEvXbtHC1auSfRag5QGtYJxwH_Hvoi2t_18uDSxzm8w@mail.gmail.com>
+Subject: Re: "bad tree block start" when trying to mount on ARM
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     Hugo Mills <hugo@carfax.org.uk>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi,
+On Mon, Jan 18, 2021 at 4:12 AM Erik Jensen <erikjensen@rkjnsn.net> wrote:
+>
+> The offending system is indeed ARMv7 (specifically a Marvell ARMADA=C2=AE
+> 388), but I believe the Broadcom BCM2835 in my Raspberry Pi is
+> actually ARMv6 (with hardware float support).
 
-This is a *compile only RFC* which adds a generic helper to initialize
-the various fields of the bio that is repeated all the places in
-file-systems, block layer, and drivers.
+Using NBD, I have verified that I receive the same error when
+attempting to mount the filesystem on my ARMv6 Raspberry Pi:
+[ 3491.339572] BTRFS info (device dm-4): disk space caching is enabled
+[ 3491.394584] BTRFS info (device dm-4): has skinny extents
+[ 3492.385095] BTRFS error (device dm-4): bad tree block start, want
+26207780683776 have 3395945502747707095
+[ 3492.514071] BTRFS error (device dm-4): bad tree block start, want
+26207780683776 have 3395945502747707095
+[ 3492.553599] BTRFS warning (device dm-4): failed to read tree root
+[ 3492.865368] BTRFS error (device dm-4): open_ctree failed
 
-The new helper allows callers to initialize various members such as
-bdev, sector, private, end io callback, io priority, and write hints.
+The Raspberry Pi is running Linux 5.4.83.
 
-The objective of this RFC is to only start a discussion, this it not 
-completely tested at all.                                                                                                            
-Following diff shows code level benefits of this helper :-
- 38 files changed, 124 insertions(+), 236 deletions(-)
-
--ck
-
-Chaitanya Kulkarni (37):
-  block: introduce bio_init_fields() helper
-  fs: use bio_init_fields in block_dev
-  btrfs: use bio_init_fields in disk-io
-  btrfs: use bio_init_fields in volumes
-  ext4: use bio_init_fields in page_io
-  gfs2: use bio_init_fields in lops
-  gfs2: use bio_init_fields in meta_io
-  gfs2: use bio_init_fields in ops_fstype
-  iomap: use bio_init_fields in buffered-io
-  iomap: use bio_init_fields in direct-io
-  jfs: use bio_init_fields in logmgr
-  zonefs: use bio_init_fields in append
-  drdb: use bio_init_fields in actlog
-  drdb: use bio_init_fields in bitmap
-  drdb: use bio_init_fields in receiver
-  floppy: use bio_init_fields
-  pktcdvd: use bio_init_fields
-  bcache: use bio_init_fields in journal
-  bcache: use bio_init_fields in super
-  bcache: use bio_init_fields in writeback
-  dm-bufio: use bio_init_fields
-  dm-crypt: use bio_init_fields
-  dm-zoned: use bio_init_fields metadata
-  dm-zoned: use bio_init_fields target
-  dm-zoned: use bio_init_fields
-  dm log writes: use bio_init_fields
-  nvmet: use bio_init_fields in bdev-ns
-  target: use bio_init_fields in iblock
-  btrfs: use bio_init_fields in scrub
-  fs: use bio_init_fields in buffer
-  eros: use bio_init_fields in data
-  eros: use bio_init_fields in zdata
-  jfs: use bio_init_fields in metadata
-  nfs: use bio_init_fields in blocklayout
-  ocfs: use bio_init_fields in heartbeat
-  xfs: use bio_init_fields in xfs_buf
-  xfs: use bio_init_fields in xfs_log
-
- block/blk-lib.c                     | 13 +++++--------
- drivers/block/drbd/drbd_actlog.c    |  5 +----
- drivers/block/drbd/drbd_bitmap.c    |  5 +----
- drivers/block/drbd/drbd_receiver.c  | 11 +++--------
- drivers/block/floppy.c              |  5 +----
- drivers/block/pktcdvd.c             | 12 ++++--------
- drivers/md/bcache/journal.c         | 21 ++++++++-------------
- drivers/md/bcache/super.c           | 19 +++++--------------
- drivers/md/bcache/writeback.c       | 14 ++++++--------
- drivers/md/dm-bufio.c               |  5 +----
- drivers/md/dm-crypt.c               |  4 +---
- drivers/md/dm-log-writes.c          | 21 ++++++---------------
- drivers/md/dm-zoned-metadata.c      | 15 +++++----------
- drivers/md/dm-zoned-target.c        |  9 +++------
- drivers/md/md.c                     |  6 ++----
- drivers/nvme/target/io-cmd-bdev.c   |  4 +---
- drivers/target/target_core_iblock.c | 11 +++--------
- fs/block_dev.c                      | 17 +++++------------
- fs/btrfs/disk-io.c                  | 11 ++++-------
- fs/btrfs/scrub.c                    |  6 ++----
- fs/btrfs/volumes.c                  |  4 +---
- fs/buffer.c                         |  7 ++-----
- fs/erofs/data.c                     |  6 ++----
- fs/erofs/zdata.c                    |  9 +++------
- fs/ext4/page-io.c                   |  6 ++----
- fs/gfs2/lops.c                      |  6 ++----
- fs/gfs2/meta_io.c                   |  5 ++---
- fs/gfs2/ops_fstype.c                |  7 ++-----
- fs/iomap/buffered-io.c              |  5 ++---
- fs/iomap/direct-io.c                | 15 +++++----------
- fs/jfs/jfs_logmgr.c                 | 16 ++++------------
- fs/jfs/jfs_metapage.c               | 16 +++++++---------
- fs/nfs/blocklayout/blocklayout.c    |  8 ++------
- fs/ocfs2/cluster/heartbeat.c        |  4 +---
- fs/xfs/xfs_buf.c                    |  6 ++----
- fs/xfs/xfs_log.c                    |  6 ++----
- fs/zonefs/super.c                   |  7 +++----
- include/linux/bio.h                 | 13 +++++++++++++
- 38 files changed, 124 insertions(+), 236 deletions(-)
-
--- 
-2.22.1
-
+> On Mon, Jan 18, 2021 at 4:01 AM Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+> >
+> >
+> >
+> > On 2021/1/18 =E4=B8=8B=E5=8D=887:55, Erik Jensen wrote:
+> > > On Mon, Jan 18, 2021 at 3:07 AM Qu Wenruo <quwenruo.btrfs@gmx.com> wr=
+ote:
+> > >> On 2021/1/18 =E4=B8=8B=E5=8D=886:33, Erik Jensen wrote:
+> > >>> I ended up having other priorities occupying my time since 2019, an=
+d the
+> > >>> "solution" of exporting the individual drives on my NAS using NBD a=
+nd
+> > >>> mounting them on my desktop worked, even if it wasn't pretty.
+> > >>>
+> > >>> However, I am currently looking into Syncthing, which I would like =
+to
+> > >>> run on the NAS directly. That would, of course, require accessing t=
+he
+> > >>> filesystem directly on the NAS rather than just exporting the raw
+> > >>> devices, which means circling back to this issue.
+> > >>>
+> > >>> After updating my NAS, I have determined that the issue still occur=
+s
+> > >>> with Linux 5.8.
+> > >>>
+> > >>> What's the next best step for debugging the issue? Ideally, I'd lik=
+e to
+> > >>> help track down the issue to find a proper fix, rather than just tr=
+ying
+> > >>> to bypass the issue. I wasn't sure if the suggestion to comment out
+> > >>> btrfs_verify_dev_extents() was more geared toward the former or the=
+ latter.
+> > >>
+> > >> After rewinding my memory on this case, the problem is really that t=
+he
+> > >> ARM btrfs kernel is reading garbage, while X86 or ARM user space too=
+l
+> > >> works as expected.
+> > >>
+> > >> Can you recompile your kernel on the ARM board to add extra debuggin=
+g
+> > >> messages?
+> > >> If possible, we can try to add some extra debug points to bombarding
+> > >> your dmesg.
+> > >>
+> > >> Or do you have other ARM boards to test the same fs?
+> > >>
+> > >>
+> > >> Thanks,
+> > >> Qu
+> > >
+> > > It's pretty easy to build a kernel with custom patches applied, thoug=
+h
+> > > the actual building takes a while, so I'd be happy to add whatever
+> > > debug messages would be useful. I also have an old Raspberry Pi
+> > > (original model B) I can dig out and try to get going, tomorrow. I
+> > > can't hook it up to the drives directly, but I should be able to
+> > > access them via NBD like I was doing from my desktop.
+> >
+> > RPI 1B would be a little slow but should be enough to expose the
+> > problem, if the problem is for all arm builds (as long as you're also
+> > using armv7 for the offending system).
+> >
+> > Thanks,
+> > Qu
+> >
+> > > If I can't get
+> > > that going for whatever reason, I could also try running an emulated
+> > > ARM system with QEMU.
+> > >
+> > >>>
+> > >>> On Fri, Jun 28, 2019 at 1:15 AM Qu Wenruo <quwenruo.btrfs@gmx.com
+> > >>> <mailto:quwenruo.btrfs@gmx.com>> wrote:
+> > >>>
+> > >>>
+> > >>>
+> > >>>      On 2019/6/28 =E4=B8=8B=E5=8D=884:00, Erik Jensen wrote:
+> > >>>       >> So it's either the block layer reading some wrong from the=
+ disk
+> > >>>      or btrfs
+> > >>>       >> layer doesn't do correct endian convert.
+> > >>>       >
+> > >>>       > My ARM board is running in little endian mode, so it doesn'=
+t seem
+> > >>>      like
+> > >>>       > endianness should be an issue. (It is 32-bits versus my des=
+ktop's 64,
+> > >>>       > though.) I've also tried exporting the drives via NBD to my=
+ x86_64
+> > >>>       > system, and that worked fine, so if the problem is under bt=
+rfs, it
+> > >>>       > would have to be in the encryption layer, but fsck succeedi=
+ng on the
+> > >>>       > ARM board would seem to rule that out, as well.
+> > >>>       >
+> > >>>       >> Would you dump the following data (X86 and ARM should outp=
+ut the
+> > >>>      same
+> > >>>       >> content, thus one output is enough).
+> > >>>       >> # btrfs ins dump-tree -b 17628726968320 /dev/dm-3
+> > >>>       >> # btrfs ins dump-tree -b 17628727001088 /dev/dm-3
+> > >>>       >
+> > >>>       > Attached, and also 17628705964032, since that's the block
+> > >>>      mentioned in
+> > >>>       > my most recent mount attempt (see below).
+> > >>>
+> > >>>      The trees are completely fine.
+> > >>>
+> > >>>      So it should be something else causing the problem.
+> > >>>
+> > >>>       >
+> > >>>       >> And then, for the ARM system, please apply the following d=
+iff,
+> > >>>      and try
+> > >>>       >> mount again.
+> > >>>       >> The diff adds extra debug info, to exam the vital members =
+of a
+> > >>>      tree block.
+> > >>>       >>
+> > >>>       >> Correct fs should output something like:
+> > >>>       >>   BTRFS error (device dm-4): bad tree block start, want 30=
+408704
+> > >>>      have 0
+> > >>>       >>   tree block gen=3D4 owner=3D5 nritems=3D2 level=3D0
+> > >>>       >>   csum:
+> > >>>       >>
+> > >>>      a304e483-0000-0000-0000-00000000000000000000-0000-0000-0000-00=
+0000000000
+> > >>>       >>
+> > >>>       >> The csum one is the most important one, if there aren't so=
+ many
+> > >>>      zeros,
+> > >>>       >> it means at that timing, btrfs just got a bunch of garbage=
+, thus we
+> > >>>       >> could do further debug.
+> > >>>       >
+> > >>>       > [  131.725573] BTRFS info (device dm-1): disk space caching=
+ is
+> > >>>      enabled
+> > >>>       > [  131.731884] BTRFS info (device dm-1): has skinny extents
+> > >>>       > [  133.046145] BTRFS error (device dm-1): bad tree block st=
+art, want
+> > >>>       > 17628705964032 have 2807793151171243621
+> > >>>       > [  133.055775] tree block gen=3D7888986126946982446
+> > >>>       > owner=3D11331573954727661546 nritems=3D4191910623 level=3D1=
+12
+> > >>>       > [  133.065661] csum:
+> > >>>       >
+> > >>>      416a456c-1e68-dbc3-185d-aaad410beaef5493ab3f-3cb9-4ba1-2214-b4=
+1cba9656fc
+> > >>>
+> > >>>      Completely garbage here, so I'd say the data we got isn't what=
+ we want.
+> > >>>
+> > >>>       > [  133.108383] BTRFS error (device dm-1): bad tree block st=
+art, want
+> > >>>       > 17628705964032 have 2807793151171243621
+> > >>>       > [  133.117999] tree block gen=3D7888986126946982446
+> > >>>       > owner=3D11331573954727661546 nritems=3D4191910623 level=3D1=
+12
+> > >>>       > [  133.127756] csum:
+> > >>>       >
+> > >>>      416a456c-1e68-dbc3-185d-aaad410beaef5493ab3f-3cb9-4ba1-2214-b4=
+1cba9656fc
+> > >>>
+> > >>>      But strangely, the 2nd try still gives us the same result, if =
+it's
+> > >>>      really some garbage, we should get some different result.
+> > >>>
+> > >>>       > [  133.136241] BTRFS error (device dm-1): failed to verify =
+dev
+> > >>>      extents
+> > >>>       > against chunks: -5
+> > >>>
+> > >>>      You can try to skip the dev extents verification by commenting=
+ out the
+> > >>>      btrfs_verify_dev_extents() call in disk-io.c::open_ctree().
+> > >>>
+> > >>>      It may fail at another location though.
+> > >>>
+> > >>>      The more strange part is, we have the device tree root node re=
+ad out
+> > >>>      without problem.
+> > >>>
+> > >>>      Thanks,
+> > >>>      Qu
+> > >>>
+> > >>>       > [  133.166165] BTRFS error (device dm-1): open_ctree failed
+> > >>>       >
+> > >>>       > I copied some files over last time I had it mounted on my d=
+esktop,
+> > >>>       > which may be why it's now failing at a different block.
+> > >>>       >
+> > >>>       > Thanks!
+> > >>>       >
+> > >>>

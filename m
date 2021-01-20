@@ -2,89 +2,71 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2BDF9C433DB
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9B300C43381
 	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Jan 2021 12:19:40 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id DF7B3221FB
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Jan 2021 12:19:39 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 58554221FB
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Jan 2021 12:19:40 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2389389AbhATMPZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 20 Jan 2021 07:15:25 -0500
-Received: from mx2.suse.de ([195.135.220.15]:36118 "EHLO mx2.suse.de"
+        id S2389450AbhATMPp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 20 Jan 2021 07:15:45 -0500
+Received: from mx2.suse.de ([195.135.220.15]:37886 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728945AbhATK0P (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Jan 2021 05:26:15 -0500
+        id S1730313AbhATK10 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 20 Jan 2021 05:27:26 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1611138327; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding;
-        bh=fNNX0OdKduF/lUQysNs2YyIVkKjxWmjAXo+PxBG6g9w=;
-        b=C0UGziICsyCKisJ2zWC8I3KtRKlbyKBuHLc6R8GvWkbSMZgsdkD+Aza2s2Y8YobXUm7FGu
-        Tfy73JBycBM85apzYJxUU+QzfkFrDc0kcyQMWHB+HvyRIJWVWmFHSP3g09RcSoYWeGPzrA
-        5wypULp5BjrbNgxAqpsJCY2RrAxKDUE=
+        t=1611138329; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=/uT8/VvrF8b2zmVsgA7ZwS5+AHiVfq4utWWMf6YpYLA=;
+        b=RVmYXP4u3GbogLI0VPGMD5eTqoY5Zjl9oq8Q7K6ubeger9vhiRqUychLwvnD47338mrgMX
+        00398ms+8TUicb/YIpwSva0fVvYZmCdQa8Wi7IXaECF58bthO5CkfsH/pQ8T3Ry33lxlu4
+        lZfVSqS/6fma4UBgIOzUOhGdp/xqhzs=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id DA5D1AC63;
-        Wed, 20 Jan 2021 10:25:27 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id C74FBAFF9;
+        Wed, 20 Jan 2021 10:25:29 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v2 00/14] Make btrfs W=1 clean
-Date:   Wed, 20 Jan 2021 12:25:12 +0200
-Message-Id: <20210120102526.310486-1-nborisov@suse.com>
+Subject: [PATCH v2 08/14] btrfs: Fix description format of fs_info parameter of btrfs_wait_on_delayed_iputs
+Date:   Wed, 20 Jan 2021 12:25:20 +0200
+Message-Id: <20210120102526.310486-9-nborisov@suse.com>
 X-Mailer: git-send-email 2.25.1
+In-Reply-To: <20210120102526.310486-1-nborisov@suse.com>
+References: <20210120102526.310486-1-nborisov@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Here's V2 of the patchset, I have incorporated all the feedback - namely spellin g
-fixes as well as David's suggestions for documenting fs_info as well as aligning
-description of members. In addition to that I added the last patch which copies
-the W=1 checks plus the cmd_checkdoc definition to btrfs' Makefile. Effectively,
-this series not only makes btrfs W=1 clean but also unconditionally enables the
-checks for all subdirs of fs/btrfs/
+Fixes fs/btrfs/inode.c:3101: warning: Function parameter or member 'fs_info' not described in 'btrfs_wait_on_delayed_iputs'
 
-Nikolay Borisov (14):
-  btrfs: Document modified paramater of add_extent_mapping
-  btrfs: Fix parameter description of btrfs_add_extent_mapping
-  btrfs: Fix function description format
-  btrfs: Fix parameter description in delayed-ref.c functions
-  btrfs: Improve parameter description for __btrfs_write_out_cache
-  btrfs: Document now parameter of peek_discard_list
-  btrfs: Document fs_info in btrfs_rmap_block
-  btrfs: Fix description format of fs_info parameter of
-    btrfs_wait_on_delayed_iputs
-  btrfs: Document btrfs_check_shared parameters
-  btrfs: Fix parameter description of
-    btrfs_inode_rsv_release/btrfs_delalloc_release_space
-  btrfs: Fix parameter description in space-info.c
-  btrfs: Fix parameter description for functions in extent_io.c
-  lib/zstd: Convert constants to defines
-  btrfs: Enable W=1 checks for btrfs
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
+ fs/btrfs/inode.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
- fs/btrfs/Makefile           | 17 +++++++++++++++++
- fs/btrfs/backref.c          |  6 ++++++
- fs/btrfs/block-group.c      |  1 +
- fs/btrfs/delalloc-space.c   |  7 ++++---
- fs/btrfs/delayed-ref.c      | 16 +++++++++-------
- fs/btrfs/discard.c          |  3 ++-
- fs/btrfs/extent_io.c        | 34 +++++++++++++++++-----------------
- fs/btrfs/extent_map.c       | 12 +++++++-----
- fs/btrfs/file-item.c        | 22 ++++++++++++++--------
- fs/btrfs/free-space-cache.c | 10 ++++++----
- fs/btrfs/inode.c            |  2 +-
- fs/btrfs/space-info.c       | 37 ++++++++++++++++++-------------------
- include/linux/zstd.h        |  8 ++++----
- 13 files changed, 106 insertions(+), 69 deletions(-)
-
---
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 5906b4267204..b6711c207808 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3089,7 +3089,7 @@ void btrfs_run_delayed_iputs(struct btrfs_fs_info *fs_info)
+ 
+ /**
+  * btrfs_wait_on_delayed_iputs - wait on the delayed iputs to be done running
+- * @fs_info - the fs_info for this fs
++ * @fs_info:  the fs_info for this fs
+  * @return - EINTR if we were killed, 0 if nothing's pending
+  *
+  * This will wait on any delayed iputs that are currently running with KILLABLE
+-- 
 2.25.1
 

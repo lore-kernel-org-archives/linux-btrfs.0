@@ -7,86 +7,90 @@ X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D2F13C4332D
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EBE10C43331
 	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Jan 2021 12:35:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 9E2332332B
+	by mail.kernel.org (Postfix) with ESMTP id C920322573
 	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Jan 2021 12:35:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2389208AbhATMR6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 20 Jan 2021 07:17:58 -0500
-Received: from mx2.suse.de ([195.135.220.15]:37900 "EHLO mx2.suse.de"
+        id S2388664AbhATMRz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 20 Jan 2021 07:17:55 -0500
+Received: from mx2.suse.de ([195.135.220.15]:37908 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1730542AbhATK11 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1730504AbhATK11 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 20 Jan 2021 05:27:27 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1611138330; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:
+        t=1611138331; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:content-type:content-type:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=frb+PZ9kVXij3jQDJdz1Vsnh2JU/aBbmJtXqrAEgPbQ=;
-        b=nPMJGMhbMNtsHrflI/P1x/kPcfvDj4rs2kVUpux15DPMnxl5uyB622dOiuQcnb2hYv0lle
-        o7kW+BXEfSIyVDifnV58aBbWf0WX69ej9zd+Cog8xzqsAA7QSSpJRndPtuqoI82bcWAOg2
-        YcmALxQkIJ9Ztu5ZHZ1jM9xLJ6rVlOg=
+        bh=BkWZYUAG7HI4cAcD4oEPJaJd37Jy2TIv0AltZTE5yoQ=;
+        b=mehlT2LkJUv078aMep7BV+JbWFX47YiM4YRmlXkIBcL0A/cKEM17f0uiotqfXQq6KeetGD
+        Sg8rPBzFeBNxmDbDvfqhxlNPhmEYgUQej3nsw+XseazVbWoLGIOAwCIDNP/lSIUaHN3ab0
+        SxPfXYnrM20b9VreIKdmU0CXgODOu7w=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 41463B01F;
+        by mx2.suse.de (Postfix) with ESMTP id E91A9B05C;
         Wed, 20 Jan 2021 10:25:30 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v2 10/14] btrfs: Fix parameter description of btrfs_inode_rsv_release/btrfs_delalloc_release_space
-Date:   Wed, 20 Jan 2021 12:25:22 +0200
-Message-Id: <20210120102526.310486-11-nborisov@suse.com>
+Subject: [PATCH v2 13/14] lib/zstd: Convert constants to defines
+Date:   Wed, 20 Jan 2021 12:25:25 +0200
+Message-Id: <20210120102526.310486-14-nborisov@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <20210120102526.310486-1-nborisov@suse.com>
 References: <20210120102526.310486-1-nborisov@suse.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Fixes following warnings:
+Those constants are really used internally by zstd and including
+linux/zstd.h into users results in the following warnings:
 
-fs/btrfs/delalloc-space.c:205: warning: Function parameter or member 'inode' not described in 'btrfs_inode_rsv_release'
-fs/btrfs/delalloc-space.c:205: warning: Function parameter or member 'qgroup_free' not described in 'btrfs_inode_rsv_release'
-fs/btrfs/delalloc-space.c:472: warning: Function parameter or member 'reserved' not described in 'btrfs_delalloc_release_space'
-fs/btrfs/delalloc-space.c:472: warning: Function parameter or member 'qgroup_free' not described in 'btrfs_delalloc_release_space'
-fs/btrfs/delalloc-space.c:472: warning: Excess function parameter 'release_bytes' description in 'btrfs_delalloc_release_space'
+In file included from fs/btrfs/zstd.c:19:
+./include/linux/zstd.h:798:21: warning: ‘ZSTD_skippableHeaderSize’ defined but not used [-Wunused-const-variable=]
+  798 | static const size_t ZSTD_skippableHeaderSize = 8;
+      |                     ^~~~~~~~~~~~~~~~~~~~~~~~
+./include/linux/zstd.h:796:21: warning: ‘ZSTD_frameHeaderSize_max’ defined but not used [-Wunused-const-variable=]
+  796 | static const size_t ZSTD_frameHeaderSize_max = ZSTD_FRAMEHEADERSIZE_MAX;
+      |                     ^~~~~~~~~~~~~~~~~~~~~~~~
+./include/linux/zstd.h:795:21: warning: ‘ZSTD_frameHeaderSize_min’ defined but not used [-Wunused-const-variable=]
+  795 | static const size_t ZSTD_frameHeaderSize_min = ZSTD_FRAMEHEADERSIZE_MIN;
+      |                     ^~~~~~~~~~~~~~~~~~~~~~~~
+./include/linux/zstd.h:794:21: warning: ‘ZSTD_frameHeaderSize_prefix’ defined but not used [-Wunused-const-variable=]
+  794 | static const size_t ZSTD_frameHeaderSize_prefix = 5;
+
+So fix those warnings by turning the constants into defines.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/delalloc-space.c | 7 ++++---
- 1 file changed, 4 insertions(+), 3 deletions(-)
+ include/linux/zstd.h | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/delalloc-space.c b/fs/btrfs/delalloc-space.c
-index bacee09b7bfd..c73e5131a2de 100644
---- a/fs/btrfs/delalloc-space.c
-+++ b/fs/btrfs/delalloc-space.c
-@@ -192,8 +192,8 @@ void btrfs_free_reserved_data_space(struct btrfs_inode *inode,
+diff --git a/include/linux/zstd.h b/include/linux/zstd.h
+index 249575e2485f..e87f78c9b19c 100644
+--- a/include/linux/zstd.h
++++ b/include/linux/zstd.h
+@@ -791,11 +791,11 @@ size_t ZSTD_DStreamOutSize(void);
+ /* for static allocation */
+ #define ZSTD_FRAMEHEADERSIZE_MAX 18
+ #define ZSTD_FRAMEHEADERSIZE_MIN  6
+-static const size_t ZSTD_frameHeaderSize_prefix = 5;
+-static const size_t ZSTD_frameHeaderSize_min = ZSTD_FRAMEHEADERSIZE_MIN;
+-static const size_t ZSTD_frameHeaderSize_max = ZSTD_FRAMEHEADERSIZE_MAX;
++#define ZSTD_frameHeaderSize_prefix 5
++#define ZSTD_frameHeaderSize_min ZSTD_FRAMEHEADERSIZE_MIN
++#define ZSTD_frameHeaderSize_max ZSTD_FRAMEHEADERSIZE_MAX
+ /* magic number + skippable frame length */
+-static const size_t ZSTD_skippableHeaderSize = 8;
++#define ZSTD_skippableHeaderSize 8
  
- /**
-  * btrfs_inode_rsv_release - release any excessive reservation.
-- * @inode - the inode we need to release from.
-- * @qgroup_free - free or convert qgroup meta.
-+ * @inode: the inode we need to release from.
-+ * @qgroup_free: free or convert qgroup meta.
-  *   Unlike normal operation, qgroup meta reservation needs to know if we are
-  *   freeing qgroup reservation or just converting it into per-trans.  Normally
-  *   @qgroup_free is true for error handling, and false for normal release.
-@@ -457,9 +457,10 @@ int btrfs_delalloc_reserve_space(struct btrfs_inode *inode,
- /**
-  * btrfs_delalloc_release_space - release data and metadata space for delalloc
-  * @inode: inode we're releasing space for
-+ * @reserved: list of changed/reserved ranges
-  * @start: start position of the space already reserved
-  * @len: the len of the space already reserved
-- * @release_bytes: the len of the space we consumed or didn't use
-+ * @qgroup_free: should qgroup reserved-space also be freed
-  *
-  * This function will release the metadata space that was not used and will
-  * decrement ->delalloc_bytes and remove it from the fs_info delalloc_inodes
+ 
+ /*-*************************************
 -- 
 2.25.1
 

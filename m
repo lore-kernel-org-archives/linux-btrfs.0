@@ -7,90 +7,139 @@ X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EBE10C43331
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B64A5C43381
 	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Jan 2021 12:35:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id C920322573
+	by mail.kernel.org (Postfix) with ESMTP id 8224F22A84
 	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Jan 2021 12:35:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388664AbhATMRz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 20 Jan 2021 07:17:55 -0500
-Received: from mx2.suse.de ([195.135.220.15]:37908 "EHLO mx2.suse.de"
+        id S2389516AbhATMSF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 20 Jan 2021 07:18:05 -0500
+Received: from mx2.suse.de ([195.135.220.15]:37902 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1730504AbhATK11 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Jan 2021 05:27:27 -0500
+        id S1730352AbhATK12 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 20 Jan 2021 05:27:28 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1611138331; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
+        t=1611138330; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=BkWZYUAG7HI4cAcD4oEPJaJd37Jy2TIv0AltZTE5yoQ=;
-        b=mehlT2LkJUv078aMep7BV+JbWFX47YiM4YRmlXkIBcL0A/cKEM17f0uiotqfXQq6KeetGD
-        Sg8rPBzFeBNxmDbDvfqhxlNPhmEYgUQej3nsw+XseazVbWoLGIOAwCIDNP/lSIUaHN3ab0
-        SxPfXYnrM20b9VreIKdmU0CXgODOu7w=
+        bh=BmcR2Ie6fb7Rd8E82AhOW2/0MIVQMzw7L/HTX9ZShUo=;
+        b=XW0SV10B4csZnvNAsPO7/uBmw9bBlRuDqRC7UgzCPTpcd7fiWSPU57nEi78l6TAtxGfyjG
+        Lm2uV+eZdEwVBVUTc6b2t/quuIAPccfJIvCq2fL/fOkYpcb1ssJtWWI5iPv97eg9XOVGFh
+        x9c7uiS/aehCPWNwaK1cM5JcmA4ouYU=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id E91A9B05C;
+        by mx2.suse.de (Postfix) with ESMTP id AFE14B04C;
         Wed, 20 Jan 2021 10:25:30 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v2 13/14] lib/zstd: Convert constants to defines
-Date:   Wed, 20 Jan 2021 12:25:25 +0200
-Message-Id: <20210120102526.310486-14-nborisov@suse.com>
+Subject: [PATCH v2 12/14] btrfs: Fix parameter description for functions in extent_io.c
+Date:   Wed, 20 Jan 2021 12:25:24 +0200
+Message-Id: <20210120102526.310486-13-nborisov@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <20210120102526.310486-1-nborisov@suse.com>
 References: <20210120102526.310486-1-nborisov@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Those constants are really used internally by zstd and including
-linux/zstd.h into users results in the following warnings:
+This makes the file W=1 clean and fixes the following warnings:
 
-In file included from fs/btrfs/zstd.c:19:
-./include/linux/zstd.h:798:21: warning: ‘ZSTD_skippableHeaderSize’ defined but not used [-Wunused-const-variable=]
-  798 | static const size_t ZSTD_skippableHeaderSize = 8;
-      |                     ^~~~~~~~~~~~~~~~~~~~~~~~
-./include/linux/zstd.h:796:21: warning: ‘ZSTD_frameHeaderSize_max’ defined but not used [-Wunused-const-variable=]
-  796 | static const size_t ZSTD_frameHeaderSize_max = ZSTD_FRAMEHEADERSIZE_MAX;
-      |                     ^~~~~~~~~~~~~~~~~~~~~~~~
-./include/linux/zstd.h:795:21: warning: ‘ZSTD_frameHeaderSize_min’ defined but not used [-Wunused-const-variable=]
-  795 | static const size_t ZSTD_frameHeaderSize_min = ZSTD_FRAMEHEADERSIZE_MIN;
-      |                     ^~~~~~~~~~~~~~~~~~~~~~~~
-./include/linux/zstd.h:794:21: warning: ‘ZSTD_frameHeaderSize_prefix’ defined but not used [-Wunused-const-variable=]
-  794 | static const size_t ZSTD_frameHeaderSize_prefix = 5;
-
-So fix those warnings by turning the constants into defines.
+fs/btrfs/extent_io.c:414: warning: Function parameter or member 'tree' not described in '__etree_search'
+fs/btrfs/extent_io.c:414: warning: Function parameter or member 'offset' not described in '__etree_search'
+fs/btrfs/extent_io.c:414: warning: Function parameter or member 'next_ret' not described in '__etree_search'
+fs/btrfs/extent_io.c:414: warning: Function parameter or member 'prev_ret' not described in '__etree_search'
+fs/btrfs/extent_io.c:414: warning: Function parameter or member 'p_ret' not described in '__etree_search'
+fs/btrfs/extent_io.c:414: warning: Function parameter or member 'parent_ret' not described in '__etree_search'
+fs/btrfs/extent_io.c:1607: warning: Function parameter or member 'tree' not described in 'find_contiguous_extent_bit'
+fs/btrfs/extent_io.c:1607: warning: Function parameter or member 'start' not described in 'find_contiguous_extent_bit'
+fs/btrfs/extent_io.c:1607: warning: Function parameter or member 'start_ret' not described in 'find_contiguous_extent_bit'
+fs/btrfs/extent_io.c:1607: warning: Function parameter or member 'end_ret' not described in 'find_contiguous_extent_bit'
+fs/btrfs/extent_io.c:1607: warning: Function parameter or member 'bits' not described in 'find_contiguous_extent_bit'
+fs/btrfs/extent_io.c:1644: warning: Function parameter or member 'tree' not described in 'find_first_clear_extent_bit'
+fs/btrfs/extent_io.c:1644: warning: Function parameter or member 'start' not described in 'find_first_clear_extent_bit'
+fs/btrfs/extent_io.c:1644: warning: Function parameter or member 'start_ret' not described in 'find_first_clear_extent_bit'
+fs/btrfs/extent_io.c:1644: warning: Function parameter or member 'end_ret' not described in 'find_first_clear_extent_bit'
+fs/btrfs/extent_io.c:1644: warning: Function parameter or member 'bits' not described in 'find_first_clear_extent_bit'
+fs/btrfs/extent_io.c:4187: warning: Function parameter or member 'epd' not described in 'extent_write_cache_pages'
+fs/btrfs/extent_io.c:4187: warning: Excess function parameter 'data' description in 'extent_write_cache_pages'
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- include/linux/zstd.h | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ fs/btrfs/extent_io.c | 34 +++++++++++++++++-----------------
+ 1 file changed, 17 insertions(+), 17 deletions(-)
 
-diff --git a/include/linux/zstd.h b/include/linux/zstd.h
-index 249575e2485f..e87f78c9b19c 100644
---- a/include/linux/zstd.h
-+++ b/include/linux/zstd.h
-@@ -791,11 +791,11 @@ size_t ZSTD_DStreamOutSize(void);
- /* for static allocation */
- #define ZSTD_FRAMEHEADERSIZE_MAX 18
- #define ZSTD_FRAMEHEADERSIZE_MIN  6
--static const size_t ZSTD_frameHeaderSize_prefix = 5;
--static const size_t ZSTD_frameHeaderSize_min = ZSTD_FRAMEHEADERSIZE_MIN;
--static const size_t ZSTD_frameHeaderSize_max = ZSTD_FRAMEHEADERSIZE_MAX;
-+#define ZSTD_frameHeaderSize_prefix 5
-+#define ZSTD_frameHeaderSize_min ZSTD_FRAMEHEADERSIZE_MIN
-+#define ZSTD_frameHeaderSize_max ZSTD_FRAMEHEADERSIZE_MAX
- /* magic number + skippable frame length */
--static const size_t ZSTD_skippableHeaderSize = 8;
-+#define ZSTD_skippableHeaderSize 8
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 7f689ad7709c..62f892238149 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -392,13 +392,13 @@ static struct rb_node *tree_insert(struct rb_root *root,
+  * __etree_search - searche @tree for an entry that contains @offset. Such
+  * entry would have entry->start <= offset && entry->end >= offset.
+  *
+- * @tree - the tree to search
+- * @offset - offset that should fall within an entry in @tree
+- * @next_ret - pointer to the first entry whose range ends after @offset
+- * @prev - pointer to the first entry whose range begins before @offset
+- * @p_ret - pointer where new node should be anchored (used when inserting an
++ * @tree:  the tree to search
++ * @offset: offset that should fall within an entry in @tree
++ * @next_ret: pointer to the first entry whose range ends after @offset
++ * @prev_ret: pointer to the first entry whose range begins before @offset
++ * @p_ret: pointer where new node should be anchored (used when inserting an
+  *	    entry in the tree)
+- * @parent_ret - points to entry which would have been the parent of the entry,
++ * @parent_ret: points to entry which would have been the parent of the entry,
+  *               containing @offset
+  *
+  * This function returns a pointer to the entry that contains @offset byte
+@@ -1589,11 +1589,11 @@ int find_first_extent_bit(struct extent_io_tree *tree, u64 start,
  
- 
- /*-*************************************
+ /**
+  * find_contiguous_extent_bit: find a contiguous area of bits
+- * @tree - io tree to check
+- * @start - offset to start the search from
+- * @start_ret - the first offset we found with the bits set
+- * @end_ret - the final contiguous range of the bits that were set
+- * @bits - bits to look for
++ * @tree: io tree to check
++ * @start: offset to start the search from
++ * @start_ret: the first offset we found with the bits set
++ * @end_ret: the final contiguous range of the bits that were set
++ * @bits: bits to look for
+  *
+  * set_extent_bit and clear_extent_bit can temporarily split contiguous ranges
+  * to set bits appropriately, and then merge them again.  During this time it
+@@ -1628,11 +1628,11 @@ int find_contiguous_extent_bit(struct extent_io_tree *tree, u64 start,
+  * find_first_clear_extent_bit - find the first range that has @bits not set.
+  * This range could start before @start.
+  *
+- * @tree - the tree to search
+- * @start - the offset at/after which the found extent should start
+- * @start_ret - records the beginning of the range
+- * @end_ret - records the end of the range (inclusive)
+- * @bits - the set of bits which must be unset
++ * @tree: the tree to search
++ * @start: the offset at/after which the found extent should start
++ * @start_ret: records the beginning of the range
++ * @end_ret: records the end of the range (inclusive)
++ * @bits: the set of bits which must be unset
+  *
+  * Since unallocated range is also considered one which doesn't have the bits
+  * set it's possible that @end_ret contains -1, this happens in case the range
+@@ -4171,7 +4171,7 @@ int btree_write_cache_pages(struct address_space *mapping,
+  * write_cache_pages - walk the list of dirty pages of the given address space and write all of them.
+  * @mapping: address space structure to write
+  * @wbc: subtract the number of written pages from *@wbc->nr_to_write
+- * @data: data passed to __extent_writepage function
++ * @epd: holds context for the write, namely the bio
+  *
+  * If a page is already under I/O, write_cache_pages() skips it, even
+  * if it's dirty.  This is desirable behaviour for memory-cleaning writeback,
 -- 
 2.25.1
 

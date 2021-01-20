@@ -7,17 +7,17 @@ X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8775AC4332D
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Jan 2021 12:19:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 07C43C433E0
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Jan 2021 12:19:40 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 498192332B
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Jan 2021 12:19:34 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B4DFB206FA
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Jan 2021 12:19:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2389155AbhATMNc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 20 Jan 2021 07:13:32 -0500
-Received: from mx2.suse.de ([195.135.220.15]:36170 "EHLO mx2.suse.de"
+        id S2389364AbhATMPB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 20 Jan 2021 07:15:01 -0500
+Received: from mx2.suse.de ([195.135.220.15]:36142 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1729195AbhATK0P (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1729138AbhATK0P (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 20 Jan 2021 05:26:15 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
@@ -25,19 +25,19 @@ DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=7CrZe6Gs7A9/IW9bCmXoVckORrRIcBg6TR8LwpXtA0E=;
-        b=mwogUTMqQ5TR/FroXV8s3DuXvBkggM4UBkkJPAffpdDnnCBTTAG3UW183gQPoUYd8SuN0L
-        qOBPlhYZ0opuV4xGUSVBlwn6Ou/WQWydvJ3OE6oi2P/6Ut/eKkHS4c/ZgaU3tb97XaqdN0
-        RFFZWtAjColzbtYFOr2Wl4aAn3ZgiaI=
+        bh=yu3/18LdguZ3RMrz114/sO3tdPeMlJMbHqeJbxB0vJY=;
+        b=oY6OoUFK3DfPRj0QgLGRZLVsVu6jMFF7mhQ5IG8QdXBLInwyFIjWO/jKTQjJ44IEgB2tHp
+        z/rglYW34HkjuhifWQpTtpvU26c12jffdMB2zw27ohpTbSXjaQBHykWDgiQuGCKlTkaWE5
+        QpMblkQ1wrsz2Bt1jzFm1tOrdVBN6pM=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id DAA25AFE2;
+        by mx2.suse.de (Postfix) with ESMTP id 54F6DAF28;
         Wed, 20 Jan 2021 10:25:28 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v2 04/14] btrfs: Fix parameter description in delayed-ref.c functions
-Date:   Wed, 20 Jan 2021 12:25:16 +0200
-Message-Id: <20210120102526.310486-5-nborisov@suse.com>
+Subject: [PATCH v2 02/14] btrfs: Fix parameter description of btrfs_add_extent_mapping
+Date:   Wed, 20 Jan 2021 12:25:14 +0200
+Message-Id: <20210120102526.310486-3-nborisov@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <20210120102526.310486-1-nborisov@suse.com>
 References: <20210120102526.310486-1-nborisov@suse.com>
@@ -47,62 +47,40 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This fixes the following warnings:
+This fixes the following compiler warnings:
 
-fs/btrfs/delayed-ref.c:80: warning: Function parameter or member 'fs_info' not described in 'btrfs_delayed_refs_rsv_release'
-fs/btrfs/delayed-ref.c:80: warning: Function parameter or member 'nr' not described in 'btrfs_delayed_refs_rsv_release'
-fs/btrfs/delayed-ref.c:128: warning: Function parameter or member 'fs_info' not described in 'btrfs_migrate_to_delayed_refs_rsv'
-fs/btrfs/delayed-ref.c:128: warning: Function parameter or member 'src' not described in 'btrfs_migrate_to_delayed_refs_rsv'
-fs/btrfs/delayed-ref.c:128: warning: Function parameter or member 'num_bytes' not described in 'btrfs_migrate_to_delayed_refs_rsv'
-fs/btrfs/delayed-ref.c:174: warning: Function parameter or member 'fs_info' not described in 'btrfs_delayed_refs_rsv_refill'
-fs/btrfs/delayed-ref.c:174: warning: Function parameter or member 'flush' not described in 'btrfs_delayed_refs_rsv_refill'
+fs/btrfs/extent_map.c:601: warning: Function parameter or member 'fs_info' not described in 'btrfs_add_extent_mapping'
+fs/btrfs/extent_map.c:601: warning: Function parameter or member 'em_tree' not described in 'btrfs_add_extent_mapping'
+fs/btrfs/extent_map.c:601: warning: Function parameter or member 'em_in' not described in 'btrfs_add_extent_mapping'
+fs/btrfs/extent_map.c:601: warning: Function parameter or member 'start' not described in 'btrfs_add_extent_mapping'
+fs/btrfs/extent_map.c:601: warning: Function parameter or member 'len' not described in 'btrfs_add_extent_mapping'
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/delayed-ref.c | 16 +++++++++-------
- 1 file changed, 9 insertions(+), 7 deletions(-)
+ fs/btrfs/extent_map.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index 353cc2994d10..aaea0c7b2b86 100644
---- a/fs/btrfs/delayed-ref.c
-+++ b/fs/btrfs/delayed-ref.c
-@@ -70,8 +70,9 @@ int btrfs_should_throttle_delayed_refs(struct btrfs_trans_handle *trans)
+diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
+index aa1ff6f2ade9..90ae3c31e7fb 100644
+--- a/fs/btrfs/extent_map.c
++++ b/fs/btrfs/extent_map.c
+@@ -577,11 +577,11 @@ static noinline int merge_extent_mapping(struct extent_map_tree *em_tree,
  
  /**
-  * btrfs_delayed_refs_rsv_release - release a ref head's reservation.
-- * @fs_info - the fs_info for our fs.
-- * @nr - the number of items to drop.
-+ *
-+ * @fs_info:  the filesystem
-+ * @nr:       the number of items to drop.
+  * btrfs_add_extent_mapping - add extent mapping into em_tree
+- * @fs_info - used for tracepoint
+- * @em_tree - the extent tree into which we want to insert the extent mapping
+- * @em_in   - extent we are inserting
+- * @start   - start of the logical range btrfs_get_extent() is requesting
+- * @len     - length of the logical range btrfs_get_extent() is requesting
++ * @fs_info:  used for tracepoint
++ * @em_tree:  the extent tree into which we want to insert the extent mapping
++ * @em_in:   extent we are inserting
++ * @start:    start of the logical range btrfs_get_extent() is requesting
++ * @len:      length of the logical range btrfs_get_extent() is requesting
   *
-  * This drops the delayed ref head's count from the delayed refs rsv and frees
-  * any excess reservation we had.
-@@ -115,9 +116,10 @@ void btrfs_update_delayed_refs_rsv(struct btrfs_trans_handle *trans)
- 
- /**
-  * btrfs_migrate_to_delayed_refs_rsv - transfer bytes to our delayed refs rsv.
-- * @fs_info - the fs info for our fs.
-- * @src - the source block rsv to transfer from.
-- * @num_bytes - the number of bytes to transfer.
-+ *
-+ * @fs_info:   the filesystem
-+ * @src:       the source block rsv to transfer from.
-+ * @num_bytes: the number of bytes to transfer.
-  *
-  * This transfers up to the num_bytes amount from the src rsv to the
-  * delayed_refs_rsv.  Any extra bytes are returned to the space info.
-@@ -163,8 +165,8 @@ void btrfs_migrate_to_delayed_refs_rsv(struct btrfs_fs_info *fs_info,
- 
- /**
-  * btrfs_delayed_refs_rsv_refill - refill based on our delayed refs usage.
-- * @fs_info - the fs_info for our fs.
-- * @flush - control how we can flush for this reservation.
-+ * @fs_info: the filesystem
-+ * @flush:   control how we can flush for this reservation.
-  *
-  * This will refill the delayed block_rsv up to 1 items size worth of space and
-  * will return -ENOSPC if we can't make the reservation.
+  * Note that @em_in's range may be different from [start, start+len),
+  * but they must be overlapped.
 -- 
 2.25.1
 

@@ -7,37 +7,37 @@ X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 31505C43332
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C3E29C432C3
 	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Jan 2021 12:19:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 016FA206FA
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Jan 2021 12:19:40 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 72B7A221FB
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Jan 2021 12:19:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727260AbhATMQ4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 20 Jan 2021 07:16:56 -0500
-Received: from mx2.suse.de ([195.135.220.15]:37884 "EHLO mx2.suse.de"
+        id S2388632AbhATMRw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 20 Jan 2021 07:17:52 -0500
+Received: from mx2.suse.de ([195.135.220.15]:37906 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1730312AbhATK10 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Jan 2021 05:27:26 -0500
+        id S1730403AbhATK11 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 20 Jan 2021 05:27:27 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1611138329; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+        t=1611138331; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=wGhIIvy8Fec9DdtXcF0QwTe1muoBAP8kCTn5E9+c9F4=;
-        b=LFYVOLz/9+MMdoVj/2luGh/Imz3mnwzTmVOF3hv55Pmfn3dPVqV3KFhTGPqHtypPfUHMcD
-        ziUJIF7bTBNplkn+fWLUVnyV8atldcIRDyb/TT7Ubav0ktAyt192lkf0wtTa629JMxtRWs
-        AJWnfkc2NsQh88J0iSwS2DOOjLBIqTo=
+        bh=6z+EG+7IpnotCSDMVtrmTiDOYUmPuYXz7I0gDY6GKZg=;
+        b=KXtMSpAKUNhE7f48HGtG+T0R8IxuFcLpXNmZ62tuJJJ85F+XcT7eHKncD3D1cZbZA/rgN8
+        NHirTjV7cNEb9nwO37DOnWWlxu/SygRoziH8xfEIqTCtvCIKBbHoHYTWIPBBt3ASA/NOsf
+        m5tL3HmTUnZZE8aP5ylr1Gnb99b7VSw=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 8F14AAFF1;
-        Wed, 20 Jan 2021 10:25:29 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 2CCB1B05E;
+        Wed, 20 Jan 2021 10:25:31 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v2 07/14] btrfs: Document fs_info in btrfs_rmap_block
-Date:   Wed, 20 Jan 2021 12:25:19 +0200
-Message-Id: <20210120102526.310486-8-nborisov@suse.com>
+Subject: [PATCH v2 14/14] btrfs: Enable W=1 checks for btrfs
+Date:   Wed, 20 Jan 2021 12:25:26 +0200
+Message-Id: <20210120102526.310486-15-nborisov@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <20210120102526.310486-1-nborisov@suse.com>
 References: <20210120102526.310486-1-nborisov@suse.com>
@@ -47,25 +47,41 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Fixes fs/btrfs/block-group.c:1570: warning: Function parameter or member 'fs_info' not described in 'btrfs_rmap_block'
+Now that the btrfs' codebase is clean of W=1 warning let's enable those
+checks unconditionally for the entire fs/btrfs/ and its subdirectories.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/block-group.c | 1 +
- 1 file changed, 1 insertion(+)
+ fs/btrfs/Makefile | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
 
-diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index 0886e81e5540..89a8d7de9cf5 100644
---- a/fs/btrfs/block-group.c
-+++ b/fs/btrfs/block-group.c
-@@ -1554,6 +1554,7 @@ static void set_avail_alloc_bits(struct btrfs_fs_info *fs_info, u64 flags)
+diff --git a/fs/btrfs/Makefile b/fs/btrfs/Makefile
+index 9f1b1a88e317..44faee776027 100644
+--- a/fs/btrfs/Makefile
++++ b/fs/btrfs/Makefile
+@@ -1,5 +1,22 @@
+ # SPDX-License-Identifier: GPL-2.0
  
- /**
-  * btrfs_rmap_block - Map a physical disk address to a list of logical addresses
-+ * @fs_info:       the filesystem
-  * @chunk_start:   logical address of block group
-  * @physical:	   physical address to map to logical addresses
-  * @logical:	   return array of logical addresses which map to @physical
++subdir-ccflags-y += -Wextra -Wunused -Wno-unused-parameter
++subdir-ccflags-y += -Wmissing-declarations
++subdir-ccflags-y += -Wmissing-format-attribute
++subdir-ccflags-y += -Wmissing-prototypes
++subdir-ccflags-y += -Wold-style-definition
++subdir-ccflags-y += -Wmissing-include-dirs
++subdir-ccflags-y += $(call cc-option, -Wunused-but-set-variable)
++subdir-ccflags-y += $(call cc-option, -Wunused-const-variable)
++subdir-ccflags-y += $(call cc-option, -Wpacked-not-aligned)
++subdir-ccflags-y += $(call cc-option, -Wstringop-truncation)
++# The following turn off the warnings enabled by -Wextra
++subdir-ccflags-y += -Wno-missing-field-initializers
++subdir-ccflags-y += -Wno-sign-compare
++subdir-ccflags-y += -Wno-type-limits
++
++cmd_checkdoc = $(srctree)/scripts/kernel-doc -none $<
++
+ obj-$(CONFIG_BTRFS_FS) := btrfs.o
+ 
+ btrfs-y += super.o ctree.o extent-tree.o print-tree.o root-tree.o dir-item.o \
 -- 
 2.25.1
 

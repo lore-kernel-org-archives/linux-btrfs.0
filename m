@@ -2,132 +2,91 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.3 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CD7B3C43219
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Jan 2021 12:19:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D2F13C4332D
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Jan 2021 12:35:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 8451F22202
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Jan 2021 12:19:42 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9E2332332B
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Jan 2021 12:35:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2389528AbhATMSH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 20 Jan 2021 07:18:07 -0500
-Received: from mx2.suse.de ([195.135.220.15]:38902 "EHLO mx2.suse.de"
+        id S2389208AbhATMR6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 20 Jan 2021 07:17:58 -0500
+Received: from mx2.suse.de ([195.135.220.15]:37900 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1731258AbhATK2t (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Jan 2021 05:28:49 -0500
+        id S1730542AbhATK11 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 20 Jan 2021 05:27:27 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1611138330; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=frb+PZ9kVXij3jQDJdz1Vsnh2JU/aBbmJtXqrAEgPbQ=;
+        b=nPMJGMhbMNtsHrflI/P1x/kPcfvDj4rs2kVUpux15DPMnxl5uyB622dOiuQcnb2hYv0lle
+        o7kW+BXEfSIyVDifnV58aBbWf0WX69ej9zd+Cog8xzqsAA7QSSpJRndPtuqoI82bcWAOg2
+        YcmALxQkIJ9Ztu5ZHZ1jM9xLJ6rVlOg=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id E2DE9AC63;
-        Wed, 20 Jan 2021 10:28:06 +0000 (UTC)
-Date:   Wed, 20 Jan 2021 10:27:56 +0000
-From:   Michal Rostecki <mrostecki@suse.de>
-To:     Anand Jain <anand.jain@oracle.com>
-Cc:     linux-btrfs@vger.kernel.org, dsterba@suse.com, josef@toxicpanda.com
-Subject: Re: [PATCH v3 1/4] btrfs: add read_policy latency
-Message-ID: <20210120102742.GA4584@wotan.suse.de>
-References: <cover.1610324448.git.anand.jain@oracle.com>
- <64bb4905dc4b77e9fa22d8ba2635a36d15a33469.1610324448.git.anand.jain@oracle.com>
+        by mx2.suse.de (Postfix) with ESMTP id 41463B01F;
+        Wed, 20 Jan 2021 10:25:30 +0000 (UTC)
+From:   Nikolay Borisov <nborisov@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH v2 10/14] btrfs: Fix parameter description of btrfs_inode_rsv_release/btrfs_delalloc_release_space
+Date:   Wed, 20 Jan 2021 12:25:22 +0200
+Message-Id: <20210120102526.310486-11-nborisov@suse.com>
+X-Mailer: git-send-email 2.25.1
+In-Reply-To: <20210120102526.310486-1-nborisov@suse.com>
+References: <20210120102526.310486-1-nborisov@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <64bb4905dc4b77e9fa22d8ba2635a36d15a33469.1610324448.git.anand.jain@oracle.com>
-User-Agent: Mutt/1.10.1 (2018-07-13)
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Jan 11, 2021 at 05:41:34PM +0800, Anand Jain wrote:
-> The read policy type latency routes the read IO based on the historical
-> average wait-time experienced by the read IOs through the individual
-> device. This patch obtains the historical read IO stats from the kernel
-> block layer and calculates its average.
-> 
-> Example usage:
->  echo "latency" > /sys/fs/btrfs/$uuid/read_policy 
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
-> v3: The block layer commit 0d02129e76ed (block: merge struct block_device and
->     struct hd_struct) has changed the first argument in the function
->     part_stat_read_all() in 5.11-rc1. So the compilation will fail. This patch
->     fixes it.
->     Commit log updated.
-> 
-> v2: Use btrfs_debug_rl() instead of btrfs_info_rl()
->     It is better we have this debug until we test this on at least few
->     hardwares.
->     Drop the unrelated changes.
->     Update change log.
-> 
-> v1: Drop part_stat_read_all instead use part_stat_read
->     Drop inflight
-> 
+Fixes following warnings:
 
-Hi Anand,
+fs/btrfs/delalloc-space.c:205: warning: Function parameter or member 'inode' not described in 'btrfs_inode_rsv_release'
+fs/btrfs/delalloc-space.c:205: warning: Function parameter or member 'qgroup_free' not described in 'btrfs_inode_rsv_release'
+fs/btrfs/delalloc-space.c:472: warning: Function parameter or member 'reserved' not described in 'btrfs_delalloc_release_space'
+fs/btrfs/delalloc-space.c:472: warning: Function parameter or member 'qgroup_free' not described in 'btrfs_delalloc_release_space'
+fs/btrfs/delalloc-space.c:472: warning: Excess function parameter 'release_bytes' description in 'btrfs_delalloc_release_space'
 
-I tested this policy with fio and dstat. It performs overall really
-well. On my raid1c3 array with two HDDs and one SSD (which is the last
-device), I'm getting the following results.
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
+ fs/btrfs/delalloc-space.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
 
-With direct=0:
+diff --git a/fs/btrfs/delalloc-space.c b/fs/btrfs/delalloc-space.c
+index bacee09b7bfd..c73e5131a2de 100644
+--- a/fs/btrfs/delalloc-space.c
++++ b/fs/btrfs/delalloc-space.c
+@@ -192,8 +192,8 @@ void btrfs_free_reserved_data_space(struct btrfs_inode *inode,
+ 
+ /**
+  * btrfs_inode_rsv_release - release any excessive reservation.
+- * @inode - the inode we need to release from.
+- * @qgroup_free - free or convert qgroup meta.
++ * @inode: the inode we need to release from.
++ * @qgroup_free: free or convert qgroup meta.
+  *   Unlike normal operation, qgroup meta reservation needs to know if we are
+  *   freeing qgroup reservation or just converting it into per-trans.  Normally
+  *   @qgroup_free is true for error handling, and false for normal release.
+@@ -457,9 +457,10 @@ int btrfs_delalloc_reserve_space(struct btrfs_inode *inode,
+ /**
+  * btrfs_delalloc_release_space - release data and metadata space for delalloc
+  * @inode: inode we're releasing space for
++ * @reserved: list of changed/reserved ranges
+  * @start: start position of the space already reserved
+  * @len: the len of the space already reserved
+- * @release_bytes: the len of the space we consumed or didn't use
++ * @qgroup_free: should qgroup reserved-space also be freed
+  *
+  * This function will release the metadata space that was not used and will
+  * decrement ->delalloc_bytes and remove it from the fs_info delalloc_inodes
+-- 
+2.25.1
 
-  Run status group 0 (all jobs):
-     READ: bw=3560MiB/s (3733MB/s), 445MiB/s-445MiB/s (467MB/s-467MB/s),
-     io=3129GiB (3360GB), run=900003-900013msec
-
-With direct=1:
-
-  Run status group 0 (all jobs):
-     READ: bw=520MiB/s (545MB/s), 64.9MiB/s-65.0MiB/s (68.1MB/s-68.2MB/s),
-     io=457GiB (490GB), run=900001-900001msec
-
-However, I was also running dstat at the same time and I noticed that
-the read stop sometimes for ~15-20 seconds. For example:
-
-  ----system---- --dsk/sdb-- --dsk/sdc-- --dsk/sdd--
-  20-01 00:37:21|   0     0 :   0     0 : 509M    0
-  20-01 00:37:22|   0     0 :   0     0 : 517M    0
-  20-01 00:37:23|   0     0 :   0     0 : 507M    0
-  20-01 00:37:24|   0     0 :   0     0 : 518M    0
-  20-01 00:37:25|   0     0 :   0     0 :  22M    0
-  20-01 00:37:26|   0     0 :   0     0 :   0     0
-  20-01 00:37:27|   0     0 :   0     0 :   0     0
-  20-01 00:37:28|   0     0 :   0     0 :   0     0
-  20-01 00:37:29|   0     0 :   0     0 :   0     0
-  20-01 00:37:30|   0     0 :   0     0 :   0     0
-  20-01 00:37:31|   0     0 :   0     0 :   0     0
-  20-01 00:37:32|   0     0 :   0     0 :   0     0
-  20-01 00:37:33|   0     0 :   0     0 :   0     0
-  20-01 00:37:34|   0     0 :   0     0 :   0     0
-  20-01 00:37:35|   0     0 :   0     0 :   0     0
-  20-01 00:37:36|   0     0 :   0     0 :   0     0
-  20-01 00:37:37|   0     0 :   0     0 :   0     0
-  20-01 00:37:38|   0     0 :   0     0 :   0     0
-  20-01 00:37:39|   0     0 :   0     0 :   0     0
-  20-01 00:37:40|   0     0 :   0     0 :   0     0
-  20-01 00:37:41|   0     0 :   0     0 :   0     0
-  20-01 00:37:42|   0     0 :   0     0 :   0     0
-  20-01 00:37:43|   0     0 :   0     0 :   0     0
-  20-01 00:37:44|   0     0 :   0     0 :   0     0
-  20-01 00:37:45|   0     0 :   0     0 :   0     0
-  20-01 00:37:46|   0     0 :   0     0 :  55M    0
-  20-01 00:37:47|   0     0 :   0     0 : 516M    0
-  20-01 00:37:48|   0     0 :   0     0 : 515M    0
-  20-01 00:37:49|   0     0 :   0     0 : 516M    0
-  20-01 00:37:50|   0     0 :   0     0 : 520M    0
-  20-01 00:37:51|   0     0 :   0     0 : 520M    0
-  20-01 00:37:52|   0     0 :   0     0 : 514M    0
-
-Here is the full log:
-
-https://susepaste.org/16928336
-
-I never noticed that happening with the PID policy. Is that maybe
-because of reading the part stats for all CPUs while selecting the
-mirror?
-
-Michal

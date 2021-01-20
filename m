@@ -2,174 +2,124 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-18.9 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_CR_TRAILER,INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	UNPARSEABLE_RELAY,USER_AGENT_GIT autolearn=ham autolearn_force=no
+X-Spam-Status: No, score=-2.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
+	SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 03059C433E9
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Jan 2021 07:55:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4970FC433DB
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Jan 2021 08:26:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 9432D2313A
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Jan 2021 07:55:32 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DC72422210
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Jan 2021 08:26:54 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729841AbhATHzO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 20 Jan 2021 02:55:14 -0500
-Received: from aserp2120.oracle.com ([141.146.126.78]:59552 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726790AbhATHxU (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Jan 2021 02:53:20 -0500
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 10K7oE1o163363;
-        Wed, 20 Jan 2021 07:52:16 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
- subject : date : message-id : in-reply-to : references : mime-version :
- content-transfer-encoding; s=corp-2020-01-29;
- bh=7CHtSN3HKN/iP31TJve+MjXjZZTRXY0RwC3lYao2mwM=;
- b=O3fhqrVcVK7ygbOdsi53QTq8yvaRcNaxN+I7pbUPIZaINy15bV3htSiJ7jdFlgjcUwVP
- PfP4qxBelb2DSt5mYzbFAdz6Etu6ajY4CGzoxCQxCfrtM6E4Et/rVQzlYo6PvFCtTj5i
- XE9MNXgjS6VnwunIWlGa7qHBe1xK3HeubksseLdrKaY/FlrmwoFaIZDUot2EkmztNNMJ
- 59kvLLp7vdxBfcuCnRa/8ZLwSq/yV2I9tDlp3pFGOHuIwMOf0BJZ+E9WN0QUbhHvllxf
- SI62LWn4Hx4+xZSORBl2lF/ixUvzO+Pa8YYymCqUsKVWkcps//bRQ61KooYuuniarOGy Ug== 
-Received: from aserp3020.oracle.com (aserp3020.oracle.com [141.146.126.70])
-        by aserp2120.oracle.com with ESMTP id 3668qms504-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Wed, 20 Jan 2021 07:52:16 +0000
-Received: from pps.filterd (aserp3020.oracle.com [127.0.0.1])
-        by aserp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 10K7nmck162268;
-        Wed, 20 Jan 2021 07:52:16 GMT
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by aserp3020.oracle.com with ESMTP id 3668rdgmhy-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Wed, 20 Jan 2021 07:52:16 +0000
-Received: from abhmp0004.oracle.com (abhmp0004.oracle.com [141.146.116.10])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id 10K7qFs0027184;
-        Wed, 20 Jan 2021 07:52:15 GMT
-Received: from ca-dev104.us.oracle.com (/10.129.135.33)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Tue, 19 Jan 2021 23:52:14 -0800
-From:   Anand Jain <anand.jain@oracle.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     dsterba@suse.com, josef@toxicpanda.com
-Subject: [PATCH v4 2/3] btrfs: introduce new device-state read_preferred
-Date:   Tue, 19 Jan 2021 23:52:06 -0800
-Message-Id: <151811057c559d9212c7fc55e9c9cbbad1f62f05.1611114341.git.anand.jain@oracle.com>
-X-Mailer: git-send-email 2.27.0
-In-Reply-To: <cover.1611114341.git.anand.jain@oracle.com>
-References: <cover.1611114341.git.anand.jain@oracle.com>
+        id S1730759AbhATIZp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 20 Jan 2021 03:25:45 -0500
+Received: from mout.gmx.net ([212.227.15.19]:43397 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1730925AbhATIWs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 20 Jan 2021 03:22:48 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1611130871;
+        bh=9n/57xRGFoFzl2uvrfzGCemSbG96WIiippD6zJJlrBA=;
+        h=X-UI-Sender-Class:To:Cc:References:From:Subject:Date:In-Reply-To;
+        b=Ib2Rn5WEoZ+fABb2ruYp85NMn0vw7ZjVG29k9ZVXQrSEU5p9TAy+EL99a3V8kCEso
+         KhmGzKx92H/WQcLSlRrnhJxvKuDWKfI1oabWAdvpMbat62amg8qCX5TgZI7eLH6Ta5
+         AJNR+mqavGcFz4HVWk9EDX/JkESZwEmYbqs8wohg=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx005
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1MAwXr-1lCpyR1TFR-00BPTa; Wed, 20
+ Jan 2021 09:21:10 +0100
+To:     Erik Jensen <erikjensen@rkjnsn.net>
+Cc:     Hugo Mills <hugo@carfax.org.uk>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <CAMj6ewO7PGBoN565WYz_bqL6nGszweNouP-Fphok9+GGpGn8gg@mail.gmail.com>
+ <20190521091842.GS1667@carfax.org.uk>
+ <CAMj6ewPKbRA_eT7JYA9ob9Qk9ZROoshOqaJE=4N_X9bPaskLUw@mail.gmail.com>
+ <CAMj6ewOHrJVdwfKrgXZxwfwE=eoTaB9MS57zha33yb1_iOLWiw@mail.gmail.com>
+ <8aa09a61-aa1c-5dcd-093f-ec096a38a7b5@gmx.com>
+ <CAMj6ewO229vq6=s+T7GhUegwDADv4dzhqPiM0jo10QiKujvytA@mail.gmail.com>
+ <684e89f3-666f-6ae6-5aa2-a4db350c1cd4@gmx.com>
+ <CAMj6ewMqXLtrBQgTJuz04v3MBZ0W95fU4pT0jP6kFhuP830TuA@mail.gmail.com>
+ <218f6448-c558-2551-e058-8a69caadcb23@gmx.com>
+ <CAMj6ewPR8hVYmUSoNWVk6gZvy-HyKnmtMXexAr2f4VQU_7bbUw@mail.gmail.com>
+ <3b2fe3d7-1919-d236-e6bb-483593287cc5@gmx.com>
+ <CAMj6ewNDQFzXsvF5c1=raJc11iMvMKcHH=AbkUkrNeV2e3XGVg@mail.gmail.com>
+ <CAMj6ewPiEvXbtHC1auSfRag5QGtYJxwH_Hvoi2t_18uDSxzm8w@mail.gmail.com>
+ <CAMj6ewNjSs-_3akOquO1Zry5RBNEPqQWf7ZKjs8JOzTA7ZGZ7w@mail.gmail.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Subject: Re: "bad tree block start" when trying to mount on ARM
+Message-ID: <2abb2701-5dde-cd5d-dd25-084682313b11@gmx.com>
+Date:   Wed, 20 Jan 2021 16:21:06 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.6.1
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9869 signatures=668683
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 mlxscore=0 spamscore=0 suspectscore=0
- adultscore=0 mlxlogscore=999 bulkscore=0 malwarescore=0 phishscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2009150000
- definitions=main-2101200043
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9869 signatures=668683
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 malwarescore=0 priorityscore=1501
- adultscore=0 impostorscore=0 mlxlogscore=999 spamscore=0 suspectscore=0
- phishscore=0 clxscore=1015 bulkscore=0 mlxscore=0 lowpriorityscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2009150000
- definitions=main-2101200043
+In-Reply-To: <CAMj6ewNjSs-_3akOquO1Zry5RBNEPqQWf7ZKjs8JOzTA7ZGZ7w@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:KyOxKIGX2JrkObxdYRFhpDkvAyfjRyQx6EVe9Xf4XtUReZdXfGU
+ HJf5OvLU+wS35y6B2H/od/qDF/cTb/nZWGUMCaQld5VPginwyt/thZlfYXv5ZOjQb7ayers
+ 8wVuCKI2sYBlPUoxpQxzY4bt8qItr+mYdt2AxiBJxXHiDuxtpbejdjWC6xOybdC9fOrzOpj
+ xE+pvCPV+5iOuVW1SBckg==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:/Qn47/PmlWk=:GA3YlZr7Zhxo0SRtMoO3Da
+ J7ollTt5IgYyok+e+/n60S0JDcyTpfdgruKwf92fd8FVRLz9F+Ut5kf0iAwsIrfiMv5heO/tG
+ dkpGmpggTLC2jfEUD5Jg0MY9pifhibCGqcd42MZH2n0MiK493QF8TUfHBIkeyciPGt0oYi6ZY
+ mJGfKdBAA4klCJF4R1jaKJvzTAfEEHCvzxbys5ojzRJHMRHTaJEjxIRN6tc0c8XxBwS4wQ+jr
+ 6RIx8/+7/lUooOxfDLNaXL4YhCMxwQP+CufBuF4Of8pso64uLtI9mE4jbgwrnzG/gRxCeA3yS
+ g/JOcHdqq6p9HCMUsnv7zJlVOJ/V+EPtVDNq9pa2tDNVHW3kMNJcfBbGOSay5a9QnyQo2rE2H
+ OcQYazkDdx312BOIXk50gGURaAy/rrt4loPrmHx39ZQOoQy4oEl7Mj2QttBdvZmb0kFCnsyZ1
+ AP6ab6G8KD1OA4n3iAa9VX1u0di48AGHRlZcoBGoLSoeyw5/p5QgRQkNCwkpFEJJg34kLNKKS
+ cN1mBanAAKHnAy2zIz7w3nyHu+a5LNtZZMfchDyc+39p4l6dFsIFrokcrW0dCqW+LJPmvN+OZ
+ noRJidhBQf/BqmWarY2C+sD0oe/mVRBXg4oPw/zKj/jXSHnBTU4sxEaYB9gvVR9eObt6zL5m6
+ p7vE0BLcPAMvAWLG1idZQ0IGMix7h7b0MbhK1G1VmgQR5c6CLBA1IhibNBFqIhfbW1LZF+m0q
+ o1LZ1SdzselXEmZlNgl1KmXCBGzYYZnRIWK1L5SJ5HaE7JlHflRfVZwGFjRpNGLTy4MhqVcgu
+ nckFhB1zWYl/gBDlfUVR9MPBPA2yF+GiPQpwZoNfR9/TttRuv+/ICRepklYv3+33greIzGaaf
+ 5s/guNPBydLQx+77ai5g==
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is a preparatory patch and introduces a new device flag
-'read_preferred', RW-able using sysfs interface.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
-v4: -
-v2: C style fixes. Drop space in between '! test_bit' and extra lines
-    after it.
 
- fs/btrfs/sysfs.c   | 53 ++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/volumes.h |  1 +
- 2 files changed, 54 insertions(+)
+On 2021/1/19 =E4=B8=8B=E5=8D=885:28, Erik Jensen wrote:
+> On Mon, Jan 18, 2021 at 9:22 PM Erik Jensen <erikjensen@rkjnsn.net> wrot=
+e:
+>>
+>> On Mon, Jan 18, 2021 at 4:12 AM Erik Jensen <erikjensen@rkjnsn.net> wro=
+te:
+>>>
+>>> The offending system is indeed ARMv7 (specifically a Marvell ARMADA=C2=
+=AE
+>>> 388), but I believe the Broadcom BCM2835 in my Raspberry Pi is
+>>> actually ARMv6 (with hardware float support).
+>>
+>> Using NBD, I have verified that I receive the same error when
+>> attempting to mount the filesystem on my ARMv6 Raspberry Pi:
+>> [ 3491.339572] BTRFS info (device dm-4): disk space caching is enabled
+>> [ 3491.394584] BTRFS info (device dm-4): has skinny extents
+>> [ 3492.385095] BTRFS error (device dm-4): bad tree block start, want
+>> 26207780683776 have 3395945502747707095
+>> [ 3492.514071] BTRFS error (device dm-4): bad tree block start, want
+>> 26207780683776 have 3395945502747707095
+>> [ 3492.553599] BTRFS warning (device dm-4): failed to read tree root
+>> [ 3492.865368] BTRFS error (device dm-4): open_ctree failed
+>>
+>> The Raspberry Pi is running Linux 5.4.83.
+>>
+>
+> Okay, after some more testing, ARM seems to be irrelevant, and 32-bit
+> is the key factor. On a whim, I booted up an i686, 5.8.14 kernel in a
+> VM, attached the drives via NBD, ran cryptsetup, tried to mount, and=E2=
+=80=A6
+> I got the exact same error message.
+>
+My educated guess is on 32bit platforms, we passed incorrect sector into
+bio, thus gave us garbage.
 
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index 7c0324fe97b2..5888e15e3d14 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -1422,11 +1422,64 @@ static ssize_t btrfs_devinfo_writeable_show(struct kobject *kobj,
- }
- BTRFS_ATTR(devid, writeable, btrfs_devinfo_writeable_show);
- 
-+static ssize_t btrfs_devinfo_read_pref_show(struct kobject *kobj,
-+					    struct kobj_attribute *a, char *buf)
-+{
-+	int val;
-+	struct btrfs_device *device = container_of(kobj, struct btrfs_device,
-+						   devid_kobj);
-+
-+	val = !!test_bit(BTRFS_DEV_STATE_READ_PREFERRED, &device->dev_state);
-+
-+	return snprintf(buf, PAGE_SIZE, "%d\n", val);
-+}
-+
-+static ssize_t btrfs_devinfo_read_pref_store(struct kobject *kobj,
-+					     struct kobj_attribute *a,
-+					     const char *buf, size_t len)
-+{
-+	int ret;
-+	unsigned long val;
-+	struct btrfs_device *device;
-+
-+	ret = kstrtoul(skip_spaces(buf), 0, &val);
-+	if (ret)
-+		return ret;
-+
-+	if (val != 0 && val != 1)
-+		return -EINVAL;
-+
-+	/*
-+	 * lock is not required, the btrfs_device struct can't be freed while
-+	 * its kobject btrfs_device::devid_kobj is still open.
-+	 */
-+	device = container_of(kobj, struct btrfs_device, devid_kobj);
-+
-+	if (val &&
-+	    !test_bit(BTRFS_DEV_STATE_READ_PREFERRED, &device->dev_state)) {
-+		set_bit(BTRFS_DEV_STATE_READ_PREFERRED, &device->dev_state);
-+		btrfs_info(device->fs_devices->fs_info,
-+			   "set read preferred on devid %llu (%d)",
-+			   device->devid, task_pid_nr(current));
-+	} else if (!val &&
-+		   test_bit(BTRFS_DEV_STATE_READ_PREFERRED, &device->dev_state)) {
-+		clear_bit(BTRFS_DEV_STATE_READ_PREFERRED, &device->dev_state);
-+		btrfs_info(device->fs_devices->fs_info,
-+			   "reset read preferred on devid %llu (%d)",
-+			   device->devid, task_pid_nr(current));
-+	}
-+
-+	return len;
-+}
-+BTRFS_ATTR_RW(devid, read_preferred, btrfs_devinfo_read_pref_show,
-+	      btrfs_devinfo_read_pref_store);
-+
- static struct attribute *devid_attrs[] = {
- 	BTRFS_ATTR_PTR(devid, in_fs_metadata),
- 	BTRFS_ATTR_PTR(devid, missing),
- 	BTRFS_ATTR_PTR(devid, replace_target),
- 	BTRFS_ATTR_PTR(devid, writeable),
-+	BTRFS_ATTR_PTR(devid, read_preferred),
- 	NULL
- };
- ATTRIBUTE_GROUPS(devid);
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 71ba1f0e93f4..ea786864b903 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -51,6 +51,7 @@ struct btrfs_io_geometry {
- #define BTRFS_DEV_STATE_REPLACE_TGT	(3)
- #define BTRFS_DEV_STATE_FLUSH_SENT	(4)
- #define BTRFS_DEV_STATE_NO_READA	(5)
-+#define BTRFS_DEV_STATE_READ_PREFERRED	(6)
- 
- struct btrfs_zoned_device_info;
- 
--- 
-2.28.0
+Is this bug happening only on the fs, or any other btrfs can also
+trigger similar problems on 32bit platforms?
 
+Thanks,
+Qu

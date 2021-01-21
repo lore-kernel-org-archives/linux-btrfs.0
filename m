@@ -2,177 +2,108 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.3 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-4.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
+	SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3A885C433DB
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Jan 2021 18:02:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 93F85C433DB
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Jan 2021 18:39:14 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D304322CE3
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Jan 2021 18:02:57 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3E13720663
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Jan 2021 18:39:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2389596AbhAUSAp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 21 Jan 2021 13:00:45 -0500
-Received: from mx2.suse.de ([195.135.220.15]:40916 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2389054AbhAURzV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 21 Jan 2021 12:55:21 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 506B8ABD6;
-        Thu, 21 Jan 2021 17:54:40 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 85123DA6E3; Thu, 21 Jan 2021 18:52:43 +0100 (CET)
-Date:   Thu, 21 Jan 2021 18:52:43 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Anand Jain <anand.jain@oracle.com>
-Cc:     dsterba@suse.cz, linux-btrfs@vger.kernel.org, dsterba@suse.com,
-        josef@toxicpanda.com
-Subject: Re: [PATCH v4 1/3] btrfs: add read_policy latency
-Message-ID: <20210121175243.GF6430@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
-        linux-btrfs@vger.kernel.org, dsterba@suse.com, josef@toxicpanda.com
-References: <cover.1611114341.git.anand.jain@oracle.com>
- <63f6f00e2ecc741efd2200c3c87b5db52c6be2fd.1611114341.git.anand.jain@oracle.com>
- <20210120121416.GX6430@twin.jikos.cz>
- <e46000d9-c2e1-ec7c-d6b1-a3bd16aa05f4@oracle.com>
+        id S1726592AbhAUS0b (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 21 Jan 2021 13:26:31 -0500
+Received: from smtp-33.italiaonline.it ([213.209.10.33]:50884 "EHLO libero.it"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S2389415AbhAUSRC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 21 Jan 2021 13:17:02 -0500
+Received: from venice.bhome ([94.37.172.193])
+        by smtp-33.iol.local with ESMTPA
+        id 2eV3lewW211DD2eV4lKmqA; Thu, 21 Jan 2021 19:16:06 +0100
+x-libjamoibt: 1601
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=libero.it; s=s2014;
+        t=1611252966; bh=IcTFjwUki1ckqgmyqGzADthGDkGGcap6h+PuBluMBlw=;
+        h=From;
+        b=pY/MFo7a6uXpOibnFTYYc0LOWRIP5mahLQFTNpVMnKM9XL+ijD2gCiYF/YaWnWpzh
+         +4GfAlLifNL6WJnLBJJIAHgr0ClC5MrJq/bPVHQj+Vq6/56+Aa7HSBNro2gbo43707
+         ZhIBDSKYRRi7z9PvPhuCn0YsJRqee5i3Sa0pl2NSJhiPZUwMivj+PpITmRwtWO8HBh
+         ItGPoyI8iDmBFGTuwPBNvAxsbaBXM0E2/jDzR9/TQyCFLh+U/iD5fKsH+AKMRO0X84
+         N1HmMdLDpipj1dnGX22+yD9d0LMmGRrVvVzaNXlwkodxwteVMBDh+ihmdjs7jBKMsa
+         fTvIs29oNzD8w==
+X-CNFS-Analysis: v=2.4 cv=ba6u7MDB c=1 sm=1 tr=0 ts=6009c4e6 cx=a_exe
+ a=z1y4hvBwYU35dpVEhKc0WA==:117 a=z1y4hvBwYU35dpVEhKc0WA==:17
+ a=IkcTkHD0fZMA:10 a=3-TMlGnVWw1Yy_zT-BYA:9 a=QEXdDO2ut3YA:10
+Reply-To: kreijack@inwind.it
+Subject: Re: [RFC][PATCH V5] btrfs: preferred_metadata: preferred device for
+ metadata
+To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org
+Cc:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+References: <20210117185435.36263-1-kreijack@libero.it>
+ <30cd0359-e649-dcc7-e373-4dd778fbf70b@toxicpanda.com>
+From:   Goffredo Baroncelli <kreijack@libero.it>
+Message-ID: <765cec4e-b989-081b-2ad7-e2d1c9cf7f55@libero.it>
+Date:   Thu, 21 Jan 2021 19:16:05 +0100
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.6.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <e46000d9-c2e1-ec7c-d6b1-a3bd16aa05f4@oracle.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <30cd0359-e649-dcc7-e373-4dd778fbf70b@toxicpanda.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
+X-CMAE-Envelope: MS4xfL904GRjuYlAmnfh5pI4cK9cr5yReYEnAqG0K5sVpVsFqysA05BHUNBhkgXwIkK/oYRjbB/tw8bMhlbUo9Hf8pidX6m5+5tekMNcIyRzrjzmeCEtw8MJ
+ KDU11+78MCCsubhWVvAh0tHY5sM+lNQC5TgKJNZ+PbUy32W7VBcQjbQHFtpK0/S4cr/i70tB9kTinse4RkysTyEFij1DVkbS6VknDrvM25UkMy5zQLkHF6yW
+ VZqnzK2m7YperjI/feU+bl8qyMpNWefXjTV8n2pXXO0=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Jan 21, 2021 at 06:10:36PM +0800, Anand Jain wrote:
+On 1/20/21 5:02 PM, Josef Bacik wrote:
+> On 1/17/21 1:54 PM, Goffredo Baroncelli wrote:
+>>
+>> Hi all,
+>>
+>> This is an RFC; I wrote this patch because I find the idea interesting
+>> even though it adds more complication to the chunk allocator.
+>>
+>> The basic idea is to store the metadata chunk in the fasters disks.
+>> The fasters disk are marked by the "preferred_metadata" flag.
+>>
+>> BTRFS when allocate a new metadata/system chunk, selects the
+>> "preferred_metadata" disks, otherwise it selectes the non
+>> "preferred_metadata" disks. The intial patch allowed to use the other
+>> kind of disk in case a set is full.
+>>
+>> This patches set is based on v5.11-rc2.
+>>
+>> For now, the only user of this patch that I am aware is Zygo.
+>> However he asked to further constraint the allocation: i.e. avoid to
+>> allocated metadata on a not "preferred_metadata"
+>> disk. So I extended the patch adding 4 modes to operate.
+>>
+>> This is enabled passing the option "preferred_metadata=<mode>" at
+>> mount time.
+>>
 > 
+> I'll echo Zygo's hatred for mount options.  The more complicated policy decisions belong in properties and sysfs knobs, not mount options.
 > 
-> On 20/1/21 8:14 pm, David Sterba wrote:
-> > On Tue, Jan 19, 2021 at 11:52:05PM -0800, Anand Jain wrote:
-> >> The read policy type latency routes the read IO based on the historical
-> >> average wait-time experienced by the read IOs through the individual
-> >> device. This patch obtains the historical read IO stats from the kernel
-> >> block layer and calculates its average.
-> > 
-> > This does not say how the stripe is selected using the gathered numbers.
-> > Ie. what is the criteria like minimum average time, "based on" is too
-> > vague.
-> > 
+I tend to agree. However adding a filesystem property can be done in a second time. I don't think that this a problem. However I prefer to make the patch smaller.
+
+Anyway I have to point out that we need a way to change the allocation policy without changing the metadata otherwise we risk to be in the loop of exhausting metadata space:
+- how we can increase the space for metadata if we don't have space for metadata but I need to allocate few block of metadata....
+
+What I mean is that even if we store the setting as filesystem properties (and definitely we have to do), we need a way to override in an emergency scenario.
+
+> And then for the properties themselves, presumably we'll want to add other FS wide properties in the future.  I'm not against adding new actual keys and items to the tree itself, but is there a way we could use our existing property infrastructure that we use for compression, and simply store the xattrs in the tree root?  It looks like we're just toggling a policy decision, and we don't actually need the other properties in the item you've created, so why not just a btrfs.preferred_metadata property with the value stored in it, dropped into the tree_root so it can be read on mount?  Thanks,
+
+What if the root subvolume is not mounted ? Yes we can create a further api to store/retrive this kind of metadata without mounting the root subvolume, but doing so in what it would be different than adding a key to the root fs like the default subvolume ioctl does ?
+
 > 
-> 
-> Could you please add the following in the change log. Hope this will 
-> suffice.
-> 
-> ----------
-> This patch adds new read policy Latency. This policy routes the read
-> I/Os based on the device's average wait time for read requests.
+> Josef
 
-'wait time' means the time from io submission to completion
 
-> The average is calculated by dividing the total wait time for read
-> requests by the total read I/Os processed by the device.
-
-So this is based on numbers from the entire lifetime of the device?  The
-numbers are IMHO not a reliable source. If unrelated writes increase the
-read wait time then the device will not be selected until the average
-is lower than of the other devices.
-
-The average can only decrease after there are some fast reads, which is
-not guaranted to happen and there's no good estimate how long it could
-take to happen.
-
-The tests we all probably do are on a fresh mkfs and with a small
-workload but the mirror selection logic must work long term.
-
-The part_stat numbers could be used but must reflect the time factor,
-ie. it needs to be some a rolling average or collecting a sample for
-last N seconds.
-
-Bear in mind that this is only a heuristic and we don't need perfect
-results nor we want to replace io scheduling, so the amont of collected
-data or the logic should be straightforward.
-
-> This policy uses kernel disk stat to calculate the average, so it needs
-> the kernel stat to be enabled.
-
-What is needed to enable it? I see it's always compiled in in
-block/blk-core.c.
-
-> If in case the kernel stat is disabled
-> the policy uses the stripe 0.
-> This policy can be set through the read_policy sysfs interface as shown
-> below.
-> 
->      $ echo latency > /sys/fs/btrfs/<uuid>/read_policy
->      $ cat /sys/fs/btrfs/<uuid>/read_policy
->           pid [latency] device roundrobin
-> 
-> This policy won't persist across reboot or mount unmount recycle as of
-> now.
-> 
-> Here below are few performance test results with latency compared with 
-> pid policy.
-> 
-> raid1 fio read 500m
-
-500m is really small data size for such measurement
-
-> -----------------------------------------------------
-> dev types   | nvme+ssd  nvme+ssd   all-nvme  all-nvme
-> read type   | random    sequential random    sequential
-> ------------+------------------------------------------
-> pid         | 744MiB/s  809MiB/s  2225MiB/s 2155MiB/s
-> latency     | 2072MiB/s 2008MiB/s  1999MiB/s 1961MiB/s
-
-Namely when the device bandwidth is 4x higher. The data size should be
-scaled up so the whole run takes at least 30 seconds if not a few
-minutes.
-
-Other missing information about the load is the number of threads and if
-it's buffered or direct io.
-
-> raid10 fio read 500m
-> -----------------------------------------------------
-> dev types   | nvme+ssd  nvme+ssd   all-nvme  all-nvme
-> read type   | random    sequential random    sequential
-> ------------+------------------------------------------
-> pid         | 1282MiB/s 1427MiB/s 2152MiB/s 1969MiB/s
-> latency     | 2073MiB/s 1871MiB/s 1975MiB/s 1984MiB/s
-> 
-> 
-> raid1c3 fio read 500m
-> -----------------------------------------------------
-> dev types   | nvme+ssd  nvme+ssd   all-nvme  all-nvme
-> read type   | random    sequential random    sequential
-> ------------+------------------------------------------
-> pid         |  973MiB/s  955MiB/s 2144MiB/s 1962MiB/s
-> latency     | 2005MiB/s 1924MiB/s 2083MiB/s 1980MiB/s
-> 
-> 
-> raid1c4 fio read 500m
-> -----------------------------------------------------
-> dev types   | nvme+ssd  nvme+ssd   all-nvme  all-nvme
-> read type   | random    sequential random    sequential
-> ------------+------------------------------------------
-> pid         | 1204MiB/s 1221MiB/s 2065MiB/s 1878MiB/s
-> latency     | 1990MiB/s 1920MiB/s 1945MiB/s 1865MiB/s
-> 
-> 
-> In the given fio I/O workload above, it is found that there are fewer 
-> I/O merges in case of latency as compared to pid. So in the case of all 
-> homogeneous devices pid performance little better.
-
-Yeah switching the device in the middle of a contiguous range could slow
-it down but as long as it's not "too much", then it's ok.
-
-The pid selection is good for multiple threads workload but we also want
-to make it work with single thread reads, like a simple 'cp'.
-
-I tested this policy and with 2G file 'cat file' utilizes only one
-device, so this is no improvement to the pid policy.
-
-A policy based on read latency makes sense but the current
-implementation does not cover enough workloads.
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

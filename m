@@ -2,443 +2,236 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.3 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
+	SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 387BBC433E0
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Jan 2021 22:54:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1F878C433DB
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Jan 2021 23:57:02 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id C8B4823A03
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Jan 2021 22:54:48 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BB3E720799
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Jan 2021 23:57:01 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726063AbhAUWyr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 21 Jan 2021 17:54:47 -0500
-Received: from mail110.syd.optusnet.com.au ([211.29.132.97]:55159 "EHLO
-        mail110.syd.optusnet.com.au" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1725268AbhAUWyp (ORCPT
+        id S1726242AbhAUX4o (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 21 Jan 2021 18:56:44 -0500
+Received: from relay7-d.mail.gandi.net ([217.70.183.200]:58909 "EHLO
+        relay7-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726094AbhAUX4m (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 21 Jan 2021 17:54:45 -0500
-X-Greylist: delayed 1989 seconds by postgrey-1.27 at vger.kernel.org; Thu, 21 Jan 2021 17:54:43 EST
-Received: from dread.disaster.area (pa49-180-243-77.pa.nsw.optusnet.com.au [49.180.243.77])
-        by mail110.syd.optusnet.com.au (Postfix) with ESMTPS id 83DF6106D12
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jan 2021 09:20:52 +1100 (AEDT)
-Received: from dave by dread.disaster.area with local (Exim 4.92.3)
-        (envelope-from <david@fromorbit.com>)
-        id 1l2iJv-0010dK-By
-        for linux-btrfs@vger.kernel.org; Fri, 22 Jan 2021 09:20:51 +1100
-Date:   Fri, 22 Jan 2021 09:20:51 +1100
-From:   Dave Chinner <david@fromorbit.com>
+        Thu, 21 Jan 2021 18:56:42 -0500
+X-Originating-IP: 87.154.216.30
+Received: from [192.168.3.4] (p579ad81e.dip0.t-ipconnect.de [87.154.216.30])
+        (Authenticated sender: chainofflowers@neuromante.net)
+        by relay7-d.mail.gandi.net (Postfix) with ESMTPSA id BD74320007
+        for <linux-btrfs@vger.kernel.org>; Thu, 21 Jan 2021 23:55:58 +0000 (UTC)
+Subject: Re: Access Beyond End of Device & Input/Output Errors
+References: <5975832.dRgAyDc8OP@luna>
+ <09596ccd-56b4-d55e-ad06-26d5c84b9ab6@gmx.com>
+ <83f3d990-dc07-8070-aa07-303a6b8507be@neuromante.net>
+From:   chainofflowers <chainofflowers@neuromante.net>
 To:     linux-btrfs@vger.kernel.org
-Subject: Unexpected reflink/subvol snapshot behaviour
-Message-ID: <20210121222051.GB4626@dread.disaster.area>
+Message-ID: <5494566e-ff98-9aa9-efa3-95db37509b88@neuromante.net>
+Date:   Fri, 22 Jan 2021 00:55:58 +0100
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.6.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-X-Optus-CM-Score: 0
-X-Optus-CM-Analysis: v=2.3 cv=Ubgvt5aN c=1 sm=1 tr=0 cx=a_idp_d
-        a=juxvdbeFDU67v5YkIhU0sw==:117 a=juxvdbeFDU67v5YkIhU0sw==:17
-        a=kj9zAlcOel0A:10 a=EmqxpYm9HcoA:10 a=7-415B0cAAAA:8
-        a=kl0_DJxKGkkhnRG-CZEA:9 a=ND06dEfBANKw4fmV:21 a=EHLN5UMVhij9eCPi:21
-        a=CjuIK1q_8ugA:10 a=biEYGPWJfzWAr4FL6Ov7:22
+In-Reply-To: <83f3d990-dc07-8070-aa07-303a6b8507be@neuromante.net>
+Content-Type: multipart/mixed;
+ boundary="------------00F2E4D12BF3D52C4D44026D"
+Content-Language: en-US
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi btrfs-gurus,
+This is a multi-part message in MIME format.
+--------------00F2E4D12BF3D52C4D44026D
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 8bit
 
-I'm running a simple reflink/snapshot/COW scalability test at the
-moment. It is just a loop that does "fio overwrite of 10,000 4kB
-random direct IOs in a 4GB file; snapshot" and I want to check a
-couple of things I'm seeing with btrfs. fio config file is appended
-to the email.
+Hi Qu,
 
-Firstly, what is the expected "space amplification" of such a
-workload over 1000 iterations on btrfs? This will write 40GB of user
-data, and I'm seeing btrfs consume ~220GB of space for the workload
-regardless of whether I use subvol snapshot or file clones
-(reflink).  That's a space amplification of ~5.5x (a lot!) so I'm
-wondering if this is expected or whether there's something else
-going on. XFS amplification for 1000 iterations using reflink is
-only 1.4x, so 5.5x seems somewhat excessive to me.
+it happened again. This time on my /home partition.
+I rebooted from an external disk and ran btrfs check without first going
+through btrfs scrub, and this is the output, no errors:
 
-On a similar note, the IO bandwidth consumed by btrfs is way out of
-proportion with the amount of user data being written. I'm seeing
-multiple GBs being written by btrfs on every iteration - easily
-exceeding 5GB of writes per cycle in the later iterations of the
-test. Given that only 40MB of user data is being written per cycle,
-there's a write amplification factor of well over 100x ocurring
-here. In comparison, XFS is writing roughly consistently at 80MB/s
-to disk over the course of the entire workload, largely because of
-journal traffic for the transactions run during COW and clone
-operations.  Is such a huge amount of of IO expected for btrfs in
-this situation?
+------------------------------------------
+[manjaro oc]# btrfs check /dev/mapper/OMO
+Opening filesystem to check…
+Checking filesystem on /dev/mapper/OMO
+UUID: 9362ac9d-c280-451d-9c8a-c09798e1c887
+[1/7] checking root items
+[2/7] checking extents
+[3/7] checking free space cache
+[4/7] checking fs roots
+[5/7] checking only csums items (without verifying data)
+[6/7] checking root refs
+[7/7] checking quota groups skipped (not enabled on this FS)
+found 137523740672 bytes used, no error found
+total csum bytes: 113842816
+total tree bytes: 1740537856
+total fs tree bytes: 1444249600
+total extent tree bytes: 143835136
+btree space waste bytes: 325744995
+file data blocks allocated: 210346024960
+ referenced 172314374144
+------------------------------------------
 
-As a side effect of that IO load, btrfs is driving the machine hard
-into memory reclaim because the page cache footprint of each
-writeback cycle. btrfs is dirtying a large number of metadata pages
-in the page cache (at least 50% of the ram in the machine is dirtied
-on every snapshot/reflink cycle). Hence when the system needs memory
-reclaim, it hits large amounts of memory it can't reclaim
-immediately and things go bad very quickly.  This is causing
-everything on the machine to stall while btrfs dumps the dirty
-metadata pages to disk at over 1GB/s and 10,000 IOPS for several
-seconds. Is this expected behaviour?
+Then, I rebooted from my internal disk, everything went well. I ran
+btrfs scrub and also got no errors.
 
-Next, subvol snapshot and clone time appears to be scale with the
-number of snapshots/clones already present. The initial clone/subvol
-snapshot command take a few milliseconds. At 50 snapshots it take
-1.5s. At 200 snapshots it takes 7.5s. At 500 it takes 15s and at
->850 it seems to level off at about 30s a snapshot. There are
-outliers that take double this time (63s was the longest) and the
-variation between iterations can be quite substantial. Is this
-expected scalablity?
+I have dumped the messages from journalctl, and the debug ones related
+to btrfs were only the ones from btrfs_trim_block_group - so, the issue
+is related to free space extents I guess?
 
-On subvol snapshot execution, there appears to be a bug manifesting
-occasionally and may be one of the reasons for things being so
-variable. The visible manifestation is that every so often a subvol
-snapshot takes 0.02s instead of the multiple seconds all the
-snapshots around it are taking:
+I have attached the logs.
+You can see that the last line:
 
- $ grep -C 1 ": 0.0" results/btrfs-snap/2021-01-21-22\:08\:15-1000/snapshot_times | sed 's/://'
- snapshot 0 0.02
- snapshot 1 0.06
- snapshot 2 0.10
- --
- snapshot 25 0.77
- snapshot 26 0.02
- snapshot 27 0.85
- --
- snapshot 51 1.45
- snapshot 52 0.02
- snapshot 53 1.51
- --
- snapshot 78 2.35
- snapshot 79 0.03
- snapshot 80 2.31
- --
- snapshot 104 3.22
- snapshot 105 0.02
- snapshot 106 3.44
- --
- snapshot 130 4.25
- snapshot 131 0.02
- snapshot 132 4.53
- --
- snapshot 156 5.38
- snapshot 157 0.02
- snapshot 158 5.76
- --
- snapshot 183 6.17
- snapshot 184 0.02
- snapshot 185 6.94
- --
- snapshot 209 8.08
- snapshot 210 0.04
- snapshot 211 6.91
- --
- snapshot 235 8.77
- snapshot 236 0.02
- snapshot 237 9.80
- --
- snapshot 288 10.91
- snapshot 289 0.04
- snapshot 290 9.07
- --
- snapshot 314 11.81
- snapshot 315 0.04
- snapshot 316 11.74
- --
- snapshot 340 11.83
- snapshot 341 0.05
- snapshot 342 12.11
- --
- snapshot 367 11.95
- snapshot 368 0.06
- snapshot 369 11.83
- --
- snapshot 393 13.66
- snapshot 394 0.03
- snapshot 395 10.98
- --
- snapshot 419 14.04
- snapshot 420 0.04
- snapshot 421 12.62
- --
- snapshot 472 22.10
- snapshot 473 0.03
- snapshot 474 14.90
- --
- snapshot 498 14.48
- snapshot 499 0.03
- snapshot 500 17.46
- --
- snapshot 524 20.50
- snapshot 525 0.04
- snapshot 526 18.01
- --
- snapshot 577 55.81
- snapshot 578 0.08
- snapshot 579 34.02
- --
- snapshot 603 22.81
- snapshot 604 0.03
- snapshot 605 19.26
- --
- snapshot 682 30.88
- snapshot 683 0.02
- snapshot 684 14.83
- --
- snapshot 708 19.90
- snapshot 709 0.03
- snapshot 710 15.38
- --
- snapshot 761 25.63
- snapshot 762 0.05
- snapshot 763 15.58
- --
- snapshot 787 15.33
- snapshot 788 0.03
- snapshot 789 15.08
- --
- snapshot 866 23.77
- snapshot 867 0.04
- snapshot 868 27.40
- --
- snapshot 892 15.33
- snapshot 893 0.03
- snapshot 894 13.38
- --
- snapshot 945 15.32
- snapshot 946 0.05
- snapshot 947 15.52
- --
- snapshot 971 15.30
- snapshot 972 0.03
- snapshot 973 14.88
+------------------------------------------
+Jan 21 23:57:25 <***> kernel: btrfs_trim_block_group: enter bg
+start=26864517120 start=26864517120 end=27938258944 minlen=512
+------------------------------------------
 
-It seems .... unlikely that random snapshots of exactly the same
-repeating workloadi have such a variance in execution time. And then
-I noticed that they exactly correlate with the order of magnitude
-fio performance drops that manifested occasionally:
+does not have a second matching line with "ret=0", because the kernel
+stopped storing messages in the log. So, I guess the issue occurred
+while btrfs_trim_block_group was working on 26864517120..27938258944.
 
-$ for i in `grep ": 0.0" results/btrfs-snap/2021-01-21-22\:08\:15-1000/snapshot_times | sed 's/://' |cut -d " " -f 2`; do grep -C 1 " $i:" results/btrfs-snap/2021-01-21-22\:08\:15-1000/fio_times ; echo --- ; done
-fio loop 0:   write: IOPS=43.7k, BW=171MiB/s (179MB/s)(39.1MiB/229msec); 0 zone resets
-fio loop 1:   write: IOPS=30.1k, BW=118MiB/s (123MB/s)(39.1MiB/332msec); 0 zone resets
----
-fio loop 0:   write: IOPS=43.7k, BW=171MiB/s (179MB/s)(39.1MiB/229msec); 0 zone resets
-fio loop 1:   write: IOPS=30.1k, BW=118MiB/s (123MB/s)(39.1MiB/332msec); 0 zone resets
-fio loop 2:   write: IOPS=33.7k, BW=132MiB/s (138MB/s)(39.1MiB/297msec); 0 zone resets
----
-fio loop 25:   write: IOPS=15.7k, BW=61.3MiB/s (64.3MB/s)(39.1MiB/637msec); 0 zone resets
-fio loop 26:   write: IOPS=5537, BW=21.6MiB/s (22.7MB/s)(39.1MiB/1806msec); 0 zone resets
-fio loop 27:   write: IOPS=15.4k, BW=60.2MiB/s (63.1MB/s)(39.1MiB/649msec); 0 zone resets
----
-fio loop 51:   write: IOPS=12.5k, BW=48.0MiB/s (51.3MB/s)(39.1MiB/798msec); 0 zone resets
-fio loop 52:   write: IOPS=3480, BW=13.6MiB/s (14.3MB/s)(39.1MiB/2873msec); 0 zone resets
-fio loop 53:   write: IOPS=9345, BW=36.5MiB/s (38.3MB/s)(39.1MiB/1070msec); 0 zone resets
----
-fio loop 78:   write: IOPS=6887, BW=26.9MiB/s (28.2MB/s)(39.1MiB/1452msec); 0 zone resets
-fio loop 79:   write: IOPS=1955, BW=7823KiB/s (8011kB/s)(39.1MiB/5113msec); 0 zone resets
-fio loop 80:   write: IOPS=7751, BW=30.3MiB/s (31.8MB/s)(39.1MiB/1290msec); 0 zone resets
----
-fio loop 104:   write: IOPS=8340, BW=32.6MiB/s (34.2MB/s)(39.1MiB/1199msec); 0 zone resets
-fio loop 105:   write: IOPS=1546, BW=6184KiB/s (6333kB/s)(39.1MiB/6468msec); 0 zone resets
-fio loop 106:   write: IOPS=7262, BW=28.4MiB/s (29.7MB/s)(39.1MiB/1377msec); 0 zone resets
----
-fio loop 130:   write: IOPS=7788, BW=30.4MiB/s (31.9MB/s)(39.1MiB/1284msec); 0 zone resets
-fio loop 131:   write: IOPS=1268, BW=5074KiB/s (5195kB/s)(39.1MiB/7884msec); 0 zone resets
-fio loop 132:   write: IOPS=6468, BW=25.3MiB/s (26.5MB/s)(39.1MiB/1546msec); 0 zone resets
----
-fio loop 156:   write: IOPS=7137, BW=27.9MiB/s (29.2MB/s)(39.1MiB/1401msec); 0 zone resets
-fio loop 157:   write: IOPS=1487, BW=5949KiB/s (6092kB/s)(39.1MiB/6724msec); 0 zone resets
-fio loop 158:   write: IOPS=8904, BW=34.8MiB/s (36.5MB/s)(39.1MiB/1123msec); 0 zone resets
----
-fio loop 183:   write: IOPS=6002, BW=23.4MiB/s (24.6MB/s)(39.1MiB/1666msec); 0 zone resets
-fio loop 184:   write: IOPS=936, BW=3746KiB/s (3836kB/s)(39.1MiB/10679msec); 0 zone resets
-fio loop 185:   write: IOPS=7230, BW=28.2MiB/s (29.6MB/s)(39.1MiB/1383msec); 0 zone resets
----
-fio loop 209:   write: IOPS=5521, BW=21.6MiB/s (22.6MB/s)(39.1MiB/1811msec); 0 zone resets
-fio loop 210:   write: IOPS=775, BW=3101KiB/s (3175kB/s)(39.1MiB/12899msec); 0 zone resets
-fio loop 211:   write: IOPS=6489, BW=25.3MiB/s (26.6MB/s)(39.1MiB/1541msec); 0 zone resets
----
-fio loop 235:   write: IOPS=7230, BW=28.2MiB/s (29.6MB/s)(39.1MiB/1383msec); 0 zone resets
-fio loop 236:   write: IOPS=758, BW=3035KiB/s (3108kB/s)(39.1MiB/13178msec); 0 zone resets
-fio loop 237:   write: IOPS=8071, BW=31.5MiB/s (33.1MB/s)(39.1MiB/1239msec); 0 zone resets
----
-fio loop 288:   write: IOPS=5552, BW=21.7MiB/s (22.7MB/s)(39.1MiB/1801msec); 0 zone resets
-fio loop 289:   write: IOPS=652, BW=2612KiB/s (2675kB/s)(39.1MiB/15314msec); 0 zone resets
-fio loop 290:   write: IOPS=6027, BW=23.5MiB/s (24.7MB/s)(39.1MiB/1659msec); 0 zone resets
----
-fio loop 314:   write: IOPS=5186, BW=20.3MiB/s (21.2MB/s)(39.1MiB/1928msec); 0 zone resets
-fio loop 315:   write: IOPS=669, BW=2680KiB/s (2744kB/s)(39.1MiB/14926msec); 0 zone resets
-fio loop 316:   write: IOPS=7163, BW=27.0MiB/s (29.3MB/s)(39.1MiB/1396msec); 0 zone resets
----
-fio loop 340:   write: IOPS=5170, BW=20.2MiB/s (21.2MB/s)(39.1MiB/1934msec); 0 zone resets
-fio loop 341:   write: IOPS=697, BW=2791KiB/s (2858kB/s)(39.1MiB/14333msec); 0 zone resets
-fio loop 342:   write: IOPS=6345, BW=24.8MiB/s (25.0MB/s)(39.1MiB/1576msec); 0 zone resets
----
-fio loop 367:   write: IOPS=5509, BW=21.5MiB/s (22.6MB/s)(39.1MiB/1815msec); 0 zone resets
-fio loop 368:   write: IOPS=607, BW=2429KiB/s (2488kB/s)(39.1MiB/16466msec); 0 zone resets
-fio loop 369:   write: IOPS=6402, BW=25.0MiB/s (26.2MB/s)(39.1MiB/1562msec); 0 zone resets
----
-fio loop 393:   write: IOPS=7331, BW=28.6MiB/s (30.0MB/s)(39.1MiB/1364msec); 0 zone resets
-fio loop 394:   write: IOPS=637, BW=2550KiB/s (2612kB/s)(39.1MiB/15684msec); 0 zone resets
-fio loop 395:   write: IOPS=7358, BW=28.7MiB/s (30.1MB/s)(39.1MiB/1359msec); 0 zone resets
----
-fio loop 419:   write: IOPS=6480, BW=25.3MiB/s (26.5MB/s)(39.1MiB/1543msec); 0 zone resets
-fio loop 420:   write: IOPS=620, BW=2484KiB/s (2543kB/s)(39.1MiB/16104msec); 0 zone resets
-fio loop 421:   write: IOPS=7007, BW=27.4MiB/s (28.7MB/s)(39.1MiB/1427msec); 0 zone resets
----
-fio loop 472:   write: IOPS=6313, BW=24.7MiB/s (25.9MB/s)(39.1MiB/1584msec); 0 zone resets
-fio loop 473:   write: IOPS=455, BW=1822KiB/s (1866kB/s)(39.1MiB/21951msec); 0 zone resets
-fio loop 474:   write: IOPS=6715, BW=26.2MiB/s (27.5MB/s)(39.1MiB/1489msec); 0 zone resets
----
-fio loop 498:   write: IOPS=7662, BW=29.9MiB/s (31.4MB/s)(39.1MiB/1305msec); 0 zone resets
-fio loop 499:   write: IOPS=470, BW=1882KiB/s (1928kB/s)(39.1MiB/21249msec); 0 zone resets
-fio loop 500:   write: IOPS=4228, BW=16.5MiB/s (17.3MB/s)(39.1MiB/2365msec); 0 zone resets
----
-fio loop 524:   write: IOPS=6697, BW=26.2MiB/s (27.4MB/s)(39.1MiB/1493msec); 0 zone resets
-fio loop 525:   write: IOPS=454, BW=1818KiB/s (1861kB/s)(39.1MiB/22004msec); 0 zone resets
-fio loop 526:   write: IOPS=7112, BW=27.8MiB/s (29.1MB/s)(39.1MiB/1406msec); 0 zone resets
----
-fio loop 577:   write: IOPS=4222, BW=16.5MiB/s (17.3MB/s)(39.1MiB/2368msec); 0 zone resets
-fio loop 578:   write: IOPS=150, BW=602KiB/s (617kB/s)(39.1MiB/66416msec); 0 zone resets
-fio loop 579:   write: IOPS=6038, BW=23.6MiB/s (24.7MB/s)(39.1MiB/1656msec); 0 zone resets
----
-fio loop 603:   write: IOPS=5991, BW=23.4MiB/s (24.5MB/s)(39.1MiB/1669msec); 0 zone resets
-fio loop 604:   write: IOPS=441, BW=1764KiB/s (1806kB/s)(39.1MiB/22674msec); 0 zone resets
-fio loop 605:   write: IOPS=6056, BW=23.7MiB/s (24.8MB/s)(39.1MiB/1651msec); 0 zone resets
----
-fio loop 682:   write: IOPS=6226, BW=24.3MiB/s (25.5MB/s)(39.1MiB/1606msec); 0 zone resets
-fio loop 683:   write: IOPS=322, BW=1290KiB/s (1321kB/s)(39.1MiB/31002msec); 0 zone resets
-fio loop 684:   write: IOPS=5934, BW=23.2MiB/s (24.3MB/s)(39.1MiB/1685msec); 0 zone resets
----
-fio loop 708:   write: IOPS=5614, BW=21.9MiB/s (22.0MB/s)(39.1MiB/1781msec); 0 zone resets
-fio loop 709:   write: IOPS=473, BW=1894KiB/s (1939kB/s)(39.1MiB/21124msec); 0 zone resets
-fio loop 710:   write: IOPS=6816, BW=26.6MiB/s (27.9MB/s)(39.1MiB/1467msec); 0 zone resets
----
-fio loop 761:   write: IOPS=6301, BW=24.6MiB/s (25.8MB/s)(39.1MiB/1587msec); 0 zone resets
-fio loop 762:   write: IOPS=448, BW=1796KiB/s (1839kB/s)(39.1MiB/22275msec); 0 zone resets
-fio loop 763:   write: IOPS=7490, BW=29.3MiB/s (30.7MB/s)(39.1MiB/1335msec); 0 zone resets
----
-fio loop 787:   write: IOPS=6729, BW=26.3MiB/s (27.6MB/s)(39.1MiB/1486msec); 0 zone resets
-fio loop 788:   write: IOPS=579, BW=2318KiB/s (2374kB/s)(39.1MiB/17253msec); 0 zone resets
-fio loop 789:   write: IOPS=5356, BW=20.9MiB/s (21.9MB/s)(39.1MiB/1867msec); 0 zone resets
----
-fio loop 866:   write: IOPS=6720, BW=26.3MiB/s (27.5MB/s)(39.1MiB/1488msec); 0 zone resets
-fio loop 867:   write: IOPS=314, BW=1258KiB/s (1288kB/s)(39.1MiB/31791msec); 0 zone resets
-fio loop 868:   write: IOPS=5602, BW=21.9MiB/s (22.9MB/s)(39.1MiB/1785msec); 0 zone resets
----
-fio loop 892:   write: IOPS=6915, BW=27.0MiB/s (28.3MB/s)(39.1MiB/1446msec); 0 zone resets
-fio loop 893:   write: IOPS=598, BW=2395KiB/s (2452kB/s)(39.1MiB/16704msec); 0 zone resets
-fio loop 894:   write: IOPS=6544, BW=25.6MiB/s (26.8MB/s)(39.1MiB/1528msec); 0 zone resets
----
-fio loop 945:   write: IOPS=6176, BW=24.1MiB/s (25.3MB/s)(39.1MiB/1619msec); 0 zone resets
-fio loop 946:   write: IOPS=570, BW=2281KiB/s (2336kB/s)(39.1MiB/17536msec); 0 zone resets
-fio loop 947:   write: IOPS=6631, BW=25.9MiB/s (27.2MB/s)(39.1MiB/1508msec); 0 zone resets
----
-fio loop 971:   write: IOPS=8539, BW=33.4MiB/s (34.0MB/s)(39.1MiB/1171msec); 0 zone resets
-fio loop 972:   write: IOPS=579, BW=2317KiB/s (2372kB/s)(39.1MiB/17265msec); 0 zone resets
-fio loop 973:   write: IOPS=6265, BW=24.5MiB/s (25.7MB/s)(39.1MiB/1596msec); 0 zone resets
----
+Unfortunately I did not dump the output of dmesg directly in that
+moment, so all I could get is what was available in the journal after
+the reboot.
+
+In the log you can also see that some time before BTRFS detected that
+the space cache for dm-3 needed to be rebuilt:
+------------------------------------------
+Jan 21 19:29:17 <***> kernel: BTRFS warning (device dm-3): block group
+82699091968 has wrong amount of free space
+Jan 21 19:29:17 <***> kernel: BTRFS warning (device dm-3): failed to
+load free space cache for block group 82699091968, rebuilding it now
+------------------------------------------
+
+Any hint about what I could do now?
+
+Thanks! :-)
 
 
-In these instances, fio takes about as long as I would expect the
-snapshot to have taken to run. Regardless of the cause, something
-looks to be broken here...
 
-An astute reader might also notice that fio performance really drops
-away quickly as the number of snapshots goes up. Loop 0 is the "no
-snapshots" performance. By 10 snapshots, performance is half the
-no-snapshot rate. By 50 snapshots, performance is a quarter of the
-no-snapshot peroframnce. It levels out around 6-7000 IOPS, which is
-about 15% of the non-snapshot performance. Is this expected
-performance degradation as snapshot count increases?
+(c)
 
-And before you ask, reflink copies of the fio file rather than
-subvol snapshots have largely the same performance, IO and
-behavioural characteristics. The only difference is that clone
-copying also has a cyclic FIO performance dip (every 3-4 cycles)
-that corresponds with the system driving hard into memory reclaim
-during periodic writeback from btrfs.
+--------------00F2E4D12BF3D52C4D44026D
+Content-Type: text/x-log; charset=UTF-8;
+ name="btrfs_trim.log"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment;
+ filename="btrfs_trim.log"
 
-FYI, I've compared btrfs reflink to XFS reflink, too, and XFS fio
-performance stays largely consistent across all 1000 iterations at
-around 13-14k +/-2k IOPS. The reflink time also scales linearly with
-the number of extents in the source file and levels off at about
-10-11s per cycle as the extent count in the source file levels off
-at ~850,000 extents. XFS completes the 1000 iterations of
-write/clone in about 4 hours, btrfs completels the same part of the
-workload in about 9 hours.
+Jan 21 19:25:47 <***> kernel: Linux version 5.10.7-4-MANJARO-BTRFS-DEBUG (chainofflowers@luna) (gcc (GCC) 10.2.0, GNU ld (GNU Binutils) 2.35.1) #1 SMP PREEMPT Mon Jan 18 02:47:41 CET 2021
+Jan 21 19:25:47 <***> kernel: usb usb1: Manufacturer: Linux 5.10.7-4-MANJARO-BTRFS-DEBUG ehci_hcd
+Jan 21 19:25:47 <***> kernel: usb usb2: Manufacturer: Linux 5.10.7-4-MANJARO-BTRFS-DEBUG ehci_hcd
+Jan 21 19:25:47 <***> kernel: usb usb3: Manufacturer: Linux 5.10.7-4-MANJARO-BTRFS-DEBUG uhci_hcd
+Jan 21 19:25:47 <***> kernel: usb usb4: Manufacturer: Linux 5.10.7-4-MANJARO-BTRFS-DEBUG uhci_hcd
+Jan 21 19:25:47 <***> kernel: usb usb5: Manufacturer: Linux 5.10.7-4-MANJARO-BTRFS-DEBUG uhci_hcd
+Jan 21 19:25:47 <***> kernel: usb usb6: Manufacturer: Linux 5.10.7-4-MANJARO-BTRFS-DEBUG uhci_hcd
+Jan 21 19:25:47 <***> kernel: usb usb7: Manufacturer: Linux 5.10.7-4-MANJARO-BTRFS-DEBUG uhci_hcd
+Jan 21 19:25:47 <***> kernel: usb usb8: Manufacturer: Linux 5.10.7-4-MANJARO-BTRFS-DEBUG uhci_hcd
+Jan 21 19:25:47 <***> kernel: usb usb9: Manufacturer: Linux 5.10.7-4-MANJARO-BTRFS-DEBUG xhci-hcd
+Jan 21 19:25:47 <***> kernel: usb usb10: Manufacturer: Linux 5.10.7-4-MANJARO-BTRFS-DEBUG xhci-hcd
+Jan 21 19:25:47 <***> kernel: usb usb11: Manufacturer: Linux 5.10.7-4-MANJARO-BTRFS-DEBUG xhci-hcd
+Jan 21 19:25:47 <***> kernel: usb usb12: Manufacturer: Linux 5.10.7-4-MANJARO-BTRFS-DEBUG xhci-hcd
+Jan 21 19:25:47 <***> kernel: usb usb13: Manufacturer: Linux 5.10.7-4-MANJARO-BTRFS-DEBUG xhci-hcd
+Jan 21 19:25:47 <***> kernel: usb usb14: Manufacturer: Linux 5.10.7-4-MANJARO-BTRFS-DEBUG xhci-hcd
+Jan 21 19:25:47 <***> kernel: Btrfs loaded, crc32c=crc32c-intel
+Jan 21 19:25:47 <***> kernel: BTRFS: device label SYS devid 1 transid 320418 /dev/dm-0 scanned by systemd-udevd (212)
+Jan 21 19:25:47 <***> kernel: BTRFS info (device dm-0): disk space caching is enabled
+Jan 21 19:25:47 <***> kernel: BTRFS info (device dm-0): has skinny extents
+Jan 21 19:25:47 <***> kernel: BTRFS info (device dm-0): enabling ssd optimizations
+Jan 21 19:25:47 <***> kernel: BTRFS info (device dm-0): disk space caching is enabled
+Jan 21 19:25:47 <***> kernel: BTRFS info (device dm-0): has skinny extents
+Jan 21 19:25:47 <***> kernel: BTRFS info (device dm-0): enabling ssd optimizations
+Jan 21 19:25:47 <***> kernel: BTRFS info (device dm-0): use zstd compression, level 3
+Jan 21 19:25:47 <***> kernel: BTRFS info (device dm-0): enabling auto defrag
+Jan 21 19:25:47 <***> kernel: BTRFS info (device dm-0): disk space caching is enabled
+Jan 21 19:25:49 <***> kernel: BTRFS info (device dm-0): devid 1 device path /dev/mapper/SYS changed to /dev/dm-0 scanned by systemd-udevd (432)
+Jan 21 19:25:49 <***> kernel: BTRFS info (device dm-0): devid 1 device path /dev/dm-0 changed to /dev/mapper/SYS scanned by systemd-udevd (432)
+Jan 21 19:25:51 <***> kernel: BTRFS: device label SCRATCH devid 1 transid 36967 /dev/dm-2 scanned by systemd-udevd (427)
+Jan 21 19:25:51 <***> kernel: BTRFS: device label HOME devid 1 transid 4316351 /dev/dm-3 scanned by systemd-udevd (427)
+Jan 21 19:25:51 <***> kernel: BTRFS info (device dm-3): use zstd compression, level 3
+Jan 21 19:25:51 <***> kernel: BTRFS info (device dm-3): enabling ssd optimizations
+Jan 21 19:25:51 <***> kernel: BTRFS info (device dm-3): enabling auto defrag
+Jan 21 19:25:51 <***> kernel: BTRFS info (device dm-3): disk space caching is enabled
+Jan 21 19:25:51 <***> kernel: BTRFS info (device dm-3): has skinny extents
+Jan 21 19:25:53 <***> kernel: BTRFS: device label USER devid 1 transid 8387 /dev/dm-5 scanned by systemd-udevd (427)
+Jan 21 19:25:55 <***> kernel: BTRFS: device label USER devid 2 transid 8387 /dev/dm-6 scanned by systemd-udevd (427)
+Jan 21 19:25:55 <***> kernel: BTRFS info (device dm-5): use zstd compression, level 3
+Jan 21 19:25:55 <***> kernel: BTRFS info (device dm-5): enabling ssd optimizations
+Jan 21 19:25:55 <***> kernel: BTRFS info (device dm-5): enabling auto defrag
+Jan 21 19:25:55 <***> kernel: BTRFS info (device dm-5): disk space caching is enabled
+Jan 21 19:25:55 <***> kernel: BTRFS info (device dm-5): has skinny extents
+Jan 21 19:25:55 <***> kernel: BTRFS info (device dm-5): devid 1 device path /dev/mapper/user1 changed to /dev/dm-5 scanned by systemd-udevd (440)
+Jan 21 19:25:55 <***> kernel: BTRFS info (device dm-5): devid 1 device path /dev/dm-5 changed to /dev/mapper/user1 scanned by systemd-udevd (440)
+Jan 21 19:25:57 <***> kernel: BTRFS: device label SCRATCH devid 2 transid 36967 /dev/dm-7 scanned by systemd-udevd (427)
+Jan 21 19:26:00 <***> kernel: BTRFS info (device dm-2): use no compression
+Jan 21 19:26:00 <***> kernel: BTRFS info (device dm-2): enabling ssd optimizations
+Jan 21 19:26:00 <***> kernel: BTRFS info (device dm-2): setting nodatacow, compression disabled
+Jan 21 19:26:00 <***> kernel: BTRFS info (device dm-2): disk space caching is enabled
+Jan 21 19:26:00 <***> kernel: BTRFS info (device dm-2): has skinny extents
+Jan 21 19:29:17 <***> kernel: BTRFS warning (device dm-3): block group 82699091968 has wrong amount of free space
+Jan 21 19:29:17 <***> kernel: BTRFS warning (device dm-3): failed to load free space cache for block group 82699091968, rebuilding it now
+Jan 21 22:00:23 <***> kernel: BTRFS: device label BACKUP devid 1 transid 407 /dev/dm-8 scanned by systemd-udevd (26929)
+Jan 21 22:00:23 <***> kernel: BTRFS info (device dm-8): use zstd compression, level 3
+Jan 21 22:00:23 <***> kernel: BTRFS info (device dm-8): enabling auto defrag
+Jan 21 22:00:23 <***> kernel: BTRFS info (device dm-8): disk space caching is enabled
+Jan 21 22:00:23 <***> kernel: BTRFS info (device dm-8): has skinny extents
+Jan 21 23:56:48 <***> kernel: btrfs_trim_block_group: enter bg start=4194304 start=4194304 end=12582912 minlen=512
+Jan 21 23:56:48 <***> kernel: btrfs_trim_block_group: enter bg start=4194304 ret=0
+Jan 21 23:56:48 <***> kernel: btrfs_trim_block_group: enter bg start=12582912 start=12582912 end=20971520 minlen=512
+Jan 21 23:56:48 <***> kernel: btrfs_trim_block_group: enter bg start=12582912 ret=0
+Jan 21 23:56:48 <***> kernel: btrfs_trim_block_group: enter bg start=20971520 start=20971520 end=1094713344 minlen=512
+Jan 21 23:56:54 <***> kernel: btrfs_trim_block_group: enter bg start=20971520 ret=0
+Jan 21 23:56:54 <***> kernel: btrfs_trim_block_group: enter bg start=1094713344 start=1094713344 end=2168455168 minlen=512
+Jan 21 23:56:55 <***> kernel: btrfs_trim_block_group: enter bg start=1094713344 ret=0
+Jan 21 23:56:55 <***> kernel: btrfs_trim_block_group: enter bg start=3242196992 start=3242196992 end=4315938816 minlen=512
+Jan 21 23:56:58 <***> kernel: btrfs_trim_block_group: enter bg start=3242196992 ret=0
+Jan 21 23:56:58 <***> kernel: btrfs_trim_block_group: enter bg start=4315938816 start=4315938816 end=5389680640 minlen=512
+Jan 21 23:57:02 <***> kernel: btrfs_trim_block_group: enter bg start=4315938816 ret=0
+Jan 21 23:57:02 <***> kernel: btrfs_trim_block_group: enter bg start=5389680640 start=5389680640 end=6463422464 minlen=512
+Jan 21 23:57:08 <***> kernel: btrfs_trim_block_group: enter bg start=5389680640 ret=0
+Jan 21 23:57:08 <***> kernel: btrfs_trim_block_group: enter bg start=6463422464 start=6463422464 end=7537164288 minlen=512
+Jan 21 23:57:12 <***> kernel: btrfs_trim_block_group: enter bg start=6463422464 ret=0
+Jan 21 23:57:12 <***> kernel: btrfs_trim_block_group: enter bg start=7537164288 start=7537164288 end=8610906112 minlen=512
+Jan 21 23:57:15 <***> kernel: btrfs_trim_block_group: enter bg start=7537164288 ret=0
+Jan 21 23:57:15 <***> kernel: btrfs_trim_block_group: enter bg start=8610906112 start=8610906112 end=9684647936 minlen=512
+Jan 21 23:57:18 <***> kernel: btrfs_trim_block_group: enter bg start=8610906112 ret=0
+Jan 21 23:57:18 <***> kernel: btrfs_trim_block_group: enter bg start=9684647936 start=9684647936 end=10758389760 minlen=512
+Jan 21 23:57:21 <***> kernel: btrfs_trim_block_group: enter bg start=9684647936 ret=0
+Jan 21 23:57:21 <***> kernel: btrfs_trim_block_group: enter bg start=10758389760 start=10758389760 end=11832131584 minlen=512
+Jan 21 23:57:23 <***> kernel: btrfs_trim_block_group: enter bg start=10758389760 ret=0
+Jan 21 23:57:23 <***> kernel: btrfs_trim_block_group: enter bg start=11832131584 start=11832131584 end=12905873408 minlen=512
+Jan 21 23:57:23 <***> kernel: btrfs_trim_block_group: enter bg start=11832131584 ret=0
+Jan 21 23:57:23 <***> kernel: btrfs_trim_block_group: enter bg start=12905873408 start=12905873408 end=13979615232 minlen=512
+Jan 21 23:57:24 <***> kernel: btrfs_trim_block_group: enter bg start=12905873408 ret=0
+Jan 21 23:57:24 <***> kernel: btrfs_trim_block_group: enter bg start=13979615232 start=13979615232 end=15053357056 minlen=512
+Jan 21 23:57:24 <***> kernel: btrfs_trim_block_group: enter bg start=13979615232 ret=0
+Jan 21 23:57:24 <***> kernel: btrfs_trim_block_group: enter bg start=15053357056 start=15053357056 end=16127098880 minlen=512
+Jan 21 23:57:24 <***> kernel: btrfs_trim_block_group: enter bg start=15053357056 ret=0
+Jan 21 23:57:24 <***> kernel: btrfs_trim_block_group: enter bg start=16127098880 start=16127098880 end=17200840704 minlen=512
+Jan 21 23:57:24 <***> kernel: btrfs_trim_block_group: enter bg start=16127098880 ret=0
+Jan 21 23:57:24 <***> kernel: btrfs_trim_block_group: enter bg start=17200840704 start=17200840704 end=18274582528 minlen=512
+Jan 21 23:57:24 <***> kernel: btrfs_trim_block_group: enter bg start=17200840704 ret=0
+Jan 21 23:57:24 <***> kernel: btrfs_trim_block_group: enter bg start=18274582528 start=18274582528 end=19348324352 minlen=512
+Jan 21 23:57:24 <***> kernel: btrfs_trim_block_group: enter bg start=18274582528 ret=0
+Jan 21 23:57:24 <***> kernel: btrfs_trim_block_group: enter bg start=19348324352 start=19348324352 end=20422066176 minlen=512
+Jan 21 23:57:24 <***> kernel: btrfs_trim_block_group: enter bg start=19348324352 ret=0
+Jan 21 23:57:24 <***> kernel: btrfs_trim_block_group: enter bg start=20422066176 start=20422066176 end=21495808000 minlen=512
+Jan 21 23:57:25 <***> kernel: btrfs_trim_block_group: enter bg start=20422066176 ret=0
+Jan 21 23:57:25 <***> kernel: btrfs_trim_block_group: enter bg start=21495808000 start=21495808000 end=22569549824 minlen=512
+Jan 21 23:57:25 <***> kernel: btrfs_trim_block_group: enter bg start=21495808000 ret=0
+Jan 21 23:57:25 <***> kernel: btrfs_trim_block_group: enter bg start=22569549824 start=22569549824 end=23643291648 minlen=512
+Jan 21 23:57:25 <***> kernel: btrfs_trim_block_group: enter bg start=22569549824 ret=0
+Jan 21 23:57:25 <***> kernel: btrfs_trim_block_group: enter bg start=23643291648 start=23643291648 end=24717033472 minlen=512
+Jan 21 23:57:25 <***> kernel: btrfs_trim_block_group: enter bg start=23643291648 ret=0
+Jan 21 23:57:25 <***> kernel: btrfs_trim_block_group: enter bg start=24717033472 start=24717033472 end=25790775296 minlen=512
+Jan 21 23:57:25 <***> kernel: btrfs_trim_block_group: enter bg start=24717033472 ret=0
+Jan 21 23:57:25 <***> kernel: btrfs_trim_block_group: enter bg start=25790775296 start=25790775296 end=26864517120 minlen=512
+Jan 21 23:57:25 <***> kernel: btrfs_trim_block_group: enter bg start=25790775296 ret=0
+Jan 21 23:57:25 <***> kernel: btrfs_trim_block_group: enter bg start=26864517120 start=26864517120 end=27938258944 minlen=512
 
-Oh, I almost forget - FIEMAP performance. After the reflink test, I
-map all the extents in all the cloned files to a) count the extents
-and b) confirm that the difference between clones is correct (~10000
-extents not shared with the previous iteration). Pulling the extent
-maps out of XFS takes about 3s a clone (~850,000 extents), or 30
-minutes for the whole set when run serialised. btrfs takes 90-100s
-per clone - after 8 hours it had only managed to map 380 files and
-was running at 6-7000 read IOPS the entire time. IOWs, it was taking
-_half a million_ read IOs to map the extents of a single clone that
-only had a million extents in it. Is it expected that FIEMAP is so
-slow and IO intensive on cloned files?
-
-As there are no performance anomolies or memory reclaim issues with
-XFS running this workload, I suspect the issues I note above are
-btrfs issues, not expected behaviour.  I'm not sure what the
-expected scalability of btrfs file clones and snapshots are though,
-so I'm interested to hear if these results are expected or not.
-
-Cheers,
-
-Dave.
--- 
-Dave Chinner
-david@fromorbit.com
-
-JOBS=4
-IODEPTH=4
-IOCOUNT=$((10000 / $JOBS))
-FILESIZE=4g
-
-cat >$fio_config <<EOF
-[global]
-name=${DST}.name
-directory=${DST}
-size=${FILESIZE}
-randrepeat=0
-bs=4k
-ioengine=libaio
-iodepth=${IODEPTH}
-iodepth_low=2
-direct=1
-end_fsync=1
-fallocate=none
-overwrite=1
-number_ios=${IOCOUNT}
-runtime=30s
-group_reporting=1
-disable_lat=1
-lat_percentiles=0
-clat_percentiles=0
-slat_percentiles=0
-disk_util=0
-
-[j1]
-filename=testfile
-rw=randwrite
-
-[j2]
-filename=testfile
-rw=randwrite
-
-[j3]
-filename=testfile
-rw=randwrite
-
-[j4]
-filename=testfile
-rw=randwrite
-EOF
-
+--------------00F2E4D12BF3D52C4D44026D--

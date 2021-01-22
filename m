@@ -2,114 +2,91 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-13.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 45502C433DB
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 10:15:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 46483C433DB
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 10:16:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 038BB238EE
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 10:15:53 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id EF4E9238EE
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 10:16:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727307AbhAVKPs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 22 Jan 2021 05:15:48 -0500
-Received: from mx2.suse.de ([195.135.220.15]:56172 "EHLO mx2.suse.de"
+        id S1727843AbhAVKPy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 22 Jan 2021 05:15:54 -0500
+Received: from mx2.suse.de ([195.135.220.15]:56126 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727748AbhAVJ7J (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1727741AbhAVJ7J (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Fri, 22 Jan 2021 04:59:09 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
         t=1611309487; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=W0pyq+c+UzuonyvfrGCjTNvdEIyf3LdLFNGkDk7oXng=;
-        b=EURvrMCCeuCG4tuUn6IRvnmSsVIyYALiZOXS369BlgDyX/lMRIdFP3ZlvlhE6N2STqsF/c
-        ZSHiONPMMDbIMCS4mmMTr6pJKPXxj2pYqenZ+9tR3b4kt54VYukC3CC8q0f65dxP9WeeFc
-        1Rrzw0dUI/Np7a2SFgCnQeQItYBtKww=
+         mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding;
+        bh=Jvk0X0YA4edBTpokqgzFwclb/my95T3acqb6Sb/Tp3E=;
+        b=Ivm+vf1uSyQzPkbXjPMoWneVyWv1PXqXz9ZmbLOYOiUw9N65pK+6gdXQ5Mz+DCdNpnpgg0
+        WUGMQwFwdPi8l2Yc0VDKK0f3obZa+vzJZCNdUQzJxSNEyV/r8eivnmb2NNlXdsDqFVMmJ6
+        VR8gT3Ofgw2rIMwJhSu4CerzMtnxt04=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id DB103AF61;
-        Fri, 22 Jan 2021 09:58:07 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id EE905AB9F;
+        Fri, 22 Jan 2021 09:58:06 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v3 04/14] btrfs: Fix parameter description in delayed-ref.c functions
-Date:   Fri, 22 Jan 2021 11:57:55 +0200
-Message-Id: <20210122095805.620458-5-nborisov@suse.com>
+Subject: [PATCH v3 00/14] Make btrfs W=1 clean
+Date:   Fri, 22 Jan 2021 11:57:51 +0200
+Message-Id: <20210122095805.620458-1-nborisov@suse.com>
 X-Mailer: git-send-email 2.25.1
-In-Reply-To: <20210122095805.620458-1-nborisov@suse.com>
-References: <20210122095805.620458-1-nborisov@suse.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This fixes the following warnings:
+Reworked patches to make touched kdocs adhere to the style described at
+https://btrfs.wiki.kernel.org/index.php/Development_notes#Coding_style_preferences
 
-fs/btrfs/delayed-ref.c:80: warning: Function parameter or member 'fs_info' not described in 'btrfs_delayed_refs_rsv_release'
-fs/btrfs/delayed-ref.c:80: warning: Function parameter or member 'nr' not described in 'btrfs_delayed_refs_rsv_release'
-fs/btrfs/delayed-ref.c:128: warning: Function parameter or member 'fs_info' not described in 'btrfs_migrate_to_delayed_refs_rsv'
-fs/btrfs/delayed-ref.c:128: warning: Function parameter or member 'src' not described in 'btrfs_migrate_to_delayed_refs_rsv'
-fs/btrfs/delayed-ref.c:128: warning: Function parameter or member 'num_bytes' not described in 'btrfs_migrate_to_delayed_refs_rsv'
-fs/btrfs/delayed-ref.c:174: warning: Function parameter or member 'fs_info' not described in 'btrfs_delayed_refs_rsv_refill'
-fs/btrfs/delayed-ref.c:174: warning: Function parameter or member 'flush' not described in 'btrfs_delayed_refs_rsv_refill'
+Namely:
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
- fs/btrfs/delayed-ref.c | 23 +++++++++++++----------
- 1 file changed, 13 insertions(+), 10 deletions(-)
+ * Removed function names from first line and left only short description
+ * Aligned all arguments
 
-diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index 353cc2994d10..7425d76fcfa8 100644
---- a/fs/btrfs/delayed-ref.c
-+++ b/fs/btrfs/delayed-ref.c
-@@ -69,9 +69,10 @@ int btrfs_should_throttle_delayed_refs(struct btrfs_trans_handle *trans)
- }
- 
- /**
-- * btrfs_delayed_refs_rsv_release - release a ref head's reservation.
-- * @fs_info - the fs_info for our fs.
-- * @nr - the number of items to drop.
-+ * Release a ref head's reservation.
-+ *
-+ * @fs_info:  the filesystem
-+ * @nr:       the number of items to drop.
-  *
-  * This drops the delayed ref head's count from the delayed refs rsv and frees
-  * any excess reservation we had.
-@@ -114,10 +115,11 @@ void btrfs_update_delayed_refs_rsv(struct btrfs_trans_handle *trans)
- }
- 
- /**
-- * btrfs_migrate_to_delayed_refs_rsv - transfer bytes to our delayed refs rsv.
-- * @fs_info - the fs info for our fs.
-- * @src - the source block rsv to transfer from.
-- * @num_bytes - the number of bytes to transfer.
-+ * Transfer bytes to our delayed refs rsv.
-+ *
-+ * @fs_info:   the filesystem
-+ * @src:       the source block rsv to transfer from.
-+ * @num_bytes: the number of bytes to transfer.
-  *
-  * This transfers up to the num_bytes amount from the src rsv to the
-  * delayed_refs_rsv.  Any extra bytes are returned to the space info.
-@@ -162,9 +164,10 @@ void btrfs_migrate_to_delayed_refs_rsv(struct btrfs_fs_info *fs_info,
- }
- 
- /**
-- * btrfs_delayed_refs_rsv_refill - refill based on our delayed refs usage.
-- * @fs_info - the fs_info for our fs.
-- * @flush - control how we can flush for this reservation.
-+ * Refill based on our delayed refs usage.
-+ *
-+ * @fs_info: the filesystem
-+ * @flush:   control how we can flush for this reservation.
-  *
-  * This will refill the delayed block_rsv up to 1 items size worth of space and
-  * will return -ENOSPC if we can't make the reservation.
--- 
+
+Nikolay Borisov (14):
+  btrfs: Document modified parameter of add_extent_mapping
+  btrfs: Fix parameter description of btrfs_add_extent_mapping
+  btrfs: Fix function description format
+  btrfs: Fix parameter description in delayed-ref.c functions
+  btrfs: Improve parameter description for __btrfs_write_out_cache
+  btrfs: Document now parameter of peek_discard_list
+  btrfs: Document fs_info in btrfs_rmap_block
+  btrfs: Fix description format of fs_info parameter of
+    btrfs_wait_on_delayed_iputs
+  btrfs: Document btrfs_check_shared parameters
+  btrfs: Fix parameter description of
+    btrfs_inode_rsv_release/btrfs_delalloc_release_space
+  btrfs: Fix parameter description in space-info.c
+  btrfs: Fix parameter description for functions in extent_io.c
+  lib/zstd: Convert constants to defines
+  btrfs: Enable W=1 checks for btrfs
+
+ fs/btrfs/Makefile           | 17 +++++++++++++
+ fs/btrfs/backref.c          |  8 +++++-
+ fs/btrfs/block-group.c      |  4 ++-
+ fs/btrfs/delalloc-space.c   | 29 ++++++++++++---------
+ fs/btrfs/delayed-ref.c      | 23 +++++++++--------
+ fs/btrfs/discard.c          |  6 +++--
+ fs/btrfs/extent_io.c        | 50 +++++++++++++++++++------------------
+ fs/btrfs/extent_map.c       | 18 +++++++------
+ fs/btrfs/file-item.c        | 22 ++++++++++------
+ fs/btrfs/free-space-cache.c | 13 ++++++----
+ fs/btrfs/inode.c            |  5 ++--
+ fs/btrfs/space-info.c       | 46 ++++++++++++++++++----------------
+ include/linux/zstd.h        |  8 +++---
+ 13 files changed, 151 insertions(+), 98 deletions(-)
+
+--
 2.25.1
 

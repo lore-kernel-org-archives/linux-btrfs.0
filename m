@@ -2,624 +2,360 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.2 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6F2D9C433E0
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 21:16:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CF485C433E0
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 22:44:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 4D6F823B09
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 21:16:52 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9DE6923AA1
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 22:44:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729155AbhAVVQr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 22 Jan 2021 16:16:47 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49252 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1730593AbhAVUtA (ORCPT
+        id S1728407AbhAVWnz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 22 Jan 2021 17:43:55 -0500
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:33318 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728586AbhAVWnh (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Jan 2021 15:49:00 -0500
-Received: from mail-pf1-x430.google.com (mail-pf1-x430.google.com [IPv6:2607:f8b0:4864:20::430])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2D683C061794
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jan 2021 12:47:19 -0800 (PST)
-Received: by mail-pf1-x430.google.com with SMTP id j12so4592276pfj.12
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jan 2021 12:47:19 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=osandov-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:cc:subject:date:message-id:in-reply-to:references
-         :mime-version:content-transfer-encoding;
-        bh=vbu9QLmVwyatXp0OfhFPNy2zQtieZiKeMZxlJn9Kfv4=;
-        b=GOgaOsTp+FUPgWB4mcGr8eF5RKOyQcGmI7XEnHl4Jcfk2vKy4Aod4Fbpj2D5sQZXN6
-         u7A5aH3ncaigNKvMgOUN7ajXUNpJdPwkpaYHw8d9xW+KjxxTcdqjuk0/uMFC4ks8w9ue
-         K3Wa2DozeExWFVhV/GHQgNAwPgi4SkiKE1MxzHn2RXHWJD52tAyKXvRHZ6g4PQ5T/GS+
-         cEcxIFBwYJa2RyCrych1I4K1N8itAHcAiyimRYm9kstpAdNZSTcOweW6izOg5uuyFvl8
-         rIKuSxUTArkewvViRerRryiq/Fe0gqwqkGnQ9JWt09I6dre6sQzoF+zIAvpTDWBn8Sb/
-         +nQw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=vbu9QLmVwyatXp0OfhFPNy2zQtieZiKeMZxlJn9Kfv4=;
-        b=JKwCflAEjTRCFTKPnbbUKBogDMoLiGB+Oknd3yl2ez7/wUgTvDjk1TwBpblHmO0cOR
-         IN3wtBxeSlJFER+nEIvee1QbPTFVPEyrJWkfbVPzH4E+JaLCBo4W39OC5jBALrjSfU/0
-         ha3mm9CBZn7mDZQ0wEIYk+Npib7QzQxXXbH3W1Dsrj5G9VtksBOkF/OYt6zpLkCPt+Ah
-         CvmgduePXJJVaDWOp3ifCzaeaflAIUw6OHwz5b9x2yIOFDscJbzGSeRShLXK18MyW6YC
-         T1fBCy1/DHuzI+ABUOV8Yg16ijr97kexsyWXq79MPEsdl+LvqkbQA67n0UYY1NgoavqQ
-         beHg==
-X-Gm-Message-State: AOAM5318BWtW03Q3lONMcCmY5Pb/7og44/Etq3STOp8cOC2IIzg7LNXY
-        t0GXs8foNoz2IQWrmGCfsZMwyg==
-X-Google-Smtp-Source: ABdhPJz3kXjLdoq+PAq+YZqCDHze64La1WV72OnjCILeDtnT0eorLoB9/YkMnFglfzquhK1WlZTXNg==
-X-Received: by 2002:a65:6116:: with SMTP id z22mr6450538pgu.264.1611348438257;
-        Fri, 22 Jan 2021 12:47:18 -0800 (PST)
-Received: from relinquished.tfbnw.net ([2620:10d:c090:400::5:ea88])
-        by smtp.gmail.com with ESMTPSA id j18sm4092900pfc.99.2021.01.22.12.47.15
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 22 Jan 2021 12:47:16 -0800 (PST)
-From:   Omar Sandoval <osandov@osandov.com>
-To:     linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        Al Viro <viro@zeniv.linux.org.uk>,
-        Christoph Hellwig <hch@infradead.org>
-Cc:     Dave Chinner <david@fromorbit.com>, Jann Horn <jannh@google.com>,
-        Amir Goldstein <amir73il@gmail.com>,
-        Aleksa Sarai <cyphar@cyphar.com>, linux-api@vger.kernel.org,
-        kernel-team@fb.com, Michael Kerrisk <mtk.manpages@gmail.com>,
-        linux-man <linux-man@vger.kernel.org>
-Subject: [PATCH man-pages v7] Document encoded I/O
-Date:   Fri, 22 Jan 2021 12:46:47 -0800
-Message-Id: <e7dea7a20091aa2aa4da07d55c02b2aa130fe418.1611348275.git.osandov@osandov.com>
-X-Mailer: git-send-email 2.30.0
-In-Reply-To: <cover.1611346706.git.osandov@fb.com>
-References: <cover.1611346706.git.osandov@fb.com>
+        Fri, 22 Jan 2021 17:43:37 -0500
+Received: by james.kirk.hungrycats.org (Postfix, from userid 1002)
+        id 7BAA0950024; Fri, 22 Jan 2021 17:42:53 -0500 (EST)
+Date:   Fri, 22 Jan 2021 17:42:53 -0500
+From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To:     Goffredo Baroncelli <kreijack@inwind.it>
+Cc:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [RFC][PATCH V5] btrfs: preferred_metadata: preferred device for
+ metadata
+Message-ID: <20210122224253.GI28049@hungrycats.org>
+References: <20210117185435.36263-1-kreijack@libero.it>
+ <30cd0359-e649-dcc7-e373-4dd778fbf70b@toxicpanda.com>
+ <765cec4e-b989-081b-2ad7-e2d1c9cf7f55@libero.it>
+ <20210121185400.GH28049@hungrycats.org>
+ <89ee4ab9-64cd-b093-92d2-02eee4997250@inwind.it>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
+In-Reply-To: <89ee4ab9-64cd-b093-92d2-02eee4997250@inwind.it>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Omar Sandoval <osandov@fb.com>
+On Fri, Jan 22, 2021 at 07:31:18PM +0100, Goffredo Baroncelli wrote:
+> On 1/21/21 7:54 PM, Zygo Blaxell wrote:
+> > On Thu, Jan 21, 2021 at 07:16:05PM +0100, Goffredo Baroncelli wrote:
+> > > On 1/20/21 5:02 PM, Josef Bacik wrote:
+> > > > On 1/17/21 1:54 PM, Goffredo Baroncelli wrote:
+> > > > > 
+> > > > > Hi all,
+> > > > > 
+> > > > > This is an RFC; I wrote this patch because I find the idea interesting
+> > > > > even though it adds more complication to the chunk allocator.
+> > > > > 
+> > > > > The basic idea is to store the metadata chunk in the fasters disks.
+> > > > > The fasters disk are marked by the "preferred_metadata" flag.
+> > > > > 
+> > > > > BTRFS when allocate a new metadata/system chunk, selects the
+> > > > > "preferred_metadata" disks, otherwise it selectes the non
+> > > > > "preferred_metadata" disks. The intial patch allowed to use the other
+> > > > > kind of disk in case a set is full.
+> > > > > 
+> > > > > This patches set is based on v5.11-rc2.
+> > > > > 
+> > > > > For now, the only user of this patch that I am aware is Zygo.
+> > > > > However he asked to further constraint the allocation: i.e. avoid to
+> > > > > allocated metadata on a not "preferred_metadata"
+> > > > > disk. So I extended the patch adding 4 modes to operate.
+> > > > > 
+> > > > > This is enabled passing the option "preferred_metadata=<mode>" at
+> > > > > mount time.
+> > > > > 
+> > > > 
+> > > > I'll echo Zygo's hatred for mount options.  The more complicated policy decisions belong in properties and sysfs knobs, not mount options.
+> > > > 
+> > > I tend to agree. However adding a filesystem property can be done in a second time. I don't think that this a problem. However I prefer to make the patch smaller.
+> > > 
+> > > Anyway I have to point out that we need a way to change the allocation
+> > > policy without changing the metadata otherwise we risk to be in the
+> > > loop of exhausting metadata space: - how we can increase the space for
+> > > metadata if we don't have space for metadata but I need to allocate
+> > > few block of metadata....
+> > > 
+> > > What I mean is that even if we store the setting as filesystem
+> > > properties (and definitely we have to do), we need a way to override
+> > > in an emergency scenario.
+> > 
+> > There are no new issues introduced by this change, thus no requirement
+> > for a mount option to deal with new issues.
+> > 
+> > The same issue comes up when changing RAID profile, or removing devices,
+> > or when existing devices simply fill up.  Part of the solution is the
+> > global reserve, which ensures we can always create a transaction to modify
+> > a few metadata pages.
+> > 
+> > Part of the solution is a run-time check to ensure we have min_devs for
+> > active RAID profiles whenever we change a device policy to reject data
+> > or metadata (see btrfs_check_raid_min_devices).  This is currently
+> > implemented for the device remove ioctl, and a similar check will
+> > be needed for the device property set ioctl for preferred_metadata.
+> > That part is missing in v5 of this patch and will have to be added,
+> > though even now it works most of the time without.
+> > 
+> > v5 is also missing changes to the df statvfs code to deal with metadata
+> > only devices.  At this stage it's an RFC patch, so that's OK, but it
+> > will also need to be fixed.  We presume these will be addressed in future
+> > versions.  Again, it works now, but 'df' will give the wrong number.
+> > 
+> > None of the above requirements is addressed by a mount option, and
+> > the mount option adds new requirements that we don't want.
+> > 
+> > > > And then for the properties themselves, presumably we'll want to
+> > > add other FS wide properties in the future.  I'm not against adding
+> > > new actual keys and items to the tree itself, but is there a way
+> > > we could use our existing property infrastructure that we use for
+> > > compression, and simply store the xattrs in the tree root?  It looks
+> > > like we're just toggling a policy decision, and we don't actually
+> > > need the other properties in the item you've created, so why not
+> > > just a btrfs.preferred_metadata property with the value stored in it,
+> > > dropped into the tree_root so it can be read on mount?  Thanks,
+> > > 
+> > > What if the root subvolume is not mounted ?
+> > 
+> > Same as device add or remove--if the filesystem isn't mounted, you can't
+> > make any changes.
+> 
+> I am referring to a case where a subvolume (id != 5) is mounted but not the root one (id=5).
+> The point is that (e.g.) in the current implementation you can use
+> 
+> $ sudo btrfs property set /dev/vde preferred_metadata 1
+> 
+> in any case where the filesystem is mounted (doesn't matter which
+> subvvolume).
+> 
+> I like the Josef idea: instead to develop a new api to retrive/change/list/store/delete/create
+> some setting, we could use the xattr api which already exists.
 
-This adds a new page, encoded_io(7), providing an overview of encoded
-I/O and updates fcntl(2), open(2), and preadv2(2)/pwritev2(2) to
-reference it.
+Yeah, I've been thinking about that since yesterday and I am now thinking
+it's a good idea if we can wave away some problems.  We don't need special
+tools to set an xattr, and we can define new schema versions by changing
+the attribute name.
 
-Cc: Michael Kerrisk <mtk.manpages@gmail.com>
-Cc: linux-man <linux-man@vger.kernel.org>
-Signed-off-by: Omar Sandoval <osandov@fb.com>
----
- man2/fcntl.2      |   8 +
- man2/open.2       |  13 ++
- man2/readv.2      |  69 +++++++++
- man7/encoded_io.7 | 369 ++++++++++++++++++++++++++++++++++++++++++++++
- 4 files changed, 459 insertions(+)
- create mode 100644 man7/encoded_io.7
+My one lingering concern is what happens when the xattr is propagated
+to other filesystems, e.g. by backups.  You might have very different
+devices on the backup server than on the origin server, and you wouldn't
+want this attribute to suddenly make the backup server unusably slow,
+nor would you want the entire backup to fail because it can't set this
+attribute to the new value on a backup filesystem because some of the
+devids don't exist there.
 
-diff --git a/man2/fcntl.2 b/man2/fcntl.2
-index a15f467ef..1081cb70f 100644
---- a/man2/fcntl.2
-+++ b/man2/fcntl.2
-@@ -217,6 +217,7 @@ in
- .I arg
- are ignored.
- On Linux, this command can change only the
-+.BR O_ALLOW_ENCODED ,
- .BR O_APPEND ,
- .BR O_ASYNC ,
- .BR O_DIRECT ,
-@@ -1815,6 +1816,13 @@ and the soft or hard user pipe limit has been reached; see
- .BR pipe (7).
- .TP
- .B EPERM
-+Attempted to set the
-+.B O_ALLOW_ENCODED
-+flag and the calling process did not have the
-+.B CAP_SYS_ADMIN
-+capability.
-+.TP
-+.B EPERM
- Attempted to clear the
- .B O_APPEND
- flag on a file that has the append-only attribute set.
-diff --git a/man2/open.2 b/man2/open.2
-index b30dc1532..6aab44b6d 100644
---- a/man2/open.2
-+++ b/man2/open.2
-@@ -180,6 +180,14 @@ for details.
- .PP
- The full list of file creation flags and file status flags is as follows:
- .TP
-+.B O_ALLOW_ENCODED
-+Open the file with encoded I/O permissions;
-+see
-+.BR encoded_io (7).
-+The caller must have the
-+.B CAP_SYS_ADMIN
-+capability.
-+.TP
- .B O_APPEND
- The file is opened in append mode.
- Before each
-@@ -1232,6 +1240,11 @@ did not match the owner of the file and the caller was not privileged.
- The operation was prevented by a file seal; see
- .BR fcntl (2).
- .TP
-+.B EPERM
-+The
-+.B O_ALLOW_ENCODED
-+flag was specified, but the caller was not privileged.
-+.TP
- .B EROFS
- .I pathname
- refers to a file on a read-only filesystem and write access was
-diff --git a/man2/readv.2 b/man2/readv.2
-index 472adcf73..c7aec9fa7 100644
---- a/man2/readv.2
-+++ b/man2/readv.2
-@@ -263,6 +263,11 @@ the data is always appended to the end of the file.
- However, if the
- .I offset
- argument is \-1, the current file offset is updated.
-+.TP
-+.BR RWF_ENCODED " (since Linux 5.13)"
-+Read or write encoded (e.g., compressed) data.
-+See
-+.BR encoded_io (7).
- .SH RETURN VALUE
- On success,
- .BR readv (),
-@@ -282,6 +287,12 @@ than requested (see
- and
- .BR write (2)).
- .PP
-+If
-+.B RWF_ENCODED
-+was specified in
-+.IR flags ,
-+then the return value is the number of encoded bytes.
-+.PP
- On error, \-1 is returned, and \fIerrno\fP is set to indicate the error.
- .SH ERRORS
- The errors are as given for
-@@ -312,6 +323,64 @@ is less than zero or greater than the permitted maximum.
- .TP
- .B EOPNOTSUPP
- An unknown flag is specified in \fIflags\fP.
-+.TP
-+.B EOPNOTSUPP
-+.B RWF_ENCODED
-+is specified in
-+.I flags
-+and the filesystem does not implement encoded I/O.
-+.TP
-+.B EPERM
-+.B RWF_ENCODED
-+is specified in
-+.I flags
-+and the file was not opened with the
-+.B O_ALLOW_ENCODED
-+flag.
-+.PP
-+.BR preadv2 ()
-+can additionally fail for the following reasons:
-+.TP
-+.B E2BIG
-+.B RWF_ENCODED
-+is specified in
-+.I flags
-+and
-+.I iov[0]
-+is not large enough to return the encoding metadata.
-+.TP
-+.B ENOBUFS
-+.B RWF_ENCODED
-+is specified in
-+.I flags
-+and the buffers in
-+.I iov
-+are not big enough to return the encoded data.
-+.PP
-+.BR pwritev2 ()
-+can additionally fail for the following reasons:
-+.TP
-+.B E2BIG
-+.B RWF_ENCODED
-+is specified in
-+.I flags
-+and
-+.I iov[0]
-+contains non-zero fields
-+after the kernel's
-+.IR "sizeof(struct encoded_iov)" .
-+.TP
-+.B EINVAL
-+.B RWF_ENCODED
-+is specified in
-+.I flags
-+and the encoding is unknown or not supported by the filesystem.
-+.TP
-+.B EINVAL
-+.B RWF_ENCODED
-+is specified in
-+.I flags
-+and the alignment and/or size requirements are not met.
- .SH VERSIONS
- .BR preadv ()
- and
-diff --git a/man7/encoded_io.7 b/man7/encoded_io.7
-new file mode 100644
-index 000000000..1f5e6a510
---- /dev/null
-+++ b/man7/encoded_io.7
-@@ -0,0 +1,369 @@
-+.\" Copyright (c) 2020 by Omar Sandoval <osandov@fb.com>
-+.\"
-+.\" %%%LICENSE_START(VERBATIM)
-+.\" Permission is granted to make and distribute verbatim copies of this
-+.\" manual provided the copyright notice and this permission notice are
-+.\" preserved on all copies.
-+.\"
-+.\" Permission is granted to copy and distribute modified versions of this
-+.\" manual under the conditions for verbatim copying, provided that the
-+.\" entire resulting derived work is distributed under the terms of a
-+.\" permission notice identical to this one.
-+.\"
-+.\" Since the Linux kernel and libraries are constantly changing, this
-+.\" manual page may be incorrect or out-of-date.  The author(s) assume no
-+.\" responsibility for errors or omissions, or for damages resulting from
-+.\" the use of the information contained herein.  The author(s) may not
-+.\" have taken the same level of care in the production of this manual,
-+.\" which is licensed free of charge, as they might when working
-+.\" professionally.
-+.\"
-+.\" Formatted or processed versions of this manual, if unaccompanied by
-+.\" the source, must acknowledge the copyright and authors of this work.
-+.\" %%%LICENSE_END
-+.\"
-+.\"
-+.TH ENCODED_IO  7 2020-11-11 "Linux" "Linux Programmer's Manual"
-+.SH NAME
-+encoded_io \- overview of encoded I/O
-+.SH DESCRIPTION
-+Several filesystems (e.g., Btrfs) support transparent encoding
-+(e.g., compression, encryption) of data on disk:
-+written data is encoded by the kernel before it is written to disk,
-+and read data is decoded before being returned to the user.
-+In some cases, it is useful to skip this encoding step.
-+For example, the user may want to read the compressed contents of a file
-+or write pre-compressed data directly to a file.
-+This is referred to as "encoded I/O".
-+.SS Encoded I/O API
-+Encoded I/O is specified with the
-+.B RWF_ENCODED
-+flag to
-+.BR preadv2 (2)
-+and
-+.BR pwritev2 (2).
-+If
-+.B RWF_ENCODED
-+is specified, then
-+.I iov[0].iov_base
-+points to an
-+.I encoded_iov
-+structure, defined in
-+.I <linux/fs.h>
-+as:
-+.PP
-+.in +4n
-+.EX
-+struct encoded_iov {
-+    __aligned_u64 len;
-+    __aligned_u64 unencoded_len;
-+    __aligned_u64 unencoded_offset;
-+    __u32 compression;
-+    __u32 encryption;
-+};
-+.EE
-+.in
-+.PP
-+This may be extended in the future, so
-+.I iov[0].iov_len
-+must be set to
-+.I sizeof(struct encoded_iov)
-+for forward/backward compatibility.
-+The remaining buffers contain the encoded data.
-+.PP
-+.I compression
-+and
-+.I encryption
-+are the encoding fields.
-+.I compression
-+is
-+.B ENCODED_IOV_COMPRESSION_NONE
-+(zero)
-+or a filesystem-specific
-+.B ENCODED_IOV_COMPRESSION_*
-+constant;
-+see
-+.B "Filesystem support"
-+below.
-+.I encryption
-+is currently always
-+.B ENCODED_IOV_ENCRYPTION_NONE
-+(zero).
-+.PP
-+.I unencoded_len
-+is the length of the unencoded (i.e., decrypted and decompressed) data.
-+.I unencoded_offset
-+is the offset from the first byte of the unencoded data
-+to the first byte of logical data in the file
-+(less than or equal to
-+.IR unencoded_len ).
-+.I len
-+is the length of the data in the file
-+(less than or equal to
-+.I unencoded_len
-+-
-+.IR unencoded_offset ).
-+See
-+.B Extent layout
-+below for some examples.
-+.PP
-+If the unencoded data is actually longer than
-+.IR unencoded_len ,
-+then it is truncated;
-+if it is shorter, then it is extended with zeroes.
-+.PP
-+.BR pwritev2 (2)
-+uses the metadata specified in
-+.IR iov[0] ,
-+writes the encoded data from the remaining buffers,
-+and returns the number of encoded bytes written
-+(that is, the sum of
-+.I iov[n].iov_len
-+for 1 <=
-+.I n
-+<
-+.IR iovcnt ;
-+partial writes will not occur).
-+At least one encoding field must be non-zero.
-+Note that the encoded data is not validated when it is written;
-+if it is not valid (e.g., it cannot be decompressed),
-+then a subsequent read may return an error.
-+If the
-+.I offset
-+argument to
-+.BR pwritev2 (2)
-+is -1, then the file offset is incremented by
-+.IR len .
-+If
-+.I iov[0].iov_len
-+is less than
-+.I sizeof(struct encoded_iov)
-+in the kernel,
-+then any fields unknown to user space are treated as if they were zero;
-+if it is greater and any fields unknown to the kernel are non-zero,
-+then this returns -1 and sets
-+.I errno
-+to
-+.BR E2BIG .
-+.PP
-+.BR preadv2 (2)
-+populates the metadata in
-+.IR iov[0] ,
-+the encoded data in the remaining buffers,
-+and returns the number of encoded bytes read.
-+This will only return one extent per call.
-+This can also read data which is not encoded;
-+all encoding fields will be zero in that case.
-+If the
-+.I offset
-+argument to
-+.BR preadv2 (2)
-+is -1, then the file offset is incremented by
-+.IR len .
-+If
-+.I iov[0].iov_len
-+is less than
-+.I sizeof(struct encoded_iov)
-+in the kernel and any fields unknown to user space are non-zero,
-+then
-+.BR preadv2 (2)
-+returns -1 and sets
-+.I errno
-+to
-+.BR E2BIG ;
-+if it is greater,
-+then any fields unknown to the kernel are returned as zero.
-+If the provided buffers are not large enough
-+to return an entire encoded extent,
-+then
-+.BR preadv2 (2)
-+returns -1 and sets
-+.I errno
-+to
-+.BR ENOBUFS .
-+.PP
-+As the filesystem page cache typically contains decoded data,
-+encoded I/O bypasses the page cache.
-+.SS Extent layout
-+By using
-+.IR len ,
-+.IR unencoded_len ,
-+and
-+.IR unencoded_offset ,
-+it is possible to refer to a subset of an unencoded extent.
-+.PP
-+In the simplest case,
-+.I len
-+is equal to
-+.I unencoded_len
-+and
-+.I unencoded_offset
-+is zero.
-+This means that the entire unencoded extent is used.
-+.PP
-+However, suppose we read 50 bytes into a file
-+which contains a single compressed extent.
-+The filesystem must still return the entire compressed extent
-+for us to be able to decompress it,
-+so
-+.I unencoded_len
-+would be the length of the entire decompressed extent.
-+However, because the read was at offset 50,
-+the first 50 bytes should be ignored.
-+Therefore,
-+.I unencoded_offset
-+would be 50,
-+and
-+.I len
-+would accordingly be
-+.I unencoded_len
-+- 50.
-+.PP
-+Additionally, suppose we want to create an encrypted file with length 500,
-+but the file is encrypted with a block cipher using a block size of 4096.
-+The unencoded data would therefore include the appropriate padding,
-+and
-+.I unencoded_len
-+would be 4096.
-+However, to represent the logical size of the file,
-+.I len
-+would be 500
-+(and
-+.I unencoded_offset
-+would be 0).
-+.PP
-+Similar situations can arise in other cases:
-+.IP * 3
-+If the filesystem pads data to the filesystem block size before compressing,
-+then compressed files with a size unaligned to the filesystem block size
-+will end with an extent with
-+.I len
-+<
-+.IR unencoded_len .
-+.IP *
-+Extents cloned from the middle of a larger encoded extent with
-+.B FICLONERANGE
-+may have a non-zero
-+.I unencoded_offset
-+and/or
-+.I len
-+<
-+.IR unencoded_len .
-+.IP *
-+If the middle of an encoded extent is overwritten,
-+the filesystem may create extents with a non-zero
-+.I unencoded_offset
-+and/or
-+.I len
-+<
-+.I unencoded_len
-+for the parts that were not overwritten.
-+.SS Security
-+Encoded I/O creates the potential for some security issues:
-+.IP * 3
-+Encoded writes allow writing arbitrary data
-+which the kernel will decode on a subsequent read.
-+Decompression algorithms are complex
-+and may have bugs which can be exploited by maliciously crafted data.
-+.IP *
-+Encoded reads may return data which is not logically present in the file
-+(see the discussion of
-+.I len
-+vs
-+.I unencoded_len
-+above).
-+It may not be intended for this data to be readable.
-+.PP
-+Therefore, encoded I/O requires privilege.
-+Namely, the
-+.B RWF_ENCODED
-+flag may only be used if the file description has the
-+.B O_ALLOW_ENCODED
-+file status flag set,
-+and the
-+.B O_ALLOW_ENCODED
-+flag may only be set by a thread with the
-+.B CAP_SYS_ADMIN
-+capability.
-+The
-+.B O_ALLOW_ENCODED
-+flag can be set by
-+.BR open (2)
-+or
-+.BR fcntl (2).
-+It can also be cleared by
-+.BR fcntl (2);
-+clearing it does not require
-+.B CAP_SYS_ADMIN.
-+Note that it is not cleared on
-+.BR fork (2)
-+or
-+.BR execve (2).
-+One may wish to use
-+.B O_CLOEXEC
-+with
-+.BR O_ALLOW_ENCODED .
-+.SS Filesystem support
-+Encoded I/O is supported on the following filesystems:
-+.TP
-+Btrfs (since Linux 5.13)
-+.IP
-+Btrfs supports encoded reads and writes of compressed data.
-+The data is encoded as follows:
-+.RS
-+.IP * 3
-+If
-+.I compression
-+is
-+.BR ENCODED_IOV_COMPRESSION_BTRFS_ZLIB ,
-+then the encoded data is a single zlib stream.
-+.IP *
-+If
-+.I compression
-+is
-+.BR ENCODED_IOV_COMPRESSION_BTRFS_ZSTD ,
-+then the encoded data is a single zstd frame compressed with the
-+.I windowLog
-+compression parameter set to no more than 17.
-+.IP *
-+If
-+.I compression
-+is one of
-+.BR ENCODED_IOV_COMPRESSION_BTRFS_LZO_4K ,
-+.BR ENCODED_IOV_COMPRESSION_BTRFS_LZO_8K ,
-+.BR ENCODED_IOV_COMPRESSION_BTRFS_LZO_16K ,
-+.BR ENCODED_IOV_COMPRESSION_BTRFS_LZO_32K ,
-+or
-+.BR ENCODED_IOV_COMPRESSION_BTRFS_LZO_64K ,
-+then the encoded data is compressed page by page
-+(using the page size indicated by the name of the constant)
-+with LZO1X
-+and wrapped in the format documented in the Linux kernel source file
-+.IR fs/btrfs/lzo.c .
-+.RE
-+.IP
-+Additionally, there are some restrictions on
-+.BR pwritev2 (2):
-+.RS
-+.IP * 3
-+.I offset
-+(or the current file offset if
-+.I offset
-+is -1) must be aligned to the sector size of the filesystem.
-+.IP *
-+.I len
-+must be aligned to the sector size of the filesystem
-+unless the data ends at or beyond the current end of the file.
-+.IP *
-+.I unencoded_len
-+and the length of the encoded data must each be no more than 128 KiB.
-+This limit may increase in the future.
-+.IP *
-+The length of the encoded data must be less than or equal to
-+.IR unencoded_len .
-+.IP *
-+If using LZO, the filesystem's page size must match the compression page size.
-+.RE
-+.SH SEE ALSO
-+.BR open (2),
-+.BR preadv2 (2)
--- 
-2.30.0
+I'm tempted to say "well you shouldn't back up the root subvol of a
+btrfs anyway, and if you do, you should explictly exclude this attribute"
+and leave it at that, but there's probably someone out there with
+working backup scripts that will be broken by this change.
 
+Maybe a compromise solution is to keep the kernel-parsed string encoding,
+but store that string in a persistent dev tree item so it doesn't show
+up in any subvol's metadata.
+
+> # adding properties
+> $ sudo setfattr -n "btrfs.metadata_preferred_disk=aabbcc" -v "mode=1"  /
+> $ sudo setfattr -n "btrfs.metadata_preferred_disk=aabbee" -v "mode=1"  /
+> $ sudo setfattr -n "btrfs.metadata_preferred" -v "1"  /
+> 
+> # listing properties and their values
+> $ sudo getfattr -d /
+> getfattr: Removing leading '/' from absolute path names
+> # file: .
+> btrfs.metadata_preferred_disk\075aabbcc="mode=1"
+> btrfs.metadata_preferred_disk\075aabbee="mode=1"
+> btrfs.metadata_preferred="1"
+> 
+> # removing a properties
+> $ sudo setfattr -x "btrfs.metadata_preferred_disk=aabbcc" /
+
+If the specification is a single string blob, then we get atomic updates
+for free--no need to figure out the right order of operations if you
+suddenly want to flip metadata from devices 1,2,3 to 4,5,6 with raid1c3
+metadata.  The kernel would just ACK or NAK the entire new string, and
+tools could manipulate the whole string without trying to guess what
+might make one order of changes work while another order fails.
+
+Of course we can haggle for a few more weeks about what that string
+should look like, but the mechanism of "configure this thing through a
+kernel-parsed single string" seems OK.
+
+I was thinking something like:
+
+	-n btrfs.chunk_policy -v only_metadata=1:only_data=3:prefer_metadata=2
+
+for device 1 = NVME, 2 = SSD, 3 = HDD, where the SSD is shared between
+data and metadata, or
+
+	-n btrfs.chunk_policy -v only_metadata=7,8:only_data=1,2,3,4,5,6
+
+for a big NVME (7, 8) and HDD (1-6) array with no device sharing.
+
+Any devid not listed in the string gets "prefer_data".
+
+Metadata is allocated on devices listed with "only_metadata" first,
+followed by "prefer_metadata" devices, followed by "prefer_data" devices.
+No metadata is allocated on "only_data" devices.
+
+Data is allocated on devices listed with "only_data" first, followed by
+"prefer_data" devices, followed by "prefer_metadata" devices.  No data
+is allocated on "only_metadata" devices.
+
+Devids may be mentioned in the string that do not exist in the filesystem.
+This allows us to do 'dev remove' without changing the xattr string at
+the same time (though we still would have to prevent 'dev remove' if this
+makes it impossible to allocate new chunks of any existing raid profile).
+
+A special devid "default" specifies the policy for devices that are not
+otherwise listed.  This can be used to define what happens to new devices
+before they are added, e.g.
+
+	-n btrfs.chunk_policy -v only_metadata=1,2:only_data=default
+
+Or, we move away from the "preferred" concept, and specify the device
+order explicitly.
+
+In the following syntax, "," separates device IDs, and ":" defines a
+boundary between ordering tiers, where we fill every device before ":"
+before any device after ":", but we let btrfs do its normal equalizing
+fill algorithm with any device between ":".
+
+The special device id "default" can be used to specify where unlisted
+devices appear in the order, which might not be at the end.  If a
+device is listed by ID for either data or metadata, it is excluded from
+"default" in either string.  We might also define other shorthands like
+"rotational" later, if some day the btrfs_device::type field ever does
+mean anything useful.
+
+The NVME (1), SSD (2), HDD (3) example is:
+
+	-n btrfs.device_fill_order.data     -v 3:2
+	-n btrfs.device_fill_order.metadata -v 1:2
+
+i.e. we put data on devid 3 first, then if that is full put data on
+devid 2, while we put metadata on devid 1 first, then if that is full
+put metadata on devid 2.  We never put metadata on devid 3 or data on
+devid 1.  Any devices added to the filesystem don't get chunks at all
+until someone changes the device_fill_order policy to say what to do
+with the new devices.
+
+The 2xNVME (7, 8) and 6xHDD (1-6) example could be:
+
+	-n btrfs.device_fill_order.data     -v 1,2,3,4,5,6:default
+	-n btrfs.device_fill_order.metadata -v 7,8
+
+Note that since devids 7 and 8 are explicitly listed in metadata, they
+are not covered by 'default' in data, and no data will be allocated
+on devices 7 and 8.  The "," operator does not specify an order, so
+btrfs will pick devices from 1-6 according to its equal-fill algorithm.
+Any new devices added to the array will be filled with data only after
+the existing devices are all full.
+
+The following order might be useful if we add disks 2 at a time, and want
+to rotate out the old ones.  We want the data to be preferentially
+located on the devices that are added last, starting with devices that
+have not been added yet:
+
+	-n btrfs.device_fill_order.data     -v default:5,6:3,4:1,2
+	-n btrfs.device_fill_order.metadata -v 7,8
+
+This could also be (ab)used to get narrower stripes than the entire
+array in striping profiles.  I'm not sure if that's good or bad.
+
+This is equivalent to the absence of each xattr:
+
+	-n btrfs.device_fill_order.data     -v default
+	-n btrfs.device_fill_order.metadata -v default
+
+This is preferred_metadata=soft with metadata on devid 1:
+
+	-n btrfs.device_fill_order.data     -v default:1
+	-n btrfs.device_fill_order.metadata -v 1:default
+
+This is preferred_metadata=hard with metadata on devid 1:
+
+	-n btrfs.device_fill_order.data     -v default
+	-n btrfs.device_fill_order.metadata -v 1
+
+This is preferred_metadata=metadata with metadata on devid 1, allowing
+metadata to overflow onto data devices but not the opposite:
+
+	-n btrfs.device_fill_order.data     -v default
+	-n btrfs.device_fill_order.metadata -v 1:default
+
+This is the "laptop with one SSD and one HDD" example, where we want only
+metadata on the SSD but we will allow data to overflow from HDD to SSD:
+
+	-n btrfs.device_fill_order.data     -v default:1
+	-n btrfs.device_fill_order.metadata -v 1
+
+Obviously we'd want to compile the ordering preferences into an attribute
+attached to each device the in-kernel device list, so sort can just order
+devices by the value of the attribute.  The attribute would be recomputed
+on mount, device add, and changes to the xattr string (dev remove and
+dev replace doesn't change the order, though they might require special
+cases in the code for other reasons).
+
+> However the xattr requires an inode to attach the .. xattrs. But when we are talking about
+> filesystem properties, which is the right inode ? The only stable inode is the '.' of
+> the root subvolume. The other inodes may be deleted so are not suitable to store per
+> filesystem properties.
+> 
+> So the point is: what happens if the root subvolume is not mounted ?
+
+It's not an onerous requirement to mount the root subvol.  You can do (*)
+
+	tmp="$(mktemp -d)"
+	mount -osubvolid=5 /dev/btrfs "$tmp"
+	setfattr -n 'btrfs...' -v... "$tmp"
+	umount "$tmp"
+	rmdir "$tmp"
+
+any time you need to change the policy, regardless of whether the root
+subvol is mounted anywhere else at the time.
+
+> Of course we can tweak the xattr api to deal this case, but doing so is not
+> so different than developing a new api, which (I think) is not what Josef suggested.
+> 
+> > 
+> > Note that all the required properties are per-device, so really you just
+> > need any open FD on the filesystem.  (I think Josef didn't read that far
+> > down).
+> > 
+> > The per-device policy storage can go in dev_root (tree 4) along with the
+> > device stats data, if we don't want to use btrfs_device::type.  You'd still
+> > need an ioctl to get to it.
+> > 
+> > Or maybe I'm misreading Josef here, and his idea is to make the per-device
+> > configuration a string blob that can be set by putting an xattr on the
+> > root subvol?  I'm not sure that's better, but it'll work.
+> > 
+> > > Yes we can create a further
+> > > api to store/retrive this kind of metadata without mounting the root
+> > > subvolume, but doing so in what it would be different than adding a
+> > > key to the root fs like the default subvolume ioctl does ?
+> > 
+> > > > 
+> > > > Josef
+> > > 
+> > > 
+> > > -- 
+> > > gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+> > > Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+> > > 
+> 
+> 
+> -- 
+> gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+> Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+
+(*) but don't do exactly that, it will seriously and dangerously confuse
+anything that thinks it owns /tmp.  Use some private directory under
+/var or /mnt where there is no possibility of some cron job waking up
+and deciding it needs to delete everything.

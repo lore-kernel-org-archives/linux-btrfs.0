@@ -7,37 +7,37 @@ X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EC8CBC433E6
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 10:06:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 39316C433E0
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 10:06:52 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id AE7F8239D1
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 10:06:13 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id F309B22202
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 10:06:51 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727176AbhAVKFz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 22 Jan 2021 05:05:55 -0500
-Received: from mx2.suse.de ([195.135.220.15]:58352 "EHLO mx2.suse.de"
+        id S1726644AbhAVKFT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 22 Jan 2021 05:05:19 -0500
+Received: from mx2.suse.de ([195.135.220.15]:58228 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727754AbhAVKA3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Jan 2021 05:00:29 -0500
+        id S1726652AbhAVKAS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 22 Jan 2021 05:00:18 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
         t=1611309488; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=0wcvDCJxwp3C/EaUlW7l1QvCczkH+pgjDYBkbIqRvs8=;
-        b=KQzGFkjbA4GdWuLE80Thi1EYOs/LlTUT5gVL0+V74sdmBlvlj0OG1wllhxpJV65wyoa0/L
-        C2ZgN/rHlWrxm8zw8pwtIIBWuqaJWa9I8+ggUrLBe+kzZ3iJxC5Oo8G0Yo6QD7Z1DdiKpl
-        EEjSX1gQgD8ny6JF6WfZAO5AKgwLFNE=
+        bh=SvI5gl2SqYzEciFjbblPT00fom5R5ei9XyNrcn61e4M=;
+        b=POm8Rabkit4KK+ThUJy2OMo45i/uliVayP3R2Nj66/TVpFmoDNYpje0mYidSZUkJe/VgR7
+        4OSLtFzatdEcyD+tAZgNtfxmzNHGN5R1UBa0ZqxmD6eGnHoDjN2osIJ3aMzbP8RzW0hFCf
+        /9XlZUF3iFUpAna9RantU4gB2izj84E=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id CA795B7AE;
+        by mx2.suse.de (Postfix) with ESMTP id 57C8FAF7B;
         Fri, 22 Jan 2021 09:58:08 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v3 08/14] btrfs: Fix description format of fs_info parameter of btrfs_wait_on_delayed_iputs
-Date:   Fri, 22 Jan 2021 11:57:59 +0200
-Message-Id: <20210122095805.620458-9-nborisov@suse.com>
+Subject: [PATCH v3 06/14] btrfs: Document now parameter of peek_discard_list
+Date:   Fri, 22 Jan 2021 11:57:57 +0200
+Message-Id: <20210122095805.620458-7-nborisov@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <20210122095805.620458-1-nborisov@suse.com>
 References: <20210122095805.620458-1-nborisov@suse.com>
@@ -47,29 +47,32 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Fixes fs/btrfs/inode.c:3101: warning: Function parameter or member 'fs_info' not described in 'btrfs_wait_on_delayed_iputs'
+Fixes fs/btrfs/discard.c:203: warning: Function parameter or member 'now' not described in 'peek_discard_list'
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/inode.c | 5 +++--
- 1 file changed, 3 insertions(+), 2 deletions(-)
+ fs/btrfs/discard.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 5906b4267204..72b892251764 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3088,8 +3088,9 @@ void btrfs_run_delayed_iputs(struct btrfs_fs_info *fs_info)
+diff --git a/fs/btrfs/discard.c b/fs/btrfs/discard.c
+index 2b8383d41144..306ff20af70f 100644
+--- a/fs/btrfs/discard.c
++++ b/fs/btrfs/discard.c
+@@ -185,10 +185,12 @@ static struct btrfs_block_group *find_next_block_group(
  }
  
  /**
-- * btrfs_wait_on_delayed_iputs - wait on the delayed iputs to be done running
-- * @fs_info - the fs_info for this fs
-+ * Wait for flushing all delayed iputs
+- * peek_discard_list - wrap find_next_block_group()
+- * @discard_ctl: discard control
++ * Wrap find_next_block_group()
 + *
-+ * @fs_info:  the fs_info for this fs
-  * @return - EINTR if we were killed, 0 if nothing's pending
++ * @discard_ctl:   discard control
+  * @discard_state: the discard_state of the block_group after state management
+  * @discard_index: the discard_index of the block_group after state management
++ * @now:           time when discard was invoked, in ns
   *
-  * This will wait on any delayed iputs that are currently running with KILLABLE
+  * This wraps find_next_block_group() and sets the block_group to be in use.
+  * discard_state's control flow is managed here.  Variables related to
 -- 
 2.25.1
 

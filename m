@@ -4,40 +4,40 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D649EC433E0
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 10:01:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 40252C43381
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 10:01:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 82AFB235E4
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 10:01:56 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1194A235F7
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 10:01:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727787AbhAVKBQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 22 Jan 2021 05:01:16 -0500
-Received: from mx2.suse.de ([195.135.220.15]:58384 "EHLO mx2.suse.de"
+        id S1726924AbhAVKBl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 22 Jan 2021 05:01:41 -0500
+Received: from mx2.suse.de ([195.135.220.15]:58386 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727645AbhAVKAo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1727781AbhAVKAo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Fri, 22 Jan 2021 05:00:44 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1611309490; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+        t=1611309489; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=fFKAj0svGI+2zYKskr3eFFtRD7j8+dDJez+Vp97ht0g=;
-        b=j1+bABB3k40C7AJcu8TQlolJMY1rjb5DPEcJqdJjE0z2fYbh4grNwTYL/M44jPOAj1Igq2
-        ZEC3jeO9p6sEdg41UFdUnBgZqoqIK0eBO0JpgwOi8hNyjsCTPt89n9KN1FoQDy4pC61CSB
-        7nZCKRYGalkVijQ3mhKo8xsOgRH/l6c=
+        bh=obVTR/iajbTHptudWZFYKehs+SdWkAKFztadESKI2VM=;
+        b=iRO0k8Eds78RDm3QqGGt2QvLif/gdL18SpLBu2HSp0yF2u8IAJLoT/uLHoFL4IQcXR+jw3
+        KuEIKOcbIeGLTEy99k5d1L7coUtNY4zb8wxEElPt0ENeBfNzWhopxcOD1ahHOv/QtWK/gI
+        NW1VjWpaCZOy2Xtbd8n9hEBmn10E+MQ=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id E43B2B804;
+        by mx2.suse.de (Postfix) with ESMTP id 47701B7DD;
         Fri, 22 Jan 2021 09:58:09 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v3 12/14] btrfs: Fix parameter description for functions in extent_io.c
-Date:   Fri, 22 Jan 2021 11:58:03 +0200
-Message-Id: <20210122095805.620458-13-nborisov@suse.com>
+Subject: [PATCH v3 10/14] btrfs: Fix parameter description of btrfs_inode_rsv_release/btrfs_delalloc_release_space
+Date:   Fri, 22 Jan 2021 11:58:01 +0200
+Message-Id: <20210122095805.620458-11-nborisov@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <20210122095805.620458-1-nborisov@suse.com>
 References: <20210122095805.620458-1-nborisov@suse.com>
@@ -47,118 +47,73 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This makes the file W=1 clean and fixes the following warnings:
+Fixes following warnings:
 
-fs/btrfs/extent_io.c:414: warning: Function parameter or member 'tree' not described in '__etree_search'
-fs/btrfs/extent_io.c:414: warning: Function parameter or member 'offset' not described in '__etree_search'
-fs/btrfs/extent_io.c:414: warning: Function parameter or member 'next_ret' not described in '__etree_search'
-fs/btrfs/extent_io.c:414: warning: Function parameter or member 'prev_ret' not described in '__etree_search'
-fs/btrfs/extent_io.c:414: warning: Function parameter or member 'p_ret' not described in '__etree_search'
-fs/btrfs/extent_io.c:414: warning: Function parameter or member 'parent_ret' not described in '__etree_search'
-fs/btrfs/extent_io.c:1607: warning: Function parameter or member 'tree' not described in 'find_contiguous_extent_bit'
-fs/btrfs/extent_io.c:1607: warning: Function parameter or member 'start' not described in 'find_contiguous_extent_bit'
-fs/btrfs/extent_io.c:1607: warning: Function parameter or member 'start_ret' not described in 'find_contiguous_extent_bit'
-fs/btrfs/extent_io.c:1607: warning: Function parameter or member 'end_ret' not described in 'find_contiguous_extent_bit'
-fs/btrfs/extent_io.c:1607: warning: Function parameter or member 'bits' not described in 'find_contiguous_extent_bit'
-fs/btrfs/extent_io.c:1644: warning: Function parameter or member 'tree' not described in 'find_first_clear_extent_bit'
-fs/btrfs/extent_io.c:1644: warning: Function parameter or member 'start' not described in 'find_first_clear_extent_bit'
-fs/btrfs/extent_io.c:1644: warning: Function parameter or member 'start_ret' not described in 'find_first_clear_extent_bit'
-fs/btrfs/extent_io.c:1644: warning: Function parameter or member 'end_ret' not described in 'find_first_clear_extent_bit'
-fs/btrfs/extent_io.c:1644: warning: Function parameter or member 'bits' not described in 'find_first_clear_extent_bit'
-fs/btrfs/extent_io.c:4187: warning: Function parameter or member 'epd' not described in 'extent_write_cache_pages'
-fs/btrfs/extent_io.c:4187: warning: Excess function parameter 'data' description in 'extent_write_cache_pages'
+fs/btrfs/delalloc-space.c:205: warning: Function parameter or member 'inode' not described in 'btrfs_inode_rsv_release'
+fs/btrfs/delalloc-space.c:205: warning: Function parameter or member 'qgroup_free' not described in 'btrfs_inode_rsv_release'
+fs/btrfs/delalloc-space.c:472: warning: Function parameter or member 'reserved' not described in 'btrfs_delalloc_release_space'
+fs/btrfs/delalloc-space.c:472: warning: Function parameter or member 'qgroup_free' not described in 'btrfs_delalloc_release_space'
+fs/btrfs/delalloc-space.c:472: warning: Excess function parameter 'release_bytes' description in 'btrfs_delalloc_release_space'
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/extent_io.c | 50 +++++++++++++++++++++++---------------------
- 1 file changed, 26 insertions(+), 24 deletions(-)
+ fs/btrfs/delalloc-space.c | 29 +++++++++++++++++------------
+ 1 file changed, 17 insertions(+), 12 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 7f689ad7709c..98937f8ea138 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -389,16 +389,16 @@ static struct rb_node *tree_insert(struct rb_root *root,
+diff --git a/fs/btrfs/delalloc-space.c b/fs/btrfs/delalloc-space.c
+index bacee09b7bfd..35f25a3d897b 100644
+--- a/fs/btrfs/delalloc-space.c
++++ b/fs/btrfs/delalloc-space.c
+@@ -191,12 +191,14 @@ void btrfs_free_reserved_data_space(struct btrfs_inode *inode,
  }
  
  /**
-- * __etree_search - searche @tree for an entry that contains @offset. Such
-+ * Searches @tree for an entry that contains @offset. Such
-  * entry would have entry->start <= offset && entry->end >= offset.
-  *
-- * @tree - the tree to search
-- * @offset - offset that should fall within an entry in @tree
-- * @next_ret - pointer to the first entry whose range ends after @offset
-- * @prev - pointer to the first entry whose range begins before @offset
-- * @p_ret - pointer where new node should be anchored (used when inserting an
-- *	    entry in the tree)
-- * @parent_ret - points to entry which would have been the parent of the entry,
-+ * @tree:       the tree to search
-+ * @offset:     offset that should fall within an entry in @tree
-+ * @next_ret:   pointer to the first entry whose range ends after @offset
-+ * @prev_ret:   pointer to the first entry whose range begins before @offset
-+ * @p_ret:      pointer where new node should be anchored (used when inserting an
-+ *	        entry in the tree)
-+ * @parent_ret: points to entry which would have been the parent of the entry,
-  *               containing @offset
-  *
-  * This function returns a pointer to the entry that contains @offset byte
-@@ -1588,12 +1588,13 @@ int find_first_extent_bit(struct extent_io_tree *tree, u64 start,
- }
- 
- /**
-- * find_contiguous_extent_bit: find a contiguous area of bits
-- * @tree - io tree to check
-- * @start - offset to start the search from
-- * @start_ret - the first offset we found with the bits set
-- * @end_ret - the final contiguous range of the bits that were set
-- * @bits - bits to look for
-+ * Find a contiguous area of bits
+- * btrfs_inode_rsv_release - release any excessive reservation.
+- * @inode - the inode we need to release from.
+- * @qgroup_free - free or convert qgroup meta.
+- *   Unlike normal operation, qgroup meta reservation needs to know if we are
+- *   freeing qgroup reservation or just converting it into per-trans.  Normally
+- *   @qgroup_free is true for error handling, and false for normal release.
++ * Release any excessive reservation.
 + *
-+ * @tree:      io tree to check
-+ * @start:     offset to start the search from
-+ * @start_ret: the first offset we found with the bits set
-+ * @end_ret:   the final contiguous range of the bits that were set
-+ * @bits:      bits to look for
++ * @inode:       the inode we need to release from.
++ * @qgroup_free: free or convert qgroup meta. Unlike normal operation, qgroup
++ *               meta reservation needs to know if we are freeing qgroup
++ *               reservation or just converting it into per-trans.  Normally
++ *               @qgroup_free is true for error handling, and false for normal
++ *               release.
   *
-  * set_extent_bit and clear_extent_bit can temporarily split contiguous ranges
-  * to set bits appropriately, and then merge them again.  During this time it
-@@ -1625,14 +1626,14 @@ int find_contiguous_extent_bit(struct extent_io_tree *tree, u64 start,
+  * This is the same as btrfs_block_rsv_release, except that it handles the
+  * tracepoint for the reservation.
+@@ -361,7 +363,8 @@ int btrfs_delalloc_reserve_metadata(struct btrfs_inode *inode, u64 num_bytes)
  }
  
  /**
-- * find_first_clear_extent_bit - find the first range that has @bits not set.
-- * This range could start before @start.
-+ * Find the first range that has @bits not set. This range could start before
-+ * @start.
-  *
-- * @tree - the tree to search
-- * @start - the offset at/after which the found extent should start
-- * @start_ret - records the beginning of the range
-- * @end_ret - records the end of the range (inclusive)
-- * @bits - the set of bits which must be unset
-+ * @tree:      the tree to search
-+ * @start:     the offset at/after which the found extent should start
-+ * @start_ret: records the beginning of the range
-+ * @end_ret:   records the end of the range (inclusive)
-+ * @bits:      the set of bits which must be unset
-  *
-  * Since unallocated range is also considered one which doesn't have the bits
-  * set it's possible that @end_ret contains -1, this happens in case the range
-@@ -4168,10 +4169,11 @@ int btree_write_cache_pages(struct address_space *mapping,
- }
- 
- /**
-- * write_cache_pages - walk the list of dirty pages of the given address space and write all of them.
-+ * Walk the list of dirty pages of the given address space and write all of them.
+- * btrfs_delalloc_release_metadata - release a metadata reservation for an inode
++ * Release a metadata reservation for an inode
 + *
-  * @mapping: address space structure to write
-- * @wbc: subtract the number of written pages from *@wbc->nr_to_write
-- * @data: data passed to __extent_writepage function
-+ * @wbc:     subtract the number of written pages from *@wbc->nr_to_write
-+ * @epd:     holds context for the write, namely the bio
+  * @inode: the inode to release the reservation for.
+  * @num_bytes: the number of bytes we are releasing.
+  * @qgroup_free: free qgroup reservation or convert it to per-trans reservation
+@@ -455,11 +458,13 @@ int btrfs_delalloc_reserve_space(struct btrfs_inode *inode,
+ }
+ 
+ /**
+- * btrfs_delalloc_release_space - release data and metadata space for delalloc
+- * @inode: inode we're releasing space for
+- * @start: start position of the space already reserved
+- * @len: the len of the space already reserved
+- * @release_bytes: the len of the space we consumed or didn't use
++ * Release data and metadata space for delalloc
++ *
++ * @inode:       inode we're releasing space for
++ * @reserved:    list of changed/reserved ranges
++ * @start:       start position of the space already reserved
++ * @len:         the len of the space already reserved
++ * @qgroup_free: should qgroup reserved-space also be freed
   *
-  * If a page is already under I/O, write_cache_pages() skips it, even
-  * if it's dirty.  This is desirable behaviour for memory-cleaning writeback,
+  * This function will release the metadata space that was not used and will
+  * decrement ->delalloc_bytes and remove it from the fs_info delalloc_inodes
 -- 
 2.25.1
 

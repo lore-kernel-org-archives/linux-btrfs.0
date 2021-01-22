@@ -7,69 +7,64 @@ X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C0F86C433DB
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 20:55:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B3791C433E0
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 20:55:25 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 9099A23B08
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 20:55:19 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 82D3A23B06
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 20:55:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730300AbhAVUzI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 22 Jan 2021 15:55:08 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49574 "EHLO
+        id S1730066AbhAVUyw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 22 Jan 2021 15:54:52 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49340 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1730770AbhAVUwM (ORCPT
+        with ESMTP id S1730945AbhAVUwY (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Jan 2021 15:52:12 -0500
-Received: from mail-pj1-x1033.google.com (mail-pj1-x1033.google.com [IPv6:2607:f8b0:4864:20::1033])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 52286C061D7F
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jan 2021 12:47:57 -0800 (PST)
-Received: by mail-pj1-x1033.google.com with SMTP id kx7so4589106pjb.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jan 2021 12:47:57 -0800 (PST)
+        Fri, 22 Jan 2021 15:52:24 -0500
+Received: from mail-pg1-x535.google.com (mail-pg1-x535.google.com [IPv6:2607:f8b0:4864:20::535])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E4D03C0698C9
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jan 2021 12:48:25 -0800 (PST)
+Received: by mail-pg1-x535.google.com with SMTP id 30so4615863pgr.6
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jan 2021 12:48:25 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=osandov-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=iHS144DxLbBMpm965BQLT7zCwBiEuqsfigSMglTrs0I=;
-        b=eEe3KzBJ5cBvVQTFc/Fat4nX2EbBqXLkGs10fIv31CgraFSVLOvQ4nDPq7BCySkz87
-         +pp73OUQ0pHOxptR0zCs1Ef541bOtFyuwSZ6uzkySCys3RldTYa1HYZf7Rop363g3Q7T
-         dIzGL0Xz0ok4Eq5uMjVoXJRvDyFPe5aanvR9G5n/yOGVcK8Pm4pheyn/1q0O462g/nRn
-         kRUzvAgZMD0GclNO8FZHNBKn5tWfonGJr0qTKbH6vxjx0bDQzqVHvDCRyjmlM3uLX2nA
-         yTsM14xJB+21a6R8QmR9UJXiDMJw7hHZN4lbzkHhggT63+nXNOKu7e0sDE5B/9dM4fU7
-         jHqQ==
+        bh=ghXEwRnY4PzM061MuP1pb0fdrgOGpzAMsrN3mJnwO7s=;
+        b=TesEIPxJqm2jRVCECOtON/HbVrrqYz+HYPrdiBvlxZDr5aAPoF4LQJiIOOC7yhST2o
+         fSrBOLfe20bD0coaM2TJECVIVab5iPU9Kdr8azhlmYCcInQHwyaPULVLuGGCODC9yQ9e
+         QMi5TojCOkmpNQgrrEBZUE9AHJqlSumQXR2zwYCc4+ZpRWFXeoXfn5duW0AjLAKi9+ey
+         5WszJ39/BsGmpvBXcuy6OqjA//cYQtxxjcTJZFZnsIy3cYCX5C65kfGF9KgjEzV1XKia
+         4ssjHucAGgV1zfjYRG8If0GfSAzSFsWZ1yO46v7T0p3n4H7fjt28TubG2TotUa2Uu4j8
+         RRPQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=iHS144DxLbBMpm965BQLT7zCwBiEuqsfigSMglTrs0I=;
-        b=bk4Njo9lkpktv8ZXiiV5Eiv20LXEsONhqq8xpQ8FpK7IoSQFYe8Ha4pLNWzOKMR0qO
-         VeNmr34WtG/4/XBWCRrV7Aktn2cC61qEJdhhYJEnELbPX2mdTmS56s0DNBXmKht35ei6
-         35J53e+fw4Wnh9pDnVA0HPJPVwohcAdDJncDlqLnJiRvpKJhGGlh0sZmbx+CClqg5Uzr
-         EuBZNgmfTHbnAdJUGC4LKmfL1ppmfQ/xTm0JUKm8Xh2aS60FbebWhOaVS3pV/Wre682N
-         zbaPQ+C7SpQ0KKqfkL26gO7RBQFfw2ePa/H2Hbzu01Eq9qM38/yrXy2GRw2j1s80MVK8
-         EGkw==
-X-Gm-Message-State: AOAM530jmnkNd03RmJtvXI+SFJXGZsXjiLAlgoEVS128x9fjUgq7eM+B
-        8RAFnwus3i6wbj4J68vsfPpAsw==
-X-Google-Smtp-Source: ABdhPJw0CDTLukWVGH2ygrhTfT70j0x9Uu65xoNtFS+yDtbeNYP2KeSbSmofvhiz+rOQCKfzxeNKBA==
-X-Received: by 2002:a17:902:c284:b029:df:c0d8:6b7 with SMTP id i4-20020a170902c284b02900dfc0d806b7mr6420291pld.34.1611348476863;
-        Fri, 22 Jan 2021 12:47:56 -0800 (PST)
+        bh=ghXEwRnY4PzM061MuP1pb0fdrgOGpzAMsrN3mJnwO7s=;
+        b=S9QeMXnrACvaTu+Ow/3gIxZ8z7uRGBUYxpUOQDGxBs6mZaB2ieHSIVLjMszMs/XBDG
+         MKnzMRg5AmO9bS6i9EbYABk+5MOMXAc5eUwliw8lfMM2U58i4VaxJWYTwIX4SjTGM7vZ
+         vR3Eqb+QOJ6YVkhIojbe0DK40WnAtwy/YreyPm3rkxCe6xgzyVr4jm/gUhLhKbsZGt3u
+         ldcAy/DNZB35nopcJwAxlLbvCCh/auGYYBXNvUQ4p9nruPYmJZgNvHi6AfTpRE5ZnPmd
+         1xXCrTDxnyBiawEyNcNzZDicuU6ZsYV+1TwPt7nMwAEveJi2gf2Tz9RFrYhWPTetvttp
+         Q4hA==
+X-Gm-Message-State: AOAM532nZYz7A5sijeFwmTSY4hhflaPYXV3h+P1oYUvnuHps2OgO1xHB
+        Uhp8fMctcR7ykG6QnWoaeFN6nmF/OAVbFA==
+X-Google-Smtp-Source: ABdhPJxnhP+RKtuv5+Ko43Q3BdvHZwuXId2no5zWBdzy0+VpIlnmKl/f3RaWbKK2kmI3x+Wkh7yqXg==
+X-Received: by 2002:a62:f202:0:b029:1bc:a634:8e9c with SMTP id m2-20020a62f2020000b02901bca6348e9cmr1831028pfh.49.1611348504764;
+        Fri, 22 Jan 2021 12:48:24 -0800 (PST)
 Received: from relinquished.tfbnw.net ([2620:10d:c090:400::5:ea88])
-        by smtp.gmail.com with ESMTPSA id j18sm4092900pfc.99.2021.01.22.12.47.54
+        by smtp.gmail.com with ESMTPSA id y16sm9865617pfb.83.2021.01.22.12.48.22
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 22 Jan 2021 12:47:55 -0800 (PST)
+        Fri, 22 Jan 2021 12:48:23 -0800 (PST)
 From:   Omar Sandoval <osandov@osandov.com>
-To:     linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        Al Viro <viro@zeniv.linux.org.uk>,
-        Christoph Hellwig <hch@infradead.org>
-Cc:     Dave Chinner <david@fromorbit.com>, Jann Horn <jannh@google.com>,
-        Amir Goldstein <amir73il@gmail.com>,
-        Aleksa Sarai <cyphar@cyphar.com>, linux-api@vger.kernel.org,
-        kernel-team@fb.com
-Subject: [PATCH v7 15/15] btrfs: send: enable support for stream v2 and compressed writes
-Date:   Fri, 22 Jan 2021 12:47:02 -0800
-Message-Id: <faf1a40be59c6ffccdfdfc795b25829baa2a12fe.1611346574.git.osandov@fb.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     linux-fsdevel@vger.kernel.org, kernel-team@fb.com
+Subject: [PATCH v3 2/5] btrfs: send: write larger chunks when using stream v2
+Date:   Fri, 22 Jan 2021 12:47:46 -0800
+Message-Id: <b66f99260a0562922e72dd71e7c78a2c22725beb.1611347187.git.osandov@fb.com>
 X-Mailer: git-send-email 2.30.0
-In-Reply-To: <cover.1611346574.git.osandov@fb.com>
-References: <cover.1611346574.git.osandov@fb.com>
+In-Reply-To: <cover.1611347187.git.osandov@fb.com>
+References: <cover.1611347187.git.osandov@fb.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
@@ -78,72 +73,79 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Omar Sandoval <osandov@fb.com>
 
-Now that the new support is implemented, allow the ioctl to accept the
-flags and update the version in sysfs.
+The length field of the send stream TLV header is 16 bits. This means
+that the maximum amount of data that can be sent for one write is 64k
+minus one. However, encoded writes must be able to send the maximum
+compressed extent (128k) in one command. To support this, send stream
+version 2 encodes the DATA attribute differently: it has no length
+field, and the length is implicitly up to the end of containing command
+(which has a 32-bit length field). Although this is necessary for
+encoded writes, normal writes can benefit from it, too.
+
+For v2, let's bump up the send buffer to the maximum compressed extent
+size plus 16k for the other metadata (144k total). Since this will most
+likely be vmalloc'd (and always will be after the next commit), we round
+it up to the next page since we might as well use the rest of the page
+on systems with >16k pages.
 
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- fs/btrfs/send.c            | 10 +++++++++-
- fs/btrfs/send.h            |  2 +-
- include/uapi/linux/btrfs.h |  4 +++-
- 3 files changed, 13 insertions(+), 3 deletions(-)
+ fs/btrfs/send.c | 34 ++++++++++++++++++++++++++--------
+ 1 file changed, 26 insertions(+), 8 deletions(-)
 
 diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 7516eba701af..cb824d1271fa 100644
+index d07570588a16..98948568017c 100644
 --- a/fs/btrfs/send.c
 +++ b/fs/btrfs/send.c
-@@ -671,7 +671,10 @@ static int send_header(struct send_ctx *sctx)
- 	struct btrfs_stream_header hdr;
+@@ -4915,14 +4915,27 @@ static inline u64 max_send_read_size(const struct send_ctx *sctx)
  
- 	strcpy(hdr.magic, BTRFS_SEND_STREAM_MAGIC);
--	hdr.version = cpu_to_le32(BTRFS_SEND_STREAM_VERSION);
-+	if (sctx->flags & BTRFS_SEND_FLAG_STREAM_V2)
-+		hdr.version = cpu_to_le32(2);
-+	else
-+		hdr.version = cpu_to_le32(1);
+ static int put_data_header(struct send_ctx *sctx, u32 len)
+ {
+-	struct btrfs_tlv_header *hdr;
++	if (sctx->flags & BTRFS_SEND_FLAG_STREAM_V2) {
++		/*
++		 * In v2, the data attribute header doesn't include a length; it
++		 * is implicitly to the end of the command.
++		 */
++		if (sctx->send_max_size - sctx->send_size < 2 + len)
++			return -EOVERFLOW;
++		put_unaligned_le16(BTRFS_SEND_A_DATA,
++				   sctx->send_buf + sctx->send_size);
++		sctx->send_size += 2;
++	} else {
++		struct btrfs_tlv_header *hdr;
  
- 	return write_buf(sctx->send_filp, &hdr, sizeof(hdr),
- 					&sctx->send_off);
-@@ -7446,6 +7449,11 @@ long btrfs_ioctl_send(struct file *mnt_file, struct btrfs_ioctl_send_args *arg)
- 		ret = -EINVAL;
- 		goto out;
- 	}
-+	if ((arg->flags & BTRFS_SEND_FLAG_COMPRESSED) &&
-+	    !(arg->flags & BTRFS_SEND_FLAG_STREAM_V2)) {
-+		ret = -EINVAL;
-+		goto out;
+-	if (sctx->send_max_size - sctx->send_size < sizeof(*hdr) + len)
+-		return -EOVERFLOW;
+-	hdr = (struct btrfs_tlv_header *)(sctx->send_buf + sctx->send_size);
+-	put_unaligned_le16(BTRFS_SEND_A_DATA, &hdr->tlv_type);
+-	put_unaligned_le16(len, &hdr->tlv_len);
+-	sctx->send_size += sizeof(*hdr);
++		if (sctx->send_max_size - sctx->send_size < sizeof(*hdr) + len)
++			return -EOVERFLOW;
++		hdr = (struct btrfs_tlv_header *)(sctx->send_buf +
++						  sctx->send_size);
++		put_unaligned_le16(BTRFS_SEND_A_DATA, &hdr->tlv_type);
++		put_unaligned_le16(len, &hdr->tlv_len);
++		sctx->send_size += sizeof(*hdr);
 +	}
+ 	return 0;
+ }
  
- 	sctx = kzalloc(sizeof(struct send_ctx), GFP_KERNEL);
- 	if (!sctx) {
-diff --git a/fs/btrfs/send.h b/fs/btrfs/send.h
-index 9f4f7b96b1eb..9c83e14a43b2 100644
---- a/fs/btrfs/send.h
-+++ b/fs/btrfs/send.h
-@@ -10,7 +10,7 @@
- #include "ctree.h"
+@@ -7267,7 +7280,12 @@ long btrfs_ioctl_send(struct file *mnt_file, struct btrfs_ioctl_send_args *arg)
  
- #define BTRFS_SEND_STREAM_MAGIC "btrfs-stream"
--#define BTRFS_SEND_STREAM_VERSION 1
-+#define BTRFS_SEND_STREAM_VERSION 2
+ 	sctx->clone_roots_cnt = arg->clone_sources_count;
  
- /*
-  * In send stream v1, no command is larger than 64k. In send stream v2, no limit
-diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index 93aa0932234e..b12a9a1a106c 100644
---- a/include/uapi/linux/btrfs.h
-+++ b/include/uapi/linux/btrfs.h
-@@ -786,7 +786,9 @@ struct btrfs_ioctl_received_subvol_args {
- #define BTRFS_SEND_FLAG_MASK \
- 	(BTRFS_SEND_FLAG_NO_FILE_DATA | \
- 	 BTRFS_SEND_FLAG_OMIT_STREAM_HEADER | \
--	 BTRFS_SEND_FLAG_OMIT_END_CMD)
-+	 BTRFS_SEND_FLAG_OMIT_END_CMD | \
-+	 BTRFS_SEND_FLAG_STREAM_V2 | \
-+	 BTRFS_SEND_FLAG_COMPRESSED)
- 
- struct btrfs_ioctl_send_args {
- 	__s64 send_fd;			/* in */
+-	sctx->send_max_size = BTRFS_SEND_BUF_SIZE_V1;
++	if (sctx->flags & BTRFS_SEND_FLAG_STREAM_V2) {
++		sctx->send_max_size = ALIGN(SZ_16K + BTRFS_MAX_COMPRESSED,
++					    PAGE_SIZE);
++	} else {
++		sctx->send_max_size = BTRFS_SEND_BUF_SIZE_V1;
++	}
+ 	sctx->send_buf = kvmalloc(sctx->send_max_size, GFP_KERNEL);
+ 	if (!sctx->send_buf) {
+ 		ret = -ENOMEM;
 -- 
 2.30.0
 

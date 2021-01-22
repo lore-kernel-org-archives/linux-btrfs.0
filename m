@@ -7,37 +7,37 @@ X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2C1A7C433E9
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 10:01:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4A348C433E0
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 10:06:09 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id E8486235E4
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 10:01:56 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 040CF235F7
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 10:06:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727712AbhAVKB1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 22 Jan 2021 05:01:27 -0500
-Received: from mx2.suse.de ([195.135.220.15]:58380 "EHLO mx2.suse.de"
+        id S1727753AbhAVKFl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 22 Jan 2021 05:05:41 -0500
+Received: from mx2.suse.de ([195.135.220.15]:58226 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727775AbhAVKAo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Jan 2021 05:00:44 -0500
+        id S1727145AbhAVKAS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 22 Jan 2021 05:00:18 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1611309489; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+        t=1611309488; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=T5YaUj33VhPxtRHJ6Ak/qrroBNU6rzjC6AVv3M42abQ=;
-        b=p+sZ/mJZdkm5tpgPC4wtv0yBkg9Y/QnWciz3Z7VmAueNGooQQPIfS855f5NEus8XTGJSpp
-        TvCol1qD5smD4fcGWSjo0fqcWJoEM+pkvflgp6tevKVL3Ual9u3LYiIY6l9E8B7sU1X0Qh
-        Rk3MjjSokTSCy9Q+IQ0bTbx1gsiwBjE=
+        bh=IG8bt/5g4V7tjXbH/cJ15EkYh/Nru/U73K4SJwV6GMY=;
+        b=lsEm9dUYB4hRWFbHmJLE/VCkCqe5YFtaQQ742qvgYRXrwtzIdRQ139YsvUdjS85T/hfEU8
+        MQMxsoFxl2wXEeYrYfe8IONcF325Q/xKjeT1K9Dpi3TMoE7Hh8H84rvLBhWMJBzkL/c2dN
+        so5Lf/YbqBlIeHcBsg32ZfMD+sRpUtw=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 7FD71B7E8;
-        Fri, 22 Jan 2021 09:58:09 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 1FE99AF7A;
+        Fri, 22 Jan 2021 09:58:08 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v3 11/14] btrfs: Fix parameter description in space-info.c
-Date:   Fri, 22 Jan 2021 11:58:02 +0200
-Message-Id: <20210122095805.620458-12-nborisov@suse.com>
+Subject: [PATCH v3 05/14] btrfs: Improve parameter description for __btrfs_write_out_cache
+Date:   Fri, 22 Jan 2021 11:57:56 +0200
+Message-Id: <20210122095805.620458-6-nborisov@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <20210122095805.620458-1-nborisov@suse.com>
 References: <20210122095805.620458-1-nborisov@suse.com>
@@ -47,117 +47,43 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-With these fixes space-info.c is clearn for W=1 warnings, namely the
-following ones are fixed:
-
-fs/btrfs/space-info.c:575: warning: Function parameter or member 'fs_info' not described in 'may_commit_transaction'
-fs/btrfs/space-info.c:575: warning: Function parameter or member 'space_info' not described in 'may_commit_transaction'
-fs/btrfs/space-info.c:1231: warning: Function parameter or member 'fs_info' not described in 'handle_reserve_ticket'
-fs/btrfs/space-info.c:1231: warning: Function parameter or member 'space_info' not described in 'handle_reserve_ticket'
-fs/btrfs/space-info.c:1231: warning: Function parameter or member 'ticket' not described in 'handle_reserve_ticket'
-fs/btrfs/space-info.c:1231: warning: Function parameter or member 'flush' not described in 'handle_reserve_ticket'
-fs/btrfs/space-info.c:1315: warning: Function parameter or member 'fs_info' not described in '__reserve_bytes'
-fs/btrfs/space-info.c:1315: warning: Function parameter or member 'space_info' not described in '__reserve_bytes'
-fs/btrfs/space-info.c:1315: warning: Function parameter or member 'orig_bytes' not described in '__reserve_bytes'
-fs/btrfs/space-info.c:1315: warning: Function parameter or member 'flush' not described in '__reserve_bytes'
-fs/btrfs/space-info.c:1427: warning: Function parameter or member 'root' not described in 'btrfs_reserve_metadata_bytes'
-fs/btrfs/space-info.c:1427: warning: Function parameter or member 'block_rsv' not described in 'btrfs_reserve_metadata_bytes'
-fs/btrfs/space-info.c:1427: warning: Function parameter or member 'orig_bytes' not described in 'btrfs_reserve_metadata_bytes'
-fs/btrfs/space-info.c:1427: warning: Function parameter or member 'flush' not described in 'btrfs_reserve_metadata_bytes'
-fs/btrfs/space-info.c:1462: warning: Function parameter or member 'fs_info' not described in 'btrfs_reserve_data_bytes'
-fs/btrfs/space-info.c:1462: warning: Function parameter or member 'bytes' not described in 'btrfs_reserve_data_bytes'
-fs/btrfs/space-info.c:1462: warning: Function parameter or member 'flush' not described in 'btrfs_reserve_data_bytes'
+Fixes following W=1 warnings:
+fs/btrfs/free-space-cache.c:1317: warning: Function parameter or member 'root' not described in '__btrfs_write_out_cache'
+fs/btrfs/free-space-cache.c:1317: warning: Function parameter or member 'inode' not described in '__btrfs_write_out_cache'
+fs/btrfs/free-space-cache.c:1317: warning: Function parameter or member 'ctl' not described in '__btrfs_write_out_cache'
+fs/btrfs/free-space-cache.c:1317: warning: Function parameter or member 'block_group' not described in '__btrfs_write_out_cache'
+fs/btrfs/free-space-cache.c:1317: warning: Function parameter or member 'io_ctl' not described in '__btrfs_write_out_cache'
+fs/btrfs/free-space-cache.c:1317: warning: Function parameter or member 'trans' not described in '__btrfs_write_out_cache'
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/space-info.c | 46 ++++++++++++++++++++++---------------------
- 1 file changed, 24 insertions(+), 22 deletions(-)
+ fs/btrfs/free-space-cache.c | 13 ++++++++-----
+ 1 file changed, 8 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-index 84fb94e78a8f..5f4b9ac99ae6 100644
---- a/fs/btrfs/space-info.c
-+++ b/fs/btrfs/space-info.c
-@@ -561,10 +561,10 @@ static void shrink_delalloc(struct btrfs_fs_info *fs_info,
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index fd6ddd6b8165..324540993fc5 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -1299,11 +1299,14 @@ int btrfs_wait_cache_io(struct btrfs_trans_handle *trans,
  }
  
  /**
-- * maybe_commit_transaction - possibly commit the transaction if its ok to
-- * @root - the root we're allocating for
-- * @bytes - the number of bytes we want to reserve
-- * @force - force the commit
-+ * Possibly commit the transaction if its ok to
+- * __btrfs_write_out_cache - write out cached info to an inode
+- * @root - the root the inode belongs to
+- * @ctl - the free space cache we are going to write out
+- * @block_group - the block_group for this cache if it belongs to a block_group
+- * @trans - the trans handle
++ * Write out cached info to an inode
 + *
-+ * @fs_info:    the filesystem
-+ * @space_info: space_info we are checking for commit, either data or metadata
++ * @root:        root the inode belongs to
++ * @inode:       freespace inode we are writing out
++ * @ctl:         the free space cache we are going to write out
++ * @block_group: the block_group for this cache if it belongs to a block_group
++ * @io_ctl:      holds context for the io
++ * @trans:       the trans handle
   *
-  * This will check to make sure that committing the transaction will actually
-  * get us somewhere and then commit the transaction if it does.  Otherwise it
-@@ -1216,10 +1216,10 @@ static void wait_reserve_ticket(struct btrfs_fs_info *fs_info,
- 
- /**
-  * handle_reserve_ticket - do the appropriate flushing and waiting for a ticket
-- * @fs_info - the fs
-- * @space_info - the space_info for the reservation
-- * @ticket - the ticket for the reservation
-- * @flush - how much we can flush
-+ * @fs_info:    the filesystem
-+ * @space_info: the space_info for the reservation
-+ * @ticket:     the ticket for the reservation
-+ * @flush:      how much we can flush
-  *
-  * This does the work of figuring out how to flush for the ticket, waiting for
-  * the reservation, and returning the appropriate error if there is one.
-@@ -1296,11 +1296,12 @@ static inline bool is_normal_flushing(enum btrfs_reserve_flush_enum flush)
- }
- 
- /**
-- * reserve_metadata_bytes - try to reserve bytes from the block_rsv's space
-- * @root - the root we're allocating for
-- * @space_info - the space info we want to allocate from
-- * @orig_bytes - the number of bytes we want
-- * @flush - whether or not we can flush to make our reservation
-+ * Tries to reserve bytes from the block_rsv's space
-+ *
-+ * @fs_info:    the filesystem
-+ * @space_info: the space info we want to allocate from
-+ * @orig_bytes: the number of bytes we want
-+ * @flush:      whether or not we can flush to make our reservation
-  *
-  * This will reserve orig_bytes number of bytes from the space info associated
-  * with the block_rsv.  If there is not enough space it will make an attempt to
-@@ -1407,11 +1408,12 @@ static int __reserve_bytes(struct btrfs_fs_info *fs_info,
- }
- 
- /**
-- * reserve_metadata_bytes - try to reserve bytes from the block_rsv's space
-- * @root - the root we're allocating for
-- * @block_rsv - the block_rsv we're allocating for
-- * @orig_bytes - the number of bytes we want
-- * @flush - whether or not we can flush to make our reservation
-+ * Tries to reserve metadata bytes from the block_rsv's space
-+ *
-+ * @root:       the root we're allocating for
-+ * @block_rsv:  the block_rsv we're allocating for
-+ * @orig_bytes: the number of bytes we want
-+ * @flush:      whether or not we can flush to make our reservation
-  *
-  * This will reserve orig_bytes number of bytes from the space info associated
-  * with the block_rsv.  If there is not enough space it will make an attempt to
-@@ -1449,10 +1451,10 @@ int btrfs_reserve_metadata_bytes(struct btrfs_root *root,
- }
- 
- /**
-- * btrfs_reserve_data_bytes - try to reserve data bytes for an allocation
-- * @fs_info - the filesystem
-- * @bytes - the number of bytes we need
-- * @flush - how we are allowed to flush
-+ * Tries to reserve data bytes for an allocation
-+ * @fs_info: the filesystem
-+ * @bytes:   the number of bytes we need
-+ * @flush:   how we are allowed to flush
-  *
-  * This will reserve bytes from the data space info.  If there is not enough
-  * space then we will attempt to flush space as specified by flush.
+  * This function writes out a free space cache struct to disk for quick recovery
+  * on mount.  This will return 0 if it was successful in writing the cache out,
 -- 
 2.25.1
 

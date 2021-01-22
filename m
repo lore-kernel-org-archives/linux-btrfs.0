@@ -7,37 +7,37 @@ X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4A348C433E0
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 10:06:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EC8CBC433E6
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 10:06:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 040CF235F7
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 10:06:08 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id AE7F8239D1
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 10:06:13 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727753AbhAVKFl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 22 Jan 2021 05:05:41 -0500
-Received: from mx2.suse.de ([195.135.220.15]:58226 "EHLO mx2.suse.de"
+        id S1727176AbhAVKFz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 22 Jan 2021 05:05:55 -0500
+Received: from mx2.suse.de ([195.135.220.15]:58352 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727145AbhAVKAS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Jan 2021 05:00:18 -0500
+        id S1727754AbhAVKA3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 22 Jan 2021 05:00:29 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
         t=1611309488; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=IG8bt/5g4V7tjXbH/cJ15EkYh/Nru/U73K4SJwV6GMY=;
-        b=lsEm9dUYB4hRWFbHmJLE/VCkCqe5YFtaQQ742qvgYRXrwtzIdRQ139YsvUdjS85T/hfEU8
-        MQMxsoFxl2wXEeYrYfe8IONcF325Q/xKjeT1K9Dpi3TMoE7Hh8H84rvLBhWMJBzkL/c2dN
-        so5Lf/YbqBlIeHcBsg32ZfMD+sRpUtw=
+        bh=0wcvDCJxwp3C/EaUlW7l1QvCczkH+pgjDYBkbIqRvs8=;
+        b=KQzGFkjbA4GdWuLE80Thi1EYOs/LlTUT5gVL0+V74sdmBlvlj0OG1wllhxpJV65wyoa0/L
+        C2ZgN/rHlWrxm8zw8pwtIIBWuqaJWa9I8+ggUrLBe+kzZ3iJxC5Oo8G0Yo6QD7Z1DdiKpl
+        EEjSX1gQgD8ny6JF6WfZAO5AKgwLFNE=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 1FE99AF7A;
+        by mx2.suse.de (Postfix) with ESMTP id CA795B7AE;
         Fri, 22 Jan 2021 09:58:08 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v3 05/14] btrfs: Improve parameter description for __btrfs_write_out_cache
-Date:   Fri, 22 Jan 2021 11:57:56 +0200
-Message-Id: <20210122095805.620458-6-nborisov@suse.com>
+Subject: [PATCH v3 08/14] btrfs: Fix description format of fs_info parameter of btrfs_wait_on_delayed_iputs
+Date:   Fri, 22 Jan 2021 11:57:59 +0200
+Message-Id: <20210122095805.620458-9-nborisov@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <20210122095805.620458-1-nborisov@suse.com>
 References: <20210122095805.620458-1-nborisov@suse.com>
@@ -47,43 +47,29 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Fixes following W=1 warnings:
-fs/btrfs/free-space-cache.c:1317: warning: Function parameter or member 'root' not described in '__btrfs_write_out_cache'
-fs/btrfs/free-space-cache.c:1317: warning: Function parameter or member 'inode' not described in '__btrfs_write_out_cache'
-fs/btrfs/free-space-cache.c:1317: warning: Function parameter or member 'ctl' not described in '__btrfs_write_out_cache'
-fs/btrfs/free-space-cache.c:1317: warning: Function parameter or member 'block_group' not described in '__btrfs_write_out_cache'
-fs/btrfs/free-space-cache.c:1317: warning: Function parameter or member 'io_ctl' not described in '__btrfs_write_out_cache'
-fs/btrfs/free-space-cache.c:1317: warning: Function parameter or member 'trans' not described in '__btrfs_write_out_cache'
+Fixes fs/btrfs/inode.c:3101: warning: Function parameter or member 'fs_info' not described in 'btrfs_wait_on_delayed_iputs'
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/free-space-cache.c | 13 ++++++++-----
- 1 file changed, 8 insertions(+), 5 deletions(-)
+ fs/btrfs/inode.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index fd6ddd6b8165..324540993fc5 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -1299,11 +1299,14 @@ int btrfs_wait_cache_io(struct btrfs_trans_handle *trans,
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 5906b4267204..72b892251764 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3088,8 +3088,9 @@ void btrfs_run_delayed_iputs(struct btrfs_fs_info *fs_info)
  }
  
  /**
-- * __btrfs_write_out_cache - write out cached info to an inode
-- * @root - the root the inode belongs to
-- * @ctl - the free space cache we are going to write out
-- * @block_group - the block_group for this cache if it belongs to a block_group
-- * @trans - the trans handle
-+ * Write out cached info to an inode
+- * btrfs_wait_on_delayed_iputs - wait on the delayed iputs to be done running
+- * @fs_info - the fs_info for this fs
++ * Wait for flushing all delayed iputs
 + *
-+ * @root:        root the inode belongs to
-+ * @inode:       freespace inode we are writing out
-+ * @ctl:         the free space cache we are going to write out
-+ * @block_group: the block_group for this cache if it belongs to a block_group
-+ * @io_ctl:      holds context for the io
-+ * @trans:       the trans handle
++ * @fs_info:  the fs_info for this fs
+  * @return - EINTR if we were killed, 0 if nothing's pending
   *
-  * This function writes out a free space cache struct to disk for quick recovery
-  * on mount.  This will return 0 if it was successful in writing the cache out,
+  * This will wait on any delayed iputs that are currently running with KILLABLE
 -- 
 2.25.1
 

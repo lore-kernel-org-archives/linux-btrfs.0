@@ -5,75 +5,75 @@ X-Spam-Level:
 X-Spam-Status: No, score=-15.5 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
 	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_SANE_1 autolearn=unavailable autolearn_force=no version=3.4.0
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F33F9C433DB
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 15:13:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E887FC433E0
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 15:23:50 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id C520823AAC
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 15:13:39 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id ACC55239D4
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 15:23:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728658AbhAVPIq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 22 Jan 2021 10:08:46 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60338 "EHLO
+        id S1729135AbhAVPXN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 22 Jan 2021 10:23:13 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35378 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729130AbhAVPIN (ORCPT
+        with ESMTP id S1728822AbhAVPWx (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Jan 2021 10:08:13 -0500
-Received: from mail-qt1-x831.google.com (mail-qt1-x831.google.com [IPv6:2607:f8b0:4864:20::831])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2B121C0613D6
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jan 2021 07:07:22 -0800 (PST)
-Received: by mail-qt1-x831.google.com with SMTP id c12so4297591qtv.5
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jan 2021 07:07:22 -0800 (PST)
+        Fri, 22 Jan 2021 10:22:53 -0500
+Received: from mail-qt1-x832.google.com (mail-qt1-x832.google.com [IPv6:2607:f8b0:4864:20::832])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 681AFC061786
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jan 2021 07:22:13 -0800 (PST)
+Received: by mail-qt1-x832.google.com with SMTP id l23so1838135qtq.13
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jan 2021 07:22:13 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=subject:to:cc:references:from:message-id:date:user-agent
          :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=h7y5VP0K5MP87hjBGawgiY2aXlKSQ1GPscxCxR0xq8k=;
-        b=E7RGSxzKjmDNyuwC1qULuWKGDFIrR3CBgCmRIGdLi2xXdAtcvq+TeTDgjbxE6Dm1zS
-         sQen7ZLxlK8eyvgXx33snPV3YgoKEOJRyhtDSIQ8m+egv+WjbeMQdJuNEEjqYszt7vgy
-         /Si6pogrmy9ZCo1iltNKKkXI3iLZTGZSKEU3Jhs8FMw+Xv6Iquff8C1h6sSv+MHFqKh7
-         eCcMTSe1V8Pfk4LA8MmtfLd1JYx7UzGWB6fAVWPXzqPMXqaEEU9XZbTFyS+LHmg6s+Fp
-         2QM0HYeWaZ3zA5O7GRvgX+k5PS0MNGKTYZY268TrSS/F9meOyBmGO/jv6w+nZfGNL1n0
-         JXWA==
+        bh=BqhXopyE4rtPd5KrmZg6pH5XHRM2IdVRjQEZffnumWM=;
+        b=xBg9h5h1NpzLDN7C3n1pLeOXONFkjo+6CjyfpieNjvdQWTOlMDf57lko3Wcg5OE0K7
+         dBSt5237zMctB6QhjldJfqYH7inB51DOMclnA0Ttr6LqC3Gs79hebnkX6StBvGHzjqs1
+         v5dF7tApO1wOrfmkyy4Slrq62sekTkHByXpVnm0vtoyu8TFx6qMObJxR46yXAgX6q2d9
+         BZyJzG25kdqduUqP8GWIwvVcFgo7BDGQIzAZe+0jWD5YsYTEfq1rfM6CsHjpvxXekWJI
+         FljR40KlY4B1n1u1Mv0WVoFruS/vhU13SPmfYU/KF2JVzYhK5VEtW7KsYz5ic2iPi5Rc
+         ZeGg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:subject:to:cc:references:from:message-id:date
          :user-agent:mime-version:in-reply-to:content-language
          :content-transfer-encoding;
-        bh=h7y5VP0K5MP87hjBGawgiY2aXlKSQ1GPscxCxR0xq8k=;
-        b=UE3vuiCEFQ8pAz6kq4ebE5kK9+WHudsNWs6CMnnKMdgi/HGp8QRHGnoakaYEU2+a6y
-         eG1aH6ZF4/fGbY3ub/lcJXFtj9Qw48Uyu+e0843tsADaRR3TmavmW0cs+JJzjV/tCxzy
-         s2tOfDQwssqoShTZJpswAQnlksvodiEIK6HBCp7OXcJdKgeIL6x07BLIik2o+dn+2GXv
-         uHp+u8H2Cr/OOq1heerOLOK8JiCQaR3DoXqIUqZUrCbBnP2y9ZmvuBqz5WP/ZFDPU7cb
-         uQKBrgGKPLC78FTrCvdIEwTei7C4gXn0i7/hZYnKe8qUJmxh4YeGIaam4zGnCsii7IPq
-         Suow==
-X-Gm-Message-State: AOAM533lpoDvLq+mpCSshRzZG4pOaGBNY0tflFFRYstY+IkpSHeX7OIN
-        iJPjRhQpErOkn3Z9Sz+jEy37bg==
-X-Google-Smtp-Source: ABdhPJz0J+RRFF75WbKsaQzbGU9WhpHqTk9CXrZkY3DuR7pS5GSgxU5ycV0tEhiEpI4/yeQOnjy9vw==
-X-Received: by 2002:ac8:c8c:: with SMTP id n12mr395137qti.339.1611328041245;
-        Fri, 22 Jan 2021 07:07:21 -0800 (PST)
+        bh=BqhXopyE4rtPd5KrmZg6pH5XHRM2IdVRjQEZffnumWM=;
+        b=ChXPbfc8FYFfKFKKfJPBO4frajW8SM9vwUrlSgUS0VPllQ7pEuOETgXv8uf23z+RNk
+         YzK7HGMpOZMEvAqHcnJSvh7G+7U5qNN1zIhGBfALeLWl7wO008Csh9ZH1X0iZv/gn6Qy
+         yvkuUWfBdDpYD92DUZeOZIDmUMjk25TYpsC6Vk9XgRkd+d46txDeYY1RefiztqocoPSI
+         fEHqDFpS6B58QonUcyKf3Gg/M6ChQfrmnuJrnoZkOBsdn8cZbrHsuMq0O7Xixl+qfX8E
+         oNXcok+M6XsKpeGHhqBvf54u3z59GLHkqf28mNSvaj0Vysfzdqv1cgvE8qM84RY/dwp1
+         I/Bw==
+X-Gm-Message-State: AOAM533AfY3DHkC/ilK1Fcmj7tSajk2HpW8NyW2sNHix/0/Ca29YJdSX
+        4B5MnOmUPyCIks67BuNTi8QnlQ==
+X-Google-Smtp-Source: ABdhPJxn8gimxcP92BtQu/c4EihPdHQW/NUJY5Oj0tSEnTCDDmGAMuaFmJaaRR21W3LZdz6dFL8NJg==
+X-Received: by 2002:ac8:24ee:: with SMTP id t43mr4669999qtt.215.1611328932588;
+        Fri, 22 Jan 2021 07:22:12 -0800 (PST)
 Received: from [192.168.1.45] (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id u63sm6330756qkc.115.2021.01.22.07.07.20
+        by smtp.gmail.com with ESMTPSA id o75sm417446qke.77.2021.01.22.07.22.11
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 22 Jan 2021 07:07:20 -0800 (PST)
-Subject: Re: [PATCH v13 12/42] btrfs: calculate allocation offset for
- conventional zones
+        Fri, 22 Jan 2021 07:22:11 -0800 (PST)
+Subject: Re: [PATCH v13 22/42] btrfs: split ordered extent when bio is sent
 To:     Naohiro Aota <naohiro.aota@wdc.com>, linux-btrfs@vger.kernel.org,
         dsterba@suse.com
 Cc:     hare@suse.com, linux-fsdevel@vger.kernel.org,
         Jens Axboe <axboe@kernel.dk>,
         Christoph Hellwig <hch@infradead.org>,
-        "Darrick J. Wong" <darrick.wong@oracle.com>
+        "Darrick J. Wong" <darrick.wong@oracle.com>,
+        kernel test robot <lkp@intel.com>
 References: <cover.1611295439.git.naohiro.aota@wdc.com>
- <617bb7d3a62aa5702bbf31f47ec67fbc56576b30.1611295439.git.naohiro.aota@wdc.com>
+ <25b86d9571b1af386f1711d0d0ae626ae6a86b35.1611295439.git.naohiro.aota@wdc.com>
 From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <8f7fbbfa-e100-14a4-fe56-ad2b017ba9d3@toxicpanda.com>
-Date:   Fri, 22 Jan 2021 10:07:19 -0500
+Message-ID: <e265540c-9613-9473-f7e6-0f55d455b18e@toxicpanda.com>
+Date:   Fri, 22 Jan 2021 10:22:10 -0500
 User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0)
  Gecko/20100101 Thunderbird/78.6.1
 MIME-Version: 1.0
-In-Reply-To: <617bb7d3a62aa5702bbf31f47ec67fbc56576b30.1611295439.git.naohiro.aota@wdc.com>
+In-Reply-To: <25b86d9571b1af386f1711d0d0ae626ae6a86b35.1611295439.git.naohiro.aota@wdc.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
 Content-Transfer-Encoding: 7bit
@@ -82,184 +82,115 @@ List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 On 1/22/21 1:21 AM, Naohiro Aota wrote:
-> Conventional zones do not have a write pointer, so we cannot use it to
-> determine the allocation offset if a block group contains a conventional
-> zone.
+> For a zone append write, the device decides the location the data is
+> written to. Therefore we cannot ensure that two bios are written
+> consecutively on the device. In order to ensure that a ordered extent maps
+> to a contiguous region on disk, we need to maintain a "one bio == one
+> ordered extent" rule.
 > 
-> But instead, we can consider the end of the last allocated extent in the
-> block group as an allocation offset.
+> This commit implements the splitting of an ordered extent and extent map
+> on bio submission to adhere to the rule.
 > 
-> For new block group, we cannot calculate the allocation offset by
-> consulting the extent tree, because it can cause deadlock by taking extent
-> buffer lock after chunk mutex (which is already taken in
-> btrfs_make_block_group()). Since it is a new block group, we can simply set
-> the allocation offset to 0, anyway.
-> 
+> [testbot] made extract_ordered_extent static
+> Reported-by: kernel test robot <lkp@intel.com>
 > Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 > ---
->   fs/btrfs/block-group.c |  4 +-
->   fs/btrfs/zoned.c       | 99 +++++++++++++++++++++++++++++++++++++++---
->   fs/btrfs/zoned.h       |  4 +-
->   3 files changed, 98 insertions(+), 9 deletions(-)
+>   fs/btrfs/inode.c        | 95 +++++++++++++++++++++++++++++++++++++++++
+>   fs/btrfs/ordered-data.c | 85 ++++++++++++++++++++++++++++++++++++
+>   fs/btrfs/ordered-data.h |  2 +
+>   3 files changed, 182 insertions(+)
 > 
-> diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-> index 1c5ed46d376c..7c210aa5f25f 100644
-> --- a/fs/btrfs/block-group.c
-> +++ b/fs/btrfs/block-group.c
-> @@ -1843,7 +1843,7 @@ static int read_one_block_group(struct btrfs_fs_info *info,
->   			goto error;
->   	}
->   
-> -	ret = btrfs_load_block_group_zone_info(cache);
-> +	ret = btrfs_load_block_group_zone_info(cache, false);
->   	if (ret) {
->   		btrfs_err(info, "zoned: failed to load zone info of bg %llu",
->   			  cache->start);
-> @@ -2138,7 +2138,7 @@ int btrfs_make_block_group(struct btrfs_trans_handle *trans, u64 bytes_used,
->   	if (btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE))
->   		cache->needs_free_space = 1;
->   
-> -	ret = btrfs_load_block_group_zone_info(cache);
-> +	ret = btrfs_load_block_group_zone_info(cache, true);
->   	if (ret) {
->   		btrfs_put_block_group(cache);
->   		return ret;
-> diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-> index 22c0665ee816..1b85a18d8573 100644
-> --- a/fs/btrfs/zoned.c
-> +++ b/fs/btrfs/zoned.c
-> @@ -930,7 +930,68 @@ int btrfs_ensure_empty_zones(struct btrfs_device *device, u64 start, u64 size)
->   	return 0;
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 2e1c1f37b3f6..ab97d4349515 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -2217,6 +2217,92 @@ static blk_status_t btrfs_submit_bio_start(struct inode *inode, struct bio *bio,
+>   	return btrfs_csum_one_bio(BTRFS_I(inode), bio, 0, 0);
 >   }
 >   
-> -int btrfs_load_block_group_zone_info(struct btrfs_block_group *cache)
-> +/*
-> + * Calculate an allocation pointer from the extent allocation information
-> + * for a block group consist of conventional zones. It is pointed to the
-> + * end of the last allocated extent in the block group as an allocation
-> + * offset.
-> + */
-> +static int calculate_alloc_pointer(struct btrfs_block_group *cache,
-> +				   u64 *offset_ret)
+> +static blk_status_t extract_ordered_extent(struct btrfs_inode *inode,
+> +					   struct bio *bio, loff_t file_offset)
 > +{
-> +	struct btrfs_fs_info *fs_info = cache->fs_info;
-> +	struct btrfs_root *root = fs_info->extent_root;
-> +	struct btrfs_path *path;
-> +	struct btrfs_key key;
-> +	struct btrfs_key found_key;
-> +	int ret;
-> +	u64 length;
+> +	struct btrfs_ordered_extent *ordered;
+> +	struct extent_map *em = NULL, *em_new = NULL;
+> +	struct extent_map_tree *em_tree = &inode->extent_tree;
+> +	u64 start = (u64)bio->bi_iter.bi_sector << SECTOR_SHIFT;
+> +	u64 len = bio->bi_iter.bi_size;
+> +	u64 end = start + len;
+> +	u64 ordered_end;
+> +	u64 pre, post;
+> +	int ret = 0;
 > +
-> +	path = btrfs_alloc_path();
-> +	if (!path)
-> +		return -ENOMEM;
+> +	ordered = btrfs_lookup_ordered_extent(inode, file_offset);
+> +	if (WARN_ON_ONCE(!ordered))
+> +		return BLK_STS_IOERR;
 > +
-> +	key.objectid = cache->start + cache->length;
-> +	key.type = 0;
-> +	key.offset = 0;
-> +
-> +	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
-> +	/* We should not find the exact match */
-> +	if (!ret)
-> +		ret = -EUCLEAN;
-> +	if (ret < 0)
+> +	/* No need to split */
+> +	if (ordered->disk_num_bytes == len)
 > +		goto out;
 > +
-> +	ret = btrfs_previous_extent_item(root, path, cache->start);
-> +	if (ret) {
-> +		if (ret == 1) {
-> +			ret = 0;
-> +			*offset_ret = 0;
-> +		}
+> +	/* We cannot split once end_bio'd ordered extent */
+> +	if (WARN_ON_ONCE(ordered->bytes_left != ordered->disk_num_bytes)) {
+> +		ret = -EINVAL;
 > +		goto out;
 > +	}
 > +
-> +	btrfs_item_key_to_cpu(path->nodes[0], &found_key, path->slots[0]);
-> +
-> +	if (found_key.type == BTRFS_EXTENT_ITEM_KEY)
-> +		length = found_key.offset;
-> +	else
-> +		length = fs_info->nodesize;
-> +
-> +	if (!(found_key.objectid >= cache->start &&
-> +	       found_key.objectid + length <= cache->start + cache->length)) {
-> +		ret = -EUCLEAN;
+> +	/* We cannot split a compressed ordered extent */
+> +	if (WARN_ON_ONCE(ordered->disk_num_bytes != ordered->num_bytes)) {
+> +		ret = -EINVAL;
 > +		goto out;
 > +	}
-> +	*offset_ret = found_key.objectid + length - cache->start;
-> +	ret = 0;
 > +
-> +out:
-> +	btrfs_free_path(path);
-> +	return ret;
-> +}
+> +	/* We cannot split a waited ordered extent */
+> +	if (WARN_ON_ONCE(wq_has_sleeper(&ordered->wait))) {
+> +		ret = -EINVAL;
+> +		goto out;
+> +	}
+
+How is this not a problem?  We can have any arbitrary waiter on an ordered 
+extent at any given time?  Write to an area with memory pressure and then fsync 
+immediately so we have to wait on an ordered extent that may need to be split, 
+bam you get this warning and fail to write out.  This seems like a bad side effect.
+
 > +
-> +int btrfs_load_block_group_zone_info(struct btrfs_block_group *cache, bool new)
->   {
->   	struct btrfs_fs_info *fs_info = cache->fs_info;
->   	struct extent_map_tree *em_tree = &fs_info->mapping_tree;
-> @@ -944,6 +1005,7 @@ int btrfs_load_block_group_zone_info(struct btrfs_block_group *cache)
->   	int i;
->   	unsigned int nofs_flag;
->   	u64 *alloc_offsets = NULL;
-> +	u64 last_alloc = 0;
->   	u32 num_sequential = 0, num_conventional = 0;
->   
->   	if (!btrfs_is_zoned(fs_info))
-> @@ -1042,11 +1104,30 @@ int btrfs_load_block_group_zone_info(struct btrfs_block_group *cache)
->   
->   	if (num_conventional > 0) {
->   		/*
-> -		 * Since conventional zones do not have a write pointer, we
-> -		 * cannot determine alloc_offset from the pointer
-> +		 * Avoid calling calculate_alloc_pointer() for new BG. It
-> +		 * is no use for new BG. It must be always 0.
-> +		 *
-> +		 * Also, we have a lock chain of extent buffer lock ->
-> +		 * chunk mutex.  For new BG, this function is called from
-> +		 * btrfs_make_block_group() which is already taking the
-> +		 * chunk mutex. Thus, we cannot call
-> +		 * calculate_alloc_pointer() which takes extent buffer
-> +		 * locks to avoid deadlock.
->   		 */
-> -		ret = -EINVAL;
-> -		goto out;
-> +		if (new) {
-> +			cache->alloc_offset = 0;
-> +			goto out;
-> +		}
-> +		ret = calculate_alloc_pointer(cache, &last_alloc);
-> +		if (ret || map->num_stripes == num_conventional) {
-> +			if (!ret)
-> +				cache->alloc_offset = last_alloc;
-> +			else
-> +				btrfs_err(fs_info,
-> +			"zoned: failed to determine allocation offset of bg %llu",
-> +					  cache->start);
-> +			goto out;
-> +		}
->   	}
->   
->   	switch (map->type & BTRFS_BLOCK_GROUP_PROFILE_MASK) {
-> @@ -1068,6 +1149,14 @@ int btrfs_load_block_group_zone_info(struct btrfs_block_group *cache)
->   	}
->   
->   out:
-> +	/* An extent is allocated after the write pointer */
-> +	if (num_conventional && last_alloc > cache->alloc_offset) {
-> +		btrfs_err(fs_info,
-> +			  "zoned: got wrong write pointer in BG %llu: %llu > %llu",
-> +			  logical, last_alloc, cache->alloc_offset);
+> +	ordered_end = ordered->disk_bytenr + ordered->disk_num_bytes;
+> +	/* bio must be in one ordered extent */
+> +	if (WARN_ON_ONCE(start < ordered->disk_bytenr || end > ordered_end)) {
+> +		ret = -EINVAL;
+> +		goto out;
+> +	}
+> +
+> +	/* Checksum list should be empty */
+> +	if (WARN_ON_ONCE(!list_empty(&ordered->list))) {
+> +		ret = -EINVAL;
+> +		goto out;
+> +	}
+> +
+> +	pre = start - ordered->disk_bytenr;
+> +	post = ordered_end - end;
+> +
+> +	ret = btrfs_split_ordered_extent(ordered, pre, post);
+> +	if (ret)
+> +		goto out;
+> +
+> +	read_lock(&em_tree->lock);
+> +	em = lookup_extent_mapping(em_tree, ordered->file_offset, len);
+> +	if (!em) {
+> +		read_unlock(&em_tree->lock);
 > +		ret = -EIO;
+> +		goto out;
 > +	}
+> +	read_unlock(&em_tree->lock);
 > +
+> +	ASSERT(!test_bit(EXTENT_FLAG_COMPRESSED, &em->flags));
+> +	em_new = create_io_em(inode, em->start + pre, len,
+> +			      em->start + pre, em->block_start + pre, len,
+> +			      len, len, BTRFS_COMPRESS_NONE,
+> +			      BTRFS_ORDERED_REGULAR);
 
-Sorry I didn't notice this on the last go around, but you could conceivably eat 
-the ret value here, this should probably be
-
-if (!ret && num_conventional && last_alloc > cache->alloc_offset) {
-}
-
+This bit confuses me, the io_em is just so we have a mapping to an area that's 
+being written to, and this is created at ordered extent time.  I get why we need 
+to split up the ordered extent, but the existing io_em should be fine, right? 
 Thanks,
 
 Josef

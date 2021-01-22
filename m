@@ -7,90 +7,72 @@ X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3FAB3C433DB
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 10:07:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 660B5C433E0
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 10:15:11 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id DCFD1235F7
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 10:07:57 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 36972239EF
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 10:15:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727795AbhAVKHU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 22 Jan 2021 05:07:20 -0500
-Received: from mx2.suse.de ([195.135.220.15]:58388 "EHLO mx2.suse.de"
+        id S1727791AbhAVKOx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 22 Jan 2021 05:14:53 -0500
+Received: from mx2.suse.de ([195.135.220.15]:56136 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727261AbhAVKAo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Jan 2021 05:00:44 -0500
+        id S1727742AbhAVJ7I (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 22 Jan 2021 04:59:08 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1611309490; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
+        t=1611309487; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=BkWZYUAG7HI4cAcD4oEPJaJd37Jy2TIv0AltZTE5yoQ=;
-        b=sf15IOY1CdIxdH6MYVR75U8e3D/VIxakhZ3g+YlJdTB20eOmDColwvKpacsCYP6ei/qRhW
-        LBaEc17mFtS/A23w1o++bBQAMdUt+1KBFFKo8Lc4fSDZOzr4rr/tmZPe4pQr47tgs4Ig+E
-        hiahxIOjUWnGhe/xJHCHlQUfsEqSoaw=
+        bh=o2vvEqnBTmuFupWNIga98trZCfyZ8zEMUa3jTuOvNIY=;
+        b=CFcNEt5wgK+b3luHLNXqlzx3Q/J72LIIn0jfUqNP+dzhywtS67h2c/tdQRzyiXQliLN07h
+        olLoDgk4j8WO/grqpcKvM53izVHOaW9KWSPA1vZTwB/Wp955FUhDGZXvxcdGUXW0YqAUBm
+        fqJJOOtbf+QGjPaUM/v03gz6CGltByk=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id F1EAFB805;
-        Fri, 22 Jan 2021 09:58:09 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 34278AC45;
+        Fri, 22 Jan 2021 09:58:07 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v3 13/14] lib/zstd: Convert constants to defines
-Date:   Fri, 22 Jan 2021 11:58:04 +0200
-Message-Id: <20210122095805.620458-14-nborisov@suse.com>
+Subject: [PATCH v3 01/14] btrfs: Document modified parameter of add_extent_mapping
+Date:   Fri, 22 Jan 2021 11:57:52 +0200
+Message-Id: <20210122095805.620458-2-nborisov@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <20210122095805.620458-1-nborisov@suse.com>
 References: <20210122095805.620458-1-nborisov@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Those constants are really used internally by zstd and including
-linux/zstd.h into users results in the following warnings:
-
-In file included from fs/btrfs/zstd.c:19:
-./include/linux/zstd.h:798:21: warning: ‘ZSTD_skippableHeaderSize’ defined but not used [-Wunused-const-variable=]
-  798 | static const size_t ZSTD_skippableHeaderSize = 8;
-      |                     ^~~~~~~~~~~~~~~~~~~~~~~~
-./include/linux/zstd.h:796:21: warning: ‘ZSTD_frameHeaderSize_max’ defined but not used [-Wunused-const-variable=]
-  796 | static const size_t ZSTD_frameHeaderSize_max = ZSTD_FRAMEHEADERSIZE_MAX;
-      |                     ^~~~~~~~~~~~~~~~~~~~~~~~
-./include/linux/zstd.h:795:21: warning: ‘ZSTD_frameHeaderSize_min’ defined but not used [-Wunused-const-variable=]
-  795 | static const size_t ZSTD_frameHeaderSize_min = ZSTD_FRAMEHEADERSIZE_MIN;
-      |                     ^~~~~~~~~~~~~~~~~~~~~~~~
-./include/linux/zstd.h:794:21: warning: ‘ZSTD_frameHeaderSize_prefix’ defined but not used [-Wunused-const-variable=]
-  794 | static const size_t ZSTD_frameHeaderSize_prefix = 5;
-
-So fix those warnings by turning the constants into defines.
+Fixes fs/btrfs/extent_map.c:399: warning: Function parameter or member
+'modified' not described in 'add_extent_mapping'
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- include/linux/zstd.h | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ fs/btrfs/extent_map.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
 
-diff --git a/include/linux/zstd.h b/include/linux/zstd.h
-index 249575e2485f..e87f78c9b19c 100644
---- a/include/linux/zstd.h
-+++ b/include/linux/zstd.h
-@@ -791,11 +791,11 @@ size_t ZSTD_DStreamOutSize(void);
- /* for static allocation */
- #define ZSTD_FRAMEHEADERSIZE_MAX 18
- #define ZSTD_FRAMEHEADERSIZE_MIN  6
--static const size_t ZSTD_frameHeaderSize_prefix = 5;
--static const size_t ZSTD_frameHeaderSize_min = ZSTD_FRAMEHEADERSIZE_MIN;
--static const size_t ZSTD_frameHeaderSize_max = ZSTD_FRAMEHEADERSIZE_MAX;
-+#define ZSTD_frameHeaderSize_prefix 5
-+#define ZSTD_frameHeaderSize_min ZSTD_FRAMEHEADERSIZE_MIN
-+#define ZSTD_frameHeaderSize_max ZSTD_FRAMEHEADERSIZE_MAX
- /* magic number + skippable frame length */
--static const size_t ZSTD_skippableHeaderSize = 8;
-+#define ZSTD_skippableHeaderSize 8
+diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
+index bd6229fb2b6f..c540a37cbdb2 100644
+--- a/fs/btrfs/extent_map.c
++++ b/fs/btrfs/extent_map.c
+@@ -385,9 +385,12 @@ static void extent_map_device_clear_bits(struct extent_map *em, unsigned bits)
+ }
  
- 
- /*-*************************************
+ /**
+- * add_extent_mapping - add new extent map to the extent tree
++ * Add new extent map to the extent tree
++ *
+  * @tree:	tree to insert new map in
+  * @em:		map to insert
++ * @modified:	bool indicating whether the given @em should be added to the
++ *	        modified list, which indicates the extent needs to be logged
+  *
+  * Insert @em into @tree or perform a simple forward/backward merge with
+  * existing mappings.  The extent_map struct passed in will be inserted
 -- 
 2.25.1
 

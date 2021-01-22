@@ -5,58 +5,58 @@ X-Spam-Level:
 X-Spam-Status: No, score=-16.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 28FB9C433E6
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 06:25:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0287FC433E9
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 06:26:12 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id E5244235FF
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 06:25:52 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B7781238D7
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 06:26:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726101AbhAVGZU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 22 Jan 2021 01:25:20 -0500
-Received: from esa1.hgst.iphmx.com ([68.232.141.245]:51031 "EHLO
+        id S1726830AbhAVGZz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 22 Jan 2021 01:25:55 -0500
+Received: from esa1.hgst.iphmx.com ([68.232.141.245]:51039 "EHLO
         esa1.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726134AbhAVGY6 (ORCPT
+        with ESMTP id S1726810AbhAVGZm (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Jan 2021 01:24:58 -0500
+        Fri, 22 Jan 2021 01:25:42 -0500
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1611296698; x=1642832698;
+  t=1611296741; x=1642832741;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=S9+/RYxer975SEcYFMIh/JyuK33yUpWJ6D9D8jaz4oI=;
-  b=IMZAXN1ARB6eeJKQcOg+KejZS9MLen2viGrYWXsFnLRqcUn74lkeT+2x
-   kEJ8WKlYhvy8cE75oOLLtYYHYA5apxIB2eIgasEDccQJY87KSLN+lLTmZ
-   qiDTY7FquGtfNXdaPU0jrsZRFztllVZ58Ag68Dot33laTxEJPiu01eEAV
-   W1lT38izHCLRKO/EcqpDk3gDP/jwcpJlGzcQdJZiAK6lMNlzSKkSkgmC0
-   p840nefWUE3zaz8rNnlAM1MbO0agsEcuRk4RjUSxyuoLC0gIk2bSTV7Rw
-   xRHihijgOQ6AaYVhDpBWD7/7EnSAEUOnU6l8GfsLKjBrTngFTkNWFKeN3
+  bh=xRZH9KEu1Wn2ThIAvcmBq2KQH7GSQKzuEhsQiBxI9rw=;
+  b=EG83WM93lVwe9ExEmddUskWxewAOXTLkQCHWglSEZ2vhkIHfmde2xsV/
+   gyj4JK7NSeU4Mfhm0/aSizBK1rYL+cnLr1LCCJbZyBw/eyKn5LJYN5iUl
+   HnesRhloiCkgTgWNgKHREQcy/4qKiaa5htFMo9BfnBNHaWOIKIw0lk6Oo
+   u0Id0jrWgOzPk8LORIGUMO9yMN9VEyJM8GXN9Pk+eLFDtesgTn/i5RaIq
+   1BuA9JDIp4MiZevJxd5rWoXIQtDMWRXRuCx2YV0fdsQo28MtlTBThS9zm
+   mCagfiCZ1YbJ24QBVx0tH23uJgJxrnw46u4QOcav0Mt9/7YCJpHyUTXaa
    g==;
-IronPort-SDR: H5uPYE42q2BmK+buIYjVmXOD3yk0AVJYdYGciJ34wScQJV+83oAXC/AlKyLwdKn86+YP0nY5IG
- 45kremn7lAKzNGEdGSF9M5cghIiRkpaTlErpWlAcS8qPGtTKmDuvJLQip5qO7mC0jeMVsSjxcB
- /PRhfwvPnMg8xO160CqmWWofOOx8w1ELL8/BOnMWbTIZop4IJSXdw5MjzM2m/fIGk3fuimw8j5
- GEAHuRpcE6d2dRNQ3d/H4WmkX54QY+03lXIFNeh7yXBZn0V1r2gkBT81pRNyz8Git4s2f75ATK
- Vns=
+IronPort-SDR: 2ecxe+HhYp8GBfG+3BlD1TCxfgJ4lZXt0IzIxuksWUKtC/RlfDwsdMlhpSWyDgefnP17ycYBYD
+ MkzmFaa1PdR3KueUpUu6PC5mVZnaZSqf/SdYLiI9u+pV4iK7L7yAekVsfyvvhrFPWI26PvaPqc
+ qlkWH00rWxQeHUMNADW81uAVxZY38PTkHMLT7lSnxwj7xBUV1CWH71veHM7dqzNeEKdkdCD4w5
+ ZR/iNFDY5rInyUETVLmWqg5RTCL2k5Ju/bTdoSclnbFRN+xytp6rooQ9EIkJJoxW8mm6AJoZWe
+ A3A=
 X-IronPort-AV: E=Sophos;i="5.79,365,1602518400"; 
-   d="scan'208";a="268391964"
+   d="scan'208";a="268391988"
 Received: from uls-op-cesaip02.wdc.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 22 Jan 2021 14:22:37 +0800
-IronPort-SDR: pKFyybzJIXSIkh6n44Y5rKusBwM1nuhz3qP4az138Go2eciYmY9IXYId6tmFMgh3mPrMFWBU7Z
- 6nZJgUHkoPPsgmiRLxpOO72dZn9GD6TUqKCU+3JxCnAZS/NSyWTexMAEvrClV2CrO2pxz0YYtt
- YFTxsITwpZ37yz48hhEaYR28ee8Tm26IXT1fVbUiBxX5wXj1bfAU+tNg2iG8huCloA9XffOdi2
- OjhPvRRrk16JYAa/Fp6vR43iLC8/Pma1UOpxsfksIRP7cLO+lZx0hn4aZgFu+eezPbAI7nicFP
- mWzlY1QF0FcXfhsrYL2Jgjja
+  by ob1.hgst.iphmx.com with ESMTP; 22 Jan 2021 14:22:47 +0800
+IronPort-SDR: oCRXuvnYntCq4oL8C2W63vdZSj7kyzojN61KgLzd4nwgguSJH9dSb59g3IKB+3mqQR1BeU0lfQ
+ zGVRQt1dsUG3cLTrtCj8RAFa8tvtKzpEB3xd7PO/yegz19aLqQ4S6mVX+nucHHO4VnkX2Wkzsx
+ 7MQtot1qocYiUhb4TtzDV8ye3tvPHSbpbgUrpGmBTNKjLVRoyC/6vzp8l5JgLFLAyrULGIfCmd
+ RlA5008J9WV+yDBLD9af0xVuO86pxVOTMzbvOYox/o2YEoM3y0nmuEKjax0MdfdjuO2Ol4prsn
+ qnzdGwmhw9fuAxqJhZ/Nauvu
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 21 Jan 2021 22:05:09 -0800
-IronPort-SDR: UDS69Jse1ee9ppUGBy3B1zkeX7Is60qzsKFoykFqoEuG7adwITNtHp6MicjFyI5ze6+AdBOTCc
- 3D2UY+gZYkhIOD1hIssp7ekoOUZI9Dw1yZSBuWqIHUTELztOfrsKQoUet2OwNqcmlZg7kvuigf
- co7hQh7KQjIhrBxU2eYjkHpsx7Az2bmT+Unr1Rl7n1a4KyH7Z11wIWeu+tlVMw7xYN89yT6muo
- RLHbCd95gBWZfs0ss0qNz1K7SCdy7xOiQEJSvp2eY6Sm5PXenBrVClasDnPofcB9lBZWfgKwYv
- RIA=
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 21 Jan 2021 22:05:19 -0800
+IronPort-SDR: ANtHpyoYxVgsSF4Img3Yx4xsgdIVDe5iC5DC+3cb5QndoVeo48lfGHZ6g1HNRQIfLDYFVbgM0T
+ ETRO3kYQBMSKxvViID3geG7dBXgdyy5CoQ1IYHFtKOh1q1r1iXowRE4dxbbTCA+tXnHSY5oMsO
+ OkT2KzPS1Wwy7c+3DsBRYLwjaKIE4eUuabdmS4ibLfAWp2HQjK+60db6eFj0SIcr8r8AT7TQmn
+ ot/ovxwbE/Uif2qslTz37lZtszlaby+eaonqiFiu4bzjHdqvyjKiLZlNtlMRdv8DQZDIOyXB+i
+ sjQ=
 WDCIronportException: Internal
 Received: from naota.dhcp.fujisawa.hgst.com ([10.149.52.155])
-  by uls-op-cesaip02.wdc.com with ESMTP; 21 Jan 2021 22:22:35 -0800
+  by uls-op-cesaip02.wdc.com with ESMTP; 21 Jan 2021 22:22:46 -0800
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     linux-btrfs@vger.kernel.org, dsterba@suse.com
 Cc:     hare@suse.com, linux-fsdevel@vger.kernel.org,
@@ -64,11 +64,10 @@ Cc:     hare@suse.com, linux-fsdevel@vger.kernel.org,
         Christoph Hellwig <hch@infradead.org>,
         "Darrick J. Wong" <darrick.wong@oracle.com>,
         Naohiro Aota <naohiro.aota@wdc.com>,
-        Anand Jain <anand.jain@oracle.com>,
         Josef Bacik <josef@toxicpanda.com>
-Subject: [PATCH v13 10/42] btrfs: verify device extent is aligned to zone
-Date:   Fri, 22 Jan 2021 15:21:10 +0900
-Message-Id: <2ffd3693e8d81d619345f9cc31070cd98191c84d.1611295439.git.naohiro.aota@wdc.com>
+Subject: [PATCH v13 16/42] btrfs: advance allocation pointer after tree log node
+Date:   Fri, 22 Jan 2021 15:21:16 +0900
+Message-Id: <b8a6081fed384de0e6fc47e2b2257fdb2d77d1a7.1611295439.git.naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.27.0
 In-Reply-To: <cover.1611295439.git.naohiro.aota@wdc.com>
 References: <cover.1611295439.git.naohiro.aota@wdc.com>
@@ -78,41 +77,47 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Add a check in verify_one_dev_extent() to check if a device extent on a
-zoned block device is aligned to the respective zone boundary.
+Since the allocation info of tree log node is not recorded to the extent
+tree, calculate_alloc_pointer() cannot detect the node, so the pointer can
+be over a tree node.
 
-Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
-Reviewed-by: Anand Jain <anand.jain@oracle.com>
+Replaying the log call btrfs_remove_free_space() for each node in the log
+tree. So, advance the pointer after the node.
+
 Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 ---
- fs/btrfs/volumes.c | 14 ++++++++++++++
- 1 file changed, 14 insertions(+)
+ fs/btrfs/free-space-cache.c | 16 +++++++++++++++-
+ 1 file changed, 15 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 27208139d6e2..2d52330f26b5 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -7776,6 +7776,20 @@ static int verify_one_dev_extent(struct btrfs_fs_info *fs_info,
- 		ret = -EUCLEAN;
- 		goto out;
- 	}
-+
-+	if (dev->zone_info) {
-+		u64 zone_size = dev->zone_info->zone_size;
-+
-+		if (!IS_ALIGNED(physical_offset, zone_size) ||
-+		    !IS_ALIGNED(physical_len, zone_size)) {
-+			btrfs_err(fs_info,
-+"zoned: dev extent devid %llu physical offset %llu len %llu is not aligned to device zone",
-+				  devid, physical_offset, physical_len);
-+			ret = -EUCLEAN;
-+			goto out;
-+		}
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 990b0887ea45..1af6eec79f66 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -2616,8 +2616,22 @@ int btrfs_remove_free_space(struct btrfs_block_group *block_group,
+ 	int ret;
+ 	bool re_search = false;
+ 
+-	if (btrfs_is_zoned(block_group->fs_info))
++	if (btrfs_is_zoned(block_group->fs_info)) {
++		/*
++		 * This can happen with conventional zones when replaying
++		 * log. Since the allocation info of tree-log nodes are
++		 * not recorded to the extent-tree, calculate_alloc_pointer()
++		 * failed to advance the allocation pointer after last
++		 * allocated tree log node blocks.
++		 *
++		 * This function is called from
++		 * btrfs_pin_extent_for_log_replay() when replaying the
++		 * log. Advance the pointer not to overwrite the tree-log nodes.
++		 */
++		if (block_group->alloc_offset < offset + bytes)
++			block_group->alloc_offset = offset + bytes;
+ 		return 0;
 +	}
-+
- out:
- 	free_extent_map(em);
- 	return ret;
+ 
+ 	spin_lock(&ctl->tree_lock);
+ 
 -- 
 2.27.0
 

@@ -7,61 +7,61 @@ X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C8452C433E0
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 20:54:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 96F84C433DB
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 20:54:52 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 9E3D523B08
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 20:54:42 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6B2AE23B06
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 20:54:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728395AbhAVUyY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 22 Jan 2021 15:54:24 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49758 "EHLO
+        id S1730320AbhAVUyn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 22 Jan 2021 15:54:43 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49786 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1730906AbhAVUwR (ORCPT
+        with ESMTP id S1730944AbhAVUwX (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Jan 2021 15:52:17 -0500
-Received: from mail-pf1-x430.google.com (mail-pf1-x430.google.com [IPv6:2607:f8b0:4864:20::430])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 53CD0C0698C4
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jan 2021 12:48:19 -0800 (PST)
-Received: by mail-pf1-x430.google.com with SMTP id 11so4627472pfu.4
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jan 2021 12:48:19 -0800 (PST)
+        Fri, 22 Jan 2021 15:52:23 -0500
+Received: from mail-pg1-x534.google.com (mail-pg1-x534.google.com [IPv6:2607:f8b0:4864:20::534])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C1E90C0698C7
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jan 2021 12:48:23 -0800 (PST)
+Received: by mail-pg1-x534.google.com with SMTP id 15so4606694pgx.7
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jan 2021 12:48:23 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=osandov-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=jsZgIcSUOs4ZF+x9oZeNSohaDc9IzmjXBuR8mId+lVo=;
-        b=QEPPhNeidELcjm3SFOE8K+esrf49VJgzCfIy09/dV2TdleLzcyvjzmljmpRXeBQLEi
-         qJmri9cDq0jT184jZVNVYaYbuAa2iyNvOjrfzCDgz1HREfobSffEJmNt7QrHr5JxyPBS
-         ULowH7wSH3HQNnrkUvqht+2S7ySymaWDMlK87wv6SRMd7pS9EoXHpgQraBv2ua3F7aad
-         xmfe3UHaUxFvv+n07I3Kmyz7hclo+Wa+S8J2cClxlnOfuwyomVVf8Nu7MyjWwMmBZCGo
-         rXJZXo6bsvvDKyClF+FL6rhN0vBHiujUqWqmJ2HNEMuErQ5qeT3oQw3Lfdxno6lrSydO
-         hOBg==
+        bh=yuS+bqDRqimJQtw+CUfBlHJuFVwwMnHAqeTtllhBo5o=;
+        b=F05HqoGWac6z+Vge5IUSRo/6x7Z5kNzAEMl13kxlj1HFCsDymJpLiS1dJVOj/4ZVyS
+         Ym5h+7gvpIu1uwrvzL3bqF0CXsnfpP0Bm3+5SyIP/n9HcqznrofQty8mia38pkzgyltL
+         wv3QU/6Cm9xKRs4n1y8FR/rPHMZn2RRYpo0qhXNIA47H2A1v8ETYsjvtaalqZtgafmvm
+         k77oFG6XdibFdhUKIAYIAW2LhK8zIl6lfsWJjToTtnDM1UMOYokRhuCExnhcSSPTN4pv
+         tFWq0luCAHjzwD99E9+02lgnXLMpxZYWceHTKAkp/PZRhEbw/0oI8BF+BSjxzO8YQ37C
+         4Ctw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=jsZgIcSUOs4ZF+x9oZeNSohaDc9IzmjXBuR8mId+lVo=;
-        b=YtITFipjzH3FvSBgyCAqvbfI+AlrjZRXjgBHOIXk4R0od6b00DpCrgg/7gd2vATdFP
-         ee10s11mu+MxlMvowLuZIQiewq+gxhRUtKnYO/N1jlA0xkJH28rEX1uWo66DpNDym5Ms
-         oVXgc4Wum/HJH7UrH1jFVCdMJzXZWvhL50SIbLd1p/86ay4FKMB3nFPzfjb1u6F1xBN8
-         LZkjZrTX6LLbrTA8DJHo7d19DCgL2zBHA29S9gdg6pc0AEWJdQ6hi7m4qC4TXGZw969O
-         OMGFeSOMMn39GCIqVnrVKzhs4E32fNdn48UZtHQbqSKDgMJSb4pcfuIYIxpTAsaQVWu6
-         awBg==
-X-Gm-Message-State: AOAM533c5Cgklg8/1jC3NcdmTHSi8aLmuKSatjGpTUnjQxE8uAvXW3KY
-        UfAE0RQeV0puqzcwzAAhmyn4RihzUnTX1g==
-X-Google-Smtp-Source: ABdhPJxWxn6YspRRGn+XGHN4ik+yFQIWFmJZNL0Hckdjr4o5Nxi4FfwKmMN9zY8MymO/EFkE3tzPLg==
-X-Received: by 2002:a63:4559:: with SMTP id u25mr6352149pgk.306.1611348497672;
-        Fri, 22 Jan 2021 12:48:17 -0800 (PST)
+        bh=yuS+bqDRqimJQtw+CUfBlHJuFVwwMnHAqeTtllhBo5o=;
+        b=BVnPFmOlkTbV/REPym8mAaXD2qYvY6YFtT3xptwhTVuDorspMmvaH2TqsNrAeYu93f
+         tMEUDD+LFTQNxGIRw4Ts7W0RpEzI0q6YPeJlMoLGPm+SoCQyPAiyt7tBztOH/I+qvhbF
+         fNw0rvoxoV2P0RH2nT6PCi7P5TEWik+V/AWNxGjTyT6xzYo5RugNNNahu/AVLRHgLOzm
+         pPct7LwOmYtu4nfR/HV0kIxOCPkgBE5BGZxVgbhBnFLECGma8tV6J7jFpH/WYvAxjbSG
+         IHJfskDEK7yxgkoTLoekT64r8BEHlmx0fYyZkdVZbcnA7CyRsNTpG2GQVERiRzes39ZK
+         8Qgg==
+X-Gm-Message-State: AOAM530+yCCJUChHiCFZQSww5A0rlN6cJPAHz18lOy0OJxOwHN5bYuwO
+        BqC7enHTsCPAO2BSeHjITfgKnIWffHpA/Q==
+X-Google-Smtp-Source: ABdhPJzxNSBEXm8T/NSdQpk2RIiNIamZcCB8nMx4SGqTY+bBicDYXpfL4gXObpa2JPuOXhCGhyr2wA==
+X-Received: by 2002:a62:2bd4:0:b029:1ae:4d9f:60da with SMTP id r203-20020a622bd40000b02901ae4d9f60damr6793220pfr.20.1611348502594;
+        Fri, 22 Jan 2021 12:48:22 -0800 (PST)
 Received: from relinquished.tfbnw.net ([2620:10d:c090:400::5:ea88])
-        by smtp.gmail.com with ESMTPSA id y16sm9865617pfb.83.2021.01.22.12.48.15
+        by smtp.gmail.com with ESMTPSA id y16sm9865617pfb.83.2021.01.22.12.48.20
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 22 Jan 2021 12:48:16 -0800 (PST)
+        Fri, 22 Jan 2021 12:48:21 -0800 (PST)
 From:   Omar Sandoval <osandov@osandov.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     linux-fsdevel@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v3 1/5] btrfs: add send stream v2 definitions
-Date:   Fri, 22 Jan 2021 12:47:43 -0800
-Message-Id: <1bbc7fbf0efb06a0d91cb029c1a5ab5f4525c71c.1611347187.git.osandov@fb.com>
+Subject: [PATCH v3 02/11] btrfs-progs: receive: dynamically allocate sctx->read_buf
+Date:   Fri, 22 Jan 2021 12:47:45 -0800
+Message-Id: <1bb29f037059aa09b4d61349f59d862cbfb44a1b.1611347859.git.osandov@osandov.com>
 X-Mailer: git-send-email 2.30.0
 In-Reply-To: <cover.1611347187.git.osandov@fb.com>
 References: <cover.1611347187.git.osandov@fb.com>
@@ -71,123 +71,151 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Omar Sandoval <osandov@fb.com>
+From: Boris Burkov <boris@bur.io>
 
-This adds the definitions of the new commands for send stream version 2
-and their respective attributes: fallocate, FS_IOC_SETFLAGS (a.k.a.
-chattr), and encoded writes. It also documents two changes to the send
-stream format in v2: the receiver shouldn't assume a maximum command
-size, and the DATA attribute is encoded differently to allow for writes
-larger than 64k. These will be implemented in subsequent changes, and
-then the ioctl will accept the new flags.
+In send stream v2, write commands can now be an arbitrary size. For that
+reason, we can no longer allocate a fixed array in sctx for read_cmd.
+Instead, read_cmd dynamically allocates sctx->read_buf. To avoid
+needless reallocations, we reuse read_buf between read_cmd calls by also
+keeping track of the size of the allocated buffer in sctx->read_buf_sz.
 
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
-Signed-off-by: Omar Sandoval <osandov@fb.com>
+We do the first allocation of the old default size at the start of
+processing the stream, and we only reallocate if we encounter a command
+that needs a larger buffer.
+
+Signed-off-by: Boris Burkov <boris@bur.io>
 ---
- fs/btrfs/send.c            |  2 +-
- fs/btrfs/send.h            | 30 +++++++++++++++++++++++++++++-
- include/uapi/linux/btrfs.h | 13 +++++++++++++
- 3 files changed, 43 insertions(+), 2 deletions(-)
+ common/send-stream.c | 55 ++++++++++++++++++++++++++++----------------
+ send.h               |  2 +-
+ 2 files changed, 36 insertions(+), 21 deletions(-)
 
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 3bcbf2bcb869..d07570588a16 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -7267,7 +7267,7 @@ long btrfs_ioctl_send(struct file *mnt_file, struct btrfs_ioctl_send_args *arg)
+diff --git a/common/send-stream.c b/common/send-stream.c
+index cd5aa311..3d3585c3 100644
+--- a/common/send-stream.c
++++ b/common/send-stream.c
+@@ -35,11 +35,11 @@ struct btrfs_send_attribute {
+ };
  
- 	sctx->clone_roots_cnt = arg->clone_sources_count;
+ struct btrfs_send_stream {
+-	char read_buf[BTRFS_SEND_BUF_SIZE];
++	char *read_buf;
++	size_t read_buf_sz;
+ 	int fd;
  
--	sctx->send_max_size = BTRFS_SEND_BUF_SIZE;
-+	sctx->send_max_size = BTRFS_SEND_BUF_SIZE_V1;
- 	sctx->send_buf = kvmalloc(sctx->send_max_size, GFP_KERNEL);
- 	if (!sctx->send_buf) {
- 		ret = -ENOMEM;
-diff --git a/fs/btrfs/send.h b/fs/btrfs/send.h
-index de91488b7cd0..9f4f7b96b1eb 100644
---- a/fs/btrfs/send.h
-+++ b/fs/btrfs/send.h
-@@ -12,7 +12,11 @@
+ 	int cmd;
+-	struct btrfs_cmd_header *cmd_hdr;
+ 	struct btrfs_send_attribute cmd_attrs[BTRFS_SEND_A_MAX + 1];
+ 	u32 version;
+ 
+@@ -111,11 +111,12 @@ static int read_cmd(struct btrfs_send_stream *sctx)
+ 	u32 pos;
+ 	u32 crc;
+ 	u32 crc2;
++	struct btrfs_cmd_header *cmd_hdr;
++	size_t buf_len;
+ 
+ 	memset(sctx->cmd_attrs, 0, sizeof(sctx->cmd_attrs));
+ 
+-	ASSERT(sizeof(*sctx->cmd_hdr) <= sizeof(sctx->read_buf));
+-	ret = read_buf(sctx, sctx->read_buf, sizeof(*sctx->cmd_hdr));
++	ret = read_buf(sctx, sctx->read_buf, sizeof(*cmd_hdr));
+ 	if (ret < 0)
+ 		goto out;
+ 	if (ret) {
+@@ -124,18 +125,22 @@ static int read_cmd(struct btrfs_send_stream *sctx)
+ 		goto out;
+ 	}
+ 
+-	sctx->cmd_hdr = (struct btrfs_cmd_header *)sctx->read_buf;
+-	cmd = le16_to_cpu(sctx->cmd_hdr->cmd);
+-	cmd_len = le32_to_cpu(sctx->cmd_hdr->len);
+-
+-	if (cmd_len + sizeof(*sctx->cmd_hdr) >= sizeof(sctx->read_buf)) {
+-		ret = -EINVAL;
+-		error("command length %u too big for buffer %zu",
+-				cmd_len, sizeof(sctx->read_buf));
+-		goto out;
++	cmd_hdr = (struct btrfs_cmd_header *)sctx->read_buf;
++	cmd_len = le32_to_cpu(cmd_hdr->len);
++	cmd = le16_to_cpu(cmd_hdr->cmd);
++	buf_len = sizeof(*cmd_hdr) + cmd_len;
++	if (sctx->read_buf_sz < buf_len) {
++		sctx->read_buf = realloc(sctx->read_buf, buf_len);
++		if (!sctx->read_buf) {
++			ret = -ENOMEM;
++			error("failed to reallocate read buffer for cmd");
++			goto out;
++		}
++		sctx->read_buf_sz = buf_len;
++		/* We need to reset cmd_hdr after realloc of sctx->read_buf */
++		cmd_hdr = (struct btrfs_cmd_header *)sctx->read_buf;
+ 	}
+-
+-	data = sctx->read_buf + sizeof(*sctx->cmd_hdr);
++	data = sctx->read_buf + sizeof(*cmd_hdr);
+ 	ret = read_buf(sctx, data, cmd_len);
+ 	if (ret < 0)
+ 		goto out;
+@@ -145,11 +150,12 @@ static int read_cmd(struct btrfs_send_stream *sctx)
+ 		goto out;
+ 	}
+ 
+-	crc = le32_to_cpu(sctx->cmd_hdr->crc);
+-	sctx->cmd_hdr->crc = 0;
++	crc = le32_to_cpu(cmd_hdr->crc);
++	/* in send, crc is computed with header crc = 0, replicate that */
++	cmd_hdr->crc = 0;
+ 
+ 	crc2 = crc32c(0, (unsigned char*)sctx->read_buf,
+-			sizeof(*sctx->cmd_hdr) + cmd_len);
++			sizeof(*cmd_hdr) + cmd_len);
+ 
+ 	if (crc != crc2) {
+ 		ret = -EINVAL;
+@@ -524,19 +530,28 @@ int btrfs_read_and_process_send_stream(int fd,
+ 		goto out;
+ 	}
+ 
++	sctx.read_buf = malloc(BTRFS_SEND_BUF_SIZE_V1);
++	if (!sctx.read_buf) {
++		ret = -ENOMEM;
++		error("unable to allocate send stream read buffer");
++		goto out;
++	}
++	sctx.read_buf_sz = BTRFS_SEND_BUF_SIZE_V1;
++
+ 	while (1) {
+ 		ret = read_and_process_cmd(&sctx);
+ 		if (ret < 0) {
+ 			last_err = ret;
+ 			errors++;
+ 			if (max_errors > 0 && errors >= max_errors)
+-				goto out;
++				break;
+ 		} else if (ret > 0) {
+ 			if (!honor_end_cmd)
+ 				ret = 0;
+-			goto out;
++			break;
+ 		}
+ 	}
++	free(sctx.read_buf);
+ 
+ out:
+ 	if (last_err && !ret)
+diff --git a/send.h b/send.h
+index 8dd865ec..228928a0 100644
+--- a/send.h
++++ b/send.h
+@@ -33,7 +33,7 @@ extern "C" {
  #define BTRFS_SEND_STREAM_MAGIC "btrfs-stream"
  #define BTRFS_SEND_STREAM_VERSION 1
  
 -#define BTRFS_SEND_BUF_SIZE SZ_64K
-+/*
-+ * In send stream v1, no command is larger than 64k. In send stream v2, no limit
-+ * should be assumed.
-+ */
 +#define BTRFS_SEND_BUF_SIZE_V1 SZ_64K
+ #define BTRFS_SEND_READ_SIZE (1024 * 48)
  
  enum btrfs_tlv_type {
- 	BTRFS_TLV_U8,
-@@ -76,6 +80,13 @@ enum btrfs_send_cmd {
- 
- 	BTRFS_SEND_C_END,
- 	BTRFS_SEND_C_UPDATE_EXTENT,
-+
-+	/* The following commands were added in send stream v2. */
-+
-+	BTRFS_SEND_C_FALLOCATE,
-+	BTRFS_SEND_C_SETFLAGS,
-+	BTRFS_SEND_C_ENCODED_WRITE,
-+
- 	__BTRFS_SEND_C_MAX,
- };
- #define BTRFS_SEND_C_MAX (__BTRFS_SEND_C_MAX - 1)
-@@ -106,6 +117,11 @@ enum {
- 	BTRFS_SEND_A_PATH_LINK,
- 
- 	BTRFS_SEND_A_FILE_OFFSET,
-+	/*
-+	 * In send stream v2, this attribute is special: it must be the last
-+	 * attribute in a command, its header contains only the type, and its
-+	 * length is implicitly the remaining length of the command.
-+	 */
- 	BTRFS_SEND_A_DATA,
- 
- 	BTRFS_SEND_A_CLONE_UUID,
-@@ -114,6 +130,18 @@ enum {
- 	BTRFS_SEND_A_CLONE_OFFSET,
- 	BTRFS_SEND_A_CLONE_LEN,
- 
-+	/* The following attributes were added in send stream v2. */
-+
-+	BTRFS_SEND_A_FALLOCATE_MODE,
-+
-+	BTRFS_SEND_A_SETFLAGS_FLAGS,
-+
-+	BTRFS_SEND_A_UNENCODED_FILE_LEN,
-+	BTRFS_SEND_A_UNENCODED_LEN,
-+	BTRFS_SEND_A_UNENCODED_OFFSET,
-+	BTRFS_SEND_A_COMPRESSION,
-+	BTRFS_SEND_A_ENCRYPTION,
-+
- 	__BTRFS_SEND_A_MAX,
- };
- #define BTRFS_SEND_A_MAX (__BTRFS_SEND_A_MAX - 1)
-diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index 5df73001aad4..93aa0932234e 100644
---- a/include/uapi/linux/btrfs.h
-+++ b/include/uapi/linux/btrfs.h
-@@ -770,6 +770,19 @@ struct btrfs_ioctl_received_subvol_args {
-  */
- #define BTRFS_SEND_FLAG_OMIT_END_CMD		0x4
- 
-+/*
-+ * Use version 2 of the send stream, which adds new commands and supports larger
-+ * writes.
-+ */
-+#define BTRFS_SEND_FLAG_STREAM_V2		0x8
-+
-+/*
-+ * Send compressed data using the ENCODED_WRITE command instead of decompressing
-+ * the data and sending it with the WRITE command. This requires
-+ * BTRFS_SEND_FLAG_STREAM_V2.
-+ */
-+#define BTRFS_SEND_FLAG_COMPRESSED		0x10
-+
- #define BTRFS_SEND_FLAG_MASK \
- 	(BTRFS_SEND_FLAG_NO_FILE_DATA | \
- 	 BTRFS_SEND_FLAG_OMIT_STREAM_HEADER | \
 -- 
 2.30.0
 

@@ -5,60 +5,60 @@ X-Spam-Level:
 X-Spam-Status: No, score=-10.5 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
 	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_SANE_1 autolearn=unavailable autolearn_force=no version=3.4.0
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C1CFEC433DB
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 15:26:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CE552C433DB
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 15:27:03 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 9736A23AAC
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 15:26:14 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9B80D239D4
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 15:27:03 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728709AbhAVPZ5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 22 Jan 2021 10:25:57 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35890 "EHLO
+        id S1728798AbhAVP0k (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 22 Jan 2021 10:26:40 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58292 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728867AbhAVPZT (ORCPT
+        with ESMTP id S1729033AbhAVO6i (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Jan 2021 10:25:19 -0500
-Received: from mail-qk1-x736.google.com (mail-qk1-x736.google.com [IPv6:2607:f8b0:4864:20::736])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 81145C061788
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jan 2021 07:24:35 -0800 (PST)
-Received: by mail-qk1-x736.google.com with SMTP id n15so751791qkh.8
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jan 2021 07:24:35 -0800 (PST)
+        Fri, 22 Jan 2021 09:58:38 -0500
+Received: from mail-qt1-x82f.google.com (mail-qt1-x82f.google.com [IPv6:2607:f8b0:4864:20::82f])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EA140C061351
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jan 2021 06:57:42 -0800 (PST)
+Received: by mail-qt1-x82f.google.com with SMTP id t17so4280248qtq.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jan 2021 06:57:42 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=subject:to:cc:references:from:message-id:date:user-agent
          :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=62MG5B/ncqLFJMCPey88hP/CHS6L6DB9Q0Ol9XSuCU0=;
-        b=eu+aytMOKIcLG7CoJGMlIIGYbOrANii2MOrd/d1r7QJJrjPiS8AS04T+mxYjh5ONo6
-         oPtTXJ+nhSi34vv5ql9Wo9fbBE1pIS0wY3ciONxzkt5Q3pNGyPiD5Xjzd+c/osFYomDF
-         ZdrncByxIGpz/7XID5uF4JMYMpbtTkKDkGGkWE46h/EBIy2TZQDK3rnDCa4HNcN5XVVb
-         6/j5M+kPQwxUAR3cone+QA9q5HcVDynZ7Z08cTusxkLGXVg0c4hQRcDJ+8wvusTmgynu
-         bli5EYVN4+/38/fB+RuuWZac8ftiDJKkVCXc5qatiiJ/rlmJo1KaB8qGT4SEj00lU0dm
-         GIWg==
+        bh=oqjNm/rdJq2xR1KlR6OKdhT6ng5D/w3SPsNp43RCjgk=;
+        b=WURC6quZJSmQAVn1OPFjZp+gDu3Jegt/Hvqx2kTw9+ScioBpDcoop/GBGeVWEpgzgc
+         /zcdyqji4bVVe3pDiZzKfAjJQPmgffRqJseWLl+aN+60Ie147SJ/qfw7WdEORGB5diwA
+         6eGefWYeMXTuBMIkvpgTBgUjhO0G6amOxWB2kGQZGPRfYPqeWZ4jgCKU9vKm5ivAb/tA
+         1AMZMo3ZAxYCN+5JpA4xN6N0szd9Yzdr0bquFuvkaI6m8B5/zCt4/qqESb7aClOZOT4M
+         wE5f4XD23wLBDSYFLFWGVuwU4C9zEdspTsJ5XV9D8FErq1N6pL8nAJBbsp5ds7kgQqcL
+         5e8g==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:subject:to:cc:references:from:message-id:date
          :user-agent:mime-version:in-reply-to:content-language
          :content-transfer-encoding;
-        bh=62MG5B/ncqLFJMCPey88hP/CHS6L6DB9Q0Ol9XSuCU0=;
-        b=YcpSgOS6gAgtJ67cyn8Axyeef19nTtJg3i0271b9PJ90iX1y/PyBUPm4lE3yecNQR6
-         vMp4LkLQQIN7n9nNabNrDn6eQa68vyIcpP/b2evP8Fk1eX06h771XviHBo7+j5R14r3p
-         e67yBr0n69XIJdKrsvGFWjpJxQVhlwiPQWO2Zt+mwzD0ef+qApRwliqLnUqnf0kGkHhg
-         yGx7b3c6SLKmCvECpVrfHSc/EqitaTngF7zN1JayNwShpaoO5dJTGu2BER7AIsPk3erM
-         oubOqm7Kz3PwgzYBFVZ2nS/3ooiVgtp+MdpyWk7e7n9LldBu+g8YnRH6whTohDiXM05k
-         TNIw==
-X-Gm-Message-State: AOAM530sB2IqFOVsGciKqNP/PBR7R+lOUq3Zm+U9wCXjhHb12DT3UdTv
-        aD0P6gX6lsmczLtFj2fKFIis8g==
-X-Google-Smtp-Source: ABdhPJy/9I03HGLRDPxWYhmODRNbrqIlmbhzU7iLkesDoviBLjKir9yrAu73CgWO7rgAbVaHgne8Jw==
-X-Received: by 2002:a37:aec5:: with SMTP id x188mr5386628qke.144.1611329074636;
-        Fri, 22 Jan 2021 07:24:34 -0800 (PST)
+        bh=oqjNm/rdJq2xR1KlR6OKdhT6ng5D/w3SPsNp43RCjgk=;
+        b=LpFieGjKh6JNRcyOB/ZJQOq+26hqCYbzdb8EXG3vHx7gUqoBagVTVcRm+wxREEJcSm
+         oZY/UGhkK9KEOXl/weSoNV9HK0j/Ny16Yp+7J3QnhYEV9NpPhyDv6or3WefdsFTj07y4
+         A9mvoF6XhksZpo99lmINJz1Hyi54W+ifiPpID+32Wx9Y1wnNIjAL81ZaXT+Rh3UuhFiO
+         QPOIQ2z9TMWofJuTx+BGWJUl/jAbc4oMjwxZ4VX6l1ouzX3jPy3fqR5g1r7vJajX9lzo
+         WbNUW4D8pm0tzBJzMeAQ6y4SMTxTmWu2YMgnKn+ThzP+WdIZnocCabfq0xKzCaMduOPN
+         R5gg==
+X-Gm-Message-State: AOAM531pYqLC0oRHPlXbSGNMUX7w7TiEhWa8KkslUgnDqWMJa3p2uLCX
+        KurPSQ6nodE3R2LQ3bNOmV/BWnlJzpfrSIg9
+X-Google-Smtp-Source: ABdhPJxxo7QbUqDv2b5LcamFR6wTsVSa7z5nXhYD1QnoUheW8ot6nzglJ9H9fLfCXwqjAeg6ugq5TA==
+X-Received: by 2002:ac8:6799:: with SMTP id b25mr4599692qtp.100.1611327461954;
+        Fri, 22 Jan 2021 06:57:41 -0800 (PST)
 Received: from [192.168.1.45] (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id j23sm6023312qtr.79.2021.01.22.07.24.33
+        by smtp.gmail.com with ESMTPSA id 23sm4002852qks.71.2021.01.22.06.57.40
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 22 Jan 2021 07:24:33 -0800 (PST)
-Subject: Re: [PATCH v13 26/42] btrfs: save irq flags when looking up an
- ordered extent
+        Fri, 22 Jan 2021 06:57:41 -0800 (PST)
+Subject: Re: [PATCH v13 05/42] btrfs: release path before calling into
+ btrfs_load_block_group_zone_info
 To:     Naohiro Aota <naohiro.aota@wdc.com>, linux-btrfs@vger.kernel.org,
         dsterba@suse.com
 Cc:     hare@suse.com, linux-fsdevel@vger.kernel.org,
@@ -67,14 +67,14 @@ Cc:     hare@suse.com, linux-fsdevel@vger.kernel.org,
         "Darrick J. Wong" <darrick.wong@oracle.com>,
         Johannes Thumshirn <johannes.thumshirn@wdc.com>
 References: <cover.1611295439.git.naohiro.aota@wdc.com>
- <8537c12ab50510bf029ff6c780a0ce2a850fa603.1611295439.git.naohiro.aota@wdc.com>
+ <9caf351d3da77e5b9f781226b2c199b570cccb62.1611295439.git.naohiro.aota@wdc.com>
 From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <8405f0b4-ccf0-5b0d-f71a-31857642b2ae@toxicpanda.com>
-Date:   Fri, 22 Jan 2021 10:24:32 -0500
+Message-ID: <2830452d-5f5c-3c6d-a588-c8b7c5823461@toxicpanda.com>
+Date:   Fri, 22 Jan 2021 09:57:39 -0500
 User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0)
  Gecko/20100101 Thunderbird/78.6.1
 MIME-Version: 1.0
-In-Reply-To: <8537c12ab50510bf029ff6c780a0ce2a850fa603.1611295439.git.naohiro.aota@wdc.com>
+In-Reply-To: <9caf351d3da77e5b9f781226b2c199b570cccb62.1611295439.git.naohiro.aota@wdc.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
 Content-Transfer-Encoding: 7bit
@@ -85,12 +85,16 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 On 1/22/21 1:21 AM, Naohiro Aota wrote:
 > From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 > 
-> A following patch will add another caller of
-> btrfs_lookup_ordered_extent() from a bio endio context.
+> Since we have no write pointer in conventional zones, we cannot determine
+> the allocation offset from it. Instead, we set the allocation offset after
+> the highest addressed extent. This is done by reading the extent tree in
+> btrfs_load_block_group_zone_info().
 > 
-> btrfs_lookup_ordered_extent() uses spin_lock_irq() which unconditionally
-> disables interrupts. Change this to spin_lock_irqsave() so interrupts
-> aren't disabled and re-enabled unconditionally.
+> However, this function is called from btrfs_read_block_groups(), so the
+> read lock for the tree node can recursively taken.
+> 
+> To avoid this unsafe locking scenario, release the path before reading the
+> extent tree to get the allocation offset.
 > 
 > Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 

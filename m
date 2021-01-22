@@ -2,194 +2,161 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-16.2 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 44EE1C433DB
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 19:44:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5270AC433E6
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 20:50:59 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 0EF4C23AFC
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 19:44:41 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1168E23B09
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 20:50:59 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730047AbhAVTmZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 22 Jan 2021 14:42:25 -0500
-Received: from mail.kernel.org ([198.145.29.99]:39116 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1729986AbhAVSnD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Jan 2021 13:43:03 -0500
-Received: by mail.kernel.org (Postfix) with ESMTPSA id DB9AA23AAC
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jan 2021 18:42:21 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1611340942;
-        bh=BquE8INPHxuVkYSYM+3Nj4iCCcuWqutd70U0XWvyv70=;
-        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-        b=uP5e1FOsby/0+UBLmvlkva2nA1ITeSFWh2ToVWqFnRGlCwVtYZPkSDWRnxV82AaLw
-         E1wik8Bjc42pPevr3p28kqa7D98PxK7CN5Pdqr7nftpnqazhjQMkryVH+2YBPBh69+
-         msGFVIWoB+1g8ZyMRzfVJvk+nuRiGltEcTE8pJHtZ5E2ZDnjB8ZUYXa+nQ1j3Johjt
-         tmGVIqWrLZLOKMBFGn5HWFUuw6lFeWUK1zMkhczE82Us9s4b1tktq9aa9YcQmWpocC
-         vpq4cZB9JJxetIpU5EJpEeFLPUDLfRV2esVTfdxQn5RHdBqq7XDTnwnNHOIKpwiR+K
-         PogO4OgTtqCpg==
-Received: by mail-qv1-f48.google.com with SMTP id et9so3119114qvb.10
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jan 2021 10:42:21 -0800 (PST)
-X-Gm-Message-State: AOAM532oAZvyaS7Z2fabxOijzwmfS0ywwa/SZbwOwxqExXcgStAkh5Px
-        B4Z+yq4YT8kXE0wb+ctAC8b2vv1dBzg6aji8qls=
-X-Google-Smtp-Source: ABdhPJzx117ZnjIjXy18IluN3IDa/1I9M6xVAGBUIzYKN1AWnUbPk4H4uGySB8FmJeocvU8/u7Z522Vr/VRn5nh2DJo=
-X-Received: by 2002:ad4:46cd:: with SMTP id g13mr2913957qvw.27.1611340940993;
- Fri, 22 Jan 2021 10:42:20 -0800 (PST)
+        id S1730028AbhAVUuS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 22 Jan 2021 15:50:18 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49014 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1730125AbhAVUsD (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 22 Jan 2021 15:48:03 -0500
+Received: from mail-pg1-x529.google.com (mail-pg1-x529.google.com [IPv6:2607:f8b0:4864:20::529])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B825DC061786
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jan 2021 12:47:15 -0800 (PST)
+Received: by mail-pg1-x529.google.com with SMTP id i5so4636069pgo.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jan 2021 12:47:15 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=osandov-com.20150623.gappssmtp.com; s=20150623;
+        h=from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=SbGUA0qvIztEUivipPk+uMPWbkIun+CS9rfwLtftEGA=;
+        b=VNTaJQyzqgMUf2bykgCnP/0Smb9RZ3fUkY1bEEk0/v6X4HX6oU3NemRHThtrG/kbcX
+         X3w5dDAAhHOK5QHszpgqjOM9XEgwqx5MIf92WdRwsZguEkhOLh9s5uTpvJSJ3F9O74cP
+         0G93EHMthoPDEY/0FZWvccvTreM7iKLv/ykz5mVpaDk4+snLs0gJNLNYiB9TLxbyj5aN
+         dGduN1uYnike/yE+BktozbvjaYaGjENqSNaEo/abdjPidhrWi5goDiSz7SPPfk3KfCz1
+         VPZYmI1mxOix4FZV5zs0VXMv2i8iJhAMnprc4RxaQEx076n4+22aJ0SCBacBCTq9yJEM
+         iHJw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=SbGUA0qvIztEUivipPk+uMPWbkIun+CS9rfwLtftEGA=;
+        b=sBzD+Y6c+6r2led9QJJV8mH0aGVy0Ng5Po8PvUrTXxmFeLUdG2pGaCOPeEHBK0en79
+         7KbEwvVFfYaUlzMt4uoKHE97ff+Y3mlavAHxleDCCVBx7ajO8SW0jTPxk6fSzhNix6Z5
+         3J5dS2iTY4pKa8mO2b3SgnrbqJUrF8QcDEnddyts1pC+5kgQPauO8idpYF2SoODE+ar9
+         RMpX/Zwu2xxshhfWplnb9EVEtM/bMUZtXEuY3G45KxHFGYdyWIRsg2I0gmuo1G9Zi3Rl
+         xEeVmnOGLfhd1/ZBKbTVArToNCoxgeZr6eMGbYYOfEMZT5kDDNTLc1Z2gleHtZIACaop
+         x+Xg==
+X-Gm-Message-State: AOAM530Ulc+QjnMNVK9vMrD26bsseuEeT0ACWT8vdmxKN5hwaZkWZaDl
+        CH/tjcA01OG/VgMMTU0iKGKo1A==
+X-Google-Smtp-Source: ABdhPJy9fUypKEpbuM+Oepmztp98ZRomAQTyUsNmVY9Wx7Vnjv2cdEOp/sBHsDoiGH/+F+d3tCWHMQ==
+X-Received: by 2002:a62:aa06:0:b029:19d:f4d3:335e with SMTP id e6-20020a62aa060000b029019df4d3335emr1611187pff.60.1611348435252;
+        Fri, 22 Jan 2021 12:47:15 -0800 (PST)
+Received: from relinquished.tfbnw.net ([2620:10d:c090:400::5:ea88])
+        by smtp.gmail.com with ESMTPSA id j18sm4092900pfc.99.2021.01.22.12.47.13
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Fri, 22 Jan 2021 12:47:14 -0800 (PST)
+From:   Omar Sandoval <osandov@osandov.com>
+To:     linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        Al Viro <viro@zeniv.linux.org.uk>,
+        Christoph Hellwig <hch@infradead.org>
+Cc:     Dave Chinner <david@fromorbit.com>, Jann Horn <jannh@google.com>,
+        Amir Goldstein <amir73il@gmail.com>,
+        Aleksa Sarai <cyphar@cyphar.com>, linux-api@vger.kernel.org,
+        kernel-team@fb.com
+Subject: [PATCH v7 00/10] fs: interface for directly reading/writing compressed data
+Date:   Fri, 22 Jan 2021 12:46:46 -0800
+Message-Id: <cover.1611346706.git.osandov@fb.com>
+X-Mailer: git-send-email 2.30.0
 MIME-Version: 1.0
-References: <c655306f61af9b2d75ed22053a7cdc3f21022d72.1611337435.git.fdmanana@suse.com>
- <e8333d58-c51d-f2ed-27c1-5815087550ad@toxicpanda.com>
-In-Reply-To: <e8333d58-c51d-f2ed-27c1-5815087550ad@toxicpanda.com>
-From:   Filipe Manana <fdmanana@kernel.org>
-Date:   Fri, 22 Jan 2021 18:42:09 +0000
-X-Gmail-Original-Message-ID: <CAL3q7H5K5JJXi51B1+U5qFUeccBvKLJ9aqUcUdpBGRv8BvJWVw@mail.gmail.com>
-Message-ID: <CAL3q7H5K5JJXi51B1+U5qFUeccBvKLJ9aqUcUdpBGRv8BvJWVw@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: fix log replay failure due to race with space
- cache rebuild
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Jan 22, 2021 at 6:39 PM Josef Bacik <josef@toxicpanda.com> wrote:
->
-> On 1/22/21 12:56 PM, fdmanana@kernel.org wrote:
-> > From: Filipe Manana <fdmanana@suse.com>
-> >
-> > After a sudden power failure we may end up with a space cache on disk that
-> > is not valid and needs to be rebuilt from scratch.
-> >
-> > If that happens, during log replay when we attempt to pin an extent buffer
-> > from a log tree, at btrfs_pin_extent_for_log_replay(), we do not wait for
-> > the space cache to be rebuilt through the call to:
-> >
-> >      btrfs_cache_block_group(cache, 1);
-> >
-> > That is because that only waits for the task (work queue job) that loads
-> > the space cache to change the cache state from BTRFS_CACHE_FAST to any
-> > other value. That is ok when the space cache on disk exists and is valid,
-> > but when the cache is not valid and needs to be rebuilt, it ends up
-> > returning as soon as the cache state changes to BTRFS_CACHE_STARTED (done
-> > at caching_thread()).
-> >
-> > So this means that we can end up trying to unpin a range which is not yet
-> > marked as free in the block group. This results in the call to
-> > btrfs_remove_free_space() to return -EINVAL to
-> > btrfs_pin_extent_for_log_replay(), which in turn makes the log replay fail
-> > as well as mounting the filesystem. More specifically the -EINVAL comes
-> > from free_space_cache.c:remove_from_bitmap(), because the requested range
-> > is not marked as free space (ones in the bitmap), we have the following
-> > condition triggered:
-> >
-> > static noinline int remove_from_bitmap(struct btrfs_free_space_ctl *ctl,
-> > (...)
-> >         if (ret < 0 || search_start != *offset)
-> >              return -EINVAL;
-> > (...)
-> >
-> > It's the "search_start != *offset" that results in the condition being
-> > evaluated to true.
-> >
-> > When this happens we got the following in dmesg/syslog:
-> >
-> > [72383.415114] BTRFS: device fsid 32b95b69-0ea9-496a-9f02-3f5a56dc9322 devid 1 transid 1432 /dev/sdb scanned by mount (3816007)
-> > [72383.417837] BTRFS info (device sdb): disk space caching is enabled
-> > [72383.418536] BTRFS info (device sdb): has skinny extents
-> > [72383.423846] BTRFS info (device sdb): start tree-log replay
-> > [72383.426416] BTRFS warning (device sdb): block group 30408704 has wrong amount of free space
-> > [72383.427686] BTRFS warning (device sdb): failed to load free space cache for block group 30408704, rebuilding it now
-> > [72383.454291] BTRFS: error (device sdb) in btrfs_recover_log_trees:6203: errno=-22 unknown (Failed to pin buffers while recovering log root tree.)
-> > [72383.456725] BTRFS: error (device sdb) in btrfs_replay_log:2253: errno=-22 unknown (Failed to recover log tree)
-> > [72383.460241] BTRFS error (device sdb): open_ctree failed
-> >
-> > We also mark the range for the extent buffer in the excluded extents io
-> > tree. That is fine when the space cache is valid on disk and we can load
-> > it, in which case it causes no problems.
-> >
-> > However, for the case where we need to rebuild the space cache, because it
-> > is either invalid or it is missing, having the extent buffer range marked
-> > in the excluded extents io tree leads to a -EINVAL failure from the call
-> > to btrfs_remove_free_space(), resulting in the log replay and mount to
-> > fail. This is because by having the range marked in the excluded extents
-> > io tree, the caching thread ends up never adding the range of the extent
-> > buffer as free space in the block group since the calls to
-> > add_new_free_space(), called from load_extent_tree_free(), filter out any
-> > ranges that are marked as excluded extents.
-> >
-> > So fix this by making sure that during log replay we wait for the caching
-> > task to finish completely when we need to rebuild a space cache, and also
-> > drop the need to mark the extent buffer range in the excluded extents io
-> > tree, as well as clearing ranges from that tree at
-> > btrfs_finish_extent_commit().
-> >
-> > This started to happen with some frequency on large filesystems having
-> > block groups with a lot of fragmentation since the recent commit
-> > e747853cae3ae3 ("btrfs: load free space cache asynchronously"), but in
-> > fact the issue has been there for years, it was just much less likely
-> > to happen.
-> >
-> > Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> > ---
-> >   fs/btrfs/extent-tree.c | 27 ++++++++++++++++++---------
-> >   1 file changed, 18 insertions(+), 9 deletions(-)
-> >
-> > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> > index 30b1a630dc2f..89d1b0551cf8 100644
-> > --- a/fs/btrfs/extent-tree.c
-> > +++ b/fs/btrfs/extent-tree.c
-> > @@ -2602,8 +2602,6 @@ int btrfs_pin_extent_for_log_replay(struct btrfs_trans_handle *trans,
-> >       struct btrfs_block_group *cache;
-> >       int ret;
-> >
-> > -     btrfs_add_excluded_extent(trans->fs_info, bytenr, num_bytes);
-> > -
-> >       cache = btrfs_lookup_block_group(trans->fs_info, bytenr);
-> >       if (!cache)
-> >               return -EINVAL;
-> > @@ -2615,6 +2613,15 @@ int btrfs_pin_extent_for_log_replay(struct btrfs_trans_handle *trans,
-> >        * the pinned extents.
-> >        */
-> >       btrfs_cache_block_group(cache, 1);
-> > +     /*
-> > +      * Make sure we wait until the cache is completely built in case it is
-> > +      * missing or is invalid and therefore needs to be rebuilt.
-> > +      */
-> > +     if (btrfs_test_opt(trans->fs_info, SPACE_CACHE)) {
-> > +             ret = btrfs_wait_block_group_cache_done(cache);
-> > +             if (ret)
-> > +                     return ret;
-> > +     }
->
-> Sorry I didn't explain this well in my previous reply and on slack.
->
-> If we are going to keep the btrfs_remove_free_space() below, which we have to,
-> we cannot remove the btrfs_add_excluded_extent() without also unconditionally
-> loading the space cache.  The 'load_cache_only' only means we'll wait for the
-> space cache to be loaded in the SPACE_CACHE case, not that we won't start caching.
->
-> Consider the free space tree case, we'll be doing the normal caching, and we'll
-> either hit the case that you're trying to fix, because we attempt to remove a
-> free space range that has been partially cached in the bitmap.  Or we'll hit the
-> case where we think we've removed the free space even though it's not been
-> loaded yet.
->
-> Your fix needs to remove the excluded extent parts as well as do
->
-> btrfs_cache_block_group(cache, 0);
-> btrfs_wait_block_group_cache_done(cache);
->
-> in order to be properly safe in all cases.  Thanks,
+From: Omar Sandoval <osandov@fb.com>
 
-Yes, I realized that later, I have a new version being tested right now:
+This series adds an API for reading compressed data on a filesystem
+without decompressing it as well as support for writing compressed data
+directly to the filesystem. As with the previous submissions, I've
+included a man page patch describing the API. I have test cases
+(including fsstress support) and example programs which I'll send up
+[1].
 
-https://pastebin.com/pgQ2y11a
+The main use-case is Btrfs send/receive: currently, when sending data
+from one compressed filesystem to another, the sending side decompresses
+the data and the receiving side recompresses it before writing it out.
+This is wasteful and can be avoided if we can just send and write
+compressed extents. The patches implementing the send/receive support
+will be sent shortly.
 
-I messed and didn't realize the wait is necessary even if there is no
-space cache or tree enabled.
+Patches 1-3 add the VFS support and UAPI. Patch 4 is a fix that this
+series depends on; it can be merged independently. Patches 5-8 are Btrfs
+prep patches. Patch 9 adds Btrfs encoded read support and patch 10 adds
+Btrfs encoded write support.
 
->
-> Josef
+These patches are based on Dave Sterba's Btrfs misc-next branch [2],
+which is in turn currently based on v5.11-rc4.
+
+Changes since v6 [3]:
+
+- Dropped O_CLOEXEC requirement for O_ALLOW_ENCODED.
+- Readded lost FMODE_ENCODED_IO check.
+- Used macros instead of enum for ENCODED_IOV_COMPRESSION_* and
+  ENCODED_IOV_ENCRYPTION_*.
+- Moved encoded I/O definitions to their own UAPI header file.
+- Fixed style nits.
+- Added reviewed-bys.
+- Addressed man page nits.
+
+1: https://github.com/osandov/xfstests/tree/rwf-encoded
+2: https://github.com/kdave/btrfs-devel/tree/misc-next
+3: https://lore.kernel.org/linux-btrfs/cover.1605723568.git.osandov@fb.com/
+
+Omar Sandoval (10):
+  iov_iter: add copy_struct_from_iter()
+  fs: add O_ALLOW_ENCODED open flag
+  fs: add RWF_ENCODED for reading/writing compressed data
+  btrfs: fix check_data_csum() error message for direct I/O
+  btrfs: don't advance offset for compressed bios in
+    btrfs_csum_one_bio()
+  btrfs: add ram_bytes and offset to btrfs_ordered_extent
+  btrfs: support different disk extent size for delalloc
+  btrfs: optionally extend i_size in cow_file_range_inline()
+  btrfs: implement RWF_ENCODED reads
+  btrfs: implement RWF_ENCODED writes
+
+ Documentation/filesystems/encoded_io.rst |  74 ++
+ Documentation/filesystems/index.rst      |   1 +
+ arch/alpha/include/uapi/asm/fcntl.h      |   1 +
+ arch/parisc/include/uapi/asm/fcntl.h     |   1 +
+ arch/sparc/include/uapi/asm/fcntl.h      |   1 +
+ fs/btrfs/compression.c                   |  12 +-
+ fs/btrfs/compression.h                   |   6 +-
+ fs/btrfs/ctree.h                         |   9 +-
+ fs/btrfs/delalloc-space.c                |  18 +-
+ fs/btrfs/file-item.c                     |  35 +-
+ fs/btrfs/file.c                          |  46 +-
+ fs/btrfs/inode.c                         | 936 ++++++++++++++++++++---
+ fs/btrfs/ordered-data.c                  |  80 +-
+ fs/btrfs/ordered-data.h                  |  18 +-
+ fs/btrfs/relocation.c                    |   4 +-
+ fs/fcntl.c                               |  10 +-
+ fs/namei.c                               |   4 +
+ fs/read_write.c                          | 168 +++-
+ include/linux/encoded_io.h               |  17 +
+ include/linux/fcntl.h                    |   2 +-
+ include/linux/fs.h                       |  13 +
+ include/linux/uio.h                      |   2 +
+ include/uapi/asm-generic/fcntl.h         |   4 +
+ include/uapi/linux/encoded_io.h          |  30 +
+ include/uapi/linux/fs.h                  |   5 +-
+ lib/iov_iter.c                           |  82 ++
+ 26 files changed, 1378 insertions(+), 201 deletions(-)
+ create mode 100644 Documentation/filesystems/encoded_io.rst
+ create mode 100644 include/linux/encoded_io.h
+ create mode 100644 include/uapi/linux/encoded_io.h
+
+-- 
+2.30.0
+

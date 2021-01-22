@@ -2,72 +2,73 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-15.5 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.5 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 54A6DC433DB
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 19:41:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B63D0C4332D
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 19:44:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 178B123A6A
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 19:41:53 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7F7E823AF8
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Jan 2021 19:44:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730003AbhAVTkw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 22 Jan 2021 14:40:52 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49810 "EHLO
+        id S1730211AbhAVTmz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 22 Jan 2021 14:42:55 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58406 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729162AbhAVSkr (ORCPT
+        with ESMTP id S1729278AbhAVTU1 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Jan 2021 13:40:47 -0500
-Received: from mail-qt1-x82f.google.com (mail-qt1-x82f.google.com [IPv6:2607:f8b0:4864:20::82f])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 22C05C061352
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jan 2021 10:39:08 -0800 (PST)
-Received: by mail-qt1-x82f.google.com with SMTP id c1so4883519qtc.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jan 2021 10:39:08 -0800 (PST)
+        Fri, 22 Jan 2021 14:20:27 -0500
+Received: from mail-qk1-x731.google.com (mail-qk1-x731.google.com [IPv6:2607:f8b0:4864:20::731])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2E7C3C0613D6
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jan 2021 11:19:46 -0800 (PST)
+Received: by mail-qk1-x731.google.com with SMTP id c7so6262649qke.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jan 2021 11:19:46 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=subject:to:references:from:message-id:date:user-agent:mime-version
          :in-reply-to:content-language:content-transfer-encoding;
-        bh=pqH4OWyn8Fcn6eT6MGolpgw+fdtjuehbHc8lpzXkkSE=;
-        b=Mv0eKmSAB9Vc8BFiGVa1u2gNdVfj/6n2cuNICMkEzuSS7g7PKAUzq3ycvQP3bi18qw
-         C9aoxhvwmrVudCng2FCOVn0+yA8M+kt0Kv2OZ6AWZ9zzOtJvqvbU+oB2m52ctd9/Zlol
-         74olbqHBkDoAeFF5SH3bRy25IDnM17Vwyn+7FkwytDwgo6+sGkxz7UAjxIulMgoS5313
-         XOeibVstAwX0xR3J0yqVsLfEtPiyVxsp0Z7iwa6tcEGpWYBHXQuP/X75OWTYVJ8GLYiL
-         54jDQS9yhkB6xwp0Xux+x1YohHiA+QhUFnVYi/hEisMiu4tj3KmIA6DZy1hEZ+TZDP//
-         +Bqw==
+        bh=UX6sWvfpYt619eHX626D4UcK0QO9wKCcgj5kSsNjHq8=;
+        b=fBdt2ac3zMFBew51ZOwCUddvotGlkzTxgbdeRVS2ByD6r9x5xqCzx1nafhhh2hONeW
+         5zIYS4TeLGgyUvRdmrbjojDXtdnhklhpXwGgxBJmajQOq2s66Ku1db+PEIS1pEr38Peq
+         2g4WTE6yq/7rtoh66mvgu3ZkmFlYD8mmLtTbtdG1qkSh3dEE8xGMhPcsR+EZoDwHfNM5
+         qUdxsRxtKXosvYINKWSQcH0Gzb45bw718Nq5argGM8SAS3GKbEvKFRE95s8ulzWrtTeb
+         AVQg8/4yrvgi2fYs2DNkLOUPjS3jvVWqV8LLnBsFKan5selEPgQwGEQlORF2x7ydDXl9
+         ve6g==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:subject:to:references:from:message-id:date
          :user-agent:mime-version:in-reply-to:content-language
          :content-transfer-encoding;
-        bh=pqH4OWyn8Fcn6eT6MGolpgw+fdtjuehbHc8lpzXkkSE=;
-        b=CS9eV0z5gR2aFGhoHhTw9XYiQU/brN1No7tAwuRl1WcoBcYComy81x64vVb7QNGqpr
-         NV9i6YPCFNWRppB+tuq4SWAgnXy2qhJCcsF72FxqFdepeac+/4ICuLIARe7VUs3PawKi
-         Lgxfc0q+3bGez9uPUZecWodF/tVrgL3/o2/U/9MGrfBJ8uZUQfoBuBw0mOn21g1wElFv
-         HtOodjB1vuCeEmUwkaXHl3PkDMJN0HH/cgttZlXr5WW8GBsDhkt75VD9bsnyVwDGylRQ
-         sV847Xm0MFJ5f/BYAYEehPVvyMaGbwYcIhrYj+nNtDfUrbEH8Rjs5We9mjZpAlES2hbv
-         Aovw==
-X-Gm-Message-State: AOAM5309kT6nPBNZiJwiDk55gwJsNkTu4jvw7vO7YHXsf53EWiiiQGw2
-        GKE/oRdZVaEy8RwuvOh9NmcrXvpUmZuCAZMF
-X-Google-Smtp-Source: ABdhPJy/rQGSa3UXapwu//oSYj4Jpyljvngf2V4SddYUpHv36HJjesB57aEFTfXIVfg2G4EBvRrEAw==
-X-Received: by 2002:a05:622a:44b:: with SMTP id o11mr5421618qtx.229.1611340746798;
-        Fri, 22 Jan 2021 10:39:06 -0800 (PST)
+        bh=UX6sWvfpYt619eHX626D4UcK0QO9wKCcgj5kSsNjHq8=;
+        b=oyJQJ5E+MQONj6T6C3ZiRjNUlH6oy3I4Xi3qB7ORluuQAb60r2JP+LvY8xT5XbM1P7
+         pMx3Tjbk+o0zWKIyoZ8Zl0bvYNZlS7IF6+gd3mEVPTwA94fvju8HoMwJBE30PHrGLbeb
+         7zLld0H6LQ9mxbI40ojc4pWkt9D7BaFtAP/3YRP0Ro0cHKDRu25a2E5sAT2+IcDdOcV8
+         INdOidPd7kH9mRTHh98Kbq42R7Sa0/rpcMaGc1v2oSS+cQ2UP8hifzAdEKT4+ADzRZNN
+         siyUubo7xlyhQnXyrKjRuNM7HMVg2LksQbLuWjmI0Rm5XwnP9IpwmnyWSR8afI2VBGXs
+         65zg==
+X-Gm-Message-State: AOAM532sa4xBzUNRx/kZfm3WQiQi9Dw6Q7v+zesnZhk41m0mZfa8LbI3
+        Ybs4D4DFZv/KLjFflXYhH9+rj8qrMuR5fuop
+X-Google-Smtp-Source: ABdhPJzCTYMcov5EfIB9jNV8xdxM81pl+RseiOmwygLVEyYoIvoIg+XVDRNMN9MBqEHDd0jCR0hHCA==
+X-Received: by 2002:ae9:e816:: with SMTP id a22mr6497914qkg.82.1611343184947;
+        Fri, 22 Jan 2021 11:19:44 -0800 (PST)
 Received: from [192.168.1.45] (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id y26sm6831118qth.53.2021.01.22.10.39.05
+        by smtp.gmail.com with ESMTPSA id d26sm6256834qtw.58.2021.01.22.11.19.43
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 22 Jan 2021 10:39:06 -0800 (PST)
-Subject: Re: [PATCH] btrfs: fix log replay failure due to race with space
+        Fri, 22 Jan 2021 11:19:44 -0800 (PST)
+Subject: Re: [PATCH v3] btrfs: fix log replay failure due to race with space
  cache rebuild
 To:     fdmanana@kernel.org, linux-btrfs@vger.kernel.org
 References: <c655306f61af9b2d75ed22053a7cdc3f21022d72.1611337435.git.fdmanana@suse.com>
+ <afa2ccadd8add70cf742ed7943c01be6fccd13b8.1611340095.git.fdmanana@suse.com>
 From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <e8333d58-c51d-f2ed-27c1-5815087550ad@toxicpanda.com>
-Date:   Fri, 22 Jan 2021 13:39:05 -0500
+Message-ID: <c3fd5a2f-20e0-56d4-ca58-5583416aa869@toxicpanda.com>
+Date:   Fri, 22 Jan 2021 14:19:43 -0500
 User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0)
  Gecko/20100101 Thunderbird/78.6.1
 MIME-Version: 1.0
-In-Reply-To: <c655306f61af9b2d75ed22053a7cdc3f21022d72.1611337435.git.fdmanana@suse.com>
+In-Reply-To: <afa2ccadd8add70cf742ed7943c01be6fccd13b8.1611340095.git.fdmanana@suse.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
 Content-Transfer-Encoding: 7bit
@@ -75,7 +76,7 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 1/22/21 12:56 PM, fdmanana@kernel.org wrote:
+On 1/22/21 2:07 PM, fdmanana@kernel.org wrote:
 > From: Filipe Manana <fdmanana@suse.com>
 > 
 > After a sudden power failure we may end up with a space cache on disk that
@@ -151,55 +152,9 @@ On 1/22/21 12:56 PM, fdmanana@kernel.org wrote:
 > to happen.
 > 
 > Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> ---
->   fs/btrfs/extent-tree.c | 27 ++++++++++++++++++---------
->   1 file changed, 18 insertions(+), 9 deletions(-)
-> 
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 30b1a630dc2f..89d1b0551cf8 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -2602,8 +2602,6 @@ int btrfs_pin_extent_for_log_replay(struct btrfs_trans_handle *trans,
->   	struct btrfs_block_group *cache;
->   	int ret;
->   
-> -	btrfs_add_excluded_extent(trans->fs_info, bytenr, num_bytes);
-> -
->   	cache = btrfs_lookup_block_group(trans->fs_info, bytenr);
->   	if (!cache)
->   		return -EINVAL;
-> @@ -2615,6 +2613,15 @@ int btrfs_pin_extent_for_log_replay(struct btrfs_trans_handle *trans,
->   	 * the pinned extents.
->   	 */
->   	btrfs_cache_block_group(cache, 1);
-> +	/*
-> +	 * Make sure we wait until the cache is completely built in case it is
-> +	 * missing or is invalid and therefore needs to be rebuilt.
-> +	 */
-> +	if (btrfs_test_opt(trans->fs_info, SPACE_CACHE)) {
-> +		ret = btrfs_wait_block_group_cache_done(cache);
-> +		if (ret)
-> +			return ret;
-> +	}
 
-Sorry I didn't explain this well in my previous reply and on slack.
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 
-If we are going to keep the btrfs_remove_free_space() below, which we have to, 
-we cannot remove the btrfs_add_excluded_extent() without also unconditionally 
-loading the space cache.  The 'load_cache_only' only means we'll wait for the 
-space cache to be loaded in the SPACE_CACHE case, not that we won't start caching.
-
-Consider the free space tree case, we'll be doing the normal caching, and we'll 
-either hit the case that you're trying to fix, because we attempt to remove a 
-free space range that has been partially cached in the bitmap.  Or we'll hit the 
-case where we think we've removed the free space even though it's not been 
-loaded yet.
-
-Your fix needs to remove the excluded extent parts as well as do
-
-btrfs_cache_block_group(cache, 0);
-btrfs_wait_block_group_cache_done(cache);
-
-in order to be properly safe in all cases.  Thanks,
+Thanks,
 
 Josef

@@ -2,62 +2,78 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.3 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-15.2 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F32E6C433DB
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jan 2021 23:06:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 90995C433E9
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jan 2021 23:06:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id C12BC20663
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jan 2021 23:06:05 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 552DD2065E
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jan 2021 23:06:06 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731721AbhAZXFE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 26 Jan 2021 18:05:04 -0500
-Received: from mx2.suse.de ([195.135.220.15]:32980 "EHLO mx2.suse.de"
+        id S1731825AbhAZXFc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 26 Jan 2021 18:05:32 -0500
+Received: from mx2.suse.de ([195.135.220.15]:33634 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1730103AbhAZRFB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 26 Jan 2021 12:05:01 -0500
+        id S2390686AbhAZSnn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 26 Jan 2021 13:43:43 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id B1F8CB761;
-        Tue, 26 Jan 2021 16:43:42 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 6B22EAB92;
+        Tue, 26 Jan 2021 18:43:02 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 9DC60DA7D2; Tue, 26 Jan 2021 17:41:53 +0100 (CET)
-Date:   Tue, 26 Jan 2021 17:41:53 +0100
+        id 8C49CDA7D2; Tue, 26 Jan 2021 19:41:15 +0100 (CET)
+Date:   Tue, 26 Jan 2021 19:41:15 +0100
 From:   David Sterba <dsterba@suse.cz>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH v2 0/5] Serious fixes for different error paths
-Message-ID: <20210126164153.GQ1993@twin.jikos.cz>
+To:     dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
+        linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: Re: [PATCH v3 04/12] btrfs: introduce a FORCE_COMMIT_TRANS flush
+ operation
+Message-ID: <20210126184115.GV1993@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 Mail-Followup-To: dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
         linux-btrfs@vger.kernel.org, kernel-team@fb.com
-References: <cover.1610650736.git.josef@toxicpanda.com>
+References: <cover.1602249928.git.josef@toxicpanda.com>
+ <58ae7655908a28c446139452ea8f5210d590acb4.1602249928.git.josef@toxicpanda.com>
+ <20201029170330.GP6756@twin.jikos.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <cover.1610650736.git.josef@toxicpanda.com>
+In-Reply-To: <20201029170330.GP6756@twin.jikos.cz>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Jan 14, 2021 at 02:02:41PM -0500, Josef Bacik wrote:
-> v1->v2:
-> - Rebased onto misc-next, dropping everything that's been merged so far.
-> - Fixed "btrfs: splice remaining dirty_bg's onto the transaction dirty bg list"
->   to handle the btrfs_alloc_path() failure and cleaned up the error handling as
->   a result of that change.
-> - dropped "btrfs: don't clear ret in btrfs_start_dirty_block_groups" as I fixed
->   it differently in "btrfs: splice remaining dirty_bg's onto the transaction
->   dirty bg list"
-> - Added a link to Zygo's original report in "btrfs: add asserts for deleting
->   backref cache nodes".
-> - Clarified the error condition that lead to the WARN_ON() in the changelog for
->   "btrfs: do not WARN_ON() if we can't find the reloc root".
-> - Added the stack trace that the error injection triggered in order to get the
->   error that happened in "btrfs: abort the transaction if we fail to inc ref in
->   btrfs_copy_root".
+On Thu, Oct 29, 2020 at 06:03:30PM +0100, David Sterba wrote:
+> On Fri, Oct 09, 2020 at 09:28:21AM -0400, Josef Bacik wrote:
+> > Sole-y for preemptive flushing, we want to be able to force the
+> > transaction commit without any of the ambiguity of
+> > may_commit_transaction().  This is because may_commit_transaction()
+> > checks tickets and such, and in preemptive flushing we already know
+> > it'll be helpful, so use this to keep the code nice and clean and
+> > straightforward.
+> > 
+> > Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+> > ---
+> >  fs/btrfs/ctree.h             | 1 +
+> >  fs/btrfs/space-info.c        | 8 ++++++++
+> >  include/trace/events/btrfs.h | 3 ++-
+> >  3 files changed, 11 insertions(+), 1 deletion(-)
+> > 
+> > diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> > index e817b3b3483d..84c5db91dc44 100644
+> > --- a/fs/btrfs/ctree.h
+> > +++ b/fs/btrfs/ctree.h
+> > @@ -2654,6 +2654,7 @@ enum btrfs_flush_state {
+> >  	ALLOC_CHUNK_FORCE	=	8,
+> >  	RUN_DELAYED_IPUTS	=	9,
+> >  	COMMIT_TRANS		=	10,
+> > +	FORCE_COMMIT_TRANS	=	11,
+> 
+> This new state is not documented in space-info.c (before
+> btrfs_space_info_used).
 
-Added to misc-next, thanks.
+I've used to changelog and turned it to the comment.

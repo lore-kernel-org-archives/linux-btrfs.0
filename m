@@ -2,64 +2,194 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.3 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-16.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8987FC433DB
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jan 2021 18:39:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 71062C433DB
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jan 2021 19:22:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 5B1C522240
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jan 2021 18:39:35 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 435ED22B2C
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jan 2021 19:22:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2391221AbhAZRWJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 26 Jan 2021 12:22:09 -0500
-Received: from mx2.suse.de ([195.135.220.15]:37182 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1730115AbhAZHEK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 26 Jan 2021 02:04:10 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 95337AD4E;
-        Tue, 26 Jan 2021 07:03:17 +0000 (UTC)
-Date:   Mon, 25 Jan 2021 23:03:11 -0800
-From:   Davidlohr Bueso <dave@stgolabs.net>
-To:     dsterba@suse.cz, Su Yue <l@damenly.su>,
-        linux-btrfs@vger.kernel.org, stable@vger.kernel.org,
-        Erhard F <erhard_f@mailbox.org>, dave@stgolabs.net
-Subject: Re: [PATCH] btrfs: fix lockdep warning due to seqcount_mutex_init()
- with wrong address
-Message-ID: <20210126070311.wusdu3sfi6ywdrzb@offworld>
-References: <20210121113910.14681-1-l@damenly.su>
- <20210121170756.GE6430@twin.jikos.cz>
- <h7n9tvwl.fsf@damenly.su>
- <20210125165346.GM1993@twin.jikos.cz>
+        id S1732135AbhAZFt1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 26 Jan 2021 00:49:27 -0500
+Received: from esa6.hgst.iphmx.com ([216.71.154.45]:38250 "EHLO
+        esa6.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1732334AbhAZCn6 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Jan 2021 21:43:58 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1611629038; x=1643165038;
+  h=from:to:cc:subject:date:message-id:in-reply-to:
+   references:mime-version:content-transfer-encoding;
+  bh=mMmFlm1ADxq3dYqfU0mxrP6qLI19NJyl4vx6551H+1s=;
+  b=SDvH5xovq6wBTfcifCFQBhNq9Si9ALXp0KycliKsdhou2jBUN4KMXbzB
+   +ZoXbdhQ98BUl+pW08xNNp2cMTXoyYi9chf3Hh7abFGxcIInZdHYBna/p
+   YM3vXiOdO0F2DEX805c5vRomXjO4Qtp2lu/f1lAaCegVBbwxGUI/CMjLu
+   clTIu9OpBlblHYry8kR+KhWOffV+vNe0pBrCNbqercsbN7jwy5EtRpAjW
+   ez3uUy0moVwyBExdMjOG1LzEHtHU4cgKxSrAqsRaOzEQINhV68nPIPZ/8
+   xQVYdnCMJZJyufjb61X3uCmS3WEh5zOxnP/8dphRwAgaJ7uTOZ/W4KVcz
+   w==;
+IronPort-SDR: e7TWfv5AZfRgGMXm8gnQdmuz0xkPmffFJ9TvO7tFSiiEM0TGbhX5IJPksFOpCZy9Zvrz+nBsE0
+ 8n8qDFTRwMbADFvgOsthviJ9EcgK+Lmi2A5YkwO3E2l5ZyOEzE95+ph6zfSA78DAGLOLPNidpk
+ N/MHvr1uoaY+EeTWGZG89R91WVIexDMme1SnGXBF6+b7NJHqfRPQi4/fp7FYAmZZGfuYBsLpaU
+ 3RMZvXImx7KBqYCMr9kFMY4rj/uaj2b0nmkYkNAW7TVotjh1uNzy+QyPHP2u6MJOiza0bwjp4C
+ BEI=
+X-IronPort-AV: E=Sophos;i="5.79,375,1602518400"; 
+   d="scan'208";a="159483582"
+Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
+  by ob1.hgst.iphmx.com with ESMTP; 26 Jan 2021 10:27:06 +0800
+IronPort-SDR: 7FIYzlsFUiU770LmxizF/lvA+a/a8YULB4ilBEgzfZIywGIpLtrU26qpbFpKQy34sSamp/Am69
+ 7J2HtiiHlprJ1RngIGxbKXUB17W7OXMBN3ylMBItO7Sy8LZvW1EOYU5swdg2NRAJ13HIzGvNKt
+ NR6T8f9sKIbU3BYPmxgBd2yxviD0Sw79qQHEVXkARayv6Gkn1oKi7Q3VduiCAisJUQ5P0HdH5p
+ MSKw5BK14RKpvTU/uTd9SaDYWDPOyL3MSHAfsP0FGmTvJUBTonhbFcbmqoaKiQaH2GzfT90/wt
+ 0JH0sEFU1TUPIuXwrd8FjcLy
+Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 25 Jan 2021 18:11:32 -0800
+IronPort-SDR: qGpGfF9+fEaSlZB3VNHTVPx9N+zGYwV/m9HxF+A3yPWZfE68GmRTzgJmz0wzbvZiGmK2sswPCo
+ maD9IVIBNdIqwtHOd0geVrl8PLwkhUkvaA2hJkMraVrrXbg+/jDjXXJIOy5LMqpgY4JNdjQxJ4
+ fOqgu+TKW+KfTFJiLxd8vRim7borarJQchpq3DvBClADYr3f180VCp4INHDw0dPqbbyVv7+vRY
+ Ch9XbpgPfqnTZhmFPRZrIqzsKWF7sAQt1SuiiOsaeGyJiIml1wJtulUiThrIiOw5UXScgeNjll
+ eow=
+WDCIronportException: Internal
+Received: from naota.dhcp.fujisawa.hgst.com ([10.149.52.155])
+  by uls-op-cesaip02.wdc.com with ESMTP; 25 Jan 2021 18:27:04 -0800
+From:   Naohiro Aota <naohiro.aota@wdc.com>
+To:     linux-btrfs@vger.kernel.org, dsterba@suse.com
+Cc:     hare@suse.com, linux-fsdevel@vger.kernel.org,
+        Jens Axboe <axboe@kernel.dk>,
+        Christoph Hellwig <hch@infradead.org>,
+        "Darrick J. Wong" <darrick.wong@oracle.com>,
+        Naohiro Aota <naohiro.aota@wdc.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Subject: [PATCH v14 39/42] btrfs: split alloc_log_tree()
+Date:   Tue, 26 Jan 2021 11:25:17 +0900
+Message-Id: <183f68ab886fde72dcaacacf4619d59f44dfab8d.1611627788.git.naohiro.aota@wdc.com>
+X-Mailer: git-send-email 2.27.0
+In-Reply-To: <cover.1611627788.git.naohiro.aota@wdc.com>
+References: <cover.1611627788.git.naohiro.aota@wdc.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii; format=flowed
-Content-Disposition: inline
-In-Reply-To: <20210125165346.GM1993@twin.jikos.cz>
-User-Agent: NeoMutt/20201120
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, 25 Jan 2021, David Sterba wrote:
+This is a preparation for the next patch. This commit split
+alloc_log_tree() to allocating tree structure part (remains in
+alloc_log_tree()) and allocating tree node part (moved in
+btrfs_alloc_log_tree_node()). The latter part is also exported to be used
+in the next patch.
 
->IMO it's not, though some kind of annotation could be useful. The patch
->introducing the seqcount mutex does not mention any warning so it's
->probably meant only for clarity of the lock nesting or maybe real-time
->related as there are some comments regarding that in seqlock.h.
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+---
+ fs/btrfs/disk-io.c | 33 +++++++++++++++++++++++++++------
+ fs/btrfs/disk-io.h |  2 ++
+ 2 files changed, 29 insertions(+), 6 deletions(-)
 
-That lockdep_assert_held() is just to verify the writer side is properly
-serialized. The real-time aspects here does not apply in that the mutex
-is always preemptible.
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 5d14100ecf72..2e2f09a46f45 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1197,7 +1197,6 @@ static struct btrfs_root *alloc_log_tree(struct btrfs_trans_handle *trans,
+ 					 struct btrfs_fs_info *fs_info)
+ {
+ 	struct btrfs_root *root;
+-	struct extent_buffer *leaf;
+ 
+ 	root = btrfs_alloc_root(fs_info, BTRFS_TREE_LOG_OBJECTID, GFP_NOFS);
+ 	if (!root)
+@@ -1207,6 +1206,14 @@ static struct btrfs_root *alloc_log_tree(struct btrfs_trans_handle *trans,
+ 	root->root_key.type = BTRFS_ROOT_ITEM_KEY;
+ 	root->root_key.offset = BTRFS_TREE_LOG_OBJECTID;
+ 
++	return root;
++}
++
++int btrfs_alloc_log_tree_node(struct btrfs_trans_handle *trans,
++			      struct btrfs_root *root)
++{
++	struct extent_buffer *leaf;
++
+ 	/*
+ 	 * DON'T set SHAREABLE bit for log trees.
+ 	 *
+@@ -1219,26 +1226,33 @@ static struct btrfs_root *alloc_log_tree(struct btrfs_trans_handle *trans,
+ 
+ 	leaf = btrfs_alloc_tree_block(trans, root, 0, BTRFS_TREE_LOG_OBJECTID,
+ 			NULL, 0, 0, 0, BTRFS_NESTING_NORMAL);
+-	if (IS_ERR(leaf)) {
+-		btrfs_put_root(root);
+-		return ERR_CAST(leaf);
+-	}
++	if (IS_ERR(leaf))
++		return PTR_ERR(leaf);
+ 
+ 	root->node = leaf;
+ 
+ 	btrfs_mark_buffer_dirty(root->node);
+ 	btrfs_tree_unlock(root->node);
+-	return root;
++
++	return 0;
+ }
+ 
+ int btrfs_init_log_root_tree(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_fs_info *fs_info)
+ {
+ 	struct btrfs_root *log_root;
++	int ret;
+ 
+ 	log_root = alloc_log_tree(trans, fs_info);
+ 	if (IS_ERR(log_root))
+ 		return PTR_ERR(log_root);
++
++	ret = btrfs_alloc_log_tree_node(trans, log_root);
++	if (ret) {
++		btrfs_put_root(log_root);
++		return ret;
++	}
++
+ 	WARN_ON(fs_info->log_root_tree);
+ 	fs_info->log_root_tree = log_root;
+ 	return 0;
+@@ -1250,11 +1264,18 @@ int btrfs_add_log_tree(struct btrfs_trans_handle *trans,
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
+ 	struct btrfs_root *log_root;
+ 	struct btrfs_inode_item *inode_item;
++	int ret;
+ 
+ 	log_root = alloc_log_tree(trans, fs_info);
+ 	if (IS_ERR(log_root))
+ 		return PTR_ERR(log_root);
+ 
++	ret = btrfs_alloc_log_tree_node(trans, log_root);
++	if (ret) {
++		btrfs_put_root(log_root);
++		return ret;
++	}
++
+ 	log_root->last_trans = trans->transid;
+ 	log_root->root_key.offset = root->root_key.objectid;
+ 
+diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
+index 9f4a2a1e3d36..0e7e9526b6a8 100644
+--- a/fs/btrfs/disk-io.h
++++ b/fs/btrfs/disk-io.h
+@@ -120,6 +120,8 @@ blk_status_t btrfs_wq_submit_bio(struct inode *inode, struct bio *bio,
+ 				 extent_submit_bio_start_t *submit_bio_start);
+ blk_status_t btrfs_submit_bio_done(void *private_data, struct bio *bio,
+ 			  int mirror_num);
++int btrfs_alloc_log_tree_node(struct btrfs_trans_handle *trans,
++			      struct btrfs_root *root);
+ int btrfs_init_log_root_tree(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_fs_info *fs_info);
+ int btrfs_add_log_tree(struct btrfs_trans_handle *trans,
+-- 
+2.27.0
 
->
->Even for a dynamic allocation we'd need a way to synchronize setting the
->variable, it could be possible, but the lockdep report needs to be
->fixed. Right now I don't see another way than the revert.
-
-Agreed, let's revert this until a proper workaround is found.
-
-Thanks,
-Davidlohr

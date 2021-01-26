@@ -7,37 +7,37 @@ X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 51061C433E9
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jan 2021 17:24:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DEB8CC433E0
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jan 2021 17:24:46 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 1E3CD22795
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jan 2021 17:24:03 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 943D220829
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jan 2021 17:24:46 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388954AbhAZRXx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 26 Jan 2021 12:23:53 -0500
-Received: from mx2.suse.de ([195.135.220.15]:54958 "EHLO mx2.suse.de"
+        id S2389602AbhAZRYK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 26 Jan 2021 12:24:10 -0500
+Received: from mx2.suse.de ([195.135.220.15]:54950 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1730238AbhAZIgM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1728502AbhAZIgM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Tue, 26 Jan 2021 03:36:12 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1611650083; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+        t=1611650069; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=brNgDs+PJeGeVQ5EpQbp/VwTl0xMoWhiRnY/kn2lO8o=;
-        b=KGRX6/oukcw/rGdOccxOzDOeCmh4knwRDgD5VPStbOEvQqvuNVCUvKEDfN85tv2NaY+9Kn
-        vl9S+hogy1sW4+eP8enfgvaAS5M60g4G1E+k1Wntx7IovlIdMUMzPBppklismDXQoEyA8l
-        eFAiVig3tpMX+glzFVEonO/VN/XuDww=
+        bh=YAlpLzJU7IxvYSBWyZmuKFX7gvKK9uEoAFAvodNgg4Q=;
+        b=Bq+OD3eW4uothn+B0IRYWlEDIBw1aZmG49Ggia33QwAeaHxEUE4UUpxDS/t2nu1zFGCyao
+        x3AnP5HpBoVYXgQpyEMD+M/O9i6qy8WCGXDl/6c8KEvKWTEIIBkaWLq9kXZrllpWj2Djv2
+        /hMA3hoP72f8JR7FNUJTSo1mUDAx5PE=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 5E28AAF4E;
-        Tue, 26 Jan 2021 08:34:43 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 37837ACF4;
+        Tue, 26 Jan 2021 08:34:29 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     David Sterba <dsterba@suse.com>
-Subject: [PATCH v5 09/18] btrfs: introduce helpers for subpage error status
-Date:   Tue, 26 Jan 2021 16:33:53 +0800
-Message-Id: <20210126083402.142577-10-wqu@suse.com>
+Subject: [PATCH v5 05/18] btrfs: make grab_extent_buffer_from_page() handle subpage case
+Date:   Tue, 26 Jan 2021 16:33:49 +0800
+Message-Id: <20210126083402.142577-6-wqu@suse.com>
 X-Mailer: git-send-email 2.30.0
 In-Reply-To: <20210126083402.142577-1-wqu@suse.com>
 References: <20210126083402.142577-1-wqu@suse.com>
@@ -47,98 +47,59 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Introduce the following functions to handle subpage error status:
+For subpage case, grab_extent_buffer() can't really get an extent buffer
+just from btrfs_subpage.
 
-- btrfs_subpage_set_error()
-- btrfs_subpage_clear_error()
-- btrfs_subpage_test_error()
-  These helpers can only be called when the page has subpage attached
-  and the range is ensured to be inside the page.
+We have radix tree lock protecting us from inserting the same eb into
+the tree.  Thus we don't really need to do the extra hassle, just let
+alloc_extent_buffer() handle the existing eb in radix tree.
 
-- btrfs_page_set_error()
-- btrfs_page_clear_error()
-- btrfs_page_test_error()
-  These helpers can handle both regular sector size and subpage without
-  problem.
+Now if two ebs are being allocated as the same time, one will fail with
+-EEIXST when inserting into the radix tree.
+
+So for grab_extent_buffer(), just always return NULL for subpage case.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 Reviewed-by: David Sterba <dsterba@suse.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/subpage.c | 29 +++++++++++++++++++++++++++++
- fs/btrfs/subpage.h |  2 ++
- 2 files changed, 31 insertions(+)
+ fs/btrfs/extent_io.c | 13 +++++++++++--
+ 1 file changed, 11 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/subpage.c b/fs/btrfs/subpage.c
-index 50b56e58ca93..2fe55a712557 100644
---- a/fs/btrfs/subpage.c
-+++ b/fs/btrfs/subpage.c
-@@ -161,6 +161,33 @@ void btrfs_subpage_clear_uptodate(const struct btrfs_fs_info *fs_info,
- 	spin_unlock_irqrestore(&subpage->lock, flags);
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index ea105cb69e3a..16a29f63cfd1 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -5282,10 +5282,19 @@ struct extent_buffer *alloc_test_extent_buffer(struct btrfs_fs_info *fs_info,
  }
- 
-+void btrfs_subpage_set_error(const struct btrfs_fs_info *fs_info,
-+		struct page *page, u64 start, u32 len)
-+{
-+	struct btrfs_subpage *subpage = (struct btrfs_subpage *)page->private;
-+	const u16 tmp = btrfs_subpage_calc_bitmap(fs_info, page, start, len);
-+	unsigned long flags;
-+
-+	spin_lock_irqsave(&subpage->lock, flags);
-+	subpage->error_bitmap |= tmp;
-+	SetPageError(page);
-+	spin_unlock_irqrestore(&subpage->lock, flags);
-+}
-+
-+void btrfs_subpage_clear_error(const struct btrfs_fs_info *fs_info,
-+		struct page *page, u64 start, u32 len)
-+{
-+	struct btrfs_subpage *subpage = (struct btrfs_subpage *)page->private;
-+	const u16 tmp = btrfs_subpage_calc_bitmap(fs_info, page, start, len);
-+	unsigned long flags;
-+
-+	spin_lock_irqsave(&subpage->lock, flags);
-+	subpage->error_bitmap &= ~tmp;
-+	if (subpage->error_bitmap == 0)
-+		ClearPageError(page);
-+	spin_unlock_irqrestore(&subpage->lock, flags);
-+}
-+
- /*
-  * Unlike set/clear which is dependent on each page status, for test all bits
-  * are tested in the same way.
-@@ -180,6 +207,7 @@ bool btrfs_subpage_test_##name(const struct btrfs_fs_info *fs_info,	\
- 	return ret;							\
- }
- IMPLEMENT_BTRFS_SUBPAGE_TEST_OP(uptodate);
-+IMPLEMENT_BTRFS_SUBPAGE_TEST_OP(error);
- 
- /*
-  * Note that, in selftests (extent-io-tests), we can have empty fs_info passed
-@@ -215,3 +243,4 @@ bool btrfs_page_test_##name(const struct btrfs_fs_info *fs_info,	\
- }
- IMPLEMENT_BTRFS_PAGE_OPS(uptodate, SetPageUptodate, ClearPageUptodate,
- 			 PageUptodate);
-+IMPLEMENT_BTRFS_PAGE_OPS(error, SetPageError, ClearPageError, PageError);
-diff --git a/fs/btrfs/subpage.h b/fs/btrfs/subpage.h
-index 1dee4eb1c5c1..68cbfc4f6765 100644
---- a/fs/btrfs/subpage.h
-+++ b/fs/btrfs/subpage.h
-@@ -20,6 +20,7 @@ struct btrfs_subpage {
- 	/* Common members for both data and metadata pages */
- 	spinlock_t lock;
- 	u16 uptodate_bitmap;
-+	u16 error_bitmap;
- 	union {
- 		/*
- 		 * Structures only used by metadata
-@@ -78,5 +79,6 @@ bool btrfs_page_test_##name(const struct btrfs_fs_info *fs_info,	\
- 		struct page *page, u64 start, u32 len);
- 
- DECLARE_BTRFS_SUBPAGE_OPS(uptodate);
-+DECLARE_BTRFS_SUBPAGE_OPS(error);
- 
  #endif
+ 
+-static struct extent_buffer *grab_extent_buffer(struct page *page)
++static struct extent_buffer *grab_extent_buffer(
++		struct btrfs_fs_info *fs_info, struct page *page)
+ {
+ 	struct extent_buffer *exists;
+ 
++	/*
++	 * For subpage case, we completely rely on radix tree to ensure we
++	 * don't try to insert two ebs for the same bytenr.  So here we always
++	 * return NULL and just continue.
++	 */
++	if (fs_info->sectorsize < PAGE_SIZE)
++		return NULL;
++
+ 	/* Page not yet attached to an extent buffer */
+ 	if (!PagePrivate(page))
+ 		return NULL;
+@@ -5371,7 +5380,7 @@ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
+ 		}
+ 
+ 		spin_lock(&mapping->private_lock);
+-		exists = grab_extent_buffer(p);
++		exists = grab_extent_buffer(fs_info, p);
+ 		if (exists) {
+ 			spin_unlock(&mapping->private_lock);
+ 			unlock_page(p);
 -- 
 2.30.0
 

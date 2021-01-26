@@ -2,156 +2,167 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+X-Spam-Status: No, score=-8.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	PDS_BAD_THREAD_QP_64,SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no
-	version=3.4.0
+	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A7260C433E0
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jan 2021 19:32:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C51E6C433E0
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jan 2021 23:04:56 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 79A5E23109
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jan 2021 19:32:49 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9EEBD20679
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jan 2021 23:04:56 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388341AbhAZFmc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 26 Jan 2021 00:42:32 -0500
-Received: from esa5.hgst.iphmx.com ([216.71.153.144]:30876 "EHLO
-        esa5.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726037AbhAYJSe (ORCPT
+        id S1731705AbhAZXEo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 26 Jan 2021 18:04:44 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34242 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1729331AbhAZEzK (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Jan 2021 04:18:34 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1611566313; x=1643102313;
-  h=from:to:cc:subject:date:message-id:references:
-   content-transfer-encoding:mime-version;
-  bh=wPaNZM1vZ3d+d47pOpYeOndobOK6jBxEFz+/lfRvwFU=;
-  b=RuKrrN25IyGMOIHekYLLLzS0heNfYMlgKTT6GST26NgcWCWWQ+Sog5Bu
-   7xisEbh56vT5bIvKWu1RKcfyIYmODnyWIGJYpA2DIeK3xnrkWq7oDvNS/
-   5YJTqePtYGr7JXHyYY20P5Lna4nZVULlgk5ok2pefLi8zc1Iiv2Pnev3z
-   0sN0PMJQ2xJPP5H1JIr246Ivmyitfh5lrNrVp2ceB2Bt7bXqSGPo9TA4x
-   FUyN8AgjcO0XixOfazso2umKKxiiPebS1vD7quca9LlwzTTq8tzUoSNZ4
-   Dm8R2e1iR2jOmQKbe3WjKTii0WSXkQKmtnN/l0q6NGa5yS2GaAMZeJqH+
-   w==;
-IronPort-SDR: ybn72KGwRgPmM3D4At6aKELwBv/6D2K41S2FIZvviTQGnvV8hb0WLolOkUBTEKJJ/W7Haow+0Y
- CKnasmSowkw7OVxVKsG3iHz6QdTupmi+zQgtk46ysWWiAr9Ie02yLv3HfntMQjIqYD1ynSMjbT
- eoiMmWDQq4Bio9m00WarXZvISZXM+zY6Q3AF8jUzi5va2Z1s0H0IxERPf8B2FP7VKxvgjSjjLJ
- f9X6TcOx1Ib9NF9e4PVapSSfu3dJDutZkuhYKtWRt5HGVOq2J5LOdFMkfBYaVBHmcCklK9wfiu
- JNs=
-X-IronPort-AV: E=Sophos;i="5.79,373,1602518400"; 
-   d="scan'208";a="158239963"
-Received: from mail-bl2nam02lp2051.outbound.protection.outlook.com (HELO NAM02-BL2-obe.outbound.protection.outlook.com) ([104.47.38.51])
-  by ob1.hgst.iphmx.com with ESMTP; 25 Jan 2021 17:02:57 +0800
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
- b=j0+j7/hmXzUFpJfEvPyAe6Ug5Xn2xjdaJ725BzS9GyVTljkiMTu4lF7+sonPn2ciFrUZxS6HPpun6YdXtf7Sk0TbsUDSMBJ/ViAlzY3yk8UVr7V41/KwNAc6GR7avNc57PiwyBZ0Qe/jctJBHAE6lr8LByacLCQt4rOL6w8sF99srTe7yjKCNC7UetfdxUM0N9JuPh+Fx7a/Gn3dbI8f80b5pzsRrgiKTIbgJGXJK9HIKPHiD6vLtqYGBdV7fFtdFD9LGC5Hjw8aAD3UcV1bV9DXf2Ydv/xb08oh4edLLTOdYgawvYmpJHNbbyRSFYEjG51NUTwObZWI49v5JYHNlQ==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector9901;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=G6W5ti7F0DEKeflpVd/qaWyOFiAf8XdEtshNR2ADxQU=;
- b=AfMW/MZaXq5HbU8Eb+HPjWTd6K9e9t6SPT8SMvoaXAI4kR9qyFE2mEJeKMW62j12drCMb9yllVu7Sx+OjX742xOwmg5NN6e+j3gldzhbSiirBjoBhfaUJ8PXKmGlzYIY5NyUsMNOPhROTK0jw2oSf+8fXSfbCjvGQSapCeXQ7cmDgOsEYQiejHx1wboPdqqzUGfpp+3CwoPTHO95T3D+YWuKYHsd6+dnlfNxplSY9ycMrrgar+IpN1d6AT1VDiIO9hUiRI3Y04/ZxUJFZgnz+F1xg8TU6LiR+3KQLZlmGJofGzR451RwzPFaCouEUaVAc4SNvfqWSQYd7JwJC7dY5w==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
- header.d=wdc.com; arc=none
+        Mon, 25 Jan 2021 23:55:10 -0500
+Received: from mail-wm1-x32f.google.com (mail-wm1-x32f.google.com [IPv6:2a00:1450:4864:20::32f])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6909EC061788
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Jan 2021 20:54:30 -0800 (PST)
+Received: by mail-wm1-x32f.google.com with SMTP id m187so1352242wme.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Jan 2021 20:54:30 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=G6W5ti7F0DEKeflpVd/qaWyOFiAf8XdEtshNR2ADxQU=;
- b=gtB28MFMAOKYMpEV+8lgIKqPFFpvduX5CN5uaWRpRvNOh0BPeaQ8DDHMHrb4cJiXVkTWYp9eB/y8mxyu209JUD+SknGZ4Au6HLIA4CEOrmijt/9uenEKW3QRre+5V3hpm6J0s9IIL0wSt0PYxZdmjMmSxOOwfQnfyxzfUvL5/8U=
-Received: from SN4PR0401MB3598.namprd04.prod.outlook.com
- (2603:10b6:803:47::21) by SN6PR04MB5408.namprd04.prod.outlook.com
- (2603:10b6:805:104::23) with Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.3784.11; Mon, 25 Jan
- 2021 09:02:55 +0000
-Received: from SN4PR0401MB3598.namprd04.prod.outlook.com
- ([fe80::c19b:805:20e0:6274]) by SN4PR0401MB3598.namprd04.prod.outlook.com
- ([fe80::c19b:805:20e0:6274%6]) with mapi id 15.20.3784.017; Mon, 25 Jan 2021
- 09:02:55 +0000
-From:   Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
-To:     Josef Bacik <josef@toxicpanda.com>,
-        Naohiro Aota <Naohiro.Aota@wdc.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "dsterba@suse.com" <dsterba@suse.com>
-CC:     "hare@suse.com" <hare@suse.com>,
-        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
-        Jens Axboe <axboe@kernel.dk>,
-        "hch@infradead.org" <hch@infradead.org>,
-        "Darrick J. Wong" <darrick.wong@oracle.com>,
-        kernel test robot <lkp@intel.com>
-Subject: Re: [PATCH v13 22/42] btrfs: split ordered extent when bio is sent
-Thread-Topic: [PATCH v13 22/42] btrfs: split ordered extent when bio is sent
-Thread-Index: AQHW8IfvPraG/TW9u0miP5VLw5sG9Q==
-Date:   Mon, 25 Jan 2021 09:02:55 +0000
-Message-ID: <SN4PR0401MB35987DF6B8CF50F0AD68C6C99BBD9@SN4PR0401MB3598.namprd04.prod.outlook.com>
-References: <cover.1611295439.git.naohiro.aota@wdc.com>
- <25b86d9571b1af386f1711d0d0ae626ae6a86b35.1611295439.git.naohiro.aota@wdc.com>
- <e265540c-9613-9473-f7e6-0f55d455b18e@toxicpanda.com>
-Accept-Language: en-US
-Content-Language: en-US
-X-MS-Has-Attach: 
-X-MS-TNEF-Correlator: 
-authentication-results: toxicpanda.com; dkim=none (message not signed)
- header.d=none;toxicpanda.com; dmarc=none action=none header.from=wdc.com;
-x-originating-ip: [129.253.240.72]
-x-ms-publictraffictype: Email
-x-ms-office365-filtering-ht: Tenant
-x-ms-office365-filtering-correlation-id: 5304d52d-f700-4ed9-8ae1-08d8c1100113
-x-ms-traffictypediagnostic: SN6PR04MB5408:
-x-ld-processed: b61c8803-16f3-4c35-9b17-6f65f441df86,ExtAddr
-x-ms-exchange-transport-forked: True
-x-microsoft-antispam-prvs: <SN6PR04MB54085E2870B00D98553469209BBD9@SN6PR04MB5408.namprd04.prod.outlook.com>
-wdcipoutbound: EOP-TRUE
-x-ms-oob-tlc-oobclassifiers: OLM:8273;
-x-ms-exchange-senderadcheck: 1
-x-microsoft-antispam: BCL:0;
-x-microsoft-antispam-message-info: K6hSC/i16ubVAawFvaHYV0Ug4+XwL3Qh6LRFuL2W1Z7zB1uDVvW3pj/dwmz+sXNbZC5+AuerktT9ew1RFBES62IPIDfRoBwxi6ossCr2HQimP0vYpIuH2udSV+DCb8NzB9kAYiIGqMzlSIr3NU35TBJT70c/LMIIY2H8X7J0wt23bQvyjYghlph+hBxR7ESeSjFsZdZoQSS/+4QagsCdcul9AKrZIdSsEXVN3F7Oh7cIFB1hxt2CqK7Eqnufgcx4vofxKUTSiM7jjKgkfiR6i0ZKeg7IMJ8Z4cP+AjRF3GqFNoxTk3G//4YZ41m6yfVD9yIGIrq9fh/7NO/YpqdqjBg8q4Wkhz6uyg6wA0r24kcd30Q0sNAEn/gV0XX4Cdf3Lo2rX3VuR9ZIol+5xRPBDQ==
-x-forefront-antispam-report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SN4PR0401MB3598.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(4636009)(376002)(366004)(39860400002)(136003)(396003)(346002)(4744005)(66946007)(76116006)(8936002)(66476007)(7696005)(91956017)(6506007)(9686003)(71200400001)(110136005)(4326008)(52536014)(33656002)(478600001)(66446008)(66556008)(86362001)(64756008)(8676002)(316002)(186003)(55016002)(26005)(83380400001)(2906002)(53546011)(5660300002)(54906003);DIR:OUT;SFP:1102;
-x-ms-exchange-antispam-messagedata: =?us-ascii?Q?hUP+oozKOiLhJgjNyLgflR3SBUi558ciSalkTuNIW32VQS8u4P2h/ibRHX8O?=
- =?us-ascii?Q?OYmrPoMJgr4d5z9nNxzRxd8cd429SNoPk8G2+WVPodjOxDdirb8grK43iI8L?=
- =?us-ascii?Q?0e4tXORMrfcCd84ApgykK5NpOc+rIuyHBC9xCE2KJOtsPusgLLuhZRCRhVJq?=
- =?us-ascii?Q?P41FjJZYH3ehhtnczlDbmo7FSGx40GBCgWHjgcjKk84JTWpON7viSdb1gZqa?=
- =?us-ascii?Q?IeTJ7kksO2+8zUXyax44vo5AT4kcttBEOQT3o7fPHeVa0xAiXrBjteg+LGvG?=
- =?us-ascii?Q?hlrsfjXrMIgWZtd8vZrLSyqz7slRvvfCn16/GQXEY3nK3voyE8Lniw8kjajD?=
- =?us-ascii?Q?J9oLUKQ/dAe3kXSXxWUMeuVaS6WcFw/51ON0v8pvh70AFVTH1BcLq1vxKGRD?=
- =?us-ascii?Q?GPad7Xi+lmB4M4PDCjiRG5LpsCtsi+VaAQsBneT10wksRvphlx+q/lb8h1JJ?=
- =?us-ascii?Q?yurawQZMTAAw+ZxZHKF0tZehn91DqgA2BhN/ynUGdJIxoLmsG7awYjC2vR/8?=
- =?us-ascii?Q?Iie0evz/j+VMAdTyF+OeuBMZ4WXZfdemVqVpg/Aw3YyzFVenXMyKwK2m7Ja3?=
- =?us-ascii?Q?drGkCCiajetC74ImcrOAypg3Fe56y16CaMZGPatEFCXjnTrS4xEXCFVaLHd6?=
- =?us-ascii?Q?E4UbzQ1BEkHw4286/PNMw2tAgTdhME9caXPxoIPTU2qw1zgFD9WCCi6wGJZR?=
- =?us-ascii?Q?JuTu1ZTgrwTrJRn+fewGwXhOTP/8rY1pn456gbSPyR3ijES/zje8rLEXCNLD?=
- =?us-ascii?Q?r97iMchExdJtBooAeLFLrLqZRpz/SOBJyYZ+o6zAuo6z2rM7CIDrHXQxMNZC?=
- =?us-ascii?Q?0kjLfVnNcTjtGMkiIVrQd+OSq2csMylhg7LGXfuWk24Hu7KPjxslFkgihY7l?=
- =?us-ascii?Q?ijDuGaCi8DV8vVdR2M/Vn8VjfL19eUVTN72LagbD/T+JTZdbO7LFHrxdOnVC?=
- =?us-ascii?Q?9Pl+8aas/iIU0Z9+YcHJwqyjmGHVjo6T9tg3uGabR2uH3R7E+H3H6gu7IxFy?=
- =?us-ascii?Q?h6HB?=
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: quoted-printable
+        d=rkjnsn-net.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :content-transfer-encoding;
+        bh=MPmCQXWKSTe1cJLnEO8jNShLQ8wkO39ZYX/ENh9wByE=;
+        b=Pjm09QXfgTxtD9dCeDpreWDU3uecONSs3FmOSxy+kAPVdT9O4WRtUHtJ2cIYhLBdIV
+         FWXESixfykdntFRuiKhaD3UZkTGC4uDrQfGc6WwoYIfIconl4gcvnQk+oG1rpJyFo8Ea
+         sC+AqeqX2gBHX5L+2j4A2EZ+fpZB1qM2qWmlZjQF2s6DzFkPYsaXNDIncn4LIoF/sulk
+         MSxI1V3F4jlb5h+S0vXxBFZ6E+LCb5dSHVNCeeu6ovRh9kGLsMEVRohhpQRDFf87vu36
+         7kR3H+jZ6qeUnUd/9X9G4ECUrL+hrtXQ9eKZ8wFDvsj3FpeG3eMxqn3NZWMhgprCiU6f
+         k2RQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:content-transfer-encoding;
+        bh=MPmCQXWKSTe1cJLnEO8jNShLQ8wkO39ZYX/ENh9wByE=;
+        b=l6l24U06kPursRvOVE24gnjQmTF/b+YPjLoycP431jH7oZ1CBKzIJj1TgYmSMlzo+Z
+         8AgV9bXedihoDGBMuWIqioUEHhbhbvQ08268LPOk3jvTbc8fBo5E7cutVbDnoNZkY5ej
+         z3VXpa0hpSVk8Qwd/fhcNS/QTRSSN/Y7mdx8ex5ZyP7/vKbyFpfxHVxDlPudfnvMonBJ
+         UhMN12WCRMB+95W8oCBB/QM2tWou5NDjU0GsO+NFSeEfXMilWQmT+3H3lx2ze6Iz+l1n
+         tpF9twqmMKh45RKvim0c2K2GgVIo5HNb58UfLrMqJ/FdyNXgpFSeJKd5/I0k9LdLvdHB
+         z99Q==
+X-Gm-Message-State: AOAM533SmsKEeggX0KcVUKqgu9+zOE0jJ9o4XKfprFTIAWKPqeezjs3b
+        zIOc+YQ8bDupnWhIdMBEFse9/9Q3Elzu/k40UVU/BXW+sCqUxA==
+X-Google-Smtp-Source: ABdhPJxIu41ZXYmQTu48t3mzrpsVs6yBF5LhcetEr71P52gCK0Vh+DYEE2KrLgwl8o7lOMJGY2YyM1Sp0FuS2hdXx3s=
+X-Received: by 2002:a1c:2341:: with SMTP id j62mr2937455wmj.34.1611636869004;
+ Mon, 25 Jan 2021 20:54:29 -0800 (PST)
 MIME-Version: 1.0
-X-OriginatorOrg: wdc.com
-X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-AuthSource: SN4PR0401MB3598.namprd04.prod.outlook.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: 5304d52d-f700-4ed9-8ae1-08d8c1100113
-X-MS-Exchange-CrossTenant-originalarrivaltime: 25 Jan 2021 09:02:55.3371
- (UTC)
-X-MS-Exchange-CrossTenant-fromentityheader: Hosted
-X-MS-Exchange-CrossTenant-id: b61c8803-16f3-4c35-9b17-6f65f441df86
-X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
-X-MS-Exchange-CrossTenant-userprincipalname: 567EDgWT8pG0wjYJDz9fxPbXoXwHl7grySVNaPSxpyssCWhP0yUZUEHfq7XHISHlpei1b6bD6d+bcgleM2JbKMC5T/ufbGF9sV0kQgrxc2o=
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: SN6PR04MB5408
+References: <CAMj6ewO7PGBoN565WYz_bqL6nGszweNouP-Fphok9+GGpGn8gg@mail.gmail.com>
+ <20190521091842.GS1667@carfax.org.uk> <CAMj6ewPKbRA_eT7JYA9ob9Qk9ZROoshOqaJE=4N_X9bPaskLUw@mail.gmail.com>
+ <CAMj6ewOHrJVdwfKrgXZxwfwE=eoTaB9MS57zha33yb1_iOLWiw@mail.gmail.com>
+ <8aa09a61-aa1c-5dcd-093f-ec096a38a7b5@gmx.com> <CAMj6ewO229vq6=s+T7GhUegwDADv4dzhqPiM0jo10QiKujvytA@mail.gmail.com>
+ <684e89f3-666f-6ae6-5aa2-a4db350c1cd4@gmx.com> <CAMj6ewMqXLtrBQgTJuz04v3MBZ0W95fU4pT0jP6kFhuP830TuA@mail.gmail.com>
+ <218f6448-c558-2551-e058-8a69caadcb23@gmx.com> <CAMj6ewPR8hVYmUSoNWVk6gZvy-HyKnmtMXexAr2f4VQU_7bbUw@mail.gmail.com>
+ <3b2fe3d7-1919-d236-e6bb-483593287cc5@gmx.com> <CAMj6ewNDQFzXsvF5c1=raJc11iMvMKcHH=AbkUkrNeV2e3XGVg@mail.gmail.com>
+ <CAMj6ewPiEvXbtHC1auSfRag5QGtYJxwH_Hvoi2t_18uDSxzm8w@mail.gmail.com>
+ <CAMj6ewNjSs-_3akOquO1Zry5RBNEPqQWf7ZKjs8JOzTA7ZGZ7w@mail.gmail.com>
+ <2abb2701-5dde-cd5d-dd25-084682313b11@gmx.com> <b2bbff7d-22d0-84c2-7749-ac9e27d4ab3d@gmx.com>
+ <CAMj6ewOqCJTGjykDijun9_LWYELA=92HrE+KjGo-ehJTutR_+w@mail.gmail.com>
+In-Reply-To: <CAMj6ewOqCJTGjykDijun9_LWYELA=92HrE+KjGo-ehJTutR_+w@mail.gmail.com>
+From:   Erik Jensen <erikjensen@rkjnsn.net>
+Date:   Mon, 25 Jan 2021 20:54:17 -0800
+Message-ID: <CAMj6ewP-NK3g1xzHNF+fKt6M+_W-ec29Sq+CBtwcb1dcqc7dNA@mail.gmail.com>
+Subject: Re: "bad tree block start" when trying to mount on ARM
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Hugo Mills <hugo@carfax.org.uk>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 22/01/2021 16:24, Josef Bacik wrote:=0A=
->> +	em_new =3D create_io_em(inode, em->start + pre, len,=0A=
->> +			      em->start + pre, em->block_start + pre, len,=0A=
->> +			      len, len, BTRFS_COMPRESS_NONE,=0A=
->> +			      BTRFS_ORDERED_REGULAR);=0A=
-> This bit confuses me, the io_em is just so we have a mapping to an area t=
-hat's =0A=
-> being written to, and this is created at ordered extent time.  I get why =
-we need =0A=
-> to split up the ordered extent, but the existing io_em should be fine, ri=
-ght? =0A=
-=0A=
-unpin_extent_cache() needs em->start !=3D start or it'll WARN there, I'll a=
-dd a comment.=0A=
+On Wed, Jan 20, 2021 at 1:08 AM Erik Jensen <erikjensen@rkjnsn.net> wrote:
+>
+> On Wed, Jan 20, 2021 at 12:31 AM Qu Wenruo <quwenruo.btrfs@gmx.com> wrote=
+:
+> > On 2021/1/20 =E4=B8=8B=E5=8D=884:21, Qu Wenruo wrote:
+> > > On 2021/1/19 =E4=B8=8B=E5=8D=885:28, Erik Jensen wrote:
+> > >> On Mon, Jan 18, 2021 at 9:22 PM Erik Jensen <erikjensen@rkjnsn.net>
+> > >> wrote:
+> > >>>
+> > >>> On Mon, Jan 18, 2021 at 4:12 AM Erik Jensen <erikjensen@rkjnsn.net>
+> > >>> wrote:
+> > >>>>
+> > >>>> The offending system is indeed ARMv7 (specifically a Marvell ARMAD=
+A=C2=AE
+> > >>>> 388), but I believe the Broadcom BCM2835 in my Raspberry Pi is
+> > >>>> actually ARMv6 (with hardware float support).
+> > >>>
+> > >>> Using NBD, I have verified that I receive the same error when
+> > >>> attempting to mount the filesystem on my ARMv6 Raspberry Pi:
+> > >>> [ 3491.339572] BTRFS info (device dm-4): disk space caching is enab=
+led
+> > >>> [ 3491.394584] BTRFS info (device dm-4): has skinny extents
+> > >>> [ 3492.385095] BTRFS error (device dm-4): bad tree block start, wan=
+t
+> > >>> 26207780683776 have 3395945502747707095
+> > >>> [ 3492.514071] BTRFS error (device dm-4): bad tree block start, wan=
+t
+> > >>> 26207780683776 have 3395945502747707095
+> > >>> [ 3492.553599] BTRFS warning (device dm-4): failed to read tree roo=
+t
+> > >>> [ 3492.865368] BTRFS error (device dm-4): open_ctree failed
+> > >>>
+> > >>> The Raspberry Pi is running Linux 5.4.83.
+> > >>>
+> > >>
+> > >> Okay, after some more testing, ARM seems to be irrelevant, and 32-bi=
+t
+> > >> is the key factor. On a whim, I booted up an i686, 5.8.14 kernel in =
+a
+> > >> VM, attached the drives via NBD, ran cryptsetup, tried to mount, and=
+=E2=80=A6
+> > >> I got the exact same error message.
+> > >>
+> > > My educated guess is on 32bit platforms, we passed incorrect sector i=
+nto
+> > > bio, thus gave us garbage.
+> >
+> > To prove that, you can use bcc tool to verify it.
+> > biosnoop can do that:
+> > https://github.com/iovisor/bcc/blob/master/tools/biosnoop_example.txt
+> >
+> > Just try mount the fs with biosnoop running.
+> > With "btrfs ins dump-tree -t chunk <dev>", we can manually calculate th=
+e
+> > offset of each read to see if they matches.
+> > If not match, it would prove my assumption and give us a pretty good
+> > clue to fix.
+> >
+> > Thanks,
+> > Qu
+> >
+> > >
+> > > Is this bug happening only on the fs, or any other btrfs can also
+> > > trigger similar problems on 32bit platforms?
+> > >
+> > > Thanks,
+> > > Qu
+>
+> I have only observed this error on this file system. Additionally, the
+> error mounting with the NAS only started after I did a `btrfs replace`
+> on all five 8TB drives using an x86_64 system. (Ironically, I did this
+> with the goal of making it faster to use the filesystem on the NAS by
+> re-encrypting the drives to use a cipher supported by my NAS's crypto
+> accelerator.)
+>
+> Maybe this process of shuffling 40TB around caused some value in the
+> filesystem to increment to the point that a calculation using it
+> overflows on 32-bit systems?
+>
+> I should be able to try biosnoop later this week, and I'll report back
+> with the results.
+
+Okay, I tried running biosnoop, but I seem to be running into this
+bug: https://github.com/iovisor/bcc/issues/3241 (That bug was reported
+for cpudist, but I'm seeing the same error when I try to run
+biosnoop.)
+
+Anything else I can try?

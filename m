@@ -2,287 +2,156 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-16.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A0C52C43333
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jan 2021 19:32:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3B057C433E6
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jan 2021 19:32:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 7AFA523109
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jan 2021 19:32:01 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1233423109
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jan 2021 19:32:06 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728971AbhAZFn3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 26 Jan 2021 00:43:29 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44172 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727895AbhAYMQC (ORCPT
+        id S2388396AbhAZFoW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 26 Jan 2021 00:44:22 -0500
+Received: from esa6.hgst.iphmx.com ([216.71.154.45]:33033 "EHLO
+        esa6.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1731694AbhAZC1I (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Jan 2021 07:16:02 -0500
-Received: from mail-qt1-x832.google.com (mail-qt1-x832.google.com [IPv6:2607:f8b0:4864:20::832])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EF602C06121F
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Jan 2021 04:15:17 -0800 (PST)
-Received: by mail-qt1-x832.google.com with SMTP id c12so9456696qtv.5
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Jan 2021 04:15:17 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
-         :subject:to:content-transfer-encoding;
-        bh=0uvB4iizeMJIJjZ/jVFdA5IC8cHSY+j5vyS7v+gCK9E=;
-        b=JhUSH2P9KiB6g/gBFuTQFaZIsK2sVYQPp8Ly8+UxVTL4AT6V2ooSmb5wQGRRNusID7
-         C9qEVWAVO5XNz1MZFAskxon3RYpsugnqXX4yNFJ5rjgdnFJzgl7gKRnP9OGbbiJGZez5
-         6AcsuP4zUrIu195ppXbyyZJpGG5e9kxAlF1TmYB+rfm5i7inl7m6P6r6zNdY3JRXadap
-         m2S5fFMFW/LcupMiPCjXMc8B9cVewrRrsd81JH+3S+nMEFwvvktvO0k791AWm8CxDpMz
-         PyAq0fTpXsfrBqFkLskpAjXXc0PlKN+CTU91MkjmcfA00bjt/0hOGc/qTVc0HY7I0OfH
-         mEYg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
-         :from:date:message-id:subject:to:content-transfer-encoding;
-        bh=0uvB4iizeMJIJjZ/jVFdA5IC8cHSY+j5vyS7v+gCK9E=;
-        b=a1xQ/C7dN9uKOaCu/YbpBSiGWuMbIbV1uBQ2jMDPVKYGejlb/cWsPAnx2Lv94s66vS
-         D836uOC6ghP0i7AJBecx98kGpgoiKcHDMbKFaZx3Bsx53TMPbhjxYN0cuRruWYrrFjzi
-         QK8ODTDZ5qsnMIPmiRnbJSutV7TEo3hY2pMpCysJfcCKtA8DhRFD0lPUNvyoVgSYhXRd
-         zASxvjUIxG84g9vqV7KwgoaDBlVC1OVXsWOFhW7/c/T0gasUzMI29/wiQ2kebxaGNIta
-         3mtCUWArb6jBHWUPWXETHqe6xMuL0HpmU9ZZQYcaU9hdQcQJjjetIQpYBqBO+NJTNZvL
-         oNHA==
-X-Gm-Message-State: AOAM531yfO51VR2WvhBvxvzeLFePAzp68nktKIRfADnXVOZ1NBDNNd0j
-        JhunZ3p+xprydb+FZ/6B7oTsVOhZ0pEf34IZN+4=
-X-Google-Smtp-Source: ABdhPJwtOQH0+WNv4BBx14Vz9O48ZFxo/RgsPFQ6q6r0W3VklN7z0BzhgN1G48BOhztdpn3wQfhseXrqQc6u5vgGNnQ=
-X-Received: by 2002:ac8:520a:: with SMTP id r10mr101340qtn.183.1611576916836;
- Mon, 25 Jan 2021 04:15:16 -0800 (PST)
+        Mon, 25 Jan 2021 21:27:08 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1611628028; x=1643164028;
+  h=from:to:cc:subject:date:message-id:in-reply-to:
+   references:mime-version:content-transfer-encoding;
+  bh=eQqHLsjybb7lWCvG4dlunJ6qzMlBgQEQm6/04cQWSLs=;
+  b=Z2imcZ/EOemTr+P6deOUZ4LE9Uol4lS9iaY3cHrOxukwz3Ig/rr+ecsy
+   hkEZ8gvmVZy9/3w65LkPW01eVGgQ93mQeyZzZP15nYUw2ZO2Hi4wbDKkI
+   TIbOeQjqcvBSB46GstEWgXjGFIybeghKQ2L2rMD5mZM0MLpA5+0UNM0H7
+   8B9tnfWOzfDyM+KNxlHLGa0HHivlbxvULPM308qf0TvFHMuJg5Q7gVK9y
+   16HLSe0gKD76Fp8Zme4z1tJKyt5jLqKXLSXThxVUBa7Lawv+abW9dqleT
+   aV72cOprSgBzrR3bU7Dh1DI/Hb1bX5mBQsDsre8bcuEs/WVeTYr0+avGx
+   w==;
+IronPort-SDR: jeOkewXojZEEW/u7rYtZdrSK9D0aQgmfXhNj83by+y/6AfqSWVvr59c3H7aAE2Kn5VRf2Ix/P5
+ c100UQQhOXJZT3CMjeZv4a4/Oq39gxNQYp9HUN/ajaVdiXh5N9ff1wVPidXVhfUhup64/QmQ0N
+ gBKhgNL5eCNFendohLOOVrYHFrEjR6bWzLd4hfJXCRiDSd1sBZRvRM89CsIBGpj75p/FHr1Igj
+ EdkYWBTbMZfgR4MBFXeRs4+S9fhX4fE52fEZeDrRmpO7WEnBCWG0qCbCDYF3Gf5PmO3fURNCo9
+ 2oM=
+X-IronPort-AV: E=Sophos;i="5.79,375,1602518400"; 
+   d="scan'208";a="159483496"
+Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
+  by ob1.hgst.iphmx.com with ESMTP; 26 Jan 2021 10:26:01 +0800
+IronPort-SDR: QbxyO2I9JObZrdu5fAH8iu7EpHMrmGnyaWtXSlT7sE+uXml80q1aRL1fjlBH7I+ID8Pv5OZEjM
+ jmHOonu7i5YcHI3+nrdkwJlZdJl3HrNbdssmws8jfiWgrRnnynCIPOfc+LMIV7v6iTBDCHAY9E
+ A3n73Ly+PenCEX99SlD1QlddpKqEv/XKvKQxFxANx322vmcil/BQ3IxcWhozs7B5Snn2yKvWR2
+ lvmfJBse80rIsulzVeI0PiqbZVUjrzU+hyNWs0/BEAf0sQtUFP15mAqJwFmxj0VYrgH+GoHACR
+ NRljZZ51oFhuFrV/7RXrBTg5
+Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 25 Jan 2021 18:10:27 -0800
+IronPort-SDR: e8ZRGeefFLl9fyACTmPhDkolUe9PxYQU57HxV3qH3NXhG2lDb523uPXmj+k4s5rr28D+Rd1lrk
+ Ej2SjcIji1k5NAz08HzmDK7A6Ya0wbK8ulP/Au1E4COtVG4rf2/2m8CRT31kznyUVbJyo2XS5/
+ 3ouNrm7vgRKmfwkK6+cR4Yaa9RyL1OeCMaqTYHB6k3TEjIDuO7OE7ZJSenGc9LMa2w8X/ynnGd
+ K6UBf1NBeBDY3QkW5iACE1rUoybPapuBs3Eu+MtEcQwjTXxpaELlO16eMqtVoJAk9OanUrqFYO
+ j7U=
+WDCIronportException: Internal
+Received: from naota.dhcp.fujisawa.hgst.com ([10.149.52.155])
+  by uls-op-cesaip02.wdc.com with ESMTP; 25 Jan 2021 18:25:59 -0800
+From:   Naohiro Aota <naohiro.aota@wdc.com>
+To:     linux-btrfs@vger.kernel.org, dsterba@suse.com
+Cc:     hare@suse.com, linux-fsdevel@vger.kernel.org,
+        Jens Axboe <axboe@kernel.dk>,
+        Christoph Hellwig <hch@infradead.org>,
+        "Darrick J. Wong" <darrick.wong@oracle.com>,
+        Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+        Christoph Hellwig <hch@lst.de>,
+        Josef Bacik <josef@toxicpanda.com>,
+        Chaitanya Kulkarni <chaitanya.kulkarni@wdc.com>
+Subject: [PATCH v14 01/42] block: add bio_add_zone_append_page
+Date:   Tue, 26 Jan 2021 11:24:39 +0900
+Message-Id: <2a0a587139de5586a2c563e4d43060b9abcbf1ed.1611627788.git.naohiro.aota@wdc.com>
+X-Mailer: git-send-email 2.27.0
+In-Reply-To: <cover.1611627788.git.naohiro.aota@wdc.com>
+References: <cover.1611627788.git.naohiro.aota@wdc.com>
 MIME-Version: 1.0
-References: <20210121061354.61271-1-wqu@suse.com> <20210121164706.GD6430@twin.jikos.cz>
-In-Reply-To: <20210121164706.GD6430@twin.jikos.cz>
-Reply-To: fdmanana@gmail.com
-From:   Filipe Manana <fdmanana@gmail.com>
-Date:   Mon, 25 Jan 2021 12:15:05 +0000
-Message-ID: <CAL3q7H4D_Hu=Xk0+dazruwnqwW7+kqdS3VXTxQ5kWSe+EuT8kg@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: rework the order of btrfs_ordered_extent::flags
-To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Jan 21, 2021 at 4:52 PM David Sterba <dsterba@suse.cz> wrote:
->
-> On Thu, Jan 21, 2021 at 02:13:54PM +0800, Qu Wenruo wrote:
-> > [BUG]
-> > There is a long existing bug in the last parameter of
-> > btrfs_add_ordered_extent(), in commit 771ed689d2cd ("Btrfs: Optimize
-> > compressed writeback and reads") back to 2008.
-> >
-> > In that ancient commit btrfs_add_ordered_extent() expects the @type
-> > parameter to be one of the following:
-> > - BTRFS_ORDERED_REGULAR
-> > - BTRFS_ORDERED_NOCOW
-> > - BTRFS_ORDERED_PREALLOC
-> > - BTRFS_ORDERED_COMPRESSED
-> >
-> > But we pass 0 in cow_file_range(), which means BTRFS_ORDERED_IO_DONE.
-> >
-> > Ironically extra check in __btrfs_add_ordered_extent() won't set the bi=
-t
-> > if we're seeing (type =3D=3D IO_DONE || type =3D=3D IO_COMPLETE), and a=
-void any
-> > obvious bug.
-> >
-> > But this still leads to regular COW ordered extent having no bit to
-> > indicate its type in various trace events, rendering REGULAR bit
-> > useless.
-> >
-> > [FIX]
-> > This patch will change the following aspects to avoid such problem:
-> > - Reorder btrfs_ordered_extent::flags
-> >   Now the type bits go first (REGULAR/NOCOW/PREALLCO/COMPRESSED), then
-> >   DIRECT bit, finally extra status bits like IO_DONE/COMPLETE/IOERR.
-> >
-> > - Add extra ASSERT() for btrfs_add_ordered_extent_*()
-> >
-> > - Remove @type parameter for btrfs_add_ordered_extent_compress()
-> >   As the only valid @type here is BTRFS_ORDERED_COMPRESSED.
-> >
-> > - Remove the unnecessary special check for IO_DONE/COMPLETE in
-> >   __btrfs_add_ordered_extent()
-> >   This is just to make the code work, with extra ASSERT(), there are
-> >   limited values can be passed in.
-> >
-> > Signed-off-by: Qu Wenruo <wqu@suse.com>
->
-> Added to misc-next thanks.
+From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 
-Btw, I see that you added a Reviewed-by tag from me to the patch.
-However I did not give the tag, not because I forgot but because there
-was a small detail in a comment that should be fixed, which was not
-addressed in misc-next.
+Add bio_add_zone_append_page(), a wrapper around bio_add_hw_page() which
+is intended to be used by file systems that directly add pages to a bio
+instead of using bio_iov_iter_get_pages().
 
-Thanks.
+Cc: Jens Axboe <axboe@kernel.dk>
+Reviewed-by: Christoph Hellwig <hch@lst.de>
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+Reviewed-by: Chaitanya Kulkarni <chaitanya.kulkarni@wdc.com>
+Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+---
+ block/bio.c         | 33 +++++++++++++++++++++++++++++++++
+ include/linux/bio.h |  2 ++
+ 2 files changed, 35 insertions(+)
 
->
-> > ---
-> >  fs/btrfs/inode.c             |  4 ++--
-> >  fs/btrfs/ordered-data.c      | 18 +++++++++++++-----
-> >  fs/btrfs/ordered-data.h      | 37 +++++++++++++++++++++++-------------
-> >  include/trace/events/btrfs.h |  7 ++++---
-> >  4 files changed, 43 insertions(+), 23 deletions(-)
-> >
-> > diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> > index ef6cb7b620d0..ea9056cc5559 100644
-> > --- a/fs/btrfs/inode.c
-> > +++ b/fs/btrfs/inode.c
-> > @@ -917,7 +917,6 @@ static noinline void submit_compressed_extents(stru=
-ct async_chunk *async_chunk)
-> >                                               ins.objectid,
-> >                                               async_extent->ram_size,
-> >                                               ins.offset,
-> > -                                             BTRFS_ORDERED_COMPRESSED,
-> >                                               async_extent->compress_ty=
-pe);
-> >               if (ret) {
-> >                       btrfs_drop_extent_cache(inode, async_extent->star=
-t,
-> > @@ -1127,7 +1126,8 @@ static noinline int cow_file_range(struct btrfs_i=
-node *inode,
-> >               free_extent_map(em);
-> >
-> >               ret =3D btrfs_add_ordered_extent(inode, start, ins.object=
-id,
-> > -                                            ram_size, cur_alloc_size, =
-0);
-> > +                                            ram_size, cur_alloc_size,
-> > +                                            BTRFS_ORDERED_REGULAR);
-> >               if (ret)
-> >                       goto out_drop_extent_cache;
-> >
-> > diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-> > index d5d326c674b1..bd7e187d9b16 100644
-> > --- a/fs/btrfs/ordered-data.c
-> > +++ b/fs/btrfs/ordered-data.c
-> > @@ -199,8 +199,11 @@ static int __btrfs_add_ordered_extent(struct btrfs=
-_inode *inode, u64 file_offset
-> >       entry->compress_type =3D compress_type;
-> >       entry->truncated_len =3D (u64)-1;
-> >       entry->qgroup_rsv =3D ret;
-> > -     if (type !=3D BTRFS_ORDERED_IO_DONE && type !=3D BTRFS_ORDERED_CO=
-MPLETE)
-> > -             set_bit(type, &entry->flags);
-> > +
-> > +     ASSERT(type =3D=3D BTRFS_ORDERED_REGULAR || type =3D=3D BTRFS_ORD=
-ERED_NOCOW ||
-> > +            type =3D=3D BTRFS_ORDERED_PREALLOC ||
-> > +            type =3D=3D BTRFS_ORDERED_COMPRESSED);
->
-> I've reformatted that so that all the checks are on separate lines, it's
-> easier to read though it does not fill the whole line.
->
-> > +     set_bit(type, &entry->flags);
-> >
-> >       if (dio) {
-> >               percpu_counter_add_batch(&fs_info->dio_bytes, num_bytes,
-> > @@ -256,6 +259,8 @@ int btrfs_add_ordered_extent(struct btrfs_inode *in=
-ode, u64 file_offset,
-> >                            u64 disk_bytenr, u64 num_bytes, u64 disk_num=
-_bytes,
-> >                            int type)
-> >  {
-> > +     ASSERT(type =3D=3D BTRFS_ORDERED_REGULAR || type =3D=3D BTRFS_ORD=
-ERED_NOCOW ||
-> > +            type =3D=3D BTRFS_ORDERED_PREALLOC);
-> >       return __btrfs_add_ordered_extent(inode, file_offset, disk_bytenr=
-,
-> >                                         num_bytes, disk_num_bytes, type=
-, 0,
-> >                                         BTRFS_COMPRESS_NONE);
-> > @@ -265,6 +270,8 @@ int btrfs_add_ordered_extent_dio(struct btrfs_inode=
- *inode, u64 file_offset,
-> >                                u64 disk_bytenr, u64 num_bytes,
-> >                                u64 disk_num_bytes, int type)
-> >  {
-> > +     ASSERT(type =3D=3D BTRFS_ORDERED_REGULAR || type =3D=3D BTRFS_ORD=
-ERED_NOCOW ||
-> > +            type =3D=3D BTRFS_ORDERED_PREALLOC);
-> >       return __btrfs_add_ordered_extent(inode, file_offset, disk_bytenr=
-,
-> >                                         num_bytes, disk_num_bytes, type=
-, 1,
-> >                                         BTRFS_COMPRESS_NONE);
-> > @@ -272,11 +279,12 @@ int btrfs_add_ordered_extent_dio(struct btrfs_ino=
-de *inode, u64 file_offset,
-> >
-> >  int btrfs_add_ordered_extent_compress(struct btrfs_inode *inode, u64 f=
-ile_offset,
-> >                                     u64 disk_bytenr, u64 num_bytes,
-> > -                                   u64 disk_num_bytes, int type,
-> > -                                   int compress_type)
-> > +                                   u64 disk_num_bytes, int compress_ty=
-pe)
-> >  {
-> > +     ASSERT(compress_type !=3D BTRFS_COMPRESS_NONE);
-> >       return __btrfs_add_ordered_extent(inode, file_offset, disk_bytenr=
-,
-> > -                                       num_bytes, disk_num_bytes, type=
-, 0,
-> > +                                       num_bytes, disk_num_bytes,
-> > +                                       BTRFS_ORDERED_COMPRESSED, 0,
-> >                                         compress_type);
-> >  }
-> >
-> > diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
-> > index 46194c2c05d4..151ec6bba405 100644
-> > --- a/fs/btrfs/ordered-data.h
-> > +++ b/fs/btrfs/ordered-data.h
-> > @@ -27,7 +27,7 @@ struct btrfs_ordered_sum {
-> >  };
-> >
-> >  /*
-> > - * bits for the flags field:
-> > + * Bits for btrfs_ordered_extent::flags.
-> >   *
-> >   * BTRFS_ORDERED_IO_DONE is set when all of the blocks are written.
-> >   * It is used to make sure metadata is inserted into the tree only onc=
-e
-> > @@ -38,24 +38,36 @@ struct btrfs_ordered_sum {
-> >   * IO is done and any metadata is inserted into the tree.
-> >   */
-> >  enum {
-> > +     /*
-> > +      * Different types for direct io, one and only one of the 4 type =
-can
->
-> direct io
->
-> > +      * be set when creating ordered extent.
-> > +      *
-> > +      * REGULAR:     For regular non-compressed COW write
-> > +      * NOCOW:       For NOCOW write into existing non-hole extent
-> > +      * PREALLOC:    For NOCOW write into preallocated extent
-> > +      * COMPRESSED:  For compressed COW write
-> > +      */
-> > +     BTRFS_ORDERED_REGULAR,
-> > +     BTRFS_ORDERED_NOCOW,
-> > +     BTRFS_ORDERED_PREALLOC,
-> > +     BTRFS_ORDERED_COMPRESSED,
-> > +
-> > +     /*
-> > +      * Extra bit for DirectIO, can only be set for
->
-> DirectIO
->
-> > +      * REGULAR/NOCOW/PREALLOC. No DIO for compressed extent.
->
-> DIO
->
-> Three different ways to spell that but one is enough. Fixed.
+diff --git a/block/bio.c b/block/bio.c
+index 1f2cc1fbe283..2f21d2958b60 100644
+--- a/block/bio.c
++++ b/block/bio.c
+@@ -851,6 +851,39 @@ int bio_add_pc_page(struct request_queue *q, struct bio *bio,
+ }
+ EXPORT_SYMBOL(bio_add_pc_page);
+ 
++/**
++ * bio_add_zone_append_page - attempt to add page to zone-append bio
++ * @bio: destination bio
++ * @page: page to add
++ * @len: vec entry length
++ * @offset: vec entry offset
++ *
++ * Attempt to add a page to the bio_vec maplist of a bio that will be submitted
++ * for a zone-append request. This can fail for a number of reasons, such as the
++ * bio being full or the target block device is not a zoned block device or
++ * other limitations of the target block device. The target block device must
++ * allow bio's up to PAGE_SIZE, so it is always possible to add a single page
++ * to an empty bio.
++ *
++ * Returns: number of bytes added to the bio, or 0 in case of a failure.
++ */
++int bio_add_zone_append_page(struct bio *bio, struct page *page,
++			     unsigned int len, unsigned int offset)
++{
++	struct request_queue *q = bio->bi_disk->queue;
++	bool same_page = false;
++
++	if (WARN_ON_ONCE(bio_op(bio) != REQ_OP_ZONE_APPEND))
++		return 0;
++
++	if (WARN_ON_ONCE(!blk_queue_is_zoned(q)))
++		return 0;
++
++	return bio_add_hw_page(q, bio, page, len, offset,
++			       queue_max_zone_append_sectors(q), &same_page);
++}
++EXPORT_SYMBOL_GPL(bio_add_zone_append_page);
++
+ /**
+  * __bio_try_merge_page - try appending data to an existing bvec.
+  * @bio: destination bio
+diff --git a/include/linux/bio.h b/include/linux/bio.h
+index 1edda614f7ce..de62911473bb 100644
+--- a/include/linux/bio.h
++++ b/include/linux/bio.h
+@@ -455,6 +455,8 @@ void bio_chain(struct bio *, struct bio *);
+ extern int bio_add_page(struct bio *, struct page *, unsigned int,unsigned int);
+ extern int bio_add_pc_page(struct request_queue *, struct bio *, struct page *,
+ 			   unsigned int, unsigned int);
++int bio_add_zone_append_page(struct bio *bio, struct page *page,
++			     unsigned int len, unsigned int offset);
+ bool __bio_try_merge_page(struct bio *bio, struct page *page,
+ 		unsigned int len, unsigned int off, bool *same_page);
+ void __bio_add_page(struct bio *bio, struct page *page,
+-- 
+2.27.0
 
-
-
---=20
-Filipe David Manana,
-
-=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
- right.=E2=80=9D

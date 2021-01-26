@@ -7,56 +7,56 @@ X-Spam-Status: No, score=-16.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D37B1C433DB
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jan 2021 19:22:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E4A47C10F12
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jan 2021 19:22:54 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 8F7C322B2C
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jan 2021 19:22:52 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B699F2310E
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jan 2021 19:22:54 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388791AbhAZFqG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 26 Jan 2021 00:46:06 -0500
-Received: from esa6.hgst.iphmx.com ([216.71.154.45]:38278 "EHLO
+        id S2388668AbhAZFpY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 26 Jan 2021 00:45:24 -0500
+Received: from esa6.hgst.iphmx.com ([216.71.154.45]:33029 "EHLO
         esa6.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1732166AbhAZCjA (ORCPT
+        with ESMTP id S1732027AbhAZCfa (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Jan 2021 21:39:00 -0500
+        Mon, 25 Jan 2021 21:35:30 -0500
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1611628739; x=1643164739;
+  t=1611628530; x=1643164530;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=niCYSduaj1gcu8wTmuqzJ1Ki+mzQOWMfoFT3y/unoec=;
-  b=VbgjJyFsSDaTYZGzFEIt98FpqCU3awhozj2ZVDqjQQhOLLvT+RfGf9rs
-   mUb7wCojTTt5ZJzCuQYFfk1vsw01OIYqz+mL7gLOHVRZUHKU3eeIDRPV+
-   vG6u6qh4stYP/KNdC06gvJGyJPTE66CXLH1xEoB0ePJRh/ACf3DOBD98j
-   fy0nlo0QsqVUAy8nKKMekP7TQ5fOTllEQkaEbZQ6pQduPDQoZeEAG8btK
-   GV9jjlXYSZv2koD3rdkwhWIw4TYPl+JFK8f5nDkKtwyJ9mydtAnwrdx+c
-   B5RBnNsO6FybhFl0LyEzONRNnHgvTu4yNw5q2QJ+UNTLo/8auszCQHcrJ
-   g==;
-IronPort-SDR: KmClbd228Jk69ErQQLXtitf/6oPVKcSS4ESgoF/D7mFPryVRsArO/S3+MpMOTjPlmyjygA1h19
- S33c5VDXITQHPrsbb+FBWFZNGPArkCB9G3uFlSSKV4n+ABOhtcCjIymT/pebsJvUJ0FE6rH7Kw
- T2pgd2hAj+6orQ2PWaKKdcfhkktxPmwS3mE3/OMo0mdPlUaV1/4QRsNQw0gu39FN86nkx5YGOF
- l2o4VIYUbHwal8n3BIq7xMSxA0M16s0xZuIVZPp9gsCxeuCI7Yq+q2Z1Ux3QAxChwmK0pbltVd
- qeY=
+  bh=93seYua6GtUzgBRkbG55tIMzckw0frJtOIIYR7zSu2g=;
+  b=dPce5jkc3Yryib5NvX+XfXghfHerD9Jsl4nRtDuapeEZEnQ7jEn6R22v
+   d5R0P8nZS8q5tpreQ4usLwWflBGV4ey8xEVpYDdqXfnj4WGV2KShnSpEC
+   jgjw7Im26IEUuAq/+96ek4YJGmIMbSOScNxefBXq0+BaCLr8RIHKtlVaX
+   IDCU8DTLe6RDvH3d6DVeNjkgA8X/AqLNpGREp7u2yyE7pPo9PfUStxGbg
+   Q7DMzPN2EFTYms3q6tUC/SyGlHBF86YpHyxYWfa04zlcgP+GzUav6sNb6
+   luFJnlgYq166b5VA4fCcypsOYXaTE9dNerElh15k55CqJx0sghgZKJHPS
+   Q==;
+IronPort-SDR: IeLwFrchL5at2eegMnR7G/XJ9dne8Xi02FBELvDJhhc3+Mz6mvUTRb6x2Z5UjwllhFjzn0uEUn
+ ar2T98IO102231lFStlkHvU2c5yae5gyw4NozF0d6B23CCWjjGIatdGgSyLIFrYOjKDpTq+gEu
+ oiigWr3HKsy64V75uYXQhIARHeiJqaUdF7UDB4VcGvLD/JKiUljunKr1B08ITR/ZVwULDGh44Q
+ gud5f07oh/UzH4YdTfsuJD7yKnj7e2MtsSM9ezjW6m/7dhgvYS95hgY+OFO7MEXErgFxBykgee
+ jB4=
 X-IronPort-AV: E=Sophos;i="5.79,375,1602518400"; 
-   d="scan'208";a="159483564"
+   d="scan'208";a="159483544"
 Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 26 Jan 2021 10:26:47 +0800
-IronPort-SDR: qRO2nLMxwI1L44Oqqo8NOozx4KT4q06QZ+TXRM7ji2unglDts8mLqR4CCSMBa7lwGBRT5ctRox
- B42xaGOeEev6AKdxaRiFz6oy8FndfnExpC86e+oANktU7L+7g8FjMGvcfXYEkfecsT3cThscVL
- TtyS3i0TE4l0oeeooTKosizNo2XTXFBDrxyMPEm5MC+kn9GIqvgXg59Al5j+hSXIrBAVmW6MWA
- s03cp8+Q5zXsma+Ynu/xSNthntMyxWWQgBLqNZnmT1CNFMupxkO/ycCCWiBcoFxltz7/+Bviei
- fOgcytRRBSMqgdvVG4t1ASEP
+  by ob1.hgst.iphmx.com with ESMTP; 26 Jan 2021 10:26:31 +0800
+IronPort-SDR: YWThrVYiADF4pTcEo3Jq36fVvXq5q7xj3U4UKDo1udgDnnxOks+1VvcEC9ECW7OXKLonA+cp26
+ 1v0EUAHMSTN/gYYGKBpiEhSQaNwT+CsInKZLhBRblmKO2SGwVW1zea0Oe5tnEOhbtF/M8ztzHM
+ S0agUgOhBCbeYYC54j4e537GISEWBE7hr/h/eZGezw3aLlglrl9kkKHrvEiFnQpecn+oCwxuda
+ m2PvVyzdqK4qoK7MNhn6C+WMvO1o+5qzcWqz2d5isrQkyLOY/xSX6od8QdurKN6pO+N6p3bTaY
+ keQ42hbX5+64qa2uVIFOCHaF
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 25 Jan 2021 18:11:13 -0800
-IronPort-SDR: XJrfF4KEJpM4IGm7W1vPXouxXc2yF3Vy0wq3l5LniIzjzkBKKrlPVEuhLI6O274WcX9w5bWHtD
- vw0Kdalhjy0qZlSZ4Ty2oDHPu8Cuo8I3z8nxMudyHYYJvg+biu22UYHxdfgkrOlCNkPA2zqBi6
- 21ii39bNiNysWkqwvnI2zGC57If8sU7TZNVxOw5AuNJpHyo5bGdUhFTacxCCrPsQXNddOjUuFt
- C3wyOCty79QNGJepefEK1+H8/nUIRi7XFvuPeDfxq0inc8Gvl8thx8MuEYnXFjyX1ovmC30JvP
- pCU=
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 25 Jan 2021 18:10:58 -0800
+IronPort-SDR: ppnNv1gEYu9RKJ5hsqCPzI7TY7TOkmT10sD95NMwXP8KeBmkUKQY5LK5IiH86VCkecc6aSvZKx
+ 9JBWjHvVeJvRXxOa0n5a3E4mOEnKguzb+Z+uB753clDTVHKTBMY1PqgsIRjIvadUynHQ48AtFI
+ +sFgP0pJT618ewy+NCp2AYO+VJ9rIHklkZXVPQm/9f6lhOEGwW1vVnDJDYtbUezuem15XGHBBI
+ NZDoKGcmcFStL7uWABgOckxY9sCGV/J77C4d/pjY1wFXncKsDpbCvTMdZ20s++K6otpZJPQGcb
+ GfE=
 WDCIronportException: Internal
 Received: from naota.dhcp.fujisawa.hgst.com ([10.149.52.155])
-  by uls-op-cesaip02.wdc.com with ESMTP; 25 Jan 2021 18:26:45 -0800
+  by uls-op-cesaip02.wdc.com with ESMTP; 25 Jan 2021 18:26:30 -0800
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     linux-btrfs@vger.kernel.org, dsterba@suse.com
 Cc:     hare@suse.com, linux-fsdevel@vger.kernel.org,
@@ -65,9 +65,9 @@ Cc:     hare@suse.com, linux-fsdevel@vger.kernel.org,
         "Darrick J. Wong" <darrick.wong@oracle.com>,
         Naohiro Aota <naohiro.aota@wdc.com>,
         Josef Bacik <josef@toxicpanda.com>
-Subject: [PATCH v14 28/42] btrfs: enable zone append writing for direct IO
-Date:   Tue, 26 Jan 2021 11:25:06 +0900
-Message-Id: <537b04a8699749b53431f875692c18bd1e7b379c.1611627788.git.naohiro.aota@wdc.com>
+Subject: [PATCH v14 19/42] btrfs: extract page adding function
+Date:   Tue, 26 Jan 2021 11:24:57 +0900
+Message-Id: <96945d7bd401af14e03525c0c4fe3557ab9441f9.1611627788.git.naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.27.0
 In-Reply-To: <cover.1611627788.git.naohiro.aota@wdc.com>
 References: <cover.1611627788.git.naohiro.aota@wdc.com>
@@ -77,58 +77,101 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Likewise to buffered IO, enable zone append writing for direct IO when its
-used on a zoned block device.
+This commit extract page adding to bio part from submit_extent_page(). The
+page is added only when bio_flags are the same, contiguous and the added
+page fits in the same stripe as pages in the bio.
+
+Condition checkings are reordered to allow early return to avoid possibly
+heavy btrfs_bio_fits_in_stripe() calling.
 
 Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 ---
- fs/btrfs/inode.c | 18 ++++++++++++++++++
- 1 file changed, 18 insertions(+)
+ fs/btrfs/extent_io.c | 58 ++++++++++++++++++++++++++++++++------------
+ 1 file changed, 43 insertions(+), 15 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index e3e4b4f7c0d7..a9bf78eaed42 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -7743,6 +7743,9 @@ static int btrfs_dio_iomap_begin(struct inode *inode, loff_t start,
- 	iomap->bdev = fs_info->fs_devices->latest_bdev;
- 	iomap->length = len;
- 
-+	if (write && btrfs_use_zone_append(BTRFS_I(inode), em))
-+		iomap->flags |= IOMAP_F_ZONE_APPEND;
-+
- 	free_extent_map(em);
- 
- 	return 0;
-@@ -7969,6 +7972,8 @@ static void btrfs_end_dio_bio(struct bio *bio)
- 	if (err)
- 		dip->dio_bio->bi_status = err;
- 
-+	btrfs_record_physical_zoned(dip->inode, dip->logical_offset, bio);
-+
- 	bio_put(bio);
- 	btrfs_dio_private_put(dip);
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index d80b3a96ae49..df434f9ba774 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3060,6 +3060,46 @@ struct bio *btrfs_bio_clone_partial(struct bio *orig, int offset, int size)
+ 	return bio;
  }
-@@ -8121,6 +8126,19 @@ static blk_qc_t btrfs_submit_direct(struct inode *inode, struct iomap *iomap,
- 		bio->bi_end_io = btrfs_end_dio_bio;
- 		btrfs_io_bio(bio)->logical = file_offset;
  
-+		WARN_ON_ONCE(write && btrfs_is_zoned(fs_info) &&
-+			     fs_info->max_zone_append_size &&
-+			     bio_op(bio) != REQ_OP_ZONE_APPEND);
++/**
++ * btrfs_bio_add_page	-	attempt to add a page to bio
++ * @bio:	destination bio
++ * @page:	page to add to the bio
++ * @disk_bytenr:  offset of the new bio or to check whether we are adding
++ *                a contiguous page to the previous one
++ * @pg_offset:	starting offset in the page
++ * @size:	portion of page that we want to write
++ * @prev_bio_flags:  flags of previous bio to see if we can merge the current one
++ * @bio_flags:	flags of the current bio to see if we can merge them
++ * @return:	true if page was added, false otherwise
++ *
++ * Attempt to add a page to bio considering stripe alignment etc. Return
++ * true if successfully page added. Otherwise, return false.
++ */
++static bool btrfs_bio_add_page(struct bio *bio, struct page *page,
++			       u64 disk_bytenr, unsigned int size,
++			       unsigned int pg_offset,
++			       unsigned long prev_bio_flags,
++			       unsigned long bio_flags)
++{
++	sector_t sector = disk_bytenr >> SECTOR_SHIFT;
++	bool contig;
 +
-+		if (bio_op(bio) == REQ_OP_ZONE_APPEND) {
-+			status = extract_ordered_extent(BTRFS_I(inode), bio,
-+							file_offset);
-+			if (status) {
-+				bio_put(bio);
-+				goto out_err;
-+			}
-+		}
++	if (prev_bio_flags != bio_flags)
++		return false;
 +
- 		ASSERT(submit_len >= clone_len);
- 		submit_len -= clone_len;
++	if (prev_bio_flags & EXTENT_BIO_COMPRESSED)
++		contig = bio->bi_iter.bi_sector == sector;
++	else
++		contig = bio_end_sector(bio) == sector;
++	if (!contig)
++		return false;
++
++	if (btrfs_bio_fits_in_stripe(page, size, bio, bio_flags))
++		return false;
++
++	return bio_add_page(bio, page, size, pg_offset) == size;
++}
++
+ /*
+  * @opf:	bio REQ_OP_* and REQ_* flags as one value
+  * @wbc:	optional writeback control for io accounting
+@@ -3088,27 +3128,15 @@ static int submit_extent_page(unsigned int opf,
+ 	int ret = 0;
+ 	struct bio *bio;
+ 	size_t io_size = min_t(size_t, size, PAGE_SIZE);
+-	sector_t sector = disk_bytenr >> 9;
+ 	struct extent_io_tree *tree = &BTRFS_I(page->mapping->host)->io_tree;
  
+ 	ASSERT(bio_ret);
+ 
+ 	if (*bio_ret) {
+-		bool contig;
+-		bool can_merge = true;
+-
+ 		bio = *bio_ret;
+-		if (prev_bio_flags & EXTENT_BIO_COMPRESSED)
+-			contig = bio->bi_iter.bi_sector == sector;
+-		else
+-			contig = bio_end_sector(bio) == sector;
+-
+-		if (btrfs_bio_fits_in_stripe(page, io_size, bio, bio_flags))
+-			can_merge = false;
+-
+-		if (prev_bio_flags != bio_flags || !contig || !can_merge ||
+-		    force_bio_submit ||
+-		    bio_add_page(bio, page, io_size, pg_offset) < io_size) {
++		if (force_bio_submit ||
++		    !btrfs_bio_add_page(bio, page, disk_bytenr, io_size,
++					pg_offset, prev_bio_flags, bio_flags)) {
+ 			ret = submit_one_bio(bio, mirror_num, prev_bio_flags);
+ 			if (ret < 0) {
+ 				*bio_ret = NULL;
 -- 
 2.27.0
 

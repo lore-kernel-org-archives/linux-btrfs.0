@@ -7,67 +7,67 @@ X-Spam-Status: No, score=-16.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E4A47C10F12
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jan 2021 19:22:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E274FC4161F
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jan 2021 19:22:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id B699F2310E
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jan 2021 19:22:54 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C1FC422D58
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jan 2021 19:22:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388668AbhAZFpY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 26 Jan 2021 00:45:24 -0500
+        id S2388736AbhAZFpy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 26 Jan 2021 00:45:54 -0500
 Received: from esa6.hgst.iphmx.com ([216.71.154.45]:33029 "EHLO
         esa6.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1732027AbhAZCfa (ORCPT
+        with ESMTP id S1732135AbhAZCiT (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Jan 2021 21:35:30 -0500
+        Mon, 25 Jan 2021 21:38:19 -0500
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1611628530; x=1643164530;
+  t=1611628698; x=1643164698;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=93seYua6GtUzgBRkbG55tIMzckw0frJtOIIYR7zSu2g=;
-  b=dPce5jkc3Yryib5NvX+XfXghfHerD9Jsl4nRtDuapeEZEnQ7jEn6R22v
-   d5R0P8nZS8q5tpreQ4usLwWflBGV4ey8xEVpYDdqXfnj4WGV2KShnSpEC
-   jgjw7Im26IEUuAq/+96ek4YJGmIMbSOScNxefBXq0+BaCLr8RIHKtlVaX
-   IDCU8DTLe6RDvH3d6DVeNjkgA8X/AqLNpGREp7u2yyE7pPo9PfUStxGbg
-   Q7DMzPN2EFTYms3q6tUC/SyGlHBF86YpHyxYWfa04zlcgP+GzUav6sNb6
-   luFJnlgYq166b5VA4fCcypsOYXaTE9dNerElh15k55CqJx0sghgZKJHPS
-   Q==;
-IronPort-SDR: IeLwFrchL5at2eegMnR7G/XJ9dne8Xi02FBELvDJhhc3+Mz6mvUTRb6x2Z5UjwllhFjzn0uEUn
- ar2T98IO102231lFStlkHvU2c5yae5gyw4NozF0d6B23CCWjjGIatdGgSyLIFrYOjKDpTq+gEu
- oiigWr3HKsy64V75uYXQhIARHeiJqaUdF7UDB4VcGvLD/JKiUljunKr1B08ITR/ZVwULDGh44Q
- gud5f07oh/UzH4YdTfsuJD7yKnj7e2MtsSM9ezjW6m/7dhgvYS95hgY+OFO7MEXErgFxBykgee
- jB4=
+  bh=PzKrK+/EaIAWaAVbsVXNTR19q/xbdDY3gO/u9Gs5HxI=;
+  b=al5MRWWOWX+ganXxPF4fGSZ08w9YrJ1JUx/ihIHYD/W5uWHscz0/fFYU
+   cTu3Lbq1/bsFzMv3DKiqnPMTwYYKN3IJpBXi7RrFTnBQn186R9PIwolay
+   pUT6KbeubwAnlDiy6mYhYpy06jpDg+QYh4mrH9oQn/A3bbw4JmahB1t0P
+   gTxMaSpsszC+Vyb34onojd2mk5lW3GDSvI8wV2xc4VPMoXwwS/+M9MIkK
+   eTZUMBl7u76I0JihA3SgmBN0AhqxCCe0BmZtwyPWNebot0tw0N0FJVqGJ
+   aXaYLz4D2OzWc/9nwFaqtfWPJt0qOAFP0ioPR4m3MscUmYHECrWtr9vfu
+   A==;
+IronPort-SDR: s6kB/mrcJQS3hMrOD8w6YzmHYSIVkjcBOGlu/TS2Jf3CsFw2tS7Yk6ehd8cI1GFHiK3fAPopQ/
+ GqPbPrTGztA1Rmcwp2UyhhIxFvnwqJNaA7rRM87QPnPTl7cAzKyJnPYIvqvkly/qjcHTlc9e7g
+ fI26FghZJ9kgoYvS2wrlIKWaYsM1KzVWkx7L1bwopqlUMn8dTSpXcTdi3qWlYnMlZSHsdeT8P4
+ 8j0B8/IafcjqPautlrZCGFE4YBXPsa3rvS/dLQtm0VBFoqnGOd9JkPOc8OsoKmtfA21IR3av8H
+ DRQ=
 X-IronPort-AV: E=Sophos;i="5.79,375,1602518400"; 
-   d="scan'208";a="159483544"
+   d="scan'208";a="159483560"
 Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 26 Jan 2021 10:26:31 +0800
-IronPort-SDR: YWThrVYiADF4pTcEo3Jq36fVvXq5q7xj3U4UKDo1udgDnnxOks+1VvcEC9ECW7OXKLonA+cp26
- 1v0EUAHMSTN/gYYGKBpiEhSQaNwT+CsInKZLhBRblmKO2SGwVW1zea0Oe5tnEOhbtF/M8ztzHM
- S0agUgOhBCbeYYC54j4e537GISEWBE7hr/h/eZGezw3aLlglrl9kkKHrvEiFnQpecn+oCwxuda
- m2PvVyzdqK4qoK7MNhn6C+WMvO1o+5qzcWqz2d5isrQkyLOY/xSX6od8QdurKN6pO+N6p3bTaY
- keQ42hbX5+64qa2uVIFOCHaF
+  by ob1.hgst.iphmx.com with ESMTP; 26 Jan 2021 10:26:43 +0800
+IronPort-SDR: dXdjsie99ZTF1mhznwTjD46mbzYzQn7VVue/ULPKyf+l+RhNKgb9fOKphV24RZy3RUFgSCDWYg
+ AEpdTPfTq7BXpPYPNUKXyXWAAlNIn8y6ycrVUTqqKqA4sMFTHk2Bz7tQmuSZWr5g5Zj1FYKCla
+ xGjBp9Fc4jiT7Yqjob7GvSQr7MIGK3SExyg6RNaJQbz6SPAkXHV4W0fi58ey73WAKEsFQIFQrL
+ BNb8h9WeR7kcYP6qkDgezWcNGvGS6G8vMQZHAO0y56DnZI/7MNlpdYK/jPCCc2d2n7jgdBRFgG
+ bsC9GsEVuBLimdeih9aV63G1
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 25 Jan 2021 18:10:58 -0800
-IronPort-SDR: ppnNv1gEYu9RKJ5hsqCPzI7TY7TOkmT10sD95NMwXP8KeBmkUKQY5LK5IiH86VCkecc6aSvZKx
- 9JBWjHvVeJvRXxOa0n5a3E4mOEnKguzb+Z+uB753clDTVHKTBMY1PqgsIRjIvadUynHQ48AtFI
- +sFgP0pJT618ewy+NCp2AYO+VJ9rIHklkZXVPQm/9f6lhOEGwW1vVnDJDYtbUezuem15XGHBBI
- NZDoKGcmcFStL7uWABgOckxY9sCGV/J77C4d/pjY1wFXncKsDpbCvTMdZ20s++K6otpZJPQGcb
- GfE=
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 25 Jan 2021 18:11:10 -0800
+IronPort-SDR: GqNM1ae1aOnsw80gVOcTeh/lB/EXYHMdwjPaITkGBlGqUqz+CPqEBK4zL2WU0+zcySCd1Cyk5E
+ sPzJv8KwN2rNgJJW8WbV++zVvM9cxMsEbcwxF39tfdb3lk4sCPBfte7jbITYel4amS5c2epxn5
+ /q1mfxgyDFFdmc9GfKxUZbFrRy7qL7j2xhi/kbtB1u/VY3wM/my+NzL/uIwNV9aEX+M4Y0E/5q
+ IlX5z3Po2M2UZnlutDgKHaKAzR/BacVoTQxvaL60qjAOP2iDm4KiYsdAjlrKZ+U9UXnzDz8sVA
+ IDw=
 WDCIronportException: Internal
 Received: from naota.dhcp.fujisawa.hgst.com ([10.149.52.155])
-  by uls-op-cesaip02.wdc.com with ESMTP; 25 Jan 2021 18:26:30 -0800
+  by uls-op-cesaip02.wdc.com with ESMTP; 25 Jan 2021 18:26:41 -0800
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     linux-btrfs@vger.kernel.org, dsterba@suse.com
 Cc:     hare@suse.com, linux-fsdevel@vger.kernel.org,
         Jens Axboe <axboe@kernel.dk>,
         Christoph Hellwig <hch@infradead.org>,
         "Darrick J. Wong" <darrick.wong@oracle.com>,
-        Naohiro Aota <naohiro.aota@wdc.com>,
+        Johannes Thumshirn <johannes.thumshirn@wdc.com>,
         Josef Bacik <josef@toxicpanda.com>
-Subject: [PATCH v14 19/42] btrfs: extract page adding function
-Date:   Tue, 26 Jan 2021 11:24:57 +0900
-Message-Id: <96945d7bd401af14e03525c0c4fe3557ab9441f9.1611627788.git.naohiro.aota@wdc.com>
+Subject: [PATCH v14 26/42] btrfs: save irq flags when looking up an ordered extent
+Date:   Tue, 26 Jan 2021 11:25:04 +0900
+Message-Id: <a4b8f87040376a80df0899d922d7aa3de5491a5a.1611627788.git.naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.27.0
 In-Reply-To: <cover.1611627788.git.naohiro.aota@wdc.com>
 References: <cover.1611627788.git.naohiro.aota@wdc.com>
@@ -77,101 +77,46 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This commit extract page adding to bio part from submit_extent_page(). The
-page is added only when bio_flags are the same, contiguous and the added
-page fits in the same stripe as pages in the bio.
+From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 
-Condition checkings are reordered to allow early return to avoid possibly
-heavy btrfs_bio_fits_in_stripe() calling.
+A following patch will add another caller of
+btrfs_lookup_ordered_extent() from a bio endio context.
 
+btrfs_lookup_ordered_extent() uses spin_lock_irq() which unconditionally
+disables interrupts. Change this to spin_lock_irqsave() so interrupts
+aren't disabled and re-enabled unconditionally.
+
+Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 Reviewed-by: Josef Bacik <josef@toxicpanda.com>
-Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 ---
- fs/btrfs/extent_io.c | 58 ++++++++++++++++++++++++++++++++------------
- 1 file changed, 43 insertions(+), 15 deletions(-)
+ fs/btrfs/ordered-data.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index d80b3a96ae49..df434f9ba774 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -3060,6 +3060,46 @@ struct bio *btrfs_bio_clone_partial(struct bio *orig, int offset, int size)
- 	return bio;
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index 23aae67fe9e9..7c061146ead9 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -768,9 +768,10 @@ struct btrfs_ordered_extent *btrfs_lookup_ordered_extent(struct btrfs_inode *ino
+ 	struct btrfs_ordered_inode_tree *tree;
+ 	struct rb_node *node;
+ 	struct btrfs_ordered_extent *entry = NULL;
++	unsigned long flags;
+ 
+ 	tree = &inode->ordered_tree;
+-	spin_lock_irq(&tree->lock);
++	spin_lock_irqsave(&tree->lock, flags);
+ 	node = tree_search(tree, file_offset);
+ 	if (!node)
+ 		goto out;
+@@ -781,7 +782,7 @@ struct btrfs_ordered_extent *btrfs_lookup_ordered_extent(struct btrfs_inode *ino
+ 	if (entry)
+ 		refcount_inc(&entry->refs);
+ out:
+-	spin_unlock_irq(&tree->lock);
++	spin_unlock_irqrestore(&tree->lock, flags);
+ 	return entry;
  }
  
-+/**
-+ * btrfs_bio_add_page	-	attempt to add a page to bio
-+ * @bio:	destination bio
-+ * @page:	page to add to the bio
-+ * @disk_bytenr:  offset of the new bio or to check whether we are adding
-+ *                a contiguous page to the previous one
-+ * @pg_offset:	starting offset in the page
-+ * @size:	portion of page that we want to write
-+ * @prev_bio_flags:  flags of previous bio to see if we can merge the current one
-+ * @bio_flags:	flags of the current bio to see if we can merge them
-+ * @return:	true if page was added, false otherwise
-+ *
-+ * Attempt to add a page to bio considering stripe alignment etc. Return
-+ * true if successfully page added. Otherwise, return false.
-+ */
-+static bool btrfs_bio_add_page(struct bio *bio, struct page *page,
-+			       u64 disk_bytenr, unsigned int size,
-+			       unsigned int pg_offset,
-+			       unsigned long prev_bio_flags,
-+			       unsigned long bio_flags)
-+{
-+	sector_t sector = disk_bytenr >> SECTOR_SHIFT;
-+	bool contig;
-+
-+	if (prev_bio_flags != bio_flags)
-+		return false;
-+
-+	if (prev_bio_flags & EXTENT_BIO_COMPRESSED)
-+		contig = bio->bi_iter.bi_sector == sector;
-+	else
-+		contig = bio_end_sector(bio) == sector;
-+	if (!contig)
-+		return false;
-+
-+	if (btrfs_bio_fits_in_stripe(page, size, bio, bio_flags))
-+		return false;
-+
-+	return bio_add_page(bio, page, size, pg_offset) == size;
-+}
-+
- /*
-  * @opf:	bio REQ_OP_* and REQ_* flags as one value
-  * @wbc:	optional writeback control for io accounting
-@@ -3088,27 +3128,15 @@ static int submit_extent_page(unsigned int opf,
- 	int ret = 0;
- 	struct bio *bio;
- 	size_t io_size = min_t(size_t, size, PAGE_SIZE);
--	sector_t sector = disk_bytenr >> 9;
- 	struct extent_io_tree *tree = &BTRFS_I(page->mapping->host)->io_tree;
- 
- 	ASSERT(bio_ret);
- 
- 	if (*bio_ret) {
--		bool contig;
--		bool can_merge = true;
--
- 		bio = *bio_ret;
--		if (prev_bio_flags & EXTENT_BIO_COMPRESSED)
--			contig = bio->bi_iter.bi_sector == sector;
--		else
--			contig = bio_end_sector(bio) == sector;
--
--		if (btrfs_bio_fits_in_stripe(page, io_size, bio, bio_flags))
--			can_merge = false;
--
--		if (prev_bio_flags != bio_flags || !contig || !can_merge ||
--		    force_bio_submit ||
--		    bio_add_page(bio, page, io_size, pg_offset) < io_size) {
-+		if (force_bio_submit ||
-+		    !btrfs_bio_add_page(bio, page, disk_bytenr, io_size,
-+					pg_offset, prev_bio_flags, bio_flags)) {
- 			ret = submit_one_bio(bio, mirror_num, prev_bio_flags);
- 			if (ret < 0) {
- 				*bio_ret = NULL;
 -- 
 2.27.0
 

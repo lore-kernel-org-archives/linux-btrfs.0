@@ -2,115 +2,197 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
+X-Spam-Status: No, score=-16.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 17242C43603
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jan 2021 19:32:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C75E8C43381
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jan 2021 19:32:10 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id E8FDD23109
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jan 2021 19:32:01 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A41482312A
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jan 2021 19:32:10 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732257AbhAZFnw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 26 Jan 2021 00:43:52 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58988 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729992AbhAYPfk (ORCPT
+        id S2388411AbhAZFoZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 26 Jan 2021 00:44:25 -0500
+Received: from esa6.hgst.iphmx.com ([216.71.154.45]:33036 "EHLO
+        esa6.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1731695AbhAZC1J (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Jan 2021 10:35:40 -0500
-Received: from mail-qt1-x82d.google.com (mail-qt1-x82d.google.com [IPv6:2607:f8b0:4864:20::82d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BE0EBC061221
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Jan 2021 07:21:03 -0800 (PST)
-Received: by mail-qt1-x82d.google.com with SMTP id z22so9874215qto.7
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Jan 2021 07:21:03 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=subject:to:cc:references:from:message-id:date:user-agent
-         :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=KQ3e8JmmQ6qyTMfl+B0Nwei3vmsUrXM2EseQEPtv8wE=;
-        b=lconq4aPIAJXwRFYa8/AUwayICocuWwWDGg6t9TAngID364njjRzcq7Sx7xw4K+HaD
-         EwHLEefiGwu/dHRx0sPd9n1vFFUi9z8FCJrF9F3RfwsBAUWk/3DgA79eaxFPs3ciSV6v
-         bZZUrfF40CpHLaNo5Xr3wMK/xm7U3qMrqIXmEdTantcofrRxfJnOX3v7MHMr6JqErfYQ
-         mnlg1CsIvw46s/AK2FVkz7geBWvDPL7M1jsM1LlqdLbGk5G3cuONRN7V2gduuhAXwnbQ
-         u5g4J+gSom+EfrylLyWhVHuMlqsVi/ElZCG8Q+6iPhHMdB94Cd2t0cJ19icyJrwuVJQh
-         G1iQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=KQ3e8JmmQ6qyTMfl+B0Nwei3vmsUrXM2EseQEPtv8wE=;
-        b=agfuI+LC6NyFfQFrmAfKPOLYjPhCcD7FL7inZuPVe5DXy916m6C5BXZlEqjyE2tors
-         XT47pnnrUmG5JAqNJfzubplvjrfAcgySy/L0OArotudlJAvfb7jP4Qiwe96hXFaku0NN
-         HzYUrPla3xdaucqlZ51xJgP+8Mo6kdv7mgZZ77UTa3S9KKXn5Jlh027wBEIX34fhoQl+
-         55635dKOP4jUCrOyh2n+G5ulFTqXL0gO0cx7GRVdXlrO2ttpdiiFOjHrd9T0152TXJW3
-         njsLgWuWrPpiCYtvBU0HamMOFKgzvGu7ubFYaYwxnnuEq8qn350XuHk9LHJhcF95BxyZ
-         M0AA==
-X-Gm-Message-State: AOAM532kaMpTdkxlSrZcitm6gRgrTiHuubgNVmOOqHq2ZwXIIJjq5F2E
-        yVbk9pui6BJWG5lGz8LcQi+Lyp4V/DquApX2
-X-Google-Smtp-Source: ABdhPJwsmiq7LoiwNkwYAnoQvTRT4V99cdNecrr4u3LQLa/d8zE7Af2qdr9vORaAb8hWMNW1vO3khA==
-X-Received: by 2002:a05:622a:20e:: with SMTP id b14mr921833qtx.148.1611588062869;
-        Mon, 25 Jan 2021 07:21:02 -0800 (PST)
-Received: from [192.168.1.45] (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id 2sm9704573qkf.97.2021.01.25.07.21.01
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 25 Jan 2021 07:21:02 -0800 (PST)
-Subject: Re: [RFC][PATCH V5] btrfs: preferred_metadata: preferred device for
- metadata
-To:     Goffredo Baroncelli <kreijack@libero.it>,
-        linux-btrfs@vger.kernel.org
-Cc:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-References: <20210117185435.36263-1-kreijack@libero.it>
-From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <ef8a85ac-4d77-1842-2969-fdfa8b2691e8@toxicpanda.com>
-Date:   Mon, 25 Jan 2021 10:21:01 -0500
-User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0)
- Gecko/20100101 Thunderbird/78.6.1
+        Mon, 25 Jan 2021 21:27:09 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1611628028; x=1643164028;
+  h=from:to:cc:subject:date:message-id:in-reply-to:
+   references:mime-version:content-transfer-encoding;
+  bh=2OGmGEY1byakHiROOdFFJ6CO7FmJZnKKJJ8Xq5Cei/Y=;
+  b=Zb6U8SVOcQOSsgrFyizNk/93NzUburQTZLfA7prblJ59Wm1KDkcpJLYD
+   1tvH9Keo5ifBpTiIrlisfBO6I558zwPQnCRMJnf154gew3fZGC8KljS9D
+   UgyR9V+ky4/efPoH+yy5u6RgxMXHfMmtL3DcZeIJO/ugtZ73MggH+gOUJ
+   hH4NPTB4SO9LEjYgAIgysboDgJRlIqRGtvUnt5N77prypjQS8V1dNMVCK
+   dgC1WWa6Dkg42jG7oQy9G9gs4oKPY9p+pqL5thg6Nw8EmZSNpkju97zl2
+   ZOMNm9sd5XefQuZG5A5PG6Wi+y9n5tJLdNIo+0yKyDQk2+HI2iHIZiQMv
+   w==;
+IronPort-SDR: 9uMIV+3lpmKaie2gs1V+OrxLxXnW3l7nxUEtqglKV6d5m+HdmR5n7g2gd3i8wtaUpVKtlWDW3L
+ KYeOp02KTjbTnoMUin/rL+uQ7RV7e8A1bKl0EgB9MDg2KCBcKEFfBaoi9vn4nRmur8SWxMGTiC
+ WxkaxQllboPoMsYa2PTYpG4LX3qqFQDVz+jD2pqVVY8R1Qd+Gm4SFQE/v0JoiwPuYj3X6IU9h+
+ 6Tzh9AUR8uaAizcL6gl+o/cWc3jebLhoFp4S2FRKs1ihhV3ckuKF3DZv5wZ13ShbwL026Z7DSz
+ 4HU=
+X-IronPort-AV: E=Sophos;i="5.79,375,1602518400"; 
+   d="scan'208";a="159483498"
+Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
+  by ob1.hgst.iphmx.com with ESMTP; 26 Jan 2021 10:26:03 +0800
+IronPort-SDR: voxKt2k8XTMLHziKkQpsDO3WCy5Ld2YeRJ/9BLVGKybsMh7UKnpyIuGKplT2BUb+o48mB5kuLT
+ C6YT/r7JozYVdMahuqy//GExy+LSkIPO6u4NvOnxDD6iiRukqHtWV8+Vad1ECiitxxqOZckqD9
+ oZ9ME129tlAdQmrr77pJKyKxHiwbq82wYiTXYZQuNw2LBOHZ4wiAxtSUyKn+NlN8+v9wega5P8
+ 1T8iK+t3KPrQNotW169bHJeU1mGE0lM8wiIERPGDSH2EjUoNyv9ft0I3QKPWQz1YEw5wHh+n+V
+ XdcXiAVrcH8cIO5V3ibneWn4
+Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 25 Jan 2021 18:10:29 -0800
+IronPort-SDR: HRuVdQSnQxgqAFRTinpTBZiGcpiMr1PDelXmGJ88FKWQEX1YVXet/tB/YpWsBpCwBE/LaiiGEM
+ x2hNYiiVUj/0QOYjBLb3LDxQK5dKiriix0YyWxOPybUuy4lAle5tp2J8uF+IpM9qANKtFQha7r
+ 2YPVYjxtc6qCVl1+dxyJTc3tNHCAwLAgpNk+pKCL/xyx9BgnjuI2DUzSurnwRhBLL8rVppBl+e
+ ffQ34zWrvomP0afXvHDxxw6ulD0Ks5ce1FQloMAeDKeLgFumEmyHKvamrijlWzk2FVLT6z+idB
+ ilA=
+WDCIronportException: Internal
+Received: from naota.dhcp.fujisawa.hgst.com ([10.149.52.155])
+  by uls-op-cesaip02.wdc.com with ESMTP; 25 Jan 2021 18:26:01 -0800
+From:   Naohiro Aota <naohiro.aota@wdc.com>
+To:     linux-btrfs@vger.kernel.org, dsterba@suse.com
+Cc:     hare@suse.com, linux-fsdevel@vger.kernel.org,
+        Jens Axboe <axboe@kernel.dk>,
+        Christoph Hellwig <hch@infradead.org>,
+        "Darrick J. Wong" <darrick.wong@oracle.com>,
+        Naohiro Aota <naohiro.aota@wdc.com>,
+        Christoph Hellwig <hch@lst.de>,
+        Chaitanya Kulkarni <chaitanya.kulkarni@wdc.com>
+Subject: [PATCH v14 02/42] iomap: support REQ_OP_ZONE_APPEND
+Date:   Tue, 26 Jan 2021 11:24:40 +0900
+Message-Id: <adb1935b96c63a34a92bbf3dc5e97d10724e34f0.1611627788.git.naohiro.aota@wdc.com>
+X-Mailer: git-send-email 2.27.0
+In-Reply-To: <cover.1611627788.git.naohiro.aota@wdc.com>
+References: <cover.1611627788.git.naohiro.aota@wdc.com>
 MIME-Version: 1.0
-In-Reply-To: <20210117185435.36263-1-kreijack@libero.it>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 1/17/21 1:54 PM, Goffredo Baroncelli wrote:
-> 
-> Hi all,
-> 
-> This is an RFC; I wrote this patch because I find the idea interesting
-> even though it adds more complication to the chunk allocator.
-> 
-> The basic idea is to store the metadata chunk in the fasters disks.
-> The fasters disk are marked by the "preferred_metadata" flag.
-> 
-> BTRFS when allocate a new metadata/system chunk, selects the
-> "preferred_metadata" disks, otherwise it selectes the non
-> "preferred_metadata" disks. The intial patch allowed to use the other
-> kind of disk in case a set is full.
-> 
-> This patches set is based on v5.11-rc2.
-> 
-> For now, the only user of this patch that I am aware is Zygo.
-> However he asked to further constraint the allocation: i.e. avoid to
-> allocated metadata on a not "preferred_metadata"
-> disk. So I extended the patch adding 4 modes to operate.
-> 
+A ZONE_APPEND bio must follow hardware restrictions (e.g. not exceeding
+max_zone_append_sectors) not to be split. bio_iov_iter_get_pages builds
+such restricted bio using __bio_iov_append_get_pages if bio_op(bio) ==
+REQ_OP_ZONE_APPEND.
 
-Ok this discussion is going in a few different directions, and there's a lot of 
-moving parts here.  I don't want Goffredo to wander off and do V6 only to have 
-us go off into the weeds on random particulars of how we think this thing is 
-supposed to work.  To that end, I've opened a design issue in github
+To utilize it, we need to set the bio_op before calling
+bio_iov_iter_get_pages(). This commit introduces IOMAP_F_ZONE_APPEND, so
+that iomap user can set the flag to indicate they want REQ_OP_ZONE_APPEND
+and restricted bio.
 
-https://github.com/btrfs/btrfs-todo/issues/19
+Reviewed-by: Darrick J. Wong <darrick.wong@oracle.com>
+Reviewed-by: Christoph Hellwig <hch@lst.de>
+Reviewed-by: Chaitanya Kulkarni <chaitanya.kulkarni@wdc.com>
+Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+---
+ fs/iomap/direct-io.c  | 43 +++++++++++++++++++++++++++++++++++++------
+ include/linux/iomap.h |  1 +
+ 2 files changed, 38 insertions(+), 6 deletions(-)
 
-and filled out what I think are all the questions and points we've all brought 
-up throughout these discussions.  Everybody please weigh in on the task, laying 
-out what they think is the best way forward for some/all of these questions. 
-Once we have an agreed upon design then Goffredo can go and do V6, and then we 
-only have to argue about the code and not the design.  Thanks,
+diff --git a/fs/iomap/direct-io.c b/fs/iomap/direct-io.c
+index 933f234d5bec..2273120d8ed7 100644
+--- a/fs/iomap/direct-io.c
++++ b/fs/iomap/direct-io.c
+@@ -201,6 +201,34 @@ iomap_dio_zero(struct iomap_dio *dio, struct iomap *iomap, loff_t pos,
+ 	iomap_dio_submit_bio(dio, iomap, bio, pos);
+ }
+ 
++/*
++ * Figure out the bio's operation flags from the dio request, the
++ * mapping, and whether or not we want FUA.  Note that we can end up
++ * clearing the WRITE_FUA flag in the dio request.
++ */
++static inline unsigned int
++iomap_dio_bio_opflags(struct iomap_dio *dio, struct iomap *iomap, bool use_fua)
++{
++	unsigned int opflags = REQ_SYNC | REQ_IDLE;
++
++	if (!(dio->flags & IOMAP_DIO_WRITE)) {
++		WARN_ON_ONCE(iomap->flags & IOMAP_F_ZONE_APPEND);
++		return REQ_OP_READ;
++	}
++
++	if (iomap->flags & IOMAP_F_ZONE_APPEND)
++		opflags |= REQ_OP_ZONE_APPEND;
++	else
++		opflags |= REQ_OP_WRITE;
++
++	if (use_fua)
++		opflags |= REQ_FUA;
++	else
++		dio->flags &= ~IOMAP_DIO_WRITE_FUA;
++
++	return opflags;
++}
++
+ static loff_t
+ iomap_dio_bio_actor(struct inode *inode, loff_t pos, loff_t length,
+ 		struct iomap_dio *dio, struct iomap *iomap)
+@@ -208,6 +236,7 @@ iomap_dio_bio_actor(struct inode *inode, loff_t pos, loff_t length,
+ 	unsigned int blkbits = blksize_bits(bdev_logical_block_size(iomap->bdev));
+ 	unsigned int fs_block_size = i_blocksize(inode), pad;
+ 	unsigned int align = iov_iter_alignment(dio->submit.iter);
++	unsigned int bio_opf;
+ 	struct bio *bio;
+ 	bool need_zeroout = false;
+ 	bool use_fua = false;
+@@ -263,6 +292,13 @@ iomap_dio_bio_actor(struct inode *inode, loff_t pos, loff_t length,
+ 			iomap_dio_zero(dio, iomap, pos - pad, pad);
+ 	}
+ 
++	/*
++	 * Set the operation flags early so that bio_iov_iter_get_pages
++	 * can set up the page vector appropriately for a ZONE_APPEND
++	 * operation.
++	 */
++	bio_opf = iomap_dio_bio_opflags(dio, iomap, use_fua);
++
+ 	do {
+ 		size_t n;
+ 		if (dio->error) {
+@@ -278,6 +314,7 @@ iomap_dio_bio_actor(struct inode *inode, loff_t pos, loff_t length,
+ 		bio->bi_ioprio = dio->iocb->ki_ioprio;
+ 		bio->bi_private = dio;
+ 		bio->bi_end_io = iomap_dio_bio_end_io;
++		bio->bi_opf = bio_opf;
+ 
+ 		ret = bio_iov_iter_get_pages(bio, dio->submit.iter);
+ 		if (unlikely(ret)) {
+@@ -293,14 +330,8 @@ iomap_dio_bio_actor(struct inode *inode, loff_t pos, loff_t length,
+ 
+ 		n = bio->bi_iter.bi_size;
+ 		if (dio->flags & IOMAP_DIO_WRITE) {
+-			bio->bi_opf = REQ_OP_WRITE | REQ_SYNC | REQ_IDLE;
+-			if (use_fua)
+-				bio->bi_opf |= REQ_FUA;
+-			else
+-				dio->flags &= ~IOMAP_DIO_WRITE_FUA;
+ 			task_io_account_write(n);
+ 		} else {
+-			bio->bi_opf = REQ_OP_READ;
+ 			if (dio->flags & IOMAP_DIO_DIRTY)
+ 				bio_set_pages_dirty(bio);
+ 		}
+diff --git a/include/linux/iomap.h b/include/linux/iomap.h
+index 5bd3cac4df9c..8ebb1fa6f3b7 100644
+--- a/include/linux/iomap.h
++++ b/include/linux/iomap.h
+@@ -55,6 +55,7 @@ struct vm_fault;
+ #define IOMAP_F_SHARED		0x04
+ #define IOMAP_F_MERGED		0x08
+ #define IOMAP_F_BUFFER_HEAD	0x10
++#define IOMAP_F_ZONE_APPEND	0x20
+ 
+ /*
+  * Flags set by the core iomap code during operations:
+-- 
+2.27.0
 
-Josef

@@ -7,35 +7,35 @@ X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6E1DBC433DB
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jan 2021 15:12:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3DC7BC433E6
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jan 2021 15:12:52 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 3EBF32310E
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jan 2021 15:12:12 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 126142311D
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jan 2021 15:12:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2406120AbhAZPL4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 26 Jan 2021 10:11:56 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54648 "EHLO
+        id S2392742AbhAZPFO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 26 Jan 2021 10:05:14 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53158 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2406065AbhAZPLq (ORCPT
+        with ESMTP id S2392696AbhAZPFB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 26 Jan 2021 10:11:46 -0500
+        Tue, 26 Jan 2021 10:05:01 -0500
 Received: from casper.infradead.org (casper.infradead.org [IPv6:2001:8b0:10b:1236::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 475E6C061A31;
-        Tue, 26 Jan 2021 07:11:06 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0D36BC061A31;
+        Tue, 26 Jan 2021 07:04:21 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=casper.20170209; h=Content-Transfer-Encoding:MIME-Version:
         References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:
         Content-Type:Content-ID:Content-Description;
-        bh=o7VUFbuCs40X37XHTmVmjDE9l+0qzfo+L5D5+3HB/Xs=; b=aV79kHDk99zhkL6s5WblnMsXYm
-        MUeYdtQAir6ZpBM6WxTX2uHNWa9GoJblM5+y9lvBViksx2RanhFgtOVoykjDrNKUAASUImAhQ2S9S
-        kCfJVL4xwzijj26ZqmZV0RNsrXFPbf4N+/Nr6bUnSe70GhYydpXzWfT1u3SDcEBkvvxsPZwC5/Opl
-        QrXnJfVNQdYsJMZo5rcHFwaYuDhpw+B9jZZ2qD3QFDvKwydp8nBngTufhjUIOGN8sMm7ejCwV76Ba
-        wQKngqSt6P9/gxTf3mYfoWEoeugpEM9qEEobeCMKiVADWZmeomcieNiE/g3oi2zy++X/iQc0gI0gY
-        x6aONCMg==;
+        bh=CdCfnYFFIv1ltUJZffW4u/NyTHX/9CqXY+v2ih8xgNs=; b=O462VxC4MBXhmWGuB9OUKroqs4
+        typGBFqFMCyilTu7ML8uHujgoR9JF8SWDaddj4Ym9aoIznm4P/RmkkcdZipgiCdy4CU/UlVqyCg8+
+        sE1wXXgjIMYGNs0msjRYv9xvtlapQFy8jZVsy5C7CzVYfcpVdPRdw8u2BYpaD1xI3nvrIeQFywGSR
+        2MZh8zfGdDv+YvYVyz/uLytE6ZQd0SGX085MxoE2Rj5ABlvPXKnyYXnzTHwuLv5OUu9s0Yozu3Zcx
+        cZljekJxqWStXaapkXgUZwyHP/gFeSzGvDBtSzy7qERfQsEUKoYCN1UZvCATMBsZSJ+VV/2zxe2jp
+        kChbAVww==;
 Received: from [2001:4bb8:191:e347:5918:ac86:61cb:8801] (helo=localhost)
         by casper.infradead.org with esmtpsa (Exim 4.94 #2 (Red Hat Linux))
-        id 1l4PuS-005nI7-1q; Tue, 26 Jan 2021 15:06:07 +0000
+        id 1l4PoW-005mZ0-Km; Tue, 26 Jan 2021 14:59:54 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Jens Axboe <axboe@kernel.dk>, Song Liu <song@kernel.org>
 Cc:     Jaegeuk Kim <jaegeuk@kernel.org>, Chao Yu <chao@kernel.org>,
@@ -54,9 +54,9 @@ Cc:     Jaegeuk Kim <jaegeuk@kernel.org>, Chao Yu <chao@kernel.org>,
         linux-bcache@vger.kernel.org, linux-raid@vger.kernel.org,
         linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
         linux-nfs@vger.kernel.org, linux-mm@kvack.org
-Subject: [PATCH 08/17] f2fs: remove FAULT_ALLOC_BIO
-Date:   Tue, 26 Jan 2021 15:52:38 +0100
-Message-Id: <20210126145247.1964410-9-hch@lst.de>
+Subject: [PATCH 04/17] block: split bio_kmalloc from bio_alloc_bioset
+Date:   Tue, 26 Jan 2021 15:52:34 +0100
+Message-Id: <20210126145247.1964410-5-hch@lst.de>
 X-Mailer: git-send-email 2.29.2
 In-Reply-To: <20210126145247.1964410-1-hch@lst.de>
 References: <20210126145247.1964410-1-hch@lst.de>
@@ -67,107 +67,259 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Sleeping bio allocations do not fail, which means that injecting an error
-into sleeping bio allocations is a little silly.
+bio_kmalloc shares almost no logic with the bio_set based fast path
+in bio_alloc_bioset.  Split it into an entirely separate implementation.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- Documentation/filesystems/f2fs.rst |  1 -
- fs/f2fs/data.c                     | 29 ++++-------------------------
- fs/f2fs/f2fs.h                     |  1 -
- fs/f2fs/super.c                    |  1 -
- 4 files changed, 4 insertions(+), 28 deletions(-)
+ block/bio.c         | 167 ++++++++++++++++++++++----------------------
+ include/linux/bio.h |   6 +-
+ 2 files changed, 86 insertions(+), 87 deletions(-)
 
-diff --git a/Documentation/filesystems/f2fs.rst b/Documentation/filesystems/f2fs.rst
-index dae15c96e659e2..624f5f3ed93e86 100644
---- a/Documentation/filesystems/f2fs.rst
-+++ b/Documentation/filesystems/f2fs.rst
-@@ -179,7 +179,6 @@ fault_type=%d		 Support configuring fault injection type, should be
- 			 FAULT_KVMALLOC		  0x000000002
- 			 FAULT_PAGE_ALLOC	  0x000000004
- 			 FAULT_PAGE_GET		  0x000000008
--			 FAULT_ALLOC_BIO	  0x000000010
- 			 FAULT_ALLOC_NID	  0x000000020
- 			 FAULT_ORPHAN		  0x000000040
- 			 FAULT_BLOCK		  0x000000080
-diff --git a/fs/f2fs/data.c b/fs/f2fs/data.c
-index 0cf0c605992431..9fb6be65592b1f 100644
---- a/fs/f2fs/data.c
-+++ b/fs/f2fs/data.c
-@@ -50,28 +50,6 @@ void f2fs_destroy_bioset(void)
- 	bioset_exit(&f2fs_bioset);
+diff --git a/block/bio.c b/block/bio.c
+index dfd7740a32300a..d4375619348c52 100644
+--- a/block/bio.c
++++ b/block/bio.c
+@@ -396,123 +396,101 @@ static void punt_bios_to_rescuer(struct bio_set *bs)
+  * @nr_iovecs:	number of iovecs to pre-allocate
+  * @bs:		the bio_set to allocate from.
+  *
+- * Description:
+- *   If @bs is NULL, uses kmalloc() to allocate the bio; else the allocation is
+- *   backed by the @bs's mempool.
++ * Allocate a bio from the mempools in @bs.
+  *
+- *   When @bs is not NULL, if %__GFP_DIRECT_RECLAIM is set then bio_alloc will
+- *   always be able to allocate a bio. This is due to the mempool guarantees.
+- *   To make this work, callers must never allocate more than 1 bio at a time
+- *   from this pool. Callers that need to allocate more than 1 bio must always
+- *   submit the previously allocated bio for IO before attempting to allocate
+- *   a new one. Failure to do so can cause deadlocks under memory pressure.
++ * If %__GFP_DIRECT_RECLAIM is set then bio_alloc will always be able to
++ * allocate a bio.  This is due to the mempool guarantees.  To make this work,
++ * callers must never allocate more than 1 bio at a time from the general pool.
++ * Callers that need to allocate more than 1 bio must always submit the
++ * previously allocated bio for IO before attempting to allocate a new one.
++ * Failure to do so can cause deadlocks under memory pressure.
+  *
+- *   Note that when running under submit_bio_noacct() (i.e. any block
+- *   driver), bios are not submitted until after you return - see the code in
+- *   submit_bio_noacct() that converts recursion into iteration, to prevent
+- *   stack overflows.
++ * Note that when running under submit_bio_noacct() (i.e. any block driver),
++ * bios are not submitted until after you return - see the code in
++ * submit_bio_noacct() that converts recursion into iteration, to prevent
++ * stack overflows.
+  *
+- *   This would normally mean allocating multiple bios under
+- *   submit_bio_noacct() would be susceptible to deadlocks, but we have
+- *   deadlock avoidance code that resubmits any blocked bios from a rescuer
+- *   thread.
++ * This would normally mean allocating multiple bios under submit_bio_noacct()
++ * would be susceptible to deadlocks, but we have
++ * deadlock avoidance code that resubmits any blocked bios from a rescuer
++ * thread.
+  *
+- *   However, we do not guarantee forward progress for allocations from other
+- *   mempools. Doing multiple allocations from the same mempool under
+- *   submit_bio_noacct() should be avoided - instead, use bio_set's front_pad
+- *   for per bio allocations.
++ * However, we do not guarantee forward progress for allocations from other
++ * mempools. Doing multiple allocations from the same mempool under
++ * submit_bio_noacct() should be avoided - instead, use bio_set's front_pad
++ * for per bio allocations.
+  *
+- *   RETURNS:
+- *   Pointer to new bio on success, NULL on failure.
++ * Returns: Pointer to new bio on success, NULL on failure.
+  */
+ struct bio *bio_alloc_bioset(gfp_t gfp_mask, unsigned int nr_iovecs,
+ 			     struct bio_set *bs)
+ {
+ 	gfp_t saved_gfp = gfp_mask;
+-	unsigned front_pad;
+-	unsigned inline_vecs;
+-	struct bio_vec *bvl = NULL;
+ 	struct bio *bio;
+ 	void *p;
+ 
+-	if (!bs) {
+-		if (nr_iovecs > UIO_MAXIOV)
+-			return NULL;
+-
+-		p = kmalloc(struct_size(bio, bi_inline_vecs, nr_iovecs), gfp_mask);
+-		front_pad = 0;
+-		inline_vecs = nr_iovecs;
+-	} else {
+-		/* should not use nobvec bioset for nr_iovecs > 0 */
+-		if (WARN_ON_ONCE(!mempool_initialized(&bs->bvec_pool) &&
+-				 nr_iovecs > 0))
+-			return NULL;
+-		/*
+-		 * submit_bio_noacct() converts recursion to iteration; this
+-		 * means if we're running beneath it, any bios we allocate and
+-		 * submit will not be submitted (and thus freed) until after we
+-		 * return.
+-		 *
+-		 * This exposes us to a potential deadlock if we allocate
+-		 * multiple bios from the same bio_set() while running
+-		 * underneath submit_bio_noacct(). If we were to allocate
+-		 * multiple bios (say a stacking block driver that was splitting
+-		 * bios), we would deadlock if we exhausted the mempool's
+-		 * reserve.
+-		 *
+-		 * We solve this, and guarantee forward progress, with a rescuer
+-		 * workqueue per bio_set. If we go to allocate and there are
+-		 * bios on current->bio_list, we first try the allocation
+-		 * without __GFP_DIRECT_RECLAIM; if that fails, we punt those
+-		 * bios we would be blocking to the rescuer workqueue before
+-		 * we retry with the original gfp_flags.
+-		 */
+-
+-		if (current->bio_list &&
+-		    (!bio_list_empty(&current->bio_list[0]) ||
+-		     !bio_list_empty(&current->bio_list[1])) &&
+-		    bs->rescue_workqueue)
+-			gfp_mask &= ~__GFP_DIRECT_RECLAIM;
++	/* should not use nobvec bioset for nr_iovecs > 0 */
++	if (WARN_ON_ONCE(!mempool_initialized(&bs->bvec_pool) && nr_iovecs > 0))
++		return NULL;
+ 
++	/*
++	 * submit_bio_noacct() converts recursion to iteration; this means if
++	 * we're running beneath it, any bios we allocate and submit will not be
++	 * submitted (and thus freed) until after we return.
++	 *
++	 * This exposes us to a potential deadlock if we allocate multiple bios
++	 * from the same bio_set() while running underneath submit_bio_noacct().
++	 * If we were to allocate multiple bios (say a stacking block driver
++	 * that was splitting bios), we would deadlock if we exhausted the
++	 * mempool's reserve.
++	 *
++	 * We solve this, and guarantee forward progress, with a rescuer
++	 * workqueue per bio_set. If we go to allocate and there are bios on
++	 * current->bio_list, we first try the allocation without
++	 * __GFP_DIRECT_RECLAIM; if that fails, we punt those bios we would be
++	 * blocking to the rescuer workqueue before we retry with the original
++	 * gfp_flags.
++	 */
++	if (current->bio_list &&
++	    (!bio_list_empty(&current->bio_list[0]) ||
++	     !bio_list_empty(&current->bio_list[1])) &&
++	    bs->rescue_workqueue)
++		gfp_mask &= ~__GFP_DIRECT_RECLAIM;
++
++	p = mempool_alloc(&bs->bio_pool, gfp_mask);
++	if (!p && gfp_mask != saved_gfp) {
++		punt_bios_to_rescuer(bs);
++		gfp_mask = saved_gfp;
+ 		p = mempool_alloc(&bs->bio_pool, gfp_mask);
+-		if (!p && gfp_mask != saved_gfp) {
+-			punt_bios_to_rescuer(bs);
+-			gfp_mask = saved_gfp;
+-			p = mempool_alloc(&bs->bio_pool, gfp_mask);
+-		}
+-
+-		front_pad = bs->front_pad;
+-		inline_vecs = BIO_INLINE_VECS;
+ 	}
+-
+ 	if (unlikely(!p))
+ 		return NULL;
+ 
+-	bio = p + front_pad;
+-	bio_init(bio, NULL, 0);
+-
+-	if (nr_iovecs > inline_vecs) {
++	bio = p + bs->front_pad;
++	if (nr_iovecs > BIO_INLINE_VECS) {
+ 		unsigned long idx = 0;
++		struct bio_vec *bvl = NULL;
+ 
+ 		bvl = bvec_alloc(gfp_mask, nr_iovecs, &idx, &bs->bvec_pool);
+ 		if (!bvl && gfp_mask != saved_gfp) {
+ 			punt_bios_to_rescuer(bs);
+ 			gfp_mask = saved_gfp;
+-			bvl = bvec_alloc(gfp_mask, nr_iovecs, &idx, &bs->bvec_pool);
++			bvl = bvec_alloc(gfp_mask, nr_iovecs, &idx,
++					 &bs->bvec_pool);
+ 		}
+ 
+ 		if (unlikely(!bvl))
+ 			goto err_free;
+ 
+ 		bio->bi_flags |= idx << BVEC_POOL_OFFSET;
+-		bio->bi_max_vecs = bvec_nr_vecs(idx);
++		bio_init(bio, bvl, bvec_nr_vecs(idx));
+ 	} else if (nr_iovecs) {
+-		bvl = bio->bi_inline_vecs;
+-		bio->bi_max_vecs = inline_vecs;
++		bio_init(bio, bio->bi_inline_vecs, BIO_INLINE_VECS);
++	} else {
++		bio_init(bio, NULL, 0);
+ 	}
+ 
+ 	bio->bi_pool = bs;
+-	bio->bi_io_vec = bvl;
+ 	return bio;
+ 
+ err_free:
+@@ -521,6 +499,31 @@ struct bio *bio_alloc_bioset(gfp_t gfp_mask, unsigned int nr_iovecs,
+ }
+ EXPORT_SYMBOL(bio_alloc_bioset);
+ 
++/**
++ * bio_kmalloc - kmalloc a bio for I/O
++ * @gfp_mask:   the GFP_* mask given to the slab allocator
++ * @nr_iovecs:	number of iovecs to pre-allocate
++ *
++ * Use kmalloc to allocate and initialize a bio.
++ *
++ * Returns: Pointer to new bio on success, NULL on failure.
++ */
++struct bio *bio_kmalloc(gfp_t gfp_mask, unsigned int nr_iovecs)
++{
++	struct bio *bio;
++
++	if (nr_iovecs > UIO_MAXIOV)
++		return NULL;
++
++	bio = kmalloc(struct_size(bio, bi_inline_vecs, nr_iovecs), gfp_mask);
++	if (unlikely(!bio))
++		return NULL;
++	bio_init(bio, nr_iovecs ? bio->bi_inline_vecs : NULL, nr_iovecs);
++	bio->bi_pool = NULL;
++	return bio;
++}
++EXPORT_SYMBOL(bio_kmalloc);
++
+ void zero_fill_bio_iter(struct bio *bio, struct bvec_iter start)
+ {
+ 	unsigned long flags;
+diff --git a/include/linux/bio.h b/include/linux/bio.h
+index 676870b2c88d80..c74857cf12528c 100644
+--- a/include/linux/bio.h
++++ b/include/linux/bio.h
+@@ -408,6 +408,7 @@ extern int biovec_init_pool(mempool_t *pool, int pool_entries);
+ extern int bioset_init_from_src(struct bio_set *bs, struct bio_set *src);
+ 
+ extern struct bio *bio_alloc_bioset(gfp_t, unsigned int, struct bio_set *);
++struct bio *bio_kmalloc(gfp_t gfp_mask, unsigned int nr_iovecs);
+ extern void bio_put(struct bio *);
+ 
+ extern void __bio_clone_fast(struct bio *, struct bio *);
+@@ -420,11 +421,6 @@ static inline struct bio *bio_alloc(gfp_t gfp_mask, unsigned int nr_iovecs)
+ 	return bio_alloc_bioset(gfp_mask, nr_iovecs, &fs_bio_set);
  }
  
--static inline struct bio *__f2fs_bio_alloc(gfp_t gfp_mask,
--						unsigned int nr_iovecs)
+-static inline struct bio *bio_kmalloc(gfp_t gfp_mask, unsigned int nr_iovecs)
 -{
--	return bio_alloc_bioset(gfp_mask, nr_iovecs, &f2fs_bioset);
+-	return bio_alloc_bioset(gfp_mask, nr_iovecs, NULL);
 -}
 -
--static struct bio *f2fs_bio_alloc(struct f2fs_sb_info *sbi, int npages,
--		bool noio)
--{
--	if (noio) {
--		/* No failure on bio allocation */
--		return __f2fs_bio_alloc(GFP_NOIO, npages);
--	}
--
--	if (time_to_inject(sbi, FAULT_ALLOC_BIO)) {
--		f2fs_show_injection_info(sbi, FAULT_ALLOC_BIO);
--		return NULL;
--	}
--
--	return __f2fs_bio_alloc(GFP_KERNEL, npages);
--}
--
- static bool __is_cp_guaranteed(struct page *page)
- {
- 	struct address_space *mapping = page->mapping;
-@@ -433,7 +411,7 @@ static struct bio *__bio_alloc(struct f2fs_io_info *fio, int npages)
- 	struct f2fs_sb_info *sbi = fio->sbi;
- 	struct bio *bio;
+ extern blk_qc_t submit_bio(struct bio *);
  
--	bio = f2fs_bio_alloc(sbi, npages, true);
-+	bio = bio_alloc_bioset(GFP_NOIO, npages, &f2fs_bioset);
- 
- 	f2fs_target_device(sbi, fio->new_blkaddr, bio);
- 	if (is_read_io(fio->op)) {
-@@ -1029,8 +1007,9 @@ static struct bio *f2fs_grab_read_bio(struct inode *inode, block_t blkaddr,
- 	struct bio_post_read_ctx *ctx;
- 	unsigned int post_read_steps = 0;
- 
--	bio = f2fs_bio_alloc(sbi, min_t(int, nr_pages, BIO_MAX_PAGES),
--								for_write);
-+	bio = bio_alloc_bioset(for_write ? GFP_NOIO : GFP_KERNEL,
-+			       min_t(int, nr_pages, BIO_MAX_PAGES),
-+			       &f2fs_bioset);
- 	if (!bio)
- 		return ERR_PTR(-ENOMEM);
- 
-diff --git a/fs/f2fs/f2fs.h b/fs/f2fs/f2fs.h
-index 902bd3267c03e1..6c78365d80ceb5 100644
---- a/fs/f2fs/f2fs.h
-+++ b/fs/f2fs/f2fs.h
-@@ -43,7 +43,6 @@ enum {
- 	FAULT_KVMALLOC,
- 	FAULT_PAGE_ALLOC,
- 	FAULT_PAGE_GET,
--	FAULT_ALLOC_BIO,
- 	FAULT_ALLOC_NID,
- 	FAULT_ORPHAN,
- 	FAULT_BLOCK,
-diff --git a/fs/f2fs/super.c b/fs/f2fs/super.c
-index b4a07fe62d1a58..3a312642907e86 100644
---- a/fs/f2fs/super.c
-+++ b/fs/f2fs/super.c
-@@ -45,7 +45,6 @@ const char *f2fs_fault_name[FAULT_MAX] = {
- 	[FAULT_KVMALLOC]	= "kvmalloc",
- 	[FAULT_PAGE_ALLOC]	= "page alloc",
- 	[FAULT_PAGE_GET]	= "page get",
--	[FAULT_ALLOC_BIO]	= "alloc bio",
- 	[FAULT_ALLOC_NID]	= "alloc nid",
- 	[FAULT_ORPHAN]		= "orphan",
- 	[FAULT_BLOCK]		= "no more block",
+ extern void bio_endio(struct bio *);
 -- 
 2.29.2
 

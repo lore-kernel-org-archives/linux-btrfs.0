@@ -7,35 +7,35 @@ X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AED81C4332D
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jan 2021 15:14:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9CD3EC433E0
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jan 2021 15:15:26 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 76EC823109
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jan 2021 15:14:29 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6B7B923109
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jan 2021 15:15:26 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2392712AbhAZPFC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 26 Jan 2021 10:05:02 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52904 "EHLO
+        id S2404152AbhAZPOq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 26 Jan 2021 10:14:46 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55264 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2391796AbhAZPDw (ORCPT
+        with ESMTP id S1730814AbhAZPOe (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 26 Jan 2021 10:03:52 -0500
+        Tue, 26 Jan 2021 10:14:34 -0500
 Received: from casper.infradead.org (casper.infradead.org [IPv6:2001:8b0:10b:1236::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 85118C061A31;
-        Tue, 26 Jan 2021 07:03:10 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8BC12C061A31;
+        Tue, 26 Jan 2021 07:13:54 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=casper.20170209; h=Content-Transfer-Encoding:MIME-Version:
         References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:
         Content-Type:Content-ID:Content-Description;
-        bh=Y3ETPQ/J5b9VzWd6gZkaTVXt4OBDcvG3hAbwDlM7Vf4=; b=mwJd/045dmJyeWS4zYv9KjfH+B
-        uVMvepvUAcMJ2wO2oEm9Vj0hy/6OgYLg2wyYVvQiEp49bLmHzFb7RYP41TAxbPQJk3d0/z0b4wZ5I
-        GjH7z3cKjL2XyfrdFxbViextVhLmmgrhFNzkIsiDEh/n5UjIE1U7X4vuFMroMTeTlFcEdMC00xHnu
-        j1P/uVY68WPmlmuYjl8Kis/h1pNlis4wblwNZsQRu57JK1/jxVqdb02OpBkO0pBlFfw6fjrGoA+5y
-        L7P23xpZ/bUuqlzT+iDWd0gG9GfO5T4JnY/ujfPIedVOLarszLq7aPsQ2C7UTvLF8Z+V9J9PTiQGw
-        TelaHqLA==;
+        bh=jUX/nPv36iBJWdAHLrELJid7jXvEdNR6cRFF7NPxZ3A=; b=IpTioxravckm1qWlFlhuTXqcRU
+        NUrQRXmnYaUUkiw+vad9k9lpdmMyYrpgXEgukSClL8PPJYRMAlC6PbXKGyHzkg4QgCq5ytPbIctU0
+        Wu+AAg1vTUjodle4xRBeGFJxUuV90SjBomvdcXWoLsGxNckVxTg/NO0lV2QQg3NnOBl2C8ucoaGEh
+        e1e0LT8AvFm3CKPyjDORVskFTIoraKd9UA3fA3R7jCx0mHdzlJoYhJv4fTxkNjiCdEnjZjfhVcdEP
+        wpDTJ0dmomAG1DDIPybWzoJF6Nb0MGrzyoAKs8QVsymaQzhznpqBFzqeBp8JY+LKtIDBeAIgk0+OS
+        j0VgL1sQ==;
 Received: from [2001:4bb8:191:e347:5918:ac86:61cb:8801] (helo=localhost)
         by casper.infradead.org with esmtpsa (Exim 4.94 #2 (Red Hat Linux))
-        id 1l4Pmc-005mP7-SH; Tue, 26 Jan 2021 14:58:39 +0000
+        id 1l4Pxm-005nbR-LQ; Tue, 26 Jan 2021 15:09:37 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Jens Axboe <axboe@kernel.dk>, Song Liu <song@kernel.org>
 Cc:     Jaegeuk Kim <jaegeuk@kernel.org>, Chao Yu <chao@kernel.org>,
@@ -54,9 +54,9 @@ Cc:     Jaegeuk Kim <jaegeuk@kernel.org>, Chao Yu <chao@kernel.org>,
         linux-bcache@vger.kernel.org, linux-raid@vger.kernel.org,
         linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
         linux-nfs@vger.kernel.org, linux-mm@kvack.org
-Subject: [PATCH 03/17] blk-crypto: use bio_kmalloc in blk_crypto_clone_bio
-Date:   Tue, 26 Jan 2021 15:52:33 +0100
-Message-Id: <20210126145247.1964410-4-hch@lst.de>
+Subject: [PATCH 10/17] drbd: remove drbd_req_make_private_bio
+Date:   Tue, 26 Jan 2021 15:52:40 +0100
+Message-Id: <20210126145247.1964410-11-hch@lst.de>
 X-Mailer: git-send-email 2.29.2
 In-Reply-To: <20210126145247.1964410-1-hch@lst.de>
 References: <20210126145247.1964410-1-hch@lst.de>
@@ -67,26 +67,73 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Use bio_kmalloc instead of open coding it.
+Open code drbd_req_make_private_bio in the two callers to prepare
+for further changes.  Also don't bother to initialize bi_next as the
+bio code already does that that.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- block/blk-crypto-fallback.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ drivers/block/drbd/drbd_req.c    |  5 ++++-
+ drivers/block/drbd/drbd_req.h    | 12 ------------
+ drivers/block/drbd/drbd_worker.c |  5 ++++-
+ 3 files changed, 8 insertions(+), 14 deletions(-)
 
-diff --git a/block/blk-crypto-fallback.c b/block/blk-crypto-fallback.c
-index 50c225398e4d60..e8327c50d7c9f4 100644
---- a/block/blk-crypto-fallback.c
-+++ b/block/blk-crypto-fallback.c
-@@ -164,7 +164,7 @@ static struct bio *blk_crypto_clone_bio(struct bio *bio_src)
- 	struct bio_vec bv;
- 	struct bio *bio;
- 
--	bio = bio_alloc_bioset(GFP_NOIO, bio_segments(bio_src), NULL);
-+	bio = bio_kmalloc(GFP_NOIO, bio_segments(bio_src));
- 	if (!bio)
+diff --git a/drivers/block/drbd/drbd_req.c b/drivers/block/drbd/drbd_req.c
+index ea0f31ab334361..9dbb660a7d7c8e 100644
+--- a/drivers/block/drbd/drbd_req.c
++++ b/drivers/block/drbd/drbd_req.c
+@@ -30,7 +30,10 @@ static struct drbd_request *drbd_req_new(struct drbd_device *device, struct bio
  		return NULL;
- 	bio->bi_bdev		= bio_src->bi_bdev;
+ 	memset(req, 0, sizeof(*req));
+ 
+-	drbd_req_make_private_bio(req, bio_src);
++	req->private_bio = bio_clone_fast(bio_src, GFP_NOIO, &drbd_io_bio_set);
++	req->private_bio->bi_private = req;
++	req->private_bio->bi_end_io = drbd_request_endio;
++
+ 	req->rq_state = (bio_data_dir(bio_src) == WRITE ? RQ_WRITE : 0)
+ 		      | (bio_op(bio_src) == REQ_OP_WRITE_SAME ? RQ_WSAME : 0)
+ 		      | (bio_op(bio_src) == REQ_OP_WRITE_ZEROES ? RQ_ZEROES : 0)
+diff --git a/drivers/block/drbd/drbd_req.h b/drivers/block/drbd/drbd_req.h
+index 55bb0f8721faa3..511f39a08de453 100644
+--- a/drivers/block/drbd/drbd_req.h
++++ b/drivers/block/drbd/drbd_req.h
+@@ -256,18 +256,6 @@ enum drbd_req_state_bits {
+ #define MR_WRITE       1
+ #define MR_READ        2
+ 
+-static inline void drbd_req_make_private_bio(struct drbd_request *req, struct bio *bio_src)
+-{
+-	struct bio *bio;
+-	bio = bio_clone_fast(bio_src, GFP_NOIO, &drbd_io_bio_set);
+-
+-	req->private_bio = bio;
+-
+-	bio->bi_private  = req;
+-	bio->bi_end_io   = drbd_request_endio;
+-	bio->bi_next     = NULL;
+-}
+-
+ /* Short lived temporary struct on the stack.
+  * We could squirrel the error to be returned into
+  * bio->bi_iter.bi_size, or similar. But that would be too ugly. */
+diff --git a/drivers/block/drbd/drbd_worker.c b/drivers/block/drbd/drbd_worker.c
+index 02044ab7f767d5..64563bfdf0da02 100644
+--- a/drivers/block/drbd/drbd_worker.c
++++ b/drivers/block/drbd/drbd_worker.c
+@@ -1523,8 +1523,11 @@ int w_restart_disk_io(struct drbd_work *w, int cancel)
+ 	if (bio_data_dir(req->master_bio) == WRITE && req->rq_state & RQ_IN_ACT_LOG)
+ 		drbd_al_begin_io(device, &req->i);
+ 
+-	drbd_req_make_private_bio(req, req->master_bio);
++	req->private_bio = bio_clone_fast(req->master_bio, GFP_NOIO,
++					  &drbd_io_bio_set);
+ 	bio_set_dev(req->private_bio, device->ldev->backing_bdev);
++	req->private_bio->bi_private = req;
++	req->private_bio->bi_end_io = drbd_request_endio;
+ 	submit_bio_noacct(req->private_bio);
+ 
+ 	return 0;
 -- 
 2.29.2
 

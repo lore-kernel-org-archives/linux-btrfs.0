@@ -7,35 +7,35 @@ X-Spam-Status: No, score=-19.3 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4D3EFC433E0
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6CF47C433E6
 	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Jan 2021 10:39:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 01CD82070E
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Jan 2021 10:39:06 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2BED02076E
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Jan 2021 10:39:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236004AbhA0KiJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 27 Jan 2021 05:38:09 -0500
-Received: from mail.kernel.org ([198.145.29.99]:52526 "EHLO mail.kernel.org"
+        id S236003AbhA0KiI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 27 Jan 2021 05:38:08 -0500
+Received: from mail.kernel.org ([198.145.29.99]:52530 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S235757AbhA0Kfp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 Jan 2021 05:35:45 -0500
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 3E15920731
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Jan 2021 10:35:04 +0000 (UTC)
+        id S235846AbhA0Kfr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 27 Jan 2021 05:35:47 -0500
+Received: by mail.kernel.org (Postfix) with ESMTPSA id EF93D2076E
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Jan 2021 10:35:05 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1611743704;
-        bh=MzfNKbKofZLjvsMlU8rraxLE9WJAm1eSa48pkb07htM=;
+        s=k20201202; t=1611743706;
+        bh=bufW6tDsoD66RjDmrDgsTqL4yOOx4GgrF16MkUAG6yk=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=mtf+DjzjCQwQqbipMKC6fKyqFfkV01m3f22idE43An1+6Er0cN+dFfq8eakJyR4yb
-         +bul/ZLcGoXl/oYecCzYhHwczLJo9htnwihf1hMy6hg7TiXkJnCAKBoWyx/s60AMMo
-         NnjTsnd0bsZjzLDkI9/LhIZm/i3r/TWw4Vt1Ihxmy9fogPFAxhcvnC/bBydRF/1t0L
-         PdazD0D+0tnrKdlri/57AMcz4bKMlYxNvlo3dMMcn+3n9E0+lAwnPvg09zZn+pIFmp
-         fSLWCoDM5wFGfKYcSzFnlaN4YiRGut0O0AkeV3ipM2qkgWNlO3HAy5o88fTmd2ZYPx
-         ZBOu1ENHL+ZMQ==
+        b=WlETU9iljMatmoWNge8xRTJ4dnY6vGaYp1V8bgCMA2oUEVjd59cs8TpPaOIIOH1os
+         FsLagK4fMDnxyUs0YjKCiFbjLQi3PncU90fLYW2VgNBF6Lx+8CJEuNsRvUdD9ntxE4
+         EAG0bb7B2yw1zlj3xMSqPdEatZ/+BzULInjVrnU2uipD7sTCKWbSLsYvFiVIJvsCAV
+         VQUmo8y5TVYbroIs3HfBvstY7UoVmTMI1Mx/lOTIFcSBI+vea0r7WJN8swpeLFEqcM
+         /NfZ827Fg0irXVfd9TSUYrHJk/RcwS0TuO4x3WIHwVIsf2XiRR59MWi66J7d5QSLyv
+         uig1vzSrz4U9w==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/7] btrfs: remove unnecessary directory inode item update when deleting dir entry
-Date:   Wed, 27 Jan 2021 10:34:54 +0000
-Message-Id: <1d84cf958b2d37fdaac8583dff6ee68ec49251b3.1611742865.git.fdmanana@suse.com>
+Subject: [PATCH 3/7] btrfs: avoid logging new ancestor inodes when logging new inode
+Date:   Wed, 27 Jan 2021 10:34:56 +0000
+Message-Id: <d6554a87bc248aa147c801717d64c7a80a45a78c.1611742865.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1611742865.git.fdmanana@suse.com>
 References: <cover.1611742865.git.fdmanana@suse.com>
@@ -47,24 +47,14 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-When we remove a directory entry, as part of an unlink operation, if the
-directory was logged before we must remove the directory index items from
-the log. We are also updating the inode item of the directory to update
-its i_size, but that is not necessary because during log replay we do not
-need it and we correctly adjust the i_size in the inode item of the
-subvolume as we process directory index items and replay deletes.
+When we fsync a new file, created in the current transaction, we check
+all its ancestor inodes and always log them if they were created in the
+current transaction - even if we have already logged them before, which
+is a waste of time.
 
-This is not needed since commit d555438b6e1dad ("Btrfs: drop dir i_size
-when adding new names on replay"), where we explicitly ignore the i_size
-of directory inode items on log replay. Before that we used it but it
-was buggy as mentioned in that commit's change log (i_size got a larger
-value then it should have).
+So avoid logging new ancestor inodes if they were already logged before
+and have no xattrs added/updated/removed since they were last logged.
 
-So stop updating the i_size of the directory inode item in the log, as
-that is a waste of time, adds more log contention to the log tree and
-often results in COWing more extent buffers for the log tree.
-
-This code path is triggered often during dbench workloads for example.
 This patch is part of a patchset comprised of the following patches:
 
   btrfs: remove unnecessary directory inode item update when deleting dir entry
@@ -80,80 +70,76 @@ change log of the last patch.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/tree-log.c | 39 ++++-----------------------------------
- 1 file changed, 4 insertions(+), 35 deletions(-)
+ fs/btrfs/tree-log.c | 35 +++++++++++++++++++++++++++++++++--
+ 1 file changed, 33 insertions(+), 2 deletions(-)
 
 diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 8ee0700a980f..5d87afc6058a 100644
+index be62759f0aac..105cf316ee27 100644
 --- a/fs/btrfs/tree-log.c
 +++ b/fs/btrfs/tree-log.c
-@@ -3379,7 +3379,6 @@ int btrfs_del_dir_entries_in_log(struct btrfs_trans_handle *trans,
- 	struct btrfs_path *path;
- 	int ret;
- 	int err = 0;
--	int bytes_del = 0;
- 	u64 dir_ino = btrfs_ino(dir);
+@@ -5272,6 +5272,7 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
+ 	if (S_ISDIR(inode->vfs_inode.i_mode)) {
+ 		int max_key_type = BTRFS_DIR_LOG_INDEX_KEY;
  
- 	if (!inode_logged(trans, dir))
-@@ -3406,7 +3405,6 @@ int btrfs_del_dir_entries_in_log(struct btrfs_trans_handle *trans,
- 	}
- 	if (di) {
- 		ret = btrfs_delete_one_dir_name(trans, log, path, di);
--		bytes_del += name_len;
- 		if (ret) {
- 			err = ret;
- 			goto fail;
-@@ -3421,46 +3419,17 @@ int btrfs_del_dir_entries_in_log(struct btrfs_trans_handle *trans,
- 	}
- 	if (di) {
- 		ret = btrfs_delete_one_dir_name(trans, log, path, di);
--		bytes_del += name_len;
- 		if (ret) {
- 			err = ret;
- 			goto fail;
- 		}
- 	}
++		clear_bit(BTRFS_INODE_COPY_EVERYTHING, &inode->runtime_flags);
+ 		if (inode_only == LOG_INODE_EXISTS)
+ 			max_key_type = BTRFS_XATTR_ITEM_KEY;
+ 		ret = drop_objectid_items(trans, log, path, ino, max_key_type);
+@@ -5520,6 +5521,34 @@ static noinline int check_parent_dirs_for_sync(struct btrfs_trans_handle *trans,
+ 	return ret;
+ }
  
--	/* update the directory size in the log to reflect the names
--	 * we have removed
++/*
++ * Check if we need to log an inode. This is used in contexts where while
++ * logging an inode we need to log another inode (either that it exists or in
++ * full mode). This is used instead of btrfs_inode_in_log() because the later
++ * requires the inode to be in the log and have the log transaction committed,
++ * while here we do not care if the log transaction was already committed - our
++ * caller will commit the log later - and we want to avoid logging an inode
++ * multiple times when multiple tasks have joined the same log transaction.
++ */
++static bool need_log_inode(struct btrfs_trans_handle *trans,
++			   struct btrfs_inode *inode)
++{
 +	/*
-+	 * We do not need to update the size field of the directory's inode item
-+	 * because on log replay we update the field to reflect all existing
-+	 * entries in the directory (see overwrite_item()).
- 	 */
--	if (bytes_del) {
--		struct btrfs_key key;
--
--		key.objectid = dir_ino;
--		key.offset = 0;
--		key.type = BTRFS_INODE_ITEM_KEY;
--		btrfs_release_path(path);
--
--		ret = btrfs_search_slot(trans, log, &key, path, 0, 1);
--		if (ret < 0) {
--			err = ret;
--			goto fail;
--		}
--		if (ret == 0) {
--			struct btrfs_inode_item *item;
--			u64 i_size;
--
--			item = btrfs_item_ptr(path->nodes[0], path->slots[0],
--					      struct btrfs_inode_item);
--			i_size = btrfs_inode_size(path->nodes[0], item);
--			if (i_size > bytes_del)
--				i_size -= bytes_del;
--			else
--				i_size = 0;
--			btrfs_set_inode_size(path->nodes[0], item, i_size);
--			btrfs_mark_buffer_dirty(path->nodes[0]);
--		} else
--			ret = 0;
--		btrfs_release_path(path);
--	}
- fail:
- 	btrfs_free_path(path);
- out_unlock:
++	 * If this inode does not have new/updated/deleted xattrs since the last
++	 * time it was logged and is flagged as logged in the current transaction,
++	 * we can skip logging it. As for new/deleted names, those are updated in
++	 * the log by link/unlink/rename operations.
++	 * In case the inode was logged and then evicted and reloaded, its
++	 * logged_trans will be 0, in which case we have to fully log it since
++	 * logged_trans is a transient field, not persisted.
++	 */
++	if (inode->logged_trans == trans->transid &&
++	    !test_bit(BTRFS_INODE_COPY_EVERYTHING, &inode->runtime_flags))
++		return false;
++
++	return true;
++}
++
+ struct btrfs_dir_list {
+ 	u64 ino;
+ 	struct list_head list;
+@@ -5848,7 +5877,8 @@ static int log_new_ancestors(struct btrfs_trans_handle *trans,
+ 		if (IS_ERR(inode))
+ 			return PTR_ERR(inode);
+ 
+-		if (BTRFS_I(inode)->generation >= trans->transid)
++		if (BTRFS_I(inode)->generation >= trans->transid &&
++		    need_log_inode(trans, BTRFS_I(inode)))
+ 			ret = btrfs_log_inode(trans, root, BTRFS_I(inode),
+ 					      LOG_INODE_EXISTS, ctx);
+ 		btrfs_add_delayed_iput(inode);
+@@ -5902,7 +5932,8 @@ static int log_new_ancestors_fast(struct btrfs_trans_handle *trans,
+ 		if (root != inode->root)
+ 			break;
+ 
+-		if (inode->generation >= trans->transid) {
++		if (inode->generation >= trans->transid &&
++		    need_log_inode(trans, inode)) {
+ 			ret = btrfs_log_inode(trans, root, inode,
+ 					      LOG_INODE_EXISTS, ctx);
+ 			if (ret)
 -- 
 2.28.0
 

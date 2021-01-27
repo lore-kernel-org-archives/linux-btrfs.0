@@ -2,178 +2,78 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.2 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
-	SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-19.3 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 49092C433E0
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Jan 2021 09:22:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B2559C43381
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Jan 2021 09:45:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 0B5FC2076D
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Jan 2021 09:22:20 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 75C3E20758
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Jan 2021 09:45:06 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235158AbhA0JV5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 27 Jan 2021 04:21:57 -0500
-Received: from smtp81.iad3a.emailsrvr.com ([173.203.187.81]:50227 "EHLO
-        smtp81.iad3a.emailsrvr.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S234382AbhA0JH3 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 Jan 2021 04:07:29 -0500
-X-Greylist: delayed 527 seconds by postgrey-1.27 at vger.kernel.org; Wed, 27 Jan 2021 04:07:28 EST
-Received: from smtp78.iad3a.emailsrvr.com (relay.iad3a.rsapps.net [172.27.255.110])
-        by smtp11.relay.iad3a.emailsrvr.com (SMTP Server) with ESMTPS id 7C35E3AD5
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Jan 2021 03:58:39 -0500 (EST)
-X-Auth-ID: a.isaev@rqc.ru
-Received: by smtp10.relay.iad3a.emailsrvr.com (Authenticated sender: a.isaev-AT-rqc.ru) with ESMTPSA id DE2A13329;
-        Wed, 27 Jan 2021 03:57:56 -0500 (EST)
-Subject: Re: btrfs becomes read-only
-To:     Chris Murphy <lists@colorremedies.com>
-Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <cf9189c0-614c-26e8-9d3e-8e18555c064f@rqc.ru>
- <CAJCQCtQFniOd53+3FFoOo4UM8CzY_vranrrHiWH86HugNvaOpw@mail.gmail.com>
-From:   Alexey Isaev <a.isaev@rqc.ru>
-Message-ID: <635ef4db-3854-d544-474b-4ecbdea5bc0d@rqc.ru>
-Date:   Wed, 27 Jan 2021 11:57:55 +0300
-User-Agent: Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:78.0) Gecko/20100101
- Thunderbird/78.6.1
+        id S233844AbhA0Jo5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 27 Jan 2021 04:44:57 -0500
+Received: from mail.kernel.org ([198.145.29.99]:42700 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S235432AbhA0JnV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 27 Jan 2021 04:43:21 -0500
+Received: by mail.kernel.org (Postfix) with ESMTPSA id 90F3E20758;
+        Wed, 27 Jan 2021 09:42:36 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1611740557;
+        bh=jGmqiZceCyQBNsgG4WSaurr6OUKEtvu04Lzu24CAX1g=;
+        h=From:To:Cc:Subject:Date:From;
+        b=ViVtmPDtmGNz+tgB5Tw3VOHZXQAhNKybtDKHuAXLOYL9IJxwA5OFXp8c35Rjs6Ljq
+         hUfaxo8d24hw3MHLCxZq7fmFxvpt/ZXQAU9YslbpjCKYPhAD9FONiXOQBmzbt9fTe1
+         YOJaqZdcUTS0D439J4h3N16NsJO0UfxoIqO3zon7shUeqPGNR0geD6AVvu8dJDlq6t
+         HJxcm9SmwS2usSbX75KU+HXpj/ukgA8zIauAL4ailr1YLw9KyzSRZJtLkfFO8Pr8jP
+         OBXf+FbmPaoT/MPAomgtNpqy7eG/MlgH69fIrY3hsoQCSs0+0wrI+AGRlT14ErwcB0
+         hyQYXt0QCYNBA==
+From:   matthias.bgg@kernel.org
+To:     Qu Wenruo <wqu@suse.com>, Marek Behun <marek.behun@nic.cz>
+Cc:     u-boot@lists.denx.de, linux-btrfs@vger.kernel.org,
+        Matthias Brugger <mbrugger@suse.com>
+Subject: [PATCH] fs: btrfs: Select SHA256 in Kconfig
+Date:   Wed, 27 Jan 2021 10:42:30 +0100
+Message-Id: <20210127094231.11740-1-matthias.bgg@kernel.org>
+X-Mailer: git-send-email 2.30.0
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtQFniOd53+3FFoOo4UM8CzY_vranrrHiWH86HugNvaOpw@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: 8bit
-Content-Language: ru
-X-Classification-ID: 8f93b0a0-2d22-44ec-8506-5f82a4cdb522-1-2
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-kernel version:
+From: Matthias Brugger <mbrugger@suse.com>
 
-aleksey@host:~$ sudo uname --all
-Linux host 4.15.0-132-generic #136~16.04.1-Ubuntu SMP Tue Jan 12 
-18:22:20 UTC 2021 x86_64 x86_64 x86_64 GNU/Linux
+Since commit 565a4147d17a ("fs: btrfs: Add more checksum algorithms")
+btrfs uses the sha256 checksum algorithm. But Kconfig lacks to select
+it. This leads to compilation errors:
+fs/built-in.o: In function `hash_sha256':
+fs/btrfs/crypto/hash.c:25: undefined reference to `sha256_starts'
+fs/btrfs/crypto/hash.c:26: undefined reference to `sha256_update'
+fs/btrfs/crypto/hash.c:27: undefined reference to `sha256_finish'
 
-drive make/model:
+Signed-off-by: Matthias Brugger <mbrugger@suse.com>
 
-Drive is external 5 bay HDD enclosure with raid-5 connected via usb-3 
-(made by Orico https://www.orico.cc/us/product/detail/3622.html)
-with 5 WD Red 10 Tb. We use this drive for backups.
+---
 
-When i try to run btrfs check i get error message:
+ fs/btrfs/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
 
-aleksey@host:~$ sudo btrfs check --readonly /dev/sdg
-Couldn't open file system
+diff --git a/fs/btrfs/Kconfig b/fs/btrfs/Kconfig
+index f302b1fbef..2a32f42ad1 100644
+--- a/fs/btrfs/Kconfig
++++ b/fs/btrfs/Kconfig
+@@ -4,6 +4,7 @@ config FS_BTRFS
+ 	select LZO
+ 	select ZSTD
+ 	select RBTREE
++	select SHA256
+ 	help
+ 	  This provides a single-device read-only BTRFS support. BTRFS is a
+ 	  next-generation Linux file system based on the copy-on-write
+-- 
+2.30.0
 
-aleksey@host:~$ sudo smartctl -x /dev/sdg
-smartctl 6.5 2016-01-24 r4214 [x86_64-linux-4.15.0-132-generic] (local 
-build)
-Copyright (C) 2002-16, Bruce Allen, Christian Franke, www.smartmontools.org
-
-=== START OF INFORMATION SECTION ===
-Device Model:     JMicron H/W RAID5
-Serial Number:    1IZ6AZCKMIFZYJ8A7V0W
-Firmware Version: 0964
-User Capacity:    40,003,191,177,216 bytes [40.0 TB]
-Sector Size:      512 bytes logical/physical
-Device is:        Not in smartctl database [for details use: -P showall]
-ATA Version is:   ATA/ATAPI-7 (minor revision not indicated)
-Local Time is:    Wed Jan 27 08:51:02 2021 UTC
-SMART support is: Available - device has SMART capability.
-SMART support is: Enabled
-AAM feature is:   Unavailable
-APM feature is:   Disabled
-Rd look-ahead is: Disabled
-Write cache is:   Enabled
-ATA Security is:  Disabled, NOT FROZEN [SEC1]
-Wt Cache Reorder: Unavailable
-
-=== START OF READ SMART DATA SECTION ===
-SMART Status not supported: Incomplete response, ATA output registers 
-missing
-SMART overall-health self-assessment test result: PASSED
-Warning: This result is based on an Attribute check.
-
-General SMART Values:
-Offline data collection status:  (0x00) Offline data collection activity
-                                         was never started.
-                                         Auto Offline Data Collection: 
-Disabled.
-Total time to complete Offline
-data collection:                (    0) seconds.
-Offline data collection
-capabilities:                    (0x00)         Offline data collection 
-not supported.
-SMART capabilities:            (0x0000) Automatic saving of SMART 
-data                                  is not implemented.
-Error logging capability:        (0x00) Error logging NOT supported.
-                                         No General Purpose Logging support.
-
-General Purpose Log Directory not supported
-
-SMART Log Directory Version 0
-Address    Access  R/W   Size  Description
-0x00           SL  R/O      1  Log Directory
-
-SMART Extended Comprehensive Error Log (GP Log 0x03) not supported
-
-SMART Error Log not supported
-
-SMART Extended Self-test Log (GP Log 0x07) not supported
-
-SMART Self-test Log not supported
-
-Selective Self-tests/Logging not supported
-
-SCT Commands not supported
-
-Device Statistics (GP/SMART Log 0x04) not supported
-
-SATA Phy Event Counters (GP Log 0x11) not supported
-
-С уважением,
-Алексей Исаев,
-RQC
-
-27.01.2021 10:38, Chris Murphy пишет:
-> On Wed, Jan 27, 2021 at 12:22 AM Alexey Isaev <a.isaev@rqc.ru> wrote:
->> Hello!
->>
->> BTRFS volume becomes read-only with this messages in dmesg.
->> What can i do to repair btrfs partition?
->>
->> [Jan25 08:18] BTRFS error (device sdg): parent transid verify failed on
->> 52180048330752 wanted 132477 found 132432
->> [  +0.007587] BTRFS error (device sdg): parent transid verify failed on
->> 52180048330752 wanted 132477 found 132432
->> [  +0.000132] BTRFS error (device sdg): qgroup scan failed with -5
->>
->> [Jan25 19:52] BTRFS error (device sdg): parent transid verify failed on
->> 52180048330752 wanted 132477 found 132432
->> [  +0.009783] BTRFS error (device sdg): parent transid verify failed on
->> 52180048330752 wanted 132477 found 132432
->> [  +0.000132] BTRFS: error (device sdg) in __btrfs_cow_block:1176:
->> errno=-5 IO failure
->> [  +0.000060] BTRFS info (device sdg): forced readonly
->> [  +0.000004] BTRFS info (device sdg): failed to delete reference to
->> ftrace.h, inode 2986197 parent 2989315
->> [  +0.000002] BTRFS: error (device sdg) in __btrfs_unlink_inode:4220:
->> errno=-5 IO failure
->> [  +0.006071] BTRFS error (device sdg): pending csums is 430080
-> What kernel version? What drive make/model?
->
-> wanted 132477 found 132432 indicates the drive has lost ~45
-> transactions, that's not good and also weird. There's no crash or any
-> other errors? A complete dmesg might be more revealing. And also
->
-> smartctl -x /dev/sdg
-> btrfs check --readonly /dev/sdg
->
-> After that I suggest
-> https://btrfs.wiki.kernel.org/index.php/Restore
->
-> And try to get any important data out if it's not backed up. You can
-> try btrfs-find-root to get a listing of roots, most recent to oldest.
-> Start at the top, and plug that address in as 'btrfs restore -t' and
-> see if it'll pull anything out. You likely need -i and -v options as
-> well.
->

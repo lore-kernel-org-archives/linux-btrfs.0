@@ -7,69 +7,69 @@ X-Spam-Status: No, score=-10.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 58950C433E0
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Jan 2021 16:05:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9B77AC433E0
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Jan 2021 16:09:19 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 0CDBD207CC
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Jan 2021 16:05:11 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4D78820773
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Jan 2021 16:09:19 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236875AbhA0QFF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 27 Jan 2021 11:05:05 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36252 "EHLO
+        id S235156AbhA0QJA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 27 Jan 2021 11:09:00 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35054 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236895AbhA0QCQ (ORCPT
+        with ESMTP id S236822AbhA0P4s (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 Jan 2021 11:02:16 -0500
-Received: from mail-qt1-x832.google.com (mail-qt1-x832.google.com [IPv6:2607:f8b0:4864:20::832])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 367E0C061573
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Jan 2021 08:01:36 -0800 (PST)
-Received: by mail-qt1-x832.google.com with SMTP id o18so1703903qtp.10
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Jan 2021 08:01:36 -0800 (PST)
+        Wed, 27 Jan 2021 10:56:48 -0500
+Received: from mail-qt1-x834.google.com (mail-qt1-x834.google.com [IPv6:2607:f8b0:4864:20::834])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 50D34C061573
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Jan 2021 07:56:08 -0800 (PST)
+Received: by mail-qt1-x834.google.com with SMTP id e17so1714007qto.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Jan 2021 07:56:08 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=subject:to:cc:references:from:message-id:date:user-agent
          :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=I5lxME1/+nPQQSvoAiBpI3bjFzAox/SESaa3XkyHk0s=;
-        b=nV+ChGHt+CTaa9MlqWX3IInBwSQ4F98prOkgrO1ralkUka5oif18qGsRtK0XctdCSc
-         lDGy1ZJDge3Jaspw+tZbuNfoJnLBJ/RWPlugpFF8pDzKjMboB9yOl66xIQyHDCFo+BAq
-         LuuoBDgv2wQtXXzqH+jw9dNhXfcLHWi9kpu0Pns0sSfCysVD35B8zFUhJJIgdqpr/g2U
-         vbkGJVu0H6zEaE49TlR1EeSMHedOnMRQv25W7hwqiWCRwVj6+sJF/EKEsCA8YTHlN3ix
-         n9zJkIV4xM9G9HgBseD/vy0ltAV7HbmM0rEaI58Ueb+3gC5BBHThJRo3AW6vc+Fo8qK6
-         RXIw==
+        bh=YcocHDGHU3qNItDFIIOMhDhxVK9YUI9YdvkQbYFHmXY=;
+        b=gbrnJw7P7qf98u1t0Cclc2VjIswS3yn/go/G60T1a9968HMs2w0gP/Zp5H8PDlWstb
+         YYLOn5t6AElBe3U6+DKL/vi3H68p+NrxHXXyM1JvIzfy2NbGKBfABVZhiKYmzfm1Ydjb
+         YkXRnzj+6ZjwysnM6GpWzKemLvxa/SbFJpHhFjOZsFiMmRizb+lgYtG9d8CIiuJ5TA70
+         +EqZ+C53Xk1sqVXENNicN6ZWXzELPN+sKKEuX0uce2veALNWDjFZkz2zkrKxGjjr1Y2q
+         YqMe9nuofbS7uLiLdLKqps1AVn43ukBGiLusAcAwXPK9oIYAVerD2wWVSwuOX0aJnp4e
+         vqiQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:subject:to:cc:references:from:message-id:date
          :user-agent:mime-version:in-reply-to:content-language
          :content-transfer-encoding;
-        bh=I5lxME1/+nPQQSvoAiBpI3bjFzAox/SESaa3XkyHk0s=;
-        b=pm20c/Q12O9w/yAbcVXn/3COmkLp8WKLHT3XrOTRfn7SQBEk5Tbsl7B178CQm8vguq
-         RLsE06U1eHCL7uP5c7lyqbkIn4qILp4EV7nwxPBffWNp/Czyd8ek3WwJIFsF/aD8MNkY
-         TkZK0ESuCC/Y+n5zwS4+Xksp/My+DUCWHqdrydKNJQUKhKxRPR/TKjKlf4t3IYMFI1Ts
-         Z9sQKKop0IR2d1YUaDSmcT2GF2M5/YsRqNLrLw/lniBexwCEdaJDckQqRAykt9cqL7/q
-         vJrvpXnfgWt/g+HjyrnUVN1J5lBx5/B20R0rLWNhynceR58MEM6lrc8ilm0p/A/FrhfN
-         eMRg==
-X-Gm-Message-State: AOAM5312Dk5wELg9TEngzKTd95Pu64B2nCko4+BmhPaxbQWhDlak3EVc
-        02Mu93Jthjru/IrsCmlU7iZyRg==
-X-Google-Smtp-Source: ABdhPJxseS5XXLzX1Ou7FTjaWxLls30jkD5XfU1q6yU8LX4z0puFWwnye6C6VMzRA2g5DblYqiLZdw==
-X-Received: by 2002:ac8:39e6:: with SMTP id v93mr10334667qte.139.1611763295362;
-        Wed, 27 Jan 2021 08:01:35 -0800 (PST)
+        bh=YcocHDGHU3qNItDFIIOMhDhxVK9YUI9YdvkQbYFHmXY=;
+        b=FnQ1bUtbyKkd+rMuouQw+wO4zJxDjcsKpbObQB2IjpUNBqHZT06GAba5SeH51avR9K
+         AW3REVoQrJhIIXeFMExBCsgDhIhRbKBrOaUHRuK2PYjQB2xS8+XSwJZuORxCRcelNZIM
+         dkgYcavGQ6xuLY08NlCCZCChyBlfG1GAb9AlvtdkciLT3IQd3eqwxCl0cx6lablVDYym
+         JBnGT6n/HO+a+6OoG4pDn8eFmggY99S3mp8RJCrCvTR2UHt1Ds3LZn2tLVTDQG2H/rGv
+         /t+l7DZtZQHC7LPG0SQDg5xlu73iKTCfDuJofxNlLNDZtqniRCs0vRu76AqDz3R85F/i
+         0Q2Q==
+X-Gm-Message-State: AOAM530gFMTaxHSBBbYVPIsiKq0m946NtnHhNBH18WJHGIwlRAZLI2zN
+        BJRXiR2QxAY0nFHTkjBnyzUdCG/mw1V4hHMA
+X-Google-Smtp-Source: ABdhPJzVO8+gy6gkNNDN2qLWXh/4ISVf00G/Nb33e+YHnI9uUvGToafvXZIJeolSmoH0pJpPBbyLHA==
+X-Received: by 2002:ac8:5d0d:: with SMTP id f13mr10046397qtx.317.1611762967493;
+        Wed, 27 Jan 2021 07:56:07 -0800 (PST)
 Received: from [192.168.1.45] (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id d192sm1444596qkc.65.2021.01.27.08.01.33
+        by smtp.gmail.com with ESMTPSA id c17sm1443582qka.16.2021.01.27.07.56.06
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 27 Jan 2021 08:01:34 -0800 (PST)
-Subject: Re: [PATCH v5 04/18] btrfs: make attach_extent_buffer_page() handle
- subpage case
+        Wed, 27 Jan 2021 07:56:06 -0800 (PST)
+Subject: Re: [PATCH v5 01/18] btrfs: merge PAGE_CLEAR_DIRTY and
+ PAGE_SET_WRITEBACK to PAGE_START_WRITEBACK
 To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
 Cc:     David Sterba <dsterba@suse.com>
 References: <20210126083402.142577-1-wqu@suse.com>
- <20210126083402.142577-5-wqu@suse.com>
+ <20210126083402.142577-2-wqu@suse.com>
 From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <bd88ae39-f5f3-3bfe-c3e1-27fec066a784@toxicpanda.com>
-Date:   Wed, 27 Jan 2021 11:01:33 -0500
+Message-ID: <8db07e28-839d-e3ae-e295-ff864490aeee@toxicpanda.com>
+Date:   Wed, 27 Jan 2021 10:56:05 -0500
 User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0)
  Gecko/20100101 Thunderbird/78.6.1
 MIME-Version: 1.0
-In-Reply-To: <20210126083402.142577-5-wqu@suse.com>
+In-Reply-To: <20210126083402.142577-2-wqu@suse.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
 Content-Transfer-Encoding: 7bit
@@ -78,32 +78,16 @@ List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 On 1/26/21 3:33 AM, Qu Wenruo wrote:
-> For subpage case, we need to allocate additional memory for each
-> metadata page.
+> PAGE_CLEAR_DIRTY and PAGE_SET_WRITEBACK are two defines used in
+> __process_pages_contig(), to let the function know to clear page dirty
+> bit and then set page writeback.
 > 
-> So we need to:
+> However page writeback and dirty bits are conflicting (at least for
+> sector size == PAGE_SIZE case), this means these two have to be always
+> updated together.
 > 
-> - Allow attach_extent_buffer_page() to return int to indicate allocation
->    failure
-> 
-> - Allow manually pre-allocate subpage memory for alloc_extent_buffer()
->    As we don't want to use GFP_ATOMIC under spinlock, we introduce
->    btrfs_alloc_subpage() and btrfs_free_subpage() functions for this
->    purpose.
->    (The simple wrap for btrfs_free_subpage() is for later convert to
->     kmem_cache. Already internally tested without problem)
-> 
-> - Preallocate btrfs_subpage structure for alloc_extent_buffer()
->    We don't want to call memory allocation with spinlock held, so
->    do preallocation before we acquire mapping->private_lock.
-> 
-> - Handle subpage and regular case differently in
->    attach_extent_buffer_page()
->    For regular case, no change, just do the usual thing.
->    For subpage case, allocate new memory or use the preallocated memory.
-> 
-> For future subpage metadata, we will make use of radix tree to grab
-> extent buffer.
+> This means we can merge PAGE_CLEAR_DIRTY and PAGE_SET_WRITEBACK to
+> PAGE_START_WRITEBACK.
 > 
 > Signed-off-by: Qu Wenruo <wqu@suse.com>
 > Reviewed-by: David Sterba <dsterba@suse.com>

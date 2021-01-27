@@ -2,74 +2,72 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
-	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9B77AC433E0
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Jan 2021 16:09:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D81C9C43381
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Jan 2021 16:19:26 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 4D78820773
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Jan 2021 16:09:19 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A9B20207A0
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Jan 2021 16:19:26 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235156AbhA0QJA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 27 Jan 2021 11:09:00 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35054 "EHLO
+        id S234551AbhA0QTE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 27 Jan 2021 11:19:04 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39824 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236822AbhA0P4s (ORCPT
+        with ESMTP id S1343928AbhA0QSl (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 Jan 2021 10:56:48 -0500
-Received: from mail-qt1-x834.google.com (mail-qt1-x834.google.com [IPv6:2607:f8b0:4864:20::834])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 50D34C061573
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Jan 2021 07:56:08 -0800 (PST)
-Received: by mail-qt1-x834.google.com with SMTP id e17so1714007qto.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Jan 2021 07:56:08 -0800 (PST)
+        Wed, 27 Jan 2021 11:18:41 -0500
+Received: from mail-qk1-x736.google.com (mail-qk1-x736.google.com [IPv6:2607:f8b0:4864:20::736])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B711AC06174A
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Jan 2021 08:18:00 -0800 (PST)
+Received: by mail-qk1-x736.google.com with SMTP id a19so2242738qka.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Jan 2021 08:18:00 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=subject:to:cc:references:from:message-id:date:user-agent
-         :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=YcocHDGHU3qNItDFIIOMhDhxVK9YUI9YdvkQbYFHmXY=;
-        b=gbrnJw7P7qf98u1t0Cclc2VjIswS3yn/go/G60T1a9968HMs2w0gP/Zp5H8PDlWstb
-         YYLOn5t6AElBe3U6+DKL/vi3H68p+NrxHXXyM1JvIzfy2NbGKBfABVZhiKYmzfm1Ydjb
-         YkXRnzj+6ZjwysnM6GpWzKemLvxa/SbFJpHhFjOZsFiMmRizb+lgYtG9d8CIiuJ5TA70
-         +EqZ+C53Xk1sqVXENNicN6ZWXzELPN+sKKEuX0uce2veALNWDjFZkz2zkrKxGjjr1Y2q
-         YqMe9nuofbS7uLiLdLKqps1AVn43ukBGiLusAcAwXPK9oIYAVerD2wWVSwuOX0aJnp4e
-         vqiQ==
+        h=subject:to:references:from:message-id:date:user-agent:mime-version
+         :in-reply-to:content-language:content-transfer-encoding;
+        bh=ppkvPicuscc+KQuuNmiQ29e4fljoXYCnWZ1WPZby+6g=;
+        b=nvdXV/wtRIwsh4nLt5QTelExKQ7TFGYaNKtRbxX+bA5wzNzZBrtmlA7ihomhln6Akl
+         FcFe9wB/zh5/DnLLBMHpRfmNWozFsfOrMH/YaG/7YjiTXi5A9rrgbuaoOd/m6GOWp4eT
+         fFqEAQV9bMxbkEH/+fEal6jZahKKiiOgmquahO61XYloEkTASyaMdibJ3fWWIsZSFEaj
+         o+IvWkEZZcuyiesMStiL0RJFghylJfuSkplZ9I0yT9tTlvi6xhJYnli9W7y8xdfJPhRG
+         XQ4N2Su/cFqBXejTcpkLC+1hMVQqPHfI0pGWlsAmO/ajkxFbQNpu09LUWh9+Kvmv4aMl
+         8CQQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
+        h=x-gm-message-state:subject:to:references:from:message-id:date
          :user-agent:mime-version:in-reply-to:content-language
          :content-transfer-encoding;
-        bh=YcocHDGHU3qNItDFIIOMhDhxVK9YUI9YdvkQbYFHmXY=;
-        b=FnQ1bUtbyKkd+rMuouQw+wO4zJxDjcsKpbObQB2IjpUNBqHZT06GAba5SeH51avR9K
-         AW3REVoQrJhIIXeFMExBCsgDhIhRbKBrOaUHRuK2PYjQB2xS8+XSwJZuORxCRcelNZIM
-         dkgYcavGQ6xuLY08NlCCZCChyBlfG1GAb9AlvtdkciLT3IQd3eqwxCl0cx6lablVDYym
-         JBnGT6n/HO+a+6OoG4pDn8eFmggY99S3mp8RJCrCvTR2UHt1Ds3LZn2tLVTDQG2H/rGv
-         /t+l7DZtZQHC7LPG0SQDg5xlu73iKTCfDuJofxNlLNDZtqniRCs0vRu76AqDz3R85F/i
-         0Q2Q==
-X-Gm-Message-State: AOAM530gFMTaxHSBBbYVPIsiKq0m946NtnHhNBH18WJHGIwlRAZLI2zN
-        BJRXiR2QxAY0nFHTkjBnyzUdCG/mw1V4hHMA
-X-Google-Smtp-Source: ABdhPJzVO8+gy6gkNNDN2qLWXh/4ISVf00G/Nb33e+YHnI9uUvGToafvXZIJeolSmoH0pJpPBbyLHA==
-X-Received: by 2002:ac8:5d0d:: with SMTP id f13mr10046397qtx.317.1611762967493;
-        Wed, 27 Jan 2021 07:56:07 -0800 (PST)
+        bh=ppkvPicuscc+KQuuNmiQ29e4fljoXYCnWZ1WPZby+6g=;
+        b=WDMMAJXuKM7HIWWzaV1Tvq+xUH861/XYFSmPrU9LXJZRxXWIp3Z7RhHGnrDMr3P3Yj
+         zK2CMdofNyAHRsd2T3v/QUSpr8j5KkueHJSU+9fHx5seD9oeV+ur4o8QYTyJVpPm9UY/
+         vzhgbZR/AyyeyBxyBuT/DmTycMYEabZ++KtoF0gBPpCK68flr4JexDUDnXuxNP4NLwLK
+         zNeFAhdcqrrNAJtDAAjLDCm3PCCO3lsILBVKeRmOzx/MWO0P2GL6a5gDUplR9FYGI/X5
+         Q3XCtVwpLzGTVbYoA01DZhV/dURI1zSJkpxNCgsjuBbeg0ETMcroanhYZRq6mJJVxcf1
+         vlDQ==
+X-Gm-Message-State: AOAM531CTtSNStVIVjHkN6hVKBv/ylLmslXuPRCphVsuXJSGwWwGD4U/
+        ZRqDsUth2aUr8BcDpqbx0M+PLMaO0csh+AAd
+X-Google-Smtp-Source: ABdhPJz0Ud4fM98C4sG4i3u2E9yuAVodJscPmVrJ6zOd6LkdDaqmUsT16Oo1KM2QUkTsb8njvQQ2wQ==
+X-Received: by 2002:a37:dc43:: with SMTP id v64mr11650628qki.361.1611764279334;
+        Wed, 27 Jan 2021 08:17:59 -0800 (PST)
 Received: from [192.168.1.45] (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id c17sm1443582qka.16.2021.01.27.07.56.06
+        by smtp.gmail.com with ESMTPSA id e189sm1485856qkf.24.2021.01.27.08.17.58
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 27 Jan 2021 07:56:06 -0800 (PST)
-Subject: Re: [PATCH v5 01/18] btrfs: merge PAGE_CLEAR_DIRTY and
- PAGE_SET_WRITEBACK to PAGE_START_WRITEBACK
+        Wed, 27 Jan 2021 08:17:58 -0800 (PST)
+Subject: Re: [PATCH v5 00/18] btrfs: add read-only support for subpage sector
+ size
 To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Cc:     David Sterba <dsterba@suse.com>
 References: <20210126083402.142577-1-wqu@suse.com>
- <20210126083402.142577-2-wqu@suse.com>
 From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <8db07e28-839d-e3ae-e295-ff864490aeee@toxicpanda.com>
-Date:   Wed, 27 Jan 2021 10:56:05 -0500
+Message-ID: <a448ea77-957b-b7fc-c05a-29a4a13352b8@toxicpanda.com>
+Date:   Wed, 27 Jan 2021 11:17:57 -0500
 User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0)
  Gecko/20100101 Thunderbird/78.6.1
 MIME-Version: 1.0
-In-Reply-To: <20210126083402.142577-2-wqu@suse.com>
+In-Reply-To: <20210126083402.142577-1-wqu@suse.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
 Content-Transfer-Encoding: 7bit
@@ -78,23 +76,128 @@ List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 On 1/26/21 3:33 AM, Qu Wenruo wrote:
-> PAGE_CLEAR_DIRTY and PAGE_SET_WRITEBACK are two defines used in
-> __process_pages_contig(), to let the function know to clear page dirty
-> bit and then set page writeback.
+> Patches can be fetched from github:
+> https://github.com/adam900710/linux/tree/subpage
+> Currently the branch also contains partial RW data support (still some
+> ordered extent and data csum mismatch problems)
 > 
-> However page writeback and dirty bits are conflicting (at least for
-> sector size == PAGE_SIZE case), this means these two have to be always
-> updated together.
+> Great thanks to David/Nikolay/Josef for their effort reviewing and
+> merging the preparation patches into misc-next.
 > 
-> This means we can merge PAGE_CLEAR_DIRTY and PAGE_SET_WRITEBACK to
-> PAGE_START_WRITEBACK.
+> === What works ===
+> Just from the patchset:
+> - Data read
+>    Both regular and compressed data, with csum check.
 > 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> Reviewed-by: David Sterba <dsterba@suse.com>
-> Signed-off-by: David Sterba <dsterba@suse.com>
+> - Metadata read
+> 
+> This means, with these patchset, 64K page systems can at least mount
+> btrfs with 4K sector size read-only.
+> This should provide the ability to migrate data at least.
+> 
+> While on the github branch, there are already experimental RW supports,
+> there are still ordered extent related bugs for me to fix.
+> Thus only the RO part is sent for review and testing.
+> 
+> === Patchset structure ===
+> Patch 01~02:	Preparation patches which don't have functional change
+> Patch 03~12:	Subpage metadata allocation and freeing
+> Patch 13~15:	Subpage metadata read path
+> Patch 16~17:	Subpage data read path
+> Patch 18:	Enable subpage RO support
+> 
+> === Changelog ===
+> v1:
+> - Separate the main implementation from previous huge patchset
+>    Huge patchset doesn't make much sense.
+> 
+> - Use bitmap implementation
+>    Now page::private will be a pointer to btrfs_subpage structure, which
+>    contains bitmaps for various page status.
+> 
+> v2:
+> - Use page::private as btrfs_subpage for extra info
+>    This replace old extent io tree based solution, which reduces latency
+>    and don't require memory allocation for its operations.
+> 
+> - Cherry-pick new preparation patches from RW development
+>    Those new preparation patches improves the readability by their own.
+> 
+> v3:
+> - Make dummy extent buffer to follow the same subpage accessors
+>    Fsstress exposed several ASSERT() for dummy extent buffers.
+>    It turns out we need to make dummy extent buffer to own the same
+>    btrfs_subpage structure to make eb accessors to work properly
+> 
+> - Two new small __process_pages_contig() related preparation patches
+>    One to make __process_pages_contig() to enhance the error handling
+>    path for locked_page, one to merge one macro.
+> 
+> - Extent buffers refs count update
+>    Except try_release_extent_buffer(), all other eb uses will try to
+>    increase the ref count of the eb.
+>    For try_release_extent_buffer(), the eb refs check will happen inside
+>    the rcu critical section to avoid eb being freed.
+> 
+> - Comment updates
+>    Addressing the comments from the mail list.
+> 
+> v4:
+> - Get rid of btrfs_subpage::tree_block_bitmap
+>    This is to reduce lock complexity (no need to bother extra subpage
+>    lock for metadata, all locks are existing locks)
+>    Now eb looking up mostly depends on radix tree, with small help from
+>    btrfs_subpage::under_alloc.
+>    Now I haven't experieneced metadata related problems any more during
+>    my local fsstress tests.
+> 
+> - Fix a race where metadata page dirty bit can race
+>    Fixed in the metadata RW patchset though.
+> 
+> - Rebased to latest misc-next branch
+>    With 4 patches removed, as they are already in misc-next.
+> 
+> v5:
+> - Use the updated version from David as base
+>    Most comment/commit message update should be kept as is.
+> 
+> - A new separate patch to move UNMAPPED bit set timing
+> 
+> - New comment on why we need to prealloc subpage inside a loop
+>    Mostly for further 16K page size support, where we can have
+>    eb across multiple pages.
+> 
+> - Remove one patch which is too RW specific
+>    Since it introduces functional change which only makes sense for RW
+>    support, it's not a good idea to include it in RO support.
+> 
+> - Error handling fixes
+>    Great thanks to Josef.
+> 
+> - Refactor btrfs_subpage allocation/freeing
+>    Now we have btrfs_alloc_subpage() and btrfs_free_subpage() helpers to
+>    do all the allocation/freeing.
+>    It's pretty easy to convert to kmem_cache using above helpers.
+>    (already internally tested using kmem_cache without problem, in fact
+>     it's all the problems found in kmem_cache test leads to the new
+>     interface)
+> 
+> - Use btrfs_subpage::eb_refs to replace old under_alloc
+>    This makes checking whether the page has any eb left much easier.
+> 
+> Qu Wenruo (18):
+>    btrfs: merge PAGE_CLEAR_DIRTY and PAGE_SET_WRITEBACK to
+>      PAGE_START_WRITEBACK
+>    btrfs: set UNMAPPED bit early in btrfs_clone_extent_buffer() for
+>      subpage support
+>    btrfs: introduce the skeleton of btrfs_subpage structure
+>    btrfs: make attach_extent_buffer_page() handle subpage case
+>    btrfs: make grab_extent_buffer_from_page() handle subpage case
+>    btrfs: support subpage for extent buffer page release
 
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
-
-Thanks,
+I don't have this patch in my inbox so I can't reply to it directly, but you 
+include refcount.h, but then use normal atomics.  Please used the actual 
+refcount_t, as it gets us all the debugging stuff that makes finding problems 
+much easier.  Thanks,
 
 Josef

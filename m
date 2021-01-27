@@ -4,38 +4,38 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-19.3 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
 	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 020C6C433DB
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Jan 2021 10:41:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E902BC433DB
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Jan 2021 10:41:23 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 9ABE92070E
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Jan 2021 10:41:10 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 96D502070E
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Jan 2021 10:41:23 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235098AbhA0Kks (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 27 Jan 2021 05:40:48 -0500
-Received: from mail.kernel.org ([198.145.29.99]:53076 "EHLO mail.kernel.org"
+        id S236016AbhA0KlH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 27 Jan 2021 05:41:07 -0500
+Received: from mail.kernel.org ([198.145.29.99]:53080 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S236008AbhA0KiZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 Jan 2021 05:38:25 -0500
-Received: by mail.kernel.org (Postfix) with ESMTPSA id AE15920773
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Jan 2021 10:35:07 +0000 (UTC)
+        id S236010AbhA0Ki1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 27 Jan 2021 05:38:27 -0500
+Received: by mail.kernel.org (Postfix) with ESMTPSA id 6AC2620781
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Jan 2021 10:35:09 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1611743708;
-        bh=IgAegIguo12oSqOVBxDaVBbCr4bKsxSGPcOcMxGYwBs=;
+        s=k20201202; t=1611743709;
+        bh=ZAFPaVcpqJlPci1Idchoh39eTJxfXRuaY85UtemkQrA=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=fQCRVbFSmRnawGoIDkX+JjI2EblwH2scq2JlrkVGUM0jI4ZznJadLPHchsZW4Sikl
-         znfB+hR9gR6xMzGVRrDLc8lFp2la3THSJfB+JdPgfYL1f7u8/uTQtiELztj3bxz2tv
-         ml/e/7ysMJksbRzNl4hQOxm98IUORoH48QB0sEO2C9fXPOfizwePDxzU7y/wexHXiO
-         bpmuX2qvitmBBexr6eX5FAmNQK5nok4O7gxB9P6sh4PbGzhoHKmis8Hht4k3v7KG23
-         zxYpXeOHMgvx/7LoqjVwKnbci22YXWPN3n0mPwyuBO1Q9dI8hHQ+ZgWZ/56us9fIH7
-         +3afD8pnVxiUA==
+        b=J5x/+oxHRcQtqaqq5hOehCW0CaisO6JWRsmbE6qjRRJyD4ilv4pNiEBq7dZBzhn/X
+         RYzVLr9fXvtbeNF/fkIjJxhg5AKIHl4v66XtGMkxxo/1c1Qi3OifyvtFbVTlayMbbU
+         NndvNGm0V1Hh8hAv0lPH6rb874Hi5zn+zb1xMF/S+JTyii1AlHBYr1q9ePJ1BPgdTU
+         MLw6wuSGUkgyEOgV810Fm6vGOiKirUunRt1aBfi57x+noxBybW7i95RhVZENESpwP3
+         tKlN3Rh3MK72Rd8aOLEr+fZSL3VyIsRQ8mjHcCI1HGyppKkWnivuvMh8wkM/fP7Ouj
+         Re4Znzh7HNP0Q==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 5/7] btrfs: skip logging inodes already logged when logging new entries
-Date:   Wed, 27 Jan 2021 10:34:58 +0000
-Message-Id: <ec2887f0b8ac633a377496206c4124154700eb3b.1611742865.git.fdmanana@suse.com>
+Subject: [PATCH 7/7] btrfs: make concurrent fsyncs wait less when waiting for a transaction commit
+Date:   Wed, 27 Jan 2021 10:35:00 +0000
+Message-Id: <8c391b7c0a7a6a7e827644d424cd4c343f39588e.1611742865.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1611742865.git.fdmanana@suse.com>
 References: <cover.1611742865.git.fdmanana@suse.com>
@@ -47,22 +47,28 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-When logging new directory entries of a directory, we log the inodes of
-new dentries and the inodes of dentries pointing to directories that
-may have been created in past transactions. For the case of directories
-we log in full mode, which can be particularly expensive for large
-directories.
+Often an fsync needs to fallback to a transaction commit for several
+reasons (to ensure consistency after a power failure, a new block group
+was allocated or a temporary error such as ENOMEM or ENOSPC happened).
 
-We do use btrfs_inode_in_log() to skip already logged inodes, however for
-that helper to return true, it requires that the log transaction used to
-log the inode to be already committed. This means that when we have more
-than one task using the same log transaction we can end up logging an
-inode multiple times, which is a waste of time and not necessary since
-the log will be committed by one of the tasks and the others will wait for
-the log transaction to be committed before returning to user space.
+In that case the log is marked as needing a full commit and any concurrent
+tasks attempting to log inodes or commit the log will also fallback to the
+transaction commit. When this happens they all wait for the task that first
+started the transaction commit to finish the transaction commit - however
+they wait until the full transaction commit happens, which is not needed,
+as they only need to wait for the superblocks to be persisted and not for
+unpinning all the extents pinned during the transaction's lifetime, which
+even for short lived transactions can be a few thousand and take some
+significant amount of time to complete - for dbench workloads I have
+observed up to 4~5 milliseconds of time spent unpinning extents in the
+worst cases, and the number of pinned extents was between 2 to 3 thousand.
 
-So simply replace the use of btrfs_inode_in_log() with the new helper
-function need_log_inode(), introduced in a previous commit.
+So allow fsync tasks to skip waiting for the unpinning of extents when
+they call btrfs_commit_transaction() and they were not the task that
+started the transaction commit (that one has to do it, the alternative
+would be to offload the transaction commit to another task so that it
+could avoid waiting for the extent unpinning or offload the extent
+unpinning to another task).
 
 This patch is part of a patchset comprised of the following patches:
 
@@ -74,27 +80,262 @@ This patch is part of a patchset comprised of the following patches:
   btrfs: remove unnecessary check_parent_dirs_for_sync()
   btrfs: make concurrent fsyncs wait less when waiting for a transaction commit
 
-Performance results, after applying all patches, are mentioned in the
-change log of the last patch.
+After applying the entire patchset, dbench shows improvements in respect
+to throughput and latency. The script used to measure it is the following:
+
+  $ cat dbench-test.sh
+  #!/bin/bash
+
+  DEV=/dev/sdk
+  MNT=/mnt/sdk
+  MOUNT_OPTIONS="-o ssd"
+  MKFS_OPTIONS="-m single -d single"
+
+  echo "performance" | tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
+
+  umount $DEV &> /dev/null
+  mkfs.btrfs -f $MKFS_OPTIONS $DEV
+  mount $MOUNT_OPTIONS $DEV $MNT
+
+  dbench -D $MNT -t 300 64
+
+  umount $MNT
+
+The test was run on a physical machine with 12 cores (Intel corei7), 64G
+of ram, using a NVMe device and a non-debug kernel configuration (Debian's
+default configuration).
+
+Before applying patchset, 32 clients:
+
+ Operation      Count    AvgLat    MaxLat
+ ----------------------------------------
+ NTCreateX    9627107     0.153    61.938
+ Close        7072076     0.001     3.175
+ Rename        407633     1.222    44.439
+ Unlink       1943895     0.658    44.440
+ Deltree          256    17.339   110.891
+ Mkdir            128     0.003     0.009
+ Qpathinfo    8725406     0.064    17.850
+ Qfileinfo    1529516     0.001     2.188
+ Qfsinfo      1599884     0.002     1.457
+ Sfileinfo     784200     0.005     3.562
+ Find         3373513     0.411    30.312
+ WriteX       4802132     0.053    29.054
+ ReadX        15089959     0.002     5.801
+ LockX          31344     0.002     0.425
+ UnlockX        31344     0.001     0.173
+ Flush         674724     5.952   341.830
+
+Throughput 1008.02 MB/sec  32 clients  32 procs  max_latency=341.833 ms
+
+After applying patchset, 32 clients:
+
+After patchset, with 32 clients:
+
+ Operation      Count    AvgLat    MaxLat
+ ----------------------------------------
+ NTCreateX    9931568     0.111    25.597
+ Close        7295730     0.001     2.171
+ Rename        420549     0.982    49.714
+ Unlink       2005366     0.497    39.015
+ Deltree          256    11.149    89.242
+ Mkdir            128     0.002     0.014
+ Qpathinfo    9001863     0.049    20.761
+ Qfileinfo    1577730     0.001     2.546
+ Qfsinfo      1650508     0.002     3.531
+ Sfileinfo     809031     0.005     5.846
+ Find         3480259     0.309    23.977
+ WriteX       4952505     0.043    41.283
+ ReadX        15568127     0.002     5.476
+ LockX          32338     0.002     0.978
+ UnlockX        32338     0.001     2.032
+ Flush         696017     7.485   228.835
+
+Throughput 1049.91 MB/sec  32 clients  32 procs  max_latency=228.847 ms
+
+ --> +4.1% throughput, -39.6% max latency
+
+Before applying patchset, 64 clients:
+
+ Operation      Count    AvgLat    MaxLat
+ ----------------------------------------
+ NTCreateX    8956748     0.342   108.312
+ Close        6579660     0.001     3.823
+ Rename        379209     2.396    81.897
+ Unlink       1808625     1.108   131.148
+ Deltree          256    25.632   172.176
+ Mkdir            128     0.003     0.018
+ Qpathinfo    8117615     0.131    55.916
+ Qfileinfo    1423495     0.001     2.635
+ Qfsinfo      1488496     0.002     5.412
+ Sfileinfo     729472     0.007     8.643
+ Find         3138598     0.855    78.321
+ WriteX       4470783     0.102    79.442
+ ReadX        14038139     0.002     7.578
+ LockX          29158     0.002     0.844
+ UnlockX        29158     0.001     0.567
+ Flush         627746    14.168   506.151
+
+Throughput 924.738 MB/sec  64 clients  64 procs  max_latency=506.154 ms
+
+After applying patchset, 64 clients:
+
+ Operation      Count    AvgLat    MaxLat
+ ----------------------------------------
+ NTCreateX    9069003     0.303    43.193
+ Close        6662328     0.001     3.888
+ Rename        383976     2.194    46.418
+ Unlink       1831080     1.022    43.873
+ Deltree          256    24.037   155.763
+ Mkdir            128     0.002     0.005
+ Qpathinfo    8219173     0.137    30.233
+ Qfileinfo    1441203     0.001     3.204
+ Qfsinfo      1507092     0.002     4.055
+ Sfileinfo     738775     0.006     5.431
+ Find         3177874     0.936    38.170
+ WriteX       4526152     0.084    39.518
+ ReadX        14213562     0.002    24.760
+ LockX          29522     0.002     1.221
+ UnlockX        29522     0.001     0.694
+ Flush         635652    14.358   422.039
+
+Throughput 990.13 MB/sec  64 clients  64 procs  max_latency=422.043 ms
+
+ --> +6.8% throughput, -18.1% max latency
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/tree-log.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fs/btrfs/file.c        |  1 +
+ fs/btrfs/transaction.c | 39 +++++++++++++++++++++++++++++++--------
+ fs/btrfs/transaction.h |  2 ++
+ 3 files changed, 34 insertions(+), 8 deletions(-)
 
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index c0dce99c2c14..6dc376a16cf2 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -5676,7 +5676,7 @@ static int log_new_dir_dentries(struct btrfs_trans_handle *trans,
- 				goto next_dir_inode;
- 			}
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index d81ae1f518f2..be5350f5bedf 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -2238,6 +2238,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+ 		ret = PTR_ERR(trans);
+ 		goto out_release_extents;
+ 	}
++	trans->in_fsync = true;
  
--			if (btrfs_inode_in_log(BTRFS_I(di_inode), trans->transid)) {
-+			if (!need_log_inode(trans, BTRFS_I(di_inode))) {
- 				btrfs_add_delayed_iput(di_inode);
- 				break;
- 			}
+ 	ret = btrfs_log_dentry_safe(trans, dentry, &ctx);
+ 	btrfs_release_log_ctx_extents(&ctx);
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 3bcb5444536e..ff8efa6f8986 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -107,6 +107,11 @@ static const unsigned int btrfs_blocked_trans_types[TRANS_STATE_MAX] = {
+ 					   __TRANS_JOIN |
+ 					   __TRANS_JOIN_NOLOCK |
+ 					   __TRANS_JOIN_NOSTART),
++	[TRANS_STATE_SUPER_COMMITTED]	= (__TRANS_START |
++					   __TRANS_ATTACH |
++					   __TRANS_JOIN |
++					   __TRANS_JOIN_NOLOCK |
++					   __TRANS_JOIN_NOSTART),
+ 	[TRANS_STATE_COMPLETED]		= (__TRANS_START |
+ 					   __TRANS_ATTACH |
+ 					   __TRANS_JOIN |
+@@ -826,10 +831,11 @@ btrfs_attach_transaction_barrier(struct btrfs_root *root)
+ 	return trans;
+ }
+ 
+-/* wait for a transaction commit to be fully complete */
+-static noinline void wait_for_commit(struct btrfs_transaction *commit)
++/* Wait for a transaction commit to reach at least the given state. */
++static noinline void wait_for_commit(struct btrfs_transaction *commit,
++				     const enum btrfs_trans_state min_state)
+ {
+-	wait_event(commit->commit_wait, commit->state == TRANS_STATE_COMPLETED);
++	wait_event(commit->commit_wait, commit->state >= min_state);
+ }
+ 
+ int btrfs_wait_for_commit(struct btrfs_fs_info *fs_info, u64 transid)
+@@ -884,7 +890,7 @@ int btrfs_wait_for_commit(struct btrfs_fs_info *fs_info, u64 transid)
+ 			goto out;  /* nothing committing|committed */
+ 	}
+ 
+-	wait_for_commit(cur_trans);
++	wait_for_commit(cur_trans, TRANS_STATE_COMPLETED);
+ 	btrfs_put_transaction(cur_trans);
+ out:
+ 	return ret;
+@@ -2102,11 +2108,15 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
+ 
+ 	spin_lock(&fs_info->trans_lock);
+ 	if (cur_trans->state >= TRANS_STATE_COMMIT_START) {
++		enum btrfs_trans_state want_state = TRANS_STATE_COMPLETED;
++
+ 		spin_unlock(&fs_info->trans_lock);
+ 		refcount_inc(&cur_trans->use_count);
+-		ret = btrfs_end_transaction(trans);
+ 
+-		wait_for_commit(cur_trans);
++		if (trans->in_fsync)
++			want_state = TRANS_STATE_SUPER_COMMITTED;
++		ret = btrfs_end_transaction(trans);
++		wait_for_commit(cur_trans, want_state);
+ 
+ 		if (TRANS_ABORTED(cur_trans))
+ 			ret = cur_trans->aborted;
+@@ -2120,13 +2130,19 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
+ 	wake_up(&fs_info->transaction_blocked_wait);
+ 
+ 	if (cur_trans->list.prev != &fs_info->trans_list) {
++		enum btrfs_trans_state want_state = TRANS_STATE_COMPLETED;
++
++		if (trans->in_fsync)
++			want_state = TRANS_STATE_SUPER_COMMITTED;
++
+ 		prev_trans = list_entry(cur_trans->list.prev,
+ 					struct btrfs_transaction, list);
+-		if (prev_trans->state != TRANS_STATE_COMPLETED) {
++		if (prev_trans->state < want_state) {
+ 			refcount_inc(&prev_trans->use_count);
+ 			spin_unlock(&fs_info->trans_lock);
+ 
+-			wait_for_commit(prev_trans);
++			wait_for_commit(prev_trans, want_state);
++
+ 			ret = READ_ONCE(prev_trans->aborted);
+ 
+ 			btrfs_put_transaction(prev_trans);
+@@ -2345,6 +2361,13 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
+ 	if (ret)
+ 		goto scrub_continue;
+ 
++	/*
++	 * We needn't acquire the lock here because there is no other task
++	 * which can change it.
++	 */
++	cur_trans->state = TRANS_STATE_SUPER_COMMITTED;
++	wake_up(&cur_trans->commit_wait);
++
+ 	btrfs_finish_extent_commit(trans);
+ 
+ 	if (test_bit(BTRFS_TRANS_HAVE_FREE_BGS, &cur_trans->flags))
+diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+index 31ca81bad822..935bd6958a8a 100644
+--- a/fs/btrfs/transaction.h
++++ b/fs/btrfs/transaction.h
+@@ -16,6 +16,7 @@ enum btrfs_trans_state {
+ 	TRANS_STATE_COMMIT_START,
+ 	TRANS_STATE_COMMIT_DOING,
+ 	TRANS_STATE_UNBLOCKED,
++	TRANS_STATE_SUPER_COMMITTED,
+ 	TRANS_STATE_COMPLETED,
+ 	TRANS_STATE_MAX,
+ };
+@@ -133,6 +134,7 @@ struct btrfs_trans_handle {
+ 	bool can_flush_pending_bgs;
+ 	bool reloc_reserved;
+ 	bool dirty;
++	bool in_fsync;
+ 	struct btrfs_root *root;
+ 	struct btrfs_fs_info *fs_info;
+ 	struct list_head new_bgs;
 -- 
 2.28.0
 

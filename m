@@ -2,264 +2,169 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-19.3 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 674F8C433E0
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Jan 2021 10:42:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5781FC433DB
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Jan 2021 10:48:10 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 09EB6205F4
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Jan 2021 10:42:00 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0C396205F4
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Jan 2021 10:48:09 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236006AbhA0Kkf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 27 Jan 2021 05:40:35 -0500
-Received: from mail.kernel.org ([198.145.29.99]:53074 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S236007AbhA0KiZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 Jan 2021 05:38:25 -0500
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 8D8B820780
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Jan 2021 10:35:08 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1611743709;
-        bh=Jtxz1Gt1cVJlfkFGfVSaBVXgzfE2MXW6E/QWWSMVkC8=;
-        h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=JxN1DIWQiEUWA/M/AzCuXGusYOJiQVWvXCappWRzOFrcEBBoIuDonY4Zr90DUF0Ow
-         mU1Q3S26CHq4lBm9Uwwb6ct82BoVLT1FhfWGC+PEzUc7yqDfjLG36rKuLwSOR2WcNE
-         NznxTeuXJw0+W5sCgynmldM5sMW1BASGGZgxyhpbHwgmx0Kud1QfgWxNGrHkoaMh2F
-         f9abxjVsKYhcw4UwC1xvxJZ7m3q9RRb8DkV+TKdlsBc68Mxwzu+po1iZqKJV9ptQ+s
-         L+zCH1xM7GC+Hhmh6O/vnvwAhxZROSMYDZK29gvWQTMYEitRULDq792PdUxGJUkX6h
-         1aEOpBiOLKF+w==
-From:   fdmanana@kernel.org
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 6/7] btrfs: remove unnecessary check_parent_dirs_for_sync()
-Date:   Wed, 27 Jan 2021 10:34:59 +0000
-Message-Id: <77b21c64a5aed56e5602c59558c1b09254f3b494.1611742865.git.fdmanana@suse.com>
-X-Mailer: git-send-email 2.25.1
-In-Reply-To: <cover.1611742865.git.fdmanana@suse.com>
-References: <cover.1611742865.git.fdmanana@suse.com>
+        id S236179AbhA0KsA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 27 Jan 2021 05:48:00 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52820 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S236104AbhA0Kpk (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 27 Jan 2021 05:45:40 -0500
+Received: from mail-qv1-xf2d.google.com (mail-qv1-xf2d.google.com [IPv6:2607:f8b0:4864:20::f2d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 705A9C061574
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Jan 2021 02:44:59 -0800 (PST)
+Received: by mail-qv1-xf2d.google.com with SMTP id es14so823272qvb.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Jan 2021 02:44:59 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
+         :subject:to:cc:content-transfer-encoding;
+        bh=BE3hbEvYnXepdoPqe4SXxH7E2xVEXlIkS9rgcMN068Q=;
+        b=KcZkI1JKYcgG6wvsBExJE0xshMj+pwzOZXm2UJ3ruwhNrh1vYjwVVhVK/dCIgWXtqa
+         tjRQkaG7IxSVzegoT6jWtLECKUo0tPpCKENCSxCAkgZKENBLC52uywKNeZYmpdmmRlZZ
+         skL5sZdwXMNcgJgfz1R3PLyMnSbwQcs/O5yPhN9DIOOHb7GY6Rmy14xigAYUGKKmFIVj
+         UiKIDFBV1X5pY/Q7p4zeOUo3gh1nwBE3Xlyeug7pLL+HQyRUCqBZH8dbhXC2B0DdXjqs
+         kdl463bhZbdiCNFsM6bSyJhiEj+HI4iYJkTETe511eQwmSSN+xyzZVmU24B8tiUd002j
+         VbTA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
+         :from:date:message-id:subject:to:cc:content-transfer-encoding;
+        bh=BE3hbEvYnXepdoPqe4SXxH7E2xVEXlIkS9rgcMN068Q=;
+        b=JUiK7Pqt6oM2+f/HjLfwx9SUqQAGQrunJv9lFv//7uzhmLB+tk8fXUuNJwXRve0Xyo
+         veVUI914Dal3hN8/JYcI+QX32RJV2mERroYfF8fxY8o7O55RnBuQMEqHk+gtH79ZB/Kc
+         +EZLBdjwlMjqo53eMIqDrRi6lVjzfj1JVjkYCcopNN9dBwPTiGkH+9yILAMpW54bp23o
+         2glXueWlg7LW0ZL8Saj4YuWpuBL7EUiQINfqHnqdodUmJxTJ/XYk94Vc3aj56qW/l6hk
+         h2tZgnbtxXL3SRMqOhqDpEEcsCqQeaUEZ5gTHpwZ9Ur3rluCQLbqVbxGyEb7T5JYw3ZI
+         4fug==
+X-Gm-Message-State: AOAM530sNRWELswId5oAXH49x+TaIfOge+Lbo6BTWGelKzfonZCOduwr
+        MtPeHFyQNwyAzaXjaY7pNRTTqTePT890W6gMW1g=
+X-Google-Smtp-Source: ABdhPJy/2Ym/BB5XWoXHwMjFVQwVKs+BtH1/Yhiu3Nyc5bHgEC4iOlt9C5Vgs2rvvKGewcT3UBiAvDoq9jVPyOFtSAc=
+X-Received: by 2002:a05:6214:10e7:: with SMTP id q7mr9791078qvt.28.1611744298678;
+ Wed, 27 Jan 2021 02:44:58 -0800 (PST)
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+References: <20210127063848.72528-1-wqu@suse.com>
+In-Reply-To: <20210127063848.72528-1-wqu@suse.com>
+Reply-To: fdmanana@gmail.com
+From:   Filipe Manana <fdmanana@gmail.com>
+Date:   Wed, 27 Jan 2021 10:44:47 +0000
+Message-ID: <CAL3q7H4kBWVewu8-yof-xzEZ1q24Xrz_h7hZHrOPEj_=9Lh1zA@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: fix a bug that btrfs_invalidapge() can double
+ account ordered extent for subpage
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+On Wed, Jan 27, 2021 at 8:29 AM Qu Wenruo <wqu@suse.com> wrote:
+>
+> Commit dbfdb6d1b369 ("Btrfs: Search for all ordered extents that could
+> span across a page") make btrfs_invalidapage() to search all ordered
+> extents.
+>
+> The offending code looks like this:
+>
+> again:
+>         start =3D page_start;
+>         ordered =3D btrfs_lookup_ordered_range(inode, start, page_end - s=
+tart + 1);
+>         if (ordred) {
+>                 end =3D min(page_end,
+>                           ordered->file_offset + ordered->num_bytes - 1);
+>
+>                 /* Do the cleanup */
+>
+>                 start =3D end + 1;
+>                 if (start < page_end)
+>                         goto again;
+>         }
+>
+> The behavior is indeed necessary for the incoming subpage support, but
+> when it iterate through all the ordered extents, it also resets the
+> search range @start.
+>
+> This means, for the following cases, we can double account the ordered
+> extents, causing its bytes_left underflow:
+>
+>         Page offset
+>         0               16K             32K
+>         |<--- OE 1  --->|<--- OE 2 ---->|
+>
+> As the first iteration will find OE 1, which doesn't cover the full
+> page, thus after cleanup code, we need to retry again.
+> But again label will reset start to page_start, and we got OE 1 again,
+> which causes double account on OE1, and cause OE1's byte_left to
+> underflow.
+>
+> The only good news is, this problem can only happen for subpage case, as
+> for regular sectorsize =3D=3D PAGE_SIZE case, we will always find a OE en=
+ds
+> at or after page end, thus no way to trigger the problem.
+>
+> This patch will move the again label after start =3D page_start, to fix
+> the bug.
+> This is just a quick fix, which is easy to backport.
 
-Whenever we fsync an inode, if it is a directory, a regular file that was
-created in the current transaction or has last_unlink_trans set to the
-generation of the current transaction, we check if any of its ancestor
-inodes (and the inode itself if it is a directory) can not be logged and
-need a fallback to a full transaction commit - if so, we return with a
-value of 1 in order to fallback to a transaction commit.
+Hum? Why does it need to be backported?
+There are no kernel releases that support subpage sector size yet and
+this does not affect the case where sector size is the same as the
+page size.
 
-However we often do not need to fallback to a transaction commit because:
+>
+> There will be more comprehensive rework to convert the open coded loop to
+> a proper while loop.
+>
+> Fixes: dbfdb6d1b369 ("Btrfs: Search for all ordered extents that could sp=
+an across a page")
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
-1) The ancestor inode is not an immediate parent, and therefore there is
-   not an explicit request to log it and it is not needed neither to
-   guarantee the consistency of the inode originally asked to be logged
-   (fsynced) nor its immediate parent;
+Anyway, it looks good to me, thanks.
 
-2) The ancestor inode was already logged before, in which case any link,
-   unlink or rename operation updates the log as needed.
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
 
-So for these two cases we can avoid an unnecessary transaction commit.
-Therefore remove check_parent_dirs_for_sync() and add a check at the top
-of btrfs_log_inode() to make us fallback immediately to a transaction
-commit when we are logging a directory inode that can not be logged and
-needs a full transaction commit. All we need to protect is the case where
-after renaming a file someone fsyncs only the old directory, which would
-result is losing the renamed file after a log replay.
+> ---
+>  fs/btrfs/inode.c | 3 ++-
+>  1 file changed, 2 insertions(+), 1 deletion(-)
+>
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index ef6cb7b620d0..2eea7d22405a 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -8184,8 +8184,9 @@ static void btrfs_invalidatepage(struct page *page,=
+ unsigned int offset,
+>
+>         if (!inode_evicting)
+>                 lock_extent_bits(tree, page_start, page_end, &cached_stat=
+e);
+> -again:
+> +
+>         start =3D page_start;
+> +again:
+>         ordered =3D btrfs_lookup_ordered_range(inode, start, page_end - s=
+tart + 1);
+>         if (ordered) {
+>                 found_ordered =3D true;
+> --
+> 2.30.0
+>
 
-This patch is part of a patchset comprised of the following patches:
 
-  btrfs: remove unnecessary directory inode item update when deleting dir entry
-  btrfs: stop setting nbytes when filling inode item for logging
-  btrfs: avoid logging new ancestor inodes when logging new inode
-  btrfs: skip logging directories already logged when logging all parents
-  btrfs: skip logging inodes already logged when logging new entries
-  btrfs: remove unnecessary check_parent_dirs_for_sync()
-  btrfs: make concurrent fsyncs wait less when waiting for a transaction commit
+--=20
+Filipe David Manana,
 
-Performance results, after applying all patches, are mentioned in the
-change log of the last patch.
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/tree-log.c | 121 ++++++--------------------------------------
- 1 file changed, 15 insertions(+), 106 deletions(-)
-
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 6dc376a16cf2..4c7b283ed2b2 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -5265,6 +5265,21 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
- 		mutex_lock(&inode->log_mutex);
- 	}
- 
-+	/*
-+	 * This is for cases where logging a directory could result in losing a
-+	 * a file after replaying the log. For example, if we move a file from a
-+	 * directory A to a directory B, then fsync directory A, we have no way
-+	 * to known the file was moved from A to B, so logging just A would
-+	 * result in losing the file after a log replay.
-+	 */
-+	if (S_ISDIR(inode->vfs_inode.i_mode) &&
-+	    inode_only == LOG_INODE_ALL &&
-+	    inode->last_unlink_trans >= trans->transid) {
-+		btrfs_set_log_full_commit(trans);
-+		err = 1;
-+		goto out_unlock;
-+	}
-+
- 	/*
- 	 * a brute force approach to making sure we get the most uptodate
- 	 * copies of everything.
-@@ -5428,99 +5443,6 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
- 	return err;
- }
- 
--/*
-- * Check if we must fallback to a transaction commit when logging an inode.
-- * This must be called after logging the inode and is used only in the context
-- * when fsyncing an inode requires the need to log some other inode - in which
-- * case we can't lock the i_mutex of each other inode we need to log as that
-- * can lead to deadlocks with concurrent fsync against other inodes (as we can
-- * log inodes up or down in the hierarchy) or rename operations for example. So
-- * we take the log_mutex of the inode after we have logged it and then check for
-- * its last_unlink_trans value - this is safe because any task setting
-- * last_unlink_trans must take the log_mutex and it must do this before it does
-- * the actual unlink operation, so if we do this check before a concurrent task
-- * sets last_unlink_trans it means we've logged a consistent version/state of
-- * all the inode items, otherwise we are not sure and must do a transaction
-- * commit (the concurrent task might have only updated last_unlink_trans before
-- * we logged the inode or it might have also done the unlink).
-- */
--static bool btrfs_must_commit_transaction(struct btrfs_trans_handle *trans,
--					  struct btrfs_inode *inode)
--{
--	bool ret = false;
--
--	mutex_lock(&inode->log_mutex);
--	if (inode->last_unlink_trans >= trans->transid) {
--		/*
--		 * Make sure any commits to the log are forced to be full
--		 * commits.
--		 */
--		btrfs_set_log_full_commit(trans);
--		ret = true;
--	}
--	mutex_unlock(&inode->log_mutex);
--
--	return ret;
--}
--
--/*
-- * follow the dentry parent pointers up the chain and see if any
-- * of the directories in it require a full commit before they can
-- * be logged.  Returns zero if nothing special needs to be done or 1 if
-- * a full commit is required.
-- */
--static noinline int check_parent_dirs_for_sync(struct btrfs_trans_handle *trans,
--					       struct btrfs_inode *inode,
--					       struct dentry *parent,
--					       struct super_block *sb)
--{
--	int ret = 0;
--	struct dentry *old_parent = NULL;
--
--	/*
--	 * for regular files, if its inode is already on disk, we don't
--	 * have to worry about the parents at all.  This is because
--	 * we can use the last_unlink_trans field to record renames
--	 * and other fun in this file.
--	 */
--	if (S_ISREG(inode->vfs_inode.i_mode) &&
--	    inode->generation < trans->transid &&
--	    inode->last_unlink_trans < trans->transid)
--		goto out;
--
--	if (!S_ISDIR(inode->vfs_inode.i_mode)) {
--		if (!parent || d_really_is_negative(parent) || sb != parent->d_sb)
--			goto out;
--		inode = BTRFS_I(d_inode(parent));
--	}
--
--	while (1) {
--		if (btrfs_must_commit_transaction(trans, inode)) {
--			ret = 1;
--			break;
--		}
--
--		if (!parent || d_really_is_negative(parent) || sb != parent->d_sb)
--			break;
--
--		if (IS_ROOT(parent)) {
--			inode = BTRFS_I(d_inode(parent));
--			if (btrfs_must_commit_transaction(trans, inode))
--				ret = 1;
--			break;
--		}
--
--		parent = dget_parent(parent);
--		dput(old_parent);
--		old_parent = parent;
--		inode = BTRFS_I(d_inode(parent));
--
--	}
--	dput(old_parent);
--out:
--	return ret;
--}
--
- /*
-  * Check if we need to log an inode. This is used in contexts where while
-  * logging an inode we need to log another inode (either that it exists or in
-@@ -5686,9 +5608,6 @@ static int log_new_dir_dentries(struct btrfs_trans_handle *trans,
- 				log_mode = LOG_INODE_ALL;
- 			ret = btrfs_log_inode(trans, root, BTRFS_I(di_inode),
- 					      log_mode, ctx);
--			if (!ret &&
--			    btrfs_must_commit_transaction(trans, BTRFS_I(di_inode)))
--				ret = 1;
- 			btrfs_add_delayed_iput(di_inode);
- 			if (ret)
- 				goto next_dir_inode;
-@@ -5835,9 +5754,6 @@ static int btrfs_log_all_parents(struct btrfs_trans_handle *trans,
- 				ctx->log_new_dentries = false;
- 			ret = btrfs_log_inode(trans, root, BTRFS_I(dir_inode),
- 					      LOG_INODE_ALL, ctx);
--			if (!ret &&
--			    btrfs_must_commit_transaction(trans, BTRFS_I(dir_inode)))
--				ret = 1;
- 			if (!ret && ctx && ctx->log_new_dentries)
- 				ret = log_new_dir_dentries(trans, root,
- 						   BTRFS_I(dir_inode), ctx);
-@@ -6053,12 +5969,9 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
- {
- 	struct btrfs_root *root = inode->root;
- 	struct btrfs_fs_info *fs_info = root->fs_info;
--	struct super_block *sb;
- 	int ret = 0;
- 	bool log_dentries = false;
- 
--	sb = inode->vfs_inode.i_sb;
--
- 	if (btrfs_test_opt(fs_info, NOTREELOG)) {
- 		ret = 1;
- 		goto end_no_trans;
-@@ -6069,10 +5982,6 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
- 		goto end_no_trans;
- 	}
- 
--	ret = check_parent_dirs_for_sync(trans, inode, parent, sb);
--	if (ret)
--		goto end_no_trans;
--
- 	/*
- 	 * Skip already logged inodes or inodes corresponding to tmpfiles
- 	 * (since logging them is pointless, a link count of 0 means they
--- 
-2.28.0
-
+=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
+ right.=E2=80=9D

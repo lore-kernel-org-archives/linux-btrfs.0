@@ -2,92 +2,140 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
-	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_SANE_1 autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-11.3 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_CR_TRAILER,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 17A48C43381
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Jan 2021 15:33:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 905B6C433DB
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Jan 2021 15:40:05 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id CC7F0207D2
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Jan 2021 15:33:18 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 47364207D8
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Jan 2021 15:40:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235343AbhA0PFW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 27 Jan 2021 10:05:22 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50418 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235341AbhA0PB2 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 Jan 2021 10:01:28 -0500
-Received: from mail-qk1-x731.google.com (mail-qk1-x731.google.com [IPv6:2607:f8b0:4864:20::731])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 39D80C061793
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Jan 2021 06:58:14 -0800 (PST)
-Received: by mail-qk1-x731.google.com with SMTP id n15so1922156qkh.8
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Jan 2021 06:58:14 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=subject:to:cc:references:from:message-id:date:user-agent
-         :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=51D0mFh5cEUFoHBTma2moWOOpyGpgJMYnt01r9UG3AY=;
-        b=fDhQVtUcG0J8/5WfYqbmZFYqcf4Pw06oIjfivyJ+a5f5IZ5SbZyPdt7dfBNTRyxKP7
-         8DuCzY0zrNkE/vYpXQVyX4uvyPs6aZ1rBs87CtJX8s7TTVISG/5TdNX223pZfXF7iITq
-         DiiV3CjzVJ7T80KvED1ENgkEhcdKKwu9Etgc3XOZmUUq1Cz+z3FgfUabV3a9PzbDxi5a
-         cXsBXz5o8dXY7psvRkZkzDCZBPt+ONoU4D+v63z9N6bJXkiFE8GNYQm+z8Uf8pHZeQMR
-         1igaCmShwoEGvALb1kwenSpV7dIUA1VbtLT43jZja5uu3u83KOkSL1iXih24iDFHA1Fg
-         ST2g==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=51D0mFh5cEUFoHBTma2moWOOpyGpgJMYnt01r9UG3AY=;
-        b=qNcgYffpfFYy148bb740pn/YJfFV0x7VutgLrCABwWGL/XpSg+oXKoBjwueVfJzYBV
-         7aOphe1Wb37yh3NUSi8L4jMUX9dyRTmqk6URhcYfIdyFpLWyLJIN53pdA8xjmwYVJhDp
-         rlk+KBGNzgEzOeWhT9ETTGjmawuALkB+1Aor+XNGU6uKc2CkvyLu6I8uAcIES0yqj+92
-         tzOVca//AUgVB+UMOqmEwlO38QTcwS+U1BYCrYz+yOQZAS5QIgn85vN49FwOjAXYvIrk
-         hxiL8SFsdgCPdC3jzaY6h1VpA7NzrD6H29XoKduo2QA0ntp4LXnGjeCwH0WaidsodHyp
-         Roog==
-X-Gm-Message-State: AOAM533WjJ6fx+Zhaaas814HhbQZKrSah8+HeFA6GTrLkb1BNQl/t4iB
-        EiYkUPMMnuwNfBagJFMXwy7Sp00dnu1fRKYc
-X-Google-Smtp-Source: ABdhPJxnfRNJ3D3nyR/+n6fvzBKmcB/lPFG7KQkLJni/R3vuZQ5wmbeqAHBRAkbPHdaeyCpgf7Pzaw==
-X-Received: by 2002:a05:620a:55d:: with SMTP id o29mr10738357qko.454.1611759493270;
-        Wed, 27 Jan 2021 06:58:13 -0800 (PST)
-Received: from [192.168.1.45] (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id 138sm1346583qkd.80.2021.01.27.06.58.11
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 27 Jan 2021 06:58:12 -0800 (PST)
-Subject: Re: [PATCH] btrfs: Simplify the calculation of variables
-To:     Abaci Team <abaci-bugfix@linux.alibaba.com>, clm@fb.com
-Cc:     dsterba@suse.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-References: <1611735097-101599-1-git-send-email-abaci-bugfix@linux.alibaba.com>
-From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <de8a96f9-e9e1-81ef-9c98-7894ba4dfb9a@toxicpanda.com>
-Date:   Wed, 27 Jan 2021 09:58:11 -0500
-User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0)
- Gecko/20100101 Thunderbird/78.6.1
+        id S236199AbhA0Pjo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 27 Jan 2021 10:39:44 -0500
+Received: from mail.kernel.org ([198.145.29.99]:35770 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S236254AbhA0PhR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 27 Jan 2021 10:37:17 -0500
+Received: by mail.kernel.org (Postfix) with ESMTPSA id AE9DF207CC
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Jan 2021 15:36:36 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1611761796;
+        bh=R6L5QSpeMTKSCmyXluWdw1vZ1dXmotvBvGuq8NoNfkI=;
+        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+        b=j8RdS5NNwx46O3Ej1fqRS3WmoebORnZw8QtL0uuttsanoPZV82POBWnOSV7ljJhVo
+         OVhOvDE+Nc4LEsC4/WOXxs2ccDM90a82NjO21bdigxPR4LCtSlP5pAXFku8LRAo3su
+         EEEFd+odiSsMn5qepQ61ponTs5Jc2zHubOEn6GQ44Phbcv6kvIDNpQgLDVLHbLgjkV
+         sGE64miveE/wNawujPzmhpZXhTKvAWlnKz0GotJfFT2GhHjI3+lmb9o8O5gsx+9WMO
+         iS4dZ6Vh29o8RDoojTBn3BjTwdbXuBPnheXEL4Sf+o+HhAyUKeV9Xpy6id7HuNHZiN
+         5HnafB0xI30Iw==
+Received: by mail-qt1-f171.google.com with SMTP id h16so557075qth.11
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Jan 2021 07:36:36 -0800 (PST)
+X-Gm-Message-State: AOAM530hBwYaiE4qtTy7ieH2fGxH47s0X58TkWIaNsxBx1an2FGAQJpN
+        hV1TzR33WNONr7ah1+PtB2i1M0ZdQixi6fZJ+OM=
+X-Google-Smtp-Source: ABdhPJxSilg2EtsPqitApNEYvfhoSyltM83x0bLBSU9hTYsim1SL1+SVRrDALQrFdDFcqsZQ+gF8BLZ1fNoeyzX7MPs=
+X-Received: by 2002:ac8:7762:: with SMTP id h2mr10058819qtu.259.1611761795724;
+ Wed, 27 Jan 2021 07:36:35 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <1611735097-101599-1-git-send-email-abaci-bugfix@linux.alibaba.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+References: <cover.1611742865.git.fdmanana@suse.com> <77b21c64a5aed56e5602c59558c1b09254f3b494.1611742865.git.fdmanana@suse.com>
+ <1a949e1e-4138-abef-bff7-0ce525be6ae3@toxicpanda.com>
+In-Reply-To: <1a949e1e-4138-abef-bff7-0ce525be6ae3@toxicpanda.com>
+From:   Filipe Manana <fdmanana@kernel.org>
+Date:   Wed, 27 Jan 2021 15:36:24 +0000
+X-Gmail-Original-Message-ID: <CAL3q7H674gb03GJh3owLSVBndSO0JsT3STVHJDeOGU72_Ar4LQ@mail.gmail.com>
+Message-ID: <CAL3q7H674gb03GJh3owLSVBndSO0JsT3STVHJDeOGU72_Ar4LQ@mail.gmail.com>
+Subject: Re: [PATCH 6/7] btrfs: remove unnecessary check_parent_dirs_for_sync()
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 1/27/21 3:11 AM, Abaci Team wrote:
-> Fix the following coccicheck warnings:
-> 
-> ./fs/btrfs/delayed-inode.c:1157:39-41: WARNING !A || A && B is
-> equivalent to !A || B.
-> 
-> Reported-by: Abaci Robot <abaci@linux.alibaba.com>
-> Suggested-by: Jiapeng Zhong <oswb@linux.alibaba.com>
-> Signed-off-by: Abaci Team <abaci-bugfix@linux.alibaba.com>
+On Wed, Jan 27, 2021 at 3:23 PM Josef Bacik <josef@toxicpanda.com> wrote:
+>
+> On 1/27/21 5:34 AM, fdmanana@kernel.org wrote:
+> > From: Filipe Manana <fdmanana@suse.com>
+> >
+> > Whenever we fsync an inode, if it is a directory, a regular file that was
+> > created in the current transaction or has last_unlink_trans set to the
+> > generation of the current transaction, we check if any of its ancestor
+> > inodes (and the inode itself if it is a directory) can not be logged and
+> > need a fallback to a full transaction commit - if so, we return with a
+> > value of 1 in order to fallback to a transaction commit.
+> >
+> > However we often do not need to fallback to a transaction commit because:
+> >
+> > 1) The ancestor inode is not an immediate parent, and therefore there is
+> >     not an explicit request to log it and it is not needed neither to
+> >     guarantee the consistency of the inode originally asked to be logged
+> >     (fsynced) nor its immediate parent;
+> >
+> > 2) The ancestor inode was already logged before, in which case any link,
+> >     unlink or rename operation updates the log as needed.
+> >
+> > So for these two cases we can avoid an unnecessary transaction commit.
+> > Therefore remove check_parent_dirs_for_sync() and add a check at the top
+> > of btrfs_log_inode() to make us fallback immediately to a transaction
+> > commit when we are logging a directory inode that can not be logged and
+> > needs a full transaction commit. All we need to protect is the case where
+> > after renaming a file someone fsyncs only the old directory, which would
+> > result is losing the renamed file after a log replay.
+> >
+> > This patch is part of a patchset comprised of the following patches:
+> >
+> >    btrfs: remove unnecessary directory inode item update when deleting dir entry
+> >    btrfs: stop setting nbytes when filling inode item for logging
+> >    btrfs: avoid logging new ancestor inodes when logging new inode
+> >    btrfs: skip logging directories already logged when logging all parents
+> >    btrfs: skip logging inodes already logged when logging new entries
+> >    btrfs: remove unnecessary check_parent_dirs_for_sync()
+> >    btrfs: make concurrent fsyncs wait less when waiting for a transaction commit
+> >
+> > Performance results, after applying all patches, are mentioned in the
+> > change log of the last patch.
+> >
+> > Signed-off-by: Filipe Manana <fdmanana@suse.com>
+>
+> I'm having a hard time with this one.
+>
+> Previously we would commit the transaction if the inode was a regular file, that
+> was created in this current transaction, and had been renamed.  Now with this
+> patch you're only committing the transaction if we are a directory and were
+> renamed ourselves.  Before if you already had directories A and B and then did
+> something like
+>
+> echo "foo" > /mnt/test/A/blah
+> fsync(/mnt/test/A/blah);
+> fsync(/mnt/test/A);
+> mv /mnt/test/A/blah /mnt/test/B
+> fsync(/mnt/test/B/blah);
+>
+> we would commit the transaction on this second fsync, but with your patch we are
+> not.  I suppose that's keeping in line with how fsync is allowed to work, but
+> it's definitely a change in behavior from what we used to do.  Not sure if
+> that's good or not, I'll have to think about it.  Thanks,
 
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+Yes. Because of the rename (or a link), we will set last_unlink_trans
+to the current transaction, and when logging the file that will cause
+logging of all its old parents (A). That was added several years ago
+to fix corruptions, and it turned out to be needed later as well to
+ensure we have
+a behaviour similar to xfs and ext4 (and others) regarding strictly
+ordered metadata updates (I added several tests to fstests over the
+years for all the cases).
+There's also the fact that on replay we will delete any inode refs
+that aren't in the log (that one was added in commit 1f250e929a9c
+("Btrfs: fix log replay failure after unlink and link combination").
 
-Thanks,
+For that example we also have A updated in the log by the rename. So
+we know the log is consistent.
 
-Josef
+So that's why the whole check_parents_for_sync() is not needed.
+
+Thanks.
+
+>
+> Josef

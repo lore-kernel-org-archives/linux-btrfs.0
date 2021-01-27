@@ -2,81 +2,53 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.2 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.2 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_SANE_2 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 65074C433E6
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Jan 2021 13:51:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1B72DC433E0
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Jan 2021 14:00:02 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 268382074D
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Jan 2021 13:51:51 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D5D4E2075E
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Jan 2021 14:00:01 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232274AbhA0Nvb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 27 Jan 2021 08:51:31 -0500
-Received: from mx2.suse.de ([195.135.220.15]:34192 "EHLO mx2.suse.de"
+        id S231371AbhA0N7l (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 27 Jan 2021 08:59:41 -0500
+Received: from lists.nic.cz ([217.31.204.67]:51596 "EHLO mail.nic.cz"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S231415AbhA0Nuf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 Jan 2021 08:50:35 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 44975AD8C;
-        Wed, 27 Jan 2021 13:49:46 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 03F98DA84C; Wed, 27 Jan 2021 14:47:58 +0100 (CET)
-Date:   Wed, 27 Jan 2021 14:47:58 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     dsterba@suse.cz, matthias.bgg@kernel.org,
-        Marek Behun <marek.behun@nic.cz>, u-boot@lists.denx.de,
-        linux-btrfs@vger.kernel.org, Matthias Brugger <mbrugger@suse.com>
-Subject: Re: [PATCH] fs: btrfs: Select SHA256 in Kconfig
-Message-ID: <20210127134758.GA1993@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        matthias.bgg@kernel.org, Marek Behun <marek.behun@nic.cz>,
+        id S231616AbhA0N54 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 27 Jan 2021 08:57:56 -0500
+Received: from localhost (unknown [IPv6:2a0e:b107:ae1:0:3e97:eff:fe61:c680])
+        by mail.nic.cz (Postfix) with ESMTPSA id 2E7121420C8;
+        Wed, 27 Jan 2021 14:57:12 +0100 (CET)
+Date:   Wed, 27 Jan 2021 14:57:11 +0100
+From:   Marek Behun <marek.behun@nic.cz>
+To:     David Sterba <dsterba@suse.cz>
+Cc:     Qu Wenruo <wqu@suse.com>, matthias.bgg@kernel.org,
         u-boot@lists.denx.de, linux-btrfs@vger.kernel.org,
         Matthias Brugger <mbrugger@suse.com>
+Subject: Re: [PATCH] fs: btrfs: Select SHA256 in Kconfig
+Message-ID: <20210127145711.44db831d@nic.cz>
+In-Reply-To: <20210127134758.GA1993@twin.jikos.cz>
 References: <20210127094231.11740-1-matthias.bgg@kernel.org>
- <20210127120146.GZ1993@twin.jikos.cz>
- <5ae76d50-a52d-6f0e-1f23-335cb32f0371@suse.com>
+        <20210127120146.GZ1993@twin.jikos.cz>
+        <5ae76d50-a52d-6f0e-1f23-335cb32f0371@suse.com>
+        <20210127134758.GA1993@twin.jikos.cz>
+X-Mailer: Claws Mail 3.17.7 (GTK+ 2.24.32; x86_64-pc-linux-gnu)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <5ae76d50-a52d-6f0e-1f23-335cb32f0371@suse.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
+X-Virus-Scanned: clamav-milter 0.102.2 at mail
+X-Virus-Status: Clean
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Jan 27, 2021 at 08:14:31PM +0800, Qu Wenruo wrote:
-> 
-> 
-> On 2021/1/27 下午8:01, David Sterba wrote:
-> > On Wed, Jan 27, 2021 at 10:42:30AM +0100, matthias.bgg@kernel.org wrote:
-> >> From: Matthias Brugger <mbrugger@suse.com>
-> >>
-> >> Since commit 565a4147d17a ("fs: btrfs: Add more checksum algorithms")
-> >> btrfs uses the sha256 checksum algorithm. But Kconfig lacks to select
-> >> it. This leads to compilation errors:
-> >> fs/built-in.o: In function `hash_sha256':
-> >> fs/btrfs/crypto/hash.c:25: undefined reference to `sha256_starts'
-> >> fs/btrfs/crypto/hash.c:26: undefined reference to `sha256_update'
-> >> fs/btrfs/crypto/hash.c:27: undefined reference to `sha256_finish'
-> >>
-> >> Signed-off-by: Matthias Brugger <mbrugger@suse.com>
-> > 
-> > So this is a fix for u-boot, got me confused and not for the first time
-> > as there's Kconfig and the same fs/btrfs/ directory structure.
-> > 
-> Well, sometimes too unified file structure/code base can also be a problem.
-> 
-> Considering I'm also going to continue cross-porting more code to 
-> U-boot, any recommendation on this?
-> Using different prefix?
+On Wed, 27 Jan 2021 14:47:58 +0100
+David Sterba <dsterba@suse.cz> wrote:
 
-If it's a series then please mention u-boot in the cover letter, no need
-to change the patches, I'll go check CC if I'm too confused about the
-patch.
+> If it's a series then please mention u-boot in the cover letter, no need
+> to change the patches, I'll go check CC if I'm too confused about the
+> patch.
+
+I would suggest using subject prefix [PATCH u-boot]

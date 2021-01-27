@@ -2,117 +2,112 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-16.3 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2CA3CC433E6
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Jan 2021 07:26:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D04C5C433DB
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Jan 2021 07:42:03 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id E6A9B20663
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Jan 2021 07:26:07 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9E56920663
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Jan 2021 07:42:03 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233360AbhA0HZj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 27 Jan 2021 02:25:39 -0500
-Received: from mail.kernel.org ([198.145.29.99]:48704 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S233735AbhA0HXm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 Jan 2021 02:23:42 -0500
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 3B9EF2074B;
-        Wed, 27 Jan 2021 07:22:59 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1611732179;
-        bh=wys3sZM3KFLi7kSDIT+8OH9R8Mzfn9WfVwnN3287ktM=;
-        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-        b=Bec44/no8t56Z502LgnlM+Qg3a7iRfwb8LyhJ+o5g82IaOznb97Gk8xlDwtFm7y0Q
-         4B+/tC5K9lGgUBiHyhE00pi36rFGRQbfNmoExpX38MvaaIEiIlo5Xpl02zb3d2+c9I
-         6QT/NDPMg5Mj36lJBF9f+RFUcTIY2MmljvRbc0DiIULgDdoXmR4KXliM+gH3VlyPk6
-         mHWoOAExmkNvS6m/z6G7b4ZdKBJLDixAbo/Wzlpm3cgdfJxA927Fy/aSbJhFzA/wq4
-         2ciHhZnN+TzrdwTTB4DOYnCFwWnsw1IL4QMJJGrVzDQalyZsi3zFFnOCUMa/DMqtOX
-         AkooKL+eqRW2g==
-Received: by mail-lj1-f174.google.com with SMTP id 3so909613ljc.4;
-        Tue, 26 Jan 2021 23:22:59 -0800 (PST)
-X-Gm-Message-State: AOAM531YWoDEJpp8cDQgEYHd2BYi206VyMREUIK+5Ba7zozGspXdzCHp
-        c+jh1CywFVUWO0gArFcLfSpkGUIVPc6m/ZhnXsY=
-X-Google-Smtp-Source: ABdhPJwT4SgEWFQYI+aGplxcgngrqXZ09YVZXq+be6TcwdS2L0sd+F5PxgqsedykGzzK3GAh/e6zF7ilKInCLGcj5r0=
-X-Received: by 2002:a2e:b8d3:: with SMTP id s19mr5116366ljp.97.1611732177533;
- Tue, 26 Jan 2021 23:22:57 -0800 (PST)
+        id S234417AbhA0Hlh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 27 Jan 2021 02:41:37 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40948 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S234315AbhA0Hi6 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 27 Jan 2021 02:38:58 -0500
+Received: from mail-wr1-x42a.google.com (mail-wr1-x42a.google.com [IPv6:2a00:1450:4864:20::42a])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 408E8C0613D6
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 Jan 2021 23:38:18 -0800 (PST)
+Received: by mail-wr1-x42a.google.com with SMTP id d16so811299wro.11
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 Jan 2021 23:38:18 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=cmrk2afGWNjOZgMgi1+zPmSGV6v8qPOMWXdrmeBuZfc=;
+        b=bpXtFs+j7WYTkghQ3zSZivYWD6hvLDq5oG5p3pqwo6INTpnrHDvOBy3rnd479y8AXa
+         Qtkt98osgsiy8W0Ht6qkl+JoHAafD45Q31iaWzJYWxeoiNjdc2HKg7CXaA5Hq1pnudbC
+         GL4gsJN4mxpKyTUFYehW4uu5cXX3hvvn2gO+LW4edXgyL4R2AurbBgcxXItZ3I1X5H6v
+         JKyiJRVPs1lK4dNwmFynH1CTc3Dmpz5k0xHQH5+OF9hS6Nra2oBK0UIe7w5nsbIMQ2gR
+         bVNlwfhYwumrBCR8nSksnxJ1/DAAH7eCb7XqHrUWpTKWrDUBRNBlhioZfD1MH4t32wO4
+         GyYQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=cmrk2afGWNjOZgMgi1+zPmSGV6v8qPOMWXdrmeBuZfc=;
+        b=DZOolRK/0OW+TPagU3d7TGa1f+mijVf/BzQGscYlmZBtGwFvoPUNWJ+CcU8uqBPtu0
+         wQlmmPQfbzTMIXY5sWcvsoxGr7ft/3NVBnAlop4SiKKlc8wkTP4xseY/+u3ne/LpyEUJ
+         01+AkLmYQikjVBHl6vAG/rvMBYLGbUjSp8WP/S9JkNRq2V91+A0bcJxhIepVa66qoFz/
+         r6ZijpPDyp3d8vLoGFbktXAQHZS5pZZVj9M8nX+ApG5o5vBtggQRDoipfu6HYcMqT4xH
+         X+ytwmxJTErItw5JDg/4UBDLepp15stc3Zks9khSEeyFL0EGX4Kw8j9Lu/iIxpUNZC+F
+         hi3A==
+X-Gm-Message-State: AOAM533Pz+Bc7qFfY/5ckXMz/6qixBw0SdkFbLajntCXPfraTZ/Dducy
+        DnlNwkdsHWKFLgDIqkVVxldKrlCBUSEslfHxcJD6AwbTabAVopM6
+X-Google-Smtp-Source: ABdhPJxHkmpeCNwOkTLOxC1yxtcmfVIK9yRUcLu8+n7gZpMx0SLxQRD8p9BvDtEqQpbI4aXIdB7yCloOwSJFdAHKZKQ=
+X-Received: by 2002:a5d:5105:: with SMTP id s5mr9880294wrt.252.1611733097038;
+ Tue, 26 Jan 2021 23:38:17 -0800 (PST)
 MIME-Version: 1.0
-References: <20210126145247.1964410-1-hch@lst.de> <20210126145247.1964410-14-hch@lst.de>
-In-Reply-To: <20210126145247.1964410-14-hch@lst.de>
-From:   Song Liu <song@kernel.org>
-Date:   Tue, 26 Jan 2021 23:22:46 -0800
-X-Gmail-Original-Message-ID: <CAPhsuW4AViTNjq1mp6zvbEJ8zKdK7__BfXEsvATTBWraK2u1Jg@mail.gmail.com>
-Message-ID: <CAPhsuW4AViTNjq1mp6zvbEJ8zKdK7__BfXEsvATTBWraK2u1Jg@mail.gmail.com>
-Subject: Re: [PATCH 13/17] md: remove md_bio_alloc_sync
-To:     Christoph Hellwig <hch@lst.de>
-Cc:     Jens Axboe <axboe@kernel.dk>, Jaegeuk Kim <jaegeuk@kernel.org>,
-        Chao Yu <chao@kernel.org>,
-        Philipp Reisner <philipp.reisner@linbit.com>,
-        Lars Ellenberg <lars.ellenberg@linbit.com>,
-        Coly Li <colyli@suse.de>, Mike Snitzer <snitzer@redhat.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>,
-        Damien Le Moal <damien.lemoal@wdc.com>,
-        Naohiro Aota <naohiro.aota@wdc.com>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Ryusuke Konishi <konishi.ryusuke@gmail.com>,
-        linux-nilfs@vger.kernel.org, dm-devel@redhat.com,
-        linux-f2fs-devel@lists.sourceforge.net,
-        linux-block@vger.kernel.org, drbd-dev@lists.linbit.com,
-        linux-bcache@vger.kernel.org,
-        linux-raid <linux-raid@vger.kernel.org>,
-        Linux-Fsdevel <linux-fsdevel@vger.kernel.org>,
-        linux-btrfs@vger.kernel.org, linux-nfs@vger.kernel.org,
-        Linux-MM <linux-mm@kvack.org>
+References: <cf9189c0-614c-26e8-9d3e-8e18555c064f@rqc.ru>
+In-Reply-To: <cf9189c0-614c-26e8-9d3e-8e18555c064f@rqc.ru>
+From:   Chris Murphy <lists@colorremedies.com>
+Date:   Wed, 27 Jan 2021 00:38:00 -0700
+Message-ID: <CAJCQCtQFniOd53+3FFoOo4UM8CzY_vranrrHiWH86HugNvaOpw@mail.gmail.com>
+Subject: Re: btrfs becomes read-only
+To:     Alexey Isaev <a.isaev@rqc.ru>
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Jan 26, 2021 at 7:17 AM Christoph Hellwig <hch@lst.de> wrote:
+On Wed, Jan 27, 2021 at 12:22 AM Alexey Isaev <a.isaev@rqc.ru> wrote:
 >
-> md_bio_alloc_sync is never called with a NULL mddev, and ->sync_set is
-> initialized in md_run, so it always must be initialized as well.  Just
-> open code the remaining call to bio_alloc_bioset.
+> Hello!
 >
-> Signed-off-by: Christoph Hellwig <hch@lst.de>
+> BTRFS volume becomes read-only with this messages in dmesg.
+> What can i do to repair btrfs partition?
+>
+> [Jan25 08:18] BTRFS error (device sdg): parent transid verify failed on
+> 52180048330752 wanted 132477 found 132432
+> [  +0.007587] BTRFS error (device sdg): parent transid verify failed on
+> 52180048330752 wanted 132477 found 132432
+> [  +0.000132] BTRFS error (device sdg): qgroup scan failed with -5
+>
+> [Jan25 19:52] BTRFS error (device sdg): parent transid verify failed on
+> 52180048330752 wanted 132477 found 132432
+> [  +0.009783] BTRFS error (device sdg): parent transid verify failed on
+> 52180048330752 wanted 132477 found 132432
+> [  +0.000132] BTRFS: error (device sdg) in __btrfs_cow_block:1176:
+> errno=-5 IO failure
+> [  +0.000060] BTRFS info (device sdg): forced readonly
+> [  +0.000004] BTRFS info (device sdg): failed to delete reference to
+> ftrace.h, inode 2986197 parent 2989315
+> [  +0.000002] BTRFS: error (device sdg) in __btrfs_unlink_inode:4220:
+> errno=-5 IO failure
+> [  +0.006071] BTRFS error (device sdg): pending csums is 430080
 
-Acked-by: Song Liu <song@kernel.org>
+What kernel version? What drive make/model?
 
-> ---
->  drivers/md/md.c | 10 +---------
->  1 file changed, 1 insertion(+), 9 deletions(-)
->
-> diff --git a/drivers/md/md.c b/drivers/md/md.c
-> index 6a27f52007c871..399c81bddc1ae1 100644
-> --- a/drivers/md/md.c
-> +++ b/drivers/md/md.c
-> @@ -340,14 +340,6 @@ static int start_readonly;
->   */
->  static bool create_on_open = true;
->
-> -static struct bio *md_bio_alloc_sync(struct mddev *mddev)
-> -{
-> -       if (!mddev || !bioset_initialized(&mddev->sync_set))
-> -               return bio_alloc(GFP_NOIO, 1);
-> -
-> -       return bio_alloc_bioset(GFP_NOIO, 1, &mddev->sync_set);
-> -}
-> -
->  /*
->   * We have a system wide 'event count' that is incremented
->   * on any 'interesting' event, and readers of /proc/mdstat
-> @@ -989,7 +981,7 @@ void md_super_write(struct mddev *mddev, struct md_rdev *rdev,
->         if (test_bit(Faulty, &rdev->flags))
->                 return;
->
-> -       bio = md_bio_alloc_sync(mddev);
-> +       bio = bio_alloc_bioset(GFP_NOIO, 1, &mddev->sync_set);
->
->         atomic_inc(&rdev->nr_pending);
->
-> --
-> 2.29.2
->
+wanted 132477 found 132432 indicates the drive has lost ~45
+transactions, that's not good and also weird. There's no crash or any
+other errors? A complete dmesg might be more revealing. And also
+
+smartctl -x /dev/sdg
+btrfs check --readonly /dev/sdg
+
+After that I suggest
+https://btrfs.wiki.kernel.org/index.php/Restore
+
+And try to get any important data out if it's not backed up. You can
+try btrfs-find-root to get a listing of roots, most recent to oldest.
+Start at the top, and plug that address in as 'btrfs restore -t' and
+see if it'll pull anything out. You likely need -i and -v options as
+well.
+
+-- 
+Chris Murphy

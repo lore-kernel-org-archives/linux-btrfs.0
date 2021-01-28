@@ -2,149 +2,150 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-15.2 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.3 required=3.0 tests=BAYES_00,BIGNUM_EMAILS,
+	DKIM_SIGNED,DKIM_VALID,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
+	SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 702D9C433E0
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Jan 2021 11:09:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 98AE0C433DB
+	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Jan 2021 11:12:38 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 25C7764D9D
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Jan 2021 11:09:29 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4940264DD8
+	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Jan 2021 11:12:38 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231136AbhA1LIr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 28 Jan 2021 06:08:47 -0500
-Received: from mx2.suse.de ([195.135.220.15]:50934 "EHLO mx2.suse.de"
+        id S231264AbhA1LMh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 28 Jan 2021 06:12:37 -0500
+Received: from mout.gmx.net ([212.227.17.20]:48997 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S229640AbhA1LIk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Jan 2021 06:08:40 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 6072BAE57;
-        Thu, 28 Jan 2021 11:07:59 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id B9699DA7D9; Thu, 28 Jan 2021 12:06:11 +0100 (CET)
-Date:   Thu, 28 Jan 2021 12:06:11 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Michal Rostecki <mrostecki@suse.de>
-Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org, Michal Rostecki <mrostecki@suse.com>
-Subject: Re: [PATCH v2] btrfs: Avoid calling btrfs_get_chunk_map() twice
-Message-ID: <20210128110611.GK1993@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Michal Rostecki <mrostecki@suse.de>,
-        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org, Michal Rostecki <mrostecki@suse.com>
-References: <20210127135728.30276-1-mrostecki@suse.de>
+        id S231138AbhA1LMc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 28 Jan 2021 06:12:32 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1611832255;
+        bh=vmYAaInkHZkZ4XKJrtRRmtPI+1GzegMTbVv8CilHfEU=;
+        h=X-UI-Sender-Class:Subject:To:Cc:References:From:Date:In-Reply-To;
+        b=DOkAJTR6DGLWrJOqry5KVa7bg9JjlJiJYmi5XL5Tkk/JWOxuE5yOg3DViHxbHWPQk
+         7xpZjRJA4VgmAzXmxaHY9s2Zn6vvRjdh7iEJgaObL041XiRfHczSRa8gfg1463Lp4o
+         2gJWkKciAyvf9ibLk4RxDX97SFlQAA4EobvnXl4k=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx104
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1MBlxM-1lHDCk0gpg-00CB8h; Thu, 28
+ Jan 2021 12:10:54 +0100
+Subject: Re: [bug report] btrfs: introduce read_extent_buffer_subpage()
+To:     Dan Carpenter <dan.carpenter@oracle.com>, wqu@suse.com
+Cc:     linux-btrfs@vger.kernel.org
+References: <YBKW31GtQ2Rc6EfC@mwanda>
+ <e19e87e2-17eb-7244-008d-2a0c9cc2dac7@gmx.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <d96ea770-4d95-1d9d-c633-4c6c4bb192b9@gmx.com>
+Date:   Thu, 28 Jan 2021 19:10:51 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.6.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20210127135728.30276-1-mrostecki@suse.de>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <e19e87e2-17eb-7244-008d-2a0c9cc2dac7@gmx.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: base64
+X-Provags-ID: V03:K1:XX7btywoLXOxandIZUo5nsQ8b9UIlSHXb3O6WKT4nF/+paks9IW
+ WQhINIWJi01+EHJFyvzVg3pQ0Nelth6v26miBFr9qL4V1SsytxZk4DmOo2MTxFp1OWRE9cj
+ +Jmb66O84XDONcbj9XiUb0h26AZb3izpMi8Jc5uXnJTD850ee/zr3Ko5znpUsVsfIlDfNyN
+ u1eQc85LsPMQUFIyov7Rg==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:QZD+zoW+QXw=:BL7COOYRwpbriQ10COU0FD
+ D8BaesDX1oORwi8cVRQ9ZTorynoWBtUkmPjJ52zFvkdN1ake1Pn1bMvtakgpV9B0NebpE2A+Y
+ 8hkd1X4QLbQ7WERM5pvHQHJjTyWzwrV+u0743ktTgvPYTDE/PDbBeDhXZlKSR8T2vRGey5tdX
+ SMAu70jZyWjN9zv81OCdkTYywz2Es3xyffdKNZ1oDKN77tOFnM3S0mSAWXpL1/fEsCta/QJAn
+ Nxvi402j+LXCvqM4ht2X/DUtYDADrgTm0MCSwKYb1PjZGnFLtw5mb+yOiO/L04RJHcGVmYRW8
+ mdDv9FnguGDLn6TuNmAlzj5AAWk0BVSnbxo8hSfPtFE3Q+xF6eu1pDvlPvfQRbUgD6Qjrqqe4
+ mqQmQ1SsFkjvrHoLy45pfk1unyuYfrCTdvxCYHAXsvDv1NWA9hMg5YAHBXsvlKTYf1yLdY+la
+ JGcY6qTfHNErVlUgv5k4Ycf4Hkks9iTF9emDDJ3AIO07PTf5/o9idoegViXXSlKwl5LmYYpA9
+ lStEX+Fsq1X+enb4qhTTYcZbE6/PJsv2ooQTvohKImQ0yAV5aCvZ8gSy2DxgTtNyrHxwIMEAu
+ o6vcApUopT1nCjTnkmC2s7goNVhSQUdgNkNnOM7Is/FHxDRuyYZf/JOg0pbiM/KYRe0kdPp9i
+ t4139QMfqjKW+nQSosKs77uMp3m8EpM9gabGWKV6RrpGOLL9L3VyOe50GjyuGzm4hfKHFY4iR
+ xE8i+UCzyrVq5RV6rvi67ji6kkX+dnoK/66S2zekx8qU05WWLhr+qZkcyCqj02kVokwuVB4aZ
+ XwmE9n6TbGLocPONJMvId+SrMxXgwyWnbWp10DAjfRpM2goUV3fHOar1IM/jVUmXl9D+bUBn+
+ j3s02h/oafmg4tG4p2PQ==
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Jan 27, 2021 at 02:57:27PM +0100, Michal Rostecki wrote:
-> From: Michal Rostecki <mrostecki@suse.com>
-> 
-> Before this change, the btrfs_get_io_geometry() function was calling
-> btrfs_get_chunk_map() to get the extent mapping, necessary for
-> calculating the I/O geometry. It was using that extent mapping only
-> internally and freeing the pointer after its execution.
-> 
-> That resulted in calling btrfs_get_chunk_map() de facto twice by the
-> __btrfs_map_block() function. It was calling btrfs_get_io_geometry()
-> first and then calling btrfs_get_chunk_map() directly to get the extent
-> mapping, used by the rest of the function.
-> 
-> This change fixes that by passing the extent mapping to the
-> btrfs_get_io_geometry() function as an argument.
-> 
-> v2:
-> When btrfs_get_chunk_map() returns an error in btrfs_submit_direct():
-> - Use errno_to_blk_status(PTR_ERR(em)) as the status
-> - Set em to NULL
-
-The version-to-version changelog belongs under the -- line. If there's
-something relevant in v2 it should be put into the proper changelog but
-normal fixups like 'set em to NULL' do not have the long-term value that
-we want to record in the changelog.
-
-> Signed-off-by: Michal Rostecki <mrostecki@suse.com>
-> ---
->  fs/btrfs/inode.c   | 38 +++++++++++++++++++++++++++++---------
->  fs/btrfs/volumes.c | 39 ++++++++++++++++-----------------------
->  fs/btrfs/volumes.h |  5 +++--
->  3 files changed, 48 insertions(+), 34 deletions(-)
-> 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 0dbe1aaa0b71..e2ee3a9c1140 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -2183,9 +2183,10 @@ int btrfs_bio_fits_in_stripe(struct page *page, size_t size, struct bio *bio,
->  	struct inode *inode = page->mapping->host;
->  	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
->  	u64 logical = bio->bi_iter.bi_sector << 9;
-> +	struct extent_map *em;
->  	u64 length = 0;
->  	u64 map_length;
-> -	int ret;
-> +	int ret = 0;
->  	struct btrfs_io_geometry geom;
->  
->  	if (bio_flags & EXTENT_BIO_COMPRESSED)
-> @@ -2193,14 +2194,21 @@ int btrfs_bio_fits_in_stripe(struct page *page, size_t size, struct bio *bio,
->  
->  	length = bio->bi_iter.bi_size;
->  	map_length = length;
-> -	ret = btrfs_get_io_geometry(fs_info, btrfs_op(bio), logical, map_length,
-> -				    &geom);
-> +	em = btrfs_get_chunk_map(fs_info, logical, map_length);
-> +	if (IS_ERR(em))
-> +		return PTR_ERR(em);
-> +	ret = btrfs_get_io_geometry(fs_info, em, btrfs_op(bio), logical,
-> +				    map_length, &geom);
->  	if (ret < 0)
-> -		return ret;
-> +		goto out;
->  
-> -	if (geom.len < length + size)
-> -		return 1;
-> -	return 0;
-> +	if (geom.len < length + size) {
-> +		ret = 1;
-> +		goto out;
-> +	}
-> +out:
-> +	free_extent_map(em);
-> +	return ret;
->  }
->  
->  /*
-> @@ -7941,10 +7949,12 @@ static blk_qc_t btrfs_submit_direct(struct inode *inode, struct iomap *iomap,
->  	u64 submit_len;
->  	int clone_offset = 0;
->  	int clone_len;
-> +	int logical;
-
-This needs to be u64
-
->  	int ret;
->  	blk_status_t status;
->  	struct btrfs_io_geometry geom;
->  	struct btrfs_dio_data *dio_data = iomap->private;
-> +	struct extent_map *em;
->  
->  	dip = btrfs_create_dio_private(dio_bio, inode, file_offset);
->  	if (!dip) {
-> @@ -7970,11 +7980,18 @@ static blk_qc_t btrfs_submit_direct(struct inode *inode, struct iomap *iomap,
->  	}
->  
->  	start_sector = dio_bio->bi_iter.bi_sector;
-> +	logical = start_sector << 9;
-
-Otherwise this overflows on logical address larger than 2^23 which is 8G.
+DQoNCk9uIDIwMjEvMS8yOCDkuIvljYg3OjA2LCBRdSBXZW5ydW8gd3JvdGU6DQo+IA0KPiANCj4g
+T24gMjAyMS8xLzI4IOS4i+WNiDY6NTAsIERhbiBDYXJwZW50ZXIgd3JvdGU6DQo+PiBIZWxsbyBR
+dSBXZW5ydW8sDQo+Pg0KPj4gVGhlIHBhdGNoIDVjNjBhNTIyZjFlYTogImJ0cmZzOiBpbnRyb2R1
+Y2UNCj4+IHJlYWRfZXh0ZW50X2J1ZmZlcl9zdWJwYWdlKCkiIGZyb20gSmFuIDE2LCAyMDIxLCBs
+ZWFkcyB0byB0aGUNCj4+IGZvbGxvd2luZyBzdGF0aWMgY2hlY2tlciB3YXJuaW5nOg0KPj4NCj4+
+IMKgwqDCoMKgZnMvYnRyZnMvZXh0ZW50X2lvLmM6NTc5NyByZWFkX2V4dGVudF9idWZmZXJfc3Vi
+cGFnZSgpDQo+PiDCoMKgwqDCoGluZm86IHJldHVybiBhIGxpdGVyYWwgaW5zdGVhZCBvZiAncmV0
+Jw0KPj4NCj4+IGZzL2J0cmZzL2V4dGVudF9pby5jDQo+PiDCoMKgIDU3ODDCoCBzdGF0aWMgaW50
+IHJlYWRfZXh0ZW50X2J1ZmZlcl9zdWJwYWdlKHN0cnVjdCBleHRlbnRfYnVmZmVyIA0KPj4gKmVi
+LCBpbnQgd2FpdCwNCj4+IMKgwqAgNTc4McKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
+wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoCBpbnQgbWlycm9y
+X251bSkNCj4+IMKgwqAgNTc4MsKgIHsNCj4+IMKgwqAgNTc4M8KgwqDCoMKgwqDCoMKgwqDCoCBz
+dHJ1Y3QgYnRyZnNfZnNfaW5mbyAqZnNfaW5mbyA9IGViLT5mc19pbmZvOw0KPj4gwqDCoCA1Nzg0
+wqDCoMKgwqDCoMKgwqDCoMKgIHN0cnVjdCBleHRlbnRfaW9fdHJlZSAqaW9fdHJlZTsNCj4+IMKg
+wqAgNTc4NcKgwqDCoMKgwqDCoMKgwqDCoCBzdHJ1Y3QgcGFnZSAqcGFnZSA9IGViLT5wYWdlc1sw
+XTsNCj4+IMKgwqAgNTc4NsKgwqDCoMKgwqDCoMKgwqDCoCBzdHJ1Y3QgYmlvICpiaW8gPSBOVUxM
+Ow0KPj4gwqDCoCA1Nzg3wqDCoMKgwqDCoMKgwqDCoMKgIGludCByZXQgPSAwOw0KPj4gwqDCoCA1
+Nzg4DQo+PiDCoMKgIDU3ODnCoMKgwqDCoMKgwqDCoMKgwqAgQVNTRVJUKCF0ZXN0X2JpdChFWFRF
+TlRfQlVGRkVSX1VOTUFQUEVELCAmZWItPmJmbGFncykpOw0KPj4gwqDCoCA1NzkwwqDCoMKgwqDC
+oMKgwqDCoMKgIEFTU0VSVChQYWdlUHJpdmF0ZShwYWdlKSk7DQo+PiDCoMKgIDU3OTHCoMKgwqDC
+oMKgwqDCoMKgwqAgaW9fdHJlZSA9ICZCVFJGU19JKGZzX2luZm8tPmJ0cmVlX2lub2RlKS0+aW9f
+dHJlZTsNCj4+IMKgwqAgNTc5Mg0KPj4gwqDCoCA1NzkzwqDCoMKgwqDCoMKgwqDCoMKgIGlmICh3
+YWl0ID09IFdBSVRfTk9ORSkgew0KPj4gwqDCoCA1Nzk0wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
+wqDCoMKgwqDCoCByZXQgPSB0cnlfbG9ja19leHRlbnQoaW9fdHJlZSwgZWItPnN0YXJ0LA0KPj4g
+wqDCoCA1Nzk1wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
+wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgIGViLT5zdGFydCArIGViLT5sZW4gLSAxKTsN
+Cj4+IMKgwqAgNTc5NsKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqAgaWYgKHJldCA8
+PSAwKQ0KPj4gwqDCoCA1Nzk3wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDC
+oMKgwqDCoMKgwqAgcmV0dXJuIHJldDsNCj4+DQo+PiBJZiB0cnlfbG9ja19leHRlbnQoKSBmYWls
+cyB0byBnZXQgdGhlIGxvY2sgYW5kIHJldHVybnMgMCwgdGhlbiBpcw0KPj4gcmV0dXJuaW5nIHpl
+cm8gaGVyZSByZWFsbHkgdGhlIGNvcnJlY3QgYmVoYXZpb3I/DQo+IA0KPiBUaGlzIGlzIHRoZSBz
+YW1lIGJlaGF2aW9yIG9mIHJlYWRfZXh0ZW50X2J1ZmZlcl9wYWdlcygpIGZvciByZWd1bGFyDQo+
+IHNlY3RvciBzaXplOg0KPiANCj4gaW50IHJlYWRfZXh0ZW50X2J1ZmZlcl9wYWdlcyhzdHJ1Y3Qg
+ZXh0ZW50X2J1ZmZlciAqZWIsIGludCB3YWl0LCBpbnQNCj4gbWlycm9yX251bSkNCj4gew0KPiAg
+wqDCoMKgwqAuLi4NCj4gIMKgwqDCoMKgwqDCoMKgIGludCByZXQgPSAwOw0KPiAgwqDCoMKgwqAu
+Li4NCj4gIMKgwqDCoMKgwqDCoMKgwqDCoMKgwqAgbnVtX3BhZ2VzID0gbnVtX2V4dGVudF9wYWdl
+cyhlYik7DQo+ICDCoMKgwqDCoMKgwqDCoCBmb3IgKGkgPSAwOyBpIDwgbnVtX3BhZ2VzOyBpKysp
+IHsNCj4gIMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoCBwYWdlID0gZWItPnBhZ2VzW2ld
+Ow0KPiAgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgIGlmICh3YWl0ID09IFdBSVRfTk9O
+RSkgew0KPiAgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoCBp
+ZiAoIXRyeWxvY2tfcGFnZShwYWdlKSkNCj4gIMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDC
+oMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgIGdvdG8gdW5sb2NrX2V4aXQ7IDw8PDwN
+Cj4gIMKgwqDCoMKgLi4uDQo+IHVubG9ja19leGl0Og0KPiAgwqDCoMKgwqDCoMKgwqAgd2hpbGUg
+KGxvY2tlZF9wYWdlcyA+IDApIHsNCj4gIMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoCBs
+b2NrZWRfcGFnZXMtLTsNCj4gIMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoCBwYWdlID0g
+ZWItPnBhZ2VzW2xvY2tlZF9wYWdlc107DQo+ICDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
+wqAgdW5sb2NrX3BhZ2UocGFnZSk7DQo+ICDCoMKgwqDCoMKgwqDCoCB9DQo+ICDCoMKgwqDCoMKg
+wqDCoCByZXR1cm4gcmV0Ow0KPiB9DQo+IA0KPiBIZXJlIHdoZW4gd2UgaGl0IHRyeWxvY2tfcGFn
+ZSgpID09IGZhbHNlIGNhc2UsIHdlIGRpcmVjdGx5IGdvDQo+IHVubG9ja19leGl0LCBhbmQgYnkg
+dGhhdCB0aW1lLCBAcmV0IGlzIHN0aWxsIDAuDQo+IA0KPiANCj4gSSdtIG5vdCB5ZXQgY29uZmlk
+ZW50IGVub3VnaCB0byBzYXkgd2h5IGl0J3MgT0ssIGJ1dCBteSBpbml0aWFsIGd1ZXNzDQo+IGlz
+LCB3ZSB3b24ndCBoYXZlICh3YWl0ID09IFdBSVRfTk9ORSkgY2FzZSBmb3IgbWV0YWRhdGEgcmVh
+ZC4NCj4gDQo+IFRoYW5rIHlvdSBmb3IgdGhlIGhpbnQsIEknbGwgdGFrZSBtb3JlIHRpbWUgdG8g
+bWFrZSBzdXJlIHRoZSBvcmlnaW5hbA0KPiBiZWhhdmlvciBpcyBjb3JyZWN0LCBhbmQgaWYgaXQn
+cyByZWFsbHkgKHdhaXQgPT0gV0FJVF9OT05FKSB3aWxsIG5ldmVyDQo+IGJlIHRydWUgZm9yIG1l
+dGFkYXRhLCBJJ2xsIHNlbmQgb3V0IGNsZWFudXAgZm9yIHRoaXMuDQoNCkZhY2VwYWxtLCBJIHNo
+b3VsZCBjaGVjayB0aGUgY29kZSBiZWZvcmUgaGl0dGluZyBzZW5kLg0KDQpUaGUgV0FJVF9OT05F
+IGNhc2UgaXMgZm9yIHJlYWRhaGVhZCwgdGh1cyB3ZSBhcmUgY29tcGxldGVseSBmaW5lIG5vdCB0
+byANCnJlYWQgdGhlIHRyZWUgYmxvY2sgYW5kIGp1c3QgcmV0dXJuIDAuDQoNCkZvciByZWFsIHRy
+ZWUgcmVhZHMsIHdlIGFsd2F5cyBoYXZlIFdBSVRfQ09NUExFVEUuDQoNCkJ1dCBzdGlsbCwgSSds
+bCBhZGQgc29tZSBjb21tZW50IG9uIHRoZSBvcmlnaW5hbCBjb2RlIHRvIGV4cGxhaW4gd2h5IA0K
+d2UncmUgc2FmZSB0byByZXR1cm4gMCBkaXJlY3RseSBpZiB3ZSBjYW4ndCBsb2NrIHRoZSBwYWdl
+IGRpcmVjdGx5Lg0KDQpUaGFua3MsDQpRdQ0KPiANCj4gVGhhbmtzLA0KPiBRdQ0KPiANCj4+IMKg
+SXQgZmVlbHMgbGlrZSB0aGVyZQ0KPj4gc2hvdWxkIGJlIHNvbWUgZG9jdW1lbnRhdGlvbiBiZWNh
+dXNlIHRoaXMgYmVoYXZpb3IgaXMgdW5leHBlY3RlZC4NCj4+DQo+PiDCoMKgIDU3OTjCoMKgwqDC
+oMKgwqDCoMKgwqAgfSBlbHNlIHsNCj4+IMKgwqAgNTc5OcKgwqDCoMKgwqDCoMKgwqDCoMKgwqDC
+oMKgwqDCoMKgwqAgcmV0ID0gbG9ja19leHRlbnQoaW9fdHJlZSwgZWItPnN0YXJ0LCANCj4+IGVi
+LT5zdGFydCArIGViLT5sZW4gLSAxKTsNCj4+IMKgwqAgNTgwMMKgwqDCoMKgwqDCoMKgwqDCoMKg
+wqDCoMKgwqDCoMKgwqAgaWYgKHJldCA8IDApDQo+PiDCoMKgIDU4MDHCoMKgwqDCoMKgwqDCoMKg
+wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoCByZXR1cm4gcmV0Ow0KPj4gwqDCoCA1
+ODAywqDCoMKgwqDCoMKgwqDCoMKgIH0NCj4+IMKgwqAgNTgwMw0KPj4gwqDCoCA1ODA0wqDCoMKg
+wqDCoMKgwqDCoMKgIHJldCA9IDA7DQo+PiDCoMKgIDU4MDXCoMKgwqDCoMKgwqDCoMKgwqAgaWYg
+KHRlc3RfYml0KEVYVEVOVF9CVUZGRVJfVVBUT0RBVEUsICZlYi0+YmZsYWdzKSB8fA0KPj4gwqDC
+oCA1ODA2wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqAgUGFnZVVwdG9kYXRlKHBhZ2UpIHx8DQo+
+PiDCoMKgIDU4MDfCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoCBidHJmc19zdWJwYWdlX3Rlc3Rf
+dXB0b2RhdGUoZnNfaW5mbywgcGFnZSwgDQo+PiBlYi0+c3RhcnQsIGViLT5sZW4pKSB7DQo+PiDC
+oMKgIDU4MDjCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgIHNldF9iaXQoRVhURU5U
+X0JVRkZFUl9VUFRPREFURSwgJmViLT5iZmxhZ3MpOw0KPj4gwqDCoCA1ODA5wqDCoMKgwqDCoMKg
+wqDCoMKgwqDCoMKgwqDCoMKgwqDCoCB1bmxvY2tfZXh0ZW50KGlvX3RyZWUsIGViLT5zdGFydCwg
+ZWItPnN0YXJ0ICsgDQo+PiBlYi0+bGVuIC0gMSk7DQo+PiDCoMKgIDU4MTDCoMKgwqDCoMKgwqDC
+oMKgwqDCoMKgwqDCoMKgwqDCoMKgIHJldHVybiByZXQ7DQo+PiDCoMKgIDU4MTHCoMKgwqDCoMKg
+wqDCoMKgwqAgfQ0KPj4NCj4+IHJlZ2FyZHMsDQo+PiBkYW4gY2FycGVudGVyDQo+Pg0K

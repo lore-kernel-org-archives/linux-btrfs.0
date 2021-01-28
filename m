@@ -2,163 +2,166 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.3 required=3.0 tests=BAYES_00,BIGNUM_EMAILS,
+	DKIM_SIGNED,DKIM_VALID,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
+	SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7B9E6C433DB
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Jan 2021 11:04:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AC8AAC433DB
+	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Jan 2021 11:08:46 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 28CE064DD8
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Jan 2021 11:04:46 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 62A2A64D9D
+	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Jan 2021 11:08:46 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229723AbhA1LEY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 28 Jan 2021 06:04:24 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55354 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229586AbhA1LEK (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Jan 2021 06:04:10 -0500
-Received: from mail-ej1-x632.google.com (mail-ej1-x632.google.com [IPv6:2a00:1450:4864:20::632])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A9390C061756
-        for <linux-btrfs@vger.kernel.org>; Thu, 28 Jan 2021 03:03:26 -0800 (PST)
-Received: by mail-ej1-x632.google.com with SMTP id w1so7058307ejf.11
-        for <linux-btrfs@vger.kernel.org>; Thu, 28 Jan 2021 03:03:26 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:from:date:message-id:subject:to;
-        bh=/fSob9qp6I1LvvE+B0L3CatYSbVJUouBMbOjeYyn748=;
-        b=cFJEJJjspobCp+oPuuES54VN/vd5HiUFzIHMhQElJRbQoSpzWHvcBtOrqKF2QU62Bs
-         6cot3qmNQcMBkpCPzDOY0C5eeeV37Ulx1XSUCbYi+X6isHL2j0qd5KEHqTfGln9r7pI4
-         OjbHuhWQHn5ur38H2XHugbHR48fkD/FRlll+v1KIpxcMv/RlMf3LTxzfhYysJX/Yd3cc
-         WeIwFHAiBWHCVOdJYHoegiGmtPpLr/KD4rVCbnraZEwgw4nUUrnW2U/cNyK1gJ/CKQfO
-         LxzYyMOXvdzVcOVI3Nl7fjxg8IeQXbg1qb/u0a8b5XYW5WNCrIIyjG+hCSUyjUqFP5QJ
-         0qWA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:from:date:message-id:subject:to;
-        bh=/fSob9qp6I1LvvE+B0L3CatYSbVJUouBMbOjeYyn748=;
-        b=VDySVkaa5ims/VGP39KsRkgV1ijONaIiAamAxdpoq5NNM1RfwjSA+46rZ0HSfMytPA
-         s3kHtW6wtRmDeCfwS8X+hnArYBLLIOXvSI0NVGjBN7Ldn5Q16PRsVG5cE1EA/aE+ps61
-         hykH71wAD5/F3ty6fViUQyqxg0dsQRpc1n/hr8o8Syvl2EVC7hNn1bHAZ/pmBgpaEhiC
-         7gTfqhlL2cnIkOiHDmglkHvuapkXqfV9D9cdrWELUrwp1aoDNIj0+HGXtUgApqGXa/cu
-         qadZ1t/ZG3C4N7sforHTHYDqqsn70fak9YUXVRapZMJ500URme9AjB64mw21rmMCOulQ
-         T1MQ==
-X-Gm-Message-State: AOAM533AEKOLL1sO+tlFkGQQ/pnFsGKnHdmFu7leL5kvVlFZdI9jsuYx
-        kDsYfklZzo46zEHeXYYJiPI2sNLaLSGQyVoioCsi5s5c
-X-Google-Smtp-Source: ABdhPJwx0Qgswr09/hb4NjlVX07VdeWeJui98hgrgaPb0pQmjUE72PN2cotBqUdJnUdX8faVnraTbiym7Kk1DGXy3Fk=
-X-Received: by 2002:a17:906:1712:: with SMTP id c18mr10716828eje.417.1611831805125;
- Thu, 28 Jan 2021 03:03:25 -0800 (PST)
+        id S231128AbhA1LI2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 28 Jan 2021 06:08:28 -0500
+Received: from mout.gmx.net ([212.227.17.21]:36579 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S229723AbhA1LIZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 28 Jan 2021 06:08:25 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1611832007;
+        bh=AmJ8JheKKzRIyc+PE48fpnm0lt/mwRYhZomnFgG4+Rg=;
+        h=X-UI-Sender-Class:To:Cc:References:From:Subject:Date:In-Reply-To;
+        b=RtdQHDNxQZIGqJTXlM3YKoMA0XbffxoIeTQAH/fNwm+vXNYNNYvMVskSXFsmRLEYT
+         X6dnlkktyoM9juSXANo3kyP8XT7s5/G2aAHcTJpDBfw7zJ6BL5nBQGmmYp3LB6u/b2
+         yMyaS5KacD5uBnQElcgo3oDmuSkrzHJdANH6rt+c=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx104
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1M1Ygt-1l6zsb0KmR-0038Oo; Thu, 28
+ Jan 2021 12:06:47 +0100
+To:     Dan Carpenter <dan.carpenter@oracle.com>, wqu@suse.com
+Cc:     linux-btrfs@vger.kernel.org
+References: <YBKW31GtQ2Rc6EfC@mwanda>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Subject: Re: [bug report] btrfs: introduce read_extent_buffer_subpage()
+Message-ID: <e19e87e2-17eb-7244-008d-2a0c9cc2dac7@gmx.com>
+Date:   Thu, 28 Jan 2021 19:06:41 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.6.1
 MIME-Version: 1.0
-From:   Andrew Vaughan <andrewjvaughan@gmail.com>
-Date:   Thu, 28 Jan 2021 22:03:08 +1100
-Message-ID: <CALxwgb59wUpyC1dinzYjG05781JesjrEf2WaXcP5bpm85-n52A@mail.gmail.com>
-Subject: super_total_bytes mismatch with fs_devices total_rw_bytes
-To:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <YBKW31GtQ2Rc6EfC@mwanda>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:VstJVDczBEsuS4Pc+PbryPIXTWZ9xHtRa03w4+xnELW3JZvHixY
+ vqaQo+blwkMc7qqMVjUp9rjScumIOlf8skKszv15k5tpRJvSqWP/fl+lflM9xmxF8Mt41eI
+ MZhv9UYNswxwEpvRqtKHJKu9j1E9b8DD05ki4OppvjisNdeYLl5yzB7rT0UejJGitlew+Js
+ S+6XCwIXyamkGVpbvqr5g==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:MncrWruw+Ew=:929B9iWJjcD5ZuXDsZidaC
+ juIIm6bG7q6y6ngEpiVLUllIbm9+YCz2Hz+3PKXP39hlSEQV/240QUtmOKGXfRjug4KtoBSL9
+ LuyEYKNU7icDcdpy2NLd7JZ0L6BVcaWI6MaEK9PnSnYFTzTLnXGug6YbmCfp79WggAJ3ofDku
+ S/Pk0nSdZAIJYA0QuKtz2e1EOVAVyBWzWCCzQgNYbDtsDAk9TPOyfOX0cd1Sk2Ysq6B7IW0z0
+ ul0adtRbGGUGOKSh0O3lCr7daYyKSCJiO9qcIBFx/cCQ1b5z2AEn10vmpEvv+9fzBVY/czRJo
+ Tj5JjmJE083shjbeqsMy6jNo6/pwRowUKulezy3zxFgN4jpyvBK8ocut0kTjE/O8oP9PhpZZr
+ V+vWwobgxketio/XuLN/VlKODlBbtjdOS4cQmOuexlgz9/OWDQk047e+V+kpj/F5kKNaaEh0u
+ 6AHB5kPMSikDJkGHJk2ixj7PJbZZ1jN+IkkTfcQqBM1r0a8ENovCzH9ta2cJq40S4BVirexyX
+ MZAUi4TaK1uwsGoIzeqEa2fNApabo7XBjPmmVEtCdIvBElAEGmPjsOkcNB4A3M/O8N6EL3dST
+ Qa/lpbO7R+nEOmTa7jizHABNnljibYLT6GFbfLD0cwWcfohihaUifwC0yqyFxMPpvNMkg44q1
+ w64IyhS2DE1uRtUFvPYezJjSY7bIN2K+lYerIbiL+nxrlu4SbpTKiaVzNEDQH+IxMWLLUGhjo
+ EPVb9RD2LMS1uKaJERAbXzC3Aw6iETWzejfXvgbpDMsqcdTlbLm5hD/tH3mYyrlFJ/SYajIT7
+ ASD+3DUGXRTDaero14yTUSCJdtHK7WiiAgEqg/oOWv2cGE2V/klRV4xzeJcfzl+uoUvjO+GWB
+ jR9PLaR17xUtWzfZb7Mg==
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-[Please cc me on replies.  I'm not subscribed to the list.]
-
-Hi
-
-I have a 3 device btrfs raid1 filesystem on my home linux system.  The
-filesystem is probably over 10 years old at this point, and has had a
-number of drives added and removed over it's life.  It currently
-contains over 8 TB of data and is mainly used as write once, read
-rarely/never.  There are a number of daily/weekly/monthly snapshots
-(I'm guessing about 50 total).  Btrfs-progs is from Debian Testing and
-currently is version 5.10-1.
-
-I recently used btrfs replace to replace a 4 TB drive with a new 8 TB
-drive.  After that completed, I did a scrub to ensure that the new
-drive wasn't reporting any read errors.  (The old drive is still
-physically installed in the system, but I expect replace should have
-wiped the filesystem metadata, so that the kernel doesn't confuse it
-with the new drive).
-
-Today I did '# btrfs fi resize 4:max /srv/shared' as preparation for a
-balance to make the extra drive space available.  (The old drives are
-all fairly full.  About 130 GB free space on each.  I initially tried
-btrfs fi resize max /srv/shared as the syntax on the manpage implies
-that devid is optional.  Since that command errored, I assume it
-didn't change the filesystem).
-
-Also today I updated the kernel to
-linux-image-5.10.0-2-amd64_5.10.9-1_amd64.deb, the latest kernel
-available in Debian Testing.
-linux-image-5.10.0-1-amd64_5.10.4-1_amd64.deb was also installed and I
-think that was the running kernel during the replace, scrub and resize
-operations.
-
-After installing the new kernel I rebooted.   (# shutdown -r now.  I
-wasn't really paying attention, but the shutdown seemed to take longer
-than normal.  At one stage I actually thought the system had actually
-hung).
-
-After the reboot the btrfs filesystem failed to mount.  dmesg | grep
--i btrfs output
-
-[    5.650300] Btrfs loaded, crc32c=crc32c-generic
-[    6.182298] BTRFS: device label samba.btrfs devid 4 transid 1281994
-/dev/sdd1 scanned by btrfs (173)
-[    6.182887] BTRFS: device label samba.btrfs devid 5 transid 1281994
-/dev/sde1 scanned by btrfs (173)
-[    6.183711] BTRFS: device label samba.btrfs devid 8 transid 1281994
-/dev/sdb1 scanned by btrfs (173)
-[   16.492471] BTRFS info (device sdd1): disk space caching is enabled
-[   16.547330] BTRFS error (device sdd1): super_total_bytes
-22004298366976 mismatch with fs_devices total_rw_bytes 22004298370048
-[   16.547561] BTRFS error (device sdd1): failed to read chunk tree: -22
-[   16.560975] BTRFS error (device sdd1): open_ctree failed
-
-That filesystem is used for archival storage and I don't need it in
-the short term, so I simply commented it out in /etc/fstab and
-rebooted to get a functioning system.
-
-# uname -a
-Linux nl40 5.10.0-2-amd64 #1 SMP Debian 5.10.9-1 (2021-01-20) x86_64 GNU/Linux
-
-# mount -t btrfs /dev/sdd1 /mnt/sdd-tmp
-mount: /mnt/sdd-tmp: wrong fs type, bad option, bad superblock on
-/dev/sdd1, missing codepage or helper program, or other error.
-
-# dmesg | grep -i btrfs
-[    5.799637] Btrfs loaded, crc32c=crc32c-generic
-[    6.428245] BTRFS: device label samba.btrfs devid 8 transid 1281994
-/dev/sdb1 scanned by btrfs (172)
-[    6.428804] BTRFS: device label samba.btrfs devid 5 transid 1281994
-/dev/sdd1 scanned by btrfs (172)
-[    6.429473] BTRFS: device label samba.btrfs devid 4 transid 1281994
-/dev/sde1 scanned by btrfs (172)
-[ 2004.140494] BTRFS info (device sde1): disk space caching is enabled
-[ 2004.790843] BTRFS error (device sde1): super_total_bytes
-22004298366976 mismatch with fs_devices total_rw_bytes 22004298370048
-[ 2004.790854] BTRFS error (device sde1): failed to read chunk tree: -22
-[ 2004.805043] BTRFS error (device sde1): open_ctree failed
-
-Note that drive identifiers have changed between reboots.  I haven't
-seen that on this system before.
 
 
-Questions
-=========
+On 2021/1/28 =E4=B8=8B=E5=8D=886:50, Dan Carpenter wrote:
+> Hello Qu Wenruo,
+>
+> The patch 5c60a522f1ea: "btrfs: introduce
+> read_extent_buffer_subpage()" from Jan 16, 2021, leads to the
+> following static checker warning:
+>
+> 	fs/btrfs/extent_io.c:5797 read_extent_buffer_subpage()
+> 	info: return a literal instead of 'ret'
+>
+> fs/btrfs/extent_io.c
+>    5780  static int read_extent_buffer_subpage(struct extent_buffer *eb,=
+ int wait,
+>    5781                                        int mirror_num)
+>    5782  {
+>    5783          struct btrfs_fs_info *fs_info =3D eb->fs_info;
+>    5784          struct extent_io_tree *io_tree;
+>    5785          struct page *page =3D eb->pages[0];
+>    5786          struct bio *bio =3D NULL;
+>    5787          int ret =3D 0;
+>    5788
+>    5789          ASSERT(!test_bit(EXTENT_BUFFER_UNMAPPED, &eb->bflags));
+>    5790          ASSERT(PagePrivate(page));
+>    5791          io_tree =3D &BTRFS_I(fs_info->btree_inode)->io_tree;
+>    5792
+>    5793          if (wait =3D=3D WAIT_NONE) {
+>    5794                  ret =3D try_lock_extent(io_tree, eb->start,
+>    5795                                        eb->start + eb->len - 1);
+>    5796                  if (ret <=3D 0)
+>    5797                          return ret;
+>
+> If try_lock_extent() fails to get the lock and returns 0, then is
+> returning zero here really the correct behavior?
 
-Is btrfs rescue fix-device-size <device> considered the best way to
-recover?  Should I run that once for each device in the filesystem?
+This is the same behavior of read_extent_buffer_pages() for regular
+sector size:
 
-Do you want me to run any other commands to help diagnose the cause
-before attempting recovery?
+int read_extent_buffer_pages(struct extent_buffer *eb, int wait, int
+mirror_num)
+{
+	...
+         int ret =3D 0;
+	...
+	        num_pages =3D num_extent_pages(eb);
+         for (i =3D 0; i < num_pages; i++) {
+                 page =3D eb->pages[i];
+                 if (wait =3D=3D WAIT_NONE) {
+                         if (!trylock_page(page))
+                                 goto unlock_exit; <<<<
+	...
+unlock_exit:
+         while (locked_pages > 0) {
+                 locked_pages--;
+                 page =3D eb->pages[locked_pages];
+                 unlock_page(page);
+         }
+         return ret;
+}
 
-Unless I hear otherwise, I will probably attempt to reboot to Debian
-kernel linux-image-5.10.0-1-amd64_5.10.4-1_amd64.deb tomorrow, to see
-whether this is a kernel regression. (Probably 16-24 hours after I
-send this).
+Here when we hit trylock_page() =3D=3D false case, we directly go
+unlock_exit, and by that time, @ret is still 0.
 
-Thanks for your work on linux and btrfs.
 
-Best sincerely
-Andrew V
+I'm not yet confident enough to say why it's OK, but my initial guess
+is, we won't have (wait =3D=3D WAIT_NONE) case for metadata read.
+
+Thank you for the hint, I'll take more time to make sure the original
+behavior is correct, and if it's really (wait =3D=3D WAIT_NONE) will never
+be true for metadata, I'll send out cleanup for this.
+
+Thanks,
+Qu
+
+>  It feels like there
+> should be some documentation because this behavior is unexpected.
+>
+>    5798          } else {
+>    5799                  ret =3D lock_extent(io_tree, eb->start, eb->sta=
+rt + eb->len - 1);
+>    5800                  if (ret < 0)
+>    5801                          return ret;
+>    5802          }
+>    5803
+>    5804          ret =3D 0;
+>    5805          if (test_bit(EXTENT_BUFFER_UPTODATE, &eb->bflags) ||
+>    5806              PageUptodate(page) ||
+>    5807              btrfs_subpage_test_uptodate(fs_info, page, eb->star=
+t, eb->len)) {
+>    5808                  set_bit(EXTENT_BUFFER_UPTODATE, &eb->bflags);
+>    5809                  unlock_extent(io_tree, eb->start, eb->start + e=
+b->len - 1);
+>    5810                  return ret;
+>    5811          }
+>
+> regards,
+> dan carpenter
+>

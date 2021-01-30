@@ -2,89 +2,93 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-20.2 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_SANE_1 autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-11.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6DAE0C433E6
-	for <linux-btrfs@archiver.kernel.org>; Sat, 30 Jan 2021 09:29:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 118F7C433DB
+	for <linux-btrfs@archiver.kernel.org>; Sat, 30 Jan 2021 11:28:20 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 280D364E12
-	for <linux-btrfs@archiver.kernel.org>; Sat, 30 Jan 2021 09:29:36 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CE13864DDB
+	for <linux-btrfs@archiver.kernel.org>; Sat, 30 Jan 2021 11:28:19 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231303AbhA3J3M (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 30 Jan 2021 04:29:12 -0500
-Received: from mga02.intel.com ([134.134.136.20]:47814 "EHLO mga02.intel.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S231668AbhA3J1c (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 30 Jan 2021 04:27:32 -0500
-IronPort-SDR: HvVow2k8quNeuvP0f+7KtKadGH1lgI991vr0/VCFu3uw0LAaOIX7osn7FArhgubDNAnKGAkmcB
- PJcBqzaZaRcA==
-X-IronPort-AV: E=McAfee;i="6000,8403,9879"; a="167616204"
-X-IronPort-AV: E=Sophos;i="5.79,387,1602572400"; 
-   d="scan'208";a="167616204"
-Received: from fmsmga006.fm.intel.com ([10.253.24.20])
-  by orsmga101.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 29 Jan 2021 22:49:54 -0800
-IronPort-SDR: Q64dFHw/De9JkkTQE2S6EZVPZpB4ve2EHh7SSIZpC+NPBOo8d4MYoglWOfzJejikq6BUTd5Svo
- PVFSc6EVjo3Q==
-X-ExtLoop1: 1
-X-IronPort-AV: E=Sophos;i="5.79,387,1602572400"; 
-   d="scan'208";a="576761034"
-Received: from lkp-server02.sh.intel.com (HELO 625d3a354f04) ([10.239.97.151])
-  by fmsmga006.fm.intel.com with ESMTP; 29 Jan 2021 22:49:52 -0800
-Received: from kbuild by 625d3a354f04 with local (Exim 4.92)
-        (envelope-from <lkp@intel.com>)
-        id 1l5k4t-0004LQ-UR; Sat, 30 Jan 2021 06:49:51 +0000
-Date:   Sat, 30 Jan 2021 14:49:27 +0800
-From:   kernel test robot <lkp@intel.com>
-To:     Naohiro Aota <naohiro.aota@wdc.com>
-Cc:     kbuild-all@lists.01.org, David Sterba <dsterba@suse.com>,
+        id S229885AbhA3L2B (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 30 Jan 2021 06:28:01 -0500
+Received: from esa5.hgst.iphmx.com ([216.71.153.144]:14341 "EHLO
+        esa5.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229498AbhA3L2A (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 30 Jan 2021 06:28:00 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1612006079; x=1643542079;
+  h=from:to:cc:subject:date:message-id:mime-version:
+   content-transfer-encoding;
+  bh=Z2CtjrXAAt/kqg5CWOXKUrEnARMJ+c/BYtxmOdOfZ6s=;
+  b=F7f++XE/pm1064sRByVaMgBl0Yk78rc0IhJVII9lJb/rGnuVqQGhTy/f
+   6R2s93FJRRNX2Go8pKsDUM6buHQrmMphfaS6dV9YiFWQNM1+W6PE0qioE
+   zkzJJpcT0g218TM0i7ArnZjC1uDURge0sflmFK7xqYwLw6oxGf2nuGtW2
+   6iHCZhGeFJxdxJhTP6+P/MgwmiO0Ijh/CjVPJLPiWmRxijJvILKpr+9It
+   Ctg9N44PP5qeLgdrzNd2RJ9EhcrcPysdz2wM3ZNN0X2Nawa5Ys3eUK5tP
+   FHUF7Ud6wqCvhZMxrndJ3vOz2ssmBmgfla7lwYFFRr1m2V3mQS8a7MWn2
+   w==;
+IronPort-SDR: GiRUlBXVIkRzS1AMa7r9piwotd9vQmuz2QxC6MBwoNw0FIWX50TJbx1pGylYDm2UgmOM5QnlhB
+ Zluv2OCgfRD/etxi6gt3CSmDX4AJ8t6ZvkL0Y2ODmN8v0PQtmTLSaxWnLx+2fbw1swwKzjcuSS
+ ckgvjcZzDeNcNhC6QOi2pBjtXMWQd6N5iMZywI5EgwpeaKx4EevTEt/TYTbz5qQvQg/y02o24q
+ lzJa3vOnOad3AUUu6Owe8KQReBhCIwc3NXVIQ0D+sWcmEMbuK7NDVOVx3Xtz1Mh91Y7tLRKyTF
+ JkQ=
+X-IronPort-AV: E=Sophos;i="5.79,388,1602518400"; 
+   d="scan'208";a="158695894"
+Received: from uls-op-cesaip02.wdc.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
+  by ob1.hgst.iphmx.com with ESMTP; 30 Jan 2021 19:26:54 +0800
+IronPort-SDR: BvDlaqDpnAZhtKaiGK2xxo/oVjVAMRJTJu/P17u3n16i4Fu15/xwJAVhxEui9Qzh35aJbVcYxq
+ GWRMjDmxYnyiAKIFVabzCP3fktuCtt9yUWsPDIlP63XC5Dxh1cAoBicn4aRZxAflPmvV3sMTQA
+ wBvgqli89ToROx+2of3WplibEnD7SRomKTSHxcnMJr//WCpNk34jUK5YTPvYDJGnvQRvBA8DNi
+ cjj85uTpxYLoS3y/FCtACqu/y4KYHca4Zm56/Wk4jEBJEnuflqUc5IELFnkLpzQbAjngck4unb
+ 3r3soztvzVnfhF5gj+3pgiSm
+Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 30 Jan 2021 03:09:07 -0800
+IronPort-SDR: JfaRVRgz6ulzOXPdfXSOLiAVOotbJq+kVT+s/PhW83PqCUTjdAG9k1l8LE2fNnh2dtNcCgiYXo
+ t2aIJcrmSOktOns9p3vKnT0NaYbsR5PqhqMGgKKVMnfhq2sxtTFdQqS7kEoSq7mFDbw8IiVM7Q
+ fxmy2H8FTNYT2iQiWI6lZUhkC/D620cUJniVyrzSd0nBJlccAriOfH7qB/7pSV3VF2XsPzGL5r
+ 9HPihhkSa6qpstpQxX5JpJtQ7jeOIwd2lkGecCO4b0BdWPjOitZoDy58SS2YBRCLyFZNEr77Xx
+ tWg=
+WDCIronportException: Internal
+Received: from unknown (HELO redsun60.ssa.fujisawa.hgst.com) ([10.149.66.36])
+  by uls-op-cesaip02.wdc.com with ESMTP; 30 Jan 2021 03:26:53 -0800
+From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
+To:     David Sterba <dsterba@suse.com>
+Cc:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+        Naohiro Aota <Naohiro.Aota@wdc.com>,
         Josef Bacik <josef@toxicpanda.com>,
-        Chris Mason <chris.mason@fusionio.com>,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: [PATCH] btrfs: fix boolreturn.cocci warnings
-Message-ID: <20210130064927.GA96852@a09516cde295>
-References: <202101301416.gmP3XmvI-lkp@intel.com>
+        Julia Lawall <julia.lawall@inria.fr>,
+        linux-btrfs@vger.kernel.org
+Subject: [PATCH for-next 0/2] Fix compilation and checker errors in zoned series
+Date:   Sat, 30 Jan 2021 20:26:42 +0900
+Message-Id: <cover.1612005682.git.johannes.thumshirn@wdc.com>
+X-Mailer: git-send-email 2.26.2
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <202101301416.gmP3XmvI-lkp@intel.com>
-X-Patchwork-Hint: ignore
-User-Agent: Mutt/1.10.1 (2018-07-13)
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: kernel test robot <lkp@intel.com>
+Hi David,
 
-fs/btrfs/volumes.c:1462:10-11: WARNING: return of 0/1 in function 'dev_extent_hole_check_zoned' with return type bool
+The Kbuild Robot and Julia reported two errors in the zoned series which have
+slipped thorugh.
 
- Return statements in functions returning bool should use
- true/false instead of 1/0.
-Generated by: scripts/coccinelle/misc/boolreturn.cocci
+Here are the fixes.
 
-Fixes: 69e81c8e2824 ("btrfs: implement zoned chunk allocator")
-CC: Naohiro Aota <naohiro.aota@wdc.com>
-Reported-by: kernel test robot <lkp@intel.com>
-Signed-off-by: kernel test robot <lkp@intel.com>
----
+Johannes Thumshirn (2):
+  btrfs: fix compilation error for !CONFIG_BLK_DEV_ZONED
+  btrfs: fix double free in btrfs_get_dev_zone_info
 
-tree:   https://github.com/kdave/btrfs-devel.git for-next-20210129
-head:   6e043613b2c4377ce095ea826160d42031156d35
-commit: 69e81c8e2824ec495071293cfebb74faca15e616 [14784/14851] btrfs: implement zoned chunk allocator
+ fs/btrfs/zoned.c | 4 +++-
+ fs/btrfs/zoned.h | 3 ++-
+ 2 files changed, 5 insertions(+), 2 deletions(-)
 
- volumes.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+-- 
+2.26.2
 
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1459,7 +1459,7 @@ static bool dev_extent_hole_check_zoned(
- 		if (ret == -ERANGE) {
- 			*hole_start += *hole_size;
- 			*hole_size = 0;
--			return 1;
-+			return true;
- 		}
- 
- 		*hole_start += zone_size;

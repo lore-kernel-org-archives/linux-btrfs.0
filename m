@@ -2,442 +2,166 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-17.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,MSGID_FROM_MTA_HEADER,NICE_REPLY_A,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-5.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 083D3C433DB
-	for <linux-btrfs@archiver.kernel.org>; Sun, 31 Jan 2021 01:20:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B2200C433DB
+	for <linux-btrfs@archiver.kernel.org>; Sun, 31 Jan 2021 15:53:22 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id BBCD364E11
-	for <linux-btrfs@archiver.kernel.org>; Sun, 31 Jan 2021 01:20:39 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6A3AF64E25
+	for <linux-btrfs@archiver.kernel.org>; Sun, 31 Jan 2021 15:53:22 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232435AbhAaBUW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 30 Jan 2021 20:20:22 -0500
-Received: from userp2130.oracle.com ([156.151.31.86]:52708 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230168AbhAaBUS (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 30 Jan 2021 20:20:18 -0500
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 10V1Bw5M082767;
-        Sun, 31 Jan 2021 01:19:23 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to : cc :
- references : from : message-id : date : in-reply-to : content-type :
- content-transfer-encoding : mime-version; s=corp-2020-01-29;
- bh=js2/6t3zLJppKVPyYCLjZgpyCP2RHqazJWZTSUr6JuM=;
- b=qodww48si+w2GkTedIn7jDUNDx8qiHtv4691jLuHzsrcHfuGg1U/MlmxygLiwPZ6gpmZ
- foewOt7znlrYhXXLDXV5rFcCJvnaltHh96qMZ3gUM+/OhWB05Ie+/ujBXN1JjZbjavQr
- rTuP7giH/VlQHvo+6KJh6IRP9gvlwlxd5rzMjaxm+0wXYJlcVMmbGo83M/QJEqHPhwGg
- ELoHN1rdSbUuHnYmksO4aEbU+5vd837lgQOBXV+wMqt+pka2wu9U5/MWXcXlXsk6ysgS
- tHwzPJduJ6WDJ4ScrAXq0gSeEloMVUw0DeFwYlc3UcTBWjZgSf4/yyNiR/5+XjcvWnco ew== 
-Received: from aserp3030.oracle.com (aserp3030.oracle.com [141.146.126.71])
-        by userp2130.oracle.com with ESMTP id 36cxvqsb91-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Sun, 31 Jan 2021 01:19:22 +0000
-Received: from pps.filterd (aserp3030.oracle.com [127.0.0.1])
-        by aserp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 10V11IiV100079;
-        Sun, 31 Jan 2021 01:17:21 GMT
-Received: from nam10-dm6-obe.outbound.protection.outlook.com (mail-dm6nam10lp2108.outbound.protection.outlook.com [104.47.58.108])
-        by aserp3030.oracle.com with ESMTP id 36dh1k1gb9-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Sun, 31 Jan 2021 01:17:21 +0000
+        id S230165AbhAaPxW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 31 Jan 2021 10:53:22 -0500
+Received: from mail-eopbgr60082.outbound.protection.outlook.com ([40.107.6.82]:28675
+        "EHLO EUR04-DB3-obe.outbound.protection.outlook.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S229677AbhAaPxV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 31 Jan 2021 10:53:21 -0500
 ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
- b=DfBgIZO2CddlHDoYCRH8xM8/RjD/rHyrwoFZpEKggotgZTiJ/XqTwzY5ajzWCS1vJUxkTrKjubINDa7a56b0pGabZ62ePVgKGG5NCXeX6Nbw9A7hnT/m0SjD8QbYhs9l4VnHFbfxkbP1bMYYDlSkDVff2vKlpF7P9WJiUyI+LxAOqNdnE/hZ8L71ToQN4X5Wq1LPTmLgpYh6C7PhU2g+D2yO2L0ThiwfhCE6n3eVZNmKAyZ4xw+ya2edHbfSuO2vkS0nSHnzcWoeCeBGVODLyoT4Qsc8YteY2acOPLYYhZzWCYrksAYIE+1zILFz6U1lDo1Y/ICTkOPC1dbhvOxKJQ==
+ b=h05wZJAg7POVMoCeTMFwAUrYVzQh9crXRzrU9QUaQ8gZjTx+tDmO2QapWf2XMNHj8QoUtK9k/Zc/+8v2IhPxPAlATWuxM0IoazU0X6fyarU+QT9crXfrPYIGq1/7IzW7unyXW1G+j31zpcPM0CHL2vfyrDPJ84+o7TOyrjQOJQCg13WOYPNNzjX/Ms347wlyL1e1TrBRabzF0sKVxtTPJyVqXTqDSABLKcnkEK4acl9z/mbLPEOXbFu0kYvAI0CCN+xPlUvCtGJ2GAINO8SWk4CbmmVPl7b6eP/Upq+TrRWy5FePuQ8umW1FsnATs7xiBf398mmNHrUTK549HHAOFQ==
 ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
  s=arcselector9901;
  h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=js2/6t3zLJppKVPyYCLjZgpyCP2RHqazJWZTSUr6JuM=;
- b=UnLP5g2Wj9dqQpdMOZUCXLU+ip6MDXzP8Dt87lHITcQp489GDMsZrNPmn1xbJo4XeGVQ6oQuBWma1Y/dA59Q54GaVsje0af8pmU9fCMiIb2L5GUEfZ4VyekhMf0vOyYWfT1LiBPuvZgVcS/fjTIr8uf4BNxnq5+eaRrJAtH38mtns/UCa+ImaWiOnbdMAMQz4/omvcE93DnyhBxDmttny+kZTG7dp+2eCiT+5nJDydUpqMwPPPxWJGMnUhZBjY5/TM2CX/WOvQdW2VztJwVmOzEfj9GgDA67QlRxV5E/DO04ov+MIUWwEIGG/ON8Cosk7krH9omySrMhmrdi8ofULA==
+ bh=1BWG0k+HZQYTieMuds4g8H9oq51I7DCuk26Q2pKEAyY=;
+ b=E9LQ3O7e3rQdmS/ePOuQ16xrSIJb2nagyKloh54AIwM/KOVNCxMLFROv8lmBnyMn0tf57adgAHJjCiU/cUmZCb6JeOmHYo6ywxp555FefNqoqQTAQr08LKX/ekVzlpeIolZVdrfmChU7hom6aRAw3V6Rz0muXbRN83sCUg3yO8Wtfq2mO6HIfp0FxddCkgtl20tsDt8xlCjktv8aZY4lo0VKuaxrl45emVIgXtNXg990m8+ppfNcaUrVsLlqgiJNqD97RnKxSXYp7X4m8SsA64aAucP+FCGjqoc0tyMuIdd4RzfQSi3nSrnwAWzdyEoHHl0zYP5+tPHdBjTNk4kyvA==
 ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=oracle.com; dmarc=pass action=none header.from=oracle.com;
- dkim=pass header.d=oracle.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=oracle.onmicrosoft.com; s=selector2-oracle-onmicrosoft-com;
+ smtp.mailfrom=bdsu.de; dmarc=pass action=none header.from=bdsu.de; dkim=pass
+ header.d=bdsu.de; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bdsu.de; s=selector2;
  h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=js2/6t3zLJppKVPyYCLjZgpyCP2RHqazJWZTSUr6JuM=;
- b=VtnQ70GnoU21X2SeAksnt7J4bHgpa1XSB2RFZXoRvfcDZMFtZnBDeC9hF4WA3x3twl3MWx0341xck0m71cIXd74x1P76OP/yoUihaAaIZP/aWYS/nAO2sTnHsoOruqA8MrWizM3ghkcRyvzNmKc2x2H1xlFD+nPVSUrwNby86OE=
-Authentication-Results: toxicpanda.com; dkim=none (message not signed)
- header.d=none;toxicpanda.com; dmarc=none action=none header.from=oracle.com;
-Received: from BN6PR10MB1683.namprd10.prod.outlook.com (2603:10b6:405:b::15)
- by BN8PR10MB3618.namprd10.prod.outlook.com (2603:10b6:408:b7::16) with
+ bh=1BWG0k+HZQYTieMuds4g8H9oq51I7DCuk26Q2pKEAyY=;
+ b=Ee588nbbtQxJkTH8d2mOc/Yo8WypwXhYI0bbOgmnPuJdZJ0sS3DuFKkT5R7UiceCNAIxXkn2OgOB+NPhMoFHaRKoFTKv2RGCxCy6h2+loPpLUCl5zxsJaRB6mnWU+WPMqle7VVjsTn50GQCBw7ed3oHTd5/AL955SfK++f+SeoTDbO0kwaSh4mWsmun1IkdpND1pQmNBc9fPgLBoDd4DuSBiTkkMdhwy4AuHD6/wckISOCoKFVz3aEy5M91WlKDJlead19Gub0ry776mt8vvoqFMmnqnlcu6BK4DudFKMPzgLFzuolfBoZy1Zgq76g8UHX2jvUkv/yhqslCRY3o0sw==
+Received: from DB7PR03MB4297.eurprd03.prod.outlook.com (2603:10a6:10:17::30)
+ by DBAPR03MB6646.eurprd03.prod.outlook.com (2603:10a6:10:19d::13) with
  Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.3805.19; Sun, 31 Jan
- 2021 01:17:18 +0000
-Received: from BN6PR10MB1683.namprd10.prod.outlook.com
- ([fe80::44c4:3dbe:4b78:f69a]) by BN6PR10MB1683.namprd10.prod.outlook.com
- ([fe80::44c4:3dbe:4b78:f69a%3]) with mapi id 15.20.3805.024; Sun, 31 Jan 2021
- 01:17:17 +0000
-Subject: Re: [PATCH v14 08/42] btrfs: allow zoned mode on non-zoned block
- devices
-To:     Naohiro Aota <naohiro.aota@wdc.com>, linux-btrfs@vger.kernel.org,
-        dsterba@suse.com
-Cc:     hare@suse.com, linux-fsdevel@vger.kernel.org,
-        Jens Axboe <axboe@kernel.dk>,
-        Christoph Hellwig <hch@infradead.org>,
-        "Darrick J. Wong" <darrick.wong@oracle.com>,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-        Josef Bacik <josef@toxicpanda.com>
-References: <cover.1611627788.git.naohiro.aota@wdc.com>
- <613da3120ca06ebf470352dbebcbdaa19bf57926.1611627788.git.naohiro.aota@wdc.com>
-From:   Anand Jain <anand.jain@oracle.com>
-Message-ID: <a945d1b6-1001-1c06-82cf-e1ee4a71d9e7@oracle.com>
-Date:   Sun, 31 Jan 2021 09:17:04 +0800
-User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:78.0) Gecko/20100101
- Thunderbird/78.7.0
-In-Reply-To: <613da3120ca06ebf470352dbebcbdaa19bf57926.1611627788.git.naohiro.aota@wdc.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.3805.24; Sun, 31 Jan
+ 2021 15:52:30 +0000
+Received: from DB7PR03MB4297.eurprd03.prod.outlook.com
+ ([fe80::b53d:bd77:c4ae:93d]) by DB7PR03MB4297.eurprd03.prod.outlook.com
+ ([fe80::b53d:bd77:c4ae:93d%6]) with mapi id 15.20.3784.022; Sun, 31 Jan 2021
+ 15:52:30 +0000
+From:   Roman Anasal | BDSU <roman.anasal@bdsu.de>
+To:     "fdmanana@gmail.com" <fdmanana@gmail.com>
+CC:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH v2 3/4] btrfs: send: fix invalid commands for inodes with
+ changed rdev but same gen
+Thread-Topic: [PATCH v2 3/4] btrfs: send: fix invalid commands for inodes with
+ changed rdev but same gen
+Thread-Index: AQHW81IrvLwzLkUvVEijvyczpX1sgqo40RyAgAkargA=
+Date:   Sun, 31 Jan 2021 15:52:30 +0000
+Message-ID: <aa2cf62fc268c9db63d47ef408accca79bc7b22f.camel@bdsu.de>
+References: <20210125194210.24071-1-roman.anasal@bdsu.de>
+         <20210125194210.24071-4-roman.anasal@bdsu.de>
+         <CAL3q7H79meSfikTKvTujQzA_SRb3bfF9ajYtWSVTfu0+pLE8wQ@mail.gmail.com>
+In-Reply-To: <CAL3q7H79meSfikTKvTujQzA_SRb3bfF9ajYtWSVTfu0+pLE8wQ@mail.gmail.com>
+Accept-Language: en-US, de-DE
 Content-Language: en-US
-Content-Transfer-Encoding: 7bit
-X-Originating-IP: [2406:3003:2006:2288:9fe:a7d1:6d17:4f56]
-X-ClientProxiedBy: SGBP274CA0006.SGPP274.PROD.OUTLOOK.COM (2603:1096:4:b0::18)
- To BN6PR10MB1683.namprd10.prod.outlook.com (2603:10b6:405:b::15)
+X-MS-Has-Attach: 
+X-MS-TNEF-Correlator: 
+authentication-results: gmail.com; dkim=none (message not signed)
+ header.d=none;gmail.com; dmarc=none action=none header.from=bdsu.de;
+x-originating-ip: [2001:a61:3aef:4c01:503:a276:cbe0:8dc0]
+x-ms-publictraffictype: Email
+x-ms-office365-filtering-correlation-id: b6b9250f-c13c-443f-1d94-08d8c6003765
+x-ms-traffictypediagnostic: DBAPR03MB6646:
+x-ms-exchange-transport-forked: True
+x-microsoft-antispam-prvs: <DBAPR03MB6646E0DF99BFAF273408332E94B79@DBAPR03MB6646.eurprd03.prod.outlook.com>
+x-ms-oob-tlc-oobclassifiers: OLM:10000;
+x-ms-exchange-senderadcheck: 1
+x-microsoft-antispam: BCL:0;
+x-microsoft-antispam-message-info: OuWrpS7OlWHrmobg0NLtdYRTIwCUFyXAdv2f89Xqa92wKv/67aGQXOpON7k+lRcKJiM4FWV2beGOodauQtTxxkMioYntDCgfAWqbL6Gbr6rdyK7Ku87fJk1yEVR/yTtagQP3zrD2DSkcVDpvqv/nSMJjJknOtB33tqKljJP4LEyfplZBm2UVic0QO/mkT6miBUX4bwI3Eu6GSaOLWaq0PAICYWNqmRgE/4XvaE7dVczlCkRFWKRWDu8ZamjyZUecoNYNZrFkX9Qr6sfHR77Xvr2xvxu1WcOgiF4/0Nqk7oegDhRvMqGzAgdHj8ds4zKQ8lnU9lg/B5wiSeX+F21gbJbhoSczZX+Zf4yGzKuVJhZ/1t+CWUubAfVMiCdqWVuxjkF6o23hZnVCRsqpQUjsmUror7EZPf+vNh4O47L50bxMtzjhVscNufqVR0zF2wOfyVzfjuQeHeJPejM+ZlU5NYC5ikc1WfCmq2JVb8gZ5ZTNQOHQytGEAm0fVoHsnxsQEuE/Im/Umlfoe0XCeQYALA==
+x-forefront-antispam-report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:DB7PR03MB4297.eurprd03.prod.outlook.com;PTR:;CAT:NONE;SFS:(346002)(366004)(5660300002)(2616005)(6916009)(91956017)(83380400001)(53546011)(186003)(71200400001)(76116006)(8936002)(66446008)(66556008)(66476007)(64756008)(66946007)(6486002)(6506007)(8676002)(2906002)(4326008)(36756003)(86362001)(508600001)(6512007);DIR:OUT;SFP:1101;
+x-ms-exchange-antispam-messagedata: =?utf-8?B?TFgzT1hXVmlkQU5raE45cWlUS1dVWmR3YXFDdS9QL053U3ZtQTVDbi9VMDEy?=
+ =?utf-8?B?NGFWaGV1ZXZFK1ZpUzk1SFM1NzRYM2grY1hvakhGeFA1MVJUMk9FcmtyNmRl?=
+ =?utf-8?B?SjJLYnc4RHFPZDBvbitVWDZnTUtsNUE1dGNRTVMydEdaZ1JsVDA1ZEVDenAz?=
+ =?utf-8?B?Ui9xV1gvQ3B3QU9Sd1RJUGM1V2JsYTVQTUJSY01EMGdBMlhsdTVJU1NVNHRj?=
+ =?utf-8?B?ZFNEWUV4T3BMM3FNdEE0eHQvK3RuMkt6akhLZkF1V2tiMTVjTExXdmRWRFl2?=
+ =?utf-8?B?TnpxQnZRZ0xoVXRZSHltL3h6VmVZUEh6UFJKVHFlYlBhZVJ5MzAzdzh4anl6?=
+ =?utf-8?B?RWdieExwRmJWcHh4eFhEQlJhUlBEamNNbFpmVmNJQ0gxZ3F6bWhXV2Q0VFZ5?=
+ =?utf-8?B?TER1S3hzWUVKd2w3Qktac0QzNXgvK25HWXBMSnRtRVpEbnZVLytiQVB4Nkxx?=
+ =?utf-8?B?RkFWU2dwVHFJTkc4NExFSFY1ak1uTkZiSytKL3RJUDlMZHl5WW10Yk5QNWNk?=
+ =?utf-8?B?UnRpM0xJQmxCUU4xT3k1bHFlZjNSbkV5ZHBxT2YwZDB6QWRsWWFNZlltLzlJ?=
+ =?utf-8?B?VnNOV1hpUHIxbnd3QURkbHYxZ1I5ZkZvdE0zc1lYdXRza1dxSjEveEEwZ1k3?=
+ =?utf-8?B?bVBwdDYwUHBPTjhFVG9rMWVCSy80dTNadStUbmNtSVIyaEZBZEFLdVZidW1h?=
+ =?utf-8?B?L0YyODM4VE9GQ3Q4SGQrTHNvUG8yOEJtbDU4Y3NwcEYrQUkxcTZWRko0ajRq?=
+ =?utf-8?B?djEwdDBhQnFwNDhpQS91Wk9qdkNmT3hNbE5MY2pEbjJLaUIvclU4VE9Vby9i?=
+ =?utf-8?B?bmMzcFJ0RDA4cjZuRVh1WG1OL1lNaHNlZ0szbUY2bU1Hc0drNnEvclBLSjI3?=
+ =?utf-8?B?TjhRalJsMGtVZVFOdWpmTGdLMDFiRVZMbGs0Vmo2Yk03bU83Wjhya2kxekdo?=
+ =?utf-8?B?bG5DSGg3YVF5SGg4UWtjRzVwL2RrUjcwbmFONnpxY0ZWMGtMUDNtaEZSMWQ0?=
+ =?utf-8?B?cWo1UkNoYnZxNkNFRzZHRWJZQ3A3SytnNkErektqUVF2UnBCTmZZOW9neVkx?=
+ =?utf-8?B?TjJYWG9aN0h1MDlSaG9ocWVTT1FsaklwZW8rZGZDaFo5aWhrOEtHQXp6d0lW?=
+ =?utf-8?B?cExTSXdCaHM0Nk0yTVY1ZXBodVNWVXF4Y1FzcDUydkN0ZVEyeHg1T3Rvb2lW?=
+ =?utf-8?B?VXFSbVNGYlRWY0s2NzZOWUxtU1BFOVE1TFdaRlhadDV3Mld3eVhsYlhwVTh6?=
+ =?utf-8?B?TVFSRndhRkg5K0lNTUc5OGxleDZZM2dUWVBpNXZUSXcxVzk0cTMvZjV0aEJN?=
+ =?utf-8?B?anhQek9tRG1SWkk1clF5TmJoejVtT2xWWlBGTGhMaGN3S2huTGZnUUlzQklh?=
+ =?utf-8?B?TElsQWJxS252NWFMMURObmhHMVllOUtIZlNBR1ZidlgyZ0ZiUVFSNkI4SW5S?=
+ =?utf-8?B?U01hdE5LRUtMa2cvbm5DUEl5RWpRS1ZlZk53Ny9Kb1N3cEt3YSt6Q1F1N3FI?=
+ =?utf-8?Q?FXaavOYmrUvublaCGY7ZmnLE/KG?=
+Content-Type: text/plain; charset="utf-8"
+Content-ID: <A2AD42540739CA4B8C5B0948AFEE201B@eurprd03.prod.outlook.com>
+Content-Transfer-Encoding: base64
 MIME-Version: 1.0
-X-MS-Exchange-MessageSentRepresentingType: 1
-Received: from [IPv6:2406:3003:2006:2288:9fe:a7d1:6d17:4f56] (2406:3003:2006:2288:9fe:a7d1:6d17:4f56) by SGBP274CA0006.SGPP274.PROD.OUTLOOK.COM (2603:1096:4:b0::18) with Microsoft SMTP Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.3805.16 via Frontend Transport; Sun, 31 Jan 2021 01:17:13 +0000
-X-MS-PublicTrafficType: Email
-X-MS-Office365-Filtering-Correlation-Id: da795111-6b10-484b-9a8d-08d8c585f334
-X-MS-TrafficTypeDiagnostic: BN8PR10MB3618:
-X-MS-Exchange-Transport-Forked: True
-X-Microsoft-Antispam-PRVS: <BN8PR10MB361870503260E4C8649EBD9AE5B79@BN8PR10MB3618.namprd10.prod.outlook.com>
-X-MS-Oob-TLC-OOBClassifiers: OLM:209;
-X-MS-Exchange-SenderADCheck: 1
-X-Microsoft-Antispam: BCL:0;
-X-Microsoft-Antispam-Message-Info: UqBekbbIBFrHEf7bYpWO3RyHbNwwEUxgNlJvUIScCO75IDU8ZYH44qzGRqfss/wmJUxbFdOyzFoGLCEhRhqn934hXAs5L/HuUplRa8OlvTTbnXx8qp91Mc2sz516BC4F3JpPwuO86ncxANm9Muo73uUC7yGYMLwiRQTCzcjXvGw3LEqwEEoWSLs88WfGP8etOw1IyP5WFpz8hcdm/ijyUGKciilyWtctNcyHEDgkFFCLYFIU4Pm+OJh/96MwemZ78RZk3Y580O0F980VUyjS2kc/m6SC+oSbHukekothYcOWA9qbyTA7zlQIZt4o+SGzRcKsyMzNTuFJVgtLUAwFF7RMAPTHJm/D9fufbsFYXG3SLFL5tevAQfsgscCfD5Eiy3foT69ToIR89B76BId7gIMdMeaZx2XmCwuMpuwceDF+s+uGc67Jhbc6tO8a7wMh7naSPQnrIE14wBOnMzaqzpSGNNlnRYeSl0bEuwb43R+3s9dMRw3AK6GqxQgrugxbZvKyerDanjCunnASsJmKRuG7pFoPvg2RwvTj832OAscmpvGkO0jcHGTDz5Mz54NOqkZKWoTo6D90KAGienVmCu0jkQ+18huUPDGRpJVobnc=
-X-Forefront-Antispam-Report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:BN6PR10MB1683.namprd10.prod.outlook.com;PTR:;CAT:NONE;SFS:(366004)(346002)(136003)(396003)(39850400004)(376002)(66946007)(2906002)(36756003)(6666004)(66476007)(16526019)(66556008)(8936002)(186003)(4326008)(316002)(6486002)(83380400001)(54906003)(478600001)(2616005)(44832011)(31696002)(8676002)(31686004)(86362001)(53546011)(5660300002)(45980500001)(43740500002);DIR:OUT;SFP:1101;
-X-MS-Exchange-AntiSpam-MessageData: =?utf-8?B?eHVrcEpmeGZKbTlZQmsxVW12ZFhJQjRHanYwd0FuVUNrYnFoQzVEZFJ0Q0t0?=
- =?utf-8?B?VkVZLzZoWW9OSnFEbE5SMStCejBvOThsNjJLNTVsZ1dTTUN2RDUzK0FHMmFq?=
- =?utf-8?B?Q3czbElaUytpaEp6eThkOVIzU0Q0ek9iTENNejA1MW9taXpDL0pzSVBrTmNC?=
- =?utf-8?B?RFQ3eW1wditpWUhrR3ZTdmNoRW1xUHRNVCt2UDlsQ3Yvc1I0MXQ4ZStDMDhl?=
- =?utf-8?B?U2h4TmJGbGRISEdvY3RRRzBNeGRxcnRVc25KSFVLbTRTYjNuWmFuSFdRWkVp?=
- =?utf-8?B?QTMzd0l6Z0tWaHlvU1JVM3FCamY1R1VkRTBXU2lxK01sOUxiS2M3b3hLaHo2?=
- =?utf-8?B?Sm5vbEU4V2N0cjA3WlN1SStVV0lKODd2V3BJMGgyRGZRb2VYQWV1Rk8vWVYv?=
- =?utf-8?B?VXN4Q1o1a0djQjRna2xOUDFLYk15d05MRTc4VnZIc2laN2xhQ0lTQW9iTTV5?=
- =?utf-8?B?V1NGa09kVVdUR2NzdHhWREhiL1dQZ1FoTngxTHcxZmJzY2swV0dTZDBRazF4?=
- =?utf-8?B?MWhJNHlwN3F4aWdqRXNDbzQ3VExRTk4ra2lSQ3dlREdac1I2cEp4S0VjVzlW?=
- =?utf-8?B?VlpGMVVFaG1GYUxMcmhlbTM4TTNtRC8vMVVUZkowT2lGNmVoUHoxN2VoZlE4?=
- =?utf-8?B?WFhqUUlnNG5yYUlZVnFac2NMY09pNldzRlcvazk3aTVJTGpPdlIxR3pIN2ZE?=
- =?utf-8?B?Qlh3Z3VveDFESmFZYWVRdGNVL0V6VllLV3RDS1BsbHloR3k2MmdDMkN1NUlS?=
- =?utf-8?B?TW9jV2hxYXVwSlNRcmRrSlYyanRYc3dRYlJkOExCcEx1Q0VzNWxvLy9BVkl1?=
- =?utf-8?B?akk4UlFBMjZ0andZNWJBNjk3MkJrZU1vcWN1OGpONDdGaEJVbnlUZ1Z1NnZq?=
- =?utf-8?B?aXRGeHFxK2xoTEJSREVna3drRnE0d0VZZ0Y4NW1kYlFHZnBlUFYwcEU5dVJ4?=
- =?utf-8?B?SE11dWluTFZWTzdUTDE4SkszZFJ1YXRVaWZVbkVuRHIrdjJ0WlNlb3p6NTFy?=
- =?utf-8?B?bmJsRUM3WWFIU3lQL1g4cUZTd2s5b3ZRZkdxdk1HYnZaYW1NZGxTTFB0RTI0?=
- =?utf-8?B?Yk5aNEczZ1ZvSzBtbldhaHNsNk02SFdKemxwTWV3YkJPVTMwVkRUUzN4RDFp?=
- =?utf-8?B?bGNHTVlKOWhsYUlFNStuOXJEdUlQVlUzUnpoYmJ6djRCUkFDWnExajJFUjIz?=
- =?utf-8?B?TGdpMmp1OE5nZlpyZnJLbEs5bXllbDArK3ZrTUJKT2M2NmpKRDdYRFBsdWFp?=
- =?utf-8?B?MHBFeVo1N2hMTlZqL2FNcXBYYklhSmR6NlFpTlVyK21pdE9XVFFKK1V2QzZR?=
- =?utf-8?B?enU0cEMwYXk1ak54cS82a0lDTmhmMHRnVzZpeFFWZWVIU1hDdkgwZHVpWnk0?=
- =?utf-8?B?eW1EZEFlWExnNW8xTGRiUUtVZHV0RytQaDZETWo1YXUxTU1pZFovTHlJN0Vt?=
- =?utf-8?B?YmdRbm5lTjVxUVJJSlJlaDVndEZHUWpldnppbFkrdmY3VTBDczRNQ2FSeFRx?=
- =?utf-8?Q?faX5YicpyXDlQd36cNKTklUWQdC?=
-X-OriginatorOrg: oracle.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: da795111-6b10-484b-9a8d-08d8c585f334
-X-MS-Exchange-CrossTenant-AuthSource: BN6PR10MB1683.namprd10.prod.outlook.com
+X-OriginatorOrg: bdsu.de
 X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-OriginalArrivalTime: 31 Jan 2021 01:17:17.7557
+X-MS-Exchange-CrossTenant-AuthSource: DB7PR03MB4297.eurprd03.prod.outlook.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: b6b9250f-c13c-443f-1d94-08d8c6003765
+X-MS-Exchange-CrossTenant-originalarrivaltime: 31 Jan 2021 15:52:30.3658
  (UTC)
-X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
-X-MS-Exchange-CrossTenant-Id: 4e2c6054-71cb-48f1-bd6c-3a9705aca71b
-X-MS-Exchange-CrossTenant-MailboxType: HOSTED
-X-MS-Exchange-CrossTenant-UserPrincipalName: RRokMR6oSkQiOVkjrCfUr8Zb6SXkLFK8WD2kHKWm2EkXF7+LXg0Qi4N17tDbEA+MQYeLk1u/Z3OkhmD3aZg3JQ==
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: BN8PR10MB3618
-X-Proofpoint-Virus-Version: vendor=nai engine=6200 definitions=9880 signatures=668683
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 adultscore=0 spamscore=0 phishscore=0
- suspectscore=0 mlxlogscore=999 bulkscore=0 mlxscore=0 malwarescore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2009150000
- definitions=main-2101310002
-X-Proofpoint-Virus-Version: vendor=nai engine=6200 definitions=9880 signatures=668683
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 malwarescore=0 mlxlogscore=999
- mlxscore=0 priorityscore=1501 spamscore=0 impostorscore=0 clxscore=1015
- suspectscore=0 lowpriorityscore=0 phishscore=0 adultscore=0 bulkscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2009150000
- definitions=main-2101310002
+X-MS-Exchange-CrossTenant-fromentityheader: Hosted
+X-MS-Exchange-CrossTenant-id: 8c0670a1-eeed-4da2-a08a-128fe03f692a
+X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
+X-MS-Exchange-CrossTenant-userprincipalname: is61B3yFd2l4jfpHPNCPtnpPG0tcBCSlQV0MfDwsuZWVRqmsq5kQeVcwHbHpkgbDQbixSTi7bwz3WX3EBgumlA==
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: DBAPR03MB6646
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 1/26/2021 10:24 AM, Naohiro Aota wrote:
-> From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-> 
-> Run zoned btrfs mode on non-zoned devices. This is done by "slicing
-> up" the block-device into static sized chunks and fake a conventional zone
-> on each of them. The emulated zone size is determined from the size of
-> device extent.
-> 
-> This is mainly aimed at testing parts of the zoned mode, i.e. the zoned
-> chunk allocator, on regular block devices.
-> 
-> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-> Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
-> Reviewed-by: Josef Bacik <josef@toxicpanda.com>
-> ---
->   fs/btrfs/zoned.c | 149 +++++++++++++++++++++++++++++++++++++++++++----
->   fs/btrfs/zoned.h |  14 +++--
->   2 files changed, 147 insertions(+), 16 deletions(-)
-> 
-> diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-> index 315cd5189781..f0af88d497c7 100644
-> --- a/fs/btrfs/zoned.c
-> +++ b/fs/btrfs/zoned.c
-> @@ -119,6 +119,37 @@ static inline u32 sb_zone_number(int shift, int mirror)
->   	return 0;
->   }
->   
-> +/*
-> + * Emulate blkdev_report_zones() for a non-zoned device. It slice up
-> + * the block device into static sized chunks and fake a conventional zone
-> + * on each of them.
-> + */
-> +static int emulate_report_zones(struct btrfs_device *device, u64 pos,
-> +				struct blk_zone *zones, unsigned int nr_zones)
-> +{
-> +	const sector_t zone_sectors =
-> +		device->fs_info->zone_size >> SECTOR_SHIFT;
-> +	sector_t bdev_size = bdev_nr_sectors(device->bdev);
-> +	unsigned int i;
-> +
-> +	pos >>= SECTOR_SHIFT;
-> +	for (i = 0; i < nr_zones; i++) {
-> +		zones[i].start = i * zone_sectors + pos;
-> +		zones[i].len = zone_sectors;
-> +		zones[i].capacity = zone_sectors;
-> +		zones[i].wp = zones[i].start + zone_sectors;
-
-I missed something.
-Hmm, why write-point is again at a zone_sector offset from the start? 
-Should it be just...
-
-  zones[i].wp = zones[i].start;
-
-Also, a typo is below.
-
-> +		zones[i].type = BLK_ZONE_TYPE_CONVENTIONAL;
-> +		zones[i].cond = BLK_ZONE_COND_NOT_WP;
-> +
-> +		if (zones[i].wp >= bdev_size) {
-> +			i++;
-> +			break;
-> +		}
-> +	}
-> +
-> +	return i;
-> +}
-> +
->   static int btrfs_get_dev_zones(struct btrfs_device *device, u64 pos,
->   			       struct blk_zone *zones, unsigned int *nr_zones)
->   {
-> @@ -127,6 +158,12 @@ static int btrfs_get_dev_zones(struct btrfs_device *device, u64 pos,
->   	if (!*nr_zones)
->   		return 0;
->   
-> +	if (!bdev_is_zoned(device->bdev)) {
-> +		ret = emulate_report_zones(device, pos, zones, *nr_zones);
-> +		*nr_zones = ret;
-> +		return 0;
-> +	}
-> +
->   	ret = blkdev_report_zones(device->bdev, pos >> SECTOR_SHIFT, *nr_zones,
->   				  copy_zone_info_cb, zones);
->   	if (ret < 0) {
-> @@ -143,6 +180,50 @@ static int btrfs_get_dev_zones(struct btrfs_device *device, u64 pos,
->   	return 0;
->   }
->   
-> +/* The emulated zone size is determined from the size of device extent. */
-> +static int calculate_emulated_zone_size(struct btrfs_fs_info *fs_info)
-> +{
-> +	struct btrfs_path *path;
-> +	struct btrfs_root *root = fs_info->dev_root;
-> +	struct btrfs_key key;
-> +	struct extent_buffer *leaf;
-> +	struct btrfs_dev_extent *dext;
-> +	int ret = 0;
-> +
-> +	key.objectid = 1;
-> +	key.type = BTRFS_DEV_EXTENT_KEY;
-> +	key.offset = 0;
-> +
-> +	path = btrfs_alloc_path();
-> +	if (!path)
-> +		return -ENOMEM;
-> +
-> +	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
-> +	if (ret < 0)
-> +		goto out;
-> +
-> +	if (path->slots[0] >= btrfs_header_nritems(path->nodes[0])) {
-> +		ret = btrfs_next_item(root, path);
-> +		if (ret < 0)
-> +			goto out;
-> +		/* No dev extents at all? Not good */
-> +		if (ret > 0) {
-> +			ret = -EUCLEAN;
-> +			goto out;
-> +		}
-> +	}
-> +
-> +	leaf = path->nodes[0];
-> +	dext = btrfs_item_ptr(leaf, path->slots[0], struct btrfs_dev_extent);
-> +	fs_info->zone_size = btrfs_dev_extent_length(leaf, dext);
-> +	ret = 0;
-> +
-> +out:
-> +	btrfs_free_path(path);
-> +
-> +	return ret;
-> +}
-> +
->   int btrfs_get_dev_zone_info_all_devices(struct btrfs_fs_info *fs_info)
->   {
->   	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
-> @@ -169,6 +250,7 @@ int btrfs_get_dev_zone_info_all_devices(struct btrfs_fs_info *fs_info)
->   
->   int btrfs_get_dev_zone_info(struct btrfs_device *device)
->   {
-> +	struct btrfs_fs_info *fs_info = device->fs_info;
->   	struct btrfs_zoned_device_info *zone_info = NULL;
->   	struct block_device *bdev = device->bdev;
->   	struct request_queue *queue = bdev_get_queue(bdev);
-> @@ -177,9 +259,14 @@ int btrfs_get_dev_zone_info(struct btrfs_device *device)
->   	struct blk_zone *zones = NULL;
->   	unsigned int i, nreported = 0, nr_zones;
->   	unsigned int zone_sectors;
-> +	char *model, *emulated;
->   	int ret;
->   
-> -	if (!bdev_is_zoned(bdev))
-> +	/*
-> +	 * Cannot use btrfs_is_zoned here, since fs_info->zone_size might
-> +	 * not be set yet.
-> +	 */
-> +	if (!btrfs_fs_incompat(fs_info, ZONED))
->   		return 0;
->   
->   	if (device->zone_info)
-> @@ -189,8 +276,20 @@ int btrfs_get_dev_zone_info(struct btrfs_device *device)
->   	if (!zone_info)
->   		return -ENOMEM;
->   
-> +	if (!bdev_is_zoned(bdev)) {
-> +		if (!fs_info->zone_size) {
-> +			ret = calculate_emulated_zone_size(fs_info);
-> +			if (ret)
-> +				goto out;
-> +		}
-> +
-> +		ASSERT(fs_info->zone_size);
-> +		zone_sectors = fs_info->zone_size >> SECTOR_SHIFT;
-> +	} else {
-> +		zone_sectors = bdev_zone_sectors(bdev);
-> +	}
-> +
->   	nr_sectors = bdev_nr_sectors(bdev);
-> -	zone_sectors = bdev_zone_sectors(bdev);
->   	/* Check if it's power of 2 (see is_power_of_2) */
->   	ASSERT(zone_sectors != 0 && (zone_sectors & (zone_sectors - 1)) == 0);
->   	zone_info->zone_size = zone_sectors << SECTOR_SHIFT;
-> @@ -296,12 +395,32 @@ int btrfs_get_dev_zone_info(struct btrfs_device *device)
->   
->   	device->zone_info = zone_info;
->   
-> -	/* device->fs_info is not safe to use for printing messages */
-> -	btrfs_info_in_rcu(NULL,
-> -			"host-%s zoned block device %s, %u zones of %llu bytes",
-> -			bdev_zoned_model(bdev) == BLK_ZONED_HM ? "managed" : "aware",
-> -			rcu_str_deref(device->name), zone_info->nr_zones,
-> -			zone_info->zone_size);
-> +	switch (bdev_zoned_model(bdev)) {
-> +	case BLK_ZONED_HM:
-> +		model = "host-managed zoned";
-> +		emulated = "";
-> +		break;
-> +	case BLK_ZONED_HA:
-> +		model = "host-aware zoned";
-> +		emulated = "";
-> +		break;
-> +	case BLK_ZONED_NONE:
-> +		model = "regular";
-> +		emulated = "emulated ";
-> +		break;
-> +	default:
-> +		/* Just in case */
-> +		btrfs_err_in_rcu(fs_info, "Unsupported zoned model %d on %s",
-> +				 bdev_zoned_model(bdev),
-> +				 rcu_str_deref(device->name));
-> +		ret = -EOPNOTSUPP;
-> +		goto out;
-> +	}
-> +
-> +	btrfs_info_in_rcu(fs_info,
-> +		"%s block device %s, %u %szones of %llu bytes",
-> +		model, rcu_str_deref(device->name), zone_info->nr_zones,
-> +		emulated, zone_info->zone_size);
->   
->   	return 0;
->   
-> @@ -348,7 +467,7 @@ int btrfs_check_zoned_mode(struct btrfs_fs_info *fs_info)
->   	u64 nr_devices = 0;
->   	u64 zone_size = 0;
->   	u64 max_zone_append_size = 0;
-> -	const bool incompat_zoned = btrfs_is_zoned(fs_info);
-> +	const bool incompat_zoned = btrfs_fs_incompat(fs_info, ZONED);
->   	int ret = 0;
->   
->   	/* Count zoned devices */
-> @@ -359,9 +478,17 @@ int btrfs_check_zoned_mode(struct btrfs_fs_info *fs_info)
->   			continue;
->   
->   		model = bdev_zoned_model(device->bdev);
-> +		/*
-> +		 * A Host-Managed zoned device msut be used as a zoned
-
-typo
-s/msut/must
-
-Thanks.
-
-> +		 * device. A Host-Aware zoned device and a non-zoned devices
-> +		 * can be treated as a zoned device, if ZONED flag is
-> +		 * enabled in the superblock.
-> +		 */
->   		if (model == BLK_ZONED_HM ||
-> -		    (model == BLK_ZONED_HA && incompat_zoned)) {
-> -			struct btrfs_zoned_device_info *zone_info;
-> +		    (model == BLK_ZONED_HA && incompat_zoned) ||
-> +		    (model == BLK_ZONED_NONE && incompat_zoned)) {
-> +			struct btrfs_zoned_device_info *zone_info =
-> +				device->zone_info;
->   
->   			zone_info = device->zone_info;
->   			zoned_devices++;
-> diff --git a/fs/btrfs/zoned.h b/fs/btrfs/zoned.h
-> index 5e0e7de84a82..058a57317c05 100644
-> --- a/fs/btrfs/zoned.h
-> +++ b/fs/btrfs/zoned.h
-> @@ -143,12 +143,16 @@ static inline void btrfs_dev_clear_zone_empty(struct btrfs_device *device, u64 p
->   static inline bool btrfs_check_device_zone_type(const struct btrfs_fs_info *fs_info,
->   						struct block_device *bdev)
->   {
-> -	u64 zone_size;
-> -
->   	if (btrfs_is_zoned(fs_info)) {
-> -		zone_size = bdev_zone_sectors(bdev) << SECTOR_SHIFT;
-> -		/* Do not allow non-zoned device */
-> -		return bdev_is_zoned(bdev) && fs_info->zone_size == zone_size;
-> +		/*
-> +		 * We can allow a regular device on a zoned btrfs, because
-> +		 * we will emulate zoned device on the regular device.
-> +		 */
-> +		if (!bdev_is_zoned(bdev))
-> +			return true;
-> +
-> +		return fs_info->zone_size ==
-> +			(bdev_zone_sectors(bdev) << SECTOR_SHIFT);
->   	}
->   
->   	/* Do not allow Host Manged zoned device */
-> 
-
+T24gTW9uLCBKYW4gMjUsIDIwMjEgYXQgMjA6NTEgKzAwMDAgRmlsaXBlIE1hbmFuYSB3cm90ZToN
+Cj4gT24gTW9uLCBKYW4gMjUsIDIwMjEgYXQgNzo1MSBQTSBSb21hbiBBbmFzYWwgPHJvbWFuLmFu
+YXNhbEBiZHN1LmRlPg0KPiB3cm90ZToNCj4gPiBTZWNvbmQgZXhhbXBsZToNCj4gPiAgICMgY2Fz
+ZSAyOiBzYW1lIGlubyBhdCBkaWZmZXJlbnQgcGF0aA0KPiA+ICAgYnRyZnMgc3Vidm9sdW1lIGNy
+ZWF0ZSBzdWJ2b2wxDQo+ID4gICBidHJmcyBzdWJ2b2x1bWUgY3JlYXRlIHN1YnZvbDINCj4gPiAg
+IG1rbm9kIHN1YnZvbDEvYSBjIDEgMw0KPiA+ICAgbWtub2Qgc3Vidm9sMi9iIGMgMSA1DQo+ID4g
+ICBidHJmcyBwcm9wZXJ0eSBzZXQgc3Vidm9sMSBybyB0cnVlDQo+ID4gICBidHJmcyBwcm9wZXJ0
+eSBzZXQgc3Vidm9sMiBybyB0cnVlDQo+ID4gICBidHJmcyBzZW5kIC1wIHN1YnZvbDEgc3Vidm9s
+MiB8IGJ0cmZzIHJlY2VpdmUgLS1kdW1wDQo+IA0KPiBBcyBJJ3ZlIHRvbGQgeW91IGJlZm9yZSBm
+b3IgdGhlIHYxIHBhdGNoc2V0IGZyb20gYSB3ZWVrIG9yIHR3byBhZ28sDQo+IHRoaXMgaXMgbm90
+IGEgc3VwcG9ydGVkIHNjZW5hcmlvIGZvciBpbmNyZW1lbnRhbCBzZW5kcy4NCj4gSW5jcmVtZW50
+YWwgc2VuZHMgYXJlIG1lYW50IHRvIGJlIHVzZWQgb24gUk8gc25hcHNob3RzIG9mIHRoZSBzYW1l
+DQo+IHN1YnZvbHVtZSwgYW5kIHRob3NlIHNuYXBzaG90cyBtdXN0IG5ldmVyIGJlIGNoYW5nZWQg
+YWZ0ZXIgdGhleSB3ZXJlDQo+IGNyZWF0ZWQuDQo+IA0KPiBJbmNyZW1lbnRhbCBzZW5kcyB3ZXJl
+IHNpbXBseSBub3QgZGVzaWduZWQgZm9yIHRoZXNlIGNhc2VzLCBhbmQgY2FuDQo+IG5ldmVyIGJl
+IGd1YXJhbnRlZWQgdG8gd29yayB3aXRoIHN1Y2ggY2FzZXMuDQo+IA0KPiBUaGUgYnVnIGlzIG5v
+dCBoYXZpbmcgaW5jcmVtZW50YWwgc2VuZHMgZmFpbCByaWdodCBhd2F5LCB3aXRoIGFuDQo+IGV4
+cGxpY2l0IGVycm9yIG1lc3NhZ2UsIHdoZW4gdGhlIHNlbmQgYW5kIHBhcmVudCByb290cyBhcmVu
+J3QgUk8NCj4gc25hcHNob3RzIG9mIHRoZSBzYW1lIHN1YnZvbHVtZS4NCg0KU2luY2UgdGhpcyBz
+aG91bGQgYmUgZml4ZWQgdGhlbiBJJ2QgbGlrZSB0byBwcm9wb3NlIHRvIGFkZCB0aGUNCmZvbGxv
+d2luZyBjaGVjazoNCg0KVGhlIGlub2RlcyBvZiB0aGUgc3Vidm9sdW1lcycgcm9vdCBkaXJlY3Rv
+cmllcyAoaW5vDQpCVFJGU19GSVJTVF9GUkVFX09CSkVDVElEID0gMjU2KSBtdXN0IGhhdmUgdGhl
+IHNhbWUgZ2VuZXJhdGlvbi4NCg0KU2luY2UgY3JlYXRlX3N1YnZvbCgpIHdpbGwgYWx3YXlzIGNv
+bW1pdCB0aGUgdHJhbnNhY3Rpb24sIGkuZS4NCmluY3JlbWVudCB0aGUgZ2VuZXJhdGlvbiwgbm8g
+dHdvIF9pbmRlcGVuZGVudGx5XyBjcmVhdGVkIHN1YnZvbHVtZXMgY2FuDQpiZSBjcmVhdGVkIHdp
+dGhpbiB0aGUgc2FtZSBnZW5lcmF0aW9uIChhcmUgdGhlcmUgcmFjZSBjb25kaXRpb25zDQpwb3Nz
+aWJsZSBoZXJlPykuDQpUYWtpbmcgYSBzbmFwc2hvdCBvZiBhIHN1YnZvbHVtZSBkb2VzIG5vdCBt
+b2RpZnkgdGhlIGdlbmVyYXRpb24gb2YgdGhlDQpyb290IGRpciBpbm9kZS4gQWxzbyBpdCBpcyBu
+b3QgcG9zc2libGUgdG8gY2hhbmdlIG9yIGRlbGV0ZS9yZS1jcmVhdGUNCnRoZSByb290IGRpcmVj
+dG9yeSBvZiBhIHN1YnZvbHVtZSBzaW5jZSB0aGlzIHdvdWxkIGRlbGV0ZSB0aGUgc3Vidm9sdW1l
+DQppdHNlbGYuDQoNCg0KU28gaGF2aW5nIHR3byBzdWJ2b2x1bWVzIHdpdGggcm9vdCBkaXJlY3Rv
+cmllcyBjcmVhdGVkIHdpdGggZGlmZmVyZW50DQpnZW5lcmF0aW9ucyBtZWFucyB0aGV5IHdlcmUg
+Y3JlYXRlZCBpbmRlcGVuZGVudGx5IGFuZCBjYW4gbm90IHNoYXJlIGENCmNvbW1vbiBhbmNlc3Rv
+ci4gRG9pbmcgYW4gaW5jcmVtZW50YWwgc2VuZCB3aXRoIHRoZW0gaXMgdW5zYWZlIGFuZCB0aHVz
+DQptdXN0IHJldHVybiBhbiBlcnJvci4NCldpdGggdGhlIHJvb3QgZGlyZWN0b3JpZXMgYXQgdGhl
+IHNhbWUgZ2VuZXJhdGlvbiB0aG91Z2ggdGhlIHN1YnZvbHVtZXMNCmFyZSBiYXNlZCBvbiBhIGNv
+bW1vbiBhbmNlc3RvciB3aGljaCBpcyBhIHJlcXVpcmVtZW50IGZvciBhIHNhZmUNCmluY3JlbWVu
+dGFsIHNlbmQuDQoNCkFyZSBteSBhc3N1bXB0aW9ucyBhbmQgbXkgdW5kZXJzdGFuZGluZyBoZXJl
+IGNvcnJlY3Q/IFRoZW4gdGhpcyBjaGVjaw0Kd291bGQgY2F0Y2ggbW9zdCBvZiB0aGUgdW5zYWZl
+IHBhcmVudHMuDQpJZiBzbyBJIGNvdWxkIGhhdmUgYSBzaG90IGF0IGEgcGF0Y2ggZm9yIHRoaXMg
+aWYgeW91J2QgbGlrZSBtZSB0bz8NCg0KDQpUaGlzIGNoZWNrIHN0aWxsIGRvZXMgbm90IHNvbHZl
+IHRoZSBzZWNvbmQgZWRnZSBjYXNlIHRob3VnaCwgd2hlbg0Kc25hcHNob3RzIGFyZSBtb2RpZmll
+ZCBhZnRlcndhcmRzIGFuZCBkaXZlcmdlIGluZGVwZW5kZW50bHkgZm9ybSBvbmUNCmFub3RoZXIu
+IEZvciB0aGlzIEkgc3RpbGwgc2VlIG5vIGdvb2Qgc29sdXRpb24gYmVzaWRlcyBhIG5ldyBvbi1k
+aXNrDQpmbGFnIHdoZXRoZXIgYSBzbmFwc2hvdCB3YXMgKmV2ZXIqIHNldCB0byBybz1mYWxzZS4g
+QnV0IHdpdGggdGhhdCBJJ20NCm5vdCBzdXJlIGhvdyB0byAobm90KSBpbmhlcml0IHRoYXQgZmxh
+ZyBpbiBhIHNhZmUgd2F5IC4uLg0K

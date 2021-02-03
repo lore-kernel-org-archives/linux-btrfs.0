@@ -7,35 +7,35 @@ X-Spam-Status: No, score=-19.5 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F3631C433E0
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Feb 2021 11:18:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EA480C433E6
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Feb 2021 11:18:40 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 9B7E064F48
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Feb 2021 11:18:38 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A124464F48
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Feb 2021 11:18:40 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234100AbhBCLSh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 3 Feb 2021 06:18:37 -0500
-Received: from mail.kernel.org ([198.145.29.99]:56536 "EHLO mail.kernel.org"
+        id S234138AbhBCLSj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 3 Feb 2021 06:18:39 -0500
+Received: from mail.kernel.org ([198.145.29.99]:56604 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S233958AbhBCLSc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 3 Feb 2021 06:18:32 -0500
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 550D264F67
-        for <linux-btrfs@vger.kernel.org>; Wed,  3 Feb 2021 11:17:51 +0000 (UTC)
+        id S234021AbhBCLSg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 3 Feb 2021 06:18:36 -0500
+Received: by mail.kernel.org (Postfix) with ESMTPSA id EF4D664F6A
+        for <linux-btrfs@vger.kernel.org>; Wed,  3 Feb 2021 11:17:53 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1612351071;
-        bh=0wduYG+Xvmcpt6w6eT+Eum7UefBBL3KUaDv/Ie+jm5Y=;
+        s=k20201202; t=1612351074;
+        bh=yq8wnwlglHlDuix1iQoTRsp8q8A7iSJniFO1ZuPkI9w=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=LvMeNZDxr3qTsb8nQBNBSynF+Z1wyP3YVpULuobgytkNwFziUrDHVL3pY9cROtptk
-         aUUPjE9RUAJ1PHRXpLeiJCFeRAibaOGFjZfLiBb3FApIIHB5Ze8S3ih4DI8SX9y8Bn
-         l7Dtoj3/RW2Rf665cirfHNlhprpBS8/CWtHmaOX7L6I9HwGTTEhsUPxf/nYgkMatsr
-         lLaXgSPppCQVOQ0ND3p0vIU//8pGoUBRna6TxP2DF2hf42IanfwWerdnDHfOUHDZx3
-         eJ7iMZrb8wjiaHC1JgiX6RODlaqTp/3jzpKDQ1i7jLWIuRhmI8nKVJ0wGvKI/jnJXn
-         5IGDOA3IHmX1g==
+        b=k/QkkHweLypvNkjvt9QUSKrU2Qwok++I1JKvq/+Tu5AeLa0RbxnySlqxh6Dcdx3RD
+         XG0K+W17qA4BAn6QPGPkSv4Zwdvl0ImAnaUZJLwccz9NlfAmzu7T5C8ukz+Tco1zzW
+         s1fKD5+LAzlIX9yZrYv1m2i46Cit1mokL5BYOQwzZfMJhzXPINENwphlHOA8UUB86d
+         08K9dyEn+LsTROS3w5ReU6Bg7snWX+NtI7RGNaQ8vtVjb8D7PmudIMSNV88abmBUnE
+         I9pmTxDum2dS7b5Z06/R4YOHijhQx3dhr7vPTnvsq7JBpEh9fS6VSxN1LhkLNmrBhQ
+         xFmA9ReLunK9A==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/4] btrfs: avoid checking for RO block group twice during nocow writeback
-Date:   Wed,  3 Feb 2021 11:17:44 +0000
-Message-Id: <9d42ab56ffa6b454998453764dbb1c899d10bc40.1612350698.git.fdmanana@suse.com>
+Subject: [PATCH 4/4] btrfs: fix race between swap file activation and snapshot creation
+Date:   Wed,  3 Feb 2021 11:17:47 +0000
+Message-Id: <84a80739d04185bc50a4f911d2284d3b9f80cf4a.1612350698.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1612350698.git.fdmanana@suse.com>
 References: <cover.1612350698.git.fdmanana@suse.com>
@@ -47,45 +47,103 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-During the nocow writeback path, we currently iterate the rbtree of block
-groups twice: once for checking if the target block group is RO with the
-call to btrfs_extent_readonly()), and once again for getting a nocow
-reference on the block group with a call to btrfs_inc_nocow_writers().
+When creating a snapshot we check if the current number of swap files, in
+the root, is non-zero, and if it is, we error out and warn that we can not
+create the snapshot because there are active swap files.
 
-Since btrfs_inc_nocow_writers() already returns false when the target
-block group is RO, remove the call to btrfs_extent_readonly(). Not only
-we avoid searching the blocks group rbtree twice, it also helps reduce
-contention on the lock that protects it (specially since it is a spin
-lock and not a read-write lock). That may make a noticeable difference
-on very large filesystems, with thousands of allocated block groups.
+However this is racy because when a task started activation of a swap
+file, another task might have started already snapshot creation and might
+have seen the counter for the number of swap files as zero. This means
+that after the swap file is activated we may end up with a snapshot of the
+same root successfully created, and therefore when the first write to the
+swap file happens it has to fall back into COW mode, which should never
+happen for active swap files.
 
+Basically what can happen is:
+
+1) Task A starts snapshot creation and enters ioctl.c:create_snapshot().
+   There it sees that root->nr_swapfiles has a value of 0 so it continues;
+
+2) Task B enters btrfs_swap_activate(). It is not aware that another task
+   started snapshot creation but it did not finish yet. It increments
+   root->nr_swapfiles from 0 to 1;
+
+3) Task B checks that the file meets all requirements to be an active
+   swap file - it has NOCOW set, there are no snapshots for the inode's
+   root at the moment, no file holes, no reflinked extents, etc;
+
+4) Task B returns success and now the file is an active swap file;
+
+5) Task A commits the transaction to create the snapshot and finishes.
+   The swap file's extents are now shared between the original root and
+   the snapshot;
+
+6) A write into an extent of the swap file is attempted - there is a
+   snapshot of the file's root, so we fall back to COW mode and therefore
+   the physical location of the extent changes on disk.
+
+So fix this by taking the snapshot lock during swap file activation before
+locking the extent range, as that is the order in which we lock these
+during buffered writes.
+
+Fixes: ed46ff3d42378 ("Btrfs: support swap files")
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/inode.c | 4 +---
- 1 file changed, 1 insertion(+), 3 deletions(-)
+ fs/btrfs/inode.c | 21 +++++++++++++++++++--
+ 1 file changed, 19 insertions(+), 2 deletions(-)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 589030cefd90..b10fc42f9e9a 100644
+index 464c289c402d..ca89f3166dd7 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -1657,9 +1657,6 @@ static noinline int run_delalloc_nocow(struct btrfs_inode *inode,
- 			 */
- 			btrfs_release_path(path);
+@@ -10093,7 +10093,8 @@ static int btrfs_swap_activate(struct swap_info_struct *sis, struct file *file,
+ 			       sector_t *span)
+ {
+ 	struct inode *inode = file_inode(file);
+-	struct btrfs_fs_info *fs_info = BTRFS_I(inode)->root->fs_info;
++	struct btrfs_root *root = BTRFS_I(inode)->root;
++	struct btrfs_fs_info *fs_info = root->fs_info;
+ 	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
+ 	struct extent_state *cached_state = NULL;
+ 	struct extent_map *em = NULL;
+@@ -10144,13 +10145,27 @@ static int btrfs_swap_activate(struct swap_info_struct *sis, struct file *file,
+ 	   "cannot activate swapfile while exclusive operation is running");
+ 		return -EBUSY;
+ 	}
++
++	/*
++	 * Prevent snapshot creation while we are activating the swap file.
++	 * We do not want to race with snapshot creation. If snapshot creation
++	 * already started before we bumped nr_swapfiles from 0 to 1 and
++	 * completes before the first write into the swap file after it is
++	 * activated, than that write would fallback to COW.
++	 */
++	if (!btrfs_drew_try_write_lock(&root->snapshot_lock)) {
++		btrfs_exclop_finish(fs_info);
++		btrfs_warn(fs_info,
++	   "cannot activate swapfile because snapshot creation is in progress");
++		return -EINVAL;
++	}
+ 	/*
+ 	 * Snapshots can create extents which require COW even if NODATACOW is
+ 	 * set. We use this counter to prevent snapshots. We must increment it
+ 	 * before walking the extents because we don't want a concurrent
+ 	 * snapshot to run after we've already checked the extents.
+ 	 */
+-	atomic_inc(&BTRFS_I(inode)->root->nr_swapfiles);
++	atomic_inc(&root->nr_swapfiles);
  
--			/* If extent is RO, we must COW it */
--			if (btrfs_extent_readonly(fs_info, disk_bytenr))
--				goto out_check;
- 			ret = btrfs_cross_ref_exist(root, ino,
- 						    found_key.offset -
- 						    extent_offset, disk_bytenr, false);
-@@ -1706,6 +1703,7 @@ static noinline int run_delalloc_nocow(struct btrfs_inode *inode,
- 				WARN_ON_ONCE(freespace_inode);
- 				goto out_check;
- 			}
-+			/* If the extent's block group is RO, we must COW. */
- 			if (!btrfs_inc_nocow_writers(fs_info, disk_bytenr))
- 				goto out_check;
- 			nocow = true;
+ 	isize = ALIGN_DOWN(inode->i_size, fs_info->sectorsize);
+ 
+@@ -10296,6 +10311,8 @@ static int btrfs_swap_activate(struct swap_info_struct *sis, struct file *file,
+ 	if (ret)
+ 		btrfs_swap_deactivate(file);
+ 
++	btrfs_drew_write_unlock(&root->snapshot_lock);
++
+ 	btrfs_exclop_finish(fs_info);
+ 
+ 	if (ret)
 -- 
 2.28.0
 

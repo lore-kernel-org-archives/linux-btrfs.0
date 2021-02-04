@@ -5,67 +5,66 @@ X-Spam-Level:
 X-Spam-Status: No, score=-16.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9ED03C43381
-	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Feb 2021 10:33:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 69AF7C4332E
+	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Feb 2021 10:33:25 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 789F164E34
-	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Feb 2021 10:33:24 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1D1F564F5E
+	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Feb 2021 10:33:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235545AbhBDKdF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 4 Feb 2021 05:33:05 -0500
-Received: from esa4.hgst.iphmx.com ([216.71.154.42]:54296 "EHLO
+        id S235566AbhBDKdN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 4 Feb 2021 05:33:13 -0500
+Received: from esa4.hgst.iphmx.com ([216.71.154.42]:54283 "EHLO
         esa4.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235583AbhBDKbj (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Feb 2021 05:31:39 -0500
+        with ESMTP id S235588AbhBDKcJ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Feb 2021 05:32:09 -0500
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1612434698; x=1643970698;
+  t=1612434729; x=1643970729;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=QOL0E9tS9Yd5OAaj5DhPGdwfZr8n6HcliTvpWtqG1PU=;
-  b=kvCaf6LGYsJUhHVMuP+HLW86EhT7Hd24vaBb5C5dbG6NCQxouLzNrPhB
-   Vvbm6tyIYrJnHl4LZoKRZzvFgHYcYbYGHylvDO/zJ9zDPJNNP2JQtN4GK
-   XAQWSruDOk8Sp4kDUHODkK0D5fah4UrqF9Ta+sEsxejUyXMMLNUj+eHJL
-   apPMJ1Cmd0cQ+aNLmn18O4bpO1MzOmYtKtAGSZLPI88Y+T2fFdg9mukbF
-   g/rG+zYaoDeB3CdYmCLaJ6CqtaLARS7vMRnxp2AkTXB2p6b2mgIfOGt7Z
-   NipXhui44xHNZKNLD9cVk9ECFb25mo1trgsqJqHYQhng5OMjvSld4PfYt
-   w==;
-IronPort-SDR: S+cyzh/y0SGHNDthN4hxMEmnN8Pv84MqAQ5vp3E2mHQPWpX61sbLSUT35V5/wGP0LPdSD+3wGO
- 9g79k1d22XjS09RKdsCh/88HxLiMdfL1W3mKR74EmCtURq8IHUJ0xv4ffYHupjYByAw4vgLDjG
- 1F6iTRZetzzoFRC0XvN2JxuntiQdeA4mXf9KDrutMXjvHUlru0xxZ67JgtyANlGUlMNT0Im47o
- /2aFx9nppRfgn74phVhzHkkA5BqRAewaQt8NQEPMitKyhWqlDVvk68X1w5b6jonvOLMhFuIF8d
- zok=
+  bh=TYXw8oVffvrRDwV3lkf+WMd8tHTd6h5e+gPXGQFVwFg=;
+  b=EuTn4voVQXD42eMMdSm2oa9QkeVEcG7X5YpWe8Ne0BeinvlUASYoQ/bk
+   D5Rfos5BtLakOqffI6+KZWsqqlmLHAwsbE6kUs2u5sv0nTKNOwhRyzSrO
+   fLnEbI85qwVTykAHxl8UfA+KMcU3uU/R+4MvBElvy03WxrRgDLKc50eHV
+   NWQbfj1gge//cWS5/PzDcM552z+QFnkXxNoqSv/h7Lrh0C+hN1HTBoyN7
+   9oEY9l2c1dadPV4DLdvyqlm32kyAxsLqyZ6n9nUvmfjcRzqnBDWSDKe6h
+   7egA0VCVRPbMpMTClBMKooRgS3j0ZhqQA3xb7God9mJdvuLtOflRpKf65
+   Q==;
+IronPort-SDR: tbTOFySAsLDbv3d0SxWy8giptYcS4cqsGWIp2Ezo/DwHfuafvYCQLL+Z8HrbJ7hs4U9meGo5NB
+ xtQPziwEoCqw72l7zlro4hGGWzLi3RhivUc2usrkmAW6yp4JBxHMJeqrK+ObmYOdTlLcK6LPrQ
+ KaEhB6Th2Ohr62xvvhveRjmDICl2qPj3blMHvf7f6d1skeRjtQdJ7uKhxWlVBiXeUK5yv65IKe
+ JzjwGqJsKAr5gfwzjbUZQRcSP6w92k2jjr5epzBoGAF112qOkARGUjCNX1WdyfWjez7iR3STaF
+ f4k=
 X-IronPort-AV: E=Sophos;i="5.79,400,1602518400"; 
-   d="scan'208";a="159108070"
+   d="scan'208";a="159108078"
 Received: from uls-op-cesaip02.wdc.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 04 Feb 2021 18:23:48 +0800
-IronPort-SDR: hy0xPrr//yKzH5cVv0AJM5HCGGE2tIerkx2Y4Kptf3zUvg48IrBNRd065qPA7OFdR0ftOlWgDF
- e6D8p1ohCEJxZUrncdLx9sl1M9rUOvIgEu0d1wbg8CAltUmNh1SQH9urg7gC1a/hG3xCiJVZT8
- zHZADZQ2zU8iByOeYYf2R1xaTMv7hW5d7CjEevX8RxwfB8ha7ivYGEWOrv/k8ZVf/hHt+OspHD
- Y2aeNhYoByAU2Z3C+p1UhyNNFyhVRSYSASldh7SvSvOX7z0LtoYuq+ieSiS3T6FrEYpK9BX1xa
- xC5FnOj6/RlVIxR65Rrzu5rV
+  by ob1.hgst.iphmx.com with ESMTP; 04 Feb 2021 18:23:51 +0800
+IronPort-SDR: TmEFt15P3oyjRHX1n7lrNtHsvypvEIe2kKlqMtgU3A/AvT4qI/5FWLtqtWgNuFAeb+3yzuS9L5
+ NgFHm+3FcMIazEFiDrTi8CZ5kPEjuFcUHgAdMslBvl5FFArEeQymbFBMYDyzZOGx1xyJwnJTa5
+ 9Yk9FZwxxvLUNGw4H+pHYz7UMKRHYNF3Fm+g4BUJLhSBhRCHNv4WkQM53nD26AMfDoIcKnbqDw
+ N1yjYHQF0ad+eNTPJkiEs8MQ0/OIqNlhxiLvQlYBYLogSxJLjgmFCDwyZ5r4RSlCvGWZdu098E
+ M8laXIxXMPlP0rnJgsDKbufN
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 04 Feb 2021 02:05:51 -0800
-IronPort-SDR: xqF0nxsKXrJ2Vp05nTQyeV2qkxvMvic4SXc8Ks1xBYq55zF9+/EpScD9yOOctExM6XyHWbvoSg
- HfGUUcSOKH4SY3YiDjPZzGoZ4Ehb/qDv02chqK0s2HiMrap1t8ZoYSBAv+ALgBLNIM1QcFUdGR
- fWcvrQwSnRgQ3vZqP3RzVCCE+66ImRYW8AhST8p8xjnkGKGwQKK+Mwct9plMXPwrWW2Ed4M7ic
- xDnPfbIbSBwLUbY42z2m1G+Z2OeFz2RGDTvrAD0cLI1Y3S0R/rwjBqO1AqtX5pJc+KL4nbnlBY
- iMU=
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 04 Feb 2021 02:05:54 -0800
+IronPort-SDR: eJuXZtNVhEUSNcV/wlmb0x8oDKUXjm5DeAarNwpLb4sGYhvLvYhyE2TQUbsuqE1oNZTGN+VG1p
+ HN6i9Vj6ZG8V3QGSSUGCcKirqWpfs3nfhCoBRVNI8EVx0J8RYEoNkGumBs28bmloYcL68qDtf4
+ tTx1CrriXKl5qrdhLU1G6D39Fj+icz5TcEiCkuiSDytZvy3WuEbqQLiJx0qQo93lefWmJxGmVr
+ fDHSB91RBZTQC0OKwpGoEQ8X4UDha9nCYB0uIeRowfda3ZKhqybwoRoCrpXj+YPon0KfZ/Tzfy
+ VPc=
 WDCIronportException: Internal
 Received: from jfklab-fym3sg2.ad.shared (HELO naota-xeon.wdc.com) ([10.84.71.79])
-  by uls-op-cesaip02.wdc.com with ESMTP; 04 Feb 2021 02:23:47 -0800
+  by uls-op-cesaip02.wdc.com with ESMTP; 04 Feb 2021 02:23:50 -0800
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     linux-btrfs@vger.kernel.org, dsterba@suse.com
 Cc:     hare@suse.com, linux-fsdevel@vger.kernel.org,
         Naohiro Aota <naohiro.aota@wdc.com>,
         Filipe Manana <fdmanana@gmail.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH v15 38/42] btrfs: split alloc_log_tree()
-Date:   Thu,  4 Feb 2021 19:22:17 +0900
-Message-Id: <2bb9a7626f2f19b722f07a9a44c7d077cde5fd27.1612434091.git.naohiro.aota@wdc.com>
+        Josef Bacik <josef@toxicpanda.com>
+Subject: [PATCH v15 40/42] btrfs: zoned: serialize log transaction on zoned filesystems
+Date:   Thu,  4 Feb 2021 19:22:19 +0900
+Message-Id: <5eabc4600691c618f34f8f39c156d9c094f2687b.1612434091.git.naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.30.0
 In-Reply-To: <b36444df121d46c6d9638a8ae8eacecaa845fbe4.1612434091.git.naohiro.aota@wdc.com>
 References: <b36444df121d46c6d9638a8ae8eacecaa845fbe4.1612434091.git.naohiro.aota@wdc.com>
@@ -75,120 +74,112 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is a preparation patch for the next patch. Split alloc_log_tree()
-into two parts. The first one allocating the tree structure, remains in
-alloc_log_tree() and the second part allocating the tree node, which is
-moved into btrfs_alloc_log_tree_node().
+This is the 2/3 patch to enable tree-log on zoned filesystems.
 
-Also export the latter part is to be used in the next patch.
+Since we can start more than one log transactions per subvolume
+simultaneously, nodes from multiple transactions can be allocated
+interleaved. Such mixed allocation results in non-sequential writes at the
+time of a log transaction commit. The nodes of the global log root tree
+(fs_info->log_root_tree), also have the same problem with mixed
+allocation.
+
+Serializes log transactions by waiting for a committing transaction when
+someone tries to start a new transaction, to avoid the mixed allocation
+problem. We must also wait for running log transactions from another
+subvolume, but there is no easy way to detect which subvolume root is
+running a log transaction. So, this patch forbids starting a new log
+transaction when other subvolumes already allocated the global log root
+tree.
 
 Cc: Filipe Manana <fdmanana@gmail.com>
 Reviewed-by: Josef Bacik <josef@toxicpanda.com>
-Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 ---
- fs/btrfs/disk-io.c | 33 +++++++++++++++++++++++++++------
- fs/btrfs/disk-io.h |  2 ++
- 2 files changed, 29 insertions(+), 6 deletions(-)
+ fs/btrfs/tree-log.c | 29 +++++++++++++++++++++++++++++
+ 1 file changed, 29 insertions(+)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 6e16f556ed75..d2fa92526b3b 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1254,7 +1254,6 @@ static struct btrfs_root *alloc_log_tree(struct btrfs_trans_handle *trans,
- 					 struct btrfs_fs_info *fs_info)
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index c02eeeac439c..8be3164d4c5d 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -105,6 +105,7 @@ static noinline int replay_dir_deletes(struct btrfs_trans_handle *trans,
+ 				       struct btrfs_root *log,
+ 				       struct btrfs_path *path,
+ 				       u64 dirid, int del_all);
++static void wait_log_commit(struct btrfs_root *root, int transid);
+ 
+ /*
+  * tree logging is a special write ahead log used to make sure that
+@@ -140,6 +141,7 @@ static int start_log_trans(struct btrfs_trans_handle *trans,
  {
- 	struct btrfs_root *root;
--	struct extent_buffer *leaf;
- 
- 	root = btrfs_alloc_root(fs_info, BTRFS_TREE_LOG_OBJECTID, GFP_NOFS);
- 	if (!root)
-@@ -1264,6 +1263,14 @@ static struct btrfs_root *alloc_log_tree(struct btrfs_trans_handle *trans,
- 	root->root_key.type = BTRFS_ROOT_ITEM_KEY;
- 	root->root_key.offset = BTRFS_TREE_LOG_OBJECTID;
- 
-+	return root;
-+}
-+
-+int btrfs_alloc_log_tree_node(struct btrfs_trans_handle *trans,
-+			      struct btrfs_root *root)
-+{
-+	struct extent_buffer *leaf;
-+
- 	/*
- 	 * DON'T set SHAREABLE bit for log trees.
- 	 *
-@@ -1276,26 +1283,33 @@ static struct btrfs_root *alloc_log_tree(struct btrfs_trans_handle *trans,
- 
- 	leaf = btrfs_alloc_tree_block(trans, root, 0, BTRFS_TREE_LOG_OBJECTID,
- 			NULL, 0, 0, 0, BTRFS_NESTING_NORMAL);
--	if (IS_ERR(leaf)) {
--		btrfs_put_root(root);
--		return ERR_CAST(leaf);
--	}
-+	if (IS_ERR(leaf))
-+		return PTR_ERR(leaf);
- 
- 	root->node = leaf;
- 
- 	btrfs_mark_buffer_dirty(root->node);
- 	btrfs_tree_unlock(root->node);
--	return root;
-+
-+	return 0;
- }
- 
- int btrfs_init_log_root_tree(struct btrfs_trans_handle *trans,
- 			     struct btrfs_fs_info *fs_info)
- {
- 	struct btrfs_root *log_root;
-+	int ret;
- 
- 	log_root = alloc_log_tree(trans, fs_info);
- 	if (IS_ERR(log_root))
- 		return PTR_ERR(log_root);
-+
-+	ret = btrfs_alloc_log_tree_node(trans, log_root);
-+	if (ret) {
-+		btrfs_put_root(log_root);
-+		return ret;
-+	}
-+
- 	WARN_ON(fs_info->log_root_tree);
- 	fs_info->log_root_tree = log_root;
- 	return 0;
-@@ -1307,11 +1321,18 @@ int btrfs_add_log_tree(struct btrfs_trans_handle *trans,
  	struct btrfs_fs_info *fs_info = root->fs_info;
- 	struct btrfs_root *log_root;
- 	struct btrfs_inode_item *inode_item;
-+	int ret;
+ 	struct btrfs_root *tree_root = fs_info->tree_root;
++	const bool zoned = btrfs_is_zoned(fs_info);
+ 	int ret = 0;
  
- 	log_root = alloc_log_tree(trans, fs_info);
- 	if (IS_ERR(log_root))
- 		return PTR_ERR(log_root);
+ 	/*
+@@ -160,12 +162,20 @@ static int start_log_trans(struct btrfs_trans_handle *trans,
  
-+	ret = btrfs_alloc_log_tree_node(trans, log_root);
-+	if (ret) {
-+		btrfs_put_root(log_root);
-+		return ret;
-+	}
+ 	mutex_lock(&root->log_mutex);
+ 
++again:
+ 	if (root->log_root) {
++		int index = (root->log_transid + 1) % 2;
 +
- 	log_root->last_trans = trans->transid;
- 	log_root->root_key.offset = root->root_key.objectid;
+ 		if (btrfs_need_log_full_commit(trans)) {
+ 			ret = -EAGAIN;
+ 			goto out;
+ 		}
  
-diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
-index 9f4a2a1e3d36..0e7e9526b6a8 100644
---- a/fs/btrfs/disk-io.h
-+++ b/fs/btrfs/disk-io.h
-@@ -120,6 +120,8 @@ blk_status_t btrfs_wq_submit_bio(struct inode *inode, struct bio *bio,
- 				 extent_submit_bio_start_t *submit_bio_start);
- blk_status_t btrfs_submit_bio_done(void *private_data, struct bio *bio,
- 			  int mirror_num);
-+int btrfs_alloc_log_tree_node(struct btrfs_trans_handle *trans,
-+			      struct btrfs_root *root);
- int btrfs_init_log_root_tree(struct btrfs_trans_handle *trans,
- 			     struct btrfs_fs_info *fs_info);
- int btrfs_add_log_tree(struct btrfs_trans_handle *trans,
++		if (zoned && atomic_read(&root->log_commit[index])) {
++			wait_log_commit(root, root->log_transid - 1);
++			goto again;
++		}
++
+ 		if (!root->log_start_pid) {
+ 			clear_bit(BTRFS_ROOT_MULTI_LOG_TASKS, &root->state);
+ 			root->log_start_pid = current->pid;
+@@ -173,6 +183,17 @@ static int start_log_trans(struct btrfs_trans_handle *trans,
+ 			set_bit(BTRFS_ROOT_MULTI_LOG_TASKS, &root->state);
+ 		}
+ 	} else {
++		if (zoned) {
++			mutex_lock(&fs_info->tree_log_mutex);
++			if (fs_info->log_root_tree)
++				ret = -EAGAIN;
++			else
++				ret = btrfs_init_log_root_tree(trans, fs_info);
++			mutex_unlock(&fs_info->tree_log_mutex);
++		}
++		if (ret)
++			goto out;
++
+ 		ret = btrfs_add_log_tree(trans, root);
+ 		if (ret)
+ 			goto out;
+@@ -201,14 +222,22 @@ static int start_log_trans(struct btrfs_trans_handle *trans,
+  */
+ static int join_running_log_trans(struct btrfs_root *root)
+ {
++	const bool zoned = btrfs_is_zoned(root->fs_info);
+ 	int ret = -ENOENT;
+ 
+ 	if (!test_bit(BTRFS_ROOT_HAS_LOG_TREE, &root->state))
+ 		return ret;
+ 
+ 	mutex_lock(&root->log_mutex);
++again:
+ 	if (root->log_root) {
++		int index = (root->log_transid + 1) % 2;
++
+ 		ret = 0;
++		if (zoned && atomic_read(&root->log_commit[index])) {
++			wait_log_commit(root, root->log_transid - 1);
++			goto again;
++		}
+ 		atomic_inc(&root->log_writers);
+ 	}
+ 	mutex_unlock(&root->log_mutex);
 -- 
 2.30.0
 

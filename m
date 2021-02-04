@@ -2,103 +2,185 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-16.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 495F2C433DB
-	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Feb 2021 10:35:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7A444C433E0
+	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Feb 2021 11:03:50 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 140C264DDE
-	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Feb 2021 10:35:10 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 417F764E7B
+	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Feb 2021 11:03:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235533AbhBDKex (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 4 Feb 2021 05:34:53 -0500
-Received: from esa4.hgst.iphmx.com ([216.71.154.42]:54218 "EHLO
-        esa4.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235470AbhBDKdb (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Feb 2021 05:33:31 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1612434811; x=1643970811;
-  h=from:to:cc:subject:date:message-id:in-reply-to:
-   references:mime-version:content-transfer-encoding;
-  bh=31ceDJu2kLyRBJSxuPw51RxbKy7EDLDCYjcUDI+Ih0c=;
-  b=iK/4ap8s5vRcfZH1mo/7BWobxGqXKBnCRbZfI6zSugxO50peQZva0RHJ
-   eTsBzVIQ4q5q76CzrRGGvcm2B92H3t1vHNRp7oEH66EovK25WOTqYwwRm
-   BlZ1GquEP5CJf/rI1hAH8ECPnngv9TlXiQ6NUotghUa3wBZngRO37PzsA
-   xwzl0URKiS1fCfjufXxcdeVOcZzJK2XyBrgELiT9u2s+eYYnW7LGK/B6j
-   bw+j2Tt9JbH+Tlm3tL1OuUb+Y5hLzP1sgcXzMHg1sY47xNL6uzy1vXIFm
-   FfEemlt24L/ruJOEMPt20VQCyZh8+0M9xCI5dWYCucpDGeqcPqtt4ZMSE
-   A==;
-IronPort-SDR: tnaOEmcMNeipcyXOMY60qH+uYVsKk3Bnue0vGtzE5oLeAR1Kz2mUXCs4c1MdYrr8d8rai7J2eO
- 1jBf2TMcBon8ENA8wadO30KqhX6lla8kSon0Gz3n6vvy/qVw+6trOusZUCkks4xvH6/aqz/I+P
- 5GC6bWBJl1LBdu+BoLRbzPCS5nJlAO6ufpAsuxjURUcgklLpLdJy8v4lWlZdYaBPVVTgl7yx9K
- 1diayeP6vHcdQHTJD5ifZeSLOKQWHyO8mxpMZMGHzULqruRh3WwE+6t1QKSEI3I42UMe7mNnTZ
- Jl4=
-X-IronPort-AV: E=Sophos;i="5.79,400,1602518400"; 
-   d="scan'208";a="159108084"
-Received: from uls-op-cesaip02.wdc.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 04 Feb 2021 18:23:55 +0800
-IronPort-SDR: OVHgJQ3bgR41zYSJtU8G9HsmI1A9EX4o+e7nH5UKseXmTwwqRtI2hvJODy+mZvQkqVkO8cCpW9
- KrjKP1V76y8vmNathwoqjz/11/9q/swaay3ZGQCI33gRR1Z1+l3fh1STcqggE323uI8x5vAVaI
- HLo1hRkO1mn3qTf+ybDoIFKvqdQOiydIW+72j3KirRkDJZc6Hug9vNfkil6Odm87pDm8BIZ3uj
- TJt0J2KGJfQBCGIHhple/Is8md2jfQOmykiXUESeXsfNuSt+4YwdcGbsR9I+Uws2I1+iNaFV0e
- bROZygCmSq9dgDnbt8aCN90A
-Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 04 Feb 2021 02:05:57 -0800
-IronPort-SDR: bhAZBBYJgUmAD9uq0Cj8A+j6Yx8yy9iAZR6FiU0YSA0oaDRAvPm87oTrdCc+iixOqoWes79nNV
- Z1nAnYQ/lRLKr8HVq2j/5z1LzQea8rO/+fPXPNCmVEI+DqSXSBJ3xnEM9yKtfVOcrFSPOteHUK
- n8IMottmv1ZC09PPFuFVhycjM1TjpEMQQqIQdtVx4HUXm6QevwUQeoMqIQ+zFb1kR/RffaOmw5
- 4mAamcEc91TykVLeMnPqjV8n+DC1vM0zqpPrrpMkzkJuV6o8ktzfXjWwoEXzVqmY8i4o3uIJu6
- 4sM=
-WDCIronportException: Internal
-Received: from jfklab-fym3sg2.ad.shared (HELO naota-xeon.wdc.com) ([10.84.71.79])
-  by uls-op-cesaip02.wdc.com with ESMTP; 04 Feb 2021 02:23:53 -0800
-From:   Naohiro Aota <naohiro.aota@wdc.com>
-To:     linux-btrfs@vger.kernel.org, dsterba@suse.com
-Cc:     hare@suse.com, linux-fsdevel@vger.kernel.org,
-        Naohiro Aota <naohiro.aota@wdc.com>,
-        Anand Jain <anand.jain@oracle.com>,
-        Josef Bacik <josef@toxicpanda.com>
-Subject: [PATCH v15 42/42] btrfs: zoned: enable to mount ZONED incompat flag
-Date:   Thu,  4 Feb 2021 19:22:21 +0900
-Message-Id: <7c375b7f63706927869c142b2bb408828472445f.1612434091.git.naohiro.aota@wdc.com>
-X-Mailer: git-send-email 2.30.0
-In-Reply-To: <b36444df121d46c6d9638a8ae8eacecaa845fbe4.1612434091.git.naohiro.aota@wdc.com>
-References: <b36444df121d46c6d9638a8ae8eacecaa845fbe4.1612434091.git.naohiro.aota@wdc.com>
+        id S235477AbhBDLDe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 4 Feb 2021 06:03:34 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38150 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S235462AbhBDLDb (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Feb 2021 06:03:31 -0500
+Received: from mail-oo1-xc32.google.com (mail-oo1-xc32.google.com [IPv6:2607:f8b0:4864:20::c32])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6763DC061573
+        for <linux-btrfs@vger.kernel.org>; Thu,  4 Feb 2021 03:02:51 -0800 (PST)
+Received: by mail-oo1-xc32.google.com with SMTP id d3so651229ool.7
+        for <linux-btrfs@vger.kernel.org>; Thu, 04 Feb 2021 03:02:51 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=rozsas-eng-br.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:from:date:message-id:subject:to
+         :content-transfer-encoding;
+        bh=jOGoLNecQKNm+RxLwSHWZiVDiRmpqn3u5F46oSHH70w=;
+        b=IZku3VIIr4WNkvtceOkQcNskcfEE8ar+cn2g9VhlK/mRsPYDPkyrgv2gYarXJj1e+B
+         LfyxXzEvU3bbOa1wM27HlQE6y7yyQ3FiXMvrzjYUPICfILrWGh+yEapPwt3NhU59c4ew
+         GznUiW8Pty/iQjrc6O/g84XQLX6rdeKcuGffNLOEV591qSCovNYu2Z0aeLvOyXWPv5WK
+         Qn0suzFCpAdTmgPeHy6u3WvliG7qmCIOhOLiqoguhvzDoxft5WmY7i2P25AXAfkRdwc/
+         4bRUbGn2kgL671z9yOH96ISBLa9SRxI2sBq7s1tNq+5gORs9g9vVbmcNCvXX1rUtZku6
+         YC8A==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:from:date:message-id:subject:to
+         :content-transfer-encoding;
+        bh=jOGoLNecQKNm+RxLwSHWZiVDiRmpqn3u5F46oSHH70w=;
+        b=AebQSIyw87ObA1wUdnBAxiiZEngxPOl/cm9APqOO1HYBd+e9RS6eM8WkS/EgVA8MzK
+         Cl2fSjJ0aVTPlTW2hSYorHramO/w6yrixgEcK1X4N5bWt4+vQiOrEOGpawVTs4XSEbF2
+         8k/FJGeO1BWLjkhuFn1JuFSE6Dp8vGQe3QsyIdbfVYg2vbOK7wK9jPeX+HVJtXdeiDqN
+         1twtmjJPrJ+UK83HP8Pi24a/2pVFCZndYdXQM07x9+94a9Z539mPy7WHe2xwpeX25elR
+         PaWj+a5XzKNa/ypWuhxA7TKqLopj5jLyMJdCzWKv+sPTRpa2MpGzeTYjJHJhA4PC+WRJ
+         ahRg==
+X-Gm-Message-State: AOAM532WA4FNsDTmZTdbPCPk0KchmtxxGG1Jkh9jGbr+J8buWoxeaK0B
+        t/F3su+mPx6TXCQmsyAoMXLGmkA77ONJKM3HQ9ixxbqTzvT5Qw==
+X-Google-Smtp-Source: ABdhPJw/rpLuzfEadLA6kPEXT8IqUq/wujXu2oKGiaWoWCgUs1YEHnONktS5l3lH03nYM0fGQCzQXTAegPbc1YeBpuQ=
+X-Received: by 2002:a4a:dcc6:: with SMTP id h6mr5315642oou.89.1612436570404;
+ Thu, 04 Feb 2021 03:02:50 -0800 (PST)
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+From:   "miguel@rozsas.eng.br" <miguel@rozsas.eng.br>
+Date:   Thu, 4 Feb 2021 08:02:14 -0300
+Message-ID: <CAP5D+waHS3rMdcYdv_++X8n8wgLjm3cC2=Tv34ZPzi=Ku4Ozog@mail.gmail.com>
+Subject: btrfs becomes read only on removal of folders
+To:     linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This final patch adds the ZONED incompat flag to
-BTRFS_FEATURE_INCOMPAT_SUPP and enables btrfs to mount ZONED flagged file
-system.
+Hi there,
 
-Reviewed-by: Anand Jain <anand.jain@oracle.com>
-Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
----
- fs/btrfs/ctree.h | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+I am using opensuse tumbleweed on a desktop.
+More than 1 year ago, I setup a rotating disk to use btrfs and things
+went nice until yesterday.
+I was done with Civ VI on steam, and decided to remove the associated files=
+.
+I've started to remove files and I got the message the file system is read-=
+only.
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 6f4b493625ef..3bc00aed13b2 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -298,7 +298,8 @@ struct btrfs_super_block {
- 	 BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA |	\
- 	 BTRFS_FEATURE_INCOMPAT_NO_HOLES	|	\
- 	 BTRFS_FEATURE_INCOMPAT_METADATA_UUID	|	\
--	 BTRFS_FEATURE_INCOMPAT_RAID1C34)
-+	 BTRFS_FEATURE_INCOMPAT_RAID1C34	|	\
-+	 BTRFS_FEATURE_INCOMPAT_ZONED)
- 
- #define BTRFS_FEATURE_INCOMPAT_SAFE_SET			\
- 	(BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF)
--- 
-2.30.0
+kimera:~ # findmnt --real -l | grep /mnt/btrfs
+/mnt/btrfs                /dev/sdc2                           btrfs
+rw,relatime,space_cache,subvolid=3D5,subvol=3D/
 
+kimera:~ # cd /mnt/btrfs/miguel/Steam/
+kimera:/mnt/btrfs/miguel/Steam # \ls
+GameOverlayRenderer64.dll    bin_steamdeps.py
+fossilize_engine_filters.json  linux64   servers
+steam_subscriber_agreement.txt  tenfoot
+ThirdPartyLegalNotices.css   bootstrap.tar.xz  friends
+       logs      skins                    steamapps
+   ubuntu12_32
+ThirdPartyLegalNotices.doc   clientui          graphics
+       music     ssfn9115004176610272489  steamchina
+   ubuntu12_64
+ThirdPartyLegalNotices.html  config
+installscriptevalutor_log.txt  package   steam
+steamclient.dll                 update_hosts_cached.vdf
+appcache                     controller_base   legacycompat
+       public    steam.sh                 steamclient64.dll
+   userdata
+bin                          depotcache        linux32
+       resource  steam_msg.sh             steamui
+kimera:/mnt/btrfs/miguel/Steam #
+
+kimera:/mnt/btrfs/miguel/Steam # rm -rf appcache bin clientui controller_ba=
+se
+rm: cannot remove
+'appcache/httpcache/00/00d317630ee7d0825dc6a4cd5ce9f91f50e6993c_da39a3ee5e6=
+b4b0d3255bfef95601890afd80709':
+Read-only file system
+rm: cannot remove
+'appcache/httpcache/01/01edefade28afe779bad14a9d5ff954b0f4c4e60_da39a3ee5e6=
+b4b0d3255bfef95601890afd80709':
+Read-only file system
+rm: cannot remove
+'appcache/httpcache/01/0116c6a41aee246e028415352052bd79d323fc1f_da39a3ee5e6=
+b4b0d3255bfef95601890afd80709':
+Read-only file system
+...
+rm: cannot remove 'controller_base/bigpicture_mouseon.vdf': Read-only
+file system
+rm: cannot remove 'controller_base/gamepad_generic.vdf': Read-only file sys=
+tem
+rm: cannot remove 'controller_base/basicui_gamepad.vdf': Read-only file sys=
+tem
+rm: cannot remove 'controller_base/basicui_neptune.vdf': Read-only file sys=
+tem
+rm: cannot remove 'controller_base/basicui.vdf': Read-only file system
+kimera:/mnt/btrfs/miguel/Steam #
+
+The associated kernel messages can be read here:  https://susepaste.org/802=
+72017
+
+The current usage is:
+kimera:~ # btrfs filesystem usage -T /mnt/btrfs
+Overall:
+    Device size:                   2.37TiB
+    Device allocated:            348.06GiB
+    Device unallocated:            2.03TiB
+    Device missing:                  0.00B
+    Used:                        287.07GiB
+    Free (estimated):              2.09TiB      (min: 1.08TiB)
+    Data ratio:                       1.00
+    Metadata ratio:                   2.00
+    Global reserve:              349.28MiB      (used: 0.00B)
+    Multiple profiles:                  no
+
+             Data      Metadata  System
+Id Path      single    RAID1     RAID1    Unallocated
+-- --------- --------- --------- -------- -----------
+ 1 /dev/sdc2 346.00GiB   1.00GiB 32.00MiB     1.16TiB
+ 2 /dev/sdc1         -   1.00GiB 32.00MiB   898.97GiB
+-- --------- --------- --------- -------- -----------
+   Total     346.00GiB   1.00GiB 32.00MiB     2.03TiB
+   Used      286.15GiB 470.45MiB 64.00KiB
+kimera:~ #
+
+Then I ran btrfs scrub (btrfs scrub start /mnt/btrfs) and got the
+following kernel messages during the scrub:
+https://susepaste.org/51166386
+
+And scrub ended with the status:
+kimera:/mnt/btrfs/miguel/Steam # btrfs scrub status /mnt/btrfs
+UUID:             af3bd7fe-5796-4248-9917-3e71a5a56ec6
+Scrub started:    Tue Feb  2 13:43:34 2021
+Status:           aborted
+Duration:         0:02:37
+Total to scrub:   287.07GiB
+Rate:             106.22MiB/s
+Error summary:    verify=3D79 csum=3D5
+ Corrected:      7
+ Uncorrectable:  77
+ Unverified:     0
+
+So, what is going here ?
+How can I fix this FS ?
+
+Sorry to not know so much about how to fix a btrfs, it is my first
+experience with btrfs since I migrated from Ubuntu to openSuSE more
+than 1 year ago.
+
+my system:
+Operating System: openSUSE Tumbleweed 20210121
+KDE Plasma Version: 5.20.5
+KDE Frameworks Version: 5.78.0
+Qt Version: 5.15.2
+Kernel Version: 5.10.7-1-default
+OS Type: 64-bit
+Processors: 8 =C3=97 Intel=C2=AE Core=E2=84=A2 i7-3770 CPU @ 3.40GHz
+Memory: 14.6 GiB of RAM
+Graphics Processor: GeForce GTX 970/PCIe/SSE2

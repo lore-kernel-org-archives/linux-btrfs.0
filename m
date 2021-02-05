@@ -2,86 +2,190 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=0.1 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	UNWANTED_LANGUAGE_BODY,URIBL_BLOCKED autolearn=no autolearn_force=no
+X-Spam-Status: No, score=-11.4 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_CR_TRAILER,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E4BF4C433E0
-	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Feb 2021 22:28:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0AD3FC433E0
+	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Feb 2021 22:50:21 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id AA1D464DD9
-	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Feb 2021 22:28:04 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A52D464FD6
+	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Feb 2021 22:50:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231256AbhBEW1n (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 5 Feb 2021 17:27:43 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41528 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232564AbhBEOWu (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Feb 2021 09:22:50 -0500
-Received: from mail-ed1-x52c.google.com (mail-ed1-x52c.google.com [IPv6:2a00:1450:4864:20::52c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CB065C06121E
-        for <linux-btrfs@vger.kernel.org>; Fri,  5 Feb 2021 07:49:31 -0800 (PST)
-Received: by mail-ed1-x52c.google.com with SMTP id l12so9336289edt.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 05 Feb 2021 07:49:31 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=message-id:date:subject:from:to:mime-version
-         :content-transfer-encoding;
-        bh=oPxDRI8cVMw26Se/+xNQJbzaioHKbYnFXFhwebyWFiA=;
-        b=kuFFaQEswufEtTOlFPG9OLuP3t++Xqxv/vsyNr0x955PSXaaxHbwZcgTwnmZu8ycut
-         /1MJl5RuIU3TYWuFpE/JUFzWbBp1YdNRRavV72lsPRkWEiKD4Hfk8y70BLpg54vlGKqc
-         wB8bIVun2qTPZwa2dhSPb6C0IbVLHzKl1Y3ipjUnbws6C8awzAyOxHt1jeTdgLjJyMfz
-         98wof67Q8VWO2+jyRqnOngCjhHWT998ACnbqF4aZ0V66eDSKhUqDuC3VwW9v2Vuq9sts
-         a5f/M71xduV/4UHtxuhSNv/i0kfaKW01qfL8cwEspCWgMxkf1MsZrbcbbPFB9dwHSZjq
-         KSLw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:message-id:date:subject:from:to:mime-version
-         :content-transfer-encoding;
-        bh=oPxDRI8cVMw26Se/+xNQJbzaioHKbYnFXFhwebyWFiA=;
-        b=HXP0Xq0lfx2Dg++Ew5hf31WFVCcMwGsm2ko+yGs6nbNVwZPb0PZzmY3wlULlOxhKZY
-         Q8upYhkgHK35vPL0ZpW1rfG6v0YQWeR3E2jtyUVckKapQRYn8hRT/APycb/yJY1VnnKE
-         3iq06ILW/uenmXnlnNLEW+s4raIQGAFbS9aDm3M27Q0SIpWisL8J4iqTW8XZyrxDxhlk
-         YRB/aAyEpfAtUcpI9E1GuY9eAnMH7xgCSmSD3xAy8Tcj8TKjGhN1EC42Cx+Q5KYy2rxC
-         yYosoHhi7LuYuKG95YvxtERxvVxbC1qm3byquaSMaLQjGOn+LJoxI0r4YzLKp/e7Z90X
-         cgew==
-X-Gm-Message-State: AOAM5333PhB7X2dMLUdIXr/qdxlBlemQnLPiCuq/Gz8jWlpTQi3+J9IQ
-        vWINvG64DfZqnEO4ISCbnb5F2HRmI5o=
-X-Google-Smtp-Source: ABdhPJywrwD0e+ePQ3fc2dBIf7AyE1JGkPJP3qAYQ5YmLjIZB0HjmlsN3AVOCoDqeUosX9QDKremSw==
-X-Received: by 2002:a17:906:4442:: with SMTP id i2mr4595793ejp.41.1612538847556;
-        Fri, 05 Feb 2021 07:27:27 -0800 (PST)
-Received: from [127.0.0.1] (212095005033.public.telering.at. [212.95.5.33])
-        by smtp.gmail.com with ESMTPSA id a9sm4118733edk.22.2021.02.05.07.27.20
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-ECDSA-AES128-GCM-SHA256 bits=128/128);
-        Fri, 05 Feb 2021 07:27:21 -0800 (PST)
-Message-ID: <96d0d82ba4db95ac770cff45dbbaa64c@swift.generated>
-Date:   Fri, 05 Feb 2021 16:27:03 +0100
-Subject: Domain operatingsystem.de
-From:   Marco Maier <maiermarco356@gmail.com>
-To:     "" <linux-btrfs@vger.kernel.org>
+        id S230270AbhBEWtz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 5 Feb 2021 17:49:55 -0500
+Received: from mail.kernel.org ([198.145.29.99]:45204 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S232426AbhBEMzS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 5 Feb 2021 07:55:18 -0500
+Received: by mail.kernel.org (Postfix) with ESMTPSA id 439D964FCB
+        for <linux-btrfs@vger.kernel.org>; Fri,  5 Feb 2021 12:54:30 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1612529670;
+        bh=JSaWFgrgpVZIlon8Cowoldf2rvQ5oFHXbEW7YgI5DSs=;
+        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+        b=t+RldXRazMwSdh9l08SYI/uCOSXBT7SwpiCM7QNKFNcK+4dawueisnIDD/ATt45Bi
+         CIukRCYPv/GXjpcLjSZ66yCGGEbf8rV2dPEZ4vdych4MypN8rOCTMYxuLgLiLeVt5A
+         pNBJmBZeV0NwkDq1umg46YEvj5a3JAUudpvzpenY3BJNWQ6HiMTgvHARMjbbultCQ6
+         Yaowms7zy1qlkFy2ID+0vX2eBSwTTcZC0nA3W5opJSzmrRaciq8rfKZ+lK9thFHjeV
+         2QwfH2ULYX+POqgL7arEgSRhP67Ix980JmCLi9mmSls67xEIi+N1pmV48U7L5Jn4OP
+         qYfufW+xLjSKQ==
+Received: by mail-qk1-f180.google.com with SMTP id x81so6732834qkb.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 05 Feb 2021 04:54:30 -0800 (PST)
+X-Gm-Message-State: AOAM530NLVrRCLv2zztIlknIIsOPFJbHS9PmkdoJIkIF8d1wTocMbjup
+        ytOUWHAHZnZ0Suhbs+0JY3op8cw6cvY7NLURpgU=
+X-Google-Smtp-Source: ABdhPJyKAy7ugbxZgeFy9ITdaY/ebic6izlrmONRxnk1Q6Em4NLD5TbNfxRhXy7Qj/w5RuZUp4PatBNRJYJfJETGsxQ=
+X-Received: by 2002:a05:620a:64d:: with SMTP id a13mr4156825qka.383.1612529669226;
+ Fri, 05 Feb 2021 04:54:29 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
+References: <cover.1612350698.git.fdmanana@suse.com> <0da379a02fdabaf9ca295a34f7de287b5d5465f7.1612350698.git.fdmanana@suse.com>
+ <169460c5-8e7b-2d0a-119f-87ef403e070f@oracle.com> <CAL3q7H5OOyZHja4hG8cmMOjcsOQSUKvMms9kZHG28i4GqNkOjA@mail.gmail.com>
+ <d563cfa9-5cf2-b408-0a7f-cdb597ebc9cc@oracle.com>
+In-Reply-To: <d563cfa9-5cf2-b408-0a7f-cdb597ebc9cc@oracle.com>
+From:   Filipe Manana <fdmanana@kernel.org>
+Date:   Fri, 5 Feb 2021 12:54:17 +0000
+X-Gmail-Original-Message-ID: <CAL3q7H4KOLoaZQkf8qY7s8KU7SPWhhGfFDgOq2hgcZP9Ykte0g@mail.gmail.com>
+Message-ID: <CAL3q7H4KOLoaZQkf8qY7s8KU7SPWhhGfFDgOq2hgcZP9Ykte0g@mail.gmail.com>
+Subject: Re: [PATCH 2/4] btrfs: fix race between writes to swap files and scrub
+To:     Anand Jain <anand.jain@oracle.com>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Sehr geehrte(r) Herr / Frau,
+On Fri, Feb 5, 2021 at 7:44 AM Anand Jain <anand.jain@oracle.com> wrote:
+>
+> On 2/4/2021 6:11 PM, Filipe Manana wrote:
+> > On Thu, Feb 4, 2021 at 8:48 AM Anand Jain <anand.jain@oracle.com> wrote:
+> >>
+> >> On 2/3/2021 7:17 PM, fdmanana@kernel.org wrote:
+> >>> From: Filipe Manana <fdmanana@suse.com>
+> >>>
+> >>> When we active a swap file, at btrfs_swap_activate(), we acquire the
+> >>> exclusive operation lock to prevent the physical location of the swap
+> >>> file extents to be changed by operations such as balance and device
+> >>> replace/resize/remove. We also call there can_nocow_extent() which,
+> >>> among other things, checks if the block group of a swap file extent is
+> >>> currently RO, and if it is we can not use the extent, since a write
+> >>> into it would result in COWing the extent.
+> >>>
+> >>> However we have no protection against a scrub operation running after we
+> >>> activate the swap file, which can result in the swap file extents to be
+> >>> COWed while the scrub is running and operating on the respective block
+> >>> group, because scrub turns a block group into RO before it processes it
+> >>> and then back again to RW mode after processing it. That means an attempt
+> >>> to write into a swap file extent while scrub is processing the respective
+> >>> block group, will result in COWing the extent, changing its physical
+> >>> location on disk.
+> >>>
+> >>> Fix this by making sure that block groups that have extents that are used
+> >>> by active swap files can not be turned into RO mode, therefore making it
+> >>> not possible for a scrub to turn them into RO mode.
+> >>
+> >>> When a scrub finds a
+> >>> block group that can not be turned to RO due to the existence of extents
+> >>> used by swap files, it proceeds to the next block group and logs a warning
+> >>> message that mentions the block group was skipped due to active swap
+> >>> files - this is the same approach we currently use for balance.
+> >>
+> >>    It is better if this info is documented in the scrub man-page. IMO.
+> >>
+> >>> This ends up removing the need to call btrfs_extent_readonly() from
+> >>> can_nocow_extent(), as btrfs_swap_activate() now checks if a block group
+> >>> is RO through the new function btrfs_inc_block_group_swap_extents().
+> >>>
+>
+>
+> >>> The only other caller of can_nocow_extent() is the direct IO write path,
+>
+> There is a third caller. check_can_nocow() also calls
+> can_nocow_extent(), which I missed before. Any idea where does it get to
+> know that extent is RO in the threads using check_can_nocow()? I have to
+> back out the RB for this reason for now.
 
+Yes, that one I missed. However it's arguable how useful it is, because starting
+nocow writers and changing a block group from RW to RO is not atomic,
+and therefore
+sometimes it will have no effect, see below.
 
-operatingsystem.de Domain Name ist jet=
-zt verf=C3=BCgbar und ist jetzt zu verkaufen.
+I'll leave that part out and deal with the direct IO write path
+optimization later perhaps,
+as things are a bit entangled and not simple to distinguish whether we
+are in the
+direct IO path or not at can_nocow_extent().
 
-Vielen Dank im Voraus.=
+>
+>
+> >>> btrfs_get_blocks_direct_write(), but that already checks if a block group
+> >>> is RO through the call to btrfs_inc_nocow_writers().
+>
+> >>> In fact, after this
+> >>> change we end up optimizing the direct IO write path, since we no longer
+> >>> iterate the block groups rbtree twice, once with btrfs_extent_readonly(),
+> >>> through can_nocow_extent(), and once again with btrfs_inc_nocow_writers().
+> >>> This can save time and reduce contention on the lock that protects the
+> >>> rbtree (specially because it is a spinlock and not a read/write lock) on
+> >>> very large filesystems, with several thousands of allocated block groups.
+> >>>
+> >>> Fixes: ed46ff3d42378 ("Btrfs: support swap files")
+> >>> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> >>
+> >>    I am not sure about the optimization of direct IO part, but as such
+> >>    changes looks good.
+>
+> Clarifying about the optimization part (for both buffered and direct IO)
+> - After patch 1, and patch 2, now we check on the RO extents after the
+> functions btrfs_cross_ref_exist(), and csum_exist_in_range(), both of
+> them have search_slot, whereas, before patch 1, and patch 2, we used to
+> fail early (if the extent is RO) and avoided the search_slot, so I am
+> not sure if there is optimization.
 
+And?
+Doing a single search is faster than doing 2 searches.
+It does not matter to check if a block group is RO before or after
+those checks, because:
 
-Ein angenehmes Wochenende w=C3=BCnscht Ihnen
+1) Having a block group RO is a rather exceptional situation and, when
+it happens (scrub and balance), it's
+temporary. We optimize for common cases, we don't gain anything by
+checking for it twice.
+Your concern goes the other way around, you want to do the RO check
+first to fallback more quickly into
+cow mode - optimizing for the exceptional and uncommon case. I could
+move up the call to
+btrfs_inc_block_group_swap_extents(), to take the place of the call to
+btrfs_inc_block_group_swap_extents(),
+but really that is pointless since RO block groups are exceptional and
+temporary, and would make the code
+more complex than needed (having to track which gotos require
+decrementing the nocow writers).
 
-Marco Maier
+2) More importantly, and this is what really matters, have you thought
+about what happens
+if the block group is turned RO right after we checked that it was RW?
+Either after calling
+btrfs_extent_readonly() and before calling btrfs_inc_nocow_writers(),
+or after calling both.
+Should we have additional checks to see if the block group is now RO
+after each one of those calls?
 
-=
+In case you didn't notice, starting a nocow write and setting a block
+group RO is not atomic,
+and that is fine (it's actually much simpler than making it atomic).
+Because scrub and balance,
+after turning a block group to RO mode, wait for any existing nocow
+writes to complete before
+they do anything with the block group's extents - new writes are
+guaranteed to not allocate from
+the block group or write to its existing extents because the block
+group is RO now.
 
-......................................
+I hope this clarifies why having the RO block group check earlier or
+later is irrelevant.
+
+Thanks.
+
+>
+> Thanks, Anand

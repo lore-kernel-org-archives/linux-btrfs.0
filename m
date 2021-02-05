@@ -2,156 +2,198 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
+X-Spam-Status: No, score=-13.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3C3F3C433DB
-	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Feb 2021 22:00:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EE11EC4332D
+	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Feb 2021 22:09:04 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D3C0A64FCC
-	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Feb 2021 22:00:16 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C8B1964FA8
+	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Feb 2021 22:09:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232897AbhBEV7k (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 5 Feb 2021 16:59:40 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48826 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232978AbhBEO6d (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Feb 2021 09:58:33 -0500
-Received: from mail-qt1-x833.google.com (mail-qt1-x833.google.com [IPv6:2607:f8b0:4864:20::833])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1F34DC061794;
-        Fri,  5 Feb 2021 08:25:58 -0800 (PST)
-Received: by mail-qt1-x833.google.com with SMTP id c1so5388850qtc.1;
-        Fri, 05 Feb 2021 08:25:58 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
-         :subject:to:cc:content-transfer-encoding;
-        bh=tknZsG8RVjECD5MXLCyGMYFFF5ZPCX7pFowei7WIg4w=;
-        b=PJqU8blQVv9UUoLrC68SIN//YrkNO8+pNLkY3nG2b6CRwKBwChSYtRICYFWu8Jcq7H
-         xZW8QOb1CuK8LspZB2DMb8RSuN5cmKqlzpaFpaTAywQzC1Yj1LhMuzuxCwHpQ58p7736
-         d/Zg89wjcKA1atDQXbFFy1hGWAIAtfqjr2VVVuk4e6Hi/Z9KUdBvOFxlytnX3LyfE5lo
-         fvVPJls5B9vXYIP7ZFxr4TfpTIpTJPQ/NP9l4EFiBnAucTmKY/A7a883e/KhzvcvJE4j
-         A6Ztbn4VrCTKESKu0YaPxZMt4NdEnevxZ5Koa1ZGfoaUCHsblcE1eUF2dK46AoSKRIF3
-         GIKQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
-         :from:date:message-id:subject:to:cc:content-transfer-encoding;
-        bh=tknZsG8RVjECD5MXLCyGMYFFF5ZPCX7pFowei7WIg4w=;
-        b=pUPH3dRQCltAyKWLnWt5411YXQulYX4zTsVyHugWv9cPi+oIBKNncN70Zujj0xfBs7
-         AKBne0YimaMzgMZX4DdLXRIS2OcXwdPOT0mq/+J2fuMTuDWsYOYpruEqwGwj+rFax3dD
-         SlPEPpxF9qdSdceaWrTAcu0r8xguJ907ysbqj2HBHxQisuwRYFhERjXPu1ugBLyEgEoy
-         sOz+81wcDrFgPCOd/TAWx2Oe05GLs+LxMC3339KeBcb0oe/Glv34JY6Lc8JZ7RDmvEh1
-         fy3TDEj1vh4wyfXy7tc3Q/Q7SNpgFhJqAwT7x3IlC45+vIlpFYG8+dTcjLHlr2Gi+8cr
-         FKfw==
-X-Gm-Message-State: AOAM530bn4esRp8txAPg2qyO5+DHrzddZOsbrVXd5FTq7HqBBqUil4tT
-        Z//tOHQra0CCfcK+hDvKzc2UOA8ZPPxsXw9OMf6COMD5CsY=
-X-Google-Smtp-Source: ABdhPJzSY4tHGRPzoupf6eGMwIpwkJv8V7MF61hTdNK0LpMfqmFtNAmpyCjnyYJiOhqzVkrIH7iAoPcA6Tebou3xrfw=
-X-Received: by 2002:ac8:4755:: with SMTP id k21mr4959450qtp.376.1612542357329;
- Fri, 05 Feb 2021 08:25:57 -0800 (PST)
-MIME-Version: 1.0
-References: <cover.1612433345.git.naohiro.aota@wdc.com> <b36444df121d46c6d9638a8ae8eacecaa845fbe4.1612434091.git.naohiro.aota@wdc.com>
- <20210205092635.i6w3c7brawlv6pgs@naota-xeon> <20210205145836.gtty4r6a4ftolehj@naota-xeon>
-In-Reply-To: <20210205145836.gtty4r6a4ftolehj@naota-xeon>
-Reply-To: fdmanana@gmail.com
-From:   Filipe Manana <fdmanana@gmail.com>
-Date:   Fri, 5 Feb 2021 16:25:45 +0000
-Message-ID: <CAL3q7H7aMzLbf-1-16x4GDPkmEC=1RNFDpkRuz55XU7B5F94cg@mail.gmail.com>
-Subject: Re: [PATCH v15.1 43/43] btrfs: zoned: deal with holes writing out
- tree-log pages
-To:     Naohiro Aota <naohiro.aota@wdc.com>
+        id S232904AbhBEWIe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 5 Feb 2021 17:08:34 -0500
+Received: from esa3.hgst.iphmx.com ([216.71.153.141]:64748 "EHLO
+        esa3.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S232783AbhBEOwM (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Feb 2021 09:52:12 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1612542657; x=1644078657;
+  h=date:from:to:cc:subject:message-id:references:
+   mime-version:content-transfer-encoding:in-reply-to;
+  bh=osl3Cr3Op+kKUp4lrjT4AnmetBsvXvl1ZR931UXyZoI=;
+  b=qfJyr/Trf9kYz5YdWfzXpbBOXdKE0dwcrvwL/ChWP6HrcxEkFGb9joxp
+   7ocnRTBv4q9VvwhU4A/2B0l75o8TqXniPwiTzX1JgKUbNLA/EZGP2zzkS
+   f2NQaTWAi4EEU2eKERxk6XODfgfKMnBvtRByXhoSSpVCPta+K5v408a3a
+   p/+BoQcI/LFIlb10f0DECbMQtIiZVp+lFXQhy7XafCf1l70wtZ9/82P/H
+   22w86HIhgc9qx4+LL5ZYwNodWoNU18mSLN2ViGk0h74mVyFBeayQFxQVu
+   PHYrED0p3NEsbJoVifZ4ZN3RYdVXtFMGsnbO97SdcR/iNoVkb3A5J1s2W
+   A==;
+IronPort-SDR: F/+dvg5lRPx7eKQyw23xS7HLpnE4FYXtZ8EtKpK6hDMn9HozjmEqH2vgb0lu97Ix4Sl3UFAmQ1
+ 2Y5aPo9/4mCfizxZqkjw+psT24qpmbiHCE3IhVvw4UL8fHlb/dVC5int1y51qqltL/HJADLepX
+ JISuaBeHpfwWrGqYKEjkDe3YOd/VtEwV/6gdekP2e29lK6fp5Dfs4Y3h+3vftZo6cWM/lDca/R
+ aoyKnMJ+pNYvQwiSwQTahcOuwbuFEVlQleFJkAv5TiAsMhdoX3FtzdHiuadu/phrpbc2Pc66tE
+ jBw=
+X-IronPort-AV: E=Sophos;i="5.81,155,1610380800"; 
+   d="scan'208";a="163683696"
+Received: from uls-op-cesaip02.wdc.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
+  by ob1.hgst.iphmx.com with ESMTP; 05 Feb 2021 22:46:51 +0800
+IronPort-SDR: Wf+AO90Vr0IY9WX9NmyRLwNfdTYZTLDZqvnfZhUrAVoaWLBxJatcxbvFR7kYlih915ZmJRBm6O
+ pcqDYS1XdSQ4MVh89MJY70ycaW9LNiG2zNuzv7/SoBWz6++ZwudbU83HeEl+9/3rQtm+uHMt1/
+ /VT5NlcAcztJGloBj4lZGgMPerfJeI2Rtv5U78P9hoYygywJY8RwmPpxEnsE6fup/tPqv3aedg
+ hvWVav63WYflmaxnEbjLCQERFU2AkTzRQ2IpEtKujm+m/pk+JEoQTOePOI8tlg9QBg3kLFNlAS
+ 7zLT7oKD7FNssi3nDK2NssPX
+Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 05 Feb 2021 06:28:53 -0800
+IronPort-SDR: NzR6jfQ2IjhxqcIMWPIVSNyPshTRZgggpaRxs+JW1x8sb94HA/I0C4giK2s6UbM6txuDwRPafO
+ buJcE6fQgF/LCOWw9PNiNfPTFKSwQkUx4uo4V/5bk8DfPf2TVp4g1yQBeVO1Sain6K2w5rbDyc
+ c+YxQRH9PxlnmQG4k/PqvmUq+70sMVqpXtdTbWmcV5kCbm7mHad3tDc7cjA93riQJJC4vRtgnI
+ rYDnDyMKkNUUS6HZzyoFLCtHFcuE1fnD2W8flyIoRSDHz55zD3UuZF9L5FtT0MnjQmnMg47U/U
+ McE=
+WDCIronportException: Internal
+Received: from jfklab-fym3sg2.ad.shared (HELO naota-xeon) ([10.84.71.79])
+  by uls-op-cesaip01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 05 Feb 2021 06:46:50 -0800
+Date:   Fri, 5 Feb 2021 23:46:48 +0900
+From:   Naohiro Aota <naohiro.aota@wdc.com>
+To:     Filipe Manana <fdmanana@gmail.com>
 Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>,
         David Sterba <dsterba@suse.com>, hare@suse.com,
         linux-fsdevel <linux-fsdevel@vger.kernel.org>,
         Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Subject: Re: [PATCH v15 43/43] btrfs: zoned: deal with holes writing out
+ tree-log pages
+Message-ID: <20210205144648.lem3344kon2ncfli@naota-xeon>
+References: <cover.1612433345.git.naohiro.aota@wdc.com>
+ <b36444df121d46c6d9638a8ae8eacecaa845fbe4.1612434091.git.naohiro.aota@wdc.com>
+ <20210205092635.i6w3c7brawlv6pgs@naota-xeon>
+ <CAL3q7H6REfruE-DSyiqZQ_Y0=HmXbiTbEC3d18Q7+3Z7pf5QzQ@mail.gmail.com>
+ <CAL3q7H7YkUAJ1h_hQzJ5C_ek5DD==V1rD1petxrs1aDru5j1+A@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <CAL3q7H7YkUAJ1h_hQzJ5C_ek5DD==V1rD1petxrs1aDru5j1+A@mail.gmail.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Feb 5, 2021 at 2:58 PM Naohiro Aota <naohiro.aota@wdc.com> wrote:
->
-> Since the zoned filesystem requires sequential write out of metadata, we
-> cannot proceed with a hole in tree-log pages. When such a hole exists,
-> btree_write_cache_pages() will return -EAGAIN. This happens when someone,
-> e.g., a concurrent transaction commit, writes a dirty extent in this
-> tree-log commit.
->
-> If we are not going to wait for the extents, we can hope the concurrent
-> writing fills the hole for us. So, we can ignore the error in this case a=
-nd
-> hope the next write will succeed.
->
-> If we want to wait for them and got the error, we cannot wait for them
-> because it will cause a deadlock. So, let's bail out to a full commit in
-> this case.
->
-> Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+On Fri, Feb 05, 2021 at 02:19:50PM +0000, Filipe Manana wrote:
+> On Fri, Feb 5, 2021 at 11:49 AM Filipe Manana <fdmanana@gmail.com> wrote:
+> >
+> > On Fri, Feb 5, 2021 at 9:26 AM Naohiro Aota <naohiro.aota@wdc.com> wrote:
+> > >
+> > > Since the zoned filesystem requires sequential write out of metadata, we
+> > > cannot proceed with a hole in tree-log pages. When such a hole exists,
+> > > btree_write_cache_pages() will return -EAGAIN. We cannot wait for the range
+> > > to be written, because it will cause a deadlock. So, let's bail out to a
+> > > full commit in this case.
+> > >
+> > > Cc: Filipe Manana <fdmanana@gmail.com>
+> > > Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+> > > ---
+> > >  fs/btrfs/tree-log.c | 19 ++++++++++++++++++-
+> > >  1 file changed, 18 insertions(+), 1 deletion(-)
+> > >
+> > > This patch solves a regression introduced by fixing patch 40. I'm
+> > > sorry for the confusing patch numbering.
+> >
+> > Hum, how does patch 40 can cause this?
+> > And is it before the fixup or after?
+> >
+> > >
+> > > diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+> > > index 4e72794342c0..629e605cd62d 100644
+> > > --- a/fs/btrfs/tree-log.c
+> > > +++ b/fs/btrfs/tree-log.c
+> > > @@ -3120,6 +3120,14 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+> > >          */
+> > >         blk_start_plug(&plug);
+> > >         ret = btrfs_write_marked_extents(fs_info, &log->dirty_log_pages, mark);
+> > > +       /*
+> > > +        * There is a hole writing out the extents and cannot proceed it on
+> > > +        * zoned filesystem, which require sequential writing. We can
+> >
+> > require -> requires
+> >
+> > > +        * ignore the error for now, since we don't wait for completion for
+> > > +        * now.
+> >
+> > So why can we ignore the error for now?
+> > Why not just bail out here and mark the log for full commit? (without
+> > a transaction abort)
+> >
+> > > +        */
+> > > +       if (ret == -EAGAIN)
+> > > +               ret = 0;
+> 
+> Thinking again about this, it would be safer, and self-documenting to
+> check here that we are in zoned mode:
+> 
+> if (ret == -EAGAIN && is_zoned)
+>     ret = 0;
+> 
+> Because if we start to get -EAGAIN here one day, from non-zoned code,
+> we risk not writing out some extent buffer and getting a corrupt log,
+> which may be very hard to find.
+> With that additional check in place, we'll end up aborting the
+> transaction with -EAGAIN and notice the problem much sooner.
 
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
+Yeah, I agree.
 
-It looks good now, thanks!
+I'll post a new version with the comments revised and using "if (ret
+== -EAGAIN && btrfs_is_zoned(fs_info))".
 
-> ---
->  fs/btrfs/tree-log.c | 23 ++++++++++++++++++++++-
->  1 file changed, 22 insertions(+), 1 deletion(-)
+> > >         if (ret) {
+> > >                 blk_finish_plug(&plug);
+> > >                 btrfs_abort_transaction(trans, ret);
+> > > @@ -3229,7 +3237,16 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+> > >                                          &log_root_tree->dirty_log_pages,
+> > >                                          EXTENT_DIRTY | EXTENT_NEW);
+> > >         blk_finish_plug(&plug);
+> > > -       if (ret) {
+> > > +       /*
+> > > +        * There is a hole in the extents, and failed to sequential write
+> > > +        * on zoned filesystem. We cannot wait for this write outs, sinc it
+> >
+> > this -> these
+> >
+> > > +        * cause a deadlock. Bail out to the full commit, instead.
+> > > +        */
+> > > +       if (ret == -EAGAIN) {
+> 
+> I would add "&& is_zoned" here too.
+> 
+> Thanks.
 >
-> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-> index fc04625cbbd1..d90695c1ab6c 100644
-> --- a/fs/btrfs/tree-log.c
-> +++ b/fs/btrfs/tree-log.c
-> @@ -3120,6 +3120,17 @@ int btrfs_sync_log(struct btrfs_trans_handle *tran=
-s,
->          */
->         blk_start_plug(&plug);
->         ret =3D btrfs_write_marked_extents(fs_info, &log->dirty_log_pages=
-, mark);
-> +       /*
-> +        * -EAGAIN happens when someone, e.g., a concurrent transaction
-> +        *  commit, writes a dirty extent in this tree-log commit. This
-> +        *  concurrent write will create a hole writing out the extents,
-> +        *  and we cannot proceed on a zoned filesystem, requiring
-> +        *  sequential writing. While we can bail out to a full commit
-> +        *  here, but we can continue hoping the concurrent writing fills
-> +        *  the hole.
-> +        */
-> +       if (ret =3D=3D -EAGAIN && btrfs_is_zoned(fs_info))
-> +               ret =3D 0;
->         if (ret) {
->                 blk_finish_plug(&plug);
->                 btrfs_abort_transaction(trans, ret);
-> @@ -3242,7 +3253,17 @@ int btrfs_sync_log(struct btrfs_trans_handle *tran=
-s,
->                                          &log_root_tree->dirty_log_pages,
->                                          EXTENT_DIRTY | EXTENT_NEW);
->         blk_finish_plug(&plug);
-> -       if (ret) {
-> +       /*
-> +        * As described above, -EAGAIN indicates a hole in the extents. W=
-e
-> +        * cannot wait for these write outs since the waiting cause a
-> +        * deadlock. Bail out to the full commit instead.
-> +        */
-> +       if (ret =3D=3D -EAGAIN && btrfs_is_zoned(fs_info)) {
-> +               btrfs_set_log_full_commit(trans);
-> +               btrfs_wait_tree_log_extents(log, mark);
-> +               mutex_unlock(&log_root_tree->log_mutex);
-> +               goto out_wake_log_root;
-> +       } else if (ret) {
->                 btrfs_set_log_full_commit(trans);
->                 btrfs_abort_transaction(trans, ret);
->                 mutex_unlock(&log_root_tree->log_mutex);
+> 
+> > > +               btrfs_wait_tree_log_extents(log, mark);
+> > > +               mutex_unlock(&log_root_tree->log_mutex);
+> > > +               goto out_wake_log_root;
+> >
+> > Must also call btrfs_set_log_full_commit(trans);
+> >
+> > Thanks.
+> >
+> > > +       } else if (ret) {
+> > >                 btrfs_set_log_full_commit(trans);
+> > >                 btrfs_abort_transaction(trans, ret);
+> > >                 mutex_unlock(&log_root_tree->log_mutex);
+> > > --
+> > > 2.30.0
+> > >
+> >
+> >
+> > --
+> > Filipe David Manana,
+> >
+> > “Whether you think you can, or you think you can't — you're right.”
+> 
+> 
+> 
 > --
-> 2.30.0
->
-
-
---=20
-Filipe David Manana,
-
-=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
- right.=E2=80=9D
+> Filipe David Manana,
+> 
+> “Whether you think you can, or you think you can't — you're right.”

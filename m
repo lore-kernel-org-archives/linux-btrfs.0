@@ -2,217 +2,248 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
+X-Spam-Status: No, score=-8.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8EE6BC43381
-	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Feb 2021 22:52:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 512B3C433DB
+	for <linux-btrfs@archiver.kernel.org>; Sat,  6 Feb 2021 02:40:42 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 4824165009
-	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Feb 2021 22:52:04 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0FF5D64FEF
+	for <linux-btrfs@archiver.kernel.org>; Sat,  6 Feb 2021 02:40:42 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231646AbhBEWue (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 5 Feb 2021 17:50:34 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35842 "EHLO
+        id S230122AbhBFCje (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 5 Feb 2021 21:39:34 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37358 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231277AbhBENKv (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Feb 2021 08:10:51 -0500
-Received: from mail-qk1-x730.google.com (mail-qk1-x730.google.com [IPv6:2607:f8b0:4864:20::730])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2E9A4C061221;
-        Fri,  5 Feb 2021 05:07:41 -0800 (PST)
-Received: by mail-qk1-x730.google.com with SMTP id a19so6777832qka.2;
-        Fri, 05 Feb 2021 05:07:41 -0800 (PST)
+        with ESMTP id S230258AbhBFCdX (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Feb 2021 21:33:23 -0500
+Received: from mail-wm1-x32e.google.com (mail-wm1-x32e.google.com [IPv6:2a00:1450:4864:20::32e])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2CA53C03327C
+        for <linux-btrfs@vger.kernel.org>; Fri,  5 Feb 2021 17:57:51 -0800 (PST)
+Received: by mail-wm1-x32e.google.com with SMTP id t142so5298027wmt.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 05 Feb 2021 17:57:51 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
-         :subject:to:cc:content-transfer-encoding;
-        bh=eifO5w09vaVkYD/HNL+OdTyeOvd9OOp5ZX1K5KzvrTo=;
-        b=uux1/nfGwEFnTg/EJ2HdZY7y2r9LwQKaqqCMlBfo/r+87x8xBc1uCR0W4HA3Am8xxl
-         ND1paPnztrtHvNqVIgvl09Jb1LpjoEee062glaCBFJhxTMlYL2zD4VLZjUfhr7KJXI/X
-         fJvt+NE/9xjR/1gC3nfciFI0dFE3sHddFXC0ahFKSrUk0s6KY4qJR8IwJ3WKvRGVXVK4
-         E+3VIHAJpsRFvpC08M2b03BT4xu2f3usNNGnS1eJnSkz6j72tNoGD4aOY1kmQB2mfx+W
-         pFA/+RQmR/jGXkd87VAeGcFW6y6uO9LeK2MDx1Lyd/NE+9NNWjpB/gI+QQZ3d6tEahWl
-         72CQ==
+        d=rkjnsn-net.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc:content-transfer-encoding;
+        bh=M87ILczPV+TPGsVbbp9Eza7zJDPnh98rpo4/KGX1HTc=;
+        b=aAG1oMJWdNMmosNj56vJG/izGIBBzVtq7bNaKq82QBPlrE08/O8WiRpHr+WDCd4eN2
+         oNvq78lS0g5e0ffjY9fgR+Gf4HI4GDw32ET7bRbCaSLYka0fREyFuNZOn6eddEKGkEzK
+         E4MZdGMyKP43JA33BO0t9bfFwy6OuNgnNmS0wQ+Tkp32MnaRT5LANJPN06qm06bTuMdh
+         xLa8ZlKGVyjjxF6RIrtYJMoq6E+BA7TY58dSwk4BE8PdE86DQ82YkE0hg00d/6Kay6je
+         R3V55Yb/ynoZ7uHlhAfZKp07hgo7nkM0x7WkBgBrHgVMc9u2Kru/uJIwxC+lpg/3xC1V
+         KY5w==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
-         :from:date:message-id:subject:to:cc:content-transfer-encoding;
-        bh=eifO5w09vaVkYD/HNL+OdTyeOvd9OOp5ZX1K5KzvrTo=;
-        b=NbkmFD8Cy96L60BIf4Y9FbWQ9BT7BWsXHZ05oxxb+sG6qs4Jvsq9gOjBMIuiW+J6Pt
-         rDddVTwzMQZwXpRhg3cDm7ipK+fmdRVfdf/nNz9YzMyyxy9sAJxgMLuD7ZxYRhy/MuiR
-         upKTIPIYYZwSOHVgOYyLBJV8UqIHJCuY/tU9XaWtuTkd39E5WG6pzt2NNvFXpEWnkVsN
-         F07TaQkR/zQSuYCQN4fDGKQVjwc7YE9IkWpwPlPJuuiQd9tCBEfqrZyp00DRSx/xw3bY
-         sWM2PalPNlJ/NoaCWX4EBsWLLGTLYw/F38OwUj/Z+bfmbQfSutfU1dyze4JIVzsaiMYd
-         /PlQ==
-X-Gm-Message-State: AOAM531LEjxhayoPDMFnkuGZcg252qAUj41hrsbBoUaD5pCbPUqG2O1w
-        8SZihCe1SZQ92rmlxzO6Oc2RSjUZmlw42Y9tPio=
-X-Google-Smtp-Source: ABdhPJx6LvF5n7cqNVXse1TC5iGMbFDY6ruGVS89G9oW4Vnhy82FeiuC3aqWafe15OIyMsm+d23xaqLM96nQCFOTmFY=
-X-Received: by 2002:a37:6491:: with SMTP id y139mr3989047qkb.479.1612530460261;
- Fri, 05 Feb 2021 05:07:40 -0800 (PST)
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc:content-transfer-encoding;
+        bh=M87ILczPV+TPGsVbbp9Eza7zJDPnh98rpo4/KGX1HTc=;
+        b=owN9qjY6oLzFUUS3IJgK28mzNftMmUBlr1weY7DLJluEB/38/ss7jn9ZR+7RbvERiw
+         uj/qfDqcQkc3K0oGoyyFOhF4o9dvHdTTpxPoS7GazxEAAjLeYhSdR2FqsD19DZfeEETV
+         iOigm4dA+ErTSTLfzamRWWLGIuEWlZOv9+HXgp8855hrJVxUaxpeqkCron5rIo4Ee58J
+         jNP3dbF2Nu8/tOodsHS3vmMMpsC0xe4VyIf0gZE7D3AjqFXVID0KNFpirhl07XVHB/66
+         2CPsABJjhPnm/FCzdQWVmbGp7/UCuO3Igp6/MFGkemcC6kwPj6VliTMR60i4vC7cx5pg
+         IFFw==
+X-Gm-Message-State: AOAM530skIF3h593dX1ZIIyzzBjZKnSUo6A2NC7bPUXzuoTzVS7NoKc3
+        s6IfFr7iQYMmJzFZE2PjY9+8vuvwPDOetiXZqXuhyw==
+X-Google-Smtp-Source: ABdhPJzTw1pXzlWBRpe4PeVSl366r2Qc7oYIJ9Ey/Ldok179d7joKNZpTkQJI56UnuK/7+vhaW70ifMfrEYnjRWsB5c=
+X-Received: by 2002:a7b:cb45:: with SMTP id v5mr5629936wmj.58.1612576669597;
+ Fri, 05 Feb 2021 17:57:49 -0800 (PST)
 MIME-Version: 1.0
-References: <cover.1612433345.git.naohiro.aota@wdc.com> <b36444df121d46c6d9638a8ae8eacecaa845fbe4.1612434091.git.naohiro.aota@wdc.com>
- <20210205092635.i6w3c7brawlv6pgs@naota-xeon> <CAL3q7H6REfruE-DSyiqZQ_Y0=HmXbiTbEC3d18Q7+3Z7pf5QzQ@mail.gmail.com>
- <20210205125526.4oeqd3utuho3b2hv@naota-xeon>
-In-Reply-To: <20210205125526.4oeqd3utuho3b2hv@naota-xeon>
-Reply-To: fdmanana@gmail.com
-From:   Filipe Manana <fdmanana@gmail.com>
-Date:   Fri, 5 Feb 2021 13:07:29 +0000
-Message-ID: <CAL3q7H6x4hcs3T17EKPQkHwth_2_M6c=c8=GxGy1eu1nDDDAUQ@mail.gmail.com>
-Subject: Re: [PATCH v15 43/43] btrfs: zoned: deal with holes writing out
- tree-log pages
-To:     Naohiro Aota <naohiro.aota@wdc.com>
-Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>,
-        David Sterba <dsterba@suse.com>, hare@suse.com,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>
+References: <CAMj6ewO7PGBoN565WYz_bqL6nGszweNouP-Fphok9+GGpGn8gg@mail.gmail.com>
+ <8aa09a61-aa1c-5dcd-093f-ec096a38a7b5@gmx.com> <CAMj6ewO229vq6=s+T7GhUegwDADv4dzhqPiM0jo10QiKujvytA@mail.gmail.com>
+ <684e89f3-666f-6ae6-5aa2-a4db350c1cd4@gmx.com> <CAMj6ewMqXLtrBQgTJuz04v3MBZ0W95fU4pT0jP6kFhuP830TuA@mail.gmail.com>
+ <218f6448-c558-2551-e058-8a69caadcb23@gmx.com> <CAMj6ewPR8hVYmUSoNWVk6gZvy-HyKnmtMXexAr2f4VQU_7bbUw@mail.gmail.com>
+ <3b2fe3d7-1919-d236-e6bb-483593287cc5@gmx.com> <CAMj6ewNDQFzXsvF5c1=raJc11iMvMKcHH=AbkUkrNeV2e3XGVg@mail.gmail.com>
+ <CAMj6ewPiEvXbtHC1auSfRag5QGtYJxwH_Hvoi2t_18uDSxzm8w@mail.gmail.com>
+ <CAMj6ewNjSs-_3akOquO1Zry5RBNEPqQWf7ZKjs8JOzTA7ZGZ7w@mail.gmail.com>
+ <2abb2701-5dde-cd5d-dd25-084682313b11@gmx.com> <b2bbff7d-22d0-84c2-7749-ac9e27d4ab3d@gmx.com>
+ <CAMj6ewOqCJTGjykDijun9_LWYELA=92HrE+KjGo-ehJTutR_+w@mail.gmail.com>
+ <CAMj6ewP-NK3g1xzHNF+fKt6M+_W-ec29Sq+CBtwcb1dcqc7dNA@mail.gmail.com>
+ <CAMj6ewPtDJdkQ=H3DO6BSPucdkqSoHOkeb-xgTd8mo+AaUWhkA@mail.gmail.com>
+ <16d35c47-40c5-25a9-c2ba-f6aab00db8e6@gmx.com> <mtwofibp.fsf@damenly.su> <CAMj6ewNYSnFUFPER06qweZaypWC6qVHmUX7gYxRXO7Gbuw_16A@mail.gmail.com>
+In-Reply-To: <CAMj6ewNYSnFUFPER06qweZaypWC6qVHmUX7gYxRXO7Gbuw_16A@mail.gmail.com>
+From:   Erik Jensen <erikjensen@rkjnsn.net>
+Date:   Fri, 5 Feb 2021 17:57:38 -0800
+Message-ID: <CAMj6ewMSw+UzZHhEEN=rhxN8O3pN9gWA05usAodk2xX5+s-Qjw@mail.gmail.com>
+Subject: Re: "bad tree block start" when trying to mount on ARM
+To:     Su Yue <l@damenly.su>
+Cc:     Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Hugo Mills <hugo@carfax.org.uk>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Feb 5, 2021 at 12:55 PM Naohiro Aota <naohiro.aota@wdc.com> wrote:
->
-> On Fri, Feb 05, 2021 at 11:49:05AM +0000, Filipe Manana wrote:
-> > On Fri, Feb 5, 2021 at 9:26 AM Naohiro Aota <naohiro.aota@wdc.com> wrot=
-e:
+On Wed, Feb 3, 2021 at 10:16 PM Erik Jensen <erikjensen@rkjnsn.net> wrote:
+> On Sun, Jan 31, 2021 at 9:50 PM Su Yue <l@damenly.su> wrote:
+> > On Mon 01 Feb 2021 at 10:35, Qu Wenruo <quwenruo.btrfs@gmx.com>
+> > wrote:
+> > > On 2021/1/29 =E4=B8=8B=E5=8D=882:39, Erik Jensen wrote:
+> > >> On Mon, Jan 25, 2021 at 8:54 PM Erik Jensen
+> > >> <erikjensen@rkjnsn.net> wrote:
+> > >>> On Wed, Jan 20, 2021 at 1:08 AM Erik Jensen
+> > >>> <erikjensen@rkjnsn.net> wrote:
+> > >>>> On Wed, Jan 20, 2021 at 12:31 AM Qu Wenruo
+> > >>>> <quwenruo.btrfs@gmx.com> wrote:
+> > >>>>> On 2021/1/20 =E4=B8=8B=E5=8D=884:21, Qu Wenruo wrote:
+> > >>>>>> On 2021/1/19 =E4=B8=8B=E5=8D=885:28, Erik Jensen wrote:
+> > >>>>>>> On Mon, Jan 18, 2021 at 9:22 PM Erik Jensen
+> > >>>>>>> <erikjensen@rkjnsn.net>
+> > >>>>>>> wrote:
+> > >>>>>>>>
+> > >>>>>>>> On Mon, Jan 18, 2021 at 4:12 AM Erik Jensen
+> > >>>>>>>> <erikjensen@rkjnsn.net>
+> > >>>>>>>> wrote:
+> > >>>>>>>>>
+> > >>>>>>>>> The offending system is indeed ARMv7 (specifically a
+> > >>>>>>>>> Marvell ARMADA=C2=AE
+> > >>>>>>>>> 388), but I believe the Broadcom BCM2835 in my Raspberry
+> > >>>>>>>>> Pi is
+> > >>>>>>>>> actually ARMv6 (with hardware float support).
+> > >>>>>>>>
+> > >>>>>>>> Using NBD, I have verified that I receive the same error
+> > >>>>>>>> when
+> > >>>>>>>> attempting to mount the filesystem on my ARMv6 Raspberry
+> > >>>>>>>> Pi:
+> > >>>>>>>> [ 3491.339572] BTRFS info (device dm-4): disk space
+> > >>>>>>>> caching is enabled
+> > >>>>>>>> [ 3491.394584] BTRFS info (device dm-4): has skinny
+> > >>>>>>>> extents
+> > >>>>>>>> [ 3492.385095] BTRFS error (device dm-4): bad tree block
+> > >>>>>>>> start, want
+> > >>>>>>>> 26207780683776 have 3395945502747707095
+> > >>>>>>>> [ 3492.514071] BTRFS error (device dm-4): bad tree block
+> > >>>>>>>> start, want
+> > >>>>>>>> 26207780683776 have 3395945502747707095
+> > >>>>>>>> [ 3492.553599] BTRFS warning (device dm-4): failed to
+> > >>>>>>>> read tree root
+> > >>>>>>>> [ 3492.865368] BTRFS error (device dm-4): open_ctree
+> > >>>>>>>> failed
+> > >>>>>>>>
+> > >>>>>>>> The Raspberry Pi is running Linux 5.4.83.
+> > >>>>>>>>
+> > >>>>>>>
+> > >>>>>>> Okay, after some more testing, ARM seems to be irrelevant,
+> > >>>>>>> and 32-bit
+> > >>>>>>> is the key factor. On a whim, I booted up an i686, 5.8.14
+> > >>>>>>> kernel in a
+> > >>>>>>> VM, attached the drives via NBD, ran cryptsetup, tried to
+> > >>>>>>> mount, and=E2=80=A6
+> > >>>>>>> I got the exact same error message.
+> > >>>>>>>
+> > >>>>>> My educated guess is on 32bit platforms, we passed
+> > >>>>>> incorrect sector into
+> > >>>>>> bio, thus gave us garbage.
+> > >>>>>
+> > >>>>> To prove that, you can use bcc tool to verify it.
+> > >>>>> biosnoop can do that:
+> > >>>>> https://github.com/iovisor/bcc/blob/master/tools/biosnoop_example=
+.txt
+> > >>>>>
+> > >>>>> Just try mount the fs with biosnoop running.
+> > >>>>> With "btrfs ins dump-tree -t chunk <dev>", we can manually
+> > >>>>> calculate the
+> > >>>>> offset of each read to see if they matches.
+> > >>>>> If not match, it would prove my assumption and give us a
+> > >>>>> pretty good
+> > >>>>> clue to fix.
+> > >>>>>
+> > >>>>> Thanks,
+> > >>>>> Qu
+> > >>>>>
+> > >>>>>>
+> > >>>>>> Is this bug happening only on the fs, or any other btrfs
+> > >>>>>> can also
+> > >>>>>> trigger similar problems on 32bit platforms?
+> > >>>>>>
+> > >>>>>> Thanks,
+> > >>>>>> Qu
+> > >>>>
+> > >>>> I have only observed this error on this file system.
+> > >>>> Additionally, the
+> > >>>> error mounting with the NAS only started after I did a `btrfs
+> > >>>> replace`
+> > >>>> on all five 8TB drives using an x86_64 system. (Ironically, I
+> > >>>> did this
+> > >>>> with the goal of making it faster to use the filesystem on
+> > >>>> the NAS by
+> > >>>> re-encrypting the drives to use a cipher supported by my
+> > >>>> NAS's crypto
+> > >>>> accelerator.)
+> > >>>>
+> > >>>> Maybe this process of shuffling 40TB around caused some value
+> > >>>> in the
+> > >>>> filesystem to increment to the point that a calculation using
+> > >>>> it
+> > >>>> overflows on 32-bit systems?
+> > >>>>
+> > >>>> I should be able to try biosnoop later this week, and I'll
+> > >>>> report back
+> > >>>> with the results.
+> > >>>
+> > >>> Okay, I tried running biosnoop, but I seem to be running into
+> > >>> this
+> > >>> bug: https://github.com/iovisor/bcc/issues/3241 (That bug was
+> > >>> reported
+> > >>> for cpudist, but I'm seeing the same error when I try to run
+> > >>> biosnoop.)
+> > >>>
+> > >>> Anything else I can try?
+> > >>
+> > >> Is it possible to add printks to retrieve the same data?
+> > >>
+> > > Sorry for the late reply, busying testing subpage patchset. (And
+> > > unfortunately no much process).
 > > >
-> > > Since the zoned filesystem requires sequential write out of metadata,=
- we
-> > > cannot proceed with a hole in tree-log pages. When such a hole exists=
-,
-> > > btree_write_cache_pages() will return -EAGAIN. We cannot wait for the=
- range
-> > > to be written, because it will cause a deadlock. So, let's bail out t=
-o a
-> > > full commit in this case.
+> > > If bcc is not possible, you can still use ftrace events, but
+> > > unfortunately I didn't find good enough one. (In fact, the trace
+> > > events
+> > > for block layer is pretty limited).
 > > >
-> > > Cc: Filipe Manana <fdmanana@gmail.com>
-> > > Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
-> > > ---
-> > >  fs/btrfs/tree-log.c | 19 ++++++++++++++++++-
-> > >  1 file changed, 18 insertions(+), 1 deletion(-)
+> > > You can try to add printk()s in function blk_account_io_done()
+> > > to
+> > > emulate what's done in function trace_req_completion() of
+> > > biosnoop.
 > > >
-> > > This patch solves a regression introduced by fixing patch 40. I'm
-> > > sorry for the confusing patch numbering.
-> >
-> > Hum, how does patch 40 can cause this?
-> > And is it before the fixup or after?
->
-> With pre-5.10 code base + zoned series at that time, it passed
-> xfstests without this patch.
->
-> With current code base + zoned series without the fixup for patch 40,
-> it also passed the tests, because we are mostly bailing out to a full
-> commit.
->
-> The fixup now stressed the new fsync code on zoned mode and revealed
-> an issue to have -EAGAIN from btrfs_write_marked_extents(). This error
-> happens when a concurrent transaction commit is writing a dirty extent
-> in this tree-log commit. This issue didn't occur previously because of
-> a longer critical section, I guess.
-
-Ok, if I understand you correctly, the problem is a transaction commit
-and an fsync both allocating metadata extents at the same time.
-
->
-> >
-> > >
-> > > diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-> > > index 4e72794342c0..629e605cd62d 100644
-> > > --- a/fs/btrfs/tree-log.c
-> > > +++ b/fs/btrfs/tree-log.c
-> > > @@ -3120,6 +3120,14 @@ int btrfs_sync_log(struct btrfs_trans_handle *=
-trans,
-> > >          */
-> > >         blk_start_plug(&plug);
-> > >         ret =3D btrfs_write_marked_extents(fs_info, &log->dirty_log_p=
-ages, mark);
-> > > +       /*
-> > > +        * There is a hole writing out the extents and cannot proceed=
- it on
-> > > +        * zoned filesystem, which require sequential writing. We can
-> >
-> > require -> requires
-> >
-> > > +        * ignore the error for now, since we don't wait for completi=
-on for
-> > > +        * now.
-> >
-> > So why can we ignore the error for now?
-> > Why not just bail out here and mark the log for full commit? (without
-> > a transaction abort)
->
-> As described above, -EAGAIN happens when a concurrent process writes
-> out an extent buffer of this tree-log commit. This concurrent write
-> out will fill a hole for us, so the next write out might
-> succeed. Indeed we can bail out here, but I opted to try the next
-> write.
-
-Ok, if I understand you correctly, you mean it will be fine if after
-this point no one allocates metadata extents from the hole?
-
-I think such a clear explanation would fit nicely in the comment.
-
-Thanks.
-
->
-> > > +        */
-> > > +       if (ret =3D=3D -EAGAIN)
-> > > +               ret =3D 0;
-> > >         if (ret) {
-> > >                 blk_finish_plug(&plug);
-> > >                 btrfs_abort_transaction(trans, ret);
-> > > @@ -3229,7 +3237,16 @@ int btrfs_sync_log(struct btrfs_trans_handle *=
-trans,
-> > >                                          &log_root_tree->dirty_log_pa=
-ges,
-> > >                                          EXTENT_DIRTY | EXTENT_NEW);
-> > >         blk_finish_plug(&plug);
-> > > -       if (ret) {
-> > > +       /*
-> > > +        * There is a hole in the extents, and failed to sequential w=
-rite
-> > > +        * on zoned filesystem. We cannot wait for this write outs, s=
-inc it
-> >
-> > this -> these
-> >
-> > > +        * cause a deadlock. Bail out to the full commit, instead.
-> > > +        */
-> > > +       if (ret =3D=3D -EAGAIN) {
-> > > +               btrfs_wait_tree_log_extents(log, mark);
-> > > +               mutex_unlock(&log_root_tree->log_mutex);
-> > > +               goto out_wake_log_root;
-> >
-> > Must also call btrfs_set_log_full_commit(trans);
->
-> Oops, I missed this one.
->
-> > Thanks.
-> >
-> > > +       } else if (ret) {
-> > >                 btrfs_set_log_full_commit(trans);
-> > >                 btrfs_abort_transaction(trans, ret);
-> > >                 mutex_unlock(&log_root_tree->log_mutex);
-> > > --
-> > > 2.30.0
+> > > The time delta is not important, we only need the device name,
+> > > sector
+> > > and length.
 > > >
 > >
+> > Tips: There are ftrace events called block:block_rq_issue and
+> > block:block_rq_complete to fetch those infomation. No need to
+> > add printk().
 > >
-> > --
-> > Filipe David Manana,
+> > >
+> > > Thanks,
+> > > Qu
 > >
-> > =E2=80=9CWhether you think you can, or you think you can't =E2=80=94 yo=
-u're right.=E2=80=9D
+>
+> Okay, here's the output of the trace:
+> https://gist.github.com/rkjnsn/4cf606874962b5a0284249b2f2e934f5
+>
+> And here's the output dump-tree:
+> https://gist.github.com/rkjnsn/630b558eaf90369478d670a1cb54b40f
+>
+> One important note is that ftrace only captured requests at the
+> underlying block device (nbd, in this case), not at the device mapper
+> level. The encryption header on these drives is 16 MiB, so the offset
+> reported in the trace will be 16777216 bytes larger than the offset
+> brtfs was actually trying to read at the time.
+>
+> In case it's helpful, I believe this is the mapping of which
+> (encrypted) nbd device node in the trace corresponds to which
+> (decrypted) filesystem device:
+> 43,0    33c75e20-26f2-4328-a565-5ef3484832aa
+> 43,32   9bdfdb8f-abfb-47c5-90af-d360d754a958
+> 43,64   39a9463d-65f5-499b-bca8-dae6b52eb729
+> 43,96   f1174dea-ea10-42f2-96b4-4589a2980684
+> 43,128  e669d804-6ea2-4516-8536-1d266f88ebad
 
-
-
---=20
-Filipe David Manana,
-
-=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
- right.=E2=80=9D
+What are the chances it's something simple like a long getting used
+somewhere in the code that should actually be a 64-bit int?

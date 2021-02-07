@@ -2,137 +2,136 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 24112C433DB
-	for <linux-btrfs@archiver.kernel.org>; Sat,  6 Feb 2021 05:01:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 79232C4332E
+	for <linux-btrfs@archiver.kernel.org>; Sun,  7 Feb 2021 17:10:40 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id DF5B264E49
-	for <linux-btrfs@archiver.kernel.org>; Sat,  6 Feb 2021 05:01:54 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 564C864DC4
+	for <linux-btrfs@archiver.kernel.org>; Sun,  7 Feb 2021 17:10:40 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230046AbhBFFBd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 6 Feb 2021 00:01:33 -0500
-Received: from mail.mailmag.net ([5.135.159.181]:41970 "EHLO mail.mailmag.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S230427AbhBFFBI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 6 Feb 2021 00:01:08 -0500
-Received: from authenticated-user (mail.mailmag.net [127.0.0.1])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by mail.mailmag.net (Postfix) with ESMTPSA id 70813EC0365;
-        Fri,  5 Feb 2021 20:00:25 -0900 (AKST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=mailmag.net; s=mail;
-        t=1612587625;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=YLiM6+HVOw3ecZqZNehdC7AaFLwnMH7AQAC1gnqs+FU=;
-        b=Mu7Kgk7ja7g04AobZHaDaQvoaxOSaY3J2uyvDXfhZ6p+iY+clzIUA9QZY97tVmBvHiFUW/
-        y/gl4aLr+sumJXfnHxhPBlKhcO/Z+/HEl8+26BckzZ6OR/ngL8VYkfgqovf0bb8npMIghW
-        BruA9PFNZCTmeviP8Q+Nvjzp1K3BzTw=
+        id S229565AbhBGRKV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 7 Feb 2021 12:10:21 -0500
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:52559 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S229445AbhBGRKU (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 7 Feb 2021 12:10:20 -0500
+X-IronPort-AV: E=Sophos;i="5.81,160,1610380800"; 
+   d="scan'208";a="104299365"
+Received: from unknown (HELO cn.fujitsu.com) ([10.167.33.5])
+  by heian.cn.fujitsu.com with ESMTP; 08 Feb 2021 01:09:32 +0800
+Received: from G08CNEXMBPEKD04.g08.fujitsu.local (unknown [10.167.33.201])
+        by cn.fujitsu.com (Postfix) with ESMTP id C6D914CE6033;
+        Mon,  8 Feb 2021 01:09:29 +0800 (CST)
+Received: from G08CNEXJMPEKD02.g08.fujitsu.local (10.167.33.202) by
+ G08CNEXMBPEKD04.g08.fujitsu.local (10.167.33.201) with Microsoft SMTP Server
+ (TLS) id 15.0.1497.2; Mon, 8 Feb 2021 01:09:32 +0800
+Received: from G08CNEXCHPEKD04.g08.fujitsu.local (10.167.33.200) by
+ G08CNEXJMPEKD02.g08.fujitsu.local (10.167.33.202) with Microsoft SMTP Server
+ (TLS) id 15.0.1497.2; Mon, 8 Feb 2021 01:09:31 +0800
+Received: from irides.mr.mr.mr (10.167.225.141) by
+ G08CNEXCHPEKD04.g08.fujitsu.local (10.167.33.209) with Microsoft SMTP Server
+ id 15.0.1497.2 via Frontend Transport; Mon, 8 Feb 2021 01:09:30 +0800
+From:   Shiyang Ruan <ruansy.fnst@cn.fujitsu.com>
+To:     <linux-kernel@vger.kernel.org>, <linux-xfs@vger.kernel.org>,
+        <linux-nvdimm@lists.01.org>, <linux-fsdevel@vger.kernel.org>
+CC:     <darrick.wong@oracle.com>, <dan.j.williams@intel.com>,
+        <willy@infradead.org>, <jack@suse.cz>, <viro@zeniv.linux.org.uk>,
+        <linux-btrfs@vger.kernel.org>, <ocfs2-devel@oss.oracle.com>,
+        <david@fromorbit.com>, <hch@lst.de>, <rgoldwyn@suse.de>
+Subject: [PATCH 1/7] fsdax: Output address in dax_iomap_pfn() and rename it
+Date:   Mon, 8 Feb 2021 01:09:18 +0800
+Message-ID: <20210207170924.2933035-2-ruansy.fnst@cn.fujitsu.com>
+X-Mailer: git-send-email 2.30.0
+In-Reply-To: <20210207170924.2933035-1-ruansy.fnst@cn.fujitsu.com>
+References: <20210207170924.2933035-1-ruansy.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-Date:   Sat, 06 Feb 2021 05:00:24 +0000
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: quoted-printable
-From:   "Joshua" <joshua@mailmag.net>
-Message-ID: <4ea56b2ba7077892079754c2449e923f@mailmag.net>
-Subject: Re: Large multi-device BTRFS array (usually) fails to mount on 
- boot.
-To:     "Qu Wenruo" <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
-In-Reply-To: <45064ba0-08e5-f311-1f9e-9a4ec62abaab@gmx.com>
-References: <45064ba0-08e5-f311-1f9e-9a4ec62abaab@gmx.com>
- <e23a835842fa7ecf5b8877e818bc68ea@mailmag.net>
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=mailmag.net;
-        s=mail; t=1612587625;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=YLiM6+HVOw3ecZqZNehdC7AaFLwnMH7AQAC1gnqs+FU=;
-        b=N9sOtqlGduWgvkeHWB3oOCxLJ9i3u+2A6dQurtfoeohIzRPMgaA5y4Dp/2cNKsEPE7De8V
-        nG7wzTIf2Vu9ifvm0WeL0orBHlHBk4kXY/uLGe5IzoLNGbFPcdnjEXSZbDYjGI2WoEpfIM
-        yjFCe3E49tGt0tJ+/iCqXw6+T9rMWPs=
-ARC-Seal: i=1; s=mail; d=mailmag.net; t=1612587625; a=rsa-sha256; cv=none;
-        b=EeTXfxoFdwJb5z9718pfYE7RpXSVNaT78JFClwBLtPAQY6fHCcToS08XpiNpHTvoYLSR1h
-        Uvy0r0/Mc0xd+Luzw8shSrucmPELFrYFbH8JXGzU5taZY2hdODWUxvcil8vcGSu3wZLe/s
-        wxtHNuihHWd1yeVI3YqqhOVeC5PLrYM=
-ARC-Authentication-Results: i=1;
-        mail.mailmag.net;
-        auth=pass smtp.mailfrom=joshua@mailmag.net
+Content-Transfer-Encoding: 7BIT
+Content-Type:   text/plain; charset=US-ASCII
+X-yoursite-MailScanner-ID: C6D914CE6033.AD132
+X-yoursite-MailScanner: Found to be clean
+X-yoursite-MailScanner-From: ruansy.fnst@cn.fujitsu.com
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-February 3, 2021 4:56 PM, "Qu Wenruo" <quwenruo.btrfs@gmx.com> wrote:=0A=
-=0A> On 2021/2/4 =E4=B8=8A=E5=8D=885:54, joshua@mailmag.net wrote:=0A> =
-=0A>> Good Evening.=0A>> =0A>> I have a large BTRFS array, (14 Drives, ~1=
-00 TB RAW) which has been having problems mounting on=0A>> boot without t=
-iming out. This causes the system to drop to emergency mode. I am then ab=
-le to mount=0A>> the array in emergency mode and all data appears fine, b=
-ut upon reboot it fails again.=0A>> =0A>> I actually first had this probl=
-em around a year ago, and initially put considerable effort into=0A>> ext=
-ending the timeout in systemd, as I believed that to be the problem. Howe=
-ver, all the methods I=0A>> attempted did not work properly or caused the=
- system to continue booting before the array was=0A>> mounted, causing al=
-l sorts of issues. Eventually, I was able to almost completely resolve it=
- by=0A>> defragmenting the extent tree and subvolume tree for each subvol=
-ume. (btrfs fi defrag=0A>> /mountpoint/subvolume/) This seemed to reduce =
-the time required to mount, and made it mount on boot=0A>> the majority o=
-f the time.=0A>> =0A>> Recently I expanded the array yet again by adding =
-another drive, (and some more data) and now I am=0A>> having the same iss=
-ue again. I've posted the relevant entries from my dmesg, as well as some=
-=0A>> information on my array and system below. I ran a defrag as mention=
-ed above on each subvolume, and=0A>> was able to get the system to boot s=
-uccessfully. Any ideas on a more reliable and permanent=0A>> solution thi=
-s this? Thanks much!=0A>> =0A>> dmesg entries upon boot:=0A>> [ 22.775439=
-] BTRFS info (device sdh): use lzo compression, level 0=0A>> [ 22.775441]=
- BTRFS info (device sdh): using free space tree=0A>> [ 22.775442] BTRFS i=
-nfo (device sdh): has skinny extents=0A>> [ 124.250554] BTRFS error (devi=
-ce sdh): open_ctree failed=0A>> =0A>> dmesg entries after running 'mount =
--a' in emergency mode:=0A>> [ 178.317339] BTRFS info (device sdh): force =
-zstd compression, level 2=0A>> [ 178.317342] BTRFS info (device sdh): usi=
-ng free space tree=0A>> [ 178.317343] BTRFS info (device sdh): has skinny=
- extents=0A>> =0A>> uname -a:=0A>> Linux HOSTNAME 5.10.0-2-amd64 #1 SMP D=
-ebian 5.10.9-1 (2021-01-20) x86-64 GNU/Linux=0A>> =0A>> btrfs --version:=
-=0A>> btrfs-progs v5.10=0A>> =0A>> btrfs fi show /mountpoint:=0A>> Label:=
- 'DATA' uuid: {snip}=0A>> Total devices 14 FS bytes used 41.94TiB=0A>> de=
-vid 1 size 2.73TiB used 2.46TiB path /dev/sdh=0A>> devid 2 size 7.28TiB u=
-sed 6.87TiB path /dev/sdm=0A>> devid 3 size 2.73TiB used 2.46TiB path /de=
-v/sdk=0A>> devid 4 size 9.10TiB used 8.57TiB path /dev/sdj=0A>> devid 5 s=
-ize 9.10TiB used 8.57TiB path /dev/sde=0A>> devid 6 size 9.10TiB used 8.5=
-7TiB path /dev/sdn=0A>> devid 7 size 7.28TiB used 4.65TiB path /dev/sdc=
-=0A>> devid 9 size 9.10TiB used 8.57TiB path /dev/sdf=0A>> devid 10 size =
-2.73TiB used 2.21TiB path /dev/sdl=0A>> devid 12 size 2.73TiB used 2.20Ti=
-B path /dev/sdg=0A>> devid 13 size 9.10TiB used 8.57TiB path /dev/sdd=0A>=
-> devid 15 size 7.28TiB used 6.75TiB path /dev/sda=0A>> devid 16 size 7.2=
-8TiB used 6.75TiB path /dev/sdi=0A>> devid 17 size 7.28TiB used 6.75TiB p=
-ath /dev/sdb=0A> =0A> With such a large array, the extent tree is conside=
-rably large.=0A> =0A> And that's causing the mount time problem, as at mo=
-unt we need to load=0A> each block group item into memory.=0A> When exten=
-t tree goes large, the read is mostly random read which is=0A> never a go=
-od thing for HDD.=0A> =0A> I was pushing skinny block group tree for btrf=
-s, which arrange block=0A> group items into a very compact tree, just lik=
-e chunk tree.=0A> =0A> This should greatly improve the mount performance,=
- but there are several=0A> problems:=0A> - The feature is not yet merged=
-=0A> - The feature needs to convert existing fs to the new tree=0A> For y=
-our fs, it may take quite some time=0A> =0A> So unfortunately, no good sh=
-ort term solution yet.=0A> =0A> THanks,=0A> Qu=0A=0AThanks for the inform=
-ation, that's more or less what I was wondering, but didn't really know.=
-=0A=0ALuckily the solution proposed by Graham appears to be working, and =
-'solved' the problem for me, allowing my system to boot reliably.=0A=0ATh=
-e only remaining issue is the annoyance of boot times (mount times) being=
- so long, but luckily that's not a very big deal for my situation, and I =
-don't need to reboot (mount) very frequently.=0A=0A=0AThanks,=0A--Joshua =
-Villwock=0A=0A=0A>> btrfs fi usage /mountpoint:=0A>> Overall:=0A>> Device=
- size: 92.78TiB=0A>> Device allocated: 83.96TiB=0A>> Device unallocated: =
-8.83TiB=0A>> Device missing: 0.00B=0A>> Used: 83.94TiB=0A>> Free (estimat=
-ed): 4.42TiB (min: 2.95TiB)=0A>> Free (statfs, df): 3.31TiB=0A>> Data rat=
-io: 2.00=0A>> Metadata ratio: 3.00=0A>> Global reserve: 512.00MiB (used: =
-0.00B)=0A>> Multiple profiles: no=0A>> =0A>> Data,RAID1: Size:41.88TiB, U=
-sed:41.877TiB (99.99%)=0A>> {snip}=0A>> =0A>> Metadata,RAID1C3: Size:68Gi=
-B, Used:63.79GiB (93.81%)=0A>> {snip}=0A>> =0A>> System,RAID1C3: Size:32M=
-iB, Used:6.69MiB (20.90%)=0A>> {snip}=0A>> =0A>> Unallocated:=0A>> {snip}
+Add address output in dax_iomap_pfn() in order to perform a memcpy() in
+CoW case.  Since this function both output address and pfn, rename it to
+dax_iomap_direct_access().
+
+Signed-off-by: Shiyang Ruan <ruansy.fnst@cn.fujitsu.com>
+---
+ fs/dax.c | 20 +++++++++++++++-----
+ 1 file changed, 15 insertions(+), 5 deletions(-)
+
+diff --git a/fs/dax.c b/fs/dax.c
+index 5b47834f2e1b..b012b2db7ba2 100644
+--- a/fs/dax.c
++++ b/fs/dax.c
+@@ -998,8 +998,8 @@ static sector_t dax_iomap_sector(struct iomap *iomap, loff_t pos)
+ 	return (iomap->addr + (pos & PAGE_MASK) - iomap->offset) >> 9;
+ }
+ 
+-static int dax_iomap_pfn(struct iomap *iomap, loff_t pos, size_t size,
+-			 pfn_t *pfnp)
++static int dax_iomap_direct_access(struct iomap *iomap, loff_t pos, size_t size,
++		void **kaddr, pfn_t *pfnp)
+ {
+ 	const sector_t sector = dax_iomap_sector(iomap, pos);
+ 	pgoff_t pgoff;
+@@ -1011,11 +1011,13 @@ static int dax_iomap_pfn(struct iomap *iomap, loff_t pos, size_t size,
+ 		return rc;
+ 	id = dax_read_lock();
+ 	length = dax_direct_access(iomap->dax_dev, pgoff, PHYS_PFN(size),
+-				   NULL, pfnp);
++				   kaddr, pfnp);
+ 	if (length < 0) {
+ 		rc = length;
+ 		goto out;
+ 	}
++	if (!pfnp)
++		goto out_check_addr;
+ 	rc = -EINVAL;
+ 	if (PFN_PHYS(length) < size)
+ 		goto out;
+@@ -1025,6 +1027,12 @@ static int dax_iomap_pfn(struct iomap *iomap, loff_t pos, size_t size,
+ 	if (length > 1 && !pfn_t_devmap(*pfnp))
+ 		goto out;
+ 	rc = 0;
++
++out_check_addr:
++	if (!kaddr)
++		goto out;
++	if (!*kaddr)
++		rc = -EFAULT;
+ out:
+ 	dax_read_unlock(id);
+ 	return rc;
+@@ -1348,7 +1356,8 @@ static vm_fault_t dax_iomap_pte_fault(struct vm_fault *vmf, pfn_t *pfnp,
+ 			count_memcg_event_mm(vma->vm_mm, PGMAJFAULT);
+ 			major = VM_FAULT_MAJOR;
+ 		}
+-		error = dax_iomap_pfn(&iomap, pos, PAGE_SIZE, &pfn);
++		error = dax_iomap_direct_access(&iomap, pos, PAGE_SIZE,
++						NULL, &pfn);
+ 		if (error < 0)
+ 			goto error_finish_iomap;
+ 
+@@ -1566,7 +1575,8 @@ static vm_fault_t dax_iomap_pmd_fault(struct vm_fault *vmf, pfn_t *pfnp,
+ 
+ 	switch (iomap.type) {
+ 	case IOMAP_MAPPED:
+-		error = dax_iomap_pfn(&iomap, pos, PMD_SIZE, &pfn);
++		error = dax_iomap_direct_access(&iomap, pos, PMD_SIZE,
++						NULL, &pfn);
+ 		if (error < 0)
+ 			goto finish_iomap;
+ 
+-- 
+2.30.0
+
+
+

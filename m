@@ -2,93 +2,115 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C8FCBC433E0
-	for <linux-btrfs@archiver.kernel.org>; Sun,  7 Feb 2021 22:07:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BF55EC433E0
+	for <linux-btrfs@archiver.kernel.org>; Mon,  8 Feb 2021 08:30:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 926E064E3E
-	for <linux-btrfs@archiver.kernel.org>; Sun,  7 Feb 2021 22:07:40 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8700064E88
+	for <linux-btrfs@archiver.kernel.org>; Mon,  8 Feb 2021 08:30:06 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229548AbhBGWHY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 7 Feb 2021 17:07:24 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58484 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229522AbhBGWHX (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 7 Feb 2021 17:07:23 -0500
-Received: from mail-wr1-x42a.google.com (mail-wr1-x42a.google.com [IPv6:2a00:1450:4864:20::42a])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A286EC06174A
-        for <linux-btrfs@vger.kernel.org>; Sun,  7 Feb 2021 14:06:43 -0800 (PST)
-Received: by mail-wr1-x42a.google.com with SMTP id g10so15061197wrx.1
-        for <linux-btrfs@vger.kernel.org>; Sun, 07 Feb 2021 14:06:43 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
-        h=mime-version:from:date:message-id:subject:to;
-        bh=8bl05qGj7Um2PamNex0n58olpfNCvFM3i23wSkNoRKM=;
-        b=LBYwJdBh5X6kV8j//AX1e0PgwgebQNUuWgatOwDqF3yGi+GF8lG+GxRJg3t6qn84o8
-         RUM4SpPKcmM5eB4WhskEte5jT82iyL8oUaA9x90K0h/3w7CryhUDvhNusQq72i1HBM4h
-         HtkXBpOknrA5Nf4y2d/vFtEGJxHEi4dcvgChaTmuch/GZqumtoyXCrgAgMRxcaVYY9yS
-         MSFDdaDq6/FzLvjyMerk+tr706ig/xK9raq4GexQvI7n5rdbADQZNgm3QjnmmkAb4BAV
-         AsI/hDN6La6t22UfMZvmEvDmFEa6a9s8RL9m1qHC32utrkQnnU0Xc0jLx93IxLT1NMP3
-         Hd5g==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:from:date:message-id:subject:to;
-        bh=8bl05qGj7Um2PamNex0n58olpfNCvFM3i23wSkNoRKM=;
-        b=fwppg1ItIf3HEONwrfThCgILkgIZ81zlzEumGBRRLBbjS6bMcpVB6qqjqlG8j4qXO2
-         HpSfn5BItvxTHisGma5xf/zH2/7lXHEKXsU44whATFsoNgGUYPW30hLJUL398Hxliifu
-         wWtyILUhaj3rA3B6Ne/fKVZZghIB7SeL7illFQHmqyMTB/a1kaBgt39tKUgxKb7/NkyO
-         YuY2MpFZqISQH8IVWZXVR/PrncPzDrBTK5+6CO7DP90U/O9yYUA4AsMWmj54Q/z+PhT0
-         BbzJdLm04p/VABgDldQ5OpyTRnnDkbqdNNsB8muto0OmCNKgzynRz18iAV3LVA2XHNAz
-         8YYQ==
-X-Gm-Message-State: AOAM532jIukCXZgQHQhW01QFVCAVCKcELSsFQWh42wzq8UfGL1G5usGV
-        UgcJahGw8UMZOLsy/QQKf2GOhK0XURXfravtwpG54HkoXy8m75Ht
-X-Google-Smtp-Source: ABdhPJzoC3qnaze++wI8AAGbcyZ07KwcJ/Y8h+98ERkAnCaFbpF5kj8E19A1mAPVjCwCF2yC7bcciR2HxdltMZj87cs=
-X-Received: by 2002:a5d:414f:: with SMTP id c15mr16902857wrq.42.1612735602107;
- Sun, 07 Feb 2021 14:06:42 -0800 (PST)
+        id S229766AbhBHI3i (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 8 Feb 2021 03:29:38 -0500
+Received: from mx2.suse.de ([195.135.220.15]:46946 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S229711AbhBHI3h (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 8 Feb 2021 03:29:37 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1612772929; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=ylYhbZ1LA4zUBDU4j1QBfyIVz9wIKU6NOfim2CguKC4=;
+        b=d5Jgsb0BJWnXlIG5UOYdE4NDHTgUsEfaqea84/89ZdRwhx70CKURKpdmmsCRqoTgwmmt2a
+        VKi+tiRoVv0OSpRLbYqLsZ/nU1bJAOlmL4iOxdj8uwu3Q1+zxTV4NoFAmoFJqa90TqXzKj
+        v000oGUIkZhZLtMO6XWiJYc5dkG9OlQ=
+Received: from relay2.suse.de (unknown [195.135.221.27])
+        by mx2.suse.de (Postfix) with ESMTP id A29C6AC43;
+        Mon,  8 Feb 2021 08:28:49 +0000 (UTC)
+From:   Nikolay Borisov <nborisov@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Nikolay Borisov <nborisov@suse.com>, stable@vger.kernel.org
+Subject: [PATCH] btrfs: Fix race between extent freeing/allocation when using bitmaps
+Date:   Mon,  8 Feb 2021 10:26:54 +0200
+Message-Id: <20210208082652.2654024-1-nborisov@suse.com>
+X-Mailer: git-send-email 2.25.1
 MIME-Version: 1.0
-From:   Chris Murphy <lists@colorremedies.com>
-Date:   Sun, 7 Feb 2021 15:06:26 -0700
-Message-ID: <CAJCQCtSx=HcCRMiE0eganPWJVTB+b4zfb_mnd68L2VapGGKi7Q@mail.gmail.com>
-Subject: is BTRFS_IOC_DEFRAG behavior optimal?
-To:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-systemd-journald journals on Btrfs default to nodatacow,  upon log
-rotation it's submitted for defragmenting with BTRFS_IOC_DEFRAG. The
-result looks curious. I can't tell what the logic is from the results.
+During allocation the allocator will try to allocate an extent using
+cluster policy. Once the current cluster is exhausted it will remove the
+its entry under btrfs_free_cluster::lock and subsequently acquire
+btrfs_free_space_ctl::tree_lock to dispose of the already-deleted
+entry and adjust btrfs_free_space_ctl::total_bitmap. This poses a
+problem because there exists a race condition between removing the
+entry under one lock and doing the necessary accounting holding a
+different lock since extent freeing only uses the 2nd lock. This can
+result in the following situation:
 
-The journal file starts out being fallocated with a size of 8MB, and
-as it grows there is an append of 8MB increments, also fallocated.
-This leads to a filefrag -v that looks like this (ext4 and btrfs
-nodatacow follow the same behavior, both are provided for reference):
+T1:                                    T2:
+btrfs_alloc_from_cluster               insert_into_bitmap <holds tree_lock>
+ if (entry->bytes == 0)                   if (block_group && !list_empty(&block_group->cluster_list)) {
+    rb_erase(entry)
 
-ext4
-https://pastebin.com/6vuufwXt
+ spin_unlock(&cluster->lock);
+   (total_bitmaps is still 4)           spin_lock(&cluster->lock);
+                                         <doesn't find entry in cluster->root>
+ spin_lock(&ctl->tree_lock);             <goes to new_bitmap label, adds
+<blocked since T2 holds tree_lock>       <a new entry and calls add_new_bitmap>
+					    recalculate_thresholds  <crashes,
+                                              due to total_bitmaps
+					      becoming 5 and triggering
+					      an ASSERT>
 
-btrfs
-https://pastebin.com/Y18B2m4h
+To fix this ensure that once depleted, the cluster entry is deleted when
+both cluster lock and tree locks are held in the allocator (T1), this
+ensures that even if there is a race with a concurrent
+insert_into_bitmap call it will correctly find the entry in the cluster
+and add the new space to it.
 
-Following defragment with BTRFS_IOC_DEFRAG it looks like this:
-https://pastebin.com/1ufErVMs
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+Cc: <stable@vger.kernel.org>
+---
+ fs/btrfs/free-space-cache.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
 
-It appears at first glance to be significantly more fragmented. Closer
-inspection shows that most of the extents weren't relocated. But
-what's up with the peculiar interleaving? Is this an improvement over
-the original allocation?
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 0d6dcb5ff963..e386c468feaf 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -3031,8 +3031,6 @@ u64 btrfs_alloc_from_cluster(struct btrfs_block_group *block_group,
+ 			entry->bytes -= bytes;
+ 		}
 
-https://pastebin.com/1ufErVMs
+-		if (entry->bytes == 0)
+-			rb_erase(&entry->offset_index, &cluster->root);
+ 		break;
+ 	}
+ out:
+@@ -3049,7 +3047,9 @@ u64 btrfs_alloc_from_cluster(struct btrfs_block_group *block_group,
+ 	ctl->free_space -= bytes;
+ 	if (!entry->bitmap && !btrfs_free_space_trimmed(entry))
+ 		ctl->discardable_bytes[BTRFS_STAT_CURR] -= bytes;
++	spin_lock(&cluster->lock);
+ 	if (entry->bytes == 0) {
++		rb_erase(&entry->offset_index, &cluster->root);
+ 		ctl->free_extents--;
+ 		if (entry->bitmap) {
+ 			kmem_cache_free(btrfs_free_space_bitmap_cachep,
+@@ -3062,6 +3062,7 @@ u64 btrfs_alloc_from_cluster(struct btrfs_block_group *block_group,
+ 		kmem_cache_free(btrfs_free_space_cachep, entry);
+ 	}
 
-If I unwind the interleaving, it looks like all the extents fall into
-two localities and within each locality the extents aren't that far
-apart - so my guess is that this file is also not meaningfully
-fragmented, in practice. Surely the drive firmware will reorder the
-reads to arrive at the least amount of seeks?
++	spin_unlock(&cluster->lock);
+ 	spin_unlock(&ctl->tree_lock);
 
--- 
-Chris Murphy
+ 	return ret;
+--
+2.25.1
+

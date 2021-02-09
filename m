@@ -3,38 +3,36 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2E399C433E9
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4D0CBC4332B
 	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Feb 2021 21:31:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id EAC7164EAC
-	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Feb 2021 21:31:05 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1EE1964EA6
+	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Feb 2021 21:31:06 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234148AbhBIV1z (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 9 Feb 2021 16:27:55 -0500
-Received: from mx2.suse.de ([195.135.220.15]:51930 "EHLO mx2.suse.de"
+        id S234405AbhBIV2s (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 9 Feb 2021 16:28:48 -0500
+Received: from mx2.suse.de ([195.135.220.15]:51926 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S234152AbhBIUyW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S234160AbhBIUyW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Tue, 9 Feb 2021 15:54:22 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 614F1B1E0;
-        Tue,  9 Feb 2021 20:31:25 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id E4AC2B23E;
+        Tue,  9 Feb 2021 20:31:17 +0000 (UTC)
 From:   Michal Rostecki <mrostecki@suse.de>
 To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>,
         linux-btrfs@vger.kernel.org (open list:BTRFS FILE SYSTEM),
         linux-kernel@vger.kernel.org (open list)
 Cc:     Michal Rostecki <mrostecki@suse.com>
-Subject: [PATCH RFC 4/6] btrfs: Check if the filesystem is has mixed type of devices
-Date:   Tue,  9 Feb 2021 21:30:38 +0100
-Message-Id: <20210209203041.21493-5-mrostecki@suse.de>
+Subject: [PATCH RFC 0/6] Add roundrobin raid1 read policy
+Date:   Tue,  9 Feb 2021 21:30:34 +0100
+Message-Id: <20210209203041.21493-1-mrostecki@suse.de>
 X-Mailer: git-send-email 2.30.0
-In-Reply-To: <20210209203041.21493-1-mrostecki@suse.de>
-References: <20210209203041.21493-1-mrostecki@suse.de>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
@@ -43,133 +41,113 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Michal Rostecki <mrostecki@suse.com>
 
-Add the btrfs_check_mixed() function which checks if the filesystem has
-the mixed type of devices (non-rotational and rotational). This
-information is going to be used in roundrobin raid1 read policy.
+This patch series adds a new raid1 read policy - roundrobin. For each
+request, it selects the mirror which has lower load than queue depth.
+Load is defined  as the number of inflight requests + a penalty value
+(if the scheduled request is not local to the last processed request for
+a rotational disk).
 
-Signed-off-by: Michal Rostecki <mrostecki@suse.com>
----
- fs/btrfs/volumes.c | 44 ++++++++++++++++++++++++++++++++++++++++++--
- fs/btrfs/volumes.h |  7 +++++++
- 2 files changed, 49 insertions(+), 2 deletions(-)
+The series consists of preparational changes which add necessary
+information to the btrfs_device struct and the change with the policy.
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 1ac364a2f105..1ad30a595722 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -617,6 +617,35 @@ static int btrfs_free_stale_devices(const char *path,
- 	return ret;
- }
- 
-+/*
-+ * Checks if after adding the new device the filesystem is going to have mixed
-+ * types of devices (non-rotational and rotational).
-+ *
-+ * @fs_devices:          list of devices
-+ * @new_device_rotating: if the new device is rotational
-+ *
-+ * Returns true if there are mixed types of devices, otherwise returns false.
-+ */
-+static bool btrfs_check_mixed(struct btrfs_fs_devices *fs_devices,
-+			      bool new_device_rotating)
-+{
-+	struct btrfs_device *device, *prev_device;
-+
-+	list_for_each_entry(device, &fs_devices->devices, dev_list) {
-+		if (prev_device == NULL &&
-+		    device->rotating != new_device_rotating)
-+			return true;
-+		if (prev_device != NULL &&
-+		    (device->rotating != prev_device->rotating ||
-+		     device->rotating != new_device_rotating))
-+			return true;
-+
-+		prev_device = device;
-+	}
-+
-+	return false;
-+}
-+
- /*
-  * This is only used on mount, and we are protected from competing things
-  * messing with our fs_devices by the uuid_mutex, thus we do not need the
-@@ -629,6 +658,7 @@ static int btrfs_open_one_device(struct btrfs_fs_devices *fs_devices,
- 	struct request_queue *q;
- 	struct block_device *bdev;
- 	struct btrfs_super_block *disk_super;
-+	bool rotating;
- 	u64 devid;
- 	int ret;
- 
-@@ -669,8 +699,12 @@ static int btrfs_open_one_device(struct btrfs_fs_devices *fs_devices,
- 	}
- 
- 	q = bdev_get_queue(bdev);
--	if (!blk_queue_nonrot(q))
-+	rotating = !blk_queue_nonrot(q);
-+	device->rotating = rotating;
-+	if (rotating)
- 		fs_devices->rotating = true;
-+	if (!fs_devices->mixed)
-+		fs_devices->mixed = btrfs_check_mixed(fs_devices, rotating);
- 
- 	device->bdev = bdev;
- 	clear_bit(BTRFS_DEV_STATE_IN_FS_METADATA, &device->dev_state);
-@@ -2418,6 +2452,7 @@ static int btrfs_prepare_sprout(struct btrfs_fs_info *fs_info)
- 	fs_devices->open_devices = 0;
- 	fs_devices->missing_devices = 0;
- 	fs_devices->rotating = false;
-+	fs_devices->mixed = false;
- 	list_add(&seed_devices->seed_list, &fs_devices->seed_list);
- 
- 	generate_random_uuid(fs_devices->fsid);
-@@ -2522,6 +2557,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
- 	int seeding_dev = 0;
- 	int ret = 0;
- 	bool locked = false;
-+	bool rotating;
- 
- 	if (sb_rdonly(sb) && !fs_devices->seeding)
- 		return -EROFS;
-@@ -2621,8 +2657,12 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
- 
- 	atomic64_add(device->total_bytes, &fs_info->free_chunk_space);
- 
--	if (!blk_queue_nonrot(q))
-+	rotating = !blk_queue_nonrot(q);
-+	device->rotating = rotating;
-+	if (rotating)
- 		fs_devices->rotating = true;
-+	if (!fs_devices->mixed)
-+		fs_devices->mixed = btrfs_check_mixed(fs_devices, rotating);
- 
- 	orig_super_total_bytes = btrfs_super_total_bytes(fs_info->super_copy);
- 	btrfs_set_super_total_bytes(fs_info->super_copy,
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 6e544317a377..594f1207281c 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -147,6 +147,9 @@ struct btrfs_device {
- 	/* I/O stats for raid1 mirror selection */
- 	struct percpu_counter inflight;
- 	atomic_t last_offset;
-+
-+	/* If the device is rotational */
-+	bool rotating;
- };
- 
- /*
-@@ -274,6 +277,10 @@ struct btrfs_fs_devices {
- 	 * nonrot flag set
- 	 */
- 	bool rotating;
-+	/* Set when we find or add both nonrot and rot disks in the
-+	 * filesystem
-+	 */
-+	bool mixed;
- 
- 	struct btrfs_fs_info *fs_info;
- 	/* sysfs kobjects */
+This policy was tested with fio and compared with the default `pid`
+policy.
+
+The singlethreaded test has the following parameters:
+
+  [global]
+  name=btrfs-raid1-seqread
+  filename=btrfs-raid1-seqread
+  rw=read
+  bs=64k
+  direct=0
+  numjobs=1
+  time_based=0
+
+  [file1]
+  size=10G
+  ioengine=libaio
+
+and shows the following results:
+
+- raid1c3 with 3 HDDs:
+  3 x Segate Barracuda ST2000DM008 (2TB)
+  * pid policy
+    READ: bw=217MiB/s (228MB/s), 217MiB/s-217MiB/s (228MB/s-228MB/s),
+    io=10.0GiB (10.7GB), run=47082-47082msec
+  * roundrobin policy
+    READ: bw=409MiB/s (429MB/s), 409MiB/s-409MiB/s (429MB/s-429MB/s),
+    io=10.0GiB (10.7GB), run=25028-25028mse
+- raid1c3 with 2 HDDs and 1 SSD:
+  2 x Segate Barracuda ST2000DM008 (2TB)
+  1 x Crucial CT256M550SSD1 (256GB)
+  * pid policy (the worst case when only HDDs were chosen)
+    READ: bw=220MiB/s (231MB/s), 220MiB/s-220MiB/s (231MB/s-231MB/s),
+    io=10.0GiB (10.7GB), run=46577-46577mse
+  * pid policy (the best case when SSD was used as well)
+    READ: bw=513MiB/s (538MB/s), 513MiB/s-513MiB/s (538MB/s-538MB/s),
+    io=10.0GiB (10.7GB), run=19954-19954msec
+  * roundrobin (there are no noticeable differences when testing multiple
+    times)
+    READ: bw=541MiB/s (567MB/s), 541MiB/s-541MiB/s (567MB/s-567MB/s),
+    io=10.0GiB (10.7GB), run=18933-18933msec
+
+The multithreaded test has the following parameters:
+
+  [global]
+  name=btrfs-raid1-seqread
+  filename=btrfs-raid1-seqread
+  rw=read
+  bs=64k
+  direct=0
+  numjobs=8
+  time_based=0
+
+  [file1]
+  size=10G
+  ioengine=libaio
+
+and shows the following results:
+
+- raid1c3 with 3 HDDs: 3 x Segate Barracuda ST2000DM008 (2TB)
+  3 x Segate Barracuda ST2000DM008 (2TB)
+  * pid policy
+    READ: bw=1569MiB/s (1645MB/s), 196MiB/s-196MiB/s (206MB/s-206MB/s),
+    io=80.0GiB (85.9GB), run=52210-52211msec
+  * roundrobin
+    READ: bw=1733MiB/s (1817MB/s), 217MiB/s-217MiB/s (227MB/s-227MB/s),
+    io=80.0GiB (85.9GB), run=47269-47271msec
+- raid1c3 with 2 HDDs and 1 SSD:
+  2 x Segate Barracuda ST2000DM008 (2TB)
+  1 x Crucial CT256M550SSD1 (256GB)
+  * pid policy
+    READ: bw=1843MiB/s (1932MB/s), 230MiB/s-230MiB/s (242MB/s-242MB/s),
+    io=80.0GiB (85.9GB), run=44449-44450msec
+  * roundrobin
+    READ: bw=2485MiB/s (2605MB/s), 311MiB/s-311MiB/s (326MB/s-326MB/s),
+    io=80.0GiB (85.9GB), run=32969-32970msec
+
+To measure the performance of each policy and find optimal penalty
+values, I created scripts which are available here:
+
+https://gitlab.com/vadorovsky/btrfs-perf
+https://github.com/mrostecki/btrfs-perf
+
+Michal Rostecki (6):
+  btrfs: Add inflight BIO request counter
+  btrfs: Store the last device I/O offset
+  btrfs: Add stripe_physical function
+  btrfs: Check if the filesystem is has mixed type of devices
+  btrfs: sysfs: Add directory for read policies
+  btrfs: Add roundrobin raid1 read policy
+
+ fs/btrfs/ctree.h   |   3 +
+ fs/btrfs/disk-io.c |   3 +
+ fs/btrfs/sysfs.c   | 144 ++++++++++++++++++++++++++----
+ fs/btrfs/volumes.c | 218 +++++++++++++++++++++++++++++++++++++++++++--
+ fs/btrfs/volumes.h |  22 +++++
+ 5 files changed, 366 insertions(+), 24 deletions(-)
+
 -- 
 2.30.0
 

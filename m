@@ -4,34 +4,34 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C7E2BC433DB
-	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Feb 2021 21:25:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 949FBC433DB
+	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Feb 2021 21:31:02 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 68B2864E92
-	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Feb 2021 21:25:35 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5869D64E8C
+	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Feb 2021 21:31:02 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233985AbhBIVYd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 9 Feb 2021 16:24:33 -0500
-Received: from mx2.suse.de ([195.135.220.15]:51922 "EHLO mx2.suse.de"
+        id S233723AbhBIV0B (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 9 Feb 2021 16:26:01 -0500
+Received: from mx2.suse.de ([195.135.220.15]:51924 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S234158AbhBIUyV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S234161AbhBIUyV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Tue, 9 Feb 2021 15:54:21 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 753BEB14C;
-        Tue,  9 Feb 2021 20:31:23 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 98BBDB109;
+        Tue,  9 Feb 2021 20:31:21 +0000 (UTC)
 From:   Michal Rostecki <mrostecki@suse.de>
 To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>,
         linux-btrfs@vger.kernel.org (open list:BTRFS FILE SYSTEM),
         linux-kernel@vger.kernel.org (open list)
 Cc:     Michal Rostecki <mrostecki@suse.com>
-Subject: [PATCH RFC 3/6] btrfs: Add stripe_physical function
-Date:   Tue,  9 Feb 2021 21:30:37 +0100
-Message-Id: <20210209203041.21493-4-mrostecki@suse.de>
+Subject: [PATCH RFC 2/6] btrfs: Store the last device I/O offset
+Date:   Tue,  9 Feb 2021 21:30:36 +0100
+Message-Id: <20210209203041.21493-3-mrostecki@suse.de>
 X-Mailer: git-send-email 2.30.0
 In-Reply-To: <20210209203041.21493-1-mrostecki@suse.de>
 References: <20210209203041.21493-1-mrostecki@suse.de>
@@ -43,55 +43,62 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Michal Rostecki <mrostecki@suse.com>
 
-Move the calculation of the physical address for a stripe to the new
-function - stripe_physical(). It can be used by raid1 read policies to
-calculate the offset and select mirrors based on I/O locality.
+Add an atomic field which stores the physical offset of the last I/O
+operation  scheduled to the device. This information is going to be used
+to measure the locality of I/O requests.
 
 Signed-off-by: Michal Rostecki <mrostecki@suse.com>
 ---
- fs/btrfs/volumes.c | 22 ++++++++++++++++++++--
- 1 file changed, 20 insertions(+), 2 deletions(-)
+ fs/btrfs/volumes.c | 4 ++++
+ fs/btrfs/volumes.h | 1 +
+ 2 files changed, 5 insertions(+)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 292175206873..1ac364a2f105 100644
+index d4f452dcce95..292175206873 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -5498,6 +5498,23 @@ int btrfs_is_parity_mirror(struct btrfs_fs_info *fs_info, u64 logical, u64 len)
- 	return ret;
+@@ -444,6 +444,7 @@ static struct btrfs_device *__alloc_device(struct btrfs_fs_info *fs_info)
+ 		kfree(dev);
+ 		return ERR_PTR(-ENOMEM);
+ 	}
++	atomic_set(&dev->last_offset, 0);
+ 
+ 	return dev;
  }
+@@ -6368,11 +6369,13 @@ static void submit_stripe_bio(struct btrfs_bio *bbio, struct bio *bio,
+ 			      u64 physical, struct btrfs_device *dev)
+ {
+ 	struct btrfs_fs_info *fs_info = bbio->fs_info;
++	u64 length;
  
-+/*
-+ * Calculates the physical location for the given stripe and I/O geometry.
-+ *
-+ * @map:           mapping containing the logical extent
-+ * @stripe_index:  index of the stripe to make a calculation for
-+ * @stripe_offset: offset of the block in its stripe
-+ * @stripe_nr:     index of the stripe whete the block falls in
-+ *
-+ * Returns the physical location.
-+ */
-+static u64 stripe_physical(struct map_lookup *map, u32 stripe_index,
-+			   u64 stripe_offset, u64 stripe_nr)
-+{
-+	return map->stripes[stripe_index].physical + stripe_offset +
-+		stripe_nr * map->stripe_len;
-+}
-+
- static int find_live_mirror(struct btrfs_fs_info *fs_info,
- 			    struct map_lookup *map, int first,
- 			    int dev_replace_is_ongoing)
-@@ -6216,8 +6233,9 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
- 	}
+ 	bio->bi_private = bbio;
+ 	btrfs_io_bio(bio)->device = dev;
+ 	bio->bi_end_io = btrfs_end_bio;
+ 	bio->bi_iter.bi_sector = physical >> 9;
++	length = bio->bi_iter.bi_size;
+ 	btrfs_debug_in_rcu(fs_info,
+ 	"btrfs_map_bio: rw %d 0x%x, sector=%llu, dev=%lu (%s id %llu), size=%u",
+ 		bio_op(bio), bio->bi_opf, bio->bi_iter.bi_sector,
+@@ -6382,6 +6385,7 @@ static void submit_stripe_bio(struct btrfs_bio *bbio, struct bio *bio,
  
- 	for (i = 0; i < num_stripes; i++) {
--		bbio->stripes[i].physical = map->stripes[stripe_index].physical +
--			stripe_offset + stripe_nr * map->stripe_len;
-+		bbio->stripes[i].physical = stripe_physical(map, stripe_index,
-+							    stripe_offset,
-+							    stripe_nr);
- 		bbio->stripes[i].dev = map->stripes[stripe_index].dev;
- 		stripe_index++;
- 	}
+ 	btrfs_bio_counter_inc_noblocked(fs_info);
+ 	percpu_counter_inc(&dev->inflight);
++	atomic_set(&dev->last_offset, physical + length);
+ 
+ 	btrfsic_submit_bio(bio);
+ }
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 938c5292250c..6e544317a377 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -146,6 +146,7 @@ struct btrfs_device {
+ 
+ 	/* I/O stats for raid1 mirror selection */
+ 	struct percpu_counter inflight;
++	atomic_t last_offset;
+ };
+ 
+ /*
 -- 
 2.30.0
 

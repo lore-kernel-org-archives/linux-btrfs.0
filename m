@@ -2,131 +2,53 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.5 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
-	SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.3 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4D33DC433DB
-	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Feb 2021 09:24:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 26912C433E0
+	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Feb 2021 09:38:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id F1A8E64DA1
-	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Feb 2021 09:24:14 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C824464E4F
+	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Feb 2021 09:38:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230241AbhBIJX6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 9 Feb 2021 04:23:58 -0500
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:8547 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S229894AbhBIJTA (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Feb 2021 04:19:00 -0500
-X-IronPort-AV: E=Sophos;i="5.81,164,1610380800"; 
-   d="scan'208";a="104367244"
-Received: from unknown (HELO cn.fujitsu.com) ([10.167.33.5])
-  by heian.cn.fujitsu.com with ESMTP; 09 Feb 2021 17:15:20 +0800
-Received: from G08CNEXMBPEKD05.g08.fujitsu.local (unknown [10.167.33.204])
-        by cn.fujitsu.com (Postfix) with ESMTP id A2C304CE6F86;
-        Tue,  9 Feb 2021 17:15:13 +0800 (CST)
-Received: from irides.mr (10.167.225.141) by G08CNEXMBPEKD05.g08.fujitsu.local
- (10.167.33.204) with Microsoft SMTP Server (TLS) id 15.0.1497.2; Tue, 9 Feb
- 2021 17:15:12 +0800
-Subject: Re: [PATCH 5/7] fsdax: Dedup file range to use a compare function
-To:     Christoph Hellwig <hch@lst.de>
-CC:     <linux-kernel@vger.kernel.org>, <linux-xfs@vger.kernel.org>,
-        <linux-nvdimm@lists.01.org>, <linux-fsdevel@vger.kernel.org>,
-        <darrick.wong@oracle.com>, <dan.j.williams@intel.com>,
-        <willy@infradead.org>, <jack@suse.cz>, <viro@zeniv.linux.org.uk>,
-        <linux-btrfs@vger.kernel.org>, <ocfs2-devel@oss.oracle.com>,
-        <david@fromorbit.com>, <rgoldwyn@suse.de>,
+        id S230296AbhBIJhh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 9 Feb 2021 04:37:37 -0500
+Received: from verein.lst.de ([213.95.11.211]:45717 "EHLO verein.lst.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S229917AbhBIJf1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 9 Feb 2021 04:35:27 -0500
+Received: by verein.lst.de (Postfix, from userid 2407)
+        id 0B90868BFE; Tue,  9 Feb 2021 10:34:38 +0100 (CET)
+Date:   Tue, 9 Feb 2021 10:34:38 +0100
+From:   Christoph Hellwig <hch@lst.de>
+To:     Ruan Shiyang <ruansy.fnst@cn.fujitsu.com>
+Cc:     Christoph Hellwig <hch@lst.de>, linux-kernel@vger.kernel.org,
+        linux-xfs@vger.kernel.org, linux-nvdimm@lists.01.org,
+        linux-fsdevel@vger.kernel.org, darrick.wong@oracle.com,
+        dan.j.williams@intel.com, willy@infradead.org, jack@suse.cz,
+        viro@zeniv.linux.org.uk, linux-btrfs@vger.kernel.org,
+        ocfs2-devel@oss.oracle.com, david@fromorbit.com, rgoldwyn@suse.de,
         Goldwyn Rodrigues <rgoldwyn@suse.com>
-References: <20210207170924.2933035-1-ruansy.fnst@cn.fujitsu.com>
- <20210207170924.2933035-6-ruansy.fnst@cn.fujitsu.com>
- <20210208151920.GE12872@lst.de>
-From:   Ruan Shiyang <ruansy.fnst@cn.fujitsu.com>
-Message-ID: <9193e305-22a1-3928-0675-af1cecd28942@cn.fujitsu.com>
-Date:   Tue, 9 Feb 2021 17:15:13 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.7.0
+Subject: Re: [PATCH 5/7] fsdax: Dedup file range to use a compare function
+Message-ID: <20210209093438.GA630@lst.de>
+References: <20210207170924.2933035-1-ruansy.fnst@cn.fujitsu.com> <20210207170924.2933035-6-ruansy.fnst@cn.fujitsu.com> <20210208151920.GE12872@lst.de> <9193e305-22a1-3928-0675-af1cecd28942@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <20210208151920.GE12872@lst.de>
-Content-Type: text/plain; charset="UTF-8"; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
-X-Originating-IP: [10.167.225.141]
-X-ClientProxiedBy: G08CNEXCHPEKD04.g08.fujitsu.local (10.167.33.200) To
- G08CNEXMBPEKD05.g08.fujitsu.local (10.167.33.204)
-X-yoursite-MailScanner-ID: A2C304CE6F86.ACFE6
-X-yoursite-MailScanner: Found to be clean
-X-yoursite-MailScanner-From: ruansy.fnst@cn.fujitsu.com
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <9193e305-22a1-3928-0675-af1cecd28942@cn.fujitsu.com>
+User-Agent: Mutt/1.5.17 (2007-11-01)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On Tue, Feb 09, 2021 at 05:15:13PM +0800, Ruan Shiyang wrote:
+> The dax dedupe comparison need the iomap_ops pointer as argument, so my 
+> understanding is that we don't modify the argument list of 
+> generic_remap_file_range_prep(), but move its code into 
+> __generic_remap_file_range_prep() whose argument list can be modified to 
+> accepts the iomap_ops pointer.  Then it looks like this:
 
-
-On 2021/2/8 下午11:19, Christoph Hellwig wrote:
-> On Mon, Feb 08, 2021 at 01:09:22AM +0800, Shiyang Ruan wrote:
->> With dax we cannot deal with readpage() etc. So, we create a
->> funciton callback to perform the file data comparison and pass
-> 
-> s/funciton/function/g
-> 
->> +#define MIN(a, b) (((a) < (b)) ? (a) : (b))
-> 
-> This should use the existing min or min_t helpers.
-> 
-> 
->>   int generic_remap_file_range_prep(struct file *file_in, loff_t pos_in,
->>   				  struct file *file_out, loff_t pos_out,
->> -				  loff_t *len, unsigned int remap_flags)
->> +				  loff_t *len, unsigned int remap_flags,
->> +				  compare_range_t compare_range_fn)
-> 
-> Can we keep generic_remap_file_range_prep as-is, and add a new
-> dax_remap_file_range_prep, both sharing a low-level
-> __generic_remap_file_range_prep implementation?  And for that
-> implementation I'd also go for classic if/else instead of the function
-> pointer.
-
-The dax dedupe comparison need the iomap_ops pointer as argument, so my 
-understanding is that we don't modify the argument list of 
-generic_remap_file_range_prep(), but move its code into 
-__generic_remap_file_range_prep() whose argument list can be modified to 
-accepts the iomap_ops pointer.  Then it looks like this:
-
-```
-int dax_remap_file_range_prep(struct file *file_in, loff_t pos_in,
-				  struct file *file_out, loff_t pos_out,
-				  loff_t *len, unsigned int remap_flags,
-				  const struct iomap_ops *ops)
-{
-	return __generic_remap_file_range_prep(file_in, pos_in, file_out,
-			pos_out, len, remap_flags, ops);
-}
-EXPORT_SYMBOL(dax_remap_file_range_prep);
-
-int generic_remap_file_range_prep(struct file *file_in, loff_t pos_in,
-				  struct file *file_out, loff_t pos_out,
-				  loff_t *len, unsigned int remap_flags)
-{
-	return __generic_remap_file_range_prep(file_in, pos_in, file_out,
-			pos_out, len, remap_flags, NULL);
-}
-EXPORT_SYMBOL(generic_remap_file_range_prep);
-```
-
-Am i right?
-
-
---
-Thanks,
-Ruan Shiyang.
-
-> 
->> +extern int vfs_dedupe_file_range_compare(struct inode *src, loff_t srcoff,
->> +					 struct inode *dest, loff_t destoff,
->> +					 loff_t len, bool *is_same);
-> 
-> no need for the extern.
-> 
-> 
-
-
+I'd say just add the iomap_ops pointer to
+generic_remap_file_range_prep and do away with the extra wrappers.  We
+only have three callers anyway.

@@ -2,128 +2,152 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.3 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9DA1CC4332D
-	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Feb 2021 21:31:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6A5A1C432C3
+	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Feb 2021 21:31:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 6D87664E9D
-	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Feb 2021 21:31:06 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3553C64E92
+	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Feb 2021 21:31:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234182AbhBIV3J (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 9 Feb 2021 16:29:09 -0500
-Received: from mx2.suse.de ([195.135.220.15]:51920 "EHLO mx2.suse.de"
+        id S234456AbhBIVac (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 9 Feb 2021 16:30:32 -0500
+Received: from mx2.suse.de ([195.135.220.15]:60730 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S234159AbhBIUyW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 9 Feb 2021 15:54:22 -0500
+        id S234323AbhBIVNn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 9 Feb 2021 16:13:43 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id BE040ADE1;
-        Tue,  9 Feb 2021 20:31:19 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id CE373AD24;
+        Tue,  9 Feb 2021 21:12:05 +0000 (UTC)
+Date:   Tue, 9 Feb 2021 21:12:00 +0000
 From:   Michal Rostecki <mrostecki@suse.de>
-To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org (open list:BTRFS FILE SYSTEM),
-        linux-kernel@vger.kernel.org (open list)
-Cc:     Michal Rostecki <mrostecki@suse.com>
-Subject: [PATCH RFC 1/6] btrfs: Add inflight BIO request counter
-Date:   Tue,  9 Feb 2021 21:30:35 +0100
-Message-Id: <20210209203041.21493-2-mrostecki@suse.de>
-X-Mailer: git-send-email 2.30.0
-In-Reply-To: <20210209203041.21493-1-mrostecki@suse.de>
-References: <20210209203041.21493-1-mrostecki@suse.de>
+To:     Anand Jain <anand.jain@oracle.com>
+Cc:     dsterba@suse.cz, linux-btrfs@vger.kernel.org, dsterba@suse.com,
+        josef@toxicpanda.com
+Subject: Re: [PATCH v4 1/3] btrfs: add read_policy latency
+Message-ID: <20210209211200.GA1662@wotan.suse.de>
+References: <cover.1611114341.git.anand.jain@oracle.com>
+ <63f6f00e2ecc741efd2200c3c87b5db52c6be2fd.1611114341.git.anand.jain@oracle.com>
+ <20210120121416.GX6430@twin.jikos.cz>
+ <e46000d9-c2e1-ec7c-d6b1-a3bd16aa05f4@oracle.com>
+ <20210121175243.GF6430@twin.jikos.cz>
+ <28b7ef3d-b5b9-f4a6-8d6f-1e6fc1103815@oracle.com>
+ <9f406301-c16a-72a5-4ff3-d3bda127895e@oracle.com>
+ <34cecc3d-235e-2f47-0992-675dc576b5be@oracle.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <34cecc3d-235e-2f47-0992-675dc576b5be@oracle.com>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Michal Rostecki <mrostecki@suse.com>
+On Thu, Feb 04, 2021 at 08:30:01PM +0800, Anand Jain wrote:
+> 
+> Hi Michal,
+> 
+>  Did you get any chance to run the evaluation with this patchset?
+> 
+> Thanks, Anand
+> 
 
-Add a per-CPU inflight BIO counter to btrfs_device which stores the
-number of requests currently processed by the device. This information
-is going to be used in roundrobin raid1 read policy.
+Hi Anand,
 
-Signed-off-by: Michal Rostecki <mrostecki@suse.com>
----
- fs/btrfs/volumes.c | 11 +++++++++--
- fs/btrfs/volumes.h |  3 +++
- 2 files changed, 12 insertions(+), 2 deletions(-)
+Yes, I tested your policies now. Sorry for late response.
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 3948f5b50d11..d4f452dcce95 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -376,6 +376,7 @@ void btrfs_free_device(struct btrfs_device *device)
- 	extent_io_tree_release(&device->alloc_state);
- 	bio_put(device->flush_bio);
- 	btrfs_destroy_dev_zone_info(device);
-+	percpu_counter_destroy(&device->inflight);
- 	kfree(device);
- }
- 
-@@ -439,6 +440,11 @@ static struct btrfs_device *__alloc_device(struct btrfs_fs_info *fs_info)
- 	extent_io_tree_init(fs_info, &dev->alloc_state,
- 			    IO_TREE_DEVICE_ALLOC_STATE, NULL);
- 
-+	if (percpu_counter_init(&dev->inflight, 0, GFP_KERNEL)) {
-+		kfree(dev);
-+		return ERR_PTR(-ENOMEM);
-+	}
-+
- 	return dev;
- }
- 
-@@ -6305,6 +6311,7 @@ static inline void btrfs_end_bbio(struct btrfs_bio *bbio, struct bio *bio)
- 
- static void btrfs_end_bio(struct bio *bio)
- {
-+	struct btrfs_device *dev = btrfs_io_bio(bio)->device;
- 	struct btrfs_bio *bbio = bio->bi_private;
- 	int is_orig_bio = 0;
- 
-@@ -6312,8 +6319,6 @@ static void btrfs_end_bio(struct bio *bio)
- 		atomic_inc(&bbio->error);
- 		if (bio->bi_status == BLK_STS_IOERR ||
- 		    bio->bi_status == BLK_STS_TARGET) {
--			struct btrfs_device *dev = btrfs_io_bio(bio)->device;
--
- 			ASSERT(dev->bdev);
- 			if (bio_op(bio) == REQ_OP_WRITE)
- 				btrfs_dev_stat_inc_and_print(dev,
-@@ -6331,6 +6336,7 @@ static void btrfs_end_bio(struct bio *bio)
- 		is_orig_bio = 1;
- 
- 	btrfs_bio_counter_dec(bbio->fs_info);
-+	percpu_counter_dec(&dev->inflight);
- 
- 	if (atomic_dec_and_test(&bbio->stripes_pending)) {
- 		if (!is_orig_bio) {
-@@ -6375,6 +6381,7 @@ static void submit_stripe_bio(struct btrfs_bio *bbio, struct bio *bio,
- 	bio_set_dev(bio, dev->bdev);
- 
- 	btrfs_bio_counter_inc_noblocked(fs_info);
-+	percpu_counter_inc(&dev->inflight);
- 
- 	btrfsic_submit_bio(bio);
- }
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 04e2b26823c2..938c5292250c 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -143,6 +143,9 @@ struct btrfs_device {
- 	struct completion kobj_unregister;
- 	/* For sysfs/FSID/devinfo/devid/ */
- 	struct kobject devid_kobj;
-+
-+	/* I/O stats for raid1 mirror selection */
-+	struct percpu_counter inflight;
- };
- 
- /*
--- 
-2.30.0
+For the singlethreaded test:
 
+  [global]
+  name=btrfs-raid1-seqread
+  filename=btrfs-raid1-seqread
+  rw=read
+  bs=64k
+  direct=0
+  numjobs=1
+  time_based=0
+
+  [file1]
+  size=10G
+  ioengine=libaio
+
+results are:
+
+- raid1c3 with 3 HDDs:
+  3 x Segate Barracuda ST2000DM008 (2TB)
+  * pid policy
+    READ: bw=215MiB/s (226MB/s), 215MiB/s-215MiB/s (226MB/s-226MB/s),
+    io=10.0GiB (10.7GB), run=47537-47537msec
+  * latency policy
+    READ: bw=219MiB/s (229MB/s), 219MiB/s-219MiB/s (229MB/s-229MB/s),
+    io=10.0GiB (10.7GB), run=46852-46852msec
+  * device policy - didn't test it here, I guess it doesn't make sense
+    to check it on non-mixed arrays ;)
+- raid1c3 with 2 HDDs and 1 SSD:
+  2 x Segate Barracuda ST2000DM008 (2TB)
+  1 x Crucial CT256M550SSD1 (256GB)
+  * pid policy
+    READ: bw=219MiB/s (230MB/s), 219MiB/s-219MiB/s (230MB/s-230MB/s),
+    io=10.0GiB (10.7GB), run=46749-46749msec
+  * latency policy
+    READ: bw=517MiB/s (542MB/s), 517MiB/s-517MiB/s (542MB/s-542MB/s),
+    io=10.0GiB (10.7GB), run=19823-19823msec
+  * device policy
+    READ: bw=517MiB/s (542MB/s), 517MiB/s-517MiB/s (542MB/s-542MB/s),
+    io=10.0GiB (10.7GB), run=19810-19810msec
+
+For the multithreaded test:
+
+  [global]
+  name=btrfs-raid1-seqread
+  filename=btrfs-raid1-seqread
+  rw=read
+  bs=64k
+  direct=0
+  numjobs=1
+  time_based=0
+
+  [file1]
+  size=10G
+  ioengine=libaio
+
+results are:
+
+- raid1c3 with 3 HDDs:
+  3 x Segate Barracuda ST2000DM008 (2TB)
+  * pid policy
+    READ: bw=1608MiB/s (1686MB/s), 201MiB/s-201MiB/s (211MB/s-211MB/s),
+    io=80.0GiB (85.9GB), run=50948-50949msec
+  * latency policy
+    READ: bw=1515MiB/s (1588MB/s), 189MiB/s-189MiB/s (199MB/s-199MB/s),
+    io=80.0GiB (85.9GB), run=54081-54084msec
+- raid1c3 with 2 HDDs and 1 SSD:
+  2 x Segate Barracuda ST2000DM008 (2TB)
+  1 x Crucial CT256M550SSD1 (256GB)
+  * pid policy
+    READ: bw=1843MiB/s (1932MB/s), 230MiB/s-230MiB/s (242MB/s-242MB/s),
+    io=80.0GiB (85.9GB), run=44449-44450msec
+  * latency policy
+    READ: bw=4213MiB/s (4417MB/s), 527MiB/s-527MiB/s (552MB/s-552MB/s),
+    io=80.0GiB (85.9GB), run=19444-19446msec
+  * device policy
+    READ: bw=4196MiB/s (4400MB/s), 525MiB/s-525MiB/s (550MB/s-550MB/s),
+    io=80.0GiB (85.9GB), run=19522-19522msec
+
+To sum it up - I think that your policies are indeed a very good match
+for mixed (nonrot and rot) arrays.
+
+They perform either slightly better or worse (depending on the test)
+than pid policy on all-HDD arrays.
+
+I've just sent out my proposal of roundrobin policy, which seems to give
+better performance for all-HDD than your policies (and better than pid
+policy in all cases):
+
+https://patchwork.kernel.org/project/linux-btrfs/patch/20210209203041.21493-7-mrostecki@suse.de/
+
+Cheers,
+Michal

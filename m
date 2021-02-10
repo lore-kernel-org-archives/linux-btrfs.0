@@ -2,27 +2,28 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.3 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.2 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EF4CFC433DB
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Feb 2021 12:31:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 282FFC433E0
+	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Feb 2021 12:51:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id AAC2664E3B
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Feb 2021 12:31:56 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C6EEB64E38
+	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Feb 2021 12:51:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231650AbhBJMbk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 10 Feb 2021 07:31:40 -0500
-Received: from mx2.suse.de ([195.135.220.15]:34672 "EHLO mx2.suse.de"
+        id S229649AbhBJMvD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 10 Feb 2021 07:51:03 -0500
+Received: from mx2.suse.de ([195.135.220.15]:52184 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S231855AbhBJMaI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 10 Feb 2021 07:30:08 -0500
+        id S229503AbhBJMu5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 10 Feb 2021 07:50:57 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 6ABD7AC43;
-        Wed, 10 Feb 2021 12:29:26 +0000 (UTC)
-Date:   Wed, 10 Feb 2021 12:29:25 +0000
+        by mx2.suse.de (Postfix) with ESMTP id 7BA9EAEBE;
+        Wed, 10 Feb 2021 12:50:15 +0000 (UTC)
+Date:   Wed, 10 Feb 2021 12:50:14 +0000
 From:   Michal Rostecki <mrostecki@suse.de>
 To:     =?utf-8?B?TWljaGHFgiBNaXJvc8WCYXc=?= <mirq-linux@rere.qmqm.pl>
 Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
@@ -30,88 +31,70 @@ Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         "open list:BTRFS FILE SYSTEM" <linux-btrfs@vger.kernel.org>,
         open list <linux-kernel@vger.kernel.org>,
         Michal Rostecki <mrostecki@suse.com>
-Subject: Re: [PATCH RFC 6/6] btrfs: Add roundrobin raid1 read policy
-Message-ID: <20210210122925.GB23499@wotan.suse.de>
+Subject: Re: [PATCH RFC 4/6] btrfs: Check if the filesystem is has mixed type
+ of devices
+Message-ID: <20210210125014.GC23499@wotan.suse.de>
 References: <20210209203041.21493-1-mrostecki@suse.de>
- <20210209203041.21493-7-mrostecki@suse.de>
- <20210210042428.GC12086@qmqm.qmqm.pl>
+ <20210209203041.21493-5-mrostecki@suse.de>
+ <20210210040805.GB12086@qmqm.qmqm.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <20210210042428.GC12086@qmqm.qmqm.pl>
+In-Reply-To: <20210210040805.GB12086@qmqm.qmqm.pl>
 User-Agent: Mutt/1.10.1 (2018-07-13)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Feb 10, 2021 at 05:24:28AM +0100, Michał Mirosław wrote:
-> On Tue, Feb 09, 2021 at 09:30:40PM +0100, Michal Rostecki wrote:
-> [...]
-> > For the array with 3 HDDs, not adding any penalty resulted in 409MiB/s
-> > (429MB/s) performance. Adding the penalty value 1 resulted in a
-> > performance drop to 404MiB/s (424MB/s). Increasing the value towards 10
-> > was making the performance even worse.
+On Wed, Feb 10, 2021 at 05:08:05AM +0100, Michał Mirosław wrote:
+> On Tue, Feb 09, 2021 at 09:30:38PM +0100, Michal Rostecki wrote:
+> > From: Michal Rostecki <mrostecki@suse.com>
 > > 
-> > For the array with 2 HDDs and 1 SSD, adding penalty value 1 to
-> > rotational disks resulted in the best performance - 541MiB/s (567MB/s).
-> > Not adding any value and increasing the value was making the performance
-> > worse.
-> > 
-> > Adding penalty value to non-rotational disks was always decreasing the
-> > performance, which motivated setting it as 0 by default. For the purpose
-> > of testing, it's still configurable.
+> > Add the btrfs_check_mixed() function which checks if the filesystem has
+> > the mixed type of devices (non-rotational and rotational). This
+> > information is going to be used in roundrobin raid1 read policy.a
 > [...]
-> > +	bdev = map->stripes[mirror_index].dev->bdev;
-> > +	inflight = mirror_load(fs_info, map, mirror_index, stripe_offset,
-> > +			       stripe_nr);
-> > +	queue_depth = blk_queue_depth(bdev->bd_disk->queue);
-> > +
-> > +	return inflight < queue_depth;
+> > @@ -669,8 +699,12 @@ static int btrfs_open_one_device(struct btrfs_fs_devices *fs_devices,
+> >  	}
+> >  
+> >  	q = bdev_get_queue(bdev);
+> > -	if (!blk_queue_nonrot(q))
+> > +	rotating = !blk_queue_nonrot(q);
+> > +	device->rotating = rotating;
+> > +	if (rotating)
+> >  		fs_devices->rotating = true;
+> > +	if (!fs_devices->mixed)
+> > +		fs_devices->mixed = btrfs_check_mixed(fs_devices, rotating);
 > [...]
-> > +	last_mirror = this_cpu_read(*fs_info->last_mirror);
-> [...]
-> > +	for (i = last_mirror; i < first + num_stripes; i++) {
-> > +		if (mirror_queue_not_filled(fs_info, map, i, stripe_offset,
-> > +					    stripe_nr)) {
-> > +			preferred_mirror = i;
-> > +			goto out;
-> > +		}
-> > +	}
-> > +
-> > +	for (i = first; i < last_mirror; i++) {
-> > +		if (mirror_queue_not_filled(fs_info, map, i, stripe_offset,
-> > +					    stripe_nr)) {
-> > +			preferred_mirror = i;
-> > +			goto out;
-> > +		}
-> > +	}
-> > +
-> > +	preferred_mirror = last_mirror;
-> > +
-> > +out:
-> > +	this_cpu_write(*fs_info->last_mirror, preferred_mirror);
 > 
-> This looks like it effectively decreases queue depth for non-last
-> device. After all devices are filled to queue_depth-penalty, only
-> a single mirror will be selected for next reads (until a read on
-> some other one completes).
+> Since this is adding to a set, a faster way is:
+> 
+> if (fs_devices->rotating != rotating)
+> 	fs_devices->mixed = true;
 > 
 
-Good point. And if all devices are going to be filled for longer time,
-this function will keep selecting the last one. Maybe I should select
-last+1 in that case. Would that address your concern or did you have any
-other solution in mind?
+Good idea.
 
-Thanks for pointing that out.
-
-> Have you tried testing with much more jobs / non-sequential accesses?
+> The scan might be necessary on device removal, though.
 > 
 
-I didn't try with non-sequential accesses. Will do that before
-respinning v2.
+And good point. I didn't address the case of device removal at all.
 
-> Best Reagrds,
+> > -	if (!blk_queue_nonrot(q))
+> > +	rotating = !blk_queue_nonrot(q);
+> > +	device->rotating = rotating;
+> > +	if (rotating)
+> >  		fs_devices->rotating = true;
+> > +	if (!fs_devices->mixed)
+> > +		fs_devices->mixed = btrfs_check_mixed(fs_devices, rotating);
+> 
+> Duplication. Maybe pull all this into a function?
+> 
+
+Will do that as well.
+
+> Best Regards,
 > Michał Mirosław
 
 Regards,

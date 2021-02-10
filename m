@@ -2,113 +2,138 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-12.5 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3D2F2C43333
-	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Feb 2021 21:31:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B6960C433E0
+	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Feb 2021 00:33:39 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 0A74364E9A
-	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Feb 2021 21:31:06 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 84F9E64E50
+	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Feb 2021 00:33:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234438AbhBIVaT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 9 Feb 2021 16:30:19 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40512 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234206AbhBIU5A (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Feb 2021 15:57:00 -0500
-Received: from mail-wr1-x429.google.com (mail-wr1-x429.google.com [IPv6:2a00:1450:4864:20::429])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5C49AC061574
-        for <linux-btrfs@vger.kernel.org>; Tue,  9 Feb 2021 11:02:13 -0800 (PST)
-Received: by mail-wr1-x429.google.com with SMTP id l12so23405427wry.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 09 Feb 2021 11:02:13 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=SYcphlIN6dLNR6a1FsHxnAGmP9jd4fXXXbjOgu38KKY=;
-        b=womYaCcVCzxO+YSREUzrDYNc/M5BvtDtpIn5MMSxXr/9r+fOFy9EoDCHA4Sc3ek+s7
-         qVCVHaU9y31IucNlv6onlXyjXf2LiWcDM1dqWF1BRvgvHd4vkK/ss0y7kNl3B2Es6ZRG
-         kmBpg2OBp7FG+UTGauF1FYHIrEmvUCDzd1zhAPNof5Aa+FEnHySp0Qdbz8Hzy0SaA7+r
-         5qC2roDzXP3bhTzqZtrEATU863gYA4UZZfQahD6DDXcR6tjANqGMqvsEK1tDTeADzIbF
-         8xwD9TM8XpkFUbmPDaC0nZ7DKCQ6b4aJ6R+T88aXXfnmVnvp91Rx2sPaU6PNikbeX5es
-         Z2rg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=SYcphlIN6dLNR6a1FsHxnAGmP9jd4fXXXbjOgu38KKY=;
-        b=NpVJVqC2CvZQk5NoMGJO84TIR8ZTZuLgDGfPf/qo4c6lQ8U/Q9tHJQU6O6MsudbkqG
-         v0Nz1+LI9pOyBGN7HuV+9anT3aFlzr1OCp9NXKbRoav84qPgLgZyaSiWe4ldQiwCLtg1
-         s2kNfswANyzegUrP2PFYo98EuY2SEdm4FQ8HPOfM1EzOQJXGyIi9zX3kuf6jTwtbTYZU
-         +z+XmlIhfwdeu0GGL51iZzpk3GgDfzse8cLETUL9QH5If0tUhcj7MJjd39G+7pBvcMC8
-         f3US+3l2QjQrbE4iNT4PP/uRidtpu0iYr7DcjojEvyIbOP9mqyuJjwPoGrneFWLuFOC8
-         1/zA==
-X-Gm-Message-State: AOAM530eCjtJdWUyPiBipGDGJ3qSiqbOzwz9B3w6y79LwMvHPpFsa2me
-        uA9z+QJGp3HDHCbqH8SOnLmfr9lDlRLzJERHMkdWfA==
-X-Google-Smtp-Source: ABdhPJz0mWEvOGHEoeDHrpYxB0lO0kPVlL95BgE2j1+ZTJE4W5QxitU1oZLJjAugVyDitRzaXMhWlWErG4GOLL5gdnE=
-X-Received: by 2002:a5d:6983:: with SMTP id g3mr3419775wru.236.1612897332123;
- Tue, 09 Feb 2021 11:02:12 -0800 (PST)
+        id S235081AbhBJAdL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 9 Feb 2021 19:33:11 -0500
+Received: from mout.gmx.net ([212.227.15.19]:59131 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S235007AbhBJALG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 9 Feb 2021 19:11:06 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1612915759;
+        bh=s+opzyFTcyKb9Np/I+ncpXPKeNNsVH37+uEc2yIG2uw=;
+        h=X-UI-Sender-Class:Subject:To:Cc:References:From:Date:In-Reply-To;
+        b=bSVfggDwtHZXo/JxTFqFGhXmihux9+VO+Hf8N6feIqR/MZaTEsYjs/5WW0zmMWacm
+         ga7H34RehlIc+MPWaHOw9TOlYsyDUiq8s+veVnmDQkM2vdiqmHrmB3z/QsL3Jev8D0
+         iTpAaYMXUk0iOIfaHYNPIEEccMzg6xt+lef/bvT0=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx004
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1Mw9Q6-1m1jDv05ye-00s2Iw; Wed, 10
+ Feb 2021 01:09:19 +0100
+Subject: Re: [PATCH u-boot] fs: btrfs: do not fail when offset of a ROOT_ITEM
+ is not -1
+To:     =?UTF-8?Q?Marek_Beh=c3=ban?= <marek.behun@nic.cz>,
+        u-boot@lists.denx.de
+Cc:     linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>,
+        Qu Wenruo <wqu@suse.com>, Tom Rini <trini@konsulko.com>
+References: <20210209173337.16621-1-marek.behun@nic.cz>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <40e38323-0013-6799-1527-02cbac8dc93e@gmx.com>
+Date:   Wed, 10 Feb 2021 08:09:14 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.7.0
 MIME-Version: 1.0
-References: <CAJCQCtSx=HcCRMiE0eganPWJVTB+b4zfb_mnd68L2VapGGKi7Q@mail.gmail.com>
- <3897f126-e977-d842-f91d-b48b74958f3d@libero.it> <CAJCQCtScUYMoMpw==HTbBB6s0BFnXuT=MvSuVJYEVBrA7-RbHA@mail.gmail.com>
- <839d9baa-8df5-7efd-94ee-b28f282ef9ec@inwind.it>
-In-Reply-To: <839d9baa-8df5-7efd-94ee-b28f282ef9ec@inwind.it>
-From:   Chris Murphy <lists@colorremedies.com>
-Date:   Tue, 9 Feb 2021 12:01:55 -0700
-Message-ID: <CAJCQCtSqESuYawuh6E8b6Xd=z4D13J2=v-6rn8+0mwuThXNtkg@mail.gmail.com>
-Subject: Re: is BTRFS_IOC_DEFRAG behavior optimal?
-To:     Goffredo Baroncelli <kreijack@inwind.it>
-Cc:     Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <20210209173337.16621-1-marek.behun@nic.cz>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:aTm3a8X29GZo8Hs7sEE1w+TXseXQ5zvOYYZmIQgYrfEQxWq866/
+ 54nvkFrkLaXBzMD4cIqA3ZNns+puKOnoRhx81w7WTeZ0g+nCLepVs7MGuaD68V5+cZoihkt
+ HpkAlxV/qlV//rNQJU7r4q9n3sEnirA/wz1tgu6OjdS94rsTdkoOsjIIFeVNehbhYu0qtSF
+ OKh/dXGUofxSbJAkk+JVg==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:DjJMwkEtfEA=:wRhD6HoUPcL+ieAKYC891n
+ SqG4AtvkhZlLTRh9k4tfkuRuyWufoaXccSHRCvzRq4xjJe/d7ylaBdSBmNUYq5W3oLbWbw1r3
+ S/v0dfisz242lcDIZSsyJlBo63fxfi7+1DX1DRgaAlpO7RuB6WjR8SRlQg9zT9S6qgKHEe/Kc
+ cn3con6t/anMLIJEzV2i3U2rgt5VkcnF6qB2+t5NSIXJm9NYCD9JSx0yjso4SStaFj9MzqlEg
+ 7AXBnqhphPCpxTDyOCFPk0bDXZtWuUc+mmYSrRXXm7Rcvbf8AAY3jfR/vKOLV/F5s2p60VEZg
+ ZTWRuzPUQcAzE4EPis8GCuZShoXTI0ASgFf9aB/jFugZ/ib+rZpOQ0hqCUiVYvF+5irjbB8iu
+ Gqzj5UEeTjyTcIUmB4fmaItwz0JJ1ng4uIGK30ClEd3X+vQGAONjQG+DMAJ3/T2vh/k5GVeqn
+ 9LvcZfYJ3GX7nYgb/T/B5eSE2ykgLh9i7bllyZmj7OVLichT3/+DJQeMKIjspx6G3x7ASGW4+
+ RIoWvVFIP6jxXoy8ZVv0CSLLNaw2zuNkwSnWg4exnWjgp4Alc/E2jpDxRfV30n834SaNKX5pV
+ /ewlFGm14ncOSUPoZ5sK7+9V2wgEIPmXUOKXDxUdh0sp4pYZrP3LXgB6eQuQYtSe6Hcul0xFH
+ /lykIpmLIQEzK8WSGun5d3pJDYJan9Oe497Uf0kOj+yD84A2poF00uoNUwZMp5zNUZp03OUEa
+ TAIDb+ZmtKnwbxcmNKRUdMPYHNlr+3VUovGreT1mWKDgD7NR4vDQhzx1MKBhVNKE3mQagxJCV
+ QajnDGJ1HGF90csCGW8KmxMoOvPP8+TUAzr3S7l2YYtKsyqMyaoVHBlr2tLgdqTNNpuifYPVb
+ +3ciFIJhQVCFrS+Pbe7w==
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Feb 9, 2021 at 11:13 AM Goffredo Baroncelli <kreijack@inwind.it> wrote:
->
-> On 2/9/21 1:42 AM, Chris Murphy wrote:
-> > Perhaps. Attach strace to journald before --rotate, and then --rotate
-> >
-> > https://pastebin.com/UGihfCG9
->
-> I looked to this strace.
->
-> in line 115: it is called a ioctl(<BTRFS-DEFRAG>)
-> in line 123: it is called a ioctl(<BTRFS-DEFRAG>)
->
-> However the two descriptors for which the defrag is invoked are never sync-ed before.
->
-> I was expecting is to see a sync (flush the data on the platters) and then a
-> ioctl(<BTRFS-defrag>. This doesn't seems to be looking from the strace.
->
-> I wrote a script (see below) which basically:
-> - create a fragmented file
-> - run filefrag on it
-> - optionally sync the file             <-----
-> - run btrfs fi defrag on it
-> - run filefrag on it
->
-> If I don't perform the sync, the defrag is ineffective. But if I sync the
-> file BEFORE doing the defrag, I got only one extent.
-> Now my hypothesis is: the journal log files are bad de-fragmented because these
-> are not sync-ed before.
-> This could be tested quite easily putting an fsync() before the
-> ioctl(<BTRFS_DEFRAG>).
->
-> Any thought ?
-
-No idea. If it's a full sync then it could be expensive on either
-slower devices or heavier workloads. On the one hand, there's no point
-of doing an ineffective defrag so maybe the defrag ioctl should  just
-do the sync first? On the other hand, this would effectively make the
-defrag ioctl a full file system sync which might be unexpected. It's a
-set of tradeoffs and I don't know what the expectation is.
-
-What about fdatasync() on the journal file rather than a full sync?
 
 
--- 
-Chris Murphy
+On 2021/2/10 =E4=B8=8A=E5=8D=881:33, Marek Beh=C3=BAn wrote:
+> When the btrfs_read_fs_root() function is searching a ROOT_ITEM with
+> location key offset other than -1, it currently fails via BUG_ON.
+>
+> The offset can have other value than -1, though. This can happen for
+> example if a subvolume is renamed:
+>
+>    $ btrfs subvolume create X && sync
+>    Create subvolume './X'
+>    $ btrfs inspect-internal dump-tree /dev/root | grep -B 2 'name: X$
+>          location key (270 ROOT_ITEM 18446744073709551615) type DIR
+>          transid 283 data_len 0 name_len 1
+>          name: X
+>    $ mv X Y && sync
+>    $ btrfs inspect-internal dump-tree /dev/root | grep -B 2 'name: Y$
+>          location key (270 ROOT_ITEM 0) type DIR
+>          transid 285 data_len 0 name_len 1
+>          name: Y
+>
+> As can be seen the offset changed from -1ULL to 0.
+
+
+Offset for subvolume ROOT_ITEM can be other values, especially for
+snapshot that offset is the transid when it get created.
+
+But the problem is, if we call btrfs_read_fs_root() for subvolume tree,
+the offset of the key really doesn't matter, the only important thing is
+the objectid.
+
+Thus we use that BUG_ON() to catch careless callers.
+
+Would you please provide a case where we wrongly call
+btrfs_read_fs_root() with incorrect offset inside btrfs-progs/uboot?
+
+I believe that would be the proper way to fix.
+
+Thanks,
+Qu
+>
+> Do not fail in this case.
+>
+> Signed-off-by: Marek Beh=C3=BAn <marek.behun@nic.cz>
+> Cc: David Sterba <dsterba@suse.com>
+> Cc: Qu Wenruo <wqu@suse.com>
+> Cc: Tom Rini <trini@konsulko.com>
+> ---
+>   fs/btrfs/disk-io.c | 3 +--
+>   1 file changed, 1 insertion(+), 2 deletions(-)
+>
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index b332ecb796..c6fdec95c1 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -732,8 +732,7 @@ struct btrfs_root *btrfs_read_fs_root(struct btrfs_f=
+s_info *fs_info,
+>   		return fs_info->chunk_root;
+>   	if (location->objectid =3D=3D BTRFS_CSUM_TREE_OBJECTID)
+>   		return fs_info->csum_root;
+> -	BUG_ON(location->objectid =3D=3D BTRFS_TREE_RELOC_OBJECTID ||
+> -	       location->offset !=3D (u64)-1);
+> +	BUG_ON(location->objectid =3D=3D BTRFS_TREE_RELOC_OBJECTID);
+>
+>   	node =3D rb_search(&fs_info->fs_root_tree, (void *)&objectid,
+>   			 btrfs_fs_roots_compare_objectids, NULL);
+>

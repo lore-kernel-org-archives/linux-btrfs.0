@@ -2,95 +2,110 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-14.3 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+X-Spam-Status: No, score=-19.3 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
 	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+	INCLUDES_CR_TRAILER,INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	UNPARSEABLE_RELAY,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 39501C433E9
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Feb 2021 05:26:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F34F6C433E0
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Feb 2021 05:27:00 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 076AB61493
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Feb 2021 05:26:42 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C4EFC61493
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Feb 2021 05:27:00 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229517AbhBKF0g (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 11 Feb 2021 00:26:36 -0500
-Received: from userp2130.oracle.com ([156.151.31.86]:46026 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229773AbhBKF0V (ORCPT
+        id S229803AbhBKF0o (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 11 Feb 2021 00:26:44 -0500
+Received: from aserp2130.oracle.com ([141.146.126.79]:57808 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229774AbhBKF0b (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 Feb 2021 00:26:21 -0500
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 11B5Oqwd153273;
+        Thu, 11 Feb 2021 00:26:31 -0500
+Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
+        by aserp2130.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 11B5OUt1032544;
         Thu, 11 Feb 2021 05:25:36 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
- subject : date : message-id : mime-version : content-transfer-encoding;
- s=corp-2020-01-29; bh=tkrtsuB4nOosd/iSYfgnHW5+MJDa9OZsW0EIBC/MpgQ=;
- b=yn0rr6PHa9KFn+hga2KPuub2jtD82YW267dtXFdmTa1bVutmvdCxHqohXh1okkShExlf
- sO1xfhkWWLBK0kJ0iOzludE1BXMV40B4UxGJNj8M7167QFRdfqKpVCTLJrl90tACUx1D
- ZByjyunLD4iK5OE1HSczJbjEQNvPBitgT1y68gj8Kw/gtAyS99NZtFe0Ji7ZcImuA6sz
- OoczdMNNvxjyvqWAPulGe8YWwmKRcINZ+z+VAcha7Q5mUdBaOiFVi6fHHif78qe4c9Br
- sT1ZOl8pJCfIKZsu1JlgimdgLDMxLGijgmGEP+SOYg/nDJD7ml6GooArv4LzbFrOH+du qw== 
-Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
-        by userp2130.oracle.com with ESMTP id 36mv9dr925-1
+ subject : date : message-id : in-reply-to : references : mime-version :
+ content-transfer-encoding; s=corp-2020-01-29;
+ bh=L9bW0YA0vUbkq6UHLgm/i1FjTeBMGWcflwqqE5oLFWc=;
+ b=h15CswaDbBteF9svsmIeL8tJi/IVzW2BqC5C0ldsqeS1hB9Xu9/nxfGHcRGozNwsqLtW
+ 7n5QeTp/0T2+iW2uup8tXzp7lodS0zXYHhX+NmiwLdgsWZPY8VqY4wTod1lWQ729HHWr
+ 4vUVpV/JL1GQ0rGjlYmZPgEzxxjj6RqZ4bWp/CZK4CncPfJezm9OUdSg7vjWkGXfiAM4
+ pZBBNGFRK/W0Svt3Mws/qLhzREbqNsZ4dPPPgcvw+Ufpd86TPlyHD5bek0G9pxGdsRb9
+ 08IVNrt7Q94FDl5WwO/96WXpFX6aN6CHOWSezS5qB+kQGKKqUfYcuCnvmgTVOWolCMoM 3Q== 
+Received: from aserp3030.oracle.com (aserp3030.oracle.com [141.146.126.71])
+        by aserp2130.oracle.com with ESMTP id 36hgmap6mm-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
         Thu, 11 Feb 2021 05:25:36 +0000
-Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
-        by userp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 11B5P6wq176909;
+Received: from pps.filterd (aserp3030.oracle.com [127.0.0.1])
+        by aserp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 11B5K2P3103300;
         Thu, 11 Feb 2021 05:25:35 GMT
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by userp3030.oracle.com with ESMTP id 36j51yg4hk-1
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by aserp3030.oracle.com with ESMTP id 36j4pr1u14-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
         Thu, 11 Feb 2021 05:25:35 +0000
 Received: from abhmp0015.oracle.com (abhmp0015.oracle.com [141.146.116.21])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 11B5PYvH015018;
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id 11B5PZQ3023673;
         Thu, 11 Feb 2021 05:25:35 GMT
 Received: from ca-dev104.us.oracle.com (/10.129.135.33)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Wed, 10 Feb 2021 21:25:34 -0800
+        with ESMTP ; Wed, 10 Feb 2021 21:25:35 -0800
 From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     josef@toxicpanda.com
-Subject: [PATCH 0/5] cleanups btrfs_extent_readonly() and scrub, part1
-Date:   Wed, 10 Feb 2021 21:25:14 -0800
-Message-Id: <cover.1613019838.git.anand.jain@oracle.com>
+Subject: [PATCH 2/5] btrfs: btrfs_extent_readonly() change return type to bool
+Date:   Wed, 10 Feb 2021 21:25:16 -0800
+Message-Id: <3c0e3bc3fa0577bded592b37d281e8fd27a8f779.1613019838.git.anand.jain@oracle.com>
 X-Mailer: git-send-email 2.27.0
+In-Reply-To: <cover.1613019838.git.anand.jain@oracle.com>
+References: <cover.1613019838.git.anand.jain@oracle.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-Proofpoint-Virus-Version: vendor=nai engine=6200 definitions=9891 signatures=668683
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 spamscore=0 phishscore=0
- mlxscore=0 malwarescore=0 mlxlogscore=999 bulkscore=0 adultscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2009150000
- definitions=main-2102110045
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 adultscore=0
+ mlxlogscore=999 malwarescore=0 bulkscore=0 phishscore=0 spamscore=0
+ mlxscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2009150000 definitions=main-2102110044
 X-Proofpoint-Virus-Version: vendor=nai engine=6200 definitions=9891 signatures=668683
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 mlxlogscore=999
- bulkscore=0 suspectscore=0 phishscore=0 adultscore=0 impostorscore=0
- mlxscore=0 clxscore=1015 lowpriorityscore=0 malwarescore=0 spamscore=0
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
+ spamscore=0 lowpriorityscore=0 phishscore=0 adultscore=0 impostorscore=0
+ suspectscore=0 mlxscore=0 clxscore=1015 mlxlogscore=999 bulkscore=0
  classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2009150000
  definitions=main-2102110045
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This patchset makes btrfs_extent_readonly() static and changes the return
-type to bool.
-And drops few unwanted function declarations in the scrub.c.
+btrfs_extent_readonly() checks if the bg is readonly, the bool return type
+will suffice its need.
 
-Thanks. Anand
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ fs/btrfs/inode.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-Anand Jain (5):
-  btrfs: make btrfs_extent_readonly() static
-  btrfs: btrfs_extent_readonly() change return type to bool
-  btrfs: scrub drop few function declarations
-  btrfs: scrub_checksum_tree_block() drop its function declaration
-  btrfs: scrub_checksum_data() drop its function declaration
-
- fs/btrfs/ctree.h       |   1 -
- fs/btrfs/extent-tree.c |  13 ---
- fs/btrfs/inode.c       |  13 +++
- fs/btrfs/scrub.c       | 202 ++++++++++++++++++++---------------------
- 4 files changed, 109 insertions(+), 120 deletions(-)
-
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 2ed7d736e39a..ebb2b8e3a71c 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -7256,14 +7256,14 @@ static struct extent_map *btrfs_new_extent_direct(struct btrfs_inode *inode,
+ 	return em;
+ }
+ 
+-static int btrfs_extent_readonly(struct btrfs_fs_info *fs_info, u64 bytenr)
++static bool btrfs_extent_readonly(struct btrfs_fs_info *fs_info, u64 bytenr)
+ {
+ 	struct btrfs_block_group *block_group;
+-	int readonly = 0;
++	bool readonly = false;
+ 
+ 	block_group = btrfs_lookup_block_group(fs_info, bytenr);
+ 	if (!block_group || block_group->ro)
+-		readonly = 1;
++		readonly = true;
+ 	if (block_group)
+ 		btrfs_put_block_group(block_group);
+ 	return readonly;
 -- 
 2.27.0
 

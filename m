@@ -2,170 +2,86 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-19.6 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+X-Spam-Status: No, score=-9.4 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,MAILING_LIST_MULTI,
+	NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0B7C7C433E6
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Feb 2021 17:04:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6CE6FC433DB
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Feb 2021 18:57:09 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D409064ECA
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Feb 2021 17:04:53 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1F25164D9C
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Feb 2021 18:57:09 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230093AbhBKREf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 11 Feb 2021 12:04:35 -0500
-Received: from mail.kernel.org ([198.145.29.99]:41978 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S232049AbhBKRCH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 Feb 2021 12:02:07 -0500
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 65C4464E15;
-        Thu, 11 Feb 2021 17:01:25 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1613062886;
-        bh=/UHp4jUiJeDClnyi15TJNaHQJrMGTxZdNhBpOabQHKw=;
-        h=From:To:Cc:Subject:Date:From;
-        b=OtCeITjWNiRO98jUIUZ8I4EmYqaW1D1qoyhsTJp6jakYXy7NC5NnADTBblFN8mtL3
-         PuOm8KSuWIIzNMKg6JU8DcjbhinI9lXTCyTLmLxNermGgbF/rSrPs02i+uFF2Pl9ri
-         gYVEovbjs4VYWTJGeWFaPh4gdoTxkBj1A77IbYeeM4C1+Ued3U3jHzy12nzs6QF7rK
-         B24fPj0/3EllsoZWxAfh2gnOiiVeSXbp+p21dV1G2zrfiRhaJDjgyYqJx+o4AhI/GC
-         sMKOtvn2Xbuau0rAcAOGGGEJwpjcxfTuWXSI0f4A2GcxoqmFBpN/IymAnhBxsQPLtk
-         DCfmdzlTxyjaQ==
-From:   fdmanana@kernel.org
-To:     fstests@vger.kernel.org
-Cc:     linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] btrfs: add test for cases when a dio write has to fallback to a buffered write
-Date:   Thu, 11 Feb 2021 17:01:18 +0000
-Message-Id: <20210211170118.12551-1-fdmanana@kernel.org>
-X-Mailer: git-send-email 2.28.0
+        id S230258AbhBKSry (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 11 Feb 2021 13:47:54 -0500
+Received: from smtp-17.italiaonline.it ([213.209.10.17]:51934 "EHLO libero.it"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S229531AbhBKSrt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 11 Feb 2021 13:47:49 -0500
+Received: from venice.bhome ([78.12.25.19])
+        by smtp-17.iol.local with ESMTPA
+        id AGzRlzLnElChfAGzRlG9yu; Thu, 11 Feb 2021 19:46:57 +0100
+x-libjamoibt: 1601
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=libero.it; s=s2014;
+        t=1613069217; bh=e1vj9OiqiS1fwYJk3Uqi3ZQSvObSC4NTRKuLRRbNI6w=;
+        h=From;
+        b=tuJ4ZOpBlpC2cS/6aThJ7BYmwQduYLlzLTlXdJZ2L8Arqi8Y0Tj3yCp0B2YsmmxkI
+         2rn/XsxHCDR7YvFVn/AEZEPElgyhCJ0OeZdVEq9bPeQthhb5Ofr7dGME8DA5X5K9xD
+         qoRpzjQV8HJ/qMK3HLrHfhjYXcqCefjzwPA/sYSLSFmIvN9OlbNwZTS0bGbcVnx3TC
+         v3lpWeneH1b72u1ZKhP5Ns0sXTnhsjxGjOCuogkacX8WcH8Qq7WqEI6M6wK90+/mE9
+         ZrIlSpWfSH42Getqj2+vMqpbRVCV6Lh8HucP7UYLNHL1C2zoMhkAZ7BnmdsqahR00+
+         MXeaB1h+LAe8A==
+X-CNFS-Analysis: v=2.4 cv=S6McfKgP c=1 sm=1 tr=0 ts=60257ba1 cx=a_exe
+ a=cZ/q60u+NbBn6HfapJxCHg==:117 a=cZ/q60u+NbBn6HfapJxCHg==:17
+ a=IkcTkHD0fZMA:10 a=MqSeC9ST09_qY2kDvqAA:9 a=QEXdDO2ut3YA:10
+Reply-To: kreijack@inwind.it
+Subject: Re: [PATCH 4/5] btrfs: add allocation_hint option.
+To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org
+Cc:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
+        Goffredo Baroncelli <kreijack@inwind.it>
+References: <20210201212820.64381-1-kreijack@libero.it>
+ <20210201212820.64381-5-kreijack@libero.it>
+ <415a0a47-ce3d-26f0-b770-156b6e53e4a7@toxicpanda.com>
+From:   Goffredo Baroncelli <kreijack@libero.it>
+Message-ID: <ecb74e47-d600-3ac7-7a29-2dc460caa9f2@libero.it>
+Date:   Thu, 11 Feb 2021 19:46:57 +0100
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.7.1
 MIME-Version: 1.0
+In-Reply-To: <415a0a47-ce3d-26f0-b770-156b6e53e4a7@toxicpanda.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
 Content-Transfer-Encoding: 8bit
+X-CMAE-Envelope: MS4xfOfgwQhgP8QDnGzxPRxzEObSjxO8v7sT+CLIcD1aKLzDE2bN0UoAkKckyTNfVy1xwG49jniDyO2HkqOvT6ICQOySLfOr9s9Sc7A0tHmIeHE9ri7lJGRg
+ C+FaVZF+EzbPYMxOdRZkyGWs6k8NhgYh97K3xvmqaCGTCck42ElADQPcEb0G+z4Jk92qlxuDWAawqTYgh/HaPuiWqX1zUuD4JJPog/1flMuGNqLhPWh6ec4G
+ 1b9gtdGM3EduFxZL2orjTLmzzGklytX91uoRpUDFPI5L1VIdRHmAjhOLHVlzktAN
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+On 2/10/21 5:14 PM, Josef Bacik wrote:
+> On 2/1/21 4:28 PM, Goffredo Baroncelli wrote:
+>> From: Goffredo Baroncelli <kreijack@inwind.it>
+>>
+>> Add allocation_hint mount option. This option accepts the following values:
+>>
+>> - 0 (default):  the chunks allocator ignores the disk hints
+>> - 1:            the chunks allocator considers the disk hints
+>>
+>> Signed-off-by: Goffredo Baroncelli <kreijack@winwind.it>
+> 
+> We don't want an mount option here.  If a user has tagged a block device as METADATA/DATA_ONLY or METADATA_PREFERRED we know they want it.  If we want to add a way to disable the hinting then I think a sysctl option to disable is a reasonable compromise.  Thanks,
 
-Test cases where a direct IO write, with O_DSYNC, can not be done and has
-to fallback to a buffered write.
+The idea was to have a knob to switch off all the logic in case of problem.
+When the code will be more tested we can drop this part. For the moment I will move this patch at the end of the series to simplify the "manual" drop.
 
-This is motivated by a regression that was introduced in kernel 5.10 by
-commit 0eb79294dbe328 ("btrfs: dio iomap DSYNC workaround")) and was
-fixed in kernel 5.11 by commit ecfdc08b8cc65d ("btrfs: remove dio iomap
-DSYNC workaround").
+> 
+> Josef
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- tests/btrfs/231     | 61 +++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/231.out | 21 ++++++++++++++++
- tests/btrfs/group   |  1 +
- 3 files changed, 83 insertions(+)
- create mode 100755 tests/btrfs/231
- create mode 100644 tests/btrfs/231.out
-
-diff --git a/tests/btrfs/231 b/tests/btrfs/231
-new file mode 100755
-index 00000000..9a404f57
---- /dev/null
-+++ b/tests/btrfs/231
-@@ -0,0 +1,61 @@
-+#! /bin/bash
-+# SPDX-License-Identifier: GPL-2.0
-+# Copyright (C) 2021 SUSE Linux Products GmbH. All Rights Reserved.
-+#
-+# FS QA Test No. btrfs/231
-+#
-+# Test cases where a direct IO write, with O_DSYNC, can not be done and has to
-+# fallback to a buffered write.
-+#
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+	cd /
-+	rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/attr
-+
-+# real QA test starts here
-+_supported_fs btrfs
-+_require_scratch
-+_require_odirect
-+_require_chattr c
-+
-+rm -f $seqres.full
-+
-+_scratch_mkfs >>$seqres.full 2>&1
-+_scratch_mount
-+
-+# First lets test with an attempt to write into a file range with compressed
-+# extents.
-+touch $SCRATCH_MNT/foo
-+$CHATTR_PROG +c $SCRATCH_MNT/foo
-+
-+$XFS_IO_PROG -s -c "pwrite -S 0xab -b 1M 0 1M" $SCRATCH_MNT/foo | _filter_xfs_io
-+# Now do the direct IO write...
-+$XFS_IO_PROG -d -s -c "pwrite -S 0xcd 512K 512K" $SCRATCH_MNT/foo | _filter_xfs_io
-+
-+# Now try doing a write into an unaligned offset...
-+$XFS_IO_PROG -f -d -s -c "pwrite -S 0xef 1111 512K" $SCRATCH_MNT/bar | _filter_xfs_io
-+
-+# Unmount, mount again, and verify we have the expected data.
-+_scratch_cycle_mount
-+
-+echo "File foo data:"
-+od -A d -t x1 $SCRATCH_MNT/foo
-+echo "File bar data:"
-+od -A d -t x1 $SCRATCH_MNT/bar
-+
-+status=0
-+exit
-diff --git a/tests/btrfs/231.out b/tests/btrfs/231.out
-new file mode 100644
-index 00000000..def05769
---- /dev/null
-+++ b/tests/btrfs/231.out
-@@ -0,0 +1,21 @@
-+QA output created by 231
-+wrote 1048576/1048576 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 524288/524288 bytes at offset 524288
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 524288/524288 bytes at offset 1111
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+File foo data:
-+0000000 ab ab ab ab ab ab ab ab ab ab ab ab ab ab ab ab
-+*
-+0524288 cd cd cd cd cd cd cd cd cd cd cd cd cd cd cd cd
-+*
-+1048576
-+File bar data:
-+0000000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-+*
-+0001104 00 00 00 00 00 00 00 ef ef ef ef ef ef ef ef ef
-+0001120 ef ef ef ef ef ef ef ef ef ef ef ef ef ef ef ef
-+*
-+0525392 ef ef ef ef ef ef ef
-+0525399
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index a7c65983..9f63db69 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -233,3 +233,4 @@
- 228 auto quick volume
- 229 auto quick send clone
- 230 auto quick qgroup limit
-+231 auto quick compress rw
+Ciao
+Goffredo
 -- 
-2.28.0
-
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

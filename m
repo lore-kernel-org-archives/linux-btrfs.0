@@ -8,107 +8,83 @@ X-Spam-Status: No, score=-4.4 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 68F6BC433E0
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Feb 2021 18:57:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A5488C433DB
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Feb 2021 18:57:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 22EAE64D9C
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Feb 2021 18:57:42 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5F53364E66
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Feb 2021 18:57:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230289AbhBKSr6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 11 Feb 2021 13:47:58 -0500
-Received: from smtp-17.italiaonline.it ([213.209.10.17]:45101 "EHLO libero.it"
+        id S230305AbhBKSsD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 11 Feb 2021 13:48:03 -0500
+Received: from smtp-17.italiaonline.it ([213.209.10.17]:41032 "EHLO libero.it"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S229679AbhBKSrw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S230196AbhBKSrw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Thu, 11 Feb 2021 13:47:52 -0500
 Received: from venice.bhome ([78.12.25.19])
         by smtp-17.iol.local with ESMTPA
-        id AGzPlzLmjlChfAGzPlG9yX; Thu, 11 Feb 2021 19:46:56 +0100
+        id AGzWlzLoslChfAGzWlGA0T; Thu, 11 Feb 2021 19:47:02 +0100
 x-libjamoibt: 1601
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=libero.it; s=s2014;
-        t=1613069216; bh=CMV2p9VxQa8MUOzB9jkwF++eAlOlH8C/UaBnS1SFwBk=;
+        t=1613069222; bh=c6/K5M8gMODr/RHru0HNp2c+0rtmF/I0zxzRFaLDduc=;
         h=From;
-        b=WUA7OYFzv6of+dHgtSC5Blc6Bc0X1kLBwtw8IjhALsdhlwfoCSWw4yNChbPNKeLve
-         9GnBxi7hxBUabvCjq45FuGFe+7kw2ysUE9gvPY+67pDIw6cHsvUIaA20n+iiGDxG6k
-         U8oJFo+On/IOCCCuCs6mX2fu6SBXoa0Mb9TphryqJ8HSCQPvFBdypYZ6v3xFdxerYB
-         UrgWbW7FcX3EhUX054GJUMGGfA174FQLvgh21Tb63O/tHvxQPiCIbs96iCV4Kq+xTf
-         TATqCvSJc7tkS+V1SH4DlxEzKrMCKTkxPCq06RUz57X6T75JtLX1ol0cZOYI7SrPo2
-         yXNaaGcAu1k8Q==
-X-CNFS-Analysis: v=2.4 cv=S6McfKgP c=1 sm=1 tr=0 ts=60257ba0 cx=a_exe
+        b=TCFAHYhGVh+t3cWXLO32BkfB8iimt31ruqL7Ne1gErPEPvaKI8jCirhSLmTxAhImR
+         GDT7kNXOAODW6RyXkfP1aUl86GJ1eR3/5eyhNf8uw42PuYuG1ubC5f/g8+ifXK8mal
+         F/NrPdT/rE4Y20Wl3uW0gN0iTPh9mPBVkcoEfBqpn2lhTvifCPeGuZ1n9oYZbm11Nv
+         FqO9bapd5yfqFHnhd1qkZVPm4jXHneSoOXR+SI16iHaAE8jdbfursUS25QYdkdbxGq
+         IqnelWYuz/+CKzXDtDjJM0yZi6HpVybadlQiRRiqoSBc1Y6cw2TTRB8U/RM2RKfSrI
+         w4azMSZK+j5GQ==
+X-CNFS-Analysis: v=2.4 cv=S6McfKgP c=1 sm=1 tr=0 ts=60257ba6 cx=a_exe
  a=cZ/q60u+NbBn6HfapJxCHg==:117 a=cZ/q60u+NbBn6HfapJxCHg==:17
- a=IkcTkHD0fZMA:10 a=w-2WzCQpt14Tbe6Q6ZAA:9 a=QEXdDO2ut3YA:10
+ a=IkcTkHD0fZMA:10 a=a2Va9reMxmNHfdzgiWcA:9 a=QEXdDO2ut3YA:10
 Reply-To: kreijack@inwind.it
-Subject: Re: [PATCH 5/5] btrfs: add allocator_hint mode
+Subject: Re: [PATCH 2/5] btrfs: add flags to give an hint to the chunk
+ allocator
 To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org
 Cc:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
         Goffredo Baroncelli <kreijack@inwind.it>
 References: <20210201212820.64381-1-kreijack@libero.it>
- <20210201212820.64381-6-kreijack@libero.it>
- <e1610b05-433c-cd17-759a-743ed3abdf7d@toxicpanda.com>
+ <20210201212820.64381-3-kreijack@libero.it>
+ <3f283f4c-889f-aec1-7906-69fa72d1c09d@toxicpanda.com>
 From:   Goffredo Baroncelli <kreijack@libero.it>
-Message-ID: <60c5fd45-4488-734a-d4de-de1a121055ef@libero.it>
-Date:   Thu, 11 Feb 2021 19:46:55 +0100
+Message-ID: <13849e89-ef98-459f-9cd9-c836ce73edc2@libero.it>
+Date:   Thu, 11 Feb 2021 19:47:02 +0100
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
  Thunderbird/78.7.1
 MIME-Version: 1.0
-In-Reply-To: <e1610b05-433c-cd17-759a-743ed3abdf7d@toxicpanda.com>
+In-Reply-To: <3f283f4c-889f-aec1-7906-69fa72d1c09d@toxicpanda.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
-X-CMAE-Envelope: MS4xfJsBeX9LN0f3atg+lGZKqHbMJfx48QDeQ61hS3pecX+oi71HIc4yXLCTIpxVcRm8diSSE7bxB4+XYdKtBFRucYhVa4yK/Tx09KcPboQLhuPCcM0XrmmP
- 8ehkZOhJNJmTSpczpiQniT+LE0VwedWk3v6QQTxazVb+kCM2L0AodKHFCRToqpzuOnBsenxDxkL3abi68Dsl0qSvvAnQClgNsEl8wFglU2OvJtLeP1A8CgHn
- qCDqfJgq5zOFcFRGRk5Qnp38sa/gyUEvL7wgcsr5rIQcXtPmNhqfeLNyXwOYFgS+
+X-CMAE-Envelope: MS4xfDFlJbM06YKp+kX0YFi2IBqzJy9UeL0Vcc6ia2rF09b3YlHBDRfENCyVXI41KPzG+bx43e1WtenPNRtgUIZMjU2PwiPkoh7xGEfa5dEbNCf8EvhWIE49
+ KIOx5bnoYR5WClTQ0hqFrYuzXG/dXCZDQhifNKNuq+oPjABS/da+65eqzFUCuKhsDufNvf6EoNRGoZVObzmaz/PIresssVrSJ7k8oifVRYLYVn3LkOQFAJNq
+ 3ZWMTVnaIp+BiW2m4AM/6BxYUn2NjezcLCrWVd5RulbQqvr3xU9y58d7lYrZzM5x
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 2/10/21 5:12 PM, Josef Bacik wrote:
+On 2/10/21 5:09 PM, Josef Bacik wrote:
 > On 2/1/21 4:28 PM, Goffredo Baroncelli wrote:
 >> From: Goffredo Baroncelli <kreijack@inwind.it>
 [...]
->> +    int hint;
 >> +
->> +    static const char alloc_hint_map[BTRFS_DEV_ALLOCATION_MASK_COUNT] = {
->> +        [BTRFS_DEV_ALLOCATION_DATA_ONLY] = -1,
->> +        [BTRFS_DEV_ALLOCATION_PREFERRED_DATA] = 0,
->> +        [BTRFS_DEV_ALLOCATION_METADATA_ONLY] = 1,
->> +        [BTRFS_DEV_ALLOCATION_PREFERRED_METADATA] = 2
->> +        /* the other values are set to 0 */
->> +    };
+>> +/* btrfs chunk allocation hints */
+>> +#define BTRFS_DEV_ALLOCATION_MASK_BIT_COUNT    3
+>> +#define BTRFS_DEV_ALLOCATION_MASK ((1ULL << \
+>> +        BTRFS_DEV_ALLOCATION_MASK_BIT_COUNT) -1)
+>> +#define BTRFS_DEV_ALLOCATION_MASK_COUNT (1ULL << \
+>> +        BTRFS_DEV_ALLOCATION_MASK_BIT_COUNT)
 > 
-> This can be made global, up with the btrfs_raid_array definitions.
+> We just want to define the actual values that are going to disk, helpers can be defined elsewhere.  Thanks,
 
-I moved this in the beginning, outside the functions. It still "static", so no global.
-> 
-[...]
-
->>       /*
->>        * now sort the devices by hole size / available space
->>        */
->>       sort(devices_info, ndevs, sizeof(struct btrfs_device_info),
->>            btrfs_cmp_device_info, NULL);
->> +    /*
->> +     * select the minimum set of disks grouped by hint that
->> +     * can host the chunk
->> +     */
->> +    ndevs = 0;
->> +    while (ndevs < ctl->ndevs) {
->> +        hint = devices_info[ndevs++].alloc_hint;
->> +        while (devices_info[ndevs].alloc_hint == hint &&
->> +               ndevs < ctl->ndevs)
->> +                ndevs++;
->> +        if (ndevs >= ctl->devs_min)
->> +            break;
->> +    }
-> 
-> Can we just adjust btrfs_cmp_device_info to take the hint info into account? Thanks,
-
-Unfortunately No. btrfs_cmp_device_info is used to sort the disks list.
-Instead this piece of code *limits* the available number of disks to a disks set
-sufficient to host the new chunk.
+I will move BTRFS_DEV_ALLOCATION_MASK, BTRFS_DEV_ALLOCATION_MASK_COUNT. Instead I like
+to left BTRFS_DEV_ALLOCATION_MASK_BIT_COUNT here, in order to show how many bits
+are available.
 
 > 
 > Josef
 
+Ciao
+Goffredo
 
 -- 
 gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>

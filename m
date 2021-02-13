@@ -2,91 +2,63 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.7 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.3 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B538BC433E0
-	for <linux-btrfs@archiver.kernel.org>; Sat, 13 Feb 2021 01:05:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 22C4BC433DB
+	for <linux-btrfs@archiver.kernel.org>; Sat, 13 Feb 2021 10:20:40 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 7720464E05
-	for <linux-btrfs@archiver.kernel.org>; Sat, 13 Feb 2021 01:05:14 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D670464E3D
+	for <linux-btrfs@archiver.kernel.org>; Sat, 13 Feb 2021 10:20:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229918AbhBMBE4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 12 Feb 2021 20:04:56 -0500
-Received: from out20-97.mail.aliyun.com ([115.124.20.97]:42689 "EHLO
-        out20-97.mail.aliyun.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229708AbhBMBE4 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 Feb 2021 20:04:56 -0500
-X-Alimail-AntiSpam: AC=CONTINUE;BC=0.1675483|-1;CH=green;DM=|CONTINUE|false|;DS=CONTINUE|ham_regular_dialog|0.0032353-0.000107607-0.996657;FP=0|0|0|0|0|-1|-1|-1;HT=ay29a033018047212;MF=wangyugui@e16-tech.com;NM=1;PH=DS;RN=2;RT=2;SR=0;TI=SMTPD_---.JYP2aiw_1613178252;
-Received: from 192.168.2.112(mailfrom:wangyugui@e16-tech.com fp:SMTPD_---.JYP2aiw_1613178252)
-          by smtp.aliyun-inc.com(10.147.41.120);
-          Sat, 13 Feb 2021 09:04:12 +0800
-Date:   Sat, 13 Feb 2021 09:04:17 +0800
-From:   Wang Yugui <wangyugui@e16-tech.com>
-To:     fdmanana@kernel.org
-Subject: Re: [PATCH 5.10.x] btrfs: fix crash after non-aligned direct IO write with O_DSYNC
-Cc:     linux-btrfs@vger.kernel.org
-In-Reply-To: <94663c8a2172dc96b760d356a538d45c36f46040.1613062764.git.fdmanana@suse.com>
-References: <94663c8a2172dc96b760d356a538d45c36f46040.1613062764.git.fdmanana@suse.com>
-Message-Id: <20210213090416.926A.409509F4@e16-tech.com>
+        id S229646AbhBMKUQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 13 Feb 2021 05:20:16 -0500
+Received: from mail.kernel.org ([198.145.29.99]:43532 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S229598AbhBMKUM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 13 Feb 2021 05:20:12 -0500
+Received: by mail.kernel.org (Postfix) with ESMTPSA id 6FC6464DEB;
+        Sat, 13 Feb 2021 10:19:31 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linuxfoundation.org;
+        s=korg; t=1613211572;
+        bh=DZYpgIfFOFXJBGvrbEklrWD/iVoTHFJ4vSHqyi4HYLw=;
+        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+        b=aKKG2vSAf3MbywiQweiAouDBjjvD9EdRdFjr6nIURi1rpMi86FSgI53/DwkLTEN7v
+         2tcOQyOQ2S5XDw1HTmV43qLrE3y4zN0Xbi/3Vq9YB30wkPlAoO7sEkJlToFkRvRQ9E
+         dHe4+ambgVonnyrUkQWHXEfGRgiXrtk+wlKk8hGY=
+Date:   Sat, 13 Feb 2021 11:19:28 +0100
+From:   Greg KH <gregkh@linuxfoundation.org>
+To:     Michal Rostecki <mrostecki@suse.de>
+Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>,
+        "open list:BTRFS FILE SYSTEM" <linux-btrfs@vger.kernel.org>,
+        open list <linux-kernel@vger.kernel.org>,
+        Michal Rostecki <mrostecki@suse.com>
+Subject: Re: [PATCH RFC 5/6] btrfs: sysfs: Add directory for read policies
+Message-ID: <YCensH6UvkIp7Hnm@kroah.com>
+References: <20210209203041.21493-1-mrostecki@suse.de>
+ <20210209203041.21493-6-mrostecki@suse.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="US-ASCII"
-Content-Transfer-Encoding: 7bit
-X-Mailer: Becky! ver. 2.75.03 [en]
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20210209203041.21493-6-mrostecki@suse.de>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi,
-
-> This bug only affects 5.10 kernels, and the regression was introduced in
-> 5.10-rc1 by commit 0eb79294dbe328 ("btrfs: dio iomap DSYNC workaround").
-> The bug does not exist in 5.11 kernels due to commit ecfdc08b8cc65d
-> ("btrfs: remove dio iomap DSYNC workaround"), which depends on other
-> changes that went into the merge window for 5.11. So this is a fix only
-> for 5.10.x stable kernels, as there are people hitting this.
-
-It is OK too to backport commit ecfdc08b8cc65d
- ("btrfs: remove dio iomap DSYNC workaround") to 5.10 for this problem?
-
-the iomap issue for commit 0eb79294dbe328 ("btrfs: dio iomap DSYNC workaround")
-is already fixed in 5.10?
-
-Best Regards
-Wang Yugui (wangyugui@e16-tech.com)
-2021/02/13
-
-
-> Fixes: 0eb79294dbe328 ("btrfs: dio iomap DSYNC workaround")
-> CC: stable@vger.kernel.org # 5.10 (and only 5.10)
-> Bugzilla: https://bugzilla.suse.com/show_bug.cgi?id=1181605
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> ---
->  fs/btrfs/inode.c | 6 +++++-
->  1 file changed, 5 insertions(+), 1 deletion(-)
+On Tue, Feb 09, 2021 at 09:30:39PM +0100, Michal Rostecki wrote:
+> From: Michal Rostecki <mrostecki@suse.com>
 > 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index acc47e2ffb46..b536d21541a9 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -8026,8 +8026,12 @@ ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
->  	bool relock = false;
->  	ssize_t ret;
->  
-> -	if (check_direct_IO(fs_info, iter, offset))
-> +	if (check_direct_IO(fs_info, iter, offset)) {
-> +		ASSERT(current->journal_info == NULL ||
-> +		       current->journal_info == BTRFS_DIO_SYNC_STUB);
-> +		current->journal_info = NULL;
->  		return 0;
-> +	}
->  
->  	count = iov_iter_count(iter);
->  	if (iov_iter_rw(iter) == WRITE) {
-> -- 
-> 2.28.0
+> Before this change, raid1 read policy could be selected by using the
+> /sys/fs/btrfs/[fsid]/read_policy file.
+> 
+> Change it to /sys/fs/btrfs/[fsid]/read_policies/policy.
+> 
+> The motivation behing creating the read_policies directory is that the
+> next changes and new read policies are going to intruduce settings
+> specific to read policies.
 
+No Documentation/ABI/ update for this change?
 

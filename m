@@ -2,42 +2,42 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+X-Spam-Status: No, score=-18.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D1892C433DB
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E89ECC433E6
 	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Feb 2021 13:13:56 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 987BE64E4D
+	by mail.kernel.org (Postfix) with ESMTP id B89CA64DFF
 	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Feb 2021 13:13:56 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232716AbhBQNNk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 17 Feb 2021 08:13:40 -0500
-Received: from mx2.suse.de ([195.135.220.15]:56752 "EHLO mx2.suse.de"
+        id S232728AbhBQNNl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 17 Feb 2021 08:13:41 -0500
+Received: from mx2.suse.de ([195.135.220.15]:56728 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S232660AbhBQNNj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S230473AbhBQNNj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 17 Feb 2021 08:13:39 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1613567573; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+        t=1613567572; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=m/u1KLvq3raS0AkW9Mh8M2Xx5F7eAZcpuR6UdbWqv9I=;
-        b=Adm2IO9G2cUAezE7PfTPZdYgQBQfQw4bkIouDiaGlFkZEDIGIMLhUa8mwi8uLS8xvAO+hn
-        1hxaQvP55pWEvvPkVWjCwu9fSsm44RmcaSBLlsp9br4j0AgV8SH1nzWzh+jCjXdPzOxstQ
-        n42zN4fU04AoY9Mp+q6oirnC6Xz0/gg=
+        bh=piKBC0MoUD68JumoPXG63turKYZa/ITCvpk5eQ9EN9Q=;
+        b=Igf+Q2wsGPIXq342LFvMOIMx2aHKaoAFMC/9iX+CIkJZatFJ6vUlK1MF4nbk6StPl3/j4Z
+        SO4kL93F+XjAALD20ooUtRpaavI0cJ5IEk4l0Z50wQ6wpaXQLj5pBoD8SzEH3NGk3vX4U9
+        WmLgdFOC3cC/A3hij0oopLs/0IIAnb0=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 502B8B8F4;
-        Wed, 17 Feb 2021 13:12:53 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id CFDC5B8F2;
+        Wed, 17 Feb 2021 13:12:52 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 4/4] btrfs: Replace opencoded while loop with proper construct
-Date:   Wed, 17 Feb 2021 15:12:50 +0200
-Message-Id: <20210217131250.265859-5-nborisov@suse.com>
+Subject: [PATCH 2/4] btrfs: Make find_desired_extent take btrfs_inode
+Date:   Wed, 17 Feb 2021 15:12:48 +0200
+Message-Id: <20210217131250.265859-3-nborisov@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <20210217131250.265859-1-nborisov@suse.com>
 References: <20210217131250.265859-1-nborisov@suse.com>
@@ -47,75 +47,64 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-btrfs_inc_block_group_ro wants to ensure that the current transaction is
-not running dirty block groups, if it is it waits and loops again.
-That logic is currently implemented using a goto label. Actually using
-a proper do {} while() construct doesn't hurt readibility nor does it
-introduce excessive nesting and makes the relevant code stand out by
-being encompassed in the loop construct. No functional changes.
-
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/block-group.c | 42 +++++++++++++++++++++++-------------------
- 1 file changed, 23 insertions(+), 19 deletions(-)
+ fs/btrfs/file.c | 15 +++++++--------
+ 1 file changed, 7 insertions(+), 8 deletions(-)
 
-diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index 5064be59dac5..fabd25b76abb 100644
---- a/fs/btrfs/block-group.c
-+++ b/fs/btrfs/block-group.c
-@@ -2262,29 +2262,33 @@ int btrfs_inc_block_group_ro(struct btrfs_block_group *cache,
- 	struct btrfs_trans_handle *trans;
- 	u64 alloc_flags;
- 	int ret;
-+	bool dirty_bg_running;
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index a4e6fb43e3a7..1e68349c3884 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -3492,13 +3492,13 @@ static long btrfs_fallocate(struct file *file, int mode,
+ 	return ret;
+ }
  
--again:
--	trans = btrfs_join_transaction(fs_info->extent_root);
--	if (IS_ERR(trans))
--		return PTR_ERR(trans);
-+	do {
-+		trans = btrfs_join_transaction(fs_info->extent_root);
-+		if (IS_ERR(trans))
-+			return PTR_ERR(trans);
+-static loff_t find_desired_extent(struct inode *inode, loff_t offset,
++static loff_t find_desired_extent(struct btrfs_inode *inode, loff_t offset,
+ 				  int whence)
+ {
+-	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
++	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+ 	struct extent_map *em = NULL;
+ 	struct extent_state *cached_state = NULL;
+-	loff_t i_size = inode->i_size;
++	loff_t i_size = inode->vfs_inode.i_size;
+ 	u64 lockstart;
+ 	u64 lockend;
+ 	u64 start;
+@@ -3521,11 +3521,10 @@ static loff_t find_desired_extent(struct inode *inode, loff_t offset,
+ 	lockend--;
+ 	len = lockend - lockstart + 1;
  
--	/*
--	 * we're not allowed to set block groups readonly after the dirty
--	 * block groups cache has started writing.  If it already started,
--	 * back off and let this transaction commit
--	 */
--	mutex_lock(&fs_info->ro_block_group_mutex);
--	if (test_bit(BTRFS_TRANS_DIRTY_BG_RUN, &trans->transaction->flags)) {
--		u64 transid = trans->transid;
-+		dirty_bg_running = false;
+-	lock_extent_bits(&BTRFS_I(inode)->io_tree, lockstart, lockend,
+-			 &cached_state);
++	lock_extent_bits(&inode->io_tree, lockstart, lockend, &cached_state);
  
--		mutex_unlock(&fs_info->ro_block_group_mutex);
--		btrfs_end_transaction(trans);
-+		/*
-+		 * we're not allowed to set block groups readonly after the dirty
-+		 * block groups cache has started writing.  If it already started,
-+		 * back off and let this transaction commit
-+		 */
-+		mutex_lock(&fs_info->ro_block_group_mutex);
-+		if (test_bit(BTRFS_TRANS_DIRTY_BG_RUN, &trans->transaction->flags)) {
-+			u64 transid = trans->transid;
- 
--		ret = btrfs_wait_for_commit(fs_info, transid);
--		if (ret)
--			return ret;
--		goto again;
--	}
-+			mutex_unlock(&fs_info->ro_block_group_mutex);
-+			btrfs_end_transaction(trans);
-+
-+			ret = btrfs_wait_for_commit(fs_info, transid);
-+			if (ret)
-+				return ret;
-+			dirty_bg_running = true;
-+		}
-+	} while (dirty_bg_running);
- 
- 	if (do_chunk_alloc) {
- 		/*
+ 	while (start < i_size) {
+-		em = btrfs_get_extent_fiemap(BTRFS_I(inode), start, len);
++		em = btrfs_get_extent_fiemap(inode, start, len);
+ 		if (IS_ERR(em)) {
+ 			ret = PTR_ERR(em);
+ 			em = NULL;
+@@ -3547,7 +3546,7 @@ static loff_t find_desired_extent(struct inode *inode, loff_t offset,
+ 		cond_resched();
+ 	}
+ 	free_extent_map(em);
+-	unlock_extent_cached(&BTRFS_I(inode)->io_tree, lockstart, lockend,
++	unlock_extent_cached(&inode->io_tree, lockstart, lockend,
+ 			     &cached_state);
+ 	if (ret) {
+ 		offset = ret;
+@@ -3571,7 +3570,7 @@ static loff_t btrfs_file_llseek(struct file *file, loff_t offset, int whence)
+ 	case SEEK_DATA:
+ 	case SEEK_HOLE:
+ 		btrfs_inode_lock(inode, BTRFS_ILOCK_SHARED);
+-		offset = find_desired_extent(inode, offset, whence);
++		offset = find_desired_extent(BTRFS_I(inode), offset, whence);
+ 		btrfs_inode_unlock(inode, BTRFS_ILOCK_SHARED);
+ 		break;
+ 	}
 -- 
 2.25.1
 

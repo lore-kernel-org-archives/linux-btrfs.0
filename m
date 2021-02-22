@@ -2,41 +2,41 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-18.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DC853C433E6
-	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Feb 2021 06:35:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 40083C433E0
+	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Feb 2021 06:35:56 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 91CAA64EB4
+	by mail.kernel.org (Postfix) with ESMTP id E6F6D64ED6
 	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Feb 2021 06:35:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229991AbhBVGfy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S229995AbhBVGfy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Mon, 22 Feb 2021 01:35:54 -0500
-Received: from mx2.suse.de ([195.135.220.15]:48810 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:48820 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S229961AbhBVGfp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 22 Feb 2021 01:35:45 -0500
+        id S229967AbhBVGfr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 22 Feb 2021 01:35:47 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1613975666; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1613975670; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=4s77KBwjFZdumwy5kDJuMYYOMm7m2X1e+Q4BIFMulMo=;
-        b=R9ImD69331M5pnR8ESBhNXr7u0T1STcxgHay6HjiMwCt5WlGDG5GinfR6RvSMfmm9cq0Al
-        d+OgfwgRKD6ofCgOiBUvaULt+5GXacYmwhKmV0q4iKj1Kz5uOm50smjGyy6WkA743ARiQE
-        e8PuWXllWQZYMd97CespYgdQ+9Q4Tq0=
+        bh=TRWV6dtPSTUWKuuRZBYdjtXv/QFwGW80DdxKdvkotUw=;
+        b=JmO04Tb1gOiowPOzpMRdLXhQsULqfOmMK3+YVAk5QU8/8yYgS29I84v+wmX5jgUgIaLKTE
+        hfKb+TUiJo8AqrrM5g0ZTXsd9iw7eLNNkHnTDiHOZYTzG8i0lQZanrZR9iFvEwPR0DAP4f
+        GwSx1d5KtUM1IOAhJa9H6SlgxkAK0+4=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id D524CB124
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Feb 2021 06:34:26 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id AF2ABB126
+        for <linux-btrfs@vger.kernel.org>; Mon, 22 Feb 2021 06:34:30 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 07/12] btrfs: extent_io: make set/clear_extent_buffer_dirty() to support subpage sized metadata
-Date:   Mon, 22 Feb 2021 14:33:52 +0800
-Message-Id: <20210222063357.92930-8-wqu@suse.com>
+Subject: [PATCH 09/12] btrfs: extent_io: introduce end_bio_subpage_eb_writepage() function
+Date:   Mon, 22 Feb 2021 14:33:54 +0800
+Message-Id: <20210222063357.92930-10-wqu@suse.com>
 X-Mailer: git-send-email 2.30.0
 In-Reply-To: <20210222063357.92930-1-wqu@suse.com>
 References: <20210222063357.92930-1-wqu@suse.com>
@@ -46,158 +46,192 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-For set_extent_buffer_dirty() to support subpage sized metadata, just
-call btrfs_page_set_dirty() to handle both cases.
+The new function, end_bio_subpage_eb_writepage(), will handle the
+metadata writeback endio.
 
-For clear_extent_buffer_dirty(), it needs to clear the page dirty if and
-only if all extent buffers in the page range are no longer dirty.
-Also do the same for page error.
+The major difference involved is:
+- How to grab extent buffer
+  Now page::private is a pointer to btrfs_subpage, we can no longer grab
+  extent buffer directly.
+  Thus we need to use the bv_offset to locate the extent buffer manually
+  and iterate through the whole range.
 
-This is pretty different from the exist clear_extent_buffer_dirty()
-routine, so add a new helper function,
-clear_subpage_extent_buffer_dirty() to do this for subpage metadata.
+- Use btrfs_subpage_end_writeback() caller
+  This helper will handle the subpage writeback for us.
 
-Also since the main part of clearing page dirty code is still the same,
-extract that into btree_clear_page_dirty() so that it can be utilized
-for both cases.
+Since this function is executed under endio context, when grabbing
+extent buffers it can't grab eb->refs_lock as that lock is not designed
+to be grabbed under hardirq context.
 
-But there is a special race between set_extent_buffer_dirty() and
-clear_extent_buffer_dirty(), where we can clear the page dirty.
-
-[POSSIBLE RACE WINDOW]
-For the race window between clear_subpage_extent_buffer_dirty() and
-set_extent_buffer_dirty(), due to the fact that we can't call
-clear_page_dirty_for_io() under subpage spin lock, we can race like
-below:
-
-   T1 (eb1 in the same page)	|  T2 (eb2 in the same page)
- -------------------------------+------------------------------
- set_extent_buffer_dirty()	| clear_extent_buffer_dirty()
- |- was_dirty = false;		| |- clear_subpagE_extent_buffer_dirty()
- |				|    |- btrfs_clear_and_test_dirty()
- |				|    |  Since eb2 is the last dirty page
- |				|    |  we got:
- |				|    |  last == true;
- |				|    |
- |- btrfs_page_set_dirty()	|    |
- |  We set the page dirty and   |    |
- |  subpage dirty bitmap	|    |
- |				|    |- if (last)
- |				|    |  Since we don't have subpage lock
- |				|    |  hold, now @last is no longer
- |				|    |  correct
- |				|    |- btree_clear_page_dirty()
- |				|	Now PageDirty == false, even we
- |				|       have dirty_bitmap not zero.
- |- ASSERT(PageDirty());	|
-    ^^^^ CRASH
-
-The solution here is to also lock the eb->pages[0] for subpage case of
-set_extent_buffer_dirty(), to prevent racing with
-clear_extent_buffer_dirty().
+So here introduce a helper, find_extent_buffer_nospinlock(), for such
+situation, and convert find_extent_buffer() to use that helper.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/extent_io.c | 65 ++++++++++++++++++++++++++++++++++++--------
- 1 file changed, 53 insertions(+), 12 deletions(-)
+ fs/btrfs/extent_io.c | 135 +++++++++++++++++++++++++++++++++----------
+ 1 file changed, 106 insertions(+), 29 deletions(-)
 
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 13ba7a012425..ea0089c8aefb 100644
+index 96ac72d3f3a0..d0afff0eb252 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -5774,28 +5774,51 @@ void free_extent_buffer_stale(struct extent_buffer *eb)
- 	release_extent_buffer(eb);
+@@ -4040,13 +4040,97 @@ static void set_btree_ioerr(struct page *page, struct extent_buffer *eb)
+ 	}
  }
  
-+static void btree_clear_page_dirty(struct page *page)
++/*
++ * This is the endio specific version which won't touch any unsafe spinlock
++ * in endio context.
++ */
++static struct extent_buffer *find_extent_buffer_nospinlock(
++		struct btrfs_fs_info *fs_info, u64 start)
 +{
-+	ASSERT(PageDirty(page));
-+	ASSERT(PageLocked(page));
-+	clear_page_dirty_for_io(page);
-+	xa_lock_irq(&page->mapping->i_pages);
-+	if (!PageDirty(page))
-+		__xa_clear_mark(&page->mapping->i_pages,
-+				page_index(page), PAGECACHE_TAG_DIRTY);
-+	xa_unlock_irq(&page->mapping->i_pages);
-+}
++	struct extent_buffer *eb;
 +
-+static void clear_subpage_extent_buffer_dirty(const struct extent_buffer *eb)
-+{
-+	struct btrfs_fs_info *fs_info = eb->fs_info;
-+	struct page *page = eb->pages[0];
-+	bool last;
-+
-+	/* btree_clear_page_dirty() needs page locked */
-+	lock_page(page);
-+	last = btrfs_subpage_clear_and_test_dirty(fs_info, page, eb->start,
-+						  eb->len);
-+	if (last)
-+		btree_clear_page_dirty(page);
-+	unlock_page(page);
-+	WARN_ON(atomic_read(&eb->refs) == 0);
-+}
-+
- void clear_extent_buffer_dirty(const struct extent_buffer *eb)
- {
- 	int i;
- 	int num_pages;
- 	struct page *page;
- 
-+	if (eb->fs_info->sectorsize < PAGE_SIZE)
-+		return clear_subpage_extent_buffer_dirty(eb);
-+
- 	num_pages = num_extent_pages(eb);
- 
- 	for (i = 0; i < num_pages; i++) {
- 		page = eb->pages[i];
- 		if (!PageDirty(page))
- 			continue;
--
- 		lock_page(page);
--		WARN_ON(!PagePrivate(page));
--
--		clear_page_dirty_for_io(page);
--		xa_lock_irq(&page->mapping->i_pages);
--		if (!PageDirty(page))
--			__xa_clear_mark(&page->mapping->i_pages,
--					page_index(page), PAGECACHE_TAG_DIRTY);
--		xa_unlock_irq(&page->mapping->i_pages);
-+		btree_clear_page_dirty(page);
- 		ClearPageError(page);
- 		unlock_page(page);
- 	}
-@@ -5816,10 +5839,28 @@ bool set_extent_buffer_dirty(struct extent_buffer *eb)
- 	WARN_ON(atomic_read(&eb->refs) == 0);
- 	WARN_ON(!test_bit(EXTENT_BUFFER_TREE_REF, &eb->bflags));
- 
--	if (!was_dirty)
--		for (i = 0; i < num_pages; i++)
--			set_page_dirty(eb->pages[i]);
-+	if (!was_dirty) {
-+		bool subpage = eb->fs_info->sectorsize < PAGE_SIZE;
- 
-+		/*
-+		 * For subpage case, we can have other extent buffers in the
-+		 * same page, and in clear_subpage_extent_buffer_dirty() we
-+		 * have to clear page dirty without subapge lock hold.
-+		 * This can cause race where our page gets dirty cleared after
-+		 * we just set it.
-+		 *
-+		 * Thankfully, clear_subpage_extent_buffer_dirty() has locked
-+		 * its page for other reasons, we can use page lock to
-+		 * prevent above race.
-+		 */
-+		if (subpage)
-+			lock_page(eb->pages[0]);
-+		for (i = 0; i < num_pages; i++)
-+			btrfs_page_set_dirty(eb->fs_info, eb->pages[i],
-+					     eb->start, eb->len);
-+		if (subpage)
-+			unlock_page(eb->pages[0]);
++	rcu_read_lock();
++	eb = radix_tree_lookup(&fs_info->buffer_radix,
++			       start >> fs_info->sectorsize_bits);
++	if (eb && atomic_inc_not_zero(&eb->refs)) {
++		rcu_read_unlock();
++		return eb;
 +	}
- #ifdef CONFIG_BTRFS_DEBUG
- 	for (i = 0; i < num_pages; i++)
- 		ASSERT(PageDirty(eb->pages[i]));
++	rcu_read_unlock();
++	return NULL;
++}
++/*
++ * The endio function for subpage extent buffer write.
++ *
++ * Unlike end_bio_extent_buffer_writepage(), we only call end_page_writeback()
++ * after all extent buffers in the page has finished their writeback.
++ */
++static void end_bio_subpage_eb_writepage(struct btrfs_fs_info *fs_info,
++					 struct bio *bio)
++{
++	struct bio_vec *bvec;
++	struct bvec_iter_all iter_all;
++
++	ASSERT(!bio_flagged(bio, BIO_CLONED));
++	bio_for_each_segment_all(bvec, bio, iter_all) {
++		struct page *page = bvec->bv_page;
++		u64 bvec_start = page_offset(page) + bvec->bv_offset;
++		u64 bvec_end = bvec_start + bvec->bv_len - 1;
++		u64 cur_bytenr = bvec_start;
++
++		ASSERT(IS_ALIGNED(bvec->bv_len, fs_info->nodesize));
++
++		/* Iterate through all extent buffers in the range */
++		while (cur_bytenr <= bvec_end) {
++			struct extent_buffer *eb;
++			int done;
++
++			/*
++			 * Here we can't use find_extent_buffer(), as it may
++			 * try to lock eb->refs_lock, which is not safe in endio 
++			 * context.
++			 */
++			eb = find_extent_buffer_nospinlock(fs_info, cur_bytenr);
++			ASSERT(eb);
++
++			cur_bytenr = eb->start + eb->len;
++
++			ASSERT(test_bit(EXTENT_BUFFER_WRITEBACK, &eb->bflags));
++			done = atomic_dec_and_test(&eb->io_pages);
++			ASSERT(done);
++
++			if (bio->bi_status ||
++			    test_bit(EXTENT_BUFFER_WRITE_ERR, &eb->bflags)) {
++				ClearPageUptodate(page);
++				set_btree_ioerr(page, eb);
++			}
++
++			btrfs_subpage_clear_writeback(fs_info, page, eb->start,
++						      eb->len);
++			end_extent_buffer_writeback(eb);
++			/*
++			 * free_extent_buffer() will grab spinlock which is not
++			 * safe in endio context. Thus here we manually dec
++			 * the ref.
++			 */
++			atomic_dec(&eb->refs);
++		}
++	}
++	bio_put(bio);
++}
++
+ static void end_bio_extent_buffer_writepage(struct bio *bio)
+ {
++	struct btrfs_fs_info *fs_info;
+ 	struct bio_vec *bvec;
+ 	struct extent_buffer *eb;
+ 	int done;
+ 	struct bvec_iter_all iter_all;
+ 
++	fs_info = btrfs_sb(bio_first_page_all(bio)->mapping->host->i_sb);
++	if (fs_info->sectorsize < PAGE_SIZE)
++		return end_bio_subpage_eb_writepage(fs_info, bio);
++
+ 	ASSERT(!bio_flagged(bio, BIO_CLONED));
+ 	bio_for_each_segment_all(bvec, bio, iter_all) {
+ 		struct page *page = bvec->bv_page;
+@@ -5427,36 +5511,29 @@ struct extent_buffer *find_extent_buffer(struct btrfs_fs_info *fs_info,
+ {
+ 	struct extent_buffer *eb;
+ 
+-	rcu_read_lock();
+-	eb = radix_tree_lookup(&fs_info->buffer_radix,
+-			       start >> fs_info->sectorsize_bits);
+-	if (eb && atomic_inc_not_zero(&eb->refs)) {
+-		rcu_read_unlock();
+-		/*
+-		 * Lock our eb's refs_lock to avoid races with
+-		 * free_extent_buffer. When we get our eb it might be flagged
+-		 * with EXTENT_BUFFER_STALE and another task running
+-		 * free_extent_buffer might have seen that flag set,
+-		 * eb->refs == 2, that the buffer isn't under IO (dirty and
+-		 * writeback flags not set) and it's still in the tree (flag
+-		 * EXTENT_BUFFER_TREE_REF set), therefore being in the process
+-		 * of decrementing the extent buffer's reference count twice.
+-		 * So here we could race and increment the eb's reference count,
+-		 * clear its stale flag, mark it as dirty and drop our reference
+-		 * before the other task finishes executing free_extent_buffer,
+-		 * which would later result in an attempt to free an extent
+-		 * buffer that is dirty.
+-		 */
+-		if (test_bit(EXTENT_BUFFER_STALE, &eb->bflags)) {
+-			spin_lock(&eb->refs_lock);
+-			spin_unlock(&eb->refs_lock);
+-		}
+-		mark_extent_buffer_accessed(eb, NULL);
+-		return eb;
++	eb = find_extent_buffer_nospinlock(fs_info, start);
++	if (!eb)
++		return NULL;
++	/*
++	 * Lock our eb's refs_lock to avoid races with free_extent_buffer().
++	 * When we get our eb it might be flagged with EXTENT_BUFFER_STALE and
++	 * another task running free_extent_buffer() might have seen that flag
++	 * set, eb->refs == 2, that the buffer isn't under IO (dirty and
++	 * writeback flags not set) and it's still in the tree (flag
++	 * EXTENT_BUFFER_TREE_REF set), therefore being in the process
++	 * of decrementing the extent buffer's reference count twice.
++	 * So here we could race and increment the eb's reference count,
++	 * clear its stale flag, mark it as dirty and drop our reference
++	 * before the other task finishes executing free_extent_buffer,
++	 * which would later result in an attempt to free an extent
++	 * buffer that is dirty.
++	 */
++	if (test_bit(EXTENT_BUFFER_STALE, &eb->bflags)) {
++		spin_lock(&eb->refs_lock);
++		spin_unlock(&eb->refs_lock);
+ 	}
+-	rcu_read_unlock();
+-
+-	return NULL;
++	mark_extent_buffer_accessed(eb, NULL);
++	return eb;
+ }
+ 
+ #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
 -- 
 2.30.0
 

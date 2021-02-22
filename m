@@ -2,92 +2,121 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.2 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-18.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 75B84C433E0
-	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Feb 2021 16:03:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4CBE9C433E0
+	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Feb 2021 16:42:33 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 382E564E74
-	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Feb 2021 16:03:53 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2365264E5C
+	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Feb 2021 16:42:33 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231321AbhBVQDk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 22 Feb 2021 11:03:40 -0500
-Received: from mx2.suse.de ([195.135.220.15]:37994 "EHLO mx2.suse.de"
+        id S230491AbhBVQmI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 22 Feb 2021 11:42:08 -0500
+Received: from mx2.suse.de ([195.135.220.15]:45986 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S231253AbhBVQDb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 22 Feb 2021 11:03:31 -0500
+        id S231432AbhBVQlh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 22 Feb 2021 11:41:37 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1614012050; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=EKilcul9G/e4GH+A6FMT6v3EeVvYjNLbh5syLphAIZE=;
+        b=s5l13WL7NnPDMYW6FGJMvXRQ/H6PpMj19ttFJaBp7pM2dHFWio+W2S5fnkar9JenaX2RzB
+        wKDz8fRnnLIkbMzH3UEBj/ufuKZx4tNz+ugJW7Qbgj0k4anc0RP1y3TmINvMjNKtI5SmM3
+        vPckalVi7DIhaGCd7IRe1KallWL8lrE=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 4CEC4AFBF;
-        Mon, 22 Feb 2021 16:02:48 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 4C219DA7FF; Mon, 22 Feb 2021 17:00:49 +0100 (CET)
-Date:   Mon, 22 Feb 2021 17:00:49 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Naohiro Aota <naohiro.aota@wdc.com>
-Cc:     dsterba@suse.cz, Johannes Thumshirn <Johannes.Thumshirn@wdc.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "dsterba@suse.com" <dsterba@suse.com>,
-        "hare@suse.com" <hare@suse.com>,
-        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
-        Damien Le Moal <Damien.LeMoal@wdc.com>
-Subject: Re: [PATCH v15 00/42] btrfs: zoned block device support
-Message-ID: <20210222160049.GR1993@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Naohiro Aota <naohiro.aota@wdc.com>,
-        Johannes Thumshirn <Johannes.Thumshirn@wdc.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "dsterba@suse.com" <dsterba@suse.com>,
-        "hare@suse.com" <hare@suse.com>,
-        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
-        Damien Le Moal <Damien.LeMoal@wdc.com>
-References: <cover.1612433345.git.naohiro.aota@wdc.com>
- <20210210195829.GW1993@twin.jikos.cz>
- <SN4PR0401MB35987EE941FA59E2ECB8D7269B8C9@SN4PR0401MB3598.namprd04.prod.outlook.com>
- <20210211151901.GD1993@twin.jikos.cz>
- <SN4PR0401MB3598ADA963CA60A715DE5EDE9B8C9@SN4PR0401MB3598.namprd04.prod.outlook.com>
- <20210211154627.GE1993@twin.jikos.cz>
- <SN4PR0401MB359821DC2BBF171C946142D09B889@SN4PR0401MB3598.namprd04.prod.outlook.com>
- <20210216043247.cjxybi7dudpgvvyg@naota-xeon>
- <20210216114611.GM1993@suse.cz>
- <20210222075043.3g7watpx5gedguaj@naota-xeon>
+        by mx2.suse.de (Postfix) with ESMTP id 119ACB117;
+        Mon, 22 Feb 2021 16:40:50 +0000 (UTC)
+From:   Nikolay Borisov <nborisov@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH 4/6] btrfs: Cleanup try_flush_qgroup
+Date:   Mon, 22 Feb 2021 18:40:45 +0200
+Message-Id: <20210222164047.978768-5-nborisov@suse.com>
+X-Mailer: git-send-email 2.25.1
+In-Reply-To: <20210222164047.978768-1-nborisov@suse.com>
+References: <20210222164047.978768-1-nborisov@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20210222075043.3g7watpx5gedguaj@naota-xeon>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Feb 22, 2021 at 04:50:43PM +0900, Naohiro Aota wrote:
-> > For real hardware I think this is not relevant but for the emulated mode
-> > we need to deal with that case. The reserved size is wasteful and this
-> > will become noticeable for devices < 16G but I'd rather keep the logic
-> > simple and not care much about this corner case. So, the superblock
-> > range would be reserved and if there's not enough to store the secondary
-> > sb, then don't.
-> 
-> Sure. That works. I'm running xfstests with these new SB
-> locations. Once it passed, I'll post the patch.
-> 
-> One corner case left. What should we do with zone size > 8G? In this
-> case, the primary SB zones and the 1st copy SB zones overlap. I know
-> this is unrealistic for real hardware, but you can still create such a
-> device with null_blk.
-> 
-> 1) Use the following zones (zones #2, #3) as the primary SB zones
-> 2) Do not write the primary SBs
-> 3) Reject to mkfs
-> 
-> To be simple logic, method #3 would be appropriate here?
-> 
-> Technically, all the log zones overlap with zone size > 128 GB. I'm
-> considering to reject to mkfs in this insane case anyway.
+It's no longer expected to call this function with an open transaction
+so all the hacks concerning this can be removed. In fact it'll
+constitute a bug to call this function with a transaction already held
+so WARN in this case.
 
-The 8G zone size idea is to buy us some time to support future hardware,
-once this won't suffice we'll add an incompat bit like BIGZONES that
-will allow larger zone sizes. At that time we'll probably have a better
-idea about an exact number. So it's #3.
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
+ fs/btrfs/qgroup.c | 35 +++++++----------------------------
+ 1 file changed, 7 insertions(+), 28 deletions(-)
+
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index fbef95bc3557..c9e82e0c88e3 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -3535,37 +3535,19 @@ static int try_flush_qgroup(struct btrfs_root *root)
+ {
+ 	struct btrfs_trans_handle *trans;
+ 	int ret;
+-	bool can_commit = true;
+ 
+-	/*
+-	 * If current process holds a transaction, we shouldn't flush, as we
+-	 * assume all space reservation happens before a transaction handle is
+-	 * held.
+-	 *
+-	 * But there are cases like btrfs_delayed_item_reserve_metadata() where
+-	 * we try to reserve space with one transction handle already held.
+-	 * In that case we can't commit transaction, but at least try to end it
+-	 * and hope the started data writes can free some space.
+-	 */
+-	if (current->journal_info &&
+-	    current->journal_info != BTRFS_SEND_TRANS_STUB)
+-		can_commit = false;
++	/* Can't hold an open transaction or we run the risk of deadlocking. */
++	ASSERT(current->journal_info == NULL ||
++	       current->journal_info == BTRFS_SEND_TRANS_STUB);
++	if (WARN_ON(current->journal_info &&
++		     current->journal_info != BTRFS_SEND_TRANS_STUB))
++		return 0;
+ 
+ 	/*
+ 	 * We don't want to run flush again and again, so if there is a running
+ 	 * one, we won't try to start a new flush, but exit directly.
+ 	 */
+ 	if (test_and_set_bit(BTRFS_ROOT_QGROUP_FLUSHING, &root->state)) {
+-		/*
+-		 * We are already holding a transaction, thus we can block other
+-		 * threads from flushing.  So exit right now. This increases
+-		 * the chance of EDQUOT for heavy load and near limit cases.
+-		 * But we can argue that if we're already near limit, EDQUOT is
+-		 * unavoidable anyway.
+-		 */
+-		if (!can_commit)
+-			return 0;
+-
+ 		wait_event(root->qgroup_flush_wait,
+ 			!test_bit(BTRFS_ROOT_QGROUP_FLUSHING, &root->state));
+ 		return 0;
+@@ -3582,10 +3564,7 @@ static int try_flush_qgroup(struct btrfs_root *root)
+ 		goto out;
+ 	}
+ 
+-	if (can_commit)
+-		ret = btrfs_commit_transaction(trans);
+-	else
+-		ret = btrfs_end_transaction(trans);
++	ret = btrfs_commit_transaction(trans);
+ out:
+ 	clear_bit(BTRFS_ROOT_QGROUP_FLUSHING, &root->state);
+ 	wake_up(&root->qgroup_flush_wait);
+-- 
+2.25.1
+

@@ -2,92 +2,91 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.2 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-15.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3F63AC433E0
-	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Feb 2021 20:06:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1116DC433E0
+	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Feb 2021 21:20:21 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 04C9564E02
-	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Feb 2021 20:06:37 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D899D64E21
+	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Feb 2021 21:20:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233351AbhBVUGg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 22 Feb 2021 15:06:36 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47128 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230099AbhBVUGe (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 22 Feb 2021 15:06:34 -0500
-X-Greylist: delayed 1651 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Mon, 22 Feb 2021 12:05:53 PST
-Received: from smtp.steev.me.uk (smtp.steev.me.uk [IPv6:2001:8b0:162c:10::25])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EC83AC061786
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Feb 2021 12:05:53 -0800 (PST)
-Received: from [2001:8b0:162c:2:25bd:2aa:7eff:5a0a]
-        by smtp.steev.me.uk with esmtpsa (TLS1.3:TLS_AES_128_GCM_SHA256:128)
-        (Exim 4.93.0.4)
-        id 1lEH29-001iFl-VT
-        for linux-btrfs@vger.kernel.org; Mon, 22 Feb 2021 19:38:18 +0000
-To:     linux-btrfs <linux-btrfs@vger.kernel.org>
-From:   Steven Davies <btrfs-list@steev.me.uk>
-Subject: 5.11.0: open ctree failed: devide total_bytes should be at most X but
- found Y
-Message-ID: <34d881ab-7484-6074-7c0b-b5c8d9e46379@steev.me.uk>
-Date:   Mon, 22 Feb 2021 19:38:17 +0000
-User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:78.0) Gecko/20100101
- Thunderbird/78.7.1
+        id S231377AbhBVVUE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 22 Feb 2021 16:20:04 -0500
+Received: from smtp-34.italiaonline.it ([213.209.10.34]:53760 "EHLO libero.it"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S231313AbhBVVUE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 22 Feb 2021 16:20:04 -0500
+Received: from venice.bhome ([78.12.28.43])
+        by smtp-34.iol.local with ESMTPA
+        id EIbml5cmb5WrZEIbwlGlog; Mon, 22 Feb 2021 22:19:20 +0100
+x-libjamoibt: 1601
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=libero.it; s=s2021;
+        t=1614028760; bh=qQewU0/qKVrHX9ZBXxFult5WZxS86t1rXfQqT4vE/oc=;
+        h=From;
+        b=RTbx9KpOocL5N1yaxMxl5HIrYzqMZS0YGeK0bnaOs+TGpWzxq5d41YUBaeln65ViL
+         syI01sQGA8xlEgQgrfJGa5sbqpxe9eGZPSK+p1JGpyPIChRS+AADgdLXtNhVN9a38q
+         XS3E+R1RtEiYjxHIiD3MQs7YVDzrQC4fDNvQbmE0My5vJCNf9g1eoRNJv+aHio7EUM
+         +OskL1A5gZXMaAJACEBu0oDYb9qKXWz4GWrsjdlav5do4QMh14wvOh+sOpqcRaIsYH
+         4dCoXOkMN7/538WhIqA+0xaKWDbGio4fkLmTTcs9ei0S/9yImPGU6NwwMoFOwx/Evw
+         DnllCGxmFdC+A==
+X-CNFS-Analysis: v=2.4 cv=W4/96Tak c=1 sm=1 tr=0 ts=60341fd8 cx=a_exe
+ a=Q5/16X4GlyvtzKxRBiE+Uw==:117 a=Q5/16X4GlyvtzKxRBiE+Uw==:17
+ a=1s11hCFB_oFSRyqhbgYA:9 a=pHzHmUro8NiASowvMSCR:22 a=Ew2E2A-JSTLzCXPT_086:22
+From:   Goffredo Baroncelli <kreijack@libero.it>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Goffredo Baroncelli <kreijack@inwind.it>
+Subject: [PATCH 3/4] btrfs: export dev_item.type in /sys/fs/btrfs/<uuid>/devinfo/<devid>/type
+Date:   Mon, 22 Feb 2021 22:19:08 +0100
+Message-Id: <58bc129a69ff0e2d1f9f047e79bfb5b404b5b1cd.1614028083.git.kreijack@inwind.it>
+X-Mailer: git-send-email 2.30.0
+In-Reply-To: <cover.1614028083.git.kreijack@inwind.it>
+References: <cover.1614028083.git.kreijack@inwind.it>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: 8bit
-Content-Language: en-GB
+X-CMAE-Envelope: MS4xfCal3Sg7EakDGjxUtmmyvugb4nbwuNm54g/5a4Vt9sSbXly5L+cLCw97fO2acXZ4iHdEn+wPavqxIliwAmfOQweVtSUB1iExoEJv6Usn/OsZ3iaQHfb/
+ HpFLYRd5FZUFPTJ+Mp0Iw8wcoXwa4CVjjn2L9a90GpX4sg1WrG8PE9E8iwE9+aH7LmYxQ6rz0eaGVmxjz/D7Gt8H1/P4V6Kol+b9ssFwWW7lu98EiogB84Xy
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Booted my system with kernel 5.11.0 vanilla with the first time and received this:
+From: Goffredo Baroncelli <kreijack@inwind.it>
 
-BTRFS info (device nvme0n1p2): has skinny extents
-BTRFS error (device nvme0n1p2): device total_bytes should be at most 964757028864 but found 
-964770336768
-BTRFS error (device nvme0n1p2): failed to read chunk tree: -22
+Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
+---
+ fs/btrfs/sysfs.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
-Booting with 5.10.12 has no issues.
-
-# btrfs filesystem usage /
-Overall:
-     Device size:                 898.51GiB
-     Device allocated:            620.06GiB
-     Device unallocated:          278.45GiB
-     Device missing:                  0.00B
-     Used:                        616.58GiB
-     Free (estimated):            279.94GiB      (min: 140.72GiB)
-     Data ratio:                       1.00
-     Metadata ratio:                   2.00
-     Global reserve:              512.00MiB      (used: 0.00B)
-
-Data,single: Size:568.00GiB, Used:566.51GiB (99.74%)
-    /dev/nvme0n1p2        568.00GiB
-
-Metadata,DUP: Size:26.00GiB, Used:25.03GiB (96.29%)
-    /dev/nvme0n1p2         52.00GiB
-
-System,DUP: Size:32.00MiB, Used:80.00KiB (0.24%)
-    /dev/nvme0n1p2         64.00MiB
-
-Unallocated:
-    /dev/nvme0n1p2        278.45GiB
-
-# parted -l
-Model: Sabrent Rocket Q (nvme)
-Disk /dev/nvme0n1: 1000GB
-Sector size (logical/physical): 512B/512B
-Partition Table: gpt
-Disk Flags:
-
-Number  Start   End     Size    File system     Name  Flags
-  1      1049kB  1075MB  1074MB  fat32                 boot, esp
-  2      1075MB  966GB   965GB   btrfs
-  3      966GB   1000GB  34.4GB  linux-swap(v1)        swap
-
-What has changed in 5.11 which might cause this?
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index 6eb1c50fa98c..9b2a18911de6 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -1418,11 +1418,22 @@ static ssize_t btrfs_devinfo_writeable_show(struct kobject *kobj,
+ }
+ BTRFS_ATTR(devid, writeable, btrfs_devinfo_writeable_show);
+ 
++static ssize_t btrfs_devinfo_type_show(struct kobject *kobj,
++					    struct kobj_attribute *a, char *buf)
++{
++	struct btrfs_device *device = container_of(kobj, struct btrfs_device,
++						   devid_kobj);
++
++	return scnprintf(buf, PAGE_SIZE, "0x%08llx\n", device->type);
++}
++BTRFS_ATTR(devid, type, btrfs_devinfo_type_show);
++
+ static struct attribute *devid_attrs[] = {
+ 	BTRFS_ATTR_PTR(devid, in_fs_metadata),
+ 	BTRFS_ATTR_PTR(devid, missing),
+ 	BTRFS_ATTR_PTR(devid, replace_target),
+ 	BTRFS_ATTR_PTR(devid, writeable),
++	BTRFS_ATTR_PTR(devid, type),
+ 	NULL
+ };
+ ATTRIBUTE_GROUPS(devid);
+-- 
+2.30.0
 

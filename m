@@ -8,98 +8,239 @@ X-Spam-Status: No, score=-15.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3A136C433DB
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5D2E3C43381
 	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Feb 2021 21:20:21 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id EF69B64E27
-	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Feb 2021 21:20:20 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 33DE164E41
+	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Feb 2021 21:20:21 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231410AbhBVVUF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 22 Feb 2021 16:20:05 -0500
-Received: from smtp-34.italiaonline.it ([213.209.10.34]:55235 "EHLO libero.it"
+        id S231473AbhBVVUJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 22 Feb 2021 16:20:09 -0500
+Received: from smtp-34.italiaonline.it ([213.209.10.34]:38903 "EHLO libero.it"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S229863AbhBVVUE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 22 Feb 2021 16:20:04 -0500
+        id S231351AbhBVVUF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 22 Feb 2021 16:20:05 -0500
 Received: from venice.bhome ([78.12.28.43])
         by smtp-34.iol.local with ESMTPA
-        id EIbml5cmb5WrZEIbwlGloV; Mon, 22 Feb 2021 22:19:20 +0100
+        id EIbml5cmb5WrZEIbwlGlol; Mon, 22 Feb 2021 22:19:20 +0100
 x-libjamoibt: 1601
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=libero.it; s=s2021;
-        t=1614028760; bh=fyrWQZCKp/t/gLoLBueHmvtjHJXmf/qMqBvk4tlI1lY=;
+        t=1614028760; bh=hbuPDumVgTT49bBH7toJhn5xvC+fWg/mnlhWUgc0kTQ=;
         h=From;
-        b=ZkJR/kVK8ODHE49nW5NgnarOuYYTt6kPoO1GB0oBlDKahCPoHaP/NMgkLcGw9Aw1P
-         irygyHkEmaXHo0A7z6WAybnD9oxZ7GrZvWe4sh9mDCieSigHzC0j33oHrnHt5Apzpg
-         Too6J+tkGS08yz4ExMnZuUWYCrL+mfgnq+kXhJPUK7yDBcM7E5ux17yr+6mldfbizb
-         S0sZkjW5JKjskktjXur4X1gMN/bJQPT0HUUXyZSc0tO/HLtk/3NqMgz5n5SWcJQ8bB
-         qQuc2WMLyHXqchEtUravQNe/uSvTj+MdFx8WN2v/OtEapql3jNuq1rInjhiPY8LDCi
-         MsSXSNHrJLHsA==
+        b=KPE3qzMOLRKwTCcNfmxGdehmgqAmRBSioZXyGnykLHdkMcHVxkzH54Z+o4QEWJcm4
+         DI50HOL3o6FXywu1xFHr0GVdEJITIJpYvrIG8LeUJs/uWoSboI/ot0wLHIbltDv5Xs
+         bJTtoDmOHS24iaF+Gey+rS7sHU5JxdUT7DoHQE8xjHC2lB1mf5JQFM0MWPdee11BdR
+         oI6GnOpq5bKkWMqj87cIZkpeqv7DUL3uH7K56nIDT1xF2n5P22jxGRqC6fYyo+srRJ
+         HiavKzxQK5pBXUZVAPg/k8omUFeSt3eBU8lsxfQ7/jA34qEDY+WpZlTJKoOsOvCrlH
+         5V2KSWXFK58+A==
 X-CNFS-Analysis: v=2.4 cv=W4/96Tak c=1 sm=1 tr=0 ts=60341fd8 cx=a_exe
  a=Q5/16X4GlyvtzKxRBiE+Uw==:117 a=Q5/16X4GlyvtzKxRBiE+Uw==:17
- a=lLZ8wYX2qvZDYXWRsIgA:9
+ a=mBwWaMFk0AQlTOBnrgkA:9
 From:   Goffredo Baroncelli <kreijack@libero.it>
 To:     linux-btrfs@vger.kernel.org
-Cc:     Goffredo Baroncelli <kreijack@inwind.it>,
-        Goffredo Baroncelli <kreijack@inwid.it>
-Subject: [PATCH 2/4] btrfs: add flags to give an hint to the chunk allocator
-Date:   Mon, 22 Feb 2021 22:19:07 +0100
-Message-Id: <f61b78b94e5e5c84e6f6bba9a8586a957fb66d6d.1614028083.git.kreijack@inwind.it>
+Cc:     Goffredo Baroncelli <kreijack@inwind.it>
+Subject: [PATCH 4/4] btrfs: add allocator_hint mode
+Date:   Mon, 22 Feb 2021 22:19:09 +0100
+Message-Id: <d4ebb03b09a9aceca099830ec7add523a7ed949d.1614028083.git.kreijack@inwind.it>
 X-Mailer: git-send-email 2.30.0
 In-Reply-To: <cover.1614028083.git.kreijack@inwind.it>
 References: <cover.1614028083.git.kreijack@inwind.it>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-CMAE-Envelope: MS4xfCal3Sg7EakDGjxUtmmyvugb4nbwuNm54g/5a4Vt9sSbXly5L+cLCw97fO2acXZ4iHdEn+wPavqxIliwAmfOQweVtSUB1iExoEJv6Usn/OsZ+CqJDUk/
- 6l3iUUlYu2sP1EiZUitiRGwdHjfdfq5ZICAtLv/dzF6U2gcPYr8xLEHxQ5v2+94zIQYIfUe0Jyn+3gQFkTx+xi4/TCv3XfWocfjrV6M3W3PCtZXhBUeBdTdH
- 8nX/TQDcHUaZFEbc54rBjw==
+X-CMAE-Envelope: MS4xfCal3Sg7EakDGjxUtmmyvugb4nbwuNm54g/5a4Vt9sSbXly5L+cLCw97fO2acXZ4iHdEn+wPavqxIliwAmfOQweVtSUB1iExoEJv6Usn/OsZ3iaQHfb/
+ HpFLYRd5FZUFPTJ+Mp0Iw8wcoXwa4CVjjn2L9a90GpX4sg1WrG8PE9E8iwE9+aH7LmYxQ6rz0eaGVmxjz/D7Gt8H1/P4V6Kol+b9ssFwWW7lu98EiogB84Xy
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Goffredo Baroncelli <kreijack@inwind.it>
 
-Add the following flags to give an hint about which chunk should be
-allocated in which a disk.
-The following flags are created:
+When this mode is enabled, the chunk allocation policy is modified as
+follow.
 
-- BTRFS_DEV_ALLOCATION_PREFERRED_DATA
-  preferred data chunk, but metadata chunk allowed
+Each disk may have a different tag:
 - BTRFS_DEV_ALLOCATION_PREFERRED_METADATA
-  preferred metadata chunk, but data chunk allowed
 - BTRFS_DEV_ALLOCATION_METADATA_ONLY
-  only metadata chunk allowed
 - BTRFS_DEV_ALLOCATION_DATA_ONLY
-  only data chunk allowed
+- BTRFS_DEV_ALLOCATION_PREFERRED_DATA (default)
 
-Signed-off-by: Goffredo Baroncelli <kreijack@inwid.it>
+Where:
+- ALLOCATION_PREFERRED_X means that it is preferred to use this disk for
+the X chunk type (the other type may be allowed when the space is low)
+- ALLOCATION_X_ONLY means that it is used *only* for the X chunk type.
+This means also that it is a preferred choice.
+
+Each time the allocator allocates a chunk of type X , first it takes the
+disks tagged as ALLOCATION_X_ONLY or ALLOCATION_PREFERRED_X; if the space
+is not enough, it uses also the disks tagged as ALLOCATION_METADATA_ONLY;
+if the space is not enough, it uses also the other disks, with the
+exception of the one marked as ALLOCATION_PREFERRED_Y, where Y the other
+type of chunk (i.e. not X).
+
+Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
 ---
- include/uapi/linux/btrfs_tree.h | 14 ++++++++++++++
- 1 file changed, 14 insertions(+)
+ fs/btrfs/volumes.c | 98 +++++++++++++++++++++++++++++++++++++++++++++-
+ fs/btrfs/volumes.h |  1 +
+ 2 files changed, 98 insertions(+), 1 deletion(-)
 
-diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tree.h
-index 58d7cff9afb1..25f522bcdadc 100644
---- a/include/uapi/linux/btrfs_tree.h
-+++ b/include/uapi/linux/btrfs_tree.h
-@@ -361,6 +361,20 @@ struct btrfs_key {
- 	__u64 offset;
- } __attribute__ ((__packed__));
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 0c649b444dcd..7ab10640758c 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -153,6 +153,20 @@ const struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
+ 	},
+ };
  
-+/* dev_item.type */
++#define BTRFS_DEV_ALLOCATION_MASK ((1ULL << \
++		BTRFS_DEV_ALLOCATION_MASK_BIT_COUNT) - 1)
++#define BTRFS_DEV_ALLOCATION_MASK_COUNT (1ULL << \
++		BTRFS_DEV_ALLOCATION_MASK_BIT_COUNT)
 +
-+/* btrfs chunk allocation hints */
-+#define BTRFS_DEV_ALLOCATION_MASK_BIT_COUNT	3
-+/* preferred data chunk, but metadata chunk allowed */
-+#define BTRFS_DEV_ALLOCATION_PREFERRED_DATA	(0ULL)
-+/* preferred metadata chunk, but data chunk allowed */
-+#define BTRFS_DEV_ALLOCATION_PREFERRED_METADATA	(1ULL)
-+/* only metadata chunk are allowed */
-+#define BTRFS_DEV_ALLOCATION_METADATA_ONLY	(2ULL)
-+/* only data chunk allowed */
-+#define BTRFS_DEV_ALLOCATION_DATA_ONLY		(3ULL)
-+/* 5..7 are unused values */
++static const char alloc_hint_map[BTRFS_DEV_ALLOCATION_MASK_COUNT] = {
++	[BTRFS_DEV_ALLOCATION_DATA_ONLY] = -1,
++	[BTRFS_DEV_ALLOCATION_PREFERRED_DATA] = 0,
++	[BTRFS_DEV_ALLOCATION_PREFERRED_METADATA] = 1,
++	[BTRFS_DEV_ALLOCATION_METADATA_ONLY] = 2,
++	/* the other values are set to 0 */
++};
 +
- struct btrfs_dev_item {
- 	/* the internal btrfs device id */
- 	__le64 devid;
++
+ const char *btrfs_bg_type_to_raid_name(u64 flags)
+ {
+ 	const int index = btrfs_bg_flags_to_raid_index(flags);
+@@ -4872,13 +4886,18 @@ static int btrfs_add_system_chunk(struct btrfs_fs_info *fs_info,
+ }
+ 
+ /*
+- * sort the devices in descending order by max_avail, total_avail
++ * sort the devices in descending order by alloc_hint,
++ * max_avail, total_avail
+  */
+ static int btrfs_cmp_device_info(const void *a, const void *b)
+ {
+ 	const struct btrfs_device_info *di_a = a;
+ 	const struct btrfs_device_info *di_b = b;
+ 
++	if (di_a->alloc_hint > di_b->alloc_hint)
++		return -1;
++	if (di_a->alloc_hint < di_b->alloc_hint)
++		return 1;
+ 	if (di_a->max_avail > di_b->max_avail)
+ 		return -1;
+ 	if (di_a->max_avail < di_b->max_avail)
+@@ -5039,6 +5058,8 @@ static int gather_device_info(struct btrfs_fs_devices *fs_devices,
+ 	int ndevs = 0;
+ 	u64 max_avail;
+ 	u64 dev_offset;
++	int hint;
++	int i;
+ 
+ 	/*
+ 	 * in the first pass through the devices list, we gather information
+@@ -5091,16 +5112,91 @@ static int gather_device_info(struct btrfs_fs_devices *fs_devices,
+ 		devices_info[ndevs].max_avail = max_avail;
+ 		devices_info[ndevs].total_avail = total_avail;
+ 		devices_info[ndevs].dev = device;
++
++		if ((ctl->type & BTRFS_BLOCK_GROUP_DATA) &&
++		     (ctl->type & BTRFS_BLOCK_GROUP_METADATA)) {
++			/*
++			 * if mixed bg set all the alloc_hint
++			 * fields to the same value, so the sorting
++			 * is not affected
++			 */
++			devices_info[ndevs].alloc_hint = 0;
++		} else if (ctl->type & BTRFS_BLOCK_GROUP_DATA) {
++			hint = device->type & BTRFS_DEV_ALLOCATION_MASK;
++
++			/*
++			 * skip BTRFS_DEV_METADATA_ONLY disks
++			 */
++			if (hint == BTRFS_DEV_ALLOCATION_METADATA_ONLY)
++				continue;
++			/*
++			 * if a data chunk must be allocated,
++			 * sort also by hint (data disk
++			 * higher priority)
++			 */
++			devices_info[ndevs].alloc_hint = -alloc_hint_map[hint];
++		} else { /* BTRFS_BLOCK_GROUP_METADATA */
++			hint = device->type & BTRFS_DEV_ALLOCATION_MASK;
++
++			/*
++			 * skip BTRFS_DEV_DATA_ONLY disks
++			 */
++			if (hint == BTRFS_DEV_ALLOCATION_DATA_ONLY)
++				continue;
++			/*
++			 * if a data chunk must be allocated,
++			 * sort also by hint (metadata hint
++			 * higher priority)
++			 */
++			devices_info[ndevs].alloc_hint = alloc_hint_map[hint];
++		}
++
+ 		++ndevs;
+ 	}
+ 	ctl->ndevs = ndevs;
+ 
++	/*
++	 * no devices available
++	 */
++	if (!ndevs)
++		return 0;
++
+ 	/*
+ 	 * now sort the devices by hole size / available space
+ 	 */
+ 	sort(devices_info, ndevs, sizeof(struct btrfs_device_info),
+ 	     btrfs_cmp_device_info, NULL);
+ 
++	/*
++	 * select the minimum set of disks grouped by hint that
++	 * can host the chunk
++	 */
++	ndevs = 0;
++	while (ndevs < ctl->ndevs) {
++		hint = devices_info[ndevs++].alloc_hint;
++		while (ndevs < ctl->ndevs &&
++		       devices_info[ndevs].alloc_hint == hint)
++				ndevs++;
++		if (ndevs >= ctl->devs_min)
++			break;
++	}
++
++	BUG_ON(ndevs > ctl->ndevs);
++	ctl->ndevs = ndevs;
++
++	/*
++	 * the next layers require the devices_info ordered by
++	 * max_avail. If we are returing two (or more) different
++	 * group of alloc_hint, this is not always true. So sort
++	 * these gain.
++	 */
++
++	for (i = 0 ; i < ndevs ; i++)
++		devices_info[i].alloc_hint = 0;
++
++	sort(devices_info, ndevs, sizeof(struct btrfs_device_info),
++	     btrfs_cmp_device_info, NULL);
++
+ 	return 0;
+ }
+ 
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 0c07b8deecab..d192aa78f03f 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -366,6 +366,7 @@ struct btrfs_device_info {
+ 	u64 dev_offset;
+ 	u64 max_avail;
+ 	u64 total_avail;
++	int alloc_hint;
+ };
+ 
+ struct btrfs_raid_attr {
 -- 
 2.30.0
 

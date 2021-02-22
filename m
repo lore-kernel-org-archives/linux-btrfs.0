@@ -2,239 +2,255 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-15.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+X-Spam-Status: No, score=-14.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 67727C4332B
-	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Feb 2021 21:20:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AB9DCC433DB
+	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Feb 2021 21:23:21 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 4D20C64E4B
-	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Feb 2021 21:20:21 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 659BB64E32
+	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Feb 2021 21:23:21 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231483AbhBVVUK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 22 Feb 2021 16:20:10 -0500
-Received: from smtp-34.italiaonline.it ([213.209.10.34]:41453 "EHLO libero.it"
+        id S231451AbhBVVXU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 22 Feb 2021 16:23:20 -0500
+Received: from smtp-35.italiaonline.it ([213.209.10.35]:59508 "EHLO libero.it"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S231345AbhBVVUG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 22 Feb 2021 16:20:06 -0500
+        id S230057AbhBVVXR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 22 Feb 2021 16:23:17 -0500
 Received: from venice.bhome ([78.12.28.43])
-        by smtp-34.iol.local with ESMTPA
-        id EIbml5cmb5WrZEIbvlGloQ; Mon, 22 Feb 2021 22:19:19 +0100
+        by smtp-35.iol.local with ESMTPA
+        id EIf1ly7bbpK9wEIf1loJjD; Mon, 22 Feb 2021 22:22:32 +0100
 x-libjamoibt: 1601
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=libero.it; s=s2021;
-        t=1614028759; bh=HfRz5BWgfq24oZe35jPs+VhOkl3Ochn7e6dpTsb7sVk=;
+        t=1614028952; bh=IjsAWmaMmQfb3NwLRf5ZjDmX5u3u7FIJ/b/OVY/bhJA=;
         h=From;
-        b=psyN4IUytW9ExblFulsgdZDvgEq7L7jLgrB5JfC4+j3EIZ5XOUGbkkJcyWqGf4lHo
-         EltSReie4IcnJvBJDlEVfaD7le7q+GfvaPs0R/4EAy9dGCchsFf1LOlW/yBVft/mrz
-         zjzuPqVpklDyrxMkPvw5zcJ5MCljfKIpUikXjn7l+AkoENQ8i9GEaSSyQTQwMktALq
-         C+jkuH84NiVJg37eBVjTl4jpgOdtXw3QEPIvgJ8Jbg8/BPqZL7gsfqne6rEfdK+CVA
-         QPVELVcL4/h7Rj5bKZAWxJGqTlBqykN9mw7s7uOCWwwxN02kr0ksiFyXz/sLurEN+c
-         JXiSNzjRsg/DA==
-X-CNFS-Analysis: v=2.4 cv=W4/96Tak c=1 sm=1 tr=0 ts=60341fd7 cx=a_exe
+        b=Bdtx46T4n0RW8do6XHuJv1BSICToSm8UKkTpuDYF3E4kkjbrYTjBrqv3NOOryLdTH
+         z6E8QJlZ86N4gOgiM8usq4K2O+PBMVHahadE4QJ/Kz4vJS9mHgoSWUS+S0VZ99UkmB
+         uI7uzNvyiZd4JnXAN0PWWNDZSOHQ37pfkQbPJYdSgDagbNTplRPxaxt123XolGfUFB
+         BSTnH/pfQtRDjtl7dmj0B8jQxEkib7gJbZYt4gEtw42VHm5R6S1/Ab7EcKBOKhNlMy
+         tHhtewhUVvs/iU6i+jiEbCG7ap0V1Kxv93YMmP02nALLdDuX8YP1+tyrPKeU+jltmC
+         wume6e1v/DvFA==
+X-CNFS-Analysis: v=2.4 cv=A9ipg4aG c=1 sm=1 tr=0 ts=60342098 cx=a_exe
  a=Q5/16X4GlyvtzKxRBiE+Uw==:117 a=Q5/16X4GlyvtzKxRBiE+Uw==:17
- a=tAp6EsRIHxeSHigjOvkA:9
+ a=IkcTkHD0fZMA:10 a=dfLDlhdaAAAA:20 a=VwQbUJbxAAAA:8 a=kT-NTsFwAAAA:8
+ a=q9z72tNrxGaIw0isQp8A:9 a=QEXdDO2ut3YA:10 a=AjGcO6oz07-iQ99wixmX:22
+ a=TLwuWKmryFjkTYsgBL5T:22
+Reply-To: kreijack@inwind.it
+Subject: Re: [RFC][PATCH V7][PATCH 0/4] btrfs: allocation_hint mode
+To:     Goffredo Baroncelli <kreijack@inwind.it>,
+        linux-btrfs@vger.kernel.org
+Cc:     Josef Bacik <josef@toxicpanda.com>,
+        Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+References: <cover.1613678288.git.kreijack@inwind.it>
+ <cover.1613678288.git.kreijack@inwind.it>
 From:   Goffredo Baroncelli <kreijack@libero.it>
-To:     linux-btrfs@vger.kernel.org
-Cc:     Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH 1/4] btrfs: add ioctl BTRFS_IOC_DEV_PROPERTIES.
-Date:   Mon, 22 Feb 2021 22:19:06 +0100
-Message-Id: <d48a0e28d4ba516602297437b1f132f2a8efd5d2.1614028083.git.kreijack@inwind.it>
-X-Mailer: git-send-email 2.30.0
-In-Reply-To: <cover.1614028083.git.kreijack@inwind.it>
-References: <cover.1614028083.git.kreijack@inwind.it>
+Message-ID: <98f4121c-3306-3f8f-4759-7b78f55f83f8@libero.it>
+Date:   Mon, 22 Feb 2021 22:22:31 +0100
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.7.1
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-CMAE-Envelope: MS4xfJ24O8zby3qTr5SSwbmex8Py1BEMtoyG06qWLfzwn3BbMd6aAcgByx/s7zCHAyyJylJ+uVljxtAQQUCyeUYl/B2Dv56P+jry+Zfj/859fUd/l3LwcZIC
- LuoGh/7Noh75ZEkl/JPpQc8AUtglOMuE6s68Z5hmtnnQ/j6N2LHu0V2gZGxevYLzld4EKCc3YOuiS/DDs+PZ7mrgTDJAXAR41Fv0mRSOVHrMKxSX77G1V1tx
+In-Reply-To: <cover.1613678288.git.kreijack@inwind.it>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
+X-CMAE-Envelope: MS4xfEBTsmRqSeSkULZLvYx6Sidv7Qf8rUk4BZcrB1cyRaHopbIKCsuj355o/3w/26Vu63/wLzL7RzE6DDvBNfYfvJ9zzj4vYBlWDueHoJU4qEhI8g5lUC3a
+ ioOBmI+khLorVbWqHhrPBNwAV/aQjRa3FcAfeJspo5zLxjelPT0+g2G8pgr+9hSyuS3Jlgr9llMGAa4yA8a0MzVQ1z+T95UyuSwUxa85qLhY+/am9imhm1sb
+ rg9MPGrsiMTE71+4Cm7Shwu1WAhl3+VecvAyUdqyjGFRwt+udxF9cnorGsoEDQYE
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Goffredo Baroncelli <kreijack@inwind.it>
+Sorry, the subject is wrong, it should be [RFC][PATCH V7][PATCH 0/4] btrfs: allocation_hint mode (seven instead six)
 
-This ioctl is a base for returning / setting information from / to  the
-fields of the btrfs_dev_item object.
+On 2/22/21 10:19 PM, Goffredo Baroncelli wrote:
+> Hi all,
+> 
+> This patches set was born after some discussion between me, Zygo and Josef.
+> Some details can be found in https://github.com/btrfs/btrfs-todo/issues/19.
+> 
+> Some further information about a real use case can be found in
+> https://lore.kernel.org/linux-btrfs/20210116002533.GE31381@hungrycats.org/
+> 
+> The idea behind this patches set, is to dedicate some disks (the fastest one)
+> to the metadata chunk. My initial idea was a "soft" hint. However Zygo
+> asked an option for a "strong" hint (== mandatory). The result is that
+> each disk can be "tagged" by one of the following flags:
+> - BTRFS_DEV_ALLOCATION_METADATA_ONLY
+> - BTRFS_DEV_ALLOCATION_PREFERRED_METADATA
+> - BTRFS_DEV_ALLOCATION_PREFERRED_DATA
+> - BTRFS_DEV_ALLOCATION_DATA_ONLY
+> 
+> When the chunk allocator search a disks to allocate a chunk, scans the disks
+> in an order decided by these tags. For metadata, the order is:
+> *_METADATA_ONLY
+> *_PREFERRED_METADATA
+> *_PREFERRED_DATA
+> 
+> The *_DATA_ONLY are not eligible from metadata chunk allocation.
+> 
+> For the data chunk, the order is reversed, and the *_METADATA_ONLY are
+> excluded.
+> 
+> The exact sort logic is to sort first for the "tag", and then for the space
+> available. If there is no space available, the next "tag" disks set are
+> selected.
+> 
+> To set these tags, a new property called "allocation_hint" was created.
+> There is a dedicated btrfs-prog patches set [[PATCH V5] btrfs-progs:
+> allocation_hint disk property].
+> 
+> $ sudo mount /dev/loop0 /mnt/test-btrfs/
+> $ for i in /dev/loop[0-9]; do sudo ./btrfs prop get $i allocation_hint; done
+> devid=1, path=/dev/loop0: allocation_hint=PREFERRED_METADATA
+> devid=2, path=/dev/loop1: allocation_hint=PREFERRED_METADATA
+> devid=3, path=/dev/loop2: allocation_hint=PREFERRED_DATA
+> devid=4, path=/dev/loop3: allocation_hint=PREFERRED_DATA
+> devid=5, path=/dev/loop4: allocation_hint=PREFERRED_DATA
+> devid=6, path=/dev/loop5: allocation_hint=DATA_ONLY
+> devid=7, path=/dev/loop6: allocation_hint=METADATA_ONLY
+> devid=8, path=/dev/loop7: allocation_hint=METADATA_ONLY
+> 
+> $ sudo ./btrfs fi us /mnt/test-btrfs/
+> Overall:
+>      Device size:		   2.75GiB
+>      Device allocated:		   1.34GiB
+>      Device unallocated:		   1.41GiB
+>      Device missing:		     0.00B
+>      Used:			 400.89MiB
+>      Free (estimated):		   1.04GiB	(min: 1.04GiB)
+>      Data ratio:			      2.00
+>      Metadata ratio:		      1.00
+>      Global reserve:		   3.25MiB	(used: 0.00B)
+>      Multiple profiles:		        no
+> 
+> Data,RAID1: Size:542.00MiB, Used:200.25MiB (36.95%)
+>     /dev/loop0	 288.00MiB
+>     /dev/loop1	 288.00MiB
+>     /dev/loop2	 127.00MiB
+>     /dev/loop3	 127.00MiB
+>     /dev/loop4	 127.00MiB
+>     /dev/loop5	 127.00MiB
+> 
+> Metadata,single: Size:256.00MiB, Used:384.00KiB (0.15%)
+>     /dev/loop1	 256.00MiB
+> 
+> System,single: Size:32.00MiB, Used:16.00KiB (0.05%)
+>     /dev/loop0	  32.00MiB
+> 
+> Unallocated:
+>     /dev/loop0	 704.00MiB
+>     /dev/loop1	 480.00MiB
+>     /dev/loop2	   1.00MiB
+>     /dev/loop3	   1.00MiB
+>     /dev/loop4	   1.00MiB
+>     /dev/loop5	   1.00MiB
+>     /dev/loop6	 128.00MiB
+>     /dev/loop7	 128.00MiB
+> 
+> # change the tag of some disks
+> 
+> $ sudo ./btrfs prop set /dev/loop0 allocation_hint DATA_ONLY
+> $ sudo ./btrfs prop set /dev/loop1 allocation_hint DATA_ONLY
+> $ sudo ./btrfs prop set /dev/loop5 allocation_hint METADATA_ONLY
+> 
+> $ for i in /dev/loop[0-9]; do sudo ./btrfs prop get $i allocation_hint; done
+> devid=1, path=/dev/loop0: allocation_hint=DATA_ONLY
+> devid=2, path=/dev/loop1: allocation_hint=DATA_ONLY
+> devid=3, path=/dev/loop2: allocation_hint=PREFERRED_DATA
+> devid=4, path=/dev/loop3: allocation_hint=PREFERRED_DATA
+> devid=5, path=/dev/loop4: allocation_hint=PREFERRED_DATA
+> devid=6, path=/dev/loop5: allocation_hint=METADATA_ONLY
+> devid=7, path=/dev/loop6: allocation_hint=METADATA_ONLY
+> devid=8, path=/dev/loop7: allocation_hint=METADATA_ONLY
+> 
+> $ sudo btrfs bal start --full-balance /mnt/test-btrfs/
+> $ sudo ./btrfs fi us /mnt/test-btrfs/
+> Overall:
+>      Device size:		   2.75GiB
+>      Device allocated:		 735.00MiB
+>      Device unallocated:		   2.03GiB
+>      Device missing:		     0.00B
+>      Used:			 400.72MiB
+>      Free (estimated):		   1.10GiB	(min: 1.10GiB)
+>      Data ratio:			      2.00
+>      Metadata ratio:		      1.00
+>      Global reserve:		   3.25MiB	(used: 0.00B)
+>      Multiple profiles:		        no
+> 
+> Data,RAID1: Size:288.00MiB, Used:200.19MiB (69.51%)
+>     /dev/loop0	 288.00MiB
+>     /dev/loop1	 288.00MiB
+> 
+> Metadata,single: Size:127.00MiB, Used:336.00KiB (0.26%)
+>     /dev/loop5	 127.00MiB
+> 
+> System,single: Size:32.00MiB, Used:16.00KiB (0.05%)
+>     /dev/loop7	  32.00MiB
+> 
+> Unallocated:
+>     /dev/loop0	 736.00MiB
+>     /dev/loop1	 736.00MiB
+>     /dev/loop2	 128.00MiB
+>     /dev/loop3	 128.00MiB
+>     /dev/loop4	 128.00MiB
+>     /dev/loop5	   1.00MiB
+>     /dev/loop6	 128.00MiB
+>     /dev/loop7	  96.00MiB
+> 
+> 
+> #As you can see all the metadata were placed on the disk loop5/loop7 even if
+> #the most empty one are loop0 and loop1.
+> 
+> 
+> 
+> TODO:
+> - more tests
+> - the tool which show the space available should consider the tagging (
+>    the disks tagged by _METADATA_ONLY should be excluded from the data
+>    availability)
+> 
+> 
+> Comments are welcome
+> BR
+> G.Baroncelli
+> 
+> --
+> gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+> Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+> 
+> Revision:
+> V7:
+> - make more room in the struct btrfs_ioctl_dev_properties up to 1K
+> - leave in btrfs_tree.h only the costants
+> - removed the mount option (sic)
+> - correct an 'use before check' in the while loop (signaled
+>    by Zygo)
+> - add a 2nd sort to be sure that the device_info array is in the
+>    expected order
+> 
+> V6:
+> - add further values to the hints: add the possibility to
+>    exclude a disk for a chunk type
+> 
+>    btrfs: add ioctl BTRFS_IOC_DEV_PROPERTIES.
+>    btrfs: add flags to give an hint to the chunk allocator
+>    btrfs: export dev_item.type in
+>      /sys/fs/btrfs/<uuid>/devinfo/<devid>/type
+>    btrfs: add allocator_hint mode
+> 
+>   fs/btrfs/ioctl.c                | 68 ++++++++++++++++++++++++++
+>   fs/btrfs/sysfs.c                | 11 +++++
+>   fs/btrfs/volumes.c              | 86 ++++++++++++++++++++++++++++++++-
+>   fs/btrfs/volumes.h              |  3 ++
+>   include/uapi/linux/btrfs.h      | 39 +++++++++++++++
+>   include/uapi/linux/btrfs_tree.h | 14 ++++++
+>   6 files changed, 219 insertions(+), 2 deletions(-)
+> 
 
-For now only the "type" field is returned / set.
 
-Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
----
- fs/btrfs/ioctl.c           | 68 ++++++++++++++++++++++++++++++++++++++
- fs/btrfs/volumes.c         |  2 +-
- fs/btrfs/volumes.h         |  2 ++
- include/uapi/linux/btrfs.h | 39 ++++++++++++++++++++++
- 4 files changed, 110 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index a8c60d46d19c..07898ee3a08d 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -4851,6 +4851,72 @@ static int btrfs_ioctl_set_features(struct file *file, void __user *arg)
- 	return ret;
- }
- 
-+static long btrfs_ioctl_dev_properties(struct file *file,
-+						void __user *argp)
-+{
-+	struct inode *inode = file_inode(file);
-+	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
-+	struct btrfs_ioctl_dev_properties dev_props;
-+	struct btrfs_device	*device;
-+	struct btrfs_root *root = fs_info->chunk_root;
-+	struct btrfs_trans_handle *trans;
-+	int ret;
-+	u64 prev_type;
-+
-+	if (!capable(CAP_SYS_ADMIN))
-+		return -EPERM;
-+
-+	if (copy_from_user(&dev_props, argp, sizeof(dev_props)))
-+		return -EFAULT;
-+
-+	device = btrfs_find_device(fs_info->fs_devices, dev_props.devid,
-+				NULL, NULL);
-+	if (!device) {
-+		btrfs_info(fs_info, "change_dev_properties: unable to find device %llu",
-+			   dev_props.devid);
-+		return -ENODEV;
-+	}
-+
-+	if (dev_props.properties & BTRFS_DEV_PROPERTY_READ) {
-+		u64 props = dev_props.properties;
-+
-+		memset(&dev_props, 0, sizeof(dev_props));
-+		if (props & BTRFS_DEV_PROPERTY_TYPE) {
-+			dev_props.properties = BTRFS_DEV_PROPERTY_TYPE;
-+			dev_props.type = device->type;
-+		}
-+		if (copy_to_user(argp, &dev_props, sizeof(dev_props)))
-+			return -EFAULT;
-+		return 0;
-+	}
-+
-+	/* it is possible to set only BTRFS_DEV_PROPERTY_TYPE for now */
-+	if (dev_props.properties & ~(BTRFS_DEV_PROPERTY_TYPE))
-+		return -EPERM;
-+
-+	trans = btrfs_start_transaction(root, 1);
-+	if (IS_ERR(trans))
-+		return PTR_ERR(trans);
-+
-+	prev_type = device->type;
-+	device->type = dev_props.type;
-+	ret = btrfs_update_device(trans, device);
-+
-+	if (ret < 0) {
-+		btrfs_abort_transaction(trans, ret);
-+		btrfs_end_transaction(trans);
-+		device->type = prev_type;
-+		return  ret;
-+	}
-+
-+	ret = btrfs_commit_transaction(trans);
-+	if (ret < 0)
-+		device->type = prev_type;
-+
-+	return ret;
-+
-+}
-+
- static int _btrfs_ioctl_send(struct file *file, void __user *argp, bool compat)
- {
- 	struct btrfs_ioctl_send_args *arg;
-@@ -5034,6 +5100,8 @@ long btrfs_ioctl(struct file *file, unsigned int
- 		return btrfs_ioctl_get_subvol_rootref(file, argp);
- 	case BTRFS_IOC_INO_LOOKUP_USER:
- 		return btrfs_ioctl_ino_lookup_user(file, argp);
-+	case BTRFS_IOC_DEV_PROPERTIES:
-+		return btrfs_ioctl_dev_properties(file, argp);
- 	}
- 
- 	return -ENOTTY;
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index b8fab44394f5..0c649b444dcd 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2809,7 +2809,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
- 	return ret;
- }
- 
--static noinline int btrfs_update_device(struct btrfs_trans_handle *trans,
-+int btrfs_update_device(struct btrfs_trans_handle *trans,
- 					struct btrfs_device *device)
- {
- 	int ret;
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index d4c3e0dd32b8..0c07b8deecab 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -600,5 +600,7 @@ int btrfs_bg_type_to_factor(u64 flags);
- const char *btrfs_bg_type_to_raid_name(u64 flags);
- int btrfs_verify_dev_extents(struct btrfs_fs_info *fs_info);
- int btrfs_repair_one_zone(struct btrfs_fs_info *fs_info, u64 logical);
-+int btrfs_update_device(struct btrfs_trans_handle *trans,
-+					struct btrfs_device *device);
- 
- #endif
-diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index 5df73001aad4..bab35d3f819c 100644
---- a/include/uapi/linux/btrfs.h
-+++ b/include/uapi/linux/btrfs.h
-@@ -860,6 +860,43 @@ struct btrfs_ioctl_get_subvol_rootref_args {
- 		__u8 align[7];
- };
- 
-+#define BTRFS_DEV_PROPERTY_TYPE		(1ULL << 0)
-+#define BTRFS_DEV_PROPERTY_DEV_GROUP	(1ULL << 1)
-+#define BTRFS_DEV_PROPERTY_SEEK_SPEED	(1ULL << 2)
-+#define BTRFS_DEV_PROPERTY_BANDWIDTH	(1ULL << 3)
-+#define BTRFS_DEV_PROPERTY_READ		(1ULL << 60)
-+
-+/*
-+ * The ioctl BTRFS_IOC_DEV_PROPERTIES can read and write the device properties.
-+ *
-+ * The properties that the user want to write have to be set
-+ * in the 'properties' field using the BTRFS_DEV_PROPERTY_xxxx constants.
-+ *
-+ * If the ioctl is used to read the device properties, the bit
-+ * BTRFS_DEV_PROPERTY_READ has to be set in the 'properties' field.
-+ * In this case the properties that the user want have to be set in the
-+ * 'properties' field. The kernel doesn't return a property that was not
-+ * required, however it may return a subset of the requested properties.
-+ * The returned properties have the corrispondent BTRFS_DEV_PROPERTY_xxxx
-+ * flag set in the 'properties' field.
-+ *
-+ * Up to 2020/05/11 the only properties that can be read/write is the 'type'
-+ * one.
-+ */
-+struct btrfs_ioctl_dev_properties {
-+	__u64	devid;
-+	__u64	properties;
-+	__u64	type;
-+	__u32	dev_group;
-+	__u8	seek_speed;
-+	__u8	bandwidth;
-+
-+	/*
-+	 * for future expansion, pad up to 1k
-+	 */
-+	__u8	reserved[1024-30];
-+};
-+
- /* Error codes as returned by the kernel */
- enum btrfs_err_code {
- 	BTRFS_ERROR_DEV_RAID1_MIN_NOT_MET = 1,
-@@ -988,5 +1025,7 @@ enum btrfs_err_code {
- 				struct btrfs_ioctl_ino_lookup_user_args)
- #define BTRFS_IOC_SNAP_DESTROY_V2 _IOW(BTRFS_IOCTL_MAGIC, 63, \
- 				struct btrfs_ioctl_vol_args_v2)
-+#define BTRFS_IOC_DEV_PROPERTIES _IOW(BTRFS_IOCTL_MAGIC, 64, \
-+				struct btrfs_ioctl_dev_properties)
- 
- #endif /* _UAPI_LINUX_BTRFS_H */
 -- 
-2.30.0
-
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

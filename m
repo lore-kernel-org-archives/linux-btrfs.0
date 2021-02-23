@@ -2,250 +2,295 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	PDS_BAD_THREAD_QP_64,SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-19.0 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AE9BFC433DB
-	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Feb 2021 09:44:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9E01EC433DB
+	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Feb 2021 12:11:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 69B4864E6B
-	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Feb 2021 09:44:23 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 60B8664E00
+	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Feb 2021 12:11:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231152AbhBWJoV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 23 Feb 2021 04:44:21 -0500
-Received: from esa5.hgst.iphmx.com ([216.71.153.144]:43068 "EHLO
-        esa5.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230505AbhBWJoP (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 23 Feb 2021 04:44:15 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1614073454; x=1645609454;
-  h=from:to:subject:date:message-id:references:
-   content-transfer-encoding:mime-version;
-  bh=f+nayMLx/K4naGLnHlnvYK1P6UymiEnQBNvTCu1PpW4=;
-  b=WYMCcckL6EpAR8mOo/aR7Q6WI3N/AxgoVhuxyWHdku7eUaZ4KOTKfeal
-   s6iMowYQHsk5SlRV23ME4BcIJ+88HTqErry3KrEwScqHNdUToVpAEtWmg
-   TegNvakmD5q0PWVCo00dUer23+1CrdEbR5r3EOMMTO66AZ3NYr6JJT3EN
-   0v2/gmGK9KqPb3VWi6QeQgvVLuDf4z9UQYHnTkbpEWJbyr0oC70mqjIfo
-   2jP2jVOPi1P8d9YzB5XeaF7uMiu5m677qyJiFqpwkF3afRDPRLJfmOlSG
-   9Sp3PUAFRHfctpoaocNLB7Pw2pzY6rHtzjsSPS8AXqbSAdoH+1LxflhyP
-   A==;
-IronPort-SDR: k6UtBEply3DlqqlE0Rm+cIeF5BGC0mgdHvCi+YopW1EK8V5OUhsXITYMYYY6lSLGxr9GPk7tJQ
- 1r7m08KBrkLdbQvvK+nwMfKITxXzjgKlARZq3qdql2R3ovxuwm7ghzs2jOa+acCjzty/owoBnT
- F5cLJGh21gnMd0y/iCElkBO4KCV2I+oHQ+BTK0rx6U/skC4dxkDsBdYE0N00r6qX9IYCxZSlBQ
- 2Heg6bH5dfWj6qSmDoGwkcGK1WQpyOdN2tRjjvdAcv/TKkyekOoMfPf+bCPVZvOGWm/+FwLqj6
- 4pQ=
-X-IronPort-AV: E=Sophos;i="5.81,199,1610380800"; 
-   d="scan'208";a="160590574"
-Received: from mail-dm6nam10lp2103.outbound.protection.outlook.com (HELO NAM10-DM6-obe.outbound.protection.outlook.com) ([104.47.58.103])
-  by ob1.hgst.iphmx.com with ESMTP; 23 Feb 2021 17:43:05 +0800
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
- b=NPDXa5FnabsHFyEtXN7UV5d8bojWLBHRRFINkYl8kyOJLIPFa2Bb8I6snYUlsyhqkeyPFX0ulMy0Uz0wkasLjGWzi5ON9aaBGQgwslmng+xFSABa4StBfEgVqIaUIdueIOm7j5ZgL6Nkk7Xa/fRbk28k2WVPGLtyd2L0bzdl/WqJHkAxk/hjhzIPEpbUzn5NzzBUKqjXaLm/xcMFXVzw5cJfqcvfsCGeV1YBS4/jJ+EzKdjmFkeQsXat3pcd5ZaItR5EeWQFlMUTS8zf36Z172U4rg6bE16HT1Quf9gy9dQtrqUjvLQuKrS4LVFXEVXRSx2yhnUxg1AHU1mR8vpgTw==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector9901;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=NVJN8bU9KbhFAku2q07YnSRJIJYbjIF8bqB1nMHq/X0=;
- b=baAvchBbvegU3tHu5YgvQqOeDxRJZdA0YIDQ6uio6sRpqK0CQo0eFsAzNSm0iKKiCERRgy1HMYSG7eLusiEp0NWD9KwWgtflHNFbHQ26MjDl5JJCUFB3pQVRRD92OQX+hwjfi2ExLE6Jy3X/x+yO4Dn4U9F8XM0pq+ImHrto8+adGpDIrVt1RQV5VNZhFRN0pR8FbURagYOyVPRnRcU/2TXKap1cSdfCtHMCfrf02xaS38cdiP7slqNN0Fb3ZZhKpYeNpgnK9kdA1l/zLcGezka0X2XXJmpp9IEXMEWVlR6W3fqQ6K7Mhbi29toRz0aXS3kodZDwg7OonylTg4ID9Q==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
- header.d=wdc.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=NVJN8bU9KbhFAku2q07YnSRJIJYbjIF8bqB1nMHq/X0=;
- b=K9Qm6R5fByWdphpuD9C9efsLWjqBb44kPFy4uzkB0ARP49p6yC8oCgGEvDPl3eT8YrZDokLIniuKD5ePiOUPimf9x8XD+9PPWpSHsEdCavZxkhrUFRyZ3U0FonMUgii9H1zYi+MS2KoU2VMCOwOdBXEVVXopscpsO60JDB1xN5o=
-Received: from PH0PR04MB7416.namprd04.prod.outlook.com (2603:10b6:510:12::17)
- by PH0PR04MB7430.namprd04.prod.outlook.com (2603:10b6:510:18::9) with
- Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.3868.31; Tue, 23 Feb
- 2021 09:43:04 +0000
-Received: from PH0PR04MB7416.namprd04.prod.outlook.com
- ([fe80::3c7d:5381:1232:e725]) by PH0PR04MB7416.namprd04.prod.outlook.com
- ([fe80::3c7d:5381:1232:e725%7]) with mapi id 15.20.3868.033; Tue, 23 Feb 2021
- 09:43:04 +0000
-From:   Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
-To:     Steven Davies <btrfs-list@steev.me.uk>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Anand Jain <anand.jain@oracle.com>
-Subject: Re: 5.11.0: open ctree failed: devide total_bytes should be at most X
- but found Y
-Thread-Topic: 5.11.0: open ctree failed: devide total_bytes should be at most
- X but found Y
-Thread-Index: AQHXCVZZbch6GFpjTEmrkxrdQ5iSyA==
-Date:   Tue, 23 Feb 2021 09:43:04 +0000
-Message-ID: <PH0PR04MB74167CACC7802BA85638105F9B809@PH0PR04MB7416.namprd04.prod.outlook.com>
-References: <34d881ab-7484-6074-7c0b-b5c8d9e46379@steev.me.uk>
- <PH0PR04MB7416AA577A3ED39E4C5833819B809@PH0PR04MB7416.namprd04.prod.outlook.com>
-Accept-Language: en-US
-Content-Language: en-US
-X-MS-Has-Attach: 
-X-MS-TNEF-Correlator: 
-authentication-results: steev.me.uk; dkim=none (message not signed)
- header.d=none;steev.me.uk; dmarc=none action=none header.from=wdc.com;
-x-originating-ip: [2001:a62:1542:e101:41af:77a9:fe21:4e5e]
-x-ms-publictraffictype: Email
-x-ms-office365-filtering-ht: Tenant
-x-ms-office365-filtering-correlation-id: 7705ba77-637e-4d81-033b-08d8d7df6aed
-x-ms-traffictypediagnostic: PH0PR04MB7430:
-x-microsoft-antispam-prvs: <PH0PR04MB743023E8B3E5C4DE96EDDE419B809@PH0PR04MB7430.namprd04.prod.outlook.com>
-wdcipoutbound: EOP-TRUE
-x-ms-oob-tlc-oobclassifiers: OLM:8882;
-x-ms-exchange-senderadcheck: 1
-x-microsoft-antispam: BCL:0;
-x-microsoft-antispam-message-info: 89gnLJvl7Uoti4g4KA/sZaLGgL0igw+ZNBSFCLwrOistwbqQavigAi1/m1yHOOJJlLNADi0wN5vD+T+2tMdiJ6IeNyBe+klnF3lUw4QIZ8Z+mtAX9LZu6e5Mfd/9LYdCzayMlecTbbQrgxZi+7HuON+Mi5yzaBZmOTRYxAnNHRJrCVvEvCo2gc3MQEBki/I4Nyqlu5VT8kNb8/xCZGo251tzJRfSGKAsFlTKl8jtQvCQhS0l2ACPOiaHd5wDnEQdZsewIMsGvPP5A3ZXNCRBGYteyjLmyVEGjY+PBL/beNFw95RfPUvmEzOoibQGDcoyHR0DiBvlW+PjyLsppez1X76FV/eL/Atpx1nfW7R45zKzbaIJVLZwE2oCWN31H2cN/SzFEgeaMagvL1X8Z/jO4yVuj5yu6Pmd1cPDrL7aayY4M8NbeCdPa1qZWWm7jbM8MUdQYhR4BgKb6ZtRLILJ8o53vqX5joKnRSZte9WODl1RaDbPbDmaCOANd4WP7gzNirrzwfXRgNxkmM2hqgRnzQ==
-x-forefront-antispam-report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:PH0PR04MB7416.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(4636009)(39860400002)(396003)(346002)(366004)(376002)(136003)(83380400001)(186003)(55016002)(86362001)(53546011)(71200400001)(478600001)(8936002)(6506007)(8676002)(7696005)(9686003)(33656002)(66556008)(5660300002)(66946007)(66446008)(66476007)(91956017)(76116006)(316002)(110136005)(52536014)(2906002)(64756008);DIR:OUT;SFP:1102;
-x-ms-exchange-antispam-messagedata: =?iso-8859-1?Q?Znj8S8O5CllZdjs5vn2mP9G5ippkPtQ/KgyB0VeDUzrCSsPYTtVHh7GQGK?=
- =?iso-8859-1?Q?YlHAf2BhshgMNwiSD3sVc5yNkYvKnPTbZlaBBtETxAdXmHs/pgOnLUosZa?=
- =?iso-8859-1?Q?6maJWDa/LZT/D6/hUNWLerZo33Z2AJeICqf7989lUFrrcMEtHJqnWoyqF7?=
- =?iso-8859-1?Q?tYo+x7WU283UID/t6mJzvzxlZKGjjdaQJyWMhRoHF4xUXPZCG41riOYpci?=
- =?iso-8859-1?Q?QSVXnW89UO9gHRSdLPUhhHEbDO/I31g0w7l/2BdaaO1/QsbUtA8FmU416Q?=
- =?iso-8859-1?Q?2k47Vk8tDd0Y9VM1uu1LCKGCQDQQ4/ocxAQKxJPuzMw8AlMEyofJJJdk2f?=
- =?iso-8859-1?Q?8gbvmc9yQOE6Z449gPw2Muw4j+uCvJKN4nd1bTEl+v4SMduZ4YoA0pLFv3?=
- =?iso-8859-1?Q?dlock5FdEBIRKDpdc6SgpI1U4XXW2gnS/YzgnIH2alVmVb+PvnsvsYgpb9?=
- =?iso-8859-1?Q?LPs3+/yFAw4oW4KVZeMEASGB0PWMSi7yTVU1XBouhMBmcQyKK4PqQkeymn?=
- =?iso-8859-1?Q?Mso2mMn5kBCHxYTaA4vEfw2Edh9N53igjJWpG4J9acfmogglc0qUNIk/nD?=
- =?iso-8859-1?Q?D6AbhZ7FGoHo2NrF+MG/MtoyAgxFlTrTGaaZ/6llVczePimqeUqO6oysvK?=
- =?iso-8859-1?Q?++SQ9oyWzEY87KfN4Qt8Es1Vb2AhtS4vcPKYL9qLn5aj/ox1uFUPu4C/Z4?=
- =?iso-8859-1?Q?4KBk8j3/jxJuCN6UH/wFUxJLObVdLJZK1G8DViOgt8OJOXkKTUbyW4lz9N?=
- =?iso-8859-1?Q?WMFhpDhLK6aHKk4TZnPcfF4rMminMYxiwBOwJLONNOZpwGEHRssWFm6+DU?=
- =?iso-8859-1?Q?PpDRloP0WiqYDC5zS4x7bsz+IzE8bnbw1tKqxtHDswkkny/7KWpCKGhqa5?=
- =?iso-8859-1?Q?4uYcSP+C7LXmuUk0yQY2Mnvs1U881qS45wxX8JnMVsfCk8tYN/YbX4GjBU?=
- =?iso-8859-1?Q?aVngwZb2GkA63qLAj+0uxUse9xyDCYZ9SSzqsM/857/q79mDJoc5PjswXq?=
- =?iso-8859-1?Q?NNDtaP6DN6vlrp4q8DT1XvqsXYFurZivlfSbetsJyH99OmV+NxFQh4HnAh?=
- =?iso-8859-1?Q?AnsWm1EG71qrTZtydXpj2FVVAjoX4DFtlTlZx5MvfG+X9GXCC0HjllZpxV?=
- =?iso-8859-1?Q?E1A29oInyW6ij7LcI+FpAzsZUIj7An1q5XDHvHtGWU0EPV90j+U/DQa3x6?=
- =?iso-8859-1?Q?xDl9hQzi8gb1W90oxJZlM92u52Jjvr3LmogU1OAYtc4rnXLJeyEFBSHYKz?=
- =?iso-8859-1?Q?ETuS2uWMq9lRaiiN14lyJM/4aoRlnLnyD2LKe2JKwYCv5A4foMaSzN5u6X?=
- =?iso-8859-1?Q?olPtUBHcsu1vBcY04K0psc3FFLBfkLZCgk9lNU7uC3I5wvXokCBkJjH7f3?=
- =?iso-8859-1?Q?11fbUKuqwKdK99u9lY+pko70I9AMIRr2Ujl8M5esSaWRcDepY/Tb9D4qy+?=
- =?iso-8859-1?Q?qRNjENwOC+p3f3Dw1FRJcn4NwLaDxs84V6FU0A=3D=3D?=
-x-ms-exchange-transport-forked: True
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+        id S232548AbhBWMLk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 23 Feb 2021 07:11:40 -0500
+Received: from mail.kernel.org ([198.145.29.99]:41630 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S232689AbhBWMJe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 23 Feb 2021 07:09:34 -0500
+Received: by mail.kernel.org (Postfix) with ESMTPSA id 901DD64E25
+        for <linux-btrfs@vger.kernel.org>; Tue, 23 Feb 2021 12:08:52 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1614082133;
+        bh=2fez1eKCiJtOXj51F8XTqr8DVrp7oBIqvrZhWsIjCW4=;
+        h=From:To:Subject:Date:In-Reply-To:References:From;
+        b=bg3QI/A1CtpNiyVobNf/3V+O5zvY0MzmGcDLEZvt3NIHvUM49dtcxgKtY8pZyfMuV
+         fX4HlIy3EVdYSIODxPt4kjk2X5PPo9Ln5aQCEjovc9nmyCRIh8dezg5bAlQ8zfkbHD
+         DDK/l0ObsxSGSMGzXCW8tOYUZc+xyFZvWdOd2C6ipL9PSEWKrntfe4o8I6S7uLIAOZ
+         RrfZEjWNGSR7USYrs/u+oKcjySSmVTtxlo6/fqbWqB2A5wIjxNYgXS2kU2scyOaa/P
+         ya9Ukqowola+VRIv2p2JXTsEKkb6UonjIWABwqqPUIPzHmWNX/foKxu1UiIcxZfh9s
+         0qhd/GWVhHcAA==
+From:   fdmanana@kernel.org
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/3] btrfs: fix race between memory mapped writes and fsync
+Date:   Tue, 23 Feb 2021 12:08:47 +0000
+Message-Id: <913b5529db9d7ff6dcfb370785e471e0024241c2.1614081281.git.fdmanana@suse.com>
+X-Mailer: git-send-email 2.25.1
+In-Reply-To: <cover.1614081281.git.fdmanana@suse.com>
+References: <cover.1614081281.git.fdmanana@suse.com>
 MIME-Version: 1.0
-X-OriginatorOrg: wdc.com
-X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-AuthSource: PH0PR04MB7416.namprd04.prod.outlook.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: 7705ba77-637e-4d81-033b-08d8d7df6aed
-X-MS-Exchange-CrossTenant-originalarrivaltime: 23 Feb 2021 09:43:04.3516
- (UTC)
-X-MS-Exchange-CrossTenant-fromentityheader: Hosted
-X-MS-Exchange-CrossTenant-id: b61c8803-16f3-4c35-9b17-6f65f441df86
-X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
-X-MS-Exchange-CrossTenant-userprincipalname: 5Zcv+3C2jJGzkNo61dimdFyVbNJ19xQb74gtmbsXGdlDneQteoyZb1/KtB3kOGjnzf8envumaqZkqkLP6ZWY+wzvpM39IJYtIIQCu1vO3wg=
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: PH0PR04MB7430
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 23/02/2021 10:13, Johannes Thumshirn wrote:=0A=
-> On 22/02/2021 21:07, Steven Davies wrote:=0A=
-> =0A=
-> [+CC Anand ]=0A=
-> =0A=
->> Booted my system with kernel 5.11.0 vanilla with the first time and rece=
-ived this:=0A=
->>=0A=
->> BTRFS info (device nvme0n1p2): has skinny extents=0A=
->> BTRFS error (device nvme0n1p2): device total_bytes should be at most 964=
-757028864 but found =0A=
->> 964770336768=0A=
->> BTRFS error (device nvme0n1p2): failed to read chunk tree: -22=0A=
->>=0A=
->> Booting with 5.10.12 has no issues.=0A=
->>=0A=
->> # btrfs filesystem usage /=0A=
->> Overall:=0A=
->>  =A0=A0=A0 Device size:=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0 =
-898.51GiB=0A=
->>  =A0=A0=A0 Device allocated:=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0 620.06GiB=
-=0A=
->>  =A0=A0=A0 Device unallocated:=A0=A0=A0=A0=A0=A0=A0=A0=A0 278.45GiB=0A=
->>  =A0=A0=A0 Device missing:=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=
-=A0=A0 0.00B=0A=
->>  =A0=A0=A0 Used:=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=
-=A0=A0=A0=A0=A0 616.58GiB=0A=
->>  =A0=A0=A0 Free (estimated):=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0 279.94GiB=
-=A0=A0=A0=A0=A0 (min: 140.72GiB)=0A=
->>  =A0=A0=A0 Data ratio:=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=
-=A0=A0=A0=A0=A0=A0 1.00=0A=
->>  =A0=A0=A0 Metadata ratio:=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=
-=A0=A0=A0 2.00=0A=
->>  =A0=A0=A0 Global reserve:=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0 512.00=
-MiB=A0=A0=A0=A0=A0 (used: 0.00B)=0A=
->>=0A=
->> Data,single: Size:568.00GiB, Used:566.51GiB (99.74%)=0A=
->>  =A0=A0 /dev/nvme0n1p2=A0=A0=A0=A0=A0=A0=A0 568.00GiB=0A=
->>=0A=
->> Metadata,DUP: Size:26.00GiB, Used:25.03GiB (96.29%)=0A=
->>  =A0=A0 /dev/nvme0n1p2=A0=A0=A0=A0=A0=A0=A0=A0 52.00GiB=0A=
->>=0A=
->> System,DUP: Size:32.00MiB, Used:80.00KiB (0.24%)=0A=
->>  =A0=A0 /dev/nvme0n1p2=A0=A0=A0=A0=A0=A0=A0=A0 64.00MiB=0A=
->>=0A=
->> Unallocated:=0A=
->>  =A0=A0 /dev/nvme0n1p2=A0=A0=A0=A0=A0=A0=A0 278.45GiB=0A=
->>=0A=
->> # parted -l=0A=
->> Model: Sabrent Rocket Q (nvme)=0A=
->> Disk /dev/nvme0n1: 1000GB=0A=
->> Sector size (logical/physical): 512B/512B=0A=
->> Partition Table: gpt=0A=
->> Disk Flags:=0A=
->>=0A=
->> Number=A0 Start=A0=A0 End=A0=A0=A0=A0 Size=A0=A0=A0 File system=A0=A0=A0=
-=A0 Name=A0 Flags=0A=
->>  =A01=A0=A0=A0=A0=A0 1049kB=A0 1075MB=A0 1074MB=A0 fat32=A0=A0=A0=A0=A0=
-=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0 boot, esp=0A=
->>  =A02=A0=A0=A0=A0=A0 1075MB=A0 966GB=A0=A0 965GB=A0=A0 btrfs=0A=
->>  =A03=A0=A0=A0=A0=A0 966GB=A0=A0 1000GB=A0 34.4GB=A0 linux-swap(v1)=A0=
-=A0=A0=A0=A0=A0=A0 swap=0A=
->>=0A=
->> What has changed in 5.11 which might cause this?=0A=
->>=0A=
->>=0A=
-> =0A=
-> This line:=0A=
->> BTRFS info (device nvme0n1p2): has skinny extents=0A=
->> BTRFS error (device nvme0n1p2): device total_bytes should be at most 964=
-757028864 but found =0A=
->> 964770336768=0A=
->> BTRFS error (device nvme0n1p2): failed to read chunk tree: -22=0A=
-> =0A=
-> comes from 3a160a933111 ("btrfs: drop never met disk total bytes check in=
- verify_one_dev_extent")=0A=
-> which went into v5.11-rc1.=0A=
-> =0A=
-> IIUIC the device item's total_bytes and the block device inode's size are=
- off by 12M, so the check=0A=
-> introduced in the above commit refuses to mount the FS.=0A=
-> =0A=
-> Anand any idea?=0A=
-=0A=
-OK this is getting interesting:=0A=
-btrfs-porgs sets the device's total_bytes at mkfs time and obtains it from =
-ioctl(..., BLKGETSIZE64, ...); =0A=
-=0A=
-BLKGETSIZE64 does:=0A=
-return put_u64(argp, i_size_read(bdev->bd_inode));=0A=
-=0A=
-The new check in read_one_dev() does:=0A=
-=0A=
-               u64 max_total_bytes =3D i_size_read(device->bdev->bd_inode);=
-=0A=
-=0A=
-               if (device->total_bytes > max_total_bytes) {=0A=
-                       btrfs_err(fs_info,=0A=
-                       "device total_bytes should be at most %llu but found=
- %llu",=0A=
-                                 max_total_bytes, device->total_bytes);=0A=
-                       return -EINVAL;=0A=
-=0A=
-=0A=
-So the bdev inode's i_size must have changed between mkfs and mount.=0A=
-=0A=
-Steven, can you please run:=0A=
-blockdev --getsize64 /dev/nvme0n1p2=0A=
+From: Filipe Manana <fdmanana@suse.com>
+
+When doing an fsync we flush all delalloc, lock the inode (vfs lock), flush
+any new delalloc that might have been created before taking the lock and
+then wait either for the ordered extents to complete or just for the
+writeback to complete (depending on whether the full sync flag is set or
+not). We then start logging the inode and assume that while we are doing it
+no one else is touching the inode's file extent items (or adding new ones).
+
+That is generally true because all operations that modify an inode acquire
+the inode's lock first, including buffered and direct IO writes. However
+there is one exception: memory mapped writes, which do not and can not
+acquire the inode's lock.
+
+This can cause two types of issues: ending up logging file extent items
+with overlapping ranges, which is detected by the tree checker and will
+result in aborting the transaction when starting writeback for a log
+tree's extent buffers, or a silent corruption where we log a version of
+the file that never existed.
+
+Scenario 1 - logging overlapping extents
+
+The following steps explain how we can end up with file extents items with
+overlapping ranges in a log tree due to a race between a fsync and memory
+mapped writes:
+
+1) Task A starts an fsync on inode X, which has the full sync runtime flag
+   set. First it starts by flushing all delalloc for the inode;
+
+2) Task A then locks the inode and flushes any other delalloc that might
+   have been created after the previous flush and waits for all ordered
+   extents to complete;
+
+3) In the inode's root we have the following leaf:
+
+   Leaf N, generation == current transaction id:
+
+   ---------------------------------------------------------
+   | (...)  [ file extent item, offset 640K, length 128K ] |
+   ---------------------------------------------------------
+
+   The last file extent item in leaf N covers the file range from 640K to
+   768K;
+
+4) Task B does a memory mapped write for the page corresponding to the
+   file range from 764K to 768K;
+
+5) Task A starts logging the inode. At copy_inode_items_to_log() it uses
+   btrfs_search_forward() to search for leafs modified in the current
+   transaction that contain items for the inode. It finds leaf N and copies
+   all the inode items from that leaf into the log tree.
+
+   Now the log tree has a copy of the last file extent item from leaf N.
+
+   At the end of the while loop at copy_inode_items_to_log(), we have the
+   minimum key set to:
+
+   min_key.objectid = <inode X number>
+   min_key.type = BTRFS_EXTENT_DATA_KEY
+   min_key.offset = 640K
+
+   Then we increment the key's offset by 1 so that the next call to
+   btrfs_search_forward() leaves us at the first key greater than the key
+   we just processed.
+
+   But before btrfs_search_forward() is called again...
+
+6) Dellaloc for the page at offset 764K, dirtied by task B, is started.
+   It can be started for several reasons:
+
+     - The async reclaim task is attempting to satisfy metadata or data
+       reservation requests, and it has reached a point where it decided
+       to flush delalloc;
+     - Due to memory pressure the vm triggers writeback of dirty pages;
+     - The system call sync_file_range(2) is called from user space.
+
+7) When the respective ordered extent completes, it trims the length of
+   the existing file extent item for file offset 640K from 128K to 124K,
+   and a new file extent item is added with a key offset of 764K and a
+   length of 4K;
+
+8) Task A calls btrfs_search_forward(), which returns us a path pointing
+   to the leaf (can be leaf N or some other) containing the new file extent
+   item for file offset 764K.
+
+   We end up copying this item to the log tree, which overlaps with the
+   last copied file extent item, which covers the file range from 640K to
+   768K.
+
+   When writeback is triggered for log tree's extent buffers, the issue
+   will be detected by the tree checker which will dump a trace and an
+   error message on dmesg/syslog. If the writeback is triggered when
+   syncing the log, which typically is, then we also end up aborting the
+   current transaction.
+
+This is the same type of problem fixed in 0c713cbab6200b ("Btrfs: fix race
+between ranged fsync and writeback of adjacent ranges").
+
+Scenario 2 - logging a version of the file that never existed
+
+This scenario only happens when using the NO_HOLES feature and results in
+a silent corruption, in the sense that is not detectable by 'btrfs check'
+or the tree checker:
+
+1) We have an inode I with a size of 1M and two file extent items, one
+   covering an extent with disk_bytenr == X for the file range [0, 512K[
+   and another one covering another extent with disk_bytenr == Y for the
+   file range [512K, 1M[;
+
+2) A hole is punched for the file range [512K, 1M[;
+
+3) Task A starts an fsync of inode I, which has the full sync runtime flag
+   set. It starts by flushing all existing delalloc, locks the inode (VFS
+   lock), starts any new delalloc that might have been created before
+   taking the lock and waits for all ordered extents to complete;
+
+4) Some other task does a memory mapped write for the page corresponding to
+   the file range [640K, 644K[ for example;
+
+5) Task A then logs all items of the inode with the call to
+   copy_inode_items_to_log();
+
+6) In the meanwhile delalloc for the range [640K, 644K[ is started. It can
+   be started for several reasons:
+
+     - The async reclaim task is attempting to satisfy metadata or data
+       reservation requests, and it has reached a point where it decided
+       to flush delalloc;
+     - Due to memory pressure the vm triggers writeback of dirty pages;
+     - The system call sync_file_range(2) is called from user space.
+
+7) The ordered extent for the range [640K, 644K[ completes and a file
+   extent item for that range is added to the subvolume tree, pointing
+   to a 4K extent with a disk_bytenr == Z;
+
+8) Task A then calls btrfs_log_holes(), to scan for implicit holes in
+   the subvolume tree. It finds two implicit holes:
+
+   - one for the file range [512K, 640K[
+   - one for the file range [644K, 1M[
+
+   As a result we end up neither logging a hole for the range [640K, 644K[
+   nor logging the file extent item with a disk_bytenr == Z.
+   This means that if we have a power failure and replay the log tree we
+   end up getting the following file extent layout:
+
+   [ disk_bytenr X ]    [   hole   ]    [ disk_bytenr Y ]    [  hole  ]
+   0             512K  512K      640K  640K           644K  644K     1M
+
+   Which does not corresponding to any layout the file ever had before
+   the power failure. The only two valid layouts would be:
+
+   [ disk_bytenr X ]    [   hole   ]
+   0             512K  512K        1M
+
+   and
+
+   [ disk_bytenr X ]    [   hole   ]    [ disk_bytenr Z ]    [  hole  ]
+   0             512K  512K      640K  640K           644K  644K     1M
+
+This can be fixed by serializing memory mapped writes with fsync, and there
+are two ways to do it:
+
+1) Make a fsync lock the entire file range, from 0 to (u64)-1 / LLONG_MAX
+   in the inode's io tree. This prevents the race but also blocks any reads
+   during the duration of the fsync, which has a negative impact for many
+   common workloads;
+
+2) Make an fsync write lock the i_mmap_lock semaphore in the inode. This
+   semaphore was recently added by Josef's patch set:
+
+   btrfs: add a i_mmap_lock to our inode
+   btrfs: cleanup inode_lock/inode_unlock uses
+   btrfs: exclude mmaps while doing remap
+   btrfs: exclude mmap from happening during all fallocate operations
+
+   and is used to solve races between memory mapped writes and
+   clone/dedupe/fallocate. This also makes us have the same behaviour we
+   have regarding other writes (buffered and direct IO) and fsync - block
+   them while the inode logging is in progress.
+
+This change uses the second approach due to the performance impact of the
+first one.
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/file.c | 18 +++++++++---------
+ 1 file changed, 9 insertions(+), 9 deletions(-)
+
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 3a2928749349..809eee806505 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -2122,7 +2122,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+ 	if (ret)
+ 		goto out;
+ 
+-	btrfs_inode_lock(inode, 0);
++	btrfs_inode_lock(inode, BTRFS_ILOCK_MMAP);
+ 
+ 	atomic_inc(&root->log_batch);
+ 
+@@ -2135,11 +2135,11 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+ 			     &BTRFS_I(inode)->runtime_flags);
+ 
+ 	/*
+-	 * Before we acquired the inode's lock, someone may have dirtied more
+-	 * pages in the target range. We need to make sure that writeback for
+-	 * any such pages does not start while we are logging the inode, because
+-	 * if it does, any of the following might happen when we are not doing a
+-	 * full inode sync:
++	 * Before we acquired the inode's lock and the mmap lock, someone may
++	 * have dirtied more pages in the target range. We need to make sure
++	 * that writeback for any such pages does not start while we are logging
++	 * the inode, because if it does, any of the following might happen when
++	 * we are not doing a full inode sync:
+ 	 *
+ 	 * 1) We log an extent after its writeback finishes but before its
+ 	 *    checksums are added to the csum tree, leading to -EIO errors
+@@ -2154,7 +2154,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+ 	 */
+ 	ret = start_ordered_ops(inode, start, end);
+ 	if (ret) {
+-		btrfs_inode_unlock(inode, 0);
++		btrfs_inode_unlock(inode, BTRFS_ILOCK_MMAP);
+ 		goto out;
+ 	}
+ 
+@@ -2255,7 +2255,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+ 	 * file again, but that will end up using the synchronization
+ 	 * inside btrfs_sync_log to keep things safe.
+ 	 */
+-	btrfs_inode_unlock(inode, 0);
++	btrfs_inode_unlock(inode, BTRFS_ILOCK_MMAP);
+ 
+ 	if (ret != BTRFS_NO_LOG_SYNC) {
+ 		if (!ret) {
+@@ -2285,7 +2285,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+ 
+ out_release_extents:
+ 	btrfs_release_log_ctx_extents(&ctx);
+-	btrfs_inode_unlock(inode, 0);
++	btrfs_inode_unlock(inode, BTRFS_ILOCK_MMAP);
+ 	goto out;
+ }
+ 
+-- 
+2.28.0
+

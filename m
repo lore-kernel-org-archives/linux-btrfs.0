@@ -2,40 +2,40 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-14.0 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-18.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4AD1EC433E0
-	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Feb 2021 12:11:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 90CFCC433E0
+	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Feb 2021 13:21:31 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 1D00264E21
-	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Feb 2021 12:11:47 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5C95264E60
+	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Feb 2021 13:21:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232658AbhBWMLp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 23 Feb 2021 07:11:45 -0500
-Received: from mail.kernel.org ([198.145.29.99]:41618 "EHLO mail.kernel.org"
+        id S232685AbhBWNVa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 23 Feb 2021 08:21:30 -0500
+Received: from mx2.suse.de ([195.135.220.15]:59472 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S232685AbhBWMJc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 23 Feb 2021 07:09:32 -0500
-Received: by mail.kernel.org (Postfix) with ESMTPSA id BC7A164E21
-        for <linux-btrfs@vger.kernel.org>; Tue, 23 Feb 2021 12:08:51 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1614082132;
-        bh=OrFXc0DCi1CRQ8jui8shbWd58unAZ1vdn/84MuWwbro=;
-        h=From:To:Subject:Date:From;
-        b=MDA/0JfOhArOpKH/2JYp1H8Uq07Gbj9FT/pGoNdAbYGLKFdwnjXK97qlNiPZQZ5wy
-         co6QxcrnIbE89LScNLY9vlVSwN2TRe8FQcZTh800lPu5li2d2Bo55xT8k7wO10cmzV
-         mklKKHHMKXfEaUPipqlZni+0b33fQnZ0/PhQli91BVuqQt0hPdqkNCQo24D8Yqz0kL
-         OYQY3a0Ojt7EWL6LkWT7yDfZKlOMvYWoLMop0xW+MqD4r5XoTeucDqp5j8KpVjOaRY
-         hyg6tuz79ENTerHEOkKjCkIGEa1OTucipvd91FCUPviviNYB2I4G0+QwEaGbS18E8H
-         03tIiYmCY7D+w==
-From:   fdmanana@kernel.org
+        id S232649AbhBWNV3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 23 Feb 2021 08:21:29 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1614086443; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=etvXDRKX+C+eQUI3ggxyu2VSklDFOJKwbGtrf9coCfk=;
+        b=KnEW8QdAdtX38gyNH53gMHlFKcSBOc2Iyt/Gd8MLUxHvmI5jTTwGgC3tNqHw4/fOw46MF4
+        0BKdp6XApEcGPn0CTPPOjZTgTPmCNLUkL+TjFVmucMrAxXPZCelw14ZgKYqFAJqP4iWl0C
+        gcBz+5HTvPlGugkVUx6CJ4yXu0caQbo=
+Received: from relay2.suse.de (unknown [195.135.221.27])
+        by mx2.suse.de (Postfix) with ESMTP id 9E890AC1D;
+        Tue, 23 Feb 2021 13:20:43 +0000 (UTC)
+From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/3] btrfs: fix a couple races between fsync and other code
-Date:   Tue, 23 Feb 2021 12:08:46 +0000
-Message-Id: <cover.1614081281.git.fdmanana@suse.com>
+Cc:     Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH] btrfs: Unlock extents in btrfs_zero_range in case of errors
+Date:   Tue, 23 Feb 2021 15:20:42 +0200
+Message-Id: <20210223132042.1198894-1-nborisov@suse.com>
 X-Mailer: git-send-email 2.25.1
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
@@ -43,33 +43,34 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+If btrfs_qgroup_reserve_data returns an error (i.e quota limit reached)
+the handling logic directly goes to the 'out' label without first
+unlocking the extent range between lockstart, lockend. This results in
+deadlocks as processes try to lock the same extent.
 
-The first patch fixes a race between fsync and memory mapped writes, which
-can result in corruptions. The second one fixes a different race that in
-practice should be "impossible" to happen, but in case it's triggered
-somehow, results in not logging an inode when it has new extents. The last
-patch just removes some no longer needed code.
+Fixes: a7f8b1c2ac21 ("btrfs: file: reserve qgroup space after the hole punch range is locked")
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
+ fs/btrfs/file.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
 
-The first patch, as mentioned in its changelog, depends on Josef's patchset
-which has the subject:
-
-   "Introduce a mmap sem to deal with some mmap issues"
-
-The others are independent of it.
-
-Filipe Manana (3):
-  btrfs: fix race between memory mapped writes and fsync
-  btrfs: fix race between marking inode needs to be logged and log
-    syncing
-  btrfs: remove stale comment and logic from btrfs_inode_in_log()
-
- fs/btrfs/btrfs_inode.h | 32 +++++++++++++++++++-------------
- fs/btrfs/file.c        | 28 +++++++++++-----------------
- fs/btrfs/inode.c       |  4 +---
- fs/btrfs/transaction.h |  2 +-
- 4 files changed, 32 insertions(+), 34 deletions(-)
-
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 1e68349c3884..af0253473508 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -3259,8 +3259,11 @@ static int btrfs_zero_range(struct inode *inode,
+ 			goto out;
+ 		ret = btrfs_qgroup_reserve_data(BTRFS_I(inode), &data_reserved,
+ 						alloc_start, bytes_to_reserve);
+-		if (ret)
++		if (ret) {
++			unlock_extent_cached(&BTRFS_I(inode)->io_tree, lockstart,
++					     lockend, &cached_state);
+ 			goto out;
++		}
+ 		ret = btrfs_prealloc_file_range(inode, mode, alloc_start,
+ 						alloc_end - alloc_start,
+ 						i_blocksize(inode),
 -- 
-2.28.0
+2.25.1
 

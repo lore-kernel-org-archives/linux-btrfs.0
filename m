@@ -2,43 +2,41 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-19.0 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-14.0 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 161E0C433DB
-	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Feb 2021 12:11:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4AD1EC433E0
+	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Feb 2021 12:11:47 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id DAECD64E00
-	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Feb 2021 12:11:45 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1D00264E21
+	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Feb 2021 12:11:47 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232648AbhBWMLn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 23 Feb 2021 07:11:43 -0500
-Received: from mail.kernel.org ([198.145.29.99]:41634 "EHLO mail.kernel.org"
+        id S232658AbhBWMLp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 23 Feb 2021 07:11:45 -0500
+Received: from mail.kernel.org ([198.145.29.99]:41618 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S232696AbhBWMJf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 23 Feb 2021 07:09:35 -0500
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 3FBFA601FF
-        for <linux-btrfs@vger.kernel.org>; Tue, 23 Feb 2021 12:08:54 +0000 (UTC)
+        id S232685AbhBWMJc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 23 Feb 2021 07:09:32 -0500
+Received: by mail.kernel.org (Postfix) with ESMTPSA id BC7A164E21
+        for <linux-btrfs@vger.kernel.org>; Tue, 23 Feb 2021 12:08:51 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1614082134;
-        bh=DXKgqUXWggre8pb+n7ubDQFTEZqblI7KH0bCrTVwXoc=;
-        h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=L3ERtcls24xtv76wn5KSgiwdxvOvSemBsCQOe9i37zcIU989KIGrJisEAu+IGzD/8
-         VUAHRIf+onW4V9WmUvGaJ+OePBuxl/+ldlwVqHo3T/3emguNpmlQYhpUeGpCVHDQbV
-         YaqiUGY4tHq1+b5G53/PvggLWWJyxv073+AA3H13PkUOy1vdlni3K0xwOVRV+Z5N9n
-         niwHRDsCI4vEEFy5oxTa9vNY4Zr+xW7YH0B9kuOJ217GD4z48l9Y+XzqRyn6XtjrDC
-         mpoVVL3qVyfGvPejLyiA7Kqrai3gaN2B0wKnUL1dQnDdwreeyYguhIq6QhTPkUylgC
-         2RfEFR1MqETMg==
+        s=k20201202; t=1614082132;
+        bh=OrFXc0DCi1CRQ8jui8shbWd58unAZ1vdn/84MuWwbro=;
+        h=From:To:Subject:Date:From;
+        b=MDA/0JfOhArOpKH/2JYp1H8Uq07Gbj9FT/pGoNdAbYGLKFdwnjXK97qlNiPZQZ5wy
+         co6QxcrnIbE89LScNLY9vlVSwN2TRe8FQcZTh800lPu5li2d2Bo55xT8k7wO10cmzV
+         mklKKHHMKXfEaUPipqlZni+0b33fQnZ0/PhQli91BVuqQt0hPdqkNCQo24D8Yqz0kL
+         OYQY3a0Ojt7EWL6LkWT7yDfZKlOMvYWoLMop0xW+MqD4r5XoTeucDqp5j8KpVjOaRY
+         hyg6tuz79ENTerHEOkKjCkIGEa1OTucipvd91FCUPviviNYB2I4G0+QwEaGbS18E8H
+         03tIiYmCY7D+w==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/3] btrfs: remove stale comment and logic from btrfs_inode_in_log()
-Date:   Tue, 23 Feb 2021 12:08:49 +0000
-Message-Id: <dabc6885cc5175dc41b926d47863931fafcc3f4c.1614081281.git.fdmanana@suse.com>
+Subject: [PATCH 0/3] btrfs: fix a couple races between fsync and other code
+Date:   Tue, 23 Feb 2021 12:08:46 +0000
+Message-Id: <cover.1614081281.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
-In-Reply-To: <cover.1614081281.git.fdmanana@suse.com>
-References: <cover.1614081281.git.fdmanana@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
@@ -47,72 +45,31 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-Currently btrfs_inode_in_log() checks the list of modified extents of the
-inode, and has a comment mentioning why, as it used to be necessary to
-make sure if we did something like the following:
+The first patch fixes a race between fsync and memory mapped writes, which
+can result in corruptions. The second one fixes a different race that in
+practice should be "impossible" to happen, but in case it's triggered
+somehow, results in not logging an inode when it has new extents. The last
+patch just removes some no longer needed code.
 
-  mmap write range A
-  mmap write range B
-  msync range A (ranged fsync)
-  msync range B (ranged fsync)
+The first patch, as mentioned in its changelog, depends on Josef's patchset
+which has the subject:
 
-we ended up with both ranges being logged.
+   "Introduce a mmap sem to deal with some mmap issues"
 
-If we did not check it, then the second fsync would do nothing because
-btrfs_inode_in_log() would return true. This was added in 125c4cf9f37c98
-("Btrfs: set inode's logged_trans/last_log_commit after ranged fsync") and
-test case generic/325 from fstests exercises that scenario.
+The others are independent of it.
 
-However, as of commit 487781796d3022 ("btrfs: make fast fsyncs wait only
-for writeback"), every ranged fsync is now turned into a full ranged fsync
-(operates on the range from 0 to LLONG_MAX), so it is now pointless to
-test of emptiness of the list of modified extents, and the comment is
-clearly outdated.
+Filipe Manana (3):
+  btrfs: fix race between memory mapped writes and fsync
+  btrfs: fix race between marking inode needs to be logged and log
+    syncing
+  btrfs: remove stale comment and logic from btrfs_inode_in_log()
 
-So just remove the comment and list emptiness check, while also changing
-the function's return type to be a boolean instead of an integer.
-In case one day we get support for ranged fsyncs again, it will be easy
-to notice the check is necessary again, because it will make generic/325
-always fail.
+ fs/btrfs/btrfs_inode.h | 32 +++++++++++++++++++-------------
+ fs/btrfs/file.c        | 28 +++++++++++-----------------
+ fs/btrfs/inode.c       |  4 +---
+ fs/btrfs/transaction.h |  2 +-
+ 4 files changed, 32 insertions(+), 34 deletions(-)
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/btrfs_inode.h | 17 ++++-------------
- 1 file changed, 4 insertions(+), 13 deletions(-)
-
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 8011596e1eb3..c652e19ad74e 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -315,24 +315,15 @@ static inline void btrfs_set_inode_last_sub_trans(struct btrfs_inode *inode)
- 	spin_unlock(&inode->lock);
- }
- 
--static inline int btrfs_inode_in_log(struct btrfs_inode *inode, u64 generation)
-+static inline bool btrfs_inode_in_log(struct btrfs_inode *inode, u64 generation)
- {
--	int ret = 0;
-+	bool ret = false;
- 
- 	spin_lock(&inode->lock);
- 	if (inode->logged_trans == generation &&
- 	    inode->last_sub_trans <= inode->last_log_commit &&
--	    inode->last_sub_trans <= inode->root->last_log_commit) {
--		/*
--		 * After a ranged fsync we might have left some extent maps
--		 * (that fall outside the fsync's range). So return false
--		 * here if the list isn't empty, to make sure btrfs_log_inode()
--		 * will be called and process those extent maps.
--		 */
--		smp_mb();
--		if (list_empty(&inode->extent_tree.modified_extents))
--			ret = 1;
--	}
-+	    inode->last_sub_trans <= inode->root->last_log_commit)
-+		ret = true;
- 	spin_unlock(&inode->lock);
- 	return ret;
- }
 -- 
 2.28.0
 

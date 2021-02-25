@@ -2,90 +2,234 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.7 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5FFD1C433E0
-	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Feb 2021 08:26:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E5728C433DB
+	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Feb 2021 12:59:18 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 0250B64EDC
-	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Feb 2021 08:26:24 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8803964EFA
+	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Feb 2021 12:59:18 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235770AbhBYI0H (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 25 Feb 2021 03:26:07 -0500
-Received: from out20-15.mail.aliyun.com ([115.124.20.15]:47167 "EHLO
-        out20-15.mail.aliyun.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232601AbhBYIZx (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 25 Feb 2021 03:25:53 -0500
-X-Alimail-AntiSpam: AC=CONTINUE;BC=0.047104|-1;CH=green;DM=|CONTINUE|false|;DS=CONTINUE|ham_alarm|0.101896-0.000707346-0.897396;FP=0|0|0|0|0|-1|-1|-1;HT=ay29a033018047204;MF=wangyugui@e16-tech.com;NM=1;PH=DS;RN=2;RT=2;SR=0;TI=SMTPD_---.Jd4SWhk_1614241510;
-Received: from 192.168.2.112(mailfrom:wangyugui@e16-tech.com fp:SMTPD_---.Jd4SWhk_1614241510)
-          by smtp.aliyun-inc.com(10.147.42.197);
-          Thu, 25 Feb 2021 16:25:10 +0800
-Date:   Thu, 25 Feb 2021 16:25:13 +0800
-From:   Wang Yugui <wangyugui@e16-tech.com>
-To:     Nikolay Borisov <nborisov@suse.com>
-Subject: Re: xfstest btrfs/154 failed at kernel 5.4.100
-Cc:     linux-btrfs@vger.kernel.org
-In-Reply-To: <b5b5c384-af04-d05f-f3d0-5d6372d2c52a@suse.com>
-References: <20210225155350.BB3A.409509F4@e16-tech.com> <b5b5c384-af04-d05f-f3d0-5d6372d2c52a@suse.com>
-Message-Id: <20210225162512.D437.409509F4@e16-tech.com>
+        id S231978AbhBYM7R (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 25 Feb 2021 07:59:17 -0500
+Received: from mx2.suse.de ([195.135.220.15]:46862 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S230498AbhBYM7Q (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 25 Feb 2021 07:59:16 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1614257910; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=KUumbRx+Xsj9WgRCcQCui1lkxvQGPEvjij5G4fq6J5g=;
+        b=SYLj1XpodG8Uaqlfxipzytvfjp/uihU8Ev6eLVhTVhI1CBGfwOKRhoVUXZalVTPyUjXvxX
+        aA/qBSdOTbFmwWGP6fnVZD/p0Vs2vl8CxpXj/aI4GzNqHRCUjmwnRbuhMCfbMyOEM3I6Ub
+        6rCh6hnpg8OQdqIBR1YAshI6bL5NuqE=
+Received: from relay2.suse.de (unknown [195.135.221.27])
+        by mx2.suse.de (Postfix) with ESMTP id 0E0F4AF6F;
+        Thu, 25 Feb 2021 12:58:30 +0000 (UTC)
+From:   Nikolay Borisov <nborisov@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH] btrfs: Refactor error handling in btrfs_zero_range
+Date:   Thu, 25 Feb 2021 14:58:28 +0200
+Message-Id: <20210225125828.1601531-1-nborisov@suse.com>
+X-Mailer: git-send-email 2.25.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset="GB2312"
 Content-Transfer-Encoding: 8bit
-X-Mailer: Becky! ver. 2.75.03 [en]
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi,
+The major complexity when it comes to error handling in btrfs_zero_range
+stems from the code executed under the 'reserve_space' label. Rather
+than it having an effect on the whole of btrfs_zero_range refactor it
+so that error handling specific to the functions called in this branch
+is contained only within the branch itself. This obviates the need for
+having the 'space_reserved' local flag since btrfs_free_reserved_data_space
+is called from the 2 error branches it's needed. Furthermore, this
+rids the code from the out label and enables converting most 'goto out'
+statements to simiple 'return ret' making the function easier to read.
 
-btrfs/154 passed with with the backport of this patch.
-btrfs: correctly calculate item size used when item key collision
-happens
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
+ fs/btrfs/file.c | 70 +++++++++++++++++++++++--------------------------
+ 1 file changed, 33 insertions(+), 37 deletions(-)
 
-Thanks a lot.
-
-Best Regards
-Wang Yugui (wangyugui@e16-tech.com)
-2021/02/25
-
-> 
-> 
-> On 25.02.21 §Ô. 9:53 §é., Wang Yugui wrote:
-> > Hi,
-> > 
-> > xfstest btrfs/154 failed at kernel 5.4.100
-> > 
-> > frequency: always
-> > kernel version: 5.4.100, other kernel version yet not tested.
-> > xfstest: https://github.com/kdave/xfstests.git
-> > btrfs-progs: 5.10.1
-> > 	but mkfs.btrfs default enable no-holes and free-space-tree.
-> > 
-> > # ./check btrfs/154
-> > FSTYP         -- btrfs
-> > PLATFORM      -- Linux/x86_64 T7610 5.4.100-3.el7.x86_64 #1 SMP Thu Feb 25 13:19:45 CST 2021
-> > MKFS_OPTIONS  -- /dev/sdb
-> > MOUNT_OPTIONS -- /dev/sdb /mnt/scratch
-> > 
-> > btrfs/154       _check_dmesg: something found in dmesg (see /ssd/git/os/xfstests/results//btrfs/154.dmesg)
-> > - output mismatch (see /ssd/git/os/xfstests/results//btrfs/154.out.bad)
-> >     --- tests/btrfs/154.out     2021-02-25 13:41:27.906590386 +0800
-> >     +++ /ssd/git/os/xfstests/results//btrfs/154.out.bad 2021-02-25 15:45:52.182865707 +0800
-> >     @@ -1,2 +1,6 @@
-> >      QA output created by 154
-> >     +Traceback (most recent call last):
-> >     +  File "/ssd/git/os/xfstests/src/btrfs_crc32c_forged_name.py", line 89, in <module>
-> >     +    os.rename(srcpath, dstpath)
-> >     +OSError: [Errno 75] Value too large for defined data type
-> >      Silence is golden
-> > 
-> 
-> That's expected to fail, the commit for it landed in 5.11-rc2 actually
-> if you've taken the time to look into the test itself it even states the
-> name of the commit. Furthermore, the commit is tagged for stable 4.4 so
-> it will eventually land in all stable kernels.
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index af0253473508..4530952c3356 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -3113,23 +3113,19 @@ static int btrfs_zero_range(struct inode *inode,
+ {
+ 	struct btrfs_fs_info *fs_info = BTRFS_I(inode)->root->fs_info;
+ 	struct extent_map *em;
+-	struct extent_changeset *data_reserved = NULL;
+ 	int ret;
+ 	u64 alloc_hint = 0;
+ 	const u64 sectorsize = btrfs_inode_sectorsize(BTRFS_I(inode));
+ 	u64 alloc_start = round_down(offset, sectorsize);
+ 	u64 alloc_end = round_up(offset + len, sectorsize);
+ 	u64 bytes_to_reserve = 0;
+-	bool space_reserved = false;
+ 
+ 	inode_dio_wait(inode);
+ 
+ 	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, alloc_start,
+ 			      alloc_end - alloc_start);
+-	if (IS_ERR(em)) {
+-		ret = PTR_ERR(em);
+-		goto out;
+-	}
++	if (IS_ERR(em))
++		return PTR_ERR(em);
+ 
+ 	/*
+ 	 * Avoid hole punching and extent allocation for some cases. More cases
+@@ -3150,9 +3146,8 @@ static int btrfs_zero_range(struct inode *inode,
+ 			 * needed.
+ 			 */
+ 			free_extent_map(em);
+-			ret = btrfs_fallocate_update_isize(inode, offset + len,
+-							   mode);
+-			goto out;
++			return btrfs_fallocate_update_isize(inode, offset + len,
++							    mode);
+ 		}
+ 		/*
+ 		 * Part of the range is already a prealloc extent, so operate
+@@ -3170,26 +3165,22 @@ static int btrfs_zero_range(struct inode *inode,
+ 	    BTRFS_BYTES_TO_BLKS(fs_info, offset + len - 1)) {
+ 		em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, alloc_start,
+ 				      sectorsize);
+-		if (IS_ERR(em)) {
+-			ret = PTR_ERR(em);
+-			goto out;
+-		}
++		if (IS_ERR(em))
++			return PTR_ERR(em);
+ 
+ 		if (test_bit(EXTENT_FLAG_PREALLOC, &em->flags)) {
+ 			free_extent_map(em);
+-			ret = btrfs_fallocate_update_isize(inode, offset + len,
+-							   mode);
+-			goto out;
++			return  btrfs_fallocate_update_isize(inode,
++							offset + len, mode);
+ 		}
+ 		if (len < sectorsize && em->block_start != EXTENT_MAP_HOLE) {
+ 			free_extent_map(em);
+ 			ret = btrfs_truncate_block(BTRFS_I(inode), offset, len,
+ 						   0);
+-			if (!ret)
+-				ret = btrfs_fallocate_update_isize(inode,
+-								   offset + len,
+-								   mode);
+-			return ret;
++			if (ret)
++				return ret;
++			return btrfs_fallocate_update_isize(inode,
++							    offset + len, mode);
+ 		}
+ 		free_extent_map(em);
+ 		alloc_start = round_down(offset, sectorsize);
+@@ -3210,14 +3201,14 @@ static int btrfs_zero_range(struct inode *inode,
+ 		ret = btrfs_zero_range_check_range_boundary(BTRFS_I(inode),
+ 							    offset);
+ 		if (ret < 0)
+-			goto out;
++			return ret;
+ 		if (ret == RANGE_BOUNDARY_HOLE) {
+ 			alloc_start = round_down(offset, sectorsize);
+ 			ret = 0;
+ 		} else if (ret == RANGE_BOUNDARY_WRITTEN_EXTENT) {
+ 			ret = btrfs_truncate_block(BTRFS_I(inode), offset, 0, 0);
+ 			if (ret)
+-				goto out;
++				return ret;
+ 		} else {
+ 			ret = 0;
+ 		}
+@@ -3227,7 +3218,7 @@ static int btrfs_zero_range(struct inode *inode,
+ 		ret = btrfs_zero_range_check_range_boundary(BTRFS_I(inode),
+ 							    offset + len);
+ 		if (ret < 0)
+-			goto out;
++			return ret;
+ 		if (ret == RANGE_BOUNDARY_HOLE) {
+ 			alloc_end = round_up(offset + len, sectorsize);
+ 			ret = 0;
+@@ -3235,7 +3226,7 @@ static int btrfs_zero_range(struct inode *inode,
+ 			ret = btrfs_truncate_block(BTRFS_I(inode), offset + len,
+ 						   0, 1);
+ 			if (ret)
+-				goto out;
++				return ret;
+ 		} else {
+ 			ret = 0;
+ 		}
+@@ -3243,6 +3234,7 @@ static int btrfs_zero_range(struct inode *inode,
+ 
+ reserve_space:
+ 	if (alloc_start < alloc_end) {
++		struct extent_changeset *data_reserved = NULL;
+ 		struct extent_state *cached_state = NULL;
+ 		const u64 lockstart = alloc_start;
+ 		const u64 lockend = alloc_end - 1;
+@@ -3251,18 +3243,27 @@ static int btrfs_zero_range(struct inode *inode,
+ 		ret = btrfs_alloc_data_chunk_ondemand(BTRFS_I(inode),
+ 						      bytes_to_reserve);
+ 		if (ret < 0)
+-			goto out;
+-		space_reserved = true;
++			return ret;
+ 		ret = btrfs_punch_hole_lock_range(inode, lockstart, lockend,
+ 						  &cached_state);
+-		if (ret)
+-			goto out;
++		if (ret) {
++			btrfs_free_reserved_data_space(BTRFS_I(inode),
++						       data_reserved,
++						       alloc_start,
++						       bytes_to_reserve);
++			return ret;
++		}
+ 		ret = btrfs_qgroup_reserve_data(BTRFS_I(inode), &data_reserved,
+ 						alloc_start, bytes_to_reserve);
+ 		if (ret) {
++			btrfs_free_reserved_data_space(BTRFS_I(inode),
++						       data_reserved,
++						       alloc_start,
++						       bytes_to_reserve);
+ 			unlock_extent_cached(&BTRFS_I(inode)->io_tree, lockstart,
+ 					     lockend, &cached_state);
+-			goto out;
++			extent_changeset_free(data_reserved);
++			return ret;
+ 		}
+ 		ret = btrfs_prealloc_file_range(inode, mode, alloc_start,
+ 						alloc_end - alloc_start,
+@@ -3272,16 +3273,11 @@ static int btrfs_zero_range(struct inode *inode,
+ 				     lockend, &cached_state);
+ 		/* btrfs_prealloc_file_range releases reserved space on error */
+ 		if (ret) {
+-			space_reserved = false;
+-			goto out;
++			extent_changeset_free(data_reserved);
++			return ret;
+ 		}
+ 	}
+ 	ret = btrfs_fallocate_update_isize(inode, offset + len, mode);
+- out:
+-	if (ret && space_reserved)
+-		btrfs_free_reserved_data_space(BTRFS_I(inode), data_reserved,
+-					       alloc_start, bytes_to_reserve);
+-	extent_changeset_free(data_reserved);
+ 
+ 	return ret;
+ }
+-- 
+2.25.1
 

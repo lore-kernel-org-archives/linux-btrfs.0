@@ -5,127 +5,123 @@ X-Spam-Level:
 X-Spam-Status: No, score=-15.2 required=3.0 tests=BAYES_00,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
-	autolearn=ham autolearn_force=no version=3.4.0
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4C76CC4332B
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Feb 2021 19:06:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E7F7CC433E6
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Feb 2021 19:14:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 1C3BD64F2D
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Feb 2021 19:06:56 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BD9F564F27
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Feb 2021 19:14:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230228AbhBZTGP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 26 Feb 2021 14:06:15 -0500
-Received: from mx2.suse.de ([195.135.220.15]:38054 "EHLO mx2.suse.de"
+        id S229953AbhBZTOH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 26 Feb 2021 14:14:07 -0500
+Received: from mx2.suse.de ([195.135.220.15]:41756 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S230188AbhBZTGM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Feb 2021 14:06:12 -0500
+        id S229545AbhBZTOG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 26 Feb 2021 14:14:06 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id CB0E5AD5C;
-        Fri, 26 Feb 2021 19:05:30 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 89140AC6E;
+        Fri, 26 Feb 2021 19:13:23 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 69F61DA7FF; Fri, 26 Feb 2021 20:03:37 +0100 (CET)
-Date:   Fri, 26 Feb 2021 20:03:37 +0100
+        id 25D07DA7FF; Fri, 26 Feb 2021 20:11:30 +0100 (CET)
+Date:   Fri, 26 Feb 2021 20:11:30 +0100
 From:   David Sterba <dsterba@suse.cz>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com,
-        Qu Wenruo <wqu@suse.com>,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: Re: [PATCH v7 02/38] btrfs: return an error from
- btrfs_record_root_in_trans
-Message-ID: <20210226190337.GQ7604@twin.jikos.cz>
+To:     Naohiro Aota <naohiro.aota@wdc.com>
+Cc:     linux-btrfs@vger.kernel.org, dsterba@suse.com, hare@suse.com,
+        linux-fsdevel@vger.kernel.org
+Subject: Re: [PATCH 1/3] btrfs: zoned: move superblock logging zone location
+Message-ID: <20210226191130.GR7604@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
-        linux-btrfs@vger.kernel.org, kernel-team@fb.com,
-        Qu Wenruo <wqu@suse.com>,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>
-References: <cover.1608135849.git.josef@toxicpanda.com>
- <0b7c322b530735e98a2c6e9db4fc024c9e137546.1608135849.git.josef@toxicpanda.com>
+Mail-Followup-To: dsterba@suse.cz, Naohiro Aota <naohiro.aota@wdc.com>,
+        linux-btrfs@vger.kernel.org, dsterba@suse.com, hare@suse.com,
+        linux-fsdevel@vger.kernel.org
+References: <cover.1614331998.git.naohiro.aota@wdc.com>
+ <7d02b9117f15101e70d2cd37da05ca93c2fd624d.1614331998.git.naohiro.aota@wdc.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <0b7c322b530735e98a2c6e9db4fc024c9e137546.1608135849.git.josef@toxicpanda.com>
+In-Reply-To: <7d02b9117f15101e70d2cd37da05ca93c2fd624d.1614331998.git.naohiro.aota@wdc.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Dec 16, 2020 at 11:26:18AM -0500, Josef Bacik wrote:
-> We can create a reloc root when we record the root in the trans, which
-> can fail for all sorts of different reasons.  Propagate this error up
-> the chain of callers.  Future patches will fix the callers of
-> btrfs_record_root_in_trans() to handle the error.
+On Fri, Feb 26, 2021 at 06:34:36PM +0900, Naohiro Aota wrote:
+> This commit moves the location of superblock logging zones basing on the
+> static address instead of the static zone number.
 > 
-> Reviewed-by: Qu Wenruo <wqu@suse.com>
-> Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+> The following zones are reserved as the circular buffer on zoned btrfs.
+>   - The primary superblock: zone at LBA 0 and the next zone
+>   - The first copy: zone at LBA 16G and the next zone
+>   - The second copy: zone at LBA 256G and the next zone
+
+This contains all the important information but somehow feels too short
+given how many mails we've exchanged and all the reasoning why we do
+that
+
+> 
+> We disallow zone size larger than 8GB not to overlap the superblock log
+> zones.
+> 
+> Since the superblock zones overlap, we disallow zone size larger than 8GB.
+
+or why we chose 8G to be the reasonable upper limit for the zone size.
+
+> Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 > ---
->  fs/btrfs/transaction.c | 5 +++--
->  1 file changed, 3 insertions(+), 2 deletions(-)
+>  fs/btrfs/zoned.c | 21 +++++++++++++++------
+>  1 file changed, 15 insertions(+), 6 deletions(-)
 > 
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index f51f9e39bcee..eba48578159e 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -400,6 +400,7 @@ static int record_root_in_trans(struct btrfs_trans_handle *trans,
->  			       int force)
+> diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
+> index 9a5cf153da89..40cb99854844 100644
+> --- a/fs/btrfs/zoned.c
+> +++ b/fs/btrfs/zoned.c
+> @@ -112,10 +112,9 @@ static int sb_write_pointer(struct block_device *bdev, struct blk_zone *zones,
+>  
+>  /*
+>   * The following zones are reserved as the circular buffer on ZONED btrfs.
+> - *  - The primary superblock: zones 0 and 1
+> - *  - The first copy: zones 16 and 17
+> - *  - The second copy: zones 1024 or zone at 256GB which is minimum, and
+> - *                     the following one
+> + *  - The primary superblock: zone at LBA 0 and the next zone
+> + *  - The first copy: zone at LBA 16G and the next zone
+> + *  - The second copy: zone at LBA 256G and the next zone
+>   */
+>  static inline u32 sb_zone_number(int shift, int mirror)
 >  {
->  	struct btrfs_fs_info *fs_info = root->fs_info;
-> +	int ret = 0;
+> @@ -123,8 +122,8 @@ static inline u32 sb_zone_number(int shift, int mirror)
 >  
->  	if ((test_bit(BTRFS_ROOT_SHAREABLE, &root->state) &&
->  	    root->last_trans < trans->transid) || force) {
-> @@ -448,11 +449,11 @@ static int record_root_in_trans(struct btrfs_trans_handle *trans,
->  		 * lock.  smp_wmb() makes sure that all the writes above are
->  		 * done before we pop in the zero below
->  		 */
-> -		btrfs_init_reloc_root(trans, root);
-> +		ret = btrfs_init_reloc_root(trans, root);
+>  	switch (mirror) {
+>  	case 0: return 0;
+> -	case 1: return 16;
+> -	case 2: return min_t(u64, btrfs_sb_offset(mirror) >> shift, 1024);
+> +	case 1: return 1 << (const_ilog2(SZ_16G) - shift);
+> +	case 2: return 1 << (const_ilog2(SZ_1G) + 8 - shift);
 
-This is patch 2 from the series and got me curious if it's ok to add the
-error value check here, because that would mean that the whole callgraph
-from btrfs_init_reloc_root is also error handling clean (ie. no
-BUG_ONs).
+This ilog(SZ_1G) + 8 is confusing, it should have been 256G for clarity,
+as it's a constant it'll get expanded at compile time.
 
-And it's not until patch 19.
-
-btrfs_init_reloc_root
-  create_reloc_root
-    kmalloc + BUG_ON
-    btrfs_copy_root + BUG_ON, twice
-    btrfs_insert_root + BUG_ON
-    btrfs_read_tree_root + BUG_ON
-  __add_reloc_root
-    ...
-
-All the patches in between add handling the record_root_in_trans errors,
-which is fine as end result, but the proper error handling needs to be
-pushed upwards from all leaf functions. That way it's cleaner and an
-understandable pattern as we can review one step in the callgraph,
-assuming that the calless are OK.
-
-After reading the whole patchset it looks like the end result is more
-or less what it should be but it's not a sequence of reviewable steps
-patch-to-patch.
-
-So it's patch ordering and maybe some context fixups, where the leaf
-functions are BUG_ON-free and then all individual callers are updated.
-
-Roughly in that order:
-
-- __add_reloc_root
-- create_reloc_root
-- btrfs_init_reloc_root
-- record_root_in_trans
-- select_reloc_root
-
->  		smp_mb__before_atomic();
->  		clear_bit(BTRFS_ROOT_IN_TRANS_SETUP, &root->state);
 >  	}
-> -	return 0;
-> +	return ret;
->  }
 >  
+>  	return 0;
+> @@ -300,6 +299,16 @@ int btrfs_get_dev_zone_info(struct btrfs_device *device)
+>  		zone_sectors = bdev_zone_sectors(bdev);
+>  	}
 >  
+> +	/* We don't support zone size > 8G that SB log zones overlap. */
+> +	if (zone_sectors > (SZ_8G >> SECTOR_SHIFT)) {
+> +		btrfs_err_in_rcu(fs_info,
+> +				 "zoned: %s: zone size %llu is too large",
+> +				 rcu_str_deref(device->name),
+> +				 (u64)zone_sectors << SECTOR_SHIFT);
+> +		ret = -EINVAL;
+> +		goto out;
+> +	}
+> +
+>  	nr_sectors = bdev_nr_sectors(bdev);
+>  	/* Check if it's power of 2 (see is_power_of_2) */
+>  	ASSERT(zone_sectors != 0 && (zone_sectors & (zone_sectors - 1)) == 0);
 > -- 
-> 2.26.2
+> 2.30.1
